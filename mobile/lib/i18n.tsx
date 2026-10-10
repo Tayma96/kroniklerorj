@@ -3146,14 +3146,26 @@ export function yuzdeL(n: number, lang: Lang): string { return lang === "tr" ? "
 export function tFor(lang: Lang, key: string): string { return dictFor(lang)[key] ?? TR[key] ?? key; }
 // %1, %2 … yer tutucularını parametrelerle doldurur (günlük/kronik kayıtları için).
 // "%1 hijo(s)" kalıpları sayıya göre çözülür: 1 → "1 hijo", 5 → "5 hijos" (ardışık sözcükler de: "2 amigo(s) leal(es)").
-export function cogulCoz(str: string): string {
+// Sayı 1 iken düz çoğul kalmış süre sözcüğü tekile iner ("1 months" → "1 month", "en 1 meses" → "en 1 mes", "daqui a 1 meses" → "daqui a 1 mês").
+// 130'dan fazla metin "%1 months/meses/años…" diye yazılmıştı; bekleme 1'e inince ekranda "1 months" görünüyordu. "meses" dile göre çözülür.
+const TEKIL: Record<string, Record<string, string>> = {
+  en: { months: "month", years: "year", days: "day", weeks: "week" },
+  es: { meses: "mes", años: "año", días: "día", semanas: "semana" },
+  pt: { meses: "mês", anos: "ano", dias: "dia", semanas: "semana" },
+};
+function tekilSure(str: string, lang?: Lang): string {
+  const m = lang ? TEKIL[lang] : undefined; if (!m) return str;
+  return str.replace(/(^|[^\d.,])1(\s+(?:more\s+)?)(months|years|days|weeks|meses|años|anos|días|dias|semanas)(?![A-Za-zÀ-ÿ(])/g, (x, on: string, ara: string, w: string) => (m[w] ? on + "1" + ara + m[w] : x)); // Hermes için \p{} yok: bitiş Latin harf aralığıyla denetlenir
+}
+export function cogulCoz(str: string, lang?: Lang): string {
+  str = tekilSure(str, lang);
   return str.replace(/(^|[^\d.,])(\d+)((?:\s+[^\s()\d,.;:]+\([a-zçãõáéíóú]{1,3}\))+)/g, (_m, on: string, n: string, rest: string) => on + n + rest.replace(/([^\s()]+)\(([a-zçãõáéíóú]{1,3})\)/g, (_x, b: string, suf: string) => (+n === 1 ? b : b.endsWith("ês") && suf === "es" ? b.slice(0, -2) + "eses" : b + suf)));
 }
 export function applyParams(str: string, p?: (string | number)[], lang?: Lang): string {
   str = str.replace(/%(\d+):[рвдтп]/g, "%$1"); // Rusça hâl işareti bu yolda çekimlenmez, yalnız silinir
   if (!p || !p.length) return str;
   if (lang === "tr") str = trApplySuffixes(str, (n) => { const v = p[n - 1]; return v == null ? "" : String(v); }); // rumor/tip gibi applyParams yolları da doğru allomorf alsın
-  return cogulCoz(str.replace(/%(\d+)/g, (_, n) => { const v = p[+n - 1]; return v == null ? "" : String(v); }));
+  return cogulCoz(str.replace(/%(\d+)/g, (_, n) => { const v = p[+n - 1]; return v == null ? "" : String(v); }), lang);
 }
 
 // Günlük/olay parametreleri — etiketli isimler render anında dile çözülür:
@@ -3373,7 +3385,7 @@ export function renderEvt(k: string | undefined, fallback: string, p: EvtParam[]
   if (lang === "tr") tpl = trApplySuffixes(tpl, (n) => resolveEvtParam(p[n - 1], lang, t, female)); // ekli yer tutucular önce, doğru allomorfla
   if (lang === "ru") tpl = tpl.replace(/((?:^|[\s(«—])(?:[Дд]ом|[Рр]од)[а-я]*\s+)%(\d+)/g, (m, on: string, n: string) => { const v = resolveEvtParam(p![+n - 1], lang, t, female); return /^[А-ЯЁ][а-яё]+ы$/.test(v) ? on + v + "х" : m; }); // "Дом Волковы" → "Дом Волковых" (hane adı çoğul yalın saklanır)
   if (lang === "ru") tpl = ruApplyCases(tpl, (n) => resolveEvtParam(p[n - 1], lang, t, female), (n) => { const v = p[n - 1]; return (typeof v === "string" && !/^(Дом|Род|Орден|Гильдия|Братство|Бейлик|Клан|Караван)/.test(v)) || (!!v && typeof v === "object" && ("kn" in v || "kf" in v || "fn" in v)); }); // edattan sonra gelen kişi adı doğru hâle
-  return cogulCoz(tpl.replace(/%(\d+)/g, (_, n) => resolveEvtParam(p[+n - 1], lang, t, female)));
+  return cogulCoz(tpl.replace(/%(\d+)/g, (_, n) => resolveEvtParam(p[+n - 1], lang, t, female)), lang);
 }
 
 interface Ctx { lang: Lang; rtl: boolean; setLang: (l: Lang) => void; t: (key: string) => string; tg: (key: string, female: boolean) => string; } // tg: oyuncuya hitap eden metin — kadın oyuncuya .f varyantı (varsa)
