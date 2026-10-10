@@ -41,6 +41,7 @@ export const MEMORY_TYPES: Record<string, MemSpec> = {
   dugun:          { yuk: +20, unutma: 0.995, skandal: 0.2, nam: null },
   ibadet_tanigi:  { yuk:  +3, unutma: 0.95, skandal: 0.2, nam: "dindar" },
   ortak_kazanc:   { yuk:  +7, unutma: 0.96, skandal: 0.0, nam: null },
+  ise_alinma:     { yuk:  +6, unutma: 0.96, skandal: 0.0, nam: null },    // mülkünde işe aldı (ekmeğine kapı açtı)
   // olumsuz
   rahatsizlik:    { yuk:  -3, unutma: 0.93, skandal: 0.0, nam: null },
   tatsiz_konu:    { yuk:  -4, unutma: 0.94, skandal: 0.0, nam: null },

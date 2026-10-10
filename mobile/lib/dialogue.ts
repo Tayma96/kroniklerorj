@@ -121,7 +121,7 @@ export function callbackLine(npc: NPC, memTur: string, lang: Lang = "tr", female
 export interface SohbetSon { i: string; t: number; ok: 0 | 1 | 2 } // i: niyet · t: tur · ok: 0 kötü bitti / 1 iyi / 2 kişi kapandı
 export interface DerinlikBaglam {
   female: boolean; playerProf: string; fame: number; honor: number; fear: number;
-  season: string; rel: number; turn: number; son?: SohbetSon; israr: boolean;
+  season: string; rel: number; turn: number; son?: SohbetSon; israr: boolean; mulk?: number; // mulk: tapulu mülk sayısı
 }
 export interface DerinlikSonuc { on: string; bant: string; takip: boolean; katman: string }
 const TAKIP_NIYET = ["dert", "iltifat", "saka", "hedef", "aile", "is", "dunya", "hosbes"];
@@ -151,7 +151,7 @@ export function derinlikKatmani(npc: NPC, intent: string, ctx: DerinlikBaglam, l
     if (ek("dlg.pa." + ascii(npc.profession) + "." + ascii(ctx.playerProf), "oyuncu")) return out;
   }
   if (intent === "hosbes" && Math.random() < 0.4) {
-    const k = ctx.fear >= 60 ? "dlg.pa.korku" : ctx.fame >= 60 ? "dlg.pa.unlu" : ctx.honor >= 60 ? "dlg.pa.onurlu" : "";
+    const k = ctx.fear >= 60 ? "dlg.pa.korku" : ctx.fame >= 60 ? "dlg.pa.unlu" : ctx.honor >= 60 ? "dlg.pa.onurlu" : (ctx.mulk || 0) >= 3 ? "dlg.pa.mulk" : "";
     if (k && ek(k, "oyuncu")) return out;
   }
   // 3) Kişilik ağzı (hoşbeş/dünya sohbetinde ara sıra).

@@ -21,7 +21,7 @@ const hata = (m) => { sorun++; if (ornek.length < 12) ornek.push(m); };
 // Derinlik metinleri (dile göre) — akışta gerçekten görünüyorlar mı diye sayılır
 const DERIN = {}; let derinGorulen = 0;
 const DK = ["dlg.takip.dert", "dlg.takip.iltifat", "dlg.takip.saka", "dlg.takip.hedef", "dlg.takip.aile", "dlg.takip.is", "dlg.takip.dunya", "dlg.takip.hosbes", "dlg.takip.kotu", "dlg.takip.kapali",
-  "dlg.pa.unlu", "dlg.pa.onurlu", "dlg.pa.korku", "dlg.pa.ayni", "dlg.ks.kibirli", "dlg.ks.comert", "dlg.ks.neseli", "dlg.ks.kurnaz", "dlg.ks.dindar", "dlg.ks.utangac",
+  "dlg.pa.unlu", "dlg.pa.onurlu", "dlg.pa.mulk", "dlg.pa.korku", "dlg.pa.ayni", "dlg.ks.kibirli", "dlg.ks.comert", "dlg.ks.neseli", "dlg.ks.kurnaz", "dlg.ks.dindar", "dlg.ks.utangac",
   "dlg.mevsim.kis", "dlg.mevsim.ilk", "dlg.mevsim.yaz", "dlg.mevsim.son", "dlg.hosbes.candost", "dlg.hosbes.candost2", "dlg.hosbes.rakip", "dlg.hosbes.rakip2"];
 for (const L of LANGS) DERIN[L] = DK.flatMap((k) => [tFor(L, k), tFor(L, k + ".f")]).filter((x) => x && !x.startsWith("dlg."));
 // 1) Gerçek oyun: sohbet akışı
@@ -61,6 +61,7 @@ const durum = [
   ["oyuncu", "hosbes", { fear: 80 }],
   ["oyuncu", "hosbes", { fame: 80 }],
   ["oyuncu", "hosbes", { honor: 80 }],
+  ["oyuncu", "hosbes", { mulk: 4 }],
   ["kisilik", "dunya", {}],
   ["mevsim", "hosbes", { season: "Yaz" }],
 ];

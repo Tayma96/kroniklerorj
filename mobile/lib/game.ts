@@ -991,6 +991,7 @@ export function hireWorker(prev: GameState, index: number, npcId: string): GameS
   const npc = townNpcsOf(s, pr.loc).find((x) => x.id === npcId);
   if (!npc || npc.age < 14) return s; // çocuk işçi olmaz (çırak yaşı altı işe alınamaz)
   pr.workers.push(npcId);
+  remember(s, { id: npc.id, name: npc.name }, "ise_alinma"); // kovulmanın aynası: ekmeğine kapı açanı da unutmaz
   push(s, "mülk", `${npc?.name || "Bir işçi"}, ${PROPERTY_TYPES[pr.type]?.name || "mülkünde"} (${pr.loc}) işe alındı.`, "kişisel", true, { k: "evj.workerHired", p: [npc?.name || "Bir işçi", { pt2: pr.type }, { pl: pr.loc }] });
   return s;
 }
@@ -4878,7 +4879,7 @@ export function talkWith(prev: GameState, npc: NPC, intent: string, lang: string
   const r: ConvResult = converse(npc, ns.mood, relWith(s, npc.id), socialPresence(p), intent, lang as any, israr);
   const dk = derinlikKatmani(npc, intent, {
     female: p.gender === "kadın", playerProf: p.profession, fame: p.fame, honor: p.honor, fear: p.fear,
-    season: currentCalendar(s.turn).season, rel: relWith(s, npc.id), turn: s.turn, son: ns.son, israr,
+    season: currentCalendar(s.turn).season, rel: relWith(s, npc.id), turn: s.turn, son: ns.son, israr, mulk: p.properties.length,
   }, lang as Lang);
   let relDelta = r.relDelta;
   if (relDelta > 0 && intent === "hosbes" && relWith(s, npc.id) < -20) relDelta = Math.ceil(relDelta / 2); // hasımla hoşbeş yarım ısıtır
