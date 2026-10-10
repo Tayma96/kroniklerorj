@@ -262,7 +262,10 @@ export function propsInLoc(s: GameState, loc: string): number { return s.player.
 // Bu enflasyon DEĞİL; soylunun kendi yaşam masrafıdır (oyuncu-bazlı, dünya enflasyonundan ayrı).
 export function lifestyleUpkeep(s: GameState): number {
   const p = s.player; const inf = inflationFactor(s);
-  let u = (4 + Math.floor(p.age / 10)) * inf;                    // hane geçim gideri (yaş + enflasyonla artar)
+  // Hane geçim gideri (yaş + enflasyonla artar). Yetişkinlikte ev kalabalıklaşır: 18'den sonra her yıl +0.15,
+  // en çok +6/ay — düşük ücretliyi aç bırakmayacak kadar hafif (ekonomi.cjs: tier-0 ücret ~12+/ay).
+  const adult = p.age >= 18 ? Math.min(6, (p.age - 18) * 0.15) : 0;
+  let u = (4 + Math.floor(p.age / 10) + adult) * inf;
   u += p.properties.length * 3 * inf;                            // mülk bakımı & tapu vergisi
   u += (s.settlements?.length || 0) * 8 * inf;                   // yerleşim idare gideri
   // Servete göre kademeli yaşam yükü (maiyet, ziyafet, sadaka beklentisi, divan vergisi) — zengini ısırır.
@@ -271,7 +274,11 @@ export function lifestyleUpkeep(s: GameState): number {
   const propNominal = p.properties.reduce((a, pr) => a + (PROPERTY_TYPES[pr.type]?.cost || 0), 0);
   const w = p.money + (p.deposit || 0) + 0.5 * propNominal; const b1 = 5000 * inf, b2 = 20000 * inf, b3 = 100000 * inf;
   let annual = 0;
-  if (w > b1) annual += (Math.min(w, b2) - b1) * 0.03;
+  // b0 kademesi (10 Ekim 2026 dengesi): eskiden 5000 altı servet hiç yük taşımıyordu; yalnızca çalışan
+  // pasif oyuncu 60 yaşında ~9.2k biriktirip ilk dilimin üstüne kendiliğinden çıkıyordu. 1500–5000 arası
+  // %10 → pasif ~3.4k (bir ev/tarla alır, dükkân alamaz), usta/etkin oyuncu açıkça önde kalır.
+  const b0 = 1500 * inf;
+  if (w > b0) annual += (Math.min(w, b1) - b0) * 0.10;
   if (w > b2) annual += (Math.min(w, b3) - b2) * 0.06;
   if (w > b3) annual += (w - b3) * 0.10;
   u += annual / 12;

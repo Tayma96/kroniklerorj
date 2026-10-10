@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { buyItem, buyPrice, sellItem, launchCaravan, caravanPremium, rentStall, stallCost, stallActive, stockWinter, winterStockCost, pawnHorse, redeemHorse, horsePawnValue, horseRedeemCost, negotiatedBuy, negotiatedSell, bargainBase, bargainSellBase, bargainChance, marketPrice, econKey, goodPriceMult, MARKET_EVENTS, bestQualityTier, QUALITY_LABEL, sellerPersonaOf, factionLocalFavor, goodMarketTag, goodTrend, citySpecialtyIdx, loanCapacity, loanRate, borrow, repay, depositCoin, withdrawCoin, DEPOSIT_ANNUAL_YIELD, giveZekat, zekatDue, zekatAvailable } from "../../lib/game";
+import { buyItem, buyPrice, sellItem, launchCaravan, caravanPremium, rentStall, stallCost, stallActive, stockWinter, winterStockCost, pawnHorse, redeemHorse, horsePawnValue, horseRedeemCost, negotiatedBuy, negotiatedSell, bargainBase, bargainSellBase, bargainChance, marketPrice, econKey, goodPriceMult, MARKET_EVENTS, bestQualityTier, QUALITY_LABEL, sellerPersonaOf, factionLocalFavor, goodMarketTag, goodTrend, citySpecialtyIdx, loanCapacity, loanRate, borrow, repay, depositCoin, withdrawCoin, DEPOSIT_ANNUAL_YIELD, lifestyleUpkeep, giveZekat, zekatDue, zekatAvailable } from "../../lib/game";
 import { marketGoods, locSeed } from "../../lib/world";
 import { currentCalendar } from "../../lib/calendar";
 import { useI18n, applyParams, yuzdeL } from "../../lib/i18n";
@@ -359,6 +359,8 @@ export default function Pazar() {
               ) : (
                 <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentDim }}>{t("paz.noCash")}</Text>
               )}
+              {/* Şeffaflık: ay kapanışında sessizce düşen hane geçimi burada görünür (birikim kademesi dahil) */}
+              <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentDim, marginTop: 8 }}>{t("paz.upkeep").replace("%c", String(lifestyleUpkeep(state)))}</Text>
               {/* Zekât: serveti saygınlığa çevir (gönüllü, yılda bir) */}
               {(() => {
                 const z = zekatDue(state); const can = zekatAvailable(state);
