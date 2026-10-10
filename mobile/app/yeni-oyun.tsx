@@ -3,7 +3,7 @@ import { View, Text, TextInput, Pressable, ImageBackground, ActivityIndicator, S
 import { useRouter } from "expo-router";
 import Animated, { FadeIn, FadeInUp, FadeOut, useSharedValue, useAnimatedStyle, withTiming, Easing } from "react-native-reanimated";
 import { useGame } from "../lib/store";
-import { useI18n } from "../lib/i18n";
+import { useI18n, applyParams } from "../lib/i18n";
 import { applyTemperament, TEMPERAMENTS } from "../lib/game";
 import { C, F } from "../lib/theme";
 import { Ambiance, ParticleBurst, Pulse } from "../lib/fx";
@@ -114,8 +114,11 @@ function Prolog({ lines, onDone }: { lines: string[]; onDone: () => void }) {
 
 export default function YeniOyun() {
   const router = useRouter();
-  const { startGame, apply, state } = useGame();
+  const { startGame, apply, state, defter, yeniOcak } = useGame();
   const { t } = useI18n();
+  // Soyu sürdür: defterde kayıtlı son soy varsa yeni hayat o soyadla, defter ve tek soy yeteneğiyle başlar (para/mülk/itibar geçmez).
+  const son = defter.soylar.length ? defter.soylar[defter.soylar.length - 1] : null;
+  const [soydan, setSoydan] = useState(false);
   const [fullName, setFullName] = useState("");
   const [gender, setGender] = useState<"erkek" | "kadın" | "">("");
   const [temp, setTemp] = useState<string>("");
@@ -127,7 +130,8 @@ export default function YeniOyun() {
   const runStart = async (first: string, surname: string, g: "erkek" | "kadın") => {
     setBusy(true);
     try {
-      await startGame(first, surname, g);
+      if (soydan && son) await yeniOcak(g, son.secilen, first);
+      else await startGame(first, surname, g);
       apply((s) => applyTemperament(s, temp));
       const cocuk = gender === "kadın" ? t("ng.childGirl") : t("ng.childBoy");
       setCinematic([
@@ -145,6 +149,7 @@ export default function YeniOyun() {
     const first = parts[0] || "";
     const surname = parts.slice(1).join(" ");
     if (first.length < 2) { setError(t("new.errName")); return; }
+    // Soydan devamda soyadı defterden gelir; yazılan soyadı yok sayılır.
     if (!gender) { setError(t("new.errGender")); return; }
     if (!temp) { setError(t("new.errTemp")); return; }
     // Mevcut (yaşayan) kayıt varsa üzerine yazmadan önce onayla — kaza ile silinmesin.
@@ -192,6 +197,25 @@ export default function YeniOyun() {
               style={{ backgroundColor: "rgba(8,5,2,0.7)", borderWidth: 1, borderColor: "rgba(160,130,70,0.3)", borderRadius: 8, color: C.parchment, fontFamily: F.serif, fontSize: 16, paddingHorizontal: 14, paddingVertical: 12 }}
             />
           </View>
+
+          {son ? (
+            <View style={{ marginTop: 20, gap: 8 }}>
+              {[true, false].map((v) => {
+                const active = soydan === v;
+                return (
+                  <Pressable key={String(v)} onPress={() => setSoydan(v)} disabled={busy} style={{
+                    paddingVertical: 11, paddingHorizontal: 12, borderRadius: 9,
+                    backgroundColor: active ? "rgba(201,168,76,0.20)" : "rgba(8,5,2,0.62)",
+                    borderWidth: 1, borderColor: active ? "rgba(201,168,76,0.7)" : "rgba(160,130,70,0.28)",
+                  }}>
+                    <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: active ? C.gold : C.parchment }}>{v ? t("new.soy.title") : t("new.soy.yeni")}</Text>
+                    {v ? <Text style={{ fontFamily: F.serif, fontSize: 10.5, color: C.parchmentMuted, marginTop: 2 }}>{applyParams(t("new.soy.sub"), [son.soyad || son.ad, son.nesil + 1, son.ad])}</Text> : null}
+                    {v ? <Text style={{ fontFamily: F.serifItalic, fontSize: 10, color: C.parchmentMuted, marginTop: 2 }}>{t("new.soy.not")}</Text> : null}
+                  </Pressable>
+                );
+              })}
+            </View>
+          ) : null}
 
           <View style={{ marginTop: 20 }}>
             <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 3, color: C.goldDim, marginBottom: 8 }}>{t("new.gender")}</Text>

@@ -56,13 +56,18 @@ const sonucAnahtarlari = (s) => s.history.filter((e) => /^(yanki|ip|seed)\./.tes
 const jaccard = (a, b) => { const A = new Set(a), B = new Set(b); const u = new Set([...A, ...B]); if (!u.size) return 0; let k = 0; for (const x of A) if (B.has(x)) k++; return 1 - k / u.size; };
 const egilim = (s) => { const o = {}; for (const x of s.hafiza || []) if (!x.ata) o[x.et] = (o[x.et] || 0) + 1; return o; };
 const N = parseInt(process.env.YNK_N || "12", 10);
-let uzakTop = 0, kontrolTop = 0, yankiA = 0, yankiB = 0, sebepsiz = 0, ornek = null;
+let fisSay = 0, fisOdenen = 0; let uzakTop = 0, kontrolTop = 0, yankiA = 0, yankiB = 0, sebepsiz = 0, ornek = null;
 for (let i = 0; i < N; i++) {
   const tohum = 1000 + i * 7919;
   const A = hayat(tohum, "ilk"), A2 = hayat(tohum, "ilk"), B = hayat(tohum, "son");
   const kA = sonucAnahtarlari(A), kB = sonucAnahtarlari(B);
   uzakTop += jaccard(kA, kB); kontrolTop += jaccard(kA, sonucAnahtarlari(A2));
   for (const s of [A, B]) for (const e of s.history) if (e.type === "yanki" && !(e.p && e.p.length && e.p.every((x) => x !== "" && x != null))) sebepsiz++;
+  for (const s of [A, B]) for (const e of s.history) if (/^fis\.yanki\./.test(e.k || "")) { // fısıltı → yankı: haber verilen karar en geç 3 ayda döner
+    const sfx = JSON.stringify(e.p[e.p.length - 1]); fisSay++;
+    if (s.history.some((y) => y.type === "yanki" && y.day >= e.day && y.day <= e.day + 3 && (y.p || []).some((x) => JSON.stringify(x) === sfx))) fisOdenen++;
+    else if (e.day >= s.turn - 3) fisSay--; // simülasyon bitti, vade dolmadı
+  }
   yankiA += A.history.filter((e) => e.type === "yanki").length; yankiB += B.history.filter((e) => e.type === "yanki").length;
   if (!ornek) ornek = { A: egilim(A), B: egilim(B), ilkA: A.history.filter((e) => e.type === "yanki").slice(0, 3).map((e) => e.k), ilkB: B.history.filter((e) => e.type === "yanki").slice(0, 3).map((e) => e.k) };
 }
@@ -73,6 +78,9 @@ console.log(`  örnek ilk yankılar — ilk-seçen ${ornek.ilkA.join(", ")} · s
 if (kontrol !== 0) hata.push(`kontrol ayrışması %${kontrol} (aynı tohum + aynı seçim aynı hayatı vermeli)`);
 if (uzak < 50) hata.push(`ikiz ayrışması %${uzak} < 50`);
 if (sebepsiz) hata.push(`${sebepsiz} yankı satırı sebebini (kart/kişi) taşımıyor`);
+console.log(`Fısıltı → yankı: ${fisSay} fısıltı eski bir kararı haber verdi · 3 ayda dönen %${fisSay ? Math.round((fisOdenen / fisSay) * 1000) / 10 : 0}`);
+if (!fisSay) hata.push("hiçbir fısıltı Yankı'ya bağlanmadı");
+else if (fisOdenen / fisSay < 0.9) hata.push(`fısıltının haber verdiği kararların yalnızca %${Math.round((fisOdenen / fisSay) * 100)}'i döndü (< 90)`);
 
 // 3) Ata izi vârise geçer
 { const s0 = hayat(4242, "ilk"); const st = { ...s0, hafiza: (s0.hafiza || []).map((x) => ({ ...x, ref: 2 })) };

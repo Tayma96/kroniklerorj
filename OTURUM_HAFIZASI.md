@@ -225,3 +225,15 @@ kaydı (iz) olur, iz bir eğilim etiketi taşır, sonraki olaylar ve yaylar bu h
 - Denetçi `scripts/_smoke/ritim-check.cjs`: 2026–2031 her gün 6 dilde satır, özel gün yılda ≤30, ritim.ts içe aktarmaz/saat okumaz,
   oyun mantığı (game/events/arcs/npc-mind/nufus/world/defter/roman/dialogue/divan/calendar) saat okumaz → hiçbir ödül zamana kilitli değil.
 - Doğrulama: 12 çekirdek rc=0; YANKI/DEFTER/ROMAN/KAN/GEÇ/DİVAN/RİTİM TEMİZ; ÇIĞIR EŞİKLERİ TEMİZ. Sıradaki: adım 5 (artıklar).
+
+## 16. Dalga 2 — Artıklar (adım 5)
+
+- Fısıltı → Yankı (`lib/game.ts` ay sonu fısıltısı + `yankiTick`): dönmeyi bekleyen eski bir karar varsa fısıltı onu adıyla haber
+  verir (`fis.yanki.0/1/ata`, `Iz.fis`), gelecek ay yankı zar atmadan o izi öder. yanki-check: 56 fısıltı, 3 ayda dönen %100 (eşik %90).
+- İkinci eğilim (`lib/events.ts`): gec_kutuk (odun −10 → cömert), cocuk_cirak (çocukluk → sağlık, temkin), sifa_otu (yeni seçenek:
+  handaki hasta yolcuya götür, −5 → cömert; 6 dil + RU kadın biçimi), yasli_sandik (ateşe ver → sağlık), orta_ana (evine al → sağlık −2),
+  son_vasiyet (eşit pay → temkin). Statik ayrışma %99,3 → %100; tek yönlü kart kalmadı; ölü karar 0.
+- `/yeni-oyun` (`app/yeni-oyun.tsx`): defterde soy varsa "Soyu sürdür / Yeni bir soy başlat" seçimi; soydan devam `yeniOcak` ile
+  (defterdeki soyadı, son atanın izleri, bıraktığı tek soy yeteneği; para/mülk/itibar geçmez). i18n parçası `l`.
+- Doğrulama: 12 çekirdek rc=0; YANKI/DEFTER/ROMAN/KAN/GEÇ/DİVAN/RİTİM TEMİZ; ÇIĞIR EŞİKLERİ TEMİZ (50+ boş %11,9, tekrar %2,2).
+- Adım 7 (Dost Haneler) taslağı commit dışı: `/tmp/kr/w7/` (dost.ts, dost-ui.tsx, dost-check.cjs, i18n `h`) — kullanıcı şimdilik atlattı.

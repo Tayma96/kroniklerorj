@@ -134,7 +134,7 @@ export const DILEMMAS: Dilemma[] = [
     when: (p) => p.age >= 55,
     choices: [
       { label: "Marangoza ver, meydana sedir olsun", delta: { reputation: 3, fame: 1 }, result: "Kütük rendelendi, meydana üç kollu bir sedir kuruldu. Şimdi herkes çınarın gölgesinde değil, tahtında oturuyor — hakemin adı sedirle anılıyor." },
-      { label: "Yoksullara kışlık odun dağıt", delta: { honor: 2, nam: { comert: 2 } }, result: "Baltalar indi, çınar kırk haneye kış oldu. Meydan boş kaldı ama kırk bacada duman tütüyor; dualar hakemin." },
+      { label: "Yoksullara kışlık odun dağıt", delta: { money: -10, honor: 2, nam: { comert: 2 } }, result: "Baltalar indi, çınar kırk haneye kış oldu. Meydan boş kaldı ama kırk bacada duman tütüyor; dualar hakemin." },
     ],
   },
   // ── Orta yaş / yaşlılık / ekonomik kriz ikilemleri (Vercel life_events_v2 boşluğu) ──
@@ -327,7 +327,7 @@ export const DILEMMAS: Dilemma[] = [
     when: (p) => p.age >= 9 && p.age < 13,
     choices: [
       { label: "Çıraklığı kap", delta: { stat_points: 1, honor: 2 }, result: "Küçük yaşta el emeğine giriştin; akranların oynarken sen öğrendin." },
-      { label: "Çocukluğunu yaşa", delta: { honor: 1 }, result: "Şimdilik oyunu seçtin; çocukluk bir kez yaşanır." },
+      { label: "Çocukluğunu yaşa", delta: { health: 2 }, result: "Şimdilik oyunu seçtin; çocukluk bir kez yaşanır." },
     ],
   },
   {
@@ -470,6 +470,7 @@ export const DILEMMAS: Dilemma[] = [
     when: (p) => p.age >= 13,
     choices: [
       { label: "Teşekkürle al", delta: { addItem: "sifa", honor: 2 }, result: "Şifalı otu heybene koydun. Bir gün lazım olur." },
+      { label: "Handaki hasta yolcuya götür", delta: { money: -5, reputation: 2 }, result: "Otu handa yatan yolcuya götürdün, yol parası senden. Yolcu ayağa kalkınca adını her konakta andı." },
     ],
   },
   {
@@ -962,7 +963,7 @@ export const DILEMMAS: Dilemma[] = [
     when: (p) => p.age >= 60,
     choices: [
       { label: "Ocak başında oku", delta: { reputation: 2, health: 1 }, result: "Mektuplar ocak başında bir bir okundu; gülen de oldu, gözü dolan da. O gece sandık değil, yürek boşaldı." },
-      { label: "Ateşe ver, geçmiş geçmişte kalsın", delta: { honor: 1 }, result: "Kâğıtlar alevde kıvrıldı; kokusu bir an gençliğini getirdi, sonra duman oldu. Bazı sözler sahibiyle gider." },
+      { label: "Ateşe ver, geçmiş geçmişte kalsın", delta: { health: 2 }, result: "Kâğıtlar alevde kıvrıldı; kokusu bir an gençliğini getirdi, sonra duman oldu. Bazı sözler sahibiyle gider." },
     ],
   },
   {
@@ -1463,7 +1464,7 @@ export const ORTA_YAS: Dilemma[] = [
     text: "Annen yaşlandı; artık tek başına kalamıyor. Evine mi alırsın, başka bir yol mu bulursun?",
     when: (p) => !p.mother_dead,
     choices: [
-      { label: "Evine al", delta: { honor: 3, money: -20, reputation: 1 }, result: "Annenin yatağı ocağın yanına kuruldu. Ev kalabalıklaştı; akşamları eski masallar yeniden anlatılır oldu." },
+      { label: "Evine al", delta: { honor: 3, reputation: 1, health: -2 }, result: "Annenin yatağı ocağın yanına kuruldu. Ev kalabalıklaştı; akşamları eski masallar yeniden anlatılır oldu." },
       { label: "Komşu kadına emanet et, masrafını öde", delta: { money: -10, honor: 1 }, result: "Komşu kadın annene bakıyor; sen her cuma uğruyorsun. Annen memnun, ama kapıda hep seni bekliyor." },
       { label: "Yanına bir bakıcı tut (−50)", delta: { money: -50, reputation: 2 }, result: "Bakıcı tuttun; mahalle 'evladı eli açık' dedi. Annen iyi bakılıyor; sesini daha az duyuyorsun." },
     ],
@@ -1544,7 +1545,7 @@ export const SON_YAS: Dilemma[] = [
     choices: [
       { label: "İlk doğana", delta: { honor: 2, veraset: "ilk" }, result: "Töre yolunu seçtin; büyük evlat başını eğdi, küçükler sustu." },
       { label: "Ocağa en çok emek verene", delta: { reputation: 1, asabiye: 2, veraset: "gozde" }, result: "Eli en çok ocağa değene yazdın; meşru ama tartışmalı bir karar." },
-      { label: "Eşit paylara", delta: { reputation: 1, asabiye: -1, veraset: "esit" }, result: "Ocağı paylara böldün; kavga çıkmadı, ama ocak da küçüldü." },
+      { label: "Eşit paylara", delta: { asabiye: -1, veraset: "esit" }, result: "Ocağı paylara böldün; kavga çıkmadı, ama ocak da küçüldü." },
     ],
   },
   {

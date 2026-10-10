@@ -1681,7 +1681,7 @@ export type IzEt = "comert" | "hirs" | "durust" | "hile" | "cesur" | "temkin";
 export const IZ_ETLERI: IzEt[] = ["comert", "hirs", "durust", "hile", "cesur", "temkin"];
 export const IZ_ZIT: Record<IzEt, IzEt> = { comert: "hirs", hirs: "comert", durust: "hile", hile: "durust", cesur: "temkin", temkin: "cesur" };
 // k: "dil:<ikilem>:<seçim>" · "arc:<yay>:<sahne>:<seçim>" · "kapi:<tür>:<1|0>" · t: tur · ref: kaç kez karşılık buldu · ata: atadan devralınan iz (atanın adı)
-export interface Iz { n: number; k: string; t: number; et: IzEt; kisi?: string; kisiId?: string; ref?: number; ata?: string; }
+export interface Iz { n: number; k: string; t: number; et: IzEt; kisi?: string; kisiId?: string; ref?: number; ata?: string; fis?: number; } // fis: ay sonu fısıltısının haber verdiği tur (yankı önce onu öder)
 export const HAFIZA_EN_COK = 80;
 export function deltaEtiketi(d: Delta | undefined, riskli = false): IzEt {
   const m = d?.money || 0, h = d?.honor || 0, r = d?.reputation || 0, hp = d?.health || 0, nam = d?.nam || {};
@@ -1727,8 +1727,9 @@ export function yankiTick(s: GameState) {
   const p = s.player; if (p.dead || inJail(p) || !s.hafiza?.length) return;
   const aday = s.hafiza.filter((x) => !x.ref && s.turn - x.t >= 8 && (!x.ata || p.age >= 12)); // ata izi çocuğa değil, kendini bilen gence döner
   if (!aday.length) return;
-  if (Math.random() >= Math.min(0.55, 0.18 + 0.05 * aday.length)) return;
-  const iz = aday.sort((a, b) => (a.ata ? 0 : 1) - (b.ata ? 0 : 1) || a.t - b.t)[0]; // ata izi (en eski) önce: soy, torun kendini bilince konuşur
+  const fisli = aday.find((x) => x.fis); // fısıltının haber verdiği iz: zar atılmadan gelir (söz verilen yankı boşa düşmez)
+  if (!fisli && Math.random() >= Math.min(0.55, 0.18 + 0.05 * aday.length)) return;
+  const iz = fisli || aday.sort((a, b) => (a.ata ? 0 : 1) - (b.ata ? 0 : 1) || a.t - b.t)[0]; // ata izi (en eski) önce: soy, torun kendini bilince konuşur
   const v = Math.floor(Math.random() * (iz.ata ? 2 : 3));
   iz.ref = 1;
   if (iz.ata) { const b = izBaslik(iz); if (!b) return; YANKI_ETKI[iz.et](p); push(s, "yanki", `Atanın bir kararı hâlâ anılıyor.`, "kişisel", false, { k: "yanki.ata." + iz.et + "." + v, p: [iz.ata, b] }); return; }
@@ -3743,8 +3744,16 @@ export function advance(prev: GameState, n = 1): GameState {
         "Değirmenin taşı gece kendi kendine döndü derler; un yok, buğday yok — yalnız ses.",
         "Çarşı kapısındaki dilenci bugün sadaka almadı; 'bugün sıra bende' deyip avucundakini dağıttı, kimse anlamadı.",
       ];
+      // Yankı fısıltısı: dönmeyi bekleyen eski bir karar varsa fısıltı onu haber verir; gelecek ay yankı onu öder.
+      const fz = (s.hafiza || []).filter((x) => !x.ref && !x.fis && !x.k.startsWith("kapi:") && s.turn - x.t >= 8 && (!x.ata || s.player.age >= 12) && izBaslik(x));
+      if (fz.length && chance(0.5)) {
+        const iz = fz.sort((a, b) => a.t - b.t)[0]; const b = izBaslik(iz)!; iz.fis = s.turn;
+        if (iz.ata) push(s, "fisilti", `Yaşlılar atanın adını anıyor; eski bir mesele yeniden açılacak gibi.`, "kişisel", false, { k: "fis.yanki.ata", p: [iz.ata, b] });
+        else push(s, "fisilti", `Çarşıda eski bir kararının konuşulduğunu duydun.`, "kişisel", false, { k: "fis.yanki." + (Math.random() < 0.5 ? 0 : 1), p: [b] });
+      } else {
       const fi = Math.floor(Math.random() * FIS.length);
       push(s, "fisilti", FIS[fi], "kişisel", false, { k: "fis." + fi });
+      }
     }
   }
   // Kronik budaması dönüm noktalarını (landmark) korur: roman/tarih, çocukluk bölümlerini kaybetmesin.
