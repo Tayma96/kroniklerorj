@@ -39,18 +39,33 @@ jobs:
         run: sed -i "s/versionCode [0-9]*/versionCode ${{ github.run_number }}/" build.gradle
 
       - name: Keystore'u geri yukle
+        # Secret adlari APK workflow'uyla AYNI. KEY_ALIAS bossa 'kronikler', KEY_PASSWORD bossa KEYSTORE_PASSWORD.
         working-directory: mobile/android
-        run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > kronikler.keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ] || [ -z "$KEYSTORE_PASSWORD" ]; then
+            echo "::error::AAB imzasiz yuklenemez: KEYSTORE_BASE64 ve KEYSTORE_PASSWORD secret'lari gerekli (bkz. mobile/YAYIN.md)"; exit 1
+          fi
+          echo "$KEYSTORE_BASE64" | base64 -d > kronikler.keystore
 
       - name: Gradle bundleRelease (imzali AAB)
         working-directory: mobile/android
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
+          KEY_ALIAS="${KEY_ALIAS:-kronikler}"
+          KEY_PASSWORD="${KEY_PASSWORD:-$KEYSTORE_PASSWORD}"
           ./gradlew bundleRelease \
             -Pandroid.injected.signing.store.file=$(pwd)/kronikler.keystore \
-            -Pandroid.injected.signing.store.password="${{ secrets.KEYSTORE_PASSWORD }}" \
-            -Pandroid.injected.signing.key.alias="${{ secrets.KEY_ALIAS }}" \
-            -Pandroid.injected.signing.key.password="${{ secrets.KEY_PASSWORD }}" \
+            -Pandroid.injected.signing.store.password="$KEYSTORE_PASSWORD" \
+            -Pandroid.injected.signing.key.alias="$KEY_ALIAS" \
+            -Pandroid.injected.signing.key.password="$KEY_PASSWORD" \
             --no-daemon --stacktrace
+          rm -f kronikler.keystore
 
       - name: AAB'yi yeniden adlandir
         run: cp mobile/android/app/build/outputs/bundle/release/app-release.aab Kronikler.aab

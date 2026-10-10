@@ -58,7 +58,27 @@ Kalan izinler: `INTERNET`, `VIBRATE`, `MODIFY_AUDIO_SETTINGS`, `FOREGROUND_SERVI
 4. **Eski kayıt testi:** Önceki sürüm yüklü cihazda üzerine kur; kayıt açılmalı (göç bekçisi CI'da da koşuyor).
 5. **Paylaşım linki:** `https://github.com/Tayma67/Kronikler/releases/download/apk-latest/Kronikler.apk` — kalıcıdır, her build'de en günceli verir.
 6. **MP (opsiyonel):** Sunucu güncellemesi için `cd server && npx wrangler deploy` (canlı v2'de kaldıysa MP BETA eski protokolde çalışır; SP etkilenmez).
-7. **Kalıcı imza (opsiyonel, Play Store öncesi şart):** `keytool -genkeypair -v -keystore kronikler.keystore -alias kronikler -keyalg RSA -keysize 2048 -validity 10000` → GitHub Secrets'a `KEYSTORE_BASE64` + `KEYSTORE_PASSWORD` → sonraki build otomatik kalıcı imzalı. İmza değişimi mevcut kurulumlara "kaldır-yeniden kur" gerektirir; geniş dağıtımdan ÖNCE yapılmalı.
+7. **Kalıcı imza (opsiyonel, Play Store öncesi şart):** bkz. aşağıdaki "İmza ve secret'lar". İmza değişimi mevcut
+   kurulumlara "kaldır-yeniden kur" gerektirir; geniş dağıtımdan ÖNCE yapılmalı.
+
+## İmza ve secret'lar (APK ve AAB workflow'ları AYNI adları kullanır)
+
+Tek bir kalıcı keystore üretilir ve iki workflow da onu kullanır:
+
+```bash
+keytool -genkeypair -v -keystore kronikler.keystore -alias kronikler -keyalg RSA -keysize 2048 -validity 10000
+base64 -w0 kronikler.keystore   # çıktı KEYSTORE_BASE64 secret'ına
+```
+
+| Secret | Zorunlu mu | Boşsa |
+|---|---|---|
+| `KEYSTORE_BASE64` | AAB için evet; APK için hayır | APK debug imzayla derlenir (doğrudan dağıtıma yeter, Play'e değil); AAB durur |
+| `KEYSTORE_PASSWORD` | `KEYSTORE_BASE64` varsa evet | — |
+| `KEY_ALIAS` | hayır | `kronikler` |
+| `KEY_PASSWORD` | hayır | `KEYSTORE_PASSWORD` ile aynı kabul edilir |
+
+Keystore dosyası ve şifreleri asla depoya girmez; kaybedilirse aynı uygulamaya güncelleme imzalanamaz (Play App
+Signing kullanılıyorsa yükleme anahtarı sıfırlanabilir). Yedeğini depo dışında sakla.
 
 ## Mağaza görselleri
 
