@@ -139,3 +139,16 @@ kaydı (iz) olur, iz bir eğilim etiketi taşır, sonraki olaylar ve yaylar bu h
 - **Denetçiler:** `yanki-check.cjs` (statik ayrışma, ikiz hayat ayrışması, kontrol=0, ata izi), `oynanis.cjs OYN_ESIK=1`
   (karşılık %, ip ödeme %, açık ip ≤3, jenerik doruk 0, seri ≤3, orta yaş arası ≤18, ay notu ≥%60, bunalma).
 - Metinler: `lib/i18n-cigir.ts` (6 dil, `.f` oyuncu dişil, `.k` NPC dişil); üretim tablosu oturum dışında, dosya elle de düzenlenebilir.
+
+## 9. Hanedan Defteri (Yankı üstünde, ölümden sağ çıkan kayıt)
+
+- **Ayrı anahtar `kronik_defter`** (`lib/defter.ts`, `lib/store.tsx`): `resetGame` dokunmaz. Soy kaydı (ad, nesil, ölüm yaşı, meslek,
+  ölüm sıfatı `ep.*`, lakaplar, baskın eğilim, en çok anılan 3 iz, tamamlanan yaylar, görülen ikilemler, soy yeteneği). En çok 60 soy.
+  `defterGoc` her alanı korur (bozuk girdi atılmaz, onarılır); `defterIsle` aynı ölümü iki kez yazmaz (anahtar: ad|soyad|nesil|tur|yaş).
+- **Motoru besler:** vâris (`continueAsHeir`) ya da vârissiz ölümde **Küllerden yeni ocak** (`kulDenYeniOcak`, `app/oyun/ocak.tsx`)
+  atanın izlerini `ata` alanıyla hafızaya koyar; `yankiTick` ata izini torun 12 yaşına gelince önce açar (`yanki.ata.<et>.<v>`).
+- **Soy yetenekleri** (`SOY_YETENEKLERI`, 8 adet): her birinin bir artısı bir bedeli var; ölümde 3 aday (`yetenekAdaylari`,
+  deterministik: en çok çalışılan dal, baskın eğilim, en güçlü özellik) + "yetenek yok". Para/mülk/itibar geçmez (pusula).
+- Ekranlar: `app/oyun/kronik.tsx` (Menü → Kayıt & Anı), `app/oyun/ocak.tsx`, vâris ekranında `lib/soy-ui.tsx YetenekSecici`.
+- Denetçi: `scripts/_smoke/defter-check.cjs` (artı+bedel, 6 dil, göç fuzz/idempotent, resetGame defteri silmez,
+  5 nesil zinciri: başlangıç gücü birikmez, ilk 20 yıl medyan para kayması ≤%10, torunda ata yankısı).

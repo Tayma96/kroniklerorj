@@ -43,6 +43,7 @@ const SECTIONS: { title: string; items: Item[] }[] = [
     { to: "/oyun/basarimlar", icon: "zafer" },
     { to: "/oyun/tarih", icon: "tarih" },
     { to: "/oyun/roman", icon: "roman" },
+    { to: "/oyun/kronik", icon: "hanedan" },
     { to: "/oyun/ayarlar", icon: "ayarlar" },
   ]},
 ];

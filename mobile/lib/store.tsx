@@ -4,7 +4,9 @@ import { AppState } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { oturumGecis } from "./oturum";
 import { useI18n } from "./i18n";
-import { GameState, newGame, advance, eat, work, achievementsOf, WorkStyle , migrate } from "./game";
+import { GameState, newGame, advance, eat, work, achievementsOf, WorkStyle , migrate, continueAsHeir, kulDenYeniOcak } from "./game";
+import { Defter, DEFTER_KEY, bosDefter, defterGoc, defterIsle, defterSecim, hayatAnahtari, sonSoy } from "./defter";
+import { NAME_POOLS } from "./locale-data";
 export { migrate }; // MP ekranı ve testler store üzerinden erişmeye devam eder
 
 const KEY = "kronikler_save_v1";
@@ -37,6 +39,10 @@ interface Ctx {
   // alt-ekranları (meslek/mektep/savaş…) MP karakteri üstünde de değişiklik yapmadan çalışır.
   // mpMode true iken SP kaydına (AsyncStorage) YAZILMAZ → çevrimdışı kayıt korunur.
   mpMode: boolean;
+  // ── Hanedan Defteri (kronik_defter): ölümden sağ çıkar, resetGame silmez ──
+  defter: Defter;
+  varisleDevam: (willId: string, heirName?: string, lastWordsId?: string, yetenek?: string) => void;
+  yeniOcak: (gender: "erkek" | "kadın", yetenek?: string, ad?: string) => Promise<void>;
   enterMp: (s: GameState) => void;
   exitMp: () => Promise<void>;
 }
@@ -50,6 +56,15 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [mpMode, setMpMode] = useState(false);
   const mpRef = useRef(false); // persist gating senkron okuma için
+  const [defter, setDefter] = useState<Defter>(bosDefter());
+  const defterRef = useRef<Defter>(defter); defterRef.current = defter;
+  const defterYaz = useCallback((d: Defter) => { setDefter(d); defterRef.current = d; AsyncStorage.setItem(DEFTER_KEY, JSON.stringify(d)).catch(() => {}); }, []);
+  useEffect(() => { AsyncStorage.getItem(DEFTER_KEY).then((raw) => { if (raw) { try { const d = defterGoc(JSON.parse(raw)); setDefter(d); defterRef.current = d; } catch {} } }).catch(() => {}); }, []);
+  // Ölüm deftere işlenir (idempotent; MP karakteri SP defterine yazılmaz).
+  useEffect(() => {
+    if (!state || !state.player.dead || mpRef.current) return;
+    const n = defterIsle(defterRef.current, state); if (n !== defterRef.current) defterYaz(n);
+  }, [state?.player.dead, state?.turn, defterYaz]);
 
   useEffect(() => {
     (async () => {
@@ -129,6 +144,29 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     } catch { return false; }
   }, []);
   const doWork = useCallback((style?: WorkStyle) => apply((s) => work(s, style)), [apply]);
+  // Vâris yolu: seçilen soy yeteneği deftere yazılır ve vârise geçer.
+  const varisleDevam = useCallback((willId: string, heirName?: string, lastWordsId?: string, yetenek?: string) => {
+    setState((cur) => {
+      if (!cur) return cur;
+      if (!mpRef.current && cur.player.dead) { const d0 = defterIsle(defterRef.current, cur); defterYaz(defterSecim(d0, hayatAnahtari(cur), yetenek)); }
+      const next = continueAsHeir(cur, willId, heirName, lastWordsId, yetenek);
+      schedulePersist(next); return next;
+    });
+  }, [schedulePersist, defterYaz]);
+  // Küllerden yeni ocak: vârissiz ölümün ardından aynı soyadla yeni hayat — defter ve tek soy yeteneği taşınır, başka hiçbir şey.
+  const yeniOcak = useCallback(async (gender: "erkek" | "kadın", yetenek?: string, ad?: string) => {
+    if (mpRef.current) return;
+    if (saveTimer.current) { clearTimeout(saveTimer.current); saveTimer.current = null; } pending.current = null;
+    let d = defterRef.current; const cur = state;
+    if (cur && cur.player.dead) { d = defterIsle(d, cur); d = defterSecim(d, hayatAnahtari(cur), yetenek); defterYaz(d); }
+    const son = sonSoy(d); const havuz = NAME_POOLS[langRef.current] || NAME_POOLS.tr;
+    const ilk = ad || (gender === "kadın" ? havuz.f : havuz.m)[Math.floor(Math.random() * (gender === "kadın" ? havuz.f : havuz.m).length)];
+    const soyad = son?.soyad || havuz.s[0];
+    const ata = son ? { name: son.ad, izler: son.izler, nesil: son.nesil } : undefined;
+    const s = { ...kulDenYeniOcak(ilk, soyad, gender, ata, yetenek), dil: langRef.current };
+    setState(s);
+    try { await AsyncStorage.setItem(KEY, JSON.stringify(s)); } catch {}
+  }, [state, defterYaz]);
   const resetGame = useCallback(async () => { if (saveTimer.current) { clearTimeout(saveTimer.current); saveTimer.current = null; } pending.current = null; if (mpRef.current) return; await AsyncStorage.removeItem(KEY); setState(null); }, []);
 
   // ── Çok oyuncu köprüsü ──
@@ -147,7 +185,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <GameContext.Provider value={{ state, loading, startGame, apply, doAdvance, doEat, importSave, doWork, resetGame, mpMode, enterMp, exitMp }}>
+    <GameContext.Provider value={{ state, loading, startGame, apply, doAdvance, doEat, importSave, doWork, resetGame, mpMode, defter, varisleDevam, yeniOcak, enterMp, exitMp }}>
       {children}
     </GameContext.Provider>
   );

@@ -48,6 +48,7 @@ const EVT: Record<string, { c: string; col: string; gi: string }> = {
   beceri: { c: "beceri", col: C.gold, gi: "medal" }, başarım: { c: "basarim", col: C.gold, gi: "trophy" }, basarim: { c: "basarim", col: C.gold, gi: "trophy" },
   mülk: { c: "mulk", col: C.gold, gi: "house" }, mulkler: { c: "mulk", col: C.gold, gi: "house" },
   hikâye: { c: "hikaye", col: C.ink, gi: "book" }, hikaye: { c: "hikaye", col: C.ink, gi: "book" },
+  yanki: { c: "olay", col: C.gold, gi: "scroll" },
   iyileşme: { c: "saglik", col: C.sage, gi: "healing" }, sağlık: { c: "saglik", col: C.sage, gi: "healing" },
   nesil_devri: { c: "nesil", col: C.ink, gi: "hourglass" }, sohbet: { c: "sohbet", col: C.parchmentMuted, gi: "family" },
   hediye: { c: "sohbet", col: C.rose, gi: "ring" }, ölüm: { c: "dunya", col: C.parchmentMuted, gi: "tombstone" }, olum: { c: "dunya", col: C.parchmentMuted, gi: "tombstone" },
@@ -416,7 +417,7 @@ export default function Dashboard() {
             professionLine={profLine} lines={eul.lines.map((l) => renderEvt(l.k, "", l.p, lang, t, p.gender === "kadın"))} ozet={{ baslik: t("eul.anlar").replace(/:\s*$/, ""), anlar: hayatAnlari, insanlar: hayatInsanlari }} close={t("dynnote." + eul.close)} hasHeir={p.children.length > 0}
             onReel={() => { setShowEulogy(false); router.push("/oyun/tarih?cine=1"); }}
             onChronicle={() => { setShowEulogy(false); router.push("/oyun/roman"); }}
-            onContinue={() => { setShowEulogy(false); if (p.children.length > 0) router.push("/oyun/nesil"); else { resetGame(); router.replace("/yeni-oyun"); } }} />
+            onContinue={() => { setShowEulogy(false); if (p.children.length > 0) router.push("/oyun/nesil"); else if (mpMode) { resetGame(); router.replace("/yeni-oyun"); } else router.push("/oyun/ocak"); }} />
         );
       })()}
 
@@ -999,6 +1000,12 @@ export default function Dashboard() {
             <Pressable onPress={() => router.push("/oyun/nesil")} style={{ flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 7, paddingVertical: 14, borderRadius: 9, borderWidth: 1.5, borderColor: "rgba(201,168,76,0.55)", backgroundColor: C.gold }}>
               <GameIcon name="hanedan" size={14} color={C.inkOnGold} />
               <Text style={{ fontFamily: F.display, fontSize: 13, color: C.inkOnGold, letterSpacing: 1 }}>{t("dash.continueHeir")} ({p.children.length} {t("dash.heirs")})</Text>
+            </Pressable>
+          )}
+          {p.children.length === 0 && !mpMode && (
+            <Pressable onPress={() => router.push("/oyun/ocak")} style={{ flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 7, paddingVertical: 14, borderRadius: 9, borderWidth: 1.5, borderColor: "rgba(201,168,76,0.55)", backgroundColor: C.gold }}>
+              <GameIcon name="hanedan" size={14} color={C.inkOnGold} />
+              <Text style={{ fontFamily: F.display, fontSize: 13, color: C.inkOnGold, letterSpacing: 1 }}>{t("dash.kulOcak")}</Text>
             </Pressable>
           )}
           <View style={{ flexDirection: "row", gap: 10 }}>

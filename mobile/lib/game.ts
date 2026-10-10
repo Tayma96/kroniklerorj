@@ -175,6 +175,7 @@ export interface Player {
   last_zekat?: number; // son zekât verilen tur (yılda bir kapısı); serveti saygınlığa çevirir
   zafer?: number; bozgun?: number; // savaş sicili: kazanılan/kaybedilen çarpışmalar (karşılaşma, cephe, sefer) — vârise geçmez
   delilik?: number; // akıl dışı riskler: oyunun bildiği güç oranlarına karşı atılan kumarlar ("Deli" lakabının yakıtı)
+  soy_yetenek?: string; // Hanedan Defteri: soydan gelen tek yetenek (bir artı, bir bedel; üst üste binmez)
   lakap?: string; lakaplar?: string[]; // yaşayan lakap (oynayış tarzından türer, ayda bir güncellenir) + ömür boyu kazanılanlar
   kademe?: number; // Ahilik: sınavla KAZANILAN kariyer kademesi (etkin unvan = min(hizmet süresi, kazanılan)); meslek değişince 0
   sinav_cagri?: number; sinav_bekle?: number; sinav_turn?: number; // peştamal sınavı: çağrılan hedef · kalınca yeniden çağrı turu · ayda tek deneme
@@ -1616,6 +1617,54 @@ function tohumSonucu(s: GameState, t: Seed): boolean {
 }
 // (Nesil devri tohum aktarımı continueAsHeir içinde: sadece nesil aşabilenler kalır.)
 
+// ── Soy yetenekleri (Hanedan Defteri): ölümde 3 adaydan biri seçilir; her biri bir artı ve bir bedel taşır (yatay — baskın yok).
+export interface SoyYetenek { id: string; beceri?: Partial<Record<SkillKey, number>>; stat?: Partial<Record<keyof Stats, number>>; rep?: number; honor?: number; et?: IzEt; }
+export const SOY_YETENEKLERI: SoyYetenek[] = [
+  { id: "ocak_eli", beceri: { crafting: 1.25 }, rep: -6, et: "temkin" },
+  { id: "kilic_yemini", beceri: { combat: 1.25, social: 0.85 }, et: "cesur" },
+  { id: "carsi_dili", beceri: { trade: 1.25 }, honor: -6, et: "hirs" },
+  { id: "gonul_eli", beceri: { social: 1.25, combat: 0.85 }, et: "comert" },
+  { id: "kalem_ehli", stat: { intelligence: 1, strength: -1 }, et: "durust" },
+  { id: "pehlivan_kani", stat: { strength: 1, charisma: -1 }, et: "cesur" },
+  { id: "hayir_ocagi", rep: 8, beceri: { trade: 0.85 }, et: "comert" },
+  { id: "yol_kani", stat: { stamina: 1 }, beceri: { crafting: 0.85 }, et: "hile" },
+];
+// Yeni hayatın başında uygula (mutasyon; clone edilmiş/yeni state üstünde). Aynı anda tek yetenek.
+export function soyYetenekUygula(s: GameState, id?: string) {
+  const y = id ? SOY_YETENEKLERI.find((x) => x.id === id) : undefined; if (!y) return;
+  const p = s.player; p.soy_yetenek = y.id;
+  for (const [k, v] of Object.entries(y.stat || {}) as [keyof Stats, number][]) p.stats[k] = Math.max(1, (p.stats[k] || 1) + v);
+  if (y.rep) p.reputation = Math.max(-100, Math.min(100, p.reputation + y.rep));
+  if (y.honor) p.honor = clampStat(p.honor + y.honor);
+  push(s, "nesil_devri", `Soydan gelen bir yetenek: ${y.id}.`, "kişisel", false, { k: "soy.miras", p: [{ sfx: "soy." + y.id + ".ad" }] });
+}
+// Ölen hayatın işlerinden üç aday (deterministik): en çok çalışılan dal, baskın Yankı eğilimi, en güçlü özellik.
+export function yetenekAdaylari(s: GameState): string[] {
+  const p = s.player; const puan: Record<string, number> = {};
+  for (const y of SOY_YETENEKLERI) {
+    let n = 0;
+    for (const k of Object.keys(y.beceri || {}) as SkillKey[]) if ((y.beceri![k] || 1) > 1) n += (p.skill_xp?.[k] || 0) / 100;
+    for (const [k, v] of Object.entries(y.stat || {}) as [keyof Stats, number][]) if (v > 0) n += (p.stats[k] || 0) * 0.8;
+    if (y.rep && y.rep > 0) n += Math.max(0, p.reputation) / 12;
+    const eg = hafizaEgilimi(s.hafiza); if (eg && y.et === eg) n += 4;
+    puan[y.id] = n;
+  }
+  return SOY_YETENEKLERI.map((y) => y.id).sort((a, b) => puan[b] - puan[a] || a.localeCompare(b)).slice(0, 3);
+}
+// Küllerden yeni ocak: varisi olmayan hayatın ardından aynı soyadla yeni bir hayat. Defterin taşıdığı tek şey kimliktir:
+// atanın en çok anılan kararları (ata izi — Yankı bunları yeni hayatta yankılatır) ve seçilen tek soy yeteneği. Para, mülk, itibar geçmez.
+export function kulDenYeniOcak(ad: string, soyad: string, gender: "erkek" | "kadın", ata?: { name: string; izler: { k: string; et: IzEt }[]; nesil: number }, yetenek?: string): GameState {
+  const s = newGame(ad, soyad, gender);
+  if (ata) {
+    s.player.generation = Math.max(1, ata.nesil + 1);
+    s.hafiza = ata.izler.filter((x) => IZ_ETLERI.includes(x.et) && typeof x.k === "string").slice(0, 3).map((x, i) => ({ n: i + 1, k: x.k, t: -12, et: x.et, ata: ata.name }));
+    s.hafiza_seq = s.hafiza.length;
+    push(s, "nesil_devri", `Küllerden yeni bir ocak: ${ata.name} soyunun hikâyesi sürüyor.`, "kişisel", true, { k: "soy.kul", p: [ata.name] });
+  }
+  soyYetenekUygula(s, yetenek);
+  return s;
+}
+
 // ── YANKI: sonuç motoru (çekirdek) ──
 // Her büyük seçim (ikilem, orta yaş sorusu, hikâye yayı sahnesi, kapıya gelen insan) hafızaya bir İZ olarak yazılır. İz,
 // seçimin eğilimini taşır (cömert/hırslı, dürüst/hileci, cesur/temkinli). Sonra motor bu hafızayı okur:
@@ -1673,10 +1722,10 @@ const YANKI_ETKI: Record<IzEt, (p: Player) => void> = {
 };
 export function yankiTick(s: GameState) {
   const p = s.player; if (p.dead || inJail(p) || !s.hafiza?.length) return;
-  const aday = s.hafiza.filter((x) => !x.ref && s.turn - x.t >= 8);
+  const aday = s.hafiza.filter((x) => !x.ref && s.turn - x.t >= 8 && (!x.ata || p.age >= 12)); // ata izi çocuğa değil, kendini bilen gence döner
   if (!aday.length) return;
   if (Math.random() >= Math.min(0.55, 0.18 + 0.05 * aday.length)) return;
-  const iz = aday.sort((a, b) => (a.ata ? 1 : 0) - (b.ata ? 1 : 0) || a.t - b.t)[0]; // önce kendi izlerin, sonra atanınkiler
+  const iz = aday.sort((a, b) => (a.ata ? 0 : 1) - (b.ata ? 0 : 1) || a.t - b.t)[0]; // ata izi (en eski) önce: soy, torun kendini bilince konuşur
   const v = Math.floor(Math.random() * (iz.ata ? 2 : 3));
   iz.ref = 1;
   if (iz.ata) { const b = izBaslik(iz); if (!b) return; YANKI_ETKI[iz.et](p); push(s, "yanki", `Atanın bir kararı hâlâ anılıyor.`, "kişisel", false, { k: "yanki.ata." + iz.et + "." + v, p: [iz.ata, b] }); return; }
@@ -7176,7 +7225,7 @@ const LW_ECHO_TR: Record<string, string> = {
 };
 // Vâris seçim ekranı önizlemesi: continueAsHeir'ın başlangıç hesabının saf (state'i değiştirmeyen) aynası.
 // Formüller continueAsHeir ile birebir aynı kalmalı; sapma önizlemeyi yalancı yapar.
-export function heirPreview(prev: GameState, heirName: string, willId = "esit"): { points: number; money: number; rep: number } {
+export function heirPreview(prev: GameState, heirName: string, willId = "esit", soyYetenek?: string): { points: number; money: number; rep: number } {
   const p = prev.player;
   const will = WILL_STYLES.find((w) => w.id === willId) || WILL_STYLES[0];
   const netWealth = Math.max(0, (p.money + (p.deposit || 0)) - (p.debt || 0));
@@ -7205,10 +7254,11 @@ export function heirPreview(prev: GameState, heirName: string, willId = "esit"):
   const favP = prev.succession?.favored || null;
   if (favP && p.children.includes(favP)) rep += heirName === favP ? 5 : -5; // veraset meşruiyeti (continueAsHeir paritesi)
   if (prev.saga && prev.saga.act >= 3 && prev.saga.ch >= 5) rep += 2; // Mühür Nişanı: tamamlanan Kül Yemini vârisi önceler (continueAsHeir paritesi)
-  return { points, money, rep: Math.max(-100, Math.min(100, rep + legacyRep)) };
+  const syRep = SOY_YETENEKLERI.find((x) => x.id === soyYetenek)?.rep || 0; // soy yeteneği (continueAsHeir paritesi)
+  return { points, money, rep: Math.max(-100, Math.min(100, Math.max(-100, Math.min(100, rep + legacyRep)) + syRep)) };
 }
 
-export function continueAsHeir(prev: GameState, willId = "esit", heirName?: string, lastWordsId?: string): GameState {
+export function continueAsHeir(prev: GameState, willId = "esit", heirName?: string, lastWordsId?: string, soyYetenek?: string): GameState {
   const s = clone(prev); const p = s.player;
   if (!p.dead || p.children.length === 0) return s;
   const heir = heirName && p.children.includes(heirName) ? heirName : p.children[0];
@@ -7380,6 +7430,7 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
   oyuncuAilesiKur(ns); // vârisin yaşayan anne/babası (atanın eşi ya da adından ibaret ebeveyn) gerçek kişi olur
   // Devralınan başarı kazanılmış sayılmaz: vârisin ilk gününde zaten sağlanan başarımlar (miras akçe, mülk…) sessizce
   // alınmış işaretlenir; vâris yeni başarımları kendi emeğiyle açar. "Hanedan Kuruldu" yalnız ilk vâriste bir kez kutlanır.
+  soyYetenekUygula(ns, soyYetenek); // Hanedan Defteri: ölümde seçilen tek soy yeteneği (heirPreview paritesi: rep)
   ns.player.claimed = achievementsOf(ns).filter((x) => x.done && !(x.a.id === "hanedan" && ns.player.generation === 2)).map((x) => x.a.id);
   return ns;
 }
@@ -9289,6 +9340,8 @@ export function pendingPerkCount(p: Player): number {
 // XP ekle; seviye atlarsa günlüğe işle (saf — clone edilmiş state üstünde çağrılır).
 function gainSkill(s: GameState, key: SkillKey, xp: number) {
   const p = s.player;
+  const sy = p.soy_yetenek ? SOY_YETENEKLERI.find((x) => x.id === p.soy_yetenek) : undefined;
+  if (sy?.beceri?.[key]) xp = Math.max(1, Math.round(xp * sy.beceri[key]!)); // soy yeteneği: bir dalda hız, bir dalda bedel
   if (p.childhood === "merakli") xp = Math.round(xp * 1.15); // meraklı çocukluk: ömür boyu daha hızlı öğrenir
   const before = p.skills[key];
   p.skill_xp[key] += xp;
@@ -10684,6 +10737,7 @@ export function migrate(s: GameState): GameState {
     s.hafiza = Array.isArray(s.hafiza) ? s.hafiza.filter((x) => x && typeof x === "object" && Number.isFinite(x.n) && typeof x.k === "string" && Number.isFinite(x.t) && IZ_ETLERI.includes(x.et)).map((x) => ({ ...x, ref: Number.isFinite(x.ref) ? x.ref : undefined, ata: typeof x.ata === "string" ? x.ata : undefined, kisi: typeof x.kisi === "string" ? x.kisi : undefined, kisiId: typeof x.kisiId === "string" ? x.kisiId : undefined })).slice(-HAFIZA_EN_COK) : undefined;
   }
   if (s.hafiza_seq != null && !Number.isFinite(s.hafiza_seq)) s.hafiza_seq = undefined;
+  if (s.player && s.player.soy_yetenek != null && !SOY_YETENEKLERI.some((x) => x.id === s.player.soy_yetenek)) s.player.soy_yetenek = undefined;
   if (s.hafiza?.length && !(s.hafiza_seq! >= Math.max(...s.hafiza.map((x) => x.n)))) s.hafiza_seq = Math.max(...s.hafiza.map((x) => x.n));
   if (Array.isArray(s.seeds)) for (const t of s.seeds) if (t && t.iz != null && !Number.isFinite(t.iz)) delete t.iz;
   if (s.orta_son != null && !Number.isFinite(s.orta_son)) s.orta_son = undefined;

@@ -3,20 +3,22 @@ import { useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { INVESTMENTS, WILL_STYLES, LAST_WORDS, investInChild, continueAsHeir, heirPreview, EDU_TRACKS, eduLevel, setChildEducation, childNature, evlatKadinMi, favorChild, addDowry, propAylikTahmin } from "../../lib/game";
+import { INVESTMENTS, WILL_STYLES, LAST_WORDS, investInChild, heirPreview, yetenekAdaylari, EDU_TRACKS, eduLevel, setChildEducation, childNature, evlatKadinMi, favorChild, addDowry, propAylikTahmin } from "../../lib/game";
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
 import { useI18n, applyParams } from "../../lib/i18n";
 import { hap } from "../../lib/haptics";
 import { BackLabel, PageHeader, ScreenFresk } from "../../lib/ui";
+import { YetenekSecici } from "../../lib/soy-ui";
 
 export default function Nesil() {
   const insets = useSafeAreaInsets(); const router = useRouter();
-  const { state, apply } = useGame();
+  const { state, apply, varisleDevam } = useGame();
   const { t } = useI18n();
   const [heir, setHeir] = useState<string | null>(null);
   const [will, setWill] = useState<string>(state?.player.will_pref || "esit"); // hanedanda önceden seçilen vasiyet burada varsayılan olur
   const [lw, setLw] = useState<string>("helalles"); // son söz — devir anında bir kez seçilir, vârise temalı iz bırakır
+  const [yet, setYet] = useState<string | null>(null); // Hanedan Defteri: ölümde seçilen tek soy yeteneği
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   const p = state.player;
   const chosenHeir = heir || p.children[0];
@@ -41,7 +43,7 @@ export default function Nesil() {
               {t("nes.deadPrompt")}
             </Text>
             <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.goldDim, marginBottom: 8 }}>{t("nes.chooseHeir")}</Text>
-            {p.children.map((c) => { const pv = heirPreview(state, c, will); return (
+            {p.children.map((c) => { const pv = heirPreview(state, c, will, yet || undefined); return (
               <Pressable key={c} onPress={() => setHeir(c)} style={{ flexDirection: "row", alignItems: "center", gap: 10, padding: 12, borderRadius: 9, borderWidth: 1, marginBottom: 7, borderColor: chosenHeir === c ? "rgba(201,168,76,0.6)" : C.border, backgroundColor: chosenHeir === c ? "rgba(201,168,76,0.12)" : C.card }}>
                 <GameIcon name="baby" size={16} color={C.gold} />
                 <View style={{ flex: 1 }}>
@@ -74,7 +76,8 @@ export default function Nesil() {
                 </View>
               </Pressable>
             ))}
-            <Pressable onPress={() => { hap("heavy"); apply((s) => continueAsHeir(s, will, chosenHeir, lw)); router.replace("/oyun"); }} style={{ marginTop: 12, paddingVertical: 15, borderRadius: 9, borderWidth: 1.5, borderColor: "rgba(201,168,76,0.55)", backgroundColor: C.gold, alignItems: "center" }}>
+            <YetenekSecici adaylar={yetenekAdaylari(state)} secili={yet} onSec={setYet} />
+            <Pressable onPress={() => { hap("heavy"); varisleDevam(will, chosenHeir, lw, yet || undefined); router.replace("/oyun"); }} style={{ marginTop: 12, paddingVertical: 15, borderRadius: 9, borderWidth: 1.5, borderColor: "rgba(201,168,76,0.55)", backgroundColor: C.gold, alignItems: "center" }}>
               <Text style={{ fontFamily: F.display, fontSize: 13, color: C.inkOnGold, letterSpacing: 1.5 }}>{t("dash.continueHeir")}</Text>
             </Pressable>
           </>
