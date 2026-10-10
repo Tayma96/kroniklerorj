@@ -8,7 +8,7 @@ const kok = path.join(__dirname, "..", ".."); const tmp = fs.mkdtempSync(path.jo
 execSync(`${ESBUILD} lib/game.ts --bundle --format=cjs --platform=node --outfile="${tmp}/g.cjs" --log-level=error`, { cwd: kok, stdio: "inherit" });
 const g = require(`${tmp}/g.cjs`);
 let hata = 0; const H = (m) => { hata++; console.log("  HATA: " + m); };
-const oyuncu = (prof, k, xp) => { const s = g.newGame("Sim", "Test", "erkek"); const p = s.player; p.age = 30; p.profession = prof; p.kademe = k; p.career_xp = xp; p.money = 5000; return s; };
+const oyuncu = (prof, k, xp) => { const s = g.newGame("Sim", "Test", "erkek"); const p = s.player; p.age = 30; p.base_age = 30; p.profession = prof; p.kademe = k; p.career_xp = xp; p.money = 5000; return s; };
 
 // 1) Şifacı merdiveni: tam dört kademe, bu sırayla
 const sif = g.professionById("şifacı");
@@ -87,6 +87,20 @@ for (let v = 0; v < g.MERDIVEN_SURUM; v++) for (const pr of g.PROFESSIONS) {
   for (const L of ["tr", "en", "es", "pt", "ar", "ru"]) { const v = tFor(L, "ahi.ladder"); if (v === "ahi.ladder" || (!/30/.test(v) && !/ثلاثين/.test(v))) H(`${L} ahi.ladder: ${v}`); }
   for (const L of ["es", "pt", "ar", "ru"]) { const f = tFor(L, "rom.t.recalled.f"); if (f === "rom.t.recalled.f" || f === tFor(L, "rom.t.recalled") || !f.includes("%s")) H(`${L} rom.t.recalled.f eksik`); }
   if (/\ba %s/.test(tFor("en", "rom.t.recalled"))) H("en rom.t.recalled: 'a %s' (an Innkeeper/an Apprentice bozulur)");
+}
+// 3d) Kalınca söz tutulur: bekleyiş boyunca çağrı yok, bekleyiş dolunca work() bir kez "yeniden çağrı" düşürür (dönüm penceresi açmaz)
+{ let s = oyuncu("çiftçi", 0, 30); s.player.hunger = 100;
+  Math.random = () => 0.999; s = g.ustalikSinavi(s, 0).state; Math.random = R0;
+  const say = (st, k) => st.history.filter((e) => e.k === k).length;
+  for (let ay = 0; ay < g.SINAV_BEKLEME + 2; ay++) {
+    const once = say(s, "evj.sinav.yeniden"); s.player.hunger = 100; s.player.health = 100; s = g.work(s);
+    const bekle = Math.max(0, (s.player.sinav_bekle ?? 0) - s.turn);
+    if (say(s, "evj.sinav.yeniden") > once && bekle > 0) H("bekleyiş sürerken yeniden çağrı düştü");
+    if (say(s, "evj.sinav.cagri") > 0) H("kalandan sonra ilk-çağrı metni tekrarlandı");
+    s = g.advance(s);
+  }
+  const yc = s.history.filter((e) => e.k === "evj.sinav.yeniden");
+  if (yc.length !== 1) H(`yeniden çağrı ${yc.length} kez düştü (1 beklenirdi)`); else if (yc[0].landmark) H("yeniden çağrı dönüm penceresi açıyor");
 }
 // 4) Yeni oyun güncel damgalı doğar: göç ona dokunmaz
 { const s = oyuncu("şifacı", 2, 65); const m = g.migrate(JSON.parse(JSON.stringify(s))); if (m.player.kademe !== 2 || m.merdiven !== g.MERDIVEN_SURUM) H("yeni kayıt göçe uğradı"); }

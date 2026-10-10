@@ -6652,9 +6652,11 @@ export function sinavDurumu(s: GameState): SinavDurumu | null {
 // Hizmet dolunca bir kez çağrı (dönüm noktası) — aynı hedef için tekrar çağrılmaz.
 function sinavCagrisi(s: GameState) {
   const p = s.player; const d = sinavDurumu(s); const pr = professionById(p.profession);
-  if (!d || !pr || d.zirve || d.hizmetAy > 0 || p.sinav_cagri === d.hedef) return;
+  if (!d || !pr || d.zirve || d.hizmetAy > 0 || d.bekleAy > 0 || p.sinav_cagri === d.hedef) return;
   p.sinav_cagri = d.hedef;
-  push(s, "sinav", `Lonca kethüdası kapını çaldı: hizmetin doldu, ${pr.tiers[d.hedef]} olmak için ustaların önüne çıkma vakti.`, "kişisel", true, { k: "evj.sinav.cagri", p: [{ c: [p.profession, d.hedef * 30] }] });
+  // Kalan (ya da pabucu dama atılan) için bekleyiş dolunca söz tutulur: lonca yeniden çağırır (dönüm penceresi açmaz, kroniğe düşer).
+  if (p.sinav_bekle != null) push(s, "sinav", `Bekleyiş doldu; lonca kethüdası yine kapında: ustalar seni ${pr.tiers[d.hedef]} olmak için bir kez daha önlerine çağırıyor.`, "kişisel", false, { k: "evj.sinav.yeniden", p: [{ c: [p.profession, d.hedef * 30] }] });
+  else push(s, "sinav", `Lonca kethüdası kapını çaldı: hizmetin doldu, ${pr.tiers[d.hedef]} olmak için ustaların önüne çıkma vakti.`, "kişisel", true, { k: "evj.sinav.cagri", p: [{ c: [p.profession, d.hedef * 30] }] });
 }
 export function ustalikSinavi(prev: GameState, yol: number): { state: GameState; basari: boolean | null } {
   const s = clone(prev); const p = s.player; const d = sinavDurumu(s); const pr = professionById(p.profession);
@@ -6675,7 +6677,7 @@ export function ustalikSinavi(prev: GameState, yol: number): { state: GameState;
     }
     return { state: s, basari: true };
   }
-  p.sinav_kalma = (p.sinav_kalma || 0) + 1; p.sinav_bekle = s.turn + SINAV_BEKLEME;
+  p.sinav_kalma = (p.sinav_kalma || 0) + 1; p.sinav_bekle = s.turn + SINAV_BEKLEME; p.sinav_cagri = undefined; // altı ay sonra yeniden çağrı düşsün (önceden söz verilip çağrılmıyordu)
   push(s, "sinav", `Peştamal sınavında kaldın; ustalar seni altı ay sonra yeniden çağıracak.`, "kişisel", false, { k: "evj.sinav.kaldi" });
   { const u = ustamKim(s); if (u && relWith(s, u.id) <= -20) push(s, "sinav", `Ustan ${kisiAdi(u, "tr")} ustalar önünde aleyhine konuştu; sözü ağır bastı.`, "kişisel", false, { k: u.g === "kadın" ? "evj.ustaAleyh.k" : "evj.ustaAleyh", p: [kfParam(u)] }); }
   return { state: s, basari: false };
