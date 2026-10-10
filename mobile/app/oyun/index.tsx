@@ -15,6 +15,7 @@ import { rakipKartVerisi } from "../../lib/rakip-ui";
 import { HesapModal } from "../../lib/hesap-ui";
 import { careerTitleL, placeName } from "../../lib/locale-data";
 import { currentCalendar } from "../../lib/calendar";
+import { gercekRitim } from "../../lib/ritim";
 import { heroImage } from "../../lib/assets";
 import { MilestoneModal, DilemmaModal, OpportunityModal, AchievementToast, EulogyModal, PressableScale, Portre } from "../../lib/ui";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -478,6 +479,8 @@ export default function Dashboard() {
               <Text style={{ fontFamily: F.display, fontSize: 8, letterSpacing: 1, color: C.parchmentDim }}>{t("cal.month." + cal.month_no).toUpperCase()} {cal.year}</Text>
             </View>
           </View>
+          {/* Gerçek takvimin yumuşak ritmi: yalnızca söz — ödül, süre, kaçırılacak bir şey yok */}
+          {!p.dead && <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentDim, textAlign: "right", marginTop: 4 }} numberOfLines={2}>{t(gercekRitim(new Date()))}</Text>}
           {p.dead && <Text style={{ color: C.blood, textAlign: "center", marginTop: 8, fontFamily: F.serifItalic }}>{t("dyn.died")}</Text>}
         </View>
       </KenBurns>

@@ -215,3 +215,13 @@ kaydı (iz) olur, iz bir eğilim etiketi taşır, sonraki olaylar ve yaylar bu h
 - Denetçi `scripts/_smoke/divan-check.cjs`: aynı tarih → aynı dava (400 gün), döngü kapsaması, 3000 numarada oy ≤%90 ve toplam 100,
   divan.ts oyun modülü/para alanı içermez, ekran eylem/zamanlayıcı çağırmaz, tek hüküm, göç, lakap ardışıklıktan bağımsız, 6 dil.
 - Doğrulama: 12 çekirdek rc=0; YANKI/DEFTER/ROMAN/KAN/GEÇ/DİVAN TEMİZ; oynanış ÇIĞIR EŞİKLERİ TEMİZ. Sıradaki: adım 4 (gerçek takvim).
+
+## 15. Dalga 2 — Gerçek takvimin yumuşak ritmi (adım 4)
+
+- `lib/ritim.ts` `gercekRitim(tarih)`: ana ekranda (`app/oyun/index.tsx`, tarih hapının altında) tek satır — "dışarıda" ne var:
+  yılbaşı, Nevruz, Hıdrellez, gün dönümü, gece-gündüz eşitliği, Yalda gecesi, Ramazan/Kurban bayramı (2026–2031 yaklaşık tablo,
+  ±1 gün pencere), yoksa mevsim satırı (iki çeşit). Yalnızca söz: ödül, bonus, süre, seri, kaçırılacak bir şey yok; oyun durumunu okumaz/yazmaz.
+- i18n parçası `c` (15 satır × 6 dil). Güney yarımküre ayrımı yok (kuzey mevsimleri).
+- Denetçi `scripts/_smoke/ritim-check.cjs`: 2026–2031 her gün 6 dilde satır, özel gün yılda ≤30, ritim.ts içe aktarmaz/saat okumaz,
+  oyun mantığı (game/events/arcs/npc-mind/nufus/world/defter/roman/dialogue/divan/calendar) saat okumaz → hiçbir ödül zamana kilitli değil.
+- Doğrulama: 12 çekirdek rc=0; YANKI/DEFTER/ROMAN/KAN/GEÇ/DİVAN/RİTİM TEMİZ; ÇIĞIR EŞİKLERİ TEMİZ. Sıradaki: adım 5 (artıklar).
