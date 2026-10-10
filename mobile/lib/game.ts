@@ -1,12 +1,12 @@
 // Offline oyun çekirdeği (sürüm 3) — hayat döngüsü + NPC/ilişki/envanter/pazar.
 import type { EvtParam } from "./i18n";
 import { currentCalendar, playerAge, CalendarInfo } from "./calendar";
-import { ITEMS, marketGoods, locSeed, generateNPCs, NPC, generateDynasties, cityInfo, RivalHouse, houseNameIdx, localFirstName, localSurname, SPECIALTIES, Item, WClass, applyFamilySurnames, npcAgeProfession, TRAITS, QUIRKS, GOALS, NPC_PROFS } from "./world";
+import { ITEMS, marketGoods, locSeed, generateNPCs, NPC, generateDynasties, cityInfo, RivalHouse, houseNameIdx, localFirstName, SPECIALTIES, Item, WClass, npcAgeProfession, TRAITS, QUIRKS, GOALS, NPC_PROFS } from "./world";
 import { Nufus, Kisi, Cins, NufusCtx, EskiDunya, OYUNCU, nufusKur, nufusYil, kadro, kisiAdi, hayalOf, huyOf, yeniGelen, nufusDegisti, olumOlasiligi, kisiNpc, kisiBaglari, yasOf, kardesler, bagEvrimi, kisiSil, kisiIlkAd } from "./nufus";
 import { Lang, professionNameL, goalL } from "./locale-data";
 import { tFor, kucukHarf } from "./i18n";
 import { converse, ConvResult, spontaneousLine, callbackLine, perceptionGreeting, derinlikKatmani, SohbetSon } from "./dialogue";
-import { Memory, addMemory, decayMemories, effectiveRel, behaviorTier, MEMORY_TYPES, RUMOR_VARIANTS } from "./npc-mind";
+import { Memory, addMemory, decayMemories, behaviorTier, MEMORY_TYPES, RUMOR_VARIANTS } from "./npc-mind";
 import { arcById, ArcChoice, availableArcs } from "./arcs";
 
 export interface Stats { strength: number; intelligence: number; charisma: number; stamina: number; }
@@ -768,20 +768,23 @@ function meslekKazanci(counts: Record<string, number>, loc: string, prof: string
 function npcMeslekKararlari(s: GameState, pop: Nufus, wy: number, sabit: Set<string>): { id: string; e: string; y: string; m: string }[] {
   const out: { id: string; e: string; y: string; m: string }[] = [];
   const MESLEKLER = NPC_PROFS.filter((x) => x !== "işsiz" && x !== "asker" && x !== "müzisyen");
+  const yereGore: Record<string, Kisi[]> = {}; for (const k of Object.values(pop.k)) if (k.ol == null) (yereGore[k.loc] = yereGore[k.loc] || []).push(k); // tek geçiş (eskiden her yer için bütün nüfus süzülürdü)
   for (const loc of LOCATIONS) {
-    const L = Object.values(pop.k).filter((k) => k.ol == null && k.loc === loc);
+    const L = yereGore[loc] || [];
     const counts: Record<string, number> = {}; for (const k of L) { const y = wy - k.dy; if (y >= 14) counts[k.prof] = (counts[k.prof] || 0) + workerAgeProd(y); }
+    let kazanc: Record<string, { v: number; m: string }> = {}; // meslek getirisi yalnız sayımlar değişince yeniden hesaplanır (sonuç birebir aynı)
+    const getiri = (m: string) => kazanc[m] || (kazanc[m] = meslekKazanci(counts, loc, m));
     let hak = Math.max(1, Math.floor(L.length * 0.05)); // yılda yerleşim başına sınırlı geçiş (dengelenme yavaş ve inandırıcı)
     for (const k of L) {
       if (hak <= 0) break;
       const y = wy - k.dy; if (y < 18 || y > 45 || sabit.has(k.id) || k.usta || k.es === OYUNCU) continue;
-      const cur = meslekKazanci(counts, loc, k.prof);
-      let best = "", bv = 0, bm = ""; for (const m of MESLEKLER) { if (m === k.prof) continue; const r = meslekKazanci(counts, loc, m); if (r.v > bv) { bv = r.v; best = m; bm = r.m; } }
+      const cur = getiri(k.prof);
+      let best = "", bv = 0, bm = ""; for (const m of MESLEKLER) { if (m === k.prof) continue; const r = getiri(m); if (r.v > bv) { bv = r.v; best = m; bm = r.m; } }
       if (!best) continue;
       const huy = huyOf(k); const mod = huy === "hırslı" || huy === "kurnaz" ? 1.6 : huy === "dindar" || huy === "sabırlı" || huy === "ciddi" ? 0.6 : 1;
       const issiz = k.prof === "işsiz";
       if (issiz ? Math.random() >= 0.5 : !(bv > cur.v * 1.3 && (counts[k.prof] || 0) > 2 && Math.random() < 0.06 * mod)) continue;
-      const w = workerAgeProd(y); counts[k.prof] = (counts[k.prof] || 0) - w; counts[best] = (counts[best] || 0) + w;
+      const w = workerAgeProd(y); counts[k.prof] = (counts[k.prof] || 0) - w; counts[best] = (counts[best] || 0) + w; kazanc = {};
       out.push({ id: k.id, e: k.prof, y: best, m: bm });
       k.kr = { y: wy, e: k.prof, m: bm }; k.prof = best; hak--;
     }
@@ -2308,7 +2311,9 @@ function clone(s: GameState): GameState {
   const dc = (x: any) => (typeof structuredClone === "function" ? structuredClone(x) : JSON.parse(JSON.stringify(x)));
   if (!s.pop) return dc(s);
   // Nüfus (kaydın en büyük parçası) yazınca kopyalanır: okuyan eylem eski nüfusu paylaşır, değiştiren nufusHazirla ile kendi kopyasını alır.
-  const c = dc({ ...s, pop: undefined }); c.pop = s.pop; _popPaylasimli.add(c);
+  // Kronik (history) olayları yazıldıktan sonra değişmez: dizi kopyalanır, olay nesneleri paylaşılır (her eylemde ~250 olayın
+  // derin kopyası, motorun en sıcak maliyetiydi). Olay nesnesi yerinde DEĞİŞTİRİLMEZ — yeni durum gerekiyorsa yeni olay itilir.
+  const c = dc({ ...s, pop: undefined, history: undefined }); c.pop = s.pop; c.history = Array.isArray(s.history) ? s.history.slice() : s.history; _popPaylasimli.add(c);
   return c;
 }
 // Ölüm nedeni: olay anahtarı → neden kodu (mersiye "nasıl öldü"yü de anlatsın; eski kayıtta alan yoksa satır sessizce atlanır).
@@ -2359,7 +2364,7 @@ function monthlyFlavor(s: GameState, cal: CalendarInfo): AySatiri {
     pool.push({ k: cv("flav.cPlay", 3), text: "Sokakta oyun oynadın." });
   } else {
     pool.push({ k: "flav.aWork", text: "Gününü işinle geçirdin." }, { k: "flav.aMarket", text: "Çarşıda dolaştın." }, { k: "flav.aRest", text: "Bir gününü dinlenip dua ederek geçirdin." }, { k: "flav.aCoin", text: "Kesendeki akçeleri sayıp yarını düşündün." });
-    const komsu = Object.values(pop.k).filter((k) => k.ol == null && k.loc === p.location_name && yasOf(k, wy) >= 16 && s.relationships[k.id] !== undefined && !oyuncuAkrabasi(p, k.id) && k.id !== p.spouse_id && (s.relationships[k.id] ?? 0) > -20); // husumetli komşuyla kapı önü sohbeti olmaz
+    const komsu = Object.keys(s.relationships).map((id) => pop.k[id]).filter((k): k is Kisi => !!k && k.ol == null && k.loc === p.location_name && yasOf(k, wy) >= 16 && s.relationships[k.id] !== undefined && !oyuncuAkrabasi(p, k.id) && k.id !== p.spouse_id && (s.relationships[k.id] ?? 0) > -20); // husumetli komşuyla kapı önü sohbeti olmaz (yalnız tanışılanlar taranır — bütün nüfus değil)
     if (komsu.length) { const k = rnd(komsu); pool.push({ k: cins(k, "flav.aChatAd"), text: `Komşun ${kisiIlkAd(k)} ile kapı önünde uzun uzun sohbet ettin.`, p: [kfParam(k)] }); }
     else pool.push({ k: "flav.aChat", text: "Komşunla kapı önünde uzun uzun sohbet ettin." });
     const yk = kardesler.filter((k) => yasOf(k, wy) >= 13);
@@ -2620,7 +2625,6 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
     // NOT: eş gerçek bir oyuncuysa (spouse_is_player) yerel sim onu öldürmez — ölümü kendi oynanışından/sunucudan gelir.
     const dc = esK ? 1 - Math.pow(1 - olumOlasiligi(esYas), 1 / 12) : p.age < 55 ? 0.008 : p.age < 65 ? 0.02 : p.age < 75 ? 0.04 : 0.07;
     if (chance(dc)) {
-      const sg: "erkek" | "kadın" = p.gender === "erkek" ? "kadın" : "erkek";
       nufusOyuncuEsiOldu(s); p.married = false; p.widowed = true; p.spouse_mizac = undefined; p.health = Math.max(1, p.health - (4 + Math.round((p.spouse_bond ?? 40) / 12))); p.spouse_bond = undefined; bumpNam(p, "dindar", 2); // acı, bağın derinliğine oranlı
       push(s, "evlilik", `Ömür arkadaşın ${p.spouse_name} vefat etti; ocağın yarısı söndü. Diyar yasını paylaştı.`, "kişisel", true, { k: "evj.spouseDied", p: [esParam(s)] });
     }
@@ -2644,7 +2648,6 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
   }
   // ── Evli hayat anları: eşinle ocak tüten yıllar; ara sıra sıcak ya da sınanan anlar (sadık-dost'a paralel) ──
   if (!p.dead && p.married && p.spouse_seed != null && p.age >= 16 && chance(0.03)) {
-    const sg: "erkek" | "kadın" = p.gender === "erkek" ? "kadın" : "erkek";
     const sn: EvtParam = esParam(s);
     const miz = p.spouse_mizac || spouseMizac(p.spouse_seed); // eş mizacı anların rengini belirler (kur yapılan NPC'nin karakteri öncelikli)
     if (p.spouse_bond === undefined) p.spouse_bond = 40; // eski kayıt göçü: bağ orta noktadan başlar

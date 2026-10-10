@@ -820,8 +820,10 @@ export default function Dashboard() {
               <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 1, color: C.goldDim, marginTop: 12, textAlign: "center" }}>{t("dash.emptyHint")}</Text>
             </View>
           ) : events.map(({ e, hIdx }, i) => (
-            <Animated.View key={i} entering={FadeInDown.duration(220).delay(Math.min(i, 8) * 30)}>
-              <EventCard e={e} hIdx={hIdx} last={i === events.length - 1} />
+            <Animated.View key={e.q != null ? "q" + e.q : "h" + hIdx} entering={FadeInDown.duration(220).delay(Math.min(i, 8) * 30)}>
+              {/* Düz çağrı: bileşen gövde içinde tanımlı — JSX ile kullanılsa her çizimde yeni tip sayılıp bütün kartlar yeniden kurulurdu.
+                  Kalıcı anahtar (olay sırası q): yalnız yeni düşen olay belirerek gelir, eskiler yerinde kalır. */}
+              {EventCard({ e, hIdx, last: i === events.length - 1 })}
             </Animated.View>
           ))}
           </Animated.View>
