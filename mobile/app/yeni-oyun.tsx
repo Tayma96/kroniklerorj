@@ -196,8 +196,8 @@ export default function YeniOyun() {
           <View style={{ marginTop: 20 }}>
             <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 3, color: C.goldDim, marginBottom: 8 }}>{t("new.gender")}</Text>
             <View style={{ flexDirection: "row", gap: 10 }}>
-              <GenderBtn val="erkek" sym="♂" label={t("new.male")} />
-              <GenderBtn val="kadın" sym="♀" label={t("new.female")} />
+              <GenderBtn val="erkek" sym={"\u2642\uFE0E"} label={t("new.male")} />
+              <GenderBtn val="kadın" sym={"\u2640\uFE0E"} label={t("new.female")} />
             </View>
           </View>
 

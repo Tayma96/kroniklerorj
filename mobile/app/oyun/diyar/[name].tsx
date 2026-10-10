@@ -47,7 +47,7 @@ export default function DiyarDetay() {
       <Pressable onPress={() => router.back()} style={{ marginBottom: 12 }}><BackLabel /></Pressable>
       <Text style={{ fontFamily: F.display, fontSize: 24, color: C.parchment, letterSpacing: 1 }}>{placeName(name, lang)}</Text>
       <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.gold, marginBottom: 1 }}>{t("kind." + KIND_KEY[kind])} · {info.population.toLocaleString("tr")} {t("diyar.pop")}</Text>
-      <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 0.5, color: beylikOf(name).tone, marginBottom: 4 }}>⚑ {beylikOf(name).name}</Text>
+      <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 0.5, color: beylikOf(name).tone, marginBottom: 4 }}>{"\u2691\uFE0E "}{beylikOf(name).name}</Text>
       <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchmentMuted, lineHeight: 20, marginBottom: 14 }}>{info.blurb}</Text>
 
       <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, paddingHorizontal: 14, marginBottom: 16 }}>

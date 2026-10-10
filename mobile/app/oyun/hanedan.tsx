@@ -213,7 +213,7 @@ export default function Hanedan() {
               <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 7, borderBottomWidth: 1, borderBottomColor: C.border }}>
                 <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 0.5, color: backing ? C.sage : C.blood }}>{backing ? "✓ " : "✕ "}{t("thr.backing")}</Text>
               </View>
-              <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.ember, lineHeight: 16, marginTop: 9 }}>⚠ {t("thr.risk")}</Text>
+              <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.ember, lineHeight: 16, marginTop: 9 }}>{"\u26A0\uFE0E "}{t("thr.risk")}</Text>
               {claimable && <Text style={{ fontFamily: F.display, fontSize: 10, color: C.gold, marginTop: 8 }}>{t("thr.odds")}: {yuzdeL(Math.round(throneOdds(state) * 100), lang)} · {t("thr.cost")} {THRONE_COST} ⚜</Text>}
               <Pressable onPress={doClaim} disabled={!claimable} style={{ marginTop: 10, paddingVertical: 13, borderRadius: 9, alignItems: "center", borderWidth: 1.5, borderColor: claimable ? "rgba(201,168,76,0.6)" : C.border, backgroundColor: claimable ? C.gold : C.bg }}>
                 <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: claimable ? C.inkOnGold : C.parchmentMuted }}>{claimable ? t("thr.claim") : t("thr.need")}</Text>

@@ -3,6 +3,7 @@
 // nereden geldiğini (çalışma / ay kapanışı: miras, olay, harçlık / yemek gideri) ölçer.
 // Ayrıca kart kararlarını da veren "etkin" oyuncuyu (oynanis.cjs ile aynı zar) ve bunun üstüne lonca sınavlarına
 // giren "usta" oyuncuyu karşılaştırma için koşar (etkin oyun pasiften belirgin biçimde iyi kalmalı).
+// Ömür sonunda hak edilen hüner kademesi ve 13–20 yaşta kesesi dibe vuranların oranı da yazılır.
 // Kullanım: node scripts/_smoke/ekonomi.cjs [hayat=200]
 //   EKO_JSON=1 → tek satır JSON · EKO_TURLER=pasif,etkin,usta · EKO_GIRIS=<başka game.ts> (deneme kopyası)
 const ESBUILD = require("./esbuild-yolu.cjs");
@@ -22,7 +23,7 @@ function hayat(tur) {
   const etkin = tur !== "pasif", usta = tur === "usta";
   let s = g.newGame("Sim", "Test", Math.random() < 0.5 ? "erkek" : "kadın");
   const m = {}; const kay = { calisma: 0, yemek: 0, ay: 0, kart: 0 };
-  let guard = 0;
+  let guard = 0; let gencBos = false; // 13–20 yaş arasında kese hiç dibe vurdu mu (erken oyun geçimi)
   while (!s.player.dead && s.player.age < 85 && guard++ < 1100) {
     const p = s.player;
     let a = p.money;
@@ -50,8 +51,11 @@ function hayat(tur) {
       kay.kart += servet(s.player) - a;
     }
     const age = s.player.age;
+    if (age >= 13 && age <= 20 && s.player.money < 5) gencBos = true;
     for (const y of [20, 40, 60]) if (age === y && m[y] == null) m[y] = { servet: servet(s.player), ...kay, enf: g.inflationFactor(s) };
   }
+  // Ömür sonunda hak edilen hüner kademesi (seçilmiş + seçilmeyi bekleyen; hedef ~6–9) ve ölüm yaşı
+  m.son = { hak: s.player.perks.length + g.pendingPerkCount(s.player), yas: s.player.age, gencBos };
   return m;
 }
 const med = (a) => { const b = a.filter((x) => x != null).sort((x, y) => x - y); return b.length ? b[Math.floor(b.length / 2)] : null; };
@@ -66,12 +70,14 @@ for (const tur of (process.env.EKO_TURLER || "pasif,etkin,usta").split(",")) {
       calisma: ort(L.map((x) => x.calisma)), ay: ort(L.map((x) => x.ay)), yemek: ort(L.map((x) => x.yemek)), kart: ort(L.map((x) => x.kart)),
       enflasyon: Math.round(ort(L.map((x) => x.enf * 1000)) ) / 1000 };
   }
+  o.son = { hunerMedyan: med(H.map((h) => h.son.hak)), olumYasi: med(H.map((h) => h.son.yas)), gencBos: Math.round(100 * H.filter((h) => h.son.gencBos).length / H.length) };
   sonuc[tur] = o;
 }
 try { fs.unlinkSync(paket); } catch {}
 if (process.env.EKO_JSON) { console.log(JSON.stringify(sonuc)); process.exit(0); }
 console.log(`EKONOMİ DENETİMİ · ${LIVES} hayat/tür`);
-for (const tur of Object.keys(sonuc)) for (const y of [20, 40, 60]) {
+for (const tur of Object.keys(sonuc)) for (const y of [20, 40, 60, "son"]) {
+  if (y === "son") { const z = sonuc[tur].son; console.log(`  ${tur.padEnd(5)} ömür: hüner kademesi medyan ${z.hunerMedyan} · ölüm yaşı medyan ${z.olumYasi} · 13–20 yaşta kesesi dibe vuran %${z.gencBos}`); continue; }
   const x = sonuc[tur][y];
   console.log(`  ${tur.padEnd(5)} ${y} yaş (n=${x.n}): kese+emanet medyan ${x.servetMedyan} · ort ${x.servetOrt} | birikmiş: çalışma ${x.calisma} · ay kapanışı ${x.ay} · yemek ${x.yemek}${tur !== "pasif" ? " · kart/kapı/sınav " + x.kart : ""} · enflasyon ×${x.enflasyon}`);
 }
