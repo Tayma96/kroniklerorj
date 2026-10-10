@@ -4,7 +4,7 @@ import Svg, { Polyline, Polygon, Defs, LinearGradient, Stop, Rect } from "react-
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { MULK_YAS, buyProperty, propAylikTahmin, propAlimTahmini, repairProperty, repairCost, upgradeProperty, propUpgradeCost, PROP_MAX_LEVEL, PROPERTY_TYPES, propBuyCost, propWorkerSlots, townNpcsOf, workerProductivity, hireWorker, fireWorker, setTenant, setGuard, setFallow, hireKahya, fireKahya, kahyaWage, siraGunu } from "../../lib/game";
+import { MULK_YAS, buyProperty, mulkSarti, propAylikTahmin, propAlimTahmini, repairProperty, repairCost, upgradeProperty, propUpgradeCost, PROP_MAX_LEVEL, PROPERTY_TYPES, propBuyCost, propWorkerSlots, townNpcsOf, workerProductivity, hireWorker, fireWorker, setTenant, setGuard, setFallow, hireKahya, fireKahya, kahyaWage, siraGunu } from "../../lib/game";
 import { placeName, professionNameL } from "../../lib/locale-data";
 import { mulkImage, MULK_BOS, MULK_HERO } from "../../lib/assets";
 import { C, F } from "../../lib/theme";
@@ -283,7 +283,8 @@ export default function Mulkler() {
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
             {Object.entries(PROPERTY_TYPES).map(([id, ty]) => {
               const cost = propBuyCost(state, id);
-              const can = p.money >= cost && p.age >= MULK_YAS;
+              const sart = mulkSarti(state, id);
+              const can = p.money >= cost && p.age >= MULK_YAS && sart.ok;
               return (
                 <View key={id} style={{ flexBasis: "31%", flexGrow: 1, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 9, overflow: "hidden" }}>
                   <Image source={mulkImage(id)} style={{ width: "100%", height: 42 }} resizeMode="cover" />
@@ -291,6 +292,7 @@ export default function Mulkler() {
                     <Text numberOfLines={1} style={{ fontFamily: F.display, fontSize: 8.5, color: C.parchment }}>{t("pt." + id)}</Text>
                     {(() => { const ta = propAlimTahmini(state, id); return (<>
                       <Text style={{ fontFamily: F.serif, fontSize: 8, color: ta.aylik >= 0 ? C.sage : C.blood, marginTop: 1 }}>≈{ta.aylik >= 0 ? "+" : ""}{ta.aylik}{t("mulk.perMonth")}</Text>
+                      {!sart.ok ? <Text style={{ fontFamily: F.serifItalic, fontSize: 7.5, color: C.ember, textAlign: "center" }}>{applyParams(t("mulk.sart"), [sart.itibar, sart.unvan + 1])}</Text> : null}
                       {ta.yil != null ? <Text style={{ fontFamily: F.serif, fontSize: 7.5, color: C.parchmentDim }}>{applyParams(t("mulk.geriOdeme"), [ta.yil])}</Text> : null}
                     </>); })()}
                     <Pressable onPress={() => { hap("tap"); apply((s) => buyProperty(s, id)); }} disabled={!can} style={{ marginTop: 4, paddingVertical: 4, borderRadius: 5, borderWidth: 1, borderColor: can ? "rgba(201,168,76,0.5)" : C.border, backgroundColor: can ? "rgba(201,168,76,0.12)" : C.bg, alignSelf: "stretch", alignItems: "center" }}>

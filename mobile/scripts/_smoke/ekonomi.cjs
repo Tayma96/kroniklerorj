@@ -34,7 +34,7 @@ function mulkPolitikasi(s, kay, alimlar, sonAlimYil) {
   s.player.properties.forEach((pr, i) => { if (pr.type === "ev" && !pr.tenant) s = g.setTenant(s, i, true); });
   const yil = Math.floor(s.turn / 12);
   if (s.player.age < g.MULK_YAS || yil === sonAlimYil.v) return s;
-  const uygun = TIPLER.filter((t) => g.propBuyCost(s, t) + pay(s) <= s.player.money)
+  const uygun = TIPLER.filter((t) => g.propBuyCost(s, t) + pay(s) <= s.player.money && (!g.mulkSarti || g.mulkSarti(s, t).ok)) // büyük tapu şartı (varsa)
     .sort((a, b) => g.PROPERTY_TYPES[b].income - g.PROPERTY_TYPES[a].income);
   if (!uygun.length) return s;
   const t = uygun[0]; const a = s.player.money; const once = s.player.properties.length;

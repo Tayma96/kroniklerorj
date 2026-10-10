@@ -6547,10 +6547,19 @@ export function opportunitiesFor(s: GameState): Opportunity[] {
 
 // Mülk satın al
 export const MULK_YAS = 16; // tapu reşit olmayana verilmez (miras kalan mülk elde kalır)
+// Büyük tapunun şartı (hafif, iki yollu): han ve değirmen çarşının güvenini ister — ya itibar ya da meslekte unvan.
+// Sınır ya da ceza değil, bir hedef: zanaatkâr unvanla, unvansız olan adıyla ulaşır. Miras kalan mülk şartsız elde kalır.
+export const MULK_SART: Record<string, { itibar: number; unvan: number }> = { han: { itibar: 15, unvan: 1 }, degirmen: { itibar: 30, unvan: 2 } };
+export function mulkSarti(s: GameState, type: string): { ok: boolean; itibar: number; unvan: number } {
+  const sr = MULK_SART[type]; if (!sr) return { ok: true, itibar: 0, unvan: 0 };
+  const p = s.player; const pr = professionById(p.profession);
+  const tier = pr ? careerTier(pr, kariyerXp(p)) : 0;
+  return { ok: p.reputation >= sr.itibar || tier >= sr.unvan, itibar: sr.itibar, unvan: sr.unvan };
+}
 export function buyProperty(prev: GameState, type: string): GameState {
   const s = clone(prev); const p = s.player; const t = PROPERTY_TYPES[type];
   const cost = propBuyCost(s, type);
-  if (!t || p.dead || p.age < MULK_YAS || p.money < cost) return s;
+  if (!t || p.dead || p.age < MULK_YAS || p.money < cost || !mulkSarti(s, type).ok) return s;
   p.money -= cost; p.properties.push({ type, loc: p.location_name, cond: 100 });
   { const pv = chance(0.5); push(s, "mülk_alım", pv ? `Anahtar avucuna düştü; ${p.location_name}'deki ${t.name.toLowerCase()} artık senin. Eşik ilk kez senin adınla aşıldı.` : `${p.location_name}'de ${t.name} satın aldın. Adına bir tapu daha.`, "kişisel", true, { k: pv ? "evj.propBuy2" : "evj.propBuy", p: [{ pl: p.location_name }, { pt2: type }] }); }
   return s;
