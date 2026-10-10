@@ -199,3 +199,19 @@ kaydı (iz) olur, iz bir eğilim etiketi taşır, sonraki olaylar ve yaylar bu h
 - Denetçi `scripts/_smoke/gec-check.cjs`: her 56+ hayat geç soru görür, asabiye ≥3 banda yayılır, vasiyet kararı yazılır, parite.
 - Doğrulama (commit öncesi tam takım): 12 çekirdek denetim rc=0; YANKI/DEFTER/ROMAN/KAN/GEÇ OYUN TEMİZ; oynanış 30 hayat ÇIĞIR EŞİKLERİ TEMİZ
   (50+ boş %11,9, 50+ tekrar %2,9). Sıradaki: Divan Davası (adım 3).
+
+## 14. Dalga 2 — Divan Davası (çevrimdışı günlük dava, çığır Sütun 6)
+
+- `lib/divan.ts`: 32 dava (`DIVAN_DAVALAR`), yollar sabit sıra c0 merhamet · c1 adalet · c2 töre. `divanNo(tarih)`: 1 Ekim 2026 = No. 1,
+  yerel takvim günü; `divanDavasi(no)` = (no−1)·7 mod 32 (her 32 günde her dava bir kez). Herkes aynı gün aynı davayı görür.
+- Kasaba oyu `kasabaOyu(no)`: numarayla tohumlanan 120 kişilik sentetik kasaba; mizaç (TRAITS) → yol eğilimi (%60/%20/%20 + dava
+  ağırlığı). Oyuncunun oyu dahil yüzde (`oyYuzde`); tek yol en çok %55 çıktı (sınır %90). Oyun durumuna dokunmaz.
+- Kayıt ayrı anahtar `kronik_divan` `{v:1,k:{no:yol}}`, `divanGoc` korumalı; `hukumVer` aynı numarayı ikinci kez yazmaz (çiftlik yok).
+  Kaçan dava yok: arşiv son 14 numarayı gösterir, bekleyenler hükmedilebilir. Seri/zamanlayıcı yok.
+- Lakap (yalnız kimlik): bir yolda 20 hüküm → Merhametli Kadı / Adil Kadı / Töre Bekçisi (es/pt/ar/ru kadın biçimli).
+- Ekran `app/oyun/divan.tsx` (menü: Kayıt & Anı, Tabs href:null): dava, üç yol, hükümden sonra oy çubukları, spoiler'sız paylaşım
+  satırı `divan.paylas` ("Divan No. 10 ⚖ Taşınan Sınır Taşı · kasaba: %37 aynı hükümde"), lakap ilerlemesi, arşiv.
+- i18n parçası `d` (`/tmp/kr/i18n/d_*.json`): 32×5 + 20 arayüz satırı, 6 dil.
+- Denetçi `scripts/_smoke/divan-check.cjs`: aynı tarih → aynı dava (400 gün), döngü kapsaması, 3000 numarada oy ≤%90 ve toplam 100,
+  divan.ts oyun modülü/para alanı içermez, ekran eylem/zamanlayıcı çağırmaz, tek hüküm, göç, lakap ardışıklıktan bağımsız, 6 dil.
+- Doğrulama: 12 çekirdek rc=0; YANKI/DEFTER/ROMAN/KAN/GEÇ/DİVAN TEMİZ; oynanış ÇIĞIR EŞİKLERİ TEMİZ. Sıradaki: adım 4 (gerçek takvim).

@@ -196,6 +196,7 @@ export default function OyunLayout() {
         <Tabs.Screen name="ayarlar" options={{ href: null }} />
         <Tabs.Screen name="roman" options={{ href: null }} />
         <Tabs.Screen name="kronik" options={{ href: null }} />
+        <Tabs.Screen name="divan" options={{ href: null }} />
         <Tabs.Screen name="ocak" options={{ href: null }} />
         <Tabs.Screen name="npc/[id]" options={{ href: null }} />
         <Tabs.Screen name="copcatan" options={{ href: null }} />
