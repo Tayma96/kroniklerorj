@@ -18,6 +18,13 @@
   (`.git` ~309 MB). Geçmişi temizlemek (`git filter-repo --path dist/Kronikler.apk --invert-paths` + force push +
   herkesin yeniden clone alması) ayrı ve ekipçe eşgüdümlü bir karardır; bu depo düzenlemesinde YAPILMADI.
 
+## Play için AAB (GitHub Actions)
+- **Tetikleme:** GitHub → Actions → "AAB (Play Store - imzali derleme)" → Run workflow → dal seç (varsayılan `apk`).
+  Kod tetiklenen daldan alınır (eskiden `apk`'ya sabitti).
+- **Kalite kapısı:** APK workflow'undakiyle aynı (`npm ci`, `tsc`, esbuild paketi + 300-hayat smoke, eski kayıt göçü);
+  geçmeden `bundleRelease` başlamaz.
+- Çıktı `aab-latest` Release'ine ve `kronikler-aab` artefaktına düşer. İmza secret'ları zorunludur (aşağıda).
+
 ## GELECEK: Google Play (EAS ile)
 
 ## Yapı (build)
