@@ -4184,7 +4184,10 @@ export function supportWar(prev: GameState): GameState {
   return s;
 }
 
-const TITLE_MULT = [1, 1.4, 1.9, 2.4];
+// Unvan çarpanı. Zirve basamağı 2.4 → 2.15 (merdivenler dört kademeye çıkınca on dört meslek ilk kez ×2.4'e ulaştı; 80 hayatlık
+// ekonomi ölçümünde sınava giren oyuncunun 60 yaşına dek çalışma geliri +%20, kesesi medyan 16.6k → 28.7k oldu). 2.15 ile zirve
+// yine üçüncü kademeden belirgin üstün (+%13) ama çalışma geliri fazlasının çoğu geri alınır (31.6k → 28.5k; eski taban 26.3k).
+const TITLE_MULT = [1, 1.4, 1.9, 2.15];
 // Ahilik ahlakı: sözü senet esnafa müşteri koşar (şeref ≥ 60 → kazanç +%10); adı kötüye çıkanın kapısından
 // müşteri döner (itibar ≤ −40 → −%10). Yeni gösterge yok: şeref ve itibar zaten oyuncunun önünde; etkisi iş panelinde yazar.
 export function esnafAhlaki(p: Player): number { return p.honor >= 60 ? 0.1 : p.reputation <= -40 ? -0.1 : 0; }

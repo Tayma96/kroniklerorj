@@ -102,6 +102,10 @@ for (let v = 0; v < g.MERDIVEN_SURUM; v++) for (const pr of g.PROFESSIONS) {
   const yc = s.history.filter((e) => e.k === "evj.sinav.yeniden");
   if (yc.length !== 1) H(`yeniden çağrı ${yc.length} kez düştü (1 beklenirdi)`); else if (yc[0].landmark) H("yeniden çağrı dönüm penceresi açıyor");
 }
+// 3e) Unvan çarpanı: aynı zar ve özellikle zirvenin kazancı üçüncü kademeden %10–17 fazla (ılımlı zirve basamağı)
+{ const kazanc = (k) => { const s = oyuncu("demirci", k, k * 30 + 5); s.player.hunger = 100; s.player.stats = { strength: 8, intelligence: 8, charisma: 8, stamina: 8 }; const m0 = s.player.money; Math.random = () => 0.5; const r = g.work(s); Math.random = R0; return r.player.money - m0; };
+  const k2 = kazanc(2), k3 = kazanc(3), k1 = kazanc(1);
+  if (!(k1 < k2 && k3 / k2 >= 1.1 && k3 / k2 <= 1.17)) H(`unvan çarpanı: 2. kademe ${k1}, 3. kademe ${k2}, zirve ${k3} (zirve/3. = ${(k3 / k2).toFixed(2)})`); }
 // 4) Yeni oyun güncel damgalı doğar: göç ona dokunmaz
 { const s = oyuncu("şifacı", 2, 65); const m = g.migrate(JSON.parse(JSON.stringify(s))); if (m.player.kademe !== 2 || m.merdiven !== g.MERDIVEN_SURUM) H("yeni kayıt göçe uğradı"); }
 
