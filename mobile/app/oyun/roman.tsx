@@ -4,7 +4,7 @@ import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
 import { WEEKS_PER_YEAR } from "../../lib/calendar";
 import { useI18n, applyParams, renderEvt } from "../../lib/i18n";
-import { careerTitleL, professionNameL } from "../../lib/locale-data";
+import { careerTitleL } from "../../lib/locale-data";
 import { kariyerXp } from "../../lib/game";
 import { C, F } from "../../lib/theme";
 import { BackLabel } from "../../lib/ui";
@@ -62,12 +62,14 @@ export default function Roman() {
     events: state.history.filter((e) => { const a = ageOf(e.day); return a >= b.lo && a <= b.hi && e.scope === "kişisel"; }),
   })).filter((c) => c.events.length > 0);
 
+  // «… olarak anıldı»: peştamalla kazanılan unvan, kadına dişil kalıp ve dişil unvan (paylaşım kartı ve mersiye aynı satırı kullanır).
+  const anildi = (pl: typeof state.player) => { const kadin = pl.gender === "kadın"; const fk = t("rom.t.recalled.f"); return (kadin && fk !== "rom.t.recalled.f" ? fk : t("rom.t.recalled")).replace("%s", careerTitleL(pl.profession, kariyerXp(pl), lang, kadin)); };
   // Hayat romanı paylaşım kartı (metin): isim + kısa künye + kapanış + oyun adı. RN yerleşik Share (ek bağımlılık yok).
   const onShare = () => {
     const pl = state.player;
     const tally = [
       t("rom.t.lived").replace("%n", String(pl.age)),
-      pl.profession !== "işsiz" ? t("rom.t.recalled").replace("%s", professionNameL(pl.profession, lang)) : null,
+      pl.profession !== "işsiz" ? anildi(pl) : null,
       pl.children.length ? t("rom.t.children").replace("%n", String(pl.children.length)) : null,
       pl.fame >= 50 ? t("rom.t.famed") : null,
     ].filter(Boolean).join(" · ");
@@ -107,7 +109,7 @@ export default function Roman() {
         const p = state.player;
         const tally = [
           t("rom.t.lived").replace("%n", String(p.age)),
-          p.profession !== "işsiz" ? (() => { const kadin = p.gender === "kadın"; const fk = t("rom.t.recalled.f"); return (kadin && fk !== "rom.t.recalled.f" ? fk : t("rom.t.recalled")).replace("%s", careerTitleL(p.profession, kariyerXp(p), lang, kadin)); })() : t("rom.t.noTrade"), // peştamalla kazanılan unvan (dişil biçimiyle)
+          p.profession !== "işsiz" ? anildi(p) : t("rom.t.noTrade"),
           p.children.length ? t("rom.t.children").replace("%n", String(p.children.length)) : t("rom.t.noChildren"),
           p.properties.length ? t("rom.t.properties").replace("%n", String(p.properties.length)) : null,
           p.fame >= 50 ? t("rom.t.famed") : null,
