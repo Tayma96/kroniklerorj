@@ -4167,6 +4167,9 @@ export function supportWar(prev: GameState): GameState {
 }
 
 const TITLE_MULT = [1, 1.4, 1.9, 2.4];
+// Ahilik ahlakı: sözü senet esnafa müşteri koşar (şeref ≥ 60 → kazanç +%10); adı kötüye çıkanın kapısından
+// müşteri döner (itibar ≤ −40 → −%10). Yeni gösterge yok: şeref ve itibar zaten oyuncunun önünde; etkisi iş panelinde yazar.
+export function esnafAhlaki(p: Player): number { return p.honor >= 60 ? 0.1 : p.reputation <= -40 ? -0.1 : 0; }
 // Çalışma stilleri (Vercel work_rework.py portu): risk/ödül dengesi.
 export type WorkStyle = "garantici" | "normal" | "hirsli" | "kaytarici";
 export const WORK_STYLES: { id: WorkStyle; mult: number; fail: number }[] = [
@@ -4196,6 +4199,7 @@ export function work(prev: GameState, style: WorkStyle = "normal"): GameState {
   if (hasPerk(p, "basyapit")) mult += 0.25;
   { const rk = p.rakip; if (rk && rk.bitti && rk.prof === p.profession) mult += rk.bitti === "ustun" ? 0.1 : rk.bitti === "ortak" ? 0.08 : -0.05; } // çarşının bayrağı: müşteri bayraklı tezgâha gider
   if (p.cirak && p.cirak.prof === p.profession) mult += 0.05; // çırağın eli: tezgâhta bir çift el daha
+  mult += esnafAhlaki(p); // ahilik: şerefli esnafa müşteri, adı kötüye çıkana ters bakış
   const tierBefore = pr ? careerTier(pr, kariyerXp(p)) : 0;
   const titleMult = TITLE_MULT[tierBefore] || 1;
   const base = pr ? pr.base : 4;
