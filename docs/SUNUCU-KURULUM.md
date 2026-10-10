@@ -17,7 +17,7 @@ Telefondan/tarayıcıdan, ücretsiz, ~10 dakikada. Hiç komut yazmadan.
 - Aynı sayfada (Workers & Pages ana ekranında, sağda) **Account ID**'ni de bir yere kopyala.
 
 ## 4) GitHub'a iki "secret" ekle
-- GitHub'da repoya gir: **tayma67/kronikler** → üstten **Settings** → sol menü
+- GitHub'da repoya gir: **Tayma96/kroniklerorj** → üstten **Settings** → sol menü
   **Secrets and variables** → **Actions** → **New repository secret**.
 - Birinci secret:
   - Name: `CLOUDFLARE_API_TOKEN`  · Secret: (3. adımda kopyaladığın anahtar) → **Add secret**.

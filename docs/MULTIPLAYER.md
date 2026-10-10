@@ -2,7 +2,7 @@
 
 Bu belge çok oyunculu modun mimarisini ve katmanlarını anlatır. **Sunucu canlı**
 (`wss://kronikler-mp.tayma.workers.dev`) ve tüm sistem headless entegrasyon
-testleriyle uçtan uca doğrulanmıştır (30/30).
+testleriyle uçtan uca doğrulanmıştır (`server/test/`, 12 dosya, 88 denetim — bkz. "Doğrulama").
 
 ## Mimari — Tur-Senkron Paylaşımlı Diyar
 - **Otoriteli sunucu + ince istemci.** Paylaşımlı dünya (saat, taht, beylikler,
@@ -62,9 +62,14 @@ beylik/sosyal/NPC çözümü, kalıcılık, NPC-vekil), `src/index.ts`, `src/pro
   Sunucu adresi APK'ye gömülü (`DEFAULT_SERVER_URL`) — ayar gerekmez.
 
 ## Doğrulama (headless entegrasyon testleri, canlı sunucu — `server/test/`)
-- Beylik/sosyal/sohbet: 14 · Kalıcılık/seyahat: 7 · NPC-vekil/ölüm: 4 ·
-  Paylaşımlı NPC: 5 · İttifak/ihanet/sefer: 7 · Açık diyar dizini: 3 →
-  **toplam 40/40** (5/5 kararlı). Çalıştır: `bash server/test/run-all.sh`.
+Sayılar test dosyalarındaki `ok(...)` denetimlerinden alındı (Ekim 2026). Eski "30/30" ilk dört dosyanın,
+"40/40" ilk altı dosyanın toplamıydı; sonradan altı dosya daha eklendi.
+- `mp_itest` beylik/sosyal/sohbet 14 · `mp_itest2` kalıcılık/seyahat 7 · `mp_itest3` NPC-vekil/ölüm 4 ·
+  `mp_itest4` paylaşımlı NPC 5 · `mp_itest5` ittifak/ihanet/sefer 7 · `mp_itest6` açık diyar dizini 3 → **40**
+- `mp_itest7` evlilik 6 · `mp_itest8` lonca 7 · `mp_itest9` pakt koruması 5 · `mp_itest10` çevrimdışı olay
+  teslimi 7 · `mp_itest11` temettü + uyarlanır çoğunluk 8 · `mp_itest12` kervan ortaklığı 15 → **48**
+- **Toplam 88 denetim.** Çalıştır: `bash server/test/run-all.sh` — **canlı sunucuya bağlanır**; yalnız bilerek
+  koşulur (CI'da koşmaz). `mp_itest7–9` adresi koda gömülü tutar, `MP_URL` yalnız 1–6 ve 10–12'de geçerlidir.
 - SP regresyon: smoke HATA:0; i18n 6 dil eksik:0; client+server tsc 0.
 
 ## Notlar & kısıtlar

@@ -17,8 +17,8 @@
 |---|---|
 | **GDD v8 SAHNE** (bu belge) | Sunum, his, onboarding, lansman — **aktif otorite** |
 | GDD v7 MASTER | Sistem anayasası — mekanik kararlar için geçerliliğini korur |
-| ANALIZ_RAPORU.md | Test bulguları + denge defterinin kaynağı |
-| PROJE_DURUMU.md | Oturum/hesap devri durumu |
+| docs/arsiv/ANALIZ_RAPORU.md | Test bulguları + denge defterinin kaynağı (Haziran, web dönemi — arşiv) |
+| OTURUM_HAFIZASI.md | Güncel oturum devri ve açık işler (eski PROJE_DURUMU.md → docs/arsiv/) |
 
 -----
 

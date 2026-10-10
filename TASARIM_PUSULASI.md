@@ -7,8 +7,8 @@
 >
 > Kapsam: (1) mobil oyuncunun gerçekleri (veri), (2) oyuncu psikolojisi, (3) oyunun içindeki toplumu gerçekçi
 > kurmak için sosyoloji ("toplum mühendisliği": kasabanın nasıl işlediği), (4) etik çizgi, (5) Kronikler'in
-> bugünkü teşhisi, (6) ilkeler, (7) süzgeç, (8) yol haritası ve ölçüm, (9) oynanış kuralları ve ölçütleri. Önceki araştırmalar (ARASTIRMA.md: his,
-> anlatı, denge; HIS_ARASTIRMASI.md: game feel) tekrarlanmaz; bu belge onların üstüne kurulur.
+> bugünkü teşhisi, (6) ilkeler, (7) süzgeç, (8) yol haritası ve ölçüm, (9) oynanış kuralları ve ölçütleri. Önceki araştırmalar (`docs/ARASTIRMA.md`: his,
+> anlatı, denge; `docs/HIS_ARASTIRMASI.md`: game feel) tekrarlanmaz; bu belge onların üstüne kurulur.
 
 ---
 
@@ -53,7 +53,7 @@
 **Ne demek?**
 - Oyuncumuzun en büyük kesimi **30–49 yaş arası yetişkin**: işte, yolda, akşam koltukta. Uzun öğretici, kalabalık
   menü ve "her şeyi bil" arayüzü bu kişiyi kaybettirir; olgun ve anlamlı hikâye ise onu tutar.
-- 2025'te kıyas değerleri düştü (ARASTIRMA.md'deki daha yüksek D7 değerleri eskidi). Ortalama bir oyun ilk haftada
+- 2025'te kıyas değerleri düştü (`docs/ARASTIRMA.md`'deki daha yüksek D7 değerleri eskidi). Ortalama bir oyun ilk haftada
   oyuncularının %96'sını kaybediyor. Oyunu ayakta tutan şey özellik sayısı değil, **ilk oturumun ve ilk haftanın
   hissi**.
 - Kronikler çevrimdışı ve bildirim kullanmıyor: oyuncuyu geri çağıran tek şey **oyunun kendi bıraktığı merak**.

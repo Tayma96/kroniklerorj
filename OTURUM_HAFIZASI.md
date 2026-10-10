@@ -2,7 +2,7 @@
 
 > Konuşma bağlamı sıkıştırıldığında ya da konteyner eski bir anlık görüntüye döndüğünde kaybolmasın diye tutulan
 > devir notu. Yeni bir oturum önce bunu, sonra `mobile/AGENTS.md` ve `TASARIM_PUSULASI.md`'yi okur.
-> Son güncelleme: 7 Ekim 2026 · dal `claude/son-durum-apk-bkyzxp` · son commit `11e8dda`.
+> Son güncelleme: 10 Ekim 2026 · dal **`apk`** (geliştirme ve yayın) · 7 Ekim penceresinin son commit'i `0c6f566`.
 
 ## 1. Kullanıcının kararları (kronolojik)
 
@@ -17,8 +17,9 @@
 
 ## 2. Kalıcı kurallar (kullanıcı koydu, tartışılmaz)
 
-- Geliştirme ve push yalnız `claude/son-durum-apk-bkyzxp` dalına: `git push -u origin claude/son-durum-apk-bkyzxp`.
-  (AGENTS.md'de `apk` dalı yazar; bu pencerede kullanıcının verdiği dal geçerlidir.)
+- **Geliştirme ve yayın `apk` dalında** (`mobile/AGENTS.md` ile aynı; workflow'lar da `apk`'yı varsayar).
+  7 Ekim penceresi geçici olarak `claude/son-durum-apk-bkyzxp` dalında çalıştı; o iş `apk`'ya alındı ve o dal
+  artık kullanılmıyor. Kullanıcı bir pencerede açıkça başka dal verirse yalnız o pencere için geçerlidir.
 - Commit mesajı **Türkçe, tek satır**, hikâye anlatan tonda. Hiçbir yerde (commit, kod, PR) imza, footer, model
   ya da araç adı yok.
 - **ScheduleWakeup, cron, trigger yasak** (kalıcı). Yalnız arka plan bash zincirleri.
@@ -35,9 +36,9 @@
 
 ## 3. Çalışma hattı
 
-- Her dalgadan önce senkron bekçisi: `git fetch origin claude/son-durum-apk-bkyzxp && git status -sb`.
+- Her dalgadan önce senkron bekçisi: `git fetch origin apk && git status -sb`.
   Konteyner bir kez eski anlık görüntüye döndü (mobile/ klasörü yoktu, commit'lenmemiş iş kayboldu); çözüm
-  `git checkout -B claude/son-durum-apk-bkyzxp origin/claude/son-durum-apk-bkyzxp` + `npm ci`. Bu yüzden
+  `git checkout -B apk origin/apk` + `npm ci`. Bu yüzden
   **iş bitince hemen commit + push**.
 - Hızlı denetimler (mobile/ içinden): `npx tsc --noEmit` · `node scripts/_smoke/i18n-icon-check.cjs` (TEMİZ) ·
   `dil-karisma.cjs` (TEMİZ) · `olay-metin.cjs 30` (TEMİZ) · `migrate-check.cjs` · `olu-karar.cjs` (TEMİZ) ·
