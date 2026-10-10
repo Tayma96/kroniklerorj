@@ -51,7 +51,7 @@ Mevcut sayılar (ayar yapılacak yerler — `mobile/lib/game.ts`):
 
 - [x] **Olay metni çeşitliliği:** aylık flavor, ikilemler, hikâye yayları — varyant sayısını artır (tekrar hissini kır). **[BEN]** — *oynanis.cjs: önemli satırların yalnız %5.7'si son iki yılda aynen tekrar; olay-metin.cjs 69.810 yazımda 0 sorun.*
 - [ ] **Roman (Hayatın Romanı):** olayları kuru cümle yerine **anlatısal** birleştir; bölüm geçişleri, kapanış künyesi zenginleştir. **[BEN]** — *`app/oyun/roman.tsx` yaş bantlı bölümler + paylaşım kartı var; anlatı kalitesi için okuma onayı (§3 ton kararı) bekliyor.*
-- [ ] **NPC diyalogu:** kişilik+ruh haline göre replik havuzunu genişlet; hafızaya gönderme ("geçen sefer..."). **[BEN]**
+- [x] **NPC diyalogu:** kişilik+ruh haline göre replik havuzunu genişlet; hafızaya gönderme ("geçen sefer..."). **[BEN]** — *10 Eki: `derinlikKatmani` (`lib/dialogue.ts`) — önceki konunun takibi, kapanan kişiye ısrarla açılma, oyuncunun mesleği/şanı/korkusunu fark etme, kişilik ağzı, can dostu/hasım hoşbeşi, mevsim açılışı; 37 yeni anahtar × 6 dil + 33 dişil varyant; bekçi: `scripts/_smoke/diyalog.cjs`.*
 - [ ] **Dönem dili:** unvanlar, deyimler, mevsim/şehir betimleri — sözlük tutarlılığı. **[BEN]** — *otomatik bekçi var (`dil-karisma.cjs`: 6 dilde karışma 0); sözlük tutarlılığı insan okuması ister.*
 - [ ] **Onboarding/öğretici:** ilk 2 ayda nazik ipuçları (zorla değil). **[BEN]** — *kısmen: ilk oyunda tek seferlik `TutorialModal`, boş panoda `dash.emptyHint`, iş tarzı ipuçları. İlk iki aya yayılan bağlamsal ipucu yok; cihazda kafa karıştıran yer notu gelince eklenmeli.*
 - [ ] **[SEN]** Ton kararı: ne kadar ağır/edebî vs sade? Birkaç örnek metin onayın. **[BİRLİKTE]**

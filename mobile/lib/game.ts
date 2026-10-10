@@ -5,7 +5,7 @@ import { ITEMS, marketGoods, locSeed, generateNPCs, NPC, generateDynasties, city
 import { Nufus, Kisi, Cins, NufusCtx, EskiDunya, OYUNCU, nufusKur, nufusYil, kadro, kisiAdi, hayalOf, huyOf, yeniGelen, nufusDegisti, olumOlasiligi, kisiNpc, kisiBaglari, yasOf, kardesler, bagEvrimi, kisiSil, kisiIlkAd } from "./nufus";
 import { Lang, professionNameL, goalL } from "./locale-data";
 import { tFor, kucukHarf } from "./i18n";
-import { converse, ConvResult, spontaneousLine, callbackLine, perceptionGreeting } from "./dialogue";
+import { converse, ConvResult, spontaneousLine, callbackLine, perceptionGreeting, derinlikKatmani, SohbetSon } from "./dialogue";
 import { Memory, addMemory, decayMemories, effectiveRel, behaviorTier, MEMORY_TYPES, RUMOR_VARIANTS } from "./npc-mind";
 import { arcById, ArcChoice, availableArcs } from "./arcs";
 
@@ -1036,7 +1036,8 @@ export function joinThreshold(p: Player, f: Faction): number { return p.perks.in
 
 export interface GameEvent { day: number; type: string; text: string; scope: "kişisel" | "makro"; landmark?: boolean; k?: string; p?: EvtParam[]; q?: number; } // q: olay sırası (artan; ekranlar "yeni olay"ı bununla tanır — kronik 250'de kırpılınca uzunluk artmaz)
 export interface DynastyRecord { generation: number; name: string; profession: string; diedAge: number; fame: number; reputation: number; faction: string | null; note: string; noteK?: string; causeK?: string; } // noteK: kitabe kimliği (6 dile çevrilir); note eski kayıtlar için TR yedek; causeK: ölüm nedeni kodu
-export interface NpcState { mood: number; memories: string[]; anilar?: Memory[]; int_turn?: number; act_turns?: Record<string, number>; rel_gain_turn?: number; rel_gain_amt?: number; }
+export interface NpcState { mood: number; memories: string[]; anilar?: Memory[]; int_turn?: number; act_turns?: Record<string, number>; rel_gain_turn?: number; rel_gain_amt?: number; son?: SohbetSon; }
+// son: bu kişiyle son sohbetin konusu ve nasıl bittiği — bir dahaki sohbette hatırlanır (diyalog takip katmanı; eski kayıtta yok, sorun değil).
 // int_turn (eski): tek blok kilit — artık kullanılmıyor, eski kayıtlar için duruyor.
 // act_turns: her etkileşim KANALI (sohbet niyeti / hediye / flört / dedikodu / hakaret / sadaka) ayrı ayrı tur-kilidi;
 //   böylece "dert dinle" deyince "iltifat" kilitlenmez — her etkileşim ayda bir okunur, kanallar bağımsız.
@@ -4842,8 +4843,15 @@ export function talkWith(prev: GameState, npc: NPC, intent: string, lang: string
   markNpcAct(ns, akey, s.turn);
   const rel = s.relationships[npc.id] || 0;
   // NPC, sohbette etkin ilişkiye (taban + anılar) göre davranır — hatırladıkları konuşmasına yansır.
-  const r: ConvResult = converse(npc, ns.mood, relWith(s, npc.id), socialPresence(p), intent, lang as any);
+  // Geçen sefer bu konuda ağzını açmayan kişiye yeniden sormak (ısrar) kapıyı açar — konunun sonucu.
+  const israr = !!ns.son && ns.son.i === intent && ns.son.ok === 2 && ns.son.t !== s.turn;
+  const r: ConvResult = converse(npc, ns.mood, relWith(s, npc.id), socialPresence(p), intent, lang as any, israr);
+  const dk = derinlikKatmani(npc, intent, {
+    female: p.gender === "kadın", playerProf: p.profession, fame: p.fame, honor: p.honor, fear: p.fear,
+    season: currentCalendar(s.turn).season, rel: relWith(s, npc.id), turn: s.turn, son: ns.son, israr,
+  }, lang as Lang);
   let relDelta = r.relDelta;
+  if (relDelta > 0 && intent === "hosbes" && relWith(s, npc.id) < -20) relDelta = Math.ceil(relDelta / 2); // hasımla hoşbeş yarım ısıtır
   if (relDelta > 0) {
     relDelta *= talkWarmthMod(s);                                  // sıcak/korkulan tanınmanın etkisi
     if (intent === "iltifat") relDelta *= 1 + allureBonus(s);      // çapkınlık iltifatı güçlendirir
@@ -4853,13 +4861,16 @@ export function talkWith(prev: GameState, npc: NPC, intent: string, lang: string
   // Olumlu kazanç ay-tavanına takılır (aynı kişiyle onlarca niyetle ilişki farmlanamaz); olumsuz tepki tam işler.
   const applied = budgetTalkRel(ns, s.turn, relDelta);
   s.relationships[npc.id] = Math.max(-100, Math.min(100, rel + applied));
-  ns.mood = Math.max(-100, Math.min(100, ns.mood + r.moodDelta));
+  ns.mood = Math.max(-100, Math.min(100, ns.mood + r.moodDelta + (dk.takip ? 2 : 0))); // hatırlanan iyi sohbet küçük bir sıcaklık katar (ilişki değil: farm yok)
+  ns.son = { i: intent, t: s.turn, ok: r.kapali ? 2 : relDelta < 0 ? 0 : 1 };
   ns.memories.push(r.memory);
   if (ns.memories.length > 8) ns.memories = ns.memories.slice(-8);
   // Diyalog katmanları (Vercel): NPC bazen kendi gündemini açar (spontane) + geçmişi hatırlar (callback).
   let line = r.line;
   if (r.moodDelta >= 3) { const g = gercekSatir(s, npc.id, intent, lang as Lang); if (g) line = g; } // açıldıysa kendi hayatının gerçeğini anlatır
   else if (intent === "hedef") line = tFor(lang as Lang, "f.hedef.kapali").split("%n").join(npc.name.split(" ")[0]); // yabancıya hayal açılmaz
+  if (dk.bant) line = dk.bant;           // can dostu / hasım hoşbeşi kendi ağzıyla
+  if (dk.on) line = dk.on + " " + line;  // tek ek katman: takip / oyuncuyu fark etme / kişilik / mevsim
   // Algı selamı: halk seni nasıl görüyorsa NPC de öyle karşılar (yalnız hoşbeşte, tanınıyorsan) — sınıf yolculuğu sohbette hissedilsin.
   if (intent === "hosbes") {
     const pp = publicPerception(s);

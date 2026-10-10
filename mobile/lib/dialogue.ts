@@ -15,7 +15,7 @@ export const INTENTS: Intent[] = [
   { id: "hedef",   label: "Hayalini sor", icon: "star" },
 ];
 
-export interface ConvResult { line: string; moodDelta: number; relDelta: number; memory: string; }
+export interface ConvResult { line: string; moodDelta: number; relDelta: number; memory: string; kapali?: boolean; } // kapali: kişi bu konuda ağzını açmadı (bir dahaki ısrar kapıyı açar)
 
 // Algı selamı: halkın seni görüşü (feared/beloved...) sohbet açılışına yansır. Anahtar yoksa boş döner (ham anahtar sızmaz).
 export function perceptionGreeting(lang: Lang, key: string, female = false): string {
@@ -35,7 +35,8 @@ function relTier(r: number): "yabancı" | "tanıdık" | "dost" | "candost" {
 }
 
 // Bir konuşma niyetini, NPC'nin kişilik/ruh hali/ilişki bağlamında çözer. Metin seçilen dile göre.
-export function converse(npc: NPC, mood: number, rel: number, charisma: number, intent: string, lang: Lang = "tr"): ConvResult {
+// israr: geçen sefer aynı konuda kapanan kişiye yeniden sormak — bu kez açılır (konunun sonucu: sabır karşılık bulur).
+export function converse(npc: NPC, mood: number, rel: number, charisma: number, intent: string, lang: Lang = "tr", israr = false): ConvResult {
   const mt = moodTier(mood); const rt = relTier(rel); const t = npc.trait;
   const hitch = mt === "küs" || mt === "soğuk";
   const fn = (npc.name.split(" ")[0]);
@@ -58,8 +59,8 @@ export function converse(npc: NPC, mood: number, rel: number, charisma: number, 
     return { line: pick("dlg.iltifat.good", 4), moodDelta: 8, relDelta: gain, memory: L("dlg.iltifat.good.m") };
   }
   if (intent === "dert") {
-    const opens = t === "dertli" || t === "yalnız" || t === "sıcakkanlı" || t === "sabırlı" || rt !== "yabancı";
-    if (!opens) return { line: pick("dlg.dert.closed", 3), moodDelta: 1, relDelta: 2, memory: L("dlg.dert.closed.m") };
+    const opens = israr || t === "dertli" || t === "yalnız" || t === "sıcakkanlı" || t === "sabırlı" || rt !== "yabancı";
+    if (!opens) return { line: pick("dlg.dert.closed", 3), moodDelta: 1, relDelta: 2, memory: L("dlg.dert.closed.m"), kapali: true };
     return { line: pick("dlg.dert.open", 4), moodDelta: 10, relDelta: 8, memory: L("dlg.dert.open.m") };
   }
   if (intent === "is") {
@@ -68,8 +69,8 @@ export function converse(npc: NPC, mood: number, rel: number, charisma: number, 
     return { line, moodDelta: hitch ? 1 : 4, relDelta: hitch ? 1 : 3, memory: L("dlg.is.m") };
   }
   if (intent === "aile") {
-    const opens = rt !== "yabancı" || t === "sıcakkanlı" || t === "dertli";
-    if (!opens) return { line: pick("dlg.aile.closed", 3), moodDelta: 1, relDelta: 1, memory: L("dlg.aile.closed.m") };
+    const opens = israr || rt !== "yabancı" || t === "sıcakkanlı" || t === "dertli";
+    if (!opens) return { line: pick("dlg.aile.closed", 3), moodDelta: 1, relDelta: 1, memory: L("dlg.aile.closed.m"), kapali: true };
     return { line: pick("dlg.aile.open", 3), moodDelta: 6, relDelta: 5, memory: L("dlg.aile.open.m") };
   }
   if (intent === "dunya") {
@@ -77,7 +78,8 @@ export function converse(npc: NPC, mood: number, rel: number, charisma: number, 
   }
   if (intent === "hedef") {
     const line = pick("dlg.hedef.line", 4).split("%g").join(goalL(npc.goal, lang));
-    return { line, moodDelta: rt === "yabancı" ? 2 : 7, relDelta: rt === "yabancı" ? 2 : 6, memory: L("dlg.hedef.m") };
+    const acik = israr || rt !== "yabancı";
+    return { line, moodDelta: acik ? 7 : 2, relDelta: acik ? 6 : 2, memory: L("dlg.hedef.m"), kapali: !acik };
   }
   // şaka
   const likes = t === "neşeli" || t === "sıcakkanlı";
@@ -110,6 +112,55 @@ export function callbackLine(npc: NPC, memTur: string, lang: Lang = "tr", female
   const vi = Math.floor(Math.random() * 3); const key = vi === 0 ? k : k + (vi + 1); // her göndermenin üç varyantı — uzun oyunda ezber kırılır
   const fk = key + ".f"; const fv = female ? tFor(lang, fk) : fk; // kadın oyuncuya hitap eden satırın .f varyantı (ör. Arapça ikinci tekil dişil)
   return (fv !== fk ? fv : tFor(lang, key)).split("%n").join(npc.name.split(" ")[0]);
+}
+
+// ── Diyalog derinliği (legacy dialogue.py katmanlarının portu, 10 Eki 2026) ──
+// Önceki sohbetin konusu hatırlanır (takip), oyuncunun mesleği/şanı/korkusu fark edilir, kişilik ağzına renk
+// katar, can dostu ve hasım hoşbeşi başka karşılar, mevsim açılış cümlesine sızar. Her sohbette EN ÇOK BİR ek
+// katman (art arda yığılıp metni boğmasın). Kadın oyuncuya hitapta .f varyantı (Arapça/Rusça vb.) kullanılır.
+export interface SohbetSon { i: string; t: number; ok: 0 | 1 | 2 } // i: niyet · t: tur · ok: 0 kötü bitti / 1 iyi / 2 kişi kapandı
+export interface DerinlikBaglam {
+  female: boolean; playerProf: string; fame: number; honor: number; fear: number;
+  season: string; rel: number; turn: number; son?: SohbetSon; israr: boolean;
+}
+export interface DerinlikSonuc { on: string; bant: string; takip: boolean; katman: string }
+const TAKIP_NIYET = ["dert", "iltifat", "saka", "hedef", "aile", "is", "dunya", "hosbes"];
+const KS_HUY: Record<string, string> = { "kibirli": "kibirli", "cömert": "comert", "neşeli": "neseli", "kurnaz": "kurnaz", "dindar": "dindar", "utangaç": "utangac" };
+const MEVSIM: Record<string, string> = { "Kış": "kis", "İlkbahar": "ilk", "Yaz": "yaz", "Sonbahar": "son" };
+const ascii = (x: string) => x.replace(/ç/g, "c").replace(/ı/g, "i").replace(/ş/g, "s").replace(/ü/g, "u").replace(/ö/g, "o").replace(/ğ/g, "g");
+export function derinlikKatmani(npc: NPC, intent: string, ctx: DerinlikBaglam, lang: Lang = "tr"): DerinlikSonuc {
+  const al = (k: string): string => { if (ctx.female) { const f = tFor(lang, k + ".f"); if (f !== k + ".f") return f; } const v = tFor(lang, k); return v !== k ? v : ""; };
+  const pick = (base: string, n: number) => { const i = Math.floor(Math.random() * n); return al(i === 0 ? base : base + (i + 1)); };
+  const out: DerinlikSonuc = { on: "", bant: "", takip: false, katman: "" };
+  // Bant: can dostu sevinçle, hasım soğuk karşılar (yalnız hoşbeşte temel satırın yerine geçer).
+  if (intent === "hosbes") {
+    if (ctx.rel >= 70) out.bant = pick("dlg.hosbes.candost", 2);
+    else if (ctx.rel < -20) out.bant = pick("dlg.hosbes.rakip", 2);
+  }
+  const ek = (k: string, katman: string): boolean => { const v = al(k); if (v) { out.on = v; out.katman = katman; } return !!v; };
+  // 1) Takip: ısrar her zaman söze dökülür; değilse önceki konu yarı yarıya hatırlanır (aynı ay hariç).
+  const son = ctx.son;
+  if (ctx.israr && ek("dlg.takip.kapali", "takip")) { out.takip = true; return out; }
+  if (son && son.t !== ctx.turn && Math.random() < 0.5) {
+    const k = son.ok === 0 ? "dlg.takip.kotu" : son.ok === 1 && TAKIP_NIYET.includes(son.i) ? "dlg.takip." + son.i : "";
+    if (k && ek(k, "takip")) { out.takip = son.ok === 1; return out; }
+  }
+  // 2) Oyuncuyu fark etme: aynı zanaat ya da birbirini tamamlayan iki meslek; hoşbeşte şan/şeref/korku.
+  if (intent === "is" && ctx.playerProf && ctx.playerProf !== "işsiz") {
+    if (npc.profession === ctx.playerProf && ek("dlg.pa.ayni", "oyuncu")) return out;
+    if (ek("dlg.pa." + ascii(npc.profession) + "." + ascii(ctx.playerProf), "oyuncu")) return out;
+  }
+  if (intent === "hosbes" && Math.random() < 0.4) {
+    const k = ctx.fear >= 60 ? "dlg.pa.korku" : ctx.fame >= 60 ? "dlg.pa.unlu" : ctx.honor >= 60 ? "dlg.pa.onurlu" : "";
+    if (k && ek(k, "oyuncu")) return out;
+  }
+  // 3) Kişilik ağzı (hoşbeş/dünya sohbetinde ara sıra).
+  const huy = KS_HUY[npc.trait];
+  if (huy && (intent === "hosbes" || intent === "dunya") && Math.random() < 0.25 && ek("dlg.ks." + huy, "kisilik")) return out;
+  // 4) Mevsim açılışı (hoşbeşte ara sıra).
+  const mv = MEVSIM[ctx.season];
+  if (mv && intent === "hosbes" && Math.random() < 0.2) ek("dlg.mevsim." + mv, "mevsim");
+  return out;
 }
 
 export function moodLabel(m: number): string {
