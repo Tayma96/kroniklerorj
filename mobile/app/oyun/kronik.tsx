@@ -26,6 +26,7 @@ export default function Kronik() {
         {x.lakaplar.length ? <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchment, marginTop: 4 }}>{x.lakaplar.map((l) => lakapAdi(l, kadin, t)).join(" · ")}</Text> : null}
         {x.egilim ? <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.goldDim, marginTop: 4 }}>{applyParams(t("kronik.egilim"), [t("yanki.et." + x.egilim)])}</Text> : null}
         {izler.length ? <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchment, marginTop: 4 }}>{t("kronik.izler")}: {izler.map((z) => "«" + z + "»").join(", ")}</Text> : null}
+        {x.kin || x.minnet ? <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted, marginTop: 4 }}>{applyParams(t("kronik.hatir"), [x.kin || 0, x.minnet || 0])}</Text> : null}
         {x.secilen ? <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.sage, marginTop: 4 }}>{applyParams(t("kronik.yetenek"), [t("soy." + x.secilen + ".ad")])}</Text> : null}
       </Panel>
     );

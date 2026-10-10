@@ -8,6 +8,7 @@ export interface DefterSoy {
   anahtar: string; // aynı ölüm iki kez işlenmesin (idempotent)
   ad: string; soyad: string; cins: "erkek" | "kadın"; nesil: number; olumYasi: number; meslek: string;
   sifat?: string; lakaplar: string[]; egilim?: IzEt; izler: DefterIz[]; yaylar: string[]; yetenek?: string; secilen?: string;
+  kin?: number; minnet?: number; // Kan Hafızası: ölümde açık kalan hesaplar (vârise geçer)
 }
 export interface Defter { v: 1; soylar: DefterSoy[]; yaylar: string[]; ikilemler: string[]; }
 export const DEFTER_KEY = "kronik_defter";
@@ -35,6 +36,7 @@ export function defterGoc(raw: unknown): Defter {
       yaylar: Array.isArray(o.yaylar) ? o.yaylar.filter(str) : [],
       yetenek: str(o.yetenek) && SOY_YETENEKLERI.some((y) => y.id === o.yetenek) ? o.yetenek : undefined,
       secilen: str(o.secilen) && SOY_YETENEKLERI.some((y) => y.id === o.secilen) ? o.secilen : undefined,
+      kin: Number.isFinite(o.kin) && (o.kin as number) > 0 ? Math.floor(o.kin as number) : undefined, minnet: Number.isFinite(o.minnet) && (o.minnet as number) > 0 ? Math.floor(o.minnet as number) : undefined,
     });
   }
   d.soylar = d.soylar.slice(-DEFTER_SOY_EN_COK);
@@ -55,6 +57,7 @@ export function defterIsle(d0: Defter, s: GameState): Defter {
     anahtar, ad: p.name, soyad: p.surname || "", cins: p.gender === "kadın" ? "kadın" : "erkek", nesil: p.generation || 1, olumYasi: p.age, meslek: p.profession,
     sifat: deathEpithet(s) || undefined, lakaplar: [...(p.lakaplar || [])], egilim: hafizaEgilimi(s.hafiza) || undefined,
     izler: onemliIzler(s.hafiza, 3).map((x) => ({ k: x.k, et: x.et, ref: x.ref || 0 })), yaylar, yetenek: p.soy_yetenek,
+    kin: (s.hatir || []).filter((x) => x.yon === "kin").length || undefined, minnet: (s.hatir || []).filter((x) => x.yon === "minnet").length || undefined,
   });
   d.soylar = d.soylar.slice(-DEFTER_SOY_EN_COK);
   return d;

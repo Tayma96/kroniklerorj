@@ -173,3 +173,16 @@ kaydı (iz) olur, iz bir eğilim etiketi taşır, sonraki olaylar ve yaylar bu h
 - Tek yönlü ikilemler (gec_kutuk, cocuk_cirak, sifa_otu, yasli_sandik, orta_ana) ikinci eğilim kazanabilir.
 - Paylaşım kartı görüntü olarak (view-shot) değil metin olarak paylaşılır; bağımlılık eklenirse kart `View` hazır.
 - Yeni oyun ekranı (`/yeni-oyun`) defterdeki soyu henüz önermiyor; şimdilik yalnız ölüm akışı ve "Küllerden yeni ocak".
+
+## 12. Dalga 2 — Kan Hafızası (çığır Sütun 4)
+
+- `lib/game.ts` "KAN HAFIZASI": `GameState.hatir: Hatir[]` (en çok 6) — `{ id (NPC), yon: kin|minnet, guc 1–5, t, son, don, nesil, ata?, kay }`.
+  Kaynak: `remember()` içinde |yük| ≥ 15 olan anılar (yardım, borçtan/candan kurtarma, düğün, savunma ↔ hakaret, tehdit,
+  dolandırıcılık, saldırı…) ve kapıdan eli boş çevrilen borç/kefil/kardeş/miras isteklerinin yarısı (kişiye bağlı, deterministik).
+- `hatirTick` (her ay): yıllık kin büyür (%20); güç 5'e varıp en az bir kez dönmüş kin %15 ihtimalle **kanlı hasma** (`story.nemesis`)
+  döner; kişi ölürse hesap yetişkin evladına geçer (en çok 3 kuşak, her devirde bir kademe söner). Dönüş: iki yılda bir, kin →
+  kese (≤ kesenin %5'i) ya da ad kaybı; **yoksul/aç/hasta iken kin geri çekilir**; iyi ilişki ya da cömert/dürüst eğilim barışı
+  açar. Minnet → darda kese, değilse ad; ödenince kapanır.
+- `hatirMiras`: vâris atanın yaşayan hesaplarını `ata` imiyle devralır (kin bir kademe söner). Defter ölümde kin/minnet sayısını yazar (Kronik).
+- Denetçi `scripts/_smoke/kan-check.cjs`: ≥5 yıl yaşamış kayıtların ≥%70'i döner, vâris devralır ve ata imli dönüş görülür,
+  yoksula vuruş 0, %5 tavan aşımı 0, kin zararı ≤ çalışma gelirinin %3'ü.

@@ -1266,6 +1266,7 @@ export function npcTeklifYanit(prev: GameState, kabul: boolean, secim?: 0 | 1): 
   const k = nufusOf(s).k[t.id]; if (!k || k.ol != null) return s;
   const kp = knParam(k); const nm = kisiAdi(k, "tr");
   izEkle(s, "kapi:" + t.tur + ":" + (kabul ? 1 : 0), kabul ? "comert" : "temkin", { kisi: nm, kisiId: t.id }); // Yankı: kapıdaki insana verilen cevap
+  if (!kabul && (t.tur === "borc" || t.tur === "kefil" || t.tur === "kardes" || t.tur === "miras") && (t.id.charCodeAt(t.id.length - 1) % 2 === 0)) hatirEkle(s, t.id, "kin", "kapi_" + t.tur); // Kan Hafızası: eli boş dönen her kapı kin tutmaz; tutan unutmaz
   if (t.tur === "dugun" || t.tur === "cenaze" || t.tur === "kefil" || t.tur === "hakem" || t.tur === "imece" || t.tur === "canborcu" || t.tur === "helal" || t.tur === "araci" || t.tur === "tanidik" || t.tur === "mahkeme") { kapiYaniti(s, t, k, kabul, secim); return s; }
   if (t.tur === "kardes" || t.tur === "miras") { // kardeşe yardım / mirasta kardeş payı: verirsen kesenden çıkar, vermezsen kardeşin unutmaz
     const kk = (key: string) => (k.g === "kadın" ? key + ".k" : key); const kf = kfParam(k); const tutar = t.tutar || 0;
@@ -1540,6 +1541,8 @@ function remember(s: GameState, npc: { id: string; name: string }, tur: string, 
   const ns = npcStateOf(s, npc.id);
   if (!ns.anilar) ns.anilar = [];
   addMemory(ns.anilar, tur, s.turn, { ...opts, kaynak: npc.name });
+  const y = opts?.yuk ?? MEMORY_TYPES[tur]?.yuk ?? 0; // Kan Hafızası: ağır iyilik minnet, ağır kötülük kin olarak kalır
+  if (Math.abs(y) >= HATIR_ESIK) hatirEkle(s, npc.id, y > 0 ? "minnet" : "kin", tur, Math.abs(y) >= 30 ? 2 : 1);
 }
 // ── Sonuç tohumları (Vercel story_director sow_seed): bugün ektiğin yıllar sonra biçilir ──
 export interface Seed { id: string; kaynak: string; ekim: number; hmin: number; hmax: number; agirlik: "kucuk" | "orta" | "buyuk"; nesil: boolean; etki?: { money?: number; reputation?: number; health?: number }; npcName?: string; npcId?: string; ip?: Ip; iz?: number; } // iz: tohumu eken seçimin hafıza kaydı (Yankı)
@@ -1772,6 +1775,91 @@ export function hafizaEgilimi(h: Iz[] | undefined): IzEt | null {
 }
 export function onemliIzler(h: Iz[] | undefined, n = 5): Iz[] {
   return [...(h || [])].filter((x) => !x.ata && !x.k.startsWith("kapi:")).sort((a, b) => (b.ref || 0) - (a.ref || 0) || a.t - b.t).slice(0, n);
+}
+
+// ── KAN HAFIZASI (çığır Sütun 4): hatırlayan insanlar ──
+// Ağır bir iyilik (yardım, borçtan kurtarma, can kurtarma, düğün) minnet; ağır bir kötülük (hakaret, tehdit, dolandırıcılık,
+// saldırı) ya da eli boş çevrilen bir dar gün kin olarak kalır. Kin tutan büyür (gücü yıllar içinde artar, en sonunda kanlı hasma
+// dönüşebilir), iki yılda bir en çok bir kez geri döner; ölürse kini/minneti yetişkin evladına geçer (en çok 3 kuşak);
+// oyuncu ölünce vârise "atanın hesabı" olarak geçer. Adalet korkulukları: düşene vurulmaz (yoksul, aç, hasta iken kin geri
+// çekilir), kayıp kesenin %5'ini aşmaz, cömert/dürüst ün ve iyi ilişki barışı açar; minnet darda kalana kese olur.
+export type HatirYon = "kin" | "minnet";
+export interface Hatir { id: string; yon: HatirYon; guc: number; t: number; son?: number; don: number; nesil: number; ata?: string; kay: string; }
+export const HATIR_EN_COK = 6;
+const HATIR_ESIK = 15; // yalnız ağır anlar (yardım, kurtarma, düğün, hakaret, tehdit, dolandırıcılık…) hatır olur
+export function hatirEkle(s: GameState, id: string, yon: HatirYon, kay: string, guc = 1) {
+  if (!id || s.player.dead) return; const k = nufusOf(s).k[id]; if (!k || k.ol != null) return;
+  const h = s.hatir || (s.hatir = []);
+  const x = h.find((y) => y.id === id);
+  if (x) {
+    if (x.yon === yon) { x.guc = Math.min(5, x.guc + guc); return; }
+    x.guc -= guc; if (x.guc <= 0) h.splice(h.indexOf(x), 1); // ters yönde ağır bir an eski hesabı aşındırır
+    if (!h.length) s.hatir = undefined; return;
+  }
+  h.push({ id, yon, guc: Math.min(5, guc), t: s.turn, don: 0, nesil: 0, kay });
+  if (h.length > HATIR_EN_COK) { const zayif = [...h].sort((a, b) => a.guc - b.guc || a.t - b.t)[0]; h.splice(h.indexOf(zayif), 1); }
+}
+function hatirSil(s: GameState, x: Hatir) { const h = s.hatir; if (!h) return; const i = h.indexOf(x); if (i >= 0) h.splice(i, 1); if (!h.length) s.hatir = undefined; }
+export function hatirTick(s: GameState) {
+  const p = s.player; if (p.dead || !s.hatir?.length) return;
+  const pop = nufusOf(s); const wy = worldYears(s); const kk = (k: Kisi) => (k.g === "kadın" ? ".k" : "");
+  if (s.turn % 12 === 0) for (const x of [...s.hatir]) { // yıllık: devir ve büyüme
+    const k = pop.k[x.id];
+    if (!k || k.ol != null) {
+      const ev = (k?.cocuk || []).map((c) => pop.k[c]).find((c) => c && c.ol == null && wy - c.dy >= 16);
+      if (k && ev && x.nesil < 3 && x.guc > 1) {
+        x.id = ev.id; x.nesil++; x.guc -= 1; x.son = s.turn;
+        if (!inJail(p) && p.age >= 12) push(s, "kan_hafiza", `${kisiAdi(ev, "tr")}, ${kisiAdi(k, "tr")} ölünce onun ${x.yon === "kin" ? "kinini" : "minnetini"} devraldı.`, "kişisel", false, { k: "hatir.devir." + x.yon + kk(ev), p: [knParam(ev), knParam(k)] });
+      } else hatirSil(s, x);
+      continue;
+    }
+    if (x.yon === "kin" && x.guc < 5 && chance(0.2)) x.guc++; // kin tutan büyür: yeni dostlar, yeni kese, yeni öfke
+    if (x.yon === "kin" && x.guc >= 5 && x.don >= 1 && s.story && !s.story.nemesis && p.age >= 16 && !inJail(p) && chance(0.15)) { // büyüyen kin kanlı hasma döner
+      s.story.nemesis = { name: kisiAdi(k, "tr"), id: k.id, power: 16 + x.guc * 2 + x.nesil * 3 };
+      s.relationships[k.id] = Math.min(s.relationships[k.id] ?? 0, -60);
+      push(s, "nemesis", `${kisiAdi(k, "tr")} yıllardır biriktirdiği kinle artık açıkça karşında.`, "kişisel", true, { k: "hatir.hasim" + (x.ata ? ".ata" : "") + kk(k), p: x.ata ? [knParam(k), x.ata] : [knParam(k)] });
+      hatirSil(s, x);
+    }
+  }
+  if (!s.hatir?.length || p.age < 14 || inJail(p)) return;
+  const aday = s.hatir.filter((x) => s.turn - (x.son ?? x.t) >= 24 && pop.k[x.id] && pop.k[x.id].ol == null);
+  if (!aday.length || !chance(Math.min(0.25, 0.04 + 0.03 * aday.length))) return;
+  const x = aday.sort((a, b) => (a.son ?? a.t) - (b.son ?? b.t))[0]; const k = pop.k[x.id]; const kp = knParam(k);
+  x.son = s.turn; x.don++;
+  const infl = inflationFactor(s); const yoksul = p.money < 80 * infl || p.hunger < 25 || p.health < 30;
+  const ata = x.ata ? ".ata" : ""; const ap = x.ata ? [x.ata] : [];
+  if (x.yon === "kin") {
+    const eg = hafizaEgilimi(s.hafiza); const rel = s.relationships[x.id] ?? 0;
+    if (yoksul) { push(s, "kan_hafiza", `${kisiAdi(k, "tr")} düşmüş hâlini görünce hesabını erteledi.`, "kişisel", false, { k: "hatir.kin.cekildi" + kk(k), p: [kp] }); return; }
+    if (rel > 30 || ((eg === "comert" || eg === "durust") && chance(0.35))) {
+      hatirSil(s, x); s.relationships[x.id] = Math.max(rel, 10);
+      push(s, "kan_hafiza", `${kisiAdi(k, "tr")} ile eski hesap kapandı; selam yeniden alındı.`, "kişisel", true, { k: "hatir.kin.baris" + ata + kk(k), p: [kp, ...ap] });
+      return;
+    }
+    if (chance(0.5)) {
+      const kayip = Math.max(1, Math.min(Math.round(x.guc * 10 * infl), Math.floor(p.money * 0.05))); p.money -= kayip;
+      push(s, "kan_hafiza", `${kisiAdi(k, "tr")} eski hesabı unutmadı: işin ${kayip} akçe zarar gördü.`, "kişisel", false, { k: "hatir.kin.para." + (x.ata ? "ata" : String(x.don % 2)) + kk(k), p: [kp, kayip, ...ap] });
+    } else {
+      p.reputation = Math.max(-100, p.reputation - x.guc);
+      push(s, "kan_hafiza", `${kisiAdi(k, "tr")} çarşıda adını kötüye çıkardı.`, "kişisel", false, { k: "hatir.kin.ad." + (x.ata ? "ata" : String(x.don % 2)) + kk(k), p: [kp, ...ap] });
+    }
+    if (x.don >= 3) { x.guc--; if (x.guc <= 0) hatirSil(s, x); } // üç kez dönen kin yorulur
+  } else {
+    if (yoksul) {
+      const para = Math.round((20 + x.guc * 10) * infl); p.money += para;
+      push(s, "kan_hafiza", `${kisiAdi(k, "tr")} darda olduğunu duydu; ${para} akçeyle geldi.`, "kişisel", true, { k: "hatir.minnet.para" + ata + kk(k), p: [kp, para, ...ap] });
+    } else {
+      p.reputation = Math.min(100, p.reputation + 1 + Math.floor(x.guc / 2));
+      push(s, "kan_hafiza", `${kisiAdi(k, "tr")} iyiliğini çarşıda anlattı.`, "kişisel", false, { k: "hatir.minnet.ad." + (x.ata ? "ata" : String((x.t + x.don) % 3)) + kk(k), p: [kp, ...ap] });
+    }
+    if (x.don >= 2 || !yoksul) hatirSil(s, x); // hatır borcu ödendi (darda kalana iki kez el uzanır, gerisinde bir kez anılır)
+  }
+}
+// Vâris atanın hesaplarını devralır: kin bir kademe söner, minnet olduğu gibi kalır; yalnız yaşayan kişiler.
+export function hatirMiras(prev: GameState): Hatir[] | undefined {
+  const pop = nufusOf(prev);
+  const h = (prev.hatir || []).filter((x) => pop.k[x.id] && pop.k[x.id].ol == null).map((x) => ({ ...x, guc: x.yon === "kin" ? x.guc - 1 : x.guc, ata: x.ata || prev.player.name, son: prev.turn - 12 })).filter((x) => x.guc > 0);
+  return h.length ? h : undefined;
 }
 
 // ── Kader İpi: söz ver, sakla, öde (çığır tasarımı Sütun 1 + 3) ──
@@ -2102,6 +2190,7 @@ export interface GameState {
   recent_dilemmas?: string[]; // son görülen ikilem id'leri (ring 6) — dar havuzlarda aynı sahnenin üst üste gelmesi önlenir
   sahne_izi?: string[]; // ayın sahnesi (ayinSahnesi) son 12 ayda hangi türdendi — tekdüzelik nöbetçisi
   orta_son?: number; // son orta yaş sorusunun turu (30–55 yaş arası her 18 ayda en az bir soru)
+  hatir?: Hatir[]; // Kan Hafızası: oyuncuya (ya da atasına) kin ya da minnet besleyen kişiler
   hafiza?: Iz[]; // Yankı: oyuncunun büyük seçimlerinin kalıcı kaydı — sonraki olaylar, yaylar ve vâris bunu okur
   hafiza_seq?: number;
 }
@@ -3365,6 +3454,7 @@ export function advance(prev: GameState, n = 1): GameState {
     gossipTick(s); // tanıklı skandallar → oyuncu söylentileri (haftalık)
     ipTick(s);     // kader ipleri: olgunlaşan büyük tohum görünür olur, vadesi dolan ip sebebiyle ödenir
     yankiTick(s);  // Yankı: eski bir seçim eğilimine göre geri döner
+    hatirTick(s);  // Kan Hafızası: kin tutan ve hatır borçlu insanlar büyür, geri döner, evlatlarına devreder
     seedTick(s);   // geçmişin tohumları filizlenir (haftalık en çok 1)
     // Süregelen evlat eğitimi: haftalık masraf düşer, birikim vâris olunca bonusa döner (Vercel child_investment_tick).
     if (s.player.child_edu) {
@@ -7369,7 +7459,7 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
     // Sadece nesil aşabilen tohumlar vârise geçer. Vârisin turu 0'dan başladığı için ekim'i yeniden
     // tabanla (ekim -= prev.turn): birikmiş yaş korunur, yoksa yas=turn-ekim negatif kalıp tohum hiç olgunlaşmaz.
     seeds: (prev.seeds || []).filter((t) => t.nesil).map((t) => ({ ...t, ekim: t.ekim - prev.turn })),
-    hafiza: ataIzleri(prev), hafiza_seq: prev.hafiza_seq, // Yankı: atanın en çok anılan üç kararı vârisin kasabasında yankılanır
+    hafiza: ataIzleri(prev), hafiza_seq: prev.hafiza_seq, hatir: hatirMiras(prev), // Yankı: atanın en çok anılan üç kararı vârisin kasabasında yankılanır
     player_rumors: [],
     player: {
       name: surname ? `${heir} ${surname}` : heir, surname, gender: CHILD_F.has(heir) ? "kadın" : "erkek",
@@ -10737,6 +10827,10 @@ export function migrate(s: GameState): GameState {
     s.hafiza = Array.isArray(s.hafiza) ? s.hafiza.filter((x) => x && typeof x === "object" && Number.isFinite(x.n) && typeof x.k === "string" && Number.isFinite(x.t) && IZ_ETLERI.includes(x.et)).map((x) => ({ ...x, ref: Number.isFinite(x.ref) ? x.ref : undefined, ata: typeof x.ata === "string" ? x.ata : undefined, kisi: typeof x.kisi === "string" ? x.kisi : undefined, kisiId: typeof x.kisiId === "string" ? x.kisiId : undefined })).slice(-HAFIZA_EN_COK) : undefined;
   }
   if (s.hafiza_seq != null && !Number.isFinite(s.hafiza_seq)) s.hafiza_seq = undefined;
+  if (s.hatir != null) { // Kan Hafızası: bozuk kayıt ayıklanır
+    s.hatir = Array.isArray(s.hatir) ? s.hatir.filter((x) => x && typeof x === "object" && typeof x.id === "string" && (x.yon === "kin" || x.yon === "minnet") && Number.isFinite(x.guc) && x.guc > 0 && Number.isFinite(x.t)).slice(-HATIR_EN_COK).map((x) => ({ id: x.id, yon: x.yon, guc: Math.min(5, Math.max(1, Math.floor(x.guc))), t: x.t, son: Number.isFinite(x.son) ? x.son : undefined, don: Number.isFinite(x.don) ? Math.max(0, x.don) : 0, nesil: Number.isFinite(x.nesil) ? Math.max(0, x.nesil) : 0, ata: typeof x.ata === "string" && x.ata ? x.ata : undefined, kay: typeof x.kay === "string" ? x.kay : "" })) : undefined;
+    if (s.hatir && !s.hatir.length) s.hatir = undefined;
+  }
   if (s.player && s.player.soy_yetenek != null && !SOY_YETENEKLERI.some((x) => x.id === s.player.soy_yetenek)) s.player.soy_yetenek = undefined;
   if (s.hafiza?.length && !(s.hafiza_seq! >= Math.max(...s.hafiza.map((x) => x.n)))) s.hafiza_seq = Math.max(...s.hafiza.map((x) => x.n));
   if (Array.isArray(s.seeds)) for (const t of s.seeds) if (t && t.iz != null && !Number.isFinite(t.iz)) delete t.iz;
