@@ -10366,6 +10366,15 @@ function merdivenGoc(s: GameState, m: Record<string, number[]>) {
 }
 export function migrate(s: GameState): GameState {
   const p: any = s.player || {};
+  // Onarım: yarım yazılmış / elle düzenlenmiş kayıtta çekirdek alanlar eksik ya da sayı-dışıysa motor ilk ayda çökmesin (göç-fuzz denetimi).
+  if (!Number.isFinite(s.turn)) s.turn = 0;
+  if (!Array.isArray(s.history)) s.history = [];
+  if (!Array.isArray(p.children)) p.children = [];
+  if (!p.stats || typeof p.stats !== "object") p.stats = { strength: 1, intelligence: 1, charisma: 1, stamina: 1 };
+  for (const k of ["strength", "intelligence", "charisma", "stamina"]) if (!Number.isFinite(p.stats[k])) p.stats[k] = 1;
+  const SAYI_VARSAYILAN: Record<string, number> = { money: 0, health: 60, hunger: 60, reputation: 0, honor: 0, fear: 0, fame: 0 };
+  for (const [k, v] of Object.entries(SAYI_VARSAYILAN)) if (!Number.isFinite(p[k])) p[k] = v;
+  if (typeof p.location_name !== "string" || !p.location_name) p.location_name = typeof p.home_name === "string" && p.home_name ? p.home_name : LOCATIONS[0];
   if (p.faction === undefined) p.faction = null;
   if (p.horse && !p.horse_name) p.horse_name = evcilAd(s, "at"); // eski kayıt: at adları sonradan geldi — adsız at cümleyi bozmasın
   if (!p.faction_standing) p.faction_standing = {};
@@ -10380,7 +10389,7 @@ export function migrate(s: GameState): GameState {
   if (!p.skill_xp) p.skill_xp = { combat: 0, trade: 0, crafting: 0, social: 0 };
   if (!p.perks) p.perks = [];
   if (!p.injuries) p.injuries = [];
-  if (p.career_xp === undefined) p.career_xp = 0;
+  if (!Number.isFinite(p.career_xp)) p.career_xp = 0;
   if (!p.nam) p.nam = { comert: 0, zalim: 0, capkin: 0, dindar: 0, mert: 0 };
   if (!p.child_invests) p.child_invests = {};
   if (!p.equipped) p.equipped = { silah: null, zirh: null };

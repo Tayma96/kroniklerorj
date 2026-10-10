@@ -3,6 +3,19 @@ const g = require(process.env.SMOKE_BUNDLE || "/tmp/kronikler-game-bundle.cjs");
 const LIVES = parseInt(process.env.SMOKE_LIVES || "300", 10);
 const R = (a) => a[Math.floor(Math.random() * a.length)];
 let errors = 0; const died = [];
+// Her ay sonunda motor değişmezleri: sayılar sonlu, kese eksiye düşmez, can/açlık 0–100, itibar eksenleri ±100, kademe merdivende.
+function degismezIhlali(s) {
+  const p = s.player;
+  for (const k of ["money", "health", "hunger", "reputation", "honor", "fear", "fame", "age", "career_xp"]) if (typeof p[k] !== "number" || !Number.isFinite(p[k])) return k + "=" + p[k];
+  for (const k of Object.keys(p.stats || {})) if (!Number.isFinite(p.stats[k])) return "stats." + k;
+  if (p.money < 0) return "money " + p.money;
+  if (p.health < 0 || p.health > 100 || p.hunger < 0 || p.hunger > 100) return "health/hunger " + p.health + "/" + p.hunger;
+  for (const k of ["reputation", "honor", "fear", "fame"]) if (p[k] < -100 || p[k] > 100) return k + " " + p[k];
+  const pr = g.professionById(p.profession); if (pr && ((p.kademe ?? 0) < 0 || (p.kademe ?? 0) > pr.tiers.length - 1)) return "kademe " + p.kademe;
+  if (!Number.isFinite(s.world && s.world.inflation)) return "inflation";
+  for (const x of p.properties || []) if (!(x.cond >= 0 && x.cond <= 100)) return "mülk cond " + x.cond;
+  return null;
+}
 for (let i = 0; i < LIVES; i++) {
   try {
     let s = g.newGame("Sim", "Test", Math.random() < 0.5 ? "erkek" : "kadın");
@@ -59,12 +72,16 @@ for (let i = 0; i < LIVES; i++) {
             const c = g.yakinCember(s, R(["tr", "ar"])); if (c.length > g.CEMBER_MAX || new Set(c.map((x) => x.npc.id)).size !== c.length) throw new Error("yakın çember bozuk"); }
         } catch (e) { errors++; if (errors <= 5) console.log("OKUMA HATASI:", e.message); }
         try { if (!s.npcTeklif && Math.random() < 0.15) s = g.kapiyaGelen(s); if (s.npcTeklif && Math.random() < 0.6) s = g.npcTeklifYanit(s, Math.random() < 0.5, Math.random() < 0.5 ? 0 : 1); } catch (e) { errors++; if (errors <= 5) console.log("TEKLİF HATASI:", e.message); } // NPC'nin kendi teklifi (dünürcü/borç)
+        try { // ahilik: hizmet dolunca peştamal sınavına gir (zirve bonusu, kalma bekleme ve kademe yolu da koşar)
+          const sd = g.sinavDurumu(s); if (sd && sd.hazir && Math.random() < 0.6) s = g.ustalikSinavi(s, R([0, 1, 2])).state;
+        } catch (e) { errors++; if (errors <= 5) console.log("SINAV HATASI:", e.message); }
         try { // çırak: usta olunca al, çoğu zaman ders ver (bazen ihmal et → kaçış yolu da koşar)
           if (g.cirakAlabilir(s.player, s.turn) && Math.random() < 0.15) s = g.cirakAl(s, R([0, 1, 2]));
           if (g.cirakDersHazir(s) && Math.random() < 0.6) s = g.cirakDers(s);
         } catch (e) { errors++; if (errors <= 5) console.log("ÇIRAK HATASI:", e.message); }
       }
       s = g.advance(s, 1);
+      const ih = degismezIhlali(s); if (ih) { errors++; if (errors <= 5) console.log("DEĞİŞMEZ İHLALİ (yaş " + s.player.age + "):", ih); }
     }
     died.push(s.player.age);
   } catch (e) { errors++; if (errors <= 5) console.log("DÖNGÜ HATASI:", e.message); }
