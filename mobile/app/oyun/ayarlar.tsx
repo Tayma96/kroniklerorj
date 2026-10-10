@@ -77,6 +77,16 @@ export default function Ayarlar() {
           <Text style={{ fontFamily: F.display, fontSize: 16, color: C.goldDim }}>›</Text>
         </Pressable>
 
+        {/* Emeği Geçenler: üçüncü taraf atıfları ve lisanslar (CC BY simgeler, OFL yazı tipleri, YZ görselleri) */}
+        <Pressable onPress={() => { hap("tap"); router.push("/oyun/emek"); }} style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, padding: 14, marginBottom: 14 }}>
+          <GameIcon name="scroll" size={20} color={C.gold} />
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: C.parchment }}>{t("scr.emek")}</Text>
+            <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted, marginTop: 3 }}>{t("settings.emekDesc")}</Text>
+          </View>
+          <Text style={{ fontFamily: F.display, fontSize: 16, color: C.goldDim }}>›</Text>
+        </Pressable>
+
         {/* Dil */}
         <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 2, color: C.gold, marginBottom: 8, textTransform: "uppercase" }}>{t("menu.language")}</Text>
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>

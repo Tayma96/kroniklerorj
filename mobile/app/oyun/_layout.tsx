@@ -173,6 +173,7 @@ export default function OyunLayout() {
         {/* Gizli (sekmede görünmez ama navigasyonla açılır) */}
         <Tabs.Screen name="pazar" options={{ href: null }} />
         <Tabs.Screen name="sss" options={{ href: null }} />
+        <Tabs.Screen name="emek" options={{ href: null }} />
         <Tabs.Screen name="sehir" options={{ href: null }} />
         <Tabs.Screen name="meslek" options={{ href: null }} />
         <Tabs.Screen name="suc" options={{ href: null }} />

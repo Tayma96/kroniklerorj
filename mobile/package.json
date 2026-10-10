@@ -40,5 +40,6 @@
     "typecheck": "tsc --noEmit",
     "smoke": "esbuild lib/game.ts --bundle --platform=node --format=cjs --outfile=/tmp/kronikler-game-bundle.cjs --log-level=error && node scripts/_smoke/run.cjs"
   },
-  "private": true
+  "private": true,
+  "license": "UNLICENSED"
 }

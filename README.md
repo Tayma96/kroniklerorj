@@ -60,6 +60,8 @@ node scripts/_smoke/dil-karisma.cjs               # dil karışması → "DİL K
 node scripts/_smoke/olu-karar.cjs                 # ölü karar → "ÖLÜ KARAR: TEMİZ"
 node scripts/_smoke/migrate-check.cjs             # eski kayıt göçü
 node scripts/_smoke/run-parallel.cjs              # 300 hayatlık smoke, çekirdeklere bölünmüş → "HATA: 0"
+node scripts/_smoke/diyalog.cjs                   # sohbet katmanları, 6 dil × 2 cinsiyet → "DİYALOG: TEMİZ"
+node scripts/_smoke/ekonomi.cjs 80                # pasif/etkin/usta oyuncunun 20/40/60 yaş kesesi (denge ölçümü)
 ```
 
 Sunucu: `cd server && npm ci && npx tsc --noEmit`. (`server/test/` canlı sunucuya bağlanır; bilerek koşulur.)
@@ -100,4 +102,6 @@ Geliştirme ve yayın **`apk`** dalındadır (varsayılan dal). Commit mesajlar�
 
 ## Lisans
 
-Özel (proprietary) proje; depo herkese açık değildir.
+Özel (proprietary) proje, tüm hakları saklıdır — bkz. [`LICENSE`](LICENSE); depo herkese açık değildir.
+Üçüncü taraf yazı tipleri (OFL), simgeler (game-icons.net, CC BY 3.0), yapay zekâ görselleri ve MIT kütüphaneler
+kendi lisanslarıyla kullanılır: [`mobile/UCUNCU-TARAF.md`](mobile/UCUNCU-TARAF.md) ve oyunda **Ayarlar → Emeği Geçenler**.

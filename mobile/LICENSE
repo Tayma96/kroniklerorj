@@ -1,3 +1,16 @@
+Kronikler mobil uygulaması — lisans
+==================================
+
+Bu klasördeki oyun kodu ve içeriği özeldir (tüm hakları saklıdır); bkz. deponun kökündeki
+LICENSE dosyası. Üçüncü taraf parçaların dökümü: UCUNCU-TARAF.md.
+
+Not: Bu klasör eskiden Expo şablonundan gelen MIT lisans metnini taşıyordu; bu metin oyunun
+lisansı DEĞİLDİR. Proje iskeleti Expo şablonuyla başlatıldığından şablonun telif bildirimi
+aşağıda üçüncü taraf bildirimi olarak korunmuştur.
+
+-------------------------------------------------------------------------------
+Expo project template — third-party notice
+
 The MIT License (MIT)
 
 Copyright (c) 2015-present 650 Industries, Inc. (aka Expo)
