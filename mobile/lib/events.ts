@@ -1055,6 +1055,25 @@ export const DILEMMAS: Dilemma[] = [
       { label: "İki karışı hediye say", delta: { money: -15, reputation: 6, nam: { comert: 2 } }, result: "'Duvar senin olsun, gölgesi bize yeter' dedin. Söz mahallede dolaştı; iki karış toprak, iki kat hayır dua getirdi." },
     ],
   },
+  // ── Mülk ve yaşlılık: tapunun ve ak saçın getirdiği ikilemler ──
+  {
+    id: "mulk_kiraci_dert", icon: "house", title: "Kiracının Derdi",
+    text: "Evindeki kiracı kapında, elinde boş kese: çocuğu sıtmaya tutulmuş, bu ayın kirası hekime gitmiş. «Hasatta öderim» diyor, gözü yerde.",
+    when: (p) => p.age >= 18 && p.properties.some((pr) => pr.type === "ev" && !!pr.tenant),
+    choices: [
+      { label: "Bu ayın kirasını helal et", delta: { money: -10, honor: 3, nam: { comert: 2 } }, result: "Adam eşikte elini öpmeye davrandı. Çocuk iyileşti; o güz evin damı senden istenmeden aktarıldı." },
+      { label: "Kirayı iste; söz sözdür", delta: { money: 6, reputation: -2, nam: { zalim: 1 } }, result: "Kiracı yorganını rehin bıraktı. Kese doğru saydı ama mahallede bir süre «kirayı hastadan alan» diye anıldın." },
+    ],
+  },
+  {
+    id: "yasli_cesme", icon: "coins", title: "Yol Kenarında Çeşme",
+    text: "Saçların ağardı. Köy ihtiyarları diyor ki: kervan yoluna bir çeşme yaptırsan, su aktıkça adın anılır. Taş ustası yüz akçeye razı.",
+    when: (p) => p.age >= 58 && p.money >= 200,
+    choices: [
+      { label: "Çeşmeyi yaptır, kitabesine adın yazılsın", delta: { money: -100, fame: 3, honor: 2, nam: { dindar: 2 } }, result: "Taş oyuldu, lüle takıldı, su aktı. Kervancılar matarasını doldururken kitabeyi okuyup dua ediyor." },
+      { label: "Akçeyi evlatların yarınına sakla", delta: { reputation: 1 }, result: "Sandık kapandı. Ev halkı bir şey demedi; ama sofrada gelinler daha bir rahat güldü." },
+    ],
+  },
   // ── Yoldaşlara tepki veren ikilemler: köpeği/kedisi olanın kapısını dünya başka çalar ──
   {
     id: "tavuk_davasi", icon: "scales", title: "Tavuk Davası",
