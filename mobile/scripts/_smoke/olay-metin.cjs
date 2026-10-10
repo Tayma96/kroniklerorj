@@ -10,7 +10,7 @@ try { execSync(`${ESBUILD} "${giris}" --bundle --format=cjs --platform=node --ou
 finally { fs.unlinkSync(giris); }
 const { g, renderEvt, tFor } = require(`${tmp}/o.cjs`);
 // Çevrilmemiş ham anahtar (ör. "wev.balıkçı.5.lose") metne sızmasın
-const HAM_ANAHTAR = /\b(wev|evj|ev|npct|npca|npci|npclife|flav|kan|mem|seed|prof|chip|rumor|sans|sk|cember|ah|kd|hesap|saga|bl|epoch|crown|horse|fsig|cb|mev|pp|soc)\.[A-Za-zçğıöşüÇĞİÖŞÜ0-9_]+(\.[A-Za-zçğıöşü0-9_]+)*/;
+const HAM_ANAHTAR = /\b(dil|arc|yanki|soy|roman|ip|wev|evj|ev|npct|npca|npci|npclife|flav|kan|mem|seed|prof|chip|rumor|sans|sk|cember|ah|kd|hesap|saga|bl|epoch|crown|horse|fsig|cb|mev|pp|soc)\.[A-Za-zçğıöşüÇĞİÖŞÜ0-9_]+(\.[A-Za-zçğıöşü0-9_]+)*/;
 const LANGS = ["tr", "en", "es", "pt", "ar", "ru"]; const R = (a) => a[Math.floor(Math.random() * a.length)];
 const HAYAT = +(process.argv[2] || 40); let sorun = 0, toplam = 0; const ornek = []; const goruldu = new Set();
 for (let h = 0; h < HAYAT; h++) {

@@ -152,3 +152,24 @@ kaydı (iz) olur, iz bir eğilim etiketi taşır, sonraki olaylar ve yaylar bu h
 - Ekranlar: `app/oyun/kronik.tsx` (Menü → Kayıt & Anı), `app/oyun/ocak.tsx`, vâris ekranında `lib/soy-ui.tsx YetenekSecici`.
 - Denetçi: `scripts/_smoke/defter-check.cjs` (artı+bedel, 6 dil, göç fuzz/idempotent, resetGame defteri silmez,
   5 nesil zinciri: başlangıç gücü birikmez, ilk 20 yıl medyan para kayması ≤%10, torunda ata yankısı).
+
+## 10. Hayat Romanı (paylaşım)
+
+- `lib/roman.ts hayatRomani(s)`: Yankı hafızasından {k,p} satırları — açılış (yaş), soy/kuşak (ata izi), hayatın ipliği (baskın eğilim),
+  en çok anılan üç dönüm (yaş + kart/yay BAŞLIĞI + eğilim; sonuç yazılmaz), "bildik yoldan dönüş" (baskın eğilimin ≥2 izinden sonra
+  gelen ilk ters iz), büyük karar / geri dönen sayısı, kapı cevapları, tamamlanan yaylar, ölüm sıfatı ya da "defter açık".
+- `app/oyun/roman.tsx`: ekranda paylaşım kartı + RN `Share` ile aynı satırlar (görüntü yakalama kütüphanesi yok → metin paylaşımı). Ağ yok.
+- Denetçi `scripts/_smoke/roman-check.cjs`: ikiz tohumlu hayatlar, 6 dil × kadın/erkek temiz basım, dönüm satırı gerçek ize dayanır,
+  spoiler sızmaz, ≤900 karakter, ikiz romanların ≥%80'i farklı.
+- **Düzeltilen hata (adım 1'den):** TR'de ikilem başlıkları sözlükte değil `events.ts`'teydi; `{sfx:"dil.<id>.t"}` yankı satırları
+  TR'de ham anahtar basıyordu. Üretici artık tüm ikilem başlıklarını TR sözlüğüne (i18n-cigir) yazar; `olay-metin` ham anahtar
+  süzgecine `dil|arc|yanki|soy|roman|ip` eklendi.
+
+## 11. Kalanlar (çığır)
+
+- Divan Davası (Sütun C) bu turda bırakıldı (commitlenmemişti).
+- Fısıltı (`fis.*`) satırları Yankı'ya bağlanmadı; `seed.*` satırı olmayan divan tohumları BUYUK_IP dışında.
+- Şenlik ayları ayların ~%24'ü (önceden de böyleydi); yönetmen ileride şenlik sıklığını eğriye bağlayabilir.
+- Tek yönlü ikilemler (gec_kutuk, cocuk_cirak, sifa_otu, yasli_sandik, orta_ana) ikinci eğilim kazanabilir.
+- Paylaşım kartı görüntü olarak (view-shot) değil metin olarak paylaşılır; bağımlılık eklenirse kart `View` hazır.
+- Yeni oyun ekranı (`/yeni-oyun`) defterdeki soyu henüz önermiyor; şimdilik yalnız ölüm akışı ve "Küllerden yeni ocak".

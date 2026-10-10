@@ -6,6 +6,7 @@ import { WEEKS_PER_YEAR } from "../../lib/calendar";
 import { useI18n, applyParams, renderEvt } from "../../lib/i18n";
 import { careerTitleL } from "../../lib/locale-data";
 import { kariyerXp } from "../../lib/game";
+import { hayatRomani } from "../../lib/roman";
 import { C, F } from "../../lib/theme";
 import { BackLabel } from "../../lib/ui";
 
@@ -64,16 +65,14 @@ export default function Roman() {
 
   // «… olarak anıldı»: peştamalla kazanılan unvan, kadına dişil kalıp ve dişil unvan (paylaşım kartı ve mersiye aynı satırı kullanır).
   const anildi = (pl: typeof state.player) => { const kadin = pl.gender === "kadın"; const fk = t("rom.t.recalled.f"); return (kadin && fk !== "rom.t.recalled.f" ? fk : t("rom.t.recalled")).replace("%s", careerTitleL(pl.profession, kariyerXp(pl), lang, kadin)); };
-  // Hayat romanı paylaşım kartı (metin): isim + kısa künye + kapanış + oyun adı. RN yerleşik Share (ek bağımlılık yok).
+  // Hayat Romanı (Yankı): hafızadaki seçimlerden kısa, spoiler'sız hikâye — ekranda kart, paylaşımda aynı satırlar.
+  // RN yerleşik Share (ek bağımlılık, ağ, sunucu yok); görüntü yakalama kütüphanesi olmadığı için kart ekranda çizilir, metin paylaşılır.
+  const kadin = state.player.gender === "kadın";
+  const roman = hayatRomani(state).satirlar.map((x) => renderEvt(x.k, "", x.p, lang, t, kadin)).filter(Boolean);
   const onShare = () => {
     const pl = state.player;
-    const tally = [
-      t("rom.t.lived").replace("%n", String(pl.age)),
-      pl.profession !== "işsiz" ? anildi(pl) : null,
-      pl.children.length ? t("rom.t.children").replace("%n", String(pl.children.length)) : null,
-      pl.fame >= 50 ? t("rom.t.famed") : null,
-    ].filter(Boolean).join(" · ");
-    const msg = `${pl.name} — ${tally}.\n${pl.dead ? t("rom.closeDead") : t("rom.closeAlive")}\n\nKronikler: Küllerin Mirası`;
+    const kunye = pl.profession !== "işsiz" ? anildi(pl) + "." : "";
+    const msg = `❧ ${t("roman.kart")} ❧\n${roman.join("\n")}${kunye ? "\n" + kunye : ""}\n\nKronikler: Küllerin Mirası`;
     Share.share({ message: msg }).catch(() => {});
   };
 
@@ -84,6 +83,16 @@ export default function Roman() {
       <Text style={{ fontFamily: F.display, fontSize: 24, color: C.gold, textAlign: "center", marginTop: 8 }}>{state.player.name}</Text>
       <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.parchmentMuted, textAlign: "center", marginBottom: 4 }}>{t("rom.subtitle")}</Text>
       <Text style={{ color: C.gold, textAlign: "center", marginVertical: 14 }}>❧ ⚜ ❧</Text>
+
+      {/* Paylaşım kartı: Yankı hafızasından hayatın romanı */}
+      <View style={{ borderWidth: 1.5, borderColor: "rgba(201,168,76,0.55)", borderRadius: 14, paddingVertical: 18, paddingHorizontal: 16, marginBottom: 12, backgroundColor: C.card }}>
+        <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 3, color: C.gold, textAlign: "center" }}>❧ {t("roman.kart")} ❧</Text>
+        <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted, textAlign: "center", marginTop: 3, marginBottom: 10 }}>{t("roman.alt")}</Text>
+        {roman.map((line, i) => (
+          <Text key={i} style={{ fontFamily: i === 0 ? F.display : F.serif, fontSize: i === 0 ? 14 : 13, lineHeight: 20, color: i === 0 ? C.parchment : C.parchmentDim, textAlign: "center", marginBottom: 5 }}>{line}</Text>
+        ))}
+        <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 2, color: C.goldDim, textAlign: "center", marginTop: 8 }}>KRONIKLER · ⚜</Text>
+      </View>
 
       <Pressable onPress={onShare} style={{ alignSelf: "center", flexDirection: "row", alignItems: "center", gap: 7, paddingVertical: 8, paddingHorizontal: 18, borderRadius: 9, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: "rgba(201,168,76,0.10)", marginBottom: 18 }}>
         <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 1, color: C.gold }}>{t("rom.share")}</Text>
