@@ -3,9 +3,10 @@
 // Amaç: yaptıkların boş kalmıyor mu, iyilik ve zulüm farklı karşılık buluyor mu? Kullanım:
 //   node scripts/_smoke/karakter-ayna.cjs        (H=hayat sayısı, varsayılan 12 · SIK=kaç ayda bir dokunuş, varsayılan 1)
 // Beklenen yön: yardımseverde dost/olumlu hamle/teklif, zalimde hasım/hamle/kaçan/yüzüne vuran; vârise bakış işaretiyle taşınır.
+const ESBUILD = require("./esbuild-yolu.cjs");
 const path = require("path"); const fs = require("fs"); const os = require("os"); const { execSync } = require("child_process");
 const kok = path.join(__dirname, "..", ".."); const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "ayna-"));
-try { execSync(`npx esbuild "${path.join(kok, "lib/game.ts")}" --bundle --format=cjs --platform=node --outfile="${tmp}/g.cjs" --log-level=error`, { cwd: kok, stdio: "inherit" }); } catch (e) { process.exit(1); }
+try { execSync(`${ESBUILD} "${path.join(kok, "lib/game.ts")}" --bundle --format=cjs --platform=node --outfile="${tmp}/g.cjs" --log-level=error`, { cwd: kok, stdio: "inherit" }); } catch (e) { process.exit(1); }
 const g = require(`${tmp}/g.cjs`);
 const HAYAT = +(process.env.H || 12);
 const grup = (huy) => ["dindar", "mert", "ciddi"].includes(huy) ? "ilkeli" : ["kurnaz", "hırslı", "kibirli"].includes(huy) ? "çıkarcı" : ["utangaç", "dertli", "yalnız", "sabırlı", "unutkan"].includes(huy) ? "çekingen" : "sıcak";

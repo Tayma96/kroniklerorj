@@ -4,13 +4,14 @@
 // (korku, zalim/çapkın nâmı, eşya). Riskli seçenekte (risk) iki sonucun ikisi de öbürünü yenmeli ya da ikisi de yenilmeli.
 // Hikâye yaylarında yalnız aynı yere varan (ikisi de biten ya da aynı sahneye geçen) seçenekler karşılaştırılır.
 // Kullanım: node scripts/_smoke/olu-karar.cjs   → "ÖLÜ KARAR: TEMİZ" ya da liste (exit 1)
+const ESBUILD = require("./esbuild-yolu.cjs");
 const { execSync } = require("child_process");
 const os = require("os"); const fs = require("fs"); const path = require("path");
 const mobile = path.join(__dirname, "..", "..");
 const giris = path.join(os.tmpdir(), `kronikler-olu-giris-${process.pid}.ts`);
 const paket = path.join(os.tmpdir(), `kronikler-olu-${process.pid}.cjs`);
 fs.writeFileSync(giris, `export { DILEMMAS, FESTIVALS } from ${JSON.stringify(path.join(mobile, "lib/events"))};\nexport { ARCS } from ${JSON.stringify(path.join(mobile, "lib/arcs"))};\nexport { DILEMMA_SEEDS } from ${JSON.stringify(path.join(mobile, "lib/game"))};\n`);
-execSync(`npx esbuild ${giris} --bundle --platform=node --format=cjs --outfile=${paket} --log-level=error`, { cwd: mobile, stdio: "inherit" });
+execSync(`${ESBUILD} ${giris} --bundle --platform=node --format=cjs --outfile=${paket} --log-level=error`, { cwd: mobile, stdio: "inherit" });
 const B = require(paket); fs.unlinkSync(giris); fs.unlinkSync(paket);
 
 const SIRALI = ["money", "health", "hunger", "reputation", "honor", "fame", "stat_points", "standing", "nam.comert", "nam.dindar", "nam.mert"]; // çok = iyi

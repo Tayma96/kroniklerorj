@@ -26,12 +26,12 @@ jobs:
           cache-dependency-path: mobile/package-lock.json
       - name: Bagimliliklar (mobile)
         working-directory: mobile
-        run: npm install --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
       - name: Kalite kapisi (tsc + 300-hayat smoke) — kirik mantik APK'ya binmesin
         working-directory: mobile
         run: |
           npx tsc --noEmit
-          npx esbuild lib/game.ts --bundle --platform=node --format=cjs --outfile=/tmp/kronikler-game-bundle.cjs --log-level=error
+          npx --no-install esbuild lib/game.ts --bundle --platform=node --format=cjs --outfile=/tmp/kronikler-game-bundle.cjs --log-level=error
           node scripts/_smoke/run.cjs
           node scripts/_smoke/migrate-check.cjs
 
@@ -60,7 +60,7 @@ jobs:
           restore-keys: gradle-${{ runner.os }}-
       - name: Bagimliliklar (mobile)
         working-directory: mobile
-        run: npm install --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
       - name: Surum (tek kaynak mobile/app.json — ezilmez; artirmak icin scripts/surum-artir.cjs)
         working-directory: mobile
         run: node scripts/surum-artir.cjs --goster

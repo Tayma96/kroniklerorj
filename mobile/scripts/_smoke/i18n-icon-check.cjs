@@ -1,4 +1,5 @@
 // Tam tarama: (1) 6 dil anahtar tamlığı, (2) %N placeholder tutarlılığı, (3) kullanılan k/t anahtarlarının varlığı, (4) GameIcon ad geçerliliği.
+const ESBUILD = require("./esbuild-yolu.cjs");
 const fs = require("fs");
 const path = require("path");
 const { execSync } = require("child_process");
@@ -8,7 +9,7 @@ const BUNDLE = path.join(ROOT, "node_modules/.cache/kronikler-i18n-bundle.cjs");
 
 // 1) i18n.tsx'i DICTS'i dışa açan footer ile paketle (react vb. external — bundle node_modules içinde olduğundan çözülür)
 execSync(
-  `npx esbuild lib/i18n.tsx --bundle --platform=node --format=cjs ` +
+  `${ESBUILD} lib/i18n.tsx --bundle --platform=node --format=cjs ` +
     `--external:react --external:react-native --external:@react-native-async-storage/async-storage ` +
     `--footer:js="module.exports.__DICTS = Object.fromEntries(Object.entries(DICT_BUILDERS).map(([k,f])=>[k,f()]));" --outfile=${BUNDLE}`,
   { cwd: ROOT, stdio: "pipe" }

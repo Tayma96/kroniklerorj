@@ -1,6 +1,7 @@
 // Dil karışması bekçisi: her dilin son sözlüğünde (tüm ek sözlükler birleşmiş hâlde) başka dilin metni var mı?
 // Yazı sistemi kesin ayırt eder: Arapça sözlükte Arap harfi, Rusçada Kiril şart; diğerlerinde bu ikisi olmamalı;
 // Latin dillerde Türkçe metin TR ile birebir aynıysa çevrilmemiş sayılır. (Geçmişte 7 yayın metni bir dil kaymıştı.)
+const ESBUILD = require("./esbuild-yolu.cjs");
 const path = require("path"); const fs = require("fs"); const os = require("os");
 const kok = path.join(__dirname, "..", "..");
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "dil-"));
@@ -8,7 +9,7 @@ const kopya = path.join(kok, "lib", "_dil_kopya.tsx");
 fs.writeFileSync(kopya, fs.readFileSync(path.join(kok, "lib", "i18n.tsx"), "utf8").replace("function dictFor(lang: Lang): Dict {", "export function dictFor(lang: Lang): Dict {"));
 const giris = path.join(kok, "_dil_giris.ts"); fs.writeFileSync(giris, 'export { dictFor } from "./lib/_dil_kopya";\n');
 const cikti = path.join(tmp, "dil.cjs");
-try { require("child_process").execSync(`npx esbuild "${giris}" --bundle --format=cjs --platform=node --outfile="${cikti}" --log-level=error`, { cwd: kok, stdio: "inherit" }); }
+try { require("child_process").execSync(`${ESBUILD} "${giris}" --bundle --format=cjs --platform=node --outfile="${cikti}" --log-level=error`, { cwd: kok, stdio: "inherit" }); }
 finally { fs.unlinkSync(kopya); fs.unlinkSync(giris); }
 const { dictFor } = require(cikti);
 const LS = ["tr", "en", "es", "pt", "ar", "ru"]; const D = {}; for (const L of LS) D[L] = dictFor(L);

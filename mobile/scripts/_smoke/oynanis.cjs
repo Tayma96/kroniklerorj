@@ -3,13 +3,14 @@
 // açık gerilim, pencere sıklığı, günlük gürültüsü, tempo, çöküş sarmalı ve hayatlar arası çeşitlilik.
 // Kullanım: node scripts/_smoke/oynanis.cjs  [OYN_LIVES=80] [OYN_JSON=1]
 // Ana ekranın kart zarı (index.tsx) burada birebir taklit edilir: değiştirilirse burası da güncellenir.
+const ESBUILD = require("./esbuild-yolu.cjs");
 const { execSync } = require("child_process");
 const os = require("os"); const fs = require("fs"); const path = require("path");
 const mobile = path.join(__dirname, "..", "..");
 const giris = path.join(os.tmpdir(), `kronikler-oyn-giris-${process.pid}.ts`);
 const paket = path.join(os.tmpdir(), `kronikler-oyn-${process.pid}.cjs`);
 fs.writeFileSync(giris, `export * from ${JSON.stringify(path.join(mobile, "lib/game"))};\nexport { pickDilemma, pickFestival } from ${JSON.stringify(path.join(mobile, "lib/events"))};\n`);
-execSync(`npx esbuild ${giris} --bundle --platform=node --format=cjs --outfile=${paket} --log-level=error`, { cwd: mobile, stdio: "inherit" });
+execSync(`${ESBUILD} ${giris} --bundle --platform=node --format=cjs --outfile=${paket} --log-level=error`, { cwd: mobile, stdio: "inherit" });
 const g = require(paket); fs.unlinkSync(giris);
 
 const LIVES = parseInt(process.env.OYN_LIVES || "80", 10);

@@ -4,7 +4,7 @@
 set -e
 cd "$(dirname "$0")/.."
 D=scripts/_smoke
-npx esbuild lib/game.ts --bundle --platform=node --format=cjs --jsx=transform \
+node_modules/.bin/esbuild lib/game.ts --bundle --platform=node --format=cjs --jsx=transform \
   --alias:react=$PWD/$D/react-stub.cjs --alias:react/jsx-runtime=$PWD/$D/react-stub.cjs \
   --alias:react/jsx-dev-runtime=$PWD/$D/react-stub.cjs --alias:react-native=$PWD/$D/react-stub.cjs \
   --alias:@react-native-async-storage/async-storage=$PWD/$D/as-stub.cjs \

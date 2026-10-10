@@ -45,7 +45,7 @@ Kronik (`s.history`) 250 kayıtta kırpılır; ekranlar yeni olayı **uzunluktan
 
 1. **Kuru koşu:** yama betiğini dosya kopyaları üzerinde çalıştır (anchor assert'leri patlarsa gerçek dosyaya dokunma).
 2. `npx tsc --noEmit` (mobile/ içinden).
-3. Bundle: `npx esbuild lib/game.ts --bundle --format=cjs --outfile=<tmp>` — **external YOK** (react dahil edilir).
+3. Bundle: `npx --no-install esbuild lib/game.ts --bundle --format=cjs --outfile=<tmp>` — **external YOK** (react dahil edilir). esbuild `package.json` devDependency’si; denetim betikleri yerel ikiliyi `scripts/_smoke/esbuild-yolu.cjs` ile çağırır (ağdan indirmez).
 4. **Hedefli sim:** değişikliğe özel node betiği; her dal/kapı/bedel/vâris-devri assert edilir.
    - Simde `p.age` ile birlikte `p.base_age` da set edilir.
    - `gainSkill` doğrudan `p.skills`'e değil `p.skill_xp[key]`'e yazar (merakli ×1.15) — assert'ler `skill_xp` üzerinde `>=` ile.

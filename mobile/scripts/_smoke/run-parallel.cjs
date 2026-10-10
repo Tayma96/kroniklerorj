@@ -2,6 +2,7 @@
 // Anlık görüntü sayesinde smoke koşarken çalışma kopyasında geliştirme sürebilir —
 // sonuç, paketin kurulduğu andaki koda (çıktıdaki commit damgasına) aittir.
 // Kullanım: node scripts/_smoke/run-parallel.cjs  [SMOKE_LIVES=300] [SMOKE_SHARDS=çekirdek]
+const ESBUILD = require("./esbuild-yolu.cjs");
 const { execSync, spawn } = require("child_process");
 const os = require("os");
 const fs = require("fs");
@@ -13,7 +14,7 @@ const kirli = execSync("git status --porcelain -- lib/", { cwd: path.join(mobile
 const bundle = path.join(os.tmpdir(), `kronikler-smoke-${sha}-${process.pid}.cjs`);
 
 console.log(`[paralel-smoke] paket kuruluyor · commit ${sha}${kirli}`);
-execSync(`npx esbuild lib/game.ts --bundle --platform=node --format=cjs --outfile=${bundle} --log-level=error`, { cwd: mobile, stdio: "inherit" });
+execSync(`${ESBUILD} lib/game.ts --bundle --platform=node --format=cjs --outfile=${bundle} --log-level=error`, { cwd: mobile, stdio: "inherit" });
 
 const TOTAL = parseInt(process.env.SMOKE_LIVES || "300", 10);
 const SHARDS = Math.max(1, Math.min(parseInt(process.env.SMOKE_SHARDS || "", 10) || os.cpus().length, 16));

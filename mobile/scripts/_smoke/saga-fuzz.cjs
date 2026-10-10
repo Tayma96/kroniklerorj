@@ -2,11 +2,12 @@
 // Değişmezler: ch/act sınırları, sahne tekrarı yok (reoffer istisnası), para asla negatif değil,
 // satış/haber kesesi ömürde bir kez, sentinel sonrası sessizlik, vâris devri tutarlı, başarım tutarlı.
 // Kendi bundle'ını üretir: motoru esbuild ile paketler (react dahil — external YOK), sonra yükler.
+const ESBUILD = require("./esbuild-yolu.cjs");
 const path = require("path");
 const { execSync } = require("child_process");
 const ROOT = path.resolve(__dirname, "../..");
 const BUNDLE = path.join(ROOT, "node_modules/.cache/kronikler-game-bundle.cjs");
-execSync(`npx esbuild lib/game.ts --bundle --format=cjs --outfile=${BUNDLE}`, { cwd: ROOT, stdio: "pipe" });
+execSync(`${ESBUILD} lib/game.ts --bundle --format=cjs --outfile=${BUNDLE}`, { cwd: ROOT, stdio: "pipe" });
 const g = require(BUNDLE);
 let fails = 0;
 const F = (m) => { console.log("FUZZ-HATA:", m); fails++; };

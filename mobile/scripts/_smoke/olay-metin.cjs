@@ -1,11 +1,12 @@
 // Olay metni bekçisi: gerçek hayatlar oynatılır, kroniğe düşen HER olay 6 dilde ekranda göründüğü gibi yazdırılır.
 // Artakalan yer tutucu (%1, %b, %n…), "undefined", "NaN", "[object" ya da boş metin → hata. (Geçmişte dünya haberlerinde
 // "%b kadısı…" oyuncuya sızmıştı.) Kullanım: node scripts/_smoke/olay-metin.cjs [hayat sayısı, varsayılan 40]
+const ESBUILD = require("./esbuild-yolu.cjs");
 const path = require("path"); const fs = require("fs"); const os = require("os"); const { execSync } = require("child_process");
 const kok = path.join(__dirname, "..", ".."); const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "olay-"));
 const giris = path.join(kok, "_olay_giris.ts");
 fs.writeFileSync(giris, 'export * as g from "./lib/game";\nexport { renderEvt, tFor } from "./lib/i18n";\n');
-try { execSync(`npx esbuild "${giris}" --bundle --format=cjs --platform=node --outfile="${tmp}/o.cjs" --log-level=error`, { cwd: kok, stdio: "inherit" }); }
+try { execSync(`${ESBUILD} "${giris}" --bundle --format=cjs --platform=node --outfile="${tmp}/o.cjs" --log-level=error`, { cwd: kok, stdio: "inherit" }); }
 finally { fs.unlinkSync(giris); }
 const { g, renderEvt, tFor } = require(`${tmp}/o.cjs`);
 // Çevrilmemiş ham anahtar (ör. "wev.balıkçı.5.lose") metne sızmasın
