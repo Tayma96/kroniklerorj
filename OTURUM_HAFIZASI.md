@@ -237,3 +237,12 @@ kaydı (iz) olur, iz bir eğilim etiketi taşır, sonraki olaylar ve yaylar bu h
   (defterdeki soyadı, son atanın izleri, bıraktığı tek soy yeteneği; para/mülk/itibar geçmez). i18n parçası `l`.
 - Doğrulama: 12 çekirdek rc=0; YANKI/DEFTER/ROMAN/KAN/GEÇ/DİVAN/RİTİM TEMİZ; ÇIĞIR EŞİKLERİ TEMİZ (50+ boş %11,9, tekrar %2,2).
 - Adım 7 (Dost Haneler) taslağı commit dışı: `/tmp/kr/w7/` (dost.ts, dost-ui.tsx, dost-check.cjs, i18n `h`) — kullanıcı şimdilik atlattı.
+
+## 17. Dalga 2 — Görsel paylaşım kartı (adım 6): ATLANDI
+
+- Projede `react-native-view-shot`, `expo-sharing`, `expo-file-system` yok; yalnız `@shopify/react-native-skia` var. Skia kartı PNG'ye
+  çizebilir (`makeImageSnapshot`/`encodeToBase64`), ama RN'nin yerleşik `Share`'i Android'de yalnız metin taşır (url alanı iOS'a özgü).
+  Android APK'da görsel paylaşmak için `expo-sharing` + `expo-file-system` (yerel modül → yeni APK derlemesi ve bağımlılık kurulumu) gerekir;
+  doğrulanamayan yerel bağımlılık eklemek "temiz" değil. Metin paylaşımı (Roman, Divan) yerinde kalır; kart `View`'ları hazır.
+- Yapılacak: iki paketi ekle, Skia ile kartı offscreen çiz → cache'e PNG yaz → `Sharing.shareAsync`; paket yoksa metne düş; yeni APK.
+- Adım 7 (Dost Haneler) kullanıcı isteğiyle ertelendi; taslak `/tmp/kr/w7/` (commit dışı, kalıcı değil).
