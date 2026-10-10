@@ -1805,6 +1805,7 @@ export interface GameState {
   micro?: { id: string } | null; // ay-içi mikro an: atlanabilir tek satırlık seçim (ertesi ay kendiliğinden kaybolur)
   saga?: { act: number; ch: number; scene?: string | null; path: Record<string, number>; lastTurn?: number; declined?: number } | null; // Kül Yemini destanı: nesiller aşan ana yay (continueAsHeir ile vârise geçer; sahne panoda bekler)
   divan?: { id: string } | null; // taç sahibinin divanına düşen arzuhal (ertesi ay kendiliğinden düşer; ferman bekler)
+  merdiven?: number; // meslek merdiveni sürümü — MERDIVEN_GOC adımlarından hangilerine kadar geçildi (yeni oyun güncel doğar)
   schema?: number; // kayıt şeması sürümü — migrate() her yüklemede damgalar; gelecek göçler bununla dallanır
   tips?: Tip[]; // eyleme dönük duyumlar (piyasa ipucu / fraksiyon istihbaratı)
   locEvents?: LocEvent[]; // lokasyon-bazlı tipli dünya olayları (kuraklık/panayır/veba...)
@@ -2155,12 +2156,18 @@ export const PROFESSIONS: Profession[] = [
   { id: "fırıncı",   name: "Fırıncı",   stat: "intelligence", base: 4, tiers: ["Hamurkâr", "Fırıncı", "Ekmekçi Başı"] },
   { id: "asker",     name: "Asker",     stat: "strength",     base: 5, tiers: ["Acemi", "Asker", "Onbaşı", "Sipahi"] },
   { id: "müzisyen",  name: "Müzisyen",  stat: "charisma",     base: 4, tiers: ["Çırak Ozan", "Müzisyen", "Saz Üstadı"] },
-  { id: "şifacı",    name: "Şifacı",    stat: "intelligence", base: 5, tiers: ["Otacı", "Şifacı", "Hekim"] },
+  { id: "şifacı",    name: "Şifacı",    stat: "intelligence", base: 5, tiers: ["Otacı", "Şifacı", "Kalfa", "Hekim"] },
   { id: "katip",     name: "Kâtip",     stat: "intelligence", base: 5, tiers: ["Çömez", "Kâtip", "Divan Kâtibi"] },
   { id: "kuyumcu",   name: "Kuyumcu",   stat: "intelligence", base: 6, tiers: ["Çırak", "Kuyumcu", "Usta Kuyumcu"] },
   { id: "dokumacı",  name: "Dokumacı",  stat: "intelligence", base: 4, tiers: ["Çırak", "Dokumacı", "Usta Dokumacı"] },
   { id: "hancı",     name: "Hancı",     stat: "charisma",     base: 5, tiers: ["Hizmetkâr", "Hancı", "Han Sahibi"] },
 ];
+// Merdiven göçleri: bir meslek merdiveni değişince eski kayıttaki kazanılmış unvan korunur — kimse rütbe kaybetmez, kimse sınavsız atlamaz.
+// Her adım: meslek → eski kademe dizininin yeni dizini (dizi uzunluğu = eski kademe sayısı). Kayıt `merdiven` damgasıyla her adımdan bir kez geçer.
+export const MERDIVEN_GOC: Record<string, number[]>[] = [
+  { şifacı: [0, 1, 3] }, // 1: Otacı · Şifacı · Hekim → araya Kalfa girdi; zirvedeki Hekim yine Hekim (yeni dizin 3)
+];
+export const MERDIVEN_SURUM = MERDIVEN_GOC.length;
 export function professionById(id: string): Profession | undefined { return PROFESSIONS.find((p) => p.id === id); }
 // Unvan kademesi: kariyer deneyimine göre (her 30 ay bir kademe).
 export function careerTier(prof: Profession, careerXp: number): number {
@@ -2215,7 +2222,7 @@ export function newGame(first: string, surname: string, gender: "erkek" | "kadı
   birthStats[gift] += 1;
   const s: GameState = {
     turn: 0, seed, world: { ready: true, inflation: 1 }, pop: nufusKur(nufusCtx(), { wy: 0 }),
-    relationships: {}, dynasty: [], npc_state: {}, story: { active: null, completed: [], tension: 0 }, wars: [], caravan: null, econ: 1,
+    relationships: {}, dynasty: [], npc_state: {}, story: { active: null, completed: [], tension: 0 }, wars: [], caravan: null, econ: 1, merdiven: MERDIVEN_SURUM,
     player: {
       name: surname ? `${first} ${surname}` : first, surname, gender, base_age: 7, age: 7,
       money: 10 + (seed % 6), profession: "işsiz", health: 100, hunger: 100,
@@ -10329,6 +10336,27 @@ export function craft(prev: GameState, id: string): GameState {
 }
 
 // Eski kayıtları yeni alanlarla uyumlulaştır (geriye dönük güvenli yükleme).
+// Tek bir merdiven adımı: oyuncunun kazanılmış kademesi eski merdivendeki karşılığına oturur (zirve zirvede kalır; capstones'a dokunulmaz);
+// zirveye eşlenen unvan için hizmet süresi de o kademeye yetecek kadar sayılır (unvan alçalmasın, sahte sınav çağrısı düşmesin).
+// Kronikteki unvan parametreleri ({ c: [meslek, xp] }) de aynı eşlemeyle düzelir: eski Hekim satırı Kalfa diye okunmaz.
+function merdivenGoc(s: GameState, m: Record<string, number[]>) {
+  const p: any = s.player;
+  if (p && p.profession && m[p.profession]) {
+    const h = m[p.profession];
+    const k0 = Math.max(0, Math.min(h.length - 1, p.kademe ?? Math.floor((p.career_xp || 0) / 30))); // ahilik öncesi kayıt: hizmetin verdiği eski unvan
+    const k1 = h[k0];
+    p.kademe = k1;
+    if (k1 > k0) p.career_xp = Math.max(p.career_xp || 0, k1 * 30);
+  }
+  const duzelt = (e: any) => {
+    if (!e || !Array.isArray(e.p)) return;
+    for (const v of e.p) if (v && typeof v === "object" && Array.isArray(v.c) && m[v.c[0]]) {
+      const h = m[v.c[0]]; const i0 = Math.max(0, Math.min(h.length - 1, Math.floor((v.c[1] || 0) / 30)));
+      if (h[i0] !== i0) v.c[1] = h[i0] * 30;
+    }
+  };
+  (s.history || []).forEach(duzelt); (p?.omur_anlari || []).forEach(duzelt);
+}
 export function migrate(s: GameState): GameState {
   const p: any = s.player || {};
   if (p.faction === undefined) p.faction = null;
@@ -10366,6 +10394,9 @@ export function migrate(s: GameState): GameState {
   if (!s.wars) s.wars = [];
   if (s.caravan === undefined) s.caravan = null;
   if (s.econ === undefined) s.econ = 1;
+  // Merdiven göçü (ahilik göçünden ÖNCE: ahilik öncesi kayıtta eski unvan eski merdivenle okunmalı) — rütbe korunur, taşınmaz.
+  for (let v = s.merdiven ?? 0; v < MERDIVEN_GOC.length; v++) merdivenGoc(s, MERDIVEN_GOC[v]);
+  s.merdiven = MERDIVEN_SURUM;
   // Ahilik göçü: eski kayıtta kazanılmış kademe yok → hizmetin verdiği unvan kazanılmış sayılır (kimse rütbe kaybetmez; bundan sonrası sınavla).
   if (p.kademe === undefined && p.profession && p.profession !== "işsiz") { const pr0 = professionById(p.profession); p.kademe = pr0 ? careerTier(pr0, p.career_xp || 0) : 0; }
   s.schema = 1; // şema damgası: bu sürümün göçlerinden geçti

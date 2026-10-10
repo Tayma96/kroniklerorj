@@ -73,7 +73,7 @@ export const PROF_L10N: Record<Lang, Record<string, ProfL>> = {
     avcı:{name:"Avcı",tiers:["İzci","Avcı","Usta Avcı"]}, marangoz:{name:"Marangoz",tiers:["Çırak","Marangoz","Usta Marangoz"]},
     çoban:{name:"Çoban",tiers:["Sürü Yamağı","Çoban","Sürü Sahibi"]}, fırıncı:{name:"Fırıncı",tiers:["Hamurkâr","Fırıncı","Ekmekçi Başı"]},
     asker:{name:"Asker",tiers:["Acemi","Asker","Onbaşı","Sipahi"]}, müzisyen:{name:"Müzisyen",tiers:["Çırak Ozan","Müzisyen","Saz Üstadı"]},
-    şifacı:{name:"Şifacı",tiers:["Otacı","Şifacı","Hekim"]}, katip:{name:"Kâtip",tiers:["Çömez","Kâtip","Divan Kâtibi"]},
+    şifacı:{name:"Şifacı",tiers:["Otacı","Şifacı","Kalfa","Hekim"]}, katip:{name:"Kâtip",tiers:["Çömez","Kâtip","Divan Kâtibi"]},
     kuyumcu:{name:"Kuyumcu",tiers:["Çırak","Kuyumcu","Usta Kuyumcu"]}, dokumacı:{name:"Dokumacı",tiers:["Çırak","Dokumacı","Usta Dokumacı"]},
     hancı:{name:"Hancı",tiers:["Hizmetkâr","Hancı","Han Sahibi"]},
     çocuk:{name:"Çocuk",tiers:["Çocuk"]}, çırak:{name:"Çırak",tiers:["Çırak"]}, işsiz:{name:"İşsiz",tiers:["İşsiz"]},
@@ -84,7 +84,7 @@ export const PROF_L10N: Record<Lang, Record<string, ProfL>> = {
     avcı:{name:"Hunter",tiers:["Tracker","Hunter","Master Hunter"]}, marangoz:{name:"Carpenter",tiers:["Apprentice","Carpenter","Master Carpenter"]},
     çoban:{name:"Shepherd",tiers:["Herd Boy","Shepherd","Flock Owner"]}, fırıncı:{name:"Baker",tiers:["Doughhand","Baker","Head Baker"]},
     asker:{name:"Soldier",tiers:["Recruit","Soldier","Corporal","Cavalryman"]}, müzisyen:{name:"Musician",tiers:["Apprentice Bard","Musician","Master Minstrel"]},
-    şifacı:{name:"Healer",tiers:["Herbalist","Healer","Physician"]}, katip:{name:"Scribe",tiers:["Novice","Scribe","Court Scribe"]},
+    şifacı:{name:"Healer",tiers:["Herbalist","Healer","Journeyman","Physician"]}, katip:{name:"Scribe",tiers:["Novice","Scribe","Court Scribe"]},
     kuyumcu:{name:"Jeweler",tiers:["Apprentice","Jeweler","Master Jeweler"]}, dokumacı:{name:"Weaver",tiers:["Apprentice","Weaver","Master Weaver"]},
     hancı:{name:"Innkeeper",tiers:["Servant","Innkeeper","Inn Owner"]},
     çocuk:{name:"Child",tiers:["Child"]}, çırak:{name:"Apprentice",tiers:["Apprentice"]}, işsiz:{name:"Unemployed",tiers:["Unemployed"]},
@@ -95,7 +95,7 @@ export const PROF_L10N: Record<Lang, Record<string, ProfL>> = {
     avcı:{name:"Cazador",tiers:["Rastreador","Cazador","Maestro cazador"]}, marangoz:{name:"Carpintero",tiers:["Aprendiz","Carpintero","Maestro carpintero"]},
     çoban:{name:"Pastor",tiers:["Zagal","Pastor","Dueño del rebaño"]}, fırıncı:{name:"Panadero",tiers:["Amasador","Panadero","Maestro panadero"]},
     asker:{name:"Soldado",tiers:["Recluta","Soldado","Cabo","Jinete"]}, müzisyen:{name:"Músico",tiers:["Aprendiz de bardo","Músico","Maestro juglar"]},
-    şifacı:{name:"Sanador",tiers:["Herbolario","Sanador","Médico"]}, katip:{name:"Escriba",tiers:["Novicio","Escriba","Escriba de la corte"]},
+    şifacı:{name:"Sanador",tiers:["Herbolario","Sanador","Oficial","Médico"]}, katip:{name:"Escriba",tiers:["Novicio","Escriba","Escriba de la corte"]},
     kuyumcu:{name:"Joyero",tiers:["Aprendiz","Joyero","Maestro joyero"]}, dokumacı:{name:"Tejedor",tiers:["Aprendiz","Tejedor","Maestro tejedor"]},
     hancı:{name:"Posadero",tiers:["Sirviente","Posadero","Dueño de posada"]},
     çocuk:{name:"Niño",tiers:["Niño"]}, çırak:{name:"Aprendiz",tiers:["Aprendiz"]}, işsiz:{name:"Desempleado",tiers:["Desempleado"]},
@@ -106,7 +106,7 @@ export const PROF_L10N: Record<Lang, Record<string, ProfL>> = {
     avcı:{name:"Caçador",tiers:["Rastreador","Caçador","Mestre caçador"]}, marangoz:{name:"Carpinteiro",tiers:["Aprendiz","Carpinteiro","Mestre carpinteiro"]},
     çoban:{name:"Pastor",tiers:["Pastorinho","Pastor","Dono do rebanho"]}, fırıncı:{name:"Padeiro",tiers:["Amassador","Padeiro","Mestre padeiro"]},
     asker:{name:"Soldado",tiers:["Recruta","Soldado","Cabo","Cavaleiro"]}, müzisyen:{name:"Músico",tiers:["Aprendiz de bardo","Músico","Mestre menestrel"]},
-    şifacı:{name:"Curandeiro",tiers:["Ervanário","Curandeiro","Médico"]}, katip:{name:"Escrivão",tiers:["Noviço","Escrivão","Escrivão da corte"]},
+    şifacı:{name:"Curandeiro",tiers:["Ervanário","Curandeiro","Oficial","Médico"]}, katip:{name:"Escrivão",tiers:["Noviço","Escrivão","Escrivão da corte"]},
     kuyumcu:{name:"Joalheiro",tiers:["Aprendiz","Joalheiro","Mestre joalheiro"]}, dokumacı:{name:"Tecelão",tiers:["Aprendiz","Tecelão","Mestre tecelão"]},
     hancı:{name:"Estalajadeiro",tiers:["Servo","Estalajadeiro","Dono da estalagem"]},
     çocuk:{name:"Criança",tiers:["Criança"]}, çırak:{name:"Aprendiz",tiers:["Aprendiz"]}, işsiz:{name:"Desempregado",tiers:["Desempregado"]},
@@ -117,7 +117,7 @@ export const PROF_L10N: Record<Lang, Record<string, ProfL>> = {
     avcı:{name:"صيّاد",tiers:["كشّاف","صيّاد","صيّاد ماهر"]}, marangoz:{name:"نجّار",tiers:["صبي","نجّار","نجّار ماهر"]},
     çoban:{name:"راعٍ",tiers:["صبي الرعي","راعٍ","صاحب قطيع"]}, fırıncı:{name:"خبّاز",tiers:["عجّان","خبّاز","كبير الخبّازين"]},
     asker:{name:"جندي",tiers:["مجنّد","جندي","عريف","فارس"]}, müzisyen:{name:"موسيقي",tiers:["شاعر متدرّب","موسيقي","أستاذ العزف"]},
-    şifacı:{name:"معالج",tiers:["عشّاب","معالج","طبيب"]}, katip:{name:"كاتب",tiers:["مبتدئ","كاتب","كاتب الديوان"]},
+    şifacı:{name:"معالج",tiers:["عشّاب","معالج","صانع","طبيب"]}, katip:{name:"كاتب",tiers:["مبتدئ","كاتب","كاتب الديوان"]},
     kuyumcu:{name:"صائغ",tiers:["صبي","صائغ","صائغ ماهر"]}, dokumacı:{name:"نسّاج",tiers:["صبي","نسّاج","نسّاج ماهر"]},
     hancı:{name:"صاحب خان",tiers:["خادم","صاحب خان","مالك الخان"]},
     çocuk:{name:"طفل",tiers:["طفل"]}, çırak:{name:"صبي",tiers:["صبي"]}, işsiz:{name:"عاطل",tiers:["عاطل"]},
@@ -128,7 +128,7 @@ export const PROF_L10N: Record<Lang, Record<string, ProfL>> = {
     avcı:{name:"Охотник",tiers:["Следопыт","Охотник","Мастер-охотник"]}, marangoz:{name:"Плотник",tiers:["Подмастерье","Плотник","Мастер-плотник"]},
     çoban:{name:"Пастух",tiers:["Подпасок","Пастух","Хозяин стада"]}, fırıncı:{name:"Пекарь",tiers:["Тестомес","Пекарь","Старший пекарь"]},
     asker:{name:"Солдат",tiers:["Новобранец","Солдат","Капрал","Всадник"]}, müzisyen:{name:"Музыкант",tiers:["Ученик барда","Музыкант","Мастер-менестрель"]},
-    şifacı:{name:"Лекарь",tiers:["Травник","Лекарь","Врач"]}, katip:{name:"Писарь",tiers:["Новичок","Писарь","Придворный писарь"]},
+    şifacı:{name:"Лекарь",tiers:["Травник","Лекарь","Подмастерье","Врач"]}, katip:{name:"Писарь",tiers:["Новичок","Писарь","Придворный писарь"]},
     kuyumcu:{name:"Ювелир",tiers:["Подмастерье","Ювелир","Мастер-ювелир"]}, dokumacı:{name:"Ткач",tiers:["Подмастерье","Ткач","Мастер-ткач"]},
     hancı:{name:"Трактирщик",tiers:["Слуга","Трактирщик","Хозяин трактира"]},
     çocuk:{name:"Ребёнок",tiers:["Ребёнок"]}, çırak:{name:"Подмастерье",tiers:["Подмастерье"]}, işsiz:{name:"Безработный",tiers:["Безработный"]},
@@ -147,9 +147,9 @@ export function professionNameL(id: string, lang: Lang, kadin = false): string {
 }
 // Kadın oyuncunun kariyer unvanları (kademe sayısı taban ile aynı).
 const TIERS_F: Partial<Record<Lang, Record<string, string[]>>> = {
-  es: {"çiftçi": ["Jornalera", "Granjera", "Terrateniente"], "demirci": ["Aprendiz de herrera", "Herrera", "Maestra herrera"], "tüccar": ["Buhonera", "Mercader", "Gran mercader"], "balıkçı": ["Redera", "Pescadora", "Patrona"], "avcı": ["Rastreadora", "Cazadora", "Maestra cazadora"], "marangoz": ["Aprendiz", "Carpintera", "Maestra carpintera"], "çoban": ["Zagala", "Pastora", "Dueña del rebaño"], "fırıncı": ["Amasadora", "Panadera", "Maestra panadera"], "müzisyen": ["Aprendiz de juglaresa", "Música", "Maestra juglaresa"], "şifacı": ["Herbolaria", "Sanadora", "Médica"], "katip": ["Novicia", "Escriba", "Escriba de la corte"], "kuyumcu": ["Aprendiz", "Joyera", "Maestra joyera"], "dokumacı": ["Aprendiz", "Tejedora", "Maestra tejedora"], "hancı": ["Sirvienta", "Posadera", "Dueña de posada"], "çocuk": ["Niña"], "işsiz": ["Desempleada"]},
-  pt: {"çiftçi": ["Jornaleira", "Agricultora", "Proprietária"], "demirci": ["Aprendiz de ferreira", "Ferreira", "Mestra ferreira"], "tüccar": ["Vendedora ambulante", "Mercadora", "Grande mercadora"], "balıkçı": ["Redeira", "Pescadora", "Mestra"], "avcı": ["Rastreadora", "Caçadora", "Mestra caçadora"], "marangoz": ["Aprendiz", "Carpinteira", "Mestra carpinteira"], "çoban": ["Pastorinha", "Pastora", "Dona do rebanho"], "fırıncı": ["Amassadora", "Padeira", "Mestra padeira"], "asker": ["Recruta", "Soldado", "Cabo", "Cavaleira"], "müzisyen": ["Aprendiz de barda", "Música", "Mestra menestrel"], "şifacı": ["Ervanária", "Curandeira", "Médica"], "katip": ["Noviça", "Escrivã", "Escrivã da corte"], "kuyumcu": ["Aprendiz", "Joalheira", "Mestra joalheira"], "dokumacı": ["Aprendiz", "Tecedeira", "Mestra tecedeira"], "hancı": ["Serva", "Estalajadeira", "Dona da estalagem"], "işsiz": ["Desempregada"]},
-  ar: {"çiftçi": ["أجيرة", "مزارعة", "مالكة أرض"], "demirci": ["صبية الحدّاد", "حدّادة", "حدّادة ماهرة"], "tüccar": ["بائعة متجوّلة", "تاجرة", "كبيرة التجّار"], "balıkçı": ["شبّاكة", "صيّادة", "ريّسة"], "avcı": ["كشّافة", "صيّادة", "صيّادة ماهرة"], "marangoz": ["صبية", "نجّارة", "نجّارة ماهرة"], "çoban": ["صبية الرعي", "راعية", "صاحبة قطيع"], "fırıncı": ["عجّانة", "خبّازة", "كبيرة الخبّازات"], "asker": ["مجنّدة", "جندية", "عريفة", "فارسة"], "müzisyen": ["شاعرة متدرّبة", "موسيقية", "أستاذة العزف"], "şifacı": ["عشّابة", "معالجة", "طبيبة"], "katip": ["مبتدئة", "كاتبة", "كاتبة الديوان"], "kuyumcu": ["صبية", "صائغة", "صائغة ماهرة"], "dokumacı": ["صبية", "نسّاجة", "نسّاجة ماهرة"], "hancı": ["خادمة", "صاحبة خان", "مالكة الخان"], "çocuk": ["طفلة"], "çırak": ["صبية"], "işsiz": ["عاطلة"]},
+  es: {"çiftçi": ["Jornalera", "Granjera", "Terrateniente"], "demirci": ["Aprendiz de herrera", "Herrera", "Maestra herrera"], "tüccar": ["Buhonera", "Mercader", "Gran mercader"], "balıkçı": ["Redera", "Pescadora", "Patrona"], "avcı": ["Rastreadora", "Cazadora", "Maestra cazadora"], "marangoz": ["Aprendiz", "Carpintera", "Maestra carpintera"], "çoban": ["Zagala", "Pastora", "Dueña del rebaño"], "fırıncı": ["Amasadora", "Panadera", "Maestra panadera"], "müzisyen": ["Aprendiz de juglaresa", "Música", "Maestra juglaresa"], "şifacı": ["Herbolaria", "Sanadora", "Oficiala", "Médica"], "katip": ["Novicia", "Escriba", "Escriba de la corte"], "kuyumcu": ["Aprendiz", "Joyera", "Maestra joyera"], "dokumacı": ["Aprendiz", "Tejedora", "Maestra tejedora"], "hancı": ["Sirvienta", "Posadera", "Dueña de posada"], "çocuk": ["Niña"], "işsiz": ["Desempleada"]},
+  pt: {"çiftçi": ["Jornaleira", "Agricultora", "Proprietária"], "demirci": ["Aprendiz de ferreira", "Ferreira", "Mestra ferreira"], "tüccar": ["Vendedora ambulante", "Mercadora", "Grande mercadora"], "balıkçı": ["Redeira", "Pescadora", "Mestra"], "avcı": ["Rastreadora", "Caçadora", "Mestra caçadora"], "marangoz": ["Aprendiz", "Carpinteira", "Mestra carpinteira"], "çoban": ["Pastorinha", "Pastora", "Dona do rebanho"], "fırıncı": ["Amassadora", "Padeira", "Mestra padeira"], "asker": ["Recruta", "Soldado", "Cabo", "Cavaleira"], "müzisyen": ["Aprendiz de barda", "Música", "Mestra menestrel"], "şifacı": ["Ervanária", "Curandeira", "Oficiala", "Médica"], "katip": ["Noviça", "Escrivã", "Escrivã da corte"], "kuyumcu": ["Aprendiz", "Joalheira", "Mestra joalheira"], "dokumacı": ["Aprendiz", "Tecedeira", "Mestra tecedeira"], "hancı": ["Serva", "Estalajadeira", "Dona da estalagem"], "işsiz": ["Desempregada"]},
+  ar: {"çiftçi": ["أجيرة", "مزارعة", "مالكة أرض"], "demirci": ["صبية الحدّاد", "حدّادة", "حدّادة ماهرة"], "tüccar": ["بائعة متجوّلة", "تاجرة", "كبيرة التجّار"], "balıkçı": ["شبّاكة", "صيّادة", "ريّسة"], "avcı": ["كشّافة", "صيّادة", "صيّادة ماهرة"], "marangoz": ["صبية", "نجّارة", "نجّارة ماهرة"], "çoban": ["صبية الرعي", "راعية", "صاحبة قطيع"], "fırıncı": ["عجّانة", "خبّازة", "كبيرة الخبّازات"], "asker": ["مجنّدة", "جندية", "عريفة", "فارسة"], "müzisyen": ["شاعرة متدرّبة", "موسيقية", "أستاذة العزف"], "şifacı": ["عشّابة", "معالجة", "صانعة", "طبيبة"], "katip": ["مبتدئة", "كاتبة", "كاتبة الديوان"], "kuyumcu": ["صبية", "صائغة", "صائغة ماهرة"], "dokumacı": ["صبية", "نسّاجة", "نسّاجة ماهرة"], "hancı": ["خادمة", "صاحبة خان", "مالكة الخان"], "çocuk": ["طفلة"], "çırak": ["صبية"], "işsiz": ["عاطلة"]},
 };
 export function careerTitleL(id: string, careerXp: number, lang: Lang, kadin = false): string {
   const p = PROF_L10N[lang]?.[id] || PROF_L10N.tr[id]; if (!p) return id;
