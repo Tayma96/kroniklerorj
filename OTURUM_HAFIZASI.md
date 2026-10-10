@@ -76,6 +76,16 @@ hayatın sonu ve doğurganlık dengesi; kiler hatası; arayüzde uzun dillerde t
 - `11e8dda` — Arayüzdeki sabit "%" önekleri `yuzdeL`'e bağlandı; enflasyon satırları her dilde doğru düzende.
 - 31 oyun ekranı 6 dilde tarandı: çökme yok.
 
+**10 Ekim (temizlik + denge + lisans):**
+- Hijyen: APK'lar git'ten çıktı (`dist/` yok sayılır), imza secret'tan, AAB'ye kalite kapısı, versionCode tek kaynak
+  `mobile/app.json` (`scripts/surum-artir.cjs`), esbuild yerel bağımlılık, repo adı Tayma96/kroniklerorj, eski Python/web
+  `legacy/`, kök belgeler `docs/` ve `docs/arsiv/`.
+- Ekonomi: `lifestyleUpkeep`'e 1500–5000 servet dilimi (%10/yıl) + yetişkin hane gideri (+0.15/yıl, en çok +6/ay);
+  pazarda "Hane geçimi" satırı. Ölçüm `scripts/_smoke/ekonomi.cjs`: pasif 60 yaş medyanı 9.173 → ~3.400.
+- Arapça: 88 satıra `.f`, 7 satır cinsiyetsiz; `callbackLine` ve pazarlık satırı cinsiyeti tanır.
+- Diyalog: `derinlikKatmani` (takip, ısrar, oyuncuyu fark etme, kişilik, can dostu/hasım, mevsim) + `diyalog.cjs`.
+- Lisans: kökte özel `LICENSE`, `mobile/UCUNCU-TARAF.md`, Ayarlar → Emeği Geçenler; soluk metin kontrastı 4.78:1.
+
 ## 5. Son ölçümler (oynanis.cjs, 60 hayat)
 
 Ayda pencere ~0,9 · bunalma ~%0 · açık gerilim en çok 2–3 · geri çağırma %100 · tekrar %5,7 · ölüm yaşı medyan 65 ·
@@ -87,7 +97,9 @@ Ayda pencere ~0,9 · bunalma ~%0 · açık gerilim en çok 2–3 · geri çağı
 - Pusula 3.6 hane asabiyesi: nesiller boyunca zorlukla yükselip rahatla eriyen dayanışma; yeni gösterge eklemeden
   vâris ekranında tek cümle, vârisin başlangıcına küçük etki (süzgeç 3–4'e dikkat).
 - Pusula 3.3 Mauss borç defteri (minnet/mahcubiyet) — kısmen var.
-- Arapçada kadın oyuncuya şimdiki zaman/emir kipiyle eril hitap taraması (otomatik ayırt etmek zor).
+- Arapça `.f` taraması 10 Ekim'de 88 satırla yapıldı; kuşkulu kalanlar (f.aile.bekar, mp.gov.appointed, divan.su_kavgasi.r1,
+  child.adv.bully, seed.velinimetUnuttu/Olu, dil.tz_demirci_d.r0) anadil okuması bekliyor.
 - Çocukluk "babanın işi" satırı en çok yinelenenlerde; mesleğe özgü varyantlar düşünülebilir.
-- Ekonomi: pasif oyuncunun parası 60 yaşta ~9.400'e çıkıyor; gerçek oyuncu verisi gelene dek dokunulmadı.
+- Ekonomi: pasif kayma düzeldi (10 Ekim); kervan/arbitraj simülasyonu ve gerçek oyuncu verisi bekleniyor.
+- 27 simgenin game-icons yazarı ve SD-Turbo ticari kaydı (insan işi) — `mobile/UCUNCU-TARAF.md`.
 - APK ve PR yok — kullanıcı isterse.
