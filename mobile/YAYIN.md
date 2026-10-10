@@ -8,6 +8,16 @@
 - **İmza:** debug anahtarı — doğrudan cihaza kurulum için yeterli; **Play Store için değil** (aşağıya bak).
 - Yerel hızlı doğrulama: `cd mobile && npm run typecheck && npm run smoke`.
 
+## Derlemeler nerede durur (git'te değil)
+- APK/AAB dosyaları **depoya commit'lenmez**: `dist/`, `*.apk`, `*.aab` `.gitignore`'da. `dist/` klasörü yerelde
+  kopya tutmak için kullanılabilir, git onu görmez.
+- Dağıtım yalnız **GitHub Releases** üzerinden: APK workflow'u (`android-apk-local.yml`) çıktıyı kanalına göre
+  `apk-latest` (kalıcı link) ya da `apk-test` (deneme) Release'ine yükler; AAB workflow'u `aab-latest`'e.
+  Elle Release açmaya ya da dosya yüklemeye gerek yoktur.
+- **Not — geçmiş:** `dist/Kronikler.apk` eskiden 84 kez commit'lendi; bu blob'lar git geçmişinde durmaya devam eder
+  (`.git` ~309 MB). Geçmişi temizlemek (`git filter-repo --path dist/Kronikler.apk --invert-paths` + force push +
+  herkesin yeniden clone alması) ayrı ve ekipçe eşgüdümlü bir karardır; bu depo düzenlemesinde YAPILMADI.
+
 ## GELECEK: Google Play (EAS ile)
 
 ## Yapı (build)

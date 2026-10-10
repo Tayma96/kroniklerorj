@@ -4,3 +4,7 @@ node_modules/
 .env
 *.log
 frontend/build/
+# Derleme çıktıları git'e girmez; dağıtım APK workflow'unun Release'leri (apk-latest / apk-test) üzerinden
+dist/
+*.apk
+*.aab
