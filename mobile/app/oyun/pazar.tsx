@@ -61,7 +61,7 @@ export default function Pazar() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { state, apply } = useGame();
-  const { lang, t } = useI18n();
+  const { lang, t, tg } = useI18n();
   const [barg, setBarg] = useState<null | { id: string; icon: string; name: string; base: number; price: number; patience: number; msg: string; done: boolean; sell?: boolean }>(null);
   const [sigorta, setSigorta] = useState(false);
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
@@ -117,7 +117,7 @@ export default function Pazar() {
         const newPrice = Math.min(ceil, Math.round(barg.price * 1.22));
         const patience = Math.max(0, barg.patience - 18);
         const atCeil = newPrice >= ceil;
-        setBarg({ ...barg, price: newPrice, patience, msg: atCeil ? t("paz.floor") : t("paz.bluffWin"), done: atCeil || patience <= 0 });
+        setBarg({ ...barg, price: newPrice, patience, msg: atCeil ? t("paz.floor") : tg("paz.bluffWin", state.player.gender === "kadın"), done: atCeil || patience <= 0 });
       } else {
         hap("warning");
         const patience = Math.max(0, barg.patience - 45);
@@ -132,7 +132,7 @@ export default function Pazar() {
       const newPrice = Math.max(floor, Math.round(barg.price * 0.78));
       const patience = Math.max(0, barg.patience - 18);
       const atFloor = newPrice <= floor;
-      setBarg({ ...barg, price: newPrice, patience, msg: atFloor ? t("paz.floor") : t("paz.bluffWin"), done: atFloor || patience <= 0 });
+      setBarg({ ...barg, price: newPrice, patience, msg: atFloor ? t("paz.floor") : tg("paz.bluffWin", state.player.gender === "kadın"), done: atFloor || patience <= 0 });
     } else {
       hap("warning");
       const patience = Math.max(0, barg.patience - 45);

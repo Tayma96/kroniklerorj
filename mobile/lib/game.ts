@@ -4870,7 +4870,7 @@ export function talkWith(prev: GameState, npc: NPC, intent: string, lang: string
   }
   if (intent === "hosbes" && Math.random() < 0.3) { const sp = spontaneousLine(npc, ns.mood, lang as any); if (sp) line = sp + " " + line; }
   const lastAni = ns.anilar && ns.anilar.length ? ns.anilar[ns.anilar.length - 1] : null;
-  if (lastAni && Math.random() < 0.3) { const cb = callbackLine(npc, lastAni.tur, lang as any); if (cb) line = line + " " + cb; }
+  if (lastAni && Math.random() < 0.3) { const cb = callbackLine(npc, lastAni.tur, lang as any, p.gender === "kadın"); if (cb) line = line + " " + cb; }
   // Yapısal ödül (anı + sosyal beceri) yalnız gerçek kazançta; tavan dolunca sonraki niyetler yalnız muhabbet olur (farm kapalı).
   if (applied > 0) {
     remember(s, npc, applied >= 8 ? "icten_sohbet" : "guzel_sohbet");

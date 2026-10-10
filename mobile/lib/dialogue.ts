@@ -98,7 +98,7 @@ export function spontaneousLine(npc: NPC, mood: number, lang: Lang = "tr"): stri
   return Math.random() < 0.5 ? pick("dlg.spont.goal", 7) : "";
 }
 // Yapısal anı türüne göre sohbette geçmişe gönderme (Vercel _memory_callback). Boş dönebilir.
-export function callbackLine(npc: NPC, memTur: string, lang: Lang = "tr"): string {
+export function callbackLine(npc: NPC, memTur: string, lang: Lang = "tr", female = false): string {
   const map: Record<string, string> = {
     hediye: "dlg.cb.gift", comert_hediye: "dlg.cb.gift", yardim: "dlg.cb.help",
     hakaret: "dlg.cb.insult", alay: "dlg.cb.insult", somuru: "dlg.cb.exploit",
@@ -108,7 +108,8 @@ export function callbackLine(npc: NPC, memTur: string, lang: Lang = "tr"): strin
   const k = map[memTur]; if (!k) return "";
   if (npc.trait === "unutkan" && Math.random() < 0.5) return ""; // unutkan dünkü sohbeti bugün hatırlamayabilir
   const vi = Math.floor(Math.random() * 3); const key = vi === 0 ? k : k + (vi + 1); // her göndermenin üç varyantı — uzun oyunda ezber kırılır
-  return tFor(lang, key).split("%n").join(npc.name.split(" ")[0]);
+  const fk = key + ".f"; const fv = female ? tFor(lang, fk) : fk; // kadın oyuncuya hitap eden satırın .f varyantı (ör. Arapça ikinci tekil dişil)
+  return (fv !== fk ? fv : tFor(lang, key)).split("%n").join(npc.name.split(" ")[0]);
 }
 
 export function moodLabel(m: number): string {
