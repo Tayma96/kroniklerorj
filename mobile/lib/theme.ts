@@ -11,7 +11,7 @@ export const C = {
   goldDim: "#8B6914",
   parchment: "#E8D5B0",
   parchmentDim: "#B8A880",
-  parchmentMuted: "#7A6A4F",
+  parchmentMuted: "#958160",  // soluk metin: kart zemininde 4.78:1 (WCAG AA ≥4.5; eski #7A6A4F 3.42:1 idi — 10–11 pt italik açıklamalar okunmuyordu)
   blood: "#C84040",
   sage: "#4A9A5A",
   ember: "#E05A30",

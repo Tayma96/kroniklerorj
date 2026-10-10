@@ -82,7 +82,7 @@ Mevcut: 14 portre (yaş×cinsiyet), 16 hero sahnesi (yaş×mevsim), 54 game-icon
 - [x] **Kayıt sağlamlığı:** sürüm güncellemesinde eski kayıt açılıyor mu (migration test). **[SEN test]** — *`scripts/_smoke/migrate-check.cjs` + `eski-kayit-v1.json` her APK/AAB derlemesinden önce koşar ("ESKİ KAYIT GÖÇÜ OK"). Cihazda güncelleme-üstüne-kurulum denemesi yine önerilir.*
 - [ ] **Ses kalitesi:** sentetik tık/çan hoş mu, yoksa gerçek asset mi koyalım? **[BİRLİKTE]**
 - [ ] **İkon/splash cihazda:** ana ekran ikonu ve açılış doğru mu. **[SEN test]**
-- [ ] **Erişilebilirlik:** font ölçeği, kontrast, dokunma hedef boyutları. **[BEN]** — *kısmen: sistem yazı ölçeği 1.25'e kadar izlenir (`app/_layout.tsx`), hareket azaltma/performans anahtarı var. Kontrast için bkz. 10 Eki notu (soluk metin jetonu). Dokunma hedefleri cihazda ölçülmeli.*
+- [ ] **Erişilebilirlik:** font ölçeği, kontrast, dokunma hedef boyutları. **[BEN]** — *kısmen: sistem yazı ölçeği 1.25'e kadar izlenir (`app/_layout.tsx`), hareket azaltma/performans anahtarı var. Kontrast: 10 Eki'de en çok kullanılan soluk metin jetonu `parchmentMuted` (477 kullanım) kart zemininde 3.42:1'den 4.78:1'e (WCAG AA) çıkarıldı; `goldDim` 3.5:1 ve `ink` 3.1:1 yalnız süs/ikon için uygun, küçük metinde kullanılmamalı. Dokunma hedefleri cihazda ölçülmeli.*
 - **Kabul:** Çökme yok; 3+ nesil akıcı; güncelleme kaydı bozmuyor.
 
 ---
