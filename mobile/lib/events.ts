@@ -1,5 +1,5 @@
 // İkilemler — ay ilerlerken çıkan anlatısal seçimler. Saf veri; etki applyDilemma ile uygulanır.
-import { GameState, Delta, Player, effStat } from "./game";
+import { GameState, Delta, Player, effStat, Opportunity, opportunitiesFor, kapiyaGelen, donumAni, inJail, acikIpler } from "./game";
 
 export interface Choice { label: string; delta: Delta; result: string; rk?: string; sans?: number; risk?: { taban: number; ticaret?: number; zeka?: number; kayip: Delta; metin: string }; gercek?: Delta; } // rk: sonuç metni anahtarı (riskli yolun kötü sonucu) · sans: görünür başarı şansı % · risk: kart açılırken zar atılır (şans = taban + ticaret×beceri + zekâ×stat), tutmazsa kayıp uygulanır · gercek: uygulanacak delta (delta kartta gösterilen)
 export interface Dilemma {
@@ -1401,4 +1401,158 @@ export function riskiCoz(p: Player, d: Dilemma): Dilemma {
     for (const [k, v] of Object.entries(r.kayip)) if (typeof v === "number" && Math.abs(v) > Math.abs((goster[k] as number) || 0)) goster[k] = v;
     return { ...c, sans, delta: goster as Delta, gercek: ok ? c.delta : r.kayip, rk: ok ? undefined : "dil." + d.id + ".r" + i + "x", result: ok ? c.result : r.metin };
   }) };
+}
+
+// ── Orta yaş soruları (çığır tasarımı Sütun 3): 30–55 yaş arasında hayat yeni bir soru sorar. Kart Reigns kısalığında:
+// en çok iki cümle, iki-üç seçenek. Bazı cevaplar görünür bir kader ipi bırakır (game.ts DILEMMA_IPLERI).
+export const ORTA_YAS: Dilemma[] = [
+  {
+    id: "orta_kalfa", icon: "anvil", title: "Kalfanın Eli",
+    text: "Kalfan artık senden iyi iş çıkarıyor; müşteri onu soruyor. Dükkânı ona mı açarsın, onunla mı yarışırsın?",
+    when: (p) => p.profession !== "işsiz",
+    choices: [
+      { label: "Tezgâhı ona aç, ortak ol", delta: { reputation: 3, money: -20 }, result: "Kalfanın adını tabelaya yazdırdın; çarşı 'usta, usta yetiştirdi' dedi. Kazanç bölündü, ad büyüdü." },
+      { label: "Yarış: çarşı ikimize de yeter", delta: { money: 25, honor: -2 }, result: "Kalfan karşı sokağa kendi tezgâhını kurdu. İlk ay müşterin sende kaldı; ama çarşı ikinizi kıyaslamaya başladı." },
+      { label: "Başka şehre usta diye yolla", delta: { reputation: 1, honor: 2, money: -10 }, result: "Mektubunu yazıp yol azığını verdin; kalfan gözleri dolu gitti. Senin adınla bir usta daha yola çıktı." },
+    ],
+  },
+  {
+    id: "orta_goc", icon: "walk", title: "Eşinin Sözü",
+    text: "Eşin bir akşam pencereden bakarak söyledi: 'Bu kasabada yaşlanmak istemiyorum.'",
+    when: (p) => p.married && !p.widowed,
+    choices: [
+      { label: "Hasattan sonra konuşalım de", delta: { honor: 2 }, result: "Söz verdin; eşin başını omzuna koydu. Sözün altında kalmak da bir yüktür." },
+      { label: "Kökümüz burada de", delta: { reputation: 2, honor: -2 }, result: "Komşular kalacağınıza sevindi; sofrada bir sandalye bir süre biraz uzak durdu." },
+    ],
+  },
+  {
+    id: "orta_evlat", icon: "family", title: "Kendi Yolu",
+    text: "Büyük evladın 'senin işini yapmayacağım' dedi; kendi yolunu çizmek istiyor.",
+    when: (p) => p.children.length > 0,
+    choices: [
+      { label: "Yolunu aç, keseden destek ver", delta: { money: -30, honor: 2 }, result: "Kesenin ağzını açtın; evladın önce şaşırdı, sonra sarıldı. Ocağın işi bekler, evladın yolu beklemez." },
+      { label: "Önce ocağın işi de", delta: { money: 10, honor: -2 }, result: "Evladın tezgâhın başında kaldı; eli hızlı, gözü yolda. Kazanç arttı, sofrada sohbet azaldı." },
+    ],
+  },
+  {
+    id: "orta_hayal", icon: "star", title: "Eski Hayal",
+    text: "Gençliğinde bir hayalin vardı. Bir sabah tezgâhın başında aklına düştü: hâlâ vakit var mı?",
+    choices: [
+      { label: "Bir mevsim ona ayır", delta: { stat_points: 1, money: -40 }, result: "Bir mevsim işini yarıya indirip hayalinin peşine düştün. Kese hafifledi; içindeki bir şey yerine oturdu." },
+      { label: "Hayal gençlere kalsın", delta: { money: 15 }, result: "Tezgâhın başında kaldın; ay sonunda kese doluydu. Hayal rafın en üstünde: tozlu ama yerinde." },
+    ],
+  },
+  {
+    id: "orta_dost", icon: "family", title: "Batan Dost",
+    text: "Çocukluk arkadaşın iflas etmiş; kimse kapısını çalmıyor. Sen de çalmadın, henüz.",
+    choices: [
+      { label: "Git, kapısını çal (−40)", delta: { money: -40, honor: 3, reputation: 1 }, result: "Kapısını çaldın, keseyi masaya bıraktın. Arkadaşın önce utandı, sonra güldü: 'Çocukken de böyleydin.'" },
+      { label: "Ayağa kalkınca ararım", delta: { honor: -2 }, result: "Aramadın. Bir yıl sonra onu pazarda gördün; selam verdi ama durmadı." },
+    ],
+  },
+  {
+    id: "orta_beden", icon: "healing", title: "Tutulan Bel",
+    text: "Sabah kalkarken belin tutuldu. Hekim 'yükü azalt' diyor; dükkân 'yük bekler' diyor.",
+    choices: [
+      { label: "İşi hafiflet, beden önce", delta: { health: 6, money: -25 }, result: "Ağır işi çırağa bıraktın; bel düzeldi, kese biraz zayıfladı. Hekim 'bu yaşta akıl budur' dedi." },
+      { label: "Daha vakit var, sürdür", delta: { money: 20, health: -4 }, result: "Dişini sıktın, işi bırakmadın. Kese doldu; akşamları merdiven bir basamak uzadı." },
+    ],
+  },
+  {
+    id: "orta_ana", icon: "family", title: "Yaşlanan Ana",
+    text: "Annen yaşlandı; artık tek başına kalamıyor. Evine mi alırsın, başka bir yol mu bulursun?",
+    when: (p) => !p.mother_dead,
+    choices: [
+      { label: "Evine al", delta: { honor: 3, money: -20, reputation: 1 }, result: "Annenin yatağı ocağın yanına kuruldu. Ev kalabalıklaştı; akşamları eski masallar yeniden anlatılır oldu." },
+      { label: "Komşu kadına emanet et, masrafını öde", delta: { money: -10, honor: 1 }, result: "Komşu kadın annene bakıyor; sen her cuma uğruyorsun. Annen memnun, ama kapıda hep seni bekliyor." },
+      { label: "Yanına bir bakıcı tut (−50)", delta: { money: -50, reputation: 2 }, result: "Bakıcı tuttun; mahalle 'evladı eli açık' dedi. Annen iyi bakılıyor; sesini daha az duyuyorsun." },
+    ],
+  },
+  {
+    id: "orta_mektep", icon: "book", title: "Mahalle Mektebi",
+    text: "Mahalle mektebine hoca lazım; ihtiyar imam seni önerdi. Haftada bir gün, karşılıksız.",
+    choices: [
+      { label: "Haftada bir ders ver", delta: { reputation: 3, health: -2 }, result: "Cuma sabahları mektepte oldun; çocuklar adını yanlış söylese de sözünü doğru tuttu." },
+      { label: "Vaktim yok de", delta: { money: 10, honor: -1 }, result: "Tezgâhında kaldın; imam başka birini buldu. Mektebin önünden geçerken çocuk sesleri bir an seni durdurdu." },
+    ],
+  },
+  {
+    id: "orta_dukkan", icon: "house", title: "Komşunun Teklifi",
+    text: "Komşu dükkânın sahibi ortaklık istiyor: sermayeni koyarsan iki tezgâh, koymazsan rahat uyku.",
+    choices: [
+      { label: "Ortak ol (sermaye koy)", delta: { money: 40, reputation: 2 }, result: "Ortaklık tuttu: iki tezgâh bir oldu, kâr bölüşüldü. Çarşı artık adınızı birlikte anıyor.", risk: { taban: 50, ticaret: 3, kayip: { money: -60 }, metin: "Ortaklık ilk kışta battı; sermaye gitti, ders kaldı." } },
+      { label: "Rahat uyku", delta: { health: 4 }, result: "Teklifi kibarca geri çevirdin. Komşun başka ortak buldu; sen akşamları erken kepenk indirdin." },
+    ],
+  },
+  {
+    id: "orta_sir", icon: "scroll", title: "Babanın Defteri",
+    text: "Babanın eski defterinde, adını hiç duymadığın bir kardeşin adı yazılı.",
+    choices: [
+      { label: "Peşine düş (−25)", delta: { money: -25, honor: 2 }, result: "Defterdeki adın peşine bir ulak yolladın. Cevabı yolda; içinde ne olduğunu kimse bilmiyor." },
+      { label: "Defteri kapat", delta: { health: 2, honor: -1 }, result: "Defteri sandığın dibine koydun. Bazı adlar okunmadan da insanı uyutmaz." },
+    ],
+  },
+];
+
+// ── Ayın sahnesi (Yönetmen 2.0, çığır tasarımı Sütun 3): ay kartını arayüzdeki zar değil motor seçer. Hayat evresinin hedef
+// eğrisine (çocuklukta merak, gençlikte sınav, orta yaşta soru, yaşlılıkta miras), açık iplere ve son 12 ayın kart türlerine
+// göre puan verir. Nöbetçi: aynı türden kart art arda en çok 3 kez; 30–55 yaş arasında her 18 ayda en az bir orta yaş sorusu.
+// Arayüz yalnız sonucu gösterir (index.tsx); oynanis.cjs aynı işlevi çağırır — ölçülen sıra oyuncunun gördüğü sıradır.
+export type SahneTur = "senlik" | "ikilem" | "orta" | "firsat" | "kapi" | "bos";
+export interface AySahnesi { s: GameState; tur: SahneTur; dilemma?: Dilemma; opp?: Opportunity }
+export const ORTA_ARA = 18; // ay: orta yaşta iki soru arasındaki en uzun ara
+const SINIF: Record<string, string> = { ikilem: "ikilem", orta: "orta", firsat: "firsat", kapi: "kapi", senlik: "senlik" }; // orta yaş sorusu kendi destesidir
+// Son gösterilen kartlar (boş aylar atlanır) aynı sınıftan art arda kaç tane?
+export function ayniTurSerisi(izi: string[], sinif: string): number {
+  let n = 0;
+  for (let i = izi.length - 1; i >= 0; i--) { const t = izi[i]; if (t === "bos") continue; if (SINIF[t] === sinif) n++; else break; }
+  return n;
+}
+// Sahne izi: son 12 kart (boş aylar araya girer ama kartı silmez; en çok 40 kayıt) — seri boş aylarla gizlenmesin.
+function izKirp(a: string[]): string[] { const o = [...a]; while (o.length > 40 || o.filter((x) => x !== "bos").length > 12) o.shift(); return o; }
+export function ayinSahnesi(prev: GameState, sonSeq?: number): AySahnesi {
+  const p = prev.player; const izi = prev.sahne_izi || [];
+  const orta = p.age >= 30 && p.age <= 55;
+  let ortaSon = prev.orta_son;
+  if (orta && ortaSon == null) ortaSon = prev.turn; // saat orta yaşa girince başlar
+  const hapis = inJail(p);
+  if (orta && hapis && ortaSon != null) ortaSon += 1; // zindanda saat durur (hücreye orta yaş sorusu gelmez)
+  const yaz = (tur: SahneTur, s0: GameState = prev, extra?: Partial<AySahnesi>): AySahnesi => {
+    const s = { ...s0, sahne_izi: izKirp([...izi, tur]), orta_son: tur === "orta" ? prev.turn : ortaSon };
+    return { s, tur, ...extra };
+  };
+  const ortaGecen = orta && ortaSon != null ? prev.turn - ortaSon : 0;
+  const kararVar = !!prev.hesap || prev.npcTeklif?.turn === prev.turn;
+  if (p.dead || hapis || (kararVar && ortaGecen < ORTA_ARA)) return { s: ortaSon !== prev.orta_son ? { ...prev, orta_son: ortaSon } : prev, tur: "bos" };
+  const ortaKart = (): AySahnesi | null => {
+    const recent = prev.recent_dilemmas || [];
+    let havuz = ORTA_YAS.filter((d) => (!d.when || d.when(p)) && !recent.includes(d.id));
+    if (!havuz.length) havuz = ORTA_YAS.filter((d) => !d.when || d.when(p));
+    if (!havuz.length) return null;
+    return yaz("orta", prev, { dilemma: riskiCoz(p, havuz[Math.floor(Math.random() * havuz.length)]) });
+  };
+  if (kararVar) { const o = ortaKart(); return o || { s: prev, tur: "bos" }; } // 18 ay doldu: teklif ayında bile soru gelir (tek istisna)
+  if (orta && ortaGecen >= ORTA_ARA) { const o = ortaKart(); if (o) return o; } // nöbetçinin son ayı: şenlikten de önce
+  const fest = ayniTurSerisi(izi, "senlik") >= 3 ? null : pickFestival(prev); // (şenlik ayları arka arkaya boş geçerse dördüncüsü bir yıl bekler)
+  if (fest) return yaz("senlik", prev, { dilemma: fest });
+  const buyukAn = sonSeq != null ? prev.history.some((e) => (e.q ?? 0) > sonSeq && donumAni(e)) : prev.history.some((e) => e.day === prev.turn && donumAni(e));
+  if (orta && ortaGecen >= ORTA_ARA - 1) { const o = ortaKart(); if (o) return o; } // nöbetçi: orta yaşın sorusu gecikmez
+  if (buyukAn) return yaz("bos"); // bu ayın sahnesi zaten var (dönüm noktası)
+  if (orta && ortaGecen >= ORTA_ARA - 3) { const o = ortaKart(); if (o) return o; }
+  // Evre eğrisi + son 12 ayın çeşitliliği + açık ipler
+  const w: Record<string, number> = { ikilem: 0.28, firsat: 0.22, kapi: 0.25, bos: 0.25, orta: 0 };
+  if (p.age < 13) { w.ikilem *= 1.1; w.firsat *= 0.6; } // çocukluk: merak
+  else if (p.age < 30) { w.firsat *= 1.2; } // gençlik: sınav
+  else if (orta) { w.ikilem *= 1.1; w.bos *= 0.7; w.orta = 0.06; } // orta yaş: soru
+  else { w.kapi *= 1.25; w.bos *= 1.1; } // yaşlılık: miras ve helalleşme
+  if (acikIpler(prev).length >= 2) w.bos += 0.05; // çok ip açıkken nefes payı
+  for (const k of ["ikilem", "firsat", "kapi", "orta"]) { const n = izi.slice(-12).filter((x) => SINIF[x] === SINIF[k]).length; w[k] *= Math.max(0.4, 1 - 0.08 * n); }
+  for (const k of ["ikilem", "firsat", "kapi", "orta"]) if (ayniTurSerisi(izi, SINIF[k]) >= 3) w[k] = 0; // nöbetçi: aynı tür art arda en çok 3
+  let r = Math.random() * Object.values(w).reduce((a, b) => a + b, 0); let tur: SahneTur = "bos";
+  for (const k of ["ikilem", "orta", "firsat", "kapi", "bos"] as SahneTur[]) { r -= w[k]; if (r <= 0) { tur = k; break; } }
+  if (tur === "orta") { const o = ortaKart(); if (o) return o; tur = "ikilem"; }
+  if (tur === "ikilem") { const d = pickDilemma(prev); return d ? yaz("ikilem", prev, { dilemma: d }) : yaz("bos"); }
+  if (tur === "firsat") { const l = opportunitiesFor(prev); return l.length ? yaz("firsat", prev, { opp: l[Math.floor(Math.random() * l.length)] }) : yaz("bos"); }
+  if (tur === "kapi") { const s2 = kapiyaGelen(prev); return s2.npcTeklif && s2.npcTeklif.turn === prev.turn && s2.npcTeklif !== prev.npcTeklif ? yaz("kapi", s2) : yaz("bos"); } // boş ay: kasabadan gerçek biri bir kararla kapına gelir
+  return yaz("bos");
 }

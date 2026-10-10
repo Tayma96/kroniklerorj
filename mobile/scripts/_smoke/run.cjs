@@ -14,6 +14,8 @@ function degismezIhlali(s) {
   const pr = g.professionById(p.profession); if (pr && ((p.kademe ?? 0) < 0 || (p.kademe ?? 0) > pr.tiers.length - 1)) return "kademe " + p.kademe;
   if (!Number.isFinite(s.world && s.world.inflation)) return "inflation";
   for (const x of p.properties || []) if (!(x.cond >= 0 && x.cond <= 100)) return "mülk cond " + x.cond;
+  if (g.acikIpler && g.acikIpler(s).length > g.IP_EN_COK) return "açık ip " + g.acikIpler(s).length; // kader ipi tavanı
+  if ((s.hafiza || []).length > g.HAFIZA_EN_COK) return "hafıza " + s.hafiza.length; // Yankı hafızası tavanı
   return null;
 }
 for (let i = 0; i < LIVES; i++) {

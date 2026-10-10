@@ -103,3 +103,39 @@ Ayda pencere ~0,9 · bunalma ~%0 · açık gerilim en çok 2–3 · geri çağı
 - Ekonomi: pasif kayma düzeldi (10 Ekim); kervan/arbitraj simülasyonu ve gerçek oyuncu verisi bekleniyor.
 - 27 simgenin game-icons yazarı ve SD-Turbo ticari kaydı (insan işi) — `mobile/UCUNCU-TARAF.md`.
 - APK ve PR yok — kullanıcı isterse.
+
+## 7. Teşhis (10 Ekim akşamı, çekirdek yeniden kuruluşundan önce) — oynanabilirliğin en büyük sorunu
+
+**Tek cümle:** Oyuncunun kararları hayatına iz bırakmıyor; ay ay önüne gelen kart, geçmişinden habersiz bir zar
+atışı. Oyun "seçimlerin hikâyesi" vaat ediyor, ama motor seçimi verildiği an unutuyor — bu yüzden döngü tekrar
+gibi hissettiriyor ("her ay yeni ve kopuk bir kart, sayılar biraz oynuyor").
+
+Kanıt (`8d25097` üzerinde):
+- **Seçimlerin %95'i unutuluyor.** 124 ikilemin 247 seçeneğinden yalnız 13'ü (%5,3) `DILEMMA_SEEDS` ile ileriye bir
+  şey ekiyor; geri kalanı anlık `delta` (para/itibar ±) ve bir günlük satırı. 30 hikâye yayının 135 seçeneğinin
+  **hiçbiri** sonraki bir olayca okunmuyor (`story.completed` yalnız yayı listeden düşürür, `arcs.ts:549`).
+- **Ay sahnesi kör zar.** `app/oyun/index.tsx` (eski 178–186. satırlar): `Math.random()` < 0,28 ikilem, < 0,50 fırsat,
+  < 0,75 kapı; seçim oyuncunun geçmişini, açık sözlerini, son ayların türünü okumuyor. Aynı tür kart art arda
+  gelebiliyor; orta yaşta 30–55 aylarının %16,2'si boş (oynanis 60 hayat).
+- **Doruk jenerik.** `directorTick` gerilim 80'i aşınca sebepsiz "talih senden yana döndü / eski dengeler sarsıldı"
+  yazıyordu (`dir.climaxWin/Turn`): 60 hayatta 502 "doruk" dönüm noktası (hayat başına ~8), hiçbiri bir seçime bağlı değil.
+- **Geri dönen sonuç oranı.** 60 hayatta 39.300 karar, 2.123 gecikmeli sonuç: kararların ~%5'i bir gün geri dönüyor.
+
+**Karar:** Çekirdek, "Yankı" adlı bir sonuç motoruyla yeniden kuruldu (aşağıda §8): her büyük seçim kalıcı bir hafıza
+kaydı (iz) olur, iz bir eğilim etiketi taşır, sonraki olaylar ve yaylar bu hafızayı okur, ay sahnesini motor seçer.
+
+## 8. Yankı — yeni sonuç motoru (çekirdek)
+
+- **Hafıza (`GameState.hafiza: Iz[]`, `lib/game.ts` "YANKI" bölümü):** her ikilem, orta yaş sorusu, yay sahnesi ve kapıya gelen
+  insana verilen cevap bir iz olur: `{ n, k: "dil:<id>:<i>" | "arc:<yay>:<sahne>:<i>" | "kapi:<tür>:<1|0>", t, et, kisi?, ref? }`.
+  `et` seçimin eğilimi (`deltaEtiketi`: cömert/hırslı, dürüst/hileci, cesur/temkinli). Tavan 80; önce karşılık bulmuş eski izler düşer.
+- **Okuyanlar:** `yankiTick` (her ay, karşılıksız ≥8 aylık en eski iz eğilimine göre geri döner — 6 eğilim × 3 satır, kişi
+  yaşıyorsa kişiyle, öldüyse ailesinin anısıyla); `tutarlilik` (yeni seçim eski izlerle aynı yöndeyse "seni bu yoldan tanırlar",
+  tersiyse şaşkınlık; **yaylarda sonucun kendisi değişir**: tutarlı +3 itibar, çelişki +2 ün −1 itibar); tohum/ip ödemesi izi
+  "karşılık buldu" sayar (`Seed.iz`); dallanan yay sahnesi izi hemen karşılar.
+- **Kader ipi** (`Ip`, en çok 3 açık, vadesinde mutlaka ödenir) ve **ay sahnesi** (`events.ts ayinSahnesi`: evre eğrisi, açık ipler,
+  son 12 kartın türü, aynı tür en çok 3, orta yaşta 18 ayda bir soru) motorda; `index.tsx` yalnız gösterir. Jenerik doruk yok.
+- **Vâris:** `ataIzleri` atanın en çok anılan üç izini atanın adıyla geçirir (`yanki.ata.<et>.<v>`).
+- **Denetçiler:** `yanki-check.cjs` (statik ayrışma, ikiz hayat ayrışması, kontrol=0, ata izi), `oynanis.cjs OYN_ESIK=1`
+  (karşılık %, ip ödeme %, açık ip ≤3, jenerik doruk 0, seri ≤3, orta yaş arası ≤18, ay notu ≥%60, bunalma).
+- Metinler: `lib/i18n-cigir.ts` (6 dil, `.f` oyuncu dişil, `.k` NPC dişil); üretim tablosu oturum dışında, dosya elle de düzenlenebilir.

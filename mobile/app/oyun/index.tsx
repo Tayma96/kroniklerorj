@@ -8,8 +8,8 @@ import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
 import { useMp } from "../../lib/mp/store";
 import { realmYearMonth } from "../../lib/mp/world";
-import { applyDilemma, rakipYarisi, tezgahKart, tezgahHuner, tezgahHunerStat, tezgahSans, tezgahBasari, resolveTezgah, TEZGAH_HUNER, careerTitle, achievementsOf, GameEvent, opportunitiesFor, resolveOpportunity, resolveMicro, resolveSaga, resolveBloodline, BL_CHOICES, BL_COST, SAGA_CHOICES, SAGA_COST, resolveDivan, inJail, jailBribeCost, bribeJailer, Opportunity, publicPerception, atHome, eulogy, WorkStyle, familyQuestsOf, playerWar, beylikName, childAction, ChildAct, elderAction, ElderAct, adultAction, AdultAct, ADULT_TRAINER_COST, studyEnergy, maxStudyEnergy, STUDY_COST, playEnergy, maxPlayEnergy, PLAY_COST, canWork, kariyerXp, kisiProfil, gorus, gorusSebebi, npcTeklifYanit, youthAction, GencAct, gonulAdayi, donumAni, acikHesaplar, onemliMi, kapiyaGelen, kapiMetni, hakemIpucu, araciSansi, hayatOzeti, kisiOf, knParam, esnafAhlaki } from "../../lib/game";
-import { pickDilemma, pickFestival, Dilemma, Choice } from "../../lib/events";
+import { applyDilemma, rakipYarisi, tezgahKart, tezgahHuner, tezgahHunerStat, tezgahSans, tezgahBasari, resolveTezgah, TEZGAH_HUNER, careerTitle, achievementsOf, GameEvent, resolveOpportunity, resolveMicro, resolveSaga, resolveBloodline, BL_CHOICES, BL_COST, SAGA_CHOICES, SAGA_COST, resolveDivan, inJail, jailBribeCost, bribeJailer, Opportunity, publicPerception, atHome, eulogy, WorkStyle, familyQuestsOf, playerWar, beylikName, childAction, ChildAct, elderAction, ElderAct, adultAction, AdultAct, ADULT_TRAINER_COST, studyEnergy, maxStudyEnergy, STUDY_COST, playEnergy, maxPlayEnergy, PLAY_COST, canWork, kariyerXp, kisiProfil, gorus, gorusSebebi, npcTeklifYanit, youthAction, GencAct, gonulAdayi, donumAni, acikHesaplar, ayNotu, onemliMi, kapiMetni, hakemIpucu, araciSansi, hayatOzeti, kisiOf, knParam, esnafAhlaki } from "../../lib/game";
+import { ayinSahnesi, Dilemma, Choice } from "../../lib/events";
 import { SinavKartiModal, SinavKartiVeri } from "../../lib/kart3d";
 import { rakipKartVerisi } from "../../lib/rakip-ui";
 import { HesapModal } from "../../lib/hesap-ui";
@@ -182,17 +182,12 @@ export default function Dashboard() {
       // kişisel bir dönüm noktası yaşandıysa rastgele ikilem/fırsat da açılmaz (o ayın sahnesi zaten var). Şenlik yılda tek
       // aydır; yalnız aynı ay gerçek bir karar bekliyorsa o yıl kaçar.
       const rs = rollSeq.current; rollSeq.current = state.hseq ?? 0;
-      const kararVar = !!state.hesap || state.npcTeklif?.turn === state.turn;
-      const buyukAn = state.history.some((e) => (e.q ?? 0) > rs && donumAni(e));
-      if (!kararVar && !state.player.dead && !inJail(state.player) && !dilemma && !opp) { // hücrede sokak sahnesi/fırsat çalınmaz
-        const fest = pickFestival(state); // şenlik ayı: yılın nabzı rastgele olaydan önce gelir (yılda bir; ay geçerse gelecek yıla)
-        if (fest) { setDilemma(fest); playChime(); }
-        else if (!buyukAn) {
-          const roll = Math.random();
-          if (roll < 0.28) { const d = pickDilemma(state); if (d) { setDilemma(d); playSaz(); } }
-          else if (roll < 0.50) { const list = opportunitiesFor(state); if (list.length) setOpp(list[Math.floor(Math.random() * list.length)]); }
-          else if (roll < 0.75) apply((s) => kapiyaGelen(s)); // boş ay: kasabadan gerçek biri bir kararla kapına gelir (düğün, cenaze, kefalet, hakemlik)
-        }
+      // Ayın sahnesini motor seçer (Yönetmen 2.0: evre eğrisi, açık ipler, son 12 ayın türleri, nöbetçi); arayüz yalnız gösterir.
+      if (!dilemma && !opp) {
+        const sahne = ayinSahnesi(state, rs);
+        if (sahne.s !== state) { const once = state; apply((cur) => (cur === once ? sahne.s : cur)); } // sahne izi / kapıdaki insan kayda geçer
+        if (sahne.dilemma) { setDilemma(sahne.dilemma); if (sahne.tur === "senlik") playChime(); else playSaz(); }
+        else if (sahne.opp) setOpp(sahne.opp);
       }
     } else if (state.turn < lastRolledTurn.current) {
       lastRolledTurn.current = state.turn;
@@ -542,6 +537,17 @@ export default function Dashboard() {
                 {x.git ? <Text style={{ color: C.goldDim, fontSize: 12 }}>›</Text> : null}
               </Pressable>
             ))}
+          </View>
+        );
+      })()}
+
+      {/* Ay sonu notu (pusula 2.4, çığır Sütun 1): oturumu kapatan tek satır — yaklaşan gerçek bir şey; kaçırılan bir şey yok */}
+      {!p.dead && (() => {
+        const not = ayNotu(state); if (!not) return null;
+        return (
+          <View style={{ marginHorizontal: 14, marginTop: 6, flexDirection: "row", alignItems: "center", gap: 7 }}>
+            <GameIcon name="hourglass" size={11} color={C.goldDim} />
+            <Text numberOfLines={2} style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 11.5, color: C.parchmentDim, lineHeight: 16 }}>{renderEvt(not.k, "", not.p, lang, t, p.gender === "kadın")}</Text>
           </View>
         );
       })()}

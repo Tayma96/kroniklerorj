@@ -1264,6 +1264,7 @@ export function npcTeklifYanit(prev: GameState, kabul: boolean, secim?: 0 | 1): 
   s.npcTeklif = undefined;
   const k = nufusOf(s).k[t.id]; if (!k || k.ol != null) return s;
   const kp = knParam(k); const nm = kisiAdi(k, "tr");
+  izEkle(s, "kapi:" + t.tur + ":" + (kabul ? 1 : 0), kabul ? "comert" : "temkin", { kisi: nm, kisiId: t.id }); // Yankı: kapıdaki insana verilen cevap
   if (t.tur === "dugun" || t.tur === "cenaze" || t.tur === "kefil" || t.tur === "hakem" || t.tur === "imece" || t.tur === "canborcu" || t.tur === "helal" || t.tur === "araci" || t.tur === "tanidik" || t.tur === "mahkeme") { kapiYaniti(s, t, k, kabul, secim); return s; }
   if (t.tur === "kardes" || t.tur === "miras") { // kardeşe yardım / mirasta kardeş payı: verirsen kesenden çıkar, vermezsen kardeşin unutmaz
     const kk = (key: string) => (k.g === "kadın" ? key + ".k" : key); const kf = kfParam(k); const tutar = t.tutar || 0;
@@ -1540,11 +1541,16 @@ function remember(s: GameState, npc: { id: string; name: string }, tur: string, 
   addMemory(ns.anilar, tur, s.turn, { ...opts, kaynak: npc.name });
 }
 // ── Sonuç tohumları (Vercel story_director sow_seed): bugün ektiğin yıllar sonra biçilir ──
-export interface Seed { id: string; kaynak: string; ekim: number; hmin: number; hmax: number; agirlik: "kucuk" | "orta" | "buyuk"; nesil: boolean; etki?: { money?: number; reputation?: number; health?: number }; npcName?: string; npcId?: string; }
+export interface Seed { id: string; kaynak: string; ekim: number; hmin: number; hmax: number; agirlik: "kucuk" | "orta" | "buyuk"; nesil: boolean; etki?: { money?: number; reputation?: number; health?: number }; npcName?: string; npcId?: string; ip?: Ip; iz?: number; } // iz: tohumu eken seçimin hafıza kaydı (Yankı)
+// Kader İpi (çığır tasarımı, Sütun 1): görünür tohum. ima: açılış satırının anahtarı · kisi: anılan kişi · vade: ekimden itibaren
+// [en erken, en geç] ay — en geç ayında ip MUTLAKA ödenir (sözü tutulmayan ip güvensizlik büyütür) · ode: ödeme satırının anahtarı
+// (yoksa tohumun kendi "seed.<kaynak>" satırı). Aynı anda en çok IP_EN_COK ip açık olur.
+export interface Ip { ima: string; kisi?: string; vade: [number, number]; ode?: string; }
+export const IP_EN_COK = 3;
 function sowSeed(s: GameState, opts: Omit<Seed, "id" | "ekim">) {
   if (!s.seeds) s.seeds = [];
   s.seeds.push({ ...opts, id: opts.kaynak + "_" + Math.random().toString(36).slice(2, 8), ekim: s.turn });
-  if (s.seeds.length > 30) s.seeds = s.seeds.slice(-30);
+  if (s.seeds.length > 30) { const fazla = s.seeds.length - 30; let atilan = 0; s.seeds = s.seeds.filter((t) => t.ip || atilan++ >= fazla); } // budama açık ipleri asla düşürmez (verilen söz silinmez)
 }
 // Kişiye bağlı tohum: iyiliği görenin ya da zulmü görenin hâli belirler. Velinimet ancak muradına eren (gd) hatırlar.
 function seedKosulOk(s: GameState, t: Seed): boolean {
@@ -1578,12 +1584,15 @@ function germinateSeed(s: GameState, t: Seed) {
   if (t.etki?.money) p.money = Math.max(0, p.money + t.etki.money);
   if (t.etki?.reputation) p.reputation = Math.max(-100, Math.min(100, p.reputation + t.etki.reputation));
   if (t.etki?.health) p.health = Math.max(1, Math.min(100, p.health + t.etki.health));
-  push(s, "tohum", `Geçmiş kapını çaldı.`, "kişisel", true, { k: "seed." + t.kaynak, p: [tohumKisi(s, t), p.name] });
+  if (t.kaynak === "ip_d_kadi") p.reputation = Math.max(-100, Math.min(100, p.reputation + (p.reputation >= 0 ? 2 : -2))); // kadının defteri adı olduğu gibi okur
+  if (t.kaynak === "ip_d_kuraklik" && !(s.marketEvent && (s.marketEvent.until ?? 0) > s.turn)) { const ev = MARKET_EVENTS.find((x) => x.key === "kuraklik"); if (ev) s.marketEvent = { goods: ev.goods, mult: ev.mult, until: s.turn + ev.months, key: ev.key }; } // yaşlıların dediği çıkar: kuraklık gerçekten pazara iner
+  push(s, "tohum", `Geçmiş kapını çaldı.`, "kişisel", true, { k: ipOdemeAnahtari(s, t), p: [tohumKisi(s, t), p.name] });
 }
 function seedTick(s: GameState) {
   const seeds = s.seeds; if (!seeds || !seeds.length) return;
   const turn = s.turn; const ready: [Seed, boolean][] = [];
   for (const t of seeds) {
+    if (t.ip) continue; // açık ipler kendi vadesiyle ödenir (ipTick)
     const yas = turn - t.ekim;
     if (yas >= t.hmax) ready.push([t, true]); // vadesi doldu — zorla biçilir
     // Büyük tohumlar doruğu bekler (directorTick'te biçilir); küçük/orta tohumlar kendiliğinden filizlenir.
@@ -1595,15 +1604,236 @@ function seedTick(s: GameState) {
 }
 // Tohumu kişinin hâline göre sonuçlandır (biç, kişiye özgü sonuç ya da sessizce sönme). Bir şey yaşandıysa true.
 function tohumSonucu(s: GameState, t: Seed): boolean {
+  izKarsilik(s, t.iz); // tohumu eken seçim karşılığını buldu (biçilse de kişiye özgü sonuçla kapansa da)
   const karar = seedKarari(s, t);
   if (karar === "bic") { germinateSeed(s, t); return true; }
   s.seeds = (s.seeds || []).filter((x) => x.id !== t.id);
+  if (karar === "sol" && t.ip) { push(s, "tohum", `Geçmiş kapını çaldı.`, "kişisel", true, { k: t.kaynak === "velinimet" ? "seed.velinimetFakir" : "ip.sondu", p: [tohumKisi(s, t)] }); return true; } // açık ip sessizce sönmez: söz her durumda sebebiyle kapanır
   if (karar === "sol") return false;
   if (karar.rep) s.player.reputation = Math.min(100, s.player.reputation + karar.rep);
   push(s, "tohum", `Geçmiş kapını çaldı.`, "kişisel", false, { k: karar.k, p: [tohumKisi(s, t)] });
   return true;
 }
 // (Nesil devri tohum aktarımı continueAsHeir içinde: sadece nesil aşabilenler kalır.)
+
+// ── YANKI: sonuç motoru (çekirdek) ──
+// Her büyük seçim (ikilem, orta yaş sorusu, hikâye yayı sahnesi, kapıya gelen insan) hafızaya bir İZ olarak yazılır. İz,
+// seçimin eğilimini taşır (cömert/hırslı, dürüst/hileci, cesur/temkinli). Sonra motor bu hafızayı okur:
+//  · yankiTick — eski bir seçim, eğilimine göre farklı bir sonuçla geri döner (kişi yaşıyorsa kişiyle);
+//  · tutarlılık — yeni seçim eski izlerle aynı yöndeyse kasaba "seni bu yoldan tanır", ters yöndeyse şaşırır; hikâye
+//    yaylarında bu, sonucun kendisini değiştirir (itibar/ün farkı);
+//  · tohum ve kader ipi — seçimin ektiği tohum/ip ödenince iz "karşılık buldu" sayılır;
+//  · yay dalları — sahnenin sonraki sahnesi seçime göre değişiyorsa iz hemen karşılık bulur.
+// Vâris, atasının en çok anılan izlerini "ata izi" olarak devralır (Hanedan Defteri bunu nesiller boyu taşır).
+export type IzEt = "comert" | "hirs" | "durust" | "hile" | "cesur" | "temkin";
+export const IZ_ETLERI: IzEt[] = ["comert", "hirs", "durust", "hile", "cesur", "temkin"];
+export const IZ_ZIT: Record<IzEt, IzEt> = { comert: "hirs", hirs: "comert", durust: "hile", hile: "durust", cesur: "temkin", temkin: "cesur" };
+// k: "dil:<ikilem>:<seçim>" · "arc:<yay>:<sahne>:<seçim>" · "kapi:<tür>:<1|0>" · t: tur · ref: kaç kez karşılık buldu · ata: atadan devralınan iz (atanın adı)
+export interface Iz { n: number; k: string; t: number; et: IzEt; kisi?: string; kisiId?: string; ref?: number; ata?: string; }
+export const HAFIZA_EN_COK = 80;
+export function deltaEtiketi(d: Delta | undefined, riskli = false): IzEt {
+  const m = d?.money || 0, h = d?.honor || 0, r = d?.reputation || 0, hp = d?.health || 0, nam = d?.nam || {};
+  if (riskli || (hp < 0 && m <= 0) || (d?.fear || 0) > 0) return "cesur";
+  if (m < 0 && (h > 0 || r > 0 || (nam.comert || 0) > 0)) return "comert";
+  if (m > 0 && (h < 0 || r < 0)) return "hirs";
+  if (h < 0 || (nam.zalim || 0) > 0) return "hile";
+  if (h > 0 || r > 0 || (nam.mert || 0) > 0 || (nam.dindar || 0) > 0) return "durust";
+  if (m > 0) return "hirs";
+  if (m < 0) return "comert";
+  return "temkin";
+}
+function izEkle(s: GameState, k: string, et: IzEt, o?: { kisi?: string; kisiId?: string; ref?: number }): Iz {
+  const n = (s.hafiza_seq || 0) + 1; s.hafiza_seq = n;
+  const iz: Iz = { n, k, t: s.turn, et, ...(o?.kisi ? { kisi: o.kisi } : {}), ...(o?.kisiId ? { kisiId: o.kisiId } : {}), ...(o?.ref ? { ref: o.ref } : {}) };
+  const h = [...(s.hafiza || []), iz];
+  while (h.length > HAFIZA_EN_COK) { const i = h.findIndex((x) => (x.ref || 0) > 0 && !x.ata); h.splice(i >= 0 ? i : 0, 1); } // önce karşılık bulmuş eski izler düşer
+  s.hafiza = h; return iz;
+}
+function izKarsilik(s: GameState, n?: number) { if (n == null || !s.hafiza) return; const iz = s.hafiza.find((x) => x.n === n); if (iz) iz.ref = (iz.ref || 0) + 1; }
+// İzin adı: hangi gün/hikâye (her dilde kartın kendi başlığı).
+export function izBaslik(iz: Iz): EvtParam | null {
+  const p = iz.k.split(":");
+  if (p[0] === "dil") return { sfx: "dil." + p[1] + ".t" };
+  if (p[0] === "arc") return { sfx: "arc." + p[1] + ".t" };
+  return null;
+}
+function izKisi(s: GameState, iz: Iz): { canli: boolean; p: EvtParam } | null {
+  if (!iz.kisiId && !iz.kisi) return null;
+  const k = iz.kisiId ? nufusOf(s).k[iz.kisiId] : undefined;
+  return k ? { canli: k.ol == null, p: knParam(k) } : { canli: false, p: iz.kisi || "" };
+}
+// Eğilimin aylık yankısı: karşılıksız, en az 8 aylık en eski iz geri döner. Etki küçük ve eğilime bağlıdır (farm yok: iz başına bir kez).
+const YANKI_ETKI: Record<IzEt, (p: Player) => void> = {
+  comert: (p) => { p.reputation = Math.min(100, p.reputation + 2); },
+  hirs: (p) => { p.reputation = Math.max(-100, p.reputation - 2); },
+  durust: (p) => { p.reputation = Math.min(100, p.reputation + 2); p.honor = clampStat(p.honor + 1); },
+  hile: (p) => { p.reputation = Math.max(-100, p.reputation - 3); },
+  cesur: (p) => { p.fame = clampStat(p.fame + 1); p.reputation = Math.min(100, p.reputation + 1); },
+  temkin: (p) => { p.health = clampStat(p.health + 2); },
+};
+export function yankiTick(s: GameState) {
+  const p = s.player; if (p.dead || inJail(p) || !s.hafiza?.length) return;
+  const aday = s.hafiza.filter((x) => !x.ref && s.turn - x.t >= 8);
+  if (!aday.length) return;
+  if (Math.random() >= Math.min(0.55, 0.18 + 0.05 * aday.length)) return;
+  const iz = aday.sort((a, b) => (a.ata ? 1 : 0) - (b.ata ? 1 : 0) || a.t - b.t)[0]; // önce kendi izlerin, sonra atanınkiler
+  const v = Math.floor(Math.random() * (iz.ata ? 2 : 3));
+  iz.ref = 1;
+  if (iz.ata) { const b = izBaslik(iz); if (!b) return; YANKI_ETKI[iz.et](p); push(s, "yanki", `Atanın bir kararı hâlâ anılıyor.`, "kişisel", false, { k: "yanki.ata." + iz.et + "." + v, p: [iz.ata, b] }); return; }
+  if (iz.k.startsWith("kapi:")) {
+    const ki = izKisi(s, iz); if (!ki) return; const evet = iz.k.endsWith(":1"); const kd = iz.kisiId ? nufusOf(s).k[iz.kisiId] : undefined; const kk = kd?.g === "kadın" ? ".k" : "";
+    if (!ki.canli) { push(s, "yanki", `Kapına gelen biri artık yok; ama o gün anılıyor.`, "kişisel", false, { k: "yanki.kapi.olu" + kk, p: [ki.p] }); return; }
+    YANKI_ETKI[evet ? "comert" : "hirs"](p);
+    push(s, "yanki", `Bir gün kapına gelen biri o günü unutmadı.`, "kişisel", false, { k: "yanki.kapi." + (evet ? "evet" : "hayir") + "." + (Math.random() < 0.5 ? 0 : 1) + kk, p: [ki.p] });
+    return;
+  }
+  const b = izBaslik(iz); if (!b) return;
+  YANKI_ETKI[iz.et](p);
+  push(s, "yanki", `Eski bir kararın yankısı geldi.`, "kişisel", false, { k: "yanki." + iz.et + "." + v, p: [b] });
+}
+// Yeni seçim eski izlerle konuşur: aynı yöndeyse "seni bu yoldan tanırlar", tam tersiyse kasaba şaşırır.
+// yay: hikâye yayında sonuç değişir (tutarlı: itibar +3 · çelişki: ün +2 itibar −1); ikilemde yarı yarıya yalnız satır + küçük nudge.
+function tutarlilik(s: GameState, et: IzEt, haric: number, yay?: string) {
+  const h = (s.hafiza || []).filter((x) => x.n !== haric && !x.ata && !x.k.startsWith("kapi:"));
+  const ayni = h.filter((x) => x.et === et), zit = h.filter((x) => x.et === IZ_ZIT[et]);
+  const p = s.player;
+  if (ayni.length >= 2) {
+    const eski = ayni.find((x) => !x.ref) || ayni[ayni.length - 1]; const b = izBaslik(eski); if (!b) return;
+    if (!yay && Math.random() >= 0.5) return;
+    eski.ref = (eski.ref || 0) + 1;
+    if (yay) { p.reputation = Math.min(100, p.reputation + 3); push(s, "yanki", `Kasaba seni tanıdığı yoldan yürürken gördü.`, "kişisel", false, { k: "yanki.arc.tutarli", p: [{ sfx: "arc." + yay + ".t" }, b] }); }
+    else { if (et === "cesur") p.fame = clampStat(p.fame + 1); else if (et === "hile" || et === "hirs") p.reputation = Math.max(-100, p.reputation - 1); else if (et === "temkin") p.health = clampStat(p.health + 1); else p.reputation = Math.min(100, p.reputation + 1);
+      push(s, "yanki", `Bu ilk değil; kasaba bu huyunu biliyor.`, "kişisel", false, { k: "yanki.tutarli." + et, p: [b] }); }
+  } else if (zit.length >= 2 && !ayni.length) {
+    const eski = zit.find((x) => !x.ref) || zit[zit.length - 1]; const b = izBaslik(eski); if (!b) return;
+    if (!yay && Math.random() >= 0.5) return;
+    eski.ref = (eski.ref || 0) + 1;
+    if (yay) { p.fame = clampStat(p.fame + 2); p.reputation = Math.max(-100, p.reputation - 1); push(s, "yanki", `Bu karar seni tanıyanları şaşırttı.`, "kişisel", false, { k: "yanki.arc.celiski", p: [{ sfx: "arc." + yay + ".t" }, b] }); }
+    else { p.fame = clampStat(p.fame + 1); push(s, "yanki", `Bu karar seni tanıyanları şaşırttı.`, "kişisel", false, { k: "yanki.celiski", p: [b] }); }
+  }
+}
+// Vâris devri: atanın en çok anılan üç kararı (atanın adıyla) yeni hayatın hafızasına "ata izi" olarak geçer; tur 0'a göre yeniden temellenir.
+export function ataIzleri(prev: GameState): Iz[] {
+  return onemliIzler(prev.hafiza, 3).map((x) => ({ n: x.n, k: x.k, t: -12, et: x.et, ata: prev.player.name }));
+}
+// Hafızanın özeti (Hayat Romanı, vâris, Hanedan Defteri): baskın eğilim ve en çok karşılık bulan izler.
+export function hafizaEgilimi(h: Iz[] | undefined): IzEt | null {
+  const say: Record<string, number> = {}; for (const x of h || []) if (!x.ata) say[x.et] = (say[x.et] || 0) + 1 + (x.ref || 0) * 0.5;
+  const en = Object.entries(say).sort((a, b) => b[1] - a[1])[0]; return en && en[1] >= 3 ? (en[0] as IzEt) : null;
+}
+export function onemliIzler(h: Iz[] | undefined, n = 5): Iz[] {
+  return [...(h || [])].filter((x) => !x.ata && !x.k.startsWith("kapi:")).sort((a, b) => (b.ref || 0) - (a.ref || 0) || a.t - b.t).slice(0, n);
+}
+
+// ── Kader İpi: söz ver, sakla, öde (çığır tasarımı Sütun 1 + 3) ──
+// İp kaynakları: (1) hikâye yaylarının 12'sinin belirli sonları, (2) olgunlaşmaya yaklaşan büyük tohumlar (vadesinden en çok
+// iki yıl önce görünür olur), (3) orta yaş sorularının bazı cevapları, (4) yönetmen — gerilim doruğa vardığında ödenecek olgun
+// ip yoksa yeni bir soru açar. Ödeme her zaman sebebini söyleyen tek bir satırdır; jenerik doruk ("talih döndü") yoktur.
+export function acikIpler(s: GameState): Seed[] { return (s.seeds || []).filter((t) => !!t.ip); }
+function ipOdemeAnahtari(s: GameState, t: Seed): string {
+  if (!t.ip?.ode) return "seed." + t.kaynak;
+  if (t.kaynak === "ip_d_kadi") return s.player.reputation >= 0 ? "ip.ip_d_kadi.ode" : "ip.ip_d_kadi.ode2"; // yeni kadının defteri oyuncunun gerçek adını okur
+  return t.ip.ode;
+}
+// Yay sonu → ip (yay kimliği:sahne:seçim). 30 yayın 12'si ip bırakır.
+export const ARC_IPLERI: Record<string, { kaynak: string; hmin: number; hmax: number; etki?: Seed["etki"] }> = {
+  "yanik_degirmen:s2:1": { kaynak: "ip_degirmen", hmin: 18, hmax: 48, etki: { reputation: -4 } },
+  "panayir_pehlivani:s2:0": { kaynak: "ip_pehlivan", hmin: 10, hmax: 14, etki: { reputation: 4 } },
+  "panayir_pehlivani:s2b:0": { kaynak: "ip_pehlivan", hmin: 10, hmax: 14, etki: { reputation: 4 } },
+  "panayir_pehlivani:s2b:1": { kaynak: "ip_pehlivan_kese", hmin: 10, hmax: 16, etki: { reputation: -3 } },
+  "gocmen_kafilesi:s2:0": { kaynak: "ip_gocmen", hmin: 24, hmax: 48, etki: { reputation: 4 } },
+  "gocmen_kafilesi:s2:1": { kaynak: "ip_gocmen", hmin: 24, hmax: 48, etki: { reputation: 4 } },
+  "son_sefer:s2b:0": { kaynak: "ip_deveci", hmin: 30, hmax: 72, etki: { money: 40, reputation: 2 } },
+  "son_sefer:s2b:1": { kaynak: "ip_deveci_kirgin", hmin: 30, hmax: 72, etki: { reputation: -3 } },
+  "kuyumcu_emaneti:s2b:0": { kaynak: "ip_kuyumcu", hmin: 18, hmax: 54, etki: { reputation: 3 } },
+  "kuyumcu_emaneti:s2b:1": { kaynak: "ip_kuyumcu", hmin: 18, hmax: 54, etki: { reputation: 3 } },
+  "dilsiz_ozan:s2b:0": { kaynak: "ip_ozan", hmin: 24, hmax: 60, etki: { reputation: 3 } },
+  "dilsiz_ozan:s2b:1": { kaynak: "ip_ozan", hmin: 24, hmax: 60, etki: { reputation: 3 } },
+  "kan_davasi:s2:1": { kaynak: "ip_kan_dugum", hmin: 36, hmax: 84, etki: { reputation: -3 } },
+  "veba:s2:0": { kaynak: "ip_veba_yetim", hmin: 36, hmax: 96, etki: { reputation: 4 } },
+  "veba:s2:1": { kaynak: "ip_veba_ambar", hmin: 36, hmax: 96, etki: { reputation: -4, money: -20 } },
+  "sahte_dervis:s1:1": { kaynak: "ip_dervis", hmin: 18, hmax: 48, etki: { reputation: -6, money: -40 } },
+  "kayip_kardes:s2:0": { kaynak: "ip_kardes_borc", hmin: 18, hmax: 54, etki: { money: 50, reputation: 2 } },
+  "kayip_kardes:s2:1": { kaynak: "ip_kardes_mektup", hmin: 12, hmax: 48 },
+  "golgeden_cikis:s1:1": { kaynak: "ip_golge", hmin: 48, hmax: 96, etki: { reputation: -3 } },
+  "miras_kavgasi:s1:1": { kaynak: "ip_miras", hmin: 18, hmax: 60, etki: { reputation: -2 } },
+};
+// Orta yaş sorusunun cevabı → ip (ikilem kimliği:seçim).
+export const DILEMMA_IPLERI: Record<string, { kaynak: string; hmin: number; hmax: number; etki?: Seed["etki"] }> = {
+  "orta_kalfa:1": { kaynak: "ip_kalfa", hmin: 12, hmax: 24, etki: { reputation: 2 } },
+  "orta_sir:0": { kaynak: "ip_kardes_defter", hmin: 6, hmax: 18, etki: { reputation: 2 } },
+  "orta_goc:0": { kaynak: "ip_goc_soz", hmin: 6, hmax: 14 },
+};
+// Yönetmenin kendi soruları: kasabanın şimdisinde duran (geçmişe olay uydurmayan) kısa vadeli merak ipleri.
+export const YONETMEN_IPLERI: { kaynak: string; hmin: number; hmax: number; etki?: Seed["etki"] }[] = [
+  { kaynak: "ip_d_muhur", hmin: 4, hmax: 14, etki: { reputation: 4 } },
+  { kaynak: "ip_d_kadi", hmin: 3, hmax: 10 },
+  { kaynak: "ip_d_kuraklik", hmin: 4, hmax: 12 },
+  { kaynak: "ip_d_bey", hmin: 4, hmax: 12, etki: { reputation: 2 } },
+];
+// Büyük tohumların ipe dönüşen hâli (ima satırı i18n "ip.seed.<kaynak>.ima"; ödeme tohumun kendi satırı).
+export const BUYUK_IP: string[] = ["savundugun_cocuk", "savunmadigin_cocuk", "yangin_sustun", "usta_mirasi", "ortak_kader", "golge_borcu", "velinimet", "divan_yetim_kirgin"];
+// Vadeyi öbür açık iplerden en az 2 ay ayır (aynı ayda iki zorunlu ödeme düşmesin; ayda en çok bir ödeme).
+function ipBitisAyir(s: GameState, ekim: number, vmax: number, vmin: number): number {
+  const dolu = acikIpler(s).map((t) => t.ekim + t.ip!.vade[1]);
+  let v = vmax; let g = 0;
+  while (dolu.some((d) => Math.abs(d - (ekim + v)) < 2) && g++ < 12) v = v + 2 > vmax + 12 ? Math.max(vmin, v - 2) : v + 2;
+  return v;
+}
+function ipAc(s: GameState, o: { kaynak: string; hmin: number; hmax: number; etki?: Seed["etki"]; npcName?: string; npcId?: string; iz?: number }): boolean {
+  if (s.player.dead) return false;
+  const acik = acikIpler(s);
+  if (acik.length >= IP_EN_COK || acik.some((t) => t.kaynak === o.kaynak)) return false;
+  const hmax = ipBitisAyir(s, s.turn, o.hmax, o.hmin);
+  sowSeed(s, { kaynak: o.kaynak, hmin: o.hmin, hmax, agirlik: "orta", nesil: false, etki: o.etki, npcName: o.npcName, npcId: o.npcId, iz: o.iz, ip: { ima: "ip." + o.kaynak + ".ima", kisi: o.npcName, vade: [o.hmin, hmax], ode: "ip." + o.kaynak + ".ode" } });
+  push(s, "kader", `Bir söz, bir ima: hikâye burada bitmedi.`, "kişisel", false, { k: "ip." + o.kaynak + ".ima", p: o.npcName ? [o.npcName] : undefined });
+  return true;
+}
+// Ay başında: büyük tohum olgunluğa yaklaştıysa ip olarak görünür; vadesi dolan ip ödenir (ayda en çok bir ödeme).
+function ipTick(s: GameState) {
+  if (s.player.dead || !s.seeds?.length) return;
+  const turn = s.turn;
+  if (acikIpler(s).length < IP_EN_COK) {
+    const aday = s.seeds.filter((t) => !t.ip && t.agirlik === "buyuk" && BUYUK_IP.includes(t.kaynak) && turn - t.ekim >= Math.max(0, t.hmin - 24) && seedKosulOk(s, t)).sort((a, b) => a.ekim - b.ekim)[0];
+    if (aday) {
+      const yas = turn - aday.ekim; const vmin = Math.max(aday.hmin, yas + 6); const vmax0 = Math.max(vmin + 2, Math.min(aday.hmax, yas + 48));
+      const vmax = ipBitisAyir(s, aday.ekim, vmax0, vmin);
+      aday.ip = { ima: "ip.seed." + aday.kaynak + ".ima", kisi: aday.npcName, vade: [vmin, vmax] };
+      push(s, "kader", `Geçmişten bir iz yeniden belirdi.`, "kişisel", false, { k: aday.ip.ima, p: [tohumKisi(s, aday)] });
+      return; // görünür olduğu ay ödenmez
+    }
+  }
+  const ipler = acikIpler(s);
+  const vadesi = ipler.filter((t) => turn - t.ekim >= t.ip!.vade[1]).sort((a, b) => a.ekim + a.ip!.vade[1] - (b.ekim + b.ip!.vade[1]))[0];
+  if (vadesi) { tohumSonucu(s, vadesi); return; }
+  const olgun = ipler.filter((t) => turn - t.ekim >= t.ip!.vade[0]);
+  if (olgun.length && Math.random() < 0.06) tohumSonucu(s, olgun[0]);
+}
+// En olgun ip: vadesinin en ileri noktasında olan (doruğun yerini o alır).
+function enOlgunIp(s: GameState): Seed | undefined {
+  const oran = (t: Seed) => (s.turn - t.ekim - t.ip!.vade[0]) / Math.max(1, t.ip!.vade[1] - t.ip!.vade[0]);
+  return acikIpler(s).filter((t) => s.turn - t.ekim >= t.ip!.vade[0]).sort((a, b) => oran(b) - oran(a))[0];
+}
+// Ay sonu notu (pusula 2.4): oturumu kapatan tek satır — yaklaşan gerçek bir şey (ipin vakti, evladın on altısı, şenlik, sınav,
+// yarış, hasat, kış). Merak bırakır, kesintisiz oynamayı ödüllendirmez; hiçbir şey kaçırılmaz (ip yoklukta kopmaz).
+export function ayNotu(s: GameState): { k: string; p?: EvtParam[] } | null {
+  const p = s.player; if (p.dead || p.age < 13 || inJail(p)) return null;
+  const ipler = acikIpler(s).map((t) => ({ t, kalan: t.ekim + t.ip!.vade[1] - s.turn })).sort((a, b) => a.kalan - b.kalan);
+  if (ipler[0] && ipler[0].kalan <= 6) return { k: "not.ipYakin", p: [{ sfx: ipKisa(ipler[0].t) }] };
+  const ev16 = (p.child_meta || []).find((c) => { const ay = s.turn - c.born; return p.children.includes(c.n) && ay >= 180 && ay < 192; });
+  if (ev16) return { k: "not.evlat16", p: [ev16.n] };
+  if (p.sinav_bekle != null && p.sinav_bekle > s.turn && p.sinav_bekle - s.turn <= 6) return { k: "not.sinav", p: [p.sinav_bekle - s.turn] };
+  const r = p.rakip; if (r && !r.bitti && r.yaris == null && r.next != null && r.next - s.turn >= 1 && r.next - s.turn <= 3) return { k: "not.rakip", p: [rkAd(r)] };
+  const ay1 = (s.turn + 1) % 12;
+  if ([2, 7, 11].includes(ay1)) return { k: "not.senlik" };
+  if (ipler[0]) return { k: "not.ip", p: [{ sfx: ipKisa(ipler[0].t) }] };
+  const bu = currentCalendar(s.turn).season, sonra = currentCalendar(s.turn + 1).season;
+  if (sonra === "Kış" && bu !== "Kış") return { k: (p.winter_stock_until ?? -1) > s.turn ? "not.kisDolu" : "not.kisBos" };
+  if (sonra === "Sonbahar" && bu !== "Sonbahar" && p.properties.some((x) => x.type === "tarla")) return { k: "not.hasat" };
+  if ((p.debt || 0) > 0) return { k: "not.borc", p: [Math.round(p.debt || 0)] };
+  return null;
+}
+export function ipKisa(t: Seed): string { return t.ip?.ima ? t.ip.ima.replace(/\.ima$/, ".kisa") : ""; }
 
 // ── Çağ olayları (Vercel legacy_system epoch_tick): her ~60-90 turda kalıcı dünya kırılması ──
 function epochTick(s: GameState) {
@@ -1643,16 +1873,24 @@ function directorTick(s: GameState) {
   if (st.tension < 80) return;
   // 1) Olgunlaşmış büyük tohum varsa doruğa o saklanmıştı — şimdi biçilir.
   const big = (s.seeds || []).filter((t) => t.agirlik === "buyuk" && s.turn - t.ekim >= t.hmin && seedKosulOk(s, t)).sort((a, b) => a.ekim - b.ekim)[0]; // kişiye bağlıysa o kişi yaşıyor ve muradına ermiş olmalı
-  if (big && tohumSonucu(s, big)) { // doruk anı: kişiye bağlı tohum o kişinin hâline göre sonuçlanır (vefalıysa ödül, unuttuysa hayal kırıklığı)
+  // 0) Yönetmen 2.0: doruğun yerini EN OLGUN İP alır (verilen söz, sebebini söyleyerek ödenir).
+  const ip = enOlgunIp(s);
+  if (ip && tohumSonucu(s, ip)) {
+  } else if (big && tohumSonucu(s, big)) { // doruk anı: kişiye bağlı tohum o kişinin hâline göre sonuçlanır (vefalıysa ödül, unuttuysa hayal kırıklığı)
   } else if (st.nemesis && Math.random() < 0.6) {
     push(s, "doruk", `Husumet doruğa çıktı: ${st.nemesis.name} gölgeden çıkıp üstüne geldi.`, "kişisel", true, { k: "dir.climaxNemesis", p: [nemAd(s, st.nemesis)] });
     s.player.fear = Math.min(100, s.player.fear + 4);
     st.nemesis.power += 3;
-  } else if (Math.random() < 0.5) {
-    s.player.reputation = Math.min(100, s.player.reputation + 5); s.player.fame = Math.min(100, s.player.fame + 4);
-    push(s, "doruk", `Yıllardır biriken gerilim doruğa vardı — ve bu kez talih senden yana döndü.`, "kişisel", true, { k: "dir.climaxWin" });
   } else {
-    push(s, "doruk", `Hayatın bir dönüm noktasına geldi; eski dengeler sarsıldı.`, "kişisel", true, { k: "dir.climaxTurn" });
+    // Ödenecek olgun ip yoksa jenerik doruk ("talih döndü", "dengeler sarsıldı") YOK: yönetmen bir soru açar ve gerilimi ona bağlar;
+    // ip de açılamıyorsa gerilim sessizce bekler (sebepsiz an üretilmez).
+    const acik = acikIpler(s).map((t) => t.kaynak);
+    const bos = YONETMEN_IPLERI.filter((x) => !acik.includes(x.kaynak));
+    const taze = bos.filter((x) => !(st.flags || {})["ip:" + x.kaynak]); // bu hanede henüz sorulmamış soru önce gelir
+    const havuz = taze.length ? taze : bos;
+    const sec = havuz.length ? havuz[Math.floor(Math.random() * havuz.length)] : undefined;
+    if (sec && ipAc(s, sec)) { st.flags = { ...(st.flags || {}), ["ip:" + sec.kaynak]: true }; st.tension = 55; st.lull = 0; return; }
+    st.tension = 70; return;
   }
   st.tension = 30; st.breath = 4; st.lull = 0;
 }
@@ -1813,6 +2051,10 @@ export interface GameState {
   tips?: Tip[]; // eyleme dönük duyumlar (piyasa ipucu / fraksiyon istihbaratı)
   locEvents?: LocEvent[]; // lokasyon-bazlı tipli dünya olayları (kuraklık/panayır/veba...)
   recent_dilemmas?: string[]; // son görülen ikilem id'leri (ring 6) — dar havuzlarda aynı sahnenin üst üste gelmesi önlenir
+  sahne_izi?: string[]; // ayın sahnesi (ayinSahnesi) son 12 ayda hangi türdendi — tekdüzelik nöbetçisi
+  orta_son?: number; // son orta yaş sorusunun turu (30–55 yaş arası her 18 ayda en az bir soru)
+  hafiza?: Iz[]; // Yankı: oyuncunun büyük seçimlerinin kalıcı kaydı — sonraki olaylar, yaylar ve vâris bunu okur
+  hafiza_seq?: number;
 }
 // Dost bir hanedanın oyuncuya teklifi (ittifak veya evlilik).
 export interface DynastyOffer { id: string; houseId: string; nameIdx: number; type: "ittifak" | "evlilik"; }
@@ -3072,6 +3314,8 @@ export function advance(prev: GameState, n = 1): GameState {
       if ((!ns.anilar || !ns.anilar.length) && Math.abs(s.relationships[id] || 0) < 5 && Math.abs(ns.mood) < 5 && (!ns.memories || !ns.memories.length)) delete s.npc_state[id];
     }
     gossipTick(s); // tanıklı skandallar → oyuncu söylentileri (haftalık)
+    ipTick(s);     // kader ipleri: olgunlaşan büyük tohum görünür olur, vadesi dolan ip sebebiyle ödenir
+    yankiTick(s);  // Yankı: eski bir seçim eğilimine göre geri döner
     seedTick(s);   // geçmişin tohumları filizlenir (haftalık en çok 1)
     // Süregelen evlat eğitimi: haftalık masraf düşer, birikim vâris olunca bonusa döner (Vercel child_investment_tick).
     if (s.player.child_edu) {
@@ -7075,6 +7319,7 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
     // Sadece nesil aşabilen tohumlar vârise geçer. Vârisin turu 0'dan başladığı için ekim'i yeniden
     // tabanla (ekim -= prev.turn): birikmiş yaş korunur, yoksa yas=turn-ekim negatif kalıp tohum hiç olgunlaşmaz.
     seeds: (prev.seeds || []).filter((t) => t.nesil).map((t) => ({ ...t, ekim: t.ekim - prev.turn })),
+    hafiza: ataIzleri(prev), hafiza_seq: prev.hafiza_seq, // Yankı: atanın en çok anılan üç kararı vârisin kasabasında yankılanır
     player_rumors: [],
     player: {
       name: surname ? `${heir} ${surname}` : heir, surname, gender: CHILD_F.has(heir) ? "kadın" : "erkek",
@@ -8573,6 +8818,7 @@ export function acikHesaplar(s: GameState): AcikHesap[] {
   { const tn = p.tanistir; const c = tn && tn.until > s.turn && !p.married ? pop.k[tn.id] : undefined; if (c && c.ol == null && !c.es) out.push({ k: "ah.tanistir", p: [knParam(c), { pl: c.loc }], ikon: "ring", git: "/oyun/npc/" + c.id, agirlik: 30 }); }
   if (p.pazar_haber && p.pazar_haber.until > s.turn && p.pazar_haber.loc !== p.location_name) out.push({ k: "ah.haber", p: [{ pl: p.pazar_haber.loc }, { il: p.pazar_haber.mal }, p.pazar_haber.until - s.turn], ikon: "coins", git: "/oyun/harita", agirlik: 22 });
   if (p.stat_points > 0) out.push({ k: "ah.puan", p: [p.stat_points], ikon: "karakter", git: "/oyun/karakter", agirlik: 20 });
+  for (const t of acikIpler(s)) out.push({ k: "ah.ip", p: [{ sfx: ipKisa(t) }, Math.max(1, t.ekim + t.ip!.vade[1] - s.turn)], ikon: "scroll", agirlik: 58 }); // kader ipi: ne, en geç ne zaman
   return out.sort((a, b) => b.agirlik - a.agirlik).slice(0, 5);
 }
 // Günlükte "önemli": oyuncunun kendi hayatına ait olaylar ve ona değen dünya olayları. Mevsim/renk satırları, fısıltılar,
@@ -8928,8 +9174,11 @@ export function applyDilemma(prev: GameState, delta: Delta, resultText: string, 
   if (delta.addItem) p.inventory[delta.addItem] = (p.inventory[delta.addItem] || 0) + 1;
   if (delta.nam) for (const k of Object.keys(delta.nam) as (keyof Nam)[]) bumpNam(p, k, delta.nam[k]!);
   if (delta.standing && p.faction) p.faction_standing[p.faction] = (p.faction_standing[p.faction] || 0) + delta.standing; // lonca itibarı (fraksiyon sahnesi)
-  if (seedKey && DILEMMA_SEEDS[seedKey]) sowSeed(s, DILEMMA_SEEDS[seedKey]); // sessiz tohum: seçim yıllar sonra döner
+  const iz = seedKey && !festival ? izEkle(s, "dil:" + seedKey, deltaEtiketi(delta)) : undefined; // Yankı: seçim hafızaya yazılır
+  if (seedKey && DILEMMA_SEEDS[seedKey]) sowSeed(s, { ...DILEMMA_SEEDS[seedKey], iz: iz?.n }); // sessiz tohum: seçim yıllar sonra döner
+  if (seedKey && DILEMMA_IPLERI[seedKey]) ipAc(s, { ...DILEMMA_IPLERI[seedKey], iz: iz?.n }); // orta yaş sorusunun cevabı görünür bir ip bırakır
   push(s, "olay", resultText, "kişisel", false, evKey ? { k: evKey } : undefined); // anahtar varsa günlük dile/dişile göre yeniden çözülür (renderEvt fallback güvenli)
+  if (iz && p.health > 0) tutarlilik(s, iz.et, iz.n);
   if (seedKey && p.health > 0) ikilemKisisi(s, seedKey.split(":")[0], delta);
   if (p.health <= 0) die(s, `${p.name} bu olaydan sağ çıkamadı.`, { k: "evj.dieEvent", p: [p.name] });
   return s;
@@ -9113,6 +9362,10 @@ export function advanceArc(prev: GameState, choiceIdx: number, loc?: { result?: 
     }
   }
   push(s, "hikaye", loc?.result || c.result, "kişisel");
+  const dalli = new Set(stage.choices.map((x) => x.next)).size > 1; // seçim sonraki sahneyi değiştiriyorsa karşılığı hemen gelir (dal)
+  const iz = izEkle(s, "arc:" + a.id + ":" + stage.id + ":" + choiceIdx, deltaEtiketi(c.delta), dalli ? { ref: 1 } : undefined);
+  tutarlilik(s, iz.et, iz.n, a.id); // yayın sonucu oyuncunun geçmişine göre değişir
+  if (c.next === "end") { const ai = ARC_IPLERI[a.id + ":" + stage.id + ":" + choiceIdx]; if (ai) ipAc(s, { ...ai, iz: iz.n }); } // yayın sonu bir söz bırakır (en çok 3 açık ip)
   if (c.next === "end") {
     push(s, "hikaye_bitti", loc?.endLabel || `"${a.title}" sona erdi.`, "kişisel", true);
     s.story.completed.push(a.id);
@@ -10420,6 +10673,20 @@ export function migrate(s: GameState): GameState {
   s.merdiven = MERDIVEN_SURUM;
   // Ahilik göçü: eski kayıtta kazanılmış kademe yok → hizmetin verdiği unvan kazanılmış sayılır (kimse rütbe kaybetmez; bundan sonrası sınavla).
   if (p.kademe === undefined && p.profession && p.profession !== "işsiz") { const pr0 = professionById(p.profession); p.kademe = pr0 ? careerTier(pr0, p.career_xp || 0) : 0; }
+  // Kader ipi / yönetmen alanları (opsiyonel): bozuk ip sessizce düz tohuma iner, bozuk tohum atılır; sayaçlar sayı olmalı.
+  if (s.seeds != null && !Array.isArray(s.seeds)) s.seeds = undefined;
+  if (Array.isArray(s.seeds)) {
+    s.seeds = s.seeds.filter((t) => t && typeof t === "object" && typeof t.kaynak === "string" && Number.isFinite(t.ekim) && Number.isFinite(t.hmin) && Number.isFinite(t.hmax));
+    for (const t of s.seeds) if (t.ip != null && !(typeof t.ip === "object" && typeof t.ip.ima === "string" && Array.isArray(t.ip.vade) && t.ip.vade.length === 2 && t.ip.vade.every((v) => Number.isFinite(v)))) delete t.ip;
+  }
+  if (s.sahne_izi != null && !(Array.isArray(s.sahne_izi) && s.sahne_izi.every((x) => typeof x === "string"))) s.sahne_izi = undefined;
+  if (s.hafiza != null) { // Yankı hafızası: bozuk kayıt ayıklanır, eğilim bilinmeyense iz düşer
+    s.hafiza = Array.isArray(s.hafiza) ? s.hafiza.filter((x) => x && typeof x === "object" && Number.isFinite(x.n) && typeof x.k === "string" && Number.isFinite(x.t) && IZ_ETLERI.includes(x.et)).map((x) => ({ ...x, ref: Number.isFinite(x.ref) ? x.ref : undefined, ata: typeof x.ata === "string" ? x.ata : undefined, kisi: typeof x.kisi === "string" ? x.kisi : undefined, kisiId: typeof x.kisiId === "string" ? x.kisiId : undefined })).slice(-HAFIZA_EN_COK) : undefined;
+  }
+  if (s.hafiza_seq != null && !Number.isFinite(s.hafiza_seq)) s.hafiza_seq = undefined;
+  if (s.hafiza?.length && !(s.hafiza_seq! >= Math.max(...s.hafiza.map((x) => x.n)))) s.hafiza_seq = Math.max(...s.hafiza.map((x) => x.n));
+  if (Array.isArray(s.seeds)) for (const t of s.seeds) if (t && t.iz != null && !Number.isFinite(t.iz)) delete t.iz;
+  if (s.orta_son != null && !Number.isFinite(s.orta_son)) s.orta_son = undefined;
   s.schema = 1; // şema damgası: bu sürümün göçlerinden geçti
   if (s.player && s.world) nufusHazirla(s); // yaşayan nüfus: eski kadro (isim, yaş, aile, ilişki) birebir kalıcı kişilere dönüşür
   return s;

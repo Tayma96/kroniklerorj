@@ -10,7 +10,7 @@ const os = require("os"); const fs = require("fs"); const path = require("path")
 const mobile = path.join(__dirname, "..", "..");
 const giris = path.join(os.tmpdir(), `kronikler-olu-giris-${process.pid}.ts`);
 const paket = path.join(os.tmpdir(), `kronikler-olu-${process.pid}.cjs`);
-fs.writeFileSync(giris, `export { DILEMMAS, FESTIVALS } from ${JSON.stringify(path.join(mobile, "lib/events"))};\nexport { ARCS } from ${JSON.stringify(path.join(mobile, "lib/arcs"))};\nexport { DILEMMA_SEEDS } from ${JSON.stringify(path.join(mobile, "lib/game"))};\n`);
+fs.writeFileSync(giris, `export { DILEMMAS, FESTIVALS, ORTA_YAS } from ${JSON.stringify(path.join(mobile, "lib/events"))};\nexport { ARCS } from ${JSON.stringify(path.join(mobile, "lib/arcs"))};\nexport { DILEMMA_SEEDS, DILEMMA_IPLERI } from ${JSON.stringify(path.join(mobile, "lib/game"))};\n`);
 execSync(`${ESBUILD} ${giris} --bundle --platform=node --format=cjs --outfile=${paket} --log-level=error`, { cwd: mobile, stdio: "inherit" });
 const B = require(paket); fs.unlinkSync(giris); fs.unlinkSync(paket);
 
@@ -24,10 +24,10 @@ const yener = (a, b) => { // a, b'yi her sıralı değerde tutuyor ve bir yerde 
   for (const k of SIRALI) { const x = a[k] || 0, y = b[k] || 0; if (x < y) return false; if (x > y) strict = true; }
   return strict;
 };
-const kartlar = [...B.DILEMMAS, ...B.FESTIVALS.flatMap((f) => f.variants)];
+const kartlar = [...B.DILEMMAS, ...B.ORTA_YAS, ...B.FESTIVALS.flatMap((f) => f.variants)]; // orta yaş soruları da (çığır Sütun 3)
 const out = [];
 for (const dl of kartlar) {
-  const ch = dl.choices.map((c, i) => ({ i, label: c.label, seed: B.DILEMMA_SEEDS[dl.id + ":" + i], sonuc: c.risk ? [vec(c.delta), vec(c.risk.kayip)] : [vec(c.delta)] }));
+  const ch = dl.choices.map((c, i) => ({ i, label: c.label, seed: B.DILEMMA_SEEDS[dl.id + ":" + i] || B.DILEMMA_IPLERI[dl.id + ":" + i] /* ip açan seçim de gizli sonuçlu */, sonuc: c.risk ? [vec(c.delta), vec(c.risk.kayip)] : [vec(c.delta)] }));
   for (const a of ch) for (const b of ch) {
     if (a === b || a.seed || b.seed) continue;
     if (a.sonuc.every((x) => b.sonuc.every((y) => yener(x, y)))) out.push(`${dl.id}: [${a.i}] "${a.label}" ${JSON.stringify(a.sonuc)}  ≻  [${b.i}] "${b.label}" ${JSON.stringify(b.sonuc)}`);
@@ -38,6 +38,6 @@ for (const arc of B.ARCS) for (const st of Object.values(arc.stages)) { sahne++;
   const ch = st.choices.map((c, i) => ({ i, label: c.label, next: c.next, v: vec(c.delta) }));
   for (const a of ch) for (const b of ch) if (a !== b && a.next === b.next && yener(a.v, b.v)) out.push(`${arc.id}.${st.id}: [${a.i}] "${a.label}" ${JSON.stringify(a.v)}  ≻  [${b.i}] "${b.label}" ${JSON.stringify(b.v)} (ikisi de → ${a.next})`);
 }
-console.log(`${kartlar.length} kart tarandı (ikilem ${B.DILEMMAS.length}, şenlik ${kartlar.length - B.DILEMMAS.length}) · ${sahne} yay sahnesi`);
+console.log(`${kartlar.length} kart tarandı (ikilem ${B.DILEMMAS.length}, orta yaş ${B.ORTA_YAS.length}, şenlik ${kartlar.length - B.DILEMMAS.length - B.ORTA_YAS.length}) · ${sahne} yay sahnesi`);
 if (out.length) { console.log(out.join("\n")); console.log(`ÖLÜ KARAR: ${out.length} kart`); process.exit(1); }
 console.log("ÖLÜ KARAR: TEMİZ (0 kart)");
