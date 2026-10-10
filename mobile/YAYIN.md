@@ -3,7 +3,8 @@
 ## GÜNCEL BORU HATTI: Doğrudan APK (GitHub Actions — EAS/hesap gerekmez)
 - **Tetikleme:** GitHub → Actions → "APK (yerel derleme - hesapsiz)" → Run workflow → branch `apk`.
 - **Kalite kapısı:** Derlemeden önce `tsc --noEmit` + 300-hayat smoke koşar; geçmeyen kod APK'ya binemez.
-- **Sürüm:** `versionCode` her derlemede `github.run_number` ile otomatik artar (üst üste kurulabilir).
+- **Sürüm:** tek kaynak `mobile/app.json` (`expo.version` + `expo.android.versionCode`); workflow ezmez. Aynı versionCode'lu
+  APK önceki APK'nın üstüne kurulabilir (Android yalnız düşüğe izin vermez). Ayrıntı: aşağıdaki "Sürüm numarası".
 - **Kalıcı indirme linki:** https://github.com/Tayma67/Kronikler/releases/download/apk-latest/Kronikler.apk
 - **İmza:** debug anahtarı — doğrudan cihaza kurulum için yeterli; **Play Store için değil** (aşağıya bak).
 - Yerel hızlı doğrulama: `cd mobile && npm run typecheck && npm run smoke`.
@@ -29,7 +30,7 @@
 
 ## Yapı (build)
 - **AAB üret:** `eas build --platform android --profile production`
-  - `production` profili App Bundle (.aab) üretir; `autoIncrement` ile versionCode otomatik artar.
+  - `production` profili App Bundle (.aab) üretir; versionCode `app.json`'dan okunur (`appVersionSource: local`, `autoIncrement` yok).
 - **Test APK:** `eas build --platform android --profile preview` (cihaza doğrudan kurulur).
 - Token: EAS hesabına bağlı `EXPO_TOKEN` ya da `eas login`.
 
@@ -51,7 +52,21 @@ Kalan izinler: `INTERNET`, `VIBRATE`, `MODIFY_AUDIO_SETTINGS`, `FOREGROUND_SERVI
 - [ ] **Hedef API seviyesi:** EAS varsayılanı güncel Play gereksinimini karşılar.
 
 ## Sürüm
-- `app.json` version: `1.0.0` · `eas.json` `appVersionSource: remote` + `production.autoIncrement: true` → versionCode EAS'te yönetilir.
+## Sürüm numarası (tek kaynak)
+- **Kaynak:** `mobile/app.json` → `expo.version` (görünen, ör. `1.0.0`) ve `expo.android.versionCode` (tam sayı).
+- **Okuyanlar:** APK workflow'u, AAB workflow'u (`expo prebuild` değeri `build.gradle`'a yazar; workflow uyuşmazlıkta
+  durur) ve EAS (`eas.json` → `cli.appVersionSource: "local"`; `autoIncrement` kaldırıldı). Eskiden üç ayrı sayaç vardı
+  (APK `run_number`, AAB `run_number`, EAS uzak sayaç) — Play aynı numarayı iki kez kabul etmediği için tekleştirildi.
+- **Başlangıç değeri 100:** dağıtılmış eski APK'ların bir kısmı `run_number` ile numaralandığı için, yeni derlemenin
+  onların üstüne kurulabilmesi (düşüğe izin yok) amacıyla 2'den 100'e çekildi. Eski APK workflow'u 100'den çok
+  koşmuşsa (Actions sayfasındaki koşu numarasına bak) bir kez o sayının üstüne çıkar.
+- **Artırma yordamı:** Play'e (ya da geniş dağıtıma) giden her derlemeden önce:
+  ```bash
+  cd mobile && node scripts/surum-artir.cjs          # versionCode +1
+  node scripts/surum-artir.cjs 1.1.0                 # +1 ve görünen sürüm 1.1.0
+  git commit -am "Sürüm 1.1.0 (versionCode N)"
+  ```
+  Sonra APK/AAB workflow'u o commit'ten tetiklenir. Test APK'ları için artırmak gerekmez.
 
 ## Notlar
 - Oyun tamamen **çevrimdışı**; sunucu/hesap gerektirmez, kayıt AsyncStorage'da (`kronikler_save_v1`).

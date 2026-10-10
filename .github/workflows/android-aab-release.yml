@@ -57,9 +57,12 @@ jobs:
         working-directory: mobile
         run: npx expo prebuild --platform android --no-install --non-interactive
 
-      - name: versionCode'u guncelle
-        working-directory: mobile/android/app
-        run: sed -i "s/versionCode [0-9]*/versionCode ${{ github.run_number }}/" build.gradle
+      - name: Surum (tek kaynak mobile/app.json; prebuild build.gradle'a aynen yazar — ezilmez)
+        working-directory: mobile
+        run: |
+          node scripts/surum-artir.cjs --goster
+          BEKLENEN=$(node -p "require('./app.json').expo.android.versionCode")
+          grep -q "versionCode $BEKLENEN" android/app/build.gradle || { echo "::error::build.gradle versionCode app.json ile uyusmuyor"; exit 1; }
 
       - name: Keystore'u geri yukle
         # Secret adlari APK workflow'uyla AYNI. KEY_ALIAS bossa 'kronikler', KEY_PASSWORD bossa KEYSTORE_PASSWORD.

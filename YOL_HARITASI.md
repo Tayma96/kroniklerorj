@@ -93,7 +93,7 @@ Mevcut: 14 portre (yaş×cinsiyet), 16 hero sahnesi (yaş×mevsim), 54 game-icon
 - [ ] **[SEN]** Ekran görüntüleri + öne çıkan görsel (oyunu oynayıp al).
 - [ ] **[SEN]** Gizlilik politikası URL (oyun veri toplamıyor → basit).
 - [ ] **[BİRLİKTE]** Play "internal testing" ile kapalı beta → geri bildirim turu.
-- [ ] **AAB:** `eas build --profile production` (otomatik versionCode).
+- [ ] **AAB:** `eas build --profile production` (versionCode `mobile/app.json`dan; bkz. mobile/YAYIN.md "Sürüm numarası").
 
 ---
 

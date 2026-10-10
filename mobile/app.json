@@ -19,7 +19,7 @@
       },
       "predictiveBackGestureEnabled": false,
       "package": "com.kronikler.app",
-      "versionCode": 2
+      "versionCode": 100
     },
     "web": {
       "favicon": "./assets/favicon.png"
