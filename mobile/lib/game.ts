@@ -453,6 +453,29 @@ export function setGuard(prev: GameState, index: number, on: boolean): GameState
   else push(s, "mülk", `${pr.loc}'daki mülkün bekçisi bırakıldı; kapı yine kendi başına.`, "kişisel", false, { k: "evj.guardOut", p: [{ pl: pr.loc }] });
   return s;
 }
+// Mülkün aylık NET getiri tahmini (ekranda gösterilir): ay kapanışındaki formülün zarsız, mevsim-ortalamalı hâli —
+// şehir refahı/güvenliği ve dünya olayı, bakım durumu, kademe, tip davranışı (tarla mevsim ortalaması, kiralık ev,
+// dükkân/han), işçi üretimi ve ücretleri, bekçi, mülk başına hane bakımı (3/ay) ve enflasyon dahil.
+// Kararı oyuncu versin diye: "bu tarla gerçekte ne getiriyor, bu han bu şehirde kaç yılda kendini öder?"
+export function propAylikTahmin(s: GameState, pr: Property): number {
+  const base = PROPERTY_TYPES[pr.type]?.income || 0; const loc = pr.loc || s.player.location_name;
+  const ci = cityInfo(loc, placeKind(loc)); const fx = cityFx(s, loc);
+  const prosp = Math.max(5, ci.prosperity + fx.prosp); const sec = Math.max(0, ci.security + fx.sec);
+  const cpl = (0.75 + prosp / 200) * (pr.cond / 100) * (1 + ((pr.level || 1) - 1) * 0.5);
+  const tip = pr.type === "tarla" ? 1.025 * (pr.fallow_until !== undefined ? 0 : (pr.fertile_until ?? 0) > s.turn ? 1.5 : 1)
+    : pr.type === "dukkan" ? 1 + prosp / 300 : pr.type === "han" ? 0.6 + (prosp + sec) / 250
+    : pr.type === "ev" ? (pr.tenant ? 1.25 * 0.96 : 0.7) : 1;
+  let pm = 1; if (hasPerk(s.player, "tuccar_prensi")) pm += 0.3; if (hasPerk(s.player, "tamirci")) pm += 0.15;
+  const w = propWorkerStats(s, pr, base, cpl);
+  const brut = (base * cpl * tip + w.gross) * pm;
+  const gider = w.wage + (pr.guard ? 4 : 0) + 3;
+  return Math.round((brut - gider) * inflationFactor(s));
+}
+// Henüz alınmamış bir mülkün burada (bakımı tam, 1. kademe, işçisiz) getireceği tahmini net ve kendini ödeme süresi (yıl).
+export function propAlimTahmini(s: GameState, type: string): { aylik: number; yil: number | null } {
+  const aylik = propAylikTahmin(s, { type, loc: s.player.location_name, cond: 100, tenant: type === "ev" ? true : undefined });
+  return { aylik, yil: aylik > 0 ? Math.round((propBuyCost(s, type) / (aylik * 12)) * 10) / 10 : null };
+}
 export function propWorkerSlots(pr: Property): number { return (PROPERTY_TYPES[pr.type]?.slots || 0) + ((pr.level || 1) - 1); }
 // Yaşayan dünya kadrosu: deterministik temel (isim dile göre çözülür) + kalıcı evrim katmanı (ölüm/yaş/doğum).
 // Kadro büyüklüğü yerleşim tipine göre: şehir kalabalık, köy tenha (canlı dünya hissi).

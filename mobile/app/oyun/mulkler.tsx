@@ -4,7 +4,7 @@ import Svg, { Polyline, Polygon, Defs, LinearGradient, Stop, Rect } from "react-
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { MULK_YAS, buyProperty, repairProperty, repairCost, upgradeProperty, propUpgradeCost, PROP_MAX_LEVEL, PROPERTY_TYPES, propBuyCost, propWorkerSlots, townNpcsOf, workerProductivity, hireWorker, fireWorker, setTenant, setGuard, setFallow, hireKahya, fireKahya, kahyaWage, siraGunu } from "../../lib/game";
+import { MULK_YAS, buyProperty, propAylikTahmin, propAlimTahmini, repairProperty, repairCost, upgradeProperty, propUpgradeCost, PROP_MAX_LEVEL, PROPERTY_TYPES, propBuyCost, propWorkerSlots, townNpcsOf, workerProductivity, hireWorker, fireWorker, setTenant, setGuard, setFallow, hireKahya, fireKahya, kahyaWage, siraGunu } from "../../lib/game";
 import { placeName, professionNameL } from "../../lib/locale-data";
 import { mulkImage, MULK_BOS, MULK_HERO } from "../../lib/assets";
 import { C, F } from "../../lib/theme";
@@ -15,9 +15,6 @@ import { GameIcon } from "../../lib/icons";
 import { BackLabel, Panel, Portre, ScreenFresk } from "../../lib/ui";
 
 // Mülk gelirini seviyeye göre hesapla (Vercel property_system ile aynı: taban × (1 + (seviye-1)*0.5)).
-function propIncome(type: string, level: number): number {
-  return Math.round((PROPERTY_TYPES[type]?.income || 0) * (1 + (level - 1) * 0.5));
-}
 
 // Gelir trend grafiği — mülk defterinden (yıllık net) küçük sparkline.
 function Spark({ ledger, color, w = 58, h = 26 }: { ledger?: { y: number; net: number }[]; color: string; w?: number; h?: number }) {
@@ -52,7 +49,7 @@ export default function Mulkler() {
   const p = state.player;
   const here = p.location_name;
 
-  const estIncome = Math.round(p.properties.reduce((a, pr) => a + propIncome(pr.type, pr.level || 1) * (pr.cond / 100), 0));
+  const estIncome = p.properties.reduce((a, pr) => a + propAylikTahmin(state, pr), 0); // gerçek formülden net tahmin (şehir, bakım, kiracı, işçi, bekçi, enflasyon)
   const netWorth = p.money + p.properties.reduce((a, pr) => a + Math.round((PROPERTY_TYPES[pr.type]?.cost || 0) * (pr.level || 1) * (pr.cond / 100) * 0.7), 0);
   const totalWorkers = p.properties.reduce((a, pr) => a + (pr.workers?.length || 0), 0);
   const condColor = (c: number) => (c >= 75 ? C.sage : c >= 45 ? C.gold : C.blood);
@@ -99,7 +96,7 @@ export default function Mulkler() {
         <View style={{ flexDirection: "row", backgroundColor: C.cardHi, borderWidth: 1, borderColor: C.borderHi, borderRadius: 13, overflow: "hidden", marginBottom: 15 }}>
           {[
             { lab: t("mulk.netWorth"), val: `${netWorth} ⚜`, col: C.gold },
-            { lab: t("mulk.income"), val: `+${estIncome} ⚜`, col: C.sage },
+            { lab: t("mulk.netIncome"), val: `${estIncome >= 0 ? "+" : ""}${estIncome} ⚜`, col: estIncome >= 0 ? C.sage : C.blood },
             { lab: t("mulk.countLabel"), val: `${p.properties.length} · ${totalWorkers}`, col: C.parchment },
           ].map((s, i) => (
             <View key={i} style={{ flex: 1, alignItems: "center", paddingVertical: 12, borderLeftWidth: i === 0 ? 0 : 1, borderLeftColor: C.border }}>
@@ -139,6 +136,7 @@ export default function Mulkler() {
             </Pressable>
           </View>
         )}
+        {p.properties.length > 0 && <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted, marginBottom: 6, lineHeight: 15 }}>{t("mulk.tahminNot")}</Text>}
         <Panel title={t("mulk.owned")} noPad>
           {p.properties.length === 0 ? (
             <View style={{ alignItems: "center", padding: 18 }}>
@@ -150,7 +148,7 @@ export default function Mulkler() {
           ) : p.properties.map((pr, i) => {
             const ty = PROPERTY_TYPES[pr.type]; if (!ty) return null;
             const lvl = pr.level || 1;
-            const inc = propIncome(pr.type, lvl);
+            const inc = propAylikTahmin(state, pr);
             const slots = propWorkerSlots(pr);
             const cc = condColor(pr.cond);
             const trend = ((pr.ledger || []).slice(-1)[0]?.net ?? 0) >= 0 ? C.sage : C.blood;
@@ -162,7 +160,7 @@ export default function Mulkler() {
                   <View style={{ flex: 1, minWidth: 0 }}>
                     <Text style={{ fontFamily: F.display, fontSize: 14, color: C.parchment }}>{t("pt." + pr.type)} <Text style={{ fontSize: 9, color: C.goldDim }}>{t("mulk.level")} {lvl}</Text></Text>
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginTop: 4 }}>
-                      <Text style={{ fontFamily: F.display, fontSize: 11, color: C.sage }}>+{inc} {t("mulk.perMonth")}</Text>
+                      <Text style={{ fontFamily: F.display, fontSize: 11, color: inc >= 0 ? C.sage : C.blood }}>≈{inc >= 0 ? "+" : ""}{inc} {t("mulk.perMonth")}</Text>
                       <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
                         <GameIcon name="iliskiler" size={11} color={C.parchmentDim} />
                         <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentDim }}>{(pr.workers?.length || 0)}/{slots}</Text>
@@ -291,7 +289,10 @@ export default function Mulkler() {
                   <Image source={mulkImage(id)} style={{ width: "100%", height: 42 }} resizeMode="cover" />
                   <View style={{ paddingHorizontal: 3, paddingTop: 4, paddingBottom: 5, alignItems: "center" }}>
                     <Text numberOfLines={1} style={{ fontFamily: F.display, fontSize: 8.5, color: C.parchment }}>{t("pt." + id)}</Text>
-                    <Text style={{ fontFamily: F.serif, fontSize: 8, color: C.sage, marginTop: 1 }}>+{ty.income}</Text>
+                    {(() => { const ta = propAlimTahmini(state, id); return (<>
+                      <Text style={{ fontFamily: F.serif, fontSize: 8, color: ta.aylik >= 0 ? C.sage : C.blood, marginTop: 1 }}>≈{ta.aylik >= 0 ? "+" : ""}{ta.aylik}{t("mulk.perMonth")}</Text>
+                      {ta.yil != null ? <Text style={{ fontFamily: F.serif, fontSize: 7.5, color: C.parchmentDim }}>{applyParams(t("mulk.geriOdeme"), [ta.yil])}</Text> : null}
+                    </>); })()}
                     <Pressable onPress={() => { hap("tap"); apply((s) => buyProperty(s, id)); }} disabled={!can} style={{ marginTop: 4, paddingVertical: 4, borderRadius: 5, borderWidth: 1, borderColor: can ? "rgba(201,168,76,0.5)" : C.border, backgroundColor: can ? "rgba(201,168,76,0.12)" : C.bg, alignSelf: "stretch", alignItems: "center" }}>
                       <Text style={{ fontFamily: F.display, fontSize: 8, color: can ? C.gold : C.parchmentMuted }}>{cost}⚜</Text>
                     </Pressable>
