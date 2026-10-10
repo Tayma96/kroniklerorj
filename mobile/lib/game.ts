@@ -2146,26 +2146,30 @@ export function placeKind(name: string): string { return _placeByName[name]?.kin
 // Meslekler — kariyer merdivenli (15 meslek). Unvanlar deneyimle yükselir.
 export interface Profession { id: string; name: string; stat: keyof Stats; base: number; tiers: string[]; }
 export const PROFESSIONS: Profession[] = [
-  { id: "çiftçi",    name: "Çiftçi",    stat: "stamina",      base: 4, tiers: ["Irgat", "Çiftçi", "Toprak Sahibi"] },
-  { id: "demirci",   name: "Demirci",   stat: "strength",     base: 5, tiers: ["Demirci Çırağı", "Demirci", "Usta Demirci"] },
-  { id: "tüccar",    name: "Tüccar",    stat: "charisma",     base: 5, tiers: ["Seyyar Satıcı", "Tüccar", "Tüccar Başı"] },
-  { id: "balıkçı",   name: "Balıkçı",   stat: "stamina",      base: 4, tiers: ["Ağcı", "Balıkçı", "Reis"] },
-  { id: "avcı",      name: "Avcı",      stat: "strength",     base: 4, tiers: ["İzci", "Avcı", "Usta Avcı"] },
-  { id: "marangoz",  name: "Marangoz",  stat: "intelligence", base: 5, tiers: ["Çırak", "Marangoz", "Usta Marangoz"] },
-  { id: "çoban",     name: "Çoban",     stat: "stamina",      base: 3, tiers: ["Sürü Yamağı", "Çoban", "Sürü Sahibi"] },
-  { id: "fırıncı",   name: "Fırıncı",   stat: "intelligence", base: 4, tiers: ["Hamurkâr", "Fırıncı", "Ekmekçi Başı"] },
-  { id: "asker",     name: "Asker",     stat: "strength",     base: 5, tiers: ["Acemi", "Asker", "Onbaşı", "Sipahi"] },
-  { id: "müzisyen",  name: "Müzisyen",  stat: "charisma",     base: 4, tiers: ["Çırak Ozan", "Müzisyen", "Saz Üstadı"] },
+  { id: "çiftçi",    name: "Çiftçi",    stat: "stamina",      base: 4, tiers: ["Irgat", "Çiftçi", "Kethüda", "Toprak Sahibi"] },
+  { id: "demirci",   name: "Demirci",   stat: "strength",     base: 5, tiers: ["Demirci Çırağı", "Kalfa", "Demirci", "Usta Demirci"] },
+  { id: "tüccar",    name: "Tüccar",    stat: "charisma",     base: 5, tiers: ["Çırak", "Kalfa", "Tüccar", "Tüccar Başı"] },
+  { id: "balıkçı",   name: "Balıkçı",   stat: "stamina",      base: 4, tiers: ["Ağcı", "Balıkçı", "Kayık Sahibi", "Reis"] },
+  { id: "avcı",      name: "Avcı",      stat: "strength",     base: 4, tiers: ["İzci", "Avcı", "Doğancı", "Avcıbaşı"] },
+  { id: "marangoz",  name: "Marangoz",  stat: "intelligence", base: 5, tiers: ["Çırak", "Kalfa", "Marangoz", "Usta Marangoz"] },
+  { id: "çoban",     name: "Çoban",     stat: "stamina",      base: 3, tiers: ["Sürü Yamağı", "Çoban", "Baş Çoban", "Sürü Sahibi"] },
+  { id: "fırıncı",   name: "Fırıncı",   stat: "intelligence", base: 4, tiers: ["Hamurkâr", "Kalfa", "Fırıncı", "Ekmekçi Başı"] },
+  { id: "asker",     name: "Asker",     stat: "strength",     base: 5, tiers: ["Acemi", "Asker", "Bölükbaşı", "Sipahi"] },
+  { id: "müzisyen",  name: "Müzisyen",  stat: "charisma",     base: 4, tiers: ["Çırak Ozan", "Müzisyen", "Kopuz Üstadı", "Saray Mutribi"] },
   { id: "şifacı",    name: "Şifacı",    stat: "intelligence", base: 5, tiers: ["Otacı", "Şifacı", "Kalfa", "Hekim"] },
-  { id: "katip",     name: "Kâtip",     stat: "intelligence", base: 5, tiers: ["Çömez", "Kâtip", "Divan Kâtibi"] },
-  { id: "kuyumcu",   name: "Kuyumcu",   stat: "intelligence", base: 6, tiers: ["Çırak", "Kuyumcu", "Usta Kuyumcu"] },
-  { id: "dokumacı",  name: "Dokumacı",  stat: "intelligence", base: 4, tiers: ["Çırak", "Dokumacı", "Usta Dokumacı"] },
-  { id: "hancı",     name: "Hancı",     stat: "charisma",     base: 5, tiers: ["Hizmetkâr", "Hancı", "Han Sahibi"] },
+  { id: "katip",     name: "Kâtip",     stat: "intelligence", base: 5, tiers: ["Çömez", "Kâtip", "Başkâtip", "Divan Kâtibi"] },
+  { id: "kuyumcu",   name: "Kuyumcu",   stat: "intelligence", base: 6, tiers: ["Çırak", "Kalfa", "Kuyumcu", "Usta Kuyumcu"] },
+  { id: "dokumacı",  name: "Dokumacı",  stat: "intelligence", base: 4, tiers: ["Çırak", "Kalfa", "Dokumacı", "Usta Dokumacı"] },
+  { id: "hancı",     name: "Hancı",     stat: "charisma",     base: 5, tiers: ["Hizmetkâr", "Hancı", "Kervansaray Emini", "Han Sahibi"] },
 ];
 // Merdiven göçleri: bir meslek merdiveni değişince eski kayıttaki kazanılmış unvan korunur — kimse rütbe kaybetmez, kimse sınavsız atlamaz.
 // Her adım: meslek → eski kademe dizininin yeni dizini (dizi uzunluğu = eski kademe sayısı). Kayıt `merdiven` damgasıyla her adımdan bir kez geçer.
 export const MERDIVEN_GOC: Record<string, number[]>[] = [
   { şifacı: [0, 1, 3] }, // 1: Otacı · Şifacı · Hekim → araya Kalfa girdi; zirvedeki Hekim yine Hekim (yeni dizin 3)
+  // 2: on üç meslek üç kademeden dörde çıktı (ahi sırası çırak → kalfa → usta → zirve). Kazanılmış kademe hizmet ayıyla eşlenir:
+  // 0 → 0 ve 1 → 1 (30 ayın unvanı yine 30 ayın unvanı — adı değişse de sınavsız terfi yok), eski zirve → yeni zirve (3).
+  // Asker zaten dört kademeydi (yalnız Onbaşı → Bölükbaşı adı değişti) — dizin aynı, göç gerekmez.
+  Object.fromEntries(["çiftçi", "demirci", "tüccar", "balıkçı", "avcı", "marangoz", "çoban", "fırıncı", "müzisyen", "katip", "kuyumcu", "dokumacı", "hancı"].map((id) => [id, [0, 1, 3]])),
 ];
 export const MERDIVEN_SURUM = MERDIVEN_GOC.length;
 export function professionById(id: string): Profession | undefined { return PROFESSIONS.find((p) => p.id === id); }
@@ -6622,8 +6626,8 @@ export function sinavOrani(s: GameState, yol: number): number {
   const p = s.player; const yollar = SINAV_YOLLARI[p.profession];
   if (!yollar || !yollar[yol]) return 0;
   const hedef = kademeOf(p) + 1;
-  const zorluk = 4 + 2 * hedef; // yolun özelliği: kalfa 6 · usta 8 · (asker) sipahi 10
-  const gerek = 2 * hedef;      // mesleğin beceri seviyesi (emek): kalfa 2 · usta 4 · sipahi 6
+  const zorluk = 4 + 2 * hedef; // yolun özelliği: 2. kademe 6 · 3. kademe 8 · zirve (4. kademe) 10
+  const gerek = 2 * hedef;      // mesleğin beceri seviyesi (emek): 2 · 4 · zirve 6
   const dom = (PROF_SKILL[p.profession] || "crafting") as SkillKey;
   const o = 0.35 + (effStat(p, yollar[yol]) - zorluk) * 0.07 + (skillLevel(p.skill_xp[dom]) - gerek) * 0.08 + ustaDestegi(s);
   return Math.max(0.08, Math.min(0.92, Math.round(o * 100) / 100));
