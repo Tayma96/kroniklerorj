@@ -80,6 +80,14 @@ for (let v = 0; v < g.MERDIVEN_SURUM; v++) for (const pr of g.PROFESSIONS) {
     for (let k = 0; k < pr.tiers.length; k++) { const e = ld.careerTitleL(pr.id, k * 30, lang, false), f = ld.careerTitleL(pr.id, k * 30, lang, true); if (!e || !f) H(`${lang} ${pr.id} k${k}: boş unvan`); }
   }
 }
+// 3c) Ekran metinleri: merdiven ipucu altı dilde "30 ay"ı söyler; mersiyedeki "… olarak anıldı" kadın için dişil (es/pt/ar/ru)
+{ const giris = path.join(kok, "_merdiven_i18n.ts"); fs.writeFileSync(giris, 'export { tFor } from "./lib/i18n";\n');
+  try { execSync(`${ESBUILD} "${giris}" --bundle --format=cjs --platform=node --outfile="${tmp}/i.cjs" --log-level=error`, { cwd: kok, stdio: "inherit" }); } finally { fs.unlinkSync(giris); }
+  const { tFor } = require(`${tmp}/i.cjs`);
+  for (const L of ["tr", "en", "es", "pt", "ar", "ru"]) { const v = tFor(L, "ahi.ladder"); if (v === "ahi.ladder" || (!/30/.test(v) && !/ثلاثين/.test(v))) H(`${L} ahi.ladder: ${v}`); }
+  for (const L of ["es", "pt", "ar", "ru"]) { const f = tFor(L, "rom.t.recalled.f"); if (f === "rom.t.recalled.f" || f === tFor(L, "rom.t.recalled") || !f.includes("%s")) H(`${L} rom.t.recalled.f eksik`); }
+  if (/\ba %s/.test(tFor("en", "rom.t.recalled"))) H("en rom.t.recalled: 'a %s' (an Innkeeper/an Apprentice bozulur)");
+}
 // 4) Yeni oyun güncel damgalı doğar: göç ona dokunmaz
 { const s = oyuncu("şifacı", 2, 65); const m = g.migrate(JSON.parse(JSON.stringify(s))); if (m.player.kademe !== 2 || m.merdiven !== g.MERDIVEN_SURUM) H("yeni kayıt göçe uğradı"); }
 

@@ -7,7 +7,7 @@ import { changeProfession, PROFESSIONS, professionById, careerTier, hasProfActio
 import { localFirstName } from "../../lib/world";
 import { rakipAdi, rakipKartVerisi } from "../../lib/rakip-ui";
 import { SinavKartiModal, SinavKartiVeri } from "../../lib/kart3d";
-import { professionNameL, careerTitleL, PROF_L10N } from "../../lib/locale-data";
+import { professionNameL, careerTitleL } from "../../lib/locale-data";
 import { C, F } from "../../lib/theme";
 import { useI18n, applyParams } from "../../lib/i18n";
 import { GameIcon } from "../../lib/icons";
@@ -179,10 +179,11 @@ export default function Meslek() {
           <Panel title={professionNameL(p.profession, lang)} right={<Pill text={`${tierIdx + 1}/${curPr.tiers.length}`} />}>
             <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.gold, marginBottom: 8 }}>{careerTitleL(p.profession, kariyerXp(p), lang, p.gender === "kadın")}</Text>
             <View style={{ flexDirection: "row", gap: 6, flexWrap: "wrap" }}>
-              {((PROF_L10N[lang] || PROF_L10N.tr)[p.profession]?.tiers || curPr.tiers).map((tt, i) => (
+              {curPr.tiers.map((_, i) => careerTitleL(p.profession, i * 30, lang, p.gender === "kadın")).map((tt, i) => ( // kadın oyuncuya kademeler de dişil (başlıkla aynı biçim)
                 <Text key={i} style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 0.5, color: i <= tierIdx ? C.gold : C.parchmentMuted, borderWidth: 1, borderColor: i <= tierIdx ? "rgba(201,168,76,0.5)" : C.border, borderRadius: 5, paddingHorizontal: 6, paddingVertical: 3 }}>{tt.toUpperCase()}</Text>
               ))}
             </View>
+            <Text style={{ fontFamily: F.serif, fontSize: 11.5, color: C.parchmentMuted, marginTop: 8, lineHeight: 17 }}>{t("ahi.ladder")}</Text>
           </Panel>
         )}
 

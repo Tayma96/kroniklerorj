@@ -4,7 +4,8 @@ import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
 import { WEEKS_PER_YEAR } from "../../lib/calendar";
 import { useI18n, applyParams, renderEvt } from "../../lib/i18n";
-import { professionNameL } from "../../lib/locale-data";
+import { careerTitleL, professionNameL } from "../../lib/locale-data";
+import { kariyerXp } from "../../lib/game";
 import { C, F } from "../../lib/theme";
 import { BackLabel } from "../../lib/ui";
 
@@ -106,7 +107,7 @@ export default function Roman() {
         const p = state.player;
         const tally = [
           t("rom.t.lived").replace("%n", String(p.age)),
-          p.profession !== "işsiz" ? t("rom.t.recalled").replace("%s", professionNameL(p.profession, lang)) : t("rom.t.noTrade"),
+          p.profession !== "işsiz" ? (() => { const kadin = p.gender === "kadın"; const fk = t("rom.t.recalled.f"); return (kadin && fk !== "rom.t.recalled.f" ? fk : t("rom.t.recalled")).replace("%s", careerTitleL(p.profession, kariyerXp(p), lang, kadin)); })() : t("rom.t.noTrade"), // peştamalla kazanılan unvan (dişil biçimiyle)
           p.children.length ? t("rom.t.children").replace("%n", String(p.children.length)) : t("rom.t.noChildren"),
           p.properties.length ? t("rom.t.properties").replace("%n", String(p.properties.length)) : null,
           p.fame >= 50 ? t("rom.t.famed") : null,
