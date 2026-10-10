@@ -3,10 +3,10 @@ import { useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { INVESTMENTS, WILL_STYLES, LAST_WORDS, investInChild, continueAsHeir, heirPreview, EDU_TRACKS, eduLevel, setChildEducation, childNature, evlatKadinMi, favorChild, addDowry } from "../../lib/game";
+import { INVESTMENTS, WILL_STYLES, LAST_WORDS, investInChild, continueAsHeir, heirPreview, EDU_TRACKS, eduLevel, setChildEducation, childNature, evlatKadinMi, favorChild, addDowry, propAylikTahmin } from "../../lib/game";
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
-import { useI18n } from "../../lib/i18n";
+import { useI18n, applyParams } from "../../lib/i18n";
 import { hap } from "../../lib/haptics";
 import { BackLabel, PageHeader, ScreenFresk } from "../../lib/ui";
 
@@ -55,6 +55,9 @@ export default function Nesil() {
               </Pressable>
             ); })}
             <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.goldDim, marginTop: 12, marginBottom: 8 }}>{t("nes.will")}</Text>
+            {p.properties.length > 0 && (() => { const wf = (WILL_STYLES.find((w) => w.id === will) || WILL_STYLES[0]).frac; const gecen = p.properties.slice(0, Math.max(1, Math.ceil(p.properties.length * wf))); const net = gecen.reduce((a, pr) => a + propAylikTahmin(state, pr), 0); return (
+              <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted, marginBottom: 8 }}>{applyParams(t("nes.tapu"), [gecen.length, p.properties.length, (net >= 0 ? "+" : "") + net])}</Text>
+            ); })()}
             {WILL_STYLES.map((w) => (
               <Pressable key={w.id} onPress={() => setWill(w.id)} style={{ padding: 12, borderRadius: 9, borderWidth: 1, marginBottom: 7, borderColor: will === w.id ? "rgba(201,168,76,0.6)" : C.border, backgroundColor: will === w.id ? "rgba(201,168,76,0.12)" : C.card }}>
                 <Text style={{ fontFamily: F.display, fontSize: 12, color: will === w.id ? C.gold : C.parchment }}>{t("will." + w.id + ".l")}</Text>
