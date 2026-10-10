@@ -22,7 +22,8 @@ Uygulamanın kullandığı Android izinleri yalnızca oyunun çalışması için
 Bu politika değişirse güncel metin bu sayfada yayımlanır.
 
 ## İletişim
-Sorular için: GitHub üzerinden **Tayma67/Kronikler** deposuna issue açabilirsiniz.
+<!-- YAYIN ÖNCESİ: Tayma96/kroniklerorj özel bir depo; dışarıdan issue açılamaz. Herkese açık bir iletişim e-postası eklenmeli ve bu metin herkese açık bir URL'de yayımlanmalı (bkz. mobile/YAYIN.md). -->
+Sorular için: GitHub üzerinden **Tayma96/kroniklerorj** deposuna issue açabilirsiniz.
 
 ---
 
@@ -50,4 +51,4 @@ Android permissions are used solely to run the game: `INTERNET` (optional multip
 If this policy changes, the current text will be published on this page.
 
 ## Contact
-For questions, open an issue on the **Tayma67/Kronikler** GitHub repository.
+For questions, open an issue on the **Tayma96/kroniklerorj** GitHub repository.

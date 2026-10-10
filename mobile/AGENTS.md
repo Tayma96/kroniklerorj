@@ -83,8 +83,8 @@ UI-dışı dosyalar (docs) için 2 ve 7 yeterli; game.ts'e dokunmayan UI dalgala
 ## APK dağıtımı
 
 - Workflow: `android-apk-local.yml`, ref `apk` (GitHub MCP `actions_run_trigger`). Yapı ~35 dk.
-- Kalıcı link: `https://github.com/Tayma67/Kronikler/releases/download/apk-latest/Kronikler.apk`
-  (`apk-latest` release'inin asset'i güncellenir; link değişmez). Runner'da npm ECONNRESET görülürse geçicidir — yeniden tetikle.
+- Kalıcı link: `https://github.com/Tayma96/kroniklerorj/releases/download/apk-latest/Kronikler.apk`
+  (`apk-latest` release'inin asset'i güncellenir; link değişmez; depo özel olduğundan yalnız erişimi olan hesaplara açılır). Runner'da npm ECONNRESET görülürse geçicidir — yeniden tetikle.
 - Play Store adımları kullanıcıda: keystore (YAYIN.md, alias "kronikler") + Secrets; MAGAZA.md ve SURUM-NOTLARI.md hazır.
 
 ## Büyük sistemlerin haritası (hızlı yön bulma)

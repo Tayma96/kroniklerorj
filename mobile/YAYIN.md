@@ -5,7 +5,9 @@
 - **Kalite kapısı:** Derlemeden önce `tsc --noEmit` + 300-hayat smoke koşar; geçmeyen kod APK'ya binemez.
 - **Sürüm:** tek kaynak `mobile/app.json` (`expo.version` + `expo.android.versionCode`); workflow ezmez. Aynı versionCode'lu
   APK önceki APK'nın üstüne kurulabilir (Android yalnız düşüğe izin vermez). Ayrıntı: aşağıdaki "Sürüm numarası".
-- **Kalıcı indirme linki:** https://github.com/Tayma67/Kronikler/releases/download/apk-latest/Kronikler.apk
+- **Kalıcı indirme linki:** https://github.com/Tayma96/kroniklerorj/releases/download/apk-latest/Kronikler.apk
+  (**dikkat:** depo özel olduğu için bu link yalnız depoya erişimi olan GitHub hesaplarıyla açılır; herkese dağıtım için
+  APK'yı public bir depoya/itch.io'ya da koymak gerekir)
 - **İmza:** debug anahtarı — doğrudan cihaza kurulum için yeterli; **Play Store için değil** (aşağıya bak).
 - Yerel hızlı doğrulama: `cd mobile && npm run typecheck && npm run smoke`.
 
@@ -46,8 +48,12 @@ Kalan izinler: `INTERNET`, `VIBRATE`, `MODIFY_AUDIO_SETTINGS`, `FOREGROUND_SERVI
 - [ ] **Uygulama imzalama:** EAS "Google Play App Signing" ile uyumlu; ilk yüklemede yönergeleri izle.
 - [ ] **Mağaza listesi:** başlık, kısa+uzun açıklama (Türkçe), kategori (Oyun > Rol Yapma / Simülasyon), içerik derecesi anketi.
 - [x] **Görseller:** 512×512 uygulama ikonu → `mobile/store/icon-512.png` (hazır) · 1024×500 öne çıkan görsel → `mobile/store/feature-graphic.png` (hazır) · en az 2 telefon ekran görüntüsü (oyunu çalıştırıp al — sende).
-- [x] **Gizlilik politikası:** `mobile/store/GIZLILIK.md` (TR+EN, hazır). URL olarak GitHub sayfası kullanılabilir:
-  `https://github.com/Tayma67/Kronikler/blob/apk/mobile/store/GIZLILIK.md` — Play Console'daki "Privacy policy" alanına bu link yapıştırılır.
+- [ ] **Gizlilik politikası:** metin hazır (`mobile/store/GIZLILIK.md`, TR+EN) ama **herkese açık bir URL'si yok.**
+  Depo (`Tayma96/kroniklerorj`) **özel**; `https://github.com/Tayma96/kroniklerorj/blob/apk/mobile/store/GIZLILIK.md`
+  yalnız depoya erişimi olana açılır, Play Console'un "Privacy policy" alanı ise girişsiz erişilebilir bir sayfa ister.
+  Yayından önce metni herkese açık bir yere koy: ayrı bir **public** depoda GitHub Pages, itch.io sayfası ya da kendi
+  alan adın. Aynı sebeple GIZLILIK.md'deki "issue açın" iletişim yolu dışarıdan çalışmaz — herkese açık bir
+  e-posta adresi eklenmeli.
 - [ ] **Data safety formu:** "Veri toplanmıyor / paylaşılmıyor" (oyun tamamen offline, AsyncStorage cihazda). MP BETA'ya girenler için "app functionality" amaçlı geçici oyun-içi durum paylaşımı işaretlenebilir — GIZLILIK.md'deki MP maddesiyle uyumlu.
 - [ ] **Hedef API seviyesi:** EAS varsayılanı güncel Play gereksinimini karşılar.
 
@@ -78,7 +84,7 @@ Kalan izinler: `INTERNET`, `VIBRATE`, `MODIFY_AUDIO_SETTINGS`, `FOREGROUND_SERVI
 2. **Son build:** En son commit'i kapsayan APK'yı tetikle, `apk-latest` linkinin o build'i verdiğini indirerek doğrula.
 3. **Temiz cihaz duman testi:** APK'yı hiç kurulmamış bir telefona kur → yeni oyun → isim/cinsiyet (kadınla da dene) → ilk 12 ay → kayıt/çık/gir → "Devam Et".
 4. **Eski kayıt testi:** Önceki sürüm yüklü cihazda üzerine kur; kayıt açılmalı (göç bekçisi CI'da da koşuyor).
-5. **Paylaşım linki:** `https://github.com/Tayma67/Kronikler/releases/download/apk-latest/Kronikler.apk` — kalıcıdır, her build'de en günceli verir.
+5. **Paylaşım linki:** `https://github.com/Tayma96/kroniklerorj/releases/download/apk-latest/Kronikler.apk` — kalıcıdır, her build'de en günceli verir.
 6. **MP (opsiyonel):** Sunucu güncellemesi için `cd server && npx wrangler deploy` (canlı v2'de kaldıysa MP BETA eski protokolde çalışır; SP etkilenmez).
 7. **Kalıcı imza (opsiyonel, Play Store öncesi şart):** bkz. aşağıdaki "İmza ve secret'lar". İmza değişimi mevcut
    kurulumlara "kaldır-yeniden kur" gerektirir; geniş dağıtımdan ÖNCE yapılmalı.
