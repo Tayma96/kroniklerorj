@@ -2999,7 +2999,10 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
   }
   // Yaşlanma + ölümlülük — geniş dağılım: bazıları genç hastalık/kazaya, sağlıklı & bakımlı olanlar 70-80'e ulaşabilir.
   // Sağlık aşınması daha yumuşak (ayda değil seyrek) → servetle hekim tutan uzun yaşar (gerçek hayat filtresi).
-  if (p.age >= 52 && chance(0.5)) p.health = Math.max(0, p.health - Math.floor((p.age - 48) / 7));
+  // Evde bakan el: gönlü bağlı eş (bağ ≥ 60) ya da altmışından sonra yanında evlat — aşınma biraz seyrekleşir (0.5 → 0.42).
+  // Ceza değil ödül: yalnız kalan için hiçbir şey değişmez; aileye yatırılan yıllar yaşlılıkta geri döner.
+  const bakanEl = (p.married && (p.spouse_bond ?? 40) >= 60) || (p.age >= 60 && p.children.length > 0);
+  if (p.age >= 52 && chance(bakanEl ? 0.42 : 0.5)) p.health = Math.max(0, p.health - Math.floor((p.age - 48) / 7));
   // Eklem ağrısı: yaşla gelir (hastalıktan değil) — sağlıklı oyuncu da yakalanabilir; hekim kürü inatçıdır.
   if (!p.dead && !p.chronic && p.age >= 48 && chance(0.003)) { p.chronic = { k: "eklem", since: s.turn }; push(s, "hastalik", "Dizlerindeki sızı bir gecede yerleşti; sabahları ilk adım eskisinden zor. Hekim görmeden yakanı bırakmayacak.", "kişisel", true, { k: "evj.eklemStart" }); }
   const accident = (p.age >= 25 ? (p.age < 40 ? 0.0003 : p.age < 55 ? 0.0006 : 0.0009) : 0) + (p.health < 25 ? 0.012 : 0); // kaza terimi yaş basamaklı: 40 öncesi ecel nadir, yaş ilerledikçe ağırlaşır
