@@ -41,7 +41,7 @@ function acikGerilim(s) {
 const GECIKMELI = ["seed.", "ip.", "kan.canBorcu", "kan.donus", "kan.davaci", "kan.buyudu", "kan.miras", "kan.babaKatili", "npct.kefilOd", "npct.kefilBatti", "npct.borcOdendi", "npct.borcGecikti", "npct.borcBatti", "npci.savundu"]; // (nesil hafızası olayları kasabanın toplu anısıdır; anılan kişi atanın kendisi — ölçüm dışı)
 // İkilemden doğan tohumların metni eylemin kendisini geri çağırır ("o yangın gecesi…"): adsız da olsa sebebini söyler.
 const IKILEM_TOHUM = new Set(Object.values(g.DILEMMA_SEEDS || {}).map((x) => "seed." + x.kaynak));
-const T = { kisisiz: {}, gecikmeli: 0, geriCagiran: 0, kapi: {}, dunyaHaberi: 0, ay: 0, bos: 0, bunalma: 0, pencere: 0, karar: 0, buyukKarar: 0, olay: 0, landmark: 0, gerilimTop: 0, gerilim5ustu: 0, gerilimMax: 0, cocukAy: 0, cocukBos: 0, ortaAy: 0, ortaBos: 0, ipAcilan: 0, ipOdenen: 0, ipVadesiGecen: 0, ipMax: 0, jenerikDoruk: 0, seriMax: 0, ortaAraMax: 0, ortaKart: 0, notAy: 0, yetiskinAy: 0, yay: 0, ipKaynak: {}, sahneTur: {}, izToplam: 0, izUygun: 0, izKarsilik: 0, yankiSatir: 0, yankiTur: {}, kisisel: 0, tekrar: 0, tekrarKey: {} };
+const T = { kisisiz: {}, gecikmeli: 0, geriCagiran: 0, kapi: {}, dunyaHaberi: 0, ay: 0, bos: 0, bunalma: 0, pencere: 0, karar: 0, buyukKarar: 0, olay: 0, landmark: 0, gerilimTop: 0, gerilim5ustu: 0, gerilimMax: 0, cocukAy: 0, cocukBos: 0, ortaAy: 0, ortaBos: 0, yasliAy: 0, yasliBos: 0, yasliKisisel: 0, yasliTekrar: 0, yasliSoru: 0, ipAcilan: 0, ipOdenen: 0, ipVadesiGecen: 0, ipMax: 0, jenerikDoruk: 0, seriMax: 0, ortaAraMax: 0, ortaKart: 0, notAy: 0, yetiskinAy: 0, yay: 0, ipKaynak: {}, sahneTur: {}, izToplam: 0, izUygun: 0, izKarsilik: 0, yankiSatir: 0, yankiTur: {}, kisisel: 0, tekrar: 0, tekrarKey: {} };
 const hayatAy = [], hayatKarar = [], olumYasi = [], meslekler = {}, enBuyuk = {}; let sarmal = 0, ilkKararAy = [];
 for (let h = 0; h < LIVES; h++) {
   let s = g.newGame("Sim", "Oyuncu", Math.random() < 0.5 ? "erkek" : "kadın");
@@ -73,7 +73,7 @@ for (let h = 0; h < LIVES; h++) {
     if (land.length) pencere++; // dönüm noktası penceresi (ayın en yenisi)
     if (yeni.some((e) => e.type === "yıl_dönümü")) pencere++; // yıl karnesi
     T.olay += yeni.length; T.landmark += land.length;
-    for (const e of yeni) { if (e.scope === "makro" || !e.k || (e.q || 0) <= ayBasi || !g.onemliMi(e)) continue; T.kisisel++; const imza = e.k + "|" + JSON.stringify(e.p || []); const once = goruldu.get(imza); if (once != null && s.turn - once <= 24) { T.tekrar++; T.tekrarKey[e.k] = (T.tekrarKey[e.k] || 0) + 1; } goruldu.set(imza, s.turn); } // aynı satır (anahtar + parametreler) iki yıl içinde yeniden
+    for (const e of yeni) { if (e.scope === "makro" || !e.k || (e.q || 0) <= ayBasi || !g.onemliMi(e)) continue; T.kisisel++; if (s.player.age >= 50) T.yasliKisisel++; const imza = e.k + "|" + JSON.stringify(e.p || []); const once = goruldu.get(imza); if (once != null && s.turn - once <= 24) { T.tekrar++; if (s.player.age >= 50) T.yasliTekrar++; T.tekrarKey[e.k] = (T.tekrarKey[e.k] || 0) + 1; } goruldu.set(imza, s.turn); } // aynı satır (anahtar + parametreler) iki yıl içinde yeniden
     for (const e of yeni) if (GECIKMELI.some((x) => (e.k || "").startsWith(x)) && !/\.ima$/.test(e.k || "")) { T.gecikmeli++; if ((e.p || []).some((v) => v && typeof v === "object" && ("kn" in v || "kf" in v || "fn" in v)) || IKILEM_TOHUM.has(e.k) || /^ip\..*\.ode2?$/.test(e.k || "")) T.geriCagiran++; else T.kisisiz[e.k] = (T.kisisiz[e.k] || 0) + 1; }
     for (const e of land) enBuyuk[e.type] = (enBuyuk[e.type] || 0) + 1;
     const ger = acikGerilim(s); T.gerilimTop += ger; if (ger > 5) T.gerilim5ustu++; T.gerilimMax = Math.max(T.gerilimMax, ger); // kararlar verilmeden önce
@@ -106,6 +106,7 @@ for (let h = 0; h < LIVES; h++) {
     if (bos) T.bos++; if (pencere >= 3) T.bunalma++;
     if (s.player.age < 13) { T.cocukAy++; if (bos) T.cocukBos++; }
     if (s.player.age >= 30 && s.player.age <= 55) { T.ortaAy++; if (bos) T.ortaBos++; }
+    if (s.player.age >= 50) { T.yasliAy++; if (bos) T.yasliBos++; }
     T.pencere += pencere; T.karar += karar; T.buyukKarar += buyuk; kararSay += karar;
     if (karar && ilkKarar == null) ilkKarar = ay;
     // Çöküş sarmalı: parasız ve (hasta ya da itibarsız) 60 ay üst üste
@@ -124,7 +125,7 @@ const yuzde = (a, b) => (b ? Math.round((a / b) * 1000) / 10 : 0);
 const entropi = (o) => { const n = Object.values(o).reduce((a, b) => a + b, 0); return Math.round(-Object.values(o).reduce((a, c) => a + (c / n) * Math.log2(c / n), 0) * 100) / 100; };
 const sonuc = {
   hayat: LIVES, ay: T.ay,
-  bosAyYuzde: yuzde(T.bos, T.ay), cocuklukBosAyYuzde: yuzde(T.cocukBos, T.cocukAy), ortaYasBosAyYuzde: yuzde(T.ortaBos, T.ortaAy),
+  bosAyYuzde: yuzde(T.bos, T.ay), cocuklukBosAyYuzde: yuzde(T.cocukBos, T.cocukAy), ortaYasBosAyYuzde: yuzde(T.ortaBos, T.ortaAy), yasliBosAyYuzde: yuzde(T.yasliBos, T.yasliAy), yasliTekrarYuzde: yuzde(T.yasliTekrar, T.yasliKisisel),
   bunalmaAyYuzde: yuzde(T.bunalma, T.ay),
   aylikPencere: Math.round((T.pencere / T.ay) * 100) / 100, aylikKarar: Math.round((T.karar / T.ay) * 100) / 100, aylikBuyukKarar: Math.round((T.buyukKarar / T.ay) * 100) / 100,
   aylikOlay: Math.round((T.olay / T.ay) * 10) / 10, aylikDonumNoktasi: Math.round((T.landmark / T.ay) * 100) / 100, aylikDunyaHaberi: Math.round((T.dunyaHaberi / T.ay) * 100) / 100,
@@ -140,7 +141,7 @@ const sonuc = {
 };
 if (process.env.OYN_JSON) { console.log(JSON.stringify(sonuc)); process.exit(0); }
 console.log(`OYNANIŞ DENETİMİ · ${LIVES} hayat · ${T.ay} ay`);
-console.log(`  Boş ay (karar da dönüm noktası da yok): %${sonuc.bosAyYuzde}  · çocuklukta %${sonuc.cocuklukBosAyYuzde} · 30–55 yaşta %${sonuc.ortaYasBosAyYuzde}`);
+console.log(`  Boş ay (karar da dönüm noktası da yok): %${sonuc.bosAyYuzde}  · çocuklukta %${sonuc.cocuklukBosAyYuzde} · 30–55 yaşta %${sonuc.ortaYasBosAyYuzde} · 50+ yaşta %${sonuc.yasliBosAyYuzde} (50+ tekrar %${sonuc.yasliTekrarYuzde})`);
 console.log(`  Bunalma ayı (3+ pencere): %${sonuc.bunalmaAyYuzde}`);
 console.log(`  Ayda pencere ${sonuc.aylikPencere} · karar ${sonuc.aylikKarar} (büyük ${sonuc.aylikBuyukKarar}) · olay ${sonuc.aylikOlay} · dönüm noktası ${sonuc.aylikDonumNoktasi} (pencere açmayan dünya haberi ${sonuc.aylikDunyaHaberi})`);
 console.log(`  Gecikmeli sonuç ${sonuc.gecikmeliSonuc} · sebebini söyleyen (geri çağırma: kişi adı ya da eylemin kendisi) %${sonuc.geriCagirmaYuzde}`);
@@ -161,6 +162,7 @@ if (process.env.OYN_ESIK) { // çığır eşikleri: ödeme %100, ≤3 açık ip,
   const hata = [];
   if (sonuc.ipOdemeYuzde < 100) hata.push("ip ödeme %" + sonuc.ipOdemeYuzde); if (sonuc.ipMax > 3) hata.push("açık ip " + sonuc.ipMax); if (sonuc.jenerikDoruk) hata.push("jenerik doruk " + sonuc.jenerikDoruk);
   if (sonuc.ayniTurSeriMax > 3) hata.push("seri " + sonuc.ayniTurSeriMax); if (sonuc.ortaAraMax > 18) hata.push("orta yaş arası " + sonuc.ortaAraMax); if (sonuc.ayNotuYuzde < 60) hata.push("ay notu %" + sonuc.ayNotuYuzde); if (sonuc.izKarsilikYuzde < 60) hata.push("yankı karşılık %" + sonuc.izKarsilikYuzde); if (sonuc.bunalmaAyYuzde > 1) hata.push("bunalma %" + sonuc.bunalmaAyYuzde);
+  if (sonuc.yasliBosAyYuzde > 13) hata.push("50+ boş ay %" + sonuc.yasliBosAyYuzde); if (sonuc.yasliTekrarYuzde > 5) hata.push("50+ tekrar %" + sonuc.yasliTekrarYuzde); // geç oyun (Sütun 5): 50 sonrası otomatik pilot değil
   console.log(hata.length ? "ÇIĞIR EŞİKLERİ: AŞILDI — " + hata.join(", ") : "ÇIĞIR EŞİKLERİ: TEMİZ"); if (hata.length) process.exitCode = 1;
 }
 console.log(`  En sık dönüm noktası türleri: ${sonuc.enSikDonum.map(([k, v]) => k + " " + v).join(", ")}`);

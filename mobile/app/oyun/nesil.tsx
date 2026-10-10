@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { INVESTMENTS, WILL_STYLES, LAST_WORDS, investInChild, heirPreview, yetenekAdaylari, EDU_TRACKS, eduLevel, setChildEducation, childNature, evlatKadinMi, favorChild, addDowry, propAylikTahmin } from "../../lib/game";
+import { INVESTMENTS, WILL_STYLES, LAST_WORDS, investInChild, heirPreview, yetenekAdaylari, asabiyeBandi, EDU_TRACKS, eduLevel, setChildEducation, childNature, evlatKadinMi, favorChild, addDowry, propAylikTahmin } from "../../lib/game";
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
 import { useI18n, applyParams } from "../../lib/i18n";
@@ -42,6 +42,7 @@ export default function Nesil() {
             <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.parchment, marginBottom: 12 }}>
               {t("nes.deadPrompt")}
             </Text>
+            <Text style={{ fontFamily: F.serifItalic, fontSize: 12.5, color: C.goldDim, marginBottom: 12, lineHeight: 19 }}>{t("asabiye." + asabiyeBandi(state))}</Text>
             <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.goldDim, marginBottom: 8 }}>{t("nes.chooseHeir")}</Text>
             {p.children.map((c) => { const pv = heirPreview(state, c, will, yet || undefined); return (
               <Pressable key={c} onPress={() => setHeir(c)} style={{ flexDirection: "row", alignItems: "center", gap: 10, padding: 12, borderRadius: 9, borderWidth: 1, marginBottom: 7, borderColor: chosenHeir === c ? "rgba(201,168,76,0.6)" : C.border, backgroundColor: chosenHeir === c ? "rgba(201,168,76,0.12)" : C.card }}>

@@ -1777,6 +1777,35 @@ export function onemliIzler(h: Iz[] | undefined, n = 5): Iz[] {
   return [...(h || [])].filter((x) => !x.ata && !x.k.startsWith("kapi:")).sort((a, b) => (b.ref || 0) - (a.ref || 0) || a.t - b.t).slice(0, n);
 }
 
+// ── GEÇ OYUN (çığır Sütun 5): asabiye ve veraset ──
+// İbn Haldun'un nesil döngüsü: rahatlık ve bölünme hane birliğini söndürür, darlık ve ortak emek yakar. Sayı ekranda yok;
+// vâris ekranında tek cümle (asabiye.<0-4>). 50 yaşından sonra orta yaş nöbetçisi SON_YAS destesini de çeker (kime, ne kadar,
+// ne zaman?). Vârise etkisi küçük ve iki yönlü: birlik ±3 başlangıç itibarı; asabiye vârise yarı yarıya söner (yeniden kazanılır).
+export function asabiyeOf(s: GameState): number { return Number.isFinite(s.asabiye) ? s.asabiye! : 50; }
+export function asabiyeBandi(s: GameState): number { const v = asabiyeOf(s); return v < 25 ? 0 : v < 45 ? 1 : v < 60 ? 2 : v < 80 ? 3 : 4; }
+export function asabiyeRep(s: GameState): number { const b = asabiyeBandi(s); return b === 0 ? -3 : b === 4 ? 3 : b === 3 ? 1 : 0; }
+function asabiyeUygula(s: GameState, d: Delta) {
+  const p = s.player;
+  if (d.asabiye) s.asabiye = Math.max(0, Math.min(100, asabiyeOf(s) + d.asabiye));
+  if ((d.rift || d.veraset) && p.children.length >= 2) {
+    if (!s.succession) s.succession = { favored: null, rift: 0 };
+    if (d.rift) s.succession.rift = Math.max(0, Math.min(100, s.succession.rift + d.rift));
+    if (d.veraset === "esit") { s.succession.favored = null; s.succession.rift = Math.max(0, s.succession.rift - 10); }
+    else if (d.veraset === "ilk") { s.succession.favored = p.children[0]; s.succession.rift = Math.min(100, s.succession.rift + 5); }
+    else if (d.veraset === "gozde") { const b = p.child_bond || {}; const en = [...p.children].sort((a, c) => (b[c] ?? 50) - (b[a] ?? 50))[0]; s.succession.favored = en; s.succession.rift = Math.min(100, s.succession.rift + 12); }
+  }
+}
+function asabiyeTick(s: GameState) {
+  const p = s.player; if (p.dead || p.age < 40 || s.turn % 12 !== 0) return;
+  const infl = inflationFactor(s); let v = asabiyeOf(s);
+  if (p.money + (p.deposit || 0) > 1500 * infl || p.properties.length >= 6) v -= 1; // rahatlık: torunlar yokluğu bilmez
+  if (p.money < 100 * infl) v += 1; // darlık birleştirir
+  if ((s.succession?.rift || 0) >= 40) v -= 1; // kardeş kırgınlığı
+  else if (p.children.length >= 2 && (s.succession?.rift || 0) < 20) v += 1; // kardeşler bir sofrada
+  if (p.children.length === 0) v += v < 50 ? 1 : -1; // evlatsız ocakta asabiye ortaya döner
+  s.asabiye = Math.max(0, Math.min(100, v));
+}
+
 // ── KAN HAFIZASI (çığır Sütun 4): hatırlayan insanlar ──
 // Ağır bir iyilik (yardım, borçtan kurtarma, can kurtarma, düğün) minnet; ağır bir kötülük (hakaret, tehdit, dolandırıcılık,
 // saldırı) ya da eli boş çevrilen bir dar gün kin olarak kalır. Kin tutan büyür (gücü yıllar içinde artar, en sonunda kanlı hasma
@@ -2190,6 +2219,7 @@ export interface GameState {
   recent_dilemmas?: string[]; // son görülen ikilem id'leri (ring 6) — dar havuzlarda aynı sahnenin üst üste gelmesi önlenir
   sahne_izi?: string[]; // ayın sahnesi (ayinSahnesi) son 12 ayda hangi türdendi — tekdüzelik nöbetçisi
   orta_son?: number; // son orta yaş sorusunun turu (30–55 yaş arası her 18 ayda en az bir soru)
+  asabiye?: number; // Hane asabiyesi 0–100 (ekranda sayı yok; vâris ekranında tek cümle). Yoksa 50 sayılır.
   hatir?: Hatir[]; // Kan Hafızası: oyuncuya (ya da atasına) kin ya da minnet besleyen kişiler
   hafiza?: Iz[]; // Yankı: oyuncunun büyük seçimlerinin kalıcı kaydı — sonraki olaylar, yaylar ve vâris bunu okur
   hafiza_seq?: number;
@@ -3454,6 +3484,7 @@ export function advance(prev: GameState, n = 1): GameState {
     gossipTick(s); // tanıklı skandallar → oyuncu söylentileri (haftalık)
     ipTick(s);     // kader ipleri: olgunlaşan büyük tohum görünür olur, vadesi dolan ip sebebiyle ödenir
     yankiTick(s);  // Yankı: eski bir seçim eğilimine göre geri döner
+    asabiyeTick(s); // Geç oyun: rahatlık asabiyeyi söndürür, darlık ve birlik yakar
     hatirTick(s);  // Kan Hafızası: kin tutan ve hatır borçlu insanlar büyür, geri döner, evlatlarına devreder
     seedTick(s);   // geçmişin tohumları filizlenir (haftalık en çok 1)
     // Süregelen evlat eğitimi: haftalık masraf düşer, birikim vâris olunca bonusa döner (Vercel child_investment_tick).
@@ -7343,6 +7374,7 @@ export function heirPreview(prev: GameState, heirName: string, willId = "esit", 
   if (bond != null) { if (bond >= 60) rep += 2; if (bond >= 85) points += 1; } // ilgiyle büyüyen evlat: ata bağı vârisin adını ve özgüvenini besler
   const favP = prev.succession?.favored || null;
   if (favP && p.children.includes(favP)) rep += heirName === favP ? 5 : -5; // veraset meşruiyeti (continueAsHeir paritesi)
+  rep += asabiyeRep(prev); // hane asabiyesi (continueAsHeir paritesi)
   if (prev.saga && prev.saga.act >= 3 && prev.saga.ch >= 5) rep += 2; // Mühür Nişanı: tamamlanan Kül Yemini vârisi önceler (continueAsHeir paritesi)
   const syRep = SOY_YETENEKLERI.find((x) => x.id === soyYetenek)?.rep || 0; // soy yeteneği (continueAsHeir paritesi)
   return { points, money, rep: Math.max(-100, Math.min(100, Math.max(-100, Math.min(100, rep + legacyRep)) + syRep)) };
@@ -7411,6 +7443,7 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
   // VERASET meşruiyeti: gözde tahta oturursa el üstünde, gözde dururken başkası oturursa gölgede başlar (heirPreview paritesi).
   const favHeir = prev.succession?.favored || null;
   if (favHeir && p.children.includes(favHeir)) startRep += heir === favHeir ? 5 : -5;
+  startRep += asabiyeRep(prev); // hane asabiyesi: birlik vârisin adını taşır, bölünme ağırlaştırır
   const ancestor: DynastyRecord = {
     generation: p.generation, name: p.name, profession: p.profession,
     diedAge: p.age, fame: Math.round(p.fame), reputation: Math.round(p.reputation), faction: p.faction,
@@ -7459,7 +7492,7 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
     // Sadece nesil aşabilen tohumlar vârise geçer. Vârisin turu 0'dan başladığı için ekim'i yeniden
     // tabanla (ekim -= prev.turn): birikmiş yaş korunur, yoksa yas=turn-ekim negatif kalıp tohum hiç olgunlaşmaz.
     seeds: (prev.seeds || []).filter((t) => t.nesil).map((t) => ({ ...t, ekim: t.ekim - prev.turn })),
-    hafiza: ataIzleri(prev), hafiza_seq: prev.hafiza_seq, hatir: hatirMiras(prev), // Yankı: atanın en çok anılan üç kararı vârisin kasabasında yankılanır
+    hafiza: ataIzleri(prev), hafiza_seq: prev.hafiza_seq, hatir: hatirMiras(prev), asabiye: prev.asabiye != null ? Math.round(50 + (prev.asabiye - 50) / 2) : undefined, // Yankı: atanın en çok anılan üç kararı vârisin kasabasında yankılanır
     player_rumors: [],
     player: {
       name: surname ? `${heir} ${surname}` : heir, surname, gender: CHILD_F.has(heir) ? "kadın" : "erkek",
@@ -9269,6 +9302,7 @@ export interface Delta {
   reputation?: number; honor?: number; fear?: number; fame?: number;
   stat_points?: number; addItem?: string; standing?: number;
   nam?: { [k in keyof Nam]?: number };
+  asabiye?: number; rift?: number; veraset?: "ilk" | "gozde" | "esit"; // geç oyun: hane birliği, kardeş kırgınlığı, vasiyetin satırı
   marry?: boolean; // sonuç metni düğün anlatıyorsa mekanik de evlendirsin (yalnız bekârsa; yay/ikilem sonuçları için)
 }
 const clampStat = (x: number) => Math.max(0, Math.min(100, x));
@@ -9302,6 +9336,7 @@ export function applyDilemma(prev: GameState, delta: Delta, resultText: string, 
     if (seedKey) s.recent_dilemmas = [...(s.recent_dilemmas || []), seedKey.split(":")[0]].slice(-6); // tekrar koruması: görülen ikilem bir süre havuza dönmez
   }
   if (delta.money) p.money = Math.max(0, p.money + delta.money);
+  if (delta.asabiye || delta.rift || delta.veraset) asabiyeUygula(s, delta);
   // Yazgı payı (test bulgusu): aynı seçim herkeste aynı sonucu doğurmasın — sağlık/itibar bedeli ±%25 zarla oynar,
   // bedenî bedeli güç statı hafifletir (para metinde açıkça yazıldığı için zarsız kalır).
   const jit = (v: number) => { const r = Math.round(v * (0.75 + Math.random() * 0.5)); return v > 0 ? Math.max(1, r) : Math.min(-1, r); };
@@ -10827,6 +10862,7 @@ export function migrate(s: GameState): GameState {
     s.hafiza = Array.isArray(s.hafiza) ? s.hafiza.filter((x) => x && typeof x === "object" && Number.isFinite(x.n) && typeof x.k === "string" && Number.isFinite(x.t) && IZ_ETLERI.includes(x.et)).map((x) => ({ ...x, ref: Number.isFinite(x.ref) ? x.ref : undefined, ata: typeof x.ata === "string" ? x.ata : undefined, kisi: typeof x.kisi === "string" ? x.kisi : undefined, kisiId: typeof x.kisiId === "string" ? x.kisiId : undefined })).slice(-HAFIZA_EN_COK) : undefined;
   }
   if (s.hafiza_seq != null && !Number.isFinite(s.hafiza_seq)) s.hafiza_seq = undefined;
+  if (s.asabiye != null && !Number.isFinite(s.asabiye)) s.asabiye = undefined; else if (s.asabiye != null) s.asabiye = Math.max(0, Math.min(100, s.asabiye));
   if (s.hatir != null) { // Kan Hafızası: bozuk kayıt ayıklanır
     s.hatir = Array.isArray(s.hatir) ? s.hatir.filter((x) => x && typeof x === "object" && typeof x.id === "string" && (x.yon === "kin" || x.yon === "minnet") && Number.isFinite(x.guc) && x.guc > 0 && Number.isFinite(x.t)).slice(-HATIR_EN_COK).map((x) => ({ id: x.id, yon: x.yon, guc: Math.min(5, Math.max(1, Math.floor(x.guc))), t: x.t, son: Number.isFinite(x.son) ? x.son : undefined, don: Number.isFinite(x.don) ? Math.max(0, x.don) : 0, nesil: Number.isFinite(x.nesil) ? Math.max(0, x.nesil) : 0, ata: typeof x.ata === "string" && x.ata ? x.ata : undefined, kay: typeof x.kay === "string" ? x.kay : "" })) : undefined;
     if (s.hatir && !s.hatir.length) s.hatir = undefined;

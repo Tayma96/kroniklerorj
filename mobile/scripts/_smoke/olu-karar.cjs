@@ -10,7 +10,7 @@ const os = require("os"); const fs = require("fs"); const path = require("path")
 const mobile = path.join(__dirname, "..", "..");
 const giris = path.join(os.tmpdir(), `kronikler-olu-giris-${process.pid}.ts`);
 const paket = path.join(os.tmpdir(), `kronikler-olu-${process.pid}.cjs`);
-fs.writeFileSync(giris, `export { DILEMMAS, FESTIVALS, ORTA_YAS } from ${JSON.stringify(path.join(mobile, "lib/events"))};\nexport { ARCS } from ${JSON.stringify(path.join(mobile, "lib/arcs"))};\nexport { DILEMMA_SEEDS, DILEMMA_IPLERI } from ${JSON.stringify(path.join(mobile, "lib/game"))};\n`);
+fs.writeFileSync(giris, `export { DILEMMAS, FESTIVALS, ORTA_YAS, SON_YAS } from ${JSON.stringify(path.join(mobile, "lib/events"))};\nexport { ARCS } from ${JSON.stringify(path.join(mobile, "lib/arcs"))};\nexport { DILEMMA_SEEDS, DILEMMA_IPLERI } from ${JSON.stringify(path.join(mobile, "lib/game"))};\n`);
 execSync(`${ESBUILD} ${giris} --bundle --platform=node --format=cjs --outfile=${paket} --log-level=error`, { cwd: mobile, stdio: "inherit" });
 const B = require(paket); fs.unlinkSync(giris); fs.unlinkSync(paket);
 
@@ -24,7 +24,7 @@ const yener = (a, b) => { // a, b'yi her sıralı değerde tutuyor ve bir yerde 
   for (const k of SIRALI) { const x = a[k] || 0, y = b[k] || 0; if (x < y) return false; if (x > y) strict = true; }
   return strict;
 };
-const kartlar = [...B.DILEMMAS, ...B.ORTA_YAS, ...B.FESTIVALS.flatMap((f) => f.variants)]; // orta yaş soruları da (çığır Sütun 3)
+const kartlar = [...B.DILEMMAS, ...B.ORTA_YAS, ...B.SON_YAS, ...B.FESTIVALS.flatMap((f) => f.variants)]; // orta yaş soruları da (çığır Sütun 3)
 const out = [];
 for (const dl of kartlar) {
   const ch = dl.choices.map((c, i) => ({ i, label: c.label, seed: B.DILEMMA_SEEDS[dl.id + ":" + i] || B.DILEMMA_IPLERI[dl.id + ":" + i] /* ip açan seçim de gizli sonuçlu */, sonuc: c.risk ? [vec(c.delta), vec(c.risk.kayip)] : [vec(c.delta)] }));

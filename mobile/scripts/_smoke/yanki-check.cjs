@@ -10,14 +10,14 @@ const os = require("os"); const fs = require("fs"); const path = require("path")
 const mobile = path.join(__dirname, "..", "..");
 const giris = path.join(os.tmpdir(), `kronikler-ynk-giris-${process.pid}.ts`);
 const paket = path.join(os.tmpdir(), `kronikler-ynk-${process.pid}.cjs`);
-fs.writeFileSync(giris, `export * from ${JSON.stringify(path.join(mobile, "lib/game"))};\nexport { ayinSahnesi, DILEMMAS, ORTA_YAS } from ${JSON.stringify(path.join(mobile, "lib/events"))};\nexport { ARCS, availableArcs, arcById } from ${JSON.stringify(path.join(mobile, "lib/arcs"))};\n`);
+fs.writeFileSync(giris, `export * from ${JSON.stringify(path.join(mobile, "lib/game"))};\nexport { ayinSahnesi, DILEMMAS, ORTA_YAS, SON_YAS } from ${JSON.stringify(path.join(mobile, "lib/events"))};\nexport { ARCS, availableArcs, arcById } from ${JSON.stringify(path.join(mobile, "lib/arcs"))};\n`);
 execSync(`${ESBUILD} ${giris} --bundle --platform=node --format=cjs --outfile=${paket} --log-level=error`, { cwd: mobile, stdio: "inherit" });
 const g = require(paket); fs.unlinkSync(giris); fs.unlinkSync(paket);
 const hata = [];
 
 // 1) Statik ayrışma
 let kart = 0, ayrisan = 0; const tekYon = [];
-for (const d of [...g.DILEMMAS, ...g.ORTA_YAS]) { kart++; const et = new Set(d.choices.map((c) => g.deltaEtiketi(c.gercek || c.delta, !!c.risk))); if (et.size > 1) ayrisan++; else tekYon.push(d.id); }
+for (const d of [...g.DILEMMAS, ...g.ORTA_YAS, ...g.SON_YAS]) { kart++; const et = new Set(d.choices.map((c) => g.deltaEtiketi(c.gercek || c.delta, !!c.risk))); if (et.size > 1) ayrisan++; else tekYon.push(d.id); }
 let sahne = 0, sahneAyrisan = 0;
 for (const a of g.ARCS) for (const st of Object.values(a.stages)) { sahne++; const et = new Set(st.choices.map((c) => g.deltaEtiketi(c.delta))); const dal = new Set(st.choices.map((c) => c.next)); if (et.size > 1 || dal.size > 1) sahneAyrisan++; }
 const statikYuzde = Math.round((ayrisan / kart) * 1000) / 10, sahneYuzde = Math.round((sahneAyrisan / sahne) * 1000) / 10;

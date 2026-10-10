@@ -186,3 +186,16 @@ kaydı (iz) olur, iz bir eğilim etiketi taşır, sonraki olaylar ve yaylar bu h
 - `hatirMiras`: vâris atanın yaşayan hesaplarını `ata` imiyle devralır (kin bir kademe söner). Defter ölümde kin/minnet sayısını yazar (Kronik).
 - Denetçi `scripts/_smoke/kan-check.cjs`: ≥5 yıl yaşamış kayıtların ≥%70'i döner, vâris devralır ve ata imli dönüş görülür,
   yoksula vuruş 0, %5 tavan aşımı 0, kin zararı ≤ çalışma gelirinin %3'ü.
+
+## 13. Dalga 2 — Geç oyun: asabiye ve veraset (çığır Sütun 5)
+
+- `GameState.asabiye` (0–100, yoksa 50; ekranda sayı yok). `asabiyeTick` (40+ yaş, yılda bir): rahatlık −1, darlık +1, kardeş
+  kırgınlığı ≥40 −1, iki+ evlat bir sofradaysa +1. Vâris ekranında tek cümle `asabiye.<0-4>` (`app/oyun/nesil.tsx`);
+  vârise ±3 itibar (`asabiyeRep`, heirPreview paritesi) ve yarı yarıya söner.
+- `events.ts SON_YAS` (12 kart): kâhya hesabı, gece gelen kumar borcu, beyin iltizamı, ölmeden miras, vasiyetin satırı
+  (`Delta.veraset`: ilk/gözde/eşit → `succession.favored`), vakıf taşı, yokluğu bilmeyenler, kardeş küslüğü, sefer hissesi,
+  eski dostun döşeği, hane meclisi, yeni düzen. Orta yaş nöbetçisi artık 30+ yaşı kapsar; 50+ yaşta deste SON_YAS'a kayar.
+- Ölçüm (oynanis 30 hayat): 50+ boş ay %15,8 → %11,9; 50+ tekrar %2,5 → %3,0. Eşik: 50+ boş ≤%13, tekrar ≤%5.
+- Denetçi `scripts/_smoke/gec-check.cjs`: her 56+ hayat geç soru görür, asabiye ≥3 banda yayılır, vasiyet kararı yazılır, parite.
+- Doğrulama (commit öncesi tam takım): 12 çekirdek denetim rc=0; YANKI/DEFTER/ROMAN/KAN/GEÇ OYUN TEMİZ; oynanış 30 hayat ÇIĞIR EŞİKLERİ TEMİZ
+  (50+ boş %11,9, 50+ tekrar %2,9). Sıradaki: Divan Davası (adım 3).

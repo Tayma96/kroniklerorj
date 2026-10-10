@@ -1494,6 +1494,129 @@ export const ORTA_YAS: Dilemma[] = [
   },
 ];
 
+// Geç oyun (çığır Sütun 5: asabiye ve veraset): 50 yaşından sonra servet kararları kolaylaştırmaz, soruyu değiştirir —
+// kime, ne kadar, ne zaman? Orta yaş nöbetçisi 50+ yaşta bu desteyi de çeker. asabiye: hane birliği (ekranda sayı yok,
+// vâris ekranında tek cümle) · rift: kardeş kırgınlığı · veraset: vasiyetin satırı. Her kartta hayır/vakıf/paylaşma çıkışı var.
+export const SON_YAS: Dilemma[] = [
+  {
+    id: "son_kahya", icon: "scroll", title: "Kâhyanın Defteri",
+    text: "Kâhyanın tuttuğu hesap üç yıldır tutmuyor; açık, bir mülkün yıllık getirisi kadar.",
+    when: (p) => p.age >= 50 && (p.properties.length > 0 || p.money >= 500),
+    choices: [
+      { label: "Hesabı mecliste aç", delta: { reputation: 2, honor: 2, asabiye: 4 }, result: "Kâhya herkesin önünde kızardı; açık kapandı. Hane düzeni sertleşti ama sağlamlaştı." },
+      { label: "Bir keseyle sessizce yolla", delta: { money: -30, asabiye: -3 }, result: "Söylenti çıkmadı; ama evlatlar hanenin gevşediğini kendi aralarında konuştu." },
+      { label: "Defteri büyük evlada devret", delta: { money: -10, asabiye: 5 }, result: "Hesap defterini büyük evlada verdin; ilk gece mum sabaha dek yandı." },
+    ],
+  },
+  {
+    id: "son_kumar", icon: "coins", title: "Gece Gelen Borç",
+    text: "Evlatlarından biri gece kapıyı çaldı: zarda büyük bir borç, alacaklı sabah gelecek.",
+    when: (p) => p.age >= 50 && p.children.length > 0,
+    choices: [
+      { label: "Borcu öde, sonra konuş", delta: { money: -60, asabiye: -4 }, result: "Borç kapandı; evladın yere baktı. Ama hane bildi ki kese her seferinde açılır." },
+      { label: "Borcu evladın emeği ödesin", delta: { reputation: -1, asabiye: 4 }, result: "Evladın bir yıl tezgâhta çalışıp alacaklıya hafta hafta ödedi; yorgun ama dik döndü." },
+      { label: "Alacaklıyla pazarlığa otur", delta: { money: -30, honor: -1, asabiye: 1 }, result: "Borç yarıya indi; alacaklı homurdandı, evladın sözünü kesti, sen de sustun." },
+    ],
+  },
+  {
+    id: "son_iltizam", icon: "coins", title: "Beyin Teklifi",
+    text: "Bey, vergi iltizamını hanene vermek istiyor: kese dolar, ama köylünün gözü de üstüne döner.",
+    when: (p) => p.age >= 50 && p.money >= 400,
+    choices: [
+      { label: "Al: hane büyüsün", delta: { money: 80, reputation: -4, asabiye: -3 }, result: "İltizam hanene geçti; kese doldu. Köyde selamlar kısaldı, evlatlar bolluğa alıştı." },
+      { label: "Geri çevir", delta: { honor: 3, asabiye: 2 }, result: "Beyin kaşı kalktı; ama köyde adın hakkı yemeyen diye geçti." },
+    ],
+  },
+  {
+    id: "son_olmeden", icon: "family", title: "Ölmeden Miras",
+    text: "Evlatların bir akşam sofrada, sen hayattayken paylarını istedi.",
+    when: (p) => p.age >= 50 && p.children.length >= 2,
+    choices: [
+      { label: "Payları şimdi böl", delta: { money: -80, asabiye: 3, rift: -20 }, result: "Kese bölündü; herkes payını aldı. Sofra hafifledi, sen biraz yalnızlaştın." },
+      { label: "Ben ölmeden olmaz", delta: { honor: 1, asabiye: -2, rift: 10 }, result: "Söz kesildi. Evlatlar sustu; sustukları yerde bir kırgınlık filizlendi." },
+      { label: "Payı emeğe bağla", delta: { reputation: 1, asabiye: 4 }, result: "Kim ocağa ne katarsa onu alacak dedin. İtiraz eden de oldu, kolları sıvayan da." },
+    ],
+  },
+  {
+    id: "son_vasiyet", icon: "scales", title: "Vasiyetin Satırı",
+    text: "Kadı vasiyetin taslağını getirdi. Bir satır boş: ocak kimin elinde kalacak?",
+    when: (p) => p.age >= 52 && p.children.length >= 2,
+    choices: [
+      { label: "İlk doğana", delta: { honor: 2, veraset: "ilk" }, result: "Töre yolunu seçtin; büyük evlat başını eğdi, küçükler sustu." },
+      { label: "Ocağa en çok emek verene", delta: { reputation: 1, asabiye: 2, veraset: "gozde" }, result: "Eli en çok ocağa değene yazdın; meşru ama tartışmalı bir karar." },
+      { label: "Eşit paylara", delta: { reputation: 1, asabiye: -1, veraset: "esit" }, result: "Ocağı paylara böldün; kavga çıkmadı, ama ocak da küçüldü." },
+    ],
+  },
+  {
+    id: "son_vakif", icon: "house", title: "Vakıf Taşı",
+    text: "Bir vakıf kurmayı düşünüyorsun: çeşme mi, aşevi mi? Kese azalır, ad kalır.",
+    when: (p) => p.age >= 50 && p.money >= 300,
+    choices: [
+      { label: "Çeşme yaptır", delta: { money: -120, reputation: 6, asabiye: 3 }, result: "Çeşmenin taşına hanenin adı kazındı; su akarken evlatlar da durup okudu." },
+      { label: "Aşevi aç", delta: { money: -150, reputation: 8, honor: 2 }, result: "Aşevi kapısını açtı; o kış kasabada aç yatan olmadı." },
+      { label: "Taş bir başka bahara", delta: { honor: -1, money: 10 }, result: "Ustaya kaparoyu geri aldırdın; taş avluda, yosun tutarak bekliyor." },
+    ],
+  },
+  {
+    id: "son_rahat", icon: "crown", title: "Yokluğu Bilmeyenler",
+    text: "Torunlar ipek giyiyor, hiç aç kalmadılar. Bir ihtiyar: 'Bu ocak yokluğu unuttu' dedi.",
+    when: (p) => p.age >= 50 && p.money >= 800 && p.children.length > 0,
+    choices: [
+      { label: "Torunları bir yaz tarlaya yolla", delta: { health: -2, asabiye: 5 }, result: "Bir yaz boyu orak salladılar; avuçları nasır tuttu, gözleri başka bakmaya başladı." },
+      { label: "Keyiflerini sürsünler", delta: { reputation: 1, asabiye: -4 }, result: "Torunlar güldü; ihtiyar başını salladı ve sustu." },
+    ],
+  },
+  {
+    id: "son_kardes", icon: "fist", title: "Kardeş Küslüğü",
+    text: "İki evladın bir tarla sınırı yüzünden birbirine küs; sofraya ayrı ayrı geliyorlar.",
+    when: (p) => p.age >= 50 && p.children.length >= 2,
+    choices: [
+      { label: "İkisini bir sofraya oturt", delta: { honor: 1, asabiye: 4, rift: -10 }, result: "Bir akşam üçünüz aynı sofradaydınız; konuşan az oldu, ama ekmek bölüşüldü." },
+      { label: "Haklıyı açıkça söyle", delta: { honor: 3, asabiye: -2, rift: 8 }, result: "Haklıyı söyledin; biri teşekkür etti, öbürü kapıyı çarptı." },
+      { label: "Kadıya bırak", delta: { money: -20, asabiye: -1 }, result: "Kadı sınırı çizdi; kavga bitti, kardeşlik sustu." },
+    ],
+  },
+  {
+    id: "son_sefer", icon: "crossed-swords", title: "Sefer Hissesi",
+    text: "Sefere çıkan beylik hanelerden hisse istiyor: ya kese ya er.",
+    when: (p) => p.age >= 50 && (p.money >= 300 || p.children.length > 0),
+    choices: [
+      { label: "Kese ver", delta: { money: -80, reputation: 3 }, result: "Hisse ödendi; hanenin adı seferin defterine yazıldı." },
+      { label: "Evlatlardan biri gitsin", delta: { health: -3, asabiye: 5 }, result: "Evladın yola çıktı; hane bir yıl duayla yaşadı. Dönünce ocağa başka gözle baktı." },
+      { label: "Hisse verme", delta: { reputation: -3, money: 10 }, result: "Beyin kâtibi adını not etti; kasaba buna kimi zaman ihtiyat, kimi zaman korku dedi." },
+    ],
+  },
+  {
+    id: "son_dost", icon: "walk", title: "Eski Dostun Döşeği",
+    text: "Gençlik arkadaşın ölüm döşeğinde; seni çağırmış. Yol uzun, iş de bekliyor.",
+    when: (p) => p.age >= 52,
+    choices: [
+      { label: "Hemen yola çık", delta: { money: -20, honor: 3 }, result: "Elini tuttun; eski bir türküyü yarıda kesip güldünüz. Ertesi gün göçtü." },
+      { label: "Uzun bir mektup yaz", delta: { money: 5, honor: -1 }, result: "Mektup vaktinde vardı mı, bilinmez; cevabı gelmedi." },
+    ],
+  },
+  {
+    id: "son_meclis", icon: "family", title: "Hane Meclisi",
+    text: "Yıllardır ilk kez bütün hane bir arada: evlatlar, gelinler, torunlar. Söz sende.",
+    when: (p) => p.age >= 50 && p.children.length > 0,
+    choices: [
+      { label: "Ocağın geçmişini anlat", delta: { honor: 1, asabiye: 5 }, result: "Ataları ve yokluk yıllarını anlattın; torunlar ilk kez sessizce dinledi." },
+      { label: "Hesapları konuş", delta: { money: 20, asabiye: 2 }, result: "Kim ne alır, kim ne verir; sert ama dürüst bir gece oldu." },
+      { label: "Bayram gibi geçsin", delta: { money: -15, reputation: 1, asabiye: 1 }, result: "Sofra kuruldu, türküler söylendi; kimse kimseye hesap sormadı." },
+    ],
+  },
+  {
+    id: "son_gelin", icon: "ring", title: "Yeni Düzen",
+    text: "Eve yeni gelen gelin, hanenin eski düzenini değiştirmek istiyor.",
+    when: (p) => p.age >= 50 && p.children.length > 0,
+    choices: [
+      { label: "Düzen eskisi gibi kalsın", delta: { reputation: -1, asabiye: 2 }, result: "Gelin sustu; ama mutfakta kapılar biraz sert kapandı." },
+      { label: "Yeni düzene yer aç", delta: { honor: 1, asabiye: 3, money: -10 }, result: "Gelinin getirdiği yeni tatlar sofraya girdi; ocak biraz gençleşti." },
+    ],
+  },
+];
+
+
 // ── Ayın sahnesi (Yönetmen 2.0, çığır tasarımı Sütun 3): ay kartını arayüzdeki zar değil motor seçer. Hayat evresinin hedef
 // eğrisine (çocuklukta merak, gençlikte sınav, orta yaşta soru, yaşlılıkta miras), açık iplere ve son 12 ayın kart türlerine
 // göre puan verir. Nöbetçi: aynı türden kart art arda en çok 3 kez; 30–55 yaş arasında her 18 ayda en az bir orta yaş sorusu.
@@ -1512,7 +1635,7 @@ export function ayniTurSerisi(izi: string[], sinif: string): number {
 function izKirp(a: string[]): string[] { const o = [...a]; while (o.length > 40 || o.filter((x) => x !== "bos").length > 12) o.shift(); return o; }
 export function ayinSahnesi(prev: GameState, sonSeq?: number): AySahnesi {
   const p = prev.player; const izi = prev.sahne_izi || [];
-  const orta = p.age >= 30 && p.age <= 55;
+  const orta = p.age >= 30; // orta yaş + geç oyun: 50 yaşından sonra soru SON_YAS destesinden de gelir
   let ortaSon = prev.orta_son;
   if (orta && ortaSon == null) ortaSon = prev.turn; // saat orta yaşa girince başlar
   const hapis = inJail(p);
@@ -1526,8 +1649,10 @@ export function ayinSahnesi(prev: GameState, sonSeq?: number): AySahnesi {
   if (p.dead || hapis || (kararVar && ortaGecen < ORTA_ARA)) return { s: ortaSon !== prev.orta_son ? { ...prev, orta_son: ortaSon } : prev, tur: "bos" };
   const ortaKart = (): AySahnesi | null => {
     const recent = prev.recent_dilemmas || [];
-    let havuz = ORTA_YAS.filter((d) => (!d.when || d.when(p)) && !recent.includes(d.id));
-    if (!havuz.length) havuz = ORTA_YAS.filter((d) => !d.when || d.when(p));
+    const son = SON_YAS.filter((d) => (!d.when || d.when(p)) && !recent.includes(d.id));
+    const deste = p.age >= 50 && son.length && (p.age >= 56 || Math.random() < 0.5) ? SON_YAS : p.age > 55 ? [...SON_YAS, ...ORTA_YAS] : ORTA_YAS;
+    let havuz = deste.filter((d) => (!d.when || d.when(p)) && !recent.includes(d.id));
+    if (!havuz.length) havuz = deste.filter((d) => !d.when || d.when(p));
     if (!havuz.length) return null;
     return yaz("orta", prev, { dilemma: riskiCoz(p, havuz[Math.floor(Math.random() * havuz.length)]) });
   };
@@ -1543,8 +1668,8 @@ export function ayinSahnesi(prev: GameState, sonSeq?: number): AySahnesi {
   const w: Record<string, number> = { ikilem: 0.28, firsat: 0.22, kapi: 0.25, bos: 0.25, orta: 0 };
   if (p.age < 13) { w.ikilem *= 1.1; w.firsat *= 0.6; } // çocukluk: merak
   else if (p.age < 30) { w.firsat *= 1.2; } // gençlik: sınav
-  else if (orta) { w.ikilem *= 1.1; w.bos *= 0.7; w.orta = 0.06; } // orta yaş: soru
-  else { w.kapi *= 1.25; w.bos *= 1.1; } // yaşlılık: miras ve helalleşme
+  else if (p.age <= 55) { w.ikilem *= 1.1; w.bos *= 0.7; w.orta = 0.06; } // orta yaş: soru
+  else { w.kapi *= 1.25; w.bos *= 0.9; w.orta = 0.07; } // yaşlılık: miras, veraset ve helalleşme
   if (acikIpler(prev).length >= 2) w.bos += 0.05; // çok ip açıkken nefes payı
   for (const k of ["ikilem", "firsat", "kapi", "orta"]) { const n = izi.slice(-12).filter((x) => SINIF[x] === SINIF[k]).length; w[k] *= Math.max(0.4, 1 - 0.08 * n); }
   for (const k of ["ikilem", "firsat", "kapi", "orta"]) if (ayniTurSerisi(izi, SINIF[k]) >= 3) w[k] = 0; // nöbetçi: aynı tür art arda en çok 3
