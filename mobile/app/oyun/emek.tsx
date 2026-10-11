@@ -10,6 +10,8 @@ import { BackLabel, PageHeader, ScreenFresk } from "../../lib/ui";
 import { C, F } from "../../lib/theme";
 import { GameIcon } from "../../lib/icons";
 
+import { SES_ATIF } from "../../lib/ses-atif";
+
 type Bolum = { icon: string; baslik: string; not?: string; satirlar: string[] };
 
 export default function Emek() {
@@ -30,7 +32,7 @@ export default function Emek() {
       "Powered by Stability AI — SD-Turbo (Stability AI Community License)",
       "FLUX.1 [schnell] — Black Forest Labs (Apache 2.0)",
     ] },
-    { icon: "lyre", baslik: t("emek.ses"), not: t("emek.sesNot"), satirlar: [] },
+    { icon: "lyre", baslik: t("emek.ses"), not: t("emek.sesNot"), satirlar: SES_ATIF },
     { icon: "cog", baslik: t("emek.yazilim"), satirlar: [
       "Expo · React Native · React · Expo Router — MIT",
       "Reanimated · Worklets · Gesture Handler · Screens · Safe Area Context — MIT",

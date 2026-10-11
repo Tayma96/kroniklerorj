@@ -1,4 +1,4 @@
-// İnce ses efektleri (çevrimdışı, paket içi WAV). Varsayılan KAPALI; ayarlardan açılır.
+// Gerçek kayıt efektleri (çevrimdışı, paket içi AAC). Varsayılan KAPALI; ayarlardan açılır.
 import { createAudioPlayer, type AudioPlayer } from "expo-audio";
 import { AppState } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -24,7 +24,7 @@ let su: AudioPlayer | null = null;
 let mirilti: AudioPlayer | null = null;
 let hav: AudioPlayer | null = null;
 
-// ── Arka plan müziği: Kervan Yolu teması (prosedürel, paket içi, 48 sn dikişsiz döngü). Ayrı anahtar; varsayılan AÇIK. ──
+// Arka plan müziği: paket içi gerçek icra, döngü. Ayrı anahtar; varsayılan AÇIK.
 const MKEY = "kronikler_music_v1";
 let musicEnabled = true;
 let music: AudioPlayer | null = null;
@@ -46,7 +46,7 @@ export async function setMusicEnabled(on: boolean): Promise<void> {
 }
 export function startMusic() {
   try {
-    if (!music) { music = createAudioPlayer(require("../assets/sfx/muzik.wav")); music.loop = true; music.volume = 0.32; }
+    if (!music) { music = createAudioPlayer(require("../assets/ses/muzik/ana_tema.m4a")); music.loop = true; music.volume = 0.32; }
     music.play();
   } catch {}
 }
@@ -69,23 +69,23 @@ export async function setSoundEnabled(on: boolean): Promise<void> {
 
 function ensure() {
   try {
-    if (!tap) tap = createAudioPlayer(require("../assets/sfx/tap.wav"));
-    if (!advance) advance = createAudioPlayer(require("../assets/sfx/advance.wav"));
-    if (!zafer) zafer = createAudioPlayer(require("../assets/sfx/zafer.wav"));
-    if (!can) can = createAudioPlayer(require("../assets/sfx/can.wav"));
-    if (!cingirak) cingirak = createAudioPlayer(require("../assets/sfx/cingirak.wav"));
-    if (!kilic) kilic = createAudioPlayer(require("../assets/sfx/kilic.wav"));
-    if (!davul) davul = createAudioPlayer(require("../assets/sfx/davul.wav"));
-    if (!yenilgi) yenilgi = createAudioPlayer(require("../assets/sfx/yenilgi.wav"));
-    if (!kese) kese = createAudioPlayer(require("../assets/sfx/kese.wav"));
-    if (!ninni) ninni = createAudioPlayer(require("../assets/sfx/ninni.wav"));
-    if (!saz) saz = createAudioPlayer(require("../assets/sfx/saz.wav"));
-    if (!nal) nal = createAudioPlayer(require("../assets/sfx/nal.wav"));
-    if (!dugun) dugun = createAudioPlayer(require("../assets/sfx/dugun.wav"));
-    if (!ney) ney = createAudioPlayer(require("../assets/sfx/ney.wav"));
-    if (!su) su = createAudioPlayer(require("../assets/sfx/su.wav"));
-    if (!mirilti) mirilti = createAudioPlayer(require("../assets/sfx/mirilti.wav"));
-    if (!hav) hav = createAudioPlayer(require("../assets/sfx/hav.wav"));
+    if (!tap) tap = createAudioPlayer(require("../assets/ses/efekt/ui_dokun.m4a"));
+    if (!advance) advance = createAudioPlayer(require("../assets/ses/efekt/ui_ilerle.m4a"));
+    if (!zafer) zafer = createAudioPlayer(require("../assets/ses/efekt/zafer.m4a"));
+    if (!can) can = createAudioPlayer(require("../assets/ses/efekt/matem.m4a"));
+    if (!cingirak) cingirak = createAudioPlayer(require("../assets/ses/efekt/zil.m4a"));
+    if (!kilic) kilic = createAudioPlayer(require("../assets/ses/efekt/kilic.m4a"));
+    if (!davul) davul = createAudioPlayer(require("../assets/ses/efekt/davul_cenk.m4a"));
+    if (!yenilgi) yenilgi = createAudioPlayer(require("../assets/ses/efekt/yenilgi.m4a"));
+    if (!kese) kese = createAudioPlayer(require("../assets/ses/efekt/akce_kese.m4a"));
+    if (!ninni) ninni = createAudioPlayer(require("../assets/ses/efekt/dogum.m4a"));
+    if (!saz) saz = createAudioPlayer(require("../assets/ses/efekt/saz_vurgu.m4a"));
+    if (!nal) nal = createAudioPlayer(require("../assets/ses/efekt/nal.m4a"));
+    if (!dugun) dugun = createAudioPlayer(require("../assets/ses/efekt/dugun.m4a"));
+    if (!ney) ney = createAudioPlayer(require("../assets/ses/efekt/ney_nefes.m4a"));
+    if (!su) su = createAudioPlayer(require("../assets/ses/efekt/su.m4a"));
+    if (!mirilti) mirilti = createAudioPlayer(require("../assets/ses/efekt/mirilti.m4a"));
+    if (!hav) hav = createAudioPlayer(require("../assets/ses/efekt/hav.m4a"));
   } catch {}
 }
 function fire(p: AudioPlayer | null) {
@@ -104,7 +104,7 @@ export function playWarDrum() { if (!enabled) return; ensure(); fire(davul); }
 export function playClash() { if (!enabled) return; ensure(); fire(kilic); }
 export function playDefeat() { if (!enabled) return; ensure(); fire(yenilgi); }
 export function playCoin() { if (!enabled) return; ensure(); fire(kese); }
-export function playLullaby() { if (!enabled) return; ensure(); fire(ninni); } // doğum: müzik kutusu motifi
+export function playLullaby() { if (!enabled) return; ensure(); fire(ninni); } // doğum: gerçek icra kesiti
 export function playSaz() { if (!enabled) return; ensure(); fire(saz); }       // ikilem kapıyı çaldı: mızrap vurgusu
 export function playHooves() { if (!enabled) return; ensure(); fire(nal); }    // yolculuk: dörtnala
 export function playWedding() { if (!enabled) return; ensure(); fire(dugun); } // düğün: zurna-davul oyun havası

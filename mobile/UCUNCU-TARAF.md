@@ -41,8 +41,12 @@ Portreler, hero sahneleri, armalar, mülk/mektep görselleri ve harita zemini (`
 - Hangi dosyanın hangi modelden çıktığı git geçmişinden tam ayrıştırılamıyor; ikisi birlikte anılır.
 
 ## Sesler ve müzik
-`assets/sfx/*.wav` — projeye özgü; git geçmişine göre kodla sentezlenip "bestelendi" (Temmuz 2026, Dalga 435–465).
-Harici ses kütüphanesi kullanılmadı.
+`assets/ses/` — yedekten kurtarılan 63 gerçek kayıt: 21 müzik, 15 ortam ve 27 efekt.
+Mevcut ses çağrıları 17 efekti ve ana temayı kullanır; kalan kayıtlar ilerideki sahne bağlantısı için korunur.
+Dosya bazında kaynak, yazar, lisans ve uygulanan işlemler: `assets/ses/LISANS.md` ve `assets/ses/kaynak.json`.
+Paket CC0 1.0, CC BY 3.0/4.0 ve kaynak dökümünde kamu malı olarak belirtilen kayıtlar içerir.
+Oyun içindeki Emeği Geçenler ekranı kaynak adını, yazarı, kaynak/lisans adreslerini ve değişiklik açıklamasını gösterir.
+Eski `assets/sfx/` dosyaları korunur; mevcut ses oynatıcısı yeni kayıtları kullanır.
 
 ## Yazılım (uygulamaya giren doğrudan bağımlılıklar)
 Tümü MIT: expo, expo-router, expo-audio, expo-constants, expo-font, expo-haptics, expo-linking, expo-navigation-bar,

@@ -1,0 +1,632 @@
+[
+  {
+    "dosya": "mobile/assets/npc/e01_genc.jpg",
+    "bayt": 218717,
+    "sha256": "50ab7d300e2e0b07cc7137bcb2baae85bbea3449d030e70555bfaa6e86207f65"
+  },
+  {
+    "dosya": "mobile/assets/npc/e01_olgun.jpg",
+    "bayt": 273816,
+    "sha256": "5398c0f25a2212280feb881039951ae32e63ecdf3498822e43c93bb30694a5a5"
+  },
+  {
+    "dosya": "mobile/assets/npc/e01_yasli.jpg",
+    "bayt": 288842,
+    "sha256": "ebab52274627c05adab704ab135a888c0f0d3e117de4fddc2a556e3c55dc1a3c"
+  },
+  {
+    "dosya": "mobile/assets/npc/e02_genc.jpg",
+    "bayt": 246360,
+    "sha256": "076685881e4b628cfea0889a493b757caa9341e8ae5c26a6aa881fe42b768e8f"
+  },
+  {
+    "dosya": "mobile/assets/npc/e02_olgun.jpg",
+    "bayt": 275480,
+    "sha256": "640f8c7857b5ebda59fe7c8fdf8b72769771078c19cfab778a877eb7d1e9ac7f"
+  },
+  {
+    "dosya": "mobile/assets/npc/e02_yasli.jpg",
+    "bayt": 305929,
+    "sha256": "59d18ec6d847297a552804f7462f11d6eeae960b0c4a5a6d63387c9663fcd1b7"
+  },
+  {
+    "dosya": "mobile/assets/npc/e03_genc.jpg",
+    "bayt": 266641,
+    "sha256": "4e8f4eeee34b743a35e271b518c318096822fdfcf66bfc9e5af2a2278c75ce25"
+  },
+  {
+    "dosya": "mobile/assets/npc/e03_olgun.jpg",
+    "bayt": 292160,
+    "sha256": "ca9f0445d3f4814ce113a86a95791f9c42dc323e70ed7d9d65020264a9128f70"
+  },
+  {
+    "dosya": "mobile/assets/npc/e03_yasli.jpg",
+    "bayt": 281042,
+    "sha256": "909c80430fbf4c6f7c3bc064544ec20751c17fbf1684b518866a59a24a42ce28"
+  },
+  {
+    "dosya": "mobile/assets/npc/e04_genc.jpg",
+    "bayt": 267787,
+    "sha256": "82b0e21f13aa0996e179fcd6ebd1b26043b417ee68aec65998a40514e9ddee2c"
+  },
+  {
+    "dosya": "mobile/assets/npc/e04_olgun.jpg",
+    "bayt": 271709,
+    "sha256": "8b026769962d3c49ae71ec3582a846c73993f274d9ca24496df196ada3550a8e"
+  },
+  {
+    "dosya": "mobile/assets/npc/e04_yasli.jpg",
+    "bayt": 279128,
+    "sha256": "0d65262e8ec86ba7703f74398733639c6c23fa1f35a8c83e6d78d96e2eb826f5"
+  },
+  {
+    "dosya": "mobile/assets/npc/e05_genc.jpg",
+    "bayt": 230072,
+    "sha256": "e8e50091c6029023b23e41c6adf0c6cef5bb02c0878a43b1b1d4b234f255f2ef"
+  },
+  {
+    "dosya": "mobile/assets/npc/e05_olgun.jpg",
+    "bayt": 229875,
+    "sha256": "a8303a44abc7398d4592827a75976d8815cfd0c6bcb1c2ce1c3bcc809831c44e"
+  },
+  {
+    "dosya": "mobile/assets/npc/e05_yasli.jpg",
+    "bayt": 249093,
+    "sha256": "3533d7a820a5ec4858a4073d829c32163c61304472096de9848b4ea1b7660dc2"
+  },
+  {
+    "dosya": "mobile/assets/npc/e06_genc.jpg",
+    "bayt": 253777,
+    "sha256": "1d4f75945d4abcbf51371935816ad7608e924e72b04148ad11a7e73af8c3ca82"
+  },
+  {
+    "dosya": "mobile/assets/npc/e06_olgun.jpg",
+    "bayt": 241822,
+    "sha256": "4e430bff8d893d9ec92d3a6de972365becbe3621b67a36d32cc3877c05f8222d"
+  },
+  {
+    "dosya": "mobile/assets/npc/e06_yasli.jpg",
+    "bayt": 283251,
+    "sha256": "2b9534a5b209ba80518687a723e05c719850739d182b2a4ddf68dffeb8414c57"
+  },
+  {
+    "dosya": "mobile/assets/npc/e07_genc.jpg",
+    "bayt": 262742,
+    "sha256": "cbd87431aa12da68cf24a18ba9266d9da684f60983c1e9a1be4a5754fb6b405f"
+  },
+  {
+    "dosya": "mobile/assets/npc/e07_olgun.jpg",
+    "bayt": 320318,
+    "sha256": "ed155d3a450b310da83ccd8b210070c20508cf83e695aef582884321105f0208"
+  },
+  {
+    "dosya": "mobile/assets/npc/e07_yasli.jpg",
+    "bayt": 315123,
+    "sha256": "43b30f52c64900c00dba41e1768c4e3fbf78edfec42fb25f98e6f5bbdb9e135a"
+  },
+  {
+    "dosya": "mobile/assets/npc/e08_genc.jpg",
+    "bayt": 346394,
+    "sha256": "0e3bf8184d7322db0445abaf235c79f4650d9f32910003dd24d2503059bdfca8"
+  },
+  {
+    "dosya": "mobile/assets/npc/e08_olgun.jpg",
+    "bayt": 274607,
+    "sha256": "4ab18869ffdfeb3dd5bfec61e948b0c478d4376be019cc46e671a70803b38d03"
+  },
+  {
+    "dosya": "mobile/assets/npc/e08_yasli.jpg",
+    "bayt": 322852,
+    "sha256": "ec4cd01d47b0fc6b85e6e73d2ed7ba5743b177d38efe3e8dc18a5de8e40dfeaf"
+  },
+  {
+    "dosya": "mobile/assets/npc/k01_genc.jpg",
+    "bayt": 263799,
+    "sha256": "63662e86e940184930a1a2145962850d5b4e4a7e2452cc8d5bf9315ae5bbddc7"
+  },
+  {
+    "dosya": "mobile/assets/npc/k01_olgun.jpg",
+    "bayt": 281015,
+    "sha256": "aa6ec9173d23947ae11fc455e15aeab3e5fa148cb57e5699ec112465fc4b01e5"
+  },
+  {
+    "dosya": "mobile/assets/npc/k01_yasli.jpg",
+    "bayt": 294322,
+    "sha256": "fb168f96290ce6c44a175684b55a6622447c43acc8392b0994e29574d203ab3d"
+  },
+  {
+    "dosya": "mobile/assets/npc/k02_genc.jpg",
+    "bayt": 289897,
+    "sha256": "1190b3708d0c20c64cd96d3bcc32b7e673ed466bc2ddb29b176b7034dbf5a2d7"
+  },
+  {
+    "dosya": "mobile/assets/npc/k02_olgun.jpg",
+    "bayt": 309949,
+    "sha256": "36ed4109819788aa0e73855053079d004212a6fa6a62b422e8610ae8918e35d3"
+  },
+  {
+    "dosya": "mobile/assets/npc/k02_yasli.jpg",
+    "bayt": 330850,
+    "sha256": "b1184351383752dbe881e9c7b063089a9a7e6704c7aa90cf20fc8d8d8bffbd57"
+  },
+  {
+    "dosya": "mobile/assets/npc/k03_genc.jpg",
+    "bayt": 289181,
+    "sha256": "1dae1454705e02e6bc9fd9c9abb30006f1bdfa54a81d2c5acf34e5a5cc9a58fc"
+  },
+  {
+    "dosya": "mobile/assets/npc/k03_olgun.jpg",
+    "bayt": 277752,
+    "sha256": "1b973c0b50c8ef34c2b8f9439756cbe00e01c1c582ae1f408a021a251e24d018"
+  },
+  {
+    "dosya": "mobile/assets/npc/k03_yasli.jpg",
+    "bayt": 288251,
+    "sha256": "db87dc5967232702448a9959bf32a2ebd257908a82272ebc7e39a0b1012f7c78"
+  },
+  {
+    "dosya": "mobile/assets/npc/k04_genc.jpg",
+    "bayt": 276332,
+    "sha256": "9b4e3db513d35173d4de473fb8c1e837311f3f0709538ea7fb1027cecb5c6d21"
+  },
+  {
+    "dosya": "mobile/assets/npc/k04_olgun.jpg",
+    "bayt": 285182,
+    "sha256": "10d4dd3ff6af3f5b688939023d20e58f3c33669b8b841ade1578aacf88bf1a0d"
+  },
+  {
+    "dosya": "mobile/assets/npc/k04_yasli.jpg",
+    "bayt": 262682,
+    "sha256": "d472b93427377b3a82700fa16acd2a410315cb03154bf62f2cedbc0ae6649a1c"
+  },
+  {
+    "dosya": "mobile/assets/npc/k05_genc.jpg",
+    "bayt": 268372,
+    "sha256": "22d910c7da764714faf7f92ac030e3ff70ebe63881b8f6f6546e84f8d8833f36"
+  },
+  {
+    "dosya": "mobile/assets/npc/k05_olgun.jpg",
+    "bayt": 256992,
+    "sha256": "25412293b7c18020311691570b043f8080d3551959688518648ed26d8f9e502e"
+  },
+  {
+    "dosya": "mobile/assets/npc/k05_yasli.jpg",
+    "bayt": 321207,
+    "sha256": "89dbfa84a9cdd96896bce68f0e20dd8e200a1340cc02d09627165b6bbb1f39bc"
+  },
+  {
+    "dosya": "mobile/assets/npc/k06_genc.jpg",
+    "bayt": 252226,
+    "sha256": "063ddc35a6b13105827444257d62e09746b2801418282b3e384fcd481d22a0ba"
+  },
+  {
+    "dosya": "mobile/assets/npc/k06_olgun.jpg",
+    "bayt": 282008,
+    "sha256": "3367ae7bf025d363bc4abc59ce1db4de92d8bd85c11118e6bfedade605c02337"
+  },
+  {
+    "dosya": "mobile/assets/npc/k06_yasli.jpg",
+    "bayt": 311807,
+    "sha256": "e0ba65ce3143897dc491c316e0e7c190aea37c250bf112231f2de10cc8f660b7"
+  },
+  {
+    "dosya": "mobile/assets/npc/k07_genc.jpg",
+    "bayt": 332855,
+    "sha256": "3d99ce100fdb18254e475c25612a9bcae097339d843c0cc0b8ce9d8851f2dd9a"
+  },
+  {
+    "dosya": "mobile/assets/npc/k07_olgun.jpg",
+    "bayt": 364625,
+    "sha256": "5edcf82cba723b3bc9e2739cf53ac24b1964f57878f345d8bedde58a2258c040"
+  },
+  {
+    "dosya": "mobile/assets/npc/k07_yasli.jpg",
+    "bayt": 298808,
+    "sha256": "99bc03aa2028a18415298fa2c2082af04451d85c0384613598ac3d593dbfbaad"
+  },
+  {
+    "dosya": "mobile/assets/npc/k08_genc.jpg",
+    "bayt": 296019,
+    "sha256": "8983aa3595791268cf2479e6d951ee239a97223f76a860b6996ef7e1fba93fc5"
+  },
+  {
+    "dosya": "mobile/assets/npc/k08_olgun.jpg",
+    "bayt": 307383,
+    "sha256": "112e8056925906acc9ec54739ff4a9a97cbf0ced0bc470a1f5467b02bc989410"
+  },
+  {
+    "dosya": "mobile/assets/npc/k08_yasli.jpg",
+    "bayt": 304054,
+    "sha256": "32e45b59b8309b40eb4ca73a27ce7fe0a8b0a4fdbdbaad07577fed9f8e61a90c"
+  },
+  {
+    "dosya": "mobile/assets/arka/ahi_tekke.jpg",
+    "bayt": 374316,
+    "sha256": "c6d3dc1dff0942269bde729286e99e57961b7d3f506924587cf0ede198c8c263"
+  },
+  {
+    "dosya": "mobile/assets/arka/atolye_demirci.jpg",
+    "bayt": 373397,
+    "sha256": "6e6d56c66fb11de705488fe9093967245f134b0eb5f2acb3210b24ad18d1280e"
+  },
+  {
+    "dosya": "mobile/assets/arka/cami_avlu.jpg",
+    "bayt": 442967,
+    "sha256": "7817357f689f562d0131be8ba08cd4d7f3b8a542f03ad7a6797bbfa28f1d80e4"
+  },
+  {
+    "dosya": "mobile/assets/arka/cenaze.jpg",
+    "bayt": 287696,
+    "sha256": "c4d7f2e3abc4fd8c4428dec581d6c2b770861bdeb17d3a45653c892c0a970927"
+  },
+  {
+    "dosya": "mobile/assets/arka/dogum.jpg",
+    "bayt": 386941,
+    "sha256": "bc9d5d6a23263aa904f185f7a7930f6d822915707e921f08b1b29c3cd6f970bf"
+  },
+  {
+    "dosya": "mobile/assets/arka/dugun.jpg",
+    "bayt": 379375,
+    "sha256": "9a5621d2ec4ce588e4e35c663968b67fdfb194961a7887bc97c1cc0ff30ce69c"
+  },
+  {
+    "dosya": "mobile/assets/arka/ev_varlikli.jpg",
+    "bayt": 407507,
+    "sha256": "74da49e8b1e340141a4a73e23a8d62a9be476e74672cb3ba4b39eeedf75c081f"
+  },
+  {
+    "dosya": "mobile/assets/arka/ev_yoksul.jpg",
+    "bayt": 336911,
+    "sha256": "3a5fb07ff4a98ab0cec75214f0998650f79a65bd49f6330aef846cf9881b5780"
+  },
+  {
+    "dosya": "mobile/assets/arka/gurbet_yol.jpg",
+    "bayt": 447223,
+    "sha256": "d9f4460075607942a650dc786e20d119e8c6562429afb43ec94d27c8f9fa6f21"
+  },
+  {
+    "dosya": "mobile/assets/arka/hasat.jpg",
+    "bayt": 488254,
+    "sha256": "6f889fe843c0f1f5e825285ea7da6d678cc447d10482c91eae867499d529735c"
+  },
+  {
+    "dosya": "mobile/assets/arka/kadi_divan.jpg",
+    "bayt": 310227,
+    "sha256": "7a953245c44a20e1f0baf93ddcb629dcaebf77c1bcc6f5de7a9d32649866cb60"
+  },
+  {
+    "dosya": "mobile/assets/arka/kitlik.jpg",
+    "bayt": 404692,
+    "sha256": "522dd14a8448af43c9a7ac0a543e8aa5ab1e6de83428bbb634d1e88f5263c0b2"
+  },
+  {
+    "dosya": "mobile/assets/arka/medrese.jpg",
+    "bayt": 408150,
+    "sha256": "a618b2f4f431de13db04a1cd55b28c9da29731262612ee2bea375d41ea1a4ef8"
+  },
+  {
+    "dosya": "mobile/assets/arka/mogol_baskin.jpg",
+    "bayt": 425029,
+    "sha256": "b224e4317c65bbdf5d6d87a1ad50b7e8f3e15d640bcc6de39b2975693a8ccc37"
+  },
+  {
+    "dosya": "mobile/assets/arka/nehir.jpg",
+    "bayt": 360949,
+    "sha256": "ed7b4aa21d426c884394976ecb58457369d22e3247ef2a0ada0dafa641326203"
+  },
+  {
+    "dosya": "mobile/assets/ses/efekt/akce_kese.m4a",
+    "bayt": 18304,
+    "sha256": "aa76344b8cd2283dbc272bc3c55257f50ad1febc698f83b83e2d46016942beea"
+  },
+  {
+    "dosya": "mobile/assets/ses/efekt/akce_tek.m4a",
+    "bayt": 11223,
+    "sha256": "a2e40984fc323afc86701ddb894fd64a498813c72153f49bbbb9f210dc39727b"
+  },
+  {
+    "dosya": "mobile/assets/ses/efekt/bolum_davul.m4a",
+    "bayt": 31333,
+    "sha256": "2b57ae5834a6489c405c6e4a1e529bd8f9b6ce86d7c77287f8c8bae785bff6a8"
+  },
+  {
+    "dosya": "mobile/assets/ses/efekt/cip_kayip.m4a",
+    "bayt": 14323,
+    "sha256": "4f7a6501b5d4237192b4e3087b523399ee4c641c984d0372e5abca0fd4b68da7"
+  },
+  {
+    "dosya": "mobile/assets/ses/efekt/cip_kazanc.m4a",
+    "bayt": 18112,
+    "sha256": "3e72b327aee5fa23d4e8926b1e9d6d7da9ab2ac3943ab8eb277fce2066d3aa4d"
+  },
+  {
+    "dosya": "mobile/assets/ses/efekt/cip_kin.m4a",
+    "bayt": 14208,
+    "sha256": "ce055c431473e06d5de53d93a126cd25d09bcfcbf6a40c8b3d1ec3a2a0528131"
+  },
+  {
+    "dosya": "mobile/assets/ses/efekt/cip_minnet.m4a",
+    "bayt": 22481,
+    "sha256": "bd7ec2f62d1aaac0ed0180b2b99589311f96d2cf47a52cfbc072af2e2a016751"
+  },
+  {
+    "dosya": "mobile/assets/ses/efekt/cip_yanki.m4a",
+    "bayt": 11068,
+    "sha256": "61d892aae03080867d4b4bc588f3eea80d24cdf6488487812ca803897bca7eb3"
+  },
+  {
+    "dosya": "mobile/assets/ses/efekt/davul_cenk.m4a",
+    "bayt": 49783,
+    "sha256": "a07ed60e018a7f6cdca5b902b5db6d06ec179742a0f7a602fc3291a22c4ff315"
+  },
+  {
+    "dosya": "mobile/assets/ses/efekt/dogum.m4a",
+    "bayt": 58516,
+    "sha256": "2ea207a3133bb8d3aea2f7a3b5017fc2916192133c2b5f24d38d05c2ee2bf4e6"
+  },
+  {
+    "dosya": "mobile/assets/ses/efekt/dugun.m4a",
+    "bayt": 21019,
+    "sha256": "2055a4da01dd38babcd2fcedd5b7001455642a47012da2a2a9203df1b6ac42aa"
+  },
+  {
+    "dosya": "mobile/assets/ses/efekt/hav.m4a",
+    "bayt": 12674,
+    "sha256": "2516e5af4b3e7805e1df882eb50c1c0642b3789b42affbb3c9fe55898a17c1cf"
+  },
+  {
+    "dosya": "mobile/assets/ses/efekt/kalem.m4a",
+    "bayt": 9935,
+    "sha256": "07e77c541539dbe7287e49ba70d1eded02338d1004f53fe7fcd2702f15096d2b"
+  },
+  {
+    "dosya": "mobile/assets/ses/efekt/kapi.m4a",
+    "bayt": 16015,
+    "sha256": "eb44951db499160e3b98406e64a56fcded68b5d3e4d21ba48ce80420a9c466ec"
+  },
+  {
+    "dosya": "mobile/assets/ses/efekt/kilic.m4a",
+    "bayt": 7055,
+    "sha256": "674dacac570a2054420c9827e6a9121c62e0afc7bf590f342f1621759ad70269"
+  },
+  {
+    "dosya": "mobile/assets/ses/efekt/matem.m4a",
+    "bayt": 19174,
+    "sha256": "4fef4a71dbd9d7efde349882957c72605f26a038041470e2e09497b5d13ee963"
+  },
+  {
+    "dosya": "mobile/assets/ses/efekt/mirilti.m4a",
+    "bayt": 33896,
+    "sha256": "d87d0f879261f641f8fdbb43d71f5a339b598b1a7feee73c413e26f6c156097b"
+  },
+  {
+    "dosya": "mobile/assets/ses/efekt/nal.m4a",
+    "bayt": 22469,
+    "sha256": "f8dd03970e5152fe04a9056854998e8448e7654206b2838f0a7e37aa29b26810"
+  },
+  {
+    "dosya": "mobile/assets/ses/efekt/ney_nefes.m4a",
+    "bayt": 29731,
+    "sha256": "cdaa68e39961ce08d1a0983d5f42b8f06ba5be9b8eddb36089da4ff3d9c11a4c"
+  },
+  {
+    "dosya": "mobile/assets/ses/efekt/sayfa.m4a",
+    "bayt": 6829,
+    "sha256": "59a75fc4a60edade1d181a975e19680e4aedd48a57c3173ca06c42b5630ca05f"
+  },
+  {
+    "dosya": "mobile/assets/ses/efekt/saz_vurgu.m4a",
+    "bayt": 27569,
+    "sha256": "4e105354ead1353340197a40ad203f4577137746460ce8d9b21558d24bf38624"
+  },
+  {
+    "dosya": "mobile/assets/ses/efekt/su.m4a",
+    "bayt": 39295,
+    "sha256": "28ee97ac57898a1479c7c20e1741cdf9d72636cae06841a68cffbf384b1eeaf0"
+  },
+  {
+    "dosya": "mobile/assets/ses/efekt/ui_dokun.m4a",
+    "bayt": 1833,
+    "sha256": "53cc97d4962c63f178c677cab16496166d2564fab8d5b3628ea743dfdf4a0438"
+  },
+  {
+    "dosya": "mobile/assets/ses/efekt/ui_ilerle.m4a",
+    "bayt": 1517,
+    "sha256": "fea54c25c5ae0a27ab9f44ebc0b09e513474834af0f0f337ea9ef7fac9125a80"
+  },
+  {
+    "dosya": "mobile/assets/ses/efekt/yenilgi.m4a",
+    "bayt": 25634,
+    "sha256": "6c5c3330aaf2d8d6a18606a40e06812543a2fa075e65106fcde48d1479d8fba5"
+  },
+  {
+    "dosya": "mobile/assets/ses/efekt/zafer.m4a",
+    "bayt": 16773,
+    "sha256": "6d247247b6ec2c3168a4f39fed9ecdf5df16cb3b6190b78c58f3eb80b2466706"
+  },
+  {
+    "dosya": "mobile/assets/ses/efekt/zil.m4a",
+    "bayt": 17471,
+    "sha256": "47847c1987b5cbce8a843c2e8331a645c3a87e7cb4de6a8ca1e4fedc9558fb03"
+  },
+  {
+    "dosya": "mobile/assets/ses/muzik/akin.m4a",
+    "bayt": 595631,
+    "sha256": "fce225796ae32091b763f8061942957a1c8f6e615d31466bcffc2eeecc2edbe4"
+  },
+  {
+    "dosya": "mobile/assets/ses/muzik/ana_tema.m4a",
+    "bayt": 731066,
+    "sha256": "e2cbd9e283edb40fb50bbd3bdde9ae5846ad3d00a8435c43f79a1d5368c7d697"
+  },
+  {
+    "dosya": "mobile/assets/ses/muzik/carsi.m4a",
+    "bayt": 232046,
+    "sha256": "00cf636a08449d8c24d6689de1b1ea2dec3a54e8be1024df48bad93274e6aded"
+  },
+  {
+    "dosya": "mobile/assets/ses/muzik/cenaze.m4a",
+    "bayt": 271653,
+    "sha256": "a56d310569c453cf13319dbeb3154dc033994215a651e2e1f0240362f8f329cf"
+  },
+  {
+    "dosya": "mobile/assets/ses/muzik/ciraklik.m4a",
+    "bayt": 257485,
+    "sha256": "508600236a8da6150f1e14a84b9ccda14803e42817b1a0ebc331a582ddbd8d99"
+  },
+  {
+    "dosya": "mobile/assets/ses/muzik/cocukluk.m4a",
+    "bayt": 200041,
+    "sha256": "9f5775a42713ed0ca75e02fb55c0a4b373a1b12859e57e94cf82f9fdedc7fd17"
+  },
+  {
+    "dosya": "mobile/assets/ses/muzik/divan.m4a",
+    "bayt": 417077,
+    "sha256": "d7859faeaf23fba91a0d5feb834e5985f8b5956dc6d4295ef869658df9f6dddc"
+  },
+  {
+    "dosya": "mobile/assets/ses/muzik/dogum.m4a",
+    "bayt": 249926,
+    "sha256": "0397d299dcc68915dbd464ccc9c9032f7c882edeeff169bc936bd575bf64bab9"
+  },
+  {
+    "dosya": "mobile/assets/ses/muzik/dugun.m4a",
+    "bayt": 487586,
+    "sha256": "13c2ccb980675f00ebb77bca3204933baa8878469d71fac3dd14d710e0b01157"
+  },
+  {
+    "dosya": "mobile/assets/ses/muzik/genclik.m4a",
+    "bayt": 489268,
+    "sha256": "fb1f7d16e2fd48dfc1d07becb6aa02dccb8005ddb2f8951e43c1baa760608531"
+  },
+  {
+    "dosya": "mobile/assets/ses/muzik/gerilim.m4a",
+    "bayt": 444748,
+    "sha256": "06255cdb33d3e3e8cb4448996e8cadb655d42188367d5262feab78fbffbda32d"
+  },
+  {
+    "dosya": "mobile/assets/ses/muzik/gunluk.m4a",
+    "bayt": 487948,
+    "sha256": "5dab6886634b9f2b7f6bd04c2e17de2fe960726a7ce27928708305dbb14733b5"
+  },
+  {
+    "dosya": "mobile/assets/ses/muzik/kitlik.m4a",
+    "bayt": 351027,
+    "sha256": "931ab00275ecab3db27d1c40f280eec5ce6e0da56df819b62ba6ef811be8c2eb"
+  },
+  {
+    "dosya": "mobile/assets/ses/muzik/miras.m4a",
+    "bayt": 127532,
+    "sha256": "ed6db294454182e56ff95d6e298c5bf33d6e3466a7dd0e21c8669a4f68a765c3"
+  },
+  {
+    "dosya": "mobile/assets/ses/muzik/olgunluk.m4a",
+    "bayt": 323116,
+    "sha256": "aa944853c0cbeb1a5f7981451775e7f5ce4b7b46ceab71e566a304893183cb98"
+  },
+  {
+    "dosya": "mobile/assets/ses/muzik/senlik.m4a",
+    "bayt": 742880,
+    "sha256": "63e07662e7cf5c435ab0f351d4d873f7253de5fb77988579ecd67f8b94823911"
+  },
+  {
+    "dosya": "mobile/assets/ses/muzik/tekke.m4a",
+    "bayt": 167131,
+    "sha256": "b74e821d23a719537ea66b3a453b1750ee13ab99e2d8cab4e6620bc3dda9bd3c"
+  },
+  {
+    "dosya": "mobile/assets/ses/muzik/ustalik.m4a",
+    "bayt": 487988,
+    "sha256": "3f29ba78d2d85eb23c935d6873e1b8923c3ed411cae7951ad3629806ecd23149"
+  },
+  {
+    "dosya": "mobile/assets/ses/muzik/yaslilik.m4a",
+    "bayt": 170957,
+    "sha256": "8a195648a64d094beb409e4b0c698e925fb4f82a0c97f2c6c0c54c049a2ec31d"
+  },
+  {
+    "dosya": "mobile/assets/ses/muzik/yolculuk.m4a",
+    "bayt": 215655,
+    "sha256": "19ea025a7944726d76630e026bcebd1f5b43282aa97978e14c3e8027fe3f4819"
+  },
+  {
+    "dosya": "mobile/assets/ses/muzik/zafer.m4a",
+    "bayt": 415784,
+    "sha256": "ea46bbe9141ab1ee0065900b4f14904db7514275199565470eefdfad57e10cc5"
+  },
+  {
+    "dosya": "mobile/assets/ses/ortam/avlu.m4a",
+    "bayt": 96027,
+    "sha256": "b5fb5a0d47dbf36dfae568db99200201d27073e9ca44d396b4e44b95efe4f037"
+  },
+  {
+    "dosya": "mobile/assets/ses/ortam/bahar_kus.m4a",
+    "bayt": 247740,
+    "sha256": "8d081ab62be282928d300e9a0dc1cd37fa17932316ab7dcb44ef4d255e88e017"
+  },
+  {
+    "dosya": "mobile/assets/ses/ortam/bozkir.m4a",
+    "bayt": 429762,
+    "sha256": "541a9938e5270bcce86a4a50f820f1950dec6d9604e38e7d9ea6f93aca9f9df5"
+  },
+  {
+    "dosya": "mobile/assets/ses/ortam/carsi.m4a",
+    "bayt": 274079,
+    "sha256": "e6186b9b2f03e492ef173d4f5417138bb4a83a02482d44e3e44e3ee32325d9d2"
+  },
+  {
+    "dosya": "mobile/assets/ses/ortam/degirmen.m4a",
+    "bayt": 245923,
+    "sha256": "166b5683ea034469a3f8785606588071fafac65a0f677869ddec81b3a92e382e"
+  },
+  {
+    "dosya": "mobile/assets/ses/ortam/dere.m4a",
+    "bayt": 247156,
+    "sha256": "5660c302ac13cbf86dc717ea246d64caf76c187a0774563acb90ecdc5df29652"
+  },
+  {
+    "dosya": "mobile/assets/ses/ortam/dokuma.m4a",
+    "bayt": 250122,
+    "sha256": "9e740f0933c9adc1567dbe2ed1e95c470ba9e7c83d1e52bc5715d1a9e800f0ed"
+  },
+  {
+    "dosya": "mobile/assets/ses/ortam/guz_ruzgar.m4a",
+    "bayt": 200645,
+    "sha256": "d8c67515a88cee9eb8ad191d07d781dfaac3f2a642d28714304a3e203a37222b"
+  },
+  {
+    "dosya": "mobile/assets/ses/ortam/kervan.m4a",
+    "bayt": 352477,
+    "sha256": "d9702cd0708444cef7a55c282d54b799e016233050e8ba648366d5c7a3ceff02"
+  },
+  {
+    "dosya": "mobile/assets/ses/ortam/kis_ruzgar.m4a",
+    "bayt": 247665,
+    "sha256": "90f861f9f8f5c43a97a0f74ec1935a439b851f096d4335549bc9ac572ce0acbe"
+  },
+  {
+    "dosya": "mobile/assets/ses/ortam/ocak.m4a",
+    "bayt": 227226,
+    "sha256": "1c6e26442ac3176fbbe2561bb55bf15e9fe557ae3845f68ea7d71dff1d6e1450"
+  },
+  {
+    "dosya": "mobile/assets/ses/ortam/ors.m4a",
+    "bayt": 244622,
+    "sha256": "1ede2a440162d73412b033363fdcf80ef6aee44c06ecf115ff580307d3cd41bc"
+  },
+  {
+    "dosya": "mobile/assets/ses/ortam/suru.m4a",
+    "bayt": 469318,
+    "sha256": "62ac0707e9ec127f3e9eea2be737aba87b15f22eb19df26b2cd90cd13025f509"
+  },
+  {
+    "dosya": "mobile/assets/ses/ortam/yaz_cayir.m4a",
+    "bayt": 387675,
+    "sha256": "6b1e09f702ebb4f5d6690db55e9c0be171e0fb3ca9f38d5051a83644676a3320"
+  },
+  {
+    "dosya": "mobile/assets/ses/ortam/yaz_gece.m4a",
+    "bayt": 387955,
+    "sha256": "e977bf89d539ae6c72ba765be2d4e21f2a5c2c1eee017eb16ba1cd14875aa5da"
+  }
+]

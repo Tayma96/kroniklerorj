@@ -279,3 +279,16 @@ kaydı (iz) olur, iz bir eğilim etiketi taşır, sonraki olaylar ve yaylar bu h
   yalnız arm64-v8a. İmza: **debug anahtarı** (CN=Android Debug, SHA-256 fac61745…3b9c) — yayın anahtarı kutuda yok; mağazaya uygun değil.
 - Manifest'e paylaşım alma intent-filter'ı girmedi; expo-sharing / expo-file-system yerel sınıfları dex'te var.
 - Son takım: 12 çekirdek rc=0, 9 yeni denetçi TEMİZ, ÇIĞIR EŞİKLERİ TEMİZ, ekonomi 80 rc=0, 300 hayat smoke HATA 0.
+
+## 21. Yedek karşılaştırması ve varlık kurtarma (11 Ekim 2026)
+
+- Kullanıcı oyuncu portreleri hariç yedekteki çalışmaları korumayı ve `apk` dalına göndermeyi istedi.
+- 48 NPC portresi kurtarıldı; kimlik sabit, yaş evresi değişir. Oyuncu portreleri ayrı tutuldu.
+- 63 gerçek ses kaydı kaynak/lisans dökümüyle kurtarıldı; mevcut 17 efekt ve ana tema bağlandı.
+- 15 arka plan ve etiketler korundu; yeni sahne kaynakları gelmeden oynanışa bağlanmadı.
+- `docs/DRIVE_KARSILASTIRMA.md`: kapsam, eksik dosyalar ve bu oturumun doğrulama sonuçları.
+- `docs/SAHNE_DEVIR_NOTLARI.md`: eski sahne notları; mevcut kodun veya güncel testlerin kanıtı değildir.
+- Açık engel: yedekte sahne v3 kaynakları, güncel oyun ekranı/motor değişiklikleri ve bağlamsal ses katmanı görünmüyor.
+  Tam kaynak proje ZIP'i gerekli; yalnız görsel ve devir notuyla özgün sahne sürümü geri getirilemez.
+- Doğrulama: mobil/sunucu tsc; kurtarma, i18n/ikon, dil karışması, göç, Dost, Paylaş, ölü karar denetimleri;
+  300 hayat HATA 0; Android paketleme; 63 AAC ve 63 JPEG doğrulaması. APK/cihaz testi yapılmadı.

@@ -1,0 +1,15 @@
+dugun: dugun, evlilik, kutlama
+cenaze: cenaze, olum, yas, helallik
+mogol_baskin: savas, baskin, mogol, felaket
+kitlik: kitlik, kis, aclik, felaket
+medrese: medrese, ilim, katip, egitim, mektep
+ahi_tekke: ahi, lonca, pestamal, usta, cirak
+kadi_divan: divan, mahkeme, kadi, dava
+gurbet_yol: yolculuk, goc, gurbet, kervan
+ev_yoksul: ev, aile, yoksul, gece
+ev_varlikli: ev, aile, varlikli, misafir
+atolye_demirci: atolye, demirci, zanaat, is
+hasat: tarla, hasat, ciftci, yaz
+nehir: nehir, balikci, sabah
+dogum: dogum, evlat, besik
+cami_avlu: cami, cuma, mahalle, sadaka, dilenci

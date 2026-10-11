@@ -2,6 +2,7 @@ import { View, Image, ImageBackground, Modal, Text, Pressable, TextInput, ViewSt
 import { useEffect, useState, useRef } from "react";
 import Animated, { useSharedValue, useAnimatedStyle, useAnimatedProps, useDerivedValue, withTiming, withSpring, withRepeat, withSequence, ZoomIn, FadeIn, FadeInUp, FadeInDown } from "react-native-reanimated";
 import { portreImage } from "./assets";
+import { npcPortreImage } from "./npc-portre";
 import { GameIcon } from "./icons";
 import { useI18n } from "./i18n";
 import { hap, Hap } from "./haptics";
@@ -75,14 +76,15 @@ export function Portre({ age, gender, size = 44, ring = true, seed }: { age: num
   }, [breathe]);
   const st = useAnimatedStyle(() => ({ transform: [{ scale: breathe ? sc.value : 1 }] }));
   // Prosedürel varyant — yalnızca seed verilen (NPC) ve nefes almayan küçük portrelerde.
-  const useVariant = seed != null && !breathe;
+  const npcImage = npcPortreImage(age, gender, seed);
+  const useVariant = seed != null && npcImage == null && !breathe;
   const h = useVariant ? portreHash(seed!) : 0;
   const flip = useVariant && (h & 1) ? -1 : 1;
   const zoom = useVariant ? 1 + (Math.floor(h / 2) % 3) * 0.07 : 1;
   const tint = useVariant ? PORTRE_TINTS[h % PORTRE_TINTS.length] : null;
   return (
     <View style={{ width: size, height: size, borderRadius: size / 2, overflow: "hidden", borderWidth: ring ? 2 : 1, borderColor: ring ? C.gold : C.borderHi, backgroundColor: "#2a1c0c" }}>
-      <AnimatedImage source={portreImage(age, gender)} style={useVariant ? { width: "100%", height: "100%", transform: [{ scaleX: flip }, { scale: zoom }] } : [{ width: "100%", height: "100%" }, st]} resizeMode="cover" />
+      <AnimatedImage source={npcImage ?? portreImage(age, gender)} style={useVariant ? { width: "100%", height: "100%", transform: [{ scaleX: flip }, { scale: zoom }] } : [{ width: "100%", height: "100%" }, st]} resizeMode="cover" />
       {tint ? <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0, backgroundColor: tint }} /> : null}
     </View>
   );
