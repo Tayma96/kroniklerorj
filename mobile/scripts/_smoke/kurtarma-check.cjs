@@ -57,8 +57,35 @@ const root = path.resolve(__dirname, '../..');
   const ui = fs.readFileSync(path.join(root, 'lib/ui.tsx'), 'utf8');
   assert(ui.includes('npcImage ?? portreImage(age, gender)'));
   assert(ui.includes('npcImage == null && !breathe'));
+  // Her yaş sınırında doğru cinsiyetin aynı portre serisi seçilir.
+  const playerBundle = await esbuild.build({
+    entryPoints: [path.join(root, 'lib/assets.ts')], bundle: true,
+    format: 'cjs', platform: 'node', write: false,
+    plugins: [{ name: 'portre-dosyalari', setup(build) {
+      build.onLoad({ filter: /\.(jpg|png)$/ }, args => {
+        assert(fs.existsSync(args.path), args.path);
+        if (args.path.includes(path.sep + 'portre' + path.sep)) {
+          const bytes = fs.readFileSync(args.path);
+          assert.equal(bytes.subarray(1, 4).toString(), 'PNG');
+          assert.equal(bytes.readUInt32BE(16), 200);
+          assert.equal(bytes.readUInt32BE(20), 200);
+        }
+        return { contents: `module.exports = ${JSON.stringify(path.basename(args.path))}`, loader: 'js' };
+      });
+    } }],
+  });
+  const playerBox = { module: { exports: {} } };
+  vm.runInNewContext(playerBundle.outputFiles[0].text, playerBox);
+  const cases = [[0, 'cocuk'], [12, 'cocuk'], [13, 'ergen'], [17, 'ergen'],
+    [18, 'genc'], [24, 'genc'], [25, 'yetiskin'], [32, 'yetiskin'],
+    [33, 'olgun'], [45, 'olgun'], [46, 'yasli'], [59, 'yasli'], [60, 'ihtiyar'], [100, 'ihtiyar']];
+  for (const [gender, prefix] of [['erkek', 'e'], ['kadın', 'k']]) {
+    for (const [age, stage] of cases) {
+      assert.equal(playerBox.module.exports.portreImage(age, gender), `${prefix}_${stage}.png`);
+    }
+  }
   const tags = fs.readFileSync(path.join(root, 'assets/arka/TAGS.txt'), 'utf8').trim().split('\n');
   assert.equal(tags.length, 15);
   for (const line of tags) assert(fs.existsSync(path.join(root, 'assets/arka', line.split(':')[0] + '.jpg')));
-  console.log('KURTARMA: TEMİZ — 48 NPC, 63 ses, 15 arka plan; oyuncu portreleri ayrı.');
+  console.log('KURTARMA: TEMİZ — 14 oyuncu portresi, 48 NPC, 63 ses, 15 arka plan; yaş/kimlik serileri ayrı.');
 })().catch(error => { console.error(error); process.exitCode = 1; });

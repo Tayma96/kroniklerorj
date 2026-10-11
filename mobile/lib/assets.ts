@@ -64,14 +64,14 @@ export const MAP_HERO = require("../assets/map/anadolu.jpg");
 
 // Portreler — yaş kuşağı + cinsiyete göre.
 const PORTRE: Record<string, any> = {
-  e_cocuk: require("../assets/portre/e_cocuk.jpg"), e_ergen: require("../assets/portre/e_ergen.jpg"),
-  e_genc: require("../assets/portre/e_genc.jpg"), e_yetiskin: require("../assets/portre/e_yetiskin.jpg"),
-  e_olgun: require("../assets/portre/e_olgun.jpg"), e_yasli: require("../assets/portre/e_yasli.jpg"),
-  e_ihtiyar: require("../assets/portre/e_ihtiyar.jpg"),
-  k_cocuk: require("../assets/portre/k_cocuk.jpg"), k_ergen: require("../assets/portre/k_ergen.jpg"),
-  k_genc: require("../assets/portre/k_genc.jpg"), k_yetiskin: require("../assets/portre/k_yetiskin.jpg"),
-  k_olgun: require("../assets/portre/k_olgun.jpg"), k_yasli: require("../assets/portre/k_yasli.jpg"),
-  k_ihtiyar: require("../assets/portre/k_ihtiyar.jpg"),
+  e_cocuk: require("../assets/portre/e_cocuk.png"), e_ergen: require("../assets/portre/e_ergen.png"),
+  e_genc: require("../assets/portre/e_genc.png"), e_yetiskin: require("../assets/portre/e_yetiskin.png"),
+  e_olgun: require("../assets/portre/e_olgun.png"), e_yasli: require("../assets/portre/e_yasli.png"),
+  e_ihtiyar: require("../assets/portre/e_ihtiyar.png"),
+  k_cocuk: require("../assets/portre/k_cocuk.png"), k_ergen: require("../assets/portre/k_ergen.png"),
+  k_genc: require("../assets/portre/k_genc.png"), k_yetiskin: require("../assets/portre/k_yetiskin.png"),
+  k_olgun: require("../assets/portre/k_olgun.png"), k_yasli: require("../assets/portre/k_yasli.png"),
+  k_ihtiyar: require("../assets/portre/k_ihtiyar.png"),
 };
 function band(age: number): string {
   if (age <= 12) return "cocuk"; if (age <= 17) return "ergen"; if (age <= 24) return "genc";

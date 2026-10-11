@@ -292,3 +292,13 @@ kaydı (iz) olur, iz bir eğilim etiketi taşır, sonraki olaylar ve yaylar bu h
   Tam kaynak proje ZIP'i gerekli; yalnız görsel ve devir notuyla özgün sahne sürümü geri getirilemez.
 - Doğrulama: mobil/sunucu tsc; kurtarma, i18n/ikon, dil karışması, göç, Dost, Paylaş, ölü karar denetimleri;
   300 hayat HATA 0; Android paketleme; 63 AAC ve 63 JPEG doğrulaması. APK/cihaz testi yapılmadı.
+
+## 22. Oyuncunun çoklu yaş serisi seçildi (11 Ekim 2026)
+
+- Kullanıcı tekli oyuncu adaylarını değil çoklu görseldeki aynı kişinin yaş serisini istedi.
+- Gösterilen iki setten birincisi seçildi: `40_portre_turk.png` (keçe başlıklı erkek, işlemeli başlıklı kadın).
+- Her cinsiyetin 7 evresi, soldan sağa sıra korunarak 200×200 PNG kırpıldı; yeni resim üretimi veya büyütme yok.
+- `assets.ts` mevcut yaş sınırları korunarak bu 14 PNG'ye bağlandı. NPC'nin kimliğe bağlı üçlüleri değişmedi.
+- Kaynak görsel `scripts/gorsel/kaynak/oyuncu-yas-seridi.png`; hücre düzeni ve sınırlar `assets/portre/KAYNAK.json`.
+- `kurtarma-check.cjs` artık her oyuncu yaş sınırında cinsiyet/seri dosyasını da doğrular.
+- Çocuk NPC'ler için arşivde kimliğe özel çocuk resmi yok; mevcut yaşa uygun genel çocuk portresi yolu korunur.

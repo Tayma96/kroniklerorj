@@ -8,3 +8,11 @@
   #2a1c0c vinyet), hedef en-boya kırpma, ÖZGÜN boyut/biçimde kaydetme (JPEG q86 / PNG).
 - `ba.py`, `sheet.py` — önce/sonra ve aday kontak sayfaları.
 Yollar /workspace/kr-gorsel-is ve /workspace/kr-gorsel-orijinal varsayar.
+
+## Oyuncu yaş serisi (güncel seçim)
+
+Oyuncu portrelerinde eski `secim.json` adayları kullanılmaz. Kullanıcı `40_portre_turk.png` çoklu setini seçti.
+Kaynak: `kaynak/oyuncu-yas-seridi.png` (1400×400). Üst sıra erkek, alt sıra kadın; soldan sağa
+çocuk, ergen, genç, yetişkin, olgun, yaşlı, ihtiyar. Her 200×200 hücre kayıpsız PNG olarak
+`assets/portre/` altına kırpıldı. Ayrıntılar `assets/portre/KAYNAK.json` içinde.
+Bu seti eski üretim/finalize adaylarıyla karıştırmayın; kişi serisi tek kaynaktan bütünüyle korunur.

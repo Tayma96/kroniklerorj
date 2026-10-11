@@ -27,14 +27,14 @@ Bu çalışma tam sahne sürümünü kurtarmış değildir; kaynak eksikleri aş
 NPC kaynakları 1280×720; eski devir notundaki 512×512 iddiasından farklı. Görseller değiştirilmeden kurtarıldı.
 Gerçek NPC'lerin yüzü meslek değişince değişmesin diye kimlikte meslek kullanılmadı. Sarıklı âlim yüzü (`e05`) gelecekteki isimsiz âlim rolleri için korunur; genel gerçek kişi havuzuna girmez.
 
-Oyuncu portrelerinin dosyaları değiştirilmedi. NPC havuzu oyuncuya atanmaz; oyuncu görsellerinin yeniden tasarımı ayrı, henüz yapılmamış iştir.
+İlk varlık entegrasyonunda oyuncu portreleri değiştirilmedi. Kullanıcı daha sonra çoklu yaş serilerinden `40_portre_turk.png` setini seçti; 14 oyuncu portresi bu tek kaynaktan kırpılarak değiştirildi. NPC havuzu oyuncuya atanmaz.
 
 ## Kurtarılan fakat bağlantısı eksik kalanlar
 
 - `mobile/assets/arka/`: 15 sahne arka planı ve özgün etiket listesi. Mevcut ekranlara rastgele atanmadı; sahne kodu gelince bağlanmalı.
 - Ses paketinin diğer 45 kaydı: sahne, ortam ve bağlamsal müzik için depoda korundu. Mevcut oynatıcı yalnız 18 kaydı kullanır.
 - `docs/SAHNE_DEVIR_NOTLARI.md`: yedeğin sahne v1–v3 notları. Eski test sonuçları yalnız kaynak belgenin iddialarıdır; mevcut sürümün doğrulaması değildir.
-- `docs/VARLIK_KURTARMA.json`: 126 medya dosyasının bayt sayısı ve SHA-256 sağlaması.
+- `docs/VARLIK_KURTARMA.json`: 126 ilk medya dosyasına ek olarak 14 oyuncu portresinin bayt sayısı ve SHA-256 sağlaması (toplam 140).
 
 ## Tam entegrasyonu engelleyen kaynak eksikleri
 

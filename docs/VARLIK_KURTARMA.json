@@ -628,5 +628,75 @@
     "dosya": "mobile/assets/ses/ortam/yaz_gece.m4a",
     "bayt": 387955,
     "sha256": "e977bf89d539ae6c72ba765be2d4e21f2a5c2c1eee017eb16ba1cd14875aa5da"
+  },
+  {
+    "dosya": "mobile/assets/portre/e_cocuk.png",
+    "bayt": 66834,
+    "sha256": "c4006ac471084ec0af07ba21f96084967b0f5f36591bbb0d2bfa3f8605458d00"
+  },
+  {
+    "dosya": "mobile/assets/portre/e_ergen.png",
+    "bayt": 66645,
+    "sha256": "920d29f6ad16a9fa5455c8c36aca036f9c5f52dd5a06f2a4d6f7bd689b83d1a2"
+  },
+  {
+    "dosya": "mobile/assets/portre/e_genc.png",
+    "bayt": 60321,
+    "sha256": "4f71efc4ec9b7ef7aad2bcd80b94ff0966b4ec52cccbe67478aed4723f5811f3"
+  },
+  {
+    "dosya": "mobile/assets/portre/e_ihtiyar.png",
+    "bayt": 61996,
+    "sha256": "9d13b44880ebea0a2765a1da18700b77b82f90d132f4714e0a642ecb52c061f7"
+  },
+  {
+    "dosya": "mobile/assets/portre/e_olgun.png",
+    "bayt": 60793,
+    "sha256": "aecb1071e2f85fcaee7ad04751df7d9ffcbb79bc42e40db07778a0b7ea62473a"
+  },
+  {
+    "dosya": "mobile/assets/portre/e_yasli.png",
+    "bayt": 59084,
+    "sha256": "c91c0d086195a0c462543191f154f3df567a4161db17e633327de10523727d77"
+  },
+  {
+    "dosya": "mobile/assets/portre/e_yetiskin.png",
+    "bayt": 59445,
+    "sha256": "c7afe3cdfdb326ee2b9f69b9ac64fe5b2e00e26d3a64a054129f55fcd6c47781"
+  },
+  {
+    "dosya": "mobile/assets/portre/k_cocuk.png",
+    "bayt": 66224,
+    "sha256": "7fd2eb66d01061951ab8ee4a8bda5cd654ca7993742e74576816dcc4ad3fd488"
+  },
+  {
+    "dosya": "mobile/assets/portre/k_ergen.png",
+    "bayt": 60835,
+    "sha256": "c75e82a091c13ff9ffc3b17dcb9628f0e69649edb379e0de2acbbab691e094b2"
+  },
+  {
+    "dosya": "mobile/assets/portre/k_genc.png",
+    "bayt": 68695,
+    "sha256": "767e1da84fef7204d3d35b9138217854658303b35c40660c272d81f60f6bdfbb"
+  },
+  {
+    "dosya": "mobile/assets/portre/k_ihtiyar.png",
+    "bayt": 68967,
+    "sha256": "09e525fa5003b002fdc640718005f3790ea9123d6d3c00c93db46718975c12f0"
+  },
+  {
+    "dosya": "mobile/assets/portre/k_olgun.png",
+    "bayt": 70391,
+    "sha256": "b1700dd80ead00ddac41bc161e259a7e6c1442a80ff38ce7afa40da4b6625ccc"
+  },
+  {
+    "dosya": "mobile/assets/portre/k_yasli.png",
+    "bayt": 66868,
+    "sha256": "683faae6ed3dbf8f59c229b511cb73c2bbc56a5b1eb1b749f1a74cbce75df9ab"
+  },
+  {
+    "dosya": "mobile/assets/portre/k_yetiskin.png",
+    "bayt": 68244,
+    "sha256": "1debdada3a5f71c29dbb04a77e27287d5b9cef4ae77b5c1a7ade77584599d651"
   }
 ]

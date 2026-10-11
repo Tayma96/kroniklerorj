@@ -1,0 +1,56 @@
+{
+  "kaynak": "40_portre_turk.png",
+  "kaynak_sha256": "102f3c5c1d78684448cbefbb1bf9333e6914db83c6160a233b7c545de3649045",
+  "kaynak_boyut": [
+    1400,
+    400
+  ],
+  "islem": "Kayıpsız PNG kırpma; yeniden boyutlandırma yok.",
+  "siralar": [
+    "erkek",
+    "kadın"
+  ],
+  "sutunlar": [
+    "cocuk",
+    "ergen",
+    "genc",
+    "yetiskin",
+    "olgun",
+    "yasli",
+    "ihtiyar"
+  ],
+  "hucre_boyut": [
+    200,
+    200
+  ],
+  "yas_araliklari": {
+    "cocuk": [
+      0,
+      12
+    ],
+    "ergen": [
+      13,
+      17
+    ],
+    "genc": [
+      18,
+      24
+    ],
+    "yetiskin": [
+      25,
+      32
+    ],
+    "olgun": [
+      33,
+      45
+    ],
+    "yasli": [
+      46,
+      59
+    ],
+    "ihtiyar": [
+      60,
+      null
+    ]
+  }
+}
