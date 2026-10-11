@@ -246,3 +246,16 @@ kaydı (iz) olur, iz bir eğilim etiketi taşır, sonraki olaylar ve yaylar bu h
   doğrulanamayan yerel bağımlılık eklemek "temiz" değil. Metin paylaşımı (Roman, Divan) yerinde kalır; kart `View`'ları hazır.
 - Yapılacak: iki paketi ekle, Skia ile kartı offscreen çiz → cache'e PNG yaz → `Sharing.shareAsync`; paket yoksa metne düş; yeni APK.
 - Adım 7 (Dost Haneler) kullanıcı isteğiyle ertelendi; taslak `/tmp/kr/w7/` (commit dışı, kalıcı değil).
+
+## 18. Dalga 3 — Görsel paylaşım kartı (adım 6 tamamlandı)
+
+- Bağımlılık: `npx expo install expo-sharing expo-file-system` → `expo-sharing ~56.0.26`, `expo-file-system ~56.0.11` (SDK 56).
+  expo-sharing'in yapılandırma eklentisi (yalnız "uygulamaya paylaşım alma" içindir, manifest'e intent-filter ekler) app.json'dan
+  bilerek çıkarıldı; dışa paylaşım (`shareAsync`) eklentisiz çalışır. **Yeni yerel modül → yeni APK gerekir.**
+- `lib/kart-paylas.ts`: `kartPaylas(ref, metin, dosyaAdı, başlık)` — Skia `makeImageFromView` ile kart View'u → PNG bayt →
+  `File(Paths.cache)` → `Sharing.shareAsync(image/png)`. Yerel modüller dinamik yüklenir; herhangi bir hata (eski APK, paylaşım yok,
+  çekim boş) `Share.share` metnine düşer. Android görsele altyazı ekletmediği için metin kartın içinde; "ya da metin olarak paylaş"
+  düğmesi (`paylas.metin`, 6 dil) metni ayrıca paylaşır.
+- Ekranlar: `app/oyun/roman.tsx` (Hayat Romanı kartı), `app/oyun/divan.tsx` (dava paneli + oy çubukları).
+- Denetçi `scripts/_smoke/paylas-check.cjs` (statik): SDK eşleşmesi, yerel modül kurulu, metne düşüş yolu, ağ yok, iki ekran.
+- Doğrulama: 12 çekirdek rc=0; YANKI/DEFTER/ROMAN/KAN/GEÇ/DİVAN/RİTİM/PAYLAŞ TEMİZ; ÇIĞIR EŞİKLERİ TEMİZ. Cihazda elle denenmedi.

@@ -1,7 +1,8 @@
 // Divan: günün davası (çevrimdışı, tarih tohumlu). Hüküm yalnızca ayrı kayda (kronik_divan) yazılır; oyun durumuna dokunmaz.
 // Zamanlayıcı yok, seri yok, kaçan dava yok: geçmiş numaralar arşivde bekler. Ödül yalnızca lakaptır (kimlik).
-import { useEffect, useMemo, useState } from "react";
-import { View, Text, ScrollView, Pressable, Share } from "react-native";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { View, Text, ScrollView, Pressable } from "react-native";
+import { kartPaylas, metinPaylas } from "../../lib/kart-paylas";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -31,11 +32,11 @@ export default function Divan() {
     const n = hukumVer(kayit, no, y); if (n === kayit) return;
     setKayit(n); AsyncStorage.setItem(DIVAN_KEY, JSON.stringify(n)).catch(() => {});
   };
-  const paylas = () => {
-    if (hukum == null || !yuzde) return;
-    const msg = applyParams(t("divan.paylas"), [no, t("divan." + id + ".t"), yuzdeL(yuzde[hukum], lang)]) + "\n\nKronikler: Küllerin Mirası";
-    Share.share({ message: msg }).catch(() => {});
-  };
+  const kartRef = useRef<View>(null);
+  const mesaj = () => hukum == null || !yuzde ? "" : applyParams(t("divan.paylas"), [no, t("divan." + id + ".t"), yuzdeL(yuzde[hukum], lang)]) + "\n\nKronikler: Küllerin Mirası";
+  // Görsel kart (dava paneli, Skia ile PNG) — olmazsa metne düşer.
+  const paylas = () => { const m = mesaj(); if (m) kartPaylas(kartRef, m, "kronikler-divan-" + no, t("divan.share")); };
+  const paylasMetin = () => { const m = mesaj(); if (m) metinPaylas(m); };
   const sayi = yolSayilari(kayit);
   const arsiv = arsivNumaralari(bugun);
   return (
@@ -45,6 +46,7 @@ export default function Divan() {
       </View>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 14, paddingBottom: insets.bottom + 90 }}>
         <PageHeader kicker={no === bugun ? t("divan.bugun") : t("divan.eyebrow")} title={applyParams(t("divan.no"), [no])} sub={t("divan.alt")} />
+        <View ref={kartRef} collapsable={false} style={{ backgroundColor: C.bg }}>
         <Panel title={t("divan." + id + ".t")} icon="tarih">
           <Text style={{ fontFamily: F.serif, fontSize: 14, lineHeight: 21, color: C.parchment }}>{t("divan." + id + ".x")}</Text>
           <View style={{ marginTop: 12, gap: 8 }}>
@@ -73,9 +75,13 @@ export default function Divan() {
               <Pressable onPress={paylas} style={{ marginTop: 10, paddingVertical: 8, paddingHorizontal: 18, borderRadius: 9, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: "rgba(201,168,76,0.10)" }}>
                 <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 1, color: C.gold }}>{t("divan.share")}</Text>
               </Pressable>
+              <Pressable onPress={paylasMetin} hitSlop={8} style={{ marginTop: 6 }}>
+                <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted }}>{t("paylas.metin")}</Text>
+              </Pressable>
             </View>
           ) : null}
         </Panel>
+        </View>
 
         <Panel title={t("divan.lakaplar")} icon="zafer">
           {DIVAN_YOLLAR.map((y) => (

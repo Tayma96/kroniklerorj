@@ -1,4 +1,6 @@
-import { View, Text, ScrollView, Pressable, Share } from "react-native";
+import { useRef } from "react";
+import { View, Text, ScrollView, Pressable } from "react-native";
+import { kartPaylas, metinPaylas } from "../../lib/kart-paylas";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
@@ -69,12 +71,15 @@ export default function Roman() {
   // RN yerleşik Share (ek bağımlılık, ağ, sunucu yok); görüntü yakalama kütüphanesi olmadığı için kart ekranda çizilir, metin paylaşılır.
   const kadin = state.player.gender === "kadın";
   const roman = hayatRomani(state).satirlar.map((x) => renderEvt(x.k, "", x.p, lang, t, kadin)).filter(Boolean);
-  const onShare = () => {
+  const kartRef = useRef<View>(null);
+  const mesaj = () => {
     const pl = state.player;
     const kunye = pl.profession !== "işsiz" ? anildi(pl) + "." : "";
-    const msg = `❧ ${t("roman.kart")} ❧\n${roman.join("\n")}${kunye ? "\n" + kunye : ""}\n\nKronikler: Küllerin Mirası`;
-    Share.share({ message: msg }).catch(() => {});
+    return `❧ ${t("roman.kart")} ❧\n${roman.join("\n")}${kunye ? "\n" + kunye : ""}\n\nKronikler: Küllerin Mirası`;
   };
+  // Görsel kart (Skia ile PNG) — olmazsa metne düşer; metin düğmesi her zaman açık.
+  const onShare = () => { kartPaylas(kartRef, mesaj(), "kronikler-roman", t("rom.share")); };
+  const onShareText = () => { metinPaylas(mesaj()); };
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ padding: 20, paddingTop: insets.top + 12, paddingBottom: insets.bottom + 60 }}>
@@ -85,7 +90,8 @@ export default function Roman() {
       <Text style={{ color: C.gold, textAlign: "center", marginVertical: 14 }}>❧ ⚜ ❧</Text>
 
       {/* Paylaşım kartı: Yankı hafızasından hayatın romanı */}
-      <View style={{ borderWidth: 1.5, borderColor: "rgba(201,168,76,0.55)", borderRadius: 14, paddingVertical: 18, paddingHorizontal: 16, marginBottom: 12, backgroundColor: C.card }}>
+      <View ref={kartRef} collapsable={false} style={{ backgroundColor: C.bg, borderRadius: 14, marginBottom: 12 }}>
+      <View style={{ borderWidth: 1.5, borderColor: "rgba(201,168,76,0.55)", borderRadius: 14, paddingVertical: 18, paddingHorizontal: 16, backgroundColor: C.card }}>
         <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 3, color: C.gold, textAlign: "center" }}>❧ {t("roman.kart")} ❧</Text>
         <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted, textAlign: "center", marginTop: 3, marginBottom: 10 }}>{t("roman.alt")}</Text>
         {roman.map((line, i) => (
@@ -93,9 +99,13 @@ export default function Roman() {
         ))}
         <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 2, color: C.goldDim, textAlign: "center", marginTop: 8 }}>KRONIKLER · ⚜</Text>
       </View>
+      </View>
 
       <Pressable onPress={onShare} style={{ alignSelf: "center", flexDirection: "row", alignItems: "center", gap: 7, paddingVertical: 8, paddingHorizontal: 18, borderRadius: 9, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: "rgba(201,168,76,0.10)", marginBottom: 18 }}>
         <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 1, color: C.gold }}>{t("rom.share")}</Text>
+      </Pressable>
+      <Pressable onPress={onShareText} hitSlop={8} style={{ alignSelf: "center", marginTop: -10, marginBottom: 18 }}>
+        <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted }}>{t("paylas.metin")}</Text>
       </Pressable>
 
       {chapters.length === 0 ? (
