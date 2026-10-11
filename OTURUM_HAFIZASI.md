@@ -269,3 +269,13 @@ kaydı (iz) olur, iz bir eğilim etiketi taşır, sonraki olaylar ve yaylar bu h
 - i18n parçası `h` (12 satır × 6 dil). Denetçi `scripts/_smoke/dost-check.cjs` (gidiş-dönüş TR/AR/RU/ES adlar, bozulma reddi,
   göç, sınır, ağ/para yok, 6 dil).
 - Doğrulama: 12 çekirdek rc=0; YANKI/DEFTER/ROMAN/KAN/GEÇ/DİVAN/RİTİM/PAYLAŞ/DOST TEMİZ; ÇIĞIR EŞİKLERİ TEMİZ.
+
+## 20. Yerel APK (11 Ekim 2026, commit 1e8ad5c)
+
+- Yöntem (öncekiyle aynı): `git archive HEAD` → `/tmp/kronikler-build2`, node_modules kopyası, `source ~/android-tools/env.sh`
+  (OpenJDK 17, SDK 36, NDK 27.1), `CI=1 npx expo prebuild --platform android --clean`,
+  `./gradlew :app:assembleRelease -PreactNativeArchitectures=arm64-v8a --no-daemon` (6 dk 13 sn, BUILD SUCCESSFUL).
+- Çıktı `dist/Kronikler.apk` (gitignore'da): 73.811.566 bayt, com.kronikler.app, versionCode 100, versionName 1.0.0, minSdk 24,
+  yalnız arm64-v8a. İmza: **debug anahtarı** (CN=Android Debug, SHA-256 fac61745…3b9c) — yayın anahtarı kutuda yok; mağazaya uygun değil.
+- Manifest'e paylaşım alma intent-filter'ı girmedi; expo-sharing / expo-file-system yerel sınıfları dex'te var.
+- Son takım: 12 çekirdek rc=0, 9 yeni denetçi TEMİZ, ÇIĞIR EŞİKLERİ TEMİZ, ekonomi 80 rc=0, 300 hayat smoke HATA 0.
