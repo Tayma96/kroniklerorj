@@ -6,6 +6,7 @@ import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
 import { ARCS } from "../../lib/arcs";
 import { DefterSoy } from "../../lib/defter";
+import { DostHaneler } from "../../lib/dost-ui";
 import { useI18n, applyParams, lakapAdi } from "../../lib/i18n";
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
@@ -42,6 +43,8 @@ export default function Kronik() {
           <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}><GameIcon name="roman" size={12} color={C.goldDim} /><Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted }}>{applyParams(t("kronik.yaylar"), [defter.yaylar.length, ARCS.length])}</Text></View>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}><GameIcon name="scroll" size={12} color={C.goldDim} /><Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted }}>{applyParams(t("kronik.ikilem"), [defter.ikilemler.length])}</Text></View>
         </View>
+        {/* Dost Haneler: sunucusuz, yalnız bu cihaz; yalnız kimlik */}
+        <DostHaneler defter={defter} />
         {defter.soylar.length === 0 ? (
           <Panel><Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.parchmentMuted, textAlign: "center", paddingVertical: 10 }}>{t("kronik.bos")}</Text></Panel>
         ) : [...defter.soylar].reverse().map(soyKart)}

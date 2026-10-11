@@ -259,3 +259,13 @@ kaydı (iz) olur, iz bir eğilim etiketi taşır, sonraki olaylar ve yaylar bu h
 - Ekranlar: `app/oyun/roman.tsx` (Hayat Romanı kartı), `app/oyun/divan.tsx` (dava paneli + oy çubukları).
 - Denetçi `scripts/_smoke/paylas-check.cjs` (statik): SDK eşleşmesi, yerel modül kurulu, metne düşüş yolu, ağ yok, iki ekran.
 - Doğrulama: 12 çekirdek rc=0; YANKI/DEFTER/ROMAN/KAN/GEÇ/DİVAN/RİTİM/PAYLAŞ TEMİZ; ÇIĞIR EŞİKLERİ TEMİZ. Cihazda elle denenmedi.
+
+## 19. Dalga 3 — Dost Haneler (sunucusuz, adım 7)
+
+- `lib/dost.ts`: `haneKodu(defter)` → `KR1-<base64url(soyad|son ata|kuşak|eğilim|yay sayısı)>-<4 haneli FNV sağlaması>`; `koduCoz`
+  bozuk/kesik/yanlış önekli kodu reddeder. Kayıt ayrı anahtar `kronik_dost` `{v:1,h:[…]}`, `dostGoc` korumalı, en çok 20 hane,
+  aynı hane çiftlenmez. Yalnız kimlik: para/güç/eşya yok, ağ yok, seri/hatırlatma/baskı yok.
+- `lib/dost-ui.tsx` → Kronik ekranında (`app/oyun/kronik.tsx`) "Dost Haneler" paneli: kendi kodun + paylaş, kod girişi, liste, çıkar.
+- i18n parçası `h` (12 satır × 6 dil). Denetçi `scripts/_smoke/dost-check.cjs` (gidiş-dönüş TR/AR/RU/ES adlar, bozulma reddi,
+  göç, sınır, ağ/para yok, 6 dil).
+- Doğrulama: 12 çekirdek rc=0; YANKI/DEFTER/ROMAN/KAN/GEÇ/DİVAN/RİTİM/PAYLAŞ/DOST TEMİZ; ÇIĞIR EŞİKLERİ TEMİZ.
