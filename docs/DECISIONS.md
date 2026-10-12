@@ -26,3 +26,9 @@ eklenir. Kişi kimliğini seçen özet ve havuz sırası değiştirilmez. Dört 
 kadrajlanır; dosya pikseli yeniden işlenmez. Altı dilde mevcut etiketler kullanılır, ekran okuyucuya tam
 değer verilir. Sade mod ortak abonelikle uygulanır ve dekoratif döngüler temizlenir. Kayıt yüklemek
 kazanç sayılmaz. Ayrıntılar ve ölçüm sınırları `GORSEL_YAS.md` içinde.
+
+## 12 Ekim 2026 — Sarı ışık topları kaldırıldı
+
+Kullanıcı ekranda süzülen yuvarlak sarı ışıkları reddetti. Sikke yağmuru çizimi ve ana ekrandaki tüm
+tetikleme/durum/zamanlayıcı katmanı silindi. Bu efekt yeniden eklenmez; kazancın gerçek değeri mevcut
+gösterge ve bildirimle aktarılır.

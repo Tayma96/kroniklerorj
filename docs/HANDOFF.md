@@ -23,3 +23,11 @@ Ana başlık/göstergeler daha okunur; kayıt yüklemesi sahte kazanç çıkarma
 Altı dilde 9 ana ekran + 8 NPC profil örneği hatasız; Android paketleme ve davranış tabanı temiz.
 Motor/MP/oyuncu varlıkları değişmedi. Fiziksel cihaz ve yeni APK yapılmadı; önceki ses cihaz kontrolü,
 kayıtlı üretim RNG ve ortak neden dökümü işleri ayrı durur.
+
+## Son görsel tercih — 12 Ekim 2026
+
+Kullanıcı sarı yuvarlak ışık/sikke yağmurunu kaldırttı. Çizim bileşeni ve ana ekrandaki tetikleyici,
+durum, zamanlayıcı ve tam ekran katmanı silindi; tekrar eklenmez. Oyun motoruna müdahale yok.
+Tip/i18n/dil kontrolleri temiz. Hareketler açıkken 27 akçe kazancı alındı; beş anlık görüntüde sikke
+çizimi ve çalışma zamanı hatası yok. Ayrı arayüz bulgusu: çalış düğmesinin orta noktası ilerlet düğmesi
+tarafından örtülebiliyor; doğrulamada çalışma düğmesinin sol bölgesine normal basış kullanıldı.

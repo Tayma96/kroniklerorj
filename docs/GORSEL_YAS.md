@@ -51,8 +51,8 @@ hiyerarşi kullanılır. Sağlık/tokluk/akçe/nâm etiketleri mevcut altı dil 
 ekran okuyucuya tam değeri verir. Akçenin sahte bir 500 üst sınırı çubuğu kaldırıldı; büyük sayı görselde
 yerel kısaltmayla, erişilebilirlik metninde tam değeriyle görünür. Arapça ana başlık/gösterge sırası aynalanır.
 
-Uzun adlar sarılır, nâm rozeti adın altındadır. Yüklenen kayıt ve yeni kişi/nesil için sikke yağmuru
-tetiklenmez; yalnız aynı hayatta gerçek akçe artışı kutlanır. Sade modda sikke yağmuru kapalıdır.
+Uzun adlar sarılır, nâm rozeti adın altındadır. Kullanıcının sonraki isteğiyle sarı yuvarlak sikke yağmuru
+tamamen kaldırıldı; kazançta da çıkmaz. Ana ekran tetikleyicisi, zamanlayıcısı ve çizim bileşeni silindi.
 Yetişkin/yaşlı ilk girişinde çocukluk eylemi isteyen yanlış rehber yerine mevcut genel ay açıklaması gösterilir.
 
 `use-sade-mod.ts` portre, hero, ortam parçacığı, düğme ve kartların tercihi anında görmesini sağlar.

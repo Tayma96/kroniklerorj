@@ -26,6 +26,7 @@
 - Cloudflare API token'ı asla saklanmaz, yazdırılmaz, commit'lenmez.
 - **APK yalnız kullanıcı açıkça isteyince.** PR yalnız istenince.
 - Arayüzde emoji yok (GameIcon; ❧ ⚜ ♂ ♀ istisna). Renk ve font yalnız tema jetonlarından.
+- Ekranda süzülen yuvarlak sarı parıltı/sikke yağmuru kullanıcı tarafından reddedildi; yeniden eklenmez.
 - Farm yok: para/itibar/XP veren her eylemde tur kilidi, tek seferlik iz ya da azalan getiri.
 - Her yeni metin 6 dilde (tr en es pt ar ru). Oyuncuya hitapta AR/RU için `.f` (dişil oyuncu) ya da cinsiyetsiz
   kuruluş; NPC cinsine bağlı satırda `.k` (6 dilde de bulunmalı, denetçi tam anahtar sayar).
@@ -337,3 +338,12 @@ kaydı (iz) olur, iz bir eğilim etiketi taşır, sonraki olaylar ve yaylar bu h
 - `docs/GORSEL_YAS.md` ve `mobile/assets/npc/YAS_KAYNAK.json`: kapsam, kaynak/yönerge ve sınırlar.
 - Tip/kurtarma/i18n/dil temiz; 10 davranış hash'i aynı; 17 görsel örnekte altı dil ve dört atlas temiz;
   Android paketleme başarılı. Yeni APK veya fiziksel cihaz testi yapılmadı.
+
+## 26. Yuvarlak sarı parıltılar kaldırıldı (12 Ekim 2026)
+
+- Kullanıcı ekranda süzülen sarı ışık toplarını kaldırmamızı istedi.
+- `CoinShower` ve altındaki sikke çizimi silindi; ana ekrandaki kazanç dinleyicisi, durumları, zamanlayıcı
+  ve tam ekran katmanı kaldırıldı. Efekt herhangi bir ayarda/kazançta yeniden gösterilmez.
+- Para işlemleri, değer bildirimi, portreler ve oyun motoru değişmedi. Yeni APK istenmedi.
+- Tip/i18n/dil temiz; hareketler açıkken çalışma kazancı 500→527, beş anlık kontrolde sikke çizimi yok,
+  tarayıcı hatası yok. Çalış düğmesinin sol kenarından basıldı; orta noktasını ilerlet düğmesi örtebiliyor.

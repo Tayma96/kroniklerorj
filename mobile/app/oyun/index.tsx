@@ -1,6 +1,5 @@
 import { View, Text, ScrollView, Pressable, ImageBackground, StyleSheet, Dimensions, Modal } from "react-native";
-import { Ambiance, LoadingScreen, KenBurns, ParticleBurst } from "../../lib/fx";
-import { CoinShower } from "../../lib/skia";
+import { Ambiance, LoadingScreen, KenBurns } from "../../lib/fx";
 import Animated, { FadeInDown, FadeIn } from "react-native-reanimated";
 import { useState, useEffect, useRef } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -25,7 +24,6 @@ import { playTap, playChime, playSaz, playNey } from "../../lib/sound";
 import { hap } from "../../lib/haptics";
 import { C, F } from "../../lib/theme";
 import { LinearGradient } from "expo-linear-gradient";
-import { useSadeMod } from "../../lib/use-sade-mod";
 
 const SEASON_KEY: Record<string, string> = { "Kış": "kis", "İlkbahar": "ilkbahar", "Yaz": "yaz", "Sonbahar": "sonbahar" };
 
@@ -108,7 +106,6 @@ export default function Dashboard() {
   const { state, doWork, doEat, resetGame, apply, mpMode } = useGame();
   const { snapshot: mpSnapshot } = useMp();
   const { t, tg, lang } = useI18n();
-  const reduced = useSadeMod();
   const [milestone, setMilestone] = useState<GameEvent | null>(null);
   const [freshMark, setFreshMark] = useState<null | { from: number; n: number }>(null); // "bu ay" özeti: son ilerlemede düşen olay sayısı + olay sırası eşiği (q > from)
   const [yearReport, setYearReport] = useState<GameEvent | null>(null); // yıl dönümü karnesi (yaş günü ritüeli)
@@ -123,11 +120,6 @@ export default function Dashboard() {
   useEffect(() => { AsyncStorage.getItem("kronikler_fs_hidden").then((v) => { if (v === "1") setGuideHidden(true); }).catch(() => {}); }, []);
   const hideGuide = () => { setGuideHidden(true); AsyncStorage.setItem("kronikler_fs_hidden", "1").catch(() => {}); };
   const [showTut, setShowTut] = useState(false);
-  const [shoot, setShoot] = useState(0);
-  const [coinsOn, setCoinsOn] = useState(false);
-  const coinTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const prevMoney = useRef<number | null>(state?.player.money ?? null);
-  const prevMoneyLife = useRef<string | null>(null);
   const seenSeq = useRef<number | null>(state ? state.hseq ?? 0 : null); // görülen son olay sırası (null: kayıt henüz yüklenmedi)
   const [showEulogy, setShowEulogy] = useState(false);
   const [workStyle, setWorkStyle] = useState<WorkStyle>("normal");
@@ -142,31 +134,6 @@ export default function Dashboard() {
     wasDead.current = d;
   }, [state?.player.dead]);
 
-  // Akçe anlamlı arttığında altın sikke yağmuru — oynayınca sökülür (sürekli GPU yükü bırakmaz).
-  useEffect(() => {
-    if (!state) {
-      prevMoney.current = null; prevMoneyLife.current = null;
-      setCoinsOn(false);
-      if (coinTimer.current) clearTimeout(coinTimer.current);
-      coinTimer.current = null;
-      return;
-    }
-    const m = state.player.money;
-    const life = `${state.player.name}|${state.player.surname}|${state.player.generation}`;
-    if (reduced || prevMoneyLife.current !== life) {
-      setCoinsOn(false);
-      if (coinTimer.current) clearTimeout(coinTimer.current);
-      coinTimer.current = null;
-    } else if (prevMoney.current != null && m > prevMoney.current + 8) {
-      setShoot((k) => k + 1);
-      setCoinsOn(true);
-      if (coinTimer.current) clearTimeout(coinTimer.current);
-      coinTimer.current = setTimeout(() => setCoinsOn(false), 1700);
-    }
-    prevMoney.current = m;
-    prevMoneyLife.current = life;
-  }, [state?.player.money, state?.player.name, state?.player.surname, state?.player.generation, reduced]);
-  useEffect(() => () => { if (coinTimer.current) clearTimeout(coinTimer.current); }, []);
   const seenAch = useRef<Set<string> | null>(null);
 
   useEffect(() => {
@@ -315,10 +282,6 @@ export default function Dashboard() {
 
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
-      {/* Akçe kazanınca sikke yağmuru */}
-      <View pointerEvents="none" style={[StyleSheet.absoluteFill, { zIndex: 60 }]}>
-        {coinsOn && <CoinShower shoot={shoot} width={Dimensions.get("window").width} height={Dimensions.get("window").height} />}
-      </View>
       {yarisK ? (
         <SinavKartiModal v={yarisK} onSec={(yol) => { const r = rakipYarisi(state, yol); if (r.basari != null) apply(() => r.state); return r.basari; }} onKapat={() => setYarisK(null)} />
       ) : milestone ? (
