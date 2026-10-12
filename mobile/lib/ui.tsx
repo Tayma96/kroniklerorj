@@ -40,13 +40,15 @@ export function BackLabel() {
 
 // Basınca hafifçe küçülen, yaylanarak dönen buton — ortak "his" bileşeni.
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-export function PressableScale({ children, onPress, style, disabled, haptic }: {
+export function PressableScale({ children, onPress, style, disabled, haptic, accessibilityLabel, accessibilityHint }: {
   children: React.ReactNode; onPress?: () => void; style?: StyleProp<ViewStyle>; disabled?: boolean; haptic?: Hap;
+  accessibilityLabel?: string; accessibilityHint?: string;
 }) {
   const s = useSharedValue(1);
   const anim = useAnimatedStyle(() => ({ transform: [{ scale: s.value }] }));
   return (
     <AnimatedPressable
+      accessibilityRole="button" accessibilityLabel={accessibilityLabel} accessibilityHint={accessibilityHint}
       disabled={disabled}
       onPressIn={() => { s.value = withTiming(0.96, { duration: DUR.fast, easing: EASE.standard }); }}
       onPressOut={() => { s.value = withSpring(1, { damping: 14, stiffness: 220 }); }}

@@ -281,7 +281,7 @@ export default function Dashboard() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: C.bg }}>
+    <View style={{ flex: 1, backgroundColor: C.bg, paddingBottom: 52 }}>
       {yarisK ? (
         <SinavKartiModal v={yarisK} onSec={(yol) => { const r = rakipYarisi(state, yol); if (r.basari != null) apply(() => r.state); return r.basari; }} onKapat={() => setYarisK(null)} />
       ) : milestone ? (
@@ -406,6 +406,7 @@ export default function Dashboard() {
       })()}
 
       {/* ── HERO (yaşayan sahne: Ken Burns + ambiyans) ── */}
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 12 }} nestedScrollEnabled>
       <KenBurns source={heroImage(p.age, cal.season)} style={{ paddingTop: insets.top }}>
         <LinearGradient pointerEvents="none" colors={[C.bg + "78", C.bg + "D9", C.bg]} locations={[0, 0.7, 1]} style={StyleSheet.absoluteFill} />
         <View style={{ paddingHorizontal: 14, paddingTop: 12, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: C.borderHi }}>
@@ -728,7 +729,7 @@ export default function Dashboard() {
       )}
 
       {/* ── GÜNLÜK KART PANELİ ── */}
-      <View style={{ flex: 1, margin: 12, borderWidth: 1, borderColor: C.borderHi, borderRadius: 10, backgroundColor: C.card, overflow: "hidden" }}>
+      <View style={{ height: 240, margin: 12, borderWidth: 1, borderColor: C.borderHi, borderRadius: 10, backgroundColor: C.card, overflow: "hidden" }}>
         {/* Başlık */}
         <View style={{ paddingHorizontal: 12, paddingTop: 11, borderBottomWidth: 1, borderBottomColor: C.border }}>
           <View style={{ flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between" }}>
@@ -763,7 +764,7 @@ export default function Dashboard() {
         </View>
 
         {/* Olay listesi */}
-        <ScrollView style={{ flex: 1, backgroundColor: "#221808" }} contentContainerStyle={{ padding: 12 }}>
+        <ScrollView style={{ flex: 1, backgroundColor: C.cardHi }} contentContainerStyle={{ padding: 12 }} nestedScrollEnabled>
           {/* "Bu ay" özeti: son ilerlemede 2+ gelişme düştüyse sayısı + işaret açıklaması (çok olaylı aylar sessizce kaybolmasın) */}
           {freshMark && (
             <Animated.View entering={FadeInDown.duration(240)} style={{ backgroundColor: "rgba(224,188,90,0.08)", borderWidth: 1, borderColor: "rgba(224,188,90,0.4)", borderRadius: 9, paddingVertical: 8, paddingHorizontal: 12, marginBottom: 10 }}>
@@ -964,6 +965,7 @@ export default function Dashboard() {
       )}
 
       {/* ── AKSİYONLAR ── */}
+      </ScrollView>
       {p.dead ? (
         <View style={{ paddingHorizontal: 12, paddingBottom: 8, gap: 10 }}>
           {p.children.length > 0 && (
@@ -1005,7 +1007,7 @@ export default function Dashboard() {
           <Text style={{ fontFamily: F.serifItalic, fontSize: 10, color: C.parchmentMuted, marginBottom: 7, textAlign: "center" }}>{t("work.hint." + workStyle)}</Text>
           {esnafAhlaki(p) !== 0 ? <Text style={{ fontFamily: F.serifItalic, fontSize: 10, color: esnafAhlaki(p) > 0 ? C.sage : C.ember, marginBottom: 7, textAlign: "center" }}>{t(esnafAhlaki(p) > 0 ? "work.ahilik" : "work.adKotu")}</Text> : null}
           {(() => { const worked = !canWork(state); return (
-          <PressableScale onPress={() => { if (worked) return; hap("tap"); playTap(); doWork(workStyle); }} disabled={worked} style={{ flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8, paddingVertical: 14, borderRadius: 9, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.card, opacity: worked ? 0.45 : 1 }}>
+          <PressableScale accessibilityLabel={worked ? t("act.workedThisTurn") : t("act.work")} onPress={() => { if (worked) return; hap("tap"); playTap(); doWork(workStyle); }} disabled={worked} style={{ flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8, paddingVertical: 14, borderRadius: 9, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.card, opacity: worked ? 0.45 : 1 }}>
             <GameIcon name="calis" size={15} color={C.gold} />
             <Text style={{ fontFamily: F.display, fontSize: 13, color: C.gold, letterSpacing: 1.5 }}>{worked ? t("act.workedThisTurn") : t("act.work")}</Text>
           </PressableScale>); })()}

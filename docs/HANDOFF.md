@@ -31,3 +31,11 @@ durum, zamanlayıcı ve tam ekran katmanı silindi; tekrar eklenmez. Oyun motoru
 Tip/i18n/dil kontrolleri temiz. Hareketler açıkken 27 akçe kazancı alındı; beş anlık görüntüde sikke
 çizimi ve çalışma zamanı hatası yok. Ayrı arayüz bulgusu: çalış düğmesinin orta noktası ilerlet düğmesi
 tarafından örtülebiliyor; doğrulamada çalışma düğmesinin sol bölgesine normal basış kullanıldı.
+
+## Ana panoda erişim düzeltildi — 12 Ekim 2026
+
+Son örtüşme giderildi: ilerlet düğmesinin yükseldiği alan ana panoda ayrıldı; çalışma eylemi yukarıda,
+bilgi/uğraş alanı kaydırılır. Altı dilde kısa ekran dahil 8 örnek: merkezden normal çalışma basışı para
+kazandırdı, tur aynı kaldı; arada en az 14 px. Günlük iç içe kaydırmayı destekler; düğme etiketleri eklendi.
+Tip/i18n/dil temiz. Sonraki somut GDD açığı: kayıt yazım yarışları, içe almada bekleyen eski yazım ve
+sıfırlanmış oyunun yedekten geri açılması. Bunlar henüz onarılmadı; kayıt kuyruğu ve hata testleri gerekir.

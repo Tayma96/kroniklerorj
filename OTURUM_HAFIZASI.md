@@ -347,3 +347,13 @@ kaydı (iz) olur, iz bir eğilim etiketi taşır, sonraki olaylar ve yaylar bu h
 - Para işlemleri, değer bildirimi, portreler ve oyun motoru değişmedi. Yeni APK istenmedi.
 - Tip/i18n/dil temiz; hareketler açıkken çalışma kazancı 500→527, beş anlık kontrolde sikke çizimi yok,
   tarayıcı hatası yok. Çalış düğmesinin sol kenarından basıldı; orta noktasını ilerlet düğmesi örtebiliyor.
+
+## 27. Çalışma düğmesine erişim düzeltildi (12 Ekim 2026)
+
+- Ana panoda ilerlet düğmesi için 52 px alan ayrıldı; çalışma eylemi sabit, bilgi alanı kaydırılabilir.
+  Kısa ekranlarda uğraşlar/kayıtlar taşarak kaybolmaz. Günlük 240 px ve iç içe kaydırma desteği var.
+- Yaylı düğmeler artık düğme rolünü/isteğe bağlı etiket ve ipucunu aktarır; çalışma etiketi mevcut 6 dilde.
+- 390×844 ve 6 dilde 320×568 + tarayıcıda %25 büyük yazı: çalışma merkezine normal basışla para kazanıldı,
+  tur hiç ilerlemedi; iki düğme arası en az 14 px. Tip/i18n/dil temiz. Fiziksel cihaz denemesi yok.
+- Sonraki GDD güvenilirlik işi: sıraya alınmamış kayıt yazıları, yedek içe alırken bekleyen eski yazım ve
+  sıfırlamada kalan yedeğin oyunu tekrar açması. Bunlar motor RNG işinden önce düzeltilmeli.
