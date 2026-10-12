@@ -4622,16 +4622,16 @@ export const WORK_STYLES: { id: WorkStyle; mult: number; fail: number }[] = [
   { id: "hirsli",    mult: 1.4, fail: 0.15 },
   { id: "kaytarici", mult: 0.4, fail: 0.20 },
 ];
-export function canWork(s: GameState): boolean {
-  if (inJail(s.player)) return false; // zindanda tezgâh yok
-  const p = s.player;
-  return !p.dead && p.age >= 13 && p.profession !== "işsiz" && p.work_turn !== s.turn;
+// Önizleme ve gerçek ücret aynı katsayıları kullanır; ekran zar atmaz, kayda dokunmaz.
+export interface WorkForecast {
+  base: number; stat: number; statKey: keyof Stats; mult: number; titleMult: number; styleMult: number; inflation: number;
+  fail: number; hunger: number; health: number; min: number; max: number; lossMin: number; lossMax: number;
 }
-export function work(prev: GameState, style: WorkStyle = "normal"): GameState {
-  const s = clone(prev); const p = s.player;
-  if (p.dead || p.age < 13 || p.profession === "işsiz") return s;
-  if (p.work_turn === s.turn) return s; // bu ay zaten çalıştın → tur başına tek maaşlı iş (farm önlenir)
-  p.work_turn = s.turn;
+function workWage(f: Pick<WorkForecast, "base" | "stat" | "mult" | "titleMult" | "styleMult" | "inflation">, roll: number): number {
+  return Math.round((f.base + f.stat * 2 + roll) * f.mult * f.titleMult * f.styleMult * f.inflation);
+}
+export function workForecast(s: GameState, style: WorkStyle = "normal"): WorkForecast {
+  const p = s.player;
   const ws = WORK_STYLES.find((w) => w.id === style) || WORK_STYLES[1];
   const pr = professionById(p.profession);
   const stat = effStat(p, PROF_STAT[p.profession] || "stamina");
@@ -4647,21 +4647,40 @@ export function work(prev: GameState, style: WorkStyle = "normal"): GameState {
   const tierBefore = pr ? careerTier(pr, kariyerXp(p)) : 0;
   const titleMult = TITLE_MULT[tierBefore] || 1;
   const base = pr ? pr.base : 4;
-  let earn = Math.round((base + stat * 2 + Math.floor(Math.random() * 6)) * mult * titleMult * ws.mult * inflationFactor(s));
+  const f = { base, stat, statKey: PROF_STAT[p.profession] || "stamina", mult, titleMult, styleMult: ws.mult, inflation: inflationFactor(s),
+    fail: ws.fail, hunger: style === "garantici" || style === "kaytarici" ? 3 : 6,
+    health: style === "garantici" ? 1 : style === "kaytarici" ? 2 : 0 };
+  const min = workWage(f, 0), max = workWage(f, 5);
+  return { ...f, min, max, lossMin: Math.round(min * 0.3), lossMax: Math.round(max * 0.3) };
+}
+
+export function canWork(s: GameState): boolean {
+  if (inJail(s.player)) return false; // zindanda tezgâh yok
+  const p = s.player;
+  return !p.dead && p.age >= 13 && p.profession !== "işsiz" && p.work_turn !== s.turn;
+}
+export function work(prev: GameState, style: WorkStyle = "normal"): GameState {
+  const s = clone(prev); const p = s.player;
+  if (p.dead || p.age < 13 || p.profession === "işsiz") return s;
+  if (p.work_turn === s.turn) return s; // bu ay zaten çalıştın → tur başına tek maaşlı iş (farm önlenir)
+  p.work_turn = s.turn;
+  const pr = professionById(p.profession);
+  const forecast = workForecast(s, style);
+  let earn = workWage(forecast, Math.floor(Math.random() * 6));
   const xp0 = kariyerXp(p); // kazanılmış unvanın xp'si (mesajdaki unvan hizmet süresinden değil peştamaldan gelir)
   p.career_xp += 1;
   gainSkill(s, PROF_SKILL[p.profession] || "crafting", 8);
   addStatXp(s, PROF_STAT[p.profession] || "stamina", 4); // meslek özelliğin işle gelişir
-  p.hunger = Math.max(0, p.hunger - (style === "kaytarici" ? 3 : 6));
+  p.hunger = Math.max(0, p.hunger - forecast.hunger);
   // Risk: hırslı bedenini yorar, kaytarıcı yakalanabilir
-  const failed = ws.fail > 0 && Math.random() < ws.fail;
+  const failed = forecast.fail > 0 && Math.random() < forecast.fail;
   if (failed) {
     earn = Math.round(earn * 0.3);
     if (style === "hirsli") { const hurt = 4 + Math.floor(Math.random() * 6); p.health = Math.max(0, p.health - hurt); p.money += earn; push(s, "çalışma", `Hırslı çalışırken sakatlandın (−${hurt} sağlık); kazanç düştü (${earn} akçe).`, "kişisel", false, { k: "evj.workHurt", p: [hurt, earn] }); }
     else { p.reputation = Math.max(-100, p.reputation - 2); p.money += earn; push(s, "çalışma", `Kaytarırken yakalandın; itibarın sarsıldı, az kazandın (${earn} akçe).`, "kişisel", false, { k: "evj.workSlack", p: [earn] }); }
   } else {
     p.money += earn;
-    if (style === "kaytarici") p.health = Math.min(100, p.health + 2);
+    if (forecast.health) p.health = Math.min(100, p.health + forecast.health);
     { const wv2 = chance(0.5); push(s, "çalışma", wv2 ? `${careerTitle(p.profession, xp0)} olarak ter döktün; ay sonunda avucunda ${earn} akçe vardı.` : `${careerTitle(p.profession, xp0)} olarak çalıştın, ${earn} akçe kazandın.`, "kişisel", false, { k: wv2 ? "evj.work2" : "evj.work", p: [{ c: [p.profession, xp0] }, earn] }); }
   }
   if (pr) sinavCagrisi(s); // Ahilik: hizmet dolunca lonca peştamal sınavına çağırır — kademe kendiliğinden yükselmez

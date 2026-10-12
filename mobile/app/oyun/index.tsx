@@ -24,6 +24,7 @@ import { playTap, playChime, playSaz, playNey } from "../../lib/sound";
 import { hap } from "../../lib/haptics";
 import { C, F } from "../../lib/theme";
 import { LinearGradient } from "expo-linear-gradient";
+import { EmekOngoru } from "../../lib/emek-ui";
 
 const SEASON_KEY: Record<string, string> = { "Kış": "kis", "İlkbahar": "ilkbahar", "Yaz": "yaz", "Sonbahar": "sonbahar" };
 
@@ -998,14 +999,13 @@ export default function Dashboard() {
             {(["garantici", "normal", "hirsli", "kaytarici"] as const).map((ws) => {
               const on = workStyle === ws;
               return (
-                <Pressable key={ws} onPress={() => { hap("tap"); setWorkStyle(ws); }} style={{ flex: 1, alignItems: "center", paddingVertical: 6, borderRadius: 7, borderWidth: 1, borderColor: on ? "rgba(201,168,76,0.6)" : C.border, backgroundColor: on ? "rgba(201,168,76,0.14)" : "transparent" }}>
+                <Pressable key={ws} accessibilityRole="button" accessibilityLabel={t("work.style." + ws)} accessibilityState={{ selected: on }} onPress={() => { hap("tap"); setWorkStyle(ws); }} style={{ flex: 1, minHeight: 44, justifyContent: "center", alignItems: "center", paddingVertical: 6, borderRadius: 7, borderWidth: 1, borderColor: on ? C.gold : C.border, backgroundColor: on ? C.cardHi : "transparent" }}>
                   <Text style={{ fontFamily: F.display, fontSize: 8.5, letterSpacing: 0.3, color: on ? C.gold : C.parchmentMuted }}>{t("work.style." + ws)}</Text>
                 </Pressable>
               );
             })}
           </View>
-          <Text style={{ fontFamily: F.serifItalic, fontSize: 10, color: C.parchmentMuted, marginBottom: 7, textAlign: "center" }}>{t("work.hint." + workStyle)}</Text>
-          {esnafAhlaki(p) !== 0 ? <Text style={{ fontFamily: F.serifItalic, fontSize: 10, color: esnafAhlaki(p) > 0 ? C.sage : C.ember, marginBottom: 7, textAlign: "center" }}>{t(esnafAhlaki(p) > 0 ? "work.ahilik" : "work.adKotu")}</Text> : null}
+          <EmekOngoru state={state} styleId={workStyle} />
           {(() => { const worked = !canWork(state); return (
           <PressableScale accessibilityLabel={worked ? t("act.workedThisTurn") : t("act.work")} onPress={() => { if (worked) return; hap("tap"); playTap(); doWork(workStyle); }} disabled={worked} style={{ flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8, paddingVertical: 14, borderRadius: 9, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.card, opacity: worked ? 0.45 : 1 }}>
             <GameIcon name="calis" size={15} color={C.gold} />

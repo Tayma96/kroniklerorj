@@ -1,0 +1,9 @@
+# Çalışma seçimleri — 12 Ekim 2026
+
+Garantici eskiden normal çalışmayla aynı yorgunluk ve sıfır tarz riski karşılığında %20 daha az ücret veriyordu. Artık bedeni korumak için gerçek bir tercih: tokluk bedeli 6 yerine 3, sağlık +1 (100 tavanı). Normal tam ücret; hırslı ×1,4 ücret ve %15 tarz kazası; kaytarıcı ×0,4 ücret, %20 yakalanma, başarılıysa +2 sağlık. Aylık kilit dinlenme/para/beceri tekrarını da engeller. Bu oranlar iş olaylarının ayrı etkilerini kapsamaz.
+
+Ana panoda dört tarzın maaş aralığı ve bedeli seçmeden görülür. Kazanç hesabı meslek ücreti, ilgili özellik, günlük 0–5 fark, unvan, çevre/hüner, tarz ve dönemin fiyatlarını açıklar. Riskli tarzlarda aksilikte kalacak ücret, sağlık veya itibar kaybı gösterilir. Altı dil; tarz ve kapatma düğmeleri en az 44 px. Önizleme ve gerçek ücret aynı saf hesabı kullanır; önizleme zar atmaz, para/ay/kayıt değiştirmez.
+
+Denetim: kuru yama gerçek değişiklikle birebir eş; tip/bundle/göç/i18n/dil temiz. `emek-check.cjs`: 15 meslek, dört tarz, üç kademe/bonus, altı ücret zarı, iki risk dalı, sağlık/tokluk sınırları ve tur kilidi; 1.628 senaryo. Önceki motorla 1.296 örnekte normal/hırslı/kaytarıcı durum ve RNG çekilişleri aynı; garantici yalnız +3 tokluk/+1 sağlık farkıyla eş. Mevcut 10 GDD akışı ve üç sentetik 30 ay davranış hash'i değişmedi.
+
+Altı dilde 320×568 / 4× CPU tarayıcı: dört tarzın maaş/riski, hesap penceresi ve kapatma denendi. Önizleme kaydı değiştirmedi. Kontrollü zarla gerçek garantici çalışması 60→61 sağlık, 80→77 tokluk, beklenen ücret; tur aynı, çalışma düğmesi ilerlet düğmesiyle örtüşmedi, hata yok. 30 hayat / 20.147 ay oynanış denetimi: boş ay %11,4, tekrar %4,2, bunalma %0,2, en çok üç açık gerilim; eşikler temiz. Bu simülasyon dört tarz arasında gerçek oyuncu tercih testi değildir. Android/Hermes paketleme başarılı; APK ve fiziksel cihaz testi yok. Denetçi iki yayın kalite kapısında.

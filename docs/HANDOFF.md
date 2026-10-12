@@ -46,3 +46,10 @@ Yukarıdaki ana kayıt yarışları onarıldı; `KAYIT_GUVENLIGI.md` gerçek kap
 11 gerçek sağlayıcı geçişi ve altı dilde hata/yeniden saklama akışı temiz; Android paketleme geçti.
 Yeni APK/cihaz testi yok. Ayrı hanedan defteri ve üretim RNG hâlâ açık. Kullanıcı doğrudan oynanışı
 önceliklendirdi; sıradaki iş meslek döngüsü ve çalışma tarzlarının gerçek kazanç/risk görünürlüğü.
+
+## Çalışma seçimi uygulandı — 12 Ekim 2026
+
+`EMEK.md`: garantici daha az yorucu, ücret/risk önizlemesi ve gerçek ücret hesabı tek kaynağa bağlı.
+Diğer üç tarzın RNG/durum davranışı aynı; 1.628 hedefli deney, 1.296 önceki motor karşılaştırması ve
+altı dilde hesap/çalışma akışı temiz. 30 hayat oynanış eşikleri ve Android paketleme temiz. GDD'nin
+geri kalan NPC/anlatı/ekonomi işleri açık; kullanıcı somut oynanış artışlarını öncelikli istiyor.

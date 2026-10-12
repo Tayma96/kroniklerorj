@@ -370,3 +370,14 @@ kaydı (iz) olur, iz bir eğilim etiketi taşır, sonraki olaylar ve yaylar bu h
   yarışı ertelendi; sıradaki somut iş çalışma tarzlarının gerçek kazanç/risk dökümü ve meslek kararları.
 - Ayrıntı `docs/KAYIT_GUVENLIGI.md`. Üretim RNG, gerçek altın kayıtlar ve iki anahtarlı atomik güç kesintisi
   koruması tamamlanmış sayılmaz. Tam GDD hedefi açık; daraltılmaz.
+
+## 29. Çalışma seçimi oynanışa bağlandı (12 Ekim 2026)
+
+- Kullanıcının hız/oynanış önceliğiyle kayıt işi kapatıldı. Garantici artık maaşından %20 vazgeçip
+  tokluktan 3 (normal 6) harcar, +1 sağlık alır (100 tavan). Diğer üç tarzın davranış/RNG akışı aynı.
+- Dört tarzın gerçek maaş aralığı/bedeli ana panoda; kazanç hesabı ve riskte kalan ücret/sağlık/itibar
+  görünür. Önizleme zar/kayıt/tur değiştirmez; 6 dil, 44 px tarz/kapatma düğmeleri.
+- 1.628 motor deneyi, önceki motorla 1.296 karşılaştırma; 10 GDD hash'i aynı. Altı dilde 320×568 hesap/
+  seçim/gerçek çalışma temiz. 30 hayat/20.147 ay eşikleri temiz; Android paketleme geçti, yeni APK yok.
+- Ayrıntı `docs/EMEK.md`. Kayıtlı üretim RNG ve derin NPC/GDD işleri hâlâ açık. Kullanıcıya görülür
+  oynanış artışları küçük dalgalarla sürdürülmeli; gereksiz kapsamlı bakım/test tekrarına sapılmamalı.

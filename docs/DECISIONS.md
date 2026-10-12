@@ -39,3 +39,10 @@ Ana oyun kaydı aynı anahtar adları ve 1.200 ms birleştirme ile tek yazım s�
 ve içe alma eski işleri iptal eder. MP karakteri SP kuyruğuna girmez; dışa aktarım canlı SP belleğini
 tercih eder. Ayrı hanedan defteri bu dalgada değişmedi. Kullanıcı kayıt işine ayrılan zamanı fazla
 buldu ve oynanışı önceledi; sıradaki geliştirmeler çalışma ve meslek kararlarında görünür olacaktır.
+
+## 12 Ekim 2026 — Garantici gerçek bir takasa dönüştü
+
+Normal çalışmaya göre yalnız daha az ücret veren garantici seçimi artık tokluktan üç puan daha az
+harcar ve sağlık +1 verir (100 tavan). Diğer tarzların ücret/risk/RNG davranışı korunur. Oyuncu ücret
+aralığı, bedel ve riskte kalanı önceden görür; önizleme ile gerçek ücret tek saf hesap kullanır.
+Tarz seçimi zar/kayıt/tur değiştirmez. Aylık kilit yeni dinlenme yararını da tekrar kullanımından korur.
