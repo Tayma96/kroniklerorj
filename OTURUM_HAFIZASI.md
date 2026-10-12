@@ -2,7 +2,7 @@
 
 > Konuşma bağlamı sıkıştırıldığında ya da konteyner eski bir anlık görüntüye döndüğünde kaybolmasın diye tutulan
 > devir notu. Yeni bir oturum önce bunu, sonra `mobile/AGENTS.md` ve `TASARIM_PUSULASI.md`'yi okur.
-> Son güncelleme: 10 Ekim 2026 · dal **`apk`** (geliştirme ve yayın) · 7 Ekim penceresinin son commit'i `0c6f566`.
+> Son güncelleme: 12 Ekim 2026 · dal **`apk`** (geliştirme ve yayın) · 7 Ekim penceresinin son commit'i `0c6f566`.
 
 ## 1. Kullanıcının kararları (kronolojik)
 
@@ -310,3 +310,15 @@ kaydı (iz) olur, iz bir eğilim etiketi taşır, sonraki olaylar ve yaylar bu h
 - PDF eski Python/web varsayımlarını taşır; aktif Expo/TypeScript, ay takvimi ve 6 dil korunur. Hayat Hırsı yine kapalı.
 - `docs/HANDOFF.md`, `docs/DECISIONS.md` ve 10 akış/3 sentetik kayıt davranış tabanı eklendi.
 - 30 hayat / 20.136 ay eşikler temiz; üretim RNG'nin kayıtta olmadığı ve gerçek cihaz/oyuncu kabulünün açık kaldığı dürüstçe kaydedildi.
+
+## 24. Ses ve sahne dalgası (12 Ekim 2026)
+
+- `sound.ts` mevcut efekt API'sini ve ayar anahtarlarını koruyarak tembel mikser kullanır; bağımsız ortam kanalı eklendi.
+- 21 ezgi / 15 ortam / 27 efekt katalogda, yaş-ekran-mevsim ve gerçek olay bağlamına bağlı.
+- İlk izole efekt oynatıcı sayısı 17 → 1; normalde 2 döngü, geçişte ≤4, efekt ≤4. 200 geçiş ve iptal/arka plan/kapatma testleri temiz.
+- 15 sahne resmi kartlara bağlandı; bilinmeyen tema nötr. 3D kartlar kaydırılır, sade mod ve animasyon temizliği yenilendi.
+- `expo-linear-gradient ~56.0.4` eklendi; yeni tam APK gerekir, APK isteği/tetiklemesi yok.
+- tsc/i18n/dil/kurtarma temiz; 10 davranış hash'i aynı; Android/Hermes export başarılı.
+- 390 px / 4× CPU'da iş kararı → seçim → sonuç → günlük → ay ilerletme oynandı; TR/AR ayarlar incelendi.
+- Web deneyi: çizim WASM başlatması test sunucusunda; hızlı ses aç/kapat sırasında web ses kütüphanesi iptal hatası. Son görsel akış sessiz/hatasız; fiziksel ses testi yapılmadı.
+- Ayrıntı: `docs/SES_SAHNE.md`; sıradaki motor işi ortak neden dökümü ve kayıtlı RNG, bu dalgada motor/MP değiştirilmedi.

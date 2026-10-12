@@ -11,3 +11,9 @@ Sonuç: ADR-1'in tek oyuncu kısmı fiilen istemcide; MP dünya otoritesi sunucu
 ## Ses katmanı — uygulanacak düşük riskli düzeltme
 
 Ayrı müzik/ortam/efekt kanalları, tembel yerel oynatıcılar, sınırlı eşzamanlı ses, uygulama arka planında tüm kaynakları bırakma. Mevcut ayar anahtarları ve efekt çağrıları korunur. Ses bağlamı oyun durumunu yalnız okur; kaynak, zar, kayıt ve MP mesajına dokunmaz. Kapatma ve geç dönen seek yarışı kontrollü saat/oynatıcı testleriyle doğrulanır. Arka plan oynatma ve mikrofon izni kullanılmaz.
+
+## 12 Ekim 2026 — Ses/sahne uygulandı
+
+Karar hayata geçti: sınırlı tembel ses, iki ayrı ortam/müzik kanalı, bağımsız tercihler, güvenli kaynak bırakma. Sahne temasında net olay kimliği yoksa nötr kalınır. Yaş ve mevsim yalnız ses bağlamıdır; kayıt ve oyun zarı değişmez. Ortam ilk tercihi önceki müzik/sade moda göre seçilir ve kalıcılaşır. Sade modda dekoratif yakınlaşma/süzülme durur; karar işlevi sürer.
+
+Tarayıcıya karşılık gelen çizim başlatması test ortamına aittir; aktif Android istemci için yeni web mimarisi varsayılmaz. Tarayıcı ses iptal hatası bilinen uyumluluk açığı olarak saklanır. APK ve sunucu dağıtımı tetiklenmedi.

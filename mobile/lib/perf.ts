@@ -24,6 +24,7 @@ export async function loadReduceMotion(): Promise<boolean> {
       await AsyncStorage.setItem(KEY, reduced ? "1" : "0");
     }
   } catch {}
+  listeners.forEach((l) => { try { l(); } catch {} });
   return reduced;
 }
 export function isReduceMotion(): boolean { return reduced; }

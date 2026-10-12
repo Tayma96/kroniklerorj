@@ -6,7 +6,7 @@ import Constants from "expo-constants";
 import { useGame, exportSaveText } from "../../lib/store";
 import { useI18n } from "../../lib/i18n";
 import { LANGS } from "../../lib/locale-data";
-import { isSoundEnabled, setSoundEnabled, isMusicEnabled, setMusicEnabled, playTap } from "../../lib/sound";
+import { isSoundEnabled, setSoundEnabled, isMusicEnabled, setMusicEnabled, isAmbianceEnabled, setAmbianceEnabled, subscribeAudioPreferences, playTap } from "../../lib/sound";
 import { isHapticsEnabled, setHapticsEnabled, hap } from "../../lib/haptics";
 import { ScreenFresk } from "../../lib/ui";
 import { isReduceMotion, setReduceMotion } from "../../lib/perf";
@@ -25,6 +25,12 @@ export default function Ayarlar() {
   const toggleSound = async (v: boolean) => { setSound(v); await setSoundEnabled(v); if (v) playTap(); };
   const [music, setMusicState] = useState(isMusicEnabled());
   const toggleMusic = async (v: boolean) => { setMusicState(v); await setMusicEnabled(v); };
+  const [ambiance, setAmbiance] = useState(isAmbianceEnabled());
+  useEffect(() => {
+    const refresh = () => { setSound(isSoundEnabled()); setMusicState(isMusicEnabled()); setAmbiance(isAmbianceEnabled()); };
+    refresh(); return subscribeAudioPreferences(refresh);
+  }, []);
+  const toggleAmbiance = async (v: boolean) => { setAmbiance(v); await setAmbianceEnabled(v); };
   const [haptics, setHaptics] = useState(isHapticsEnabled());
   const toggleHaptics = async (v: boolean) => { setHaptics(v); await setHapticsEnabled(v); if (v) hap("selection"); };
   const [reduceM, setReduceM] = useState(isReduceMotion());
@@ -70,7 +76,7 @@ export default function Ayarlar() {
         {/* Nasıl Oynanır / SSS */}
         <Pressable onPress={() => { hap("tap"); router.push("/oyun/sss"); }} style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(201,168,76,0.4)", borderRadius: 10, padding: 14, marginBottom: 16 }}>
           <GameIcon name="haberler" size={20} color={C.gold} />
-          <View style={{ flex: 1 }}>
+          <View style={{ flex: 1, paddingHorizontal: 8 }}>
             <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: C.parchment }}>{t("settings.sss")}</Text>
             <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted, marginTop: 3 }}>{t("settings.sssDesc")}</Text>
           </View>
@@ -80,7 +86,7 @@ export default function Ayarlar() {
         {/* Emeği Geçenler: üçüncü taraf atıfları ve lisanslar (CC BY simgeler, OFL yazı tipleri, YZ görselleri) */}
         <Pressable onPress={() => { hap("tap"); router.push("/oyun/emek"); }} style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, padding: 14, marginBottom: 14 }}>
           <GameIcon name="scroll" size={20} color={C.gold} />
-          <View style={{ flex: 1 }}>
+          <View style={{ flex: 1, paddingHorizontal: 8 }}>
             <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: C.parchment }}>{t("scr.emek")}</Text>
             <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted, marginTop: 3 }}>{t("settings.emekDesc")}</Text>
           </View>
@@ -102,28 +108,35 @@ export default function Ayarlar() {
         </View>
 
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, padding: 14, marginBottom: 16 }}>
-          <View style={{ flex: 1 }}>
+          <View style={{ flex: 1, paddingHorizontal: 8 }}>
             <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: C.parchment }}>{t("settings.sound")}</Text>
             <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted, marginTop: 3 }}>{t("settings.soundDesc")}</Text>
           </View>
-          <Switch value={sound} onValueChange={toggleSound} trackColor={{ false: "#3a2f1c", true: "rgba(201,168,76,0.6)" }} thumbColor={sound ? C.gold : "#8a7a55"} />
+          <Switch accessibilityLabel={t("settings.sound")} value={sound} onValueChange={toggleSound} trackColor={{ false: "#3a2f1c", true: "rgba(201,168,76,0.6)" }} thumbColor={sound ? C.gold : "#8a7a55"} />
         </View>
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, padding: 14, marginBottom: 16 }}>
-          <View style={{ flex: 1 }}>
+          <View style={{ flex: 1, paddingHorizontal: 8 }}>
             <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: C.parchment }}>{t("settings.music")}</Text>
-            <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted, marginTop: 3 }}>{t("settings.musicDesc")}</Text>
+            <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted, marginTop: 3 }}>{t("settings.musicSceneDesc")}</Text>
           </View>
-          <Switch value={music} onValueChange={toggleMusic} trackColor={{ false: "#3a2f1c", true: "rgba(201,168,76,0.6)" }} thumbColor={music ? C.gold : "#8a7a55"} />
+          <Switch accessibilityLabel={t("settings.music")} value={music} onValueChange={toggleMusic} trackColor={{ false: "#3a2f1c", true: "rgba(201,168,76,0.6)" }} thumbColor={music ? C.gold : "#8a7a55"} />
         </View>
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, padding: 14, marginBottom: 16 }}>
-          <View style={{ flex: 1 }}>
+          <View style={{ flex: 1, paddingHorizontal: 8 }}>
+            <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: C.parchment }}>{t("settings.ambiance")}</Text>
+            <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted, marginTop: 3 }}>{t("settings.ambianceDesc")}</Text>
+          </View>
+          <Switch accessibilityLabel={t("settings.ambiance")} value={ambiance} onValueChange={toggleAmbiance} trackColor={{ false: C.borderHi, true: C.gold }} thumbColor={ambiance ? C.goldBright : C.parchmentMuted} />
+        </View>
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, padding: 14, marginBottom: 16 }}>
+          <View style={{ flex: 1, paddingHorizontal: 8 }}>
             <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: C.parchment }}>{t("settings.haptics")}</Text>
             <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted, marginTop: 3 }}>{t("settings.hapticsDesc")}</Text>
           </View>
           <Switch value={haptics} onValueChange={toggleHaptics} trackColor={{ false: "#3a2f1c", true: "rgba(201,168,76,0.6)" }} thumbColor={haptics ? C.gold : "#8a7a55"} />
         </View>
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, padding: 14, marginBottom: 16 }}>
-          <View style={{ flex: 1 }}>
+          <View style={{ flex: 1, paddingHorizontal: 8 }}>
             <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: C.parchment }}>{t("settings.perf")}</Text>
             <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted, marginTop: 3 }}>{t("settings.perfDesc")}</Text>
           </View>
@@ -132,7 +145,7 @@ export default function Ayarlar() {
         {/* Kayıt yedeği: ham kayıt JSON'unu paylaş — tek offline kayıt cihazla birlikte kaybolmasın */}
         <Pressable onPress={async () => { hap("tap"); const j = await exportSaveText(); if (j) Share.share({ message: j }).catch(() => {}); else Alert.alert(t("settings.backup"), t("settings.backupNone")); }} style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, padding: 14, marginBottom: 16 }}>
           <GameIcon name="scroll" size={20} color={C.gold} />
-          <View style={{ flex: 1 }}>
+          <View style={{ flex: 1, paddingHorizontal: 8 }}>
             <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: C.parchment }}>{t("settings.backup")}</Text>
             <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted, marginTop: 3 }}>{t("settings.backupDesc")}</Text>
           </View>
@@ -141,7 +154,7 @@ export default function Ayarlar() {
         {/* Yedeği geri yükle: dışa aktarılan JSON yapıştırılır → doğrulanır → onayla mevcut kaydın üstüne yazılır */}
         <Pressable onPress={() => { hap("tap"); setRestoreOpen((v) => !v); }} style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, padding: 14, marginBottom: restoreOpen ? 8 : 16 }}>
           <GameIcon name="scroll" size={20} color={C.gold} />
-          <View style={{ flex: 1 }}>
+          <View style={{ flex: 1, paddingHorizontal: 8 }}>
             <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: C.parchment }}>{t("settings.restore")}</Text>
             <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted, marginTop: 3 }}>{t("settings.restoreDesc")}</Text>
           </View>

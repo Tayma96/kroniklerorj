@@ -11,7 +11,8 @@ import { MpProvider } from "../lib/mp/store";
 import { RealmSession } from "../lib/mp/RealmSession";
 import { LanguageProvider } from "../lib/i18n";
 import { LoadingScreen } from "../lib/fx";
-import { loadSoundSetting, loadMusicSetting } from "../lib/sound";
+import { initializeAudio } from "../lib/sound";
+import { SesYonetmen } from "../lib/ses-yonetmen";
 import { loadHapticsSetting } from "../lib/haptics";
 import { loadReduceMotion } from "../lib/perf";
 import { C } from "../lib/theme";
@@ -31,7 +32,12 @@ export default function RootLayout() {
   });
   const [fontTimeout, setFontTimeout] = useState(false);
   useEffect(() => { const t = setTimeout(() => setFontTimeout(true), 6000); return () => clearTimeout(t); }, []);
-  useEffect(() => { loadSoundSetting(); loadHapticsSetting(); loadReduceMotion().then(() => { loadMusicSetting(); }); }, []);
+  useEffect(() => {
+    let gone = false, stop: (() => void) | undefined;
+    void loadHapticsSetting();
+    void loadReduceMotion().then(() => { if (!gone) stop = initializeAudio(); });
+    return () => { gone = true; stop?.(); };
+  }, []);
   if (!loaded && !fontError && !fontTimeout) {
     return <LoadingScreen />;
   }
@@ -43,6 +49,7 @@ export default function RootLayout() {
             <StatusBar style="light" />
             {/* Diyar oturumu koordinatörü: MP tick'inde yerel hayatı ilerletir (UI çizmez). */}
             <RealmSession />
+            <SesYonetmen />
             {/* Android sistem gezinme çubuğunu gizle (tam ekran / immersive); yukarı kaydırınca geçici görünür */}
             <NavigationBar hidden />
             <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: C.bg }, animation: "slide_from_right" }} />

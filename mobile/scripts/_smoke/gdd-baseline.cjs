@@ -39,5 +39,5 @@ function rng(a) { return () => { a |= 0; a = a + 0x6d2b79f5 | 0; let t = Math.im
   const measured = { p50: +timings[Math.floor(timings.length * .5)].toFixed(2), p95: +timings[Math.floor(timings.length * .95)].toFixed(2), max: +timings.at(-1).toFixed(2) };
   if (process.argv.includes('--kaydet')) fs.writeFileSync(out, JSON.stringify({ kind: 'sentetik-karakterizasyon-gercek-oyuncu-kaydi-degil', engineSha256: hash(fs.readFileSync(path.join(mobile, 'lib/game.ts'), 'utf8')), flows: hashes, simulations, measuredTickMs: measured }, null, 2) + '\n');
   else { const baseline = JSON.parse(fs.readFileSync(out, 'utf8')); assert.deepEqual(hashes, baseline.flows, 'Davranış değişti; neden ayrı kaydedilmeli'); for (const age of Object.keys(simulations)) assert.equal(simulations[age].hash, baseline.simulations[age].hash, age); }
-  console.log(`GDD TABANI: TEMİZ · ${Object.keys(hashes).length} akış · 3 sentetik kayıt × 30 ay · tick ms ${JSON.stringify(measured)}`);
+  process.stdout.write(`GDD TABANI: TEMİZ · ${Object.keys(hashes).length} akış · 3 sentetik kayıt × 30 ay · tick ms ${JSON.stringify(measured)}\n`);
 })().catch(e => { console.error(e); process.exitCode = 1; });

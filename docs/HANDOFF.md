@@ -9,3 +9,7 @@ Testler: mobil tsc ve iki dil denetçisi temiz; v1 göç 51 tur; 30 hayat / 20.1
 Sıradaki: ses oynatıcılarını tembel ve sınırlı hale getir; rota/yaş/mevsim bağlamını bağla, ayarları koru, iptal/arka plan yarışını sınayıp Android paketi çıkar. Görsel taslakları ve yeni gradyan bağımlılığı henüz etkin sahne değildir. Sonraki motor değişikliği ayrı dalga ve tüm motor kapılarıyla yapılır.
 
 Riskler: üretim RNG kayıtta yok; game.ts 10.886 satır; altın kayıt, cihaz, canlı sunucu ve lisansların mağaza yayın son kontrolü ayrıca gerekli. PDF'de öneri olan birçok konu zaten kısmen mevcut; yeniden yazmadan envanterle.
+
+## Ses ve sahne kontrol noktası — 12 Ekim 2026
+
+Ses/sahne dalgası uygulandı: `SES_SAHNE.md` değişiklikler, önce/sonra, test ve açık sınırlar. 63 kayıt bağlamsal katalogda; geçişte ≤4 döngü / ≤4 efekt, normalde 2 döngü. 15 resim anlamsal sahne eşlemesine bağlı, nötr geri dönüş var; görünmeyen modal ses açmaz. Altı dilde ortam ayarı; eski ayar ve kayıtlar korunur. Android/Hermes export geçti, gerçek APK yapılmadı. 390 px / 4× CPU'da çalışma kararı, seçimi, sonucu ve günlük oynandı; TR/AR ayar görselleri incelendi. Tarayıcı çizim altyapısı yalnız test ortamında başlatıldı; hızlı web ses aç/kapatında kütüphane iptal hatası ayrıca açık. Fiziksel cihaz testi yok. Motor/MP değişmedi, davranış tabanı aynı. Sıradaki: ortak neden dökümü ve kayıtlı RNG için ayrı doğrulanmış motor dalgası.

@@ -5,15 +5,19 @@
 // backfaceVisibility'ye yaslanmaz. Işık Skia değil düz katmanlardır: 3D dönüşümle birlikte döner.
 // Sade modda (lib/perf) süzülme/ışık kapanır, giriş-çıkış anında olur; kart yine tam çalışır.
 import { useEffect, useRef, useState, ReactNode } from "react";
-import { View, Text, Pressable, Modal, StyleProp, ViewStyle, useWindowDimensions } from "react-native";
-import Animated, { useSharedValue, useAnimatedStyle, withTiming, withSpring, withRepeat, withSequence, Easing, SharedValue } from "react-native-reanimated";
+import { View, Text, Pressable, Modal, ScrollView, StyleProp, ViewStyle, useWindowDimensions } from "react-native";
+import Animated, { useSharedValue, useAnimatedStyle, withTiming, withSpring, withRepeat, withSequence, Easing, cancelAnimation, SharedValue } from "react-native-reanimated";
 import { Gesture, GestureDetector, GestureHandlerRootView } from "react-native-gesture-handler";
 import { scheduleOnRN } from "react-native-worklets";
 import { C, F } from "./theme";
 import { EASE } from "./motion";
-import { isReduceMotion } from "./perf";
+import { isReduceMotion, onReduceMotionChange } from "./perf";
 import { hap } from "./haptics";
-import { playTap } from "./sound";
+import { playTap, playEffect, pushSoundscape } from "./sound";
+import { LinearGradient } from "expo-linear-gradient";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { ikilemTema, SAHNE_GORSEL, type SahneTema } from "./sahne-tema";
+import { sahneSes } from "./ses-plan";
 import { GameIcon } from "./icons";
 import { useI18n, applyParams } from "./i18n";
 import type { Dilemma, Choice } from "./events";
@@ -21,6 +25,11 @@ import type { Opportunity } from "./game";
 
 const YAY = { damping: 15, stiffness: 170, mass: 0.8 };
 const KART_W = 360;
+function useSadeMod() {
+  const [reduced, setReduced] = useState(isReduceMotion);
+  useEffect(() => onReduceMotionChange(() => setReduced(isReduceMotion())), []);
+  return reduced;
+}
 
 // ── Ortak 3D taşıyıcı: giriş, süzülme, eğim, çıkış ──
 interface Kart3D {
@@ -29,15 +38,20 @@ interface Kart3D {
   exit: (cb: () => void) => void; calm: (on: boolean) => void; reduced: boolean;
 }
 function useKart3D(): Kart3D {
-  const reduced = isReduceMotion();
+  const reduced = useSadeMod();
   const tx = useSharedValue(0), ty = useSharedValue(0);
   const enter = useSharedValue(reduced ? 1 : 0), out = useSharedValue(0);
   const idle = useSharedValue(0.5), amp = useSharedValue(reduced ? 0 : 1);
   useEffect(() => {
-    if (reduced) return;
-    enter.value = withSpring(1, { damping: 14, stiffness: 110, mass: 0.9 });
-    idle.value = withRepeat(withTiming(1, { duration: 2400, easing: Easing.inOut(Easing.sin) }), -1, true);
-  }, []);
+    amp.value = reduced ? 0 : 1;
+    if (reduced) { enter.value = 1; idle.value = 0.5; }
+    else {
+      enter.value = withSpring(1, { damping: 14, stiffness: 110, mass: 0.9 });
+      idle.value = withRepeat(withTiming(1, { duration: 2400, easing: Easing.inOut(Easing.sin) }), -1, true);
+    }
+    return () => { cancelAnimation(enter); cancelAnimation(idle); cancelAnimation(amp); };
+  }, [reduced]);
+  useEffect(() => () => { cancelAnimation(out); cancelAnimation(tx); cancelAnimation(ty); }, []);
   const style = useAnimatedStyle(() => {
     const e = enter.value, o = out.value, i = (idle.value - 0.75) * amp.value, x = tx.value;
     const egim = Math.max(-24, Math.min(24, x / 9));
@@ -71,15 +85,16 @@ function DonenYuz({ flipKey, children, reduced }: { flipKey: string; children: R
   const rot = useSharedValue(0);
   const ilk = useRef(true);
   useEffect(() => {
+    if (reduced) { cancelAnimation(rot); rot.value = 0; if (shown !== flipKey) setShown(flipKey); return; }
     if (shown === flipKey) return;
-    if (reduced) { setShown(flipKey); return; }
     rot.value = withTiming(90, { duration: 170, easing: EASE.accel }, (fin) => { if (fin) scheduleOnRN(setShown, flipKey); });
-  }, [flipKey]);
+  }, [flipKey, reduced]);
   useEffect(() => {
     if (ilk.current) { ilk.current = false; return; }
     if (reduced) return;
     rot.value = withSequence(withTiming(-90, { duration: 0 }), withSpring(0, { damping: 13, stiffness: 150 }));
-  }, [shown]);
+  }, [shown, reduced]);
+  useEffect(() => () => cancelAnimation(rot), []);
   const st = useAnimatedStyle(() => ({ transform: [{ perspective: 1000 }, { rotateY: `${rot.value}deg` }] }));
   return <Animated.View style={st}>{shown === flipKey ? children : last.current}</Animated.View>;
 }
@@ -117,10 +132,23 @@ function Deste() {
   return <>{kart(20, 0.9, 2.5, C.bg)}{kart(10, 0.95, -2, C.surface)}</>;
 }
 
-function Arka({ children }: { children: ReactNode }) {
+function Arka({ children, theme, festival = false }: { children: ReactNode; theme: SahneTema | null; festival?: boolean }) {
+  const insets = useSafeAreaInsets(), reduced = useSadeMod();
+  const zoom = useSharedValue(1);
+  useEffect(() => {
+    zoom.value = 1;
+    if (theme && !reduced) zoom.value = withTiming(1.055, { duration: 12000, easing: Easing.out(Easing.quad) });
+    return () => cancelAnimation(zoom);
+  }, [theme, reduced]);
+  useEffect(() => theme ? pushSoundscape(sahneSes(theme, festival)) : undefined, [theme, festival]);
+  const drift = useAnimatedStyle(() => ({ transform: [{ scale: zoom.value }] }));
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <View style={{ flex: 1, backgroundColor: C.bg + "EB", alignItems: "center", justifyContent: "center", padding: 24 }}>{children}</View>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: C.bg }}>
+      {theme && <Animated.Image accessible={false} source={SAHNE_GORSEL[theme]} resizeMode="cover" style={[{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, opacity: 0.62 }, drift]} />}
+      <LinearGradient pointerEvents="none" colors={[C.bg + "70", C.bg + "B8", C.bg + "F5"]} locations={[0, 0.4, 1]} style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }} />
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 24, paddingTop: insets.top + 24, paddingBottom: insets.bottom + 24 }}>
+        {children}
+      </ScrollView>
     </GestureHandlerRootView>
   );
 }
@@ -185,7 +213,7 @@ function KaderKarti({ dilemma, onChoose, female }: { dilemma: Dilemma; onChoose:
   const devam = () => {
     if (cikiyor.current || secim === null) return;
     cikiyor.current = true;
-    const i = secim; k.exit(() => onChoose(dilemma.choices[i], i));
+    const i = secim; k.exit(() => { onChoose(dilemma.choices[i], i); playEffect("kalem"); });
   };
 
   const pan = Gesture.Pan()
@@ -274,7 +302,7 @@ function KaderKarti({ dilemma, onChoose, female }: { dilemma: Dilemma; onChoose:
 export function KaderKartiModal({ dilemma, onChoose, female }: { dilemma: Dilemma | null; onChoose: (c: Choice, i: number) => void; female?: boolean }) {
   return (
     <Modal visible={!!dilemma} transparent animationType="fade" onRequestClose={() => {}}>
-      <Arka>{dilemma && <KaderKarti key={dilemma.id} dilemma={dilemma} onChoose={onChoose} female={female} />}</Arka>
+      {dilemma && <Arka theme={ikilemTema(dilemma.id, dilemma.icon)} festival={dilemma.id.startsWith("fest_")}><KaderKarti key={dilemma.id} dilemma={dilemma} onChoose={onChoose} female={female} /></Arka>}
     </Modal>
   );
 }
@@ -303,7 +331,7 @@ function FirsatKarti({ opp, statVal, onResolve, onPass }: { opp: Opportunity; st
     const id = setInterval(() => setPos((p) => { let n = p + dir.current * 3.4; if (n >= 100) { n = 100; dir.current = -1; } else if (n <= 0) { n = 0; dir.current = 1; } return n; }), 24);
     return () => clearInterval(id);
   }, [phase]);
-  const onStop = () => { if (stopped.current) return; stopped.current = true; const ok = pos >= zoneStart && pos <= zoneEnd; setSuccess(ok); setPhase("result"); hap(ok ? "success" : "error"); };
+  const onStop = () => { if (stopped.current) return; stopped.current = true; const ok = pos >= zoneStart && pos <= zoneEnd; setSuccess(ok); setPhase("result"); hap(ok ? "success" : "error"); playEffect(ok ? "cip_kazanc" : "cip_kayip"); };
   const kapat = (cb: () => void) => { if (cikiyor.current) return; cikiyor.current = true; k.exit(cb); };
   const pill = (txt: string, color: string, bg: string = C.bg, bd: string = C.border) => (
     <View style={{ backgroundColor: bg, borderWidth: 1, borderColor: bd, borderRadius: 20, paddingVertical: 4, paddingHorizontal: 11 }}>
@@ -372,7 +400,7 @@ function FirsatKarti({ opp, statVal, onResolve, onPass }: { opp: Opportunity; st
 export function FirsatKartiModal({ opp, statVal = 5, onResolve, onPass }: { opp: Opportunity | null; statVal?: number; onResolve: (success: boolean) => void; onPass: () => void }) {
   return (
     <Modal visible={!!opp} transparent animationType="fade" onRequestClose={onPass}>
-      <Arka>{opp && <FirsatKarti key={opp.id} opp={opp} statVal={statVal} onResolve={onResolve} onPass={onPass} />}</Arka>
+      {opp && <Arka theme={ikilemTema(opp.id, "")}><FirsatKarti key={opp.id} opp={opp} statVal={statVal} onResolve={onResolve} onPass={onPass} /></Arka>}
     </Modal>
   );
 }
@@ -390,6 +418,7 @@ function SinavKarti({ v, onSec, onKapat }: { v: SinavKartiVeri; onSec: (yol: num
   const sec = (i: number) => {
     if (kilit.current) return; kilit.current = true;
     const b = onSec(i);
+    if (b !== null) playEffect(b ? "cip_kazanc" : "cip_kayip");
     if (b == null) { kilit.current = false; return; }
     hap(b ? "success" : "error"); playTap(); setSonuc({ yol: i, basari: b });
   };
@@ -450,7 +479,7 @@ function SinavKarti({ v, onSec, onKapat }: { v: SinavKartiVeri; onSec: (yol: num
 export function SinavKartiModal({ v, onSec, onKapat }: { v: SinavKartiVeri | null; onSec: (yol: number) => boolean | null; onKapat: () => void }) {
   return (
     <Modal visible={!!v} transparent animationType="fade" onRequestClose={onKapat}>
-      <Arka>{v && <SinavKarti key={v.prof + v.hedefUnvan} v={v} onSec={onSec} onKapat={onKapat} />}</Arka>
+      {v && <Arka theme={v.prof === "demirci" ? "atolye_demirci" : "ahi_tekke"}><SinavKarti key={v.prof + v.hedefUnvan} v={v} onSec={onSec} onKapat={onKapat} /></Arka>}
     </Modal>
   );
 }

@@ -1,114 +1,115 @@
-// Gerçek kayıt efektleri (çevrimdışı, paket içi AAC). Varsayılan KAPALI; ayarlardan açılır.
-import { createAudioPlayer, type AudioPlayer } from "expo-audio";
-import { AppState } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { isReduceMotion } from "./perf";
+// Çevrimdışı ses: müzik, ortam ve efektler ayrı; kaynaklar ihtiyaç bitince bırakılır.
+import { createAudioPlayer, setAudioModeAsync } from 'expo-audio';
+import { AppState } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { isReduceMotion } from './perf';
+import { MUZIK, ORTAM, EFEKT, EFEKT_SURE, type EfektId } from './ses-katalog';
+import { SesMikser, type SesOynatici, type SesPlan, type SesTercih } from './ses-mikser';
+import type { OrtamPlan } from './ses-plan';
 
-const KEY = "kronikler_sound_v1";
-let enabled = false;
-let tap: AudioPlayer | null = null;
-let advance: AudioPlayer | null = null;
-let zafer: AudioPlayer | null = null;
-let can: AudioPlayer | null = null;
-let cingirak: AudioPlayer | null = null;
-let kilic: AudioPlayer | null = null;
-let davul: AudioPlayer | null = null;
-let yenilgi: AudioPlayer | null = null;
-let kese: AudioPlayer | null = null;
-let ninni: AudioPlayer | null = null;
-let saz: AudioPlayer | null = null;
-let nal: AudioPlayer | null = null;
-let dugun: AudioPlayer | null = null;
-let ney: AudioPlayer | null = null;
-let su: AudioPlayer | null = null;
-let mirilti: AudioPlayer | null = null;
-let hav: AudioPlayer | null = null;
+const KEYS = { effects: 'kronikler_sound_v1', music: 'kronikler_music_v1', ambiance: 'kronikler_ambiance_v1' };
+let prefs: SesTercih = { music: true, ambiance: false, effects: false };
+const revisions = { music: 0, ambiance: 0, effects: 0 };
+const writes: Partial<Record<keyof SesTercih, Promise<void>>> = {};
+const listeners = new Set<() => void>();
+const sources: Record<string, number> = Object.fromEntries([
+  ...Object.entries(MUZIK).map(([id, source]) => ['music:' + id, source]),
+  ...Object.entries(ORTAM).map(([id, source]) => ['ambiance:' + id, source]),
+  ...Object.entries(EFEKT).map(([id, source]) => ['effect:' + id, source]),
+]);
+function nativePlayer(id: string): SesOynatici {
+  const source = sources[id]; if (source == null) throw new Error('Ses kaynağı yok');
+  const p = createAudioPlayer(source, { updateInterval: id.startsWith('effect:') ? 100 : 500 });
+  return {
+    get volume() { return p.volume; }, set volume(v) { p.volume = v; },
+    get loop() { return p.loop; }, set loop(v) { p.loop = v; },
+    play: () => p.play(), pause: () => p.pause(), remove: () => p.remove(), seekTo: sec => p.seekTo(sec),
+    onEnd: fn => { const sub = p.addListener('playbackStatusUpdate', status => { if (status.didJustFinish) fn(); }); return () => sub.remove(); },
+  };
+}
+const mixer = new SesMikser(nativePlayer);
+let base: OrtamPlan = { music: 'ana_tema', ambiance: 'ocak' };
+const scenes = new Map<symbol, OrtamPlan>();
+let eventPlan: OrtamPlan | null = null, eventTimer: ReturnType<typeof setTimeout> | undefined;
+let epoch = 0, cleanup: (() => void) | null = null;
+function applyPlan() {
+  const plan = [...scenes.values()].at(-1) || eventPlan || base;
+  const mapped: SesPlan = { music: 'music:' + plan.music, ambiance: plan.ambiance ? 'ambiance:' + plan.ambiance : null };
+  mixer.setPlan(mapped);
+}
+function notify() { mixer.setPreferences(prefs); listeners.forEach(fn => { try { fn(); } catch {} }); }
+export function subscribeAudioPreferences(fn: () => void): () => void { listeners.add(fn); return () => { listeners.delete(fn); }; }
+export function isSoundEnabled() { return prefs.effects; }
+export function isMusicEnabled() { return prefs.music; }
+export function isAmbianceEnabled() { return prefs.ambiance; }
+async function setPreference(name: keyof SesTercih, on: boolean) {
+  revisions[name]++; prefs = { ...prefs, [name]: on }; notify();
+  const write = (writes[name] || Promise.resolve()).then(() => AsyncStorage.setItem(KEYS[name], on ? '1' : '0')).catch(() => {});
+  writes[name] = write; await write;
+}
+export function setSoundEnabled(on: boolean) { return setPreference('effects', on); }
+export function setMusicEnabled(on: boolean) { return setPreference('music', on); }
+export function setAmbianceEnabled(on: boolean) { return setPreference('ambiance', on); }
+async function loadPreferences(run: number) {
+  const version = { ...revisions };
+  let rows: readonly (readonly [string, string | null])[] = [];
+  try { rows = await AsyncStorage.multiGet(Object.values(KEYS)); } catch {}
+  if (run !== epoch) return;
+  const stored = new Map(rows), musicDefault = !isReduceMotion();
 
-// Arka plan müziği: paket içi gerçek icra, döngü. Ayrı anahtar; varsayılan AÇIK.
-const MKEY = "kronikler_music_v1";
-let musicEnabled = true;
-let music: AudioPlayer | null = null;
-export async function loadMusicSetting(): Promise<boolean> {
-  // Pil dostu: sade moddaki (düşük RAM) cihazlarda müzik varsayılanı KAPALI — kullanıcı ayarlardan açarsa tercihi kalıcıdır.
-  try {
-    const v = await AsyncStorage.getItem(MKEY);
-    if (v !== null) musicEnabled = v === "1";
-    else { musicEnabled = !isReduceMotion(); await AsyncStorage.setItem(MKEY, musicEnabled ? "1" : "0"); }
-  } catch {}
-  if (musicEnabled) startMusic();
-  return musicEnabled;
+  for (const name of ['music', 'ambiance', 'effects'] as const) {
+    if (version[name] !== revisions[name]) continue; // Geç dönen yükleme yeni kullanıcı tercihini ezemez.
+    const value = stored.get(KEYS[name]);
+    prefs = { ...prefs, [name]: value == null ? (name === 'music' ? musicDefault : name === 'ambiance' ? prefs.music && !isReduceMotion() : false) : value === '1' };
+    if (value == null && name !== 'effects') {
+      const selected = prefs[name], rev = revisions[name];
+      writes[name] = (writes[name] || Promise.resolve()).then(async () => {
+        if (run !== epoch || rev !== revisions[name]) return;
+        try { await AsyncStorage.setItem(KEYS[name], selected ? '1' : '0'); } catch {}
+      });
+    }
+  }
+  notify();
 }
-export function isMusicEnabled(): boolean { return musicEnabled; }
-export async function setMusicEnabled(on: boolean): Promise<void> {
-  musicEnabled = on;
-  try { await AsyncStorage.setItem(MKEY, on ? "1" : "0"); } catch {}
-  if (on) startMusic(); else stopMusic();
+// Eski çağrı yüzeyi korunur; uygulama yaşam döngüsünü initializeAudio sahiplenir.
+export async function loadSoundSetting() { await loadPreferences(epoch); return prefs.effects; }
+export async function loadMusicSetting() { await loadPreferences(epoch); return prefs.music; }
+export function initializeAudio(): () => void {
+  cleanup?.(); const run = ++epoch; let ready = false, stopped = false;
+  const stateChanged = () => { mixer.setActive(ready && AppState.currentState === 'active'); if (AppState.currentState !== 'active') clearEvent(); };
+  const sub = AppState.addEventListener('change', stateChanged);
+  applyPlan();
+  void Promise.allSettled([loadPreferences(run), Promise.resolve().then(() => setAudioModeAsync({ playsInSilentMode: false, allowsRecording: false, shouldPlayInBackground: false, interruptionMode: 'mixWithOthers' }))]).then(results => {
+    if (stopped || epoch !== run) return; ready = results[1].status === 'fulfilled'; stateChanged();
+  });
+  const stop = () => { if (stopped) return; stopped = true; sub.remove(); if (epoch !== run) return; ++epoch; clearEvent(); mixer.dispose(); cleanup = null; };
+  cleanup = stop; return stop;
 }
-export function startMusic() {
-  try {
-    if (!music) { music = createAudioPlayer(require("../assets/ses/muzik/ana_tema.m4a")); music.loop = true; music.volume = 0.32; }
-    music.play();
-  } catch {}
+export function setSoundscape(plan: OrtamPlan) { base = plan; applyPlan(); }
+export function pushSoundscape(plan: OrtamPlan): () => void {
+  const key = Symbol(); scenes.set(key, plan); applyPlan();
+  return () => { scenes.delete(key); applyPlan(); };
 }
-export function stopMusic() { try { music?.pause(); } catch {} }
-// Uygulama arka plana geçince müzik susar, dönünce kaldığı yerden sürer.
-AppState.addEventListener("change", (st) => {
-  if (!musicEnabled) return;
-  try { if (st === "active") music?.play(); else music?.pause(); } catch {}
-});
-
-export async function loadSoundSetting(): Promise<boolean> {
-  try { const v = await AsyncStorage.getItem(KEY); enabled = v === "1"; } catch {}
-  return enabled;
-}
-export function isSoundEnabled(): boolean { return enabled; }
-export async function setSoundEnabled(on: boolean): Promise<void> {
-  enabled = on;
-  try { await AsyncStorage.setItem(KEY, on ? "1" : "0"); } catch {}
-}
-
-function ensure() {
-  try {
-    if (!tap) tap = createAudioPlayer(require("../assets/ses/efekt/ui_dokun.m4a"));
-    if (!advance) advance = createAudioPlayer(require("../assets/ses/efekt/ui_ilerle.m4a"));
-    if (!zafer) zafer = createAudioPlayer(require("../assets/ses/efekt/zafer.m4a"));
-    if (!can) can = createAudioPlayer(require("../assets/ses/efekt/matem.m4a"));
-    if (!cingirak) cingirak = createAudioPlayer(require("../assets/ses/efekt/zil.m4a"));
-    if (!kilic) kilic = createAudioPlayer(require("../assets/ses/efekt/kilic.m4a"));
-    if (!davul) davul = createAudioPlayer(require("../assets/ses/efekt/davul_cenk.m4a"));
-    if (!yenilgi) yenilgi = createAudioPlayer(require("../assets/ses/efekt/yenilgi.m4a"));
-    if (!kese) kese = createAudioPlayer(require("../assets/ses/efekt/akce_kese.m4a"));
-    if (!ninni) ninni = createAudioPlayer(require("../assets/ses/efekt/dogum.m4a"));
-    if (!saz) saz = createAudioPlayer(require("../assets/ses/efekt/saz_vurgu.m4a"));
-    if (!nal) nal = createAudioPlayer(require("../assets/ses/efekt/nal.m4a"));
-    if (!dugun) dugun = createAudioPlayer(require("../assets/ses/efekt/dugun.m4a"));
-    if (!ney) ney = createAudioPlayer(require("../assets/ses/efekt/ney_nefes.m4a"));
-    if (!su) su = createAudioPlayer(require("../assets/ses/efekt/su.m4a"));
-    if (!mirilti) mirilti = createAudioPlayer(require("../assets/ses/efekt/mirilti.m4a"));
-    if (!hav) hav = createAudioPlayer(require("../assets/ses/efekt/hav.m4a"));
-  } catch {}
-}
-function fire(p: AudioPlayer | null) {
-  if (!enabled || !p) return;
-  try { p.seekTo(0); p.play(); } catch {}
-}
-export function playTap() { if (!enabled) return; ensure(); fire(tap); }
-export function playAdvance() { if (!enabled) return; ensure(); fire(advance); }
-// Büyük anlar artık kendi sesini taşır: kutlama arpeji, ölüm çanı, şenlik çıngırağı.
-export function playFanfare() { if (!enabled) return; ensure(); fire(zafer); }
-export function playVictory() { if (!enabled) return; ensure(); fire(zafer); }
-export function playToll() { if (!enabled) return; ensure(); fire(can); }
-export function playChime() { if (!enabled) return; ensure(); fire(cingirak); }
-// Savaş sesleri: giriş davulu, çelik çınlaması, yenilgi gümbürtüsü — meydanın kendi dili.
-export function playWarDrum() { if (!enabled) return; ensure(); fire(davul); }
-export function playClash() { if (!enabled) return; ensure(); fire(kilic); }
-export function playDefeat() { if (!enabled) return; ensure(); fire(yenilgi); }
-export function playCoin() { if (!enabled) return; ensure(); fire(kese); }
-export function playLullaby() { if (!enabled) return; ensure(); fire(ninni); } // doğum: gerçek icra kesiti
-export function playSaz() { if (!enabled) return; ensure(); fire(saz); }       // ikilem kapıyı çaldı: mızrap vurgusu
-export function playHooves() { if (!enabled) return; ensure(); fire(nal); }    // yolculuk: dörtnala
-export function playWedding() { if (!enabled) return; ensure(); fire(dugun); } // düğün: zurna-davul oyun havası
-export function playNey() { if (!enabled) return; ensure(); fire(ney); }       // ibadet/tekke: ney nefesi
-export function playWater() { if (!enabled) return; ensure(); fire(su); }      // hamam: tas suyu, mermer yankısı
-export function playPurr() { if (!enabled) return; ensure(); fire(mirilti); }  // ocak kedisi: mırıltı
-export function playBark() { if (!enabled) return; ensure(); fire(hav); }      // çoban köpeği: çift hav
+function clearEvent() { if (eventTimer) clearTimeout(eventTimer); eventTimer = undefined; eventPlan = null; applyPlan(); }
+function cue(plan: OrtamPlan, ms = 6500) { if (!mixer.snapshot().active) return; clearEvent(); eventPlan = plan; applyPlan(); eventTimer = setTimeout(clearEvent, ms); }
+export function startMusic() { mixer.setPreferences(prefs); applyPlan(); }
+export function stopMusic() { mixer.setPreferences({ ...prefs, music: false }); }
+export function playEffect(id: EfektId) { mixer.effect('effect:' + id, EFEKT_SURE[id], !id.startsWith('ui_')); }
+export function playTap() { playEffect('ui_dokun'); }
+export function playAdvance() { playEffect('ui_ilerle'); }
+export function playFanfare() { playEffect('zafer'); cue({ music: 'zafer', ambiance: 'avlu' }); }
+export function playVictory() { playFanfare(); }
+export function playToll() { playEffect('matem'); cue({ music: 'cenaze', ambiance: 'ocak' }); }
+export function playChime() { playEffect('zil'); }
+export function playWarDrum() { playEffect('davul_cenk'); cue({ music: 'akin', ambiance: 'bozkir' }, 12000); }
+export function playClash() { playEffect('kilic'); }
+export function playDefeat() { playEffect('yenilgi'); }
+export function playCoin() { playEffect('akce_kese'); }
+export function playLullaby() { playEffect('dogum'); cue({ music: 'dogum', ambiance: 'ocak' }, 8000); }
+export function playSaz() { playEffect('saz_vurgu'); }
+export function playHooves() { playEffect('nal'); }
+export function playWedding() { playEffect('dugun'); cue({ music: 'dugun', ambiance: 'carsi' }); }
+export function playNey() { playEffect('ney_nefes'); cue({ music: 'tekke', ambiance: 'avlu' }); }
+export function playWater() { playEffect('su'); }
+export function playPurr() { playEffect('mirilti'); }
+export function playBark() { playEffect('hav'); }

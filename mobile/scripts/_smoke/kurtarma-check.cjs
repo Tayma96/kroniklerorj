@@ -50,8 +50,9 @@ const root = path.resolve(__dirname, '../..');
     assert(source.lisans_url || source.lisans === 'Kamu malı (PD)', source.dosya);
   }
   const sound = fs.readFileSync(path.join(root, 'lib/sound.ts'), 'utf8');
-  const calls = [...sound.matchAll(/require\("(\.\.\/assets\/ses\/[^\"]+)"\)/g)];
-  assert.equal(calls.length, 18);
+  const catalog = fs.readFileSync(path.join(root, 'lib/ses-katalog.ts'), 'utf8');
+  const calls = [...catalog.matchAll(/require\(['"](\.\.\/assets\/ses\/[^'"]+)['"]\)/g)];
+  assert.equal(calls.length, 63);
   for (const call of calls) assert(fs.existsSync(path.resolve(root, 'lib', call[1])));
   assert(!sound.includes('assets/sfx/'));
   const ui = fs.readFileSync(path.join(root, 'lib/ui.tsx'), 'utf8');
