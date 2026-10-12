@@ -1,0 +1,22 @@
+{
+  "kind": "sentetik-davranis-tabaninin-gerekceli-degisimi",
+  "previousEngineVerified": true,
+  "changedFlows": [
+    "sohbet"
+  ],
+  "unchangedFlowCount": 9,
+  "unchangedSyntheticAges": [
+    "7",
+    "30",
+    "60"
+  ],
+  "reason": "Yeni NPC anısı kimliği/olay/sahip/kanıt alanları ve kişilik ağırlığı; geçmiş metninin gerçek anıya bağlanması. Kaynak/ay/XP ödülü eklenmedi.",
+  "hashes": {
+    "sohbet": {
+      "before": "9543d04c57ed18146e1fb94d246edc451f18a20cc1fb6009b44d82720360b206",
+      "after": "7a4d7589072d93bd2ec1626654afb489306244c6677ffdfd656f09b5d815df10"
+    }
+  },
+  "source": "NPC_HAFIZA.md",
+  "realUserGoldenSaves": false
+}

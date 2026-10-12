@@ -10,6 +10,9 @@ export interface Memory {
   taniklar: string[]; // tanık NPC id'leri (dedikodu için)
   yayildi: boolean;   // dedikoduya dönüştü mü
   kaynak?: string;    // anı sahibinin adı (dedikodu kaynağı, anlık)
+  kimlik?: string; sahip?: string; konu?: string; olay?: string;
+  kanit?: "katilim" | "gorgu" | "duyum" | "eski";
+  kesinlik?: number; kaynakZinciri?: string[]; sonAnilma?: number;
 }
 
 // Dedikoduya dönüşebilen anı türleri için söylenti varyant sayısı (rumor.<tur>.<i> anahtarları).
@@ -88,19 +91,47 @@ export const MEMORY_TYPES: Record<string, MemSpec> = {
 export const NAM_TRAITS = ["comert", "zalim", "capkin", "dindar", "mert"];
 
 // Yapısal anı ekle. Bilinmeyen tür sessizce yok sayılır. 24 tavan; travmalar korunur.
-export function addMemory(anilar: Memory[], tur: string, hafta: number, opts?: { yuk?: number; taniklar?: string[]; kaynak?: string }): Memory | null {
+export interface MemoryOptions {
+  yuk?: number; taniklar?: string[]; kaynak?: string; huy?: string;
+  kimlik?: string; sahip?: string; konu?: string; olay?: string;
+  kanit?: Memory["kanit"]; kesinlik?: number; kaynakZinciri?: string[];
+}
+// Aynı olay kişiliğe göre başka ağırlık taşır; açık yükü veren eski çağrılar da bu cepheden geçer.
+export function personalityWeight(tur: string, huy?: string): number {
+  if (!huy) return 1;
+  const iyi = (MEMORY_TYPES[tur]?.yuk || 0) > 0;
+  if (huy === "unutkan") return 0.75;
+  if (iyi) {
+    if (["cömert", "misafirperver", "sıcakkanlı", "neşeli"].includes(huy)) return 1.25;
+    if (["kurnaz", "hırslı", "kibirli"].includes(huy)) return 0.65;
+    if (["dindar", "mert", "ciddi"].includes(huy)) return 1.1;
+    return 1;
+  }
+  if (["hakaret", "alay", "haddini_asma"].includes(tur)) return huy === "kibirli" ? 1.4 : huy === "neşeli" ? 0.85 : 1;
+  if (["ihanet", "somuru", "dolandiricilik", "ucret_odenmedi"].includes(tur)) return ["dindar", "mert", "ciddi"].includes(huy) ? 1.3 : 1;
+  if (["saldiri", "tehdit", "kacirma", "kan", "yakinima_zarar"].includes(tur)) return ["utangaç", "dertli", "yalnız", "sabırlı"].includes(huy) ? 1.3 : ["dindar", "mert", "ciddi"].includes(huy) ? 1.15 : 1;
+  return 1;
+}
+export function addMemory(anilar: Memory[], tur: string, hafta: number, opts?: MemoryOptions): Memory | null {
   const spec = MEMORY_TYPES[tur];
   if (!spec) return null;
+  const rawLoad = Number.isFinite(opts?.yuk) ? opts!.yuk! : spec.yuk;
   const m: Memory = {
     tur,
     hafta: Math.floor(hafta),
-    yuk: opts?.yuk != null ? opts.yuk : spec.yuk,
+    yuk: opts?.huy ? Math.round(rawLoad * personalityWeight(tur, opts.huy) * 1000) / 1000 : rawLoad,
     unutma: spec.travma ? 1.0 : spec.unutma,
     travma: !!spec.travma,
     taniklar: opts?.taniklar ? [...opts.taniklar] : [],
     yayildi: false,
     kaynak: opts?.kaynak,
   };
+  if (opts?.kimlik) m.kimlik = opts.kimlik;
+  if (opts?.sahip) m.sahip = opts.sahip;
+  if (opts?.konu) m.konu = opts.konu;
+  if (opts?.olay) m.olay = opts.olay;
+  if (opts?.kanit) { m.kanit = opts.kanit; m.kesinlik = Number.isFinite(opts.kesinlik) ? Math.max(0, Math.min(1, opts.kesinlik!)) : opts.kanit === "duyum" ? 0.6 : opts.kanit === "eski" ? 0.4 : 1; }
+  if (opts?.kaynakZinciri) m.kaynakZinciri = [...opts.kaynakZinciri].slice(-4);
   anilar.push(m);
   if (anilar.length > 24) {
     const zayif = anilar.filter((x) => !x.travma).sort((a, b) => Math.abs(a.yuk) - Math.abs(b.yuk));
@@ -108,6 +139,17 @@ export function addMemory(anilar: Memory[], tur: string, hafta: number, opts?: {
     else anilar.shift();
   }
   return m;
+}
+
+// Son küçük sohbet ağır bir geçmişi örtemez. Otomatik gönderme aynı ayda aynı anıyı tekrarlamaz.
+export function salientMemory(anilar: Memory[] | undefined, turn: number, allowMentioned = false): Memory | null {
+  let best: Memory | null = null, score = -1;
+  for (const m of anilar || []) {
+    if (!m || !Number.isFinite(m.yuk) || !Number.isFinite(m.hafta) || m.hafta > turn || Math.abs(m.yuk) < 3 || (!allowMentioned && m.sonAnilma === turn)) continue;
+    const value = Math.abs(m.yuk) * (m.travma ? 1.25 : 1) / (m.travma ? 1 : 1 + Math.max(0, turn - m.hafta) / 120);
+    if (value > score || (value === score && m.hafta > (best?.hafta ?? -1))) { best = m; score = value; }
+  }
+  return best;
 }
 
 // Haftalık: duygu yükü unutma hızıyla söner; sönen travmasız anı silinir.

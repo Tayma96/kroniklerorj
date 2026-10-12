@@ -381,3 +381,17 @@ kaydı (iz) olur, iz bir eğilim etiketi taşır, sonraki olaylar ve yaylar bu h
   seçim/gerçek çalışma temiz. 30 hayat/20.147 ay eşikleri temiz; Android paketleme geçti, yeni APK yok.
 - Ayrıntı `docs/EMEK.md`. Kayıtlı üretim RNG ve derin NPC/GDD işleri hâlâ açık. Kullanıcıya görülür
   oynanış artışları küçük dalgalarla sürdürülmeli; gereksiz kapsamlı bakım/test tekrarına sapılmamalı.
+
+## 30. NPC geçmişi kişiliğe bağlandı (12 Ekim 2026)
+
+- GDD §4.1/§5.4: yardım/hakaret anıları kişiliğe göre ağırlık alır. Yeni anıda kimlik, sahip, konu,
+  olay, kanıt/kesinlik/ilk kaynak halkası opsiyonel. Eski yükler yeniden yazılmaz; 24 tavan aynı.
+- Sohbette en belirgin anı seçilir; ay içinde aynı otomatik gönderme tekrarlanmaz. Profilde **Geçmişi
+  konuş**: ayda bir, yaşayan/aynı yerdeki kişi, ödül/XP/ilişki/tur yok; kronik dil değişiminde çevrilir.
+- 10.798 hedefli örnek; 6 dilde 7 gerçek yardım/hakaret→ay→konuşma UI örneği temiz. 39.379 diyalog,
+  16.644 olay yazımı, karakter aynası, 30 hayat/20.173 ay eşikleri, Android paketleme temiz.
+- Önceki motor eski GDD tabanını aynen üretti; yeni yalnız sohbet hash'ini değiştirdi. Diğer dokuz
+  akış ve üç sentetik kayıt aynı. Gerekçe `docs/NPC_HAFIZA.md`/denetim kaydında; gerçek altın kayıt yok.
+- GDD tamamlanmadı: üç canlı tanık, üç halkalı dedikodu, altı boyutlu artımlı görüş, izlenim/LOD ve
+  çok turlu tonlu konuşma açık. Bir sonraki NPC dalgası gerçek kaynak zinciri ve duyan kişi ayrımına
+  ilerlemeli; salt yeni alanı tamamlanmış sistem diye sunma. APK/sunucu dağıtımı istenmedi.

@@ -5,10 +5,11 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useGame } from "../../../lib/store";
 import { kisiProfil, kisiCevresi, gorus, teklifSansi, helalUygun, helalBedeli, helalSansi, helallikIste, talkWith, giftTo, proposeMarriage, canCourt, helpNpcGoal, exploitNpcGoal, oyuncuAkrabasi, GOAL_HELP_COST, relWith, insultNpc, flirtWith, gossipAbout, giveMoneyTo, canFlirt, flirtIsForbidden, npcSeededMarried, GIVE_MONEY_AMT, martialLoad, canTakeApprentice, takeApprentice, mentorApprentice, APPRENTICE_MONTHS } from "../../../lib/game";
-import { useI18n, yuzdeL, kucukHarf } from "../../../lib/i18n";
+import { useI18n, yuzdeL, kucukHarf, applyParams } from "../../../lib/i18n";
 import { hap } from "../../../lib/haptics";
 import { INTENTS, moodKey } from "../../../lib/dialogue";
-import { topMemories } from "../../../lib/npc-mind";
+import { topMemories, salientMemory } from "../../../lib/npc-mind";
+import { memoryQuote } from "../../../lib/hafiza-sohbet";
 import { professionNameL, traitL, quirkL, goalL, placeName } from "../../../lib/locale-data";
 import { ITEMS, TieKind } from "../../../lib/world";
 import { Portre, BackLabel, ScreenFresk } from "../../../lib/ui";
@@ -131,6 +132,7 @@ export default function NpcDetail() {
   // "dert dinle" deyince "iltifat" kapanmaz — hepsi bağımsız, hepsi bir kez okunur; farm motor tarafında kapalı.
   const acts = state.npc_state?.[npc.id]?.act_turns;
   const usedAct = (key: string) => acts?.[key] === state.turn;
+  const recalled = salientMemory(ns.anilar, state.turn, true);
 
   const speak = (intent: string) => {
     if (usedAct("t:" + intent)) return;
@@ -231,6 +233,19 @@ export default function NpcDetail() {
       )}
 
       {prof.burada && (<>
+      {recalled && !state.player.dead && (
+        <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.borderHi, borderRadius: 12, padding: 12, marginBottom: 10 }}>
+          <View style={{ flexDirection: lang === "ar" ? "row-reverse" : "row", alignItems: "center", gap: 7, marginBottom: 6 }}>
+            <GameIcon name="scroll" size={14} color={recalled.yuk > 0 ? C.sage : C.ember} />
+            <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 13, color: C.gold }}>{t("npc.remembers")}</Text>
+            <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted }}>{state.turn === recalled.hafta ? t("mind.recall.now") : applyParams(t("mind.recall.ago"), [state.turn - recalled.hafta], lang)}</Text>
+          </View>
+          <Text style={{ fontFamily: F.serifItalic, fontSize: 13, lineHeight: 19, color: C.parchmentDim }}>{memoryQuote(recalled, lang, state.player.gender === "kadın")}</Text>
+          <Pressable accessibilityRole="button" accessibilityLabel={t("mind.recall.action")} accessibilityState={{ disabled: usedAct("t:hatira") }} disabled={usedAct("t:hatira")} onPress={() => { hap("tap"); speak("hatira"); }} style={{ minHeight: 44, justifyContent: "center", alignItems: "center", borderWidth: 1, borderColor: C.borderHi, borderRadius: 8, marginTop: 8, opacity: usedAct("t:hatira") ? 0.5 : 1 }}>
+            <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.gold }}>{t(usedAct("t:hatira") ? "mind.recall.done" : "mind.recall.action")}</Text>
+          </Pressable>
+        </View>
+      )}
       {/* Söylenen söz — yanında ilişki etkisi (kişinin mizacına/ruh haline göre artı ya da eksi gelir) */}
       {line ? (
         <View style={{ backgroundColor: C.card, borderLeftColor: lineDelta < 0 ? C.blood : C.gold, borderLeftWidth: 2.5, borderWidth: 1, borderColor: C.border, borderRadius: 8, padding: 12, marginBottom: 10 }}>

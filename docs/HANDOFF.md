@@ -53,3 +53,11 @@ Yeni APK/cihaz testi yok. Ayrı hanedan defteri ve üretim RNG hâlâ açık. Ku
 Diğer üç tarzın RNG/durum davranışı aynı; 1.628 hedefli deney, 1.296 önceki motor karşılaştırması ve
 altı dilde hesap/çalışma akışı temiz. 30 hayat oynanış eşikleri ve Android paketleme temiz. GDD'nin
 geri kalan NPC/anlatı/ekonomi işleri açık; kullanıcı somut oynanış artışlarını öncelikli istiyor.
+
+## NPC geçmişi — 12 Ekim 2026
+
+`NPC_HAFIZA.md`: kişiliğe bağlı yeni anı yükü ve kimlik/kanıt alanları; belirgin anı seçimi; profil ve
+geçmiş konuşması. Yeni eylem kaynak/ilişki/XP vermez. 10.798 hedefli örnek ve 7 altı dilli gerçek motor/UI
+akışı temiz; karakter aynası, diyalog/olay, 30 hayat eşikleri ve Android paketleme temiz. GDD tabanında
+yalnız sohbet değişti; eski motorla doğrulama ve gerekçe saklandı. Çok sıçramalı dedikodu, altı boyutlu
+artımlı görüş, izlenim/LOD ve çok turlu konuşma hâlâ açık; yeni alanlar bu kabul maddelerinin kanıtı değil.

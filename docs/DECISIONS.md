@@ -46,3 +46,10 @@ Normal çalışmaya göre yalnız daha az ücret veren garantici seçimi artık 
 harcar ve sağlık +1 verir (100 tavan). Diğer tarzların ücret/risk/RNG davranışı korunur. Oyuncu ücret
 aralığı, bedel ve riskte kalanı önceden görür; önizleme ile gerçek ücret tek saf hesap kullanır.
 Tarz seçimi zar/kayıt/tur değiştirmez. Aylık kilit yeni dinlenme yararını da tekrar kullanımından korur.
+
+## 12 Ekim 2026 — Anı cephesini kişiselleştir
+
+GDD S2 için mevcut anı çağrılarını koru; yeni anıda olay/sahip/kanıt alanları ve kişilik yükü üret,
+eskilerin yükünü yeniden hesaplama. Geçmiş konuşması en belirgin anıyı görünür kılar; yeni ödül kanalı
+oluşturmaz. Şimdiki tek kaynak halkası çok sıçramalı yayılım diye sunulmaz; onun gerçek kişi ağına
+bağlanması ve artımlı çok boyutlu görüş ayrı açık uygulama adımlarıdır.
