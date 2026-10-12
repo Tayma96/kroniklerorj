@@ -412,3 +412,23 @@ kaydı (iz) olur, iz bir eğilim etiketi taşır, sonraki olaylar ve yaylar bu h
 - Altı dilde 320×568/4× CPU'da üç ay gerçek yayılım→kaynak sorusu; kaynak/belirsizlik/ay kilidi
   görünür, tarayıcı hatası yok. Ayna +97,1/−96,3, vâris +43,8/−42,2; 30 hayat/18.569 ay
   oynanış eşikleri temiz; 16.578 olay yazımı ve Android/Hermes paketleme temiz. Telefon testi yok.
+
+## 32. Aynı olayın üç canlı şahidi bağlandı (12 Ekim 2026)
+
+- Açık sadaka ve mevcut skandal şahitliği en çok üç yaşayan 13+ kişi seçer; muhatap dışarıda.
+  Şahit yükü temel türün %60'ı × huy, ortak olay referansı/ayrı anı kimliği. Sadaka taşı gizli kalır.
+- Üç yaşayan kişinin aynı sadakaya yükü 7,5/6,6/3,9; gerçek görüş katkısı ve konuşma farklı.
+  Eşit tek temas fırsatında susma/normal/büyüterek aktarım ayrıca karşılaştırıldı.
+- Aynı sahne tek söylenti denemesi; tüm doğrudan bilenler kesinlik 1 ile başlar, sonrakiler duyum.
+  Kaynak konuşması görgü/katılım/aktarımı ayırır. Profilde kanıt etiketi ve diğer şahit profilleri.
+- Belirgin anı, tür özeti, görüş gerekçesi ve otomatik gönderme şahitliği mağduriyet gibi anlatmaz.
+  Türkçe dışı sosyal sonuç şeridi olay anahtarını çözer; yeni AR/RU bildirimler nötr. Altı dil.
+- 1.246 hedefli örnek, önceki 10.798 hafıza/1.666 söylenti, 10 GDD akışı/üç 30 aylık sentetik kayıt
+  temiz. Sekiz UI örneği altı dil/üç Türkçe kişilik, 320×568/4× CPU; başka şahide geçiş ve kilitler.
+- Son motor görüntüsünde 300 hayat HATA:0; 30 hayat/19.528 ay oynanış eşikleri temiz. Ayna +95,7/
+  −98,3, vâris +42,9/−43,5; 16.620 olay yazımı, tip/dil/göç/Android paketleme temiz. Telefon testi yok.
+- `run-parallel.cjs` kirli-kopya yolu düzeltildi: motor çalışma görüntüsünü artık +kirli diye söyler.
+  APK/PR/dağıtım istenmedi. `docs/SAHITLER.md` kapsam/sınırlar. Tam GDD hedefi açık.
+- Kanıtla karşı söylenti ve mahkemede şahit kullanımı daha uygulanmadı. Artımlı altı boyutlu görüş,
+  izlenim/LOD, çok turlu tonlu konuşma ve üretim RNG kaydı da açık. Eski sekiz NPC konuşma metni
+  yazıldığı dilde saklanır; yerelleşen kronikten ayrı. Sıradaki görünür iş kaynağa güven/karşı söz.

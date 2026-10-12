@@ -8,7 +8,7 @@ import { kisiProfil, kisiCevresi, heardRumor, gorus, teklifSansi, helalUygun, he
 import { useI18n, yuzdeL, kucukHarf, applyParams } from "../../../lib/i18n";
 import { hap } from "../../../lib/haptics";
 import { INTENTS, moodKey } from "../../../lib/dialogue";
-import { topMemories, salientMemory } from "../../../lib/npc-mind";
+import { topMemories, salientMemory, representativeMemory } from "../../../lib/npc-mind";
 import { memoryQuote } from "../../../lib/hafiza-sohbet";
 import { professionNameL, traitL, quirkL, goalL, placeName } from "../../../lib/locale-data";
 import { ITEMS, TieKind } from "../../../lib/world";
@@ -134,6 +134,7 @@ export default function NpcDetail() {
   const usedAct = (key: string) => acts?.[key] === state.turn;
   const recalled = salientMemory(ns.anilar, state.turn, true);
   const heard = heardRumor(state, npc.id);
+  const witnesses = [...new Set(recalled?.taniklar || [])].filter(id => id !== npc.id).slice(0, 3);
 
   const speak = (intent: string) => {
     if (usedAct("t:" + intent)) return;
@@ -181,7 +182,7 @@ export default function NpcDetail() {
               <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 1.5, color: C.goldDim, marginBottom: 6 }}>{t("gorus.title")}</Text>
               {g.kalemler.map((it, i) => (
                 <View key={i} style={{ flexDirection: "row", alignItems: "flex-start", gap: 8, paddingVertical: 3 }}>
-                  <Text style={{ flex: 1, fontFamily: it.k === "gorus.ani" ? F.serifItalic : F.serif, fontSize: 12, color: C.parchmentDim, lineHeight: 17 }}>{it.k === "gorus.ani" ? "«" + tg("mem.remember." + it.tur, state?.player.gender === "kadın") + "»" : t(it.k)}</Text>
+                  <Text style={{ flex: 1, fontFamily: it.k === "gorus.ani" ? F.serifItalic : F.serif, fontSize: 12, color: C.parchmentDim, lineHeight: 17 }}>{it.k === "gorus.ani" ? "«" + memoryQuote(representativeMemory(ns.anilar, it.tur || "") || { tur: it.tur || "" }, lang, state.player.gender === "kadın") + "»" : t(it.k)}</Text>
                   <Text style={{ fontFamily: F.display, fontSize: 11.5, color: it.v > 0 ? C.sage : C.blood, minWidth: 34, textAlign: "right" }}>{it.v > 0 ? "+" + it.v : it.v}</Text>
                 </View>
               ))}
@@ -242,6 +243,15 @@ export default function NpcDetail() {
             <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted }}>{state.turn === recalled.hafta ? t("mind.recall.now") : applyParams(t("mind.recall.ago"), [state.turn - recalled.hafta], lang)}</Text>
           </View>
           <Text style={{ fontFamily: F.serifItalic, fontSize: 13, lineHeight: 19, color: C.parchmentDim }}>{memoryQuote(recalled, lang, state.player.gender === "kadın")}</Text>
+          {(recalled.kanit === "gorgu" || recalled.kanit === "katilim") && <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted, marginTop: 5 }}>{t("mind.evidence." + recalled.kanit)}</Text>}
+          {witnesses.length > 0 && <View style={{ marginTop: 9 }}>
+            <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted }}>{t("mind.witness.others")}</Text>
+            <View style={{ flexDirection: lang === "ar" ? "row-reverse" : "row", flexWrap: "wrap", gap: 6, marginTop: 5 }}>
+              {witnesses.map(id => { const witness = kisiProfil(state, id, lang); return witness ? <Pressable key={id} accessibilityRole="button" accessibilityLabel={witness.npc.name} onPress={() => router.push({ pathname: "/oyun/npc/[id]", params: { id } })} style={{ minHeight: 44, maxWidth: "100%", justifyContent: "center", paddingHorizontal: 9, borderWidth: 1, borderColor: C.border, borderRadius: 8 }}>
+                <Text style={{ fontFamily: F.serif, fontSize: 12, color: C.gold }}>{witness.npc.name}{witness.olu ? " · " + t("npc.late") : ""}</Text>
+              </Pressable> : null; })}
+            </View>
+          </View>}
           <Pressable accessibilityRole="button" accessibilityLabel={t("mind.recall.action")} accessibilityState={{ disabled: usedAct("t:hatira") }} disabled={usedAct("t:hatira")} onPress={() => { hap("tap"); speak("hatira"); }} style={{ minHeight: 44, justifyContent: "center", alignItems: "center", borderWidth: 1, borderColor: C.borderHi, borderRadius: 8, marginTop: 8, opacity: usedAct("t:hatira") ? 0.5 : 1 }}>
             <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.gold }}>{t(usedAct("t:hatira") ? "mind.recall.done" : "mind.recall.action")}</Text>
           </Pressable>
@@ -435,7 +445,7 @@ export default function NpcDetail() {
             {tops.map((m, i) => (
               <View key={i} style={{ flexDirection: "row", gap: 7, marginBottom: 5, alignItems: "flex-start" }}>
                 <GameIcon name={m.travma ? "skull" : m.yon > 0 ? "prayer-beads" : "crossed-swords"} size={11} color={m.travma ? C.blood : m.yon > 0 ? C.sage : C.blood} />
-                <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 12.5, color: m.travma ? C.blood : C.parchmentDim, lineHeight: 17 }}>{tg("mem.remember." + m.tur, state?.player.gender === "kadın")}{m.travma ? ` — ${t("npc.trauma")}` : ""}</Text>
+                <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 12.5, color: m.travma ? C.blood : C.parchmentDim, lineHeight: 17 }}>{memoryQuote(representativeMemory(ns.anilar, m.tur) || { tur: m.tur }, lang, state.player.gender === "kadın")}{m.travma ? ` — ${t("npc.trauma")}` : ""}</Text>
               </View>
             ))}
           </View>

@@ -24,7 +24,7 @@ export const SOYLENTI_METIN = {
     'rum.net.embellished': 'Pode ter crescido ao ser contado.', 'rum.net.plain': '', 'rum.net.unknown': 'alguém cujo nome desconheço',
   },
   ar: {
-    'rum.net.action': 'السؤال عن المصدر', 'rum.net.done': 'تم السؤال هذا الشهر', 'rum.net.topic': 'يعرف كلامًا عنك.', 'rum.net.count': 'وصل إلى %1 أشخاص', 'rum.net.lock': 'تم التعامل مع هذا الكلام هذا الشهر',
+    'rum.net.action': 'السؤال عن المصدر', 'rum.net.done': 'تم السؤال هذا الشهر', 'rum.net.topic': 'كلام عنك في الذاكرة.', 'rum.net.count': 'وصل إلى %1 أشخاص', 'rum.net.lock': 'تم التعامل مع هذا الكلام هذا الشهر',
     'rum.net.self': '%1: هذا الكلام بدأ مني.', 'rum.net.heard': '%1: مصدري هو %2. %3. %4',
     'rum.net.near': 'انتقل عبر أشخاص قليلين؛ لم أره بنفسي', 'rum.net.far': 'تناقله عدة أشخاص؛ لا أستطيع الجزم',
     'rum.net.embellished': 'ربما زاد الكلام أثناء نقله.', 'rum.net.plain': '', 'rum.net.unknown': 'شخص لا أعرف اسمه',

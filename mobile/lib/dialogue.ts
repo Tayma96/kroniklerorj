@@ -1,5 +1,7 @@
 // Bağlamlı diyalog — NPC kişiliği + ruh hali + ilişki + hafızaya göre cevap.
 import { NPC } from "./world";
+import type { Memory } from "./npc-mind";
+import { memoryQuote } from "./hafiza-sohbet";
 import { tFor } from "./i18n";
 import { quirkL, goalL, professionNameL, Lang } from "./locale-data";
 
@@ -100,16 +102,18 @@ export function spontaneousLine(npc: NPC, mood: number, lang: Lang = "tr"): stri
   return Math.random() < 0.5 ? pick("dlg.spont.goal", 7) : "";
 }
 // Yapısal anı türüne göre sohbette geçmişe gönderme (Vercel _memory_callback). Boş dönebilir.
-export function callbackLine(npc: NPC, memTur: string, lang: Lang = "tr", female = false): string {
+export function callbackLine(npc: NPC, memTur: string, lang: Lang = "tr", female = false, memory?: Memory): string {
   const map: Record<string, string> = {
     hediye: "dlg.cb.gift", comert_hediye: "dlg.cb.gift", yardim: "dlg.cb.help",
     hakaret: "dlg.cb.insult", alay: "dlg.cb.insult", somuru: "dlg.cb.exploit",
     icten_sohbet: "dlg.cb.warm", guzel_sohbet: "dlg.cb.warm",
     tatsiz_konu: "dlg.cb.sour", rahatsizlik: "dlg.cb.sour",
   };
-  const k = map[memTur]; if (!k) return "";
+  const k = map[memTur]; const witnessed = memory?.kanit === "gorgu"; if (!k && !witnessed) return "";
   if (npc.trait === "unutkan" && Math.random() < 0.5) return ""; // unutkan dünkü sohbeti bugün hatırlamayabilir
-  const vi = Math.floor(Math.random() * 3); const key = vi === 0 ? k : k + (vi + 1); // her göndermenin üç varyantı — uzun oyunda ezber kırılır
+  const vi = k ? Math.floor(Math.random() * 3) : 0;
+  if (witnessed) return memoryQuote(memory!, lang, female);
+  const key = vi === 0 ? k : k + (vi + 1); // her göndermenin üç varyantı — uzun oyunda ezber kırılır
   const fk = key + ".f"; const fv = female ? tFor(lang, fk) : fk; // kadın oyuncuya hitap eden satırın .f varyantı (ör. Arapça ikinci tekil dişil)
   return (fv !== fk ? fv : tFor(lang, key)).split("%n").join(npc.name.split(" ")[0]);
 }

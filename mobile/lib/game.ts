@@ -6,7 +6,7 @@ import { Nufus, Kisi, Cins, NufusCtx, EskiDunya, OYUNCU, nufusKur, nufusYil, kad
 import { Lang, professionNameL, goalL } from "./locale-data";
 import { tFor, kucukHarf, renderEvt } from "./i18n";
 import { converse, ConvResult, spontaneousLine, callbackLine, perceptionGreeting, derinlikKatmani, SohbetSon } from "./dialogue";
-import { Memory, addMemory, decayMemories, behaviorTier, MEMORY_TYPES, RUMOR_VARIANTS, salientMemory } from "./npc-mind";
+import { Memory, addMemory, decayMemories, behaviorTier, MEMORY_TYPES, RUMOR_VARIANTS, salientMemory, MemoryOptions, groupWitnessMemories, representativeMemory } from "./npc-mind";
 import { recollectionLine, recollectionGroup } from "./hafiza-sohbet";
 import { RumorHearing, rumorOrigin, rumorGraph, spreadRumor } from "./soylenti-agi";
 import { arcById, ArcChoice, availableArcs } from "./arcs";
@@ -1196,7 +1196,9 @@ function soylentiEtkisi(s: GameState, k: Kisi, huy: string | undefined): number 
 export function gorusSebebi(s: GameState, id: string, yon: 1 | -1): EvtParam {
   const g = gorus(s, id).kalemler.filter((x) => Math.sign(x.v) === yon && x.k !== "gorus.sinir").sort((a, b) => Math.abs(b.v) - Math.abs(a.v))[0];
   if (!g) return { tk: "gorus.gecmis" };
-  return g.k === "gorus.ani" ? { tq: "mem.remember." + g.tur } : { tk: g.k };
+  const memory = g.k === "gorus.ani" ? representativeMemory(s.npc_state?.[id]?.anilar, g.tur || "") : undefined;
+  const witnessed = memory?.kanit === "gorgu" && tFor("tr", "mem.witness." + g.tur) !== "mem.witness." + g.tur;
+  return g.k === "gorus.ani" ? { tq: (witnessed ? "mem.witness." : "mem.remember.") + g.tur } : { tk: g.k };
 }
 // ── NPC teklifleri (Aşama 3): sana bakışı yeterince sıcak biri kendi kararıyla gelir — dünürcü ya da borç ister.
 // Aynı anda tek teklif; cevapsız kalan 3 ayda düşer. Ayda yüzde 4 yoklama (seyrek, farm edilemez).
@@ -1542,17 +1544,18 @@ function alacakTiki(s: GameState) {
   p.alacaklar = kalan.length ? kalan : undefined;
 }
 // Bir NPC'ye yapısal anı ekle (kişiselleştirilmiş hatırlama + dedikodu + nam kaynağı).
-function remember(s: GameState, npc: { id: string; name: string }, tur: string, opts?: { yuk?: number; taniklar?: string[] }) {
+function remember(s: GameState, npc: { id: string; name: string }, tur: string, opts?: Pick<MemoryOptions, "yuk" | "taniklar" | "olay" | "kanit">) {
   const ns = npcStateOf(s, npc.id);
   if (!ns.anilar) ns.anilar = [];
   const owner = nufusOf(s).k[npc.id];
   const seq = (Number.isFinite(ns.ani_sira) ? Math.max(0, Math.floor(ns.ani_sira!)) : 0) + 1; ns.ani_sira = seq;
   const m = addMemory(ns.anilar, tur, s.turn, { ...opts, kaynak: npc.name, huy: owner ? huyOf(owner) : undefined,
     kimlik: [s.seed, s.player.generation, npc.id, seq].join(":"), sahip: npc.id, konu: OYUNCU,
-    olay: [s.seed, s.player.generation, s.turn, s.hseq || 0, tur].join(":"), kaynakZinciri: [npc.id],
-    kanit: tur.endsWith("_tanigi") ? "gorgu" : "katilim" });
+    olay: opts?.olay || [s.seed, s.player.generation, s.turn, s.hseq || 0, tur].join(":"), kaynakZinciri: [npc.id],
+    kanit: opts?.kanit || (tur.endsWith("_tanigi") ? "gorgu" : "katilim") });
   const y = m?.yuk ?? 0; // Kan Hafızası: ağır iyilik minnet, ağır kötülük kin olarak kalır
   if (Math.abs(y) >= HATIR_ESIK) hatirEkle(s, npc.id, y > 0 ? "minnet" : "kin", tur, Math.abs(y) >= 30 ? 2 : 1);
+  return m;
 }
 // ── Sonuç tohumları (Vercel story_director sow_seed): bugün ektiğin yıllar sonra biçilir ──
 export interface Seed { id: string; kaynak: string; ekim: number; hmin: number; hmax: number; agirlik: "kucuk" | "orta" | "buyuk"; nesil: boolean; etki?: { money?: number; reputation?: number; health?: number }; npcName?: string; npcId?: string; ip?: Ip; iz?: number; } // iz: tohumu eken seçimin hafıza kaydı (Yankı)
@@ -2072,11 +2075,20 @@ function directorTick(s: GameState) {
   st.tension = 30; st.breath = 4; st.lull = 0;
 }
 
-// Skandal bir eyleme yakındaki bir NPC tanık olur → skandal anı (dedikodu kaynağı).
-function witnessScandal(s: GameState, tur: string, chance: number) {
-  if (Math.random() >= chance) return;
-  const npcs = npcsOf(s); if (!npcs.length) return;
-  remember(s, npcs[Math.floor(Math.random() * npcs.length)], tur);
+// Açık olayı en çok üç yaşayan kişi görür. Muhatabına ikinci kez "şahit" anısı yazılmaz.
+function witnessScandal(s: GameState, tur: string, chance: number, participantId?: string, participantMemory?: Memory | null): string[] {
+  if (Math.random() >= chance) return [];
+  const pool = npcsOf(s).filter(n => n.id !== participantId && n.age >= 13);
+  const chosen: NPC[] = [];
+  while (pool.length && chosen.length < 3) chosen.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+  if (!chosen.length) return [];
+  const ids = chosen.map(n => n.id);
+  const event = participantMemory?.olay || [s.seed, s.player.generation, s.turn, s.hseq || 0, tur].join(":");
+  if (participantMemory) participantMemory.taniklar = ids.slice();
+  for (const n of chosen) remember(s, n, tur, { yuk: (MEMORY_TYPES[tur]?.yuk || 0) * .6, taniklar: ids, olay: event, kanit: "gorgu" });
+  push(s, "sohbet", `Bu olayı görenler: ${chosen.map(n => n.name).join(", ")}.`, "kişisel", false,
+    { k: "mind.witness.notice." + ids.length, p: chosen.map(n => npcP(s, n)) });
+  return ids;
 }
 // Dedikodu turu: işlenmemiş skandal anılar oyuncu söylentisine dönüşür (Vercel gossip_tick).
 function gossipTick(s: GameState) {
@@ -2084,25 +2096,31 @@ function gossipTick(s: GameState) {
   let rumors = s.player_rumors || [];
   for (const r of rumors) r.siddet = Math.round((r.siddet - 0.15) * 100) / 100;
   rumors = rumors.filter((r) => r.siddet > 0).slice(-12);
+  const pending: { id: string; memory: Memory }[] = [];
   if (s.npc_state) for (const id in s.npc_state) {
-    const anilar = s.npc_state[id].anilar; if (!anilar) continue;
-    for (const m of anilar) {
-      if (m.yayildi || (turn - m.hafta) > 4) { m.yayildi = true; continue; }
-      const skandal = MEMORY_TYPES[m.tur]?.skandal || 0;
-      if (skandal <= 0 || !RUMOR_VARIANTS[m.tur]) { m.yayildi = true; continue; }
+    for (const m of s.npc_state[id].anilar || []) {
+      if (m.yayildi || turn - m.hafta > 4) { m.yayildi = true; continue; }
       m.yayildi = true;
-      const tanik = 1 + (m.taniklar?.length || 0);
-      const sans = Math.min(0.9, tanik * skandal * 0.55);     // yoğunluk ~orta varsayılır (offline)
-      if (Math.random() >= sans) continue;
-      const vc = RUMOR_VARIANTS[m.tur];
-      rumors.push({
-        id: Math.random().toString(36).slice(2, 12), hafta: turn, tur: m.tur, vi: Math.floor(Math.random() * vc),
-        nam: MEMORY_TYPES[m.tur]?.nam || null, yon: m.yuk > 0 ? 1 : -1,
-        siddet: Math.min(3, Math.max(1, Math.round(Math.abs(m.yuk) / 12))), kaynak: m.kaynak || "",
-        loc: nufusOf(s).k[id]?.loc || s.player.location_name,
-        kaynakId: id, duyanlar: rumorOrigin(id, turn), // yalnız ilk tanık biliyor; çevresi sonraki aylarda duyar
-      });
+      if ((MEMORY_TYPES[m.tur]?.skandal || 0) > 0 && RUMOR_VARIANTS[m.tur]) pending.push({ id, memory: m });
     }
+  }
+  for (const group of groupWitnessMemories(pending)) {
+    const live = group.filter(x => { const k = nufusOf(s).k[x.id]; return k && k.ol == null; });
+    if (!live.length) continue;
+    const lead = live.find(x => x.memory.kanit === "katilim") || live[0];
+    const { id, memory: m } = lead;
+    const event = m.taniklar?.length ? m.olay : undefined;
+    if (event && rumors.some(r => r.olay === event)) continue;
+    const skandal = MEMORY_TYPES[m.tur]?.skandal || 0;
+    const sans = Math.min(.9, (1 + new Set(m.taniklar).size) * skandal * .55);
+    if (Math.random() >= sans) continue;
+    rumors.push({
+      id: Math.random().toString(36).slice(2, 12), hafta: turn, tur: m.tur, vi: Math.floor(Math.random() * RUMOR_VARIANTS[m.tur]),
+      nam: MEMORY_TYPES[m.tur]?.nam || null, yon: m.yuk > 0 ? 1 : -1,
+      siddet: Math.min(3, Math.max(1, Math.round(Math.abs(m.yuk) / 12))), kaynak: m.kaynak || "",
+      loc: nufusOf(s).k[id]?.loc || s.player.location_name, kaynakId: id, olay: event,
+      duyanlar: live.map(x => ({ ...rumorOrigin(x.id, turn)[0], evidence: x.memory.kanit })),
+    });
   }
   const pop = nufusOf(s);
   if (rumors.some(r => r.duyanlar)) {
@@ -2257,7 +2275,7 @@ export interface GameState {
 // Dost bir hanedanın oyuncuya teklifi (ittifak veya evlilik).
 export interface DynastyOffer { id: string; houseId: string; nameIdx: number; type: "ittifak" | "evlilik"; }
 // Oyuncu hakkında söylenti — tanıklı skandal anıdan doğar, zamanla söner.
-export interface Rumor { id: string; hafta: number; tur: string; vi: number; nam: string | null; yon: number; siddet: number; kaynak: string; yayildi?: boolean; loc?: string; kaynakId?: string; duyanlar?: RumorHearing[]; agTurn?: number; islemTurn?: number; } // eski kayıtta ağ yoksa bölgesel davranış korunur
+export interface Rumor { id: string; hafta: number; tur: string; vi: number; nam: string | null; yon: number; siddet: number; kaynak: string; yayildi?: boolean; loc?: string; kaynakId?: string; duyanlar?: RumorHearing[]; agTurn?: number; islemTurn?: number; olay?: string; } // eski kayıtta ağ yoksa bölgesel davranış korunur
 // Hanedanın kurduğu yerleşim — mezra olarak başlar, yıllarca gelişir, vergi getirir.
 export interface Settlement { name: string; founded: number; dev: number; tier?: string; loc?: string; }
 // Piyasa çarpanına göre fiyat.
@@ -5366,7 +5384,7 @@ export function talkWith(prev: GameState, npc: NPC, intent: string, lang: string
     const source = nufusOf(s).k[hearing.chain[hearing.chain.length - 2]];
     const certainty = "rum.net." + (hearing.certainty >= .7 ? "near" : "far");
     const embellish: EvtParam = { sfx: hearing.distortion >= 1.15 ? "rum.net.embellished" : "rum.net.plain" };
-    const key = origin ? "rum.net.self" : "rum.net.heard";
+    const key = origin ? hearing.evidence === "gorgu" ? "rum.net.saw" : hearing.evidence === "katilim" ? "rum.net.participated" : "rum.net.self" : "rum.net.heard";
     const params: EvtParam[] = origin ? [npcP(s, npc)] : [npcP(s, npc), source ? knParam(source) : { tk: "rum.net.unknown" }, { sfx: certainty }, embellish];
     const intro = renderEvt(key, "", params, lang as Lang, k => tFor(lang as Lang, k), p.gender === "kadın");
     const rumorSource = rumor.kaynakId ? nufusOf(s).k[rumor.kaynakId] : undefined;
@@ -5387,8 +5405,8 @@ export function talkWith(prev: GameState, npc: NPC, intent: string, lang: string
     const line = recollectionLine(npc, memory, s.turn, lang as Lang, p.gender === "kadın");
     ns.memories = [...ns.memories, line].slice(-8);
     const months = Math.max(0, s.turn - memory.hafta);
-    const tone: EvtParam = { tk: "mind.recall." + (memory.yuk > 0 ? "good." : "bad.") + recollectionGroup(npc.trait) };
-    const quoteKey = "mem.remember." + memory.tur;
+    const tone: EvtParam = { tk: (memory.kanit === "gorgu" ? "mind.witness." : "mind.recall.") + (memory.yuk > 0 ? "good." : "bad.") + recollectionGroup(npc.trait) };
+    const quoteKey = (memory.kanit === "gorgu" && tFor(lang as Lang, "mem.witness." + memory.tur) !== "mem.witness." + memory.tur ? "mem.witness." : "mem.remember.") + memory.tur;
     const quote: EvtParam = { tq: tFor(lang as Lang, quoteKey) === quoteKey ? "mind.recall.faded" : quoteKey };
     push(s, "sohbet", `${npc.name}: ${line}`, "kişisel", false, { k: months ? "mind.recall.log.ago" : "mind.recall.log.now",
       p: months ? [npcP(s, npc), months, tone, quote] : [npcP(s, npc), tone, quote] });
@@ -5438,7 +5456,7 @@ export function talkWith(prev: GameState, npc: NPC, intent: string, lang: string
   }
   if (intent === "hosbes" && Math.random() < 0.3) { const sp = spontaneousLine(npc, ns.mood, lang as any); if (sp) line = sp + " " + line; }
   const lastAni = salientMemory(ns.anilar, s.turn);
-  if (lastAni && Math.random() < 0.3) { const cb = callbackLine(npc, lastAni.tur, lang as any, p.gender === "kadın"); if (cb) { line = line + " " + cb; lastAni.sonAnilma = s.turn; } }
+  if (lastAni && Math.random() < 0.3) { const cb = callbackLine(npc, lastAni.tur, lang as any, p.gender === "kadın", lastAni); if (cb) { line = line + " " + cb; lastAni.sonAnilma = s.turn; } }
   // Yapısal ödül (anı + sosyal beceri) yalnız gerçek kazançta; tavan dolunca sonraki niyetler yalnız muhabbet olur (farm kapalı).
   if (applied > 0) {
     remember(s, npc, applied >= 8 ? "icten_sohbet" : "guzel_sohbet");
@@ -5672,8 +5690,8 @@ export function insultNpc(prev: GameState, npc: NPC): GameState {
   s.relationships[npc.id] = Math.max(-100, rel - drop);
   ns.mood = Math.max(-100, ns.mood - 20);
   p.honor = Math.max(0, p.honor - 2);
-  remember(s, npc, "hakaret");
-  witnessScandal(s, "hakaret", 0.4); // tanık varsa dedikodu kaynağı
+  const memory = remember(s, npc, "hakaret");
+  witnessScandal(s, "hakaret", 0.4, npc.id, memory); // tanık varsa dedikodu kaynağı
   push(s, "sohbet", `${npc.name}'a ağzına geleni söyledin; aranıza duvar girdi (−${drop} ilişki).`, "kişisel", false, { k: "npca.insult", p: [npcP(s, npc), drop] });
   return s;
 }
@@ -6691,7 +6709,7 @@ export function doCrime(prev: GameState, kind: CrimeKind): GameState {
     p.crime_wins = (p.crime_wins || 0) + 1; // yeraltı namı: tamamlanan iş merdiveni tırmandırır
     p.fear = Math.min(100, p.fear + ct.fear);
     bumpNam(p, "zalim", ct.nam);
-    witnessScandal(s, kind === "yankesicilik" || kind === "dukkan_soyma" ? "hirsizlik_tanigi" : "suc_tanigi", 0.22);
+    witnessScandal(s, kind === "yankesicilik" || kind === "dukkan_soyma" ? "hirsizlik_tanigi" : "suc_tanigi", 0.22, kurban?.id);
     const why = dread(s) > 30 ? " Korkulan adın kurbanını dondurdu." : "";
     push(s, "suç", `${ct.label} işini başardın (+${cash} akçe).${why}`, "kişisel", false, { k: "evj.crimeWin", p: [{ cr: kind }, cash, dread(s) > 30 ? { sfx: "sfx.crimeDread" } : ""] });
     if (hot > 0) push(s, "suç", `Ganimetin ${hot} akçelik kısmı sıcak mal; eritmek için kara borsa lazım.`, "kişisel", false, { k: "crime.hotGot", p: [hot] });
@@ -6792,7 +6810,7 @@ function crimeCaught(s: GameState, kind: CrimeKind, direct = false) {
   const hurt = Math.round(ct.hurt * (p.faction === "asker" ? 0.5 : 1));
   const extra = crimeCaughtPenalty(s);
   p.money -= fine; p.reputation = Math.max(-100, p.reputation - 6 - ct.sev * 2 - extra); p.health = Math.max(0, p.health - hurt);
-  witnessScandal(s, kind === "yankesicilik" || kind === "dukkan_soyma" ? "hirsizlik_tanigi" : "suc_tanigi", 0.7);
+  witnessScandal(s, kind === "yankesicilik" || kind === "dukkan_soyma" ? "hirsizlik_tanigi" : "suc_tanigi", 0.7, p.son_kurban?.id);
   { const kb = p.son_kurban && s.turn - p.son_kurban.turn <= 2 ? nufusOf(s).k[p.son_kurban.id] : undefined; p.son_kurban = undefined; // yakalandın: kurban seni tanır
     if (kb && kb.ol == null) { kurbanOgrenir(s, kb, true); push(s, "suç_yakalandı", `${kisiAdi(kb, "tr")} seni tanıdı; bunu ömür boyu unutmayacak.`, "kişisel", false, { k: "crime.kurbanTanidi", p: [knParam(kb)] }); } }
   if (ct.sev >= 3 && Math.random() < 0.5) sowSeed(s, { kaynak: "suc_gecmisi", hmin: 24, hmax: 120, agirlik: "orta", nesil: false, etki: { money: -30, reputation: -4 } });
@@ -8692,6 +8710,7 @@ export function giveAlms(prev: GameState): GameState {
   gainSkill(s, "social", 5);
   bumpNam(p, "comert", 6); bumpNam(p, "dindar", 5);
   { const av = chance(0.5); push(s, "sosyal", av ? "Kapı kapı dolaşmadın; çeşme başına oturdun, gelen aldı. Kimseyi eğdirmeden vermek de bir hünerdir." : "Yoksullara sadaka dağıttın; vicdanın hafifledi, şerefin yükseldi.", "kişisel", false, { k: av ? "evj.alms2" : "evj.alms" }); }
+  witnessScandal(s, "sadaka", 1); // açık hayır görülür; adsız sadaka taşı ayrı ve gizlidir
   return s;
 }
 

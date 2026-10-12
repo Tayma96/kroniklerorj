@@ -90,6 +90,16 @@ export const MEMORY_TYPES: Record<string, MemSpec> = {
 
 export const NAM_TRAITS = ["comert", "zalim", "capkin", "dindar", "mert"];
 
+// Aynı açık sahnenin şahitleri tek haber çıkarır. Eski, ortak sahnesiz anılar ayrı kalır.
+export function groupWitnessMemories(entries: { id: string; memory: Memory }[]): { id: string; memory: Memory }[][] {
+  const groups = new Map<string, { id: string; memory: Memory }[]>();
+  entries.forEach((entry, i) => {
+    const m = entry.memory; const key = m.olay && m.taniklar?.length ? "event:" + m.olay : "old:" + i;
+    const group = groups.get(key); if (group) group.push(entry); else groups.set(key, [entry]);
+  });
+  return [...groups.values()];
+}
+
 // Yapısal anı ekle. Bilinmeyen tür sessizce yok sayılır. 24 tavan; travmalar korunur.
 export interface MemoryOptions {
   yuk?: number; taniklar?: string[]; kaynak?: string; huy?: string;
@@ -109,6 +119,7 @@ export function personalityWeight(tur: string, huy?: string): number {
   }
   if (["hakaret", "alay", "haddini_asma"].includes(tur)) return huy === "kibirli" ? 1.4 : huy === "neşeli" ? 0.85 : 1;
   if (["ihanet", "somuru", "dolandiricilik", "ucret_odenmedi"].includes(tur)) return ["dindar", "mert", "ciddi"].includes(huy) ? 1.3 : 1;
+  if (["hirsizlik_tanigi", "suc_tanigi"].includes(tur)) return ["dindar", "mert", "ciddi"].includes(huy) ? 1.3 : ["kurnaz", "hırslı", "kibirli"].includes(huy) ? .7 : ["cömert", "sıcakkanlı", "misafirperver"].includes(huy) ? 1.1 : 1;
   if (["saldiri", "tehdit", "kacirma", "kan", "yakinima_zarar"].includes(tur)) return ["utangaç", "dertli", "yalnız", "sabırlı"].includes(huy) ? 1.3 : ["dindar", "mert", "ciddi"].includes(huy) ? 1.15 : 1;
   return 1;
 }
@@ -142,6 +153,12 @@ export function addMemory(anilar: Memory[], tur: string, hafta: number, opts?: M
 }
 
 // Son küçük sohbet ağır bir geçmişi örtemez. Otomatik gönderme aynı ayda aynı anıyı tekrarlamaz.
+export function representativeMemory(anilar: Memory[] | undefined, tur: string): Memory | undefined {
+  let best: Memory | undefined;
+  for (const m of anilar || []) if (m.tur === tur && Number.isFinite(m.yuk) && (!best || Math.abs(m.yuk) > Math.abs(best.yuk) || (Math.abs(m.yuk) === Math.abs(best.yuk) && m.hafta > best.hafta))) best = m;
+  return best;
+}
+
 export function salientMemory(anilar: Memory[] | undefined, turn: number, allowMentioned = false): Memory | null {
   let best: Memory | null = null, score = -1;
   for (const m of anilar || []) {

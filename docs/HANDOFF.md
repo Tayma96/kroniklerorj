@@ -72,3 +72,13 @@ senaryo, altı dilde küçük ekranda gerçek motor → kaynak sorgusu, 10 GDD a
 kayıt, karakter aynası, 30 hayat/18.569 ay oynanış temiz. APK/dağıtım yok. Tam GDD hedefi açık;
 sonraki görünür aday tek olayın üç canlı tanığında farklı yorum veya kanıtla karşı söylenti.
 Susturma/yüzleşme başarısı henüz tüm söylentiyi kaldırır; kişilere ayrı düzeltme anısı açık.
+
+## Şahitlik kontrol noktası — 12 Ekim 2026
+
+`SAHITLER.md`: gerçek aynı sahne/üç canlı kişi, farklı hafıza/görüş/söz; açık sadaka şahitli,
+adsız hayır gizli. Muhatap ayrı, ortak olay tek söylenti, kaynak sorusu görgü/katılım/duyum ayrımı.
+Profilde diğer şahitlere geçiş; özet ve otomatik sözlerde şahidin mağdur gibi konuşması düzeltildi.
+1.246 hedefli örnek ve sekiz küçük ekran örneği temiz. Son motor görüntüsüyle 300 hayat HATA:0;
+kirli-kopya damgası yolu düzeltildi. 30 hayat/19.528 ay, ayna ve metin denetimleri temiz. GDD'nin
+artımlı vektör/izlenim, kanıtla karşı söylenti, mahkeme şahitliği, tonlu sohbet ve RNG işleri açık.
+APK/PR/dağıtım yok; fiziksel cihaz denemesi yapılmadı. Yalnız apk dalı, tam geliştirme yetkisi sürüyor.

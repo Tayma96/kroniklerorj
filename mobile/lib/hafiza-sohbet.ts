@@ -10,8 +10,9 @@ export function recollectionGroup(trait: string): "sicak" | "ilkeli" | "cikarci"
   return "sicak";
 }
 
-export function memoryQuote(memory: Pick<Memory, "tur">, lang: Lang = "tr", female = false): string {
-  const key = "mem.remember." + memory.tur;
+export function memoryQuote(memory: Pick<Memory, "tur" | "kanit">, lang: Lang = "tr", female = false): string {
+  const witnessed = memory.kanit === "gorgu" && tFor(lang, "mem.witness." + memory.tur) !== "mem.witness." + memory.tur;
+  const key = (witnessed ? "mem.witness." : "mem.remember.") + memory.tur;
   const feminine = female ? tFor(lang, key + ".f") : key + ".f";
   let quote = feminine !== key + ".f" ? feminine : tFor(lang, key);
   if (quote === key) quote = tFor(lang, "mind.recall.faded");
@@ -23,6 +24,6 @@ export function recollectionLine(npc: NPC, memory: Memory, turn: number, lang: L
   const quote = memoryQuote(memory, lang, female);
   const months = Math.max(0, turn - memory.hafta);
   const when = months === 0 ? tFor(lang, "mind.recall.now") : applyParams(tFor(lang, "mind.recall.ago"), [months], lang);
-  const tone = tFor(lang, "mind.recall." + (memory.yuk > 0 ? "good." : "bad.") + recollectionGroup(npc.trait));
+  const tone = tFor(lang, (memory.kanit === "gorgu" ? "mind.witness." : "mind.recall.") + (memory.yuk > 0 ? "good." : "bad.") + recollectionGroup(npc.trait));
   return applyParams(tFor(lang, "mind.recall.line"), [when, tone, quote], lang);
 }

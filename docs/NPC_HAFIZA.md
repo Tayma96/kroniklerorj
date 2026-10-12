@@ -13,3 +13,11 @@ Doğrulama: 10.798 hedefli örnek; tüm anı türleri/kişilikler/altı dil/iki 
 Davranış tabanı değişimi ayrıca kayıtlıdır: önceki motor eski 10 akış/3 sentetik örnek hash'ini yeniden aynen üretti. Yeni motorun yalnız `sohbet` hash'i (yeni anı alanları/kişilik ağırlığı) değişti; diğer dokuz akış ve üç sentetik 30 ay aynı. Mevcut taban bu gerekçeyle güncellendi; bunlar gerçek kullanıcı altın kayıtları değildir.
 
 **GDD açıkları:** altı boyutlu artımlı görüş vektörü/ucuz eski izlenim; tek olayın birden çok canlı tanığı; üç halkalı bozulabilen dedikodu ve kesinliği tüketen kararlar; NPC LOD/perf bütçesi; 3–6 turlu tonlu konuşma. Kaynak zinciri/kanıt alanlarının varlığı bu sistemleri uygulanmış kılmaz. Mevcut kişilik, nüfus, hedef, görüş/şans dökümleri ve miras davranışı üstüne ilerlenir.
+
+## Yaşayan üç şahit — sonraki dalga
+
+Önceki bölümdeki üç kişilik varyantı deneyi canlı sahne değildi. Artık açık sadaka aynı sahnede
+üç yaşayan kişiye ayrı görgü anısı üretir; gerçek görüş farkı ve konuşma doğrulanır. Hakaretin
+muhatabı ayrıca kişisel anı taşır ve şahit havuzundan çıkar. Ortak olay tek söylentiye döner.
+Profil, özet, görüş gerekçesi ve otomatik gönderme, görgüyü kişisel mağduriyet gibi anlatmaz.
+Ayrıntı/kabul kapsamı `SAHITLER.md`; kanıta dayalı soruşturma, artımlı vektör ve izlenim hâlâ açık.

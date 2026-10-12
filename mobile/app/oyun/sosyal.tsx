@@ -52,7 +52,7 @@ export default function Sosyal() {
     if (q > sn) {
       const fresh = h.filter((e) => (e.q ?? 0) > sn);
       const ev = [...fresh].reverse().find((e) => e.type === "sosyal");
-      if (ev) setRes({ text: ev.text, tick: Date.now() });
+      if (ev) setRes({ text: ev.k ? renderEvt(ev.k, ev.text, ev.p, lang, t, state.player.gender === "kadın") : ev.text, tick: Date.now() });
     }
     seen.current = q;
   }, [state?.hseq]);

@@ -65,3 +65,11 @@ sözü, kişiliğe göre farklı aktarım cümlesi ve başarısız müdahaleye a
 `SOYLENTI_AGI.md` içinde. Sonraki tasarım fırsatı, ispat ile karşı söz arasındaki seçim: şahit/kanıt
 bulmak güven verebilir; sırf para dağıtmak tüm kişilerin inancını anında silmemeli. Bu son fikir henüz
 uygulanmadı; tamamlanmış özellik olarak sayılmaz. Daha çok süs yerine ilişkilerin oynanışa etkisi öncelikli.
+
+## 12 Ekim 2026 — Görülmek ile yaşamak ayrıdır
+
+Açık sadaka toplumsal iz bıraksın, adsız hayır şahit üretmesin. Olayın tarafını ikinci kez şahit
+yapma. Görgünün duygu yükü kişisel yaşantının %60'ı; huy yine çarpar. Üç şahit üç söylenti doğurmaz:
+bir sahne, bir üretim denemesi. Kaynak sorusunda kişinin bizzat bildiği ile başkasından duyduğu
+ayrılır. Liste/görüş/sohbet aynı kanıt türünü anlatır; özette en güçlü gerçek anı örnek alınır.
+Kanıtla karşı söz ve mahkeme kullanımı sonraki açık uygulama adımlarıdır.

@@ -3,6 +3,7 @@ import type { Nufus } from "./nufus";
 
 export interface RumorHearing {
   id: string; turn: number; chain: string[]; certainty: number; distortion: number; retelling?: number;
+  evidence?: "katilim" | "gorgu" | "duyum" | "eski";
 }
 export const RUMOR_LIMITS = { people: 48, hops: 3, deliveries: 8, attempts: 24 } as const;
 export type RumorGraph = Record<string, string[]>;
@@ -51,7 +52,7 @@ export function spreadRumor(heard: RumorHearing[], graph: RumorGraph, pop: Nufus
       if (random() >= (careful ? .35 : dramatic ? .65 : .5)) continue;
       out.push({ id, turn, chain: [...h.chain, id], certainty: Math.round(h.certainty * (careful ? .85 : dramatic ? .68 : .78) * 1000) / 1000,
         distortion: Math.min(1.5, Math.round(h.distortion * (dramatic ? 1.12 : 1.03) * 1000) / 1000),
-        retelling: Math.min(Math.max(0, variants - 1), (h.retelling || 0) + (dramatic ? 1 : 0)) });
+        retelling: Math.min(Math.max(0, variants - 1), (h.retelling || 0) + (dramatic ? 1 : 0)), evidence: "duyum" });
       known.add(id); deliveries++; if (++sent >= 2) break;
     }
   }

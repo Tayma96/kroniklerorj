@@ -33,7 +33,7 @@ NPC profilinde ise yalnız o kişinin gerçekten bildiği bir konu açılır. Bu
 
 ## Sınırlar
 
-GDD bütünü tamamlanmış değildir. Canlı üç tanıklı tek olay, altı boyutlu artımlı görüş, izlenim/LOD,
+GDD bütünü tamamlanmış değildir. Canlı üç tanıklı olay sonraki dalgada bağlandı (`SAHITLER.md`); altı boyutlu artımlı görüş, izlenim/LOD,
 çok turlu tonlu sohbet ve kanıta dayalı karşı söylenti açık. Yüzleşme/susturma/dost savunmasının başarılı
 olunca söylentiyi tümden kaldırması önceki oyun davranışıdır; bu dalga kişilere ayrı düzeltme anısı
 veya kısmi inanış üretmez. Kaynak sorgusu doğruluğu kanıtlamaz. Üretim RNG hâlâ kayda alınmaz.

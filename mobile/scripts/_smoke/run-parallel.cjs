@@ -10,7 +10,7 @@ const path = require("path");
 
 const mobile = path.join(__dirname, "..", "..");
 const sha = execSync("git rev-parse --short HEAD", { cwd: mobile }).toString().trim();
-const kirli = execSync("git status --porcelain -- lib/", { cwd: path.join(mobile, "..") }).toString().trim() ? "+kirli" : "";
+const kirli = execSync("git status --porcelain -- lib/", { cwd: mobile }).toString().trim() ? "+kirli" : "";
 const bundle = path.join(os.tmpdir(), `kronikler-smoke-${sha}-${process.pid}.cjs`);
 
 console.log(`[paralel-smoke] paket kuruluyor · commit ${sha}${kirli}`);
