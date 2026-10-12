@@ -24,6 +24,8 @@ import { useI18n, yuzdeL, applyParams, renderEvt, lakapliAd, lakapAdi } from "..
 import { playTap, playChime, playSaz, playNey } from "../../lib/sound";
 import { hap } from "../../lib/haptics";
 import { C, F } from "../../lib/theme";
+import { LinearGradient } from "expo-linear-gradient";
+import { useSadeMod } from "../../lib/use-sade-mod";
 
 const SEASON_KEY: Record<string, string> = { "Kış": "kis", "İlkbahar": "ilkbahar", "Yaz": "yaz", "Sonbahar": "sonbahar" };
 
@@ -82,16 +84,20 @@ function fameRepKey(fame: number) {
   if (fame >= 40) return "rep.heard"; if (fame >= 20) return "rep.known"; return "rep.unknown";
 }
 
-// Mini istatistik barı (hero içi).
-function MiniStat({ icon, value, max, color }: { icon: string; value: number; max: number; color: string }) {
-  const pct = Math.max(0, Math.min(100, (value / max) * 100));
+// Etiket ve değer birlikte okunur; sınırı olmayan akçe için doluluk çubuğu gösterilmez.
+function MiniStat({ icon, label, value, max, color, lang }: { icon: string; label: string; value: number; max?: number; color: string; lang: string }) {
+  const pct = max == null ? null : Math.max(0, Math.min(100, (value / max) * 100));
+  const number = new Intl.NumberFormat(lang, { notation: value >= 100000 ? "compact" : "standard", maximumFractionDigits: 0 }).format(value);
   return (
-    <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
-      <View style={{ width: 14, alignItems: "center" }}><GameIcon name={icon} size={11} color={color} /></View>
-      <View style={{ flex: 1, height: 3, backgroundColor: "rgba(255,255,255,0.10)", borderRadius: 2 }}>
-        <View style={{ width: `${pct}%`, height: 3, backgroundColor: color, borderRadius: 2 }} />
+    <View accessible accessibilityRole="text" accessibilityLabel={`${label}: ${value}${max == null ? "" : ` / ${max}`}`} style={{ flex: 1, minWidth: 0, paddingHorizontal: 7, paddingVertical: 8, backgroundColor: C.surface + "C0", borderWidth: 1, borderColor: C.borderHi, borderRadius: 9 }}>
+      <Text style={{ fontFamily: F.serif, fontSize: 12, lineHeight: 16, color: C.parchmentDim, textAlign: "center" }}>{label}</Text>
+      <View style={{ flexDirection: lang === "ar" ? "row-reverse" : "row", justifyContent: "center", alignItems: "center", gap: 5, marginTop: 2 }}>
+        <GameIcon name={icon} size={13} color={color} />
+        <Text style={{ fontFamily: F.display, fontSize: 15, color: C.parchment, flexShrink: 1 }}>{number}</Text>
       </View>
-      <Text style={{ fontFamily: F.display, fontSize: 9, color: C.parchment, width: 26, textAlign: "right" }}>{value}</Text>
+      {pct != null && <View style={{ height: 3, marginTop: 6, backgroundColor: C.borderHi, borderRadius: 2, overflow: "hidden" }}>
+        <View style={{ width: `${pct}%`, height: 3, backgroundColor: color, borderRadius: 2 }} />
+      </View>}
     </View>
   );
 }
@@ -102,6 +108,7 @@ export default function Dashboard() {
   const { state, doWork, doEat, resetGame, apply, mpMode } = useGame();
   const { snapshot: mpSnapshot } = useMp();
   const { t, tg, lang } = useI18n();
+  const reduced = useSadeMod();
   const [milestone, setMilestone] = useState<GameEvent | null>(null);
   const [freshMark, setFreshMark] = useState<null | { from: number; n: number }>(null); // "bu ay" özeti: son ilerlemede düşen olay sayısı + olay sırası eşiği (q > from)
   const [yearReport, setYearReport] = useState<GameEvent | null>(null); // yıl dönümü karnesi (yaş günü ritüeli)
@@ -119,7 +126,8 @@ export default function Dashboard() {
   const [shoot, setShoot] = useState(0);
   const [coinsOn, setCoinsOn] = useState(false);
   const coinTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const prevMoney = useRef<number>(state?.player.money ?? 0);
+  const prevMoney = useRef<number | null>(state?.player.money ?? null);
+  const prevMoneyLife = useRef<string | null>(null);
   const seenSeq = useRef<number | null>(state ? state.hseq ?? 0 : null); // görülen son olay sırası (null: kayıt henüz yüklenmedi)
   const [showEulogy, setShowEulogy] = useState(false);
   const [workStyle, setWorkStyle] = useState<WorkStyle>("normal");
@@ -136,16 +144,28 @@ export default function Dashboard() {
 
   // Akçe anlamlı arttığında altın sikke yağmuru — oynayınca sökülür (sürekli GPU yükü bırakmaz).
   useEffect(() => {
-    if (!state) return;
+    if (!state) {
+      prevMoney.current = null; prevMoneyLife.current = null;
+      setCoinsOn(false);
+      if (coinTimer.current) clearTimeout(coinTimer.current);
+      coinTimer.current = null;
+      return;
+    }
     const m = state.player.money;
-    if (m > prevMoney.current + 8) {
+    const life = `${state.player.name}|${state.player.surname}|${state.player.generation}`;
+    if (reduced || prevMoneyLife.current !== life) {
+      setCoinsOn(false);
+      if (coinTimer.current) clearTimeout(coinTimer.current);
+      coinTimer.current = null;
+    } else if (prevMoney.current != null && m > prevMoney.current + 8) {
       setShoot((k) => k + 1);
       setCoinsOn(true);
       if (coinTimer.current) clearTimeout(coinTimer.current);
       coinTimer.current = setTimeout(() => setCoinsOn(false), 1700);
     }
     prevMoney.current = m;
-  }, [state?.player.money]);
+    prevMoneyLife.current = life;
+  }, [state?.player.money, state?.player.name, state?.player.surname, state?.player.generation, reduced]);
   useEffect(() => () => { if (coinTimer.current) clearTimeout(coinTimer.current); }, []);
   const seenAch = useRef<Set<string> | null>(null);
 
@@ -424,63 +444,47 @@ export default function Dashboard() {
 
       {/* ── HERO (yaşayan sahne: Ken Burns + ambiyans) ── */}
       <KenBurns source={heroImage(p.age, cal.season)} style={{ paddingTop: insets.top }}>
-        <View style={{ backgroundColor: "rgba(8,5,2,0.5)", paddingHorizontal: 12, paddingTop: 6, paddingBottom: 4, borderBottomWidth: 1, borderBottomColor: C.borderHi }}>
-          <Ambiance season={cal.season} width={Dimensions.get("window").width} height={180} embers={false} />
-          <View style={{ flexDirection: "row", alignItems: "flex-start" }}>
-            {/* Sol: avatar + mini istatistikler */}
-            <View style={{ alignItems: "center", gap: 6, width: 92 }}>
-              <View style={{ borderWidth: 2, borderColor: C.gold, borderRadius: 30, padding: 1 }}>
-                <Portre age={p.age} gender={p.gender} size={48} ring={false} />
-              </View>
-              <View style={{ width: 90, backgroundColor: "rgba(8,5,2,0.6)", borderWidth: 1, borderColor: "rgba(201,168,76,0.2)", borderRadius: 9, padding: 7, gap: 6 }}>
-                <MiniStat icon="saglik" value={Math.round(p.health)} max={100} color={C.blood} />
-                <MiniStat icon="tokluk" value={Math.round(p.hunger)} max={100} color={C.sage} />
-                <MiniStat icon="akce" value={Math.round(p.money)} max={500} color={C.gold} />
-                <MiniStat icon="orgutler" value={fame} max={100} color={C.ink} />
-              </View>
+        <LinearGradient pointerEvents="none" colors={[C.bg + "78", C.bg + "D9", C.bg]} locations={[0, 0.7, 1]} style={StyleSheet.absoluteFill} />
+        <View style={{ paddingHorizontal: 14, paddingTop: 12, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: C.borderHi }}>
+          <Ambiance season={cal.season} width={Dimensions.get("window").width} height={210} embers={false} />
+          <View style={{ flexDirection: lang === "ar" ? "row-reverse" : "row", alignItems: "center", gap: 12 }}>
+            <View style={{ borderWidth: 1, borderColor: C.gold + "70", borderRadius: 42, padding: 3 }}>
+              <Portre age={p.age} gender={p.gender} size={72} />
             </View>
-
-            {/* Orta: isim + ünvan */}
-            <View style={{ flex: 1, alignItems: "center", paddingHorizontal: 6 }}>
-              <Text numberOfLines={2} style={{ fontFamily: F.display, fontSize: 17, color: C.parchment, letterSpacing: 1.5, textAlign: "center", textShadowColor: "rgba(0,0,0,0.9)", textShadowRadius: 10 }}>
-                {lakapliAd(p.name, p.lakap, p.gender === "kadın", t).toUpperCase()}
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text style={{ fontFamily: F.display, fontSize: 19, lineHeight: 26, color: C.parchment, letterSpacing: lang === "ar" ? 0 : 0.7, textAlign: lang === "ar" ? "right" : "left" }}>
+                {lakapliAd(p.name, p.lakap, p.gender === "kadın", t).toLocaleUpperCase(lang)}
               </Text>
-              <View style={{ width: "55%", height: 1, marginVertical: 4, backgroundColor: "rgba(201,168,76,0.5)" }} />
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
-                {profGi && <GameIcon name={profGi} size={13} color={C.gold} />}
-                <Text style={{ fontFamily: F.serifItalic, fontSize: 12.5, color: C.gold, textAlign: "center" }}>
+              <View style={{ flexDirection: lang === "ar" ? "row-reverse" : "row", alignItems: "center", gap: 6, marginTop: 5 }}>
+                {profGi && <GameIcon name={profGi} size={15} color={C.gold} />}
+                <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 14, lineHeight: 19, color: C.gold, textAlign: lang === "ar" ? "right" : "left" }}>
                   {p.profession === "işsiz" ? t("misc.jobless") : careerTitleL(p.profession, kariyerXp(p), lang, p.gender === "kadın")}
                 </Text>
               </View>
-            </View>
-
-            {/* Sağ: itibar rozeti */}
-            <View style={{ alignItems: "center", gap: 3, width: 64 }}>
-              <View style={{ width: 38, height: 38, borderRadius: 8, backgroundColor: "rgba(8,5,2,0.72)", borderWidth: 1.5, borderColor: "rgba(201,168,76,0.45)", alignItems: "center", justifyContent: "center" }}>
-                <GameIcon name="crown" size={18} color={C.gold} />
-              </View>
-              <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ fontFamily: F.display, fontSize: lang === "ar" ? 8.5 : 6.5, lineHeight: lang === "ar" ? 12 : 9, letterSpacing: lang === "ar" ? 0 : 0.3, color: C.parchmentMuted, textAlign: "center", alignSelf: "stretch" }}>
-                {t(fameRepKey(fame))}
-              </Text>
-              <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: "rgba(8,5,2,0.8)", borderWidth: 1.5, borderColor: "rgba(201,168,76,0.4)", alignItems: "center", justifyContent: "center" }}>
-                <Text style={{ fontFamily: F.display, fontSize: 10, color: C.parchment }}>{fame}</Text>
+              <View style={{ alignSelf: lang === "ar" ? "flex-end" : "flex-start", maxWidth: "100%", flexDirection: lang === "ar" ? "row-reverse" : "row", alignItems: "center", paddingHorizontal: 8, paddingVertical: 4, marginTop: 6, gap: 6, backgroundColor: C.card + "C0", borderWidth: 1, borderColor: C.gold + "50", borderRadius: 6 }}>
+                <GameIcon name="crown" size={12} color={C.gold} />
+                <Text style={{ flexShrink: 1, fontFamily: F.serif, fontSize: 12, lineHeight: 16, color: C.parchmentDim, textAlign: lang === "ar" ? "right" : "left" }}>
+                  {t(fameRepKey(fame))}
+                </Text>
               </View>
             </View>
           </View>
-
-          {/* Tarih hapı */}
-          <View style={{ flexDirection: "row", justifyContent: "flex-end", marginTop: 4 }}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: "rgba(8,5,2,0.5)", borderRadius: 20, paddingVertical: 3, paddingHorizontal: 10, borderWidth: 1, borderColor: "rgba(201,168,76,0.14)" }}>
-              <GameIcon name="karakter" size={9} color={C.parchmentDim} />
-              <Text style={{ fontFamily: F.display, fontSize: 8, letterSpacing: 1, color: C.parchmentDim }}>{p.age} {t("misc.age").toUpperCase()}</Text>
-              <Text style={{ color: C.borderHi }}>·</Text>
-              <Text style={{ fontFamily: F.display, fontSize: 8, letterSpacing: 1, color: C.parchmentDim }}>{t("cal.season." + SEASON_KEY[cal.season]).toUpperCase()}</Text>
-              <Text style={{ color: C.borderHi }}>·</Text>
-              <Text style={{ fontFamily: F.display, fontSize: 8, letterSpacing: 1, color: C.parchmentDim }}>{t("cal.month." + cal.month_no).toUpperCase()} {cal.year}</Text>
-            </View>
+          <View style={{ flexDirection: lang === "ar" ? "row-reverse" : "row", gap: 6, marginTop: 12, alignItems: "stretch" }}>
+            <MiniStat icon="saglik" label={t("char.health")} value={Math.round(p.health)} max={100} color={C.blood} lang={lang} />
+            <MiniStat icon="tokluk" label={t("char.hunger")} value={Math.round(p.hunger)} max={100} color={C.sage} lang={lang} />
+            <MiniStat icon="akce" label={t("char.money")} value={Math.round(p.money)} color={C.gold} lang={lang} />
+            <MiniStat icon="orgutler" label={t("soc.nam.h")} value={fame} max={100} color={C.ink} lang={lang} />
+          </View>
+          <View style={{ flexDirection: lang === "ar" ? "row-reverse" : "row", flexWrap: "wrap", alignItems: "center", gap: 7, marginTop: 10 }}>
+            <GameIcon name="karakter" size={12} color={C.gold} />
+            <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchment }}>{p.age} {t("misc.age")}</Text>
+            <Text style={{ color: C.goldDim }}>·</Text>
+            <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchmentDim }}>{t("cal.season." + SEASON_KEY[cal.season])}</Text>
+            <Text style={{ color: C.goldDim }}>·</Text>
+            <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchmentDim }}>{t("cal.month." + cal.month_no)} {cal.year}</Text>
           </View>
           {/* Gerçek takvimin yumuşak ritmi: yalnızca söz — ödül, süre, kaçırılacak bir şey yok */}
-          {!p.dead && <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentDim, textAlign: "right", marginTop: 4 }} numberOfLines={2}>{t(gercekRitim(new Date()))}</Text>}
+          {!p.dead && <Text style={{ fontFamily: F.serifItalic, fontSize: 12, lineHeight: 17, color: C.parchmentDim, textAlign: lang === "ar" ? "right" : "left", marginTop: 4 }} numberOfLines={2}>{t(gercekRitim(new Date()))}</Text>}
           {p.dead && <Text style={{ color: C.blood, textAlign: "center", marginTop: 8, fontFamily: F.serifItalic }}>{t("dyn.died")}</Text>}
         </View>
       </KenBurns>
@@ -521,8 +525,8 @@ export default function Dashboard() {
       {showTut && !p.dead && (
         <View style={{ marginHorizontal: 12, marginTop: 8, flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 10, borderWidth: 1, borderColor: "rgba(201,168,76,0.45)", backgroundColor: "rgba(201,168,76,0.08)" }}>
           <GameIcon name="scroll" size={16} color={C.gold} />
-          <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 12.5, color: C.parchment, lineHeight: 18 }}>{t("sp.tut.kisa")}</Text>
-          <Pressable onPress={() => { hap("tap"); closeTut(); }} hitSlop={10} style={{ paddingHorizontal: 6, paddingVertical: 2 }}>
+          <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 12.5, color: C.parchment, lineHeight: 18 }}>{t(p.age < 13 ? "sp.tut.kisa" : "sp.tut.b1")}</Text>
+          <Pressable accessibilityRole="button" accessibilityLabel={t("cine.close")} onPress={() => { hap("tap"); closeTut(); }} hitSlop={10} style={{ paddingHorizontal: 6, paddingVertical: 2 }}>
             <Text style={{ fontFamily: F.display, fontSize: 14, color: C.goldDim }}>×</Text>
           </Pressable>
         </View>

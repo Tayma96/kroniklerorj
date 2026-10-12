@@ -322,3 +322,18 @@ kaydı (iz) olur, iz bir eğilim etiketi taşır, sonraki olaylar ve yaylar bu h
 - 390 px / 4× CPU'da iş kararı → seçim → sonuç → günlük → ay ilerletme oynandı; TR/AR ayarlar incelendi.
 - Web deneyi: çizim WASM başlatması test sunucusunda; hızlı ses aç/kapat sırasında web ses kütüphanesi iptal hatası. Son görsel akış sessiz/hatasız; fiziksel ses testi yapılmadı.
 - Ayrıntı: `docs/SES_SAHNE.md`; sıradaki motor işi ortak neden dökümü ve kayıtlı RNG, bu dalgada motor/MP değiştirilmedi.
+
+## 25. Selçuklu görsel yönü ve yaş kimliği (12 Ekim 2026)
+
+- Kullanıcı Türk/Türkmen karakterler ve 1200'lü yılların Selçuklu Anadolu'sunu istedi; genel çöl teması yok.
+- Seçilen birinci oyuncu serisi ve 48 yetişkin NPC dosyası aynı. Dört yeni atlas 32 çocuk/ergen karesi taşır;
+  30'u kişi havuzunda, e05'in iki karesi âlim şablonu için ayrılmıştır. Kimlik özeti/havuz sırası aynı.
+- NPC görsel yaş sınırları 0–12 çocuk, 13–17 ergen, 18–34 genç, 35–59 olgun, 60+ yaşlı.
+  Çocuk karesi okul çağı temsili; bebek için ayrı kare yok. Oyun yaşı/kapıları/kayıt şeması değişmedi.
+- Ana ekranda 72 px portre, okunur etiketli göstergeler, ismin altında nâm, saran tarih; Arapçada sıra aynalı.
+  Akçe için sahte 500 tavan çubuğu kaldırıldı; erişilebilir metin tam değeri söyler. Rehber yaşa uygun.
+- Yüklenen kayıt/yeni nesil sahte kazanç animasyonu çıkarmaz. Sade mod portre/hero/parçacık/düğmede
+  abonelikle canlı uygulanır; döngü temizliği var. Titreşim/sade mod/kapatma etiketleri eklendi.
+- `docs/GORSEL_YAS.md` ve `mobile/assets/npc/YAS_KAYNAK.json`: kapsam, kaynak/yönerge ve sınırlar.
+- Tip/kurtarma/i18n/dil temiz; 10 davranış hash'i aynı; 17 görsel örnekte altı dil ve dört atlas temiz;
+  Android paketleme başarılı. Yeni APK veya fiziksel cihaz testi yapılmadı.

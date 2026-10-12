@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+const crypto = require('node:crypto');
 const esbuild = require('esbuild');
 const root = path.resolve(__dirname, '../..');
 
@@ -11,18 +12,46 @@ const root = path.resolve(__dirname, '../..');
     entryPoints: [path.join(root, 'lib/npc-portre.ts')], bundle: true,
     format: 'cjs', platform: 'node', write: false,
     plugins: [{ name: 'yerel-gorseller', setup(build) {
-      build.onLoad({ filter: /\.jpg$/ }, args => {
+      build.onLoad({ filter: /\.(jpg|png)$/ }, args => {
         assert(fs.existsSync(args.path), args.path);
         const bytes = fs.readFileSync(args.path);
-        assert.equal(bytes.readUInt16BE(0), 0xffd8);
+        if (args.path.endsWith('.jpg')) assert.equal(bytes.readUInt16BE(0), 0xffd8);
+        else assert.equal(bytes.subarray(1, 4).toString(), 'PNG');
         return { contents: `module.exports = ${JSON.stringify(path.basename(args.path))}`, loader: 'js' };
       });
     } }],
   });
   const box = { module: { exports: {} } };
   vm.runInNewContext(result.outputFiles[0].text, box);
-  const { npcKimlik, npcEvre, npcPortreImage, NPC_PORTRELER } = box.module.exports;
+  const { npcKimlik, npcEvre, npcPortreImage, npcPortreFrame, NPC_PORTRELER } = box.module.exports;
   assert.equal(Object.keys(NPC_PORTRELER).length, 16);
+  // Önceki sürümün kayıtlı kişi → yüz eşlemesi. Yaş eklemek bu kimlikleri kaydıramaz.
+  for (const [seed, male, female] of [
+    ['kisi_0', 'e07', 'k03'], ['kisi_17', 'e04', 'k07'], ['kisi_1999', 'e08', 'k03'],
+    ['anne', 'e06', 'k08'], ['baba', 'e04', 'k02'], [1001, 'e02', 'k08'], ['Türkmen-İlbilge', 'e01', 'k05'],
+  ]) {
+    assert.equal(npcKimlik(seed, 'erkek'), male);
+    assert.equal(npcKimlik(seed, 'kadın'), female);
+  }
+  const provenance = JSON.parse(fs.readFileSync(path.join(root, 'assets/npc/YAS_KAYNAK.json'), 'utf8'));
+  assert.equal(provenance.atlaslar.length, 4);
+  const frames = new Map();
+  for (const atlas of provenance.atlaslar) {
+    const bytes = fs.readFileSync(path.join(root, 'assets/npc', atlas.dosya));
+    assert.equal(crypto.createHash('sha256').update(bytes).digest('hex'), atlas.sha256);
+    assert.equal(bytes.readUInt32BE(16), atlas.genislik);
+    assert.equal(bytes.readUInt32BE(20), atlas.yukseklik);
+    assert.equal(atlas.genislik / atlas.sutun, atlas.yukseklik / atlas.satir);
+    for (let row = 0; row < atlas.satir; row++) for (let column = 0; column < atlas.sutun; column++) {
+      const key = atlas.yerlesim[row][column];
+      assert(!frames.has(key), `Çiftlenmiş kimlik/yaş: ${key}`);
+      frames.set(key, { source: atlas.dosya, columns: atlas.sutun, rows: atlas.satir, column, row });
+    }
+  }
+  assert.equal(frames.size, 32);
+  for (const [age, phase] of [[0, 'cocuk'], [12.99, 'cocuk'], [13, 'ergen'], [17.99, 'ergen'], [18, 'genc'], [34.99, 'genc'], [35, 'olgun'], [59.99, 'olgun'], [60, 'yasli'], [100, 'yasli']]) {
+    assert.equal(npcEvre(age), phase);
+  }
   for (const gender of ['erkek', 'kadın']) {
     const identities = new Set();
     for (let i = 0; i < 2000; i++) {
@@ -32,13 +61,20 @@ const root = path.resolve(__dirname, '../..');
       assert(identity.startsWith(gender === 'erkek' ? 'e' : 'k'));
       assert.notEqual(identity, 'e05');
       assert.equal(npcKimlik(seed, gender), identity);
-      for (const age of [16, 22, 34, 35, 47, 59, 60, 71, 95]) {
+      for (const age of [18, 22, 34, 35, 47, 59, 60, 71, 95]) {
         assert.equal(npcPortreImage(age, gender, seed), `${identity}_${npcEvre(age)}.jpg`);
+        assert.equal(npcPortreFrame(age, gender, seed).columns, 1);
+      }
+      for (const age of [0, 7, 12, 13, 16, 17]) {
+        const frame = npcPortreFrame(age, gender, seed);
+        assert.deepEqual({ ...frame }, frames.get(`${identity}_${npcEvre(age)}`));
+        assert.equal(npcPortreImage(age, gender, seed), frame.source);
       }
     }
     assert.equal(identities.size, gender === 'erkek' ? 7 : 8);
     for (const age of [7, 15, 16, 35, 60]) assert.equal(npcPortreImage(age, gender), null);
-    for (const age of [7, 15, NaN, Infinity]) assert.equal(npcPortreImage(age, gender, 'kisi'), null);
+    for (const age of [-1, NaN, Infinity]) assert.equal(npcPortreFrame(age, gender, 'kisi'), null);
+    assert(npcPortreFrame(7, gender, 0));
   }
   const sources = JSON.parse(fs.readFileSync(path.join(root, 'assets/ses/kaynak.json'), 'utf8'));
   assert.equal(sources.length, 63);
@@ -55,9 +91,6 @@ const root = path.resolve(__dirname, '../..');
   assert.equal(calls.length, 63);
   for (const call of calls) assert(fs.existsSync(path.resolve(root, 'lib', call[1])));
   assert(!sound.includes('assets/sfx/'));
-  const ui = fs.readFileSync(path.join(root, 'lib/ui.tsx'), 'utf8');
-  assert(ui.includes('npcImage ?? portreImage(age, gender)'));
-  assert(ui.includes('npcImage == null && !breathe'));
   // Her yaş sınırında doğru cinsiyetin aynı portre serisi seçilir.
   const playerBundle = await esbuild.build({
     entryPoints: [path.join(root, 'lib/assets.ts')], bundle: true,
@@ -88,5 +121,5 @@ const root = path.resolve(__dirname, '../..');
   const tags = fs.readFileSync(path.join(root, 'assets/arka/TAGS.txt'), 'utf8').trim().split('\n');
   assert.equal(tags.length, 15);
   for (const line of tags) assert(fs.existsSync(path.join(root, 'assets/arka', line.split(':')[0] + '.jpg')));
-  console.log('KURTARMA: TEMİZ — 14 oyuncu portresi, 48 NPC, 63 ses, 15 arka plan; yaş/kimlik serileri ayrı.');
+  console.log('KURTARMA: TEMİZ — 14 oyuncu, 48 yetişkin NPC + 32 çocuk/ergen karesi, 63 ses, 15 arka plan; kayıtlı yüz kimlikleri aynı.');
 })().catch(error => { console.error(error); process.exitCode = 1; });

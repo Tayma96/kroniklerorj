@@ -1,21 +1,24 @@
 // Atmosfer efektleri — UI thread'de döngüsel partiküller (köz, kar, yaprak).
 import { useEffect, useMemo } from "react";
 import { View, Text, Image, StyleSheet, ImageSourcePropType } from "react-native";
-import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withDelay, withTiming, withSequence, Easing } from "react-native-reanimated";
+import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withDelay, withTiming, withSequence, Easing, cancelAnimation } from "react-native-reanimated";
 import { C, F } from "./theme";
-import { isReduceMotion } from "./perf";
+import { useSadeMod } from "./use-sade-mod";
 
 const AnimImage = Animated.createAnimatedComponent(Image);
 
 // Yaşayan hero — arka görsel yavaşça zoom + pan (Ken Burns). İçerik üstte akar.
 export function KenBurns({ source, children, style }: { source: ImageSourcePropType; children?: React.ReactNode; style?: any }) {
+  const reduced = useSadeMod();
   const sc = useSharedValue(1); const tx = useSharedValue(0); const ty = useSharedValue(0);
   useEffect(() => {
-    if (isReduceMotion()) return; // sade mod: hero sabit kalır (sürekli GPU yok)
+    sc.value = 1; tx.value = 0; ty.value = 0;
+    if (reduced) return;
     sc.value = withRepeat(withTiming(1.12, { duration: 15000, easing: Easing.inOut(Easing.sin) }), -1, true);
     tx.value = withRepeat(withTiming(-16, { duration: 19000, easing: Easing.inOut(Easing.sin) }), -1, true);
     ty.value = withRepeat(withTiming(-10, { duration: 17000, easing: Easing.inOut(Easing.sin) }), -1, true);
-  }, []);
+    return () => { cancelAnimation(sc); cancelAnimation(tx); cancelAnimation(ty); };
+  }, [source, reduced]);
   const st = useAnimatedStyle(() => ({ transform: [{ scale: sc.value }, { translateX: tx.value }, { translateY: ty.value }] }));
   return (
     <View style={[{ overflow: "hidden" }, style]}>
@@ -54,8 +57,13 @@ export function Slash({ color = "rgba(255,255,255,0.9)" }: { color?: string }) {
 
 // Nabız atan sarmalayıcı (opaklık).
 export function Pulse({ children, min = 0.35, max = 1, dur = 850 }: { children: React.ReactNode; min?: number; max?: number; dur?: number }) {
+  const reduced = useSadeMod();
   const o = useSharedValue(min);
-  useEffect(() => { o.value = withRepeat(withSequence(withTiming(max, { duration: dur }), withTiming(min, { duration: dur })), -1, false); }, []);
+  useEffect(() => {
+    o.value = max;
+    if (!reduced) o.value = withRepeat(withSequence(withTiming(min, { duration: dur }), withTiming(max, { duration: dur })), -1, false);
+    return () => cancelAnimation(o);
+  }, [reduced, min, max, dur]);
   const st = useAnimatedStyle(() => ({ opacity: o.value }));
   return <Animated.View style={st}>{children}</Animated.View>;
 }
@@ -101,6 +109,7 @@ function Ember({ x, size, dur, delay, color, rise }: { x: number; size: number; 
     ty.value = withDelay(delay, withRepeat(withTiming(-rise, { duration: dur, easing: Easing.out(Easing.quad) }), -1, false));
     tx.value = withDelay(delay, withRepeat(withSequence(withTiming(rnd(-6, 6), { duration: dur / 2 }), withTiming(rnd(-6, 6), { duration: dur / 2 })), -1, true));
     op.value = withDelay(delay, withRepeat(withSequence(withTiming(0.85, { duration: dur * 0.25 }), withTiming(0, { duration: dur * 0.75 })), -1, false));
+    return () => { cancelAnimation(ty); cancelAnimation(tx); cancelAnimation(op); };
   }, []);
   const st = useAnimatedStyle(() => ({ transform: [{ translateY: ty.value }, { translateX: tx.value }], opacity: op.value }));
   return <Animated.View pointerEvents="none" style={[{ position: "absolute", bottom: 0, left: x, width: size, height: size, borderRadius: size / 2, backgroundColor: color, shadowColor: color, shadowOpacity: 0.8, shadowRadius: 4 }, st]} />;
@@ -113,6 +122,7 @@ function Flake({ x, size, dur, delay, color, fall, sway, radius }: { x: number; 
     ty.value = withDelay(delay, withRepeat(withTiming(fall, { duration: dur, easing: Easing.linear }), -1, false));
     tx.value = withDelay(delay, withRepeat(withSequence(withTiming(sway, { duration: dur / 2, easing: Easing.inOut(Easing.sin) }), withTiming(-sway, { duration: dur / 2, easing: Easing.inOut(Easing.sin) })), -1, true));
     op.value = withDelay(delay, withRepeat(withSequence(withTiming(0.7, { duration: dur * 0.2 }), withTiming(0.7, { duration: dur * 0.6 }), withTiming(0, { duration: dur * 0.2 })), -1, false));
+    return () => { cancelAnimation(ty); cancelAnimation(tx); cancelAnimation(op); };
   }, []);
   const st = useAnimatedStyle(() => ({ transform: [{ translateY: ty.value }, { translateX: tx.value }], opacity: op.value }));
   return <Animated.View pointerEvents="none" style={[{ position: "absolute", top: 0, left: x, width: size, height: size, borderRadius: radius, backgroundColor: color }, st]} />;
@@ -120,7 +130,7 @@ function Flake({ x, size, dur, delay, color, fall, sway, radius }: { x: number; 
 
 // Hero ambiyansı — daima birkaç köz; mevsime göre kar/yaprak.
 export function Ambiance({ season, width = 360, height = 150, embers: showEmbers = true, flakes: showFlakes = true, count = 7 }: { season?: string; width?: number; height?: number; embers?: boolean; flakes?: boolean; count?: number }) {
-  const reduced = isReduceMotion(); // sade mod: parçacıklar kapalı (sürekli GPU yok)
+  const reduced = useSadeMod(); // sade mod: parçacıklar kapalı (sürekli GPU yok)
   const embers = useMemo(() => (showEmbers && !reduced ? Array.from({ length: count }, () => ({ x: rnd(8, width - 8), size: rnd(2, 4), dur: rnd(2600, 4200), delay: rnd(0, 3000), rise: rnd(height * 0.6, height), color: Math.random() < 0.5 ? C.emberSoft : C.gold })) : []), [width, height, showEmbers, count, reduced]);
   const isWinter = showFlakes && season === "Kış"; const isAutumn = showFlakes && season === "Sonbahar";
   const flakes = useMemo(() => {

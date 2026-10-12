@@ -2,7 +2,7 @@ import { Tabs, useRouter, usePathname } from "expo-router";
 import { View, Pressable, Text } from "react-native";
 import Svg, { Defs, RadialGradient, Stop, Rect } from "react-native-svg";
 import { useEffect, useState } from "react";
-import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming, Easing } from "react-native-reanimated";
+import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming, Easing, cancelAnimation } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { C, F } from "../../lib/theme";
 import { GameIcon } from "../../lib/icons";
@@ -18,7 +18,7 @@ const pf = (s: string, ...a: (string | number)[]) => a.reduce<string>((acc, v, i
 import { StatDeltaOverlay } from "../../lib/feel";
 import { Ambiance } from "../../lib/fx";
 import { hap } from "../../lib/haptics";
-import { isReduceMotion } from "../../lib/perf";
+import { useSadeMod } from "../../lib/use-sade-mod";
 import { playAdvance } from "../../lib/sound";
 
 function TabIcon({ name, focused }: { name: string; focused: boolean }) {
@@ -30,15 +30,18 @@ function AdvanceFab({ bottom }: { bottom: number }) {
   const { state, doAdvance, mpMode, apply } = useGame();
   const { snapshot, guestId, setReady, syncPlayer } = useMp();
   const { t } = useI18n();
+  const reduced = useSadeMod();
   const [readyOpt, setReadyOpt] = useState<boolean | null>(null);
   const pulse = useSharedValue(1);
   useEffect(() => {
-    if (isReduceMotion()) return; // sade mod: düğme nabzı + tozu kapalı
+    pulse.value = 1;
+    if (reduced) return;
     pulse.value = withRepeat(withSequence(
       withTiming(1.06, { duration: 1050, easing: Easing.inOut(Easing.quad) }),
       withTiming(1, { duration: 1050, easing: Easing.inOut(Easing.quad) }),
     ), -1, false);
-  }, []);
+    return () => cancelAnimation(pulse);
+  }, [reduced]);
   const style = useAnimatedStyle(() => ({ transform: [{ scale: pulse.value }] }));
   // ── ÇOK OYUNCU: "Ayı İlerlet" tek başına değil çoğunluk-hazır oyu; sunucu tick'i herkesi birlikte ilerletir ──
   if (mpMode) {
@@ -106,7 +109,7 @@ function AdvanceFab({ bottom }: { bottom: number }) {
   );
 }
 
-// Navbar üst kenarına oymalı altın çerçeve (Osmanlı/parşömen motifi).
+// Navbar üst kenarında geometrik altın şerit.
 function NavOrnament({ bottom }: { bottom: number }) {
   const Diamond = ({ s = 6 }: { s?: number }) => (
     <View style={{ width: s, height: s, backgroundColor: C.gold, transform: [{ rotate: "45deg" }], opacity: 0.7 }} />

@@ -133,14 +133,14 @@ export default function Ayarlar() {
             <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: C.parchment }}>{t("settings.haptics")}</Text>
             <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted, marginTop: 3 }}>{t("settings.hapticsDesc")}</Text>
           </View>
-          <Switch value={haptics} onValueChange={toggleHaptics} trackColor={{ false: "#3a2f1c", true: "rgba(201,168,76,0.6)" }} thumbColor={haptics ? C.gold : "#8a7a55"} />
+          <Switch accessibilityLabel={t("settings.haptics")} value={haptics} onValueChange={toggleHaptics} trackColor={{ false: "#3a2f1c", true: "rgba(201,168,76,0.6)" }} thumbColor={haptics ? C.gold : "#8a7a55"} />
         </View>
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, padding: 14, marginBottom: 16 }}>
           <View style={{ flex: 1, paddingHorizontal: 8 }}>
             <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: C.parchment }}>{t("settings.perf")}</Text>
             <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted, marginTop: 3 }}>{t("settings.perfDesc")}</Text>
           </View>
-          <Switch value={reduceM} onValueChange={toggleReduceM} trackColor={{ false: "#3a2f1c", true: "rgba(201,168,76,0.6)" }} thumbColor={reduceM ? C.gold : "#8a7a55"} />
+          <Switch accessibilityLabel={t("settings.perf")} value={reduceM} onValueChange={toggleReduceM} trackColor={{ false: "#3a2f1c", true: "rgba(201,168,76,0.6)" }} thumbColor={reduceM ? C.gold : "#8a7a55"} />
         </View>
         {/* Kayıt yedeği: ham kayıt JSON'unu paylaş — tek offline kayıt cihazla birlikte kaybolmasın */}
         <Pressable onPress={async () => { hap("tap"); const j = await exportSaveText(); if (j) Share.share({ message: j }).catch(() => {}); else Alert.alert(t("settings.backup"), t("settings.backupNone")); }} style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, padding: 14, marginBottom: 16 }}>

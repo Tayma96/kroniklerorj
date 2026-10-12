@@ -1,0 +1,187 @@
+{
+  "surum": 1,
+  "tarih": "2026-10-12",
+  "sanat_yonu": "1200'lü yılların Selçuklu Anadolu'su; mevcut Türkmen kişi yüzleri, örgülü saç, keçe/kürk kenarlı başlık ve dokuma giysi kimliği korunur. Dönemden ilham alan kurmaca yorum; birebir arkeolojik rekonstrüksiyon değildir.",
+  "kullanici_karari": "Seçilen oyuncu yaş serisi korunur; aynı NPC'nin her yaş evresi aynı kişi olmalıdır. Genel çöl teması, modern giysi ve Osmanlı fesi kullanılmaz.",
+  "yontem": "Mevcut 16 yetişkin portresi yüz ve kıyafet referansı alındı. Dört yeni 4×2 yaş atlası üretildi. Piksel düzenleme, büyütme ve dosya kırpma yapılmadı; arayüz tek hücreyi kadrajlar.",
+  "temsil_yaslari": {
+    "cocuk": "yaklaşık 7–12 (0–12 bandının temsilî portresi; bebek için ayrı kare yok)",
+    "ergen": "yaklaşık 14–17 (13–17 bandı)"
+  },
+  "npc_yas_sinirlari": {
+    "cocuk": [
+      0,
+      13
+    ],
+    "ergen": [
+      13,
+      18
+    ],
+    "genc": [
+      18,
+      35
+    ],
+    "olgun": [
+      35,
+      60
+    ],
+    "yasli": [
+      60,
+      null
+    ]
+  },
+  "sinir_notu": "Üst sınır hariç; oynanış takvimi ve oyuncunun yedi yaş bandı değişmedi.",
+  "referanslar": [
+    {
+      "ad": "Selçuklu Devri Kadın Başlıkları — Mehmet Önder, Kubadabad buluntuları",
+      "url": "https://taed.ktb.gov.tr/Eklenti/108801,46onderpdf.pdf?0="
+    },
+    {
+      "ad": "The Art of the Seljuq Period in Anatolia (1081–1307) — müze dönem özeti",
+      "url": "https://www.metmuseum.org/essays/the-art-of-the-seljuq-period-in-anatolia-1081-1307"
+    }
+  ],
+  "atlaslar": [
+    {
+      "dosya": "e01-04_yas-atlas-v1.png",
+      "sha256": "695232e7989ec232e6ec12c509245efab923c09afc20c036905a76fc1d707232",
+      "kimlikler": [
+        "e01",
+        "e02",
+        "e03",
+        "e04"
+      ],
+      "genislik": 1774,
+      "yukseklik": 887,
+      "sutun": 4,
+      "satir": 2,
+      "girdi": [
+        "e01_genc.jpg",
+        "e02_genc.jpg",
+        "e03_genc.jpg",
+        "e04_genc.jpg"
+      ],
+      "yerlesim": [
+        [
+          "e01_cocuk",
+          "e01_ergen",
+          "e02_cocuk",
+          "e02_ergen"
+        ],
+        [
+          "e03_cocuk",
+          "e03_ergen",
+          "e04_cocuk",
+          "e04_ergen"
+        ]
+      ],
+      "uretme_yonergesi": "Use case: identity-preserve. Asset type: ONE production NPC age-portrait atlas. The four reference images are four distinct fictional male identities e01,e02,e03,e04, in that order. Generate a precise 4-column by 2-row grid of 8 equal square head-and-shoulders portraits, edge to edge, NO gutter, NO separator, NO margin, NO text, NO label, NO frame. Canvas 2048x1024 landscape, each cell 512x512. Layout EXACTLY: top row e01 age7, e01 age14, e02 age7, e02 age14; bottom row e03 age7,e03 age14,e04 age7,e04 age14. These are biologically younger versions of each SAME reference person. Lock the distinctive facial identity, eye/brow/nose shape, complexion and dark hair texture per identity; no beard or moustache at these ages, natural child and teenage proportions. No blending identities. Clothing remains similar but appropriate to childhood: e01 dark-blue robe and brown fur-trim felt cap; e02 green robe and muted red felt cap; e03 rust-red plain robe and brown fur-trim cap, NO armour; e04 ivory wool robe and white felt cap. Complete head and shoulders centered in EACH square, both eyes visible at about 43% of cell height, suitable for a circular crop. Match realistic reference photography, naturally textured wool, warm earthy candlelight, subtle dark warm earthen-wall background throughout. Readable faces without blown highlights. Historically inspired 13th-century Anatolia, no modern props, no weapons, no sexualization, no additional characters. Output just this one atlas."
+    },
+    {
+      "dosya": "e05-08_yas-atlas-v1.png",
+      "sha256": "69dc8ef00dbf7702cac89bb1718e2f89844035623694fa668ab2e4079a93041d",
+      "kimlikler": [
+        "e05",
+        "e06",
+        "e07",
+        "e08"
+      ],
+      "genislik": 1774,
+      "yukseklik": 887,
+      "sutun": 4,
+      "satir": 2,
+      "girdi": [
+        "e05_genc.jpg",
+        "e06_genc.jpg",
+        "e07_genc.jpg",
+        "e08_genc.jpg"
+      ],
+      "yerlesim": [
+        [
+          "e05_cocuk",
+          "e05_ergen",
+          "e06_cocuk",
+          "e06_ergen"
+        ],
+        [
+          "e07_cocuk",
+          "e07_ergen",
+          "e08_cocuk",
+          "e08_ergen"
+        ]
+      ],
+      "uretme_yonergesi": "Use case: identity-preserve. Asset type: ONE production NPC age-portrait atlas, matching the style of image 5. Images 1–4 are four distinct fictional male identity references e05,e06,e07,e08, in that order; image 5 is an atlas style/layout reference only, do not copy its people. Generate a 4-column by 2-row grid of 8 equal SQUARE head-and-shoulders portraits, edge to edge, NO gutter, separator, outer margin, text, label or frame. Exactly 2:1 landscape canvas. Layout: top row e05 childhood, e05 adolescence, e06 childhood,e06 adolescence; bottom row e07 childhood,e07 adolescence,e08 childhood,e08 adolescence. Childhood looks about 7-9, adolescence about 14-16; no beard or moustache. Each pair must be the SAME recognizable reference person, biologically younger facial proportions, preserving distinct eyes, brows, nose, complexion, black hair texture and characteristic expression. e05 simple white cloth head covering/navy robe, book omitted; e06 plain brown felt cap/rough earth-brown robe, natural hair, NO grime caricature; e07 tan fur-trim felt cap/rust patterned robe, instrument omitted; e08 low dark fur cap/burgundy woven robe, no weapons. Garments appropriate to young people; no adult armour. Face and complete head centered independently in EACH square, eyes at ~43% cell height, shoulders visible, no hands. Match image5's natural reference photography, warm candlelit earth tones, detailed cloth and skin, softly blurred dark brown background, readable facial lighting. Historically inspired 13th-century Anatolia; respectful portrayal, no modern objects, no extra characters. Output just the atlas."
+    },
+    {
+      "dosya": "k01-04_yas-atlas-v1.png",
+      "sha256": "59cc3d3784ced8bb260cee5d26672bb7f88de87180379e3b7095bcc730e10a55",
+      "kimlikler": [
+        "k01",
+        "k02",
+        "k03",
+        "k04"
+      ],
+      "genislik": 1774,
+      "yukseklik": 887,
+      "sutun": 4,
+      "satir": 2,
+      "girdi": [
+        "k01_genc.jpg",
+        "k02_genc.jpg",
+        "k03_genc.jpg",
+        "k04_genc.jpg"
+      ],
+      "yerlesim": [
+        [
+          "k01_cocuk",
+          "k01_ergen",
+          "k02_cocuk",
+          "k02_ergen"
+        ],
+        [
+          "k03_cocuk",
+          "k03_ergen",
+          "k04_cocuk",
+          "k04_ergen"
+        ]
+      ],
+      "uretme_yonergesi": "Use case: identity-preserve. Asset type: ONE production NPC age-portrait atlas, matching image 5's layout and warm photographic style. Images1–4 are distinct fictional female identity references k01,k02,k03,k04 in that order; image5 is style/layout only. Make an exactly 2:1 landscape atlas with a precise 4-column x 2-row grid of 8 equal SQUARE head-and-shoulders portraits, flush edge-to-edge with NO margins, gutters, lines, borders, text or labels. Layout top row=k01 childhood,k01 adolescence,k02 childhood,k02 adolescence; bottom row=k03 childhood,k03 adolescence,k04 childhood,k04 adolescence. Each pair must be recognizable younger ages of the SAME reference person. Childhood around 7-9, adolescence around14-16. Preserve facial identity, distinctive eye/brow/nose shapes, complexion, hair texture and character of the expression. Natural age-appropriate younger proportions; NO makeup or glamour retouching. k01 muted red robe and simple red/ochre woven head scarf; k02 teal woven robe and modest pale tan embroidered cloth covering, greatly simplified age-appropriate adornment; k03 forest-green robe/white embroidered cloth cap; k04 rustic cream/red woven tunic and modest patterned headscarf with joyful natural expression. Braids echo reference hair. Keep neckline covered, no elaborate jewellery, no weapons, no added adult props. Complete head and shoulders centered per square, eyes at about43% of height, suitable for circular portrait clipping. Realistic texture, warm earthy candlelit photography, subtle blurred dark brown background, faces evenly readable. Historical-inspired13th-centuryAnatolia. Do not blend identities or add characters. Output only the atlas."
+    },
+    {
+      "dosya": "k05-08_yas-atlas-v1.png",
+      "sha256": "d58ee398cfc5ed845196761ae952c3f72e5e47191697fa869407dbf6926f1c27",
+      "kimlikler": [
+        "k05",
+        "k06",
+        "k07",
+        "k08"
+      ],
+      "genislik": 1774,
+      "yukseklik": 887,
+      "sutun": 4,
+      "satir": 2,
+      "girdi": [
+        "k05_genc.jpg",
+        "k06_genc.jpg",
+        "k07_genc.jpg",
+        "k08_genc.jpg"
+      ],
+      "yerlesim": [
+        [
+          "k05_cocuk",
+          "k05_ergen",
+          "k06_cocuk",
+          "k06_ergen"
+        ],
+        [
+          "k07_cocuk",
+          "k07_ergen",
+          "k08_cocuk",
+          "k08_ergen"
+        ]
+      ],
+      "uretme_yonergesi": "Use case: identity-preserve. Asset type: ONE production NPC age-portrait atlas. Images1–4 are four distinct fictional female identity references k05,k06,k07,k08, in order. Image5 is atlas style/layout only, do not copy its people. Exactly2:1 landscape; precise4-column x2-row grid, 8 equal SQUARE head-and-shoulders portraits, NO gutters, separators, margins, frame, text or labels. Top row=k05 childhood,k05 adolescence,k06 childhood,k06 adolescence. Bottom row=k07 childhood,k07 adolescence,k08 childhood,k08 adolescence. Childhood clearly7-9 years, rounder child cheeks and smaller proportions; adolescence14-16 years. Preserve SAME reference person's distinctive eye/brow/nose shape, complexion, black hair texture and expression character within each pair. Do not blend identities. k05 rough plain earth-brown cloth cap/robe, natural skin without grime caricature; k06 plain yellow head scarf/blue linen robe, warm open smile; k07 modest low blue-gold cloth cap/purple woven robe, age-appropriate simpler trim, NO weapon or armour; k08 plain olive-green head scarf/ochre linen robe, no sickle. Braided hair matches identities. Covered neckline, no makeup, no glamour retouching, no adult jewellery. Complete heads and shoulders centered separately in every square; eyes around43% cell height, suitable for circular crop. Match image5 realistic warm earthy candlelit photography, cloth texture, subtly blurred dark brown background, evenly readable faces. Historically inspired13th-centuryAnatolia, no modern elements, additional characters or props. Output just this atlas."
+    }
+  ],
+  "korunan_kimlik": "FNV özeti ve 7 erkek / 8 kadın kişi havuzu aynı. e05 âlim için ayrılmıştır, rastgele kişilere verilmez."
+}

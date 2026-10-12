@@ -13,3 +13,13 @@ Riskler: üretim RNG kayıtta yok; game.ts 10.886 satır; altın kayıt, cihaz, 
 ## Ses ve sahne kontrol noktası — 12 Ekim 2026
 
 Ses/sahne dalgası uygulandı: `SES_SAHNE.md` değişiklikler, önce/sonra, test ve açık sınırlar. 63 kayıt bağlamsal katalogda; geçişte ≤4 döngü / ≤4 efekt, normalde 2 döngü. 15 resim anlamsal sahne eşlemesine bağlı, nötr geri dönüş var; görünmeyen modal ses açmaz. Altı dilde ortam ayarı; eski ayar ve kayıtlar korunur. Android/Hermes export geçti, gerçek APK yapılmadı. 390 px / 4× CPU'da çalışma kararı, seçimi, sonucu ve günlük oynandı; TR/AR ayar görselleri incelendi. Tarayıcı çizim altyapısı yalnız test ortamında başlatıldı; hızlı web ses aç/kapatında kütüphane iptal hatası ayrıca açık. Fiziksel cihaz testi yok. Motor/MP değişmedi, davranış tabanı aynı. Sıradaki: ortak neden dökümü ve kayıtlı RNG için ayrı doğrulanmış motor dalgası.
+
+## Görsel kimlik kontrol noktası — 12 Ekim 2026
+
+Kullanıcı görsel yönünü Türk/Türkmen karakterler, 1200'lü yılların Selçuklu Anadolu'su olarak belirledi.
+`GORSEL_YAS.md` tamamlanan sunum dalgası ve sınırları; `YAS_KAYNAK.json` dört yeni atlasın gerçek yönergeleri,
+kimlikleri, hücreleri ve dosya özetleri. Seçilen oyuncu portreleri korunur; NPC'lere çocuk/ergen evreleri eklendi.
+Ana başlık/göstergeler daha okunur; kayıt yüklemesi sahte kazanç çıkarmaz; sade mod canlı uygulanır.
+Altı dilde 9 ana ekran + 8 NPC profil örneği hatasız; Android paketleme ve davranış tabanı temiz.
+Motor/MP/oyuncu varlıkları değişmedi. Fiziksel cihaz ve yeni APK yapılmadı; önceki ses cihaz kontrolü,
+kayıtlı üretim RNG ve ortak neden dökümü işleri ayrı durur.

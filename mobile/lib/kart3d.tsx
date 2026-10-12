@@ -11,7 +11,7 @@ import { Gesture, GestureDetector, GestureHandlerRootView } from "react-native-g
 import { scheduleOnRN } from "react-native-worklets";
 import { C, F } from "./theme";
 import { EASE } from "./motion";
-import { isReduceMotion, onReduceMotionChange } from "./perf";
+import { useSadeMod } from "./use-sade-mod";
 import { hap } from "./haptics";
 import { playTap, playEffect, pushSoundscape } from "./sound";
 import { LinearGradient } from "expo-linear-gradient";
@@ -25,12 +25,6 @@ import type { Opportunity } from "./game";
 
 const YAY = { damping: 15, stiffness: 170, mass: 0.8 };
 const KART_W = 360;
-function useSadeMod() {
-  const [reduced, setReduced] = useState(isReduceMotion);
-  useEffect(() => onReduceMotionChange(() => setReduced(isReduceMotion())), []);
-  return reduced;
-}
-
 // ── Ortak 3D taşıyıcı: giriş, süzülme, eğim, çıkış ──
 interface Kart3D {
   tx: SharedValue<number>; ty: SharedValue<number>; idle: SharedValue<number>;

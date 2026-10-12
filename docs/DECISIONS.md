@@ -17,3 +17,12 @@ Ayrı müzik/ortam/efekt kanalları, tembel yerel oynatıcılar, sınırlı eşz
 Karar hayata geçti: sınırlı tembel ses, iki ayrı ortam/müzik kanalı, bağımsız tercihler, güvenli kaynak bırakma. Sahne temasında net olay kimliği yoksa nötr kalınır. Yaş ve mevsim yalnız ses bağlamıdır; kayıt ve oyun zarı değişmez. Ortam ilk tercihi önceki müzik/sade moda göre seçilir ve kalıcılaşır. Sade modda dekoratif yakınlaşma/süzülme durur; karar işlevi sürer.
 
 Tarayıcıya karşılık gelen çizim başlatması test ortamına aittir; aktif Android istemci için yeni web mimarisi varsayılmaz. Tarayıcı ses iptal hatası bilinen uyumluluk açığı olarak saklanır. APK ve sunucu dağıtımı tetiklenmedi.
+
+## 12 Ekim 2026 — Selçuklu Anadolu'su ve yaş kimliği
+
+Kullanıcı görsel/tasarım değişikliklerine yetki verdi ve Türk/Türkmen karakterlerle 1200'lü yılların Selçuklu
+Anadolu'sunu istedi. Seçilen oyuncu seti korunur; yetişkin NPC yüzleri referans alınarak çocuk/ergen evreleri
+eklenir. Kişi kimliğini seçen özet ve havuz sırası değiştirilmez. Dört atlas dosyası arayüzde hücre olarak
+kadrajlanır; dosya pikseli yeniden işlenmez. Altı dilde mevcut etiketler kullanılır, ekran okuyucuya tam
+değer verilir. Sade mod ortak abonelikle uygulanır ve dekoratif döngüler temizlenir. Kayıt yüklemek
+kazanç sayılmaz. Ayrıntılar ve ölçüm sınırları `GORSEL_YAS.md` içinde.

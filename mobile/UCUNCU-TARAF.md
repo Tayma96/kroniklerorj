@@ -40,9 +40,14 @@ Portreler, hero sahneleri, armalar, mülk/mektep görselleri ve harita zemini (`
   Haziran 2026'da portreler bununla yenilendi. Çıktılar üzerinde kısıt yoktur.
 - Hangi dosyanın hangi modelden çıktığı git geçmişinden tam ayrıştırılamıyor; ikisi birlikte anılır.
 
+12 Ekim 2026'da eklenen dört `npc/*yas-atlas-v1.png`, mevcut yetişkin yüzlerinden üretilen yeni çocuk/ergen serileridir;
+yukarıdaki eski üretim atıflarına dahil değildir. Dosya özeti, referans kimlikleri, yerleşim ve tam üretim yönergeleri
+`assets/npc/YAS_KAYNAK.json` içinde tutulur. Müze ve kazı yayınları dönem yönünü kontrol etmek için okunmuştur;
+bu yayınların görselleri oyun varlığı olarak kopyalanmamıştır.
+
 ## Sesler ve müzik
 `assets/ses/` — yedekten kurtarılan 63 gerçek kayıt: 21 müzik, 15 ortam ve 27 efekt.
-Mevcut ses çağrıları 17 efekti ve ana temayı kullanır; kalan kayıtlar ilerideki sahne bağlantısı için korunur.
+21 ezgi, 15 ortam ve 27 efekt bağlamsal katalogdadır; yaş, mevsim, ekran ve olay geçişlerine bağlanmıştır.
 Dosya bazında kaynak, yazar, lisans ve uygulanan işlemler: `assets/ses/LISANS.md` ve `assets/ses/kaynak.json`.
 Paket CC0 1.0, CC BY 3.0/4.0 ve kaynak dökümünde kamu malı olarak belirtilen kayıtlar içerir.
 Oyun içindeki Emeği Geçenler ekranı kaynak adını, yazarı, kaynak/lisans adreslerini ve değişiklik açıklamasını gösterir.

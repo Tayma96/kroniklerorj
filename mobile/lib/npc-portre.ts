@@ -21,8 +21,24 @@ export const NPC_PORTRELER = {
 } as const;
 
 export type NpcKimlik = keyof typeof NPC_PORTRELER;
-export type NpcEvre = "genc" | "olgun" | "yasli";
+export type NpcEvre = "cocuk" | "ergen" | "genc" | "olgun" | "yasli";
 type Cinsiyet = "erkek" | "kadın";
+
+// Her atlas: 4 sütun × 2 satır. Bir kişinin çocuk/ergen çifti yan yana durur.
+const YAS_ATLASLARI = {
+  e01_04: require("../assets/npc/e01-04_yas-atlas-v1.png"),
+  e05_08: require("../assets/npc/e05-08_yas-atlas-v1.png"),
+  k01_04: require("../assets/npc/k01-04_yas-atlas-v1.png"),
+  k05_08: require("../assets/npc/k05-08_yas-atlas-v1.png"),
+} as const;
+
+export interface NpcPortreFrame {
+  source: ImageSourcePropType;
+  columns: number;
+  rows: number;
+  column: number;
+  row: number;
+}
 
 // Sarıklı âlim (e05) isimsiz âlim figürleri için ayrılır; gerçek kişilerde rol değişince yüz değişmez.
 const ERKEK: readonly NpcKimlik[] = ["e01", "e02", "e03", "e04", "e06", "e07", "e08"];
@@ -37,12 +53,24 @@ export function npcKimlik(seed: string | number, gender: Cinsiyet): NpcKimlik {
 }
 
 export function npcEvre(age: number): NpcEvre | null {
-  if (!Number.isFinite(age) || age < 16) return null;
-  return age < 35 ? "genc" : age < 60 ? "olgun" : "yasli";
+  if (!Number.isFinite(age) || age < 0) return null;
+  return age < 13 ? "cocuk" : age < 18 ? "ergen" : age < 35 ? "genc" : age < 60 ? "olgun" : "yasli";
 }
 
-export function npcPortreImage(age: number, gender: Cinsiyet, seed?: string | number): ImageSourcePropType | null {
+export function npcPortreFrame(age: number, gender: Cinsiyet, seed?: string | number): NpcPortreFrame | null {
   const evre = npcEvre(age);
   if (seed == null || evre == null) return null;
-  return NPC_PORTRELER[npcKimlik(seed, gender)][evre];
+  const identity = npcKimlik(seed, gender);
+  if (evre === "cocuk" || evre === "ergen") {
+    const index = Number(identity.slice(1)) - 1;
+    const group = `${identity[0]}${index < 4 ? "01_04" : "05_08"}` as keyof typeof YAS_ATLASLARI;
+    const pair = index % 4;
+    return { source: YAS_ATLASLARI[group], columns: 4, rows: 2, column: (pair % 2) * 2 + (evre === "ergen" ? 1 : 0), row: Math.floor(pair / 2) };
+  }
+  return { source: NPC_PORTRELER[identity][evre], columns: 1, rows: 1, column: 0, row: 0 };
+}
+
+// Kaynak dosyası; atlaslı yaşları ekrana çizerken hücre bilgisi için npcPortreFrame kullanılır.
+export function npcPortreImage(age: number, gender: Cinsiyet, seed?: string | number): ImageSourcePropType | null {
+  return npcPortreFrame(age, gender, seed)?.source ?? null;
 }

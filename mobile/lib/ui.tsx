@@ -1,13 +1,13 @@
 import { View, Image, ImageBackground, Modal, Text, Pressable, TextInput, ViewStyle, StyleProp, TextStyle, Share, ScrollView } from "react-native";
 import { useEffect, useState, useRef } from "react";
-import Animated, { useSharedValue, useAnimatedStyle, useAnimatedProps, useDerivedValue, withTiming, withSpring, withRepeat, withSequence, ZoomIn, FadeIn, FadeInUp, FadeInDown } from "react-native-reanimated";
+import Animated, { useSharedValue, useAnimatedStyle, useAnimatedProps, useDerivedValue, withTiming, withSpring, withRepeat, withSequence, cancelAnimation, ZoomIn, FadeIn, FadeInUp, FadeInDown } from "react-native-reanimated";
 import { portreImage } from "./assets";
-import { npcPortreImage } from "./npc-portre";
+import { npcPortreFrame } from "./npc-portre";
 import { GameIcon } from "./icons";
 import { useI18n } from "./i18n";
 import { hap, Hap } from "./haptics";
 import { DUR, EASE } from "./motion";
-import { isReduceMotion } from "./perf";
+import { useSadeMod } from "./use-sade-mod";
 import type { Dilemma, Choice } from "./events";
 import type { Opportunity } from "./game";
 import { ParticleBurst } from "./fx";
@@ -58,34 +58,32 @@ export function PressableScale({ children, onPress, style, disabled, haptic }: {
   );
 }
 
-const AnimatedImage = Animated.createAnimatedComponent(Image);
-// NPC portrelerine prosedürel çeşitlilik (ton+çevirme+zoom) — sabit görsel havuzunu ~48 kat çoğaltır.
-const PORTRE_TINTS = ["rgba(0,0,0,0)", "rgba(125,80,40,0.17)", "rgba(55,90,120,0.17)", "rgba(120,55,65,0.15)", "rgba(80,110,70,0.16)", "rgba(145,120,45,0.15)", "rgba(90,70,120,0.16)", "rgba(35,35,40,0.20)"];
-function portreHash(s: string | number): number { const str = String(s); let h = 5381; for (let i = 0; i < str.length; i++) h = ((h << 5) + h + str.charCodeAt(i)) >>> 0; return h; }
-
 export function Portre({ age, gender, size = 44, ring = true, seed }: { age: number; gender: "erkek" | "kadın"; size?: number; ring?: boolean; seed?: string | number }) {
-  // Büyük portreler hafifçe "nefes alır" (canlı his); küçük liste portreleri sabit (perf).
-  const breathe = size >= 56;
+  const reduced = useSadeMod();
+  const breathe = size >= 56 && !reduced;
   const sc = useSharedValue(1);
   useEffect(() => {
+    sc.value = 1;
     if (!breathe) return;
     sc.value = withRepeat(withSequence(
       withTiming(1.04, { duration: 2200, easing: EASE.standard }),
       withTiming(1, { duration: 2200, easing: EASE.standard }),
     ), -1, false);
+    return () => cancelAnimation(sc);
   }, [breathe]);
   const st = useAnimatedStyle(() => ({ transform: [{ scale: breathe ? sc.value : 1 }] }));
-  // Prosedürel varyant — yalnızca seed verilen (NPC) ve nefes almayan küçük portrelerde.
-  const npcImage = npcPortreImage(age, gender, seed);
-  const useVariant = seed != null && npcImage == null && !breathe;
-  const h = useVariant ? portreHash(seed!) : 0;
-  const flip = useVariant && (h & 1) ? -1 : 1;
-  const zoom = useVariant ? 1 + (Math.floor(h / 2) % 3) * 0.07 : 1;
-  const tint = useVariant ? PORTRE_TINTS[h % PORTRE_TINTS.length] : null;
+  const frame = npcPortreFrame(age, gender, seed);
+  const borderWidth = ring ? 2 : 1;
+  const contentSize = Math.max(1, size - borderWidth * 2);
+  const atlas = frame != null && frame.columns > 1;
   return (
-    <View style={{ width: size, height: size, borderRadius: size / 2, overflow: "hidden", borderWidth: ring ? 2 : 1, borderColor: ring ? C.gold : C.borderHi, backgroundColor: "#2a1c0c" }}>
-      <AnimatedImage source={npcImage ?? portreImage(age, gender)} style={useVariant ? { width: "100%", height: "100%", transform: [{ scaleX: flip }, { scale: zoom }] } : [{ width: "100%", height: "100%" }, st]} resizeMode="cover" />
-      {tint ? <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0, backgroundColor: tint }} /> : null}
+    <View accessible={false} style={{ width: size, height: size, borderRadius: size / 2, overflow: "hidden", borderWidth, borderColor: ring ? C.gold : C.borderHi, backgroundColor: C.cardHi }}>
+      {/* Önce tek hücre kesilir; nefes hareketi komşu yüzü kadraja sokamaz. */}
+      <Animated.View style={[{ width: contentSize, height: contentSize, overflow: "hidden" }, st]}>
+        <Image accessible={false} source={frame?.source ?? portreImage(age, gender)}
+          style={atlas ? { position: "absolute", width: contentSize * frame.columns, height: contentSize * frame.rows, left: -contentSize * frame.column, top: -contentSize * frame.row } : { width: "100%", height: "100%" }}
+          resizeMode={atlas ? "stretch" : "cover"} />
+      </Animated.View>
     </View>
   );
 }
@@ -377,7 +375,8 @@ export function Panel({ title, icon, tone = C.gold, right, children, noPad, dela
 
 // Ekran freski: ana menü freski kısık ışıkla (opasite 0.1) arkadan bakar — düz zeminlere derinlik, okunurluğa dokunmadan.
 export function ScreenFresk({ children, style }: { children: React.ReactNode; style?: StyleProp<ViewStyle> }) {
-  if (isReduceMotion()) return <View style={[{ flex: 1, backgroundColor: C.bg }, style]}>{children}</View>; // sade mod: doku belleği harcanmaz
+  const reduced = useSadeMod();
+  if (reduced) return <View style={[{ flex: 1, backgroundColor: C.bg }, style]}>{children}</View>; // sade mod: doku belleği harcanmaz
   return (
     <ImageBackground source={require("../assets/yeni_oyun_bg.png")} resizeMode="cover" imageStyle={{ opacity: 0.1 }} style={[{ flex: 1, backgroundColor: C.bg }, style]}>
       {children}
