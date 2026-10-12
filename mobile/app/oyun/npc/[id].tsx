@@ -4,7 +4,7 @@ import Svg, { Defs, LinearGradient, Stop, Rect, Circle } from "react-native-svg"
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useGame } from "../../../lib/store";
-import { kisiProfil, kisiCevresi, gorus, teklifSansi, helalUygun, helalBedeli, helalSansi, helallikIste, talkWith, giftTo, proposeMarriage, canCourt, helpNpcGoal, exploitNpcGoal, oyuncuAkrabasi, GOAL_HELP_COST, relWith, insultNpc, flirtWith, gossipAbout, giveMoneyTo, canFlirt, flirtIsForbidden, npcSeededMarried, GIVE_MONEY_AMT, martialLoad, canTakeApprentice, takeApprentice, mentorApprentice, APPRENTICE_MONTHS } from "../../../lib/game";
+import { kisiProfil, kisiCevresi, heardRumor, gorus, teklifSansi, helalUygun, helalBedeli, helalSansi, helallikIste, talkWith, giftTo, proposeMarriage, canCourt, helpNpcGoal, exploitNpcGoal, oyuncuAkrabasi, GOAL_HELP_COST, relWith, insultNpc, flirtWith, gossipAbout, giveMoneyTo, canFlirt, flirtIsForbidden, npcSeededMarried, GIVE_MONEY_AMT, martialLoad, canTakeApprentice, takeApprentice, mentorApprentice, APPRENTICE_MONTHS } from "../../../lib/game";
 import { useI18n, yuzdeL, kucukHarf, applyParams } from "../../../lib/i18n";
 import { hap } from "../../../lib/haptics";
 import { INTENTS, moodKey } from "../../../lib/dialogue";
@@ -133,6 +133,7 @@ export default function NpcDetail() {
   const acts = state.npc_state?.[npc.id]?.act_turns;
   const usedAct = (key: string) => acts?.[key] === state.turn;
   const recalled = salientMemory(ns.anilar, state.turn, true);
+  const heard = heardRumor(state, npc.id);
 
   const speak = (intent: string) => {
     if (usedAct("t:" + intent)) return;
@@ -243,6 +244,14 @@ export default function NpcDetail() {
           <Text style={{ fontFamily: F.serifItalic, fontSize: 13, lineHeight: 19, color: C.parchmentDim }}>{memoryQuote(recalled, lang, state.player.gender === "kadın")}</Text>
           <Pressable accessibilityRole="button" accessibilityLabel={t("mind.recall.action")} accessibilityState={{ disabled: usedAct("t:hatira") }} disabled={usedAct("t:hatira")} onPress={() => { hap("tap"); speak("hatira"); }} style={{ minHeight: 44, justifyContent: "center", alignItems: "center", borderWidth: 1, borderColor: C.borderHi, borderRadius: 8, marginTop: 8, opacity: usedAct("t:hatira") ? 0.5 : 1 }}>
             <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.gold }}>{t(usedAct("t:hatira") ? "mind.recall.done" : "mind.recall.action")}</Text>
+          </Pressable>
+        </View>
+      )}
+      {heard && !state.player.dead && state.player.age >= 13 && (
+        <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 12, padding: 12, marginBottom: 10 }}>
+          <Text style={{ fontFamily: F.serifItalic, fontSize: 13, lineHeight: 19, color: C.parchmentDim }}>{t("rum.net.topic")}</Text>
+          <Pressable accessibilityRole="button" accessibilityLabel={t("rum.net.action")} accessibilityState={{ disabled: usedAct("t:duyum") }} disabled={usedAct("t:duyum")} onPress={() => { hap("tap"); speak("duyum"); }} style={{ minHeight: 44, justifyContent: "center", alignItems: "center", borderWidth: 1, borderColor: C.borderHi, borderRadius: 8, marginTop: 8, opacity: usedAct("t:duyum") ? 0.5 : 1 }}>
+            <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.gold }}>{t(usedAct("t:duyum") ? "rum.net.done" : "rum.net.action")}</Text>
           </Pressable>
         </View>
       )}

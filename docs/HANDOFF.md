@@ -61,3 +61,14 @@ geçmiş konuşması. Yeni eylem kaynak/ilişki/XP vermez. 10.798 hedefli örnek
 akışı temiz; karakter aynası, diyalog/olay, 30 hayat eşikleri ve Android paketleme temiz. GDD tabanında
 yalnız sohbet değişti; eski motorla doğrulama ve gerekçe saklandı. Çok sıçramalı dedikodu, altı boyutlu
 artımlı görüş, izlenim/LOD ve çok turlu konuşma hâlâ açık; yeni alanlar bu kabul maddelerinin kanıtı değil.
+
+## Söylenti ağı ve tasarım serbestisi — 12 Ekim 2026
+
+Kullanıcı GDD'yi uygularken kendi fikir/kararlarımızı eklememizi istedi. Kaynak sorgusu, en yeni
+duyanların yayılım önceliği, kişiliğe bağlı aktarım cümleleri ve müdahaleye aylık sınır uygulandı.
+`SOYLENTI_AGI.md` kapsam/sınır/doğrulama; eski söylentiler bölgesel davranışı korur, yeni söz yalnız
+gerçek duyanlarda görüşe girer. Üç aktarım/48 kişi/ayda sekiz teslim ve 24 yoklama. 1.666 hedefli
+senaryo, altı dilde küçük ekranda gerçek motor → kaynak sorgusu, 10 GDD akışı/üç 30 aylık sentetik
+kayıt, karakter aynası, 30 hayat/18.569 ay oynanış temiz. APK/dağıtım yok. Tam GDD hedefi açık;
+sonraki görünür aday tek olayın üç canlı tanığında farklı yorum veya kanıtla karşı söylenti.
+Susturma/yüzleşme başarısı henüz tüm söylentiyi kaldırır; kişilere ayrı düzeltme anısı açık.

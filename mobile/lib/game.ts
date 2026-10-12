@@ -4,10 +4,11 @@ import { currentCalendar, playerAge, CalendarInfo } from "./calendar";
 import { ITEMS, marketGoods, locSeed, generateNPCs, NPC, generateDynasties, cityInfo, RivalHouse, houseNameIdx, localFirstName, SPECIALTIES, Item, WClass, npcAgeProfession, TRAITS, QUIRKS, GOALS, NPC_PROFS } from "./world";
 import { Nufus, Kisi, Cins, NufusCtx, EskiDunya, OYUNCU, nufusKur, nufusYil, kadro, kisiAdi, hayalOf, huyOf, yeniGelen, nufusDegisti, olumOlasiligi, kisiNpc, kisiBaglari, yasOf, kardesler, bagEvrimi, kisiSil, kisiIlkAd } from "./nufus";
 import { Lang, professionNameL, goalL } from "./locale-data";
-import { tFor, kucukHarf } from "./i18n";
+import { tFor, kucukHarf, renderEvt } from "./i18n";
 import { converse, ConvResult, spontaneousLine, callbackLine, perceptionGreeting, derinlikKatmani, SohbetSon } from "./dialogue";
 import { Memory, addMemory, decayMemories, behaviorTier, MEMORY_TYPES, RUMOR_VARIANTS, salientMemory } from "./npc-mind";
 import { recollectionLine, recollectionGroup } from "./hafiza-sohbet";
+import { RumorHearing, rumorOrigin, rumorGraph, spreadRumor } from "./soylenti-agi";
 import { arcById, ArcChoice, availableArcs } from "./arcs";
 
 export interface Stats { strength: number; intelligence: number; charisma: number; stamina: number; }
@@ -1179,8 +1180,11 @@ function soylentiEtkisi(s: GameState, k: Kisi, huy: string | undefined): number 
   const rs = s.player_rumors; if (!rs?.length) return 0;
   const g = huyGrubu(huy); const ad = kisiAdi(k, "tr"); let t = 0;
   for (const r of rs) {
-    if (r.kaynak && r.kaynak === ad) continue;
-    const yer = r.loc || s.player.location_name; const w = yer === k.loc ? 1 : regionOf(yer) === regionOf(k.loc) ? 0.4 : 0; if (!w) continue;
+    if (r.kaynakId === k.id || (!r.kaynakId && r.kaynak && r.kaynak === ad)) continue;
+    const heard = r.duyanlar?.find(h => h.id === k.id && h.chain.length > 1);
+    const yer = r.loc || s.player.location_name;
+    const w = r.duyanlar ? (heard ? heard.certainty * heard.distortion : 0) : yer === k.loc ? 1 : regionOf(yer) === regionOf(k.loc) ? 0.4 : 0;
+    if (!w) continue;
     if (r.tur === "kara_cal") { const yak = s.relationships[k.id] ?? 0; t += r.yon * r.siddet * 2 * w * (yak >= 30 ? 0.2 : g === "ilkeli" && s.player.honor >= 40 ? 0.3 : g === "cikarci" ? 1.2 : 1); continue; } // kara çalmaya dostun inanmaz, şerefliye ilkeli inanmaz
     const hw = r.nam === "zalim" ? (g === "ilkeli" ? 1.5 : g === "cikarci" ? 0.5 : 1) : r.nam === "comert" ? (g === "sicak" ? 1.5 : g === "cikarci" ? 0.5 : 1)
       : r.nam === "mert" ? (g === "ilkeli" ? 1.5 : 1) : r.nam === "dindar" ? (huy === "dindar" ? 1.5 : 0.7) : r.nam === "capkin" ? (huy === "dindar" || huy === "ciddi" ? 1.5 : 0.6) : 1;
@@ -2095,11 +2099,29 @@ function gossipTick(s: GameState) {
         id: Math.random().toString(36).slice(2, 12), hafta: turn, tur: m.tur, vi: Math.floor(Math.random() * vc),
         nam: MEMORY_TYPES[m.tur]?.nam || null, yon: m.yuk > 0 ? 1 : -1,
         siddet: Math.min(3, Math.max(1, Math.round(Math.abs(m.yuk) / 12))), kaynak: m.kaynak || "",
-        loc: nufusOf(s).k[id]?.loc || s.player.location_name, // anıyı taşıyanın yaşadığı yerde dolaşır
+        loc: nufusOf(s).k[id]?.loc || s.player.location_name,
+        kaynakId: id, duyanlar: rumorOrigin(id, turn), // yalnız ilk tanık biliyor; çevresi sonraki aylarda duyar
       });
     }
   }
+  const pop = nufusOf(s);
+  if (rumors.some(r => r.duyanlar)) {
+    const graph = rumorGraph(pop, worldYears(s));
+    for (const r of rumors) if (r.duyanlar && r.agTurn !== turn) {
+      r.duyanlar = spreadRumor(r.duyanlar, graph, pop, turn, Math.random, RUMOR_VARIANTS[r.tur] || 1); r.agTurn = turn;
+    }
+  }
   s.player_rumors = rumors.slice(-12);
+}
+// En ağır duyum: yalnız bu kişinin gerçekten bildiği söz. Okuma zar/bellek tüketmez.
+export function heardRumor(s: GameState, id: string): { rumor: Rumor; hearing: RumorHearing } | undefined {
+  let best: { rumor: Rumor; hearing: RumorHearing } | undefined;
+  for (const rumor of s.player_rumors || []) {
+    const hearing = rumor.duyanlar?.find(h => h.id === id);
+    if (!hearing) continue;
+    if (!best || rumor.siddet * hearing.certainty > best.rumor.siddet * best.hearing.certainty) best = { rumor, hearing };
+  }
+  return best;
 }
 // ── Eyleme dönük duyumlar (Vercel rumors.py actionable_rumors portu) ──
 // Piyasa ipucu: deterministik fiyat modelinden GERÇEK arbitraj (ucuz şehir → pahalı şehir); takip eden kazanır.
@@ -2137,9 +2159,10 @@ export function rumorAction(prev: GameState, rumorId: string, eylem: "yuzles" | 
   if (p.dead) return s;
   const rumors = s.player_rumors || [];
   const r = rumors.find((x) => x.id === rumorId);
-  if (!r) return s;
+  if (!r || p.age < 13 || r.islemTurn === s.turn) return s;
   const social = p.skills?.social || 0;
   if (eylem === "yuzles") {
+    r.islemTurn = s.turn;
     const sans = Math.max(0.15, Math.min(0.85, 0.40 + social * 0.05 + socialPresence(p) * 0.03 - r.siddet * 0.08));
     if (Math.random() < sans) {
       s.player_rumors = rumors.filter((x) => x.id !== rumorId);
@@ -2154,7 +2177,7 @@ export function rumorAction(prev: GameState, rumorId: string, eylem: "yuzles" | 
   if (eylem === "yay") {
     if (r.yon <= 0) return s; // kendi aleyhine lafı yaymak akıl kârı değil
     if (r.yayildi) return s; // aynı söylenti bir kez yayılır — tıkla-itibar farm'ı kapalı
-    r.yayildi = true;
+    r.yayildi = true; r.islemTurn = s.turn;
     r.siddet = Math.min(4, r.siddet + 1); p.reputation = Math.min(100, p.reputation + 1);
     push(s, "söylenti", `Sözü sen de salladın; namın büyüyor.`, "kişisel", false, { k: "rum.spread.win" });
     return s;
@@ -2162,13 +2185,13 @@ export function rumorAction(prev: GameState, rumorId: string, eylem: "yuzles" | 
   // sustur
   const cost = 15 * Math.round(r.siddet);
   if (p.money < cost) return s;
-  p.money -= cost;
+  p.money -= cost; r.islemTurn = s.turn;
   if (Math.random() < 0.70) {
     s.player_rumors = rumors.filter((x) => x.id !== rumorId);
     push(s, "söylenti", `${cost} akçe doğru ellere dağıldı; konuşan diller unutkanlaştı.`, "kişisel", false, { k: "rum.silence.win", p: [cost] });
   } else {
     bumpNam(p, "zalim", 3);
-    rumors.push({ id: Math.random().toString(36).slice(2, 12), hafta: s.turn, tur: "dolandiricilik", vi: 0, nam: "zalim", yon: -1, siddet: 2, kaynak: r.kaynak });
+    rumors.push({ id: Math.random().toString(36).slice(2, 12), hafta: s.turn, tur: "dolandiricilik", vi: 0, nam: "zalim", yon: -1, siddet: 2, kaynak: r.kaynak, loc: r.loc, kaynakId: r.kaynakId, duyanlar: r.kaynakId ? rumorOrigin(r.kaynakId, s.turn) : undefined });
     s.player_rumors = rumors.slice(-12);
     push(s, "söylenti", `Para el değiştirdi ama biri boşboğazlık etti: "Rüşvet dağıtıyor!" İş büyüdü.`, "kişisel", true, { k: "rum.bribe" });
   }
@@ -2234,7 +2257,7 @@ export interface GameState {
 // Dost bir hanedanın oyuncuya teklifi (ittifak veya evlilik).
 export interface DynastyOffer { id: string; houseId: string; nameIdx: number; type: "ittifak" | "evlilik"; }
 // Oyuncu hakkında söylenti — tanıklı skandal anıdan doğar, zamanla söner.
-export interface Rumor { id: string; hafta: number; tur: string; vi: number; nam: string | null; yon: number; siddet: number; kaynak: string; yayildi?: boolean; loc?: string; } // loc: söylentinin dolaştığı yerleşim (duyanların görüşüne girer)
+export interface Rumor { id: string; hafta: number; tur: string; vi: number; nam: string | null; yon: number; siddet: number; kaynak: string; yayildi?: boolean; loc?: string; kaynakId?: string; duyanlar?: RumorHearing[]; agTurn?: number; islemTurn?: number; } // eski kayıtta ağ yoksa bölgesel davranış korunur
 // Hanedanın kurduğu yerleşim — mezra olarak başlar, yıllarca gelişir, vergi getirir.
 export interface Settlement { name: string; founded: number; dev: number; tier?: string; loc?: string; }
 // Piyasa çarpanına göre fiyat.
@@ -2995,7 +3018,7 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
     const k = id ? nufusOf(s).k[id] : undefined;
     if (id && k && k.ol == null && k.loc === p.location_name && worldYears(s) - k.dy >= 13) { // yalnız aynı yerleşimdekiler kapına gelir
       const rel = relWith(s, id); const wns = npcStateOf(s, id); const nm = kisiAdi(k, "tr"); const kp = knParam(k);
-      const kotuSoz = rel >= 50 ? (s.player_rumors || []).filter((r) => r.yon < 0 && (r.loc || p.location_name) === k.loc && r.kaynak !== nm).sort((a, b) => b.siddet - a.siddet)[0] : undefined;
+      const kotuSoz = rel >= 50 ? (s.player_rumors || []).filter((r) => r.yon < 0 && (r.duyanlar ? r.duyanlar.some(h => h.id === id && h.chain.length > 1) : (r.loc || p.location_name) === k.loc) && r.kaynak !== nm).sort((a, b) => b.siddet - a.siddet)[0] : undefined;
       if (kotuSoz && Math.random() < 0.5) { // seveni hakkındaki kötü söze karşı çıkar: söylenti söner
         s.player_rumors = (s.player_rumors || []).filter((r) => r.id !== kotuSoz.id); s.relationships[id] = Math.min(100, (s.relationships[id] || 0) + 1);
         push(s, "söylenti", `${nm} hakkındaki sözlere karşı çıktı; söylenti söndü.`, "kişisel", true, { k: "npci.savundu", p: [kp, gorusSebebi(s, id, 1)] });
@@ -3019,7 +3042,7 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
           p.reputation = Math.max(-100, p.reputation - 1);
           push(s, "sohbet", `${nm} çarşıda aleyhinde konuşmuş; lafı kulağına geldi.`, "kişisel", false, { k: "npci.badmouthWhy", p: [kp, gorusSebebi(s, id, -1)] });
           // Laf söylentiye döner: kasabada dolaşır, duyanın gözünü bulandırır (yüzleşip söndürebilirsin; dostların da karşı çıkabilir).
-          if (rel <= -40) { const rs = s.player_rumors || []; rs.push({ id: Math.random().toString(36).slice(2, 12), hafta: s.turn, tur: "kara_cal", vi: Math.floor(Math.random() * 2), nam: null, yon: -1, siddet: rel <= -70 ? 3 : 2, kaynak: nm, loc: k.loc }); s.player_rumors = rs.slice(-12); }
+          if (rel <= -40) { const rs = s.player_rumors || []; rs.push({ id: Math.random().toString(36).slice(2, 12), hafta: s.turn, tur: "kara_cal", vi: Math.floor(Math.random() * 2), nam: null, yon: -1, siddet: rel <= -70 ? 3 : 2, kaynak: nm, loc: k.loc, kaynakId: id, duyanlar: rumorOrigin(id, s.turn) }); s.player_rumors = rs.slice(-12); }
         } else {
           s.relationships[id] = Math.max(-100, (s.relationships[id] || 0) - 3); wns.mood = Math.max(-100, wns.mood - 5);
           push(s, "sohbet", `${nm} yolda önünü kesip laf soktu; dişini sıkıp geçtin.`, "kişisel", false, { k: "npci.tauntWhy", p: [kp, gorusSebebi(s, id, -1)] });
@@ -5333,6 +5356,27 @@ export function talkWith(prev: GameState, npc: NPC, intent: string, lang: string
   const s = clone(prev); const p = s.player;
   if (p.dead) return { state: s, line: "", delta: 0 };
   const ns = npcStateOf(s, npc.id);
+  if (intent === "duyum") {
+    const owner = nufusOf(s).k[npc.id];
+    if (!owner || owner.ol != null || owner.loc !== p.location_name || p.age < 13 || npcActUsed(ns, "t:duyum", s.turn)) return { state: s, line: "", delta: 0 };
+    const heard = heardRumor(s, npc.id);
+    if (!heard) return { state: s, line: "", delta: 0 };
+    markNpcAct(ns, "t:duyum", s.turn);
+    const { rumor, hearing } = heard; const origin = hearing.chain.length === 1;
+    const source = nufusOf(s).k[hearing.chain[hearing.chain.length - 2]];
+    const certainty = "rum.net." + (hearing.certainty >= .7 ? "near" : "far");
+    const embellish: EvtParam = { sfx: hearing.distortion >= 1.15 ? "rum.net.embellished" : "rum.net.plain" };
+    const key = origin ? "rum.net.self" : "rum.net.heard";
+    const params: EvtParam[] = origin ? [npcP(s, npc)] : [npcP(s, npc), source ? knParam(source) : { tk: "rum.net.unknown" }, { sfx: certainty }, embellish];
+    const intro = renderEvt(key, "", params, lang as Lang, k => tFor(lang as Lang, k), p.gender === "kadın");
+    const rumorSource = rumor.kaynakId ? nufusOf(s).k[rumor.kaynakId] : undefined;
+    const variant = (rumor.vi + (hearing.retelling || 0)) % (RUMOR_VARIANTS[rumor.tur] || 1);
+    const quote = renderEvt("rumor." + rumor.tur + "." + variant, "", [p.name, rumorSource ? knParam(rumorSource) : rumor.kaynak], lang as Lang, k => tFor(lang as Lang, k), p.gender === "kadın");
+    const line = intro + " «" + quote + "»";
+    ns.memories = [...ns.memories, line].slice(-8);
+    push(s, "sohbet", intro, "kişisel", false, { k: key, p: params });
+    return { state: s, line, delta: 0 };
+  }
   if (intent === "hatira") {
     const owner = nufusOf(s).k[npc.id];
     if (!owner || owner.ol != null || owner.loc !== p.location_name || npcActUsed(ns, "t:hatira", s.turn)) return { state: s, line: "", delta: 0 };

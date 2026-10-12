@@ -53,3 +53,15 @@ GDD S2 için mevcut anı çağrılarını koru; yeni anıda olay/sahip/kanıt al
 eskilerin yükünü yeniden hesaplama. Geçmiş konuşması en belirgin anıyı görünür kılar; yeni ödül kanalı
 oluşturmaz. Şimdiki tek kaynak halkası çok sıçramalı yayılım diye sunulmaz; onun gerçek kişi ağına
 bağlanması ve artımlı çok boyutlu görüş ayrı açık uygulama adımlarıdır.
+
+## 12 Ekim 2026 — GDD'yi tasarım kararlarıyla uygula
+
+Kullanıcı belgeyi uygularken kendi fikir ve kararlarımızı da katmamızı istedi. Belge oyunun yönünü
+belirler; her öneri birebir ve koşulsuz kopyalanmaz. Eklenen karar oyuncuya anlamlı seçim veya
+anlaşılır sonuç getirmeli; Türk/Türkmen Selçuklu dönemi çizgisi, yaş kimliği ve etik sınırlar korunur.
+
+Bu dalgada: yeni duyanların yayılımda önceliği, kaynak sorgusunda sayısal gizli puan yerine kişinin
+sözü, kişiliğe göre farklı aktarım cümlesi ve başarısız müdahaleye aylık sınır. Uygulama/sınırlar
+`SOYLENTI_AGI.md` içinde. Sonraki tasarım fırsatı, ispat ile karşı söz arasındaki seçim: şahit/kanıt
+bulmak güven verebilir; sırf para dağıtmak tüm kişilerin inancını anında silmemeli. Bu son fikir henüz
+uygulanmadı; tamamlanmış özellik olarak sayılmaz. Daha çok süs yerine ilişkilerin oynanışa etkisi öncelikli.

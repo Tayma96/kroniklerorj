@@ -395,3 +395,20 @@ kaydı (iz) olur, iz bir eğilim etiketi taşır, sonraki olaylar ve yaylar bu h
 - GDD tamamlanmadı: üç canlı tanık, üç halkalı dedikodu, altı boyutlu artımlı görüş, izlenim/LOD ve
   çok turlu tonlu konuşma açık. Bir sonraki NPC dalgası gerçek kaynak zinciri ve duyan kişi ayrımına
   ilerlemeli; salt yeni alanı tamamlanmış sistem diye sunma. APK/sunucu dağıtımı istenmedi.
+
+## 31. Söylenti kişiler arasında taşındı (12 Ekim 2026)
+
+- Kullanıcı GDD uygulanırken kendi fikir/kararlarımızı katmamızı istedi; ek onay beklenmez.
+- Yeni söylenti gerçek kaynak kimliğinden yaşayan 13+ kişilerin mevcut yerleşim/akraba/dost/hasım/
+  iş bağlarıyla ilerler. Seyrek çarşı/meslek halkaları temas yaklaşımıdır; sokak konumu veri olarak yok.
+- En çok üç aktarım; kesinlik azalır, huy anlatımı büyütebilir/varyantı değiştirebilir. Duymayanın
+  söylenti görüş kalemi yok; kaynak kendi anısıyla iki kez cezalandırılmaz. Eski bölgesel kayıt korunur.
+- Profilde Kaynağını sor, kişi/ay bir kez, ödül/XP/ilişki/tur yok. Son anlatıcı ve temkinli söz görünür;
+  tüm ağ oyuncuya açılmaz. Müdahaleler söylenti/ay bir; olumlu yayma ayrıca ömürlük bir kez.
+- 12 söylenti/48 duyan/3 halka/8 aktarım/24 yoklama tavanları. GDD'nin çok tanık, izlenim/LOD,
+  artımlı görüş, kanıtla düzeltme ve çok turlu konuşması açık. Kaynak sorgusu doğruluğu kanıtlamaz.
+- Hedefli 1.666 örnek, 10 davranış hash'i/üç sentetik kaydın 30 ayı aynı; tip/paket/göç/i18n/dil temiz.
+  Ayrıntı `docs/SOYLENTI_AGI.md`. APK ve dağıtım istenmedi; 300 hayat denetimi sonraki kadans noktasında.
+- Altı dilde 320×568/4× CPU'da üç ay gerçek yayılım→kaynak sorusu; kaynak/belirsizlik/ay kilidi
+  görünür, tarayıcı hatası yok. Ayna +97,1/−96,3, vâris +43,8/−42,2; 30 hayat/18.569 ay
+  oynanış eşikleri temiz; 16.578 olay yazımı ve Android/Hermes paketleme temiz. Telefon testi yok.
