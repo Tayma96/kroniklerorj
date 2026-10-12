@@ -302,3 +302,11 @@ kaydı (iz) olur, iz bir eğilim etiketi taşır, sonraki olaylar ve yaylar bu h
 - Kaynak görsel `scripts/gorsel/kaynak/oyuncu-yas-seridi.png`; hücre düzeni ve sınırlar `assets/portre/KAYNAK.json`.
 - `kurtarma-check.cjs` artık her oyuncu yaş sınırında cinsiyet/seri dosyasını da doğrular.
 - Çocuk NPC'ler için arşivde kimliğe özel çocuk resmi yok; mevcut yaşa uygun genel çocuk portresi yolu korunur.
+
+## 23. Yeni tasarım belgesi ve bağımsız ilerleme (11 Ekim 2026)
+
+- Kullanıcı 25 sayfalık detaylı tasarım/devir PDF'ini verdi; çalışan kodla eşleştirme `docs/AUDIT.md`.
+- Kullanıcı “Benim onayımı bekleme, yaptığın her şeyi onaylıyorum” dedi; rutin geliştirme/öneriler için yeniden soru yok.
+- PDF eski Python/web varsayımlarını taşır; aktif Expo/TypeScript, ay takvimi ve 6 dil korunur. Hayat Hırsı yine kapalı.
+- `docs/HANDOFF.md`, `docs/DECISIONS.md` ve 10 akış/3 sentetik kayıt davranış tabanı eklendi.
+- 30 hayat / 20.136 ay eşikler temiz; üretim RNG'nin kayıtta olmadığı ve gerçek cihaz/oyuncu kabulünün açık kaldığı dürüstçe kaydedildi.

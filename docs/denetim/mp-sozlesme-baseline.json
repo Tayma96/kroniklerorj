@@ -1,0 +1,13 @@
+{
+  "sha256": "148a481bbc6695cb6771e9e50720dc368d8ffcc053f62766abde2a5a9ea58cdd",
+  "client": "mobile/lib/mp/protocol.ts",
+  "server": "server/src/protocol.ts",
+  "http": [
+    "/",
+    "/health",
+    "/realms",
+    "/realm/:id"
+  ],
+  "transport": "WebSocket",
+  "openapi": "Aktif uygulamada yok; eski Python API ile karıştırılmaz."
+}
