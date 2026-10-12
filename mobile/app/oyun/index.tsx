@@ -985,7 +985,7 @@ export default function Dashboard() {
               <GameIcon name="roman" size={13} color={C.gold} />
               <Text style={{ fontFamily: F.display, fontSize: 12, color: C.gold, letterSpacing: 1 }}>{t("dash.readLife")}</Text>
             </Pressable>
-            <Pressable onPress={async () => { await resetGame(); router.replace("/yeni-oyun"); }} style={{ flex: 1, flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 6, paddingVertical: 14, borderRadius: 9, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.card }}>
+            <Pressable onPress={async () => { try { await resetGame(); router.replace("/yeni-oyun"); } catch {} }} style={{ flex: 1, flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 6, paddingVertical: 14, borderRadius: 9, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.card }}>
               <GameIcon name="leaf" size={13} color={C.parchmentDim} />
               <Text style={{ fontFamily: F.display, fontSize: 12, color: C.parchmentDim, letterSpacing: 1 }}>{t("dash.newLife")}</Text>
             </Pressable>

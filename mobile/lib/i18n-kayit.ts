@@ -1,0 +1,8 @@
+export const KAYIT_METIN = {
+  tr: { 'save.busy': 'Kaydın güncelleniyor…', 'save.error': 'Kayıt işlemi tamamlanamadı. Son değişikliklerin bellekte duruyor.', 'save.retry': 'Kaydı tekrar sakla', 'save.readError': 'Kaydına erişilemedi. Mevcut dosyalar silinmedi; yeniden deneyebilirsin.' },
+  en: { 'save.busy': 'Updating your save…', 'save.error': 'The save operation failed. Your latest changes are still in memory.', 'save.retry': 'Save again', 'save.readError': 'Your save could not be read. Existing files were kept; you can try again.' },
+  es: { 'save.busy': 'Actualizando la partida…', 'save.error': 'No se pudo completar el guardado. Los últimos cambios siguen en la memoria.', 'save.retry': 'Guardar de nuevo', 'save.readError': 'No se pudo leer la partida. Los archivos se conservan; puedes volver a intentarlo.' },
+  pt: { 'save.busy': 'A atualizar a partida…', 'save.error': 'Não foi possível guardar. As últimas alterações continuam na memória.', 'save.retry': 'Guardar novamente', 'save.readError': 'Não foi possível ler a partida. Os ficheiros foram preservados; podes tentar novamente.' },
+  ar: { 'save.busy': 'جارٍ تحديث الحفظ…', 'save.error': 'تعذّر إتمام الحفظ. التغييرات الأخيرة لا تزال في الذاكرة.', 'save.retry': 'إعادة الحفظ', 'save.readError': 'تعذّرت قراءة الحفظ. بقيت الملفات الحالية محفوظة؛ يمكن المحاولة مجددًا.' },
+  ru: { 'save.busy': 'Обновление сохранения…', 'save.error': 'Не удалось завершить сохранение. Последние изменения остаются в памяти.', 'save.retry': 'Сохранить снова', 'save.readError': 'Не удалось прочитать сохранение. Файлы сохранены; можно повторить попытку.' },
+};

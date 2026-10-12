@@ -7,21 +7,23 @@ import { useI18n } from "./i18n";
 import { GameState, newGame, advance, eat, work, achievementsOf, WorkStyle , migrate, continueAsHeir, kulDenYeniOcak } from "./game";
 import { Defter, DEFTER_KEY, bosDefter, defterGoc, defterIsle, defterSecim, hayatAnahtari, sonSoy } from "./defter";
 import { NAME_POOLS } from "./locale-data";
+import { kayitGovdesi, kayitKuyrugu } from "./kayit-kuyrugu";
 export { migrate }; // MP ekranı ve testler store üzerinden erişmeye devam eder
 
 const KEY = "kronikler_save_v1";
-// Yazmadan önce son sağlam kaydı yedeğe kaydır: yarım yazım/bozulma tek noktadan toplam kayba dönmesin.
-async function persistWithBackup(s: unknown) {
-  try {
-    const prev = await AsyncStorage.getItem(KEY);
-    if (prev) await AsyncStorage.setItem(KEY + "_bak", prev);
-    await AsyncStorage.setItem(KEY, JSON.stringify(s));
-  } catch {}
-}
+export const oyunKaydi = kayitKuyrugu(AsyncStorage, KEY);
 
 // Kaydın ham JSON'unu dışa ver (ayarlar ekranındaki yedekle/paylaş): tek offline kayıt telefonla birlikte kaybolmasın.
 export async function exportSaveText(): Promise<string | null> {
-  try { return (await AsyncStorage.getItem(KEY)) || (await AsyncStorage.getItem(KEY + "_bak")); } catch { return null; }
+  try {
+    const current = oyunKaydi.snapshot();
+    if (current) return JSON.stringify(current);
+    await oyunKaydi.idle();
+    const raw = await AsyncStorage.getItem(KEY);
+    if (kayitGovdesi(raw)) return raw;
+    const backup = await AsyncStorage.getItem(KEY + "_bak");
+    return kayitGovdesi(backup) ? backup : null;
+  } catch { return null; }
 }
 
 
@@ -35,9 +37,11 @@ interface Ctx {
   importSave: (raw: string) => Promise<boolean>;
   doWork: (style?: WorkStyle) => void;
   resetGame: () => Promise<void>;
+  switchingSave: boolean;
+  retryPersist: () => Promise<boolean>;
   // ── Çok oyuncu köprüsü ── MP karakterini aynı depoya koyar; böylece TÜM /oyun
   // alt-ekranları (meslek/mektep/savaş…) MP karakteri üstünde de değişiklik yapmadan çalışır.
-  // mpMode true iken SP kaydına (AsyncStorage) YAZILMAZ → çevrimdışı kayıt korunur.
+  // MP karakteri SP kuyruğuna verilmez; daha önce kabul edilen SP yazımı tamamlanabilir.
   mpMode: boolean;
   // ── Hanedan Defteri (kronik_defter): ölümden sağ çıkar, resetGame silmez ──
   defter: Defter;
@@ -50,12 +54,18 @@ interface Ctx {
 const GameContext = createContext<Ctx | null>(null);
 
 export function GameProvider({ children }: { children: React.ReactNode }) {
-  const [state, setState] = useState<GameState | null>(null);
+  const [state, setRawState] = useState<GameState | null>(null);
+  const stateRef = useRef<GameState | null>(null);
+  const setState = (next: GameState | null) => { stateRef.current = next; setRawState(next); };
   // Oyunun dili kayda yazılır (yeni evlatların adı bu dilde konur); oturum sayacına eylem diye geçmez.
   const { lang } = useI18n(); const langRef = useRef(lang); langRef.current = lang;
   const [loading, setLoading] = useState(true);
   const [mpMode, setMpMode] = useState(false);
   const mpRef = useRef(false); // persist gating senkron okuma için
+  const changing = useRef(false);
+  const [switchingSave, setSwitchingSave] = useState(false);
+  const beginSwitch = () => { changing.current = true; setSwitchingSave(true); };
+  const endSwitch = () => { changing.current = false; setSwitchingSave(false); };
   const [defter, setDefter] = useState<Defter>(bosDefter());
   const defterRef = useRef<Defter>(defter); defterRef.current = defter;
   const defterYaz = useCallback((d: Defter) => { setDefter(d); defterRef.current = d; AsyncStorage.setItem(DEFTER_KEY, JSON.stringify(d)).catch(() => {}); }, []);
@@ -67,42 +77,50 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   }, [state?.player.dead, state?.turn, defterYaz]);
 
   useEffect(() => {
+    let gone = false;
+    const version = oyunKaydi.version();
+    const currentLoad = () => !gone && version === oyunKaydi.version();
     (async () => {
       try {
-        const parseOk = (raw: string | null) => {
-          if (!raw) return null;
-          try { const obj = JSON.parse(raw); return obj && typeof obj === "object" && obj.player && typeof obj.player === "object" ? obj : null; } catch { return null; }
-        };
         // Bozuk/eksik kayıt (sürüm geçişi, yarım yazım) "Devam Et"i gösterip /oyun'da çökmesin:
         // önce ana kayıt, o bozuksa bir önceki yazımın yedeği (tek nokta = toplam kayıp olmasın).
-        const obj = parseOk(await AsyncStorage.getItem(KEY)) || parseOk(await AsyncStorage.getItem(KEY + "_bak"));
-        if (obj) setState(migrate(obj));
-      } catch {}
-      setLoading(false);
+        await oyunKaydi.idle();
+        let obj = oyunKaydi.snapshot();
+        if (!obj) {
+          const raw = await AsyncStorage.getItem(KEY);
+          const backup = kayitGovdesi(raw) ? null : await AsyncStorage.getItem(KEY + "_bak");
+          const saved = kayitGovdesi(raw) || kayitGovdesi(backup);
+          obj = oyunKaydi.snapshot() || saved;
+          if (currentLoad() && !obj && (raw || backup)) oyunKaydi.reportFailure();
+        }
+        // Açılış okuması sürerken sıfırlanan/yenilenen hayat geri getirilemez.
+        if (!currentLoad()) return;
+        if (obj) {
+          const s = migrate(obj as GameState); oyunKaydi.remember(s);
+          if (!mpRef.current && !changing.current) setState(s);
+        }
+      } catch { if (currentLoad()) oyunKaydi.reportFailure(); }
+      finally { if (!gone) setLoading(false); }
     })();
+    return () => { gone = true; };
   }, []);
 
   // Kalıcılaştırmayı geciktir: bellekte anında, diske en çok ~1.2 sn'de bir yaz.
   // (Her aksiyonda tüm state'i JSON'a çevirip diske yazmak CPU/pil yakıyordu.)
-  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const pending = useRef<GameState | null>(null);
   const flush = useCallback(() => {
-    if (saveTimer.current) { clearTimeout(saveTimer.current); saveTimer.current = null; }
-    const s = pending.current; pending.current = null;
-    if (mpRef.current) return; // MP modunda SP kaydına yazma
-    if (s) persistWithBackup(s);
+    if (!mpRef.current && !changing.current) void oyunKaydi.flush();
   }, []);
   const schedulePersist = useCallback((s: GameState) => {
-    if (mpRef.current) return; // MP modunda SP kaydına yazma (çevrimdışı kayıt korunur)
-    pending.current = s;
-    if (saveTimer.current) return;
-    saveTimer.current = setTimeout(() => { saveTimer.current = null; const x = pending.current; pending.current = null; if (x) persistWithBackup(x); }, 1200);
+    if (mpRef.current || changing.current) return;
+    oyunKaydi.schedule(s);
   }, []);
   // Arayüz dili değişince (ya da dili yazılmamış eski kayıt açılınca) kayda işlenir.
   useEffect(() => {
-    if (!state || mpRef.current || state.dil === lang) return;
-    setState((cur) => { if (!cur || cur.dil === lang) return cur; const n = { ...cur, dil: lang }; schedulePersist(n); return n; });
-  }, [lang, state?.dil, schedulePersist]);
+    if (!state || mpRef.current || changing.current || state.dil === lang) return;
+    const cur = stateRef.current;
+    if (!cur || mpRef.current || changing.current || cur.dil === lang) return;
+    const n = { ...cur, dil: lang }; setState(n); schedulePersist(n);
+  }, [lang, state?.dil, switchingSave, schedulePersist]);
   // Uygulama arka plana alınınca / kapanırken bekleyen kaydı hemen diske yaz.
   useEffect(() => {
     const sub = AppState.addEventListener("change", (st) => { if (st !== "active") flush(); });
@@ -111,20 +129,24 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
   // Tek geçiş noktası: state'i dönüştür (bellek anında) + kalıcılaştırmayı geciktir.
   const apply = useCallback((fn: (s: GameState) => GameState) => {
-    setState((cur) => {
-      if (!cur) return cur;
-      const next = fn(cur);
-      if (next !== cur) oturumGecis(cur.turn, next.turn, next.player.age); // cihazda kalan oturum kaydı (yalnız bu cihazda)
-      schedulePersist(next);
-      return next;
-    });
+    if (changing.current) return;
+    const cur = stateRef.current;
+    if (!cur) return;
+    const next = fn(cur);
+    if (next !== cur) oturumGecis(cur.turn, next.turn, next.player.age);
+    setState(next); schedulePersist(next);
   }, [schedulePersist]);
 
   const startGame = useCallback(async (first: string, surname: string, gender: "erkek" | "kadın") => {
-    if (saveTimer.current) { clearTimeout(saveTimer.current); saveTimer.current = null; } pending.current = null;
-    const s = { ...newGame(first, surname, gender), dil: langRef.current };
-    setState(s);
-    try { await AsyncStorage.setItem(KEY, JSON.stringify(s)); } catch {}
+    if (changing.current || mpRef.current) return;
+    beginSwitch();
+    try {
+      const s = { ...newGame(first, surname, gender), dil: langRef.current };
+      const previous = oyunKaydi.snapshot();
+      oyunKaydi.remember(s);
+      setState(s);
+      await oyunKaydi.replace(s, previous);
+    } finally { endSwitch(); }
   }, []);
 
   // MP modunda zaman yalnız sunucu tick'iyle ilerler → yerel doAdvance no-op (desenkron önlenir).
@@ -132,60 +154,86 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const doEat = useCallback(() => apply(eat), [apply]);
   // Yedeği içe al: yapıştırılan JSON'u doğrula, göçten geçir, kayda ve yedeğe yaz. MP diyarında kapalı (SP kaydı ezilmesin).
   const importSave = useCallback(async (raw: string): Promise<boolean> => {
-    if (mpRef.current) return false;
+    if (mpRef.current || changing.current) return false;
+    const obj = kayitGovdesi(raw.trim());
+    if (!obj || typeof obj.turn !== "number") return false;
+    beginSwitch();
     try {
-      const obj = JSON.parse(raw.trim());
-      if (!obj || typeof obj !== "object" || !obj.player || typeof obj.turn !== "number") return false;
       const s = migrate(obj);
-      await AsyncStorage.setItem(KEY, JSON.stringify(s));
-      await AsyncStorage.setItem(KEY + "_bak", JSON.stringify(s));
+      if (!await oyunKaydi.replace(s)) return false;
       setState(s);
       return true;
-    } catch { return false; }
+    } catch { return false; } finally { endSwitch(); }
   }, []);
   const doWork = useCallback((style?: WorkStyle) => apply((s) => work(s, style)), [apply]);
   // Vâris yolu: seçilen soy yeteneği deftere yazılır ve vârise geçer.
   const varisleDevam = useCallback((willId: string, heirName?: string, lastWordsId?: string, yetenek?: string) => {
-    setState((cur) => {
-      if (!cur) return cur;
-      if (!mpRef.current && cur.player.dead) { const d0 = defterIsle(defterRef.current, cur); defterYaz(defterSecim(d0, hayatAnahtari(cur), yetenek)); }
-      const next = continueAsHeir(cur, willId, heirName, lastWordsId, yetenek);
-      schedulePersist(next); return next;
-    });
+    const cur = stateRef.current;
+    if (!cur || changing.current) return;
+    if (!mpRef.current && cur.player.dead) { const d0 = defterIsle(defterRef.current, cur); defterYaz(defterSecim(d0, hayatAnahtari(cur), yetenek)); }
+    const next = continueAsHeir(cur, willId, heirName, lastWordsId, yetenek);
+    setState(next); schedulePersist(next);
   }, [schedulePersist, defterYaz]);
   // Küllerden yeni ocak: vârissiz ölümün ardından aynı soyadla yeni hayat — defter ve tek soy yeteneği taşınır, başka hiçbir şey.
   const yeniOcak = useCallback(async (gender: "erkek" | "kadın", yetenek?: string, ad?: string) => {
-    if (mpRef.current) return;
-    if (saveTimer.current) { clearTimeout(saveTimer.current); saveTimer.current = null; } pending.current = null;
-    let d = defterRef.current; const cur = state;
-    if (cur && cur.player.dead) { d = defterIsle(d, cur); d = defterSecim(d, hayatAnahtari(cur), yetenek); defterYaz(d); }
-    const son = sonSoy(d); const havuz = NAME_POOLS[langRef.current] || NAME_POOLS.tr;
-    const ilk = ad || (gender === "kadın" ? havuz.f : havuz.m)[Math.floor(Math.random() * (gender === "kadın" ? havuz.f : havuz.m).length)];
-    const soyad = son?.soyad || havuz.s[0];
-    const ata = son ? { name: son.ad, izler: son.izler, nesil: son.nesil } : undefined;
-    const s = { ...kulDenYeniOcak(ilk, soyad, gender, ata, yetenek), dil: langRef.current };
-    setState(s);
-    try { await AsyncStorage.setItem(KEY, JSON.stringify(s)); } catch {}
-  }, [state, defterYaz]);
-  const resetGame = useCallback(async () => { if (saveTimer.current) { clearTimeout(saveTimer.current); saveTimer.current = null; } pending.current = null; if (mpRef.current) return; await AsyncStorage.removeItem(KEY); setState(null); }, []);
+    if (mpRef.current || changing.current) return;
+    beginSwitch();
+    try {
+      let d = defterRef.current; const cur = stateRef.current;
+      if (cur && cur.player.dead) { d = defterIsle(d, cur); d = defterSecim(d, hayatAnahtari(cur), yetenek); defterYaz(d); }
+      const son = sonSoy(d); const havuz = NAME_POOLS[langRef.current] || NAME_POOLS.tr;
+      const ilk = ad || (gender === "kadın" ? havuz.f : havuz.m)[Math.floor(Math.random() * (gender === "kadın" ? havuz.f : havuz.m).length)];
+      const soyad = son?.soyad || havuz.s[0];
+      const ata = son ? { name: son.ad, izler: son.izler, nesil: son.nesil } : undefined;
+      const s = { ...kulDenYeniOcak(ilk, soyad, gender, ata, yetenek), dil: langRef.current };
+      const previous = oyunKaydi.snapshot();
+      oyunKaydi.remember(s);
+      setState(s);
+      await oyunKaydi.replace(s, previous);
+    } finally { endSwitch(); }
+  }, [defterYaz]);
+  const resetGame = useCallback(async () => {
+    if (mpRef.current || changing.current) return;
+    beginSwitch();
+    try {
+      if (!await oyunKaydi.clear()) throw new Error("Kayit sifirlanamadi");
+      setState(null);
+    } finally { endSwitch(); }
+  }, []);
+  const retryPersist = useCallback(async () => {
+    if (mpRef.current || changing.current) return false;
+    let current = oyunKaydi.snapshot();
+    if (!current) {
+      beginSwitch();
+      try {
+        const saved = kayitGovdesi(await AsyncStorage.getItem(KEY)) || kayitGovdesi(await AsyncStorage.getItem(KEY + "_bak"));
+        if (!saved) return false;
+        current = migrate(saved); oyunKaydi.remember(current); setState(current as GameState);
+      } catch { oyunKaydi.reportFailure(); return false; } finally { endSwitch(); }
+    }
+    return await oyunKaydi.saveNow(current);
+  }, []);
 
   // ── Çok oyuncu köprüsü ──
   const enterMp = useCallback((s: GameState) => {
-    if (saveTimer.current) { clearTimeout(saveTimer.current); saveTimer.current = null; } pending.current = null; // bekleyen SP yazımını iptal et
+    if (changing.current) return;
+    if (!mpRef.current) void oyunKaydi.flush(); // Son SP hamlesi bırakılmaz; MP karakteri kuyruğa verilmez.
     mpRef.current = true; setMpMode(true); setState(s);
   }, []);
   const exitMp = useCallback(async () => {
-    mpRef.current = false; setMpMode(false);
-    // SP kaydını diskten geri yükle (Devam Et için); yoksa null
+    if (changing.current) return;
+    beginSwitch();
     try {
-      const raw = await AsyncStorage.getItem(KEY);
-      if (raw) { const obj = JSON.parse(raw); if (obj && typeof obj === "object" && obj.player) { setState(migrate(obj)); return; } }
-    } catch {}
-    setState(null);
+      // Son SP hamlesi bellekte korunur; disk yazımı tamamlanmadan eski sürüm okunmaz.
+      await oyunKaydi.idle();
+      const obj = oyunKaydi.snapshot() || kayitGovdesi(await AsyncStorage.getItem(KEY)) || kayitGovdesi(await AsyncStorage.getItem(KEY + "_bak"));
+      setState(obj ? migrate(obj as GameState) : null);
+    } catch { setState(oyunKaydi.snapshot() as GameState | null); }
+    finally { mpRef.current = false; setMpMode(false); endSwitch(); }
   }, []);
 
   return (
-    <GameContext.Provider value={{ state, loading, startGame, apply, doAdvance, doEat, importSave, doWork, resetGame, mpMode, defter, varisleDevam, yeniOcak, enterMp, exitMp }}>
+    <GameContext.Provider value={{ state, loading, startGame, apply, doAdvance, doEat, importSave, doWork, resetGame, mpMode, defter, varisleDevam, yeniOcak, enterMp, exitMp, switchingSave, retryPersist }}>
       {children}
     </GameContext.Provider>
   );

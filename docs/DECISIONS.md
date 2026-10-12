@@ -32,3 +32,10 @@ kazanç sayılmaz. Ayrıntılar ve ölçüm sınırları `GORSEL_YAS.md` içinde
 Kullanıcı ekranda süzülen yuvarlak sarı ışıkları reddetti. Sikke yağmuru çizimi ve ana ekrandaki tüm
 tetikleme/durum/zamanlayıcı katmanı silindi. Bu efekt yeniden eklenmez; kazancın gerçek değeri mevcut
 gösterge ve bildirimle aktarılır.
+
+## 12 Ekim 2026 — Kayıt yarışları ve oynanış önceliği
+
+Ana oyun kaydı aynı anahtar adları ve 1.200 ms birleştirme ile tek yazım sırasına alındı; yeni hayat
+ve içe alma eski işleri iptal eder. MP karakteri SP kuyruğuna girmez; dışa aktarım canlı SP belleğini
+tercih eder. Ayrı hanedan defteri bu dalgada değişmedi. Kullanıcı kayıt işine ayrılan zamanı fazla
+buldu ve oynanışı önceledi; sıradaki geliştirmeler çalışma ve meslek kararlarında görünür olacaktır.

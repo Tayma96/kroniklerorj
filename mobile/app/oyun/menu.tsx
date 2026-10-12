@@ -72,7 +72,7 @@ export default function Menu() {
   const confirmReset = () => {
     Alert.alert(t("settings.newLife"), t("settings.reset"), [
       { text: t("common.cancel"), style: "cancel" },
-      { text: "✓", style: "destructive", onPress: async () => { await resetGame(); router.replace("/yeni-oyun"); } },
+      { text: "✓", style: "destructive", onPress: async () => { try { await resetGame(); router.replace("/yeni-oyun"); } catch {} } },
     ]);
   };
   return (

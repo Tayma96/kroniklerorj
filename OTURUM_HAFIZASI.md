@@ -357,3 +357,16 @@ kaydı (iz) olur, iz bir eğilim etiketi taşır, sonraki olaylar ve yaylar bu h
   tur hiç ilerlemedi; iki düğme arası en az 14 px. Tip/i18n/dil temiz. Fiziksel cihaz denemesi yok.
 - Sonraki GDD güvenilirlik işi: sıraya alınmamış kayıt yazıları, yedek içe alırken bekleyen eski yazım ve
   sıfırlamada kalan yedeğin oyunu tekrar açması. Bunlar motor RNG işinden önce düzeltilmeli.
+
+## 28. Ana oyun kayıt geçişleri düzeltildi (12 Ekim 2026)
+
+- Ana/yedek yazımı tek sıraya alındı; içe alma/yeni hayat/sıfırlama eski işleri iptal eder. Açılış okuması
+  sıfırlamayla yarışınca hayatı geri getiremez. Dışa aktarım son canlı SP hamlesini içerir.
+- MP'ye son SP hamlesi korunarak girilir, MP karakteri SP kaydına yazılmaz. Başarısız yazımdan sonra
+  SP'ye dönüş son belleği korur. Altı dilde hata/tekrar saklama bildirimi var.
+- 13 kuyruk + 11 gerçek sağlayıcı geçişi + 6 tarayıcı hata/tekrar deneme örneği temiz. Tip/i18n/dil/göç/
+  davranış hashleri/protokol paritesi/Android paketleme temiz. Yeni APK ve telefon testi yok.
+- Kullanıcı kayıt işine fazla zaman ayrıldığını söyledi ve oynanışı önceliklendirdi. Ayrı hanedan defteri
+  yarışı ertelendi; sıradaki somut iş çalışma tarzlarının gerçek kazanç/risk dökümü ve meslek kararları.
+- Ayrıntı `docs/KAYIT_GUVENLIGI.md`. Üretim RNG, gerçek altın kayıtlar ve iki anahtarlı atomik güç kesintisi
+  koruması tamamlanmış sayılmaz. Tam GDD hedefi açık; daraltılmaz.

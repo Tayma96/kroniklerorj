@@ -1,0 +1,9 @@
+# Kayıt güvenilirliği — 12 Ekim 2026
+
+Ana oyun kaydı ve yedeği artık tek yazım sırasından geçer. 1.200 ms birleştirme korunur; aynı anda iki depo işlemi başlatılmaz. İçe alma, yeni oyun ve sıfırlama önceki hayatın bekleyen işlemlerini geçersiz kılar. Sıfırlama hem ana kaydı hem yedeği siler; açılışta geç dönen eski okuma silinen hayatı geri getiremez.
+
+Dışa aktarım son canlı tek oyunculu durumunu verir. MP'ye girmeden önce son SP hamlesi kuyruğa alınır; MP karakteri bu kuyruğa verilmez. Çıkışta son SP durumu bellekte korunur, disk hatası eski ilerlemeyi geri getirmez. İçe almada önceki canlı durum, henüz diske yazılmamış hamleleriyle birlikte yedekte kalır. Bozuk ana gövde sağlam yedeğin üzerine yazılmaz. Hatalı kayıt işlemi altı dilde bir uyarı ve tekrar saklama düğmesi gösterir; sıfırlama başarısızsa ekran mevcut hayatı bırakmaz.
+
+Doğrulama: `kayit-check.cjs` 13 senaryo, 500 birleştirilmiş hamle ve en çok bir eşzamanlı depo işlemi. Gerçek React sağlayıcısı/motoruyla 11 geçiş deneyi; yalnız cihaz deposu, dil sağlayıcısı ve oturum sayacı taklit edildi. Açılış okuması–sıfırlama yarışı önce yeniden üretildi, sonra aynı deney geçti. Altı dilde 320×568 / 4× CPU tarayıcı deneyinde gerçek çalışma hamlesi yapıldı; ana yazım kasıtlı başarısız olduğunda uyarı görüldü, tekrar denemede aynı hamle saklandı, tur ilerlemedi, çalışma zamanı hatası yok. Tip, iki dil denetçisi, eski kayıt göçü, 10 GDD davranış hash'i ve MP protokol paritesi temiz. Android/Hermes paketlemesi başarılı; APK üretilmedi, telefon testi yapılmadı.
+
+Kayıt denetçisi APK/AAB kalite kapılarına eklendi. Yeni üretim bağımlılığı veya şema alanı yok. İki ayrı anahtar elektrik kesintisine karşı tek bir atomik işlem değildir. Ayrı hanedan defterinin yazım/ilk okuma yarışı ve kayıtlı üretim RNG işi bu dalgada değişmedi. Gerçek kullanıcı altın kayıtları hâlâ elde değil. Kullanıcının sonraki önceliği doğrudan oynanış geliştirmesi; ayrı defter işi ertelendi.

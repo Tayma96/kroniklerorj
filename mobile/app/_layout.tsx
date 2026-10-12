@@ -13,6 +13,7 @@ import { LanguageProvider } from "../lib/i18n";
 import { LoadingScreen } from "../lib/fx";
 import { initializeAudio } from "../lib/sound";
 import { SesYonetmen } from "../lib/ses-yonetmen";
+import { KayitDurum, KayitGecisi } from "../lib/kayit-durum";
 import { loadHapticsSetting } from "../lib/haptics";
 import { loadReduceMotion } from "../lib/perf";
 import { C } from "../lib/theme";
@@ -52,7 +53,10 @@ export default function RootLayout() {
             <SesYonetmen />
             {/* Android sistem gezinme çubuğunu gizle (tam ekran / immersive); yukarı kaydırınca geçici görünür */}
             <NavigationBar hidden />
-            <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: C.bg }, animation: "slide_from_right" }} />
+            <View style={{ flex: 1 }}>
+              <KayitDurum />
+              <KayitGecisi><Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: C.bg }, animation: "slide_from_right" }} /></KayitGecisi>
+            </View>
           </MpProvider>
         </GameProvider>
       </LanguageProvider>

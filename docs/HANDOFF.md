@@ -39,3 +39,10 @@ bilgi/uğraş alanı kaydırılır. Altı dilde kısa ekran dahil 8 örnek: merk
 kazandırdı, tur aynı kaldı; arada en az 14 px. Günlük iç içe kaydırmayı destekler; düğme etiketleri eklendi.
 Tip/i18n/dil temiz. Sonraki somut GDD açığı: kayıt yazım yarışları, içe almada bekleyen eski yazım ve
 sıfırlanmış oyunun yedekten geri açılması. Bunlar henüz onarılmadı; kayıt kuyruğu ve hata testleri gerekir.
+
+## Ana oyun kaydı ve güncel öncelik — 12 Ekim 2026
+
+Yukarıdaki ana kayıt yarışları onarıldı; `KAYIT_GUVENLIGI.md` gerçek kapsam ve deneyler. 13 kuyruk,
+11 gerçek sağlayıcı geçişi ve altı dilde hata/yeniden saklama akışı temiz; Android paketleme geçti.
+Yeni APK/cihaz testi yok. Ayrı hanedan defteri ve üretim RNG hâlâ açık. Kullanıcı doğrudan oynanışı
+önceliklendirdi; sıradaki iş meslek döngüsü ve çalışma tarzlarının gerçek kazanç/risk görünürlüğü.
