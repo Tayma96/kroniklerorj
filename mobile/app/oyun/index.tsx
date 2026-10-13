@@ -25,6 +25,7 @@ import { hap } from "../../lib/haptics";
 import { C, F } from "../../lib/theme";
 import { LinearGradient } from "expo-linear-gradient";
 import { EmekOngoru } from "../../lib/emek-ui";
+import { SoylentiIzi } from "../../lib/rumor-ui";
 
 const SEASON_KEY: Record<string, string> = { "Kış": "kis", "İlkbahar": "ilkbahar", "Yaz": "yaz", "Sonbahar": "sonbahar" };
 
@@ -514,6 +515,8 @@ export default function Dashboard() {
           <GameIcon name="meslek" size={16} color={C.gold} /><Text style={{ flex: 1, fontFamily: F.serif, fontSize: 13, color: C.parchment }}>{label}</Text>
         </Pressable>;
       })()}
+
+      <SoylentiIzi state={state} onOpen={(id) => router.push(("/oyun/sosyal?soz=" + encodeURIComponent(id)) as any)} />
 
       {/* Açık hesaplar: aklında tutman gereken süren hesaplar (en çok 5; kim, ne istiyor, ne zaman) — TASARIM_PUSULASI ilke 4 */}
       {!p.dead && (() => {

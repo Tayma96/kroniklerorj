@@ -2219,21 +2219,48 @@ function tipsTick(s: GameState) {
   }
   s.tips = tips.slice(-4);
 }
+// Söze müdahale önizlemesi: kaynak burada mı, gerçek bir şahit var mı, hangi duyum düzeltilebilir?
+export function rumorReplyOptions(s: GameState, r: Rumor) {
+  const pop = nufusOf(s), p = s.player;
+  const sourceId = r.kaynakId || r.duyanlar?.find(h => h.chain.length === 1)?.id;
+  const source = sourceId ? pop.k[sourceId] : undefined;
+  const origin = r.duyanlar?.find(h => h.id === sourceId);
+  const available = !p.dead && p.age >= 13 && !inJail(p);
+  const sourceHere = (!r.duyanlar || origin?.chain.length === 1) && !!source && source.ol == null && source.loc === p.location_name && worldYears(s) - source.dy >= 13;
+  const local = (h: RumorHearing) => { const k = pop.k[h.id]; return !!k && k.ol == null && k.loc === p.location_name && worldYears(s) - k.dy >= 13; };
+  const listeners = (r.duyanlar || []).filter(h => local(h) && h.chain.length > 1 && h.evidence !== "gorgu" && h.evidence !== "katilim" && !h.aciklama && (h.distortion > 1.001 || (h.retelling || 0) > 0)).sort((a, b) => b.distortion - a.distortion).slice(0, 3).map(h => h.id);
+  const witnessId = available && r.yon < 0 && r.olay && listeners.length ? (r.duyanlar || []).filter(h => local(h) && h.chain.length === 1 && !h.sessiz && !h.aciklama && huyGrubu(huyOf(pop.k[h.id])) !== "cikarci" && relWith(s, h.id) >= 0 && s.npc_state?.[h.id]?.anilar?.some(m => m.olay === r.olay && m.tur === r.tur && m.kanit === "gorgu" && Math.abs(m.yuk) >= 1)).sort((a, b) => relWith(s, b.id) - relWith(s, a.id))[0]?.id : undefined;
+  return { sourceId, sourceHere, quiet: !!origin?.sessiz, available, witnessId, listeners,
+    cost: 15 * Math.max(1, Math.round(r.siddet)),
+    chance: Math.max(.15, Math.min(.85, .40 + (p.skills?.social || 0) * .05 + socialPresence(p) * .03 - r.siddet * .08)) };
+}
 // Söylenti eylemi: yüzleş / yay / sustur (Vercel rumor_action). Döndürür yeni state.
-export function rumorAction(prev: GameState, rumorId: string, eylem: "yuzles" | "yay" | "sustur"): GameState {
+export function rumorAction(prev: GameState, rumorId: string, eylem: "yuzles" | "yay" | "sustur" | "sahit"): GameState {
   const s = clone(prev); const p = s.player;
   if (p.dead) return s;
   const rumors = s.player_rumors || [];
   const r = rumors.find((x) => x.id === rumorId);
-  if (!r || p.age < 13 || r.islemTurn === s.turn) return s;
-  const social = p.skills?.social || 0;
+  if (!r || p.age < 13 || inJail(p) || r.islemTurn === s.turn) return s;
+  const o = rumorReplyOptions(s, r);
+  if (eylem === "sahit") {
+    if (!o.witnessId) return s;
+    const witness = nufusOf(s).k[o.witnessId];
+    const proof = { id: o.witnessId, turn: s.turn, hops: 0 };
+    const origin = r.duyanlar!.find(h => h.id === o.witnessId)!; origin.aciklama = proof;
+    for (const id of o.listeners) { const h = r.duyanlar!.find(x => x.id === id)!; h.distortion = 1; h.retelling = 0; h.aciklama = { ...proof, hops: 1 }; }
+    r.islemTurn = s.turn;
+    push(s, "söylenti", `Şahit olayı kendi gördüğü gibi anlattı; abartı birkaç kulakta düzeldi.`, "kişisel", false, { k: "rum.reply.proved", p: [knParam(witness), o.listeners.length] });
+    return s;
+  }
+  if ((eylem === "yuzles" || eylem === "sustur") && r.duyanlar && (!o.sourceHere || o.quiet)) return s;
   if (eylem === "yuzles") {
     r.islemTurn = s.turn;
-    const sans = Math.max(0.15, Math.min(0.85, 0.40 + social * 0.05 + socialPresence(p) * 0.03 - r.siddet * 0.08));
+    const sans = o.chance;
     if (Math.random() < sans) {
-      s.player_rumors = rumors.filter((x) => x.id !== rumorId);
+      if (r.duyanlar) { const source = r.duyanlar.find(h => h.id === o.sourceId); if (source) source.sessiz = true; }
+      else s.player_rumors = rumors.filter((x) => x.id !== rumorId);
       p.reputation = Math.min(100, p.reputation + 2); bumpNam(p, "mert", 3);
-      push(s, "söylenti", `"${r.kaynak}" yüzüne karşı sözünü yutmak zorunda kaldı; söylenti söndü.`, "kişisel", false, { k: "rum.confront.win" });
+      push(s, "söylenti", `Kaynak geri adım attı; duyanların hafızası yerinde.`, "kişisel", false, { k: r.duyanlar ? "rum.reply.confront" : "rum.confront.win" });
     } else {
       r.siddet = Math.min(4, r.siddet + 1);
       push(s, "söylenti", `Yüzleşme ters tepti — söylenti alevlendi.`, "kişisel", false, { k: "rum.confront.lose" });
@@ -2249,12 +2276,13 @@ export function rumorAction(prev: GameState, rumorId: string, eylem: "yuzles" | 
     return s;
   }
   // sustur
-  const cost = 15 * Math.round(r.siddet);
+  const cost = o.cost;
   if (p.money < cost) return s;
   p.money -= cost; r.islemTurn = s.turn;
   if (Math.random() < 0.70) {
-    s.player_rumors = rumors.filter((x) => x.id !== rumorId);
-    push(s, "söylenti", `${cost} akçe doğru ellere dağıldı; konuşan diller unutkanlaştı.`, "kişisel", false, { k: "rum.silence.win", p: [cost] });
+    if (r.duyanlar) { const source = r.duyanlar.find(h => h.id === o.sourceId); if (source) source.sessiz = true; }
+    else s.player_rumors = rumors.filter((x) => x.id !== rumorId);
+    push(s, "söylenti", `Kaynağın dilini bağladın; duyanların hafızası yerinde.`, "kişisel", false, { k: r.duyanlar ? "rum.reply.silenced" : "rum.silence.win", p: [cost] });
   } else {
     bumpNam(p, "zalim", 3);
     rumors.push({ id: Math.random().toString(36).slice(2, 12), hafta: s.turn, tur: "dolandiricilik", vi: 0, nam: "zalim", yon: -1, siddet: 2, kaynak: r.kaynak, loc: r.loc, kaynakId: r.kaynakId, duyanlar: r.kaynakId ? rumorOrigin(r.kaynakId, s.turn) : undefined });
@@ -3084,10 +3112,12 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
     const k = id ? nufusOf(s).k[id] : undefined;
     if (id && k && k.ol == null && k.loc === p.location_name && worldYears(s) - k.dy >= 13) { // yalnız aynı yerleşimdekiler kapına gelir
       const rel = relWith(s, id); const wns = npcStateOf(s, id); const nm = kisiAdi(k, "tr"); const kp = knParam(k);
-      const kotuSoz = rel >= 50 ? (s.player_rumors || []).filter((r) => r.yon < 0 && (r.duyanlar ? r.duyanlar.some(h => h.id === id && h.chain.length > 1) : (r.loc || p.location_name) === k.loc) && r.kaynak !== nm).sort((a, b) => b.siddet - a.siddet)[0] : undefined;
+      const kotuSoz = rel >= 50 ? (s.player_rumors || []).filter((r) => r.yon < 0 && (r.duyanlar ? r.duyanlar.some(h => h.id === id && h.chain.length > 1 && !h.sessiz) : (r.loc || p.location_name) === k.loc) && r.kaynak !== nm).sort((a, b) => b.siddet - a.siddet)[0] : undefined;
       if (kotuSoz && Math.random() < 0.5) { // seveni hakkındaki kötü söze karşı çıkar: söylenti söner
-        s.player_rumors = (s.player_rumors || []).filter((r) => r.id !== kotuSoz.id); s.relationships[id] = Math.min(100, (s.relationships[id] || 0) + 1);
-        push(s, "söylenti", `${nm} hakkındaki sözlere karşı çıktı; söylenti söndü.`, "kişisel", true, { k: "npci.savundu", p: [kp, gorusSebebi(s, id, 1)] });
+        if (kotuSoz.duyanlar) { const h = kotuSoz.duyanlar.find(x => x.id === id)!; h.certainty = Math.round(h.certainty * .5 * 1000) / 1000; h.sessiz = true; }
+        else s.player_rumors = (s.player_rumors || []).filter((r) => r.id !== kotuSoz.id);
+        s.relationships[id] = Math.min(100, (s.relationships[id] || 0) + 1);
+        push(s, "söylenti", `${nm} hakkındaki sözlere karşı çıktı.`, "kişisel", true, { k: kotuSoz.duyanlar ? "rum.reply.friend" : "npci.savundu", p: [kp, gorusSebebi(s, id, 1)] });
       } else if (rel >= 30) {
         wns.mood = Math.min(100, wns.mood + 4);
         if (p.health < 50) { p.health = Math.min(100, p.health + 4); push(s, "sohbet", `${nm} hâlini sormaya geldi, bir tas sıcak çorba bıraktı; için ısındı.`, "kişisel", false, { k: "npci.soupWhy", p: [kp, gorusSebebi(s, id, 1)] }); }
@@ -5432,8 +5462,9 @@ export function talkWith(prev: GameState, npc: NPC, intent: string, lang: string
     const source = nufusOf(s).k[hearing.chain[hearing.chain.length - 2]];
     const certainty = "rum.net." + (hearing.certainty >= .7 ? "near" : "far");
     const embellish: EvtParam = { sfx: hearing.distortion >= 1.15 ? "rum.net.embellished" : "rum.net.plain" };
-    const key = origin ? hearing.evidence === "gorgu" ? "rum.net.saw" : hearing.evidence === "katilim" ? "rum.net.participated" : "rum.net.self" : "rum.net.heard";
-    const params: EvtParam[] = origin ? [npcP(s, npc)] : [npcP(s, npc), source ? knParam(source) : { tk: "rum.net.unknown" }, { sfx: certainty }, embellish];
+    const proofSource = hearing.aciklama ? nufusOf(s).k[hearing.aciklama.id] : undefined;
+    const key = origin ? hearing.evidence === "gorgu" ? "rum.net.saw" : hearing.evidence === "katilim" ? "rum.net.participated" : "rum.net.self" : proofSource ? "rum.reply.heard" : "rum.net.heard";
+    const params: EvtParam[] = origin ? [npcP(s, npc)] : proofSource ? [npcP(s, npc), knParam(proofSource)] : [npcP(s, npc), source ? knParam(source) : { tk: "rum.net.unknown" }, { sfx: certainty }, embellish];
     const intro = renderEvt(key, "", params, lang as Lang, k => tFor(lang as Lang, k), p.gender === "kadın");
     const rumorSource = rumor.kaynakId ? nufusOf(s).k[rumor.kaynakId] : undefined;
     const variant = (rumor.vi + (hearing.retelling || 0)) % (RUMOR_VARIANTS[rumor.tur] || 1);
@@ -7864,7 +7895,11 @@ export function useFactionPower(prev: GameState, kind: "himaye" | "kese" | "sifa
   p.faction_standing[fid] = (p.faction_standing[fid] || 0) - FAC_POWER_COST;
   if (kind === "himaye") { // örgüt himayesi: korku düşer, itibar artar, bir söylenti bastırılır
     p.fear = Math.max(0, p.fear - 6); p.reputation = Math.min(100, p.reputation + 3);
-    if (s.player_rumors?.length) s.player_rumors = s.player_rumors.slice(1);
+    if (s.player_rumors?.length) {
+      const r = s.player_rumors[0]; const origin = r.duyanlar?.find(h => h.id === r.kaynakId) || r.duyanlar?.find(h => h.chain.length === 1);
+      if (r.duyanlar) { if (origin) origin.sessiz = true; }
+      else s.player_rumors = s.player_rumors.slice(1);
+    }
     push(s, "örgüt", `${f?.name} seni kanadı altına aldı; düşmanların geri çekildi.`, "kişisel", true, { k: "fac.powHimaye", p: [{ fc: fid }] });
   } else if (kind === "sifa") { // ocak hekimi: otlar, sargı, iki tatlı söz — beden toparlar
     const h = 14; p.health = Math.min(100, p.health + h);

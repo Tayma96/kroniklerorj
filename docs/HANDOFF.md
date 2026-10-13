@@ -88,3 +88,27 @@ APK/PR/dağıtım yok; fiziksel cihaz denemesi yapılmadı. Yalnız apk dalı, t
 `HAYIR_FIRSATI.md`: açık sadakanın gerçek şahidinden, ortak olaya bağlı kısa vadeli iş fırsatı. Aynı ay çalışma takası, ücret/bedel görünür; ret/süre sonu cezasız. Sonraya bırakma ve ana panodan geri açma; tek teklif, ikinci dönüm noktası penceresi yok. 37 motor ve 12 gerçek ana ekran bileşen örneği temiz. 10 GDD akışı/üç sentetik kayıt aynı; 30 hayat/21.051 ay, ayna/metin/göç/dil temiz. Bu oturum yerel tarayıcı bağlantısını engelledi; bileşen deneyi görsel/telefon QA sayılmaz. 300 hayat kadansı bir önceki dalgada; yeni APK yok. Tam GDD işleri açık.
 
 Gönderim sınırı (13 Ekim 2026): GitHub bağlı okuma ile uzak apk=ae38a80 doğrulandı. Yerel ağ GitHub adını çözemedi; bağlı GitHub yazma aracı onay gereksinimi/never politikası nedeniyle işlemi engelledi. Bu dalga yerelde commit ve çıktı yamasıyla hazırdır, uzak dala gönderilmiş sayılmaz. İzinli ağ/yazma erişimi geldiğinde yalnız apk dalına normal ileri gönderim yapılmalı; uzak durum yeniden doğrulanmalı.
+
+Sonraki izinli ağ oturumunda `dd4b01d50a0c73d323a9038fbb5641a2eb4457c3` uzak apk'ya
+gönderildi; bağımsız uzak dal okuması doğruladı. Terminal Tayma96 erişimi geçerliydi. Önceki
+başarısız kimlik doğrulamasını kalıcı hesap sorunu diye tekrarlama. Yeni ortam yeniden sınırlı
+ağa dönebilir; yeni commit'in gönderimini ayrı doğrula, eski gönderim kanıtını ona uygulama.
+
+## Şahit açıklaması — 13 Ekim 2026
+
+`KARSI_SOZ.md`: gerçek ortak olay/görgü anısına bağlı açıklama başta üç dolaylı yerel duyumun
+abartısını düzeltir, ardından gerçek bağlarla en çok üç halkada yayılır. Gerçek olayın olumsuz
+etkisi ve ilk bilenlerin hafızası korunur. Kaynak susması diğerlerinin bildiğini silmez; dost ve
+örgüt müdahaleleri de yereldir. Eski ağsız kayıt davranışı korunur. Ödülsüz/aylık tek müdahale.
+
+Ana panoda tek söylenti izi ilgili karta gider; kaynak/şahit/bedel/gerçek yüzde görünür.
+534 hedefli senaryo, önceki ağ/şahit/iş denetimleri, GDD hashleri, 30 hayat ve metin/ayna temiz.
+Dokuz küçük ekran tarayıcı akışı gerçek motor ve saklanan kayıtla temiz; 44 px, altı dil,
+uzak-susmuş kaynak ve büyük yazı. Android/Hermes paketleme geçti, APK/telefon QA yok.
+Tam GDD açık: mahkeme, bağımsız iftira kanıtı, artımlı altı boyutlu görüş/izlenim/LOD, tonlu
+çok turlu sohbet, üretim RNG. Sıradaki görünür sonuç bunlardan seçilsin; tekrar kayıt bakımına
+ve uzun izin teşhisine sapılmasın. Yalnız apk; yayınlama sonucu ayrıca kaydedilmeli.
+
+Şahit açıklaması dalgası gönderilemedi: yerel GitHub DNS/ağ erişimi kapalı, ağ izni aracı
+bu tur ek yetki vermedi. Bağlı okuma uzak apk'yı dd4b01d olarak doğruladı. Yeni commit hazır;
+yetki geldiğinde normal ileri gönderim ve bağımsız uzak kimlik doğrulaması gerekir.

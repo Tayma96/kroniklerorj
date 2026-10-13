@@ -2,11 +2,12 @@ import { useState, useEffect, useRef } from "react";
 import { View, Text, ScrollView, Pressable } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { useGame } from "../../lib/store";
-import { SOCIAL_AXES, socialTierIndex, hostFeast, giveAlms, sadakaTasi, intimidate, factionById, NAM_META, rumorAction, playerDominantNam } from "../../lib/game";
+import { SOCIAL_AXES, socialTierIndex, hostFeast, giveAlms, sadakaTasi, intimidate, factionById, NAM_META, rumorAction, playerDominantNam, GameEvent } from "../../lib/game";
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
+import { SoylentiKarti } from "../../lib/rumor-ui";
 import { useI18n, renderEvt, applyParams } from "../../lib/i18n";
 import { hap } from "../../lib/haptics";
 import { playTap } from "../../lib/sound";
@@ -39,9 +40,10 @@ function Axis({ icon, label, value, tier, desc }: { icon: string; label: string;
 
 export default function Sosyal() {
   const insets = useSafeAreaInsets(); const router = useRouter();
+  const { soz } = useLocalSearchParams<{ soz?: string }>();
   const { state, apply } = useGame();
   const { t, lang } = useI18n();
-  const [res, setRes] = useState<null | { text: string; tick: number }>(null);
+  const [res, setRes] = useState<null | { event: GameEvent; tick: number }>(null);
   const seen = useRef<number | null>(state ? state.hseq ?? 0 : null); // görülen son olay sırası
 
   // Sosyal eylem sonucunu anlık şerit olarak yansıt.
@@ -51,8 +53,8 @@ export default function Sosyal() {
     if (sn === null || q < sn) { seen.current = q; return; }
     if (q > sn) {
       const fresh = h.filter((e) => (e.q ?? 0) > sn);
-      const ev = [...fresh].reverse().find((e) => e.type === "sosyal");
-      if (ev) setRes({ text: ev.k ? renderEvt(ev.k, ev.text, ev.p, lang, t, state.player.gender === "kadın") : ev.text, tick: Date.now() });
+      const ev = [...fresh].reverse().find((e) => e.type === "sosyal" || e.type === "söylenti");
+      if (ev) setRes({ event: ev, tick: Date.now() });
     }
     seen.current = q;
   }, [state?.hseq]);
@@ -85,7 +87,7 @@ export default function Sosyal() {
 
         {res && (
           <Animated.View key={res.tick} entering={FadeInDown.duration(240)} style={{ backgroundColor: "rgba(201,168,76,0.10)", borderWidth: 1, borderColor: "rgba(201,168,76,0.4)", borderLeftWidth: 3, borderLeftColor: C.gold, borderRadius: 10, padding: 12, marginTop: 8 }}>
-            <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.parchment, lineHeight: 19 }}>{res.text}</Text>
+            <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.parchment, lineHeight: 19 }}>{renderEvt(res.event.k, res.event.text, res.event.p, lang, t, p.gender === "kadın")}</Text>
           </Animated.View>
         )}
 
@@ -125,32 +127,10 @@ export default function Sosyal() {
         {(() => {
           const rumors = state.player_rumors || [];
           if (!rumors.length) return <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, marginBottom: 6 }}>{t("rum.none")}</Text>;
-          return [...rumors].reverse().map((r) => {
-            const txt = renderEvt("rumor." + r.tur + "." + r.vi, "", [p.name, r.kaynak], lang, t, p.gender === "kadın"); // kadın oyuncuya dişil söylenti, Rusçada ad çekimi
-            const cost = 15 * Math.round(r.siddet);
-            const locked = r.islemTurn === state.turn;
-            return (
-              <View key={r.id} style={{ backgroundColor: C.card, borderWidth: 1, borderColor: r.yon > 0 ? "rgba(124,160,90,0.35)" : "rgba(160,60,60,0.35)", borderLeftWidth: 3, borderLeftColor: r.yon > 0 ? C.sage : C.blood, borderRadius: 10, padding: 12, marginBottom: 8 }}>
-                <Text style={{ fontFamily: F.serifItalic, fontSize: 12.5, color: C.parchmentDim, lineHeight: 18 }}>{txt}</Text>
-                <Text style={{ fontFamily: F.display, fontSize: 8.5, letterSpacing: 1, color: C.goldDim, marginTop: 4 }}>{t("rum.intensity").toUpperCase()}: {"●".repeat(Math.round(r.siddet))}</Text>
-                {r.duyanlar && <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted, marginTop: 5 }}>{applyParams(t("rum.net.count"), [r.duyanlar.length], lang)}</Text>}
-                {locked && <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted, marginTop: 5 }}>{t("rum.net.lock")}</Text>}
-                <View style={{ flexDirection: "row", gap: 7, marginTop: 8, opacity: locked ? 0.5 : 1 }}>
-                  <Pressable accessibilityRole="button" disabled={!canAct || locked} onPress={() => { hap("tap"); playTap(); apply((s) => rumorAction(s, r.id, "yuzles")); }} style={{ flex: 1, alignItems: "center", minHeight: 44, justifyContent: "center", paddingVertical: 7, borderRadius: 7, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.bg }}>
-                    <Text style={{ fontFamily: F.display, fontSize: 10.5, color: C.parchment }}>{t("rum.confront")}</Text>
-                  </Pressable>
-                  {r.yon > 0 && (
-                    <Pressable accessibilityRole="button" disabled={!canAct || locked || !!r.yayildi} onPress={() => { hap("tap"); playTap(); apply((s) => rumorAction(s, r.id, "yay")); }} style={{ flex: 1, alignItems: "center", minHeight: 44, justifyContent: "center", paddingVertical: 7, borderRadius: 7, borderWidth: 1, borderColor: "rgba(124,160,90,0.5)", backgroundColor: "rgba(124,160,90,0.1)" }}>
-                      <Text style={{ fontFamily: F.display, fontSize: 10.5, color: C.sage }}>{t("rum.spread")}</Text>
-                    </Pressable>
-                  )}
-                  <Pressable accessibilityRole="button" disabled={!canAct || locked || p.money < cost} onPress={() => { hap("tap"); playTap(); apply((s) => rumorAction(s, r.id, "sustur")); }} style={{ flex: 1, alignItems: "center", minHeight: 44, justifyContent: "center", paddingVertical: 7, borderRadius: 7, borderWidth: 1, borderColor: (canAct && p.money >= cost) ? "rgba(201,168,76,0.5)" : C.border, backgroundColor: C.bg }}>
-                    <Text style={{ fontFamily: F.display, fontSize: 10.5, color: (canAct && p.money >= cost) ? C.gold : C.parchmentMuted }}>{t("rum.silence")} {cost}⚜</Text>
-                  </Pressable>
-                </View>
-              </View>
-            );
-          });
+          return [...rumors].reverse().sort((a, b) => Number(b.id === soz) - Number(a.id === soz)).map((r) => <SoylentiKarti key={r.id} state={state} rumor={r}
+            onAction={(action) => { hap("tap"); playTap(); apply((s) => rumorAction(s, r.id, action)); }}
+            onSource={(id) => { hap("tap"); router.push(("/oyun/npc/" + encodeURIComponent(id)) as any); }} />);
+
         })()}
 
         <Section title={t("soc.act.h")} sub="" />

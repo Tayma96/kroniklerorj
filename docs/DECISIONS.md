@@ -77,3 +77,15 @@ Kanıtla karşı söz ve mahkeme kullanımı sonraki açık uygulama adımlarıd
 ## 13 Ekim 2026 — Mobil oyuncuya sosyal sonuç getir
 
 Kullanıcı oyunun mobil olduğunu ve toplum/oyuncu psikolojisine göre oynamaya değer kılınmasını vurguladı. Açık hayrın gerçek şahidinden kısa vadeli iş teklifi: sebebi anlaşılır, iki oyun seçeneği, ücret/yorgunluk takası. Ret veya sonraya bırakma baskı/ilişki cezası yaratmaz. Kısa oturumun ilgisini kişinin hatırlaması ve tekrar karşılaşma taşır; gerçek takvim/giriş serisi yok. GDD uygulanırken bu tasarım kararları eklenir. `HAYIR_FIRSATI.md` kapsam ve doğrulama sınırları.
+
+## 13 Ekim 2026 — Susmak unutmak değildir
+
+Gerçek kötü davranışın abartısını bir şahit düzeltebilir; davranışın kendisini silmez. Bu yüzden
+açıklama kanonik anlatımı geri getirir, kesinliği ve gerçek anıları korur. Başta üç yerel kişi,
+sonra mevcut bağlarla üç halka; kasabanın tamamına sihirli af yok. Kaynağı susturmak yalnız
+onun aktarımını durdurur. Dostun savunması da sadece kendi duyumuna etki eder.
+
+Ücretsiz şahit açıklamasının bedeli ayın müdahale hakkıdır; para/ilişki/XP kazandırmaz.
+Yüzleşme ve susturma olasılıklı/riskli alternatif olarak görünür. Oyuncunun önüne ana akışta
+tek iz getir; tüm ağ yollarını açan yeni menü ekleme. Açıklamanın gerçek kaynağı konuşmada
+gösterilsin. `KARSI_SOZ.md` kapsam/doğrulama; asılsız iftiraya bağımsız kanıt ve mahkeme açık.

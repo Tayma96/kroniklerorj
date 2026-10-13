@@ -444,3 +444,37 @@ kaydı (iz) olur, iz bir eğilim etiketi taşır, sonraki olaylar ve yaylar bu h
 - `docs/HAYIR_FIRSATI.md`. Tam GDD açık: vektör/izlenim/LOD, karşı söylenti/mahkeme, tonlu sohbet, üretim RNG ve gerçek cihaz/oyuncu deneyi. Başka dalda iş yok; yalnız apk.
 
 Gönderim sınırı (13 Ekim 2026): GitHub bağlı okuma ile uzak apk=ae38a80 doğrulandı. Yerel ağ GitHub adını çözemedi; bağlı GitHub yazma aracı onay gereksinimi/never politikası nedeniyle işlemi engelledi. Bu dalga yerelde commit ve çıktı yamasıyla hazırdır, uzak dala gönderilmiş sayılmaz. İzinli ağ/yazma erişimi geldiğinde yalnız apk dalına normal ileri gönderim yapılmalı; uzak durum yeniden doğrulanmalı.
+
+Sonraki doğrulama (13 Ekim 2026): izinli ağ erişimi açılınca terminalde Tayma96 doğrulandı ve
+`dd4b01d50a0c73d323a9038fbb5641a2eb4457c3` normal ileri gönderimle uzak apk'ya ulaştı.
+Bağımsız uzak dal okuması aynı tam kimliği verdi. Yukarıdaki gönderim sınırı tarihsel kayıttır;
+bu commit artık gönderilmiştir. Ağ kapalıyken çıkan hesap doğrulama başarısızlığı kalıcı
+bozuk kimlik bilgisi diye yorumlanmamalı. Sonraki ortam profili yeniden sınırlı ağa döndü;
+yeni dalganın gönderimi kendi sonucuyla ayrıca doğrulanmalıdır.
+
+## 34. Şahidin sözü abartıyı kişi kişi düzeltti (13 Ekim 2026)
+
+- Gerçek aynı olay/tür/görgü anısı olan, yaşayan 13+ yerel ve düşmanca/çıkarcı olmayan şahitten açıklama.
+  Başta en çok üç yerel dolaylı duyumda abartı/varyant düzelir; gerçek olumsuz olay/anı korunur.
+  Para/XP/ilişki/tur verilmez; söylentiye aylık tek müdahale hakkı harcanır. İftira için şahit uydurulmaz.
+- Açıklama gerçek şahitle etiketli, sonraki aylarda mevcut bağlarla üç halka içinde yayılır.
+  48 kişi/8 teslim/24 yoklama bütçesi ortak; aynı ay öğrenen ne açıklamayı ne eski abartıyı tekrar taşır.
+- Yeni ağda yüzleşme/para yalnız ilk kaynağı susturur; diğerlerinin bildiği sürer. Dost savunması
+  yalnız dostun duyumunu değiştirir, örgüt himayesi ilk kaynağı susturur. Eski ağsız kayıt davranışı korunur.
+- Ana panoda tek yerel iz, doğrudan seçili sosyal kart; kaynak profili, gerçek yüzde/bedel/aylık takas,
+  44 px düğmeler/altı dil. Duyum sohbeti gerçek açıklama sahibini söyler; sonuç şeridi dilde yeniden çözülür.
+- 534 hedefli, önceki 1.666/1.246/37 örnek temiz. 10 GDD hash'i/üç sentetik 30 ay aynı.
+  Dokuz gerçek tarayıcı akışı: altı dil/uzak-susmuş kaynak/büyük yazı, 320×568/4× CPU,
+  ana iz→kart→müdahale→kayıt sonrası açma→kaynak sorgusu; hata yok. Fiziksel cihaz deneyi değil.
+- 30 hayat/20.817 ay: boş %11,5/bunalma %0,2/gerilim en çok iki. Ayna +97,5/−97; vâris
+  +44,4/−42,9. 16.620 olay yazımı, tip/göç/dil/MP/web/Android-Hermes temiz. APK yok.
+  300 hayat kontrol noktasından sonra ikinci motor dalgası; kadans gereği tekrar edilmedi.
+- `docs/KARSI_SOZ.md` kapsam/sınırlar. Gerçek mahkeme, asılsız iftirayı çürütme, altı boyutlu
+  artımlı görüş/izlenim/LOD, çok turlu sohbet ve üretim RNG açık. GDD tamamlanmış sayılmaz.
+
+Bu dalganın gönderimi: normal push GitHub adresini çözemedi. Ağ izni aracı bu tur ek ağ
+yetkisi vermedi (`network: null`); bu sonuç kullanıcının reddettiğini göstermez. Bağlı okuma
+uzak apk'nın hâlâ `dd4b01d50a0c73d323a9038fbb5641a2eb4457c3` olduğunu doğruladı.
+Şahit açıklaması yerelde doğrulanmış commit olarak bekliyor; gönderilmiş diye sunulmasın.
+İzinli ağ/yazma geldiğinde mevcut commit normal ileri gönderilsin; tekrar giriş/kod isteme
+ve engellenmiş GitHub tarayıcısını başka yoldan açmaya çalışma.

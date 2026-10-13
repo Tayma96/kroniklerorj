@@ -4,6 +4,8 @@ import type { Nufus } from "./nufus";
 export interface RumorHearing {
   id: string; turn: number; chain: string[]; certainty: number; distortion: number; retelling?: number;
   evidence?: "katilim" | "gorgu" | "duyum" | "eski";
+  sessiz?: boolean; // kişi sözü aktarmaz; duyduğu veya gördüğü unutulmaz
+  aciklama?: { id: string; turn: number; hops?: number }; // açıklamayı yapan gerçek görgü sahibi ve bu kişinin duyduğu ay
 }
 export const RUMOR_LIMITS = { people: 48, hops: 3, deliveries: 8, attempts: 24 } as const;
 export type RumorGraph = Record<string, string[]>;
@@ -39,8 +41,20 @@ export function rumorOrigin(id: string, turn: number): RumorHearing[] {
 export function spreadRumor(heard: RumorHearing[], graph: RumorGraph, pop: Nufus, turn: number, random: () => number, variants = 1): RumorHearing[] {
   const out = heard.slice(0, RUMOR_LIMITS.people), known = new Set(out.map(h => h.id));
   let attempts = 0, deliveries = 0;
+  // Açıklama yeni bir söylenti listesi yaratmaz: mevcut duyumlar aynı bütçede düzeltilir.
+  for (const h of heard) if (h.aciklama && !h.sessiz && (h.aciklama.hops || 0) < RUMOR_LIMITS.hops && h.aciklama.turn < turn && graph[h.id]) {
+    for (const id of graph[h.id]) {
+      const index = out.findIndex(x => x.id === id), receiver = out[index];
+      if (!receiver || receiver.aciklama || receiver.chain.length === 1 || receiver.evidence === "gorgu" || receiver.evidence === "katilim") continue;
+      if (attempts >= RUMOR_LIMITS.attempts || deliveries >= RUMOR_LIMITS.deliveries) return out;
+      attempts++; if (random() >= .65) continue;
+      out[index] = { ...receiver, distortion: 1, retelling: 0, aciklama: { id: h.aciklama.id, turn, hops: (h.aciklama.hops || 0) + 1 } }; deliveries++;
+    }
+  }
   for (const h of [...heard].sort((a, b) => b.turn - a.turn)) {
-    if (h.turn >= turn || h.chain.length - 1 >= RUMOR_LIMITS.hops || !graph[h.id]) continue;
+    if (h.sessiz || h.turn >= turn || h.chain.length - 1 >= RUMOR_LIMITS.hops || !graph[h.id] || (h.aciklama && (h.aciklama.turn >= turn || (h.aciklama.hops || 0) >= RUMOR_LIMITS.hops))) continue;
+    const current = out.find(x => x.id === h.id);
+    if (current?.aciklama && !h.aciklama) continue; // bu ay açıklamayı öğrenen eski abartıyı aynı turda yeniden taşımaz
     const trait = huyOf(pop.k[h.id]);
     const careful = ["mert", "dindar", "ciddi", "sabırlı"].includes(trait);
     const dramatic = ["kurnaz", "hırslı", "kibirli", "aceleci"].includes(trait);
@@ -51,8 +65,9 @@ export function spreadRumor(heard: RumorHearing[], graph: RumorGraph, pop: Nufus
       attempts++;
       if (random() >= (careful ? .35 : dramatic ? .65 : .5)) continue;
       out.push({ id, turn, chain: [...h.chain, id], certainty: Math.round(h.certainty * (careful ? .85 : dramatic ? .68 : .78) * 1000) / 1000,
-        distortion: Math.min(1.5, Math.round(h.distortion * (dramatic ? 1.12 : 1.03) * 1000) / 1000),
-        retelling: Math.min(Math.max(0, variants - 1), (h.retelling || 0) + (dramatic ? 1 : 0)), evidence: "duyum" });
+        distortion: h.aciklama ? 1 : Math.min(1.5, Math.round(h.distortion * (dramatic ? 1.12 : 1.03) * 1000) / 1000),
+        retelling: h.aciklama ? 0 : Math.min(Math.max(0, variants - 1), (h.retelling || 0) + (dramatic ? 1 : 0)), evidence: "duyum",
+        ...(h.aciklama ? { aciklama: { id: h.aciklama.id, turn, hops: (h.aciklama.hops || 0) + 1 } } : {}) });
       known.add(id); deliveries++; if (++sent >= 2) break;
     }
   }

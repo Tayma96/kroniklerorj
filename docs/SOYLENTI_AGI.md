@@ -34,9 +34,11 @@ NPC profilinde ise yalnız o kişinin gerçekten bildiği bir konu açılır. Bu
 ## Sınırlar
 
 GDD bütünü tamamlanmış değildir. Canlı üç tanıklı olay sonraki dalgada bağlandı (`SAHITLER.md`); altı boyutlu artımlı görüş, izlenim/LOD,
-çok turlu tonlu sohbet ve kanıta dayalı karşı söylenti açık. Yüzleşme/susturma/dost savunmasının başarılı
-olunca söylentiyi tümden kaldırması önceki oyun davranışıdır; bu dalga kişilere ayrı düzeltme anısı
-veya kısmi inanış üretmez. Kaynak sorgusu doğruluğu kanıtlamaz. Üretim RNG hâlâ kayda alınmaz.
+çok turlu tonlu sohbet açık. Şahit açıklaması sonraki dalgada bağlandı (`KARSI_SOZ.md`): yeni ağda
+yüzleşme/susturma yalnız ilk kaynağı susturur; dost savunması yalnız dostun duyumunu değiştirir.
+Gerçek olayın abartısı kişi kişi düzeltilir; eski ağsız söylentinin topluca kaldırılması korunur.
+Asılsız iftirayı bağımsız kanıtla çürütme ve mahkemede şahit kullanımı hâlâ açık.
+Kaynak sorgusu doğruluğu kanıtlamaz. Üretim RNG hâlâ kayda alınmaz.
 
 ## Doğrulama
 
