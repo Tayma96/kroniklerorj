@@ -120,3 +120,15 @@ gibi yazılmaz. İlk yanıt düşünme alanıdır, kaynak/zar/ilişki değiştir
 itiraza karşılığı değiştirir; dürüst sınır her kişide otomatik en iyi seçenek değildir.
 Önce az sayıda ilgili konu, diğerleri açılır satır; yaş, güven/korku ve gerçek soy bağı
 sözü belirler. `NPC_SOHBET.md` kapsam/sınırlar. Torunlar sıradaki açık iştir.
+
+## 13 Ekim 2026 — Soy bağı adı değil kişiyi izlesin
+
+Yeni torun gerçek evladın gerçek çocuğudur. Yaş ve yerleşim bakımı/sözü değiştirir;
+uzaktaki veya yetişkin toruna beşik/avlu/ilk at sahnesi uydurulmaz. Eski yalnız ad
+bilgisi eksik kalabilir, uydurma soy verisinden daha dürüsttür. Ortak aylık zaman
+seçimi gerçek bağ yaratır; yeni para/XP musluğu yoktur.
+
+Çocuğu olan vârise yedi yaş verip evlatlarını düşürme. Gerçek yaş/aynı çocuk kimliği,
+öbür ebeveyn ve gerçek eş korunur; diğer aile kolu yabancı veya kur adayı olmaz.
+Eski adlar atanın defterine kalır. `TORUNLAR.md` gerçek kapsam; bütün vârislerin
+yaş modelini, bağımsız yetişkin evlat yaşamını ve tam soy ağacını tamamlanmış sayma.

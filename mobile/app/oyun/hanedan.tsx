@@ -27,6 +27,7 @@ import { generateDynasties, houseName as rivalHouseName, localFirstName } from "
 import { professionNameL, placeName } from "../../lib/locale-data";
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
+import { Torunlar } from "../../lib/torun-ui";
 import { useI18n, yuzdeL, applyParams, renderEvt } from "../../lib/i18n";
 import { hap } from "../../lib/haptics";
 import { BackLabel, PageHeader, ScreenFresk } from "../../lib/ui";
@@ -144,6 +145,8 @@ export default function Hanedan() {
             <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 0.5, color: C.gold }}>{t("dyn.manageHeirs")} ›</Text>
           </Pressable>
         </View>
+
+        <Torunlar state={state} onOpen={id => { hap("tap"); router.push(`/oyun/npc/${id}`); }} />
 
         {/* ── VASİYET ── */}
         <SecTitle>{t("dyn.will")}</SecTitle>
@@ -566,6 +569,7 @@ export default function Hanedan() {
                   {profL(a.profession)} · {t("dyn.passedAt").replace("%n", String(a.diedAge))} · {t("dyn.fameWord")} {a.fame}
                 </Text>
                 <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.gold, marginTop: 4 }}>{a.noteK ? t("dynnote." + a.noteK) : a.note}</Text>
+                {!!a.grandchildren?.length && <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted, marginTop: 4 }}>{t("torun.ancestor")}: {a.grandchildren.join(", ")}</Text>}
                 {!!a.causeK && <Text style={{ fontFamily: F.serif, fontSize: 10.5, color: C.parchmentMuted, marginTop: 3 }}>{t("eul.cause." + a.causeK)}</Text>}
               </View>
             ))}

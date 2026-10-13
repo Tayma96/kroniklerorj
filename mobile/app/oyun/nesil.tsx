@@ -52,6 +52,7 @@ export default function Nesil() {
                   <Text style={{ fontFamily: F.serifItalic, fontSize: 10, color: C.sage, marginTop: 1 }}>{(() => { const nk = "nat." + childNature(c, p.generation); const kv = t(nk + ".k"); return evlatKadinMi(c) && kv !== nk + ".k" ? kv : t(nk); })()}{p.child_bond?.[c] != null ? ` · ${t("char.bond")} ${p.child_bond[c]}` : ""}</Text>
                   <Text style={{ fontFamily: F.serif, fontSize: 10, color: C.goldDim, marginTop: 2 }}>{t("nes.preview").replace("%1", String(pv.points)).replace("%2", String(pv.money)).replace("%3", String(pv.rep))}</Text>
                 </View>
+                {pv.children > 0 && <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted, maxWidth: 105 }}>{t("torun.heir").replace("%1", String(pv.age)).replace("%2", String(pv.children))}</Text>}
                 {(p.child_invests?.[c]?.length || 0) > 0 && <Text style={{ fontFamily: F.serif, fontSize: 10, color: C.goldDim }}>{p.child_invests[c].length} {t("nes.invests")}</Text>}
                 {p.child_edu?.[c] && eduLevel(p.child_edu[c].weeks) > 0 && <Text style={{ fontFamily: F.serif, fontSize: 10, color: C.gold }}>{t("edu.track." + p.child_edu[c].track)} {eduLevel(p.child_edu[c].weeks)}</Text>}
                 {chosenHeir === c && <Text style={{ color: C.gold }}>✓</Text>}

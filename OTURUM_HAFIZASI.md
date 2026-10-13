@@ -550,3 +550,32 @@ EPERM ile kapatılmasıydı. Hesap bozukluğu diye yorumlama; izin değişikliğ
 - `docs/NPC_SOHBET.md`. 300 hayat önceki dalgada; bu ilk ara motor dalgası. Torunlar
   henüz yalnız isim/otomatik olay: sıradaki gerçek kişi/yaş/soy bağı/etkileşim. Eski
   isimlere uydurma doğum tarihi/ebeveyn atama; vârisin gerçek yaşını önce incele.
+
+## 38. Torun büyüdü, soy yeni kuşağa taşındı (13 Ekim 2026)
+
+- Karşılıklı sohbet dalgası `d13bc1bdc6ef1f9f6717855ebce6e06749bb7912` olarak apk'ya
+  gönderildi; bağımsız uzak kimlik doğrulandı. Artık gönderim sorunu/izin/device kodu yok.
+- Yeni torun gerçek yetişkin yaşayan evlat üzerinden kişi/yaş/kimlik/yerleşim taşır.
+  Aynı ebeveynden aynı yıl tekrar doğum yok; bilinen öbür ebeveyn varsa bağlanır,
+  yoksa eş veya ebeveyn uydurulmaz. Ad/portre kimliği yaş boyunca korunur.
+- Karakter/hanedan listesi gerçek profili açar; eski yalnız adlar tarihsiz/ebeveynsiz kalır.
+  Aynı adlı ikinci kayıt silinmez; atanın defterinde eski torun adları saklanır.
+- Bebek bakım/oyun/öğrenme/genç dinleme/yetişkin kararları; profil ve sohbet aynı aylık
+  tek toruna zaman hakkı, bağ +4/gerçek anı, para/XP/tur yok. Yaşa özgü karşılıklı söz.
+  Otomatik an yalnız gerçek yaşayan yerel 4+ kişide; yetişkine çocuk sahnesi yok.
+- Kendi gerçek çocuğu olan vâris gerçek yaşını/çocuk kimliğini/yaşını/öbür ebeveynini
+  ve gerçek eşini korur. Önizleme aynı yaş/çocuk sayısını gösterir. Diğer kol ve bilinen
+  yakınlar kan akrabası kalır; kur/evlilik engeli ve korunan nüfus kaydı. Kişisel sohbet
+  defteri/aylık bakım hakkı sıfır. Çocuğu olmayan eski başlangıçlarda yedi yaş döngüsü sürer.
+- 99 motor + önceki 329/3.770/3.850 temiz. Göç/bozuk kayıt, tip/dil/MP/web/Android-Hermes temiz.
+  GDD: dokuz akış/üç sentetik 30 ay aynı; vâris hash'i yalnız üç bilinen akraba/tanışıklık
+  eki nedeniyle değişti, eski motorla karşılaştırıldıktan sonra taban yenilendi.
+- Yeni 300 hayat HATA:0, 6 dk, medyan ölüm 64 (14–74). 30 hayat/20.534 ay: boş %11,6,
+  bunalma %0,2/gerilim en çok iki/ip ödeme %100. Ayna +96,1/−97,8, vâris +43,4/−43;
+  41.682 olay metni temiz. 12 gerçek küçük ekran akışı altı dil, 320×568/4× CPU/44 px;
+  gerçek yaşlı vâris/evlat aktarımı ve atada eski adlar da ekranda doğrulandı. Telefon/APK yok.
+- `docs/TORUNLAR.md`. Tam GDD hâlâ açık: bağımsız yetişkin evlat evlenme/ayrılma,
+  ayrıntılı diğer soy rolleri/tam soy ağacı, bütün varlıklar görüşü/LOD, mahkeme/iftira,
+  kayıtlı üretim RNG, okul/meslek/yol ve gerçek cihaz/oyuncu deneyi. Yüzde tahmini yapma.
+  NPC sohbeti önceliği sürüyor; sonraki görünür iş ailenin kendi gündemi ve konuşmanın
+  sonraki karşılaşmadaki kişisel sonucu olsun. Doğrulanmış değişiklikler hemen commit→push→uzak doğrulama.

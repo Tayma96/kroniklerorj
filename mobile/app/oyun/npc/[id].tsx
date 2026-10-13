@@ -134,7 +134,7 @@ export default function NpcDetail() {
   const ties = cevre
     .map((tt) => ({ kind: tt.tur as TieKind, otherId: tt.npc.id, who: tt.npc, olu: tt.olu, uzak: tt.uzak }))
     .sort((a, z) => TIE_ORDER.indexOf(a.kind) - TIE_ORDER.indexOf(z.kind) || Number(a.olu) - Number(z.olu));
-  const couldMarry = prof.burada && !state.player.dead && !state.player.married && state.player.age >= 18 && npc.age >= 18 && npc.gender !== state.player.gender;
+  const couldMarry = prof.burada && !state.player.dead && !state.player.married && state.player.age >= 18 && npc.age >= 18 && npc.gender !== state.player.gender && !prof.aileRolu && !oyuncuAkrabasi(state.player, npc.id);
   const canGoal = prof.burada && !state.player.dead && state.player.age >= 13 && !!npc.goal; // muradına ermiş NPC'nin hedefi kalmaz — yardım/istismar kapanır
   // Kanal-bazlı kilit: her etkileşim (her sohbet niyeti + hediye/flört/dedikodu/hakaret/sadaka) ayrı ayrı ayda bir.
   // "dert dinle" deyince "iltifat" kapanmaz — hepsi bağımsız, hepsi bir kez okunur; farm motor tarafında kapalı.
@@ -181,7 +181,7 @@ export default function NpcDetail() {
           {/* Bant etiketi */}
           <View style={{ flexDirection: "row", alignItems: "center", gap: 4, paddingVertical: 3, paddingHorizontal: 7, borderRadius: 5, borderWidth: 1, borderColor: band.tone + "66", backgroundColor: band.tone + "14" }}>
             <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: band.tone }} />
-            <Text style={{ fontFamily: F.display, fontSize: 8.5, letterSpacing: 0.5, color: band.tone }}>{(prof.aileRolu ? t({ anne: "char.mother", baba: "char.father", es: "char.spouse", evlat: "tie.evlat", kardes: "tie.kardes" }[prof.aileRolu]) : t("relb." + band.id)).toUpperCase()}</Text>
+            <Text style={{ fontFamily: F.display, fontSize: 8.5, letterSpacing: 0.5, color: band.tone }}>{(prof.aileRolu ? t({ anne: "char.mother", baba: "char.father", es: "char.spouse", evlat: "tie.evlat", kardes: "tie.kardes", torun: "torun.role", akraba: "torun.kin" }[prof.aileRolu]) : t("relb." + band.id)).toUpperCase()}</Text>
           </View>
         </View>
 

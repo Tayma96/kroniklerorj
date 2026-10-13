@@ -14,6 +14,7 @@ import { hap } from "../../lib/haptics";
 import { playWater, playPurr, playBark } from "../../lib/sound";
 import { placeName, professionNameL, careerTitleL } from "../../lib/locale-data";
 import { C, F } from "../../lib/theme";
+import { Torunlar } from "../../lib/torun-ui";
 
 const GB = "rgba(201,168,76,0.22)"; // gold border
 const GBG = "rgba(201,168,76,0.07)"; // gold bg
@@ -571,7 +572,7 @@ export default function Karakter() {
                 ) : (
                   <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
                     {p.children.map((c, i) => { const cid = p.child_ids?.[c]; return ( // evlat gerçek kişiyse dokununca profili açılır
-                      <Pressable key={i} disabled={!cid} onPress={() => { if (cid) { hap("tap"); router.push(`/oyun/npc/${cid}`); } }} style={{ flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: C.bg, borderWidth: 1, borderColor: C.border, borderRadius: 8, paddingVertical: 5, paddingHorizontal: 9 }}>
+                      <Pressable key={i} testID={cid ? "family-child-" + cid : undefined} accessibilityRole={cid ? "button" : undefined} accessibilityLabel={c} disabled={!cid} onPress={() => { if (cid) { hap("tap"); router.push(`/oyun/npc/${cid}`); } }} style={{ flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: C.bg, borderWidth: 1, borderColor: C.border, borderRadius: 8, minHeight: 44, paddingVertical: 5, paddingHorizontal: 9 }}>
                         <GameIcon name="dogum" size={11} color={C.goldDim} />
                         <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchment }}>{c}</Text>
                       </Pressable>
@@ -579,6 +580,7 @@ export default function Karakter() {
                   </View>
                 )}
               </View>
+              <Torunlar state={state} onOpen={id => { hap("tap"); router.push(`/oyun/npc/${id}`); }} />
               {/* Kardeşler — aynı ocakta büyüyen gerçek kişiler (rahmetliler soluk); dokununca profili */}
               {(() => { const ks = (p.sibling_ids || []).map((id) => kisiProfil(state, id, lang)).filter((x): x is NonNullable<typeof x> => !!x); if (!ks.length) return null; return (
                 <View style={{ marginTop: 11, paddingTop: 11, borderTopWidth: 1, borderTopColor: C.border }}>

@@ -153,3 +153,19 @@ eylem kabulü denetlenir. Ara ve tamamlanmış sohbet kayıt sonrası doğru aç
 30 hayat/19.766 ay, ayna/olay metni temiz. 300 hayat önceki dalgada; APK/telefon QA yok.
 Sıradaki torunların gerçek kişi/yaş/soy bağı ve etkileşimi: eski isimlere bilinmeyen
 doğum/ebeveyn uydurma, vârisin gerçek başlangıç yaşı ve nüfus aktarımını önce oku.
+
+## Gerçek torun ve aile sürekliliği — 13 Ekim 2026
+
+`NPC_SOHBET` dalgası d13bc1b apk'ya gönderildi ve uzak kimlik doğrulandı.
+`TORUNLAR.md`: kimlik/yaş/gerçek evlat üzerinden ebeveyn, aileden profile geçiş,
+beş bakım aşaması ve yaşa özgü karşılıklı söz. Profil/sohbet ay hakkı ortak;
+eski yalnız adlara doğum/ebeveyn uydurulmaz, atanın defterine kalır. Çocuğu olan
+vâris gerçek yaş/aynı çocuk/gerçek eşle devam eder; başka kol kan akrabası kalır.
+Çocuğu olmayan eski yedi yaş başlangıcı sürer. Kişisel hafıza/ay hakkı sıfırlanır.
+99 motor, 329/3.770/3.850 önceki örnek, 12 gerçek küçük ekran/altı dil/44 px,
+göç/dil/MP/GDD/web/Android-Hermes temiz. Yeni kontrol noktası 300 hayat HATA:0.
+30 hayat/20.534 ay, ayna ve 41.682 olay metni temiz. Telefon/yeni APK yok.
+GDD vâris hash'i yalnız gerçek eski yakınların kimlik/tanışıklık ekidir; eski
+motorla karşılaştırıldıktan sonra güncellendi. Sıradaki aile üyelerinin kendi
+gündemleri ve sohbetin sonraki karşılaşmadaki kişisel sonucu; bağımsız yetişkin
+evlat evlenme/ayrılma, ayrıntılı soy rolleri/tam soy ağacı ve tam GDD hâlâ açıktır.
