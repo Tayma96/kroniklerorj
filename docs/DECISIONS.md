@@ -73,3 +73,7 @@ yapma. Görgünün duygu yükü kişisel yaşantının %60'ı; huy yine çarpar.
 bir sahne, bir üretim denemesi. Kaynak sorusunda kişinin bizzat bildiği ile başkasından duyduğu
 ayrılır. Liste/görüş/sohbet aynı kanıt türünü anlatır; özette en güçlü gerçek anı örnek alınır.
 Kanıtla karşı söz ve mahkeme kullanımı sonraki açık uygulama adımlarıdır.
+
+## 13 Ekim 2026 — Mobil oyuncuya sosyal sonuç getir
+
+Kullanıcı oyunun mobil olduğunu ve toplum/oyuncu psikolojisine göre oynamaya değer kılınmasını vurguladı. Açık hayrın gerçek şahidinden kısa vadeli iş teklifi: sebebi anlaşılır, iki oyun seçeneği, ücret/yorgunluk takası. Ret veya sonraya bırakma baskı/ilişki cezası yaratmaz. Kısa oturumun ilgisini kişinin hatırlaması ve tekrar karşılaşma taşır; gerçek takvim/giriş serisi yok. GDD uygulanırken bu tasarım kararları eklenir. `HAYIR_FIRSATI.md` kapsam ve doğrulama sınırları.

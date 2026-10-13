@@ -7,7 +7,7 @@ import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
 import { useMp } from "../../lib/mp/store";
 import { realmYearMonth } from "../../lib/mp/world";
-import { applyDilemma, rakipYarisi, tezgahKart, tezgahHuner, tezgahHunerStat, tezgahSans, tezgahBasari, resolveTezgah, TEZGAH_HUNER, careerTitle, achievementsOf, GameEvent, resolveOpportunity, resolveMicro, resolveSaga, resolveBloodline, BL_CHOICES, BL_COST, SAGA_CHOICES, SAGA_COST, resolveDivan, inJail, jailBribeCost, bribeJailer, Opportunity, publicPerception, atHome, eulogy, WorkStyle, familyQuestsOf, playerWar, beylikName, childAction, ChildAct, elderAction, ElderAct, adultAction, AdultAct, ADULT_TRAINER_COST, studyEnergy, maxStudyEnergy, STUDY_COST, playEnergy, maxPlayEnergy, PLAY_COST, canWork, kariyerXp, kisiProfil, gorus, gorusSebebi, npcTeklifYanit, youthAction, GencAct, gonulAdayi, donumAni, acikHesaplar, ayNotu, onemliMi, kapiMetni, hakemIpucu, araciSansi, hayatOzeti, kisiOf, knParam, esnafAhlaki } from "../../lib/game";
+import { applyDilemma, rakipYarisi, tezgahKart, tezgahHuner, tezgahHunerStat, tezgahSans, tezgahBasari, resolveTezgah, TEZGAH_HUNER, careerTitle, achievementsOf, GameEvent, resolveOpportunity, resolveMicro, resolveSaga, resolveBloodline, BL_CHOICES, BL_COST, SAGA_CHOICES, SAGA_COST, resolveDivan, inJail, jailBribeCost, bribeJailer, Opportunity, publicPerception, atHome, eulogy, WorkStyle, familyQuestsOf, playerWar, beylikName, childAction, ChildAct, elderAction, ElderAct, adultAction, AdultAct, ADULT_TRAINER_COST, studyEnergy, maxStudyEnergy, STUDY_COST, playEnergy, maxPlayEnergy, PLAY_COST, canWork, kariyerXp, kisiProfil, gorus, gorusSebebi, echoWorkBlock, npcTeklifYanit, youthAction, GencAct, gonulAdayi, donumAni, acikHesaplar, ayNotu, onemliMi, kapiMetni, hakemIpucu, araciSansi, hayatOzeti, kisiOf, knParam, esnafAhlaki } from "../../lib/game";
 import { ayinSahnesi, Dilemma, Choice } from "../../lib/events";
 import { SinavKartiModal, SinavKartiVeri } from "../../lib/kart3d";
 import { rakipKartVerisi } from "../../lib/rakip-ui";
@@ -124,6 +124,9 @@ export default function Dashboard() {
   const seenSeq = useRef<number | null>(state ? state.hseq ?? 0 : null); // görülen son olay sırası (null: kayıt henüz yüklenmedi)
   const [showEulogy, setShowEulogy] = useState(false);
   const [workStyle, setWorkStyle] = useState<WorkStyle>("normal");
+  const [echoParked, setEchoParked] = useState<string | null>(null);
+  const echoDialogKey = state?.npcTeklif?.sebep === "sahit_sadaka" ? `${state.player.generation}:${state.npcTeklif.id}:${state.npcTeklif.turn}` : null;
+  const echoDeferred = !!echoDialogKey && echoParked === echoDialogKey;
   const wasDead = useRef<boolean>(state?.player.dead ?? false);
 
   // Ölüm anı → sinematik mersiye (yalnızca yeni ölümde).
@@ -295,31 +298,36 @@ export default function Dashboard() {
         <DilemmaModal dilemma={tzDilemma} onChoose={onTezgah} female={p.gender === "kadın"} />
       ) : state.hesap && !p.dead && !yearReport ? ( // yıl karnesi kapanınca hesap anı gelir (iki pencere üst üste açılmaz)
         <HesapModal />
-      ) : state.npcTeklif && !p.dead ? (() => {
+      ) : state.npcTeklif && !p.dead && !echoDeferred ? (() => {
         // NPC'nin kendi kararıyla gelen teklifi: kim, ne istiyor, sana bakışı ve en büyük sebebi (döküm motorla aynı)
         const tk = state.npcTeklif!; const pr = kisiProfil(state, tk.id, lang);
         if (!pr) return null;
         const g = gorus(state, tk.id).toplam;
+        const echo = tk.sebep === "sahit_sadaka"; const echoBlock = echo ? echoWorkBlock(state) : null;
         const kardesTur = tk.tur === "kardes" || tk.tur === "miras"; // kardeşin isteği: anahtar kardeşin cinsine göre, adı ilk adıyla
         const km = kapiMetni(state); // kapıdaki insan kartı (düğün, cenaze, kefalet, hakemlik)
         const metin = km ? renderEvt(km.k, "", km.p, lang, t, p.gender === "kadın") : kardesTur ? renderEvt("npct." + tk.tur + (pr.npc.gender === "kadın" ? ".k" : ""), "", [pr.npc.name.split(" ")[0], tk.tutar || 0], lang, t, p.gender === "kadın")
           : renderEvt(tk.tur === "dunur" ? "npct.dunur" : "npct.borc" + (tk.sebep ? "." + tk.sebep : ""), "", tk.tur === "dunur" ? [pr.npc.name] : [pr.npc.name, tk.tutar || 0, tk.ay || 12], lang, t, p.gender === "kadın");
-        const yetmez = tk.tur !== "dunur" && tk.tur !== "kefil" && tk.tur !== "hakem" && tk.tur !== "imece" && tk.tur !== "canborcu" && tk.tur !== "tanidik" && tk.tur !== "mahkeme" && p.money < (tk.tutar || 0); // kesede yoksa verilemez (ret her zaman açık)
+        const yetmez = !!echoBlock || tk.tur !== "dunur" && tk.tur !== "kefil" && tk.tur !== "hakem" && tk.tur !== "imece" && tk.tur !== "canborcu" && tk.tur !== "tanidik" && tk.tur !== "mahkeme" && p.money < (tk.tutar || 0); // kesede yoksa verilemez (ret her zaman açık)
         const ipucu = hakemIpucu(state); const bAdi = tk.tur === "hakem" && tk.ek ? kisiProfil(state, tk.ek, lang)?.npc.name || "" : "";
-        const redEt = tk.tur === "tanidik" && tk.alt === "haber" ? t("npct.bosver") : tk.tur === "dugun" || tk.tur === "cenaze" || tk.tur === "imece" || (tk.tur === "helal" && tk.alt === "olum") ? t("npct.gitme") : tk.tur === "hakem" ? t("npct.karisma") : tk.tur === "canborcu" ? t("npct.canborcuHelalBtn") : tk.tur === "araci" ? t("npct.araciRedBtn") : tk.tur === "mahkeme" ? t("npct.mahkemeRedBtn") : t("npct.red");
-        const kabulEt = tk.tur === "dugun" ? applyParams(t("npct.dugunBtn"), [tk.tutar || 0]) : tk.tur === "cenaze" ? applyParams(t("npct.cenazeBtn"), [tk.tutar || 0]) : tk.tur === "kefil" ? t("npct.kefilBtn") : tk.tur === "imece" ? t("npct.imeceBtn") : tk.tur === "tanidik" ? t(tk.alt === "haber" ? "npct.tanidikHaberBtn" : tk.alt === "tanistir" ? "npct.tanistirBtn" : "npct.tanidikBtn") : tk.tur === "canborcu" ? t("npct.canborcuAlBtn") : tk.tur === "helal" ? t("npct.helalBtn") : tk.tur === "araci" ? applyParams(t("cb.diyet"), [tk.tutar || 0]) : tk.tur === "mahkeme" ? t("npct.mahkemeBtn") : t("npct.kabul");
+        const redEt = echo ? t("echo.decline") : tk.tur === "tanidik" && tk.alt === "haber" ? t("npct.bosver") : tk.tur === "dugun" || tk.tur === "cenaze" || tk.tur === "imece" || (tk.tur === "helal" && tk.alt === "olum") ? t("npct.gitme") : tk.tur === "hakem" ? t("npct.karisma") : tk.tur === "canborcu" ? t("npct.canborcuHelalBtn") : tk.tur === "araci" ? t("npct.araciRedBtn") : tk.tur === "mahkeme" ? t("npct.mahkemeRedBtn") : t("npct.red");
+        const kabulEt = echo ? t("echo.accept") : tk.tur === "dugun" ? applyParams(t("npct.dugunBtn"), [tk.tutar || 0]) : tk.tur === "cenaze" ? applyParams(t("npct.cenazeBtn"), [tk.tutar || 0]) : tk.tur === "kefil" ? t("npct.kefilBtn") : tk.tur === "imece" ? t("npct.imeceBtn") : tk.tur === "tanidik" ? t(tk.alt === "haber" ? "npct.tanidikHaberBtn" : tk.alt === "tanistir" ? "npct.tanistirBtn" : "npct.tanidikBtn") : tk.tur === "canborcu" ? t("npct.canborcuAlBtn") : tk.tur === "helal" ? t("npct.helalBtn") : tk.tur === "araci" ? applyParams(t("cb.diyet"), [tk.tutar || 0]) : tk.tur === "mahkeme" ? t("npct.mahkemeBtn") : t("npct.kabul");
         const araciYuzde = tk.tur === "araci" ? araciSansi(state) : null; // aracının hatırıyla diyet şansı (savaş ekranındaki dökümün üstüne +20)
         const neden = renderEvt("npct.why", "", [(g > 0 ? "+" : "") + g, gorusSebebi(state, tk.id, g >= 0 ? 1 : -1)], lang, t, p.gender === "kadın");
         const yanit = (kabul: boolean, secim?: 0 | 1) => { hap("selection"); playTap(); apply((s) => npcTeklifYanit(s, kabul, secim)); };
         return (
-          <Modal visible transparent animationType="fade" onRequestClose={() => yanit(false)}>
+          <Modal visible transparent animationType="fade" onRequestClose={() => echo ? setEchoParked(echoDialogKey) : yanit(false)}>
             <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.72)", alignItems: "center", justifyContent: "center", padding: 22 }}>
+              <ScrollView style={{ width: "100%", maxWidth: 380, maxHeight: "92%", flexGrow: 0 }} contentContainerStyle={{ padding: 1 }}>
               <View style={{ width: "100%", maxWidth: 380, backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(201,168,76,0.45)", borderRadius: 14, padding: 18, alignItems: "center" }}>
                 <GameIcon name={tk.tur === "dunur" || tk.tur === "dugun" ? "ring" : tk.tur === "cenaze" ? "tombstone" : tk.tur === "helal" ? "sosyal" : tk.tur === "araci" || tk.tur === "mahkeme" ? "scales" : tk.tur === "imece" ? "iliskiler" : tk.tur === "tanidik" ? "meslek" : tk.tur === "kardes" ? "iliskiler" : tk.tur === "miras" || tk.tur === "kefil" || tk.tur === "hakem" ? "scales" : "coins"} size={18} color={C.gold} />
+                {echo && <Pressable accessibilityRole="button" accessibilityLabel={t("echo.later")} onPress={() => setEchoParked(echoDialogKey)} style={{ minHeight: 44, alignSelf: "flex-end", justifyContent: "center", paddingHorizontal: 10 }}><Text style={{ fontFamily: F.display, fontSize: 12, color: C.parchmentMuted }}>{t("echo.later")}</Text></Pressable>}
                 <View style={{ marginTop: 10 }}><Portre age={pr.npc.age} gender={pr.npc.gender} size={64} ring={false} seed={pr.npc.id} /></View>
                 <Text style={{ fontFamily: F.display, fontSize: 16, color: C.parchment, marginTop: 8, textAlign: "center" }}>{pr.npc.name}</Text>
                 <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchmentDim, lineHeight: 21, marginTop: 10, textAlign: "center" }}>{metin}</Text>
-                {tk.tur !== "hakem" ? <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.goldDim, lineHeight: 18, marginTop: 8, textAlign: "center" }}>{neden}</Text> : null}
+                {echo && <Text style={{ fontFamily: F.serif, fontSize: 12, color: C.parchmentMuted, lineHeight: 18, marginTop: 8, textAlign: "center" }}>{t("echo.cost")}</Text>}
+                {echoBlock && <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.ember, lineHeight: 18, marginTop: 6, textAlign: "center" }}>{t("echo.block." + echoBlock)}</Text>}
+                {tk.tur !== "hakem" && !echo ? <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.goldDim, lineHeight: 18, marginTop: 8, textAlign: "center" }}>{neden}</Text> : null}
                 {araciYuzde != null ? <Text style={{ fontFamily: F.display, fontSize: 12, color: araciYuzde >= 60 ? C.sage : araciYuzde <= 25 ? C.blood : C.gold, marginTop: 8, textAlign: "center" }}>{t("npct.araciSans")}: {yuzdeL(araciYuzde, lang)}</Text> : null}
                 {ipucu ? <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.sage, lineHeight: 18, marginTop: 8, textAlign: "center" }}>{renderEvt("npct.hakemIpucu", "", [ipucu], lang, t, p.gender === "kadın")}</Text> : null}
                 {tk.tur === "hakem" ? (
@@ -337,15 +345,16 @@ export default function Dashboard() {
                   </View>
                 ) : (
                 <View style={{ flexDirection: "row", gap: 10, marginTop: 16, alignSelf: "stretch" }}>
-                  <Pressable onPress={() => yanit(false)} style={{ flex: 1, paddingVertical: 11, borderRadius: 9, borderWidth: 1, borderColor: C.border, alignItems: "center" }}>
+                  <Pressable accessibilityRole="button" accessibilityLabel={redEt} onPress={() => yanit(false)} style={{ flex: 1, minHeight: 44, justifyContent: "center", paddingVertical: 11, borderRadius: 9, borderWidth: 1, borderColor: C.border, alignItems: "center" }}>
                     <Text style={{ fontFamily: F.display, fontSize: 12, color: C.parchmentMuted, letterSpacing: 0.5 }}>{redEt}</Text>
                   </Pressable>
-                  <Pressable disabled={yetmez} onPress={() => yanit(true)} style={{ flex: 1, paddingVertical: 11, paddingHorizontal: 6, borderRadius: 9, borderWidth: 1, borderColor: "rgba(201,168,76,0.55)", backgroundColor: "rgba(201,168,76,0.12)", alignItems: "center", opacity: yetmez ? 0.4 : 1 }}>
+                  <Pressable accessibilityRole="button" accessibilityLabel={kabulEt} accessibilityState={{ disabled: yetmez }} disabled={yetmez} onPress={() => yanit(true)} style={{ flex: 1, minHeight: 44, justifyContent: "center", paddingVertical: 11, paddingHorizontal: 6, borderRadius: 9, borderWidth: 1, borderColor: "rgba(201,168,76,0.55)", backgroundColor: "rgba(201,168,76,0.12)", alignItems: "center", opacity: yetmez ? 0.4 : 1 }}>
                     <Text style={{ fontFamily: F.display, fontSize: 12, color: C.gold, letterSpacing: 0.5, textAlign: "center" }}>{kabulEt}</Text>
                   </Pressable>
                 </View>
                 )}
               </View>
+              </ScrollView>
             </View>
           </Modal>
         );
@@ -496,6 +505,15 @@ export default function Dashboard() {
           </Pressable>
         </View>
       )}
+
+      {echoDeferred && !p.dead && state.npcTeklif && (() => {
+        const name = kisiProfil(state, state.npcTeklif.id, lang)?.npc.name;
+        if (!name) return null;
+        const label = applyParams(t("echo.pending"), [name]);
+        return <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={() => setEchoParked(null)} style={{ marginHorizontal: 12, marginTop: 8, minHeight: 44, padding: 10, borderRadius: 9, borderWidth: 1, borderColor: C.border, flexDirection: lang === "ar" ? "row-reverse" : "row", alignItems: "center", gap: 8 }}>
+          <GameIcon name="meslek" size={16} color={C.gold} /><Text style={{ flex: 1, fontFamily: F.serif, fontSize: 13, color: C.parchment }}>{label}</Text>
+        </Pressable>;
+      })()}
 
       {/* Açık hesaplar: aklında tutman gereken süren hesaplar (en çok 5; kim, ne istiyor, ne zaman) — TASARIM_PUSULASI ilke 4 */}
       {!p.dead && (() => {

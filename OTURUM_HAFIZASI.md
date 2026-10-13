@@ -432,3 +432,15 @@ kaydı (iz) olur, iz bir eğilim etiketi taşır, sonraki olaylar ve yaylar bu h
 - Kanıtla karşı söylenti ve mahkemede şahit kullanımı daha uygulanmadı. Artımlı altı boyutlu görüş,
   izlenim/LOD, çok turlu tonlu konuşma ve üretim RNG kaydı da açık. Eski sekiz NPC konuşma metni
   yazıldığı dilde saklanır; yerelleşen kronikten ayrı. Sıradaki görünür iş kaynağa güven/karşı söz.
+
+## 33. Açık hayrın tanıdığı iş haberi getirdi (13 Ekim 2026)
+
+- Kullanıcı mobil oyun olduğunu, toplum ve oyuncu psikolojisiyle oynamaya değer kılınmasını vurguladı. GDD/kendi tasarım yetkisi sürüyor; menü sayısı yerine ana akışta kişisel sosyal sonuç.
+- Gerçek görgü anısı/ortak olaya bağlı yetişkin şahitten 1–3 aylık ip; mevcut vade ayırma/meşgul karar nedeniyle uzayabilir. 24 ay kişisel kilit, aynı kaynak kapı kilidi, en çok üç ip; gizli hayır fırsat üretmez.
+- İş teklifi normal ortalama maaş ×1,35; aynı aylık çalışma hakkı, tokluk −15/sağlık −2. Normal kariyer/beceri/özellik XP, tanıdık +4/anı. Ret ve üç oyun ayı yanıtsız kalma cezasız; gerçek takvim yok.
+- Sonra bak/Android geri tekliften vazgeçirmez; ana panodaki tek satır geri açar. İkinci dönüm noktası penceresi yok, 44 px düğmeler/kaydırılan kart/altı dil. Ölüm/uzaklık/soğuma/unutma ayrı kapanır.
+- 37 hedefli motor + 12 gerçek ana ekran bileşen akışı; tip/paket/göç/i18n/dil ve 1.246 önceki şahit örneği temiz. 10 GDD akışı/üç sentetik 30 ay aynı. 30 hayat/21.051 ay: boş %11,8, bunalma %0,3, gerilim en çok iki; ayna +94,9/−98,8, vâris +43,4/−42,5; 16.566 metin temiz.
+- Ortam yerel ağ/tarayıcı açılışını engelledi; yeni görsel yerleşim/telefon QA yok. Bileşen testi bu sınırı gizlemez. Web ve Android/Hermes paketleri üretildi. 300 hayat önceki kontrol noktası; bu ilk ara motor dalgası. Yeni APK/PR/dağıtım yok.
+- `docs/HAYIR_FIRSATI.md`. Tam GDD açık: vektör/izlenim/LOD, karşı söylenti/mahkeme, tonlu sohbet, üretim RNG ve gerçek cihaz/oyuncu deneyi. Başka dalda iş yok; yalnız apk.
+
+Gönderim sınırı (13 Ekim 2026): GitHub bağlı okuma ile uzak apk=ae38a80 doğrulandı. Yerel ağ GitHub adını çözemedi; bağlı GitHub yazma aracı onay gereksinimi/never politikası nedeniyle işlemi engelledi. Bu dalga yerelde commit ve çıktı yamasıyla hazırdır, uzak dala gönderilmiş sayılmaz. İzinli ağ/yazma erişimi geldiğinde yalnız apk dalına normal ileri gönderim yapılmalı; uzak durum yeniden doğrulanmalı.

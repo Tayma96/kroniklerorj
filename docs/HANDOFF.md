@@ -82,3 +82,9 @@ Profilde diğer şahitlere geçiş; özet ve otomatik sözlerde şahidin mağdur
 kirli-kopya damgası yolu düzeltildi. 30 hayat/19.528 ay, ayna ve metin denetimleri temiz. GDD'nin
 artımlı vektör/izlenim, kanıtla karşı söylenti, mahkeme şahitliği, tonlu sohbet ve RNG işleri açık.
 APK/PR/dağıtım yok; fiziksel cihaz denemesi yapılmadı. Yalnız apk dalı, tam geliştirme yetkisi sürüyor.
+
+## Mobil sosyal sonuç — 13 Ekim 2026
+
+`HAYIR_FIRSATI.md`: açık sadakanın gerçek şahidinden, ortak olaya bağlı kısa vadeli iş fırsatı. Aynı ay çalışma takası, ücret/bedel görünür; ret/süre sonu cezasız. Sonraya bırakma ve ana panodan geri açma; tek teklif, ikinci dönüm noktası penceresi yok. 37 motor ve 12 gerçek ana ekran bileşen örneği temiz. 10 GDD akışı/üç sentetik kayıt aynı; 30 hayat/21.051 ay, ayna/metin/göç/dil temiz. Bu oturum yerel tarayıcı bağlantısını engelledi; bileşen deneyi görsel/telefon QA sayılmaz. 300 hayat kadansı bir önceki dalgada; yeni APK yok. Tam GDD işleri açık.
+
+Gönderim sınırı (13 Ekim 2026): GitHub bağlı okuma ile uzak apk=ae38a80 doğrulandı. Yerel ağ GitHub adını çözemedi; bağlı GitHub yazma aracı onay gereksinimi/never politikası nedeniyle işlemi engelledi. Bu dalga yerelde commit ve çıktı yamasıyla hazırdır, uzak dala gönderilmiş sayılmaz. İzinli ağ/yazma erişimi geldiğinde yalnız apk dalına normal ileri gönderim yapılmalı; uzak durum yeniden doğrulanmalı.

@@ -518,3 +518,7 @@ haritasındadır. Hedeflerin bir kısmı bugünkü değerler ölçüldükten son
 
 **Etik**
 - [Zagal, Björk, Lewis (2013) — Dark Patterns in the Design of Games](https://www.semanticscholar.org/paper/Dark-patterns-in-the-design-of-games-Zagal-Bj%C3%B6rk/19a241378b06d868eb5f6b76027172c3aaca86f4)
+
+## Uygulama notu — 13 Ekim 2026
+
+Mobil sosyal bağlılık: NPC'nin bildiği gerçek eylem daha sonraki kısa bir karar sahnesinin sebebi olur. İki oyun seçeneği, görünür bedel, tek bekleyen teklif ve cezasız sonraya bırakma. Oyuncu çevresini kendi kararıyla kurar; uygulamayı ne zaman açtığı ödül veya kayıp koşulu değildir. Hayırdan iş fırsatı ilk örnek (`docs/HAYIR_FIRSATI.md`); etkisi gerçek oyuncu deneyiyle sınanmalıdır.
