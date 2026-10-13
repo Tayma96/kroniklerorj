@@ -111,3 +111,12 @@ GDD'deki ayrı koleksiyon/LOD ve bütün varlıklar vektörü ayrıca açık. `N
 Kullanıcı NPC profilindeki sohbet ve etkileşimleri sığ buldu; eş/anne-baba/evlat/torun farkını istedi.
 Sonraki öncelik, profil içindeki aile eylemleri ve oyuncunun yanıt verebildiği bağlamlı kısa konuşmadır.
 Eşi bekâr anlatan aile satırı ve henüz yalnız isim/otomatik olay olan torunlar açık bulgulardır.
+
+## 13 Ekim 2026 — Dinlemek gerçek desteğe bağlansın
+
+Karşılıklı sohbet iki oyuncu yanıtı içinde niyet ve sonucu bağlar. Aile bakımını ayrı
+ödül kanalına çevirmeden mevcut gerçek eylemi çağırır; gerçekleşmeyen destek olmuş
+gibi yazılmaz. İlk yanıt düşünme alanıdır, kaynak/zar/ilişki değiştirmez. Kişilik
+itiraza karşılığı değiştirir; dürüst sınır her kişide otomatik en iyi seçenek değildir.
+Önce az sayıda ilgili konu, diğerleri açılır satır; yaş, güven/korku ve gerçek soy bağı
+sözü belirler. `NPC_SOHBET.md` kapsam/sınırlar. Torunlar sıradaki açık iştir.

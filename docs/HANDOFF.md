@@ -142,3 +142,14 @@ Kullanıcı NPC sohbeti/etkileşimlerini özellikle derinleştirmemizi istedi: a
 profil eylemleri ve oyuncu karşılıkları öncelik. Eşi bekâr anlatan gercekSatir dalı hatalı; torunlar
 henüz yalnız isim/otomatik olay. Bitmemiş işleri yapılmış sayma. Mevcut tam erişim/ağ/never
 profilinde normal terminal erişimi var, sandbox_permissions verme, tekrar izin/kod isteme.
+
+## Karşılıklı aile sohbeti — 13 Ekim 2026
+
+`NPC_SOHBET.md`: profilde iki oyuncu karşılığı, kişilik/gerçek aile/yaş bağlamı, ortak
+bakım ay hakkı ve bedeli. Eşi bekâr anlatma düzeldi; seçilen evlatla ilgilenilir.
+İlk yanıt ödülsüz; ayda tek derin sohbet, eski olumlu puan tavanı, korku ve gerçek
+eylem kabulü denetlenir. Ara ve tamamlanmış sohbet kayıt sonrası doğru açılır.
+329 motor + 15 gerçek küçük ekran akışı, tip/göç/dil/GDD/MP/web/Android-Hermes temiz.
+30 hayat/19.766 ay, ayna/olay metni temiz. 300 hayat önceki dalgada; APK/telefon QA yok.
+Sıradaki torunların gerçek kişi/yaş/soy bağı ve etkileşimi: eski isimlere bilinmeyen
+doğum/ebeveyn uydurma, vârisin gerçek başlangıç yaşı ve nüfus aktarımını önce oku.

@@ -532,3 +532,21 @@ EPERM ile kapatılmasıydı. Hesap bozukluğu diye yorumlama; izin değişikliğ
   Eşi bekâr anlatan aile satırı ve torunların kişi olmayışı mevcut açık bulgu; tamamlandı diye sunma.
 - Tam erişim/ağ/never ortamı aktif: normal terminal fetch/push çalışır; sandbox_permissions verme.
   Kullanıcının yetkisi sürer, yeniden izin/device kodu isteme. Tam GDD hedefi açık, yüzdesi ölçülmedi.
+
+## 37. Aile konuştu, oyuncu karşılık verdi (13 Ekim 2026)
+
+- Profilde dert/aile/iş/hedef için iki oyuncu karşılığı; dinle/sor/itiraz ve destek/sınır/bitir.
+  Kişilik ve gerçek aile bağı ihtiyacı değiştirir. Eşi bekâr anlatan satır düzeldi.
+- Eş/anne/baba/seçilen evlat eylemi profilde; mevcut bakım bedeli/ay hakkı ortaktır.
+  Yetişkin evlatta karar/kaygı, 3–6 yaşta oyun; bebekte yetişkin konuşması yok.
+  Yapılmayan eylem olmuş gibi anlatılmaz; para eksikliği ve kullanılan aile hakkı ayrıdır.
+- NPC başına ayda tek tamamlanan derin sohbet; mevcut olumlu sohbet tavanı paylaşılır.
+  İlk yanıt ödülsüz/zarsız, korku özel sözü devamda da kapatır. Opsiyonel konuşma kaydı
+  ara/son aşamada saklanır; ölü/uzak/ay/rol/vâris değişiminde devam edemez.
+- 329 hedefli motor; 15 gerçek küçük ekran akışı, altı dil/320×568/4× CPU/44 px/kayıt.
+  Tip/paket/göç/dil/MP/GDD aynı taban ve web/Android-Hermes temiz. Görseller incelendi.
+  30 hayat/19.766 ay, boş %11,7/bunalma %0,2/en çok iki gerilim; ayna +94,7/−98,4,
+  vâris +43,9/−43,2, 16.650 olay metni temiz. Fiziksel cihaz/yeni APK yok.
+- `docs/NPC_SOHBET.md`. 300 hayat önceki dalgada; bu ilk ara motor dalgası. Torunlar
+  henüz yalnız isim/otomatik olay: sıradaki gerçek kişi/yaş/soy bağı/etkileşim. Eski
+  isimlere uydurma doğum tarihi/ebeveyn atama; vârisin gerçek yaşını önce incele.

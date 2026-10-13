@@ -1,16 +1,19 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { View, Text, ScrollView, Pressable } from "react-native";
 import Svg, { Defs, LinearGradient, Stop, Rect, Circle } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useGame } from "../../../lib/store";
 import { kisiProfil, kisiCevresi, heardRumor, gorus, teklifSansi, helalUygun, helalBedeli, helalSansi, helallikIste, talkWith, giftTo, proposeMarriage, canCourt, helpNpcGoal, exploitNpcGoal, oyuncuAkrabasi, GOAL_HELP_COST, relWith, insultNpc, flirtWith, gossipAbout, giveMoneyTo, canFlirt, flirtIsForbidden, npcSeededMarried, GIVE_MONEY_AMT, martialLoad, canTakeApprentice, takeApprentice, mentorApprentice, APPRENTICE_MONTHS } from "../../../lib/game";
-import { useI18n, yuzdeL, kucukHarf, applyParams } from "../../../lib/i18n";
+import { useI18n, yuzdeL, kucukHarf, applyParams, renderEvt } from "../../../lib/i18n";
 import { hap } from "../../../lib/haptics";
 import { INTENTS, moodKey } from "../../../lib/dialogue";
 import { topMemories, salientMemory, representativeMemory } from "../../../lib/npc-mind";
 import { NpcTavri } from "../../../lib/npc-bakis-ui";
 import { NpcIzlenimi } from "../../../lib/npc-izlenim-ui";
+import { SohbetDevami } from "../../../lib/npc-sohbet-ui";
+import { sohbetCevapla, aileProfilEylemi, aileProfilEyleminiYap } from "../../../lib/game";
+import type { SohbetYanit } from "../../../lib/npc-sohbet";
 import { memoryQuote } from "../../../lib/hafiza-sohbet";
 import { professionNameL, traitL, quirkL, goalL, placeName } from "../../../lib/locale-data";
 import { ITEMS, TieKind } from "../../../lib/world";
@@ -112,8 +115,11 @@ export default function NpcDetail() {
   const [line, setLine] = useState<string>("");
   const [lineDelta, setLineDelta] = useState<number>(0);
   const [giftOpen, setGiftOpen] = useState(false);
+  const [moreTopics, setMoreTopics] = useState(false);
+  const scroll = useRef<ScrollView>(null), chatY = useRef(0);
   const [gorusAcik, setGorusAcik] = useState(false); // görüş dökümü (neden böyle bakıyor)
   const [sansAcik, setSansAcik] = useState<string | null>(null); // hangi teklifin şans dökümü açık
+  useEffect(() => { setLine(""); setLineDelta(0); setGiftOpen(false); setMoreTopics(false); setSansAcik(null); }, [id, state?.turn]);
   // Kişi nüfus kaydından okunur (her yerden; yaşayan ya da rahmetli) — nüfus her eylemde yenilendiği için pop'a bağlı.
   const prof = useMemo(() => (state ? kisiProfil(state, id, lang) : null), [state?.pop, state?.seed, state?.turn, state?.player.location_name, lang, id]);
   const cevre = useMemo(() => (state ? kisiCevresi(state, id, lang) : []), [state?.pop, state?.seed, state?.turn, state?.player.location_name, lang, id]);
@@ -134,6 +140,18 @@ export default function NpcDetail() {
   // "dert dinle" deyince "iltifat" kapanmaz — hepsi bağımsız, hepsi bir kez okunur; farm motor tarafında kapalı.
   const acts = state.npc_state?.[npc.id]?.act_turns;
   const usedAct = (key: string) => acts?.[key] === state.turn;
+  const familyAction = aileProfilEylemi(state, npc.id);
+  const isFamily = !!prof.aileRolu;
+  const topics = INTENTS.filter(it => npc.age >= 7 ? (npc.age >= 14 || it.id !== "is") && (it.id !== "hedef" || !!npc.goal) : npc.age >= 3 && ["hosbes", "saka"].includes(it.id));
+  const primary = npc.age < 7 ? ["hosbes", "saka"] : isFamily ? ["hosbes", "dert", "aile", "hedef"] : ["hosbes", "dert", "is", "hedef"];
+  const visibleTopics = moreTopics ? topics : topics.filter(it => primary.includes(it.id));
+  const topicLabel = (id: string) => t(id === "aile" && isFamily ? "sohbet.topic.aile" : "dlg.intent." + id);
+  const focusChat = () => requestAnimationFrame(() => scroll.current?.scrollTo({ y: Math.max(0, chatY.current - 12), animated: false }));
+  const reply = (answer: SohbetYanit) => {
+    const out = sohbetCevapla(state, npc.id, answer, lang);
+    if (!out.line) return;
+    apply(() => out.state); setLine(""); setLineDelta(out.delta); focusChat();
+  };
   const recalled = salientMemory(ns.anilar, state.turn, true);
   const heard = heardRumor(state, npc.id);
   const witnesses = [...new Set(recalled?.taniklar || [])].filter(id => id !== npc.id).slice(0, 3);
@@ -141,11 +159,11 @@ export default function NpcDetail() {
   const speak = (intent: string) => {
     if (usedAct("t:" + intent)) return;
     const r = talkWith(state, npc, intent, lang); // saf motor: söz burada okunur, durum tek seferde uygulanır
-    apply(() => r.state); setLine(r.line); setLineDelta(r.delta);
+    apply(() => r.state); setLine(r.line); setLineDelta(r.delta); focusChat();
   };
 
   return (
-    <ScreenFresk><ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 14, paddingTop: insets.top + 12, paddingBottom: insets.bottom + 40 }}>
+    <ScreenFresk><ScrollView ref={scroll} style={{ flex: 1 }} contentContainerStyle={{ padding: 14, paddingTop: insets.top + 12, paddingBottom: insets.bottom + 40 }}>
       <Pressable onPress={() => router.back()} style={{ marginBottom: 12 }}><BackLabel /></Pressable>
 
       {/* ── Profil kartı ── */}
@@ -238,7 +256,7 @@ export default function NpcDetail() {
         </View>
       )}
 
-      {prof.burada && (<>
+      {prof.burada && !state.player.dead && (<>
       {recalled && !state.player.dead && (
         <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.borderHi, borderRadius: 12, padding: 12, marginBottom: 10 }}>
           <View style={{ flexDirection: lang === "ar" ? "row-reverse" : "row", alignItems: "center", gap: 7, marginBottom: 6 }}>
@@ -271,6 +289,7 @@ export default function NpcDetail() {
         </View>
       )}
       {/* Söylenen söz — yanında ilişki etkisi (kişinin mizacına/ruh haline göre artı ya da eksi gelir) */}
+      <View onLayout={e => { chatY.current = e.nativeEvent.layout.y; }}>
       {line ? (
         <View style={{ backgroundColor: C.card, borderLeftColor: lineDelta < 0 ? C.blood : C.gold, borderLeftWidth: 2.5, borderWidth: 1, borderColor: C.border, borderRadius: 8, padding: 12, marginBottom: 10 }}>
           <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 8 }}>
@@ -284,6 +303,9 @@ export default function NpcDetail() {
         </View>
       ) : null}
 
+      <SohbetDevami state={state} id={npc.id} onReply={reply} />
+      </View>
+
       {/* ── Etkileşim menüsü ── */}
       <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(201,168,76,0.22)", borderRadius: 12, overflow: "hidden", marginBottom: 10 }}>
         <View style={{ paddingHorizontal: 14, paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: C.border }}>
@@ -296,13 +318,26 @@ export default function NpcDetail() {
           </View>
         ) : null}
         {/* 14 yaş altı NPC'ye iş/hayal sorma — çocuğun mesleği/hedefi yok (boş tırnak saçmalığı önlenir). */}
-        {INTENTS.filter((it) => (npc.age >= 14 || it.id !== "is") && (it.id !== "hedef" || !!npc.goal)).map((it) => { const done = usedAct("t:" + it.id); return (
-          <Pressable key={it.id} accessibilityRole="button" accessibilityLabel={t("dlg.intent." + it.id)} accessibilityState={{ disabled: done }} disabled={done} onPress={() => { hap("tap"); speak(it.id); }} style={({ pressed }) => ({ flexDirection: "row", minHeight: 44, alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent", opacity: done ? 0.4 : 1 })}>
+        {familyAction && <Pressable testID="npc-family-action" accessibilityRole="button" accessibilityLabel={t(familyAction.key)} accessibilityState={{ disabled: familyAction.used }} disabled={familyAction.used} onPress={() => {
+          hap("tap"); const next = aileProfilEyleminiYap(state, npc.id); apply(() => next);
+          const e = next.history[next.history.length - 1];
+          setLine(e ? renderEvt(e.k || "", e.text, e.p || [], lang, t, state.player.gender === "kadın") : ""); setLineDelta(0); focusChat();
+        }} style={{ flexDirection: lang === "ar" ? "row-reverse" : "row", minHeight: 44, alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: C.borderHi, opacity: familyAction.used ? .45 : 1 }}>
+          <GameIcon name="family" size={16} color={C.gold} />
+          <View style={{ flex: 1 }}><Text style={{ fontFamily: F.serif, fontSize: 14, color: C.gold }}>{t(familyAction.key)}</Text>
+          {familyAction.cost > 0 && <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted }}>{applyParams(t("sohbet.cost"), [familyAction.cost], lang)}</Text>}</View>
+          {familyAction.used && <Text style={{ maxWidth: 90, flexShrink: 1, fontFamily: F.serif, fontSize: 11, lineHeight: 15, color: C.parchmentMuted }}>{t(familyAction.key + ".used")}</Text>}
+        </Pressable>}
+        {visibleTopics.map((it) => { const done = usedAct("t:" + it.id); return (
+          <Pressable key={it.id} accessibilityRole="button" accessibilityLabel={topicLabel(it.id)} accessibilityState={{ disabled: done }} disabled={done} onPress={() => { hap("tap"); speak(it.id); }} style={({ pressed }) => ({ flexDirection: "row", minHeight: 44, alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent", opacity: done ? 0.4 : 1 })}>
             <GameIcon name={it.icon} size={17} color={C.gold} />
-            <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 14, color: C.parchment }}>{t("dlg.intent." + it.id)}</Text>
+            <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 14, color: C.parchment }}>{topicLabel(it.id)}</Text>
             {done ? <Text style={{ fontFamily: F.display, fontSize: 9, color: C.goldDim }}>{t("soc.lock.done")}</Text> : <Text style={{ color: C.goldDim, fontSize: 15 }}>›</Text>}
           </Pressable>
         ); })}
+        {topics.some(it => !primary.includes(it.id)) && <Pressable accessibilityRole="button" accessibilityLabel={t("sohbet.more")} accessibilityState={{ expanded: moreTopics }} onPress={() => setMoreTopics(v => !v)} style={{ minHeight: 44, justifyContent: "center", paddingHorizontal: 14, borderBottomWidth: 1, borderBottomColor: C.border }}>
+          <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchmentMuted }}>{t("sohbet.more")} {moreTopics ? "⌄" : "›"}</Text>
+        </Pressable>}
         {/* Hediye — kendi kanalı: sohbetten bağımsız, ayda bir */}
         <Pressable disabled={usedAct("gift")} onPress={() => setGiftOpen((o) => !o)} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent", opacity: usedAct("gift") ? 0.4 : 1 })}>
           <GameIcon name="gems" size={16} color={C.gold} />

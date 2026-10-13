@@ -10,6 +10,7 @@ import { Memory, addMemory, decayMemories, behaviorTier, MEMORY_TYPES, RUMOR_VAR
 import { Bakis, BakisDefteri, bakisOku, bakisHazirla, aniHafiflet } from "./npc-bakis";
 import { recollectionLine, recollectionGroup } from "./hafiza-sohbet";
 import { IzlenimDefteri, izlenimHazirla, izlenimler, izlenimToplami, belirginIzlenim, izlenimSozAnahtari } from "./npc-izlenim";
+import { Konusma, SohbetYanit, SohbetKonu, SOHBET_KONULARI, konusmaGecerli, ilkSozEtkisi, ilkSozAnahtari } from "./npc-sohbet";
 import { RumorHearing, rumorOrigin, rumorGraph, spreadRumor } from "./soylenti-agi";
 import { arcById, ArcChoice, availableArcs } from "./arcs";
 
@@ -1069,7 +1070,7 @@ export function joinThreshold(p: Player, f: Faction): number { return p.perks.in
 
 export interface GameEvent { day: number; type: string; text: string; scope: "kişisel" | "makro"; landmark?: boolean; k?: string; p?: EvtParam[]; q?: number; } // q: olay sırası (artan; ekranlar "yeni olay"ı bununla tanır — kronik 250'de kırpılınca uzunluk artmaz)
 export interface DynastyRecord { generation: number; name: string; profession: string; diedAge: number; fame: number; reputation: number; faction: string | null; note: string; noteK?: string; causeK?: string; } // noteK: kitabe kimliği (6 dile çevrilir); note eski kayıtlar için TR yedek; causeK: ölüm nedeni kodu
-export interface NpcState { mood: number; memories: string[]; anilar?: Memory[]; int_turn?: number; act_turns?: Record<string, number>; rel_gain_turn?: number; rel_gain_amt?: number; son?: SohbetSon; ani_sira?: number; bakis?: BakisDefteri; izlenim?: IzlenimDefteri; }
+export interface NpcState { mood: number; memories: string[]; anilar?: Memory[]; int_turn?: number; act_turns?: Record<string, number>; rel_gain_turn?: number; rel_gain_amt?: number; son?: SohbetSon; ani_sira?: number; bakis?: BakisDefteri; izlenim?: IzlenimDefteri; konusma?: Konusma; }
 // son: bu kişiyle son sohbetin konusu ve nasıl bittiği — bir dahaki sohbette hatırlanır (diyalog takip katmanı; eski kayıtta yok, sorun değil).
 // int_turn (eski): tek blok kilit — artık kullanılmıyor, eski kayıtlar için duruyor.
 // act_turns: her etkileşim KANALI (sohbet niyeti / hediye / flört / dedikodu / hakaret / sadaka) ayrı ayrı tur-kilidi;
@@ -5411,6 +5412,8 @@ function gercekSatir(s: GameState, id: string, intent: string, lang: Lang): stri
   const ilk = (x: Kisi) => kisiAdi(x, lang).split(" ")[0]; const tam = (x: Kisi) => kisiAdi(x, lang);
   const T = (key: string, r: Record<string, string | number>) => { let v = tFor(lang, key); for (const a in r) v = v.split("%" + a).join(String(r[a])); return v.replace("%n", ilk(k)); };
   if (intent === "aile") {
+    const family = aileSohbetAnahtari(s, id);
+    if (family) return tFor(lang, family);
     const cocuklar = (k.cocuk || []).map((c) => pop.k[c]).filter((c): c is Kisi => !!c && c.ol == null);
     const yeni = cocuklar.find((c) => yas(c) <= 1); if (yeni) return T("f.aile.bebek", { k: ilk(yeni) });
     const evlenen = cocuklar.find((c) => c.es && c.ey != null && wy - c.ey <= 2); if (evlenen) return T("f.aile.evlatEvlendi", { k: ilk(evlenen) });
@@ -5453,9 +5456,110 @@ function gercekSatir(s: GameState, id: string, intent: string, lang: Lang): stri
   }
   return "";
 }
+export function aileSohbetBagi(s: GameState, id: string): string {
+  const prof = kisiProfil(s, id);
+  return prof?.aileRolu === "es" && !s.player.married ? "diger" : prof?.aileRolu || "diger";
+}
+export function aileSohbetAnahtari(s: GameState, id: string): string | null {
+  const p = s.player, bag = aileSohbetBagi(s, id), k = nufusOf(s).k[id];
+  if (!k) return null;
+  if (bag === "es") return "sohbet.aile.es." + ((p.spouse_bond ?? 40) < 35 ? "uzak" : "yakin");
+  if (bag === "anne" || bag === "baba") return "sohbet.aile." + bag + "." + ((p.parent_bond ?? 45) < 35 ? "uzak" : "yakin");
+  if (bag === "evlat") { const age = yasOf(k, worldYears(s)); return "sohbet.aile.evlat." + (age < 7 ? "kucuk" : age < 13 ? "mektep" : age < 18 ? "genc" : "yetiskin"); }
+  return bag === "kardes" ? "sohbet.aile.kardes" : null;
+}
+export function aileProfilEylemi(s: GameState, id: string): { key: string; used: boolean; cost: number } | null {
+  const p = s.player, k = nufusOf(s).k[id], bag = aileSohbetBagi(s, id);
+  if (p.dead || inJail(p) || !k || k.ol != null || k.loc !== p.location_name) return null;
+  if (bag === "es" && !p.spouse_is_player && k.es === OYUNCU) {
+    const cost = Math.round(8 * inflationFactor(s)), paid = p.money >= cost;
+    const miz = p.spouse_mizac || (p.spouse_seed != null ? spouseMizac(p.spouse_seed) : "sefkatli");
+    return { key: "sohbet.care.es", used: p.spouse_time_turn === s.turn, cost: paid ? cost - (miz === "caliskan" ? Math.round(cost / 2) : 0) : 0 };
+  }
+  if (bag === "anne" || bag === "baba") return { key: "sohbet.care." + bag, used: p.parent_visit_turn === s.turn, cost: 0 };
+  if (bag === "evlat") return { key: "sohbet.care.evlat", used: p.child_time_turn === s.turn, cost: 0 };
+  return null;
+}
+export function aileProfilEyleminiYap(prev: GameState, id: string): GameState {
+  const action = aileProfilEylemi(prev, id);
+  if (!action || action.used) return clone(prev);
+  const bag = aileSohbetBagi(prev, id);
+  if (bag === "es") {
+    const s = spendWithSpouse(prev), k = nufusOf(s).k[id];
+    if (s.player.spouse_time_turn === s.turn) remember(s, { id, name: kisiAdi(k) }, "icten_sohbet", { yuk: 5 });
+    return s;
+  }
+  if (bag === "anne" || bag === "baba") return visitParents(prev, id);
+  const name = Object.keys(prev.player.child_ids || {}).find(n => prev.player.child_ids![n] === id);
+  return name ? tendChild(prev, name) : clone(prev);
+}
+export function npcKonusmasi(s: GameState, id: string): Konusma | null {
+  const k = s.npc_state?.[id]?.konusma, person = nufusOf(s).k[id];
+  if (s.player.dead || inJail(s.player) || !person || person.ol != null || person.loc !== s.player.location_name || !konusmaGecerli(k) || k.t !== s.turn || k.bag !== aileSohbetBagi(s, id)) return null;
+  return k;
+}
+export function sohbetDestegi(s: GameState, id: string): { key: string; disabled: boolean; cost: number; reason?: "money" | "used" } {
+  const action = aileProfilEylemi(s, id);
+  if (action) return { key: action.key, disabled: action.used, cost: action.cost, reason: action.used ? "used" : undefined };
+  const k = npcKonusmasi(s, id), npc = kisiProfil(s, id)?.npc;
+  if (k?.konu === "hedef" && npc?.goal && s.player.age >= 13) return { key: "sohbet.choice.yardim", disabled: s.player.money < GOAL_HELP_COST || !!s.npc_state?.[id] && npcActUsed(s.npc_state[id], "help", s.turn), cost: GOAL_HELP_COST, reason: s.player.money < GOAL_HELP_COST ? "money" : s.npc_state?.[id] && npcActUsed(s.npc_state[id], "help", s.turn) ? "used" : undefined };
+  return { key: "sohbet.choice.destek", disabled: false, cost: 0 };
+}
+export function sohbetDevamSatiri(s: GameState, id: string, lang: Lang = "tr"): string {
+  const k = npcKonusmasi(s, id); if (!k) return "";
+  if (k.adim === 1) return tFor(lang, "sohbet.ask");
+  if (k.adim === 3) return tFor(lang, k.satir!);
+  const npc = kisiProfil(s, id)!.npc;
+  const need = k.bag === "es" ? "es" : k.bag === "anne" || k.bag === "baba" ? "ebeveyn" : k.bag === "evlat" ? npc.age < 13 ? "cocuk" : "evlat" : k.konu === "hedef" && npc.goal ? "hedef" : "diger";
+  return tFor(lang, ilkSozAnahtari(k.ilk, npc.trait)) + " " + tFor(lang, "sohbet.need." + need);
+}
+export function sohbetCevapla(prev: GameState, id: string, answer: SohbetYanit, lang: Lang = "tr"): { state: GameState; line: string; delta: number } {
+  let s = clone(prev); const current = npcKonusmasi(s, id);
+  const nothing = () => ({ state: s, line: "", delta: 0 });
+  if (!current || current.adim === 3 || !["dinle", "sor", "itiraz", "destek", "sinir", "kapat"].includes(answer)) return nothing();
+  if (current.adim === 1 && !["dinle", "sor", "itiraz"].includes(answer) || current.adim === 2 && !["destek", "sinir", "kapat"].includes(answer)) return nothing();
+  const ns = npcStateOf(s, id), npc = kisiProfil(s, id)!.npc, stance = npcBakisi(s, id);
+  if (["aile", "dert", "hedef"].includes(current.konu) && stance.korku >= 20 && stance.guven < 5) {
+    if (current.adim === 1) current.ilk = answer as Konusma["ilk"];
+    current.adim = 3; current.satir = "bakis.closed"; markNpcAct(ns, "t:cevap", s.turn); ns.son = { i: current.konu, t: s.turn, ok: 2 };
+    push(s, "sohbet", `${npc.name}: ${tFor(lang, "bakis.closed")}`, "kişisel", false, { k: "bakis.closed.log", p: [npcP(s, npc)] });
+    return { state: s, line: tFor(lang, "bakis.closed"), delta: 0 };
+  }
+  if (current.adim === 1) {
+    if (!["dinle", "sor", "itiraz"].includes(answer)) return nothing();
+    current.ilk = answer as Konusma["ilk"]; current.adim = 2;
+    const line = sohbetDevamSatiri(s, id, lang);
+    push(s, "sohbet", `${npc.name}: ${line}`, "kişisel", false, { k: "sohbet.replyLog", p: [npcP(s, npc), { tk: "sohbet.choice." + answer }, { tk: ilkSozAnahtari(current.ilk, npc.trait) }] });
+    return { state: s, line, delta: 0 };
+  }
+  if (!["destek", "sinir", "kapat"].includes(answer) || npcActUsed(ns, "t:cevap", s.turn)) return nothing();
+  const support = sohbetDestegi(s, id); if (answer === "destek" && support.disabled) return nothing();
+  // Gerçek eylem kendi mevcut bedel ve ay kilidiyle çözülür; yeni kanal bunları atlamaz.
+  let acted = false;
+  if (answer === "destek") {
+    if (aileProfilEylemi(s, id)) { s = aileProfilEyleminiYap(s, id); acted = !!aileProfilEylemi(s, id)?.used; if (!acted) return nothing(); }
+    else if (support.key === "sohbet.choice.yardim") { s = helpNpcGoal(s, npc); acted = !!s.npc_state?.[id] && npcActUsed(s.npc_state[id], "help", s.turn); if (!acted) return nothing(); }
+  }
+  const end = npcStateOf(s, id), conversation = end.konusma!;
+  markNpcAct(end, "t:cevap", s.turn);
+  const raw = ilkSozEtkisi(conversation.ilk, npc.trait) + (answer === "destek" ? acted ? 0 : 2 : answer === "sinir" && ["dindar", "mert", "ciddi"].includes(npc.trait) ? 1 : 0);
+  const delta = budgetTalkRel(end, s.turn, raw);
+  s.relationships[id] = Math.max(-100, Math.min(100, (s.relationships[id] || 0) + delta));
+  end.mood = Math.max(-100, Math.min(100, end.mood + delta));
+  if (delta > 0) remember(s, npc, "icten_sohbet", { yuk: delta });
+  else if (delta < 0) remember(s, npc, "haddini_asma", { yuk: delta });
+  const key = answer === "destek" ? "sohbet.end." + (acted ? "eylem" : "destek") : answer === "sinir" ? "sohbet.end." + (raw < 0 ? "sinirSoguk" : "sinir") : "sohbet.end.kapat";
+  conversation.adim = 3; conversation.son = answer; conversation.satir = key;
+  end.son = { i: conversation.konu, t: s.turn, ok: raw < 0 ? 0 : 1 };
+  const line = tFor(lang, key);
+  push(s, "sohbet", `${npc.name}: ${line}`, "kişisel", false, { k: "sohbet.endLog", p: [npcP(s, npc), { tk: answer === "destek" ? support.key : "sohbet.choice." + answer }, { tk: key }] });
+  return { state: s, line, delta };
+}
+
 export function talkWith(prev: GameState, npc: NPC, intent: string, lang: string = "tr"): { state: GameState; line: string; delta: number } {
   const s = clone(prev); const p = s.player;
-  if (p.dead) return { state: s, line: "", delta: 0 };
+  const actual = nufusOf(s).k[npc.id];
+  if (p.dead || !actual || actual.ol != null || actual.loc !== p.location_name || yasOf(actual, worldYears(s)) < 3) return { state: s, line: "", delta: 0 };
   const ns = npcStateOf(s, npc.id);
   if (intent === "duyum") {
     const owner = nufusOf(s).k[npc.id];
@@ -5504,10 +5608,21 @@ export function talkWith(prev: GameState, npc: NPC, intent: string, lang: string
       p: months ? [npcP(s, npc), months, tone, quote] : [npcP(s, npc), tone, quote] });
     return { state: s, line, delta: 0 };
   }
+  // Küçük çocuk iş/aile sorgusu yapmaz; oyunla kısa karşılık verir, yetişkin ödülü kazanmaz.
+  if (yasOf(actual, worldYears(s)) < 7) {
+    if (!["hosbes", "saka"].includes(intent) || npcActUsed(ns, "t:" + intent, s.turn)) return { state: s, line: "", delta: 0 };
+    markNpcAct(ns, "t:" + intent, s.turn);
+    const delta = budgetTalkRel(ns, s.turn, 1), key = aileSohbetBagi(s, npc.id) === "evlat" ? "sohbet.aile.evlat.kucuk" : "sohbet.kucuk";
+    s.relationships[npc.id] = Math.min(100, (s.relationships[npc.id] || 0) + delta);
+    if (delta > 0) remember(s, npc, "guzel_sohbet", { yuk: delta });
+    const line = tFor(lang as Lang, key); push(s, "sohbet", `${npc.name}: ${line}`, "kişisel", false, { k: "izlenim.log", p: [npcP(s, npc), { tk: key }] });
+    return { state: s, line, delta };
+  }
   // Kanal-bazlı kilit: bu NİYET bu ay bu kişiyle kullanıldıysa tekrar edilemez — ama diğer niyetler (iltifat/şaka/dert…) açık kalır.
   const akey = "t:" + intent;
   if (npcActUsed(ns, akey, s.turn)) return { state: s, line: "", delta: 0 };
   markNpcAct(ns, akey, s.turn);
+  ns.konusma = undefined;
   const owner = nufusOf(s).k[npc.id], stance = npcBakisi(s, npc.id);
   if (["dert", "hedef", "aile"].includes(intent) && owner && owner.ol == null && owner.loc === p.location_name && npc.age >= 13 && p.age >= 13 && stance.korku >= 20 && stance.guven < 5) {
     ns.son = { i: intent, t: s.turn, ok: 2 };
@@ -5563,6 +5678,8 @@ export function talkWith(prev: GameState, npc: NPC, intent: string, lang: string
   } else if (relDelta < 0) {
     remember(s, npc, relDelta <= -3 ? "alay" : "rahatsizlik"); // geri tepen tepki iz bırakır — gerçek sonuç
   }
+  if (SOHBET_KONULARI.includes(intent as SohbetKonu) && !r.kapali && r.relDelta >= 0 && npc.age >= 7 && p.age >= 7 && !npcActUsed(ns, "t:cevap", s.turn))
+    ns.konusma = { v: 1, t: s.turn, konu: intent as SohbetKonu, adim: 1, bag: aileSohbetBagi(s, npc.id) };
   push(s, "sohbet", `${npc.name}: ${line}`);
   return { state: s, line, delta: applied };
 }
@@ -7987,14 +8104,19 @@ export function socialTier(axis: SocialAxis, value: number): string {
 
 // Ziyafet ver: akçe harcayıp şöhret + itibar kazan.
 // Ebeveynlerini ziyaret et: el öpmek bağı besler — turda tek (karakter ekranından). İkisi de vefat ettiyse kapanır.
-export function visitParents(prev: GameState): GameState {
+export function visitParents(prev: GameState, targetId?: string): GameState {
   const s = clone(prev); const p = s.player;
   if (p.dead || (p.mother_dead && p.father_dead)) return s;
+  const target = targetId ? nufusOf(s).k[targetId] : undefined;
+  if (targetId && (!target || ![p.mother_id, p.father_id].includes(targetId) || target.ol != null || target.loc !== p.location_name)) return s;
   if (p.parent_visit_turn === s.turn) return s; // turda tek — bağ farmı önlenir
   p.parent_visit_turn = s.turn;
   p.parent_bond = Math.min(100, (p.parent_bond ?? 45) + 5);
   p.honor = Math.min(100, p.honor + 1); bumpNam(p, "dindar", 1);
-  push(s, "gunluk", `Ana-babanın elini öptün, sofralarına oturdun; duaları üstünde.`, "kişisel", false, { k: "evj.parentVisit" });
+  if (target) {
+    remember(s, { id: target.id, name: kisiAdi(target) }, "icten_sohbet", { yuk: 5 });
+    push(s, "gunluk", `${kisiAdi(target)} ile oturup hâlini dinledin.`, "kişisel", false, { k: "sohbet.parentVisit", p: [knParam(target)] });
+  } else push(s, "gunluk", `Ana-babanın elini öptün, sofralarına oturdun; duaları üstünde.`, "kişisel", false, { k: "evj.parentVisit" });
   return s;
 }
 // Eşinle vakit geçir: ocağı bilerek beslemek — küçük bedel, turda tek (karakter ekranından).
@@ -8026,14 +8148,19 @@ export function spendWithSpouse(prev: GameState): GameState {
   return s;
 }
 // Evlatlarınla ilgilen: en küçüğün yaşına göre bir sahne — soy isim listesi değil, büyüyen hayatlar (turda tek).
-export function tendChild(prev: GameState): GameState {
+export function tendChild(prev: GameState, targetName?: string): GameState {
   const s = clone(prev); const p = s.player;
   if (p.dead || !p.children.length) return s;
+  if (targetName) {
+    const k = p.child_ids?.[targetName] ? nufusOf(s).k[p.child_ids[targetName]] : undefined;
+    if (!p.children.includes(targetName) || !k || k.ol != null || k.loc !== p.location_name) return s;
+  }
   if (p.child_time_turn === s.turn) return s; // turda tek — bağ farmı önlenir
   p.child_time_turn = s.turn;
   // En küçük evlat seçilir (evde en çok o var); doğumu kayıtsız eski-kayıt çocukları yetişkin sayılır
-  let name = p.children[0]; let age = 18;
-  if (p.child_meta?.length) {
+  let name = targetName || p.children[0]; let age = 18;
+  if (targetName && p.child_ids?.[targetName]) age = yasOf(nufusOf(s).k[p.child_ids[targetName]], worldYears(s));
+  else if (p.child_meta?.length) {
     const cm = [...p.child_meta].filter((c) => p.children.includes(c.n)).sort((a, b) => b.born - a.born)[0];
     if (cm) { name = cm.n; age = Math.floor((s.turn - cm.born) / 12); }
   }
@@ -8042,7 +8169,8 @@ export function tendChild(prev: GameState): GameState {
   if (age < 7) { p.health = Math.min(100, p.health + 2); bond(4); push(s, "doğum", `Minik ${name} ile evin önünde oynadın; kahkahası günün yorgunluğunu sildi.`, "kişisel", false, { k: "evj.childTend.bebek", p: [name] }); }
   else if (age < 13) { bond(4); if (p.child_edu?.[name]) p.child_edu[name].weeks += 1; push(s, "cocukluk", `${name} ile rahlenin başına oturdunuz; harfler sökülünce gözleri parladı.`, "kişisel", false, { k: "evj.childTend.mektepli", p: [name] }); }
   else if (age < 18) { bond(4); p.reputation = Math.min(100, p.reputation + 1); push(s, "cocukluk", `${name}'e zanaatının inceliğini gösterdin; el alışkanlığı sana çekmiş.`, "kişisel", false, { k: "evj.childTend.genc", p: [name] }); }
-  else { bond(3); p.reputation = Math.min(100, p.reputation + 1); push(s, "gunluk", `Yetişkin evladın ${name} ile sofra kurdunuz; kendi ocağının derdini, sevincini dinledin.`, "kişisel", false, { k: "evj.childTend.yetiskin", p: [name] }); }
+  else { bond(3); p.reputation = Math.min(100, p.reputation + 1); push(s, "gunluk", `Yetişkin evladın ${name} ile oturup kararlarını ve derdini dinledin.`, "kişisel", false, { k: targetName ? "sohbet.adultChildTime" : "evj.childTend.yetiskin", p: [name] }); }
+  if (targetName && p.child_ids?.[targetName]) remember(s, { id: p.child_ids[targetName], name: targetName }, "icten_sohbet", { yuk: 4 });
   // Derin evlat bağı: bağ 85+ ise ara sıra yaş bandı ötesi bir an — çocuk sana çekmiş, sen çocukta kendini görürsün
   if ((p.child_bond[name] ?? 50) >= 85 && Math.random() < 0.3) {
     p.honor = Math.min(100, p.honor + 1);
