@@ -130,3 +130,15 @@ Eski şekil hashleri aynı; yeni defter yüzünden yalnız sohbetin ham hash'i g
 planla. Tam GDD açık; kalıcı izlenim/LOD, çok varlıklı görüş, tonlu çok turlu sohbet, gerçek
 mahkeme/iftira kanıtı ve kayıtlı üretim RNG sıradaki büyük işler. Web ve Android/Hermes
 paketleme geçti. Son yayın sonucu ayrıca kaydedilir.
+
+## Kalıcı NPC izlenimi — 13 Ekim 2026
+
+`NPC_IZLENIM.md`: 24 ayrıntı + en çok 16 ucuz iz; görüş ve altı tavır boyutunda gerçek etki,
+helallik/diyet/can bağışıyla yumuşama, unutulan şahitlikten kanıt üretmeme. 3.770 hedefli ve
+önceki hafıza/ağ/tavır denetimleri temiz. Sekiz küçük ekran akışı altı dil/44 px/kayıt sonrası kilit.
+Son motor görüntüsüyle 300 hayat HATA:0; yeni kontrol noktası bu dalgadır. 30 hayat/21.198 ay,
+ayna/metin/tip/göç/dil/MP/web/Android-Hermes temiz. APK/telefon QA yok. Tam GDD açık.
+Kullanıcı NPC sohbeti/etkileşimlerini özellikle derinleştirmemizi istedi: aile rolüne göre gerçek
+profil eylemleri ve oyuncu karşılıkları öncelik. Eşi bekâr anlatan gercekSatir dalı hatalı; torunlar
+henüz yalnız isim/otomatik olay. Bitmemiş işleri yapılmış sayma. Mevcut tam erişim/ağ/never
+profilinde normal terminal erişimi var, sandbox_permissions verme, tekrar izin/kod isteme.

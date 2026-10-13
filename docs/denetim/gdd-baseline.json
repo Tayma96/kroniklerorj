@@ -1,13 +1,13 @@
 {
   "kind": "sentetik-karakterizasyon-gercek-oyuncu-kaydi-degil",
-  "engineSha256": "7a654ab9fad9e74cb506d4b6b1181ea170389e6c8e997108976326636ce99861",
+  "engineSha256": "d03e26db01f16644af61fdc944aa70103305e68e0d88a9d492dec1521b2a30e0",
   "flows": {
     "yeni": "1d50f861b4ea05a930c7c3d1062d415dde069cfa771315b48870f711e6b35ecf",
     "ay": "ca7021a26c7b49632e9e9e5e0bcf638c22423b180309d7896efa60ece1771faa",
     "yemek": "9678051611cd90b112fd56d1e89e2927045e909b6b658fa2d3dc9f80cd189dfd",
     "is": "6595b0469b1f27ba88134c75b89c662dd267592ef7ee86498652924ae6a372f4",
     "ticaret": "2c5042bd6da205174165320ce8cf9f2e7ff8cf48599605291bb218e65e5cf468",
-    "sohbet": "6b6650e4a4b4fc4dc9124d3f938928492260aeb46c8aecdd0931d7ea4287ee19",
+    "sohbet": "469ca0036f180f2aba1aef3810f853061e1210dd3348cab300ab970ddce77829",
     "ders": "da957035e04bbb72bc6f63a081c1ea6e01fba39502f99f3db1f0f2f1cad8a08e",
     "suc": "30d2ae171a5e744ecf4e099e7538f93308fb59ba0720a0bbbe12fcb736943187",
     "yol": "be4550de63071faa0801c2b71333e090c78bdb7cf8059874a809617ce3581caa",
@@ -34,8 +34,8 @@
     }
   },
   "measuredTickMs": {
-    "p50": 0.42,
-    "p95": 7.34,
-    "max": 14.63
+    "p50": 0.57,
+    "p95": 10.68,
+    "max": 30.23
   }
 }

@@ -509,3 +509,26 @@ EPERM ile kapatılmasıydı. Hesap bozukluğu diye yorumlama; izin değişikliğ
 - Tip/göç/dil/MP/web/Android-Hermes temiz. `docs/NPC_TAVIR.md` sınırlar. 300 hayat kontrol noktasından
   sonra üçüncü motor dalgası; bir sonraki dalga/kontrol noktasında geniş denetim gerekir.
   APK/PR/sunucu dağıtımı yok. Tam GDD yüzdesi ölçülmedi; önceki %40 tahmini geri çekildi.
+
+
+## 36. Ayrıntı unutuldu, kalıcı iz kaldı (13 Ekim 2026)
+
+- GDD §4.1: en çok 16 sınırlı, güçlü iz; 24 ayrıntı doğal sönme/budamasında sıkıştırılır.
+  Gerçek görüş/yakın çevre ve altı boyuta bağlı; tek yardım 25→5 iz, 73 bayt örnek.
+- Özet olay/tarih/şahit/kaynak kimliği taşımaz; ispat veya iş teklifinde aktif olayın yerini almaz.
+  Kendi deneyimi/görgü/duyum/belirsiz eski kayıt farklı; şahit kişisel minnet borcu kazanmaz.
+  Helallik kalıcı kırgınlığı da hafifletir. Tekrar aynı hücreye sınırsız yük eklemez; sıradan hoşbeş
+  kalıcı sadakat üretmez. Eski kayıtta mevcut yükten tembel geçiş; vâris kişisel defteri sıfırlar,
+  mevcut ata görüş hesabı kalıcı izi de yarılar. Neden dökümü ve Geçmişi konuş aynı veriden.
+- 3.770 hedefli + önceki 3.850/10.798/1.666/1.246/534/37 temiz. Eski on akış/üç sentetik
+  kayıt yeni alanlar ayrılınca aynı; ham sohbet hash'i yalnız yeni alanlarla değişti.
+- Sekiz küçük ekran akışı altı dil/TR-AR kırgınlık, 320×568/4× CPU; 44 px/ay kilidi/yeniden
+  açma, ödül veya uydurma şahit/tarih yok. Tip/göç/dil/MP/web/Android-Hermes temiz.
+- Yeni geniş kontrol noktası: 300 hayat HATA:0, 7 dk; ölüm medyan 64 (23–74).
+  30 hayat/21.198 ay, boş %11,4/bunalma %0,3/en çok iki gerilim; ayna +97,8/−97,8,
+  vâris +44,4/−43,1; 16.494 olay yazımı temiz. `docs/NPC_IZLENIM.md` sınırlar. APK/cihaz QA yok.
+- Kullanıcı NPC profili/sohbet/etkileşimleri sığ buldu; eş, anne-baba, çocuk, torun farkını istiyor.
+  Sıradaki aileye özgü gerçek profil eylemleri ve oyuncunun yanıt verebildiği kısa bağlamlı sohbet.
+  Eşi bekâr anlatan aile satırı ve torunların kişi olmayışı mevcut açık bulgu; tamamlandı diye sunma.
+- Tam erişim/ağ/never ortamı aktif: normal terminal fetch/push çalışır; sandbox_permissions verme.
+  Kullanıcının yetkisi sürer, yeniden izin/device kodu isteme. Tam GDD hedefi açık, yüzdesi ölçülmedi.

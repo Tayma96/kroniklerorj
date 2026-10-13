@@ -9,6 +9,7 @@ import { converse, ConvResult, spontaneousLine, callbackLine, perceptionGreeting
 import { Memory, addMemory, decayMemories, behaviorTier, MEMORY_TYPES, RUMOR_VARIANTS, salientMemory, MemoryOptions, groupWitnessMemories, representativeMemory } from "./npc-mind";
 import { Bakis, BakisDefteri, bakisOku, bakisHazirla, aniHafiflet } from "./npc-bakis";
 import { recollectionLine, recollectionGroup } from "./hafiza-sohbet";
+import { IzlenimDefteri, izlenimHazirla, izlenimler, izlenimToplami, belirginIzlenim, izlenimSozAnahtari } from "./npc-izlenim";
 import { RumorHearing, rumorOrigin, rumorGraph, spreadRumor } from "./soylenti-agi";
 import { arcById, ArcChoice, availableArcs } from "./arcs";
 
@@ -1068,7 +1069,7 @@ export function joinThreshold(p: Player, f: Faction): number { return p.perks.in
 
 export interface GameEvent { day: number; type: string; text: string; scope: "kişisel" | "makro"; landmark?: boolean; k?: string; p?: EvtParam[]; q?: number; } // q: olay sırası (artan; ekranlar "yeni olay"ı bununla tanır — kronik 250'de kırpılınca uzunluk artmaz)
 export interface DynastyRecord { generation: number; name: string; profession: string; diedAge: number; fame: number; reputation: number; faction: string | null; note: string; noteK?: string; causeK?: string; } // noteK: kitabe kimliği (6 dile çevrilir); note eski kayıtlar için TR yedek; causeK: ölüm nedeni kodu
-export interface NpcState { mood: number; memories: string[]; anilar?: Memory[]; int_turn?: number; act_turns?: Record<string, number>; rel_gain_turn?: number; rel_gain_amt?: number; son?: SohbetSon; ani_sira?: number; bakis?: BakisDefteri; }
+export interface NpcState { mood: number; memories: string[]; anilar?: Memory[]; int_turn?: number; act_turns?: Record<string, number>; rel_gain_turn?: number; rel_gain_amt?: number; son?: SohbetSon; ani_sira?: number; bakis?: BakisDefteri; izlenim?: IzlenimDefteri; }
 // son: bu kişiyle son sohbetin konusu ve nasıl bittiği — bir dahaki sohbette hatırlanır (diyalog takip katmanı; eski kayıtta yok, sorun değil).
 // int_turn (eski): tek blok kilit — artık kullanılmıyor, eski kayıtlar için duruyor.
 // act_turns: her etkileşim KANALI (sohbet niyeti / hediye / flört / dedikodu / hakaret / sadaka) ayrı ayrı tur-kilidi;
@@ -1085,12 +1086,13 @@ function aniKalemleri(anilar: Memory[] | undefined): GorusKalemi[] {
   return Object.keys(g).map((tur) => ({ k: "gorus.ani", tur, v: Math.round(g[tur]) })).filter((x) => x.v !== 0).sort((a, b) => Math.abs(b.v) - Math.abs(a.v));
 }
 // Bir kişinin oyuncuyla doğrudan hesabı (geçmiş + anılar) — akrabalarına yansıyan kısım bundan türer (özyineleme yok).
-function dogrudanHesap(s: GameState, id: string): number { return (s.relationships[id] || 0) + aniKalemleri(s.npc_state?.[id]?.anilar).reduce((a, x) => a + x.v, 0); }
+function dogrudanHesap(s: GameState, id: string): number { return (s.relationships[id] || 0) + aniKalemleri(s.npc_state?.[id]?.anilar).reduce((a, x) => a + x.v, 0) + izlenimToplami(s.npc_state?.[id]?.izlenim); }
 export function gorus(s: GameState, id: string): { toplam: number; kalemler: GorusKalemi[] } {
   const p = s.player; const ks: GorusKalemi[] = [];
   const ekle = (k: string, v: number) => { const r = Math.round(v); if (r) ks.push({ k, v: r }); };
   ekle("gorus.gecmis", s.relationships[id] || 0);
   ks.push(...aniKalemleri(s.npc_state?.[id]?.anilar));
+  ekle("gorus.izlenim", izlenimToplami(s.npc_state?.[id]?.izlenim));
   const pop = nufusOf(s); const k = pop.k[id]; const wy = worldYears(s);
   if (k) {
     // Akrabalık: anne-baba evladını, eş eşini, hısımlar damat/gelini görür (bağın sıcaklığı oyuncunun emeğine bağlı).
@@ -1583,7 +1585,7 @@ function remember(s: GameState, npc: { id: string; name: string }, tur: string, 
   if (!ns.anilar) ns.anilar = [];
   const owner = nufusOf(s).k[npc.id];
   const seq = (Number.isFinite(ns.ani_sira) ? Math.max(0, Math.floor(ns.ani_sira!)) : 0) + 1; ns.ani_sira = seq;
-  const m = addMemory(ns.anilar, tur, s.turn, { ...opts, bakis: MEMORY_TYPES[tur] ? bakisHazirla(ns) : undefined, kaynak: npc.name, huy: owner ? huyOf(owner) : undefined,
+  const m = addMemory(ns.anilar, tur, s.turn, { ...opts, bakis: MEMORY_TYPES[tur] ? bakisHazirla(ns) : undefined, izlenim: MEMORY_TYPES[tur] ? izlenimHazirla(ns) : undefined, kaynak: npc.name, huy: owner ? huyOf(owner) : undefined,
     kimlik: [s.seed, s.player.generation, npc.id, seq].join(":"), sahip: npc.id, konu: OYUNCU,
     olay: opts?.olay || [s.seed, s.player.generation, s.turn, s.hseq || 0, tur].join(":"), kaynakZinciri: [npc.id],
     kanit: opts?.kanit || (tur.endsWith("_tanigi") ? "gorgu" : "katilim") });
@@ -3607,8 +3609,8 @@ export function advance(prev: GameState, n = 1): GameState {
     // NPC anıları haftalık söner (travmalar kalıcı); anlamsız geçici girdiler budanır (perf + temizlik).
     if (s.npc_state) for (const id in s.npc_state) {
       const ns = s.npc_state[id];
-      if (ns.anilar && ns.anilar.length) ns.anilar = decayMemories(ns.anilar, bakisHazirla(ns));
-      if ((!ns.anilar || !ns.anilar.length) && Math.abs(s.relationships[id] || 0) < 5 && Math.abs(ns.mood) < 5 && (!ns.memories || !ns.memories.length)) delete s.npc_state[id];
+      if (ns.anilar && ns.anilar.length) ns.anilar = decayMemories(ns.anilar, bakisHazirla(ns), izlenimHazirla(ns));
+      if ((!ns.anilar || !ns.anilar.length) && !izlenimler(ns.izlenim).length && Math.abs(s.relationships[id] || 0) < 5 && Math.abs(ns.mood) < 5 && (!ns.memories || !ns.memories.length)) delete s.npc_state[id];
     }
     gossipTick(s); // tanıklı skandallar → oyuncu söylentileri (haftalık)
     ipTick(s);     // kader ipleri: olgunlaşan büyük tohum görünür olur, vadesi dolan ip sebebiyle ödenir
@@ -5481,7 +5483,15 @@ export function talkWith(prev: GameState, npc: NPC, intent: string, lang: string
     const owner = nufusOf(s).k[npc.id];
     if (!owner || owner.ol != null || owner.loc !== p.location_name || npcActUsed(ns, "t:hatira", s.turn)) return { state: s, line: "", delta: 0 };
     const memory = salientMemory(ns.anilar, s.turn, true);
-    if (!memory) return { state: s, line: "", delta: 0 };
+    if (!memory) {
+      const impression = belirginIzlenim(ns.izlenim);
+      if (!impression) return { state: s, line: "", delta: 0 };
+      markNpcAct(ns, "t:hatira", s.turn);
+      const key = izlenimSozAnahtari(impression), line = tFor(lang as Lang, key);
+      ns.memories = [...ns.memories, line].slice(-8);
+      push(s, "sohbet", `${npc.name}: ${line}`, "kişisel", false, { k: "izlenim.log", p: [npcP(s, npc), { tk: key }] });
+      return { state: s, line, delta: 0 };
+    }
     markNpcAct(ns, "t:hatira", s.turn);
     memory.sonAnilma = s.turn;
     const line = recollectionLine(npc, memory, s.turn, lang as Lang, p.gender === "kadın");

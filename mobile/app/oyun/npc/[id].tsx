@@ -10,6 +10,7 @@ import { hap } from "../../../lib/haptics";
 import { INTENTS, moodKey } from "../../../lib/dialogue";
 import { topMemories, salientMemory, representativeMemory } from "../../../lib/npc-mind";
 import { NpcTavri } from "../../../lib/npc-bakis-ui";
+import { NpcIzlenimi } from "../../../lib/npc-izlenim-ui";
 import { memoryQuote } from "../../../lib/hafiza-sohbet";
 import { professionNameL, traitL, quirkL, goalL, placeName } from "../../../lib/locale-data";
 import { ITEMS, TieKind } from "../../../lib/world";
@@ -260,6 +261,7 @@ export default function NpcDetail() {
           </Pressable>
         </View>
       )}
+      {!recalled && !state.player.dead && <NpcIzlenimi def={ns.izlenim} used={usedAct("t:hatira")} onPress={() => { hap("tap"); speak("hatira"); }} />}
       {heard && !state.player.dead && state.player.age >= 13 && (
         <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 12, padding: 12, marginBottom: 10 }}>
           <Text style={{ fontFamily: F.serifItalic, fontSize: 13, lineHeight: 19, color: C.parchmentDim }}>{t("rum.net.topic")}</Text>

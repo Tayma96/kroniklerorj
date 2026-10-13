@@ -100,3 +100,14 @@ veya yeni ceza oluşturmasın. Profilde bir tavır cümlesi, ayrıntılar mevcut
 Altı toplam ilk motor yazımında eski anılardan başlar, sonra anı değişimleriyle güncellenir.
 Doyma yalnız görüntüde uygulanır; defterin ara toplamı kesilmez. Tüm varlıklar arasındaki
 görüş, kalıcı izlenim ve LOD bu kişisel katmandan ayrı açık işlerdir. `NPC_TAVIR.md` sınırlar.
+
+## 13 Ekim 2026 — Ayrıntı unutulur, tavırdan iz kalır
+
+24 ayrıntı tavanını ölçümsüz büyütmek yerine en çok 16 küçük özet. Aynı tema/yön/deneyim sınıfında
+tek en güçlü iz; sıradan sohbetin kalıcı puan biriktirmesi kapalı. Unutulan şahitlik özet üzerinden
+yeniden kanıt olmaz. Helallik özeti de yumuşatır; vârise kişisel minnet değil mevcut ata görüşü geçer.
+GDD'deki ayrı koleksiyon/LOD ve bütün varlıklar vektörü ayrıca açık. `NPC_IZLENIM.md` gerçek kapsam.
+
+Kullanıcı NPC profilindeki sohbet ve etkileşimleri sığ buldu; eş/anne-baba/evlat/torun farkını istedi.
+Sonraki öncelik, profil içindeki aile eylemleri ve oyuncunun yanıt verebildiği bağlamlı kısa konuşmadır.
+Eşi bekâr anlatan aile satırı ve henüz yalnız isim/otomatik olay olan torunlar açık bulgulardır.

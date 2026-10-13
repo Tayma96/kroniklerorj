@@ -1,4 +1,5 @@
 import { aniBakisi, bakisDegistir, type BakisDefteri } from "./npc-bakis";
+import { izlenimTabani, izlenimBirlestir, type IzlenimDefteri } from "./npc-izlenim";
 
 // NPC Zihni — Vercel npc_mind.py portu (S2): yapısal anı, decay, ilişki=taban+Σanı,
 // davranış kademeleri, dedikodu kaynağı, nam türetme. Saf modül (game.ts'e bağımsız).
@@ -15,6 +16,7 @@ export interface Memory {
   kimlik?: string; sahip?: string; konu?: string; olay?: string;
   kanit?: "katilim" | "gorgu" | "duyum" | "eski";
   kesinlik?: number; kaynakZinciri?: string[]; sonAnilma?: number;
+  izYuku?: number; // ayrıntı sönerken kalan, helallikle de hafifleyen yük
 }
 
 // Dedikoduya dönüşebilen anı türleri için söylenti varyant sayısı (rumor.<tur>.<i> anahtarları).
@@ -102,10 +104,10 @@ export function groupWitnessMemories(entries: { id: string; memory: Memory }[]):
   return [...groups.values()];
 }
 
-// Yapısal anı ekle. Bilinmeyen tür sessizce yok sayılır. 24 tavan; travmalar korunur.
+// Yapısal anı ekle. 24 ayrıntı tavanı; budanan anının izlenimi ayrı, sınırlı özette kalır.
 export interface MemoryOptions {
   yuk?: number; taniklar?: string[]; kaynak?: string; huy?: string;
-  bakis?: BakisDefteri;
+  bakis?: BakisDefteri; izlenim?: IzlenimDefteri;
   kimlik?: string; sahip?: string; konu?: string; olay?: string;
   kanit?: Memory["kanit"]; kesinlik?: number; kaynakZinciri?: string[];
 }
@@ -146,12 +148,19 @@ export function addMemory(anilar: Memory[], tur: string, hafta: number, opts?: M
   if (opts?.olay) m.olay = opts.olay;
   if (opts?.kanit) { m.kanit = opts.kanit; m.kesinlik = Number.isFinite(opts.kesinlik) ? Math.max(0, Math.min(1, opts.kesinlik!)) : opts.kanit === "duyum" ? 0.6 : opts.kanit === "eski" ? 0.4 : 1; }
   if (opts?.kaynakZinciri) m.kaynakZinciri = [...opts.kaynakZinciri].slice(-4);
+  if (opts?.izlenim) m.izYuku = izlenimTabani(m);
   anilar.push(m);
   if (opts?.bakis) bakisDegistir(opts.bakis, undefined, aniBakisi(m));
   if (anilar.length > 24) {
     const zayif = anilar.filter((x) => !x.travma).sort((a, b) => Math.abs(a.yuk) - Math.abs(b.yuk));
     const removed = zayif.length ? anilar.splice(anilar.indexOf(zayif[0]), 1)[0] : anilar.shift();
-    if (removed && opts?.bakis) bakisDegistir(opts.bakis, aniBakisi(removed));
+    if (removed) {
+      if (opts?.bakis) bakisDegistir(opts.bakis, aniBakisi(removed));
+      if (opts?.izlenim) {
+        const delta = izlenimBirlestir(opts.izlenim, removed);
+        if (opts.bakis && delta.after) bakisDegistir(opts.bakis, delta.before ? aniBakisi(delta.before) : undefined, aniBakisi(delta.after));
+      }
+    }
   }
   return m;
 }
@@ -173,14 +182,21 @@ export function salientMemory(anilar: Memory[] | undefined, turn: number, allowM
   return best;
 }
 
-// Haftalık: duygu yükü unutma hızıyla söner; sönen travmasız anı silinir.
-export function decayMemories(anilar: Memory[], bakis?: BakisDefteri): Memory[] {
+// Ayrıntının yükü iz tabanına kadar söner; aynı yük iki listede birden tutulmaz.
+export function decayMemories(anilar: Memory[], bakis?: BakisDefteri, izlenim?: IzlenimDefteri): Memory[] {
   const keep: Memory[] = [];
   for (const m of anilar) {
     const before = bakis ? aniBakisi(m) : undefined;
-    m.yuk = Math.round(m.yuk * (m.unutma ?? 0.95) * 1000) / 1000;
-    if (m.travma || Math.abs(m.yuk) >= 1.0) keep.push(m);
-    if (bakis) bakisDegistir(bakis, before, m.travma || Math.abs(m.yuk) >= 1 ? aniBakisi(m) : undefined);
+    if (izlenim && !Number.isFinite(m.izYuku)) m.izYuku = izlenimTabani(m);
+    const floor = izlenim ? Math.abs(izlenimTabani(m)) : 0;
+    m.yuk = Math.sign(m.yuk) * Math.max(floor, Math.round(Math.abs(m.yuk) * (m.unutma ?? .95) * 1000) / 1000);
+    const retained = m.travma || Math.abs(m.yuk) >= 1 && (!izlenim || Math.abs(m.yuk) > floor);
+    if (retained) keep.push(m);
+    if (bakis) bakisDegistir(bakis, before, retained ? aniBakisi(m) : undefined);
+    if (!retained && izlenim) {
+      const delta = izlenimBirlestir(izlenim, m);
+      if (bakis && delta.after) bakisDegistir(bakis, delta.before ? aniBakisi(delta.before) : undefined, aniBakisi(delta.after));
+    }
   }
   return keep;
 }

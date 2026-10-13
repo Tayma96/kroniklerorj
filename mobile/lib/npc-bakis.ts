@@ -1,15 +1,16 @@
 import type { Memory } from "./npc-mind";
+import { izlenimler, type IzlenimDefteri } from "./npc-izlenim";
 
 export const BAKIS_KEYS = ["guven", "saygi", "korku", "yakinlik", "borc", "suphe"] as const;
 export type BakisKey = typeof BAKIS_KEYS[number];
 export type Bakis = Record<BakisKey, number>;
 export interface BakisDefteri { v: 1; toplam: Bakis }
-export interface BakisSahibi { anilar?: Memory[]; bakis?: BakisDefteri }
+export interface BakisSahibi { anilar?: Memory[]; bakis?: BakisDefteri; izlenim?: IzlenimDefteri }
 const empty = (): Bakis => ({ guven: 0, saygi: 0, korku: 0, yakinlik: 0, borc: 0, suphe: 0 });
 const round = (x: number) => Math.round(x * 1000) / 1000;
 
 // Yük zaten kişinin huyunu ve görgünün ağırlığını taşır. Aynı ilişki toplamı aynı tavır değildir.
-export function aniBakisi(m: Memory): Bakis {
+export function aniBakisi(m: Pick<Memory, "tur" | "yuk" | "kanit" | "kesinlik">): Bakis {
   const y = Number.isFinite(m.yuk) ? m.yuk : 0;
   const certainty = Number.isFinite(m.kesinlik) ? Math.max(0, Math.min(1, m.kesinlik!)) : m.kanit === "duyum" ? .6 : 1;
   const personal = m.kanit !== "gorgu" && m.kanit !== "duyum";
@@ -32,9 +33,9 @@ export function aniBakisi(m: Memory): Bakis {
 export function bakisDegistir(ledger: BakisDefteri, before?: Bakis, after?: Bakis): void {
   for (const k of BAKIS_KEYS) ledger.toplam[k] = round(ledger.toplam[k] - (before?.[k] || 0) + (after?.[k] || 0));
 }
-export function bakisHesapla(memories: Memory[] | undefined): BakisDefteri {
+export function bakisHesapla(memories: Memory[] | undefined, impressions?: IzlenimDefteri): BakisDefteri {
   const ledger: BakisDefteri = { v: 1, toplam: empty() };
-  for (const m of memories || []) bakisDegistir(ledger, undefined, aniBakisi(m));
+  for (const m of [...(memories || []), ...izlenimler(impressions)]) bakisDegistir(ledger, undefined, aniBakisi(m));
   return ledger;
 }
 function valid(b: BakisDefteri | undefined): b is BakisDefteri {
@@ -42,21 +43,28 @@ function valid(b: BakisDefteri | undefined): b is BakisDefteri {
 }
 // Yalnız motor yazımında başlatılır. Okuma eski kaydı değiştirmez; yeni kayıtta altı toplama erişir.
 export function bakisHazirla(owner: BakisSahibi): BakisDefteri {
-  if (!valid(owner.bakis)) owner.bakis = bakisHesapla(owner.anilar);
+  if (!valid(owner.bakis)) owner.bakis = bakisHesapla(owner.anilar, owner.izlenim);
   return owner.bakis;
 }
 export function bakisOku(owner?: BakisSahibi): Bakis {
-  const total = valid(owner?.bakis) ? owner!.bakis!.toplam : bakisHesapla(owner?.anilar).toplam;
+  const total = valid(owner?.bakis) ? owner!.bakis!.toplam : bakisHesapla(owner?.anilar, owner?.izlenim).toplam;
   return Object.fromEntries(BAKIS_KEYS.map(k => [k, Math.round(Math.max(["korku", "borc", "suphe"].includes(k) ? 0 : -100, Math.min(100, total[k])))])) as Bakis;
 }
 // Helallik, can bağışı ve diyet anıyı hafifletirken ayrı tavrı bayat bırakmaz.
-export function aniHafiflet(owner: BakisSahibi, match: (m: Memory) => boolean, factor: number, whole = false): void {
+export function aniHafiflet(owner: BakisSahibi, match: (m: Pick<Memory, "tur" | "yuk">) => boolean, factor: number, whole = false): void {
   const ledger = bakisHazirla(owner);
   for (const m of owner.anilar || []) if (match(m)) {
     const before = aniBakisi(m);
     m.yuk = whole ? Math.round(m.yuk * factor) : round(m.yuk * factor);
+    if (Number.isFinite(m.izYuku)) m.izYuku = round(m.izYuku! * factor);
     bakisDegistir(ledger, before, aniBakisi(m));
   }
+  for (const m of izlenimler(owner.izlenim)) if (match(m)) {
+    const before = aniBakisi(m);
+    m.yuk = whole ? Math.round(m.yuk * factor) : round(m.yuk * factor);
+    bakisDegistir(ledger, before, Math.abs(m.yuk) > .001 ? aniBakisi(m) : undefined);
+  }
+  if (owner.izlenim) owner.izlenim.izler = izlenimler(owner.izlenim);
 }
 export function bakisTavri(b: Bakis): string {
   if (b.korku >= 20 && b.guven < 5) return "cekingen";
