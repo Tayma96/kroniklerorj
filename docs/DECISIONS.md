@@ -89,3 +89,14 @@ onun aktarımını durdurur. Dostun savunması da sadece kendi duyumuna etki ede
 Yüzleşme ve susturma olasılıklı/riskli alternatif olarak görünür. Oyuncunun önüne ana akışta
 tek iz getir; tüm ağ yollarını açan yeni menü ekleme. Açıklamanın gerçek kaynağı konuşmada
 gösterilsin. `KARSI_SOZ.md` kapsam/doğrulama; asılsız iftiraya bağımsız kanıt ve mahkeme açık.
+
+## 13 Ekim 2026 — Sevgi ve güven aynı değildir
+
+Kişisel yaşantının altı boyutu eski ilişki toplamını kopyalamaz. Hediyenin yakınlık ve minnet
+yararı, tehdidin korkusunu otomatik silmesin. Korku yüksek/güven düşükken özel konu kapanır;
+helallik ve gerçek anının hafiflemesi bu durumu değiştirebilir. Sırf konuşmayı denemek ödül
+veya yeni ceza oluşturmasın. Profilde bir tavır cümlesi, ayrıntılar mevcut Neden dökümünde.
+
+Altı toplam ilk motor yazımında eski anılardan başlar, sonra anı değişimleriyle güncellenir.
+Doyma yalnız görüntüde uygulanır; defterin ara toplamı kesilmez. Tüm varlıklar arasındaki
+görüş, kalıcı izlenim ve LOD bu kişisel katmandan ayrı açık işlerdir. `NPC_TAVIR.md` sınırlar.

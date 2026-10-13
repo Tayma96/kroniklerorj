@@ -478,3 +478,34 @@ uzak apk'nın hâlâ `dd4b01d50a0c73d323a9038fbb5641a2eb4457c3` olduğunu doğru
 Şahit açıklaması yerelde doğrulanmış commit olarak bekliyor; gönderilmiş diye sunulmasın.
 İzinli ağ/yazma geldiğinde mevcut commit normal ileri gönderilsin; tekrar giriş/kod isteme
 ve engellenmiş GitHub tarayıcısını başka yoldan açmaya çalışma.
+
+Gönderim çözüldü (13 Ekim 2026): ortam workspace-write + otomatik izin incelemesine döndü.
+İzinli ağ yükseltmesiyle fetch, normal push ve bağımsız uzak kimlik okuması başarılı;
+`983f6c650b3b675608a83985854fb8ed404f4cf7` uzak apk'dadır. Cihaz girişi gerekmedi.
+Yukarıdaki gönderilmedi notu tarihsel kayıttır. Kullanıcı her commit'in hemen gönderilmesini
+istedi; tamamlanan dalgada commit→push→uzak tam kimlik doğrulaması aynı adımda yapılmalı.
+İzin politikası yükseltmeye açıkken ağ kısıtını tekrar tekrar normal komutla yoklama;
+yetkili ve repo/dal özelinde yükseltme kullan. Never politikası yükseltmeye kapalıysa onu aşma.
+GitHub eklentisi Tüm işlemlere izin ver durumundaydı; asıl terminal sorunu TCP/DNS soketinin
+EPERM ile kapatılmasıydı. Hesap bozukluğu diye yorumlama; izin değişikliği sonucu ayrı doğrula.
+
+## 35. Yüksek ilişki korkuyu örtemedi (13 Ekim 2026)
+
+- GDD §4.1/§5.4: opsiyonel altı boyutlu kişisel anı defteri (güven/saygı/korku/yakınlık/
+  iyilik borcu/şüphe). Anı ekleme, budama, sönme, helallik/diyet/hakemlik/can bağışı artımlı.
+  Eski kayıt saf okunur, ilk yazımda başlar; vâris devrinde mevcut npc_state sıfırlanır.
+- Gerçek tehdit şahitliği→hediye: toplam +66 iken güven −13/korku 28; aile/dert/hayal açılmaz.
+  Kabul edilmiş helallik sonrası korku 11; özel konuşma yeniden açılabilir. Kapalı söz ödülsüz,
+  ay kilitli. Yeni boyutları genel ilişki puanının kopyası diye gösterme.
+- Profil tek tavır cümlesi, mevcut dökümde altı değer. 44 px döküm/konuşma seçenekleri,
+  erişilebilir rol/etiket/kapalı durum; altı dil/nötr AR-RU. Sadece kişisel anı; genel nam ve
+  söylentinin eski skalası ayrı. Bütün varlıklar, izlenim/LOD ve çok turlu sohbet tamamlanmadı.
+- 3.850 hedefli; önceki 10.798/1.666/1.246/534/37 örnek temiz. 12 gerçek profil bileşen
+  akışı altı dil × korkulu/helalleşmiş; cihaz sınırları taklit edildi, görsel/telefon QA değildir.
+- Yalnız yeni defter alanını ayırınca eski 10 akış/üç sentetik 30 ay hash'i aynı. Ham tabanın
+  yalnız sohbeti ek alan nedeniyle değişti; karşılaştırma sonrası taban güncellendi.
+- 30 hayat/19.823 ay: boş %11,3/bunalma %0,3/gerilim en çok üç, ilk karar bir ay, ip ödeme
+  %100; eşikler temiz. Ayna +96,6/−98,9; vâris +43,3/−42,8; 16.728 metin temiz.
+- Tip/göç/dil/MP/web/Android-Hermes temiz. `docs/NPC_TAVIR.md` sınırlar. 300 hayat kontrol noktasından
+  sonra üçüncü motor dalgası; bir sonraki dalga/kontrol noktasında geniş denetim gerekir.
+  APK/PR/sunucu dağıtımı yok. Tam GDD yüzdesi ölçülmedi; önceki %40 tahmini geri çekildi.

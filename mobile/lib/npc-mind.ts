@@ -1,3 +1,5 @@
+import { aniBakisi, bakisDegistir, type BakisDefteri } from "./npc-bakis";
+
 // NPC Zihni — Vercel npc_mind.py portu (S2): yapısal anı, decay, ilişki=taban+Σanı,
 // davranış kademeleri, dedikodu kaynağı, nam türetme. Saf modül (game.ts'e bağımsız).
 
@@ -103,6 +105,7 @@ export function groupWitnessMemories(entries: { id: string; memory: Memory }[]):
 // Yapısal anı ekle. Bilinmeyen tür sessizce yok sayılır. 24 tavan; travmalar korunur.
 export interface MemoryOptions {
   yuk?: number; taniklar?: string[]; kaynak?: string; huy?: string;
+  bakis?: BakisDefteri;
   kimlik?: string; sahip?: string; konu?: string; olay?: string;
   kanit?: Memory["kanit"]; kesinlik?: number; kaynakZinciri?: string[];
 }
@@ -144,10 +147,11 @@ export function addMemory(anilar: Memory[], tur: string, hafta: number, opts?: M
   if (opts?.kanit) { m.kanit = opts.kanit; m.kesinlik = Number.isFinite(opts.kesinlik) ? Math.max(0, Math.min(1, opts.kesinlik!)) : opts.kanit === "duyum" ? 0.6 : opts.kanit === "eski" ? 0.4 : 1; }
   if (opts?.kaynakZinciri) m.kaynakZinciri = [...opts.kaynakZinciri].slice(-4);
   anilar.push(m);
+  if (opts?.bakis) bakisDegistir(opts.bakis, undefined, aniBakisi(m));
   if (anilar.length > 24) {
     const zayif = anilar.filter((x) => !x.travma).sort((a, b) => Math.abs(a.yuk) - Math.abs(b.yuk));
-    if (zayif.length) anilar.splice(anilar.indexOf(zayif[0]), 1);
-    else anilar.shift();
+    const removed = zayif.length ? anilar.splice(anilar.indexOf(zayif[0]), 1)[0] : anilar.shift();
+    if (removed && opts?.bakis) bakisDegistir(opts.bakis, aniBakisi(removed));
   }
   return m;
 }
@@ -170,11 +174,13 @@ export function salientMemory(anilar: Memory[] | undefined, turn: number, allowM
 }
 
 // Haftalık: duygu yükü unutma hızıyla söner; sönen travmasız anı silinir.
-export function decayMemories(anilar: Memory[]): Memory[] {
+export function decayMemories(anilar: Memory[], bakis?: BakisDefteri): Memory[] {
   const keep: Memory[] = [];
   for (const m of anilar) {
+    const before = bakis ? aniBakisi(m) : undefined;
     m.yuk = Math.round(m.yuk * (m.unutma ?? 0.95) * 1000) / 1000;
     if (m.travma || Math.abs(m.yuk) >= 1.0) keep.push(m);
+    if (bakis) bakisDegistir(bakis, before, m.travma || Math.abs(m.yuk) >= 1 ? aniBakisi(m) : undefined);
   }
   return keep;
 }

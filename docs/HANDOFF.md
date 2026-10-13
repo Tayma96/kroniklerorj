@@ -112,3 +112,21 @@ ve uzun izin teşhisine sapılmasın. Yalnız apk; yayınlama sonucu ayrıca kay
 Şahit açıklaması dalgası gönderilemedi: yerel GitHub DNS/ağ erişimi kapalı, ağ izni aracı
 bu tur ek yetki vermedi. Bağlı okuma uzak apk'yı dd4b01d olarak doğruladı. Yeni commit hazır;
 yetki geldiğinde normal ileri gönderim ve bağımsız uzak kimlik doğrulaması gerekir.
+
+Gönderim güncellemesi: 13 Ekim'deki workspace-write/otomatik inceleme izniyle fetch→normal
+push→bağımsız ls-remote başarılı. Uzak apk artık `983f6c650b3b675608a83985854fb8ed404f4cf7`.
+Cihaz girişi gerekmedi. Kullanıcı her commit'i hemen pushlamamızı istedi; aynı adımda uzak
+kimliği doğrula. Yetkili ağ yükseltmesi kullanılabilirken normal DNS hata döngüsüne sapılmasın.
+
+## Kişisel tavır — 13 Ekim 2026
+
+`NPC_TAVIR.md`: kişisel anıların altı ayrı toplamı artımlı tutulur. Toplam ilişki +66 olsa bile
+tehdit şahidinde korku 28/güven −13 özel konuşmayı kapatır; helallik sonrası korku 11 ile açılabilir.
+Profilde tek tavır ve mevcut dökümün içinde altı değer; 44 px/etiket/ay kilidi/altı dil.
+3.850 hedefli senaryo, önceki hafıza/ağ/şahit/iş örnekleri, 12 gerçek profil bileşen akışı temiz.
+Eski şekil hashleri aynı; yeni defter yüzünden yalnız sohbetin ham hash'i güncellendi.
+30 hayat/19.823 ay, ayna ve metin temiz. Cihaz sınırları taklit edildi; gerçek ekran/telefon QA yok.
+300 hayat kadansından sonra üçüncü motor dalgası. Bir sonraki motor dalgasında kontrol noktası
+planla. Tam GDD açık; kalıcı izlenim/LOD, çok varlıklı görüş, tonlu çok turlu sohbet, gerçek
+mahkeme/iftira kanıtı ve kayıtlı üretim RNG sıradaki büyük işler. Web ve Android/Hermes
+paketleme geçti. Son yayın sonucu ayrıca kaydedilir.

@@ -7,6 +7,7 @@ import { Lang, professionNameL, goalL } from "./locale-data";
 import { tFor, kucukHarf, renderEvt } from "./i18n";
 import { converse, ConvResult, spontaneousLine, callbackLine, perceptionGreeting, derinlikKatmani, SohbetSon } from "./dialogue";
 import { Memory, addMemory, decayMemories, behaviorTier, MEMORY_TYPES, RUMOR_VARIANTS, salientMemory, MemoryOptions, groupWitnessMemories, representativeMemory } from "./npc-mind";
+import { Bakis, BakisDefteri, bakisOku, bakisHazirla, aniHafiflet } from "./npc-bakis";
 import { recollectionLine, recollectionGroup } from "./hafiza-sohbet";
 import { RumorHearing, rumorOrigin, rumorGraph, spreadRumor } from "./soylenti-agi";
 import { arcById, ArcChoice, availableArcs } from "./arcs";
@@ -1067,7 +1068,7 @@ export function joinThreshold(p: Player, f: Faction): number { return p.perks.in
 
 export interface GameEvent { day: number; type: string; text: string; scope: "kişisel" | "makro"; landmark?: boolean; k?: string; p?: EvtParam[]; q?: number; } // q: olay sırası (artan; ekranlar "yeni olay"ı bununla tanır — kronik 250'de kırpılınca uzunluk artmaz)
 export interface DynastyRecord { generation: number; name: string; profession: string; diedAge: number; fame: number; reputation: number; faction: string | null; note: string; noteK?: string; causeK?: string; } // noteK: kitabe kimliği (6 dile çevrilir); note eski kayıtlar için TR yedek; causeK: ölüm nedeni kodu
-export interface NpcState { mood: number; memories: string[]; anilar?: Memory[]; int_turn?: number; act_turns?: Record<string, number>; rel_gain_turn?: number; rel_gain_amt?: number; son?: SohbetSon; ani_sira?: number; }
+export interface NpcState { mood: number; memories: string[]; anilar?: Memory[]; int_turn?: number; act_turns?: Record<string, number>; rel_gain_turn?: number; rel_gain_amt?: number; son?: SohbetSon; ani_sira?: number; bakis?: BakisDefteri; }
 // son: bu kişiyle son sohbetin konusu ve nasıl bittiği — bir dahaki sohbette hatırlanır (diyalog takip katmanı; eski kayıtta yok, sorun değil).
 // int_turn (eski): tek blok kilit — artık kullanılmıyor, eski kayıtlar için duruyor.
 // act_turns: her etkileşim KANALI (sohbet niyeti / hediye / flört / dedikodu / hakaret / sadaka) ayrı ayrı tur-kilidi;
@@ -1129,6 +1130,8 @@ export function gorus(s: GameState, id: string): { toplam: number; kalemler: Gor
   return { toplam: c, kalemler: ks };
 }
 export function relWith(s: GameState, id: string): number { return gorus(s, id).toplam; }
+// Kişinin kendi yaşantısının altı boyutlu izi; genel nam ve başkasının anısı eklenmez.
+export function npcBakisi(s: GameState, id: string): Bakis { return bakisOku(s.npc_state?.[id]); }
 // Kasabanın gözünde (mahalle ekranı): bulunduğun yerdeki yetişkinlerin (ailen hariç) huy grubuna göre sana ortalama bakışı ve
 // o grupta görüşü en çok belirleyen kalem; dost/hasım sayısı ve o yerde dolaşan söylentiler. Döküm motorla aynı (gorus).
 export interface GrupGozu { grup: HuyGrubu; n: number; ort: number; sebep: string | null; sebepTur?: string }
@@ -1459,7 +1462,7 @@ function kapiYaniti(s: GameState, t: NonNullable<GameState["npcTeklif"]>, k: Kis
   }
   if (t.tur === "helal") { // kendisi helallik istemeye geldi: kabul edersen kırgınlık solar; ölüm döşeğindekini geri çevirmek ocağına da yazılır
     const ns = npcStateOf(s, k.id); const olum = t.alt === "olum";
-    if (kabul) { for (const m of ns.anilar || []) if (m.yuk < 0) m.yuk = Math.round(m.yuk * 0.3 * 1000) / 1000; an(k, "helallik"); p.honor = Math.min(100, p.honor + 2); bumpNam(p, "dindar", 1);
+    if (kabul) { aniHafiflet(ns, m => m.yuk < 0, .3); an(k, "helallik"); p.honor = Math.min(100, p.honor + 2); bumpNam(p, "dindar", 1);
       push(s, "sohbet", `${nm} ile helalleştin.`, "kişisel", olum, { k: olum ? "npct.helalOldu" : "npct.helalBayramOldu", p: [kp] }); }
     else if (olum) { an(k, "yuz_cevirme"); for (const c of k.cocuk || []) { const ck = pop.k[c]; if (ck && ck.ol == null) an(ck, "tatsiz_konu"); }
       push(s, "sohbet", `${nm} helallik istedi; gitmedin.`, "kişisel", false, { k: "npct.helalGitme", p: [kp] }); }
@@ -1473,7 +1476,7 @@ function kapiYaniti(s: GameState, t: NonNullable<GameState["npcTeklif"]>, k: Kis
     p.reconcile_turn = s.turn;
     if (Math.random() * 100 < araciSansi(s)) {
       p.money -= tutar; s.story!.nemesis = null; p.honor = Math.min(100, p.honor + 3); bumpNam(p, "dindar", 1);
-      const ns = npcStateOf(s, e.id); for (const m of ns.anilar || []) if (m.tur === "kan") m.yuk = Math.round(m.yuk * 0.5 * 1000) / 1000;
+      const ns = npcStateOf(s, e.id); aniHafiflet(ns, m => m.tur === "kan", .5);
       an(e, "diyet"); s.relationships[e.id] = Math.max(-20, s.relationships[e.id] || 0); an(k, "icten_sohbet");
       push(s, "kan_davası", `${nm} aracılığıyla ${kisiAdi(e, "tr")} diyeti kabul etti; kan davası kapandı.`, "kişisel", true, { k: "npct.araciOk", p: [kp, knParam(e), tutar] });
     } else {
@@ -1534,7 +1537,7 @@ function kapiYaniti(s: GameState, t: NonNullable<GameState["npcTeklif"]>, k: Kis
     if (!kabul || secim == null) { push(s, "sohbet", `${nm} ile ${kisiAdi(b, "tr")} arasına girmedin.`, "kişisel", false, { k: "npct.hakemRed", p: [kp, knParam(b)] }); return; }
     const w = secim === 0 ? k : b; const l = secim === 0 ? b : k;
     an(w, "hakem_lehte"); an(l, "hakem_aleyhte");
-    if (huyGrubu(huyOf(l)) === "ilkeli") { const m = npcStateOf(s, l.id).anilar?.slice(-1)[0]; if (m && m.tur === "hakem_aleyhte") m.yuk = Math.round(m.yuk * 0.5); } // ilkeli olan hakem kararına boyun eğer
+    if (huyGrubu(huyOf(l)) === "ilkeli") { const m = npcStateOf(s, l.id).anilar?.slice(-1)[0]; if (m && m.tur === "hakem_aleyhte") aniHafiflet(npcStateOf(s, l.id), x => x === m, .5, true); } // ilkeli olan hakem kararına boyun eğer
     if ((t.hakli ?? 0) === secim) { p.honor = Math.min(100, p.honor + 2); p.reputation = Math.min(100, p.reputation + 2); push(s, "sohbet", `${kisiAdi(w, "tr")} lehine karar verdin; haklıydı.`, "kişisel", false, { k: "npct.hakemHakli", p: [knParam(w), knParam(l)] }); }
     else { p.honor = Math.max(0, p.honor - 2); p.reputation = Math.max(-100, p.reputation - 2); push(s, "sohbet", `${kisiAdi(w, "tr")} lehine karar verdin; haklı olan öbürüydü.`, "kişisel", false, { k: "npct.hakemHaksiz", p: [knParam(w), knParam(l)] }); }
   }
@@ -1580,7 +1583,7 @@ function remember(s: GameState, npc: { id: string; name: string }, tur: string, 
   if (!ns.anilar) ns.anilar = [];
   const owner = nufusOf(s).k[npc.id];
   const seq = (Number.isFinite(ns.ani_sira) ? Math.max(0, Math.floor(ns.ani_sira!)) : 0) + 1; ns.ani_sira = seq;
-  const m = addMemory(ns.anilar, tur, s.turn, { ...opts, kaynak: npc.name, huy: owner ? huyOf(owner) : undefined,
+  const m = addMemory(ns.anilar, tur, s.turn, { ...opts, bakis: MEMORY_TYPES[tur] ? bakisHazirla(ns) : undefined, kaynak: npc.name, huy: owner ? huyOf(owner) : undefined,
     kimlik: [s.seed, s.player.generation, npc.id, seq].join(":"), sahip: npc.id, konu: OYUNCU,
     olay: opts?.olay || [s.seed, s.player.generation, s.turn, s.hseq || 0, tur].join(":"), kaynakZinciri: [npc.id],
     kanit: opts?.kanit || (tur.endsWith("_tanigi") ? "gorgu" : "katilim") });
@@ -3604,7 +3607,7 @@ export function advance(prev: GameState, n = 1): GameState {
     // NPC anıları haftalık söner (travmalar kalıcı); anlamsız geçici girdiler budanır (perf + temizlik).
     if (s.npc_state) for (const id in s.npc_state) {
       const ns = s.npc_state[id];
-      if (ns.anilar && ns.anilar.length) ns.anilar = decayMemories(ns.anilar);
+      if (ns.anilar && ns.anilar.length) ns.anilar = decayMemories(ns.anilar, bakisHazirla(ns));
       if ((!ns.anilar || !ns.anilar.length) && Math.abs(s.relationships[id] || 0) < 5 && Math.abs(ns.mood) < 5 && (!ns.memories || !ns.memories.length)) delete s.npc_state[id];
     }
     gossipTick(s); // tanıklı skandallar → oyuncu söylentileri (haftalık)
@@ -5495,6 +5498,13 @@ export function talkWith(prev: GameState, npc: NPC, intent: string, lang: string
   const akey = "t:" + intent;
   if (npcActUsed(ns, akey, s.turn)) return { state: s, line: "", delta: 0 };
   markNpcAct(ns, akey, s.turn);
+  const owner = nufusOf(s).k[npc.id], stance = npcBakisi(s, npc.id);
+  if (["dert", "hedef", "aile"].includes(intent) && owner && owner.ol == null && owner.loc === p.location_name && npc.age >= 13 && p.age >= 13 && stance.korku >= 20 && stance.guven < 5) {
+    ns.son = { i: intent, t: s.turn, ok: 2 };
+    const line = tFor(lang as Lang, "bakis.closed");
+    push(s, "sohbet", `${npc.name}: ${line}`, "kişisel", false, { k: "bakis.closed.log", p: [npcP(s, npc)] });
+    return { state: s, line, delta: 0 };
+  }
   const rel = s.relationships[npc.id] || 0;
   // NPC, sohbette etkin ilişkiye (taban + anılar) göre davranır — hatırladıkları konuşmasına yansır.
   // Geçen sefer bu konuda ağzını açmayan kişiye yeniden sormak (ısrar) kapıyı açar — konunun sonucu.
@@ -5917,7 +5927,7 @@ export function helallikIste(prev: GameState, npc: NPC, bedel = false): GameStat
   const cost = helalBedeli(s, npc.id); if (bedel && p.money < cost) return s;
   const sans = helalSansi(s, npc, bedel).yuzde; markNpcAct(ns, "helal", s.turn);
   if (Math.random() * 100 < sans) {
-    for (const m of ns.anilar || []) if (m.yuk < 0) m.yuk = Math.round(m.yuk * 0.4 * 1000) / 1000; // kırgınlık solar (travma izi kalır ama hafifler)
+    aniHafiflet(ns, m => m.yuk < 0, .4); // kırgınlık solar (travma izi kalır ama hafifler)
     remember(s, npc, "helallik"); p.honor = Math.min(100, p.honor + 2); bumpNam(p, "dindar", 1);
     if (bedel) p.money -= cost;
     push(s, "sohbet", `${npc.name} helallik verdi; aranızdaki kırgınlık hafifledi.`, "kişisel", true, { k: bedel ? "npca.helalOkBedel" : "npca.helalOk", p: [npcP(s, npc), cost] });
@@ -9097,13 +9107,13 @@ function hesapUygula(s: GameState, oldur: boolean) {
   p.honor = Math.min(100, p.honor + 5); bumpNam(p, "mert", 4); p.reputation = Math.min(100, p.reputation + 3); p.fame = Math.min(100, p.fame + 2);
   const ns = npcStateOf(s, k.id); const g = huyGrubu(huyOf(k)); const ok = olenId ? pop.k[olenId] : undefined;
   if (g === "ilkeli" || g === "sicak") {
-    for (const m of ns.anilar || []) if (m.yuk < 0) m.yuk = Math.round(m.yuk * (g === "ilkeli" ? 0.3 : 0.4) * 1000) / 1000;
+    aniHafiflet(ns, m => m.yuk < 0, g === "ilkeli" ? .3 : .4);
     remember(s, { id: k.id, name: nm }, "can_bagisi"); s.relationships[k.id] = Math.max(s.relationships[k.id] || 0, g === "ilkeli" ? 10 : 0);
     (s.kanDefteri = s.kanDefteri || []).push({ id: k.id, tur: "canborcu", turn: s.turn, vade: s.turn + 12 + Math.floor(Math.random() * 37), nesil: 0 });
     push(s, "nemesis", `${nm} canını bağışlamanı unutmayacak.`, "kişisel", true, { k: g === "ilkeli" ? "kan.bagisIlkeli" : "kan.bagisSicak", p: [kp] });
     if (ok) push(s, "kan_davası", `${nm}, ${kisiAdi(ok, "tr")} için tuttuğu davayı senin bağışınla kapattı.`, "kişisel", true, { k: "kan.bagisKapandi", p: [kp, knParam(ok)] });
   } else if (g === "cekingen") {
-    for (const m of ns.anilar || []) if (m.yuk < 0) m.yuk = Math.round(m.yuk * 0.6 * 1000) / 1000;
+    aniHafiflet(ns, m => m.yuk < 0, .6);
     s.relationships[k.id] = Math.max(s.relationships[k.id] || 0, -30);
     const yer = LOCATIONS.filter((l) => l !== k.loc && regionOf(l) === regionOf(k.loc));
     if (!k.es && yer.length) { k.loc = rnd(yer); nufusDegisti(pop); push(s, "nemesis", `${nm} yenilginin utancıyla ${k.loc} yoluna düştü.`, "kişisel", true, { k: "kan.bagisCekingen", p: [kp, { pl: k.loc }] }); }
@@ -9301,7 +9311,7 @@ export function diyetOde(prev: GameState): GameState {
   p.reconcile_turn = s.turn;
   if (Math.random() * 100 < diyetSansi(s).yuzde) {
     p.money -= cost; s.story.nemesis = null; p.honor = Math.min(100, p.honor + 3); bumpNam(p, "dindar", 1);
-    const ns = npcStateOf(s, k.id); for (const m of ns.anilar || []) if (m.tur === "kan") m.yuk = Math.round(m.yuk * 0.5 * 1000) / 1000;
+    const ns = npcStateOf(s, k.id); aniHafiflet(ns, m => m.tur === "kan", .5);
     remember(s, { id: k.id, name: n.name }, "diyet"); s.relationships[k.id] = Math.max(-20, s.relationships[k.id] || 0);
     push(s, "kan_davası", `${n.name} diyeti kabul etti (${cost} akçe); kan davası kapandı.`, "kişisel", true, { k: "kan.diyetOk", p: [knParam(k), cost] });
   } else {

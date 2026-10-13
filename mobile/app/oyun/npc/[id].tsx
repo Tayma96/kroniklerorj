@@ -9,6 +9,7 @@ import { useI18n, yuzdeL, kucukHarf, applyParams } from "../../../lib/i18n";
 import { hap } from "../../../lib/haptics";
 import { INTENTS, moodKey } from "../../../lib/dialogue";
 import { topMemories, salientMemory, representativeMemory } from "../../../lib/npc-mind";
+import { NpcTavri } from "../../../lib/npc-bakis-ui";
 import { memoryQuote } from "../../../lib/hafiza-sohbet";
 import { professionNameL, traitL, quirkL, goalL, placeName } from "../../../lib/locale-data";
 import { ITEMS, TieKind } from "../../../lib/world";
@@ -169,11 +170,12 @@ export default function NpcDetail() {
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12, marginTop: 12 }}>
           {!prof.olu ? <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}><GameIcon name="prayer-beads" size={11} color={C.parchmentDim} /><Text style={{ fontFamily: F.serif, fontSize: 11.5, color: C.parchmentDim }}>{t("dlg.mood." + moodKey(ns.mood))}</Text></View> : null}
           <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}><GameIcon name="star" size={11} color={C.parchmentDim} /><Text style={{ fontFamily: F.serif, fontSize: 11.5, color: C.parchmentDim }}>{traitL(npc.trait, lang)}</Text></View>
-          <Pressable onPress={() => { hap("tap"); setGorusAcik((x) => !x); }} hitSlop={8} style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+          <Pressable accessibilityRole="button" accessibilityLabel={t("gorus.ipucu")} accessibilityState={{ expanded: gorusAcik }} onPress={() => { hap("tap"); setGorusAcik((x) => !x); }} hitSlop={8} style={{ flexDirection: "row", minHeight: 44, alignItems: "center", gap: 5 }}>
             <Text style={{ fontFamily: F.display, fontSize: 11, color: v >= 20 ? C.sage : v <= -20 ? C.blood : C.parchmentMuted }}>{t("npc.rel")} {v > 0 ? "+" + v : v}</Text>
             <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.goldDim, textDecorationLine: "underline" }}>{t("gorus.ipucu")}</Text>
           </Pressable>
         </View>
+        {!prof.olu && <NpcTavri state={state} id={npc.id} />}
         {/* Görüş dökümü: motorun kullandığı değerle birebir aynı kalemler (relWith = gorus().toplam) */}
         {gorusAcik ? (() => {
           const g = gorus(state, npc.id);
@@ -190,6 +192,7 @@ export default function NpcDetail() {
                 <Text style={{ flex: 1, fontFamily: F.display, fontSize: 11, color: C.parchment }}>{t("gorus.toplam")}</Text>
                 <Text style={{ fontFamily: F.display, fontSize: 12, color: g.toplam >= 20 ? C.sage : g.toplam <= -20 ? C.blood : C.parchment, minWidth: 34, textAlign: "right" }}>{g.toplam > 0 ? "+" + g.toplam : g.toplam}</Text>
               </View>
+              <NpcTavri state={state} id={npc.id} detailed />
             </View>
           );
         })() : null}
@@ -292,7 +295,7 @@ export default function NpcDetail() {
         ) : null}
         {/* 14 yaş altı NPC'ye iş/hayal sorma — çocuğun mesleği/hedefi yok (boş tırnak saçmalığı önlenir). */}
         {INTENTS.filter((it) => (npc.age >= 14 || it.id !== "is") && (it.id !== "hedef" || !!npc.goal)).map((it) => { const done = usedAct("t:" + it.id); return (
-          <Pressable key={it.id} disabled={done} onPress={() => { hap("tap"); speak(it.id); }} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent", opacity: done ? 0.4 : 1 })}>
+          <Pressable key={it.id} accessibilityRole="button" accessibilityLabel={t("dlg.intent." + it.id)} accessibilityState={{ disabled: done }} disabled={done} onPress={() => { hap("tap"); speak(it.id); }} style={({ pressed }) => ({ flexDirection: "row", minHeight: 44, alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent", opacity: done ? 0.4 : 1 })}>
             <GameIcon name={it.icon} size={17} color={C.gold} />
             <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 14, color: C.parchment }}>{t("dlg.intent." + it.id)}</Text>
             {done ? <Text style={{ fontFamily: F.display, fontSize: 9, color: C.goldDim }}>{t("soc.lock.done")}</Text> : <Text style={{ color: C.goldDim, fontSize: 15 }}>›</Text>}

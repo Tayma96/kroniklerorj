@@ -21,3 +21,10 @@ Davranış tabanı değişimi ayrıca kayıtlıdır: önceki motor eski 10 akı�
 muhatabı ayrıca kişisel anı taşır ve şahit havuzundan çıkar. Ortak olay tek söylentiye döner.
 Profil, özet, görüş gerekçesi ve otomatik gönderme, görgüyü kişisel mağduriyet gibi anlatmaz.
 Ayrıntı/kabul kapsamı `SAHITLER.md`; kanıta dayalı soruşturma, artımlı vektör ve izlenim hâlâ açık.
+
+## Kişisel tavır — 13 Ekim 2026
+
+Sonraki dalgada kişisel anıların altı boyutlu artımlı defteri ve korkuya bağlı özel konuşma
+kapısı eklendi (`NPC_TAVIR.md`). Yüksek toplam ilişki, korku ve düşük güveni örtmez.
+Üç halkalı kişi ağı ve şahit açıklaması `SOYLENTI_AGI.md`/`KARSI_SOZ.md` içinde uygulanmıştır.
+Genel varlıklar arası görüş, kalıcı izlenim/LOD ve çok turlu konuşma açık kalır.
