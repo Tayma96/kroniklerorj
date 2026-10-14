@@ -605,3 +605,5 @@ EPERM ile kapatılmasıydı. Hesap bozukluğu diye yorumlama; izin değişikliğ
 - `docs/EVLAT_YOLU.md` kapsam/sınırlar. Doğrudan evlat ölüm muafiyeti, yeğen/torun/çırak yedek
   vâris, nesiller arası dünya takvimi ve NPC→oyuncu tam ad/portre/geçmiş aktarımı açık. Bütün
   varlık görüşü/LOD, mahkeme/iftira, kayıtlı üretim RNG ve diğer GDD sistemleri de tamamlanmadı.
+- Uygulama commit'i `5409ecd221bf2c618424e50655f7b50909bc7693` normal ileri push ile
+  `apk` dalına gönderildi; bağımsız `ls-remote` aynı tam kimliği verdi. Repo gönderimden sonra temizdi.

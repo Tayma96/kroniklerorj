@@ -188,3 +188,6 @@ Sıradaki büyük aile işi doğrudan evlat ölümünü yedek vâris akışıyla
 yeğen/torun/çırak adayları. Dünya takvimi vârisle bütün ekranlarda kesintisiz sürmüyor;
 NPC'den oyuncuya tam ad/portre/geçmiş aktarımı da eksik. Bunları bitmiş sayma. Yalnız
 `apk`; biten her commit normal push ve bağımsız uzak kimlik okumasıyla doğrulanmalı.
+
+Uygulama gönderimi tamamlandı: `5409ecd221bf2c618424e50655f7b50909bc7693`
+yerel `apk`, `origin/apk` ve bağımsız uzak dal okumasında aynıydı; cihaz girişi gerekmedi.
