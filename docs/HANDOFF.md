@@ -169,3 +169,22 @@ GDD vâris hash'i yalnız gerçek eski yakınların kimlik/tanışıklık ekidir
 motorla karşılaştırıldıktan sonra güncellendi. Sıradaki aile üyelerinin kendi
 gündemleri ve sohbetin sonraki karşılaşmadaki kişisel sonucu; bağımsız yetişkin
 evlat evlenme/ayrılma, ayrıntılı soy rolleri/tam soy ağacı ve tam GDD hâlâ açıktır.
+
+## Yetişkin evlat yolu — 14 Ekim 2026
+
+`EVLAT_YOLU.md`: gerçek yetişkin evlat evlenir/göçer; gerçek çiftin çocuğu torun olur.
+Oyuncu soyunda akraba eşleşmesi, 18 yaş altı eş/doğum ve iki ebeveynden birinin sekiz
+çocuğu varken yeni doğum engellenir. Aylık/yıllık doğum haberi doğru evlat profiline gider.
+Uzak evlada iki oyun aylık, ödülsüz gönderilen kervan mektubu; teslimde tek bağ/anı sonucu.
+Yerel bakım hakkıyla ortak ay kilidi. Yeni haber ve mektup kayıtları göçte ayıklanır.
+
+Gerçek yaşayan vâris kendi yaşı/mesleği/yeri/eşi/evlilik süresiyle devam eder; ölü aday
+seçilemez, yaşayan yoksa oyun ölüyü diriltmez. Eski olay sayacı en büyük `q` değerine
+onarılır. 75/99/329/3.770/3.850 motor örneği, 10 GDD akışı/üç 30 aylık kayıt, tip/dil/MP,
+web ve Android/Hermes temiz. 30 hayat/20.614 ay eşikleri, ayna ve 27.780 metin temiz.
+15 evlat, 12 torun, 15 sohbet küçük ekran akışı altı dilde geçti. Telefon/APK testi yok.
+
+Sıradaki büyük aile işi doğrudan evlat ölümünü yedek vâris akışıyla güvenle açmak; sonra
+yeğen/torun/çırak adayları. Dünya takvimi vârisle bütün ekranlarda kesintisiz sürmüyor;
+NPC'den oyuncuya tam ad/portre/geçmiş aktarımı da eksik. Bunları bitmiş sayma. Yalnız
+`apk`; biten her commit normal push ve bağımsız uzak kimlik okumasıyla doğrulanmalı.

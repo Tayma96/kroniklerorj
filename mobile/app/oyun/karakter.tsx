@@ -15,6 +15,7 @@ import { playWater, playPurr, playBark } from "../../lib/sound";
 import { placeName, professionNameL, careerTitleL } from "../../lib/locale-data";
 import { C, F } from "../../lib/theme";
 import { Torunlar } from "../../lib/torun-ui";
+import { cocuklaVakitSec } from "../../lib/game";
 
 const GB = "rgba(201,168,76,0.22)"; // gold border
 const GBG = "rgba(201,168,76,0.07)"; // gold bg
@@ -268,10 +269,10 @@ export default function Karakter() {
                 );
               })() : null}
               {p.children.length > 0 ? (() => {
-                const tended = p.child_time_turn === state.turn;
+                const local = cocuklaVakitSec(state), tended = p.child_time_turn === state.turn || !local;
                 return (
-                  <Pressable disabled={tended} onPress={() => { hap("tap"); apply((s) => tendChild(s)); }} style={{ alignSelf: "flex-start", marginTop: 5, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 7, borderWidth: 1, borderColor: "rgba(201,168,76,0.4)", backgroundColor: "rgba(201,168,76,0.08)", opacity: tended ? 0.4 : 1 }}>
-                    <Text style={{ fontFamily: F.display, fontSize: 10, color: C.gold, letterSpacing: 0.5 }}>{t("char.tendChildren")}</Text>
+                  <Pressable accessibilityRole="button" accessibilityLabel={t(local ? "char.tendChildren" : "evlat.noneLocal")} disabled={tended} onPress={() => { hap("tap"); apply((s) => tendChild(s)); }} style={{ alignSelf: "flex-start", marginTop: 5, minHeight: 44, justifyContent: "center", paddingVertical: 6, paddingHorizontal: 12, borderRadius: 7, borderWidth: 1, borderColor: "rgba(201,168,76,0.4)", backgroundColor: "rgba(201,168,76,0.08)", opacity: tended ? 0.4 : 1 }}>
+                    <Text style={{ fontFamily: F.display, fontSize: 10, color: C.gold, letterSpacing: 0.5 }}>{t(local ? "char.tendChildren" : "evlat.noneLocal")}</Text>
                   </Pressable>
                 );
               })() : null}

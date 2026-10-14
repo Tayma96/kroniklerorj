@@ -6,15 +6,20 @@ ve hanedan ekranından profiline gidilir; portresi aynı kimlikle yaşlanır.
 
 ## Doğum ve yaş
 
-Mevcut 52 yaş sonrası doğum olasılığı ve sekiz torun sınırı sürer. Doğum için
-yaşayan gerçek 18+ evlat gerekir; kadın evlatta 44, erkek evlatta 60 yaş üst
-sınırdır. Aynı ebeveynden aynı dünya yılında tekrar doğum olmaz; ebeveyn başına
-sekiz çocuk sınırı vardır. Adlar evlat/torun adlarıyla çakışmaz, nüfus kimliği
-adı birincil anahtar olarak kullanmaz. Yerleşim ebeveynin yerleşimidir.
+Ek aylık doğum 52 yaş sonrası olasılık ve sekiz torun sınırını kullanır.
+`EVLAT_YOLU.md` sonrası doğum gerçek aynı yerdeki iki yaşayan 18+ eşe bağlıdır;
+kadında 44, erkekte 60 yaş üst sınırdır. Nüfusun doğal yıllık doğumu da gerçek
+torun kaydı oluşturur; o toplam sekiz sınırına bağlı değildir. Aynı ebeveynden
+aynı dünya yılında tekrar ek doğum olmaz; ebeveyn başına sekiz çocuk sınırı
+vardır. Son evlat dalgasıyla sınır iki ebeveyn için birlikte uygulanır; önceki
+eşten sekiz çocuğu olan kişiyle dokuzuncu doğum açılmaz. Oyuncu ailesine değen
+yıllık evlilik/doğum da iki eşin 18 yaşını tamamlamasını bekler. Adlar
+evlat/torun adlarıyla ayrılır, nüfus kimliği birincil anahtardır.
+Yerleşim ebeveynin yerleşimidir.
 
-Öbür ebeveyn nüfusta gerçekten kayıtlı, yaşayan uygun yaştaki eşse onun bağı da
-kurulur. Yoksa eş, evlilik veya ikinci ebeveyn uydurulmaz. Yetişkin evlatların
-bağımsız evlenme ve ayrılma akışı bu dalgada tamamlanmış sayılmaz.
+İki ebeveynin gerçek bağı kurulur. Eş, evlilik veya ikinci ebeveyn uydurulmaz.
+Yetişkin evlatların nüfus evlilik ve yerleşim akışına katılması sonraki
+`EVLAT_YOLU.md` dalgasında uygulanmıştır.
 
 Nüfusta önceden var olan gerçek evlat→çocuk bağı göçte/okumada tanınır. Eski
 yalnız-ad kayıtlarına doğum yılı, cinsiyet, portre veya ebeveyn atanmaz. Aynı
@@ -42,17 +47,19 @@ yeğen/kuzen rolü henüz yoktur; genel kan akrabası etiketi vardır.
 
 ## Nesil devri
 
-Gerçek çocuğu bulunan vâris kendi gerçek yaşından başlar. Nüfustaki çocuklar
+Kayıtlı gerçek kişi vâris her durumda kendi gerçek yaşından başlar. Nüfustaki çocuklar
 aynı kimlik/yaş/öbür ebeveynle yeni oyuncunun evlatları olur; doğum turu yeni
 takvime yeniden tabanlanır. Gerçek eşi varsa evlilik bağı korunur. Vârisin
 nüfusta kendi kopyası silinir, oyuncuya ait çocuk/eş alanları aynı kişileri
 işaret eder. Diğer aile kolundaki torunlar ve bilinen eski yakınlar kan akrabası
 kalır. Kişisel anı/konuşma ve aylık bakım hakkı atadan taşınmaz.
 
-Kendi çocuğu olmayan mevcut başlangıçlarda eski yedi yaş döngüsü sürer. Bütün
-vârisleri gerçek yaşla devralma, yeğen/çırak adayları ve tam soy ağacı ayrı açık
-GDD işleridir. Önizleme hem gerçek başlangıç yaşını/çocuk sayısını hem mevcut
-puan/para/itibar hesabını aynı kaynakla gösterir.
+`EVLAT_YOLU.md` sonrası çocuksuz kişinin yaşı da korunur. Kişi kaydı yoksa
+doğum turu kullanılır; hiç yaş kaydı yoksa eski çocukluk başlangıcı sürer ve
+kayıt eksikliği ekranda söylenir. Yeğen/çırak adayları ve tam soy ağacı ayrı
+açık GDD işleridir. Önizleme gerçek yaş/çocuk sayısı ve mevcut puan/para/itibar
+hesabını aynı kaynakla gösterir. Aşağıdaki denetim sonuçları ilk torun dalgasının
+kendi kapsamına aittir; güncel ek doğrulama EVLAT_YOLU içindedir.
 
 ## Doğrulama
 

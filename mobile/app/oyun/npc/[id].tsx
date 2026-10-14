@@ -14,6 +14,8 @@ import { NpcIzlenimi } from "../../../lib/npc-izlenim-ui";
 import { SohbetDevami } from "../../../lib/npc-sohbet-ui";
 import { sohbetCevapla, aileProfilEylemi, aileProfilEyleminiYap } from "../../../lib/game";
 import type { SohbetYanit } from "../../../lib/npc-sohbet";
+import { EvlatMektubu } from "../../../lib/evlat-ui";
+import { evladaMektup } from "../../../lib/game";
 import { memoryQuote } from "../../../lib/hafiza-sohbet";
 import { professionNameL, traitL, quirkL, goalL, placeName } from "../../../lib/locale-data";
 import { ITEMS, TieKind } from "../../../lib/world";
@@ -255,6 +257,8 @@ export default function NpcDetail() {
           })}
         </View>
       )}
+
+      <EvlatMektubu state={state} id={npc.id} onSend={() => { hap("tap"); apply(s => evladaMektup(s, npc.id)); }} />
 
       {prof.burada && !state.player.dead && (<>
       {recalled && !state.player.dead && (

@@ -26,6 +26,8 @@ import { C, F } from "../../lib/theme";
 import { LinearGradient } from "expo-linear-gradient";
 import { EmekOngoru } from "../../lib/emek-ui";
 import { SoylentiIzi } from "../../lib/rumor-ui";
+import { AileHaberi } from "../../lib/evlat-ui";
+import { aileHaberiniOku, varisAdaylari } from "../../lib/game";
 
 const SEASON_KEY: Record<string, string> = { "Kış": "kis", "İlkbahar": "ilkbahar", "Yaz": "yaz", "Sonbahar": "sonbahar" };
 
@@ -409,10 +411,10 @@ export default function Dashboard() {
         ];
         return (
           <EulogyModal visible={showEulogy} name={p.name} epithet={epLabel} bornYear={diedYear - p.age} diedYear={diedYear} age={p.age}
-            professionLine={profLine} lines={eul.lines.map((l) => renderEvt(l.k, "", l.p, lang, t, p.gender === "kadın"))} ozet={{ baslik: t("eul.anlar").replace(/:\s*$/, ""), anlar: hayatAnlari, insanlar: hayatInsanlari }} close={t("dynnote." + eul.close)} hasHeir={p.children.length > 0}
+            professionLine={profLine} lines={eul.lines.map((l) => renderEvt(l.k, "", l.p, lang, t, p.gender === "kadın"))} ozet={{ baslik: t("eul.anlar").replace(/:\s*$/, ""), anlar: hayatAnlari, insanlar: hayatInsanlari }} close={t("dynnote." + eul.close)} hasHeir={varisAdaylari(state).length > 0}
             onReel={() => { setShowEulogy(false); router.push("/oyun/tarih?cine=1"); }}
             onChronicle={() => { setShowEulogy(false); router.push("/oyun/roman"); }}
-            onContinue={() => { setShowEulogy(false); if (p.children.length > 0) router.push("/oyun/nesil"); else if (mpMode) { resetGame(); router.replace("/yeni-oyun"); } else router.push("/oyun/ocak"); }} />
+            onContinue={() => { setShowEulogy(false); if (varisAdaylari(state).length > 0) router.push("/oyun/nesil"); else if (mpMode) { resetGame(); router.replace("/yeni-oyun"); } else router.push("/oyun/ocak"); }} />
         );
       })()}
 
@@ -515,6 +517,8 @@ export default function Dashboard() {
           <GameIcon name="meslek" size={16} color={C.gold} /><Text style={{ flex: 1, fontFamily: F.serif, fontSize: 13, color: C.parchment }}>{label}</Text>
         </Pressable>;
       })()}
+
+      <AileHaberi state={state} onOpen={(id, q) => { apply(s => aileHaberiniOku(s, q)); router.push(`/oyun/npc/${id}`); }} />
 
       <SoylentiIzi state={state} onOpen={(id) => router.push(("/oyun/sosyal?soz=" + encodeURIComponent(id)) as any)} />
 
@@ -990,13 +994,13 @@ export default function Dashboard() {
       </ScrollView>
       {p.dead ? (
         <View style={{ paddingHorizontal: 12, paddingBottom: 8, gap: 10 }}>
-          {p.children.length > 0 && (
+          {varisAdaylari(state).length > 0 && (
             <Pressable onPress={() => router.push("/oyun/nesil")} style={{ flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 7, paddingVertical: 14, borderRadius: 9, borderWidth: 1.5, borderColor: "rgba(201,168,76,0.55)", backgroundColor: C.gold }}>
               <GameIcon name="hanedan" size={14} color={C.inkOnGold} />
-              <Text style={{ fontFamily: F.display, fontSize: 13, color: C.inkOnGold, letterSpacing: 1 }}>{t("dash.continueHeir")} ({p.children.length} {t("dash.heirs")})</Text>
+              <Text style={{ fontFamily: F.display, fontSize: 13, color: C.inkOnGold, letterSpacing: 1 }}>{t("dash.continueHeir")} ({varisAdaylari(state).length} {t("dash.heirs")})</Text>
             </Pressable>
           )}
-          {p.children.length === 0 && !mpMode && (
+          {varisAdaylari(state).length === 0 && !mpMode && (
             <Pressable onPress={() => router.push("/oyun/ocak")} style={{ flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 7, paddingVertical: 14, borderRadius: 9, borderWidth: 1.5, borderColor: "rgba(201,168,76,0.55)", backgroundColor: C.gold }}>
               <GameIcon name="hanedan" size={14} color={C.inkOnGold} />
               <Text style={{ fontFamily: F.display, fontSize: 13, color: C.inkOnGold, letterSpacing: 1 }}>{t("dash.kulOcak")}</Text>

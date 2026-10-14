@@ -178,7 +178,10 @@ export interface YilOpts {
   korunan?: Set<string>;    // budanmayacak kimlikler (oyuncuyla bağı olanlar)
   oyuncuLoc?: string; oyuncuCins?: Cins; oyuncuYas?: number; oyuncuBekar?: boolean;
   olumCarpani?: number;     // çağ olayları (salgın) için
-  sabit?: Set<string>;      // oyuncunun ailesi (anne, baba, evlatları): evlilik pazarına ve göçe girmez, ocağında kalır
+  sabit?: Set<string>;      // henüz bağımsız olmayanlar: evlilik/göçten muaf
+  akraba?: (a: string, b: string) => boolean; // oyuncu nüfusta kişi olmadığı için aynı oyuncunun soy bağı
+  evlilikUygun?: (a: string, b: string) => boolean; // oyuncu ailesine özgü yetişkinlik gibi ek eşleşme sınırları
+  dogumUygun?: (anne: string, baba: string) => boolean; // oyuncu ailesine özgü yaş/çocuk aralığı sınırları
   muaf?: Set<string>;       // ölüm zarından muaf (oyuncu yaşarken evlatları — onların akıbeti oyuncunun hikâyesidir)
 }
 export function olumOlasiligi(yas: number): number {
@@ -223,7 +226,7 @@ export function nufusYil(pop: Nufus, ctx: NufusCtx, o: YilOpts): NufusOlay[] {
       const y = yas(kz); if (rng() >= (y <= 30 ? 0.35 : 0.15)) continue;
       const bolgeden = rng() < 0.15;
       const havuz = (bolgeden ? ctx.yerler.filter((l) => l !== loc && ctx.bolge(l) === ctx.bolge(loc)).flatMap((l) => yerde[l] || []) : (yerde[loc] || []))
-        .filter((e) => e.g === "erkek" && bekar(e) && yas(e) >= 18 && yas(e) <= 60 && yas(e) - y >= -3 && yas(e) - y <= 15 && !yakinAkraba(pop, kz.id, e.id));
+        .filter((e) => e.g === "erkek" && bekar(e) && yas(e) >= 18 && yas(e) <= 60 && yas(e) - y >= -3 && yas(e) - y <= 15 && !yakinAkraba(pop, kz.id, e.id) && !o.akraba?.(kz.id, e.id) && (o.evlilikUygun?.(kz.id, e.id) ?? true));
       if (!havuz.length) continue;
       let best: Kisi | null = null, bs = -1e9;
       for (const e of havuz) {
@@ -242,6 +245,7 @@ export function nufusYil(pop: Nufus, ctx: NufusCtx, o: YilOpts): NufusOlay[] {
   for (const anne of canli()) {
     if (anne.g !== "kadın" || !anne.es || anne.es === OYUNCU) continue;
     const baba = pop.k[anne.es]; if (!baba || baba.ol != null) continue;
+    if (o.dogumUygun && !o.dogumUygun(anne.id, baba.id)) continue;
     const y = yas(anne); if (y < 16 || y > 44) continue;
     const cocuklar = (anne.cocuk || []).map((c) => pop.k[c]).filter((c): c is Kisi => !!c);
     if (cocuklar.length >= 8 || cocuklar.some((c) => c.dy >= wy)) continue; // en fazla 8, yılda bir

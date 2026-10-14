@@ -579,3 +579,29 @@ EPERM ile kapatılmasıydı. Hesap bozukluğu diye yorumlama; izin değişikliğ
   kayıtlı üretim RNG, okul/meslek/yol ve gerçek cihaz/oyuncu deneyi. Yüzde tahmini yapma.
   NPC sohbeti önceliği sürüyor; sonraki görünür iş ailenin kendi gündemi ve konuşmanın
   sonraki karşılaşmadaki kişisel sonucu olsun. Doğrulanmış değişiklikler hemen commit→push→uzak doğrulama.
+
+## 39. Yetişkin evlat kendi hayatını kurdu (14 Ekim 2026)
+
+- Gerçek 18+ evlat nüfusun evlilik ve yerleşim akışına katılır. Farklı NPC ebeveyni
+  bulunan oyuncu evlatları da kardeş/akraba kabul edilir; birbirleriyle eşleşmez. Oyuncu
+  ailesine değen çiftte iki kişi 18 yaşını doldurmadan yıllık evlilik/doğum oluşmaz.
+- Torun doğumu gerçek, yaşayan, aynı yerdeki simetrik iki eşe bağlıdır. Yaş/doğurganlık,
+  aynı yıl ve iki ebeveynin sekiz çocuk sınırı birlikte denetlenir. Yıllık ve aylık gerçek
+  doğum haberi doğru evlada bağlanır; evlilik, göç, yeni bebek ve eş kaybı konuşması ayrıdır.
+- Ana panoda en yeni gerçek aile haberi ilgili evlat profilini açar. Uzaktaki yetişkin evlada
+  kervan mektubu iki oyun ayında ulaşır; gönderimde ödül yok, teslimde bağ +3/gerçek anı var.
+  Yerel bakım ve mektup aynı aylık hakkı paylaşır; en çok iki mektup, aynı kişiye tek bekleyen.
+- Nesil devrinde her gerçek yaşayan evlat kendi yaşı, cinsiyeti, yeri, uygun mesleği, yaşayan
+  eşi ve gerçek evlilik süresiyle devam eder; çocuksuz kişi yedi yaşa dönmez. Ölü aday seçilmez,
+  yaşayan yoksa ceset canlandırılmaz. Bilinmeyen eski ad kaydı dürüstçe bilinmeyen kalır.
+- Eski/yarım kaydın olay sıra sayacı geçmiş en büyük `q` değerine yükselir; yeni haber eski
+  olayla çakışmaz. Yeni mektup/haber alanları opsiyonel, göç idempotent, vâriste kişisel kuyruk sıfır.
+- 75 evlat, 99 torun, 329 sohbet, 3.770 iz ve 3.850 tavır örneği temiz. GDD'nin 10 akışı ve
+  üç sentetik 30 ayı aynı. 30 hayat/20.614 ay: boş %11,7, bunalma %0,2, gerilim en çok üç,
+  çöküş %0; ayna +94,6/−97,8, vâris +41,8/−42,2; 27.780 olay metni temiz.
+- Son web ve Android/Hermes paketi temiz. 15 evlat + 12 torun + 15 aile sohbeti gerçek tarayıcı
+  akışı; altı dil, 320×568, 4× CPU, 44 px, kayıt/teslim/vâris ve festival perdesinden sonra haber.
+  Fiziksel telefon ve yeni APK yok. 300 hayat önceki torun kontrol noktası; bu ara motor dalgası.
+- `docs/EVLAT_YOLU.md` kapsam/sınırlar. Doğrudan evlat ölüm muafiyeti, yeğen/torun/çırak yedek
+  vâris, nesiller arası dünya takvimi ve NPC→oyuncu tam ad/portre/geçmiş aktarımı açık. Bütün
+  varlık görüşü/LOD, mahkeme/iftira, kayıtlı üretim RNG ve diğer GDD sistemleri de tamamlanmadı.

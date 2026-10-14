@@ -7,7 +7,7 @@ export const TORUN_METIN = {
     "torun.kin": "Kan akraban",
     "torun.role": "Torunun",
     "torun.gorus": "Büyük ebeveyn bağı",
-    "torun.born": "Evladın %1, %3’da bir çocuk sahibi oldu: torunun %2.",
+    "torun.born": "Evladın %1 bir çocuk sahibi oldu: torunun %2. Doğduğu yer: %3.",
     "torun.died": "Torunun %1 vefat etti; ailede yeri kaldı.",
     "torun.time.bebek": "Torunun %1’in bakımına yardım ettin; ailesine soluk alacak zaman kaldı.",
     "torun.time.oyun": "Torunun %1 ile avluda oynadın; birlikte geçirdiğiniz zaman bağınızı güçlendirdi.",

@@ -132,3 +132,20 @@ seçimi gerçek bağ yaratır; yeni para/XP musluğu yoktur.
 öbür ebeveyn ve gerçek eş korunur; diğer aile kolu yabancı veya kur adayı olmaz.
 Eski adlar atanın defterine kalır. `TORUNLAR.md` gerçek kapsam; bütün vârislerin
 yaş modelini, bağımsız yetişkin evlat yaşamını ve tam soy ağacını tamamlanmış sayma.
+
+## 14 Ekim 2026 — Yetişkin evlat bağımsızdır, bağ kopmaz
+
+18 yaşını tamamlayan gerçek evlat eşini ve yerleşimini nüfus kurallarıyla seçer; oyuncu
+onun yerine karar vermez. Oyuncu ailesine katılan eş de 18 yaşını doldurmuş olmalı.
+Evlilik, göç, doğum ve yas gerçek kişi kayıtlarından çıkar; sahte eş/ev/çocuk üretilmez.
+İki ebeveynin çocuk ve aynı yıl doğum sınırı birlikte uygulanır.
+
+Uzaklık aile bağını menü cezasına çevirmesin: ücretsiz mektup iki oyun ayında ulaşır,
+gerçek takvim/giriş serisi yoktur. Gönderim ödülsüzdür; sonuç yalnız teslimde bir kez gelir.
+Yerel ilgiyle aynı aylık hakkı paylaşır. Ana panoda tek güncel haber kişiye götürür;
+olay sıra kimliği kayıt göçünde korunur.
+
+Vâris olmak kişiyi çocuklaştırmaz. Gerçek kişi yaşı, yeri, uygun mesleği, yaşayan eşi ve
+evlilik süresi korunur; bilinmeyen geçmiş uydurulmaz, ölü kişi diriltilmez. Tam kimlik,
+portre, geçmiş, dünya takvimi ve yedek vârisler ayrı açık kararlardır. Ayrıntılar ve
+kanıt sınırları `EVLAT_YOLU.md` içindedir.

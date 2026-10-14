@@ -10,6 +10,7 @@ import { useI18n, applyParams } from "../../lib/i18n";
 import { hap } from "../../lib/haptics";
 import { BackLabel, PageHeader, ScreenFresk } from "../../lib/ui";
 import { YetenekSecici } from "../../lib/soy-ui";
+import { varisAdaylari } from "../../lib/game";
 
 export default function Nesil() {
   const insets = useSafeAreaInsets(); const router = useRouter();
@@ -21,7 +22,7 @@ export default function Nesil() {
   const [yet, setYet] = useState<string | null>(null); // Hanedan Defteri: ölümde seçilen tek soy yeteneği
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   const p = state.player;
-  const chosenHeir = heir || p.children[0];
+  const eligible = varisAdaylari(state), chosenHeir = heir && eligible.includes(heir) ? heir : eligible[0];
 
   return (
     <ScreenFresk style={{ paddingTop: insets.top }}>
@@ -33,9 +34,9 @@ export default function Nesil() {
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 80 }}>
         <PageHeader kicker={t("scr.nesil")} title={t("scr.nesil")} />
-        {p.children.length === 0 ? (
+        {p.dead && !eligible.length || p.children.length === 0 ? (
           <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.parchmentMuted, textAlign: "center", marginTop: 30 }}>
-            {t("nes.noChildren")}
+            {t(p.children.length ? "evlat.heir.none" : "nes.noChildren")}
           </Text>
         ) : p.dead ? (
           <>
@@ -45,14 +46,14 @@ export default function Nesil() {
             <Text style={{ fontFamily: F.serifItalic, fontSize: 12.5, color: C.goldDim, marginBottom: 12, lineHeight: 19 }}>{t("asabiye." + asabiyeBandi(state))}</Text>
             <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.goldDim, marginBottom: 8 }}>{t("nes.chooseHeir")}</Text>
             {p.children.map((c) => { const pv = heirPreview(state, c, will, yet || undefined); return (
-              <Pressable key={c} onPress={() => setHeir(c)} style={{ flexDirection: "row", alignItems: "center", gap: 10, padding: 12, borderRadius: 9, borderWidth: 1, marginBottom: 7, borderColor: chosenHeir === c ? "rgba(201,168,76,0.6)" : C.border, backgroundColor: chosenHeir === c ? "rgba(201,168,76,0.12)" : C.card }}>
-                <GameIcon name="baby" size={16} color={C.gold} />
+              <Pressable key={c} testID={"heir-" + c} accessibilityRole="button" accessibilityState={{ disabled: !pv.available, selected: chosenHeir === c }} disabled={!pv.available} onPress={() => setHeir(c)} style={{ flexDirection: "row", alignItems: "center", gap: 10, padding: 12, borderRadius: 9, borderWidth: 1, marginBottom: 7, borderColor: chosenHeir === c ? "rgba(201,168,76,0.6)" : C.border, backgroundColor: chosenHeir === c ? "rgba(201,168,76,0.12)" : C.card }}>
+                <GameIcon name={pv.age >= 13 ? "meslek" : pv.age >= 7 ? "mektep" : "baby"} size={16} color={pv.available ? C.gold : C.parchmentMuted} />
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchment }}>{c}</Text>
                   <Text style={{ fontFamily: F.serifItalic, fontSize: 10, color: C.sage, marginTop: 1 }}>{(() => { const nk = "nat." + childNature(c, p.generation); const kv = t(nk + ".k"); return evlatKadinMi(c) && kv !== nk + ".k" ? kv : t(nk); })()}{p.child_bond?.[c] != null ? ` · ${t("char.bond")} ${p.child_bond[c]}` : ""}</Text>
                   <Text style={{ fontFamily: F.serif, fontSize: 10, color: C.goldDim, marginTop: 2 }}>{t("nes.preview").replace("%1", String(pv.points)).replace("%2", String(pv.money)).replace("%3", String(pv.rep))}</Text>
                 </View>
-                {pv.children > 0 && <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted, maxWidth: 105 }}>{t("torun.heir").replace("%1", String(pv.age)).replace("%2", String(pv.children))}</Text>}
+                <Text style={{ fontFamily: F.serif, fontSize: 11, lineHeight: 16, color: C.parchmentMuted, maxWidth: 105 }}>{!pv.available ? t("npc.late") : !pv.ageKnown ? t("evlat.heir.unknown") : pv.children > 0 ? t("torun.heir").replace("%1", String(pv.age)).replace("%2", String(pv.children)) : t("evlat.heir.age").replace("%1", String(pv.age))}</Text>
                 {(p.child_invests?.[c]?.length || 0) > 0 && <Text style={{ fontFamily: F.serif, fontSize: 10, color: C.goldDim }}>{p.child_invests[c].length} {t("nes.invests")}</Text>}
                 {p.child_edu?.[c] && eduLevel(p.child_edu[c].weeks) > 0 && <Text style={{ fontFamily: F.serif, fontSize: 10, color: C.gold }}>{t("edu.track." + p.child_edu[c].track)} {eduLevel(p.child_edu[c].weeks)}</Text>}
                 {chosenHeir === c && <Text style={{ color: C.gold }}>✓</Text>}
