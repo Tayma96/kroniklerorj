@@ -607,3 +607,26 @@ EPERM ile kapatılmasıydı. Hesap bozukluğu diye yorumlama; izin değişikliğ
   varlık görüşü/LOD, mahkeme/iftira, kayıtlı üretim RNG ve diğer GDD sistemleri de tamamlanmadı.
 - Uygulama commit'i `5409ecd221bf2c618424e50655f7b50909bc7693` normal ileri push ile
   `apk` dalına gönderildi; bağımsız `ls-remote` aynı tam kimliği verdi. Repo gönderimden sonra temizdi.
+
+## 40. Ölüm soy defterini silmedi, yedek vâris gerçek kişi oldu (14 Ekim 2026)
+
+- 18 yaşını dolduran doğrudan evlat gerçek nüfus ölümüne katılır; küçük evlat korunur.
+  Ölü kişi soy defterinde/profilde hatıra kalır ama eğitim, yatırım, çeyiz, bakım, gözde
+  seçimi, hayvan sahnesi ve güncel aile olaylarında eylem üretemez. Yas haberi gerçek
+  kimliğe gider; yoldaki mektup vakti gelince ulaşılamadı diye ödülsüz döner.
+- Kimlik tabanlı kesin sıra: yaşayan doğrudan evlat → gerçek torun → gerçek kardeş evladı
+  → en az 12 aylık ya da 50 ilerlemeli aktif çırak. Bir üst kademe doluyken altı açılmaz;
+  aynı adlı kişiler birleşmez, rastgele akraba/usta veya yalnız ad kaydı aday olmaz.
+- Torun, yeğen ve çırak doğrudan evladın eğitim/yatırım/bağ bonusunu alamaz. Gerçek yaş,
+  soyadı, cinsiyet, şehir, uygun meslek, yaşayan eş, evlilik süresi, çocuklar, ebeveyn ve
+  kardeşler korunur. Bilinmeyen geçmiş veya eski oyuncudan sahte ebeveyn üretilmez.
+- Nesil ekranında ölü doğrudan evlat 58 px seçilemeyen hatıra satırıdır; aktif yedek rolü
+  açıkça yazılır. Karakter ekranı yaşayan evlat sayısını verir, rahmetliyi soluk profil
+  bağlantısı olarak saklar. Görev/menü devir çağrısı yalnız gerçek aday varsa görünür.
+- 7 yeni motor kümesi ve önceki 75 evlat/99 torun örneği temiz. GDD'nin vâris hash'i yalnız
+  uydurma anne kaydı kaldırıldığı için güncellendi; diğer dokuz akış ve üç sentetik 30 ay aynı.
+  Altı dilde 7 küçük ekran akışı, 320×568/4× CPU, taşma/rol/hatıra/gerçek devir/adaysız son;
+  web ve Android/Hermes paketleri temiz. Fiziksel telefon/yeni APK yok.
+- `docs/YEDEK_VARIS.md`. 300 hayat önceki torun kontrol noktasında geçti; bu ikinci ara motor
+  dalgası. Tam soy ağacı görünümü, uzak roller, nesiller arası bütün ekranlarda dünya takvimi,
+  NPC portre/geçmişinin tam devri ve diğer GDD sistemleri açık. Yüzde tahmini yapma.

@@ -4,11 +4,22 @@ import { GameState, Delta, Player, effStat, Opportunity, opportunitiesFor, kapiy
 export interface Choice { label: string; delta: Delta; result: string; rk?: string; sans?: number; risk?: { taban: number; ticaret?: number; zeka?: number; kayip: Delta; metin: string }; gercek?: Delta; } // rk: sonuç metni anahtarı (riskli yolun kötü sonucu) · sans: görünür başarı şansı % · risk: kart açılırken zar atılır (şans = taban + ticaret×beceri + zekâ×stat), tutmazsa kayıp uygulanır · gercek: uygulanacak delta (delta kartta gösterilen)
 export interface Dilemma {
   id: string; title: string; text: string; icon: string;
-  when?: (p: Player) => boolean;
+  when?: (p: Player, s?: GameState) => boolean;
   identity?: boolean; // kimliğe (nam/korku/şeref/şöhret) tepki veren olay — daha sık çıkar
   not?: string; // kartın altına düşen çevrilmiş not (ör. kilitli hüner yolu ipucu)
   choices: Choice[];
 }
+
+// Evlat adları ölümden sonra soy kaydı olarak kalır. Güncel aile sahneleri yalnız yaşayan kimlikleri sayar;
+// s verilmeden yapılan veri/test sorgularında eski Player davranışı korunur.
+const yasayanEvlatSayisi = (p: Player, s?: GameState): number => !s ? p.children.length : p.children.filter((name) => {
+  const id = p.child_ids?.[name], k = id ? s.pop?.k[id] : undefined; return !k || k.ol == null;
+}).length;
+const yasayanTorunSayisi = (p: Player, s?: GameState): number => {
+  if (!s) return p.grandchildren?.length || 0;
+  const ids = p.grandchild_ids || []; if (!ids.length) return p.grandchildren?.length || 0;
+  return ids.filter((id) => !s.pop?.k[id] || s.pop.k[id].ol == null).length;
+};
 
 export const DILEMMAS: Dilemma[] = [
   {
@@ -360,7 +371,7 @@ export const DILEMMAS: Dilemma[] = [
   {
     id: "yasli_torun", icon: "scroll-open", title: "Torunun Merakı",
     text: "Torunun dizine oturmuş geçmişini soruyor: 'Sen gençken nasıldın?'",
-    when: (p) => p.age >= 50,
+    when: (p, s) => p.age >= 50 && yasayanTorunSayisi(p, s) > 0,
     choices: [
       { label: "Hikâyeni anlat", delta: { honor: 4, reputation: 2 }, result: "Geçmişini anlattın; gözleri parladı, adın bir kuşak daha yaşayacak." },
       { label: "Geçiştir", delta: { health: 2 }, result: "'Çok şey yaşadım' deyip geçtin; kimi sır mezara gider." },
@@ -369,7 +380,7 @@ export const DILEMMAS: Dilemma[] = [
   {
     id: "yasli_miras", icon: "coins", title: "Mirasın Gölgesi",
     text: "Evlatların, sen henüz hayattayken mirası konuşmaya başladı. Kulağına geldi.",
-    when: (p) => p.age >= 50 && (p.children?.length || 0) > 0,
+    when: (p, s) => p.age >= 50 && yasayanEvlatSayisi(p, s) > 0,
     choices: [
       { label: "Adilce paylaştır", delta: { honor: 6, reputation: 3 }, result: "Herkese hakkını açıkça söyledin; ocakta huzur kaldı." },
       { label: "Sırrını koru", delta: { fear: 4, nam: { zalim: 2 } }, result: "Ağzını sıkı tuttun; belirsizlik onları hizada tutuyor." },
@@ -646,7 +657,7 @@ export const DILEMMAS: Dilemma[] = [
   {
     id: "evlat_dert", icon: "baby", title: "Evladının Derdi",
     text: "Evladın bir hata yaptı ve sana çekinerek geldi.",
-    when: (p) => p.children.length > 0,
+    when: (p, s) => yasayanEvlatSayisi(p, s) > 0,
     choices: [
       { label: "Şefkatle yol göster", delta: { honor: 5, nam: { comert: 3 } }, result: "Azarlamadan anlattın; evladının gözünde büyüdün." },
       { label: "Sert ceza ver", delta: { fear: 4, honor: -2 }, result: "Korkuyla terbiye ettin; itaat etti ama mesafe açıldı." },
@@ -655,7 +666,7 @@ export const DILEMMAS: Dilemma[] = [
   {
     id: "evlat_dugun", icon: "ring", title: "Evladına Talip",
     text: "Evladına bir talip çıktı; köklü ama soğuk bir aile.",
-    when: (p) => p.children.length > 0 && p.age >= 35,
+    when: (p, s) => yasayanEvlatSayisi(p, s) > 0 && p.age >= 35,
     choices: [
       { label: "Gönlüne bak, sor", delta: { honor: 4, reputation: 2 }, result: "Evladının rızasını gözettin; ocağın huzuru korundu." },
       { label: "Çıkar için onayla", delta: { money: 50, reputation: -3, nam: { comert: -2 } }, result: "Servet geldi ama evladının bakışı bir başka oldu." },
@@ -843,7 +854,7 @@ export const DILEMMAS: Dilemma[] = [
   {
     id: "evlat_yalan", icon: "baby", title: "Küçük Yalan",
     text: "Evladının komşunun bahçesinden meyve aşırdığını öğrendin; üstelik sorulunca inkâr etti.",
-    when: (p) => p.children.length >= 1,
+    when: (p, s) => yasayanEvlatSayisi(p, s) >= 1,
     choices: [
       { label: "Karşısına otur, konuş", delta: { honor: 4, nam: { dindar: 2 } }, result: "Bağırmadan anlattın; çocuk hem utandı hem anladı. Komşuya da helallik dilendi." },
       { label: "Üstünü ört", delta: { honor: -3, fear: 1 }, result: "Meseleyi kapattın; ama çocuk yanlışın bedelsiz olduğunu da öğrendi." },
@@ -852,7 +863,7 @@ export const DILEMMAS: Dilemma[] = [
   {
     id: "cocuk_hayal", icon: "star", title: "Evladının Hayali",
     text: "Evladın gözleri parlayarak bir hayalini açtı; hevesini beslemek biraz akçe ister.",
-    when: (p) => p.children.length >= 1 && p.money >= 20,
+    when: (p, s) => yasayanEvlatSayisi(p, s) >= 1 && p.money >= 20,
     choices: [
       { label: "Hevesini destekle", delta: { money: -15, reputation: 2, nam: { comert: 2 } }, result: "Küçük bir masrafla büyük bir sevinç aldın; evladın bunu hiç unutmayacak." },
       { label: "Ayakları yere bassın", delta: { honor: 1 }, result: "Hayal başka, hayat başka dedin; çocuk sustu ama gözlerindeki ışık biraz söndü." },
@@ -1372,7 +1383,7 @@ export function pickFestival(s: GameState): Dilemma | null {
   if (p.festival_turn === s.turn) return null; // bu ayın şenliği çözüldü
   const f = FESTIVALS.find((x) => x.month === s.turn % 12);
   if (!f) return null;
-  const uygun = f.variants.filter((d) => !d.when || d.when(p));
+  const uygun = f.variants.filter((d) => !d.when || d.when(p, s));
   return uygun.length ? uygun[Math.floor(Math.random() * uygun.length)] : null;
 }
 
@@ -1382,8 +1393,8 @@ export function pickDilemma(s: GameState): Dilemma | null {
   if (p.dead) return null;
   // Tekrar koruması: son görülen ikilemler (ring 6) havuz dışı — havuz tümüyle tükenirse yoksayılır (kilitlenme yok).
   const recent = s.recent_dilemmas || [];
-  let pool = DILEMMAS.filter((d) => (!d.when || d.when(p)) && !recent.includes(d.id));
-  if (pool.length === 0) pool = DILEMMAS.filter((d) => !d.when || d.when(p));
+  let pool = DILEMMAS.filter((d) => (!d.when || d.when(p, s)) && !recent.includes(d.id));
+  if (pool.length === 0) pool = DILEMMAS.filter((d) => !d.when || d.when(p, s));
   if (pool.length === 0) return null;
   // Kimliğe tepki veren olaylar daha ağırlıklı: dünyanın seni tanıdığı hissi.
   const weighted: Dilemma[] = [];
@@ -1429,7 +1440,7 @@ export const ORTA_YAS: Dilemma[] = [
   {
     id: "orta_evlat", icon: "family", title: "Kendi Yolu",
     text: "Büyük evladın 'senin işini yapmayacağım' dedi; kendi yolunu çizmek istiyor.",
-    when: (p) => p.children.length > 0,
+    when: (p, s) => yasayanEvlatSayisi(p, s) > 0,
     choices: [
       { label: "Yolunu aç, keseden destek ver", delta: { money: -30, honor: 2 }, result: "Kesenin ağzını açtın; evladın önce şaşırdı, sonra sarıldı. Ocağın işi bekler, evladın yolu beklemez." },
       { label: "Önce ocağın işi de", delta: { money: 10, honor: -2 }, result: "Evladın tezgâhın başında kaldı; eli hızlı, gözü yolda. Kazanç arttı, sofrada sohbet azaldı." },
@@ -1512,7 +1523,7 @@ export const SON_YAS: Dilemma[] = [
   {
     id: "son_kumar", icon: "coins", title: "Gece Gelen Borç",
     text: "Evlatlarından biri gece kapıyı çaldı: zarda büyük bir borç, alacaklı sabah gelecek.",
-    when: (p) => p.age >= 50 && p.children.length > 0,
+    when: (p, s) => p.age >= 50 && yasayanEvlatSayisi(p, s) > 0,
     choices: [
       { label: "Borcu öde, sonra konuş", delta: { money: -60, asabiye: -4 }, result: "Borç kapandı; evladın yere baktı. Ama hane bildi ki kese her seferinde açılır." },
       { label: "Borcu evladın emeği ödesin", delta: { reputation: -1, asabiye: 4 }, result: "Evladın bir yıl tezgâhta çalışıp alacaklıya hafta hafta ödedi; yorgun ama dik döndü." },
@@ -1531,7 +1542,7 @@ export const SON_YAS: Dilemma[] = [
   {
     id: "son_olmeden", icon: "family", title: "Ölmeden Miras",
     text: "Evlatların bir akşam sofrada, sen hayattayken paylarını istedi.",
-    when: (p) => p.age >= 50 && p.children.length >= 2,
+    when: (p, s) => p.age >= 50 && yasayanEvlatSayisi(p, s) >= 2,
     choices: [
       { label: "Payları şimdi böl", delta: { money: -80, asabiye: 3, rift: -20 }, result: "Kese bölündü; herkes payını aldı. Sofra hafifledi, sen biraz yalnızlaştın." },
       { label: "Ben ölmeden olmaz", delta: { honor: 1, asabiye: -2, rift: 10 }, result: "Söz kesildi. Evlatlar sustu; sustukları yerde bir kırgınlık filizlendi." },
@@ -1541,7 +1552,7 @@ export const SON_YAS: Dilemma[] = [
   {
     id: "son_vasiyet", icon: "scales", title: "Vasiyetin Satırı",
     text: "Kadı vasiyetin taslağını getirdi. Bir satır boş: ocak kimin elinde kalacak?",
-    when: (p) => p.age >= 52 && p.children.length >= 2,
+    when: (p, s) => p.age >= 52 && yasayanEvlatSayisi(p, s) >= 2,
     choices: [
       { label: "İlk doğana", delta: { honor: 2, veraset: "ilk" }, result: "Töre yolunu seçtin; büyük evlat başını eğdi, küçükler sustu." },
       { label: "Ocağa en çok emek verene", delta: { reputation: 1, asabiye: 2, veraset: "gozde" }, result: "Eli en çok ocağa değene yazdın; meşru ama tartışmalı bir karar." },
@@ -1561,7 +1572,7 @@ export const SON_YAS: Dilemma[] = [
   {
     id: "son_rahat", icon: "crown", title: "Yokluğu Bilmeyenler",
     text: "Torunlar ipek giyiyor, hiç aç kalmadılar. Bir ihtiyar: 'Bu ocak yokluğu unuttu' dedi.",
-    when: (p) => p.age >= 50 && p.money >= 800 && p.children.length > 0,
+    when: (p, s) => p.age >= 50 && p.money >= 800 && yasayanTorunSayisi(p, s) > 0,
     choices: [
       { label: "Torunları bir yaz tarlaya yolla", delta: { health: -2, asabiye: 5 }, result: "Bir yaz boyu orak salladılar; avuçları nasır tuttu, gözleri başka bakmaya başladı." },
       { label: "Keyiflerini sürsünler", delta: { reputation: 1, asabiye: -4 }, result: "Torunlar güldü; ihtiyar başını salladı ve sustu." },
@@ -1570,7 +1581,7 @@ export const SON_YAS: Dilemma[] = [
   {
     id: "son_kardes", icon: "fist", title: "Kardeş Küslüğü",
     text: "İki evladın bir tarla sınırı yüzünden birbirine küs; sofraya ayrı ayrı geliyorlar.",
-    when: (p) => p.age >= 50 && p.children.length >= 2,
+    when: (p, s) => p.age >= 50 && yasayanEvlatSayisi(p, s) >= 2,
     choices: [
       { label: "İkisini bir sofraya oturt", delta: { honor: 1, asabiye: 4, rift: -10 }, result: "Bir akşam üçünüz aynı sofradaydınız; konuşan az oldu, ama ekmek bölüşüldü." },
       { label: "Haklıyı açıkça söyle", delta: { honor: 3, asabiye: -2, rift: 8 }, result: "Haklıyı söyledin; biri teşekkür etti, öbürü kapıyı çarptı." },
@@ -1580,7 +1591,7 @@ export const SON_YAS: Dilemma[] = [
   {
     id: "son_sefer", icon: "crossed-swords", title: "Sefer Hissesi",
     text: "Sefere çıkan beylik hanelerden hisse istiyor: ya kese ya er.",
-    when: (p) => p.age >= 50 && (p.money >= 300 || p.children.length > 0),
+    when: (p, s) => p.age >= 50 && yasayanEvlatSayisi(p, s) > 0,
     choices: [
       { label: "Kese ver", delta: { money: -80, reputation: 3 }, result: "Hisse ödendi; hanenin adı seferin defterine yazıldı." },
       { label: "Evlatlardan biri gitsin", delta: { health: -3, asabiye: 5 }, result: "Evladın yola çıktı; hane bir yıl duayla yaşadı. Dönünce ocağa başka gözle baktı." },
@@ -1599,7 +1610,7 @@ export const SON_YAS: Dilemma[] = [
   {
     id: "son_meclis", icon: "family", title: "Hane Meclisi",
     text: "Yıllardır ilk kez bütün hane bir arada: evlatlar, gelinler, torunlar. Söz sende.",
-    when: (p) => p.age >= 50 && p.children.length > 0,
+    when: (p, s) => p.age >= 50 && yasayanEvlatSayisi(p, s) > 0,
     choices: [
       { label: "Ocağın geçmişini anlat", delta: { honor: 1, asabiye: 5 }, result: "Ataları ve yokluk yıllarını anlattın; torunlar ilk kez sessizce dinledi." },
       { label: "Hesapları konuş", delta: { money: 20, asabiye: 2 }, result: "Kim ne alır, kim ne verir; sert ama dürüst bir gece oldu." },
@@ -1609,7 +1620,7 @@ export const SON_YAS: Dilemma[] = [
   {
     id: "son_gelin", icon: "ring", title: "Yeni Düzen",
     text: "Eve yeni gelen gelin, hanenin eski düzenini değiştirmek istiyor.",
-    when: (p) => p.age >= 50 && p.children.length > 0,
+    when: (p, s) => p.age >= 50 && yasayanEvlatSayisi(p, s) > 0,
     choices: [
       { label: "Düzen eskisi gibi kalsın", delta: { reputation: -1, asabiye: 2 }, result: "Gelin sustu; ama mutfakta kapılar biraz sert kapandı." },
       { label: "Yeni düzene yer aç", delta: { honor: 1, asabiye: 3, money: -10 }, result: "Gelinin getirdiği yeni tatlar sofraya girdi; ocak biraz gençleşti." },
@@ -1650,10 +1661,10 @@ export function ayinSahnesi(prev: GameState, sonSeq?: number): AySahnesi {
   if (p.dead || hapis || (kararVar && ortaGecen < ORTA_ARA)) return { s: ortaSon !== prev.orta_son ? { ...prev, orta_son: ortaSon } : prev, tur: "bos" };
   const ortaKart = (): AySahnesi | null => {
     const recent = prev.recent_dilemmas || [];
-    const son = SON_YAS.filter((d) => (!d.when || d.when(p)) && !recent.includes(d.id));
+    const son = SON_YAS.filter((d) => (!d.when || d.when(p, prev)) && !recent.includes(d.id));
     const deste = p.age >= 50 && son.length && (p.age >= 56 || Math.random() < 0.5) ? SON_YAS : p.age > 55 ? [...SON_YAS, ...ORTA_YAS] : ORTA_YAS;
-    let havuz = deste.filter((d) => (!d.when || d.when(p)) && !recent.includes(d.id));
-    if (!havuz.length) havuz = deste.filter((d) => !d.when || d.when(p));
+    let havuz = deste.filter((d) => (!d.when || d.when(p, prev)) && !recent.includes(d.id));
+    if (!havuz.length) havuz = deste.filter((d) => !d.when || d.when(p, prev));
     if (!havuz.length) return null;
     return yaz("orta", prev, { dilemma: riskiCoz(p, havuz[Math.floor(Math.random() * havuz.length)]) });
   };

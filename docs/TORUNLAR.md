@@ -56,8 +56,10 @@ kalır. Kişisel anı/konuşma ve aylık bakım hakkı atadan taşınmaz.
 
 `EVLAT_YOLU.md` sonrası çocuksuz kişinin yaşı da korunur. Kişi kaydı yoksa
 doğum turu kullanılır; hiç yaş kaydı yoksa eski çocukluk başlangıcı sürer ve
-kayıt eksikliği ekranda söylenir. Yeğen/çırak adayları ve tam soy ağacı ayrı
-açık GDD işleridir. Önizleme gerçek yaş/çocuk sayısı ve mevcut puan/para/itibar
+kayıt eksikliği ekranda söylenir. Sonraki `YEDEK_VARIS.md` dalgasıyla yaşayan
+doğrudan evlat kalmadığında gerçek torun vâris olabilir; ardından gerçek yeğen
+ve yetişmiş aktif çırak gelir. Tam soy ağacı görünümü ayrı açık GDD işidir.
+Önizleme gerçek yaş/çocuk sayısı ve mevcut puan/para/itibar
 hesabını aynı kaynakla gösterir. Aşağıdaki denetim sonuçları ilk torun dalgasının
 kendi kapsamına aittir; güncel ek doğrulama EVLAT_YOLU içindedir.
 

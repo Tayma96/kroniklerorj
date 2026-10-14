@@ -149,3 +149,16 @@ Vâris olmak kişiyi çocuklaştırmaz. Gerçek kişi yaşı, yeri, uygun mesle�
 evlilik süresi korunur; bilinmeyen geçmiş uydurulmaz, ölü kişi diriltilmez. Tam kimlik,
 portre, geçmiş, dünya takvimi ve yedek vârisler ayrı açık kararlardır. Ayrıntılar ve
 kanıt sınırları `EVLAT_YOLU.md` içindedir.
+
+## 14 Ekim 2026 — Ölüm soy kaydını silmez, vâris kimlikle seçilir
+
+Doğrudan evlat 18 yaşından sonra dünyanın gerçek ölüm akışına katılır; küçük evlat
+korunur. Ölüm, kişiyi soy defterinden silmez ama eğitim, yatırım, çeyiz, bakım, gözde
+seçimi ve güncel aile sahneleri gibi yaşayan kişiye ait eylemleri kapatır. Vefat eden
+evlat vâris ekranında seçilemeyen hatıra satırı olarak kalır.
+
+İlk yaşayan kademe vâris olur: doğrudan evlat, gerçek torun, gerçek kardeş evladı,
+yeterince yetişmiş aktif çırak. Seçim adla değil kişi kimliğiyle yapılır. Torun, yeğen
+ve çırak doğrudan evladın eğitim/yatırım bonusunu ada benzerlik yüzünden alamaz.
+Gerçek yaş, soyadı, yer, uygun meslek, eş, çocuk ve ebeveyn bağları korunur; bilinmeyen
+anne-baba tamamlanmış gibi üretilmez. Ayrıntılar `YEDEK_VARIS.md` içindedir.

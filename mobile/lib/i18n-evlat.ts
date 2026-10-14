@@ -21,7 +21,12 @@ export const EVLAT_METIN = {
     "evlat.aile.bebek": "Bebeğimin gelişiyle günlerim değişti. Bakımı öğrenirken benim de hâlimi dinlemeni istiyorum.",
     "evlat.aile.dul": "Eşimden sonra günler farklı. Hemen bir yol göstermenden önce yanımda oturup beni dinlemeni isterim.",
     "sohbet.need.evlatYeni": "Yeni bebeğin yanında beni de bir yetişkin olarak dinle; birlikte düşünelim.",
-    "sohbet.need.evlatYas": "Yasımı aceleye getirme. Bugün benimle oturman yeter."
+    "sohbet.need.evlatYas": "Yasımı aceleye getirme. Bugün benimle oturman yeter.",
+    "evlat.died": "Oğlun %1 Hakk'ın rahmetine kavuştu; onun yeri ve bıraktığı bağlar ailede kaldı.",
+    "evlat.died.k": "Kızın %1 Hakk'ın rahmetine kavuştu; onun yeri ve bıraktığı bağlar ailede kaldı.",
+    "evlat.news.remember": "Hatırasına git", "evlat.heir.noneAll": "Yaşayan bir vâris adayı kalmadı",
+    "varis.role.evlat": "Evladın", "varis.role.torun": "Torunun", "varis.role.yegen": "Yeğenin", "varis.role.cirak": "Yetişmiş çırağın",
+    "varis.source.torun": "%1, hanenin torunu olarak ocağı devraldı.", "varis.source.yegen": "%1, hanenin yeğeni olarak ocağı devraldı.", "varis.source.cirak": "%1, hanenin yetişmiş çırağı olarak ocağı devraldı."
   },
   "en": {
     "evlat.married": "Your child %1 married %2 in %3; they will make their own decisions.",
@@ -45,7 +50,12 @@ export const EVLAT_METIN = {
     "evlat.aile.bebek": "My days changed with the baby. While I learn to care for them, I want you to listen to how I am too.",
     "evlat.aile.dul": "Days are different since my spouse died. Before offering a way forward, sit with me and listen.",
     "sohbet.need.evlatYeni": "Alongside the new baby, listen to me as an adult too; let us think together.",
-    "sohbet.need.evlatYas": "Do not rush my grief. Sitting with me today is enough."
+    "sohbet.need.evlatYas": "Do not rush my grief. Sitting with me today is enough.",
+    "evlat.died": "Your son %1 died; his place and the bonds he left remain in the family.",
+    "evlat.died.k": "Your daughter %1 died; her place and the bonds she left remain in the family.",
+    "evlat.news.remember": "Visit their memory", "evlat.heir.noneAll": "No living successor remains",
+    "varis.role.evlat": "Your child", "varis.role.torun": "Your grandchild", "varis.role.yegen": "Your niece or nephew", "varis.role.cirak": "Your trained apprentice",
+    "varis.source.torun": "%1 inherited the household as its grandchild.", "varis.source.yegen": "%1 inherited the household as its niece or nephew.", "varis.source.cirak": "%1 inherited the household as its trained apprentice."
   },
   "es": {
     "evlat.married": "Tu hijo o hija %1 se casó con %2 en %3; tomarán sus propias decisiones.",
@@ -69,7 +79,12 @@ export const EVLAT_METIN = {
     "evlat.aile.bebek": "Mis días cambiaron con el bebé. Mientras aprendo a cuidarlo, también quiero que escuches cómo estoy.",
     "evlat.aile.dul": "Los días son distintos desde que perdí a mi pareja. Antes de dar consejos, siéntate conmigo y escúchame.",
     "sohbet.need.evlatYeni": "Además del bebé, escúchame también como persona adulta; pensemos juntos.",
-    "sohbet.need.evlatYas": "No apresures mi duelo. Hoy basta con que te sientes conmigo."
+    "sohbet.need.evlatYas": "No apresures mi duelo. Hoy basta con que te sientes conmigo.",
+    "evlat.died": "Tu hijo %1 falleció; su lugar y los lazos que dejó permanecen en la familia.",
+    "evlat.died.k": "Tu hija %1 falleció; su lugar y los lazos que dejó permanecen en la familia.",
+    "evlat.news.remember": "Visita su recuerdo", "evlat.heir.noneAll": "No queda ningún sucesor con vida",
+    "varis.role.evlat": "Tu hijo o hija", "varis.role.torun": "Tu nieto o nieta", "varis.role.yegen": "Tu sobrino o sobrina", "varis.role.cirak": "Tu aprendiz formado",
+    "varis.source.torun": "%1 heredó el hogar como nieto o nieta de la casa.", "varis.source.yegen": "%1 heredó el hogar como sobrino o sobrina de la casa.", "varis.source.cirak": "%1 heredó el hogar como aprendiz formado de la casa."
   },
   "pt": {
     "evlat.married": "Teu filho ou filha %1 casou com %2 em %3; tomarão as suas próprias decisões.",
@@ -93,7 +108,12 @@ export const EVLAT_METIN = {
     "evlat.aile.bebek": "Os meus dias mudaram com o bebé. Enquanto aprendo a cuidar, também quero que ouças como estou.",
     "evlat.aile.dul": "Os dias mudaram desde a perda do meu cônjuge. Antes de dar conselhos, senta comigo e ouve-me.",
     "sohbet.need.evlatYeni": "Além do bebé, ouve-me também como pessoa adulta; vamos pensar juntos.",
-    "sohbet.need.evlatYas": "Não apresses o meu luto. Hoje basta sentares comigo."
+    "sohbet.need.evlatYas": "Não apresses o meu luto. Hoje basta sentares comigo.",
+    "evlat.died": "Teu filho %1 faleceu; seu lugar e os laços que deixou permanecem na família.",
+    "evlat.died.k": "Tua filha %1 faleceu; seu lugar e os laços que deixou permanecem na família.",
+    "evlat.news.remember": "Visita sua memória", "evlat.heir.noneAll": "Não resta sucessor vivo",
+    "varis.role.evlat": "Teu filho ou filha", "varis.role.torun": "Teu neto ou neta", "varis.role.yegen": "Teu sobrinho ou sobrinha", "varis.role.cirak": "Teu aprendiz formado",
+    "varis.source.torun": "%1 herdou o lar como neto ou neta da casa.", "varis.source.yegen": "%1 herdou o lar como sobrinho ou sobrinha da casa.", "varis.source.cirak": "%1 herdou o lar como aprendiz formado da casa."
   },
   "ar": {
     "evlat.married": "زواج ابنك أو ابنتك %1 من %2 في %3؛ والقرارات لهما الآن.",
@@ -117,7 +137,12 @@ export const EVLAT_METIN = {
     "evlat.aile.bebek": "تغيّرت أيامي مع قدوم الطفل. أتعلم الرعاية، وأحتاج أيضًا للاستماع إلى حالي.",
     "evlat.aile.dul": "تغيّرت الأيام بعد وفاة شريك حياتي. قبل النصيحة، أحتاج إلى الجلوس معك والاستماع.",
     "sohbet.need.evlatYeni": "إلى جانب الطفل الجديد، أحتاج لسماع أفكاري أيضًا؛ لنفكر معًا.",
-    "sohbet.need.evlatYas": "لا عجلة في الحزن. يكفي الجلوس معي اليوم."
+    "sohbet.need.evlatYas": "لا عجلة في الحزن. يكفي الجلوس معي اليوم.",
+    "evlat.died": "تُوفي %1 من أبنائك؛ وبقي موضعه وما تركه من صلات في العائلة.",
+    "evlat.died.k": "تُوفيت %1 من أبنائك؛ وبقي موضعها وما تركته من صلات في العائلة.",
+    "evlat.news.remember": "زيارة الذكرى", "evlat.heir.noneAll": "لا يوجد وريث حي",
+    "varis.role.evlat": "من أبنائك", "varis.role.torun": "من أحفادك", "varis.role.yegen": "من أبناء إخوتك", "varis.role.cirak": "من تلاميذك المتدرّبين",
+    "varis.source.torun": "تسلّم %1 الموقد بصفته من أحفاد العائلة.", "varis.source.yegen": "تسلّم %1 الموقد بصفته من أبناء إخوة العائلة.", "varis.source.cirak": "تسلّم %1 الموقد بصفته من تلاميذ العائلة المتدرّبين."
   },
   "ru": {
     "evlat.married": "Твой ребёнок %1 и %2 вступили в брак. Место: %3. Теперь они принимают решения сами.",
@@ -141,6 +166,11 @@ export const EVLAT_METIN = {
     "evlat.aile.bebek": "С появлением малыша дни изменились. Я учусь заботиться о нём, но мне нужно внимание и к моим переживаниям.",
     "evlat.aile.dul": "После утраты близкого человека дни изменились. Прежде советов мне нужно твоё присутствие и внимание.",
     "sohbet.need.evlatYeni": "Кроме малыша, услышь и мои взрослые переживания; давай подумаем вместе.",
-    "sohbet.need.evlatYas": "Не торопи моё горе. Сегодня достаточно побыть рядом."
+    "sohbet.need.evlatYas": "Не торопи моё горе. Сегодня достаточно побыть рядом.",
+    "evlat.died": "Твой сын %1 умер; его место и оставленные им связи сохранились в семье.",
+    "evlat.died.k": "Твоя дочь %1 умерла; её место и оставленные ею связи сохранились в семье.",
+    "evlat.news.remember": "Посетить память", "evlat.heir.noneAll": "Живых преемников не осталось",
+    "varis.role.evlat": "Твой ребёнок", "varis.role.torun": "Твой внук или внучка", "varis.role.yegen": "Твой племянник или племянница", "varis.role.cirak": "Твой обученный подмастерье",
+    "varis.source.torun": "%1 принял очаг как внук или внучка семьи.", "varis.source.yegen": "%1 принял очаг как племянник или племянница семьи.", "varis.source.cirak": "%1 принял очаг как обученный подмастерье семьи."
   }
 };

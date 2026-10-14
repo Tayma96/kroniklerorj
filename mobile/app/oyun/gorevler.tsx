@@ -2,7 +2,7 @@ import { View, Text, ScrollView, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { playerWar, pendingPerkCount, nemesisEncounter, familyQuestsOf } from "../../lib/game";
+import { playerWar, pendingPerkCount, nemesisEncounter, familyQuestsOf, varisAdaylari } from "../../lib/game";
 import { arcById } from "../../lib/arcs";
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
@@ -19,7 +19,7 @@ export default function Gorevler() {
   type Task = { icon: string; title: string; sub: string; to: string; urgent?: boolean };
   const tasks: Task[] = [];
   if (p.dead) {
-    if (p.children.length > 0) tasks.push({ icon: "baby", title: t("gv.heir.t"), sub: t("gv.heir.s"), to: "/oyun/nesil", urgent: true });
+    if (varisAdaylari(state).length > 0) tasks.push({ icon: "baby", title: t("gv.heir.t"), sub: t("gv.heir.s"), to: "/oyun/nesil", urgent: true });
   } else {
     if (p.stat_points > 0) tasks.push({ icon: "shield", title: t("gv.statpts.t").replace("%n", String(p.stat_points)), sub: t("gv.statpts.s"), to: "/oyun/karakter", urgent: true });
     if (pendingPerkCount(p) > 0) tasks.push({ icon: "medal", title: `${pendingPerkCount(p)} ${t("char.perksAvail")}`, sub: t("gv.perks.s"), to: "/oyun/beceriler", urgent: true });

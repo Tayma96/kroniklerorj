@@ -2,7 +2,7 @@ import { View, Text, Pressable, Alert, ScrollView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { pendingPerkCount, playerWar, sinavDurumu, MULK_YAS, GameState } from "../../lib/game";
+import { pendingPerkCount, playerWar, sinavDurumu, MULK_YAS, GameState, varisAdaylari } from "../../lib/game";
 import { useI18n } from "../../lib/i18n";
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
@@ -65,7 +65,7 @@ export default function Menu() {
       case "orgutler": return { n: playerWar(state) ? 1 : 0, urgent: true };
       case "pazar": return { n: state.caravan ? 1 : 0, urgent: false };
       case "haberler": return { n: Math.min(9, Math.max(0, state.turn - (state.newsSeenTurn ?? state.turn))), urgent: false }; // son ziyaretten beri geçen aylar (ilk açılışa dek sessiz)
-      case "nesil": return { n: p.dead && p.children.length > 0 ? 1 : 0, urgent: true };
+      case "nesil": return { n: p.dead && varisAdaylari(state).length > 0 ? 1 : 0, urgent: true };
       default: return { n: 0, urgent: false };
     }
   };

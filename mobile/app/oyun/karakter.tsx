@@ -15,7 +15,7 @@ import { playWater, playPurr, playBark } from "../../lib/sound";
 import { placeName, professionNameL, careerTitleL } from "../../lib/locale-data";
 import { C, F } from "../../lib/theme";
 import { Torunlar } from "../../lib/torun-ui";
-import { cocuklaVakitSec } from "../../lib/game";
+import { cocuklaVakitSec, yasayanEvlatAdlari } from "../../lib/game";
 
 const GB = "rgba(201,168,76,0.22)"; // gold border
 const GBG = "rgba(201,168,76,0.07)"; // gold bg
@@ -177,6 +177,7 @@ export default function Karakter() {
   const [sermayeAcik, setSermayeAcik] = useState<SermayeId | null>(null);
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   const p = state.player;
+  const livingChildren = yasayanEvlatAdlari(state);
   const inv = Object.keys(p.inventory).filter((k) => p.inventory[k] > 0);
   const canAdd = p.stat_points > 0;
   const add = (k: keyof Stats) => { hap("tap"); apply((s) => allocateStat(s, k)); };
@@ -268,7 +269,7 @@ export default function Karakter() {
                   </View>
                 );
               })() : null}
-              {p.children.length > 0 ? (() => {
+              {livingChildren.length > 0 ? (() => {
                 const local = cocuklaVakitSec(state), tended = p.child_time_turn === state.turn || !local;
                 return (
                   <Pressable accessibilityRole="button" accessibilityLabel={t(local ? "char.tendChildren" : "evlat.noneLocal")} disabled={tended} onPress={() => { hap("tap"); apply((s) => tendChild(s)); }} style={{ alignSelf: "flex-start", marginTop: 5, minHeight: 44, justifyContent: "center", paddingVertical: 6, paddingHorizontal: 12, borderRadius: 7, borderWidth: 1, borderColor: "rgba(201,168,76,0.4)", backgroundColor: "rgba(201,168,76,0.08)", opacity: tended ? 0.4 : 1 }}>
@@ -566,16 +567,16 @@ export default function Karakter() {
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 7 }}>
                   <GameIcon name="dogum" size={12} color={C.goldDim} />
                   <Text style={{ fontFamily: F.display, fontSize: 9.5, letterSpacing: 1, color: C.parchmentMuted, textTransform: "uppercase" }}>{t("char.children")}</Text>
-                  <Text style={{ fontFamily: F.display, fontSize: 9.5, color: C.gold }}>{p.children.length}</Text>
+                  <Text style={{ fontFamily: F.display, fontSize: 9.5, color: C.gold }}>{livingChildren.length}</Text>
                 </View>
                 {p.children.length === 0 ? (
                   <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted }}>{t("char.none")}</Text>
                 ) : (
                   <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-                    {p.children.map((c, i) => { const cid = p.child_ids?.[c]; return ( // evlat gerçek kişiyse dokununca profili açılır
-                      <Pressable key={i} testID={cid ? "family-child-" + cid : undefined} accessibilityRole={cid ? "button" : undefined} accessibilityLabel={c} disabled={!cid} onPress={() => { if (cid) { hap("tap"); router.push(`/oyun/npc/${cid}`); } }} style={{ flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: C.bg, borderWidth: 1, borderColor: C.border, borderRadius: 8, minHeight: 44, paddingVertical: 5, paddingHorizontal: 9 }}>
+                    {p.children.map((c, i) => { const cid = p.child_ids?.[c], late = !!cid && !!kisiProfil(state, cid, lang)?.olu; return ( // evlat gerçek kişiyse dokununca profili açılır; rahmetli kaydı hatıra olarak kalır
+                      <Pressable key={i} testID={cid ? "family-child-" + cid : undefined} accessibilityRole={cid ? "button" : undefined} accessibilityLabel={late ? `${c}, ${t("npc.late")}` : c} disabled={!cid} onPress={() => { if (cid) { hap("tap"); router.push(`/oyun/npc/${cid}`); } }} style={{ flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: C.bg, borderWidth: 1, borderColor: C.border, borderRadius: 8, minHeight: 44, paddingVertical: 5, paddingHorizontal: 9, opacity: late ? .58 : 1 }}>
                         <GameIcon name="dogum" size={11} color={C.goldDim} />
-                        <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchment }}>{c}</Text>
+                        <Text style={{ fontFamily: F.serif, fontSize: 13, color: late ? C.parchmentMuted : C.parchment }}>{c}{late ? ` · ${t("npc.late")}` : ""}</Text>
                       </Pressable>
                     ); })}
                   </View>

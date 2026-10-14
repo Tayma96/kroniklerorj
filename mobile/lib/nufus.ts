@@ -182,7 +182,7 @@ export interface YilOpts {
   akraba?: (a: string, b: string) => boolean; // oyuncu nüfusta kişi olmadığı için aynı oyuncunun soy bağı
   evlilikUygun?: (a: string, b: string) => boolean; // oyuncu ailesine özgü yetişkinlik gibi ek eşleşme sınırları
   dogumUygun?: (anne: string, baba: string) => boolean; // oyuncu ailesine özgü yaş/çocuk aralığı sınırları
-  muaf?: Set<string>;       // ölüm zarından muaf (oyuncu yaşarken evlatları — onların akıbeti oyuncunun hikâyesidir)
+  muaf?: Set<string>;       // ölüm zarından geçici olarak muaf tutulan kişiler (ör. reşit olmayan aile üyeleri)
 }
 export function olumOlasiligi(yas: number): number {
   if (yas >= 100) return 1;

@@ -191,3 +191,27 @@ NPC'den oyuncuya tam ad/portre/geçmiş aktarımı da eksik. Bunları bitmiş sa
 
 Uygulama gönderimi tamamlandı: `5409ecd221bf2c618424e50655f7b50909bc7693`
 yerel `apk`, `origin/apk` ve bağımsız uzak dal okumasında aynıydı; cihaz girişi gerekmedi.
+
+## Aile ölümü ve yedek vâris — 14 Ekim 2026
+
+`YEDEK_VARIS.md`: reşit doğrudan evlat artık nüfusun gerçek ölüm akışına katılır;
+18 yaş altı korunur. Ölüm haberi ve yoldaki mektubun ulaşılamadı dönüşü gerçek kişiye
+bağlıdır. Ölü evlat soy kaydında/profilde hatıra olarak kalır; eğitim, yatırım, çeyiz,
+bakım, gözde seçimi, hayvan sahnesi ve güncel aile olaylarında hayalet eylem üretmez.
+
+Vâris sırası yaşayan doğrudan evlat → gerçek torun → gerçek kardeş evladı → en az
+12 aylık ya da 50 ilerlemeli aktif çıraktır. Kimlik anahtarı aynı adlı kişileri ayırır.
+Yedek aday doğrudan evlat bonusu alamaz; gerçek yaşı, soyadı, şehri, uygun mesleği,
+eşi, çocukları ve ebeveynleriyle oyuncuya dönüşür. Bilinmeyen ebeveyn uydurulmaz.
+Ölü doğrudan evlat seçilemeyen hatıra satırıdır; görev ve menü yalnız uygun aday varsa
+devir çağrısı gösterir.
+
+7 yeni motor kümesi, önceki 75 evlat ve 99 torun örneği temiz. GDD karakterizasyonunda
+vâris akışı bilinmeyen anneyi üretmeyi bıraktığı için bilerek güncellendi; diğer dokuz
+ana akış ve üç sentetik 30 aylık kayıt aynı kaldı. Altı dilde 7 gerçek küçük ekran akışı,
+320×568/4× CPU, 58 px aday satırı, ölü hatıra, torun rolü, gerçek kimlik devri ve adaysız
+son doğrulandı. Web ve Android/Hermes paketleri temiz. Fiziksel telefon ve yeni APK yok.
+
+Tam soy ağacı görünümü, kuzen gibi uzak roller, dünya takviminin bütün ekranlarda nesiller
+boyu sürmesi ve NPC geçmiş/portresinin tüm ayrıntılarıyla oyuncuya aktarılması açık. Tam GDD
+de tamamlanmış değildir. Bu dalga 300 hayat kontrol noktaları arasındaki ikinci motor dalgasıdır.

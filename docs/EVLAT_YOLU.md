@@ -9,8 +9,8 @@ kişinin profiline gider. Yeni zorunlu pencere veya onay menüsü yoktur.
 
 18 yaş altı evlat ve küçük torun ocağında kalır; yetişkin evlat kendi evliliğini
 ve yerleşimini kurabilir. Ölüm muafiyeti ile yerinde tutma ayrı kurallardır.
-Mevcut doğrudan evlat ölüm koruması bu dalgada sürmektedir; aile ölüm akışı ve
-yeğen/torun/çırak yedek vârisleri ayrı açık iştir.
+Sonraki `YEDEK_VARIS.md` dalgasıyla reşit evlat gerçek ölüm akışına katılmış,
+küçükler korunmuş ve evlat→torun→yeğen→yetişmiş çırak sırası uygulanmıştır.
 
 Oyuncu nüfusta kişi olarak bulunmadığı için farklı öbür ebeveynleri olan
 evlatlar eski NPC grafiğinde kardeş görünmeyebiliyordu. Nüfusun evlilik seçimi
@@ -54,8 +54,8 @@ evlenmiş gibi başlamaz. Önizleme aynı yaş ve mevcut para/puan/itibarı gös
 Gerçek kişi kaydı yoksa doğum turu varsa yaşı ondan bulunur. Hiç yaş kaydı yoksa
 eski çocukluk başlangıcı sürer; arayüz yaşın kayıtlı olmadığını söyler.
 Rahmetli kişi vâris seçilmez. İlk aday rahmetliyse yaşayan evlat seçilir;
-yaşayan evlat kalmadıysa ölü kişi canlandırılmaz. Daha geniş yedek vâris
-seçenekleri tamamlanmış sayılmaz.
+yaşayan doğrudan evlat kalmadıysa kimlik tabanlı torun, gerçek yeğen ve
+yetişmiş aktif çırak sırası devreye girer. Ayrıntılar `YEDEK_VARIS.md` içindedir.
 
 `child_letters` (en çok iki), `family_news` ve önizleme alanları eklenmiştir.
 Yeni Player alanları opsiyoneldir; bozuk kayıt ayıklaması/yeniden yükleme
@@ -91,6 +91,6 @@ hedefleri en az 44 px, yatay taşma ve çalışma zamanı hatası yok. Festival 
 perdesi açıksa oyuncu gibi önce karar çözüldü; arka plandaki habere yapay basış
 yapılmadı. Web ve Android/Hermes paketleme geçti.
 
-Tam soy ağacı/yedek vâris/aile ölümü, dünya takviminin bütün ekranlarda nesiller
+Tam soy ağacı ve uzak soy rolleri, dünya takviminin bütün ekranlarda nesiller
 boyu sürekliliği, NPC→oyuncu tüm kişisel geçmiş/portre aktarımı, çok varlıklı
 görüş/LOD, gerçek mahkeme/iftira, kayıtlı üretim RNG ve diğer GDD işleri açıktır.
