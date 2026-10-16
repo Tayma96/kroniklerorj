@@ -1,0 +1,102 @@
+# Expo HAS CHANGED
+
+Read the exact versioned docs at https://docs.expo.dev/versions/v56.0.0/ before writing any code.
+
+# Konveyör El Kitabı (devir notu — her ajan/model için bağlayıcı)
+
+> Önce depo kökündeki `OTURUM_HAFIZASI.md`'yi oku: kullanıcının son kararları, geçerli dal ve açık işler orada.
+
+Bu oyun "dalga" (Dalga NN) adı verilen küçük, tam doğrulanmış artışlarla geliştirilir.
+Aşağıdaki kurallar geçmiş oturumlarda kullanıcıyla kesinleşti; **tartışmasız uygulanır**.
+
+## Sert kurallar
+
+- **Yalnız `apk` dalı.** Geliştirme ve push hedefi `apk`; başka dala izinsiz push yok.
+- **Commit mesajları TÜRKÇE**, tek satır, hikâye anlatır tonda. **Footer/imza/model adı/araç adı YOK** —
+  commit'te, kodda, PR'da hiçbir yerde model veya araç adı geçmez.
+- **Zamanlayıcı yasak:** ScheduleWakeup / cron / trigger KULLANILMAZ (kullanıcı yasağı, kalıcı).
+  İzinli tek mekanizma: arka plan bash zincirleri ve bunların bitiş bildirimleri. Ek "izleyici döngüsü" de kurma.
+- **Cloudflare API token'ı asla** saklanmaz/yazdırılmaz/commit'lenmez. Sunucu dağıtımı kullanıcının işi:
+  `cd server && npx wrangler deploy`.
+- **UI'da emoji yok** — yalnız `GameIcon` (lib/icons.tsx; 54 ikon + 34 takma ad). Süs glifleri (❧ ⚜ ♂ ♀) yerleşik istisnadır.
+- **Farm yok:** para/itibar/XP veren her yeni eylem tur-kilidi (`p.X_turn === s.turn`), tek-seferlik iz
+  veya azalan getiri ile kapatılır. P2W yok.
+- **Her yeni metin 6 dilde:** tr en es pt ar ru. Oyuncuya hitap eden cinsiyetli satırlarda AR/RU için `.f`
+  dişil varyantı YA DA cinsiyet-nötr (edilgen/nominal) kuruluş. NPC anlatımlarında nötr kuruluş tercih edilir.
+- **Şema disiplini:** Player/GameState'e eklenen her alan opsiyonel + ek (eski kayıt kırılmaz).
+  Vâris devri `continueAsHeir` içinde açıkça taşınır; `heirPreview` ↔ `continueAsHeir` paritesi korunur.
+- **MP paritesi:** `mobile/lib/mp/protocol.ts` ↔ `server/src/protocol.ts` bayt-bayt aynı kalır.
+- **Tema disiplini:** renk/font yalnız `lib/theme.ts` jetonlarından (C/F). Yeni ham hex ekleme; gerekirse jetonlaştır.
+
+## Tasarım pusulası (bağlayıcı)
+
+Depo kökündeki `TASARIM_PUSULASI.md`, oyuncu psikolojisi, toplum bilimi ve mobil verilere dayanan **10 ilke**,
+**oynanış kuralları ve ölçütleri** (Bölüm 9) ile **yeni özellik süzgecini** içerir. Pusula yalnız arayüz için değil,
+**oynanış için de** bağlayıcıdır: mekanik, denge, tempo, sonuçların zamanlaması, karakter davranışı, ekonomi ve
+zorluk dahil her değişiklik bu süzgeçten geçmeden yazılmaz ve ilgili oynanış ölçütleri simülasyonla ölçülür: karar oyuncuya
+ana akışta gelir, sonuç sebebini söyler, aynı anda en çok 5 açık gerilim, göstergeler dört sermayeye bağlanır,
+etik çizgi (zamanlayıcı/kayıp cezası/parayla atlama yok) aşılmaz. Öncelik sırası pusuladaki yol haritasıdır
+(önce sadeleştirme ve görünürlük, sonra yeni sistem).
+
+Kronik (`s.history`) 250 kayıtta kırpılır; ekranlar yeni olayı **uzunluktan değil olay sırasından** (`e.q`,
+`s.hseq`) tanır. Yeni bir "yeni olay" dinleyicisi yazarken bu kalıp kullanılır.
+
+## Dalga doğrulama hattı (her game.ts değişikliğinde ZORUNLU sıra)
+
+1. **Kuru koşu:** yama betiğini dosya kopyaları üzerinde çalıştır (anchor assert'leri patlarsa gerçek dosyaya dokunma).
+2. `npx tsc --noEmit` (mobile/ içinden).
+3. Bundle: `npx --no-install esbuild lib/game.ts --bundle --format=cjs --outfile=<tmp>` — **external YOK** (react dahil edilir). esbuild `package.json` devDependency’si; denetim betikleri yerel ikiliyi `scripts/_smoke/esbuild-yolu.cjs` ile çağırır (ağdan indirmez).
+4. **Hedefli sim:** değişikliğe özel node betiği; her dal/kapı/bedel/vâris-devri assert edilir.
+   - Simde `p.age` ile birlikte `p.base_age` da set edilir.
+   - `gainSkill` doğrudan `p.skills`'e değil `p.skill_xp[key]`'e yazar (merakli ×1.15) — assert'ler `skill_xp` üzerinde `>=` ile.
+5. **Smoke:** `node scripts/_smoke/run.cjs` → "HATA: 0" şart. (~15-25 dk sürer; normaldir, asılı değildir.)
+   **Kadans (kullanıcı kararı, 7 Temmuz):** smoke HER dalgada koşulmaz — 4-5 dalgada bir kontrol noktası
+   olarak VE her APK tetiklemesinden önce koşulur (APK'ya giren kod smoke'suz yayınlanmaz). Ara dalgalarda
+   hedefli sim + tsc + bundle + checker + migrate yeterlidir. Smoke kontrol noktası patlarsa suçlu,
+   son smoke'tan bu yana giren dalgalardadır — hedefli simlerle daralt.
+6. `node scripts/_smoke/migrate-check.cjs` (eski kayıt göçü).
+7. **Checker:** `node scripts/_smoke/i18n-icon-check.cjs` → "SONUÇ: TEMİZ (0 sorun)" ve `node scripts/_smoke/dil-karisma.cjs` → "DİL KARIŞMASI: TEMİZ" (taban D445 ile sıfırlandı; TEK sorun bile çıkarsa yeni hata var demektir).
+8. Depo kökünden commit + `git push -u origin apk` (ağ hatasında 2s/4s/8s/16s geri çekilmeli 5 deneme).
+
+**Senkron bekçisi (yaşanmış olay):** uzak yürütme konteyneri ara sıra ESKİ bir çalışma-kopyası anlık
+görüntüsüne dönebilir — yerel tarihçeden commit kaybolur ama uzak dalda durur (reflog'da iz olmaz).
+Bu yüzden her dalgaya başlamadan önce `git fetch origin apk && git status -sb` ile yerelin
+`origin/apk` ile eşit/ileri olduğunu doğrula. "fetch first" reddi görürsen: durdur → reflog ile teşhis →
+`git rebase origin/apk` ile onar → eksik tabana uygulanmış yamayı ATIP temiz tabanda YENİDEN uygula ve
+tüm doğrulama hattını yeniden koş. Eksik tabanda alınmış smoke sonucu birleşik kod için geçersizdir.
+
+UI-dışı dosyalar (docs) için 2 ve 7 yeterli; game.ts'e dokunmayan UI dalgalarında smoke atlanabilir (tsc+checker şart).
+
+## Denetim araçları (scripts/_smoke/)
+
+- `run.cjs` — 300 hayatlık smoke. `SMOKE_BUNDLE` (anlık-görüntü paketi yolu), `SMOKE_LIVES`, `SMOKE_JSON` env değişkenleriyle parametrelenir; verilmezse eski davranış (CI böyle kullanır).
+- `run-parallel.cjs` — ÖNERİLEN smoke koşucusu. Motoru commit damgalı bir ANLIK GÖRÜNTÜ paketine dondurur, 300 hayatı çekirdeklere böler (~6-7 dk, tekli koşunun ~1/3'ü) ve çıktıya doğrulanan commit'i yazar. Anlık görüntü sayesinde smoke koşarken çalışma kopyasında geliştirme SÜRER — denetim konveyörü durdurmaz. (Eskiden `/tmp/kronikler-game-bundle.cjs` sabit paketi kullanılırdı; konteyner restartında bayatlayıp yanlış commit'i doğrulama tuzağı vardı — bu araç onu kapatır.)
+- `migrate-check.cjs` — eski kayıt göç bekçisi.
+- `i18n-icon-check.cjs` — 6 dil anahtar tamlığı + %N placeholder + kullanılan anahtar varlığı + GameIcon geçerliliği.
+- `dil-karisma.cjs` — her dilin birleşmiş son sözlüğünde başka dilin metni var mı (Arap/Kiril yazısı kesin ayırt eder; Latin dillerde çevrilmemiş Türkçe). i18n'e dokunan her dalgada checker ile birlikte koşulur → "DİL KARIŞMASI: TEMİZ".
+- `olay-metin.cjs [hayat]` — gerçek hayatlar oynatıp kroniğe düşen HER olayı 6 dilde ekrandaki gibi yazdırır; artakalan yer tutucu (%1, %b…), undefined/NaN → hata. Olay metni ekleyen her dalgada koşulur → "OLAY METNİ: TEMİZ".
+- `karakter-ayna.cjs` — sonuç denetimi: aynı kurallarla "herkese yardım eden" ve "önüne gelene zulmeden" iki karakter 22 yıl oynatılır; kasabanın 1./10./22. yıldaki bakışı, hiç dokunulmamışların ve huy gruplarının bakışı, dost/hasım hamleleri, kaçan/yüzüne vuran, teklifler, söylentiler, tohum sonuçları ve vârise geçen bakış yan yana basılır. Görüş, nâm, söylenti, tohum ya da vâris devrine dokunan her dalgada koşulur; iki sütunun yönü ayrışmalı (yardımsever +, zalim −).
+- `olu-karar.cjs` — ölü karar denetimi: ikilem ve şenlik kartlarında öbür seçeneği her değerde yenen seçenek (pusula 9.1). Kart ekleyen ya da deltası değişen her dalgada → "ÖLÜ KARAR: TEMİZ". Riskli seçenek `risk: { taban, ticaret?, zeka?, kayip, metin }` ile yazılır; zar kart açılırken atılır (`riskiCoz`), kayıp metni `dil.<id>.r<i>x`.
+- `saga-fuzz.cjs` — Kül Yemini destanı düşman denetimi: 120 hanedan × ≤3 nesil rastgele seçim; değişmez ihlallerinde exit 1.
+  Destana (saga) dokunan her dalgadan sonra çalıştırılır.
+
+## APK dağıtımı
+
+- Workflow: `android-apk-local.yml`, ref `apk` (GitHub MCP `actions_run_trigger`). Yapı ~35 dk.
+- Kalıcı link: `https://github.com/Tayma96/kroniklerorj/releases/download/apk-latest/Kronikler.apk`
+  (`apk-latest` release'inin asset'i güncellenir; link değişmez; depo özel olduğundan yalnız erişimi olan hesaplara açılır). Runner'da npm ECONNRESET görülürse geçicidir — yeniden tetikle.
+- Play Store adımları kullanıcıda: keystore (YAYIN.md, alias "kronikler") + Secrets; MAGAZA.md ve SURUM-NOTLARI.md hazır.
+
+## Büyük sistemlerin haritası (hızlı yön bulma)
+
+- **Motor:** `lib/game.ts` (~6300 satır). Değişmez çekirdek: her eylem `clone(prev)` → mutasyon → return.
+- **Kül Yemini (ana destan):** `s.saga {act, ch, scene, path, lastTurn, declined}`; `sagaTick` advance'in ay
+  kapanışında; `resolveSaga` seçimleri işler; sahne panoda BEKLER (silinmez). Vârise geçer (scene temizlenir,
+  declined sıfırlanır). `declined=9` = "haberi Karakuş'a sattı" sentineli (o ömürde destan kapalı).
+- **Arz-talep:** NPC meslekleri → `cityProfCounts` (yıl-memolu) → `cityGoodSupply` → `supplyDemandMult` → fiyat.
+  NPC yaşam tiki yılda bir (`npcLifeTick` → `nufusYil`): kalıcı kişiler `s.pop` (lib/nufus.ts, NUFUS.md) —
+  gerçek evlilik/doğum/ölüm/göç; oyuncunun eşi ve anne-babası da kişidir (`spouse_id/mother_id/father_id`).
+- **i18n:** `lib/i18n.tsx` (~4.4k anahtar × 6 dil). Yeni anahtar ekleme kalıbı: bir anchor anahtarın 6 dildeki
+  konumunu bulup ters sırayla blob ekle; değerlerde `"` ve `\` yasak (assert'le).
+- **Sinematik prolog:** `app/yeni-oyun.tsx` (Prolog) + `lib/prolog.tsx` (SVG sahne tabloları). Sade mod
+  (`lib/perf.ts`) tüm sürekli animasyonları kapatır; <3GB RAM Android'de otomatik açılır.
