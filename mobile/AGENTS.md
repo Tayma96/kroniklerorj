@@ -1,6 +1,7 @@
 # Kronikler — kısa geliştirme kuralları
 
-> Başlangıçta `OTURUM_HAFIZASI.md` ve `TASARIM_PUSULASI.md` özetlerini oku.
+> `OTURUM_HAFIZASI.md` bu oturumda okunmadıysa oku. `TASARIM_PUSULASI.md`yi yalnız
+> ürün, oynanış, denge veya arayüz kararı verilecekse aç.
 > Tam arşivleri kendi kararınla açma; kullanıcı o oturumda açıkça izin verirse aç.
 > Expo API'sine dokunuyorsan yalnız kullanılan API için v56 belgesini kontrol et.
 

@@ -1,0 +1,10 @@
+# Büyük veya üretilmiş içerikler genel metin aramasına girmez.
+# Açık kullanıcı izniyle gereken dosya doğrudan okunabilir.
+docs/arsiv/
+docs/taslak/
+docs/HANDOFF.md
+mobile/SURUM-NOTLARI.md
+mobile/.expo/
+**/node_modules/
+*.log
+outputs/

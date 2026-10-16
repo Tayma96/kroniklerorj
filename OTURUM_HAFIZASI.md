@@ -1,6 +1,7 @@
 # Kronikler — kısa oturum özeti
 
-> Başlangıçta yalnız bunu, `mobile/AGENTS.md` ve `TASARIM_PUSULASI.md`yi oku.
+> Başlangıçta yalnız bu dosyayı oku. `mobile/AGENTS.md`yi mobil kod değişecekse,
+> `TASARIM_PUSULASI.md`yi ürün/oynanış kararı verilecekse aç.
 > Arşivleri ihtiyaç varsayarak açma; yalnız kullanıcı o oturumda açıkça izin verirse oku. (16 Ekim 2026)
 
 ## Kurallar
