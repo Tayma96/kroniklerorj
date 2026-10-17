@@ -92,6 +92,7 @@ export interface Player {
   listen_turn?: number; // kulak tutma ayda bir — istihbarat spam'i ve bedava keşif olmaz
   last_crime_turn?: number; // son suç denemesi turu (ay başına tek deneme; risksiz spam önlenir)
   crime_wins?: number; // başarıyla tamamlanan suç sayısı — yeraltı namı; ağır işler bununla açılır (merdiven)
+  crime_heat?: number; // 0-100: zaptiyenin üstündeki izi; yeni işlerin yakalanma riskini büyütür, zamanla söner
   governorships?: string[]; // valisi olunan şehirler
   legacy?: Record<string, boolean>; // kalıcı görkem eserleri (vakıf/anıt/imaret) — bir kez kurulur
   govLeg?: Record<string, number>; // valilik meşruiyeti (şehir → 0-100); düşerse isyan/azil
@@ -3761,6 +3762,8 @@ export function advance(prev: GameState, n = 1): GameState {
     snapshotPrices(s); // ayrılan ayın pazar fiyatlarını hafızaya al (R3.3 'geçen fiyat')
     s.turn += 1; const cal = currentCalendar(s.turn);
     s.player.age = playerAge(s.player.base_age, s.turn);
+    // Suç izi zamanla soğur; Gölge Kardeşliği saklanacak kapı ve haber ağı sayesinde daha çabuk kaybettirir.
+    if ((s.player.crime_heat || 0) > 0) s.player.crime_heat = Math.max(0, (s.player.crime_heat || 0) - (s.player.faction === "golge" ? 3 : 2));
     // Yıl dönümü: yaş günün geldi — yılın kısa muhasebesi kroniğe (landmark) düşer; hayat "yaşanmış" hissettirir.
     if (s.turn % 12 === 0 && !s.player.dead) {
       const pl = s.player;
@@ -7027,6 +7030,9 @@ export function elderAction(prev: GameState, kind: ElderAct): StudyResult {
 // ── Suç/Gölge: risk/ödül ──
 // Suç türleri (Vercel crime_rework.py portu): risk/ödül kademeleri + şiddet.
 export type CrimeKind = "yankesicilik" | "dukkan_soyma" | "soygun" | "konak_soygunu";
+export type CrimeApproach = "sessiz" | "hile" | "zor";
+export const CRIME_APPROACHES: CrimeApproach[] = ["sessiz", "hile", "zor"];
+export interface CrimePlanPreview { success: number; attention: number; loot: number; heatGain: number; }
 export const CRIME_TYPES: Record<CrimeKind, { base: number; lootMin: number; lootMax: number; fine: number; hurt: number; fear: number; nam: number; sev: number; label: string }> = {
   yankesicilik:  { base: 0.70, lootMin: 6,  lootMax: 22,  fine: 10, hurt: 3,  fear: 2, nam: 2, sev: 1, label: "Bir yankesicilik" },
   dukkan_soyma:  { base: 0.55, lootMin: 18, lootMax: 45,  fine: 22, hurt: 6,  fear: 4, nam: 4, sev: 2, label: "Bir dükkân soygunu" },
@@ -7061,6 +7067,47 @@ export function underworldTier(p: Player): number {
   for (let i = 0; i < UNDERWORLD_TIERS.length; i++) if (st >= UNDERWORLD_TIERS[i]) tier = i;
   return tier;
 }
+export function crimeHeat(p: Player): number {
+  return Math.max(0, Math.min(100, Number.isFinite(p.crime_heat) ? Math.round(p.crime_heat!) : 0));
+}
+// Oyuncunun seçmeden önce gördüğü oranlar, çözümde kullanılan oranların aynısıdır: karar okunabilir, sonuç yine risklidir.
+export function crimePlanPreview(s: GameState, kind: CrimeKind, approach: CrimeApproach = "hile"): CrimePlanPreview {
+  const p = s.player; const ct = CRIME_TYPES[kind] || CRIME_TYPES.yankesicilik;
+  const golgeBonus = p.faction === "golge" ? 0.12 : 0;
+  const hasariBonus = p.childhood === "hasari" ? 0.07 : 0;
+  const common = golgeBonus + hasariBonus + crimeSuccessMod(s);
+  let execution: number; let attentionMult: number; let loot: number; let heatMult: number;
+  if (approach === "sessiz") {
+    execution = ct.base + 0.01 + effStat(p, "intelligence") * 0.016 + effStat(p, "stamina") * 0.008 + common * 0.85;
+    attentionMult = 0.55; loot = 0.78; heatMult = 0.62;
+  } else if (approach === "zor") {
+    execution = ct.base - 0.12 + effStat(p, "strength") * 0.014 + effStat(p, "stamina") * 0.008 + golgeBonus * 0.45 + hasariBonus + crimeSuccessMod(s) * 0.75;
+    attentionMult = 1.55; loot = 1.28; heatMult = 1.45;
+  } else {
+    execution = ct.base + effStat(p, "charisma") * 0.01 + common;
+    attentionMult = 1; loot = 1; heatMult = 1;
+  }
+  const baseAttention = ct.sev * 0.05 + dread(s) / 100 * 0.15 + crimeHeat(p) / 220;
+  const golgeGizli = p.faction === "golge" ? 0.5 : 1;
+  const pursuit = Math.max(0.02, Math.min(0.85, baseAttention * attentionMult * golgeGizli));
+  const success = Math.max(0.08, Math.min(0.92, Math.max(0.08, Math.min(0.92, execution)) * (1 - pursuit)));
+  return {
+    success,
+    attention: 1 - success,
+    loot,
+    heatGain: Math.max(1, Math.round((2 + ct.sev * 2) * heatMult)),
+  };
+}
+// Bir aylık suç fırsatını feda ederek iz kaybettir. Para/nam üretmez; bu yüzden risksiz kaynak çiftliğine dönmez.
+export function layLow(prev: GameState): GameState {
+  const s = clone(prev); const p = s.player; const heat = crimeHeat(p);
+  if (p.dead || p.age < 13 || inJail(p) || s.pendingScene || p.last_crime_turn === s.turn || heat <= 0) return s;
+  p.last_crime_turn = s.turn;
+  const drop = Math.min(heat, 12 + Math.min(8, p.skills?.social || 0) + (p.faction === "golge" ? 6 : 0));
+  p.crime_heat = heat - drop;
+  push(s, "suç", `Bir ay başını eğip izini kaybettirdin; zaptiyenin takibi ${drop} azaldı.`, "kişisel", false, { k: "crime.layLow.done", p: [drop] });
+  return s;
+}
 // Suçun kurbanı gerçek bir insandır: yankesicilikte çarşıdan biri, dükkân soygununda bir esnaf, konakta varlıklı biri,
 // yol soygununda bölgeden geçen bir yolcu. Aile, eş ve çocuk kurban seçilmez.
 const DUKKANCI = new Set(["tüccar", "fırıncı", "kuyumcu", "hancı", "demirci", "dokumacı", "marangoz", "şifacı"]);
@@ -7077,7 +7124,7 @@ function kurbanOgrenir(s: GameState, k: Kisi, tam: boolean) {
   remember(s, { id: k.id, name: kisiAdi(k, "tr") }, "soyulma", tam ? undefined : { yuk: -15 });
   if (s.relationships[k.id] === undefined) s.relationships[k.id] = 0;
 }
-export function doCrime(prev: GameState, kind: CrimeKind): GameState {
+export function doCrime(prev: GameState, kind: CrimeKind, approach: CrimeApproach = "hile"): GameState {
   const s = clone(prev); const p = s.player;
   if (inJail(p)) return s;
   if (p.dead || p.age < 13) return s;
@@ -7086,18 +7133,13 @@ export function doCrime(prev: GameState, kind: CrimeKind): GameState {
   if (p.last_crime_turn === s.turn) return s;          // ay başına tek suç denemesi (risksiz spam ile para basma önlenir)
   p.last_crime_turn = s.turn;
   const ct = CRIME_TYPES[kind] || CRIME_TYPES.yankesicilik;
+  const plan = crimePlanPreview(s, kind, approach);
+  p.crime_heat = Math.min(100, crimeHeat(p) + plan.heatGain);
   const kurban = kurbanSec(s, kind); p.son_kurban = kurban ? { id: kurban.id, turn: s.turn } : undefined;
-  const golgeBonus = p.faction === "golge" ? 0.12 : 0;     // Gölge Kardeşliği avantajı
-  const hasariBonus = p.childhood === "hasari" ? 0.07 : 0; // haşarı çocukluk: sokak kurnazlığı işe yarar
-  const success = gameRandom(s) < ct.base + p.stats.charisma * 0.01 + golgeBonus + hasariBonus + crimeSuccessMod(s);
-  gainSkill(s, "social", 4);
+  const success = gameRandom(s) < plan.success;
+  gainSkill(s, approach === "zor" ? "combat" : "social", 4);
   if (success) {
-    // Marifetli kaçış bile tümüyle risksiz değil: ağır suç + korkulan/çok tanınan ad daha çok dikkat çeker.
-    // Böylece korku/zalim hem başarıyı hem yakalanma ihtimalini artırır — suç "risksiz kazanç" olmaktan çıkar (dread iki tarafı da keser).
-    const golgeGizli = p.faction === "golge" ? 0.5 : 1; // Gölge Kardeşliği iz bırakmaz — sıcaklık yarıya düşer
-    const heat = Math.min(0.5, (ct.sev * 0.05 + dread(s) / 100 * 0.15) * golgeGizli);
-    if (gameRandom(s) < heat) { s.pendingScene = { kind: "crime", ctx: { crime: kind } }; return s; } // ganimeti güvene almadan enselendin — kaçış sahnesine düş
-    const loot = Math.round((ct.lootMin + Math.floor(gameRandom(s) * (ct.lootMax - ct.lootMin + 1))) * inflationFactor(s)); // ganimet çağın parasıyla — geç oyunda 12 nam grindiyle açılan soygun anlamsız kalmasın (dövüş ödülüyle aynı ilke)
+    const loot = Math.round((ct.lootMin + Math.floor(gameRandom(s) * (ct.lootMax - ct.lootMin + 1))) * inflationFactor(s) * plan.loot); // ganimet çağın parasıyla — geç oyunda 12 nam grindiyle açılan soygun anlamsız kalmasın
     // Büyük soygunlarda ganimetin bir kısmı SICAK MAL: nakde çevrilmesi (eritme) riskli.
     const hot = ct.sev >= 3 ? Math.round(loot * 0.45) : 0;
     const cash = loot - hot;
@@ -7105,7 +7147,8 @@ export function doCrime(prev: GameState, kind: CrimeKind): GameState {
     p.crime_wins = (p.crime_wins || 0) + 1; // yeraltı namı: tamamlanan iş merdiveni tırmandırır
     p.fear = Math.min(100, p.fear + ct.fear);
     bumpNam(p, "zalim", ct.nam);
-    witnessScandal(s, kind === "yankesicilik" || kind === "dukkan_soyma" ? "hirsizlik_tanigi" : "suc_tanigi", 0.22, kurban?.id, undefined, () => gameRandom(s));
+    const witnessChance = approach === "sessiz" ? 0.10 : approach === "zor" ? 0.42 : 0.22;
+    witnessScandal(s, kind === "yankesicilik" || kind === "dukkan_soyma" ? "hirsizlik_tanigi" : "suc_tanigi", witnessChance, kurban?.id, undefined, () => gameRandom(s));
     const why = dread(s) > 30 ? " Korkulan adın kurbanını dondurdu." : "";
     push(s, "suç", `${ct.label} işini başardın (+${cash} akçe).${why}`, "kişisel", false, { k: "evj.crimeWin", p: [{ cr: kind }, cash, dread(s) > 30 ? { sfx: "sfx.crimeDread" } : ""] });
     if (hot > 0) push(s, "suç", `Ganimetin ${hot} akçelik kısmı sıcak mal; eritmek için kara borsa lazım.`, "kişisel", false, { k: "crime.hotGot", p: [hot] });
@@ -7117,7 +7160,7 @@ export function doCrime(prev: GameState, kind: CrimeKind): GameState {
     return s;
   }
   // ── Kesinti anı (Vercel interrupt sahnesi): yakalanmak üzeresin — oyuncu seçer (Saklan/Rüşvet/Kaç).
-  s.pendingScene = { kind: "crime", ctx: { crime: kind } };
+  s.pendingScene = { kind: "crime", ctx: { crime: kind, approach } };
   return s;
 }
 
@@ -7143,13 +7186,14 @@ export function resolveCrimeScene(prev: GameState, choice: "saklan" | "rusvet" |
   const s = clone(prev); const p = s.player;
   if (s.pendingScene?.kind !== "crime") return s;      // yalnız bekleyen suç sahnesi çözülür (yanlış çağrı koruması)
   const kind = (s.pendingScene?.ctx?.crime as CrimeKind) || "yankesicilik";
+  const approach = (["sessiz", "hile", "zor"].includes(s.pendingScene?.ctx?.approach) ? s.pendingScene.ctx.approach : "hile") as CrimeApproach;
   s.pendingScene = null;
   const ct = CRIME_TYPES[kind] || CRIME_TYPES.yankesicilik;
   const golgeBonus = p.faction === "golge" ? 0.12 : 0;
   let escaped = false; let scratch = 0; let note: { k: string; p?: EvtParam[] };
   if (choice === "saklan") {
     // Saklan: gizlenme testi (dayanıklılık + gölge). Sessiz kaçış.
-    const chance = 0.42 + p.stats.stamina * 0.03 + golgeBonus - ct.sev * 0.04;
+    const chance = 0.42 + p.stats.stamina * 0.03 + golgeBonus - ct.sev * 0.04 + (approach === "sessiz" ? 0.12 : approach === "zor" ? -0.05 : 0);
     escaped = gameRandom(s) < Math.max(0.08, chance);
     gainSkill(s, "social", 3);
     note = { k: escaped ? "crimesc.hideWin" : "crimesc.hideLose" };
@@ -7158,12 +7202,13 @@ export function resolveCrimeScene(prev: GameState, choice: "saklan" | "rusvet" |
     const cost = Math.round(ct.fine * 1.2 * inflationFactor(s)); // rüşvet de çağın parasıyla — ganimet ölçeklenirken sabit kalsa suç ucuz riske döner
     if (p.money >= cost) {
       p.money -= cost; escaped = true;
-      if (gameRandom(s) < 0.3) { bumpNam(p, "zalim", 3); p.reputation = Math.max(-100, p.reputation - 3); note = { k: "crimesc.bribeLeak", p: [cost] }; }
+      const leak = approach === "hile" ? 0.18 : approach === "zor" ? 0.40 : 0.26;
+      if (gameRandom(s) < leak) { bumpNam(p, "zalim", 3); p.reputation = Math.max(-100, p.reputation - 3); note = { k: "crimesc.bribeLeak", p: [cost] }; }
       else note = { k: "crimesc.bribeWin", p: [cost] };
     } else { escaped = false; note = { k: "crimesc.bribePoor" }; }
   } else {
     // Kaç: atletik test (güç + dayanıklılık). Başarırsan sıyrıkla kurtulursun.
-    const chance = 0.34 + (p.stats.strength + p.stats.stamina) * 0.025 + golgeBonus - ct.sev * 0.03;
+    const chance = 0.34 + (p.stats.strength + p.stats.stamina) * 0.025 + golgeBonus - ct.sev * 0.03 + (approach === "zor" ? 0.12 : approach === "sessiz" ? -0.03 : 0);
     escaped = gameRandom(s) < Math.max(0.06, chance);
     if (escaped) { scratch = 2 + Math.floor(gameRandom(s) * (ct.sev * 2)); p.health = Math.max(1, p.health - scratch); }
     gainSkill(s, "combat", 4);
@@ -11407,6 +11452,7 @@ export function migrate(s: GameState): GameState {
   for (const k of ["strength", "intelligence", "charisma", "stamina"]) if (!Number.isFinite(p.stats[k])) p.stats[k] = 1;
   const SAYI_VARSAYILAN: Record<string, number> = { money: 0, health: 60, hunger: 60, reputation: 0, honor: 0, fear: 0, fame: 0 };
   for (const [k, v] of Object.entries(SAYI_VARSAYILAN)) if (!Number.isFinite(p[k])) p[k] = v;
+  if (p.crime_heat !== undefined) p.crime_heat = Number.isFinite(p.crime_heat) ? Math.max(0, Math.min(100, Math.round(p.crime_heat))) : undefined;
   if (typeof p.location_name !== "string" || !p.location_name) p.location_name = typeof p.home_name === "string" && p.home_name ? p.home_name : LOCATIONS[0];
   if (p.faction === undefined) p.faction = null;
   if (p.horse && !p.horse_name) p.horse_name = evcilAd(s, "at"); // eski kayıt: at adları sonradan geldi — adsız at cümleyi bozmasın

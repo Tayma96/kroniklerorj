@@ -1,6 +1,6 @@
 {
   "kind": "sentetik-karakterizasyon-gercek-oyuncu-kaydi-degil",
-  "engineSha256": "c21e8f0a95c71ff4f8a99d881b9d093e3a3943e717e6fb8507ff1386818ee8da",
+  "engineSha256": "4bc499edba8056aa1c37821cc74be1f1734bbfdfd66dd8af4a8799344ac840b4",
   "flows": {
     "yeni": "812d7a96f192971c030041adb380d97935a38c6f38dbf5b4e63fc7028c867441",
     "ay": "f835380135d312b7e54014b4f4e01bd703749a0d7c7bc4ad82bdc993cce7b675",
@@ -9,7 +9,7 @@
     "ticaret": "7ee6afd9939d8bbfe0881a45a4b9f29e6ec73f57202a1817cf326caecbbf176f",
     "sohbet": "b018908d6e8b24a00221ad0d0321f5c81b338b5129f3b89a2ba32077bc55c75d",
     "ders": "d35bace7d7fe2e3fd17c9f1fde0ae254fb62b671fc2595a6d13e39c6ba28c52d",
-    "suc": "368691cf5c376c10e7ff369016cebc02c98e4ad2121c39be10b7ccecec8ecaa4",
+    "suc": "33d59c5ea2592945164fce75bdb64449295a61a574108d285cccc2ad07ba0552",
     "yol": "d3ab498a4bd71a770ebb75746429fb0ee98d654593349583708f0c61aa9e8302",
     "varis": "a7f2a00f49b9169e25ff1ca21558e72037001df2ee6e7cac166eace3a6dcc1d3"
   },

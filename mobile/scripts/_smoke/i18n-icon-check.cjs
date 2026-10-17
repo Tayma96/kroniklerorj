@@ -11,7 +11,7 @@ const BUNDLE = path.join(ROOT, "node_modules/.cache/kronikler-i18n-bundle.cjs");
 execSync(
   `${ESBUILD} lib/i18n.tsx --bundle --platform=node --format=cjs ` +
     `--external:react --external:react-native --external:@react-native-async-storage/async-storage ` +
-    `--footer:js="module.exports.__DICTS = Object.fromEntries(Object.entries(DICT_BUILDERS).map(([k,f])=>[k,f()]));" --outfile=${BUNDLE}`,
+    `--footer:js="module.exports.__DICTS = Object.fromEntries(Object.keys(DICT_BUILDERS).map(k=>[k,dictFor(k)]));" --outfile=${BUNDLE}`,
   { cwd: ROOT, stdio: "pipe" }
 );
 const I = require(BUNDLE);

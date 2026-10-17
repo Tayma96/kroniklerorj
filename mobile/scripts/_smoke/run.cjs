@@ -11,6 +11,7 @@ function degismezIhlali(s) {
   if (p.money < 0) return "money " + p.money;
   if (p.health < 0 || p.health > 100 || p.hunger < 0 || p.hunger > 100) return "health/hunger " + p.health + "/" + p.hunger;
   for (const k of ["reputation", "honor", "fear", "fame"]) if (p[k] < -100 || p[k] > 100) return k + " " + p[k];
+  if (p.crime_heat !== undefined && (!Number.isFinite(p.crime_heat) || p.crime_heat < 0 || p.crime_heat > 100)) return "crime_heat " + p.crime_heat;
   const pr = g.professionById(p.profession); if (pr && ((p.kademe ?? 0) < 0 || (p.kademe ?? 0) > pr.tiers.length - 1)) return "kademe " + p.kademe;
   if (!Number.isFinite(s.world && s.world.inflation)) return "inflation";
   for (const x of p.properties || []) if (!(x.cond >= 0 && x.cond <= 100)) return "mülk cond " + x.cond;
@@ -37,7 +38,7 @@ for (let i = 0; i < LIVES; i++) {
           else if (act < 0.18) s = g.craft(s, R(["bicak","kilic","yay","savas_balta","zincir_zirh"]));
           else if (act < 0.24) s = g.sellItem(s, R(Object.keys(p.inventory||{})) || "demir");
           else if (act < 0.30 && p.money > 60) s = g.launchCaravan(s, 50);
-          else if (act < 0.36) { s = g.doCrime(s, R(["yankesicilik","dukkan_soyma","soygun","konak_soygunu"])); if ((s.player.hotGoods||0) > 0 && Math.random() < 0.5) s = g.fenceHotGoods(s); }
+          else if (act < 0.36) { s = g.doCrime(s, R(["yankesicilik","dukkan_soyma","soygun","konak_soygunu"]), R(["sessiz","hile","zor"])); if ((s.player.hotGoods||0) > 0 && Math.random() < 0.5) s = g.fenceHotGoods(s); }
           else if (act < 0.42) s = g.doFactionTask(s, R(["tuccar","demirci","asker"]));
           else if (act < 0.48) s = g.equipItem(s, R(["kilic","bicak","kalkan","deri_zirh"]));
           else if (act < 0.54) s = g.travelBy(s, R(g.LOCATIONS.filter(l=>l!==p.location_name)), R(["anayol","patika","kervan"]));

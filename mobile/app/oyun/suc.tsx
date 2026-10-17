@@ -4,7 +4,7 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { doCrime, resolveCrimeScene, CrimeKind, fenceHotGoods, crimeUnlocked, crimeReq, underworldStanding, underworldTier, UNDERWORLD_TIERS, inJail, playDice, resolveTrial, hasTrialWitness } from "../../lib/game";
+import { doCrime, resolveCrimeScene, CrimeKind, CrimeApproach, CRIME_APPROACHES, crimePlanPreview, crimeHeat, layLow, fenceHotGoods, crimeUnlocked, crimeReq, underworldStanding, underworldTier, UNDERWORLD_TIERS, inJail, playDice, resolveTrial, hasTrialWitness } from "../../lib/game";
 import { C, F } from "../../lib/theme";
 import { GameIcon } from "../../lib/icons";
 import { useI18n, applyParams } from "../../lib/i18n";
@@ -16,6 +16,7 @@ export default function Suc() {
   const { state, apply } = useGame();
   const { t } = useI18n();
   const [res, setRes] = useState<null | { text: string; ok: boolean; tick: number }>(null);
+  const [selectedCrime, setSelectedCrime] = useState<CrimeKind | null>(null);
   const seen = useRef<number | null>(state ? state.hseq ?? 0 : null); // görülen son olay sırası
 
   // Suç sonucunu (en yeni suç olayı) anlık şerit olarak yansıt.
@@ -36,21 +37,50 @@ export default function Suc() {
   // Ay başına tek suç denemesi (doCrime last_crime_turn) — çekirdek sessizce reddediyor; tuşu kilitle + sebep göster.
   const crimeDone = state.player.last_crime_turn === state.turn || state.player.dead;
   const standing = underworldStanding(state.player);
+  const heat = crimeHeat(state.player);
+  const heatKey = heat >= 75 ? "crime.heat.severe" : heat >= 45 ? "crime.heat.high" : heat >= 20 ? "crime.heat.medium" : "crime.heat.low";
+  const heatColor = heat >= 75 ? C.blood : heat >= 45 ? C.gold : C.sage;
   const Crime = ({ kind, title, desc }: { kind: CrimeKind; title: string; desc: string }) => {
     const open = crimeUnlocked(state.player, kind);
     const locked = !open;
     const jailed = inJail(state.player); // hücrede buton da kapalı — sessiz no-op yerine görünür kilit
+    const blocked = crimeDone || locked || jailed || !!state.pendingScene;
+    const expanded = selectedCrime === kind && !blocked;
     return (
-      <Pressable disabled={crimeDone || locked || jailed} onPress={() => { hap("advance"); apply((s) => doCrime(s, kind)); }} style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(123,79,175,0.4)", borderLeftWidth: 2.5, borderLeftColor: C.ink, borderRadius: 11, padding: 14, marginBottom: 10, opacity: crimeDone || locked || jailed ? 0.45 : 1 }}>
-        <View style={{ width: 38, height: 38, borderRadius: 9, backgroundColor: "rgba(123,79,175,0.12)", borderWidth: 1, borderColor: "rgba(123,79,175,0.35)", alignItems: "center", justifyContent: "center" }}>
-          <GameIcon name={locked ? "prisoner" : "hood"} size={18} color={C.ink} />
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text style={{ fontFamily: F.display, fontSize: 13, color: C.ink }}>{title}</Text>
-          <Text style={{ fontFamily: F.serif, fontSize: 11.5, color: locked ? C.goldDim : C.parchmentMuted, marginTop: 3 }}>{locked ? applyParams(t("suc.lockReq"), [crimeReq(state.player, kind), standing]) : desc}</Text>
-        </View>
-        <Text style={{ color: locked ? C.parchmentMuted : C.ink, fontSize: 15 }}>›</Text>
-      </Pressable>
+      <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: expanded ? C.ink : "rgba(123,79,175,0.4)", borderLeftWidth: 2.5, borderLeftColor: C.ink, borderRadius: 11, marginBottom: 10, opacity: blocked ? 0.45 : 1, overflow: "hidden" }}>
+        <Pressable accessibilityRole="button" accessibilityLabel={`${title}. ${locked ? applyParams(t("suc.lockReq"), [crimeReq(state.player, kind), standing]) : desc}`} accessibilityState={{ disabled: blocked, expanded }} disabled={blocked} onPress={() => { hap("selection"); setSelectedCrime(expanded ? null : kind); }} style={{ flexDirection: "row", alignItems: "center", gap: 12, padding: 14 }}>
+          <View style={{ width: 38, height: 38, borderRadius: 9, backgroundColor: "rgba(123,79,175,0.12)", borderWidth: 1, borderColor: "rgba(123,79,175,0.35)", alignItems: "center", justifyContent: "center" }}>
+            <GameIcon name={locked ? "prisoner" : "hood"} size={18} color={C.ink} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontFamily: F.display, fontSize: 13, color: C.ink }}>{title}</Text>
+            <Text style={{ fontFamily: F.serif, fontSize: 11.5, color: locked ? C.goldDim : C.parchmentMuted, marginTop: 3 }}>{locked ? applyParams(t("suc.lockReq"), [crimeReq(state.player, kind), standing]) : desc}</Text>
+          </View>
+          <Text accessibilityElementsHidden style={{ color: locked ? C.parchmentMuted : C.ink, fontSize: 15, transform: [{ rotate: expanded ? "90deg" : "0deg" }] }}>›</Text>
+        </Pressable>
+        {expanded && (
+          <Animated.View entering={FadeInDown.duration(180)} style={{ borderTopWidth: 1, borderTopColor: "rgba(123,79,175,0.3)", padding: 10 }}>
+            <Text style={{ fontFamily: F.display, fontSize: 9.5, letterSpacing: 1.2, color: C.goldDim, marginBottom: 6 }}>{t("crime.plan.choose").toUpperCase()}</Text>
+            {CRIME_APPROACHES.map((approach: CrimeApproach) => {
+              const plan = crimePlanPreview(state, kind, approach);
+              const success = `${Math.round(plan.success * 100)}%`; const caught = `${Math.round(plan.attention * 100)}%`;
+              return (
+                <Pressable key={approach} accessibilityRole="button" accessibilityLabel={`${t(`crime.plan.${approach}`)}. ${applyParams(t("crime.plan.odds"), [success, caught])}`} onPress={() => { hap("advance"); setSelectedCrime(null); apply((s) => doCrime(s, kind, approach)); }} style={{ backgroundColor: C.bg, borderWidth: 1, borderColor: C.borderHi, borderRadius: 9, padding: 11, marginTop: 6 }}>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                    <Text style={{ flex: 1, fontFamily: F.display, fontSize: 11.5, color: C.parchment }}>{t(`crime.plan.${approach}`)}</Text>
+                    <Text style={{ fontFamily: F.serif, fontSize: 10.5, color: C.gold }}>{applyParams(t("crime.plan.loot"), [plan.loot.toFixed(2), plan.heatGain])}</Text>
+                  </View>
+                  <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted, marginTop: 3 }}>{t(`crime.plan.${approach}.d`)}</Text>
+                  <View style={{ flexDirection: "row", gap: 8, marginTop: 7 }}>
+                    <Text style={{ fontFamily: F.serif, fontSize: 10.5, color: C.sage }}>{applyParams(t("crime.plan.odds"), [success, caught]).split(" · ")[0]}</Text>
+                    <Text style={{ fontFamily: F.serif, fontSize: 10.5, color: C.blood }}>{applyParams(t("crime.plan.odds"), [success, caught]).split(" · ")[1]}</Text>
+                  </View>
+                </Pressable>
+              );
+            })}
+          </Animated.View>
+        )}
+      </View>
     );
   };
   return (
@@ -85,6 +115,26 @@ export default function Suc() {
             </View>
           );
         })()}
+
+        {state.player.age >= 13 && (
+          <View accessibilityLabel={`${t("crime.heat.title")}. ${applyParams(t("crime.heat.value"), [heat])}. ${t(heatKey)}`} style={{ backgroundColor: "rgba(123,79,175,0.08)", borderWidth: 1, borderColor: "rgba(123,79,175,0.4)", borderRadius: 11, padding: 12, marginBottom: 12 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+              <GameIcon name="hourglass" size={15} color={heatColor} />
+              <Text style={{ flex: 1, fontFamily: F.display, fontSize: 10.5, letterSpacing: 1, color: C.ink }}>{t("crime.heat.title").toUpperCase()}</Text>
+              <Text style={{ fontFamily: F.display, fontSize: 10.5, color: heatColor }}>{applyParams(t("crime.heat.value"), [heat])}</Text>
+            </View>
+            <View style={{ height: 5, borderRadius: 3, backgroundColor: "rgba(123,79,175,0.18)", marginTop: 8, overflow: "hidden" }}>
+              <View style={{ width: `${heat}%`, height: "100%", backgroundColor: heatColor }} />
+            </View>
+            <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted, lineHeight: 15, marginTop: 6 }}>{t(heatKey)}</Text>
+            {heat > 0 && (
+              <Pressable accessibilityRole="button" accessibilityLabel={`${t("crime.layLow")}. ${t("crime.layLow.d")}`} accessibilityState={{ disabled: crimeDone || inJail(state.player) || !!state.pendingScene }} disabled={crimeDone || inJail(state.player) || !!state.pendingScene} onPress={() => { hap("advance"); setSelectedCrime(null); apply((s) => layLow(s)); }} style={{ borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.bg, borderRadius: 8, padding: 10, marginTop: 9, opacity: crimeDone || inJail(state.player) || !!state.pendingScene ? 0.4 : 1 }}>
+                <Text style={{ fontFamily: F.display, fontSize: 11, color: C.parchment, textAlign: "center" }}>{t("crime.layLow")}</Text>
+                <Text style={{ fontFamily: F.serifItalic, fontSize: 10, color: C.parchmentMuted, textAlign: "center", marginTop: 2 }}>{t("crime.layLow.d")}</Text>
+              </Pressable>
+            )}
+          </View>
+        )}
 
         {res && (
           <Animated.View key={res.tick} entering={FadeInDown.duration(240)} style={{ backgroundColor: res.ok ? "rgba(127,166,106,0.10)" : "rgba(200,64,64,0.10)", borderWidth: 1, borderColor: res.ok ? "rgba(127,166,106,0.5)" : "rgba(200,64,64,0.5)", borderLeftWidth: 3, borderLeftColor: res.ok ? C.sage : C.blood, borderRadius: 10, padding: 12, marginBottom: 12 }}>
