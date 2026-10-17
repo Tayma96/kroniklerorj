@@ -3,7 +3,7 @@ import { View, Text, ScrollView, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { changeProfession, PROFESSIONS, professionById, careerTier, hasProfAction, canProfAction, professionAction, profActionCooldownLeft, meslekSarti, meslekEksik, meslekSermaye, meslegeUygun, effStat, kariyerXp, sinavDurumu, ustalikSinavi, rakipAktif, rakipPuan, rakipYollari, rakipMeydan, rakipMeydanHazir, rakipMeydanKalan, rakipYarisi, rakipOrtaklik, rakipOrtaklikHazir, RAKIP_HEDEF, RAKIP_MEYDAN_BEDEL, cirakAlabilir, cirakAdaylari, cirakAl, cirakDers, cirakDersHazir, cirakDersKalan, cirakBekleAy, CIRAK_BEDEL, CIRAK_KOST, kademeOf } from "../../lib/game";
+import { changeProfession, PROFESSIONS, professionById, careerTier, hasProfAction, canProfAction, professionAction, profActionCooldownLeft, meslekSarti, meslekEksik, meslekSermaye, meslegeUygun, effStat, kariyerXp, sinavDurumu, ustalikSinavi, rakipAktif, rakipPuan, rakipYollari, rakipMeydan, rakipMeydanHazir, rakipMeydanKalan, rakipYarisi, rakipOrtaklik, rakipOrtaklikHazir, RAKIP_HEDEF, RAKIP_MEYDAN_BEDEL, cirakAlabilir, cirakAdaylari, cirakAl, cirakDers, cirakDersHazir, cirakDersKalan, cirakBekleAy, CIRAK_BEDEL, CIRAK_KOST, kademeOf, meslekYoluKademesi, meslekYoluIlerleme, MESLEK_YOLU_ESIK } from "../../lib/game";
 import { localFirstName } from "../../lib/world";
 import { rakipAdi, rakipKartVerisi } from "../../lib/rakip-ui";
 import { SinavKartiModal, SinavKartiVeri } from "../../lib/kart3d";
@@ -187,6 +187,22 @@ export default function Meslek() {
           </Panel>
         )}
 
+        {curPr && (() => {
+          const yolKademe = meslekYoluKademesi(p); const ilerleme = meslekYoluIlerleme(p); const hedef = MESLEK_YOLU_ESIK[2];
+          return (
+            <Panel title={t("my.title")} right={<Pill text={t("my.stage." + yolKademe)} />}>
+              <Text style={{ fontFamily: F.display, fontSize: 15, color: C.gold }}>{t("my." + p.profession + ".n")}</Text>
+              <Text style={{ fontFamily: F.serifItalic, fontSize: 12.5, color: C.parchmentDim, marginTop: 4, lineHeight: 18 }}>{t("my.intro")}</Text>
+              <Text style={{ fontFamily: F.serif, fontSize: 12.5, color: C.parchment, marginTop: 9, lineHeight: 18 }}>{t("my." + p.profession + ".d")}</Text>
+              <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 1.2, color: C.goldDim, marginTop: 11 }}>{applyParams(t("my.progress"), [ilerleme, hedef], lang).toUpperCase()}</Text>
+              <View style={{ height: 7, borderRadius: 4, backgroundColor: C.border, marginTop: 5, overflow: "hidden" }}>
+                <View style={{ width: `${Math.round((ilerleme / hedef) * 100)}%`, height: 7, borderRadius: 4, backgroundColor: yolKademe >= 3 ? C.goldBright : C.gold }} />
+              </View>
+              <Text style={{ fontFamily: F.serif, fontSize: 11.5, color: C.parchmentMuted, marginTop: 6 }}>{t("my.milestones")}</Text>
+            </Panel>
+          );
+        })()}
+
         {hasProfAction(p) && (() => {
           const can = canProfAction(state);
           const cd = profActionCooldownLeft(p, state.turn);
@@ -216,6 +232,8 @@ export default function Meslek() {
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontFamily: F.display, fontSize: 14, color: cur ? C.gold : C.parchment }}>{professionNameL(pr.id, lang)}</Text>
                   <Text style={{ fontFamily: F.serif, fontSize: 12, color: C.parchmentMuted }}>{t("st." + pr.stat)} · {pr.tiers.length} {t("mes.tier")}</Text>
+                  <Text style={{ fontFamily: F.display, fontSize: 10.5, color: C.goldDim, marginTop: 4 }}>{t("my." + pr.id + ".n")}</Text>
+                  <Text style={{ fontFamily: F.serifItalic, fontSize: 11.5, color: C.parchmentDim, marginTop: 2, lineHeight: 16 }}>{t("my." + pr.id + ".d")}</Text>
                   {!cur && m && (acik ? (
                     <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.sage, marginTop: 3 }}>{t("mes.open")}</Text>
                   ) : (
