@@ -1740,9 +1740,9 @@ export interface Seed { id: string; kaynak: string; ekim: number; hmin: number; 
 // (yoksa tohumun kendi "seed.<kaynak>" satırı). Aynı anda en çok IP_EN_COK ip açık olur.
 export interface Ip { ima: string; kisi?: string; vade: [number, number]; ode?: string; }
 export const IP_EN_COK = 3;
-function sowSeed(s: GameState, opts: Omit<Seed, "id" | "ekim">) {
+function sowSeed(s: GameState, opts: Omit<Seed, "id" | "ekim">, random: () => number = Math.random) {
   if (!s.seeds) s.seeds = [];
-  s.seeds.push({ ...opts, id: opts.kaynak + "_" + Math.random().toString(36).slice(2, 8), ekim: s.turn });
+  s.seeds.push({ ...opts, id: opts.kaynak + "_" + random().toString(36).slice(2, 8), ekim: s.turn });
   if (s.seeds.length > 30) { const fazla = s.seeds.length - 30; let atilan = 0; s.seeds = s.seeds.filter((t) => t.ip || atilan++ >= fazla); } // budama açık ipleri asla düşürmez (verilen söz silinmez)
 }
 // Kişiye bağlı tohum: iyiliği görenin ya da zulmü görenin hâli belirler. Velinimet ancak muradına eren (gd) hatırlar.
@@ -2271,11 +2271,11 @@ function directorTick(s: GameState) {
 }
 
 // Açık olayı en çok üç yaşayan kişi görür. Muhatabına ikinci kez "şahit" anısı yazılmaz.
-function witnessScandal(s: GameState, tur: string, chance: number, participantId?: string, participantMemory?: Memory | null): string[] {
-  if (Math.random() >= chance) return [];
+function witnessScandal(s: GameState, tur: string, chance: number, participantId?: string, participantMemory?: Memory | null, random: () => number = Math.random): string[] {
+  if (random() >= chance) return [];
   const pool = npcsOf(s).filter(n => n.id !== participantId && n.age >= 13);
   const chosen: NPC[] = [];
-  while (pool.length && chosen.length < 3) chosen.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+  while (pool.length && chosen.length < 3) chosen.push(pool.splice(Math.floor(random() * pool.length), 1)[0]);
   if (!chosen.length) return [];
   const ids = chosen.map(n => n.id);
   const event = participantMemory?.olay || [s.seed, s.player.generation, s.turn, s.hseq || 0, tur].join(":");
@@ -2441,6 +2441,7 @@ export function rumorAction(prev: GameState, rumorId: string, eylem: "yuzles" | 
 export interface StoryProgress { active: { id: string; stage: string } | null; completed: string[]; tension: number; nemesis?: { name: string; power: number; id?: string; olen?: string; yak?: KanYak; nesil?: number; kt?: number } | null; flags?: Record<string, boolean>; lull?: number; breath?: number; }
 export interface GameState {
   turn: number; seed: number; player: Player; history: GameEvent[];
+  rng_state?: number; // kayıtlı rastgelelik: aynı kayıt + aynı eylem aynı zarı verir (eski kayıtta göçle kurulur)
   newsSeenTurn?: number; // haberler ekranının son görüldüğü tur (menü rozeti için; opsiyonel — eski kayıtlar dokunulmadan çalışır)
   relationships: Record<string, number>; world: { ready: boolean; npcEvo?: Record<string, { dead?: boolean; age?: number; married?: boolean; goalHelped?: boolean; goalDone?: boolean; gname?: string; goalk?: string; usta?: boolean; prof?: string }>; npcBorn?: NPC[]; npcYears?: number; inflation?: number; marketLeverUntil?: number; mkt?: Record<string, number> };
   pop?: Nufus; // yaşayan nüfus: kalıcı kişiler ve aileler (NUFUS.md)
@@ -2897,6 +2898,23 @@ const rnd = <T,>(a: T[]): T => a[Math.floor(Math.random() * a.length)];
 const chance = (p: number) => Math.random() < p;
 const cap = (x: string) => x.charAt(0).toUpperCase() + x.slice(1);
 
+// xorshift32: oyun kararlarının üretim zarı kaydın içinde ilerler. İlk geçiş suç akışıdır;
+// kalan sistemler küçük, doğrulanabilir dalgalarla aynı kaynağa taşınacaktır.
+function rngBaslangici(seed: number, turn = 0, generation = 1): number {
+  let x = ((seed >>> 0) ^ Math.imul((turn + 1) >>> 0, 0x9e3779b1) ^ Math.imul(generation >>> 0, 0x85ebca6b)) >>> 0;
+  x = Math.imul(x ^ (x >>> 16), 0x7feb352d) >>> 0;
+  x = Math.imul(x ^ (x >>> 15), 0x846ca68b) >>> 0;
+  return (x ^ (x >>> 16)) >>> 0 || 0x6d2b79f5;
+}
+export function gameRandom(s: GameState): number {
+  let x = Number.isFinite(s.rng_state) && (s.rng_state! >>> 0) !== 0
+    ? s.rng_state! >>> 0
+    : rngBaslangici(s.seed, s.turn, s.player?.generation || 1);
+  x ^= x << 13; x ^= x >>> 17; x ^= x << 5;
+  s.rng_state = x >>> 0 || 0x6d2b79f5;
+  return s.rng_state / 0x100000000;
+}
+
 // NPC'ler KONUMA bağlı: her şehrin kendi insanları (konum tohumlu + konum-önekli kimlik).
 export function npcsOf(s: GameState, lang: Lang = "tr"): NPC[] { return rosterAt(s, s.player.location_name, lang); }
 
@@ -2909,7 +2927,7 @@ export function newGame(first: string, surname: string, gender: "erkek" | "kadı
   const birthStats: Stats = { strength: 1, intelligence: 1, charisma: 1, stamina: 1 };
   birthStats[gift] += 1;
   const s: GameState = {
-    turn: 0, seed, world: { ready: true, inflation: 1 }, pop: nufusKur(nufusCtx(), { wy: 0 }),
+    turn: 0, seed, rng_state: rngBaslangici(seed), world: { ready: true, inflation: 1 }, pop: nufusKur(nufusCtx(), { wy: 0 }),
     relationships: {}, dynasty: [], npc_state: {}, story: { active: null, completed: [], tension: 0 }, wars: [], caravan: null, econ: 1, merdiven: MERDIVEN_SURUM,
     player: {
       name: surname ? `${first} ${surname}` : first, surname, gender, base_age: 7, age: 7,
@@ -7049,10 +7067,10 @@ const DUKKANCI = new Set(["tüccar", "fırıncı", "kuyumcu", "hancı", "demirci
 function kurbanSec(s: GameState, kind: CrimeKind): Kisi | undefined {
   const p = s.player; const pop = nufusOf(s); const wy = worldYears(s);
   const ok = (k: Kisi) => k.ol == null && wy - k.dy >= 18 && !oyuncuAkrabasi(p, k.id) && k.id !== p.spouse_id && k.es !== OYUNCU;
-  if (kind === "soygun") { const yol = Object.values(pop.k).filter((k) => ok(k) && k.loc !== p.location_name && regionOf(k.loc) === regionOf(p.location_name)); return yol.length ? rnd(yol) : undefined; }
+  if (kind === "soygun") { const yol = Object.values(pop.k).filter((k) => ok(k) && k.loc !== p.location_name && regionOf(k.loc) === regionOf(p.location_name)); return yol.length ? yol[Math.floor(gameRandom(s) * yol.length)] : undefined; }
   const yer = Object.values(pop.k).filter((k) => ok(k) && k.loc === p.location_name);
   const hedef = kind === "dukkan_soyma" ? yer.filter((k) => DUKKANCI.has(k.prof)) : kind === "konak_soygunu" ? yer.filter((k) => k.usta || k.prof === "kuyumcu" || k.prof === "tüccar" || k.prof === "hancı") : yer;
-  const h = hedef.length ? hedef : yer; return h.length ? rnd(h) : undefined;
+  const h = hedef.length ? hedef : yer; return h.length ? h[Math.floor(gameRandom(s) * h.length)] : undefined;
 }
 // Kurban seni öğrenir: anısına yazılır (yakınlarına da dokunur), dedikodusu dolaşır.
 function kurbanOgrenir(s: GameState, k: Kisi, tam: boolean) {
@@ -7071,15 +7089,15 @@ export function doCrime(prev: GameState, kind: CrimeKind): GameState {
   const kurban = kurbanSec(s, kind); p.son_kurban = kurban ? { id: kurban.id, turn: s.turn } : undefined;
   const golgeBonus = p.faction === "golge" ? 0.12 : 0;     // Gölge Kardeşliği avantajı
   const hasariBonus = p.childhood === "hasari" ? 0.07 : 0; // haşarı çocukluk: sokak kurnazlığı işe yarar
-  const success = Math.random() < ct.base + p.stats.charisma * 0.01 + golgeBonus + hasariBonus + crimeSuccessMod(s);
+  const success = gameRandom(s) < ct.base + p.stats.charisma * 0.01 + golgeBonus + hasariBonus + crimeSuccessMod(s);
   gainSkill(s, "social", 4);
   if (success) {
     // Marifetli kaçış bile tümüyle risksiz değil: ağır suç + korkulan/çok tanınan ad daha çok dikkat çeker.
     // Böylece korku/zalim hem başarıyı hem yakalanma ihtimalini artırır — suç "risksiz kazanç" olmaktan çıkar (dread iki tarafı da keser).
     const golgeGizli = p.faction === "golge" ? 0.5 : 1; // Gölge Kardeşliği iz bırakmaz — sıcaklık yarıya düşer
     const heat = Math.min(0.5, (ct.sev * 0.05 + dread(s) / 100 * 0.15) * golgeGizli);
-    if (Math.random() < heat) { s.pendingScene = { kind: "crime", ctx: { crime: kind } }; return s; } // ganimeti güvene almadan enselendin — kaçış sahnesine düş
-    const loot = Math.round((ct.lootMin + Math.floor(Math.random() * (ct.lootMax - ct.lootMin + 1))) * inflationFactor(s)); // ganimet çağın parasıyla — geç oyunda 12 nam grindiyle açılan soygun anlamsız kalmasın (dövüş ödülüyle aynı ilke)
+    if (gameRandom(s) < heat) { s.pendingScene = { kind: "crime", ctx: { crime: kind } }; return s; } // ganimeti güvene almadan enselendin — kaçış sahnesine düş
+    const loot = Math.round((ct.lootMin + Math.floor(gameRandom(s) * (ct.lootMax - ct.lootMin + 1))) * inflationFactor(s)); // ganimet çağın parasıyla — geç oyunda 12 nam grindiyle açılan soygun anlamsız kalmasın (dövüş ödülüyle aynı ilke)
     // Büyük soygunlarda ganimetin bir kısmı SICAK MAL: nakde çevrilmesi (eritme) riskli.
     const hot = ct.sev >= 3 ? Math.round(loot * 0.45) : 0;
     const cash = loot - hot;
@@ -7087,12 +7105,12 @@ export function doCrime(prev: GameState, kind: CrimeKind): GameState {
     p.crime_wins = (p.crime_wins || 0) + 1; // yeraltı namı: tamamlanan iş merdiveni tırmandırır
     p.fear = Math.min(100, p.fear + ct.fear);
     bumpNam(p, "zalim", ct.nam);
-    witnessScandal(s, kind === "yankesicilik" || kind === "dukkan_soyma" ? "hirsizlik_tanigi" : "suc_tanigi", 0.22, kurban?.id);
+    witnessScandal(s, kind === "yankesicilik" || kind === "dukkan_soyma" ? "hirsizlik_tanigi" : "suc_tanigi", 0.22, kurban?.id, undefined, () => gameRandom(s));
     const why = dread(s) > 30 ? " Korkulan adın kurbanını dondurdu." : "";
     push(s, "suç", `${ct.label} işini başardın (+${cash} akçe).${why}`, "kişisel", false, { k: "evj.crimeWin", p: [{ cr: kind }, cash, dread(s) > 30 ? { sfx: "sfx.crimeDread" } : ""] });
     if (hot > 0) push(s, "suç", `Ganimetin ${hot} akçelik kısmı sıcak mal; eritmek için kara borsa lazım.`, "kişisel", false, { k: "crime.hotGot", p: [hot] });
     if (kurban) { // başarılı işte kurban çoğu zaman kimin yaptığını bilmez; beşte bir öğrenir
-      if (Math.random() < 0.2) { kurbanOgrenir(s, kurban, false); push(s, "suç", `${kisiAdi(kurban, "tr")} kimin işi olduğunu öğrendi.`, "kişisel", false, { k: "crime.kurbanBildi", p: [knParam(kurban)] }); }
+      if (gameRandom(s) < 0.2) { kurbanOgrenir(s, kurban, false); push(s, "suç", `${kisiAdi(kurban, "tr")} kimin işi olduğunu öğrendi.`, "kişisel", false, { k: "crime.kurbanBildi", p: [knParam(kurban)] }); }
       else push(s, "suç", `Kurbanın ${kisiAdi(kurban, "tr")} neyin başına geldiğini hâlâ bilmiyor.`, "kişisel", false, { k: "crime.kurban", p: [knParam(kurban)] });
       p.son_kurban = undefined;
     }
@@ -7109,7 +7127,7 @@ export function fenceHotGoods(prev: GameState): GameState {
   const hot = p.hotGoods || 0; if (hot <= 0 || p.dead || inJail(p)) return s; // zindanda kara borsa da yok
   const golge = p.faction === "golge";
   p.hotGoods = 0;
-  if (Math.random() < (golge ? 0.05 : 0.18)) {
+  if (gameRandom(s) < (golge ? 0.05 : 0.18)) {
     const fine = Math.round(hot * 0.4);
     p.money = Math.max(0, p.money - fine); p.fear = Math.min(100, p.fear + 3); p.reputation = Math.max(-100, p.reputation - 3);
     push(s, "suç_yakalandı", `Sıcak malı eritirken yakalandın; ${fine} akçe ceza ve leke.`, "kişisel", true, { k: "crime.fenceCaught", p: [fine] });
@@ -7132,7 +7150,7 @@ export function resolveCrimeScene(prev: GameState, choice: "saklan" | "rusvet" |
   if (choice === "saklan") {
     // Saklan: gizlenme testi (dayanıklılık + gölge). Sessiz kaçış.
     const chance = 0.42 + p.stats.stamina * 0.03 + golgeBonus - ct.sev * 0.04;
-    escaped = Math.random() < Math.max(0.08, chance);
+    escaped = gameRandom(s) < Math.max(0.08, chance);
     gainSkill(s, "social", 3);
     note = { k: escaped ? "crimesc.hideWin" : "crimesc.hideLose" };
   } else if (choice === "rusvet") {
@@ -7140,14 +7158,14 @@ export function resolveCrimeScene(prev: GameState, choice: "saklan" | "rusvet" |
     const cost = Math.round(ct.fine * 1.2 * inflationFactor(s)); // rüşvet de çağın parasıyla — ganimet ölçeklenirken sabit kalsa suç ucuz riske döner
     if (p.money >= cost) {
       p.money -= cost; escaped = true;
-      if (Math.random() < 0.3) { bumpNam(p, "zalim", 3); p.reputation = Math.max(-100, p.reputation - 3); note = { k: "crimesc.bribeLeak", p: [cost] }; }
+      if (gameRandom(s) < 0.3) { bumpNam(p, "zalim", 3); p.reputation = Math.max(-100, p.reputation - 3); note = { k: "crimesc.bribeLeak", p: [cost] }; }
       else note = { k: "crimesc.bribeWin", p: [cost] };
     } else { escaped = false; note = { k: "crimesc.bribePoor" }; }
   } else {
     // Kaç: atletik test (güç + dayanıklılık). Başarırsan sıyrıkla kurtulursun.
     const chance = 0.34 + (p.stats.strength + p.stats.stamina) * 0.025 + golgeBonus - ct.sev * 0.03;
-    escaped = Math.random() < Math.max(0.06, chance);
-    if (escaped) { scratch = 2 + Math.floor(Math.random() * (ct.sev * 2)); p.health = Math.max(1, p.health - scratch); }
+    escaped = gameRandom(s) < Math.max(0.06, chance);
+    if (escaped) { scratch = 2 + Math.floor(gameRandom(s) * (ct.sev * 2)); p.health = Math.max(1, p.health - scratch); }
     gainSkill(s, "combat", 4);
     note = { k: escaped ? "crimesc.runWin" : "crimesc.runLose", p: escaped ? [scratch] : undefined };
   }
@@ -7179,7 +7197,7 @@ function crimeCaught(s: GameState, kind: CrimeKind, direct = false) {
     push(s, "taht", `Hükümdarın ${ct.label.toLowerCase()} işine karıştığı kulaktan kulağa yayıldı; kadı susar, diyar konuşur (otorite −${drop}).`, "makro", true, { k: "crown.scandal", p: [{ cr: kind }, drop] });
   }
   // Ağır suç (sev>=3): kadı zindan hükmü verir — sev 3'te yazı tura, sev 4'te kesin (asker ocağı süreyi yarılar). Taçlı zindana düşmez.
-  if (!p.crowned && ct.sev >= 3 && !inJail(p) && (ct.sev >= 4 || Math.random() < 0.5)) {
+  if (!p.crowned && ct.sev >= 3 && !inJail(p) && (ct.sev >= 4 || gameRandom(s) < 0.5)) {
     const ay = Math.max(1, Math.round((ct.sev - 1) * (p.faction === "asker" ? 0.5 : 1)));
     p.jail = { left: ay, kind };
     push(s, "suç", `Kadı hükmünü verdi: ${ay} ay zindan. Demir kapı ardında ay saymak da bir mekteptir.`, "kişisel", true, { k: "jail.sentenced", p: [ay] });
@@ -7188,10 +7206,10 @@ function crimeCaught(s: GameState, kind: CrimeKind, direct = false) {
   const hurt = Math.round(ct.hurt * (p.faction === "asker" ? 0.5 : 1));
   const extra = crimeCaughtPenalty(s);
   p.money -= fine; p.reputation = Math.max(-100, p.reputation - 6 - ct.sev * 2 - extra); p.health = Math.max(0, p.health - hurt);
-  witnessScandal(s, kind === "yankesicilik" || kind === "dukkan_soyma" ? "hirsizlik_tanigi" : "suc_tanigi", 0.7, p.son_kurban?.id);
+  witnessScandal(s, kind === "yankesicilik" || kind === "dukkan_soyma" ? "hirsizlik_tanigi" : "suc_tanigi", 0.7, p.son_kurban?.id, undefined, () => gameRandom(s));
   { const kb = p.son_kurban && s.turn - p.son_kurban.turn <= 2 ? nufusOf(s).k[p.son_kurban.id] : undefined; p.son_kurban = undefined; // yakalandın: kurban seni tanır
     if (kb && kb.ol == null) { kurbanOgrenir(s, kb, true); push(s, "suç_yakalandı", `${kisiAdi(kb, "tr")} seni tanıdı; bunu ömür boyu unutmayacak.`, "kişisel", false, { k: "crime.kurbanTanidi", p: [knParam(kb)] }); } }
-  if (ct.sev >= 3 && Math.random() < 0.5) sowSeed(s, { kaynak: "suc_gecmisi", hmin: 24, hmax: 120, agirlik: "orta", nesil: false, etki: { money: -30, reputation: -4 } });
+  if (ct.sev >= 3 && gameRandom(s) < 0.5) sowSeed(s, { kaynak: "suc_gecmisi", hmin: 24, hmax: 120, agirlik: "orta", nesil: false, etki: { money: -30, reputation: -4 } }, () => gameRandom(s));
   push(s, "suç_yakalandı", `Yakalandın! ${fine} akçe ceza, itibarın sarsıldı.`, "kişisel", true, { k: "evj.crimeCaught", p: [fine, extra >= 4 ? { sfx: "sfx.crimeHard" } : ""] });
   if (p.health <= 0) die(s, `${p.name}, suçüstü yakalanıp can verdi.`, { k: "evj.dieCrime", p: [p.name] });
 }
@@ -7209,7 +7227,7 @@ export function resolveTrial(prev: GameState, choice: "savun" | "tanik" | "boyun
     if (!entries.length) { crimeCaught(s, kind, true); return s; } // tanık yoksa hüküm (UI düğmeyi kapatır)
     const wid = entries[0][0];
     s.relationships[wid] = Math.max(-100, (s.relationships[wid] as number) - 6); // tanıklık bir borçtur
-    if (Math.random() < 0.72) {
+    if (gameRandom(s) < 0.72) {
       p.reputation = Math.max(-100, p.reputation - 2);
       push(s, "suç", "Bir dostun kadı önünde lehine tanıklık etti; beraat ettin. Bu borç unutulmaz.", "kişisel", true, { k: "trial.witWin" });
       return s;
@@ -7221,7 +7239,7 @@ export function resolveTrial(prev: GameState, choice: "savun" | "tanik" | "boyun
   if (choice === "savun") {
     const chanceW = Math.max(0.1, 0.32 + effStat(p, "charisma") * 0.03 + effStat(p, "intelligence") * 0.015 - ct.sev * 0.03);
     gainSkill(s, "social", 4);
-    if (Math.random() < chanceW) {
+    if (gameRandom(s) < chanceW) {
       const fine = Math.min(p.money, Math.round(ct.fine * 0.5 * inflationFactor(s)));
       p.money -= fine; p.reputation = Math.max(-100, p.reputation - 4);
       push(s, "suç", `Kendini öyle savundun ki kadı cezayı yarıya indirdi (${fine} akçe); zindan kapısı açılmadı.`, "kişisel", true, { k: "trial.defWin", p: [fine] });
@@ -8024,8 +8042,9 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
   const soyNam: Nam = { comert: 0, zalim: 0, capkin: 0, dindar: 0, mert: 0 };
   for (const key of Object.keys(soyNam) as (keyof Nam)[]) soyNam[key] = Math.floor((pn[key] || 0) / 4 + (on?.[key] || 0) / 2);
   const ataIyi = Object.values(ataHatira).filter((v) => v >= 15).length, ataKotu = Object.values(ataHatira).filter((v) => v <= -15).length;
+  const nesilSeed = Math.floor(gameRandom(s) * 1e9);
   const ns: GameState = {
-    turn: 0, seed: Math.floor(Math.random() * 1e9), world: { ready: true, npcYears: (prev.world?.npcYears || 0) + Math.floor(prev.turn / 12), inflation: prev.world?.inflation || 1 }, pop: heirPop, relationships: Object.fromEntries([...kardesIds, ...Object.keys(ataHatira).filter((id) => Math.abs(ataHatira[id]) >= 15)].map((id) => [id, 0])), dynasty, // atasını güçlü hatırlayan seni de tanır
+    turn: 0, seed: nesilSeed, rng_state: rngBaslangici(nesilSeed, 0, gen), world: { ready: true, npcYears: (prev.world?.npcYears || 0) + Math.floor(prev.turn / 12), inflation: prev.world?.inflation || 1 }, pop: heirPop, relationships: Object.fromEntries([...kardesIds, ...Object.keys(ataHatira).filter((id) => Math.abs(ataHatira[id]) >= 15)].map((id) => [id, 0])), dynasty, // atasını güçlü hatırlayan seni de tanır
     ata_hatira: Object.keys(ataHatira).length ? ataHatira : undefined, soy_nam: Object.values(soyNam).some((v) => v > 0) ? soyNam : undefined, npc_state: {}, saga: prev.saga ? { ...prev.saga, scene: null, declined: 0 } : null, rivals: prev.rivals ? prev.rivals.map((h) => ({ ...h, tutum: Math.round((h.tutum ?? 0) / 2) })) : undefined,
     // Kan davası NESLE GEÇER (adı üstünde): ısı yarılanır (yeni kuşakta kor küllenir ama sönmez), aylık hamle hakkı tazelenir.
     dil: prev.dil, // torunların adı da aynı dilde
@@ -11373,6 +11392,7 @@ export function migrate(s: GameState): GameState {
   const p: any = s.player || {};
   // Onarım: yarım yazılmış / elle düzenlenmiş kayıtta çekirdek alanlar eksik ya da sayı-dışıysa motor ilk ayda çökmesin (göç-fuzz denetimi).
   if (!Number.isFinite(s.turn)) s.turn = 0;
+  if (!Number.isFinite(s.rng_state) || (s.rng_state! >>> 0) === 0) s.rng_state = rngBaslangici(s.seed, s.turn, Number.isFinite(p.generation) ? p.generation : 1);
   if (!Array.isArray(s.history)) s.history = [];
   const sonOlaySirasi = s.history.reduce((m, e) => Number.isFinite(e?.q) ? Math.max(m, e.q!) : m, 0);
   if (sonOlaySirasi > 0 && (!Number.isFinite(s.hseq) || (s.hseq || 0) < sonOlaySirasi)) s.hseq = sonOlaySirasi;
