@@ -95,6 +95,7 @@ export interface Player {
   crime_wins?: number; // başarıyla tamamlanan suç sayısı — yeraltı namı; ağır işler bununla açılır (merdiven)
   crime_heat?: number; // 0-100: zaptiyenin üstündeki izi; yeni işlerin yakalanma riskini büyütür, zamanla söner
   crime_intel?: { kind: CrimeKind; loc: string; expires: number; quality: 1 | 2; victim_id?: string }; // bir suç için önceden gözlenen gerçek hedef ve süreli hazırlık
+  crime_case?: { kind: CrimeKind; investigator_id: string; victim_id?: string; witnesses: string[]; evidence: number; left: number }; // kaçılan ağır işin yaşayan NPC'lere bağlı soruşturması
   governorships?: string[]; // valisi olunan şehirler
   legacy?: Record<string, boolean>; // kalıcı görkem eserleri (vakıf/anıt/imaret) — bir kez kurulur
   govLeg?: Record<string, number>; // valilik meşruiyeti (şehir → 0-100); düşerse isyan/azil
@@ -3824,6 +3825,7 @@ export function advance(prev: GameState, n = 1): GameState {
   if (prev.pendingScene?.kind === "trial") prev = resolveTrial(prev, "boyun"); // duruşmadan kaçılmaz: gelmeyen gıyabında hüküm giyer
   const s = clone(prev);
   for (let i = 0; i < n; i++) {
+    if (s.pendingScene) break; // çoklu ay ilerletmede yeni açılan mahkeme kararı atlanamaz
     if (s.player.dead) break;
     snapshotPrices(s); // ayrılan ayın pazar fiyatlarını hafızaya al (R3.3 'geçen fiyat')
     s.turn += 1; const cal = currentCalendar(s.turn);
@@ -3831,6 +3833,7 @@ export function advance(prev: GameState, n = 1): GameState {
     // Suç izi zamanla soğur; Gölge Kardeşliği saklanacak kapı ve haber ağı sayesinde daha çabuk kaybettirir.
     if ((s.player.crime_heat || 0) > 0) s.player.crime_heat = Math.max(0, (s.player.crime_heat || 0) - (s.player.faction === "golge" ? 3 : 2));
     if (s.player.crime_intel && s.player.crime_intel.expires < s.turn) delete s.player.crime_intel;
+    crimeInvestigationTick(s);
     // Yıl dönümü: yaş günün geldi — yılın kısa muhasebesi kroniğe (landmark) düşer; hayat "yaşanmış" hissettirir.
     if (s.turn % 12 === 0 && !s.player.dead) {
       const pl = s.player;
@@ -7179,6 +7182,7 @@ export type CrimeKind = "yankesicilik" | "dukkan_soyma" | "soygun" | "konak_soyg
 export type CrimeApproach = "sessiz" | "hile" | "zor";
 export const CRIME_APPROACHES: CrimeApproach[] = ["sessiz", "hile", "zor"];
 export interface CrimePlanPreview { success: number; attention: number; loot: number; heatGain: number; }
+export interface CrimeInvestigationInfo { kind: CrimeKind; investigatorName: string; victimName: string | null; evidence: number; level: "weak" | "medium" | "strong"; left: number; witnessCount: number; }
 export const CRIME_TYPES: Record<CrimeKind, { base: number; lootMin: number; lootMax: number; fine: number; hurt: number; fear: number; nam: number; sev: number; label: string }> = {
   yankesicilik:  { base: 0.70, lootMin: 6,  lootMax: 22,  fine: 10, hurt: 3,  fear: 2, nam: 2, sev: 1, label: "Bir yankesicilik" },
   dukkan_soyma:  { base: 0.55, lootMin: 18, lootMax: 45,  fine: 22, hurt: 6,  fear: 4, nam: 4, sev: 2, label: "Bir dükkân soygunu" },
@@ -7220,6 +7224,104 @@ export function crimeIntelFor(s: GameState, kind: CrimeKind): Player["crime_inte
   const intel = s.player.crime_intel;
   return intel && intel.kind === kind && intel.loc === s.player.location_name && intel.expires >= s.turn ? intel : null;
 }
+export function crimeInvestigationInfo(s: GameState, lang: Lang = "tr"): CrimeInvestigationInfo | null {
+  const c = s.player.crime_case; if (!c) return null;
+  const pop = nufusOf(s).k; const investigator = pop[c.investigator_id];
+  if (!investigator || investigator.ol != null) return null;
+  const victim = c.victim_id ? pop[c.victim_id] : undefined;
+  const livingVictim = victim && victim.ol == null ? victim : undefined;
+  const evidence = Math.max(0, Math.min(100, Math.round(c.evidence)));
+  const witnesses = (c.witnesses || []).filter((id) => pop[id]?.ol == null).length;
+  return { kind: c.kind, investigatorName: kisiAdi(investigator, lang), victimName: livingVictim ? kisiAdi(livingVictim, lang) : null, evidence, level: evidence >= 70 ? "strong" : evidence >= 40 ? "medium" : "weak", left: Math.max(0, Math.round(c.left)), witnessCount: witnesses };
+}
+export function crimeInvestigationMisdirectOdds(s: GameState): number {
+  const c = s.player.crime_case; if (!c) return 0;
+  const p = s.player;
+  return Math.max(0.15, Math.min(0.82, 0.30 + effStat(p, "intelligence") * 0.04 + Math.min(8, p.skills?.social || 0) * 0.02 + (p.faction === "golge" ? 0.12 : 0) - c.evidence * 0.002));
+}
+function investigationPeople(s: GameState, excluded: Set<string>): Kisi[] {
+  const wy = worldYears(s);
+  return Object.values(nufusOf(s).k).filter((k) => k.ol == null && wy - k.dy >= 20 && k.loc === s.player.location_name && !excluded.has(k.id));
+}
+function closeInvestigation(s: GameState, escaped: boolean) {
+  const c = s.player.crime_case; if (!c) return;
+  const investigator = nufusOf(s).k[c.investigator_id];
+  s.player.crime_case = undefined;
+  if (escaped) {
+    s.player.crime_heat = Math.max(0, crimeHeat(s.player) - 10);
+    push(s, "suç", `${investigator ? kisiAdi(investigator, "tr") : "Subaşı vekili"} izleri birleştiremedi; dosya kapandı.`, "kişisel", true, { k: "crime.investigation.closed", p: [investigator ? knParam(investigator) : ""] });
+  }
+}
+function startOrDeepenInvestigation(s: GameState, kind: CrimeKind, approach: CrimeApproach, intelQuality: 0 | 1 | 2) {
+  const p = s.player; const ct = CRIME_TYPES[kind];
+  if (p.crime_case) {
+    p.crime_case.evidence = Math.min(95, p.crime_case.evidence + 6 + ct.sev * 2 + (approach === "zor" ? 4 : 0));
+    p.crime_case.left = Math.min(p.crime_case.left, 2);
+    push(s, "suç", `Yeni iş eski dosyaya eklendi; soruşturma hızlandı.`, "kişisel", true, { k: "crime.investigation.deepened" });
+    return;
+  }
+  const heat = crimeHeat(p);
+  const openingChance = Math.max(0.08, Math.min(0.82, 0.10 + ct.sev * 0.08 + heat / 250 + (approach === "zor" ? 0.10 : approach === "sessiz" ? -0.05 : 0) - intelQuality * 0.06));
+  if (gameRandom(s) >= openingChance) return;
+  const victim = p.son_kurban && s.turn - p.son_kurban.turn <= 2 ? nufusOf(s).k[p.son_kurban.id] : undefined;
+  const witnesses = witnessScandal(s, kind === "yankesicilik" || kind === "dukkan_soyma" ? "hirsizlik_tanigi" : "suc_tanigi", 1, victim?.id, undefined, () => gameRandom(s));
+  const excluded = new Set([victim?.id, ...witnesses].filter((x): x is string => !!x));
+  const pool = investigationPeople(s, excluded); const fallback = investigationPeople(s, new Set([victim?.id].filter((x): x is string => !!x)));
+  const candidates = pool.length ? pool : fallback; if (!candidates.length) return;
+  const investigator = candidates[Math.floor(gameRandom(s) * candidates.length)];
+  const evidence = Math.max(20, Math.min(88, 18 + ct.sev * 8 + Math.round(heat / 7) + (approach === "zor" ? 8 : approach === "sessiz" ? -6 : 0) + witnesses.length * 5 - intelQuality * 5));
+  p.crime_case = { kind, investigator_id: investigator.id, victim_id: victim?.id, witnesses, evidence, left: 3 + Math.floor(gameRandom(s) * 4) };
+  push(s, "suç", `${kisiAdi(investigator, "tr")} izleri toplamaya başladı; kaçtın ama dosya kapanmadı.`, "kişisel", true, { k: "crime.investigation.opened", p: [knParam(investigator), { cr: kind }, p.crime_case.left] });
+}
+function crimeInvestigationTick(s: GameState) {
+  const p = s.player; const c = p.crime_case; if (!c || p.dead) return;
+  const pop = nufusOf(s).k;
+  let investigator = pop[c.investigator_id];
+  if (!investigator || investigator.ol != null) {
+    const replacement = investigationPeople(s, new Set([c.victim_id, ...(c.witnesses || [])].filter((x): x is string => !!x))).sort((a, b) => a.id < b.id ? -1 : 1)[0];
+    if (!replacement) { closeInvestigation(s, true); return; }
+    c.investigator_id = replacement.id; c.evidence = Math.max(10, c.evidence - 12); investigator = replacement;
+    push(s, "suç", `${kisiAdi(replacement, "tr")} yarım kalan dosyayı devraldı; izlerin bir kısmı kayboldu.`, "kişisel", false, { k: "crime.investigation.replaced", p: [knParam(replacement)] });
+  }
+  c.left = Math.max(0, c.left - 1);
+  c.evidence = Math.min(95, c.evidence + Math.max(1, Math.round(crimeHeat(p) / 30)));
+  if (c.left > 0) {
+    if (c.left === 1) push(s, "suç", `${kisiAdi(investigator, "tr")} tanıkları yeniden çağırdı; dosya hükme yaklaşıyor.`, "kişisel", true, { k: "crime.investigation.near", p: [knParam(investigator)] });
+    return;
+  }
+  const witnesses = (c.witnesses || []).filter((id) => pop[id]?.ol == null);
+  const evidence = Math.max(15, Math.min(95, Math.round(c.evidence - ((c.witnesses || []).length - witnesses.length) * 7)));
+  const victim = c.victim_id ? pop[c.victim_id] : undefined;
+  const livingVictim = victim && victim.ol == null ? victim : undefined;
+  const goesToCourt = gameRandom(s) < evidence / 100;
+  p.crime_case = undefined;
+  if (!goesToCourt) {
+    p.crime_heat = Math.max(0, crimeHeat(p) - 10);
+    push(s, "suç", `${kisiAdi(investigator, "tr")} şüpheyi ispata çeviremedi; dosya düştü.`, "kişisel", true, { k: "crime.investigation.failed", p: [knParam(investigator)] });
+    return;
+  }
+  p.son_kurban = livingVictim ? { id: livingVictim.id, turn: s.turn } : undefined;
+  s.pendingScene = { kind: "trial", ctx: { crime: c.kind, approach: "hile", evidence: String(evidence), witnesses: witnesses.join(","), victim: livingVictim?.id || "", investigator: investigator.id } };
+  push(s, "suç_yakalandı", `${kisiAdi(investigator, "tr")} dosyayı kadıya taşıdı; bu kez kaçacak sokak yok.`, "kişisel", true, { k: "crime.investigation.court", p: [knParam(investigator), { cr: c.kind }] });
+}
+export function misdirectInvestigation(prev: GameState): GameState {
+  const s = clone(prev); const p = s.player; const c = p.crime_case;
+  if (!c || p.dead || inJail(p) || s.pendingScene || p.last_crime_turn === s.turn) return s;
+  p.last_crime_turn = s.turn;
+  const chanceW = crimeInvestigationMisdirectOdds(s); gainSkill(s, "social", 4); addStatXp(s, "intelligence", 3);
+  const investigator = nufusOf(s).k[c.investigator_id];
+  if (gameRandom(s) < chanceW) {
+    const drop = 16 + Math.min(8, p.skills?.social || 0) + (p.faction === "golge" ? 6 : 0);
+    c.evidence = Math.max(0, c.evidence - drop); p.crime_heat = Math.max(0, crimeHeat(p) - 5);
+    if (c.evidence < 20) { closeInvestigation(s, true); return s; }
+    push(s, "suç", `Sahte izi başka sokağa sürdün; dosyanın delili ${drop} zayıfladı.`, "kişisel", false, { k: "crime.investigation.misdirectWin", p: [drop] });
+  } else {
+    c.evidence = Math.min(95, c.evidence + 12); p.crime_heat = Math.min(100, crimeHeat(p) + 5);
+    if (investigator) s.relationships[investigator.id] = Math.max(-100, (s.relationships[investigator.id] || 0) - 6);
+    push(s, "suç_yakalandı", `Sahte iz çözüldü; soruşturmacı artık seni daha yakından izliyor.`, "kişisel", true, { k: "crime.investigation.misdirectLose" });
+  }
+  return s;
+}
 // Oyuncunun seçmeden önce gördüğü oranlar, çözümde kullanılan oranların aynısıdır: karar okunabilir, sonuç yine risklidir.
 export function crimePlanPreview(s: GameState, kind: CrimeKind, approach: CrimeApproach = "hile"): CrimePlanPreview {
   const p = s.player; const ct = CRIME_TYPES[kind] || CRIME_TYPES.yankesicilik;
@@ -7258,7 +7360,9 @@ export function layLow(prev: GameState): GameState {
   p.last_crime_turn = s.turn;
   const drop = Math.min(heat, 12 + Math.min(8, p.skills?.social || 0) + (p.faction === "golge" ? 6 : 0));
   p.crime_heat = heat - drop;
-  push(s, "suç", `Bir ay başını eğip izini kaybettirdin; zaptiyenin takibi ${drop} azaldı.`, "kişisel", false, { k: "crime.layLow.done", p: [drop] });
+  const caseDrop = p.crime_case ? 10 + Math.min(8, p.skills?.social || 0) + (p.faction === "golge" ? 5 : 0) : 0;
+  if (p.crime_case) { p.crime_case.evidence = Math.max(0, p.crime_case.evidence - caseDrop); if (p.crime_case.evidence < 20) closeInvestigation(s, true); }
+  push(s, "suç", `Bir ay başını eğip izini kaybettirdin; zaptiyenin takibi ${drop} azaldı.`, "kişisel", false, { k: caseDrop ? "crime.layLow.done.case" : "crime.layLow.done", p: caseDrop ? [drop, caseDrop] : [drop] });
   return s;
 }
 // Suçun kurbanı gerçek bir insandır: yankesicilikte çarşıdan biri, dükkân soygununda bir esnaf, konakta varlıklı biri,
@@ -7328,7 +7432,8 @@ export function doCrime(prev: GameState, kind: CrimeKind, approach: CrimeApproac
     p.fear = Math.min(100, p.fear + ct.fear);
     bumpNam(p, "zalim", ct.nam);
     const witnessChance = approach === "sessiz" ? 0.10 : approach === "zor" ? 0.42 : 0.22;
-    witnessScandal(s, kind === "yankesicilik" || kind === "dukkan_soyma" ? "hirsizlik_tanigi" : "suc_tanigi", witnessChance, kurban?.id, undefined, () => gameRandom(s));
+    const seen = witnessScandal(s, kind === "yankesicilik" || kind === "dukkan_soyma" ? "hirsizlik_tanigi" : "suc_tanigi", witnessChance, kurban?.id, undefined, () => gameRandom(s));
+    if (p.crime_case && seen.length) { p.crime_case.evidence = Math.min(95, p.crime_case.evidence + 4 + ct.sev * 2); p.crime_case.left = Math.min(p.crime_case.left, 2); }
     const why = dread(s) > 30 ? " Korkulan adın kurbanını dondurdu." : "";
     push(s, "suç", `${ct.label} işini başardın (+${cash} akçe).${why}`, "kişisel", false, { k: "evj.crimeWin", p: [{ cr: kind }, cash, dread(s) > 30 ? { sfx: "sfx.crimeDread" } : ""] });
     if (hot > 0) push(s, "suç", `Ganimetin ${hot} akçelik kısmı sıcak mal; eritmek için kara borsa lazım.`, "kişisel", false, { k: "crime.hotGot", p: [hot] });
@@ -7398,6 +7503,8 @@ export function resolveCrimeScene(prev: GameState, choice: "saklan" | "rusvet" |
   if (escaped) {
     p.fear = Math.min(100, p.fear + 1);
     push(s, "suç", `Kesintiyi atlattın.`, "kişisel", true, note);
+    startOrDeepenInvestigation(s, kind, approach, intelQuality);
+    p.son_kurban = undefined;
     return s;
   }
   // Kaçamadın → yakalandın.
@@ -7408,12 +7515,14 @@ export function resolveCrimeScene(prev: GameState, choice: "saklan" | "rusvet" |
 // Yakalanma cezasını uygula (kesinti sahnesinden veya doğrudan). Şiddete göre ceza + tanık + tohum.
 function crimeCaught(s: GameState, kind: CrimeKind, direct = false, approach: CrimeApproach = "hile", intelQuality: 0 | 1 | 2 = 0) {
   const p = s.player; const ct = CRIME_TYPES[kind] || CRIME_TYPES.yankesicilik;
+  if (p.crime_case && !direct) { p.crime_case.evidence = Math.min(95, p.crime_case.evidence + 8 + ct.sev * 2); p.crime_case.left = Math.min(p.crime_case.left, 2); }
   // KADI DURUŞMASI: ağır suç (sev>=3) taçsız oyuncuyu önce mahkemeye çıkarır — ceza resolveTrial keser.
   if (!direct && !p.crowned && ct.sev >= 3 && !inJail(p) && !s.pendingScene) {
     const victim = p.son_kurban && s.turn - p.son_kurban.turn <= 2 ? nufusOf(s).k[p.son_kurban.id] : undefined;
     const witnesses = witnessScandal(s, kind === "yankesicilik" || kind === "dukkan_soyma" ? "hirsizlik_tanigi" : "suc_tanigi", 1, victim?.id, undefined, () => gameRandom(s));
     const approachEvidence = approach === "zor" ? 10 : approach === "sessiz" ? -8 : 0;
     const evidence = Math.max(20, Math.min(95, 20 + ct.sev * 8 + Math.round(crimeHeat(p) / 8) + approachEvidence + (victim ? 8 : 0) + witnesses.length * 6 - intelQuality * 6));
+    p.crime_case = undefined;
     s.pendingScene = { kind: "trial", ctx: { crime: kind, approach, evidence: String(evidence), witnesses: witnesses.join(","), victim: victim?.id || "" } };
     push(s, "suç_yakalandı", "Yakalandın! Zaptiye kolundan tuttu; kadı huzuruna çıkarılacaksın.", "kişisel", true, { k: "trial.opened", p: [{ cr: kind }] });
     return;
@@ -7421,6 +7530,7 @@ function crimeCaught(s: GameState, kind: CrimeKind, direct = false, approach: Cr
   // Taç sahibi kadıya değil tarihe hesap verir: zindan yerine meşruiyet bedeli (otorite + şeref),
   // skandal diyara yayılır — otorite eridikçe mevcut isyan/iddiacı sistemi tahtı kendiliğinden sallar.
   if (p.crowned) {
+    p.crime_case = undefined;
     const drop = 6 + ct.sev * 2;
     p.crownAuthority = clamp100(crownAuthorityOf(p) - drop);
     p.honor = Math.max(0, p.honor - ct.sev);
@@ -7440,6 +7550,7 @@ function crimeCaught(s: GameState, kind: CrimeKind, direct = false, approach: Cr
   { const kb = p.son_kurban && s.turn - p.son_kurban.turn <= 2 ? nufusOf(s).k[p.son_kurban.id] : undefined; p.son_kurban = undefined; // yakalandın: kurban seni tanır
     if (kb && kb.ol == null) { kurbanOgrenir(s, kb, true); push(s, "suç_yakalandı", `${kisiAdi(kb, "tr")} seni tanıdı; bunu ömür boyu unutmayacak.`, "kişisel", false, { k: "crime.kurbanTanidi", p: [knParam(kb)] }); } }
   if (ct.sev >= 3 && gameRandom(s) < 0.5) sowSeed(s, { kaynak: "suc_gecmisi", hmin: 24, hmax: 120, agirlik: "orta", nesil: false, etki: { money: -30, reputation: -4 } }, () => gameRandom(s));
+  if (direct) p.crime_case = undefined;
   push(s, "suç_yakalandı", `Yakalandın! ${fine} akçe ceza, itibarın sarsıldı.`, "kişisel", true, { k: "evj.crimeCaught", p: [fine, extra >= 4 ? { sfx: "sfx.crimeHard" } : ""] });
   if (p.health <= 0) die(s, `${p.name}, suçüstü yakalanıp can verdi.`, { k: "evj.dieCrime", p: [p.name] });
 }
@@ -11722,6 +11833,11 @@ export function migrate(s: GameState): GameState {
     const x = p.crime_intel; const kinds = ["yankesicilik", "dukkan_soyma", "soygun", "konak_soygunu"];
     if (!x || typeof x !== "object" || !kinds.includes(x.kind) || typeof x.loc !== "string" || !x.loc || !Number.isFinite(x.expires)) p.crime_intel = undefined;
     else { x.expires = Math.round(x.expires); x.quality = x.quality === 2 ? 2 : 1; if (x.victim_id !== undefined && typeof x.victim_id !== "string") delete x.victim_id; }
+  }
+  if (p.crime_case !== undefined) {
+    const x = p.crime_case; const kinds = ["yankesicilik", "dukkan_soyma", "soygun", "konak_soygunu"];
+    if (!x || typeof x !== "object" || !kinds.includes(x.kind) || typeof x.investigator_id !== "string" || !x.investigator_id || !Array.isArray(x.witnesses) || !Number.isFinite(x.evidence) || !Number.isFinite(x.left)) p.crime_case = undefined;
+    else { x.witnesses = [...new Set(x.witnesses.filter((id: unknown) => typeof id === "string"))].slice(0, 3); x.evidence = Math.max(0, Math.min(95, Math.round(x.evidence))); x.left = Math.max(1, Math.min(12, Math.round(x.left))); if (x.victim_id !== undefined && typeof x.victim_id !== "string") delete x.victim_id; }
   }
   if (typeof p.location_name !== "string" || !p.location_name) p.location_name = typeof p.home_name === "string" && p.home_name ? p.home_name : LOCATIONS[0];
   if (p.faction === undefined) p.faction = null;

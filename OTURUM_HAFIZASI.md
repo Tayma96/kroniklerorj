@@ -27,13 +27,15 @@
   kayıt yeniden açıldığında aynı sonucu verir. Diğer zar sistemleri kademeli taşınacak.
 - Ağır suç mahkemesi gerçek mağdur ve yaşayan görgü tanıklarını dosyaya bağlar; delil gücü
   görünen savunma/tanık oranlarını belirler, pahalı uzlaşma ayrı bir bedelli çıkış sunar.
+- Kaçılan ağır iş 3–6 aylık gerçek NPC soruşturmasına dönüşebilir; saklanma/sahte iz delili
+  düşürür, yeni suç dosyayı hızlandırır, olgun delil aynı mahkeme akışına taşınır.
 - Son kapı: tsc/bundle/göç/i18n/dil/MP, 7+75+99 aile senaryosu, 10 GDD akışı, 41.394
   olay metni, altı dil 320×568/4× CPU UI, web ve Android/Hermes temiz.
 
 ## Sırada
 
 1. Kayıtlı RNG'yi ticaret/yol/savaşa yay + ortak sonuç/neden dökümü.
-2. Soruşturmacı takibi ve 3–6 turluk NPC/aile sohbeti.
+2. 3–6 turluk NPC/aile sohbeti ve ilişkiye özgü ortak yaşam kararları.
 3. Ticaret–kervan–seyahat kararları, hoca/silsile, tam soy ağacı, LOD ve gerçek oyuncu testi.
 
 `mobile/AGENTS.md` kadansına uy. Sentetik testi altın kayıt/oyuncu testi, kısmî işi tam GDD diye sunma.

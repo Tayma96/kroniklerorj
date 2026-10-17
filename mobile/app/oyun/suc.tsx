@@ -4,7 +4,7 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { doCrime, resolveCrimeScene, CrimeKind, CrimeApproach, CRIME_APPROACHES, crimePlanPreview, crimeHeat, crimeIntelFor, crimeIntelTargetName, scoutCrime, layLow, fenceHotGoods, crimeUnlocked, crimeReq, underworldStanding, underworldTier, UNDERWORLD_TIERS, inJail, playDice, resolveTrial, trialEvidence, trialDefenseOdds, trialWitnessInfo, trialSettlementCost } from "../../lib/game";
+import { doCrime, resolveCrimeScene, CrimeKind, CrimeApproach, CRIME_APPROACHES, crimePlanPreview, crimeHeat, crimeIntelFor, crimeIntelTargetName, scoutCrime, layLow, fenceHotGoods, crimeUnlocked, crimeReq, underworldStanding, underworldTier, UNDERWORLD_TIERS, inJail, playDice, resolveTrial, trialEvidence, trialDefenseOdds, trialWitnessInfo, trialSettlementCost, crimeInvestigationInfo, crimeInvestigationMisdirectOdds, misdirectInvestigation } from "../../lib/game";
 import { C, F } from "../../lib/theme";
 import { GameIcon } from "../../lib/icons";
 import { useI18n, applyParams } from "../../lib/i18n";
@@ -42,6 +42,8 @@ export default function Suc() {
   const courtWitness = trialWitnessInfo(state, lang);
   const courtDefense = `${Math.round(trialDefenseOdds(state) * 100)}%`;
   const courtSettlement = trialSettlementCost(state);
+  const investigation = crimeInvestigationInfo(state, lang);
+  const misdirectOdds = `${Math.round(crimeInvestigationMisdirectOdds(state) * 100)}%`;
   const heatKey = heat >= 75 ? "crime.heat.severe" : heat >= 45 ? "crime.heat.high" : heat >= 20 ? "crime.heat.medium" : "crime.heat.low";
   const heatColor = heat >= 75 ? C.blood : heat >= 45 ? C.gold : C.sage;
   const Crime = ({ kind, title, desc }: { kind: CrimeKind; title: string; desc: string }) => {
@@ -153,6 +155,24 @@ export default function Suc() {
           </View>
         )}
 
+        {investigation && (
+          <View accessibilityLabel={`${t("crime.investigation.title")}. ${investigation.investigatorName}. ${applyParams(t("crime.investigation.summary"), [t(`trial.level.${investigation.level}`), investigation.left])}`} style={{ backgroundColor: "rgba(200,64,64,0.08)", borderWidth: 1, borderColor: investigation.level === "strong" ? C.blood : C.goldDim, borderLeftWidth: 3, borderLeftColor: C.blood, borderRadius: 11, padding: 13, marginBottom: 12 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+              <GameIcon name="scroll" size={16} color={C.blood} />
+              <Text style={{ flex: 1, fontFamily: F.display, fontSize: 11, letterSpacing: 1, color: C.ink }}>{t("crime.investigation.title").toUpperCase()}</Text>
+              <Text style={{ fontFamily: F.display, fontSize: 10.5, color: C.blood }}>{investigation.evidence}/100</Text>
+            </View>
+            <Text style={{ fontFamily: F.serif, fontSize: 12.5, color: C.parchment, marginTop: 7 }}>{applyParams(t("crime.investigation.investigator"), [investigation.investigatorName])}</Text>
+            <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted, lineHeight: 15, marginTop: 3 }}>{applyParams(t("crime.investigation.summary"), [t(`trial.level.${investigation.level}`), investigation.left])}</Text>
+            <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted, lineHeight: 15, marginTop: 2 }}>{applyParams(t("crime.investigation.case"), [t(`crime.${investigation.kind}.l`), investigation.witnessCount])}</Text>
+            {investigation.victimName && <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted, marginTop: 2 }}>{applyParams(t("trial.case.victim"), [investigation.victimName])}</Text>}
+            <Pressable accessibilityRole="button" accessibilityLabel={applyParams(t("crime.investigation.misdirect"), [misdirectOdds])} accessibilityState={{ disabled: crimeDone || inJail(state.player) || !!state.pendingScene }} disabled={crimeDone || inJail(state.player) || !!state.pendingScene} onPress={() => { hap("advance"); setSelectedCrime(null); apply((s) => misdirectInvestigation(s)); }} style={{ borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.bg, borderRadius: 8, padding: 10, marginTop: 9, opacity: crimeDone || inJail(state.player) || !!state.pendingScene ? 0.4 : 1 }}>
+              <Text style={{ fontFamily: F.display, fontSize: 11, color: C.parchment, textAlign: "center" }}>{applyParams(t("crime.investigation.misdirect"), [misdirectOdds])}</Text>
+              <Text style={{ fontFamily: F.serifItalic, fontSize: 10, color: C.parchmentMuted, textAlign: "center", marginTop: 2 }}>{t("crime.investigation.misdirect.d")}</Text>
+            </Pressable>
+          </View>
+        )}
+
         {res && (
           <Animated.View key={res.tick} entering={FadeInDown.duration(240)} style={{ backgroundColor: res.ok ? "rgba(127,166,106,0.10)" : "rgba(200,64,64,0.10)", borderWidth: 1, borderColor: res.ok ? "rgba(127,166,106,0.5)" : "rgba(200,64,64,0.5)", borderLeftWidth: 3, borderLeftColor: res.ok ? C.sage : C.blood, borderRadius: 10, padding: 12, marginBottom: 12 }}>
             <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.parchment, lineHeight: 19 }}>{res.text}</Text>
@@ -227,7 +247,8 @@ export default function Suc() {
       {/* Kadı duruşması — ağır suçun hükmü okunmadan son söz: Savun / Tanık / Boyun eğ */}
       {state.pendingScene?.kind === "trial" && (
         <View style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.72)", alignItems: "center", justifyContent: "center", padding: 22 }}>
-          <Animated.View entering={FadeInDown.duration(220)} style={{ width: "100%", maxWidth: 420, backgroundColor: C.card, borderWidth: 1.5, borderColor: C.ink, borderRadius: 14, padding: 18 }}>
+          <Animated.View entering={FadeInDown.duration(220)} style={{ width: "100%", maxWidth: 420, maxHeight: "90%", backgroundColor: C.card, borderWidth: 1.5, borderColor: C.ink, borderRadius: 14, overflow: "hidden" }}>
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 18 }}>
             <Text style={{ fontFamily: F.display, fontSize: 17, color: C.ink, textAlign: "center", letterSpacing: 0.5 }}>{t("trial.title")}</Text>
             <Text style={{ fontFamily: F.serif, fontSize: 13.5, color: C.parchment, textAlign: "center", lineHeight: 20, marginTop: 10 }}>{t("trial.text")}</Text>
             <View style={{ backgroundColor: C.bg, borderWidth: 1, borderColor: courtCase.level === "strong" ? C.blood : courtCase.level === "medium" ? C.goldDim : C.sage, borderRadius: 9, padding: 10, marginTop: 12, marginBottom: 8 }}>
@@ -249,6 +270,7 @@ export default function Suc() {
             <Pressable accessibilityRole="button" accessibilityLabel={t("trial.bowBtn")} onPress={() => { hap("selection"); apply((s) => resolveTrial(s, "boyun")); }} style={{ borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.bg, borderRadius: 9, paddingVertical: 12, marginTop: 8, alignItems: "center" }}>
               <Text style={{ fontFamily: F.display, fontSize: 12.5, color: C.parchment, letterSpacing: 0.3 }}>{t("trial.bowBtn")}</Text>
             </Pressable>
+            </ScrollView>
           </Animated.View>
         </View>
       )}
