@@ -1,7 +1,7 @@
 // Offline oyun çekirdeği (sürüm 3) — hayat döngüsü + NPC/ilişki/envanter/pazar.
 import type { EvtParam } from "./i18n";
 import { currentCalendar, playerAge, CalendarInfo } from "./calendar";
-import { ITEMS, marketGoods, locSeed, generateNPCs, NPC, generateDynasties, cityInfo, RivalHouse, houseNameIdx, localFirstName, SPECIALTIES, Item, WClass, npcAgeProfession, TRAITS, QUIRKS, GOALS, NPC_PROFS } from "./world";
+import { ITEMS, marketGoods, locSeed, generateNPCs, NPC, generateDynasties, cityInfo, RivalHouse, RivalCrisisKind, houseNameIdx, localFirstName, SPECIALTIES, Item, WClass, npcAgeProfession, TRAITS, QUIRKS, GOALS, NPC_PROFS } from "./world";
 import { Nufus, Kisi, Cins, NufusCtx, EskiDunya, OYUNCU, nufusKur, nufusYil, kadro, kisiAdi, hayalOf, huyOf, yeniGelen, nufusDegisti, olumOlasiligi, kisiNpc, kisiBaglari, yasOf, kardesler, bagEvrimi, kisiSil, kisiIlkAd, kisiSoyad } from "./nufus";
 import { Lang, professionNameL, goalL } from "./locale-data";
 import { tFor, kucukHarf, renderEvt } from "./i18n";
@@ -4207,16 +4207,52 @@ function tickFactions(s: GameState, announce: boolean) {
 export function ensureRivals(s: GameState): RivalHouse[] {
   if (!s.rivals) s.rivals = generateDynasties(s.seed);
   // Eski kayıt göçü: nameIdx yoksa TR addan türet (kültürel yerelleştirme için).
-  for (const h of s.rivals) if (h.nameIdx == null) h.nameIdx = houseNameIdx(h.name);
+  for (const h of s.rivals) {
+    if (h.nameIdx == null) h.nameIdx = houseNameIdx(h.name);
+    if (h.trend !== undefined && !Number.isFinite(h.trend)) delete h.trend;
+    if (h.crisis && (!(["miras", "borc", "kuraklik", "baskin"] as string[]).includes(h.crisis.kind) || !Number.isFinite(h.crisis.left) || h.crisis.left <= 0)) delete h.crisis;
+  }
   return s.rivals;
 }
-// Rakip hanedan tikİ (Vercel dynasties.py portu): güç mizaca göre sürüklenir + ara sıra hamle yaparlar.
+const RIVAL_TARGET: Record<string, number> = { "ihtiraslı": 74, "gururlu": 67, "kindar": 65, "sadık": 62, "temkinli": 60, "cömert": 57 };
+const RIVAL_CRISES: RivalCrisisKind[] = ["miras", "borc", "kuraklik", "baskin"];
+const RIVAL_CRISIS_HIT: Record<RivalCrisisKind, number> = { miras: 8, borc: 6, kuraklik: 5, baskin: 10 };
+// Saf aya yakın yardımcı: yüksek güç bakım yükü doğurur, zayıf hane kendi dengesine toparlanır.
+// Üç zar dışarıdan verilir; böylece kayıtlı RNG ve uzun dönem denge testi aynı hesabı kullanır.
+export function rivalHouseMonth(h: RivalHouse, noiseRoll: number, crisisRoll: number, kindRoll: number): { started?: RivalCrisisKind; ended?: RivalCrisisKind; delta: number } {
+  const before = h.power, target = RIVAL_TARGET[h.trait] ?? 62;
+  const gap = target - h.power;
+  let mean = gap >= 15 ? 2 : gap >= 6 ? 1 : gap <= -15 ? -2 : gap <= -6 ? -1 : 0;
+  let noise = Math.floor(Math.max(0, Math.min(0.999999, noiseRoll)) * 5) - 2;
+  if (h.trait === "temkinli") noise = Math.max(-1, Math.min(1, noise));
+  const upkeep = h.power >= 90 ? 2 : h.power >= 78 ? 1 : 0;
+  let started: RivalCrisisKind | undefined, ended: RivalCrisisKind | undefined;
+  if (h.crisis) {
+    mean += 1; // kriz sürerken hane bütünüyle çökmez; çevresi toparlanmaya çalışır
+    h.crisis.left -= 1;
+    if (h.crisis.left <= 0) { ended = h.crisis.kind; delete h.crisis; mean += 2; }
+  } else if (h.power > 35 && crisisRoll < 0.004) {
+    started = RIVAL_CRISES[Math.floor(Math.max(0, Math.min(0.999999, kindRoll)) * RIVAL_CRISES.length)];
+    h.crisis = { kind: started, left: started === "borc" ? 6 : started === "miras" ? 5 : 4 };
+    mean -= RIVAL_CRISIS_HIT[started];
+  }
+  h.power = Math.max(20, Math.min(100, h.power + mean + noise - upkeep));
+  const delta = h.power - before;
+  h.trend = Math.max(-12, Math.min(12, Math.round((h.trend || 0) * 0.65 + delta * 2)));
+  return { started, ended, delta };
+}
+export function rivalHouseDurumu(h: RivalHouse): "crisis" | "rising" | "falling" | "steady" {
+  if (h.crisis) return "crisis";
+  return (h.trend || 0) >= 3 ? "rising" : (h.trend || 0) <= -3 ? "falling" : "steady";
+}
+// Rakip hanedan tiki: güç, bakım yükü ve krizlerle iki yönde yaşar; haneler yıllar içinde 100'e yığılmaz.
 function tickDynasties(s: GameState, announce: boolean) {
   const rivals = ensureRivals(s);
   const p = s.player;
   for (const h of rivals) {
-    const drift = (h.trait === "ihtiraslı" ? 1 : 0) + Math.floor(Math.random() * 4) - 1;
-    h.power = Math.max(20, Math.min(100, h.power + drift));
+    const sonuc = rivalHouseMonth(h, gameRandom(s), gameRandom(s), gameRandom(s));
+    if (announce && sonuc.started) push(s, "hanedan_haber", `${h.name} hanesi bir sarsıntıya girdi; gücü geriliyor.`, "makro", true, { k: "rival.crisis.start." + sonuc.started, p: [{ hn: h.nameIdx }] });
+    else if (announce && sonuc.ended) push(s, "hanedan_haber", `${h.name} hanesi sarsıntıyı atlattı; ocağını yeniden topluyor.`, "makro", false, { k: "rival.crisis.end", p: [{ hn: h.nameIdx }] });
     // Oyuncuya tutum: yaşayan değer — oyuncunun nam/itibarına göre hedefe doğru sürüklenir (Vercel oyuncuya_tutum).
     const target = houseAttitude(p, h);
     h.tutum = Math.round(Math.max(-100, Math.min(100, (h.tutum ?? target) * 0.85 + target * 0.15)));
@@ -8246,7 +8282,7 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
   const nesilSeed = Math.floor(gameRandom(s) * 1e9);
   const ns: GameState = {
     turn: 0, seed: nesilSeed, rng_state: rngBaslangici(nesilSeed, 0, gen), world: { ready: true, npcYears: (prev.world?.npcYears || 0) + Math.floor(prev.turn / 12), inflation: prev.world?.inflation || 1 }, pop: heirPop, relationships: Object.fromEntries([...kardesIds, ...Object.keys(ataHatira).filter((id) => Math.abs(ataHatira[id]) >= 15)].map((id) => [id, 0])), dynasty, // atasını güçlü hatırlayan seni de tanır
-    ata_hatira: Object.keys(ataHatira).length ? ataHatira : undefined, soy_nam: Object.values(soyNam).some((v) => v > 0) ? soyNam : undefined, npc_state: {}, saga: prev.saga ? { ...prev.saga, scene: null, declined: 0 } : null, rivals: prev.rivals ? prev.rivals.map((h) => ({ ...h, tutum: Math.round((h.tutum ?? 0) / 2) })) : undefined,
+    ata_hatira: Object.keys(ataHatira).length ? ataHatira : undefined, soy_nam: Object.values(soyNam).some((v) => v > 0) ? soyNam : undefined, npc_state: {}, saga: prev.saga ? { ...prev.saga, scene: null, declined: 0 } : null, rivals: prev.rivals ? prev.rivals.map((h) => ({ ...h, crisis: h.crisis ? { ...h.crisis } : undefined, tutum: Math.round((h.tutum ?? 0) / 2) })) : undefined,
     // Kan davası NESLE GEÇER (adı üstünde): ısı yarılanır (yeni kuşakta kor küllenir ama sönmez), aylık hamle hakkı tazelenir.
     dil: prev.dil, // torunların adı da aynı dilde
     hseq: prev.hseq, // olay sırası kesintisiz sürer (ekranlar yeni olayı bununla tanır)
@@ -10605,8 +10641,8 @@ export function canClaimThrone(s: GameState): boolean {
 // İddianın başarı şansı: hane gücü en güçlü rakibe karşı, şöhret, savaş ve lonca desteğiyle ölçülür.
 export function throneOdds(s: GameState): number {
   const p = s.player;
-  const rivals = generateDynasties(s.seed);
-  const topRival = Math.max(100, ...rivals.map((h) => h.power));
+  const rivals = s.rivals || generateDynasties(s.seed); // yaşayan güç dengesi: kriz/geçmiş hamleler iddia gününde gerçekten hesaba katılır
+  const topRival = Math.max(60, ...rivals.map((h) => h.power)); // diyar bütünüyle çökmüşse bile asgarî siyasî direnç var; yaşayan haneler 60'ın üstünde sonucu değiştirir
   // Hane gücünün rakibe ÜSTÜNLÜĞÜ asıl belirleyici olsun: kişisel paye terimleri (şöhret/savaş/
   // saygınlık) beceri tavanı 10 ve sabit katkılarla 0.9 tavanını her nitelikli oyuncuda doldurup
   // tahtı garanti %90'a çeviriyordu. Yeniden kalibre: sınırda iddia gerçek bir kumar (~%68),
@@ -11596,6 +11632,7 @@ export function migrate(s: GameState): GameState {
   if (!Number.isFinite(s.turn)) s.turn = 0;
   if (!Number.isFinite(s.rng_state) || (s.rng_state! >>> 0) === 0) s.rng_state = rngBaslangici(s.seed, s.turn, Number.isFinite(p.generation) ? p.generation : 1);
   if (!Array.isArray(s.history)) s.history = [];
+  if (Array.isArray(s.rivals)) ensureRivals(s); // eski/elle düzenlenmiş hane trendi ve kriz alanlarını güvenli biçime getir
   if (s.saheserler !== undefined) {
     const tanim = new Map(SAHESERLER.map((x) => [x.id, x]));
     s.saheserler = Array.isArray(s.saheserler) ? s.saheserler.flatMap((x: any) => {

@@ -22,7 +22,7 @@ import { aileUyesi,
   appointableCities, canAppointGovernor, appointGovernor, dismissGovernor, APPOINT_FEE, crownTribute,
   inCourt, courtRankId,
   suppressPretender, reconcilePretender, PRETENDER_SUPPRESS_COST, PRETENDER_RECONCILE_COST,
-  ESTATE_TIERS, estateCost, upgradeEstate, VAKIF_DONATE_AMOUNTS, VAKIF_TIERS, donateVakif } from "../../lib/game";
+  ESTATE_TIERS, estateCost, upgradeEstate, VAKIF_DONATE_AMOUNTS, VAKIF_TIERS, donateVakif, rivalHouseDurumu } from "../../lib/game";
 import { generateDynasties, houseName as rivalHouseName, localFirstName } from "../../lib/world";
 import { professionNameL, placeName } from "../../lib/locale-data";
 import { GameIcon } from "../../lib/icons";
@@ -613,8 +613,8 @@ export default function Hanedan() {
           </>
         )}
         {(() => {
-          const mine = { id: "mine", name: houseName, power, mine: true, attitude: 0 };
-          const rivals = baseRivals.map((h) => ({ id: h.id, name: h.nameIdx != null ? rivalHouseName(h.nameIdx, lang) : h.name, power: h.power, mine: false, attitude: h.tutum ?? houseAttitude(p, h) }));
+          const mine = { id: "mine", name: houseName, power, mine: true, attitude: 0, trend: 0, crisis: undefined, trait: "", pride: 0, nameIdx: -1 };
+          const rivals = baseRivals.map((h) => ({ ...h, name: h.nameIdx != null ? rivalHouseName(h.nameIdx, lang) : h.name, mine: false, attitude: h.tutum ?? houseAttitude(p, h) }));
           const all = [...rivals, mine].sort((a, b) => b.power - a.power);
           return (
             <>
@@ -679,7 +679,8 @@ export default function Hanedan() {
                   <Text style={{ fontFamily: F.display, fontSize: 13, color: C.goldDim, width: 24 }}>{i + 1}.</Text>
                   <View style={{ flex: 1 }}>
                     <Text style={{ fontFamily: F.display, fontSize: 13, color: h.mine ? C.gold : C.parchment }}>{h.name}{h.mine ? t("dyn.you") : ""}</Text>
-                    <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted }}>{t("dyn.power")} {h.power}</Text>
+                    <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted }}>{t("dyn.power")} {h.power}{!h.mine ? ` · ${t("rival.state." + rivalHouseDurumu(h))}` : ""}</Text>
+                    {!h.mine && h.crisis && <Text style={{ fontFamily: F.serifItalic, fontSize: 9.5, color: C.ember, marginTop: 2 }}>{t("rival.crisis." + h.crisis.kind)}</Text>}
                   </View>
                   {!h.mine && (
                     <View style={{ backgroundColor: attTone(h.attitude) + "1A", borderWidth: 1, borderColor: attTone(h.attitude) + "55", borderRadius: 6, paddingVertical: 3, paddingHorizontal: 8 }}>
