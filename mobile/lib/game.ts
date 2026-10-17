@@ -93,6 +93,7 @@ export interface Player {
   last_crime_turn?: number; // son suç denemesi turu (ay başına tek deneme; risksiz spam önlenir)
   crime_wins?: number; // başarıyla tamamlanan suç sayısı — yeraltı namı; ağır işler bununla açılır (merdiven)
   crime_heat?: number; // 0-100: zaptiyenin üstündeki izi; yeni işlerin yakalanma riskini büyütür, zamanla söner
+  crime_intel?: { kind: CrimeKind; loc: string; expires: number; quality: 1 | 2; victim_id?: string }; // bir suç için önceden gözlenen gerçek hedef ve süreli hazırlık
   governorships?: string[]; // valisi olunan şehirler
   legacy?: Record<string, boolean>; // kalıcı görkem eserleri (vakıf/anıt/imaret) — bir kez kurulur
   govLeg?: Record<string, number>; // valilik meşruiyeti (şehir → 0-100); düşerse isyan/azil
@@ -3764,6 +3765,7 @@ export function advance(prev: GameState, n = 1): GameState {
     s.player.age = playerAge(s.player.base_age, s.turn);
     // Suç izi zamanla soğur; Gölge Kardeşliği saklanacak kapı ve haber ağı sayesinde daha çabuk kaybettirir.
     if ((s.player.crime_heat || 0) > 0) s.player.crime_heat = Math.max(0, (s.player.crime_heat || 0) - (s.player.faction === "golge" ? 3 : 2));
+    if (s.player.crime_intel && s.player.crime_intel.expires < s.turn) delete s.player.crime_intel;
     // Yıl dönümü: yaş günün geldi — yılın kısa muhasebesi kroniğe (landmark) düşer; hayat "yaşanmış" hissettirir.
     if (s.turn % 12 === 0 && !s.player.dead) {
       const pl = s.player;
@@ -7070,6 +7072,10 @@ export function underworldTier(p: Player): number {
 export function crimeHeat(p: Player): number {
   return Math.max(0, Math.min(100, Number.isFinite(p.crime_heat) ? Math.round(p.crime_heat!) : 0));
 }
+export function crimeIntelFor(s: GameState, kind: CrimeKind): Player["crime_intel"] | null {
+  const intel = s.player.crime_intel;
+  return intel && intel.kind === kind && intel.loc === s.player.location_name && intel.expires >= s.turn ? intel : null;
+}
 // Oyuncunun seçmeden önce gördüğü oranlar, çözümde kullanılan oranların aynısıdır: karar okunabilir, sonuç yine risklidir.
 export function crimePlanPreview(s: GameState, kind: CrimeKind, approach: CrimeApproach = "hile"): CrimePlanPreview {
   const p = s.player; const ct = CRIME_TYPES[kind] || CRIME_TYPES.yankesicilik;
@@ -7087,9 +7093,12 @@ export function crimePlanPreview(s: GameState, kind: CrimeKind, approach: CrimeA
     execution = ct.base + effStat(p, "charisma") * 0.01 + common;
     attentionMult = 1; loot = 1; heatMult = 1;
   }
+  const intel = crimeIntelFor(s, kind);
+  if (intel) execution += intel.quality === 2 ? 0.10 : 0.06;
   const baseAttention = ct.sev * 0.05 + dread(s) / 100 * 0.15 + crimeHeat(p) / 220;
   const golgeGizli = p.faction === "golge" ? 0.5 : 1;
-  const pursuit = Math.max(0.02, Math.min(0.85, baseAttention * attentionMult * golgeGizli));
+  const intelCover = intel ? (intel.quality === 2 ? 0.65 : 0.80) : 1;
+  const pursuit = Math.max(0.02, Math.min(0.85, baseAttention * attentionMult * golgeGizli * intelCover));
   const success = Math.max(0.08, Math.min(0.92, Math.max(0.08, Math.min(0.92, execution)) * (1 - pursuit)));
   return {
     success,
@@ -7119,6 +7128,30 @@ function kurbanSec(s: GameState, kind: CrimeKind): Kisi | undefined {
   const hedef = kind === "dukkan_soyma" ? yer.filter((k) => DUKKANCI.has(k.prof)) : kind === "konak_soygunu" ? yer.filter((k) => k.usta || k.prof === "kuyumcu" || k.prof === "tüccar" || k.prof === "hancı") : yer;
   const h = hedef.length ? hedef : yer; return h.length ? h[Math.floor(gameRandom(s) * h.length)] : undefined;
 }
+function crimeIntelVictim(s: GameState, kind: CrimeKind): Kisi | undefined {
+  const intel = crimeIntelFor(s, kind); if (!intel?.victim_id) return undefined;
+  const k = nufusOf(s).k[intel.victim_id]; if (!k || k.ol != null || worldYears(s) - k.dy < 18 || oyuncuAkrabasi(s.player, k.id)) return undefined;
+  const inReach = kind === "soygun"
+    ? k.loc !== s.player.location_name && regionOf(k.loc) === regionOf(s.player.location_name)
+    : k.loc === s.player.location_name;
+  return inReach ? k : undefined;
+}
+export function crimeIntelTargetName(s: GameState, kind: CrimeKind, lang: Lang = "tr"): string | null {
+  const k = crimeIntelVictim(s, kind); return k ? kisiAdi(k, lang) : null;
+}
+// Keşif bir aylık suç hakkını harcar; seçilen gerçek hedef ve açık birkaç ay saklanır.
+export function scoutCrime(prev: GameState, kind: CrimeKind): GameState {
+  const s = clone(prev); const p = s.player;
+  if (p.dead || p.age < 13 || inJail(p) || s.pendingScene || !crimeUnlocked(p, kind) || p.last_crime_turn === s.turn || crimeIntelFor(s, kind)) return s;
+  p.last_crime_turn = s.turn;
+  const victim = kurbanSec(s, kind);
+  const quality: 1 | 2 = p.faction === "golge" || effStat(p, "intelligence") + Math.min(5, p.skills?.social || 0) >= 10 ? 2 : 1;
+  p.crime_intel = { kind, loc: p.location_name, expires: s.turn + 4, quality, victim_id: victim?.id };
+  addStatXp(s, "intelligence", 3); gainSkill(s, "social", 2);
+  const hedef: EvtParam = victim ? knParam(victim) : { tq: "crime.scout.target.generic" };
+  push(s, "suç", `${CRIME_TYPES[kind].label} için çevreyi gözledin; ${victim ? kisiAdi(victim, "tr") : "uygun bir hedef"} hakkında açık buldun.`, "kişisel", false, { k: `crime.scout.done.${quality}`, p: [{ cr: kind }, hedef] });
+  return s;
+}
 // Kurban seni öğrenir: anısına yazılır (yakınlarına da dokunur), dedikodusu dolaşır.
 function kurbanOgrenir(s: GameState, k: Kisi, tam: boolean) {
   remember(s, { id: k.id, name: kisiAdi(k, "tr") }, "soyulma", tam ? undefined : { yuk: -15 });
@@ -7133,9 +7166,12 @@ export function doCrime(prev: GameState, kind: CrimeKind, approach: CrimeApproac
   if (p.last_crime_turn === s.turn) return s;          // ay başına tek suç denemesi (risksiz spam ile para basma önlenir)
   p.last_crime_turn = s.turn;
   const ct = CRIME_TYPES[kind] || CRIME_TYPES.yankesicilik;
+  const intel = crimeIntelFor(s, kind);
   const plan = crimePlanPreview(s, kind, approach);
   p.crime_heat = Math.min(100, crimeHeat(p) + plan.heatGain);
-  const kurban = kurbanSec(s, kind); p.son_kurban = kurban ? { id: kurban.id, turn: s.turn } : undefined;
+  const kurban = crimeIntelVictim(s, kind) || kurbanSec(s, kind);
+  if (intel) delete p.crime_intel;
+  p.son_kurban = kurban ? { id: kurban.id, turn: s.turn } : undefined;
   const success = gameRandom(s) < plan.success;
   gainSkill(s, approach === "zor" ? "combat" : "social", 4);
   if (success) {
@@ -11453,6 +11489,11 @@ export function migrate(s: GameState): GameState {
   const SAYI_VARSAYILAN: Record<string, number> = { money: 0, health: 60, hunger: 60, reputation: 0, honor: 0, fear: 0, fame: 0 };
   for (const [k, v] of Object.entries(SAYI_VARSAYILAN)) if (!Number.isFinite(p[k])) p[k] = v;
   if (p.crime_heat !== undefined) p.crime_heat = Number.isFinite(p.crime_heat) ? Math.max(0, Math.min(100, Math.round(p.crime_heat))) : undefined;
+  if (p.crime_intel !== undefined) {
+    const x = p.crime_intel; const kinds = ["yankesicilik", "dukkan_soyma", "soygun", "konak_soygunu"];
+    if (!x || typeof x !== "object" || !kinds.includes(x.kind) || typeof x.loc !== "string" || !x.loc || !Number.isFinite(x.expires)) p.crime_intel = undefined;
+    else { x.expires = Math.round(x.expires); x.quality = x.quality === 2 ? 2 : 1; if (x.victim_id !== undefined && typeof x.victim_id !== "string") delete x.victim_id; }
+  }
   if (typeof p.location_name !== "string" || !p.location_name) p.location_name = typeof p.home_name === "string" && p.home_name ? p.home_name : LOCATIONS[0];
   if (p.faction === undefined) p.faction = null;
   if (p.horse && !p.horse_name) p.horse_name = evcilAd(s, "at"); // eski kayıt: at adları sonradan geldi — adsız at cümleyi bozmasın

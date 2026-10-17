@@ -4,7 +4,7 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { doCrime, resolveCrimeScene, CrimeKind, CrimeApproach, CRIME_APPROACHES, crimePlanPreview, crimeHeat, layLow, fenceHotGoods, crimeUnlocked, crimeReq, underworldStanding, underworldTier, UNDERWORLD_TIERS, inJail, playDice, resolveTrial, hasTrialWitness } from "../../lib/game";
+import { doCrime, resolveCrimeScene, CrimeKind, CrimeApproach, CRIME_APPROACHES, crimePlanPreview, crimeHeat, crimeIntelFor, crimeIntelTargetName, scoutCrime, layLow, fenceHotGoods, crimeUnlocked, crimeReq, underworldStanding, underworldTier, UNDERWORLD_TIERS, inJail, playDice, resolveTrial, hasTrialWitness } from "../../lib/game";
 import { C, F } from "../../lib/theme";
 import { GameIcon } from "../../lib/icons";
 import { useI18n, applyParams } from "../../lib/i18n";
@@ -14,7 +14,7 @@ import { BackLabel, PageHeader, ScreenFresk } from "../../lib/ui";
 export default function Suc() {
   const insets = useSafeAreaInsets(); const router = useRouter();
   const { state, apply } = useGame();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const [res, setRes] = useState<null | { text: string; ok: boolean; tick: number }>(null);
   const [selectedCrime, setSelectedCrime] = useState<CrimeKind | null>(null);
   const seen = useRef<number | null>(state ? state.hseq ?? 0 : null); // görülen son olay sırası
@@ -46,6 +46,8 @@ export default function Suc() {
     const jailed = inJail(state.player); // hücrede buton da kapalı — sessiz no-op yerine görünür kilit
     const blocked = crimeDone || locked || jailed || !!state.pendingScene;
     const expanded = selectedCrime === kind && !blocked;
+    const intel = crimeIntelFor(state, kind);
+    const intelTarget = crimeIntelTargetName(state, kind, lang);
     return (
       <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: expanded ? C.ink : "rgba(123,79,175,0.4)", borderLeftWidth: 2.5, borderLeftColor: C.ink, borderRadius: 11, marginBottom: 10, opacity: blocked ? 0.45 : 1, overflow: "hidden" }}>
         <Pressable accessibilityRole="button" accessibilityLabel={`${title}. ${locked ? applyParams(t("suc.lockReq"), [crimeReq(state.player, kind), standing]) : desc}`} accessibilityState={{ disabled: blocked, expanded }} disabled={blocked} onPress={() => { hap("selection"); setSelectedCrime(expanded ? null : kind); }} style={{ flexDirection: "row", alignItems: "center", gap: 12, padding: 14 }}>
@@ -60,6 +62,17 @@ export default function Suc() {
         </Pressable>
         {expanded && (
           <Animated.View entering={FadeInDown.duration(180)} style={{ borderTopWidth: 1, borderTopColor: "rgba(123,79,175,0.3)", padding: 10 }}>
+            {intel ? (
+              <View style={{ backgroundColor: "rgba(127,166,106,0.10)", borderWidth: 1, borderColor: "rgba(127,166,106,0.45)", borderRadius: 9, padding: 10, marginBottom: 8 }}>
+                <Text style={{ fontFamily: F.display, fontSize: 10.5, color: C.sage }}>{applyParams(t(`crime.scout.ready.${intel.quality}`), [intel.expires - state.turn + 1])}</Text>
+                {intelTarget && <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted, marginTop: 3 }}>{applyParams(t("crime.scout.target"), [intelTarget])}</Text>}
+              </View>
+            ) : (
+              <Pressable accessibilityRole="button" accessibilityLabel={`${t("crime.scout")}. ${t(state.player.crime_intel ? "crime.scout.replace" : "crime.scout.d")}`} onPress={() => { hap("advance"); setSelectedCrime(null); apply((s) => scoutCrime(s, kind)); }} style={{ backgroundColor: "rgba(201,168,76,0.08)", borderWidth: 1, borderColor: "rgba(201,168,76,0.4)", borderRadius: 9, padding: 10, marginBottom: 8 }}>
+                <Text style={{ fontFamily: F.display, fontSize: 11, color: C.gold, textAlign: "center" }}>{t("crime.scout")}</Text>
+                <Text style={{ fontFamily: F.serifItalic, fontSize: 10, color: C.parchmentMuted, textAlign: "center", lineHeight: 14, marginTop: 2 }}>{t(state.player.crime_intel ? "crime.scout.replace" : "crime.scout.d")}</Text>
+              </Pressable>
+            )}
             <Text style={{ fontFamily: F.display, fontSize: 9.5, letterSpacing: 1.2, color: C.goldDim, marginBottom: 6 }}>{t("crime.plan.choose").toUpperCase()}</Text>
             {CRIME_APPROACHES.map((approach: CrimeApproach) => {
               const plan = crimePlanPreview(state, kind, approach);

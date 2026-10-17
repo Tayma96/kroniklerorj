@@ -79,6 +79,44 @@ const copy = (x) => structuredClone(x);
   assert(quietHide && forceRun && trickBribe, "Yaklaşımın kesinti sahnesindeki uzmanlığı çalışmadı: " + JSON.stringify({ quietHide, forceRun, trickBribe }));
   cases += 3;
 
+  const scoutBase = copy(base); scoutBase.rng_state = 0x9e3779b1; delete scoutBase.player.last_crime_turn;
+  const scouted = noAmbient(() => g.scoutCrime(copy(scoutBase), "yankesicilik"));
+  assert.deepEqual(scouted, noAmbient(() => g.scoutCrime(copy(scoutBase), "yankesicilik")), "Keşif aynı kayıtta değişti");
+  assert.equal(scouted.player.last_crime_turn, scouted.turn, "Keşif aylık suç hakkını tüketmedi");
+  assert.equal(scouted.player.crime_intel.kind, "yankesicilik");
+  assert.equal(scouted.player.crime_intel.quality, 2, "Gölge Kardeşliği nitelikli keşif vermedi");
+  assert.equal(scouted.player.crime_intel.expires, scouted.turn + 4);
+  assert(g.crimeIntelTargetName(scouted, "yankesicilik", "tr"), "Keşif gerçek NPC hedef seçmedi");
+  const rawPlan = g.crimePlanPreview(scoutBase, "yankesicilik", "hile");
+  const preparedPlan = g.crimePlanPreview(scouted, "yankesicilik", "hile");
+  assert(preparedPlan.success > rawPlan.success && preparedPlan.attention < rawPlan.attention, "Keşif görünen ve gerçek oranı iyileştirmedi");
+  const scoutEvent = scouted.history.at(-1); assert.equal(scoutEvent.k, "crime.scout.done.2");
+  for (const lang of ["tr", "en", "es", "pt", "ar", "ru"]) {
+    for (const key of ["crime.scout", "crime.scout.d", "crime.scout.replace", "crime.scout.ready.1", "crime.scout.ready.2", "crime.scout.target", "crime.scout.target.generic"]) assert.notEqual(tFor(lang, key), key, lang + " keşif çevirisi eksik: " + key);
+    const line = renderEvt(scoutEvent.k, scoutEvent.text, scoutEvent.p, lang, (key) => tFor(lang, key), true);
+    assert(line && !/undefined|NaN|%[a-zA-Z0-9]|crime\./.test(line), lang + " keşif olayı bozuk: " + line);
+  }
+  cases += 2;
+
+  const oldTarget = scouted.player.crime_intel.victim_id;
+  let usedIntel = false;
+  for (let seed = 1; seed <= 400 && !usedIntel; seed++) {
+    const ready = copy(scouted); ready.turn += 1; ready.rng_state = Math.imul(seed, 0x9e3779b1) >>> 0; delete ready.player.last_crime_turn;
+    const out = noAmbient(() => g.doCrime(ready, "yankesicilik", "hile"));
+    if (out.pendingScene?.kind === "crime") {
+      assert.equal(out.player.son_kurban?.id, oldTarget, "Hazırlanan gerçek hedef suçta kullanılmadı");
+      assert.equal(out.player.crime_intel, undefined, "Kullanılan keşif tüketilmedi");
+      usedIntel = true;
+    }
+  }
+  assert(usedIntel, "Hazırlanmış suçun kesinti yolu kapsanmadı"); cases++;
+
+  const expiring = copy(scouted); expiring.player.crime_intel.expires = expiring.turn;
+  try { Math.random = () => 0.5; assert.equal(g.advance(expiring).player.crime_intel, undefined, "Süresi dolan keşif temizlenmedi"); }
+  finally { Math.random = original; }
+  const badIntel = copy(base); badIntel.player.crime_intel = { kind: "uydurma", loc: 4, expires: "sonra", quality: 9 };
+  assert.equal(g.migrate(badIntel).player.crime_intel, undefined, "Bozuk keşif kaydı onarılmadı"); cases += 2;
+
   const hiding = copy(base); hiding.player.crime_heat = 52; delete hiding.player.last_crime_turn;
   const laid = g.layLow(hiding);
   assert(laid.player.crime_heat < hiding.player.crime_heat, "İz kaybettirme izi azaltmadı");
@@ -100,5 +138,5 @@ const copy = (x) => structuredClone(x);
   const broken = copy(base); broken.player.crime_heat = "yoğun"; assert.equal(g.migrate(broken).player.crime_heat, undefined);
   cases += 2;
 
-  console.log(`SUÇ PLANI: TEMİZ · ${cases} senaryo · 4 suç × 3 yaklaşım · görünür oran · kalıcı iz · aylık soğuma · iz kaybettirme · kayıtlı zar · eski kayıt · 6 dil`);
+  console.log(`SUÇ PLANI: TEMİZ · ${cases} senaryo · 4 suç × 3 yaklaşım · gerçek hedefli keşif · görünür oran · kalıcı iz · aylık soğuma · iz kaybettirme · kayıtlı zar · eski kayıt · 6 dil`);
 })().catch((e) => { console.error(e.stack); process.exitCode = 1; });
