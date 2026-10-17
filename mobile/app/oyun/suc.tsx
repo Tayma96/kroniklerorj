@@ -4,7 +4,7 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { doCrime, resolveCrimeScene, CrimeKind, CrimeApproach, CRIME_APPROACHES, crimePlanPreview, crimeHeat, crimeIntelFor, crimeIntelTargetName, scoutCrime, layLow, fenceHotGoods, crimeUnlocked, crimeReq, underworldStanding, underworldTier, UNDERWORLD_TIERS, inJail, playDice, resolveTrial, hasTrialWitness } from "../../lib/game";
+import { doCrime, resolveCrimeScene, CrimeKind, CrimeApproach, CRIME_APPROACHES, crimePlanPreview, crimeHeat, crimeIntelFor, crimeIntelTargetName, scoutCrime, layLow, fenceHotGoods, crimeUnlocked, crimeReq, underworldStanding, underworldTier, UNDERWORLD_TIERS, inJail, playDice, resolveTrial, trialEvidence, trialDefenseOdds, trialWitnessInfo, trialSettlementCost } from "../../lib/game";
 import { C, F } from "../../lib/theme";
 import { GameIcon } from "../../lib/icons";
 import { useI18n, applyParams } from "../../lib/i18n";
@@ -38,6 +38,10 @@ export default function Suc() {
   const crimeDone = state.player.last_crime_turn === state.turn || state.player.dead;
   const standing = underworldStanding(state.player);
   const heat = crimeHeat(state.player);
+  const courtCase = trialEvidence(state, lang);
+  const courtWitness = trialWitnessInfo(state, lang);
+  const courtDefense = `${Math.round(trialDefenseOdds(state) * 100)}%`;
+  const courtSettlement = trialSettlementCost(state);
   const heatKey = heat >= 75 ? "crime.heat.severe" : heat >= 45 ? "crime.heat.high" : heat >= 20 ? "crime.heat.medium" : "crime.heat.low";
   const heatColor = heat >= 75 ? C.blood : heat >= 45 ? C.gold : C.sage;
   const Crime = ({ kind, title, desc }: { kind: CrimeKind; title: string; desc: string }) => {
@@ -225,12 +229,26 @@ export default function Suc() {
         <View style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.72)", alignItems: "center", justifyContent: "center", padding: 22 }}>
           <Animated.View entering={FadeInDown.duration(220)} style={{ width: "100%", maxWidth: 420, backgroundColor: C.card, borderWidth: 1.5, borderColor: C.ink, borderRadius: 14, padding: 18 }}>
             <Text style={{ fontFamily: F.display, fontSize: 17, color: C.ink, textAlign: "center", letterSpacing: 0.5 }}>{t("trial.title")}</Text>
-            <Text style={{ fontFamily: F.serif, fontSize: 13.5, color: C.parchment, textAlign: "center", lineHeight: 20, marginTop: 10, marginBottom: 16 }}>{t("trial.text")}</Text>
-            {([["savun", "trial.defBtn", true], ["tanik", "trial.witBtn", hasTrialWitness(state)], ["boyun", "trial.bowBtn", true]] as const).map(([ch, key, ok]) => (
-              <Pressable key={ch} disabled={!ok} onPress={() => { hap("selection"); apply((s) => resolveTrial(s, ch)); }} style={{ borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.bg, borderRadius: 9, paddingVertical: 12, marginTop: 8, alignItems: "center", opacity: ok ? 1 : 0.4 }}>
-                <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchment, letterSpacing: 0.5 }}>{t(key)}</Text>
+            <Text style={{ fontFamily: F.serif, fontSize: 13.5, color: C.parchment, textAlign: "center", lineHeight: 20, marginTop: 10 }}>{t("trial.text")}</Text>
+            <View style={{ backgroundColor: C.bg, borderWidth: 1, borderColor: courtCase.level === "strong" ? C.blood : courtCase.level === "medium" ? C.goldDim : C.sage, borderRadius: 9, padding: 10, marginTop: 12, marginBottom: 8 }}>
+              <Text style={{ fontFamily: F.display, fontSize: 11, color: C.parchment, textAlign: "center" }}>{applyParams(t("trial.case"), [t(`trial.level.${courtCase.level}`), courtCase.witnessCount])}</Text>
+              {courtCase.victimName && <Text style={{ fontFamily: F.serif, fontSize: 10.5, color: C.parchmentMuted, textAlign: "center", marginTop: 4 }}>{applyParams(t("trial.case.victim"), [courtCase.victimName])}</Text>}
+              {!!courtCase.witnessNames.length && <Text style={{ fontFamily: F.serif, fontSize: 10.5, color: C.parchmentMuted, textAlign: "center", marginTop: 2 }}>{applyParams(t("trial.case.people"), [courtCase.witnessNames.join(", ")])}</Text>}
+            </View>
+            <Pressable accessibilityRole="button" accessibilityLabel={applyParams(t("trial.defBtn.odds"), [courtDefense])} onPress={() => { hap("selection"); apply((s) => resolveTrial(s, "savun")); }} style={{ borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.bg, borderRadius: 9, paddingVertical: 12, paddingHorizontal: 8, marginTop: 8, alignItems: "center" }}>
+              <Text style={{ fontFamily: F.display, fontSize: 12.5, color: C.parchment, letterSpacing: 0.3, textAlign: "center" }}>{applyParams(t("trial.defBtn.odds"), [courtDefense])}</Text>
+            </Pressable>
+            <Pressable accessibilityRole="button" accessibilityLabel={courtWitness ? applyParams(t("trial.witBtn.named"), [courtWitness.name, `${Math.round(courtWitness.chance * 100)}%`]) : t("trial.witBtn.none")} accessibilityState={{ disabled: !courtWitness }} disabled={!courtWitness} onPress={() => { hap("selection"); apply((s) => resolveTrial(s, "tanik")); }} style={{ borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.bg, borderRadius: 9, paddingVertical: 12, paddingHorizontal: 8, marginTop: 8, alignItems: "center", opacity: courtWitness ? 1 : 0.4 }}>
+              <Text style={{ fontFamily: F.display, fontSize: 12.5, color: C.parchment, letterSpacing: 0.3, textAlign: "center" }}>{courtWitness ? applyParams(t("trial.witBtn.named"), [courtWitness.name, `${Math.round(courtWitness.chance * 100)}%`]) : t("trial.witBtn.none")}</Text>
+            </Pressable>
+            {courtSettlement != null && (
+              <Pressable accessibilityRole="button" accessibilityLabel={applyParams(t(state.player.money >= courtSettlement ? "trial.settleBtn" : "trial.settle.noFunds"), [courtSettlement])} accessibilityState={{ disabled: state.player.money < courtSettlement }} disabled={state.player.money < courtSettlement} onPress={() => { hap("selection"); apply((s) => resolveTrial(s, "uzlas")); }} style={{ borderWidth: 1, borderColor: C.goldDim, backgroundColor: "rgba(201,168,76,0.08)", borderRadius: 9, paddingVertical: 12, paddingHorizontal: 8, marginTop: 8, alignItems: "center", opacity: state.player.money >= courtSettlement ? 1 : 0.4 }}>
+                <Text style={{ fontFamily: F.display, fontSize: 12.5, color: C.gold, letterSpacing: 0.3, textAlign: "center" }}>{applyParams(t(state.player.money >= courtSettlement ? "trial.settleBtn" : "trial.settle.noFunds"), [courtSettlement])}</Text>
               </Pressable>
-            ))}
+            )}
+            <Pressable accessibilityRole="button" accessibilityLabel={t("trial.bowBtn")} onPress={() => { hap("selection"); apply((s) => resolveTrial(s, "boyun")); }} style={{ borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.bg, borderRadius: 9, paddingVertical: 12, marginTop: 8, alignItems: "center" }}>
+              <Text style={{ fontFamily: F.display, fontSize: 12.5, color: C.parchment, letterSpacing: 0.3 }}>{t("trial.bowBtn")}</Text>
+            </Pressable>
           </Animated.View>
         </View>
       )}

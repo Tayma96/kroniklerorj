@@ -25,13 +25,15 @@
   küçük korunur; sıra evlat→torun→yeğen→yetişmiş çırak. Ölüler hayalet eylem üretmez.
 - Kayıtlı RNG altyapısı kuruldu; suç, kaçış, kara borsa, mahkeme ve yeni nesil tohumu aynı
   kayıt yeniden açıldığında aynı sonucu verir. Diğer zar sistemleri kademeli taşınacak.
+- Ağır suç mahkemesi gerçek mağdur ve yaşayan görgü tanıklarını dosyaya bağlar; delil gücü
+  görünen savunma/tanık oranlarını belirler, pahalı uzlaşma ayrı bir bedelli çıkış sunar.
 - Son kapı: tsc/bundle/göç/i18n/dil/MP, 7+75+99 aile senaryosu, 10 GDD akışı, 41.394
   olay metni, altı dil 320×568/4× CPU UI, web ve Android/Hermes temiz.
 
 ## Sırada
 
 1. Kayıtlı RNG'yi ticaret/yol/savaşa yay + ortak sonuç/neden dökümü.
-2. Suçta delil–şahit–soruşturmacı–uzlaşma ve 3–6 turluk NPC/aile sohbeti.
+2. Soruşturmacı takibi ve 3–6 turluk NPC/aile sohbeti.
 3. Ticaret–kervan–seyahat kararları, hoca/silsile, tam soy ağacı, LOD ve gerçek oyuncu testi.
 
 `mobile/AGENTS.md` kadansına uy. Sentetik testi altın kayıt/oyuncu testi, kısmî işi tam GDD diye sunma.

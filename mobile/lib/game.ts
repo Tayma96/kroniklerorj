@@ -7340,7 +7340,7 @@ export function doCrime(prev: GameState, kind: CrimeKind, approach: CrimeApproac
     return s;
   }
   // ── Kesinti anı (Vercel interrupt sahnesi): yakalanmak üzeresin — oyuncu seçer (Saklan/Rüşvet/Kaç).
-  s.pendingScene = { kind: "crime", ctx: { crime: kind, approach } };
+  s.pendingScene = { kind: "crime", ctx: { crime: kind, approach, intel: String(intel?.quality || 0) } };
   return s;
 }
 
@@ -7367,6 +7367,7 @@ export function resolveCrimeScene(prev: GameState, choice: "saklan" | "rusvet" |
   if (s.pendingScene?.kind !== "crime") return s;      // yalnız bekleyen suç sahnesi çözülür (yanlış çağrı koruması)
   const kind = (s.pendingScene?.ctx?.crime as CrimeKind) || "yankesicilik";
   const approach = (["sessiz", "hile", "zor"].includes(s.pendingScene?.ctx?.approach) ? s.pendingScene.ctx.approach : "hile") as CrimeApproach;
+  const intelQuality = Math.max(0, Math.min(2, Number(s.pendingScene?.ctx?.intel || 0))) as 0 | 1 | 2;
   s.pendingScene = null;
   const ct = CRIME_TYPES[kind] || CRIME_TYPES.yankesicilik;
   const golgeBonus = p.faction === "golge" ? 0.12 : 0;
@@ -7400,16 +7401,20 @@ export function resolveCrimeScene(prev: GameState, choice: "saklan" | "rusvet" |
     return s;
   }
   // Kaçamadın → yakalandın.
-  crimeCaught(s, kind);
+  crimeCaught(s, kind, false, approach, intelQuality);
   return s;
 }
 
 // Yakalanma cezasını uygula (kesinti sahnesinden veya doğrudan). Şiddete göre ceza + tanık + tohum.
-function crimeCaught(s: GameState, kind: CrimeKind, direct = false) {
+function crimeCaught(s: GameState, kind: CrimeKind, direct = false, approach: CrimeApproach = "hile", intelQuality: 0 | 1 | 2 = 0) {
   const p = s.player; const ct = CRIME_TYPES[kind] || CRIME_TYPES.yankesicilik;
   // KADI DURUŞMASI: ağır suç (sev>=3) taçsız oyuncuyu önce mahkemeye çıkarır — ceza resolveTrial keser.
   if (!direct && !p.crowned && ct.sev >= 3 && !inJail(p) && !s.pendingScene) {
-    s.pendingScene = { kind: "trial", ctx: { crime: kind } };
+    const victim = p.son_kurban && s.turn - p.son_kurban.turn <= 2 ? nufusOf(s).k[p.son_kurban.id] : undefined;
+    const witnesses = witnessScandal(s, kind === "yankesicilik" || kind === "dukkan_soyma" ? "hirsizlik_tanigi" : "suc_tanigi", 1, victim?.id, undefined, () => gameRandom(s));
+    const approachEvidence = approach === "zor" ? 10 : approach === "sessiz" ? -8 : 0;
+    const evidence = Math.max(20, Math.min(95, 20 + ct.sev * 8 + Math.round(crimeHeat(p) / 8) + approachEvidence + (victim ? 8 : 0) + witnesses.length * 6 - intelQuality * 6));
+    s.pendingScene = { kind: "trial", ctx: { crime: kind, approach, evidence: String(evidence), witnesses: witnesses.join(","), victim: victim?.id || "" } };
     push(s, "suç_yakalandı", "Yakalandın! Zaptiye kolundan tuttu; kadı huzuruna çıkarılacaksın.", "kişisel", true, { k: "trial.opened", p: [{ cr: kind }] });
     return;
   }
@@ -7431,7 +7436,7 @@ function crimeCaught(s: GameState, kind: CrimeKind, direct = false) {
   const hurt = Math.round(ct.hurt * (p.faction === "asker" ? 0.5 : 1));
   const extra = crimeCaughtPenalty(s);
   p.money -= fine; p.reputation = Math.max(-100, p.reputation - 6 - ct.sev * 2 - extra); p.health = Math.max(0, p.health - hurt);
-  witnessScandal(s, kind === "yankesicilik" || kind === "dukkan_soyma" ? "hirsizlik_tanigi" : "suc_tanigi", 0.7, p.son_kurban?.id, undefined, () => gameRandom(s));
+  if (!direct) witnessScandal(s, kind === "yankesicilik" || kind === "dukkan_soyma" ? "hirsizlik_tanigi" : "suc_tanigi", 0.7, p.son_kurban?.id, undefined, () => gameRandom(s));
   { const kb = p.son_kurban && s.turn - p.son_kurban.turn <= 2 ? nufusOf(s).k[p.son_kurban.id] : undefined; p.son_kurban = undefined; // yakalandın: kurban seni tanır
     if (kb && kb.ol == null) { kurbanOgrenir(s, kb, true); push(s, "suç_yakalandı", `${kisiAdi(kb, "tr")} seni tanıdı; bunu ömür boyu unutmayacak.`, "kişisel", false, { k: "crime.kurbanTanidi", p: [knParam(kb)] }); } }
   if (ct.sev >= 3 && gameRandom(s) < 0.5) sowSeed(s, { kaynak: "suc_gecmisi", hmin: 24, hmax: 120, agirlik: "orta", nesil: false, etki: { money: -30, reputation: -4 } }, () => gameRandom(s));
@@ -7439,34 +7444,93 @@ function crimeCaught(s: GameState, kind: CrimeKind, direct = false) {
   if (p.health <= 0) die(s, `${p.name}, suçüstü yakalanıp can verdi.`, { k: "evj.dieCrime", p: [p.name] });
 }
 
-// ── KADI DURUŞMASI: hüküm öncesi son söz — savunma, tanık ya da boyun. ──
-export function hasTrialWitness(s: GameState): boolean { return Object.values(s.relationships || {}).some((v) => (v as number) >= 55); }
-export function resolveTrial(prev: GameState, choice: "savun" | "tanik" | "boyun"): GameState {
+// ── KADI DURUŞMASI: dosyadaki gerçek mağdur/tanıklar savunmanın gücünü ve uzlaşma yolunu belirler. ──
+export interface TrialEvidenceInfo { score: number; level: "weak" | "medium" | "strong"; witnessCount: number; witnessNames: string[]; victimName: string | null; }
+export interface TrialWitnessInfo { id: string; name: string; relation: number; chance: number; }
+function trialCtx(s: GameState): Record<string, string> { return s.pendingScene?.kind === "trial" ? (s.pendingScene.ctx || {}) : {}; }
+function trialCrime(s: GameState): CrimeKind {
+  const kind = trialCtx(s).crime as CrimeKind;
+  return CRIME_TYPES[kind] ? kind : "yankesicilik";
+}
+function trialWitnessIds(s: GameState): string[] { return (trialCtx(s).witnesses || "").split(",").filter(Boolean); }
+function trialVictim(s: GameState): Kisi | undefined {
+  const ctx = trialCtx(s); const id = ctx.victim || s.player.son_kurban?.id;
+  const k = id ? nufusOf(s).k[id] : undefined;
+  return k?.ol == null ? k : undefined;
+}
+export function trialEvidence(s: GameState, lang: Lang = "tr"): TrialEvidenceInfo {
+  const ctx = trialCtx(s); const ct = CRIME_TYPES[trialCrime(s)]; const pop = nufusOf(s);
+  const people = trialWitnessIds(s).map((id) => pop.k[id]).filter((k): k is Kisi => !!k && k.ol == null);
+  const victim = trialVictim(s);
+  const raw = Number(ctx.evidence);
+  const score = Math.max(20, Math.min(95, Number.isFinite(raw) ? Math.round(raw) : 24 + ct.sev * 9 + people.length * 6 + (victim ? 8 : 0)));
+  return { score, level: score >= 70 ? "strong" : score >= 45 ? "medium" : "weak", witnessCount: people.length, witnessNames: people.map((k) => kisiAdi(k, lang)), victimName: victim ? kisiAdi(victim, lang) : null };
+}
+export function trialDefenseOdds(s: GameState): number {
+  const p = s.player; const ct = CRIME_TYPES[trialCrime(s)]; const evidence = trialEvidence(s).score;
+  return Math.max(0.10, Math.min(0.78, 0.28 + effStat(p, "charisma") * 0.03 + effStat(p, "intelligence") * 0.02 - ct.sev * 0.015 - evidence * 0.003));
+}
+export function trialWitnessInfo(s: GameState, lang: Lang = "tr"): TrialWitnessInfo | null {
+  if (s.pendingScene?.kind !== "trial") return null;
+  const excluded = new Set([...trialWitnessIds(s), trialVictim(s)?.id].filter((x): x is string => !!x));
+  const pop = nufusOf(s).k;
+  const found = Object.entries(s.relationships || {})
+    .map(([id, relation]) => ({ k: pop[id], relation: Number(relation) }))
+    .filter((x): x is { k: Kisi; relation: number } => !!x.k && x.k.ol == null && x.relation >= 55 && !excluded.has(x.k.id))
+    .sort((a, b) => b.relation - a.relation || (a.k.id < b.k.id ? -1 : 1))[0];
+  if (!found) return null;
+  const p = s.player; const evidence = trialEvidence(s).score;
+  const chance = Math.max(0.12, Math.min(0.84, 0.30 + found.relation * 0.004 + Math.max(0, p.reputation) * 0.001 + p.honor * 0.0015 - evidence * 0.003));
+  return { id: found.k.id, name: kisiAdi(found.k, lang), relation: found.relation, chance };
+}
+export function trialSettlementCost(s: GameState): number | null {
+  if (s.pendingScene?.kind !== "trial" || !trialVictim(s)) return null;
+  const ct = CRIME_TYPES[trialCrime(s)];
+  return Math.max(1, Math.round((ct.fine * 2 + ct.lootMin * 0.5) * inflationFactor(s)));
+}
+export function hasTrialWitness(s: GameState): boolean { return trialWitnessInfo(s) !== null; }
+function closeTrialVictim(s: GameState, victim: Kisi | undefined, tam: boolean) {
+  s.player.son_kurban = undefined;
+  if (victim) kurbanOgrenir(s, victim, tam);
+}
+export function resolveTrial(prev: GameState, choice: "savun" | "tanik" | "uzlas" | "boyun"): GameState {
   const s = clone(prev); const p = s.player;
   if (s.pendingScene?.kind !== "trial") return s;
-  const kind = (s.pendingScene.ctx?.crime as CrimeKind) || "yankesicilik";
+  const kind = trialCrime(s);
   const ct = CRIME_TYPES[kind] || CRIME_TYPES.yankesicilik;
+  const witness = trialWitnessInfo(s);
+  const defenseChance = trialDefenseOdds(s);
+  const settlement = trialSettlementCost(s);
+  const victim = trialVictim(s);
+  if (choice === "uzlas" && (settlement == null || p.money < settlement)) return s;
   s.pendingScene = null;
+  if (choice === "uzlas" && settlement != null) {
+    p.money -= settlement; p.reputation = Math.max(-100, p.reputation - 3); p.honor = Math.max(0, p.honor - 1); p.crime_heat = Math.max(0, crimeHeat(p) - 18);
+    closeTrialVictim(s, victim, true);
+    if (victim) s.relationships[victim.id] = Math.max(-100, (s.relationships[victim.id] || 0) - 12);
+    push(s, "suç", `Mağdurun zararını ${settlement} akçeyle karşıladın; kadı dosyayı kapattı.`, "kişisel", true, { k: "trial.settle.done", p: [victim ? knParam(victim) : "", settlement] });
+    return s;
+  }
   if (choice === "tanik") {
-    const entries = Object.entries(s.relationships || {}).filter(([, v]) => (v as number) >= 55).sort((a, b) => (b[1] as number) - (a[1] as number));
-    if (!entries.length) { crimeCaught(s, kind, true); return s; } // tanık yoksa hüküm (UI düğmeyi kapatır)
-    const wid = entries[0][0];
-    s.relationships[wid] = Math.max(-100, (s.relationships[wid] as number) - 6); // tanıklık bir borçtur
-    if (gameRandom(s) < 0.72) {
+    if (!witness) { crimeCaught(s, kind, true); return s; } // tanık yoksa hüküm (UI düğmeyi kapatır)
+    s.relationships[witness.id] = Math.max(-100, witness.relation - 6); // tanıklık bir borçtur
+    if (gameRandom(s) < witness.chance) {
       p.reputation = Math.max(-100, p.reputation - 2);
-      push(s, "suç", "Bir dostun kadı önünde lehine tanıklık etti; beraat ettin. Bu borç unutulmaz.", "kişisel", true, { k: "trial.witWin" });
+      const k = nufusOf(s).k[witness.id]; closeTrialVictim(s, victim, false);
+      push(s, "suç", `${witness.name} kadı önünde lehine tanıklık etti; beraat ettin. Bu borç unutulmaz.`, "kişisel", true, { k: "trial.witWin.named", p: [k ? knParam(k) : witness.name] });
       return s;
     }
-    push(s, "suç", "Tanığın sözü kadıyı kesmedi; hüküm okundu.", "kişisel", true, { k: "trial.witLose" });
+    const k = nufusOf(s).k[witness.id];
+    push(s, "suç", `${witness.name}'ın sözü kadıyı kesmedi; hüküm okundu.`, "kişisel", true, { k: "trial.witLose.named", p: [k ? knParam(k) : witness.name] });
     crimeCaught(s, kind, true);
     return s;
   }
   if (choice === "savun") {
-    const chanceW = Math.max(0.1, 0.32 + effStat(p, "charisma") * 0.03 + effStat(p, "intelligence") * 0.015 - ct.sev * 0.03);
     gainSkill(s, "social", 4);
-    if (gameRandom(s) < chanceW) {
+    if (gameRandom(s) < defenseChance) {
       const fine = Math.min(p.money, Math.round(ct.fine * 0.5 * inflationFactor(s)));
       p.money -= fine; p.reputation = Math.max(-100, p.reputation - 4);
+      closeTrialVictim(s, victim, true);
       push(s, "suç", `Kendini öyle savundun ki kadı cezayı yarıya indirdi (${fine} akçe); zindan kapısı açılmadı.`, "kişisel", true, { k: "trial.defWin", p: [fine] });
       return s;
     }
