@@ -2469,6 +2469,7 @@ export interface GameState {
   marketEvent?: { goods: string[]; mult: number; until: number; key: string } | null; // geçici piyasa olayı
   player_rumors?: Rumor[]; // oyuncu hakkında dolaşan söylentiler (npc_mind dedikodu ağı)
   eserler?: Record<string, string[]>; // hanedanın şehirlere yaptırdığı bayındırlık eserleri — o şehrin insanları kuşaklar boyu anar (vârise geçer)
+  saheserler?: SaheserKaydi[]; // meslek pirlerinin ömürde bir kez yaptığı, adı ve soy etkisi nesiller boyu kalan eserler
   ata_hatira?: Record<string, number>; // nesil hafızası: kişilerin atanı (atalarını) nasıl hatırladığı — vârise görüş kalemi olarak geçer, her nesilde yarılanır
   soy_nam?: Nam; // hanedanın nâmı: ataların nâmından süzülen iz (dörtte biri, her nesilde yarılanır)
   seeds?: Seed[]; // sonuç tohumları (geçmişin geleceğe etkisi)
@@ -2889,6 +2890,46 @@ const PROF_SKILL: Record<string, "combat" | "trade" | "crafting" | "social"> = {
 export const MESLEK_YOLU_ESIK = [90, 126, 180] as const;
 export interface MeslekYolu { id: string; workBonus: number; }
 export const MESLEK_YOLLARI: Record<string, MeslekYolu> = Object.fromEntries(PROFESSIONS.map((pr) => [pr.id, { id: pr.id, workBonus: 0.12 }])) as Record<string, MeslekYolu>;
+export type SaheserAlani = "bereket" | "zanaat" | "ticaret" | "savas" | "sosyal" | "saglik";
+export interface SaheserSecenegi { id: string; prof: string; alan: SaheserAlani; }
+export interface SaheserKaydi extends SaheserSecenegi { yapan: string; nesil: number; turn: number; }
+// Selçuklu dünyasına oturan, mesleğe özgü iki ömür eseri. Her pir bir ömürde yalnız birini
+// tamamlayabilir; eser hanedan defterinde kalır ve alanına göre sonraki vârisi yetiştirir.
+export const SAHESERLER: SaheserSecenegi[] = [
+  { id: "yedi_yil_tohumu", prof: "çiftçi", alan: "bereket" }, { id: "sarnicli_harman", prof: "çiftçi", alan: "saglik" },
+  { id: "alaca_kilic", prof: "demirci", alan: "savas" }, { id: "kirilmaz_saban", prof: "demirci", alan: "zanaat" },
+  { id: "kervan_ahitnamesi", prof: "tüccar", alan: "ticaret" }, { id: "yedi_sehir_mizani", prof: "tüccar", alan: "sosyal" },
+  { id: "golun_gumus_agi", prof: "balıkçı", alan: "bereket" }, { id: "firtina_kayigi", prof: "balıkçı", alan: "saglik" },
+  { id: "alaca_yay", prof: "avcı", alan: "savas" }, { id: "izler_defteri", prof: "avcı", alan: "zanaat" },
+  { id: "civisiz_sandik", prof: "marangoz", alan: "zanaat" }, { id: "kervansaray_kapisi", prof: "marangoz", alan: "sosyal" },
+  { id: "ak_kece_surusu", prof: "çoban", alan: "bereket" }, { id: "canli_goc_yolu", prof: "çoban", alan: "ticaret" },
+  { id: "kirk_ocak_mayasi", prof: "fırıncı", alan: "bereket" }, { id: "ahilik_somunu", prof: "fırıncı", alan: "sosyal" },
+  { id: "uc_sancagi", prof: "asker", alan: "savas" }, { id: "gazi_talimnamesi", prof: "asker", alan: "saglik" },
+  { id: "kopuz_destani", prof: "müzisyen", alan: "sosyal" }, { id: "yedi_makam_mecmuasi", prof: "müzisyen", alan: "zanaat" },
+  { id: "sifa_mecmuasi", prof: "şifacı", alan: "saglik" }, { id: "darussifa_sandigi", prof: "şifacı", alan: "sosyal" },
+  { id: "altin_muhurlu_vakfiye", prof: "katip", alan: "sosyal" }, { id: "yollar_sicili", prof: "katip", alan: "ticaret" },
+  { id: "firuze_kemer", prof: "kuyumcu", alan: "ticaret" }, { id: "cift_kartal_brosu", prof: "kuyumcu", alan: "zanaat" },
+  { id: "kubadabad_deseni", prof: "dokumacı", alan: "zanaat" }, { id: "kirk_boy_kilimi", prof: "dokumacı", alan: "sosyal" },
+  { id: "kervanlar_defteri", prof: "hancı", alan: "ticaret" }, { id: "acik_sofra_yemini", prof: "hancı", alan: "sosyal" },
+];
+export function meslekSaheserleri(prof: string): SaheserSecenegi[] { return SAHESERLER.filter((x) => x.prof === prof); }
+export function saheserBedeli(s: GameState): number { return Math.round(220 * inflationFactor(s)); }
+export function neslinSaheseri(s: GameState): SaheserKaydi | undefined { return (s.saheserler || []).find((x) => x.nesil === s.player.generation); }
+export function saheserYapabilir(s: GameState, id: string): boolean {
+  const sec = SAHESERLER.find((x) => x.id === id), p = s.player;
+  return !!sec && sec.prof === p.profession && !p.dead && meslekYoluKademesi(p) >= 3 && !neslinSaheseri(s) && p.money >= saheserBedeli(s);
+}
+export function saheserYap(prev: GameState, id: string): GameState {
+  const s = clone(prev), sec = SAHESERLER.find((x) => x.id === id);
+  if (!sec || !saheserYapabilir(s, id)) return s;
+  const p = s.player, bedel = saheserBedeli(s);
+  p.money -= bedel; p.fame = Math.min(100, p.fame + 8); p.reputation = Math.min(100, p.reputation + 6); p.honor = Math.min(100, p.honor + 3);
+  const kayit: SaheserKaydi = { ...sec, yapan: p.name, nesil: p.generation, turn: s.turn };
+  (s.saheserler = s.saheserler || []).push(kayit);
+  push(s, "şaheser", `${p.name}, ömrünün şaheserini tamamladı.`, "kişisel", true, { k: "se.made", p: [p.name, { tq: "se." + id + ".n" }] });
+  return s;
+}
+export function saheserMirasAlanlari(s: GameState): Set<SaheserAlani> { return new Set((s.saheserler || []).map((x) => x.alan)); }
 export function meslekYoluKademesi(p: Player, id = p.profession): number {
   if ((p.meslek_pirleri || []).includes(id)) return id === p.profession && kademeOf(p) >= 3 ? 3 : 0;
   if (id !== p.profession || !(p.capstones || []).includes(id) || kademeOf(p) < 3) return 0;
@@ -8057,10 +8098,14 @@ export function heirPreview(prev: GameState, heirRef: string, willId = "esit", s
   const heirLegacy: Record<string, boolean> = { ...(p.legacy || {}) }; delete heirLegacy.hekim; delete heirLegacy.hac;
   const legacyRep = (heirLegacy.imaret ? 5 : 0) + (heirLegacy.vakif ? 8 : 0) + Math.min(12, Math.floor((p.vakif_fon || 0) / 5000)) + 2 * vakifTier(p.vakif_fon || 0);
   const estateTier = p.estate || 0;
+  const saheserIz = saheserMirasAlanlari(prev);
   const invests = childName && p.child_invests ? p.child_invests[childName] || [] : [];
   let points = Math.min(gen, 10); let money = inheritMoney; let rep = Math.floor(p.reputation / 2) + will.repBonus + VARIS_MESRUIYET[family.tur];
   if (estateTier >= 3) points += 1;
   if (estateTier >= 5) money += 80;
+  if (saheserIz.has("bereket")) money += 50;
+  if (saheserIz.has("saglik")) points += 1;
+  if (saheserIz.has("sosyal")) rep += 3;
   if (p.dowry_chest) money += p.dowry_chest; // continueAsHeir paritesi: açılmamış çeyiz sandığı olduğu gibi geçer
   for (const inv of invests) {
     if (inv === "egitim") points += 1;
@@ -8107,6 +8152,7 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
   const legacyRep = (heirLegacy.imaret ? 5 : 0) + (heirLegacy.vakif ? 8 : 0) + Math.min(12, Math.floor((p.vakif_fon || 0) / 5000)) + 2 * vakifTier(p.vakif_fon || 0); // atanın hayratı (+fonun büyüklüğü) vârisin adını önden yürütür
   const legacyFameFloor = heirLegacy.anit ? 15 : 0; // anıt: aile adı unutulmaz — vârisin şöhret tabanı
   const estateTier = p.estate || 0; // konak taşınmazdır: vâris aynı çatının altında doğar
+  const saheserIz = saheserMirasAlanlari(prev);
   // Vârise yapılan yatırımların başlangıç avantajları
   const invests = childName && p.child_invests ? p.child_invests[childName] || [] : [];
   const stats = { strength: 1, intelligence: 1, charisma: 1, stamina: 2 };
@@ -8114,6 +8160,12 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
   let startPoints = Math.min(gen, 10); let startMoney = inheritMoney; let startHealth = 100; let startRep = Math.floor(p.reputation / 2) + will.repBonus + VARIS_MESRUIYET[heirCandidate.tur]; // nesil bonusu tavanlı: çok uzun hanedanda (gen>10) vâris doğuştan tüm statları maxlayamasın
   if (estateTier >= 3) startPoints += 1; // kütüphaneli konakta büyüyen çocuk: +1 özellik puanı
   if (estateTier >= 5) startMoney += 80; // saray yavrusunun kileri: vârise çeyiz akçesi
+  if (saheserIz.has("bereket")) startMoney += 50; // atanın üretim bilgisi yeni ocağın kilerini doldurur
+  if (saheserIz.has("saglik")) startPoints += 1; // şifa/direnç mirası vârisin kendi bedenini kurmasına alan açar
+  if (saheserIz.has("sosyal")) startRep += 3; // adı bilinen eser hane adına kapı açar
+  if (saheserIz.has("zanaat")) skills.crafting += 1;
+  if (saheserIz.has("ticaret")) skills.trade += 1;
+  if (saheserIz.has("savas")) skills.combat += 1;
   if (p.dowry_chest) startMoney += p.dowry_chest; // açılmamış çeyiz sandığı vasiyet oranından muaf, olduğu gibi vârise geçer (heirPreview paritesi)
   const investNotes: string[] = [];
   for (const inv of invests) {
@@ -8207,6 +8259,7 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
     story: { active: null, completed: [], tension: Math.min(20, Object.keys(prev.story?.flags || {}).length * 3), nemesis: null, flags: { ...(prev.story?.flags || {}) }, lull: 0 }, wars: [], caravan: null, econ: 1,
     settlements: prev.settlements || [], // dynastinin kurduğu yerleşimler vârise kalır
     eserler: prev.eserler || (prev.player.govWorks && Object.keys(prev.player.govWorks).length ? { ...prev.player.govWorks } : undefined), // yaptırılan eserler şehirde kalır, hanedanın adıyla anılır
+    saheserler: prev.saheserler ? prev.saheserler.map((x) => ({ ...x })) : undefined, // pirlerin ömür eserleri hanedanın ortak hafızasıdır
     // Sadece nesil aşabilen tohumlar vârise geçer. Vârisin turu 0'dan başladığı için ekim'i yeniden
     // tabanla (ekim -= prev.turn): birikmiş yaş korunur, yoksa yas=turn-ekim negatif kalıp tohum hiç olgunlaşmaz.
     seeds: (prev.seeds || []).filter((t) => t.nesil).map((t) => ({ ...t, ekim: t.ekim - prev.turn })),
@@ -8230,7 +8283,7 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
       inventory: heirloomId ? { ekmek: 2, [heirloomId]: 1 } : { ekmek: 2 }, properties: props, generation: gen,
       inv_q: heirloomId && heirloomQ && heirloomQ !== "siradan" ? { [heirloomId]: { [heirloomQ]: 1 } } : undefined,
       faction: null, faction_standing: {},
-      skills, skill_xp: { combat: skills.combat * 100, trade: 0, crafting: skills.crafting * 100, social: skills.social * 100 },
+      skills, skill_xp: { combat: skills.combat * 100, trade: skills.trade * 100, crafting: skills.crafting * 100, social: skills.social * 100 },
       perks: [], injuries: [], career_xp: 0, nam: { comert: 0, zalim: 0, capkin: 0, dindar: 0, mert: 0 }, child_invests: {}, equipped: { silah: null, zirh: null },
       crowned: p.crowned || false, will_pref: "esit", fates: [], claimed: [], governorships: [], // taht irsîdir; kader/başarım/valilik yeni baştan
     },
@@ -11543,6 +11596,13 @@ export function migrate(s: GameState): GameState {
   if (!Number.isFinite(s.turn)) s.turn = 0;
   if (!Number.isFinite(s.rng_state) || (s.rng_state! >>> 0) === 0) s.rng_state = rngBaslangici(s.seed, s.turn, Number.isFinite(p.generation) ? p.generation : 1);
   if (!Array.isArray(s.history)) s.history = [];
+  if (s.saheserler !== undefined) {
+    const tanim = new Map(SAHESERLER.map((x) => [x.id, x]));
+    s.saheserler = Array.isArray(s.saheserler) ? s.saheserler.flatMap((x: any) => {
+      const d = x && tanim.get(x.id); if (!d || typeof x.yapan !== "string" || !Number.isFinite(x.nesil) || !Number.isFinite(x.turn)) return [];
+      return [{ ...d, yapan: x.yapan.slice(0, 80), nesil: Math.max(1, Math.floor(x.nesil)), turn: Math.max(0, Math.floor(x.turn)) }];
+    }).filter((x, i, a) => a.findIndex((y) => y.nesil === x.nesil) === i) : undefined;
+  }
   const sonOlaySirasi = s.history.reduce((m, e) => Number.isFinite(e?.q) ? Math.max(m, e.q!) : m, 0);
   if (sonOlaySirasi > 0 && (!Number.isFinite(s.hseq) || (s.hseq || 0) < sonOlaySirasi)) s.hseq = sonOlaySirasi;
   else if (s.hseq !== undefined && (!Number.isFinite(s.hseq) || s.hseq < 0)) delete s.hseq;

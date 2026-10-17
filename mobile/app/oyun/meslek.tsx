@@ -3,7 +3,7 @@ import { View, Text, ScrollView, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { changeProfession, PROFESSIONS, professionById, careerTier, hasProfAction, canProfAction, professionAction, profActionCooldownLeft, meslekSarti, meslekEksik, meslekSermaye, meslegeUygun, effStat, kariyerXp, sinavDurumu, ustalikSinavi, rakipAktif, rakipPuan, rakipYollari, rakipMeydan, rakipMeydanHazir, rakipMeydanKalan, rakipYarisi, rakipOrtaklik, rakipOrtaklikHazir, RAKIP_HEDEF, RAKIP_MEYDAN_BEDEL, cirakAlabilir, cirakAdaylari, cirakAl, cirakDers, cirakDersHazir, cirakDersKalan, cirakBekleAy, CIRAK_BEDEL, CIRAK_KOST, kademeOf, meslekYoluKademesi, meslekYoluIlerleme, MESLEK_YOLU_ESIK } from "../../lib/game";
+import { changeProfession, PROFESSIONS, professionById, careerTier, hasProfAction, canProfAction, professionAction, profActionCooldownLeft, meslekSarti, meslekEksik, meslekSermaye, meslegeUygun, effStat, kariyerXp, sinavDurumu, ustalikSinavi, rakipAktif, rakipPuan, rakipYollari, rakipMeydan, rakipMeydanHazir, rakipMeydanKalan, rakipYarisi, rakipOrtaklik, rakipOrtaklikHazir, RAKIP_HEDEF, RAKIP_MEYDAN_BEDEL, cirakAlabilir, cirakAdaylari, cirakAl, cirakDers, cirakDersHazir, cirakDersKalan, cirakBekleAy, CIRAK_BEDEL, CIRAK_KOST, kademeOf, meslekYoluKademesi, meslekYoluIlerleme, MESLEK_YOLU_ESIK, meslekSaheserleri, neslinSaheseri, saheserBedeli, saheserYapabilir, saheserYap } from "../../lib/game";
 import { localFirstName } from "../../lib/world";
 import { rakipAdi, rakipKartVerisi } from "../../lib/rakip-ui";
 import { SinavKartiModal, SinavKartiVeri } from "../../lib/kart3d";
@@ -189,6 +189,7 @@ export default function Meslek() {
 
         {curPr && (() => {
           const yolKademe = meslekYoluKademesi(p); const ilerleme = meslekYoluIlerleme(p); const hedef = MESLEK_YOLU_ESIK[2];
+          const yapilan = neslinSaheseri(state), secenekler = meslekSaheserleri(p.profession), bedel = saheserBedeli(state);
           return (
             <Panel title={t("my.title")} right={<Pill text={t("my.stage." + yolKademe)} />}>
               <Text style={{ fontFamily: F.display, fontSize: 15, color: C.gold }}>{t("my." + p.profession + ".n")}</Text>
@@ -199,6 +200,30 @@ export default function Meslek() {
                 <View style={{ width: `${Math.round((ilerleme / hedef) * 100)}%`, height: 7, borderRadius: 4, backgroundColor: yolKademe >= 3 ? C.goldBright : C.gold }} />
               </View>
               <Text style={{ fontFamily: F.serif, fontSize: 11.5, color: C.parchmentMuted, marginTop: 6 }}>{t("my.milestones")}</Text>
+              {yolKademe >= 3 && (
+                <View style={{ marginTop: 13, paddingTop: 12, borderTopWidth: 1, borderTopColor: C.border }}>
+                  <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 1.2, color: C.gold }}>{t("se.title").toUpperCase()}</Text>
+                  {yapilan ? (
+                    <View style={{ marginTop: 8, padding: 10, borderRadius: 8, borderWidth: 1, borderColor: "rgba(127,166,106,0.5)", backgroundColor: "rgba(127,166,106,0.08)" }}>
+                      <Text style={{ fontFamily: F.display, fontSize: 13, color: C.sage }}>{t("se." + yapilan.id + ".n")}</Text>
+                      <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted, marginTop: 3 }}>{t("se.domain." + yapilan.alan)}</Text>
+                    </View>
+                  ) : (
+                    <>
+                      <Text style={{ fontFamily: F.serifItalic, fontSize: 11.5, color: C.parchmentMuted, marginTop: 5, lineHeight: 17 }}>{t("se.intro")}</Text>
+                      <Text style={{ fontFamily: F.display, fontSize: 10, color: C.goldDim, marginTop: 7 }}>{applyParams(t("se.cost"), [bedel], lang)}</Text>
+                      <View style={{ gap: 7, marginTop: 8 }}>
+                        {secenekler.map((se) => { const can = saheserYapabilir(state, se.id); return (
+                          <Pressable key={se.id} accessibilityRole="button" accessibilityLabel={t("se." + se.id + ".n")} disabled={!can} onPress={() => { if (!can) return; hap("success"); apply((s) => saheserYap(s, se.id)); }} style={{ padding: 10, borderRadius: 8, borderWidth: 1, borderColor: can ? "rgba(201,168,76,0.55)" : C.border, backgroundColor: can ? "rgba(201,168,76,0.10)" : C.bg, opacity: can ? 1 : 0.5 }}>
+                            <Text style={{ fontFamily: F.display, fontSize: 12, color: can ? C.gold : C.parchmentMuted }}>{t("se." + se.id + ".n")}</Text>
+                            <Text style={{ fontFamily: F.serif, fontSize: 10.5, color: C.parchmentMuted, marginTop: 2 }}>{t("se.domain." + se.alan)}</Text>
+                          </Pressable>
+                        ); })}
+                      </View>
+                    </>
+                  )}
+                </View>
+              )}
             </Panel>
           );
         })()}

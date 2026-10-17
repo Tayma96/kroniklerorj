@@ -148,6 +148,23 @@ export default function Hanedan() {
 
         <Torunlar state={state} onOpen={id => { hap("tap"); router.push(`/oyun/npc/${id}`); }} />
 
+        {!!state.saheserler?.length && (
+          <>
+            <SecTitle>{t("se.title")}</SecTitle>
+            <Text style={{ fontFamily: F.serifItalic, fontSize: 11.5, color: C.parchmentMuted, marginBottom: 9 }}>{t("se.intro")}</Text>
+            {[...state.saheserler].reverse().map((se) => (
+              <View key={`${se.nesil}-${se.id}`} style={{ backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(201,168,76,0.42)", borderLeftWidth: 3, borderLeftColor: C.gold, borderRadius: 10, padding: 12, marginBottom: 8 }}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                  <GameIcon name="anvil" size={14} color={C.gold} />
+                  <Text style={{ flex: 1, fontFamily: F.display, fontSize: 13, color: C.gold }}>{t("se." + se.id + ".n")}</Text>
+                </View>
+                <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted, marginTop: 4 }}>{applyParams(t("se.by"), [se.yapan, se.nesil], lang)} · {profL(se.prof)}</Text>
+                <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.sage, marginTop: 3 }}>{t("se.domain." + se.alan)}</Text>
+              </View>
+            ))}
+          </>
+        )}
+
         {/* ── VASİYET ── */}
         <SecTitle>{t("dyn.will")}</SecTitle>
         <Text style={{ fontFamily: F.serifItalic, fontSize: 11.5, color: C.parchmentMuted, marginBottom: 9 }}>{t("dyn.willHint")}</Text>
