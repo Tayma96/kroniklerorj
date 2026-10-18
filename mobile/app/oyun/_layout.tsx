@@ -187,6 +187,7 @@ export default function OyunLayout() {
         <Tabs.Screen name="savas" options={{ href: null }} />
         <Tabs.Screen name="haberler" options={{ href: null }} />
         <Tabs.Screen name="hanedan" options={{ href: null }} />
+        <Tabs.Screen name="diplomasi" options={{ href: null }} />
         <Tabs.Screen name="basarimlar" options={{ href: null }} />
         <Tabs.Screen name="beceriler" options={{ href: null }} />
         <Tabs.Screen name="hikayeler" options={{ href: null }} />

@@ -19,7 +19,7 @@ import { aileUyesi,
   appointOfficer, dismissOfficer, courtAppointCost, courtWage, COURT_OFFICES, CourtOffice,
   crownAuthorityOf, CROWN_DECREES, canIssueDecree, issueDecree, decreeCooldownLeft,
   campaignTargets, canLaunchCampaign, campaignOdds, launchCampaign, CAMPAIGN_COST,
-  CROWN_POLICIES, crownPolicyOf, setCrownPolicy, crownTreaty, treatyCost, treatyOdds, negotiateTreaty,
+  CROWN_POLICIES, crownPolicyOf, setCrownPolicy, crownTreaty,
   commandCampaign, campaignOrderCost, campaignForecast, CampaignOrder,
   appointableCities, canAppointGovernor, appointGovernor, dismissGovernor, APPOINT_FEE, crownTribute,
   inCourt, courtRankId,
@@ -46,7 +46,6 @@ export default function Hanedan() {
   const { state, apply } = useGame();
   const { lang, t } = useI18n();
   const [settleName, setSettleName] = useState("");
-  const [treatyKind, setTreatyKind] = useState<"ticaret" | "ateskes">("ticaret");
   const [throneMsg, setThroneMsg] = useState<null | { ok: boolean; tick: number }>(null);
   const [campMsg, setCampMsg] = useState<null | { ok: boolean; tick: number; key?: string }>(null);
   const baseRivals = useMemo(() => (state ? (state.rivals ?? generateDynasties(state.seed)) : []), [state?.seed, state?.rivals]);
@@ -325,13 +324,10 @@ export default function Hanedan() {
                     );
                   })}
                 </View>
-                <Text style={sub}>{t("war.treaty.title")}</Text>
-                <View style={{ flexDirection: "row", gap: 6 }}>
-                  {(["ticaret", "ateskes"] as const).map((kind) => <Pressable key={kind} onPress={() => setTreatyKind(kind)} style={{ flex: 1, minHeight: 44, justifyContent: "center", alignItems: "center", padding: 8, borderRadius: 8, borderWidth: 1, borderColor: treatyKind === kind ? C.gold : C.border }}>
-                    <Text style={{ fontFamily: F.display, fontSize: 11, color: treatyKind === kind ? C.gold : C.parchmentMuted }}>{t("war.treaty." + kind)}</Text>
-                  </Pressable>)}
-                </View>
-                <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted, lineHeight: 17, marginTop: 6 }}>{t("war.treaty.d." + treatyKind)} · −{treatyCost(state, treatyKind)} ⚜ · {yuzdeL(Math.round(treatyOdds(state, treatyKind) * 100), lang)}</Text>
+                {!state.mpRealm && <Pressable accessibilityRole="button" onPress={() => router.push("/oyun/diplomasi")} style={{ minHeight: 52, justifyContent: "center", borderWidth: 1, borderColor: C.goldDim, borderRadius: 9, padding: 12, marginTop: 12 }}>
+                  <Text style={{ fontFamily: F.display, color: C.gold, fontSize: 13 }}>{t("dp.title")}</Text>
+                  <Text style={{ fontFamily: F.serif, color: C.parchmentMuted, fontSize: 12, marginTop: 4 }}>{t("dp.intro")}</Text>
+                </Pressable>}
                 {/* Sefer */}
                 <Text style={sub}>{t("crown.campaign").toUpperCase()}{targets.length ? ` · ${t("crown.odds")} ${yuzdeL(Math.round(campaignOdds(state) * 100), lang)} · ${Math.round(CAMPAIGN_COST * inflationFactor(state))} ⚜` : ""}</Text>
                 {state.crownCampaign && (
@@ -367,18 +363,6 @@ export default function Hanedan() {
                           <Text style={{ fontFamily: F.display, fontSize: 10, color: tcan ? C.gold : C.parchmentMuted }}>{t("crown.tributeBtn")}: {t("beylik." + tg.id)}</Text>
                         </Pressable>
                         ); })()}
-                        {(() => {
-                          const treaty = crownTreaty(state, tg.id);
-                          if (treaty) return <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.sage }}>{applyParams(t("war.treaty.active"), [t("war.treaty." + treaty.kind), treaty.until - state.turn])}</Text>;
-                          const can = p.crown_action_turn !== state.turn && p.money >= treatyCost(state, treatyKind) && state.crownCampaign?.beylikId !== tg.id;
-                          return <Pressable disabled={!can} onPress={() => apply((current) => {
-                            const r = negotiateTreaty(current, tg.id, treatyKind);
-                            setCampMsg({ ok: r.success, tick: Date.now(), key: r.success ? "war.treaty.success" : "war.treaty.fail" });
-                            return r.state;
-                          })} style={{ minHeight: 44, padding: 9, justifyContent: "center", borderWidth: 1, borderColor: C.border, borderRadius: 8, opacity: can ? 1 : 0.45 }}>
-                            <Text style={{ fontFamily: F.display, fontSize: 10, color: C.sage }}>{t("war.treaty.btn")} · {t("war.treaty." + treatyKind)}</Text>
-                          </Pressable>;
-                        })()}
                         </View>
                       );
                     })}
