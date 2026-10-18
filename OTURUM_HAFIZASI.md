@@ -12,7 +12,7 @@
 - NPC ekranı mockup yapısını izlemeli; Aybike yalnız örnek, sabit karakter değil. Her NPC'nin yaşı, mesleği ve ruh hâline uyan kendine ait portresi olmalı. Kahraman görseli portre olarak kullanılmamalı; başsız kıyafet atlası portreye bindirilmemeli. Bu tam portre seti henüz yapılmadı.
 - `apk` uzak dalındaki `69ff1b2` önceki tasarım turudur: kasaba/venue görselleri, NPC ekranı ve düğme cilası. Kullanıcı sonucu inceletmek istedi; onaylanmış nihai tasarım sayma. Diğer sohbete kullanıcı açıkça yetki vermeden mesaj gönderme.
 
-## Şimdiki iş
-- Kullanıcı kapsamı tek ekrandan tüm oyunun sistematik iyileştirilmesine genişletti.
-- Açık çalışma ağacı turu: mobil paleti ısıtıp aydınlatma; ortak kabartmalı `GameButton`; karar kartı, meslek/ustalık ve vâris geçişinde kullanma; paneller, sahne başlıkları ve erişilebilir dokunma alanlarını iyileştirme. Mekanik ve çeviri metni değiştirilmedi.
-- Görsel önizleme veya test henüz yapılmadı; yalnız `git diff --check` statik kontrolü yapıldı. Tamamlanınca `apk` dalı ve uzak commit doğrulanmalı.
+## Son tamamlanan tur
+- Kullanıcı kapsamı tüm oyunun sistematik iyileştirilmesine genişletti. `70fc1c3` (`apk`) mobil paleti ısıtıp aydınlatır; ortak kabartmalı `GameButton` karar kartı, ana pano, meslek/ustalık ve vâris geçişinde kullanılır; paneller/sahne başlıkları ile dokunma alanları cilalandı. Oynanış/çeviri metni değişmedi.
+- `git diff --check` temiz; otomatik test, görsel önizleme ve APK çalıştırılmadı. Uzak dal yerel ağaçla eşit, çalışma alanı temiz.
+- ChatGPT tarayıcı görsel üretimi `list_apps` zaman aşımı yüzünden denenemedi; bu turda yeni yapay zekâ görseli yok. NPC'lere yaş/meslek/ruh hâline özgü ayrı portre seti hâlâ açık iş.
