@@ -32,3 +32,7 @@ export const F = {
   serif: "CrimsonText_400Regular",
   serifItalic: "CrimsonText_400Regular_Italic",
 };
+
+// Okunabilir ekran ailesi; taslak: docs/tasarim/EKRANLAR.md. Sistem font ölçeği korunur.
+export const T = { caption: 12, label: 13, body: 15, bodyLg: 16, title: 18, display: 22, line: 22, lineLg: 24 } as const;
+export const L = { page: 16, gap: 12, radius: 12, touch: 44, hero: 196 } as const;
