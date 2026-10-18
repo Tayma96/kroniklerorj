@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
 import { ENCOUNTERS, combatPower, armorDefense, weaponClass, hasShield, shieldBlockChance, applyBattleOutcome, nemesisEncounter, applyNemesisOutcome, reconcileNemesis, reconcileCost, diyetBedeli, diyetSansi, diyetOde, kisiProfil, trainCombat, trainCost, startBattleAttempt, inflationFactor, hireGuard, dismissGuards, retinueHireCost, retinueWage, RETINUE_MAX, inJail } from "../../lib/game";
-import { startBattle, stepBattle, MOVES, STANCES, BattleState, Move, Stance, CbLogEntry } from "../../lib/combat";
+import { startBattle, stepBattle, battleMoveCost, MOVES, STANCES, BattleState, Move, Stance, CbLogEntry } from "../../lib/combat";
 import { playVictory, playWarDrum, playClash, playDefeat } from "../../lib/sound";
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
@@ -67,7 +67,7 @@ export default function Savas() {
     const e = id === "nemesis" ? nemEnc : ENCOUNTERS.find((x) => x.id === id);
     if (!e) return;
     apply((s) => {
-      if (s.player.dead || s.player.battle_turn === s.turn) return s;
+      if (s.player.dead || inJail(s.player) || s.player.age < 13 || s.player.health < 15 || s.player.battle_turn === s.turn) return s;
       const next = startBattleAttempt(s);
       setEncId(id); playWarDrum();
       setBs(startBattle(s.player, { ...e, title: id === "nemesis" ? nemTitle : gt("enc." + e.id + ".t", e.title) }, s.rng_state ?? s.seed));
@@ -131,6 +131,8 @@ export default function Savas() {
         <Animated.View style={[{ paddingHorizontal: 20, position: "relative" }, shakeStyle]}>
           <HpBar label={t("cb.you")} hp={bs.playerHp} max={bs.playerMax} color={C.sage} />
           <HpBar label={t("cb.enemy")} hp={bs.enemyHp} max={bs.enemyMax} color={C.blood} />
+          <HpBar label={`${t("war.breath")} · ${applyParams(t("war.momentum"), [bs.momentum || 0])}`} hp={bs.breath ?? 100} max={bs.breathMax ?? 100} color={C.azure} />
+          {(bs.repetition || 0) >= 2 && <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.ember }}>{t("war.predictable")}</Text>}
           {floats.map((f) => <FloatingNumber key={f.id} value={f.value} color={f.color} left={f.left} top={f.top} />)}
         </Animated.View>
         <ScrollView style={{ flex: 1, marginTop: 8 }} contentContainerStyle={{ paddingHorizontal: 16 }}>
@@ -166,7 +168,7 @@ export default function Savas() {
                 {STANCES.map((s) => {
                   const on = stance === s.id;
                   return (
-                    <Pressable key={s.id} onPress={() => { hap("tap"); setStance(s.id); }} style={{ flex: 1, alignItems: "center", paddingVertical: 7, borderRadius: 8, borderWidth: 1, borderColor: on ? "rgba(201,168,76,0.7)" : C.border, backgroundColor: on ? "rgba(201,168,76,0.15)" : C.bg }}>
+                    <Pressable key={s.id} onPress={() => { hap("tap"); setStance(s.id); }} style={{ flex: 1, minHeight: 44, justifyContent: "center", alignItems: "center", paddingVertical: 7, borderRadius: 8, borderWidth: 1, borderColor: on ? "rgba(201,168,76,0.7)" : C.border, backgroundColor: on ? "rgba(201,168,76,0.15)" : C.bg }}>
                       <Text style={{ fontFamily: F.display, fontSize: 10, color: on ? C.gold : C.parchmentMuted }}>{t("cb.stance." + s.id)}</Text>
                       <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginTop: 2 }}>
                         <GameIcon name="crossed-swords" size={8} color={C.parchmentDim} />
@@ -180,9 +182,10 @@ export default function Savas() {
               </View>
               <View style={{ flexDirection: "row", gap: 8 }}>
                 {MOVES.map((m) => (
-                  <Pressable key={m.id} onPress={() => play(m.id)} style={{ flex: 1, alignItems: "center", paddingVertical: 12, borderRadius: 9, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.card }}>
+                  <Pressable key={m.id} disabled={m.id === "toparlan" && (bs.breath ?? 100) >= (bs.breathMax ?? 100)} onPress={() => play(m.id)} style={{ opacity: m.id === "toparlan" && (bs.breath ?? 100) >= (bs.breathMax ?? 100) ? 0.45 : 1, flex: 1, alignItems: "center", paddingVertical: 12, borderRadius: 9, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.card }}>
                     <GameIcon name={m.icon} size={20} color={C.gold} />
-                    <Text style={{ fontFamily: F.display, fontSize: 11, color: C.parchment, marginTop: 5, letterSpacing: 0.5 }}>{t("cb." + m.id)}</Text>
+                    <Text style={{ fontFamily: F.display, fontSize: 11, color: C.parchment, marginTop: 5 }}>{t("cb." + m.id)}</Text>
+                    <Text style={{ fontFamily: F.serif, fontSize: 9, color: (bs.breath ?? 100) < battleMoveCost(m.id, stance) ? C.ember : C.parchmentMuted, marginTop: 4 }}>{m.id === "toparlan" ? `+${Math.min((bs.breathMax ?? 100) - (bs.breath ?? 100), 26 + (p.skills?.combat || 0))}` : applyParams(t("war.cost"), [battleMoveCost(m.id, stance)])}</Text>
                   </Pressable>
                 ))}
               </View>
@@ -196,6 +199,9 @@ export default function Savas() {
   // Seçim ekranı
   return (
     <ScreenFresk style={{ paddingTop: insets.top }}>
+      <Pressable onPress={() => router.push("/oyun/meslek")} style={{ paddingHorizontal: 16, paddingVertical: 12, minHeight: 44 }}>
+        <Text style={{ fontFamily: F.serif, fontSize: 12, color: C.parchmentMuted, lineHeight: 18 }}>{t("war.soldier")}</Text>
+      </Pressable>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 12 }}>
         <Pressable onPress={() => router.back()}><BackLabel /></Pressable>
         <View style={{ width: 40 }} />

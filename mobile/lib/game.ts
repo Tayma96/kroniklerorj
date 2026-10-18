@@ -132,6 +132,9 @@ export interface Player {
   trade_xp_turn?: number; // bu ay pazar işleminden ticaret tecrübesi alındı mı (tur başına tek — al-sat XP farmı önlenir)
   yr_money?: number; // geçen yaş gününde kese ne kadardı (yıl dönümü özeti farkı için)
   temperament?: string; // yaratılışta seçilen mizaç (yigit/kurnaz/merhametli/hirsli) — ömürlük küçük etkiler
+  crownSeat?: string; // tahta çıkılan beylik; taşınmayla sınır değiştirilmez
+  crownPolicy?: "denge" | "refah" | "sefer";
+  crownTreaties?: Record<string, { kind: "ticaret" | "ateskes"; until: number }>;
   crown_action_turn?: number; // bu ay taht eylemi (iddiacıyı bastır/uzlaş) yapıldı mı — tur başına tek
   jail?: { left: number; kind: string } | null; // zindan: kalan ay + sebep (ağır suç bedeli — zaman kaybı gerçek risk)
   jail_freed?: number; races_won?: number; divan_resolved?: number; // başarım sayaçları (history budanır; sayaç kalıcı — opsiyonel, eski kayıt dokunmadan)
@@ -2480,7 +2483,7 @@ export interface GameState {
   feud?: { houseId: string; nameIdx: number; stage: number; heat: number; act_turn?: number } | null; // kan davası: tek aktif dava; ısı büyür, aşama tırmanır, NESLE GEÇER (continueAsHeir)
   bloodline?: { houseId: string; nameIdx: number; gen: number; scene: string | null; path: string[]; opened: number; act_turn?: number } | null; // KAN DEFTERİ: dava kana bulanınca açılan nesiller aşan destan — VÂRİSE GEÇER (gen+1, devir sahnesi)
   succession?: { favored: string | null; rift: number } | null; // VERASET: gözde vâris ilanı — kardeş kırgınlığı birikir; ölümde meşruiyet etkisi (vârise taşınmaz)
-  crownCampaign?: { beylikId: string; month: number; edge: number } | null; // SEFER 2.0: üç aylık yürüyüş — ay ay ilerler, hüküm ayında zar atılır (vârise geçmez)
+  crownCampaign?: { beylikId: string; month: number; edge: number; supplies?: number; order_turn?: number; scouted?: boolean } | null; // SEFER 2.0: üç aylık yürüyüş — ay ay ilerler, hüküm ayında zar atılır (vârise geçmez)
   plot?: { kind: "leke" | "sabotaj" | "nifak"; houseId: string; nameIdx: number; stage: number; heat: number; helpers: number; started: number } | null; // entrika: tek aktif komplo; fısıltı birikir, açığa çıkabilir; ölümle düşer (vârise GEÇMEZ)
   enemyPlot?: { houseId: string; nameIdx: number; kind: "leke" | "sabotaj"; stage: number; known: boolean } | null; // karşı entrika: bir hane oyuncu aleyhine örer; kulak tutarak keşfedilir, kesilmezse patlar
   enemyPlotCool?: number; // patlama/bozulma sonrası soğuma: bu turdan önce yeni düşman komplosu doğmaz
@@ -4555,19 +4558,19 @@ export function sendEnvoy(prev: GameState, houseId: string): GameState {
   const cost = Math.round(ENVOY_COST * inflationFactor(s));
   if (p.money < cost) { push(s, "hanedan_haber", `Elçi donatacak akçen yok.`, "kişisel", false, { k: "evj.envoyNoFee" }); return s; }
   p.propose_turn = s.turn; p.money -= cost;
-  h.tutum = Math.min(100, (h.tutum ?? 0) + 8 + Math.floor(Math.random() * 7)); // 8-14: iki-üç elçilik soğuk haneyi teklife hazır eder
-  { const ev2 = chance(0.5); push(s, "hanedan_haber", ev2 ? `Elçin ${h.name} konağında üç gün ağırlandı; dönerken heybesinde karşı hediye vardı — buz tam kırılmadı ama çatladı.` : `${h.name} kapısına hediyelerle elçi gönderdin; soğuk selam ılıdı.`, "makro", false, { k: ev2 ? "evj.envoySent2" : "evj.envoySent", p: [{ hn: h.nameIdx }] }); }
+  h.tutum = Math.min(100, (h.tutum ?? 0) + 8 + Math.floor(gameRandom(s) * 7)); // 8-14: iki-üç elçilik soğuk haneyi teklife hazır eder
+  { const ev2 = gameRandom(s) < 0.5; push(s, "hanedan_haber", ev2 ? `Elçin ${h.name} konağında üç gün ağırlandı; dönerken heybesinde karşı hediye vardı — buz tam kırılmadı ama çatladı.` : `${h.name} kapısına hediyelerle elçi gönderdin; soğuk selam ılıdı.`, "makro", false, { k: ev2 ? "evj.envoySent2" : "evj.envoySent", p: [{ hn: h.nameIdx }] }); }
   return s;
 }
 // Haraç talebi: kılıç çekmeden beylik sindirmek — başarısı seferden düşük, bedeli otorite (taht eylemi hakkını kullanır).
 export function demandTribute(prev: GameState, beylikId: string): { state: GameState; success: boolean } {
   const s = clone(prev); const p = s.player;
-  if (!p.crowned || p.dead) return { state: s, success: false };
+  if (!p.crowned || p.dead || inJail(p) || crownTreaty(s, beylikId) || s.crownCampaign?.beylikId === beylikId) return { state: s, success: false };
   if (p.crown_action_turn === s.turn) return { state: s, success: false }; // ayda tek taht eylemi (iddia bastırmayla ortak)
   if (!campaignTargets(s).some((t) => t.id === beylikId)) return { state: s, success: false };
   p.crown_action_turn = s.turn;
-  const odds = Math.max(0.1, Math.min(0.8, campaignOdds(s) - 0.1)); // kılıçsız korkutmak kılıçtan zordur
-  if (Math.random() < odds) {
+  const odds = Math.max(0.1, Math.min(0.8, campaignOdds(s, beylikId) - 0.1)); // kılıçsız korkutmak kılıçtan zordur
+  if (gameRandom(s) < odds) {
     const trib = Math.round(150 * inflationFactor(s));
     p.money += trib; p.crownAuthority = clamp100(crownAuthorityOf(p) + 4); p.fear = clamp100(p.fear + 3);
     push(s, "taht", `Elçin boş dönmedi: haraç geldi; adın sınırda ağır anılıyor.`, "kişisel", true, { k: "crown.tributeWin", p: [{ bl: beylikId }, trib] });
@@ -4801,6 +4804,8 @@ function caravanAttackChance(s: GameState): number {
   if (p.skills.trade >= 8) c -= 0.03;
   if (p.fear > 50) c -= 0.03;            // korkulan biri daha az gözü kara saldırı çeker
   c -= (p.retinue || 0) * 0.02;          // maiyet kılıçları kervanla yürür — eşkıya iştahı kırılır
+  const stop = s.caravan?.route?.[s.caravan.step ?? 0] || s.caravan?.dest;
+  if (stop && crownTreaty(s, regionOf(stop))) c -= 0.04;
   if (s.wars.some((w) => w.turnsLeft > 0)) c += 0.08; // diyar savaştaysa yollar tehlikeli
   return Math.max(0.03, Math.min(0.4, c));
 }
@@ -4855,7 +4860,7 @@ function tickCaravan(s: GameState) {
   const effSpread = 1 + (spread - 1) * (satCap / (satCap + c.invested));
   // Taban ~0.92: fiyat farkı yoksa kervan masrafına çalışır (arbitraj yok = kâr yok). Ticaret becerisi
   // yalnız arbitraj dilimini büyütür — doymuş pazarda usta tüccar bile ancak başabaş çıkar.
-  const mult = Math.max(0.4, 0.92 + 0.5 * (effSpread - 1) * (1 + p.skills.trade * 0.05) + (gameRandom(s) * 0.2 - 0.05));
+  const mult = Math.max(0.4, 0.92 + 0.5 * (effSpread - 1) * (1 + p.skills.trade * 0.05) + (gameRandom(s) * 0.2 - 0.05) + (crownTreaty(s, regionOf(c.dest))?.kind === "ticaret" ? 0.06 : 0));
   const ret = Math.round(c.invested * mult);
   p.money += ret; gainSkill(s, "trade", 10);
   if (c.good) addTradePressure(s, c.dest, c.good, -Math.min(0.20, c.invested / 20000)); // getirdiğin mal hedefte arzı bollaştırır (kalıcı iz, sönümlü)
@@ -9757,7 +9762,7 @@ function maybeInjure(s: GameState, heavy: boolean) {
 // Dövüş girişi: ay hakkı ekrana adım atınca yanar — kaybederken OS-geri ile kaçıp bedelsiz tekrar denenemez (risk by-pass'ı kapalı).
 export function startBattleAttempt(prev: GameState): GameState {
   const s = clone(prev); const p = s.player;
-  if (p.dead || p.battle_turn === s.turn) return s;
+  if (p.dead || inJail(p) || p.age < 13 || p.health < 15 || p.battle_turn === s.turn) return s;
   p.battle_turn = s.turn;
   gameRandom(s); // dövüş kendi alt akışını kullanır; giriş bir kayıtlı zar ayırır
   return s;
@@ -9765,7 +9770,7 @@ export function startBattleAttempt(prev: GameState): GameState {
 // Tur-tabanlı savaşın sonucunu uygula (savas ekranı çağırır).
 export function applyBattleOutcome(prev: GameState, id: string, won: boolean, finalHp: number): GameState {
   const s = clone(prev); const p = s.player; const e = ENCOUNTERS.find((x) => x.id === id);
-  if (!e) return s;
+  if (!e || p.dead || !Number.isFinite(finalHp)) return s;
   if (p.battle_award_turn === s.turn) return s; // çekirdek kapısı (UI'dan bağımsız): sonuç ayda bir kez uygulanır
   p.battle_award_turn = s.turn;
   p.battle_turn = s.turn; // giriş kilidi kurulmamışsa (eski akış) burada da kurulur — çifte güvence
@@ -10118,7 +10123,7 @@ export function nemesisEncounter(s: GameState): Encounter | null {
   return { id: "nemesis", title: `Nemesis: ${n.name}`, desc: `${n.name} ile son hesaplaşma.`, power: n.power, reward: Math.round(90 * inflationFactor(s)), fame: 16, honor: 8, danger: 30 };
 }
 export function applyNemesisOutcome(prev: GameState, won: boolean, finalHp: number): GameState {
-  const s = clone(prev); const p = s.player; const n = s.story?.nemesis; if (!n) return s;
+  const s = clone(prev); const p = s.player; const n = s.story?.nemesis; if (!n || p.dead || !Number.isFinite(finalHp)) return s;
   if (p.battle_award_turn === s.turn) return s; // çekirdek kapısı (UI'dan bağımsız): sonuç ayda bir kez uygulanır
   p.battle_award_turn = s.turn;
   p.battle_turn = s.turn; // nemesis hesaplaşması da tur başına tek dövüş kapısına dahil (giriş kilidi kurulmamışsa çifte güvence)
@@ -10815,7 +10820,7 @@ export function throneRequirements(s: GameState): ThroneReq[] {
 // Tahta iddia için arka: bir lonca DESTEĞİ ya da sarayda yüksek mevki (Vezir+) — devlet ricalinden güç tabanı.
 export function throneBacking(p: Player): boolean { return !!p.faction || (p.courtRank ?? -1) >= 3; }
 export function canClaimThrone(s: GameState): boolean {
-  return !s.player.crowned && !s.player.dead && throneBacking(s.player) && throneRequirements(s).every((r) => r.ok);
+  return !s.player.crowned && !s.player.dead && !inJail(s.player) && throneBacking(s.player) && throneRequirements(s).every((r) => r.ok);
 }
 // İddianın başarı şansı: hane gücü en güçlü rakibe karşı, şöhret, savaş ve lonca desteğiyle ölçülür.
 export function throneOdds(s: GameState): number {
@@ -10835,13 +10840,13 @@ export function claimThrone(prev: GameState): { state: GameState; success: boole
   if (!canClaimThrone(s)) return { state: s, success: false };
   const odds = throneOdds(s);
   p.money -= THRONE_COST;
-  const success = Math.random() < odds;
+  const success = gameRandom(s) < odds;
   if (success) {
-    p.crowned = true;
+    p.crowned = true; p.crownSeat = regionOf(p.home_name || p.location_name);
     p.crownAuthority = 72; // tahta yeni çıkan hükümdarın başlangıç otoritesi
     p.fame = Math.min(100, p.fame + 25); p.reputation = Math.min(100, p.reputation + 15);
     bumpNam(p, "mert", 6);
-    { const tw2 = chance(0.5); push(s, "taht", tw2 ? `Kubbede üç gün mum yandı, kapılarda üç gün aş kaynadı: taht artık ${p.surname || p.name} Hanedanı'nın. İlk ferman: kimse aç yatmasın.` : `Tahta çıktın! Bundan böyle ${p.surname || p.name} Hanedanı diyara hükmediyor.`, "kişisel", true, { k: tw2 ? "ev.throne.win2" : "ev.throne.win" }); }
+    { const tw2 = gameRandom(s) < 0.5; push(s, "taht", tw2 ? `Kubbede üç gün mum yandı, kapılarda üç gün aş kaynadı: taht artık ${p.surname || p.name} Hanedanı'nın. İlk ferman: kimse aç yatmasın.` : `Tahta çıktın! Bundan böyle ${p.surname || p.name} Hanedanı diyara hükmediyor.`, "kişisel", true, { k: tw2 ? "ev.throne.win2" : "ev.throne.win" }); }
   } else {
     p.reputation = Math.max(-100, p.reputation - 30); p.fame = Math.max(0, p.fame - 15);
     p.fear = Math.min(100, p.fear + 10); p.health = Math.max(1, p.health - 25);
@@ -11313,7 +11318,7 @@ export function suppressPretender(prev: GameState): GameState {
   if (p.crown_action_turn === s.turn) return s; // ayda tek taht eylemi
   p.crown_action_turn = s.turn; p.money -= PRETENDER_SUPPRESS_COST;
   const h = ensureRivals(s).find((x) => x.id === s.pretender!.houseId); if (!h) { s.pretender = null; return s; }
-  if (Math.random() < Math.min(0.9, 0.45 + p.skills.combat * 0.03 + crownAuthorityOf(p) / 200 + Math.min(0.09, (s.allied_houses?.length || 0) * 0.03))) { // müttefikler iddiacıya karşı da yanında
+  if (gameRandom(s) < Math.min(0.9, 0.45 + p.skills.combat * 0.03 + crownAuthorityOf(p) / 200 + Math.min(0.09, (s.allied_houses?.length || 0) * 0.03))) { // müttefikler iddiacıya karşı da yanında
     s.pretender!.strength = Math.max(0, s.pretender!.strength - 28); h.power = Math.max(20, h.power - 8); p.fear = clamp100(p.fear + 3);
     if (s.pretender!.strength <= 0) { s.pretender = null; p.crownAuthority = clamp100(crownAuthorityOf(p) + 8); push(s, "taht", `${h.name} sindirildi; iddia söndü.`, "kişisel", true, { k: "crown.pretCrushed", p: [{ hn: h.nameIdx }] }); }
     else push(s, "taht", `${h.name} destekçilerine gözdağı verdin; iddia geriledi.`, "kişisel", false, { k: "crown.pretSupWin", p: [{ hn: h.nameIdx }] });
@@ -11380,25 +11385,88 @@ export function issueDecree(prev: GameState, id: string): GameState {
 
 // Sefer (hükümdar askerî seferi): rakip beyliğe sefer; başarı hane gücü + otorite + savaşla; ilhak → haraç + şöhret.
 export const CAMPAIGN_COST = 800;
+export type CrownPolicy = "denge" | "refah" | "sefer";
+export const CROWN_POLICIES = [
+  { id: "denge" as const, tribute: 1, authority: 0, war: 0 },
+  { id: "refah" as const, tribute: 0.8, authority: 8, war: 0 },
+  { id: "sefer" as const, tribute: 0.85, authority: -4, war: 0.07 },
+];
+export function crownPolicyOf(p: Player) { return CROWN_POLICIES.find((x) => x.id === p.crownPolicy) || CROWN_POLICIES[0]; }
+export function setCrownPolicy(prev: GameState, id: CrownPolicy): GameState {
+  const s = clone(prev), p = s.player;
+  if (!p.crowned || p.dead || inJail(p) || p.crown_action_turn === s.turn || crownPolicyOf(p).id === id || !CROWN_POLICIES.some((x) => x.id === id)) return s;
+  p.crown_action_turn = s.turn; p.crownPolicy = id;
+  push(s, "taht", "Devlet siyaseti değişti.", "kişisel", false, { k: "war.policy.changed", p: [{ sfx: "war.policy." + id }] });
+  return s;
+}
+export function crownTreaty(s: GameState, id: string) {
+  const t = s.player.crownTreaties?.[id];
+  return s.player.crowned && !s.player.dead && t && t.until > s.turn && (t.kind === "ticaret" || t.kind === "ateskes") ? t : null;
+}
+export function treatyCost(s: GameState, kind: "ticaret" | "ateskes"): number { return Math.round((kind === "ticaret" ? 180 : 120) * inflationFactor(s)); }
+export function treatyOdds(s: GameState, kind: "ticaret" | "ateskes"): number {
+  return Math.max(0.2, Math.min(0.85, 0.3 + socialPresence(s.player) * 0.035 + crownAuthorityOf(s.player) / 350 + s.player.honor / 600 - s.player.fear / 1000 - (kind === "ticaret" ? 0.05 : 0)));
+}
+export function negotiateTreaty(prev: GameState, id: string, kind: "ticaret" | "ateskes"): { state: GameState; success: boolean } {
+  const s = clone(prev), p = s.player;
+  if (!p.crowned || p.dead || inJail(p) || p.crown_action_turn === s.turn || !["ticaret", "ateskes"].includes(kind) || !campaignTargets(s).some((x) => x.id === id) || crownTreaty(s, id) || s.crownCampaign?.beylikId === id || p.money < treatyCost(s, kind)) return { state: s, success: false };
+  p.crown_action_turn = s.turn; p.money -= treatyCost(s, kind);
+  const success = gameRandom(s) < treatyOdds(s, kind);
+  if (success) {
+    (p.crownTreaties ||= {})[id] = { kind, until: s.turn + 12 };
+    p.honor = clamp100(p.honor + 2);
+    push(s, "taht", "Elçiler anlaşmayla döndü.", "kişisel", true, { k: "war.treaty.event." + kind, p: [{ bl: id }, 12] });
+  } else {
+    p.crownAuthority = clamp100(crownAuthorityOf(p) - 2);
+    push(s, "taht", "Elçilik anlaşma sağlayamadı.", "kişisel", false, { k: "war.treaty.refused", p: [{ bl: id }] });
+  }
+  return { state: s, success };
+}
+export function crownControls(s: GameState, loc: string): boolean {
+  const id = regionOf(loc);
+  return !!s.player.crowned && !s.player.dead && (id === (s.player.crownSeat || regionOf(s.player.home_name || s.player.location_name)) || (s.player.crownConquests || []).includes(id));
+}
+export type CampaignOrder = "ikmal" | "kesif" | "hucum";
+export function campaignOrderCost(s: GameState, id: CampaignOrder): number { return Math.round(({ ikmal: 120, kesif: 60, hucum: 0 }[id] ?? 0) * inflationFactor(s)); }
+export function commandCampaign(prev: GameState, id: CampaignOrder): GameState {
+  const s = clone(prev), p = s.player, c = s.crownCampaign;
+  if (!c || !p.crowned || p.dead || inJail(p) || c.order_turn === s.turn || !["ikmal", "kesif", "hucum"].includes(id) || p.money < campaignOrderCost(s, id)) return s;
+  const supply = c.supplies ?? 65;
+  if (id === "hucum" && (supply < 25 || p.health < 8)) return s;
+  if (id === "ikmal" && supply >= 100) return s;
+  c.order_turn = s.turn; const cost = campaignOrderCost(s, id); p.money -= cost;
+  if (id === "ikmal") c.supplies = Math.min(100, supply + 35);
+  if (id === "kesif") { c.scouted = true; c.edge = Math.min(40, c.edge + 3); }
+  if (id === "hucum") { c.supplies = supply - 20; c.edge = Math.min(40, c.edge + 7); p.health -= 3; }
+  push(s, "taht", "Sefer emri verildi.", "kişisel", false, { k: "war.order.done", p: [{ sfx: "war.order." + id }, cost] });
+  return s;
+}
+export function campaignForecast(s: GameState): number {
+  const c = s.crownCampaign;
+  return c ? Math.max(0.15, Math.min(0.92, campaignOdds(s, c.beylikId) + c.edge / 100 + ((c.supplies ?? 65) - 50) / 500)) : campaignOdds(s);
+}
 export function campaignTargets(s: GameState): { id: string; name: string }[] {
-  const own = regionOf(s.player.home_name || s.player.location_name);
+  const own = s.player.crownSeat || regionOf(s.player.home_name || s.player.location_name);
   const done = s.player.crownConquests || [];
   return BEYLIKS.filter((b) => b.id !== own && !done.includes(b.id)).map((b) => ({ id: b.id, name: b.name }));
 }
-export function canLaunchCampaign(s: GameState): boolean {
+export function canLaunchCampaign(s: GameState, target?: string): boolean {
   if (inJail(s.player)) return false;
+  if (target && (crownTreaty(s, target) || !campaignTargets(s).some((x) => x.id === target))) return false;
   if (s.crownCampaign) return false; // ordu zaten yolda — ikinci tuğ çözülmez
-  return !!s.player.crowned && !s.player.dead && s.player.money >= CAMPAIGN_COST && campaignTargets(s).length > 0;
+  return !!s.player.crowned && !s.player.dead && s.player.money >= Math.round(CAMPAIGN_COST * inflationFactor(s)) && campaignTargets(s).some((x) => !crownTreaty(s, x.id));
 }
-export function campaignOdds(s: GameState): number {
+export function campaignOdds(s: GameState, target?: string): number {
   const p = s.player;
-  const odds = 0.40 + (dynastyPower(s) - 140) / 400 + crownAuthorityOf(p) / 300 + p.skills.combat / 50 + Math.min(0.12, (s.allied_houses?.length || 0) * 0.04); // müttefik haneler sancağın altına atlı yollar
-  return Math.max(0.15, Math.min(0.88, odds));
+  const odds = 0.34 + (dynastyPower(s) - 140) / 500 + crownAuthorityOf(p) / 450 + p.skills.combat / 70 + Math.min(0.09, (s.allied_houses?.length || 0) * 0.04); // müttefik haneler sancağın altına atlı yollar
+  const defender = target ? s.realm?.find((x) => x.id === target) : undefined;
+  const resistance = defender ? (1 - defender.tension / 100) * 0.08 + factionTrait(defender.holder).aggression * 0.04 : 0;
+  return Math.max(0.15, Math.min(0.88, odds + crownPolicyOf(p).war - resistance));
 }
 export function launchCampaign(prev: GameState, beylikId: string): { state: GameState; success: boolean } {
   const s = clone(prev); const p = s.player;
-  if (!canLaunchCampaign(s) || !campaignTargets(s).some((tg) => tg.id === beylikId)) return { state: s, success: false };
-  p.money -= CAMPAIGN_COST;
+  if (!canLaunchCampaign(s, beylikId)) return { state: s, success: false };
+  p.money -= Math.round(CAMPAIGN_COST * inflationFactor(s));
   if (campaignOdds(s) < 0.3) { // divanın bildiği oran yüzde otuzun altındayken tuğ çözmek: "Deli Hükümdar" yolu
     p.delilik = (p.delilik || 0) + 1;
     push(s, "lakap", `Divan fısıldaşıyor: bu sefer akıl kârı değil. Tuğlar yine de çözüldü ve tahtta bir delilik olduğu konuşulmaya başladı.`, "kişisel", false, { k: "evj.deli.sefer" });
@@ -11408,7 +11476,7 @@ export function launchCampaign(prev: GameState, beylikId: string): { state: Game
     const ah = ensureRivals(s).find((x) => s.allied_houses!.includes(x.id));
     if (ah) { edge += 4; push(s, "taht", `${ah.name} sancağın altına atlılarını yolladı; ordun güçlendi.`, "kişisel", false, { k: "crown.allyAid", p: [{ hn: ah.nameIdx }] }); }
   }
-  s.crownCampaign = { beylikId, month: 0, edge };
+  s.crownCampaign = { beylikId, month: 0, edge, supplies: 65 };
   push(s, "taht", `Tuğlar çözüldü, davullar vuruldu: ordu yürüyüşe geçti. Hüküm üç ay sonra okunacak.`, "kişisel", true, { k: "crown.campaignStart", p: [{ bl: beylikId }] });
   return { state: s, success: true };
 }
@@ -11422,27 +11490,33 @@ function crownCampaignTick(s: GameState) {
     push(s, "taht", `Taç düşünce sefer ordusu dağıldı; tuğlar geri getirildi.`, "kişisel", false, { k: "crown.cmp.dissolved" });
     return;
   }
+  c.supplies = Math.max(0, (c.supplies ?? 65) - 20);
+  if (c.supplies < 25) {
+    c.edge = Math.max(-40, c.edge - 5);
+    push(s, "taht", "Erzak azaldı; ordu zayıfladı.", "kişisel", false, { k: "war.supply.low" });
+  }
+  const scouted = c.scouted; c.scouted = false;
   c.month += 1;
   if (c.month === 1) {
-    if (chance(0.5)) { c.edge += 3; push(s, "taht", `Öncüler geçitleri tuttu, köyler erzak verdi; yürüyüş hızlandı.`, "kişisel", false, { k: "crown.cmp.road1" }); }
+    if (gameRandom(s) < (scouted ? 0.8 : 0.5)) { c.edge += 3; push(s, "taht", `Öncüler geçitleri tuttu, köyler erzak verdi; yürüyüş hızlandı.`, "kişisel", false, { k: "crown.cmp.road1" }); }
     else { c.edge -= 2; push(s, "taht", `Yağmur yolları çamura çevirdi; arabalar geride kaldı.`, "kişisel", false, { k: "crown.cmp.road2" }); }
     return;
   }
   if (c.month === 2) {
-    if (chance(0.5)) { c.edge += 4; push(s, "taht", `Lağımcılar surun altına indi; gedik an meselesi.`, "kişisel", false, { k: "crown.cmp.siege1" }); }
+    if (gameRandom(s) < (scouted ? 0.8 : 0.5)) { c.edge += 4; push(s, "taht", `Lağımcılar surun altına indi; gedik an meselesi.`, "kişisel", false, { k: "crown.cmp.siege1" }); }
     else { c.edge -= 3; p.health = Math.max(1, p.health - 4); push(s, "taht", `Ordugâha hastalık düştü; kuşatma gevşedi.`, "kişisel", false, { k: "crown.cmp.siege2" }); }
     return;
   }
   const beylikId = c.beylikId;
+  const odds = campaignForecast(s);
   s.crownCampaign = null;
-  const odds = Math.max(0.15, Math.min(0.92, campaignOdds(s) + c.edge / 100));
-  if (Math.random() < odds) {
+  if (gameRandom(s) < odds) {
     p.crownConquests = [...(p.crownConquests || []), beylikId];
     p.campaignsWon = (p.campaignsWon || 0) + 1; p.zafer = (p.zafer || 0) + 1; (p.fetih_turlari = p.fetih_turlari || []).push(s.turn);
     p.crownAuthority = clamp100(crownAuthorityOf(p) + 10);
     p.fame = clamp100(p.fame + 12);
     bumpNam(p, "mert", 5);
-    const tribute = 300 + Math.floor(Math.random() * 300); p.money += tribute;
+    const tribute = 300 + Math.floor(gameRandom(s) * 300); p.money += tribute;
     push(s, "taht", `Sefer zaferle bitti; topraklar tâcına katıldı (+${tribute} akçe ganimet).`, "kişisel", true, { k: "crown.campaignWin", p: [{ bl: beylikId }, tribute] });
     // Diyar birleşmesi: son sancak da tâca katıldıysa bir kezlik doruk anı (hedef listesi boşaldığında tetiklenir — tekrarlanamaz).
     if (campaignTargets(s).length === 0) {
@@ -11452,9 +11526,9 @@ function crownCampaignTick(s: GameState) {
   } else {
     p.crownAuthority = clamp100(crownAuthorityOf(p) - 12); p.bozgun = (p.bozgun || 0) + 1;
     p.reputation = Math.max(-100, p.reputation - 6);
-    const hurt = 6 + Math.floor(Math.random() * 10); p.health = Math.max(1, p.health - hurt);
+    const hurt = 6 + Math.floor(gameRandom(s) * 10); p.health = Math.max(1, p.health - hurt);
     push(s, "taht", `Sefer bozguna uğradı; otoriten sarsıldı, yara aldın (−${hurt} sağlık).`, "kişisel", true, { k: "crown.campaignLose", p: [{ bl: beylikId }, hurt] });
-    if ((p.retinue || 0) > 0 && chance(0.35)) { // bozgunda maiyet de kan verir
+    if ((p.retinue || 0) > 0 && gameRandom(s) < 0.35) { // bozgunda maiyet de kan verir
       p.retinue = (p.retinue || 0) - 1;
       push(s, "taht", `Bozgunun tozu dinince yoklama yapıldı: muhafızlarından biri geri dönmedi.`, "kişisel", false, { k: "crown.cmp.guardFallen" });
     }
@@ -11466,17 +11540,17 @@ export const APPOINT_FEE = 150;
 export function isAppointableKind(loc: string): boolean { const k = placeKind(loc); return k === "şehir" || k === "kale"; }
 export function appointableCities(s: GameState): string[] {
   const p = s.player;
-  return LOCATIONS.filter((loc) => isAppointableKind(loc) && !(p.governorships || []).includes(loc) && !(p.appointedGov || {})[loc]);
+  return LOCATIONS.filter((loc) => isAppointableKind(loc) && crownControls(s, loc) && !(p.governorships || []).includes(loc) && !(p.appointedGov || {})[loc]);
 }
 export function canAppointGovernor(s: GameState, loc: string): boolean {
-  return !!s.player.crowned && !s.player.dead && s.player.money >= APPOINT_FEE && appointableCities(s).includes(loc);
+  return !!s.player.crowned && !s.player.dead && !inJail(s.player) && s.player.money >= APPOINT_FEE && appointableCities(s).includes(loc);
 }
 export function appointGovernor(prev: GameState, loc: string): GameState {
   const s = clone(prev); const p = s.player;
   if (!canAppointGovernor(s, loc)) return s;
   p.money -= APPOINT_FEE;
-  const seed = (locSeed(loc) ^ s.turn ^ Math.floor(Math.random() * 1e6)) >>> 0;
-  const gender: "erkek" | "kadın" = Math.random() < 0.5 ? "erkek" : "kadın";
+  const seed = (locSeed(loc) ^ s.turn ^ Math.floor(gameRandom(s) * 1e6)) >>> 0;
+  const gender: "erkek" | "kadın" = gameRandom(s) < 0.5 ? "erkek" : "kadın";
   if (!p.appointedGov) p.appointedGov = {};
   p.appointedGov[loc] = { seed, gender, loyalty: 70 };
   p.crownAuthority = clamp100(crownAuthorityOf(p) + 3);
@@ -11496,37 +11570,38 @@ export function dismissGovernor(prev: GameState, loc: string): GameState {
 export function crownTribute(s: GameState): number {
   const p = s.player; if (!p.crowned) return 0;
   let t = (p.crownConquests?.length || 0) * 25;
-  if (p.appointedGov) for (const loc of Object.keys(p.appointedGov)) { const g = p.appointedGov[loc]; t += Math.max(1, Math.round(cityInfo(loc, placeKind(loc)).prosperity / 6 * (g.loyalty / 100))); }
-  return t;
+  if (p.appointedGov) for (const loc of Object.keys(p.appointedGov)) { if (!crownControls(s, loc)) continue; const g = p.appointedGov[loc]; t += Math.max(1, Math.round(cityInfo(loc, placeKind(loc)).prosperity / 6 * (g.loyalty / 100))); }
+  return Math.round(t * crownPolicyOf(p).tribute);
 }
 
 // Hükümdarlık tiki (her tur, yalnız tahttaysan): otorite kayması + atanan vali sadakati + saray olayları + isyan riski.
 const CROWN_EVENTS = ["envoy", "famine", "loyal", "plot"] as const;
 function crownTick(s: GameState) {
   const p = s.player; if (!p.crowned || p.dead) return;
+  if (p.crownTreaties) for (const id of Object.keys(p.crownTreaties)) if (p.crownTreaties[id].until <= s.turn) delete p.crownTreaties[id];
   let auth = crownAuthorityOf(p);
-  const target = 45 + (p.reputation - 50) * 0.3 + p.honor * 0.12 + p.fame * 0.15 - p.fear * 0.05 + (p.crownConquests?.length || 0) * 3;
+  const target = crownPolicyOf(p).authority + 45 + (p.reputation - 50) * 0.3 + p.honor * 0.12 + p.fame * 0.15 - p.fear * 0.05 + (p.crownConquests?.length || 0) * 3;
   auth = clamp100(auth + (target - auth) * 0.12 - 1.0); // hafif doğal aşınma → ilgilenilmezse düşer
   p.crownAuthority = Math.round(auth);
   // Atanan valilerin sadakati: zamanla aşınır; otorite yüksekse korunur; çok düşerse ayrılır (defection).
   if (p.appointedGov) for (const loc of Object.keys(p.appointedGov)) {
     const g = p.appointedGov[loc];
     g.loyalty = clamp100(g.loyalty - 1.5 + (auth > 62 ? 1.5 : 0));
-    if (g.loyalty < 22 && Math.random() < 0.14) {
+    if (g.loyalty < 22 && gameRandom(s) < 0.14) {
       delete p.appointedGov[loc]; p.crownAuthority = clamp100(crownAuthorityOf(p) - 5);
       push(s, "taht", `${loc} valisi sadakatten ayrıldı; haracı kesildi.`, "kişisel", true, { k: "crown.defect", p: [{ fn: [g.seed, g.gender] }, { pl: loc }] });
     }
   }
   // Saray olayları (otoriteye göre): düşük ihtimalle bir an.
-  if (Math.random() < 0.08) {
-    const ev = CROWN_EVENTS[Math.floor(Math.random() * CROWN_EVENTS.length)];
+  if (gameRandom(s) < 0.08) {
+    const ev = CROWN_EVENTS[Math.floor(gameRandom(s) * CROWN_EVENTS.length)];
     if (ev === "envoy") { p.fame = clamp100(p.fame + 2); p.crownAuthority = clamp100(crownAuthorityOf(p) + 2); push(s, "taht", `Yabancı bir elçi sarayına geldi; hediyelerle dostluk tazelendi.`, "kişisel", false, { k: "crown.ev.envoy" }); }
     else if (ev === "famine") { p.crownAuthority = clamp100(crownAuthorityOf(p) - 5); push(s, "taht", `Diyarda kıtlık baş gösterdi; halkın hükümdara güveni sarsıldı.`, "kişisel", true, { k: "crown.ev.famine" }); }
     else if (ev === "loyal") { p.crownAuthority = clamp100(crownAuthorityOf(p) + 4); push(s, "taht", `Sadık bir tebaa divanda seni öven nutuk verdi; otoriten pekişti.`, "kişisel", false, { k: "crown.ev.loyal" }); }
     else { if (auth > 50) { p.crownAuthority = clamp100(crownAuthorityOf(p) + 2); push(s, "taht", `Bir vezir entrikası açığa çıktı; vaktinde bastırdın, otoriten arttı.`, "kişisel", true, { k: "crown.ev.plotFoil" }); } else { p.crownAuthority = clamp100(crownAuthorityOf(p) - 6); p.fear = clamp100(p.fear + 4); push(s, "taht", `Sarayda bir entrika otoriteni hırpaladı; korku saçtın.`, "kişisel", true, { k: "crown.ev.plotHit" }); } }
   }
   // ── Taht İddiacısı: taç rahat durmaz — hoşnutsuz bir hanedan hak iddia eder. Kral artık her ay karar sahibi. ──
-  if (!s.pretender && Math.random() < (crownAuthorityOf(p) < 50 ? 0.12 : 0.05)) {
+  if (!s.pretender && gameRandom(s) < (crownAuthorityOf(p) < 50 ? 0.12 : 0.05)) {
     const cand = ensureRivals(s).filter((h) => (h.tutum ?? 0) < 20).sort((a, b) => ((a.tutum ?? 0) - (b.tutum ?? 0)) || (b.power - a.power))[0];
     if (cand) {
       s.pretender = { houseId: cand.id, strength: 25 };
@@ -11539,7 +11614,7 @@ function crownTick(s: GameState) {
       s.pretender.strength = Math.min(100, s.pretender.strength + 2 + (crownAuthorityOf(p) < 50 ? 2 : 0));
       if (s.pretender.strength >= 100) {
         // İç savaş: iddia doruğa vardı — tek hamlede çözülür.
-        const win = Math.random() < Math.max(0.15, Math.min(0.85, 0.5 + (crownAuthorityOf(p) - 50) / 100 + p.skills.combat / 40 - h.power / 400));
+        const win = gameRandom(s) < Math.max(0.15, Math.min(0.85, 0.5 + (crownAuthorityOf(p) - 50) / 100 + p.skills.combat / 40 - h.power / 400));
         if (win) {
           s.pretender = null; h.power = Math.max(20, h.power - 30);
           p.fame = clamp100(p.fame + 10); p.crownAuthority = clamp100(crownAuthorityOf(p) + 15);
@@ -11554,8 +11629,8 @@ function crownTick(s: GameState) {
     }
   }
   // Otorite dibe vurursa: isyan — bastıramazsan tacını yitirirsin (nadir, çok düşük otoritede).
-  if (crownAuthorityOf(p) < 12 && Math.random() < 0.05) { // tur-içi olaylardan sonraki güncel otorite
-    if (p.skills.combat + p.fame / 2 > 30 && Math.random() < 0.5) {
+  if (crownAuthorityOf(p) < 12 && gameRandom(s) < 0.05) { // tur-içi olaylardan sonraki güncel otorite
+    if (p.skills.combat + p.fame / 2 > 30 && gameRandom(s) < 0.5) {
       p.crownAuthority = 30; push(s, "taht", `Büyük bir isyan patladı; güçbela bastırdın, tahtı korudun.`, "kişisel", true, { k: "crown.rebellionHold" });
     } else {
       p.crowned = false; p.crownAuthority = undefined; p.appointedGov = {};
@@ -11809,6 +11884,22 @@ export function migrate(s: GameState): GameState {
   const p: any = s.player || {};
   // Onarım: yarım yazılmış / elle düzenlenmiş kayıtta çekirdek alanlar eksik ya da sayı-dışıysa motor ilk ayda çökmesin (göç-fuzz denetimi).
   if (!Number.isFinite(s.turn)) s.turn = 0;
+  if (p.crowned && !BEYLIKS.some((b) => b.id === p.crownSeat)) p.crownSeat = regionOf(p.home_name || p.location_name);
+  if (p.crownPolicy !== undefined && !CROWN_POLICIES.some((x) => x.id === p.crownPolicy)) delete p.crownPolicy;
+  if (p.crownTreaties !== undefined) {
+    const raw = p.crownTreaties as Record<string, { kind: "ticaret" | "ateskes"; until: number }> | null;
+    p.crownTreaties = raw && typeof raw === "object" && !Array.isArray(raw) ? Object.fromEntries(Object.entries(raw).filter(([id, t]) => BEYLIKS.some((b) => b.id === id) && t && ["ticaret", "ateskes"].includes(t.kind) && Number.isFinite(t.until) && t.until > s.turn && t.until <= s.turn + 12).map(([id, t]) => [id, { kind: t.kind, until: Math.floor(t.until) }])) : undefined;
+  }
+  if (s.crownCampaign) {
+    const c = s.crownCampaign;
+    if (!BEYLIKS.some((b) => b.id === c.beylikId) || !Number.isFinite(c.month) || !Number.isFinite(c.edge)) s.crownCampaign = null;
+    else {
+      c.month = Math.max(0, Math.min(2, Math.floor(c.month))); c.edge = Math.max(-40, Math.min(40, c.edge));
+      c.supplies = Number.isFinite(c.supplies) ? clamp100(c.supplies!) : 65;
+      if (!Number.isFinite(c.order_turn) || c.order_turn! > s.turn) delete c.order_turn;
+      c.scouted = c.scouted === true;
+    }
+  }
   if (!Number.isFinite(s.rng_state) || (s.rng_state! >>> 0) === 0) s.rng_state = rngBaslangici(s.seed, s.turn, Number.isFinite(p.generation) ? p.generation : 1);
   if (!Array.isArray(s.history)) s.history = [];
   if (Array.isArray(s.rivals)) ensureRivals(s); // eski/elle düzenlenmiş hane trendi ve kriz alanlarını güvenli biçime getir

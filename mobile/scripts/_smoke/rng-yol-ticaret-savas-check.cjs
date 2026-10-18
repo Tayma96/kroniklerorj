@@ -144,7 +144,7 @@ const quick = process.env.SMOKE_PROFILE === "quick"; // doğrudan/CI çağrısı
     let bs = noAmbient(() => cb.startBattle(player, enc, seed));
     assert.deepEqual(bs, noAmbient(() => cb.startBattle(player, enc, seed)));
     while (!bs.over && bs.round < 100) {
-      const move = ["hamle", "savustur", "ozel"][bs.round % 3];
+      const move = (bs.breath ?? 100) < 28 ? "toparlan" : ["hamle", "savustur", "ozel"][bs.round % 3];
       bs = same(bs, (x) => cb.stepBattle(x, player, move, stance), "Taktik savaş"); rounds++;
       bs.log.forEach((e) => {
         combatKeys.add(e.k);

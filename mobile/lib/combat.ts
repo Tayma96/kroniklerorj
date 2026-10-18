@@ -3,10 +3,11 @@ import { Player, Encounter, combatPower, armorDefense, weaponClass, shieldBlockC
 import { WClass } from "./world";
 import { nextRandom } from "./random";
 
-export type Move = "hamle" | "savustur" | "ozel";
+export type Move = "hamle" | "savustur" | "ozel" | "toparlan";
 export const MOVES: { id: Move; label: string; icon: string; hint: string }[] = [
   { id: "hamle",    label: "Hamle",    icon: "crossed-swords", hint: "Saldırır. Özel'i bozar, savuşturmaya yenilir." },
   { id: "savustur", label: "Savuştur", icon: "shield",         hint: "Savunur. Hamle'yi karşılar, özele yenilir." },
+  { id: "toparlan", label: "Toparlan", icon: "shield", hint: "Nefes toplar; rakip saldırabilir." },
   { id: "ozel",     label: "Özel",     icon: "fist",           hint: "Güçlü vuruş. Savuşturmayı kırar, hamleye yenilir." },
 ];
 // Taş-kağıt-makas: hamle>ozel, savustur>hamle, ozel>savustur
@@ -46,6 +47,7 @@ export interface CbLogEntry { k: string; p?: CbLogParam[]; }
 
 export interface BattleState {
   rng_state?: number; // dövüşe girişte kayıttan ayrılan zar; hamleler bu alt akışı ilerletir
+  breath?: number; breathMax?: number; momentum?: number; lastMove?: Move; repetition?: number;
   enemyName: string; enemyPower: number;
   playerHp: number; playerMax: number; enemyHp: number; enemyMax: number;
   round: number; log: CbLogEntry[]; over: boolean; won: boolean;
@@ -91,7 +93,8 @@ export function startBattle(p: Player, e: Encounter, rngState: number): BattleSt
   }
   return {
     enemyName: e.title, enemyPower: e.power,
-    playerHp: Math.max(20, Math.round(p.health)), playerMax: Math.max(20, Math.round(p.health)),
+    playerHp: Math.max(1, Math.round(p.health)), playerMax: Math.max(1, Math.round(p.health)),
+    breath: 60 + Math.min(40, (p.stats.stamina || 1) * 4), breathMax: 60 + Math.min(40, (p.stats.stamina || 1) * 4), momentum: 0,
     enemyHp, enemyMax,
     round: 1, log, over: enemyHp <= 0, won: enemyHp <= 0,
     arch: encounterArch(e.id), enemyIntent, rng_state: rng.rng_state,
@@ -110,9 +113,19 @@ function classAtkMult(wc: WClass | null, round: number, outcome: "tie" | "win", 
   }
 }
 
+export function battleMoveCost(mv: Move, stance: Stance = "dengeli"): number {
+  return mv === "toparlan" ? 0 : Math.max(4, ({ hamle: 12, savustur: 7, ozel: 24 }[mv]) + (stance === "saldirgan" ? 4 : stance === "savunmaci" ? -2 : 0));
+}
+
 export function stepBattle(prev: BattleState, p: Player, mv: Move, stance: Stance = "dengeli"): BattleState {
   if (prev.over) return prev;
   const bs: BattleState = { ...prev, log: [...prev.log] };
+  const maxBreath = bs.breathMax ?? (60 + Math.min(40, (p.stats.stamina || 1) * 4));
+  const breath = bs.breath ?? maxBreath, cost = battleMoveCost(mv, stance);
+  if (mv === "toparlan" && breath >= maxBreath) return prev;
+  const exhausted = breath < cost;
+  bs.breathMax = maxBreath; bs.breath = Math.max(0, breath - cost);
+  if (exhausted) bs.log.push({ k: "war.log.exhausted" });
   // Çaresizlik (enrage): düşman HP'si %30 altındaysa köşeye sıkışmıştır.
   const desperate = bs.enemyHp > 0 && bs.enemyHp <= bs.enemyMax * 0.3;
   if (desperate && !bs.desperate) { bs.desperate = true; bs.log.push({ k: "cb.log.desperate" }); }
@@ -125,26 +138,33 @@ export function stepBattle(prev: BattleState, p: Player, mv: Move, stance: Stanc
   const st = stanceOf(stance);                              // duruş: atk/def çarpanı
   const baseP = 6 + Math.round(pw * 0.6);
   const baseE = 6 + Math.round(bs.enemyPower * 0.9);
-  const dealt = (d: number, outcome: "tie" | "win") => Math.round(d * st.atk * classAtkMult(wc, bs.round, outcome, mv));
+  const dealt = (d: number, outcome: "tie" | "win") => Math.max(1, Math.round(d * st.atk * classAtkMult(wc, bs.round, outcome, mv) * (exhausted ? 0.55 : 1) * (1 + (bs.momentum || 0) * 0.05)));
   // Hızlı silah: hafif kaçış (alınan hasarı biraz azaltır).
   const evade = wc === "hizli" ? 0.85 : 1.0;
   const kalkanli = p.perks?.includes("kalkanli") ? 0.75 : 1.0; // kalkanlı hüneri: alınan hasar %25 azalır (vaat edilen etki artık gerçek)
-  const taken = (d: number) => Math.round((d / st.def) * evade * kalkanli);
+  const taken = (d: number) => Math.round((d / st.def) * evade * kalkanli * (exhausted ? 1.2 : 1));
 
   // Tur log'unun ortak başlık parametreleri: tur no, oyuncu hamlesi, düşman hamlesi, fent eki.
   const fp: CbLogParam = feint ? { lk: "cb.log.feint" } : "";
   let entry: CbLogEntry;
-  if (mv === em) {
+  if (mv === "toparlan") {
+    const recovered = Math.min(maxBreath - breath, 26 + (p.skills?.combat || 0));
+    bs.breath = breath + recovered;
+    const damage = Math.max(1, taken(Math.round(baseE * 0.55)) - armorDefense(p));
+    bs.playerHp -= damage; bs.momentum = 0;
+    entry = { k: "war.log.recover", p: [recovered, damage] };
+  } else if (mv === em) {
     const pd = dealt(Math.round(baseP * 0.4), "tie"), edRaw = Math.max(1, taken(Math.round(baseE * 0.4)) - armorDefense(p)); // zırh denk anında da hasarı azaltır (kayıp dalıyla tutarlı)
     let ed = desperate ? Math.round(edRaw * 1.15) : edRaw; // enrage: çaresiz düşman daha sert vurur
     // Kalkan bloğu (denk anında da geçerli)
     let blocked = false;
     if (shieldBlockChance(p, stance === "savunmaci") > 0 && nextRandom(bs) < shieldBlockChance(p, stance === "savunmaci")) { ed = Math.round(ed * 0.4); blocked = true; }
-    bs.enemyHp -= pd; bs.playerHp -= ed;
+    bs.enemyHp -= pd; bs.playerHp -= ed; bs.momentum = 0;
     entry = { k: "cb.log.tie", p: [bs.round, { mv }, { mv: em }, fp, pd, ed, blocked ? { lk: "cb.log.tieBlock" } : ""] };
   } else if (beats(mv, em)) {
     const dmg = dealt(mv === "ozel" ? Math.round(baseP * 1.4) : baseP, "win");
-    bs.enemyHp -= dmg;
+    bs.enemyHp -= dmg; bs.momentum = Math.min(3, (bs.momentum || 0) + 1);
+    if (mv === "savustur") bs.breath = Math.min(maxBreath, bs.breath! + 10);
     entry = { k: "cb.log.win", p: [bs.round, { mv }, { mv: em }, fp, dmg] };
   } else {
     let dmg = em === "ozel" ? Math.round(baseE * 1.4) : baseE;
@@ -155,12 +175,19 @@ export function stepBattle(prev: BattleState, p: Player, mv: Move, stance: Stanc
     let blocked = false;
     const bc = shieldBlockChance(p, stance === "savunmaci");
     if (bc > 0 && nextRandom(bs) < bc) { dmg = Math.max(1, Math.round(dmg * 0.4)); blocked = true; }
-    bs.playerHp -= dmg;
+    bs.playerHp -= dmg; bs.momentum = 0;
     entry = { k: blocked ? "cb.log.loseBlock" : "cb.log.loseOpen", p: [bs.round, { mv }, { mv: em }, fp, dmg] };
   }
   bs.log.push(entry);
+  bs.repetition = mv !== "toparlan" && bs.lastMove === mv ? (bs.repetition || 1) + 1 : 1;
+  bs.lastMove = mv;
   bs.round += 1;
   bs.enemyIntent = pickEnemyMove(bs.arch, bs.enemyPower, () => nextRandom(bs), bs.enemyHp > 0 && bs.enemyHp <= bs.enemyMax * 0.3); // bir sonraki turun telegraf'ı (kalan HP'ye göre çaresizlik)
+
+  // Tek hamleye yaslanırsan rakip karşı hamleye ağırlık verir; telegraf yine okunabilir.
+  if (mv !== "toparlan" && bs.repetition >= 2 && nextRandom(bs) < 0.6) {
+    bs.enemyIntent = mv === "hamle" ? "savustur" : mv === "savustur" ? "ozel" : "hamle";
+  }
 
   if (bs.enemyHp <= 0) { bs.enemyHp = 0; bs.over = true; bs.won = true; bs.log.push({ k: "cb.log.victory" }); }
   else if (bs.playerHp <= 0) { bs.playerHp = 0; bs.over = true; bs.won = false; bs.log.push({ k: "cb.log.defeat" }); }
