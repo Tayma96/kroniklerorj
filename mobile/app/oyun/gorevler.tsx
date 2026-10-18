@@ -1,4 +1,5 @@
-import { View, Text, ScrollView, Pressable } from "react-native";
+import { DesignPressable as Pressable } from "../../lib/design-pressable";
+import { View, Text, ScrollView} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
@@ -47,17 +48,17 @@ export default function Gorevler() {
       <ScrollView contentContainerStyle={{ paddingHorizontal: 14, paddingBottom: insets.bottom + 90 }}>
         <PageHeader kicker={t("scr.gorevler")} title={t("scr.gorevler")} sub={t("gv.hint")} />
         {tasks.length === 0 ? (
-          <Panel><Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.parchmentMuted, textAlign: "center", paddingVertical: 14 }}>{t("gv.empty")}</Text></Panel>
+          <Panel><Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, textAlign: "center", paddingVertical: 14 }}>{t("gv.empty")}</Text></Panel>
         ) : (
           <Panel title={t("scr.gorevler")} noPad>
             {tasks.map((tk, i) => (
               <Pressable key={i} onPress={() => router.push(tk.to as any)} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 12, paddingVertical: 12, borderBottomWidth: i === tasks.length - 1 ? 0 : 1, borderBottomColor: C.border, borderLeftWidth: tk.urgent ? 2.5 : 0, borderLeftColor: C.gold, backgroundColor: pressed ? C.cardHi : "transparent" })}>
-                <View style={{ width: 36, height: 36, borderRadius: 8, backgroundColor: "rgba(201,168,76,0.08)", borderWidth: 1, borderColor: tk.urgent ? "rgba(201,168,76,0.45)" : "rgba(201,168,76,0.22)", alignItems: "center", justifyContent: "center" }}>
+                <View style={{ width: 36, height: 36, borderRadius: 5, backgroundColor: "rgba(201,168,76,0.08)", borderWidth: 1, borderColor: tk.urgent ? "rgba(201,168,76,0.45)" : "rgba(201,168,76,0.22)", alignItems: "center", justifyContent: "center" }}>
                   <GameIcon name={tk.icon} size={18} color={tk.urgent ? C.gold : C.goldDim} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchment }}>{tk.title}</Text>
-                  <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted }} numberOfLines={1}>{tk.sub}</Text>
+                  <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchmentMuted }} numberOfLines={1}>{tk.sub}</Text>
                 </View>
                 <Text style={{ fontFamily: F.display, fontSize: 13, color: C.gold }}>›</Text>
               </Pressable>
@@ -72,12 +73,12 @@ export default function Gorevler() {
             const status = claimed ? "✓" : done ? "★" : locked ? `${q.minAge}+` : "…";
             return (
               <View key={q.id} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 12, paddingVertical: 11, borderBottomWidth: i === arr.length - 1 ? 0 : 1, borderBottomColor: C.border, opacity: locked ? 0.55 : 1 }}>
-                <View style={{ width: 34, height: 34, borderRadius: 8, backgroundColor: "rgba(201,168,76,0.08)", borderWidth: 1, borderColor: claimed ? "rgba(127,166,106,0.5)" : "rgba(201,168,76,0.22)", alignItems: "center", justifyContent: "center" }}>
+                <View style={{ width: 34, height: 34, borderRadius: 5, backgroundColor: "rgba(201,168,76,0.08)", borderWidth: 1, borderColor: claimed ? "rgba(127,166,106,0.5)" : "rgba(201,168,76,0.22)", alignItems: "center", justifyContent: "center" }}>
                   <GameIcon name={q.icon} size={16} color={claimed ? C.sage : C.gold} />
                 </View>
                 <View style={{ flex: 1, minWidth: 0 }}>
-                  <Text style={{ fontFamily: F.display, fontSize: 12.5, color: claimed ? C.sage : C.parchment }}>{t("fq." + q.id + ".t")}</Text>
-                  <Text numberOfLines={1} style={{ fontFamily: F.serif, fontSize: 10.5, color: C.parchmentMuted }}>{t("fq." + q.id + ".d")}</Text>
+                  <Text style={{ fontFamily: F.display, fontSize: 13, color: claimed ? C.sage : C.parchment }}>{t("fq." + q.id + ".t")}</Text>
+                  <Text numberOfLines={1} style={{ fontFamily: F.serif, fontSize: 15, color: C.parchmentMuted }}>{t("fq." + q.id + ".d")}</Text>
                 </View>
                 <Text style={{ fontFamily: F.display, fontSize: 13, color: tone, width: 28, textAlign: "right" }}>{status}</Text>
               </View>

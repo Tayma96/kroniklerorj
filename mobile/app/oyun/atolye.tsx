@@ -1,4 +1,5 @@
-import { View, Text, ScrollView, Pressable } from "react-native";
+import { DesignPressable as Pressable } from "../../lib/design-pressable";
+import { View, Text, ScrollView} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
@@ -53,17 +54,17 @@ export default function Atolye() {
     const able = canCraft(p, r) && !crafted;
     const inputs = Object.entries(r.inputs);
     return (
-      <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: able ? tone + "55" : C.border, borderRadius: 13, padding: 13, marginBottom: 10 }}>
+      <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: able ? tone + "55" : C.border, borderRadius: 5, padding: 13, marginBottom: 10 }}>
         {/* Üst: çıktı + zanaat şartı */}
         <View style={{ flexDirection: "row", alignItems: "center", gap: 11 }}>
-          <View style={{ width: 44, height: 44, borderRadius: 10, backgroundColor: tone + "18", borderWidth: 1, borderColor: tone + "55", alignItems: "center", justifyContent: "center" }}>
+          <View style={{ width: 44, height: 44, borderRadius: 5, backgroundColor: tone + "18", borderWidth: 1, borderColor: tone + "55", alignItems: "center", justifyContent: "center" }}>
             <GameIcon name={itmIcon(ITEMS[r.out])} size={22} color={tone} />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={{ fontFamily: F.display, fontSize: 14, color: C.parchment }}>{t("it." + r.out)}{r.outQty > 1 ? ` ×${r.outQty}` : ""}</Text>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 5, marginTop: 3 }}>
               <GameIcon name={locked ? "hood" : "anvil"} size={10} color={locked ? C.blood : C.parchmentMuted} />
-              <Text style={{ fontFamily: F.display, fontSize: 9.5, letterSpacing: 0.5, color: locked ? C.blood : C.parchmentMuted }}>
+              <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 0.5, color: locked ? C.blood : C.parchmentMuted }}>
                 {t("wsp.needSkill")}: {t("wsp.skillAbbr")}{r.minSkill} · {t("wsp.your")} {t("wsp.skillAbbr")}{skill}
               </Text>
             </View>
@@ -71,7 +72,7 @@ export default function Atolye() {
         </View>
 
         {/* Malzemeler: var/gerek */}
-        <Text style={{ fontFamily: F.display, fontSize: 8.5, letterSpacing: 1.5, color: C.goldDim, marginTop: 11, marginBottom: 6 }}>{t("wsp.materials").toUpperCase()}</Text>
+        <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1.5, color: C.goldDim, marginTop: 11, marginBottom: 6 }}>{t("wsp.materials").toUpperCase()}</Text>
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
           {inputs.map(([id, q]) => {
             const have = p.inventory[id] || 0;
@@ -79,8 +80,8 @@ export default function Atolye() {
             return (
               <View key={id} style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: ok ? "rgba(127,166,106,0.12)" : "rgba(201,168,76,0.06)", borderWidth: 1, borderColor: ok ? "rgba(127,166,106,0.5)" : C.border, borderRadius: 20, paddingVertical: 4, paddingHorizontal: 9 }}>
                 <GameIcon name={itmIcon(ITEMS[id])} size={12} color={C.parchment} />
-                <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchment }}>{t("it." + id)}</Text>
-                <Text style={{ fontFamily: F.display, fontSize: 10, color: ok ? C.sage : C.blood }}>{have}/{q}</Text>
+                <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchment }}>{t("it." + id)}</Text>
+                <Text style={{ fontFamily: F.display, fontSize: 13, color: ok ? C.sage : C.blood }}>{have}/{q}</Text>
               </View>
             );
           })}
@@ -88,9 +89,9 @@ export default function Atolye() {
 
         {/* Üret butonu + durum */}
         <Pressable disabled={!able} onPress={() => { hap("success"); playTap(); apply((s) => craft(s, r.id)); }}
-          style={{ marginTop: 12, paddingVertical: 11, borderRadius: 9, borderWidth: 1, alignItems: "center",
+          style={{ marginTop: 12, paddingVertical: 11, borderRadius: 5, borderWidth: 1, alignItems: "center",
             borderColor: able ? tone + "88" : C.border, backgroundColor: able ? tone + "1F" : C.bg }}>
-          <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: able ? tone : C.parchmentMuted }}>
+          <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: able ? tone : C.parchmentMuted }}>
             {able ? t("misc.craft") : profLocked ? applyParams(t("wsp.profOnly"), [professionNameL(r.prof!, lang)]) : crafted ? t("wsp.craftedTurn") : locked ? applyParams(t("wsp.locked"), [r.minSkill]) : t("wsp.noMat")}
           </Text>
         </Pressable>
@@ -108,9 +109,9 @@ export default function Atolye() {
         <PageHeader kicker={t("scr.atolye")} title={t("scr.atolye")} sub={t("wsp.hint")} />
 
         {/* Bilgi: üretim zanaatı geliştirir */}
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: "rgba(201,168,76,0.07)", borderWidth: 1, borderColor: C.border, borderRadius: 10, padding: 11, marginBottom: 14 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: "rgba(201,168,76,0.07)", borderWidth: 1, borderColor: C.border, borderRadius: 5, padding: 11, marginBottom: 14 }}>
           <GameIcon name="anvil" size={13} color={C.goldDim} />
-          <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 11.5, color: C.parchmentMuted }}>{t("wsp.gain")}.</Text>
+          <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted }}>{t("wsp.gain")}.</Text>
         </View>
 
         {CAT_ORDER.map((cat) => {
@@ -120,7 +121,7 @@ export default function Atolye() {
             <View key={cat} style={{ marginBottom: 8 }}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10 }}>
                 <GameIcon name={CAT_ICON[cat]} size={14} color={CAT_TONE[cat]} />
-                <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 1.5, color: CAT_TONE[cat] }}>{t("wsp.cat." + cat).toUpperCase()}</Text>
+                <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1.5, color: CAT_TONE[cat] }}>{t("wsp.cat." + cat).toUpperCase()}</Text>
                 <View style={{ flex: 1, height: 1, backgroundColor: CAT_TONE[cat] + "33" }} />
               </View>
               {list.map((r) => <RecipeCard key={r.id} r={r} />)}

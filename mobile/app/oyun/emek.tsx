@@ -1,7 +1,8 @@
+import { DesignPressable as Pressable } from "../../lib/design-pressable";
 // Emeği Geçenler: üçüncü taraf parçaların atfı ve lisansları (CC BY 3.0 simgeler, OFL yazı tipleri,
 // yapay zekâ görselleri, MIT yazılımlar). Ayrıntılı döküm: mobile/UCUNCU-TARAF.md. Özel adlar ve lisans
 // adları çevrilmez (her dilde aynı yazılır); açıklamalar 6 dilde i18n'den gelir.
-import { View, Text, ScrollView, Pressable } from "react-native";
+import { View, Text, ScrollView} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import Constants from "expo-constants";
@@ -47,19 +48,19 @@ export default function Emek() {
       <ScrollView contentContainerStyle={{ paddingHorizontal: 14, paddingBottom: insets.bottom + 90 }}>
         <PageHeader kicker={t("settings.title")} title={t("scr.emek")} sub={t("emek.intro")} />
         {bolumler.map((b) => (
-          <View key={b.icon} style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 11, padding: 14, marginBottom: 10 }}>
+          <View key={b.icon} style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 5, padding: 14, marginBottom: 10 }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 }}>
               <GameIcon name={b.icon} size={15} color={C.gold} />
-              <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 1.5, color: C.gold, textTransform: "uppercase" }}>{b.baslik}</Text>
+              <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1.5, color: C.gold, textTransform: "uppercase" }}>{b.baslik}</Text>
             </View>
             {b.satirlar.map((s) => (
-              <Text key={s} style={{ fontFamily: F.serif, fontSize: 13, color: C.parchment, lineHeight: 20 }}>{s}</Text>
+              <Text key={s} style={{ fontFamily: F.serif, fontSize: 15, color: C.parchment, lineHeight: 22 }}>{s}</Text>
             ))}
-            {b.not ? <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentDim, lineHeight: 18, marginTop: b.satirlar.length ? 6 : 0 }}>{b.not}</Text> : null}
+            {b.not ? <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentDim, lineHeight: 22, marginTop: b.satirlar.length ? 6 : 0 }}>{b.not}</Text> : null}
           </View>
         ))}
-        <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentDim, lineHeight: 18, textAlign: "center", marginTop: 8 }}>{t("emek.hak")}</Text>
-        <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted, textAlign: "center", marginTop: 12 }}>Kronikler: Küllerin Mirası · v{Constants.expoConfig?.version || "1.0.0"} · © 2026</Text>
+        <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentDim, lineHeight: 22, textAlign: "center", marginTop: 8 }}>{t("emek.hak")}</Text>
+        <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, textAlign: "center", marginTop: 12 }}>Kronikler: Küllerin Mirası · v{Constants.expoConfig?.version || "1.0.0"} · © 2026</Text>
       </ScrollView>
     </ScreenFresk>
   );
