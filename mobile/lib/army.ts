@@ -18,6 +18,8 @@ export interface ArmyWar {
   started: number;
   lastTick: number;
   month: number;
+  goal?: "raid" | "conquest";
+  commandTurn?: number;
   a: Army;
   b: Army;
   winner?: "a" | "b";
@@ -124,6 +126,8 @@ export function repairArmyWar(raw: unknown, ids: readonly string[], turn: number
     army.evacuated = Number.isFinite(army.evacuated) ? Math.round(clamp(army.evacuated!, 0, army.initial - army.troops - army.wounded)) : 0;
   }
   w.month = Math.floor(clamp(w.month, 0, 3));
+  if (w.goal !== undefined && !["raid", "conquest"].includes(w.goal)) delete w.goal;
+  if (w.commandTurn !== undefined && (!Number.isFinite(w.commandTurn) || w.commandTurn > turn)) delete w.commandTurn;
   if (w.winner && (!Number.isFinite(w.ended) || w.ended! > turn)) w.ended = turn;
   const d = w.service;
   if (d) {

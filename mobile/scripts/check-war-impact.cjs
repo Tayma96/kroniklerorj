@@ -67,5 +67,24 @@ const assert = require('node:assert/strict'), fs = require('node:fs'), path = re
   assert(moved.history.some(e => e.k === 'ww.return'));
   assert(g.warTravelRisk(damaged, 'Demirhan', 'Akşehir', 'patika') > g.warTravelRisk(peace, 'Demirhan', 'Akşehir', 'patika'));
   assert(g.warTravelRisk(damaged, 'Demirhan', 'Akşehir', 'kervan') < g.warTravelRisk(damaged, 'Demirhan', 'Akşehir', 'patika'));
+  // Başka hükümdarlar oyuncunun toprağını da hedefleyebilir; savunma ücretsiz değildir.
+  let attacked;
+  for (let seed = 1; seed <= 30 && !attacked; seed++) {
+    const king = copy(peace); king.warWorld = w.emptyWarWorld(); delete king.realmArmyWar; king.rng_state = seed;
+    g.realmArmyTick(king);
+    if (king.realmArmyWar && ['aksehir', 'demirhan'].includes(king.realmArmyWar.defender)) attacked = king;
+  }
+  assert(attacked, 'hükümdar oyuncunun toprağı hedeflenemiyor');
+  assert(g.playerArmyWar(attacked)); assert(!g.canLaunchCampaign(attacked, 'gumushisar'));
+  assert(g.canCommandDefense(attacked, 'ikmal'));
+  const orderCost = g.defenseOrderCost(attacked, 'ikmal'), supplied = g.commandDefense(attacked, 'ikmal');
+  assert.equal(supplied.player.money, attacked.player.money - orderCost); assert.equal(supplied.realmArmyWar.b.supplies, 100);
+  assert.deepEqual(g.commandDefense(supplied, 'siper'), supplied);
+  const lossState = copy(attacked); lossState.realmArmyWar.a = a.makeArmy(2000); lossState.realmArmyWar.b = a.makeArmy(100); lossState.turn++;
+  const cash = lossState.player.money, authority = g.crownAuthorityOf(lossState.player);
+  g.realmArmyTick(lossState); assert.equal(lossState.realmArmyWar.winner, 'a'); assert.equal(lossState.player.money, cash - 150); assert.equal(g.crownAuthorityOf(lossState.player), authority - 10);
+  assert(lossState.history.some(e => e.k === 'ww.defeated'));
+  const lossOnce = copy(lossState); g.realmArmyTick(lossState); assert.deepEqual(lossState, lossOnce);
+  assert(w.truceLeft(lossState.warWorld, lossState.realmArmyWar.attacker, lossState.player.crownSeat, lossState.turn) > 0);
   console.log('SAVAŞ ETKİLERİ: sivil fiyat/üretim/hane/ücret, mülk, vergi, ordu kaybı, barış, kayıt ve MP yalıtımı temiz.');
 })().catch(e => { console.error(e); process.exitCode = 1; });

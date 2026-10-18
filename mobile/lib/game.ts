@@ -2,7 +2,7 @@
 import type { EvtParam } from "./i18n";
 import { nextRandom } from "./random";
 import { ArmyWar, FrontMove, armyForecast, makeArmy, clashArmies, frontContact, nextEnemy, repairArmyWar } from "./army";
-import { WarWorld, WarRegion, CivilAid, peacefulRegion, emptyWarWorld, warRegion, warEffects, recordWar, tickWarWorld, repairWarWorld, aidNeeded, applyCivilAid } from "./war-world";
+import { WarWorld, WarRegion, CivilAid, peacefulRegion, emptyWarWorld, warRegion, warEffects, recordWar, tickWarWorld, repairWarWorld, aidNeeded, applyCivilAid, truceLeft } from "./war-world";
 import { currentCalendar, playerAge, CalendarInfo } from "./calendar";
 import { ITEMS, marketGoods, locSeed, generateNPCs, NPC, generateDynasties, cityInfo, RivalHouse, RivalCrisisKind, houseNameIdx, localFirstName, SPECIALTIES, Item, WClass, npcAgeProfession, TRAITS, QUIRKS, GOALS, NPC_PROFS } from "./world";
 import { Nufus, Kisi, Cins, NufusCtx, EskiDunya, OYUNCU, nufusKur, nufusYil, kadro, kisiAdi, hayalOf, huyOf, yeniGelen, nufusDegisti, olumOlasiligi, kisiNpc, kisiBaglari, yasOf, kardesler, bagEvrimi, kisiSil, kisiIlkAd, kisiSoyad } from "./nufus";
@@ -5095,7 +5095,7 @@ function warCivilianTick(s: GameState): void {
 function crownArmies(s: GameState, target: string): ArmyWar {
   const odds = campaignOdds(s, target);
   return { id: `crown:${s.player.generation || 1}:${s.turn}:${target}`, attacker: s.player.crownSeat || regionOf(s.player.home_name), defender: target,
-    started: s.turn, lastTick: s.turn - 1, month: 0,
+    started: s.turn, lastTick: s.turn - 1, month: 0, goal: "conquest",
     a: makeArmy(800 * odds / (1 - odds) * regionalWarEffects(s, s.player.home_name).recruitment, 65), b: makeArmy(800 * realmWarEffects(s, target).recruitment, 70) };
 }
 
@@ -5109,6 +5109,15 @@ function realmArmyTick(s: GameState): void {
     if (old.winner) {
       const winner = old.winner === "a" ? old.attacker : old.defender;
       push(s, "ocak_savasi", "Beyliklerin sınır muharebesi bitti.", "makro", true, { k: "army.ended", p: [{ bl: winner }, old.a.troops, old.b.troops] });
+      if (s.player.crowned && [s.player.crownSeat || regionOf(s.player.home_name), ...(s.player.crownConquests || [])].includes(old.defender)) {
+        const defended = old.winner === "b";
+        const seat = s.player.crownSeat || regionOf(s.player.home_name);
+        (s.warWorld!.truces || (s.warWorld!.truces = {}))[[old.attacker, seat].sort().join("|")] = s.turn + 12;
+        const loss = defended ? 0 : Math.min(Math.max(0, s.player.money), Math.round(150 * inflationFactor(s)));
+        s.player.money -= loss;
+        s.player.crownAuthority = clamp100(crownAuthorityOf(s.player) + (defended ? 4 : -10));
+        push(s, "taht", "Sınır savunması hükümdarlığın gücünü etkiledi.", "kişisel", true, { k: defended ? "ww.defended" : "ww.defeated", p: [{ bl: old.defender }, loss] });
+      }
       const duty = old.service;
       if (duty && duty.generation === (s.player.generation || 1) && duty.rounds > 0 && duty.actionTurn !== undefined && !s.player.dead) {
         const won = duty.side === old.winner;
@@ -5119,15 +5128,17 @@ function realmArmyTick(s: GameState): void {
     return;
   }
   // Savaş sonrası en az bir yıl sakinlik; ekranda tek devlet cephesi.
-  if (old && s.turn < (old.ended ?? old.started) + 12 || s.crownCampaign || gameRandom(s) >= 0.08) return;
+  if (old && s.turn < (old.ended ?? old.started) + 3 || s.crownCampaign || gameRandom(s) >= 0.08) return;
   const controlled = s.player.crowned ? [s.player.crownSeat || regionOf(s.player.home_name), ...(s.player.crownConquests || [])] : [];
   const pool = BEYLIKS.filter(b => !controlled.includes(b.id) && warRegion(s.warWorld, b.id).exhaustion < 50 && warRegion(s.warWorld, b.id).manpowerLoss < 55);
-  if (pool.length < 2) return;
+  if (pool.length < 1) return;
   const attacker = pool[Math.floor(gameRandom(s) * pool.length)].id;
-  const targets = pool.filter(b => b.id !== attacker);
+  const targets = BEYLIKS.filter(b => b.id !== attacker && truceLeft(s.warWorld, attacker, b.id, s.turn) === 0 && !(controlled.includes(b.id) && (crownTreaty(s, attacker) || truceLeft(s.warWorld, attacker, s.player.crownSeat || regionOf(s.player.home_name), s.turn) > 0)));
+  if (!targets.length) return;
   const defender = targets[Math.floor(gameRandom(s) * targets.length)].id;
+  const defenderSize = controlled.includes(defender) ? 800 * Math.max(0.6, campaignOdds(s, attacker) / (1 - campaignOdds(s, attacker))) : 650 + gameRandom(s) * 650;
   s.realmArmyWar = { id: `realm:${s.player.generation || 1}:${s.turn}:${attacker}:${defender}`, attacker, defender, started: s.turn, lastTick: s.turn,
-    month: 0, a: makeArmy((650 + gameRandom(s) * 650) * realmWarEffects(s, attacker).recruitment), b: makeArmy((650 + gameRandom(s) * 650) * realmWarEffects(s, defender).recruitment) };
+    month: 0, goal: "raid", a: makeArmy((650 + gameRandom(s) * 650) * realmWarEffects(s, attacker).recruitment), b: makeArmy(defenderSize * realmWarEffects(s, defender).recruitment) };
   recordWar(s.warWorld || (s.warWorld = emptyWarWorld()), s.realmArmyWar);
   push(s, "ocak_savasi", "Hükümdar sınır seferi için sancak açtı.", "makro", true, { k: "army.declared", p: [{ bl: attacker }, { bl: defender }] });
 }
@@ -5137,7 +5148,28 @@ export function playerArmyWar(s: GameState): ArmyWar | null {
   if (s.player.crowned && s.crownCampaign?.armies) return s.crownCampaign.armies;
   const w = s.realmArmyWar;
   const home = s.player.crowned ? s.player.crownSeat || regionOf(s.player.home_name) : regionOf(s.player.home_name || s.player.location_name);
-  return w && [w.attacker, w.defender].includes(home) ? w : null;
+  const owned = s.player.crowned ? [home, ...(s.player.crownConquests || [])] : [home];
+  return w && owned.some(id => [w.attacker, w.defender].includes(id)) ? w : null;
+}
+export type DefenseOrder = "ikmal" | "siper" | "kesif";
+export function defenseOrderCost(s: GameState, order: DefenseOrder): number {
+  return Math.round(({ ikmal: 120, siper: 100, kesif: 60 }[order] || 0) * inflationFactor(s));
+}
+export function canCommandDefense(s: GameState, order: DefenseOrder): boolean {
+  const w = s.realmArmyWar, p = s.player;
+  if (!["ikmal", "siper", "kesif"].includes(order) || s.mpRealm || !w || w.winner || !p.crowned || p.dead || inJail(p) || w.commandTurn === s.turn) return false;
+  if (![p.crownSeat || regionOf(p.home_name), ...(p.crownConquests || [])].includes(w.defender) || p.money < defenseOrderCost(s, order)) return false;
+  return order === "ikmal" ? w.b.supplies < 100 : order === "siper" ? w.b.morale < 100 : w.a.morale > 20;
+}
+export function commandDefense(prev: GameState, order: DefenseOrder): GameState {
+  if (!canCommandDefense(prev, order)) return prev;
+  const s = clone(prev), w = s.realmArmyWar!, cost = defenseOrderCost(s, order);
+  s.player.money -= cost; w.commandTurn = s.turn;
+  if (order === "ikmal") w.b.supplies = clamp100(w.b.supplies + 30);
+  else if (order === "siper") w.b.morale = clamp100(w.b.morale + 7);
+  else w.a.morale = Math.max(0, w.a.morale - 4);
+  push(s, "taht", "Sınır savunmasına emir ve kaynak ayırdın.", "kişisel", false, { k: "ww.defenseOrder", p: [{ sfx: "ww.order." + order }, cost] });
+  return s;
 }
 export function canJoinArmy(s: GameState): boolean {
   const p = s.player, w = playerArmyWar(s);
@@ -8676,7 +8708,7 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
   const nesilSeed = Math.floor(gameRandom(s) * 1e9);
   const ns: GameState = {
     turn: 0, seed: nesilSeed, rng_state: rngBaslangici(nesilSeed, 0, gen), world: { ready: true, npcYears: (prev.world?.npcYears || 0) + Math.floor(prev.turn / 12), inflation: prev.world?.inflation || 1 }, pop: heirPop, relationships: Object.fromEntries([...kardesIds, ...Object.keys(ataHatira).filter((id) => Math.abs(ataHatira[id]) >= 15)].map((id) => [id, 0])), dynasty, // atasını güçlü hatırlayan seni de tanır
-    warWorld: s.warWorld ? { ...s.warWorld, lastTurn: (s.warWorld.lastTurn ?? prev.turn) - prev.turn, aidTurn: undefined, migrationTurn: undefined } : undefined,
+    warWorld: s.warWorld ? { ...s.warWorld, lastTurn: (s.warWorld.lastTurn ?? prev.turn) - prev.turn, aidTurn: undefined, migrationTurn: undefined, truces: s.warWorld.truces ? Object.fromEntries(Object.entries(s.warWorld.truces).map(([key, until]) => [key, until - prev.turn])) : undefined } : undefined,
     realmArmyWar: s.realmArmyWar ? { ...s.realmArmyWar, started: s.realmArmyWar.started - prev.turn, lastTick: s.realmArmyWar.lastTick - prev.turn, ended: s.realmArmyWar.ended === undefined ? undefined : s.realmArmyWar.ended - prev.turn, service: undefined } : undefined,
     ata_hatira: Object.keys(ataHatira).length ? ataHatira : undefined, soy_nam: Object.values(soyNam).some((v) => v > 0) ? soyNam : undefined, npc_state: {}, saga: prev.saga ? { ...prev.saga, scene: null, declined: 0 } : null, rivals: prev.rivals ? prev.rivals.map((h) => ({ ...h, crisis: h.crisis ? { ...h.crisis } : undefined, tutum: Math.round((h.tutum ?? 0) / 2) })) : undefined,
     // Kan davası NESLE GEÇER (adı üstünde): ısı yarılanır (yeni kuşakta kor küllenir ama sönmez), aylık hamle hakkı tazelenir.
@@ -8717,7 +8749,10 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
       faction: null, faction_standing: {},
       skills, skill_xp: { combat: skills.combat * 100, trade: skills.trade * 100, crafting: skills.crafting * 100, social: skills.social * 100 },
       perks: [], injuries: [], career_xp: 0, nam: { comert: 0, zalim: 0, capkin: 0, dindar: 0, mert: 0 }, child_invests: {}, equipped: { silah: null, zirh: null },
-      crowned: p.crowned || false, will_pref: "esit", fates: [], claimed: [], governorships: [], // taht irsîdir; kader/başarım/valilik yeni baştan
+      crowned: p.crowned || false, crownSeat: p.crownSeat, crownConquests: p.crownConquests?.slice(),
+      crownAuthority: p.crowned ? Math.max(35, Math.min(70, Math.round(crownAuthorityOf(p) * 0.8))) : undefined,
+      appointedGov: p.appointedGov ? Object.fromEntries(Object.entries(p.appointedGov).map(([loc, gov]) => [loc, { ...gov, loyalty: Math.max(15, gov.loyalty - 10) }])) : undefined,
+      will_pref: "esit", fates: [], claimed: [], governorships: [], // taht irsîdir; kader/başarım/valilik yeni baştan
     },
     history: [{ day: 0, type: "nesil_devri", text: `${gen}. nesil: ${heir}, ${will.label.toLowerCase()} vasiyetiyle mirası devraldı (${inheritMoney} akçe, ${props.length} mülk).${noteStr}`, scope: "kişisel", landmark: true, k: "evj.genHandover", p: [gen, heir, inheritMoney, props.length] }],
   };
@@ -11666,9 +11701,11 @@ export function campaignTargets(s: GameState): { id: string; name: string }[] {
 }
 export function canLaunchCampaign(s: GameState, target?: string): boolean {
   if (inJail(s.player)) return false;
-  if (target && (crownTreaty(s, target) || !campaignTargets(s).some((x) => x.id === target))) return false;
+  const seat = s.player.crownSeat || regionOf(s.player.home_name);
+  if (s.realmArmyWar && !s.realmArmyWar.winner && [seat, ...(s.player.crownConquests || [])].includes(s.realmArmyWar.defender)) return false;
+  if (target && (crownTreaty(s, target) || !s.mpRealm && truceLeft(s.warWorld, seat, target, s.turn) > 0 || !campaignTargets(s).some((x) => x.id === target))) return false;
   if (s.crownCampaign) return false; // ordu zaten yolda — ikinci tuğ çözülmez
-  return !!s.player.crowned && !s.player.dead && s.player.money >= Math.round(CAMPAIGN_COST * inflationFactor(s)) && campaignTargets(s).some((x) => !crownTreaty(s, x.id));
+  return !!s.player.crowned && !s.player.dead && s.player.money >= Math.round(CAMPAIGN_COST * inflationFactor(s)) && campaignTargets(s).some((x) => !crownTreaty(s, x.id) && (s.mpRealm || truceLeft(s.warWorld, seat, x.id, s.turn) === 0));
 }
 export function campaignOdds(s: GameState, target?: string): number {
   const p = s.player;
@@ -11728,6 +11765,7 @@ function crownCampaignTick(s: GameState) {
   c.armies.a.morale = clamp100(65 + c.edge);
   // Kuşatma/yürüyüş hazırlığından sonra gerçek iki ordu karşılaşır; tek zafer zarı yok.
   for (let battle = 0; battle < 3 && !c.armies.winner; battle++) clashArmies(c.armies, s, s.turn + battle);
+  c.armies.ended = s.turn; c.armies.lastTick = s.turn;
   if (!s.mpRealm) recordWar(s.warWorld || (s.warWorld = emptyWarWorld()), c.armies);
   const won = c.armies.winner === "a";
   push(s, "taht", "Meydan muharebesi sonuçlandı.", "kişisel", true, { k: "army.clash", p: [c.armies.a.troops, c.armies.b.troops, Math.round(c.armies.a.morale), Math.round(c.armies.b.morale)] });

@@ -19,6 +19,7 @@ export function WarWorldCard({ loc, aid = false }: { loc?: string; aid?: boolean
     <Text style={body}>{t(report.active ? "ww.active" : "ww.peace")}</Text>
     <Text style={body}>{text("ww.effects", [yuzdeL(Math.round((1 - e.production) * 100), lang), yuzdeL(Math.round((e.foodDemand - 1) * 100), lang), yuzdeL(Math.round((1 - e.revenue) * 100), lang)])}</Text>
     <Text style={body}>{text("ww.causes", [Math.round(r.damage), Math.round(r.shortage), Math.round(r.exhaustion)])}</Text>
+    {!!r.occupation && <Text style={body}>{text("ww.occupation", [Math.round(r.occupation)])}</Text>}
     {aid && place === state.player.location_name && <>
       <Text style={body}>{t("ww.aid.rule")}</Text>
       {(["food", "rebuild", "patrol"] as CivilAid[]).map(kind => {

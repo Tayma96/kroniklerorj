@@ -14,6 +14,10 @@ const assert = require('node:assert/strict'), esbuild = require('esbuild'), path
   const ruined = w.warEffects(world.regions.b), healthy = w.warEffects(w.peacefulRegion());
   for (const field of ['production', 'revenue', 'recruitment']) assert(ruined[field] < healthy[field], field);
   assert(ruined.foodDemand > 1); assert(ruined.roadRisk > 0); assert(ruined.unrest > 0);
+  assert.equal(w.truceLeft(world, 'a', 'b', war.ended), 12);
+  const conquestWorld = w.emptyWarWorld(), conquest = { ...structuredClone(war), id: 'conquest:2', goal: 'conquest', winner: 'a' };
+  w.recordWar(conquestWorld, conquest); assert.equal(conquestWorld.regions.b.occupation, 30);
+  assert(w.warEffects(conquestWorld.regions.b).unrest > w.warEffects({ ...conquestWorld.regions.b, occupation: 0 }).unrest);
   const peace = structuredClone(world); w.tickWarWorld(peace, [], 4, ids); assert(peace.regions.b.damage > 0, 'barışta hasar silindi');
   assert(peace.regions.b.damage < world.regions.b.damage); assert(peace.regions.b.manpowerLoss > 0);
   assert(!w.tickWarWorld(peace, [], 4, ids));

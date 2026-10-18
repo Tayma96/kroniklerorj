@@ -1,7 +1,7 @@
 import { View, Text, Pressable } from "react-native";
 import { useGame } from "./store";
 import { useI18n, applyParams } from "./i18n";
-import { playerArmyWar, canJoinArmy, joinArmy, canServeArmy, serveArmy } from "./game";
+import { playerArmyWar, canJoinArmy, joinArmy, canServeArmy, serveArmy, DefenseOrder, canCommandDefense, commandDefense, defenseOrderCost } from "./game";
 import { FrontMove } from "./army";
 import { C, F } from "./theme";
 
@@ -35,6 +35,12 @@ export function ArmyFront() {
     <Text style={{ fontFamily: F.serifItalic, color: C.parchmentMuted, fontSize: 12, lineHeight: 19, marginTop: 10 }}>{war.winner
       ? text("army.result", [t("beylik." + (war.winner === "a" ? war.attacker : war.defender))])
       : text("army.month", [state.player.crowned ? state.crownCampaign?.month ?? war.month : war.month])}</Text>
+    {!war.winner && state.player.crowned && war === state.realmArmyWar && <>
+      <Text style={{ fontFamily: F.serif, color: C.parchmentMuted, fontSize: 12, lineHeight: 19, marginTop: 8 }}>{t("ww.defense")}</Text>
+      {(["ikmal", "siper", "kesif"] as DefenseOrder[]).map(order => <Pressable key={order} disabled={!canCommandDefense(state, order)} onPress={() => apply(s => commandDefense(s, order))} style={{ minHeight: 48, padding: 10, borderWidth: 1, borderColor: C.border, borderRadius: 7, marginTop: 8, justifyContent: "center", opacity: canCommandDefense(state, order) ? 1 : 0.45 }}>
+        <Text style={{ fontFamily: F.display, color: C.parchment, fontSize: 12 }}>{t("ww.order." + order)} · {defenseOrderCost(state, order)}</Text>
+      </Pressable>)}
+    </>}
     {!war.winner && !state.player.crowned && <>
       {!duty ? <>
         <Text style={{ fontFamily: F.serif, color: C.parchmentMuted, fontSize: 12, lineHeight: 19, marginTop: 8 }}>{t("army.eligibility")}</Text>
