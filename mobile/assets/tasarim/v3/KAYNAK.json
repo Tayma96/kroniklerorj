@@ -1,0 +1,27 @@
+{
+  "durum": "Ana ekran örneği için kaynaklar; oyunda henüz etkin değil. Birebir eşleşme iddiası yok.",
+  "izin": "Kullanıcı 18 Ekim 2026 tarihinde eksik resimlerin yeniden üretilmesini istedi.",
+  "dosyalar": [
+    {
+      "dosya": "hero-town.png",
+      "kaynak": "/workspace/generated_images/exec-affa6c9e-5c23-4a9c-9882-c41941123d1d.png",
+      "sha256": "2ddf67368e42ec27b86077e0dec3c7b6982af529b6c2ddd9cd1c9650c9e7de3f"
+    },
+    {
+      "dosya": "panel-texture.png",
+      "kaynak": "/workspace/generated_images/exec-c122cdae-8a89-444e-96a0-fc6e165e6b57.png",
+      "sha256": "dc1547cfa5d7105cd8fe61e2556332130f37462677b7e7f64ec586e5f7b804a9"
+    },
+    {
+      "dosya": "war-scene.png",
+      "kaynak": "/workspace/generated_images/exec-95a02ba4-10d6-4794-bf4d-669c23928b0c.png",
+      "sha256": "da704e419193fa0d83b24943359511b07d5a82ae2d4d07101f7bffd95a0a76c4"
+    },
+    {
+      "dosya": "reference-atlas.png",
+      "kaynak": "/workspace/kronikler/docs/tasarim/ekran-taslaklari-v1.png",
+      "sha256": "138bfd148f56b88fbdfff5f0d68d15a1e89edb5c1df518e9aa592eaebc424988"
+    }
+  ],
+  "not": "reference-atlas orijinal referanstır; yalnız küçük süs/ikon/çerçeve parçaları çalışma zamanında kırpılır. Bütün ekran arka plan olarak kullanılmaz. Yeni şehir ve savaş resmi kompozisyon uyarlamasıdır, özgün referansla aynı piksel değildir."
+}
