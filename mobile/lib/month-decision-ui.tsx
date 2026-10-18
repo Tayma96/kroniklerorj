@@ -1,11 +1,11 @@
-import { View, Text, Pressable, useWindowDimensions } from "react-native";
+import { View, Text, useWindowDimensions } from "react-native";
 import { useGame } from "./store";
 import { useI18n, applyParams, renderEvt } from "./i18n";
 import { pendingMonthScene, chooseMonthDilemma } from "./month-scene";
 import { OrnatePanel } from "./ornament-ui";
 import { EtkiIzi } from "./kart3d";
 import { C, F, T, L } from "./theme";
-import { hap } from "./haptics";
+import { GameButton } from "./ui";
 export function MonthDecisionCard() {
   const { state, apply, mpMode } = useGame(), { t, tg, lang } = useI18n(), { width } = useWindowDimensions();
   if (!state || mpMode || state.player.dead) return null;
@@ -19,11 +19,11 @@ export function MonthDecisionCard() {
     <Text style={{ fontFamily: F.display, fontSize: T.label, color: C.gold, marginBottom: 5 }}>{text(`dil.${d.id}.t`, d.title)}</Text>
     <Text style={{ fontFamily: F.serif, fontSize: T.body, lineHeight: T.line, color: C.parchment }}>{text(`dil.${d.id}.x`, d.text)}</Text>
     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 9, marginTop: 12 }}>
-      {d.choices.map((choice, index) => <Pressable key={index} accessibilityRole="button" onPress={() => { hap("selection"); apply(s => chooseMonthDilemma(s, m.id, index)); }} style={({ pressed }) => ({ minHeight: L.touch, flexGrow: 1, flexBasis: width >= 360 && d.choices.length === 2 ? "45%" : "100%", padding: 12, borderRadius: 4, borderWidth: 1, borderColor: C.goldDim, backgroundColor: pressed ? C.cardHi : C.card })}>
+      {d.choices.map((choice, index) => <GameButton key={index} variant="choice" accessibilityLabel={text(`dil.${d.id}.c${index}`, choice.label)} haptic="selection" onPress={() => apply(s => chooseMonthDilemma(s, m.id, index))} style={{ flexGrow: 1, flexBasis: width >= 360 && d.choices.length === 2 ? "45%" : "100%" }}>
         <Text style={{ fontFamily: F.display, fontSize: T.label, color: C.parchment }}>{text(`dil.${d.id}.c${index}`, choice.label)}</Text>
         <EtkiIzi c={choice} />
         {choice.sans !== undefined && <Text style={{ fontFamily: F.serif, fontSize: T.caption, color: C.parchmentMuted, marginTop: 6 }}>{applyParams(t("ahi.odds"), [choice.sans])}</Text>}
-      </Pressable>)}
+      </GameButton>)}
     </View>
   </OrnatePanel>;
 }

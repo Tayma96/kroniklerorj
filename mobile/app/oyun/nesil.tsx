@@ -9,7 +9,7 @@ import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
 import { useI18n, applyParams } from "../../lib/i18n";
 import { hap } from "../../lib/haptics";
-import { BackLabel, PageHeader, ScreenFresk } from "../../lib/ui";
+import { BackLabel, GameButton, PageHeader, ScreenFresk } from "../../lib/ui";
 import { YetenekSecici } from "../../lib/soy-ui";
 
 export default function Nesil() {
@@ -80,9 +80,9 @@ export default function Nesil() {
               </Pressable>
             ))}
             <YetenekSecici adaylar={yetenekAdaylari(state)} secili={yet} onSec={setYet} />
-            <Pressable onPress={() => { hap("heavy"); varisleDevam(will, chosenHeir?.key, lw, yet || undefined); router.replace("/oyun"); }} style={{ marginTop: 12, minHeight: 48, justifyContent: "center", borderRadius: 5, borderWidth: 1.5, borderColor: "rgba(201,168,76,0.55)", backgroundColor: C.gold, alignItems: "center" }}>
-              <Text style={{ fontFamily: F.display, fontSize: 13, color: C.inkOnGold, letterSpacing: 1.5 }}>{t("dash.continueHeir")}</Text>
-            </Pressable>
+            <GameButton accessibilityLabel={t("dash.continueHeir")} icon="hanedan" haptic="heavy" onPress={() => { varisleDevam(will, chosenHeir?.key, lw, yet || undefined); router.replace("/oyun"); }} style={{ marginTop: 12 }}>
+              <Text style={{ fontFamily: F.display, fontSize: 13, color: C.inkOnGold, letterSpacing: 1.5, textAlign: "center" }}>{t("dash.continueHeir")}</Text>
+            </GameButton>
           </>
         ) : (
           <>

@@ -21,7 +21,7 @@ import { gercekRitim } from "../../lib/ritim";
 import { IllustratedHeader, OrnatePanel } from "../../lib/ornament-ui";
 import { MonthDecisionCard } from "../../lib/month-decision-ui";
 import { townSeasonImage } from "../../lib/assets";
-import { MilestoneModal, DilemmaModal, OpportunityModal, AchievementToast, EulogyModal, PressableScale, Portre } from "../../lib/ui";
+import { MilestoneModal, DilemmaModal, OpportunityModal, AchievementToast, EulogyModal, GameButton, Portre } from "../../lib/ui";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { GameIcon } from "../../lib/icons";
 import { useI18n, yuzdeL, applyParams, renderEvt, lakapliAd, lakapAdi } from "../../lib/i18n";
@@ -453,26 +453,22 @@ export default function Dashboard() {
       {p.dead && (
         <View style={{ paddingHorizontal: 12, paddingBottom: 8, gap: 10 }}>
           {varisAdaylari(state).length > 0 && (
-            <Pressable onPress={() => router.push("/oyun/nesil")} style={{ flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 7, paddingVertical: 14, borderRadius: 5, borderWidth: 1.5, borderColor: "rgba(201,168,76,0.55)", backgroundColor: C.gold }}>
-              <GameIcon name="hanedan" size={14} color={C.inkOnGold} />
-              <Text style={{ fontFamily: F.display, fontSize: 13, color: C.inkOnGold, letterSpacing: 1 }}>{t("dash.continueHeir")} ({varisAdaylari(state).length} {t("dash.heirs")})</Text>
-            </Pressable>
+            <GameButton accessibilityLabel={t("dash.continueHeir")} icon="hanedan" rtl={lang === "ar"} onPress={() => router.push("/oyun/nesil")}>
+              <Text style={{ fontFamily: F.display, fontSize: 13, color: C.inkOnGold, letterSpacing: 1, textAlign: "center" }}>{t("dash.continueHeir")} ({varisAdaylari(state).length} {t("dash.heirs")})</Text>
+            </GameButton>
           )}
           {varisAdaylari(state).length === 0 && !mpMode && (
-            <Pressable onPress={() => router.push("/oyun/ocak")} style={{ flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 7, paddingVertical: 14, borderRadius: 5, borderWidth: 1.5, borderColor: "rgba(201,168,76,0.55)", backgroundColor: C.gold }}>
-              <GameIcon name="hanedan" size={14} color={C.inkOnGold} />
-              <Text style={{ fontFamily: F.display, fontSize: 13, color: C.inkOnGold, letterSpacing: 1 }}>{t("dash.kulOcak")}</Text>
-            </Pressable>
+            <GameButton accessibilityLabel={t("dash.kulOcak")} icon="hanedan" rtl={lang === "ar"} onPress={() => router.push("/oyun/ocak")}>
+              <Text style={{ fontFamily: F.display, fontSize: 13, color: C.inkOnGold, letterSpacing: 1, textAlign: "center" }}>{t("dash.kulOcak")}</Text>
+            </GameButton>
           )}
           <View style={{ flexDirection: "row", gap: 10 }}>
-            <Pressable onPress={() => router.push("/oyun/roman")} style={{ flex: 1, flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 6, paddingVertical: 14, borderRadius: 5, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.card }}>
-              <GameIcon name="roman" size={13} color={C.gold} />
-              <Text style={{ fontFamily: F.display, fontSize: 13, color: C.gold, letterSpacing: 1 }}>{t("dash.readLife")}</Text>
-            </Pressable>
-            <Pressable onPress={async () => { try { await resetGame(); router.replace("/yeni-oyun"); } catch {} }} style={{ flex: 1, flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 6, paddingVertical: 14, borderRadius: 5, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.card }}>
-              <GameIcon name="leaf" size={13} color={C.parchmentDim} />
-              <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchmentDim, letterSpacing: 1 }}>{t("dash.newLife")}</Text>
-            </Pressable>
+            <GameButton variant="secondary" accessibilityLabel={t("dash.readLife")} icon="roman" rtl={lang === "ar"} onPress={() => router.push("/oyun/roman")} style={{ flex: 1 }}>
+              <Text style={{ fontFamily: F.display, fontSize: 13, color: C.goldBright, letterSpacing: 1, textAlign: "center" }}>{t("dash.readLife")}</Text>
+            </GameButton>
+            <GameButton variant="secondary" accessibilityLabel={t("dash.newLife")} icon="leaf" rtl={lang === "ar"} onPress={async () => { try { await resetGame(); router.replace("/yeni-oyun"); } catch {} }} style={{ flex: 1 }}>
+              <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchmentDim, letterSpacing: 1, textAlign: "center" }}>{t("dash.newLife")}</Text>
+            </GameButton>
           </View>
         </View>
       )}
@@ -787,10 +783,9 @@ export default function Dashboard() {
           </View>
           <EmekOngoru state={state} styleId={workStyle} />
           {(() => { const worked = !canWork(state); return (
-          <PressableScale accessibilityLabel={worked ? t("act.workedThisTurn") : t("act.work")} onPress={() => { if (worked) return; hap("tap"); playTap(); doWork(workStyle); }} disabled={worked} style={{ flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8, paddingVertical: 14, borderRadius: 5, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.card, opacity: worked ? 0.45 : 1 }}>
-            <GameIcon name="calis" size={15} color={C.gold} />
-            <Text style={{ fontFamily: F.display, fontSize: 13, color: C.gold, letterSpacing: 1.5 }}>{worked ? t("act.workedThisTurn") : t("act.work")}</Text>
-          </PressableScale>); })()}
+          <GameButton variant="secondary" accessibilityLabel={worked ? t("act.workedThisTurn") : t("act.work")} icon="calis" rtl={lang === "ar"} onPress={() => { if (worked) return; hap("tap"); playTap(); doWork(workStyle); }} disabled={worked}>
+            <Text style={{ fontFamily: F.display, fontSize: 13, color: C.goldBright, letterSpacing: 1.5, textAlign: "center" }}>{worked ? t("act.workedThisTurn") : t("act.work")}</Text>
+          </GameButton>); })()}
         </View>
       ) : null}
 

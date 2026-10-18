@@ -1,14 +1,14 @@
-// Kül & Köz tasarım tokenları (web index.css'ten birebir).
+// Kül & Köz tasarım tokenları; mobil oyun yüzeyleri daha sıcak ve aydınlık tutulur.
 export const C = {
-  bg: "#0D0A06",
-  surface: "#1B150D",
-  card: "#241B11",
-  cardHi: "#302419",
-  border: "#493823",
-  borderHi: "#705633",
-  gold: "#D8B35A",
-  goldBright: "#FFD36C",
-  goldDim: "#A98236",
+  bg: "#140F09",
+  surface: "#241A10",
+  card: "#2D2115",
+  cardHi: "#3B2B1B",
+  border: "#5A452C",
+  borderHi: "#896439",
+  gold: "#E4BE63",
+  goldBright: "#FFE18A",
+  goldDim: "#BC8D3E",
   parchment: "#F2E2C4",
   parchmentDim: "#D2BC91",
   parchmentMuted: "#B9A47D",  // okunur soluk metin: kart zemininde AA kontrastı

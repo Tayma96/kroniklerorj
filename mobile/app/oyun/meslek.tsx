@@ -13,7 +13,7 @@ import { C, F } from "../../lib/theme";
 import { useI18n, applyParams } from "../../lib/i18n";
 import { GameIcon } from "../../lib/icons";
 import { hap } from "../../lib/haptics";
-import { BackLabel, PageHeader, Panel, Pill, ScreenFresk } from "../../lib/ui";
+import { BackLabel, GameButton, PageHeader, Panel, Pill, ScreenFresk } from "../../lib/ui";
 
 export default function Meslek() {
   const insets = useSafeAreaInsets();
@@ -52,9 +52,9 @@ export default function Meslek() {
               <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: d.hazir ? C.goldBright : C.parchmentDim, marginTop: 4, lineHeight: 22 }}>{durum}</Text>
               {(p.sinav_gecme || p.sinav_kalma) ? <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchmentMuted, marginTop: 4 }}>{applyParams(t("ahi.record"), [p.sinav_gecme || 0, p.sinav_kalma || 0], lang)}</Text> : null}
               {d.hazir && (
-                <Pressable accessibilityRole="button" accessibilityLabel={t("ahi.btn")} onPress={() => { hap("tap"); setSinav({ prof: p.profession, hedefUnvan, yollar: d.yollar, oranlar: d.oranlar }); }} style={{ marginTop: 11, paddingVertical: 12, borderRadius: 5, borderWidth: 1.5, borderColor: C.gold + "99", backgroundColor: C.gold, alignItems: "center" }}>
-                  <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1.5, color: C.inkOnGold }}>{t("ahi.btn")}</Text>
-                </Pressable>
+                <GameButton accessibilityLabel={t("ahi.btn")} icon="medal" onPress={() => { hap("tap"); setSinav({ prof: p.profession, hedefUnvan, yollar: d.yollar, oranlar: d.oranlar }); }} style={{ marginTop: 11 }}>
+                  <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1.5, color: C.inkOnGold, textAlign: "center" }}>{t("ahi.btn")}</Text>
+                </GameButton>
               )}
             </Panel>
           );
@@ -145,9 +145,9 @@ export default function Meslek() {
                       <Text style={{ fontFamily: F.display, fontSize: 13, color: C.gold, letterSpacing: 0.5 }}>{t("ck.h." + a.huy)}</Text>
                     </View>
                     <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentDim, marginTop: 3, lineHeight: 22 }}>{t("ck.hd." + a.huy)}</Text>
-                    <Pressable accessibilityRole="button" accessibilityLabel={applyParams(t("ck.btnTake"), [CIRAK_BEDEL], lang)} disabled={!alabilir} onPress={() => { hap("success"); apply((st) => cirakAl(st, i)); }} style={{ marginTop: 8, paddingVertical: 9, borderRadius: 5, borderWidth: 1.2, borderColor: alabilir ? C.gold + "99" : C.border, alignItems: "center", opacity: alabilir ? 1 : 0.55 }}>
-                      <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.gold }}>{applyParams(t("ck.btnTake"), [CIRAK_BEDEL], lang)}</Text>
-                    </Pressable>
+                    <GameButton variant="secondary" accessibilityLabel={applyParams(t("ck.btnTake"), [CIRAK_BEDEL], lang)} disabled={!alabilir} icon="family" onPress={() => { hap("success"); apply((st) => cirakAl(st, i)); }} style={{ marginTop: 8 }}>
+                      <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: alabilir ? C.goldBright : C.parchmentMuted, textAlign: "center" }}>{applyParams(t("ck.btnTake"), [CIRAK_BEDEL], lang)}</Text>
+                    </GameButton>
                   </View>
                 ))}
                 <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchmentMuted, marginTop: 8, lineHeight: 22 }}>{applyParams(t("ck.cost"), [CIRAK_KOST], lang)}</Text>
@@ -167,9 +167,9 @@ export default function Meslek() {
                 <View style={{ width: `${Math.min(100, c.ilerleme)}%`, height: 7, borderRadius: 4, backgroundColor: C.gold }} />
               </View>
               {c.ihmal >= 2 && <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.ember, marginTop: 7 }}>{t("ck.neglect")}</Text>}
-              <Pressable accessibilityRole="button" accessibilityLabel={t("ck.btnLesson")} disabled={!hazir} onPress={() => { hap("tap"); apply((st) => cirakDers(st)); }} style={{ marginTop: 11, paddingVertical: 12, borderRadius: 5, borderWidth: 1.5, borderColor: hazir ? C.gold + "99" : C.border, backgroundColor: hazir ? C.gold : C.bg, alignItems: "center", opacity: hazir ? 1 : 0.6 }}>
-                <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1.2, color: hazir ? C.inkOnGold : C.parchmentMuted }}>{hazir ? t("ck.btnLesson") : cirakDersKalan(state) > 0 ? applyParams(t("ck.lessonWait"), [cirakDersKalan(state)], lang) : t("ck.lessonDone")}</Text>
-              </Pressable>
+              <GameButton accessibilityLabel={hazir ? t("ck.btnLesson") : cirakDersKalan(state) > 0 ? applyParams(t("ck.lessonWait"), [cirakDersKalan(state)], lang) : t("ck.lessonDone")} disabled={!hazir} variant={hazir ? "primary" : "secondary"} icon="graduate-cap" onPress={() => { hap("tap"); apply((st) => cirakDers(st)); }} style={{ marginTop: 11 }}>
+                <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1.2, color: hazir ? C.inkOnGold : C.parchmentMuted, textAlign: "center" }}>{hazir ? t("ck.btnLesson") : cirakDersKalan(state) > 0 ? applyParams(t("ck.lessonWait"), [cirakDersKalan(state)], lang) : t("ck.lessonDone")}</Text>
+              </GameButton>
               <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchmentMuted, marginTop: 8, lineHeight: 22 }}>{applyParams(t("ck.cost"), [CIRAK_KOST], lang)}</Text>
               {sayac}
             </Panel>

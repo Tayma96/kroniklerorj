@@ -12,7 +12,7 @@ import type { Dilemma, Choice } from "./events";
 import type { Opportunity } from "./game";
 import { ParticleBurst } from "./fx";
 import { GlowPulse } from "./skia";
-import { C, F } from "./theme";
+import { C, F, L } from "./theme";
 import { KaderKartiModal, FirsatKartiModal } from "./kart3d";
 import { LinearGradient } from "expo-linear-gradient";
 import { usePathname } from "expo-router";
@@ -53,6 +53,8 @@ export function PressableScale({ children, onPress, style, disabled, haptic, acc
   return (
     <AnimatedPressable
       accessibilityRole="button" accessibilityLabel={accessibilityLabel} accessibilityHint={accessibilityHint}
+      accessibilityState={disabled ? { disabled: true } : undefined}
+      hitSlop={8}
       disabled={disabled}
       onPressIn={() => { s.value = withTiming(0.96, { duration: DUR.fast, easing: EASE.standard }); }}
       onPressOut={() => { s.value = withSpring(1, { damping: 14, stiffness: 220 }); }}
@@ -61,6 +63,39 @@ export function PressableScale({ children, onPress, style, disabled, haptic, acc
     >
       {children}
     </AnimatedPressable>
+  );
+}
+
+type GameButtonVariant = "primary" | "secondary" | "choice" | "danger";
+const GAME_BUTTON_SKIN: Record<GameButtonVariant, { frame: string; inset: string; fill: [string, string, string]; icon: string }> = {
+  primary: { frame: "#FFE8A9", inset: "#A56F2D", fill: ["#F4D889", "#DDAE4D", "#B77C2F"], icon: C.inkOnGold },
+  secondary: { frame: C.goldDim, inset: C.border, fill: [C.cardHi, C.card, C.surface], icon: C.goldBright },
+  choice: { frame: C.borderHi, inset: C.goldDim, fill: [C.cardHi, C.card, C.surface], icon: C.goldBright },
+  danger: { frame: "#F1A37C", inset: "#76251E", fill: ["#B94C3E", "#8B332C", "#63211D"], icon: C.parchment },
+};
+
+// Ortak oyunsu düğme: metal çerçeve, ışık alan üst kenar ve dokunsal basış.
+export function GameButton({ children, onPress, style, disabled, haptic, accessibilityLabel, accessibilityHint, variant = "primary", icon, rtl = false }: {
+  children: React.ReactNode; onPress?: () => void; style?: StyleProp<ViewStyle>; disabled?: boolean; haptic?: Hap;
+  accessibilityLabel?: string; accessibilityHint?: string; variant?: GameButtonVariant; icon?: string; rtl?: boolean;
+}) {
+  const skin = GAME_BUTTON_SKIN[variant];
+  return (
+    <PressableScale accessibilityLabel={accessibilityLabel} accessibilityHint={accessibilityHint} onPress={onPress} disabled={disabled} haptic={haptic}
+      style={[{ minHeight: L.touch, borderRadius: 9, borderWidth: 1.5, borderColor: skin.frame, backgroundColor: skin.inset, padding: 2, opacity: disabled ? 0.56 : 1 }, style]}>
+      <View style={{ flexGrow: 1, minHeight: L.touch - 6, borderRadius: 6, borderWidth: 1, borderColor: skin.inset, overflow: "hidden" }}>
+        <LinearGradient colors={skin.fill} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={{ flexGrow: 1, minHeight: L.touch - 8, justifyContent: "center", paddingHorizontal: 12, paddingVertical: 8 }}>
+          <LinearGradient pointerEvents="none" colors={["rgba(255,255,255,0.28)", "rgba(255,255,255,0.02)"]} style={{ position: "absolute", top: 0, left: 0, right: 0, height: 14 }} />
+          <View pointerEvents="none" style={{ position: "absolute", top: 1, left: 5, right: 5, height: 1, backgroundColor: "rgba(255,248,220,0.62)" }} />
+          {icon ? <View style={{ flexDirection: rtl ? "row-reverse" : "row", alignItems: "center", justifyContent: "center", gap: 9 }}>
+            <View style={{ width: 28, height: 28, borderRadius: 14, borderWidth: 1, borderColor: variant === "primary" ? "rgba(255,241,192,0.8)" : skin.inset, backgroundColor: variant === "primary" ? "rgba(94,53,18,0.2)" : C.surface, alignItems: "center", justifyContent: "center" }}>
+              <GameIcon name={icon} size={16} color={skin.icon} />
+            </View>
+            <View style={{ flex: 1, minWidth: 0 }}>{children}</View>
+          </View> : children}
+        </LinearGradient>
+      </View>
+    </PressableScale>
   );
 }
 
@@ -347,8 +382,8 @@ export function PageHeader({ kicker, icon, title, sub }: { kicker?: string; icon
   const path = usePathname(), design = screenDesign(path);
   return (
     <Animated.View entering={FadeInDown.duration(320).easing(EASE.decel)} style={{ marginBottom: 14, borderWidth: 1, borderColor: C.goldDim, borderRadius: 4, overflow: "hidden", backgroundColor: C.surface }}>
-      <Image accessible={false} source={screenArt(path)} resizeMode="cover" style={{ position: "absolute", width: "100%", height: "100%", opacity: 0.75 }} />
-      <LinearGradient pointerEvents="none" colors={[C.bg + "00", C.bg + "DD", C.bg]} style={{ position: "absolute", top: 0, right: 0, bottom: 0, left: 0 }} />
+      <Image accessible={false} source={screenArt(path)} resizeMode="cover" style={{ position: "absolute", width: "100%", height: "100%", opacity: 0.86 }} />
+      <LinearGradient pointerEvents="none" colors={[C.bg + "00", C.bg + "88", C.bg + "D8"]} style={{ position: "absolute", top: 0, right: 0, bottom: 0, left: 0 }} />
       <View style={{ padding: 16, paddingTop: design.family === "system" ? 32 : 72 }}>
         <GameIcon name={design.icon} size={24} color={C.gold} />
         {!!kicker && kicker !== title && <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchmentDim, marginTop: 8 }}>{kicker}</Text>}
@@ -375,7 +410,7 @@ export function ScreenFresk({ children, style }: { children: React.ReactNode; st
   const reduced = useSadeMod();
   if (reduced) return <View style={[{ flex: 1, backgroundColor: C.bg }, style]}>{children}</View>; // sade mod: doku belleği harcanmaz
   return (
-    <ImageBackground source={require("../assets/yeni_oyun_bg.png")} resizeMode="cover" imageStyle={{ opacity: 0.1 }} style={[{ flex: 1, backgroundColor: C.bg }, style]}>
+    <ImageBackground source={require("../assets/yeni_oyun_bg.png")} resizeMode="cover" imageStyle={{ opacity: 0.13 }} style={[{ flex: 1, backgroundColor: C.bg }, style]}>
       {children}
     </ImageBackground>
   );

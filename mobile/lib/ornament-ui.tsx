@@ -5,10 +5,11 @@ import { GameIcon } from "./icons";
 import { C, F, T } from "./theme";
 import { useState } from "react";
 export function OrnatePanel({ title, icon, right, children, tone = C.gold, inset = true }: { title?: string; icon?: string; right?: ReactNode; children: ReactNode; tone?: string; inset?: boolean }) {
-  return <View style={{ marginBottom: 12, borderWidth: 1, borderColor: tone + "77", borderRadius: 5, backgroundColor: C.surface, padding: 3 }}>
-    <View style={{ borderWidth: 1, borderColor: tone + "25", borderRadius: 3, overflow: "hidden" }}>
-      {title && <View style={{ flexDirection: "row", alignItems: "center", gap: 8, padding: 11, borderBottomWidth: 1, borderColor: tone + "33", backgroundColor: tone + "08" }}>
-        {icon && <GameIcon name={icon} color={tone} size={20} />}
+  return <View style={{ marginBottom: 12, borderWidth: 1.5, borderColor: tone + "99", borderRadius: 8, backgroundColor: C.bg, padding: 3 }}>
+    <View style={{ borderWidth: 1, borderColor: tone + "40", borderRadius: 6, overflow: "hidden", backgroundColor: C.surface }}>
+      {title && <View style={{ position: "relative", flexDirection: "row", alignItems: "center", gap: 8, padding: 10, borderBottomWidth: 1, borderColor: tone + "55", backgroundColor: tone + "12" }}>
+        <LinearGradient pointerEvents="none" colors={[tone + "20", tone + "04"]} style={{ position: "absolute", top: 0, left: 0, right: 0, height: 18 }} />
+        {icon && <View style={{ width: 26, height: 26, borderRadius: 13, borderWidth: 1, borderColor: tone + "77", backgroundColor: tone + "12", alignItems: "center", justifyContent: "center" }}><GameIcon name={icon} color={tone} size={15} /></View>}
         <Text style={{ flex: 1, fontFamily: F.display, fontSize: T.title, color: tone }}>{title}</Text>{right}
       </View>}
       <View style={inset ? { padding: 12 } : undefined}>{children}</View>
