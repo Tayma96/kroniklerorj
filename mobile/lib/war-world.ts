@@ -52,7 +52,7 @@ export function recordWar(world: WarWorld, war: ArmyWar): boolean {
     r.shortage = clean(r.shortage + loss * 0.35);
     r.insecurity = clean(r.insecurity + loss * (i === 1 ? 0.4 : 0.2));
     r.displacement = clean(r.displacement + loss * (i === 1 ? 0.32 : 0.1));
-    if (war.winner) {
+    if (war.winner && !war.peace) {
       const won = war.winner === (i === 0 ? "a" : "b");
       r.insecurity = clean(r.insecurity + (won ? -2 : 5));
       r.exhaustion = clean(r.exhaustion + (won ? 0 : 3));
@@ -61,7 +61,7 @@ export function recordWar(world: WarWorld, war: ArmyWar): boolean {
   world.fronts[war.id] = { month: war.month, a: war.a.troops, b: war.b.troops, settled: !!war.winner };
   if (war.winner) {
     (world.truces || (world.truces = {}))[[war.attacker, war.defender].sort().join("|")] = (war.ended ?? war.lastTick) + 12;
-    if (war.goal === "conquest" && war.winner === "a") region(world, war.defender).occupation = clean((region(world, war.defender).occupation || 0) + 30);
+    if (!war.peace && war.goal === "conquest" && war.winner === "a") region(world, war.defender).occupation = clean((region(world, war.defender).occupation || 0) + 30);
   }
   // Sınırlı defter; nesil dahil benzersiz kimlikler geçmiş sonucun yeniden uygulanmasını önler.
   const ids = Object.keys(world.fronts);

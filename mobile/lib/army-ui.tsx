@@ -32,7 +32,7 @@ export function ArmyFront() {
         {!!((army.wounded || 0) + (army.evacuated || 0)) && <Text style={{ fontFamily: F.serif, color: C.parchmentMuted, fontSize: 11, lineHeight: 17 }}>{text("army.wounded", [army.wounded || 0, army.evacuated || 0])}</Text>}
       </View>;
     })}
-    <Text style={{ fontFamily: F.serifItalic, color: C.parchmentMuted, fontSize: 12, lineHeight: 19, marginTop: 10 }}>{war.winner
+    <Text style={{ fontFamily: F.serifItalic, color: C.parchmentMuted, fontSize: 12, lineHeight: 19, marginTop: 10 }}>{war.peace ? t("dp.negotiated") : war.winner
       ? text("army.result", [t("beylik." + (war.winner === "a" ? war.attacker : war.defender))])
       : text("army.month", [state.player.crowned ? state.crownCampaign?.month ?? war.month : war.month])}</Text>
     {!war.winner && state.player.crowned && war === state.realmArmyWar && <>

@@ -1,7 +1,7 @@
 export type AccordKind = "ateskes" | "ticaret" | "savunma" | "yardim" | "baris";
 export interface RealmRuler { personId: string; reign: number; treasury: number; legitimacy: number; aggression: number; honor: number; }
 export interface RealmBond { trust: number; grievance: number; }
-export interface RealmAccord { id: string; a: string; b: string; kind: AccordKind; signed: number; until: number; missed?: number; lastWar?: string; }
+export interface RealmAccord { id: string; a: string; b: string; kind: AccordKind; signed: number; until: number; missed?: number; lastWar?: string; helpedWars?: string[]; }
 export interface RealmOffer { id: string; from: string; to: string; kind: AccordKind; until: number; payment: number; counter?: boolean; }
 export interface DiplomacyState {
   rulers: Record<string, RealmRuler>;
@@ -11,6 +11,7 @@ export interface DiplomacyState {
   actionTurn?: number;
   lastTurn?: number;
   lastWar?: string;
+  seenWars?: string[];
 }
 export interface DiplomaticContext {
   ownPower: number; targetPower: number; exhaustion: number; targetExhaustion: number;
@@ -47,7 +48,7 @@ export function quoteAccord(d: DiplomacyState, a: string, b: string, kind: Accor
   return { odds, payment, duration: kind === "yardim" ? 6 : 12, eligible, factors, reparations };
 }
 export function signAccord(d: DiplomacyState, a: string, b: string, kind: AccordKind, turn: number, id: string): RealmAccord {
-  const agreement: RealmAccord = { id, a, b, kind, signed: turn, until: turn + (kind === "yardim" ? 6 : 12) };
+  const agreement: RealmAccord = { id, a, b, kind, signed: turn, until: turn + (kind === "yardim" ? 6 : 12), missed: 0 };
   d.accords = d.accords.filter(t => !(realmPair(t.a, t.b) === realmPair(a, b) && t.kind === kind));
   d.accords.push(agreement); changeBond(d, a, b, kind === "baris" ? 3 : 8, kind === "baris" ? -8 : -2);
   return agreement;
@@ -78,10 +79,11 @@ export function repairDiplomacy(raw: unknown, ids: readonly string[], turn: numb
     };
   }
   if (Array.isArray(input.accords)) result.accords = input.accords.filter(t => t && ids.includes(t.a) && ids.includes(t.b) && t.a !== t.b && ACCORDS.includes(t.kind) && typeof t.id === "string" && Number.isFinite(t.signed) && t.signed <= turn && Number.isFinite(t.until) && t.until > turn && t.until <= turn + 12).slice(-32).map(t => ({
-    id: t.id, a: t.a, b: t.b, kind: t.kind, signed: t.signed, until: t.until, missed: Math.floor(clamp(Number.isFinite(t.missed) ? t.missed! : 0, 0, 2)), ...(typeof t.lastWar === "string" ? { lastWar: t.lastWar } : {}),
+    id: t.id, a: t.a, b: t.b, kind: t.kind, signed: t.signed, until: t.until, missed: Math.floor(clamp(Number.isFinite(t.missed) ? t.missed! : 0, 0, 2)), ...(typeof t.lastWar === "string" ? { lastWar: t.lastWar } : {}), ...(Array.isArray(t.helpedWars) ? { helpedWars: t.helpedWars.filter(id => typeof id === "string").slice(-6) } : {}),
   }));
   if (Array.isArray(input.offers)) result.offers = input.offers.filter(o => o && ids.includes(o.from) && ids.includes(o.to) && o.from !== o.to && ACCORDS.includes(o.kind) && typeof o.id === "string" && Number.isFinite(o.until) && o.until > turn && o.until <= turn + 3 && Number.isFinite(o.payment)).slice(-2).map(o => ({ id: o.id, from: o.from, to: o.to, kind: o.kind, until: o.until, payment: clamp(o.payment, 0, 1000), counter: o.counter === true }));
   for (const key of ["lastTurn", "actionTurn"] as const) if (Number.isFinite(input[key]) && input[key]! <= turn) result[key] = input[key];
   if (typeof input.lastWar === "string") result.lastWar = input.lastWar;
+  if (Array.isArray(input.seenWars)) result.seenWars = input.seenWars.filter(id => typeof id === "string").slice(-8);
   return result;
 }

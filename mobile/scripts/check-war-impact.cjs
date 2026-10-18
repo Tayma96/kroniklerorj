@@ -53,6 +53,7 @@ const assert = require('node:assert/strict'), fs = require('node:fs'), path = re
   const child = n.yeniGelen(migration.pop, 0, 'Demirhan', 'erkek', 8, () => 0.5);
   head.prof = spouse.prof = 'çiftçi'; head.es = spouse.id; spouse.es = head.id;
   head.cocuk = spouse.cocuk = [child.id]; child.baba = head.id; child.anne = spouse.id;
+  const sovereign = n.yeniGelen(migration.pop, 0, 'Demirhan', 'erkek', 45, () => 0.8); sovereign.prof = 'asker';
   const moved = g.giveWarAid(migration, 'patrol'); moved.turn = 3;
   const supplyBefore = g.cityGoodSupply(moved, 'Demirhan', 'bugday'); g.warEconomyTick(moved);
   const newHome = moved.pop.k[head.id].loc;
