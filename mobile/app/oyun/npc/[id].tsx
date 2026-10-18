@@ -179,7 +179,7 @@ export default function NpcDetail() {
         <View style={{ flexDirection: "row", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
           <View style={{ flexGrow: 1, flexBasis: 180, minWidth: 0 }}>
             <Text style={{ fontFamily: F.display, fontSize: T.display, color: C.parchment, letterSpacing: 0.5 }}>{npc.name}</Text>
-            <Text style={{ fontFamily: F.serifItalic, fontSize: T.body, color: C.parchmentMuted, marginTop: 1 }}>{prof.olu ? t("npc.late") : visual.ruler ? t("visual.ruler") : professionNameL(npc.profession, lang, npc.gender === "kadın")} · {npc.age} {t("misc.age")}</Text>
+            <Text style={{ fontFamily: F.serifItalic, fontSize: T.body, color: C.parchmentMuted, marginTop: 1 }}>{prof.olu ? t("npc.late") : visual.ruler ? tg("visual.ruler", npc.gender === "kadın") : professionNameL(npc.profession, lang, npc.gender === "kadın")} · {npc.age} {t("misc.age")}</Text>
             {!prof.olu && !prof.burada ? <Text style={{ fontFamily: F.serifItalic, fontSize: T.caption, color: C.goldDim, marginTop: 2 }}>{t("npc.livesIn").replace("%1", placeName(npc.loc || "", lang))}</Text> : null}
             <RelBand score={v} />
           </View>

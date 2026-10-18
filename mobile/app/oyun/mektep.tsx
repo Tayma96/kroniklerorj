@@ -85,6 +85,10 @@ export default function Mektep() {
           <Text style={{ fontFamily: F.serif, fontSize: 15, lineHeight: 22, color: done ? C.sage : C.parchment, marginTop: 4 }}>{done ? "✓" : toExam === 1 ? t("mek.examNow") : applyParams(t("mek.exam"), [toExam])}</Text>
         </View>
 
+        {p.age >= 18 && <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 14 }}>
+          {[{ to: "/oyun/beceriler", key: "scr.beceriler", icon: "medal" }, { to: "/oyun", key: "adult.act.tefekkur", icon: "book" }].map(item => <Pressable key={item.to} onPress={() => router.push(item.to as any)} style={{ flexBasis: "45%", flexGrow: 1, gap: 8, padding: 14, borderWidth: 1, borderColor: C.goldDim, borderRadius: 4, backgroundColor: C.surface }}><GameIcon name={item.icon} color={C.gold} size={24} /><Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchment }}>{t(item.key)}</Text></Pressable>)}
+        </View>}
+
         {/* Çalışma gücü (enerji) — bu ay kalan ders/meşk hakkı (yalnız okul çağı) */}
         {p.age < 18 && (
         <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(201,168,76,0.28)", borderRadius: 5, paddingVertical: 10, paddingHorizontal: 13, marginBottom: 13 }}>

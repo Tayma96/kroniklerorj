@@ -201,9 +201,7 @@ export default function Savas() {
   // Seçim ekranı
   return (
     <ScreenFresk style={{ paddingTop: insets.top }}>
-      <Pressable onPress={() => router.push("/oyun/meslek")} style={{ paddingHorizontal: 16, paddingVertical: 12, minHeight: 44 }}>
-        <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchmentMuted, lineHeight: 22 }}>{t("war.soldier")}</Text>
-      </Pressable>
+
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 12 }}>
         <Pressable onPress={() => router.back()}><BackLabel /></Pressable>
         <View style={{ width: 40 }} />
@@ -213,12 +211,16 @@ export default function Savas() {
           <Text style={{ fontFamily: F.display, fontSize: 13, color: C.blood }}>{pw}</Text>
         </View>
       </View>
-      <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, paddingHorizontal: 16, marginBottom: 10 }}>
-        {t("cb.subtitle")} {(p.inventory["bicak"] || 0) > 0 ? t("cb.knifeYes") : t("cb.knifeNo")}
-      </Text>
+
       <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 80 }}>
         <PageHeader kicker={t("scr.savas")} title={t("scr.savas")} />
         <ArmyFront />
+      <Pressable onPress={() => router.push("/oyun/meslek")} style={{ paddingHorizontal: 16, paddingVertical: 12, minHeight: 44 }}>
+        <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchmentMuted, lineHeight: 22 }}>{t("war.soldier")}</Text>
+      </Pressable>
+      <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, paddingHorizontal: 16, marginBottom: 10 }}>
+        {t("cb.subtitle")} {(p.inventory["bicak"] || 0) > 0 ? t("cb.knifeYes") : t("cb.knifeNo")}
+      </Text>
         {tooWeak && !p.dead && (
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: "rgba(168,52,52,0.1)", borderWidth: 1, borderColor: "rgba(168,52,52,0.45)", borderRadius: 5, padding: 12, marginBottom: 12 }}>
             <GameIcon name="saglik" size={15} color={C.blood} />
