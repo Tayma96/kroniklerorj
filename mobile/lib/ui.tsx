@@ -14,6 +14,10 @@ import { ParticleBurst } from "./fx";
 import { GlowPulse } from "./skia";
 import { C, F } from "./theme";
 import { KaderKartiModal, FirsatKartiModal } from "./kart3d";
+import { LinearGradient } from "expo-linear-gradient";
+import { usePathname } from "expo-router";
+import { screenArt, screenDesign } from "./screen-design";
+import { OrnatePanel } from "./ornament-ui";
 
 // Değişince yumuşakça sayan (count-up/down) sayı — UI thread'de, re-render yok.
 const AnimatedTextInput = Animated.createAnimatedComponent(TextInput);
@@ -35,7 +39,7 @@ export function AnimatedNumber({ value, style }: { value: number; style?: StyleP
 // Lokalize geri-butonu etiketi (tüm ekranlarda ortak).
 export function BackLabel() {
   const { t } = useI18n();
-  return <Text style={{ color: C.gold, fontFamily: F.display, fontSize: 12 }}>{t("common.back")}</Text>;
+  return <Text style={{ color: C.gold, fontFamily: F.display, fontSize: 13, lineHeight: 22 }}>{t("common.back")}</Text>;
 }
 
 // Basınca hafifçe küçülen, yaylanarak dönen buton — ortak "his" bileşeni.
@@ -304,11 +308,11 @@ export function GoldDivider({ mt = 16, mb = 12 }: { mt?: number; mb?: number }) 
 
 // Bölüm başlığı — altın, harf aralıklı, opsiyonel ikon + sağ çizgi.
 export function SectionHead({ title, icon, center }: { title: string; icon?: string; center?: boolean }) {
-  if (center) return <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 2.5, color: C.gold, textTransform: "uppercase", textAlign: "center", marginBottom: 12 }}>{title}</Text>;
+  if (center) return <Text style={{ fontFamily: F.display, fontSize: 15, color: C.gold, textAlign: "center", marginBottom: 12 }}>{title}</Text>;
   return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 9 }}>
       {icon ? <GameIcon name={icon} size={14} color={C.gold} /> : null}
-      <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 2, color: C.gold, textTransform: "uppercase" }}>{title}</Text>
+      <Text style={{ flexShrink: 1, fontFamily: F.display, fontSize: 15, color: C.gold }}>{title}</Text>
       <View style={{ flex: 1, height: 1, backgroundColor: C.border }} />
     </View>
   );
@@ -340,15 +344,17 @@ export function ProgressBar({ value, max, color, h = 5 }: { value: number; max: 
 
 // ── Vercel Kit bileşenleri (PageHeader / Panel / Pill) ──
 export function PageHeader({ kicker, icon, title, sub }: { kicker?: string; icon?: string; title: string; sub?: string }) {
+  const path = usePathname(), design = screenDesign(path);
   return (
-    <Animated.View entering={FadeInDown.duration(320).easing(EASE.decel)} style={{ alignItems: "center", marginBottom: 14 }}>
-      {kicker ? <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 3, color: C.goldDim, textTransform: "uppercase" }}>{kicker}</Text> : null}
-      <Text style={{ fontFamily: F.display, fontSize: 22, color: C.parchment, letterSpacing: 1, marginTop: 4, textAlign: "center" }}>{icon ? icon + " " : ""}{title}</Text>
-      {sub ? <Text style={{ fontFamily: F.serifItalic, fontSize: 12.5, color: C.parchmentMuted, marginTop: 4, textAlign: "center" }}>{sub}</Text> : null}
-      <View style={{ flexDirection: "row", alignItems: "center", marginTop: 12, alignSelf: "stretch" }}>
-        <View style={{ flex: 1, height: 1, backgroundColor: C.goldDim, opacity: 0.6 }} />
-        <View style={{ width: 6, height: 6, backgroundColor: C.gold, transform: [{ rotate: "45deg" }], marginHorizontal: 8 }} />
-        <View style={{ flex: 1, height: 1, backgroundColor: C.goldDim, opacity: 0.6 }} />
+    <Animated.View entering={FadeInDown.duration(320).easing(EASE.decel)} style={{ marginBottom: 14, borderWidth: 1, borderColor: C.goldDim, borderRadius: 4, overflow: "hidden", backgroundColor: C.surface }}>
+      <Image accessible={false} source={screenArt(path)} resizeMode="cover" style={{ position: "absolute", width: "100%", height: "100%", opacity: 0.75 }} />
+      <LinearGradient pointerEvents="none" colors={[C.bg + "00", C.bg + "DD", C.bg]} style={{ position: "absolute", top: 0, right: 0, bottom: 0, left: 0 }} />
+      <View style={{ padding: 16, paddingTop: design.family === "system" ? 32 : 72 }}>
+        <GameIcon name={design.icon} size={24} color={C.gold} />
+        {!!kicker && kicker !== title && <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchmentDim, marginTop: 8 }}>{kicker}</Text>}
+        <Text accessibilityRole="header" style={{ fontFamily: F.display, fontSize: 23, lineHeight: 31, color: C.parchment, marginTop: 6 }}>{title}</Text>
+        {!!sub && <Text style={{ fontFamily: F.serif, fontSize: 15, lineHeight: 22, color: C.parchmentDim, marginTop: 5 }}>{sub}</Text>}
+        <View style={{ height: 1, backgroundColor: C.goldDim, marginTop: 12, width: 44 }} />
       </View>
     </Animated.View>
   );
@@ -361,18 +367,7 @@ export function Pill({ text, tone = C.gold }: { text: string; tone?: string }) {
   );
 }
 export function Panel({ title, icon, tone = C.gold, right, children, noPad, delay = 0 }: { title?: string; icon?: string; tone?: string; right?: React.ReactNode; children: React.ReactNode; noPad?: boolean; delay?: number }) {
-  return (
-    <Animated.View entering={FadeInDown.duration(300).delay(delay).easing(EASE.decel)} style={{ backgroundColor: C.card, borderWidth: 1, borderColor: tone + "33", borderRadius: 12, marginBottom: 12, overflow: "hidden" }}>
-      {title ? (
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 13, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.border, backgroundColor: tone + "12" }}>
-          {icon ? <Text style={{ fontSize: 15 }}>{icon}</Text> : null}
-          <Text style={{ flex: 1, fontFamily: F.display, fontSize: 12, letterSpacing: 1.5, color: tone, textTransform: "uppercase" }}>{title}</Text>
-          {right}
-        </View>
-      ) : null}
-      <View style={noPad ? undefined : { padding: 12 }}>{children}</View>
-    </Animated.View>
-  );
+  return <OrnatePanel title={title} tone={tone} right={right} inset={!noPad}>{children}</OrnatePanel>;
 }
 
 // Ekran freski: ana menü freski kısık ışıkla (opasite 0.1) arkadan bakar — düz zeminlere derinlik, okunurluğa dokunmadan.
