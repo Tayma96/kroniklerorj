@@ -58,6 +58,8 @@ export const yasiyor = (k: Kisi | undefined): k is Kisi => !!k && k.ol == null;
 // ── Kadro görünümü (eski NPC biçimiyle uyumlu) ──
 // Kimlik-tabanlı önbellek: aynı nüfus nesnesi için yer listeleri bir kez çıkarılır (clone sonrası yeni nesne → yeni kayıt).
 const _yerIdx = new WeakMap<object, Record<string, string[]>>();
+const _revision = new WeakMap<object, number>();
+export function nufusRevision(pop: Nufus): number { return _revision.get(pop.k) || 0; }
 function yerIndeksi(pop: Nufus): Record<string, string[]> {
   let ix = _yerIdx.get(pop.k);
   if (!ix) { ix = {}; for (const id in pop.k) { const k = pop.k[id]; if (k.ol == null) (ix[k.loc] = ix[k.loc] || []).push(id); } _yerIdx.set(pop.k, ix); }
@@ -71,7 +73,7 @@ export function kisiNpc(k: Kisi, wy: number, lang: Lang = "tr"): NPC {
   };
 }
 // Nüfus değiştiren her akış sonunda çağrılır: yer listeleri bir sonraki okumada yeniden çıkarılır.
-export function nufusDegisti(pop: Nufus): void { _yerIdx.delete(pop.k); }
+export function nufusDegisti(pop: Nufus): void { _yerIdx.delete(pop.k); _revision.set(pop.k, nufusRevision(pop) + 1); }
 export function kadro(pop: Nufus, loc: string, wy: number, lang: Lang = "tr"): NPC[] {
   return (yerIndeksi(pop)[loc] || []).map((id) => kisiNpc(pop.k[id], wy, lang));
 }

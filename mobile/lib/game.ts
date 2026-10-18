@@ -5,7 +5,7 @@ import { ArmyWar, FrontMove, armyForecast, makeArmy, clashArmies, frontContact, 
 import { WarWorld, WarRegion, CivilAid, peacefulRegion, emptyWarWorld, warRegion, warEffects, recordWar, tickWarWorld, repairWarWorld, aidNeeded, applyCivilAid, truceLeft } from "./war-world";
 import { currentCalendar, playerAge, CalendarInfo } from "./calendar";
 import { ITEMS, marketGoods, locSeed, generateNPCs, NPC, generateDynasties, cityInfo, RivalHouse, RivalCrisisKind, houseNameIdx, localFirstName, SPECIALTIES, Item, WClass, npcAgeProfession, TRAITS, QUIRKS, GOALS, NPC_PROFS } from "./world";
-import { Nufus, Kisi, Cins, NufusCtx, EskiDunya, OYUNCU, nufusKur, nufusYil, kadro, kisiAdi, hayalOf, huyOf, yeniGelen, nufusDegisti, olumOlasiligi, kisiNpc, kisiBaglari, yasOf, kardesler, bagEvrimi, kisiSil, kisiIlkAd, kisiSoyad } from "./nufus";
+import { Nufus, Kisi, Cins, NufusCtx, EskiDunya, OYUNCU, nufusKur, nufusYil, nufusRevision, kadro, kisiAdi, hayalOf, huyOf, yeniGelen, nufusDegisti, olumOlasiligi, kisiNpc, kisiBaglari, yasOf, kardesler, bagEvrimi, kisiSil, kisiIlkAd, kisiSoyad } from "./nufus";
 import { Lang, professionNameL, goalL } from "./locale-data";
 import { tFor, kucukHarf, renderEvt } from "./i18n";
 import { converse, ConvResult, spontaneousLine, callbackLine, perceptionGreeting, derinlikKatmani, SohbetSon } from "./dialogue";
@@ -1015,7 +1015,7 @@ function npcLifeTick(s: GameState) {
   const baglar = bagEvrimi(pop, wy);
   const bilinenBag = baglar.find((x) => tanidik(x.a) && tanidik(x.b));
   if (bilinenBag && !p.dead) push(s, "dunya_olayi", bilinenBag.t === "dost" ? `${ad(bilinenBag.a)} ile ${ad(bilinenBag.b)} can ciğer dost oldu.` : `${ad(bilinenBag.a)} ile ${ad(bilinenBag.b)} arasına husumet girdi.`, "kişisel", false, { k: bilinenBag.t === "dost" ? "npclife.friends" : "npclife.feud", p: [prm(bilinenBag.a), prm(bilinenBag.b)] });
-  _profCache = {}; // nüfus ve meslekler değişti — şehir arzı yeniden okunur
+  _profCache = new WeakMap(); // nüfus ve meslekler değişti — şehir arzı yeniden okunur
   // Eş oyuncunun ocağında yaşar (ocak değişirse peşinden gelir).
   const esK = nufusOyuncuEsi(s); if (esK && esK.loc !== (p.home_name || p.location_name)) { esK.loc = p.home_name || p.location_name; nufusDegisti(pop); }
   // Omuz verilen hayaller boşa gitmez: yılda bir, yardım görmüş biri muradına erebilir.
@@ -2597,18 +2597,33 @@ const DEMAND_COEF: Record<string, number> = {
 };
 function workerAgeProd(age: number): number { return age < 16 ? 0.3 : age <= 50 ? 1 : age <= 65 ? 0.7 : 0.4; }
 // Çok-girişli memo (42 yerleşimli dünyada kervan arbitrajı tüm lokasyonları taradığından tek-giriş thrash ediyordu).
-let _profCache: Record<string, Record<string, number>> = {};
-// Şehrin yaşayan kadrosundaki meslek dağılımı (yaşa göre üretkenlik ağırlıklı). Yılda bir değişir → memo.
-function cityProfCounts(s: GameState, loc: string): Record<string, number> {
-  const key = loc + "@" + worldYears(s) + "#" + s.seed;
-  let counts = _profCache[key];
-  if (counts) return counts;
-  if (Object.keys(_profCache).length > 600) _profCache = {}; // sınır: ara sıra tümden temizle (tembelce yeniden dolar)
-  counts = {};
-  for (const n of rosterAt(s, loc)) counts[n.profession] = (counts[n.profession] || 0) + workerAgeProd(n.age);
-  _profCache[key] = counts;
-  return counts;
+export interface CityEconomy {
+  residents: number; mouths: number; adults: number; productive: number;
+  professions: Record<string, number>;
+  services: { trade: number; care: number; security: number; culture: number };
 }
+let _profCache = new WeakMap<object, Map<string, { revision: number; value: CityEconomy }>>();
+export function cityEconomy(s: GameState, loc: string): CityEconomy {
+  const pop = nufusOf(s), revision = nufusRevision(pop), key = loc + "@" + worldYears(s);
+  let cache = _profCache.get(pop.k);
+  if (!cache) { cache = new Map(); _profCache.set(pop.k, cache); }
+  const hit = cache.get(key); if (hit?.revision === revision) return hit.value;
+  if (cache.size > 84) cache.clear();
+  const value: CityEconomy = { residents: 0, mouths: 0, adults: 0, productive: 0, professions: {}, services: { trade: 0, care: 0, security: 0, culture: 0 } };
+  for (const n of rosterAt(s, loc)) {
+    value.residents++;
+    value.mouths += n.age < 6 ? 0.45 : n.age < 14 ? 0.7 : n.age > 65 ? 0.85 : 1;
+    if (n.age >= 14) value.adults++;
+    const weight = n.age < 14 ? 0 : workerAgeProd(n.age);
+    if (!["işsiz", "çocuk", "bebek", "emekli"].includes(n.profession)) value.productive += weight;
+    value.professions[n.profession] = (value.professions[n.profession] || 0) + weight;
+  }
+  const capacity = Math.max(2, value.adults * 0.12), jobs = value.professions;
+  value.services = { trade: Math.min(1, (jobs["tüccar"] || 0) / capacity), care: Math.min(1, (jobs["şifacı"] || 0) / capacity),
+    security: Math.min(1, (jobs["asker"] || 0) / capacity), culture: Math.min(1, (jobs["müzisyen"] || 0) / capacity) };
+  cache.set(key, { revision, value }); return value;
+}
+function cityProfCounts(s: GameState, loc: string): Record<string, number> { return cityEconomy(s, loc).professions; }
 // Oyuncunun bir şehirdeki işçili mülklerinin o malı aylık üretimi (üretim zinciri → şehir arzı).
 // Çiftliğin buğdayı sadece oyuncu envanterine değil, o şehrin pazarına da akar → yerel fiyatı düşürür.
 function playerPropSupply(s: GameState, loc: string, good: string): number {
@@ -2661,7 +2676,10 @@ export function goodTrend(s: GameState, loc: string, good: string): -1 | 0 | 1 {
 }
 // Bir malın yerel talebi (nüfusa oranlı). Savaşta silah/zırh talebi artar.
 export function cityGoodDemand(s: GameState, loc: string, good: string): number {
-  let d = (DEMAND_COEF[good] || 0.06) * rosterSize(loc);
+  const people = cityEconomy(s, loc);
+  const food = !!ITEMS[good]?.feed || ["bugday", "un"].includes(good);
+  const consumers = food ? people.mouths : ["silah", "zirh"].includes(ITEMS[good]?.kind || "") ? people.adults : people.residents;
+  let d = (DEMAND_COEF[good] || 0.06) * consumers;
   const war = regionalWarEffects(s, loc);
   if (ITEMS[good]?.feed || ["bugday", "un"].includes(good)) d *= war.foodDemand;
   if (mobilizedRegion(s, regionOf(loc)) && ["silah", "zirh"].includes(ITEMS[good]?.kind || "")) d *= 1.35;
@@ -2709,7 +2727,7 @@ export function cityFx(s: GameState, loc: string): { prosp: number; sec: number 
     const t = LOC_EVENT_TYPES[e.type]; if (t) { prosp += t.prosp; sec += t.sec; }
   }
   const war = regionalWarEffects(s, loc);
-  return { prosp: prosp + war.prosperity, sec: sec + war.security };
+  return { prosp: prosp + war.prosperity, sec: sec + war.security + cityEconomy(s, loc).services.security * 3 };
 }
 // Bir şehirdeki aktif olayların bir mala uyguladığı fiyat çarpanı.
 function locPriceMult(s: GameState, loc: string, goodId: string): number {
@@ -2720,7 +2738,8 @@ function locPriceMult(s: GameState, loc: string, goodId: string): number {
   }
   const r = warRegionAt(s, loc);
   const medicine = ["sifa", "iksir"].includes(goodId) ? 1 + r.manpowerLoss * 0.003 : 1;
-  return m * regionalWarEffects(s, loc).transport * medicine;
+  const transport = 1 + (regionalWarEffects(s, loc).transport - 1) * (1 - cityEconomy(s, loc).services.trade * 0.2);
+  return m * transport * medicine;
 }
 // Bir şehirdeki aktif olay tiplerini döndür (UI için).
 export function locEventsAt(s: GameState, loc: string): string[] {
@@ -3903,7 +3922,7 @@ export function advance(prev: GameState, n = 1): GameState {
     s.player.hunger = Math.max(0, s.player.hunger - drop);
     if (child && s.player.hunger < 30) s.player.hunger = Math.min(100, s.player.hunger + 20); // anne-baba sofrası
     if (s.player.hunger < 20 && !child) s.player.health = Math.max(0, s.player.health - 6);
-    else if (s.player.health < 100) s.player.health = Math.min(100, s.player.health + 2);
+    else if (s.player.health < 100) s.player.health = Math.min(100, s.player.health + 2 + cityEconomy(s, s.player.location_name).services.care);
     if (s.player.faction === "sifaci" && s.player.health < 100) s.player.health = Math.min(100, s.player.health + 2);
     if (s.player.health <= 0 && !child) { die(s, `${s.player.name} açlık ve hastalığa yenik düştü.`, { k: "evj.dieStarve", p: [s.player.name] }); break; }
     // Yaralar zamanla iyileşir (kalıcı olanlar kalır)
@@ -5079,7 +5098,7 @@ function warCivilianTick(s: GameState): void {
       if (returning) { delete k.warHome; delete k.warYear; }
       else { k.warHome = k.warHome || origin; k.warYear = year; }
     }
-    nufusDegisti(writable); _profCache = {};
+    nufusDegisti(writable); _profCache = new WeakMap();
     world.migrationTurn = s.turn;
     if (!returning) {
       const arrival = regionOf(destination);
@@ -11517,7 +11536,7 @@ function governorTick(s: GameState) {
     const prosperity = Math.max(5, cityInfo(loc, placeKind(loc)).prosperity + cityFx(s, loc).prosp);
     p.govTreasury[loc] = Math.round((p.govTreasury[loc] ?? 0) + prosperity * tax / 100 * 0.4 * (1 + works * 0.06)); // hazine vergiyle dolar (eserler artırır)
     let happy = p.govHappy[loc] ?? 60;
-    const happyTarget = Math.max(35, Math.min(94, 72 - (tax - 15) * 1.4 + works * 4 - regionalWarEffects(s, loc).unrest)); // yüksek vergi → homurtu; eserler halkı hoş tutar
+    const happyTarget = Math.max(35, Math.min(94, 72 - (tax - 15) * 1.4 + works * 4 + cityEconomy(s, loc).services.culture * 2 - regionalWarEffects(s, loc).unrest)); // yüksek vergi → homurtu; eserler halkı hoş tutar
     happy = Math.max(0, Math.min(100, happy + (happyTarget - happy) * 0.1));
     p.govHappy[loc] = Math.round(happy);
     const target = 40 + (p.reputation - 50) * 0.4 + p.honor * 0.12 - p.fear * 0.05 + (happy - 60) * 0.25;
