@@ -4602,19 +4602,27 @@ export function sendEnvoy(prev: GameState, houseId: string): GameState {
   return s;
 }
 // Haraç talebi: kılıç çekmeden beylik sindirmek — başarısı seferden düşük, bedeli otorite (taht eylemi hakkını kullanır).
+export function canDemandTribute(s: GameState, beylikId: string): boolean {
+  const p = s.player;
+  return !!p.crowned && !p.dead && !inJail(p) && p.crown_action_turn !== s.turn && !crownTreaty(s, beylikId) &&
+    s.crownCampaign?.beylikId !== beylikId && (s.mpRealm || !realmWarWith(s, beylikId)) &&
+    campaignTargets(s).some(t => t.id === beylikId) && (s.mpRealm || (s.diplomacy?.rulers[beylikId]?.treasury ?? 800) >= 1);
+}
 export function demandTribute(prev: GameState, beylikId: string): { state: GameState; success: boolean } {
   const s = clone(prev); const p = s.player;
-  if (!p.crowned || p.dead || inJail(p) || crownTreaty(s, beylikId) || s.crownCampaign?.beylikId === beylikId) return { state: s, success: false };
-  if (p.crown_action_turn === s.turn) return { state: s, success: false }; // ayda tek taht eylemi (iddia bastırmayla ortak)
-  if (!campaignTargets(s).some((t) => t.id === beylikId)) return { state: s, success: false };
+  if (!canDemandTribute(s, beylikId)) return { state: s, success: false };
+  if (!s.mpRealm) ensureRealmRulers(s);
   p.crown_action_turn = s.turn;
   const odds = Math.max(0.1, Math.min(0.8, campaignOdds(s, beylikId) - 0.1)); // kılıçsız korkutmak kılıçtan zordur
   if (gameRandom(s) < odds) {
-    const trib = Math.round(150 * inflationFactor(s));
+    const treasury = s.diplomacy?.rulers[beylikId];
+    const trib = Math.min(Math.round(150 * inflationFactor(s)), s.mpRealm ? Infinity : Math.floor(treasury?.treasury || 0));
+    if (!s.mpRealm && treasury) { treasury.treasury -= trib; treasury.legitimacy = Math.max(15, treasury.legitimacy - 3); changeBond(s.diplomacy!, royalSeat(s), beylikId, -12, 8); }
     p.money += trib; p.crownAuthority = clamp100(crownAuthorityOf(p) + 4); p.fear = clamp100(p.fear + 3);
     push(s, "taht", `Elçin boş dönmedi: haraç geldi; adın sınırda ağır anılıyor.`, "kişisel", true, { k: "crown.tributeWin", p: [{ bl: beylikId }, trib] });
     return { state: s, success: true };
   }
+  if (!s.mpRealm) changeBond(s.diplomacy!, royalSeat(s), beylikId, -6, 6);
   p.crownAuthority = clamp100(crownAuthorityOf(p) - 5); p.reputation = Math.max(-100, p.reputation - 2);
   push(s, "taht", `Haraç talebin geri çevrildi; sınır kahvelerinde gülüşmeler dolaşıyor.`, "kişisel", false, { k: "crown.tributeLose", p: [{ bl: beylikId }] });
   return { state: s, success: false };

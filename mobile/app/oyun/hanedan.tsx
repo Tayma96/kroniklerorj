@@ -13,13 +13,13 @@ import { aileUyesi,
   nextSettleTier, canUpgradeSettleTier, upgradeSettleTier, propsInLoc,
   PRESTIGE, prestigeCost, fundPrestige, MARKET_LEVER_MIN, marketLeverCost, canManipulateMarket, manipulateMarket,
   acceptDynastyOffer, declineDynastyOffer,
-  feudPeaceCost, feudSuePeace, feudStrike, proposeToHouse, sendEnvoy, ENVOY_COST, demandTribute, inflationFactor,
+  feudPeaceCost, feudSuePeace, feudStrike, proposeToHouse, sendEnvoy, ENVOY_COST, canDemandTribute, demandTribute, inflationFactor,
   startPlot, hirePlotHelper, plotCost, plotHelperCost,
   listenWhispers, cutThread, listenCost, cutThreadCost,
   appointOfficer, dismissOfficer, courtAppointCost, courtWage, COURT_OFFICES, CourtOffice,
   crownAuthorityOf, CROWN_DECREES, canIssueDecree, issueDecree, decreeCooldownLeft,
   campaignTargets, canLaunchCampaign, campaignOdds, launchCampaign, CAMPAIGN_COST,
-  CROWN_POLICIES, crownPolicyOf, setCrownPolicy, crownTreaty,
+  CROWN_POLICIES, crownPolicyOf, setCrownPolicy,
   commandCampaign, campaignOrderCost, campaignForecast, CampaignOrder,
   appointableCities, canAppointGovernor, appointGovernor, dismissGovernor, APPOINT_FEE, crownTribute,
   inCourt, courtRankId,
@@ -349,6 +349,7 @@ export default function Hanedan() {
                     </Pressable>;
                   })}
                 </View>}
+                {!state.mpRealm && <Text style={{ fontFamily: F.serif, fontSize: 12, lineHeight: 19, color: C.parchmentMuted, marginBottom: 8 }}>{t("dp.tributeTerms")}</Text>}
                 {targets.length ? (
                   <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
                     {targets.map((tg) => {
@@ -358,7 +359,7 @@ export default function Hanedan() {
                         <Pressable disabled={!can} onPress={() => doCampaign(tg.id)} style={{ minHeight: 44, justifyContent: "center", paddingVertical: 8, paddingHorizontal: 11, borderRadius: 8, borderWidth: 1, borderColor: can ? "rgba(200,64,64,0.5)" : C.border, backgroundColor: can ? "rgba(200,64,64,0.10)" : C.bg, opacity: can ? 1 : 0.5 }}>
                           <Text style={{ fontFamily: F.display, fontSize: 11, color: can ? C.ember : C.parchmentMuted }}>{t("crown.campaignBtn")}: {t("beylik." + tg.id)} · {yuzdeL(Math.round(campaignOdds(state, tg.id) * 100), lang)}</Text>
                         </Pressable>
-                        {(() => { const tcan = p.crown_action_turn !== state.turn && !crownTreaty(state, tg.id) && state.crownCampaign?.beylikId !== tg.id; return (
+                        {(() => { const tcan = canDemandTribute(state, tg.id); return (
                         <Pressable disabled={!tcan} onPress={() => { const r = demandTribute(state, tg.id); hap(r.success ? "success" : "warning"); if (r.success) playVictory(); apply(() => r.state); setCampMsg({ ok: r.success, tick: Date.now() }); }} style={{ minHeight: 44, justifyContent: "center", paddingVertical: 6, paddingHorizontal: 11, borderRadius: 8, borderWidth: 1, borderColor: tcan ? "rgba(201,168,76,0.45)" : C.border, backgroundColor: tcan ? "rgba(201,168,76,0.08)" : C.bg, opacity: tcan ? 1 : 0.5 }}>
                           <Text style={{ fontFamily: F.display, fontSize: 10, color: tcan ? C.gold : C.parchmentMuted }}>{t("crown.tributeBtn")}: {t("beylik." + tg.id)}</Text>
                         </Pressable>

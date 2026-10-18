@@ -85,6 +85,21 @@ const assert = require('node:assert/strict'), fs = require('node:fs'), path = re
       assert(!/undefined|NaN|\[object|%[1-9]|^dp\.|^ww\./.test(rendered), `${lang}: ${rendered}`);
     }
   }
+  const tribute = copy(king); tribute.diplomacy.rulers[target].treasury = 70;
+  const extracted = g.demandTribute(tribute, target); assert(extracted.success); assert.equal(extracted.state.player.money, tribute.player.money + 70);
+  assert.equal(extracted.state.diplomacy.rulers[target].treasury, 0); assert.equal(tribute.diplomacy.rulers[target].treasury, 70);
+  assert(d.realmBond(extracted.state.diplomacy, 'demirhan', target).grievance >= 8); extracted.state.turn++;
+  assert(!g.canDemandTribute(extracted.state, target), 'boş hazineden para üretildi'); assert(!g.canDemandTribute(peace, target), 'savaştaki devletten barış haraç eylemi');
+  let refusedTribute;
+  for (let seed = 10000; seed < 80000 && !refusedTribute; seed += 5000) {
+    const s = copy(king); s.rng_state = seed; const r = g.demandTribute(s, target); if (!r.success) refusedTribute = r.state;
+  }
+  assert(refusedTribute); assert.equal(refusedTribute.player.money, king.player.money); assert.equal(refusedTribute.diplomacy.rulers[target].treasury, king.diplomacy.rulers[target].treasury);
+  assert(d.realmBond(refusedTribute.diplomacy, 'demirhan', target).grievance >= 6);
+  const reserveEvent = copy(king); reserveEvent.player.inventory.bugday = 8;
+  for (const state of [g.stockWarReserve(reserveEvent), extracted.state, refusedTribute]) for (const event of state.history.filter(e => /^(ww|crown)\./.test(e.k || ''))) for (const lang of ['tr', 'en', 'es', 'pt', 'ar', 'ru']) {
+    const rendered = renderEvt(event.k, event.text || '', event.p, lang, key => tFor(lang, key)); assert(!/undefined|NaN|\[object|%[1-9]|^ww\.|^crown\./.test(rendered), `${lang}: ${rendered}`);
+  }
   const mp = copy(king); mp.mpRealm = true; assert.equal(g.proposeRealmAccord(mp, target, 'ticaret').state, mp); const snap = copy(mp); g.realmDiplomacyTick(mp); assert.deepEqual(mp, snap);
   console.log('HÜKÜMDAR DİPLOMASİSİ: gerçek kişi/veraset, elçilik/karşı teklif, aylık kilit, yardım bütçesi/temerrüt, savunma askeri, fetihsiz barış, kayıt ve MP temiz.');
 })().catch(e => { console.error(e); process.exitCode = 1; });
