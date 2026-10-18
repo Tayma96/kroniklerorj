@@ -5264,6 +5264,22 @@ export function giveWarAid(prev: GameState, kind: CivilAid): GameState {
   push(s, "dunya", "Savaşın sivil yaralarını hafiflettin.", "kişisel", false, { k: "ww.aid.done", p: [{ sfx: "ww.aid." + kind }, { pl: s.player.location_name }] });
   return s;
 }
+export function warReserveAt(s: GameState, loc: string): number {
+  return s.mpRealm ? 0 : s.warWorld?.reserves?.[regionOf(loc)] || 0;
+}
+export function canStockWarReserve(s: GameState): boolean {
+  const p = s.player;
+  return !s.mpRealm && !p.dead && !inJail(p) && p.age >= 13 && s.warWorld?.aidTurn !== s.turn &&
+    (p.inventory.bugday || 0) >= 8 && warReserveAt(s, p.location_name) <= 32;
+}
+export function stockWarReserve(prev: GameState): GameState {
+  if (!canStockWarReserve(prev)) return prev;
+  const s = clone(prev), world = s.warWorld || (s.warWorld = emptyWarWorld()), id = regionOf(s.player.location_name);
+  (world.reserves || (world.reserves = {}))[id] = (world.reserves[id] || 0) + 8;
+  world.aidTurn = s.turn; s.player.inventory.bugday -= 8;
+  push(s, "dunya", "Kendi buğdayından bölge ambarına ayırdın.", "kişisel", false, { k: "ww.reserve.done", p: [{ pl: s.player.location_name }] });
+  return s;
+}
 function warEconomyTick(s: GameState): void {
   if (s.mpRealm) return;
   ensureRealmRulers(s);

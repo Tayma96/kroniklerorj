@@ -17,6 +17,7 @@ export interface WarWorld {
   aidTurn?: number;
   migrationTurn?: number;
   truces?: Record<string, number>;
+  reserves?: Record<string, number>; // bağışlanan gerçek buğday; bölge başına en çok 40
 }
 export type CivilAid = "food" | "rebuild" | "patrol";
 const fields = ["damage", "shortage", "insecurity", "displacement", "exhaustion", "manpowerLoss", "occupation"] as const;
@@ -88,6 +89,12 @@ export function tickWarWorld(world: WarWorld, fronts: ArmyWar[], turn: number, i
     r.exhaustion = clean(r.exhaustion + (fighting ? 1.5 : -0.8));
     r.manpowerLoss = clean(r.manpowerLoss - (fighting ? 0 : 0.35));
     r.occupation = clean((r.occupation || 0) - (fighting ? 0 : 0.5));
+    const stored = world.reserves?.[id] || 0;
+    if (stored > 0) {
+      const used = r.shortage >= 4 ? Math.min(4, stored, r.shortage) : 0;
+      r.shortage = clean(r.shortage - used);
+      world.reserves![id] = Math.max(0, Math.round((stored - used - (turn > 0 && turn % 12 === 0 ? 1 : 0)) * 100) / 100);
+    }
   }
   if (world.truces) for (const key of Object.keys(world.truces)) if (world.truces[key] <= turn) delete world.truces[key];
   return true;
@@ -138,6 +145,10 @@ export function repairWarWorld(raw: unknown, ids: readonly string[], turn: numbe
   if (input.truces && typeof input.truces === "object") for (const [key, until] of Object.entries(input.truces)) {
     const pair = key.split("|");
     if (pair.length === 2 && pair[0] !== pair[1] && pair.every(id => ids.includes(id)) && Number.isFinite(until) && until > turn && until <= turn + 12) (result.truces || (result.truces = {}))[pair.sort().join("|")] = until;
+  }
+  if (input.reserves && typeof input.reserves === "object") for (const id of ids) {
+    const stored = input.reserves[id];
+    if (Number.isFinite(stored)) (result.reserves || (result.reserves = {}))[id] = bounded(stored, 0, 40);
   }
   return result;
 }

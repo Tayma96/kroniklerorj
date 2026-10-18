@@ -37,6 +37,16 @@ const assert = require('node:assert/strict'), fs = require('node:fs'), path = re
   const noGoods = copy(donor); noGoods.player.inventory.kereste = 0; assert(!g.canWarAid(noGoods, 'rebuild'));
   const jailed = copy(donor); jailed.player.jail = { left: 2 }; assert(!g.canWarAid(jailed, 'food'));
   assert(!g.canWarAid(mp, 'food')); assert(!g.warReportAt(mp, 'Demirhan').affected);
+  const prepared = copy(donor); prepared.warWorld = w.emptyWarWorld();
+  const stock = g.stockWarReserve(prepared); assert.equal(stock.player.inventory.bugday, prepared.player.inventory.bugday - 8);
+  assert.equal(g.warReserveAt(stock, 'Demirhan'), 8); assert.equal(stock.player.reputation, prepared.player.reputation);
+  assert.equal(g.warReserveAt(prepared, 'Demirhan'), 0, 'eski kayıt ambarı değişti'); assert.equal(g.stockWarReserve(stock), stock);
+  assert(!g.canWarAid(stock, 'food')); stock.turn++; stock.player.location_name = 'Akşehir';
+  assert.equal(g.warReserveAt(stock, 'Akşehir'), 0); assert.equal(g.warReserveAt(stock, 'Demirhan'), 8);
+  const full = copy(prepared); full.warWorld.reserves = { demirhan: 40 }; assert(!g.canStockWarReserve(full));
+  assert(!g.canStockWarReserve(jailed)); assert(!g.canStockWarReserve(mp));
+  const emptyBag = copy(prepared); emptyBag.player.inventory.bugday = 7; assert(!g.canStockWarReserve(emptyBag));
+  const restoredStock = g.migrate(JSON.parse(JSON.stringify(stock))); assert.equal(g.warReserveAt(restoredStock, 'Demirhan'), 8);
   const fighting = copy(peace); fighting.player.crowned = false; fighting.rng_state = 21;
   fighting.realmArmyWar = { id: 'realm:1:test', attacker: 'demirhan', defender: 'aksehir', started: 0, lastTick: 0, month: 0, a: a.makeArmy(800), b: a.makeArmy(900) };
   for (let turn = 1; turn <= 3; turn++) { fighting.turn = turn; g.warEconomyTick(fighting); g.realmArmyTick(fighting); }

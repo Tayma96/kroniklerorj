@@ -26,6 +26,16 @@ const assert = require('node:assert/strict'), esbuild = require('esbuild'), path
   const corrupt = w.repairWarWorld({ regions: { b: { damage: Infinity, shortage: -5, insecurity: 200, displacement: null }, nope: {} }, lastTurn: 900 }, ids, 3);
   assert.equal(corrupt.regions.b.damage, 0); assert.equal(corrupt.regions.b.shortage, 0); assert.equal(corrupt.regions.b.insecurity, 100); assert(!corrupt.regions.nope); assert.equal(corrupt.lastTurn, undefined);
   const restored = w.repairWarWorld(JSON.parse(JSON.stringify(world)), ids, 3); assert.deepEqual(restored, world);
+  const reserve = w.emptyWarWorld(); reserve.regions.b = { ...w.peacefulRegion(), shortage: 35 }; reserve.reserves = { b: 8, c: 16 };
+  const noReserve = structuredClone(reserve); delete noReserve.reserves;
+  w.tickWarWorld(reserve, [], 1, ids); w.tickWarWorld(noReserve, [], 1, ids);
+  assert.equal(reserve.regions.b.shortage, Math.round((noReserve.regions.b.shortage - 4) * 100) / 100); assert.equal(reserve.reserves.b, 4);
+  assert.equal(reserve.regions.b.damage, noReserve.regions.b.damage); assert.equal(reserve.reserves.c, 16, 'ihtiyaç yokken erzak dağıtıldı');
+  const reserveOnce = structuredClone(reserve); assert(!w.tickWarWorld(reserve, [], 1, ids)); assert.deepEqual(reserve, reserveOnce);
+  w.tickWarWorld(reserve, [], 12, ids); assert.equal(reserve.reserves.b, 0); assert.equal(reserve.reserves.c, 15);
+  assert.deepEqual(w.repairWarWorld(reserve, ids, 12), reserve);
+  const badReserve = w.repairWarWorld({ reserves: { a: Infinity, b: -2, c: 999, x: 20 } }, ids, 0);
+  assert.equal(badReserve.reserves.b, 0); assert.equal(badReserve.reserves.c, 40); assert(!badReserve.reserves.x); assert(!badReserve.reserves.a);
   const reorder = structuredClone(world), normal = structuredClone(world); w.tickWarWorld(reorder, [], 4, [...ids].reverse()); w.tickWarWorld(normal, [], 4, ids); assert.deepEqual(reorder, normal, 'yayılım bölge sırasına bağlı');
   for (let turn = 4; turn <= 100; turn++) w.tickWarWorld(normal, [], turn, ids);
   assert(normal.regions.b.damage < world.regions.b.damage); assert(normal.regions.b.shortage < world.regions.b.shortage);
