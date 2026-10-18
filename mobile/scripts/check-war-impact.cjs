@@ -67,6 +67,10 @@ const assert = require('node:assert/strict'), fs = require('node:fs'), path = re
   assert(moved.history.some(e => e.k === 'ww.return'));
   assert(g.warTravelRisk(damaged, 'Demirhan', 'Akşehir', 'patika') > g.warTravelRisk(peace, 'Demirhan', 'Akşehir', 'patika'));
   assert(g.warTravelRisk(damaged, 'Demirhan', 'Akşehir', 'kervan') < g.warTravelRisk(damaged, 'Demirhan', 'Akşehir', 'patika'));
+  // İkamet değiştirerek yıpranmış hükümdarlık merkezinin asker kaybı aşılamaz.
+  const seated = copy(damaged); seated.player.crownSeat = 'demirhan'; seated.player.crownConquests = [];
+  const abroad = copy(seated); abroad.player.home_name = 'Akşehir'; abroad.player.location_name = 'Akşehir';
+  assert.equal(g.launchCampaign(seated, 'gumushisar').state.crownCampaign.armies.a.initial, g.launchCampaign(abroad, 'gumushisar').state.crownCampaign.armies.a.initial);
   // Başka hükümdarlar oyuncunun toprağını da hedefleyebilir; savunma ücretsiz değildir.
   let attacked;
   for (let seed = 1; seed <= 30 && !attacked; seed++) {

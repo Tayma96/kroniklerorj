@@ -38,7 +38,7 @@ export function ArmyFront() {
     {!war.winner && state.player.crowned && war === state.realmArmyWar && <>
       <Text style={{ fontFamily: F.serif, color: C.parchmentMuted, fontSize: 12, lineHeight: 19, marginTop: 8 }}>{t("ww.defense")}</Text>
       {(["ikmal", "siper", "kesif"] as DefenseOrder[]).map(order => <Pressable key={order} disabled={!canCommandDefense(state, order)} onPress={() => apply(s => commandDefense(s, order))} style={{ minHeight: 48, padding: 10, borderWidth: 1, borderColor: C.border, borderRadius: 7, marginTop: 8, justifyContent: "center", opacity: canCommandDefense(state, order) ? 1 : 0.45 }}>
-        <Text style={{ fontFamily: F.display, color: C.parchment, fontSize: 12 }}>{t("ww.order." + order)} · {defenseOrderCost(state, order)}</Text>
+        <Text style={{ fontFamily: F.display, color: C.parchment, fontSize: 12 }}>{t("ww.order." + order)} · {text("ww.coins", [defenseOrderCost(state, order)])}</Text>
       </Pressable>)}
     </>}
     {!war.winner && !state.player.crowned && <>

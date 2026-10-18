@@ -5084,8 +5084,8 @@ function warCivilianTick(s: GameState): void {
     if (!returning) {
       const arrival = regionOf(destination);
       world.regions[arrival] = world.regions[arrival] || peacefulRegion();
-      world.regions[arrival].displacement = Math.min(100, world.regions[arrival].displacement + group.length * 0.4);
-      world.regions[arrival].shortage = Math.min(100, world.regions[arrival].shortage + group.length * 0.3);
+      world.regions[arrival].displacement = Math.round(Math.min(100, world.regions[arrival].displacement + group.length * 0.4) * 100) / 100;
+      world.regions[arrival].shortage = Math.round(Math.min(100, world.regions[arrival].shortage + group.length * 0.3) * 100) / 100;
     }
     push(s, "dunya", "Bir hane savaşın ardından yer değiştirdi.", "makro", true, { k: returning ? "ww.return" : "ww.displaced", p: [knParam(head), group.length, { pl: origin }, { pl: destination }] });
     break;
@@ -5096,7 +5096,7 @@ function crownArmies(s: GameState, target: string): ArmyWar {
   const odds = campaignOdds(s, target);
   return { id: `crown:${s.player.generation || 1}:${s.turn}:${target}`, attacker: s.player.crownSeat || regionOf(s.player.home_name), defender: target,
     started: s.turn, lastTick: s.turn - 1, month: 0, goal: "conquest",
-    a: makeArmy(800 * odds / (1 - odds) * regionalWarEffects(s, s.player.home_name).recruitment, 65), b: makeArmy(800 * realmWarEffects(s, target).recruitment, 70) };
+    a: makeArmy(800 * odds / (1 - odds) * realmWarEffects(s, s.player.crownSeat || regionOf(s.player.home_name)).recruitment, 65), b: makeArmy(800 * realmWarEffects(s, target).recruitment, 70) };
 }
 
 // Beylik hükümdarlarının sınır seferleri: lonca üyesi olma şartı yoktur.
