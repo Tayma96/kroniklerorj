@@ -1,5 +1,6 @@
+import { DesignPressable as Pressable } from "../lib/design-pressable";
 import { useEffect, useState } from "react";
-import { View, Text, TextInput, Pressable, ImageBackground, ActivityIndicator, ScrollView, Alert, Image, StyleSheet, Dimensions } from "react-native";
+import { View, Text, TextInput, ImageBackground, ActivityIndicator, ScrollView, Alert, Image, StyleSheet, Dimensions } from "react-native";
 import { useRouter } from "expo-router";
 import Animated, { FadeIn, FadeInUp, FadeOut, useSharedValue, useAnimatedStyle, withTiming, Easing } from "react-native-reanimated";
 import { useGame } from "../lib/store";
@@ -76,15 +77,15 @@ function Prolog({ lines, onDone }: { lines: string[]; onDone: () => void }) {
       {last && !reduced ? <ParticleBurst top="26%" count={14} /> : null}
       <Vignette />
       <Letterbox reduced={reduced} />
-      <Pressable accessibilityRole="button" accessibilityLabel={t("new.skip")} onPress={onDone} style={{ position: "absolute", top: 52, right: 18, zIndex: 9, paddingVertical: 6, paddingHorizontal: 13, borderRadius: 8, borderWidth: 1, borderColor: "rgba(201,168,76,0.35)", backgroundColor: "rgba(6,4,2,0.55)" }}>
-        <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.parchmentDim }}>{t("new.skip").toUpperCase()}</Text>
+      <Pressable accessibilityRole="button" accessibilityLabel={t("new.skip")} onPress={onDone} style={{ position: "absolute", top: 52, right: 18, zIndex: 9, paddingVertical: 6, paddingHorizontal: 13, borderRadius: 5, borderWidth: 1, borderColor: "rgba(201,168,76,0.35)", backgroundColor: "rgba(6,4,2,0.55)" }}>
+        <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.parchmentDim }}>{t("new.skip").toUpperCase()}</Text>
       </Pressable>
       <Pressable accessibilityRole="button" accessibilityLabel={t(last ? "new.beginLife" : "new.tapNext")} onPress={next} style={{ flex: 1, justifyContent: "center", paddingHorizontal: 30 }}>
         {beat === 0 ? (
           <Animated.View key="title" entering={FadeIn.duration(1600)} exiting={FadeOut.duration(300)}>
-            <Text style={{ fontFamily: F.display, fontSize: 30, letterSpacing: 9, color: C.parchment, textAlign: "center" }}>KRONİKLER</Text>
+            <Text style={{ fontFamily: F.display, fontSize: 28, letterSpacing: 1, color: C.parchment, textAlign: "center" }}>KRONİKLER</Text>
             <GrowLine beat={beat} />
-            <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 5, color: C.goldDim, textAlign: "center" }}>KÜLLERİN MİRASI</Text>
+            <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.goldDim, textAlign: "center" }}>KÜLLERİN MİRASI</Text>
           </Animated.View>
         ) : (
           <Animated.View key={"b" + beat} exiting={FadeOut.duration(300)}>
@@ -101,10 +102,10 @@ function Prolog({ lines, onDone }: { lines: string[]; onDone: () => void }) {
         <View style={{ marginTop: 28 }}>
           {last ? (
             <Pulse min={0.45} max={1} dur={950}>
-              <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 2, color: C.gold, textAlign: "center" }}>{t("new.beginLife")}</Text>
+              <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.gold, textAlign: "center" }}>{t("new.beginLife")}</Text>
             </Pulse>
           ) : (
-            <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 2, color: C.parchmentMuted, textAlign: "center" }}>{t("new.tapNext")}</Text>
+            <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.parchmentMuted, textAlign: "center" }}>{t("new.tapNext")}</Text>
           )}
         </View>
       </Pressable>
@@ -172,7 +173,7 @@ export default function YeniOyun() {
     return (
       <Pressable onPress={() => setGender(val)} style={{
         flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
-        paddingVertical: 14, borderRadius: 9,
+        paddingVertical: 14, borderRadius: 5,
         backgroundColor: active ? "rgba(201,168,76,0.20)" : "rgba(8,5,2,0.62)",
         borderWidth: 1, borderColor: active ? "rgba(201,168,76,0.7)" : "rgba(160,130,70,0.28)",
       }}>
@@ -186,15 +187,15 @@ export default function YeniOyun() {
     <ImageBackground source={require("../assets/yeni_oyun_bg.png")} resizeMode="cover" style={{ flex: 1, backgroundColor: C.bg }}>
       <View style={{ flex: 1, backgroundColor: "rgba(8,5,2,0.55)", paddingHorizontal: 24, paddingTop: 54, paddingBottom: 36 }}>
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 16 }} showsVerticalScrollIndicator={false}>
-          <Text style={{ fontFamily: F.display, fontSize: 34, letterSpacing: 8, color: C.parchment, textAlign: "center" }}>{t("new.title")}</Text>
+          <Text style={{ fontFamily: F.display, fontSize: 28, letterSpacing: 1, color: C.parchment, textAlign: "center" }}>{t("new.title")}</Text>
           <Text style={{ color: C.gold, textAlign: "center", marginTop: 6, fontSize: 12 }}>⚜</Text>
 
           <View style={{ marginTop: 36 }}>
-            <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 3, color: C.goldDim, marginBottom: 8 }}>{t("new.nameLabel")}</Text>
+            <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.goldDim, marginBottom: 8 }}>{t("new.nameLabel")}</Text>
             <TextInput
               value={fullName} onChangeText={setFullName} placeholder={t("new.namePlaceholder")}
               placeholderTextColor={C.parchmentMuted} maxLength={32} editable={!busy}
-              style={{ backgroundColor: "rgba(8,5,2,0.7)", borderWidth: 1, borderColor: "rgba(160,130,70,0.3)", borderRadius: 8, color: C.parchment, fontFamily: F.serif, fontSize: 16, paddingHorizontal: 14, paddingVertical: 12 }}
+              style={{ backgroundColor: "rgba(8,5,2,0.7)", borderWidth: 1, borderColor: "rgba(160,130,70,0.3)", borderRadius: 5, color: C.parchment, fontFamily: F.serif, fontSize: 16, paddingHorizontal: 14, paddingVertical: 12 }}
             />
           </View>
 
@@ -204,13 +205,13 @@ export default function YeniOyun() {
                 const active = soydan === v;
                 return (
                   <Pressable key={String(v)} onPress={() => setSoydan(v)} disabled={busy} style={{
-                    paddingVertical: 11, paddingHorizontal: 12, borderRadius: 9,
+                    paddingVertical: 11, paddingHorizontal: 12, borderRadius: 5,
                     backgroundColor: active ? "rgba(201,168,76,0.20)" : "rgba(8,5,2,0.62)",
                     borderWidth: 1, borderColor: active ? "rgba(201,168,76,0.7)" : "rgba(160,130,70,0.28)",
                   }}>
                     <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: active ? C.gold : C.parchment }}>{v ? t("new.soy.title") : t("new.soy.yeni")}</Text>
-                    {v ? <Text style={{ fontFamily: F.serif, fontSize: 10.5, color: C.parchmentMuted, marginTop: 2 }}>{applyParams(t("new.soy.sub"), [son.soyad || son.ad, son.nesil + 1, son.ad])}</Text> : null}
-                    {v ? <Text style={{ fontFamily: F.serifItalic, fontSize: 10, color: C.parchmentMuted, marginTop: 2 }}>{t("new.soy.not")}</Text> : null}
+                    {v ? <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchmentMuted, marginTop: 2 }}>{applyParams(t("new.soy.sub"), [son.soyad || son.ad, son.nesil + 1, son.ad])}</Text> : null}
+                    {v ? <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, marginTop: 2 }}>{t("new.soy.not")}</Text> : null}
                   </Pressable>
                 );
               })}
@@ -218,7 +219,7 @@ export default function YeniOyun() {
           ) : null}
 
           <View style={{ marginTop: 20 }}>
-            <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 3, color: C.goldDim, marginBottom: 8 }}>{t("new.gender")}</Text>
+            <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.goldDim, marginBottom: 8 }}>{t("new.gender")}</Text>
             <View style={{ flexDirection: "row", gap: 10 }}>
               <GenderBtn val="erkek" sym={"\u2642\uFE0E"} label={t("new.male")} />
               <GenderBtn val="kadın" sym={"\u2640\uFE0E"} label={t("new.female")} />
@@ -226,18 +227,18 @@ export default function YeniOyun() {
           </View>
 
           <View style={{ marginTop: 20 }}>
-            <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 3, color: C.goldDim, marginBottom: 8 }}>{t("new.tempLabel")}</Text>
+            <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.goldDim, marginBottom: 8 }}>{t("new.tempLabel")}</Text>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
               {TEMPERAMENTS.map((id) => {
                 const active = temp === id;
                 return (
                   <Pressable key={id} onPress={() => setTemp(id)} style={{
-                    width: "48%", paddingVertical: 11, paddingHorizontal: 12, borderRadius: 9,
+                    width: "48%", paddingVertical: 11, paddingHorizontal: 12, borderRadius: 5,
                     backgroundColor: active ? "rgba(201,168,76,0.20)" : "rgba(8,5,2,0.62)",
                     borderWidth: 1, borderColor: active ? "rgba(201,168,76,0.7)" : "rgba(160,130,70,0.28)",
                   }}>
                     <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: active ? C.gold : C.parchment }}>{t("temp." + id + ".l")}</Text>
-                    <Text style={{ fontFamily: F.serif, fontSize: 10.5, color: C.parchmentMuted, marginTop: 2 }}>{t("temp." + id + ".d")}</Text>
+                    <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchmentMuted, marginTop: 2 }}>{t("temp." + id + ".d")}</Text>
                   </Pressable>
                 );
               })}
@@ -248,11 +249,11 @@ export default function YeniOyun() {
         </ScrollView>
 
         <Pressable onPress={start} disabled={busy} style={{
-          marginTop: 14, paddingVertical: 16, borderRadius: 9, borderWidth: 1, borderColor: "rgba(201,168,76,0.6)",
+          marginTop: 14, paddingVertical: 16, borderRadius: 5, borderWidth: 1, borderColor: "rgba(201,168,76,0.6)",
           backgroundColor: C.gold, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
         }}>
           {busy && <ActivityIndicator color={C.inkOnGold} size="small" />}
-          <Text style={{ fontFamily: F.display, fontSize: 14, letterSpacing: 3, color: C.inkOnGold }}>
+          <Text style={{ fontFamily: F.display, fontSize: 14, letterSpacing: 1, color: C.inkOnGold }}>
             {busy ? t("new.creating") : t("new.create")}
           </Text>
         </Pressable>

@@ -1,5 +1,7 @@
+import { PageHeader } from "../../lib/ui";
+import { DesignPressable as Pressable } from "../../lib/design-pressable";
 import { useState } from "react";
-import { View, Text, Pressable, ScrollView } from "react-native";
+import { View, Text, ScrollView } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useI18n } from "../../lib/i18n";
@@ -65,16 +67,16 @@ export default function Diplomasi() {
     <ScreenFresk style={{ paddingTop: insets.top }}>
       <View style={{ paddingHorizontal: 14, paddingVertical: 10, flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
         <Pressable onPress={() => router.back()}><BackLabel /></Pressable>
-        <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 1, color: C.parchmentMuted }}>{pf(t("mp.soc.myHonor"), Math.round(myHonor))} · {money} {t("mp.soc.coin")}</Text>
+        <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.parchmentMuted }}>{pf(t("mp.soc.myHonor"), Math.round(myHonor))} · {money} {t("mp.soc.coin")}</Text>
       </View>
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 40 }}>
-        <Text style={{ fontFamily: F.display, fontSize: 16, letterSpacing: 1, color: C.gold, marginBottom: 2 }}>{t("mp.soc.title")}</Text>
-        <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, marginBottom: 12 }}>{t("mp.soc.subtitle")}</Text>
+        <PageHeader title={t("mp.soc.title")} />
+        <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, marginBottom: 12 }}>{t("mp.soc.subtitle")}</Text>
 
         {(() => { const h = (snapshot.hostages || []).find((x) => x.captive === guestId); if (!h) return null; const cap = snapshot.players.find((x) => x.id === h.captor); return (
-          <View style={{ borderWidth: 1, borderColor: "rgba(168,52,52,0.6)", backgroundColor: "rgba(168,52,52,0.10)", borderRadius: 9, padding: 12, marginBottom: 12 }}>
-            <Text style={{ fontFamily: F.serif, fontSize: 12.5, color: C.parchment, lineHeight: 18 }}>{pf(t("mp.hostage.banner"), cap?.name || "?", h.ask)}</Text>
+          <View style={{ borderWidth: 1, borderColor: "rgba(168,52,52,0.6)", backgroundColor: "rgba(168,52,52,0.10)", borderRadius: 5, padding: 12, marginBottom: 12 }}>
+            <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchment, lineHeight: 22 }}>{pf(t("mp.hostage.banner"), cap?.name || "?", h.ask)}</Text>
             <View style={{ flexDirection: "row", gap: 8, marginTop: 8 }}>
               <Btn label={pf(t("mp.hostage.payBtn"), h.ask)} disabled={money < h.ask} onPress={() => act({ k: "payRansom" }, h.ask)} />
             </View>
@@ -84,9 +86,9 @@ export default function Diplomasi() {
         {(() => { const until = snapshot.watches?.[guestId || ""] || 0; const left = until - snapshot.turn; return (
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 12 }}>
             {left > 0 ? (
-              <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 11, color: C.sage }}>{pf(t("mp.watch.active"), left)}</Text>
+              <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 15, color: C.sage }}>{pf(t("mp.watch.active"), left)}</Text>
             ) : (
-              <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted }}>{t("mp.watch.pitch")}</Text>
+              <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted }}>{t("mp.watch.pitch")}</Text>
             )}
             <Btn label={pf(t("mp.watch.hireBtn"), 250)} disabled={money < 250} onPress={() => act({ k: "hireWatch" }, 250)} />
           </View>
@@ -95,10 +97,10 @@ export default function Diplomasi() {
         {/* Bana gelen teklifler */}
         {myOffers.length > 0 && (
           <>
-            <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.goldDim, marginBottom: 8 }}>{t("mp.soc.offersIn")}</Text>
+            <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.goldDim, marginBottom: 8 }}>{t("mp.soc.offersIn")}</Text>
             {myOffers.map((o) => (
-              <View key={o.id} style={{ borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", borderRadius: 9, padding: 10, marginBottom: 8, backgroundColor: C.card }}>
-                <Text style={{ fontFamily: F.serif, fontSize: 12.5, color: C.parchment, marginBottom: 8 }}>
+              <View key={o.id} style={{ borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", borderRadius: 5, padding: 10, marginBottom: 8, backgroundColor: C.card }}>
+                <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchment, marginBottom: 8 }}>
                   {pf(t("mp.soc.offer." + o.kind), o.fromName, o.amount ?? 0)}
                 </Text>
                 <View style={{ flexDirection: "row", gap: 8 }}>
@@ -115,10 +117,10 @@ export default function Diplomasi() {
         {/* Gönderdiğim teklifler — kör gönderim olmasın: bekleyenler görünür (salt bilgi, tuş yok) */}
         {(() => { const sent = snapshot.offers.filter((o) => o.from === guestId); return sent.length > 0 ? (
           <>
-            <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.goldDim, marginBottom: 8 }}>{t("mp.soc.offersOut")}</Text>
+            <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.goldDim, marginBottom: 8 }}>{t("mp.soc.offersOut")}</Text>
             {sent.map((o) => (
-              <View key={o.id} style={{ borderWidth: 1, borderColor: C.border, borderRadius: 9, padding: 10, marginBottom: 8, backgroundColor: C.card, opacity: 0.85 }}>
-                <Text style={{ fontFamily: F.serif, fontSize: 12, color: C.parchmentMuted }}>
+              <View key={o.id} style={{ borderWidth: 1, borderColor: C.border, borderRadius: 5, padding: 10, marginBottom: 8, backgroundColor: C.card, opacity: 0.85 }}>
+                <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchmentMuted }}>
                   {pf(t("mp.soc.offerOut." + o.kind), snapshot.players.find((x) => x.id === o.to)?.name || "?", o.amount ?? 0)} · {t("mp.soc.pending")}
                 </Text>
               </View>
@@ -128,31 +130,31 @@ export default function Diplomasi() {
 
         {/* Diyar şöleni — herkese bağ, sana şeref (feat 4) */}
         {featOk && (
-          <Pressable disabled={money < 100} onPress={() => act({ k: "feastAll" }, 100)} style={{ flexDirection: "row", alignItems: "center", gap: 8, borderWidth: 1, borderColor: money >= 100 ? "rgba(201,168,76,0.45)" : C.border, backgroundColor: money >= 100 ? "rgba(201,168,76,0.08)" : C.card, borderRadius: 9, padding: 11, marginTop: 6, marginBottom: 4, opacity: money >= 100 ? 1 : 0.5 }}>
+          <Pressable disabled={money < 100} onPress={() => act({ k: "feastAll" }, 100)} style={{ flexDirection: "row", alignItems: "center", gap: 8, borderWidth: 1, borderColor: money >= 100 ? "rgba(201,168,76,0.45)" : C.border, backgroundColor: money >= 100 ? "rgba(201,168,76,0.08)" : C.card, borderRadius: 5, padding: 11, marginTop: 6, marginBottom: 4, opacity: money >= 100 ? 1 : 0.5 }}>
             <GameIcon name="party" size={14} color={C.gold} />
-            <Text style={{ flex: 1, fontFamily: F.display, fontSize: 11.5, color: C.gold }}>{pf(t("mp.soc.feastBtn"), 100)}</Text>
+            <Text style={{ flex: 1, fontFamily: F.display, fontSize: 13, color: C.gold }}>{pf(t("mp.soc.feastBtn"), 100)}</Text>
           </Pressable>
         )}
 
         {/* Sıralama / haneler */}
-        <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.goldDim, marginTop: 6, marginBottom: 8 }}>{t("mp.soc.standings")}</Text>
+        <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.goldDim, marginTop: 6, marginBottom: 8 }}>{t("mp.soc.standings")}</Text>
         {others.length === 0 && <Text style={{ fontFamily: F.serifItalic, color: C.parchmentMuted }}>{t("mp.empty")}</Text>}
         {others.map((x, i) => {
           const bd = bondOf(snapshot.bonds, guestId, x.id);
           const ht = honorTag(x.honor ?? 0); const pt = pactTag(bd?.pact ?? null);
           const open = sel === x.id;
           return (
-            <View key={x.id} style={{ borderWidth: 1, borderColor: open ? "rgba(201,168,76,0.6)" : C.border, borderRadius: 9, marginBottom: 8, backgroundColor: C.card, overflow: "hidden" }}>
+            <View key={x.id} style={{ borderWidth: 1, borderColor: open ? "rgba(201,168,76,0.6)" : C.border, borderRadius: 5, marginBottom: 8, backgroundColor: C.card, overflow: "hidden" }}>
               <Pressable onPress={() => { hap("tap"); setSel(open ? null : x.id); }} style={{ flexDirection: "row", alignItems: "center", gap: 8, padding: 11 }}>
-                <Text style={{ fontFamily: F.display, fontSize: 12, color: C.goldDim, width: 18 }}>{i + 1}</Text>
+                <Text style={{ fontFamily: F.display, fontSize: 13, color: C.goldDim, width: 18 }}>{i + 1}</Text>
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontFamily: F.display, fontSize: 13, color: open ? C.gold : C.parchment }}>{x.name}{x.crowned ? " ♔" : ""}</Text>
                   {(snapshot.reis?.id === x.id || !!x.laurel) && (
-                    <Text style={{ fontFamily: F.display, fontSize: 8.5, color: C.goldBright }}>
+                    <Text style={{ fontFamily: F.display, fontSize: 13, color: C.goldBright }}>
                       {snapshot.reis?.id === x.id ? "⚜ " + t("mp.reis.badge") : ""}{snapshot.reis?.id === x.id && x.laurel ? " · " : ""}{x.laurel ? "❧ " + t("mp.laurel." + x.laurel) : ""}
                     </Text>
                   )}
-                  <Text style={{ fontFamily: F.serif, fontSize: 10.5, color: C.parchmentMuted }}>
+                  <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchmentMuted }}>
                     {pf(t("mp.soc.metrics"), x.power, x.fame, x.age)}{pt ? " · " + pt : ""}{ht ? " · " + ht : ""}
                   </Text>
                 </View>
@@ -178,7 +180,7 @@ export default function Diplomasi() {
                   {/* Rekabet */}
                   <Text style={cap}>{t("mp.soc.capRivalry")}</Text>
                   {pactShield && (
-                    <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.sage, marginBottom: 6 }}>{t("mp.soc.shieldNote")}</Text>
+                    <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.sage, marginBottom: 6 }}>{t("mp.soc.shieldNote")}</Text>
                   )}
                   <View style={rowWrap}>
                     <Btn label={t("mp.soc.duelBtn")} disabled={x.traveling || !x.online || pactShield} onPress={() => act({ k: "duel", to: x.id })} />
@@ -206,7 +208,7 @@ export default function Diplomasi() {
                     {iAmBey && targetInOtherBeylik && <Btn label={pf(t("mp.soc.bribeBtn"), BRIBE_COST)} tone="dim" disabled={x.traveling || pactShield || money < BRIBE_COST} onPress={() => act({ k: "bribe", on: x.id }, BRIBE_COST)} />}
                     <Btn label={pf(t("mp.soc.assassinBtn"), ASSASSINATE_COST)} tone="blood" disabled={x.traveling || pactShield || money < ASSASSINATE_COST || x.age < ASSASSINATE_MIN_AGE} onPress={() => act({ k: "assassinate", on: x.id }, ASSASSINATE_COST)} />
                   </View>
-                  <Text style={{ fontFamily: F.serifItalic, fontSize: 9.5, color: C.parchmentDim, marginTop: 6 }}>{x.traveling ? t("mp.soc.travelingNote") : t("mp.soc.intrigueWarn")}</Text>
+                  <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentDim, marginTop: 6 }}>{x.traveling ? t("mp.soc.travelingNote") : t("mp.soc.intrigueWarn")}</Text>
                 </View>
               )}
             </View>
@@ -214,19 +216,19 @@ export default function Diplomasi() {
         })}
 
         {/* Diyar İleri Gelenleri — paylaşımlı NPC'ler (herkes aynısını görür) */}
-        <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.goldDim, marginTop: 18, marginBottom: 8 }}>{t("mp.npc.title")}</Text>
+        <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.goldDim, marginTop: 18, marginBottom: 8 }}>{t("mp.npc.title")}</Text>
         {(snapshot.npcs || []).map((n) => {
           const open = selNpc === n.id;
           const myStand = (snapshot.npcBonds || []).find((b) => b.npc === n.id && b.player === guestId)?.standing ?? 0;
           const standCol = myStand >= 25 ? C.sage : myStand <= -25 ? C.blood : C.parchmentMuted;
           return (
-            <View key={n.id} style={{ borderWidth: 1, borderColor: open ? "rgba(201,168,76,0.6)" : C.border, borderRadius: 9, marginBottom: 8, backgroundColor: C.card, overflow: "hidden" }}>
+            <View key={n.id} style={{ borderWidth: 1, borderColor: open ? "rgba(201,168,76,0.6)" : C.border, borderRadius: 5, marginBottom: 8, backgroundColor: C.card, overflow: "hidden" }}>
               <Pressable onPress={() => { hap("tap"); setSelNpc(open ? null : n.id); setNpcTarget(null); }} style={{ flexDirection: "row", alignItems: "center", gap: 8, padding: 11 }}>
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontFamily: F.display, fontSize: 13, color: open ? C.gold : C.parchment }}>{n.name}</Text>
-                  <Text style={{ fontFamily: F.serif, fontSize: 10.5, color: C.parchmentMuted }}>{t("mp.npc.role." + n.role)} · {n.beylikId} · {pf(t("mp.npc.influence"), n.influence)}</Text>
+                  <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchmentMuted }}>{t("mp.npc.role." + n.role)} · {n.beylikId} · {pf(t("mp.npc.influence"), n.influence)}</Text>
                 </View>
-                <Text style={{ fontFamily: F.display, fontSize: 10, color: standCol }}>{pf(t("mp.npc.standing"), myStand)}</Text>
+                <Text style={{ fontFamily: F.display, fontSize: 13, color: standCol }}>{pf(t("mp.npc.standing"), myStand)}</Text>
               </Pressable>
               {open && (
                 <View style={{ paddingHorizontal: 11, paddingBottom: 11, borderTopWidth: 1, borderTopColor: C.border }}>
@@ -272,7 +274,7 @@ function Btn({ label, onPress, disabled, tone }: { label: string; onPress: () =>
   );
 }
 
-const cap = { fontFamily: F.display, fontSize: 9, letterSpacing: 1.5, color: C.goldDim, marginTop: 12, marginBottom: 6 };
+const cap = { fontFamily: F.display, fontSize: 13, letterSpacing: 1.5, color: C.goldDim, marginTop: 12, marginBottom: 6 };
 const rowWrap = { flexDirection: "row" as const, flexWrap: "wrap" as const, gap: 6 };
-const mb = { paddingVertical: 7, paddingHorizontal: 11, borderRadius: 8, borderWidth: 1 };
-const mt = { fontFamily: F.display, fontSize: 10.5, letterSpacing: 0.3 };
+const mb = { paddingVertical: 7, paddingHorizontal: 11, borderRadius: 5, borderWidth: 1 };
+const mt = { fontFamily: F.display, fontSize: 13, letterSpacing: 0.3 };

@@ -1,4 +1,6 @@
-import { View, Text, Pressable, ScrollView } from "react-native";
+import { PageHeader } from "../../lib/ui";
+import { DesignPressable as Pressable } from "../../lib/design-pressable";
+import { View, Text, ScrollView } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useI18n } from "../../lib/i18n";
@@ -42,7 +44,7 @@ export default function Harita() {
         <Pressable onPress={() => router.back()}><BackLabel /></Pressable>
       </View>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 40 }}>
-        <Text style={{ fontFamily: F.display, fontSize: 16, letterSpacing: 1, color: C.gold }}>{t("mp.map.title")}</Text>
+        <PageHeader title={t("mp.map.title")} />
         <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, marginTop: 2, marginBottom: 8 }}>
           {snapshot.throne.holderName ? pf(t("mp.throneHolder"), snapshot.throne.holderName) : t("mp.throneEmpty")}
         </Text>
@@ -54,19 +56,19 @@ export default function Harita() {
           const inThis = myBeylikId === b.id;
           const beyLabel = b.beyName || (b.ocak ? pf(t("mp.beylik.ocakLine"), b.ocak) : t("mp.beylik.npcHeld"));
           return (
-            <View key={b.id} style={{ flexDirection: "row", marginBottom: 10, borderRadius: 11, overflow: "hidden", borderWidth: 1, borderColor: isMine ? "rgba(201,168,76,0.7)" : C.border, backgroundColor: C.card }}>
+            <View key={b.id} style={{ flexDirection: "row", marginBottom: 10, borderRadius: 5, overflow: "hidden", borderWidth: 1, borderColor: isMine ? "rgba(201,168,76,0.7)" : C.border, backgroundColor: C.card }}>
               {/* Renk şeridi — beyliğin rengi */}
               <View style={{ width: 8, backgroundColor: tone }} />
               <View style={{ flex: 1, padding: 12 }}>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
                   <View style={{ width: 11, height: 11, borderRadius: 3, backgroundColor: tone }} />
                   <Text style={{ flex: 1, fontFamily: F.display, fontSize: 14, color: C.parchment }}>{b.name}{isMine ? " ♔" : ""}</Text>
-                  {inThis && <Text style={{ fontFamily: F.display, fontSize: 8, letterSpacing: 1, color: C.gold }}>{t("mp.map.youHere")}</Text>}
+                  {inThis && <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: C.gold }}>{t("mp.map.youHere")}</Text>}
                 </View>
                 <Text style={{ fontFamily: F.serif, fontSize: 12.5, color: bey ? C.gold : C.parchmentMuted, marginTop: 6 }}>
                   {pf(t("mp.beylik.beyLine"), beyLabel)}{(() => { const pt2 = pactWithBey(b.beyId); return pt2 ? " · " + pt2 : ""; })()}
                 </Text>
-                <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted, marginTop: 3 }}>
+                <Text style={{ fontFamily: F.serif, fontSize: 12, color: C.parchmentMuted, marginTop: 3 }}>
                   {pf(t("mp.beylik.powerLine"), b.power)} · {pf(t("mp.beylik.musterLine"), musterOf(b))} · {pf(t("mp.map.tax"), b.tax)}{b.ocak ? " · " + pf(t("mp.beylik.ocakLine"), b.ocak) : ""}
                 </Text>
                 {(() => { const members = snapshot.players.filter((x) => x.beylikId === b.id && !x.dead); return members.length > 0 ? (
@@ -74,7 +76,7 @@ export default function Harita() {
                     {members.map((m) => (
                       <View key={m.id} style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
                         <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: m.online ? C.sage : C.parchmentDim }} />
-                        <Text style={{ fontFamily: F.serif, fontSize: 10, color: m.id === guestId ? C.gold : C.parchmentMuted }}>{m.name}</Text>
+                        <Text style={{ fontFamily: F.serif, fontSize: 12, color: m.id === guestId ? C.gold : C.parchmentMuted }}>{m.name}</Text>
                       </View>
                     ))}
                   </View>
@@ -84,7 +86,7 @@ export default function Harita() {
           );
         })}
 
-        <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentDim, marginTop: 4, textAlign: "center" }}>{t("mp.map.hint")}</Text>
+        <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentDim, marginTop: 4, textAlign: "center" }}>{t("mp.map.hint")}</Text>
       </ScrollView>
     </ScreenFresk>
   );

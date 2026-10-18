@@ -1,6 +1,8 @@
+import { PageHeader } from "../../lib/ui";
+import { DesignPressable as Pressable } from "../../lib/design-pressable";
 import React, { useEffect, useState, useRef } from "react";
 import { CountdownSecs } from "../../lib/mp/countdown";
-import { View, Text, Pressable, ScrollView, TextInput, ActivityIndicator } from "react-native";
+import { View, Text, ScrollView, TextInput, ActivityIndicator } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useI18n } from "../../lib/i18n";
@@ -71,29 +73,21 @@ export default function Diyar() {
         <Pressable onPress={() => { leave(); router.back(); }}><BackLabel /></Pressable>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
           <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: status === "open" ? C.sage : status === "connecting" ? C.gold : status === "idle" ? C.parchmentDim : C.blood }} />
-          <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 1, color: C.parchmentMuted }}>
+          <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.parchmentMuted }}>
             {status === "open" ? t("mp.connected") : status === "connecting" ? t("mp.connecting") : (status === "closed" || status === "error") ? t("mp.reconnecting") : t("mp.connecting")}
           </Text>
         </View>
       </View>
 
-      {/* Diyar başlığı + saat */}
-      <View style={{ alignItems: "center", paddingVertical: 8 }}>
-        <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 3, color: C.goldDim }}>{t("mp.realm")} · {String(realmId)}</Text>
-        <Text style={{ fontFamily: F.display, fontSize: 18, color: C.gold, marginTop: 4 }}>{t("mp.year")} {year} · {t("mp.month")} {month}</Text>
-        <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, marginTop: 2 }}>
-          {snapshot?.throne.holderName ? pf(t("mp.throneHolder"), snapshot.throne.holderName) : t("mp.throneEmpty")}
-        </Text>
-      </View>
-
       {!snapshot && status !== "error" && (
         <View style={{ alignItems: "center", marginTop: 30 }}><ActivityIndicator color={C.gold} /><Text style={{ fontFamily: F.serifItalic, color: C.parchmentMuted, marginTop: 10 }}>{t("mp.connecting")}</Text></View>
       )}
-      {error && <Text style={{ fontFamily: F.serifItalic, fontSize: 12.5, color: C.blood, textAlign: "center", marginTop: 20, paddingHorizontal: 24 }}>{error}</Text>}
+      {error && <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.blood, textAlign: "center", marginTop: 20, paddingHorizontal: 24 }}>{error}</Text>}
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 120 }}>
+        <PageHeader kicker={String(realmId)} title={t("mp.realm")} sub={`${t("mp.year")} ${year} · ${t("mp.month")} ${month} · ${snapshot?.throne.holderName ? pf(t("mp.throneHolder"), snapshot.throne.holderName) : t("mp.throneEmpty")}`} />
         {/* Oyuncular */}
-        <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.goldDim, marginTop: 12, marginBottom: 8 }}>{t("mp.players")} · {liveCount}</Text>
+        <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.goldDim, marginTop: 12, marginBottom: 8 }}>{t("mp.players")} · {liveCount}</Text>
         {players.length === 0 ? (
           <Text style={{ fontFamily: F.serifItalic, color: C.parchmentMuted }}>{t("mp.empty")}</Text>
         ) : players.map((p) => (
@@ -101,26 +95,26 @@ export default function Diyar() {
             <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: p.online ? C.sage : C.parchmentDim }} />
             <View style={{ flex: 1 }}>
               <Text style={{ fontFamily: F.display, fontSize: 13, color: p.id === guestId ? C.gold : C.parchment }}>{p.name} {p.id === guestId ? t("mp.you") : ""}{p.crowned ? " ♔" : ""}</Text>
-              <Text style={{ fontFamily: F.serif, fontSize: 10.5, color: C.parchmentMuted }}>{t("misc.age")} {p.age} · {p.online ? t("mp.online") : t("mp.offlineTag")}</Text>
+              <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchmentMuted }}>{t("misc.age")} {p.age} · {p.online ? t("mp.online") : t("mp.offlineTag")}</Text>
             </View>
-            {p.ready && <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 1, color: C.sage }}>{t("mp.ready").toUpperCase()}</Text>}
+            {p.ready && <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.sage }}>{t("mp.ready").toUpperCase()}</Text>}
           </View>
         ))}
 
         {/* Diyara gir (paylaşımlı oyun) */}
         {snapshot && (
           <Pressable onPress={enterRealm}
-            style={{ marginTop: 18, paddingVertical: 14, borderRadius: 9, alignItems: "center", borderWidth: 1.5, borderColor: "rgba(201,168,76,0.6)", backgroundColor: C.gold }}>
-            <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 2, color: C.inkOnGold }}>{t("mp.enterWorld")}</Text>
+            style={{ marginTop: 18, paddingVertical: 14, borderRadius: 5, alignItems: "center", borderWidth: 1.5, borderColor: "rgba(201,168,76,0.6)", backgroundColor: C.gold }}>
+            <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.inkOnGold }}>{t("mp.enterWorld")}</Text>
           </Pressable>
         )}
 
         {/* Sohbet */}
-        <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.goldDim, marginTop: 20, marginBottom: 8 }}>{t("mp.chat")}</Text>
-        <View style={{ borderWidth: 1, borderColor: C.border, borderRadius: 10, padding: 10, minHeight: 80, backgroundColor: C.card }}>
-          {chat.length === 0 ? <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentDim }}>—</Text> :
+        <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.goldDim, marginTop: 20, marginBottom: 8 }}>{t("mp.chat")}</Text>
+        <View style={{ borderWidth: 1, borderColor: C.border, borderRadius: 5, padding: 10, minHeight: 80, backgroundColor: C.card }}>
+          {chat.length === 0 ? <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentDim }}>—</Text> :
             chat.map((c, i) => (
-              <Text key={i} style={{ fontFamily: F.serif, fontSize: 12.5, color: C.parchment, marginBottom: 3 }}>
+              <Text key={i} style={{ fontFamily: F.serif, fontSize: 15, color: C.parchment, marginBottom: 3 }}>
                 {c.scope === "whisper" && <Text style={{ color: "#C4A24C" }}>[{t("mp.chat.whisper")}] </Text>}
                 {c.scope === "beylik" && <Text style={{ color: C.sage }}>[{t("mp.chat.beylik")}] </Text>}
                 <Text style={{ color: c.from === guestId ? C.gold : C.frost }}>{c.fromName}: </Text>{c.text}
@@ -139,8 +133,8 @@ export default function Diyar() {
             const label = sc === "all" ? t("mp.chat.all") : sc === "beylik" ? t("mp.chat.beylik") : t("mp.chat.whisper");
             return (
               <Pressable key={sc} disabled={disabled} onPress={() => { hap("tap"); setChatScope(sc); if (sc !== "whisper") setWhisperTo(null); }}
-                style={{ paddingVertical: 5, paddingHorizontal: 12, borderRadius: 7, borderWidth: 1, borderColor: on ? "rgba(201,168,76,0.6)" : C.border, backgroundColor: on ? "rgba(201,168,76,0.12)" : "transparent", opacity: disabled ? 0.4 : 1 }}>
-                <Text style={{ fontFamily: F.display, fontSize: 9.5, letterSpacing: 0.5, color: on ? C.gold : C.parchmentMuted }}>{label}</Text>
+                style={{ paddingVertical: 5, paddingHorizontal: 12, borderRadius: 5, borderWidth: 1, borderColor: on ? "rgba(201,168,76,0.6)" : C.border, backgroundColor: on ? "rgba(201,168,76,0.12)" : "transparent", opacity: disabled ? 0.4 : 1 }}>
+                <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 0.5, color: on ? C.gold : C.parchmentMuted }}>{label}</Text>
               </Pressable>
             );
           })}
@@ -152,19 +146,19 @@ export default function Diyar() {
               const on = whisperTo === x.id;
               return (
                 <Pressable key={x.id} onPress={() => { hap("tap"); setWhisperTo(x.id); }}
-                  style={{ paddingVertical: 5, paddingHorizontal: 11, borderRadius: 7, marginRight: 6, borderWidth: 1, borderColor: on ? "rgba(111,160,192,0.7)" : C.border, backgroundColor: on ? "rgba(111,160,192,0.14)" : "transparent" }}>
-                  <Text style={{ fontFamily: F.display, fontSize: 9.5, color: on ? C.frost : C.parchmentMuted }}>{x.name}</Text>
+                  style={{ paddingVertical: 5, paddingHorizontal: 11, borderRadius: 5, marginRight: 6, borderWidth: 1, borderColor: on ? "rgba(111,160,192,0.7)" : C.border, backgroundColor: on ? "rgba(111,160,192,0.14)" : "transparent" }}>
+                  <Text style={{ fontFamily: F.display, fontSize: 13, color: on ? C.frost : C.parchmentMuted }}>{x.name}</Text>
                 </Pressable>
               );
             })}
             {players.filter((x) => x.id !== guestId && x.online).length === 0 && (
-              <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentDim, paddingVertical: 6 }}>{t("mp.chat.noTarget")}</Text>
+              <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentDim, paddingVertical: 6 }}>{t("mp.chat.noTarget")}</Text>
             )}
           </ScrollView>
         )}
         <View style={{ flexDirection: "row", gap: 8, marginBottom: 8 }}>
           <TextInput value={chatText} onChangeText={setChatText} placeholder={chatScope === "whisper" ? t("mp.chat.whisperPh") : chatScope === "beylik" ? t("mp.chat.beylikPh") : t("mp.chatPlaceholder")} placeholderTextColor={C.parchmentDim}
-            style={{ flex: 1, fontFamily: F.serif, fontSize: 13, color: C.parchment, borderWidth: 1, borderColor: C.border, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8, backgroundColor: C.card }}
+            style={{ flex: 1, fontFamily: F.serif, fontSize: 15, color: C.parchment, borderWidth: 1, borderColor: C.border, borderRadius: 5, paddingHorizontal: 12, paddingVertical: 8, backgroundColor: C.card }}
             onSubmitEditing={() => {
               if (!chatText.trim()) return;
               if (chatScope === "whisper" && !whisperTo) return;
@@ -173,13 +167,13 @@ export default function Diyar() {
             }} returnKeyType="send" />
         </View>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-          <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 1, color: C.parchmentMuted }}>
+          <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.parchmentMuted }}>
             {pf(t("mp.readyCount"), readyCount, liveCount)} ·{" "}
           </Text>
           <CountdownSecs deadline={snapshot?.tickDeadline ?? 0} fmt={(s) => pf(t("mp.tickIn"), s)}
-            style={{ flex: 1, fontFamily: F.display, fontSize: 10, letterSpacing: 1, color: C.parchmentMuted }} />
-          <Pressable onPress={() => { hap("tap"); setReady(!me?.ready); }} style={{ paddingVertical: 11, paddingHorizontal: 22, borderRadius: 9, borderWidth: 1, borderColor: me?.ready ? "rgba(127,166,106,0.7)" : "rgba(201,168,76,0.6)", backgroundColor: me?.ready ? "rgba(127,166,106,0.15)" : "rgba(201,168,76,0.12)" }}>
-            <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: me?.ready ? C.sage : C.gold }}>{me?.ready ? t("mp.ready") + " ✓" : t("mp.ready")}</Text>
+            style={{ flex: 1, fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.parchmentMuted }} />
+          <Pressable onPress={() => { hap("tap"); setReady(!me?.ready); }} style={{ paddingVertical: 11, paddingHorizontal: 22, borderRadius: 5, borderWidth: 1, borderColor: me?.ready ? "rgba(127,166,106,0.7)" : "rgba(201,168,76,0.6)", backgroundColor: me?.ready ? "rgba(127,166,106,0.15)" : "rgba(201,168,76,0.12)" }}>
+            <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: me?.ready ? C.sage : C.gold }}>{me?.ready ? t("mp.ready") + " ✓" : t("mp.ready")}</Text>
           </Pressable>
         </View>
       </View>
