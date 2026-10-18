@@ -1,6 +1,7 @@
 // Tur-tabanlı taktik savaş motoru (saf). Sonuç savas ekranında GameState'e uygulanır.
 import { Player, Encounter, combatPower, armorDefense, weaponClass, shieldBlockChance } from "./game";
 import { WClass } from "./world";
+import { nextRandom } from "./random";
 
 export type Move = "hamle" | "savustur" | "ozel";
 export const MOVES: { id: Move; label: string; icon: string; hint: string }[] = [
@@ -44,6 +45,7 @@ export type CbLogParam = string | number | { mv: Move } | { lk: string };
 export interface CbLogEntry { k: string; p?: CbLogParam[]; }
 
 export interface BattleState {
+  rng_state?: number; // dövüşe girişte kayıttan ayrılan zar; hamleler bu alt akışı ilerletir
   enemyName: string; enemyPower: number;
   playerHp: number; playerMax: number; enemyHp: number; enemyMax: number;
   round: number; log: CbLogEntry[]; over: boolean; won: boolean;
@@ -53,11 +55,11 @@ export interface BattleState {
 }
 
 // Düşmanın hamle eğilimi: arketip ağırlıkları + güçlü düşman 'özel'e kayar + çaresizse saldırganlaşır.
-function pickEnemyMove(arch: EArch, power: number, desperate = false): Move {
+function pickEnemyMove(arch: EArch, power: number, random: () => number, desperate = false): Move {
   let [wh, ws, wo] = ARCH[arch].w;
   if (power >= 13) { const shift = Math.min(ws, 0.1); ws -= shift; wo += shift; } // güçlü düşman savunmayı bırakır
   if (desperate) { const d = ws * 0.7; ws -= d; wo += d * 0.6; wh += d * 0.4; } // köşeye sıkışınca savunmayı bırakıp saldırır
-  const r = Math.random() * (wh + ws + wo);
+  const r = random() * (wh + ws + wo);
   if (r < wh) return "hamle";
   if (r < wh + ws) return "savustur";
   return "ozel";
@@ -74,7 +76,9 @@ export function readAccuracy(p: Player, enemyPower: number, arch: EArch = "asker
   return Math.max(0.38, Math.min(enemyPower >= 14 ? 0.85 : 0.93, a));
 }
 
-export function startBattle(p: Player, e: Encounter): BattleState {
+export function startBattle(p: Player, e: Encounter, rngState: number): BattleState {
+  const rng = { rng_state: (rngState ^ 0xa341316c) >>> 0 }; // ana akışın zarlarını dövüşte yeniden kullanma
+  const enemyIntent = pickEnemyMove(encounterArch(e.id), e.power, () => nextRandom(rng));
   const pw = combatPower(p);
   const enemyMax = 30 + e.power * 4;
   let enemyHp = enemyMax;
@@ -90,7 +94,7 @@ export function startBattle(p: Player, e: Encounter): BattleState {
     playerHp: Math.max(20, Math.round(p.health)), playerMax: Math.max(20, Math.round(p.health)),
     enemyHp, enemyMax,
     round: 1, log, over: enemyHp <= 0, won: enemyHp <= 0,
-    arch: encounterArch(e.id), enemyIntent: pickEnemyMove(encounterArch(e.id), e.power),
+    arch: encounterArch(e.id), enemyIntent, rng_state: rng.rng_state,
   };
 }
 
@@ -114,8 +118,8 @@ export function stepBattle(prev: BattleState, p: Player, mv: Move, stance: Stanc
   if (desperate && !bs.desperate) { bs.desperate = true; bs.log.push({ k: "cb.log.desperate" }); }
   // Telegraf: sezdiğin niyet (bs.enemyIntent) okuma isabetiyle doğru çıkar; aksi halde düşman fent atar.
   let em: Move; let feint = false;
-  if (Math.random() < readAccuracy(p, bs.enemyPower, bs.arch, desperate)) { em = bs.enemyIntent; }
-  else { const others = (["hamle", "savustur", "ozel"] as Move[]).filter((m) => m !== bs.enemyIntent); em = others[Math.floor(Math.random() * others.length)]; feint = true; }
+  if (nextRandom(bs) < readAccuracy(p, bs.enemyPower, bs.arch, desperate)) { em = bs.enemyIntent; }
+  else { const others = (["hamle", "savustur", "ozel"] as Move[]).filter((m) => m !== bs.enemyIntent); em = others[Math.floor(nextRandom(bs) * others.length)]; feint = true; }
   const pw = combatPower(p);
   const wc = weaponClass(p);
   const st = stanceOf(stance);                              // duruş: atk/def çarpanı
@@ -135,7 +139,7 @@ export function stepBattle(prev: BattleState, p: Player, mv: Move, stance: Stanc
     let ed = desperate ? Math.round(edRaw * 1.15) : edRaw; // enrage: çaresiz düşman daha sert vurur
     // Kalkan bloğu (denk anında da geçerli)
     let blocked = false;
-    if (shieldBlockChance(p, stance === "savunmaci") > 0 && Math.random() < shieldBlockChance(p, stance === "savunmaci")) { ed = Math.round(ed * 0.4); blocked = true; }
+    if (shieldBlockChance(p, stance === "savunmaci") > 0 && nextRandom(bs) < shieldBlockChance(p, stance === "savunmaci")) { ed = Math.round(ed * 0.4); blocked = true; }
     bs.enemyHp -= pd; bs.playerHp -= ed;
     entry = { k: "cb.log.tie", p: [bs.round, { mv }, { mv: em }, fp, pd, ed, blocked ? { lk: "cb.log.tieBlock" } : ""] };
   } else if (beats(mv, em)) {
@@ -150,13 +154,13 @@ export function stepBattle(prev: BattleState, p: Player, mv: Move, stance: Stanc
     // Kalkan bloğu: belli ihtimalle darbeyi yarıdan fazla emer.
     let blocked = false;
     const bc = shieldBlockChance(p, stance === "savunmaci");
-    if (bc > 0 && Math.random() < bc) { dmg = Math.max(1, Math.round(dmg * 0.4)); blocked = true; }
+    if (bc > 0 && nextRandom(bs) < bc) { dmg = Math.max(1, Math.round(dmg * 0.4)); blocked = true; }
     bs.playerHp -= dmg;
     entry = { k: blocked ? "cb.log.loseBlock" : "cb.log.loseOpen", p: [bs.round, { mv }, { mv: em }, fp, dmg] };
   }
   bs.log.push(entry);
   bs.round += 1;
-  bs.enemyIntent = pickEnemyMove(bs.arch, bs.enemyPower, bs.enemyHp > 0 && bs.enemyHp <= bs.enemyMax * 0.3); // bir sonraki turun telegraf'ı (kalan HP'ye göre çaresizlik)
+  bs.enemyIntent = pickEnemyMove(bs.arch, bs.enemyPower, () => nextRandom(bs), bs.enemyHp > 0 && bs.enemyHp <= bs.enemyMax * 0.3); // bir sonraki turun telegraf'ı (kalan HP'ye göre çaresizlik)
 
   if (bs.enemyHp <= 0) { bs.enemyHp = 0; bs.over = true; bs.won = true; bs.log.push({ k: "cb.log.victory" }); }
   else if (bs.playerHp <= 0) { bs.playerHp = 0; bs.over = true; bs.won = false; bs.log.push({ k: "cb.log.defeat" }); }

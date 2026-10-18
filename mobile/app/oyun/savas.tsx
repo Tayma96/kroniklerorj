@@ -63,8 +63,19 @@ export default function Savas() {
   const yakAdi = (yak: string | undefined, olenG?: string) => kucukHarf(t("kan.yak." + (yak || "kardes") + (yak === "baba" || yak === "anne" ? "" : olenG === "kadın" ? ".k" : ".e")), lang);
   const nemOlen = nem?.olen ? kisiProfil(state, nem.olen, lang) : null;
   // Ay hakkı girişte yanar (çekirdek kilidi): kaybederken ekrandan kaçıp bedelsiz tekrar denenemez.
-  const begin = (id: string) => { const e = ENCOUNTERS.find((x) => x.id === id)!; setEncId(id); playWarDrum(); setBs(startBattle(p, { ...e, title: gt("enc." + e.id + ".t", e.title) })); setApplied(false); setFloats([]); apply((s) => startBattleAttempt(s)); };
-  const beginNemesis = () => { if (!nemEnc) return; setEncId("nemesis"); playWarDrum(); setBs(startBattle(p, { ...nemEnc, title: nemTitle })); setApplied(false); setFloats([]); apply((s) => startBattleAttempt(s)); };
+  const begin = (id: string) => {
+    const e = id === "nemesis" ? nemEnc : ENCOUNTERS.find((x) => x.id === id);
+    if (!e) return;
+    apply((s) => {
+      if (s.player.dead || s.player.battle_turn === s.turn) return s;
+      const next = startBattleAttempt(s);
+      setEncId(id); playWarDrum();
+      setBs(startBattle(s.player, { ...e, title: id === "nemesis" ? nemTitle : gt("enc." + e.id + ".t", e.title) }, s.rng_state ?? s.seed));
+      setApplied(false); setFloats([]);
+      return next;
+    });
+  };
+  const beginNemesis = () => begin("nemesis");
   const play = (mv: Move) => {
     if (!bs || bs.over) return;
     const next = stepBattle(bs, p, mv, stance);

@@ -1,41 +1,43 @@
 # Kronikler — kısa oturum özeti
 
-> Başlangıçta yalnız bu dosyayı oku. `mobile/AGENTS.md`yi mobil kod değişecekse,
-> `TASARIM_PUSULASI.md`yi ürün/oynanış kararı verilecekse aç.
-> Arşivleri ihtiyaç varsayarak açma; yalnız kullanıcı o oturumda açıkça izin verirse oku. (16 Ekim 2026)
+> Başlangıçta yalnız bu dosya. Mobil değişiklikte `mobile/AGENTS.md`, ürün kararında
+> `TASARIM_PUSULASI.md`. Arşiv/GDD/PDF yalnız kullanıcının o oturumdaki açık izniyle.
 
 ## Kurallar
 
-- Depo `Tayma96/kroniklerorj`, dal `apk`. Biten commit'i push et, `ls-remote` ile doğrula.
-  Türkçe tek satır commit; model/araç imzası ve cron yok.
-- Kullanıcı rutin kod/tasarım/görsel/seste tam yetki verdi; izin veya cihaz kodu isteme.
-  APK, PR ve sunucu dağıtımı yalnız açıkça istenirse yapılır.
-- Mobil, çevrimdışı öncelikli, 1200'ler Selçuklu Anadolu'su. Türk yüzleri; Araplaştırma,
-  sarı ışık/sikke yağmuru yok. Seçili yaş portreleri keçe başlıklı erkek ve işlemeli başlıklı kadın.
-- Yeni metin tr/en/es/pt/ar/ru; `GameIcon` ve tema jetonları. Farm/P2W yok. Kayıt alanları
-  opsiyonel; vâris önizleme paritesi ve MP protokol bayt eşliği korunur.
+- Depo `Tayma96/kroniklerorj`, dal `apk`. Biten işi Türkçe tek satır commit/push et,
+  uzak dalı doğrula. Araç/model imzası ve cron yok. Anahtarları okuma/yazdırma.
+- Rutin geliştirme için onay bekleme. APK, PR ve sunucu dağıtımı yalnız açık istekle.
+- Mobil, çevrimdışı öncelikli; 1200'ler Selçuklu Anadolu'su, aylık tur. Türk yüzleri;
+  Araplaştırma, sarı ışık/sikke yağmuru yok. Seçili erkek portresi keçe başlıklı,
+  kadın işlemeli başlıklı. Yeni metin tr/en/es/pt/ar/ru; GameIcon ve tema jetonları.
+- Farm/P2W yok. Kayıt alanları opsiyonel; vâris önizleme paritesi ve MP protokol
+  bayt eşliği korunur. Sentetik test, cihaz/oyuncu kabulü değildir.
 
 ## Durum
 
-- Uzak `apk` her tamamlanan dalgada yerel HEAD ile doğrulanır.
-- Katı GDD tamamlanması `%58 ±5`; özellik varlığı `%72`, yayın hazırlığı yaklaşık `%40`.
-  Kaynak: GDD v7/v8, `docs/AUDIT.md` ve 25 sayfalık devir PDF'i.
-- Aylık yaşam, altı dil, yaş portreleri/ses, NPC hafıza–söylenti–tavır–izlenim, tohumlar,
-  yönetmen, rakip haneler, kronik ve kimlikli aile/vâris akışı çalışır. Yetişkin evlat ölebilir;
-  küçük korunur; sıra evlat→torun→yeğen→yetişmiş çırak. Ölüler hayalet eylem üretmez.
-- Kayıtlı RNG altyapısı kuruldu; suç, kaçış, kara borsa, mahkeme ve yeni nesil tohumu aynı
-  kayıt yeniden açıldığında aynı sonucu verir. Diğer zar sistemleri kademeli taşınacak.
-- Ağır suç mahkemesi gerçek mağdur ve yaşayan görgü tanıklarını dosyaya bağlar; delil gücü
-  görünen savunma/tanık oranlarını belirler, pahalı uzlaşma ayrı bir bedelli çıkış sunar.
-- Kaçılan ağır iş 3–6 aylık gerçek NPC soruşturmasına dönüşebilir; saklanma/sahte iz delili
-  düşürür, yeni suç dosyayı hızlandırır, olgun delil aynı mahkeme akışına taşınır.
-- Son kapı: tsc/bundle/göç/i18n/dil/MP, 7+75+99 aile senaryosu, 10 GDD akışı, 41.394
-  olay metni, altı dil 320×568/4× CPU UI, web ve Android/Hermes temiz.
+- Bu dalga yerel committe. Push 403: bağlantı Tayma67; Tayma96 deposuna yazma yetkisi yok.
+  Yazma erişimi sağlanınca yerel commit kaybedilmeden uzak dalla karşılaştırılıp gönderilmeli.
+
+- Aylık yaşam, meslek yolları/şaheser, yaş portreleri/ses, NPC hafıza/söylenti/tavır,
+  tohum/yönetmen, rakip haneler ve kimlikli aile/vâris akışları mevcut.
+  Küçük evlat korunur; vâris sırası evlat→torun→yeğen→yetişmiş çırak; hayalet eylem yok.
+- Ağır suç mahkemesi gerçek mağdur/tanık ve delil kullanır; bedelli uzlaşma var.
+  Kaçılan iş 3–6 aylık NPC soruşturmasına dönüşebilir; saklanma/sahte iz delili düşürür,
+  yeni suç hızlandırır, olgun delil mahkemeye taşınır.
+- Kayıtlı RNG suçtan yol/pusu, pazarlık/blöf, kervan/piyasa, cephe/ocak savaşı ve
+  yaralanmaya yayıldı. Taktik dövüş tohumlu alt akışta; çekirdek `mobile/lib/random.ts`.
+  Yaşam/NPC/aylık kartlar henüz tam taşınmadı; tam aylık tekrar garantisi yok.
+- Son kontrol: tsc/bundle/göç/i18n/dil/MP temiz; 4.370 kayıt tekrarı, 52 yol sonucu,
+  153 dövüş/1.810 hamle; suç, 7 vâris kümesi, 13 kayıt senaryosu temiz.
+  Güncel inceleme: `docs/AUDIT.md`. Yeni bekçi: `rng-yol-ticaret-savas-check.cjs`.
 
 ## Sırada
 
-1. Kayıtlı RNG'yi ticaret/yol/savaşa yay + ortak sonuç/neden dökümü.
-2. 3–6 turluk NPC/aile sohbeti ve ilişkiye özgü ortak yaşam kararları.
-3. Ticaret–kervan–seyahat kararları, hoca/silsile, tam soy ağacı, LOD ve gerçek oyuncu testi.
+1. Aylık ikilem/fırsat kartı ekran belleğinde: kararı kayda al, açılışta geri getir ve
+   tek uygula. Kart RNG'sini taşı; yaşam/NPC/sefer RNG ve ortak neden dökümünü sürdür.
+2. Müzakere sabrı kapat/açta sıfırlanıyor; kalıcılaştır. Rota/mal üstünlüğünü ölç.
+3. 3–6 turluk NPC/aile sohbeti, ortak yaşam kararları, hoca/silsile, soy ağacı, LOD.
+4. Gerçek oyuncu kayıtları ve düşük donanımlı Android/uzun oturum testi.
 
-`mobile/AGENTS.md` kadansına uy. Sentetik testi altın kayıt/oyuncu testi, kısmî işi tam GDD diye sunma.
+`mobile/AGENTS.md` test kadansına uy; kısmî işi tam GDD diye sunma.

@@ -34,6 +34,7 @@ jobs:
           node scripts/_smoke/kurtarma-check.cjs
           node scripts/_smoke/ses-check.cjs
           node scripts/_smoke/kayit-check.cjs
+          node scripts/_smoke/rng-yol-ticaret-savas-check.cjs
           node scripts/_smoke/emek-check.cjs
           node scripts/_smoke/hafiza-check.cjs
           node scripts/_smoke/soylenti-check.cjs

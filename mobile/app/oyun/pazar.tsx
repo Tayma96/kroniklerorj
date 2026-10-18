@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { buyItem, buyPrice, sellItem, launchCaravan, caravanPremium, rentStall, stallCost, stallActive, stockWinter, winterStockCost, pawnHorse, redeemHorse, horsePawnValue, horseRedeemCost, negotiatedBuy, negotiatedSell, bargainBase, bargainSellBase, bargainChance, marketPrice, econKey, goodPriceMult, MARKET_EVENTS, bestQualityTier, QUALITY_LABEL, sellerPersonaOf, factionLocalFavor, goodMarketTag, goodTrend, citySpecialtyIdx, loanCapacity, loanRate, borrow, repay, depositCoin, withdrawCoin, DEPOSIT_ANNUAL_YIELD, lifestyleUpkeep, giveZekat, zekatDue, zekatAvailable } from "../../lib/game";
+import { buyItem, buyPrice, sellItem, launchCaravan, caravanPremium, rentStall, stallCost, stallActive, stockWinter, winterStockCost, pawnHorse, redeemHorse, horsePawnValue, horseRedeemCost, negotiatedBuy, negotiatedSell, bargainBase, bargainSellBase, bargainChance, rollBargain, marketPrice, econKey, goodPriceMult, MARKET_EVENTS, bestQualityTier, QUALITY_LABEL, sellerPersonaOf, factionLocalFavor, goodMarketTag, goodTrend, citySpecialtyIdx, loanCapacity, loanRate, borrow, repay, depositCoin, withdrawCoin, DEPOSIT_ANNUAL_YIELD, lifestyleUpkeep, giveZekat, zekatDue, zekatAvailable } from "../../lib/game";
 import { marketGoods, locSeed } from "../../lib/world";
 import { currentCalendar } from "../../lib/calendar";
 import { useI18n, applyParams, yuzdeL } from "../../lib/i18n";
@@ -81,7 +81,13 @@ export default function Pazar() {
   };
   const doHaggle = () => {
     if (!barg || barg.done) return;
-    const ok = Math.random() < bargainChance(state);
+    let ok: boolean | undefined;
+    apply((s) => {
+      const result = rollBargain(s, false);
+      if (result.state !== s) ok = result.success;
+      return result.state;
+    });
+    if (ok === undefined) return;
     if (barg.sell) {
       const ceil = Math.round(barg.base * 1.4);
       if (ok && barg.price < ceil) {
@@ -109,7 +115,13 @@ export default function Pazar() {
   // Blöf: yüksek risk/ödül — tutarsa büyük kazanım, tutmazsa satıcı alınır, fiyat kötüleşir.
   const doBluff = () => {
     if (!barg || barg.done) return;
-    const ok = Math.random() < bargainChance(state) * 0.7; // pazarlıktan riskli
+    let ok: boolean | undefined;
+    apply((s) => {
+      const result = rollBargain(s, true);
+      if (result.state !== s) ok = result.success;
+      return result.state;
+    });
+    if (ok === undefined) return;
     if (barg.sell) {
       const ceil = Math.round(barg.base * 1.4);
       if (ok && barg.price < ceil) {
