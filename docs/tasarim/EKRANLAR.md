@@ -31,7 +31,7 @@ ayrıntı sırası korunur. Doku metnin arkasında kısık; resim ağırlıkla �
 ## NPC kimliği, meslek, ruh hâli
 
 Mevcut yaş/yüz ailesi korunur: kişi meslek değiştirince başka bir yüze dönüşmez.
-İlk yeni sanat katmanları çiftçi, demirci ve hükümdar içindir; hükümdarlık kişi kimliğiyle
+Yeni sanat katmanları 11 meslek ve hükümdar için 36 gövde/duruş içerir; hükümdarlık kişi kimliğiyle
 bulunur, kişinin önceki asker mesleği rolü gizlemez. Yeni kıyafetler başsız/gövde
 katmanıdır; yaş yüzü üstte ayrı yerleştirilir. Ruh hâli aynı kıyafetin sakin, açık/neşeli
 ve gergin duruşunu seçer; renk ve mevcut metin de durumu destekler. Bütün yüzlere ayrı
@@ -45,3 +45,39 @@ azaltılır. Yeni kaynaklar mevcut portreleri ezmez.
 altı dil ve büyük yazı. Tarayıcı denemesi gerçek Android/Hermes veya fiziksel cihaz
 kabulünün karşılığı değildir. Aylık karar/risk/fırsat sonucu kayıtta, çift uygulama ve
 hızlı ilerleme kapıları hedefli kontrol edilir. Her tamamlanan parça ayrı pushlanır.
+
+## Bütün sayfalar
+
+42 gerçek sayfanın tasarım envanteri `mobile/lib/screen-design.ts` içindedir.
+[Tüm sayfa düzenleri ve önizleme galerisi](GALERI.md) tarayıcıda çekilmiş örnek
+kayıtları gösterir. Bunlar Android ekran görüntüsü değildir. `PageHeader` sahneyi
+rotadan seçer; başlık/açıklama yerel metindir, resme basılmamıştır. Kartlar çift
+pirinç çizgili parşömen, köşeler 4–5; metin resmin üstünde karartmayla ayrılır.
+Ana ekran/NPC/şehir, mülk afişi, harita ve açılış kendi sahne düzenini korur.
+Alt menüde ay ilerletme için 76 piksel yer bırakılır; etiketler en az12 ve sarılır.
+Çalışma seçenekleri kaydırmadadır; ölümde vâris/ocak eylemleri kişi kartının hemen
+ardındadır. Savaş ve gelen diplomasi uyarıları aylık kararın ardından gelir.
+Şehir güvenliği `asayisOf`, refahı `cityFx` kullanır; hasar/yerel olay/NPC hizmetleriyle
+aynı kaynaktan değişir. Nüfus künyesi dünyanın makro nüfusudur; ekonomi kartındaki
+isimli sakin/işgücü sayısıyla karıştırılmaz.
+
+## Önizlemeyi yeniden üretme
+
+Ürün bağımlılıklarına tarayıcı paketi eklenmez. İsteğe bağlı masaüstü kontrolü:
+
+```sh
+npm install --prefix /tmp/kronikler-webview react@19.2.3 react-dom@19.2.3 react-native-web@0.21.2 playwright@1.62.1 --no-audit --no-fund
+cd mobile
+npm run design:check
+npm run design:preview
+python3 -m http.server 8765 --directory /tmp/kronikler-webview/public
+```
+
+Başka terminalde `WIDTH=320 npm run design:gallery` veya `WIDTH=390 npm run design:gallery`.
+`CHROMIUM_PATH` kurulu Chromium yoludur; varsayılan `/usr/bin/chromium`.
+`KRONIKLER_PREVIEW_DEPS`, `KRONIKLER_PREVIEW_URL` yolları değiştirilebilir.
+Tarayıcıda `?screen=/oyun/diplomasi&state=ruler&lang=ar` gibi bir adres açılır.
+`state=child|ruler|dead|war|decision`, `long=1`, `reduce=1` desteklenir.
+Adaptör ses/titreşim/Skia/saklama/ağ işlemlerini devre dışı bırakır; sekme kabuğunu
+basitçe taklit eder. Gerçek sayfa bileşenleri, yerel resimler ve motorun örnek kaydı
+kullanılır. Bu araç oyunun başka bir sürümü veya sunucusu değildir.

@@ -1,0 +1,881 @@
+{
+  "viewportHeight": 844,
+  "cpuThrottling": 4,
+  "renderer": "Chromium + React Native Web; native APIs/navigation adapted",
+  "widths": {
+    "320": [
+      {
+        "route": "/cok-oyunculu/diplomasi",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\nŞeref 10 · 3500 akçe\nDiplomasi\nDestek ver, rekabet et, entrika çevir, düşene el uzat.\nKapında gözcü yok — hançer, casus ve ",
+        "targets": 0,
+        "file": "cok-oyunculu-diplomasi.png"
+      },
+      {
+        "route": "/cok-oyunculu/diyar",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\nBağlı\ntasarim\nDiyar\nYıl 1251 · Ay 1 · Taht boş\nOyuncular · 2\nBoran (sen)\nyaş 40 · çevrimiçi\nAyşe \nyaş 40 · çevrimiçi\nAYI İL",
+        "targets": 0,
+        "file": "cok-oyunculu-diyar.png"
+      },
+      {
+        "route": "/cok-oyunculu/harita",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\nBeylik Haritası\nTaht boş\nDemirhan ♔\nburadasın\nBey: Boran\nGüç 80 · Ordu tahmini ~108 · vergi 10\nBoran\nSahil\nBey: Ayşe\nGüç 70",
+        "targets": 0,
+        "file": "cok-oyunculu-harita.png"
+      },
+      {
+        "route": "/cok-oyunculu",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\nÇok Oyuncu\nPaylaşımlı diyarda yaşayan hanedanlar\nBeylik kur, sefere omuz ver, reis seçil; dilersen kervana pusu kur, kumpas",
+        "targets": 0,
+        "file": "cok-oyunculu.png"
+      },
+      {
+        "route": "/cok-oyunculu/oyun",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\nDiyar\nDiyarda 2 can\nBoran(sen)\nAyşe\n· hazır\nZirvedesin — diyarın bütün gözleri sende, herkes seni kovalıyor.\nAyşe ensende —",
+        "targets": 0,
+        "file": "cok-oyunculu-oyun.png"
+      },
+      {
+        "route": "/",
+        "errors": [],
+        "overflow": false,
+        "text": "Ayarlar\nKRONİKLER\nKÜLLERİN MİRASI\nKül & Köz · çevrimdışı\n❧ ⚜ ❧\nTEK OYUNCU · Çevrimdışı — kendi hanedanın\nDevam Et\nYeni Oyun\nÇEVRIM",
+        "targets": 0,
+        "file": "acilis.png"
+      },
+      {
+        "route": "/oyun/atolye",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\nZanaat 0\nAtölye\nHammaddeyi mamule çevir. Zanaat becerisi ve malzeme ister; kimi ustalık tarifleri yalnız o mesleğin elinded",
+        "targets": 0,
+        "file": "oyun-atolye.png"
+      },
+      {
+        "route": "/oyun/ayarlar",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\nAyarlar\nNESİL\n1.\nNasıl Oynanır / SSS\nMekanikler, itibar, nam ve daha fazlası\n›\nEmeği Geçenler\nYazı tipleri, simgeler, görse",
+        "targets": 0,
+        "file": "oyun-ayarlar.png"
+      },
+      {
+        "route": "/oyun/basarimlar",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\n3/100\nBaşarımlar\nBir ömrün ve soyun nişaneleri.\nAZ KALDI\nServet Sahibi\n%70\nUzun Ömür\n%67\nReşit Oldun\n13 yaşına ulaş ve bir ",
+        "targets": 0,
+        "file": "oyun-basarimlar.png"
+      },
+      {
+        "route": "/oyun/beceriler",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\nBeceri Ağacı\nEyleme geçtikçe beceriler kendiliğinden gelişir. 3, 6 ve 9. seviyede ağaçta bir hüner açılır.\nBECERI DIVANI\n0/",
+        "targets": 0,
+        "file": "oyun-beceriler.png"
+      },
+      {
+        "route": "/oyun/copcatan",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\n3500\nGÖRÜCÜ USULÜ\nÇöpçatan\nHer teklif 60 akçe — iki aile görüştürülür.\nYAŞA GÖRE\nHepsi\nGenç\nOrta\nOlgun\nSERVETE GÖRE\nHepsi\nV",
+        "targets": 0,
+        "file": "oyun-copcatan.png"
+      },
+      {
+        "route": "/oyun/diplomasi",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\nHanedan\nHükümdar diplomasisi\nDevlet diplomasisinde ayda bir karar. Elçilik ve ahitler; siyaset, haraç ve taht iddiacısı kar",
+        "targets": 0,
+        "file": "oyun-diplomasi.png"
+      },
+      {
+        "route": "/oyun/divan",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\nBugünün davası\nDivan No. 18\nHer gün bir dava. Ne kazanç ne ceza: yalnızca kasabanın vicdanı ve seninki.\nIsıran Köpek\nBir kö",
+        "targets": 0,
+        "file": "oyun-divan.png"
+      },
+      {
+        "route": "/oyun/diyar/[name]",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\nDemirhan\nKale · 637 nüfus\n⚑︎ Demirhan Beyliği\nDemir kapılı kale burçlarından üç vadi birden gözlenir; ocaklarının isi taşla",
+        "targets": 0,
+        "file": "oyun-diyar-name.png"
+      },
+      {
+        "route": "/oyun/emek",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\nAyarlar\nEmeği Geçenler\nBu oyun tek kişinin emeğiyle yazıldı; aşağıdakilerin cömertliği olmadan bu hâliyle var olamazdı.\nTAS",
+        "targets": 0,
+        "file": "oyun-emek.png"
+      },
+      {
+        "route": "/oyun/gorevler",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\nAçık İşler\nSeni bekleyen işler ve fırsatlar — tek bakışta.\nAçık İşler\nBir loncaya katılabilirsin\nGörev görüp itibar topla\n›",
+        "targets": 0,
+        "file": "oyun-gorevler.png"
+      },
+      {
+        "route": "/oyun/haberler",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\nOcak 1251 · diyarın diline düşenler\nDiyardan Haberler\nDIYAR HABERLERI\nSınırda Hareket\nSınır boylarında atlı birlikler görül",
+        "targets": 0,
+        "file": "oyun-haberler.png"
+      },
+      {
+        "route": "/oyun/hanedan",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\nHanedan\nSoyunun Mührü\nYalçın Hanedanı\nSoyunun mührü, mirası ve diyardaki yeri.\nHANEDAN MÜHRÜ\n10\nSıradan Aile\n1. nesil\nBoran",
+        "targets": 0,
+        "file": "oyun-hanedan.png"
+      },
+      {
+        "route": "/oyun/harita",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\n3500\nDiyar Haritası\n❧\nDIYAR HARITASI\n☙\nDEMIRHAN\n● ŞU AN BURADASIN\nYENIŞEHIR\nGÜMÜŞHISAR\nAKŞEHIR\nKARAHISAR\nBir yerleşime doku",
+        "targets": 0,
+        "file": "oyun-harita.png"
+      },
+      {
+        "route": "/oyun/hikayeler",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\nHikâyelerim\n0/30 yay tamamlandı — beşincide Kıssahan denir sana.\nŞu an açık bir hikâyen yok. Hayatın seni yeni maceralara ç",
+        "targets": 0,
+        "file": "oyun-hikayeler.png"
+      },
+      {
+        "route": "/oyun/iliskiler",
+        "errors": [],
+        "overflow": false,
+        "text": "Demirhan\nİlişkiler\n23 kişiyle aranda bir hikâye var; kimi dost, kimi diken.\nÇöpçatan\nYaş ve servete göre sana talip önerir.\n›\nYAKI",
+        "targets": 0,
+        "file": "oyun-iliskiler.png"
+      },
+      {
+        "route": "/oyun",
+        "errors": [],
+        "overflow": false,
+        "text": "Bir Ay Daha\n1251 · Kış\nBoran Yalçın\nDemirci Çırağı · 40 yaş\nSağlık\n82\nTokluk\n75\nAkçe\n3.500\nNam\n0\nTanınıyorsun ama henüz bir kanaat",
+        "targets": 0,
+        "file": "oyun.png"
+      },
+      {
+        "route": "/oyun/karakter",
+        "errors": [],
+        "overflow": false,
+        "text": "Karakter\nYALÇIN HANEDANI\nBoran Yalçın\nDemirci Çırağı\n40 YAŞ\nERKEK\nDEMIRHAN\n1. NESIL\n82\n/ 100\n75\n/ 100\n3500\n0\nHekime Görün · 25⚜\nHa",
+        "targets": 0,
+        "file": "oyun-karakter.png"
+      },
+      {
+        "route": "/oyun/kronik",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\nKronik\nÖlümden sağ çıkan tek kayıt: kim yaşadı, ne dendi, hangi kararlar anıldı.\nTamamlanan hikâyeler: 0/30\nGörülen ikileml",
+        "targets": 0,
+        "file": "oyun-kronik.png"
+      },
+      {
+        "route": "/oyun/mahalle",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\nKİM NEREDE\nMahalle · Demirhan\nBu ay herkes bir yerde; ayda bir mekâna uğrayabilirsin.\nKasabanın gözünde\n0 dost · 0 hasım\nİl",
+        "targets": 0,
+        "file": "oyun-mahalle.png"
+      },
+      {
+        "route": "/oyun/mektep",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\nMektep\nMektep yılları geçti ama ilim her yaşta makbuldür.\nSINAV\nSonraki sınava 4 ders\nBeceri Ağacı\nKitap & Hesap\nAna Sayfa\n",
+        "targets": 0,
+        "file": "oyun-mektep.png"
+      },
+      {
+        "route": "/oyun/menu",
+        "errors": [],
+        "overflow": false,
+        "text": "Menü\nKül & Köz · çevrimdışı\nGEÇIM\nMeslek\n›\nPazar\n›\nAtölye\n›\nMülkler\n›\nAçık İşler\n›\nMektep\n›\nBeceri Ağacı\n›\nGÜÇ & MEVKI\nÖrgütler / ",
+        "targets": 0,
+        "file": "oyun-menu.png"
+      },
+      {
+        "route": "/oyun/meslek",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\nMeslek\nBaşka bir zanaata geçersen kariyerin en alttan başlar.\nAhilik · Peştamal\nDemirci Çırağı  →  Kalfa\nSıradaki sınav içi",
+        "targets": 0,
+        "file": "oyun-meslek.png"
+      },
+      {
+        "route": "/oyun/mulkler",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\n3500\nMÜLKLER\nMülkler\nAdına yazılı her tapu, çocuklarına kalır.\nTOPLAM SERVET\n3500 ⚜\nAYLIK NET (TAHMINI)\n+0 ⚜\nMÜLK · İŞÇI\n0 ",
+        "targets": 0,
+        "file": "oyun-mulkler.png"
+      },
+      {
+        "route": "/oyun/nesil",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\n3500 ⚜\nNesil & Vâris\nHenüz evladın yok. Evlen ve bir ocak kur; soyun böyle sürer.\nAna Sayfa\nKarakter\nİlişkiler\nMenü\nAyı ile",
+        "targets": 0,
+        "file": "oyun-nesil.png"
+      },
+      {
+        "route": "/oyun/npc/[id]",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\nFatma Demirhan\nDemirci · 38 yaş\nTANIŞLAR\nKayıtsız\naceleci\nİlişki +5\nNedenleri gör\nSürekli hava durumundan dert yanar.\nHayal",
+        "targets": 0,
+        "file": "oyun-npc-id.png"
+      },
+      {
+        "route": "/oyun/ocak",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\nKronik\nKüllerden Yeni Ocak\nArdında vâris kalmadı, ama defter yanmadı. Aynı soyadla yeni bir hayat başlar: atanın en çok anı",
+        "targets": 0,
+        "file": "oyun-ocak.png"
+      },
+      {
+        "route": "/oyun/orgutler",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\n3500\nLoncalara görev gör, itibar kazan; güvenildiğinde saflarına katıl.\nÖrgütler / Loncalar\nSaray · Dîvân\nDivana liyakatle ",
+        "targets": 0,
+        "file": "oyun-orgutler.png"
+      },
+      {
+        "route": "/oyun/pazar",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\n3500 ⚜\nPazar\nDemirhan\nPiyasa dengeli · Yerel geçim: Demirci ocağı\nPAZAR TEZGÂHI\nÜç aylığına çarşıda tezgâh kirala: malın gö",
+        "targets": 0,
+        "file": "oyun-pazar.png"
+      },
+      {
+        "route": "/oyun/roman",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\nHAYATIN ROMANI\nBoran Yalçın\n— bir ömrün hikâyesi, küllerin diyarında —\n❧ HAYAT ROMANI ❧\nKararların başlığı ve eğilimi; sonu",
+        "targets": 0,
+        "file": "oyun-roman.png"
+      },
+      {
+        "route": "/oyun/savas",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\n5\nÇatışma\nOrdu cephesi\nYurdunun hükümdarı şu anda ordu toplamıyor. Askerlik mesleği ve Asker Ocağı üyeliği farklıdır; devle",
+        "targets": 0,
+        "file": "oyun-savas.png"
+      },
+      {
+        "route": "/oyun/sehir",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\nDemirhan\nKale · 637 nüfus\n72/100\nGüvenlik\n56/100\nRefah\n%45\nTanınma\nMemleketin\nTanınıyorsun ama henüz bir kanaat yok.\n%45\nTA",
+        "targets": 0,
+        "file": "oyun-sehir.png"
+      },
+      {
+        "route": "/oyun/sosyal",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\n3500 ⚜\nMevki & İtibar\nAdın diyarda nasıl anılıyor? Henüz bir loncaya bağlı değilsin.\nMEVKI\nHalkın ve soyluların gözündeki r",
+        "targets": 0,
+        "file": "oyun-sosyal.png"
+      },
+      {
+        "route": "/oyun/sss",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\nNasıl Oynanır (SSS)\nOyunun mekanikleri kısa cevaplarla. Bir soruya dokun, açılsın.\nZAMAN & YAŞAM\nAy/yıl nasıl ilerler?\n+\nAç",
+        "targets": 0,
+        "file": "oyun-sss.png"
+      },
+      {
+        "route": "/oyun/suc",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\nGölge İşleri\nYasanın gölgesinde kazanç var ama yakalanırsan bedeli ağır.\nGÖLGE DEĞIL\nNam 0\nSonraki mertebeye 2 nam: Yankesi",
+        "targets": 0,
+        "file": "oyun-suc.png"
+      },
+      {
+        "route": "/oyun/tarih",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\nKronik\nOCAK 1247\nBu diyara bir can daha geldi; doğuştan Zekâ tarafı kuvvetli.\nAna Sayfa\nKarakter\nİlişkiler\nMenü\nAyı ilerlet",
+        "targets": 0,
+        "file": "oyun-tarih.png"
+      },
+      {
+        "route": "/yeni-oyun",
+        "errors": [],
+        "overflow": false,
+        "text": "YENİ OYUN\n⚜\nAD SOYAD\nCİNSİYET\n♂︎\nErkek\n♀︎\nKız\nÇocukluğunda tabiatın\nYiğit\nKorkusuz ve güçlü; cenkte ömür boyu bir adım önde.\nKurna",
+        "targets": 0,
+        "file": "yeni-oyun.png"
+      }
+    ],
+    "390": [
+      {
+        "route": "/cok-oyunculu/diplomasi",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\nŞeref 10 · 3500 akçe\nDiplomasi\nDestek ver, rekabet et, entrika çevir, düşene el uzat.\nKapında gözcü yok — hançer, casus ve ",
+        "targets": 0,
+        "file": "cok-oyunculu-diplomasi.png"
+      },
+      {
+        "route": "/cok-oyunculu/diyar",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\nBağlı\ntasarim\nDiyar\nYıl 1251 · Ay 1 · Taht boş\nOyuncular · 2\nBoran (sen)\nyaş 40 · çevrimiçi\nAyşe \nyaş 40 · çevrimiçi\nAYI İL",
+        "targets": 0,
+        "file": "cok-oyunculu-diyar.png"
+      },
+      {
+        "route": "/cok-oyunculu/harita",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\nBeylik Haritası\nTaht boş\nDemirhan ♔\nburadasın\nBey: Boran\nGüç 80 · Ordu tahmini ~108 · vergi 10\nBoran\nSahil\nBey: Ayşe\nGüç 70",
+        "targets": 0,
+        "file": "cok-oyunculu-harita.png"
+      },
+      {
+        "route": "/cok-oyunculu",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\nÇok Oyuncu\nPaylaşımlı diyarda yaşayan hanedanlar\nBeylik kur, sefere omuz ver, reis seçil; dilersen kervana pusu kur, kumpas",
+        "targets": 0,
+        "file": "cok-oyunculu.png"
+      },
+      {
+        "route": "/cok-oyunculu/oyun",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\nDiyar\nDiyarda 2 can\nBoran(sen)\nAyşe\n· hazır\nZirvedesin — diyarın bütün gözleri sende, herkes seni kovalıyor.\nAyşe ensende —",
+        "targets": 0,
+        "file": "cok-oyunculu-oyun.png"
+      },
+      {
+        "route": "/",
+        "errors": [],
+        "overflow": false,
+        "text": "Ayarlar\nKRONİKLER\nKÜLLERİN MİRASI\nKül & Köz · çevrimdışı\n❧ ⚜ ❧\nTEK OYUNCU · Çevrimdışı — kendi hanedanın\nDevam Et\nYeni Oyun\nÇEVRIM",
+        "targets": 0,
+        "file": "acilis.png"
+      },
+      {
+        "route": "/oyun/atolye",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\nZanaat 0\nAtölye\nHammaddeyi mamule çevir. Zanaat becerisi ve malzeme ister; kimi ustalık tarifleri yalnız o mesleğin elinded",
+        "targets": 0,
+        "file": "oyun-atolye.png"
+      },
+      {
+        "route": "/oyun/ayarlar",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\nAyarlar\nNESİL\n1.\nNasıl Oynanır / SSS\nMekanikler, itibar, nam ve daha fazlası\n›\nEmeği Geçenler\nYazı tipleri, simgeler, görse",
+        "targets": 0,
+        "file": "oyun-ayarlar.png"
+      },
+      {
+        "route": "/oyun/basarimlar",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\n3/100\nBaşarımlar\nBir ömrün ve soyun nişaneleri.\nAZ KALDI\nServet Sahibi\n%70\nUzun Ömür\n%67\nReşit Oldun\n13 yaşına ulaş ve bir ",
+        "targets": 0,
+        "file": "oyun-basarimlar.png"
+      },
+      {
+        "route": "/oyun/beceriler",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\nBeceri Ağacı\nEyleme geçtikçe beceriler kendiliğinden gelişir. 3, 6 ve 9. seviyede ağaçta bir hüner açılır.\nBECERI DIVANI\n0/",
+        "targets": 0,
+        "file": "oyun-beceriler.png"
+      },
+      {
+        "route": "/oyun/copcatan",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\n3500\nGÖRÜCÜ USULÜ\nÇöpçatan\nHer teklif 60 akçe — iki aile görüştürülür.\nYAŞA GÖRE\nHepsi\nGenç\nOrta\nOlgun\nSERVETE GÖRE\nHepsi\nV",
+        "targets": 0,
+        "file": "oyun-copcatan.png"
+      },
+      {
+        "route": "/oyun/diplomasi",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\nHanedan\nHükümdar diplomasisi\nDevlet diplomasisinde ayda bir karar. Elçilik ve ahitler; siyaset, haraç ve taht iddiacısı kar",
+        "targets": 0,
+        "file": "oyun-diplomasi.png"
+      },
+      {
+        "route": "/oyun/divan",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\nBugünün davası\nDivan No. 18\nHer gün bir dava. Ne kazanç ne ceza: yalnızca kasabanın vicdanı ve seninki.\nIsıran Köpek\nBir kö",
+        "targets": 0,
+        "file": "oyun-divan.png"
+      },
+      {
+        "route": "/oyun/diyar/[name]",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\nDemirhan\nKale · 637 nüfus\n⚑︎ Demirhan Beyliği\nDemir kapılı kale burçlarından üç vadi birden gözlenir; ocaklarının isi taşla",
+        "targets": 0,
+        "file": "oyun-diyar-name.png"
+      },
+      {
+        "route": "/oyun/emek",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\nAyarlar\nEmeği Geçenler\nBu oyun tek kişinin emeğiyle yazıldı; aşağıdakilerin cömertliği olmadan bu hâliyle var olamazdı.\nTAS",
+        "targets": 0,
+        "file": "oyun-emek.png"
+      },
+      {
+        "route": "/oyun/gorevler",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\nAçık İşler\nSeni bekleyen işler ve fırsatlar — tek bakışta.\nAçık İşler\nBir loncaya katılabilirsin\nGörev görüp itibar topla\n›",
+        "targets": 0,
+        "file": "oyun-gorevler.png"
+      },
+      {
+        "route": "/oyun/haberler",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\nOcak 1251 · diyarın diline düşenler\nDiyardan Haberler\nDIYAR HABERLERI\nSalgın Korkusu\nKaraağaç çevresinde ateşli bir hastalı",
+        "targets": 0,
+        "file": "oyun-haberler.png"
+      },
+      {
+        "route": "/oyun/hanedan",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\nHanedan\nSoyunun Mührü\nYalçın Hanedanı\nSoyunun mührü, mirası ve diyardaki yeri.\nHANEDAN MÜHRÜ\n10\nSıradan Aile\n1. nesil\nBoran",
+        "targets": 0,
+        "file": "oyun-hanedan.png"
+      },
+      {
+        "route": "/oyun/harita",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\n3500\nDiyar Haritası\n❧\nDIYAR HARITASI\n☙\nDEMIRHAN\n● ŞU AN BURADASIN\nYENIŞEHIR\nGÜMÜŞHISAR\nAKŞEHIR\nKARAHISAR\nBir yerleşime doku",
+        "targets": 0,
+        "file": "oyun-harita.png"
+      },
+      {
+        "route": "/oyun/hikayeler",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\nHikâyelerim\n0/30 yay tamamlandı — beşincide Kıssahan denir sana.\nŞu an açık bir hikâyen yok. Hayatın seni yeni maceralara ç",
+        "targets": 0,
+        "file": "oyun-hikayeler.png"
+      },
+      {
+        "route": "/oyun/iliskiler",
+        "errors": [],
+        "overflow": false,
+        "text": "Demirhan\nİlişkiler\n23 kişiyle aranda bir hikâye var; kimi dost, kimi diken.\nÇöpçatan\nYaş ve servete göre sana talip önerir.\n›\nYAKI",
+        "targets": 0,
+        "file": "oyun-iliskiler.png"
+      },
+      {
+        "route": "/oyun",
+        "errors": [],
+        "overflow": false,
+        "text": "Bir Ay Daha\n1251 · Kış\nBoran Yalçın\nDemirci Çırağı · 40 yaş\nSağlık\n82\nTokluk\n75\nAkçe\n3.500\nNam\n0\nTanınıyorsun ama henüz bir kanaat",
+        "targets": 0,
+        "file": "oyun.png"
+      },
+      {
+        "route": "/oyun/karakter",
+        "errors": [],
+        "overflow": false,
+        "text": "Karakter\nYALÇIN HANEDANI\nBoran Yalçın\nDemirci Çırağı\n40 YAŞ\nERKEK\nDEMIRHAN\n1. NESIL\n82\n/ 100\n75\n/ 100\n3500\n0\nHekime Görün · 25⚜\nHa",
+        "targets": 0,
+        "file": "oyun-karakter.png"
+      },
+      {
+        "route": "/oyun/kronik",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\nKronik\nÖlümden sağ çıkan tek kayıt: kim yaşadı, ne dendi, hangi kararlar anıldı.\nTamamlanan hikâyeler: 0/30\nGörülen ikileml",
+        "targets": 0,
+        "file": "oyun-kronik.png"
+      },
+      {
+        "route": "/oyun/mahalle",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\nKİM NEREDE\nMahalle · Demirhan\nBu ay herkes bir yerde; ayda bir mekâna uğrayabilirsin.\nKasabanın gözünde\n0 dost · 0 hasım\nİl",
+        "targets": 0,
+        "file": "oyun-mahalle.png"
+      },
+      {
+        "route": "/oyun/mektep",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\nMektep\nMektep yılları geçti ama ilim her yaşta makbuldür.\nSINAV\nSonraki sınava 4 ders\nBeceri Ağacı\nKitap & Hesap\nAna Sayfa\n",
+        "targets": 0,
+        "file": "oyun-mektep.png"
+      },
+      {
+        "route": "/oyun/menu",
+        "errors": [],
+        "overflow": false,
+        "text": "Menü\nKül & Köz · çevrimdışı\nGEÇIM\nMeslek\n›\nPazar\n›\nAtölye\n›\nMülkler\n›\nAçık İşler\n›\nMektep\n›\nBeceri Ağacı\n›\nGÜÇ & MEVKI\nÖrgütler / ",
+        "targets": 0,
+        "file": "oyun-menu.png"
+      },
+      {
+        "route": "/oyun/meslek",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\nMeslek\nBaşka bir zanaata geçersen kariyerin en alttan başlar.\nAhilik · Peştamal\nDemirci Çırağı  →  Kalfa\nSıradaki sınav içi",
+        "targets": 0,
+        "file": "oyun-meslek.png"
+      },
+      {
+        "route": "/oyun/mulkler",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\n3500\nMÜLKLER\nMülkler\nAdına yazılı her tapu, çocuklarına kalır.\nTOPLAM SERVET\n3500 ⚜\nAYLIK NET (TAHMINI)\n+0 ⚜\nMÜLK · İŞÇI\n0 ",
+        "targets": 0,
+        "file": "oyun-mulkler.png"
+      },
+      {
+        "route": "/oyun/nesil",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\n3500 ⚜\nNesil & Vâris\nHenüz evladın yok. Evlen ve bir ocak kur; soyun böyle sürer.\nAna Sayfa\nKarakter\nİlişkiler\nMenü\nAyı ile",
+        "targets": 0,
+        "file": "oyun-nesil.png"
+      },
+      {
+        "route": "/oyun/npc/[id]",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\nFatma Demirhan\nDemirci · 38 yaş\nTANIŞLAR\nKayıtsız\naceleci\nİlişki +5\nNedenleri gör\nSürekli hava durumundan dert yanar.\nHayal",
+        "targets": 0,
+        "file": "oyun-npc-id.png"
+      },
+      {
+        "route": "/oyun/ocak",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\nKronik\nKüllerden Yeni Ocak\nArdında vâris kalmadı, ama defter yanmadı. Aynı soyadla yeni bir hayat başlar: atanın en çok anı",
+        "targets": 0,
+        "file": "oyun-ocak.png"
+      },
+      {
+        "route": "/oyun/orgutler",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\n3500\nLoncalara görev gör, itibar kazan; güvenildiğinde saflarına katıl.\nÖrgütler / Loncalar\nSaray · Dîvân\nDivana liyakatle ",
+        "targets": 0,
+        "file": "oyun-orgutler.png"
+      },
+      {
+        "route": "/oyun/pazar",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\n3500 ⚜\nPazar\nDemirhan\nPiyasa dengeli · Yerel geçim: Demirci ocağı\nPAZAR TEZGÂHI\nÜç aylığına çarşıda tezgâh kirala: malın gö",
+        "targets": 0,
+        "file": "oyun-pazar.png"
+      },
+      {
+        "route": "/oyun/roman",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\nHAYATIN ROMANI\nBoran Yalçın\n— bir ömrün hikâyesi, küllerin diyarında —\n❧ HAYAT ROMANI ❧\nKararların başlığı ve eğilimi; sonu",
+        "targets": 0,
+        "file": "oyun-roman.png"
+      },
+      {
+        "route": "/oyun/savas",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\n5\nÇatışma\nOrdu cephesi\nYurdunun hükümdarı şu anda ordu toplamıyor. Askerlik mesleği ve Asker Ocağı üyeliği farklıdır; devle",
+        "targets": 0,
+        "file": "oyun-savas.png"
+      },
+      {
+        "route": "/oyun/sehir",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\nDemirhan\nKale · 637 nüfus\n72/100\nGüvenlik\n56/100\nRefah\n%45\nTanınma\nMemleketin\nTanınıyorsun ama henüz bir kanaat yok.\n%45\nTA",
+        "targets": 0,
+        "file": "oyun-sehir.png"
+      },
+      {
+        "route": "/oyun/sosyal",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\n3500 ⚜\nMevki & İtibar\nAdın diyarda nasıl anılıyor? Henüz bir loncaya bağlı değilsin.\nMEVKI\nHalkın ve soyluların gözündeki r",
+        "targets": 0,
+        "file": "oyun-sosyal.png"
+      },
+      {
+        "route": "/oyun/sss",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\nNasıl Oynanır (SSS)\nOyunun mekanikleri kısa cevaplarla. Bir soruya dokun, açılsın.\nZAMAN & YAŞAM\nAy/yıl nasıl ilerler?\n+\nAç",
+        "targets": 0,
+        "file": "oyun-sss.png"
+      },
+      {
+        "route": "/oyun/suc",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\nGölge İşleri\nYasanın gölgesinde kazanç var ama yakalanırsan bedeli ağır.\nGÖLGE DEĞIL\nNam 0\nSonraki mertebeye 2 nam: Yankesi",
+        "targets": 0,
+        "file": "oyun-suc.png"
+      },
+      {
+        "route": "/oyun/tarih",
+        "errors": [],
+        "overflow": false,
+        "text": "‹ Geri\nKronik\nOCAK 1247\nBu diyara bir can daha geldi; doğuştan Güç tarafı kuvvetli.\nAna Sayfa\nKarakter\nİlişkiler\nMenü\nAyı ilerlet",
+        "targets": 0,
+        "file": "oyun-tarih.png"
+      },
+      {
+        "route": "/yeni-oyun",
+        "errors": [],
+        "overflow": false,
+        "text": "YENİ OYUN\n⚜\nAD SOYAD\nCİNSİYET\n♂︎\nErkek\n♀︎\nKız\nÇocukluğunda tabiatın\nYiğit\nKorkusuz ve güçlü; cenkte ömür boyu bir adım önde.\nKurna",
+        "targets": 0,
+        "file": "yeni-oyun.png"
+      }
+    ]
+  },
+  "states": [
+    {
+      "route": "/oyun",
+      "state": "decision",
+      "lang": "tr",
+      "largeText": false,
+      "errors": [],
+      "overflow": false,
+      "text": "Bir Ay Daha\n1251 · Kış\nAbdülkerim Şemseddin Karahisarlı\nDemirci Çırağı · 40 yaş\nSağlık\n82\nTokluk\n75\nAkçe\n3.500",
+      "file": "state-0.png"
+    },
+    {
+      "route": "/oyun",
+      "state": "decision",
+      "lang": "ar",
+      "largeText": false,
+      "errors": [],
+      "overflow": false,
+      "text": "شهر آخر\n1251 · الشتاء\nAbdülkerim Şemseddin Karahisarlı\nصبي الحدّاد · 40 سنة\nالصحة\n82\nالشبع\n75\nالمال\n3,500\nالصي",
+      "file": "state-1.png"
+    },
+    {
+      "route": "/oyun",
+      "state": "decision",
+      "lang": "ru",
+      "largeText": false,
+      "errors": [],
+      "overflow": false,
+      "text": "Ещё один месяц\n1251 · Зима\nAbdülkerim Şemseddin Karahisarlı\nУченик кузнеца · 40 лет\nЗдоровье\n82\nСытость\n75\nМон",
+      "file": "state-2.png"
+    },
+    {
+      "route": "/oyun",
+      "state": "dead",
+      "lang": "tr",
+      "largeText": false,
+      "errors": [],
+      "overflow": false,
+      "text": "Bir Ay Daha\n1251 · Kış\nAbdülkerim Şemseddin Karahisarlı\nDemirci Çırağı · 40 yaş\nSağlık\n82\nTokluk\n75\nAkçe\n3.500",
+      "file": "state-3.png"
+    },
+    {
+      "route": "/oyun",
+      "state": "war",
+      "lang": "tr",
+      "largeText": false,
+      "errors": [],
+      "overflow": false,
+      "text": "Bir Ay Daha\n1251 · Kış\nAbdülkerim Şemseddin Karahisarlı\nAcemi · 40 yaş\nSağlık\n82\nTokluk\n75\nAkçe\n3.500\nNam\n0\nOr",
+      "file": "state-4.png"
+    },
+    {
+      "route": "/oyun/sehir",
+      "state": "war",
+      "lang": "ru",
+      "largeText": false,
+      "errors": [],
+      "overflow": false,
+      "text": "‹ Назад\nЖелезоград\nЗамок · 637 душ\n72/100\nБезопасность\n56/100\nБлагосостояние\n45 %\nУзнаваемость\nТвой родной кра",
+      "file": "state-5.png"
+    },
+    {
+      "route": "/oyun/diplomasi",
+      "state": "ruler",
+      "lang": "ar",
+      "largeText": false,
+      "errors": [],
+      "overflow": false,
+      "text": "‹ رجوع\nالسلالة\nدبلوماسية الحكام\nقرار دبلوماسي للدولة شهريًا. تتشارك السفارات والعهود إجراء الشهر مع قرارات الس",
+      "file": "state-6.png"
+    },
+    {
+      "route": "/oyun/diplomasi",
+      "state": "ruler",
+      "lang": "ru",
+      "largeText": false,
+      "errors": [],
+      "overflow": false,
+      "text": "‹ Назад\nДинастия\nДипломатия правителей\nОдно государственное дипломатическое решение в месяц. Посольства и дого",
+      "file": "state-7.png"
+    },
+    {
+      "route": "/oyun/savas",
+      "state": "war",
+      "lang": "tr",
+      "largeText": false,
+      "errors": [],
+      "overflow": false,
+      "text": "Askerlik: Meslek ekranından Asker yoluna gir. Talim, teçhizat ve cephe desteği savaş becerini geliştirir.\n‹ Ge",
+      "file": "state-8.png"
+    },
+    {
+      "route": "/oyun/nesil",
+      "state": "dead",
+      "lang": "tr",
+      "largeText": false,
+      "errors": [],
+      "overflow": false,
+      "text": "‹ Geri\n3500 ⚜\nNesil & Vâris\nHayatın sona erdi. Soyunu kim sürdürecek ve mirasın nasıl paylaşılacak?\nHanenin at",
+      "file": "state-9.png"
+    },
+    {
+      "route": "/oyun/mektep",
+      "state": "child",
+      "lang": "ar",
+      "largeText": false,
+      "errors": [],
+      "overflow": false,
+      "text": "‹ رجوع\nالمدرسة\nاختر درسًا وادرس. الطفولة أخصب أعمار التعلّم.\nامتحان\n4 دروس حتى الامتحان التالي\nطاقة الدراسة\n2/",
+      "file": "state-10.png"
+    },
+    {
+      "route": "/oyun/ayarlar",
+      "state": "",
+      "lang": "ru",
+      "largeText": true,
+      "errors": [],
+      "overflow": false,
+      "text": "‹ Назад\nНастройки\nПОКОЛЕНИЕ\n1.\nКак играть / ЧаВо\nМеханики, положение, молва и не только\n›\nБлагодарности\nШрифты",
+      "file": "state-11.png"
+    },
+    {
+      "route": "/oyun/pazar",
+      "state": "",
+      "lang": "es",
+      "largeText": true,
+      "errors": [],
+      "overflow": false,
+      "text": "‹ Atrás\n3500 ⚜\nMercado\nHerrería\nMercado equilibrado · Sustento local: Fragua\nPUESTO DE MERCADO\nAlquila un pues",
+      "file": "state-12.png"
+    },
+    {
+      "route": "/oyun/iliskiler",
+      "state": "",
+      "lang": "pt",
+      "largeText": true,
+      "errors": [],
+      "overflow": false,
+      "text": "Ferreiro\nLaços e Desavenças\nTens uma história com 23 pessoas; uns amigos, outros espinhos.\nCasamenteira\nSugere",
+      "file": "state-13.png"
+    },
+    {
+      "route": "/oyun/kronik",
+      "state": "",
+      "lang": "en",
+      "largeText": true,
+      "errors": [],
+      "overflow": false,
+      "text": "‹ Back\nChronicle\nThe only record that survives death: who lived, what was said, which choices were remembered.",
+      "file": "state-14.png"
+    },
+    {
+      "route": "/oyun/menu",
+      "state": "",
+      "lang": "ar",
+      "largeText": true,
+      "errors": [],
+      "overflow": false,
+      "text": "القائمة\nرماد وجمر · بلا اتصال\nالمعيشة\nالمهنة\n›\nالسوق\n›\nالورشة\n›\nالأملاك\n›\nالمهام\n›\nالمدرسة\n›\nشجرة المهارات\n›\nا",
+      "file": "state-15.png"
+    },
+    {
+      "route": "/yeni-oyun",
+      "state": "",
+      "lang": "ru",
+      "largeText": true,
+      "errors": [],
+      "overflow": false,
+      "text": "НОВАЯ ИГРА\n⚜\nПОЛНОЕ ИМЯ\nПОЛ\n♂︎\nМужчина\n♀︎\nЖенщина\nТвой нрав в детстве\nХрабрец\nБесстрашен и силён; пожизненное ",
+      "file": "state-16.png"
+    },
+    {
+      "route": "/oyun/npc/[id]",
+      "state": "ruler",
+      "lang": "ar",
+      "gender": "kadın",
+      "errors": [],
+      "overflow": false,
+      "file": "ruler-ar.png"
+    },
+    {
+      "route": "/oyun/npc/[id]",
+      "state": "ruler",
+      "lang": "ru",
+      "gender": "kadın",
+      "errors": [],
+      "overflow": false,
+      "file": "ruler-ru.png"
+    }
+  ],
+  "androidExport": {
+    "modules": 2374,
+    "bundle": "entry-5def3be8c224dc3296b07930862ad2fe.js",
+    "size": "13 MB",
+    "deviceTest": false,
+    "apkBuilt": false
+  },
+  "sourceCommit": "987b787"
+}

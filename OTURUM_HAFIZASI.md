@@ -1,37 +1,41 @@
-# Kronikler — kısa oturum özeti
+# Kronikler — kısa oturum özeti (18 Ekim 2026)
 
-## Kurallar/erişim
-- Tayma96/kroniklerorj, yalnız apk; Türkçe tek satır commit, force yok.
-- HER tamamlanan küçük iş hemen commit/push. Uzun smoke/300 hayat yok.
-- mobile/AGENTS.md + TASARIM_PUSULASI.md; arşiv/GDD izni yok. Alt ajan kullanma.
-- Yeni metinler tr/en/es/pt/ar/ru; yeni mekanikler çevrimdışı. MP/sunucu dağıtımı yok.
-- Tayma96: env -u GH_TOKEN -u GITHUB_TOKEN GH_CONFIG_DIR=/workspace/.gh-tayma96 gh ...
-  Miras GH_TOKEN Tayma67; kimlik dosyalarını okuma/yazdırma.
+## Kurallar / erişim
+- Tayma96/kroniklerorj; yalnız apk. Her tamamlanan küçük iş hemen commit/push.
+- Türkçe tek satır commit; force/cron/alt ajan yok. Uzun smoke/life simülasyonu yok.
+- mobile/AGENTS.md + TASARIM_PUSULASI.md geçerli; arşivi izinsiz açma.
+- Yeni metinler tr/en/es/pt/ar/ru. APK/PR/dağıtım yalnız açıkça istenirse.
+- Tayma96 doğrulandı. Miras GH_TOKEN Tayma67; saved CLI kullan:
+  env -u GH_TOKEN -u GITHUB_TOKEN GH_CONFIG_DIR=/workspace/.gh-tayma96 gh ...
+- Push: git -c credential.helper= -c 'credential.helper=!env -u GH_TOKEN -u GITHUB_TOKEN GH_CONFIG_DIR=/workspace/.gh-tayma96 gh auth git-credential' push origin HEAD:apk
+- Kimlik/anahtar dosyalarını okuma veya yazdırma.
+
+## Son kullanıcı hedefi / yapılanlar
+- Kullanıcı bütün sayfaları onaylanan mockup diline dönüştürmemizi istedi.
+- 42/42 gerçek rota dönüştürüldü; mobile/lib/screen-design.ts envanteri.
+- Referans: docs/tasarim/ekran-taslaklari-v1.png. Gerçek UI tarayıcı galerisi:
+  docs/tasarim/GALERI.md; düzen tablosu, 42 görüntü, kontrol kayıtları mevcut.
+- Ana ekran: gerçek dört gösterge, kalıcı aylık karar, erken cephe/elçilik uyarıları,
+  son3 gelişme/tam defter, kaydırılan çalışma; ölümde erken vâris/ocak eylemleri.
+- Şehir: panorama, asayisOf/cityFx ile güncel durum, iki sütun mekânlar, ambar/yardım.
+- Ortak sahne/parşömen başlık/kart, 44 dokunma alanı, daha okunur metinler.
+- NPC: mevcut yaş/yüz kimliği korunur; 11 meslek+hükümdar, 4 atlas/36 gövde-duruş.
+  Ruh hâli duruşu değiştirir; ayrı yüz mimikleri yok. Çocuk/ergen yetişkin gövdesi almaz.
+- Son kaynak 987b787. Önceki: b815953 aylık kayıt, a9910f2 NPC sanatı,
+  ae44ffd ana/şehir, 6415db8 ortak sistem; kalan aileler ayrı pushlandı.
+- Aylık risk/fırsat ara sonucu kalıcı; yeniden açma/çift seçim/hızlı ilerleme korumalı.
+
+## Kontroller / sınırlar
+- tsc; i18n/ikon + dil karışması; aylık karar ve NPC görsel hedefli kontroller temiz.
+- 42 sayfa × 320/390, tarayıcıda 4×CPU; hata/taşma/küçük ölçülen düğme yok.
+- 19 ek dil/durum; uzun ad, çocuk, hükümdar, savaş, ölüm/vâris, 1.3× yazı.
+- UI çift seçim/şehir rotası/yardım açılımı temiz. Android Metro export 2374 modül,
+  13MB JS; son paket entry-5def3be8c224dc3296b07930862ad2fe.js.
+- Tarayıcı adaptörü ses/ağ/Skia/depolama/sekme kabuğunu taklit eder. Fiziksel cihaz,
+  Hermes, animasyon performansı, klavye ve Android font büyütmesi test edilmedi.
+- Claude GDD yalnız incelendi; mülk tavanı/sistem dondurma/gelir kesintisi kabul edilmedi.
+- Önceki savaş/diplomasi/NPC ekonomi ayrıntıları: docs/SAVAS_VE_HUKUMDARLIK.md.
 
 ## APK
-- Eski 3 commit d9e6391/5f4f7d6/9a695c2 pushlandı. 22906ce kısa APK kontrol seçeneği.
-- Actions 39125665457 başarılı. apk-latest hâlâ 22906ce; sonraki kodu İÇERMEZ.
+- Yeni APK üretilmedi. apk-latest hâlâ 22906ce; yeni motor/tasarımı İÇERMEZ.
 - https://github.com/Tayma96/kroniklerorj/releases/download/apk-latest/Kronikler.apk
-- ZIP/Debug v2 imza doğrulandı: com.kronikler.app 1.0.0(100), ARM64, gömülü JS/23 lib.
-
-## Oyun motoru
-- 496bc2a: devlet ordusu/asker katılımı; üç manga teması, sayı/moral/ikmal/yaralı.
-- f44fb88..a0019e7: kalıcı savaş hasarı/darlık/göç/işgücü, gerçek ekonomi/gelir;
-  NPC hane göçü/dönüşü, sivil yardım, sınır savunması, ateşkes/işgal ve taht mirası.
-- 3f17491: tüm canlı isimli NPC tüketimi/mesleği/yaşı; tüccar/şifacı/asker/müzisyen
-  hizmeti, gerçek nüfus kimliği+sürümle üretim önbelleği. Bağımsız NPC cüzdanı yok.
-- a159581/f7c0295: diplomacy.ts, gerçek kişi hükümdar/veraset/hazine, güven/kin,
-  elçilik/kabul/ret/karşı teklif; saldırmazlık/ticaret/savunma/yardım/müzakereli barış.
-- 0bc4905: Hanedan→Diplomasi, gerçek profil/şartlar/teklifler; şehir işgücü kartı.
-- 9990df5: bölgesel ambar 8 gerçek buğday, kapasite40, darlıkta ayda4 dağıtım,
-  yılda1 bozulma; sivil yardımla ortak aylık hak. Taşınma/vâris/kayıt korunur.
-- 02b5e6b: NPC bağımsız barış/ahit kararları, savaş seçimine mizaç/güven/kin.
-- f03d017: yardım darlık−3/göç−1. 4fa355e: haraç karşı hazineden; ilişki bozar.
-- 47180df: yeni kısa NPC/diplomasi kontrolleri APK/AAB kalite kapısında.
-
-## Doğrulama/sınırlar
-- tsc, motor/UI bundle, check-war-world/war-impact/army/war/npc-economy/diplomacy/
-  diplomacy-game; kayıt göçü, vâris, 6 dil/ikon temiz. Protokol değişmedi.
-- Geniş karakter-ayna yanlışlıkla başlatılıp durduruldu; başarılı test sayılmadı.
-- Gerçek telefon, 320/390 görsel ve CPU testi yapılmadı. Yeni APK derlenmedi.
-- Ayrıntı: docs/SAVAS_VE_HUKUMDARLIK.md. Esir/harita birlik/kuşatma/özel NPC maliyesi yok.
