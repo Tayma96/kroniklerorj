@@ -1,11 +1,11 @@
 const assert = require('node:assert/strict'), fs = require('node:fs'), path = require('node:path'), esbuild = require('esbuild');
 (async () => {
   const root = path.resolve(__dirname, '..');
-  const built = await esbuild.build({ stdin: { contents: 'export * as g from "./lib/game"; export * as d from "./lib/diplomacy"; export * as w from "./lib/war-world"; export * as a from "./lib/army";', resolveDir: root, loader: 'ts' }, bundle: true, platform: 'node', format: 'cjs', write: false,
+  const built = await esbuild.build({ stdin: { contents: 'export * as g from "./lib/game"; export * as d from "./lib/diplomacy"; export * as w from "./lib/war-world"; export * as a from "./lib/army"; export { renderEvt, tFor } from "./lib/i18n";', resolveDir: root, loader: 'ts' }, bundle: true, platform: 'node', format: 'cjs', write: false,
     alias: { '@react-native-async-storage/async-storage': path.join(root, 'scripts/_smoke/as-stub.cjs') },
-    plugins: [{ name: 'diplomacy-test-only', setup(b) { b.onLoad({ filter: /[/\\]lib[/\\]game\.ts$/ }, ({ path: file }) => ({ contents: fs.readFileSync(file, 'utf8') + '\nexport {realmDiplomacyTick};', loader: 'ts' })); } }] });
+    plugins: [{ name: 'diplomacy-test-only', setup(b) { b.onLoad({ filter: /[/\\]lib[/\\]game\.ts$/ }, ({ path: file }) => ({ contents: fs.readFileSync(file, 'utf8') + '\nexport {realmDiplomacyTick, realmDiplomacyAi};', loader: 'ts' })); } }] });
   const box = { exports: {} }; new Function('module', 'exports', 'require', built.outputFiles[0].text)(box, box.exports, require);
-  const { g, d, w, a } = box.exports, copy = structuredClone;
+  const { g, d, w, a, renderEvt, tFor } = box.exports, copy = structuredClone;
   const king = g.newGame('Elçi', 'Kontrol', 'erkek');
   Object.assign(king.player, { age: 40, base_age: 40, crowned: true, crownSeat: 'demirhan', location_name: 'Demirhan', home_name: 'Demirhan', money: 20000, honor: 70, reputation: 40 });
   king.rng_state = 1;
@@ -55,6 +55,34 @@ const assert = require('node:assert/strict'), fs = require('node:fs'), path = re
   assert(!treaty.state.player.crownConquests?.includes(target)); assert.equal(treaty.state.warWorld.regions[target].damage, 30);
   assert(!treaty.state.warWorld.regions[target].occupation); assert(w.truceLeft(treaty.state.warWorld, 'demirhan', target, 0) > 0);
   const restored = g.migrate(JSON.parse(JSON.stringify(treaty.state))); assert(restored.realmArmyWar.peace); assert.equal(restored.diplomacy.accords.length, 1);
+  // Dış saraylar kendi aralarında yardım/savunma/saldırmazlık kurabilir.
+  const ai = copy(king); ai.player.crowned = false; ai.turn = 3; ai.rng_state = 1; ai.warWorld = w.emptyWarWorld();
+  for (const id of Object.keys(ai.diplomacy.rulers)) { ai.diplomacy.rulers[id].treasury = 800; ai.diplomacy.rulers[id].aggression = 50; ai.warWorld.regions[id] = { ...w.peacefulRegion(), shortage: 40 }; }
+  g.realmDiplomacyAi(ai, []); assert.equal(ai.diplomacy.accords[0].kind, 'yardim');
+  const foreignAid = ai.diplomacy.accords[0]; assert.notEqual(foreignAid.a, foreignAid.b); assert(ai.diplomacy.rulers[foreignAid.b].treasury < 800);
+  const allied = copy(king); allied.player.crowned = false; allied.turn = 3; allied.rng_state = 1;
+  const realms = Object.keys(allied.diplomacy.rulers);
+  for (const x of realms) for (const y of realms) if (x !== y) allied.diplomacy.relations[d.realmPair(x, y)] = { trust: 30, grievance: 0 };
+  g.realmDiplomacyAi(allied, []); assert.equal(allied.diplomacy.accords[0].kind, 'savunma');
+  const cautious = copy(king); cautious.player.crowned = false; cautious.turn = 3; cautious.rng_state = 1;
+  for (const ruler of Object.values(cautious.diplomacy.rulers)) ruler.aggression = 25;
+  g.realmDiplomacyAi(cautious, []); assert.equal(cautious.diplomacy.accords[0].kind, 'ateskes');
+  // Yardım tek başına askerî saldırmazlık değildir; ticaret/savunma/barış öyledir.
+  const aidOnly = copy(king); d.signAccord(aidOnly.diplomacy, 'demirhan', target, 'yardim', 0, 'aid-only'); assert.equal(g.crownTreaty(aidOnly, target), null);
+  const npcPeace = copy(peace); npcPeace.player.crowned = false; npcPeace.turn = 1; npcPeace.rng_state = 1;
+  npcPeace.warWorld.regions.demirhan = { ...w.peacefulRegion(), exhaustion: 80 }; npcPeace.diplomacy.rulers.demirhan.aggression = 25;
+  g.realmDiplomacyAi(npcPeace, [npcPeace.realmArmyWar]); assert(npcPeace.realmArmyWar.peace, 'iki bağımsız hükümdar barış yapamadı');
+  assert(!npcPeace.player.zafer); assert(!npcPeace.warWorld.regions[target].occupation);
+  const incoming = copy(peace); incoming.turn = 1; incoming.rng_state = 1; incoming.warWorld.regions[target].exhaustion = 80; incoming.diplomacy.rulers[target].aggression = 25;
+  g.realmDiplomacyAi(incoming, [incoming.realmArmyWar]); assert.equal(incoming.diplomacy.offers[0].kind, 'baris'); assert(!incoming.realmArmyWar.peace, 'oyuncunun barış kararı atlandı');
+  const pending = copy(incoming); g.realmDiplomacyAi(incoming, [incoming.realmArmyWar]); assert.deepEqual(incoming, pending, 'barış elçiliği yinelendi');
+  const peaceAnswer = g.answerRealmOffer(incoming, incoming.diplomacy.offers[0].id, true); assert(peaceAnswer.realmArmyWar.peace);
+  for (const state of [accepted.state, successor, breached, counter, refused, relief, sponsored, defense, treaty.state, ai, allied, cautious, npcPeace, incoming, peaceAnswer]) {
+    for (const event of state.history.filter(e => /^(dp|ww)\./.test(e.k || ''))) for (const lang of ['tr', 'en', 'es', 'pt', 'ar', 'ru']) {
+      const rendered = renderEvt(event.k, event.text || '', event.p, lang, key => tFor(lang, key));
+      assert(!/undefined|NaN|\[object|%[1-9]|^dp\.|^ww\./.test(rendered), `${lang}: ${rendered}`);
+    }
+  }
   const mp = copy(king); mp.mpRealm = true; assert.equal(g.proposeRealmAccord(mp, target, 'ticaret').state, mp); const snap = copy(mp); g.realmDiplomacyTick(mp); assert.deepEqual(mp, snap);
   console.log('HÜKÜMDAR DİPLOMASİSİ: gerçek kişi/veraset, elçilik/karşı teklif, aylık kilit, yardım bütçesi/temerrüt, savunma askeri, fetihsiz barış, kayıt ve MP temiz.');
 })().catch(e => { console.error(e); process.exitCode = 1; });
