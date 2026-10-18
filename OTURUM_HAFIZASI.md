@@ -5,39 +5,31 @@
 - Türkçe tek satır commit; force/cron/alt ajan yok. Uzun smoke/life simülasyonu yok.
 - mobile/AGENTS.md + TASARIM_PUSULASI.md geçerli; arşivi izinsiz açma.
 - Yeni metinler tr/en/es/pt/ar/ru. APK/PR/dağıtım yalnız açıkça istenirse.
-- Tayma96 doğrulandı. Miras GH_TOKEN Tayma67; saved CLI kullan:
+- Tayma96 API ile doğrulandı. Miras GH_TOKEN Tayma67; saved CLI kullan:
   env -u GH_TOKEN -u GITHUB_TOKEN GH_CONFIG_DIR=/workspace/.gh-tayma96 gh ...
 - Push: git -c credential.helper= -c 'credential.helper=!env -u GH_TOKEN -u GITHUB_TOKEN GH_CONFIG_DIR=/workspace/.gh-tayma96 gh auth git-credential' push origin HEAD:apk
 - Kimlik/anahtar dosyalarını okuma veya yazdırma.
 
-## Son kullanıcı hedefi / yapılanlar
-- Kullanıcı bütün sayfaları onaylanan mockup diline dönüştürmemizi istedi.
-- Kullanıcı son uyarlamayı REDDETTİ: NPC yüz/gövde montajı kötü, mockup benzerliği yok.
-- Bitmiş/onaylı tasarım iddiası YANLIŞTI. Önce ana/NPC/şehir birebir yeniden yapılacak.
-- Yüz/gövde montajı kaldırıldı; kimlik portresi bölünmez.
-- 42 rota ilk kez stillendi; mobile/lib/screen-design.ts envanteri.
-- Referans: docs/tasarim/ekran-taslaklari-v1.png. Gerçek UI tarayıcı galerisi:
-  docs/tasarim/GALERI.md; düzen tablosu, 42 görüntü, kontrol kayıtları mevcut.
-- Ana ekran: gerçek dört gösterge, kalıcı aylık karar, erken cephe/elçilik uyarıları,
-  son3 gelişme/tam defter, kaydırılan çalışma; ölümde erken vâris/ocak eylemleri.
-- Şehir: panorama, asayisOf/cityFx ile güncel durum, iki sütun mekânlar, ambar/yardım.
-- Ortak sahne/parşömen başlık/kart, 44 dokunma alanı, daha okunur metinler.
-- NPC: mevcut yaş/yüz kimliği korunur; 11 meslek+hükümdar, 4 atlas/36 gövde-duruş.
-  Ruh hâli duruşu değiştirir; ayrı yüz mimikleri yok. Çocuk/ergen yetişkin gövdesi almaz.
-- Son kaynak 987b787. Önceki: b815953 aylık kayıt, a9910f2 NPC sanatı,
-  ae44ffd ana/şehir, 6415db8 ortak sistem; kalan aileler ayrı pushlandı.
-- Aylık risk/fırsat ara sonucu kalıcı; yeniden açma/çift seçim/hızlı ilerleme korumalı.
+## Son kullanıcı şartı / tasarım durumu
+- Kullanıcı önce bütün sayfaları istedi; sonra ilk uyarlamayı sert biçimde REDDETTİ.
+- Son şart: yalnız sevdiği üç mockup birebir yapılabiliyorsa uygulansın.
+- Referans docs/tasarim/ekran-taslaklari-v1.png; tasarım bitmiş/onaylı DEĞİL.
+- 509b9a5: kötü NPC yüz/gövde montajı çalışma zamanından kaldırıldı.
+- Yeni deneme de eşleşmedi. Uygulama değişiklikleri geri alındı; yalnız docs altında
+  kaynak yama, iki yeni sanat resmi ve tarayıcı görüntüleri korundu:
+  docs/tasarim/duzeltme-v2/README.md. Bu klasör oyunda kullanılmaz.
+- Yama tabanı 509b9a5. Onaylanmış tasarım gibi yeniden uygulama.
+- Eski reddedilen 42 sayfalık uyarlama temel dalda hâlâ var; düzelmiş sayma.
+- docs/tasarim/GALERI.md eski reddedilen galeri; EKRANLAR.md durum düzeltildi.
+- Bütüncül meslek/ruh hâli NPC sahne seti yok; tek k07/olgun/demirci resmi denemede.
 
-## Kontroller / sınırlar
-- tsc; i18n/ikon + dil karışması; aylık karar ve NPC görsel hedefli kontroller temiz.
-- 42 sayfa × 320/390, tarayıcıda 4×CPU; hata/taşma/küçük ölçülen düğme yok.
-- 19 ek dil/durum; uzun ad, çocuk, hükümdar, savaş, ölüm/vâris, 1.3× yazı.
-- UI çift seçim/şehir rotası/yardım açılımı temiz. Android Metro export 2374 modül,
-  13MB JS; son paket entry-5def3be8c224dc3296b07930862ad2fe.js.
-- Tarayıcı adaptörü ses/ağ/Skia/depolama/sekme kabuğunu taklit eder. Fiziksel cihaz,
-  Hermes, animasyon performansı, klavye ve Android font büyütmesi test edilmedi.
+## Korunan motor / kontroller
+- Aylık karar/risk/fırsat ara sonucu kalıcı; yeniden açma/çift seçim/hızlı ilerleme korumalı.
+- Savaş/diplomasi/NPC ekonomi: docs/SAVAS_VE_HUKUMDARLIK.md.
 - Claude GDD yalnız incelendi; mülk tavanı/sistem dondurma/gelir kesintisi kabul edilmedi.
-- Önceki savaş/diplomasi/NPC ekonomi ayrıntıları: docs/SAVAS_VE_HUKUMDARLIK.md.
+- Denemede tsc, i18n/ikon, dil karışması ve 320/390 ortak alt menü testi geçti;
+  bunlar görsel eşleşme kanıtı değil. Deneme uygulamada etkin değil.
+- Tarayıcı önizlemesi fiziksel cihaz/Android/Hermes testi değildir. Uzun smoke yok.
 
 ## APK
 - Yeni APK üretilmedi. apk-latest hâlâ 22906ce; yeni motor/tasarımı İÇERMEZ.

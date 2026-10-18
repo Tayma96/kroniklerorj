@@ -1,5 +1,9 @@
 # Kronikler — ekran ve NPC sanat yönü
 
+> Durum: ilk uyarlama kullanıcı tarafından reddedildi. Son şart yalnız üç referans
+> ekranla birebir eşleşen uygulamadır. [Yeni deneme](duzeltme-v2/README.md) de bu
+> hedefi karşılamadığı için uygulamaya alınmadı. Bu belge bitiş/onay kaydı değildir.
+
 Kullanıcı 18 Ekim 2026'da seçilen iyileştirme sırasını ve sayfa taslaklarına göre tasarım
 çalışmasını yetkilendirdi. Claude GDD'si bütünüyle kabul edilmedi; mevcut Tasarım
 Pusulası geçerlidir. Mülk tavanı, otomatik gelir kesintisi, sistem dondurma uygulanmaz.
@@ -21,7 +25,7 @@ ayrıntı sırası korunur. Doku metnin arkasında kısık; resim ağırlıkla �
 | Aile | Düzen ve korunacak bilgi |
 |---|---|
 | Ana ekran | Yaş/mevsim sahnesi, kişi ve gerçek dört gösterge; aylık karar; acil insan/savaş/elçilik uyarısı; son üç gelişme; tam deftere bağlantı. İç içe günlük kaydırması yok. |
-| NPC profili | Meslek ortamı ve kıyafet/duruş katmanı; kalıcı yaş yüzü; gerçek ad/yaş/meslek/ruh hâli ve ilişki. Sonra tanıma ve konuşma. Uydurma yaşam öyküsü yazılmaz. |
+| NPC profili | Kalıcı yaş/yüz kimliği ve meslek ortamı; gerçek ad/yaş/meslek/ruh hâli ve ilişki. Sonra tanıma ve konuşma. Uydurma yaşam öyküsü yazılmaz. |
 | Şehir | Mekân sahnesi; gerçek yerel durum; iki sütun rota kartları; sivil yardım/ambar; ayrıntılar aşağıda. |
 | Meslek/pazar/mülk/ordu | Ortak başlık ve okunur işlem kartları; bedel, şart ve sonuç birlikte. Var olan mekanik ve ekonomi kapıları korunur. |
 | Hanedan/diplomasi | Devlet/kişi kimliği; yürürlükteki sözler; seçili tek hedef ve işlem; devam eden yükümlülükler açık. |
@@ -31,13 +35,11 @@ ayrıntı sırası korunur. Doku metnin arkasında kısık; resim ağırlıkla �
 ## NPC kimliği, meslek, ruh hâli
 
 Mevcut yaş/yüz ailesi korunur: kişi meslek değiştirince başka bir yüze dönüşmez.
-Yeni sanat katmanları 11 meslek ve hükümdar için 36 gövde/duruş içerir; hükümdarlık kişi kimliğiyle
-bulunur, kişinin önceki asker mesleği rolü gizlemez. Yeni kıyafetler başsız/gövde
-katmanıdır; yaş yüzü üstte ayrı yerleştirilir. Ruh hâli aynı kıyafetin sakin, açık/neşeli
-ve gergin duruşunu seçer; renk ve mevcut metin de durumu destekler. Bütün yüzlere ayrı
-mimik resmi üretildiği iddia edilmez. Çocuk/ergen ve henüz sanatı olmayan meslekler
-kendi mevcut yaş yüzü ve anlamlı ortamıyla kalır. Sade modda hareket ve ek katmanlar
-azaltılır. Yeni kaynaklar mevcut portreleri ezmez.
+Reddedilen yüz/gövde montajı `509b9a5` ile çalışma zamanından kaldırıldı. Mevcut
+uygulama bütün portre ve meslek ortamını ayrı gösterir; 36 gövde/duruş atlası artık
+ekranda kullanılmaz. Meslek ve ruh hâline göre bütüncül sahne seti tamamlanmış değildir.
+Yeni denemede yalnız k07/olgun/demirci için tek bütüncül sahne üretildi; bu sahne de
+birebir kabul hedefini karşılamayan denemeyle birlikte uygulamanın dışında tutulur.
 
 ## Kabul
 

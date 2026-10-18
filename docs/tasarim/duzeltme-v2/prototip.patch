@@ -1,0 +1,620 @@
+diff --git a/mobile/app/_layout.tsx b/mobile/app/_layout.tsx
+index db4ca81..e9d9823 100644
+--- a/mobile/app/_layout.tsx
++++ b/mobile/app/_layout.tsx
+@@ -1,5 +1,5 @@
+ import { useFonts, Cinzel_400Regular, Cinzel_700Bold } from "@expo-google-fonts/cinzel";
+-import { CrimsonText_400Regular, CrimsonText_400Regular_Italic } from "@expo-google-fonts/crimson-text";
++import { CrimsonText_400Regular, CrimsonText_400Regular_Italic, CrimsonText_600SemiBold } from "@expo-google-fonts/crimson-text";
+ import { Stack } from "expo-router";
+ import { SafeAreaProvider } from "react-native-safe-area-context";
+ import { StatusBar } from "expo-status-bar";
+@@ -29,7 +29,7 @@ try {
+ 
+ export default function RootLayout() {
+   const [loaded, fontError] = useFonts({
+-    Cinzel_400Regular, Cinzel_700Bold, CrimsonText_400Regular, CrimsonText_400Regular_Italic,
++    Cinzel_400Regular, Cinzel_700Bold, CrimsonText_400Regular, CrimsonText_400Regular_Italic, CrimsonText_600SemiBold,
+   });
+   const [fontTimeout, setFontTimeout] = useState(false);
+   useEffect(() => { const t = setTimeout(() => setFontTimeout(true), 6000); return () => clearTimeout(t); }, []);
+diff --git a/mobile/app/oyun/_layout.tsx b/mobile/app/oyun/_layout.tsx
+index b831e66..b4a5fe1 100644
+--- a/mobile/app/oyun/_layout.tsx
++++ b/mobile/app/oyun/_layout.tsx
+@@ -1,3 +1,4 @@
++import { GameNavigation } from "../../lib/game-navigation";
+ import { Tabs, useRouter, usePathname } from "expo-router";
+ import { View, Pressable, Text, useWindowDimensions } from "react-native";
+ import Svg, { Defs, RadialGradient, Stop, Rect } from "react-native-svg";
+@@ -63,7 +64,7 @@ function AdvanceFab({ bottom }: { bottom: number }) {
+       <View pointerEvents="box-none" style={{ position: "absolute", left: 0, right: 0, bottom: bottom + 16, alignItems: "center" }}>
+         <Pressable disabled={dead} accessibilityRole="button" accessibilityLabel={t("mp.ready")} onPress={doReady} style={{
+           minWidth: 100, paddingVertical: 13, paddingHorizontal: 22, borderRadius: 26, alignItems: "center",
+-          borderWidth: 3, borderColor: "rgba(13,10,6,0.98)",
++          borderWidth: 5, borderColor: "#5C431B",
+           backgroundColor: ready ? "rgba(127,166,106,0.92)" : C.gold, opacity: dead ? 0.4 : 1,
+           shadowColor: "#000", shadowOpacity: 0.45, shadowRadius: 7, shadowOffset: { width: 0, height: 3 }, elevation: 9,
+         }}>
+@@ -81,30 +82,26 @@ function AdvanceFab({ bottom }: { bottom: number }) {
+   const waiting = !!pendingMonthScene(state);
+   return (
+     <View pointerEvents="box-none" style={{ position: "absolute", left: 0, right: 0, bottom: bottom + 16, alignItems: "center" }}>
+-      <View style={{ width: 100, minHeight: 96, alignItems: "center", justifyContent: "flex-end" }}>
+-        {/* Hero'dan taşınan altın toz — düğmeden yükselir */}
+-        <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0 }}>
+-          <Ambiance width={100} height={92} flakes={false} count={6} />
+-        </View>
++      <View style={{ width: 100, minHeight: 108, alignItems: "center", justifyContent: "flex-end" }}>
+         <Animated.View style={style}>
+           <Pressable
+             accessibilityRole="button" accessibilityLabel={t("a11y.advance")} accessibilityHint={t(waiting ? "flow.pendingHint" : "adv.ffHint")}
+-            onPress={() => { if (waiting) { hap("tap"); router.push("/oyun"); return; } hap("advance"); playAdvance(); doAdvance(1); }}
+-            onLongPress={() => { if (waiting) { hap("tap"); router.push("/oyun"); return; } hap("success"); playAdvance(); apply((s) => advanceWithMonthScene(s, 6, true)); }}
++            onPress={() => { router.navigate("/oyun"); if (waiting) { hap("tap"); router.push("/oyun"); return; } hap("advance"); playAdvance(); doAdvance(1); }}
++            onLongPress={() => { router.navigate("/oyun"); if (waiting) { hap("tap"); router.push("/oyun"); return; } hap("success"); playAdvance(); apply((s) => advanceWithMonthScene(s, 6, true)); }}
+             delayLongPress={420}
+             style={{
+-              width: 60, height: 60, borderRadius: 30, backgroundColor: C.gold,
++              width: 74, height: 74, borderRadius: 37, backgroundColor: C.gold,
+               alignItems: "center", justifyContent: "center",
+-              borderWidth: 3, borderColor: "rgba(13,10,6,0.98)",
++              borderWidth: 5, borderColor: "#5C431B",
+               shadowColor: "#000", shadowOpacity: 0.45, shadowRadius: 7, shadowOffset: { width: 0, height: 3 }, elevation: 9,
+             }}
+           >
+-            <GameIcon name="ilerle" size={26} color={C.inkOnGold} />
++            <View pointerEvents="none" style={{width:60,height:60,borderRadius:30,borderWidth:1,borderColor:C.goldSoft,alignItems:"center",justifyContent:"center"}}><GameIcon name="compass" size={34} color={C.inkOnGold} /></View>
+           </Pressable>
+         </Animated.View>
+         {/* Çekirdek eylem ikon-only kalmasın: mikro etiket (a11y metniyle aynı anahtar) */}
+         {/* Uzun dillerde (AVANZAR EL MES) etiket yandaki sekme simgelerine taşmasın: düğme sütununa sığdırılır */}
+-        <Text style={{ width: 100, textAlign: "center", fontFamily: F.display, fontSize: 12, lineHeight: 16, color: C.gold, marginTop: 3 }}>{t(waiting ? "flow.pending" : "adv.kisa")}</Text>
++        <Text style={{ width: 100, textAlign: "center", fontFamily: F.heading, fontSize: 15, lineHeight: 17, color: C.gold, marginTop: 3 }}>{t(waiting ? "flow.pending" : "visual.advance")}</Text>
+ 
+       </View>
+     </View>
+@@ -166,23 +163,28 @@ export default function OyunLayout() {
+   useEffect(() => { const ad = yol.replace(/^\/oyun\/?/, "").split("/")[0] || "index"; oturumEkran(ad); }, [yol]); // cihazda kalan oturum kaydı
+   return (
+     <View style={{ flex: 1 }}>
+-      <Tabs screenOptions={{
++      <Tabs tabBar={({ state: navState, navigation }) => <GameNavigation active={navState.routes[navState.index]?.name || "index"} bottom={insets.bottom} onSelect={name => {
++        const target = navState.routes.find(route => route.name === name);
++        if (!target) return;
++        const event = navigation.emit({ type: "tabPress", target: target.key, canPreventDefault: true });
++        if (!event.defaultPrevented) navigation.navigate(target.name);
++      }} />} screenOptions={{
+         headerShown: false,
+         tabBarStyle: { backgroundColor: "rgba(9,6,3,0.99)", borderTopWidth: 1.5, borderTopColor: "rgba(201,168,76,0.4)", height: 76 + insets.bottom, paddingBottom: insets.bottom + 6, paddingTop: 10, shadowColor: "#000", shadowOpacity: 0.5, shadowRadius: 8, shadowOffset: { width: 0, height: -3 }, elevation: 14 },
+         tabBarActiveTintColor: C.gold,
+         tabBarInactiveTintColor: C.parchmentMuted,
+-        tabBarItemStyle: { flexGrow: 0, flexShrink: 0, width: tabWidth },
++        tabBarItemStyle: { flexBasis: "auto", flexGrow: 0, flexShrink: 0, width: tabWidth },
+         tabBarLabel: ({ color, children }) => <Text style={{ fontFamily: F.display, fontSize: 12, lineHeight: 16, color, textAlign: "center", paddingHorizontal: 2 }}>{children}</Text>,
+       }}>
+-        <Tabs.Screen name="index" options={{ title: t("tab.home"), tabBarIcon: ({ focused }) => <TabIcon name="ana" focused={focused} /> }} />
+-        <Tabs.Screen name="karakter" options={{ title: t("tab.character"), tabBarItemStyle: { flexGrow: 0, flexShrink: 0, width: tabWidth, marginRight: 76 }, tabBarIcon: ({ focused }) => <TabIcon name="karakter" focused={focused} /> }} />
++        <Tabs.Screen name="index" options={{ href: null }} />
++        <Tabs.Screen name="karakter" options={{ title: t("tab.character"), tabBarItemStyle: { flexBasis: "auto", flexGrow: 0, flexShrink: 0, width: tabWidth, marginRight: 76 }, tabBarIcon: ({ focused }) => <TabIcon name="karakter" focused={focused} /> }} />
+         <Tabs.Screen name="iliskiler" options={{ title: t("tab.relations"), tabBarIcon: ({ focused }) => <TabIcon name="iliskiler" focused={focused} /> }} />
+-        <Tabs.Screen name="menu" options={{ title: t("tab.menu"), tabBarIcon: ({ focused }) => <TabIcon name="menu" focused={focused} /> }} />
++        <Tabs.Screen name="menu" options={{ href: null }} />
+         {/* Gizli (sekmede görünmez ama navigasyonla açılır) */}
+         <Tabs.Screen name="pazar" options={{ href: null }} />
+         <Tabs.Screen name="sss" options={{ href: null }} />
+         <Tabs.Screen name="emek" options={{ href: null }} />
+-        <Tabs.Screen name="sehir" options={{ href: null }} />
++        <Tabs.Screen name="sehir" options={{ title: t("scr.sehir") }} />
+         <Tabs.Screen name="meslek" options={{ href: null }} />
+         <Tabs.Screen name="suc" options={{ href: null }} />
+         <Tabs.Screen name="mektep" options={{ href: null }} />
+@@ -201,7 +203,7 @@ export default function OyunLayout() {
+         <Tabs.Screen name="diyar/[name]" options={{ href: null }} />
+         <Tabs.Screen name="harita" options={{ href: null }} />
+         <Tabs.Screen name="gorevler" options={{ href: null }} />
+-        <Tabs.Screen name="tarih" options={{ href: null }} />
++        <Tabs.Screen name="tarih" options={{ title: t("visual.navJournal") }} />
+         <Tabs.Screen name="ayarlar" options={{ href: null }} />
+         <Tabs.Screen name="roman" options={{ href: null }} />
+         <Tabs.Screen name="kronik" options={{ href: null }} />
+@@ -211,8 +213,8 @@ export default function OyunLayout() {
+         <Tabs.Screen name="copcatan" options={{ href: null }} />
+         <Tabs.Screen name="mahalle" options={{ href: null }} />
+       </Tabs>
+-      <GlobalBackdrop bottom={76 + insets.bottom} />
+-      <NavOrnament bottom={76 + insets.bottom} />
++      <GlobalBackdrop bottom={82 + insets.bottom} />
++
+       <AdvanceFab bottom={insets.bottom} />
+       <StatDeltaOverlay />
+       {/* MP'deyken kişisel ekranlar SP kabuğunda açılır — oyuncu diyardan koptuğunu sanmasın: dönüş şeridi hep üstte (test bulgusu) */}
+diff --git a/mobile/app/oyun/index.tsx b/mobile/app/oyun/index.tsx
+index 7bf27ab..06811c6 100644
+--- a/mobile/app/oyun/index.tsx
++++ b/mobile/app/oyun/index.tsx
+@@ -1,6 +1,6 @@
+ import { DesignPressable as Pressable } from "../../lib/design-pressable";
+ import { RealmNotices } from "../../lib/realm-notices-ui";
+-import { View, Text, ScrollView, ImageBackground, StyleSheet, Dimensions, Modal } from "react-native";
++import { View, Text, ScrollView, ImageBackground, StyleSheet, Dimensions, Modal, useWindowDimensions } from "react-native";
+ import { Ambiance, LoadingScreen, KenBurns } from "../../lib/fx";
+ import Animated, { FadeInDown, FadeIn } from "react-native-reanimated";
+ import { useState, useEffect, useRef } from "react";
+@@ -15,7 +15,7 @@ import { ayinSahnesi, Dilemma, Choice } from "../../lib/events";
+ import { SinavKartiModal, SinavKartiVeri } from "../../lib/kart3d";
+ import { rakipKartVerisi } from "../../lib/rakip-ui";
+ import { HesapModal } from "../../lib/hesap-ui";
+-import { careerTitleL, placeName } from "../../lib/locale-data";
++import { careerTitleL, professionNameL, placeName } from "../../lib/locale-data";
+ import { currentCalendar } from "../../lib/calendar";
+ import { gercekRitim } from "../../lib/ritim";
+ import { IllustratedHeader, OrnatePanel } from "../../lib/ornament-ui";
+@@ -92,19 +92,13 @@ function fameRepKey(fame: number) {
+ }
+ 
+ // Etiket ve değer birlikte okunur; sınırı olmayan akçe için doluluk çubuğu gösterilmez.
+-function MiniStat({ icon, label, value, max, color, lang }: { icon: string; label: string; value: number; max?: number; color: string; lang: string }) {
++function MiniStat({ icon, label, value, max, color, lang, tight = false }: { icon: string; label: string; value: number; max?: number; color: string; lang: string; tight?: boolean }) {
+   const pct = max == null ? null : Math.max(0, Math.min(100, (value / max) * 100));
+   const number = new Intl.NumberFormat(lang, { notation: value >= 100000 ? "compact" : "standard", maximumFractionDigits: 0 }).format(value);
+   return (
+-    <View accessible accessibilityRole="text" accessibilityLabel={`${label}: ${value}${max == null ? "" : ` / ${max}`}`} style={{ flex: 1, minWidth: 0, paddingHorizontal: 7, paddingVertical: 8, backgroundColor: C.surface + "C0", borderWidth: 1, borderColor: C.borderHi, borderRadius: 5 }}>
+-      <Text style={{ fontFamily: F.serif, fontSize: 15, lineHeight: 22, color: C.parchmentDim, textAlign: "center" }}>{label}</Text>
+-      <View style={{ flexDirection: lang === "ar" ? "row-reverse" : "row", justifyContent: "center", alignItems: "center", gap: 5, marginTop: 2 }}>
+-        <GameIcon name={icon} size={13} color={color} />
+-        <Text style={{ fontFamily: F.display, fontSize: 15, color: C.parchment, flexShrink: 1 }}>{number}</Text>
+-      </View>
+-      {pct != null && <View style={{ height: 3, marginTop: 6, backgroundColor: C.borderHi, borderRadius: 2, overflow: "hidden" }}>
+-        <View style={{ width: `${pct}%`, height: 3, backgroundColor: color, borderRadius: 2 }} />
+-      </View>}
++    <View accessible accessibilityRole="text" accessibilityLabel={`${label}: ${value}${max == null ? "" : ` / ${max}`}`} style={{ flex: 1, minWidth: 0, flexDirection: "row", alignItems: "center", gap: tight ? 4 : 6, paddingHorizontal: tight ? 2 : 5, borderRightWidth: 1, borderColor: C.gold + "33" }}>
++      <GameIcon name={icon} size={tight ? 16 : 21} color={color} />
++      <View style={{flex:1,minWidth:0}}><Text style={{fontFamily:F.serif,fontSize:12,lineHeight:15,color:C.parchmentDim}}>{label}</Text><Text style={{fontFamily:F.heading,fontSize:17,lineHeight:21,color:C.parchment}}>{number}</Text></View>
+     </View>
+   );
+ }
+@@ -115,6 +109,7 @@ export default function Dashboard() {
+   const { state, doWork, doEat, resetGame, apply, mpMode } = useGame();
+   const { snapshot: mpSnapshot } = useMp();
+   const { t, tg, lang } = useI18n();
++  const wide = useWindowDimensions().width >= 360;
+   const [milestone, setMilestone] = useState<GameEvent | null>(null);
+   const [freshMark, setFreshMark] = useState<null | { from: number; n: number }>(null); // "bu ay" özeti: son ilerlemede düşen olay sayısı + olay sırası eşiği (q > from)
+   const [yearReport, setYearReport] = useState<GameEvent | null>(null); // yıl dönümü karnesi (yaş günü ritüeli)
+@@ -240,6 +235,12 @@ export default function Dashboard() {
+   const cal = currentCalendar(state.turn);
+   const turn = state.turn;
+   const fame = Math.round(p.fame || 0);
++  const headerStats = (<View style={{ flexDirection: lang === "ar" ? "row-reverse" : "row", gap: 0, marginTop: 4 }}>
++            <MiniStat icon="saglik" label={t("char.health")} value={Math.round(p.health)} max={100} color={C.gold} lang={lang} tight={wide} />
++            <MiniStat icon="tokluk" label={t("char.hunger")} value={Math.round(p.hunger)} max={100} color={C.gold} lang={lang} tight={wide} />
++            <MiniStat icon="akce" label={t("char.money")} value={Math.round(p.money)} color={C.gold} lang={lang} tight={wide} />
++            <MiniStat icon="orgutler" label={t("soc.nam.h")} value={fame} max={100} color={C.gold} lang={lang} tight={wide} />
++          </View>);
+   const profGi = PROF_GI[p.profession];
+ 
+   // Zaman etiketi (1 tur = 1 ay).
+@@ -256,7 +257,7 @@ export default function Dashboard() {
+   // geçmiş 250'ye dayanırken her aksiyonda 250 kartı yeniden çizip pano kasmasını önler;
+   // tam geçmiş "Tümünü gör" → Tarih ekranında). Render maliyeti geçmiş büyüse de sabit kalır.
+   const reversed = state.history.map((e, hIdx) => ({ e, hIdx })).reverse();
+-  const events = reversed.filter(({ e }) => (tab === "onemli" ? onemliMi(e) : tab === "dunya" ? e.scope === "makro" : e.scope !== "makro")).slice(0, DASH_EVENTS);
++  const events = reversed.slice(0, DASH_EVENTS);
+ 
+   const EventCard = ({ e, hIdx, last }: { e: GameEvent; hIdx: number; last: boolean }) => {
+     const cfg = EVT[e.type] || DEFAULT_EVT;
+@@ -303,7 +304,7 @@ export default function Dashboard() {
+   };
+ 
+   return (
+-    <View style={{ flex: 1, backgroundColor: C.bg, paddingBottom: 52 }}>
++    <View style={{ flex: 1, backgroundColor: C.bg }}>
+       {yarisK ? (
+         <SinavKartiModal v={yarisK} onSec={(yol) => { const r = rakipYarisi(state, yol); if (r.basari != null) apply(() => r.state); return r.basari; }} onKapat={() => setYarisK(null)} />
+       ) : milestone ? (
+@@ -433,22 +434,21 @@ export default function Dashboard() {
+         );
+       })()}
+ 
+-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingTop: insets.top + 8, paddingHorizontal: 12, paddingBottom: 100 }}>
+-        <IllustratedHeader title={t("flow.anotherMonth")} sub={`${cal.year} · ${t("cal.season." + SEASON_KEY[cal.season])}`} source={cal.season === "Yaz" ? undefined : heroImage(p.age, cal.season)} right={<Pressable accessibilityRole="button" accessibilityLabel={t("scr.ayarlar")} onPress={() => router.push("/oyun/ayarlar")} style={{ minHeight: L.touch, minWidth: L.touch, alignItems: "center", justifyContent: "center" }}><GameIcon name="ayarlar" size={24} color={C.bg} /></Pressable>} />
+-        <View style={{ marginTop: -20, marginBottom: 12, paddingHorizontal: 10 }}>
++      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingTop: insets.top + 6, paddingHorizontal: 9, paddingBottom: 38 }}>
++        <IllustratedHeader height={184} title={t("flow.anotherMonth")} sub={`${cal.year} · ${t("cal.season." + SEASON_KEY[cal.season])}`} season={cal.season} right={<View style={{flexDirection:"row",gap:2}}>
++          <Pressable accessibilityLabel={t("menu.title")} onPress={()=>router.push("/oyun/menu")} style={{minWidth:44,minHeight:44,alignItems:"center",justifyContent:"center"}}><GameIcon name="scroll-open" color={C.goldDim} size={22}/></Pressable>
++          <Pressable accessibilityLabel={t("scr.ayarlar")} onPress={()=>router.push("/oyun/ayarlar")} style={{minWidth:44,minHeight:44,alignItems:"center",justifyContent:"center"}}><GameIcon name="ayarlar" color={C.bg} size={22}/></Pressable>
++        </View>} />
++        <View style={{ marginTop: -30, marginBottom: 12, paddingHorizontal: 10 }}>
+           <View style={{ flexDirection: lang === "ar" ? "row-reverse" : "row", alignItems: "center", gap: 12 }}>
+-            <Portre age={p.age} gender={p.gender} size={80} />
++            <Portre age={p.age} gender={p.gender} size={86} />
+             <View style={{ flex: 1, minWidth: 0, paddingTop: 18 }}>
+-              <Text style={{ fontFamily: F.display, fontSize: T.title, color: C.parchment }}>{lakapliAd(p.name, p.lakap, p.gender === "kadın", t)}</Text>
+-              <Text style={{ fontFamily: F.serif, fontSize: T.body, lineHeight: T.line, color: C.parchmentMuted }}>{p.profession === "işsiz" ? t("misc.jobless") : careerTitleL(p.profession, kariyerXp(p), lang, p.gender === "kadın")} · {p.age} {t("misc.age")}</Text>
++              <Text style={{ fontFamily: F.heading, fontSize: 23, lineHeight: 26, color: C.parchment }}>{lakapliAd(p.name, p.lakap, p.gender === "kadın", t)}</Text>
++              <Text style={{ fontFamily: F.serif, fontSize: T.body, lineHeight: T.line, color: C.parchmentMuted }}>{p.profession === "işsiz" ? t("misc.jobless") : professionNameL(p.profession, lang, p.gender === "kadın")} · {p.age} {t("misc.age")}</Text>
++              {wide && headerStats}
+             </View>
+           </View>
+-          <View style={{ flexDirection: lang === "ar" ? "row-reverse" : "row", gap: 4, marginTop: 8 }}>
+-            <MiniStat icon="saglik" label={t("char.health")} value={Math.round(p.health)} max={100} color={C.gold} lang={lang} />
+-            <MiniStat icon="tokluk" label={t("char.hunger")} value={Math.round(p.hunger)} max={100} color={C.gold} lang={lang} />
+-            <MiniStat icon="akce" label={t("char.money")} value={Math.round(p.money)} color={C.gold} lang={lang} />
+-            <MiniStat icon="orgutler" label={t("soc.nam.h")} value={fame} max={100} color={C.gold} lang={lang} />
+-          </View>
++          {!wide && headerStats}
+         </View>
+       {p.dead && (
+         <View style={{ paddingHorizontal: 12, paddingBottom: 8, gap: 10 }}>
+@@ -478,19 +478,6 @@ export default function Dashboard() {
+       )}
+       <MonthDecisionCard />
+       <RealmNotices />
+-      {/* Halk seni nasıl görüyor — kimlik her an görünür */}
+-      {!p.dead && (() => {
+-        const pp = publicPerception(state);
+-        const home = atHome(p);
+-        return (
+-          <Pressable onPress={() => router.push("/oyun/karakter")} style={{ marginHorizontal: 12, marginTop: 8, paddingVertical: 7, paddingHorizontal: 11, borderRadius: 5, borderWidth: 1, borderColor: home ? "rgba(127,166,106,0.3)" : "rgba(111,160,192,0.3)", backgroundColor: "rgba(8,5,2,0.4)", flexDirection: "row", alignItems: "center", gap: 8 }}>
+-            <GameIcon name={home ? "sehir" : "firsatlar"} size={13} color={home ? C.sage : C.frost} />
+-            <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentDim }} numberOfLines={1}>{t("percept." + pp.key)}</Text>
+-            <Text style={{ fontFamily: F.display, fontSize: 13, color: home ? C.sage : C.frost }}>{yuzdeL(Math.round(pp.recog * 100), lang)}</Text>
+-          </Pressable>
+-        );
+-      })()}
+-
+       {/* Diyar presence (çok oyuncu): paylaşımlı diyarda olduğunu her an hisset — saat, taht, kaç kişi ayakta (İlişkiler'e köprü) */}
+       {mpMode && mpSnapshot && (() => {
+         const ym = realmYearMonth(mpSnapshot.turn);
+@@ -551,17 +538,6 @@ export default function Dashboard() {
+         );
+       })()}
+ 
+-      {/* Ay sonu notu (pusula 2.4, çığır Sütun 1): oturumu kapatan tek satır — yaklaşan gerçek bir şey; kaçırılan bir şey yok */}
+-      {!p.dead && (() => {
+-        const not = ayNotu(state); if (!not) return null;
+-        return (
+-          <View style={{ marginHorizontal: 14, marginTop: 6, flexDirection: "row", alignItems: "center", gap: 7 }}>
+-            <GameIcon name="hourglass" size={11} color={C.goldDim} />
+-            <Text numberOfLines={2} style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentDim, lineHeight: 22 }}>{renderEvt(not.k, "", not.p, lang, t, p.gender === "kadın")}</Text>
+-          </View>
+-        );
+-      })()}
+-
+       {/* Zindan: ağır suçun bedeli — süre dolana ya da gardiyan sussuzlanana dek çoğu kapı kilitli */}
+       {!p.dead && inJail(p) && (() => {
+         const cost = jailBribeCost(state);
+@@ -767,10 +743,10 @@ export default function Dashboard() {
+       )}
+ 
+       <OrnatePanel title={t("flow.recent")} icon="scroll-open" right={<Pressable accessibilityRole="button" accessibilityLabel={t("dash.seeAll")} onPress={() => router.push("/oyun/tarih")} style={{ minHeight: L.touch, justifyContent: "center" }}><Text style={{ fontFamily: F.serif, fontSize: T.caption, color: C.gold }}>{t("dash.seeAll")} ›</Text></Pressable>}>
+-        {events.length ? events.map(({ e, hIdx }, index) => <View key={e.q ?? hIdx}>{EventCard({ e, hIdx, last: index === events.length - 1 })}</View>) : <Text style={{ fontFamily: F.serif, fontSize: T.body, lineHeight: T.line, color: C.parchmentMuted }}>{t("dash.empty")}</Text>}
++        {events.length ? events.map(({ e, hIdx }, index) => <View key={e.q ?? hIdx} style={{flexDirection:"row",alignItems:"center",gap:9,paddingVertical:9,borderBottomWidth:index===events.length-1?0:1,borderColor:C.gold+"22"}}><GameIcon name={(EVT[e.type]||DEFAULT_EVT).gi} size={21} color={C.gold}/><Text numberOfLines={3} style={{flex:1,fontFamily:F.serif,fontSize:15,lineHeight:20,color:C.parchment}}>{renderEvt(e.k,e.text,e.p,lang,t,p.gender==="kadın")}</Text><Text style={{width:53,fontFamily:F.serif,fontSize:12,lineHeight:15,color:C.parchmentMuted,textAlign:"right"}}>{timeAgo(e.day)}</Text></View>) : <Text style={{ fontFamily: F.serif, fontSize: T.body, lineHeight: T.line, color: C.parchmentMuted }}>{t("dash.empty")}</Text>}
+       </OrnatePanel>
+       <Pressable accessibilityRole="button" onPress={() => router.push("/oyun/tarih")} style={{ minHeight: 58, marginBottom: 12, padding: 12, flexDirection: "row", alignItems: "center", gap: 12, borderWidth: 1, borderColor: C.goldDim, borderRadius: 4, backgroundColor: C.surface }}>
+-        <GameIcon name="roman" size={28} color={C.gold} /><Text style={{ flex: 1, fontFamily: F.display, fontSize: T.title, color: C.parchment }}>{t("flow.lifeBook")}</Text><Text style={{ color: C.gold, fontSize: 22 }}>›</Text>
++        <GameIcon name="book" size={29} color={C.gold} /><View style={{flex:1}}><Text style={{fontFamily:F.heading,fontSize:20,color:C.parchment}}>{t("flow.lifeBook")}</Text><Text style={{fontFamily:F.serif,fontSize:13,lineHeight:17,color:C.parchmentDim}}>{t("flow.lifeBookHint")}</Text></View><Text style={{ color: C.gold, fontSize: 22 }}>›</Text>
+       </Pressable>
+       {!p.dead && (p.age >= 13 && p.profession !== "işsiz") ? (
+         <View style={{ paddingHorizontal: 12, paddingBottom: 8 }}>
+@@ -794,6 +770,17 @@ export default function Dashboard() {
+         </View>
+       ) : null}
+ 
++      {/* Ay sonu notu (pusula 2.4, çığır Sütun 1): oturumu kapatan tek satır — yaklaşan gerçek bir şey; kaçırılan bir şey yok */}
++      {!p.dead && (() => {
++        const not = ayNotu(state); if (!not) return null;
++        return (
++          <View style={{ marginHorizontal: 14, marginTop: 6, flexDirection: "row", alignItems: "center", gap: 7 }}>
++            <GameIcon name="hourglass" size={11} color={C.goldDim} />
++            <Text numberOfLines={2} style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentDim, lineHeight: 22 }}>{renderEvt(not.k, "", not.p, lang, t, p.gender === "kadın")}</Text>
++          </View>
++        );
++      })()}
++
+       {/* Çocukluk uğraşları (7-12) — çocuğa hareket alanı; çalışma gücünden harcar */}
+       {!p.dead && !inJail(p) && p.age >= 7 && p.age < 13 && (() => {
+         const en = playEnergy(state); const can = en >= PLAY_COST;
+diff --git a/mobile/app/oyun/npc/[id].tsx b/mobile/app/oyun/npc/[id].tsx
+index 8fcecfc..57b079b 100644
+--- a/mobile/app/oyun/npc/[id].tsx
++++ b/mobile/app/oyun/npc/[id].tsx
+@@ -1,3 +1,4 @@
++import { OrnatePanel } from "../../../lib/ornament-ui";
+ import { DesignPressable as Pressable } from "../../../lib/design-pressable";
+ import { useState, useMemo, useRef, useEffect } from "react";
+ import { View, Text, ScrollView} from "react-native";
+@@ -22,7 +23,7 @@ import { professionNameL, traitL, quirkL, goalL, placeName } from "../../../lib/
+ import { ITEMS, TieKind } from "../../../lib/world";
+ import { Portre, BackLabel, ScreenFresk } from "../../../lib/ui";
+ import { GameIcon } from "../../../lib/icons";
+-import { NpcSceneArt } from "../../../lib/npc-scene-ui";
++import { NpcSceneArt, NpcIdentityPortrait } from "../../../lib/npc-scene-ui";
+ import { npcVisual } from "../../../lib/npc-visual";
+ import { C, F, T, L } from "../../../lib/theme";
+ 
+@@ -170,15 +171,15 @@ export default function NpcDetail() {
+   };
+ 
+   return (
+-    <ScreenFresk><ScrollView ref={scroll} style={{ flex: 1 }} contentContainerStyle={{ padding: 14, paddingTop: insets.top + 12, paddingBottom: insets.bottom + 40 }}>
++    <ScreenFresk><ScrollView ref={scroll} style={{ flex: 1 }} contentContainerStyle={{ padding: 9, paddingTop: insets.top + 6, paddingBottom: insets.bottom + 40 }}>
+       <Pressable onPress={() => router.back()} style={{ minHeight: L.touch, justifyContent: "center", marginBottom: 12 }}><BackLabel /></Pressable>
+ 
+       <NpcSceneArt state={state} npc={npc} mood={ns.mood} dead={prof.olu} />
+       {/* ── Profil kartı ── */}
+-      <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(201,168,76,0.22)", borderRadius: 5, padding: 14, marginBottom: 10 }}>
+-        <View style={{ flexDirection: "row", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
+-          <View style={{ flexGrow: 1, flexBasis: 180, minWidth: 0 }}>
+-            <Text style={{ fontFamily: F.display, fontSize: T.display, color: C.parchment, letterSpacing: 0.5 }}>{npc.name}</Text>
++      <View style={{paddingHorizontal:10,marginTop:-28,marginBottom:10}}>
++        <View style={{ flexDirection: "row", alignItems: "flex-start", flexWrap: "wrap", gap: 10 }}>
++          <NpcIdentityPortrait npc={npc} ruler={visual.ruler}/><View style={{ flexGrow: 1, flexBasis: 150, minWidth: 0, paddingTop: 30 }}>
++            <Text style={{ fontFamily: F.heading, fontSize: 24, lineHeight: 28, color: C.parchment }}>{npc.name}</Text>
+             <Text style={{ fontFamily: F.serifItalic, fontSize: T.body, color: C.parchmentMuted, marginTop: 1 }}>{prof.olu ? t("npc.late") : visual.ruler ? tg("visual.ruler", npc.gender === "kadın") : professionNameL(npc.profession, lang, npc.gender === "kadın")} · {npc.age} {t("misc.age")}</Text>
+             {!prof.olu && !prof.burada ? <Text style={{ fontFamily: F.serifItalic, fontSize: T.caption, color: C.goldDim, marginTop: 2 }}>{t("npc.livesIn").replace("%1", placeName(npc.loc || "", lang))}</Text> : null}
+             <RelBand score={v} />
+@@ -199,6 +200,8 @@ export default function NpcDetail() {
+             <Text style={{ fontFamily: F.serifItalic, fontSize: T.body, color: C.goldDim, textDecorationLine: "underline" }}>{t("gorus.ipucu")}</Text>
+           </Pressable>
+         </View>
++      </View>
++      <OrnatePanel title={t("visual.know")} icon="compass">
+         {!prof.olu && <NpcTavri state={state} id={npc.id} />}
+         {/* Görüş dökümü: motorun kullandığı değerle birebir aynı kalemler (relWith = gorus().toplam) */}
+         {gorusAcik ? (() => {
+@@ -233,7 +236,7 @@ export default function NpcDetail() {
+             </View>
+           </View>
+         ) : null}
+-      </View>
++      </OrnatePanel>
+ 
+       {/* ── Çevresi (NPC↔NPC ilişki ağı) ── */}
+       {ties.length > 0 && (
+@@ -316,7 +319,7 @@ export default function NpcDetail() {
+       {/* ── Etkileşim menüsü ── */}
+       <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(201,168,76,0.22)", borderRadius: 5, overflow: "hidden", marginBottom: 10 }}>
+         <View style={{ paddingHorizontal: 14, paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: C.border }}>
+-          <Text style={{ fontFamily: F.display, fontSize: T.title, letterSpacing: 0.4, color: C.gold }}>{t("visual.talkTitle")}</Text>
++          <Text style={{ fontFamily: F.heading, fontSize: 22, color: C.parchment }}>{t("visual.talkTitle")}</Text>
+         </View>
+         {martialLoad(state.player) > 0 && (couldMarry || canFlirt(state.player, npc, v)) ? (
+           <View style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 14, paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: C.border, backgroundColor: "rgba(224,90,48,0.07)" }}>
+@@ -338,7 +341,7 @@ export default function NpcDetail() {
+         {visibleTopics.map((it) => { const done = usedAct("t:" + it.id); return (
+           <Pressable key={it.id} accessibilityRole="button" accessibilityLabel={topicLabel(it.id)} accessibilityState={{ disabled: done }} disabled={done} onPress={() => { hap("tap"); speak(it.id); }} style={({ pressed }) => ({ flexDirection: "row", minHeight: 44, alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent", opacity: done ? 0.4 : 1 })}>
+             <GameIcon name={it.icon} size={17} color={C.gold} />
+-            <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 15, color: C.parchment }}>{topicLabel(it.id)}</Text>
++            <Text style={{ flex: 1, fontFamily: F.heading, fontSize: 18, color: C.parchment }}>{topicLabel(it.id)}</Text>
+             {done ? <Text style={{ fontFamily: F.display, fontSize: 13, color: C.goldDim }}>{t("soc.lock.done")}</Text> : <Text style={{ color: C.goldDim, fontSize: 15 }}>›</Text>}
+           </Pressable>
+         ); })}
+diff --git a/mobile/lib/i18n-flow.ts b/mobile/lib/i18n-flow.ts
+index 746d631..21df284 100644
+--- a/mobile/lib/i18n-flow.ts
++++ b/mobile/lib/i18n-flow.ts
+@@ -5,6 +5,14 @@ const rows: Record<string, string[]> = {
+   "visual.ruler": ["Hükümdar", "Ruler", "Gobernante", "Governante", "الحاكم", "Правитель"],
+   "visual.ruler.f": ["Hükümdar", "Ruler", "Gobernante", "Governante", "الحاكمة", "Правительница"],
+   "visual.talkTitle": ["Söyleyeceklerin", "What to say", "Qué decir", "O que dizer", "ما تود قوله", "Что сказать"],
++  "visual.know": ["Onu Tanı", "Know Them", "Conoce a esta persona", "Conhece esta pessoa", "عن هذه الشخصية", "О персонаже"],
++  "visual.navPeople": ["Kişiler", "People", "Personas", "Pessoas", "الأشخاص", "Люди"],
++  "visual.navCity": ["Şehir", "City", "Ciudad", "Cidade", "المدينة", "Город"],
++  "visual.warNotice": ["Diyarda savaş var", "War in the realm", "Guerra en el reino", "Guerra no reino", "الحرب في الديار", "Война в державе"],
++  "visual.warNoticeBody": ["Cepheyi ve diyardaki etkilerini gör.", "View the front and its effects on the realm.", "Consulta el frente y sus efectos en el reino.", "Vê a frente e os seus efeitos no reino.", "اطّلع على الجبهة وآثارها في الديار.", "Фронт и последствия войны для державы."],
++  "visual.navJournal": ["Defter", "Journal", "Diario", "Diário", "السجل", "Дневник"],
++  "visual.advance": ["İlerle", "Advance", "Avanzar", "Avançar", "تقدّم", "Далее"],
++  "flow.lifeBookHint": ["Bu ay yaşadıklarını ve önemli kararlarını gör.", "See this month’s events and important decisions.", "Consulta los sucesos del mes y tus decisiones importantes.", "Vê os acontecimentos do mês e as tuas decisões importantes.", "راجع أحداث هذا الشهر وقراراتك المهمة.", "События месяца и важные решения."],
+   "flow.monthDecision": ["Bu Ayın Kararı", "This Month’s Decision", "La decisión de este mes", "A decisão deste mês", "قرار هذا الشهر", "Решение месяца"],
+   "flow.anotherMonth": ["Bir Ay Daha", "Another Month", "Un mes más", "Mais um mês", "شهر آخر", "Ещё один месяц"],
+   "flow.recent": ["Son Gelişmeler", "Recent Events", "Últimos acontecimientos", "Últimos acontecimentos", "آخر التطورات", "Последние события"],
+diff --git a/mobile/lib/kart3d.tsx b/mobile/lib/kart3d.tsx
+index 9bb3923..854b7fa 100644
+--- a/mobile/lib/kart3d.tsx
++++ b/mobile/lib/kart3d.tsx
+@@ -162,9 +162,10 @@ function etkiler(c: Choice): { k: string; big: boolean }[] {
+   const d = (c.delta || {}) as Record<string, unknown>;
+   return Object.keys(ETKI).filter((k) => typeof d[k] === "number" && d[k] !== 0).map((k) => ({ k, big: Math.abs(d[k] as number) >= ETKI[k].big }));
+ }
+-export function EtkiIzi({ c }: { c: Choice }) {
++export function EtkiIzi({ c, compact = false }: { c: Choice; compact?: boolean }) {
+   const list = etkiler(c);
+   if (!list.length) return null;
++  if (compact) return <View style={{flexDirection:"row",gap:7,marginTop:7,flexWrap:"wrap"}}>{list.map(({k})=><GameIcon key={k} name={ETKI[k].icon} color={C.gold} size={16}/>)}</View>;
+   return (
+     <View style={{ flexDirection: "row", justifyContent: "center", marginTop: 7 }}>
+       {list.map(({ k, big }) => (
+diff --git a/mobile/lib/month-decision-ui.tsx b/mobile/lib/month-decision-ui.tsx
+index d3e2456..cc2d830 100644
+--- a/mobile/lib/month-decision-ui.tsx
++++ b/mobile/lib/month-decision-ui.tsx
+@@ -16,12 +16,11 @@ export function MonthDecisionCard() {
+     return event ? <OrnatePanel title={t("flow.monthDecision")} icon="scroll-open"><Text style={{ fontFamily: F.serif, fontSize: T.body, color: C.parchment, lineHeight: T.line }}>{renderEvt(event.k, event.text, event.p, lang, t, state.player.gender === "kadın")}</Text></OrnatePanel> : null;
+   }
+   return <OrnatePanel title={t("flow.monthDecision")} icon={d.icon}>
+-    <Text style={{ fontFamily: F.display, fontSize: T.label, color: C.gold, marginBottom: 5 }}>{text(`dil.${d.id}.t`, d.title)}</Text>
+-    <Text style={{ fontFamily: F.serif, fontSize: T.body, lineHeight: T.line, color: C.parchment }}>{text(`dil.${d.id}.x`, d.text)}</Text>
++    <Text style={{ fontFamily: F.serif, fontSize: T.body, lineHeight: 20, color: C.parchment }}>{text(`dil.${d.id}.x`, d.text)}</Text>
+     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 9, marginTop: 12 }}>
+       {d.choices.map((choice, index) => <Pressable key={index} accessibilityRole="button" onPress={() => { hap("selection"); apply(s => chooseMonthDilemma(s, m.id, index)); }} style={({ pressed }) => ({ minHeight: L.touch, flexGrow: 1, flexBasis: width >= 360 && d.choices.length === 2 ? "45%" : "100%", padding: 12, borderRadius: 4, borderWidth: 1, borderColor: C.goldDim, backgroundColor: pressed ? C.cardHi : C.card })}>
+-        <Text style={{ fontFamily: F.display, fontSize: T.label, color: C.parchment }}>{text(`dil.${d.id}.c${index}`, choice.label)}</Text>
+-        <EtkiIzi c={choice} />
++        <Text style={{ fontFamily: F.heading, fontSize: 17, lineHeight: 21, color: C.parchment }}>{text(`dil.${d.id}.c${index}`, choice.label)}</Text>
++        <EtkiIzi c={choice} compact />
+         {choice.sans !== undefined && <Text style={{ fontFamily: F.serif, fontSize: T.caption, color: C.parchmentMuted, marginTop: 6 }}>{applyParams(t("ahi.odds"), [choice.sans])}</Text>}
+       </Pressable>)}
+     </View>
+diff --git a/mobile/lib/npc-scene-ui.tsx b/mobile/lib/npc-scene-ui.tsx
+index 33e4ea3..67e0923 100644
+--- a/mobile/lib/npc-scene-ui.tsx
++++ b/mobile/lib/npc-scene-ui.tsx
+@@ -6,16 +6,24 @@ import { npcVisual, NpcVisualRole } from "./npc-visual";
+ import { moodKey } from "./dialogue";
+ import { SAHNE_GORSEL, SahneTema } from "./sahne-tema";
+ import { Portre } from "./ui";
++import { npcKimlik, npcEvre } from "./npc-portre";
+ import { C } from "./theme";
+ const PLACES: Record<NpcVisualRole, SahneTema> = { farmer: "hasat", smith: "atolye_demirci", ruler: "kadi_divan", merchant: "ev_varlikli", healer: "medrese", soldier: "kadi_divan", fisher: "nehir", hunter: "gurbet_yol", shepherd: "hasat", baker: "ev_yoksul", musician: "ahi_tekke", commoner: "cami_avlu" };
++const SMITH_K07 = require("../assets/npc/k07-olgun-demirci-sahne-v2.png");
++// Bu ilk bütüncül sahne yalnız kendi yüz ailesi/yaşı/mesleğinde kullanılır.
++// Henüz resmi olmayan kişiye başka bir NPC'nin yüzü atanmaz.
++function coherent(npc: NPC) { return npcKimlik(npc.id,npc.gender)==="k07" && npcEvre(npc.age)==="olgun" && npc.profession==="demirci"; }
++export function NpcIdentityPortrait({npc,size=88,ruler=false}:{npc:NPC;size?:number;ruler?:boolean}) {
++  if (ruler || !coherent(npc)) return <Portre age={npc.age} gender={npc.gender} seed={npc.id} size={size}/>;
++  return <View accessible={false} style={{width:size,height:size,borderRadius:size/2,borderWidth:2,borderColor:C.gold,overflow:"hidden",backgroundColor:C.bg}}><Image accessible={false} source={SMITH_K07} style={{position:"absolute",width:size*5.12,height:size*3.413,left:-size*2.1,top:-size*0.36}} resizeMode="stretch"/></View>;
++}
+ // Kimlik portresi bütündür. Ayrı yüz/gövde parçaları birleştirilmez.
+ export function NpcSceneArt({ state, npc, mood = 0, dead = false }: { state: GameState; npc: NPC; mood?: number; dead?: boolean }) {
+   const visual = npcVisual(state, npc, dead ? "notr" : moodKey(mood));
+-  return <View accessible={false} style={{ marginBottom: 8, opacity: dead ? 0.6 : 1 }}>
+-    <View style={{ height: 210, overflow: "hidden", borderRadius: 4, backgroundColor: C.bg, borderWidth: 1, borderColor: C.goldDim }}>
+-      <Image accessible={false} source={SAHNE_GORSEL[PLACES[visual.role]]} resizeMode="cover" style={StyleSheet.absoluteFill} />
++  return <View accessible={false} style={{ marginBottom: 0, opacity: dead ? 0.6 : 1 }}>
++    <View style={{ height: 250, overflow: "hidden", borderRadius: 2, backgroundColor: C.bg, borderWidth: 1, borderColor: C.goldDim }}>
++      <Image accessible={false} source={!visual.ruler && coherent(npc) ? SMITH_K07 : SAHNE_GORSEL[PLACES[visual.role]]} resizeMode="cover" style={StyleSheet.absoluteFill} />
+       <LinearGradient pointerEvents="none" colors={[C.bg + "00", C.bg + "00", C.bg + "AA"]} style={StyleSheet.absoluteFill} />
+     </View>
+-    <View style={{ marginTop: -42, marginLeft: 12 }}><Portre age={npc.age} gender={npc.gender} seed={npc.id} size={90} /></View>
+   </View>;
+ }
+diff --git a/mobile/lib/ornament-ui.tsx b/mobile/lib/ornament-ui.tsx
+index 8616568..20a215e 100644
+--- a/mobile/lib/ornament-ui.tsx
++++ b/mobile/lib/ornament-ui.tsx
+@@ -4,30 +4,38 @@ import { LinearGradient } from "expo-linear-gradient";
+ import { GameIcon } from "./icons";
+ import { C, F, T } from "./theme";
+ import { useState } from "react";
++import Svg, { Path } from "react-native-svg";
++function Corners({ tone }: { tone: string }) {
++  return <>{[0, 1, 2, 3].map(i => <View key={i} pointerEvents="none" style={{ position: "absolute", width: 16, height: 16, ...(i === 0 || i === 3 ? { left: -1 } : { right: -1 }), ...(i < 2 ? { top: -1 } : { bottom: -1 }), transform: [{ rotate: `${i * 90}deg` }] }}><Svg width={16} height={16}><Path d="M1 15 V6 L6 1 H15 M4 15 V8 L8 4 H15" stroke={tone} strokeWidth={0.8} fill="none" /></Svg></View>)}</>;
++}
+ export function OrnatePanel({ title, icon, right, children, tone = C.gold, inset = true }: { title?: string; icon?: string; right?: ReactNode; children: ReactNode; tone?: string; inset?: boolean }) {
+-  return <View style={{ marginBottom: 12, borderWidth: 1, borderColor: tone + "77", borderRadius: 5, backgroundColor: C.surface, padding: 3 }}>
+-    <View style={{ borderWidth: 1, borderColor: tone + "25", borderRadius: 3, overflow: "hidden" }}>
+-      {title && <View style={{ flexDirection: "row", alignItems: "center", gap: 8, padding: 11, borderBottomWidth: 1, borderColor: tone + "33", backgroundColor: tone + "08" }}>
++  return <View style={{ marginBottom: 10, borderWidth: 1, borderColor: tone + "88", borderRadius: 2, backgroundColor: C.surface, padding: 3 }}>
++    <LinearGradient pointerEvents="none" colors={["#3A2B1122", C.bg + "22", "#3A2B1122"]} style={{ position: "absolute", top: 0, right: 0, bottom: 0, left: 0 }} />
++    <View style={{ borderWidth: 1, borderColor: tone + "33", borderRadius: 1, overflow: "hidden" }}>
++      {title && <View style={{ flexDirection: "row", alignItems: "center", gap: 8, minHeight: 44, paddingHorizontal: 10, borderBottomWidth: 1, borderColor: tone + "33" }}>
+         {icon && <GameIcon name={icon} color={tone} size={20} />}
+-        <Text style={{ flex: 1, fontFamily: F.display, fontSize: T.title, color: tone }}>{title}</Text>{right}
++        <Text style={{ flex: 1, fontFamily: F.heading, fontSize: 21, lineHeight: 25, color: C.parchment }}>{title}</Text>{right}
+       </View>}
+-      <View style={inset ? { padding: 12 } : undefined}>{children}</View>
++      <View style={inset ? { padding: 10 } : undefined}>{children}</View>
+     </View>
++    <Corners tone={tone} />
+   </View>;
+ }
+ const PANORAMAS = require("../assets/tasarim/diyar-panoramalari-v1.png");
+-export function Panorama({ row = 0, height = 190, source }: { row?: 0 | 1; height?: number; source?: ImageSourcePropType }) {
++const SEASONS = require("../assets/tasarim/anasayfa-mevsimler-v2.png");
++export function Panorama({ row = 0, height = 190, source, season }: { row?: 0 | 1; height?: number; source?: ImageSourcePropType; season?: string }) {
+   const [width, setWidth] = useState(390);
++  const cell = Math.max(0, ["İlkbahar", "Yaz", "Sonbahar", "Kış"].indexOf(season || "")), cw = Math.max(width, height * 1.5), ch = cw / 1.5;
+   return <View accessible={false} onLayout={e => setWidth(e.nativeEvent.layout.width)} style={{ height, width: "100%", overflow: "hidden", backgroundColor: C.bg }}>
+-    <Image accessible={false} source={source || PANORAMAS} resizeMode={source ? "cover" : "stretch"} style={source ? { width: "100%", height: "100%" } : { position: "absolute", width: height * 4, height: height * 2, left: (width - height * 4) / 2, top: -row * height }} />
++    <Image accessible={false} source={season ? SEASONS : source || PANORAMAS} resizeMode={source && !season ? "cover" : "stretch"} style={season ? { position:"absolute",width:cw*2,height:ch*2,left:(width-cw)/2-(cell%2)*cw,top:(height-ch)/2-Math.floor(cell/2)*ch } : source ? { width: "100%", height: "100%" } : { position: "absolute", width: height * 4, height: height * 2, left: (width - height * 4) / 2, top: -row * height }} />
+   </View>;
+ }
+-export function IllustratedHeader({ title, sub, row = 0, source, height = 190, right }: { title: string; sub?: string; row?: 0 | 1; source?: ImageSourcePropType; height?: number; right?: ReactNode }) {
++export function IllustratedHeader({ title, sub, row = 0, source, height = 190, right, season }: { title: string; sub?: string; row?: 0 | 1; source?: ImageSourcePropType; height?: number; right?: ReactNode; season?: string }) {
+   return <View style={{ height, borderWidth: 1, borderColor: C.goldDim, overflow: "hidden", borderRadius: 4 }}>
+-    <Panorama row={row} height={height} source={source} />
+-    <LinearGradient pointerEvents="none" colors={["#F4E7C877", "#F4E7C800", C.bg + "77"]} style={{ position: "absolute", top: 0, right: 0, bottom: 0, left: 0 }} />
++    <Panorama row={row} height={height} source={source} season={season} />
++    <LinearGradient pointerEvents="none" colors={["#F4E7C844", "#F4E7C800", C.bg + "CC"]} style={{ position: "absolute", top: 0, right: 0, bottom: 0, left: 0 }} />
+     <View style={{ position: "absolute", top: 12, left: 14, right: 14, flexDirection: "row", alignItems: "flex-start", gap: 8 }}>
+-      <View style={{ flex: 1 }}><Text style={{ fontFamily: F.display, fontSize: 26, color: C.bg, lineHeight: 34 }}>{title}</Text>{sub && <Text style={{ fontFamily: F.serif, fontSize: T.body, color: C.bg, lineHeight: T.line }}>{sub}</Text>}</View>{right}
++      <View style={{ flex: 1 }}><Text style={{ fontFamily: F.heading, fontSize: 30, color: C.bg, lineHeight: 34 }}>{title}</Text>{sub && <Text style={{ fontFamily: F.heading, fontSize: T.body, color: C.bg, lineHeight: 20 }}>{sub}</Text>}</View>{right}
+     </View>
+   </View>;
+ }
+diff --git a/mobile/lib/realm-notices-ui.tsx b/mobile/lib/realm-notices-ui.tsx
+index 07f474d..76abd02 100644
+--- a/mobile/lib/realm-notices-ui.tsx
++++ b/mobile/lib/realm-notices-ui.tsx
+@@ -14,10 +14,10 @@ export function RealmNotices() {
+   const own = p.crownSeat || regionOf(p.home_name || p.location_name);
+   const offers = p.crowned ? state.diplomacy?.offers.filter(o => o.to === own && o.until > state.turn).length || 0 : 0;
+   const rows = [
+-    ...(report.active || war && !war.winner ? [{ route: "/oyun/savas", icon: "crossed-swords", title: t("army.title"), sub: t(report.active ? "ww.active" : "army.scale"), color: C.blood }] : []),
++    ...(report.active || war && !war.winner ? [{ route: "/oyun/savas", icon: "crossed-swords", title: t("visual.warNotice"), sub: t("visual.warNoticeBody"), color: C.blood }] : []),
+     ...(offers ? [{ route: "/oyun/diplomasi", icon: "scroll-open", title: `${t("dp.inbox")} · ${offers}`, sub: t("dp.title"), color: C.gold }] : []),
+   ];
+   return <View>{rows.map(row => <DesignPressable key={row.route} onPress={() => router.push(row.route as any)} style={{ flexDirection: "row", alignItems: "center", gap: 10, borderWidth: 1, borderColor: row.color + "88", borderRadius: 4, backgroundColor: row.color + "12", padding: 12, marginBottom: 12 }}>
+-    <GameIcon name={row.icon} color={row.color} size={24} /><View style={{ flex: 1 }}><Text style={{ fontFamily: F.display, fontSize: 14, color: row.color }}>{row.title}</Text><Text style={{ fontFamily: F.serif, fontSize: 15, lineHeight: 22, color: C.parchment }}>{row.sub}</Text></View><Text style={{ color: row.color }}>›</Text>
++    <GameIcon name={row.icon} color={row.color} size={27} /><View style={{ flex: 1 }}><Text style={{ fontFamily: F.heading, fontSize: 20, lineHeight: 24, color: C.parchment }}>{row.title}</Text><Text style={{ fontFamily: F.serif, fontSize: 13, lineHeight: 17, color: C.parchmentDim }}>{row.sub}</Text></View><Text style={{ color: row.color }}>›</Text>
+   </DesignPressable>)}</View>;
+ }
+diff --git a/mobile/lib/theme.ts b/mobile/lib/theme.ts
+index 992b5e9..e0a23e4 100644
+--- a/mobile/lib/theme.ts
++++ b/mobile/lib/theme.ts
+@@ -31,6 +31,7 @@ export const F = {
+   displayReg: "Cinzel_400Regular",
+   serif: "CrimsonText_400Regular",
+   serifItalic: "CrimsonText_400Regular_Italic",
++  heading: "CrimsonText_600SemiBold",
+ };
+ 
+ // Okunabilir ekran ailesi; taslak: docs/tasarim/EKRANLAR.md. Sistem font ölçeği korunur.
+diff --git a/mobile/scripts/design-preview.cjs b/mobile/scripts/design-preview.cjs
+index 1738c8e..b1fe7ad 100644
+--- a/mobile/scripts/design-preview.cjs
++++ b/mobile/scripts/design-preview.cjs
+@@ -5,7 +5,7 @@ const esbuild=require(path.join(root,'node_modules/esbuild'));fs.mkdirSync(out,{
+ const react=path.join(deps,'node_modules/react/index.js');
+ const stubs={
+   'react-native-reanimated': `import React,{useRef} from 'react';import {View,Text,Image,TextInput,ScrollView} from 'react-native';const chain=new Proxy(()=>chain,{get:()=>chain,apply:()=>chain});export const FadeInDown=chain,FadeIn=chain,FadeOut=chain,FadeOutUp=chain,Layout=chain,FadeInUp=chain,ZoomIn=chain,Easing=chain;export const useSharedValue=(v)=>useRef({value:v}).current,useAnimatedStyle=(fn)=>fn(),useAnimatedProps=(fn)=>fn(),useDerivedValue=(fn)=>({value:fn()}),withTiming=(v)=>v,withSpring=(v)=>v,withRepeat=(v)=>v,withSequence=(v)=>v,withDelay=(_t,v)=>v,cancelAnimation=()=>{},runOnJS=(fn)=>fn;export default {View,Text,Image,TextInput,ScrollView,createAnimatedComponent:(c)=>c};`,
+-  'expo-router':`import React from 'react';import{View,Text,Pressable}from'react-native';export const useRouter=()=>({push:(p)=>{window.__ROUTE=p},replace:(p)=>{window.__ROUTE=p},back:()=>{}}),useLocalSearchParams=()=>({id:window.__NPC,name:"Demirhan",realmId:"tasarim",gender:"erkek"}),usePathname=()=>window.__PATH||'/oyun';export function Tabs({children,screenOptions:o}){const Component=window.__SCREEN;return <><View style={{flex:1,minHeight:0}}><Component/></View><View style={[o.tabBarStyle,{flexDirection:'row',alignItems:'center'}]}>{React.Children.toArray(children).filter(c=>c.props.options?.href!==null).map(c=>{const opt=c.props.options,focused=window.__PATH==='/oyun'+(c.props.name==='index'?'':'/'+c.props.name),color=focused?o.tabBarActiveTintColor:o.tabBarInactiveTintColor;return <Pressable key={c.props.name} onPress={()=>{window.__ROUTE='/oyun/'+c.props.name}} style={[o.tabBarItemStyle,opt.tabBarItemStyle,{alignItems:'center',minHeight:44}]}>{opt.tabBarIcon?.({focused,color})}{o.tabBarLabel({color,children:opt.title})}</Pressable>})}</View></>};Tabs.Screen=()=>null;`,
++  'expo-router':`import React from 'react';import{View,Text,Pressable}from'react-native';export const useRouter=()=>({push:(p)=>{window.__ROUTE=p},replace:(p)=>{window.__ROUTE=p},navigate:(p)=>{window.__ROUTE=p},back:()=>{}}),useLocalSearchParams=()=>({id:window.__NPC,name:"Demirhan",realmId:"tasarim",gender:"erkek"}),usePathname=()=>window.__PATH||'/oyun';export function Tabs({children,screenOptions:o,tabBar}){const Component=window.__SCREEN;return <><View style={{flex:1,minHeight:0}}><Component/></View>{tabBar?tabBar({state:{routes:React.Children.toArray(children).map(c=>({name:c.props.name,key:c.props.name})),index:React.Children.toArray(children).findIndex(c=>window.__PATH==='/oyun'+(c.props.name==='index'?'':'/'+c.props.name))},navigation:{emit:()=>({defaultPrevented:false}),navigate:(name)=>{window.__ROUTE='/oyun/'+name}}}):null}</>};Tabs.Screen=()=>null;`,
+   'react-native-safe-area-context':`export const useSafeAreaInsets=()=>({top:0,bottom:0,left:0,right:0});export const SafeAreaProvider=({children})=>children;`,
+   'expo-linear-gradient':`import React from 'react';import{View}from'react-native';export const LinearGradient=({children,colors,locations,...props})=><View {...props} style={[props.style,{backgroundImage:'linear-gradient(to bottom,'+colors.join(',')+')'}]}>{children}</View>;`,
+   'react-native-svg':`import React from 'react';const tag=(t)=>({children,...p})=>React.createElement(t,p,children);export default tag('svg');export const Path=tag('path'),Svg=tag('svg'),Defs=tag('defs'),LinearGradient=tag('linearGradient'),RadialGradient=tag('radialGradient'),Stop=tag('stop'),Rect=tag('rect'),Circle=tag('circle'),G=tag('g'),Line=tag('line'),Polygon=tag('polygon'),Polyline=tag('polyline');`,
+@@ -27,8 +27,9 @@ const entry=`import Layout from'${root}/app/oyun/_layout';import React from 'rea
+ let fixtureSeed=91823;Math.random=()=>{fixtureSeed=(Math.imul(fixtureSeed,1664525)+1013904223)>>>0;return fixtureSeed/4294967296;};const q=new URLSearchParams(location.search);const routes={${screenRoutes}};const alias={home:'/oyun',city:'/oyun/sehir',npc:'/oyun/npc/[id]'};const path=alias[q.get('screen')]||q.get('screen')||'/oyun';window.__PATH=path;
+ let s=g.newGame('Boran','Yalçın','erkek');Object.assign(s.player,{age:40,base_age:36,profession:'demirci',money:3500,location_name:'Demirhan',home_name:'Demirhan',health:82,hunger:75});s.turn=48;s.history=s.history.slice(-8);const people=g.rosterAt(s,'Demirhan').filter(x=>x.age>=18&&x.gender===(q.get('gender')||'kadın'));const npc=people[0];window.__NPC=npc.id;s.pop.k[npc.id].prof=q.get('profession')||'demirci';s.pop.k[npc.id].dy=g.worldYears(s)-Number(q.get('age')||38);s.npc_state[npc.id]={mood:Number(q.get('mood')||0),memories:[]};if(q.get('profession')==='ruler'){s.diplomacy.rulers.demirhan.personId=npc.id;s.pop.k[npc.id].prof='asker';}
+ if(q.get('state')==='child')Object.assign(s.player,{age:12,base_age:8,profession:'işsiz'});if(q.get('state')==='ruler')Object.assign(s.player,{crowned:true,province_name:'Demirhan',fame:80,money:50000,age:45});if(q.get('state')==='dead'){s.player.dead=true;s.player.children=['Ayşe'];s.player.child_meta=[{n:'Ayşe',born:s.turn-240}];}if(q.get('state')==='war'){s.player.profession='asker';s.realmArmyWar={id:'preview-front',attacker:'demirhan',defender:'aksehir',started:48,lastTick:48,month:1,a:makeArmy(800),b:makeArmy(1100)};}if(q.get('long')==='1')s.player.name='Abdülkerim Şemseddin Karahisarlı';if(q.get('state')==='decision'){for(let turn=49;turn<65;turn++){s.turn=turn;s=prepareMonthScene(s);if(s.monthScene?.dilemma)break;s.monthScene=undefined;}}
++if(q.get('state')==='reference'){s.turn=54;s=g.work(s,'normal');s=g.adultAction(s,'tefekkur').state;s=g.adultAction(s,'yuruyus').state;const baseline=structuredClone(s);for(let seed=1;seed<1000;seed++){const candidate=structuredClone(baseline);candidate.rng_state=seed;candidate.monthScene=undefined;const prepared=prepareMonthScene(candidate);if(prepared.monthScene?.dilemma&&prepared.monthScene.dilemma.text.length<170&&prepared.monthScene.dilemma.choices.every(c=>c.label.length<32)){s=prepared;break;}}s.realmArmyWar={id:'preview-front',attacker:'demirhan',defender:'aksehir',started:54,lastTick:54,month:1,a:makeArmy(800),b:makeArmy(1100)};}
+ window.__STATE=s;window.__REDUCE=q.get('reduce')==='1';window.__LANG=q.get('lang')||'tr';window.__GAME=g;
+ const me={id:'preview-me',name:'Boran',surname:'Yalçın',age:40,gender:'erkek',profession:'demirci',generation:1,fame:25,power:55,crowned:false,guildId:null,provinceName:null,beylikId:'demirhan',honor:10,traveling:false,married:false,online:true,ready:false,dead:false};window.__MP={turn:48,feat:4,players:[me,{...me,id:'preview-other',name:'Ayşe',gender:'kadın',beylikId:'sahil',ready:true}],throne:{holderId:null,holderName:null},beyliks:[{id:'demirhan',name:'Demirhan',power:80,beyId:'preview-me',beyName:'Boran',tax:10,ocak:null},{id:'sahil',name:'Sahil',power:70,beyId:'preview-other',beyName:'Ayşe',tax:10,ocak:null}],guilds:[],bonds:[],offers:[],hostages:[],watches:{},rumors:[],npcLords:[],wars:[],loans:[],ventures:[],log:[],events:[],nextTickAt:Date.now()+60000};
+ function App(){const[revision,bump]=React.useState(0);window.__REFRESH=()=>bump(x=>x+1);const Screen=routes[path]||routes['/oyun'];window.__SCREEN=Screen;return <LanguageProvider><View style={{width:'100%',height:'100vh',backgroundColor:'#0D0A06'}}>{path.startsWith('/oyun')?<Layout/>:<Screen/>}</View></LanguageProvider>}createRoot(document.getElementById('root')).render(<App/>);`;
+ const plugin={name:'preview-runtime',setup(b){b.onResolve({filter:/.*/},a=>{if(stubs[a.path])return{path:a.path,namespace:'stub'};if(a.path==='react')return{path:react};if(a.path==='react-dom/client')return{path:deps+'/node_modules/react-dom/client.js'};if(a.path==='react-native')return{path:deps+'/node_modules/react-native-web/dist/index.js'};return null;});b.onLoad({filter:/.*/,namespace:'stub'},a=>({contents:stubs[a.path],loader:'tsx',resolveDir:root}));b.onLoad({filter:/[/\\]lib[/\\]store\.tsx$/},()=>({contents:`export const migrate=(s)=>s,exportSaveText=async()=>"";export const useGame=()=>({state:window.__STATE,loading:false,mpMode:window.__PATH?.startsWith("/cok-oyunculu/"),defter:{yaylar:[],ikilemler:[],soylar:[],dostlar:[]},apply:(fn)=>{window.__STATE=fn(window.__STATE);window.__REFRESH?.()},doAdvance:()=>{},doWork:()=>{},doEat:()=>{},startGame:()=>{},varisleDevam:()=>{},yeniOcak:()=>{},enterMp:()=>{},exitMp:()=>{},startNew:()=>{},newGame:()=>{},importSave:()=>({ok:true}),resetGame:()=>{}});`,loader:'tsx'}));b.onLoad({filter:/[/\\]lib[/\\]mp[/\\]store\.tsx$/},()=>({contents:`export const useMp=()=>({snapshot:window.__MP,guestId:"preview-me",status:"open",chat:[],offers:[],missed:[],lastTick:null,saved:null,clearMissed:()=>{},setReady:()=>{},sendIntent:()=>{},syncPlayer:()=>{},saveState:()=>{},setTravel:()=>{},sendChat:()=>{},joinRealm:()=>{},leave:()=>{},rooms:[],listRooms:()=>{}});`,loader:'tsx'}));b.onLoad({filter:/[/\\]lib[/\\]use-sade-mod\.ts$/},()=>({contents:`export const useSadeMod=()=>window.__REDUCE;`,loader:'ts'}));b.onLoad({filter:/[/\\]lib[/\\](sound|ses-plan)\.ts$/},({path:p})=>({contents:fs.readFileSync(p,'utf8').replace(/.*/s,`export const isSoundEnabled=()=>true,isMusicEnabled=()=>true,isAmbianceEnabled=()=>true,setSoundEnabled=async()=>{},setMusicEnabled=async()=>{},setAmbianceEnabled=async()=>{},subscribeAudioPreferences=()=>()=>{},playFanfare=()=>{},playToll=()=>{},playLullaby=()=>{},playWedding=()=>{},playCoin=()=>{},playWarDrum=()=>{},playClash=()=>{},playDefeat=()=>{},playHooves=()=>{},playWater=()=>{},playPurr=()=>{},playBark=()=>{},playEffect=()=>{},pushSoundscape=()=>()=>{},playChime=()=>{},playSaz=()=>{},playNey=()=>{},playTap=()=>{},playAdvance=()=>{},playVictory=()=>{},sahneSes=()=>null;`),loader:'ts'}));b.onLoad({filter:/[/\\]lib[/\\]skia\.tsx$/},()=>({contents:`export const GlowPulse=()=>null,Firelight=()=>null;`,loader:'tsx'}));}};
+-(async()=>{await esbuild.build({stdin:{contents:entry,resolveDir:root,loader:'tsx'},bundle:true,platform:'browser',format:'iife',outfile:path.join(out,'app.js'),plugins:[plugin],loader:{'.png':'file','.jpg':'file','.ttf':'file','.m4a':'file'},assetNames:'assets/[name]-[hash]',define:{'process.env.NODE_ENV':'"production"',__DEV__:'false'},logLevel:'warning'});fs.copyFileSync(root+'/node_modules/@expo-google-fonts/cinzel/700Bold/Cinzel_700Bold.ttf',out+'/cinzel.ttf');fs.copyFileSync(root+'/node_modules/@expo-google-fonts/crimson-text/400Regular/CrimsonText_400Regular.ttf',out+'/crimson.ttf');fs.copyFileSync(root+'/node_modules/@expo-google-fonts/crimson-text/400Regular_Italic/CrimsonText_400Regular_Italic.ttf',out+'/crimson-italic.ttf');fs.writeFileSync(out+'/index.html',`<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>@font-face{font-family:Cinzel_700Bold;src:url(/cinzel.ttf)}@font-face{font-family:CrimsonText_400Regular;src:url(/crimson.ttf)}@font-face{font-family:CrimsonText_400Regular_Italic;src:url(/crimson-italic.ttf)}html,body,#root{margin:0;width:100%;height:100%;background:#0D0A06}*{box-sizing:border-box}</style><div id="root"></div><script src="/app.js"></script>`);console.log('Önizleme paketi hazır');})().catch(e=>{console.error(e);process.exitCode=1});
++(async()=>{await esbuild.build({stdin:{contents:entry,resolveDir:root,loader:'tsx'},bundle:true,platform:'browser',format:'iife',outfile:path.join(out,'app.js'),plugins:[plugin],loader:{'.png':'file','.jpg':'file','.ttf':'file','.m4a':'file'},assetNames:'assets/[name]-[hash]',define:{'process.env.NODE_ENV':'"production"',__DEV__:'false'},logLevel:'warning'});fs.copyFileSync(root+'/node_modules/@expo-google-fonts/cinzel/700Bold/Cinzel_700Bold.ttf',out+'/cinzel.ttf');fs.copyFileSync(root+'/node_modules/@expo-google-fonts/crimson-text/400Regular/CrimsonText_400Regular.ttf',out+'/crimson.ttf');fs.copyFileSync(root+'/node_modules/@expo-google-fonts/crimson-text/400Regular_Italic/CrimsonText_400Regular_Italic.ttf',out+'/crimson-italic.ttf');fs.copyFileSync(root+'/node_modules/@expo-google-fonts/crimson-text/600SemiBold/CrimsonText_600SemiBold.ttf',out+'/crimson-heading.ttf');fs.writeFileSync(out+'/index.html',`<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>@font-face{font-family:CrimsonText_600SemiBold;src:url(/crimson-heading.ttf)}@font-face{font-family:Cinzel_700Bold;src:url(/cinzel.ttf)}@font-face{font-family:CrimsonText_400Regular;src:url(/crimson.ttf)}@font-face{font-family:CrimsonText_400Regular_Italic;src:url(/crimson-italic.ttf)}html,body,#root{margin:0;width:100%;height:100%;background:#0D0A06}*{box-sizing:border-box}</style><div id="root"></div><script src="/app.js"></script>`);console.log('Önizleme paketi hazır');})().catch(e=>{console.error(e);process.exitCode=1});
+diff --git a/mobile/lib/game-navigation.tsx b/mobile/lib/game-navigation.tsx
+new file mode 100644
+index 0000000..a2cd2e7
+--- /dev/null
++++ b/mobile/lib/game-navigation.tsx
+@@ -0,0 +1,26 @@
++import { View, Text, StyleSheet } from "react-native";
++import { DesignPressable } from "./design-pressable";
++import { GameIcon } from "./icons";
++import { useI18n } from "./i18n";
++import { C, F } from "./theme";
++
++const LEFT = [{ name: "karakter", key: "tab.character", icon: "karakter" }, { name: "sehir", key: "visual.navCity", icon: "sehir" }];
++const RIGHT = [{ name: "iliskiler", key: "visual.navPeople", icon: "iliskiler" }, { name: "tarih", key: "visual.navJournal", icon: "book" }];
++// Önizleme ve oyun aynı alt menü bileşenini kullanır. Orta boşluk ay düğmesinindir.
++export function GameNavigation({ active, onSelect, bottom = 0 }: { active: string; onSelect: (name: string) => void; bottom?: number }) {
++  const { t } = useI18n();
++  const group = (items: typeof LEFT) => <View style={styles.group}>{items.map(item => <DesignPressable key={item.name} accessibilityRole="tab" accessibilityState={{ selected: active === item.name }} accessibilityLabel={t(item.key)} onPress={() => onSelect(item.name)} style={styles.item}>
++    <GameIcon name={item.icon} size={28} color={active === item.name ? C.goldSoft : C.parchmentDim} />
++    <Text style={{ fontFamily: F.serif, fontSize: 14, lineHeight: 17, color: active === item.name ? C.goldSoft : C.parchmentDim, textAlign: "center", maxWidth: "100%" }}>{t(item.key)}</Text>
++  </DesignPressable>)}</View>;
++  return <View style={{ backgroundColor: C.bg, paddingBottom: bottom, paddingHorizontal: 8 }}>
++    <View style={styles.frame}><View pointerEvents="none" style={styles.inner} /><View style={styles.row}>{group(LEFT)}<View style={{ width: 78 }} />{group(RIGHT)}</View></View>
++  </View>;
++}
++const styles = StyleSheet.create({
++  frame: { minHeight: 82, borderWidth: 1, borderColor: C.goldDim, borderRadius: 3, backgroundColor: C.surface, paddingHorizontal: 5, paddingVertical: 5 },
++  inner: { position: "absolute", top: 3, left: 3, right: 3, bottom: 3, borderWidth: 1, borderColor: C.gold + "33", borderRadius: 2 },
++  row: { flexDirection: "row", alignItems: "center" },
++  group: { flex: 1, minWidth: 0, flexDirection: "row" },
++  item: { flex: 1, minWidth: 0, minHeight: 68, alignItems: "center", justifyContent: "center", gap: 4, paddingHorizontal: 1 },
++});

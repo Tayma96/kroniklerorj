@@ -1,0 +1,18 @@
+[
+  {
+    "screen": "ana",
+    "width": 320,
+    "errors": [],
+    "overflow": false,
+    "footer": "4 native tabs + center action",
+    "file": "ana-320.png"
+  },
+  {
+    "screen": "ana",
+    "width": 390,
+    "errors": [],
+    "overflow": false,
+    "footer": "4 native tabs + center action",
+    "file": "ana-390.png"
+  }
+]

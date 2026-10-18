@@ -2,7 +2,8 @@
 
 > Kullanıcı bu uyarlamayı onaylamadı. NPC yüz/gövde montajı ve mockup benzerliği
 > yetersiz bulundu. Aşağıdaki galeri ilk denemedir; tamamlanmış tasarım değildir.
-> NPC montajı uygulamadan kaldırıldı; ana ekran/NPC/şehir yeniden çalışılıyor.
+> NPC montajı uygulamadan kaldırıldı. [Yeni üç ekran denemesi](duzeltme-v2/README.md)
+> de birebir eşleşmediği için uygulamaya alınmadı; tasarım tamamlanmış değildir.
 
 42 sayfa, onaylanan [ilk görsel taslağın](ekran-taslaklari-v1.png) koyu parşömen,
 pirinç çerçeve ve sıcak Anadolu sahneleriyle uygulandı. Aşağıdaki görseller **gerçek
