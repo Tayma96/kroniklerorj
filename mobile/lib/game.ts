@@ -1870,7 +1870,7 @@ export function yetenekAdaylari(s: GameState): string[] {
     const eg = hafizaEgilimi(s.hafiza); if (eg && y.et === eg) n += 4;
     puan[y.id] = n;
   }
-  return SOY_YETENEKLERI.map((y) => y.id).sort((a, b) => puan[b] - puan[a] || a.localeCompare(b)).slice(0, 3);
+  return SOY_YETENEKLERI.map((y) => y.id).sort((a, b) => puan[b] - puan[a] || (a < b ? -1 : a > b ? 1 : 0)).slice(0, 3);
 }
 // Küllerden yeni ocak: varisi olmayan hayatın ardından aynı soyadla yeni bir hayat. Defterin taşıdığı tek şey kimliktir:
 // atanın en çok anılan kararları (ata izi — Yankı bunları yeni hayatta yankılatır) ve seçilen tek soy yeteneği. Para, mülk, itibar geçmez.
@@ -5047,7 +5047,49 @@ function warEconomyTick(s: GameState): void {
   const world = s.warWorld || (s.warWorld = emptyWarWorld());
   const fronts = [s.realmArmyWar, s.crownCampaign?.armies].filter((w): w is ArmyWar => !!w);
   for (const front of fronts) recordWar(world, front);
-  tickWarWorld(world, fronts, s.turn, BEYLIKS.map(b => b.id));
+  if (tickWarWorld(world, fronts, s.turn, BEYLIKS.map(b => b.id))) warCivilianTick(s);
+}
+
+// Sayısal göç baskısı gerçek kişilerle de bağlanır. Bir seferde tek hane, üç ayda bir;
+// eş/küçük çocuklar beraber gider. Oyuncunun yakınları, işçileri ve açık ilişkileri zorla taşınmaz.
+function warCivilianTick(s: GameState): void {
+  const world = s.warWorld;
+  if (!world || s.mpRealm || s.turn % 3 !== 0 || world.migrationTurn === s.turn) return;
+  const pop = nufusOf(s), year = worldYears(s), p = s.player;
+  const protectedIds = new Set([...Object.keys(s.relationships), ...(p.properties || []).flatMap(pr => pr.workers || [])]);
+  if (p.spouse_id) protectedIds.add(p.spouse_id);
+  const safePerson = (k: Kisi) => k.ol == null && !protectedIds.has(k.id) && !oyuncuAkrabasi(p, k.id) && k.es !== OYUNCU;
+  const households = Object.values(pop.k).filter(k => safePerson(k) && yasOf(k, year) >= 21 && yasOf(k, year) <= 65 && k.prof !== "asker");
+  for (const head of households) {
+    const group = [head, ...(head.es && pop.k[head.es] ? [pop.k[head.es]] : []), ...(head.cocuk || []).map(id => pop.k[id]).filter((k): k is Kisi => !!k && yasOf(k, year) < 16)]
+      .filter((k, index, all) => k.ol == null && k.loc === head.loc && all.findIndex(other => other.id === k.id) === index);
+    if (group.length > 6 || group.some(k => !safePerson(k))) continue;
+    const home = typeof head.warHome === "string" && LOCATIONS.includes(head.warHome) ? head.warHome : undefined, homeState = home ? warRegionAt(s, home) : null;
+    const returning = !!home && year > (head.warYear ?? year) && !mobilizedRegion(s, regionOf(home)) && homeState!.damage < 4 && homeState!.shortage < 6 && homeState!.insecurity < 6;
+    const r = warRegionAt(s, head.loc);
+    if (!returning && r.displacement < 8 && r.damage < 12) continue;
+    const origin = head.loc;
+    const safePlaces = returning ? [home!] : LOCATIONS.filter(loc => regionOf(loc) !== regionOf(origin) && !mobilizedRegion(s, regionOf(loc)) && warRegionAt(s, loc).damage < 10 && warRegionAt(s, loc).shortage < 18)
+      .sort((a, b) => warRegionAt(s, a).shortage - warRegionAt(s, b).shortage || a.localeCompare(b)).slice(0, 3);
+    if (!safePlaces.length) continue;
+    const destination = safePlaces[Math.floor(gameRandom(s) * safePlaces.length)];
+    const writable = nufusHazirla(s);
+    for (const member of group) {
+      const k = writable.k[member.id]; k.loc = destination;
+      if (returning) { delete k.warHome; delete k.warYear; }
+      else { k.warHome = k.warHome || origin; k.warYear = year; }
+    }
+    nufusDegisti(writable); _profCache = {};
+    world.migrationTurn = s.turn;
+    if (!returning) {
+      const arrival = regionOf(destination);
+      world.regions[arrival] = world.regions[arrival] || peacefulRegion();
+      world.regions[arrival].displacement = Math.min(100, world.regions[arrival].displacement + group.length * 0.4);
+      world.regions[arrival].shortage = Math.min(100, world.regions[arrival].shortage + group.length * 0.3);
+    }
+    push(s, "dunya", "Bir hane savaşın ardından yer değiştirdi.", "makro", true, { k: returning ? "ww.return" : "ww.displaced", p: [knParam(head), group.length, { pl: origin }, { pl: destination }] });
+    break;
+  }
 }
 
 function crownArmies(s: GameState, target: string): ArmyWar {
@@ -6579,10 +6621,12 @@ function markVisit(p: Player, dest: string) {
 }
 export function travelTo(prev: GameState, dest: string): GameState {
   const s = clone(prev); const p = s.player;
-  if (p.dead || dest === p.location_name) return s;
+  if (p.dead || inJail(p) || dest === p.location_name || !LOCATIONS.includes(dest)) return s;
+  const origin = p.location_name;
   markVisit(p, p.location_name); // kalkış noktası da sayılır (doğduğun yerleşim kaybolmasın)
   p.location_name = dest; markVisit(p, dest); p.hunger = Math.max(0, p.hunger - 5);
   { const tv2 = gameRandom(s) < 0.5; push(s, "yolculuk", tv2 ? `Yol seni ${dest} kapısına bıraktı; heybende iki beyliğin tozu var.` : `${dest} yerleşimine gittin.`, "kişisel", false, { k: tv2 ? "evj.travel2" : "evj.travel", p: [{ pl: dest }] }); }
+  warTravelImpact(s, origin, dest, "anayol");
   return s;
 }
 
@@ -6744,8 +6788,20 @@ function rollTravelEvent(s: GameState, route: TravelRoute) {
   if (p.health <= 0) die(s, `${p.name}, yolda can verdi.`, { k: "evj.dieRoad", p: [p.name] });
 }
 
+export function warTravelRisk(s: GameState, origin: string, dest: string, route: TravelRoute): number {
+  const risk = Math.max(regionalWarEffects(s, origin).roadRisk, regionalWarEffects(s, dest).roadRisk);
+  return risk * (route === "kervan" ? 0.35 : route === "at" ? 0.5 : route === "patika" ? 1 : 0.7);
+}
+function warTravelImpact(s: GameState, origin: string, dest: string, route: TravelRoute): void {
+  const risk = warTravelRisk(s, origin, dest, route);
+  if (risk <= 0 || gameRandom(s) >= risk) return;
+  const loss = Math.min(Math.max(0, s.player.money), Math.round(8 * inflationFactor(s)));
+  s.player.money -= loss; s.player.hunger = Math.max(0, s.player.hunger - 4);
+  push(s, "yolculuk", "Savaşın dağıttığı yol düzeni yolculuğa bedel ödetti.", "kişisel", false, { k: "ww.roadLoss", p: [{ pl: dest }, loss] });
+}
 export function travelBy(prev: GameState, dest: string, route: TravelRoute): GameState {
   const s = clone(prev); const p = s.player;
+  const origin = p.location_name;
   if (inJail(p)) return s; // zindandan kervan kalkmaz
   if (p.dead || dest === p.location_name) return s;
   markVisit(p, p.location_name); // kalkış noktası da sayılır (doğduğun yerleşim kaybolmasın)
@@ -6788,6 +6844,7 @@ export function travelBy(prev: GameState, dest: string, route: TravelRoute): Gam
     p.hunger = Math.max(0, p.hunger - 5); p.location_name = dest; markVisit(p, dest);
     { const tv2 = gameRandom(s) < 0.5; push(s, "yolculuk", tv2 ? `Ana yol seni ${dest} kapısına bıraktı; heybende iki beyliğin tozu var.` : `Ana yoldan ${dest} yerleşimine gittin.`, "kişisel", false, { k: tv2 ? "evj.travel2" : "evj.travel", p: [{ pl: dest }] }); }
   }
+  if (!p.dead) warTravelImpact(s, origin, dest, route);
   if (!p.dead) rollTravelEvent(s, route); // yol olayları (han/yolcu/tüccar/fırtına/geçit/kervan) — artık etkin
   // ── Ocağa dönüş: vardığın şehirde evin varsa eşik seni tanır — yol tozunun en tatlı sonu (yalnız anlatı, kazanç yok) ──
   if (!p.dead && p.location_name === dest && p.properties.some((pr) => pr.type === "ev" && pr.loc === dest) && gameRandom(s) < 0.35) {

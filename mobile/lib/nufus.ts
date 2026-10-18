@@ -29,6 +29,7 @@ export interface Kisi {
   dost?: string[]; hasim?: string[];
   gd?: boolean; gh?: boolean; usta?: boolean; // hayaline erdi · oyuncu hayaline omuz verdi · oyuncunun yetiştirdiği usta
   kr?: { y: number; e: string; m: string }; // son meslek kararı: yıl, bırakılan meslek, kıt olduğu için yöneldiği mal
+  warHome?: string; warYear?: number; // savaşla yerinden edilen hanenin eski yurdu ve dünya yılı
 }
 export interface Nufus { v: 1; k: Record<string, Kisi>; n: number } // n: yeni kimlik sayacı
 
