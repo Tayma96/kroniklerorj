@@ -1,0 +1,91 @@
+{
+  "generated": "2026-10-18",
+  "tool": "image_gen",
+  "note": "Başsız kıyafet/gövde katmanları. Kimlik ve yaş yüzü npc-portre.ts kaynağından ayrı çizilir. Kaynak görüntüye piksel düzenlemesi uygulanmadı; çalışma anında atlas hücresi kadrajlanır.",
+  "atlases": [
+    {
+      "file": "uretim-hukumdar-v1.png",
+      "original": "exec-69c7c4e0-23a8-44a6-a90d-584ba99ee43e.png",
+      "sha256": "3cf63d478c4c965abe80cebf9d62f9de02677c6a6fd7b95f1e0c4667d9963b9a",
+      "size": [
+        1536,
+        1024
+      ],
+      "columns": [
+        "çiftçi",
+        "demirci",
+        "hükümdar"
+      ],
+      "rows": [
+        "sakin",
+        "açık/neşeli",
+        "gergin"
+      ],
+      "headless": true,
+      "alpha": true
+    },
+    {
+      "file": "hizmet-v1.png",
+      "original": "exec-77848216-f8ef-4119-b519-e6ac720df957.png",
+      "sha256": "a3dce29b69499c1e0598327088939f12f034415a263e7f08d3f02feb6b316dd2",
+      "size": [
+        1536,
+        1024
+      ],
+      "columns": [
+        "tüccar",
+        "şifacı",
+        "asker"
+      ],
+      "rows": [
+        "sakin",
+        "açık/neşeli",
+        "gergin"
+      ],
+      "headless": true,
+      "alpha": true
+    },
+    {
+      "file": "kir-v1.png",
+      "original": "exec-03f8fcf8-decc-484c-984e-1539d60c4118.png",
+      "sha256": "9efba318ba4f82ab6b62aa833cd21809f39cf437734fe1dfde60a1f0de641d6f",
+      "size": [
+        1536,
+        1024
+      ],
+      "columns": [
+        "balıkçı",
+        "avcı",
+        "çoban"
+      ],
+      "rows": [
+        "sakin",
+        "açık/neşeli",
+        "gergin"
+      ],
+      "headless": true,
+      "alpha": true
+    },
+    {
+      "file": "kasaba-v1.png",
+      "original": "exec-635148f1-b66e-4a20-8790-05327101dc1a.png",
+      "sha256": "01a6917907e00af0a18c08d2731a781e959648238c874a239b396eaf0f2549aa",
+      "size": [
+        1536,
+        1024
+      ],
+      "columns": [
+        "fırıncı",
+        "müzisyen",
+        "işsiz"
+      ],
+      "rows": [
+        "sakin",
+        "açık/neşeli",
+        "gergin"
+      ],
+      "headless": true,
+      "alpha": true
+    }
+  ]
+}
