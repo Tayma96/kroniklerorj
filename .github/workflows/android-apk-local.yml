@@ -8,6 +8,10 @@ name: APK (yerel derleme - hesapsiz)
 on:
   workflow_dispatch:
     inputs:
+      kisa_kontrol:
+        description: "Uzun smoke yerine tip ve hedefli savaş/kayıt/dil kontrolleri"
+        type: boolean
+        default: false
       kanal:
         description: "latest = kalici link (apk-latest) · test = ayri deneme linki (apk-test), kalici linke dokunmaz"
         type: choice
@@ -27,9 +31,21 @@ jobs:
       - name: Bagimliliklar (mobile)
         working-directory: mobile
         run: npm ci --no-audit --no-fund
-      - name: Kalite kapisi (tsc + 300-hayat smoke) — kirik mantik APK'ya binmesin
+      - name: Kalite kapisi
         working-directory: mobile
+        env:
+          KISA_KONTROL: ${{ inputs.kisa_kontrol }}
         run: |
+          if [ "$KISA_KONTROL" = "true" ]; then
+            set -e
+            npx tsc --noEmit
+            npx --no-install esbuild lib/game.ts --bundle --platform=node --format=cjs --outfile=/tmp/kronikler-game-bundle.cjs --log-level=error
+            node scripts/check-war.cjs
+            node scripts/_smoke/migrate-check.cjs
+            node scripts/_smoke/i18n-icon-check.cjs
+            node scripts/_smoke/dil-karisma.cjs
+            exit 0
+          fi
           npx tsc --noEmit
           node scripts/_smoke/kurtarma-check.cjs
           node scripts/_smoke/ses-check.cjs
