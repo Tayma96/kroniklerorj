@@ -2,6 +2,7 @@ import { View, Text, ScrollView, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useGame } from "../../../lib/store";
+import { WarWorldCard } from "../../../lib/war-world-ui";
 import { inJail, travelBy, buyHorse, HORSE_COST, placeKind, TRAVEL_ROUTES, beylikOf, GOV_TITLE, isGovernor, canRunForGovernor, runForGovernor, govReqRep, govLegOf, shoreUpLegitimacy, GOV_SHORE_COST, govTaxOf, govHappyOf, govTreasuryOf, GOV_TAX_PRESETS, setGovTax, investTreasury, GOV_INVEST_COST, locEventsAt, LOC_EVENT_TYPES, citySpecialtyIdx, GOV_EDICTS, canIssueEdict, issueEdict, edictCooldownLeft, GOV_WORKS, canFundWork, fundWork, worksOf } from "../../../lib/game";
 import { cityInfo, marketGoods, locSeed } from "../../../lib/world";
 import { useI18n, yuzdeL, applyParams } from "../../../lib/i18n";
@@ -49,6 +50,7 @@ export default function DiyarDetay() {
       <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.gold, marginBottom: 1 }}>{t("kind." + KIND_KEY[kind])} · {info.population.toLocaleString("tr")} {t("diyar.pop")}</Text>
       <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 0.5, color: beylikOf(name).tone, marginBottom: 4 }}>{"\u2691\uFE0E "}{beylikOf(name).name}</Text>
       <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchmentMuted, lineHeight: 20, marginBottom: 14 }}>{info.blurb}</Text>
+      <WarWorldCard loc={name} aid={here} />
 
       <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, paddingHorizontal: 14, marginBottom: 16 }}>
         <Stat label={t("diyar.governor")} value={info.governor} />

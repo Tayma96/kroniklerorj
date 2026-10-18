@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
+import { WarWorldCard } from "../../lib/war-world-ui";
 import { buyItem, buyPrice, sellItem, launchCaravan, caravanPremium, rentStall, stallCost, stallActive, stockWinter, winterStockCost, pawnHorse, redeemHorse, horsePawnValue, horseRedeemCost, negotiatedBuy, negotiatedSell, bargainBase, bargainSellBase, bargainChance, rollBargain, marketPrice, econKey, goodPriceMult, MARKET_EVENTS, bestQualityTier, QUALITY_LABEL, sellerPersonaOf, factionLocalFavor, goodMarketTag, goodTrend, citySpecialtyIdx, loanCapacity, loanRate, borrow, repay, depositCoin, withdrawCoin, DEPOSIT_ANNUAL_YIELD, lifestyleUpkeep, giveZekat, zekatDue, zekatAvailable } from "../../lib/game";
 import { marketGoods, locSeed } from "../../lib/world";
 import { currentCalendar } from "../../lib/calendar";
@@ -168,6 +169,7 @@ export default function Pazar() {
       </View>
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: 14, paddingBottom: insets.bottom + 90 }}>
+        <WarWorldCard />
         {/* PageHeader */}
         <View style={{ alignItems: "center", marginBottom: 14 }}>
           <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 3, color: C.goldDim, textTransform: "uppercase" }}>{t("scr.pazar")}</Text>

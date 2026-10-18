@@ -2,6 +2,7 @@ import { View, Text, ScrollView, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
+import { WarWorldCard } from "../../lib/war-world-ui";
 import { placeKind, recognition, publicPerception, atHome, regionOf, defaultRealm, factionById, beylikName, citySpecialtyIdx, buyIltizam, iltizamCost } from "../../lib/game";
 import { cityInfo } from "../../lib/world";
 import { useI18n, yuzdeL, applyParams } from "../../lib/i18n";
@@ -54,6 +55,7 @@ export default function Sehir() {
       </View>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 14, paddingBottom: insets.bottom + 90 }}>
         <PageHeader kicker={`${t("kind." + KIND_KEY[kind])} · ${info.population.toLocaleString("tr")} ${t("diyar.pop")}`} title={placeName(here, lang)} sub={t("city.hubSub")} />
+        <WarWorldCard aid />
 
         <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchmentMuted, lineHeight: 20, marginBottom: 14 }}>{info.blurb}</Text>
 

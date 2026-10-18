@@ -5017,6 +5017,31 @@ export function warRegionAt(s: GameState, loc: string): WarRegion {
 export function regionalWarEffects(s: GameState, loc: string): ReturnType<typeof warEffects> {
   return warEffects(warRegionAt(s, loc), mobilizedRegion(s, regionOf(loc)));
 }
+export function warReportAt(s: GameState, loc: string) {
+  const region = warRegionAt(s, loc);
+  return { region, effects: regionalWarEffects(s, loc), active: mobilizedRegion(s, regionOf(loc)),
+    affected: !s.mpRealm && Object.values(region).some(n => n >= 0.5) };
+}
+export function warAidCost(s: GameState, kind: CivilAid): { money: number; good?: string; quantity: number } {
+  if (kind === "food") return { money: 0, good: "bugday", quantity: 8 };
+  if (kind === "rebuild") return { money: Math.round(90 * inflationFactor(s)), good: "kereste", quantity: 4 };
+  return { money: Math.round(75 * inflationFactor(s)), quantity: 0 };
+}
+export function canWarAid(s: GameState, kind: CivilAid): boolean {
+  if (!["food", "rebuild", "patrol"].includes(kind) || s.mpRealm || s.player.dead || inJail(s.player) || s.player.age < 13 || s.warWorld?.aidTurn === s.turn) return false;
+  const cost = warAidCost(s, kind);
+  return aidNeeded(warRegionAt(s, s.player.location_name), kind) && s.player.money >= cost.money && (!cost.good || (s.player.inventory[cost.good] || 0) >= cost.quantity);
+}
+export function giveWarAid(prev: GameState, kind: CivilAid): GameState {
+  if (!canWarAid(prev, kind)) return prev;
+  const s = clone(prev), cost = warAidCost(s, kind);
+  if (!applyCivilAid(s.warWorld!, regionOf(s.player.location_name), kind, s.turn)) return prev;
+  s.player.money -= cost.money;
+  if (cost.good) s.player.inventory[cost.good] -= cost.quantity;
+  s.player.reputation = Math.min(100, s.player.reputation + 1);
+  push(s, "dunya", "Savaşın sivil yaralarını hafiflettin.", "kişisel", false, { k: "ww.aid.done", p: [{ sfx: "ww.aid." + kind }, { pl: s.player.location_name }] });
+  return s;
+}
 function warEconomyTick(s: GameState): void {
   if (s.mpRealm) return;
   const world = s.warWorld || (s.warWorld = emptyWarWorld());

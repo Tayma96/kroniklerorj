@@ -26,6 +26,17 @@ const assert = require('node:assert/strict'), fs = require('node:fs'), path = re
   const mp = copy(damaged); mp.mpRealm = true;
   assert.equal(g.buyPrice(mp, 'ekmek'), g.buyPrice(peace, 'ekmek')); assert.equal(g.crownTribute(mp), g.crownTribute(peace));
   assert.equal(g.cityGoodSupply(mp, 'Demirhan', 'bugday'), g.cityGoodSupply(peace, 'Demirhan', 'bugday'));
+  // Sivil yardım gerçek bedelle çalışır; şehir değiştirerek aynı ay tekrar kazanılamaz.
+  const donor = copy(damaged); donor.player.crowned = false; donor.player.inventory.bugday = 20; donor.player.inventory.kereste = 20;
+  const cost = g.warAidCost(donor, 'rebuild'), donated = g.giveWarAid(donor, 'rebuild');
+  assert.equal(donated.player.money, donor.player.money - cost.money);
+  assert.equal(donated.player.inventory.kereste, donor.player.inventory.kereste - 4);
+  assert(donated.warWorld.regions.demirhan.damage < donor.warWorld.regions.demirhan.damage);
+  assert.deepEqual(g.giveWarAid(donated, 'food'), donated);
+  assert.deepEqual(g.giveWarAid(peace, 'food'), peace, 'barışta ihtiyacı olmayan yere itibar çiftçiliği');
+  const noGoods = copy(donor); noGoods.player.inventory.kereste = 0; assert(!g.canWarAid(noGoods, 'rebuild'));
+  const jailed = copy(donor); jailed.player.jail = { left: 2 }; assert(!g.canWarAid(jailed, 'food'));
+  assert(!g.canWarAid(mp, 'food')); assert(!g.warReportAt(mp, 'Demirhan').affected);
   const fighting = copy(peace); fighting.player.crowned = false; fighting.rng_state = 21;
   fighting.realmArmyWar = { id: 'realm:1:test', attacker: 'demirhan', defender: 'aksehir', started: 0, lastTick: 0, month: 0, a: a.makeArmy(800), b: a.makeArmy(900) };
   for (let turn = 1; turn <= 3; turn++) { fighting.turn = turn; g.warEconomyTick(fighting); g.realmArmyTick(fighting); }
