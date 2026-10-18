@@ -12,7 +12,10 @@
 
 ## Son kullanıcı hedefi / yapılanlar
 - Kullanıcı bütün sayfaları onaylanan mockup diline dönüştürmemizi istedi.
-- 42/42 gerçek rota dönüştürüldü; mobile/lib/screen-design.ts envanteri.
+- Kullanıcı son uyarlamayı REDDETTİ: NPC yüz/gövde montajı kötü, mockup benzerliği yok.
+- Bitmiş/onaylı tasarım iddiası YANLIŞTI. Önce ana/NPC/şehir birebir yeniden yapılacak.
+- Yüz/gövde montajı kaldırıldı; kimlik portresi bölünmez.
+- 42 rota ilk kez stillendi; mobile/lib/screen-design.ts envanteri.
 - Referans: docs/tasarim/ekran-taslaklari-v1.png. Gerçek UI tarayıcı galerisi:
   docs/tasarim/GALERI.md; düzen tablosu, 42 görüntü, kontrol kayıtları mevcut.
 - Ana ekran: gerçek dört gösterge, kalıcı aylık karar, erken cephe/elçilik uyarıları,

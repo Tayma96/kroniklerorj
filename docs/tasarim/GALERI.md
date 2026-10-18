@@ -1,4 +1,8 @@
-# Kronikler — bütün sayfaların tasarım galerisi
+# Kronikler — ilk uyarlama / reddedilen tasarım
+
+> Kullanıcı bu uyarlamayı onaylamadı. NPC yüz/gövde montajı ve mockup benzerliği
+> yetersiz bulundu. Aşağıdaki galeri ilk denemedir; tamamlanmış tasarım değildir.
+> NPC montajı uygulamadan kaldırıldı; ana ekran/NPC/şehir yeniden çalışılıyor.
 
 42 sayfa, onaylanan [ilk görsel taslağın](ekran-taslaklari-v1.png) koyu parşömen,
 pirinç çerçeve ve sıcak Anadolu sahneleriyle uygulandı. Aşağıdaki görseller **gerçek
