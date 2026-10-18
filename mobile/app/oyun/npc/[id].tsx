@@ -1,5 +1,6 @@
+import { DesignPressable as Pressable } from "../../../lib/design-pressable";
 import { useState, useMemo, useRef, useEffect } from "react";
-import { View, Text, ScrollView, Pressable } from "react-native";
+import { View, Text, ScrollView} from "react-native";
 import Svg, { Defs, LinearGradient, Stop, Rect, Circle } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -49,8 +50,8 @@ const TIE_ORDER: TieKind[] = ["es", "ebeveyn", "evlat", "kardes", "dost", "rakip
 function SansRozet({ yuzde, acik, onPress }: { yuzde: number; acik: boolean; onPress: () => void }) {
   const { lang } = useI18n();
   return (
-    <Pressable onPress={onPress} hitSlop={8} style={{ paddingVertical: 3, paddingHorizontal: 8, borderRadius: 7, borderWidth: 1, borderColor: (acik ? C.gold : C.goldDim) + "88", backgroundColor: acik ? "rgba(201,168,76,0.14)" : "transparent" }}>
-      <Text style={{ fontFamily: F.display, fontSize: 11, color: yuzde >= 60 ? C.sage : yuzde <= 25 ? C.blood : C.gold }}>{yuzdeL(yuzde, lang)}</Text>
+    <Pressable onPress={onPress} hitSlop={8} style={{ paddingVertical: 3, paddingHorizontal: 8, borderRadius: 5, borderWidth: 1, borderColor: (acik ? C.gold : C.goldDim) + "88", backgroundColor: acik ? "rgba(201,168,76,0.14)" : "transparent" }}>
+      <Text style={{ fontFamily: F.display, fontSize: 13, color: yuzde >= 60 ? C.sage : yuzde <= 25 ? C.blood : C.gold }}>{yuzdeL(yuzde, lang)}</Text>
     </Pressable>
   );
 }
@@ -58,16 +59,16 @@ function SansDokum({ kalemler, yuzde, t }: { kalemler: { k: string; v: number }[
   const { lang } = useI18n();
   return (
     <View style={{ paddingHorizontal: 14, paddingBottom: 10, paddingTop: 2 }}>
-      <Text style={{ fontFamily: F.display, fontSize: 8.5, letterSpacing: 1.5, color: C.goldDim, marginBottom: 4 }}>{t("sans.title")}</Text>
+      <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1.5, color: C.goldDim, marginBottom: 4 }}>{t("sans.title")}</Text>
       {kalemler.map((x, i) => (
         <View key={i} style={{ flexDirection: "row", paddingVertical: 2 }}>
           <Text style={{ flex: 1, fontFamily: F.serif, fontSize: T.body, color: C.parchmentDim }}>{t(x.k)}</Text>
-          <Text style={{ fontFamily: F.display, fontSize: 11, color: x.v > 0 ? C.sage : C.blood }}>{x.v > 0 ? "+" + x.v : x.v}</Text>
+          <Text style={{ fontFamily: F.display, fontSize: 13, color: x.v > 0 ? C.sage : C.blood }}>{x.v > 0 ? "+" + x.v : x.v}</Text>
         </View>
       ))}
       <View style={{ flexDirection: "row", paddingTop: 4, marginTop: 3, borderTopWidth: 1, borderTopColor: C.border }}>
-        <Text style={{ flex: 1, fontFamily: F.display, fontSize: 11, color: C.parchment }}>{t("sans.toplam")}</Text>
-        <Text style={{ fontFamily: F.display, fontSize: 11.5, color: C.gold }}>{yuzdeL(yuzde, lang)}</Text>
+        <Text style={{ flex: 1, fontFamily: F.display, fontSize: 13, color: C.parchment }}>{t("sans.toplam")}</Text>
+        <Text style={{ fontFamily: F.display, fontSize: 13, color: C.gold }}>{yuzdeL(yuzde, lang)}</Text>
       </View>
     </View>
   );
@@ -174,7 +175,7 @@ export default function NpcDetail() {
 
       <NpcSceneArt state={state} npc={npc} mood={ns.mood} dead={prof.olu} />
       {/* ── Profil kartı ── */}
-      <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(201,168,76,0.22)", borderRadius: 12, padding: 14, marginBottom: 10 }}>
+      <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(201,168,76,0.22)", borderRadius: 5, padding: 14, marginBottom: 10 }}>
         <View style={{ flexDirection: "row", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
           <View style={{ flexGrow: 1, flexBasis: 180, minWidth: 0 }}>
             <Text style={{ fontFamily: F.display, fontSize: T.display, color: C.parchment, letterSpacing: 0.5 }}>{npc.name}</Text>
@@ -194,7 +195,7 @@ export default function NpcDetail() {
           {!prof.olu ? <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}><GameIcon name="prayer-beads" size={11} color={C.parchmentDim} /><Text style={{ fontFamily: F.serif, fontSize: T.body, color: C.parchmentDim }}>{t("dlg.mood." + moodKey(ns.mood))}</Text></View> : null}
           <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}><GameIcon name="star" size={11} color={C.parchmentDim} /><Text style={{ fontFamily: F.serif, fontSize: T.body, color: C.parchmentDim }}>{traitL(npc.trait, lang)}</Text></View>
           <Pressable accessibilityRole="button" accessibilityLabel={t("gorus.ipucu")} accessibilityState={{ expanded: gorusAcik }} onPress={() => { hap("tap"); setGorusAcik((x) => !x); }} hitSlop={8} style={{ flexDirection: "row", minHeight: 44, alignItems: "center", gap: 5 }}>
-            <Text style={{ fontFamily: F.display, fontSize: 11, color: v >= 20 ? C.sage : v <= -20 ? C.blood : C.parchmentMuted }}>{t("npc.rel")} {v > 0 ? "+" + v : v}</Text>
+            <Text style={{ fontFamily: F.display, fontSize: 13, color: v >= 20 ? C.sage : v <= -20 ? C.blood : C.parchmentMuted }}>{t("npc.rel")} {v > 0 ? "+" + v : v}</Text>
             <Text style={{ fontFamily: F.serifItalic, fontSize: T.body, color: C.goldDim, textDecorationLine: "underline" }}>{t("gorus.ipucu")}</Text>
           </Pressable>
         </View>
@@ -204,16 +205,16 @@ export default function NpcDetail() {
           const g = gorus(state, npc.id);
           return (
             <View style={{ marginTop: 10, paddingTop: 9, borderTopWidth: 1, borderTopColor: C.border }}>
-              <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 1.5, color: C.goldDim, marginBottom: 6 }}>{t("gorus.title")}</Text>
+              <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1.5, color: C.goldDim, marginBottom: 6 }}>{t("gorus.title")}</Text>
               {g.kalemler.map((it, i) => (
                 <View key={i} style={{ flexDirection: "row", alignItems: "flex-start", gap: 8, paddingVertical: 3 }}>
-                  <Text style={{ flex: 1, fontFamily: it.k === "gorus.ani" ? F.serifItalic : F.serif, fontSize: 12, color: C.parchmentDim, lineHeight: T.line }}>{it.k === "gorus.ani" ? "«" + memoryQuote(representativeMemory(ns.anilar, it.tur || "") || { tur: it.tur || "" }, lang, state.player.gender === "kadın") + "»" : t(it.k)}</Text>
-                  <Text style={{ fontFamily: F.display, fontSize: 11.5, color: it.v > 0 ? C.sage : C.blood, minWidth: 34, textAlign: "right" }}>{it.v > 0 ? "+" + it.v : it.v}</Text>
+                  <Text style={{ flex: 1, fontFamily: it.k === "gorus.ani" ? F.serifItalic : F.serif, fontSize: 15, color: C.parchmentDim, lineHeight: T.line }}>{it.k === "gorus.ani" ? "«" + memoryQuote(representativeMemory(ns.anilar, it.tur || "") || { tur: it.tur || "" }, lang, state.player.gender === "kadın") + "»" : t(it.k)}</Text>
+                  <Text style={{ fontFamily: F.display, fontSize: 13, color: it.v > 0 ? C.sage : C.blood, minWidth: 34, textAlign: "right" }}>{it.v > 0 ? "+" + it.v : it.v}</Text>
                 </View>
               ))}
               <View style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingTop: 6, marginTop: 4, borderTopWidth: 1, borderTopColor: C.border }}>
-                <Text style={{ flex: 1, fontFamily: F.display, fontSize: 11, color: C.parchment }}>{t("gorus.toplam")}</Text>
-                <Text style={{ fontFamily: F.display, fontSize: 12, color: g.toplam >= 20 ? C.sage : g.toplam <= -20 ? C.blood : C.parchment, minWidth: 34, textAlign: "right" }}>{g.toplam > 0 ? "+" + g.toplam : g.toplam}</Text>
+                <Text style={{ flex: 1, fontFamily: F.display, fontSize: 13, color: C.parchment }}>{t("gorus.toplam")}</Text>
+                <Text style={{ fontFamily: F.display, fontSize: 13, color: g.toplam >= 20 ? C.sage : g.toplam <= -20 ? C.blood : C.parchment, minWidth: 34, textAlign: "right" }}>{g.toplam > 0 ? "+" + g.toplam : g.toplam}</Text>
               </View>
               <NpcTavri state={state} id={npc.id} detailed />
             </View>
@@ -224,9 +225,9 @@ export default function NpcDetail() {
         {npc.goal && !prof.olu ? <Text style={{ fontFamily: F.serifItalic, fontSize: T.body, color: C.goldDim, marginTop: 2 }}>{t("npc.dream")} {goalL(npc.goal, lang)}.</Text> : null}
         {/* Gizli ilişki: bu kişi aktif yasak sevgilinse ateş çubuğuyla göster */}
         {state.player.affair?.id === npc.id ? (
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 8, paddingVertical: 5, paddingHorizontal: 8, borderRadius: 7, borderWidth: 1, borderColor: C.ember + "55", backgroundColor: C.ember + "14" }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 8, paddingVertical: 5, paddingHorizontal: 8, borderRadius: 5, borderWidth: 1, borderColor: C.ember + "55", backgroundColor: C.ember + "14" }}>
             <GameIcon name="lyre" size={11} color={C.ember} />
-            <Text style={{ fontFamily: F.display, fontSize: 8.5, letterSpacing: 0.5, color: C.ember }}>{t("affair.badge").toUpperCase()}</Text>
+            <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 0.5, color: C.ember }}>{t("affair.badge").toUpperCase()}</Text>
             <View style={{ flex: 1, height: 4, borderRadius: 2, backgroundColor: C.ember + "22", overflow: "hidden" }}>
               <View style={{ width: `${Math.max(0, Math.min(100, state.player.affair.heat))}%`, height: "100%", backgroundColor: C.ember }} />
             </View>
@@ -236,10 +237,10 @@ export default function NpcDetail() {
 
       {/* ── Çevresi (NPC↔NPC ilişki ağı) ── */}
       {ties.length > 0 && (
-        <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(201,168,76,0.22)", borderRadius: 12, padding: 12, marginBottom: 10 }}>
+        <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(201,168,76,0.22)", borderRadius: 5, padding: 12, marginBottom: 10 }}>
           <Pressable accessibilityRole="button" accessibilityState={{ expanded: tiesOpen }} onPress={() => setTiesOpen(x => !x)} style={{ flexDirection: "row", alignItems: "center", minHeight: L.touch, gap: 6 }}>
             <GameIcon name="iliskiler" size={13} color={C.goldDim} />
-            <Text style={{ fontFamily: F.display, fontSize: T.label, letterSpacing: 2, color: C.goldDim, textTransform: "uppercase" }}>{t("npc.ties")} · {ties.length} {tiesOpen ? "−" : "+"}</Text>
+            <Text style={{ fontFamily: F.display, fontSize: T.label, letterSpacing: 1, color: C.goldDim, textTransform: "uppercase" }}>{t("npc.ties")} · {ties.length} {tiesOpen ? "−" : "+"}</Text>
           </Pressable>
           {tiesOpen && ties.map((tt) => {
             const meta = TIE_META[tt.kind];
@@ -252,7 +253,7 @@ export default function NpcDetail() {
                 </View>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 4, paddingVertical: 3, paddingHorizontal: 7, borderRadius: 5, borderWidth: 1, borderColor: meta.tone + "55", backgroundColor: meta.tone + "14" }}>
                   <GameIcon name={meta.icon} size={11} color={meta.tone} />
-                  <Text style={{ fontFamily: F.display, fontSize: 8.5, letterSpacing: 0.5, color: meta.tone }}>{t("tie." + tt.kind).toUpperCase()}</Text>
+                  <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 0.5, color: meta.tone }}>{t("tie." + tt.kind).toUpperCase()}</Text>
                 </View>
               </Pressable>
             );
@@ -264,7 +265,7 @@ export default function NpcDetail() {
 
       {prof.burada && !state.player.dead && (<>
       {recalled && !state.player.dead && (
-        <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.borderHi, borderRadius: 12, padding: 12, marginBottom: 10 }}>
+        <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.borderHi, borderRadius: 5, padding: 12, marginBottom: 10 }}>
           <View style={{ flexDirection: lang === "ar" ? "row-reverse" : "row", alignItems: "center", gap: 7, marginBottom: 6 }}>
             <GameIcon name="scroll" size={14} color={recalled.yuk > 0 ? C.sage : C.ember} />
             <Text style={{ flex: 1, fontFamily: F.serif, fontSize: T.body, color: C.gold }}>{t("npc.remembers")}</Text>
@@ -275,21 +276,21 @@ export default function NpcDetail() {
           {witnesses.length > 0 && <View style={{ marginTop: 9 }}>
             <Text style={{ fontFamily: F.serif, fontSize: T.body, color: C.parchmentMuted }}>{t("mind.witness.others")}</Text>
             <View style={{ flexDirection: lang === "ar" ? "row-reverse" : "row", flexWrap: "wrap", gap: 6, marginTop: 5 }}>
-              {witnesses.map(id => { const witness = kisiProfil(state, id, lang); return witness ? <Pressable key={id} accessibilityRole="button" accessibilityLabel={witness.npc.name} onPress={() => router.push({ pathname: "/oyun/npc/[id]", params: { id } })} style={{ minHeight: 44, maxWidth: "100%", justifyContent: "center", paddingHorizontal: 9, borderWidth: 1, borderColor: C.border, borderRadius: 8 }}>
+              {witnesses.map(id => { const witness = kisiProfil(state, id, lang); return witness ? <Pressable key={id} accessibilityRole="button" accessibilityLabel={witness.npc.name} onPress={() => router.push({ pathname: "/oyun/npc/[id]", params: { id } })} style={{ minHeight: 44, maxWidth: "100%", justifyContent: "center", paddingHorizontal: 9, borderWidth: 1, borderColor: C.border, borderRadius: 5 }}>
                 <Text style={{ fontFamily: F.serif, fontSize: T.body, color: C.gold }}>{witness.npc.name}{witness.olu ? " · " + t("npc.late") : ""}</Text>
               </Pressable> : null; })}
             </View>
           </View>}
-          <Pressable accessibilityRole="button" accessibilityLabel={t("mind.recall.action")} accessibilityState={{ disabled: usedAct("t:hatira") }} disabled={usedAct("t:hatira")} onPress={() => { hap("tap"); speak("hatira"); }} style={{ minHeight: 44, justifyContent: "center", alignItems: "center", borderWidth: 1, borderColor: C.borderHi, borderRadius: 8, marginTop: 8, opacity: usedAct("t:hatira") ? 0.5 : 1 }}>
+          <Pressable accessibilityRole="button" accessibilityLabel={t("mind.recall.action")} accessibilityState={{ disabled: usedAct("t:hatira") }} disabled={usedAct("t:hatira")} onPress={() => { hap("tap"); speak("hatira"); }} style={{ minHeight: 44, justifyContent: "center", alignItems: "center", borderWidth: 1, borderColor: C.borderHi, borderRadius: 5, marginTop: 8, opacity: usedAct("t:hatira") ? 0.5 : 1 }}>
             <Text style={{ fontFamily: F.serif, fontSize: T.body, color: C.gold }}>{t(usedAct("t:hatira") ? "mind.recall.done" : "mind.recall.action")}</Text>
           </Pressable>
         </View>
       )}
       {!recalled && !state.player.dead && <NpcIzlenimi def={ns.izlenim} used={usedAct("t:hatira")} onPress={() => { hap("tap"); speak("hatira"); }} />}
       {heard && !state.player.dead && state.player.age >= 13 && (
-        <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 12, padding: 12, marginBottom: 10 }}>
+        <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 5, padding: 12, marginBottom: 10 }}>
           <Text style={{ fontFamily: F.serifItalic, fontSize: T.body, lineHeight: T.line, color: C.parchmentDim }}>{t("rum.net.topic")}</Text>
-          <Pressable accessibilityRole="button" accessibilityLabel={t("rum.net.action")} accessibilityState={{ disabled: usedAct("t:duyum") }} disabled={usedAct("t:duyum")} onPress={() => { hap("tap"); speak("duyum"); }} style={{ minHeight: 44, justifyContent: "center", alignItems: "center", borderWidth: 1, borderColor: C.borderHi, borderRadius: 8, marginTop: 8, opacity: usedAct("t:duyum") ? 0.5 : 1 }}>
+          <Pressable accessibilityRole="button" accessibilityLabel={t("rum.net.action")} accessibilityState={{ disabled: usedAct("t:duyum") }} disabled={usedAct("t:duyum")} onPress={() => { hap("tap"); speak("duyum"); }} style={{ minHeight: 44, justifyContent: "center", alignItems: "center", borderWidth: 1, borderColor: C.borderHi, borderRadius: 5, marginTop: 8, opacity: usedAct("t:duyum") ? 0.5 : 1 }}>
             <Text style={{ fontFamily: F.serif, fontSize: T.body, color: C.gold }}>{t(usedAct("t:duyum") ? "rum.net.done" : "rum.net.action")}</Text>
           </Pressable>
         </View>
@@ -297,12 +298,12 @@ export default function NpcDetail() {
       {/* Söylenen söz — yanında ilişki etkisi (kişinin mizacına/ruh haline göre artı ya da eksi gelir) */}
       <View onLayout={e => { chatY.current = e.nativeEvent.layout.y; }}>
       {line ? (
-        <View style={{ backgroundColor: C.card, borderLeftColor: lineDelta < 0 ? C.blood : C.gold, borderLeftWidth: 2.5, borderWidth: 1, borderColor: C.border, borderRadius: 8, padding: 12, marginBottom: 10 }}>
+        <View style={{ backgroundColor: C.card, borderLeftColor: lineDelta < 0 ? C.blood : C.gold, borderLeftWidth: 2.5, borderWidth: 1, borderColor: C.border, borderRadius: 5, padding: 12, marginBottom: 10 }}>
           <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 8 }}>
-            <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 14, color: C.parchment, lineHeight: T.line }}>{line}</Text>
+            <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 15, color: C.parchment, lineHeight: T.line }}>{line}</Text>
             {lineDelta !== 0 ? (
-              <View style={{ paddingVertical: 2, paddingHorizontal: 7, borderRadius: 9, borderWidth: 1, borderColor: (lineDelta > 0 ? C.sage : C.blood) + "66", backgroundColor: (lineDelta > 0 ? C.sage : C.blood) + "1A" }}>
-                <Text style={{ fontFamily: F.display, fontSize: 11, color: lineDelta > 0 ? C.sage : C.blood }}>{lineDelta > 0 ? "+" + lineDelta : lineDelta}</Text>
+              <View style={{ paddingVertical: 2, paddingHorizontal: 7, borderRadius: 5, borderWidth: 1, borderColor: (lineDelta > 0 ? C.sage : C.blood) + "66", backgroundColor: (lineDelta > 0 ? C.sage : C.blood) + "1A" }}>
+                <Text style={{ fontFamily: F.display, fontSize: 13, color: lineDelta > 0 ? C.sage : C.blood }}>{lineDelta > 0 ? "+" + lineDelta : lineDelta}</Text>
               </View>
             ) : null}
           </View>
@@ -313,14 +314,14 @@ export default function NpcDetail() {
       </View>
 
       {/* ── Etkileşim menüsü ── */}
-      <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(201,168,76,0.22)", borderRadius: 12, overflow: "hidden", marginBottom: 10 }}>
+      <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(201,168,76,0.22)", borderRadius: 5, overflow: "hidden", marginBottom: 10 }}>
         <View style={{ paddingHorizontal: 14, paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: C.border }}>
           <Text style={{ fontFamily: F.display, fontSize: T.title, letterSpacing: 0.4, color: C.gold }}>{t("visual.talkTitle")}</Text>
         </View>
         {martialLoad(state.player) > 0 && (couldMarry || canFlirt(state.player, npc, v)) ? (
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 14, paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: C.border, backgroundColor: "rgba(224,90,48,0.07)" }}>
             <GameIcon name="crossed-swords" size={12} color={C.ember} />
-            <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: T.body, color: C.ember, lineHeight: 15 }}>{t("npca.martialWarn")}</Text>
+            <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: T.body, color: C.ember, lineHeight: 22 }}>{t("npca.martialWarn")}</Text>
           </View>
         ) : null}
         {/* 14 yaş altı NPC'ye iş/hayal sorma — çocuğun mesleği/hedefi yok (boş tırnak saçmalığı önlenir). */}
@@ -330,15 +331,15 @@ export default function NpcDetail() {
           setLine(e ? renderEvt(e.k || "", e.text, e.p || [], lang, t, state.player.gender === "kadın") : ""); setLineDelta(0); focusChat();
         }} style={{ flexDirection: lang === "ar" ? "row-reverse" : "row", minHeight: 44, alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: C.borderHi, opacity: familyAction.used ? .45 : 1 }}>
           <GameIcon name="family" size={16} color={C.gold} />
-          <View style={{ flex: 1 }}><Text style={{ fontFamily: F.serif, fontSize: 14, color: C.gold }}>{t(familyAction.key)}</Text>
+          <View style={{ flex: 1 }}><Text style={{ fontFamily: F.serif, fontSize: 15, color: C.gold }}>{t(familyAction.key)}</Text>
           {familyAction.cost > 0 && <Text style={{ fontFamily: F.serif, fontSize: T.body, color: C.parchmentMuted }}>{applyParams(t("sohbet.cost"), [familyAction.cost], lang)}</Text>}</View>
-          {familyAction.used && <Text style={{ maxWidth: 90, flexShrink: 1, fontFamily: F.serif, fontSize: T.body, lineHeight: 15, color: C.parchmentMuted }}>{t(familyAction.key + ".used")}</Text>}
+          {familyAction.used && <Text style={{ maxWidth: 90, flexShrink: 1, fontFamily: F.serif, fontSize: T.body, lineHeight: 22, color: C.parchmentMuted }}>{t(familyAction.key + ".used")}</Text>}
         </Pressable>}
         {visibleTopics.map((it) => { const done = usedAct("t:" + it.id); return (
           <Pressable key={it.id} accessibilityRole="button" accessibilityLabel={topicLabel(it.id)} accessibilityState={{ disabled: done }} disabled={done} onPress={() => { hap("tap"); speak(it.id); }} style={({ pressed }) => ({ flexDirection: "row", minHeight: 44, alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent", opacity: done ? 0.4 : 1 })}>
             <GameIcon name={it.icon} size={17} color={C.gold} />
-            <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 14, color: C.parchment }}>{topicLabel(it.id)}</Text>
-            {done ? <Text style={{ fontFamily: F.display, fontSize: 9, color: C.goldDim }}>{t("soc.lock.done")}</Text> : <Text style={{ color: C.goldDim, fontSize: 15 }}>›</Text>}
+            <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 15, color: C.parchment }}>{topicLabel(it.id)}</Text>
+            {done ? <Text style={{ fontFamily: F.display, fontSize: 13, color: C.goldDim }}>{t("soc.lock.done")}</Text> : <Text style={{ color: C.goldDim, fontSize: 15 }}>›</Text>}
           </Pressable>
         ); })}
         {topics.some(it => !primary.includes(it.id)) && <Pressable accessibilityRole="button" accessibilityLabel={t("sohbet.more")} accessibilityState={{ expanded: moreTopics }} onPress={() => setMoreTopics(v => !v)} style={{ minHeight: 44, justifyContent: "center", paddingHorizontal: 14, borderBottomWidth: 1, borderBottomColor: C.border }}>
@@ -347,7 +348,7 @@ export default function NpcDetail() {
         {/* Hediye — kendi kanalı: sohbetten bağımsız, ayda bir */}
         <Pressable disabled={usedAct("gift")} onPress={() => setGiftOpen((o) => !o)} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent", opacity: usedAct("gift") ? 0.4 : 1 })}>
           <GameIcon name="gems" size={16} color={C.gold} />
-          <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 14, color: C.parchment }}>{t("npc.gift")}</Text>
+          <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 15, color: C.parchment }}>{t("npc.gift")}</Text>
           <Text style={{ color: C.goldDim, fontSize: 15 }}>{giftOpen ? "⌄" : "›"}</Text>
         </Pressable>
         {/* Amacına yardım et / istismar et (npc_mind goal_action) */}
@@ -355,16 +356,16 @@ export default function NpcDetail() {
           <Pressable onPress={() => { if (state.player.money >= GOAL_HELP_COST && !usedAct("help")) { hap("success"); apply((s) => helpNpcGoal(s, npc)); } }} disabled={state.player.money < GOAL_HELP_COST || usedAct("help")} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent", opacity: usedAct("help") ? 0.4 : 1 })}>
             <GameIcon name="leaf" size={16} color={state.player.money >= GOAL_HELP_COST ? C.sage : C.parchmentMuted} />
             <View style={{ flex: 1 }}>
-              <Text style={{ fontFamily: F.serif, fontSize: 14, color: state.player.money >= GOAL_HELP_COST ? C.sage : C.parchmentMuted }}>{t("npc.helpGoal")}</Text>
+              <Text style={{ fontFamily: F.serif, fontSize: 15, color: state.player.money >= GOAL_HELP_COST ? C.sage : C.parchmentMuted }}>{t("npc.helpGoal")}</Text>
               <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: T.body, color: C.parchmentMuted, marginTop: 1 }}>{goalL(npc.goal, lang)}</Text>
             </View>
-            <Text style={{ fontFamily: F.display, fontSize: 11, color: C.goldDim }}>{GOAL_HELP_COST}⚜</Text>
+            <Text style={{ fontFamily: F.display, fontSize: 13, color: C.goldDim }}>{GOAL_HELP_COST}⚜</Text>
           </Pressable>
         )}
         {canGoal && v > -25 && !(state.player.married && state.player.spouse_id === npc.id) && !oyuncuAkrabasi(state.player, npc.id) && (() => { const exploited = state.player.exploit_turn === state.turn; return (
           <Pressable disabled={exploited} onPress={() => { hap("tap"); apply((s) => exploitNpcGoal(s, npc)); }} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderBottomWidth: couldMarry ? 1 : 0, borderBottomColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent", opacity: exploited ? 0.4 : 1 })}>
             <GameIcon name="hood" size={16} color={C.ember} />
-            <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 14, color: C.ember }}>{t("npc.exploitGoal")}</Text>
+            <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 15, color: C.ember }}>{t("npc.exploitGoal")}</Text>
             <Text style={{ color: C.goldDim, fontSize: 15 }}>›</Text>
           </Pressable>
         ); })()}
@@ -373,7 +374,7 @@ export default function NpcDetail() {
           <Pressable onPress={() => { hap("success"); apply((s) => takeApprentice(s, npc)); }} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent" })}>
             <GameIcon name="anvil" size={16} color={C.gold} />
             <View style={{ flex: 1 }}>
-              <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.gold }}>{t("npc.aprTake")}</Text>
+              <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.gold }}>{t("npc.aprTake")}</Text>
               <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: T.body, color: C.parchmentMuted, marginTop: 1 }}>{t("npc.aprTakeSub")}</Text>
             </View>
             <Text style={{ color: C.goldDim, fontSize: 15 }}>›</Text>
@@ -384,7 +385,7 @@ export default function NpcDetail() {
           <Pressable disabled={taught} onPress={() => { hap("tap"); apply((s) => mentorApprentice(s)); }} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: C.border, backgroundColor: pressed ? C.cardHi : "rgba(201,168,76,0.06)", opacity: taught ? 0.4 : 1 })}>
             <GameIcon name="graduate-cap" size={16} color={C.gold} />
             <View style={{ flex: 1 }}>
-              <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.gold }}>{t("npc.aprMentor")}</Text>
+              <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.gold }}>{t("npc.aprMentor")}</Text>
               <Text style={{ fontFamily: F.serifItalic, fontSize: T.body, color: C.parchmentMuted, marginTop: 1 }}>{(state.player.apprentice?.months || 0)}/{APPRENTICE_MONTHS} {t("npc.aprMonths")}</Text>
             </View>
             <Text style={{ color: C.goldDim, fontSize: 15 }}>›</Text>
@@ -394,7 +395,7 @@ export default function NpcDetail() {
         {state.player.betrothed?.id === npc.id ? (
           <View style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, backgroundColor: "rgba(192,85,107,0.08)" }}>
             <GameIcon name="ring" size={17} color={C.roseDim} />
-            <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 14, color: C.roseDim }}>{t("npc.betrothed")}</Text>
+            <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 15, color: C.roseDim }}>{t("npc.betrothed")}</Text>
           </View>
         ) : couldMarry && (() => {
           const wed = npcSeededMarried(npc); // evli birine teklif: kabul ederse önce boşanması gerekir
@@ -402,7 +403,7 @@ export default function NpcDetail() {
             <Pressable onPress={() => { if (courtable) { hap("success"); apply((s) => proposeMarriage(s, npc)); } }} disabled={!courtable} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, backgroundColor: courtable ? "rgba(201,168,76,0.08)" : "transparent" }}>
               <GameIcon name="evlilik" size={17} color={courtable ? C.gold : C.parchmentMuted} />
               <View style={{ flex: 1 }}>
-                <Text style={{ fontFamily: F.serif, fontSize: 14, color: courtable ? C.gold : C.parchmentMuted }}>{t("npc.propose")}</Text>
+                <Text style={{ fontFamily: F.serif, fontSize: 15, color: courtable ? C.gold : C.parchmentMuted }}>{t("npc.propose")}</Text>
                 {!courtable ? <Text style={{ fontFamily: F.serifItalic, fontSize: T.body, color: C.parchmentMuted, marginTop: 1 }}>{t("npc.proposeReq")}</Text>
                   : wed ? <Text style={{ fontFamily: F.serifItalic, fontSize: T.body, color: C.roseDim, marginTop: 1 }}>{t("affair.warnTheirs")}</Text> : null}
               </View>
@@ -414,8 +415,8 @@ export default function NpcDetail() {
         {/* Ek etkileşimler (Vercel npc_interactions): para / flört / dedikodu / hakaret */}
         <Pressable onPress={() => { if (state.player.money >= GIVE_MONEY_AMT) { hap("tap"); apply((s) => giveMoneyTo(s, npc)); } }} disabled={state.player.money < GIVE_MONEY_AMT} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderTopWidth: 1, borderTopColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent" })}>
           <GameIcon name="akce" size={16} color={state.player.money >= GIVE_MONEY_AMT ? C.gold : C.parchmentMuted} />
-          <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 14, color: state.player.money >= GIVE_MONEY_AMT ? C.parchment : C.parchmentMuted }}>{t("npca.moneyBtn")}</Text>
-          <Text style={{ fontFamily: F.display, fontSize: 11, color: C.goldDim }}>{GIVE_MONEY_AMT} ⚜</Text>
+          <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 15, color: state.player.money >= GIVE_MONEY_AMT ? C.parchment : C.parchmentMuted }}>{t("npca.moneyBtn")}</Text>
+          <Text style={{ fontFamily: F.display, fontSize: 13, color: C.goldDim }}>{GIVE_MONEY_AMT} ⚜</Text>
         </Pressable>
         {canFlirt(state.player, npc, v) && (() => {
           const forbidden = flirtIsForbidden(state.player, npc);
@@ -424,7 +425,7 @@ export default function NpcDetail() {
             <Pressable disabled={usedAct("flirt")} onPress={() => { hap("success"); apply((s) => flirtWith(s, npc)); }} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderTopWidth: 1, borderTopColor: C.border, backgroundColor: pressed ? C.cardHi : (forbidden ? "rgba(224,90,48,0.06)" : "transparent"), opacity: usedAct("flirt") ? 0.4 : 1 })}>
               <GameIcon name="lyre" size={16} color={tone} />
               <View style={{ flex: 1 }}>
-                <Text style={{ fontFamily: F.serif, fontSize: 14, color: tone }}>{forbidden ? t("affair.flirtBtn") : t("npca.flirtBtn")}</Text>
+                <Text style={{ fontFamily: F.serif, fontSize: 15, color: tone }}>{forbidden ? t("affair.flirtBtn") : t("npca.flirtBtn")}</Text>
                 {forbidden ? <Text style={{ fontFamily: F.serifItalic, fontSize: T.body, color: C.ember, marginTop: 1 }}>{state.player.married ? tg("affair.warnMarried", state.player.gender === "kadın") : t("affair.warnTheirs")}</Text> : null}
               </View>
               <SansRozet yuzde={teklifSansi(state, npc, "flort").yuzde} acik={sansAcik === "flort"} onPress={() => setSansAcik(sansAcik === "flort" ? null : "flort")} />
@@ -434,7 +435,7 @@ export default function NpcDetail() {
         {sansAcik === "flort" && canFlirt(state.player, npc, v) ? (() => { const x = teklifSansi(state, npc, "flort"); return <SansDokum kalemler={x.kalemler} yuzde={x.yuzde} t={t} />; })() : null}
         <Pressable disabled={state.player.dead || state.player.age < 13 || usedAct("gossip")} onPress={() => { hap("tap"); apply((s) => gossipAbout(s, npc)); }} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderTopWidth: 1, borderTopColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent", opacity: (state.player.age < 13 || usedAct("gossip")) ? 0.45 : 1 })}>
           <GameIcon name="speaker" size={16} color={C.parchment} />
-          <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 14, color: C.parchment }}>{t("npca.gossipBtn")}</Text>
+          <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 15, color: C.parchment }}>{t("npca.gossipBtn")}</Text>
           <SansRozet yuzde={teklifSansi(state, npc, "dedikodu").yuzde} acik={sansAcik === "dedikodu"} onPress={() => setSansAcik(sansAcik === "dedikodu" ? null : "dedikodu")} />
         </Pressable>
         {sansAcik === "dedikodu" ? (() => { const x = teklifSansi(state, npc, "dedikodu"); return <SansDokum kalemler={x.kalemler} yuzde={x.yuzde} t={t} />; })() : null}
@@ -442,20 +443,20 @@ export default function NpcDetail() {
         {helalUygun(state, npc.id) && (() => { const cost = helalBedeli(state, npc.id); const kul = usedAct("helal") || state.player.dead || state.player.age < 13; return (<>
           <Pressable disabled={kul} onPress={() => { hap("tap"); apply((s) => helallikIste(s, npc, false)); }} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderTopWidth: 1, borderTopColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent", opacity: kul ? 0.45 : 1 })}>
             <GameIcon name="prayer-beads" size={16} color={C.sage} />
-            <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 14, color: C.parchment }}>{t("npca.helalBtn")}</Text>
+            <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 15, color: C.parchment }}>{t("npca.helalBtn")}</Text>
             <SansRozet yuzde={helalSansi(state, npc, false).yuzde} acik={sansAcik === "helal"} onPress={() => setSansAcik(sansAcik === "helal" ? null : "helal")} />
           </Pressable>
           {sansAcik === "helal" ? (() => { const x = helalSansi(state, npc, false); return <SansDokum kalemler={x.kalemler} yuzde={x.yuzde} t={t} />; })() : null}
           <Pressable disabled={kul || state.player.money < cost} onPress={() => { hap("tap"); apply((s) => helallikIste(s, npc, true)); }} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderTopWidth: 1, borderTopColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent", opacity: kul || state.player.money < cost ? 0.45 : 1 })}>
             <GameIcon name="akce" size={16} color={C.gold} />
-            <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 14, color: C.parchment }}>{t("npca.helalBedelBtn")} <Text style={{ fontFamily: F.display, fontSize: 11, color: C.goldDim }}>· {cost} ⚜</Text></Text>
+            <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 15, color: C.parchment }}>{t("npca.helalBedelBtn")} <Text style={{ fontFamily: F.display, fontSize: 13, color: C.goldDim }}>· {cost} ⚜</Text></Text>
             <SansRozet yuzde={helalSansi(state, npc, true).yuzde} acik={sansAcik === "helalb"} onPress={() => setSansAcik(sansAcik === "helalb" ? null : "helalb")} />
           </Pressable>
           {sansAcik === "helalb" ? (() => { const x = helalSansi(state, npc, true); return <SansDokum kalemler={x.kalemler} yuzde={x.yuzde} t={t} />; })() : null}
         </>); })()}
         <Pressable disabled={state.player.dead || state.player.age < 13 || usedAct("insult")} onPress={() => { hap("tap"); apply((s) => insultNpc(s, npc)); }} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderTopWidth: 1, borderTopColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent", opacity: (state.player.age < 13 || usedAct("insult")) ? 0.45 : 1 })}>
           <GameIcon name="skull" size={16} color={C.blood} />
-          <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 14, color: C.blood }}>{t("npca.insultBtn")}</Text>
+          <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 15, color: C.blood }}>{t("npca.insultBtn")}</Text>
         </Pressable>
       </View>
 
@@ -465,12 +466,12 @@ export default function NpcDetail() {
           {giftables.length === 0 ? (
             <Text style={{ fontFamily: F.serifItalic, fontSize: T.body, color: C.parchmentMuted, textAlign: "center", paddingVertical: 8 }}>{t("npc.noGift")}</Text>
           ) : giftables.map((k) => (
-            <Pressable key={k} disabled={usedAct("gift")} onPress={() => { hap("tap"); apply((s) => giftTo(s, npc, k)); setGiftOpen(false); }} style={{ flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 9, padding: 11, marginBottom: 7, opacity: usedAct("gift") ? 0.4 : 1 }}>
-              <View style={{ width: 32, height: 32, borderRadius: 7, backgroundColor: "rgba(201,168,76,0.08)", borderWidth: 1, borderColor: "rgba(201,168,76,0.22)", alignItems: "center", justifyContent: "center" }}>
+            <Pressable key={k} disabled={usedAct("gift")} onPress={() => { hap("tap"); apply((s) => giftTo(s, npc, k)); setGiftOpen(false); }} style={{ flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 5, padding: 11, marginBottom: 7, opacity: usedAct("gift") ? 0.4 : 1 }}>
+              <View style={{ width: 32, height: 32, borderRadius: 5, backgroundColor: "rgba(201,168,76,0.08)", borderWidth: 1, borderColor: "rgba(201,168,76,0.22)", alignItems: "center", justifyContent: "center" }}>
                 <GameIcon name={giftIcon(ITEMS[k])} size={16} color={C.gold} />
               </View>
               <Text style={{ flex: 1, fontFamily: F.serif, fontSize: T.body, color: C.parchment }}>{t("it." + k)}</Text>
-              <Text style={{ fontFamily: F.display, fontSize: 11, color: C.parchmentMuted }}>×{state.player.inventory[k]}</Text>
+              <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchmentMuted }}>×{state.player.inventory[k]}</Text>
             </Pressable>
           ))}
         </View>
@@ -483,10 +484,10 @@ export default function NpcDetail() {
         const tops = topMemories(ns.anilar, 3);
         if (!tops.length) return null;
         return (
-          <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(201,168,76,0.3)", borderRadius: 12, padding: 14, marginBottom: 10 }}>
+          <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(201,168,76,0.3)", borderRadius: 5, padding: 14, marginBottom: 10 }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 8 }}>
               <GameIcon name="scroll" size={13} color={C.goldDim} />
-              <Text style={{ fontFamily: F.display, fontSize: 9.5, letterSpacing: 2, color: C.goldDim, textTransform: "uppercase" }}>{t("npc.remembers")}</Text>
+              <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.goldDim, textTransform: "uppercase" }}>{t("npc.remembers")}</Text>
             </View>
             {tops.map((m, i) => (
               <View key={i} style={{ flexDirection: "row", gap: 7, marginBottom: 5, alignItems: "flex-start" }}>
@@ -500,10 +501,10 @@ export default function NpcDetail() {
 
       {/* ── Onun Zihninde (anılar) ── */}
       {ns.memories.length > 0 && (
-        <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(201,168,76,0.22)", borderRadius: 12, padding: 14 }}>
+        <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(201,168,76,0.22)", borderRadius: 5, padding: 14 }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 8 }}>
             <GameIcon name="book" size={13} color={C.goldDim} />
-            <Text style={{ fontFamily: F.display, fontSize: 9.5, letterSpacing: 2, color: C.goldDim, textTransform: "uppercase" }}>{t("npc.mind")}</Text>
+            <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.goldDim, textTransform: "uppercase" }}>{t("npc.mind")}</Text>
           </View>
           {[...ns.memories].reverse().map((m, i) => (
             <View key={i} style={{ flexDirection: "row", gap: 7, marginBottom: 5 }}>

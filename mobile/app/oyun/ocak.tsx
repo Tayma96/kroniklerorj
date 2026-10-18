@@ -1,6 +1,7 @@
+import { DesignPressable as Pressable } from "../../lib/design-pressable";
 // Küllerden yeni ocak: vârissiz ölümün ardından aynı soyadla yeni bir hayat. Hanedan Defteri ve tek soy yeteneği taşınır;
 // atanın en çok anılan kararları yeni hayatta yankılanır (Yankı ata izi). Para, mülk, itibar geçmez (pusula: güç değil kimlik).
-import { View, Text, ScrollView, Pressable } from "react-native";
+import { View, Text, ScrollView} from "react-native";
 import { useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -31,18 +32,18 @@ export default function Ocak() {
       </View>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 80 }}>
         <PageHeader kicker={t("scr.kronik")} title={t("scr.ocak")} />
-        <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.parchment, marginBottom: 10, lineHeight: 20 }}>{t("ocak.alt")}</Text>
-        {ata ? <Text style={{ fontFamily: F.display, fontSize: 11, color: C.goldDim, marginBottom: 6 }}>{applyParams(t("ocak.ata"), [ata, nesil || 1])}</Text> : null}
+        <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchment, marginBottom: 10, lineHeight: 22 }}>{t("ocak.alt")}</Text>
+        {ata ? <Text style={{ fontFamily: F.display, fontSize: 13, color: C.goldDim, marginBottom: 6 }}>{applyParams(t("ocak.ata"), [ata, nesil || 1])}</Text> : null}
         <YetenekSecici adaylar={adaylar} secili={yet} onSec={setYet} />
-        <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.goldDim, marginTop: 12, marginBottom: 8 }}>{t("ocak.cins")}</Text>
+        <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.goldDim, marginTop: 12, marginBottom: 8 }}>{t("ocak.cins")}</Text>
         <View style={{ flexDirection: "row", gap: 10 }}>
           {(["kadın", "erkek"] as const).map((g) => (
-            <Pressable key={g} onPress={() => setCins(g)} style={{ flex: 1, alignItems: "center", padding: 12, borderRadius: 9, borderWidth: 1, borderColor: cins === g ? "rgba(201,168,76,0.6)" : C.border, backgroundColor: cins === g ? "rgba(201,168,76,0.12)" : C.card }}>
+            <Pressable key={g} onPress={() => setCins(g)} style={{ flex: 1, alignItems: "center", padding: 12, borderRadius: 5, borderWidth: 1, borderColor: cins === g ? "rgba(201,168,76,0.6)" : C.border, backgroundColor: cins === g ? "rgba(201,168,76,0.12)" : C.card }}>
               <Text style={{ fontFamily: F.display, fontSize: 16, color: cins === g ? C.gold : C.parchmentDim }}>{g === "kadın" ? "♀" : "♂"}</Text>
             </Pressable>
           ))}
         </View>
-        <Pressable onPress={async () => { hap("heavy"); await yeniOcak(cins, yet || undefined); router.replace("/oyun"); }} style={{ marginTop: 16, flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 7, paddingVertical: 15, borderRadius: 9, borderWidth: 1.5, borderColor: "rgba(201,168,76,0.55)", backgroundColor: C.gold }}>
+        <Pressable onPress={async () => { hap("heavy"); await yeniOcak(cins, yet || undefined); router.replace("/oyun"); }} style={{ marginTop: 16, flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 7, paddingVertical: 15, borderRadius: 5, borderWidth: 1.5, borderColor: "rgba(201,168,76,0.55)", backgroundColor: C.gold }}>
           <GameIcon name="hanedan" size={14} color={C.inkOnGold} />
           <Text style={{ fontFamily: F.display, fontSize: 13, color: C.inkOnGold, letterSpacing: 1.5 }}>{t("ocak.basla")}</Text>
         </Pressable>

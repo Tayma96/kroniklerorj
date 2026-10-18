@@ -1,5 +1,6 @@
+import { DesignPressable as Pressable } from "../../lib/design-pressable";
 import { useState, useEffect, useRef } from "react";
-import { View, Text, ScrollView, Pressable } from "react-native";
+import { View, Text, ScrollView} from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -16,8 +17,8 @@ import { BackLabel, PageHeader, ScreenFresk } from "../../lib/ui";
 function Section({ title, sub }: { title: string; sub: string }) {
   return (
     <>
-      <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 2, color: C.goldDim, textTransform: "uppercase", marginTop: 16, marginBottom: 2 }}>{title}</Text>
-      <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted, marginBottom: 9 }}>{sub}</Text>
+      <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.goldDim, textTransform: "uppercase", marginTop: 16, marginBottom: 2 }}>{title}</Text>
+      <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, marginBottom: 9 }}>{sub}</Text>
     </>
   );
 }
@@ -25,12 +26,12 @@ function Section({ title, sub }: { title: string; sub: string }) {
 function Axis({ icon, label, value, tier, desc }: { icon: string; label: string; value: number; tier: string; desc: string }) {
   const pct = Math.max(0, Math.min(100, value));
   return (
-    <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, padding: 14, marginBottom: 8 }}>
+    <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 5, padding: 14, marginBottom: 8 }}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}><GameIcon name={icon} size={13} color={C.gold} /><Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchment, letterSpacing: 1 }}>{label}</Text></View>
-        <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.gold }}>{tier}</Text>
+        <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.gold }}>{tier}</Text>
       </View>
-      <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted, marginTop: 3 }}>{desc}</Text>
+      <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchmentMuted, marginTop: 3 }}>{desc}</Text>
       <View style={{ height: 5, backgroundColor: "rgba(255,255,255,0.09)", borderRadius: 3, marginTop: 8 }}>
         <View style={{ width: `${pct}%`, height: 5, backgroundColor: C.gold, borderRadius: 3 }} />
       </View>
@@ -81,13 +82,13 @@ export default function Sosyal() {
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 80 }}>
         <PageHeader kicker={t("scr.sosyal")} title={t("scr.sosyal")} />
-        <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, marginBottom: 4 }}>
+        <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, marginBottom: 4 }}>
           {t("soc.intro")} {f ? `${f.name} ${t("soc.memberSuffix")}` : t("soc.noGuild")}
         </Text>
 
         {res && (
-          <Animated.View key={res.tick} entering={FadeInDown.duration(240)} style={{ backgroundColor: "rgba(201,168,76,0.10)", borderWidth: 1, borderColor: "rgba(201,168,76,0.4)", borderLeftWidth: 3, borderLeftColor: C.gold, borderRadius: 10, padding: 12, marginTop: 8 }}>
-            <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.parchment, lineHeight: 19 }}>{renderEvt(res.event.k, res.event.text, res.event.p, lang, t, p.gender === "kadın")}</Text>
+          <Animated.View key={res.tick} entering={FadeInDown.duration(240)} style={{ backgroundColor: "rgba(201,168,76,0.10)", borderWidth: 1, borderColor: "rgba(201,168,76,0.4)", borderLeftWidth: 3, borderLeftColor: C.gold, borderRadius: 5, padding: 12, marginTop: 8 }}>
+            <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchment, lineHeight: 22 }}>{renderEvt(res.event.k, res.event.text, res.event.p, lang, t, p.gender === "kadın")}</Text>
           </Animated.View>
         )}
 
@@ -98,17 +99,17 @@ export default function Sosyal() {
         })}
 
         <Section title={t("soc.nam.h")} sub={t("soc.nam.sub")} />
-        <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, padding: 14, marginBottom: 6 }}>
+        <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 5, padding: 14, marginBottom: 6 }}>
           {NAM_META.map((nm) => {
             const val = (p.nam?.[nm.key]) || 0;
             return (
               <View key={nm.key} style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 }}>
                 <GameIcon name={nm.icon} size={14} color={C.goldDim} />
-                <Text style={{ width: 72, fontFamily: F.display, fontSize: 11, color: C.parchmentMuted }}>{t("nam." + nm.key)}</Text>
+                <Text style={{ width: 72, fontFamily: F.display, fontSize: 13, color: C.parchmentMuted }}>{t("nam." + nm.key)}</Text>
                 <View style={{ flex: 1, height: 4, backgroundColor: "rgba(255,255,255,0.09)", borderRadius: 2 }}>
                   <View style={{ width: `${val}%`, height: 4, backgroundColor: C.gold, borderRadius: 2 }} />
                 </View>
-                <Text style={{ width: 26, textAlign: "right", fontFamily: F.display, fontSize: 11, color: C.parchment }}>{val}</Text>
+                <Text style={{ width: 26, textAlign: "right", fontFamily: F.display, fontSize: 13, color: C.parchment }}>{val}</Text>
               </View>
             );
           })}
@@ -116,9 +117,9 @@ export default function Sosyal() {
         {(() => {
           const dom = playerDominantNam(p);
           return (
-            <View style={{ backgroundColor: dom ? "rgba(201,168,76,0.1)" : C.card, borderWidth: 1, borderColor: dom ? "rgba(201,168,76,0.4)" : C.border, borderLeftWidth: 3, borderLeftColor: dom ? C.gold : C.border, borderRadius: 10, padding: 12, marginBottom: 6 }}>
-              <Text style={{ fontFamily: F.display, fontSize: 9.5, letterSpacing: 1.5, color: C.goldDim, textTransform: "uppercase" }}>{t("nam.dominant")}{dom ? `: ${t("nam." + dom)}` : ""}</Text>
-              <Text style={{ fontFamily: F.serifItalic, fontSize: 12.5, color: C.parchmentDim, lineHeight: 18, marginTop: 4 }}>{t(dom ? "nam.dom." + dom : "nam.dom.none")}</Text>
+            <View style={{ backgroundColor: dom ? "rgba(201,168,76,0.1)" : C.card, borderWidth: 1, borderColor: dom ? "rgba(201,168,76,0.4)" : C.border, borderLeftWidth: 3, borderLeftColor: dom ? C.gold : C.border, borderRadius: 5, padding: 12, marginBottom: 6 }}>
+              <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1.5, color: C.goldDim, textTransform: "uppercase" }}>{t("nam.dominant")}{dom ? `: ${t("nam." + dom)}` : ""}</Text>
+              <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentDim, lineHeight: 22, marginTop: 4 }}>{t(dom ? "nam.dom." + dom : "nam.dom.none")}</Text>
             </View>
           );
         })()}
@@ -126,7 +127,7 @@ export default function Sosyal() {
         <Section title={t("rum.title")} sub="" />
         {(() => {
           const rumors = state.player_rumors || [];
-          if (!rumors.length) return <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, marginBottom: 6 }}>{t("rum.none")}</Text>;
+          if (!rumors.length) return <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, marginBottom: 6 }}>{t("rum.none")}</Text>;
           return [...rumors].reverse().sort((a, b) => Number(b.id === soz) - Number(a.id === soz)).map((r) => <SoylentiKarti key={r.id} state={state} rumor={r}
             onAction={(action) => { hap("tap"); playTap(); apply((s) => rumorAction(s, r.id, action)); }}
             onSource={(id) => { hap("tap"); router.push(("/oyun/npc/" + encodeURIComponent(id)) as any); }} />);
@@ -135,17 +136,17 @@ export default function Sosyal() {
 
         <Section title={t("soc.act.h")} sub="" />
         {actions.map((act) => (
-          <Pressable key={act.key} disabled={!act.enabled} onPress={() => { hap("tap"); playTap(); apply(act.fn); }} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: act.enabled ? "rgba(201,168,76,0.08)" : C.card, borderWidth: 1, borderColor: act.enabled ? "rgba(201,168,76,0.4)" : C.border, borderRadius: 9, padding: 13, marginBottom: 8 }}>
+          <Pressable key={act.key} disabled={!act.enabled} onPress={() => { hap("tap"); playTap(); apply(act.fn); }} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: act.enabled ? "rgba(201,168,76,0.08)" : C.card, borderWidth: 1, borderColor: act.enabled ? "rgba(201,168,76,0.4)" : C.border, borderRadius: 5, padding: 13, marginBottom: 8 }}>
             <View>
               <Text style={{ fontFamily: F.display, fontSize: 13, color: act.enabled ? C.parchment : C.parchmentMuted, letterSpacing: 0.5 }}>{t("soc." + act.key + ".l")}</Text>
-              <Text style={{ fontFamily: F.serif, fontSize: 10, color: C.goldDim, marginTop: 2 }}>{t("soc." + act.key + ".n")}</Text>
+              <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.goldDim, marginTop: 2 }}>{t("soc." + act.key + ".n")}</Text>
               {!act.enabled && canAct && (
-                <Text style={{ fontFamily: F.serifItalic, fontSize: 9.5, color: C.parchmentMuted, marginTop: 3 }}>
+                <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, marginTop: 3 }}>
                   {act.used ? t("soc.lock.done") : t("soc.lock.money").replace("%1", String(act.need))}
                 </Text>
               )}
             </View>
-            <Text style={{ fontFamily: F.display, fontSize: 12, color: act.enabled ? C.gold : C.parchmentMuted }}>{act.cost}</Text>
+            <Text style={{ fontFamily: F.display, fontSize: 13, color: act.enabled ? C.gold : C.parchmentMuted }}>{act.cost}</Text>
           </Pressable>
         ))}
       </ScrollView>

@@ -1,5 +1,7 @@
+import { PageHeader } from "../../lib/ui";
+import { DesignPressable as Pressable } from "../../lib/design-pressable";
 import { useMemo } from "react";
-import { View, Text, ScrollView, Pressable } from "react-native";
+import { View, Text, ScrollView} from "react-native";
 import Svg, { Defs, LinearGradient, Stop, Rect, Circle } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -45,8 +47,8 @@ function RelBand({ score }: { score: number }) {
 
 function Pill({ text, tone }: { text: string; tone: string }) {
   return (
-    <View style={{ paddingVertical: 2, paddingHorizontal: 8, borderRadius: 10, borderWidth: 1, borderColor: tone + "66", backgroundColor: tone + "1A" }}>
-      <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 0.5, color: tone }}>{text}</Text>
+    <View style={{ paddingVertical: 2, paddingHorizontal: 8, borderRadius: 5, borderWidth: 1, borderColor: tone + "66", backgroundColor: tone + "1A" }}>
+      <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 0.5, color: tone }}>{text}</Text>
     </View>
   );
 }
@@ -74,25 +76,13 @@ export default function Iliskiler() {
   return (
     <ScreenFresk style={{ paddingTop: insets.top }}>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 14, paddingTop: 14, paddingBottom: insets.bottom + 90 }}>
-        {/* PageHeader */}
-        <View style={{ alignItems: "center", marginBottom: 14 }}>
-          <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 3, color: C.goldDim, textTransform: "uppercase" }}>{t("rel.kicker")}</Text>
-          <Text style={{ fontFamily: F.display, fontSize: 22, color: C.parchment, letterSpacing: 1, marginTop: 4, textAlign: "center" }}>{t("rel.headTitle")}</Text>
-          <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 0.5, color: C.gold, marginTop: 3 }}>{placeName(state.player.location_name, lang)}</Text>
-          <Text style={{ fontFamily: F.serifItalic, fontSize: 12.5, color: C.parchmentMuted, marginTop: 4, textAlign: "center" }}>{applyParams(t("rel.subSome"), [total])}</Text>
-          <View style={{ flexDirection: "row", alignItems: "center", marginTop: 12, alignSelf: "stretch" }}>
-            <View style={{ flex: 1, height: 1, backgroundColor: C.goldDim, opacity: 0.6 }} />
-            <View style={{ width: 6, height: 6, backgroundColor: C.gold, transform: [{ rotate: "45deg" }], marginHorizontal: 8 }} />
-            <View style={{ flex: 1, height: 1, backgroundColor: C.goldDim, opacity: 0.6 }} />
-          </View>
-        </View>
-
+        <PageHeader kicker={placeName(state.player.location_name, lang)} title={t("rel.headTitle")} sub={applyParams(t("rel.subSome"), [total])} />
         {/* ── DİYAR HANEDANLARI: aynı diyarda yaşayan gerçek oyuncular (çok oyunculu) — bölgenin bir parçası gibi hep görünür ── */}
         {mpMode && snapshot && snapshot.players.length > 0 && (
-          <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(201,168,76,0.4)", borderRadius: 12, marginBottom: 14, overflow: "hidden" }}>
+          <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(201,168,76,0.4)", borderRadius: 5, marginBottom: 14, overflow: "hidden" }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 13, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.border, backgroundColor: "rgba(201,168,76,0.08)" }}>
               <GameIcon name="hanedan" size={13} color={C.gold} />
-              <Text style={{ flex: 1, fontFamily: F.display, fontSize: 12, letterSpacing: 1.5, color: C.gold, textTransform: "uppercase" }}>{t("mp.players")}</Text>
+              <Text style={{ flex: 1, fontFamily: F.display, fontSize: 13, letterSpacing: 1.5, color: C.gold, textTransform: "uppercase" }}>{t("mp.players")}</Text>
               <Pill text={`${snapshot.players.filter((x) => x.online && !x.dead).length}`} tone={C.sage} />
             </View>
             <View style={{ padding: 10 }}>
@@ -100,10 +90,10 @@ export default function Iliskiler() {
                 <View key={pl.id} style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 7 }}>
                   <Portre age={Math.max(7, pl.age)} gender={pl.gender} size={37} ring={false} seed={pl.id} />
                   <View style={{ flex: 1, minWidth: 0 }}>
-                    <Text numberOfLines={1} style={{ fontFamily: F.serif, fontSize: 14, color: pl.id === guestId ? C.gold : C.parchment }}>
+                    <Text numberOfLines={1} style={{ fontFamily: F.serif, fontSize: 15, color: pl.id === guestId ? C.gold : C.parchment }}>
                       {pl.name}{pl.id === guestId ? ` ${t("mp.you")}` : ""}{pl.crowned ? " ♔" : ""}
                     </Text>
-                    <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted }}>{professionNameL(pl.profession, lang, pl.gender === "kadın")} · {pl.age}</Text>
+                    <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted }}>{professionNameL(pl.profession, lang, pl.gender === "kadın")} · {pl.age}</Text>
                   </View>
                   <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: pl.online ? C.sage : C.parchmentDim }} />
                 </View>
@@ -114,11 +104,11 @@ export default function Iliskiler() {
 
         {/* Görücü usulü / çöpçatan — bekâr yetişkine talip önerisi (yaş/servet filtreli) */}
         {!state.player.married && state.player.age >= 18 ? (
-          <Pressable onPress={() => { router.push("/oyun/copcatan"); }} style={{ flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: "rgba(192,85,107,0.08)", borderWidth: 1, borderColor: "rgba(192,85,107,0.4)", borderRadius: 12, padding: 13, marginBottom: 12 }}>
+          <Pressable onPress={() => { router.push("/oyun/copcatan"); }} style={{ flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: "rgba(192,85,107,0.08)", borderWidth: 1, borderColor: "rgba(192,85,107,0.4)", borderRadius: 5, padding: 13, marginBottom: 12 }}>
             <GameIcon name="ring" size={18} color={C.roseDim} />
             <View style={{ flex: 1 }}>
-              <Text style={{ fontFamily: F.display, fontSize: 12, color: C.roseDim, letterSpacing: 0.5 }}>{t("cc.title")}</Text>
-              <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted, marginTop: 2 }}>{t("cc.entryHint")}</Text>
+              <Text style={{ fontFamily: F.display, fontSize: 13, color: C.roseDim, letterSpacing: 0.5 }}>{t("cc.title")}</Text>
+              <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, marginTop: 2 }}>{t("cc.entryHint")}</Text>
             </View>
             <Text style={{ fontFamily: F.display, fontSize: 16, color: C.roseDim }}>›</Text>
           </Pressable>
@@ -132,12 +122,12 @@ export default function Iliskiler() {
           const statusKey = rival ? "child.friend.rivalStatus" : d === "omurluk" ? "child.friend.lifelong" : d === "ayrildi" ? "child.friend.parted" : "child.friend.label";
           const kayit = kisiProfil(state, cf.id, lang); // gerçek kişiyse yaşı kaydından, dokununca profili
           return (
-            <Pressable disabled={!kayit} onPress={() => router.push(`/oyun/npc/${cf.id}`)} style={{ backgroundColor: C.card, borderWidth: 1, borderColor: tone + "44", borderRadius: 12, marginBottom: 12, padding: 12 }}>
+            <Pressable disabled={!kayit} onPress={() => router.push(`/oyun/npc/${cf.id}`)} style={{ backgroundColor: C.card, borderWidth: 1, borderColor: tone + "44", borderRadius: 5, marginBottom: 12, padding: 12 }}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
                 <Portre age={kayit ? kayit.npc.age : Math.max(7, state.player.age)} gender={cf.gender} size={37} ring={false} seed={kayit ? cf.id : "cf_" + cf.seed} />
                 <View style={{ flex: 1, minWidth: 0 }}>
-                  <Text numberOfLines={1} style={{ fontFamily: F.serif, fontSize: 14, color: C.parchment }}>{nm}</Text>
-                  <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted }}>{t("child.friend.of")}</Text>
+                  <Text numberOfLines={1} style={{ fontFamily: F.serif, fontSize: 15, color: C.parchment }}>{nm}</Text>
+                  <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted }}>{t("child.friend.of")}</Text>
                   <View style={{ height: 5, borderRadius: 3, backgroundColor: tone + "22", overflow: "hidden", marginTop: 5 }}>
                     <View style={{ width: `${Math.max(0, Math.min(100, cf.bond))}%`, height: "100%", backgroundColor: tone }} />
                   </View>
@@ -149,14 +139,14 @@ export default function Iliskiler() {
         })() : null}
 
         {cember.length ? (
-          <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(201,168,76,0.3)", borderRadius: 12, marginBottom: 12, overflow: "hidden" }}>
+          <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(201,168,76,0.3)", borderRadius: 5, marginBottom: 12, overflow: "hidden" }}>
             <View style={{ paddingHorizontal: 13, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.border, backgroundColor: "rgba(201,168,76,0.08)" }}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
                 <GameIcon name="iliskiler" size={13} color={C.gold} />
-                <Text style={{ flex: 1, fontFamily: F.display, fontSize: 12, letterSpacing: 1.5, color: C.gold, textTransform: "uppercase" }}>{t("cember.baslik")}</Text>
+                <Text style={{ flex: 1, fontFamily: F.display, fontSize: 13, letterSpacing: 1.5, color: C.gold, textTransform: "uppercase" }}>{t("cember.baslik")}</Text>
                 <Pill text={`${cember.length} ${t(cember.length === 1 ? "rel.person" : "rel.people")}`} tone={C.gold} />
               </View>
-              <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted, marginTop: 3 }}>{t("cember.not")}</Text>
+              <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, marginTop: 3 }}>{t("cember.not")}</Text>
             </View>
             <View style={{ padding: 10 }}>
               {cember.map(({ npc: n, v, rol, uzak, loc }) => {
@@ -166,10 +156,10 @@ export default function Iliskiler() {
                     <Portre age={n.age} gender={n.gender} size={37} ring={false} seed={n.id} />
                     <View style={{ flex: 1, minWidth: 0 }}>
                       <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                        <Text numberOfLines={1} style={{ flexShrink: 1, fontFamily: F.serif, fontSize: 14, color: C.parchment }}>{n.name}</Text>
+                        <Text numberOfLines={1} style={{ flexShrink: 1, fontFamily: F.serif, fontSize: 15, color: C.parchment }}>{n.name}</Text>
                         <Pill text={t(rol)} tone={tone} />
                       </View>
-                      <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted }}>{professionNameL(n.profession, lang, n.gender === "kadın")} · {n.age}{uzak ? ` · ${placeName(loc, lang)}` : ""}</Text>
+                      <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted }}>{professionNameL(n.profession, lang, n.gender === "kadın")} · {n.age}{uzak ? ` · ${placeName(loc, lang)}` : ""}</Text>
                       <RelBand score={v} />
                     </View>
                     <Text style={{ fontFamily: F.display, fontSize: 13, color: v >= 20 ? C.sage : v <= -20 ? C.blood : C.parchmentMuted, width: 34, textAlign: "right" }}>{v > 0 ? "+" + v : v}</Text>
@@ -181,28 +171,28 @@ export default function Iliskiler() {
         ) : null}
 
         {total === 0 ? (
-          <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 12, padding: 24, alignItems: "center" }}>
+          <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 5, padding: 24, alignItems: "center" }}>
             <Text style={{ fontFamily: F.display, fontSize: 14, color: C.parchment, letterSpacing: 0.5 }}>{t("rel.noneTitle")}</Text>
-            <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, textAlign: "center", marginTop: 7, lineHeight: 18 }}>{t("rel.noneBody")}</Text>
+            <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, textAlign: "center", marginTop: 7, lineHeight: 22 }}>{t("rel.noneBody")}</Text>
           </View>
         ) : grouped.filter(({ list }) => list.length || !cember.length).map(({ b, list }) => ( // çember doluyken boş bantlar gizlenir (dostun çemberdeyken "dost yok" demesin)
-          <View key={b.id} style={{ backgroundColor: C.card, borderWidth: 1, borderColor: b.tone + "30", borderRadius: 12, marginBottom: 12, overflow: "hidden" }}>
+          <View key={b.id} style={{ backgroundColor: C.card, borderWidth: 1, borderColor: b.tone + "30", borderRadius: 5, marginBottom: 12, overflow: "hidden" }}>
             {/* Panel başlığı */}
             <View style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 13, paddingVertical: 10, borderBottomWidth: list.length ? 1 : 0, borderBottomColor: C.border, backgroundColor: b.tone + "10" }}>
               <View style={{ width: 9, height: 9, borderRadius: 2, backgroundColor: b.tone, transform: [{ rotate: "45deg" }] }} />
-              <Text style={{ flex: 1, fontFamily: F.display, fontSize: 12, letterSpacing: 1.5, color: b.tone, textTransform: "uppercase" }}>{t("relb." + b.id)}</Text>
+              <Text style={{ flex: 1, fontFamily: F.display, fontSize: 13, letterSpacing: 1.5, color: b.tone, textTransform: "uppercase" }}>{t("relb." + b.id)}</Text>
               <Pill text={`${list.length} ${t(list.length === 1 ? "rel.person" : "rel.people")}`} tone={b.tone} />
             </View>
             {/* Gövde */}
             <View style={{ padding: list.length ? 10 : 12 }}>
               {list.length === 0 ? (
-                <Text style={{ fontFamily: F.serifItalic, fontSize: 11.5, color: C.parchmentMuted, textAlign: "center", opacity: 0.75 }}>{applyParams(t("rel.bandNone"), [t("relb." + b.id + ".m")])}</Text>
+                <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, textAlign: "center", opacity: 0.75 }}>{applyParams(t("rel.bandNone"), [t("relb." + b.id + ".m")])}</Text>
               ) : list.map(({ n, v }) => (
                 <Pressable key={n.id} onPress={() => router.push(`/oyun/npc/${n.id}`)} style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 7 }}>
                   <Portre age={n.age} gender={n.gender} size={37} ring={false} seed={n.id} />
                   <View style={{ flex: 1, minWidth: 0 }}>
-                    <Text numberOfLines={1} style={{ fontFamily: F.serif, fontSize: 14, color: C.parchment }}>{n.name}</Text>
-                    <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted }}>{professionNameL(n.profession, lang, n.gender === "kadın")} · {n.age}</Text>
+                    <Text numberOfLines={1} style={{ fontFamily: F.serif, fontSize: 15, color: C.parchment }}>{n.name}</Text>
+                    <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted }}>{professionNameL(n.profession, lang, n.gender === "kadın")} · {n.age}</Text>
                     <RelBand score={v} />
                   </View>
                   <Text style={{ fontFamily: F.display, fontSize: 13, color: v >= 20 ? C.sage : v <= -20 ? C.blood : C.parchmentMuted, width: 34, textAlign: "right" }}>{v > 0 ? "+" + v : v}</Text>

@@ -1,5 +1,6 @@
+import { DesignPressable as Pressable } from "../../lib/design-pressable";
 import { useState, useMemo } from "react";
-import { View, Text, ScrollView, Pressable } from "react-native";
+import { View, Text, ScrollView} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
@@ -31,8 +32,8 @@ export default function Copcatan() {
     { v: -1, label: t("cc.age.all") }, { v: 2, label: t("cc.wealth.2") }, { v: 1, label: t("cc.wealth.1") }, { v: 0, label: t("cc.wealth.0") },
   ];
   const Chip = ({ active, label, onPress }: { active: boolean; label: string; onPress: () => void }) => (
-    <Pressable onPress={() => { hap("tap"); onPress(); }} style={{ paddingVertical: 6, paddingHorizontal: 12, borderRadius: 16, borderWidth: 1, borderColor: active ? "rgba(201,168,76,0.6)" : C.border, backgroundColor: active ? "rgba(201,168,76,0.14)" : C.bg }}>
-      <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 0.5, color: active ? C.gold : C.parchmentMuted }}>{label}</Text>
+    <Pressable onPress={() => { hap("tap"); onPress(); }} style={{ paddingVertical: 6, paddingHorizontal: 12, borderRadius: 5, borderWidth: 1, borderColor: active ? "rgba(201,168,76,0.6)" : C.border, backgroundColor: active ? "rgba(201,168,76,0.14)" : C.bg }}>
+      <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 0.5, color: active ? C.gold : C.parchmentMuted }}>{label}</Text>
     </Pressable>
   );
   const wealthLabel = (tier: number) => t("cc.wealth." + tier);
@@ -49,44 +50,44 @@ export default function Copcatan() {
         <PageHeader kicker={t("cc.kicker")} title={t("cc.title")} sub={applyParams(t("cc.fee"), [MATCHMAKER_FEE])} />
 
         {p.married ? (
-          <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 12, padding: 22, alignItems: "center", marginTop: 8 }}>
-            <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.parchmentMuted, textAlign: "center" }}>{tg("cc.married", state.player.gender === "kadın")}</Text>
+          <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 5, padding: 22, alignItems: "center", marginTop: 8 }}>
+            <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, textAlign: "center" }}>{tg("cc.married", state.player.gender === "kadın")}</Text>
           </View>
         ) : (
           <>
             {/* Filtreler */}
-            <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 1.5, color: C.goldDim, marginBottom: 6, marginTop: 4 }}>{t("cc.byAge").toUpperCase()}</Text>
+            <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1.5, color: C.goldDim, marginBottom: 6, marginTop: 4 }}>{t("cc.byAge").toUpperCase()}</Text>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 7, marginBottom: 10 }}>
               {ageChips.map((c) => <Chip key={c.k} active={ageF === c.k} label={c.label} onPress={() => setAgeF(c.k)} />)}
             </View>
-            <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 1.5, color: C.goldDim, marginBottom: 6 }}>{t("cc.byWealth").toUpperCase()}</Text>
+            <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1.5, color: C.goldDim, marginBottom: 6 }}>{t("cc.byWealth").toUpperCase()}</Text>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 7, marginBottom: 14 }}>
               {wealthChips.map((c) => <Chip key={c.v} active={wealthF === c.v} label={c.label} onPress={() => setWealthF(c.v)} />)}
             </View>
 
             {list.length === 0 ? (
-              <Text style={{ fontFamily: F.serifItalic, fontSize: 12.5, color: C.parchmentMuted, textAlign: "center", marginTop: 16 }}>{t("cc.none")}</Text>
+              <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, textAlign: "center", marginTop: 16 }}>{t("cc.none")}</Text>
             ) : list.map((n) => {
               const tier = npcWealthTier(n);
               const tcol = tier === 2 ? C.sage : tier === 0 ? C.parchmentMuted : C.gold;
               return (
-                <View key={n.id} style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 11, padding: 12, marginBottom: 9, flexDirection: "row", alignItems: "center", gap: 11 }}>
+                <View key={n.id} style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 5, padding: 12, marginBottom: 9, flexDirection: "row", alignItems: "center", gap: 11 }}>
                   <Portre age={n.age} gender={n.gender} size={40} ring={false} seed={n.id} />
                   <View style={{ flex: 1, minWidth: 0 }}>
-                    <Text numberOfLines={1} style={{ fontFamily: F.serif, fontSize: 14, color: C.parchment }}>{n.name}</Text>
-                    <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted }}>{professionNameL(n.profession, lang, n.gender === "kadın")} · {n.age}</Text>
+                    <Text numberOfLines={1} style={{ fontFamily: F.serif, fontSize: 15, color: C.parchment }}>{n.name}</Text>
+                    <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted }}>{professionNameL(n.profession, lang, n.gender === "kadın")} · {n.age}</Text>
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginTop: 3 }}>
-                      <GameIcon name="akce" size={9} color={tcol} /><Text style={{ fontFamily: F.display, fontSize: 9, color: tcol }}>{wealthLabel(tier)}</Text>
-                      <Text style={{ fontFamily: F.display, fontSize: 9, color: C.goldDim, marginLeft: 6 }}>{t("sans.toplam")} {yuzdeL(teklifSansi(state, n, "gorucu").yuzde, lang)}</Text>
+                      <GameIcon name="akce" size={9} color={tcol} /><Text style={{ fontFamily: F.display, fontSize: 13, color: tcol }}>{wealthLabel(tier)}</Text>
+                      <Text style={{ fontFamily: F.display, fontSize: 13, color: C.goldDim, marginLeft: 6 }}>{t("sans.toplam")} {yuzdeL(teklifSansi(state, n, "gorucu").yuzde, lang)}</Text>
                     </View>
                   </View>
-                  <Pressable disabled={!able} onPress={() => { hap("success"); apply((s) => proposeArranged(s, n)); }} style={{ paddingVertical: 9, paddingHorizontal: 14, borderRadius: 8, borderWidth: 1.5, borderColor: able ? "rgba(201,168,76,0.6)" : C.border, backgroundColor: able ? C.gold : C.bg, opacity: able ? 1 : 0.5 }}>
-                    <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 0.5, color: able ? C.inkOnGold : C.parchmentMuted }}>{t("cc.propose")}</Text>
+                  <Pressable disabled={!able} onPress={() => { hap("success"); apply((s) => proposeArranged(s, n)); }} style={{ paddingVertical: 9, paddingHorizontal: 14, borderRadius: 5, borderWidth: 1.5, borderColor: able ? "rgba(201,168,76,0.6)" : C.border, backgroundColor: able ? C.gold : C.bg, opacity: able ? 1 : 0.5 }}>
+                    <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 0.5, color: able ? C.inkOnGold : C.parchmentMuted }}>{t("cc.propose")}</Text>
                   </Pressable>
                 </View>
               );
             })}
-            {!able && !p.married && <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.blood, textAlign: "center", marginTop: 10 }}>{applyParams(t("cc.needFee"), [MATCHMAKER_FEE])}</Text>}
+            {!able && !p.married && <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.blood, textAlign: "center", marginTop: 10 }}>{applyParams(t("cc.needFee"), [MATCHMAKER_FEE])}</Text>}
           </>
         )}
       </ScrollView>
