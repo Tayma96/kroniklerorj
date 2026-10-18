@@ -41,6 +41,9 @@ jobs:
             npx tsc --noEmit
             node scripts/check-war-world.cjs
             node scripts/check-war-impact.cjs
+            node scripts/check-npc-economy.cjs
+            node scripts/check-diplomacy.cjs
+            node scripts/check-diplomacy-game.cjs
             npx --no-install esbuild lib/game.ts --bundle --platform=node --format=cjs --outfile=/tmp/kronikler-game-bundle.cjs --log-level=error
             node scripts/check-war.cjs
             node scripts/check-army.cjs
@@ -53,6 +56,9 @@ jobs:
           npx tsc --noEmit
           node scripts/check-war-world.cjs
           node scripts/check-war-impact.cjs
+          node scripts/check-npc-economy.cjs
+          node scripts/check-diplomacy.cjs
+          node scripts/check-diplomacy-game.cjs
           node scripts/_smoke/kurtarma-check.cjs
           node scripts/_smoke/ses-check.cjs
           node scripts/_smoke/kayit-check.cjs
