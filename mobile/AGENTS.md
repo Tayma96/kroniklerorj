@@ -32,8 +32,16 @@ push et, uzak dalın commit kimliğini doğrula ve çalışma alanını temiz b�
 4. Kayıt göçü, i18n/ikon ve dil karışması kontrollerini çalıştır.
 5. `git diff --check` ile biçim hatasını denetle.
 
-300 hayat smoke testi her 4–5 motor dalgasında ve her APK öncesinde çalışır; her küçük
-değişiklikte çalıştırılmaz. UI değişikliklerini 320 ve 390 piksel genişlikte, 4× CPU yavaşlatmada,
+Günlük `npm run smoke`: tsc + tek motor paketi + 3 kısa senaryo (en çok 120 ay/senaryo)
+ve eski kayıt göçü. Yol/ticaret/savaş RNG değiştiyse `npm run smoke:rng` kısa kapsamı seçer.
+Aynı uygulama/motor/test/bağımlılık kaynağındaki başarılı adımlar tekrar çalışmaz;
+zorunlu tekrar için `-- --force`. Hata veya 60 sn adım sınırı aşılırsa durur; genişe geçmez.
+Bu kısa tarama tam ömür/kapsam testi değildir. `npm run smoke:full` 300 hayatı,
+`npm run smoke:rng:full` geniş RNG taramasını açıkça çalıştırır; önbellekten atlanmaz.
+Geniş test yalnız kullanıcı açıkça istediğinde veya APK/AAB öncesinde; otomatik kadans yok.
+Kullanıcı o işte smoke istemiyorsa hiçbir smoke komutunu başlatma; yalnız statik kontrol
+yap ve çalıştırılmamış doğrulamayı açıkça belirt. Yalnız belge değiştiyse oyun testini tekrarlama.
+UI değişikliklerini 320 ve 390 piksel genişlikte, 4× CPU yavaşlatmada,
 en az 44 piksel dokunma alanıyla ve taşma olmadan denetle.
 
 ## Kontrol yönlendirmesi

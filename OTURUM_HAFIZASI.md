@@ -16,6 +16,9 @@
 
 ## Durum
 
+- Test bütçesi: varsayılan kısa + başarılı kaynak önbelleği; geniş smoke yalnız açık istek/APK.
+  Kullanıcı bu düzenlemede smoke istemedi; yalnız statik kontrol yapıldı.
+
 - Bu dalga yerel committe. Push 403: bağlantı Tayma67; Tayma96 deposuna yazma yetkisi yok.
   Yazma erişimi sağlanınca yerel commit kaybedilmeden uzak dalla karşılaştırılıp gönderilmeli.
 

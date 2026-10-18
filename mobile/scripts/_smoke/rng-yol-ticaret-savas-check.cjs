@@ -4,6 +4,7 @@ const path = require("node:path");
 const esbuild = require("esbuild");
 const copy = structuredClone;
 const root = path.resolve(__dirname, "../..");
+const quick = process.env.SMOKE_PROFILE === "quick"; // doğrudan/CI çağrısı geniş kapsamı korur
 
 (async () => {
   const built = await esbuild.build({
@@ -46,7 +47,7 @@ const root = path.resolve(__dirname, "../..");
   const seeded = (i) => { const s = copy(base); s.rng_state = Math.imul(i, 0x9e3779b1) >>> 0 || 1; return s; };
   const roadKeys = new Set(), warKeys = new Set(), caravanKeys = new Set(), injuryKeys = new Set();
   let bargainsWon = 0, bargainsLost = 0, bluffDifference = 0;
-  for (let i = 1; i <= 256; i++) {
+  for (let i = 1; i <= (quick ? 32 : 256); i++) {
     for (const route of ["anayol", "patika", "kervan", "at"]) {
       const s = seeded(i);
       s.player.horse = true; s.player.horse_name = "Doru";
@@ -82,14 +83,15 @@ const root = path.resolve(__dirname, "../..");
       assert.deepEqual(g.applyBattleOutcome(out, "haydut", won, 35), out, "Savaş ödülü iki kez verildi");
     }
   }
-  for (const key of ["evj.pathAmbush", "evj.dogSave", "horse.lost", "evj.rideAmbush", "evj.diePath", "evj.trMerchWin", "evj.trMerchLose", "evj.home4"])
+  for (const key of quick ? [] : ["evj.pathAmbush", "evj.dogSave", "horse.lost", "evj.rideAmbush", "evj.diePath", "evj.trMerchWin", "evj.trMerchLose", "evj.home4"])
     assert(roadKeys.has(key), "Yol dalı kapsanmadı: " + key);
-  assert(roadKeys.size >= 40, "Yol olay havuzu yeterince sınanmadı");
+  assert(roadKeys.size >= (quick ? 8 : 40), "Yol olay havuzu yeterince sınanmadı");
   assert(warKeys.has("evj.frontWin") && warKeys.has("evj.frontLose"));
-  assert(injuryKeys.has("evj.injure") && injuryKeys.has("evj.injurePerm") && injuryKeys.has("evj.nemTaunt"));
+  assert(injuryKeys.has("evj.injure"));
+  if (!quick) assert(injuryKeys.has("evj.injurePerm") && injuryKeys.has("evj.nemTaunt"));
   assert(bargainsWon && bargainsLost && bluffDifference);
 
-  for (let i = 1; i <= 64; i++) {
+  for (let i = 1; i <= (quick ? 8 : 64); i++) {
     const s = seeded(i);
     const out = same(s, (x) => g.launchCaravan(x, 600, i % 2 === 0), "Kervan çıkışı");
     assert(out.caravan && out.caravan.route.length >= 3 && out.caravan.route.length <= 4);
@@ -105,8 +107,15 @@ const root = path.resolve(__dirname, "../..");
     assert(economy.econ >= 0.7 && economy.econ <= 1.5);
     same(market, (x) => { const n = copy(x); g.tickWars(n, true); return n; }, "Ocak savaşları");
   }
-  assert(caravanKeys.has("evj.carArrive2") && caravanKeys.has("evj.carInsPay"));
-  assert(caravanKeys.has("evj.carRaid") || caravanKeys.has("evj.carRaid2"));
+  assert(caravanKeys.has("evj.carArrive2"));
+  if (!quick) {
+    assert(caravanKeys.has("evj.carInsPay"));
+    assert(caravanKeys.has("evj.carRaid") || caravanKeys.has("evj.carRaid2"));
+  }
+  const insured = copy(base); insured.rng_state = 1;
+  insured.caravan = { invested: 600, dest, route: [base.player.location_name, dest], step: 0, lost: 0, insured: true, spread: 1.2 };
+  const insuredOut = same(insured, (x) => { const n = copy(x); g.tickCaravan(n); return n; }, "Sigortalı yağma");
+  assert(insuredOut.history.some((e) => e.k === "evj.carInsPay"));
 
   for (const blocked of ["dead", "jail", "child"]) {
     const s = seeded(7);
@@ -127,7 +136,8 @@ const root = path.resolve(__dirname, "../..");
   // Her arketip ve duruş: dövüş ortasında JSON'a yaz/oku, aynı sonraki hamle aynı sonucu vermeli.
   let battles = 0, rounds = 0;
   const combatKeys = new Set();
-  for (const enc of g.ENCOUNTERS) for (const stance of ["dengeli", "saldirgan", "savunmaci"]) for (const seed of [1, 71, 123456789]) {
+  const encounters = quick ? g.ENCOUNTERS.filter((e) => ["haydut", "duello", "reis", "sinir"].includes(e.id)) : g.ENCOUNTERS;
+  for (const enc of encounters) for (const stance of ["dengeli", "saldirgan", "savunmaci"]) for (const seed of [1, 71, 123456789]) {
     const player = copy(base.player);
     if (seed === 71) player.equipped.kalkan = "kalkan";
     if (seed === 123456789) { player.equipped.silah = "yay"; player.perks.push("kalkanli"); }
@@ -150,5 +160,5 @@ const root = path.resolve(__dirname, "../..");
   const migrated = g.migrate(copy(locked));
   assert.equal(migrated.rng_state, locked.rng_state);
   assert.deepEqual(g.migrate(copy(migrated)), migrated);
-  console.log(`KAYITLI YOL/TİCARET/SAVAŞ: TEMİZ · ${checks} tekrar · ${roadKeys.size} yol sonucu · ${battles} dövüş/${rounds} hamle · kervan/sigorta · pazarlık/blöf · aylık kilit · göç`);
+  console.log(`${quick ? "KISA" : "GENİŞ"} KAYITLI YOL/TİCARET/SAVAŞ: TEMİZ · ${checks} tekrar · ${roadKeys.size} yol sonucu · ${battles} dövüş/${rounds} hamle · kervan/sigorta · pazarlık/blöf · aylık kilit · göç`);
 })().catch((e) => { console.error(e.stack); process.exitCode = 1; });

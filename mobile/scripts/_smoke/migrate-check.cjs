@@ -1,6 +1,6 @@
 // Eski kayıt göç bekçisi: donmuş v1 fikstürü her build'de migrate()'ten geçirip 50 tur koşar.
 // Amaç: gelecekteki şema değişiklikleri eski kayıtları kırarsa smoke'tan ÖNCE burada yakalansın.
-const g = require("/tmp/kronikler-game-bundle.cjs");
+const g = require(process.env.SMOKE_BUNDLE || "/tmp/kronikler-game-bundle.cjs");
 const fs = require("fs");
 const path = require("path");
 const raw = fs.readFileSync(path.join(__dirname, "eski-kayit-v1.json"), "utf8");

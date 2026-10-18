@@ -1,6 +1,10 @@
 // Çekirdek oyun döngüsünü + tüm oyuncu aksiyonlarını headless koşturur (runtime smoke testi).
 const g = require(process.env.SMOKE_BUNDLE || "/tmp/kronikler-game-bundle.cjs"); // SMOKE_BUNDLE: anlık-görüntü paketi (paralel koşucu)
 const LIVES = parseInt(process.env.SMOKE_LIVES || "300", 10);
+const TURNS = parseInt(process.env.SMOKE_TURNS || "1100", 10);
+if (!Number.isInteger(LIVES) || LIVES < 1 || !Number.isInteger(TURNS) || TURNS < 1) {
+  console.error("SMOKE_LIVES ve SMOKE_TURNS pozitif tam sayı olmalı."); process.exit(1);
+}
 const R = (a) => a[Math.floor(Math.random() * a.length)];
 let errors = 0; const died = [];
 // Her ay sonunda motor değişmezleri: sayılar sonlu, kese eksiye düşmez, can/açlık 0–100, itibar eksenleri ±100, kademe merdivende.
@@ -23,7 +27,7 @@ for (let i = 0; i < LIVES; i++) {
   try {
     let s = g.newGame("Sim", "Test", Math.random() < 0.5 ? "erkek" : "kadın");
     let guard = 0;
-    while (!s.player.dead && s.player.age < 85 && guard++ < 1100) {
+    while (!s.player.dead && s.player.age < 85 && guard++ < TURNS) {
       const p = s.player;
       if (p.hunger < 35) s = g.eat(s);
       if (p.age >= 13 && p.profession !== "işsiz" && p.hunger >= 30) s = g.work(s);
@@ -91,5 +95,5 @@ for (let i = 0; i < LIVES; i++) {
 }
 died.sort((a,b)=>a-b);
 if (process.env.SMOKE_JSON) console.log("SMOKE_JSON:" + JSON.stringify({ errors, died }));
-else console.log(`${LIVES} hayat × tüm aksiyonlar · HATA: ${errors} · ölüm yaşı medyan ${died[Math.floor(died.length / 2)]} (min ${died[0]} / max ${died[died.length - 1]})`);
+else console.log(`${LIVES} ${TURNS < 1100 ? `kısa senaryo × en çok ${TURNS} ay` : "hayat × tüm aksiyonlar"} · HATA: ${errors} · son yaş medyan ${died[Math.floor(died.length / 2)]} (min ${died[0]} / max ${died[died.length - 1]})`);
 process.exit(errors > 0 ? 1 : 0);

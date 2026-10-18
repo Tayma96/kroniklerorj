@@ -23,8 +23,10 @@ okuma, çıktı ve testlerle kullanıcı limitini tüketmemektir.
 
 ## Uygulama bütçesi
 
-- Değişiklikle ilişkili en küçük test kümesini çalıştır. Tam 300 hayat testi yalnız
-  `mobile/AGENTS.md` kadansında veya APK öncesinde çalışır.
+- Değişiklikle ilişkili en küçük kontrolü seç. Kullanıcı smoke istemiyorsa başlatma;
+  yalnız sözdizimi/diff gibi statik kontrolleri yap, çalıştırılmamış testi geçti sayma.
+- Tam 300 hayat testi yalnız açık kullanıcı isteğinde veya APK/AAB öncesinde çalışır.
+  Günlük komutlar ve aynı kaynak için başarılı sonuç önbelleği `mobile/AGENTS.md`de.
 - Önce dosya/özellik bazlı kontrol, sonra yalnız hata veya risk varsa daha geniş denetim yap.
 - Bir tamamlanmış işi tek commit'te doğrula ve `apk` dalına push et; uzak commit'i karşılaştır.
 - Kullanıcıya kısa sonuç, doğrulama ve commit ver; uzun çalışma günlüğü aktarma.

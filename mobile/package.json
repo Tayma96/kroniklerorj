@@ -41,7 +41,10 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
-    "smoke": "esbuild lib/game.ts --bundle --platform=node --format=cjs --outfile=/tmp/kronikler-game-bundle.cjs --log-level=error && node scripts/_smoke/run.cjs"
+    "smoke": "node scripts/_smoke/check.cjs quick",
+    "smoke:rng": "node scripts/_smoke/check.cjs rng",
+    "smoke:full": "node scripts/_smoke/check.cjs full",
+    "smoke:rng:full": "node scripts/_smoke/check.cjs rng-full"
   },
   "private": true,
   "license": "UNLICENSED"
