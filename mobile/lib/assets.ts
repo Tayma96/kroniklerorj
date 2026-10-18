@@ -37,6 +37,29 @@ export function heroImage(age: number, season: string): any {
   return set[season] || set["Yaz"];
 }
 
+// Ana ekran ve şehir başlıkları için yazısız, mevsime ayrılmış kasaba görselleri.
+const TOWN_SEASON: Record<string, any> = {
+  "İlkbahar": require("../assets/tasarim/v4/town-ilkbahar.jpg"),
+  "Yaz": require("../assets/tasarim/v4/town-yaz.jpg"),
+  "Sonbahar": require("../assets/tasarim/v4/town-sonbahar.jpg"),
+  "Kış": require("../assets/tasarim/v4/town-kis.jpg"),
+};
+export function townSeasonImage(season: string): any { return TOWN_SEASON[season] || TOWN_SEASON["Yaz"]; }
+
+// Şehir mekânı kartlarının her biri kendi kırpılmış görselini kullanır.
+const VENUE: Record<string, any> = {
+  pazar: require("../assets/tasarim/v4/venue-pazar.jpg"),
+  mahalle: require("../assets/tasarim/v4/venue-mahalle.jpg"),
+  mulkler: require("../assets/tasarim/v4/venue-mulkler.jpg"),
+  hanedan: require("../assets/tasarim/v4/venue-hanedan.jpg"),
+  atolye: require("../assets/arka/atolye_demirci.jpg"),
+  mektep: require("../assets/arka/medrese.jpg"),
+  orgutler: require("../assets/arka/ahi_tekke.jpg"),
+  iliskiler: require("../assets/arka/ev_varlikli.jpg"),
+  haberler: require("../assets/arka/cami_avlu.jpg"),
+};
+export function venueImage(id: string): any { return VENUE[id] || VENUE.pazar; }
+
 // Mülk illüstrasyonları (FLUX üretimi; 13. yy Anadolu yağlıboya — portre/hero ile aynı stil).
 const MULK: Record<string, any> = {
   tarla: require("../assets/mulk/tarla.jpg"),

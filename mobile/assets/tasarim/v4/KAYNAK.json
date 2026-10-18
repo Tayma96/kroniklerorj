@@ -1,0 +1,129 @@
+{
+  "style": "Aydınlık, doygun Selçuklu kasabası; yazı ve arayüz öğeleri görüntüye gömülü değil.",
+  "seasonalSource": "../v3/town-seasons.png",
+  "venueSource": "../v3/hero-town-clean.png",
+  "seasons": [
+    {
+      "file": "town-ilkbahar.jpg",
+      "source": "../v3/town-seasons.png",
+      "crop": [
+        0,
+        0,
+        768,
+        512
+      ],
+      "size": [
+        768,
+        512
+      ],
+      "sha256": "4fb875d0c700a03feb07402350dc44160cbcbb9dc0661af35cf5cb40f3897416"
+    },
+    {
+      "file": "town-yaz.jpg",
+      "source": "../v3/town-seasons.png",
+      "crop": [
+        768,
+        0,
+        1536,
+        512
+      ],
+      "size": [
+        768,
+        512
+      ],
+      "sha256": "0737db1c0edb1127fbd39cfd648e8ed939b1b88f82a20f925c9b26fd32336b4d"
+    },
+    {
+      "file": "town-sonbahar.jpg",
+      "source": "../v3/town-seasons.png",
+      "crop": [
+        0,
+        512,
+        768,
+        1024
+      ],
+      "size": [
+        768,
+        512
+      ],
+      "sha256": "3f3405387c9cfce3235f449881c3178e6410d2d4e696e9564482fea6589d2970"
+    },
+    {
+      "file": "town-kis.jpg",
+      "source": "../v3/town-seasons.png",
+      "crop": [
+        768,
+        512,
+        1536,
+        1024
+      ],
+      "size": [
+        768,
+        512
+      ],
+      "sha256": "69141ee331c335926e8179bab5ea50917a4d625c2ac393e83639d9f3402b612b"
+    }
+  ],
+  "venues": [
+    {
+      "file": "venue-pazar.jpg",
+      "source": "../v3/hero-town-clean.png",
+      "crop": [
+        0,
+        210,
+        640,
+        690
+      ],
+      "size": [
+        640,
+        480
+      ],
+      "sha256": "367f95e639e7d9928bc0102ae9fb9e3b7516074b252470d2a981f1f88d87b43d"
+    },
+    {
+      "file": "venue-mahalle.jpg",
+      "source": "../v3/hero-town-clean.png",
+      "crop": [
+        420,
+        190,
+        1060,
+        670
+      ],
+      "size": [
+        640,
+        480
+      ],
+      "sha256": "9fb03b9637bfa3a34575a8310f90654a40f874840d8026951488a5fb0371a6b9"
+    },
+    {
+      "file": "venue-mulkler.jpg",
+      "source": "../v3/hero-town-clean.png",
+      "crop": [
+        1040,
+        40,
+        1680,
+        520
+      ],
+      "size": [
+        640,
+        480
+      ],
+      "sha256": "fa0358761814579f8e7128897ebc01f2aeafc1fd2804830811dc3ea9e5d792c0"
+    },
+    {
+      "file": "venue-hanedan.jpg",
+      "source": "../v3/hero-town-clean.png",
+      "crop": [
+        740,
+        190,
+        1380,
+        670
+      ],
+      "size": [
+        640,
+        480
+      ],
+      "sha256": "763655dd601a0730c7984d034083ebd3d874a7a25d52ba5b5f2e576b0c30133b"
+    }
+  ]
+}

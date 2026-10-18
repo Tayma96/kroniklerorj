@@ -13,7 +13,8 @@ import { useI18n, yuzdeL, applyParams } from "../../lib/i18n";
 import { placeName } from "../../lib/locale-data";
 import { C, F, T } from "../../lib/theme";
 import { IllustratedHeader, OrnatePanel } from "../../lib/ornament-ui";
-import { SAHNE_GORSEL } from "../../lib/sahne-tema";
+import { townSeasonImage, venueImage } from "../../lib/assets";
+import { currentCalendar } from "../../lib/calendar";
 import { GameIcon } from "../../lib/icons";
 import { hap } from "../../lib/haptics";
 import { BackLabel, PageHeader, ScreenFresk } from "../../lib/ui";
@@ -64,7 +65,7 @@ export default function Sehir() {
         <Pressable onPress={() => router.back()}><BackLabel /></Pressable>
       </View>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 14, paddingBottom: insets.bottom + 90 }}>
-        <IllustratedHeader title={placeName(here, lang)} sub={`${t("kind." + KIND_KEY[kind])} · ${info.population.toLocaleString(lang)} ${t("diyar.pop")}`} row={1} />
+        <IllustratedHeader title={placeName(here, lang)} sub={`${t("kind." + KIND_KEY[kind])} · ${info.population.toLocaleString(lang)} ${t("diyar.pop")}`} source={townSeasonImage(currentCalendar(state.turn).season)} row={1} />
         <View style={{ flexDirection: "row", gap: 8, paddingVertical: 14 }}>
           {[{icon:"shield",key:"diyar.security",value:`${security}/100`},{icon:"coins",key:"diyar.prosperity",value:`${prosperity}/100`},{icon:"family",key:"soc.recog",value:yuzdeL(Math.round(pp.recog * 100),lang)}].map(x => <View key={x.key} style={{ flex: 1, alignItems: "center", padding: 8, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.surface, borderRadius: 4 }}><GameIcon name={x.icon} color={C.gold} size={20}/><Text style={{fontFamily:F.display,fontSize:T.body,color:C.parchment,marginVertical:4}}>{x.value}</Text><Text style={{fontFamily:F.serif,fontSize:T.caption,color:C.parchmentMuted,textAlign:"center"}}>{t(x.key)}</Text></View>)}
         </View>
@@ -86,9 +87,12 @@ export default function Sehir() {
         <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.goldDim, textTransform: "uppercase", marginBottom: 9 }}>{t("city.venues")}</Text>
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 9, marginBottom: 16 }}>
           {VENUES.map((v) => (
-            <Pressable key={v.to} onPress={() => { hap("tap"); router.push(v.to as any); }} style={({ pressed }) => ({ flexBasis: "46%", flexGrow: 1, minHeight: 108, borderRadius: 4, borderWidth: 1, borderColor: C.goldDim, backgroundColor: C.card, overflow: "hidden", opacity: pressed ? 0.7 : 1 })}>
-              <ImageBackground source={v.to.endsWith("mahalle") ? SAHNE_GORSEL.ev_yoksul : v.to.endsWith("mulkler") ? SAHNE_GORSEL.hasat : v.to.endsWith("hanedan") ? SAHNE_GORSEL.ev_varlikli : SAHNE_GORSEL.cami_avlu} style={{ flex: 1, minHeight: 108 }} imageStyle={{ opacity: 0.65 }}>
-                <LinearGradient colors={["#0D0A0600",C.bg]} style={{ flex: 1, justifyContent: "flex-end", padding: 12, gap: 6 }}><GameIcon name={v.icon} size={24} color={C.gold} /><Text style={{ fontFamily: F.display, fontSize: T.label, color: C.parchment }}>{t(v.key)}</Text></LinearGradient>
+            <Pressable key={v.to} onPress={() => { hap("tap"); router.push(v.to as any); }} style={({ pressed }) => ({ flexBasis: "46%", flexGrow: 1, minHeight: 132, borderRadius: 10, borderWidth: 1, borderColor: "rgba(216,179,90,0.64)", backgroundColor: C.card, overflow: "hidden", opacity: pressed ? 0.9 : 1 })}>
+              <ImageBackground source={venueImage(v.to.split("/").pop() || "")} style={{ flex: 1, minHeight: 132 }} imageStyle={{ opacity: 1 }}>
+                <LinearGradient colors={["#0D0A0600", "#0D0A0680", "#0D0A06D9"]} locations={[0, 0.56, 1]} style={{ flex: 1, justifyContent: "flex-end", padding: 12, gap: 8 }}>
+                  <View style={{ width: 34, height: 34, borderRadius: 10, alignItems: "center", justifyContent: "center", backgroundColor: "#17110BDD", borderWidth: 1, borderColor: "rgba(255,211,108,0.48)" }}><GameIcon name={v.icon} size={19} color={C.goldBright} /></View>
+                  <Text style={{ fontFamily: F.display, fontSize: T.label, lineHeight: 18, color: C.parchment, textShadowColor: "#0D0A06", textShadowRadius: 4 }}>{t(v.key)}</Text>
+                </LinearGradient>
               </ImageBackground>
             </Pressable>
           ))}

@@ -1,17 +1,17 @@
 // Kül & Köz tasarım tokenları (web index.css'ten birebir).
 export const C = {
   bg: "#0D0A06",
-  surface: "#15110A",
-  card: "#1C160D",
-  cardHi: "#221A0F",
-  border: "#2E2416",
-  borderHi: "#4A3820",
-  gold: "#C9A84C",
-  goldBright: "#F0C040",
-  goldDim: "#8B6914",
-  parchment: "#E8D5B0",
-  parchmentDim: "#B8A880",
-  parchmentMuted: "#958160",  // soluk metin: kart zemininde 4.78:1 (WCAG AA ≥4.5; eski #7A6A4F 3.42:1 idi — 10–11 pt italik açıklamalar okunmuyordu)
+  surface: "#1B150D",
+  card: "#241B11",
+  cardHi: "#302419",
+  border: "#493823",
+  borderHi: "#705633",
+  gold: "#D8B35A",
+  goldBright: "#FFD36C",
+  goldDim: "#A98236",
+  parchment: "#F2E2C4",
+  parchmentDim: "#D2BC91",
+  parchmentMuted: "#B9A47D",  // okunur soluk metin: kart zemininde AA kontrastı
   blood: "#C84040",
   sage: "#4A9A5A",
   ember: "#E05A30",

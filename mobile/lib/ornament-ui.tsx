@@ -25,9 +25,14 @@ export function Panorama({ row = 0, height = 190, source }: { row?: 0 | 1; heigh
 export function IllustratedHeader({ title, sub, row = 0, source, height = 190, right }: { title: string; sub?: string; row?: 0 | 1; source?: ImageSourcePropType; height?: number; right?: ReactNode }) {
   return <View style={{ height, borderWidth: 1, borderColor: C.goldDim, overflow: "hidden", borderRadius: 4 }}>
     <Panorama row={row} height={height} source={source} />
-    <LinearGradient pointerEvents="none" colors={["#F4E7C877", "#F4E7C800", C.bg + "77"]} style={{ position: "absolute", top: 0, right: 0, bottom: 0, left: 0 }} />
+    <LinearGradient pointerEvents="none" colors={["#F4E7C81A", "#F4E7C800", C.bg + "38"]} style={{ position: "absolute", top: 0, right: 0, bottom: 0, left: 0 }} />
     <View style={{ position: "absolute", top: 12, left: 14, right: 14, flexDirection: "row", alignItems: "flex-start", gap: 8 }}>
-      <View style={{ flex: 1 }}><Text style={{ fontFamily: F.display, fontSize: 26, color: C.bg, lineHeight: 34 }}>{title}</Text>{sub && <Text style={{ fontFamily: F.serif, fontSize: T.body, color: C.bg, lineHeight: T.line }}>{sub}</Text>}</View>{right}
+      <View style={{ flex: 1 }}>
+        <View style={{ alignSelf: "flex-start", maxWidth: "100%", paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: "rgba(169,130,54,0.48)", backgroundColor: "rgba(244,231,200,0.84)" }}>
+          <Text style={{ fontFamily: F.display, fontSize: 26, color: C.bg, lineHeight: 34 }}>{title}</Text>
+          {sub && <Text style={{ fontFamily: F.serif, fontSize: T.body, color: C.bg, lineHeight: T.line }}>{sub}</Text>}
+        </View>
+      </View>{right}
     </View>
   </View>;
 }

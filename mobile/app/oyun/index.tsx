@@ -20,7 +20,7 @@ import { currentCalendar } from "../../lib/calendar";
 import { gercekRitim } from "../../lib/ritim";
 import { IllustratedHeader, OrnatePanel } from "../../lib/ornament-ui";
 import { MonthDecisionCard } from "../../lib/month-decision-ui";
-import { heroImage } from "../../lib/assets";
+import { townSeasonImage } from "../../lib/assets";
 import { MilestoneModal, DilemmaModal, OpportunityModal, AchievementToast, EulogyModal, PressableScale, Portre } from "../../lib/ui";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { GameIcon } from "../../lib/icons";
@@ -434,7 +434,7 @@ export default function Dashboard() {
       })()}
 
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingTop: insets.top + 8, paddingHorizontal: 12, paddingBottom: 100 }}>
-        <IllustratedHeader title={t("flow.anotherMonth")} sub={`${cal.year} · ${t("cal.season." + SEASON_KEY[cal.season])}`} source={cal.season === "Yaz" ? undefined : heroImage(p.age, cal.season)} right={<Pressable accessibilityRole="button" accessibilityLabel={t("scr.ayarlar")} onPress={() => router.push("/oyun/ayarlar")} style={{ minHeight: L.touch, minWidth: L.touch, alignItems: "center", justifyContent: "center" }}><GameIcon name="ayarlar" size={24} color={C.bg} /></Pressable>} />
+        <IllustratedHeader title={t("flow.anotherMonth")} sub={`${cal.year} · ${t("cal.season." + SEASON_KEY[cal.season])}`} source={townSeasonImage(cal.season)} right={<Pressable accessibilityRole="button" accessibilityLabel={t("scr.ayarlar")} onPress={() => router.push("/oyun/ayarlar")} style={{ minHeight: L.touch, minWidth: L.touch, alignItems: "center", justifyContent: "center", borderRadius: L.touch / 2, borderWidth: 1, borderColor: "rgba(169,130,54,0.55)", backgroundColor: "rgba(244,231,200,0.84)" }}><GameIcon name="ayarlar" size={24} color={C.bg} /></Pressable>} />
         <View style={{ marginTop: -20, marginBottom: 12, paddingHorizontal: 10 }}>
           <View style={{ flexDirection: lang === "ar" ? "row-reverse" : "row", alignItems: "center", gap: 12 }}>
             <Portre age={p.age} gender={p.gender} size={80} />

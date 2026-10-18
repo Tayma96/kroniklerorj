@@ -1,14 +1,13 @@
 import { DesignPressable as Pressable } from "../../../lib/design-pressable";
 import { useState, useMemo, useRef, useEffect } from "react";
-import { View, Text, ScrollView} from "react-native";
-import Svg, { Defs, LinearGradient, Stop, Rect, Circle } from "react-native-svg";
+import { View, Text, ScrollView, type ViewStyle } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useGame } from "../../../lib/store";
 import { kisiProfil, kisiCevresi, heardRumor, gorus, teklifSansi, helalUygun, helalBedeli, helalSansi, helallikIste, talkWith, giftTo, proposeMarriage, canCourt, helpNpcGoal, exploitNpcGoal, oyuncuAkrabasi, GOAL_HELP_COST, relWith, insultNpc, flirtWith, gossipAbout, giveMoneyTo, canFlirt, flirtIsForbidden, npcSeededMarried, GIVE_MONEY_AMT, martialLoad, canTakeApprentice, takeApprentice, mentorApprentice, APPRENTICE_MONTHS } from "../../../lib/game";
 import { useI18n, yuzdeL, kucukHarf, applyParams, renderEvt } from "../../../lib/i18n";
 import { hap } from "../../../lib/haptics";
-import { INTENTS, moodKey } from "../../../lib/dialogue";
+import { INTENTS } from "../../../lib/dialogue";
 import { topMemories, salientMemory, representativeMemory } from "../../../lib/npc-mind";
 import { NpcTavri } from "../../../lib/npc-bakis-ui";
 import { NpcIzlenimi } from "../../../lib/npc-izlenim-ui";
@@ -18,12 +17,11 @@ import type { SohbetYanit } from "../../../lib/npc-sohbet";
 import { EvlatMektubu } from "../../../lib/evlat-ui";
 import { evladaMektup } from "../../../lib/game";
 import { memoryQuote } from "../../../lib/hafiza-sohbet";
-import { professionNameL, traitL, quirkL, goalL, placeName } from "../../../lib/locale-data";
+import { professionNameL, quirkL, goalL, placeName } from "../../../lib/locale-data";
 import { ITEMS, TieKind } from "../../../lib/world";
 import { Portre, BackLabel, ScreenFresk } from "../../../lib/ui";
 import { GameIcon } from "../../../lib/icons";
 import { NpcSceneArt } from "../../../lib/npc-scene-ui";
-import { npcVisual } from "../../../lib/npc-visual";
 import { C, F, T, L } from "../../../lib/theme";
 
 const BANDS = [
@@ -34,6 +32,46 @@ const BANDS = [
   { id: "dusman", min: -100, tone: C.blood },
 ];
 function bandOf(score: number) { return BANDS.find((b) => score >= b.min) || BANDS[BANDS.length - 1]; }
+
+function gameActionStyle(pressed: boolean, tone: string, disabled: boolean, rtl: boolean): ViewStyle {
+  return {
+    flexDirection: rtl ? "row-reverse" : "row",
+    minHeight: 62,
+    alignItems: "center",
+    gap: 12,
+    paddingHorizontal: 11,
+    paddingVertical: 8,
+    marginBottom: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: pressed ? C.goldBright : tone + "99",
+    borderBottomWidth: pressed ? 1 : 3,
+    borderBottomColor: pressed ? tone + "88" : C.bg,
+    backgroundColor: pressed ? C.surface : C.cardHi,
+    shadowColor: "#000",
+    shadowOpacity: pressed ? 0.08 : 0.28,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: pressed ? 1 : 3 },
+    elevation: pressed ? 0 : 3,
+    transform: [{ translateY: pressed ? 2 : 0 }],
+    opacity: disabled ? 0.42 : 1,
+  };
+}
+
+function NpcActionIcon({ name, color = C.gold }: { name: string; color?: string }) {
+  return <View style={{ width: 42, height: 42, alignItems: "center", justifyContent: "center", borderRadius: 14, borderWidth: 1, borderColor: color + "A8", borderBottomWidth: 3, borderBottomColor: C.bg, backgroundColor: "#21180F", shadowColor: color, shadowOpacity: 0.16, shadowRadius: 4, elevation: 2 }}>
+    <View style={{ width: 33, height: 33, alignItems: "center", justifyContent: "center", borderRadius: 11, borderWidth: 1, borderColor: color + "44", backgroundColor: "#302317" }}>
+      <GameIcon name={name} size={20} color={color} />
+    </View>
+    <View pointerEvents="none" style={{ position: "absolute", top: 4, left: 8, right: 8, height: 1, borderRadius: 1, backgroundColor: "rgba(255,239,193,0.32)" }} />
+  </View>;
+}
+
+function NpcActionChevron({ rtl = false, expanded = false }: { rtl?: boolean; expanded?: boolean }) {
+  return <View style={{ width: 28, height: 28, alignItems: "center", justifyContent: "center", borderRadius: 14, borderWidth: 1, borderColor: C.goldDim + "88", backgroundColor: C.surface }}>
+    <Text style={{ fontFamily: F.display, fontSize: 20, lineHeight: 22, color: C.gold }}>{expanded ? "⌄" : rtl ? "‹" : "›"}</Text>
+  </View>;
+}
 
 // Bağ türü → ikon + ton (aile altın, dost adaçayı, rakip kan).
 const TIE_META: Record<TieKind, { icon: string; tone: string }> = {
@@ -50,7 +88,7 @@ const TIE_ORDER: TieKind[] = ["es", "ebeveyn", "evlat", "kardes", "dost", "rakip
 function SansRozet({ yuzde, acik, onPress }: { yuzde: number; acik: boolean; onPress: () => void }) {
   const { lang } = useI18n();
   return (
-    <Pressable onPress={onPress} hitSlop={8} style={{ paddingVertical: 3, paddingHorizontal: 8, borderRadius: 5, borderWidth: 1, borderColor: (acik ? C.gold : C.goldDim) + "88", backgroundColor: acik ? "rgba(201,168,76,0.14)" : "transparent" }}>
+    <Pressable onPress={onPress} hitSlop={8} style={({ pressed }) => ({ minWidth: 48, minHeight: 44, alignItems: "center", justifyContent: "center", paddingVertical: 5, paddingHorizontal: 9, borderRadius: 13, borderWidth: 1, borderColor: (acik || pressed ? C.goldBright : C.goldDim) + "AA", borderBottomWidth: pressed ? 1 : 3, borderBottomColor: C.bg, backgroundColor: acik || pressed ? "rgba(201,168,76,0.18)" : C.card, shadowColor: C.gold, shadowOpacity: 0.16, shadowRadius: 4, elevation: 2, transform: [{ translateY: pressed ? 2 : 0 }] })}>
       <Text style={{ fontFamily: F.display, fontSize: 13, color: yuzde >= 60 ? C.sage : yuzde <= 25 ? C.blood : C.gold }}>{yuzdeL(yuzde, lang)}</Text>
     </Pressable>
   );
@@ -70,26 +108,6 @@ function SansDokum({ kalemler, yuzde, t }: { kalemler: { k: string; v: number }[
         <Text style={{ flex: 1, fontFamily: F.display, fontSize: 13, color: C.parchment }}>{t("sans.toplam")}</Text>
         <Text style={{ fontFamily: F.display, fontSize: 13, color: C.gold }}>{yuzdeL(yuzde, lang)}</Text>
       </View>
-    </View>
-  );
-}
-
-function RelBand({ score }: { score: number }) {
-  const pct = Math.max(0, Math.min(100, ((score + 100) / 200) * 100));
-  const dot = score >= 20 ? C.sage : score <= -20 ? C.blood : C.parchmentDim;
-  return (
-    <View style={{ height: 9, marginTop: 4, justifyContent: "center" }}>
-      <Svg width="100%" height={9}>
-        <Defs>
-          <LinearGradient id="ng" x1="0" y1="0" x2="1" y2="0">
-            <Stop offset="0" stopColor="#C84040" stopOpacity={0.5} />
-            <Stop offset="0.5" stopColor="#7A6A4F" stopOpacity={0.45} />
-            <Stop offset="1" stopColor="#4A9A5A" stopOpacity={0.5} />
-          </LinearGradient>
-        </Defs>
-        <Rect x="0" y="3" width="100%" height="3" rx="1.5" fill="url(#ng)" />
-        <Circle cx={`${pct}%`} cy="4.5" r="4" fill={dot} stroke="rgba(0,0,0,0.45)" strokeWidth="1" />
-      </Svg>
     </View>
   );
 }
@@ -135,7 +153,9 @@ export default function NpcDetail() {
   const v = relWith(state, npc.id);
   const band = bandOf(v);
   const ns = state.npc_state?.[npc.id] || { mood: 0, memories: [] };
-  const visual = npcVisual(state, npc, moodKey(ns.mood));
+  const relationLabel = prof.aileRolu
+    ? t({ anne: "char.mother", baba: "char.father", es: "char.spouse", evlat: "tie.evlat", kardes: "tie.kardes", torun: "torun.role", akraba: "torun.kin" }[prof.aileRolu])
+    : t("relb." + band.id);
   const giftables = Object.keys(state.player.inventory).filter((k) => state.player.inventory[k] > 0);
   const courtable = canCourt(state.player, npc, v);
   const ties = cevre
@@ -173,32 +193,15 @@ export default function NpcDetail() {
     <ScreenFresk><ScrollView ref={scroll} style={{ flex: 1 }} contentContainerStyle={{ padding: 14, paddingTop: insets.top + 12, paddingBottom: insets.bottom + 40 }}>
       <Pressable onPress={() => router.back()} style={{ minHeight: L.touch, justifyContent: "center", marginBottom: 12 }}><BackLabel /></Pressable>
 
-      <NpcSceneArt state={state} npc={npc} mood={ns.mood} dead={prof.olu} />
+      <NpcSceneArt state={state} npc={npc} mood={ns.mood} dead={prof.olu} relation={v} relationLabel={relationLabel} />
       {/* ── Profil kartı ── */}
-      <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(201,168,76,0.22)", borderRadius: 5, padding: 14, marginBottom: 10 }}>
-        <View style={{ flexDirection: "row", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
-          <View style={{ flexGrow: 1, flexBasis: 180, minWidth: 0 }}>
-            <Text style={{ fontFamily: F.display, fontSize: T.display, color: C.parchment, letterSpacing: 0.5 }}>{npc.name}</Text>
-            <Text style={{ fontFamily: F.serifItalic, fontSize: T.body, color: C.parchmentMuted, marginTop: 1 }}>{prof.olu ? t("npc.late") : visual.ruler ? tg("visual.ruler", npc.gender === "kadın") : professionNameL(npc.profession, lang, npc.gender === "kadın")} · {npc.age} {t("misc.age")}</Text>
-            {!prof.olu && !prof.burada ? <Text style={{ fontFamily: F.serifItalic, fontSize: T.caption, color: C.goldDim, marginTop: 2 }}>{t("npc.livesIn").replace("%1", placeName(npc.loc || "", lang))}</Text> : null}
-            <RelBand score={v} />
-          </View>
-          {/* Bant etiketi */}
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 4, paddingVertical: 3, paddingHorizontal: 7, borderRadius: 5, borderWidth: 1, borderColor: band.tone + "66", backgroundColor: band.tone + "14" }}>
-            <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: band.tone }} />
-            <Text style={{ fontFamily: F.display, fontSize: T.caption, letterSpacing: 0.5, color: band.tone }}>{(prof.aileRolu ? t({ anne: "char.mother", baba: "char.father", es: "char.spouse", evlat: "tie.evlat", kardes: "tie.kardes", torun: "torun.role", akraba: "torun.kin" }[prof.aileRolu]) : t("relb." + band.id)).toUpperCase()}</Text>
-          </View>
-        </View>
-
-        {/* Hızlı bilgi */}
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12, marginTop: 12 }}>
-          {!prof.olu ? <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}><GameIcon name="prayer-beads" size={11} color={C.parchmentDim} /><Text style={{ fontFamily: F.serif, fontSize: T.body, color: C.parchmentDim }}>{t("dlg.mood." + moodKey(ns.mood))}</Text></View> : null}
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}><GameIcon name="star" size={11} color={C.parchmentDim} /><Text style={{ fontFamily: F.serif, fontSize: T.body, color: C.parchmentDim }}>{traitL(npc.trait, lang)}</Text></View>
-          <Pressable accessibilityRole="button" accessibilityLabel={t("gorus.ipucu")} accessibilityState={{ expanded: gorusAcik }} onPress={() => { hap("tap"); setGorusAcik((x) => !x); }} hitSlop={8} style={{ flexDirection: "row", minHeight: 44, alignItems: "center", gap: 5 }}>
-            <Text style={{ fontFamily: F.display, fontSize: 13, color: v >= 20 ? C.sage : v <= -20 ? C.blood : C.parchmentMuted }}>{t("npc.rel")} {v > 0 ? "+" + v : v}</Text>
-            <Text style={{ fontFamily: F.serifItalic, fontSize: T.body, color: C.goldDim, textDecorationLine: "underline" }}>{t("gorus.ipucu")}</Text>
-          </Pressable>
-        </View>
+      <View style={{ backgroundColor: C.surface, borderWidth: 1, borderColor: C.goldDim, borderRadius: 15, padding: 4, marginBottom: 12 }}>
+      <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(216,179,90,0.34)", borderRadius: 11, padding: 13 }}>
+        {!prof.olu && !prof.burada ? <Text style={{ fontFamily: F.serifItalic, fontSize: T.caption, color: C.goldDim, marginBottom: 6 }}>{t("npc.livesIn").replace("%1", placeName(npc.loc || "", lang))}</Text> : null}
+        <Pressable accessibilityRole="button" accessibilityLabel={t("gorus.ipucu")} accessibilityState={{ expanded: gorusAcik }} onPress={() => { hap("tap"); setGorusAcik((x) => !x); }} hitSlop={8} style={({ pressed }) => ({ flexDirection: lang === "ar" ? "row-reverse" : "row", minHeight: 44, alignSelf: "flex-start", alignItems: "center", gap: 8, paddingHorizontal: 11, paddingVertical: 7, borderRadius: 9, borderWidth: 1, borderColor: pressed ? C.goldBright : C.borderHi, borderBottomWidth: pressed ? 1 : 3, borderBottomColor: C.bg, backgroundColor: pressed ? C.surface : C.cardHi, transform: [{ translateY: pressed ? 2 : 0 }] })}>
+          <GameIcon name="compass" size={16} color={C.gold} />
+          <Text style={{ fontFamily: F.serif, fontSize: T.body, color: C.gold }}>{t("gorus.ipucu")}</Text>
+        </Pressable>
         {!prof.olu && <NpcTavri state={state} id={npc.id} />}
         {/* Görüş dökümü: motorun kullandığı değerle birebir aynı kalemler (relWith = gorus().toplam) */}
         {gorusAcik ? (() => {
@@ -234,24 +237,26 @@ export default function NpcDetail() {
           </View>
         ) : null}
       </View>
+      </View>
 
       {/* ── Çevresi (NPC↔NPC ilişki ağı) ── */}
       {ties.length > 0 && (
-        <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(201,168,76,0.22)", borderRadius: 5, padding: 12, marginBottom: 10 }}>
-          <Pressable accessibilityRole="button" accessibilityState={{ expanded: tiesOpen }} onPress={() => setTiesOpen(x => !x)} style={{ flexDirection: "row", alignItems: "center", minHeight: L.touch, gap: 6 }}>
-            <GameIcon name="iliskiler" size={13} color={C.goldDim} />
-            <Text style={{ fontFamily: F.display, fontSize: T.label, letterSpacing: 1, color: C.goldDim, textTransform: "uppercase" }}>{t("npc.ties")} · {ties.length} {tiesOpen ? "−" : "+"}</Text>
+        <View style={{ backgroundColor: C.surface, borderWidth: 1, borderColor: C.borderHi, borderRadius: 15, padding: 7, marginBottom: 10 }}>
+          <Pressable accessibilityRole="button" accessibilityState={{ expanded: tiesOpen }} onPress={() => setTiesOpen(x => !x)} style={({ pressed }) => gameActionStyle(pressed, C.goldDim, false, lang === "ar")}>
+            <NpcActionIcon name="iliskiler" color={C.goldDim} />
+            <Text numberOfLines={1} style={{ flex: 1, minWidth: 0, fontFamily: F.display, fontSize: T.label, letterSpacing: 1, color: C.goldDim, textTransform: "uppercase" }}>{t("npc.ties")} · {ties.length}</Text>
+            <NpcActionChevron rtl={lang === "ar"} expanded={tiesOpen} />
           </Pressable>
           {tiesOpen && ties.map((tt) => {
             const meta = TIE_META[tt.kind];
             return (
-              <Pressable key={tt.kind + tt.otherId} onPress={() => { hap("tap"); router.push(`/oyun/npc/${tt.otherId}`); }} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 6, opacity: pressed ? 0.6 : 1 })}>
+              <Pressable key={tt.kind + tt.otherId} onPress={() => { hap("tap"); router.push(`/oyun/npc/${tt.otherId}`); }} style={({ pressed }) => gameActionStyle(pressed, meta.tone, false, lang === "ar")}>
                 <View style={{ opacity: tt.olu ? 0.45 : 1 }}><Portre age={tt.who!.age} gender={tt.who!.gender} size={32} ring={false} seed={tt.who!.id} /></View>
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <Text numberOfLines={1} style={{ fontFamily: F.serif, fontSize: T.body, color: tt.olu ? C.parchmentMuted : C.parchment }}>{tt.who!.name}</Text>
                   <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: T.body, color: C.parchmentMuted }}>{tt.olu ? t("npc.late") : professionNameL(tt.who!.profession, lang, tt.who!.gender === "kadın")} · {tt.who!.age}{!tt.olu && tt.uzak ? " · " + placeName(tt.who!.loc || "", lang) : ""}</Text>
                 </View>
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 4, paddingVertical: 3, paddingHorizontal: 7, borderRadius: 5, borderWidth: 1, borderColor: meta.tone + "55", backgroundColor: meta.tone + "14" }}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 4, paddingVertical: 3, paddingHorizontal: 7, borderRadius: 8, borderWidth: 1, borderColor: meta.tone + "55", backgroundColor: meta.tone + "14" }}>
                   <GameIcon name={meta.icon} size={11} color={meta.tone} />
                   <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 0.5, color: meta.tone }}>{t("tie." + tt.kind).toUpperCase()}</Text>
                 </View>
@@ -314,9 +319,11 @@ export default function NpcDetail() {
       </View>
 
       {/* ── Etkileşim menüsü ── */}
-      <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(201,168,76,0.22)", borderRadius: 5, overflow: "hidden", marginBottom: 10 }}>
-        <View style={{ paddingHorizontal: 14, paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: C.border }}>
-          <Text style={{ fontFamily: F.display, fontSize: T.title, letterSpacing: 0.4, color: C.gold }}>{t("visual.talkTitle")}</Text>
+      <View style={{ marginBottom: 10, padding: 7, borderWidth: 1, borderColor: C.borderHi, borderRadius: 15, backgroundColor: C.surface }}>
+        <View style={{ flexDirection: lang === "ar" ? "row-reverse" : "row", alignItems: "center", gap: 10, paddingHorizontal: 5, paddingTop: 2, paddingBottom: 11 }}>
+          <NpcActionIcon name="speaker" />
+          <Text style={{ flex: 1, fontFamily: F.display, fontSize: T.title, letterSpacing: 0.5, color: C.gold }}>{t("visual.talkTitle")}</Text>
+          <View style={{ width: 26, height: 1, backgroundColor: C.goldDim + "88" }} />
         </View>
         {martialLoad(state.player) > 0 && (couldMarry || canFlirt(state.player, npc, v)) ? (
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 14, paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: C.border, backgroundColor: "rgba(224,90,48,0.07)" }}>
@@ -329,66 +336,69 @@ export default function NpcDetail() {
           hap("tap"); const next = aileProfilEyleminiYap(state, npc.id); apply(() => next);
           const e = next.history[next.history.length - 1];
           setLine(e ? renderEvt(e.k || "", e.text, e.p || [], lang, t, state.player.gender === "kadın") : ""); setLineDelta(0); focusChat();
-        }} style={{ flexDirection: lang === "ar" ? "row-reverse" : "row", minHeight: 44, alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: C.borderHi, opacity: familyAction.used ? .45 : 1 }}>
-          <GameIcon name="family" size={16} color={C.gold} />
+        }} style={({ pressed }) => gameActionStyle(pressed, C.gold, familyAction.used, lang === "ar")}>
+          <NpcActionIcon name="family" />
           <View style={{ flex: 1 }}><Text style={{ fontFamily: F.serif, fontSize: 15, color: C.gold }}>{t(familyAction.key)}</Text>
           {familyAction.cost > 0 && <Text style={{ fontFamily: F.serif, fontSize: T.body, color: C.parchmentMuted }}>{applyParams(t("sohbet.cost"), [familyAction.cost], lang)}</Text>}</View>
           {familyAction.used && <Text style={{ maxWidth: 90, flexShrink: 1, fontFamily: F.serif, fontSize: T.body, lineHeight: 22, color: C.parchmentMuted }}>{t(familyAction.key + ".used")}</Text>}
+          {!familyAction.used && <NpcActionChevron rtl={lang === "ar"} />}
         </Pressable>}
         {visibleTopics.map((it) => { const done = usedAct("t:" + it.id); return (
-          <Pressable key={it.id} accessibilityRole="button" accessibilityLabel={topicLabel(it.id)} accessibilityState={{ disabled: done }} disabled={done} onPress={() => { hap("tap"); speak(it.id); }} style={({ pressed }) => ({ flexDirection: "row", minHeight: 44, alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent", opacity: done ? 0.4 : 1 })}>
-            <GameIcon name={it.icon} size={17} color={C.gold} />
+          <Pressable key={it.id} accessibilityRole="button" accessibilityLabel={topicLabel(it.id)} accessibilityState={{ disabled: done }} disabled={done} onPress={() => { hap("tap"); speak(it.id); }} style={({ pressed }) => gameActionStyle(pressed, C.gold, done, lang === "ar")}>
+            <NpcActionIcon name={it.icon} />
             <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 15, color: C.parchment }}>{topicLabel(it.id)}</Text>
-            {done ? <Text style={{ fontFamily: F.display, fontSize: 13, color: C.goldDim }}>{t("soc.lock.done")}</Text> : <Text style={{ color: C.goldDim, fontSize: 15 }}>›</Text>}
+            {done ? <Text style={{ fontFamily: F.display, fontSize: T.caption, color: C.goldDim }}>{t("soc.lock.done")}</Text> : <NpcActionChevron rtl={lang === "ar"} />}
           </Pressable>
         ); })}
-        {topics.some(it => !primary.includes(it.id)) && <Pressable accessibilityRole="button" accessibilityLabel={t("sohbet.more")} accessibilityState={{ expanded: moreTopics }} onPress={() => setMoreTopics(v => !v)} style={{ minHeight: 44, justifyContent: "center", paddingHorizontal: 14, borderBottomWidth: 1, borderBottomColor: C.border }}>
-          <Text style={{ fontFamily: F.serif, fontSize: T.body, color: C.parchmentMuted }}>{t("sohbet.more")} {moreTopics ? "⌄" : "›"}</Text>
+        {topics.some(it => !primary.includes(it.id)) && <Pressable accessibilityRole="button" accessibilityLabel={t("sohbet.more")} accessibilityState={{ expanded: moreTopics }} onPress={() => setMoreTopics(v => !v)} style={({ pressed }) => gameActionStyle(pressed, C.parchmentMuted, false, lang === "ar")}>
+          <NpcActionIcon name="scroll-open" color={C.parchmentMuted} />
+          <Text style={{ flex: 1, fontFamily: F.serif, fontSize: T.body, color: C.parchmentMuted }}>{t("sohbet.more")}</Text>
+          <NpcActionChevron rtl={lang === "ar"} expanded={moreTopics} />
         </Pressable>}
         {/* Hediye — kendi kanalı: sohbetten bağımsız, ayda bir */}
-        <Pressable disabled={usedAct("gift")} onPress={() => setGiftOpen((o) => !o)} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent", opacity: usedAct("gift") ? 0.4 : 1 })}>
-          <GameIcon name="gems" size={16} color={C.gold} />
+        <Pressable disabled={usedAct("gift")} onPress={() => setGiftOpen((o) => !o)} style={({ pressed }) => gameActionStyle(pressed, C.gold, usedAct("gift"), lang === "ar")}>
+          <NpcActionIcon name="gems" />
           <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 15, color: C.parchment }}>{t("npc.gift")}</Text>
-          <Text style={{ color: C.goldDim, fontSize: 15 }}>{giftOpen ? "⌄" : "›"}</Text>
+          <NpcActionChevron rtl={lang === "ar"} expanded={giftOpen} />
         </Pressable>
         {/* Amacına yardım et / istismar et (npc_mind goal_action) */}
         {canGoal && (
-          <Pressable onPress={() => { if (state.player.money >= GOAL_HELP_COST && !usedAct("help")) { hap("success"); apply((s) => helpNpcGoal(s, npc)); } }} disabled={state.player.money < GOAL_HELP_COST || usedAct("help")} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent", opacity: usedAct("help") ? 0.4 : 1 })}>
-            <GameIcon name="leaf" size={16} color={state.player.money >= GOAL_HELP_COST ? C.sage : C.parchmentMuted} />
+          <Pressable onPress={() => { if (state.player.money >= GOAL_HELP_COST && !usedAct("help")) { hap("success"); apply((s) => helpNpcGoal(s, npc)); } }} disabled={state.player.money < GOAL_HELP_COST || usedAct("help")} style={({ pressed }) => gameActionStyle(pressed, C.sage, state.player.money < GOAL_HELP_COST || usedAct("help"), lang === "ar")}>
+            <NpcActionIcon name="leaf" color={state.player.money >= GOAL_HELP_COST ? C.sage : C.parchmentMuted} />
             <View style={{ flex: 1 }}>
               <Text style={{ fontFamily: F.serif, fontSize: 15, color: state.player.money >= GOAL_HELP_COST ? C.sage : C.parchmentMuted }}>{t("npc.helpGoal")}</Text>
               <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: T.body, color: C.parchmentMuted, marginTop: 1 }}>{goalL(npc.goal, lang)}</Text>
             </View>
-            <Text style={{ fontFamily: F.display, fontSize: 13, color: C.goldDim }}>{GOAL_HELP_COST}⚜</Text>
+            <Text style={{ fontFamily: F.display, fontSize: T.caption, color: C.gold }}>{GOAL_HELP_COST} ⚜</Text>
           </Pressable>
         )}
         {canGoal && v > -25 && !(state.player.married && state.player.spouse_id === npc.id) && !oyuncuAkrabasi(state.player, npc.id) && (() => { const exploited = state.player.exploit_turn === state.turn; return (
-          <Pressable disabled={exploited} onPress={() => { hap("tap"); apply((s) => exploitNpcGoal(s, npc)); }} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderBottomWidth: couldMarry ? 1 : 0, borderBottomColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent", opacity: exploited ? 0.4 : 1 })}>
-            <GameIcon name="hood" size={16} color={C.ember} />
+          <Pressable disabled={exploited} onPress={() => { hap("tap"); apply((s) => exploitNpcGoal(s, npc)); }} style={({ pressed }) => gameActionStyle(pressed, C.ember, exploited, lang === "ar")}>
+            <NpcActionIcon name="hood" color={C.ember} />
             <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 15, color: C.ember }}>{t("npc.exploitGoal")}</Text>
-            <Text style={{ color: C.goldDim, fontSize: 15 }}>›</Text>
+            <NpcActionChevron rtl={lang === "ar"} />
           </Pressable>
         ); })()}
         {/* Çırak al (usta çağı: 45+, en iyi beceri ≥6, genç NPC) */}
         {canTakeApprentice(state, npc) && (
-          <Pressable onPress={() => { hap("success"); apply((s) => takeApprentice(s, npc)); }} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent" })}>
-            <GameIcon name="anvil" size={16} color={C.gold} />
+          <Pressable onPress={() => { hap("success"); apply((s) => takeApprentice(s, npc)); }} style={({ pressed }) => gameActionStyle(pressed, C.gold, false, lang === "ar")}>
+            <NpcActionIcon name="anvil" />
             <View style={{ flex: 1 }}>
               <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.gold }}>{t("npc.aprTake")}</Text>
               <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: T.body, color: C.parchmentMuted, marginTop: 1 }}>{t("npc.aprTakeSub")}</Text>
             </View>
-            <Text style={{ color: C.goldDim, fontSize: 15 }}>›</Text>
+            <NpcActionChevron rtl={lang === "ar"} />
           </Pressable>
         )}
         {/* Çırakla çalış (ayda bir ders) */}
         {state.player.apprentice?.id === npc.id && (() => { const taught = state.player.apprentice_turn === state.turn; return (
-          <Pressable disabled={taught} onPress={() => { hap("tap"); apply((s) => mentorApprentice(s)); }} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: C.border, backgroundColor: pressed ? C.cardHi : "rgba(201,168,76,0.06)", opacity: taught ? 0.4 : 1 })}>
-            <GameIcon name="graduate-cap" size={16} color={C.gold} />
+          <Pressable disabled={taught} onPress={() => { hap("tap"); apply((s) => mentorApprentice(s)); }} style={({ pressed }) => gameActionStyle(pressed, C.gold, taught, lang === "ar")}>
+            <NpcActionIcon name="graduate-cap" />
             <View style={{ flex: 1 }}>
               <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.gold }}>{t("npc.aprMentor")}</Text>
               <Text style={{ fontFamily: F.serifItalic, fontSize: T.body, color: C.parchmentMuted, marginTop: 1 }}>{(state.player.apprentice?.months || 0)}/{APPRENTICE_MONTHS} {t("npc.aprMonths")}</Text>
             </View>
-            <Text style={{ color: C.goldDim, fontSize: 15 }}>›</Text>
+            <NpcActionChevron rtl={lang === "ar"} />
           </Pressable>
         ); })()}
         {/* Söz kesilmiş: bu kişiyle nişanlısın, boşanmasını bekliyorsun */}
@@ -400,8 +410,8 @@ export default function NpcDetail() {
         ) : couldMarry && (() => {
           const wed = npcSeededMarried(npc); // evli birine teklif: kabul ederse önce boşanması gerekir
           return (
-            <Pressable onPress={() => { if (courtable) { hap("success"); apply((s) => proposeMarriage(s, npc)); } }} disabled={!courtable} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, backgroundColor: courtable ? "rgba(201,168,76,0.08)" : "transparent" }}>
-              <GameIcon name="evlilik" size={17} color={courtable ? C.gold : C.parchmentMuted} />
+            <Pressable onPress={() => { if (courtable) { hap("success"); apply((s) => proposeMarriage(s, npc)); } }} disabled={!courtable} style={({ pressed }) => gameActionStyle(pressed, C.gold, !courtable, lang === "ar")}>
+              <NpcActionIcon name="evlilik" color={courtable ? C.gold : C.parchmentMuted} />
               <View style={{ flex: 1 }}>
                 <Text style={{ fontFamily: F.serif, fontSize: 15, color: courtable ? C.gold : C.parchmentMuted }}>{t("npc.propose")}</Text>
                 {!courtable ? <Text style={{ fontFamily: F.serifItalic, fontSize: T.body, color: C.parchmentMuted, marginTop: 1 }}>{t("npc.proposeReq")}</Text>
@@ -413,8 +423,8 @@ export default function NpcDetail() {
         })()}
         {sansAcik === "kur" && courtable ? (() => { const x = teklifSansi(state, npc, "kur"); return <SansDokum kalemler={x.kalemler} yuzde={x.yuzde} t={t} />; })() : null}
         {/* Ek etkileşimler (Vercel npc_interactions): para / flört / dedikodu / hakaret */}
-        <Pressable onPress={() => { if (state.player.money >= GIVE_MONEY_AMT) { hap("tap"); apply((s) => giveMoneyTo(s, npc)); } }} disabled={state.player.money < GIVE_MONEY_AMT} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderTopWidth: 1, borderTopColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent" })}>
-          <GameIcon name="akce" size={16} color={state.player.money >= GIVE_MONEY_AMT ? C.gold : C.parchmentMuted} />
+        <Pressable onPress={() => { if (state.player.money >= GIVE_MONEY_AMT) { hap("tap"); apply((s) => giveMoneyTo(s, npc)); } }} disabled={state.player.money < GIVE_MONEY_AMT} style={({ pressed }) => gameActionStyle(pressed, C.gold, state.player.money < GIVE_MONEY_AMT, lang === "ar")}>
+          <NpcActionIcon name="akce" color={state.player.money >= GIVE_MONEY_AMT ? C.gold : C.parchmentMuted} />
           <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 15, color: state.player.money >= GIVE_MONEY_AMT ? C.parchment : C.parchmentMuted }}>{t("npca.moneyBtn")}</Text>
           <Text style={{ fontFamily: F.display, fontSize: 13, color: C.goldDim }}>{GIVE_MONEY_AMT} ⚜</Text>
         </Pressable>
@@ -422,8 +432,8 @@ export default function NpcDetail() {
           const forbidden = flirtIsForbidden(state.player, npc);
           const tone = forbidden ? C.ember : C.gold;
           return (
-            <Pressable disabled={usedAct("flirt")} onPress={() => { hap("success"); apply((s) => flirtWith(s, npc)); }} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderTopWidth: 1, borderTopColor: C.border, backgroundColor: pressed ? C.cardHi : (forbidden ? "rgba(224,90,48,0.06)" : "transparent"), opacity: usedAct("flirt") ? 0.4 : 1 })}>
-              <GameIcon name="lyre" size={16} color={tone} />
+            <Pressable disabled={usedAct("flirt")} onPress={() => { hap("success"); apply((s) => flirtWith(s, npc)); }} style={({ pressed }) => gameActionStyle(pressed, tone, usedAct("flirt"), lang === "ar")}>
+              <NpcActionIcon name="lyre" color={tone} />
               <View style={{ flex: 1 }}>
                 <Text style={{ fontFamily: F.serif, fontSize: 15, color: tone }}>{forbidden ? t("affair.flirtBtn") : t("npca.flirtBtn")}</Text>
                 {forbidden ? <Text style={{ fontFamily: F.serifItalic, fontSize: T.body, color: C.ember, marginTop: 1 }}>{state.player.married ? tg("affair.warnMarried", state.player.gender === "kadın") : t("affair.warnTheirs")}</Text> : null}
@@ -433,29 +443,29 @@ export default function NpcDetail() {
           );
         })()}
         {sansAcik === "flort" && canFlirt(state.player, npc, v) ? (() => { const x = teklifSansi(state, npc, "flort"); return <SansDokum kalemler={x.kalemler} yuzde={x.yuzde} t={t} />; })() : null}
-        <Pressable disabled={state.player.dead || state.player.age < 13 || usedAct("gossip")} onPress={() => { hap("tap"); apply((s) => gossipAbout(s, npc)); }} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderTopWidth: 1, borderTopColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent", opacity: (state.player.age < 13 || usedAct("gossip")) ? 0.45 : 1 })}>
-          <GameIcon name="speaker" size={16} color={C.parchment} />
+        <Pressable disabled={state.player.dead || state.player.age < 13 || usedAct("gossip")} onPress={() => { hap("tap"); apply((s) => gossipAbout(s, npc)); }} style={({ pressed }) => gameActionStyle(pressed, C.parchmentDim, state.player.dead || state.player.age < 13 || usedAct("gossip"), lang === "ar")}>
+          <NpcActionIcon name="speaker" color={C.parchment} />
           <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 15, color: C.parchment }}>{t("npca.gossipBtn")}</Text>
           <SansRozet yuzde={teklifSansi(state, npc, "dedikodu").yuzde} acik={sansAcik === "dedikodu"} onPress={() => setSansAcik(sansAcik === "dedikodu" ? null : "dedikodu")} />
         </Pressable>
         {sansAcik === "dedikodu" ? (() => { const x = teklifSansi(state, npc, "dedikodu"); return <SansDokum kalemler={x.kalemler} yuzde={x.yuzde} t={t} />; })() : null}
         {/* Helallik: aranızda kırgınlık varsa — içtenlikle ya da gönlünü alarak (bedelli) */}
         {helalUygun(state, npc.id) && (() => { const cost = helalBedeli(state, npc.id); const kul = usedAct("helal") || state.player.dead || state.player.age < 13; return (<>
-          <Pressable disabled={kul} onPress={() => { hap("tap"); apply((s) => helallikIste(s, npc, false)); }} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderTopWidth: 1, borderTopColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent", opacity: kul ? 0.45 : 1 })}>
-            <GameIcon name="prayer-beads" size={16} color={C.sage} />
+          <Pressable disabled={kul} onPress={() => { hap("tap"); apply((s) => helallikIste(s, npc, false)); }} style={({ pressed }) => gameActionStyle(pressed, C.sage, kul, lang === "ar")}>
+            <NpcActionIcon name="prayer-beads" color={C.sage} />
             <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 15, color: C.parchment }}>{t("npca.helalBtn")}</Text>
             <SansRozet yuzde={helalSansi(state, npc, false).yuzde} acik={sansAcik === "helal"} onPress={() => setSansAcik(sansAcik === "helal" ? null : "helal")} />
           </Pressable>
           {sansAcik === "helal" ? (() => { const x = helalSansi(state, npc, false); return <SansDokum kalemler={x.kalemler} yuzde={x.yuzde} t={t} />; })() : null}
-          <Pressable disabled={kul || state.player.money < cost} onPress={() => { hap("tap"); apply((s) => helallikIste(s, npc, true)); }} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderTopWidth: 1, borderTopColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent", opacity: kul || state.player.money < cost ? 0.45 : 1 })}>
-            <GameIcon name="akce" size={16} color={C.gold} />
+          <Pressable disabled={kul || state.player.money < cost} onPress={() => { hap("tap"); apply((s) => helallikIste(s, npc, true)); }} style={({ pressed }) => gameActionStyle(pressed, C.gold, kul || state.player.money < cost, lang === "ar")}>
+            <NpcActionIcon name="akce" />
             <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 15, color: C.parchment }}>{t("npca.helalBedelBtn")} <Text style={{ fontFamily: F.display, fontSize: 13, color: C.goldDim }}>· {cost} ⚜</Text></Text>
             <SansRozet yuzde={helalSansi(state, npc, true).yuzde} acik={sansAcik === "helalb"} onPress={() => setSansAcik(sansAcik === "helalb" ? null : "helalb")} />
           </Pressable>
           {sansAcik === "helalb" ? (() => { const x = helalSansi(state, npc, true); return <SansDokum kalemler={x.kalemler} yuzde={x.yuzde} t={t} />; })() : null}
         </>); })()}
-        <Pressable disabled={state.player.dead || state.player.age < 13 || usedAct("insult")} onPress={() => { hap("tap"); apply((s) => insultNpc(s, npc)); }} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderTopWidth: 1, borderTopColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent", opacity: (state.player.age < 13 || usedAct("insult")) ? 0.45 : 1 })}>
-          <GameIcon name="skull" size={16} color={C.blood} />
+        <Pressable disabled={state.player.dead || state.player.age < 13 || usedAct("insult")} onPress={() => { hap("tap"); apply((s) => insultNpc(s, npc)); }} style={({ pressed }) => gameActionStyle(pressed, C.blood, state.player.dead || state.player.age < 13 || usedAct("insult"), lang === "ar")}>
+          <NpcActionIcon name="skull" color={C.blood} />
           <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 15, color: C.blood }}>{t("npca.insultBtn")}</Text>
         </Pressable>
       </View>
@@ -466,10 +476,8 @@ export default function NpcDetail() {
           {giftables.length === 0 ? (
             <Text style={{ fontFamily: F.serifItalic, fontSize: T.body, color: C.parchmentMuted, textAlign: "center", paddingVertical: 8 }}>{t("npc.noGift")}</Text>
           ) : giftables.map((k) => (
-            <Pressable key={k} disabled={usedAct("gift")} onPress={() => { hap("tap"); apply((s) => giftTo(s, npc, k)); setGiftOpen(false); }} style={{ flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 5, padding: 11, marginBottom: 7, opacity: usedAct("gift") ? 0.4 : 1 }}>
-              <View style={{ width: 32, height: 32, borderRadius: 5, backgroundColor: "rgba(201,168,76,0.08)", borderWidth: 1, borderColor: "rgba(201,168,76,0.22)", alignItems: "center", justifyContent: "center" }}>
-                <GameIcon name={giftIcon(ITEMS[k])} size={16} color={C.gold} />
-              </View>
+            <Pressable key={k} disabled={usedAct("gift")} onPress={() => { hap("tap"); apply((s) => giftTo(s, npc, k)); setGiftOpen(false); }} style={({ pressed }) => gameActionStyle(pressed, C.gold, usedAct("gift"), lang === "ar")}>
+              <NpcActionIcon name={giftIcon(ITEMS[k])} />
               <Text style={{ flex: 1, fontFamily: F.serif, fontSize: T.body, color: C.parchment }}>{t("it." + k)}</Text>
               <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchmentMuted }}>×{state.player.inventory[k]}</Text>
             </Pressable>
