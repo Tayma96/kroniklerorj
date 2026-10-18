@@ -39,15 +39,20 @@ jobs:
           if [ "$KISA_KONTROL" = "true" ]; then
             set -e
             npx tsc --noEmit
+            node scripts/check-war-world.cjs
+            node scripts/check-war-impact.cjs
             npx --no-install esbuild lib/game.ts --bundle --platform=node --format=cjs --outfile=/tmp/kronikler-game-bundle.cjs --log-level=error
             node scripts/check-war.cjs
             node scripts/check-army.cjs
+            node scripts/_smoke/varis-check.cjs
             node scripts/_smoke/migrate-check.cjs
             node scripts/_smoke/i18n-icon-check.cjs
             node scripts/_smoke/dil-karisma.cjs
             exit 0
           fi
           npx tsc --noEmit
+          node scripts/check-war-world.cjs
+          node scripts/check-war-impact.cjs
           node scripts/_smoke/kurtarma-check.cjs
           node scripts/_smoke/ses-check.cjs
           node scripts/_smoke/kayit-check.cjs

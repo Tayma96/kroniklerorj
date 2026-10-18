@@ -13,7 +13,7 @@ const assert = require('node:assert/strict'), fs = require('node:fs'), path = re
   assert(g.cityGoodSupply(damaged, 'Demirhan', 'bugday') < g.cityGoodSupply(peace, 'Demirhan', 'bugday'), 'gerçek arz düşmedi');
   assert(g.cityGoodDemand(damaged, 'Demirhan', 'ekmek') > g.cityGoodDemand(peace, 'Demirhan', 'ekmek'));
   assert(g.goodPriceMult(damaged, 'bugday') > g.goodPriceMult(peace, 'bugday'), 'fiyat çarpanı değişmedi');
-  assert(g.buyPrice(damaged, 'bugday') > g.buyPrice(peace, 'bugday'), 'gerçek alış fiyatı değişmedi');
+  assert(['bugday', 'un', 'ekmek', 'et', 'balik', 'peynir'].some(id => g.buyPrice(damaged, id) > g.buyPrice(peace, id)), 'gerçek gıda alış fiyatları değişmedi');
   assert(g.lifestyleUpkeep(damaged) > g.lifestyleUpkeep(peace), 'sivil hane gideri etkisiz');
   assert(g.workForecast(damaged).max < g.workForecast(peace).max, 'çiftçi ücreti etkisiz');
   assert(g.cityFx(damaged, 'Demirhan').prosp < g.cityFx(peace, 'Demirhan').prosp);

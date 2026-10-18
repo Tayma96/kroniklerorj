@@ -1,32 +1,34 @@
 # Kronikler — kısa oturum özeti
 
-## Çalışma sınırları
-- Depo `Tayma96/kroniklerorj`, dal `apk`. Türkçe tek satır commit; force push yok.
-- Kullanıcı hazır kodların pushunu, APK ve savaş/asker/ordu bağlantısının geliştirilmesini istedi.
-- Uzun smoke/300 hayat yok. Tip + en küçük hedefli kontrol; arşiv/GDD okuma izni yok.
-- Mobil kurallar `mobile/AGENTS.md`; ürün kararları `TASARIM_PUSULASI.md`.
-- Sunucu dağıtımı yok; MP protokolünü değiştirme. Yeni metinler altı dilde, kayıt alanları eklemeli.
+## Kurallar ve erişim
+- Depo `Tayma96/kroniklerorj`, yalnız `apk`; Türkçe tek satır commit, force push yok.
+- Kullanıcı HER tamamlanan küçük işlemi hemen commit/push istiyor. Biriktirme.
+- Uzun smoke/300 hayat yok; tip, hedefli kontrol, kayıt/i18n denetimi. Arşiv/GDD izni yok.
+- `mobile/AGENTS.md`, ürün için `TASARIM_PUSULASI.md`. Yeni metinler 6 dil; kayıtlar eklemeli.
+- Sunucu dağıtımı/MP protokol değişikliği yok. Yeni savaş modeli çevrimdışı.
+- Tayma96 terminal girişi: `env -u GH_TOKEN -u GITHUB_TOKEN GH_CONFIG_DIR=/workspace/.gh-tayma96 gh ...`
+  Miras GH_TOKEN Tayma67'dir. Kimlik bilgisi dosyalarını okuma/yazdırma.
 
-## GitHub ve hazır APK
-- Üç hazır commit kimlikleri korunarak pushlandı: d9e6391, 5f4f7d6, 9a695c2.
-- 22906ce: APK iş akışına kisa_kontrol seçeneği; varsayılan geniş kapı korunur.
-- Terminal Tayma96 girişi telefonla GitHub cihaz onayından tamamlandı. Görev komutlarında
-  `env -u GH_TOKEN -u GITHUB_TOKEN GH_CONFIG_DIR=/workspace/.gh-tayma96 gh ...` kullan;
-  miras GH_TOKEN Tayma67'dir. Anahtar/kimlik bilgisi dosyası içeriğini okuma/yazdırma.
-- Actions 39125665457 başarılı: kalite, derle, yayımla. apk-latest etiketi 22906ce.
-- APK indirildi/doğrulandı: com.kronikler.app, 1.0.0 (100), arm64-v8a, gömülü JS/23 kitaplık,
-  sağlam ZIP ve geçerli Android Debug v2 imzası. Gerçek telefon testi yapılmadı.
+## Kod ve APK
+- Hazır üç commit pushlandı: d9e6391, 5f4f7d6, 9a695c2. 22906ce kısa APK kontrol seçeneği.
+- Actions 39125665457 başarılı; apk-latest halen 22906ce. APK indirildi ve doğrulandı:
+  com.kronikler.app, 1.0.0 (100), ARM64, gömülü JS/23 kitaplık, geçerli Debug v2 imzası.
 - https://github.com/Tayma96/kroniklerorj/releases/download/apk-latest/Kronikler.apk
-- Bu APK aşağıdaki yeni ordu geliştirmesini içermez; sonraki APK derlemesi gerekir.
+- Bu APK sonraki ordu/diyar geliştirmelerini İÇERMEZ. Gerçek cihaz testi yok.
 
-## Yeni ordu dalgası
-- Beylik hükümdarlarının bağımsız sınır seferleri; asker mesleğiyle yurtta gönüllü katılım.
-- Ayda üç manga teması: safı koru/ilerle/yaralı taşı; sağlık, kayıp, moral ve kayıtlı RNG.
-- Ordu sayısı/moral/ikmal/yaralı-güvene taşıma havuzu. Kişisel başarı otomatik ordu zaferi değil.
-- Hükümdar seferinin finali ortak ordu modelini kullanır; tek zafer zarı kaldırıldı.
-- Savaşan bölgede kervan riski, savaş enflasyonu; vârise cephe sürer, kişisel görev geçmez.
-- Çevrimdışı ilk model; haritada birlik komutası, isimli hükümdar diplomasi AI'sı ve MP yok.
-- Detay `docs/SAVAS_VE_HUKUMDARLIK.md`; yeni test `mobile/scripts/check-army.cjs`.
-- Kısa kontroller: tsc, motor bundle, check-army/check-war, kayıt göçü, altı dil/ikon.
-- Vâris devri/önizleme, altı dil/ikon ve kısa kontroller temiz; uzun smoke çalıştırılmadı.
-- Yeni ordu kodu apk dalına pushlandı. Görsel 320/390/CPU ve gerçek cihaz testi yapılmadı.
+## Ordu ve diyar dalgası
+- 496bc2a: asker olarak yurdun ordusuna katılım, ayda 3 manga teması, iki ordunun sayı/moral/ikmali.
+- f44fb88: kalıcı bölgesel hasar/darlık/göç/yorgunluk/insan gücü ve toparlanma.
+- 9b0fa9b: gerçek arz, fiyat, ücret, hane/mülk geliri, vergi/otorite/ordu toplanmasına bağlantı.
+- 007d117: şehir/pazar/yerleşimde neden-sonuç kartı, ayda bir gerçek bedelli sivil yardım.
+- 0b169d6: gerçek NPC hanesi göçü, güvenli yurda dönüş, üretim önbelleği ve yolculuk riski.
+- d85a02c: karşı hükümdar sınır saldırısı, ücretli savunma, ateşkes, fetih direnci, taht mirası.
+- 46e0168: taşınarak başkentin insan gücü kaybından kaçma açığı kapatıldı.
+- Her parça hedefli test sonrası ayrı pushlandı. Son iş: CI denetimleri/belgeler de ayrı push.
+
+## Doğrulama ve sınırlar
+- tsc, motor/UI bundle; check-war-world, check-war-impact, check-army, check-war;
+  kayıt göçü, vâris paritesi, 6 dil/ikon temiz. Uzun smoke çalışmadı.
+- Eski/kusurlu kayıtta baskılar onarılır; MP etkilerden yalıtıldı, protokoller eşit.
+- Birlik harita komutası, isimli hükümdar diplomasisi ve NPC maliyesi tamamlanmış değildir.
+- Görsel 320/390/CPU ve gerçek telefon testi yapılmadı. Ayrıntı `docs/SAVAS_VE_HUKUMDARLIK.md`.

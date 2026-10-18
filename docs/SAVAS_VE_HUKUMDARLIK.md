@@ -38,8 +38,8 @@ aynı başlangıç gücünden karşılıklı zayiat verir. Üç ay sonunda veya 
 kalan etkin güç üstünlüğü belirler; eşitlikte savunan mevzisini tutar. Oyuncu katılmasa
 da ordu savaşır; bir manganın başarısı bütün ordu için otomatik zafer değildir.
 Sınır seferi sonucu tek başına toprak ilhak etmez. Bölgedeki kervan riski ve genel
-savaş enflasyonu etkilenir. Tek devlet cephesi ve sonrasında en az 12 aylık sakinlik
-vardır. Atanın askerlik görevi vârise geçmez; dünya cephesi takvimi yeniden tabanlanır.
+savaş enflasyonu etkilenir. Aynı anda tek NPC devlet cephesi vardır. Bir savaşın
+tarafları arasında 12 aylık ateşkes; dünya için en az üç aylık yeni sefer aralığı vardır. Atanın askerlik görevi vârise geçmez; dünya cephesi takvimi yeniden tabanlanır.
 
 Oyuncu hükümdarsa mevcut Hanedan seferi de aynı iki-ordu çözümünü kullanır. Yürüyüş
 ve kuşatma hazırlığından sonra üç temaslık meydan muharebesi çözülür. Sefer emirleri
@@ -50,6 +50,52 @@ Birliklerin harita üzerinde konumlanması, bağımsız piyade/süvari alayları
 kuşatma makinesi simülasyonu ve esir değişimi henüz yoktur. Düşman emirleri manga
 karşılaşmalarını anlatır; tam bir savaş alanı simülasyonu olarak sunulmaz. Yeni model
 çevrimdışıdır; çok oyunculu protokol ve sunucu otoritesi değiştirilmedi.
+
+## Savaşın bütün diyara yayılan sonuçları
+
+Tek oyunculu kayıtta her beyliğin hasar, darlık, güvensizlik, yerinden edilme,
+savaş yorgunluğu ve insan gücü kaybı vardır. Bunlar 0–100 ölçekli baskı değerleridir;
+birebir nüfus sayımı değildir. Fetih ayrıca direnç bırakır. Yalnız yeni asker zayiatı
+ve ilk sonuç kayda alınır; ekranı açmak, aynı ay iki kez hesaplamak veya kaydı yüklemek
+hasarı/ganimeti çoğaltmaz. Cephe kimlikleri nesli içerir, takip defteri sınırlıdır.
+
+| Neden | Bağlandığı gerçek hesap ve devam eden sonuç |
+|---|---|
+| Seferberlik ve insan gücü kaybı | NPC üretimi, işçili mülkün gerçek ürünü ve sonraki ordunun toplayabildiği asker azalır. |
+| Hasar ve erzak darlığı | Gıda arz-talebi, fiyatlar, hane geçimi ve meslek ücreti etkilenir. İlaç talebi asker kaybıyla, nakliye baskısı güvensizlikle artar. |
+| Savaş bölgesinden göç | Üç ayda en fazla bir gerçek NPC hanesi güvenli yerleşime taşınır. Eş ve küçük çocuklar birlikte gider; kimlik ve aile bağları korunur. Üretim önbelleği yenilenir. |
+| Sığınan hane ve bozulan ticaret | Varılan bölgenin erzak/yerleşme baskısı ve savaş dışındaki bölgelerin ticaret darlığı artar; savaş yalnız cepheyi etkilemez. |
+| Güvensiz yollar | Gerçek kervan baskın ihtimali ve oyuncunun yolculuk riski yükselir. Kervanla/atla gitmek riski azaltır, tamamen sıfırlamaz. |
+| Yıkım ve yorgunluk | Valinin geliri/hazinesi, halk memnuniyeti ve hükümdar haracı düşer; otorite ve isyan/azil sistemleri baskı alır. |
+| Fetih | Toprak ele geçse de direnç nedeniyle ilk günden tam vergi ve meşruiyet alınmaz. İmar ve barış direnci azaltır. |
+| Sınır bozgunu | Oyuncu hükümdarsa hazine kaybı ve otorite düşüşü olur; zafer sivil zararları otomatik onarmaz. |
+| Hükümdarın ölümü | Merkez, fetihler ve süreleri yeniden tabanlanmış ateşkesler vârise geçer; yeni hükümdar daha düşük otorite ve vali sadakatiyle başlar. |
+
+Başka hükümdarlar oyuncunun topraklarına da sınır seferi açabilir. Hükümdar Savaş
+sayfasından ayda bir ikmal/savunma hazırlığı/keşif emri verir; para bedeli ve gerçek
+ordu etkisi vardır. Savunma sürerken yeni fetih seferi açılmaz. NPC sınır seferleri
+baskın niteliğindedir; bu ilk modelde her sınır zaferi otomatik ilhak değildir.
+
+Şehir, pazar ve yerleşim ayrıntısında üretim/gıda/vergi etkisiyle bunun nedeni birlikte
+anlatılır. Herhangi bir yetişkin mesleğiyle (13+ oyun eşiği) bulunduğun yerde ayda bir:
+8 buğdayla erzak yardımı; 4 kereste ve 90 × enflasyonla imar; 75 × enflasyonla yol
+muhafızı desteği verilebilir. İhtiyaç yoksa eylem kapalıdır. Bedel gerçekten harcanır;
+başka şehre giderek aylık kilit aşılamaz. İmar fetih direncini de hafifletir.
+
+Barışta hasar ve kayıp yavaş söner. Yol ve geçim güvenli hale geldikten en az bir dünya
+yılı sonra yerinden edilmiş hane yurduna dönebilir. Oyuncunun yakın ailesi, işe aldığı
+kişiler ve açık ilişkileri otomatik taşınmaz; aile geçimi üzerindeki ekonomik baskı
+korunur. Soyut ordu kayıpları rastgele seçilen kent NPC'lerini öldürmek için kullanılmaz.
+
+Model nedensel bir oyun simülasyonudur; katsayılar tarihsel ölçüm iddiası taşımaz.
+Gerçek isimli bağımsız hükümdar diplomasisi, NPC devlet hazinesi/esir pazarlığı,
+birliklerin haritada konumlandırılması ve tam kuşatma simülasyonu hâlâ ayrı işlerdir.
+Bu dalgada bu sistemler bitmiş gibi sunulmaz. Çok oyunculu sunucu otoritesi değişmedi.
+
+Hedefli testler: `check-war-world.cjs`, `check-war-impact.cjs`, `check-army.cjs`,
+`check-war.cjs`, eski kayıt göçü ve vâris önizleme/devir paritesi. Tip, motor/UI paketleme
+ve altı dil/ikon kontrolleri uygulandı. Uzun hayat simülasyonu çalıştırılmadı; gerçek
+telefon, 320/390 piksel görsel ve CPU performans kabulü ayrıca yapılmalıdır.
 
 ## Bireysel savaşta bu dalgada değişenler
 
