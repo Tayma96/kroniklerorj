@@ -297,12 +297,12 @@ const rows: Record<string, string[]> = {
     "Припасы ниже 25; голодная армия потеряла 5 пунктов преимущества."
   ],
   "war.forecast": [
-    "Mevcut koşullarda zafer: %1",
-    "Victory under current conditions: %1",
-    "Victoria en condiciones actuales: %1",
-    "Vitória nas condições atuais: %1",
-    "النصر بالظروف الحالية: %1",
-    "Победа при текущих условиях: %1"
+    "Göreli ordu gücü payı: %1",
+    "Relative army strength share: %1",
+    "Proporción de fuerza militar: %1",
+    "Proporção da força militar: %1",
+    "حصة القوة النسبية للجيش: %1",
+    "Доля относительной силы войска: %1"
   ]
 };
 export const WAR_METIN = Object.fromEntries((["tr", "en", "es", "pt", "ar", "ru"] as Lang[]).map((lang, i) => [lang, Object.fromEntries(Object.entries(rows).map(([key, values]) => [key, values[i]]))])) as Record<Lang, Record<string, string>>;

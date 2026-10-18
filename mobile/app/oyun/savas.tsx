@@ -4,6 +4,7 @@ import Animated, { useSharedValue, useAnimatedStyle, withSequence, withTiming } 
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
+import { ArmyFront } from "../../lib/army-ui";
 import { ENCOUNTERS, combatPower, armorDefense, weaponClass, hasShield, shieldBlockChance, applyBattleOutcome, nemesisEncounter, applyNemesisOutcome, reconcileNemesis, reconcileCost, diyetBedeli, diyetSansi, diyetOde, kisiProfil, trainCombat, trainCost, startBattleAttempt, inflationFactor, hireGuard, dismissGuards, retinueHireCost, retinueWage, RETINUE_MAX, inJail } from "../../lib/game";
 import { startBattle, stepBattle, battleMoveCost, MOVES, STANCES, BattleState, Move, Stance, CbLogEntry } from "../../lib/combat";
 import { playVictory, playWarDrum, playClash, playDefeat } from "../../lib/sound";
@@ -216,6 +217,7 @@ export default function Savas() {
       </Text>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 80 }}>
         <PageHeader kicker={t("scr.savas")} title={t("scr.savas")} />
+        <ArmyFront />
         {tooWeak && !p.dead && (
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: "rgba(168,52,52,0.1)", borderWidth: 1, borderColor: "rgba(168,52,52,0.45)", borderRadius: 10, padding: 12, marginBottom: 12 }}>
             <GameIcon name="saglik" size={15} color={C.blood} />

@@ -16,6 +16,41 @@ ve ocak itibarı var. **Örgütler → Cephe desteği**, bağlı olunan tarafın
 ocak itibarı etkilenir. **Savaş** ekranında bireysel taktik karşılaşmalar; talim, silah,
 zırh, kalkan, maiyet ve hasım hesaplaşması bulunur.
 
+## Hükümdar savaşı ve asker olarak orduya katılma
+
+Bireysel karşılaşma, lonca cephesi ve devlet ordusu aynı şey değildir. **Savaş → Ordu
+cephesi** artık oyuncunun yurduna ait hükümdarın sınır seferini gösterir. Asker mesleği,
+16 yaş, 25 sağlık, kendi beyliğinde bulunma ve kullanılmamış aylık savaş hakkıyla
+çağrıya gönüllü katılınır; Asker Ocağı üyeliği aranmaz. Asker olmak otomatik seferberlik
+veya ordunun başkomutanlığı anlamına gelmez. Gerçek isimli bağımsız hükümdarların
+hanedan/diplomasi yapay zekâsı bu ilk sınır seferi modelinin kapsamında değildir.
+
+Her ay üç kısa manga teması vardır: **safı koru / manganla ilerle / yaralı taşı**.
+Yaklaşan hücum, ok atışı veya piyade baskısı görünür. Safı korumak manga zayiatını
+azaltır; ilerlemek karşı ordunun az sayıda askerini ve moralini etkiler, süvari hücumuna
+karşı ağır yara ve moral kaybı riski taşır. Yaralı taşıma mevcut yaralı havuzunu güvenli
+bölgeye aktarır; bu askerler aynı muharebede yeniden savaşabilir sayıya eklenmez.
+Kendi sağlık kaybı, temas, yaralılar ve kayıtlı RNG her kararda saklanır. Ekranı
+kapatmak hamleyi geri almaz; görev ve kişisel düello aynı aylık hakkı paylaşır.
+
+İki ordunun savaşabilir asker sayısı, morali ve ikmali ayrıdır. Aylık çatışmada iki taraf
+aynı başlangıç gücünden karşılıklı zayiat verir. Üç ay sonunda veya erken çözülmede
+kalan etkin güç üstünlüğü belirler; eşitlikte savunan mevzisini tutar. Oyuncu katılmasa
+da ordu savaşır; bir manganın başarısı bütün ordu için otomatik zafer değildir.
+Sınır seferi sonucu tek başına toprak ilhak etmez. Bölgedeki kervan riski ve genel
+savaş enflasyonu etkilenir. Tek devlet cephesi ve sonrasında en az 12 aylık sakinlik
+vardır. Atanın askerlik görevi vârise geçmez; dünya cephesi takvimi yeniden tabanlanır.
+
+Oyuncu hükümdarsa mevcut Hanedan seferi de aynı iki-ordu çözümünü kullanır. Yürüyüş
+ve kuşatma hazırlığından sonra üç temaslık meydan muharebesi çözülür. Sefer emirleri
+morali/ikmali etkiler; ekrandaki oran **göreli ordu gücü payıdır**, kesin kazanma
+olasılığı değildir. Artık sonuç tek bağımsız zafer zarıyla belirlenmez.
+
+Birliklerin harita üzerinde konumlanması, bağımsız piyade/süvari alaylarının emri,
+kuşatma makinesi simülasyonu ve esir değişimi henüz yoktur. Düşman emirleri manga
+karşılaşmalarını anlatır; tam bir savaş alanı simülasyonu olarak sunulmaz. Yeni model
+çevrimdışıdır; çok oyunculu protokol ve sunucu otoritesi değiştirilmedi.
+
 ## Bireysel savaşta bu dalgada değişenler
 
 Eski çekirdek hamle–savuştur–özel karşılaşması, duruş ve düşman niyetinden oluşuyordu.
@@ -62,9 +97,9 @@ Her ay **bir** emir:
 | Hücum | 20 erzak, 3 sağlık | Üstünlük +7; en az 25 erzak ve 8 sağlık gerekir. |
 
 Hedefin mevcut sancak istikrarı ve hâkim teşkilatın askerî tavrı savunma direncini
-etkiler. Devlet siyaseti ve müttefikler katkı verir. Güncel tahmin; üstünlük ve erzağı
-birlikte gösterir. Hüküm zarı aynı hesap fonksiyonunu kullanır; sonraki ayın erzak
-tüketimi ve olayları koşulları değiştirebilir. Sefer zarı kayıtta ilerler.
+etkiler. Devlet siyaseti ve müttefikler katkı verir. Güncel güç payı; hazırlığın morale ve erzağın etkin güce katkısını gösterir. Sonraki ayın
+erzak tüketimi ve olayları koşulları değiştirebilir. Muharebe zayiatı kayıtlı RNG ile
+hesaplanır; finalde tek bağımsız zafer zarı kullanılmaz.
 
 ### Diplomasi ve ticaret
 
@@ -106,7 +141,7 @@ antlaşma/süre/sefer-haraç engeli, gerçek kervan getirisi, sınır ve vali ka
 etkisi, bozuk/eski kayıt göçü, nefes/toparlanma/yorgunluk ve altı dil. TypeScript ve
 i18n/ikon/dil denetimleri temiz. Geniş hayat simülasyonu bu dalgada çalıştırılmadı.
 
-Ordu hâlâ soyut güç/üstünlük/erzakla temsil edilir; ayrı piyade-süvari birlikleri,
+Ordu artık savaşabilir sayı/moral/ikmal ve yaralı havuzuyla temsil edilir; ayrı piyade-süvari birlikleri,
 cephe konumlandırması ve tam devlet bütçesi yoktur. Merkez giderleri oyuncunun mevcut
 para havuzundan, şehir yatırımları yerel hazineden işlenir. Yeni antlaşma ve sefer
 emirleri tek oyunculu sistem içindir; MP protokolü değiştirilmedi. Canlı MP otoritesi,

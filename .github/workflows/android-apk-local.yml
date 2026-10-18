@@ -41,6 +41,7 @@ jobs:
             npx tsc --noEmit
             npx --no-install esbuild lib/game.ts --bundle --platform=node --format=cjs --outfile=/tmp/kronikler-game-bundle.cjs --log-level=error
             node scripts/check-war.cjs
+            node scripts/check-army.cjs
             node scripts/_smoke/migrate-check.cjs
             node scripts/_smoke/i18n-icon-check.cjs
             node scripts/_smoke/dil-karisma.cjs
