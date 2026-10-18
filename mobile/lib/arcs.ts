@@ -9,6 +9,9 @@ export interface Arc {
   start: string; stages: Record<string, ArcStage>;
 }
 
+const CRAFT_PROFESSIONS = new Set<string>(["demirci", "marangoz", "fırıncı", "kuyumcu", "dokumacı"]);
+const SUPPLY_PROFESSIONS = new Set<string>(["çiftçi", "tüccar", "balıkçı", "avcı", "çoban", "hancı"]);
+
 export const ARCS: Arc[] = [
   {
     id: "dilsiz_ozan", title: "Dilsiz Ozan", icon: "lyre",
@@ -538,6 +541,49 @@ ARCS.push(
       s2: { id: "s2", text: "Kasaba konuşmaya başladı: 'Bu yaşta düğün mü olur?' Kimi güldü, kimi hayır duası etti. Karar günü geldi.", choices: [
         { label: "Davulu vurdur: düğün var", result: "Gülenler düğünde en önde oynadı. Geç gelen sevda, acele gelenden uzun sürermiş — ocağın geç ama sağlam tüttü.", delta: { reputation: 6, fame: 4, marry: true }, next: "end" },
         { label: "Dost kalalım de", result: "El sıkıştınız; pazar günleri kahve hâlâ içiliyor. Kasabaya göre yarım kalan iş, size göre tam kararında bir dostluk.", delta: { honor: 4 }, next: "end" },
+      ]},
+    },
+  },
+);
+
+ARCS.push(
+  {
+    id: "imza_ve_kalip", title: "İmza ve Kalıp", icon: "gems",
+    blurb: "Yeni bir kalıp, çırağın emeği ve ustanın adı: çarşıda üçü birden sınanıyor.",
+    when: (p) => p.age >= 24 && CRAFT_PROFESSIONS.has(p.profession) && p.money >= 20,
+    start: "s1",
+    stages: {
+      s1: { id: "s1", text: "Lonca siparişindeki kalıbı genç yardımcın değiştirmek istiyor. Yeni biçim tutarsa atölyenin adı büyüyecek; tutmazsa malzeme ve zaman senin.", choices: [
+        { label: "Yeni kalıbı dene (−20 akçe)", result: "Bakır ve kömür ayrıldı; kalıp gece boyu yeniden dövüldü. Sabah siparişin karşısında iki yol duruyor.", delta: { money: -20 }, next: "s2" },
+        { label: "Siparişi eski usulle yetiştir", result: "Sipariş vaktinde çıktı, kesen ağırlaştı. Genç yardımcın yine de kendi çizimini saklamadan masaya bıraktı.", delta: { money: 12 }, next: "s2b" },
+      ]},
+      s2: { id: "s2", text: "Yeni kalıp beklenenden iyi sattı. Çarşı şimdi kimin emeğinin adının yazılacağını soruyor.", choices: [
+        { label: "İkinizin adını yazdır", result: "İşin kaydı iki adla tutuldu; sonraki siparişler kalfanı da bulmaya başladı. Bu ortak emek, senin hünerini de keskinleştirdi.", delta: { honor: 4, reputation: 4, fame: 2, stat_points: 1 }, next: "end" },
+        { label: "Mührünü tek başına bas", result: "İlk kazanç büyüdü. Yardımcın ses etmedi; kalıbı nasıl yaptığını da bir daha anlatmadı.", delta: { money: 40, fame: 3, honor: -5, reputation: -3 }, next: "end" },
+      ]},
+      s2b: { id: "s2b", text: "Eski usul siparişi kurtardı; yeni kalıp henüz denenmedi. Yardımcın çizimini bırakıp bu kez payını soruyor.", choices: [
+        { label: "Emeğinin hakkını öde (−10 akçe)", result: "Akçeyi saydın, çizimi saklamadın. O hafta atölyede yeni kalıp üzerine çalışmayı sürdürdünüz.", delta: { money: -10, honor: 3, reputation: 2 }, next: "end" },
+        { label: "Payı kes, işi kapat", result: "Kesen doldu ama yardımcının çizimi lonca defterine başka bir ustanın adıyla girdi.", delta: { money: 20, honor: -3, reputation: -4 }, next: "end" },
+      ]},
+    },
+  },
+  {
+    id: "kislik_ambar", title: "Ambarın Kışı", icon: "house",
+    blurb: "Kışlık pay, peşin akçe ve mahalledeki ihtiyaç aynı terazide.",
+    when: (p) => p.age >= 24 && SUPPLY_PROFESSIONS.has(p.profession) && p.money >= 15,
+    start: "s1",
+    stages: {
+      s1: { id: "s1", text: "İlk soğuk erken bastı. Elindeki un, balık, yün ya da erzağı toptan almak isteyen bir tüccar peşin akçe koydu; mahalle kışı aynı stokla geçirecek.", choices: [
+        { label: "Ambarı koru, komşuya pay ayır (−15 akçe)", result: "Bir kısmı mahalle için ayrıldı. Kasan hafifledi; kapındaki ihtiyaç sahiplerinin yüzü rahatladı.", delta: { money: -15 }, next: "s2" },
+        { label: "Stoku toptan sat, kasayı doldur", result: "Tüccar yükünü aldı, akçeyi saydı. Ertesi gün çarşıda fiyatların yükseldiği konuşuluyordu.", delta: { money: 26 }, next: "s2b" },
+      ]},
+      s2: { id: "s2", text: "Ayırdığın payın bedeli hemen dönmedi. Mahalle şimdi senden adil fiyat bekliyor; stok azaldıkça baskı büyüyor.", choices: [
+        { label: "Fiyatı sabit tut, güven kazan", result: "Kârın bu kez sınırlı kaldı; komşuların kış boyunca kapını güvenle çaldı.", delta: { honor: 4, reputation: 4 }, next: "end" },
+        { label: "Son kalan payı yüksek fiyata ver", result: "Kasa yeniden doldu. Mahallede ise adın, zor günde fiyat yükselten kişi diye anıldı.", delta: { money: 35, honor: -3, reputation: -4 }, next: "end" },
+      ]},
+      s2b: { id: "s2b", text: "Toptan satış kasayı doldurdu. Sokaklarda fiyatın yükseldiği konuşuluyor; tüccar bu kez son çuvallar için döndü.", choices: [
+        { label: "Bir payı geri alıp ihtiyaç sahibine bırak (−12 akçe)", result: "Bir miktar erzağı yeniden aldın. Kıtlık söylentisi dinmedi ama mahalle kapılarını yüzüne kapatmadı.", delta: { money: -12, honor: 4, reputation: 3 }, next: "end" },
+        { label: "Yeni fiyatı kabul et", result: "Son yük de çıktı; kesen ağırlaştı. Çarşıdaki insanlar bu kış kimin yanında durduğunu unutmadı.", delta: { money: 26, honor: -4, reputation: -5 }, next: "end" },
       ]},
     },
   },

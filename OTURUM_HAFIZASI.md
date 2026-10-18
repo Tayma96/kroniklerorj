@@ -14,5 +14,6 @@
 
 ## Son tamamlanan tur
 - Kullanıcı kapsamı tüm oyunun sistematik iyileştirilmesine genişletti. `70fc1c3` (`apk`) mobil paleti ısıtıp aydınlatır; ortak kabartmalı `GameButton` karar kartı, ana pano, meslek/ustalık ve vâris geçişinde kullanılır; paneller/sahne başlıkları ile dokunma alanları cilalandı. Oynanış/çeviri metni değişmedi.
-- `git diff --check` temiz; otomatik test, görsel önizleme ve APK çalıştırılmadı. Uzak dal yerel ağaçla eşit, çalışma alanı temiz.
+- Bu dalgada biçim kontrolü temiz; otomatik oyun testi, görsel önizleme ve APK çalıştırılmadı.
 - ChatGPT tarayıcı görsel üretimi `list_apps` zaman aşımı yüzünden denenemedi; bu turda yeni yapay zekâ görseli yok. NPC'lere yaş/meslek/ruh hâline özgü ayrı portre seti hâlâ açık iş.
+- Oynanış içeriği turunda `imza_ve_kalip` ve `kislik_ambar` mesleğe bağlı, dallanan hikâyeler olarak eklendi; altı dil ve akçe/şeref/itibar/beceri etkileri var. `git diff --check` temiz; otomatik oyun testi çalıştırılmadı.

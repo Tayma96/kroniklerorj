@@ -5,6 +5,7 @@ import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
 import { beginArc, advanceArc } from "../../lib/game";
 import { arcById, availableArcs, ARCS } from "../../lib/arcs";
+import { storyArcText } from "../../lib/story-arc-locales";
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
 import { useI18n, applyParams } from "../../lib/i18n";
@@ -15,7 +16,11 @@ export default function Hikayeler() {
   const { state, apply } = useGame();
   const { t, tg } = useI18n();
   // i18n anahtarı varsa onu, yoksa arc'ın kendi (TR) verisini kullan; kadın oyuncuya .f varyantı.
-  const gt = (key: string, fb: string) => { const v = tg(key, state?.player.gender === "kadın"); return v === key ? fb : v; };
+  const gt = (key: string, fb: string) => {
+    const added = storyArcText(state?.dil || "tr", key);
+    if (added) return added;
+    const v = tg(key, state?.player.gender === "kadın"); return v === key ? fb : v;
+  };
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   const p = state.player;
   const st = state.story;
