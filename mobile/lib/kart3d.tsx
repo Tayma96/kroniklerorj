@@ -302,14 +302,16 @@ export function KaderKartiModal({ dilemma, onChoose, female }: { dilemma: Dilemm
 }
 
 // ── FIRSAT: aynı 3D kart; beceri sınavı (durdur) korunur — şans değil hüner ──
-function FirsatKarti({ opp, statVal, onResolve, onPass }: { opp: Opportunity; statVal: number; onResolve: (success: boolean) => void; onPass: () => void }) {
+type FirsatProgress = { stage?: "intro" | "play" | "result"; success?: boolean };
+type FirsatProgressUpdate = (stage: "play" | "result", success?: boolean) => void;
+function FirsatKarti({ opp, statVal, onResolve, onPass, progress, onProgress }: { opp: Opportunity; statVal: number; onResolve: (success: boolean) => void; onPass: () => void; progress?: FirsatProgress; onProgress?: FirsatProgressUpdate }) {
   const { t } = useI18n();
   const gt = (key: string, fb: string) => { const v = t(key); return v === key ? fb : v; };
   const k = useKart3D();
   const rk = opp.risk >= 0.55 ? { k: "high", c: C.blood } : opp.risk >= 0.35 ? { k: "mid", c: C.ember } : { k: "low", c: C.sage };
-  const [phase, setPhase] = useState<"intro" | "play" | "result">("intro");
+  const [phase, setPhase] = useState<"intro" | "play" | "result">(progress?.stage || "intro");
   const [pos, setPos] = useState(0);
-  const [success, setSuccess] = useState(false);
+  const [success, setSuccess] = useState(progress?.success ?? false);
   const dir = useRef(1);
   const stopped = useRef(false);
   const cikiyor = useRef(false);
@@ -325,7 +327,7 @@ function FirsatKarti({ opp, statVal, onResolve, onPass }: { opp: Opportunity; st
     const id = setInterval(() => setPos((p) => { let n = p + dir.current * 3.4; if (n >= 100) { n = 100; dir.current = -1; } else if (n <= 0) { n = 0; dir.current = 1; } return n; }), 24);
     return () => clearInterval(id);
   }, [phase]);
-  const onStop = () => { if (stopped.current) return; stopped.current = true; const ok = pos >= zoneStart && pos <= zoneEnd; setSuccess(ok); setPhase("result"); hap(ok ? "success" : "error"); playEffect(ok ? "cip_kazanc" : "cip_kayip"); };
+  const onStop = () => { if (stopped.current) return; stopped.current = true; const ok = pos >= zoneStart && pos <= zoneEnd; onProgress?.("result", ok); setSuccess(ok); setPhase("result"); hap(ok ? "success" : "error"); playEffect(ok ? "cip_kazanc" : "cip_kayip"); };
   const kapat = (cb: () => void) => { if (cikiyor.current) return; cikiyor.current = true; k.exit(cb); };
   const pill = (txt: string, color: string, bg: string = C.bg, bd: string = C.border) => (
     <View style={{ backgroundColor: bg, borderWidth: 1, borderColor: bd, borderRadius: 20, paddingVertical: 4, paddingHorizontal: 11 }}>
@@ -354,7 +356,7 @@ function FirsatKarti({ opp, statVal, onResolve, onPass }: { opp: Opportunity; st
                   <Pressable accessibilityRole="button" accessibilityLabel={t("frs.pass")} onPress={() => kapat(onPass)} style={{ flex: 1, paddingVertical: 13, borderRadius: 9, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.bg, alignItems: "center" }}>
                     <Text style={{ fontFamily: F.display, fontSize: 12.5, color: C.parchmentMuted, letterSpacing: 1 }}>{t("frs.pass")}</Text>
                   </Pressable>
-                  <Pressable accessibilityRole="button" accessibilityLabel={t("frs.take")} onPress={() => { hap("tap"); setPhase("play"); }} style={{ flex: 2, paddingVertical: 13, borderRadius: 9, borderWidth: 1.5, borderColor: C.gold + "99", backgroundColor: C.gold, alignItems: "center" }}>
+                  <Pressable accessibilityRole="button" accessibilityLabel={t("frs.take")} onPress={() => { hap("tap"); onProgress?.("play"); setPhase("play"); }} style={{ flex: 2, paddingVertical: 13, borderRadius: 9, borderWidth: 1.5, borderColor: C.gold + "99", backgroundColor: C.gold, alignItems: "center" }}>
                     <Text style={{ fontFamily: F.display, fontSize: 12.5, color: C.inkOnGold, letterSpacing: 1 }}>{t("frs.take")}</Text>
                   </Pressable>
                 </View>
@@ -391,10 +393,10 @@ function FirsatKarti({ opp, statVal, onResolve, onPass }: { opp: Opportunity; st
   );
 }
 
-export function FirsatKartiModal({ opp, statVal = 5, onResolve, onPass }: { opp: Opportunity | null; statVal?: number; onResolve: (success: boolean) => void; onPass: () => void }) {
+export function FirsatKartiModal({ opp, statVal = 5, onResolve, onPass, progress, onProgress }: { opp: Opportunity | null; statVal?: number; onResolve: (success: boolean) => void; onPass: () => void; progress?: FirsatProgress; onProgress?: FirsatProgressUpdate }) {
   return (
     <Modal visible={!!opp} transparent animationType="fade" onRequestClose={onPass}>
-      {opp && <Arka theme={ikilemTema(opp.id, "")}><FirsatKarti key={opp.id} opp={opp} statVal={statVal} onResolve={onResolve} onPass={onPass} /></Arka>}
+      {opp && <Arka theme={ikilemTema(opp.id, "")}><FirsatKarti key={opp.id} opp={opp} statVal={statVal} onResolve={onResolve} onPass={onPass} progress={progress} onProgress={onProgress} /></Arka>}
     </Modal>
   );
 }

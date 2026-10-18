@@ -4,6 +4,7 @@ import { AppState } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { oturumGecis } from "./oturum";
 import { useI18n } from "./i18n";
+import { advanceWithMonthScene, prepareMonthScene } from "./month-scene";
 import { GameState, newGame, advance, eat, work, achievementsOf, WorkStyle , migrate, continueAsHeir, kulDenYeniOcak } from "./game";
 import { Defter, DEFTER_KEY, bosDefter, defterGoc, defterIsle, defterSecim, hayatAnahtari, sonSoy } from "./defter";
 import { NAME_POOLS } from "./locale-data";
@@ -132,7 +133,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     if (changing.current) return;
     const cur = stateRef.current;
     if (!cur) return;
-    const next = fn(cur);
+    let next = fn(cur);
+    if (!mpRef.current && next.turn > cur.turn && next.player.generation === cur.player.generation) next = prepareMonthScene(next, cur.hseq ?? 0);
     if (next !== cur) oturumGecis(cur.turn, next.turn, next.player.age);
     setState(next); schedulePersist(next);
   }, [schedulePersist]);
@@ -150,7 +152,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // MP modunda zaman yalnız sunucu tick'iyle ilerler → yerel doAdvance no-op (desenkron önlenir).
-  const doAdvance = useCallback((n = 1) => { if (mpRef.current) return; apply((s) => advance(s, n)); }, [apply]);
+  const doAdvance = useCallback((n = 1) => { if (mpRef.current) return; apply((s) => advanceWithMonthScene(s, n)); }, [apply]);
   const doEat = useCallback(() => apply(eat), [apply]);
   // Yedeği içe al: yapıştırılan JSON'u doğrula, göçten geçir, kayda ve yedeğe yaz. MP diyarında kapalı (SP kaydı ezilmesin).
   const importSave = useCallback(async (raw: string): Promise<boolean> => {

@@ -1377,18 +1377,18 @@ export const FESTIVALS: { month: number; variants: Dilemma[] }[] = [
   },
 ];
 // Bu ayın şenliğini döndür (varsa ve henüz çözülmediyse). Sabit ay → yılda bir; kilit applyDilemma'da kurulur.
-export function pickFestival(s: GameState): Dilemma | null {
+export function pickFestival(s: GameState, random: () => number = Math.random): Dilemma | null {
   const p = s.player;
   if (p.dead) return null;
   if (p.festival_turn === s.turn) return null; // bu ayın şenliği çözüldü
   const f = FESTIVALS.find((x) => x.month === s.turn % 12);
   if (!f) return null;
   const uygun = f.variants.filter((d) => !d.when || d.when(p, s));
-  return uygun.length ? uygun[Math.floor(Math.random() * uygun.length)] : null;
+  return uygun.length ? uygun[Math.floor(random() * uygun.length)] : null;
 }
 
 // Tura göre bir ikilem seç (deterministik değil; çağıran olasılıkla tetikler).
-export function pickDilemma(s: GameState): Dilemma | null {
+export function pickDilemma(s: GameState, random: () => number = Math.random): Dilemma | null {
   const p = s.player;
   if (p.dead) return null;
   // Tekrar koruması: son görülen ikilemler (ring 6) havuz dışı — havuz tümüyle tükenirse yoksayılır (kilitlenme yok).
@@ -1399,16 +1399,16 @@ export function pickDilemma(s: GameState): Dilemma | null {
   // Kimliğe tepki veren olaylar daha ağırlıklı: dünyanın seni tanıdığı hissi.
   const weighted: Dilemma[] = [];
   for (const d of pool) { const w = d.identity ? 3 : 1; for (let i = 0; i < w; i++) weighted.push(d); }
-  return riskiCoz(p, weighted[Math.floor(Math.random() * weighted.length)]);
+  return riskiCoz(p, weighted[Math.floor(random() * weighted.length)], random);
 }
 // Riskli seçenek (ölü karar olmasın): şans kartta görünür, zar kart açılırken atılır. Kartın etki izi iki ihtimali birlikte gösterir
 // (sonucu ele vermesin); tutmazsa kayıp deltası ve kendi sonuç metni (dil.<id>.r<i>x) uygulanır.
-export function riskiCoz(p: Player, d: Dilemma): Dilemma {
+export function riskiCoz(p: Player, d: Dilemma, random: () => number = Math.random): Dilemma {
   if (!d.choices.some((c) => c.risk)) return d;
   return { ...d, choices: d.choices.map((c, i) => {
     const r = c.risk; if (!r) return c;
     const sans = Math.max(10, Math.min(90, Math.round(r.taban + (r.ticaret || 0) * (p.skills?.trade || 0) + (r.zeka || 0) * effStat(p, "intelligence"))));
-    const ok = Math.random() * 100 < sans;
+    const ok = random() * 100 < sans;
     const goster = { ...c.delta } as Record<string, unknown>;
     for (const [k, v] of Object.entries(r.kayip)) if (typeof v === "number" && Math.abs(v) > Math.abs((goster[k] as number) || 0)) goster[k] = v;
     return { ...c, sans, delta: goster as Delta, gercek: ok ? c.delta : r.kayip, rk: ok ? undefined : "dil." + d.id + ".r" + i + "x", result: ok ? c.result : r.metin };
@@ -1645,7 +1645,7 @@ export function ayniTurSerisi(izi: string[], sinif: string): number {
 }
 // Sahne izi: son 12 kart (boş aylar araya girer ama kartı silmez; en çok 40 kayıt) — seri boş aylarla gizlenmesin.
 function izKirp(a: string[]): string[] { const o = [...a]; while (o.length > 40 || o.filter((x) => x !== "bos").length > 12) o.shift(); return o; }
-export function ayinSahnesi(prev: GameState, sonSeq?: number): AySahnesi {
+export function ayinSahnesi(prev: GameState, sonSeq?: number, random: () => number = Math.random): AySahnesi {
   const p = prev.player; const izi = prev.sahne_izi || [];
   const orta = p.age >= 30; // orta yaş + geç oyun: 50 yaşından sonra soru SON_YAS destesinden de gelir
   let ortaSon = prev.orta_son;
@@ -1662,15 +1662,15 @@ export function ayinSahnesi(prev: GameState, sonSeq?: number): AySahnesi {
   const ortaKart = (): AySahnesi | null => {
     const recent = prev.recent_dilemmas || [];
     const son = SON_YAS.filter((d) => (!d.when || d.when(p, prev)) && !recent.includes(d.id));
-    const deste = p.age >= 50 && son.length && (p.age >= 56 || Math.random() < 0.5) ? SON_YAS : p.age > 55 ? [...SON_YAS, ...ORTA_YAS] : ORTA_YAS;
+    const deste = p.age >= 50 && son.length && (p.age >= 56 || random() < 0.5) ? SON_YAS : p.age > 55 ? [...SON_YAS, ...ORTA_YAS] : ORTA_YAS;
     let havuz = deste.filter((d) => (!d.when || d.when(p, prev)) && !recent.includes(d.id));
     if (!havuz.length) havuz = deste.filter((d) => !d.when || d.when(p, prev));
     if (!havuz.length) return null;
-    return yaz("orta", prev, { dilemma: riskiCoz(p, havuz[Math.floor(Math.random() * havuz.length)]) });
+    return yaz("orta", prev, { dilemma: riskiCoz(p, havuz[Math.floor(random() * havuz.length)], random) });
   };
   if (kararVar) { const o = ortaKart(); return o || { s: prev, tur: "bos" }; } // 18 ay doldu: teklif ayında bile soru gelir (tek istisna)
   if (orta && ortaGecen >= ORTA_ARA) { const o = ortaKart(); if (o) return o; } // nöbetçinin son ayı: şenlikten de önce
-  const fest = ayniTurSerisi(izi, "senlik") >= 3 ? null : pickFestival(prev); // (şenlik ayları arka arkaya boş geçerse dördüncüsü bir yıl bekler)
+  const fest = ayniTurSerisi(izi, "senlik") >= 3 ? null : pickFestival(prev, random); // (şenlik ayları arka arkaya boş geçerse dördüncüsü bir yıl bekler)
   if (fest) return yaz("senlik", prev, { dilemma: fest });
   const buyukAn = sonSeq != null ? prev.history.some((e) => (e.q ?? 0) > sonSeq && donumAni(e)) : prev.history.some((e) => e.day === prev.turn && donumAni(e));
   if (orta && ortaGecen >= ORTA_ARA - 1) { const o = ortaKart(); if (o) return o; } // nöbetçi: orta yaşın sorusu gecikmez
@@ -1685,11 +1685,11 @@ export function ayinSahnesi(prev: GameState, sonSeq?: number): AySahnesi {
   if (acikIpler(prev).length >= 2) w.bos += 0.05; // çok ip açıkken nefes payı
   for (const k of ["ikilem", "firsat", "kapi", "orta"]) { const n = izi.slice(-12).filter((x) => SINIF[x] === SINIF[k]).length; w[k] *= Math.max(0.4, 1 - 0.08 * n); }
   for (const k of ["ikilem", "firsat", "kapi", "orta"]) if (ayniTurSerisi(izi, SINIF[k]) >= 3) w[k] = 0; // nöbetçi: aynı tür art arda en çok 3
-  let r = Math.random() * Object.values(w).reduce((a, b) => a + b, 0); let tur: SahneTur = "bos";
+  let r = random() * Object.values(w).reduce((a, b) => a + b, 0); let tur: SahneTur = "bos";
   for (const k of ["ikilem", "orta", "firsat", "kapi", "bos"] as SahneTur[]) { r -= w[k]; if (r <= 0) { tur = k; break; } }
   if (tur === "orta") { const o = ortaKart(); if (o) return o; tur = "ikilem"; }
-  if (tur === "ikilem") { const d = pickDilemma(prev); return d ? yaz("ikilem", prev, { dilemma: d }) : yaz("bos"); }
-  if (tur === "firsat") { const l = opportunitiesFor(prev); return l.length ? yaz("firsat", prev, { opp: l[Math.floor(Math.random() * l.length)] }) : yaz("bos"); }
+  if (tur === "ikilem") { const d = pickDilemma(prev, random); return d ? yaz("ikilem", prev, { dilemma: d }) : yaz("bos"); }
+  if (tur === "firsat") { const l = opportunitiesFor(prev); return l.length ? yaz("firsat", prev, { opp: l[Math.floor(random() * l.length)] }) : yaz("bos"); }
   if (tur === "kapi") { const s2 = kapiyaGelen(prev); return s2.npcTeklif && s2.npcTeklif.turn === prev.turn && s2.npcTeklif !== prev.npcTeklif ? yaz("kapi", s2) : yaz("bos"); } // boş ay: kasabadan gerçek biri bir kararla kapına gelir
   return yaz("bos");
 }

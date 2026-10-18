@@ -11,7 +11,7 @@ import { useGame } from "../../lib/store";
 import { useMp } from "../../lib/mp/store";
 import { mePublic } from "../../lib/mp/world";
 import { CountdownSecs } from "../../lib/mp/countdown";
-import { advanceUntilEvent } from "../../lib/game";
+import { pendingMonthScene, advanceWithMonthScene } from "../../lib/month-scene";
 import { oturumEkran } from "../../lib/oturum";
 
 const pf = (s: string, ...a: (string | number)[]) => a.reduce<string>((acc, v, i) => acc.replace("%" + (i + 1), String(v)), s);
@@ -28,6 +28,7 @@ function TabIcon({ name, focused }: { name: string; focused: boolean }) {
 // Nav ortasında yükseltilmiş yuvarlak "Ayı İlerle" düğmesi (Karakter ↔ İlişkiler arası).
 function AdvanceFab({ bottom }: { bottom: number }) {
   const { state, doAdvance, mpMode, apply } = useGame();
+  const router = useRouter();
   const { snapshot, guestId, setReady, syncPlayer } = useMp();
   const { t } = useI18n();
   const reduced = useSadeMod();
@@ -77,6 +78,7 @@ function AdvanceFab({ bottom }: { bottom: number }) {
     );
   }
   if (!state || state.player.dead) return null;
+  const waiting = !!pendingMonthScene(state);
   return (
     <View pointerEvents="box-none" style={{ position: "absolute", left: 0, right: 0, bottom: bottom + 16, alignItems: "center" }}>
       <View style={{ width: 100, height: 92, alignItems: "center", justifyContent: "flex-end" }}>
@@ -86,9 +88,9 @@ function AdvanceFab({ bottom }: { bottom: number }) {
         </View>
         <Animated.View style={style}>
           <Pressable
-            accessibilityRole="button" accessibilityLabel={t("a11y.advance")} accessibilityHint={t("adv.ffHint")}
-            onPress={() => { hap("advance"); playAdvance(); doAdvance(1); }}
-            onLongPress={() => { hap("success"); playAdvance(); apply((s) => advanceUntilEvent(s, 6)); }}
+            accessibilityRole="button" accessibilityLabel={t("a11y.advance")} accessibilityHint={t(waiting ? "flow.pendingHint" : "adv.ffHint")}
+            onPress={() => { if (waiting) { hap("tap"); router.push("/oyun"); return; } hap("advance"); playAdvance(); doAdvance(1); }}
+            onLongPress={() => { if (waiting) { hap("tap"); router.push("/oyun"); return; } hap("success"); playAdvance(); apply((s) => advanceWithMonthScene(s, 6, true)); }}
             delayLongPress={420}
             style={{
               width: 60, height: 60, borderRadius: 30, backgroundColor: C.gold,
@@ -102,7 +104,7 @@ function AdvanceFab({ bottom }: { bottom: number }) {
         </Animated.View>
         {/* Çekirdek eylem ikon-only kalmasın: mikro etiket (a11y metniyle aynı anahtar) */}
         {/* Uzun dillerde (AVANZAR EL MES) etiket yandaki sekme simgelerine taşmasın: düğme sütununa sığdırılır */}
-        <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={{ width: 100, textAlign: "center", fontFamily: F.display, fontSize: 8, letterSpacing: 0.8, color: C.goldDim, marginTop: 3, textTransform: "uppercase" }}>{t("adv.kisa")}</Text>
+        <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={{ width: 100, textAlign: "center", fontFamily: F.display, fontSize: 8, letterSpacing: 0.8, color: C.goldDim, marginTop: 3, textTransform: "uppercase" }}>{t(waiting ? "flow.pending" : "adv.kisa")}</Text>
         <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={{ width: 100, textAlign: "center", fontFamily: F.serifItalic, fontSize: 7.5, color: C.parchmentMuted, marginTop: 1 }}>{t("adv.ffKisa")}</Text>
       </View>
     </View>

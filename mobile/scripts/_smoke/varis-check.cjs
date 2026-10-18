@@ -40,12 +40,13 @@ const assert=require("node:assert/strict"),path=require("node:path"),esbuild=req
     childOf(deadParent,otherParent,heir);childOf(deadParent,otherParent,sibling);childOf(heir,spouse,own);heir.es=spouse.id;spouse.es=heir.id;heir.ey=spouse.ey=g.worldYears(estate)-6;deadParent.ol=g.worldYears(estate)-1;
     estate.player.grandchild_ids=[heir.id,sibling.id];estate.player.grandchildren=[heir.ad,sibling.ad];estate.player.dead=true;
     estate.realmArmyWar={id:"miras-cephesi",attacker:"demirhan",defender:"aksehir",started:estate.turn-1,lastTick:estate.turn,month:1,a:{troops:800,initial:900,morale:60,supplies:60},b:{troops:700,initial:850,morale:55,supplies:50},service:{side:"a",generation:1,joined:estate.turn-1,actionTurn:estate.turn,rounds:3,enemy:"press"}};
+    estate.monthScene={id:`month:1:${estate.turn}`,turn:estate.turn,generation:1,kind:"firsat",done:false,stage:"result",success:true,opp:{id:"test",key:"sifa_ot",title:"Ot",desc:"Ot",reward:20,risk:.2,stat:"stamina"}};
     estate.player.crowned=true;estate.player.crownSeat="demirhan";estate.player.crownConquests=["aksehir"];estate.player.crownAuthority=80;
     estate.player.appointedGov={"Akşehir":{seed:23,gender:"erkek",loyalty:80}};
     estate.diplomacy.accords=[{id:"devlet-ahdi",a:"demirhan",b:"yenisehir",kind:"savunma",signed:estate.turn-2,until:estate.turn+8,helpedWars:["miras-cephesi"]}];estate.diplomacy.actionTurn=estate.turn;
     estate.warWorld={regions:{},fronts:{},lastTurn:estate.turn,reserves:{demirhan:24},truces:{"aksehir|demirhan":estate.turn+8}};
     const key=g.varisAdayDetaylari(estate).find(x=>x.id===heir.id).key,preview=g.heirPreview(estate,key),before=copy(estate),next=g.continueAsHeir(estate,"esit",key);
-    assert.deepEqual(estate,before);assert.equal(next.player.name,"Gökçe Yalçın");assert.equal(next.player.age,31);assert.equal(next.player.location_name,"Konya");assert.equal(next.player.profession,"demirci");
+    assert.deepEqual(estate,before);assert.equal(next.player.name,"Gökçe Yalçın");assert.equal(next.player.age,31);assert.equal(next.monthScene,undefined);assert.equal(next.player.location_name,"Konya");assert.equal(next.player.profession,"demirci");
     assert.equal(next.player.father_id,deadParent.id);assert.equal(next.player.father_dead,true);assert.equal(next.player.mother_id,otherParent.id);assert(!next.player.mother_dead);
     assert(next.player.sibling_ids.includes(sibling.id));assert.equal(next.player.spouse_id,spouse.id);assert.equal(next.pop.k[spouse.id].es,"@");
     assert.equal(next.player.child_ids[own.ad],own.id);assert.equal(next.pop.k[own.id].baba,undefined);assert(!next.pop.k[heir.id]);

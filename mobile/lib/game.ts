@@ -2,6 +2,7 @@
 import type { EvtParam } from "./i18n";
 import { AccordKind, RealmOffer, RealmRuler, DiplomacyState, ACCORDS, emptyDiplomacy, realmPair, realmBond, changeBond, findAccord, quoteAccord, signAccord, breakAccords, repairDiplomacy } from "./diplomacy";
 import { nextRandom } from "./random";
+import { MonthScene, pendingMonthScene, repairMonthScene } from "./month-scene-state";
 import { ArmyWar, FrontMove, armyForecast, makeArmy, clashArmies, frontContact, nextEnemy, repairArmyWar } from "./army";
 import { WarWorld, WarRegion, CivilAid, peacefulRegion, emptyWarWorld, warRegion, warEffects, recordWar, tickWarWorld, repairWarWorld, aidNeeded, applyCivilAid, truceLeft } from "./war-world";
 import { currentCalendar, playerAge, CalendarInfo } from "./calendar";
@@ -2505,6 +2506,7 @@ export interface GameState {
   schema?: number; // kayıt şeması sürümü — migrate() her yüklemede damgalar; gelecek göçler bununla dallanır
   tips?: Tip[]; // eyleme dönük duyumlar (piyasa ipucu / fraksiyon istihbaratı)
   locEvents?: LocEvent[]; // lokasyon-bazlı tipli dünya olayları (kuraklık/panayır/veba...)
+  monthScene?: MonthScene; // aylık kart/seçenek/risk sonucu; ekran ve kayıt aynı kararı kullanır
   recent_dilemmas?: string[]; // son görülen ikilem id'leri (ring 6) — dar havuzlarda aynı sahnenin üst üste gelmesi önlenir
   sahne_izi?: string[]; // ayın sahnesi (ayinSahnesi) son 12 ayda hangi türdendi — tekdüzelik nöbetçisi
   orta_son?: number; // son orta yaş sorusunun turu (30–55 yaş arası her 18 ayda en az bir soru)
@@ -3854,6 +3856,7 @@ function claimAchievements(s: GameState) {
 }
 
 export function advance(prev: GameState, n = 1): GameState {
+  if (pendingMonthScene(prev)) return prev;
   // Bekleyen yakalanma sahnesinden (donanım-geri vb.) ay ilerleterek kaçılamaz:
   // sahne çözülmeden zaman akmaz — kaçmayı denemiş sayılırsın ("kaç" zorlanır).
   if (prev.pendingScene?.kind === "crime") prev = resolveCrimeScene(prev, "kac");
@@ -12533,6 +12536,7 @@ export function migrate(s: GameState): GameState {
     s.seeds = s.seeds.filter((t) => t && typeof t === "object" && typeof t.kaynak === "string" && Number.isFinite(t.ekim) && Number.isFinite(t.hmin) && Number.isFinite(t.hmax));
     for (const t of s.seeds) if (t.ip != null && !(typeof t.ip === "object" && typeof t.ip.ima === "string" && Array.isArray(t.ip.vade) && t.ip.vade.length === 2 && t.ip.vade.every((v) => Number.isFinite(v)))) delete t.ip;
   }
+  s.monthScene = repairMonthScene(s.monthScene, s);
   if (s.sahne_izi != null && !(Array.isArray(s.sahne_izi) && s.sahne_izi.every((x) => typeof x === "string"))) s.sahne_izi = undefined;
   if (s.hafiza != null) { // Yankı hafızası: bozuk kayıt ayıklanır, eğilim bilinmeyense iz düşer
     s.hafiza = Array.isArray(s.hafiza) ? s.hafiza.filter((x) => x && typeof x === "object" && Number.isFinite(x.n) && typeof x.k === "string" && Number.isFinite(x.t) && IZ_ETLERI.includes(x.et)).map((x) => ({ ...x, ref: Number.isFinite(x.ref) ? x.ref : undefined, ata: typeof x.ata === "string" ? x.ata : undefined, kisi: typeof x.kisi === "string" ? x.kisi : undefined, kisiId: typeof x.kisiId === "string" ? x.kisiId : undefined })).slice(-HAFIZA_EN_COK) : undefined;

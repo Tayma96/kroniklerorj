@@ -263,8 +263,8 @@ export function EulogyModal({ visible, name, epithet, bornYear, diedYear, age, p
 // onResolve(success): mini-oyunun sonucunu üst bileşene verir (resolveOpportunity'ye iletilir).
 // statVal: ilgili özelliğin değeri (1–10) — başarı bölgesini büyütür (hüner işe yarar).
 // Fırsat: aynı 3D kart; beceri sınavı (durdur) korunur — şans değil hüner (lib/kart3d).
-export function OpportunityModal({ opp, statVal = 5, onResolve, onPass }: { opp: Opportunity | null; statVal?: number; onResolve: (success: boolean) => void; onPass: () => void }) {
-  return <FirsatKartiModal opp={opp} statVal={statVal} onResolve={onResolve} onPass={onPass} />;
+export function OpportunityModal({ opp, statVal = 5, onResolve, onPass, progress, onProgress }: { opp: Opportunity | null; statVal?: number; onResolve: (success: boolean) => void; onPass: () => void; progress?: { stage?: "intro" | "play" | "result"; success?: boolean }; onProgress?: (stage: "play" | "result", success?: boolean) => void }) {
+  return <FirsatKartiModal opp={opp} statVal={statVal} onResolve={onResolve} onPass={onPass} progress={progress} onProgress={onProgress} />;
 }
 
 // Bilgilendirici tutorial — ilk oyunda bir kez (madde madde temel oynanış). Genel; SP ve başka yerde de kullanılabilir.

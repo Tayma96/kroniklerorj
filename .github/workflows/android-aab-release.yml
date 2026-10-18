@@ -30,6 +30,7 @@ jobs:
           node scripts/check-npc-economy.cjs
           node scripts/check-diplomacy.cjs
           node scripts/check-diplomacy-game.cjs
+          node scripts/check-month-scene.cjs
           node scripts/_smoke/kurtarma-check.cjs
           node scripts/_smoke/ses-check.cjs
           node scripts/_smoke/kayit-check.cjs

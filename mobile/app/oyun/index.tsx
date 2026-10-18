@@ -8,6 +8,7 @@ import { useGame } from "../../lib/store";
 import { useMp } from "../../lib/mp/store";
 import { realmYearMonth } from "../../lib/mp/world";
 import { applyDilemma, rakipYarisi, tezgahKart, tezgahHuner, tezgahHunerStat, tezgahSans, tezgahBasari, resolveTezgah, TEZGAH_HUNER, careerTitle, achievementsOf, GameEvent, resolveOpportunity, resolveMicro, resolveSaga, resolveBloodline, BL_CHOICES, BL_COST, SAGA_CHOICES, SAGA_COST, resolveDivan, inJail, jailBribeCost, bribeJailer, Opportunity, publicPerception, atHome, eulogy, WorkStyle, familyQuestsOf, playerWar, beylikName, childAction, ChildAct, elderAction, ElderAct, adultAction, AdultAct, ADULT_TRAINER_COST, studyEnergy, maxStudyEnergy, STUDY_COST, playEnergy, maxPlayEnergy, PLAY_COST, canWork, kariyerXp, kisiProfil, gorus, gorusSebebi, echoWorkBlock, npcTeklifYanit, youthAction, GencAct, gonulAdayi, donumAni, acikHesaplar, ayNotu, onemliMi, kapiMetni, hakemIpucu, araciSansi, hayatOzeti, kisiOf, knParam, esnafAhlaki } from "../../lib/game";
+import { pendingMonthScene, chooseMonthDilemma, progressMonthOpportunity, resolveMonthOpportunity } from "../../lib/month-scene";
 import { ayinSahnesi, Dilemma, Choice } from "../../lib/events";
 import { SinavKartiModal, SinavKartiVeri } from "../../lib/kart3d";
 import { rakipKartVerisi } from "../../lib/rakip-ui";
@@ -113,8 +114,11 @@ export default function Dashboard() {
   const [milestone, setMilestone] = useState<GameEvent | null>(null);
   const [freshMark, setFreshMark] = useState<null | { from: number; n: number }>(null); // "bu ay" özeti: son ilerlemede düşen olay sayısı + olay sırası eşiği (q > from)
   const [yearReport, setYearReport] = useState<GameEvent | null>(null); // yıl dönümü karnesi (yaş günü ritüeli)
-  const [dilemma, setDilemma] = useState<Dilemma | null>(null);
-  const [opp, setOpp] = useState<Opportunity | null>(null);
+  const [mpDilemma, setDilemma] = useState<Dilemma | null>(null);
+  const [mpOpp, setOpp] = useState<Opportunity | null>(null);
+  const savedMonth = state ? pendingMonthScene(state) : undefined;
+  const dilemma = mpMode ? mpDilemma : savedMonth?.dilemma || null;
+  const opp = mpMode ? mpOpp : savedMonth?.opp || null;
   // Lonca bayrağı yarışı vakti gelince kart bir kez kendiliğinden açılır ("şimdi değil" denebilir; meslek ekranından da girilir).
   const [yarisK, setYarisK] = useState<SinavKartiVeri | null>(null);
   const yarisAcilan = useRef<number | null>(null);
@@ -165,13 +169,20 @@ export default function Dashboard() {
     // Meydan okumayla başlayan yarışın kartını meslek ekranı açar; burada yalnız yıllık yarış vakti kendiliğinden açılır (çift kart olmasın).
     if (state && y != null && yarisAcilan.current !== y && r?.meydan !== y) { yarisAcilan.current = y; setYarisK(rakipKartVerisi(state, t, lang, true)); }
   }, [state?.player.rakip?.yaris]);
+  const playedMonth = useRef(savedMonth?.id);
+  useEffect(() => {
+    if (!mpMode && savedMonth && playedMonth.current !== savedMonth.id) {
+      playedMonth.current = savedMonth.id;
+      if (savedMonth.dilemma) { if (savedMonth.kind === "senlik") playChime(); else playSaz(); }
+    }
+  }, [savedMonth?.id, mpMode]);
   const lastRolledTurn = useRef<number>(state?.turn ?? 0);
   const rollSeq = useRef<number>(state?.hseq ?? 0); // son kart zarından bu yana düşen olaylar: bu ay büyük bir an yaşandıysa kart çıkmaz
-  const onChoose = (c: Choice, i: number) => { hap("selection"); let res = c.result; const sk = dilemma ? dilemma.id + ":" + i : undefined; const isFest = !!dilemma && dilemma.id.startsWith("fest_"); const rk = dilemma ? c.rk || "dil." + dilemma.id + ".r" + i : undefined; if (rk) { const v = t(rk); res = v === rk ? c.result : v; } apply((s) => applyDilemma(s, c.gercek || c.delta, res, sk, isFest, rk)); setDilemma(null); };
-  const onResolveOpp = (success: boolean) => { if (!opp) return; hap("advance"); apply((s) => resolveOpportunity(s, opp, success)); setOpp(null); };
+  const onChoose = (c: Choice, i: number) => { if (!mpMode) { if (savedMonth) { hap("selection"); apply(s => chooseMonthDilemma(s, savedMonth.id, i)); } return; } hap("selection"); let res = c.result; const sk = dilemma ? dilemma.id + ":" + i : undefined; const isFest = !!dilemma && dilemma.id.startsWith("fest_"); const rk = dilemma ? c.rk || "dil." + dilemma.id + ".r" + i : undefined; if (rk) { const v = t(rk); res = v === rk ? c.result : v; } apply((s) => applyDilemma(s, c.gercek || c.delta, res, sk, isFest, rk)); setDilemma(null); };
+  const onResolveOpp = (success: boolean) => { if (!mpMode) { if (savedMonth) apply(s => resolveMonthOpportunity(s, savedMonth.id)); return; } if (!opp) return; hap("advance"); apply((s) => resolveOpportunity(s, opp, success)); setOpp(null); };
 
   useEffect(() => {
-    if (!state) return;
+    if (!state || !mpMode) return;
     if (state.turn > lastRolledTurn.current) {
       lastRolledTurn.current = state.turn;
       // Ayda tek büyük karar (TASARIM_PUSULASI ilke 2): bu ay bir insanın teklifi ya da hesap anı varsa kart açılmaz;
@@ -296,7 +307,7 @@ export default function Dashboard() {
       ) : dilemma ? (
         <DilemmaModal dilemma={dilemma} onChoose={onChoose} female={p.gender === "kadın"} />
       ) : opp ? (
-        <OpportunityModal opp={opp} statVal={opp ? state.player.stats[opp.stat] : 5} onResolve={onResolveOpp} onPass={() => { hap("tap"); setOpp(null); }} />
+        <OpportunityModal opp={opp} statVal={opp ? state.player.stats[opp.stat] : 5} onResolve={onResolveOpp} progress={mpMode ? undefined : savedMonth} onProgress={mpMode || !savedMonth ? undefined : (stage, success) => apply(s => progressMonthOpportunity(s, savedMonth.id, stage, success))} onPass={() => { hap("tap"); if (mpMode) setOpp(null); else if (savedMonth) apply(s => resolveMonthOpportunity(s, savedMonth.id, true)); }} />
       ) : tzDilemma ? (
         <DilemmaModal dilemma={tzDilemma} onChoose={onTezgah} female={p.gender === "kadın"} />
       ) : state.hesap && !p.dead && !yearReport ? ( // yıl karnesi kapanınca hesap anı gelir (iki pencere üst üste açılmaz)
