@@ -2,6 +2,7 @@
 import type { EvtParam } from "./i18n";
 import { nextRandom } from "./random";
 import { ArmyWar, FrontMove, armyForecast, makeArmy, clashArmies, frontContact, nextEnemy, repairArmyWar } from "./army";
+import { WarWorld, WarRegion, CivilAid, peacefulRegion, emptyWarWorld, warRegion, warEffects, recordWar, tickWarWorld, repairWarWorld, aidNeeded, applyCivilAid } from "./war-world";
 import { currentCalendar, playerAge, CalendarInfo } from "./calendar";
 import { ITEMS, marketGoods, locSeed, generateNPCs, NPC, generateDynasties, cityInfo, RivalHouse, RivalCrisisKind, houseNameIdx, localFirstName, SPECIALTIES, Item, WClass, npcAgeProfession, TRAITS, QUIRKS, GOALS, NPC_PROFS } from "./world";
 import { Nufus, Kisi, Cins, NufusCtx, EskiDunya, OYUNCU, nufusKur, nufusYil, kadro, kisiAdi, hayalOf, huyOf, yeniGelen, nufusDegisti, olumOlasiligi, kisiNpc, kisiBaglari, yasOf, kardesler, bagEvrimi, kisiSil, kisiIlkAd, kisiSoyad } from "./nufus";
@@ -288,6 +289,8 @@ export function lifestyleUpkeep(s: GameState): number {
   // en çok +6/ay — düşük ücretliyi aç bırakmayacak kadar hafif (ekonomi.cjs: tier-0 ücret ~12+/ay).
   const adult = p.age >= 18 ? Math.min(6, (p.age - 18) * 0.15) : 0;
   let u = (4 + Math.floor(p.age / 10) + adult) * inf;
+  const family = 1 + (p.married ? 1 : 0) + Math.min(4, yasayanEvlatAdlari(s).length);
+  u += Math.max(0, regionalWarEffects(s, p.location_name).foodDemand - 1) * (3 + family * 2) * inf;
   u += p.properties.length * 3 * inf;                            // mülk bakımı & tapu vergisi
   u += (s.settlements?.length || 0) * 8 * inf;                   // yerleşim idare gideri
   // Servete göre kademeli yaşam yükü (maiyet, ziyafet, sadaka beklentisi, divan vergisi) — zengini ısırır.
@@ -1135,7 +1138,7 @@ export function propYield(s: GameState, pr: Property, lang: Lang = "tr"): { good
   const npcs = townNpcsOf(s, pr.loc, lang);
   let units = 0;
   for (const id of ids) { const npc = npcs.find((x) => x.id === id); if (npc) units += workerProductivity(npc, pr.type) * (1 + ((pr.level || 1) - 1) * 0.3); }
-  const qty = Math.floor(units); // ~işçi başına ayda ~1 birim (üretkenlikle ölçekli)
+  const qty = Math.floor(units * regionalWarEffects(s, pr.loc).production); // ~işçi başına ayda ~1 birim (üretkenlikle ölçekli)
   return qty > 0 ? { good, qty } : null;
 }
 // İşçi işe al (mülkün bulunduğu şehrin NPC'lerinden, boş slot varsa).
@@ -2464,6 +2467,7 @@ export interface GameState {
   npc_state: Record<string, NpcState>;
   story: StoryProgress;
   wars: FactionWar[];
+  warWorld?: WarWorld; // savaşın bütün bölge ve mesleklere yayılan kalıcı sonuçları
   realmArmyWar?: ArmyWar | null; // beylik orduları; lonca husumetinden ayrı, kayıtta ilerler
   warCooldowns?: Record<string, number>; // iki lonca arası ateşkes: pair → bu tura kadar yeni savaş yok
   realm?: SancakHold[]; // 4 sancağın fraksiyon hakimiyeti (emergent şehir-kontrolü)
@@ -2623,6 +2627,7 @@ export function cityGoodSupply(s: GameState, loc: string, good: string): number 
   let sup = 0; for (const [prof, w] of prod) sup += (counts[prof] || 0) * w;
   if (prod.some(([p]) => p === "çiftçi" || p === "çoban" || p === "balıkçı"))
     sup *= ({ "İlkbahar": 1.0, "Yaz": 1.1, "Sonbahar": 1.5, "Kış": 0.5 }[currentCalendar(s.turn).season] ?? 1); // mevsim üretimi etkiler
+  sup *= regionalWarEffects(s, loc).production;
   sup += playerPropSupply(s, loc, good); // oyuncunun çiftlik/değirmen üretimi yerel arzı şişirir
   return sup;
 }
@@ -2657,6 +2662,9 @@ export function goodTrend(s: GameState, loc: string, good: string): -1 | 0 | 1 {
 // Bir malın yerel talebi (nüfusa oranlı). Savaşta silah/zırh talebi artar.
 export function cityGoodDemand(s: GameState, loc: string, good: string): number {
   let d = (DEMAND_COEF[good] || 0.06) * rosterSize(loc);
+  const war = regionalWarEffects(s, loc);
+  if (ITEMS[good]?.feed || ["bugday", "un"].includes(good)) d *= war.foodDemand;
+  if (mobilizedRegion(s, regionOf(loc)) && ["silah", "zirh"].includes(ITEMS[good]?.kind || "")) d *= 1.35;
   if ((s.wars?.length || 0) > 0 && (ITEMS[good]?.kind === "silah" || ITEMS[good]?.kind === "zirh")) d *= 1.6;
   return d;
 }
@@ -2700,7 +2708,8 @@ export function cityFx(s: GameState, loc: string): { prosp: number; sec: number 
     if (e.loc !== loc || e.until <= s.turn) continue;
     const t = LOC_EVENT_TYPES[e.type]; if (t) { prosp += t.prosp; sec += t.sec; }
   }
-  return { prosp, sec };
+  const war = regionalWarEffects(s, loc);
+  return { prosp: prosp + war.prosperity, sec: sec + war.security };
 }
 // Bir şehirdeki aktif olayların bir mala uyguladığı fiyat çarpanı.
 function locPriceMult(s: GameState, loc: string, goodId: string): number {
@@ -2709,7 +2718,9 @@ function locPriceMult(s: GameState, loc: string, goodId: string): number {
     if (e.loc !== loc || e.until <= s.turn) continue;
     const t = LOC_EVENT_TYPES[e.type]; if (t && t.goods.includes(goodId)) m *= t.priceMult;
   }
-  return m;
+  const r = warRegionAt(s, loc);
+  const medicine = ["sifa", "iksir"].includes(goodId) ? 1 + r.manpowerLoss * 0.003 : 1;
+  return m * regionalWarEffects(s, loc).transport * medicine;
 }
 // Bir şehirdeki aktif olay tiplerini döndür (UI için).
 export function locEventsAt(s: GameState, loc: string): string[] {
@@ -3830,6 +3841,7 @@ export function advance(prev: GameState, n = 1): GameState {
     if (s.player.dead) break;
     snapshotPrices(s); // ayrılan ayın pazar fiyatlarını hafızaya al (R3.3 'geçen fiyat')
     s.turn += 1; const cal = currentCalendar(s.turn);
+    warEconomyTick(s); // ayın üretim/gelir/yiyecek hesaplarından önce aynı bölgesel fotoğraf
     s.player.age = playerAge(s.player.base_age, s.turn);
     // Suç izi zamanla soğur; Gölge Kardeşliği saklanacak kapı ve haber ağı sayesinde daha çabuk kaybettirir.
     if ((s.player.crime_heat || 0) > 0) s.player.crime_heat = Math.max(0, (s.player.crime_heat || 0) - (s.player.faction === "golge" ? 3 : 2));
@@ -4812,6 +4824,7 @@ function caravanAttackChance(s: GameState): number {
   if (s.wars.some((w) => w.turnsLeft > 0)) c += 0.08; // diyar savaştaysa yollar tehlikeli
   const front = s.realmArmyWar;
   if (front && !front.winner && stop && [front.attacker, front.defender].includes(regionOf(stop))) c += 0.06;
+  if (stop) c += regionalWarEffects(s, stop).roadRisk;
   return Math.max(0.03, Math.min(0.4, c));
 }
 // Saldırı kaybı oranı (Vercel caravan._attack_outcome portu): savunma = güç×0.4 + dövüş×0.6.
@@ -4988,11 +5001,35 @@ export function launchCaravan(prev: GameState, amount: number, insured = false):
   return s;
 }
 
+function mobilizedRegion(s: GameState, id: string): boolean {
+  if (s.mpRealm) return false;
+  const w = s.realmArmyWar;
+  if (w && !w.winner && [w.attacker, w.defender].includes(id)) return true;
+  const c = s.crownCampaign;
+  return !!c && [s.player.crownSeat || regionOf(s.player.home_name), c.beylikId].includes(id);
+}
+function realmWarEffects(s: GameState, id: string): ReturnType<typeof warEffects> {
+  return warEffects(s.mpRealm ? peacefulRegion() : warRegion(s.warWorld, id));
+}
+export function warRegionAt(s: GameState, loc: string): WarRegion {
+  return s.mpRealm ? peacefulRegion() : warRegion(s.warWorld, regionOf(loc));
+}
+export function regionalWarEffects(s: GameState, loc: string): ReturnType<typeof warEffects> {
+  return warEffects(warRegionAt(s, loc), mobilizedRegion(s, regionOf(loc)));
+}
+function warEconomyTick(s: GameState): void {
+  if (s.mpRealm) return;
+  const world = s.warWorld || (s.warWorld = emptyWarWorld());
+  const fronts = [s.realmArmyWar, s.crownCampaign?.armies].filter((w): w is ArmyWar => !!w);
+  for (const front of fronts) recordWar(world, front);
+  tickWarWorld(world, fronts, s.turn, BEYLIKS.map(b => b.id));
+}
+
 function crownArmies(s: GameState, target: string): ArmyWar {
   const odds = campaignOdds(s, target);
-  return { id: `crown:${s.turn}:${target}`, attacker: s.player.crownSeat || regionOf(s.player.home_name), defender: target,
+  return { id: `crown:${s.player.generation || 1}:${s.turn}:${target}`, attacker: s.player.crownSeat || regionOf(s.player.home_name), defender: target,
     started: s.turn, lastTick: s.turn - 1, month: 0,
-    a: makeArmy(800 * odds / (1 - odds), 65), b: makeArmy(800, 70) };
+    a: makeArmy(800 * odds / (1 - odds) * regionalWarEffects(s, s.player.home_name).recruitment, 65), b: makeArmy(800 * realmWarEffects(s, target).recruitment, 70) };
 }
 
 // Beylik hükümdarlarının sınır seferleri: lonca üyesi olma şartı yoktur.
@@ -5001,6 +5038,7 @@ function realmArmyTick(s: GameState): void {
   const old = s.realmArmyWar;
   if (old && !old.winner) {
     clashArmies(old, s, s.turn);
+    recordWar(s.warWorld || (s.warWorld = emptyWarWorld()), old);
     if (old.winner) {
       const winner = old.winner === "a" ? old.attacker : old.defender;
       push(s, "ocak_savasi", "Beyliklerin sınır muharebesi bitti.", "makro", true, { k: "army.ended", p: [{ bl: winner }, old.a.troops, old.b.troops] });
@@ -5016,13 +5054,14 @@ function realmArmyTick(s: GameState): void {
   // Savaş sonrası en az bir yıl sakinlik; ekranda tek devlet cephesi.
   if (old && s.turn < (old.ended ?? old.started) + 12 || s.crownCampaign || gameRandom(s) >= 0.08) return;
   const controlled = s.player.crowned ? [s.player.crownSeat || regionOf(s.player.home_name), ...(s.player.crownConquests || [])] : [];
-  const pool = BEYLIKS.filter(b => !controlled.includes(b.id));
+  const pool = BEYLIKS.filter(b => !controlled.includes(b.id) && warRegion(s.warWorld, b.id).exhaustion < 50 && warRegion(s.warWorld, b.id).manpowerLoss < 55);
   if (pool.length < 2) return;
   const attacker = pool[Math.floor(gameRandom(s) * pool.length)].id;
   const targets = pool.filter(b => b.id !== attacker);
   const defender = targets[Math.floor(gameRandom(s) * targets.length)].id;
-  s.realmArmyWar = { id: `realm:${s.turn}:${attacker}:${defender}`, attacker, defender, started: s.turn, lastTick: s.turn,
-    month: 0, a: makeArmy(650 + gameRandom(s) * 650), b: makeArmy(650 + gameRandom(s) * 650) };
+  s.realmArmyWar = { id: `realm:${s.player.generation || 1}:${s.turn}:${attacker}:${defender}`, attacker, defender, started: s.turn, lastTick: s.turn,
+    month: 0, a: makeArmy((650 + gameRandom(s) * 650) * realmWarEffects(s, attacker).recruitment), b: makeArmy((650 + gameRandom(s) * 650) * realmWarEffects(s, defender).recruitment) };
+  recordWar(s.warWorld || (s.warWorld = emptyWarWorld()), s.realmArmyWar);
   push(s, "ocak_savasi", "Hükümdar sınır seferi için sancak açtı.", "makro", true, { k: "army.declared", p: [{ bl: attacker }, { bl: defender }] });
 }
 
@@ -5143,6 +5182,9 @@ export function workForecast(s: GameState, style: WorkStyle = "normal"): WorkFor
   if (p.cirak && p.cirak.prof === p.profession) mult += 0.05; // çırağın eli: tezgâhta bir çift el daha
   mult += esnafAhlaki(p); // ahilik: şerefli esnafa müşteri, adı kötüye çıkana ters bakış
   mult += meslekYoluIsBonusu(p); // aynı tezgâhta kök salan usta: müşteri ağı, ocak düzeni ve pirlik
+  const localWar = regionalWarEffects(s, p.location_name);
+  const neededCraft = ["demirci", "şifacı"].includes(p.profession) ? 1 + (localWar.foodDemand - 1) * 0.25 : 1;
+  mult *= p.profession === "asker" ? Math.max(0.7, localWar.revenue) : Math.min(1.1, localWar.production * neededCraft);
   const tierBefore = pr ? careerTier(pr, kariyerXp(p)) : 0;
   const titleMult = TITLE_MULT[tierBefore] || 1;
   const base = pr ? pr.base : 4;
@@ -8552,6 +8594,7 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
   const nesilSeed = Math.floor(gameRandom(s) * 1e9);
   const ns: GameState = {
     turn: 0, seed: nesilSeed, rng_state: rngBaslangici(nesilSeed, 0, gen), world: { ready: true, npcYears: (prev.world?.npcYears || 0) + Math.floor(prev.turn / 12), inflation: prev.world?.inflation || 1 }, pop: heirPop, relationships: Object.fromEntries([...kardesIds, ...Object.keys(ataHatira).filter((id) => Math.abs(ataHatira[id]) >= 15)].map((id) => [id, 0])), dynasty, // atasını güçlü hatırlayan seni de tanır
+    warWorld: s.warWorld ? { ...s.warWorld, lastTurn: (s.warWorld.lastTurn ?? prev.turn) - prev.turn, aidTurn: undefined, migrationTurn: undefined } : undefined,
     realmArmyWar: s.realmArmyWar ? { ...s.realmArmyWar, started: s.realmArmyWar.started - prev.turn, lastTick: s.realmArmyWar.lastTick - prev.turn, ended: s.realmArmyWar.ended === undefined ? undefined : s.realmArmyWar.ended - prev.turn, service: undefined } : undefined,
     ata_hatira: Object.keys(ataHatira).length ? ataHatira : undefined, soy_nam: Object.values(soyNam).some((v) => v > 0) ? soyNam : undefined, npc_state: {}, saga: prev.saga ? { ...prev.saga, scene: null, declined: 0 } : null, rivals: prev.rivals ? prev.rivals.map((h) => ({ ...h, crisis: h.crisis ? { ...h.crisis } : undefined, tutum: Math.round((h.tutum ?? 0) / 2) })) : undefined,
     // Kan davası NESLE GEÇER (adı üstünde): ısı yarılanır (yeni kuşakta kor küllenir ama sönmez), aylık hamle hakkı tazelenir.
@@ -11354,10 +11397,10 @@ function governorTick(s: GameState) {
     const tax = govTaxOf(p, loc);
     if (s.turn % 12 === 0) vergiKisileri(s, loc, tax); // vergi bir sayı değil: yılda bir, ağırsa birinin ocağını söndürür, hafifse dua alır
     const works = worksBonus(p, loc); // bayındırlık eseri sayısı
-    const prosperity = cityInfo(loc, placeKind(loc)).prosperity;
+    const prosperity = Math.max(5, cityInfo(loc, placeKind(loc)).prosperity + cityFx(s, loc).prosp);
     p.govTreasury[loc] = Math.round((p.govTreasury[loc] ?? 0) + prosperity * tax / 100 * 0.4 * (1 + works * 0.06)); // hazine vergiyle dolar (eserler artırır)
     let happy = p.govHappy[loc] ?? 60;
-    const happyTarget = Math.max(35, Math.min(94, 72 - (tax - 15) * 1.4 + works * 4)); // yüksek vergi → homurtu; eserler halkı hoş tutar
+    const happyTarget = Math.max(35, Math.min(94, 72 - (tax - 15) * 1.4 + works * 4 - regionalWarEffects(s, loc).unrest)); // yüksek vergi → homurtu; eserler halkı hoş tutar
     happy = Math.max(0, Math.min(100, happy + (happyTarget - happy) * 0.1));
     p.govHappy[loc] = Math.round(happy);
     const target = 40 + (p.reputation - 50) * 0.4 + p.honor * 0.12 - p.fear * 0.05 + (happy - 60) * 0.25;
@@ -11393,7 +11436,7 @@ function governorTick(s: GameState) {
 // Valilik vergi payı (her tur): şehrin refahına × meşruiyet × vergi oranı (yüksek vergi çok toplar, düşük meşruiyet azaltır).
 export function governorIncome(s: GameState): number {
   const list = s.player.governorships; if (!list?.length) return 0;
-  return list.reduce((a, loc) => a + Math.max(1, Math.round(cityInfo(loc, placeKind(loc)).prosperity / 4 * (0.4 + govLegOf(s.player, loc) / 100 * 0.8) * (govTaxOf(s.player, loc) / 15) * (1 + worksBonus(s.player, loc) * 0.06))), 0);
+  return list.reduce((a, loc) => a + Math.max(1, Math.round(cityInfo(loc, placeKind(loc)).prosperity / 4 * (0.4 + govLegOf(s.player, loc) / 100 * 0.8) * (govTaxOf(s.player, loc) / 15) * (1 + worksBonus(s.player, loc) * 0.06) * regionalWarEffects(s, loc).revenue)), 0);
 }
 
 // ── HÜKÜMDARLIK (taht sonrası oynanış): otorite + dîvân fermanları + sefer + vali atama/azil + saray olayları ──
@@ -11566,6 +11609,7 @@ export function launchCampaign(prev: GameState, beylikId: string): { state: Game
     if (ah) { edge += 4; push(s, "taht", `${ah.name} sancağın altına atlılarını yolladı; ordun güçlendi.`, "kişisel", false, { k: "crown.allyAid", p: [{ hn: ah.nameIdx }] }); }
   }
   s.crownCampaign = { beylikId, month: 0, edge, supplies: 65, armies: crownArmies(s, beylikId) };
+  if (!s.mpRealm) recordWar(s.warWorld || (s.warWorld = emptyWarWorld()), s.crownCampaign.armies!);
   push(s, "taht", `Tuğlar çözüldü, davullar vuruldu: ordu yürüyüşe geçti. Hüküm üç ay sonra okunacak.`, "kişisel", true, { k: "crown.campaignStart", p: [{ bl: beylikId }] });
   return { state: s, success: true };
 }
@@ -11602,6 +11646,7 @@ function crownCampaignTick(s: GameState) {
   c.armies.a.morale = clamp100(65 + c.edge);
   // Kuşatma/yürüyüş hazırlığından sonra gerçek iki ordu karşılaşır; tek zafer zarı yok.
   for (let battle = 0; battle < 3 && !c.armies.winner; battle++) clashArmies(c.armies, s, s.turn + battle);
+  if (!s.mpRealm) recordWar(s.warWorld || (s.warWorld = emptyWarWorld()), c.armies);
   const won = c.armies.winner === "a";
   push(s, "taht", "Meydan muharebesi sonuçlandı.", "kişisel", true, { k: "army.clash", p: [c.armies.a.troops, c.armies.b.troops, Math.round(c.armies.a.morale), Math.round(c.armies.b.morale)] });
   s.crownCampaign = null;
@@ -11664,8 +11709,8 @@ export function dismissGovernor(prev: GameState, loc: string): GameState {
 // Hükümdar haracı (her tur): ilhak edilen beylikler + atanan valilerin sadık geliri.
 export function crownTribute(s: GameState): number {
   const p = s.player; if (!p.crowned) return 0;
-  let t = (p.crownConquests?.length || 0) * 25;
-  if (p.appointedGov) for (const loc of Object.keys(p.appointedGov)) { if (!crownControls(s, loc)) continue; const g = p.appointedGov[loc]; t += Math.max(1, Math.round(cityInfo(loc, placeKind(loc)).prosperity / 6 * (g.loyalty / 100))); }
+  let t = (p.crownConquests || []).reduce((sum, id) => sum + 25 * realmWarEffects(s, id).revenue, 0);
+  if (p.appointedGov) for (const loc of Object.keys(p.appointedGov)) { if (!crownControls(s, loc)) continue; const g = p.appointedGov[loc]; t += Math.max(1, Math.round(cityInfo(loc, placeKind(loc)).prosperity / 6 * (g.loyalty / 100) * regionalWarEffects(s, loc).revenue)); }
   return Math.round(t * crownPolicyOf(p).tribute);
 }
 
@@ -11675,7 +11720,8 @@ function crownTick(s: GameState) {
   const p = s.player; if (!p.crowned || p.dead) return;
   if (p.crownTreaties) for (const id of Object.keys(p.crownTreaties)) if (p.crownTreaties[id].until <= s.turn) delete p.crownTreaties[id];
   let auth = crownAuthorityOf(p);
-  const target = crownPolicyOf(p).authority + 45 + (p.reputation - 50) * 0.3 + p.honor * 0.12 + p.fame * 0.15 - p.fear * 0.05 + (p.crownConquests?.length || 0) * 3;
+  const warStrain = BEYLIKS.filter(b => b.id === p.crownSeat || p.crownConquests?.includes(b.id)).reduce((sum, b) => sum + realmWarEffects(s, b.id).unrest, 0) / Math.max(1, 1 + (p.crownConquests?.length || 0));
+  const target = crownPolicyOf(p).authority - warStrain * 0.35 + 45 + (p.reputation - 50) * 0.3 + p.honor * 0.12 + p.fame * 0.15 - p.fear * 0.05 + (p.crownConquests?.length || 0) * 3;
   auth = clamp100(auth + (target - auth) * 0.12 - 1.0); // hafif doğal aşınma → ilgilenilmezse düşer
   p.crownAuthority = Math.round(auth);
   // Atanan valilerin sadakati: zamanla aşınır; otorite yüksekse korunur; çok düşerse ayrılır (defection).
@@ -11995,6 +12041,7 @@ export function migrate(s: GameState): GameState {
       c.scouted = c.scouted === true;
     }
   }
+  s.warWorld = repairWarWorld(s.warWorld, BEYLIKS.map(b => b.id), s.turn);
   s.realmArmyWar = repairArmyWar(s.realmArmyWar, BEYLIKS.map(b => b.id), s.turn);
   if (s.crownCampaign?.armies) s.crownCampaign.armies = repairArmyWar(s.crownCampaign.armies, BEYLIKS.map(b => b.id), s.turn) || undefined;
   if (!Number.isFinite(s.rng_state) || (s.rng_state! >>> 0) === 0) s.rng_state = rngBaslangici(s.seed, s.turn, Number.isFinite(p.generation) ? p.generation : 1);
