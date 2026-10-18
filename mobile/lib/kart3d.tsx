@@ -162,7 +162,7 @@ function etkiler(c: Choice): { k: string; big: boolean }[] {
   const d = (c.delta || {}) as Record<string, unknown>;
   return Object.keys(ETKI).filter((k) => typeof d[k] === "number" && d[k] !== 0).map((k) => ({ k, big: Math.abs(d[k] as number) >= ETKI[k].big }));
 }
-function EtkiIzi({ c }: { c: Choice }) {
+export function EtkiIzi({ c }: { c: Choice }) {
   const list = etkiler(c);
   if (!list.length) return null;
   return (
