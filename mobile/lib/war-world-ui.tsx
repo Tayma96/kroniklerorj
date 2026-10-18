@@ -1,4 +1,5 @@
-import { View, Text, Pressable } from "react-native";
+import { DesignPressable as Pressable } from "./design-pressable";
+import { View, Text} from "react-native";
 import { useGame } from "./store";
 import { useI18n, applyParams, yuzdeL } from "./i18n";
 import { warReportAt, warAidCost, canWarAid, giveWarAid, warReserveAt, canStockWarReserve, stockWarReserve } from "./game";
@@ -14,8 +15,8 @@ export function WarWorldCard({ loc, aid = false }: { loc?: string; aid?: boolean
   const affected = report.active || report.affected;
   const e = report.effects, r = report.region;
   const text = (key: string, params: (string | number)[]) => applyParams(t(key), params);
-  const body = { fontFamily: F.serif, fontSize: 12, lineHeight: 19, color: C.parchmentMuted, marginTop: 6 };
-  return <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, padding: 13, borderRadius: 10, marginVertical: 10 }}>
+  const body = { fontFamily: F.serif, fontSize: 15, lineHeight: 22, color: C.parchmentMuted, marginTop: 6 };
+  return <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, padding: 13, borderRadius: 5, marginVertical: 10 }}>
     <Text style={{ fontFamily: F.display, fontSize: 14, color: C.ember }}>{t(affected ? "ww.title" : "ww.reserve.title")}</Text>
     {affected && <>
     <Text style={body}>{t(report.active ? "ww.active" : "ww.peace")}</Text>
@@ -26,14 +27,14 @@ export function WarWorldCard({ loc, aid = false }: { loc?: string; aid?: boolean
     {aid && place === state.player.location_name && <>
       <Text style={body}>{text("ww.reserve.stock", [warReserveAt(state, place)])}</Text>
       <Text style={body}>{t("ww.reserve.rule")}</Text>
-      <Pressable accessibilityRole="button" disabled={!canStockWarReserve(state)} onPress={() => apply(s => stockWarReserve(s))} style={{ minHeight: 48, padding: 10, justifyContent: "center", borderWidth: 1, borderColor: C.border, borderRadius: 7, marginTop: 8, opacity: canStockWarReserve(state) ? 1 : 0.45 }}>
-        <Text style={{ fontFamily: F.display, fontSize: 12, color: C.parchment }}>{t("ww.reserve.add")}</Text>
+      <Pressable accessibilityRole="button" disabled={!canStockWarReserve(state)} onPress={() => apply(s => stockWarReserve(s))} style={{ minHeight: 48, padding: 10, justifyContent: "center", borderWidth: 1, borderColor: C.border, borderRadius: 5, marginTop: 8, opacity: canStockWarReserve(state) ? 1 : 0.45 }}>
+        <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchment }}>{t("ww.reserve.add")}</Text>
       </Pressable>
       <Text style={body}>{t("ww.aid.rule")}</Text>
       {affected && (["food", "rebuild", "patrol"] as CivilAid[]).map(kind => {
         const cost = warAidCost(state, kind), enabled = canWarAid(state, kind);
-        return <Pressable key={kind} disabled={!enabled} onPress={() => apply(s => giveWarAid(s, kind))} style={{ minHeight: 52, borderWidth: 1, borderColor: C.border, borderRadius: 7, padding: 10, marginTop: 8, opacity: enabled ? 1 : 0.45, justifyContent: "center" }}>
-          <Text style={{ fontFamily: F.display, color: C.parchment, fontSize: 12 }}>{t("ww.aid." + kind)}</Text>
+        return <Pressable key={kind} disabled={!enabled} onPress={() => apply(s => giveWarAid(s, kind))} style={{ minHeight: 52, borderWidth: 1, borderColor: C.border, borderRadius: 5, padding: 10, marginTop: 8, opacity: enabled ? 1 : 0.45, justifyContent: "center" }}>
+          <Text style={{ fontFamily: F.display, color: C.parchment, fontSize: 13 }}>{t("ww.aid." + kind)}</Text>
           <Text style={{ ...body, fontSize: 11, marginTop: 2 }}>{text("ww.cost." + kind, [cost.money])}</Text>
         </Pressable>;
       })}

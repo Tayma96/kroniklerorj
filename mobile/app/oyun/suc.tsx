@@ -1,5 +1,6 @@
+import { DesignPressable as Pressable } from "../../lib/design-pressable";
 import { useState, useEffect, useRef } from "react";
-import { View, Text, ScrollView, Pressable } from "react-native";
+import { View, Text, ScrollView} from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -55,44 +56,44 @@ export default function Suc() {
     const intel = crimeIntelFor(state, kind);
     const intelTarget = crimeIntelTargetName(state, kind, lang);
     return (
-      <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: expanded ? C.ink : "rgba(123,79,175,0.4)", borderLeftWidth: 2.5, borderLeftColor: C.ink, borderRadius: 11, marginBottom: 10, opacity: blocked ? 0.45 : 1, overflow: "hidden" }}>
+      <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: expanded ? C.ink : "rgba(123,79,175,0.4)", borderLeftWidth: 2.5, borderLeftColor: C.ink, borderRadius: 5, marginBottom: 10, opacity: blocked ? 0.45 : 1, overflow: "hidden" }}>
         <Pressable accessibilityRole="button" accessibilityLabel={`${title}. ${locked ? applyParams(t("suc.lockReq"), [crimeReq(state.player, kind), standing]) : desc}`} accessibilityState={{ disabled: blocked, expanded }} disabled={blocked} onPress={() => { hap("selection"); setSelectedCrime(expanded ? null : kind); }} style={{ flexDirection: "row", alignItems: "center", gap: 12, padding: 14 }}>
-          <View style={{ width: 38, height: 38, borderRadius: 9, backgroundColor: "rgba(123,79,175,0.12)", borderWidth: 1, borderColor: "rgba(123,79,175,0.35)", alignItems: "center", justifyContent: "center" }}>
+          <View style={{ width: 38, height: 38, borderRadius: 5, backgroundColor: "rgba(123,79,175,0.12)", borderWidth: 1, borderColor: "rgba(123,79,175,0.35)", alignItems: "center", justifyContent: "center" }}>
             <GameIcon name={locked ? "prisoner" : "hood"} size={18} color={C.ink} />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={{ fontFamily: F.display, fontSize: 13, color: C.ink }}>{title}</Text>
-            <Text style={{ fontFamily: F.serif, fontSize: 11.5, color: locked ? C.goldDim : C.parchmentMuted, marginTop: 3 }}>{locked ? applyParams(t("suc.lockReq"), [crimeReq(state.player, kind), standing]) : desc}</Text>
+            <Text style={{ fontFamily: F.serif, fontSize: 15, color: locked ? C.goldDim : C.parchmentMuted, marginTop: 3 }}>{locked ? applyParams(t("suc.lockReq"), [crimeReq(state.player, kind), standing]) : desc}</Text>
           </View>
           <Text accessibilityElementsHidden style={{ color: locked ? C.parchmentMuted : C.ink, fontSize: 15, transform: [{ rotate: expanded ? "90deg" : "0deg" }] }}>›</Text>
         </Pressable>
         {expanded && (
           <Animated.View entering={FadeInDown.duration(180)} style={{ borderTopWidth: 1, borderTopColor: "rgba(123,79,175,0.3)", padding: 10 }}>
             {intel ? (
-              <View style={{ backgroundColor: "rgba(127,166,106,0.10)", borderWidth: 1, borderColor: "rgba(127,166,106,0.45)", borderRadius: 9, padding: 10, marginBottom: 8 }}>
-                <Text style={{ fontFamily: F.display, fontSize: 10.5, color: C.sage }}>{applyParams(t(`crime.scout.ready.${intel.quality}`), [intel.expires - state.turn + 1])}</Text>
-                {intelTarget && <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted, marginTop: 3 }}>{applyParams(t("crime.scout.target"), [intelTarget])}</Text>}
+              <View style={{ backgroundColor: "rgba(127,166,106,0.10)", borderWidth: 1, borderColor: "rgba(127,166,106,0.45)", borderRadius: 5, padding: 10, marginBottom: 8 }}>
+                <Text style={{ fontFamily: F.display, fontSize: 13, color: C.sage }}>{applyParams(t(`crime.scout.ready.${intel.quality}`), [intel.expires - state.turn + 1])}</Text>
+                {intelTarget && <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, marginTop: 3 }}>{applyParams(t("crime.scout.target"), [intelTarget])}</Text>}
               </View>
             ) : (
-              <Pressable accessibilityRole="button" accessibilityLabel={`${t("crime.scout")}. ${t(state.player.crime_intel ? "crime.scout.replace" : "crime.scout.d")}`} onPress={() => { hap("advance"); setSelectedCrime(null); apply((s) => scoutCrime(s, kind)); }} style={{ backgroundColor: "rgba(201,168,76,0.08)", borderWidth: 1, borderColor: "rgba(201,168,76,0.4)", borderRadius: 9, padding: 10, marginBottom: 8 }}>
-                <Text style={{ fontFamily: F.display, fontSize: 11, color: C.gold, textAlign: "center" }}>{t("crime.scout")}</Text>
-                <Text style={{ fontFamily: F.serifItalic, fontSize: 10, color: C.parchmentMuted, textAlign: "center", lineHeight: 14, marginTop: 2 }}>{t(state.player.crime_intel ? "crime.scout.replace" : "crime.scout.d")}</Text>
+              <Pressable accessibilityRole="button" accessibilityLabel={`${t("crime.scout")}. ${t(state.player.crime_intel ? "crime.scout.replace" : "crime.scout.d")}`} onPress={() => { hap("advance"); setSelectedCrime(null); apply((s) => scoutCrime(s, kind)); }} style={{ backgroundColor: "rgba(201,168,76,0.08)", borderWidth: 1, borderColor: "rgba(201,168,76,0.4)", borderRadius: 5, padding: 10, marginBottom: 8 }}>
+                <Text style={{ fontFamily: F.display, fontSize: 13, color: C.gold, textAlign: "center" }}>{t("crime.scout")}</Text>
+                <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, textAlign: "center", lineHeight: 22, marginTop: 2 }}>{t(state.player.crime_intel ? "crime.scout.replace" : "crime.scout.d")}</Text>
               </Pressable>
             )}
-            <Text style={{ fontFamily: F.display, fontSize: 9.5, letterSpacing: 1.2, color: C.goldDim, marginBottom: 6 }}>{t("crime.plan.choose").toUpperCase()}</Text>
+            <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1.2, color: C.goldDim, marginBottom: 6 }}>{t("crime.plan.choose").toUpperCase()}</Text>
             {CRIME_APPROACHES.map((approach: CrimeApproach) => {
               const plan = crimePlanPreview(state, kind, approach);
               const success = `${Math.round(plan.success * 100)}%`; const caught = `${Math.round(plan.attention * 100)}%`;
               return (
-                <Pressable key={approach} accessibilityRole="button" accessibilityLabel={`${t(`crime.plan.${approach}`)}. ${applyParams(t("crime.plan.odds"), [success, caught])}`} onPress={() => { hap("advance"); setSelectedCrime(null); apply((s) => doCrime(s, kind, approach)); }} style={{ backgroundColor: C.bg, borderWidth: 1, borderColor: C.borderHi, borderRadius: 9, padding: 11, marginTop: 6 }}>
+                <Pressable key={approach} accessibilityRole="button" accessibilityLabel={`${t(`crime.plan.${approach}`)}. ${applyParams(t("crime.plan.odds"), [success, caught])}`} onPress={() => { hap("advance"); setSelectedCrime(null); apply((s) => doCrime(s, kind, approach)); }} style={{ backgroundColor: C.bg, borderWidth: 1, borderColor: C.borderHi, borderRadius: 5, padding: 11, marginTop: 6 }}>
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                    <Text style={{ flex: 1, fontFamily: F.display, fontSize: 11.5, color: C.parchment }}>{t(`crime.plan.${approach}`)}</Text>
-                    <Text style={{ fontFamily: F.serif, fontSize: 10.5, color: C.gold }}>{applyParams(t("crime.plan.loot"), [plan.loot.toFixed(2), plan.heatGain])}</Text>
+                    <Text style={{ flex: 1, fontFamily: F.display, fontSize: 13, color: C.parchment }}>{t(`crime.plan.${approach}`)}</Text>
+                    <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.gold }}>{applyParams(t("crime.plan.loot"), [plan.loot.toFixed(2), plan.heatGain])}</Text>
                   </View>
-                  <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted, marginTop: 3 }}>{t(`crime.plan.${approach}.d`)}</Text>
+                  <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, marginTop: 3 }}>{t(`crime.plan.${approach}.d`)}</Text>
                   <View style={{ flexDirection: "row", gap: 8, marginTop: 7 }}>
-                    <Text style={{ fontFamily: F.serif, fontSize: 10.5, color: C.sage }}>{applyParams(t("crime.plan.odds"), [success, caught]).split(" · ")[0]}</Text>
-                    <Text style={{ fontFamily: F.serif, fontSize: 10.5, color: C.blood }}>{applyParams(t("crime.plan.odds"), [success, caught]).split(" · ")[1]}</Text>
+                    <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.sage }}>{applyParams(t("crime.plan.odds"), [success, caught]).split(" · ")[0]}</Text>
+                    <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.blood }}>{applyParams(t("crime.plan.odds"), [success, caught]).split(" · ")[1]}</Text>
                   </View>
                 </Pressable>
               );
@@ -117,18 +118,18 @@ export default function Suc() {
           const base = UNDERWORLD_TIERS[tier];
           const frac = next != null ? Math.min(1, (st - base) / (next - base)) : 1;
           return (
-            <View style={{ backgroundColor: "rgba(123,79,175,0.08)", borderWidth: 1, borderColor: "rgba(123,79,175,0.4)", borderRadius: 11, padding: 12, marginBottom: 12 }}>
+            <View style={{ backgroundColor: "rgba(123,79,175,0.08)", borderWidth: 1, borderColor: "rgba(123,79,175,0.4)", borderRadius: 5, padding: 12, marginBottom: 12 }}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
                 <GameIcon name="hood" size={15} color={C.ink} />
-                <Text style={{ flex: 1, fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: C.ink }}>{t("uw.tier" + tier).toUpperCase()}</Text>
-                <Text style={{ fontFamily: F.display, fontSize: 10.5, color: C.parchmentMuted }}>{t("uw.standing")} {st}</Text>
+                <Text style={{ flex: 1, fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.ink }}>{t("uw.tier" + tier).toUpperCase()}</Text>
+                <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchmentMuted }}>{t("uw.standing")} {st}</Text>
               </View>
               {next != null && (
                 <>
                   <View style={{ height: 4, borderRadius: 2, backgroundColor: "rgba(123,79,175,0.18)", marginTop: 8, overflow: "hidden" }}>
                     <View style={{ width: `${Math.round(frac * 100)}%`, height: "100%", backgroundColor: C.ink }} />
                   </View>
-                  <Text style={{ fontFamily: F.serifItalic, fontSize: 10, color: C.parchmentMuted, marginTop: 4 }}>{applyParams(t("uw.next"), [next - st, t("uw.tier" + (tier + 1))])}</Text>
+                  <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, marginTop: 4 }}>{applyParams(t("uw.next"), [next - st, t("uw.tier" + (tier + 1))])}</Text>
                 </>
               )}
             </View>
@@ -136,56 +137,56 @@ export default function Suc() {
         })()}
 
         {state.player.age >= 13 && (
-          <View accessibilityLabel={`${t("crime.heat.title")}. ${applyParams(t("crime.heat.value"), [heat])}. ${t(heatKey)}`} style={{ backgroundColor: "rgba(123,79,175,0.08)", borderWidth: 1, borderColor: "rgba(123,79,175,0.4)", borderRadius: 11, padding: 12, marginBottom: 12 }}>
+          <View accessibilityLabel={`${t("crime.heat.title")}. ${applyParams(t("crime.heat.value"), [heat])}. ${t(heatKey)}`} style={{ backgroundColor: "rgba(123,79,175,0.08)", borderWidth: 1, borderColor: "rgba(123,79,175,0.4)", borderRadius: 5, padding: 12, marginBottom: 12 }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
               <GameIcon name="hourglass" size={15} color={heatColor} />
-              <Text style={{ flex: 1, fontFamily: F.display, fontSize: 10.5, letterSpacing: 1, color: C.ink }}>{t("crime.heat.title").toUpperCase()}</Text>
-              <Text style={{ fontFamily: F.display, fontSize: 10.5, color: heatColor }}>{applyParams(t("crime.heat.value"), [heat])}</Text>
+              <Text style={{ flex: 1, fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.ink }}>{t("crime.heat.title").toUpperCase()}</Text>
+              <Text style={{ fontFamily: F.display, fontSize: 13, color: heatColor }}>{applyParams(t("crime.heat.value"), [heat])}</Text>
             </View>
             <View style={{ height: 5, borderRadius: 3, backgroundColor: "rgba(123,79,175,0.18)", marginTop: 8, overflow: "hidden" }}>
               <View style={{ width: `${heat}%`, height: "100%", backgroundColor: heatColor }} />
             </View>
-            <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted, lineHeight: 15, marginTop: 6 }}>{t(heatKey)}</Text>
+            <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, lineHeight: 22, marginTop: 6 }}>{t(heatKey)}</Text>
             {heat > 0 && (
-              <Pressable accessibilityRole="button" accessibilityLabel={`${t("crime.layLow")}. ${t("crime.layLow.d")}`} accessibilityState={{ disabled: crimeDone || inJail(state.player) || !!state.pendingScene }} disabled={crimeDone || inJail(state.player) || !!state.pendingScene} onPress={() => { hap("advance"); setSelectedCrime(null); apply((s) => layLow(s)); }} style={{ borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.bg, borderRadius: 8, padding: 10, marginTop: 9, opacity: crimeDone || inJail(state.player) || !!state.pendingScene ? 0.4 : 1 }}>
-                <Text style={{ fontFamily: F.display, fontSize: 11, color: C.parchment, textAlign: "center" }}>{t("crime.layLow")}</Text>
-                <Text style={{ fontFamily: F.serifItalic, fontSize: 10, color: C.parchmentMuted, textAlign: "center", marginTop: 2 }}>{t("crime.layLow.d")}</Text>
+              <Pressable accessibilityRole="button" accessibilityLabel={`${t("crime.layLow")}. ${t("crime.layLow.d")}`} accessibilityState={{ disabled: crimeDone || inJail(state.player) || !!state.pendingScene }} disabled={crimeDone || inJail(state.player) || !!state.pendingScene} onPress={() => { hap("advance"); setSelectedCrime(null); apply((s) => layLow(s)); }} style={{ borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.bg, borderRadius: 5, padding: 10, marginTop: 9, opacity: crimeDone || inJail(state.player) || !!state.pendingScene ? 0.4 : 1 }}>
+                <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchment, textAlign: "center" }}>{t("crime.layLow")}</Text>
+                <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, textAlign: "center", marginTop: 2 }}>{t("crime.layLow.d")}</Text>
               </Pressable>
             )}
           </View>
         )}
 
         {investigation && (
-          <View accessibilityLabel={`${t("crime.investigation.title")}. ${investigation.investigatorName}. ${applyParams(t("crime.investigation.summary"), [t(`trial.level.${investigation.level}`), investigation.left])}`} style={{ backgroundColor: "rgba(200,64,64,0.08)", borderWidth: 1, borderColor: investigation.level === "strong" ? C.blood : C.goldDim, borderLeftWidth: 3, borderLeftColor: C.blood, borderRadius: 11, padding: 13, marginBottom: 12 }}>
+          <View accessibilityLabel={`${t("crime.investigation.title")}. ${investigation.investigatorName}. ${applyParams(t("crime.investigation.summary"), [t(`trial.level.${investigation.level}`), investigation.left])}`} style={{ backgroundColor: "rgba(200,64,64,0.08)", borderWidth: 1, borderColor: investigation.level === "strong" ? C.blood : C.goldDim, borderLeftWidth: 3, borderLeftColor: C.blood, borderRadius: 5, padding: 13, marginBottom: 12 }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
               <GameIcon name="scroll" size={16} color={C.blood} />
-              <Text style={{ flex: 1, fontFamily: F.display, fontSize: 11, letterSpacing: 1, color: C.ink }}>{t("crime.investigation.title").toUpperCase()}</Text>
-              <Text style={{ fontFamily: F.display, fontSize: 10.5, color: C.blood }}>{investigation.evidence}/100</Text>
+              <Text style={{ flex: 1, fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.ink }}>{t("crime.investigation.title").toUpperCase()}</Text>
+              <Text style={{ fontFamily: F.display, fontSize: 13, color: C.blood }}>{investigation.evidence}/100</Text>
             </View>
-            <Text style={{ fontFamily: F.serif, fontSize: 12.5, color: C.parchment, marginTop: 7 }}>{applyParams(t("crime.investigation.investigator"), [investigation.investigatorName])}</Text>
-            <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted, lineHeight: 15, marginTop: 3 }}>{applyParams(t("crime.investigation.summary"), [t(`trial.level.${investigation.level}`), investigation.left])}</Text>
-            <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted, lineHeight: 15, marginTop: 2 }}>{applyParams(t("crime.investigation.case"), [t(`crime.${investigation.kind}.l`), investigation.witnessCount])}</Text>
-            {investigation.victimName && <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted, marginTop: 2 }}>{applyParams(t("trial.case.victim"), [investigation.victimName])}</Text>}
-            <Pressable accessibilityRole="button" accessibilityLabel={applyParams(t("crime.investigation.misdirect"), [misdirectOdds])} accessibilityState={{ disabled: crimeDone || inJail(state.player) || !!state.pendingScene }} disabled={crimeDone || inJail(state.player) || !!state.pendingScene} onPress={() => { hap("advance"); setSelectedCrime(null); apply((s) => misdirectInvestigation(s)); }} style={{ borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.bg, borderRadius: 8, padding: 10, marginTop: 9, opacity: crimeDone || inJail(state.player) || !!state.pendingScene ? 0.4 : 1 }}>
-              <Text style={{ fontFamily: F.display, fontSize: 11, color: C.parchment, textAlign: "center" }}>{applyParams(t("crime.investigation.misdirect"), [misdirectOdds])}</Text>
-              <Text style={{ fontFamily: F.serifItalic, fontSize: 10, color: C.parchmentMuted, textAlign: "center", marginTop: 2 }}>{t("crime.investigation.misdirect.d")}</Text>
+            <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchment, marginTop: 7 }}>{applyParams(t("crime.investigation.investigator"), [investigation.investigatorName])}</Text>
+            <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, lineHeight: 22, marginTop: 3 }}>{applyParams(t("crime.investigation.summary"), [t(`trial.level.${investigation.level}`), investigation.left])}</Text>
+            <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, lineHeight: 22, marginTop: 2 }}>{applyParams(t("crime.investigation.case"), [t(`crime.${investigation.kind}.l`), investigation.witnessCount])}</Text>
+            {investigation.victimName && <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, marginTop: 2 }}>{applyParams(t("trial.case.victim"), [investigation.victimName])}</Text>}
+            <Pressable accessibilityRole="button" accessibilityLabel={applyParams(t("crime.investigation.misdirect"), [misdirectOdds])} accessibilityState={{ disabled: crimeDone || inJail(state.player) || !!state.pendingScene }} disabled={crimeDone || inJail(state.player) || !!state.pendingScene} onPress={() => { hap("advance"); setSelectedCrime(null); apply((s) => misdirectInvestigation(s)); }} style={{ borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.bg, borderRadius: 5, padding: 10, marginTop: 9, opacity: crimeDone || inJail(state.player) || !!state.pendingScene ? 0.4 : 1 }}>
+              <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchment, textAlign: "center" }}>{applyParams(t("crime.investigation.misdirect"), [misdirectOdds])}</Text>
+              <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, textAlign: "center", marginTop: 2 }}>{t("crime.investigation.misdirect.d")}</Text>
             </Pressable>
           </View>
         )}
 
         {res && (
-          <Animated.View key={res.tick} entering={FadeInDown.duration(240)} style={{ backgroundColor: res.ok ? "rgba(127,166,106,0.10)" : "rgba(200,64,64,0.10)", borderWidth: 1, borderColor: res.ok ? "rgba(127,166,106,0.5)" : "rgba(200,64,64,0.5)", borderLeftWidth: 3, borderLeftColor: res.ok ? C.sage : C.blood, borderRadius: 10, padding: 12, marginBottom: 12 }}>
-            <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.parchment, lineHeight: 19 }}>{res.text}</Text>
+          <Animated.View key={res.tick} entering={FadeInDown.duration(240)} style={{ backgroundColor: res.ok ? "rgba(127,166,106,0.10)" : "rgba(200,64,64,0.10)", borderWidth: 1, borderColor: res.ok ? "rgba(127,166,106,0.5)" : "rgba(200,64,64,0.5)", borderLeftWidth: 3, borderLeftColor: res.ok ? C.sage : C.blood, borderRadius: 5, padding: 12, marginBottom: 12 }}>
+            <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchment, lineHeight: 22 }}>{res.text}</Text>
           </Animated.View>
         )}
 
         {(state.player.hotGoods || 0) > 0 && (
-          <View style={{ backgroundColor: "rgba(123,79,175,0.08)", borderWidth: 1, borderColor: "rgba(123,79,175,0.4)", borderRadius: 11, padding: 13, marginBottom: 12 }}>
-            <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 1.5, color: C.goldDim }}>{t("crime.hotPanel").toUpperCase()}</Text>
-            <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchment, marginTop: 4 }}>{state.player.hotGoods} ⚜ {t("crime.hotValue")}</Text>
-            <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted, marginTop: 2 }}>{t(state.player.faction === "golge" ? "crime.fenceGolge" : "crime.fenceRisk")}</Text>
-            <Pressable disabled={inJail(state.player)} onPress={() => { hap("advance"); apply((s) => fenceHotGoods(s)); }} style={{ marginTop: 9, paddingVertical: 10, borderRadius: 8, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: "rgba(201,168,76,0.12)", alignItems: "center" }}>
-              <Text style={{ fontFamily: F.display, fontSize: 11.5, letterSpacing: 0.5, color: C.gold }}>{t("crime.fence")}</Text>
+          <View style={{ backgroundColor: "rgba(123,79,175,0.08)", borderWidth: 1, borderColor: "rgba(123,79,175,0.4)", borderRadius: 5, padding: 13, marginBottom: 12 }}>
+            <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1.5, color: C.goldDim }}>{t("crime.hotPanel").toUpperCase()}</Text>
+            <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchment, marginTop: 4 }}>{state.player.hotGoods} ⚜ {t("crime.hotValue")}</Text>
+            <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, marginTop: 2 }}>{t(state.player.faction === "golge" ? "crime.fenceGolge" : "crime.fenceRisk")}</Text>
+            <Pressable disabled={inJail(state.player)} onPress={() => { hap("advance"); apply((s) => fenceHotGoods(s)); }} style={{ marginTop: 9, paddingVertical: 10, borderRadius: 5, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: "rgba(201,168,76,0.12)", alignItems: "center" }}>
+              <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 0.5, color: C.gold }}>{t("crime.fence")}</Text>
             </Pressable>
           </View>
         )}
@@ -194,15 +195,15 @@ export default function Suc() {
           const played = state.player.gamble_turn === state.turn;
           const jailed = inJail(state.player);
           return (
-            <View style={{ backgroundColor: "rgba(201,168,76,0.06)", borderWidth: 1, borderColor: "rgba(201,168,76,0.35)", borderRadius: 11, padding: 13, marginBottom: 12 }}>
-              <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 1.5, color: C.goldDim }}>{t("dice.title").toUpperCase()}</Text>
-              <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted, marginTop: 3 }}>{t(played ? "dice.done" : "dice.desc")}</Text>
+            <View style={{ backgroundColor: "rgba(201,168,76,0.06)", borderWidth: 1, borderColor: "rgba(201,168,76,0.35)", borderRadius: 5, padding: 13, marginBottom: 12 }}>
+              <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1.5, color: C.goldDim }}>{t("dice.title").toUpperCase()}</Text>
+              <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, marginTop: 3 }}>{t(played ? "dice.done" : "dice.desc")}</Text>
               <View style={{ flexDirection: "row", gap: 8, marginTop: 9 }}>
                 {[10, 25, 50].map((bet) => {
                   const dis = played || jailed || state.player.money < bet;
                   return (
-                    <Pressable key={bet} disabled={dis} onPress={() => { hap("advance"); apply((s) => playDice(s, bet)); }} style={{ flex: 1, paddingVertical: 10, borderRadius: 8, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: "rgba(201,168,76,0.10)", alignItems: "center", opacity: dis ? 0.4 : 1 }}>
-                      <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 0.5, color: C.gold }}>{applyParams(t("dice.btn"), [bet])}</Text>
+                    <Pressable key={bet} disabled={dis} onPress={() => { hap("advance"); apply((s) => playDice(s, bet)); }} style={{ flex: 1, paddingVertical: 10, borderRadius: 5, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: "rgba(201,168,76,0.10)", alignItems: "center", opacity: dis ? 0.4 : 1 }}>
+                      <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 0.5, color: C.gold }}>{applyParams(t("dice.btn"), [bet])}</Text>
                     </Pressable>
                   );
                 })}
@@ -216,9 +217,9 @@ export default function Suc() {
         ) : (
           <>
             {crimeDone && !state.player.dead && (
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: "rgba(123,79,175,0.08)", borderWidth: 1, borderColor: "rgba(123,79,175,0.4)", borderRadius: 10, padding: 12, marginBottom: 12 }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: "rgba(123,79,175,0.08)", borderWidth: 1, borderColor: "rgba(123,79,175,0.4)", borderRadius: 5, padding: 12, marginBottom: 12 }}>
                 <GameIcon name="hood" size={15} color={C.ink} />
-                <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 12, color: C.parchment, lineHeight: 17 }}>{t("suc.doneMonth")}</Text>
+                <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 15, color: C.parchment, lineHeight: 22 }}>{t("suc.doneMonth")}</Text>
               </View>
             )}
             <Crime kind="yankesicilik" title={t("crime.yankesicilik.l")} desc={t("crime.yankesicilik.d")} />
@@ -232,11 +233,11 @@ export default function Suc() {
       {/* Kesinti sahnesi — yakalanmak üzeresin: Saklan / Rüşvet / Kaç (Vercel interrupt) */}
       {state.pendingScene?.kind === "crime" && (
         <View style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.72)", alignItems: "center", justifyContent: "center", padding: 22 }}>
-          <Animated.View entering={FadeInDown.duration(220)} style={{ width: "100%", maxWidth: 420, backgroundColor: C.card, borderWidth: 1.5, borderColor: C.ink, borderRadius: 14, padding: 18 }}>
+          <Animated.View entering={FadeInDown.duration(220)} style={{ width: "100%", maxWidth: 420, backgroundColor: C.card, borderWidth: 1.5, borderColor: C.ink, borderRadius: 5, padding: 18 }}>
             <Text style={{ fontFamily: F.display, fontSize: 17, color: C.ink, textAlign: "center", letterSpacing: 0.5 }}>{t("crimesc.title")}</Text>
-            <Text style={{ fontFamily: F.serif, fontSize: 13.5, color: C.parchment, textAlign: "center", lineHeight: 20, marginTop: 10, marginBottom: 16 }}>{t("crimesc.text")}</Text>
+            <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchment, textAlign: "center", lineHeight: 22, marginTop: 10, marginBottom: 16 }}>{t("crimesc.text")}</Text>
             {([["saklan", "crimesc.hide"], ["rusvet", "crimesc.bribe"], ["kac", "crimesc.run"]] as const).map(([ch, key]) => (
-              <Pressable key={ch} onPress={() => { hap("selection"); apply((s) => resolveCrimeScene(s, ch)); }} style={{ borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.bg, borderRadius: 9, paddingVertical: 12, marginTop: 8, alignItems: "center" }}>
+              <Pressable key={ch} onPress={() => { hap("selection"); apply((s) => resolveCrimeScene(s, ch)); }} style={{ borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.bg, borderRadius: 5, paddingVertical: 12, marginTop: 8, alignItems: "center" }}>
                 <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchment, letterSpacing: 0.5 }}>{t(key)}</Text>
               </Pressable>
             ))}
@@ -247,28 +248,28 @@ export default function Suc() {
       {/* Kadı duruşması — ağır suçun hükmü okunmadan son söz: Savun / Tanık / Boyun eğ */}
       {state.pendingScene?.kind === "trial" && (
         <View style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.72)", alignItems: "center", justifyContent: "center", padding: 22 }}>
-          <Animated.View entering={FadeInDown.duration(220)} style={{ width: "100%", maxWidth: 420, maxHeight: "90%", backgroundColor: C.card, borderWidth: 1.5, borderColor: C.ink, borderRadius: 14, overflow: "hidden" }}>
+          <Animated.View entering={FadeInDown.duration(220)} style={{ width: "100%", maxWidth: 420, maxHeight: "90%", backgroundColor: C.card, borderWidth: 1.5, borderColor: C.ink, borderRadius: 5, overflow: "hidden" }}>
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 18 }}>
             <Text style={{ fontFamily: F.display, fontSize: 17, color: C.ink, textAlign: "center", letterSpacing: 0.5 }}>{t("trial.title")}</Text>
-            <Text style={{ fontFamily: F.serif, fontSize: 13.5, color: C.parchment, textAlign: "center", lineHeight: 20, marginTop: 10 }}>{t("trial.text")}</Text>
-            <View style={{ backgroundColor: C.bg, borderWidth: 1, borderColor: courtCase.level === "strong" ? C.blood : courtCase.level === "medium" ? C.goldDim : C.sage, borderRadius: 9, padding: 10, marginTop: 12, marginBottom: 8 }}>
-              <Text style={{ fontFamily: F.display, fontSize: 11, color: C.parchment, textAlign: "center" }}>{applyParams(t("trial.case"), [t(`trial.level.${courtCase.level}`), courtCase.witnessCount])}</Text>
-              {courtCase.victimName && <Text style={{ fontFamily: F.serif, fontSize: 10.5, color: C.parchmentMuted, textAlign: "center", marginTop: 4 }}>{applyParams(t("trial.case.victim"), [courtCase.victimName])}</Text>}
-              {!!courtCase.witnessNames.length && <Text style={{ fontFamily: F.serif, fontSize: 10.5, color: C.parchmentMuted, textAlign: "center", marginTop: 2 }}>{applyParams(t("trial.case.people"), [courtCase.witnessNames.join(", ")])}</Text>}
+            <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchment, textAlign: "center", lineHeight: 22, marginTop: 10 }}>{t("trial.text")}</Text>
+            <View style={{ backgroundColor: C.bg, borderWidth: 1, borderColor: courtCase.level === "strong" ? C.blood : courtCase.level === "medium" ? C.goldDim : C.sage, borderRadius: 5, padding: 10, marginTop: 12, marginBottom: 8 }}>
+              <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchment, textAlign: "center" }}>{applyParams(t("trial.case"), [t(`trial.level.${courtCase.level}`), courtCase.witnessCount])}</Text>
+              {courtCase.victimName && <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchmentMuted, textAlign: "center", marginTop: 4 }}>{applyParams(t("trial.case.victim"), [courtCase.victimName])}</Text>}
+              {!!courtCase.witnessNames.length && <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchmentMuted, textAlign: "center", marginTop: 2 }}>{applyParams(t("trial.case.people"), [courtCase.witnessNames.join(", ")])}</Text>}
             </View>
-            <Pressable accessibilityRole="button" accessibilityLabel={applyParams(t("trial.defBtn.odds"), [courtDefense])} onPress={() => { hap("selection"); apply((s) => resolveTrial(s, "savun")); }} style={{ borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.bg, borderRadius: 9, paddingVertical: 12, paddingHorizontal: 8, marginTop: 8, alignItems: "center" }}>
-              <Text style={{ fontFamily: F.display, fontSize: 12.5, color: C.parchment, letterSpacing: 0.3, textAlign: "center" }}>{applyParams(t("trial.defBtn.odds"), [courtDefense])}</Text>
+            <Pressable accessibilityRole="button" accessibilityLabel={applyParams(t("trial.defBtn.odds"), [courtDefense])} onPress={() => { hap("selection"); apply((s) => resolveTrial(s, "savun")); }} style={{ borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.bg, borderRadius: 5, paddingVertical: 12, paddingHorizontal: 8, marginTop: 8, alignItems: "center" }}>
+              <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchment, letterSpacing: 0.3, textAlign: "center" }}>{applyParams(t("trial.defBtn.odds"), [courtDefense])}</Text>
             </Pressable>
-            <Pressable accessibilityRole="button" accessibilityLabel={courtWitness ? applyParams(t("trial.witBtn.named"), [courtWitness.name, `${Math.round(courtWitness.chance * 100)}%`]) : t("trial.witBtn.none")} accessibilityState={{ disabled: !courtWitness }} disabled={!courtWitness} onPress={() => { hap("selection"); apply((s) => resolveTrial(s, "tanik")); }} style={{ borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.bg, borderRadius: 9, paddingVertical: 12, paddingHorizontal: 8, marginTop: 8, alignItems: "center", opacity: courtWitness ? 1 : 0.4 }}>
-              <Text style={{ fontFamily: F.display, fontSize: 12.5, color: C.parchment, letterSpacing: 0.3, textAlign: "center" }}>{courtWitness ? applyParams(t("trial.witBtn.named"), [courtWitness.name, `${Math.round(courtWitness.chance * 100)}%`]) : t("trial.witBtn.none")}</Text>
+            <Pressable accessibilityRole="button" accessibilityLabel={courtWitness ? applyParams(t("trial.witBtn.named"), [courtWitness.name, `${Math.round(courtWitness.chance * 100)}%`]) : t("trial.witBtn.none")} accessibilityState={{ disabled: !courtWitness }} disabled={!courtWitness} onPress={() => { hap("selection"); apply((s) => resolveTrial(s, "tanik")); }} style={{ borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.bg, borderRadius: 5, paddingVertical: 12, paddingHorizontal: 8, marginTop: 8, alignItems: "center", opacity: courtWitness ? 1 : 0.4 }}>
+              <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchment, letterSpacing: 0.3, textAlign: "center" }}>{courtWitness ? applyParams(t("trial.witBtn.named"), [courtWitness.name, `${Math.round(courtWitness.chance * 100)}%`]) : t("trial.witBtn.none")}</Text>
             </Pressable>
             {courtSettlement != null && (
-              <Pressable accessibilityRole="button" accessibilityLabel={applyParams(t(state.player.money >= courtSettlement ? "trial.settleBtn" : "trial.settle.noFunds"), [courtSettlement])} accessibilityState={{ disabled: state.player.money < courtSettlement }} disabled={state.player.money < courtSettlement} onPress={() => { hap("selection"); apply((s) => resolveTrial(s, "uzlas")); }} style={{ borderWidth: 1, borderColor: C.goldDim, backgroundColor: "rgba(201,168,76,0.08)", borderRadius: 9, paddingVertical: 12, paddingHorizontal: 8, marginTop: 8, alignItems: "center", opacity: state.player.money >= courtSettlement ? 1 : 0.4 }}>
-                <Text style={{ fontFamily: F.display, fontSize: 12.5, color: C.gold, letterSpacing: 0.3, textAlign: "center" }}>{applyParams(t(state.player.money >= courtSettlement ? "trial.settleBtn" : "trial.settle.noFunds"), [courtSettlement])}</Text>
+              <Pressable accessibilityRole="button" accessibilityLabel={applyParams(t(state.player.money >= courtSettlement ? "trial.settleBtn" : "trial.settle.noFunds"), [courtSettlement])} accessibilityState={{ disabled: state.player.money < courtSettlement }} disabled={state.player.money < courtSettlement} onPress={() => { hap("selection"); apply((s) => resolveTrial(s, "uzlas")); }} style={{ borderWidth: 1, borderColor: C.goldDim, backgroundColor: "rgba(201,168,76,0.08)", borderRadius: 5, paddingVertical: 12, paddingHorizontal: 8, marginTop: 8, alignItems: "center", opacity: state.player.money >= courtSettlement ? 1 : 0.4 }}>
+                <Text style={{ fontFamily: F.display, fontSize: 13, color: C.gold, letterSpacing: 0.3, textAlign: "center" }}>{applyParams(t(state.player.money >= courtSettlement ? "trial.settleBtn" : "trial.settle.noFunds"), [courtSettlement])}</Text>
               </Pressable>
             )}
-            <Pressable accessibilityRole="button" accessibilityLabel={t("trial.bowBtn")} onPress={() => { hap("selection"); apply((s) => resolveTrial(s, "boyun")); }} style={{ borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.bg, borderRadius: 9, paddingVertical: 12, marginTop: 8, alignItems: "center" }}>
-              <Text style={{ fontFamily: F.display, fontSize: 12.5, color: C.parchment, letterSpacing: 0.3 }}>{t("trial.bowBtn")}</Text>
+            <Pressable accessibilityRole="button" accessibilityLabel={t("trial.bowBtn")} onPress={() => { hap("selection"); apply((s) => resolveTrial(s, "boyun")); }} style={{ borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.bg, borderRadius: 5, paddingVertical: 12, marginTop: 8, alignItems: "center" }}>
+              <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchment, letterSpacing: 0.3 }}>{t("trial.bowBtn")}</Text>
             </Pressable>
             </ScrollView>
           </Animated.View>

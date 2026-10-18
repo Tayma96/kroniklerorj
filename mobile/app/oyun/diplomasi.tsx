@@ -1,5 +1,6 @@
+import { DesignPressable as Pressable } from "../../lib/design-pressable";
 import { useState } from "react";
-import { View, Text, Pressable, ScrollView } from "react-native";
+import { View, Text, ScrollView } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useGame } from "../../lib/store";
@@ -9,11 +10,11 @@ import { ACCORDS, AccordKind } from "../../lib/diplomacy";
 import { BackLabel, PageHeader, ScreenFresk } from "../../lib/ui";
 import { C, F } from "../../lib/theme";
 
-const body = { fontFamily: F.serif, fontSize: 13, lineHeight: 20, color: C.parchmentMuted, marginTop: 7 };
-const card = { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, padding: 13, marginTop: 12 };
+const body = { fontFamily: F.serif, fontSize: 15, lineHeight: 22, color: C.parchmentMuted, marginTop: 7 };
+const card = { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 5, padding: 13, marginTop: 12 };
 function Action({ label, onPress, enabled = true, danger = false }: { label: string; onPress: () => void; enabled?: boolean; danger?: boolean }) {
-  return <Pressable accessibilityRole="button" accessibilityState={{ disabled: !enabled }} disabled={!enabled} onPress={onPress} style={{ minHeight: 48, justifyContent: "center", borderWidth: 1, borderColor: danger ? C.blood : C.goldDim, borderRadius: 8, padding: 11, marginTop: 9, opacity: enabled ? 1 : 0.45 }}>
-    <Text style={{ fontFamily: F.display, fontSize: 12, color: danger ? C.blood : C.gold }}>{label}</Text>
+  return <Pressable accessibilityRole="button" accessibilityState={{ disabled: !enabled }} disabled={!enabled} onPress={onPress} style={{ minHeight: 48, justifyContent: "center", borderWidth: 1, borderColor: danger ? C.blood : C.goldDim, borderRadius: 5, padding: 11, marginTop: 9, opacity: enabled ? 1 : 0.45 }}>
+    <Text style={{ fontFamily: F.display, fontSize: 13, color: danger ? C.blood : C.gold }}>{label}</Text>
   </Pressable>;
 }
 export default function Diplomasi() {
@@ -45,8 +46,8 @@ export default function Diplomasi() {
           </View>)}
         </View>}
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 7, marginTop: 12 }}>
-          {targets.map(target => <Pressable key={target.id} accessibilityRole="button" accessibilityState={{ selected: target.id === id }} onPress={() => setSelected(target.id)} style={{ minHeight: 44, justifyContent: "center", padding: 10, borderWidth: 1, borderColor: target.id === id ? C.gold : C.border, borderRadius: 8, maxWidth: "100%" }}>
-            <Text style={{ fontFamily: F.display, fontSize: 12, color: target.id === id ? C.gold : C.parchment }}>{realm(target.id)}</Text>
+          {targets.map(target => <Pressable key={target.id} accessibilityRole="button" accessibilityState={{ selected: target.id === id }} onPress={() => setSelected(target.id)} style={{ minHeight: 44, justifyContent: "center", padding: 10, borderWidth: 1, borderColor: target.id === id ? C.gold : C.border, borderRadius: 5, maxWidth: "100%" }}>
+            <Text style={{ fontFamily: F.display, fontSize: 13, color: target.id === id ? C.gold : C.parchment }}>{realm(target.id)}</Text>
           </Pressable>)}
         </View>
         {quote && id && <>
@@ -64,8 +65,8 @@ export default function Diplomasi() {
           </View>
           <View style={card}>
             <View style={{ gap: 6 }}>
-              {ACCORDS.map(k => <Pressable key={k} accessibilityRole="button" accessibilityState={{ selected: k === kind }} onPress={() => setKind(k)} style={{ minHeight: 44, padding: 10, justifyContent: "center", borderWidth: 1, borderColor: k === kind ? C.gold : C.border, borderRadius: 7 }}>
-                <Text style={{ fontFamily: F.display, fontSize: 12, color: k === kind ? C.gold : C.parchment }}>{t("dp.kind." + k)}</Text>
+              {ACCORDS.map(k => <Pressable key={k} accessibilityRole="button" accessibilityState={{ selected: k === kind }} onPress={() => setKind(k)} style={{ minHeight: 44, padding: 10, justifyContent: "center", borderWidth: 1, borderColor: k === kind ? C.gold : C.border, borderRadius: 5 }}>
+                <Text style={{ fontFamily: F.display, fontSize: 13, color: k === kind ? C.gold : C.parchment }}>{t("dp.kind." + k)}</Text>
               </Pressable>)}
             </View>
             <Text style={body}>{t("dp.term." + kind)}</Text>
