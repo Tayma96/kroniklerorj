@@ -22,8 +22,8 @@ Bireysel karşılaşma, lonca cephesi ve devlet ordusu aynı şey değildir. **S
 cephesi** artık oyuncunun yurduna ait hükümdarın sınır seferini gösterir. Asker mesleği,
 16 yaş, 25 sağlık, kendi beyliğinde bulunma ve kullanılmamış aylık savaş hakkıyla
 çağrıya gönüllü katılınır; Asker Ocağı üyeliği aranmaz. Asker olmak otomatik seferberlik
-veya ordunun başkomutanlığı anlamına gelmez. Gerçek isimli bağımsız hükümdarların
-hanedan/diplomasi yapay zekâsı bu ilk sınır seferi modelinin kapsamında değildir.
+veya ordunun başkomutanlığı anlamına gelmez. Hükümdarlar artık nüfustaki gerçek
+kişilerdir; kendi hazineleri, verasetleri ve aşağıda anlatılan diplomasi kararları vardır.
 
 Her ay üç kısa manga teması vardır: **safı koru / manganla ilerle / yaralı taşı**.
 Yaklaşan hücum, ok atışı veya piyade baskısı görünür. Safı korumak manga zayiatını
@@ -88,14 +88,53 @@ kişiler ve açık ilişkileri otomatik taşınmaz; aile geçimi üzerindeki eko
 korunur. Soyut ordu kayıpları rastgele seçilen kent NPC'lerini öldürmek için kullanılmaz.
 
 Model nedensel bir oyun simülasyonudur; katsayılar tarihsel ölçüm iddiası taşımaz.
-Gerçek isimli bağımsız hükümdar diplomasisi, NPC devlet hazinesi/esir pazarlığı,
-birliklerin haritada konumlandırılması ve tam kuşatma simülasyonu hâlâ ayrı işlerdir.
-Bu dalgada bu sistemler bitmiş gibi sunulmaz. Çok oyunculu sunucu otoritesi değişmedi.
+İsimli hükümdarlar ve sınırlı NPC devlet hazinesi çalışır. Esir pazarlığı, birliklerin
+haritada konumlandırılması ve tam kuşatma simülasyonu hâlâ yoktur. Çok oyunculu
+sunucu otoritesi değişmedi.
 
 Hedefli testler: `check-war-world.cjs`, `check-war-impact.cjs`, `check-army.cjs`,
-`check-war.cjs`, eski kayıt göçü ve vâris önizleme/devir paritesi. Tip, motor/UI paketleme
-ve altı dil/ikon kontrolleri uygulandı. Uzun hayat simülasyonu çalıştırılmadı; gerçek
+`check-war.cjs`, `check-npc-economy.cjs`, `check-diplomacy.cjs`,
+`check-diplomacy-game.cjs`, eski kayıt göçü ve vâris önizleme/devir paritesi. Tip, motor/UI paketleme
+ve altı dil/ikon kontrolleri uygulandı. Geniş hayat taraması tamamlanmadı ve kabul sayılmadı; gerçek
 telefon, 320/390 piksel görsel ve CPU performans kabulü ayrıca yapılmalıdır.
+
+## Her NPC ekonomiyi etkiliyor mu?
+
+İsimli nüfustaki yaşayan herkes yerel tüketimde sayılır. Çocuk, işsiz ve yaşlılar da
+yaşlarına göre tüketir; ölen veya başka yere taşınan kişi eski yerindeki tüketimden çıkar.
+Üretim, yaşayanların gerçek mesleği ve yaşına göre hesaplanır. Doğum, ölüm, meslek
+seçimi ve göç, önbelleği geçersiz kılar; iki ayrı kayıt birbirinin hesabını kullanmaz.
+
+| Kişiler | Yerel sonuç |
+|---|---|
+| Çiftçi, çoban, balıkçı ve zanaatkâr | İlgili malların arzı; gerçek pazar fiyatları ve hammadde zinciri. |
+| Tüccar | Savaşın taşıma ek maliyetini hizmet kapasitesine göre en çok yüzde 20 azaltır. |
+| Şifacı | Aylık doğal toparlanmaya en çok 1 sağlık ekler. |
+| Asker | Yerel güvenliğe en çok 3 katkı verir; ordu kayıpları rastgele sivil kimlik öldürmez. |
+| Müzisyen | Valilikte halk memnuniyetine hizmet kapasitesine göre katkı verir. |
+| Bütün yaşayanlar | Tüketim; çocuk/yaşlı yaş ağırlığı, yetişkin silah talebi ve diğer mallarda canlı nüfus. |
+
+**Şehir → Yerel haneler ve işgücü** kartı, tanışılabilen gerçek kişilerin sayısını,
+tüketim yükünü, etkin işgücünü ve hizmet kapasitesini gösterir. Şehrin genel anlatı
+nüfusu ile bu isimli nüfus aynı sayı değildir. Her NPC için bağımsız cüzdan, tek tek
+alışveriş, borç defteri ve özel mülk bütçesi henüz yoktur. Çalışan model, gerçek
+kişilerden türetilen yerel arz/talep ve hizmetlerdir.
+
+## Savaşın etkilerini hafifletmek
+
+- **Önceden:** bölge ambarına kendi envanterinden 8 buğday ayır; kapasite 40. Sivil
+  yardımla aynı aylık hakkı kullanır ve itibar kazandırmaz. Taşınırken stok yanında gitmez.
+- **Darlıkta:** darlık 4'e ulaştığında ambar ayda en çok 4 buğday dağıtır; her birim
+  darlığı 1 azaltır. Yılda 1 birim bozulur. Depo kalıcı kayda ve vârise taşınır.
+- **Savaş boyunca:** sivil erzak/imar/devriye, ordu ikmali/savunma hazırlığı, güvenli
+  yol veya kervanla seyahat; hükümdarken yardım ve savunma ahitleri.
+- **Toparlanırken:** müzakereli barış ve saldırmazlık yeni zayiatı durdurur; refah
+  siyaseti otoriteyi destekler. Onarım, düşük vergi ve yerel yatırımlar mevcut yönetim
+  kanallarıdır. Barış hasarı, göçü ve insan gücü kaybını anında sıfırlamaz.
+
+Bu önlemler farklı sorunlara karşıdır: buğday yaralı askeri geri getirmez, devriye
+binayı onarmaz. Ama daha az darlık ve güvensizlik, üretim ve geçim üzerindeki baskıyı
+azaltarak yeni göç ve otorite sorunlarını sınırlayabilir.
 
 ## Bireysel savaşta bu dalgada değişenler
 
@@ -147,21 +186,51 @@ etkiler. Devlet siyaseti ve müttefikler katkı verir. Güncel güç payı; haz�
 erzak tüketimi ve olayları koşulları değiştirebilir. Muharebe zayiatı kayıtlı RNG ile
 hesaplanır; finalde tek bağımsız zafer zarı kullanılmaz.
 
-### Diplomasi ve ticaret
+### Hükümdar diplomasisi ve ticaret
 
-Hanelere elçi, ittifak ve evlilik teklifleri ile iddiacıyla uzlaşma zaten vardı.
-Beylikler için iki süreli seçenek eklendi:
+**Hanedan → Hükümdar diplomasisi**: karşı sarayı ve teklif türünü seç. Hükümdarın
+gerçek kişi profili, devlet hazinesi, meşruiyeti, saldırganlığı, sözünde durma eğilimi,
+ikili güven/kin ve kişisel ilişki görünür. Kabul hesabına güven, geçmiş savaşlar,
+onur, kişisel bağ, güç dengesi, iki tarafın yorgunluğu ve hükümdarın mizacı katılır.
+Erzak yardımında ihtiyaç ve karşı hazinenin durumu da etkilidir.
 
-| Antlaşma | Elçilik bedeli | Etkisi |
+| Ahit | İlk elçilik bedeli | Süre ve gerçek yükümlülük |
 |---|---|---|
-| Ticaret ahdi | 180 × enflasyon | 12 ay saldırmazlık; o beyliğe giden kervanın getiri çarpanına +0,06. |
-| Ateşkes | 120 × enflasyon | 12 ay saldırmazlık. |
+| Saldırmazlık | 120 × enflasyon | 12 ay; yeni sefer ve haraç engellenir. |
+| Ticaret | 180 × enflasyon | 12 ay saldırmazlık; iki ülkenin yerel ithalatı yüzde 3 ucuzlar; hükümdarın o ülkeye kervan getirisi +0,06. |
+| Karşılıklı savunma | 240 × enflasyon | 12 ay; saldırıya uğrayan müttefike savaş başına en çok 120 asker. Gönderen 150 × enflasyon öder, kendi insan gücü baskısı +2 olur. Ordu sınırı 5000. |
+| Erzak yardımı | 120 × enflasyon | 6 ay; sponsor ayda 30 × enflasyon öder, alıcının darlığı −3 ve göç baskısı −1. Tek başına saldırmazlık değildir. |
+| Müzakereli barış | 100 × enflasyon + güç dengesine göre tazminat | Mevcut savaşı bitirir, 12 ay saldırmazlık; zafer, fetih veya hasar sıfırlama vermez. |
 
-Her ikisi antlaşma bölgesindeki kervan baskın ihtimalini 4 puan azaltır; asgarî risk
-korunur. Başarı; sosyal güç, otorite, şeref ve korkuya bağlıdır. Elçilik bedeli ret
-halinde de ödenir. Antlaşma varken aynı hedefe sefer ve haraç talebi engellenir;
-süresi geçince açılır. Devam eden seferin hedefiyle yeni antlaşma yapılamaz.
-Elçilik, haraç, iddiacıya müdahale ve siyaset değişimi aynı aylık taht hakkını paylaşır.
+Yol/hediye bedeli ret halinde de harcanır. Elçi kabul, ret veya üç ay geçerli karşı
+şartlarla dönebilir. Karşı teklif ilk bedelin yarısı kadar ek ödeme ister; kabul ayrı
+aylık karar ve gerçek para gerektirir. Sonradan savaş/ahit/ihtiyaç değişirse teklif
+kabulü yeniden denetlenir. Gelen yardım talebinde **oyuncu sponsor**, oyuncunun yardım
+isteğine gelen karşı teklifte **karşı saray sponsor** olur; ekran iki tarafı açıkça yazar.
+
+Elçilik, teklif cevabı ve ahit bozma; siyaset, haraç ve iddiacıya müdahaleyle aynı
+aylık hakkı paylaşır. Ahitleri isteyerek bozmak onur −8, itibar −5; ikili güven −35,
+kin +20, üçüncü sarayların güveni −5 getirir. İki aksayan yardım ödemesi veya
+ödenemeyen savunma yükümlülüğü ahitleri bozar, devlet güvenini zedeler.
+
+Hükümdar öldüğünde uygun yetişkin evladı, yoksa ülkedeki yetişkin bir kişi yerini alır;
+bu, tam bir veraset hukuku simülasyonu değildir. Devlet hazinesi ve ahitler sürer,
+kişisel bağ ve mizaç değişebilir. Oyuncunun vârisinde süreler kalan aylara yeniden
+tabanlanır; aynı savaşın savunma desteği ikinci kez doğmaz.
+
+Dış saraylar da hareket eder: yıpranan hükümdar savaş sırasında barış arayabilir.
+Oyuncu sıradan askerse iki devlet kendi karar verir; oyuncu hükümdarsa elçilik ona
+sunulur. Savaş dışı girişim üç ayda en çok bir kez yapılır. Dış saraylar güven,
+ihtiyaç, mizaç ve hazineye göre kendi aralarında ticaret, saldırmazlık, erzak veya
+savunma ahdi kurabilir. Savaş açan hükümdarın seçimi saldırganlığına; hedef seçimi
+güven ve kine bağlı ağırlık taşır. Para yetmezse sefer başlayamaz.
+
+NPC hazinesi gerçek yerel işgücünden türeyen vergi geliri alır; bölgesel yıkım ve
+huzursuzluk geliri/meşruiyeti azaltır, idare/ordu/elçilik/yardım/savunma harcaması
+kasadan düşer. Oyuncunun aldığı haraç da bu hazineden aktarılır: en çok 150 ×
+enflasyon, kasada daha az varsa yalnız mevcut tam akçe; boş kasadan alınamaz.
+Başarılı veya reddedilen haraç talebi ilişkileri bozar. Oyuncunun merkez giderleri
+kendi para havuzunu kullanır; ayrı oyuncu devlet bütçesi henüz yoktur.
 
 ### Devlet siyaseti ve sınırlar
 
@@ -185,10 +254,11 @@ akışı mevcut sistemi kullanmaya devam eder.
 Hedefli kontrol: emir bedeli ve aylık kilit, üç aşamanın kayıt tekrarında eşliği,
 antlaşma/süre/sefer-haraç engeli, gerçek kervan getirisi, sınır ve vali kapısı, siyaset
 etkisi, bozuk/eski kayıt göçü, nefes/toparlanma/yorgunluk ve altı dil. TypeScript ve
-i18n/ikon/dil denetimleri temiz. Geniş hayat simülasyonu bu dalgada çalıştırılmadı.
+i18n/ikon/dil denetimleri temiz. Kabul doğrulaması kısa hedefli senaryolarla sınırlı; geniş tarama tamamlanmadı.
 
 Ordu artık savaşabilir sayı/moral/ikmal ve yaralı havuzuyla temsil edilir; ayrı piyade-süvari birlikleri,
-cephe konumlandırması ve tam devlet bütçesi yoktur. Merkez giderleri oyuncunun mevcut
+cephe konumlandırması ve tüm bireyleri kapsayan maliye yoktur. NPC devlet hazinesi
+yukarıdaki sınırlı gelir/gider akışını uygular. Merkez giderleri oyuncunun mevcut
 para havuzundan, şehir yatırımları yerel hazineden işlenir. Yeni antlaşma ve sefer
 emirleri tek oyunculu sistem içindir; MP protokolü değiştirilmedi. Canlı MP otoritesi,
 telefon üstünde dokunma/okunabilirlik ve insanla denge testi ayrıca doğrulanmalıdır.
