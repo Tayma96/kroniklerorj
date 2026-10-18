@@ -1,5 +1,7 @@
+import { PageHeader } from "../../lib/ui";
+import { DesignPressable as Pressable } from "../../lib/design-pressable";
 import { useEffect } from "react";
-import { View, Text, ScrollView, Pressable } from "react-native";
+import { View, Text, ScrollView} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
@@ -30,38 +32,39 @@ export default function Haberler() {
     <ScreenFresk style={{ paddingTop: insets.top }}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 12 }}>
         <Pressable onPress={() => router.back()}><BackLabel /></Pressable>
-        <Text style={{ fontFamily: F.display, fontSize: 16, color: C.parchment, letterSpacing: 1 }}>{t("scr.haberler")}</Text>
+        
         <View style={{ width: 36 }} />
       </View>
-      <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, paddingHorizontal: 16, marginBottom: 6 }}>
+      <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, paddingHorizontal: 16, marginBottom: 6 }}>
         {t("cal.month." + cal.month_no)} {cal.year} · {t("hab.dropped")}
       </Text>
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 80 }}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 10, marginBottom: 8 }}><GameIcon name="haberler" size={12} color={C.goldDim} /><Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 2, color: C.goldDim, textTransform: "uppercase" }}>{t("hab.news")}</Text></View>
+        <PageHeader title={t("scr.haberler")} />
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 10, marginBottom: 8 }}><GameIcon name="haberler" size={12} color={C.goldDim} /><Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.goldDim, textTransform: "uppercase" }}>{t("hab.news")}</Text></View>
         {news.map((n) => (
-          <View key={n.id} style={{ backgroundColor: C.card, borderWidth: 1, borderColor: n.local ? "rgba(201,168,76,0.45)" : C.border, borderLeftColor: C.gold, borderLeftWidth: n.local ? 4 : 2.5, borderRadius: 8, padding: 12, marginBottom: 8 }}>
+          <View key={n.id} style={{ backgroundColor: C.card, borderWidth: 1, borderColor: n.local ? "rgba(201,168,76,0.45)" : C.border, borderLeftColor: C.gold, borderLeftWidth: n.local ? 4 : 2.5, borderRadius: 5, padding: 12, marginBottom: 8 }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
               {n.cat && CAT_ICON[n.cat] ? <GameIcon name={CAT_ICON[n.cat]} size={12} color={C.gold} /> : null}
-              <Text style={{ fontFamily: F.display, fontSize: 12, color: C.gold, letterSpacing: 0.5 }}>{n.title}</Text>
-              {n.local ? <View style={{ marginLeft: "auto", paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, backgroundColor: "rgba(201,168,76,0.14)", borderWidth: 1, borderColor: "rgba(201,168,76,0.4)" }}><Text style={{ fontFamily: F.display, fontSize: 8, letterSpacing: 1, color: C.gold }}>{t("hab.local").toUpperCase()}</Text></View> : null}
+              <Text style={{ fontFamily: F.display, fontSize: 13, color: C.gold, letterSpacing: 0.5 }}>{n.title}</Text>
+              {n.local ? <View style={{ marginLeft: "auto", paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, backgroundColor: "rgba(201,168,76,0.14)", borderWidth: 1, borderColor: "rgba(201,168,76,0.4)" }}><Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.gold }}>{t("hab.local").toUpperCase()}</Text></View> : null}
             </View>
-            <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchment, lineHeight: 19, marginTop: 4 }}>{n.body}</Text>
+            <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchment, lineHeight: 22, marginTop: 4 }}>{n.body}</Text>
           </View>
         ))}
 
         {realm.length > 0 && (
           <>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 14, marginBottom: 8 }}><GameIcon name="banner" size={12} color={C.goldDim} /><Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 2, color: C.goldDim, textTransform: "uppercase" }}>{t("hab.realm")}</Text></View>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 14, marginBottom: 8 }}><GameIcon name="banner" size={12} color={C.goldDim} /><Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.goldDim, textTransform: "uppercase" }}>{t("hab.realm")}</Text></View>
             {realm.map((e, i) => {
               const evLoc = e.type === "dunya_olayi" ? (e.p || []).map((x: any) => x && typeof x === "object" && "pl" in x ? x.pl : null).find(Boolean) : null;
               const dest = e.type === "ocak_savasi" ? "/oyun/orgutler" : e.type === "piyasa" ? "/oyun/pazar" : evLoc ? "/oyun/diyar/" + evLoc : "/oyun/hanedan"; // haberden ilgili ekrana köprü (salt gezinme; şehir olayı kendi şehrine)
               return (
-              <Pressable key={"realm" + i} onPress={() => { router.push(dest as any); }} style={({ pressed }) => ({ backgroundColor: pressed ? C.cardHi : C.card, borderWidth: 1, borderColor: C.border, borderLeftColor: e.type === "ocak_savasi" ? C.blood : C.sage, borderLeftWidth: 2.5, borderRadius: 8, padding: 12, marginBottom: 8 })}>
-                <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchment, lineHeight: 19 }}>{renderEvt(e.k, e.text, e.p, lang, t, state.player.gender === "kadın")}</Text>
+              <Pressable key={"realm" + i} onPress={() => { router.push(dest as any); }} style={({ pressed }) => ({ backgroundColor: pressed ? C.cardHi : C.card, borderWidth: 1, borderColor: C.border, borderLeftColor: e.type === "ocak_savasi" ? C.blood : C.sage, borderLeftWidth: 2.5, borderRadius: 5, padding: 12, marginBottom: 8 })}>
+                <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchment, lineHeight: 22 }}>{renderEvt(e.k, e.text, e.p, lang, t, state.player.gender === "kadın")}</Text>
                 <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "flex-end", gap: 3, marginTop: 6 }}>
-                  <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 1, color: C.goldDim }}>{t("hab.go").toUpperCase()}</Text>
-                  <Text style={{ color: C.goldDim, fontSize: 11, fontFamily: F.display }}>›</Text>
+                  <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.goldDim }}>{t("hab.go").toUpperCase()}</Text>
+                  <Text style={{ color: C.goldDim, fontSize: 13, fontFamily: F.display }}>›</Text>
                 </View>
               </Pressable>
               );
@@ -71,10 +74,10 @@ export default function Haberler() {
 
         {tips.length > 0 && (
           <>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 14, marginBottom: 8 }}><GameIcon name="star" size={12} color={C.goldDim} /><Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 2, color: C.goldDim, textTransform: "uppercase" }}>{t("tip.head")}</Text></View>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 14, marginBottom: 8 }}><GameIcon name="star" size={12} color={C.goldDim} /><Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.goldDim, textTransform: "uppercase" }}>{t("tip.head")}</Text></View>
             {tips.map((tp) => (
-              <View key={tp.id} style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderLeftColor: C.sage, borderLeftWidth: 2.5, borderRadius: 8, padding: 12, marginBottom: 8 }}>
-                <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchment, lineHeight: 19 }}>
+              <View key={tp.id} style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderLeftColor: C.sage, borderLeftWidth: 2.5, borderRadius: 5, padding: 12, marginBottom: 8 }}>
+                <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchment, lineHeight: 22 }}>
                   {tp.kind === "market"
                     ? applyParams(t("tip.market"), [t("it." + tp.good), placeName(tp.cheap || "", lang), placeName(tp.expensive || "", lang)], lang)
                     : applyParams(t("tip.intel"), [t("fac." + tp.fac + ".n"), t("fac." + tp.vsFac + ".n")], lang)}
@@ -84,13 +87,13 @@ export default function Haberler() {
           </>
         )}
 
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 14, marginBottom: 8 }}><GameIcon name="speaker" size={12} color={C.goldDim} /><Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 2, color: C.goldDim, textTransform: "uppercase" }}>{t("hab.gossip")}</Text></View>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 14, marginBottom: 8 }}><GameIcon name="speaker" size={12} color={C.goldDim} /><Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.goldDim, textTransform: "uppercase" }}>{t("hab.gossip")}</Text></View>
         {gossip.map((g) => (
-          <View key={g.id} style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 8, padding: 12, marginBottom: 8 }}>
-            <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.parchment, lineHeight: 19 }}>“{g.body}”</Text>
+          <View key={g.id} style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 5, padding: 12, marginBottom: 8 }}>
+            <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchment, lineHeight: 22 }}>“{g.body}”</Text>
           </View>
         ))}
-        <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted, textAlign: "center", marginTop: 14 }}>
+        <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, textAlign: "center", marginTop: 14 }}>
           {t("hab.footer")}
         </Text>
       </ScrollView>

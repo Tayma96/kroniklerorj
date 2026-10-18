@@ -1,4 +1,6 @@
-import { View, Text, Pressable, Alert, Switch, ScrollView, Share, TextInput } from "react-native";
+import { PageHeader } from "../../lib/ui";
+import { DesignPressable as Pressable } from "../../lib/design-pressable";
+import { View, Text, Alert, Switch, ScrollView, Share, TextInput } from "react-native";
 import { useEffect, useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -58,144 +60,145 @@ export default function Ayarlar() {
   return (
     <ScreenFresk style={{ paddingTop: insets.top }}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 12 }}>
-        <Pressable onPress={() => router.back()}><Text style={{ color: C.gold, fontFamily: F.display, fontSize: 12 }}>{t("common.back")}</Text></Pressable>
-        <Text style={{ fontFamily: F.display, fontSize: 16, color: C.parchment, letterSpacing: 1 }}>{t("settings.title")}</Text>
+        <Pressable onPress={() => router.back()}><Text style={{ color: C.gold, fontFamily: F.display, fontSize: 13 }}>{t("common.back")}</Text></Pressable>
+        
         <View style={{ width: 40 }} />
       </View>
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: insets.bottom + 40 }}>
+        <PageHeader title={t("settings.title")} />
         <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 18 }}>
           <View style={{ flex: 1, height: 1, backgroundColor: C.goldDim, opacity: 0.6 }} />
           <View style={{ width: 6, height: 6, backgroundColor: C.gold, transform: [{ rotate: "45deg" }], marginHorizontal: 8 }} />
           <View style={{ flex: 1, height: 1, backgroundColor: C.goldDim, opacity: 0.6 }} />
         </View>
-        <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, padding: 14, marginBottom: 18 }}>
-          <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 1, color: C.parchmentMuted, textTransform: "uppercase" }}>{t("settings.generation")}</Text>
+        <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 5, padding: 14, marginBottom: 18 }}>
+          <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.parchmentMuted, textTransform: "uppercase" }}>{t("settings.generation")}</Text>
           <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchment, marginTop: 4 }}>{state?.player.generation || 1}.</Text>
         </View>
 
         {/* Nasıl Oynanır / SSS */}
-        <Pressable onPress={() => { hap("tap"); router.push("/oyun/sss"); }} style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(201,168,76,0.4)", borderRadius: 10, padding: 14, marginBottom: 16 }}>
+        <Pressable onPress={() => { hap("tap"); router.push("/oyun/sss"); }} style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(201,168,76,0.4)", borderRadius: 5, padding: 14, marginBottom: 16 }}>
           <GameIcon name="haberler" size={20} color={C.gold} />
           <View style={{ flex: 1, paddingHorizontal: 8 }}>
-            <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: C.parchment }}>{t("settings.sss")}</Text>
-            <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted, marginTop: 3 }}>{t("settings.sssDesc")}</Text>
+            <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.parchment }}>{t("settings.sss")}</Text>
+            <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, marginTop: 3 }}>{t("settings.sssDesc")}</Text>
           </View>
           <Text style={{ fontFamily: F.display, fontSize: 16, color: C.goldDim }}>›</Text>
         </Pressable>
 
         {/* Emeği Geçenler: üçüncü taraf atıfları ve lisanslar (CC BY simgeler, OFL yazı tipleri, YZ görselleri) */}
-        <Pressable onPress={() => { hap("tap"); router.push("/oyun/emek"); }} style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, padding: 14, marginBottom: 14 }}>
+        <Pressable onPress={() => { hap("tap"); router.push("/oyun/emek"); }} style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 5, padding: 14, marginBottom: 14 }}>
           <GameIcon name="scroll" size={20} color={C.gold} />
           <View style={{ flex: 1, paddingHorizontal: 8 }}>
-            <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: C.parchment }}>{t("scr.emek")}</Text>
-            <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted, marginTop: 3 }}>{t("settings.emekDesc")}</Text>
+            <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.parchment }}>{t("scr.emek")}</Text>
+            <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, marginTop: 3 }}>{t("settings.emekDesc")}</Text>
           </View>
           <Text style={{ fontFamily: F.display, fontSize: 16, color: C.goldDim }}>›</Text>
         </Pressable>
 
         {/* Dil */}
-        <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 2, color: C.gold, marginBottom: 8, textTransform: "uppercase" }}>{t("menu.language")}</Text>
+        <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.gold, marginBottom: 8, textTransform: "uppercase" }}>{t("menu.language")}</Text>
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
           {LANGS.map((l) => {
             const active = l.code === lang;
             return (
-              <Pressable key={l.code} onPress={() => setLang(l.code)} style={{ flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: 9, paddingHorizontal: 12, borderRadius: 8, borderWidth: 1, borderColor: active ? "rgba(201,168,76,0.7)" : C.border, backgroundColor: active ? "rgba(201,168,76,0.18)" : C.card }}>
+              <Pressable key={l.code} onPress={() => setLang(l.code)} style={{ flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: 9, paddingHorizontal: 12, borderRadius: 5, borderWidth: 1, borderColor: active ? "rgba(201,168,76,0.7)" : C.border, backgroundColor: active ? "rgba(201,168,76,0.18)" : C.card }}>
                 <Text style={{ fontSize: 14 }}>{l.flag}</Text>
-                <Text style={{ fontFamily: F.display, fontSize: 12, color: active ? C.gold : C.parchment }}>{l.label}</Text>
+                <Text style={{ fontFamily: F.display, fontSize: 13, color: active ? C.gold : C.parchment }}>{l.label}</Text>
               </Pressable>
             );
           })}
         </View>
 
-        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, padding: 14, marginBottom: 16 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 5, padding: 14, marginBottom: 16 }}>
           <View style={{ flex: 1, paddingHorizontal: 8 }}>
-            <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: C.parchment }}>{t("settings.sound")}</Text>
-            <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted, marginTop: 3 }}>{t("settings.soundDesc")}</Text>
+            <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.parchment }}>{t("settings.sound")}</Text>
+            <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, marginTop: 3 }}>{t("settings.soundDesc")}</Text>
           </View>
           <Switch accessibilityLabel={t("settings.sound")} value={sound} onValueChange={toggleSound} trackColor={{ false: "#3a2f1c", true: "rgba(201,168,76,0.6)" }} thumbColor={sound ? C.gold : "#8a7a55"} />
         </View>
-        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, padding: 14, marginBottom: 16 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 5, padding: 14, marginBottom: 16 }}>
           <View style={{ flex: 1, paddingHorizontal: 8 }}>
-            <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: C.parchment }}>{t("settings.music")}</Text>
-            <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted, marginTop: 3 }}>{t("settings.musicSceneDesc")}</Text>
+            <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.parchment }}>{t("settings.music")}</Text>
+            <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, marginTop: 3 }}>{t("settings.musicSceneDesc")}</Text>
           </View>
           <Switch accessibilityLabel={t("settings.music")} value={music} onValueChange={toggleMusic} trackColor={{ false: "#3a2f1c", true: "rgba(201,168,76,0.6)" }} thumbColor={music ? C.gold : "#8a7a55"} />
         </View>
-        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, padding: 14, marginBottom: 16 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 5, padding: 14, marginBottom: 16 }}>
           <View style={{ flex: 1, paddingHorizontal: 8 }}>
-            <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: C.parchment }}>{t("settings.ambiance")}</Text>
-            <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted, marginTop: 3 }}>{t("settings.ambianceDesc")}</Text>
+            <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.parchment }}>{t("settings.ambiance")}</Text>
+            <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, marginTop: 3 }}>{t("settings.ambianceDesc")}</Text>
           </View>
           <Switch accessibilityLabel={t("settings.ambiance")} value={ambiance} onValueChange={toggleAmbiance} trackColor={{ false: C.borderHi, true: C.gold }} thumbColor={ambiance ? C.goldBright : C.parchmentMuted} />
         </View>
-        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, padding: 14, marginBottom: 16 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 5, padding: 14, marginBottom: 16 }}>
           <View style={{ flex: 1, paddingHorizontal: 8 }}>
-            <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: C.parchment }}>{t("settings.haptics")}</Text>
-            <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted, marginTop: 3 }}>{t("settings.hapticsDesc")}</Text>
+            <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.parchment }}>{t("settings.haptics")}</Text>
+            <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, marginTop: 3 }}>{t("settings.hapticsDesc")}</Text>
           </View>
           <Switch accessibilityLabel={t("settings.haptics")} value={haptics} onValueChange={toggleHaptics} trackColor={{ false: "#3a2f1c", true: "rgba(201,168,76,0.6)" }} thumbColor={haptics ? C.gold : "#8a7a55"} />
         </View>
-        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, padding: 14, marginBottom: 16 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 5, padding: 14, marginBottom: 16 }}>
           <View style={{ flex: 1, paddingHorizontal: 8 }}>
-            <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: C.parchment }}>{t("settings.perf")}</Text>
-            <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted, marginTop: 3 }}>{t("settings.perfDesc")}</Text>
+            <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.parchment }}>{t("settings.perf")}</Text>
+            <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, marginTop: 3 }}>{t("settings.perfDesc")}</Text>
           </View>
           <Switch accessibilityLabel={t("settings.perf")} value={reduceM} onValueChange={toggleReduceM} trackColor={{ false: "#3a2f1c", true: "rgba(201,168,76,0.6)" }} thumbColor={reduceM ? C.gold : "#8a7a55"} />
         </View>
         {/* Kayıt yedeği: ham kayıt JSON'unu paylaş — tek offline kayıt cihazla birlikte kaybolmasın */}
-        <Pressable onPress={async () => { hap("tap"); const j = await exportSaveText(); if (j) Share.share({ message: j }).catch(() => {}); else Alert.alert(t("settings.backup"), t("settings.backupNone")); }} style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, padding: 14, marginBottom: 16 }}>
+        <Pressable onPress={async () => { hap("tap"); const j = await exportSaveText(); if (j) Share.share({ message: j }).catch(() => {}); else Alert.alert(t("settings.backup"), t("settings.backupNone")); }} style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 5, padding: 14, marginBottom: 16 }}>
           <GameIcon name="scroll" size={20} color={C.gold} />
           <View style={{ flex: 1, paddingHorizontal: 8 }}>
-            <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: C.parchment }}>{t("settings.backup")}</Text>
-            <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted, marginTop: 3 }}>{t("settings.backupDesc")}</Text>
+            <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.parchment }}>{t("settings.backup")}</Text>
+            <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, marginTop: 3 }}>{t("settings.backupDesc")}</Text>
           </View>
           <Text style={{ fontFamily: F.display, fontSize: 16, color: C.goldDim }}>›</Text>
         </Pressable>
         {/* Yedeği geri yükle: dışa aktarılan JSON yapıştırılır → doğrulanır → onayla mevcut kaydın üstüne yazılır */}
-        <Pressable onPress={() => { hap("tap"); setRestoreOpen((v) => !v); }} style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, padding: 14, marginBottom: restoreOpen ? 8 : 16 }}>
+        <Pressable onPress={() => { hap("tap"); setRestoreOpen((v) => !v); }} style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 5, padding: 14, marginBottom: restoreOpen ? 8 : 16 }}>
           <GameIcon name="scroll" size={20} color={C.gold} />
           <View style={{ flex: 1, paddingHorizontal: 8 }}>
-            <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: C.parchment }}>{t("settings.restore")}</Text>
-            <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted, marginTop: 3 }}>{t("settings.restoreDesc")}</Text>
+            <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.parchment }}>{t("settings.restore")}</Text>
+            <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, marginTop: 3 }}>{t("settings.restoreDesc")}</Text>
           </View>
           <Text style={{ fontFamily: F.display, fontSize: 16, color: C.goldDim }}>{restoreOpen ? "×" : "›"}</Text>
         </Pressable>
         {restoreOpen && (
-          <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, padding: 12, marginBottom: 16 }}>
+          <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 5, padding: 12, marginBottom: 16 }}>
             <TextInput value={restoreText} onChangeText={setRestoreText} multiline placeholder={t("settings.restorePaste")} placeholderTextColor={C.parchmentMuted}
-              style={{ minHeight: 90, maxHeight: 160, borderWidth: 1, borderColor: C.border, borderRadius: 8, padding: 10, color: C.parchment, fontFamily: F.serif, fontSize: 11, textAlignVertical: "top" }} />
-            <Pressable disabled={!restoreText.trim()} onPress={doRestore} style={{ marginTop: 10, paddingVertical: 11, borderRadius: 8, borderWidth: 1, alignItems: "center", borderColor: restoreText.trim() ? "rgba(201,168,76,0.6)" : C.border, backgroundColor: restoreText.trim() ? "rgba(201,168,76,0.12)" : C.bg }}>
-              <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: restoreText.trim() ? C.gold : C.parchmentMuted }}>{t("settings.restoreGo")}</Text>
+              style={{ minHeight: 90, maxHeight: 160, borderWidth: 1, borderColor: C.border, borderRadius: 5, padding: 10, color: C.parchment, fontFamily: F.serif, fontSize: 15, textAlignVertical: "top" }} />
+            <Pressable disabled={!restoreText.trim()} onPress={doRestore} style={{ marginTop: 10, paddingVertical: 11, borderRadius: 5, borderWidth: 1, alignItems: "center", borderColor: restoreText.trim() ? "rgba(201,168,76,0.6)" : C.border, backgroundColor: restoreText.trim() ? "rgba(201,168,76,0.12)" : C.bg }}>
+              <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: restoreText.trim() ? C.gold : C.parchmentMuted }}>{t("settings.restoreGo")}</Text>
             </Pressable>
           </View>
         )}
         {/* Oturum kaydı: yalnız bu cihazda; gerçek oyuncu testinde nerede takıldığını gösterir (TASARIM_PUSULASI Faz 4) */}
-        <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, padding: 14, marginBottom: 16 }}>
-          <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: C.parchment }}>{t("oturum.baslik")}</Text>
-          <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted, marginTop: 3 }}>{t("oturum.not")}</Text>
+        <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 5, padding: 14, marginBottom: 16 }}>
+          <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.parchment }}>{t("oturum.baslik")}</Text>
+          <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, marginTop: 3 }}>{t("oturum.not")}</Text>
           {!oturum || !oturum.n ? (
-            <Text style={{ fontFamily: F.serifItalic, fontSize: 11.5, color: C.parchmentDim, marginTop: 10 }}>{t("oturum.bos")}</Text>
+            <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentDim, marginTop: 10 }}>{t("oturum.bos")}</Text>
           ) : (
             <View style={{ marginTop: 10, gap: 5 }}>
               {([["oturum.n", oturum.n], ["oturum.sure", oturum.sureDk], ["oturum.ilk", oturum.ilkEylemSn ?? "—"], ["oturum.eylem", oturum.eylem], ["oturum.dk", oturum.dkBasinaEylem], ["oturum.ay", oturum.ay]] as [string, number | string][]).map(([k, v]) => (
                 <View key={k} style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                  <Text style={{ fontFamily: F.serif, fontSize: 12.5, color: C.parchmentMuted }}>{t(k)}</Text>
-                  <Text style={{ fontFamily: F.display, fontSize: 12.5, color: C.parchment }}>{v}</Text>
+                  <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchmentMuted }}>{t(k)}</Text>
+                  <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchment }}>{v}</Text>
                 </View>
               ))}
               {([["oturum.ekran", oturum.ekranlar], ["oturum.birak", oturum.birakilan]] as [string, [string, number][]][]).filter(([, l]) => l.length).map(([k, l]) => (
-                <Text key={k} style={{ fontFamily: F.serifItalic, fontSize: 11.5, color: C.parchmentMuted, marginTop: 3 }}>{t(k)}: {l.map(([ad, n]) => `${ekranAdi(ad)} (${n})`).join(" · ")}</Text>
+                <Text key={k} style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, marginTop: 3 }}>{t(k)}: {l.map(([ad, n]) => `${ekranAdi(ad)} (${n})`).join(" · ")}</Text>
               ))}
-              <Pressable onPress={() => { hap("tap"); oturumSil().then(() => oturumOzeti().then(setOturum)); }} style={{ alignSelf: "flex-start", marginTop: 8, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 8, borderWidth: 1, borderColor: C.border }}>
-                <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 1, color: C.parchmentMuted }}>{t("oturum.sil")}</Text>
+              <Pressable onPress={() => { hap("tap"); oturumSil().then(() => oturumOzeti().then(setOturum)); }} style={{ alignSelf: "flex-start", marginTop: 8, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 5, borderWidth: 1, borderColor: C.border }}>
+                <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.parchmentMuted }}>{t("oturum.sil")}</Text>
               </Pressable>
             </View>
           )}
         </View>
-        <Pressable onPress={reset} style={{ paddingVertical: 14, borderRadius: 9, borderWidth: 1, borderColor: "rgba(200,64,64,0.4)", backgroundColor: "rgba(200,64,64,0.08)", alignItems: "center" }}>
+        <Pressable onPress={reset} style={{ paddingVertical: 14, borderRadius: 5, borderWidth: 1, borderColor: "rgba(200,64,64,0.4)", backgroundColor: "rgba(200,64,64,0.08)", alignItems: "center" }}>
           <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1.5, color: C.blood }}>{t("settings.newLife")}</Text>
         </Pressable>
-        <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted, textAlign: "center", marginTop: 24 }}>Kronikler: Küllerin Mirası · v{Constants.expoConfig?.version || "1.0.0"}</Text>
+        <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, textAlign: "center", marginTop: 24 }}>Kronikler: Küllerin Mirası · v{Constants.expoConfig?.version || "1.0.0"}</Text>
       </ScrollView>
     </ScreenFresk>
   );

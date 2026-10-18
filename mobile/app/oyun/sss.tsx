@@ -1,5 +1,6 @@
+import { DesignPressable as Pressable } from "../../lib/design-pressable";
 import { useState } from "react";
-import { View, Text, ScrollView, Pressable, LayoutAnimation, Platform, UIManager } from "react-native";
+import { View, Text, ScrollView, LayoutAnimation, Platform, UIManager } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useI18n } from "../../lib/i18n";
@@ -37,7 +38,7 @@ export default function SSS() {
           <View key={sec.title} style={{ marginBottom: 16 }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 9 }}>
               <GameIcon name={sec.icon} size={15} color={C.gold} />
-              <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 1.5, color: C.gold }}>{sec.title.toUpperCase()}</Text>
+              <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1.5, color: C.gold }}>{sec.title.toUpperCase()}</Text>
               <View style={{ flex: 1, height: 1, backgroundColor: "rgba(201,168,76,0.25)" }} />
             </View>
 
@@ -45,13 +46,13 @@ export default function SSS() {
               const key = sec.title + i;
               const isOpen = open === key;
               return (
-                <Pressable key={key} onPress={() => toggle(key)} style={{ backgroundColor: C.card, borderWidth: 1, borderColor: isOpen ? "rgba(201,168,76,0.45)" : C.border, borderRadius: 11, padding: 13, marginBottom: 8 }}>
+                <Pressable key={key} onPress={() => toggle(key)} style={{ backgroundColor: C.card, borderWidth: 1, borderColor: isOpen ? "rgba(201,168,76,0.45)" : C.border, borderRadius: 5, padding: 13, marginBottom: 8 }}>
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
                     <Text style={{ flex: 1, fontFamily: F.display, fontSize: 13, color: isOpen ? C.gold : C.parchment, lineHeight: 19 }}>{item.q}</Text>
                     <Text style={{ fontFamily: F.display, fontSize: 16, color: C.goldDim }}>{isOpen ? "−" : "+"}</Text>
                   </View>
                   {isOpen && (
-                    <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchmentMuted, lineHeight: 20, marginTop: 9 }}>{item.a}</Text>
+                    <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchmentMuted, lineHeight: 22, marginTop: 9 }}>{item.a}</Text>
                   )}
                 </Pressable>
               );

@@ -1,5 +1,6 @@
+import { DesignPressable as Pressable } from "./design-pressable";
 import { useState } from "react";
-import { Modal, View, Text, ScrollView, Pressable } from "react-native";
+import { Modal, View, Text, ScrollView} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { GameState, WorkStyle, workForecast } from "./game";
 import { useI18n, applyParams, yuzdeL } from "./i18n";
@@ -31,16 +32,16 @@ export function EmekOngoru({ state, styleId }: { state: GameState; styleId: Work
     <View style={{ flexDirection: lang === "ar" ? "row-reverse" : "row", alignItems: "center", gap: 8, marginBottom: 7 }}>
       <View accessible accessibilityRole="text" accessibilityLabel={[range, cost, rest, risk].filter(Boolean).join("; ")} style={{ flex: 1 }}>
         <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.gold, textAlign: lang === "ar" ? "right" : "left" }}>{range}</Text>
-        <Text style={{ fontFamily: F.serif, fontSize: 11.5, lineHeight: 15, color: C.parchmentDim }}>{[cost, rest].filter(Boolean).join(" · ")}</Text>
-        {f.fail > 0 && <Text style={{ fontFamily: F.serif, fontSize: 11.5, color: C.ember }}>{risk}</Text>}
+        <Text style={{ fontFamily: F.serif, fontSize: 15, lineHeight: 22, color: C.parchmentDim }}>{[cost, rest].filter(Boolean).join(" · ")}</Text>
+        {f.fail > 0 && <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.ember }}>{risk}</Text>}
       </View>
-      <Pressable accessibilityRole="button" accessibilityLabel={t("work.forecast.details")} onPress={() => setOpen(true)} style={{ minHeight: 44, maxWidth: "45%", borderWidth: 1, borderColor: C.borderHi, borderRadius: 8, paddingHorizontal: 10, justifyContent: "center" }}>
-        <Text style={{ fontFamily: F.serif, fontSize: 12, color: C.parchment, textAlign: "center" }}>{t("work.forecast.details")}</Text>
+      <Pressable accessibilityRole="button" accessibilityLabel={t("work.forecast.details")} onPress={() => setOpen(true)} style={{ minHeight: 44, maxWidth: "45%", borderWidth: 1, borderColor: C.borderHi, borderRadius: 5, paddingHorizontal: 10, justifyContent: "center" }}>
+        <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchment, textAlign: "center" }}>{t("work.forecast.details")}</Text>
       </Pressable>
     </View>
     <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
       <View style={{ flex: 1, backgroundColor: C.bg + "F2", justifyContent: "center", paddingHorizontal: 16, paddingTop: insets.top + 16, paddingBottom: insets.bottom + 16 }}>
-        <View accessibilityViewIsModal style={{ maxHeight: "100%", width: "100%", maxWidth: 440, alignSelf: "center", backgroundColor: C.card, borderWidth: 1, borderColor: C.borderHi, borderRadius: 14 }}>
+        <View accessibilityViewIsModal style={{ maxHeight: "100%", width: "100%", maxWidth: 440, alignSelf: "center", backgroundColor: C.card, borderWidth: 1, borderColor: C.borderHi, borderRadius: 5 }}>
           <View style={{ flexDirection: lang === "ar" ? "row-reverse" : "row", alignItems: "center", gap: 8, paddingHorizontal: 16, paddingTop: 10, paddingBottom: 6 }}>
             <GameIcon name="calis" size={19} color={C.gold} />
             <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 20, color: C.gold }}>{t("work.forecast.details")}</Text>
@@ -48,14 +49,14 @@ export function EmekOngoru({ state, styleId }: { state: GameState; styleId: Work
           </View>
           <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 14 }}>
             <Text style={{ fontFamily: F.serif, fontSize: 22, color: C.parchment, marginBottom: 4 }}>{range}</Text>
-            <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.parchmentDim, lineHeight: 19, marginBottom: 10 }}>{t("work.hint." + styleId)}</Text>
+            <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentDim, lineHeight: 22, marginBottom: 10 }}>{t("work.hint." + styleId)}</Text>
             {lines.map(([label, value]) => <View key={label} style={{ flexDirection: lang === "ar" ? "row-reverse" : "row", gap: 10, paddingVertical: 5, borderBottomWidth: 1, borderColor: C.border }}>
-              <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 14, color: C.parchmentDim }}>{label}</Text><Text style={{ fontFamily: F.serif, fontSize: 14, color: C.gold }}>{value}</Text>
+              <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 15, color: C.parchmentDim }}>{label}</Text><Text style={{ fontFamily: F.serif, fontSize: 15, color: C.gold }}>{value}</Text>
             </View>)}
-            <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.sage, marginTop: 12 }}>{[cost, rest].filter(Boolean).join(" · ")}</Text>
-            <Text style={{ fontFamily: F.serif, fontSize: 13, color: f.fail ? C.ember : C.parchmentDim, marginTop: 4 }}>{risk}</Text>
-            {!!f.fail && <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.ember, lineHeight: 19, marginTop: 4 }}>{text("work.forecast.loss", [f.lossMin, f.lossMax])} {t(styleId === "hirsli" ? "work.forecast.hurt" : "work.forecast.shame")}</Text>}
-            <Text style={{ fontFamily: F.serifItalic, fontSize: 12, lineHeight: 18, color: C.parchmentMuted, marginTop: 12 }}>{t("work.forecast.extra")}</Text>
+            <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.sage, marginTop: 12 }}>{[cost, rest].filter(Boolean).join(" · ")}</Text>
+            <Text style={{ fontFamily: F.serif, fontSize: 15, color: f.fail ? C.ember : C.parchmentDim, marginTop: 4 }}>{risk}</Text>
+            {!!f.fail && <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.ember, lineHeight: 22, marginTop: 4 }}>{text("work.forecast.loss", [f.lossMin, f.lossMax])} {t(styleId === "hirsli" ? "work.forecast.hurt" : "work.forecast.shame")}</Text>}
+            <Text style={{ fontFamily: F.serifItalic, fontSize: 15, lineHeight: 22, color: C.parchmentMuted, marginTop: 12 }}>{t("work.forecast.extra")}</Text>
           </ScrollView>
         </View>
       </View>

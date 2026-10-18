@@ -1,5 +1,7 @@
+import { PageHeader } from "../../lib/ui";
+import { DesignPressable as Pressable } from "../../lib/design-pressable";
 import { useRef } from "react";
-import { View, Text, ScrollView, Pressable } from "react-native";
+import { View, Text, ScrollView} from "react-native";
 import { kartPaylas, metinPaylas } from "../../lib/kart-paylas";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -84,37 +86,33 @@ export default function Roman() {
   return (
     <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ padding: 20, paddingTop: insets.top + 12, paddingBottom: insets.bottom + 60 }}>
       <Pressable onPress={() => router.back()} style={{ marginBottom: 10 }}><BackLabel /></Pressable>
-      <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 4, color: C.goldDim, textAlign: "center" }}>{t("rom.eyebrow")}</Text>
-      <Text style={{ fontFamily: F.display, fontSize: 24, color: C.gold, textAlign: "center", marginTop: 8 }}>{state.player.name}</Text>
-      <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.parchmentMuted, textAlign: "center", marginBottom: 4 }}>{t("rom.subtitle")}</Text>
-      <Text style={{ color: C.gold, textAlign: "center", marginVertical: 14 }}>❧ ⚜ ❧</Text>
-
-      {/* Paylaşım kartı: Yankı hafızasından hayatın romanı */}
-      <View ref={kartRef} collapsable={false} style={{ backgroundColor: C.bg, borderRadius: 14, marginBottom: 12 }}>
-      <View style={{ borderWidth: 1.5, borderColor: "rgba(201,168,76,0.55)", borderRadius: 14, paddingVertical: 18, paddingHorizontal: 16, backgroundColor: C.card }}>
-        <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 3, color: C.gold, textAlign: "center" }}>❧ {t("roman.kart")} ❧</Text>
-        <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted, textAlign: "center", marginTop: 3, marginBottom: 10 }}>{t("roman.alt")}</Text>
+      <PageHeader kicker={t("rom.eyebrow")} title={state.player.name} sub={t("rom.subtitle")} />
+        {/* Paylaşım kartı: Yankı hafızasından hayatın romanı */}
+      <View ref={kartRef} collapsable={false} style={{ backgroundColor: C.bg, borderRadius: 5, marginBottom: 12 }}>
+      <View style={{ borderWidth: 1.5, borderColor: "rgba(201,168,76,0.55)", borderRadius: 5, paddingVertical: 18, paddingHorizontal: 16, backgroundColor: C.card }}>
+        <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.gold, textAlign: "center" }}>❧ {t("roman.kart")} ❧</Text>
+        <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, textAlign: "center", marginTop: 3, marginBottom: 10 }}>{t("roman.alt")}</Text>
         {roman.map((line, i) => (
-          <Text key={i} style={{ fontFamily: i === 0 ? F.display : F.serif, fontSize: i === 0 ? 14 : 13, lineHeight: 20, color: i === 0 ? C.parchment : C.parchmentDim, textAlign: "center", marginBottom: 5 }}>{line}</Text>
+          <Text key={i} style={{ fontFamily: i === 0 ? F.display : F.serif, fontSize: i === 0 ? 14 : 13, lineHeight: 22, color: i === 0 ? C.parchment : C.parchmentDim, textAlign: "center", marginBottom: 5 }}>{line}</Text>
         ))}
-        <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 2, color: C.goldDim, textAlign: "center", marginTop: 8 }}>KRONIKLER · ⚜</Text>
+        <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.goldDim, textAlign: "center", marginTop: 8 }}>KRONIKLER · ⚜</Text>
       </View>
       </View>
 
-      <Pressable onPress={onShare} style={{ alignSelf: "center", flexDirection: "row", alignItems: "center", gap: 7, paddingVertical: 8, paddingHorizontal: 18, borderRadius: 9, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: "rgba(201,168,76,0.10)", marginBottom: 18 }}>
-        <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 1, color: C.gold }}>{t("rom.share")}</Text>
+      <Pressable onPress={onShare} style={{ alignSelf: "center", flexDirection: "row", alignItems: "center", gap: 7, paddingVertical: 8, paddingHorizontal: 18, borderRadius: 5, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: "rgba(201,168,76,0.10)", marginBottom: 18 }}>
+        <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.gold }}>{t("rom.share")}</Text>
       </Pressable>
       <Pressable onPress={onShareText} hitSlop={8} style={{ alignSelf: "center", marginTop: -10, marginBottom: 18 }}>
-        <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted }}>{t("paylas.metin")}</Text>
+        <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted }}>{t("paylas.metin")}</Text>
       </Pressable>
 
       {chapters.length === 0 ? (
         <Text style={{ fontFamily: F.serifItalic, color: C.parchmentMuted, textAlign: "center", marginTop: 20 }}>{t("rom.empty")}</Text>
       ) : chapters.map((c, ci) => (
         <View key={ci} style={{ marginBottom: 24 }}>
-          <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 3, color: C.goldDim, textAlign: "center" }}>{t("rom.chapter")} {ci + 1}</Text>
+          <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.goldDim, textAlign: "center" }}>{t("rom.chapter")} {ci + 1}</Text>
           <Text style={{ fontFamily: F.display, fontSize: 19, color: C.gold, textAlign: "center", marginTop: 2 }}>{t("rom.band." + c.band.key)}</Text>
-          {(() => { const narr = bandNarrative(c.events, t); return narr ? <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.parchmentMuted, textAlign: "center", lineHeight: 20, marginTop: 8, paddingHorizontal: 8 }}>{narr}</Text> : null; })()}
+          {(() => { const narr = bandNarrative(c.events, t); return narr ? <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, textAlign: "center", lineHeight: 22, marginTop: 8, paddingHorizontal: 8 }}>{narr}</Text> : null; })()}
           <View style={{ width: "55%", height: 1, backgroundColor: C.borderHi, alignSelf: "center", marginVertical: 14 }} />
           {c.events.map((e, i) => (
             <View key={i} style={{ flexDirection: "row", gap: 8, marginBottom: e.landmark ? 10 : 6 }}>
@@ -134,15 +132,15 @@ export default function Roman() {
           p.fame >= 50 ? t("rom.t.famed") : null,
         ].filter(Boolean).join(" · ");
         return (
-          <View style={{ borderWidth: 1, borderColor: "rgba(201,168,76,0.4)", borderRadius: 12, padding: 16, marginBottom: 16, backgroundColor: "rgba(201,168,76,0.06)" }}>
-            <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 3, color: C.goldDim, textAlign: "center" }}>{t("rom.tallyHeader")}</Text>
-            <Text style={{ fontFamily: F.serifItalic, fontSize: 14, color: C.parchment, textAlign: "center", lineHeight: 22, marginTop: 8 }}>{tally}.</Text>
+          <View style={{ borderWidth: 1, borderColor: "rgba(201,168,76,0.4)", borderRadius: 5, padding: 16, marginBottom: 16, backgroundColor: "rgba(201,168,76,0.06)" }}>
+            <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.goldDim, textAlign: "center" }}>{t("rom.tallyHeader")}</Text>
+            <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchment, textAlign: "center", lineHeight: 22, marginTop: 8 }}>{tally}.</Text>
           </View>
         );
       })()}
 
       <Text style={{ color: C.gold, textAlign: "center", marginVertical: 14 }}>❧ ⚜ ❧</Text>
-      <Text style={{ fontFamily: F.serifItalic, fontSize: 14, color: C.parchmentMuted, textAlign: "center", lineHeight: 22 }}>
+      <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, textAlign: "center", lineHeight: 22 }}>
         {state.player.dead ? t("rom.closeDead") : t("rom.closeAlive")}
       </Text>
     </ScrollView>

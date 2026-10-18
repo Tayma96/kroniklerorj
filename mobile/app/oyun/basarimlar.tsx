@@ -1,4 +1,5 @@
-import { View, Text, ScrollView, Pressable } from "react-native";
+import { DesignPressable as Pressable } from "../../lib/design-pressable";
+import { View, Text, ScrollView} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
@@ -52,30 +53,30 @@ export default function Basarimlar() {
         <PageHeader kicker={t("scr.basarimlar")} title={t("scr.basarimlar")} sub={t("ach.subtitle")} />
         {/* En yakın hedefler: "az kaldı" şeridi */}
         {nearest.length > 0 && (
-          <View style={{ backgroundColor: "rgba(201,168,76,0.07)", borderWidth: 1, borderColor: "rgba(201,168,76,0.4)", borderRadius: 11, padding: 12, marginBottom: 12 }}>
-            <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 2, color: C.goldDim, marginBottom: 8 }}>{t("ach.nearest").toUpperCase()}</Text>
+          <View style={{ backgroundColor: "rgba(201,168,76,0.07)", borderWidth: 1, borderColor: "rgba(201,168,76,0.4)", borderRadius: 5, padding: 12, marginBottom: 12 }}>
+            <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.goldDim, marginBottom: 8 }}>{t("ach.nearest").toUpperCase()}</Text>
             {nearest.map(({ a, prog }) => (
               <View key={a.id} style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 6 }}>
                 <GameIcon name={a.icon} size={15} color={C.gold} />
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontFamily: F.display, fontSize: 11.5, color: C.parchment }}>{t("ach." + a.id + ".l")}</Text>
+                  <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchment }}>{t("ach." + a.id + ".l")}</Text>
                   <View style={{ height: 4, borderRadius: 2, backgroundColor: "rgba(201,168,76,0.15)", marginTop: 4, overflow: "hidden" }}>
                     <View style={{ width: `${Math.round((prog ?? 0) * 100)}%`, height: "100%", backgroundColor: C.gold }} />
                   </View>
                 </View>
-                <Text style={{ fontFamily: F.display, fontSize: 10, color: C.goldDim }}>{yuzdeL(Math.round((prog ?? 0) * 100), lang)}</Text>
+                <Text style={{ fontFamily: F.display, fontSize: 13, color: C.goldDim }}>{yuzdeL(Math.round((prog ?? 0) * 100), lang)}</Text>
               </View>
             ))}
           </View>
         )}
         {list.map(({ a, done, prog }) => (
-          <View key={a.id} style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.card, borderWidth: 1, borderColor: done ? "rgba(201,168,76,0.45)" : C.border, borderRadius: 11, padding: 13, marginBottom: 8, opacity: done ? 1 : 0.55 }}>
+          <View key={a.id} style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.card, borderWidth: 1, borderColor: done ? "rgba(201,168,76,0.45)" : C.border, borderRadius: 5, padding: 13, marginBottom: 8, opacity: done ? 1 : 0.55 }}>
             <View style={{ width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center", backgroundColor: done ? "rgba(201,168,76,0.12)" : "rgba(255,255,255,0.04)", borderWidth: 1, borderColor: done ? "rgba(201,168,76,0.4)" : C.border }}>
               <GameIcon name={a.icon} size={19} color={done ? C.gold : C.parchmentMuted} />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={{ fontFamily: F.display, fontSize: 13, color: done ? C.parchment : C.parchmentMuted, letterSpacing: 0.5 }}>{t("ach." + a.id + ".l")}</Text>
-              <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted, marginTop: 2 }}>{t("ach." + a.id + ".d")}</Text>
+              <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchmentMuted, marginTop: 2 }}>{t("ach." + a.id + ".d")}</Text>
               {!done && prog !== undefined && prog > 0 && (
                 <View style={{ height: 3, borderRadius: 2, backgroundColor: "rgba(255,255,255,0.07)", marginTop: 5, overflow: "hidden" }}>
                   <View style={{ width: `${Math.round(prog * 100)}%`, height: "100%", backgroundColor: "rgba(201,168,76,0.55)" }} />
@@ -83,8 +84,8 @@ export default function Basarimlar() {
               )}
             </View>
             <View style={{ alignItems: "flex-end", gap: 3 }}>
-              <View style={{ backgroundColor: done ? "rgba(201,168,76,0.16)" : "rgba(255,255,255,0.05)", borderRadius: 10, paddingVertical: 2, paddingHorizontal: 7 }}>
-                <Text style={{ fontFamily: F.display, fontSize: 9, color: done ? C.gold : C.parchmentMuted }}>+1 ✦</Text>
+              <View style={{ backgroundColor: done ? "rgba(201,168,76,0.16)" : "rgba(255,255,255,0.05)", borderRadius: 5, paddingVertical: 2, paddingHorizontal: 7 }}>
+                <Text style={{ fontFamily: F.display, fontSize: 13, color: done ? C.gold : C.parchmentMuted }}>+1 ✦</Text>
               </View>
               {done && <GameIcon name="medal" size={15} color={C.gold} />}
             </View>

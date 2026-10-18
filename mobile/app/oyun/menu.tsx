@@ -1,4 +1,6 @@
-import { View, Text, Pressable, Alert, ScrollView } from "react-native";
+import { PageHeader } from "../../lib/ui";
+import { DesignPressable as Pressable } from "../../lib/design-pressable";
+import { View, Text, Alert, ScrollView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
@@ -78,25 +80,17 @@ export default function Menu() {
   return (
     <ScreenFresk>
     <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 18, paddingTop: insets.top + 16, paddingBottom: insets.bottom + 90 }}>
-      {/* Başlık */}
-      <Text style={{ fontFamily: F.display, fontSize: 22, color: C.parchment, letterSpacing: 1.5, textAlign: "center" }}>{t("menu.title")}</Text>
-      <Text style={{ fontFamily: F.serifItalic, fontSize: 12.5, color: C.parchmentMuted, textAlign: "center", marginTop: 2 }}>{t("app.subtitle")}</Text>
-      <View style={{ flexDirection: "row", alignItems: "center", marginTop: 14, marginBottom: 4 }}>
-        <View style={{ flex: 1, height: 1, backgroundColor: C.goldDim, opacity: 0.6 }} />
-        <View style={{ width: 6, height: 6, backgroundColor: C.gold, transform: [{ rotate: "45deg" }], marginHorizontal: 8 }} />
-        <View style={{ flex: 1, height: 1, backgroundColor: C.goldDim, opacity: 0.6 }} />
-      </View>
-
-      {SECTIONS.map((sec) => ({ ...sec, items: sec.items.filter((m) => !state || !m.acik || m.acik(state)) })).filter((sec) => sec.items.length).map((sec) => (
+      <PageHeader title={t("menu.title")} sub={t("app.subtitle")} />
+        {SECTIONS.map((sec) => ({ ...sec, items: sec.items.filter((m) => !state || !m.acik || m.acik(state)) })).filter((sec) => sec.items.length).map((sec) => (
         <View key={sec.title} style={{ marginTop: 14 }}>
           {/* Bölüm başlığı: ikon + etiket + altın çizgi */}
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 9, paddingHorizontal: 2 }}>
             <GameIcon name={SEC_ICON[sec.title]} size={14} color={C.gold} />
-            <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 2, color: C.gold, textTransform: "uppercase" }}>{t(SEC_KEY[sec.title] || "")}</Text>
+            <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.gold, textTransform: "uppercase" }}>{t(SEC_KEY[sec.title] || "")}</Text>
             <View style={{ flex: 1, height: 1, backgroundColor: C.border }} />
           </View>
           {/* Gruplu panel */}
-          <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 11, overflow: "hidden" }}>
+          <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 5, overflow: "hidden" }}>
             {sec.items.map((m, i) => {
               const key = m.to.split("/").pop() || "";
               return (
@@ -107,13 +101,13 @@ export default function Menu() {
                     backgroundColor: pressed ? C.cardHi : "transparent",
                   })}>
                   {/* İkon kutusu */}
-                  <View style={{ width: 34, height: 34, borderRadius: 8, backgroundColor: "rgba(201,168,76,0.08)", borderWidth: 1, borderColor: "rgba(201,168,76,0.22)", alignItems: "center", justifyContent: "center" }}>
+                  <View style={{ width: 34, height: 34, borderRadius: 5, backgroundColor: "rgba(201,168,76,0.08)", borderWidth: 1, borderColor: "rgba(201,168,76,0.22)", alignItems: "center", justifyContent: "center" }}>
                     <GameIcon name={m.icon} size={18} color={C.gold} />
                   </View>
                   <Text style={{ flex: 1, fontFamily: F.display, fontSize: 13, letterSpacing: 0.8, color: C.parchment }}>{t("scr." + key)}</Text>
                   {(() => { const b = badgeFor(key); return b.n > 0 ? (
-                    <View style={{ minWidth: 18, height: 18, borderRadius: 9, paddingHorizontal: 5, alignItems: "center", justifyContent: "center", backgroundColor: b.urgent ? "rgba(200,64,64,0.9)" : "rgba(201,168,76,0.9)" }}>
-                      <Text style={{ fontFamily: F.display, fontSize: 10, color: C.inkOnGold }}>{b.n}</Text>
+                    <View style={{ minWidth: 18, height: 18, borderRadius: 5, paddingHorizontal: 5, alignItems: "center", justifyContent: "center", backgroundColor: b.urgent ? "rgba(200,64,64,0.9)" : "rgba(201,168,76,0.9)" }}>
+                      <Text style={{ fontFamily: F.display, fontSize: 13, color: C.inkOnGold }}>{b.n}</Text>
                     </View>
                   ) : null; })()}
                   <Text style={{ color: C.goldDim, fontSize: 16, fontFamily: F.display }}>›</Text>
@@ -125,12 +119,12 @@ export default function Menu() {
       ))}
 
       {state && SECTIONS.some((sec) => sec.items.some((m) => m.acik && !m.acik(state))) ? (
-        <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, textAlign: "center", marginTop: 16 }}>{t("menu.buyudukce")}</Text>
+        <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, textAlign: "center", marginTop: 16 }}>{t("menu.buyudukce")}</Text>
       ) : null}
       <View style={{ height: 18 }} />
       {/* MP'de "Yeni Hayat" gizli: resetGame no-op ama navigasyon yeni-oyun ekranına düşürüp SP kaydını ezdirebilirdi. */}
       {!mpMode && (
-      <Pressable onPress={confirmReset} style={{ paddingVertical: 14, borderRadius: 9, borderWidth: 1, borderColor: "rgba(200,64,64,0.4)", backgroundColor: "rgba(200,64,64,0.08)", alignItems: "center" }}>
+      <Pressable onPress={confirmReset} style={{ paddingVertical: 14, borderRadius: 5, borderWidth: 1, borderColor: "rgba(200,64,64,0.4)", backgroundColor: "rgba(200,64,64,0.08)", alignItems: "center" }}>
         <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1.5, color: C.blood }}>{t("settings.newLife")}</Text>
       </Pressable>
       )}
