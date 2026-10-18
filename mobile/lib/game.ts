@@ -5103,6 +5103,7 @@ function realmDiplomacyTick(s: GameState): void {
       if (paid) {
         const world = s.warWorld || (s.warWorld = emptyWarWorld()); world.regions[t.a] = world.regions[t.a] || peacefulRegion();
         world.regions[t.a].shortage = Math.max(0, Math.round((world.regions[t.a].shortage - 3) * 100) / 100);
+        world.regions[t.a].displacement = Math.max(0, Math.round((world.regions[t.a].displacement - 1) * 100) / 100);
         changeBond(d, t.a, t.b, 1, -1);
       } else if (t.missed >= 2) {
         breakAccords(d, t.b, t.a, s.turn);

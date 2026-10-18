@@ -41,6 +41,8 @@ const assert = require('node:assert/strict'), fs = require('node:fs'), path = re
   assert.equal(relief.diplomacy.rulers[target].treasury, baseline.diplomacy.rulers[target].treasury - Math.round(30 * g.inflationFactor(relief)));
   assert.equal(relief.warWorld.regions.demirhan.shortage, 37);
   const once = copy(relief); g.realmDiplomacyTick(relief); assert.deepEqual(relief, once);
+  const displaced = copy(relief); displaced.turn = 2; displaced.warWorld.regions.demirhan.shortage = 0; displaced.warWorld.regions.demirhan.displacement = 15;
+  g.realmDiplomacyTick(displaced); assert.equal(displaced.warWorld.regions.demirhan.displacement, 14); assert.equal(displaced.warWorld.regions.demirhan.shortage, 0);
   const sponsored = copy(king); sponsored.turn = 1; d.signAccord(sponsored.diplomacy, target, 'demirhan', 'yardim', 0, 'foreign-relief');
   const sponsorMoney = sponsored.player.money; g.realmDiplomacyTick(sponsored); assert.equal(sponsored.player.money, sponsorMoney - Math.round(30 * g.inflationFactor(sponsored)));
   sponsored.player.money = 0; sponsored.turn = 2; g.realmDiplomacyTick(sponsored); sponsored.turn = 4; g.realmDiplomacyTick(sponsored); assert.equal(sponsored.diplomacy.accords.length, 0, 'iki temerrüt ahdi bozmadı');
