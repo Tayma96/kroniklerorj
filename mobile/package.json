@@ -44,7 +44,10 @@
     "smoke": "node scripts/_smoke/check.cjs quick",
     "smoke:rng": "node scripts/_smoke/check.cjs rng",
     "smoke:full": "node scripts/_smoke/check.cjs full",
-    "smoke:rng:full": "node scripts/_smoke/check.cjs rng-full"
+    "smoke:rng:full": "node scripts/_smoke/check.cjs rng-full",
+    "design:preview": "node scripts/design-preview.cjs",
+    "design:check": "node scripts/check-screen-design.cjs",
+    "design:gallery": "node scripts/design-gallery-check.cjs"
   },
   "private": true,
   "license": "UNLICENSED"
