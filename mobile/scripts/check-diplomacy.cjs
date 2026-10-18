@@ -1,0 +1,22 @@
+const assert = require('node:assert/strict'), esbuild = require('esbuild'), path = require('node:path');
+(async () => {
+  const result = await esbuild.build({ entryPoints: [path.resolve(__dirname, '../lib/diplomacy.ts')], bundle: true, platform: 'node', format: 'cjs', write: false });
+  const box = { exports: {} }; new Function('module', 'exports', result.outputFiles[0].text)(box, box.exports); const d = box.exports;
+  const state = d.emptyDiplomacy(); state.rulers.b = { personId: 'lord-b', reign: 0, treasury: 800, legitimacy: 60, aggression: 60, honor: 50 };
+  const context = { ownPower: 800, targetPower: 900, exhaustion: 20, targetExhaustion: 30, honor: 60, activeWar: false, need: 25 };
+  const neutral = d.quoteAccord(state, 'a', 'b', 'ticaret', context);
+  d.changeBond(state, 'a', 'b', 40); assert(d.quoteAccord(state, 'a', 'b', 'ticaret', context).odds > neutral.odds);
+  assert(!d.quoteAccord(state, 'a', 'b', 'baris', context).eligible);
+  const war = { ...context, activeWar: true }; assert(d.quoteAccord(state, 'a', 'b', 'baris', war).eligible); assert(!d.quoteAccord(state, 'a', 'b', 'ticaret', war).eligible);
+  assert(d.quoteAccord(state, 'a', 'b', 'baris', { ...war, targetExhaustion: 90 }).odds > d.quoteAccord(state, 'a', 'b', 'baris', war).odds);
+  assert(d.quoteAccord(state, 'a', 'b', 'baris', { ...war, ownPower: 100 }).reparations > d.quoteAccord(state, 'a', 'b', 'baris', war).reparations);
+  assert(!d.quoteAccord(state, 'a', 'b', 'yardim', { ...context, need: 0 }).eligible);
+  d.signAccord(state, 'a', 'b', 'ticaret', 3, 't1'); d.signAccord(state, 'a', 'b', 'ticaret', 4, 't2'); assert.equal(state.accords.length, 1);
+  assert(d.findAccord(state, 'b', 'a', 'ticaret', 4)); assert(!d.findAccord(state, 'a', 'b', undefined, 16));
+  state.rulers.c = { ...state.rulers.b, personId: 'lord-c' }; const before = d.realmBond(state, 'a', 'c').trust;
+  assert(d.breakAccords(state, 'a', 'b', 4)); assert(d.realmBond(state, 'a', 'c').trust < before); assert(!d.breakAccords(state, 'a', 'b', 4));
+  d.signAccord(state, 'a', 'b', 'yardim', 4, 'relief'); assert.equal(state.accords[0].until, 10);
+  const malformed = d.repairDiplomacy({ rulers: { b: { ...state.rulers.b, treasury: Infinity } }, relations: { 'a|b': { trust: 400, grievance: NaN }, 'x|b': {} }, accords: [{ id: 'bad', a: 'a', b: 'a', kind: 'savunma', signed: 0, until: 6 }], actionTurn: 999 }, ['a', 'b', 'c'], 4);
+  assert.equal(malformed.rulers.b.treasury, 800); assert.equal(malformed.relations['a|b'].trust, 100); assert(!malformed.relations['b|x']); assert.equal(malformed.accords.length, 0); assert.equal(malformed.actionTurn, undefined);
+  console.log('DİPLOMASİ: güven/kin, kişilik/güç/yorgunluk, şartlar, süre, ihlal ve üçüncü taraf güveni temiz.');
+})().catch(e => { console.error(e); process.exitCode = 1; });
