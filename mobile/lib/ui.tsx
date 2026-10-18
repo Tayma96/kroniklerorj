@@ -367,7 +367,7 @@ export function Pill({ text, tone = C.gold }: { text: string; tone?: string }) {
   );
 }
 export function Panel({ title, icon, tone = C.gold, right, children, noPad, delay = 0 }: { title?: string; icon?: string; tone?: string; right?: React.ReactNode; children: React.ReactNode; noPad?: boolean; delay?: number }) {
-  return <OrnatePanel title={title} tone={tone} right={right} inset={!noPad}>{children}</OrnatePanel>;
+  return <OrnatePanel title={title} icon={icon} tone={tone} right={right} inset={!noPad}>{children}</OrnatePanel>;
 }
 
 // Ekran freski: ana menü freski kısık ışıkla (opasite 0.1) arkadan bakar — düz zeminlere derinlik, okunurluğa dokunmadan.

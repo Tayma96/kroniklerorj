@@ -1,3 +1,4 @@
+import { asayisOf, cityFx } from "../../../lib/game";
 import { PageHeader } from "../../../lib/ui";
 import { DesignPressable as Pressable } from "../../../lib/design-pressable";
 import { View, Text, ScrollView} from "react-native";
@@ -42,6 +43,8 @@ export default function DiyarDetay() {
   if (!state || !name) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   const kind = placeKind(name);
   const info = cityInfo(name, kind, lang);
+  const security = Math.round(asayisOf(state, name));
+  const prosperity = Math.round(Math.max(0, Math.min(100, info.prosperity + cityFx(state, name).prosp)));
   const here = state.player.location_name === name;
   const goods = marketGoods(locSeed(name)).slice(0, 4);
 
@@ -56,8 +59,8 @@ export default function DiyarDetay() {
 
       <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 5, paddingHorizontal: 14, marginBottom: 16 }}>
         <Stat label={t("diyar.governor")} value={info.governor} />
-        <Stat label={t("diyar.security")} value={`${info.security}/100`} />
-        <Stat label={t("diyar.prosperity")} value={`${info.prosperity}/100`} />
+        <Stat label={t("diyar.security")} value={`${security}/100`} />
+        <Stat label={t("diyar.prosperity")} value={`${prosperity}/100`} />
         <Stat label={t("diyar.livelihood")} value={t("spec." + citySpecialtyIdx(state, name))} />
       </View>
 

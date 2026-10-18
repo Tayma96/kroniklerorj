@@ -1,5 +1,5 @@
 import { Tabs, useRouter, usePathname } from "expo-router";
-import { View, Pressable, Text } from "react-native";
+import { View, Pressable, Text, useWindowDimensions } from "react-native";
 import Svg, { Defs, RadialGradient, Stop, Rect } from "react-native-svg";
 import { useEffect, useState } from "react";
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming, Easing, cancelAnimation } from "react-native-reanimated";
@@ -81,7 +81,7 @@ function AdvanceFab({ bottom }: { bottom: number }) {
   const waiting = !!pendingMonthScene(state);
   return (
     <View pointerEvents="box-none" style={{ position: "absolute", left: 0, right: 0, bottom: bottom + 16, alignItems: "center" }}>
-      <View style={{ width: 100, height: 92, alignItems: "center", justifyContent: "flex-end" }}>
+      <View style={{ width: 100, minHeight: 96, alignItems: "center", justifyContent: "flex-end" }}>
         {/* Hero'dan taşınan altın toz — düğmeden yükselir */}
         <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0 }}>
           <Ambiance width={100} height={92} flakes={false} count={6} />
@@ -104,8 +104,8 @@ function AdvanceFab({ bottom }: { bottom: number }) {
         </Animated.View>
         {/* Çekirdek eylem ikon-only kalmasın: mikro etiket (a11y metniyle aynı anahtar) */}
         {/* Uzun dillerde (AVANZAR EL MES) etiket yandaki sekme simgelerine taşmasın: düğme sütununa sığdırılır */}
-        <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={{ width: 100, textAlign: "center", fontFamily: F.display, fontSize: 8, letterSpacing: 0.8, color: C.goldDim, marginTop: 3, textTransform: "uppercase" }}>{t(waiting ? "flow.pending" : "adv.kisa")}</Text>
-        <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={{ width: 100, textAlign: "center", fontFamily: F.serifItalic, fontSize: 7.5, color: C.parchmentMuted, marginTop: 1 }}>{t("adv.ffKisa")}</Text>
+        <Text style={{ width: 100, textAlign: "center", fontFamily: F.display, fontSize: 12, lineHeight: 16, color: C.gold, marginTop: 3 }}>{t(waiting ? "flow.pending" : "adv.kisa")}</Text>
+
       </View>
     </View>
   );
@@ -161,18 +161,21 @@ export default function OyunLayout() {
   const { leave } = useMp();
   const router = useRouter();
   const yol = usePathname();
+  const { width } = useWindowDimensions();
+  const tabWidth = Math.max(44, (width - 76) / 4);
   useEffect(() => { const ad = yol.replace(/^\/oyun\/?/, "").split("/")[0] || "index"; oturumEkran(ad); }, [yol]); // cihazda kalan oturum kaydı
   return (
     <View style={{ flex: 1 }}>
       <Tabs screenOptions={{
         headerShown: false,
-        tabBarStyle: { backgroundColor: "rgba(9,6,3,0.99)", borderTopWidth: 1.5, borderTopColor: "rgba(201,168,76,0.4)", height: 60 + insets.bottom, paddingBottom: insets.bottom + 6, paddingTop: 10, shadowColor: "#000", shadowOpacity: 0.5, shadowRadius: 8, shadowOffset: { width: 0, height: -3 }, elevation: 14 },
+        tabBarStyle: { backgroundColor: "rgba(9,6,3,0.99)", borderTopWidth: 1.5, borderTopColor: "rgba(201,168,76,0.4)", height: 76 + insets.bottom, paddingBottom: insets.bottom + 6, paddingTop: 10, shadowColor: "#000", shadowOpacity: 0.5, shadowRadius: 8, shadowOffset: { width: 0, height: -3 }, elevation: 14 },
         tabBarActiveTintColor: C.gold,
         tabBarInactiveTintColor: C.parchmentMuted,
-        tabBarLabelStyle: { fontFamily: F.display, fontSize: 9, letterSpacing: 0.5 },
+        tabBarItemStyle: { flexGrow: 0, flexShrink: 0, width: tabWidth },
+        tabBarLabel: ({ color, children }) => <Text style={{ fontFamily: F.display, fontSize: 12, lineHeight: 16, color, textAlign: "center", paddingHorizontal: 2 }}>{children}</Text>,
       }}>
         <Tabs.Screen name="index" options={{ title: t("tab.home"), tabBarIcon: ({ focused }) => <TabIcon name="ana" focused={focused} /> }} />
-        <Tabs.Screen name="karakter" options={{ title: t("tab.character"), tabBarIcon: ({ focused }) => <TabIcon name="karakter" focused={focused} /> }} />
+        <Tabs.Screen name="karakter" options={{ title: t("tab.character"), tabBarItemStyle: { flexGrow: 0, flexShrink: 0, width: tabWidth, marginRight: 76 }, tabBarIcon: ({ focused }) => <TabIcon name="karakter" focused={focused} /> }} />
         <Tabs.Screen name="iliskiler" options={{ title: t("tab.relations"), tabBarIcon: ({ focused }) => <TabIcon name="iliskiler" focused={focused} /> }} />
         <Tabs.Screen name="menu" options={{ title: t("tab.menu"), tabBarIcon: ({ focused }) => <TabIcon name="menu" focused={focused} /> }} />
         {/* Gizli (sekmede görünmez ama navigasyonla açılır) */}
@@ -208,8 +211,8 @@ export default function OyunLayout() {
         <Tabs.Screen name="copcatan" options={{ href: null }} />
         <Tabs.Screen name="mahalle" options={{ href: null }} />
       </Tabs>
-      <GlobalBackdrop bottom={60 + insets.bottom} />
-      <NavOrnament bottom={60 + insets.bottom} />
+      <GlobalBackdrop bottom={76 + insets.bottom} />
+      <NavOrnament bottom={76 + insets.bottom} />
       <AdvanceFab bottom={insets.bottom} />
       <StatDeltaOverlay />
       {/* MP'deyken kişisel ekranlar SP kabuğunda açılır — oyuncu diyardan koptuğunu sanmasın: dönüş şeridi hep üstte (test bulgusu) */}

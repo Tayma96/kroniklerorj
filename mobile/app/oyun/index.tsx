@@ -1,4 +1,6 @@
-import { View, Text, ScrollView, Pressable, ImageBackground, StyleSheet, Dimensions, Modal } from "react-native";
+import { DesignPressable as Pressable } from "../../lib/design-pressable";
+import { RealmNotices } from "../../lib/realm-notices-ui";
+import { View, Text, ScrollView, ImageBackground, StyleSheet, Dimensions, Modal } from "react-native";
 import { Ambiance, LoadingScreen, KenBurns } from "../../lib/fx";
 import Animated, { FadeInDown, FadeIn } from "react-native-reanimated";
 import { useState, useEffect, useRef } from "react";
@@ -94,8 +96,8 @@ function MiniStat({ icon, label, value, max, color, lang }: { icon: string; labe
   const pct = max == null ? null : Math.max(0, Math.min(100, (value / max) * 100));
   const number = new Intl.NumberFormat(lang, { notation: value >= 100000 ? "compact" : "standard", maximumFractionDigits: 0 }).format(value);
   return (
-    <View accessible accessibilityRole="text" accessibilityLabel={`${label}: ${value}${max == null ? "" : ` / ${max}`}`} style={{ flex: 1, minWidth: 0, paddingHorizontal: 7, paddingVertical: 8, backgroundColor: C.surface + "C0", borderWidth: 1, borderColor: C.borderHi, borderRadius: 9 }}>
-      <Text style={{ fontFamily: F.serif, fontSize: 12, lineHeight: 16, color: C.parchmentDim, textAlign: "center" }}>{label}</Text>
+    <View accessible accessibilityRole="text" accessibilityLabel={`${label}: ${value}${max == null ? "" : ` / ${max}`}`} style={{ flex: 1, minWidth: 0, paddingHorizontal: 7, paddingVertical: 8, backgroundColor: C.surface + "C0", borderWidth: 1, borderColor: C.borderHi, borderRadius: 5 }}>
+      <Text style={{ fontFamily: F.serif, fontSize: 15, lineHeight: 22, color: C.parchmentDim, textAlign: "center" }}>{label}</Text>
       <View style={{ flexDirection: lang === "ar" ? "row-reverse" : "row", justifyContent: "center", alignItems: "center", gap: 5, marginTop: 2 }}>
         <GameIcon name={icon} size={13} color={color} />
         <Text style={{ fontFamily: F.display, fontSize: 15, color: C.parchment, flexShrink: 1 }}>{number}</Text>
@@ -267,7 +269,7 @@ export default function Dashboard() {
         <View style={{ width: 42, alignItems: "center", paddingTop: 8 }}>
           {!last && <View style={{ position: "absolute", top: 40, bottom: -8, width: 2, backgroundColor: "rgba(184,148,64,0.30)" }} />}
           <View style={{
-            width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center", zIndex: 1,
+            width: 32, height: 32, borderRadius: 5, alignItems: "center", justifyContent: "center", zIndex: 1,
             backgroundColor: land ? "rgba(46,32,10,0.95)" : C.card,
             borderWidth: 1.5, borderColor: land ? "rgba(224,188,90,0.8)" : "rgba(184,148,64,0.35)",
           }}>
@@ -276,7 +278,7 @@ export default function Dashboard() {
         </View>
         {/* Kart */}
         <View style={{
-          flex: 1, borderRadius: 8, paddingHorizontal: 11, paddingVertical: 9,
+          flex: 1, borderRadius: 5, paddingHorizontal: 11, paddingVertical: 9,
           backgroundColor: land ? "rgba(224,188,90,0.08)" : C.card,
           borderWidth: 1, borderColor: land ? "rgba(224,188,90,0.45)" : C.border,
           borderLeftWidth: 2.5, borderLeftColor: land ? "rgba(224,188,90,0.9)" : col,
@@ -284,17 +286,17 @@ export default function Dashboard() {
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
               <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: cfg.col }} />
-              <Text style={{ fontFamily: F.display, fontSize: 8, letterSpacing: 1.4, color: land ? C.goldBright : cfg.col }}>
+              <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1.4, color: land ? C.goldBright : cfg.col }}>
                 {t("evc." + cfg.c).toUpperCase()}
               </Text>
               {land && <GameIcon name="castle" size={9} color={C.goldBright} />}
             </View>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
               {freshMark && (e.q ?? 0) > freshMark.from && <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: C.goldBright }} />}
-              <Text style={{ fontFamily: F.serifItalic, fontSize: 9.5, color: C.parchmentMuted }}>{timeAgo(e.day)}</Text>
+              <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted }}>{timeAgo(e.day)}</Text>
             </View>
           </View>
-          <Text style={{ fontFamily: F.serif, fontSize: 13.5, color: C.parchment, lineHeight: 19 }}>{txt}</Text>
+          <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchment, lineHeight: 22 }}>{txt}</Text>
         </View>
       </View>
     );
@@ -335,37 +337,37 @@ export default function Dashboard() {
           <Modal visible transparent animationType="fade" onRequestClose={() => echo ? setEchoParked(echoDialogKey) : yanit(false)}>
             <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.72)", alignItems: "center", justifyContent: "center", padding: 22 }}>
               <ScrollView style={{ width: "100%", maxWidth: 380, maxHeight: "92%", flexGrow: 0 }} contentContainerStyle={{ padding: 1 }}>
-              <View style={{ width: "100%", maxWidth: 380, backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(201,168,76,0.45)", borderRadius: 14, padding: 18, alignItems: "center" }}>
+              <View style={{ width: "100%", maxWidth: 380, backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(201,168,76,0.45)", borderRadius: 5, padding: 18, alignItems: "center" }}>
                 <GameIcon name={tk.tur === "dunur" || tk.tur === "dugun" ? "ring" : tk.tur === "cenaze" ? "tombstone" : tk.tur === "helal" ? "sosyal" : tk.tur === "araci" || tk.tur === "mahkeme" ? "scales" : tk.tur === "imece" ? "iliskiler" : tk.tur === "tanidik" ? "meslek" : tk.tur === "kardes" ? "iliskiler" : tk.tur === "miras" || tk.tur === "kefil" || tk.tur === "hakem" ? "scales" : "coins"} size={18} color={C.gold} />
-                {echo && <Pressable accessibilityRole="button" accessibilityLabel={t("echo.later")} onPress={() => setEchoParked(echoDialogKey)} style={{ minHeight: 44, alignSelf: "flex-end", justifyContent: "center", paddingHorizontal: 10 }}><Text style={{ fontFamily: F.display, fontSize: 12, color: C.parchmentMuted }}>{t("echo.later")}</Text></Pressable>}
+                {echo && <Pressable accessibilityRole="button" accessibilityLabel={t("echo.later")} onPress={() => setEchoParked(echoDialogKey)} style={{ minHeight: 44, alignSelf: "flex-end", justifyContent: "center", paddingHorizontal: 10 }}><Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchmentMuted }}>{t("echo.later")}</Text></Pressable>}
                 <View style={{ marginTop: 10 }}><Portre age={pr.npc.age} gender={pr.npc.gender} size={64} ring={false} seed={pr.npc.id} /></View>
                 <Text style={{ fontFamily: F.display, fontSize: 16, color: C.parchment, marginTop: 8, textAlign: "center" }}>{pr.npc.name}</Text>
-                <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchmentDim, lineHeight: 21, marginTop: 10, textAlign: "center" }}>{metin}</Text>
-                {echo && <Text style={{ fontFamily: F.serif, fontSize: 12, color: C.parchmentMuted, lineHeight: 18, marginTop: 8, textAlign: "center" }}>{t("echo.cost")}</Text>}
-                {echoBlock && <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.ember, lineHeight: 18, marginTop: 6, textAlign: "center" }}>{t("echo.block." + echoBlock)}</Text>}
-                {tk.tur !== "hakem" && !echo ? <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.goldDim, lineHeight: 18, marginTop: 8, textAlign: "center" }}>{neden}</Text> : null}
-                {araciYuzde != null ? <Text style={{ fontFamily: F.display, fontSize: 12, color: araciYuzde >= 60 ? C.sage : araciYuzde <= 25 ? C.blood : C.gold, marginTop: 8, textAlign: "center" }}>{t("npct.araciSans")}: {yuzdeL(araciYuzde, lang)}</Text> : null}
-                {ipucu ? <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.sage, lineHeight: 18, marginTop: 8, textAlign: "center" }}>{renderEvt("npct.hakemIpucu", "", [ipucu], lang, t, p.gender === "kadın")}</Text> : null}
+                <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchmentDim, lineHeight: 22, marginTop: 10, textAlign: "center" }}>{metin}</Text>
+                {echo && <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchmentMuted, lineHeight: 22, marginTop: 8, textAlign: "center" }}>{t("echo.cost")}</Text>}
+                {echoBlock && <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.ember, lineHeight: 22, marginTop: 6, textAlign: "center" }}>{t("echo.block." + echoBlock)}</Text>}
+                {tk.tur !== "hakem" && !echo ? <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.goldDim, lineHeight: 22, marginTop: 8, textAlign: "center" }}>{neden}</Text> : null}
+                {araciYuzde != null ? <Text style={{ fontFamily: F.display, fontSize: 13, color: araciYuzde >= 60 ? C.sage : araciYuzde <= 25 ? C.blood : C.gold, marginTop: 8, textAlign: "center" }}>{t("npct.araciSans")}: {yuzdeL(araciYuzde, lang)}</Text> : null}
+                {ipucu ? <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.sage, lineHeight: 22, marginTop: 8, textAlign: "center" }}>{renderEvt("npct.hakemIpucu", "", [ipucu], lang, t, p.gender === "kadın")}</Text> : null}
                 {tk.tur === "hakem" ? (
                   <View style={{ gap: 8, marginTop: 16, alignSelf: "stretch" }}>
                     <View style={{ flexDirection: "row", gap: 10 }}>
                       {([[0, pr.npc.name], [1, bAdi]] as const).map(([i, ad]) => (
-                        <Pressable key={i} onPress={() => yanit(true, i)} style={{ flex: 1, paddingVertical: 11, paddingHorizontal: 6, borderRadius: 9, borderWidth: 1, borderColor: "rgba(201,168,76,0.55)", backgroundColor: "rgba(201,168,76,0.12)", alignItems: "center" }}>
-                          <Text style={{ fontFamily: F.display, fontSize: 11.5, color: C.gold, letterSpacing: 0.3, textAlign: "center" }}>{applyParams(t("npct.hakemYan"), [ad.split(" ")[0]])}</Text>
+                        <Pressable key={i} onPress={() => yanit(true, i)} style={{ flex: 1, paddingVertical: 11, paddingHorizontal: 6, borderRadius: 5, borderWidth: 1, borderColor: "rgba(201,168,76,0.55)", backgroundColor: "rgba(201,168,76,0.12)", alignItems: "center" }}>
+                          <Text style={{ fontFamily: F.display, fontSize: 13, color: C.gold, letterSpacing: 0.3, textAlign: "center" }}>{applyParams(t("npct.hakemYan"), [ad.split(" ")[0]])}</Text>
                         </Pressable>
                       ))}
                     </View>
-                    <Pressable onPress={() => yanit(false)} style={{ paddingVertical: 10, borderRadius: 9, borderWidth: 1, borderColor: C.border, alignItems: "center" }}>
-                      <Text style={{ fontFamily: F.display, fontSize: 12, color: C.parchmentMuted, letterSpacing: 0.5 }}>{redEt}</Text>
+                    <Pressable onPress={() => yanit(false)} style={{ paddingVertical: 10, borderRadius: 5, borderWidth: 1, borderColor: C.border, alignItems: "center" }}>
+                      <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchmentMuted, letterSpacing: 0.5 }}>{redEt}</Text>
                     </Pressable>
                   </View>
                 ) : (
                 <View style={{ flexDirection: "row", gap: 10, marginTop: 16, alignSelf: "stretch" }}>
-                  <Pressable accessibilityRole="button" accessibilityLabel={redEt} onPress={() => yanit(false)} style={{ flex: 1, minHeight: 44, justifyContent: "center", paddingVertical: 11, borderRadius: 9, borderWidth: 1, borderColor: C.border, alignItems: "center" }}>
-                    <Text style={{ fontFamily: F.display, fontSize: 12, color: C.parchmentMuted, letterSpacing: 0.5 }}>{redEt}</Text>
+                  <Pressable accessibilityRole="button" accessibilityLabel={redEt} onPress={() => yanit(false)} style={{ flex: 1, minHeight: 44, justifyContent: "center", paddingVertical: 11, borderRadius: 5, borderWidth: 1, borderColor: C.border, alignItems: "center" }}>
+                    <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchmentMuted, letterSpacing: 0.5 }}>{redEt}</Text>
                   </Pressable>
-                  <Pressable accessibilityRole="button" accessibilityLabel={kabulEt} accessibilityState={{ disabled: yetmez }} disabled={yetmez} onPress={() => yanit(true)} style={{ flex: 1, minHeight: 44, justifyContent: "center", paddingVertical: 11, paddingHorizontal: 6, borderRadius: 9, borderWidth: 1, borderColor: "rgba(201,168,76,0.55)", backgroundColor: "rgba(201,168,76,0.12)", alignItems: "center", opacity: yetmez ? 0.4 : 1 }}>
-                    <Text style={{ fontFamily: F.display, fontSize: 12, color: C.gold, letterSpacing: 0.5, textAlign: "center" }}>{kabulEt}</Text>
+                  <Pressable accessibilityRole="button" accessibilityLabel={kabulEt} accessibilityState={{ disabled: yetmez }} disabled={yetmez} onPress={() => yanit(true)} style={{ flex: 1, minHeight: 44, justifyContent: "center", paddingVertical: 11, paddingHorizontal: 6, borderRadius: 5, borderWidth: 1, borderColor: "rgba(201,168,76,0.55)", backgroundColor: "rgba(201,168,76,0.12)", alignItems: "center", opacity: yetmez ? 0.4 : 1 }}>
+                    <Text style={{ fontFamily: F.display, fontSize: 13, color: C.gold, letterSpacing: 0.5, textAlign: "center" }}>{kabulEt}</Text>
                   </Pressable>
                 </View>
                 )}
@@ -383,23 +385,23 @@ export default function Dashboard() {
         return (
           <Modal visible transparent animationType="fade" onRequestClose={() => setYearReport(null)}>
             <View style={{ flex: 1, backgroundColor: "rgba(4,3,2,0.94)", alignItems: "center", justifyContent: "center", padding: 26 }}>
-              <Animated.View entering={FadeInDown.duration(400)} style={{ width: "100%", maxWidth: 400, backgroundColor: C.card, borderWidth: 1.5, borderColor: "rgba(201,168,76,0.5)", borderRadius: 16, padding: 20 }}>
-                <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 3, color: C.goldDim, textAlign: "center" }}>{t("yr.title").toUpperCase()}</Text>
+              <Animated.View entering={FadeInDown.duration(400)} style={{ width: "100%", maxWidth: 400, backgroundColor: C.card, borderWidth: 1.5, borderColor: "rgba(201,168,76,0.5)", borderRadius: 5, padding: 20 }}>
+                <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.goldDim, textAlign: "center" }}>{t("yr.title").toUpperCase()}</Text>
                 <Text style={{ fontFamily: F.display, fontSize: 22, color: C.gold, textAlign: "center", marginTop: 6 }}>{applyParams(t("yr.age"), [p.age])}</Text>
-                <Text style={{ fontFamily: F.serif, fontSize: 13.5, color: C.parchment, textAlign: "center", lineHeight: 20, marginTop: 10 }}>{renderEvt(yearReport.k, yearReport.text, yearReport.p, lang, t, p.gender === "kadın")}</Text>
+                <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchment, textAlign: "center", lineHeight: 22, marginTop: 10 }}>{renderEvt(yearReport.k, yearReport.text, yearReport.p, lang, t, p.gender === "kadın")}</Text>
                 <View style={{ flexDirection: "row", justifyContent: "center", gap: 14, marginTop: 12 }}>
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}><GameIcon name="akce" size={12} color={C.gold} /><Text style={{ fontFamily: F.display, fontSize: 12, color: C.gold }}>{p.money}</Text></View>
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}><GameIcon name="karakter" size={12} color={C.sage} /><Text style={{ fontFamily: F.display, fontSize: 12, color: C.sage }}>{Math.round(p.reputation)}</Text></View>
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}><GameIcon name="crown" size={12} color={C.goldDim} /><Text style={{ fontFamily: F.display, fontSize: 12, color: C.parchment }}>{fame}</Text></View>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}><GameIcon name="akce" size={12} color={C.gold} /><Text style={{ fontFamily: F.display, fontSize: 13, color: C.gold }}>{p.money}</Text></View>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}><GameIcon name="karakter" size={12} color={C.sage} /><Text style={{ fontFamily: F.display, fontSize: 13, color: C.sage }}>{Math.round(p.reputation)}</Text></View>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}><GameIcon name="crown" size={12} color={C.goldDim} /><Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchment }}>{fame}</Text></View>
                 </View>
-                <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 2, color: C.goldDim, marginTop: 14, marginBottom: 6 }}>{t("yr.highlights").toUpperCase()}</Text>
+                <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.goldDim, marginTop: 14, marginBottom: 6 }}>{t("yr.highlights").toUpperCase()}</Text>
                 {yrEvents.length === 0 ? (
-                  <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted }}>{t("yr.none")}</Text>
+                  <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted }}>{t("yr.none")}</Text>
                 ) : yrEvents.map((ev, i) => (
-                  <Text key={i} style={{ fontFamily: F.serif, fontSize: 12, color: C.parchmentDim, lineHeight: 17, marginBottom: 4 }}>· {renderEvt(ev.k, ev.text, ev.p, lang, t, p.gender === "kadın")}</Text>
+                  <Text key={i} style={{ fontFamily: F.serif, fontSize: 15, color: C.parchmentDim, lineHeight: 22, marginBottom: 4 }}>· {renderEvt(ev.k, ev.text, ev.p, lang, t, p.gender === "kadın")}</Text>
                 ))}
-                <Pressable onPress={() => { hap("tap"); setYearReport(null); }} style={{ marginTop: 16, paddingVertical: 12, borderRadius: 9, backgroundColor: C.gold, alignItems: "center" }}>
-                  <Text style={{ fontFamily: F.display, fontSize: 12, color: C.inkOnGold, letterSpacing: 1 }}>{t("yr.close")}</Text>
+                <Pressable onPress={() => { hap("tap"); setYearReport(null); }} style={{ marginTop: 16, paddingVertical: 12, borderRadius: 5, backgroundColor: C.gold, alignItems: "center" }}>
+                  <Text style={{ fontFamily: F.display, fontSize: 13, color: C.inkOnGold, letterSpacing: 1 }}>{t("yr.close")}</Text>
                 </Pressable>
               </Animated.View>
             </View>
@@ -448,16 +450,43 @@ export default function Dashboard() {
             <MiniStat icon="orgutler" label={t("soc.nam.h")} value={fame} max={100} color={C.gold} lang={lang} />
           </View>
         </View>
-        <MonthDecisionCard />
+      {p.dead && (
+        <View style={{ paddingHorizontal: 12, paddingBottom: 8, gap: 10 }}>
+          {varisAdaylari(state).length > 0 && (
+            <Pressable onPress={() => router.push("/oyun/nesil")} style={{ flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 7, paddingVertical: 14, borderRadius: 5, borderWidth: 1.5, borderColor: "rgba(201,168,76,0.55)", backgroundColor: C.gold }}>
+              <GameIcon name="hanedan" size={14} color={C.inkOnGold} />
+              <Text style={{ fontFamily: F.display, fontSize: 13, color: C.inkOnGold, letterSpacing: 1 }}>{t("dash.continueHeir")} ({varisAdaylari(state).length} {t("dash.heirs")})</Text>
+            </Pressable>
+          )}
+          {varisAdaylari(state).length === 0 && !mpMode && (
+            <Pressable onPress={() => router.push("/oyun/ocak")} style={{ flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 7, paddingVertical: 14, borderRadius: 5, borderWidth: 1.5, borderColor: "rgba(201,168,76,0.55)", backgroundColor: C.gold }}>
+              <GameIcon name="hanedan" size={14} color={C.inkOnGold} />
+              <Text style={{ fontFamily: F.display, fontSize: 13, color: C.inkOnGold, letterSpacing: 1 }}>{t("dash.kulOcak")}</Text>
+            </Pressable>
+          )}
+          <View style={{ flexDirection: "row", gap: 10 }}>
+            <Pressable onPress={() => router.push("/oyun/roman")} style={{ flex: 1, flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 6, paddingVertical: 14, borderRadius: 5, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.card }}>
+              <GameIcon name="roman" size={13} color={C.gold} />
+              <Text style={{ fontFamily: F.display, fontSize: 13, color: C.gold, letterSpacing: 1 }}>{t("dash.readLife")}</Text>
+            </Pressable>
+            <Pressable onPress={async () => { try { await resetGame(); router.replace("/yeni-oyun"); } catch {} }} style={{ flex: 1, flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 6, paddingVertical: 14, borderRadius: 5, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.card }}>
+              <GameIcon name="leaf" size={13} color={C.parchmentDim} />
+              <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchmentDim, letterSpacing: 1 }}>{t("dash.newLife")}</Text>
+            </Pressable>
+          </View>
+        </View>
+      )}
+      <MonthDecisionCard />
+      <RealmNotices />
       {/* Halk seni nasıl görüyor — kimlik her an görünür */}
       {!p.dead && (() => {
         const pp = publicPerception(state);
         const home = atHome(p);
         return (
-          <Pressable onPress={() => router.push("/oyun/karakter")} style={{ marginHorizontal: 12, marginTop: 8, paddingVertical: 7, paddingHorizontal: 11, borderRadius: 8, borderWidth: 1, borderColor: home ? "rgba(127,166,106,0.3)" : "rgba(111,160,192,0.3)", backgroundColor: "rgba(8,5,2,0.4)", flexDirection: "row", alignItems: "center", gap: 8 }}>
+          <Pressable onPress={() => router.push("/oyun/karakter")} style={{ marginHorizontal: 12, marginTop: 8, paddingVertical: 7, paddingHorizontal: 11, borderRadius: 5, borderWidth: 1, borderColor: home ? "rgba(127,166,106,0.3)" : "rgba(111,160,192,0.3)", backgroundColor: "rgba(8,5,2,0.4)", flexDirection: "row", alignItems: "center", gap: 8 }}>
             <GameIcon name={home ? "sehir" : "firsatlar"} size={13} color={home ? C.sage : C.frost} />
-            <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 11.5, color: C.parchmentDim }} numberOfLines={1}>{t("percept." + pp.key)}</Text>
-            <Text style={{ fontFamily: F.display, fontSize: 9, color: home ? C.sage : C.frost }}>{yuzdeL(Math.round(pp.recog * 100), lang)}</Text>
+            <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentDim }} numberOfLines={1}>{t("percept." + pp.key)}</Text>
+            <Text style={{ fontFamily: F.display, fontSize: 13, color: home ? C.sage : C.frost }}>{yuzdeL(Math.round(pp.recog * 100), lang)}</Text>
           </Pressable>
         );
       })()}
@@ -467,13 +496,13 @@ export default function Dashboard() {
         const ym = realmYearMonth(mpSnapshot.turn);
         const live = mpSnapshot.players.filter((x) => x.online && !x.dead).length;
         return (
-          <Pressable onPress={() => { hap("tap"); router.push("/cok-oyunculu/oyun"); }} style={{ marginHorizontal: 12, marginTop: 8, padding: 11, borderRadius: 8, borderWidth: 1, borderColor: "rgba(201,168,76,0.4)", backgroundColor: "rgba(201,168,76,0.07)" }}>
+          <Pressable onPress={() => { hap("tap"); router.push("/cok-oyunculu/oyun"); }} style={{ marginHorizontal: 12, marginTop: 8, padding: 11, borderRadius: 5, borderWidth: 1, borderColor: "rgba(201,168,76,0.4)", backgroundColor: "rgba(201,168,76,0.07)" }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 7 }}>
               <GameIcon name="crown" size={13} color={C.gold} />
-              <Text style={{ flex: 1, fontFamily: F.display, fontSize: 9, letterSpacing: 1.5, color: C.gold, textTransform: "uppercase" }}>{t("mp.realm")}</Text>
-              <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 0.5, color: C.parchmentMuted }}>{t("mp.year")} {ym.year} · {t("mp.month")} {ym.month}</Text>
+              <Text style={{ flex: 1, fontFamily: F.display, fontSize: 13, letterSpacing: 1.5, color: C.gold, textTransform: "uppercase" }}>{t("mp.realm")}</Text>
+              <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 0.5, color: C.parchmentMuted }}>{t("mp.year")} {ym.year} · {t("mp.month")} {ym.month}</Text>
             </View>
-            <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: 11.5, color: C.parchmentDim, marginTop: 4 }}>
+            <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentDim, marginTop: 4 }}>
               {mpSnapshot.throne.holderName ? applyParams(t("mp.throneHolder"), [mpSnapshot.throne.holderName]) : t("mp.throneEmpty")} · {applyParams(t("mp.pulse.here"), [live])}
             </Text>
           </Pressable>
@@ -483,9 +512,9 @@ export default function Dashboard() {
 
       {/* İlk açılış: metin duvarı yerine tek cümlelik, akışı kesmeyen şerit — oyuncu hemen ilk kararını verir (TASARIM_PUSULASI 2.5) */}
       {showTut && !p.dead && (
-        <View style={{ marginHorizontal: 12, marginTop: 8, flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 10, borderWidth: 1, borderColor: "rgba(201,168,76,0.45)", backgroundColor: "rgba(201,168,76,0.08)" }}>
+        <View style={{ marginHorizontal: 12, marginTop: 8, flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 5, borderWidth: 1, borderColor: "rgba(201,168,76,0.45)", backgroundColor: "rgba(201,168,76,0.08)" }}>
           <GameIcon name="scroll" size={16} color={C.gold} />
-          <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 12.5, color: C.parchment, lineHeight: 18 }}>{t(p.age < 13 ? "sp.tut.kisa" : "sp.tut.b1")}</Text>
+          <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 15, color: C.parchment, lineHeight: 22 }}>{t(p.age < 13 ? "sp.tut.kisa" : "sp.tut.b1")}</Text>
           <Pressable accessibilityRole="button" accessibilityLabel={t("cine.close")} onPress={() => { hap("tap"); closeTut(); }} hitSlop={10} style={{ paddingHorizontal: 6, paddingVertical: 2 }}>
             <Text style={{ fontFamily: F.display, fontSize: 14, color: C.goldDim }}>×</Text>
           </Pressable>
@@ -496,8 +525,8 @@ export default function Dashboard() {
         const name = kisiProfil(state, state.npcTeklif.id, lang)?.npc.name;
         if (!name) return null;
         const label = applyParams(t("echo.pending"), [name]);
-        return <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={() => setEchoParked(null)} style={{ marginHorizontal: 12, marginTop: 8, minHeight: 44, padding: 10, borderRadius: 9, borderWidth: 1, borderColor: C.border, flexDirection: lang === "ar" ? "row-reverse" : "row", alignItems: "center", gap: 8 }}>
-          <GameIcon name="meslek" size={16} color={C.gold} /><Text style={{ flex: 1, fontFamily: F.serif, fontSize: 13, color: C.parchment }}>{label}</Text>
+        return <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={() => setEchoParked(null)} style={{ marginHorizontal: 12, marginTop: 8, minHeight: 44, padding: 10, borderRadius: 5, borderWidth: 1, borderColor: C.border, flexDirection: lang === "ar" ? "row-reverse" : "row", alignItems: "center", gap: 8 }}>
+          <GameIcon name="meslek" size={16} color={C.gold} /><Text style={{ flex: 1, fontFamily: F.serif, fontSize: 15, color: C.parchment }}>{label}</Text>
         </Pressable>;
       })()}
 
@@ -509,12 +538,12 @@ export default function Dashboard() {
       {!p.dead && (() => {
         const ah = acikHesaplar(state); if (!ah.length) return null;
         return (
-          <View style={{ marginHorizontal: 12, marginTop: 8, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 10, borderWidth: 1, borderColor: C.border, backgroundColor: "rgba(255,255,255,0.02)" }}>
-            <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 1.5, color: C.goldDim, textTransform: "uppercase", marginBottom: 4 }}>{t("ah.baslik")}</Text>
+          <View style={{ marginHorizontal: 12, marginTop: 8, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 5, borderWidth: 1, borderColor: C.border, backgroundColor: "rgba(255,255,255,0.02)" }}>
+            <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1.5, color: C.goldDim, textTransform: "uppercase", marginBottom: 4 }}>{t("ah.baslik")}</Text>
             {ah.map((x, i) => (
               <Pressable key={i} disabled={!x.git} onPress={() => { if (x.git) { hap("tap"); router.push(x.git as never); } }} style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 5, borderTopWidth: i ? 1 : 0, borderTopColor: C.border }}>
                 <GameIcon name={x.ikon} size={13} color={x.agirlik >= 70 ? C.blood : C.parchmentDim} />
-                <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 12.5, color: C.parchment, lineHeight: 17 }}>{renderEvt(x.k, "", x.p, lang, t, p.gender === "kadın")}</Text>
+                <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 15, color: C.parchment, lineHeight: 22 }}>{renderEvt(x.k, "", x.p, lang, t, p.gender === "kadın")}</Text>
                 {x.git ? <Text style={{ color: C.goldDim, fontSize: 12 }}>›</Text> : null}
               </Pressable>
             ))}
@@ -528,7 +557,7 @@ export default function Dashboard() {
         return (
           <View style={{ marginHorizontal: 14, marginTop: 6, flexDirection: "row", alignItems: "center", gap: 7 }}>
             <GameIcon name="hourglass" size={11} color={C.goldDim} />
-            <Text numberOfLines={2} style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 11.5, color: C.parchmentDim, lineHeight: 16 }}>{renderEvt(not.k, "", not.p, lang, t, p.gender === "kadın")}</Text>
+            <Text numberOfLines={2} style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentDim, lineHeight: 22 }}>{renderEvt(not.k, "", not.p, lang, t, p.gender === "kadın")}</Text>
           </View>
         );
       })()}
@@ -538,15 +567,15 @@ export default function Dashboard() {
         const cost = jailBribeCost(state);
         const able = p.money >= cost;
         return (
-          <View style={{ marginHorizontal: 12, marginTop: 8, padding: 12, borderRadius: 10, borderWidth: 1, borderColor: "rgba(168,52,52,0.5)", backgroundColor: "rgba(168,52,52,0.10)" }}>
+          <View style={{ marginHorizontal: 12, marginTop: 8, padding: 12, borderRadius: 5, borderWidth: 1, borderColor: "rgba(168,52,52,0.5)", backgroundColor: "rgba(168,52,52,0.10)" }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 7 }}>
               <GameIcon name="hood" size={15} color={C.blood} />
-              <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 1.5, color: C.blood, textTransform: "uppercase" }}>{t("jail.title")}</Text>
-              <Text style={{ marginLeft: "auto", fontFamily: F.serif, fontSize: 11, color: C.parchmentDim }}>{applyParams(t("jail.left"), [p.jail!.left])}</Text>
+              <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1.5, color: C.blood, textTransform: "uppercase" }}>{t("jail.title")}</Text>
+              <Text style={{ marginLeft: "auto", fontFamily: F.serif, fontSize: 15, color: C.parchmentDim }}>{applyParams(t("jail.left"), [p.jail!.left])}</Text>
             </View>
-            <Text style={{ fontFamily: F.serifItalic, fontSize: 11.5, color: C.parchmentMuted, marginTop: 6, lineHeight: 16 }}>{t("jail.hint")}</Text>
-            <Pressable disabled={!able} onPress={() => { hap("heavy"); apply((s) => bribeJailer(s)); }} style={{ alignSelf: "flex-start", marginTop: 8, paddingVertical: 7, paddingHorizontal: 12, borderRadius: 7, borderWidth: 1, borderColor: able ? "rgba(201,168,76,0.5)" : C.border, opacity: able ? 1 : 0.45 }}>
-              <Text style={{ fontFamily: F.display, fontSize: 10, color: able ? C.gold : C.parchmentMuted }}>{applyParams(t("jail.bribeBtn"), [cost])}</Text>
+            <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, marginTop: 6, lineHeight: 22 }}>{t("jail.hint")}</Text>
+            <Pressable disabled={!able} onPress={() => { hap("heavy"); apply((s) => bribeJailer(s)); }} style={{ alignSelf: "flex-start", marginTop: 8, paddingVertical: 7, paddingHorizontal: 12, borderRadius: 5, borderWidth: 1, borderColor: able ? "rgba(201,168,76,0.5)" : C.border, opacity: able ? 1 : 0.45 }}>
+              <Text style={{ fontFamily: F.display, fontSize: 13, color: able ? C.gold : C.parchmentMuted }}>{applyParams(t("jail.bribeBtn"), [cost])}</Text>
             </Pressable>
           </View>
         );
@@ -556,14 +585,14 @@ export default function Dashboard() {
       {!p.dead && state.micro && (() => {
         const m = state.micro!;
         return (
-          <View style={{ marginHorizontal: 12, marginTop: 8, padding: 10, borderRadius: 8, borderWidth: 1, borderColor: "rgba(126,138,106,0.45)", backgroundColor: "rgba(126,138,106,0.08)" }}>
-            <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchment }}>{t("micro." + m.id + ".x")}</Text>
+          <View style={{ marginHorizontal: 12, marginTop: 8, padding: 10, borderRadius: 5, borderWidth: 1, borderColor: "rgba(126,138,106,0.45)", backgroundColor: "rgba(126,138,106,0.08)" }}>
+            <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchment }}>{t("micro." + m.id + ".x")}</Text>
             <View style={{ flexDirection: "row", gap: 8, marginTop: 8 }}>
               {([0, 1] as const).map((c) => {
                 const dis = m.id === "cirak_tabla" && c === 1 && p.money < 2;
                 return (
-                <Pressable key={c} disabled={dis} onPress={() => { hap("tap"); apply((s) => resolveMicro(s, c)); }} style={{ flex: 1, paddingVertical: 7, paddingHorizontal: 8, borderRadius: 7, borderWidth: 1, borderColor: "rgba(201,168,76,0.4)", backgroundColor: "rgba(201,168,76,0.08)", opacity: dis ? 0.4 : 1 }}>
-                  <Text style={{ fontFamily: F.display, fontSize: 10, color: C.gold, letterSpacing: 0.5, textAlign: "center" }}>{t("micro." + m.id + ".c" + c)}</Text>
+                <Pressable key={c} disabled={dis} onPress={() => { hap("tap"); apply((s) => resolveMicro(s, c)); }} style={{ flex: 1, paddingVertical: 7, paddingHorizontal: 8, borderRadius: 5, borderWidth: 1, borderColor: "rgba(201,168,76,0.4)", backgroundColor: "rgba(201,168,76,0.08)", opacity: dis ? 0.4 : 1 }}>
+                  <Text style={{ fontFamily: F.display, fontSize: 13, color: C.gold, letterSpacing: 0.5, textAlign: "center" }}>{t("micro." + m.id + ".c" + c)}</Text>
                 </Pressable>
                 );
               })}
@@ -577,19 +606,19 @@ export default function Dashboard() {
         const sc = state.bloodline!.scene!;
         const n = BL_CHOICES[sc] || 2;
         return (
-          <View style={{ marginHorizontal: 12, marginTop: 8, padding: 12, borderRadius: 8, borderWidth: 1.5, borderColor: "rgba(168,52,52,0.6)", backgroundColor: "rgba(168,52,52,0.08)" }}>
+          <View style={{ marginHorizontal: 12, marginTop: 8, padding: 12, borderRadius: 5, borderWidth: 1.5, borderColor: "rgba(168,52,52,0.6)", backgroundColor: "rgba(168,52,52,0.08)" }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 6 }}>
               <GameIcon name="skull" size={13} color={C.blood} />
-              <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 1.5, color: C.blood, textTransform: "uppercase" }}>{t("bl.title")}</Text>
+              <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1.5, color: C.blood, textTransform: "uppercase" }}>{t("bl.title")}</Text>
             </View>
-            <Text style={{ fontFamily: F.serifItalic, fontSize: 12.5, color: C.parchment, lineHeight: 19 }}>{t("bl." + sc + ".x")}</Text>
+            <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchment, lineHeight: 22 }}>{t("bl." + sc + ".x")}</Text>
             <View style={{ gap: 7, marginTop: 10 }}>
               {Array.from({ length: n }, (_, c) => {
                 const need = BL_COST[sc]?.[c] || 0;
                 const dis = need > 0 && p.money < need;
                 return (
-                  <Pressable key={c} disabled={dis} onPress={() => { hap("tap"); apply((s) => resolveBloodline(s, c as 0 | 1 | 2)); }} style={{ paddingVertical: 8, paddingHorizontal: 10, borderRadius: 7, borderWidth: 1, borderColor: "rgba(168,52,52,0.4)", backgroundColor: "rgba(168,52,52,0.06)", opacity: dis ? 0.4 : 1 }}>
-                    <Text style={{ fontFamily: F.display, fontSize: 10, color: C.blood, letterSpacing: 0.5 }}>{t("bl." + sc + ".c" + c)}</Text>
+                  <Pressable key={c} disabled={dis} onPress={() => { hap("tap"); apply((s) => resolveBloodline(s, c as 0 | 1 | 2)); }} style={{ paddingVertical: 8, paddingHorizontal: 10, borderRadius: 5, borderWidth: 1, borderColor: "rgba(168,52,52,0.4)", backgroundColor: "rgba(168,52,52,0.06)", opacity: dis ? 0.4 : 1 }}>
+                    <Text style={{ fontFamily: F.display, fontSize: 13, color: C.blood, letterSpacing: 0.5 }}>{t("bl." + sc + ".c" + c)}</Text>
                   </Pressable>
                 );
               })}
@@ -603,19 +632,19 @@ export default function Dashboard() {
         const sc = state.saga!.scene!;
         const n = SAGA_CHOICES[sc] || 3;
         return (
-          <View style={{ marginHorizontal: 12, marginTop: 8, padding: 12, borderRadius: 8, borderWidth: 1.5, borderColor: "rgba(201,168,76,0.65)", backgroundColor: "rgba(201,168,76,0.10)" }}>
+          <View style={{ marginHorizontal: 12, marginTop: 8, padding: 12, borderRadius: 5, borderWidth: 1.5, borderColor: "rgba(201,168,76,0.65)", backgroundColor: "rgba(201,168,76,0.10)" }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 6 }}>
               <GameIcon name="scroll" size={13} color={C.gold} />
-              <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 1.5, color: C.gold, textTransform: "uppercase" }}>{t("saga.title")}</Text>
+              <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1.5, color: C.gold, textTransform: "uppercase" }}>{t("saga.title")}</Text>
             </View>
-            <Text style={{ fontFamily: F.serifItalic, fontSize: 12.5, color: C.parchment, lineHeight: 19 }}>{t("saga." + sc + ".x")}</Text>
+            <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchment, lineHeight: 22 }}>{t("saga." + sc + ".x")}</Text>
             <View style={{ gap: 7, marginTop: 10 }}>
               {Array.from({ length: n }, (_, c) => {
                 const need = SAGA_COST[sc]?.[c] || 0;
                 const dis = need > 0 && p.money < need;
                 return (
-                  <Pressable key={c} disabled={dis} onPress={() => { hap("tap"); apply((s) => resolveSaga(s, c as 0 | 1 | 2)); }} style={{ paddingVertical: 8, paddingHorizontal: 10, borderRadius: 7, borderWidth: 1, borderColor: "rgba(201,168,76,0.4)", backgroundColor: "rgba(201,168,76,0.07)", opacity: dis ? 0.4 : 1 }}>
-                    <Text style={{ fontFamily: F.display, fontSize: 10, color: C.gold, letterSpacing: 0.5 }}>{t("saga." + sc + ".c" + c)}</Text>
+                  <Pressable key={c} disabled={dis} onPress={() => { hap("tap"); apply((s) => resolveSaga(s, c as 0 | 1 | 2)); }} style={{ paddingVertical: 8, paddingHorizontal: 10, borderRadius: 5, borderWidth: 1, borderColor: "rgba(201,168,76,0.4)", backgroundColor: "rgba(201,168,76,0.07)", opacity: dis ? 0.4 : 1 }}>
+                    <Text style={{ fontFamily: F.display, fontSize: 13, color: C.gold, letterSpacing: 0.5 }}>{t("saga." + sc + ".c" + c)}</Text>
                   </Pressable>
                 );
               })}
@@ -628,10 +657,10 @@ export default function Dashboard() {
       {!p.dead && state.crownCampaign && (() => {
         const cc = state.crownCampaign!;
         return (
-          <Pressable onPress={() => { hap("tap"); router.push("/oyun/hanedan"); }} style={{ marginHorizontal: 12, marginTop: 8, padding: 11, borderRadius: 8, borderWidth: 1, borderColor: "rgba(200,64,64,0.55)", borderLeftWidth: 3, borderLeftColor: C.ember, backgroundColor: "rgba(200,64,64,0.08)" }}>
+          <Pressable onPress={() => { hap("tap"); router.push("/oyun/hanedan"); }} style={{ marginHorizontal: 12, marginTop: 8, padding: 11, borderRadius: 5, borderWidth: 1, borderColor: "rgba(200,64,64,0.55)", borderLeftWidth: 3, borderLeftColor: C.ember, backgroundColor: "rgba(200,64,64,0.08)" }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
               <GameIcon name="crossed-swords" size={13} color={C.ember} />
-              <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 12, color: C.parchment, lineHeight: 17 }}>
+              <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 15, color: C.parchment, lineHeight: 22 }}>
                 {applyParams(t("crown.cmp.band"), [t("beylik." + cc.beylikId), t(cc.month < 2 ? "crown.cmp.stage1" : "crown.cmp.stage2"), cc.edge])}
               </Text>
             </View>
@@ -644,18 +673,18 @@ export default function Dashboard() {
         const d = state.divan!;
         const NEED: Record<string, number> = { su_kavgasi: 100, sinir_haraci: 120, genc_mucit: 150, iki_imam: 200, kayip_kervan: 130, sel_bendi: 140, sahte_tanik: 110, kuru_kuyu: 120, mukerrer_bac: 100, yanik_koy: 160, hekim_ucreti: 120, degirmen_kavgasi: 90, veba_soylenti: 130, koprucu_borcu: 110, gece_bekcisi: 100 };
         return (
-          <View style={{ marginHorizontal: 12, marginTop: 8, padding: 11, borderRadius: 8, borderWidth: 1, borderColor: "rgba(201,168,76,0.55)", backgroundColor: "rgba(201,168,76,0.10)" }}>
+          <View style={{ marginHorizontal: 12, marginTop: 8, padding: 11, borderRadius: 5, borderWidth: 1, borderColor: "rgba(201,168,76,0.55)", backgroundColor: "rgba(201,168,76,0.10)" }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 5 }}>
               <GameIcon name="crown" size={13} color={C.gold} />
-              <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 1.5, color: C.gold, textTransform: "uppercase" }}>{t("divan.title")}</Text>
+              <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1.5, color: C.gold, textTransform: "uppercase" }}>{t("divan.title")}</Text>
             </View>
-            <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchment }}>{t("divan." + d.id + ".x")}</Text>
+            <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchment }}>{t("divan." + d.id + ".x")}</Text>
             <View style={{ flexDirection: "row", gap: 8, marginTop: 8 }}>
               {([0, 1] as const).map((c) => {
                 const dis = c === 0 && NEED[d.id] != null && p.money < NEED[d.id];
                 return (
-                <Pressable key={c} disabled={dis} onPress={() => { hap(c === 0 ? "success" : "tap"); if (c === 0) playChime(); apply((s) => resolveDivan(s, c)); }} style={{ flex: 1, paddingVertical: 7, paddingHorizontal: 8, borderRadius: 7, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: "rgba(201,168,76,0.12)", opacity: dis ? 0.4 : 1 }}>
-                  <Text style={{ fontFamily: F.display, fontSize: 10, color: C.gold, letterSpacing: 0.5, textAlign: "center" }}>{t("divan." + d.id + ".c" + c)}</Text>
+                <Pressable key={c} disabled={dis} onPress={() => { hap(c === 0 ? "success" : "tap"); if (c === 0) playChime(); apply((s) => resolveDivan(s, c)); }} style={{ flex: 1, paddingVertical: 7, paddingHorizontal: 8, borderRadius: 5, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: "rgba(201,168,76,0.12)", opacity: dis ? 0.4 : 1 }}>
+                  <Text style={{ fontFamily: F.display, fontSize: 13, color: C.gold, letterSpacing: 0.5, textAlign: "center" }}>{t("divan." + d.id + ".c" + c)}</Text>
                 </Pressable>
                 );
               })}
@@ -671,10 +700,10 @@ export default function Dashboard() {
         if (!war && !prizeWar) return null;
         const text = war ? t("dash.warMine") : `${beylikName(prizeWar!.prize!)} ${t("dash.warFor")}`;
         return (
-          <Pressable onPress={() => { hap("tap"); router.push("/oyun/orgutler"); }} style={{ marginHorizontal: 12, marginTop: 8, padding: 10, borderRadius: 8, borderWidth: 1, borderColor: "rgba(168,52,52,0.4)", backgroundColor: "rgba(168,52,52,0.08)", flexDirection: "row", alignItems: "center", gap: 9 }}>
+          <Pressable onPress={() => { hap("tap"); router.push("/oyun/orgutler"); }} style={{ marginHorizontal: 12, marginTop: 8, padding: 10, borderRadius: 5, borderWidth: 1, borderColor: "rgba(168,52,52,0.4)", backgroundColor: "rgba(168,52,52,0.08)", flexDirection: "row", alignItems: "center", gap: 9 }}>
             <GameIcon name="crossed-swords" size={15} color={C.blood} />
-            <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 12, color: C.parchment }}>{text}</Text>
-            <Text style={{ color: C.blood, fontFamily: F.display, fontSize: 12 }}>›</Text>
+            <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 15, color: C.parchment }}>{text}</Text>
+            <Text style={{ color: C.blood, fontFamily: F.display, fontSize: 13 }}>›</Text>
           </Pressable>
         );
       })()}
@@ -705,9 +734,9 @@ export default function Dashboard() {
         return (
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginHorizontal: 12, marginTop: 8 }}>
             {chips.map((c, i) => (
-              <View key={i} style={{ flexDirection: "row", alignItems: "center", gap: 5, paddingVertical: 4, paddingHorizontal: 9, borderRadius: 12, borderWidth: 1, borderColor: "rgba(201,168,76,0.3)", backgroundColor: "rgba(201,168,76,0.06)" }}>
+              <View key={i} style={{ flexDirection: "row", alignItems: "center", gap: 5, paddingVertical: 4, paddingHorizontal: 9, borderRadius: 5, borderWidth: 1, borderColor: "rgba(201,168,76,0.3)", backgroundColor: "rgba(201,168,76,0.06)" }}>
                 <GameIcon name={c.icon} size={11} color={C.goldDim} />
-                <Text style={{ fontFamily: F.display, fontSize: 9.5, color: C.parchmentMuted }}>{c.label}</Text>
+                <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchmentMuted }}>{c.label}</Text>
               </View>
             ))}
           </View>
@@ -716,11 +745,11 @@ export default function Dashboard() {
 
       {/* Kervan yolculuğu (bağlam) — çok-adımlı rota ilerlemesi */}
       {!p.dead && state.caravan?.route && (
-        <Pressable onPress={() => { hap("tap"); router.push("/oyun/pazar"); }} style={{ marginHorizontal: 12, marginTop: 8, padding: 10, borderRadius: 8, borderWidth: 1, borderColor: "rgba(224,90,48,0.4)", backgroundColor: "rgba(224,90,48,0.08)" }}>
+        <Pressable onPress={() => { hap("tap"); router.push("/oyun/pazar"); }} style={{ marginHorizontal: 12, marginTop: 8, padding: 10, borderRadius: 5, borderWidth: 1, borderColor: "rgba(224,90,48,0.4)", backgroundColor: "rgba(224,90,48,0.08)" }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
             <GameIcon name="camel" size={14} color={C.ember} />
-            <Text style={{ flex: 1, fontFamily: F.display, fontSize: 9, letterSpacing: 1.5, color: C.ember, textTransform: "uppercase" }}>{t("dash.caravan")}</Text>
-            <Text style={{ fontFamily: F.serif, fontSize: 10.5, color: C.parchmentMuted }}>{(state.caravan.step ?? 0)}/{state.caravan.route.length - 1}</Text>
+            <Text style={{ flex: 1, fontFamily: F.display, fontSize: 13, letterSpacing: 1.5, color: C.ember, textTransform: "uppercase" }}>{t("dash.caravan")}</Text>
+            <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchmentMuted }}>{(state.caravan.step ?? 0)}/{state.caravan.route.length - 1}</Text>
           </View>
           <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 2, marginTop: 5 }}>
             {state.caravan.route.map((stop, i) => {
@@ -743,6 +772,28 @@ export default function Dashboard() {
       <Pressable accessibilityRole="button" onPress={() => router.push("/oyun/tarih")} style={{ minHeight: 58, marginBottom: 12, padding: 12, flexDirection: "row", alignItems: "center", gap: 12, borderWidth: 1, borderColor: C.goldDim, borderRadius: 4, backgroundColor: C.surface }}>
         <GameIcon name="roman" size={28} color={C.gold} /><Text style={{ flex: 1, fontFamily: F.display, fontSize: T.title, color: C.parchment }}>{t("flow.lifeBook")}</Text><Text style={{ color: C.gold, fontSize: 22 }}>›</Text>
       </Pressable>
+      {!p.dead && (p.age >= 13 && p.profession !== "işsiz") ? (
+        <View style={{ paddingHorizontal: 12, paddingBottom: 8 }}>
+          {/* Çalışma stili seçici (Vercel work_rework.py) */}
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 7 }}>
+            {(["garantici", "normal", "hirsli", "kaytarici"] as const).map((ws) => {
+              const on = workStyle === ws;
+              return (
+                <Pressable key={ws} accessibilityRole="button" accessibilityLabel={t("work.style." + ws)} accessibilityState={{ selected: on }} onPress={() => { hap("tap"); setWorkStyle(ws); }} style={{ flexBasis: "45%", flexGrow: 1, minHeight: 44, justifyContent: "center", alignItems: "center", paddingVertical: 8, borderRadius: 5, borderWidth: 1, borderColor: on ? C.gold : C.border, backgroundColor: on ? C.cardHi : "transparent" }}>
+                  <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 0.3, color: on ? C.gold : C.parchmentMuted }}>{t("work.style." + ws)}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+          <EmekOngoru state={state} styleId={workStyle} />
+          {(() => { const worked = !canWork(state); return (
+          <PressableScale accessibilityLabel={worked ? t("act.workedThisTurn") : t("act.work")} onPress={() => { if (worked) return; hap("tap"); playTap(); doWork(workStyle); }} disabled={worked} style={{ flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8, paddingVertical: 14, borderRadius: 5, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.card, opacity: worked ? 0.45 : 1 }}>
+            <GameIcon name="calis" size={15} color={C.gold} />
+            <Text style={{ fontFamily: F.display, fontSize: 13, color: C.gold, letterSpacing: 1.5 }}>{worked ? t("act.workedThisTurn") : t("act.work")}</Text>
+          </PressableScale>); })()}
+        </View>
+      ) : null}
+
       {/* Çocukluk uğraşları (7-12) — çocuğa hareket alanı; çalışma gücünden harcar */}
       {!p.dead && !inJail(p) && p.age >= 7 && p.age < 13 && (() => {
         const en = playEnergy(state); const can = en >= PLAY_COST;
@@ -754,9 +805,9 @@ export default function Dashboard() {
         ];
         const onChild = (k: ChildAct) => { if (!can) return; hap("tap"); const r = childAction(state, k); if (!r.blocked) apply(() => r.state); };
         return (
-          <View style={{ marginHorizontal: 12, marginTop: 8, padding: 12, borderRadius: 10, borderWidth: 1, borderColor: "rgba(201,168,76,0.3)", backgroundColor: "rgba(201,168,76,0.06)" }}>
+          <View style={{ marginHorizontal: 12, marginTop: 8, padding: 12, borderRadius: 5, borderWidth: 1, borderColor: "rgba(201,168,76,0.3)", backgroundColor: "rgba(201,168,76,0.06)" }}>
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 9 }}>
-              <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 1.5, color: C.gold, textTransform: "uppercase" }}>{t("child.title")}</Text>
+              <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1.5, color: C.gold, textTransform: "uppercase" }}>{t("child.title")}</Text>
               <View style={{ flexDirection: "row", gap: 4 }}>
                 {Array.from({ length: maxPlayEnergy(p.age) }).map((_, i) => (
                   <View key={i} style={{ width: 9, height: 9, borderRadius: 2, transform: [{ rotate: "45deg" }], backgroundColor: i < en ? C.gold : "transparent", borderWidth: 1, borderColor: i < en ? C.gold : C.border }} />
@@ -767,18 +818,18 @@ export default function Dashboard() {
             {p.child_dream ? (
               <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 9 }}>
                 <GameIcon name="star" size={11} color={C.gold} />
-                <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted }}>{t("child.dream.label")}: <Text style={{ fontFamily: F.serif, color: C.gold }}>{t("dream." + p.child_dream)}</Text></Text>
+                <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted }}>{t("child.dream.label")}: <Text style={{ fontFamily: F.serif, color: C.gold }}>{t("dream." + p.child_dream)}</Text></Text>
               </View>
             ) : null}
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
               {acts.map((a) => (
-                <Pressable key={a.k} onPress={() => onChild(a.k)} disabled={!can} style={{ width: "48%", flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 10, paddingHorizontal: 10, borderRadius: 9, borderWidth: 1, borderColor: can ? "rgba(201,168,76,0.4)" : C.border, backgroundColor: can ? C.card : C.bg, opacity: can ? 1 : 0.5 }}>
+                <Pressable key={a.k} onPress={() => onChild(a.k)} disabled={!can} style={{ width: "48%", flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 10, paddingHorizontal: 10, borderRadius: 5, borderWidth: 1, borderColor: can ? "rgba(201,168,76,0.4)" : C.border, backgroundColor: can ? C.card : C.bg, opacity: can ? 1 : 0.5 }}>
                   <GameIcon name={a.icon} size={16} color={can ? C.gold : C.parchmentMuted} />
-                  <Text style={{ fontFamily: F.display, fontSize: 11, color: can ? C.parchment : C.parchmentMuted }}>{a.label}</Text>
+                  <Text style={{ fontFamily: F.display, fontSize: 13, color: can ? C.parchment : C.parchmentMuted }}>{a.label}</Text>
                 </Pressable>
               ))}
             </View>
-            {!can && <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted, marginTop: 8 }}>{tg("child.spent", p.gender === "kadın")}</Text>}
+            {!can && <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, marginTop: 8 }}>{tg("child.spent", p.gender === "kadın")}</Text>}
           </View>
         );
       })()}
@@ -795,9 +846,9 @@ export default function Dashboard() {
         ];
         const onYouth = (k: GencAct) => { if (!can) return; hap("tap"); const r = youthAction(state, k); if (!r.blocked) apply(() => r.state); };
         return (
-          <View style={{ marginHorizontal: 12, marginTop: 8, padding: 12, borderRadius: 10, borderWidth: 1, borderColor: "rgba(127,166,106,0.32)", backgroundColor: "rgba(127,166,106,0.06)" }}>
+          <View style={{ marginHorizontal: 12, marginTop: 8, padding: 12, borderRadius: 5, borderWidth: 1, borderColor: "rgba(127,166,106,0.32)", backgroundColor: "rgba(127,166,106,0.06)" }}>
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 9 }}>
-              <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 1.5, color: C.sage, textTransform: "uppercase" }}>{t("genc.title")}</Text>
+              <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1.5, color: C.sage, textTransform: "uppercase" }}>{t("genc.title")}</Text>
               <View style={{ flexDirection: "row", gap: 4 }}>
                 {Array.from({ length: maxPlayEnergy(p.age) }).map((_, i) => (
                   <View key={i} style={{ width: 9, height: 9, borderRadius: 2, transform: [{ rotate: "45deg" }], backgroundColor: i < en ? C.sage : "transparent", borderWidth: 1, borderColor: i < en ? C.sage : C.border }} />
@@ -806,16 +857,16 @@ export default function Dashboard() {
             </View>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
               {acts.map((a) => { const dis = !can || !!a.kapali; return (
-                <Pressable key={a.k} onPress={() => { if (!dis) onYouth(a.k); }} disabled={dis} style={{ width: "48%", flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 10, paddingHorizontal: 10, borderRadius: 9, borderWidth: 1, borderColor: dis ? C.border : "rgba(127,166,106,0.45)", backgroundColor: dis ? "transparent" : "rgba(127,166,106,0.08)" }}>
+                <Pressable key={a.k} onPress={() => { if (!dis) onYouth(a.k); }} disabled={dis} style={{ width: "48%", flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 10, paddingHorizontal: 10, borderRadius: 5, borderWidth: 1, borderColor: dis ? C.border : "rgba(127,166,106,0.45)", backgroundColor: dis ? "transparent" : "rgba(127,166,106,0.08)" }}>
                   <GameIcon name={a.icon} size={16} color={dis ? C.parchmentMuted : C.sage} />
                   <View style={{ flex: 1, minWidth: 0 }}>
-                    <Text numberOfLines={1} style={{ fontFamily: F.display, fontSize: 11, color: dis ? C.parchmentMuted : C.parchment }}>{a.label}</Text>
-                    {a.not ? <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: 9.5, color: C.parchmentMuted }}>{a.not}</Text> : null}
+                    <Text numberOfLines={1} style={{ fontFamily: F.display, fontSize: 13, color: dis ? C.parchmentMuted : C.parchment }}>{a.label}</Text>
+                    {a.not ? <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted }}>{a.not}</Text> : null}
                   </View>
                 </Pressable>
               ); })}
             </View>
-            {!can && <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted, marginTop: 8 }}>{t("genc.spent")}</Text>}
+            {!can && <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, marginTop: 8 }}>{t("genc.spent")}</Text>}
           </View>
         );
       })()}
@@ -832,9 +883,9 @@ export default function Dashboard() {
         ];
         const onAdult = (k: AdultAct) => { if (!can) return; hap("tap"); const r = adultAction(state, k); if (!r.blocked) { if (k === "ibadet") playNey(); apply(() => r.state); } };
         return (
-          <View style={{ marginHorizontal: 12, marginTop: 8, padding: 12, borderRadius: 10, borderWidth: 1, borderColor: "rgba(111,160,192,0.3)", backgroundColor: "rgba(111,160,192,0.05)" }}>
+          <View style={{ marginHorizontal: 12, marginTop: 8, padding: 12, borderRadius: 5, borderWidth: 1, borderColor: "rgba(111,160,192,0.3)", backgroundColor: "rgba(111,160,192,0.05)" }}>
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 9 }}>
-              <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 1.5, color: C.frost, textTransform: "uppercase" }}>{t("adult.title")}</Text>
+              <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1.5, color: C.frost, textTransform: "uppercase" }}>{t("adult.title")}</Text>
               <View style={{ flexDirection: "row", gap: 4 }}>
                 {Array.from({ length: maxStudyEnergy(p.age) }).map((_, i) => (
                   <View key={i} style={{ width: 9, height: 9, borderRadius: 2, transform: [{ rotate: "45deg" }], backgroundColor: i < en ? C.frost : "transparent", borderWidth: 1, borderColor: i < en ? C.frost : C.border }} />
@@ -845,9 +896,9 @@ export default function Dashboard() {
               {acts.map((a) => {
                 const dis = !can || (a.cost != null && p.money < a.cost);
                 return (
-                  <Pressable key={a.k} onPress={() => { if (!dis) onAdult(a.k); }} disabled={dis} style={{ width: acts.length % 2 === 1 && a.k === acts[acts.length - 1].k ? "100%" : "48%", flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 10, paddingHorizontal: 10, borderRadius: 9, borderWidth: 1, borderColor: dis ? C.border : "rgba(111,160,192,0.4)", backgroundColor: dis ? C.bg : C.card, opacity: dis ? 0.5 : 1 }}>
+                  <Pressable key={a.k} onPress={() => { if (!dis) onAdult(a.k); }} disabled={dis} style={{ width: acts.length % 2 === 1 && a.k === acts[acts.length - 1].k ? "100%" : "48%", flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 10, paddingHorizontal: 10, borderRadius: 5, borderWidth: 1, borderColor: dis ? C.border : "rgba(111,160,192,0.4)", backgroundColor: dis ? C.bg : C.card, opacity: dis ? 0.5 : 1 }}>
                     <GameIcon name={a.icon} size={16} color={dis ? C.parchmentMuted : C.frost} />
-                    <Text style={{ flex: 1, fontFamily: F.display, fontSize: 10.5, color: dis ? C.parchmentMuted : C.parchment }} numberOfLines={1}>{a.label}{a.cost != null ? ` · ${a.cost}⚜` : ""}</Text>
+                    <Text style={{ flex: 1, fontFamily: F.display, fontSize: 13, color: dis ? C.parchmentMuted : C.parchment }} numberOfLines={1}>{a.label}{a.cost != null ? ` · ${a.cost}⚜` : ""}</Text>
                   </Pressable>
                 );
               })}
@@ -868,9 +919,9 @@ export default function Dashboard() {
         ];
         const onElder = (k: ElderAct) => { if (!can) return; hap("tap"); const r = elderAction(state, k); if (!r.blocked) { if (k === "tekke") playNey(); apply(() => r.state); } };
         return (
-          <View style={{ marginHorizontal: 12, marginTop: 8, padding: 12, borderRadius: 10, borderWidth: 1, borderColor: "rgba(123,79,175,0.3)", backgroundColor: "rgba(123,79,175,0.06)" }}>
+          <View style={{ marginHorizontal: 12, marginTop: 8, padding: 12, borderRadius: 5, borderWidth: 1, borderColor: "rgba(123,79,175,0.3)", backgroundColor: "rgba(123,79,175,0.06)" }}>
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 9 }}>
-              <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 1.5, color: C.ink, textTransform: "uppercase" }}>{t("elder.title")}</Text>
+              <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1.5, color: C.ink, textTransform: "uppercase" }}>{t("elder.title")}</Text>
               <View style={{ flexDirection: "row", gap: 4 }}>
                 {Array.from({ length: maxStudyEnergy(p.age) }).map((_, i) => (
                   <View key={i} style={{ width: 9, height: 9, borderRadius: 2, transform: [{ rotate: "45deg" }], backgroundColor: i < en ? C.ink : "transparent", borderWidth: 1, borderColor: i < en ? C.ink : C.border }} />
@@ -879,74 +930,28 @@ export default function Dashboard() {
             </View>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
               {acts.map((a) => (
-                <Pressable key={a.k} onPress={() => onElder(a.k)} disabled={!can} style={{ width: acts.length % 2 === 1 && a.k === acts[acts.length - 1].k ? "100%" : "48%", flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 10, paddingHorizontal: 10, borderRadius: 9, borderWidth: 1, borderColor: can ? "rgba(123,79,175,0.4)" : C.border, backgroundColor: can ? C.card : C.bg, opacity: can ? 1 : 0.5 }}>
+                <Pressable key={a.k} onPress={() => onElder(a.k)} disabled={!can} style={{ width: acts.length % 2 === 1 && a.k === acts[acts.length - 1].k ? "100%" : "48%", flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 10, paddingHorizontal: 10, borderRadius: 5, borderWidth: 1, borderColor: can ? "rgba(123,79,175,0.4)" : C.border, backgroundColor: can ? C.card : C.bg, opacity: can ? 1 : 0.5 }}>
                   <GameIcon name={a.icon} size={16} color={can ? C.ink : C.parchmentMuted} />
-                  <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.display, fontSize: 11, color: can ? C.parchment : C.parchmentMuted }}>{a.label}</Text>
+                  <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.display, fontSize: 13, color: can ? C.parchment : C.parchmentMuted }}>{a.label}</Text>
                 </Pressable>
               ))}
             </View>
-            {!can && <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted, marginTop: 8 }}>{tg("child.spent", p.gender === "kadın")}</Text>}
+            {!can && <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, marginTop: 8 }}>{tg("child.spent", p.gender === "kadın")}</Text>}
           </View>
         );
       })()}
 
       {/* Aktif hikâye çağrısı */}
       {!p.dead && state.story?.active && (
-        <Pressable onPress={() => router.push("/oyun/hikayeler")} style={{ marginHorizontal: 12, marginTop: 8, padding: 10, borderRadius: 8, borderWidth: 1, borderColor: "rgba(201,168,76,0.4)", backgroundColor: "rgba(201,168,76,0.08)", flexDirection: "row", alignItems: "center", gap: 8 }}>
+        <Pressable onPress={() => router.push("/oyun/hikayeler")} style={{ marginHorizontal: 12, marginTop: 8, padding: 10, borderRadius: 5, borderWidth: 1, borderColor: "rgba(201,168,76,0.4)", backgroundColor: "rgba(201,168,76,0.08)", flexDirection: "row", alignItems: "center", gap: 8 }}>
           <GameIcon name="roman" size={16} color={C.gold} />
-          <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 12, color: C.parchment }}>{t("dash.storyCta")}</Text>
-          <Text style={{ color: C.gold, fontFamily: F.display, fontSize: 12 }}>›</Text>
+          <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 15, color: C.parchment }}>{t("dash.storyCta")}</Text>
+          <Text style={{ color: C.gold, fontFamily: F.display, fontSize: 13 }}>›</Text>
         </Pressable>
       )}
 
       {/* ── AKSİYONLAR ── */}
       </ScrollView>
-      {p.dead ? (
-        <View style={{ paddingHorizontal: 12, paddingBottom: 8, gap: 10 }}>
-          {varisAdaylari(state).length > 0 && (
-            <Pressable onPress={() => router.push("/oyun/nesil")} style={{ flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 7, paddingVertical: 14, borderRadius: 9, borderWidth: 1.5, borderColor: "rgba(201,168,76,0.55)", backgroundColor: C.gold }}>
-              <GameIcon name="hanedan" size={14} color={C.inkOnGold} />
-              <Text style={{ fontFamily: F.display, fontSize: 13, color: C.inkOnGold, letterSpacing: 1 }}>{t("dash.continueHeir")} ({varisAdaylari(state).length} {t("dash.heirs")})</Text>
-            </Pressable>
-          )}
-          {varisAdaylari(state).length === 0 && !mpMode && (
-            <Pressable onPress={() => router.push("/oyun/ocak")} style={{ flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 7, paddingVertical: 14, borderRadius: 9, borderWidth: 1.5, borderColor: "rgba(201,168,76,0.55)", backgroundColor: C.gold }}>
-              <GameIcon name="hanedan" size={14} color={C.inkOnGold} />
-              <Text style={{ fontFamily: F.display, fontSize: 13, color: C.inkOnGold, letterSpacing: 1 }}>{t("dash.kulOcak")}</Text>
-            </Pressable>
-          )}
-          <View style={{ flexDirection: "row", gap: 10 }}>
-            <Pressable onPress={() => router.push("/oyun/roman")} style={{ flex: 1, flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 6, paddingVertical: 14, borderRadius: 9, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.card }}>
-              <GameIcon name="roman" size={13} color={C.gold} />
-              <Text style={{ fontFamily: F.display, fontSize: 12, color: C.gold, letterSpacing: 1 }}>{t("dash.readLife")}</Text>
-            </Pressable>
-            <Pressable onPress={async () => { try { await resetGame(); router.replace("/yeni-oyun"); } catch {} }} style={{ flex: 1, flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 6, paddingVertical: 14, borderRadius: 9, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.card }}>
-              <GameIcon name="leaf" size={13} color={C.parchmentDim} />
-              <Text style={{ fontFamily: F.display, fontSize: 12, color: C.parchmentDim, letterSpacing: 1 }}>{t("dash.newLife")}</Text>
-            </Pressable>
-          </View>
-        </View>
-      ) : (p.age >= 13 && p.profession !== "işsiz") ? (
-        <View style={{ paddingHorizontal: 12, paddingBottom: 8 }}>
-          {/* Çalışma stili seçici (Vercel work_rework.py) */}
-          <View style={{ flexDirection: "row", gap: 5, marginBottom: 7 }}>
-            {(["garantici", "normal", "hirsli", "kaytarici"] as const).map((ws) => {
-              const on = workStyle === ws;
-              return (
-                <Pressable key={ws} accessibilityRole="button" accessibilityLabel={t("work.style." + ws)} accessibilityState={{ selected: on }} onPress={() => { hap("tap"); setWorkStyle(ws); }} style={{ flex: 1, minHeight: 44, justifyContent: "center", alignItems: "center", paddingVertical: 6, borderRadius: 7, borderWidth: 1, borderColor: on ? C.gold : C.border, backgroundColor: on ? C.cardHi : "transparent" }}>
-                  <Text style={{ fontFamily: F.display, fontSize: 8.5, letterSpacing: 0.3, color: on ? C.gold : C.parchmentMuted }}>{t("work.style." + ws)}</Text>
-                </Pressable>
-              );
-            })}
-          </View>
-          <EmekOngoru state={state} styleId={workStyle} />
-          {(() => { const worked = !canWork(state); return (
-          <PressableScale accessibilityLabel={worked ? t("act.workedThisTurn") : t("act.work")} onPress={() => { if (worked) return; hap("tap"); playTap(); doWork(workStyle); }} disabled={worked} style={{ flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8, paddingVertical: 14, borderRadius: 9, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.card, opacity: worked ? 0.45 : 1 }}>
-            <GameIcon name="calis" size={15} color={C.gold} />
-            <Text style={{ fontFamily: F.display, fontSize: 13, color: C.gold, letterSpacing: 1.5 }}>{worked ? t("act.workedThisTurn") : t("act.work")}</Text>
-          </PressableScale>); })()}
-        </View>
-      ) : null}
     </View>
   );
 }

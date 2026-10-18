@@ -5,16 +5,16 @@ export type DesignFamily = "life" | "craft" | "people" | "realm" | "journey" | "
 export type ScreenDesign = { route: string; titleKey: string; family: DesignFamily; scene: SahneTema; icon: string };
 const page = (route: string, titleKey: string, family: DesignFamily, scene: SahneTema, icon: string): ScreenDesign => ({ route, titleKey, family, scene, icon });
 export const SCREEN_DESIGNS: readonly ScreenDesign[] = [
-  page("/", "app.title", "life", "gurbet_yol", "book"),
+  page("/", "menu.title", "life", "gurbet_yol", "book"),
   page("/yeni-oyun", "new.title", "life", "dogum", "leaf"),
   page("/oyun", "flow.anotherMonth", "life", "gurbet_yol", "hourglass"),
   page("/oyun/karakter", "tab.character", "life", "ev_varlikli", "karakter"),
-  page("/oyun/sehir", "tab.city", "journey", "cami_avlu", "castle"),
+  page("/oyun/sehir", "scr.sehir", "journey", "cami_avlu", "castle"),
   page("/oyun/npc/[id]", "tab.relations", "people", "ev_yoksul", "family"),
   page("/oyun/atolye", "scr.atolye", "craft", "atolye_demirci", "anvil"),
   page("/oyun/pazar", "scr.pazar", "craft", "cami_avlu", "scales"),
   page("/oyun/meslek", "scr.meslek", "craft", "ahi_tekke", "anvil"),
-  page("/oyun/emek", "scr.emek", "craft", "hasat", "wheat"),
+  page("/oyun/emek", "scr.emek", "system", "medrese", "book"),
   page("/oyun/mulkler", "scr.mulkler", "craft", "hasat", "house"),
   page("/oyun/beceriler", "scr.beceriler", "craft", "medrese", "medal"),
   page("/oyun/mektep", "scr.mektep", "craft", "medrese", "mektep"),
