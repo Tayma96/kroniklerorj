@@ -4,7 +4,7 @@ import { View, Text, ScrollView, type ViewStyle } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useGame } from "../../../lib/store";
-import { kisiProfil, kisiCevresi, heardRumor, gorus, teklifSansi, helalUygun, helalBedeli, helalSansi, helallikIste, talkWith, giftTo, proposeMarriage, canCourt, helpNpcGoal, exploitNpcGoal, oyuncuAkrabasi, GOAL_HELP_COST, relWith, insultNpc, flirtWith, gossipAbout, giveMoneyTo, canFlirt, flirtIsForbidden, npcSeededMarried, GIVE_MONEY_AMT, martialLoad, canTakeApprentice, takeApprentice, mentorApprentice, APPRENTICE_MONTHS } from "../../../lib/game";
+import { kisiProfil, kisiCevresi, heardRumor, gorus, teklifSansi, helalUygun, helalBedeli, helalSansi, helallikIste, talkWith, giftTo, proposeMarriage, canCourt, helpNpcGoal, exploitNpcGoal, oyuncuAkrabasi, GOAL_HELP_COST, relWith, insultNpc, flirtWith, gossipAbout, giveMoneyTo, canFlirt, flirtIsForbidden, npcSeededMarried, GIVE_MONEY_AMT, martialLoad, canTakeApprentice, takeApprentice, mentorApprentice, bestSkillOf, APPRENTICE_MONTHS } from "../../../lib/game";
 import { useI18n, yuzdeL, kucukHarf, applyParams, renderEvt } from "../../../lib/i18n";
 import { hap } from "../../../lib/haptics";
 import { INTENTS } from "../../../lib/dialogue";
@@ -83,6 +83,7 @@ const TIE_META: Record<TieKind, { icon: string; tone: string }> = {
   rakip: { icon: "crossed-swords", tone: C.blood },
 };
 const TIE_ORDER: TieKind[] = ["es", "ebeveyn", "evlat", "kardes", "dost", "rakip"];
+const APPRENTICE_SKILLS = ["combat", "trade", "crafting", "social"] as const;
 
 // Teklif şansı rozeti (dokununca döküm açılır) — yüzde ve kalemler motorun zar attığı değerle birebir.
 function SansRozet({ yuzde, acik, onPress }: { yuzde: number; acik: boolean; onPress: () => void }) {
@@ -143,7 +144,8 @@ export default function NpcDetail() {
   const scroll = useRef<ScrollView>(null), chatY = useRef(0);
   const [gorusAcik, setGorusAcik] = useState(false); // görüş dökümü (neden böyle bakıyor)
   const [sansAcik, setSansAcik] = useState<string | null>(null); // hangi teklifin şans dökümü açık
-  useEffect(() => { setLine(""); setLineDelta(0); setGiftOpen(false); setMoreTopics(false); setTiesOpen(false); setSansAcik(null); }, [id, state?.turn]);
+  const [apprenticeChoiceOpen, setApprenticeChoiceOpen] = useState(false);
+  useEffect(() => { setLine(""); setLineDelta(0); setGiftOpen(false); setMoreTopics(false); setTiesOpen(false); setSansAcik(null); setApprenticeChoiceOpen(false); }, [id, state?.turn]);
   // Kişi nüfus kaydından okunur (her yerden; yaşayan ya da rahmetli) — nüfus her eylemde yenilendiği için pop'a bağlı.
   const prof = useMemo(() => (state ? kisiProfil(state, id, lang) : null), [state?.pop, state?.seed, state?.turn, state?.player.location_name, lang, id]);
   const cevre = useMemo(() => (state ? kisiCevresi(state, id, lang) : []), [state?.pop, state?.seed, state?.turn, state?.player.location_name, lang, id]);
@@ -381,22 +383,36 @@ export default function NpcDetail() {
         ); })()}
         {/* Çırak al (usta çağı: 45+, en iyi beceri ≥6, genç NPC) */}
         {canTakeApprentice(state, npc) && (
-          <Pressable onPress={() => { hap("success"); apply((s) => takeApprentice(s, npc)); }} style={({ pressed }) => gameActionStyle(pressed, C.gold, false, lang === "ar")}>
+          <Pressable accessibilityRole="button" accessibilityState={{ expanded: apprenticeChoiceOpen }} onPress={() => { hap("tap"); setApprenticeChoiceOpen((open) => !open); }} style={({ pressed }) => gameActionStyle(pressed, C.gold, false, lang === "ar")}>
             <NpcActionIcon name="anvil" />
             <View style={{ flex: 1 }}>
               <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.gold }}>{t("npc.aprTake")}</Text>
               <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: T.body, color: C.parchmentMuted, marginTop: 1 }}>{t("npc.aprTakeSub")}</Text>
             </View>
-            <NpcActionChevron rtl={lang === "ar"} />
+            <NpcActionChevron rtl={lang === "ar"} expanded={apprenticeChoiceOpen} />
           </Pressable>
         )}
+        {canTakeApprentice(state, npc) && apprenticeChoiceOpen && (
+          <View style={{ marginHorizontal: 14, marginBottom: 8, padding: 10, borderRadius: 10, borderWidth: 1, borderColor: C.border, backgroundColor: C.surface }}>
+            {state.player.apprentice && state.player.apprentice.id !== npc.id && <Text style={{ fontFamily: F.serifItalic, fontSize: T.body, color: C.ember, lineHeight: T.line, marginBottom: 7 }}>{t("npc.aprReplaceWarn")}</Text>}
+            <Text style={{ fontFamily: F.serifItalic, fontSize: T.body, color: C.parchmentMuted, lineHeight: T.line }}>{t("npc.aprChooseSkill")}</Text>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 9 }}>
+              {APPRENTICE_SKILLS.map((skill) => (
+                <Pressable key={skill} accessibilityRole="button" accessibilityLabel={`${t("npc.aprTake")}: ${t("skill." + skill)}`} onPress={() => { hap("success"); apply((s) => takeApprentice(s, npc, skill)); setApprenticeChoiceOpen(false); }} style={({ pressed }) => ({ flexBasis: "47%", flexGrow: 1, minHeight: 74, justifyContent: "center", padding: 9, borderRadius: 9, borderWidth: 1, borderColor: pressed ? C.goldBright : C.goldDim + "99", borderBottomWidth: pressed ? 1 : 3, borderBottomColor: C.bg, backgroundColor: pressed ? C.surface : C.cardHi, transform: [{ translateY: pressed ? 2 : 0 }] })}>
+                  <Text style={{ fontFamily: F.display, fontSize: 13, color: C.gold, textAlign: lang === "ar" ? "right" : "left" }}>{t("npc.aprTake")}: {t("skill." + skill)}</Text>
+                  <Text style={{ fontFamily: F.serifItalic, fontSize: 13, lineHeight: 18, color: C.parchmentMuted, marginTop: 4, textAlign: lang === "ar" ? "right" : "left" }}>{t("skill." + skill + ".b")}</Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+        )}
         {/* Çırakla çalış (ayda bir ders) */}
-        {state.player.apprentice?.id === npc.id && (() => { const taught = state.player.apprentice_turn === state.turn; return (
+        {state.player.apprentice?.id === npc.id && (() => { const apprentice = state.player.apprentice!; const apprenticeSkill = apprentice.skill || bestSkillOf(state.player); const taught = state.player.apprentice_turn === state.turn; return (
           <Pressable disabled={taught} onPress={() => { hap("tap"); apply((s) => mentorApprentice(s)); }} style={({ pressed }) => gameActionStyle(pressed, C.gold, taught, lang === "ar")}>
             <NpcActionIcon name="graduate-cap" />
             <View style={{ flex: 1 }}>
               <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.gold }}>{t("npc.aprMentor")}</Text>
-              <Text style={{ fontFamily: F.serifItalic, fontSize: T.body, color: C.parchmentMuted, marginTop: 1 }}>{(state.player.apprentice?.months || 0)}/{APPRENTICE_MONTHS} {t("npc.aprMonths")}</Text>
+              <Text style={{ fontFamily: F.serifItalic, fontSize: T.body, color: C.parchmentMuted, marginTop: 1 }}>{t("skill." + apprenticeSkill)} · {(apprentice.months || 0)}/{APPRENTICE_MONTHS} {t("npc.aprMonths")}</Text>
             </View>
             <NpcActionChevron rtl={lang === "ar"} />
           </Pressable>

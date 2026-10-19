@@ -6723,7 +6723,7 @@ export function canTakeApprentice(s: GameState, npc: NPC): boolean {
   // Mevcut çırak varken de yeni çırak alınabilir (eskisi bırakılır) — şehir değiştiren oyuncu içerikten kalıcı mahrum kalmasın.
   return !p.cirak && !p.dead && p.age >= 45 && p.apprentice?.id !== npc.id && p.apprentice_turn !== s.turn && p.skills[bestSkillOf(p)] >= 6 && npc.alive !== false && npc.age >= 12 && npc.age <= 22;
 }
-export function takeApprentice(prev: GameState, npc: NPC): GameState {
+export function takeApprentice(prev: GameState, npc: NPC, skill: keyof Skills = bestSkillOf(prev.player)): GameState {
   const s = clone(prev); const p = s.player;
   if (!canTakeApprentice(s, npc)) return s;
   p.apprentice_turn = s.turn; // ayda tek çıraklık eylemi (al/değiştir/ders aynı ailede) — ilişki farmı önlenir
@@ -6732,7 +6732,7 @@ export function takeApprentice(prev: GameState, npc: NPC): GameState {
     s.relationships[p.apprentice.id] = Math.max(-100, Math.min(100, (s.relationships[p.apprentice.id] || 0) - 10));
     push(s, "çıraklık", `Çırağın ${p.apprentice.name}'i yol yarısında bıraktın; gönlü kırıldı.`, "kişisel", false, { k: "evj.apr.released", p: [npcP(s, p.apprentice)] });
   }
-  p.apprentice = { id: npc.id, name: npc.name, months: 0, skill: bestSkillOf(p) };
+  p.apprentice = { id: npc.id, name: npc.name, months: 0, skill };
   s.relationships[npc.id] = Math.max(-100, Math.min(100, (s.relationships[npc.id] || 0) + 10));
   push(s, "çıraklık", `${npc.name}'i yanına çırak aldın; hünerini bir gence aktaracaksın.`, "kişisel", true, { k: "evj.apr.taken", p: [npcP(s, npc)] });
   return s;
@@ -6749,7 +6749,9 @@ export function mentorApprentice(prev: GameState): GameState {
   }
   p.apprentice_turn = s.turn;
   a.months += 1;
-  gainSkill(s, "social", 5); // öğretmek de bir sanattır
+  const lessonSkill = a.skill || bestSkillOf(p); // eski kayıtta dal yoksa ustanın bugünkü hüneriyle devam et
+  a.skill = lessonSkill;
+  gainSkill(s, lessonSkill, 5); // iki yıllık emek, ustanın çırağa aktardığı dalı keskinleştirir
   s.relationships[a.id] = Math.max(-100, Math.min(100, (s.relationships[a.id] || 0) + 3));
   if (a.months >= APPRENTICE_MONTHS) {
     p.apprentice = undefined;
