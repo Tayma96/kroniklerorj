@@ -263,7 +263,7 @@ export function effStat(p: Player, key: keyof Stats): number {
   return Math.max(0, base - pen);
 }
 // Mülk: konuma bağlı (loc) + kondisyon (cond 0..100) + kademe (level 1..3). Gelir refah×kondisyon×kademe.
-export interface Property { type: string; loc: string; cond: number; level?: number; workers?: string[]; ledger?: { y: number; net: number }[]; tenant?: boolean; guard?: boolean; fallow_until?: number; fertile_until?: number; }
+export interface Property { type: string; loc: string; cond: number; level?: number; workers?: string[]; ledger?: { y: number; net: number; months?: number }[]; ledger_accum?: { y: number; net: number; months: number }; tenant?: boolean; guard?: boolean; fallow_until?: number; fertile_until?: number; }
 export const PROP_MAX_LEVEL = 3;
 export function propUpgradeCost(pr: Property): number { return Math.round((PROPERTY_TYPES[pr.type]?.cost || 100) * (pr.level || 1) * 0.8); }
 export function upgradeProperty(prev: GameState, index: number): GameState {
@@ -4003,8 +4003,18 @@ export function advance(prev: GameState, n = 1): GameState {
       const w = propWorkerStats(s, pr, base, condProspLevel);
       inc += w.gross; wages += w.wage;
       if (pr.guard) wages += 4; // bekçi ücreti (enflasyon çarpanı aşağıda tüm ücretlere uygulanır)
-      // Mülk defteri: yıllık net (gelir − ücret) geçmişi (Vercel property ledger; şeffaflık).
-      if (i === n - 1 && s.turn > 0 && s.turn % 12 === 0) { pr.ledger = pr.ledger || []; pr.ledger.push({ y: Math.floor(s.turn / 12), net: Math.round((base * condProspLevel * typeMult * mevMult * nadasMult + w.gross - w.wage) * pmult) }); if (pr.ledger.length > 6) pr.ledger = pr.ledger.slice(-6); }
+      // Mülk defteri: gerçek aylık katkı 12 ay birikir; işçi, bekçi, tapu bakımı ve enflasyon hesaba girer.
+      const ledgerYear = Math.ceil(s.turn / 12);
+      if (!pr.ledger_accum || pr.ledger_accum.y !== ledgerYear) pr.ledger_accum = { y: ledgerYear, net: 0, months: 0 };
+      const ledgerIncome = (rentSkip ? 0 : base * condProspLevel * typeMult * mevMult * nadasMult) + w.gross;
+      pr.ledger_accum.net += (ledgerIncome * pmult - w.wage - (pr.guard ? 4 : 0) - 3) * inflationFactor(s);
+      pr.ledger_accum.months += 1;
+      if (s.turn > 0 && s.turn % 12 === 0) {
+        pr.ledger = pr.ledger || [];
+        pr.ledger.push({ y: ledgerYear, net: Math.round(pr.ledger_accum.net), months: pr.ledger_accum.months });
+        if (pr.ledger.length > 6) pr.ledger = pr.ledger.slice(-6);
+        delete pr.ledger_accum;
+      }
       const y = propYield(s, pr); if (y) { const sm = pr.type === "tarla" ? ({ "İlkbahar": 0.6, "Yaz": 1.0, "Sonbahar": 1.8, "Kış": 0.2 }[cal.season] ?? 1) : 1; const q = Math.round(y.qty * sm * nadasMult); if (q > 0) { const city = pr.loc || s.player.location_name; if (y.good === "un") millCapacityByCity[city] = (millCapacityByCity[city] || 0) + q; else { produced[y.good] = (produced[y.good] || 0) + q; if (y.good === "bugday") farmWheatByCity[city] = (farmWheatByCity[city] || 0) + q; } } } // işçi emeği → gerçek hammadde (tarla mevsimlik)
       if (pr.cond > 40 && chance(pr.type === "ev" && pr.tenant ? 0.35 : 0.2)) pr.cond -= 1; // zamanla aşınma (kiracılı ev daha hızlı yıpranır)
       if (effSec < 30 && chance((0.02 + (effSec < 10 ? 0.03 : 0)) * (pr.guard ? 0.35 : 1))) { // düşük güvenlikte yağma (bekçili mülkte üçte bire iner)

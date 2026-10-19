@@ -114,7 +114,7 @@ Mevcut: 14 portre (yaş×cinsiyet), 16 hero sahnesi (yaş×mevsim), 54 game-icon
 
 ## 8. HEMEN (oynanış derinliği)
 1. **[x] [BEN]** Pazar kervanında oyuncuya yük/şehir seçimi ve şehirler arası fiyat farkı gösterimi eklendi.
-2. **[x] [BEN]** Atölye siparişleri şehir talebine bağlandı; pazar pazarlığı aynı ay/şehir/mal için fiyatı, sabrı ve son sözü kayıtta koruyor. Mülk zincirinde değirmen her un için iki buğday tüketiyor; yerel hasat ve oyuncunun bulunduğu şehirde taşıdığı stok kullanılıyor, otomatik alım yok. Nadaslı tarla üretimi kesiyor. Oyuncu çırak alırken dört beceri dalından birini seçiyor; aylık dersler bu dalı geliştiriyor ve ekranda seçim görünüyor. **Sıradaki:** çıraklığın zaman/beceri karşılığını ve mülk kârlılığını dengele; ardından NPC-aile ve şehir-güç bağlantıları.
+2. **[x] [BEN]** Atölye siparişleri şehir talebine bağlandı; pazar pazarlığı aynı ay/şehir/mal için fiyatı, sabrı ve son sözü kayıtta koruyor. Mülk zincirinde değirmen her un için iki buğday tüketiyor; yerel hasat ve oyuncunun bulunduğu şehirde taşıdığı stok kullanılıyor, otomatik alım yok. Nadaslı tarla üretimi kesiyor. Oyuncu çırak alırken dört beceri dalından birini seçiyor; aylık dersler bu dalı geliştiriyor ve ekranda seçim görünüyor. Yıllık mülk defteri 12 aylık gerçek net akışı işçi/bekçi/bakım/enflasyonla topluyor. **Sıradaki:** çıraklığın zaman/beceri karşılığını ve mülk kârlılığını dengele; ardından NPC-aile ve şehir-güç bağlantıları.
 3. **[BİRLİKTE]** Gerçek cihaz/oyun hissi gerektiren denge ve okunabilirlik kararlarını kullanıcının oyun gözlemleri geldikçe plana işle.
 
 > Not: Bu belge yaşar; her hafta güncellenir. "Bir an önce" için en hızlı yol — senin oynayış notların + benim paralel yazım/denge çalışmam.

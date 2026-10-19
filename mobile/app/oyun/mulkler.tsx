@@ -18,11 +18,9 @@ import { BackLabel, Panel, Portre, ScreenFresk } from "../../lib/ui";
 // Mülk gelirini seviyeye göre hesapla (Vercel property_system ile aynı: taban × (1 + (seviye-1)*0.5)).
 
 // Gelir trend grafiği — mülk defterinden (yıllık net) küçük sparkline.
-function Spark({ ledger, color, w = 58, h = 26 }: { ledger?: { y: number; net: number }[]; color: string; w?: number; h?: number }) {
-  const data = (ledger || []).slice(-7).map((e) => e.net);
-  if (data.length < 2) {
-    return <Svg width={w} height={h}><Polyline points={`2,${h / 2} ${w - 2},${h / 2}`} fill="none" stroke={C.parchmentMuted} strokeWidth={1.3} opacity={0.5} /></Svg>;
-  }
+function Spark({ ledger, color, w = 58, h = 26 }: { ledger?: { y: number; net: number; months?: number }[]; color: string; w?: number; h?: number }) {
+  const data = (ledger || []).filter((e) => e.months === 12).slice(-7).map((e) => e.net);
+  if (data.length < 2) return null;
   const min = Math.min(...data), max = Math.max(...data), rng = max - min || 1, pad = 3;
   const pts = data.map((v, i) => {
     const x = pad + (i / (data.length - 1)) * (w - pad * 2);
@@ -152,7 +150,8 @@ export default function Mulkler() {
             const inc = propAylikTahmin(state, pr);
             const slots = propWorkerSlots(pr);
             const cc = condColor(pr.cond);
-            const trend = ((pr.ledger || []).slice(-1)[0]?.net ?? 0) >= 0 ? C.sage : C.blood;
+            const fullYears = (pr.ledger || []).filter((entry) => entry.months === 12);
+            const trend = (fullYears.slice(-1)[0]?.net ?? 0) >= 0 ? C.sage : C.blood;
             const open = manageIdx === i;
             return (
               <View key={i} style={{ paddingHorizontal: 11, paddingVertical: 11, borderBottomWidth: i === p.properties.length - 1 ? 0 : 1, borderBottomColor: C.border }}>
@@ -187,7 +186,7 @@ export default function Mulkler() {
                   <View style={{ flex: 1, height: 5, borderRadius: 3, backgroundColor: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
                     <View style={{ width: `${pr.cond}%`, height: 5, borderRadius: 3, backgroundColor: cc }} />
                   </View>
-                  <Spark ledger={pr.ledger} color={trend} />
+                  <Spark ledger={fullYears} color={trend} />
                 </View>
 
                 {/* Yönet paneli — onar / büyüt / işçiler */}
