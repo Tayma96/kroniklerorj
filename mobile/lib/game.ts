@@ -22,6 +22,9 @@ import { arcById, ArcChoice, availableArcs } from "./arcs";
 export interface Stats { strength: number; intelligence: number; charisma: number; stamina: number; }
 export interface Skills { combat: number; trade: number; crafting: number; social: number; }
 export interface Injury { label: string; stat: keyof Stats; delta: number; weeks_left: number; permanent: boolean; }
+export type BargainMessageKey = "opening" | "softened" | "firm" | "walkedOff" | "floor" | "limit" | "bluffWin" | "bluffFail";
+export interface BargainSession { id: string; city: string; turn: number; sell: boolean; base: number; price: number; patience: number; messageKey: BargainMessageKey; done: boolean; }
+const BARGAIN_MESSAGE_KEYS = new Set<string>(["opening", "softened", "firm", "walkedOff", "floor", "limit", "bluffWin", "bluffFail"]);
 export interface Player {
   name: string; surname: string; gender: "erkek" | "kadın"; base_age: number; age: number;
   money: number; profession: string; health: number; hunger: number;
@@ -166,6 +169,7 @@ export interface Player {
   healer_turn?: number; // bu ay hekime görünüldü mü (tur başına tek — şifa farm'ı yok)
   propose_turn?: number; // bu ay bir haneye teklif götürüldü mü (diplomasi tek girişim)
   bargain_buy_turn?: number; bargain_sell_turn?: number; // pazarlık ayda birer kez (sınırsız arbitraj + XP farm'ı kapalı)
+  bargain_sessions?: Record<string, BargainSession>; // yarım kalan pazarlık aynı ay/şehir/eşya için kayıtta sürer
   dilemma_turn?: number; // ikilem sonucu turda bir kez uygulanır (çift tık / yarış koruması)
   prestige_turn?: number; // ayda tek hayrat işi (hekim/imaret spam'ı kapalı)
   omur_anlari?: GameEvent[]; // ömür defteri: en çok 12 büyük kişisel an (kronik kırpılsa da mersiyeye kalır)
@@ -6201,6 +6205,88 @@ export function rollBargain(prev: GameState, bluff = false): { state: GameState;
   const success = gameRandom(state) < bargainChance(state) * (bluff ? 0.7 : 1);
   return { state, success };
 }
+export function bargainSessionKey(turn: number, city: string, id: string, sell: boolean): string {
+  return JSON.stringify([turn, city, id, sell ? "sell" : "buy"]);
+}
+function savedBargainSession(state: GameState, key: string): BargainSession | undefined {
+  const session = state.player.bargain_sessions?.[key];
+  if (!session || typeof session !== "object" || session.turn !== state.turn || session.city !== state.player.location_name) return undefined;
+  if (typeof session.id !== "string" || typeof session.sell !== "boolean" || typeof session.done !== "boolean" || key !== bargainSessionKey(session.turn, session.city, session.id, session.sell)) return undefined;
+  if (!Number.isFinite(session.base) || session.base <= 0 || !Number.isFinite(session.price) || !Number.isFinite(session.patience) || session.patience < 0 || session.patience > 100) return undefined;
+  const floor = Math.max(1, Math.round(session.base * (session.sell ? 1 : 0.6)));
+  const ceiling = Math.round(session.base * (session.sell ? 1.4 : 1));
+  if (session.price < floor || session.price > ceiling) return undefined;
+  if (!BARGAIN_MESSAGE_KEYS.has(session.messageKey)) return undefined;
+  return session;
+}
+export function beginBargain(prev: GameState, id: string, sell = false): { state: GameState; key: string } {
+  const p = prev.player;
+  if (p.dead || inJail(p) || p.age < 13) return { state: prev, key: "" };
+  if (sell ? p.bargain_sell_turn === prev.turn : p.bargain_buy_turn === prev.turn) return { state: prev, key: "" };
+  const key = bargainSessionKey(prev.turn, p.location_name, id, sell);
+  if (savedBargainSession(prev, key)) return { state: prev, key };
+  const base = sell ? bargainSellBase(prev, id) : bargainBase(prev, id);
+  if (!(base > 0)) return { state: prev, key: "" };
+  const state = clone(prev);
+  const sessions: Record<string, BargainSession> = {};
+  for (const savedKey of Object.keys(p.bargain_sessions || {})) {
+    const saved = savedBargainSession(prev, savedKey);
+    if (saved) sessions[savedKey] = saved;
+  }
+  sessions[key] = { id, city: p.location_name, turn: prev.turn, sell, base, price: base, patience: 100, messageKey: "opening", done: false };
+  state.player.bargain_sessions = sessions;
+  return { state, key };
+}
+export function advanceBargain(prev: GameState, key: string, bluff = false): { state: GameState; success: boolean } {
+  const current = savedBargainSession(prev, key);
+  if (!current || current.done) return { state: prev, success: false };
+  const rolled = rollBargain(prev, bluff);
+  if (rolled.state === prev) return rolled;
+  const next: BargainSession = { ...current };
+  if (current.sell) {
+    const ceiling = Math.round(current.base * 1.4);
+    if (bluff && rolled.success && current.price < ceiling) {
+      next.price = Math.min(ceiling, Math.round(current.price * 1.22));
+      next.patience = Math.max(0, current.patience - 18);
+      const atCeiling = next.price >= ceiling;
+      next.messageKey = atCeiling ? "limit" : "bluffWin";
+      next.done = atCeiling || next.patience <= 0;
+    } else if (!bluff && rolled.success && current.price < ceiling) {
+      next.price = Math.min(ceiling, Math.round(current.price * 1.1));
+      next.patience = Math.max(0, current.patience - 12);
+      const atCeiling = next.price >= ceiling;
+      next.messageKey = atCeiling ? "limit" : "softened";
+      next.done = atCeiling || next.patience <= 0;
+    } else {
+      next.patience = Math.max(0, current.patience - (bluff ? 45 : 30));
+      if (bluff) next.price = Math.max(Math.round(current.base * 0.9), Math.round(current.price * 0.95));
+      next.messageKey = next.patience <= 0 ? "walkedOff" : bluff ? "bluffFail" : "firm";
+      next.done = next.patience <= 0;
+    }
+  } else {
+    const floor = Math.max(1, Math.round(current.base * 0.6));
+    if (bluff && rolled.success && current.price > floor) {
+      next.price = Math.max(floor, Math.round(current.price * 0.78));
+      next.patience = Math.max(0, current.patience - 18);
+      const atFloor = next.price <= floor;
+      next.messageKey = atFloor ? "floor" : "bluffWin";
+      next.done = atFloor || next.patience <= 0;
+    } else if (!bluff && rolled.success && current.price > floor) {
+      next.price = Math.max(floor, Math.round(current.price * 0.9));
+      next.patience = Math.max(0, current.patience - 12);
+      const atFloor = next.price <= floor;
+      next.messageKey = atFloor ? "floor" : "softened";
+      next.done = atFloor || next.patience <= 0;
+    } else {
+      next.patience = Math.max(0, current.patience - (bluff ? 45 : 30));
+      if (bluff) next.price = Math.min(current.base, Math.round(current.price * 1.05)); // başarısız blöf fiyatı yükseltir ama normal alış fiyatını aşamaz
+      next.messageKey = next.patience <= 0 ? "walkedOff" : bluff ? "bluffFail" : "firm";
+      next.done = next.patience <= 0;
+    }
+  }
+  rolled.state.player.bargain_sessions = { ...rolled.state.player.bargain_sessions, [key]: next };
+  return { state: rolled.state, success: rolled.success };
+}
 // Müzakere sonunda anlaşılan fiyattan alım.
 export function negotiatedBuy(prev: GameState, id: string, price: number): GameState {
   const s = clone(prev); const p = s.player;
@@ -6258,6 +6344,17 @@ export function negotiatedSell(prev: GameState, id: string, price: number): Game
   if (p.trade_xp_turn !== s.turn) { p.trade_xp_turn = s.turn; gainSkill(s, "trade", 6); }
   push(s, "ticaret", `Pazarlıkla ${g.name} sattın (+${earn} akçe).`, "kişisel", false, { k: "evj.sellHaggle", p: [{ i: id }, earn] });
   return s;
+}
+export function settleBargain(prev: GameState, key: string): GameState {
+  const session = savedBargainSession(prev, key);
+  if (!session) return prev;
+  const state = session.sell ? negotiatedSell(prev, session.id, session.price) : negotiatedBuy(prev, session.id, session.price);
+  const settled = session.sell ? state.player.bargain_sell_turn === state.turn : state.player.bargain_buy_turn === state.turn;
+  if (!settled) return state;
+  const sessions = { ...state.player.bargain_sessions };
+  delete sessions[key];
+  state.player.bargain_sessions = Object.keys(sessions).length ? sessions : undefined;
+  return state;
 }
 
 // İlişki: niyetli sohbet (bağlamlı), hediye ver.

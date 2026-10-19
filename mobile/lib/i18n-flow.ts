@@ -10,6 +10,7 @@ const rows: Record<string, string[]> = {
   "flow.recent": ["Son Gelişmeler", "Recent Events", "Últimos acontecimientos", "Últimos acontecimentos", "آخر التطورات", "Последние события"],
   "flow.lifeBook": ["Yaşam Defteri", "Life Journal", "Diario de vida", "Diário da vida", "سجل الحياة", "Дневник жизни"],
   "cra.order.title": ["Kasaba siparişleri", "Town orders", "Pedidos del pueblo", "Encomendas da vila", "طلبات البلدة", "Заказы города"],
+  "paz.limit": ["Bu pazarlıkta daha ileri gitmiyor.", "The merchant will go no further on this deal.", "El mercader no cede más en este trato.", "O mercador não cede mais neste negócio.", "لن يتنازل التاجر أكثر في هذه الصفقة.", "Торговец больше не уступит в этой сделке."],
   "cra.order.hint": ["Kasabanın yerel arz-talebe göre seçtiği üç zanaat ihtiyacı.", "Three craft needs chosen from the town's local supply and demand.", "Tres necesidades artesanales según la oferta y demanda local.", "Três necessidades de ofício conforme a oferta e a procura locais.", "ثلاث حاجات حرفية يحددها عرض البلدة وطلبها المحليان.", "Три ремесленные нужды, выбранные по местному спросу и предложению."],
   "cra.order.pay": ["Sabit ödeme: %1 akçe", "Fixed payment: %1 coins", "Pago fijo: %1 monedas", "Pagamento fixo: %1 moedas", "أجر ثابت: %1 أقجة", "Фиксированная плата: %1 акче"],
   "cra.order.publicBenefit": ["Teslimde halk itibarı +2", "Delivery grants +2 public standing", "La entrega da +2 de prestigio público", "A entrega concede +2 de prestígio público", "التسليم يمنح +2 من تقدير الناس", "Доставка даёт +2 к уважению горожан"],

@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
 import { WarWorldCard } from "../../lib/war-world-ui";
-import { buyItem, buyPrice, sellItem, launchCaravan, caravanRouteOptions, caravanPremium, rentStall, stallCost, stallActive, stockWinter, winterStockCost, pawnHorse, redeemHorse, horsePawnValue, horseRedeemCost, negotiatedBuy, negotiatedSell, bargainBase, bargainSellBase, bargainChance, rollBargain, marketPrice, econKey, goodPriceMult, MARKET_EVENTS, bestQualityTier, QUALITY_LABEL, sellerPersonaOf, factionLocalFavor, goodMarketTag, goodTrend, citySpecialtyIdx, loanCapacity, loanRate, borrow, repay, depositCoin, withdrawCoin, DEPOSIT_ANNUAL_YIELD, lifestyleUpkeep, giveZekat, zekatDue, zekatAvailable } from "../../lib/game";
+import { buyItem, buyPrice, sellItem, launchCaravan, caravanRouteOptions, caravanPremium, rentStall, stallCost, stallActive, stockWinter, winterStockCost, pawnHorse, redeemHorse, horsePawnValue, horseRedeemCost, beginBargain, advanceBargain, settleBargain, marketPrice, econKey, goodPriceMult, MARKET_EVENTS, bestQualityTier, QUALITY_LABEL, sellerPersonaOf, factionLocalFavor, goodMarketTag, goodTrend, citySpecialtyIdx, loanCapacity, loanRate, borrow, repay, depositCoin, withdrawCoin, DEPOSIT_ANNUAL_YIELD, lifestyleUpkeep, giveZekat, zekatDue, zekatAvailable } from "../../lib/game";
 import { marketGoods, locSeed, ITEMS } from "../../lib/world";
 import { caravanRouteText } from "../../lib/caravan-route-locales";
 import { currentCalendar } from "../../lib/calendar";
@@ -66,7 +66,7 @@ export default function Pazar() {
   const router = useRouter();
   const { state, apply } = useGame();
   const { lang, t, tg } = useI18n();
-  const [barg, setBarg] = useState<null | { id: string; icon: string; name: string; base: number; price: number; patience: number; msg: string; done: boolean; sell?: boolean }>(null);
+  const [barg, setBarg] = useState<null | { key: string; id: string; icon: string; name: string; base: number; price: number; patience: number; messageKey: string; msg: string; done: boolean; sell?: boolean }>(null);
   const [sigorta, setSigorta] = useState(false);
   const [caravanRouteId, setCaravanRouteId] = useState<string | null>(null);
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
@@ -81,89 +81,51 @@ export default function Pazar() {
 
   // ── Pazarlık müzakeresi (anlık alım/satım yok; sabır ibresiyle tur tur) ──
   // sell=false: fiyatı tabana indir (alım). sell=true: fiyatı tavana çıkar (satım).
+  const bargainUi = (session: NonNullable<typeof state.player.bargain_sessions>[string], key: string, g: { id: string; kind?: string; heal?: number; feed?: number }) => ({
+    key, id: g.id, icon: marketItemIcon(g), name: t("it." + g.id), base: session.base, price: session.price,
+    patience: session.patience, messageKey: session.messageKey, msg: session.messageKey === "bluffWin" ? tg("paz.bluffWin", state.player.gender === "kadın") : t("paz." + session.messageKey),
+    done: session.done, sell: session.sell,
+  });
   const openBarg = (g: { id: string; kind?: string; heal?: number; feed?: number }, sell = false) => {
     hap("tap");
-    const base = sell ? bargainSellBase(state, g.id) : bargainBase(state, g.id);
-    setBarg({ id: g.id, icon: marketItemIcon(g), name: t("it." + g.id), base, price: base, patience: 100, msg: t("paz.opening"), done: false, sell });
+    const opened: { value?: ReturnType<typeof beginBargain> } = {};
+    apply((s) => { opened.value = beginBargain(s, g.id, sell); return opened.value.state; });
+    const value = opened.value;
+    if (!value?.key) return;
+    const session = value.state.player.bargain_sessions?.[value.key];
+    if (session) setBarg(bargainUi(session, value.key, g));
   };
   const doHaggle = () => {
     if (!barg || barg.done) return;
-    let ok: boolean | undefined;
+    const updated: { session?: NonNullable<typeof state.player.bargain_sessions>[string] } = {};
     apply((s) => {
-      const result = rollBargain(s, false);
-      if (result.state !== s) ok = result.success;
+      const result = advanceBargain(s, barg.key, false);
+      updated.session = result.state.player.bargain_sessions?.[barg.key];
       return result.state;
     });
-    if (ok === undefined) return;
-    if (barg.sell) {
-      const ceil = Math.round(barg.base * 1.4);
-      if (ok && barg.price < ceil) {
-        hap("success");
-        const newPrice = Math.min(ceil, Math.round(barg.price * 1.1));
-        const patience = Math.max(0, barg.patience - 12);
-        const atCeil = newPrice >= ceil;
-        setBarg({ ...barg, price: newPrice, patience, msg: atCeil ? t("paz.floor") : t("paz.softened"), done: atCeil || patience <= 0 });
-      } else { hap("warning"); const patience = Math.max(0, barg.patience - 30); setBarg({ ...barg, patience, msg: patience <= 0 ? t("paz.walkedOff") : t("paz.firm"), done: patience <= 0 }); }
-      return;
-    }
-    const floor = Math.max(1, Math.round(barg.base * 0.6));
-    if (ok && barg.price > floor) {
-      hap("success");
-      const newPrice = Math.max(floor, Math.round(barg.price * 0.9));
-      const patience = Math.max(0, barg.patience - 12);
-      const atFloor = newPrice <= floor;
-      setBarg({ ...barg, price: newPrice, patience, msg: atFloor ? t("paz.floor") : t("paz.softened"), done: atFloor || patience <= 0 });
-    } else {
-      hap("warning");
-      const patience = Math.max(0, barg.patience - 30);
-      setBarg({ ...barg, patience, msg: patience <= 0 ? t("paz.walkedOff") : t("paz.firm"), done: patience <= 0 });
-    }
+    if (!updated.session) return;
+    const next = bargainUi(updated.session, barg.key, barg);
+    hap(next.messageKey === "softened" || next.messageKey === "floor" || next.messageKey === "limit" ? "success" : "warning");
+    setBarg(next);
   };
   // Blöf: yüksek risk/ödül — tutarsa büyük kazanım, tutmazsa satıcı alınır, fiyat kötüleşir.
   const doBluff = () => {
     if (!barg || barg.done) return;
-    let ok: boolean | undefined;
+    const updated: { session?: NonNullable<typeof state.player.bargain_sessions>[string] } = {};
     apply((s) => {
-      const result = rollBargain(s, true);
-      if (result.state !== s) ok = result.success;
+      const result = advanceBargain(s, barg.key, true);
+      updated.session = result.state.player.bargain_sessions?.[barg.key];
       return result.state;
     });
-    if (ok === undefined) return;
-    if (barg.sell) {
-      const ceil = Math.round(barg.base * 1.4);
-      if (ok && barg.price < ceil) {
-        hap("success");
-        const newPrice = Math.min(ceil, Math.round(barg.price * 1.22));
-        const patience = Math.max(0, barg.patience - 18);
-        const atCeil = newPrice >= ceil;
-        setBarg({ ...barg, price: newPrice, patience, msg: atCeil ? t("paz.floor") : tg("paz.bluffWin", state.player.gender === "kadın"), done: atCeil || patience <= 0 });
-      } else {
-        hap("warning");
-        const patience = Math.max(0, barg.patience - 45);
-        const newPrice = Math.max(Math.round(barg.base * 0.9), Math.round(barg.price * 0.95)); // satıcı alınır, teklif düşer
-        setBarg({ ...barg, price: newPrice, patience, msg: patience <= 0 ? t("paz.walkedOff") : t("paz.bluffFail"), done: patience <= 0 });
-      }
-      return;
-    }
-    const floor = Math.max(1, Math.round(barg.base * 0.6));
-    if (ok && barg.price > floor) {
-      hap("success");
-      const newPrice = Math.max(floor, Math.round(barg.price * 0.78));
-      const patience = Math.max(0, barg.patience - 18);
-      const atFloor = newPrice <= floor;
-      setBarg({ ...barg, price: newPrice, patience, msg: atFloor ? t("paz.floor") : tg("paz.bluffWin", state.player.gender === "kadın"), done: atFloor || patience <= 0 });
-    } else {
-      hap("warning");
-      const patience = Math.max(0, barg.patience - 45);
-      const newPrice = Math.min(Math.round(barg.base * 1.1), Math.round(barg.price * 1.05));
-      setBarg({ ...barg, price: newPrice, patience, msg: patience <= 0 ? t("paz.walkedOff") : t("paz.bluffFail"), done: patience <= 0 });
-    }
+    if (!updated.session) return;
+    const next = bargainUi(updated.session, barg.key, barg);
+    hap(next.messageKey === "bluffWin" || next.messageKey === "floor" || next.messageKey === "limit" ? "success" : "warning");
+    setBarg(next);
   };
   const confirmBuy = () => {
     if (!barg) return;
     hap("advance");
-    if (barg.sell) apply((s) => negotiatedSell(s, barg.id, barg.price));
-    else apply((s) => negotiatedBuy(s, barg.id, barg.price));
+    apply((s) => settleBargain(s, barg.key));
     setBarg(null);
   };
 
@@ -477,8 +439,8 @@ export default function Pazar() {
                         <Text style={{ fontFamily: F.display, fontSize: 13, color: p.money < g.buy ? C.parchmentMuted : C.gold }}>{t("misc.buy")} {g.buy}⚜</Text>
                       </Pressable>
                       {/* Pazarlık daha DÜŞÜK fiyata inebilir → tam fiyatı karşılayamasan da aç (modal kendi 'yeterli akçe'sini kontrol eder). */}
-                      <Pressable onPress={() => openBarg(g)} disabled={p.money < Math.round(g.buy * 0.6)} style={{ alignItems: "center", paddingVertical: 8, paddingHorizontal: 12, borderRadius: 5, borderWidth: 1, borderColor: "rgba(201,168,76,0.3)", backgroundColor: C.bg }}>
-                        <Text style={{ fontFamily: F.display, fontSize: 13, color: p.money < Math.round(g.buy * 0.6) ? C.parchmentMuted : C.goldDim }}>{t("misc.bargain")}</Text>
+                      <Pressable onPress={() => openBarg(g)} disabled={p.bargain_buy_turn === state.turn || p.money < Math.round(g.buy * 0.6)} style={{ alignItems: "center", paddingVertical: 8, paddingHorizontal: 12, borderRadius: 5, borderWidth: 1, borderColor: "rgba(201,168,76,0.3)", backgroundColor: C.bg, opacity: p.bargain_buy_turn === state.turn ? 0.45 : 1 }}>
+                        <Text style={{ fontFamily: F.display, fontSize: 13, color: p.bargain_buy_turn === state.turn || p.money < Math.round(g.buy * 0.6) ? C.parchmentMuted : C.goldDim }}>{t("misc.bargain")}</Text>
                       </Pressable>
                     </View>
                     {have > 0 && (
@@ -486,8 +448,8 @@ export default function Pazar() {
                         <Pressable onPress={() => { hap('tap'); playCoin(); apply((s) => sellItem(s, g.id)); }} style={{ flex: 1, alignItems: "center", paddingVertical: 8, borderRadius: 5, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.card }}>
                           <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchmentDim }}>{t("misc.sell")} {g.sell}⚜</Text>
                         </Pressable>
-                        <Pressable onPress={() => openBarg(g, true)} style={{ alignItems: "center", paddingVertical: 8, paddingHorizontal: 12, borderRadius: 5, borderWidth: 1, borderColor: "rgba(127,166,106,0.4)", backgroundColor: C.bg }}>
-                          <Text style={{ fontFamily: F.display, fontSize: 13, color: C.sage }}>{t("paz.sellHaggle")}</Text>
+                        <Pressable onPress={() => openBarg(g, true)} disabled={p.bargain_sell_turn === state.turn} style={{ alignItems: "center", paddingVertical: 8, paddingHorizontal: 12, borderRadius: 5, borderWidth: 1, borderColor: "rgba(127,166,106,0.4)", backgroundColor: C.bg, opacity: p.bargain_sell_turn === state.turn ? 0.45 : 1 }}>
+                          <Text style={{ fontFamily: F.display, fontSize: 13, color: p.bargain_sell_turn === state.turn ? C.parchmentMuted : C.sage }}>{t("paz.sellHaggle")}</Text>
                         </Pressable>
                       </View>
                     )}

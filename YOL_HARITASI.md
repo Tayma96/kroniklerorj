@@ -43,7 +43,7 @@ Mevcut sayılar (ayar yapılacak yerler — `mobile/lib/game.ts`):
 
 - [ ] **[SEN→BEN]** 3–4 nesil oynayıp not al: "çok hızlı zenginleştim / sürekli açım / savaş çok kolay/zor / ilerleme yavaş". **[BİRLİKTE]** — *insan oyun testi gerekir.*
 - [x] Erken oyun eğrisi: 13–20 yaş geçim sürdürülebilir mi? **[BEN]** — *`scripts/_smoke/ekonomi.cjs` (80 hayat/tür): 13–20 yaşta kesesi dibe vuran %0; 20 yaşında kese+emanet medyanı pasif ~935, etkin ~1.4k, usta ~1.65k.*
-- [ ] Ekonomi: kasaba-bazlı fiyat + kıtlık/bolluk + kervan kârı dengeli mi (sömürü açığı var mı)? **[BEN]** — *şehirler arası arz-talep arbitrajı ve kervan yolculuğu mevcut; eksik parça oyuncunun yükü/hedefi seçememesi ve fiyat farkını yola çıkmadan görememesi. İlk oynanış dilimi bunu kapatıyor.*
+- [ ] Ekonomi: kasaba-bazlı fiyat + kıtlık/bolluk + kervan kârı dengeli mi (sömürü açığı var mı)? **[BEN]** — *şehirler arası arz-talep arbitrajı ve kervan yolculuğu mevcut; oyuncu kervan yükü/hedefi ve pazarlık teklifini görüyor, sipariş de atölyeyi yerel talebe bağlıyor. Uzun vadeli kâr-risk simülasyonu hâlâ yapılmalı.*
 - [ ] Savaş zorluğu: encounter güçleri ve yaralanma oranı; nemesis adil mi? **[BEN]** — *duman testi çökme olmadığını gösterir ama zorluk ölçümü yok; oyun testi notu ile ayarlanmalı.*
 - [ ] Beceri/perk hızı: bir ömürde kaç perk açılıyor (hedef ~6–9)? **[BEN]** — *ölçüldü (ekonomi.cjs): yalnız çalışan oyuncu ömür sonunda 3, kart kararı veren 4 hüner kademesi hak ediyor. Bu politikalar talim/okuma yapmıyor; gerçek oyuncu sayısı cihaz testinden alınmalı, hedefin altındaysa XP artırılır.*
 - [ ] Ömür temposu: bir nesil kaç "Ayı İlerle"de bitiyor (hedef: tatmin edici ama sürünmeyen)? **[BEN]** — *ölçüldü (oynanis.cjs, 60 hayat): medyan 708 ay / 657 karar, boş ay %15, bunalma %0.2, ölüm yaşı medyan 66. "Sürünüyor mu" kararı insan testine kalır.*
@@ -114,7 +114,7 @@ Mevcut: 14 portre (yaş×cinsiyet), 16 hero sahnesi (yaş×mevsim), 54 game-icon
 
 ## 8. HEMEN (oynanış derinliği)
 1. **[x] [BEN]** Pazar kervanında oyuncuya yük/şehir seçimi ve şehirler arası fiyat farkı gösterimi eklendi.
-2. **[x] [BEN]** Atölye mesleğini şehir ekonomisine bağlayan sipariş döngüsü eklendi: üç yerel talep, görünür ücret, sipariş şehrinde üretim koşulu, vadesiz kabul, iptal, ayda bir teslim ve halk/lonca itibarı tercihi. **Sıradaki:** çıraklık, meslek uzmanlığı ve mülk üretim zincirini oyuncu kararlarına bağla; ardından NPC-aile ve şehir-güç bağlantıları.
+2. **[x] [BEN]** Atölye mesleğini şehir ekonomisine bağlayan sipariş döngüsü eklendi: üç yerel talep, görünür ücret, sipariş şehrinde üretim koşulu, vadesiz kabul, iptal, ayda bir teslim ve halk/lonca itibarı tercihi. Pazar pazarlığı da aynı ay/şehir/mal için fiyatı, sabrı ve son sözü kayıtta koruyor; kapatıp açma ücretsiz yeni deneme vermiyor. **Sıradaki:** çıraklık, meslek uzmanlığı ve mülk üretim zincirini oyuncu kararlarına bağla; ardından NPC-aile ve şehir-güç bağlantıları.
 3. **[BİRLİKTE]** Gerçek cihaz/oyun hissi gerektiren denge ve okunabilirlik kararlarını kullanıcının oyun gözlemleri geldikçe plana işle.
 
 > Not: Bu belge yaşar; her hafta güncellenir. "Bir an önce" için en hızlı yol — senin oynayış notların + benim paralel yazım/denge çalışmam.
