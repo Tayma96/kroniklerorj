@@ -12,6 +12,10 @@ import { hap } from "../../lib/haptics";
 import { BackLabel, GameButton, PageHeader, ScreenFresk } from "../../lib/ui";
 import { YetenekSecici } from "../../lib/soy-ui";
 
+const HEIR_ATTRIBUTE_KEYS = ["strength", "intelligence", "charisma", "stamina"] as const;
+const HEIR_SKILL_KEYS = ["combat", "trade", "crafting", "social"] as const;
+const BASE_HEIR_STATS = { strength: 1, intelligence: 1, charisma: 1, stamina: 2 };
+
 export default function Nesil() {
   const insets = useSafeAreaInsets(); const router = useRouter();
   const { state, apply, varisleDevam } = useGame();
@@ -45,13 +49,21 @@ export default function Nesil() {
             </Text>
             <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.goldDim, marginBottom: 12, lineHeight: 22 }}>{t("asabiye." + asabiyeBandi(state))}</Text>
             <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.goldDim, marginBottom: 8 }}>{t("nes.chooseHeir")}</Text>
-            {heirRows.map((a) => { const pv = heirPreview(state, a.key, will, yet || undefined), selected = chosenHeir?.key === a.key; return (
-              <Pressable key={a.key} testID={"heir-" + a.key} accessibilityRole="button" accessibilityLabel={`${a.ad}, ${t("varis.role." + a.tur)}`} accessibilityState={{ disabled: !pv.available, selected }} disabled={!pv.available} onPress={() => setHeir(a.key)} style={{ flexDirection: "row", alignItems: "center", gap: 10, minHeight: 58, padding: 12, borderRadius: 5, borderWidth: 1, marginBottom: 7, borderColor: selected ? "rgba(201,168,76,0.6)" : C.border, backgroundColor: selected ? "rgba(201,168,76,0.12)" : C.card, opacity: pv.available ? 1 : .58 }}>
+            {heirRows.map((a) => {
+              const pv = heirPreview(state, a.key, will, yet || undefined, lw), selected = chosenHeir?.key === a.key;
+              const attributes = HEIR_ATTRIBUTE_KEYS.filter((key) => pv.stats[key] !== BASE_HEIR_STATS[key]).map((key) => `${t("st." + key)} ${pv.stats[key] - BASE_HEIR_STATS[key] > 0 ? "+" : ""}${pv.stats[key] - BASE_HEIR_STATS[key]}`);
+              const skills = HEIR_SKILL_KEYS.filter((key) => pv.skills[key] > 0).map((key) => `${t("skill." + key)} +${pv.skills[key]}`);
+              const preview = t("nes.preview").replace("%1", String(pv.points)).replace("%2", String(pv.money)).replace("%3", String(pv.rep));
+              const accessibilityLabel = [a.ad, t("varis.role." + a.tur), preview, attributes.length ? `${t("char.attrs")}: ${attributes.join(", ")}` : "", skills.length ? `${t("char.skills")}: ${skills.join(", ")}` : ""].filter(Boolean).join(". ");
+              return (
+              <Pressable key={a.key} testID={"heir-" + a.key} accessibilityRole="button" accessibilityLabel={accessibilityLabel} accessibilityState={{ disabled: !pv.available, selected }} disabled={!pv.available} onPress={() => setHeir(a.key)} style={{ flexDirection: "row", alignItems: "center", gap: 10, minHeight: 58, padding: 12, borderRadius: 5, borderWidth: 1, marginBottom: 7, borderColor: selected ? "rgba(201,168,76,0.6)" : C.border, backgroundColor: selected ? "rgba(201,168,76,0.12)" : C.card, opacity: pv.available ? 1 : .58 }}>
                 <GameIcon name={pv.age >= 13 ? "meslek" : pv.age >= 7 ? "mektep" : "baby"} size={16} color={pv.available ? C.gold : C.parchmentMuted} />
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchment }}>{a.ad}</Text>
                   <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.sage, marginTop: 1 }}>{a.tur === "evlat" ? <>{(() => { const nk = "nat." + childNature(a.ad, p.generation); const kv = t(nk + ".k"); return evlatKadinMi(a.ad) && kv !== nk + ".k" ? kv : t(nk); })()}{p.child_bond?.[a.ad] != null ? ` · ${t("char.bond")} ${p.child_bond[a.ad]}` : ""}</> : t("varis.role." + a.tur)}</Text>
-                  <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.goldDim, marginTop: 2 }}>{t("nes.preview").replace("%1", String(pv.points)).replace("%2", String(pv.money)).replace("%3", String(pv.rep))}</Text>
+                  <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.goldDim, marginTop: 2 }}>{preview}</Text>
+                  {attributes.length > 0 && <Text style={{ fontFamily: F.serif, fontSize: 13, lineHeight: 17, color: C.parchmentMuted, marginTop: 3 }}>{t("char.attrs")}: {attributes.join(" · ")}</Text>}
+                  {skills.length > 0 && <Text style={{ fontFamily: F.serif, fontSize: 13, lineHeight: 17, color: C.parchmentMuted, marginTop: 2 }}>{t("char.skills")}: {skills.join(" · ")}</Text>}
                 </View>
                 <Text style={{ fontFamily: F.serif, fontSize: 15, lineHeight: 22, color: C.parchmentMuted, maxWidth: 105 }}>{!pv.available ? t("npc.late") : !pv.ageKnown ? t("evlat.heir.unknown") : pv.children > 0 ? t("torun.heir").replace("%1", String(pv.age)).replace("%2", String(pv.children)) : t("evlat.heir.age").replace("%1", String(pv.age))}</Text>
                 {a.tur === "evlat" && (p.child_invests?.[a.ad]?.length || 0) > 0 && <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.goldDim }}>{p.child_invests[a.ad].length} {t("nes.invests")}</Text>}

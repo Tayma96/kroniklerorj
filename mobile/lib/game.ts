@@ -1859,10 +1859,10 @@ export const SOY_YETENEKLERI: SoyYetenek[] = [
   { id: "yol_kani", stat: { stamina: 1 }, beceri: { crafting: 0.85 }, et: "hile" },
 ];
 // Yeni hayatın başında uygula (mutasyon; clone edilmiş/yeni state üstünde). Aynı anda tek yetenek.
-export function soyYetenekUygula(s: GameState, id?: string) {
+export function soyYetenekUygula(s: GameState, id?: string, applyStats = true) {
   const y = id ? SOY_YETENEKLERI.find((x) => x.id === id) : undefined; if (!y) return;
   const p = s.player; p.soy_yetenek = y.id;
-  for (const [k, v] of Object.entries(y.stat || {}) as [keyof Stats, number][]) p.stats[k] = Math.max(1, (p.stats[k] || 1) + v);
+  if (applyStats) for (const [k, v] of Object.entries(y.stat || {}) as [keyof Stats, number][]) p.stats[k] = Math.max(1, (p.stats[k] || 1) + v);
   if (y.rep) p.reputation = Math.max(-100, Math.min(100, p.reputation + y.rep));
   if (y.honor) p.honor = clampStat(p.honor + y.honor);
   push(s, "nesil_devri", `Soydan gelen bir yetenek: ${y.id}.`, "kişisel", false, { k: "soy.miras", p: [{ sfx: "soy." + y.id + ".ad" }] });
@@ -8996,11 +8996,47 @@ export function heirFamily(s: GameState, ref: string): { age: number; ageKnown: 
   const kin = [...new Set([...kendi, ...eskiHane].filter((x): x is string => !!x && !!pop.k[x] && x !== id && x !== spouse && !own.has(x)))];
   return { ageKnown: aday?.yasBiliniyor ?? false, age: aday?.yas ?? 7, ids, spouse, kin, id, tur: aday?.tur || "evlat", ad: aday?.ad || ref };
 }
+// Miras önizlemesi ve gerçek devir; aile yetiştirmesi, soy yeteneği ve son söz için aynı hesabı kullanır.
+function heirStartingAttributes(prev: GameState, childName?: string, soyYetenek?: string, lastWordsId?: string): { stats: Stats; skills: Skills } {
+  const p = prev.player;
+  const stats: Stats = { strength: 1, intelligence: 1, charisma: 1, stamina: 2 };
+  const skills: Skills = { combat: 0, trade: 0, crafting: 0, social: 0 };
+  const saheserIz = saheserMirasAlanlari(prev);
+  if (saheserIz.has("zanaat")) skills.crafting += 1;
+  if (saheserIz.has("ticaret")) skills.trade += 1;
+  if (saheserIz.has("savas")) skills.combat += 1;
+  const invests = childName && p.child_invests ? p.child_invests[childName] || [] : [];
+  for (const inv of invests) {
+    if (inv === "egitim") stats.intelligence += 2;
+    if (inv === "savas") { stats.strength += 2; skills.combat = 2; }
+    if (inv === "zanaat") skills.crafting = 2;
+    if (inv === "sosyal") { stats.charisma += 2; skills.social = 2; }
+  }
+  const nat = childName ? childNature(childName, p.generation) : null;
+  if (nat === "cesur") stats.strength += 1;
+  else if (nat === "zeki") stats.intelligence += 1;
+  else if (nat === "hunerli") skills.crafting += 1;
+  else if (nat === "sevecen") stats.charisma += 1;
+  const edu = childName && p.child_edu ? p.child_edu[childName] : undefined;
+  if (edu) {
+    const tr = EDU_TRACKS.find((x) => x.id === edu.track);
+    const lvl = eduLevel(edu.weeks);
+    if (tr && lvl > 0) {
+      if (tr.stat) stats[tr.stat] = Math.min(10, stats[tr.stat] + lvl);
+      if (tr.skill) skills[tr.skill] = Math.min(10, skills[tr.skill] + lvl);
+    }
+  }
+  const soy = SOY_YETENEKLERI.find((x) => x.id === soyYetenek);
+  for (const [key, value] of Object.entries(soy?.stat || {}) as [keyof Stats, number][]) stats[key] = Math.max(1, stats[key] + value);
+  if (lastWordsId === "sirrini_ver") skills.trade = Math.min(10, skills.trade + 1);
+  return { stats, skills };
+}
 // Vâris seçim ekranı önizlemesi: continueAsHeir'ın başlangıç hesabının saf (state'i değiştirmeyen) aynası.
 // Formüller continueAsHeir ile birebir aynı kalmalı; sapma önizlemeyi yalancı yapar.
-export function heirPreview(prev: GameState, heirRef: string, willId = "esit", soyYetenek?: string): { points: number; money: number; rep: number; age: number; children: number; available: boolean; ageKnown: boolean } {
+export function heirPreview(prev: GameState, heirRef: string, willId = "esit", soyYetenek?: string, lastWordsId?: string): { points: number; money: number; rep: number; age: number; children: number; available: boolean; ageKnown: boolean; stats: Stats; skills: Skills } {
   const p = prev.player;
   const family = heirFamily(prev, heirRef), childName = family.tur === "evlat" ? family.ad : undefined;
+  const { stats, skills } = heirStartingAttributes(prev, childName, soyYetenek, lastWordsId);
   const will = WILL_STYLES.find((w) => w.id === willId) || WILL_STYLES[0];
   const netWealth = Math.max(0, (p.money + (p.deposit || 0)) - (p.debt || 0));
   const inheritMoney = Math.floor(netWealth * will.frac) + 20;
@@ -9032,10 +9068,14 @@ export function heirPreview(prev: GameState, heirRef: string, willId = "esit", s
   const favP = prev.succession?.favored || null;
   if (childName && favP && yasayanEvlatAdlari(prev).includes(favP)) rep += childName === favP ? 5 : -5; // veraset meşruiyeti (continueAsHeir paritesi)
   rep += asabiyeRep(prev); // hane asabiyesi (continueAsHeir paritesi)
-  if (prev.saga && prev.saga.act >= 3 && prev.saga.ch >= 5) rep += 2; // Mühür Nişanı: tamamlanan Kül Yemini vârisi önceler (continueAsHeir paritesi)
+  const sagaRep = prev.saga && prev.saga.act >= 3 && prev.saga.ch >= 5 ? 2 : 0; // Mühür Nişanı: tamamlanan Kül Yemini vârisi önceler
   const syRep = SOY_YETENEKLERI.find((x) => x.id === soyYetenek)?.rep || 0; // soy yeteneği (continueAsHeir paritesi)
+  let finalRep = Math.max(-100, Math.min(100, rep + legacyRep));
+  if (lastWordsId === "helalles") finalRep = Math.max(-100, Math.min(100, finalRep + 6));
+  if (sagaRep) finalRep = Math.max(-100, Math.min(100, finalRep + sagaRep));
+  finalRep = Math.max(-100, Math.min(100, finalRep + syRep));
   const chosen = varisAdayiBul(prev, heirRef);
-  return { points, money, age: family.age, ageKnown: family.ageKnown, children: family.ids.length, available: !!chosen?.uygun, rep: Math.max(-100, Math.min(100, Math.max(-100, Math.min(100, rep + legacyRep)) + syRep)) };
+  return { points, money, age: family.age, ageKnown: family.ageKnown, children: family.ids.length, available: !!chosen?.uygun, rep: finalRep, stats, skills };
 }
 
 export function continueAsHeir(prev: GameState, willId = "esit", heirName?: string, lastWordsId?: string, soyYetenek?: string): GameState {
@@ -9063,34 +9103,27 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
   const legacyFameFloor = heirLegacy.anit ? 15 : 0; // anıt: aile adı unutulmaz — vârisin şöhret tabanı
   const estateTier = p.estate || 0; // konak taşınmazdır: vâris aynı çatının altında doğar
   const saheserIz = saheserMirasAlanlari(prev);
+  const { stats, skills } = heirStartingAttributes(prev, childName, soyYetenek, lastWordsId);
   // Vârise yapılan yatırımların başlangıç avantajları
   const invests = childName && p.child_invests ? p.child_invests[childName] || [] : [];
-  const stats = { strength: 1, intelligence: 1, charisma: 1, stamina: 2 };
-  const skills = { combat: 0, trade: 0, crafting: 0, social: 0 };
   let startPoints = Math.min(gen, 10); let startMoney = inheritMoney; let startHealth = 100; let startRep = Math.floor(p.reputation / 2) + will.repBonus + VARIS_MESRUIYET[heirCandidate.tur]; // nesil bonusu tavanlı: çok uzun hanedanda (gen>10) vâris doğuştan tüm statları maxlayamasın
   if (estateTier >= 3) startPoints += 1; // kütüphaneli konakta büyüyen çocuk: +1 özellik puanı
   if (estateTier >= 5) startMoney += 80; // saray yavrusunun kileri: vârise çeyiz akçesi
   if (saheserIz.has("bereket")) startMoney += 50; // atanın üretim bilgisi yeni ocağın kilerini doldurur
   if (saheserIz.has("saglik")) startPoints += 1; // şifa/direnç mirası vârisin kendi bedenini kurmasına alan açar
   if (saheserIz.has("sosyal")) startRep += 3; // adı bilinen eser hane adına kapı açar
-  if (saheserIz.has("zanaat")) skills.crafting += 1;
-  if (saheserIz.has("ticaret")) skills.trade += 1;
-  if (saheserIz.has("savas")) skills.combat += 1;
   if (p.dowry_chest) startMoney += p.dowry_chest; // açılmamış çeyiz sandığı vasiyet oranından muaf, olduğu gibi vârise geçer (heirPreview paritesi)
   const investNotes: string[] = [];
   for (const inv of invests) {
-    if (inv === "egitim") { stats.intelligence += 2; startPoints += 1; investNotes.push("eğitimli"); }
-    if (inv === "savas") { stats.strength += 2; skills.combat = 2; investNotes.push("savaş görmüş"); }
-    if (inv === "zanaat") { skills.crafting = 2; startMoney += 30; investNotes.push("zanaat öğrenmiş"); }
-    if (inv === "sosyal") { stats.charisma += 2; skills.social = 2; investNotes.push("terbiyeli"); }
+    if (inv === "egitim") { startPoints += 1; investNotes.push("eğitimli"); }
+    if (inv === "savas") investNotes.push("savaş görmüş");
+    if (inv === "zanaat") { startMoney += 30; investNotes.push("zanaat öğrenmiş"); }
+    if (inv === "sosyal") investNotes.push("terbiyeli");
     if (inv === "saglik") { startHealth = 100; startRep += 6; investNotes.push("dinç"); }
   }
   // Vârisin doğuştan tabiatı küçük bir başlangıç eğilimi katar (yatırımlardan bağımsız).
   const nat = childName ? childNature(childName, p.generation) : null;
-  if (nat === "cesur") stats.strength += 1;
-  else if (nat === "zeki") stats.intelligence += 1;
-  else if (nat === "hunerli") skills.crafting += 1;
-  else if (nat === "sevecen") { stats.charisma += 1; startRep += 3; }
+  if (nat === "sevecen") startRep += 3;
   else if (nat === "hirsli") startPoints += 1;
   // Süregelen eğitim yolu: biriken aylara göre ölçekli bonus (Vercel apply_child_bonus portu).
   const edu = childName && p.child_edu ? p.child_edu[childName] : undefined;
@@ -9098,8 +9131,6 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
     const tr = EDU_TRACKS.find((x) => x.id === edu.track);
     const lvl = eduLevel(edu.weeks);
     if (tr && lvl > 0) {
-      if (tr.stat) stats[tr.stat] = Math.min(10, stats[tr.stat] + lvl);
-      if (tr.skill) skills[tr.skill] = Math.min(10, skills[tr.skill] + lvl);
       startRep += lvl; // köklü eğitim saygınlık katar
       investNotes.push(`${tr.label.toLowerCase()}nda yetişmiş (${lvl}. kademe)`);
     }
@@ -9211,7 +9242,7 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
     const hp = ns.player;
     if (lastWordsId === "adimizi_yasat") hp.fame = Math.min(100, hp.fame + 6);
     else if (lastWordsId === "helalles") hp.reputation = Math.max(-100, Math.min(100, hp.reputation + 6));
-    else if (lastWordsId === "sirrini_ver") { hp.skills.trade = Math.min(10, hp.skills.trade + 1); hp.skill_xp.trade = hp.skills.trade * 100; }
+    else if (lastWordsId === "sirrini_ver") hp.skill_xp.trade = hp.skills.trade * 100;
     ns.history.push({ day: 0, type: "nesil_devri", text: LW_ECHO_TR[lastWordsId].replace("%1", p.name), scope: "kişisel", landmark: false, k: "evj.lw." + lastWordsId, p: [p.name] });
   }
   // Nesil hafızası kroniğe düşer: kasaba atanı nasıl anıyorsa sana da öyle bakar.
@@ -9244,7 +9275,7 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
   oyuncuAilesiKur(ns); // vârisin yaşayan anne/babası (atanın eşi ya da adından ibaret ebeveyn) gerçek kişi olur
   // Devralınan başarı kazanılmış sayılmaz: vârisin ilk gününde zaten sağlanan başarımlar (miras akçe, mülk…) sessizce
   // alınmış işaretlenir; vâris yeni başarımları kendi emeğiyle açar. "Hanedan Kuruldu" yalnız ilk vâriste bir kez kutlanır.
-  soyYetenekUygula(ns, soyYetenek); // Hanedan Defteri: ölümde seçilen tek soy yeteneği (heirPreview paritesi: rep)
+  soyYetenekUygula(ns, soyYetenek, false); // Stat katkısı ortak başlangıç hesabında uygulandı; burada rep/honor ve soy kaydı kalır.
   ns.player.claimed = achievementsOf(ns).filter((x) => x.done && !(x.a.id === "hanedan" && ns.player.generation === 2)).map((x) => x.a.id);
   return ns;
 }
