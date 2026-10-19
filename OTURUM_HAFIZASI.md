@@ -12,7 +12,7 @@
 - `apk` dalında: kervan yük/rota seçimi; kasaba talebine bağlı atölye siparişi; kayıtta süren pazar pazarlığı; girdisi gerçek olan değirmen; beceri dalı seçilen çıraklık; işçi/bekçi/bakım/enflasyonu içeren 12 aylık mülk defteri.
 - Aktif dilim: miras ekranı huy, çocuk yatırımı, eğitim, seçili soy yeteneği, son söz ve ata eserlerinden gelen başlangıç stat/beceri farklarını gösteriyor; gerçek devirle ortak hesap kullanıyor. Kod tamamlandı; yalnız `git diff --check` koştu, test/smoke/cihaz önizlemesi çalıştırılmadı.
 - Aile dilimi sürüyor: ebeveyn bağları NPC kimliğine göre ayrıldı; hedefli ziyaret, ortak sofra, yıllık ihmal, NPC görüşü ve ölüm/yas/miras yalnız ilgili kişinin bağını kullanıyor. Eski kayıtların ortak değeri başlangıç olarak korunuyor. Bu dilim için test/smoke çalıştırılmadı.
-- Valilikte vergi mağduru/dua alan kişi, ferman muhatabı, ayaklanma/azil ve divan talebi kayıtlı RNG'ye taşındı; `game.ts`te 254 doğrudan `Math.random()` kaldı. Bu dilim için test/smoke çalıştırılmadı.
+- Valilikte vergi mağduru/dua alan kişi, ferman muhatabı, ayaklanma/azil ve divan talebi kayıtlı RNG kullanıyor; yönetilen şehrin memnuniyeti pazar talebine küçük etki veriyor ve ekran bunu açıklıyor. `game.ts`te 254 doğrudan `Math.random()` kaldı. Test/smoke çalıştırılmadı.
 - Sıradaki: aile kararlarını beceri, kaynak ve sonraki kuşağın tepkisine bağla; vergi politikasını yerel pazar/işletme refahına bağla; ardından kalan mahalle/kurum/güç döngüleri. Denge ve gerçek cihaz/oyuncu kabulü ayrıca gerekli.
 
 ## Önceki oturum notu

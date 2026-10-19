@@ -129,6 +129,7 @@ export default function DiyarDetay() {
                     <View style={{ height: 7, borderRadius: 4, backgroundColor: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
                       <View style={{ width: `${hp}%`, height: 7, borderRadius: 4, backgroundColor: hpCol }} />
                     </View>
+                    <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.parchmentMuted, marginTop: 4 }}>{t("gov.marketHint")}</Text>
                   </>
                 );
               })()}

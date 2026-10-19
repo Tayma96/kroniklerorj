@@ -2712,11 +2712,13 @@ export function goodTrend(s: GameState, loc: string, good: string): -1 | 0 | 1 {
   return 0;
 }
 // Bir malın yerel talebi (nüfusa oranlı). Savaşta silah/zırh talebi artar.
+const GOV_MOOD_MARKET_STEP = 0.004; // Memnuniyet pazar talebini en çok ±%10 değiştirir.
 export function cityGoodDemand(s: GameState, loc: string, good: string): number {
   const people = cityEconomy(s, loc);
   const food = !!ITEMS[good]?.feed || ["bugday", "un"].includes(good);
   const consumers = food ? people.mouths : ["silah", "zirh"].includes(ITEMS[good]?.kind || "") ? people.adults : people.residents;
   let d = (DEMAND_COEF[good] || 0.06) * consumers;
+  if (isGovernor(s.player, loc)) d *= Math.max(0.9, Math.min(1.1, 1 + (govHappyOf(s.player, loc) - 60) * GOV_MOOD_MARKET_STEP)); // halk memnuniyeti yerel pazarın alım gücünü etkiler
   const war = regionalWarEffects(s, loc);
   if (ITEMS[good]?.feed || ["bugday", "un"].includes(good)) d *= war.foodDemand;
   if (mobilizedRegion(s, regionOf(loc)) && ["silah", "zirh"].includes(ITEMS[good]?.kind || "")) d *= 1.35;
