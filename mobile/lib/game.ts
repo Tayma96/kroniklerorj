@@ -2639,12 +2639,23 @@ function cityProfCounts(s: GameState, loc: string): Record<string, number> { ret
 // Oyuncunun bir şehirdeki işçili mülklerinin o malı aylık üretimi (üretim zinciri → şehir arzı).
 // Çiftliğin buğdayı sadece oyuncu envanterine değil, o şehrin pazarına da akar → yerel fiyatı düşürür.
 function playerPropSupply(s: GameState, loc: string, good: string): number {
-  let extra = 0;
+  let wheatHarvest = 0, flourCapacity = 0, extra = 0;
   for (const pr of s.player.properties || []) {
     if (pr.loc !== loc || !(pr.workers?.length)) continue;
     const y = propYield(s, pr);
-    if (y && y.good === good) extra += y.qty;
+    if (!y) continue;
+    if (y.good === "bugday") {
+      const season = currentCalendar(s.turn).season;
+      const sm = pr.type === "tarla" ? ({ "İlkbahar": 0.6, "Yaz": 1.0, "Sonbahar": 1.8, "Kış": 0.2 }[season] ?? 1) : 1;
+      const nadasMult = pr.fallow_until !== undefined ? 0 : (pr.fertile_until ?? 0) > s.turn ? 1.5 : 1;
+      wheatHarvest += Math.round(y.qty * sm * nadasMult);
+    } else if (y.good === "un") flourCapacity += y.qty;
+    else if (y.good === good) extra += y.qty;
   }
+  const carriedWheat = loc === s.player.location_name ? Math.max(0, Math.floor(s.player.inventory.bugday || 0)) : 0;
+  const flourMade = Math.min(flourCapacity, Math.floor((wheatHarvest + carriedWheat) / 2));
+  if (good === "un") return flourMade;
+  if (good === "bugday") return Math.max(0, wheatHarvest - Math.max(0, flourMade * 2 - carriedWheat));
   return extra;
 }
 // Bir malın yerel arzı: üreten mesleklerin ağırlıklı sayısı × mevsim + oyuncu mülklerinin üretimi.
@@ -3954,6 +3965,8 @@ export function advance(prev: GameState, n = 1): GameState {
     let inc = 0;
     let wages = 0; // işçi ücretleri (ekonomiden çıkan; pmult'tan bağımsız)
     const produced: Record<string, number> = {}; // işçilerin ürettiği gerçek hammadde (üretim zinciri)
+    const farmWheatByCity: Record<string, number> = {};
+    const millCapacityByCity: Record<string, number> = {};
     const cityCache: Record<string, { prosperity: number; security: number }> = {};
     const cityOf = (loc: string) => cityCache[loc] || (cityCache[loc] = cityInfo(loc, placeKind(loc)));
     let burnPr: Property | null = null; // katastrofik kayıp adayı: turda EN FAZLA bir mülk yanar
@@ -3992,7 +4005,7 @@ export function advance(prev: GameState, n = 1): GameState {
       if (pr.guard) wages += 4; // bekçi ücreti (enflasyon çarpanı aşağıda tüm ücretlere uygulanır)
       // Mülk defteri: yıllık net (gelir − ücret) geçmişi (Vercel property ledger; şeffaflık).
       if (i === n - 1 && s.turn > 0 && s.turn % 12 === 0) { pr.ledger = pr.ledger || []; pr.ledger.push({ y: Math.floor(s.turn / 12), net: Math.round((base * condProspLevel * typeMult * mevMult * nadasMult + w.gross - w.wage) * pmult) }); if (pr.ledger.length > 6) pr.ledger = pr.ledger.slice(-6); }
-      const y = propYield(s, pr); if (y) { const sm = pr.type === "tarla" ? ({ "İlkbahar": 0.6, "Yaz": 1.0, "Sonbahar": 1.8, "Kış": 0.2 }[cal.season] ?? 1) : 1; const q = Math.round(y.qty * sm); if (q > 0) produced[y.good] = (produced[y.good] || 0) + q; } // işçi emeği → gerçek hammadde (tarla mevsimlik)
+      const y = propYield(s, pr); if (y) { const sm = pr.type === "tarla" ? ({ "İlkbahar": 0.6, "Yaz": 1.0, "Sonbahar": 1.8, "Kış": 0.2 }[cal.season] ?? 1) : 1; const q = Math.round(y.qty * sm * nadasMult); if (q > 0) { const city = pr.loc || s.player.location_name; if (y.good === "un") millCapacityByCity[city] = (millCapacityByCity[city] || 0) + q; else { produced[y.good] = (produced[y.good] || 0) + q; if (y.good === "bugday") farmWheatByCity[city] = (farmWheatByCity[city] || 0) + q; } } } // işçi emeği → gerçek hammadde (tarla mevsimlik)
       if (pr.cond > 40 && chance(pr.type === "ev" && pr.tenant ? 0.35 : 0.2)) pr.cond -= 1; // zamanla aşınma (kiracılı ev daha hızlı yıpranır)
       if (effSec < 30 && chance((0.02 + (effSec < 10 ? 0.03 : 0)) * (pr.guard ? 0.35 : 1))) { // düşük güvenlikte yağma (bekçili mülkte üçte bire iner)
         pr.cond = Math.max(20, pr.cond - 15);
@@ -4035,7 +4048,33 @@ export function advance(prev: GameState, n = 1): GameState {
       if (ya > 0) push(s, "mülk_hasat", yw > 0 ? `Bu yıl mülk ve yerleşimlerinden ${ya} akçe gelir geldi (${yw} akçe işçi ücreti ödendi).` : `Bu yıl mülk ve yerleşimlerinden ${ya} akçe gelir geldi.`, "kişisel", false, yw > 0 ? { k: "evj.propHarvestYW", p: [ya, yw] } : { k: "evj.propHarvestY", p: [ya] });
       s.player.harvestAccum = 0; s.player.wageAccum = 0;
     }
-    // Üretim zinciri: işçilerin ürettiği hammadde envantere girer (tarla→buğday, değirmen→un) → zanaata/ticarete besler
+    // Üretim zinciri: değirmen 1 un için 2 buğday tüketir; önce eldeki stok, sonra bu ayın tarla ürünü kullanılır.
+    if (Object.keys(millCapacityByCity).length) {
+      const wheatStock = Math.max(0, Math.floor(s.player.inventory.bugday || 0));
+      let stockUsed = 0, flourMadeTotal = 0;
+      const harvestLeft = { ...farmWheatByCity };
+      for (const [city, capacity] of Object.entries(millCapacityByCity)) {
+        const localStock = city === s.player.location_name ? Math.max(0, wheatStock - stockUsed) : 0;
+        const harvest = harvestLeft[city] || 0;
+        const flourMade = Math.min(capacity, Math.floor((localStock + harvest) / 2));
+        if (flourMade <= 0) continue;
+        const wheatUsed = flourMade * 2;
+        const fromStock = Math.min(localStock, wheatUsed);
+        stockUsed += fromStock;
+        harvestLeft[city] = Math.max(0, harvest - (wheatUsed - fromStock));
+        flourMadeTotal += flourMade;
+        push(s, "mülk_hasat", `${city} şehrindeki değirmende ${wheatUsed} buğday öğütülüp ${flourMade} un oldu (${capacity} unluk kapasite).`, "kişisel", false, { k: "evj.millProcess", p: [wheatUsed, flourMade, { pl: city }, capacity] });
+      }
+      if (stockUsed > 0) {
+        s.player.inventory.bugday = wheatStock - stockUsed;
+        if (s.player.inventory.bugday <= 0) delete s.player.inventory.bugday;
+      }
+      const wheatRemaining = Object.values(harvestLeft).reduce((sum, qty) => sum + qty, 0);
+      if (wheatRemaining > 0) produced.bugday = wheatRemaining;
+      else delete produced.bugday;
+      if (flourMadeTotal > 0) produced.un = flourMadeTotal;
+    }
+    // Üretim zinciri: net ürünler envantere girer (tarla→buğday→değirmen→un) → zanaata/ticarete besler
     { const goods = Object.keys(produced).filter((g) => produced[g] > 0);
       if (goods.length) {
         for (const g of goods) s.player.inventory[g] = (s.player.inventory[g] || 0) + produced[g];

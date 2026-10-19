@@ -200,6 +200,7 @@ export default function Mulkler() {
                   const ho = hireOpen === i;
                   return (
                     <View style={{ marginTop: 10, borderTopWidth: 1, borderTopColor: C.border, paddingTop: 10, gap: 9 }}>
+                      {pr.type === "degirmen" && <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, lineHeight: 22 }}>{applyParams(t("mulk.millRule"), [p.inventory.bugday || 0])}</Text>}
                       {(pr.cond < 100 || lvl < PROP_MAX_LEVEL) && (
                         <View style={{ flexDirection: "row", gap: 8 }}>
                           {pr.cond < 100 && (
