@@ -123,6 +123,8 @@ export interface Player {
   war_support_turn?: number; // bu ay cepheye destek verildi mi (tur başına tek)
   favor_turn?: number; // bu ay pîşkeş/iltifat yapıldı mı (tur başına tek)
   craft_turn?: number; // bu ay zanaat işlendi mi (tur başına tek — beceri/kalite-satış farmı önlenir)
+  last_craft?: { good: string; turn: number; city: string }; // üretilen son mal; kasaba siparişinin gerçekten atölyede yapıldığını doğrular
+  workshop_order_turn?: number; // bu ay kasaba siparişi teslim edildi mi (tur başına tek — itibar/para farmı önlenir)
   battle_turn?: number; // bu ay taktik savaşa/düelloya girildi mi (tur başına tek — para/beceri/itibar farmı önlenir; work/war ile aynı desen)
   battle_award_turn?: number; // bu ay dövüş sonucu uygulandı mı (giriş kilidi battle_turn'e taşındı; ödülün tek-seferliği bu alanla korunur)
   enc_won?: Record<string, true>; // yenilen efsane karşılaşmaların izi (başarımlar okur; opsiyonel — eski kayıt kırılmaz)
@@ -2453,6 +2455,7 @@ export function rumorAction(prev: GameState, rumorId: string, eylem: "yuzles" | 
   return s;
 }
 export interface StoryProgress { active: { id: string; stage: string } | null; completed: string[]; tension: number; nemesis?: { name: string; power: number; id?: string; olen?: string; yak?: KanYak; nesil?: number; kt?: number } | null; flags?: Record<string, boolean>; lull?: number; breath?: number; }
+export interface WorkshopOrder { recipeId: string; good: string; city: string; pay: number; acceptedTurn: number; }
 export interface GameState {
   turn: number; seed: number; player: Player; history: GameEvent[];
   rng_state?: number; // kayıtlı rastgelelik: aynı kayıt + aynı eylem aynı zarı verir (eski kayıtta göçle kurulur)
@@ -2478,6 +2481,7 @@ export interface GameState {
   rivals?: RivalHouse[]; // rakip hanedanların yaşayan gücü (zamanla değişir + hamle yapar)
   pretender?: { houseId: string; strength: number } | null; // taht iddiacısı: taçtayken beliren rakip hanedan — bastır ya da uzlaş, yoksa iç savaş
   caravan: { invested: number; dest: string; route?: string[]; step?: number; lost?: number; returnTurn?: number; good?: string; spread?: number; insured?: boolean } | null;
+  workshopOrder?: WorkshopOrder; // kabul edilmiş kasaba siparişi; vade yok, teslim edilene veya oyuncu vazgeçene dek yaşar
   econ: number; // piyasa çarpanı (kıtlık>1, bolluk<1)
   settlements?: Settlement[]; // hanedanın kurduğu yerleşimler
   marketEvent?: { goods: string[]; mult: number; until: number; key: string } | null; // geçici piyasa olayı
@@ -12330,6 +12334,65 @@ export function canCraft(p: Player, r: Recipe): boolean {
   if (p.skills.crafting < r.minSkill) return false;
   return Object.entries(r.inputs).every(([id, q]) => (p.inventory[id] || 0) >= q);
 }
+export interface WorkshopOrderOffer { recipeId: string; good: string; city: string; pay: number; scarcity: number; inputs: Record<string, number>; }
+// Kasabanın en kıt üç zanaat malı için sipariş: teklif ve ücret mevcut yerel arz-talep fiyatından çıkar.
+// Ay/yer değişince açık teklifler yenilenir; kabul edilen siparişin vadesi yoktur ve kendi kaydında kalır.
+export function workshopOrderOffers(s: GameState): WorkshopOrderOffer[] {
+  const p = s.player;
+  if (p.dead || p.age < 13 || inJail(p) || s.workshopOrder || p.workshop_order_turn === s.turn) return [];
+  const city = p.location_name, goods = marketGoods(locSeed(city));
+  return RECIPES.flatMap((r) => {
+    if (p.skills.crafting < r.minSkill || (r.prof && r.prof !== p.profession)) return [];
+    const item = goods.find((g) => g.id === r.out);
+    if (!item) return [];
+    const scarcity = goodPriceMult(s, r.out);
+    const pay = Math.max(1, Math.round(marketPrice(item.sell, s.econ || 1) * scarcity * 0.85));
+    return [{ recipeId: r.id, good: r.out, city, pay, scarcity, inputs: { ...r.inputs } }];
+  }).sort((a, b) => b.scarcity - a.scarcity || b.pay - a.pay || (a.recipeId < b.recipeId ? -1 : a.recipeId > b.recipeId ? 1 : 0)).slice(0, 3);
+}
+export function acceptWorkshopOrder(prev: GameState, recipeId: string): GameState {
+  const s = clone(prev), p = s.player;
+  if (p.dead || p.workshop_order_turn === s.turn || s.workshopOrder) return s;
+  const offer = workshopOrderOffers(s).find((x) => x.recipeId === recipeId);
+  if (!offer) return s;
+  s.workshopOrder = { recipeId: offer.recipeId, good: offer.good, city: offer.city, pay: offer.pay, acceptedTurn: s.turn };
+  push(s, "zanaat_siparişi", "Kasaba siparişi kabul edildi.", "kişisel", false, { k: "evj.workshopOrderAccepted", p: [{ i: offer.good }, { pl: offer.city }] });
+  return s;
+}
+export function workshopOrderStatus(s: GameState): "none" | "confined" | "away" | "craftOther" | "craft" | "stock" | "ready" {
+  const o = s.workshopOrder, p = s.player;
+  if (!o) return "none";
+  if (p.dead || inJail(p)) return "confined";
+  if (p.location_name !== o.city) return "away";
+  if (p.workshop_order_turn === s.turn) return "stock";
+  const made = p.last_craft;
+  if (made?.good === o.good && made.city === o.city && made.turn >= o.acceptedTurn && (p.inventory[o.good] || 0) > 0) return "ready";
+  if (p.craft_turn === s.turn && made?.good !== o.good) return "craftOther";
+  if (made?.good === o.good && (p.inventory[o.good] || 0) <= 0) return "stock";
+  return "craft";
+}
+export function deliverWorkshopOrder(prev: GameState): GameState {
+  const s = clone(prev), p = s.player, o = s.workshopOrder;
+  if (!o || workshopOrderStatus(s) !== "ready" || p.workshop_order_turn === s.turn) return s;
+  const quality = QUALITY_GOODS.has(o.good) ? takeQualityUnit(p, o.good) : "siradan";
+  p.inventory[o.good] -= 1;
+  if (p.inventory[o.good] <= 0) delete p.inventory[o.good];
+  p.money += Math.max(1, Math.round(o.pay));
+  const guild = npcLonca(p.profession);
+  if (guild && p.faction === guild) { p.faction_standing = p.faction_standing || {}; p.faction_standing[guild] = Math.min(100, (p.faction_standing[guild] || 0) + 3); }
+  else p.reputation = Math.min(100, p.reputation + 2);
+  p.workshop_order_turn = s.turn;
+  addTradePressure(s, o.city, o.good, -0.045);
+  delete s.workshopOrder;
+  const q = quality === "siradan" ? "" : ` (${QUALITY_LABEL[quality]})`;
+  push(s, "zanaat_siparişi", `${ITEMS[o.good]?.name || o.good}${q} kasaba siparişine teslim edildi (+${Math.max(1, Math.round(o.pay))} akçe).`, "kişisel", false, { k: "evj.workshopOrderDone", p: [{ i: o.good }, Math.max(1, Math.round(o.pay)), { pl: o.city }] });
+  return s;
+}
+export function cancelWorkshopOrder(prev: GameState): GameState {
+  const s = clone(prev);
+  if (s.workshopOrder) delete s.workshopOrder;
+  return s;
+}
 // ── Eşya kalitesi (Vercel quality.py portu) — dayanıklı/zanaat malları için 4 kademe ──
 export type QualityTier = "kusurlu" | "siradan" | "iyi" | "usta_isi";
 export const QUALITY_MULT: Record<QualityTier, number> = { kusurlu: 0.6, siradan: 1.0, iyi: 1.5, usta_isi: 2.5 };
@@ -12388,6 +12451,7 @@ export function craft(prev: GameState, id: string): GameState {
   // Tur başına tek üretim — yoksa aynı turda sınırsız zanaat becerisi + kalite-satış kârı farm'lanır (work/suç ile aynı kural).
   if (p.craft_turn === s.turn) { push(s, "zanaat", `Bu ay tezgâh başında yeterince çalıştın; usta eli dinlenmek de ister.`, "kişisel", false, { k: "evj.craftWait" }); return s; }
   p.craft_turn = s.turn;
+  p.last_craft = { good: r.out, turn: s.turn, city: p.location_name };
   for (const [iid, q] of Object.entries(r.inputs)) { p.inventory[iid] -= q; if (p.inventory[iid] <= 0) delete p.inventory[iid]; }
   p.inventory[r.out] = (p.inventory[r.out] || 0) + r.outQty;
   gainSkill(s, "crafting", 6);

@@ -114,7 +114,7 @@ Mevcut: 14 portre (yaş×cinsiyet), 16 hero sahnesi (yaş×mevsim), 54 game-icon
 
 ## 8. HEMEN (oynanış derinliği)
 1. **[x] [BEN]** Pazar kervanında oyuncuya yük/şehir seçimi ve şehirler arası fiyat farkı gösterimi eklendi.
-2. **[BEN]** Sıradaki inceleme: meslek-zanaat döngüsünde gerçek uzmanlaşma ve üretim kararları; ardından NPC-aile ve şehir-güç bağlantıları.
+2. **[x] [BEN]** Atölye mesleğini şehir ekonomisine bağlayan sipariş döngüsü eklendi: üç yerel talep, görünür ücret, sipariş şehrinde üretim koşulu, vadesiz kabul, iptal, ayda bir teslim ve halk/lonca itibarı tercihi. **Sıradaki:** çıraklık, meslek uzmanlığı ve mülk üretim zincirini oyuncu kararlarına bağla; ardından NPC-aile ve şehir-güç bağlantıları.
 3. **[BİRLİKTE]** Gerçek cihaz/oyun hissi gerektiren denge ve okunabilirlik kararlarını kullanıcının oyun gözlemleri geldikçe plana işle.
 
 > Not: Bu belge yaşar; her hafta güncellenir. "Bir an önce" için en hızlı yol — senin oynayış notların + benim paralel yazım/denge çalışmam.

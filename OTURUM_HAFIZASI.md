@@ -12,4 +12,5 @@
 ## Aktif oynanış planı
 - Ayrıntılı, alan alan sıra: `docs/OYNANIS_DERINLIGI.md`. YOL_HARITASI.md bu önceliğe göre güncellendi.
 - Tamamlanan ilk dilim: pazar en iyi üç kervan yükü/şehir rotasını ve fiyat farkını gösteriyor; seçilen rota kervanın gerçek varış/yük verisine uygulanıyor. Altı dil eklendi; diff biçim kontrolü temiz. Smoke, test ve cihaz önizlemesi çalıştırılmadı.
-- Sonraki alan: meslek-zanaat-ustalık döngüsünü incele; hikâye eklemek yerine uzmanlaşma ve üretim kararlarında eksik kalan işlevi bul.
+- Yeni tamamlanan kod dilimi: atölye üç yerel talep sunuyor; birini kabul edip ilgili şehirde oyuncunun ürettiği ürünü teslim etmek sabit ücret + halk/lonca itibarı sağlar. Açık siparişin vadesi yok, iptal edilebilir; teslim ayda bir ve yerel arzı artırır. Altı dil, yeni opsiyonel kayıt alanları, eski kayıt uyumu korunuyor. Yalnız `git diff --check` koştu; test/smoke ve cihaz önizlemesi çalıştırılmadı.
+- Sonraki işler: çıraklık ve uzmanlığı üretim/mülk zincirine bağla; sonra NPC-aile ve mahalle-güç döngülerini incele. Hikâye yazımını öne alma.
