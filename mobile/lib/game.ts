@@ -34,7 +34,7 @@ export interface Player {
   spouse_is_player?: boolean; // çok oyuncu: eş başka bir GERÇEK oyuncu → yerel sim onu öldüremez (desync önlenir)
   widowed?: boolean; // eşi vefat etmiş (dul); married=false olur ama anı/eulogy için iz kalır
   mother?: string; father?: string; mother_dead?: boolean; father_dead?: boolean; mother_frail?: boolean; father_frail?: boolean; // ebeveynler de fanidir; oyuncu yaşlandıkça birer kez vefat eder (frail: göçüşten önce tek bir yaşlanma haberi)
-  parent_bond?: number; // anne-babayla bağ 0-100 (ziyaret besler; vefat acısı ve küçük miras bağa oranlı; eski kayıtta yoksa 45 sayılır)
+  parent_bond?: number; // hanenin genel ebeveyn bağı 0-100; kişi bazlı ilişki parent_bonds'ta, eski kayıt tabanı 45
   parent_bonds?: Record<string, number>; // gerçek ebeveyn NPC kimliği → kişisel bağ; eski kayıtta parent_bond taban alınır
   parent_visit_turn?: number; // bu ay ebeveyn ziyareti yapıldı mı (turda tek — bağ farmı önlenir)
   mother_seed?: number; father_seed?: number; spouse_seed?: number; // kültürel isim için tohum (dile göre çözülür)
@@ -3040,7 +3040,7 @@ const rnd = <T,>(a: T[]): T => a[Math.floor(Math.random() * a.length)];
 const chance = (p: number) => Math.random() < p;
 const cap = (x: string) => x.charAt(0).toUpperCase() + x.slice(1);
 
-// Oyun kararlarının zarı kaydın içinde ilerler: suç, yol, ticaret ve savaş.
+// Oyun kararlarının zarı kaydın içinde ilerler: suç, yol, ticaret, savaş ve şehir yönetimi.
 // Aylık yaşamın kalan sistemleri ayrı, doğrulanabilir dalgalarla taşınır.
 function rngBaslangici(seed: number, turn = 0, generation = 1): number {
   let x = ((seed >>> 0) ^ Math.imul((turn + 1) >>> 0, 0x9e3779b1) ^ Math.imul(generation >>> 0, 0x85ebca6b)) >>> 0;
@@ -11947,7 +11947,7 @@ function fermanKisileri(s: GameState, loc: string, id: string) {
   let ad = Object.values(nufusOf(s).k).filter((k) => k.ol == null && k.loc === loc && wy - k.dy >= 16 && !oyuncuAkrabasi(p, k.id) && k.es !== OYUNCU);
   if (id === "pazarserbest") { const e = ad.filter((k) => DUKKANCI.has(k.prof)); if (e.length) ad = e; }
   else if (id === "angarya") { const e = ad.filter((k) => wy - k.dy <= 50); if (e.length) ad = e; }
-  const secilen: Kisi[] = []; while (ad.length && secilen.length < f.n) secilen.push(ad.splice(Math.floor(Math.random() * ad.length), 1)[0]);
+  const secilen: Kisi[] = []; while (ad.length && secilen.length < f.n) secilen.push(ad.splice(Math.floor(gameRandom(s) * ad.length), 1)[0]);
   for (const k of secilen) { remember(s, { id: k.id, name: kisiAdi(k, "tr") }, f.tur); if (s.relationships[k.id] === undefined) s.relationships[k.id] = 0; }
   if (secilen.length) push(s, "yonetim", `${kisiAdi(secilen[0], "tr")} de fermandan payını aldı.`, "kişisel", false, { k: f.key, p: [knParam(secilen[0])] });
 }
@@ -11986,13 +11986,13 @@ export function worksBonus(p: Player, loc: string): number { return worksOf(p, l
 function vergiKisileri(s: GameState, loc: string, tax: number) {
   const p = s.player; const pop = nufusOf(s); const wy = worldYears(s);
   const yer = Object.values(pop.k).filter((k) => k.ol == null && k.loc === loc && wy - k.dy >= 18 && !oyuncuAkrabasi(p, k.id) && k.es !== OYUNCU);
-  if (tax >= 25 && Math.random() < 0.6) {
+  if (tax >= 25 && gameRandom(s) < 0.6) {
     const yoksul = yer.filter((k) => k.prof === "işsiz" || (k.cocuk || []).filter((c) => pop.k[c]?.ol == null && wy - pop.k[c].dy < 14).length >= 3);
-    const k = yoksul.length ? rnd(yoksul) : yer.length ? rnd(yer) : undefined; if (!k) return;
+    const kaynak = yoksul.length ? yoksul : yer; const k = kaynak[Math.floor(gameRandom(s) * kaynak.length)]; if (!k) return;
     remember(s, { id: k.id, name: kisiAdi(k, "tr") }, "vergi_zulmu"); if (s.relationships[k.id] === undefined) s.relationships[k.id] = 0;
     push(s, "yonetim", `${kisiAdi(k, "tr")} vergiyi ödeyemedi; ocağındaki son keçiyi sattı.`, "kişisel", false, { k: "gov.vergiMagdur", p: [knParam(k)] });
-  } else if (tax <= 10 && Math.random() < 0.4 && yer.length) {
-    const k = rnd(yer); remember(s, { id: k.id, name: kisiAdi(k, "tr") }, "vergi_hafif"); if (s.relationships[k.id] === undefined) s.relationships[k.id] = 0;
+  } else if (tax <= 10 && gameRandom(s) < 0.4 && yer.length) {
+    const k = yer[Math.floor(gameRandom(s) * yer.length)]; remember(s, { id: k.id, name: kisiAdi(k, "tr") }, "vergi_hafif"); if (s.relationships[k.id] === undefined) s.relationships[k.id] = 0;
     push(s, "yonetim", `${kisiAdi(k, "tr")} vergin hafif olduğu için ocağında sana dua ediyor.`, "kişisel", false, { k: "gov.vergiDua", p: [knParam(k)] });
   }
 }
@@ -12021,19 +12021,19 @@ function governorTick(s: GameState) {
     let leg = p.govLeg[loc] ?? 60;
     leg = Math.max(0, Math.min(100, leg + (target - leg) * 0.12 - 1.2));
     p.govLeg[loc] = Math.round(leg);
-    if (leg < 18 && Math.random() < 0.12 + (18 - leg) * 0.02) { // meşruiyet krizi → azil
+    if (leg < 18 && gameRandom(s) < 0.12 + (18 - leg) * 0.02) { // meşruiyet krizi → azil
       p.governorships = p.governorships!.filter((x) => x !== loc);
       delete p.govLeg[loc]; delete p.govHappy[loc]; delete p.govTreasury[loc];
       p.reputation = Math.max(-100, p.reputation - 8);
       push(s, "yonetim", `${loc}'de halk ayaklandı; valilikten azledildin.`, "kişisel", true, { k: "gov.deposed", p: [{ pl: loc }] });
-    } else if (happy < 22 && Math.random() < 0.04 + (22 - happy) * 0.01) { // memnuniyet krizi → isyan (azil değil, zarar)
+    } else if (happy < 22 && gameRandom(s) < 0.04 + (22 - happy) * 0.01) { // memnuniyet krizi → isyan (azil değil, zarar)
       p.govHappy[loc] = Math.min(100, happy + 18);
       p.govTreasury[loc] = Math.round((p.govTreasury[loc] ?? 0) * 0.5);
       p.reputation = Math.max(-100, p.reputation - 3);
       const onder = isyanOnderi(s, loc); // halkı meydanda toplayan: sana en kırgın ilkeli ya da en kırgın kişi
       if (onder) { s.relationships[onder.id] = Math.max(-100, (s.relationships[onder.id] ?? 0) - 10); push(s, "yonetim", `${loc}'de ${kisiAdi(onder, "tr")} halkı meydanda topladı; şehir hazinesi zarar gördü.`, "kişisel", true, { k: "gov.unrestOnder", p: [knParam(onder), { pl: loc }] }); }
       else push(s, "yonetim", `${loc}'de halk homurdandı; şehir hazinesi zarar gördü.`, "kişisel", false, { k: "gov.unrest", p: [{ pl: loc }] });
-    } else if (Math.random() < 0.05) { // merkezî divan talebi: hazineden vergi ister (öde → meşruiyet; ödeyemezsen güven sarsılır)
+    } else if (gameRandom(s) < 0.05) { // merkezî divan talebi: hazineden vergi ister (öde → meşruiyet; ödeyemezsen güven sarsılır)
       const demand = 20 + Math.round(prosperity * 0.2);
       if ((p.govTreasury[loc] ?? 0) >= demand) {
         p.govTreasury[loc] = (p.govTreasury[loc] ?? 0) - demand;
