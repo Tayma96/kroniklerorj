@@ -35,6 +35,7 @@ export interface Player {
   widowed?: boolean; // eşi vefat etmiş (dul); married=false olur ama anı/eulogy için iz kalır
   mother?: string; father?: string; mother_dead?: boolean; father_dead?: boolean; mother_frail?: boolean; father_frail?: boolean; // ebeveynler de fanidir; oyuncu yaşlandıkça birer kez vefat eder (frail: göçüşten önce tek bir yaşlanma haberi)
   parent_bond?: number; // anne-babayla bağ 0-100 (ziyaret besler; vefat acısı ve küçük miras bağa oranlı; eski kayıtta yoksa 45 sayılır)
+  parent_bonds?: Record<string, number>; // gerçek ebeveyn NPC kimliği → kişisel bağ; eski kayıtta parent_bond taban alınır
   parent_visit_turn?: number; // bu ay ebeveyn ziyareti yapıldı mı (turda tek — bağ farmı önlenir)
   mother_seed?: number; father_seed?: number; spouse_seed?: number; // kültürel isim için tohum (dile göre çözülür)
   spouse_id?: string; mother_id?: string; father_id?: string; // yaşayan nüfustaki gerçek kişiler (eş, anne, baba): ad, yaş ve ölüm oradan gelir
@@ -866,12 +867,13 @@ function nufusOyuncuEsiOldu(s: GameState) { const k = nufusOyuncuEsi(s); if (k) 
 function ebeveynVefat(s: GameState, rol: "anne" | "baba") {
   const p = s.player;
   if (rol === "anne") p.mother_dead = true; else p.father_dead = true;
-  p.health = Math.max(1, p.health - (3 + Math.round((p.parent_bond ?? 45) / 20))); bumpNam(p, "dindar", 2); p.reputation = Math.min(100, p.reputation + 1); // acı, bağın derinliğine oranlı
-  const k = (rol === "anne" ? p.mother_id : p.father_id); const kk = k && s.pop ? nufusHazirla(s).k[k] : undefined;
+  const k = (rol === "anne" ? p.mother_id : p.father_id); const bond = parentBondOf(s, k);
+  p.health = Math.max(1, p.health - (3 + Math.round(bond / 20))); bumpNam(p, "dindar", 2); p.reputation = Math.min(100, p.reputation + 1); // acı, o ebeveynle bağın derinliğine oranlı
+  const kk = k && s.pop ? nufusHazirla(s).k[k] : undefined;
   if (kk && kk.ol == null) { kk.ol = worldYears(s); nufusDegisti(s.pop!); }
   if (rol === "anne") push(s, "kader", `Annen ${p.mother} Hakk'ın rahmetine kavuştu; çocukluğunun bir direği daha gitti.`, "kişisel", true, { k: "evj.motherDied", p: [ebeveynParam(s, "anne")] });
   else push(s, "kader", `Baban ${p.father} Hakk'ın rahmetine kavuştu; çocukluğunun bir direği daha gitti.`, "kişisel", true, { k: "evj.fatherDied", p: [ebeveynParam(s, "baba")] });
-  if ((p.parent_bond ?? 45) >= 60) {
+  if (bond >= 60) {
     const mir = Math.round(20 * inflationFactor(s)); p.money += mir;
     if (rol === "anne") push(s, "kader", `Annenin çeyiz sandığından sana kalan çıktı (+${mir} akçe); yakın olana el emeği kalır.`, "kişisel", false, { k: "evj.parentLegacy", p: [mir] });
     else push(s, "kader", `Babanın kesesinden sana ayırdığı çıktı (+${mir} akçe); yakın olana el emeği kalır.`, "kişisel", false, { k: "evj.parentLegacy", p: [mir] });
@@ -1054,15 +1056,15 @@ function npcLifeTick(s: GameState) {
 // aynı yerdelerse bağ törpülenir ve kroniğe düşer. Uzakta yaşayan ya da ölen için sayılmaz; ilgi gösterilince sayaç sıfırlanır.
 // Kademeli: ihmalin 1. yılı uyarır, 2. yılı derinleşir, 3. yılı kopuşu söyler; sonrasında bağ sessizce aşınır ve üç yılda bir
 // hatırlatılır (aynı cümle her yıl tekrar etmez). Süren ihmal Açık hesaplarda tek satırdır.
-function ihmalDurumu(s: GameState): { es?: { k: Kisi; yil: number }; ebeveyn?: { k: Kisi; yil: number }; evlat?: { x: { c: string; k: Kisi }[]; yil: number } } {
+function ihmalDurumu(s: GameState): { es?: { k: Kisi; yil: number }; ebeveyn?: { x: Kisi[]; yil: number }; evlat?: { x: { c: string; k: Kisi }[]; yil: number } } {
   const p = s.player; if (p.dead || p.age < 16 || inJail(p) || p.ihmal_bas == null) return {};
   const pop = nufusOf(s); const wy = worldYears(s); const son = (x?: number) => Math.max(x ?? -1e9, p.sofra_turn ?? -1e9, p.ihmal_bas!);
   const burada = (id?: string) => { const k = id ? pop.k[id] : undefined; return k && k.ol == null && k.loc === p.location_name ? k : undefined; };
   const out: ReturnType<typeof ihmalDurumu> = {};
   const es = p.married && !p.spouse_is_player ? burada(p.spouse_id) : undefined;
   if (es) { const yil = Math.floor((s.turn - son(Math.max(p.spouse_time_turn ?? -1e9, p.married_turn ?? -1e9))) / 12); if (yil >= 1) out.es = { k: es, yil }; }
-  const ebeveyn = burada(p.mother_id) || burada(p.father_id);
-  if (ebeveyn) { const yil = Math.floor((s.turn - son(p.parent_visit_turn)) / 12) - 1; if (yil >= 1) out.ebeveyn = { k: ebeveyn, yil }; }
+  const ebeveynler = [burada(p.mother_id), burada(p.father_id)].filter((k): k is Kisi => !!k);
+  if (ebeveynler.length) { const yil = Math.floor((s.turn - son(p.parent_visit_turn)) / 12) - 1; if (yil >= 1) out.ebeveyn = { x: ebeveynler, yil }; }
   const kucukler = p.children.map((c) => ({ c, k: burada(p.child_ids?.[c]) })).filter((x): x is { c: string; k: Kisi } => !!x.k && wy - x.k.dy >= 3 && wy - x.k.dy < 18);
   if (kucukler.length) { const yil = Math.floor((s.turn - son(p.child_time_turn)) / 12) - 1; if (yil >= 1) out.evlat = { x: kucukler, yil }; }
   return out;
@@ -1077,7 +1079,7 @@ function ailedenIhmal(s: GameState) {
     if (kd != null) push(s, "evlilik", `Eşin ${kisiAdi(es, "tr")} bu yıl seni ocakta pek göremedi; aranıza mesafe girdi.`, "kişisel", kd === "3", { k: "evj.esIhmal" + kd + (es.g === "kadın" ? ".k" : ""), p: [kfParam(es)] });
   }
   if (d.ebeveyn) {
-    p.parent_bond = Math.max(0, (p.parent_bond ?? 45) - 5); const eb = d.ebeveyn.k; const kd = ihmalKademe(d.ebeveyn.yil);
+    changeParentBond(p, d.ebeveyn.x.map((k) => k.id), -5); const eb = d.ebeveyn.x[0]; const kd = ihmalKademe(d.ebeveyn.yil);
     if (kd != null) push(s, "gunluk", `${eb.g === "kadın" ? "Annen" : "Baban"} ${kisiAdi(eb, "tr")} 'bir uğramaz oldu' diye yakınıyor.`, "kişisel", false, { k: (eb.g === "kadın" ? "evj.anneIhmal" : "evj.babaIhmal") + kd, p: [kfParam(eb)] });
   }
   if (d.evlat) {
@@ -1237,6 +1239,18 @@ export interface NpcState { mood: number; memories: string[]; anilar?: Memory[];
 // ── Görüş (NUFUS.md Aşama 2): bir kişinin sana bakışı = kalemlerin toplamı. Ekrandaki döküm ile motorun her kararda
 // kullandığı değer AYNI fonksiyondan gelir (relWith = gorus().toplam). Kalemler yapısaldır — farm edilecek yeni kanal açmaz.
 export interface GorusKalemi { k: string; v: number; tur?: string } // k: i18n anahtarı; "gorus.ani" ise tur = anı türü
+function clampParentBond(value: number): number { return Math.max(0, Math.min(100, Math.round(value))); }
+function parentBondOf(s: GameState, id?: string): number {
+  const personal = id ? s.player.parent_bonds?.[id] : undefined;
+  return Number.isFinite(personal) ? clampParentBond(personal!) : clampParentBond(s.player.parent_bond ?? 45);
+}
+function changeParentBond(p: Player, ids: (string | undefined)[], delta: number) {
+  if (!p.parent_bonds || typeof p.parent_bonds !== "object" || Array.isArray(p.parent_bonds)) p.parent_bonds = {};
+  const base = clampParentBond(p.parent_bond ?? 45);
+  for (const id of [p.mother_id, p.father_id]) if (id && !Number.isFinite(p.parent_bonds[id])) p.parent_bonds[id] = base;
+  for (const id of new Set(ids.filter((x): x is string => !!x))) { const current = p.parent_bonds[id]; p.parent_bonds[id] = clampParentBond((Number.isFinite(current) ? current! : base) + delta); }
+  p.parent_bond = clampParentBond(base + delta); // household-level value keeps existing overall family effects
+}
 function aniKalemleri(anilar: Memory[] | undefined): GorusKalemi[] {
   if (!anilar || !anilar.length) return [];
   const g: Record<string, number> = {};
@@ -1254,7 +1268,7 @@ export function gorus(s: GameState, id: string): { toplam: number; kalemler: Gor
   const pop = nufusOf(s); const k = pop.k[id]; const wy = worldYears(s);
   if (k) {
     // Akrabalık: anne-baba evladını, eş eşini, hısımlar damat/gelini görür (bağın sıcaklığı oyuncunun emeğine bağlı).
-    if (id === p.mother_id || id === p.father_id) ekle("gorus.evlat", 20 + ((p.parent_bond ?? 45) - 45) / 3);
+    if (id === p.mother_id || id === p.father_id) ekle("gorus.evlat", 20 + (parentBondOf(s, id) - 45) / 3);
     else if (p.child_ids && Object.values(p.child_ids).includes(id)) { const ad = Object.keys(p.child_ids).find((n) => p.child_ids![n] === id)!; ekle("gorus.ebeveyn", 20 + ((p.child_bond?.[ad] ?? 50) - 50) / 3); }
     else if (p.sibling_ids?.includes(id)) ekle("gorus.kardes", 15);
     else if (torunKimlikleri(s).includes(id)) ekle("torun.gorus", 15 + ((p.grandchild_bond?.[id] ?? 50) - 50) / 4);
@@ -6468,7 +6482,7 @@ export function aileSohbetAnahtari(s: GameState, id: string): string | null {
   const p = s.player, bag = aileSohbetBagi(s, id), k = nufusOf(s).k[id];
   if (!k) return null;
   if (bag === "es") return "sohbet.aile.es." + ((p.spouse_bond ?? 40) < 35 ? "uzak" : "yakin");
-  if (bag === "anne" || bag === "baba") return "sohbet.aile." + bag + "." + ((p.parent_bond ?? 45) < 35 ? "uzak" : "yakin");
+  if (bag === "anne" || bag === "baba") return "sohbet.aile." + bag + "." + (parentBondOf(s, id) < 35 ? "uzak" : "yakin");
   if (bag === "torun") { const age = yasOf(k, worldYears(s)); return "torun.aile." + (age < 7 ? "kucuk" : age < 13 ? "mektep" : age < 18 ? "genc" : "yetiskin"); }
   if (bag === "evlat") { const age = yasOf(k, worldYears(s)), pop = nufusOf(s), wy = worldYears(s);
     if (age >= 18) {
@@ -9504,7 +9518,9 @@ export function visitParents(prev: GameState, targetId?: string): GameState {
   if (targetId && (!target || ![p.mother_id, p.father_id].includes(targetId) || target.ol != null || target.loc !== p.location_name)) return s;
   if (p.parent_visit_turn === s.turn) return s; // turda tek — bağ farmı önlenir
   p.parent_visit_turn = s.turn;
-  p.parent_bond = Math.min(100, (p.parent_bond ?? 45) + 5);
+  const people = nufusOf(s).k;
+  const visitedIds = target ? [target.id] : [p.mother_id, p.father_id].filter((id): id is string => !!id && !!people[id] && people[id].ol == null);
+  changeParentBond(p, visitedIds, 5);
   p.honor = Math.min(100, p.honor + 1); bumpNam(p, "dindar", 1);
   if (target) {
     remember(s, { id: target.id, name: kisiAdi(target) }, "icten_sohbet", { yuk: 5 });
@@ -11454,7 +11470,8 @@ export function aksamSofrasi(prev: GameState): GameState {
   p.hunger = Math.min(100, p.hunger + 25); p.health = Math.min(100, p.health + 1);
   const ids = new Set(kat.map((k) => k.id));
   if (p.spouse_id && ids.has(p.spouse_id)) p.spouse_bond = Math.min(100, (p.spouse_bond ?? 40) + 1);
-  if ((p.mother_id && ids.has(p.mother_id)) || (p.father_id && ids.has(p.father_id))) p.parent_bond = Math.min(100, (p.parent_bond ?? 45) + 1);
+  const parentsAtTable = kat.filter((k) => k.id === p.mother_id || k.id === p.father_id);
+  if (parentsAtTable.length) changeParentBond(p, parentsAtTable.map((k) => k.id), 1);
   for (const [ad, id] of Object.entries(p.child_ids || {})) if (ids.has(id)) { if (!p.child_bond) p.child_bond = {}; p.child_bond[ad] = Math.min(100, (p.child_bond[ad] ?? 50) + 1); }
   push(s, "gunluk", `Akşam sofrası kuruldu; ${kat.length + 1} kişi aynı sofrada.`, "kişisel", false, { k: "sofra.ev", p: [kat.length + 1] });
   return s;
@@ -12712,6 +12729,7 @@ export function migrate(s: GameState): GameState {
   else if (s.hseq !== undefined && (!Number.isFinite(s.hseq) || s.hseq < 0)) delete s.hseq;
   if (!Array.isArray(p.children)) p.children = [];
   for (const key of ["grandchildren", "grandchild_ids", "kin_ids"]) if (p[key] !== undefined) p[key] = Array.isArray(p[key]) ? p[key].filter((v: unknown) => typeof v === "string") : undefined;
+  if (p.parent_bonds !== undefined) p.parent_bonds = p.parent_bonds && typeof p.parent_bonds === "object" && !Array.isArray(p.parent_bonds) ? Object.fromEntries(Object.entries(p.parent_bonds).filter(([, v]) => Number.isFinite(v)).map(([id, v]) => [id, clampParentBond(v as number)])) : undefined;
   if (p.grandchild_bond !== undefined) p.grandchild_bond = p.grandchild_bond && typeof p.grandchild_bond === "object" && !Array.isArray(p.grandchild_bond) ? Object.fromEntries(Object.entries(p.grandchild_bond).filter(([, v]) => Number.isFinite(v)).map(([id, v]) => [id, Math.max(0, Math.min(100, v as number))])) : undefined;
   if (p.grandchild_time_turn !== undefined && !Number.isFinite(p.grandchild_time_turn)) p.grandchild_time_turn = undefined;
   if (p.child_letters !== undefined) p.child_letters = Array.isArray(p.child_letters) ? p.child_letters.filter((x: any) => x && typeof x.id === "string" && Number.isFinite(x.sent) && Number.isFinite(x.due) && x.due >= x.sent).slice(-2) : undefined;

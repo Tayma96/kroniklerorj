@@ -11,7 +11,8 @@
 - Ayrıntılı alan sırası ve açık işler: `docs/OYNANIS_DERINLIGI.md`; mevcut sistem denetimi: `docs/AUDIT.md`.
 - `apk` dalında: kervan yük/rota seçimi; kasaba talebine bağlı atölye siparişi; kayıtta süren pazar pazarlığı; girdisi gerçek olan değirmen; beceri dalı seçilen çıraklık; işçi/bekçi/bakım/enflasyonu içeren 12 aylık mülk defteri.
 - Aktif dilim: miras ekranı huy, çocuk yatırımı, eğitim, seçili soy yeteneği, son söz ve ata eserlerinden gelen başlangıç stat/beceri farklarını gösteriyor; gerçek devirle ortak hesap kullanıyor. Kod tamamlandı; yalnız `git diff --check` koştu, test/smoke/cihaz önizlemesi çalıştırılmadı.
-- Sıradaki: NPC ve aile kararlarının ilişki, beceri, servet ve hane sonuçlarını bağla; ardından mahalle/kurum/güç döngüleri. Denge ve gerçek cihaz/oyuncu kabulü ayrıca gerekli.
+- Aile dilimi sürüyor: ebeveyn bağları NPC kimliğine göre ayrıldı; hedefli ziyaret, ortak sofra, yıllık ihmal, NPC görüşü ve ölüm/yas/miras yalnız ilgili kişinin bağını kullanıyor. Eski kayıtların ortak değeri başlangıç olarak korunuyor. Bu dilim için test/smoke çalıştırılmadı.
+- Sıradaki: aile kararlarını beceri, kaynak ve sonraki kuşağın tepkisine bağla; ardından mahalle/kurum/güç döngüleri. Denge ve gerçek cihaz/oyuncu kabulü ayrıca gerekli.
 
 ## Önceki oturum notu
 - Görsel tasarım commitleri `70fc1c3`; hikâye içeriği `a131cbf`. Bunlar nihai oyuncu onayı değildir.
