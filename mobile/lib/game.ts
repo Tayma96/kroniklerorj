@@ -4927,21 +4927,22 @@ function tickCaravan(s: GameState) {
 function cityGoodPriceIndex(s: GameState, loc: string, good: string): number {
   return supplyDemandMult(s, loc, good);
 }
-// En kârlı kervan rotası: bir malı ucuz olduğu (bol) şehirden alıp pahalı olduğu (kıt) şehirde satmak.
-// Şehirler-arası gerçek fiyat farkını tarar; çıkışta bol + hedefte kıt olan malı/şehri seçer.
-function bestCaravanRoute(s: GameState, origin: string): { dest: string; good: string; spread: number } | null {
+// Oyuncunun seçebilmesi için şehirler arası yük/hedef seçeneklerini fiyat farkına göre sırala.
+// Fiyat farkı kâr garantisi değildir: sermaye doygunluğu, yol riski ve sigorta sonucu değiştirir.
+export interface CaravanRouteOption { dest: string; good: string; spread: number; }
+export function caravanRouteOptions(s: GameState, origin = s.player.location_name): CaravanRouteOption[] {
   const goods = Object.keys(GOOD_PRODUCERS);
   const oIdx: Record<string, number> = {};
   for (const g of goods) oIdx[g] = Math.max(0.5, cityGoodPriceIndex(s, origin, g)); // çıkış fiyatı (ucuza al)
-  let best: { dest: string; good: string; spread: number } | null = null;
+  const options: CaravanRouteOption[] = [];
   for (const dest of LOCATIONS) {
     if (dest === origin) continue;
     for (const g of goods) {
       const spread = cityGoodPriceIndex(s, dest, g) / oIdx[g]; // hedefte pahalı / çıkışta ucuz
-      if (!best || spread > best.spread) best = { dest, good: g, spread };
+      options.push({ dest, good: g, spread });
     }
   }
-  return best;
+  return options.sort((a, b) => b.spread - a.spread);
 }
 // Kervan gönder: en kârlı şehirler-arası rotayı bul, çok konaklı yol kur, her ay bir konak ilerlesin.
 // Pazar tezgâhı: 3 aylık kira — akçe gider, kiralanan şehirde satışlar %20 kârlı olur. Kira yenilenebilir ama üst üste binmez.
@@ -5011,7 +5012,7 @@ export function trainCombat(prev: GameState): GameState {
   { const tv2 = chance(0.5); push(s, "talim", tv2 ? `İhtiyar sipahi kalkanı indirtene kadar vurdu; akşam kolun ağrıdı, kılıcın hafifledi (−${cost} akçe).` : `Talim meydanında emekli sipahiden ders aldın; bileğin sertleşti (−${cost} akçe).`, "kişisel", false, { k: tv2 ? "evj.trained2" : "evj.trained", p: [cost] }); }
   return s;
 }
-export function launchCaravan(prev: GameState, amount: number, insured = false): GameState {
+export function launchCaravan(prev: GameState, amount: number, insured = false, choice?: Pick<CaravanRouteOption, "dest" | "good">): GameState {
   const s = clone(prev); const p = s.player;
   const prim = insured ? caravanPremium(amount) : 0;
   if (p.dead || p.age < 13 || inJail(p) || s.caravan || amount <= 0 || p.money < amount + prim) return s; // hücreden kervan donatılmaz; kefalet primi peşin
@@ -5019,7 +5020,8 @@ export function launchCaravan(prev: GameState, amount: number, insured = false):
   const others = LOCATIONS.filter((l) => l !== origin);
   if (others.length === 0) return s;
   // Arbitraj: en iyi fiyat farkını veren mal+hedef. Bulunamazsa rastgele hedef (emniyet).
-  const arb = bestCaravanRoute(s, origin);
+  const options = caravanRouteOptions(s, origin);
+  const arb = (choice && options.find((o) => o.dest === choice.dest && o.good === choice.good)) || options[0] || null;
   const dest = arb ? arb.dest : others[Math.floor(gameRandom(s) * others.length)];
   // 1-2 ara konak (origin ve hedef hariç).
   const pool = others.filter((l) => l !== dest);

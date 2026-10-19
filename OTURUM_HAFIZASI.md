@@ -1,19 +1,15 @@
 # Kronikler — güncel çalışma özeti (19 Ekim 2026)
 
-## Kurallar
-- Tayma96/kroniklerorj; yalnız `apk`. Commit Türkçe ve tek satır; değişikliği tamamlayınca uzak dalı doğrula.
-- APK, PR, dağıtım ve Cloudflare işlemi yalnız açıkça istenirse. Kullanıcı sormadıysa otomatik test çalıştırma.
-- Ekranda yeni metin varsa tr/en/es/pt/ar/ru. Kayıt ve MP protokolünü koru. Anahtarları okuma/yazdırma.
-- Yalnız ücretsiz araç; ücret riski varsa çağrı yapma. Bu oturumda yerleşik ImageGen görünmüyor, Higgsfield bağlı değil, Canva kredi durumu doğrulanamıyor; yeni AI görseli üretilmedi.
+## Kalıcı kurallar ve tercihler
+- Tayma96/kroniklerorj; yalnız `apk`. Commit Türkçe ve tek satır; push sonrası uzak başı doğrula.
+- APK/PR/dağıtım/Cloudflare yalnız açıkça istenirse. Kullanıcı sormadıysa test/smoke çalıştırma. Anahtarları okuma/yazdırma.
+- Yeni görünen metin tr/en/es/pt/ar/ru. Eski kayıt, çevrimdışı akış ve MP protokolünü koru.
+- Yalnız ücretsiz araç; ücret riski varsa çağrı yapma.
+- Oyun: 1247 Anadolu'sunda çevrimdışı hanedan simülasyonu. Kullanıcı yeni hikâyeler yerine sistem işlevi, oynanış derinliği ve alanlar arası bağlantı istiyor. Bu öncelik değişene kadar yalnız hikâye yayı ekleme.
+- Görsel yön açık: canlı, profesyonel oyun hissi. NPC portresi yaş/meslek/ruh hâline özel olmalı; hero görseli veya başsız kıyafet atlası portre diye kullanılmamalı. Aybike yalnız örnekti. Bu portre seti henüz tamamlanmadı.
+- Tasarım turu `70fc1c3`; önceki içerik hikâyeleri `a131cbf`. Bunları nihai oyuncu onayı sayma. Diğer sohbet/task'a kullanıcı açıkça yetki vermeden mesaj gönderme.
 
-## Tasarım yönü
-- Oyun: 1247 Anadolu'sunda çevrimdışı, reklam/satın alım içermeyen hanedan yaşam simülasyonu.
-- Kullanıcı bütün oyunda daha canlı, profesyonel, oyun hissi veren ve mockuplara yakın tasarım istiyor; düz/ofis düğmeleri ve soluk, ağır gölgeli ekranlar istemiyor.
-- NPC ekranı mockup yapısını izlemeli; Aybike yalnız örnek, sabit karakter değil. Her NPC'nin yaşı, mesleği ve ruh hâline uyan kendine ait portresi olmalı. Kahraman görseli portre olarak kullanılmamalı; başsız kıyafet atlası portreye bindirilmemeli. Bu tam portre seti henüz yapılmadı.
-- `apk` uzak dalındaki `69ff1b2` önceki tasarım turudur: kasaba/venue görselleri, NPC ekranı ve düğme cilası. Kullanıcı sonucu inceletmek istedi; onaylanmış nihai tasarım sayma. Diğer sohbete kullanıcı açıkça yetki vermeden mesaj gönderme.
-
-## Son tamamlanan tur
-- Kullanıcı kapsamı tüm oyunun sistematik iyileştirilmesine genişletti. `70fc1c3` (`apk`) mobil paleti ısıtıp aydınlatır; ortak kabartmalı `GameButton` karar kartı, ana pano, meslek/ustalık ve vâris geçişinde kullanılır; paneller/sahne başlıkları ile dokunma alanları cilalandı. Oynanış/çeviri metni değişmedi.
-- Bu dalgada biçim kontrolü temiz; otomatik oyun testi, görsel önizleme ve APK çalıştırılmadı.
-- ChatGPT tarayıcı görsel üretimi `list_apps` zaman aşımı yüzünden denenemedi; bu turda yeni yapay zekâ görseli yok. NPC'lere yaş/meslek/ruh hâline özgü ayrı portre seti hâlâ açık iş.
-- Oynanış içeriği turunda `imza_ve_kalip` ve `kislik_ambar` mesleğe bağlı, dallanan hikâyeler olarak eklendi; altı dil ve akçe/şeref/itibar/beceri etkileri var. `git diff --check` temiz; otomatik oyun testi çalıştırılmadı.
+## Aktif oynanış planı
+- Ayrıntılı, alan alan sıra: `docs/OYNANIS_DERINLIGI.md`. YOL_HARITASI.md bu önceliğe göre güncellendi.
+- Tamamlanan ilk dilim: pazar en iyi üç kervan yükü/şehir rotasını ve fiyat farkını gösteriyor; seçilen rota kervanın gerçek varış/yük verisine uygulanıyor. Altı dil eklendi; diff biçim kontrolü temiz. Smoke, test ve cihaz önizlemesi çalıştırılmadı.
+- Sonraki alan: meslek-zanaat-ustalık döngüsünü incele; hikâye eklemek yerine uzmanlaşma ve üretim kararlarında eksik kalan işlevi bul.

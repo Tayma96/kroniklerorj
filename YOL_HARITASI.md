@@ -5,6 +5,11 @@
 > bunları yayına hazır hâle getirmek için. Etiketler: **[BEN]** kod/içerik
 > bende, **[SEN]** karar/sanat/cihaz/Play sende, **[BİRLİKTE]** geri bildirim döngüsü.
 
+> **19 Ekim yön güncellemesi:** Kullanıcı önceliği artık yeni hikâye metni değil; işlevsellik,
+> sistemler arası bağ ve oynanış derinliği. Özellik geliştirmede güncel sıra
+> [`docs/OYNANIS_DERINLIGI.md`](docs/OYNANIS_DERINLIGI.md); aşağıdaki yazım/sanat/yayın
+> kontrol listesi bu yeni önceliğin yerine geçmez.
+
 ---
 
 ## 0. Çalışma Düzeni
@@ -38,7 +43,7 @@ Mevcut sayılar (ayar yapılacak yerler — `mobile/lib/game.ts`):
 
 - [ ] **[SEN→BEN]** 3–4 nesil oynayıp not al: "çok hızlı zenginleştim / sürekli açım / savaş çok kolay/zor / ilerleme yavaş". **[BİRLİKTE]** — *insan oyun testi gerekir.*
 - [x] Erken oyun eğrisi: 13–20 yaş geçim sürdürülebilir mi? **[BEN]** — *`scripts/_smoke/ekonomi.cjs` (80 hayat/tür): 13–20 yaşta kesesi dibe vuran %0; 20 yaşında kese+emanet medyanı pasif ~935, etkin ~1.4k, usta ~1.65k.*
-- [ ] Ekonomi: kasaba-bazlı fiyat + kıtlık/bolluk + kervan kârı dengeli mi (sömürü açığı var mı)? **[BEN]** — *kısmen: pasif birikim kayması düzeltildi (10 Eki: 60 yaş medyanı 9.2k → 3.4k, `lifestyleUpkeep` b0 kademesi, pazarda görünür). Kervan/şehirler arası arbitraj için ayrı simülasyon henüz yok.*
+- [ ] Ekonomi: kasaba-bazlı fiyat + kıtlık/bolluk + kervan kârı dengeli mi (sömürü açığı var mı)? **[BEN]** — *şehirler arası arz-talep arbitrajı ve kervan yolculuğu mevcut; eksik parça oyuncunun yükü/hedefi seçememesi ve fiyat farkını yola çıkmadan görememesi. İlk oynanış dilimi bunu kapatıyor.*
 - [ ] Savaş zorluğu: encounter güçleri ve yaralanma oranı; nemesis adil mi? **[BEN]** — *duman testi çökme olmadığını gösterir ama zorluk ölçümü yok; oyun testi notu ile ayarlanmalı.*
 - [ ] Beceri/perk hızı: bir ömürde kaç perk açılıyor (hedef ~6–9)? **[BEN]** — *ölçüldü (ekonomi.cjs): yalnız çalışan oyuncu ömür sonunda 3, kart kararı veren 4 hüner kademesi hak ediyor. Bu politikalar talim/okuma yapmıyor; gerçek oyuncu sayısı cihaz testinden alınmalı, hedefin altındaysa XP artırılır.*
 - [ ] Ömür temposu: bir nesil kaç "Ayı İlerle"de bitiyor (hedef: tatmin edici ama sürünmeyen)? **[BEN]** — *ölçüldü (oynanis.cjs, 60 hayat): medyan 708 ay / 657 karar, boş ay %15, bunalma %0.2, ölüm yaşı medyan 66. "Sürünüyor mu" kararı insan testine kalır.*
@@ -107,9 +112,9 @@ Mevcut: 14 portre (yaş×cinsiyet), 16 hero sahnesi (yaş×mevsim), 54 game-icon
 
 ---
 
-## 8. HEMEN (bu hafta)
-1. **[SEN]** Son test APK'sını kur, 2–3 nesil oyna, şunları not al: takıldığın yer, sıkıcı/sinir bozucu an, görsel bozukluk, anlamadığın mekanik.
-2. **[BEN]** Sen oynarken paralel: **yazım derinliği** (cihaz gerektirmez) — olay/roman/diyalog metin havuzlarını genişletmeye başlarım.
-3. **[BİRLİKTE]** Notların gelince 1. Hafta dengesine gireriz.
+## 8. HEMEN (oynanış derinliği)
+1. **[x] [BEN]** Pazar kervanında oyuncuya yük/şehir seçimi ve şehirler arası fiyat farkı gösterimi eklendi.
+2. **[BEN]** Sıradaki inceleme: meslek-zanaat döngüsünde gerçek uzmanlaşma ve üretim kararları; ardından NPC-aile ve şehir-güç bağlantıları.
+3. **[BİRLİKTE]** Gerçek cihaz/oyun hissi gerektiren denge ve okunabilirlik kararlarını kullanıcının oyun gözlemleri geldikçe plana işle.
 
 > Not: Bu belge yaşar; her hafta güncellenir. "Bir an önce" için en hızlı yol — senin oynayış notların + benim paralel yazım/denge çalışmam.

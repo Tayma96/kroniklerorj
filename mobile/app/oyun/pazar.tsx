@@ -6,8 +6,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
 import { WarWorldCard } from "../../lib/war-world-ui";
-import { buyItem, buyPrice, sellItem, launchCaravan, caravanPremium, rentStall, stallCost, stallActive, stockWinter, winterStockCost, pawnHorse, redeemHorse, horsePawnValue, horseRedeemCost, negotiatedBuy, negotiatedSell, bargainBase, bargainSellBase, bargainChance, rollBargain, marketPrice, econKey, goodPriceMult, MARKET_EVENTS, bestQualityTier, QUALITY_LABEL, sellerPersonaOf, factionLocalFavor, goodMarketTag, goodTrend, citySpecialtyIdx, loanCapacity, loanRate, borrow, repay, depositCoin, withdrawCoin, DEPOSIT_ANNUAL_YIELD, lifestyleUpkeep, giveZekat, zekatDue, zekatAvailable } from "../../lib/game";
-import { marketGoods, locSeed } from "../../lib/world";
+import { buyItem, buyPrice, sellItem, launchCaravan, caravanRouteOptions, caravanPremium, rentStall, stallCost, stallActive, stockWinter, winterStockCost, pawnHorse, redeemHorse, horsePawnValue, horseRedeemCost, negotiatedBuy, negotiatedSell, bargainBase, bargainSellBase, bargainChance, rollBargain, marketPrice, econKey, goodPriceMult, MARKET_EVENTS, bestQualityTier, QUALITY_LABEL, sellerPersonaOf, factionLocalFavor, goodMarketTag, goodTrend, citySpecialtyIdx, loanCapacity, loanRate, borrow, repay, depositCoin, withdrawCoin, DEPOSIT_ANNUAL_YIELD, lifestyleUpkeep, giveZekat, zekatDue, zekatAvailable } from "../../lib/game";
+import { marketGoods, locSeed, ITEMS } from "../../lib/world";
+import { caravanRouteText } from "../../lib/caravan-route-locales";
 import { currentCalendar } from "../../lib/calendar";
 import { useI18n, applyParams, yuzdeL } from "../../lib/i18n";
 import { placeName } from "../../lib/locale-data";
@@ -67,9 +68,12 @@ export default function Pazar() {
   const { lang, t, tg } = useI18n();
   const [barg, setBarg] = useState<null | { id: string; icon: string; name: string; base: number; price: number; patience: number; msg: string; done: boolean; sell?: boolean }>(null);
   const [sigorta, setSigorta] = useState(false);
+  const [caravanRouteId, setCaravanRouteId] = useState<string | null>(null);
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   const p = state.player;
   const econ = state.econ || 1;
+  const caravanRoutes = caravanRouteOptions(state).slice(0, 3);
+  const selectedCaravanRoute = caravanRoutes.find((r) => `${r.dest}|${r.good}` === caravanRouteId) || caravanRoutes[0];
   // buy = GERÇEK alış fiyatı (tüccar/pazarlıkçı indirimi dahil) → gösterim + "yeterli akçe" kontrolü buyItem ile aynı.
   const goods = marketGoods(locSeed(p.location_name)).map((g) => { const m = goodPriceMult(state, g.id); return { ...g, buy: buyPrice(state, g.id), sell: Math.max(1, Math.round(marketPrice(g.sell, econ) * m)), pm: m }; });
   const mev = state.marketEvent && state.marketEvent.until > state.turn ? MARKET_EVENTS.find((e) => e.key === state.marketEvent!.key) : null;
@@ -231,6 +235,7 @@ export default function Pazar() {
               <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, marginBottom: state.caravan.route ? 9 : 0 }}>
                 {t("paz.caravanActive").replace("%d", placeName(state.caravan.dest, lang)).replace("%c", String(state.caravan.invested))}
               </Text>
+              {!!state.caravan.good && <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.goldDim, marginBottom: 7 }}>{caravanRouteText(lang, "cargo")}: {t("it." + state.caravan.good)}{state.caravan.spread != null ? ` · ${caravanRouteText(lang, "gap").toLowerCase()} ${yuzdeL(Math.round((state.caravan.spread - 1) * 100), lang)}` : ""}</Text>}
               {state.caravan.route && (
                 <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 3 }}>
                   {state.caravan.route.map((stop, i) => {
@@ -256,13 +261,37 @@ export default function Pazar() {
             <>
               <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, marginBottom: 9 }}>{t("paz.caravanHint")}</Text>
               {!!(p.retinue || 0) && <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.sage, marginBottom: 9, marginTop: -4 }}>{t("paz.caravanGuard").replace("%c", String(p.retinue || 0))}</Text>}
+              {!!caravanRoutes.length && (
+                <View style={{ marginBottom: 11 }}>
+                  <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: C.parchmentDim, marginBottom: 6 }}>{caravanRouteText(lang, "title").toUpperCase()}</Text>
+                  <Text style={{ fontFamily: F.serifItalic, fontSize: 14, lineHeight: 19, color: C.parchmentMuted, marginBottom: 7 }}>{caravanRouteText(lang, "hint")}</Text>
+                  <View style={{ gap: 6 }}>
+                    {caravanRoutes.map((route) => {
+                      const key = `${route.dest}|${route.good}`;
+                      const selected = selectedCaravanRoute?.dest === route.dest && selectedCaravanRoute?.good === route.good;
+                      const gap = Math.round((route.spread - 1) * 100);
+                      return (
+                        <Pressable key={key} onPress={() => { hap("tap"); setCaravanRouteId(key); }} style={{ flexDirection: "row", alignItems: "center", gap: 9, padding: 9, borderRadius: 5, borderWidth: 1, borderColor: selected ? "rgba(224,90,48,0.75)" : C.border, backgroundColor: selected ? "rgba(224,90,48,0.11)" : C.bg }}>
+                          <GameIcon name={marketItemIcon(ITEMS[route.good])} size={17} color={selected ? C.ember : C.parchmentMuted} />
+                          <View style={{ flex: 1 }}>
+                            <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchment }}>{t("it." + route.good)}</Text>
+                            <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchmentMuted }}>{placeName(p.location_name, lang)} → {placeName(route.dest, lang)}</Text>
+                            <Text style={{ fontFamily: F.serifItalic, fontSize: 14, color: gap >= 0 ? C.sage : C.blood }}>{caravanRouteText(lang, "gap")}: {gap > 0 ? "+" : ""}{yuzdeL(gap, lang)}</Text>
+                          </View>
+                          {selected && <Text style={{ fontFamily: F.display, fontSize: 11, color: C.ember }}>{caravanRouteText(lang, "selected")}</Text>}
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                </View>
+              )}
               <Pressable onPress={() => { hap("tap"); setSigorta(!sigorta); }} style={{ flexDirection: "row", alignItems: "center", gap: 7, marginBottom: 9 }}>
                 <View style={{ width: 15, height: 15, borderRadius: 4, borderWidth: 1, borderColor: sigorta ? "rgba(127,166,106,0.8)" : C.border, backgroundColor: sigorta ? "rgba(127,166,106,0.35)" : "transparent", alignItems: "center", justifyContent: "center" }}>{sigorta && <GameIcon name="shield" size={9} color={C.sage} />}</View>
                 <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 15, color: sigorta ? C.sage : C.parchmentMuted }}>{t("paz.caravanInsure")}</Text>
               </Pressable>
               <View style={{ flexDirection: "row", gap: 8 }}>
                 {CARAVAN_AMOUNTS.map((amt) => { const tot = amt + (sigorta ? caravanPremium(amt) : 0); const dis = p.money < tot || p.age < 13; return (
-                  <Pressable key={amt} disabled={dis} onPress={() => { hap('advance'); apply((s) => launchCaravan(s, amt, sigorta)); }} style={{ flex: 1, alignItems: "center", paddingVertical: 10, borderRadius: 5, borderWidth: 1, borderColor: dis ? C.border : "rgba(224,90,48,0.5)", backgroundColor: dis ? C.bg : "rgba(224,90,48,0.12)" }}>
+                  <Pressable key={amt} disabled={dis} onPress={() => { hap('advance'); apply((s) => launchCaravan(s, amt, sigorta, selectedCaravanRoute)); }} style={{ flex: 1, alignItems: "center", paddingVertical: 10, borderRadius: 5, borderWidth: 1, borderColor: dis ? C.border : "rgba(224,90,48,0.5)", backgroundColor: dis ? C.bg : "rgba(224,90,48,0.12)" }}>
                     <Text style={{ fontFamily: F.display, fontSize: 13, color: dis ? C.parchmentMuted : C.ember }}>{amt}⚜{sigorta ? ` +${caravanPremium(amt)}` : ""}</Text>
                   </Pressable>
                 ); })}
