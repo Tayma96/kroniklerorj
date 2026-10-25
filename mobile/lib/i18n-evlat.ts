@@ -26,7 +26,14 @@ export const EVLAT_METIN = {
     "evlat.died.k": "Kızın %1 Hakk'ın rahmetine kavuştu; onun yeri ve bıraktığı bağlar ailede kaldı.",
     "evlat.news.remember": "Hatırasına git", "evlat.heir.noneAll": "Yaşayan bir vâris adayı kalmadı",
     "varis.role.evlat": "Evladın", "varis.role.torun": "Torunun", "varis.role.yegen": "Yeğenin", "varis.role.cirak": "Yetişmiş çırağın",
-    "varis.source.torun": "%1, hanenin torunu olarak ocağı devraldı.", "varis.source.yegen": "%1, hanenin yeğeni olarak ocağı devraldı.", "varis.source.cirak": "%1, hanenin yetişmiş çırağı olarak ocağı devraldı."
+    "varis.source.torun": "%1, hanenin torunu olarak ocağı devraldı.", "varis.source.yegen": "%1, hanenin yeğeni olarak ocağı devraldı.", "varis.source.cirak": "%1, hanenin yetişmiş çırağı olarak ocağı devraldı.",
+    "edu.ageNote": "Eğitim masrafı 7–17 yaş arasında sürer; 3. kademede veya 18 yaşında durur.",
+    "edu.careerHint": "13 yaşında bu yola uygun mesleğe yönelme ihtimali: %1.",
+    "edu.hint": "Her ay akçe ister. 13 yaşından önce sürdürülen yol çıraklık mesleğini etkileyebilir; biriken eğitim vârisin başlangıç özellik ve becerilerini geliştirir. Yolu değiştirince birikim sıfırlanır.",
+    "edu.hint.after": "13 yaşından sonra eğitim çocuğun mesleğini değiştirmez; birikim vârisin başlangıç özellik ve becerilerini geliştirmeyi sürdürür. Yolu değiştirince birikim sıfırlanır.",
+    "edu.hint.after.none": "13 yaşındaki çıraklık tercihi artık değişmez. 18 yaşına kadar başlayacağın eğitim, vârisin başlangıç özellik ve becerilerini yine geliştirebilir.",
+    "edu.hint.closed": "Eğitim dönemi kapandı. Yeni yol seçilemez; biriken eğitim vâris önizlemesinde korunur.",
+    "evj.kidApprenticeCareer": "Eğitim alan %1, %2 yolunda çıraklığa başladı; ilk kazancını eve getirdi (+%3 akçe)."
   },
   "en": {
     "evlat.married": "Your child %1 married %2 in %3; they will make their own decisions.",
@@ -55,7 +62,14 @@ export const EVLAT_METIN = {
     "evlat.died.k": "Your daughter %1 died; her place and the bonds she left remain in the family.",
     "evlat.news.remember": "Visit their memory", "evlat.heir.noneAll": "No living successor remains",
     "varis.role.evlat": "Your child", "varis.role.torun": "Your grandchild", "varis.role.yegen": "Your niece or nephew", "varis.role.cirak": "Your trained apprentice",
-    "varis.source.torun": "%1 inherited the household as its grandchild.", "varis.source.yegen": "%1 inherited the household as its niece or nephew.", "varis.source.cirak": "%1 inherited the household as its trained apprentice."
+    "varis.source.torun": "%1 inherited the household as its grandchild.", "varis.source.yegen": "%1 inherited the household as its niece or nephew.", "varis.source.cirak": "%1 inherited the household as its trained apprentice.",
+    "edu.ageNote": "Education costs run from ages 7–17 and stop at level 3 or age 18.",
+    "edu.careerHint": "At age 13, chance of entering a profession aligned with this path: %1.",
+    "edu.hint": "Costs coins monthly. A path pursued before age 13 can guide their apprenticeship; accumulated study improves the heir's starting attributes and skills. Switching resets progress.",
+    "edu.hint.after": "After age 13, study can no longer change their profession; continued education improves the heir's starting attributes and skills. Switching resets progress.",
+    "edu.hint.after.none": "The age-13 apprenticeship choice has passed. Study started before 18 can still improve the heir's starting attributes and skills.",
+    "edu.hint.closed": "Education is closed. No new path can be set; any accumulated study remains in the heir preview.",
+    "evj.kidApprenticeCareer": "Education guided %1 toward %2; their apprenticeship begins, and their first earnings come home (+%3 coins)."
   },
   "es": {
     "evlat.married": "Tu hijo o hija %1 se casó con %2 en %3; tomarán sus propias decisiones.",
@@ -84,7 +98,14 @@ export const EVLAT_METIN = {
     "evlat.died.k": "Tu hija %1 falleció; su lugar y los lazos que dejó permanecen en la familia.",
     "evlat.news.remember": "Visita su recuerdo", "evlat.heir.noneAll": "No queda ningún sucesor con vida",
     "varis.role.evlat": "Tu hijo o hija", "varis.role.torun": "Tu nieto o nieta", "varis.role.yegen": "Tu sobrino o sobrina", "varis.role.cirak": "Tu aprendiz formado",
-    "varis.source.torun": "%1 heredó el hogar como nieto o nieta de la casa.", "varis.source.yegen": "%1 heredó el hogar como sobrino o sobrina de la casa.", "varis.source.cirak": "%1 heredó el hogar como aprendiz formado de la casa."
+    "varis.source.torun": "%1 heredó el hogar como nieto o nieta de la casa.", "varis.source.yegen": "%1 heredó el hogar como sobrino o sobrina de la casa.", "varis.source.cirak": "%1 heredó el hogar como aprendiz formado de la casa.",
+    "edu.ageNote": "La educación se paga de los 7 a los 17 años; el coste termina en el nivel 3 o al cumplir 18.",
+    "edu.careerHint": "A los 13, probabilidad de elegir un oficio relacionado con este camino: %1.",
+    "edu.hint": "Cuesta monedas cada mes. Un camino seguido antes de los 13 puede orientar su aprendizaje; los estudios acumulados mejoran los atributos y habilidades iniciales del heredero. Cambiarlo reinicia el progreso.",
+    "edu.hint.after": "Después de los 13, los estudios ya no cambian su oficio; continuar mejora los atributos y habilidades iniciales del heredero. Cambiar de camino reinicia el progreso.",
+    "edu.hint.after.none": "La decisión del aprendizaje a los 13 ya pasó. Los estudios iniciados antes de los 18 aún pueden mejorar los atributos y habilidades iniciales del heredero.",
+    "edu.hint.closed": "La educación ha terminado. No se puede elegir otro camino; los estudios acumulados siguen en la vista previa del heredero.",
+    "evj.kidApprenticeCareer": "La educación orientó a %1 hacia %2; comienza su aprendizaje y lleva a casa sus primeras monedas (+%3)."
   },
   "pt": {
     "evlat.married": "Teu filho ou filha %1 casou com %2 em %3; tomarão as suas próprias decisões.",
@@ -113,7 +134,14 @@ export const EVLAT_METIN = {
     "evlat.died.k": "Tua filha %1 faleceu; seu lugar e os laços que deixou permanecem na família.",
     "evlat.news.remember": "Visita sua memória", "evlat.heir.noneAll": "Não resta sucessor vivo",
     "varis.role.evlat": "Teu filho ou filha", "varis.role.torun": "Teu neto ou neta", "varis.role.yegen": "Teu sobrinho ou sobrinha", "varis.role.cirak": "Teu aprendiz formado",
-    "varis.source.torun": "%1 herdou o lar como neto ou neta da casa.", "varis.source.yegen": "%1 herdou o lar como sobrinho ou sobrinha da casa.", "varis.source.cirak": "%1 herdou o lar como aprendiz formado da casa."
+    "varis.source.torun": "%1 herdou o lar como neto ou neta da casa.", "varis.source.yegen": "%1 herdou o lar como sobrinho ou sobrinha da casa.", "varis.source.cirak": "%1 herdou o lar como aprendiz formado da casa.",
+    "edu.ageNote": "O apoio é pago dos 7 aos 17 anos; termina no nível 3 ou aos 18.",
+    "edu.careerHint": "Aos 13 anos, probabilidade de seguir uma profissão ligada a este caminho: %1.",
+    "edu.hint": "Custa moedas por mês. Um caminho seguido antes dos 13 anos pode orientar a aprendizagem; o estudo acumulado melhora os atributos e perícias iniciais do herdeiro. Mudar de caminho reinicia o progresso.",
+    "edu.hint.after": "Depois dos 13 anos, o estudo já não muda a profissão; continuar melhora os atributos e perícias iniciais do herdeiro. Mudar de caminho reinicia o progresso.",
+    "edu.hint.after.none": "A escolha do aprendizado aos 13 anos já passou. O estudo iniciado antes dos 18 ainda pode melhorar os atributos e perícias iniciais do herdeiro.",
+    "edu.hint.closed": "O período de educação terminou. Não é possível escolher outro caminho; o estudo acumulado permanece na prévia do herdeiro.",
+    "evj.kidApprenticeCareer": "A educação orientou %1 para %2; começa a aprendizagem e chega a casa o primeiro ganho (+%3 moedas)."
   },
   "ar": {
     "evlat.married": "زواج ابنك أو ابنتك %1 من %2 في %3؛ والقرارات لهما الآن.",
@@ -142,7 +170,14 @@ export const EVLAT_METIN = {
     "evlat.died.k": "تُوفيت %1 من أبنائك؛ وبقي موضعها وما تركته من صلات في العائلة.",
     "evlat.news.remember": "زيارة الذكرى", "evlat.heir.noneAll": "لا يوجد وريث حي",
     "varis.role.evlat": "من أبنائك", "varis.role.torun": "من أحفادك", "varis.role.yegen": "من أبناء إخوتك", "varis.role.cirak": "من تلاميذك المتدرّبين",
-    "varis.source.torun": "تسلّم %1 الموقد بصفته من أحفاد العائلة.", "varis.source.yegen": "تسلّم %1 الموقد بصفته من أبناء إخوة العائلة.", "varis.source.cirak": "تسلّم %1 الموقد بصفته من تلاميذ العائلة المتدرّبين."
+    "varis.source.torun": "تسلّم %1 الموقد بصفته من أحفاد العائلة.", "varis.source.yegen": "تسلّم %1 الموقد بصفته من أبناء إخوة العائلة.", "varis.source.cirak": "تسلّم %1 الموقد بصفته من تلاميذ العائلة المتدرّبين.",
+    "edu.ageNote": "تستمر كلفة التعليم من عمر 7 إلى 17 عامًا، وتتوقف عند المستوى 3 أو بلوغ 18 عامًا.",
+    "edu.careerHint": "احتمال اختيار مهنة مرتبطة بهذا المسار عند عمر 13 عامًا: %1.",
+    "edu.hint": "تُدفع كلفة شهرية. قد يؤثر المسار المتّبع قبل سن 13 في مهنة التدريب؛ ويحسّن التعليم المتراكم الصفات والمهارات التي تنتقل إلى الوريث عند البداية. تغيير المسار يعيد التقدم إلى الصفر.",
+    "edu.hint.after": "بعد سن 13، لا يغيّر التعليم المهنة؛ لكن استمراره يحسّن صفات الوريث ومهاراته عند البداية. تغيير المسار يعيد التقدم إلى الصفر.",
+    "edu.hint.after.none": "مضى وقت اختيار مهنة التدريب عند سن 13. ويمكن للتعليم حتى سن 18 تحسين صفات الوريث ومهاراته عند البداية.",
+    "edu.hint.closed": "انتهت فترة التعليم. لا يمكن اختيار مسار جديد؛ ويبقى التعليم المتراكم ظاهرًا في معاينة الوريث.",
+    "evj.kidApprenticeCareer": "أثر التعليم: اختيار %1 لمهنة %2 وبداية التدريب فيها؛ ووصول أول كسب إلى البيت (+%3 قطعة)."
   },
   "ru": {
     "evlat.married": "Твой ребёнок %1 и %2 вступили в брак. Место: %3. Теперь они принимают решения сами.",
@@ -171,6 +206,13 @@ export const EVLAT_METIN = {
     "evlat.died.k": "Твоя дочь %1 умерла; её место и оставленные ею связи сохранились в семье.",
     "evlat.news.remember": "Посетить память", "evlat.heir.noneAll": "Живых преемников не осталось",
     "varis.role.evlat": "Твой ребёнок", "varis.role.torun": "Твой внук или внучка", "varis.role.yegen": "Твой племянник или племянница", "varis.role.cirak": "Твой обученный подмастерье",
-    "varis.source.torun": "%1 принял очаг как внук или внучка семьи.", "varis.source.yegen": "%1 принял очаг как племянник или племянница семьи.", "varis.source.cirak": "%1 принял очаг как обученный подмастерье семьи."
+    "varis.source.torun": "%1 принял очаг как внук или внучка семьи.", "varis.source.yegen": "%1 принял очаг как племянник или племянница семьи.", "varis.source.cirak": "%1 принял очаг как обученный подмастерье семьи.",
+    "edu.ageNote": "Обучение оплачивается с 7 до 17 лет и прекращается на 3-м уровне или в 18 лет.",
+    "edu.careerHint": "В 13 лет шанс выбрать профессию по этому направлению: %1.",
+    "edu.hint": "Учёба стоит монет каждый месяц. Направление, выбранное до 13 лет, может повлиять на профессию подмастерья; накопленные знания улучшают начальные качества и навыки наследника. Смена направления сбрасывает прогресс.",
+    "edu.hint.after": "После 13 лет учёба уже не меняет профессию; продолжение обучения улучшает начальные качества и навыки наследника. Смена направления сбрасывает прогресс.",
+    "edu.hint.after.none": "Выбор ученичества в 13 лет уже сделан. Обучение до 18 лет всё ещё может улучшить начальные качества и навыки наследника.",
+    "edu.hint.closed": "Обучение завершено. Новый путь выбрать нельзя; накопленные знания остаются в предварительном просмотре наследника.",
+    "evj.kidApprenticeCareer": "Учёба помогла %1 выбрать профессию «%2» и начать ученичество; первый заработок пришёл домой (+%3 монет)."
   }
 };

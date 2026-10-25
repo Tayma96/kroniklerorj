@@ -310,9 +310,9 @@ function FirsatKarti({ opp, statVal, onResolve, onPass, progress, onProgress }: 
   const k = useKart3D();
   const rk = opp.risk >= 0.55 ? { k: "high", c: C.blood } : opp.risk >= 0.35 ? { k: "mid", c: C.ember } : { k: "low", c: C.sage };
   const [phase, setPhase] = useState<"intro" | "play" | "result">(progress?.stage || "intro");
-  const [pos, setPos] = useState(0);
+  const pos = useSharedValue(0);
+  const markerStyle = useAnimatedStyle(() => ({ left: `${pos.value}%` }));
   const [success, setSuccess] = useState(progress?.success ?? false);
-  const dir = useRef(1);
   const stopped = useRef(false);
   const cikiyor = useRef(false);
   // Başarı bölgesi: hüner büyütür, risk daraltır (orta noktada). Genişlik %12–%64.
@@ -320,14 +320,14 @@ function FirsatKarti({ opp, statVal, onResolve, onPass, progress, onProgress }: 
   const zoneStart = 50 - zoneW / 2, zoneEnd = 50 + zoneW / 2;
   // Sınav sırasında kart süzülmez: hüner anında el titremesin.
   useEffect(() => { k.calm(phase === "play"); }, [phase]);
-  // Oyun fazında işaretçiyi 0↔100 gezdir (saf JS — durdurunca değer kesin bilinir).
+  // İşaretçiyi JS state döngüsüyle değil UI thread'inde gezdir; her 24 ms React ağacını yeniden çizme.
   useEffect(() => {
     if (phase !== "play") return;
-    stopped.current = false; dir.current = 1; setPos(0);
-    const id = setInterval(() => setPos((p) => { let n = p + dir.current * 3.4; if (n >= 100) { n = 100; dir.current = -1; } else if (n <= 0) { n = 0; dir.current = 1; } return n; }), 24);
-    return () => clearInterval(id);
+    stopped.current = false; pos.value = 0;
+    pos.value = withRepeat(withTiming(100, { duration: 706, easing: Easing.linear }), -1, true);
+    return () => cancelAnimation(pos);
   }, [phase]);
-  const onStop = () => { if (stopped.current) return; stopped.current = true; const ok = pos >= zoneStart && pos <= zoneEnd; onProgress?.("result", ok); setSuccess(ok); setPhase("result"); hap(ok ? "success" : "error"); playEffect(ok ? "cip_kazanc" : "cip_kayip"); };
+  const onStop = () => { if (stopped.current) return; stopped.current = true; const currentPos = pos.value; const ok = currentPos >= zoneStart && currentPos <= zoneEnd; onProgress?.("result", ok); setSuccess(ok); setPhase("result"); hap(ok ? "success" : "error"); playEffect(ok ? "cip_kazanc" : "cip_kayip"); };
   const kapat = (cb: () => void) => { if (cikiyor.current) return; cikiyor.current = true; k.exit(cb); };
   const pill = (txt: string, color: string, bg: string = C.bg, bd: string = C.border) => (
     <View style={{ backgroundColor: bg, borderWidth: 1, borderColor: bd, borderRadius: 20, paddingVertical: 4, paddingHorizontal: 11 }}>
@@ -369,7 +369,7 @@ function FirsatKarti({ opp, statVal, onResolve, onPass, progress, onProgress }: 
                 {/* Sınav çubuğu: yeşil başarı bölgesi + gezen işaretçi */}
                 <View style={{ height: 28, borderRadius: 8, backgroundColor: C.parchment + "10", borderWidth: 1, borderColor: C.border, overflow: "hidden", justifyContent: "center" }}>
                   <View style={{ position: "absolute", left: `${zoneStart}%`, width: `${zoneW}%`, top: 0, bottom: 0, backgroundColor: C.sage + "52", borderLeftWidth: 1, borderRightWidth: 1, borderColor: C.sage }} />
-                  <View style={{ position: "absolute", left: `${pos}%`, width: 3, top: -2, bottom: -2, backgroundColor: C.goldBright, marginLeft: -1.5 }} />
+                  <Animated.View style={[{ position: "absolute", width: 3, top: -2, bottom: -2, backgroundColor: C.goldBright, marginLeft: -1.5 }, markerStyle]} />
                 </View>
                 <Pressable accessibilityRole="button" accessibilityLabel={t("frs.stop")} onPress={onStop} style={{ marginTop: 18, paddingVertical: 14, borderRadius: 9, borderWidth: 1.5, borderColor: C.gold + "99", backgroundColor: C.gold, alignItems: "center" }}>
                   <Text style={{ fontFamily: F.display, fontSize: 14, letterSpacing: 2, color: C.inkOnGold }}>{t("frs.stop")}</Text>

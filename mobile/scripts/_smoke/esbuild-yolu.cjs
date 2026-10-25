@@ -9,5 +9,11 @@ try {
   console.error("esbuild bulunamadı — mobile/ içinde `npm ci` çalıştır (esbuild devDependency).");
   process.exit(1);
 }
-// Not: kurulumda bu dosya yerel ikiliyle değiştirilir; node ile değil doğrudan çalıştırılır.
+// Windows cmd.exe, paketin JavaScript başlatıcısını doğrudan açmaz; isteğe bağlı platform paketindeki .exe'yi çağır.
+if (process.platform === "win32") {
+  const arch = process.arch === "arm64" ? "arm64" : process.arch === "ia32" ? "ia32" : "x64";
+  try { bin = require.resolve(`@esbuild/win32-${arch}/esbuild.exe`, { paths: [path.dirname(bin)] }); }
+  catch (e) { console.error("esbuild Windows ikilisi bulunamadı — mobile/ içinde `npm ci` çalıştır."); process.exit(1); }
+}
+// Not: bin doğrudan çalıştırılır; test süreçleri paket yöneticisine veya ağa başvurmaz.
 module.exports = `"${bin}"`;

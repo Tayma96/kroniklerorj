@@ -68,6 +68,8 @@ if (!fs.existsSync(bundle)) {
     if (name.startsWith("game-") && old !== bundle && Date.now() - fs.statSync(old).mtimeMs > 86400_000) fs.unlinkSync(old);
   }
 }
+step("aile-eğitim-pazar", process.execPath,
+  [path.join(__dirname, "child-education-check.cjs")], { SMOKE_BUNDLE: bundle });
 if (mode === "rng" || mode === "rng-full") {
   step(`rng-${wide ? "full" : "quick"}`, process.execPath,
     [path.join(__dirname, "rng-yol-ticaret-savas-check.cjs")], { SMOKE_PROFILE: wide ? "full" : "quick" });

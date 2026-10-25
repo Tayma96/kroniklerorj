@@ -61,7 +61,7 @@ export interface Player {
   stat_xp?: Stats; // özellik tecrübesi (kullanımla birikir; stat_points'e EK — Vercel add_stat_xp)
   injuries: Injury[]; career_xp: number;
   nam: Nam; child_invests: Record<string, string[]>;
-  child_edu?: Record<string, { track: string; weeks: number }>; // süregelen evlat eğitimi (haftalık biriken)
+  child_edu?: Record<string, { track: string; weeks: number }>; // weeks eski kayıt alanı; ilerleme ayda bir artar
   child_bond?: Record<string, number>; // evlat başına bağ 0-100 (ilgiyle beslenir; ilk dokunuşta 50)
   child_time_turn?: number; // yerel bakım veya uzak evlada mektup aynı aylık hakkı paylaşır
   child_letters?: { id: string; sent: number; due: number }[]; // en çok iki gerçek mektup; oyun aylarıyla ulaşır
@@ -229,16 +229,20 @@ export const INVESTMENTS: Investment[] = [
 ];
 // Süregelen eğitim yolu — tek-seferlik yatırımdan farklı olarak HER AY emek+akçe ister ve birikir;
 // vâris olunca biriken aylara göre ölçekli bonus verir (Vercel legacy_system EDUCATION_TRACKS portu).
-export interface EduTrack { id: string; label: string; icon: string; weekly: number; stat?: keyof Stats; skill?: keyof Skills; }
+export interface EduTrack { id: string; label: string; icon: string; monthly: number; stat?: keyof Stats; skill?: keyof Skills; }
 export const EDU_TRACKS: EduTrack[] = [
-  { id: "ilim",    label: "İlim Yolu",    icon: "graduate-cap",   weekly: 3, stat: "intelligence" },
-  { id: "savas",   label: "Savaş Yolu",   icon: "crossed-swords", weekly: 3, stat: "strength", skill: "combat" },
-  { id: "zanaat",  label: "Zanaat Yolu",  icon: "anvil",          weekly: 2, skill: "crafting" },
-  { id: "ticaret", label: "Ticaret Yolu", icon: "coins",          weekly: 2, stat: "charisma", skill: "trade" },
-  { id: "kelam",   label: "Kelam Yolu",   icon: "speaker",        weekly: 2, skill: "social" },
+  { id: "ilim",    label: "İlim Yolu",    icon: "graduate-cap",   monthly: 3, stat: "intelligence" },
+  { id: "savas",   label: "Savaş Yolu",   icon: "crossed-swords", monthly: 3, stat: "strength", skill: "combat" },
+  { id: "zanaat",  label: "Zanaat Yolu",  icon: "anvil",          monthly: 2, skill: "crafting" },
+  { id: "ticaret", label: "Ticaret Yolu", icon: "coins",          monthly: 2, stat: "charisma", skill: "trade" },
+  { id: "kelam",   label: "Kelam Yolu",   icon: "speaker",        monthly: 2, skill: "social" },
 ];
-// Biriken ay sayısı → bonus kademesi: <10 ay etkisiz, ~6 ayda +1 (max +3). Vercel apply_child_bonus hizası.
-export function eduLevel(weeks: number): number { return weeks < 10 ? 0 : Math.max(1, Math.min(3, Math.floor(weeks / 26))); }
+// Biriken ay sayısı → bonus kademesi: <10 ay etkisiz, ~2 yılda +1 (max +3). `weeks` eski kayıt alanıdır.
+export function eduLevel(months: number): number { return months < 10 ? 0 : Math.max(1, Math.min(3, Math.floor(months / 26))); }
+export function childCareerChance(s: GameState, name: string): number {
+  const level = eduLevel(s.player.child_edu?.[name]?.weeks ?? 0);
+  return level > 0 ? 0.1 + level * 0.2 : 0;
+}
 // Vasiyet stilleri — miras oranı ve yeni nesle etki.
 export interface WillStyle { id: string; label: string; desc: string; frac: number; repBonus: number; }
 export const WILL_STYLES: WillStyle[] = [
@@ -784,13 +788,19 @@ function evlatMektuplariTick(s: GameState) {
   s.player.child_letters = pending.length ? pending : undefined;
 }
 export function cocuklaVakitSec(s: GameState, target?: string): { name: string; age: number; id?: string } | null {
-  const p = s.player, pop = nufusOf(s), wy = worldYears(s);
+  const p = s.player, pop = nufusOf(s);
   const choices = p.children.filter(name => !target || name === target).map(name => {
-    const id = p.child_ids?.[name], k = id ? pop.k[id] : undefined, cm = p.child_meta?.find(c => c.n === name);
+    const id = p.child_ids?.[name], k = id ? pop.k[id] : undefined;
     if (id && (!k || k.ol != null || k.loc !== p.location_name)) return null;
-    return { name, id, age: k ? yasOf(k, wy) : cm ? Math.max(0, Math.floor((s.turn - cm.born) / 12)) : 18 };
+    return { name, id, age: evlatYasi(s, name) };
   }).filter((x): x is { name: string; age: number; id: string | undefined } => !!x).sort((a,b) => a.age - b.age);
   return choices[0] || null;
+}
+export function evlatYasi(s: GameState, name: string): number {
+  const id = s.player.child_ids?.[name], k = id ? nufusOf(s).k[id] : undefined;
+  if (k) return yasOf(k, worldYears(s));
+  const meta = s.player.child_meta?.find((x) => x.n === name);
+  return meta ? Math.max(0, Math.floor((s.turn - meta.born) / 12)) : 18;
 }
 // Oyuncunun eşi (yaşıyor ya da vefat etmiş; boşanınca bağ kopar).
 export function esKisi(s: GameState): Kisi | undefined { const id = s.player.spouse_id; return id ? nufusOf(s).k[id] : undefined; }
@@ -2713,12 +2723,16 @@ export function goodTrend(s: GameState, loc: string, good: string): -1 | 0 | 1 {
 }
 // Bir malın yerel talebi (nüfusa oranlı). Savaşta silah/zırh talebi artar.
 const GOV_MOOD_MARKET_STEP = 0.004; // Memnuniyet pazar talebini en çok ±%10 değiştirir.
+const GOV_TAX_MARKET_STEP = 0.006; // Vergi, şehir halkının pazardaki alım gücünü etkiler; en çok +%6 / -%9.
 export function cityGoodDemand(s: GameState, loc: string, good: string): number {
   const people = cityEconomy(s, loc);
   const food = !!ITEMS[good]?.feed || ["bugday", "un"].includes(good);
   const consumers = food ? people.mouths : ["silah", "zirh"].includes(ITEMS[good]?.kind || "") ? people.adults : people.residents;
   let d = (DEMAND_COEF[good] || 0.06) * consumers;
-  if (isGovernor(s.player, loc)) d *= Math.max(0.9, Math.min(1.1, 1 + (govHappyOf(s.player, loc) - 60) * GOV_MOOD_MARKET_STEP)); // halk memnuniyeti yerel pazarın alım gücünü etkiler
+  if (isGovernor(s.player, loc)) {
+    d *= Math.max(0.9, Math.min(1.1, 1 + (govHappyOf(s.player, loc) - 60) * GOV_MOOD_MARKET_STEP)); // halk memnuniyeti yerel pazarın alım gücünü etkiler
+    d *= Math.max(0.91, Math.min(1.06, 1 - (govTaxOf(s.player, loc) - 15) * GOV_TAX_MARKET_STEP)); // ağır vergi hane alımını daraltır; düşük vergi çarşı talebini destekler
+  }
   const war = regionalWarEffects(s, loc);
   if (ITEMS[good]?.feed || ["bugday", "un"].includes(good)) d *= war.foodDemand;
   if (mobilizedRegion(s, regionOf(loc)) && ["silah", "zirh"].includes(ITEMS[good]?.kind || "")) d *= 1.35;
@@ -2959,6 +2973,19 @@ const PROF_SKILL: Record<string, "combat" | "trade" | "crafting" | "social"> = {
   müzisyen: "social",
   // çiftçi, demirci, balıkçı, marangoz, çoban, fırıncı, şifacı, dokumacı → crafting (varsayılan)
 };
+function educatedChildProfession(s: GameState, name: string): string | undefined {
+  const edu = s.player.child_edu?.[name];
+  if (!edu) return;
+  const level = eduLevel(edu.weeks);
+  const track = EDU_TRACKS.find((x) => x.id === edu.track);
+  if (level < 1 || !track) return;
+  const paths = PROFS.filter((id) => NPC_PROFS.includes(id) && (
+    (!!track.skill && (PROF_SKILL[id] || "crafting") === track.skill) ||
+    (!!track.stat && PROF_STAT[id] === track.stat)
+  ));
+  if (!paths.length || gameRandom(s) >= childCareerChance(s, name)) return;
+  return paths[Math.floor(gameRandom(s) * paths.length)];
+}
 
 // Meslek, tahta çıkmanın hazırlık basamağı değil kendi başına bir ömür yoludur. Peştamal zirvesinden sonra
 // aynı tezgâhta kalmak üç menzil açar: usta (90), kök salmış ocak (126), pir (180). Meslek değiştirmek
@@ -3370,7 +3397,15 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
       cm.ms = next + 1;
       if (next === 0) { p.health = Math.min(100, p.health + 2); push(s, "doğum", `${cm.n} ilk adımlarını attı; evin içi cıvıltıyla doldu.`, "kişisel", false, { k: "evj.kidStep", p: [cm.n] }); }
       else if (next === 1) push(s, "cocukluk", `${cm.n} mektebe başladı; heybesinde ekmek, gözlerinde merak.`, "kişisel", false, { k: "evj.kidSchool", p: [cm.n] });
-      else if (next === 2) { const tip = Math.round(10 * inflationFactor(s)); p.money += tip; push(s, "cocukluk", `${cm.n} bir ustanın yanına çırak girdi; ilk kazancını eve getirdi (+${tip} akçe).`, "kişisel", false, { k: "evj.kidApprentice", p: [cm.n, tip] }); }
+      else if (next === 2) {
+        const tip = Math.round(10 * inflationFactor(s)); p.money += tip;
+        const childId = p.child_ids?.[cm.n], child = childId ? nufusOf(s).k[childId] : undefined;
+        const chosenCareer = child ? educatedChildProfession(s, cm.n) : undefined;
+        if (chosenCareer && child) {
+          child.prof = chosenCareer;
+          push(s, "cocukluk", `${cm.n} aldığı eğitimle ${chosenCareer} yolunda çıraklığa başladı; ilk kazancını eve getirdi (+${tip} akçe).`, "kişisel", false, { k: "evj.kidApprenticeCareer", p: [kfParam(child), { prl: chosenCareer }, tip] });
+        } else push(s, "cocukluk", `${cm.n} bir ustanın yanına çırak girdi; ilk kazancını eve getirdi (+${tip} akçe).`, "kişisel", false, { k: "evj.kidApprentice", p: [cm.n, tip] });
+      }
       else {
         p.reputation = Math.min(100, p.reputation + 2);
         push(s, "doğum", `${cm.n} yetişkin oldu; artık kendi yolunu yürüyor. Soyun dallanıyor.`, "kişisel", true, { k: "evj.kidGrown", p: [cm.n] });
@@ -3932,13 +3967,15 @@ export function advance(prev: GameState, n = 1): GameState {
     asabiyeTick(s); // Geç oyun: rahatlık asabiyeyi söndürür, darlık ve birlik yakar
     hatirTick(s);  // Kan Hafızası: kin tutan ve hatır borçlu insanlar büyür, geri döner, evlatlarına devreder
     seedTick(s);   // geçmişin tohumları filizlenir (haftalık en çok 1)
-    // Süregelen evlat eğitimi: haftalık masraf düşer, birikim vâris olunca bonusa döner (Vercel child_investment_tick).
+    // Evlat eğitimi ayda bir ödenir; okul çağı dışında ve üçüncü kademeden sonra masraf işlemez.
     if (s.player.child_edu) {
       for (const cn in s.player.child_edu) {
         if (!evlatYasiyor(s, cn)) { delete s.player.child_edu[cn]; continue; } // ölen/ayrılan çocuğu temizle
         const tr = EDU_TRACKS.find((x) => x.id === s.player.child_edu![cn].track);
-        if (!tr || s.player.money < tr.weekly) continue; // parasızken eğitim duraklar (birikim de durur)
-        s.player.money -= tr.weekly;
+        const age = evlatYasi(s, cn);
+        if (!tr || age < 7 || age >= 18 || eduLevel(s.player.child_edu[cn].weeks) >= 3) continue;
+        if (s.player.money < tr.monthly) continue; // parasızken eğitim duraklar (birikim de durur)
+        s.player.money -= tr.monthly;
         s.player.child_edu![cn].weeks += 1;
       }
     }
@@ -8948,9 +8985,11 @@ export function investInChild(prev: GameState, childName: string, investId: stri
 export function setChildEducation(prev: GameState, childName: string, trackId: string | null): GameState {
   const s = clone(prev); const p = s.player;
   if (p.dead || !evlatYasiyor(s, childName)) return s;
-  if (!p.child_edu) p.child_edu = {};
-  if (!trackId) { delete p.child_edu[childName]; return s; }
+  if (!trackId) { if (p.child_edu) delete p.child_edu[childName]; return s; }
+  const age = evlatYasi(s, childName);
+  if (age < 7 || age >= 18) return s;
   const tr = EDU_TRACKS.find((x) => x.id === trackId); if (!tr) return s;
+  if (!p.child_edu) p.child_edu = {};
   const cur = p.child_edu[childName];
   p.child_edu[childName] = { track: trackId, weeks: cur && cur.track === trackId ? cur.weeks : 0 };
   push(s, "nesil_yatirim", `${childName} ${tr.label.toLowerCase()}'na verildi; her ay emek ve akçe ister.`, "kişisel", false, { k: "edu.set", p: [childName, { edul: trackId }] });
@@ -9569,7 +9608,7 @@ export function tendChild(prev: GameState, targetName?: string): GameState {
   if (!p.child_bond) p.child_bond = {};
   const bond = (d: number) => { p.child_bond![name] = Math.max(0, Math.min(100, (p.child_bond![name] ?? 50) + d)); };
   if (age < 7) { p.health = Math.min(100, p.health + 2); bond(4); push(s, "doğum", `Minik ${name} ile evin önünde oynadın; kahkahası günün yorgunluğunu sildi.`, "kişisel", false, { k: "evj.childTend.bebek", p: [name] }); }
-  else if (age < 13) { bond(4); if (p.child_edu?.[name]) p.child_edu[name].weeks += 1; push(s, "cocukluk", `${name} ile rahlenin başına oturdunuz; harfler sökülünce gözleri parladı.`, "kişisel", false, { k: "evj.childTend.mektepli", p: [name] }); }
+  else if (age < 13) { bond(4); const education = p.child_edu?.[name]; if (age >= 7 && education && eduLevel(education.weeks) < 3) education.weeks += 1; push(s, "cocukluk", `${name} ile rahlenin başına oturdunuz; harfler sökülünce gözleri parladı.`, "kişisel", false, { k: "evj.childTend.mektepli", p: [name] }); }
   else if (age < 18) { bond(4); p.reputation = Math.min(100, p.reputation + 1); push(s, "cocukluk", `${name}'e zanaatının inceliğini gösterdin; el alışkanlığı sana çekmiş.`, "kişisel", false, { k: "evj.childTend.genc", p: [name] }); }
   else { bond(3); p.reputation = Math.min(100, p.reputation + 1); push(s, "gunluk", `Yetişkin evladın ${name} ile oturup kararlarını ve derdini dinledin.`, "kişisel", false, { k: targetName ? "sohbet.adultChildTime" : "evj.childTend.yetiskin", p: [name] }); }
   if (targetName && p.child_ids?.[targetName]) remember(s, { id: p.child_ids[targetName], name: targetName }, "icten_sohbet", { yuk: 4 });
@@ -10734,7 +10773,7 @@ export function acikHesaplar(s: GameState): AcikHesap[] {
   if (p.affair) out.push({ k: "ah.sevgili", p: [Math.round(p.affair.heat)], ikon: "ring", agirlik: 50 });
   if (p.betrothed) out.push({ k: "ah.soz", p: [kp(p.betrothed.id) || p.betrothed.name], ikon: "ring", agirlik: 45 });
   if (p.married && !p.widowed && (p.spouse_bond ?? 50) < 30) out.push({ k: "ah.esSoguk", p: [esParam(s)], ikon: "iliskiler", git: "/oyun/iliskiler", agirlik: 40 });
-  { const d = ihmalDurumu(s); const en = [d.es && { k: d.es.k, yil: d.es.yil }, d.ebeveyn && { k: d.ebeveyn.k, yil: d.ebeveyn.yil }, d.evlat && { k: d.evlat.x[0].k, yil: d.evlat.yil }].filter((x): x is { k: Kisi; yil: number } => !!x).sort((a, b) => b.yil - a.yil)[0];
+  { const d = ihmalDurumu(s); const en = [d.es && { k: d.es.k, yil: d.es.yil }, d.ebeveyn && { k: d.ebeveyn.x[0], yil: d.ebeveyn.yil }, d.evlat && { k: d.evlat.x[0].k, yil: d.evlat.yil }].filter((x): x is { k: Kisi; yil: number } => !!x).sort((a, b) => b.yil - a.yil)[0];
     if (en) out.push({ k: "ah.ocak", p: [kfParam(en.k)], ikon: "iliskiler", git: "/oyun/karakter", agirlik: 42 }); } // ocakta kim yüzünü göremiyor (karakter ekranındaki aile düğmeleriyle kapanır)
   const r = rakipAktif(p);
   if (r) out.push(r.yaris != null ? { k: "ah.rakipVakit", p: [rkAd(r)], ikon: "trophy", git: "/oyun/meslek", agirlik: 75 } : { k: "ah.rakip", p: [rkAd(r), r.galip, r.maglup, Math.max(0, r.next - s.turn)], ikon: "trophy", git: "/oyun/meslek", agirlik: 35 });

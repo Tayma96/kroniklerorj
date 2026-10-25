@@ -399,4 +399,3 @@ Aşağıdaki metni her uygulama isteğinde ilgili faz ve kabul kapsamı doldurul
 - Yeni kapsam, açık karar tablosuna durum/tarih ve gerekçeyle eklenir. Kullanıcı onayı olmadan kapsam dışı bir mekanik sessizce “v1”e sokulmaz.
 - Tasarım revizyonu yapılınca Codex promptu, kabul ölçütü ve ilgili fazlar aynı değişiklikte gözden geçirilir.
 - Yeni ürün davranışının başarılı olup olmadığı; yalnız test sayısıyla değil, gerçek oyuncunun kısa oturumda kararı anlayıp sonucun sebebini görebilmesiyle değerlendirilir.
-

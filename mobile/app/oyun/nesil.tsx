@@ -4,10 +4,10 @@ import { useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { INVESTMENTS, WILL_STYLES, LAST_WORDS, investInChild, heirPreview, yetenekAdaylari, asabiyeBandi, EDU_TRACKS, eduLevel, setChildEducation, childNature, evlatKadinMi, favorChild, addDowry, propAylikTahmin, varisAdayDetaylari, yasayanEvlatAdlari } from "../../lib/game";
+import { INVESTMENTS, WILL_STYLES, LAST_WORDS, investInChild, heirPreview, yetenekAdaylari, asabiyeBandi, EDU_TRACKS, eduLevel, evlatYasi, childCareerChance, setChildEducation, childNature, evlatKadinMi, favorChild, addDowry, propAylikTahmin, varisAdayDetaylari, yasayanEvlatAdlari } from "../../lib/game";
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
-import { useI18n, applyParams } from "../../lib/i18n";
+import { useI18n, applyParams, yuzdeL } from "../../lib/i18n";
 import { hap } from "../../lib/haptics";
 import { BackLabel, GameButton, PageHeader, ScreenFresk } from "../../lib/ui";
 import { YetenekSecici } from "../../lib/soy-ui";
@@ -19,7 +19,7 @@ const BASE_HEIR_STATS = { strength: 1, intelligence: 1, charisma: 1, stamina: 2 
 export default function Nesil() {
   const insets = useSafeAreaInsets(); const router = useRouter();
   const { state, apply, varisleDevam } = useGame();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const [heir, setHeir] = useState<string | null>(null);
   const [will, setWill] = useState<string>(state?.player.will_pref || "esit"); // hanedanda önceden seçilen vasiyet burada varsayılan olur
   const [lw, setLw] = useState<string>("helalles"); // son söz — devir anında bir kez seçilir, vârise temalı iz bırakır
@@ -118,6 +118,8 @@ export default function Nesil() {
             </View>
             {livingChildren.map((c) => {
               const invs = p.child_invests?.[c] || [];
+              const age = evlatYasi(state, c);
+              const educationOpen = age >= 7 && age < 18;
               return (
                 <View key={c} style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 5, padding: 14, marginBottom: 10 }}>
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 }}>
@@ -145,24 +147,28 @@ export default function Nesil() {
                   })}
                   {/* Süregelen eğitim yolu — haftalık emek/akçe biriktirir, vâris olunca ölçekli bonus verir */}
                   <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1.5, color: C.goldDim, marginTop: 12, marginBottom: 3 }}>{t("edu.head")}</Text>
-                  <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchmentMuted, marginBottom: 7 }}>{t("edu.hint")}</Text>
+                  <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchmentMuted, marginBottom: 7 }}>{t(age < 13 ? "edu.hint" : age >= 18 ? "edu.hint.closed" : p.child_edu?.[c] ? "edu.hint.after" : "edu.hint.after.none")}</Text>
+                  <Text style={{ fontFamily: F.serifItalic, fontSize: 14, color: C.goldDim, marginBottom: 7 }}>{t("edu.ageNote")}</Text>
                   <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
                     {EDU_TRACKS.map((tr) => {
                       const on = p.child_edu?.[c]?.track === tr.id;
-                      const afford = p.money >= tr.weekly;
+                      const afford = p.money >= tr.monthly;
                       return (
-                        <Pressable key={tr.id} disabled={!on && !afford} onPress={() => { hap("tap"); apply((s) => setChildEducation(s, c, on ? null : tr.id)); }} style={{ flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: 7, paddingHorizontal: 10, borderRadius: 5, borderWidth: 1, borderColor: on ? "rgba(201,168,76,0.6)" : C.border, backgroundColor: on ? "rgba(201,168,76,0.12)" : C.card, opacity: !on && !afford ? 0.5 : 1 }}>
+                        <Pressable key={tr.id} disabled={!on && (!afford || !educationOpen)} onPress={() => { hap("tap"); apply((s) => setChildEducation(s, c, on ? null : tr.id)); }} style={{ flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: 7, paddingHorizontal: 10, borderRadius: 5, borderWidth: 1, borderColor: on ? "rgba(201,168,76,0.6)" : C.border, backgroundColor: on ? "rgba(201,168,76,0.12)" : C.card, opacity: !on && (!afford || !educationOpen) ? 0.5 : 1 }}>
                           <GameIcon name={tr.icon} size={13} color={on ? C.gold : C.goldDim} />
                           <Text style={{ fontFamily: F.display, fontSize: 13, color: on ? C.gold : C.parchment }}>{t("edu.track." + tr.id)}</Text>
-                          <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchmentMuted }}>{t("edu.cost").replace("%1", String(tr.weekly))}</Text>
+                          <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchmentMuted }}>{t("edu.cost").replace("%1", String(tr.monthly))}</Text>
                         </Pressable>
                       );
                     })}
                   </View>
                   {p.child_edu?.[c] && (
-                    <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.goldDim, marginTop: 6 }}>
-                      {t("edu.months").replace("%1", String(p.child_edu[c].weeks))} · {eduLevel(p.child_edu[c].weeks) > 0 ? t("edu.proj").replace("%1", String(eduLevel(p.child_edu[c].weeks))) : t("edu.notyet")}
-                    </Text>
+                    <View style={{ marginTop: 6, gap: 3 }}>
+                      <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.goldDim }}>
+                        {t("edu.months").replace("%1", String(p.child_edu[c].weeks))} · {eduLevel(p.child_edu[c].weeks) > 0 ? t("edu.proj").replace("%1", String(eduLevel(p.child_edu[c].weeks))) : t("edu.notyet")}
+                      </Text>
+                      {age < 13 && <Text style={{ fontFamily: F.serifItalic, fontSize: 14, color: C.goldDim }}>{t("edu.careerHint").replace("%1", yuzdeL(Math.round(childCareerChance(state, c) * 100), lang))}</Text>}
+                    </View>
                   )}
                 </View>
               );
