@@ -159,14 +159,13 @@ jobs:
       - name: Release'e yukle (dogrudan indirme linki)
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: apk-test-2026-10-25
-          name: Kronikler APK — test 25.10.2026
+          tag_name: apk-latest-2026-10-25
+          name: Kronikler APK — güncel test 25.10.2026
           prerelease: true
           make_latest: false
           body: |
             Arkadaşlarla cihaz testi için APK.
 
-            Kaynak commit: de8b26ef738e12d52b1bb08726a3c6c93bc202ae (apk)
-            Derleme başarılıdır; kalite adımı uzak daldaki bilinen TypeScript hatası nedeniyle başarısız olmuştur.
+            Kaynak oyun kodu: yerel commit 6725459 (test dalına aktarılmıştır).
           files: Kronikler.apk
           fail_on_unmatched_files: true
