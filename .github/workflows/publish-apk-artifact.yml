@@ -1,0 +1,42 @@
+name: APK artifactini test Release'e yayımla
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_run_id:
+        description: "APK artifact'inin bulunduğu Actions run ID"
+        required: true
+        type: string
+        default: "40152231272"
+
+permissions:
+  actions: read
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: APK artifact'ini indir
+        uses: actions/download-artifact@v4
+        with:
+          name: kronikler-apk
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.source_run_id }}
+
+      - name: Tarihli test Release'ini yayımla
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: apk-test-2026-10-25
+          target_commitish: apk
+          name: Kronikler APK — test 25.10.2026
+          prerelease: true
+          make_latest: false
+          body: |
+            Arkadaşlarla cihaz testi için APK.
+
+            Kaynak commit: de8b26ef738e12d52b1bb08726a3c6c93bc202ae (apk)
+            Derleme başarılıdır; kalite adımı uzak daldaki bilinen TypeScript hatası nedeniyle başarısız olmuştur.
+          files: Kronikler.apk
+          fail_on_unmatched_files: true
