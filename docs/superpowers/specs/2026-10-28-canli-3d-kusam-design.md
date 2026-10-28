@@ -88,9 +88,10 @@ düşük piksel oranı, dövüşte arayüz yeniden çizimini durdurma). Seçim d
 
 - **Gövde:** MPFB (MakeHuman) erkek ve kadın yetişkin, `game_engine` iskeleti, ~15-20 bin üçgen,
   yüz için iyi deri dokusu; varsayılan kıyafet tek parça, gövdeyle birlikte ağırlıklı.
-- **Sert eşyalar** (silah, kalkan, miğfer): yapay zekâ referans görseli (FLUX/Qwen-Image,
-  Hugging Face) → görselden 3D (Hunyuan3D/TRELLIS) → Blender'da temizlik, ölçek, düşük poligon,
-  PBR doku → ilgili kemiğe bağlama (el, baş).
+- **Sert eşyalar** (silah, kalkan, miğfer): **tamamı Blender'da modellenir** (kullanıcı kararı:
+  yapay zekâ üretimi yok). Betikle temel biçim + elle ayrıntı, dönem kaynaklarına göre ölçü;
+  Poly Haven CC0 PBR dokuları (çelik, pirinç, deri, ahşap) ve yıpranma; düşük poligon + normal
+  haritası pişirme. İlgili kemiğe bağlanır (el, baş).
 - **Giyilen eşyalar** (zırh, eldiven, çizme): gövdenin üstüne Blender'da kurulur ya da üretilip
   oturtulur; ağırlıklar gövdeden aktarılır (data transfer), içinden geçme düzeltilir.
 - Dışa aktarma: gövde başına bir GLB (iskelet + animasyonlar) + eşya başına GLB (aynı iskelet).
@@ -105,15 +106,15 @@ düşük piksel oranı, dövüşte arayüz yeniden çizimini durdurma). Seçim d
 | Muhafız duruşu, bekleme | CMU 76_04 (savunma duruşu) + elle yazılmış nefes katmanı |
 | İleri/geri adım | 100STYLE (CC BY 4.0) ya da CMU yürüyüş kesitleri |
 | Hafif saldırı (2-3 çeşit) | CMU 02_07, 02_08, 02_09 kılıç oyunu kesitleri |
-| Ağır/özel vuruş | CMU 02_09 baş üstü vuruş, gerekirse Kimodo |
+| Ağır/özel vuruş | CMU 02_09 baş üstü vuruş |
 | Savuşturma/blok | CMU 144 (kadın) bloklar, 76_02-03 kaçınma |
-| Darbe alma, sendeleme | CMU 85_07 sendeleme; eksikler KayKit/Quaternius (CC0) ya da Kimodo |
+| Darbe alma, sendeleme | CMU 85_07 sendeleme; eksikler KayKit/Quaternius (CC0) |
 | Yere düşme/yenilgi | CMU 90_16, 90_18 |
-| Zafer, karakter sayfası beklemesi | Kimodo ya da KayKit (CC0), CMU sakin duruş |
+| Zafer, karakter sayfası beklemesi | KayKit (CC0), CMU sakin duruş |
 
 - CMU: ürüne gömülü ticari kullanım serbest; ham veri yeniden satılamaz/dağıtılamaz.
-- **NVIDIA Kimodo** (SOMA modeli, NVIDIA Open Model License, ticari kullanım serbest):
-  metinden hareket taslağı; eksik hareketler için. Hugging Face Space'i var (kotalı).
+- Eksik hareketler (darbe alma, zafer) CC0 paketlerden (KayKit, Quaternius) Blender'da iskelete
+  aktarılıp elle düzeltilir. Yapay zekâ hareket üretimi kullanılmaz (kullanıcı kararı).
 - Kullanılmayacaklar: HY-Motion (AB/İngiltere/Kore'de lisanssız), MoMask/MotionGPT
   (ticari olmayan AMASS verisiyle eğitilmiş), Bandai Namco, LAFAN1, AMASS (ticari değil).
 - Mixamo isteğe bağlı: ücretsiz ve oyunlarda serbest, ama kullanıcının Adobe hesabıyla elle
@@ -157,8 +158,7 @@ Her aşama ayrı plan, alt ajanlarla uygulama, inceleme ajanı ve doğrulamayla 
 ## 9. Kısıtlar
 
 - Kullanıcının bilgisayarı yok; her şey bulut makinesinde, sonuçlar telefonda görülür.
-- Bulut makinesinde GPU yok: Blender CPU ile; yapay zekâ üretimi Hugging Face (kullanıcının
-  `HF_TOKEN`'ı gerekir).
+- Bulut makinesinde GPU yok: Blender CPU ile; yapay zekâ üretimi kullanılmaz.
 - Yalnız ücretsiz araçlar ve ticari kullanıma uygun lisanslar.
 - 6 dil, `GameIcon`, `lib/theme.ts`, `apk` dalı, Türkçe tek satır commit.
 
@@ -170,10 +170,8 @@ Benim kararlarım (kullanıcı itiraz edebilir):
 - **Yaş:** 16 yaş altı karakterler 3D'ye girmez, mevcut 2D görünüm kalır. Yetişkin gövdede yaş,
   saç, sakal ve ten rengi birkaç çeşitle verilir. 3D baş mevcut portrelerle birebir aynı olmak
   zorunda değil, yalnız ten ve saç rengi uyumlu.
-- **Görselden 3D:** TRELLIS (MIT). Hunyuan3D'nin lisansı da AB, İngiltere ve Kore'yi dışarıda
-  bırakıyor; kullanılmaz.
-- **Yapay zekâ kotası biterse:** sert eşyalar Blender'da elle modellenir. Kalite Kapı 1'de
-  kullanıcıya gösterilir.
+- **Yapay zekâ yok (kullanıcı kararı):** tüm eşyalar ve düzeltmeler Blender'da; `HF_TOKEN`
+  gerekmez. Kalite Kapı 1'de kullanıcıya gösterilir.
 - **Kapı 0 geçme ölçütü:** kullanıcının telefonunda en az 30 kare/sn sabit, hedef 60. Bellek
   taşması yok, açılış 3 sn altında.
 
@@ -187,7 +185,6 @@ Kullanıcıya sorulanlar: aşağıdaki "Açık sorular".
    gürz ve savaş baltası ağır vuruş seti; mızrak dürtme seti; yay atış seti. Uygun mu?
 3. Test APK'ları: Kapı 0 ve Kapı 1 için GitHub Actions'ta test APK derlemeye izin; kullanıcının
    telefon modeli.
-4. `HF_TOKEN` ortam gizlisi (yapay zekâ görseli ve görselden 3D için).
 
 ## 12. Uygulayıcıya kalanlar
 
