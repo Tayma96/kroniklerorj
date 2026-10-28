@@ -11,7 +11,7 @@ Kullanıcının o anki sözü > `AGENTS.md` ve `mobile/AGENTS.md` > bu rehber > 
 Dış skill bir adımı depo kuralıyla çelişecek biçimde isterse depo kuralı uygulanır:
 
 - Dal `apk` (oturum dalına aynı commit). Commit Türkçe, tek satır, Conventional Commits değil.
-- Alt ajan, worktree ve paralel ajan yalnız kullanıcı açıkça isterse.
+- Alt ajanlar serbest (kullanıcı izni, 28 Ekim 2026); worktree ve dal açma yalnız gerekirse, çıktı `apk`'ye.
 - Smoke ve geniş test yalnız kullanıcı isterse ya da APK öncesi; aksi hâlde hedefli statik kontrol.
 - Oyuncuya görünen her metin 6 dilde; emoji yerine `GameIcon`.
 - Yalnız ücretsiz araç. Ücret ihtimali olan API çağrısından önce kullanıcıya sor; anahtar okuma, yazdırma ve commit etme.
@@ -56,9 +56,9 @@ ana bağlamı korur. Büyük plan için `planner` ya da `architect` (opus). Değ
 sonrasında `code-reviewer`, `typescript-reviewer`, `react-reviewer`, `silent-failure-hunter`.
 Hata için `build-error-resolver`, sadeleştirme için `code-simplifier`. Ayrıca
 `performance-optimizer`, `security-reviewer`, `a11y-architect`, `type-design-analyzer`,
-`refactor-cleaner` ve döngü izleme için `loop-operator` var. Alt ajan yalnız `AGENTS.md`
-izin verdiğinde (kullanıcı istediğinde) başlatılır. Her alt ajana tek iş, dosya yolları
-ve bitiş ölçütü verilir; aynı dosyayı iki ajana okutma.
+`refactor-cleaner` ve döngü izleme için `loop-operator` var. Alt ajanları gerektiğinde kendi
+kararınla başlat. Her alt ajana tek iş, dosya yolları ve bitiş ölçütü verilir; aynı dosyayı
+iki ajana okutma.
 
 ## ElevenLabs notu
 

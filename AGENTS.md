@@ -9,7 +9,8 @@ okuma, çıktı ve testlerle kullanıcı limitini tüketmemektir.
   ürün/oynanış kararı verilecekse `TASARIM_PUSULASI.md` de okunur.
 - `docs/arsiv/`, GDD/PDF, eski devir notları ve tam raporlar kullanıcı o oturumda açıkça
   izin vermedikçe açılmaz. “Gerekebilir” veya “yararlı olabilir” izin sayılmaz.
-- Kullanıcı istemedikçe alt ajan/delegasyon kullanma. Aynı işi birden çok ajana okutma.
+- Alt ajanları (`.claude/agents/`) gerektiğinde kendi kararınla kullan; geniş okumayı `code-explorer`'a
+  devret, ana bağlamı koru. Her ajana tek iş, dosya yolları ve bitiş ölçütü ver; aynı işi birden çok ajana okutma.
 
 ## Arama ve okuma bütçesi
 
