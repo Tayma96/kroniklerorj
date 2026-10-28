@@ -1,6 +1,6 @@
 # Canlı 3D kuşamlı karakter — tasarım belgesi
 
-Tarih: 28 Ekim 2026 · Durum: TASLAK (kullanıcı onayı bekliyor)
+Tarih: 28 Ekim 2026 · Durum: ONAYLANDI — Aşama 0 (teknik deneme) başladı
 
 ## 1. Amaç ve neden
 
@@ -177,14 +177,14 @@ Benim kararlarım (kullanıcı itiraz edebilir):
 
 Kullanıcıya sorulanlar: aşağıdaki "Açık sorular".
 
-## 11. Açık sorular
+## 11. Kullanıcı cevapları (28 Ekim 2026)
 
-1. Bu proje sayfa sırasıyla (giriş → yeni oyun → ana sayfa) ilerleyen işten önce mi gelir,
-   paralel mi yürür?
-2. Silah hareket setleri: 4 tip öneriliyor. Tek elli kılıç/hançer/bıçak/yatağan bir set;
-   gürz ve savaş baltası ağır vuruş seti; mızrak dürtme seti; yay atış seti. Uygun mu?
-3. Test APK'ları: Kapı 0 ve Kapı 1 için GitHub Actions'ta test APK derlemeye izin; kullanıcının
-   telefon modeli.
+1. Sıra: 3D şimdi deneme olarak yapılır (Aşama 0); sayfa işi sonra.
+2. Silah setleri: 4 tip onaylandı (kılıç/hançer/bıçak/yatağan; gürz/balta; mızrak; yay).
+3. Test APK'sı serbest; herhangi bir Android telefonda denenir. Deneme oturum dalında
+   (`claude/happy-maxwell-fadqof`) yürür, `apk` dalına onaydan sonra girer; derleme "test"
+   kanalında (apk-test linki), kalıcı linke dokunmaz.
+4. Yapay zekâ üretimi yok; her şey Blender'da.
 
 ## 12. Uygulayıcıya kalanlar
 
