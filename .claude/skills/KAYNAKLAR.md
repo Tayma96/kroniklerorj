@@ -8,6 +8,8 @@ Güncellemek için aynı depoyu yeniden klonlayıp ilgili klasörü değiştir.
 |---|---|---|---|---|
 | Superpowers | github.com/obra/superpowers | 2ce8aa1 | MIT | 15 skill'in hepsi |
 | ECC (seçki) | github.com/affaan-m/everything-claude-code | 25278e7 | MIT | react-native-patterns, react-performance, accessibility, blender-motion-state-inspection, make-interfaces-feel-better, click-path-audit, verification-loop, context-budget, search-first, error-handling, browser-qa, agent-sort, council |
+| ECC (kendini geliştirme) | github.com/affaan-m/everything-claude-code | 25278e7 | MIT | strategic-compact, iterative-retrieval, context-and-decisions, parallel-execution-optimizer, agentic-engineering, team-agent-orchestration, loop-design-check, continuous-agent-loop, santa-method, blueprint, product-capability, architecture-decision-records, brownfield-retrospective, agent-self-evaluation, skill-stocktake |
+| ECC ajanları (`.claude/agents/`) | github.com/affaan-m/everything-claude-code | 25278e7 | MIT (`LICENSE-ECC`) | planner, architect, code-explorer, code-reviewer, typescript-reviewer, react-reviewer, silent-failure-hunter, build-error-resolver, performance-optimizer, refactor-cleaner, security-reviewer, a11y-architect, code-simplifier, type-design-analyzer, loop-operator |
 | ElevenLabs | github.com/elevenlabs/skills | 503d4e9 | MIT | text-to-speech, sound-effects, music, voice-changer, setup-api-key |
 | claude-code-setup | github.com/anthropics/claude-plugins-official | f8c5e7a | Apache-2.0 | claude-automation-recommender |
 | Figma | github.com/figma/mcp-server-guide | — | — | Zaten kurulu (`figma:*`); kopyalanmadı |
@@ -15,7 +17,7 @@ Güncellemek için aynı depoyu yeniden klonlayıp ilgili klasörü değiştir.
 
 ## Bilerek kurulmayanlar
 
-- ECC'nin geri kalan ~300 skill'i, 71 ajanı, kancaları (hooks) ve her zaman yüklenen kuralları:
+- ECC'nin geri kalan ~280 skill'i, 56 ajanı, kancaları (hooks) ve her zaman yüklenen kuralları:
   bu projeyle ilgisiz (Django, Kotlin, ticaret vb.) ya da depo kurallarıyla çelişiyor
   (Conventional Commits, zorunlu kapsam oranı). Her oturumda bağlamı doldururlardı.
 - Superpowers'ın oturum başı kancası: her yanıttan önce skill taraması dayatır; düşük bağlam
