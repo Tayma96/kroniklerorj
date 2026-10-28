@@ -1,6 +1,6 @@
 import { DesignPressable as Pressable } from "../../lib/design-pressable";
 import { useState, useRef } from "react";
-import { View, Text, ScrollView} from "react-native";
+import { View, Text, ScrollView, useWindowDimensions } from "react-native";
 import Animated, { useSharedValue, useAnimatedStyle, withSequence, withTiming } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -8,6 +8,7 @@ import { useGame } from "../../lib/store";
 import { ArmyFront } from "../../lib/army-ui";
 import { ENCOUNTERS, combatPower, armorDefense, weaponClass, hasShield, shieldBlockChance, applyBattleOutcome, nemesisEncounter, applyNemesisOutcome, reconcileNemesis, reconcileCost, diyetBedeli, diyetSansi, diyetOde, kisiProfil, trainCombat, trainCost, startBattleAttempt, inflationFactor, hireGuard, dismissGuards, retinueHireCost, retinueWage, RETINUE_MAX, inJail } from "../../lib/game";
 import { startBattle, stepBattle, battleMoveCost, MOVES, STANCES, BattleState, Move, Stance, CbLogEntry } from "../../lib/combat";
+import { DuelArena } from "../../lib/duel-arena";
 import { playVictory, playWarDrum, playClash, playDefeat } from "../../lib/sound";
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
@@ -16,20 +17,10 @@ import { hap } from "../../lib/haptics";
 import { FloatingNumber, Slash } from "../../lib/fx";
 import { BackLabel, PageHeader, ProgressBar, ScreenFresk } from "../../lib/ui";
 
-function HpBar({ label, hp, max, color }: { label: string; hp: number; max: number; color: string }) {
-  return (
-    <View style={{ marginBottom: 8 }}>
-      <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 3 }}>
-        <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchment, letterSpacing: 0.5 }}>{label}</Text>
-        <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchmentMuted }}>{Math.round(hp)}/{max}</Text>
-      </View>
-      <ProgressBar value={hp} max={max} color={color} h={7} />
-    </View>
-  );
-}
 
 export default function Savas() {
   const insets = useSafeAreaInsets(); const router = useRouter();
+  const { width: winW } = useWindowDimensions();
   const { state, apply } = useGame();
   const { t, tg, lang } = useI18n();
   const [diyetAcik, setDiyetAcik] = useState(false);
@@ -84,8 +75,8 @@ export default function Savas() {
     const dE = Math.round(bs.enemyHp - next.enemyHp);
     const dY = Math.round(bs.playerHp - next.playerHp);
     const adds: { id: number; value: string; color: string; left: number; top: number }[] = [];
-    if (dE > 0) adds.push({ id: fid.current++, value: `-${dE}`, color: C.ember, left: 235, top: 44 });
-    if (dY > 0) adds.push({ id: fid.current++, value: `-${dY}`, color: C.blood, left: 30, top: 2 });
+    if (dE > 0) adds.push({ id: fid.current++, value: `-${dE}`, color: C.ember, left: Math.min(winW - 24, 460) * 0.72, top: 112 });
+    if (dY > 0) adds.push({ id: fid.current++, value: `-${dY}`, color: C.blood, left: Math.min(winW - 24, 460) * 0.18, top: 112 });
     if (dE > 0) setSlashKey((k) => k + 1);
     if (dE > 0 || dY > 0) playClash(); // çelik konuştu — kim vurduysa çınlama aynı
     if (adds.length) {
@@ -130,11 +121,10 @@ export default function Savas() {
             <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}><GameIcon name="kite" size={11} color={C.sage} /><Text style={{ fontFamily: F.display, fontSize: 13, color: C.sage }}>{t("cb.block")} {yuzdeL(Math.round(shieldBlockChance(p, stance === "savunmaci") * 100), lang)}</Text></View>
           ) : null}
         </View>
-        <Animated.View style={[{ paddingHorizontal: 20, position: "relative" }, shakeStyle]}>
-          <HpBar label={t("cb.you")} hp={bs.playerHp} max={bs.playerMax} color={C.sage} />
-          <HpBar label={t("cb.enemy")} hp={bs.enemyHp} max={bs.enemyMax} color={C.blood} />
-          <HpBar label={`${t("war.breath")} · ${applyParams(t("war.momentum"), [bs.momentum || 0])}`} hp={bs.breath ?? 100} max={bs.breathMax ?? 100} color={C.azure} />
-          {(bs.repetition || 0) >= 2 && <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.ember }}>{t("war.predictable")}</Text>}
+        {/* Arena: Karagöz perdesi — iki tasvir, rakibin niyeti, can/nefes/üstünlük; tur sonucu canlanır */}
+        <Animated.View style={[{ paddingHorizontal: 12, position: "relative" }, shakeStyle]}>
+          <DuelArena bs={bs} youLabel={t("cb.you")} intentLabel={t("cb.intent")} breathLabel={`${t("war.breath")} · ${applyParams(t("war.momentum"), [bs.momentum || 0])}`} moveLabel={(m) => t("cb." + m)} desperateLabel={t("cb.desperate")} />
+          {(bs.repetition || 0) >= 2 && <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.ember, textAlign: "center", marginTop: 4 }}>{t("war.predictable")}</Text>}
           {floats.map((f) => <FloatingNumber key={f.id} value={f.value} color={f.color} left={f.left} top={f.top} />)}
         </Animated.View>
         <ScrollView style={{ flex: 1, marginTop: 8 }} contentContainerStyle={{ paddingHorizontal: 16 }}>
@@ -142,28 +132,13 @@ export default function Savas() {
             <Text key={i} style={{ fontFamily: F.serif, fontSize: 15, color: i === 0 ? C.parchment : C.parchmentMuted, lineHeight: 22, marginBottom: 5 }}>{renderCb(l)}</Text>
           ))}
         </ScrollView>
-        <View style={{ padding: 16, borderTopWidth: 1, borderTopColor: C.border, paddingBottom: insets.bottom + 16 }}>
+        <View style={{ padding: 16, borderTopWidth: 1, borderTopColor: C.border, paddingBottom: 34 }}>
           {bs.over ? (
             <Pressable onPress={finish} style={{ paddingVertical: 15, borderRadius: 5, borderWidth: 1.5, borderColor: "rgba(201,168,76,0.55)", backgroundColor: C.gold, alignItems: "center" }}>
               <Text style={{ fontFamily: F.display, fontSize: 13, color: C.inkOnGold, letterSpacing: 1.5 }}>{bs.won ? t("cb.claim") : t("cb.retreat")}</Text>
             </Pressable>
           ) : (
             <>
-              {/* Niyet telegraf'ı: düşmanın sezdiğin bir sonraki hamlesi (kurnaz düşman fent atabilir) */}
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 7, marginBottom: 10, paddingVertical: 8, paddingHorizontal: 11, borderRadius: 5, borderWidth: 1, borderColor: "rgba(200,64,64,0.3)", backgroundColor: "rgba(200,64,64,0.07)" }}>
-                <GameIcon name="compass" size={13} color={C.blood} />
-                <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted }}>{t("cb.intent")}</Text>
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-                  <GameIcon name={MOVES.find((m) => m.id === bs.enemyIntent)?.icon || "fist"} size={14} color={C.blood} />
-                  <Text style={{ fontFamily: F.display, fontSize: 13, color: C.blood }}>{t("cb." + bs.enemyIntent)}</Text>
-                </View>
-                {bs.desperate ? (
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: 3, marginLeft: "auto", paddingHorizontal: 7, paddingVertical: 2, borderRadius: 6, backgroundColor: "rgba(200,64,64,0.22)" }}>
-                    <GameIcon name="flame" size={11} color={C.ember} />
-                    <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 0.5, color: C.ember, textTransform: "uppercase" }}>{t("cb.desperate")}</Text>
-                  </View>
-                ) : null}
-              </View>
               {/* Duruş seçimi (Vercel portu): saldırı/savunma dengesi */}
               <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1.5, color: C.parchmentMuted, marginBottom: 5 }}>{t("cb.stanceLabel")}</Text>
               <View style={{ flexDirection: "row", gap: 6, marginBottom: 10 }}>
