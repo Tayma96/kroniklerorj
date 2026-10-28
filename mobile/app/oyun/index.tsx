@@ -139,6 +139,23 @@ export default function Dashboard() {
     wasDead.current = d;
   }, [state?.player.dead]);
 
+  // Ay sonu özeti: ayın başındaki değerlerle karşılaştırıp göstergelerin yanında "+12 / −3" gösterir.
+  // Değişim; o ay yapılan işleri (çalışma, alışveriş) ve ay geçişini birlikte kapsar. Nedenler Son Gelişmeler'de.
+  const monthRef = useRef<{ turn: number; gen: number; v: Record<string, number> } | null>(null);
+  const [deltas, setDeltas] = useState<Record<string, number>>({});
+  useEffect(() => {
+    if (!state) return;
+    const pl = state.player;
+    const v = { health: Math.round(pl.health), str: Math.round(effStat(pl, "strength")), int: Math.round(effStat(pl, "intelligence")), money: Math.round(pl.money) };
+    const cur = monthRef.current;
+    if (!cur || cur.gen !== pl.generation || state.turn < cur.turn) { monthRef.current = { turn: state.turn, gen: pl.generation, v }; setDeltas({}); return; }
+    if (state.turn > cur.turn) {
+      const d: Record<string, number> = {};
+      for (const k of Object.keys(v) as (keyof typeof v)[]) { const x = v[k] - (cur.v[k] ?? v[k]); if (x) d[k] = x; }
+      setDeltas(d); monthRef.current = { turn: state.turn, gen: pl.generation, v };
+    }
+  }, [state?.turn, state?.player.generation]);
+
   const seenAch = useRef<Set<string> | null>(null);
 
   useEffect(() => {
@@ -424,10 +441,10 @@ export default function Dashboard() {
           name={lakapliAd(p.name, p.lakap, p.gender === "kadın", t)}
           role={p.profession === "işsiz" ? t("misc.jobless") : careerTitleL(p.profession, kariyerXp(p), lang, p.gender === "kadın")}
           stats={[
-            { icon: "saglik", label: t("char.health"), value: String(Math.round(p.health)), tone: p.health < 30 ? C.blood : undefined },
-            { icon: "fist", label: t("st.strength"), value: String(Math.round(effStat(p, "strength"))) },
-            { icon: "graduate-cap", label: t("st.intelligence"), value: String(Math.round(effStat(p, "intelligence"))) },
-            { icon: "akce", label: t("char.money"), value: new Intl.NumberFormat(lang, { notation: p.money >= 10000 ? "compact" : "standard", maximumFractionDigits: 1 }).format(Math.round(p.money)).replace(/[\s\u00A0]/g, "") },
+            { icon: "saglik", label: t("char.health"), value: String(Math.round(p.health)), tone: p.health < 30 ? C.blood : undefined, delta: deltas.health },
+            { icon: "fist", label: t("st.strength"), value: String(Math.round(effStat(p, "strength"))), delta: deltas.str },
+            { icon: "graduate-cap", label: t("st.intelligence"), value: String(Math.round(effStat(p, "intelligence"))), delta: deltas.int },
+            { icon: "akce", label: t("char.money"), value: new Intl.NumberFormat(lang, { notation: p.money >= 10000 ? "compact" : "standard", maximumFractionDigits: 1 }).format(Math.round(p.money)).replace(/[\s\u00A0]/g, ""), delta: deltas.money },
           ]} />
         <View style={{ paddingHorizontal: MK.side }}>
       {p.dead && (

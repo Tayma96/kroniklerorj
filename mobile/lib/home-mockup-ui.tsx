@@ -75,7 +75,7 @@ export function MkHero({ source, topInset, seasonIcon, title, sub, rtl, onBook, 
 }
 
 // Kimlik: 84 pt portre sahneden 33 pt taşar; sağında ad, meslek, çizgi ve dört gösterge.
-export function MkIdentity({ age, gender, name, role, stats, rtl, onPortrait, portraitLabel }: { age: number; gender: "erkek" | "kadın"; name: string; role: string; stats: { icon: string; label: string; value: string; tone?: string }[]; rtl: boolean; onPortrait: () => void; portraitLabel: string }) {
+export function MkIdentity({ age, gender, name, role, stats, rtl, onPortrait, portraitLabel }: { age: number; gender: "erkek" | "kadın"; name: string; role: string; stats: { icon: string; label: string; value: string; tone?: string; delta?: number }[]; rtl: boolean; onPortrait: () => void; portraitLabel: string }) {
   const narrow = useWindowDimensions().width < 360;
   return <View style={{ marginTop: -40, paddingHorizontal: 16, flexDirection: rtl ? "row-reverse" : "row", alignItems: "flex-start", gap: 12, marginBottom: 10 }}>
     <Pressable accessibilityRole="button" accessibilityLabel={portraitLabel} onPress={onPortrait} style={{ width: 88, height: 88, borderRadius: 44, padding: 2, backgroundColor: "#0E0A06", borderWidth: 2, borderColor: MK.frameHi, shadowColor: "#000", shadowOpacity: 0.6, shadowRadius: 6, elevation: 6 }}>
@@ -86,10 +86,10 @@ export function MkIdentity({ age, gender, name, role, stats, rtl, onPortrait, po
       <Text numberOfLines={1} style={{ fontFamily: F.serif, fontSize: 13, lineHeight: 16, color: MK.muted }}>{role}</Text>
       <View style={{ height: 1, backgroundColor: "rgba(201,162,78,0.45)", marginTop: 6, marginBottom: 6 }} />
       <View style={{ flexDirection: rtl ? "row-reverse" : "row", flexWrap: narrow ? "wrap" : "nowrap", rowGap: 6 }}>
-        {stats.map((s, i) => { const sep = narrow ? i % 2 === 1 : i > 0; return <View key={s.label} accessible accessibilityLabel={`${s.label}: ${s.value}`} style={{ flex: narrow ? undefined : 1, width: narrow ? "50%" : undefined, minWidth: 0, flexDirection: rtl ? "row-reverse" : "row", alignItems: "center", gap: 4, paddingHorizontal: 3, borderLeftWidth: !rtl && sep ? 1 : 0, borderRightWidth: rtl && sep ? 1 : 0, borderColor: "rgba(201,162,78,0.3)" }}>
+        {stats.map((s, i) => { const sep = narrow ? i % 2 === 1 : i > 0; return <View key={s.label} accessible accessibilityLabel={`${s.label}: ${s.value}${s.delta ? ` (${s.delta > 0 ? "+" : ""}${s.delta})` : ""}`} style={{ flex: narrow ? undefined : 1, width: narrow ? "50%" : undefined, minWidth: 0, flexDirection: rtl ? "row-reverse" : "row", alignItems: "center", gap: 4, paddingHorizontal: 3, borderLeftWidth: !rtl && sep ? 1 : 0, borderRightWidth: rtl && sep ? 1 : 0, borderColor: "rgba(201,162,78,0.3)" }}>
           <GameIcon name={s.icon} size={16} color={s.tone || MK.gold} />
           <View style={{ minWidth: 0, flexShrink: 1 }}>
-            <Text numberOfLines={1} style={{ fontFamily: F.serif, fontSize: 10, lineHeight: 12, color: MK.muted }}>{s.label}</Text>
+            <Text numberOfLines={1} style={{ fontFamily: F.serif, fontSize: 10, lineHeight: 12, color: MK.muted }}>{s.label}{!!s.delta && <Text style={{ color: s.delta > 0 ? "#8FD07A" : "#E8796A" }}> {s.delta > 0 ? "+" : "−"}{Math.abs(s.delta) >= 10000 ? new Intl.NumberFormat(undefined, { notation: "compact", maximumFractionDigits: 1 }).format(Math.abs(s.delta)) : Math.abs(s.delta)}</Text>}</Text>
             <Text numberOfLines={1} adjustsFontSizeToFit style={{ fontFamily: F.serif, fontSize: 14, lineHeight: 16, color: s.tone || "#F4E8CF" }}>{s.value}</Text>
           </View>
         </View>; })}
