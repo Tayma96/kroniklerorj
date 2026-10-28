@@ -381,15 +381,17 @@ export function ProgressBar({ value, max, color, h = 5 }: { value: number; max: 
 export function PageHeader({ kicker, icon, title, sub }: { kicker?: string; icon?: string; title: string; sub?: string }) {
   const path = usePathname(), design = screenDesign(path);
   return (
-    <Animated.View entering={FadeInDown.duration(320).easing(EASE.decel)} style={{ marginBottom: 14, borderWidth: 1, borderColor: C.goldDim, borderRadius: 4, overflow: "hidden", backgroundColor: C.surface }}>
-      <Image accessible={false} source={screenArt(path)} resizeMode="cover" style={{ position: "absolute", width: "100%", height: "100%", opacity: 0.86 }} />
-      <LinearGradient pointerEvents="none" colors={[C.bg + "00", C.bg + "88", C.bg + "D8"]} style={{ position: "absolute", top: 0, right: 0, bottom: 0, left: 0 }} />
-      <View style={{ padding: 16, paddingTop: design.family === "system" ? 32 : 72 }}>
-        <GameIcon name={design.icon} size={24} color={C.gold} />
-        {!!kicker && kicker !== title && <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchmentDim, marginTop: 8 }}>{kicker}</Text>}
-        <Text accessibilityRole="header" style={{ fontFamily: F.display, fontSize: 23, lineHeight: 31, color: C.parchment, marginTop: 6 }}>{title}</Text>
-        {!!sub && <Text style={{ fontFamily: F.serif, fontSize: 15, lineHeight: 22, color: C.parchmentDim, marginTop: 5 }}>{sub}</Text>}
-        <View style={{ height: 1, backgroundColor: C.goldDim, marginTop: 12, width: 44 }} />
+    <Animated.View entering={FadeInDown.duration(320).easing(EASE.decel)} style={{ marginBottom: 14, borderWidth: 1, borderColor: C.borderHi, borderRadius: 6, overflow: "hidden", backgroundColor: C.surface }}>
+      <Image accessible={false} source={screenArt(path)} resizeMode="cover" style={{ position: "absolute", width: "100%", height: "100%" }} />
+      <LinearGradient pointerEvents="none" colors={["rgba(8,5,2,0.15)", "rgba(14,10,6,0.10)", "rgba(14,10,6,0.72)", "rgba(14,10,6,0.95)"]} locations={[0, 0.35, 0.72, 1]} style={{ position: "absolute", top: 0, right: 0, bottom: 0, left: 0 }} />
+      <View pointerEvents="none" style={{ position: "absolute", top: 3, left: 3, right: 3, bottom: 3, borderWidth: 1, borderColor: "rgba(221,180,90,0.16)", borderRadius: 4 }} />
+      <View style={{ padding: 16, paddingTop: design.family === "system" ? 40 : 96 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+          <GameIcon name={design.icon} size={22} color={C.goldBright} />
+          {!!kicker && kicker !== title && <Text style={{ flexShrink: 1, fontFamily: F.serif, fontSize: 14, color: C.parchmentDim, textShadowColor: "#000", textShadowRadius: 5 }}>{kicker}</Text>}
+        </View>
+        <Text accessibilityRole="header" style={{ fontFamily: F.display, fontSize: 26, lineHeight: 33, color: "#F7EBD2", marginTop: 4, textShadowColor: "rgba(0,0,0,0.9)", textShadowRadius: 8 }}>{title}</Text>
+        {!!sub && <Text style={{ fontFamily: F.serif, fontSize: 15, lineHeight: 22, color: C.parchmentDim, marginTop: 4, textShadowColor: "#000", textShadowRadius: 4 }}>{sub}</Text>}
       </View>
     </Animated.View>
   );

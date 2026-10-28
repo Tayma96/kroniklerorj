@@ -33,6 +33,7 @@ import { EmekOngoru } from "../../lib/emek-ui";
 import { SoylentiIzi } from "../../lib/rumor-ui";
 import { AileHaberi } from "../../lib/evlat-ui";
 import { aileHaberiniOku, varisAdaylari } from "../../lib/game";
+import { ITEMS } from "../../lib/world";
 
 const SEASON_KEY: Record<string, string> = { "Kış": "kis", "İlkbahar": "ilkbahar", "Yaz": "yaz", "Sonbahar": "sonbahar" };
 
@@ -437,6 +438,25 @@ export default function Dashboard() {
       )}
       <MonthDecisionCard />
       <RealmNotices />
+      {/* Sofra: 13 yaşından sonra açlık her ay düşer; yemeğin bedeli ve sonucu ana akışta görünür (eskiden yalnız pazar+envanterden yenebiliyordu) */}
+      {!p.dead && !mpMode && p.age >= 13 && p.hunger < 40 && (() => {
+        const foodId = Object.keys(p.inventory).find((id) => p.inventory[id] > 0 && ITEMS[id]?.feed);
+        const can = !!foodId || p.money >= 2;
+        const starving = p.hunger < 20;
+        return (
+          <View style={{ marginBottom: 12, padding: 12, borderRadius: 6, borderWidth: 1, borderColor: starving ? "#B4483A" : C.borderHi, backgroundColor: starving ? "rgba(126,34,25,0.35)" : C.card }}>
+            <View style={{ flexDirection: lang === "ar" ? "row-reverse" : "row", alignItems: "center", gap: 10 }}>
+              <GameIcon name="tokluk" size={26} color={starving ? "#F2D3B8" : C.ember} />
+              <Text style={{ flex: 1, fontFamily: starving ? F.display : F.serif, fontSize: starving ? 15 : T.body, lineHeight: T.line, color: starving ? "#FBE9D2" : C.parchment }}>{starving ? t("dash.starving") : applyParams(t("dash.hungry"), [Math.round(p.hunger)])}</Text>
+            </View>
+            {can ? (
+              <GameButton icon="ye" rtl={lang === "ar"} accessibilityLabel={t("act.eat")} haptic="tap" onPress={() => doEat()} style={{ marginTop: 10 }}>
+                <Text style={{ fontFamily: F.display, fontSize: 14, color: C.inkOnGold, textAlign: "center" }}>{foodId ? applyParams(t("dash.eatFood"), [t("it." + foodId)]) : t("dash.eatStreet")}</Text>
+              </GameButton>
+            ) : <Text style={{ fontFamily: F.serifItalic, fontSize: T.body, lineHeight: T.line, color: C.parchmentDim, marginTop: 8 }}>{t("dash.noCoin")}</Text>}
+          </View>
+        );
+      })()}
       {/* Halk seni nasıl görüyor — kimlik her an görünür */}
       {!p.dead && (() => {
         const pp = publicPerception(state);
