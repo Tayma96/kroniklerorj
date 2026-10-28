@@ -14,7 +14,7 @@ import { mePublic } from "../../lib/mp/world";
 import { CountdownSecs } from "../../lib/mp/countdown";
 import { pendingMonthScene, advanceWithMonthScene } from "../../lib/month-scene";
 import { oturumEkran } from "../../lib/oturum";
-import { openHomeSheet } from "../../lib/home-hud";
+import { canWork } from "../../lib/game";
 
 const pf = (s: string, ...a: (string | number)[]) => a.reduce<string>((acc, v, i) => acc.replace("%" + (i + 1), String(v)), s);
 import { StatDeltaOverlay } from "../../lib/feel";
@@ -23,19 +23,21 @@ import { hap } from "../../lib/haptics";
 import { useSadeMod } from "../../lib/use-sade-mod";
 import { playAdvance } from "../../lib/sound";
 
-// Sekme simgesi: küçük madalyon. Seçili sekmede altın halka ve parlak ikon; diğerlerinde soluk bronz.
+// Sekme simgesi (mockup): çerçevesiz siluet; seçili sekme parlak altın ve ışıltılı.
 function TabIcon({ name, focused }: { name: string; focused: boolean }) {
-  return <View style={{ width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center", borderWidth: focused ? 2 : 1.5, borderColor: focused ? C.goldBright : "#6B5130", backgroundColor: focused ? "#2E2112" : "#16100A", shadowColor: C.gold, shadowOpacity: focused ? 0.55 : 0, shadowRadius: 8, elevation: focused ? 6 : 0 }}>
-    <GameIcon name={name} size={20} color={focused ? C.goldBright : "#B39B72"} />
+  return <View style={{ alignItems: "center", justifyContent: "center", shadowColor: C.goldBright, shadowOpacity: focused ? 0.85 : 0, shadowRadius: 9 }}>
+    <GameIcon name={name} size={27} color={focused ? C.goldBright : "#CDB98F"} />
   </View>;
 }
 
-// Menü zemini: koyu ahşap üstünde bronz kenar; düz web çubuğu yerine işlenmiş bir tezgâh hissi.
-function TabBackground() {
+// Menü zemini (mockup): koyu ahşap, üstte altın kenar; sekmeler arasında ince bölmeler (ortada pusula yuvası).
+function TabBackground({ width }: { width: number }) {
+  const tab = Math.max(44, (width - 84) / 4);
+  const xs = [tab, tab * 2, tab * 2 + 84 + tab, tab * 2 + 84 + tab * 2].map((x) => x - 0.5);
   return <View style={{ flex: 1 }}>
-    <LinearGradient colors={["#3A2916", "#21170C", "#130D07"]} locations={[0, 0.45, 1]} style={{ flex: 1 }} />
-    <LinearGradient pointerEvents="none" start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} colors={["#6B4F2A", "#F3D27A", "#6B4F2A"]} style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2 }} />
-    <View pointerEvents="none" style={{ position: "absolute", top: 4, left: 8, right: 8, height: 1, backgroundColor: "rgba(243,210,122,0.18)" }} />
+    <LinearGradient colors={["#2B1F12", "#1B140B", "#110C07"]} locations={[0, 0.5, 1]} style={{ flex: 1 }} />
+    <LinearGradient pointerEvents="none" start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} colors={["#6B4F2A", "#E8C46A", "#6B4F2A"]} style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1.5 }} />
+    {xs.filter((_, i) => i !== 1).map((x) => <View key={x} pointerEvents="none" style={{ position: "absolute", left: x, top: 14, bottom: 18, width: 1, backgroundColor: "rgba(205,185,143,0.18)" }} />)}
   </View>;
 }
 
@@ -118,8 +120,8 @@ function AdvanceFab({ bottom }: { bottom: number }) {
         <Animated.View style={style}>
           <Pressable
             accessibilityRole="button" accessibilityLabel={t("a11y.advance")} accessibilityHint={t(waiting ? "flow.pendingHint" : "adv.ffHint")}
-            onPress={() => { if (waiting) { hap("tap"); router.push("/oyun"); openHomeSheet("karar"); return; } hap("advance"); playAdvance(); doAdvance(1); }}
-            onLongPress={() => { if (waiting) { hap("tap"); router.push("/oyun"); openHomeSheet("karar"); return; } hap("success"); playAdvance(); apply((s) => advanceWithMonthScene(s, 6, true)); }}
+            onPress={() => { if (waiting) { hap("tap"); router.push("/oyun"); return; } hap("advance"); playAdvance(); doAdvance(1); router.push("/oyun"); }}
+            onLongPress={() => { if (waiting) { hap("tap"); router.push("/oyun"); return; } hap("success"); playAdvance(); apply((s) => advanceWithMonthScene(s, 6, true)); router.push("/oyun"); }}
             delayLongPress={420}
             style={{
               width: 70, height: 70, borderRadius: 35, backgroundColor: "#0E0A06",
@@ -145,7 +147,7 @@ function AdvanceFab({ bottom }: { bottom: number }) {
         </Animated.View>
         {/* Çekirdek eylem ikon-only kalmasın: mikro etiket (a11y metniyle aynı anahtar) */}
         {/* Uzun dillerde (AVANZAR EL MES) etiket yandaki sekme simgelerine taşmasın: düğme sütununa sığdırılır */}
-        <Text numberOfLines={2} style={{ width: narrow ? 80 : 100, textAlign: "center", fontFamily: F.display, fontSize: narrow ? 10 : 12, lineHeight: narrow ? 13 : 16, color: C.gold, marginTop: 3 }}>{t(waiting ? "flow.pending" : "adv.kisa")}</Text>
+        <Text numberOfLines={2} style={{ width: narrow ? 80 : 100, textAlign: "center", fontFamily: F.serif, fontSize: narrow ? 12 : 14, lineHeight: narrow ? 14 : 17, color: C.goldBright, marginTop: 2 }}>{t(waiting ? "flow.pending" : "tab.advance")}</Text>
 
       </View>
     </View>
@@ -196,27 +198,31 @@ export default function OyunLayout() {
   const yol = usePathname();
   const { width } = useWindowDimensions();
   const tabWidth = Math.max(44, (width - 84) / 4);
+  // Bu ay emek henüz verilmediyse Karakter sekmesinde rozet (çalışma ana sayfadan Karakter ekranına taşındı)
+  const workDue = !mpMode && !!state && !state.player.dead && state.player.age >= 13 && state.player.profession !== "işsiz" && canWork(state);
   useEffect(() => { const ad = yol.replace(/^\/oyun\/?/, "").split("/")[0] || "index"; oturumEkran(ad); }, [yol]); // cihazda kalan oturum kaydı
   return (
     <View style={{ flex: 1 }}>
       <Tabs screenOptions={{
         headerShown: false,
-        tabBarStyle: { backgroundColor: "#1B130A", borderTopWidth: 0, height: 80 + insets.bottom, paddingBottom: insets.bottom + 6, paddingTop: 8, shadowColor: "#000", shadowOpacity: 0.6, shadowRadius: 10, shadowOffset: { width: 0, height: -4 }, elevation: 16 },
-        tabBarBackground: () => <TabBackground />,
+        tabBarStyle: { backgroundColor: "#1B130A", borderTopWidth: 0, height: 80 + insets.bottom, paddingBottom: insets.bottom + 6, paddingTop: 10, shadowColor: "#000", shadowOpacity: 0.6, shadowRadius: 10, shadowOffset: { width: 0, height: -4 }, elevation: 16 },
+        tabBarBackground: () => <TabBackground width={width} />,
         tabBarActiveTintColor: C.goldBright,
-        tabBarInactiveTintColor: "#B39B72",
+        tabBarInactiveTintColor: "#CDB98F",
         tabBarItemStyle: { flexGrow: 0, flexShrink: 0, width: tabWidth },
-        tabBarLabel: ({ color, children }) => <Text numberOfLines={2} style={{ fontFamily: F.display, fontSize: width < 360 ? 9.5 : 12, lineHeight: width < 360 ? 12 : 16, color, textAlign: "center", paddingHorizontal: 1 }}>{children}</Text>,
+        tabBarLabel: ({ color, children }) => <Text numberOfLines={1} adjustsFontSizeToFit style={{ fontFamily: F.serif, fontSize: width < 360 ? 12 : 14, lineHeight: 18, color, textAlign: "center", paddingHorizontal: 1 }}>{children}</Text>,
       }}>
-        <Tabs.Screen name="index" options={{ title: t("tab.home"), tabBarIcon: ({ focused }) => <TabIcon name="ana" focused={focused} /> }} />
-        <Tabs.Screen name="karakter" options={{ title: t("tab.character"), tabBarItemStyle: { flexGrow: 0, flexShrink: 0, width: tabWidth, marginRight: 84 }, tabBarIcon: ({ focused }) => <TabIcon name="karakter" focused={focused} /> }} />
-        <Tabs.Screen name="iliskiler" options={{ title: t("tab.relations"), tabBarIcon: ({ focused }) => <TabIcon name="iliskiler" focused={focused} /> }} />
-        <Tabs.Screen name="menu" options={{ title: t("tab.menu"), tabBarIcon: ({ focused }) => <TabIcon name="menu" focused={focused} /> }} />
+        <Tabs.Screen name="karakter" options={{ title: t("tab.character"), tabBarBadge: workDue ? "!" : undefined, tabBarBadgeStyle: { backgroundColor: "#B5331F", color: "#FFF4E2", fontSize: 11, minWidth: 18, height: 18, lineHeight: 16 }, tabBarIcon: ({ focused }) => <TabIcon name="hood" focused={focused} /> }} />
+        <Tabs.Screen name="sehir" options={{ title: t("tab.town"), tabBarItemStyle: { flexGrow: 0, flexShrink: 0, width: tabWidth, marginRight: 84 }, tabBarIcon: ({ focused }) => <TabIcon name="castle" focused={focused} /> }} />
+        <Tabs.Screen name="iliskiler" options={{ title: t("tab.people"), tabBarIcon: ({ focused }) => <TabIcon name="family" focused={focused} /> }} />
+        <Tabs.Screen name="defter" options={{ title: t("tab.book"), tabBarIcon: ({ focused }) => <TabIcon name="book" focused={focused} /> }} />
+        {/* Ana sayfa sekmede görünmez: ortadaki pusula (İlerle) her zaman ana sayfaya döner */}
+        <Tabs.Screen name="index" options={{ href: null }} />
+        <Tabs.Screen name="menu" options={{ href: null }} />
         {/* Gizli (sekmede görünmez ama navigasyonla açılır) */}
         <Tabs.Screen name="pazar" options={{ href: null }} />
         <Tabs.Screen name="sss" options={{ href: null }} />
         <Tabs.Screen name="emek" options={{ href: null }} />
-        <Tabs.Screen name="sehir" options={{ href: null }} />
         <Tabs.Screen name="meslek" options={{ href: null }} />
         <Tabs.Screen name="suc" options={{ href: null }} />
         <Tabs.Screen name="mektep" options={{ href: null }} />

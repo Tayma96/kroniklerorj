@@ -7,7 +7,7 @@ import { AlertBanner } from "./ornament-ui";
 import { C } from "./theme";
 
 // Ana ekran uyarı rozeti için aynı satırların sayısı (savaş cephesi, gelen elçilik).
-function noticeRows(state: GameState, t: (k: string) => string) {
+export function noticeRows(state: GameState, t: (k: string) => string) {
   if (state.mpRealm || state.player.dead) return [];
   const p = state.player, war = playerArmyWar(state), report = warReportAt(state, p.location_name);
   const own = p.crownSeat || regionOf(p.home_name || p.location_name);

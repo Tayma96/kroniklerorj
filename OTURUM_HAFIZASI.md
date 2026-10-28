@@ -15,13 +15,13 @@
 - tsc kırığı düzeldi; `smoke:full` 300 hayat temiz (`bd471c8`). Tema, `ornament-ui` bileşenleri, NPC kendi portresiyle sahne, ayrı mekân resimleri.
 - Oynanış hatası: 13+ yaşta yemek düğmesi yoktu; "Sofra" eklendi. Tarayıcı botu (scratchpad) 400 ay hatasız oynadı. Cihaz/APK denemesi yok.
 
-## 2. tur (kullanıcı geri bildirimi)
-- Ana ekran: tam ekran mevsim sahnesi + kimlik kartı + gündem madalyonları; karar/emek/uğraş/gündem/günlük alttan açılan panellerde (`lib/home-hud.tsx`). Alt menü madalyonlu, ahşap-bronz. Alt sayfalar kendi sahne fotoğrafı üstünde (`ScreenFresk`).
-- ⚜ ✓ ★ vb. sembol ve bayrak emojileri: yazı tiplerine gömüldü (`scripts/yazitipi/sembol-gom.py` → `assets/fonts`), bayraklar dil koduna döndü.
-- Savaş/3D/sayfa düzeni araştırması ve sıra: `docs/SAVAS_3D_VE_SAYFA_PLANI.md`. Kullanıcı smoke'u en sona bıraktı.
+## 3. tur (kullanıcının seçtiği nihai ana sayfa)
+- Ana sayfa = `claude-paket` mockup ekran 1: sahne, kimlik+4 gösterge, Bu Ayın Kararı (satır içi), tek uyarı afişi (savaş/açlık/gündem → alttan panel), Son Gelişmeler, Yaşam Defteri.
+- Alt menü: Karakter · Şehir · [İlerle pusulası → ana sayfa] · Kişiler · Defter. Emek ve yaş uğraşları Karakter'de (`lib/month-actions-ui.tsx`); eski Menü içeriği `lib/place-grid.tsx` ile Karakter/Kişiler/Defter'e dağıldı. Çalışılmamış ayda Karakter sekmesinde rozet.
+- Semboller yazı tipine gömülü (`scripts/yazitipi/sembol-gom.py`); alt sayfalar sahne fotoğrafı üstünde. Araştırma: `docs/SAVAS_3D_VE_SAYFA_PLANI.md`. Smoke en sona bırakıldı.
 
 ## Açık işler
-- Sıradaki: alt menüyü mockup düzenine (Ana · Şehir · İlerle · Kişiler · Defter) geçir, Menü içeriğini dağıt; ibre mini oyununu kaldır; dövüşe niyet+nefes; Skia meydan muharebesi.
+- Sıradaki: ibre mini oyununu kaldır; dövüşe niyet+nefes; Skia meydan muharebesi; Menü rotası artık bağlantısız (silinebilir).
 - Denge: rastgele bot 40 yaşında nam 100; eğri gözden geçirilmeli.
 - Ana ekrandaki eski stil şeritler (zindan, destan, kervan, açık hesaplar) ve diğer alt sayfa iç kartları ortak bileşene taşınabilir.
 - Aile/valilik dilimleri (19 Ekim) ve `game.ts`teki 254 `Math.random()` göçü sürüyor; ayrıntı `docs/OYNANIS_DERINLIGI.md`, `docs/AUDIT.md`.

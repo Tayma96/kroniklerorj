@@ -1,10 +1,16 @@
 import { PageHeader } from "../../lib/ui";
 import { DesignPressable as Pressable } from "../../lib/design-pressable";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { View, Text, ScrollView, Image } from "react-native";
 import Animated, { FadeIn } from "react-native-reanimated";
+import { GameSheet } from "../../lib/home-hud";
+import { PlaceGrid } from "../../lib/place-grid";
+import { EmekPanel, UgrasPanel } from "../../lib/month-actions-ui";
+import { ListRow } from "../../lib/ornament-ui";
+import { SAHNE_GORSEL } from "../../lib/sahne-tema";
+import { canWork } from "../../lib/game";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { useGame } from "../../lib/store";
 import { sermayeler, SermayeId, aileUyesi, kisiProfil, yoldasAdi, yoldasDurumu, ustamKim, useItem, allocateStat, Stats, pendingPerkCount, equipItem, unequipItem, careerTier, professionById, recognition, publicPerception, atHome, combatPower, armorDefense, attireScore, socialPresence, martialLoad, isTwoHanded, equippedQualityMult, QUALITY_LABEL, statXpOf, statXpForNext, statTierKey, spouseMizac, spendWithSpouse, tendChild, visitParents, visitHealer, healerCost, visitHamam, hamamCost, inJail, tendPet, tendDog, kariyerXp } from "../../lib/game";
 import { ITEMS, localFirstName } from "../../lib/world";
@@ -177,8 +183,12 @@ export default function Karakter() {
   const { lang, t } = useI18n();
   const [tab, setTab] = useState<"ozellikler" | "dunya" | "seruven">("ozellikler");
   const [sermayeAcik, setSermayeAcik] = useState<SermayeId | null>(null);
+  const { ac } = useLocalSearchParams<{ ac?: string }>();
+  const [acts, setActs] = useState<"emek" | "ugras" | null>(null);
+  useEffect(() => { if (ac === "emek" || ac === "ugras") setActs(ac); }, [ac]); // ana sayfadan "çalışmaya git"
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   const p = state.player;
+  const canAct = { emek: p.age >= 13 && p.profession !== "işsiz", ugras: !inJail(p) && p.age >= 7, ugrasKey: p.age < 13 ? "child.title" : p.age < 18 ? "genc.title" : p.age < 55 ? "adult.title" : "elder.title", ugrasIcon: p.age < 13 ? "party" : p.age < 18 ? "lyre" : p.age < 55 ? "medal" : "prayer-beads" };
   const livingChildren = yasayanEvlatAdlari(state);
   const inv = Object.keys(p.inventory).filter((k) => p.inventory[k] > 0);
   const canAdd = p.stat_points > 0;
@@ -384,6 +394,15 @@ export default function Karakter() {
             </View>
           )}
         </View>
+
+        {/* ── Bu ay: emek ve yaşa göre uğraşlar (ana sayfadan buraya taşındı; içerik alttan açılır) ── */}
+        {!p.dead && (canAct.emek || canAct.ugras) && <View style={{ flexDirection: "row", gap: 10, marginBottom: 10 }}>
+          {canAct.emek && <View style={{ flex: 1 }}><ListRow boxed first icon="calis" title={t("flow.workTitle")} sub={canWork(state) ? t("char.workReady") : t("act.workedThisTurn")} onPress={() => setActs("emek")} /></View>}
+          {canAct.ugras && <View style={{ flex: 1 }}><ListRow boxed first icon={canAct.ugrasIcon} title={t(canAct.ugrasKey)} sub={t("char.ugrasSub")} onPress={() => setActs("ugras")} /></View>}
+        </View>}
+        {!p.dead && <PlaceGrid title={t("char.path")} icon="walk" keys={["meslek", "atolye", "mulkler", "gorevler", "mektep", "beceriler", "orgutler", "sosyal", "savas", "suc"]} />}
+        <GameSheet visible={acts === "emek"} onClose={() => setActs(null)} title={t("flow.workTitle")} icon="calis" scene={SAHNE_GORSEL.atolye_demirci}><EmekPanel /></GameSheet>
+        <GameSheet visible={acts === "ugras"} onClose={() => setActs(null)} title={t(canAct.ugrasKey)} icon={canAct.ugrasIcon} scene={SAHNE_GORSEL.medrese}><UgrasPanel /></GameSheet>
 
         {/* ── Sekme navigasyonu ── */}
         <View style={{ flexDirection: "row", backgroundColor: C.card, borderWidth: 1, borderColor: GB, borderRadius: 5, overflow: "hidden", marginBottom: 10 }}>

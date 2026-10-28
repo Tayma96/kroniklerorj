@@ -1,5 +1,5 @@
 import { DesignPressable as Pressable } from "../../lib/design-pressable";
-import { RealmNotices, realmNoticeCount } from "../../lib/realm-notices-ui";
+import { RealmNotices, realmNoticeCount, noticeRows } from "../../lib/realm-notices-ui";
 import { HudButton, GameSheet, useHomeSheet, type HomeSheetId } from "../../lib/home-hud";
 import { SAHNE_GORSEL, ikilemTema } from "../../lib/sahne-tema";
 import { View, Text, ScrollView, ImageBackground, StyleSheet, Dimensions, Modal, useWindowDimensions } from "react-native";
@@ -20,7 +20,7 @@ import { HesapModal } from "../../lib/hesap-ui";
 import { careerTitleL, placeName } from "../../lib/locale-data";
 import { currentCalendar } from "../../lib/calendar";
 import { gercekRitim } from "../../lib/ritim";
-import { IllustratedHeader, OrnatePanel, HeaderIconButton, StatStrip, ListRow } from "../../lib/ornament-ui";
+import { IllustratedHeader, OrnatePanel, HeaderIconButton, StatStrip, ListRow, AlertBanner } from "../../lib/ornament-ui";
 import { MonthDecisionCard } from "../../lib/month-decision-ui";
 import { townSeasonImage } from "../../lib/assets";
 import { MilestoneModal, DilemmaModal, OpportunityModal, AchievementToast, EulogyModal, GameButton, Portre } from "../../lib/ui";
@@ -275,15 +275,14 @@ export default function Dashboard() {
   const ugrasKey = p.age < 13 ? "child.title" : p.age < 18 ? "genc.title" : p.age < 55 ? "adult.title" : "elder.title";
   const ugrasIcon = p.age < 13 ? "party" : p.age < 18 ? "lyre" : p.age < 55 ? "medal" : "prayer-beads";
   const gundemN = p.dead ? 0 : [echoDeferred && state.npcTeklif, aileHaberi(state), soylentiLead(state), acikHesaplar(state).length, state.micro, state.bloodline?.scene && !state.saga?.scene, state.saga?.scene, p.crowned && state.divan, state.caravan?.route, state.story?.active].filter(Boolean).length;
-  const hud: { id: HomeSheetId; icon: string; label: string; badge?: number | "!"; tone?: "gold" | "red" | "green"; pulse?: boolean }[] = [
-    ...(pendingDil ? [{ id: "karar" as const, icon: "scroll-open", label: t("flow.monthDecision"), badge: "!" as const, pulse: true }] : []),
-    ...(uyariN ? [{ id: "uyari" as const, icon: "crossed-swords", label: t("home.uyari"), badge: uyariN, tone: "red" as const }] : []),
-    ...(hungry ? [{ id: "sofra" as const, icon: "ye", label: t("dash.eatTitle"), badge: "!" as const, tone: p.hunger < 20 ? "red" as const : "gold" as const, pulse: p.hunger < 20 }] : []),
-    ...(canEmek ? [{ id: "emek" as const, icon: "calis", label: t("flow.workTitle"), tone: canWork(state) ? "green" as const : "gold" as const }] : []),
-    ...(canUgras ? [{ id: "ugras" as const, icon: ugrasIcon, label: t(ugrasKey) }] : []),
-    { id: "gundem", icon: "scroll", label: t("home.gundem"), badge: gundemN || undefined },
-    { id: "gunluk", icon: "roman", label: t("flow.recent"), badge: freshMark?.n },
+  const rtl = lang === "ar";
+  // Ana sayfada yalnız bir uyarı afişi: en acil olan; diğerleri aynı panelde ya da gündemde.
+  const alerts: { id: HomeSheetId; icon: string; title: string; sub: string; tone: string }[] = [
+    ...(uyariN ? [(() => { const r = noticeRows(state, t)[0]; return r ? { id: "uyari" as const, icon: r.icon, title: r.title, sub: r.sub, tone: r.color } : inJail(p) ? { id: "uyari" as const, icon: "prisoner", title: t("jail.title"), sub: applyParams(t("home.alertsSub"), [uyariN]), tone: C.blood } : { id: "uyari" as const, icon: "crossed-swords", title: t("home.uyari"), sub: applyParams(t("home.alertsSub"), [uyariN]), tone: C.blood }; })()] : []),
+    ...(hungry ? [{ id: "sofra" as const, icon: "ye", title: t(p.hunger < 20 ? "dash.starving" : "dash.eatTitle"), sub: applyParams(t("home.hungerSub"), [Math.round(p.hunger)]), tone: p.hunger < 20 ? C.blood : C.ember }] : []),
+    ...(gundemN ? [{ id: "gundem" as const, icon: "scroll", title: t("home.gundem"), sub: applyParams(t("home.alertsSub"), [gundemN]), tone: C.gold }] : []),
   ];
+  const alert = alerts[0] ? { ...alerts[0], sub: alerts.length > 1 ? `${alerts[0].sub} · +${alerts.length - 1}` : alerts[0].sub } : null;
 
   return (
     <View style={{ flex: 1, backgroundColor: C.bg, paddingBottom: 52 }}>
@@ -416,36 +415,28 @@ export default function Dashboard() {
         );
       })()}
 
-      {/* Yaşayan sahne: mevsimin kasabası tüm ekranı kaplar, yavaşça kayar; kar/kıvılcım tozu üstünde süzülür */}
-      <KenBurns source={townSeasonImage(cal.season)} style={StyleSheet.absoluteFill} />
-      <LinearGradient pointerEvents="none" colors={["rgba(8,5,2,0.62)", "rgba(8,5,2,0.04)", "rgba(8,5,2,0.12)", "rgba(8,5,2,0.80)"]} locations={[0, 0.2, 0.48, 1]} style={StyleSheet.absoluteFill} />
-      <View pointerEvents="none" style={[StyleSheet.absoluteFill, { top: insets.top + 60 }]}><Ambiance season={cal.season} width={winW} height={winH * 0.5} count={8} /></View>
-      <ScrollView style={{ flex: 1 }} onLayout={(e) => setViewH(e.nativeEvent.layout.height)} contentContainerStyle={{ flexGrow: 1, minHeight: viewH || undefined, paddingTop: insets.top + 8, paddingHorizontal: 14, paddingBottom: 56 }}>
-        <View style={{ flexDirection: lang === "ar" ? "row-reverse" : "row", alignItems: "flex-start", gap: 8 }}>
-          <View style={{ flex: 1, minWidth: 0 }}>
-            <Text accessibilityRole="header" style={{ fontFamily: F.display, fontSize: 30, lineHeight: 38, color: "#F7EBD2", textShadowColor: "rgba(0,0,0,0.9)", textShadowRadius: 10, textShadowOffset: { width: 0, height: 2 } }}>{t("flow.anotherMonth")}</Text>
-            <Text style={{ fontFamily: F.display, fontSize: 15, letterSpacing: 0.8, color: "#F1E2C2", textShadowColor: "#000", textShadowRadius: 8 }}>{cal.year} · {t("cal.season." + SEASON_KEY[cal.season])}</Text>
-          </View>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingTop: insets.top + 8, paddingHorizontal: 12, paddingBottom: 116 }}>
+        <IllustratedHeader topInset={insets.top + 8} title={t("flow.anotherMonth")} sub={`${cal.year} · ${t("cal.season." + SEASON_KEY[cal.season])}`} source={townSeasonImage(cal.season)} right={<View style={{ flexDirection: "row", gap: 4 }}>
           <HeaderIconButton icon="roman" label={t("flow.lifeBook")} onPress={() => router.push("/oyun/tarih")} />
           <HeaderIconButton icon="ayarlar" label={t("scr.ayarlar")} onPress={() => router.push("/oyun/ayarlar")} />
-        </View>
-        {/* Kimlik kartı: sahnenin önünde yarı saydam; portre çerçeveden taşar */}
-        <View style={{ marginTop: 58, marginBottom: 14, borderRadius: 10, borderWidth: 1, borderColor: C.borderHi, backgroundColor: "rgba(20,14,8,0.80)", paddingHorizontal: 10, paddingBottom: 10 }}>
-          <View style={{ flexDirection: lang === "ar" ? "row-reverse" : "row", alignItems: "flex-end", gap: 12, marginTop: -44 }}>
-            <View style={{ padding: 3, borderRadius: 50, backgroundColor: "#120C06", borderWidth: 1.5, borderColor: C.gold }}>
-              <Portre age={p.age} gender={p.gender} size={88} />
-            </View>
-            <View style={{ flex: 1, minWidth: 0, paddingBottom: 4 }}>
-              <Text numberOfLines={2} style={{ fontFamily: F.display, fontSize: 20, lineHeight: 26, color: C.parchment }}>{lakapliAd(p.name, p.lakap, p.gender === "kadın", t)}</Text>
-              <Text numberOfLines={2} style={{ fontFamily: F.serif, fontSize: T.body, lineHeight: 20, color: C.parchmentDim }}>{p.profession === "işsiz" ? t("misc.jobless") : careerTitleL(p.profession, kariyerXp(p), lang, p.gender === "kadın")} · {p.age} {t("misc.age")}</Text>
+        </View>} />
+        {/* Kimlik: portre sahnenin kenarından taşar; dört gösterge tek şeritte */}
+        <View style={{ marginTop: -46, marginBottom: 12 }}>
+          <View style={{ flexDirection: rtl ? "row-reverse" : "row", alignItems: "flex-end", gap: 12, paddingHorizontal: 4 }}>
+            <Pressable accessibilityLabel={t("tab.character")} onPress={() => router.push("/oyun/karakter")} style={{ padding: 3, borderRadius: 56, backgroundColor: C.bg, borderWidth: 1, borderColor: C.goldDim }}>
+              <Portre age={p.age} gender={p.gender} size={96} />
+            </Pressable>
+            <View style={{ flex: 1, minWidth: 0, paddingBottom: 8 }}>
+              <Text numberOfLines={2} style={{ fontFamily: F.display, fontSize: 21, lineHeight: 27, color: C.parchment }}>{lakapliAd(p.name, p.lakap, p.gender === "kadın", t)}</Text>
+              <Text numberOfLines={2} style={{ fontFamily: F.serif, fontSize: T.bodyLg, lineHeight: T.line, color: C.parchmentDim }}>{p.profession === "işsiz" ? t("misc.jobless") : careerTitleL(p.profession, kariyerXp(p), lang, p.gender === "kadın")} · {p.age} {t("misc.age")}</Text>
             </View>
           </View>
-          <View style={{ marginTop: 10 }}>
-            <StatStrip rtl={lang === "ar"} items={[
-              { icon: "saglik", label: t("char.health"), value: String(Math.round(p.health)), pct: p.health, tone: p.health < 30 ? C.blood : undefined },
-              { icon: "tokluk", label: t("char.hunger"), value: String(Math.round(p.hunger)), pct: p.hunger, tone: p.hunger < 30 ? C.ember : undefined },
+          <View style={{ marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderColor: C.border }}>
+            <StatStrip rtl={rtl} items={[
+              { icon: "saglik", label: t("char.health"), value: String(Math.round(p.health)), tone: p.health < 30 ? C.blood : undefined },
+              { icon: "tokluk", label: t("char.hunger"), value: String(Math.round(p.hunger)), tone: p.hunger < 30 ? C.ember : undefined },
               { icon: "akce", label: t("char.money"), value: new Intl.NumberFormat(lang, { notation: p.money >= 100000 ? "compact" : "standard", maximumFractionDigits: 0 }).format(Math.round(p.money)) },
-              { icon: "orgutler", label: t("soc.nam.h"), value: String(fame), pct: fame },
+              { icon: "orgutler", label: t("soc.nam.h"), value: String(fame) },
             ]} />
           </View>
         </View>
@@ -499,16 +490,15 @@ export default function Dashboard() {
         </View>
       )}
 
-        <View style={{ flexGrow: 1, minHeight: 24 }} />
-        {/* Gündem madalyonları: ana ekranda içerik değil, yalnız ne beklediğini gösteren küçük düğmeler; içerik alttan açılan panelde */}
-        {!p.dead && <View style={{ flexDirection: lang === "ar" ? "row-reverse" : "row", flexWrap: "wrap", justifyContent: "center", rowGap: 12 }}>
-          {hud.map((h) => <HudButton key={h.id} icon={h.icon} label={h.label} badge={h.badge} tone={h.tone} pulse={h.pulse} onPress={() => setSheet(h.id)} />)}
-        </View>}
+        <MonthDecisionCard />
+        {/* Tek uyarı afişi: en acil iş (savaş, açlık, zindan, gündem); dokununca ayrıntı alttan açılır */}
+        {!p.dead && alert && <AlertBanner icon={alert.icon} title={alert.title} sub={alert.sub} tone={alert.tone} rtl={rtl} onPress={() => setSheet(alert.id)} />}
+        <OrnatePanel title={t("flow.recent")} icon="sun" right={<Pressable accessibilityRole="button" accessibilityLabel={t("dash.seeAll")} onPress={() => router.push("/oyun/tarih")} style={{ minHeight: L.touch, justifyContent: "center" }}><Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchmentDim }}>{t("dash.seeAll")} ›</Text></Pressable>}>
+          {events.length ? events.map(({ e, hIdx }, index) => <View key={e.q ?? hIdx}>{EventCard({ e, hIdx, last: index === events.length - 1 })}</View>) : <Text style={{ fontFamily: F.serif, fontSize: T.body, lineHeight: T.line, color: C.parchmentMuted }}>{t("dash.empty")}</Text>}
+        </OrnatePanel>
+        <ListRow boxed first icon="roman" title={t("flow.lifeBook")} sub={t("flow.lifeBookSub")} rtl={rtl} onPress={() => router.push("/oyun/tarih")} />
       </ScrollView>
 
-      <GameSheet visible={sheet === "karar"} onClose={() => setSheet(null)} title={t("flow.monthDecision")} icon="scroll-open" scene={kararSahne}>
-      <MonthDecisionCard bare />
-      </GameSheet>
       <GameSheet visible={sheet === "uyari"} onClose={() => setSheet(null)} title={t("home.uyari")} icon="crossed-swords" scene={SAHNE_GORSEL.mogol_baskin}>
       <RealmNotices />
       {/* Zindan: ağır suçun bedeli — süre dolana ya da gardiyan sussuzlanana dek çoğu kapı kilitli */}
@@ -577,182 +567,15 @@ export default function Dashboard() {
               <GameButton icon="ye" rtl={lang === "ar"} accessibilityLabel={t("act.eat")} haptic="tap" onPress={() => doEat()} style={{ marginTop: 10 }}>
                 <Text style={{ fontFamily: F.display, fontSize: 14, color: C.inkOnGold, textAlign: "center" }}>{foodId ? applyParams(t("dash.eatFood"), [t("it." + foodId)]) : t("dash.eatStreet")}</Text>
               </GameButton>
-            ) : <Text style={{ fontFamily: F.serifItalic, fontSize: T.body, lineHeight: T.line, color: C.parchmentDim, marginTop: 8 }}>{t("dash.noCoin")}</Text>}
+            ) : <>
+              <Text style={{ fontFamily: F.serifItalic, fontSize: T.body, lineHeight: T.line, color: C.parchmentDim, marginTop: 8 }}>{t("dash.noCoin")}</Text>
+              {canEmek && <GameButton variant="secondary" icon="calis" rtl={lang === "ar"} accessibilityLabel={t("flow.workTitle")} onPress={() => { setSheet(null); router.push("/oyun/karakter?ac=emek" as any); }} style={{ marginTop: 10 }}>
+                <Text style={{ fontFamily: F.display, fontSize: 14, color: C.goldBright, textAlign: "center" }}>{t("flow.workTitle")}</Text>
+              </GameButton>}
+            </>}
           </View>
         );
       })()}
-      </GameSheet>
-      <GameSheet visible={sheet === "emek"} onClose={() => setSheet(null)} title={t("flow.workTitle")} icon="calis" scene={SAHNE_GORSEL.atolye_demirci}>
-      {!p.dead && (p.age >= 13 && p.profession !== "işsiz") ? (
-        <OrnatePanel>
-          {/* Çalışma stili seçici (Vercel work_rework.py) */}
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 7 }}>
-            {(["garantici", "normal", "hirsli", "kaytarici"] as const).map((ws) => {
-              const on = workStyle === ws;
-              return (
-                <Pressable key={ws} accessibilityRole="button" accessibilityLabel={t("work.style." + ws)} accessibilityState={{ selected: on }} onPress={() => { hap("tap"); setWorkStyle(ws); }} style={{ flexBasis: "45%", flexGrow: 1, minHeight: 44, justifyContent: "center", alignItems: "center", paddingVertical: 8, borderRadius: 5, borderWidth: 1, borderColor: on ? C.gold : C.border, backgroundColor: on ? C.cardHi : "transparent" }}>
-                  <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 0.3, color: on ? C.gold : C.parchmentMuted }}>{t("work.style." + ws)}</Text>
-                </Pressable>
-              );
-            })}
-          </View>
-          <EmekOngoru state={state} styleId={workStyle} />
-          {(() => { const worked = !canWork(state); return (
-          <GameButton variant="secondary" accessibilityLabel={worked ? t("act.workedThisTurn") : t("act.work")} icon="calis" rtl={lang === "ar"} onPress={() => { if (worked) return; hap("tap"); playTap(); doWork(workStyle); }} disabled={worked}>
-            <Text style={{ fontFamily: F.display, fontSize: 13, color: C.goldBright, letterSpacing: 1.5, textAlign: "center" }}>{worked ? t("act.workedThisTurn") : t("act.work")}</Text>
-          </GameButton>); })()}
-        </OrnatePanel>
-      ) : null}
-
-      </GameSheet>
-      <GameSheet visible={sheet === "ugras"} onClose={() => setSheet(null)} title={t(ugrasKey)} icon={ugrasIcon} scene={SAHNE_GORSEL.medrese}>
-      {/* Çocukluk uğraşları (7-12) — çocuğa hareket alanı; çalışma gücünden harcar */}
-      {!p.dead && !inJail(p) && p.age >= 7 && p.age < 13 && (() => {
-        const en = playEnergy(state); const can = en >= PLAY_COST;
-        const acts: { k: ChildAct; icon: string; label: string }[] = [
-          { k: "oyun", icon: "party", label: t("child.act.oyun") },
-          { k: "yardim", icon: "iliskiler", label: t("child.act.yardim") },
-          { k: "yaramazlik", icon: "hood", label: t("child.act.yaramazlik") },
-          { k: "kesif", icon: "firsatlar", label: t("child.act.kesif") },
-        ];
-        const onChild = (k: ChildAct) => { if (!can) return; hap("tap"); const r = childAction(state, k); if (!r.blocked) apply(() => r.state); };
-        return (
-          <View style={{ marginBottom: 12, padding: 14, borderRadius: 6, borderWidth: 1, borderColor: C.borderHi, borderTopColor: "rgba(201,168,76,0.3)", borderTopWidth: 2, backgroundColor: C.card }}>
-            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 9 }}>
-              <Text style={{ flexShrink: 1, fontFamily: F.display, fontSize: 17, color: C.gold }}>{t("child.title")}</Text>
-              <View style={{ flexDirection: "row", gap: 4 }}>
-                {Array.from({ length: maxPlayEnergy(p.age) }).map((_, i) => (
-                  <View key={i} style={{ width: 9, height: 9, borderRadius: 2, transform: [{ rotate: "45deg" }], backgroundColor: i < en ? C.gold : "transparent", borderWidth: 1, borderColor: i < en ? C.gold : C.border }} />
-                ))}
-              </View>
-            </View>
-            {/* Çocukluk yoldaşı ("can dostu") artık İlişkiler ekranında gösteriliyor (pano kalabalığı azaldı). */}
-            {p.child_dream ? (
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 9 }}>
-                <GameIcon name="star" size={11} color={C.gold} />
-                <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted }}>{t("child.dream.label")}: <Text style={{ fontFamily: F.serif, color: C.gold }}>{t("dream." + p.child_dream)}</Text></Text>
-              </View>
-            ) : null}
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-              {acts.map((a) => (
-                <Pressable key={a.k} onPress={() => onChild(a.k)} disabled={!can} style={{ width: "48%", flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 10, paddingHorizontal: 10, borderRadius: 5, borderWidth: 1, borderColor: can ? "rgba(201,168,76,0.4)" : C.border, backgroundColor: can ? C.card : C.bg, opacity: can ? 1 : 0.5 }}>
-                  <GameIcon name={a.icon} size={16} color={can ? C.gold : C.parchmentMuted} />
-                  <Text style={{ fontFamily: F.display, fontSize: 13, color: can ? C.parchment : C.parchmentMuted }}>{a.label}</Text>
-                </Pressable>
-              ))}
-            </View>
-            {!can && <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, marginTop: 8 }}>{tg("child.spent", p.gender === "kadın")}</Text>}
-          </View>
-        );
-      })()}
-
-      {/* Gençlik uğraşları (13-17) — çocukluk oyunu bitti, olgunluk talimi başlamadı: usta, akranlar, gönül, meydan (gerçek kişilerle) */}
-      {!p.dead && !inJail(p) && p.age >= 13 && p.age < 18 && (() => {
-        const en = playEnergy(state); const can = en >= PLAY_COST;
-        const gonulAcik = p.age >= 15 && !!gonulAdayi(state);
-        const acts: { k: GencAct; icon: string; label: string; kapali?: boolean; not?: string }[] = [
-          { k: "usta", icon: "anvil", label: t("genc.act.usta") },
-          { k: "akran", icon: "iliskiler", label: t("genc.act.akran") },
-          { k: "gonul", icon: "ring", label: t("genc.act.gonul"), kapali: !gonulAcik, not: p.age < 15 ? t("genc.gonulYas") : undefined },
-          { k: "huner", icon: "banner", label: t("genc.act.huner") },
-        ];
-        const onYouth = (k: GencAct) => { if (!can) return; hap("tap"); const r = youthAction(state, k); if (!r.blocked) apply(() => r.state); };
-        return (
-          <View style={{ marginBottom: 12, padding: 14, borderRadius: 6, borderWidth: 1, borderColor: C.borderHi, borderTopColor: "rgba(127,166,106,0.32)", borderTopWidth: 2, backgroundColor: C.card }}>
-            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 9 }}>
-              <Text style={{ flexShrink: 1, fontFamily: F.display, fontSize: 17, color: C.sage }}>{t("genc.title")}</Text>
-              <View style={{ flexDirection: "row", gap: 4 }}>
-                {Array.from({ length: maxPlayEnergy(p.age) }).map((_, i) => (
-                  <View key={i} style={{ width: 9, height: 9, borderRadius: 2, transform: [{ rotate: "45deg" }], backgroundColor: i < en ? C.sage : "transparent", borderWidth: 1, borderColor: i < en ? C.sage : C.border }} />
-                ))}
-              </View>
-            </View>
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-              {acts.map((a) => { const dis = !can || !!a.kapali; return (
-                <Pressable key={a.k} onPress={() => { if (!dis) onYouth(a.k); }} disabled={dis} style={{ width: "48%", flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 10, paddingHorizontal: 10, borderRadius: 5, borderWidth: 1, borderColor: dis ? C.border : "rgba(127,166,106,0.45)", backgroundColor: dis ? "transparent" : "rgba(127,166,106,0.08)" }}>
-                  <GameIcon name={a.icon} size={16} color={dis ? C.parchmentMuted : C.sage} />
-                  <View style={{ flex: 1, minWidth: 0 }}>
-                    <Text numberOfLines={1} style={{ fontFamily: F.display, fontSize: 13, color: dis ? C.parchmentMuted : C.parchment }}>{a.label}</Text>
-                    {a.not ? <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted }}>{a.not}</Text> : null}
-                  </View>
-                </Pressable>
-              ); })}
-            </View>
-            {!can && <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, marginTop: 8 }}>{t("genc.spent")}</Text>}
-          </View>
-        );
-      })()}
-
-      {/* Olgunluk uğraşları (18-54) — atıl aylık çalışma gücü işlesin: dört uğraş dört statı besler */}
-      {!p.dead && !inJail(p) && p.age >= 18 && p.age < 55 && (() => {
-        const en = studyEnergy(state); const can = en >= STUDY_COST;
-        const acts: { k: AdultAct; icon: string; label: string; cost?: number }[] = [
-          { k: "talim", icon: "crossed-swords", label: t("adult.act.talim"), cost: ADULT_TRAINER_COST },
-          { k: "meclis", icon: "iliskiler", label: t("adult.act.meclis") },
-          { k: "tefekkur", icon: "scroll", label: t("adult.act.tefekkur") },
-          { k: "yuruyus", icon: "firsatlar", label: t("adult.act.yuruyus") },
-          { k: "ibadet", icon: "prayer-beads", label: t("adult.act.ibadet") },
-        ];
-        const onAdult = (k: AdultAct) => { if (!can) return; hap("tap"); const r = adultAction(state, k); if (!r.blocked) { if (k === "ibadet") playNey(); apply(() => r.state); } };
-        return (
-          <View style={{ marginBottom: 12, padding: 14, borderRadius: 6, borderWidth: 1, borderColor: C.borderHi, borderTopColor: "rgba(111,160,192,0.3)", borderTopWidth: 2, backgroundColor: C.card }}>
-            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 9 }}>
-              <Text style={{ flexShrink: 1, fontFamily: F.display, fontSize: 17, color: C.frost }}>{t("adult.title")}</Text>
-              <View style={{ flexDirection: "row", gap: 4 }}>
-                {Array.from({ length: maxStudyEnergy(p.age) }).map((_, i) => (
-                  <View key={i} style={{ width: 9, height: 9, borderRadius: 2, transform: [{ rotate: "45deg" }], backgroundColor: i < en ? C.frost : "transparent", borderWidth: 1, borderColor: i < en ? C.frost : C.border }} />
-                ))}
-              </View>
-            </View>
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-              {acts.map((a) => {
-                const dis = !can || (a.cost != null && p.money < a.cost);
-                return (
-                  <Pressable key={a.k} onPress={() => { if (!dis) onAdult(a.k); }} disabled={dis} style={{ width: acts.length % 2 === 1 && a.k === acts[acts.length - 1].k ? "100%" : "48%", flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 10, paddingHorizontal: 10, borderRadius: 5, borderWidth: 1, borderColor: dis ? C.border : "rgba(111,160,192,0.4)", backgroundColor: dis ? C.bg : C.card, opacity: dis ? 0.5 : 1 }}>
-                    <GameIcon name={a.icon} size={16} color={dis ? C.parchmentMuted : C.frost} />
-                    <Text style={{ flex: 1, fontFamily: F.display, fontSize: 13, color: dis ? C.parchmentMuted : C.parchment }} numberOfLines={1}>{a.label}{a.cost != null ? ` · ${a.cost}⚜` : ""}</Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-          </View>
-        );
-      })()}
-
-      {/* İhtiyarlık uğraşları (55+) — hayatın akşamına anlam; çalışma gücünden harcar */}
-      {!p.dead && !inJail(p) && p.age >= 55 && (() => {
-        const en = studyEnergy(state); const can = en >= STUDY_COST;
-        const acts: { k: ElderAct; icon: string; label: string }[] = [
-          { k: "nasihat", icon: "speaker", label: t("elder.act.nasihat") },
-          { k: "hayir", icon: "akce", label: t("elder.act.hayir") },
-          { k: "dinlen", icon: "saglik", label: t("elder.act.dinlen") },
-          { k: "ani", icon: "roman", label: t("elder.act.ani") },
-          { k: "tekke", icon: "prayer-beads", label: t("elder.act.tekke") },
-        ];
-        const onElder = (k: ElderAct) => { if (!can) return; hap("tap"); const r = elderAction(state, k); if (!r.blocked) { if (k === "tekke") playNey(); apply(() => r.state); } };
-        return (
-          <View style={{ marginBottom: 12, padding: 14, borderRadius: 6, borderWidth: 1, borderColor: C.borderHi, borderTopColor: "rgba(123,79,175,0.3)", borderTopWidth: 2, backgroundColor: C.card }}>
-            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 9 }}>
-              <Text style={{ flexShrink: 1, fontFamily: F.display, fontSize: 17, color: C.ink }}>{t("elder.title")}</Text>
-              <View style={{ flexDirection: "row", gap: 4 }}>
-                {Array.from({ length: maxStudyEnergy(p.age) }).map((_, i) => (
-                  <View key={i} style={{ width: 9, height: 9, borderRadius: 2, transform: [{ rotate: "45deg" }], backgroundColor: i < en ? C.ink : "transparent", borderWidth: 1, borderColor: i < en ? C.ink : C.border }} />
-                ))}
-              </View>
-            </View>
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-              {acts.map((a) => (
-                <Pressable key={a.k} onPress={() => onElder(a.k)} disabled={!can} style={{ width: acts.length % 2 === 1 && a.k === acts[acts.length - 1].k ? "100%" : "48%", flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 10, paddingHorizontal: 10, borderRadius: 5, borderWidth: 1, borderColor: can ? "rgba(123,79,175,0.4)" : C.border, backgroundColor: can ? C.card : C.bg, opacity: can ? 1 : 0.5 }}>
-                  <GameIcon name={a.icon} size={16} color={can ? C.ink : C.parchmentMuted} />
-                  <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.display, fontSize: 13, color: can ? C.parchment : C.parchmentMuted }}>{a.label}</Text>
-                </Pressable>
-              ))}
-            </View>
-            {!can && <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, marginTop: 8 }}>{tg("child.spent", p.gender === "kadın")}</Text>}
-          </View>
-        );
-      })()}
-
       </GameSheet>
       <GameSheet visible={sheet === "gundem"} onClose={() => setSheet(null)} title={t("home.gundem")} icon="scroll" scene={SAHNE_GORSEL.cami_avlu}>
         {gundemN === 0 && <Text style={{ fontFamily: F.serifItalic, fontSize: T.body, lineHeight: T.line, color: C.parchmentDim, marginBottom: 10 }}>{t("home.calm")}</Text>}
@@ -961,14 +784,6 @@ export default function Dashboard() {
         </Pressable>
       )}
 
-      </GameSheet>
-      <GameSheet visible={sheet === "gunluk"} onClose={() => setSheet(null)} title={t("flow.recent")} icon="roman" scene={SAHNE_GORSEL.medrese}>
-      <OrnatePanel right={<Pressable accessibilityRole="button" accessibilityLabel={t("dash.seeAll")} onPress={() => router.push("/oyun/tarih")} style={{ minHeight: L.touch, justifyContent: "center" }}><Text style={{ fontFamily: F.serif, fontSize: 14, color: C.gold }}>{t("dash.seeAll")} ›</Text></Pressable>}>
-        {events.length ? events.map(({ e, hIdx }, index) => <View key={e.q ?? hIdx}>{EventCard({ e, hIdx, last: index === events.length - 1 })}</View>) : <Text style={{ fontFamily: F.serif, fontSize: T.body, lineHeight: T.line, color: C.parchmentMuted }}>{t("dash.empty")}</Text>}
-      </OrnatePanel>
-      <View style={{ marginBottom: 12 }}>
-        <ListRow boxed first icon="roman" title={t("flow.lifeBook")} sub={t("flow.lifeBookSub")} rtl={lang === "ar"} onPress={() => router.push("/oyun/tarih")} />
-      </View>
       </GameSheet>
     </View>
   );

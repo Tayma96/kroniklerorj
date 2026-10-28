@@ -1056,12 +1056,12 @@ const PERK: Record<Lang, Dict> = {
 };
 // Alt sekme başlıkları (her zaman görünür).
 const TAB: Record<Lang, Dict> = {
-  tr: { "tab.home":"Ana Sayfa","tab.character":"Karakter","tab.relations":"İlişkiler","tab.menu":"Menü" },
-  en: { "tab.home":"Home","tab.character":"Character","tab.relations":"Relations","tab.menu":"Menu" },
-  es: { "tab.home":"Inicio","tab.character":"Personaje","tab.relations":"Relaciones","tab.menu":"Menú" },
-  pt: { "tab.home":"Início","tab.character":"Personagem","tab.relations":"Relações","tab.menu":"Menu" },
-  ar: { "tab.home":"الرئيسية","tab.character":"الشخصية","tab.relations":"العلاقات","tab.menu":"القائمة" },
-  ru: { "tab.home":"Главная","tab.character":"Персонаж","tab.relations":"Связи","tab.menu":"Меню" },
+  tr: { "tab.town":"Şehir", "tab.people":"Kişiler", "tab.book":"Defter", "tab.advance":"İlerle", "tab.home":"Ana Sayfa","tab.character":"Karakter","tab.relations":"İlişkiler","tab.menu":"Menü" },
+  en: { "tab.town":"Town", "tab.people":"People", "tab.book":"Journal", "tab.advance":"Advance", "tab.home":"Home","tab.character":"Character","tab.relations":"Relations","tab.menu":"Menu" },
+  es: { "tab.town":"Ciudad", "tab.people":"Gente", "tab.book":"Diario", "tab.advance":"Avanzar", "tab.home":"Inicio","tab.character":"Personaje","tab.relations":"Relaciones","tab.menu":"Menú" },
+  pt: { "tab.town":"Cidade", "tab.people":"Pessoas", "tab.book":"Diário", "tab.advance":"Avançar", "tab.home":"Início","tab.character":"Personagem","tab.relations":"Relações","tab.menu":"Menu" },
+  ar: { "tab.town":"المدينة", "tab.people":"الناس", "tab.book":"الدفتر", "tab.advance":"تقدّم", "tab.home":"الرئيسية","tab.character":"الشخصية","tab.relations":"العلاقات","tab.menu":"القائمة" },
+  ru: { "tab.town":"Город", "tab.people":"Люди", "tab.book":"Летопись", "tab.advance":"Вперёд", "tab.home":"Главная","tab.character":"Персонаж","tab.relations":"Связи","tab.menu":"Меню" },
 };
 // Eksik dillerin (ES/PT/AR/RU) yeni özellik çevirileri — boşlukları doldurur (denetim sonrası).
 const XTRA = {
