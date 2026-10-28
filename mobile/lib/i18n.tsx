@@ -2,6 +2,7 @@
 // Eksik anahtar Türkçe'ye, o da yoksa anahtarın kendisine düşer (oyun hiç bozulmaz).
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { F } from "./theme";
 import { CIGIR } from "./i18n-cigir";
 import { SAHNE_METIN } from "./i18n-sahne";
 import { KAYIT_METIN } from "./i18n-kayit";
@@ -3414,6 +3415,13 @@ export function renderEvt(k: string | undefined, fallback: string, p: EvtParam[]
 interface Ctx { lang: Lang; rtl: boolean; setLang: (l: Lang) => void; t: (key: string) => string; tg: (key: string, female: boolean) => string; } // tg: oyuncuya hitap eden metin — kadın oyuncuya .f varyantı (varsa)
 const LangContext = createContext<Ctx | null>(null);
 
+// Cinzel küçük harfleri küçük büyük harf çizer; Türkçede "i" noktasız "I" görünmesin diye
+// başlık ailesi dil Türkçe iken "i"si noktalı türeve geçer (scripts/yazitipi/sembol-gom.py).
+function displayFontFor(lang: Lang) {
+  const tr = lang === "tr";
+  F.display = tr ? "Cinzel_700Bold_TR" : "Cinzel_700Bold";
+  F.displayReg = tr ? "Cinzel_400Regular_TR" : "Cinzel_400Regular";
+}
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [lang, setLangState] = useState<Lang>("tr");
   useEffect(() => { (async () => { try { const v = await AsyncStorage.getItem(KEY); if (v && DICT_BUILDERS[v as Lang]) setLangState(v as Lang); } catch {} })(); }, []);
@@ -3421,6 +3429,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const t = useCallback((key: string) => dictFor(lang)[key] ?? TR[key] ?? key, [lang]);
   const rtl = LANGS.find((l) => l.code === lang)?.rtl ?? false;
   const tg = useCallback((key: string, female: boolean) => { if (female) { const d = dictFor(lang); const f = d[key + ".f"]; if (f) return f; } return t(key); }, [lang, t]);
+  displayFontFor(lang);
   return <LangContext.Provider value={{ lang, rtl, setLang, t, tg }}>{children}</LangContext.Provider>;
 }
 export function useI18n(): Ctx {

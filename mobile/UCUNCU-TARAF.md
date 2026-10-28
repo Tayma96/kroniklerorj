@@ -10,7 +10,7 @@ Son denetim: 10 Ekim 2026.
 | Cinzel | © 2020 The Cinzel Project Authors (github.com/NDISCOVER/Cinzel) | `@expo-google-fonts/cinzel` |
 | Crimson Text | © 2010 The Crimson Text Project Authors (github.com/googlefonts/Crimson) | `@expo-google-fonts/crimson-text` |
 
-Oyunda kullanılan dosyalar `assets/fonts/` altındadır: bu iki ailenin, DejaVu Sans'tan alınmış ⚜ ✓ ★ gibi sembollerle genişletilmiş ve "Kronikler Cinzel" / "Kronikler Crimson" olarak yeniden adlandırılmış türevleridir (`scripts/yazitipi/sembol-gom.py`). DejaVu Sans glifleri Bitstream Vera / DejaVu lisansıyla (serbest kullanım ve değiştirme) kullanılır.
+Oyunda kullanılan dosyalar `assets/fonts/` altındadır: bu iki ailenin, DejaVu Sans'tan alınmış ⚜ ✓ ★ gibi sembollerle genişletilmiş ve "Kronikler Cinzel" / "Kronikler Crimson" olarak yeniden adlandırılmış türevleridir (`scripts/yazitipi/sembol-gom.py`). Türkçe için "i"si yazı tipinin kendi noktalı glifine bağlanmış "Kronikler Cinzel TR" türevi de aynı betikle üretilir. DejaVu Sans glifleri Bitstream Vera / DejaVu lisansıyla (serbest kullanım ve değiştirme) kullanılır.
 
 OFL tam metni paketlerin `LICENSE_FONT` dosyalarındadır (`node_modules/@expo-google-fonts/*/LICENSE_FONT`).
 Yazı tipleri değiştirilmeden, uygulamaya gömülü olarak dağıtılır; ayrı satılmaz (OFL buna izin verir).

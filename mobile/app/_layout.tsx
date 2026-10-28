@@ -32,6 +32,8 @@ export default function RootLayout() {
   const [loaded, fontError] = useFonts({
     Cinzel_400Regular: require("../assets/fonts/Cinzel_400Regular.ttf"),
     Cinzel_700Bold: require("../assets/fonts/Cinzel_700Bold.ttf"),
+    Cinzel_400Regular_TR: require("../assets/fonts/Cinzel_400Regular_TR.ttf"),
+    Cinzel_700Bold_TR: require("../assets/fonts/Cinzel_700Bold_TR.ttf"),
     CrimsonText_400Regular: require("../assets/fonts/CrimsonText_400Regular.ttf"),
     CrimsonText_400Regular_Italic: require("../assets/fonts/CrimsonText_400Regular_Italic.ttf"),
   });
