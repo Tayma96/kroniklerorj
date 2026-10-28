@@ -1,7 +1,7 @@
 // Ana sayfa — claude-paket mockup (ekran 1) ölçüleriyle.
 // Ölçüler mockup'ın 476 px genişliğindeki ekranından 390 pt'ye (×0.82) çevrilmiştir; tek ekrana sığar.
 import type { ReactNode } from "react";
-import { View, Text, Image, Pressable, StyleSheet, type ImageSourcePropType } from "react-native";
+import { View, Text, Image, Pressable, StyleSheet, useWindowDimensions, type ImageSourcePropType } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Path, Circle } from "react-native-svg";
 import { GameIcon } from "./icons";
@@ -53,6 +53,7 @@ export function MkPanelHeader({ title, right, rtl }: { title: string; right?: Re
 // Sahne: yaş × mevsim kahraman resmi; başlık açık gökyüzünde koyu yazı.
 export function MkHero({ source, topInset, seasonIcon, title, sub, rtl, onBook, onSettings, bookLabel, settingsLabel }: { source: ImageSourcePropType; topInset: number; seasonIcon: string; title: string; sub: string; rtl: boolean; onBook: () => void; onSettings: () => void; bookLabel: string; settingsLabel: string }) {
   const ink = "#1C130A", halo = "rgba(255,246,228,0.95)";
+  const narrow = useWindowDimensions().width < 360;
   return <View style={{ height: MK.heroH + topInset, overflow: "hidden" }}>
     <Image accessible={false} source={source} resizeMode="cover" style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%" }} />
     <LinearGradient pointerEvents="none" colors={["rgba(255,248,232,0.30)", "rgba(255,248,232,0)", "rgba(21,16,10,0)", "#15100A"]} locations={[0, 0.28, 0.78, 1]} style={StyleSheet.absoluteFill} />
@@ -62,7 +63,7 @@ export function MkHero({ source, topInset, seasonIcon, title, sub, rtl, onBook, 
       <View style={{ flex: 1, minWidth: 0, alignItems: rtl ? "flex-end" : "flex-start" }}>
         {/* Tarih satırı başlığın tam altında ortalı (mockup) */}
         <View style={{ alignItems: "center", maxWidth: "100%" }}>
-          <Text accessibilityRole="header" numberOfLines={1} adjustsFontSizeToFit style={{ fontFamily: F.display, fontSize: 28, lineHeight: 33, color: ink, textShadowColor: halo, textShadowRadius: 8 }}>{title}</Text>
+          <Text accessibilityRole="header" numberOfLines={1} adjustsFontSizeToFit style={{ fontFamily: F.display, fontSize: narrow ? 22 : 28, lineHeight: narrow ? 27 : 33, color: ink, textShadowColor: halo, textShadowRadius: 8 }}>{title}</Text>
           <Text style={{ fontFamily: F.serif, fontSize: 13, lineHeight: 16, color: "#24180C", textShadowColor: halo, textShadowRadius: 6 }}>{sub}</Text>
         </View>
       </View>
@@ -74,6 +75,7 @@ export function MkHero({ source, topInset, seasonIcon, title, sub, rtl, onBook, 
 
 // Kimlik: 84 pt portre sahneden 33 pt taşar; sağında ad, meslek, çizgi ve dört gösterge.
 export function MkIdentity({ age, gender, name, role, stats, rtl, onPortrait, portraitLabel }: { age: number; gender: "erkek" | "kadın"; name: string; role: string; stats: { icon: string; label: string; value: string; tone?: string }[]; rtl: boolean; onPortrait: () => void; portraitLabel: string }) {
+  const narrow = useWindowDimensions().width < 360;
   return <View style={{ marginTop: -40, paddingHorizontal: 16, flexDirection: rtl ? "row-reverse" : "row", alignItems: "flex-start", gap: 12, marginBottom: 10 }}>
     <Pressable accessibilityRole="button" accessibilityLabel={portraitLabel} onPress={onPortrait} style={{ width: 88, height: 88, borderRadius: 44, padding: 2, backgroundColor: "#0E0A06", borderWidth: 2, borderColor: MK.frameHi, shadowColor: "#000", shadowOpacity: 0.6, shadowRadius: 6, elevation: 6 }}>
       <Portre age={age} gender={gender} size={80} ring={false} />
@@ -82,14 +84,14 @@ export function MkIdentity({ age, gender, name, role, stats, rtl, onPortrait, po
       <Text numberOfLines={1} adjustsFontSizeToFit style={{ fontFamily: F.serif, fontSize: 18, lineHeight: 21, color: "#F4E8CF" }}>{name}</Text>
       <Text numberOfLines={1} style={{ fontFamily: F.serif, fontSize: 13, lineHeight: 16, color: MK.muted }}>{role}</Text>
       <View style={{ height: 1, backgroundColor: "rgba(201,162,78,0.45)", marginTop: 6, marginBottom: 6 }} />
-      <View style={{ flexDirection: rtl ? "row-reverse" : "row" }}>
-        {stats.map((s, i) => <View key={s.label} accessible accessibilityLabel={`${s.label}: ${s.value}`} style={{ flex: 1, minWidth: 0, flexDirection: rtl ? "row-reverse" : "row", alignItems: "center", gap: 4, paddingHorizontal: 3, borderLeftWidth: !rtl && i ? 1 : 0, borderRightWidth: rtl && i ? 1 : 0, borderColor: "rgba(201,162,78,0.3)" }}>
+      <View style={{ flexDirection: rtl ? "row-reverse" : "row", flexWrap: narrow ? "wrap" : "nowrap", rowGap: 6 }}>
+        {stats.map((s, i) => { const sep = narrow ? i % 2 === 1 : i > 0; return <View key={s.label} accessible accessibilityLabel={`${s.label}: ${s.value}`} style={{ flex: narrow ? undefined : 1, width: narrow ? "50%" : undefined, minWidth: 0, flexDirection: rtl ? "row-reverse" : "row", alignItems: "center", gap: 4, paddingHorizontal: 3, borderLeftWidth: !rtl && sep ? 1 : 0, borderRightWidth: rtl && sep ? 1 : 0, borderColor: "rgba(201,162,78,0.3)" }}>
           <GameIcon name={s.icon} size={16} color={s.tone || MK.gold} />
           <View style={{ minWidth: 0, flexShrink: 1 }}>
             <Text numberOfLines={1} style={{ fontFamily: F.serif, fontSize: 10, lineHeight: 12, color: MK.muted }}>{s.label}</Text>
             <Text numberOfLines={1} adjustsFontSizeToFit style={{ fontFamily: F.serif, fontSize: 14, lineHeight: 16, color: s.tone || "#F4E8CF" }}>{s.value}</Text>
           </View>
-        </View>)}
+        </View>; })}
       </View>
     </View>
   </View>;

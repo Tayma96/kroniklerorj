@@ -71,7 +71,7 @@ export function ListRow({ icon, title, sub, right, onPress, tone = C.gold, first
   const body = <>
     {icon && <View style={{ width: 34, alignItems: "center" }}><GameIcon name={icon} size={boxed ? 26 : 20} color={tone} /></View>}
     <View style={{ flex: 1, minWidth: 0 }}>
-      <Text style={{ fontFamily: F.serif, fontSize: boxed ? 20 : T.body, lineHeight: boxed ? 24 : T.line, color: boxed ? "#F6EAD0" : C.parchment }}>{title}</Text>
+      <Text style={{ fontFamily: F.serif, fontSize: boxed ? 16 : T.body, lineHeight: boxed ? 20 : T.line, color: boxed ? "#F6EAD0" : C.parchment }}>{title}</Text>
       {!!sub && <Text style={{ fontFamily: F.serif, fontSize: 14, lineHeight: 20, color: C.parchmentMuted }}>{sub}</Text>}
     </View>
     {right ?? (onPress ? <Text style={{ fontFamily: F.display, fontSize: 22, color: C.gold }}>{rtl ? "‹" : "›"}</Text> : null)}
