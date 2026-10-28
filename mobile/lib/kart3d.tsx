@@ -310,24 +310,25 @@ function FirsatKarti({ opp, statVal, onResolve, onPass, progress, onProgress }: 
   const k = useKart3D();
   const rk = opp.risk >= 0.55 ? { k: "high", c: C.blood } : opp.risk >= 0.35 ? { k: "mid", c: C.ember } : { k: "low", c: C.sage };
   const [phase, setPhase] = useState<"intro" | "play" | "result">(progress?.stage || "intro");
-  const [pos, setPos] = useState(0);
   const [success, setSuccess] = useState(progress?.success ?? false);
-  const dir = useRef(1);
   const stopped = useRef(false);
   const cikiyor = useRef(false);
-  // Başarı bölgesi: hüner büyütür, risk daraltır (orta noktada). Genişlik %12–%64.
-  const zoneW = Math.max(12, Math.min(64, 16 + statVal * 4 - opp.risk * 12));
-  const zoneStart = 50 - zoneW / 2, zoneEnd = 50 + zoneW / 2;
   // Sınav sırasında kart süzülmez: hüner anında el titremesin.
   useEffect(() => { k.calm(phase === "play"); }, [phase]);
-  // Oyun fazında işaretçiyi 0↔100 gezdir (saf JS — durdurunca değer kesin bilinir).
+  // Şans (eski ibre başarı alanının genişliği): hüner büyütür, risk küçültür. Oyuncu kararı bu oranı bilerek verir;
+  // refleks testi yok. "Üstlen"den sonra kısa bir tartı anı, ardından sonuç (bir kez atılır, kayda yazılır).
+  // Şans: hüner (özellik puanı) her puanda +5, risk en çok −30; %15–90 arası (ibrede elin çabukluğu yoktu, ortalama korunur).
+  const sans = Math.max(15, Math.min(90, Math.round(35 + statVal * 5 - opp.risk * 30)));
   useEffect(() => {
     if (phase !== "play") return;
-    stopped.current = false; dir.current = 1; setPos(0);
-    const id = setInterval(() => setPos((p) => { let n = p + dir.current * 3.4; if (n >= 100) { n = 100; dir.current = -1; } else if (n <= 0) { n = 0; dir.current = 1; } return n; }), 24);
-    return () => clearInterval(id);
+    stopped.current = false;
+    const id = setTimeout(() => {
+      if (stopped.current) return; stopped.current = true;
+      const ok = Math.random() * 100 < sans;
+      onProgress?.("result", ok); setSuccess(ok); setPhase("result"); hap(ok ? "success" : "error"); playEffect(ok ? "cip_kazanc" : "cip_kayip");
+    }, k.reduced ? 200 : 1100);
+    return () => clearTimeout(id);
   }, [phase]);
-  const onStop = () => { if (stopped.current) return; stopped.current = true; const ok = pos >= zoneStart && pos <= zoneEnd; onProgress?.("result", ok); setSuccess(ok); setPhase("result"); hap(ok ? "success" : "error"); playEffect(ok ? "cip_kazanc" : "cip_kayip"); };
   const kapat = (cb: () => void) => { if (cikiyor.current) return; cikiyor.current = true; k.exit(cb); };
   const pill = (txt: string, color: string, bg: string = C.bg, bd: string = C.border) => (
     <View style={{ backgroundColor: bg, borderWidth: 1, borderColor: bd, borderRadius: 20, paddingVertical: 4, paddingHorizontal: 11 }}>
@@ -351,6 +352,7 @@ function FirsatKarti({ opp, statVal, onResolve, onPass, progress, onProgress }: 
                   {pill(`${t("frs.reward")} ${opp.reward} ⚜`, C.gold)}
                   {pill(`${t("frs.risk." + rk.k)} ${t("frs.riskLabel")}`, rk.c, rk.c + "1A", rk.c + "66")}
                   {pill(`${t("frs.needStat")}: ${t("st." + opp.stat)}`, C.parchmentMuted)}
+                  {pill(applyParams(t("ahi.odds"), [sans]), sans >= 55 ? C.sage : sans >= 35 ? C.gold : C.ember, C.bg, C.borderHi)}
                 </View>
                 <View style={{ flexDirection: "row", gap: 10 }}>
                   <Pressable accessibilityRole="button" accessibilityLabel={t("frs.pass")} onPress={() => kapat(onPass)} style={{ flex: 1, paddingVertical: 13, borderRadius: 9, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.bg, alignItems: "center" }}>
@@ -363,18 +365,11 @@ function FirsatKarti({ opp, statVal, onResolve, onPass, progress, onProgress }: 
               </>
             )}
             {phase === "play" && (
-              <>
-                <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.gold, textAlign: "center", marginTop: 4 }}>{t("frs.skillTitle")}</Text>
-                <Text style={{ fontFamily: F.serif, fontSize: 13.5, color: C.parchmentMuted, textAlign: "center", marginTop: 8, marginBottom: 16, lineHeight: 19 }}>{t("frs.skillHint")}</Text>
-                {/* Sınav çubuğu: yeşil başarı bölgesi + gezen işaretçi */}
-                <View style={{ height: 28, borderRadius: 8, backgroundColor: C.parchment + "10", borderWidth: 1, borderColor: C.border, overflow: "hidden", justifyContent: "center" }}>
-                  <View style={{ position: "absolute", left: `${zoneStart}%`, width: `${zoneW}%`, top: 0, bottom: 0, backgroundColor: C.sage + "52", borderLeftWidth: 1, borderRightWidth: 1, borderColor: C.sage }} />
-                  <View style={{ position: "absolute", left: `${pos}%`, width: 3, top: -2, bottom: -2, backgroundColor: C.goldBright, marginLeft: -1.5 }} />
-                </View>
-                <Pressable accessibilityRole="button" accessibilityLabel={t("frs.stop")} onPress={onStop} style={{ marginTop: 18, paddingVertical: 14, borderRadius: 9, borderWidth: 1.5, borderColor: C.gold + "99", backgroundColor: C.gold, alignItems: "center" }}>
-                  <Text style={{ fontFamily: F.display, fontSize: 14, letterSpacing: 2, color: C.inkOnGold }}>{t("frs.stop")}</Text>
-                </Pressable>
-              </>
+              <View style={{ alignItems: "center", paddingVertical: 10 }}>
+                <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.gold, textAlign: "center", marginTop: 4 }}>{t("frs.rollTitle")}</Text>
+                <View style={{ marginTop: 18, marginBottom: 12 }}><GameIcon name="scales" size={44} color={C.goldBright} /></View>
+                <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchmentMuted, textAlign: "center" }}>{applyParams(t("ahi.odds"), [sans])}</Text>
+              </View>
             )}
             {phase === "result" && (
               <View style={{ alignItems: "center" }}>
