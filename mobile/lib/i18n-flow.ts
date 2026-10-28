@@ -32,6 +32,7 @@ const rows: Record<string, string[]> = {
   "rel.lineage": ["Soy ve Hanedan", "Lineage and House", "Linaje y casa", "Linhagem e casa", "النسب والبيت", "Род и дом"],
   "char.path": ["Yolun", "Your Path", "Tu camino", "Seu caminho", "طريقك", "Твой путь"],
   "dash.seeAllShort": ["Tümünü Gör", "See all", "Ver todo", "Ver tudo", "عرض الكل", "Все"],
+  "home.recentMore": ["Ay ilerledikçe hayatının gelişmeleri buraya yazılır.", "As the months pass, your life’s events are written here.", "Con el paso de los meses, aquí se escriben los sucesos de tu vida.", "Com o passar dos meses, os acontecimentos da sua vida ficam escritos aqui.", "مع مرور الأشهر تُكتب هنا أحداث حياتك.", "С каждым месяцем здесь записываются события твоей жизни."],
   "flow.lifeBook": ["Yaşam Defteri", "Life Journal", "Diario de vida", "Diário da vida", "سجل الحياة", "Дневник жизни"],
   "cra.order.title": ["Kasaba siparişleri", "Town orders", "Pedidos del pueblo", "Encomendas da vila", "طلبات البلدة", "Заказы города"],
   "paz.limit": ["Bu pazarlıkta daha ileri gitmiyor.", "The merchant will go no further on this deal.", "El mercader no cede más en este trato.", "O mercador não cede mais neste negócio.", "لن يتنازل التاجر أكثر في هذه الصفقة.", "Торговец больше не уступит в этой сделке."],

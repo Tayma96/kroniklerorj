@@ -246,7 +246,7 @@ export default function Dashboard() {
   // geçmiş 250'ye dayanırken her aksiyonda 250 kartı yeniden çizip pano kasmasını önler;
   // tam geçmiş "Tümünü gör" → Tarih ekranında). Render maliyeti geçmiş büyüse de sabit kalır.
   const reversed = state.history.map((e, hIdx) => ({ e, hIdx })).reverse();
-  const events = reversed.filter(({ e }) => (tab === "onemli" ? onemliMi(e) : tab === "dunya" ? e.scope === "makro" : e.scope !== "makro")).slice(0, DASH_EVENTS);
+  const events = reversed.filter(({ e }) => (tab === "onemli" ? onemliMi(e) : tab === "dunya" ? e.scope === "makro" : e.scope !== "makro")).slice(0, DASH_EVENTS * 3); // panel boş alanı doldurduğu kadarını gösterir
 
   // Son gelişmeler: mockup'taki gibi ikon · cümle · zaman satırları; büyük anlar altınla vurgulanır.
   const EventCard = ({ e, last }: { e: GameEvent; hIdx: number; last: boolean }) => {
@@ -287,7 +287,7 @@ export default function Dashboard() {
   const alert = alerts[0] ? { ...alerts[0], sub: alerts.length > 1 ? `${alerts[0].sub} · +${alerts.length - 1}` : alerts[0].sub } : null;
 
   return (
-    <View style={{ flex: 1, backgroundColor: C.bg, paddingBottom: 52 }}>
+    <View style={{ flex: 1, backgroundColor: "#15100A", paddingBottom: 20 }}>
       {yarisK ? (
         <SinavKartiModal v={yarisK} onSec={(yol) => { const r = rakipYarisi(state, yol); if (r.basari != null) apply(() => r.state); return r.basari; }} onKapat={() => setYarisK(null)} />
       ) : milestone ? (
@@ -417,7 +417,7 @@ export default function Dashboard() {
         );
       })()}
 
-      <ScrollView style={{ flex: 1, backgroundColor: "#15100A" }} contentContainerStyle={{ paddingBottom: 100 }}>
+      <ScrollView style={{ flex: 1, backgroundColor: "#15100A" }} onLayout={(e) => setViewH(e.nativeEvent.layout.height)} contentContainerStyle={{ flexGrow: 1, minHeight: viewH || undefined, paddingBottom: 8 }}>
         <MkHero source={heroImage(p.age, cal.season)} topInset={insets.top} seasonIcon={SEASON_ICON[cal.season] || "sun"} title={t("flow.anotherMonth")} sub={`${cal.year}  •  ${t("cal.season." + SEASON_KEY[cal.season])}`} rtl={rtl}
           onBook={() => router.push("/oyun/tarih")} onSettings={() => router.push("/oyun/ayarlar")} bookLabel={t("flow.lifeBook")} settingsLabel={t("scr.ayarlar")} />
         <MkIdentity age={p.age} gender={p.gender} rtl={rtl} portraitLabel={t("tab.character")} onPortrait={() => router.push("/oyun/karakter")}
@@ -483,7 +483,7 @@ export default function Dashboard() {
         </View>
         <MkDecision />
         {!p.dead && alert && <View style={{ marginHorizontal: 0 }}><MkAlert icon={alert.icon} title={alert.title} sub={alert.sub} red={alert.tone !== C.gold} rtl={rtl} onPress={() => setSheet(alert.id)} /></View>}
-        <MkRecent title={t("flow.recent")} seeAll={t("dash.seeAllShort")} empty={t("dash.empty")} rtl={rtl} onSeeAll={() => router.push("/oyun/tarih")}
+        <MkRecent fill title={t("flow.recent")} seeAll={t("dash.seeAllShort")} empty={t("dash.empty")} more={t("home.recentMore")} rtl={rtl} onSeeAll={() => router.push("/oyun/tarih")}
           rows={events.map(({ e }) => { const cfg = EVT[e.type] || DEFAULT_EVT; return { key: String(e.q ?? e.day + e.text), icon: cfg.gi, when: timeAgo(e.day), text: renderEvt(e.k, e.text, e.p, lang, t, p.gender === "kadın"), fresh: !!freshMark && (e.q ?? 0) > freshMark.from, landmark: !!e.landmark }; })} />
         <MkBookRow title={t("flow.lifeBook")} sub={t("flow.lifeBookSub")} rtl={rtl} onPress={() => router.push("/oyun/tarih")} />
       </ScrollView>

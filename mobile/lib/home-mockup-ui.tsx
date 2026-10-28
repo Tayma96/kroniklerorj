@@ -1,6 +1,6 @@
 // Ana sayfa — claude-paket mockup (ekran 1) ölçüleriyle.
 // Ölçüler mockup'ın 476 px genişliğindeki ekranından 390 pt'ye (×0.82) çevrilmiştir; tek ekrana sığar.
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { View, Text, Image, Pressable, StyleSheet, useWindowDimensions, type ImageSourcePropType } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Path, Circle } from "react-native-svg";
@@ -17,7 +17,7 @@ import { C, F } from "./theme";
 export const MK = {
   side: 10,            // panel yan boşluğu
   heroH: 201,          // sahne yüksekliği (durum çubuğu hariç)
-  frame: "#8C6B37",    // panel çerçevesi
+  frame: "#A8823F",    // panel çerçevesi
   frameHi: "#C9A24E",  // ince altın vurgu
   panel: "#18120B",    // panel zemini
   ink: "#EDE1C8",      // gövde metni
@@ -160,17 +160,22 @@ export function MkAlert({ icon, title, sub, rtl, onPress, red = true }: { icon: 
   </Pressable>;
 }
 
-// Son Gelişmeler: başlık + iç kutuda 35 pt satırlar (ikon · cümle · zaman).
-export function MkRecent({ title, seeAll, empty, rows, rtl, onSeeAll }: { title: string; seeAll: string; empty: string; rows: { key: string; icon: string; text: string; when: string; fresh: boolean; landmark: boolean }[]; rtl: boolean; onSeeAll: () => void }) {
-  return <MkPanel style={{ marginBottom: 8 }}>
+// Son Gelişmeler: başlık + iç kutuda satırlar (ikon · cümle · zaman).
+// `fill`: ekranda kalan boşluğu kaplar ve oraya sığdığı kadar satır gösterir (mockup gibi sayfa tam dolar).
+export function MkRecent({ title, seeAll, empty, more = "", rows, rtl, onSeeAll, fill = false }: { title: string; seeAll: string; empty: string; more?: string; rows: { key: string; icon: string; text: string; when: string; fresh: boolean; landmark: boolean }[]; rtl: boolean; onSeeAll: () => void; fill?: boolean }) {
+  const [boxH, setBoxH] = useState(0);
+  const cap = fill && boxH ? Math.max(3, Math.floor(boxH / 40)) : 3; // satır başına ~40 pt
+  const shown = rows.slice(0, cap);
+  return <MkPanel style={{ marginBottom: 8, flex: fill ? 1 : undefined, minHeight: fill ? 150 : undefined }}>
     <MkPanelHeader title={title} rtl={rtl} right={<Pressable accessibilityRole="button" accessibilityLabel={seeAll} onPress={onSeeAll} hitSlop={10} style={{ minHeight: 30, justifyContent: "center" }}><Text style={{ fontFamily: F.serif, fontSize: 12, color: "#E9DDC4" }}>{seeAll}  {rtl ? "‹" : "›"}</Text></Pressable>} />
-    <View style={{ marginHorizontal: 12, marginTop: 2, marginBottom: 12, borderRadius: 3, borderWidth: 1, borderColor: "rgba(140,107,55,0.55)", backgroundColor: "#100C07" }}>
-      {rows.length ? rows.map((r, i) => <View key={r.key} style={{ flexDirection: rtl ? "row-reverse" : "row", alignItems: "center", gap: 10, minHeight: 35, paddingHorizontal: 10, paddingVertical: 6, borderTopWidth: i ? 1 : 0, borderColor: "rgba(140,107,55,0.35)" }}>
+    <View onLayout={fill ? (e) => setBoxH(e.nativeEvent.layout.height) : undefined} style={{ flex: fill ? 1 : undefined, marginHorizontal: 12, marginTop: 2, marginBottom: 12, borderRadius: 3, borderWidth: 1, borderColor: "rgba(140,107,55,0.55)", backgroundColor: "#100C07", overflow: "hidden" }}>
+      {shown.length ? shown.map((r, i) => <View key={r.key} style={{ flexDirection: rtl ? "row-reverse" : "row", alignItems: "center", gap: 10, minHeight: 38, paddingHorizontal: 10, paddingVertical: 6, borderTopWidth: i ? 1 : 0, borderColor: "rgba(140,107,55,0.35)" }}>
         <View style={{ width: 22, alignItems: "center" }}><GameIcon name={r.icon} size={17} color={r.landmark ? C.goldBright : MK.gold} /></View>
-        <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 12.5, lineHeight: 16, color: r.landmark ? C.goldBright : MK.ink }}>{r.text}</Text>
+        <Text numberOfLines={2} style={{ flex: 1, fontFamily: F.serif, fontSize: 12.5, lineHeight: 16, color: r.landmark ? C.goldBright : MK.ink }}>{r.text}</Text>
         {r.fresh && <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: C.goldBright }} />}
         <Text style={{ fontFamily: F.serif, fontSize: 10.5, color: MK.muted }}>{r.when}</Text>
       </View>) : <Text style={{ fontFamily: F.serif, fontSize: 12.5, color: MK.muted, padding: 10 }}>{empty}</Text>}
+      {fill && shown.length > 0 && shown.length < cap && <Text style={{ marginTop: "auto", padding: 10, textAlign: "center", fontFamily: F.serifItalic, fontSize: 12, color: "rgba(185,165,127,0.65)" }}>{more}</Text>}
     </View>
   </MkPanel>;
 }
