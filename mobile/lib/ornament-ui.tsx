@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { View, Text, Image, ImageSourcePropType, StyleSheet } from "react-native";
+import { View, Text, Image, ImageSourcePropType, StyleSheet, useWindowDimensions } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { GameIcon } from "./icons";
 import { DesignPressable } from "./design-pressable";
@@ -101,16 +101,18 @@ export function AlertBanner({ icon, title, sub, onPress, tone = C.blood, rtl = f
 
 // Dikey çizgilerle ayrılmış gösterge şeridi (ikon, etiket, değer; isteğe bağlı çubuk).
 export function StatStrip({ items, rtl = false }: { items: { icon: string; label: string; value: string; pct?: number; tone?: string }[]; rtl?: boolean }) {
-  return <View style={{ flexDirection: rtl ? "row-reverse" : "row", alignItems: "stretch" }}>
-    {items.map((it, i) => <View key={it.label} accessible accessibilityLabel={`${it.label}: ${it.value}`} style={{ flex: 1, minWidth: 0, flexDirection: rtl ? "row-reverse" : "row", alignItems: "center", gap: 6, paddingHorizontal: 6, borderLeftWidth: !rtl && i ? 1 : 0, borderRightWidth: rtl && i ? 1 : 0, borderColor: C.border }}>
-      <GameIcon name={it.icon} size={22} color={it.tone || C.gold} />
+  const { width } = useWindowDimensions();
+  const grid = width < 360 && items.length > 3; // dar ekranda dört gösterge 2×2 dizilir; değer kesilmez
+  return <View style={{ flexDirection: rtl ? "row-reverse" : "row", flexWrap: grid ? "wrap" : "nowrap", alignItems: "stretch", rowGap: grid ? 10 : 0 }}>
+    {items.map((it, i) => { const sep = grid ? i % 2 === 1 : i > 0; return <View key={it.label} accessible accessibilityLabel={`${it.label}: ${it.value}`} style={{ flex: grid ? undefined : 1, width: grid ? "50%" : undefined, minWidth: 0, flexDirection: rtl ? "row-reverse" : "row", alignItems: "center", gap: 6, paddingHorizontal: 6, borderLeftWidth: !rtl && sep ? 1 : 0, borderRightWidth: rtl && sep ? 1 : 0, borderColor: C.border }}>
+      <GameIcon name={it.icon} size={width < 360 ? 18 : 22} color={it.tone || C.gold} />
       <View style={{ flex: 1, minWidth: 0 }}>
         <Text numberOfLines={1} style={{ fontFamily: F.serif, fontSize: 12, lineHeight: 15, color: C.parchmentMuted }}>{it.label}</Text>
-        <Text numberOfLines={1} adjustsFontSizeToFit style={{ fontFamily: F.display, fontSize: 16, lineHeight: 21, color: it.tone || C.parchment }}>{it.value}</Text>
+        <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={{ fontFamily: F.display, fontSize: 16, lineHeight: 21, color: it.tone || C.parchment }}>{it.value}</Text>
         {it.pct != null && <View style={{ height: 4, marginTop: 3, borderRadius: 2, backgroundColor: C.border, overflow: "hidden" }}>
           <LinearGradient start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} colors={[C.goldDim, it.tone || C.gold]} style={{ width: `${Math.max(0, Math.min(100, it.pct))}%`, height: 4 }} />
         </View>}
       </View>
-    </View>)}
+    </View>; })}
   </View>;
 }

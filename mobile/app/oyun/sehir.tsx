@@ -68,8 +68,8 @@ export default function Sehir() {
         <View style={{ height: 12 }} />
         <OrnatePanel title={t("city.status")} icon="sun">
           <StatStrip rtl={lang === "ar"} items={[
-            { icon: "shield", label: t("diyar.security"), value: `${security} / 100`, pct: security, tone: security < 35 ? C.blood : undefined },
-            { icon: "coins", label: t("diyar.prosperity"), value: `${prosperity} / 100`, pct: prosperity, tone: prosperity < 35 ? C.ember : undefined },
+            { icon: "shield", label: t("diyar.security"), value: String(security), pct: security, tone: security < 35 ? C.blood : undefined },
+            { icon: "coins", label: t("diyar.prosperity"), value: String(prosperity), pct: prosperity, tone: prosperity < 35 ? C.ember : undefined },
             { icon: "family", label: t("soc.recog"), value: yuzdeL(Math.round(pp.recog * 100), lang), pct: pp.recog * 100 },
           ]} />
           {/* Memleket / gurbet + halkın algısı (tanınma sistemi) */}

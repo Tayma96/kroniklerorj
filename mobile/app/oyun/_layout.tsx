@@ -46,6 +46,7 @@ function AdvanceFab({ bottom }: { bottom: number }) {
   const { snapshot, guestId, setReady, syncPlayer } = useMp();
   const { t } = useI18n();
   const reduced = useSadeMod();
+  const narrow = useWindowDimensions().width < 360;
   const [readyOpt, setReadyOpt] = useState<boolean | null>(null);
   const pulse = useSharedValue(1);
   useEffect(() => {
@@ -130,7 +131,7 @@ function AdvanceFab({ bottom }: { bottom: number }) {
         </Animated.View>
         {/* Çekirdek eylem ikon-only kalmasın: mikro etiket (a11y metniyle aynı anahtar) */}
         {/* Uzun dillerde (AVANZAR EL MES) etiket yandaki sekme simgelerine taşmasın: düğme sütununa sığdırılır */}
-        <Text style={{ width: 100, textAlign: "center", fontFamily: F.display, fontSize: 12, lineHeight: 16, color: C.gold, marginTop: 3 }}>{t(waiting ? "flow.pending" : "adv.kisa")}</Text>
+        <Text numberOfLines={2} style={{ width: narrow ? 80 : 100, textAlign: "center", fontFamily: F.display, fontSize: narrow ? 10 : 12, lineHeight: narrow ? 13 : 16, color: C.gold, marginTop: 3 }}>{t(waiting ? "flow.pending" : "adv.kisa")}</Text>
 
       </View>
     </View>
@@ -198,7 +199,7 @@ export default function OyunLayout() {
         tabBarActiveTintColor: C.gold,
         tabBarInactiveTintColor: C.parchmentMuted,
         tabBarItemStyle: { flexGrow: 0, flexShrink: 0, width: tabWidth },
-        tabBarLabel: ({ color, children }) => <Text style={{ fontFamily: F.display, fontSize: 12, lineHeight: 16, color, textAlign: "center", paddingHorizontal: 2 }}>{children}</Text>,
+        tabBarLabel: ({ color, children }) => <Text numberOfLines={2} style={{ fontFamily: F.display, fontSize: width < 360 ? 9.5 : 12, lineHeight: width < 360 ? 12 : 16, color, textAlign: "center", paddingHorizontal: 1 }}>{children}</Text>,
       }}>
         <Tabs.Screen name="index" options={{ title: t("tab.home"), tabBarIcon: ({ focused }) => <TabIcon name="ana" focused={focused} /> }} />
         <Tabs.Screen name="karakter" options={{ title: t("tab.character"), tabBarItemStyle: { flexGrow: 0, flexShrink: 0, width: tabWidth, marginRight: 84 }, tabBarIcon: ({ focused }) => <TabIcon name="karakter" focused={focused} /> }} />
