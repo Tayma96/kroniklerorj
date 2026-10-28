@@ -69,6 +69,17 @@ Bu makinede GPU yok; 14-19B video modelleri burada çalışmaz.
   Gerçekçileştirme yapmaz.
 - **muapi.ai**: modelleri ücretli kredilerle sunan aracı; kullanılmaz.
 
+Neden burada çalışmaz: makine 4 çekirdek, 15 GB bellek, 24 GB boş disk, GPU yok. LTX-2.x
+19B parametre; ağırlıklar bile belleğe sığmaz. Kod ve ağırlık kurulabilir, çalıştırılamaz.
+
+Ücretsiz GPU yolları (ikisi de buradan otomatik sürülebilir):
+- **Kaggle not defteri** (önerilen): ücretsiz hesapta haftada ~30 saat T4×2/P100 GPU.
+  Kullanıcı Kaggle API anahtarını (`KAGGLE_USERNAME`, `KAGGLE_KEY`) ortam gizlisi olarak
+  verir; not defteri `kaggle kernels push` ile gönderilir, çıktı `kaggle kernels output`
+  ile alınır. İnternet erişimi için Kaggle hesabı telefonla doğrulanmış olmalı. T4'te
+  19B model için nicemlenmiş (fp8/GGUF) sürüm ve bellek boşaltma gerekir; ilk denemede ölç.
+- **Hugging Face Space**: `HF_TOKEN` ile `gradio_client`; kuyruk ve günlük kota.
+
 Hat: Blender'da hareket (manken yeterli) → MP4 sürücü video; tek gerçekçi karakter görseli →
 Wan 2.2 Animate → 3-5 sn klip → kare dizisi/WebP. Kota yetmezse Cycles render'ı esas alınır.
 
