@@ -20,7 +20,13 @@
 - Ana ekranda eylemler (çalış/yaş uğraşları) geçmiş kaydının önüne alındı.
 - Tarayıcı botu (scratchpad, depoda yok) 400 ay hatasız oynadı. Gerçek cihaz/APK denemesi yapılmadı.
 
+## 2. tur (kullanıcı geri bildirimi)
+- Ana ekran: tam ekran mevsim sahnesi + kimlik kartı + gündem madalyonları; karar/emek/uğraş/gündem/günlük alttan açılan panellerde (`lib/home-hud.tsx`). Alt menü madalyonlu, ahşap-bronz. Alt sayfalar kendi sahne fotoğrafı üstünde (`ScreenFresk`).
+- ⚜ ✓ ★ vb. sembol ve bayrak emojileri: yazı tiplerine gömüldü (`scripts/yazitipi/sembol-gom.py` → `assets/fonts`), bayraklar dil koduna döndü.
+- Savaş/3D/sayfa düzeni araştırması ve sıra: `docs/SAVAS_3D_VE_SAYFA_PLANI.md`. Kullanıcı smoke'u en sona bıraktı.
+
 ## Açık işler
+- Sıradaki: alt menüyü mockup düzenine (Ana · Şehir · İlerle · Kişiler · Defter) geçir, Menü içeriğini dağıt; ibre mini oyununu kaldır; dövüşe niyet+nefes; Skia meydan muharebesi.
 - Denge: rastgele oynayan bot 40 yaşında nam 100'e ulaşıyor; nam/para eğrisi gözden geçirilmeli. Sofra kartı sık çıkıyorsa aylık otomatik ev sofrası düşünülebilir.
 - Ana ekrandaki eski stil şeritler (zindan, destan, kervan, açık hesaplar) ve diğer alt sayfa iç kartları ortak bileşene taşınabilir.
 - Aile/valilik dilimleri (19 Ekim) ve `game.ts`teki 254 `Math.random()` göçü sürüyor; ayrıntı `docs/OYNANIS_DERINLIGI.md`, `docs/AUDIT.md`.
