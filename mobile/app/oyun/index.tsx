@@ -745,12 +745,6 @@ export default function Dashboard() {
         </Pressable>
       )}
 
-      <OrnatePanel title={t("flow.recent")} icon="sun" right={<Pressable accessibilityRole="button" accessibilityLabel={t("dash.seeAll")} onPress={() => router.push("/oyun/tarih")} style={{ minHeight: L.touch, justifyContent: "center" }}><Text style={{ fontFamily: F.serif, fontSize: 14, color: C.gold }}>{t("dash.seeAll")} ›</Text></Pressable>}>
-        {events.length ? events.map(({ e, hIdx }, index) => <View key={e.q ?? hIdx}>{EventCard({ e, hIdx, last: index === events.length - 1 })}</View>) : <Text style={{ fontFamily: F.serif, fontSize: T.body, lineHeight: T.line, color: C.parchmentMuted }}>{t("dash.empty")}</Text>}
-      </OrnatePanel>
-      <View style={{ marginBottom: 12 }}>
-        <ListRow boxed first icon="roman" title={t("flow.lifeBook")} sub={t("flow.lifeBookSub")} rtl={lang === "ar"} onPress={() => router.push("/oyun/tarih")} />
-      </View>
       {!p.dead && (p.age >= 13 && p.profession !== "işsiz") ? (
         <OrnatePanel title={t("flow.workTitle")} icon="calis">
           {/* Çalışma stili seçici (Vercel work_rework.py) */}
@@ -783,9 +777,9 @@ export default function Dashboard() {
         ];
         const onChild = (k: ChildAct) => { if (!can) return; hap("tap"); const r = childAction(state, k); if (!r.blocked) apply(() => r.state); };
         return (
-          <View style={{ marginBottom: 10, padding: 12, borderRadius: 5, borderWidth: 1, borderColor: "rgba(201,168,76,0.3)", backgroundColor: "rgba(201,168,76,0.06)" }}>
+          <View style={{ marginBottom: 12, padding: 14, borderRadius: 6, borderWidth: 1, borderColor: C.borderHi, borderTopColor: "rgba(201,168,76,0.3)", borderTopWidth: 2, backgroundColor: C.card }}>
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 9 }}>
-              <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1.5, color: C.gold, textTransform: "uppercase" }}>{t("child.title")}</Text>
+              <Text style={{ flexShrink: 1, fontFamily: F.display, fontSize: 17, color: C.gold }}>{t("child.title")}</Text>
               <View style={{ flexDirection: "row", gap: 4 }}>
                 {Array.from({ length: maxPlayEnergy(p.age) }).map((_, i) => (
                   <View key={i} style={{ width: 9, height: 9, borderRadius: 2, transform: [{ rotate: "45deg" }], backgroundColor: i < en ? C.gold : "transparent", borderWidth: 1, borderColor: i < en ? C.gold : C.border }} />
@@ -824,9 +818,9 @@ export default function Dashboard() {
         ];
         const onYouth = (k: GencAct) => { if (!can) return; hap("tap"); const r = youthAction(state, k); if (!r.blocked) apply(() => r.state); };
         return (
-          <View style={{ marginBottom: 10, padding: 12, borderRadius: 5, borderWidth: 1, borderColor: "rgba(127,166,106,0.32)", backgroundColor: "rgba(127,166,106,0.06)" }}>
+          <View style={{ marginBottom: 12, padding: 14, borderRadius: 6, borderWidth: 1, borderColor: C.borderHi, borderTopColor: "rgba(127,166,106,0.32)", borderTopWidth: 2, backgroundColor: C.card }}>
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 9 }}>
-              <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1.5, color: C.sage, textTransform: "uppercase" }}>{t("genc.title")}</Text>
+              <Text style={{ flexShrink: 1, fontFamily: F.display, fontSize: 17, color: C.sage }}>{t("genc.title")}</Text>
               <View style={{ flexDirection: "row", gap: 4 }}>
                 {Array.from({ length: maxPlayEnergy(p.age) }).map((_, i) => (
                   <View key={i} style={{ width: 9, height: 9, borderRadius: 2, transform: [{ rotate: "45deg" }], backgroundColor: i < en ? C.sage : "transparent", borderWidth: 1, borderColor: i < en ? C.sage : C.border }} />
@@ -861,9 +855,9 @@ export default function Dashboard() {
         ];
         const onAdult = (k: AdultAct) => { if (!can) return; hap("tap"); const r = adultAction(state, k); if (!r.blocked) { if (k === "ibadet") playNey(); apply(() => r.state); } };
         return (
-          <View style={{ marginBottom: 10, padding: 12, borderRadius: 5, borderWidth: 1, borderColor: "rgba(111,160,192,0.3)", backgroundColor: "rgba(111,160,192,0.05)" }}>
+          <View style={{ marginBottom: 12, padding: 14, borderRadius: 6, borderWidth: 1, borderColor: C.borderHi, borderTopColor: "rgba(111,160,192,0.3)", borderTopWidth: 2, backgroundColor: C.card }}>
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 9 }}>
-              <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1.5, color: C.frost, textTransform: "uppercase" }}>{t("adult.title")}</Text>
+              <Text style={{ flexShrink: 1, fontFamily: F.display, fontSize: 17, color: C.frost }}>{t("adult.title")}</Text>
               <View style={{ flexDirection: "row", gap: 4 }}>
                 {Array.from({ length: maxStudyEnergy(p.age) }).map((_, i) => (
                   <View key={i} style={{ width: 9, height: 9, borderRadius: 2, transform: [{ rotate: "45deg" }], backgroundColor: i < en ? C.frost : "transparent", borderWidth: 1, borderColor: i < en ? C.frost : C.border }} />
@@ -897,9 +891,9 @@ export default function Dashboard() {
         ];
         const onElder = (k: ElderAct) => { if (!can) return; hap("tap"); const r = elderAction(state, k); if (!r.blocked) { if (k === "tekke") playNey(); apply(() => r.state); } };
         return (
-          <View style={{ marginBottom: 10, padding: 12, borderRadius: 5, borderWidth: 1, borderColor: "rgba(123,79,175,0.3)", backgroundColor: "rgba(123,79,175,0.06)" }}>
+          <View style={{ marginBottom: 12, padding: 14, borderRadius: 6, borderWidth: 1, borderColor: C.borderHi, borderTopColor: "rgba(123,79,175,0.3)", borderTopWidth: 2, backgroundColor: C.card }}>
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 9 }}>
-              <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1.5, color: C.ink, textTransform: "uppercase" }}>{t("elder.title")}</Text>
+              <Text style={{ flexShrink: 1, fontFamily: F.display, fontSize: 17, color: C.ink }}>{t("elder.title")}</Text>
               <View style={{ flexDirection: "row", gap: 4 }}>
                 {Array.from({ length: maxStudyEnergy(p.age) }).map((_, i) => (
                   <View key={i} style={{ width: 9, height: 9, borderRadius: 2, transform: [{ rotate: "45deg" }], backgroundColor: i < en ? C.ink : "transparent", borderWidth: 1, borderColor: i < en ? C.ink : C.border }} />
@@ -928,6 +922,12 @@ export default function Dashboard() {
         </Pressable>
       )}
 
+      <OrnatePanel title={t("flow.recent")} icon="sun" right={<Pressable accessibilityRole="button" accessibilityLabel={t("dash.seeAll")} onPress={() => router.push("/oyun/tarih")} style={{ minHeight: L.touch, justifyContent: "center" }}><Text style={{ fontFamily: F.serif, fontSize: 14, color: C.gold }}>{t("dash.seeAll")} ›</Text></Pressable>}>
+        {events.length ? events.map(({ e, hIdx }, index) => <View key={e.q ?? hIdx}>{EventCard({ e, hIdx, last: index === events.length - 1 })}</View>) : <Text style={{ fontFamily: F.serif, fontSize: T.body, lineHeight: T.line, color: C.parchmentMuted }}>{t("dash.empty")}</Text>}
+      </OrnatePanel>
+      <View style={{ marginBottom: 12 }}>
+        <ListRow boxed first icon="roman" title={t("flow.lifeBook")} sub={t("flow.lifeBookSub")} rtl={lang === "ar"} onPress={() => router.push("/oyun/tarih")} />
+      </View>
       {/* ── AKSİYONLAR ── */}
       </ScrollView>
     </View>
