@@ -42,6 +42,7 @@ export const SCREEN_DESIGNS: readonly ScreenDesign[] = [
   page("/oyun/menu", "menu.title", "system", "ev_varlikli", "compass"),
   page("/oyun/ayarlar", "settings.title", "system", "medrese", "ayarlar"),
   page("/oyun/sss", "scr.sss", "system", "medrese", "book"),
+  page("/deneme-3d", "d3.title", "system", "medrese", "crossed-swords"),
   page("/cok-oyunculu", "mp.title", "system", "cami_avlu", "family"),
   page("/cok-oyunculu/oyun", "mp.realm", "realm", "ev_varlikli", "banner"),
   page("/cok-oyunculu/harita", "mp.map.title", "journey", "gurbet_yol", "map"),

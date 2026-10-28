@@ -104,5 +104,12 @@ const rows: Record<string, string[]> = {
   "cra.order.empty": ["Bu şehirde şu an uygun bir zanaat siparişi yok.", "There are no suitable craft orders in this town right now.", "Ahora no hay pedidos artesanales adecuados en esta ciudad.", "Não há encomendas de ofício adequadas nesta vila agora.", "لا توجد طلبات حرفية مناسبة في هذه البلدة الآن.", "Сейчас в этом городе нет подходящих ремесленных заказов."],
   "evj.workshopOrderAccepted": ["Kasaba siparişini kabul ettin: %1, %2 için.", "Accepted the town order for %1 in %2.", "Aceptaste el pedido local de %1 en %2.", "Aceitaste a encomenda local de %1 em %2.", "قُبل طلب البلدة لصنع %1 في %2.", "Принят городской заказ на %1 для города %2."],
   "evj.workshopOrderDone": ["%1 siparişini %3'e teslim ettin (+%2 akçe).", "Delivered %1 to %3 (+%2 coins).", "Entregaste %1 en %3 (+%2 monedas).", "Entregaste %1 em %3 (+%2 moedas).", "سُلّم %1 إلى %3 (+%2 أقجة).", "Заказ %1 доставлен в город %3 (+%2 акче)."],
+  "d3.title": ["3D deneme", "3D test", "Prueba 3D", "Teste 3D", "تجربة ثلاثية الأبعاد", "3D-тест"],
+  "d3.desc": ["Gerçek zamanlı 3D savaşçı ve animasyon denemesi", "Real-time 3D warrior and animation test", "Prueba en tiempo real de un guerrero 3D y sus animaciones", "Teste em tempo real de um guerreiro 3D e suas animações", "تجربة فورية لمحارب ثلاثي الأبعاد وحركاته", "Тест 3D-воина и анимаций в реальном времени"],
+  "d3.bekle": ["Bekle", "Idle", "Reposo", "Repouso", "انتظار", "Ожидание"],
+  "d3.saldir": ["Saldır", "Attack", "Atacar", "Atacar", "هجوم", "Атака"],
+  "d3.savustur": ["Savuştur", "Parry", "Desviar", "Aparar", "صدّ", "Парировать"],
+  "d3.fps": ["Çizim %1 FPS · JS %2 FPS", "Render %1 FPS · JS %2 FPS", "Renderizado %1 FPS · JS %2 FPS", "Renderização %1 FPS · JS %2 FPS", "الرسم %1 FPS · JS %2 FPS", "Отрисовка %1 FPS · JS %2 FPS"],
+  "d3.loading": ["Model yükleniyor…", "Loading model…", "Cargando modelo…", "Carregando modelo…", "جارٍ تحميل النموذج…", "Загрузка модели…"],
 };
 export const FLOW_METIN = Object.fromEntries((["tr", "en", "es", "pt", "ar", "ru"] as Lang[]).map((lang, i) => [lang, Object.fromEntries(Object.entries(rows).map(([key, values]) => [key, values[i]]))])) as Record<Lang, Record<string, string>>;

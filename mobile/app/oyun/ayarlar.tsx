@@ -96,6 +96,16 @@ export default function Ayarlar() {
           <Text style={{ fontFamily: F.display, fontSize: 16, color: C.goldDim }}>›</Text>
         </Pressable>
 
+        {/* 3D deneme: gerçek zamanlı savaşçı ve animasyon geçişleri (react-native-filament) */}
+        <Pressable onPress={() => { hap("tap"); router.push("/deneme-3d"); }} style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 5, padding: 14, marginBottom: 14 }}>
+          <GameIcon name="crossed-swords" size={20} color={C.gold} />
+          <View style={{ flex: 1, paddingHorizontal: 8 }}>
+            <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.parchment }}>{t("d3.title")}</Text>
+            <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, marginTop: 3 }}>{t("d3.desc")}</Text>
+          </View>
+          <Text style={{ fontFamily: F.display, fontSize: 16, color: C.goldDim }}>›</Text>
+        </Pressable>
+
         {/* Dil */}
         <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.gold, marginBottom: 8, textTransform: "uppercase" }}>{t("menu.language")}</Text>
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
