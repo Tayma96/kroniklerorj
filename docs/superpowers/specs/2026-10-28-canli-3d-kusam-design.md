@@ -66,7 +66,23 @@ Konsey başta önceden işlenmiş katmanları önerdi; kullanıcının "Shadow F
 ## 7. Teknik tasarım
 
 ### 7.1 3D motoru
-<!-- ARAŞTIRMA AJANI SONUCUYLA DOLACAK: Filament mi three.js mi, Expo 56 / RN 0.85 uyumu, derleme hattı -->
+
+Depo: Expo 56.0.11, RN 0.85.3 (Yeni Mimari zorunlu), Reanimated 4.3.1 + worklets 0.8.3,
+Skia 2.6.2. APK, GitHub Actions'ta `expo prebuild` + `gradlew assembleRelease` (yalnız arm64)
+ile derlenir; EAS kullanılmaz. `metro.config.js` yok (GLB için eklenecek). `assets/` 81 MB.
+
+| | react-native-filament 1.11 (Margelo) | expo-gl + three.js 0.186 + R3F 9.8 |
+|---|---|---|
+| Çizim | Yerel, ayrı iş parçacığında (JS'i yormaz) | JS iş parçacığında (Hermes), oyun koduyla yarışır |
+| Animasyon | Deri bağlama + iki hareket arası yumuşak geçiş | Olgun karıştırma (`crossFadeTo`), çoklu katman |
+| Eşya | Kemiğe bağlama yok; tüm eşyalar tek GLB'de aynı iskelete bağlı, göster/gizle | Aynı iskeleti paylaşan çoklu SkinnedMesh |
+| Risk | RN 0.85'te denenmemiş; `worklets-core` ile Reanimated 4 çakışması; Expo çökme kayıtları | Android'de kenar yumuşatma (MSAA) yok; gömülü doku yükleme kırılgan |
+| APK etkisi | ~4 MB (iddia) | ~2-4 MB |
+
+**Karar:** önce Filament ile 1-2 günlük **teknik deneme** (Kapı 0), gerçek derleme hattında,
+gerçek telefonda: tek gövde + iki hareket + yumuşak geçiş. Çakışma çözülemezse three.js + R3F'ye
+geçilir (gölgesiz ya da yassı gölge, basit malzeme, ≤ 60 kemik, ≤ 1024 px ayrı dokular,
+düşük piksel oranı, dövüşte arayüz yeniden çizimini durdurma). Seçim deneme sonucuyla kesinleşir.
 
 ### 7.2 Varlık hattı (Blender, bu bulut makinesinde)
 
