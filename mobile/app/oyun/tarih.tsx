@@ -11,6 +11,7 @@ import { BackLabel, PageHeader, ScreenFresk } from "../../lib/ui";
 import { GameIcon } from "../../lib/icons";
 import { isReduceMotion } from "../../lib/perf";
 import { hap } from "../../lib/haptics";
+import { onemliMi } from "../../lib/game";
 
 // Büyük an tipleri → ikon (kroniğin gözle taranabilir kilometre taşları).
 const BIG_ICON: Record<string, string> = { taht: "crown", kan_davası: "crossed-swords", nesil_devri: "banner", "savaş_zafer": "trophy", "mülk_yangın": "flame", evlilik: "ring", "doğum": "baby", "ölüm": "tombstone" };
@@ -21,6 +22,8 @@ export default function Tarih() {
   const { t, lang } = useI18n();
   // Hayat Şeridi: dönüm noktalarını kare kare oynatan sinema perdesi (-1 kapalı).
   const [cine, setCine] = useState(-1);
+  // Süzgeç: önemli (sana değen) · günlük (kişisel) · dünya (makro). Ana sayfadan kaldırılan sekmeler burada.
+  const [filtre, setFiltre] = useState<"onemli" | "gunluk" | "dunya">("onemli");
   const { cine: cineParam } = useLocalSearchParams<{ cine?: string }>();
   const fade = useRef(new Animated.Value(0)).current;
   const marks = state ? state.history.filter((e) => e.landmark) : [];
@@ -37,7 +40,7 @@ export default function Tarih() {
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   // FlatList (sanallaştırma): 250 kartı tek seferde değil görünür pencere kadar çizer — düşük-uç cihazda takılma biter.
   // Anahtar en yeni uçtan sayılır ki yeni girdi eklenince eski kartların anahtarı kaymasın.
-  const events = [...state.history].reverse();
+  const events = [...state.history].reverse().filter((e) => filtre === "onemli" ? onemliMi(e) || e.type === "nesil_devri" : filtre === "dunya" ? e.scope === "makro" : e.scope !== "makro");
   return (
     <ScreenFresk style={{ paddingTop: insets.top }}>
       <View style={{ paddingHorizontal: 14, paddingVertical: 12 }}>
@@ -49,6 +52,15 @@ export default function Tarih() {
         contentContainerStyle={{ paddingHorizontal: 14, paddingBottom: insets.bottom + 90 }}
         ListHeaderComponent={<View>
           <PageHeader kicker={t("scr.tarih")} title={t("scr.tarih")} />
+          <View style={{ flexDirection: "row", gap: 6, marginBottom: 12 }}>
+            {([["onemli", "star", t("dash.tabImportant")], ["gunluk", "roman", t("dash.tabJournal")], ["dunya", "haberler", t("dash.tabWorld")]] as const).map(([k, ic, lbl]) => {
+              const on = filtre === k;
+              return <Pressable key={k} accessibilityRole="button" accessibilityState={{ selected: on }} accessibilityLabel={lbl} onPress={() => { hap("tap"); setFiltre(k); }} style={{ flex: 1, minHeight: 44, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, borderRadius: 6, borderWidth: 1, borderColor: on ? C.gold : C.border, backgroundColor: on ? "rgba(60,44,24,0.9)" : "rgba(20,14,8,0.7)" }}>
+                <GameIcon name={ic} size={14} color={on ? C.goldBright : C.parchmentMuted} />
+                <Text numberOfLines={1} style={{ fontFamily: F.display, fontSize: 12, color: on ? C.goldBright : C.parchmentMuted }}>{lbl}</Text>
+              </Pressable>;
+            })}
+          </View>
           {marks.length >= 3 && (
             <Pressable onPress={() => { hap("selection"); setCine(0); }} style={{ flexDirection: "row", alignItems: "center", gap: 8, alignSelf: "flex-start", paddingVertical: 9, paddingHorizontal: 14, borderRadius: 5, borderWidth: 1, borderColor: "rgba(201,168,76,0.55)", backgroundColor: "rgba(201,168,76,0.08)", marginBottom: 12 }}>
               <GameIcon name="hourglass" size={14} color={C.gold} />
@@ -56,6 +68,7 @@ export default function Tarih() {
             </Pressable>
           )}
         </View>}
+        ListEmptyComponent={<Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, textAlign: "center", marginTop: 20 }}>{t(filtre === "dunya" ? "dash.worldEmpty" : "dash.empty")}</Text>}
         initialNumToRender={16}
         windowSize={7}
         removeClippedSubviews

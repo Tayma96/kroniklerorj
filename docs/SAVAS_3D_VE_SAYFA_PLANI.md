@@ -8,7 +8,7 @@ doğru yere taşınsın. Bu belge karar önerisidir; uygulama sırası en altta.
 
 | Sistem | Dosya | Ne yapıyor | Sorun |
 |---|---|---|---|
-| Bireysel dövüş | `lib/combat.ts`, `app/oyun/savas.tsx` | Tur tabanlı taş-kağıt-makas: hamle / savuştur / özel / toparlan; duruş çarpanı; düşman arketipi (kaba, vahşi, usta, asker) ve fent payı. | Mekanik aslında sağlam ama yalnız düğme + metin. Rakibin niyeti görünmüyor; karar tahmin oyununa dönüyor. Görsel karşılık yok. |
+| Bireysel dövüş | `lib/combat.ts`, `app/oyun/savas.tsx` | Tur tabanlı taş-kağıt-makas: hamle / savuştur / özel / toparlan; duruş çarpanı; düşman arketipi ve fent payı. **Niyet sezme, nefes ve üstünlük (3/3 → bitiriş) zaten var.** | Mekanik sağlam; eksik olan görsel karşılık: düğme + metin. (Düzeltme: ilk sürümde niyet/nefes eksik sanılmıştı.) |
 | Ordu / cephe | `lib/army.ts`, `lib/army-ui.tsx` | Aylık cephe hamlesi: tut / ilerle / kurtar; düşman emri: hücum / ok / baskı. | Tek düğmelik aylık seçim. Birlik türü, arazi, kanat, moral akışı görünmüyor. |
 | Fırsat kartı | `lib/kart3d.tsx` (`FirsatKarti`) | Gezen işaretçiyi başarı alanında durdurma (zamanlama). | Kullanıcının beğenmediği "ibre" oyunu budur. Hüner/şans testi için zayıf ve tekrarlı. |
 
@@ -35,7 +35,7 @@ doğru yere taşınsın. Bu belge karar önerisidir; uygulama sırası en altta.
 
 ## 3. Önerilen tasarım
 
-### 3.1 Bireysel dövüş: "Oku, nefesini yönet, bitir"
+### 3.1 Bireysel dövüş: "Oku, nefesini yönet, bitir" (motor hazır; aşağıdakiler görsel ve ince ayar)
 
 1. Rakibin üstünde **niyet simgesi** (vuracak / savunacak / ağır vuruş hazırlıyor). Okunma payı mevcut `feint`
    ve oyuncunun savaş becerisinden gelir; usta rakipte niyet bazen "?" ya da yanıltıcıdır.
