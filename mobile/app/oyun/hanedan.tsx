@@ -47,6 +47,7 @@ export default function Hanedan() {
   const { state, apply } = useGame();
   const { lang, t } = useI18n();
   const [settleName, setSettleName] = useState("");
+  const [sekme, setSekme] = useState<"soy" | "taht" | "servet" | "hane">("soy");
   const [throneMsg, setThroneMsg] = useState<null | { ok: boolean; tick: number }>(null);
   const [campMsg, setCampMsg] = useState<null | { ok: boolean; tick: number; key?: string }>(null);
   const baseRivals = useMemo(() => (state ? (state.rivals ?? generateDynasties(state.seed)) : []), [state?.seed, state?.rivals]);
@@ -79,39 +80,18 @@ export default function Hanedan() {
       <ScrollView contentContainerStyle={{ paddingHorizontal: 14, paddingBottom: insets.bottom + 90 }}>
         <PageHeader kicker={t("dyn.kicker")} title={houseName} sub={t("dyn.rivalsHint")} />
 
-        {/* ── KAN DAVASI ── aktif dava: aşama, ısı ve oyuncu hamleleri (sulh / karşılık / meydan savaşı) */}
-        {state.feud && (() => {
-          const f = state.feud!;
-          const fname = rivalHouseName(f.nameIdx, lang);
-          const acted = f.act_turn === state.turn;
-          const cost = feudPeaceCost(state);
-          return (
-            <View style={{ backgroundColor: "rgba(160,48,42,0.08)", borderWidth: 1, borderColor: "rgba(160,48,42,0.5)", borderRadius: 5, padding: 14, marginBottom: 10 }}>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                <GameIcon name="crossed-swords" size={16} color={C.blood} />
-                <Text style={{ flex: 1, fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.blood }}>{t("feud.title").toUpperCase()}</Text>
-                <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchmentDim }}>{t("feud.stage" + f.stage)}</Text>
-              </View>
-              <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchment, marginTop: 8 }}>{applyParams(t("feud.body"), [fname])}</Text>
-              <View style={{ height: 5, borderRadius: 3, backgroundColor: "rgba(160,48,42,0.18)", marginTop: 10, overflow: "hidden" }}>
-                <View style={{ width: `${Math.min(100, f.heat)}%`, height: "100%", backgroundColor: C.blood }} />
-              </View>
-              <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, marginTop: 3 }}>{t("feud.heat")}: {f.heat}/100</Text>
-              <View style={{ flexDirection: "row", gap: 8, marginTop: 10 }}>
-                <Pressable disabled={acted || p.money < cost} onPress={() => { hap("tap"); apply((s) => feudSuePeace(s)); }} style={{ flex: 1, paddingVertical: 11, borderRadius: 5, borderWidth: 1, borderColor: "rgba(201,168,76,0.45)", backgroundColor: "rgba(201,168,76,0.08)", alignItems: "center", opacity: acted || p.money < cost ? 0.4 : 1 }}>
-                  <Text style={{ fontFamily: F.display, fontSize: 13, color: C.gold }}>{t("feud.sue")}</Text>
-                  <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchmentMuted, marginTop: 1 }}>{cost} ⚜</Text>
-                </Pressable>
-                <Pressable disabled={acted || p.age < 16} onPress={() => { hap("advance"); apply((s) => feudStrike(s)); }} style={{ flex: 1, paddingVertical: 11, borderRadius: 5, borderWidth: 1, borderColor: "rgba(160,48,42,0.55)", backgroundColor: "rgba(160,48,42,0.14)", alignItems: "center", opacity: acted || p.age < 16 ? 0.4 : 1 }}>
-                  <Text style={{ fontFamily: F.display, fontSize: 13, color: C.blood }}>{f.stage >= 3 ? t("feud.battle") : t("feud.strike")}</Text>
-                  <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchmentMuted, marginTop: 1 }}>{f.stage >= 3 ? t("feud.battleSub") : t("feud.strikeSub")}</Text>
-                </Pressable>
-              </View>
-              {acted && <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, marginTop: 7, textAlign: "center" }}>{t("feud.acted")}</Text>}
-            </View>
-          );
-        })()}
-
+        {/* Sekmeler: tek uzun sayfa yerine dört bölüm (soy · taht · servet · hanedanlar) */}
+        <View style={{ flexDirection: "row", gap: 6, marginBottom: 14 }}>
+          {([["soy", "family", t("dyn.tab.soy"), false], ["taht", "crown", t("dyn.tab.taht"), claimable || (p.crowned && !!state.divan)], ["servet", "coins", t("dyn.tab.servet"), false], ["hane", "banner", t("dyn.tab.hane"), !!state.feud || (state.dynastyOffers || []).length > 0]] as const).map(([k, ic, lbl, dot]) => {
+            const on = sekme === k;
+            return <Pressable key={k} accessibilityRole="button" accessibilityState={{ selected: on }} accessibilityLabel={lbl} onPress={() => { hap("tap"); setSekme(k); }} style={{ flex: 1, minHeight: 52, alignItems: "center", justifyContent: "center", gap: 3, borderRadius: 6, borderWidth: 1, borderColor: on ? C.gold : C.border, backgroundColor: on ? "rgba(60,44,24,0.92)" : "rgba(20,14,8,0.75)" }}>
+              <GameIcon name={ic} size={18} color={on ? C.goldBright : C.parchmentMuted} />
+              <Text numberOfLines={1} style={{ fontFamily: F.serif, fontSize: 13, color: on ? C.goldBright : C.parchmentDim }}>{lbl}</Text>
+              {dot && <View style={{ position: "absolute", top: 5, right: 7, width: 8, height: 8, borderRadius: 4, backgroundColor: "#D9473A" }} />}
+            </Pressable>;
+          })}
+        </View>
+        {sekme === "soy" && <>
         {/* ── HANEDAN MÜHRÜ ── */}
         <View style={{ backgroundColor: "rgba(201,168,76,0.07)", borderWidth: 1, borderColor: "rgba(201,168,76,0.4)", borderRadius: 5, padding: 18, alignItems: "center", marginBottom: 10 }}>
           <Image source={armaImage(p.surname || p.name)} style={{ width: 72, height: 72, borderRadius: 5, borderWidth: 1.5, borderColor: C.gold, marginBottom: 8 }} resizeMode="cover" />
@@ -184,6 +164,29 @@ export default function Hanedan() {
           );
         })}
 
+        {/* ── ATALAR ── */}
+        {past.length > 0 && (
+          <>
+            <SecTitle>{t("dyn.ancestors")}</SecTitle>
+            {[...past].reverse().map((a) => (
+              <View key={a.generation} style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderLeftColor: C.gold, borderLeftWidth: 2.5, borderRadius: 5, padding: 12, marginBottom: 8 }}>
+                <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                  <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchment }}>{a.name}</Text>
+                  <Text style={{ fontFamily: F.display, fontSize: 13, color: C.goldDim }}>{a.generation}. {t("misc.generation")}</Text>
+                </View>
+                <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchmentMuted, marginTop: 3 }}>
+                  {profL(a.profession)} · {t("dyn.passedAt").replace("%n", String(a.diedAge))} · {t("dyn.fameWord")} {a.fame}
+                </Text>
+                <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.gold, marginTop: 4 }}>{a.noteK ? t("dynnote." + a.noteK) : a.note}</Text>
+                {!!a.grandchildren?.length && <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchmentMuted, marginTop: 4 }}>{t("torun.ancestor")}: {a.grandchildren.join(", ")}</Text>}
+                {!!a.causeK && <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchmentMuted, marginTop: 3 }}>{t("eul.cause." + a.causeK)}</Text>}
+              </View>
+            ))}
+          </>
+        )}
+
+        </>}
+        {sekme === "taht" && <>
         {/* ── TAHT YOLU ── */}
         <SecTitle>{t("dyn.throne")}</SecTitle>
         <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: claimable ? "rgba(201,168,76,0.5)" : C.border, borderRadius: 5, padding: 14 }}>
@@ -428,6 +431,8 @@ export default function Hanedan() {
           );
         })()}
 
+        </>}
+        {sekme === "servet" && <>
         {/* ── KADEMELİ YERLEŞİM ── */}
         <SecTitle>{t("dyn.settle")}</SecTitle>
         <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, marginBottom: 9 }}>{t("set.hint")}</Text>
@@ -601,26 +606,40 @@ export default function Hanedan() {
           );
         })()}
 
-        {/* ── ATALAR ── */}
-        {past.length > 0 && (
-          <>
-            <SecTitle>{t("dyn.ancestors")}</SecTitle>
-            {[...past].reverse().map((a) => (
-              <View key={a.generation} style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderLeftColor: C.gold, borderLeftWidth: 2.5, borderRadius: 5, padding: 12, marginBottom: 8 }}>
-                <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                  <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchment }}>{a.name}</Text>
-                  <Text style={{ fontFamily: F.display, fontSize: 13, color: C.goldDim }}>{a.generation}. {t("misc.generation")}</Text>
-                </View>
-                <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchmentMuted, marginTop: 3 }}>
-                  {profL(a.profession)} · {t("dyn.passedAt").replace("%n", String(a.diedAge))} · {t("dyn.fameWord")} {a.fame}
-                </Text>
-                <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.gold, marginTop: 4 }}>{a.noteK ? t("dynnote." + a.noteK) : a.note}</Text>
-                {!!a.grandchildren?.length && <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchmentMuted, marginTop: 4 }}>{t("torun.ancestor")}: {a.grandchildren.join(", ")}</Text>}
-                {!!a.causeK && <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchmentMuted, marginTop: 3 }}>{t("eul.cause." + a.causeK)}</Text>}
+        </>}
+        {sekme === "hane" && <>
+        {/* ── KAN DAVASI ── aktif dava: aşama, ısı ve oyuncu hamleleri (sulh / karşılık / meydan savaşı) */}
+        {state.feud && (() => {
+          const f = state.feud!;
+          const fname = rivalHouseName(f.nameIdx, lang);
+          const acted = f.act_turn === state.turn;
+          const cost = feudPeaceCost(state);
+          return (
+            <View style={{ backgroundColor: "rgba(160,48,42,0.08)", borderWidth: 1, borderColor: "rgba(160,48,42,0.5)", borderRadius: 5, padding: 14, marginBottom: 10 }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                <GameIcon name="crossed-swords" size={16} color={C.blood} />
+                <Text style={{ flex: 1, fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.blood }}>{t("feud.title").toUpperCase()}</Text>
+                <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchmentDim }}>{t("feud.stage" + f.stage)}</Text>
               </View>
-            ))}
-          </>
-        )}
+              <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchment, marginTop: 8 }}>{applyParams(t("feud.body"), [fname])}</Text>
+              <View style={{ height: 5, borderRadius: 3, backgroundColor: "rgba(160,48,42,0.18)", marginTop: 10, overflow: "hidden" }}>
+                <View style={{ width: `${Math.min(100, f.heat)}%`, height: "100%", backgroundColor: C.blood }} />
+              </View>
+              <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, marginTop: 3 }}>{t("feud.heat")}: {f.heat}/100</Text>
+              <View style={{ flexDirection: "row", gap: 8, marginTop: 10 }}>
+                <Pressable disabled={acted || p.money < cost} onPress={() => { hap("tap"); apply((s) => feudSuePeace(s)); }} style={{ flex: 1, paddingVertical: 11, borderRadius: 5, borderWidth: 1, borderColor: "rgba(201,168,76,0.45)", backgroundColor: "rgba(201,168,76,0.08)", alignItems: "center", opacity: acted || p.money < cost ? 0.4 : 1 }}>
+                  <Text style={{ fontFamily: F.display, fontSize: 13, color: C.gold }}>{t("feud.sue")}</Text>
+                  <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchmentMuted, marginTop: 1 }}>{cost} ⚜</Text>
+                </Pressable>
+                <Pressable disabled={acted || p.age < 16} onPress={() => { hap("advance"); apply((s) => feudStrike(s)); }} style={{ flex: 1, paddingVertical: 11, borderRadius: 5, borderWidth: 1, borderColor: "rgba(160,48,42,0.55)", backgroundColor: "rgba(160,48,42,0.14)", alignItems: "center", opacity: acted || p.age < 16 ? 0.4 : 1 }}>
+                  <Text style={{ fontFamily: F.display, fontSize: 13, color: C.blood }}>{f.stage >= 3 ? t("feud.battle") : t("feud.strike")}</Text>
+                  <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchmentMuted, marginTop: 1 }}>{f.stage >= 3 ? t("feud.battleSub") : t("feud.strikeSub")}</Text>
+                </Pressable>
+              </View>
+              {acted && <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, marginTop: 7, textAlign: "center" }}>{t("feud.acted")}</Text>}
+            </View>
+          );
+        })()}
 
         {/* ── DİYARIN HANEDANLARI ── */}
         {(state.dynastyOffers || []).length > 0 && (
@@ -756,6 +775,7 @@ export default function Hanedan() {
             </>
           );
         })()}
+        </>}
       </ScrollView>
     </ScreenFresk>
   );
