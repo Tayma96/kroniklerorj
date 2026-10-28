@@ -55,7 +55,8 @@ export function MkHero({ source, topInset, seasonIcon, title, sub, rtl, onBook, 
   const ink = "#1C130A", halo = "rgba(255,246,228,0.95)";
   const narrow = useWindowDimensions().width < 360;
   return <View style={{ height: MK.heroH + topInset, overflow: "hidden" }}>
-    <Image accessible={false} source={source} resizeMode="cover" style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%" }} />
+    {/* Kahraman resimleri kare: ortadan kırpılınca gökyüzü kesiliyordu. Üstten hizalanır; başlık gökyüzüne oturur. */}
+    <Image accessible={false} source={source} resizeMode="cover" style={{ position: "absolute", top: 0, left: 0, width: "100%", aspectRatio: 1 }} />
     <LinearGradient pointerEvents="none" colors={["rgba(255,248,232,0.30)", "rgba(255,248,232,0)", "rgba(21,16,10,0)", "#15100A"]} locations={[0, 0.28, 0.78, 1]} style={StyleSheet.absoluteFill} />
     <View style={{ position: "absolute", top: topInset + 14, left: 0, right: 0, flexDirection: rtl ? "row-reverse" : "row", alignItems: "center", paddingHorizontal: 12 }}>
       <View style={{ width: 44, alignItems: "center" }}><GameIcon name={seasonIcon} size={22} color={ink} /></View>

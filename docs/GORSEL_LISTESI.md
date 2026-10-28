@@ -4,23 +4,13 @@ Hedef: `mobile/assets/tasarim/claude-paket/mockup_full.png` ekran 1'in havası �
 canlı renkler, 13. yüzyıl Anadolu Selçuklu kasabası, yağlıboya/dijital resim. Görsellerde yazı,
 çerçeve, arayüz öğesi ve filigran olmasın. Dosyayı aynı adla değiştirmen yeterli; kod değişmez.
 
-## 1. Sahne (ana sayfanın üstü) — 16 adet
+## 1. Sahne (ana sayfanın üstü) — var, isteğe bağlı yenileme
 
-Yer: `mobile/assets/hero/<yaş>_<mevsim>.jpg`. Ölçü: 1600×1000 px (yatay), JPG, ≤ 350 KB.
-
-- **Kompozisyon:** Üst %35 açık ve sade gökyüzü olsun; koyu başlık oraya yazılıyor.
-  Sol alt köşe sade kalsın; portre oraya biniyor. Ana konu orta ve sağ altta.
-- **Işık:** Kış dahil hepsi aydınlık olsun. Kışta güneşli bir kar günü, gri ve karanlık değil.
-
-| Dosya öneki | Konu |
-|---|---|
-| `cocuk_` | Köy avlusu, ahşap evler, meyve ağaçları, uzakta kasaba |
-| `genc_` | Çarşı yolu, kervan, han önü, uzakta köprü |
-| `orta_` | Kasaba pazarı, minare, kale, taş köprü (mockup'taki sahne) |
-| `yasli_` | Kümbet ya da türbe tepesinden kasabaya bakış |
-
-Her önek için dört mevsim: `ilkbahar`, `yaz`, `sonbahar`, `kis`.
-Örnek dosya adı: `orta_yaz.jpg`.
+`mobile/assets/hero/<yaş>_<mevsim>.jpg` altında 16 resim zaten var. Kare resimler üstten
+hizalanıyor; başlık gökyüzüne oturuyor. Yenilemek istersen gerekçe yalnız kalite olur:
+dosyalar 640 px ve telefonda biraz yumuşak görünüyor, birkaçı da kasvetli (`genc_sonbahar`,
+`yasli_sonbahar`, `cocuk_yaz`). Yenilersen aynı adla, kare **1280×1280 px**, üst %35 sade
+gökyüzü ve aydınlık olsun.
 
 ## 2. Karar ve sayfa sahneleri — 15 adet
 
@@ -62,4 +52,4 @@ Yer: `mobile/assets/ikon/<ad>.png`.
 | Alt menü | `ana` (ev), `karakter` (büst), `iliskiler` (iki-üç kişi), `menu` (kitap), `pusula` (ortadaki düğme için 8 köşeli yıldız) |
 
 İkonlar gelince eski glifler yerine resim ikonları kullanacak küçük bir değişiklik yapacağım.
-Önce 1 ve 2 numaralı setleri getirmen sayfanın havasını en çok değiştirir.
+Önce 2 numaralı seti (karar ve sayfa sahneleri) getirmen sayfanın havasını en çok değiştirir.
