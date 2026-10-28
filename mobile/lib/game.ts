@@ -10734,7 +10734,7 @@ export function acikHesaplar(s: GameState): AcikHesap[] {
   if (p.affair) out.push({ k: "ah.sevgili", p: [Math.round(p.affair.heat)], ikon: "ring", agirlik: 50 });
   if (p.betrothed) out.push({ k: "ah.soz", p: [kp(p.betrothed.id) || p.betrothed.name], ikon: "ring", agirlik: 45 });
   if (p.married && !p.widowed && (p.spouse_bond ?? 50) < 30) out.push({ k: "ah.esSoguk", p: [esParam(s)], ikon: "iliskiler", git: "/oyun/iliskiler", agirlik: 40 });
-  { const d = ihmalDurumu(s); const en = [d.es && { k: d.es.k, yil: d.es.yil }, d.ebeveyn && { k: d.ebeveyn.k, yil: d.ebeveyn.yil }, d.evlat && { k: d.evlat.x[0].k, yil: d.evlat.yil }].filter((x): x is { k: Kisi; yil: number } => !!x).sort((a, b) => b.yil - a.yil)[0];
+  { const d = ihmalDurumu(s); const en = [d.es && { k: d.es.k, yil: d.es.yil }, d.ebeveyn && { k: d.ebeveyn.x[0], yil: d.ebeveyn.yil }, d.evlat && { k: d.evlat.x[0].k, yil: d.evlat.yil }].filter((x): x is { k: Kisi; yil: number } => !!x).sort((a, b) => b.yil - a.yil)[0];
     if (en) out.push({ k: "ah.ocak", p: [kfParam(en.k)], ikon: "iliskiler", git: "/oyun/karakter", agirlik: 42 }); } // ocakta kim yüzünü göremiyor (karakter ekranındaki aile düğmeleriyle kapanır)
   const r = rakipAktif(p);
   if (r) out.push(r.yaris != null ? { k: "ah.rakipVakit", p: [rkAd(r)], ikon: "trophy", git: "/oyun/meslek", agirlik: 75 } : { k: "ah.rakip", p: [rkAd(r), r.galip, r.maglup, Math.max(0, r.next - s.turn)], ikon: "trophy", git: "/oyun/meslek", agirlik: 35 });
