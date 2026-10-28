@@ -1,8 +1,8 @@
 # Kronikler — ekran ve NPC sanat yönü
 
-> Durum: ilk uyarlama kullanıcı tarafından reddedildi. Son şart yalnız üç referans
-> ekranla birebir eşleşen uygulamadır. [Yeni deneme](duzeltme-v2/README.md) de bu
-> hedefi karşılamadığı için uygulamaya alınmadı. Bu belge bitiş/onay kaydı değildir.
+> Durum (28 Ekim 2026): kullanıcı birebir şartını kaldırdı; hedef mockup diline yakın,
+> mantıksızlıkları giderilmiş ve içeriği koruyan uygulama. Ana ekran, şehir, NPC ve ortak
+> paneller bu dile taşındı (`lib/ornament-ui.tsx`). Gerçek cihaz onayı henüz yok.
 
 Kullanıcı 18 Ekim 2026'da seçilen iyileştirme sırasını ve sayfa taslaklarına göre tasarım
 çalışmasını yetkilendirdi. Claude GDD'si bütünüyle kabul edilmedi; mevcut Tasarım
