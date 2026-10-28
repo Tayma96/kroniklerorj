@@ -61,8 +61,10 @@ Bu makinede GPU yok; 14-19B video modelleri burada çalışmaz.
   video olur. Ücretsiz yol: resmî Hugging Face Space (kuyruklu, günlük GPU kotası). Kullanıcı
   ücretsiz HF hesabı açıp okuma anahtarını ortam gizlisi (`HF_TOKEN`) olarak verirse
   `gradio_client` ile buradan çağrılır; anahtar yazdırılmaz, commit edilmez.
-- **LTX-2 + Pose IC-LoRA** (Lightricks): poz kontrollü video; topluluk lisansı (büyük şirket
-  eşiği var). Yine GPU ister.
+- **LTX-2 / LTX-2.5 + Pose IC-LoRA** (Lightricks, açık ağırlık): poz kontrollü video.
+  LTX-2 Topluluk Lisansı: yıllık geliri 10 milyon doların altındaki kurumlara ticari kullanım
+  dahil ücretsiz; Kronikler için ücretsiz sayılır. Wan'a eşdeğer seçenek; yine GPU ister
+  (ücretsiz yol: Hugging Face Space'leri, kotalı).
 - **Remotion**: yapay zekâ değil, React ile programatik video (fragman, arayüz animasyonu).
   Gerçekçileştirme yapmaz.
 - **muapi.ai**: modelleri ücretli kredilerle sunan aracı; kullanılmaz.
