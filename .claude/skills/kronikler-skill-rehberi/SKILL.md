@@ -20,6 +20,7 @@ Dış skill bir adımı depo kuralıyla çelişecek biçimde isterse depo kural�
 
 | İş | Skill |
 |---|---|
+| Bir sayfayı baştan sona geliştirme (sıra: giriş → yeni oyun → ana sayfa → diğerleri) | `sayfa-gelistirme` |
 | Büyük özellik fikri, sayfa yeniden düzeni | `brainstorming` (kısa tut), `writing-plans`, `executing-plans` |
 | Hata, beklenmeyen davranış | `systematic-debugging`, ardından `verification-before-completion` |
 | Motor (`lib/game.ts`) davranışı | `test-driven-development` mantığıyla hedefli sim betiği (Jest yok) |
@@ -32,7 +33,7 @@ Dış skill bir adımı depo kuralıyla çelişecek biçimde isterse depo kural�
 | Yazmadan önce hazır çözüm arama | `search-first` (yalnız ücretsiz) |
 | Hata yönetimi deseni | `error-handling` |
 | Blender, gerçekçi 3D insan, hareket | `blender-karakter`, `blender-motion-state-inspection` |
-| Ses, müzik, efekt | `text-to-speech`, `sound-effects`, `music`, `voice-changer`, `setup-api-key` |
+| Ses, müzik, efekt | önce `ses-uretimi` (ücretsiz Chatterbox); `text-to-speech`, `sound-effects`, `music`, `voice-changer`, `setup-api-key` |
 | Otomasyon önerisi (salt okuma) | `claude-automation-recommender` |
 | Yeni skill yazma veya düzenleme | `writing-skills`, `agent-sort` |
 | Figma | `figma:*` (zaten kurulu); MCP için kullanıcı Figma bağlayıcısını yetkilendirmeli |

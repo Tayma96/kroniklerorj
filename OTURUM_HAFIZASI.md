@@ -22,7 +22,7 @@
 
 ## Açık işler
 - MP ertelendi; yalnız protokol eşliğini koru.
-- Denetim `docs/SAYFA_DENETIMI.md`: ibre, hanedan sekmeleri, dövüş arenası, doğduğun ocak, NPC sohbet sahnesi, TR başlık fontu bitti. Sıradaki: mahalle haritası, meydan muharebesi.
+- Yöntem: Superpowers (beyin fırtınası → tasarım belgesi → plan → alt ajanlar → doğrulama). Sayfa sırası: giriş → yeni oyun → ana sayfa → diğerleri (`sayfa-gelistirme`). Komut/skill'leri kullanıcıyı beklemeden çalıştır.
 - 3D: kullanıcı karikatür değil gerçekçi insan istiyor. Hat `.claude/skills/blender-karakter` (her oturumda setup.sh). Kullanıcı onayı olmadan tasarım/oyun entegrasyonuna geçme.
 - Skill'ler `.claude/skills` (Superpowers, ECC seçkisi, ElevenLabs, claude-code-setup); öncelik `kronikler-skill-rehberi`.
 - Denge: bot 40 yaşında nam 100. `game.ts` Math.random göçü sürüyor (`docs/AUDIT.md`).

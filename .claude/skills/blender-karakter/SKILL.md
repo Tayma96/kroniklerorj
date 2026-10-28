@@ -52,6 +52,24 @@ Görüntüye bakmadan önce yapıyı ölç (`blender-motion-state-inspection` sk
 - Oyuna aktarım önerisi: saydam arka planlı (gölge yakalayıcılı) kare dizileri →
   WebP; mevcut arena arka planlarının üstüne oynatma. Uygulama kararını kullanıcı verir.
 
+## Gerçekçi videoya dönüştürme (Higgsfield yerine ücretsiz)
+
+Bu makinede GPU yok; 14-19B video modelleri burada çalışmaz.
+
+- **Wan 2.2 Animate** (Alibaba, açık ağırlık; lisansı resmî depodan doğrula): bir karakter
+  görseli + sürücü video → aynı hareketi yapan gerçekçi karakter. Blender çıktısı sürücü
+  video olur. Ücretsiz yol: resmî Hugging Face Space (kuyruklu, günlük GPU kotası). Kullanıcı
+  ücretsiz HF hesabı açıp okuma anahtarını ortam gizlisi (`HF_TOKEN`) olarak verirse
+  `gradio_client` ile buradan çağrılır; anahtar yazdırılmaz, commit edilmez.
+- **LTX-2 + Pose IC-LoRA** (Lightricks): poz kontrollü video; topluluk lisansı (büyük şirket
+  eşiği var). Yine GPU ister.
+- **Remotion**: yapay zekâ değil, React ile programatik video (fragman, arayüz animasyonu).
+  Gerçekçileştirme yapmaz.
+- **muapi.ai**: modelleri ücretli kredilerle sunan aracı; kullanılmaz.
+
+Hat: Blender'da hareket (manken yeterli) → MP4 sürücü video; tek gerçekçi karakter görseli →
+Wan 2.2 Animate → 3-5 sn klip → kare dizisi/WebP. Kota yetmezse Cycles render'ı esas alınır.
+
 ## Lisans
 
 MPFB GPL-3.0 (yalnız araç, çıktı serbest). MakeHuman CC0 paketleri; shoes03/shirts03

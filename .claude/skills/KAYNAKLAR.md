@@ -13,7 +13,7 @@ Güncellemek için aynı depoyu yeniden klonlayıp ilgili klasörü değiştir.
 | ElevenLabs | github.com/elevenlabs/skills | 503d4e9 | MIT | text-to-speech, sound-effects, music, voice-changer, setup-api-key |
 | claude-code-setup | github.com/anthropics/claude-plugins-official | f8c5e7a | Apache-2.0 | claude-automation-recommender |
 | Figma | github.com/figma/mcp-server-guide | — | — | Zaten kurulu (`figma:*`); kopyalanmadı |
-| Proje | bu depo | — | — | kronikler-skill-rehberi, blender-karakter |
+| Proje | bu depo | — | — | kronikler-skill-rehberi, blender-karakter, sayfa-gelistirme, ses-uretimi |
 
 ## Bilerek kurulmayanlar
 
