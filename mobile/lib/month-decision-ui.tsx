@@ -11,19 +11,19 @@ import { C, F, T } from "./theme";
 import { PressableScale } from "./ui";
 
 // Ayın kararı: mockup'taki gibi metnin sağında soluklaşan sahne, altta iki büyük seçenek.
-export function MonthDecisionCard() {
+export function MonthDecisionCard({ bare = false }: { bare?: boolean } = {}) {
   const { state, apply, mpMode } = useGame(), { t, tg, lang } = useI18n(), { width } = useWindowDimensions();
   if (!state || mpMode || state.player.dead) return null;
   const m = pendingMonthScene(state), d = m?.dilemma;
   const text = (key: string, fallback: string) => { const value = tg(key, state.player.gender === "kadın"); return value === key ? fallback : value; };
   if (!d || !m) {
     const event = [...state.history].reverse().find(e => e.day === state.turn && e.k?.startsWith("dil."));
-    return event ? <OrnatePanel title={t("flow.monthDecision")} icon="sun"><Text style={{ fontFamily: F.serif, fontSize: T.body, color: C.parchment, lineHeight: T.line }}>{renderEvt(event.k, event.text, event.p, lang, t, state.player.gender === "kadın")}</Text></OrnatePanel> : null;
+    return event ? <OrnatePanel title={bare ? undefined : t("flow.monthDecision")} icon="sun"><Text style={{ fontFamily: F.serif, fontSize: T.body, color: C.parchment, lineHeight: T.line }}>{renderEvt(event.k, event.text, event.p, lang, t, state.player.gender === "kadın")}</Text></OrnatePanel> : null;
   }
   const tema = ikilemTema(d.id, d.icon);
   const rtl = lang === "ar";
   const two = width >= 340 && d.choices.length === 2;
-  return <OrnatePanel title={t("flow.monthDecision")} icon="sun">
+  return <OrnatePanel title={bare ? undefined : t("flow.monthDecision")} icon="sun">
     <View style={{ minHeight: tema ? 112 : 0 }}>
       {tema && <View pointerEvents="none" style={{ position: "absolute", top: -10, bottom: -6, [rtl ? "left" : "right"]: -14, width: "52%", overflow: "hidden" }}>
         <Image accessible={false} source={SAHNE_GORSEL[tema]} resizeMode="cover" style={{ width: "100%", height: "100%", opacity: 0.9 }} />

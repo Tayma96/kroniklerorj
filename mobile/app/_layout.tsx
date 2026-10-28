@@ -1,5 +1,4 @@
-import { useFonts, Cinzel_400Regular, Cinzel_700Bold } from "@expo-google-fonts/cinzel";
-import { CrimsonText_400Regular, CrimsonText_400Regular_Italic } from "@expo-google-fonts/crimson-text";
+import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
@@ -28,8 +27,13 @@ try {
 } catch {}
 
 export default function RootLayout() {
+  // Yazı tipleri ⚜ ✓ ★ gibi sembolleri içerecek biçimde yeniden üretildi (scripts/yazitipi/sembol-gom.py):
+  // Android bu sembolleri renkli emoji yazı tipinden çizmesin, metin renginde kalsın.
   const [loaded, fontError] = useFonts({
-    Cinzel_400Regular, Cinzel_700Bold, CrimsonText_400Regular, CrimsonText_400Regular_Italic,
+    Cinzel_400Regular: require("../assets/fonts/Cinzel_400Regular.ttf"),
+    Cinzel_700Bold: require("../assets/fonts/Cinzel_700Bold.ttf"),
+    CrimsonText_400Regular: require("../assets/fonts/CrimsonText_400Regular.ttf"),
+    CrimsonText_400Regular_Italic: require("../assets/fonts/CrimsonText_400Regular_Italic.ttf"),
   });
   const [fontTimeout, setFontTimeout] = useState(false);
   useEffect(() => { const t = setTimeout(() => setFontTimeout(true), 6000); return () => clearTimeout(t); }, []);

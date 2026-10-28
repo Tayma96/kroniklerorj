@@ -42,12 +42,18 @@ export function SoylentiKarti({ state, rumor: r, onAction, onSource }: { state: 
 }
 
 // Tek görünür iz: menüyü büyütmeden yaşayan kişilerin bildiği kötü söze yönlendirir.
-export function SoylentiIzi({ state, onOpen }: { state: GameState; onOpen: (id: string) => void }) {
-  const { t } = useI18n(), p = state.player;
+// Ana ekranda karşılık verilebilecek en ağır kara söz (yoksa null); gündem rozeti de bunu sayar.
+export function soylentiLead(state: GameState) {
+  const p = state.player;
   if (p.dead || p.age < 13 || inJail(p) || state.npcTeklif || state.hesap || acikHesaplar(state).length >= 5) return null;
-  const lead = (state.player_rumors || []).filter(r => r.yon < 0 && r.siddet >= 1 && r.islemTurn !== state.turn && r.duyanlar?.some(h => {
+  return (state.player_rumors || []).filter(r => r.yon < 0 && r.siddet >= 1 && r.islemTurn !== state.turn && r.duyanlar?.some(h => {
     const k = kisiOf(state, h.id); return h.chain.length > 1 && !h.aciklama && !h.sessiz && k && k.ol == null && k.loc === p.location_name;
-  })).sort((a, b) => b.siddet - a.siddet)[0];
+  })).sort((a, b) => b.siddet - a.siddet)[0] || null;
+}
+
+export function SoylentiIzi({ state, onOpen }: { state: GameState; onOpen: (id: string) => void }) {
+  const { t } = useI18n();
+  const lead = soylentiLead(state);
   if (!lead) return null;
   return <Pressable accessibilityRole="button" accessibilityLabel={t("rum.reply.lead")} onPress={() => onOpen(lead.id)} style={{ marginHorizontal: 12, marginTop: 8, padding: 10, minHeight: 44, flexDirection: "row", alignItems: "center", gap: 8, borderWidth: 1, borderColor: C.border, borderRadius: 5 }}><GameIcon name="speaker" size={16} color={C.gold} /><Text style={{ flex: 1, fontFamily: F.serif, fontSize: 15, color: C.parchment, lineHeight: 22 }}>{t("rum.reply.lead")}</Text></Pressable>;
 }

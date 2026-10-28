@@ -103,7 +103,7 @@ export default function Ayarlar() {
             const active = l.code === lang;
             return (
               <Pressable key={l.code} onPress={() => setLang(l.code)} style={{ flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: 9, paddingHorizontal: 12, borderRadius: 5, borderWidth: 1, borderColor: active ? "rgba(201,168,76,0.7)" : C.border, backgroundColor: active ? "rgba(201,168,76,0.18)" : C.card }}>
-                <Text style={{ fontSize: 14 }}>{l.flag}</Text>
+                <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 1, color: C.gold }}>{l.code.toUpperCase()}</Text>
                 <Text style={{ fontFamily: F.display, fontSize: 13, color: active ? C.gold : C.parchment }}>{l.label}</Text>
               </Pressable>
             );

@@ -93,7 +93,7 @@ export default function MainMenu() {
             <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.goldDim, marginBottom: 8 }}>{t("menu.language")}</Text>
             <Pressable onPress={() => { hap("tap"); setLangOpen((o) => !o); }} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 12, paddingHorizontal: 14, borderRadius: 5, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: C.card }}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                <Text style={{ fontSize: 15 }}>{activeLang.flag}</Text>
+                <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 1, color: C.gold }}>{activeLang.code.toUpperCase()}</Text>
                 <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchment, letterSpacing: 0.5 }}>{activeLang.label}</Text>
               </View>
               <Text style={{ color: C.gold, fontSize: 12 }}>{langOpen ? "▲" : "▼"}</Text>
@@ -104,7 +104,7 @@ export default function MainMenu() {
                   const active = l.code === lang;
                   return (
                     <Pressable key={l.code} onPress={() => { hap("selection"); setLang(l.code); setLangOpen(false); }} style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 11, paddingHorizontal: 14, backgroundColor: active ? "rgba(201,168,76,0.16)" : C.bg, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: C.border }}>
-                      <Text style={{ fontSize: 15 }}>{l.flag}</Text>
+                      <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 1, color: C.gold }}>{l.code.toUpperCase()}</Text>
                       <Text style={{ flex: 1, fontFamily: F.display, fontSize: 13, color: active ? C.gold : C.parchment, letterSpacing: 0.5 }}>{l.label}</Text>
                       {active && <Text style={{ color: C.gold, fontSize: 13 }}>✓</Text>}
                     </Pressable>
