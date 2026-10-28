@@ -33,7 +33,6 @@ export const SCREEN_DESIGNS: readonly ScreenDesign[] = [
   page("/oyun/harita", "scr.harita", "journey", "gurbet_yol", "map"),
   page("/oyun/diyar/[name]", "city.localInfo", "journey", "cami_avlu", "castle"),
   page("/oyun/haberler", "scr.haberler", "book", "cami_avlu", "speaker"),
-  page("/oyun/defter", "tab.book", "book", "medrese", "book"),
   page("/oyun/tarih", "scr.tarih", "book", "medrese", "scroll-open"),
   page("/oyun/kronik", "scr.kronik", "book", "medrese", "book"),
   page("/oyun/roman", "rom.eyebrow", "book", "ev_varlikli", "book"),

@@ -31,6 +31,7 @@ const rows: Record<string, string[]> = {
   "char.ugrasSub": ["Boş vaktini değerlendir", "Make use of your spare time", "Aprovecha tu tiempo libre", "Aproveite o tempo livre", "اغتنم وقت فراغك", "Распорядись свободным временем"],
   "rel.lineage": ["Soy ve Hanedan", "Lineage and House", "Linaje y casa", "Linhagem e casa", "النسب والبيت", "Род и дом"],
   "char.path": ["Yolun", "Your Path", "Tu camino", "Seu caminho", "طريقك", "Твой путь"],
+  "dash.seeAllShort": ["Tümünü Gör", "See all", "Ver todo", "Ver tudo", "عرض الكل", "Все"],
   "flow.lifeBook": ["Yaşam Defteri", "Life Journal", "Diario de vida", "Diário da vida", "سجل الحياة", "Дневник жизни"],
   "cra.order.title": ["Kasaba siparişleri", "Town orders", "Pedidos del pueblo", "Encomendas da vila", "طلبات البلدة", "Заказы города"],
   "paz.limit": ["Bu pazarlıkta daha ileri gitmiyor.", "The merchant will go no further on this deal.", "El mercader no cede más en este trato.", "O mercador não cede mais neste negócio.", "لن يتنازل التاجر أكثر في هذه الصفقة.", "Торговец больше не уступит в этой сделке."],

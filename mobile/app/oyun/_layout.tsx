@@ -26,7 +26,7 @@ import { playAdvance } from "../../lib/sound";
 // Sekme simgesi (mockup): çerçevesiz siluet; seçili sekme parlak altın ve ışıltılı.
 function TabIcon({ name, focused }: { name: string; focused: boolean }) {
   return <View style={{ alignItems: "center", justifyContent: "center", shadowColor: C.goldBright, shadowOpacity: focused ? 0.85 : 0, shadowRadius: 9 }}>
-    <GameIcon name={name} size={27} color={focused ? C.goldBright : "#E6D6B4"} />
+    <GameIcon name={name} size={23} color={focused ? C.goldBright : "#E6D6B4"} />
   </View>;
 }
 
@@ -111,8 +111,8 @@ function AdvanceFab({ bottom }: { bottom: number }) {
   if (!state || state.player.dead) return null;
   const waiting = !!pendingMonthScene(state);
   return (
-    <View pointerEvents="box-none" style={{ position: "absolute", left: 0, right: 0, bottom: bottom + 16, alignItems: "center" }}>
-      <View style={{ width: 100, minHeight: 104, alignItems: "center", justifyContent: "flex-end" }}>
+    <View pointerEvents="box-none" style={{ position: "absolute", left: 0, right: 0, bottom: bottom + 14, alignItems: "center" }}>
+      <View style={{ width: 100, minHeight: 84, alignItems: "center", justifyContent: "flex-end" }}>
         {/* Hero'dan taşınan altın toz — düğmeden yükselir */}
         <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0 }}>
           <Ambiance width={100} height={92} flakes={false} count={6} />
@@ -124,14 +124,14 @@ function AdvanceFab({ bottom }: { bottom: number }) {
             onLongPress={() => { if (waiting) { hap("tap"); router.push("/oyun"); return; } hap("success"); playAdvance(); apply((s) => advanceWithMonthScene(s, 6, true)); router.push("/oyun"); }}
             delayLongPress={420}
             style={{
-              width: 70, height: 70, borderRadius: 35, backgroundColor: "#0E0A06",
+              width: 64, height: 64, borderRadius: 32, backgroundColor: "#0E0A06",
               alignItems: "center", justifyContent: "center", padding: 3,
               borderWidth: 1.5, borderColor: C.goldDim,
               shadowColor: C.gold, shadowOpacity: 0.35, shadowRadius: 10, shadowOffset: { width: 0, height: 0 }, elevation: 10,
             }}
           >
-            <View style={{ width: 61, height: 61, borderRadius: 31, overflow: "hidden", borderWidth: 2, borderColor: "#F3D27A", alignItems: "center", justifyContent: "center" }}>
-              <Svg width={61} height={61} style={{ position: "absolute" }}>
+            <View style={{ width: 56, height: 56, borderRadius: 28, overflow: "hidden", borderWidth: 2, borderColor: "#F3D27A", alignItems: "center", justifyContent: "center" }}>
+              <Svg width={56} height={56} style={{ position: "absolute" }}>
                 <Defs>
                   <RadialGradient id="fabGold" cx="42%" cy="36%" r="70%">
                     <Stop offset="0" stopColor="#FCE7A6" />
@@ -139,15 +139,15 @@ function AdvanceFab({ bottom }: { bottom: number }) {
                     <Stop offset="1" stopColor="#8E6220" />
                   </RadialGradient>
                 </Defs>
-                <Rect x="0" y="0" width="61" height="61" fill="url(#fabGold)" />
+                <Rect x="0" y="0" width="56" height="56" fill="url(#fabGold)" />
               </Svg>
-              <View><CompassStar size={50} /></View>
+              <View><CompassStar size={46} /></View>
             </View>
           </Pressable>
         </Animated.View>
         {/* Çekirdek eylem ikon-only kalmasın: mikro etiket (a11y metniyle aynı anahtar) */}
         {/* Uzun dillerde (AVANZAR EL MES) etiket yandaki sekme simgelerine taşmasın: düğme sütununa sığdırılır */}
-        <Text numberOfLines={2} style={{ width: narrow ? 80 : 100, textAlign: "center", fontFamily: F.display, fontSize: narrow ? 12 : 14, lineHeight: narrow ? 14 : 17, color: C.goldBright, marginTop: 2 }}>{t(waiting ? "flow.pending" : "tab.advance")}</Text>
+        <Text numberOfLines={2} style={{ width: narrow ? 80 : 100, textAlign: "center", fontFamily: F.display, fontSize: narrow ? 11 : 12, lineHeight: narrow ? 14 : 17, color: C.goldBright, marginTop: 4 }}>{t(waiting ? "flow.pending" : "adv.kisa")}</Text>
 
       </View>
     </View>
@@ -205,20 +205,18 @@ export default function OyunLayout() {
     <View style={{ flex: 1 }}>
       <Tabs screenOptions={{
         headerShown: false,
-        tabBarStyle: { backgroundColor: "#1B130A", borderTopWidth: 0, height: 80 + insets.bottom, paddingBottom: insets.bottom + 6, paddingTop: 10, shadowColor: "#000", shadowOpacity: 0.6, shadowRadius: 10, shadowOffset: { width: 0, height: -4 }, elevation: 16 },
+        tabBarStyle: { backgroundColor: "#1B130A", borderTopWidth: 0, height: 70 + insets.bottom, paddingBottom: insets.bottom + 6, paddingTop: 8, shadowColor: "#000", shadowOpacity: 0.6, shadowRadius: 10, shadowOffset: { width: 0, height: -4 }, elevation: 16 },
         tabBarBackground: () => <TabBackground width={width} />,
         tabBarActiveTintColor: C.goldBright,
         tabBarInactiveTintColor: "#E6D6B4",
         tabBarItemStyle: { flexGrow: 0, flexShrink: 0, width: tabWidth },
-        tabBarLabel: ({ color, children }) => <Text numberOfLines={1} adjustsFontSizeToFit style={{ fontFamily: F.serif, fontSize: width < 360 ? 12 : 14, lineHeight: 18, color, textAlign: "center", paddingHorizontal: 1 }}>{children}</Text>,
+        tabBarLabel: ({ color, children }) => <Text numberOfLines={1} adjustsFontSizeToFit style={{ fontFamily: F.serif, fontSize: width < 360 ? 10.5 : 12, lineHeight: 15, color, textAlign: "center", paddingHorizontal: 1 }}>{children}</Text>,
       }}>
-        <Tabs.Screen name="karakter" options={{ title: t("tab.character"), tabBarBadge: workDue ? "!" : undefined, tabBarBadgeStyle: { backgroundColor: "#B5331F", color: "#FFF4E2", fontSize: 11, minWidth: 18, height: 18, lineHeight: 16 }, tabBarIcon: ({ focused }) => <TabIcon name="hood" focused={focused} /> }} />
-        <Tabs.Screen name="sehir" options={{ title: t("tab.town"), tabBarItemStyle: { flexGrow: 0, flexShrink: 0, width: tabWidth, marginRight: 84 }, tabBarIcon: ({ focused }) => <TabIcon name="castle" focused={focused} /> }} />
-        <Tabs.Screen name="iliskiler" options={{ title: t("tab.people"), tabBarIcon: ({ focused }) => <TabIcon name="family" focused={focused} /> }} />
-        <Tabs.Screen name="defter" options={{ title: t("tab.book"), tabBarIcon: ({ focused }) => <TabIcon name="book" focused={focused} /> }} />
-        {/* Ana sayfa sekmede görünmez: ortadaki pusula (İlerle) her zaman ana sayfaya döner */}
-        <Tabs.Screen name="index" options={{ href: null }} />
-        <Tabs.Screen name="menu" options={{ href: null }} />
+        <Tabs.Screen name="index" options={{ title: t("tab.home"), tabBarIcon: ({ focused }) => <TabIcon name="house" focused={focused} /> }} />
+        <Tabs.Screen name="karakter" options={{ title: t("tab.character"), tabBarBadge: workDue ? "!" : undefined, tabBarBadgeStyle: { backgroundColor: "#B5331F", color: "#FFF4E2", fontSize: 11, minWidth: 18, height: 18, lineHeight: 16 }, tabBarItemStyle: { flexGrow: 0, flexShrink: 0, width: tabWidth, marginRight: 84 }, tabBarIcon: ({ focused }) => <TabIcon name="hood" focused={focused} /> }} />
+        <Tabs.Screen name="iliskiler" options={{ title: t("tab.relations"), tabBarIcon: ({ focused }) => <TabIcon name="family" focused={focused} /> }} />
+        <Tabs.Screen name="menu" options={{ title: t("tab.menu"), tabBarIcon: ({ focused }) => <TabIcon name="book" focused={focused} /> }} />
+        <Tabs.Screen name="sehir" options={{ href: null }} />
         {/* Gizli (sekmede görünmez ama navigasyonla açılır) */}
         <Tabs.Screen name="pazar" options={{ href: null }} />
         <Tabs.Screen name="sss" options={{ href: null }} />
@@ -251,7 +249,7 @@ export default function OyunLayout() {
         <Tabs.Screen name="copcatan" options={{ href: null }} />
         <Tabs.Screen name="mahalle" options={{ href: null }} />
       </Tabs>
-      <GlobalBackdrop bottom={80 + insets.bottom} />
+      <GlobalBackdrop bottom={70 + insets.bottom} />
       {(mpMode || (state && !state.player.dead)) && <NavOrnament bottom={80 + insets.bottom} />}
       <AdvanceFab bottom={insets.bottom} />
       <StatDeltaOverlay />

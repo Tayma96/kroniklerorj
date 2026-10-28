@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { View, Text, ScrollView, Image } from "react-native";
 import Animated, { FadeIn } from "react-native-reanimated";
 import { GameSheet } from "../../lib/home-hud";
-import { PlaceGrid } from "../../lib/place-grid";
 import { EmekPanel, UgrasPanel } from "../../lib/month-actions-ui";
 import { ListRow } from "../../lib/ornament-ui";
 import { SAHNE_GORSEL } from "../../lib/sahne-tema";
@@ -400,7 +399,6 @@ export default function Karakter() {
           {canAct.emek && <View style={{ flex: 1 }}><ListRow boxed first icon="calis" title={t("flow.workTitle")} sub={canWork(state) ? t("char.workReady") : t("act.workedThisTurn")} onPress={() => setActs("emek")} /></View>}
           {canAct.ugras && <View style={{ flex: 1 }}><ListRow boxed first icon={canAct.ugrasIcon} title={t(canAct.ugrasKey)} sub={t("char.ugrasSub")} onPress={() => setActs("ugras")} /></View>}
         </View>}
-        {!p.dead && <PlaceGrid title={t("char.path")} icon="walk" keys={["meslek", "atolye", "mulkler", "gorevler", "mektep", "beceriler", "orgutler", "sosyal", "savas", "suc"]} />}
         <GameSheet visible={acts === "emek"} onClose={() => setActs(null)} title={t("flow.workTitle")} icon="calis" scene={SAHNE_GORSEL.atolye_demirci}><EmekPanel /></GameSheet>
         <GameSheet visible={acts === "ugras"} onClose={() => setActs(null)} title={t(canAct.ugrasKey)} icon={canAct.ugrasIcon} scene={SAHNE_GORSEL.medrese}><UgrasPanel /></GameSheet>
 

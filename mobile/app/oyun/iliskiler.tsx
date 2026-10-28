@@ -1,5 +1,4 @@
 import { PageHeader } from "../../lib/ui";
-import { PlaceGrid } from "../../lib/place-grid";
 import { DesignPressable as Pressable } from "../../lib/design-pressable";
 import { useMemo } from "react";
 import { View, Text, ScrollView} from "react-native";
@@ -78,7 +77,6 @@ export default function Iliskiler() {
     <ScreenFresk style={{ paddingTop: insets.top }}>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 14, paddingTop: 14, paddingBottom: insets.bottom + 90 }}>
         <PageHeader kicker={placeName(state.player.location_name, lang)} title={t("rel.headTitle")} sub={applyParams(t("rel.subSome"), [total])} />
-        <PlaceGrid title={t("rel.lineage")} icon="crown" keys={["hanedan", "nesil"]} />
         {/* ── DİYAR HANEDANLARI: aynı diyarda yaşayan gerçek oyuncular (çok oyunculu) — bölgenin bir parçası gibi hep görünür ── */}
         {mpMode && snapshot && snapshot.players.length > 0 && (
           <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(201,168,76,0.4)", borderRadius: 5, marginBottom: 14, overflow: "hidden" }}>

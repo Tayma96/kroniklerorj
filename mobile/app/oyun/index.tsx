@@ -22,7 +22,8 @@ import { currentCalendar } from "../../lib/calendar";
 import { gercekRitim } from "../../lib/ritim";
 import { IllustratedHeader, OrnatePanel, HeaderIconButton, StatStrip, ListRow, AlertBanner } from "../../lib/ornament-ui";
 import { MonthDecisionCard } from "../../lib/month-decision-ui";
-import { townSeasonImage } from "../../lib/assets";
+import { MK, MkHero, MkIdentity, MkDecision, MkAlert, MkRecent, MkBookRow } from "../../lib/home-mockup-ui";
+import { townSeasonImage, heroImage } from "../../lib/assets";
 import { MilestoneModal, DilemmaModal, OpportunityModal, AchievementToast, EulogyModal, GameButton, Portre } from "../../lib/ui";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { GameIcon } from "../../lib/icons";
@@ -416,39 +417,19 @@ export default function Dashboard() {
         );
       })()}
 
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingTop: insets.top + 8, paddingHorizontal: 12, paddingBottom: 116 }}>
-        {/* Sahne başlığı (mockup): açık gökyüzünde koyu, ışık haleli başlık; üstte karartma yok, alt kenar zemine erir */}
-        <View style={{ height: 262 + insets.top, marginHorizontal: -12, marginTop: -(insets.top + 8), overflow: "hidden", borderBottomWidth: 1, borderColor: C.goldDim + "88" }}>
-          <Image accessible={false} source={townSeasonImage(cal.season)} resizeMode="cover" style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%" }} />
-          <LinearGradient pointerEvents="none" colors={["rgba(255,246,226,0.45)", "rgba(255,246,226,0)", "rgba(14,10,6,0)", C.bg]} locations={[0, 0.32, 0.72, 1]} style={StyleSheet.absoluteFill} />
-          <View style={{ position: "absolute", top: insets.top + 10, left: 16, right: 8, flexDirection: rtl ? "row-reverse" : "row", alignItems: "center" }}>
-            <GameIcon name={SEASON_ICON[cal.season] || "sun"} size={26} color="#2E200F" />
-            <View style={{ width: 1.5, height: 46, marginHorizontal: 10, backgroundColor: "rgba(46,32,15,0.55)" }} />
-            <View style={{ flex: 1, minWidth: 0 }}>
-              <Text accessibilityRole="header" numberOfLines={1} adjustsFontSizeToFit style={{ fontFamily: F.display, fontSize: winW < 360 ? 25 : 31, lineHeight: winW < 360 ? 31 : 38, color: "#1E1409", textShadowColor: "rgba(255,244,220,0.95)", textShadowRadius: 10 }}>{t("flow.anotherMonth")}</Text>
-              <Text style={{ fontFamily: F.serif, fontSize: 16, lineHeight: 19, color: "#2B1E10", textShadowColor: "rgba(255,244,220,0.95)", textShadowRadius: 8 }}>{cal.year}  •  {t("cal.season." + SEASON_KEY[cal.season])}</Text>
-            </View>
-            <Pressable accessibilityLabel={t("flow.lifeBook")} onPress={() => router.push("/oyun/tarih")} style={{ minWidth: 44, minHeight: 44, alignItems: "center", justifyContent: "center" }}><GameIcon name="map" size={24} color="#2E200F" /></Pressable>
-            <Pressable accessibilityLabel={t("scr.ayarlar")} onPress={() => router.push("/oyun/ayarlar")} style={{ minWidth: 44, minHeight: 44, alignItems: "center", justifyContent: "center" }}><GameIcon name="ayarlar" size={24} color="#2E200F" /></Pressable>
-          </View>
-        </View>
-        {/* Kimlik (mockup): büyük portre sahneden taşar; sağında ad, meslek, ince çizgi ve dört gösterge */}
-        <View style={{ marginTop: -62, marginBottom: 14, flexDirection: rtl ? "row-reverse" : "row", alignItems: "flex-end", gap: 10 }}>
-          <Pressable accessibilityLabel={t("tab.character")} onPress={() => router.push("/oyun/karakter")} style={{ padding: 3, borderRadius: 60, backgroundColor: "#1A1208", borderWidth: 2, borderColor: C.gold, shadowColor: "#000", shadowOpacity: 0.6, shadowRadius: 8, elevation: 8 }}>
-            <Portre age={p.age} gender={p.gender} size={98} ring={false} />
-          </Pressable>
-          <View style={{ flex: 1, minWidth: 0, paddingBottom: 2 }}>
-            <Text numberOfLines={1} adjustsFontSizeToFit style={{ fontFamily: F.serif, fontSize: 23, lineHeight: 28, color: "#F6EAD0", textShadowColor: "#000", textShadowRadius: 6 }}>{lakapliAd(p.name, p.lakap, p.gender === "kadın", t)}</Text>
-            <Text numberOfLines={1} style={{ fontFamily: F.serif, fontSize: 16, lineHeight: 20, color: C.parchmentDim }}>{p.profession === "işsiz" ? t("misc.jobless") : careerTitleL(p.profession, kariyerXp(p), lang, p.gender === "kadın")} · {p.age} {t("misc.age")}</Text>
-            <LinearGradient start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} colors={[C.goldDim, C.goldDim + "00"]} style={{ height: 1, marginTop: 7, marginBottom: 8 }} />
-            <StatStrip rtl={rtl} items={[
-              { icon: "saglik", label: t("char.health"), value: String(Math.round(p.health)), tone: p.health < 30 ? C.blood : undefined },
-              { icon: "fist", label: t("st.strength"), value: String(Math.round(effStat(p, "strength"))) },
-              { icon: "graduate-cap", label: t("st.intelligence"), value: String(Math.round(effStat(p, "intelligence"))) },
-              { icon: "akce", label: t("char.money"), value: new Intl.NumberFormat(lang, { notation: p.money >= 1000 ? "compact" : "standard", maximumFractionDigits: 1 }).format(Math.round(p.money)).replace(/[\s\u00A0]/g, "") },
-            ]} tight />
-          </View>
-        </View>
+      <ScrollView style={{ flex: 1, backgroundColor: "#15100A" }} contentContainerStyle={{ paddingBottom: 100 }}>
+        <MkHero source={heroImage(p.age, cal.season)} topInset={insets.top} seasonIcon={SEASON_ICON[cal.season] || "sun"} title={t("flow.anotherMonth")} sub={`${cal.year}  •  ${t("cal.season." + SEASON_KEY[cal.season])}`} rtl={rtl}
+          onBook={() => router.push("/oyun/tarih")} onSettings={() => router.push("/oyun/ayarlar")} bookLabel={t("flow.lifeBook")} settingsLabel={t("scr.ayarlar")} />
+        <MkIdentity age={p.age} gender={p.gender} rtl={rtl} portraitLabel={t("tab.character")} onPortrait={() => router.push("/oyun/karakter")}
+          name={lakapliAd(p.name, p.lakap, p.gender === "kadın", t)}
+          role={p.profession === "işsiz" ? t("misc.jobless") : careerTitleL(p.profession, kariyerXp(p), lang, p.gender === "kadın")}
+          stats={[
+            { icon: "saglik", label: t("char.health"), value: String(Math.round(p.health)), tone: p.health < 30 ? C.blood : undefined },
+            { icon: "fist", label: t("st.strength"), value: String(Math.round(effStat(p, "strength"))) },
+            { icon: "graduate-cap", label: t("st.intelligence"), value: String(Math.round(effStat(p, "intelligence"))) },
+            { icon: "akce", label: t("char.money"), value: new Intl.NumberFormat(lang, { notation: p.money >= 10000 ? "compact" : "standard", maximumFractionDigits: 1 }).format(Math.round(p.money)).replace(/[\s\u00A0]/g, "") },
+          ]} />
+        <View style={{ paddingHorizontal: MK.side }}>
       {p.dead && (
         <View style={{ paddingBottom: 8, gap: 10 }}>
           {varisAdaylari(state).length > 0 && (
@@ -499,13 +480,12 @@ export default function Dashboard() {
         </View>
       )}
 
-        <MonthDecisionCard />
-        {/* Tek uyarı afişi: en acil iş (savaş, açlık, zindan, gündem); dokununca ayrıntı alttan açılır */}
-        {!p.dead && alert && <AlertBanner icon={alert.icon} title={alert.title} sub={alert.sub} tone={alert.tone} rtl={rtl} onPress={() => setSheet(alert.id)} />}
-        <OrnatePanel title={t("flow.recent")} icon="sun" right={<Pressable accessibilityRole="button" accessibilityLabel={t("dash.seeAll")} onPress={() => router.push("/oyun/tarih")} style={{ minHeight: L.touch, justifyContent: "center" }}><Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchmentDim }}>{t("dash.seeAll")} ›</Text></Pressable>}>
-          {events.length ? <View style={{ borderWidth: 1, borderColor: C.border, borderRadius: 6, backgroundColor: "rgba(8,5,2,0.35)" }}>{events.map(({ e, hIdx }, index) => <View key={e.q ?? hIdx}>{EventCard({ e, hIdx, last: index === events.length - 1 })}</View>)}</View> : <Text style={{ fontFamily: F.serif, fontSize: T.body, lineHeight: T.line, color: C.parchmentMuted }}>{t("dash.empty")}</Text>}
-        </OrnatePanel>
-        <ListRow boxed first icon="roman" title={t("flow.lifeBook")} sub={t("flow.lifeBookSub")} rtl={rtl} onPress={() => router.push("/oyun/tarih")} />
+        </View>
+        <MkDecision />
+        {!p.dead && alert && <View style={{ marginHorizontal: 0 }}><MkAlert icon={alert.icon} title={alert.title} sub={alert.sub} red={alert.tone !== C.gold} rtl={rtl} onPress={() => setSheet(alert.id)} /></View>}
+        <MkRecent title={t("flow.recent")} seeAll={t("dash.seeAllShort")} empty={t("dash.empty")} rtl={rtl} onSeeAll={() => router.push("/oyun/tarih")}
+          rows={events.map(({ e }) => { const cfg = EVT[e.type] || DEFAULT_EVT; return { key: String(e.q ?? e.day + e.text), icon: cfg.gi, when: timeAgo(e.day), text: renderEvt(e.k, e.text, e.p, lang, t, p.gender === "kadın"), fresh: !!freshMark && (e.q ?? 0) > freshMark.from, landmark: !!e.landmark }; })} />
+        <MkBookRow title={t("flow.lifeBook")} sub={t("flow.lifeBookSub")} rtl={rtl} onPress={() => router.push("/oyun/tarih")} />
       </ScrollView>
 
       <GameSheet visible={sheet === "uyari"} onClose={() => setSheet(null)} title={t("home.uyari")} icon="crossed-swords" scene={SAHNE_GORSEL.mogol_baskin}>

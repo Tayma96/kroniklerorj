@@ -15,10 +15,10 @@
 - tsc kırığı düzeldi; `smoke:full` 300 hayat temiz (`bd471c8`). Tema, `ornament-ui` bileşenleri, NPC kendi portresiyle sahne, ayrı mekân resimleri.
 - Oynanış hatası: 13+ yaşta yemek düğmesi yoktu; "Sofra" eklendi. Tarayıcı botu (scratchpad) 400 ay hatasız oynadı. Cihaz/APK denemesi yok.
 
-## 3. tur (kullanıcının seçtiği nihai ana sayfa)
-- Ana sayfa = `claude-paket` mockup ekran 1: sahne, kimlik+4 gösterge, Bu Ayın Kararı (satır içi), tek uyarı afişi (savaş/açlık/gündem → alttan panel), Son Gelişmeler, Yaşam Defteri.
-- Alt menü: Karakter · Şehir · [İlerle pusulası → ana sayfa] · Kişiler · Defter. Emek ve yaş uğraşları Karakter'de (`lib/month-actions-ui.tsx`); eski Menü içeriği `lib/place-grid.tsx` ile Karakter/Kişiler/Defter'e dağıldı. Çalışılmamış ayda Karakter sekmesinde rozet.
-- Semboller yazı tipine gömülü (`scripts/yazitipi/sembol-gom.py`); alt sayfalar sahne fotoğrafı üstünde. Araştırma: `docs/SAVAS_3D_VE_SAYFA_PLANI.md`. Smoke en sona bırakıldı.
+## 3. tur (nihai ana sayfa — kullanıcı kararı)
+- Ana sayfa = `claude-paket/mockup_full.png` ekran 1, ölçüler ×0.82 ile `lib/home-mockup-ui.tsx`ta (sahne 201, portre 84, metin ~12.5 pt). Sahne `heroImage(yaş, mevsim)` (eski mantık). Yan yana karşılaştırarak ayarlandı.
+- Alt menü seçenekleri ESKİ gibi kalır: Ana Sayfa · Karakter · [Ayı İlerlet] · İlişkiler · Menü; yalnız görünüm mockup'a göre. Başka sayfaların yapısını değiştirme.
+- Emek ve yaş uğraşları Karakter ekranında (`lib/month-actions-ui.tsx`), çalışılmamış ayda Karakter rozeti. Semboller yazı tipinde (`scripts/yazitipi`). Smoke en sona.
 
 ## Açık işler
 - Sıradaki: ibre mini oyununu kaldır; dövüşe niyet+nefes; Skia meydan muharebesi; Menü rotası artık bağlantısız (silinebilir).
