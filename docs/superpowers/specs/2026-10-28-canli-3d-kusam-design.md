@@ -97,7 +97,37 @@ düşük piksel oranı, dövüşte arayüz yeniden çizimini durdurma). Seçim d
 - Doku bütçesi: eşya başına 512-1024 px, sıkıştırılmış (KTX2/webp).
 
 ### 7.3 Hareket hattı
-<!-- ARAŞTIRMA AJANI SONUCUYLA DOLACAK: mocap kaynakları, metinden hareket, akıcılık teknikleri -->
+
+**Kaynaklar (ticari kullanıma uygun):**
+
+| Hareket | Kaynak |
+|---|---|
+| Muhafız duruşu, bekleme | CMU 76_04 (savunma duruşu) + elle yazılmış nefes katmanı |
+| İleri/geri adım | 100STYLE (CC BY 4.0) ya da CMU yürüyüş kesitleri |
+| Hafif saldırı (2-3 çeşit) | CMU 02_07, 02_08, 02_09 kılıç oyunu kesitleri |
+| Ağır/özel vuruş | CMU 02_09 baş üstü vuruş, gerekirse Kimodo |
+| Savuşturma/blok | CMU 144 (kadın) bloklar, 76_02-03 kaçınma |
+| Darbe alma, sendeleme | CMU 85_07 sendeleme; eksikler KayKit/Quaternius (CC0) ya da Kimodo |
+| Yere düşme/yenilgi | CMU 90_16, 90_18 |
+| Zafer, karakter sayfası beklemesi | Kimodo ya da KayKit (CC0), CMU sakin duruş |
+
+- CMU: ürüne gömülü ticari kullanım serbest; ham veri yeniden satılamaz/dağıtılamaz.
+- **NVIDIA Kimodo** (SOMA modeli, NVIDIA Open Model License, ticari kullanım serbest):
+  metinden hareket taslağı; eksik hareketler için. Hugging Face Space'i var (kotalı).
+- Kullanılmayacaklar: HY-Motion (AB/İngiltere/Kore'de lisanssız), MoMask/MotionGPT
+  (ticari olmayan AMASS verisiyle eğitilmiş), Bandai Namco, LAFAN1, AMASS (ticari değil).
+- Mixamo isteğe bağlı: ücretsiz ve oyunlarda serbest, ama kullanıcının Adobe hesabıyla elle
+  indirme ister.
+
+**Akıcılık (Blender'da hazırlanır):** 120 → 30 kare/sn; kılıç hareketleri 1,2-1,5 kat
+hızlandırılır; her vuruşa 2-4 karelik hazırlanma ve sonunda taşma-oturma eklenir; ayaklar
+IK ile yere sabitlenip pişirilir (kayan ayak yok); adım ve geri tepme kök kemiğine taşınır;
+sol el sürümleri aynalanarak üretilir; her hareket ayrı NLA izi olarak GLB'ye çıkar.
+
+**Akıcılık (oyunda):** yumuşak geçiş süreleri — bekleme→muhafız 0,15-0,25 sn, saldırıya
+giriş 0,05-0,1 sn, darbe kesmesi ~0,05 sn, toparlanma 0,15-0,25 sn; üst gövde saldırısı alt
+gövde duruşunun üstüne katmanlanır; her beklemede düşük ağırlıklı nefes katmanı; vuruş anında
+kısa donma (hafif 30-50 ms, ağır 60-100 ms, kritik 100-150 ms) ve hafif kamera sarsıntısı.
 
 ### 7.4 Oyun içi davranış
 
@@ -111,13 +141,18 @@ düşük piksel oranı, dövüşte arayüz yeniden çizimini durdurma). Seçim d
   figürler. Bu projede yalnız altyapı.
 - Yedek: 3D başlatılamazsa (eski cihaz) mevcut 2D görünüme düşer; oyun bozulmaz.
 
-## 8. Onay kapıları
+## 8. Aşamalar ve onay kapıları
 
-1. **Kapı 1 — akıcılık ve görünüm testi:** erkek karakter, kılıç + miğfer + zırh, 3 hareket
-   (bekleme, saldırı, savuşturma) test APK'sında kullanıcının telefonunda. Kullanıcı "akıcı ve
-   gerçek" demeden toplu üretim yok.
-2. **Kapı 2 — karakter sayfası:** tüm görünen eşyalar, canlı takma.
-3. **Kapı 3 — düello:** tüm hareketler, rakip kuşamları, bitiriş anı.
+| Aşama | İş | Kapı (kullanıcı onayı) |
+|---|---|---|
+| 0. Teknik deneme | Filament (olmazsa three.js) + tek gövde + 2 hareket + yumuşak geçiş, gerçek derleme hattında test APK | Telefonda açılıyor, akıcı mı? |
+| 1. Görünüm ve akıcılık | Erkek gövde, varsayılan kıyafet, kılıç + miğfer + zırh; bekleme, saldırı, savuşturma | "Akıcı ve gerçek" demeden toplu üretim yok |
+| 2. Varlık üretimi | Kadın gövde, 22 eşyanın tamamı, tüm hareketler | Eşya sayfası (kontak sayfa) incelemesi |
+| 3. Karakter sayfası | Canlı 3D figür, takma/çıkarma animasyonu, vâris anı | Telefonda deneme |
+| 4. Düello | Tüm hareketler, rakip kuşamları, bitiriş anı, eski 2D'ye yedek | Telefonda deneme |
+| 5. Ordu altyapısı | Komutan figürü, asker figürü taslağı (meydan muharebesiyle birlikte) | Meydan muharebesi tasarımında |
+
+Her aşama ayrı plan, alt ajanlarla uygulama, inceleme ajanı ve doğrulamayla ilerler.
 
 ## 9. Kısıtlar
 
