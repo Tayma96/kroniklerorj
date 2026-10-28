@@ -11,14 +11,9 @@
 - Kullanıcı: 2 haftada tek oyunculuyu oynanabilir ve güzel görünür hâle getir; online GDD sonra. Tam yetki verdi, onay beklenmez. Çalışma dalı `apk` (oturum dalına da aynı commit itilir).
 - Tasarım hedefi `mobile/assets/tasarim/claude-paket/mockup_full.png`; birebir değil, mantıksızlık giderilerek ve içerik kaybetmeden.
 
-## Bu oturumda yapılanlar
-- `4c20917` tsc kırığı (ebeveyn ihmali) düzeltildi. `smoke:full` 300 hayat temiz.
-- Tema koyulaştı; `ornament-ui`: işlenmiş panel, kenardan kenara sahne başlığı, `ListRow`, `AlertBanner`, `StatStrip` (dar ekranda 2×2). Ana ekran, şehir, NPC, aylık karar (sahne görselli), savaş afişi, bölge ambarı, alt sayfa başlıkları ve pusula düğmesi yenilendi.
-- NPC sahnesi artık kişinin kendi sinematik portresi (başka kişinin meslek resmi kimliği bozuyordu); çocuklarda meslek ortamı + yuvarlak portre.
-- Şehir mekân kartları ayrı sahneler kullanıyor (`lib/assets.ts`).
-- Oynanış hatası: 13+ yaşta yemek düğmesi yoktu, oyuncu sessizce açlıktan ölüyordu. Ana ekrana tokluk <40'ta bedelli "Sofra" kartı eklendi.
-- Ana ekranda eylemler (çalış/yaş uğraşları) geçmiş kaydının önüne alındı.
-- Tarayıcı botu (scratchpad, depoda yok) 400 ay hatasız oynadı. Gerçek cihaz/APK denemesi yapılmadı.
+## 1. tur
+- tsc kırığı düzeldi; `smoke:full` 300 hayat temiz (`bd471c8`). Tema, `ornament-ui` bileşenleri, NPC kendi portresiyle sahne, ayrı mekân resimleri.
+- Oynanış hatası: 13+ yaşta yemek düğmesi yoktu; "Sofra" eklendi. Tarayıcı botu (scratchpad) 400 ay hatasız oynadı. Cihaz/APK denemesi yok.
 
 ## 2. tur (kullanıcı geri bildirimi)
 - Ana ekran: tam ekran mevsim sahnesi + kimlik kartı + gündem madalyonları; karar/emek/uğraş/gündem/günlük alttan açılan panellerde (`lib/home-hud.tsx`). Alt menü madalyonlu, ahşap-bronz. Alt sayfalar kendi sahne fotoğrafı üstünde (`ScreenFresk`).
@@ -27,6 +22,6 @@
 
 ## Açık işler
 - Sıradaki: alt menüyü mockup düzenine (Ana · Şehir · İlerle · Kişiler · Defter) geçir, Menü içeriğini dağıt; ibre mini oyununu kaldır; dövüşe niyet+nefes; Skia meydan muharebesi.
-- Denge: rastgele oynayan bot 40 yaşında nam 100'e ulaşıyor; nam/para eğrisi gözden geçirilmeli. Sofra kartı sık çıkıyorsa aylık otomatik ev sofrası düşünülebilir.
+- Denge: rastgele bot 40 yaşında nam 100; eğri gözden geçirilmeli.
 - Ana ekrandaki eski stil şeritler (zindan, destan, kervan, açık hesaplar) ve diğer alt sayfa iç kartları ortak bileşene taşınabilir.
 - Aile/valilik dilimleri (19 Ekim) ve `game.ts`teki 254 `Math.random()` göçü sürüyor; ayrıntı `docs/OYNANIS_DERINLIGI.md`, `docs/AUDIT.md`.
