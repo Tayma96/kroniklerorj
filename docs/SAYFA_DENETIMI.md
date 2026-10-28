@@ -35,8 +35,8 @@ oynanabilir bir sahneye çeviren fırsat (2.5D Skia ya da 3D).
 | Mektep | Ders, sınav, kulüp, hoca | Sınavı tek tıktan çıkarıp 3 soruluk kısa seçim (özelliğe bağlı şans) | Ders amblemleri var | Düşük |
 | Örgütler | Görev, katılım, güç kullanma, saray, sancak | Rütbe basamakları ve sıradaki rütbenin şartı tek yerde | Lonca sancak haritası | Orta |
 | Gölge İşleri | Keşif, 4 suç, kovalamaca, kadı, zar meclisi, soruşturma | Mekanik yeterli | **Zar meclisi: fiziksel zar atma animasyonu**, kovalamaca sahnesi | Orta |
-| Savaş | Duruş, hamle, niyet sezme, nefes, üstünlük, muhafız, hasım, talim | Mekanik var; ordu cephesi tek düğme — **meydan muharebesi** (hazırlık, emir kartları, sahte ricat) | **Dövüş arenası: iki figür, niyet simgesi, vuruş efekti** | Çok yüksek |
-| Hanedan | Vasiyet, taht, divan, sefer, vali, yerleşim, görkem, entrika, kan davası | **Alt sekmelere böl**: Soy · Taht · Dîvân · Yerleşim · Entrika | **Soy ağacı görünümü** | Çok yüksek |
+| Savaş | Duruş, hamle, niyet sezme, nefes, üstünlük, muhafız, hasım, talim | Mekanik var; ordu cephesi tek düğme — **meydan muharebesi** (hazırlık, emir kartları, sahte ricat) | **Dövüş arenası eklendi** (Karagöz perdesi, iki tasvir); meydan muharebesi sırada | Yüksek |
+| Hanedan | Vasiyet, taht, divan, sefer, vali, yerleşim, görkem, entrika, kan davası | **Sekmelere bölündü** (Soy · Taht · Servet · Hanedanlar) | **Soy ağacı görünümü** | Orta |
 | Nesil & Vâris | Vâris seçimi, yatırım, çeyiz, gözde, eğitim | Vâris kartlarında özellik karşılaştırması yan yana | Kart çevirme animasyonu | Orta |
 | NPC profili | Sohbet, hediye, hedef yardımı/istismarı, çırak, flört, evlilik, dedikodu, helallik, hafıza | Uzun listeyi **sohbet sahnesine** çevir: büyük portre, 3–4 seçenek, yanıt | Portreli diyalog sahnesi | Yüksek |
 | İlişkiler | Yakın çember ve tanışlar listesi | Kişiye göre süzgeç (aile, dost, hasım); kim kimi tanıyor | **İlişki ağı görseli** (çember) | Orta |
@@ -53,7 +53,7 @@ oynanabilir bir sahneye çeviren fırsat (2.5D Skia ya da 3D).
 | Divan | Günün davası (etkisiz, paylaşım) | Bilerek etkisiz; değişiklik gerekmez | — | — |
 | Yaşam Defteri | Tam geçmiş, sinema modu | **Süzgeç eklendi** (Önemli/Günlük/Dünya); kişi araması | Sayfa çevirme | Yapıldı |
 | Hayat Romanı, Kronik, Ocak | Kayıt ve devir | Mekanik yeterli | — | — |
-| Yeni Oyun | Ad, cinsiyet, huy | **Doğduğun hane seçimi** (köylü, esnaf, ulema, bey ailesi): farklı başlangıç ve tekrar oynanış | Prolog sahnesi var | Yüksek |
+| Yeni Oyun | Ad, cinsiyet, huy, doğduğun ocak | **Doğduğun ocak eklendi** (köylü, esnaf, hekim, sipahi): farklı başlangıç akçesi, beceri, babanın mesleği | Prolog sahnesi var | Yapıldı |
 | Ayarlar, SSS, Emeği Geçenler | — | — | — | — |
 
 ## 3D ve canlandırma

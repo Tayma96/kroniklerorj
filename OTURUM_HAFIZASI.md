@@ -22,8 +22,6 @@
 
 ## Açık işler
 - Çok oyunculu (MP) kullanıcı kararıyla ertelendi: denetimde ve geliştirmede dokunma; yalnız protokol eşliğini bozma.
-- Sayfa denetimi ve öncelik sırası: `docs/SAYFA_DENETIMI.md` (1. ay sonu özeti, 2. ibre kaldır, 3. hanedan sekmeleri, 4. dövüş arenası, 5. doğum hanesi).
-- Sıradaki: ibre mini oyununu kaldır; dövüşe niyet+nefes; Skia meydan muharebesi; Menü rotası artık bağlantısız (silinebilir).
+- Denetim `docs/SAYFA_DENETIMI.md`: ibre kaldırıldı, hanedan sekmeli, dövüş arenası (`lib/duel-arena.tsx`), doğduğun ocak (yeni oyun) bitti. Sıradaki: NPC sohbet sahnesi, mahalle haritası, meydan muharebesi (Skia).
 - Denge: bot 40 yaşında nam 100.
-- Ana ekrandaki eski stil şeritler (zindan, destan, kervan, açık hesaplar) ve diğer alt sayfa iç kartları ortak bileşene taşınabilir.
 - Aile/valilik dilimleri (19 Ekim) ve `game.ts`teki 254 `Math.random()` göçü sürüyor; ayrıntı `docs/OYNANIS_DERINLIGI.md`, `docs/AUDIT.md`.

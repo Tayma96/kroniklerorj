@@ -142,6 +142,7 @@ export interface Player {
   trade_xp_turn?: number; // bu ay pazar işleminden ticaret tecrübesi alındı mı (tur başına tek — al-sat XP farmı önlenir)
   yr_money?: number; // geçen yaş gününde kese ne kadardı (yıl dönümü özeti farkı için)
   temperament?: string; // yaratılışta seçilen mizaç (yigit/kurnaz/merhametli/hirsli) — ömürlük küçük etkiler
+  birth_house?: string; // doğduğun ocak (koylu/esnaf/hekim/sipahi) — başlangıç farkı; eski kayıtta yok
   crownSeat?: string; // tahta çıkılan beylik; taşınmayla sınır değiştirilmez
   crownPolicy?: "denge" | "refah" | "sefer";
   crownTreaties?: Record<string, { kind: "ticaret" | "ateskes"; until: number }>;
@@ -3102,6 +3103,25 @@ export function applyTemperament(prev: GameState, id: string): GameState {
   else if (id === "hirsli") { p.stats.intelligence += 1; p.reputation = Math.min(100, p.reputation + 5); }
   p.skills.combat = skillLevel(p.skill_xp.combat);
   p.skills.social = skillLevel(p.skill_xp.social);
+  return s;
+}
+
+// Doğduğun ocak — yeni oyunda seçilir. Her biri başka eksende avantaj verir (para · beceri · özellik · itibar);
+// hiçbiri baskın değil. Babanın gerçek mesleği ocağa göre kurulur; kroniğe doğum satırı düşer. Yalnız ilk hayatın başında.
+export const BIRTH_HOUSES = ["koylu", "esnaf", "hekim", "sipahi"] as const;
+export function applyBirthHouse(prev: GameState, id: string): GameState {
+  if (!(BIRTH_HOUSES as readonly string[]).includes(id)) return prev;
+  const s = clone(prev); const p = s.player;
+  if (p.birth_house || s.turn > 0) return prev; // bir kez, hayatın başında
+  p.birth_house = id;
+  const baba = p.father_id && s.pop ? s.pop.k[p.father_id] : undefined;
+  if (id === "koylu") { p.stats.stamina += 1; p.honor = clampStat(p.honor + 4); p.inventory.bugday = (p.inventory.bugday || 0) + 4; if (baba) baba.prof = "çiftçi"; }
+  else if (id === "esnaf") { p.money += 30; p.skill_xp.crafting += 50; p.skill_xp.trade += 30; if (baba) baba.prof = s.seed % 2 ? "demirci" : "fırıncı"; }
+  else if (id === "hekim") { p.stats.intelligence += 1; p.skill_xp.social += 40; p.honor = clampStat(p.honor + 2); p.money += 8; if (baba) baba.prof = "şifacı"; }
+  else { p.money += 60; p.reputation = Math.min(100, p.reputation + 6); p.fame = Math.min(100, p.fame + 4); p.skill_xp.combat += 40; bumpNam(p, "zalim", 6); if (baba) baba.prof = "asker"; }
+  for (const k of ["combat", "trade", "crafting", "social"] as const) p.skills[k] = skillLevel(p.skill_xp[k]);
+  const TR: Record<string, string> = { koylu: "Bir köylü ocağında doğdun; tarlanın ve harmanın çocuğusun.", esnaf: "Bir esnaf ocağında doğdun; çarşının sesiyle büyüyeceksin.", hekim: "Bir hekim ocağında doğdun; evde kitap ve şifalı ot kokusu eksik olmaz.", sipahi: "Bir sipahi ocağında doğdun; atın ve kılıcın yanında, halkın biraz uzağında büyüyeceksin." };
+  push(s, "doğum", TR[id], "kişisel", false, { k: "evj.birthHouse." + id });
   return s;
 }
 

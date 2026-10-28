@@ -5,7 +5,7 @@ import { useRouter } from "expo-router";
 import Animated, { FadeIn, FadeInUp, FadeOut, useSharedValue, useAnimatedStyle, withTiming, Easing } from "react-native-reanimated";
 import { useGame } from "../lib/store";
 import { useI18n, applyParams } from "../lib/i18n";
-import { applyTemperament, TEMPERAMENTS } from "../lib/game";
+import { applyTemperament, TEMPERAMENTS, applyBirthHouse, BIRTH_HOUSES } from "../lib/game";
 import { C, F } from "../lib/theme";
 import { Ambiance, ParticleBurst, Pulse } from "../lib/fx";
 import { SceneArt, Vignette } from "../lib/prolog";
@@ -123,6 +123,7 @@ export default function YeniOyun() {
   const [fullName, setFullName] = useState("");
   const [gender, setGender] = useState<"erkek" | "kadın" | "">("");
   const [temp, setTemp] = useState<string>("");
+  const [house, setHouse] = useState<string>("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
@@ -133,7 +134,7 @@ export default function YeniOyun() {
     try {
       if (soydan && son) await yeniOcak(g, son.secilen, first);
       else await startGame(first, surname, g);
-      apply((s) => applyTemperament(s, temp));
+      apply((s) => applyBirthHouse(applyTemperament(s, temp), house));
       const cocuk = gender === "kadın" ? t("ng.childGirl") : t("ng.childBoy");
       setCinematic([
         t("ng.cine1"),
@@ -153,6 +154,7 @@ export default function YeniOyun() {
     // Soydan devamda soyadı defterden gelir; yazılan soyadı yok sayılır.
     if (!gender) { setError(t("new.errGender")); return; }
     if (!temp) { setError(t("new.errTemp")); return; }
+    if (!house) { setError(t("new.errHouse")); return; }
     // Mevcut (yaşayan) kayıt varsa üzerine yazmadan önce onayla — kaza ile silinmesin.
     if (state && !state.player.dead) {
       Alert.alert(t("new.owTitle"), t("new.owBody"), [
@@ -243,6 +245,25 @@ export default function YeniOyun() {
                 );
               })}
             </View>
+          {/* Doğduğun ocak: başlangıçta farklı eksende avantaj (para · beceri · özellik · itibar) */}
+          <View style={{ marginTop: 20 }}>
+            <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.goldDim, marginBottom: 8 }}>{t("new.houseLabel")}</Text>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+              {BIRTH_HOUSES.map((id) => {
+                const active = house === id;
+                return (
+                  <Pressable key={id} accessibilityRole="button" accessibilityState={{ selected: active }} onPress={() => setHouse(id)} style={{
+                    width: "48%", paddingVertical: 11, paddingHorizontal: 12, borderRadius: 5,
+                    backgroundColor: active ? "rgba(201,168,76,0.20)" : "rgba(8,5,2,0.62)",
+                    borderWidth: 1, borderColor: active ? "rgba(201,168,76,0.7)" : "rgba(160,130,70,0.28)",
+                  }}>
+                    <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: active ? C.gold : C.parchment }}>{t("house." + id + ".l")}</Text>
+                    <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchmentMuted, marginTop: 2 }}>{t("house." + id + ".d")}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
           </View>
 
           {error ? <Text style={{ color: "#ff9b8a", textAlign: "center", marginTop: 16, fontFamily: F.serif }}>{error}</Text> : null}
