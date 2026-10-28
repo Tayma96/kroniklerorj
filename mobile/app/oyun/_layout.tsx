@@ -26,7 +26,7 @@ import { playAdvance } from "../../lib/sound";
 // Sekme simgesi (mockup): çerçevesiz siluet; seçili sekme parlak altın ve ışıltılı.
 function TabIcon({ name, focused }: { name: string; focused: boolean }) {
   return <View style={{ alignItems: "center", justifyContent: "center", shadowColor: C.goldBright, shadowOpacity: focused ? 0.85 : 0, shadowRadius: 9 }}>
-    <GameIcon name={name} size={27} color={focused ? C.goldBright : "#CDB98F"} />
+    <GameIcon name={name} size={27} color={focused ? C.goldBright : "#E6D6B4"} />
   </View>;
 }
 
@@ -147,7 +147,7 @@ function AdvanceFab({ bottom }: { bottom: number }) {
         </Animated.View>
         {/* Çekirdek eylem ikon-only kalmasın: mikro etiket (a11y metniyle aynı anahtar) */}
         {/* Uzun dillerde (AVANZAR EL MES) etiket yandaki sekme simgelerine taşmasın: düğme sütununa sığdırılır */}
-        <Text numberOfLines={2} style={{ width: narrow ? 80 : 100, textAlign: "center", fontFamily: F.serif, fontSize: narrow ? 12 : 14, lineHeight: narrow ? 14 : 17, color: C.goldBright, marginTop: 2 }}>{t(waiting ? "flow.pending" : "tab.advance")}</Text>
+        <Text numberOfLines={2} style={{ width: narrow ? 80 : 100, textAlign: "center", fontFamily: F.display, fontSize: narrow ? 12 : 14, lineHeight: narrow ? 14 : 17, color: C.goldBright, marginTop: 2 }}>{t(waiting ? "flow.pending" : "tab.advance")}</Text>
 
       </View>
     </View>
@@ -208,7 +208,7 @@ export default function OyunLayout() {
         tabBarStyle: { backgroundColor: "#1B130A", borderTopWidth: 0, height: 80 + insets.bottom, paddingBottom: insets.bottom + 6, paddingTop: 10, shadowColor: "#000", shadowOpacity: 0.6, shadowRadius: 10, shadowOffset: { width: 0, height: -4 }, elevation: 16 },
         tabBarBackground: () => <TabBackground width={width} />,
         tabBarActiveTintColor: C.goldBright,
-        tabBarInactiveTintColor: "#CDB98F",
+        tabBarInactiveTintColor: "#E6D6B4",
         tabBarItemStyle: { flexGrow: 0, flexShrink: 0, width: tabWidth },
         tabBarLabel: ({ color, children }) => <Text numberOfLines={1} adjustsFontSizeToFit style={{ fontFamily: F.serif, fontSize: width < 360 ? 12 : 14, lineHeight: 18, color, textAlign: "center", paddingHorizontal: 1 }}>{children}</Text>,
       }}>

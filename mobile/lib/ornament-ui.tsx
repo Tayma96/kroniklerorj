@@ -27,7 +27,7 @@ export function OrnatePanel({ title, icon, right, children, tone = C.gold, inset
     {title && <View style={{ paddingHorizontal: 14, paddingTop: 12 }}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 10, minHeight: 28 }}>
         {icon && <GameIcon name={icon} color={tone} size={20} />}
-        <Text accessibilityRole="header" style={{ flex: 1, fontFamily: F.display, fontSize: 19, lineHeight: 25, color: tone }}>{title}</Text>{right}
+        <Text accessibilityRole="header" style={{ flex: 1, fontFamily: F.serif, fontSize: 22, lineHeight: 27, color: tone }}>{title}</Text>{right}
       </View>
       <LinearGradient pointerEvents="none" start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} colors={[tone + "99", tone + "33", tone + "00"]} style={{ height: 1, marginTop: 8 }} />
     </View>}
@@ -71,7 +71,7 @@ export function ListRow({ icon, title, sub, right, onPress, tone = C.gold, first
   const body = <>
     {icon && <View style={{ width: 34, alignItems: "center" }}><GameIcon name={icon} size={boxed ? 26 : 20} color={tone} /></View>}
     <View style={{ flex: 1, minWidth: 0 }}>
-      <Text style={{ fontFamily: boxed ? F.display : F.serif, fontSize: boxed ? 16 : T.body, lineHeight: boxed ? 22 : T.line, color: C.parchment }}>{title}</Text>
+      <Text style={{ fontFamily: F.serif, fontSize: boxed ? 20 : T.body, lineHeight: boxed ? 24 : T.line, color: boxed ? "#F6EAD0" : C.parchment }}>{title}</Text>
       {!!sub && <Text style={{ fontFamily: F.serif, fontSize: 14, lineHeight: 20, color: C.parchmentMuted }}>{sub}</Text>}
     </View>
     {right ?? (onPress ? <Text style={{ fontFamily: F.display, fontSize: 22, color: C.gold }}>{rtl ? "‹" : "›"}</Text> : null)}
@@ -91,7 +91,7 @@ export function AlertBanner({ icon, title, sub, onPress, tone = C.blood, rtl = f
     <View style={{ flexDirection: rtl ? "row-reverse" : "row", alignItems: "center", gap: 12, paddingVertical: 12, paddingHorizontal: 14 }}>
       <GameIcon name={icon} size={30} color={red ? "#F2D3B8" : tone} />
       <View style={{ flex: 1, minWidth: 0 }}>
-        <Text style={{ fontFamily: F.display, fontSize: 17, lineHeight: 23, color: red ? "#FBE9D2" : tone }}>{title}</Text>
+        <Text style={{ fontFamily: F.serif, fontSize: 20, lineHeight: 24, color: red ? "#FBE9D2" : tone }}>{title}</Text>
         {!!sub && <Text style={{ fontFamily: F.serif, fontSize: T.body, lineHeight: T.line, color: red ? "#EBC9B0" : C.parchmentDim }}>{sub}</Text>}
       </View>
       {onPress && <Text style={{ fontFamily: F.display, fontSize: 24, color: red ? "#FBE9D2" : tone }}>{rtl ? "‹" : "›"}</Text>}
@@ -100,15 +100,15 @@ export function AlertBanner({ icon, title, sub, onPress, tone = C.blood, rtl = f
 }
 
 // Dikey çizgilerle ayrılmış gösterge şeridi (ikon, etiket, değer; isteğe bağlı çubuk).
-export function StatStrip({ items, rtl = false }: { items: { icon: string; label: string; value: string; pct?: number; tone?: string }[]; rtl?: boolean }) {
+export function StatStrip({ items, rtl = false, tight = false }: { items: { icon: string; label: string; value: string; pct?: number; tone?: string }[]; rtl?: boolean; tight?: boolean }) {
   const { width } = useWindowDimensions();
   const grid = width < 360 && items.length > 3; // dar ekranda dört gösterge 2×2 dizilir; değer kesilmez
   return <View style={{ flexDirection: rtl ? "row-reverse" : "row", flexWrap: grid ? "wrap" : "nowrap", alignItems: "stretch", rowGap: grid ? 10 : 0 }}>
-    {items.map((it, i) => { const sep = grid ? i % 2 === 1 : i > 0; return <View key={it.label} accessible accessibilityLabel={`${it.label}: ${it.value}`} style={{ flex: grid ? undefined : 1, width: grid ? "50%" : undefined, minWidth: 0, flexDirection: rtl ? "row-reverse" : "row", alignItems: "center", gap: 6, paddingHorizontal: 6, borderLeftWidth: !rtl && sep ? 1 : 0, borderRightWidth: rtl && sep ? 1 : 0, borderColor: C.border }}>
-      <GameIcon name={it.icon} size={width < 360 ? 18 : 22} color={it.tone || C.gold} />
+    {items.map((it, i) => { const sep = grid ? i % 2 === 1 : i > 0; return <View key={it.label} accessible accessibilityLabel={`${it.label}: ${it.value}`} style={{ flex: grid ? undefined : 1, width: grid ? "50%" : undefined, minWidth: 0, flexDirection: rtl ? "row-reverse" : "row", alignItems: "center", gap: tight ? 3 : 6, paddingHorizontal: tight ? 3 : 6, borderLeftWidth: !rtl && sep ? 1 : 0, borderRightWidth: rtl && sep ? 1 : 0, borderColor: C.border }}>
+      <GameIcon name={it.icon} size={tight ? 16 : width < 360 ? 18 : 22} color={it.tone || C.gold} />
       <View style={{ flex: 1, minWidth: 0 }}>
-        <Text numberOfLines={1} style={{ fontFamily: F.serif, fontSize: 12, lineHeight: 15, color: C.parchmentMuted }}>{it.label}</Text>
-        <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={{ fontFamily: F.display, fontSize: 16, lineHeight: 21, color: it.tone || C.parchment }}>{it.value}</Text>
+        <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ fontFamily: F.serif, fontSize: tight ? 11 : 12, lineHeight: 15, color: C.parchmentMuted }}>{it.label}</Text>
+        <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={{ fontFamily: F.display, fontSize: tight ? 14 : 16, lineHeight: 20, color: it.tone || C.parchment }}>{it.value}</Text>
         {it.pct != null && <View style={{ height: 4, marginTop: 3, borderRadius: 2, backgroundColor: C.border, overflow: "hidden" }}>
           <LinearGradient start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} colors={[C.goldDim, it.tone || C.gold]} style={{ width: `${Math.max(0, Math.min(100, it.pct))}%`, height: 4 }} />
         </View>}
