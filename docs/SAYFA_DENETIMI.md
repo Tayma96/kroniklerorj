@@ -38,7 +38,7 @@ oynanabilir bir sahneye çeviren fırsat (2.5D Skia ya da 3D).
 | Savaş | Duruş, hamle, niyet sezme, nefes, üstünlük, muhafız, hasım, talim | Mekanik var; ordu cephesi tek düğme — **meydan muharebesi** (hazırlık, emir kartları, sahte ricat) | **Dövüş arenası eklendi** (Karagöz perdesi, iki tasvir); meydan muharebesi sırada | Yüksek |
 | Hanedan | Vasiyet, taht, divan, sefer, vali, yerleşim, görkem, entrika, kan davası | **Sekmelere bölündü** (Soy · Taht · Servet · Hanedanlar) | **Soy ağacı görünümü** | Orta |
 | Nesil & Vâris | Vâris seçimi, yatırım, çeyiz, gözde, eğitim | Vâris kartlarında özellik karşılaştırması yan yana | Kart çevirme animasyonu | Orta |
-| NPC profili | Sohbet, hediye, hedef yardımı/istismarı, çırak, flört, evlilik, dedikodu, helallik, hafıza | Uzun listeyi **sohbet sahnesine** çevir: büyük portre, 3–4 seçenek, yanıt | Portreli diyalog sahnesi | Yüksek |
+| NPC profili | Sohbet, hediye, hedef yardımı/istismarı, çırak, flört, evlilik, dedikodu, helallik, hafıza | **Sohbet sahnesi yapıldı**: söz perdesi, iki sütun konu, eylem madalyonları; her eylemin açıklaması, bedeli ve şansı alttan açılan panelde, sonucu kişinin sözü olarak | Portreli diyalog sahnesi | Yapıldı |
 | İlişkiler | Yakın çember ve tanışlar listesi | Kişiye göre süzgeç (aile, dost, hasım); kim kimi tanıyor | **İlişki ağı görseli** (çember) | Orta |
 | Mahalle | Kim nerede, akşam sofrası, kasabanın gözü | Mekâna uğrayınca orada kimin olduğuna göre farklı karşılaşma | **Mahalle haritası**: cami, çarşı, han; kişiler pin olarak | Yüksek |
 | Mevki & İtibar | İtibar/şeref/korku/şöhret, söylentiler, mevki | Söylentiye karşılık sonuçlarını önceden göster | Söylentinin yayıldığı kişiler zinciri | Düşük |

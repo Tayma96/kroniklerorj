@@ -1,5 +1,5 @@
 import { DesignPressable as Pressable } from "../../../lib/design-pressable";
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useRef, useEffect, type ReactNode } from "react";
 import { View, Text, ScrollView, type ViewStyle } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -12,7 +12,9 @@ import { topMemories, salientMemory, representativeMemory } from "../../../lib/n
 import { NpcTavri } from "../../../lib/npc-bakis-ui";
 import { NpcIzlenimi } from "../../../lib/npc-izlenim-ui";
 import { SohbetDevami } from "../../../lib/npc-sohbet-ui";
-import { sohbetCevapla, aileProfilEylemi, aileProfilEyleminiYap } from "../../../lib/game";
+import { sohbetCevapla, aileProfilEylemi, aileProfilEyleminiYap, npcBakisi, type GameState } from "../../../lib/game";
+import { bakisTavri } from "../../../lib/npc-bakis";
+import { GameSheet } from "../../../lib/home-hud";
 import type { SohbetYanit } from "../../../lib/npc-sohbet";
 import { EvlatMektubu } from "../../../lib/evlat-ui";
 import { evladaMektup } from "../../../lib/game";
@@ -83,20 +85,11 @@ const TIE_META: Record<TieKind, { icon: string; tone: string }> = {
 const TIE_ORDER: TieKind[] = ["es", "ebeveyn", "evlat", "kardes", "dost", "rakip"];
 const APPRENTICE_SKILLS = ["combat", "trade", "crafting", "social"] as const;
 
-// Teklif şansı rozeti (dokununca döküm açılır) — yüzde ve kalemler motorun zar attığı değerle birebir.
-function SansRozet({ yuzde, acik, onPress }: { yuzde: number; acik: boolean; onPress: () => void }) {
+function SansDokum({ kalemler, yuzde, t, baslik = "sans.title" }: { kalemler: { k: string; v: number }[]; yuzde: number; t: (k: string) => string; baslik?: string }) {
   const { lang } = useI18n();
   return (
-    <Pressable onPress={onPress} hitSlop={8} style={({ pressed }) => ({ minWidth: 48, minHeight: 44, alignItems: "center", justifyContent: "center", paddingVertical: 5, paddingHorizontal: 9, borderRadius: 13, borderWidth: 1, borderColor: (acik || pressed ? C.goldBright : C.goldDim) + "AA", borderBottomWidth: pressed ? 1 : 3, borderBottomColor: C.bg, backgroundColor: acik || pressed ? "rgba(201,168,76,0.18)" : C.card, shadowColor: C.gold, shadowOpacity: 0.16, shadowRadius: 4, elevation: 2, transform: [{ translateY: pressed ? 2 : 0 }] })}>
-      <Text style={{ fontFamily: F.display, fontSize: 13, color: yuzde >= 60 ? C.sage : yuzde <= 25 ? C.blood : C.gold }}>{yuzdeL(yuzde, lang)}</Text>
-    </Pressable>
-  );
-}
-function SansDokum({ kalemler, yuzde, t }: { kalemler: { k: string; v: number }[]; yuzde: number; t: (k: string) => string }) {
-  const { lang } = useI18n();
-  return (
-    <View style={{ paddingHorizontal: 14, paddingBottom: 10, paddingTop: 2 }}>
-      <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1.5, color: C.goldDim, marginBottom: 4 }}>{t("sans.title")}</Text>
+    <View style={{ paddingHorizontal: 4, paddingBottom: 10, paddingTop: 2 }}>
+      <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1.5, color: C.goldDim, marginBottom: 4 }}>{t(baslik)}</Text>
       {kalemler.map((x, i) => (
         <View key={i} style={{ flexDirection: "row", paddingVertical: 2 }}>
           <Text style={{ flex: 1, fontFamily: F.serif, fontSize: T.body, color: C.parchmentDim }}>{t(x.k)}</Text>
@@ -136,14 +129,12 @@ export default function NpcDetail() {
   const { lang, t, tg } = useI18n();
   const [line, setLine] = useState<string>("");
   const [lineDelta, setLineDelta] = useState<number>(0);
-  const [giftOpen, setGiftOpen] = useState(false);
+  const [act, setAct] = useState<string | null>(null); // açık eylem paneli
   const [moreTopics, setMoreTopics] = useState(false);
   const [tiesOpen, setTiesOpen] = useState(false);
   const scroll = useRef<ScrollView>(null), chatY = useRef(0);
   const [gorusAcik, setGorusAcik] = useState(false); // görüş dökümü (neden böyle bakıyor)
-  const [sansAcik, setSansAcik] = useState<string | null>(null); // hangi teklifin şans dökümü açık
-  const [apprenticeChoiceOpen, setApprenticeChoiceOpen] = useState(false);
-  useEffect(() => { setLine(""); setLineDelta(0); setGiftOpen(false); setMoreTopics(false); setTiesOpen(false); setSansAcik(null); setApprenticeChoiceOpen(false); }, [id, state?.turn]);
+  useEffect(() => { setLine(""); setLineDelta(0); setAct(null); setMoreTopics(false); setTiesOpen(false); }, [id, state?.turn]);
   // Kişi nüfus kaydından okunur (her yerden; yaşayan ya da rahmetli) — nüfus her eylemde yenilendiği için pop'a bağlı.
   const prof = useMemo(() => (state ? kisiProfil(state, id, lang) : null), [state?.pop, state?.seed, state?.turn, state?.player.location_name, lang, id]);
   const cevre = useMemo(() => (state ? kisiCevresi(state, id, lang) : []), [state?.pop, state?.seed, state?.turn, state?.player.location_name, lang, id]);
@@ -189,18 +180,169 @@ export default function NpcDetail() {
     apply(() => r.state); setLine(r.line); setLineDelta(r.delta); focusChat();
   };
 
+  // Eylem sonucu: motorun bu eylemde yazdığı en yeni olay, kişinin sözü gibi perdede görünür; ilişki farkı yanında.
+  const doAct = (fn: (s: GameState) => GameState) => {
+    const before = state.hseq || 0, r0 = v, next = fn(state);
+    apply(() => next); setAct(null);
+    const e = [...next.history].reverse().find((x) => (x.q || 0) > before);
+    setLine(e ? renderEvt(e.k || "", e.text, e.p || [], lang, t, state.player.gender === "kadın") : ""); setLineDelta(relWith(next, npc.id) - r0); focusChat();
+  };
+  const stance = bakisTavri(npcBakisi(state, npc.id));
+  const rtl = lang === "ar", done = t("soc.lock.done"), young = state.player.age < 13, money = state.player.money;
+  const pct = (y: number) => yuzdeL(y, lang);
+  const eylemler: Eylem[] = [];
+  if (prof.burada && !state.player.dead) {
+    eylemler.push({ id: "gift", icon: "gems", tile: t("npcx.t.gift"), title: t("npcx.t.gift"), desc: t("npcx.gift.d"),
+      blocked: usedAct("gift") ? done : giftables.length === 0 ? t("npc.noGift") : undefined,
+      custom: <View style={{ gap: 8 }}>{giftables.map((k) => <SheetChoice key={k} icon={giftIcon(ITEMS[k])} label={t("it." + k)} tag={"×" + state.player.inventory[k]} onPress={() => doAct((s) => giftTo(s, npc, k))} />)}</View> });
+    eylemler.push({ id: "money", icon: "akce", tile: t("npcx.t.money"), title: t("npca.moneyBtn"), tag: GIVE_MONEY_AMT + " ⚜", desc: applyParams(t("npcx.money.d"), [GIVE_MONEY_AMT], lang),
+      blocked: usedAct("money") ? done : money < GIVE_MONEY_AMT ? t("sohbet.lowMoney") : undefined, run: () => doAct((s) => giveMoneyTo(s, npc)) });
+    if (canGoal) eylemler.push({ id: "help", icon: "leaf", tone: C.sage, tile: t("npcx.t.help"), title: t("npc.helpGoal"), tag: GOAL_HELP_COST + " ⚜", desc: applyParams(t("npcx.help.d"), [GOAL_HELP_COST], lang), note: goalL(npc.goal, lang),
+      blocked: usedAct("help") ? done : money < GOAL_HELP_COST ? t("sohbet.lowMoney") : undefined, run: () => doAct((s) => helpNpcGoal(s, npc)) });
+    if (canGoal && v > -25 && !(state.player.married && state.player.spouse_id === npc.id) && !oyuncuAkrabasi(state.player, npc.id)) eylemler.push({ id: "exploit", icon: "hood", tone: C.ember, tile: t("npcx.t.exploit"), title: t("npc.exploitGoal"), desc: t("npcx.exploit.d"), note: goalL(npc.goal, lang),
+      blocked: state.player.exploit_turn === state.turn ? done : undefined, run: () => doAct((s) => exploitNpcGoal(s, npc)) });
+    if (canTakeApprentice(state, npc)) eylemler.push({ id: "apprentice", icon: "anvil", tile: t("npcx.t.apprentice"), title: t("npc.aprTake"), desc: t("npcx.apprentice.d"),
+      warn: state.player.apprentice && state.player.apprentice.id !== npc.id ? [t("npc.aprReplaceWarn")] : undefined,
+      custom: <View>
+        <Text style={{ fontFamily: F.serifItalic, fontSize: T.body, color: C.parchmentMuted, lineHeight: T.line, marginBottom: 8 }}>{t("npc.aprChooseSkill")}</Text>
+        <View style={{ gap: 8 }}>{APPRENTICE_SKILLS.map((skill) => <SheetChoice key={skill} icon="graduate-cap" label={t("skill." + skill)} sub={t("skill." + skill + ".b")} onPress={() => doAct((s) => takeApprentice(s, npc, skill))} />)}</View>
+      </View> });
+    if (state.player.apprentice?.id === npc.id) { const ap = state.player.apprentice; eylemler.push({ id: "lesson", icon: "graduate-cap", tile: t("npcx.t.lesson"), title: t("npc.aprMentor"), desc: t("npcx.lesson.d"),
+      note: t("skill." + (ap.skill || bestSkillOf(state.player))) + " · " + (ap.months || 0) + "/" + APPRENTICE_MONTHS + " " + t("npc.aprMonths"),
+      blocked: state.player.apprentice_turn === state.turn ? done : undefined, run: () => doAct((s) => mentorApprentice(s)) }); }
+    if (state.player.betrothed?.id !== npc.id && couldMarry) { const x = teklifSansi(state, npc, "kur"); eylemler.push({ id: "propose", icon: "evlilik", tile: t("npcx.t.propose"), title: t("npc.propose"), desc: t("npcx.propose.d"),
+      tag: courtable ? pct(x.yuzde) : undefined, sans: courtable ? x : undefined,
+      warn: [...(martialLoad(state.player) > 0 ? [t("npca.martialWarn")] : []), ...(npcSeededMarried(npc) ? [t("affair.warnTheirs")] : [])],
+      blocked: courtable ? undefined : t("npc.proposeReq"), run: () => doAct((s) => proposeMarriage(s, npc)) }); }
+    if (canFlirt(state.player, npc, v)) { const forbidden = flirtIsForbidden(state.player, npc), x = teklifSansi(state, npc, "flort"); eylemler.push({ id: "flirt", icon: "lyre", tone: forbidden ? C.ember : C.gold, tile: t("npcx.t.flirt"), title: forbidden ? t("affair.flirtBtn") : t("npca.flirtBtn"), desc: t("npcx.flirt.d"),
+      tag: pct(x.yuzde), sans: x, warn: [...(forbidden ? [state.player.married ? tg("affair.warnMarried", state.player.gender === "kadın") : t("affair.warnTheirs")] : []), ...(martialLoad(state.player) > 0 ? [t("npca.martialWarn")] : [])],
+      blocked: usedAct("flirt") ? done : undefined, run: () => doAct((s) => flirtWith(s, npc)) }); }
+    { const x = teklifSansi(state, npc, "dedikodu"); eylemler.push({ id: "gossip", icon: "speaker", tone: C.parchmentDim, tile: t("npcx.t.gossip"), title: t("npca.gossipBtn"), desc: t("npcx.gossip.d"), tag: pct(x.yuzde), sans: x,
+      blocked: young ? t("npcx.young") : usedAct("gossip") ? done : undefined, run: () => doAct((s) => gossipAbout(s, npc)) }); }
+    if (helalUygun(state, npc.id)) { const cost = helalBedeli(state, npc.id), a = helalSansi(state, npc, false), b = helalSansi(state, npc, true); eylemler.push({ id: "helal", icon: "prayer-beads", tone: C.sage, tile: t("npcx.t.helal"), title: t("npcx.t.helal"), desc: t("npcx.helal.d"), tag: pct(a.yuzde),
+      blocked: young ? t("npcx.young") : usedAct("helal") ? done : undefined,
+      custom: <View style={{ gap: 10 }}>
+        <SheetChoice icon="prayer-beads" label={t("npca.helalBtn")} tag={pct(a.yuzde)} onPress={() => doAct((s) => helallikIste(s, npc, false))} />
+        <SansDokum kalemler={a.kalemler} yuzde={a.yuzde} t={t} baslik="npcx.chance" />
+        <SheetChoice icon="akce" label={t("npca.helalBedelBtn")} sub={applyParams(t("sohbet.cost"), [cost], lang)} tag={pct(b.yuzde)} disabled={money < cost} onPress={() => doAct((s) => helallikIste(s, npc, true))} />
+        <SansDokum kalemler={b.kalemler} yuzde={b.yuzde} t={t} baslik="npcx.chance" />
+      </View> }); }
+    eylemler.push({ id: "insult", icon: "skull", tone: C.blood, tile: t("npcx.t.insult"), title: t("npca.insultBtn"), desc: t("npcx.insult.d"),
+      blocked: young ? t("npcx.young") : usedAct("insult") ? done : undefined, run: () => doAct((s) => insultNpc(s, npc)) });
+  }
+  const acik = eylemler.find((e) => e.id === act);
+
   return (
     <ScreenFresk><ScrollView ref={scroll} style={{ flex: 1 }} contentContainerStyle={{ padding: 14, paddingTop: 0, paddingBottom: insets.bottom + 110 }}>
       <View style={{ height: insets.top, marginHorizontal: -14, backgroundColor: C.bg }} />
 
       <View>
         <NpcSceneArt state={state} npc={npc} mood={ns.mood} dead={prof.olu} relation={v} relationLabel={relationLabel} />
-        <Pressable onPress={() => router.back()} style={{ position: "absolute", top: 6, left: lang === "ar" ? undefined : -4, right: lang === "ar" ? -4 : undefined, minHeight: L.touch, justifyContent: "center", paddingHorizontal: 10, borderRadius: 6, backgroundColor: "rgba(14,10,6,0.55)" }}><BackLabel /></Pressable>
+        <Pressable onPress={() => router.back()} style={{ position: "absolute", top: 6, left: rtl ? undefined : -4, right: rtl ? -4 : undefined, minHeight: L.touch, justifyContent: "center", paddingHorizontal: 10, borderRadius: 6, backgroundColor: "rgba(14,10,6,0.55)" }}><BackLabel /></Pressable>
       </View>
-      {/* ── Profil kartı ── */}
+
+      {prof.burada && !state.player.dead && (<>
+      {/* ── Söz perdesi: kişinin son sözü (ya da tavrı), yarım kalan sohbet ── */}
+      <View onLayout={e => { chatY.current = e.nativeEvent.layout.y; }}>
+        <View style={{ marginTop: 6, marginBottom: 10 }}>
+          <View style={{ flexDirection: rtl ? "row-reverse" : "row", alignItems: "flex-start", gap: 8, paddingHorizontal: 14, paddingVertical: 12, borderRadius: 12, borderWidth: 1, borderColor: line ? (lineDelta < 0 ? C.blood : C.goldDim) : C.borderHi, backgroundColor: "rgba(33,24,16,0.94)" }}>
+            <Text accessibilityLiveRegion="polite" style={{ flex: 1, fontFamily: line ? F.serif : F.serifItalic, fontSize: 16, lineHeight: 23, color: line ? C.parchment : C.parchmentDim, textAlign: rtl ? "right" : "left" }}>{line || (stance !== "notr" ? t("bakis.t." + stance) : t("npcx.idle"))}</Text>
+            {line && lineDelta !== 0 ? (
+              <View style={{ paddingVertical: 2, paddingHorizontal: 7, borderRadius: 5, borderWidth: 1, borderColor: (lineDelta > 0 ? C.sage : C.blood) + "66", backgroundColor: (lineDelta > 0 ? C.sage : C.blood) + "1A" }}>
+                <Text style={{ fontFamily: F.display, fontSize: 13, color: lineDelta > 0 ? C.sage : C.blood }}>{lineDelta > 0 ? "+" + lineDelta : lineDelta}</Text>
+              </View>
+            ) : null}
+          </View>
+          <View pointerEvents="none" style={{ position: "absolute", top: -7, left: rtl ? undefined : 34, right: rtl ? 34 : undefined, width: 14, height: 14, transform: [{ rotate: "45deg" }], borderLeftWidth: 1, borderTopWidth: 1, borderColor: line ? (lineDelta < 0 ? C.blood : C.goldDim) : C.borderHi, backgroundColor: "rgb(33,24,16)" }} />
+        </View>
+        <SohbetDevami state={state} id={npc.id} onReply={reply} />
+      </View>
+
+      {recalled && (
+        <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.borderHi, borderRadius: 5, padding: 12, marginBottom: 10 }}>
+          <View style={{ flexDirection: rtl ? "row-reverse" : "row", alignItems: "center", gap: 7, marginBottom: 6 }}>
+            <GameIcon name="scroll" size={14} color={recalled.yuk > 0 ? C.sage : C.ember} />
+            <Text style={{ flex: 1, fontFamily: F.serif, fontSize: T.body, color: C.gold }}>{t("npc.remembers")}</Text>
+            <Text style={{ fontFamily: F.serif, fontSize: T.body, color: C.parchmentMuted }}>{state.turn === recalled.hafta ? t("mind.recall.now") : applyParams(t("mind.recall.ago"), [state.turn - recalled.hafta], lang)}</Text>
+          </View>
+          <Text style={{ fontFamily: F.serifItalic, fontSize: T.body, lineHeight: T.line, color: C.parchmentDim }}>{memoryQuote(recalled, lang, state.player.gender === "kadın")}</Text>
+          {(recalled.kanit === "gorgu" || recalled.kanit === "katilim") && <Text style={{ fontFamily: F.serif, fontSize: T.body, color: C.parchmentMuted, marginTop: 5 }}>{t("mind.evidence." + recalled.kanit)}</Text>}
+          {witnesses.length > 0 && <View style={{ marginTop: 9 }}>
+            <Text style={{ fontFamily: F.serif, fontSize: T.body, color: C.parchmentMuted }}>{t("mind.witness.others")}</Text>
+            <View style={{ flexDirection: rtl ? "row-reverse" : "row", flexWrap: "wrap", gap: 6, marginTop: 5 }}>
+              {witnesses.map(id => { const witness = kisiProfil(state, id, lang); return witness ? <Pressable key={id} accessibilityRole="button" accessibilityLabel={witness.npc.name} onPress={() => router.push({ pathname: "/oyun/npc/[id]", params: { id } })} style={{ minHeight: 44, maxWidth: "100%", justifyContent: "center", paddingHorizontal: 9, borderWidth: 1, borderColor: C.border, borderRadius: 5 }}>
+                <Text style={{ fontFamily: F.serif, fontSize: T.body, color: C.gold }}>{witness.npc.name}{witness.olu ? " · " + t("npc.late") : ""}</Text>
+              </Pressable> : null; })}
+            </View>
+          </View>}
+          <Pressable accessibilityRole="button" accessibilityLabel={t("mind.recall.action")} accessibilityState={{ disabled: usedAct("t:hatira") }} disabled={usedAct("t:hatira")} onPress={() => { hap("tap"); speak("hatira"); }} style={{ minHeight: 44, justifyContent: "center", alignItems: "center", borderWidth: 1, borderColor: C.borderHi, borderRadius: 5, marginTop: 8, opacity: usedAct("t:hatira") ? 0.5 : 1 }}>
+            <Text style={{ fontFamily: F.serif, fontSize: T.body, color: C.gold }}>{t(usedAct("t:hatira") ? "mind.recall.done" : "mind.recall.action")}</Text>
+          </Pressable>
+        </View>
+      )}
+      {!recalled && <NpcIzlenimi def={ns.izlenim} used={usedAct("t:hatira")} onPress={() => { hap("tap"); speak("hatira"); }} />}
+      {heard && state.player.age >= 13 && (
+        <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 5, padding: 12, marginBottom: 10 }}>
+          <Text style={{ fontFamily: F.serifItalic, fontSize: T.body, lineHeight: T.line, color: C.parchmentDim }}>{t("rum.net.topic")}</Text>
+          <Pressable accessibilityRole="button" accessibilityLabel={t("rum.net.action")} accessibilityState={{ disabled: usedAct("t:duyum") }} disabled={usedAct("t:duyum")} onPress={() => { hap("tap"); speak("duyum"); }} style={{ minHeight: 44, justifyContent: "center", alignItems: "center", borderWidth: 1, borderColor: C.borderHi, borderRadius: 5, marginTop: 8, opacity: usedAct("t:duyum") ? 0.5 : 1 }}>
+            <Text style={{ fontFamily: F.serif, fontSize: T.body, color: C.gold }}>{t(usedAct("t:duyum") ? "rum.net.done" : "rum.net.action")}</Text>
+          </Pressable>
+        </View>
+      )}
+
+      {/* ── Söyleyeceklerin: konular iki sütun ── */}
+      <View style={PANEL}>
+        <PanelBaslik icon="speaker" title={t("visual.talkTitle")} rtl={rtl} />
+        {familyAction && <Pressable testID="npc-family-action" accessibilityRole="button" accessibilityLabel={t(familyAction.key)} accessibilityState={{ disabled: familyAction.used }} disabled={familyAction.used} onPress={() => {
+          hap("tap"); const next = aileProfilEyleminiYap(state, npc.id); apply(() => next);
+          const e = next.history[next.history.length - 1];
+          setLine(e ? renderEvt(e.k || "", e.text, e.p || [], lang, t, state.player.gender === "kadın") : ""); setLineDelta(0); focusChat();
+        }} style={({ pressed }) => gameActionStyle(pressed, C.gold, familyAction.used, rtl)}>
+          <NpcActionIcon name="family" />
+          <View style={{ flex: 1 }}><Text style={{ fontFamily: F.serif, fontSize: 15, color: C.gold }}>{t(familyAction.key)}</Text>
+          {familyAction.cost > 0 && <Text style={{ fontFamily: F.serif, fontSize: T.body, color: C.parchmentMuted }}>{applyParams(t("sohbet.cost"), [familyAction.cost], lang)}</Text>}</View>
+          {familyAction.used && <Text style={{ maxWidth: 90, flexShrink: 1, fontFamily: F.serif, fontSize: T.body, lineHeight: 22, color: C.parchmentMuted }}>{t(familyAction.key + ".used")}</Text>}
+          {!familyAction.used && <NpcActionChevron rtl={rtl} />}
+        </Pressable>}
+        <View style={{ flexDirection: rtl ? "row-reverse" : "row", flexWrap: "wrap", gap: 8 }}>
+          {visibleTopics.map((it) => { const used = usedAct("t:" + it.id); return (
+            <Pressable key={it.id} accessibilityRole="button" accessibilityLabel={topicLabel(it.id)} accessibilityState={{ disabled: used }} disabled={used} onPress={() => { hap("tap"); speak(it.id); }} style={({ pressed }) => konuStil(pressed, used, rtl)}>
+              <GameIcon name={it.icon} size={18} color={used ? C.parchmentMuted : C.gold} />
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text numberOfLines={2} style={{ fontFamily: F.serif, fontSize: 15, lineHeight: 19, color: used ? C.parchmentMuted : C.parchment, textAlign: rtl ? "right" : "left" }}>{topicLabel(it.id)}</Text>
+                {used ? <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: 12.5, color: C.goldDim, textAlign: rtl ? "right" : "left" }}>{done}</Text> : null}
+              </View>
+            </Pressable>
+          ); })}
+          {topics.some(it => !primary.includes(it.id)) && <Pressable accessibilityRole="button" accessibilityLabel={t("sohbet.more")} accessibilityState={{ expanded: moreTopics }} onPress={() => setMoreTopics(x => !x)} style={({ pressed }) => konuStil(pressed, false, rtl, true)}>
+            <GameIcon name="scroll-open" size={18} color={C.parchmentMuted} />
+            <Text numberOfLines={2} style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 15, lineHeight: 19, color: C.parchmentMuted, textAlign: rtl ? "right" : "left" }}>{t("sohbet.more")}</Text>
+            <NpcActionChevron rtl={rtl} expanded={moreTopics} />
+          </Pressable>}
+        </View>
+      </View>
+
+      {/* ── Eylemler: madalyonlar; ayrıntı, bedel ve şans alttan açılan panelde ── */}
+      <View style={PANEL}>
+        <PanelBaslik icon="gems" title={t("npcx.deeds")} rtl={rtl} />
+        {state.player.betrothed?.id === npc.id ? (
+          <View style={{ flexDirection: rtl ? "row-reverse" : "row", alignItems: "center", gap: 10, paddingHorizontal: 10, paddingVertical: 10, marginBottom: 6, borderRadius: 8, backgroundColor: "rgba(192,85,107,0.10)" }}>
+            <GameIcon name="ring" size={17} color={C.roseDim} />
+            <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 15, color: C.roseDim }}>{t("npc.betrothed")}</Text>
+          </View>
+        ) : null}
+        <View style={{ flexDirection: rtl ? "row-reverse" : "row", flexWrap: "wrap" }}>
+          {eylemler.map((e) => <EylemTasi key={e.id} icon={e.icon} label={e.tile} tag={e.tag} tone={e.tone} dim={!!e.blocked} onPress={() => setAct(e.id)} />)}
+        </View>
+      </View>
+      </>)}
+
+      <EvlatMektubu state={state} id={npc.id} onSend={() => { hap("tap"); apply(s => evladaMektup(s, npc.id)); }} />
+
+      {/* ── Onu tanı: tavır, görüş dökümü, huy, hayal ── */}
       <OrnatePanel title={t("npc.knowTitle")} icon="sun">
         {!prof.olu && !prof.burada ? <Text style={{ fontFamily: F.serifItalic, fontSize: T.caption, color: C.goldDim, marginBottom: 6 }}>{t("npc.livesIn").replace("%1", placeName(npc.loc || "", lang))}</Text> : null}
-        <Pressable accessibilityRole="button" accessibilityLabel={t("gorus.ipucu")} accessibilityState={{ expanded: gorusAcik }} onPress={() => { hap("tap"); setGorusAcik((x) => !x); }} hitSlop={8} style={({ pressed }) => ({ flexDirection: lang === "ar" ? "row-reverse" : "row", minHeight: 44, alignSelf: "flex-start", alignItems: "center", gap: 8, paddingHorizontal: 11, paddingVertical: 7, borderRadius: 9, borderWidth: 1, borderColor: pressed ? C.goldBright : C.borderHi, borderBottomWidth: pressed ? 1 : 3, borderBottomColor: C.bg, backgroundColor: pressed ? C.surface : C.cardHi, transform: [{ translateY: pressed ? 2 : 0 }] })}>
+        <Pressable accessibilityRole="button" accessibilityLabel={t("gorus.ipucu")} accessibilityState={{ expanded: gorusAcik }} onPress={() => { hap("tap"); setGorusAcik((x) => !x); }} hitSlop={8} style={({ pressed }) => ({ flexDirection: rtl ? "row-reverse" : "row", minHeight: 44, alignSelf: "flex-start", alignItems: "center", gap: 8, paddingHorizontal: 11, paddingVertical: 7, borderRadius: 9, borderWidth: 1, borderColor: pressed ? C.goldBright : C.borderHi, borderBottomWidth: pressed ? 1 : 3, borderBottomColor: C.bg, backgroundColor: pressed ? C.surface : C.cardHi, transform: [{ translateY: pressed ? 2 : 0 }] })}>
           <GameIcon name="compass" size={16} color={C.gold} />
           <Text style={{ fontFamily: F.serif, fontSize: T.body, color: C.gold }}>{t("gorus.ipucu")}</Text>
         </Pressable>
@@ -243,15 +385,15 @@ export default function NpcDetail() {
       {/* ── Çevresi (NPC↔NPC ilişki ağı) ── */}
       {ties.length > 0 && (
         <View style={{ marginBottom: 4 }}>
-          <Pressable accessibilityRole="button" accessibilityState={{ expanded: tiesOpen }} onPress={() => setTiesOpen(x => !x)} style={({ pressed }) => gameActionStyle(pressed, C.goldDim, false, lang === "ar")}>
+          <Pressable accessibilityRole="button" accessibilityState={{ expanded: tiesOpen }} onPress={() => setTiesOpen(x => !x)} style={({ pressed }) => gameActionStyle(pressed, C.goldDim, false, rtl)}>
             <NpcActionIcon name="iliskiler" color={C.goldDim} />
             <Text numberOfLines={1} style={{ flex: 1, minWidth: 0, fontFamily: F.display, fontSize: T.label, letterSpacing: 1, color: C.goldDim, textTransform: "uppercase" }}>{t("npc.ties")} · {ties.length}</Text>
-            <NpcActionChevron rtl={lang === "ar"} expanded={tiesOpen} />
+            <NpcActionChevron rtl={rtl} expanded={tiesOpen} />
           </Pressable>
           {tiesOpen && ties.map((tt) => {
             const meta = TIE_META[tt.kind];
             return (
-              <Pressable key={tt.kind + tt.otherId} onPress={() => { hap("tap"); router.push(`/oyun/npc/${tt.otherId}`); }} style={({ pressed }) => gameActionStyle(pressed, meta.tone, false, lang === "ar")}>
+              <Pressable key={tt.kind + tt.otherId} onPress={() => { hap("tap"); router.push(`/oyun/npc/${tt.otherId}`); }} style={({ pressed }) => gameActionStyle(pressed, meta.tone, false, rtl)}>
                 <View style={{ opacity: tt.olu ? 0.45 : 1 }}><Portre age={tt.who!.age} gender={tt.who!.gender} size={32} ring={false} seed={tt.who!.id} /></View>
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <Text numberOfLines={1} style={{ fontFamily: F.serif, fontSize: T.body, color: tt.olu ? C.parchmentMuted : C.parchment }}>{tt.who!.name}</Text>
@@ -266,240 +408,6 @@ export default function NpcDetail() {
           })}
         </View>
       )}
-
-      <EvlatMektubu state={state} id={npc.id} onSend={() => { hap("tap"); apply(s => evladaMektup(s, npc.id)); }} />
-
-      {prof.burada && !state.player.dead && (<>
-      {recalled && !state.player.dead && (
-        <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.borderHi, borderRadius: 5, padding: 12, marginBottom: 10 }}>
-          <View style={{ flexDirection: lang === "ar" ? "row-reverse" : "row", alignItems: "center", gap: 7, marginBottom: 6 }}>
-            <GameIcon name="scroll" size={14} color={recalled.yuk > 0 ? C.sage : C.ember} />
-            <Text style={{ flex: 1, fontFamily: F.serif, fontSize: T.body, color: C.gold }}>{t("npc.remembers")}</Text>
-            <Text style={{ fontFamily: F.serif, fontSize: T.body, color: C.parchmentMuted }}>{state.turn === recalled.hafta ? t("mind.recall.now") : applyParams(t("mind.recall.ago"), [state.turn - recalled.hafta], lang)}</Text>
-          </View>
-          <Text style={{ fontFamily: F.serifItalic, fontSize: T.body, lineHeight: T.line, color: C.parchmentDim }}>{memoryQuote(recalled, lang, state.player.gender === "kadın")}</Text>
-          {(recalled.kanit === "gorgu" || recalled.kanit === "katilim") && <Text style={{ fontFamily: F.serif, fontSize: T.body, color: C.parchmentMuted, marginTop: 5 }}>{t("mind.evidence." + recalled.kanit)}</Text>}
-          {witnesses.length > 0 && <View style={{ marginTop: 9 }}>
-            <Text style={{ fontFamily: F.serif, fontSize: T.body, color: C.parchmentMuted }}>{t("mind.witness.others")}</Text>
-            <View style={{ flexDirection: lang === "ar" ? "row-reverse" : "row", flexWrap: "wrap", gap: 6, marginTop: 5 }}>
-              {witnesses.map(id => { const witness = kisiProfil(state, id, lang); return witness ? <Pressable key={id} accessibilityRole="button" accessibilityLabel={witness.npc.name} onPress={() => router.push({ pathname: "/oyun/npc/[id]", params: { id } })} style={{ minHeight: 44, maxWidth: "100%", justifyContent: "center", paddingHorizontal: 9, borderWidth: 1, borderColor: C.border, borderRadius: 5 }}>
-                <Text style={{ fontFamily: F.serif, fontSize: T.body, color: C.gold }}>{witness.npc.name}{witness.olu ? " · " + t("npc.late") : ""}</Text>
-              </Pressable> : null; })}
-            </View>
-          </View>}
-          <Pressable accessibilityRole="button" accessibilityLabel={t("mind.recall.action")} accessibilityState={{ disabled: usedAct("t:hatira") }} disabled={usedAct("t:hatira")} onPress={() => { hap("tap"); speak("hatira"); }} style={{ minHeight: 44, justifyContent: "center", alignItems: "center", borderWidth: 1, borderColor: C.borderHi, borderRadius: 5, marginTop: 8, opacity: usedAct("t:hatira") ? 0.5 : 1 }}>
-            <Text style={{ fontFamily: F.serif, fontSize: T.body, color: C.gold }}>{t(usedAct("t:hatira") ? "mind.recall.done" : "mind.recall.action")}</Text>
-          </Pressable>
-        </View>
-      )}
-      {!recalled && !state.player.dead && <NpcIzlenimi def={ns.izlenim} used={usedAct("t:hatira")} onPress={() => { hap("tap"); speak("hatira"); }} />}
-      {heard && !state.player.dead && state.player.age >= 13 && (
-        <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 5, padding: 12, marginBottom: 10 }}>
-          <Text style={{ fontFamily: F.serifItalic, fontSize: T.body, lineHeight: T.line, color: C.parchmentDim }}>{t("rum.net.topic")}</Text>
-          <Pressable accessibilityRole="button" accessibilityLabel={t("rum.net.action")} accessibilityState={{ disabled: usedAct("t:duyum") }} disabled={usedAct("t:duyum")} onPress={() => { hap("tap"); speak("duyum"); }} style={{ minHeight: 44, justifyContent: "center", alignItems: "center", borderWidth: 1, borderColor: C.borderHi, borderRadius: 5, marginTop: 8, opacity: usedAct("t:duyum") ? 0.5 : 1 }}>
-            <Text style={{ fontFamily: F.serif, fontSize: T.body, color: C.gold }}>{t(usedAct("t:duyum") ? "rum.net.done" : "rum.net.action")}</Text>
-          </Pressable>
-        </View>
-      )}
-      {/* Söylenen söz — yanında ilişki etkisi (kişinin mizacına/ruh haline göre artı ya da eksi gelir) */}
-      <View onLayout={e => { chatY.current = e.nativeEvent.layout.y; }}>
-      {line ? (
-        <View style={{ backgroundColor: C.card, borderLeftColor: lineDelta < 0 ? C.blood : C.gold, borderLeftWidth: 2.5, borderWidth: 1, borderColor: C.border, borderRadius: 5, padding: 12, marginBottom: 10 }}>
-          <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 8 }}>
-            <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 15, color: C.parchment, lineHeight: T.line }}>{line}</Text>
-            {lineDelta !== 0 ? (
-              <View style={{ paddingVertical: 2, paddingHorizontal: 7, borderRadius: 5, borderWidth: 1, borderColor: (lineDelta > 0 ? C.sage : C.blood) + "66", backgroundColor: (lineDelta > 0 ? C.sage : C.blood) + "1A" }}>
-                <Text style={{ fontFamily: F.display, fontSize: 13, color: lineDelta > 0 ? C.sage : C.blood }}>{lineDelta > 0 ? "+" + lineDelta : lineDelta}</Text>
-              </View>
-            ) : null}
-          </View>
-        </View>
-      ) : null}
-
-      <SohbetDevami state={state} id={npc.id} onReply={reply} />
-      </View>
-
-      {/* ── Etkileşim menüsü ── */}
-      <View style={{ marginBottom: 12, padding: 10, paddingBottom: 2, borderWidth: 1, borderColor: C.borderHi, borderRadius: 6, backgroundColor: C.card }}>
-        <View style={{ flexDirection: lang === "ar" ? "row-reverse" : "row", alignItems: "center", gap: 10, paddingHorizontal: 4, paddingTop: 2, paddingBottom: 10 }}>
-          <GameIcon name="speaker" size={22} color={C.gold} />
-          <Text accessibilityRole="header" style={{ flex: 1, fontFamily: F.display, fontSize: 19, color: C.gold }}>{t("visual.talkTitle")}</Text>
-        </View>
-        {martialLoad(state.player) > 0 && (couldMarry || canFlirt(state.player, npc, v)) ? (
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 14, paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: C.border, backgroundColor: "rgba(224,90,48,0.07)" }}>
-            <GameIcon name="crossed-swords" size={12} color={C.ember} />
-            <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: T.body, color: C.ember, lineHeight: 22 }}>{t("npca.martialWarn")}</Text>
-          </View>
-        ) : null}
-        {/* 14 yaş altı NPC'ye iş/hayal sorma — çocuğun mesleği/hedefi yok (boş tırnak saçmalığı önlenir). */}
-        {familyAction && <Pressable testID="npc-family-action" accessibilityRole="button" accessibilityLabel={t(familyAction.key)} accessibilityState={{ disabled: familyAction.used }} disabled={familyAction.used} onPress={() => {
-          hap("tap"); const next = aileProfilEyleminiYap(state, npc.id); apply(() => next);
-          const e = next.history[next.history.length - 1];
-          setLine(e ? renderEvt(e.k || "", e.text, e.p || [], lang, t, state.player.gender === "kadın") : ""); setLineDelta(0); focusChat();
-        }} style={({ pressed }) => gameActionStyle(pressed, C.gold, familyAction.used, lang === "ar")}>
-          <NpcActionIcon name="family" />
-          <View style={{ flex: 1 }}><Text style={{ fontFamily: F.serif, fontSize: 15, color: C.gold }}>{t(familyAction.key)}</Text>
-          {familyAction.cost > 0 && <Text style={{ fontFamily: F.serif, fontSize: T.body, color: C.parchmentMuted }}>{applyParams(t("sohbet.cost"), [familyAction.cost], lang)}</Text>}</View>
-          {familyAction.used && <Text style={{ maxWidth: 90, flexShrink: 1, fontFamily: F.serif, fontSize: T.body, lineHeight: 22, color: C.parchmentMuted }}>{t(familyAction.key + ".used")}</Text>}
-          {!familyAction.used && <NpcActionChevron rtl={lang === "ar"} />}
-        </Pressable>}
-        {visibleTopics.map((it) => { const done = usedAct("t:" + it.id); return (
-          <Pressable key={it.id} accessibilityRole="button" accessibilityLabel={topicLabel(it.id)} accessibilityState={{ disabled: done }} disabled={done} onPress={() => { hap("tap"); speak(it.id); }} style={({ pressed }) => gameActionStyle(pressed, C.gold, done, lang === "ar")}>
-            <NpcActionIcon name={it.icon} />
-            <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 15, color: C.parchment }}>{topicLabel(it.id)}</Text>
-            {done ? <Text style={{ fontFamily: F.display, fontSize: T.caption, color: C.goldDim }}>{t("soc.lock.done")}</Text> : <NpcActionChevron rtl={lang === "ar"} />}
-          </Pressable>
-        ); })}
-        {topics.some(it => !primary.includes(it.id)) && <Pressable accessibilityRole="button" accessibilityLabel={t("sohbet.more")} accessibilityState={{ expanded: moreTopics }} onPress={() => setMoreTopics(v => !v)} style={({ pressed }) => gameActionStyle(pressed, C.parchmentMuted, false, lang === "ar")}>
-          <NpcActionIcon name="scroll-open" color={C.parchmentMuted} />
-          <Text style={{ flex: 1, fontFamily: F.serif, fontSize: T.body, color: C.parchmentMuted }}>{t("sohbet.more")}</Text>
-          <NpcActionChevron rtl={lang === "ar"} expanded={moreTopics} />
-        </Pressable>}
-        {/* Hediye — kendi kanalı: sohbetten bağımsız, ayda bir */}
-        <Pressable disabled={usedAct("gift")} onPress={() => setGiftOpen((o) => !o)} style={({ pressed }) => gameActionStyle(pressed, C.gold, usedAct("gift"), lang === "ar")}>
-          <NpcActionIcon name="gems" />
-          <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 15, color: C.parchment }}>{t("npc.gift")}</Text>
-          <NpcActionChevron rtl={lang === "ar"} expanded={giftOpen} />
-        </Pressable>
-        {/* Amacına yardım et / istismar et (npc_mind goal_action) */}
-        {canGoal && (
-          <Pressable onPress={() => { if (state.player.money >= GOAL_HELP_COST && !usedAct("help")) { hap("success"); apply((s) => helpNpcGoal(s, npc)); } }} disabled={state.player.money < GOAL_HELP_COST || usedAct("help")} style={({ pressed }) => gameActionStyle(pressed, C.sage, state.player.money < GOAL_HELP_COST || usedAct("help"), lang === "ar")}>
-            <NpcActionIcon name="leaf" color={state.player.money >= GOAL_HELP_COST ? C.sage : C.parchmentMuted} />
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontFamily: F.serif, fontSize: 15, color: state.player.money >= GOAL_HELP_COST ? C.sage : C.parchmentMuted }}>{t("npc.helpGoal")}</Text>
-              <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: T.body, color: C.parchmentMuted, marginTop: 1 }}>{goalL(npc.goal, lang)}</Text>
-            </View>
-            <Text style={{ fontFamily: F.display, fontSize: T.caption, color: C.gold }}>{GOAL_HELP_COST} ⚜</Text>
-          </Pressable>
-        )}
-        {canGoal && v > -25 && !(state.player.married && state.player.spouse_id === npc.id) && !oyuncuAkrabasi(state.player, npc.id) && (() => { const exploited = state.player.exploit_turn === state.turn; return (
-          <Pressable disabled={exploited} onPress={() => { hap("tap"); apply((s) => exploitNpcGoal(s, npc)); }} style={({ pressed }) => gameActionStyle(pressed, C.ember, exploited, lang === "ar")}>
-            <NpcActionIcon name="hood" color={C.ember} />
-            <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 15, color: C.ember }}>{t("npc.exploitGoal")}</Text>
-            <NpcActionChevron rtl={lang === "ar"} />
-          </Pressable>
-        ); })()}
-        {/* Çırak al (usta çağı: 45+, en iyi beceri ≥6, genç NPC) */}
-        {canTakeApprentice(state, npc) && (
-          <Pressable accessibilityRole="button" accessibilityState={{ expanded: apprenticeChoiceOpen }} onPress={() => { hap("tap"); setApprenticeChoiceOpen((open) => !open); }} style={({ pressed }) => gameActionStyle(pressed, C.gold, false, lang === "ar")}>
-            <NpcActionIcon name="anvil" />
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.gold }}>{t("npc.aprTake")}</Text>
-              <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: T.body, color: C.parchmentMuted, marginTop: 1 }}>{t("npc.aprTakeSub")}</Text>
-            </View>
-            <NpcActionChevron rtl={lang === "ar"} expanded={apprenticeChoiceOpen} />
-          </Pressable>
-        )}
-        {canTakeApprentice(state, npc) && apprenticeChoiceOpen && (
-          <View style={{ marginHorizontal: 14, marginBottom: 8, padding: 10, borderRadius: 10, borderWidth: 1, borderColor: C.border, backgroundColor: C.surface }}>
-            {state.player.apprentice && state.player.apprentice.id !== npc.id && <Text style={{ fontFamily: F.serifItalic, fontSize: T.body, color: C.ember, lineHeight: T.line, marginBottom: 7 }}>{t("npc.aprReplaceWarn")}</Text>}
-            <Text style={{ fontFamily: F.serifItalic, fontSize: T.body, color: C.parchmentMuted, lineHeight: T.line }}>{t("npc.aprChooseSkill")}</Text>
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 9 }}>
-              {APPRENTICE_SKILLS.map((skill) => (
-                <Pressable key={skill} accessibilityRole="button" accessibilityLabel={`${t("npc.aprTake")}: ${t("skill." + skill)}`} onPress={() => { hap("success"); apply((s) => takeApprentice(s, npc, skill)); setApprenticeChoiceOpen(false); }} style={({ pressed }) => ({ flexBasis: "47%", flexGrow: 1, minHeight: 74, justifyContent: "center", padding: 9, borderRadius: 9, borderWidth: 1, borderColor: pressed ? C.goldBright : C.goldDim + "99", borderBottomWidth: pressed ? 1 : 3, borderBottomColor: C.bg, backgroundColor: pressed ? C.surface : C.cardHi, transform: [{ translateY: pressed ? 2 : 0 }] })}>
-                  <Text style={{ fontFamily: F.display, fontSize: 13, color: C.gold, textAlign: lang === "ar" ? "right" : "left" }}>{t("npc.aprTake")}: {t("skill." + skill)}</Text>
-                  <Text style={{ fontFamily: F.serifItalic, fontSize: 13, lineHeight: 18, color: C.parchmentMuted, marginTop: 4, textAlign: lang === "ar" ? "right" : "left" }}>{t("skill." + skill + ".b")}</Text>
-                </Pressable>
-              ))}
-            </View>
-          </View>
-        )}
-        {/* Çırakla çalış (ayda bir ders) */}
-        {state.player.apprentice?.id === npc.id && (() => { const apprentice = state.player.apprentice!; const apprenticeSkill = apprentice.skill || bestSkillOf(state.player); const taught = state.player.apprentice_turn === state.turn; return (
-          <Pressable disabled={taught} onPress={() => { hap("tap"); apply((s) => mentorApprentice(s)); }} style={({ pressed }) => gameActionStyle(pressed, C.gold, taught, lang === "ar")}>
-            <NpcActionIcon name="graduate-cap" />
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.gold }}>{t("npc.aprMentor")}</Text>
-              <Text style={{ fontFamily: F.serifItalic, fontSize: T.body, color: C.parchmentMuted, marginTop: 1 }}>{t("skill." + apprenticeSkill)} · {(apprentice.months || 0)}/{APPRENTICE_MONTHS} {t("npc.aprMonths")}</Text>
-            </View>
-            <NpcActionChevron rtl={lang === "ar"} />
-          </Pressable>
-        ); })()}
-        {/* Söz kesilmiş: bu kişiyle nişanlısın, boşanmasını bekliyorsun */}
-        {state.player.betrothed?.id === npc.id ? (
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, backgroundColor: "rgba(192,85,107,0.08)" }}>
-            <GameIcon name="ring" size={17} color={C.roseDim} />
-            <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 15, color: C.roseDim }}>{t("npc.betrothed")}</Text>
-          </View>
-        ) : couldMarry && (() => {
-          const wed = npcSeededMarried(npc); // evli birine teklif: kabul ederse önce boşanması gerekir
-          return (
-            <Pressable onPress={() => { if (courtable) { hap("success"); apply((s) => proposeMarriage(s, npc)); } }} disabled={!courtable} style={({ pressed }) => gameActionStyle(pressed, C.gold, !courtable, lang === "ar")}>
-              <NpcActionIcon name="evlilik" color={courtable ? C.gold : C.parchmentMuted} />
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontFamily: F.serif, fontSize: 15, color: courtable ? C.gold : C.parchmentMuted }}>{t("npc.propose")}</Text>
-                {!courtable ? <Text style={{ fontFamily: F.serifItalic, fontSize: T.body, color: C.parchmentMuted, marginTop: 1 }}>{t("npc.proposeReq")}</Text>
-                  : wed ? <Text style={{ fontFamily: F.serifItalic, fontSize: T.body, color: C.roseDim, marginTop: 1 }}>{t("affair.warnTheirs")}</Text> : null}
-              </View>
-              {courtable ? <SansRozet yuzde={teklifSansi(state, npc, "kur").yuzde} acik={sansAcik === "kur"} onPress={() => setSansAcik(sansAcik === "kur" ? null : "kur")} /> : null}
-            </Pressable>
-          );
-        })()}
-        {sansAcik === "kur" && courtable ? (() => { const x = teklifSansi(state, npc, "kur"); return <SansDokum kalemler={x.kalemler} yuzde={x.yuzde} t={t} />; })() : null}
-        {/* Ek etkileşimler (Vercel npc_interactions): para / flört / dedikodu / hakaret */}
-        <Pressable onPress={() => { if (state.player.money >= GIVE_MONEY_AMT) { hap("tap"); apply((s) => giveMoneyTo(s, npc)); } }} disabled={state.player.money < GIVE_MONEY_AMT} style={({ pressed }) => gameActionStyle(pressed, C.gold, state.player.money < GIVE_MONEY_AMT, lang === "ar")}>
-          <NpcActionIcon name="akce" color={state.player.money >= GIVE_MONEY_AMT ? C.gold : C.parchmentMuted} />
-          <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 15, color: state.player.money >= GIVE_MONEY_AMT ? C.parchment : C.parchmentMuted }}>{t("npca.moneyBtn")}</Text>
-          <Text style={{ fontFamily: F.display, fontSize: 13, color: C.goldDim }}>{GIVE_MONEY_AMT} ⚜</Text>
-        </Pressable>
-        {canFlirt(state.player, npc, v) && (() => {
-          const forbidden = flirtIsForbidden(state.player, npc);
-          const tone = forbidden ? C.ember : C.gold;
-          return (
-            <Pressable disabled={usedAct("flirt")} onPress={() => { hap("success"); apply((s) => flirtWith(s, npc)); }} style={({ pressed }) => gameActionStyle(pressed, tone, usedAct("flirt"), lang === "ar")}>
-              <NpcActionIcon name="lyre" color={tone} />
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontFamily: F.serif, fontSize: 15, color: tone }}>{forbidden ? t("affair.flirtBtn") : t("npca.flirtBtn")}</Text>
-                {forbidden ? <Text style={{ fontFamily: F.serifItalic, fontSize: T.body, color: C.ember, marginTop: 1 }}>{state.player.married ? tg("affair.warnMarried", state.player.gender === "kadın") : t("affair.warnTheirs")}</Text> : null}
-              </View>
-              <SansRozet yuzde={teklifSansi(state, npc, "flort").yuzde} acik={sansAcik === "flort"} onPress={() => setSansAcik(sansAcik === "flort" ? null : "flort")} />
-            </Pressable>
-          );
-        })()}
-        {sansAcik === "flort" && canFlirt(state.player, npc, v) ? (() => { const x = teklifSansi(state, npc, "flort"); return <SansDokum kalemler={x.kalemler} yuzde={x.yuzde} t={t} />; })() : null}
-        <Pressable disabled={state.player.dead || state.player.age < 13 || usedAct("gossip")} onPress={() => { hap("tap"); apply((s) => gossipAbout(s, npc)); }} style={({ pressed }) => gameActionStyle(pressed, C.parchmentDim, state.player.dead || state.player.age < 13 || usedAct("gossip"), lang === "ar")}>
-          <NpcActionIcon name="speaker" color={C.parchment} />
-          <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 15, color: C.parchment }}>{t("npca.gossipBtn")}</Text>
-          <SansRozet yuzde={teklifSansi(state, npc, "dedikodu").yuzde} acik={sansAcik === "dedikodu"} onPress={() => setSansAcik(sansAcik === "dedikodu" ? null : "dedikodu")} />
-        </Pressable>
-        {sansAcik === "dedikodu" ? (() => { const x = teklifSansi(state, npc, "dedikodu"); return <SansDokum kalemler={x.kalemler} yuzde={x.yuzde} t={t} />; })() : null}
-        {/* Helallik: aranızda kırgınlık varsa — içtenlikle ya da gönlünü alarak (bedelli) */}
-        {helalUygun(state, npc.id) && (() => { const cost = helalBedeli(state, npc.id); const kul = usedAct("helal") || state.player.dead || state.player.age < 13; return (<>
-          <Pressable disabled={kul} onPress={() => { hap("tap"); apply((s) => helallikIste(s, npc, false)); }} style={({ pressed }) => gameActionStyle(pressed, C.sage, kul, lang === "ar")}>
-            <NpcActionIcon name="prayer-beads" color={C.sage} />
-            <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 15, color: C.parchment }}>{t("npca.helalBtn")}</Text>
-            <SansRozet yuzde={helalSansi(state, npc, false).yuzde} acik={sansAcik === "helal"} onPress={() => setSansAcik(sansAcik === "helal" ? null : "helal")} />
-          </Pressable>
-          {sansAcik === "helal" ? (() => { const x = helalSansi(state, npc, false); return <SansDokum kalemler={x.kalemler} yuzde={x.yuzde} t={t} />; })() : null}
-          <Pressable disabled={kul || state.player.money < cost} onPress={() => { hap("tap"); apply((s) => helallikIste(s, npc, true)); }} style={({ pressed }) => gameActionStyle(pressed, C.gold, kul || state.player.money < cost, lang === "ar")}>
-            <NpcActionIcon name="akce" />
-            <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 15, color: C.parchment }}>{t("npca.helalBedelBtn")} <Text style={{ fontFamily: F.display, fontSize: 13, color: C.goldDim }}>· {cost} ⚜</Text></Text>
-            <SansRozet yuzde={helalSansi(state, npc, true).yuzde} acik={sansAcik === "helalb"} onPress={() => setSansAcik(sansAcik === "helalb" ? null : "helalb")} />
-          </Pressable>
-          {sansAcik === "helalb" ? (() => { const x = helalSansi(state, npc, true); return <SansDokum kalemler={x.kalemler} yuzde={x.yuzde} t={t} />; })() : null}
-        </>); })()}
-        <Pressable disabled={state.player.dead || state.player.age < 13 || usedAct("insult")} onPress={() => { hap("tap"); apply((s) => insultNpc(s, npc)); }} style={({ pressed }) => gameActionStyle(pressed, C.blood, state.player.dead || state.player.age < 13 || usedAct("insult"), lang === "ar")}>
-          <NpcActionIcon name="skull" color={C.blood} />
-          <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 15, color: C.blood }}>{t("npca.insultBtn")}</Text>
-        </Pressable>
-      </View>
-
-      {/* Hediye listesi (açılır) */}
-      {giftOpen && (
-        <View style={{ marginBottom: 10 }}>
-          {giftables.length === 0 ? (
-            <Text style={{ fontFamily: F.serifItalic, fontSize: T.body, color: C.parchmentMuted, textAlign: "center", paddingVertical: 8 }}>{t("npc.noGift")}</Text>
-          ) : giftables.map((k) => (
-            <Pressable key={k} disabled={usedAct("gift")} onPress={() => { hap("tap"); apply((s) => giftTo(s, npc, k)); setGiftOpen(false); }} style={({ pressed }) => gameActionStyle(pressed, C.gold, usedAct("gift"), lang === "ar")}>
-              <NpcActionIcon name={giftIcon(ITEMS[k])} />
-              <Text style={{ flex: 1, fontFamily: F.serif, fontSize: T.body, color: C.parchment }}>{t("it." + k)}</Text>
-              <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchmentMuted }}>×{state.player.inventory[k]}</Text>
-            </Pressable>
-          ))}
-        </View>
-      )}
-
-      </>)}
 
       {/* ── Seni hatırlıyor (yapısal anılar, en ağır) ── */}
       {(() => {
@@ -536,6 +444,62 @@ export default function NpcDetail() {
           ))}
         </View>
       )}
-    </ScrollView></ScreenFresk>
+    </ScrollView>
+    <GameSheet visible={!!acik} onClose={() => setAct(null)} title={acik?.title || ""} icon={acik?.icon || "gems"}>
+      {acik ? <View>
+        <Text style={{ fontFamily: F.serif, fontSize: 16, lineHeight: 23, color: C.parchment, marginBottom: 8 }}>{acik.desc}</Text>
+        {acik.note ? <Text style={{ fontFamily: F.serifItalic, fontSize: 15, lineHeight: 22, color: C.goldDim, marginBottom: 8 }}>{acik.note}</Text> : null}
+        {(acik.warn || []).map((w, i) => <View key={i} style={{ flexDirection: rtl ? "row-reverse" : "row", alignItems: "flex-start", gap: 8, padding: 10, marginBottom: 8, borderRadius: 8, borderWidth: 1, borderColor: C.ember + "55", backgroundColor: C.ember + "12" }}>
+          <GameIcon name="crossed-swords" size={14} color={C.ember} />
+          <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 15, lineHeight: 21, color: C.ember }}>{w}</Text>
+        </View>)}
+        {acik.sans ? <SansDokum kalemler={acik.sans.kalemler} yuzde={acik.sans.yuzde} t={t} baslik={acik.id === "propose" ? "sans.title" : "npcx.chance"} /> : null}
+        {acik.blocked ? <Text style={{ fontFamily: F.serifItalic, fontSize: 15, lineHeight: 22, color: C.parchmentMuted, textAlign: "center", marginVertical: 10 }}>{acik.blocked}</Text>
+          : acik.custom ? <View style={{ marginTop: 4 }}>{acik.custom}</View>
+          : acik.run ? <SheetChoice icon={acik.icon} label={acik.title} tag={acik.tag} tone={acik.tone} primary onPress={acik.run} /> : null}
+      </View> : null}
+    </GameSheet>
+    </ScreenFresk>
   );
+}
+
+// Eylem: madalyonda kısa ad; panelde açıklama, uyarı, şans dökümü ve onay.
+type Eylem = { id: string; icon: string; tile: string; title: string; desc: string; tone?: string; tag?: string; note?: string; warn?: string[]; sans?: { kalemler: { k: string; v: number }[]; yuzde: number }; blocked?: string; run?: () => void; custom?: ReactNode };
+
+const PANEL: ViewStyle = { marginBottom: 12, padding: 10, borderWidth: 1, borderColor: C.borderHi, borderRadius: 8, backgroundColor: "rgba(24,18,11,0.9)" };
+
+function PanelBaslik({ icon, title, rtl }: { icon: string; title: string; rtl: boolean }) {
+  return <View style={{ flexDirection: rtl ? "row-reverse" : "row", alignItems: "center", gap: 10, paddingHorizontal: 4, paddingTop: 2, paddingBottom: 10 }}>
+    <GameIcon name={icon} size={20} color={C.gold} />
+    <Text accessibilityRole="header" style={{ flex: 1, fontFamily: F.display, fontSize: 18, color: C.gold, textAlign: rtl ? "right" : "left" }}>{title}</Text>
+  </View>;
+}
+
+function konuStil(pressed: boolean, used: boolean, rtl: boolean, wide = false): ViewStyle {
+  return { flexBasis: wide ? "100%" : "46%", flexGrow: 1, minHeight: 52, flexDirection: rtl ? "row-reverse" : "row", alignItems: "center", gap: 9, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10, borderWidth: 1, borderColor: used ? C.border : pressed ? C.goldBright : C.borderHi, borderBottomWidth: pressed || used ? 1 : 3, borderBottomColor: used ? C.border : C.bg, backgroundColor: pressed ? C.surface : used ? "rgba(23,17,10,0.6)" : C.cardHi, transform: [{ translateY: pressed ? 2 : 0 }] };
+}
+
+function EylemTasi({ icon, label, tag, tone = C.gold, dim, onPress }: { icon: string; label: string; tag?: string; tone?: string; dim: boolean; onPress: () => void }) {
+  return <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={() => { hap("tap"); onPress(); }} style={({ pressed }) => ({ width: "25%", minHeight: 84, alignItems: "center", paddingTop: 4, paddingBottom: 6, opacity: dim ? 0.5 : 1, transform: [{ scale: pressed ? 0.94 : 1 }] })}>
+    <View style={{ width: 52, height: 52, borderRadius: 26, alignItems: "center", justifyContent: "center", backgroundColor: "#120C06", borderWidth: 2, borderColor: tone }}>
+      <View style={{ position: "absolute", top: 3, left: 3, right: 3, bottom: 3, borderRadius: 23, borderWidth: 1, borderColor: tone + "44" }} />
+      <GameIcon name={icon} size={24} color={tone} />
+    </View>
+    {tag ? <View style={{ position: "absolute", top: 0, right: 2, minWidth: 24, height: 19, paddingHorizontal: 5, borderRadius: 10, alignItems: "center", justifyContent: "center", backgroundColor: "#120C06", borderWidth: 1, borderColor: tone }}>
+      <Text style={{ fontFamily: F.display, fontSize: 11, lineHeight: 14, color: tone }}>{tag}</Text>
+    </View> : null}
+    <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={{ marginTop: 5, maxWidth: "100%", paddingHorizontal: 2, fontFamily: F.display, fontSize: 12.5, color: C.parchment, textAlign: "center" }}>{label}</Text>
+  </Pressable>;
+}
+
+function SheetChoice({ icon, label, sub, tag, tone = C.gold, primary = false, disabled = false, onPress }: { icon: string; label: string; sub?: string; tag?: string; tone?: string; primary?: boolean; disabled?: boolean; onPress: () => void }) {
+  const { lang } = useI18n(), rtl = lang === "ar";
+  return <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ disabled }} disabled={disabled} onPress={() => { hap("success"); onPress(); }} style={({ pressed }) => ({ flexDirection: rtl ? "row-reverse" : "row", alignItems: "center", gap: 10, minHeight: 54, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10, borderWidth: 1.5, borderColor: pressed ? C.goldBright : tone, borderBottomWidth: pressed ? 1.5 : 4, borderBottomColor: C.bg, backgroundColor: primary ? (pressed ? "#3A2A14" : "#2E2112") : pressed ? C.surface : C.cardHi, opacity: disabled ? 0.45 : 1, transform: [{ translateY: pressed ? 2 : 0 }] })}>
+    <GameIcon name={icon} size={20} color={tone} />
+    <View style={{ flex: 1, minWidth: 0 }}>
+      <Text style={{ fontFamily: primary ? F.display : F.serif, fontSize: primary ? 16 : 15.5, color: primary ? C.goldBright : C.parchment, textAlign: rtl ? "right" : "left" }}>{label}</Text>
+      {sub ? <Text style={{ fontFamily: F.serifItalic, fontSize: 13.5, lineHeight: 18, color: C.parchmentMuted, marginTop: 2, textAlign: rtl ? "right" : "left" }}>{sub}</Text> : null}
+    </View>
+    {tag ? <Text style={{ fontFamily: F.display, fontSize: 13, color: tone }}>{tag}</Text> : null}
+  </Pressable>;
 }
