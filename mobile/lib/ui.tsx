@@ -381,18 +381,13 @@ export function ProgressBar({ value, max, color, h = 5 }: { value: number; max: 
 export function PageHeader({ kicker, icon, title, sub }: { kicker?: string; icon?: string; title: string; sub?: string }) {
   const path = usePathname(), design = screenDesign(path);
   return (
-    <Animated.View entering={FadeInDown.duration(320).easing(EASE.decel)} style={{ marginBottom: 14, borderWidth: 1, borderColor: C.borderHi, borderRadius: 6, overflow: "hidden", backgroundColor: C.surface }}>
-      <Image accessible={false} source={screenArt(path)} resizeMode="cover" style={{ position: "absolute", width: "100%", height: "100%" }} />
-      <LinearGradient pointerEvents="none" colors={["rgba(8,5,2,0.15)", "rgba(14,10,6,0.10)", "rgba(14,10,6,0.72)", "rgba(14,10,6,0.95)"]} locations={[0, 0.35, 0.72, 1]} style={{ position: "absolute", top: 0, right: 0, bottom: 0, left: 0 }} />
-      <View pointerEvents="none" style={{ position: "absolute", top: 3, left: 3, right: 3, bottom: 3, borderWidth: 1, borderColor: "rgba(221,180,90,0.16)", borderRadius: 4 }} />
-      <View style={{ padding: 16, paddingTop: design.family === "system" ? 40 : 96 }}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-          <GameIcon name={design.icon} size={22} color={C.goldBright} />
-          {!!kicker && kicker !== title && <Text style={{ flexShrink: 1, fontFamily: F.serif, fontSize: 14, color: C.parchmentDim, textShadowColor: "#000", textShadowRadius: 5 }}>{kicker}</Text>}
-        </View>
-        <Text accessibilityRole="header" style={{ fontFamily: F.display, fontSize: 26, lineHeight: 33, color: "#F7EBD2", marginTop: 4, textShadowColor: "rgba(0,0,0,0.9)", textShadowRadius: 8 }}>{title}</Text>
-        {!!sub && <Text style={{ fontFamily: F.serif, fontSize: 15, lineHeight: 22, color: C.parchmentDim, marginTop: 4, textShadowColor: "#000", textShadowRadius: 4 }}>{sub}</Text>}
+    <Animated.View entering={FadeInDown.duration(320).easing(EASE.decel)} style={{ marginBottom: 14, paddingTop: design.family === "system" ? 8 : 64, paddingHorizontal: 2 }}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+        <View style={{ width: 34, height: 34, borderRadius: 17, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(18,12,6,0.75)", borderWidth: 1.5, borderColor: C.gold }}><GameIcon name={design.icon} size={18} color={C.goldBright} /></View>
+        {!!kicker && kicker !== title && <Text style={{ flexShrink: 1, fontFamily: F.serif, fontSize: 15, color: "#F1E2C2", textShadowColor: "#000", textShadowRadius: 6 }}>{kicker}</Text>}
       </View>
+      <Text accessibilityRole="header" style={{ fontFamily: F.display, fontSize: 30, lineHeight: 38, color: "#F7EBD2", marginTop: 6, textShadowColor: "rgba(0,0,0,0.95)", textShadowRadius: 10, textShadowOffset: { width: 0, height: 2 } }}>{title}</Text>
+      {!!sub && <Text style={{ fontFamily: F.serif, fontSize: 16, lineHeight: 23, color: "#EBDDBF", marginTop: 2, textShadowColor: "#000", textShadowRadius: 6 }}>{sub}</Text>}
     </Animated.View>
   );
 }
@@ -407,13 +402,15 @@ export function Panel({ title, icon, tone = C.gold, right, children, noPad, dela
   return <OrnatePanel title={title} icon={icon} tone={tone} right={right} inset={!noPad}>{children}</OrnatePanel>;
 }
 
-// Ekran freski: ana menü freski kısık ışıkla (opasite 0.1) arkadan bakar — düz zeminlere derinlik, okunurluğa dokunmadan.
+// Ekran sahnesi: her sayfanın kendi mekân fotoğrafı tüm ekranı kaplar (siyah zemin yerine yaşayan dünya).
+// Üstte ışık daha açık kalır (başlık sahnenin içinde okunur), aşağı indikçe metin için koyulaşır.
 export function ScreenFresk({ children, style }: { children: React.ReactNode; style?: StyleProp<ViewStyle> }) {
-  const reduced = useSadeMod();
-  if (reduced) return <View style={[{ flex: 1, backgroundColor: C.bg }, style]}>{children}</View>; // sade mod: doku belleği harcanmaz
+  const path = usePathname();
   return (
-    <ImageBackground source={require("../assets/yeni_oyun_bg.png")} resizeMode="cover" imageStyle={{ opacity: 0.13 }} style={[{ flex: 1, backgroundColor: C.bg }, style]}>
+    <View style={[{ flex: 1, backgroundColor: C.bg }, style]}>
+      <Image accessible={false} source={screenArt(path)} resizeMode="cover" style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, width: "100%", height: "100%" }} />
+      <LinearGradient pointerEvents="none" colors={["rgba(8,5,2,0.40)", "rgba(10,7,4,0.32)", "rgba(12,9,5,0.80)", "rgba(12,9,5,0.87)"]} locations={[0, 0.12, 0.24, 1]} style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }} />
       {children}
-    </ImageBackground>
+    </View>
   );
 }

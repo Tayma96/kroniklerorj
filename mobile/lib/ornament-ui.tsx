@@ -20,8 +20,8 @@ function Corners({ tone }: { tone: string }) {
 // Ortak işlenmiş panel: koyu kahve zemin, ince pirinç çerçeve, altın başlık ve başlık altı ışık çizgisi.
 export function OrnatePanel({ title, icon, right, children, tone = C.gold, inset = true }: { title?: string; icon?: string; right?: ReactNode; children: ReactNode; tone?: string; inset?: boolean }) {
   const frame = tone === C.gold ? C.borderHi : tone + "AA";
-  return <View style={{ marginBottom: 12, borderWidth: 1, borderColor: frame, borderRadius: 6, overflow: "hidden", backgroundColor: C.card }}>
-    <LinearGradient pointerEvents="none" colors={["#251B10", "#18120B", "#130E08"]} locations={[0, 0.45, 1]} style={StyleSheet.absoluteFill} />
+  return <View style={{ marginBottom: 12, borderWidth: 1, borderColor: frame, borderRadius: 8, overflow: "hidden", backgroundColor: "rgba(20,14,8,0.55)" }}>
+    <LinearGradient pointerEvents="none" colors={["rgba(40,29,17,0.88)", "rgba(24,18,11,0.86)", "rgba(19,14,8,0.9)"]} locations={[0, 0.45, 1]} style={StyleSheet.absoluteFill} />
     <View pointerEvents="none" style={{ position: "absolute", top: 3, left: 3, right: 3, bottom: 3, borderWidth: 1, borderColor: tone + "1F", borderRadius: 4 }} />
     <Corners tone={tone} />
     {title && <View style={{ paddingHorizontal: 14, paddingTop: 12 }}>
