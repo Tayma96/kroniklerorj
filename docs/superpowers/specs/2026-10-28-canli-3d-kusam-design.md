@@ -162,7 +162,34 @@ Her aşama ayrı plan, alt ajanlarla uygulama, inceleme ajanı ve doğrulamayla 
 - Yalnız ücretsiz araçlar ve ticari kullanıma uygun lisanslar.
 - 6 dil, `GameIcon`, `lib/theme.ts`, `apk` dalı, Türkçe tek satır commit.
 
-## 10. Uygulayıcıya kalanlar
+## 10. İnceleme sonrası kararlar
+
+Benim kararlarım (kullanıcı itiraz edebilir):
+- **Düello sıra tabanlı kalır.** 3D yalnız seçilen hamlenin sonucunu oynatır; tur başına bir
+  karşılaşma (saldıran hareket + karşılık). Gerçek zamanlı tuş zamanlaması yok.
+- **Yaş:** 16 yaş altı karakterler 3D'ye girmez, mevcut 2D görünüm kalır. Yetişkin gövdede yaş,
+  saç, sakal ve ten rengi birkaç çeşitle verilir. 3D baş mevcut portrelerle birebir aynı olmak
+  zorunda değil, yalnız ten ve saç rengi uyumlu.
+- **Görselden 3D:** TRELLIS (MIT). Hunyuan3D'nin lisansı da AB, İngiltere ve Kore'yi dışarıda
+  bırakıyor; kullanılmaz.
+- **Yapay zekâ kotası biterse:** sert eşyalar Blender'da elle modellenir. Kalite Kapı 1'de
+  kullanıcıya gösterilir.
+- **Kapı 0 geçme ölçütü:** kullanıcının telefonunda en az 30 kare/sn sabit, hedef 60. Bellek
+  taşması yok, açılış 3 sn altında.
+
+Kullanıcıya sorulanlar: aşağıdaki "Açık sorular".
+
+## 11. Açık sorular
+
+1. Bu proje sayfa sırasıyla (giriş → yeni oyun → ana sayfa) ilerleyen işten önce mi gelir,
+   paralel mi yürür?
+2. Silah hareket setleri: 4 tip öneriliyor. Tek elli kılıç/hançer/bıçak/yatağan bir set;
+   gürz ve savaş baltası ağır vuruş seti; mızrak dürtme seti; yay atış seti. Uygun mu?
+3. Test APK'ları: Kapı 0 ve Kapı 1 için GitHub Actions'ta test APK derlemeye izin; kullanıcının
+   telefon modeli.
+4. `HF_TOKEN` ortam gizlisi (yapay zekâ görseli ve görselden 3D için).
+
+## 12. Uygulayıcıya kalanlar
 
 - Kemik adlandırma ve dışa aktarma ayrıntıları, doku sıkıştırma biçimi.
 - Kamera açısının ince ayarı, ışık kurulumu.
