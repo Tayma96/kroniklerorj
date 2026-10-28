@@ -12,12 +12,12 @@ import { cityInfo } from "../../lib/world";
 import { useI18n, yuzdeL, applyParams } from "../../lib/i18n";
 import { placeName } from "../../lib/locale-data";
 import { C, F, T } from "../../lib/theme";
-import { IllustratedHeader, OrnatePanel } from "../../lib/ornament-ui";
+import { IllustratedHeader, OrnatePanel, HeaderIconButton, StatStrip, ListRow } from "../../lib/ornament-ui";
 import { townSeasonImage, venueImage } from "../../lib/assets";
 import { currentCalendar } from "../../lib/calendar";
 import { GameIcon } from "../../lib/icons";
 import { hap } from "../../lib/haptics";
-import { BackLabel, PageHeader, ScreenFresk } from "../../lib/ui";
+import { ScreenFresk } from "../../lib/ui";
 
 const KIND_KEY: Record<string, string> = { "şehir": "sehir", "kale": "kale", "köy": "koy" };
 const KIND_ICON: Record<string, string> = { "şehir": "castle", "kale": "shield", "köy": "house" };
@@ -37,9 +37,9 @@ const VENUES = [
 
 function InfoRow({ label, value, last }: { label: string; value: string; last?: boolean }) {
   return (
-    <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 10, borderBottomWidth: last ? 0 : 1, borderBottomColor: C.border }}>
-      <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.parchmentMuted, textTransform: "uppercase" }}>{label}</Text>
-      <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchment }}>{value}</Text>
+    <View style={{ flexDirection: "row", justifyContent: "space-between", gap: 10, paddingVertical: 9, borderBottomWidth: last ? 0 : 1, borderBottomColor: C.border + "AA" }}>
+      <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchmentMuted }}>{label}</Text>
+      <Text style={{ flexShrink: 1, textAlign: "right", fontFamily: F.serif, fontSize: 15, color: C.parchment }}>{value}</Text>
     </View>
   );
 }
@@ -60,61 +60,59 @@ export default function Sehir() {
   const prosperity = Math.round(Math.max(0, Math.min(100, info.prosperity + cityFx(state, here).prosp)));
 
   return (
-    <ScreenFresk style={{ paddingTop: insets.top }}>
-      <View style={{ paddingHorizontal: 14, paddingVertical: 12 }}>
-        <Pressable onPress={() => router.back()}><BackLabel /></Pressable>
-      </View>
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 14, paddingBottom: insets.bottom + 90 }}>
-        <IllustratedHeader title={placeName(here, lang)} sub={`${t("kind." + KIND_KEY[kind])} · ${info.population.toLocaleString(lang)} ${t("diyar.pop")}`} source={townSeasonImage(currentCalendar(state.turn).season)} row={1} />
-        <View style={{ flexDirection: "row", gap: 8, paddingVertical: 14 }}>
-          {[{icon:"shield",key:"diyar.security",value:`${security}/100`},{icon:"coins",key:"diyar.prosperity",value:`${prosperity}/100`},{icon:"family",key:"soc.recog",value:yuzdeL(Math.round(pp.recog * 100),lang)}].map(x => <View key={x.key} style={{ flex: 1, alignItems: "center", padding: 8, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.surface, borderRadius: 4 }}><GameIcon name={x.icon} color={C.gold} size={20}/><Text style={{fontFamily:F.display,fontSize:T.body,color:C.parchment,marginVertical:4}}>{x.value}</Text><Text style={{fontFamily:F.serif,fontSize:T.caption,color:C.parchmentMuted,textAlign:"center"}}>{t(x.key)}</Text></View>)}
-        </View>
-
-        {/* Memleket / gurbet + halkın algısı (tanınma sistemi) */}
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 11, backgroundColor: home ? "rgba(127,166,106,0.10)" : "rgba(111,160,192,0.10)", borderWidth: 1, borderColor: home ? "rgba(127,166,106,0.4)" : "rgba(111,160,192,0.4)", borderRadius: 5, padding: 13, marginBottom: 14 }}>
-          <GameIcon name={home ? "sehir" : "firsatlar"} size={22} color={home ? C.sage : C.frost} />
-          <View style={{ flex: 1 }}>
-            <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 0.5, color: home ? C.sage : C.frost }}>{home ? t("soc.home") : t("soc.away")}</Text>
-            <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchment, marginTop: 2 }}>{t("percept." + pp.key)}</Text>
+    <ScreenFresk>
+      <ScrollView contentContainerStyle={{ paddingTop: insets.top, paddingHorizontal: 12, paddingBottom: insets.bottom + 110 }}>
+        <IllustratedHeader topInset={insets.top} title={placeName(here, lang)} sub={`${t("kind." + KIND_KEY[kind])} · ${info.population.toLocaleString(lang)} ${t("diyar.pop")}`} source={townSeasonImage(currentCalendar(state.turn).season)}
+          leading={<Pressable onPress={() => router.back()} style={{ alignSelf: "flex-start", minHeight: 36, justifyContent: "center", marginBottom: 2 }}><Text style={{ color: C.goldBright, fontFamily: F.display, fontSize: 13, textShadowColor: "#000", textShadowRadius: 6 }}>{t("common.back")}</Text></Pressable>}
+          right={<HeaderIconButton icon="map" label={t("city.allRealm")} onPress={() => router.push("/oyun/harita")} />} />
+        <View style={{ height: 12 }} />
+        <OrnatePanel title={t("city.status")} icon="sun">
+          <StatStrip rtl={lang === "ar"} items={[
+            { icon: "shield", label: t("diyar.security"), value: `${security} / 100`, pct: security, tone: security < 35 ? C.blood : undefined },
+            { icon: "coins", label: t("diyar.prosperity"), value: `${prosperity} / 100`, pct: prosperity, tone: prosperity < 35 ? C.ember : undefined },
+            { icon: "family", label: t("soc.recog"), value: yuzdeL(Math.round(pp.recog * 100), lang), pct: pp.recog * 100 },
+          ]} />
+          {/* Memleket / gurbet + halkın algısı (tanınma sistemi) */}
+          <View style={{ flexDirection: lang === "ar" ? "row-reverse" : "row", alignItems: "center", gap: 10, marginTop: 12, paddingTop: 10, borderTopWidth: 1, borderColor: C.border + "AA" }}>
+            <GameIcon name={home ? "sehir" : "firsatlar"} size={20} color={home ? C.sage : C.frost} />
+            <Text style={{ fontFamily: F.display, fontSize: 13, color: home ? C.sage : C.frost }}>{home ? t("soc.home") : t("soc.away")}</Text>
+            <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 15, lineHeight: 21, color: C.parchmentDim }}>{t("percept." + pp.key)}</Text>
           </View>
-          <View style={{ alignItems: "flex-end" }}>
-            <Text style={{ fontFamily: F.display, fontSize: 16, color: home ? C.sage : C.frost }}>{yuzdeL(Math.round(pp.recog * 100), lang)}</Text>
-            <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 0.5, color: C.parchmentMuted }}>{t("soc.recog").toUpperCase()}</Text>
-          </View>
-        </View>
+        </OrnatePanel>
 
-        {/* Buralarda — yerel imkânlar */}
-        <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.goldDim, textTransform: "uppercase", marginBottom: 9 }}>{t("city.venues")}</Text>
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 9, marginBottom: 16 }}>
-          {VENUES.map((v) => (
-            <Pressable key={v.to} onPress={() => { hap("tap"); router.push(v.to as any); }} style={({ pressed }) => ({ flexBasis: "46%", flexGrow: 1, minHeight: 132, borderRadius: 10, borderWidth: 1, borderColor: "rgba(216,179,90,0.64)", backgroundColor: C.card, overflow: "hidden", opacity: pressed ? 0.9 : 1 })}>
-              <ImageBackground source={venueImage(v.to.split("/").pop() || "")} style={{ flex: 1, minHeight: 132 }} imageStyle={{ opacity: 1 }}>
-                <LinearGradient colors={["#0D0A0600", "#0D0A0680", "#0D0A06D9"]} locations={[0, 0.56, 1]} style={{ flex: 1, justifyContent: "flex-end", padding: 12, gap: 8 }}>
-                  <View style={{ width: 34, height: 34, borderRadius: 10, alignItems: "center", justifyContent: "center", backgroundColor: "#17110BDD", borderWidth: 1, borderColor: "rgba(255,211,108,0.48)" }}><GameIcon name={v.icon} size={19} color={C.goldBright} /></View>
-                  <Text style={{ fontFamily: F.display, fontSize: T.label, lineHeight: 18, color: C.parchment, textShadowColor: "#0D0A06", textShadowRadius: 4 }}>{t(v.key)}</Text>
+        {/* Buralarda — yerel imkânlar: ilk dördü büyük resimli kart, diğerleri küçük */}
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 9, marginBottom: 12 }}>
+          {VENUES.map((v, i) => {
+            const id = v.to.split("/").pop() || "", big = i < 4, h = big ? 158 : 100;
+            return <Pressable key={v.to} accessibilityLabel={t(v.key)} onPress={() => { hap("tap"); router.push(v.to as any); }} style={({ pressed }) => ({ flexBasis: "46%", flexGrow: 1, minHeight: h, borderRadius: 6, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.card, overflow: "hidden", opacity: pressed ? 0.88 : 1 })}>
+              <ImageBackground source={venueImage(id)} style={{ flex: 1, minHeight: h }}>
+                <LinearGradient colors={["#0E0A0600", "#0E0A0699", "#0E0A06F2"]} locations={[0, 0.5, 1]} style={{ flex: 1, flexDirection: lang === "ar" ? "row-reverse" : "row", alignItems: "flex-end", padding: 10, gap: 6 }}>
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <View style={{ flexDirection: lang === "ar" ? "row-reverse" : "row", alignItems: "center", gap: 6 }}>
+                      {!big && <GameIcon name={v.icon} size={16} color={C.goldBright} />}
+                      <Text style={{ fontFamily: F.display, fontSize: big ? 17 : 14, lineHeight: big ? 23 : 19, color: C.parchment, textShadowColor: "#000", textShadowRadius: 5 }}>{t(v.key)}</Text>
+                    </View>
+                    {big && <Text numberOfLines={2} style={{ fontFamily: F.serif, fontSize: 13, lineHeight: 17, color: C.parchmentDim, textShadowColor: "#000", textShadowRadius: 4 }}>{t("city.v." + id)}</Text>}
+                  </View>
+                  <Text style={{ fontFamily: F.display, fontSize: 20, color: C.goldBright }}>{lang === "ar" ? "‹" : "›"}</Text>
                 </LinearGradient>
               </ImageBackground>
-            </Pressable>
-          ))}
+            </Pressable>;
+          })}
         </View>
 
         <WarWorldCard aid />
         <NpcEconomyCard />
-        <OrnatePanel title={t("city.localInfo")}><Text style={{fontFamily:F.serif,fontSize:T.body,lineHeight:T.line,color:C.parchmentMuted}}>{info.blurb}</Text></OrnatePanel>
-
-        {/* Diyar künyesi */}
-        <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.goldDim, textTransform: "uppercase", marginBottom: 9 }}>{t("city.localInfo")}</Text>
-        <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 5, paddingHorizontal: 14, marginBottom: 16 }}>
+        <OrnatePanel title={t("city.localInfo")} icon="scroll-open">
+          <Text style={{ fontFamily: F.serif, fontSize: T.body, lineHeight: T.line, color: C.parchmentDim, marginBottom: 4 }}>{info.blurb}</Text>
           <InfoRow label={t("diyar.governor")} value={info.governor} />
-          <InfoRow label={t("diyar.security")} value={`${security}/100`} />
-          <InfoRow label={t("diyar.prosperity")} value={`${prosperity}/100`} />
           <InfoRow label={t("diyar.livelihood")} value={t("spec." + citySpecialtyIdx(state, here))} />
           {(() => {
             const sn = (state.realm ?? defaultRealm()).find((r) => r.id === regionOf(here));
             const f = sn ? factionById(sn.holder) : null;
             return <InfoRow label={t("realm.holder")} value={`${beylikName(regionOf(here))} · ${f ? t("fac." + f.id + ".n") : "—"}`} last />;
           })()}
-        </View>
+        </OrnatePanel>
 
         {/* Vergi iltizamı — şehrin bir yıllık tahsilatını peşin al (geç oyun para kararı) */}
         {p.age >= 25 && p.fame >= 35 && (
@@ -136,16 +134,7 @@ export default function Sehir() {
         )}
 
         {/* Diyarı gez */}
-        <Pressable onPress={() => { hap("tap"); router.push("/oyun/harita"); }} style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: "rgba(201,168,76,0.07)", borderWidth: 1, borderColor: "rgba(201,168,76,0.35)", borderRadius: 5, padding: 14 }}>
-          <View style={{ width: 38, height: 38, borderRadius: 5, backgroundColor: "rgba(201,168,76,0.1)", borderWidth: 1, borderColor: "rgba(201,168,76,0.3)", alignItems: "center", justifyContent: "center" }}>
-            <GameIcon name="map" size={19} color={C.gold} />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={{ fontFamily: F.display, fontSize: 13, color: C.gold }}>{t("city.allRealm")}</Text>
-            <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted }}>{t("city.hint")}</Text>
-          </View>
-          <Text style={{ fontFamily: F.display, fontSize: 13, color: C.gold }}>›</Text>
-        </Pressable>
+        <ListRow boxed first icon="map" title={t("city.allRealm")} sub={t("city.hint")} rtl={lang === "ar"} onPress={() => { hap("tap"); router.push("/oyun/harita"); }} />
       </ScrollView>
     </ScreenFresk>
   );

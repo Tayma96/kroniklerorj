@@ -1,17 +1,17 @@
-// Kül & Köz tasarım tokenları; mobil oyun yüzeyleri daha sıcak ve aydınlık tutulur.
+// Kül & Köz tasarım tokenları; koyu kahve zemin, keskin pirinç-altın vurgu (claude-paket mockup).
 export const C = {
-  bg: "#140F09",
-  surface: "#241A10",
-  card: "#2D2115",
-  cardHi: "#3B2B1B",
-  border: "#5A452C",
-  borderHi: "#896439",
-  gold: "#E4BE63",
-  goldBright: "#FFE18A",
-  goldDim: "#BC8D3E",
-  parchment: "#F2E2C4",
-  parchmentDim: "#D2BC91",
-  parchmentMuted: "#B9A47D",  // okunur soluk metin: kart zemininde AA kontrastı
+  bg: "#0E0A06",
+  surface: "#17110A",
+  card: "#1D160D",
+  cardHi: "#2A1F13",
+  border: "#4A3820",
+  borderHi: "#7A5C33",
+  gold: "#DDB45A",
+  goldBright: "#F3D27A",
+  goldDim: "#A07A3A",
+  parchment: "#EEDFC2",
+  parchmentDim: "#CDB98F",
+  parchmentMuted: "#A8946E",  // okunur soluk metin: kart zemininde AA kontrastı (≈5.6:1)
   blood: "#C84040",
   sage: "#4A9A5A",
   ember: "#E05A30",

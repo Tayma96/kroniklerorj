@@ -1,6 +1,6 @@
 import { Tabs, useRouter, usePathname } from "expo-router";
 import { View, Pressable, Text, useWindowDimensions } from "react-native";
-import Svg, { Defs, RadialGradient, Stop, Rect } from "react-native-svg";
+import Svg, { Defs, RadialGradient, Stop, Rect, Polygon, Circle } from "react-native-svg";
 import { useEffect, useState } from "react";
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming, Easing, cancelAnimation } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -23,6 +23,20 @@ import { playAdvance } from "../../lib/sound";
 
 function TabIcon({ name, focused }: { name: string; focused: boolean }) {
   return <GameIcon name={name} size={22} color={focused ? C.gold : C.parchmentMuted} />;
+}
+
+// Pusula yıldızı: dört uzun, dört kısa uç; açık/koyu yüzlerle kabartma hissi.
+function CompassStar({ size }: { size: number }) {
+  const pt = (deg: number, r: number) => { const a = (deg - 90) * Math.PI / 180; return `${(50 + r * Math.cos(a)).toFixed(1)},${(50 + r * Math.sin(a)).toFixed(1)}`; };
+  const half = (deg: number, r: number, side: 1 | -1) => [pt(deg, r), pt(deg + side * 45, 8), "50,50"].join(" ");
+  return <Svg width={size} height={size} viewBox="0 0 100 100">
+    <Circle cx="50" cy="50" r="30" fill="none" stroke="#5A3A10" strokeWidth="1.5" opacity={0.55} />
+    {[45, 135, 225, 315].map((d) => <Polygon key={"s" + d} points={half(d, 30, 1)} fill="#6B4613" />)}
+    {[45, 135, 225, 315].map((d) => <Polygon key={"t" + d} points={half(d, 30, -1)} fill="#9A6A22" />)}
+    {[0, 90, 180, 270].map((d) => <Polygon key={"l" + d} points={half(d, 46, 1)} fill="#3B2507" />)}
+    {[0, 90, 180, 270].map((d) => <Polygon key={"r" + d} points={half(d, 46, -1)} fill="#FFF0BE" />)}
+    <Circle cx="50" cy="50" r="5" fill="#FFE9A8" stroke="#3B2507" strokeWidth="1.5" />
+  </Svg>;
 }
 
 // Nav ortasında yükseltilmiş yuvarlak "Ayı İlerle" düğmesi (Karakter ↔ İlişkiler arası).
@@ -81,7 +95,7 @@ function AdvanceFab({ bottom }: { bottom: number }) {
   const waiting = !!pendingMonthScene(state);
   return (
     <View pointerEvents="box-none" style={{ position: "absolute", left: 0, right: 0, bottom: bottom + 16, alignItems: "center" }}>
-      <View style={{ width: 100, minHeight: 96, alignItems: "center", justifyContent: "flex-end" }}>
+      <View style={{ width: 100, minHeight: 104, alignItems: "center", justifyContent: "flex-end" }}>
         {/* Hero'dan taşınan altın toz — düğmeden yükselir */}
         <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0 }}>
           <Ambiance width={100} height={92} flakes={false} count={6} />
@@ -93,13 +107,25 @@ function AdvanceFab({ bottom }: { bottom: number }) {
             onLongPress={() => { if (waiting) { hap("tap"); router.push("/oyun"); return; } hap("success"); playAdvance(); apply((s) => advanceWithMonthScene(s, 6, true)); }}
             delayLongPress={420}
             style={{
-              width: 60, height: 60, borderRadius: 30, backgroundColor: C.gold,
-              alignItems: "center", justifyContent: "center",
-              borderWidth: 3, borderColor: "rgba(13,10,6,0.98)",
-              shadowColor: "#000", shadowOpacity: 0.45, shadowRadius: 7, shadowOffset: { width: 0, height: 3 }, elevation: 9,
+              width: 70, height: 70, borderRadius: 35, backgroundColor: "#0E0A06",
+              alignItems: "center", justifyContent: "center", padding: 3,
+              borderWidth: 1.5, borderColor: C.goldDim,
+              shadowColor: C.gold, shadowOpacity: 0.35, shadowRadius: 10, shadowOffset: { width: 0, height: 0 }, elevation: 10,
             }}
           >
-            <GameIcon name="ilerle" size={26} color={C.inkOnGold} />
+            <View style={{ width: 61, height: 61, borderRadius: 31, overflow: "hidden", borderWidth: 2, borderColor: "#F3D27A", alignItems: "center", justifyContent: "center" }}>
+              <Svg width={61} height={61} style={{ position: "absolute" }}>
+                <Defs>
+                  <RadialGradient id="fabGold" cx="42%" cy="36%" r="70%">
+                    <Stop offset="0" stopColor="#FCE7A6" />
+                    <Stop offset="0.55" stopColor="#D9A944" />
+                    <Stop offset="1" stopColor="#8E6220" />
+                  </RadialGradient>
+                </Defs>
+                <Rect x="0" y="0" width="61" height="61" fill="url(#fabGold)" />
+              </Svg>
+              <View><CompassStar size={50} /></View>
+            </View>
           </Pressable>
         </Animated.View>
         {/* Çekirdek eylem ikon-only kalmasın: mikro etiket (a11y metniyle aynı anahtar) */}
@@ -162,7 +188,7 @@ export default function OyunLayout() {
   const router = useRouter();
   const yol = usePathname();
   const { width } = useWindowDimensions();
-  const tabWidth = Math.max(44, (width - 76) / 4);
+  const tabWidth = Math.max(44, (width - 84) / 4);
   useEffect(() => { const ad = yol.replace(/^\/oyun\/?/, "").split("/")[0] || "index"; oturumEkran(ad); }, [yol]); // cihazda kalan oturum kaydı
   return (
     <View style={{ flex: 1 }}>
@@ -175,7 +201,7 @@ export default function OyunLayout() {
         tabBarLabel: ({ color, children }) => <Text style={{ fontFamily: F.display, fontSize: 12, lineHeight: 16, color, textAlign: "center", paddingHorizontal: 2 }}>{children}</Text>,
       }}>
         <Tabs.Screen name="index" options={{ title: t("tab.home"), tabBarIcon: ({ focused }) => <TabIcon name="ana" focused={focused} /> }} />
-        <Tabs.Screen name="karakter" options={{ title: t("tab.character"), tabBarItemStyle: { flexGrow: 0, flexShrink: 0, width: tabWidth, marginRight: 76 }, tabBarIcon: ({ focused }) => <TabIcon name="karakter" focused={focused} /> }} />
+        <Tabs.Screen name="karakter" options={{ title: t("tab.character"), tabBarItemStyle: { flexGrow: 0, flexShrink: 0, width: tabWidth, marginRight: 84 }, tabBarIcon: ({ focused }) => <TabIcon name="karakter" focused={focused} /> }} />
         <Tabs.Screen name="iliskiler" options={{ title: t("tab.relations"), tabBarIcon: ({ focused }) => <TabIcon name="iliskiler" focused={focused} /> }} />
         <Tabs.Screen name="menu" options={{ title: t("tab.menu"), tabBarIcon: ({ focused }) => <TabIcon name="menu" focused={focused} /> }} />
         {/* Gizli (sekmede görünmez ama navigasyonla açılır) */}

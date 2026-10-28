@@ -149,7 +149,7 @@ function Arka({ children, theme, festival = false }: { children: ReactNode; them
 
 // ── İKİLEM: Kader Kartı ──
 // Etkilenen değerler (Reigns ruhu): yön söylemez, yalnız NEYİN kıpırdayacağını ve büyüklüğünü ima eder.
-const ETKI: Record<string, { icon: string; color: string; big: number }> = {
+export const ETKI: Record<string, { icon: string; color: string; big: number }> = {
   money: { icon: "akce", color: C.gold, big: 50 },
   reputation: { icon: "karakter", color: C.sage, big: 4 },
   honor: { icon: "medal", color: C.azure, big: 4 },
@@ -158,7 +158,7 @@ const ETKI: Record<string, { icon: string; color: string; big: number }> = {
   health: { icon: "saglik", color: C.blood, big: 5 },
   stat_points: { icon: "star", color: C.gold, big: 1 },
 };
-function etkiler(c: Choice): { k: string; big: boolean }[] {
+export function etkiler(c: Choice): { k: string; big: boolean }[] {
   const d = (c.delta || {}) as Record<string, unknown>;
   return Object.keys(ETKI).filter((k) => typeof d[k] === "number" && d[k] !== 0).map((k) => ({ k, big: Math.abs(d[k] as number) >= ETKI[k].big }));
 }

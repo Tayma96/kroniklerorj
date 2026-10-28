@@ -22,6 +22,7 @@ import { ITEMS, TieKind } from "../../../lib/world";
 import { Portre, BackLabel, ScreenFresk } from "../../../lib/ui";
 import { GameIcon } from "../../../lib/icons";
 import { NpcSceneArt } from "../../../lib/npc-scene-ui";
+import { OrnatePanel } from "../../../lib/ornament-ui";
 import { C, F, T, L } from "../../../lib/theme";
 
 const BANDS = [
@@ -42,12 +43,12 @@ function gameActionStyle(pressed: boolean, tone: string, disabled: boolean, rtl:
     paddingHorizontal: 11,
     paddingVertical: 8,
     marginBottom: 8,
-    borderRadius: 12,
+    borderRadius: 6,
     borderWidth: 1,
-    borderColor: pressed ? C.goldBright : tone + "99",
-    borderBottomWidth: pressed ? 1 : 3,
-    borderBottomColor: pressed ? tone + "88" : C.bg,
-    backgroundColor: pressed ? C.surface : C.cardHi,
+    borderColor: pressed ? C.goldBright : tone === C.gold ? C.borderHi : tone + "99",
+    borderBottomWidth: pressed ? 1 : 2,
+    borderBottomColor: pressed ? tone + "88" : "#080503",
+    backgroundColor: pressed ? C.surface : "#241B11",
     shadowColor: "#000",
     shadowOpacity: pressed ? 0.08 : 0.28,
     shadowRadius: 4,
@@ -59,17 +60,14 @@ function gameActionStyle(pressed: boolean, tone: string, disabled: boolean, rtl:
 }
 
 function NpcActionIcon({ name, color = C.gold }: { name: string; color?: string }) {
-  return <View style={{ width: 42, height: 42, alignItems: "center", justifyContent: "center", borderRadius: 14, borderWidth: 1, borderColor: color + "A8", borderBottomWidth: 3, borderBottomColor: C.bg, backgroundColor: "#21180F", shadowColor: color, shadowOpacity: 0.16, shadowRadius: 4, elevation: 2 }}>
-    <View style={{ width: 33, height: 33, alignItems: "center", justifyContent: "center", borderRadius: 11, borderWidth: 1, borderColor: color + "44", backgroundColor: "#302317" }}>
-      <GameIcon name={name} size={20} color={color} />
-    </View>
-    <View pointerEvents="none" style={{ position: "absolute", top: 4, left: 8, right: 8, height: 1, borderRadius: 1, backgroundColor: "rgba(255,239,193,0.32)" }} />
+  return <View style={{ width: 40, height: 40, alignItems: "center", justifyContent: "center" }}>
+    <GameIcon name={name} size={26} color={color} />
   </View>;
 }
 
 function NpcActionChevron({ rtl = false, expanded = false }: { rtl?: boolean; expanded?: boolean }) {
-  return <View style={{ width: 28, height: 28, alignItems: "center", justifyContent: "center", borderRadius: 14, borderWidth: 1, borderColor: C.goldDim + "88", backgroundColor: C.surface }}>
-    <Text style={{ fontFamily: F.display, fontSize: 20, lineHeight: 22, color: C.gold }}>{expanded ? "⌄" : rtl ? "‹" : "›"}</Text>
+  return <View style={{ width: 24, height: 28, alignItems: "center", justifyContent: "center" }}>
+    <Text style={{ fontFamily: F.display, fontSize: 24, lineHeight: 26, color: C.gold }}>{expanded ? "⌄" : rtl ? "‹" : "›"}</Text>
   </View>;
 }
 
@@ -192,13 +190,15 @@ export default function NpcDetail() {
   };
 
   return (
-    <ScreenFresk><ScrollView ref={scroll} style={{ flex: 1 }} contentContainerStyle={{ padding: 14, paddingTop: insets.top + 12, paddingBottom: insets.bottom + 40 }}>
-      <Pressable onPress={() => router.back()} style={{ minHeight: L.touch, justifyContent: "center", marginBottom: 12 }}><BackLabel /></Pressable>
+    <ScreenFresk><ScrollView ref={scroll} style={{ flex: 1 }} contentContainerStyle={{ padding: 14, paddingTop: 0, paddingBottom: insets.bottom + 110 }}>
+      <View style={{ height: insets.top, marginHorizontal: -14, backgroundColor: C.bg }} />
 
-      <NpcSceneArt state={state} npc={npc} mood={ns.mood} dead={prof.olu} relation={v} relationLabel={relationLabel} />
+      <View>
+        <NpcSceneArt state={state} npc={npc} mood={ns.mood} dead={prof.olu} relation={v} relationLabel={relationLabel} />
+        <Pressable onPress={() => router.back()} style={{ position: "absolute", top: 6, left: lang === "ar" ? undefined : -4, right: lang === "ar" ? -4 : undefined, minHeight: L.touch, justifyContent: "center", paddingHorizontal: 10, borderRadius: 6, backgroundColor: "rgba(14,10,6,0.55)" }}><BackLabel /></Pressable>
+      </View>
       {/* ── Profil kartı ── */}
-      <View style={{ backgroundColor: C.surface, borderWidth: 1, borderColor: C.goldDim, borderRadius: 15, padding: 4, marginBottom: 12 }}>
-      <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(216,179,90,0.34)", borderRadius: 11, padding: 13 }}>
+      <OrnatePanel title={t("npc.knowTitle")} icon="sun">
         {!prof.olu && !prof.burada ? <Text style={{ fontFamily: F.serifItalic, fontSize: T.caption, color: C.goldDim, marginBottom: 6 }}>{t("npc.livesIn").replace("%1", placeName(npc.loc || "", lang))}</Text> : null}
         <Pressable accessibilityRole="button" accessibilityLabel={t("gorus.ipucu")} accessibilityState={{ expanded: gorusAcik }} onPress={() => { hap("tap"); setGorusAcik((x) => !x); }} hitSlop={8} style={({ pressed }) => ({ flexDirection: lang === "ar" ? "row-reverse" : "row", minHeight: 44, alignSelf: "flex-start", alignItems: "center", gap: 8, paddingHorizontal: 11, paddingVertical: 7, borderRadius: 9, borderWidth: 1, borderColor: pressed ? C.goldBright : C.borderHi, borderBottomWidth: pressed ? 1 : 3, borderBottomColor: C.bg, backgroundColor: pressed ? C.surface : C.cardHi, transform: [{ translateY: pressed ? 2 : 0 }] })}>
           <GameIcon name="compass" size={16} color={C.gold} />
@@ -238,12 +238,11 @@ export default function NpcDetail() {
             </View>
           </View>
         ) : null}
-      </View>
-      </View>
+      </OrnatePanel>
 
       {/* ── Çevresi (NPC↔NPC ilişki ağı) ── */}
       {ties.length > 0 && (
-        <View style={{ backgroundColor: C.surface, borderWidth: 1, borderColor: C.borderHi, borderRadius: 15, padding: 7, marginBottom: 10 }}>
+        <View style={{ marginBottom: 4 }}>
           <Pressable accessibilityRole="button" accessibilityState={{ expanded: tiesOpen }} onPress={() => setTiesOpen(x => !x)} style={({ pressed }) => gameActionStyle(pressed, C.goldDim, false, lang === "ar")}>
             <NpcActionIcon name="iliskiler" color={C.goldDim} />
             <Text numberOfLines={1} style={{ flex: 1, minWidth: 0, fontFamily: F.display, fontSize: T.label, letterSpacing: 1, color: C.goldDim, textTransform: "uppercase" }}>{t("npc.ties")} · {ties.length}</Text>
@@ -321,11 +320,10 @@ export default function NpcDetail() {
       </View>
 
       {/* ── Etkileşim menüsü ── */}
-      <View style={{ marginBottom: 10, padding: 7, borderWidth: 1, borderColor: C.borderHi, borderRadius: 15, backgroundColor: C.surface }}>
-        <View style={{ flexDirection: lang === "ar" ? "row-reverse" : "row", alignItems: "center", gap: 10, paddingHorizontal: 5, paddingTop: 2, paddingBottom: 11 }}>
-          <NpcActionIcon name="speaker" />
-          <Text style={{ flex: 1, fontFamily: F.display, fontSize: T.title, letterSpacing: 0.5, color: C.gold }}>{t("visual.talkTitle")}</Text>
-          <View style={{ width: 26, height: 1, backgroundColor: C.goldDim + "88" }} />
+      <View style={{ marginBottom: 12, padding: 10, paddingBottom: 2, borderWidth: 1, borderColor: C.borderHi, borderRadius: 6, backgroundColor: C.card }}>
+        <View style={{ flexDirection: lang === "ar" ? "row-reverse" : "row", alignItems: "center", gap: 10, paddingHorizontal: 4, paddingTop: 2, paddingBottom: 10 }}>
+          <GameIcon name="speaker" size={22} color={C.gold} />
+          <Text accessibilityRole="header" style={{ flex: 1, fontFamily: F.display, fontSize: 19, color: C.gold }}>{t("visual.talkTitle")}</Text>
         </View>
         {martialLoad(state.player) > 0 && (couldMarry || canFlirt(state.player, npc, v)) ? (
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 14, paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: C.border, backgroundColor: "rgba(224,90,48,0.07)" }}>
