@@ -22,7 +22,7 @@
 
 ## Açık işler
 - MP ertelendi; yalnız protokol eşliğini koru.
-- Yöntem: Superpowers (beyin fırtınası → tasarım belgesi → plan → alt ajanlar → doğrulama). Sayfalar ✓: giriş, yeni oyun, menü, şehir, ilişkiler, mülkler, pazar, karakter. Yarım (worktree'de): ana, atölye, meslek, mahalle. KURAL: paralel ajan yok (limit bitiriyor); en çok 1 ajan, inceleme ucuz betikle. 3D: `docs/superpowers/specs/2026-10-28-canli-3d-kusam-design.md`, deneme oturum dalında (Filament). Komut/skill'leri kullanıcıyı beklemeden çalıştır.
+- Yöntem: Superpowers (tasarım → plan → uygulama → doğrulama). Sayfalar ✓: giriş, yeni oyun, menü, şehir, ilişkiler, mülkler, pazar, karakter. Yarım (worktree'de): ana, atölye, meslek, mahalle. KURAL: paralel ajan yok (limit bitiriyor); en çok 1 ajan, inceleme ucuz betikle. 3D: `docs/superpowers/specs/2026-10-28-canli-3d-kusam-design.md`, deneme oturum dalında (Filament).
 - 3D: kullanıcı karikatür değil gerçekçi insan istiyor. Hat `.claude/skills/blender-karakter` (her oturumda setup.sh). Kullanıcı onayı olmadan tasarım/oyun entegrasyonuna geçme.
 - Skill'ler `.claude/skills` (Superpowers, ECC seçkisi, ElevenLabs, claude-code-setup); öncelik `kronikler-skill-rehberi`.
 - Denge: bot 40 yaşında nam 100. `game.ts` Math.random göçü sürüyor (`docs/AUDIT.md`).
