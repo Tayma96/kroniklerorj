@@ -1,134 +1,96 @@
-import { PageHeader } from "../../lib/ui";
-import { DesignPressable as Pressable } from "../../lib/design-pressable";
-import { View, Text, Alert, ScrollView } from "react-native";
+// Menü: oyunun kapısı. Mockup ekran 3 dilinde — mevsimin kasabası başlıkta, dört grup:
+// Şehir (mekân kartları) · Güç & Mevki · Aile & Soy (sahneli kartlar) · Defter (madalyon rafı).
+import { View, Text, Alert, ScrollView, useWindowDimensions } from "react-native";
+import Animated, { FadeInUp } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { pendingPerkCount, playerWar, sinavDurumu, MULK_YAS, GameState, varisAdaylari } from "../../lib/game";
 import { useI18n } from "../../lib/i18n";
-import { GameIcon } from "../../lib/icons";
-import { C, F } from "../../lib/theme";
 import { ScreenFresk } from "../../lib/ui";
+import { townSeasonImage } from "../../lib/assets";
+import { currentCalendar } from "../../lib/calendar";
+import { placeName } from "../../lib/locale-data";
+import { useSadeMod } from "../../lib/use-sade-mod";
+import { MK } from "../../lib/home-mockup-ui";
+import { MENU_GROUPS, MENU_DESTS, acikMi, rozet, type MenuDest } from "../../lib/sayfa/menu/menu-data";
+import { MenuHero, GroupHead, VenueTile, DefterShelf, PendingStrip, FooterButton } from "../../lib/sayfa/menu/menu-ui";
+import { F } from "../../lib/theme";
 
-const SEC_KEY: Record<string, string> = { "Geçim": "sec.livelihood", "Güç & Mevki": "sec.power", "Diyar & Soy": "sec.realm", "Kayıt & Anı": "sec.records" };
-const SEC_ICON: Record<string, string> = { "Geçim": "meslek", "Güç & Mevki": "orgutler", "Diyar & Soy": "sehir", "Kayıt & Anı": "tarih" };
-
-type Item = { to: string; icon: string; acik?: (s: GameState) => boolean };
-// Kademeli açılım (TASARIM_PUSULASI ilke 7): ekran oyuncunun hayatına değince menüye girer — çocuk menüsü sade kalır.
-const RESIT = (s: GameState) => s.player.age >= 13 || s.player.dead;
-const SECTIONS: { title: string; items: Item[] }[] = [
-  { title: "Geçim", items: [
-    { to: "/oyun/meslek", acik: RESIT, icon: "meslek" },
-    { to: "/oyun/pazar", icon: "pazar" },
-    { to: "/oyun/atolye", acik: RESIT, icon: "meslek" },
-    { to: "/oyun/mulkler", acik: (s) => s.player.age >= MULK_YAS || s.player.properties.length > 0 || s.player.dead, icon: "mulkler" },
-    { to: "/oyun/gorevler", icon: "scroll-open" },
-    { to: "/oyun/mektep", icon: "mektep" },
-    { to: "/oyun/beceriler", icon: "karakter" },
-  ]},
-  { title: "Güç & Mevki", items: [
-    { to: "/oyun/orgutler", acik: RESIT, icon: "orgutler" },
-    { to: "/oyun/sosyal", acik: RESIT, icon: "sosyal" },
-    { to: "/oyun/savas", acik: (s) => RESIT(s) || !!s.story?.nemesis, icon: "savas" },
-    { to: "/oyun/suc", acik: RESIT, icon: "suc" },
-  ]},
-  { title: "Diyar & Soy", items: [
-    { to: "/oyun/sehir", icon: "sehir" },
-    { to: "/oyun/mahalle", icon: "house" },
-    { to: "/oyun/harita", icon: "map" },
-    { to: "/oyun/haberler", icon: "haberler" },
-    { to: "/oyun/hanedan", icon: "hanedan" },
-    { to: "/oyun/nesil", acik: (s) => s.player.dead || s.player.married || s.player.children.length > 0 || s.player.age >= 16, icon: "dogum" },
-  ]},
-  { title: "Kayıt & Anı", items: [
-    { to: "/oyun/hikayeler", icon: "roman" },
-    { to: "/oyun/basarimlar", icon: "zafer" },
-    { to: "/oyun/tarih", icon: "tarih" },
-    { to: "/oyun/roman", icon: "roman" },
-    { to: "/oyun/kronik", icon: "hanedan" },
-    { to: "/oyun/divan", icon: "tarih" },
-    { to: "/oyun/ayarlar", icon: "ayarlar" },
-  ]},
-];
+const SEASON_KEY: Record<string, string> = { "Kış": "kis", "İlkbahar": "ilkbahar", "Yaz": "yaz", "Sonbahar": "sonbahar" };
+const SEASON_ICON: Record<string, string> = { "Kış": "flame", "İlkbahar": "leaf", "Yaz": "sun", "Sonbahar": "wheat" };
+const SIDE = 12, GAP = 10;
 
 export default function Menu() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { width } = useWindowDimensions();
   const { state, resetGame, mpMode } = useGame();
-  const { t } = useI18n();
-  const p = state?.player;
-  // Ekran başına eylem-bekleyen durum rozeti: {n: sayı, urgent: kırmızı mı}.
-  const badgeFor = (key: string): { n: number; urgent: boolean } => {
-    if (!state || !p) return { n: 0, urgent: false };
-    switch (key) {
-      case "beceriler": return { n: pendingPerkCount(p), urgent: false };
-      case "meslek": { const ry = state.player.rakip; const yaris = !!ry && !ry.bitti && ry.prof === state.player.profession && ry.yaris != null; const ck = state.player.cirak; const ihmal = !!ck && ck.prof === state.player.profession && ck.ihmal >= 2; return { n: sinavDurumu(state)?.hazir || yaris || ihmal ? 1 : 0, urgent: yaris || ihmal }; } // Ahilik: peştamal sınavı hazır
-      case "hikayeler": return { n: state.story?.active ? 1 : 0, urgent: false };
-      case "orgutler": return { n: playerWar(state) ? 1 : 0, urgent: true };
-      case "pazar": return { n: state.caravan ? 1 : 0, urgent: false };
-      case "haberler": return { n: Math.min(9, Math.max(0, state.turn - (state.newsSeenTurn ?? state.turn))), urgent: false }; // son ziyaretten beri geçen aylar (ilk açılışa dek sessiz)
-      case "nesil": return { n: p.dead && varisAdaylari(state).length > 0 ? 1 : 0, urgent: true };
-      default: return { n: 0, urgent: false };
-    }
-  };
+  const { t, lang, rtl } = useI18n();
+  const reduced = useSadeMod();
+  const narrow = width < 360;
+  const go = (to: string) => router.push(to as any);
+  const cal = currentCalendar(state?.turn ?? 0);
+  const place = state ? placeName(state.player.location_name, lang) : t("menu.title");
+  // Defter'de "tarih" ana sayfadaki Yaşam Defteri'dir; Kronik adı Aile & Soy'daki hanedan defterine kalır.
+  const label = (d: MenuDest) => d.key === "tarih" ? t("flow.lifeBook") : t("scr." + d.key);
+  const visible = MENU_DESTS.filter((d) => acikMi(d, state));
+  const locked = state ? MENU_DESTS.some((d) => !acikMi(d, state)) : false;
+  const pending = visible.map((d) => ({ d, r: rozet(d.key, state) })).filter((x) => x.r.n > 0).sort((a, b) => Number(b.r.urgent) - Number(a.r.urgent));
+
+  const tileW = Math.floor((Math.min(width, 640) - SIDE * 2 - GAP) / 2);
+  const tileH = Math.round(Math.max(120, Math.min(138, tileW * 0.74))); // dar ekranda iki satırlık ad için pay
+  const enter = (i: number) => (reduced ? undefined : FadeInUp.delay(80 + i * 90).duration(420));
+
   const confirmReset = () => {
     Alert.alert(t("settings.newLife"), t("settings.reset"), [
       { text: t("common.cancel"), style: "cancel" },
-      { text: "✓", style: "destructive", onPress: async () => { try { await resetGame(); router.replace("/yeni-oyun"); } catch {} } },
+      { text: t("menu.sifirla"), style: "destructive", onPress: async () => { try { await resetGame(); router.replace("/yeni-oyun"); } catch {} } },
     ]);
   };
+
   return (
     <ScreenFresk>
-    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 18, paddingTop: insets.top + 16, paddingBottom: insets.bottom + 90 }}>
-      <PageHeader title={t("menu.title")} sub={t("app.subtitle")} />
-        {SECTIONS.map((sec) => ({ ...sec, items: sec.items.filter((m) => !state || !m.acik || m.acik(state)) })).filter((sec) => sec.items.length).map((sec) => (
-        <View key={sec.title} style={{ marginTop: 14 }}>
-          {/* Bölüm başlığı: ikon + etiket + altın çizgi */}
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 9, paddingHorizontal: 2 }}>
-            <GameIcon name={SEC_ICON[sec.title]} size={14} color={C.gold} />
-            <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.gold, textTransform: "uppercase" }}>{t(SEC_KEY[sec.title] || "")}</Text>
-            <View style={{ flex: 1, height: 1, backgroundColor: C.border }} />
-          </View>
-          {/* Gruplu panel */}
-          <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 5, overflow: "hidden" }}>
-            {sec.items.map((m, i) => {
-              const key = m.to.split("/").pop() || "";
-              return (
-                <Pressable key={m.to} onPress={() => router.push(m.to as any)}
-                  style={({ pressed }) => ({
-                    flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, paddingHorizontal: 12,
-                    borderBottomWidth: i === sec.items.length - 1 ? 0 : 1, borderBottomColor: C.border,
-                    backgroundColor: pressed ? C.cardHi : "transparent",
-                  })}>
-                  {/* İkon kutusu */}
-                  <View style={{ width: 34, height: 34, borderRadius: 5, backgroundColor: "rgba(201,168,76,0.08)", borderWidth: 1, borderColor: "rgba(201,168,76,0.22)", alignItems: "center", justifyContent: "center" }}>
-                    <GameIcon name={m.icon} size={18} color={C.gold} />
-                  </View>
-                  <Text style={{ flex: 1, fontFamily: F.display, fontSize: 13, letterSpacing: 0.8, color: C.parchment }}>{t("scr." + key)}</Text>
-                  {(() => { const b = badgeFor(key); return b.n > 0 ? (
-                    <View style={{ minWidth: 18, height: 18, borderRadius: 5, paddingHorizontal: 5, alignItems: "center", justifyContent: "center", backgroundColor: b.urgent ? "rgba(200,64,64,0.9)" : "rgba(201,168,76,0.9)" }}>
-                      <Text style={{ fontFamily: F.display, fontSize: 13, color: C.inkOnGold }}>{b.n}</Text>
-                    </View>
-                  ) : null; })()}
-                  <Text style={{ color: C.goldDim, fontSize: 16, fontFamily: F.display }}>›</Text>
-                </Pressable>
-              );
-            })}
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: insets.bottom + 96 }}>
+        <MenuHero source={townSeasonImage(cal.season)} topInset={insets.top} seasonIcon={SEASON_ICON[cal.season] || "sun"} title={place}
+          sub={`${cal.year}  •  ${t("cal.season." + (SEASON_KEY[cal.season] || "yaz"))}`} rtl={rtl} narrow={narrow} reduced={reduced}
+          cta={t("menu.sehreCik")} ctaHint={t("scr.sehir")} onCta={() => go("/oyun/sehir")}
+          mapLabel={t("scr.harita")} onMap={() => go("/oyun/harita")} settingsLabel={t("scr.ayarlar")} onSettings={() => go("/oyun/ayarlar")} />
+
+        <View style={{ paddingHorizontal: SIDE, maxWidth: 640, width: "100%", alignSelf: "center" }}>
+          {pending.length > 0 && <Animated.View entering={enter(0)} style={{ marginTop: 12 }}>
+            <PendingStrip title={t("menu.bekleyen")} rtl={rtl} reduced={reduced}
+              items={pending.map(({ d, r }) => ({ key: d.key, label: label(d), icon: d.icon, r, onPress: () => go(d.to) }))} />
+          </Animated.View>}
+
+          {MENU_GROUPS.map((g, gi) => {
+            const items = visible.filter((d) => d.group === g.id);
+            if (!items.length) return null;
+            return <Animated.View key={g.id} entering={enter(gi + 1)} style={{ marginTop: 18 }}>
+              <GroupHead title={t(g.title)} rtl={rtl} />
+              {g.id === "defter"
+                ? <DefterShelf cols={width >= 360 ? Math.min(5, items.length) : 3} rtl={rtl} reduced={reduced}
+                    items={items.map((d) => ({ key: d.key, label: label(d), icon: d.icon, r: rozet(d.key, state), onPress: () => go(d.to) }))} />
+                : <View style={{ flexDirection: rtl ? "row-reverse" : "row", flexWrap: "wrap", gap: GAP }}>
+                    {items.map((d, i) => {
+                      const wide = items.length % 2 === 1 && i === items.length - 1; // tek kalan kart tam genişlik
+                      return <VenueTile key={d.key} title={label(d)} sub={t("menu.alt." + d.key)} source={d.scene!(state)} r={rozet(d.key, state)}
+                        width={wide ? "100%" : tileW} height={wide ? Math.round(tileH * 0.86) : tileH} rtl={rtl} reduced={reduced} emblem={d.emblem} onPress={() => go(d.to)} />;
+                    })}
+                  </View>}
+            </Animated.View>;
+          })}
+
+          {locked && <Text style={{ fontFamily: F.serifItalic, fontSize: 15, lineHeight: 20, color: MK.muted, textAlign: "center", marginTop: 16 }}>{t("menu.buyudukce")}</Text>}
+
+          <View style={{ marginTop: 20 }}>
+            {/* MP'de "Yeni Hayat" gizli: resetGame no-op ama navigasyon yeni-oyun ekranına düşürüp SP kaydını ezdirebilirdi. */}
+            <View style={{ gap: 10 }}>
+              <FooterButton icon="ayarlar" label={t("scr.ayarlar")} onPress={() => go("/oyun/ayarlar")} reduced={reduced} rtl={rtl} />
+              {!mpMode && <FooterButton icon="leaf" label={t("settings.newLife")} danger onPress={confirmReset} reduced={reduced} rtl={rtl} />}
+            </View>
           </View>
         </View>
-      ))}
-
-      {state && SECTIONS.some((sec) => sec.items.some((m) => m.acik && !m.acik(state))) ? (
-        <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, textAlign: "center", marginTop: 16 }}>{t("menu.buyudukce")}</Text>
-      ) : null}
-      <View style={{ height: 18 }} />
-      {/* MP'de "Yeni Hayat" gizli: resetGame no-op ama navigasyon yeni-oyun ekranına düşürüp SP kaydını ezdirebilirdi. */}
-      {!mpMode && (
-      <Pressable onPress={confirmReset} style={{ paddingVertical: 14, borderRadius: 5, borderWidth: 1, borderColor: "rgba(200,64,64,0.4)", backgroundColor: "rgba(200,64,64,0.08)", alignItems: "center" }}>
-        <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1.5, color: C.blood }}>{t("settings.newLife")}</Text>
-      </Pressable>
-      )}
-    </ScrollView>
+      </ScrollView>
     </ScreenFresk>
   );
 }
