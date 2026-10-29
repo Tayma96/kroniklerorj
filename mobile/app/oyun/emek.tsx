@@ -32,8 +32,9 @@ export default function Emek() {
     { icon: "crown", baslik: t("emek.gorsel"), not: t("emek.gorselNot"), satirlar: [
       "Powered by Stability AI — SD-Turbo (Stability AI Community License)",
       "FLUX.1 [schnell] — Black Forest Labs (Apache 2.0)",
+      "stable-diffusion.cpp — leejet (MIT)",
     ] },
-    { icon: "lyre", baslik: t("emek.ses"), not: t("emek.sesNot"), satirlar: SES_ATIF },
+    { icon: "lyre", baslik: t("emek.ses"), not: t("emek.sesNot"), satirlar: [...SES_ATIF, "Chatterbox Multilingual — Resemble AI (MIT) · Türkçe anlatıcı / narrator"] },
     { icon: "cog", baslik: t("emek.yazilim"), satirlar: [
       "Expo · React Native · React · Expo Router — MIT",
       "Reanimated · Worklets · Gesture Handler · Screens · Safe Area Context — MIT",

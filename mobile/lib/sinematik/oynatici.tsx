@@ -10,7 +10,8 @@ import { useI18n } from "../i18n";
 import { C, F } from "../theme";
 import { Ambiance, Pulse } from "../fx";
 import { isReduceMotion } from "../perf";
-import { playEffect, playTap, pushSoundscape } from "../sound";
+import { playEffect, playTap, pushSoundscape, playNarration, stopNarration } from "../sound";
+import { ANLATIM } from "./anlatim";
 import { hap } from "../haptics";
 import type { Cekim } from "./cekimler";
 
@@ -115,7 +116,9 @@ export function Sinematik({ cekimler, onDone }: { cekimler: Cekim[]; onDone: () 
   const [i, setI] = useState(0);
   const c = cekimler[i];
   const son = i === cekimler.length - 1;
-  const sure = useMemo(() => sureOf(c), [c]);
+  // Türkçede anlatıcı konuşur; çekim, kayıt bitip kısa bir nefes payı kalana dek sürer.
+  const vo = lang === "tr" && c.vo ? ANLATIM[c.vo] : undefined;
+  const sure = useMemo(() => (c.baslik ? 0 : Math.max(sureOf(c), vo ? vo.ms + 1900 : 0)), [c, vo]);
   const bant = Math.round(H * 0.075);
 
   // Kendiliğinden akış; son kart dokunuş bekler.
@@ -132,6 +135,11 @@ export function Sinematik({ cekimler, onDone }: { cekimler: Cekim[]; onDone: () 
     return () => clearTimeout(id);
   }, [c]);
 
+  useEffect(() => {
+    if (!vo || !c.vo) return;
+    const id = c.vo, tm = setTimeout(() => playNarration(id), 650);
+    return () => { clearTimeout(tm); stopNarration(id); };
+  }, [c, vo]);
   const ileri = () => { if (son) return; playTap(); setI(i + 1); };
   const bitir = () => { hap("success"); onDone(); };
   const kat = (k: string) => !reduced && !!c.katman?.includes(k as never);

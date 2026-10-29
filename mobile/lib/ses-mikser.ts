@@ -16,7 +16,8 @@ export type SesPlan = { music: string | null; ambiance: string | null };
 export type SesTercih = { music: boolean; ambiance: boolean; effects: boolean };
 type Loop = { id: string; player: SesOynatici };
 type Channel = { current?: Loop; retiring?: Loop; fade?: unknown };
-type Voice = { player: SesOynatici; timer?: unknown; off?: () => void; duck: boolean };
+// Anlatım (sinematik anlatıcısı) efekt tercihine bağlı değildir: müzik ya da efekt açıksa çalar.
+type Voice = { player: SesOynatici; timer?: unknown; off?: () => void; duck: boolean; kind: 'effect' | 'narration' };
 const SAAT: SesSaat = {
   now: () => Date.now(), later: (fn, ms) => setTimeout(fn, ms), cancel: id => clearTimeout(id as ReturnType<typeof setTimeout>),
   repeat: (fn, ms) => setInterval(fn, ms), stopRepeat: id => clearInterval(id as ReturnType<typeof setInterval>),
@@ -32,7 +33,7 @@ export class SesMikser {
   setPlan(plan: SesPlan) { if (this.plan.music === plan.music && this.plan.ambiance === plan.ambiance) return; this.plan = plan; this.sync(); }
   setPreferences(prefs: SesTercih) {
     this.prefs = prefs;
-    if (!prefs.effects) for (const id of [...this.voices.keys()]) this.end(id);
+    for (const [id, v] of [...this.voices]) if (!this.allows(v.kind)) this.end(id);
     this.sync();
   }
   setActive(active: boolean) {
@@ -42,6 +43,7 @@ export class SesMikser {
       this.clearChannel('music'); this.clearChannel('ambiance');
     } else this.sync();
   }
+  private allows(kind: Voice['kind']) { return kind === 'narration' ? this.prefs.music || this.prefs.effects : this.prefs.effects; }
   private safe(fn: () => void) { try { fn(); } catch {} }
   private remove(player?: SesOynatici) { if (player) { this.safe(() => player.pause()); this.safe(() => player.remove()); } }
   private clearChannel(name: 'music' | 'ambiance') {
@@ -85,27 +87,28 @@ export class SesMikser {
       }
     }, 50);
   }
-  effect(id: string, durationMs: number, duck = true) {
-    if (!this.active || !this.prefs.effects) return;
+  effect(id: string, durationMs: number, duck = true, kind: Voice['kind'] = 'effect') {
+    if (!this.active || !this.allows(kind)) return;
     const now = this.clock.now();
     if (now - (this.last.get(id) ?? -Infinity) < 100) return;
     this.last.set(id, now);
     this.end(id);
     while (this.voices.size >= 4) this.end(this.voices.keys().next().value!);
     let player: SesOynatici | undefined;
-    try { player = this.create(id); player.loop = false; player.volume = duck ? 0.56 : 0.34; }
+    try { player = this.create(id); player.loop = false; player.volume = kind === 'narration' ? 1 : duck ? 0.56 : 0.34; }
     catch { this.remove(player); return; }
     const effectPlayer = player;
-    const voice: Voice = { player: effectPlayer, duck }; this.voices.set(id, voice);
+    const voice: Voice = { player: effectPlayer, duck, kind }; this.voices.set(id, voice);
     try { voice.off = player.onEnd?.(() => { if (this.voices.get(id) === voice) this.end(id); }); } catch {}
     voice.timer = this.clock.later(() => { if (this.voices.get(id) === voice) this.end(id); }, Math.max(400, durationMs + 700));
     // seekTo asenkrondur: susturma veya arka plana geçme sırasında geç dönen sonuç sesi yeniden başlatamaz.
     try { void effectPlayer.seekTo(0).then(() => {
-      if (this.active && this.prefs.effects && this.voices.get(id) === voice) { try { effectPlayer.play(); } catch { this.end(id); } }
+      if (this.active && this.allows(kind) && this.voices.get(id) === voice) { try { effectPlayer.play(); } catch { this.end(id); } }
     }).catch(() => { if (this.voices.get(id) === voice) this.end(id); }); }
     catch { this.end(id); }
     this.fade('music'); this.fade('ambiance');
   }
+  stop(id: string) { this.end(id); }
   private end(id: string) {
     const v = this.voices.get(id); if (!v) return;
     this.voices.delete(id);

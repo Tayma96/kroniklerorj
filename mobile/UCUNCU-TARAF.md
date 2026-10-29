@@ -64,3 +64,9 @@ Dolaylı bağımlılıkların tam dökümü gerektiğinde: `npx license-checker 
 
 ## Expo proje şablonu
 Proje iskeleti Expo şablonuyla başlatıldı; şablonun MIT bildirimi `mobile/LICENSE` içinde korunur.
+
+## Açılış sinematiği (29 Ekim 2026)
+- **Anlatıcı sesi:** `assets/ses/vo/` — Chatterbox Multilingual (Resemble AI, MIT), yerelde üretildi; modelin varsayılan
+  sesi, gerçek kişi sesi kopyalanmadı. Çıktıda duyulmayan Perth filigranı vardır.
+- **Yeni sahne görselleri:** `assets/sinematik/` — FLUX.1 [schnell] (Black Forest Labs, Apache 2.0), stable-diffusion.cpp
+  (MIT) ile bu projede yerelde üretildi. Çıktılar üzerinde kısıt yoktur. İstemler `assets/sinematik/KAYNAK.md`de.

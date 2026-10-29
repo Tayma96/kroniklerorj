@@ -44,6 +44,11 @@ async function bundle(entry, context) {
   for(let i=0;i<20;i++) mix.effect('fx'+i,1000); await flush(); assert.equal(mix.snapshot().voices,4); assert(made.filter(p=>!p.removed).length<=6);
   timer.step(850); assert(Math.abs(made.filter(p=>!p.removed && p.loop)[0].volume-.085)<1e-9);
   timer.step(1000); assert.equal(mix.snapshot().voices,0); timer.step(850); assert(Math.abs(made.filter(p=>!p.removed && p.loop)[0].volume-.23)<1e-9);
+  // Anlatım: efekt kapalıyken de müzikle çalar, müziği kısar; bütün ses kapanınca susar.
+  mix.setPreferences({music:true,ambiance:true,effects:false}); timer.step(150); mix.effect('vo',1000,true,'narration'); await flush();
+  assert.equal(mix.snapshot().voices,1); assert.equal(made.at(-1).volume,1); timer.step(850); assert(Math.abs(made.filter(p=>!p.removed && p.loop)[0].volume-.085)<1e-9);
+  mix.effect('fx-kapali',1000); assert.equal(mix.snapshot().voices,1);
+  mix.setPreferences({music:false,ambiance:true,effects:false}); assert.equal(mix.snapshot().voices,0);
   mix.dispose(); assert(made.every(p=>p.removed===1 && p.listeners===0)); assert.equal(timer.tasks.size,0);
   const failures=[]; const bad=new SesMikser(id=>{const p=player(id); p.play=()=>{throw new Error('native');}; failures.push(p); return p;},clock());
   bad.setPreferences({music:true,ambiance:false,effects:true}); bad.setPlan({music:'bad',ambiance:null}); bad.setActive(true); assert.equal(failures[0].removed,1); bad.effect('badfx',100); await flush(); assert.equal(bad.snapshot().voices,0); assert(failures.every(p=>p.removed===1)); bad.dispose();
