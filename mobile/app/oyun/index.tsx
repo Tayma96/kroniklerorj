@@ -1,17 +1,17 @@
 import { DesignPressable as Pressable } from "../../lib/design-pressable";
 import { RealmNotices, realmNoticeCount, noticeRows } from "../../lib/realm-notices-ui";
-import { HudButton, GameSheet, useHomeSheet, type HomeSheetId } from "../../lib/home-hud";
-import { SAHNE_GORSEL, ikilemTema } from "../../lib/sahne-tema";
-import { View, Text, ScrollView, ImageBackground, Image, StyleSheet, Dimensions, Modal, useWindowDimensions } from "react-native";
-import { Ambiance, LoadingScreen, KenBurns } from "../../lib/fx";
-import Animated, { FadeInDown, FadeIn } from "react-native-reanimated";
-import { useState, useEffect, useRef } from "react";
+import { GameSheet, useHomeSheet, type HomeSheetId } from "../../lib/home-hud";
+import { SAHNE_GORSEL } from "../../lib/sahne-tema";
+import { View, Text, ScrollView, Modal } from "react-native";
+import { LoadingScreen } from "../../lib/fx";
+import Animated, { FadeInDown } from "react-native-reanimated";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
 import { useMp } from "../../lib/mp/store";
 import { realmYearMonth } from "../../lib/mp/world";
-import { applyDilemma, rakipYarisi, tezgahKart, tezgahHuner, tezgahHunerStat, tezgahSans, tezgahBasari, resolveTezgah, TEZGAH_HUNER, careerTitle, achievementsOf, GameEvent, resolveOpportunity, resolveMicro, resolveSaga, resolveBloodline, BL_CHOICES, BL_COST, SAGA_CHOICES, SAGA_COST, resolveDivan, inJail, jailBribeCost, bribeJailer, Opportunity, publicPerception, atHome, eulogy, WorkStyle, familyQuestsOf, playerWar, beylikName, childAction, ChildAct, elderAction, ElderAct, adultAction, AdultAct, ADULT_TRAINER_COST, studyEnergy, maxStudyEnergy, STUDY_COST, playEnergy, maxPlayEnergy, PLAY_COST, canWork, kariyerXp, kisiProfil, gorus, gorusSebebi, echoWorkBlock, npcTeklifYanit, youthAction, GencAct, gonulAdayi, donumAni, acikHesaplar, ayNotu, onemliMi, kapiMetni, hakemIpucu, araciSansi, hayatOzeti, kisiOf, knParam, esnafAhlaki } from "../../lib/game";
+import { applyDilemma, rakipYarisi, tezgahKart, tezgahHuner, tezgahHunerStat, tezgahSans, tezgahBasari, resolveTezgah, TEZGAH_HUNER, achievementsOf, GameEvent, resolveOpportunity, resolveMicro, resolveSaga, resolveBloodline, BL_CHOICES, BL_COST, SAGA_CHOICES, SAGA_COST, resolveDivan, inJail, jailBribeCost, bribeJailer, Opportunity, eulogy, playerWar, beylikName, kariyerXp, kisiProfil, gorus, gorusSebebi, echoWorkBlock, npcTeklifYanit, donumAni, acikHesaplar, ayNotu, onemliMi, kapiMetni, hakemIpucu, araciSansi, hayatOzeti, kisiOf, knParam } from "../../lib/game";
 import { pendingMonthScene, chooseMonthDilemma, progressMonthOpportunity, resolveMonthOpportunity } from "../../lib/month-scene";
 import { ayinSahnesi, Dilemma, Choice } from "../../lib/events";
 import { SinavKartiModal, SinavKartiVeri } from "../../lib/kart3d";
@@ -19,20 +19,18 @@ import { rakipKartVerisi } from "../../lib/rakip-ui";
 import { HesapModal } from "../../lib/hesap-ui";
 import { careerTitleL, placeName } from "../../lib/locale-data";
 import { currentCalendar } from "../../lib/calendar";
-import { gercekRitim } from "../../lib/ritim";
-import { IllustratedHeader, OrnatePanel, HeaderIconButton, StatStrip, ListRow, AlertBanner } from "../../lib/ornament-ui";
-import { MonthDecisionCard } from "../../lib/month-decision-ui";
-import { MK, MkHero, MkIdentity, MkDecision, MkAlert, MkRecent, MkBookRow } from "../../lib/home-mockup-ui";
-import { townSeasonImage, heroImage } from "../../lib/assets";
+import { MK, MkHero, MkIdentity, MkDecision, MkAlert, MkAlertChips, MkRecent, MkBookRow } from "../../lib/home-mockup-ui";
+import { AnaZemin } from "../../lib/sayfa/ana/zemin";
+import { AyOzeti, useAyFarki, sayi } from "../../lib/sayfa/ana/ay-ozeti";
+import { useSadeMod } from "../../lib/use-sade-mod";
+import { heroImage } from "../../lib/assets";
 import { MilestoneModal, DilemmaModal, OpportunityModal, AchievementToast, EulogyModal, GameButton, Portre } from "../../lib/ui";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { GameIcon } from "../../lib/icons";
-import { useI18n, yuzdeL, applyParams, renderEvt, lakapliAd, lakapAdi } from "../../lib/i18n";
-import { playTap, playChime, playSaz, playNey } from "../../lib/sound";
+import { useI18n, yuzdeL, applyParams, renderEvt, lakapliAd } from "../../lib/i18n";
+import { playTap, playChime, playSaz } from "../../lib/sound";
 import { hap } from "../../lib/haptics";
-import { C, F, T, L } from "../../lib/theme";
-import { LinearGradient } from "expo-linear-gradient";
-import { EmekOngoru } from "../../lib/emek-ui";
+import { C, F, T } from "../../lib/theme";
 import { SoylentiIzi, soylentiLead } from "../../lib/rumor-ui";
 import { AileHaberi } from "../../lib/evlat-ui";
 import { aileHaberiniOku, varisAdaylari, aileHaberi, effStat } from "../../lib/game";
@@ -40,12 +38,6 @@ import { ITEMS } from "../../lib/world";
 
 const SEASON_KEY: Record<string, string> = { "Kış": "kis", "İlkbahar": "ilkbahar", "Yaz": "yaz", "Sonbahar": "sonbahar" };
 const SEASON_ICON: Record<string, string> = { "Kış": "flame", "İlkbahar": "leaf", "Yaz": "sun", "Sonbahar": "wheat" };
-
-// Meslek → ikon (mevcut game-icons setinden).
-const PROF_GI: Record<string, string> = {
-  çiftçi: "wheat", demirci: "anvil", tüccar: "scales", balıkçı: "fishing", avcı: "bow",
-  çoban: "sheep", fırıncı: "bread", müzisyen: "lyre", şifacı: "herbs", asker: "crossed-swords", işsiz: "leaf",
-};
 
 // Olay tipi → { kategori anahtarı (evc.*), renk, ikon }. Bulunmazsa DEFAULT.
 const EVT: Record<string, { c: string; col: string; gi: string }> = {
@@ -91,21 +83,16 @@ const DEFAULT_EVT = { c: "olay", col: C.gold, gi: "star" };
 // Panoda gösterilecek en yeni olay sayısı (tam geçmiş Tarih ekranında). Geç-oyun render kasması önlenir.
 const DASH_EVENTS = 3;
 
-function fameRepKey(fame: number) {
-  if (fame >= 80) return "rep.legendary"; if (fame >= 60) return "rep.renowned";
-  if (fame >= 40) return "rep.heard"; if (fame >= 20) return "rep.known"; return "rep.unknown";
-}
-
 export default function Dashboard() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { state, doWork, doEat, resetGame, apply, mpMode } = useGame();
+  const { state, doEat, resetGame, apply, mpMode } = useGame();
   const { snapshot: mpSnapshot } = useMp();
-  const { t, tg, lang } = useI18n();
+  const { t, lang } = useI18n();
+  const sade = useSadeMod();
   const [milestone, setMilestone] = useState<GameEvent | null>(null);
   const [sheet, setSheet] = useHomeSheet();
   const [viewH, setViewH] = useState(0); // kaydırma alanı yüksekliği: madalyonlar ekranın altına otursun
-  const { width: winW, height: winH } = useWindowDimensions();
   const [freshMark, setFreshMark] = useState<null | { from: number; n: number }>(null); // "bu ay" özeti: son ilerlemede düşen olay sayısı + olay sırası eşiği (q > from)
   const [yearReport, setYearReport] = useState<GameEvent | null>(null); // yıl dönümü karnesi (yaş günü ritüeli)
   const [mpDilemma, setDilemma] = useState<Dilemma | null>(null);
@@ -117,14 +104,9 @@ export default function Dashboard() {
   const [yarisK, setYarisK] = useState<SinavKartiVeri | null>(null);
   const yarisAcilan = useRef<number | null>(null);
   const [ach, setAch] = useState<{ name: string; icon: string } | null>(null);
-  const tab = "onemli" as "onemli" | "gunluk" | "dunya"; // önemli: kendi hayatın + sana değen dünya olayları (renk satırları "günlük"te)
-  const [guideHidden, setGuideHidden] = useState(false);
-  useEffect(() => { AsyncStorage.getItem("kronikler_fs_hidden").then((v) => { if (v === "1") setGuideHidden(true); }).catch(() => {}); }, []);
-  const hideGuide = () => { setGuideHidden(true); AsyncStorage.setItem("kronikler_fs_hidden", "1").catch(() => {}); };
   const [showTut, setShowTut] = useState(false);
   const seenSeq = useRef<number | null>(state ? state.hseq ?? 0 : null); // görülen son olay sırası (null: kayıt henüz yüklenmedi)
   const [showEulogy, setShowEulogy] = useState(false);
-  const [workStyle, setWorkStyle] = useState<WorkStyle>("normal");
   const [echoParked, setEchoParked] = useState<string | null>(null);
   const echoDialogKey = state?.npcTeklif?.sebep === "sahit_sadaka" ? `${state.player.generation}:${state.npcTeklif.id}:${state.npcTeklif.turn}` : null;
   const echoDeferred = !!echoDialogKey && echoParked === echoDialogKey;
@@ -139,22 +121,35 @@ export default function Dashboard() {
     wasDead.current = d;
   }, [state?.player.dead]);
 
-  // Ay sonu özeti: ayın başındaki değerlerle karşılaştırıp göstergelerin yanında "+12 / −3" gösterir.
-  // Değişim; o ay yapılan işleri (çalışma, alışveriş) ve ay geçişini birlikte kapsar. Nedenler Son Gelişmeler'de.
-  const monthRef = useRef<{ turn: number; gen: number; v: Record<string, number> } | null>(null);
-  const [deltas, setDeltas] = useState<Record<string, number>>({});
-  useEffect(() => {
-    if (!state) return;
-    const pl = state.player;
-    const v = { health: Math.round(pl.health), str: Math.round(effStat(pl, "strength")), int: Math.round(effStat(pl, "intelligence")), money: Math.round(pl.money) };
-    const cur = monthRef.current;
-    if (!cur || cur.gen !== pl.generation || state.turn < cur.turn) { monthRef.current = { turn: state.turn, gen: pl.generation, v }; setDeltas({}); return; }
-    if (state.turn > cur.turn) {
-      const d: Record<string, number> = {};
-      for (const k of Object.keys(v) as (keyof typeof v)[]) { const x = v[k] - (cur.v[k] ?? v[k]); if (x) d[k] = x; }
-      setDeltas(d); monthRef.current = { turn: state.turn, gen: pl.generation, v };
+  // Ayın hesabı: ayın başındaki değerlerle karşılaştırıp biten ayın farkını (akçe, sağlık, şöhret, itibar, nitelik) verir.
+  // Değişim; o ay yapılan işleri (çalışma, alışveriş) ve ay geçişini birlikte kapsar. Nedenler Son Gelişmeler'de işaretli.
+  const fark = useAyFarki(state);
+
+  // Sofra paneli: yemekten sonra açlık geçtiyse içi boş kalmasın, kendiliğinden kapansın.
+  const sofraGerek = !!state && !state.player.dead && !mpMode && state.player.age >= 13 && state.player.hunger < 40;
+  useEffect(() => { if (sheet === "sofra" && !sofraGerek) setSheet(null); }, [sheet, sofraGerek]);
+
+  // Son gelişmeler: yalnız önemli olaylar, en yeniden; her çizimde bütün geçmiş yeniden süzülmesin diye ezberlenir.
+  // Pano bir "bakış" görünümüdür: en çok DASH_EVENTS × 3 satır (tam geçmiş "Tümünü gör" → Tarih ekranında).
+  const recentRows = useMemo(() => {
+    if (!state) return [];
+    const turn = state.turn, kad = state.player.gender === "kadın";
+    const ago = (day: number) => {
+      const diff = turn - (day || 0);
+      if (diff <= 0) return t("ago.this");
+      if (diff === 1) return t("ago.last");
+      if (diff < 12) return applyParams(t("ago.months"), [diff]);
+      return applyParams(t("ago.years"), [Math.floor(diff / 12)]);
+    };
+    const out: { key: string; icon: string; text: string; when: string; fresh: boolean; landmark: boolean }[] = [];
+    for (let i = state.history.length - 1; i >= 0 && out.length < DASH_EVENTS * 3; i--) {
+      const e = state.history[i];
+      if (!onemliMi(e)) continue;
+      const cfg = EVT[e.type] || DEFAULT_EVT;
+      out.push({ key: String(e.q ?? e.day + e.text), icon: cfg.gi, when: ago(e.day), text: renderEvt(e.k, e.text, e.p, lang, t, kad), fresh: !!freshMark && (e.q ?? 0) > freshMark.from, landmark: !!e.landmark });
     }
-  }, [state?.turn, state?.player.generation]);
+    return out;
+  }, [state?.history, state?.turn, state?.player.gender, freshMark, lang, t]);
 
   const seenAch = useRef<Set<string> | null>(null);
 
@@ -247,64 +242,33 @@ export default function Dashboard() {
   const cal = currentCalendar(state.turn);
   const turn = state.turn;
   const fame = Math.round(p.fame || 0);
-  const profGi = PROF_GI[p.profession];
+  const kad = p.gender === "kadın";
+  const rtl = lang === "ar";
+  const heroSrc = heroImage(p.age, cal.season);
+  // Hafif giriş: bölümler sırayla süzülür; sade modda hareket yok.
+  const gir = (i: number) => (sade ? undefined : FadeInDown.delay(60 + i * 70).duration(420));
 
-  // Zaman etiketi (1 tur = 1 ay).
-  const timeAgo = (day: number) => {
-    const diff = turn - (day || 0);
-    if (diff <= 0) return t("ago.this");
-    if (diff === 1) return t("ago.last");
-    if (diff < 12) return applyParams(t("ago.months"), [diff]);
-    return applyParams(t("ago.years"), [Math.floor(diff / 12)]);
-  };
-
-  // Günlük: makro olmayanlar; Dünya: makro olanlar.
-  // Pano bir "bakış" görünümü: yalnız en yeni DASH_EVENTS olay çizilir (geç-oyunda
-  // geçmiş 250'ye dayanırken her aksiyonda 250 kartı yeniden çizip pano kasmasını önler;
-  // tam geçmiş "Tümünü gör" → Tarih ekranında). Render maliyeti geçmiş büyüse de sabit kalır.
-  const reversed = state.history.map((e, hIdx) => ({ e, hIdx })).reverse();
-  const events = reversed.filter(({ e }) => (tab === "onemli" ? onemliMi(e) : tab === "dunya" ? e.scope === "makro" : e.scope !== "makro")).slice(0, DASH_EVENTS * 3); // panel boş alanı doldurduğu kadarını gösterir
-
-  // Son gelişmeler: mockup'taki gibi ikon · cümle · zaman satırları; büyük anlar altınla vurgulanır.
-  const EventCard = ({ e, last }: { e: GameEvent; hIdx: number; last: boolean }) => {
-    const cfg = EVT[e.type] || DEFAULT_EVT;
-    const land = !!e.landmark;
-    const txt = renderEvt(e.k, e.text, e.p, lang, t, state?.player.gender === "kadın");
-    const fresh = !!freshMark && (e.q ?? 0) > freshMark.from;
-    return (
-      <View style={{ flexDirection: lang === "ar" ? "row-reverse" : "row", alignItems: "flex-start", gap: 10, paddingVertical: 10, paddingHorizontal: 10, borderBottomWidth: last ? 0 : 1, borderColor: C.border + "AA" }}>
-        <View style={{ width: 30, alignItems: "center", paddingTop: 1 }}><GameIcon name={cfg.gi} size={20} color={land ? C.goldBright : C.gold} /></View>
-        <Text style={{ flex: 1, fontFamily: F.serif, fontSize: T.body, lineHeight: T.line, color: land ? C.goldBright : C.parchment }}>{txt}</Text>
-        <View style={{ alignItems: "flex-end", gap: 4, paddingTop: 2 }}>
-          <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchmentMuted }}>{timeAgo(e.day)}</Text>
-          {fresh && <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: C.goldBright }} />}
-        </View>
-      </View>
-    );
-  };
-
-  // Ana ekran gündemi: her düğme yalnız gerçekten bekleyen bir şey varsa (ya da sürekli bir eylem alanıysa) görünür.
-  const pendingDil = !mpMode && !!savedMonth?.dilemma;
-  const kararTema = savedMonth?.dilemma ? ikilemTema(savedMonth.dilemma.id, savedMonth.dilemma.icon) : null;
-  const kararSahne = kararTema ? SAHNE_GORSEL[kararTema] : SAHNE_GORSEL.cami_avlu;
+  // Ana ekran gündemi: her düğme yalnız gerçekten bekleyen bir şey varsa görünür.
   const uyariN = p.dead ? 0 : realmNoticeCount(state) + (inJail(p) ? 1 : 0) + (state.crownCampaign ? 1 : 0) + (playerWar(state) || (state.wars || []).some((w) => w.prize) ? 1 : 0);
   const hungry = !mpMode && p.age >= 13 && p.hunger < 40;
+  const starving = hungry && p.hunger < 20;
   const canEmek = p.age >= 13 && p.profession !== "işsiz";
-  const canUgras = !inJail(p) && p.age >= 7;
-  const ugrasKey = p.age < 13 ? "child.title" : p.age < 18 ? "genc.title" : p.age < 55 ? "adult.title" : "elder.title";
-  const ugrasIcon = p.age < 13 ? "party" : p.age < 18 ? "lyre" : p.age < 55 ? "medal" : "prayer-beads";
   const gundemN = p.dead ? 0 : [echoDeferred && state.npcTeklif, aileHaberi(state), soylentiLead(state), acikHesaplar(state).length, state.micro, state.bloodline?.scene && !state.saga?.scene, state.saga?.scene, p.crowned && state.divan, state.caravan?.route, state.story?.active].filter(Boolean).length;
-  const rtl = lang === "ar";
-  // Ana sayfada yalnız bir uyarı afişi: en acil olan; diğerleri aynı panelde ya da gündemde.
-  const alerts: { id: HomeSheetId; icon: string; title: string; sub: string; tone: string }[] = [
-    ...(uyariN ? [(() => { const r = noticeRows(state, t)[0]; return r ? { id: "uyari" as const, icon: r.icon, title: r.title, sub: r.sub, tone: r.color } : inJail(p) ? { id: "uyari" as const, icon: "prisoner", title: t("jail.title"), sub: applyParams(t("home.alertsSub"), [uyariN]), tone: C.blood } : { id: "uyari" as const, icon: "crossed-swords", title: t("home.uyari"), sub: applyParams(t("home.alertsSub"), [uyariN]), tone: C.blood }; })()] : []),
-    ...(hungry ? [{ id: "sofra" as const, icon: "ye", title: t(p.hunger < 20 ? "dash.starving" : "dash.eatTitle"), sub: applyParams(t("home.hungerSub"), [Math.round(p.hunger)]), tone: p.hunger < 20 ? C.blood : C.ember }] : []),
-    ...(gundemN ? [{ id: "gundem" as const, icon: "scroll", title: t("home.gundem"), sub: applyParams(t("home.alertsSub"), [gundemN]), tone: C.gold }] : []),
-  ];
-  const alert = alerts[0] ? { ...alerts[0], sub: alerts.length > 1 ? `${alerts[0].sub} · +${alerts.length - 1}` : alerts[0].sub } : null;
+  // Uyarılar önceliğe göre: açlıktan ölmek üzereyken Sofra her şeyin önündedir; sonra diyar uyarısı, açlık, gündem.
+  // En acil olan büyük afiş olur; diğerleri altında küçük düğmeler olarak kalır — savaş haberi açlığı gizleyemez.
+  type Uyari = { id: HomeSheetId; icon: string; title: string; sub: string; tone: string };
+  const uyari: Uyari | null = uyariN ? (() => { const r = noticeRows(state, t)[0]; return r ? { id: "uyari" as const, icon: r.icon, title: r.title, sub: r.sub, tone: r.color } : inJail(p) ? { id: "uyari" as const, icon: "prisoner", title: t("jail.title"), sub: applyParams(t("home.alertsSub"), [uyariN]), tone: C.blood } : { id: "uyari" as const, icon: "crossed-swords", title: t("home.uyari"), sub: applyParams(t("home.alertsSub"), [uyariN]), tone: C.blood }; })() : null;
+  const sofra: Uyari | null = hungry ? { id: "sofra", icon: "ye", title: t(starving ? "dash.starving" : "dash.eatTitle"), sub: applyParams(t("home.hungerSub"), [Math.round(p.hunger)]), tone: starving ? C.blood : C.ember } : null;
+  const gundem: Uyari | null = gundemN ? { id: "gundem", icon: "scroll", title: t("home.gundem"), sub: applyParams(t("home.alertsSub"), [gundemN]), tone: C.gold } : null;
+  const alerts = [starving ? sofra : null, uyari, starving ? null : sofra, gundem].filter((a): a is Uyari => !!a);
+  const alert = alerts[0] || null;
+  // Sıradaki ayın notu (yaklaşan gerçek bir şey): Ayın Hesabı'nda görünür; gündem panelinde de durur.
+  const not = p.dead ? null : ayNotu(state);
+  const notMetni = not ? renderEvt(not.k, "", not.p, lang, t, kad) : undefined;
 
   return (
     <View style={{ flex: 1, backgroundColor: "#15100A", paddingBottom: 20 }}>
+      <AnaZemin source={heroSrc} />
       {yarisK ? (
         <SinavKartiModal v={yarisK} onSec={(yol) => { const r = rakipYarisi(state, yol); if (r.basari != null) apply(() => r.state); return r.basari; }} onKapat={() => setYarisK(null)} />
       ) : milestone ? (
@@ -434,47 +398,53 @@ export default function Dashboard() {
         );
       })()}
 
-      <ScrollView style={{ flex: 1, backgroundColor: "#15100A" }} onLayout={(e) => setViewH(e.nativeEvent.layout.height)} contentContainerStyle={{ flexGrow: 1, minHeight: viewH || undefined, paddingBottom: 8 }}>
-        <MkHero source={heroImage(p.age, cal.season)} topInset={insets.top} seasonIcon={SEASON_ICON[cal.season] || "sun"} title={t("flow.anotherMonth")} sub={`${cal.year}  •  ${t("cal.season." + SEASON_KEY[cal.season])}`} rtl={rtl}
+      <ScrollView style={{ flex: 1, backgroundColor: "transparent" }} onLayout={(e) => setViewH(e.nativeEvent.layout.height)} contentContainerStyle={{ flexGrow: 1, minHeight: viewH || undefined, paddingBottom: 8 }}>
+        <MkHero source={heroSrc} topInset={insets.top} seasonIcon={SEASON_ICON[cal.season] || "sun"} title={t("flow.anotherMonth")} sub={`${t("cal.month." + cal.month_no)} ${cal.year}  •  ${t("cal.season." + SEASON_KEY[cal.season])}`} rtl={rtl}
           onBook={() => router.push("/oyun/tarih")} onSettings={() => router.push("/oyun/ayarlar")} bookLabel={t("flow.lifeBook")} settingsLabel={t("scr.ayarlar")} />
-        <MkIdentity age={p.age} gender={p.gender} rtl={rtl} portraitLabel={t("tab.character")} onPortrait={() => router.push("/oyun/karakter")}
-          name={lakapliAd(p.name, p.lakap, p.gender === "kadın", t)}
-          role={p.profession === "işsiz" ? t("misc.jobless") : careerTitleL(p.profession, kariyerXp(p), lang, p.gender === "kadın")}
-          stats={[
-            { icon: "saglik", label: t("char.health"), value: String(Math.round(p.health)), tone: p.health < 30 ? C.blood : undefined, delta: deltas.health },
-            { icon: "fist", label: t("st.strength"), value: String(Math.round(effStat(p, "strength"))), delta: deltas.str },
-            { icon: "graduate-cap", label: t("st.intelligence"), value: String(Math.round(effStat(p, "intelligence"))), delta: deltas.int },
-            { icon: "akce", label: t("char.money"), value: new Intl.NumberFormat(lang, { notation: p.money >= 10000 ? "compact" : "standard", maximumFractionDigits: 1 }).format(Math.round(p.money)).replace(/[\s\u00A0]/g, ""), delta: deltas.money },
-          ]} />
+        <Animated.View entering={gir(0)}>
+          <MkIdentity age={p.age} gender={p.gender} rtl={rtl} portraitLabel={t("tab.character")} onPortrait={() => router.push("/oyun/karakter")}
+            name={lakapliAd(p.name, p.lakap, kad, t)}
+            role={p.profession === "işsiz" ? t("misc.jobless") : careerTitleL(p.profession, kariyerXp(p), lang, kad)}
+            stats={[
+              { icon: "saglik", label: t("char.health"), value: String(Math.round(p.health)), tone: p.health < 30 ? C.blood : undefined },
+              { icon: "fist", label: t("st.strength"), value: String(Math.round(effStat(p, "strength"))) },
+              { icon: "graduate-cap", label: t("st.intelligence"), value: String(Math.round(effStat(p, "intelligence"))) },
+              { icon: "akce", label: t("char.money"), value: sayi(Math.round(p.money), lang) },
+            ]} />
+        </Animated.View>
+        {!p.dead && <Animated.View entering={gir(1)}><AyOzeti fark={fark} not={notMetni} yeni={freshMark?.n ?? 0} rtl={rtl} lang={lang} t={t} /></Animated.View>}
         <View style={{ paddingHorizontal: MK.side }}>
-      {p.dead && (
+      {p.dead && (() => {
+        const heirs = varisAdaylari(state).length;
+        return (
         <View style={{ paddingBottom: 8, gap: 10 }}>
-          {varisAdaylari(state).length > 0 && (
-            <GameButton accessibilityLabel={t("dash.continueHeir")} icon="hanedan" rtl={lang === "ar"} onPress={() => router.push("/oyun/nesil")}>
-              <Text style={{ fontFamily: F.display, fontSize: 13, color: C.inkOnGold, letterSpacing: 1, textAlign: "center" }}>{t("dash.continueHeir")} ({varisAdaylari(state).length} {t("dash.heirs")})</Text>
+          {heirs > 0 && (
+            <GameButton accessibilityLabel={t("dash.continueHeir")} icon="hanedan" rtl={rtl} onPress={() => router.push("/oyun/nesil")}>
+              <Text style={{ fontFamily: F.display, fontSize: 13, color: C.inkOnGold, letterSpacing: 1, textAlign: "center" }}>{t("dash.continueHeir")} ({heirs} {t("dash.heirs")})</Text>
             </GameButton>
           )}
-          {varisAdaylari(state).length === 0 && !mpMode && (
-            <GameButton accessibilityLabel={t("dash.kulOcak")} icon="hanedan" rtl={lang === "ar"} onPress={() => router.push("/oyun/ocak")}>
+          {heirs === 0 && !mpMode && (
+            <GameButton accessibilityLabel={t("dash.kulOcak")} icon="hanedan" rtl={rtl} onPress={() => router.push("/oyun/ocak")}>
               <Text style={{ fontFamily: F.display, fontSize: 13, color: C.inkOnGold, letterSpacing: 1, textAlign: "center" }}>{t("dash.kulOcak")}</Text>
             </GameButton>
           )}
-          <View style={{ flexDirection: "row", gap: 10 }}>
-            <GameButton variant="secondary" accessibilityLabel={t("dash.readLife")} icon="roman" rtl={lang === "ar"} onPress={() => router.push("/oyun/roman")} style={{ flex: 1 }}>
+          <View style={{ flexDirection: rtl ? "row-reverse" : "row", gap: 10 }}>
+            <GameButton variant="secondary" accessibilityLabel={t("dash.readLife")} icon="roman" rtl={rtl} onPress={() => router.push("/oyun/roman")} style={{ flex: 1 }}>
               <Text style={{ fontFamily: F.display, fontSize: 13, color: C.goldBright, letterSpacing: 1, textAlign: "center" }}>{t("dash.readLife")}</Text>
             </GameButton>
-            <GameButton variant="secondary" accessibilityLabel={t("dash.newLife")} icon="leaf" rtl={lang === "ar"} onPress={async () => { try { await resetGame(); router.replace("/yeni-oyun"); } catch {} }} style={{ flex: 1 }}>
+            <GameButton variant="secondary" accessibilityLabel={t("dash.newLife")} icon="leaf" rtl={rtl} onPress={async () => { try { await resetGame(); router.replace("/yeni-oyun"); } catch {} }} style={{ flex: 1 }}>
               <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchmentDim, letterSpacing: 1, textAlign: "center" }}>{t("dash.newLife")}</Text>
             </GameButton>
           </View>
         </View>
-      )}
+        );
+      })()}
       {/* Diyar presence (çok oyuncu): paylaşımlı diyarda olduğunu her an hisset — saat, taht, kaç kişi ayakta (İlişkiler'e köprü) */}
       {mpMode && mpSnapshot && (() => {
         const ym = realmYearMonth(mpSnapshot.turn);
         const live = mpSnapshot.players.filter((x) => x.online && !x.dead).length;
         return (
-          <Pressable onPress={() => { hap("tap"); router.push("/cok-oyunculu/oyun"); }} style={{ marginBottom: 10, padding: 11, borderRadius: 5, borderWidth: 1, borderColor: "rgba(201,168,76,0.4)", backgroundColor: "rgba(201,168,76,0.07)" }}>
+          <Pressable onPress={() => { hap("tap"); playTap(); router.push("/cok-oyunculu/oyun"); }} style={{ marginBottom: 10, padding: 11, borderRadius: 5, borderWidth: 1, borderColor: "rgba(201,168,76,0.45)", backgroundColor: "rgba(22,16,10,0.82)" }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 7 }}>
               <GameIcon name="crown" size={13} color={C.gold} />
               <Text style={{ flex: 1, fontFamily: F.display, fontSize: 13, letterSpacing: 1.5, color: C.gold, textTransform: "uppercase" }}>{t("mp.realm")}</Text>
@@ -488,21 +458,27 @@ export default function Dashboard() {
       })()}
       {/* İlk açılış: metin duvarı yerine tek cümlelik, akışı kesmeyen şerit — oyuncu hemen ilk kararını verir (TASARIM_PUSULASI 2.5) */}
       {showTut && !p.dead && (
-        <View style={{ marginBottom: 10, flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 5, borderWidth: 1, borderColor: "rgba(201,168,76,0.45)", backgroundColor: "rgba(201,168,76,0.08)" }}>
+        <View style={{ marginBottom: 10, flexDirection: rtl ? "row-reverse" : "row", alignItems: "center", gap: 10, paddingVertical: 4, paddingLeft: rtl ? 4 : 12, paddingRight: rtl ? 12 : 4, borderRadius: 5, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: "rgba(22,16,10,0.82)" }}>
           <GameIcon name="scroll" size={16} color={C.gold} />
-          <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 15, color: C.parchment, lineHeight: 22 }}>{t(p.age < 13 ? "sp.tut.kisa" : "sp.tut.b1")}</Text>
-          <Pressable accessibilityRole="button" accessibilityLabel={t("cine.close")} onPress={() => { hap("tap"); closeTut(); }} hitSlop={10} style={{ paddingHorizontal: 6, paddingVertical: 2 }}>
-            <Text style={{ fontFamily: F.display, fontSize: 14, color: C.goldDim }}>×</Text>
+          <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 15, color: C.parchment, lineHeight: 22, textAlign: rtl ? "right" : "left" }}>{t(p.age < 13 ? "sp.tut.kisa" : "sp.tut.b1")}</Text>
+          <Pressable accessibilityRole="button" accessibilityLabel={t("cine.close")} onPress={() => { hap("tap"); playTap(); closeTut(); }} hitSlop={6} style={{ width: 44, height: 44, alignItems: "center" }}>
+            <Text style={{ fontFamily: F.display, fontSize: 18, color: C.goldDim }}>×</Text>
           </Pressable>
         </View>
       )}
 
         </View>
-        <MkDecision />
-        {!p.dead && alert && <View style={{ marginHorizontal: 0 }}><MkAlert icon={alert.icon} title={alert.title} sub={alert.sub} red={alert.tone !== C.gold} rtl={rtl} onPress={() => setSheet(alert.id)} /></View>}
-        <MkRecent fill title={t("flow.recent")} seeAll={t("dash.seeAllShort")} empty={t("dash.empty")} more={t("home.recentMore")} rtl={rtl} onSeeAll={() => router.push("/oyun/tarih")}
-          rows={events.map(({ e }) => { const cfg = EVT[e.type] || DEFAULT_EVT; return { key: String(e.q ?? e.day + e.text), icon: cfg.gi, when: timeAgo(e.day), text: renderEvt(e.k, e.text, e.p, lang, t, p.gender === "kadın"), fresh: !!freshMark && (e.q ?? 0) > freshMark.from, landmark: !!e.landmark }; })} />
-        <MkBookRow title={t("flow.lifeBook")} sub={t("flow.lifeBookSub")} rtl={rtl} onPress={() => router.push("/oyun/tarih")} />
+        <Animated.View entering={gir(2)}><MkDecision /></Animated.View>
+        {!p.dead && alert && <Animated.View entering={gir(3)}>
+          <MkAlert icon={alert.icon} title={alert.title} sub={alert.sub} red={alert.tone !== C.gold} rtl={rtl} onPress={() => setSheet(alert.id)} />
+          <MkAlertChips rtl={rtl} items={alerts.slice(1).map((a) => ({ key: a.id, icon: a.icon, title: a.title, red: a.tone !== C.gold, onPress: () => setSheet(a.id) }))} />
+        </Animated.View>}
+        <Animated.View entering={gir(4)} style={{ flex: 1 }}>
+          <MkRecent fill title={t("flow.recent")} seeAll={t("dash.seeAllShort")} empty={t("dash.empty")} more={t("home.recentMore")} rtl={rtl} onSeeAll={() => router.push("/oyun/tarih")} rows={recentRows} />
+        </Animated.View>
+        <Animated.View entering={gir(5)}>
+          <MkBookRow title={t("flow.lifeBook")} sub={t("flow.lifeBookSub")} rtl={rtl} onPress={() => router.push("/oyun/tarih")} />
+        </Animated.View>
       </ScrollView>
 
       <GameSheet visible={sheet === "uyari"} onClose={() => setSheet(null)} title={t("home.uyari")} icon="crossed-swords" scene={SAHNE_GORSEL.mogol_baskin}>
@@ -570,7 +546,7 @@ export default function Dashboard() {
               <Text style={{ flex: 1, fontFamily: starving ? F.display : F.serif, fontSize: starving ? 15 : T.body, lineHeight: T.line, color: starving ? "#FBE9D2" : C.parchment }}>{starving ? t("dash.starving") : applyParams(t("dash.hungry"), [Math.round(p.hunger)])}</Text>
             </View>
             {can ? (
-              <GameButton icon="ye" rtl={lang === "ar"} accessibilityLabel={t("act.eat")} haptic="tap" onPress={() => doEat()} style={{ marginTop: 10 }}>
+              <GameButton icon="ye" rtl={lang === "ar"} accessibilityLabel={t("act.eat")} haptic="tap" onPress={() => { playTap(); doEat(); }} style={{ marginTop: 10 }}>
                 <Text style={{ fontFamily: F.display, fontSize: 14, color: C.inkOnGold, textAlign: "center" }}>{foodId ? applyParams(t("dash.eatFood"), [t("it." + foodId)]) : t("dash.eatStreet")}</Text>
               </GameButton>
             ) : <>
