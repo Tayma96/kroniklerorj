@@ -280,14 +280,14 @@ function HouseCard({ id, name, perks, active, rtl, narrow, onPress }: { id: stri
 
 function LineageCard({ icon, title, sub, note, active, rtl, disabled, onPress }: { icon: string; title: string; sub?: string; note?: string; active: boolean; rtl: boolean; disabled: boolean; onPress: () => void }) {
   const align = rtl ? "right" as const : "left" as const;
-  return <Pressable onPress={onPress} disabled={disabled} accessibilityRole="radio" accessibilityLabel={[title, sub].filter(Boolean).join(". ")} accessibilityState={{ checked: active, selected: active, disabled }}>
+  return <Pressable onPress={onPress} disabled={disabled} accessibilityRole="radio" accessibilityLabel={[title, sub, note].filter(Boolean).join(". ")} accessibilityState={{ checked: active, selected: active, disabled }}>
     <Frame active={active} radius={8}>
       <View style={{ flexDirection: rtl ? "row-reverse" : "row", alignItems: "center", gap: 11, paddingHorizontal: 12, paddingVertical: 10, minHeight: 58 }}>
         <Medal icon={icon} size={36} active={active} />
         <View style={{ flex: 1 }}>
           <Text style={{ fontFamily: F.display, fontSize: 14, letterSpacing: 0.6, textAlign: align, color: active ? C.goldBright : C.parchment }}>{title}</Text>
           {sub ? <Text style={{ marginTop: 2, fontFamily: F.serif, fontSize: 14, lineHeight: 18, textAlign: align, color: C.parchmentDim }}>{sub}</Text> : null}
-          {note && active ? <Text style={{ marginTop: 3, fontFamily: F.serifItalic, fontSize: 13.5, lineHeight: 17, textAlign: align, color: C.parchmentMuted }}>{note}</Text> : null}
+          {note ? <Text style={{ marginTop: 3, fontFamily: F.serifItalic, fontSize: 13.5, lineHeight: 17, textAlign: align, color: C.parchmentMuted }}>{note}</Text> : null}
         </View>
         <View style={{ width: 22, height: 22, borderRadius: 11, borderWidth: 1.5, borderColor: active ? C.goldBright : "rgba(168,130,63,0.7)", alignItems: "center", justifyContent: "center" }}>
           {active ? <View style={{ width: 11, height: 11, borderRadius: 6, backgroundColor: C.gold }} /> : null}
@@ -317,10 +317,12 @@ export default function YeniOyun() {
   const [dir, setDir] = useState(1);
   const [showErr, setShowErr] = useState(false);
   const [focus, setFocus] = useState(false);
+  const startingRef = useRef(false); // çift dokunuş / çift onay ile iki kez başlatmayı engeller
 
   const [cinematic, setCinematic] = useState<string[] | null>(null);
 
   const runStart = async (first: string, surname: string, g: "erkek" | "kadın") => {
+    startingRef.current = true;
     setBusy(true);
     try {
       if (soydan && son) await yeniOcak(g, son.secilen, first);
@@ -333,10 +335,14 @@ export default function YeniOyun() {
         t("ng.cine3"),
         t("ng.cine4"), // destanın fısıltısı: kül rengi mühür bir gün yolunu bulacak (Kül Yemini önsezisi)
       ]);
+    } catch {
+      startingRef.current = false;
+      setError(t("save.readError"));
     } finally { setBusy(false); }
   };
 
   const start = () => {
+    if (startingRef.current) return;
     setError("");
     const parts = fullName.trim().split(/\s+/).filter(Boolean);
     const first = parts[0] || "";
@@ -348,8 +354,9 @@ export default function YeniOyun() {
     if (!house) { setError(t("new.errHouse")); return; }
     // Mevcut (yaşayan) kayıt varsa üzerine yazmadan önce onayla — kaza ile silinmesin.
     if (state && !state.player.dead) {
+      startingRef.current = true;
       Alert.alert(t("new.owTitle"), t("new.owBody"), [
-        { text: t("new.owCancel"), style: "cancel" },
+        { text: t("new.owCancel"), style: "cancel", onPress: () => { startingRef.current = false; } },
         { text: t("new.owConfirm"), style: "destructive", onPress: () => runStart(first, surname, gender as "erkek" | "kadın") },
       ]);
       return;
@@ -365,7 +372,7 @@ export default function YeniOyun() {
   const valid = !stepErr;
   const errText = (showErr && stepErr) || (step === 3 ? error : "");
 
-  const goStep = (n: Step) => { Keyboard.dismiss(); setDir(n > step ? 1 : -1); setShowErr(false); setError(""); setStep(n); };
+  const goStep = (n: Step) => { Keyboard.dismiss(); setFocus(false); setDir(n > step ? 1 : -1); setShowErr(false); setError(""); setStep(n); };
   const back = () => {
     if (busy) return;
     playTap();
@@ -384,7 +391,8 @@ export default function YeniOyun() {
   useEffect(() => {
     if (cinematic || Platform.OS !== "android") return;
     const sub = BackHandler.addEventListener("hardwareBackPress", () => {
-      if (step > 1 && !busy) { goStep((step - 1) as Step); return true; }
+      if (busy) return true;
+      if (step > 1) { goStep((step - 1) as Step); return true; }
       return false;
     });
     return () => sub.remove();
@@ -412,7 +420,7 @@ export default function YeniOyun() {
             <View><Chevron dir={rtl ? "right" : "left"} size={17} color={C.gold} /></View>
           </View>}
         </Pressable>
-        <View style={{ flex: 1, marginTop: 3 }}><Stepper step={step} rtl={rtl} t={t} onJump={(n) => { playTap(); goStep(n); }} /></View>
+        <View style={{ flex: 1, marginTop: 3 }}><Stepper step={step} rtl={rtl} t={t} onJump={(n) => { if (busy) return; playTap(); goStep(n); }} /></View>
         <View style={{ width: 44 }} />
       </View>
 

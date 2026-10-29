@@ -1,11 +1,11 @@
 // Giriş ekranı — mevsime göre aydınlık kasaba resmi, ortada logo, altta altın çerçeveli menü (claude-paket mockup dili).
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { View, Text, Image, Modal, Switch, StyleSheet, Pressable as RNPressable, useWindowDimensions } from "react-native";
 import Animated, { FadeIn, FadeInUp, useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing, cancelAnimation } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Path, Defs, LinearGradient as SvgGradient, RadialGradient, Stop, Rect, Ellipse } from "react-native-svg";
 import Constants from "expo-constants";
-import { useRouter } from "expo-router";
+import { useRouter, useIsFocused } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { DesignPressable as Pressable } from "../lib/design-pressable";
 import { PressableScale } from "../lib/ui";
@@ -33,8 +33,9 @@ function seasonNow(): string {
 }
 
 // Sahne: resim kale/minare odaklı yerleşir, yavaşça yakınlaşır (sade modda durağan).
-function TitleScene({ season, width, height, top }: { season: string; width: number; height: number; top: number }) {
-  const reduced = useSadeMod();
+function TitleScene({ season, width, height, top, paused = false }: { season: string; width: number; height: number; top: number; paused?: boolean }) {
+  const sade = useSadeMod();
+  const reduced = sade || paused; // başka ekran öndeyken (router.push) yineleyen yakınlaşma durur
   const z = useSharedValue(1);
   useEffect(() => {
     z.value = 1;
@@ -93,7 +94,8 @@ const DARK_FILL = ["rgba(42,31,19,0.95)", "rgba(26,19,11,0.95)", "rgba(16,11,6,0
 
 function MenuButton({ icon, label, sub, primary = false, tag, rtl, narrow, onPress }: { icon: string; label: string; sub?: string; primary?: boolean; tag?: string; rtl: boolean; narrow: boolean; onPress: () => void }) {
   const ink = primary ? C.inkOnGold : C.parchment;
-  return <PressableScale haptic="tap" accessibilityLabel={[label, tag, sub].filter(Boolean).join(". ")} onPress={() => { playTap(); onPress(); }}
+  const lock = useRef(false); // hızlı çift dokunuşta iki kez router.push olmasın
+  return <PressableScale haptic="tap" accessibilityLabel={[label, tag, sub].filter(Boolean).join(". ")} onPress={() => { if (lock.current) return; lock.current = true; setTimeout(() => { lock.current = false; }, 600); playTap(); onPress(); }}
     style={{ minHeight: 62, borderRadius: 6, borderWidth: 1, borderColor: primary ? C.goldBright : MK.frame, overflow: "hidden", backgroundColor: primary ? C.gold : C.card,
       shadowColor: primary ? C.gold : "#000", shadowOpacity: primary ? 0.35 : 0.5, shadowRadius: primary ? 10 : 6, shadowOffset: { width: 0, height: 2 }, elevation: primary ? 6 : 3 }}>
     <LinearGradient pointerEvents="none" colors={primary ? GOLD_FILL : DARK_FILL} style={StyleSheet.absoluteFill} />
@@ -129,6 +131,7 @@ export default function MainMenu() {
   const insets = useSafeAreaInsets();
   const { width: W, height: H } = useWindowDimensions();
   const reduced = useSadeMod();
+  const focused = useIsFocused(); // /oyun üstteyken index bağlı kalır; arka plan animasyonları dursun
 
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [sound, setSound] = useState(isSoundEnabled());
@@ -155,12 +158,12 @@ export default function MainMenu() {
 
   return (
     <View style={{ flex: 1, backgroundColor: C.bg, overflow: "hidden" }}>
-      <TitleScene season={season} width={W} height={H} top={artTop} />
+      <TitleScene season={season} width={W} height={H} top={artTop} paused={!focused} />
       {/* Okunurluk: üst koyu bant resmin kenarını örter, alt geçiş menüyü taşır. */}
       <View pointerEvents="none" style={{ position: "absolute", top: 0, left: 0, right: 0, height: artTop + 2, backgroundColor: C.bg }} />
       <LinearGradient pointerEvents="none" colors={[C.bg, `rgba(${SHADE},0.78)`, `rgba(${SHADE},0.5)`, `rgba(${SHADE},0.2)`, `rgba(${SHADE},0)`]} style={{ position: "absolute", top: artTop, left: 0, right: 0, height: Math.round(H * 0.3) }} />
       <LinearGradient pointerEvents="none" colors={[`rgba(${SHADE},0)`, `rgba(${SHADE},0.3)`, `rgba(${SHADE},0.72)`, `rgba(${SHADE},0.92)`, C.bg]} style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: Math.round(H * 0.52) }} />
-      <Ambiance season={season} width={W} height={H} count={10} />
+      {focused && <Ambiance season={season} width={W} height={H} count={10} />}
 
       {/* Ayarlar madalyonu */}
       <View style={{ position: "absolute", top: insets.top + 8, [rtl ? "left" : "right"]: 12, zIndex: 2 }}>
@@ -217,7 +220,7 @@ export default function MainMenu() {
 
       {/* Ayarlar penceresi */}
       <Modal visible={settingsOpen} transparent animationType="fade" onRequestClose={() => setSettingsOpen(false)}>
-        <RNPressable accessibilityRole="button" accessibilityLabel={t("cine.close")} onPress={() => setSettingsOpen(false)} style={{ flex: 1, backgroundColor: "rgba(4,3,1,0.78)", justifyContent: "center", paddingHorizontal: 16 }}>
+        <RNPressable accessible={false} onPress={() => setSettingsOpen(false)} style={{ flex: 1, backgroundColor: "rgba(4,3,1,0.78)", justifyContent: "center", paddingHorizontal: 16 }}>
           <RNPressable accessible={false} onPress={() => {}} style={{ width: "100%", maxWidth: 420, alignSelf: "center" }}>
             <FramedPanel style={{ paddingHorizontal: 16, paddingTop: 10, paddingBottom: 16 }}>
               <View style={{ flexDirection: rtl ? "row-reverse" : "row", alignItems: "center", gap: 10 }}>
