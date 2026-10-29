@@ -1,0 +1,98 @@
+{
+ "mocap": "/tmp/claude-0/-home-user-kroniklerorj/c519a9f5-cfce-5229-98c4-72e1209e4be2/scratchpad/blender/mocap",
+ "bake": {
+  "02_07": [
+   1,
+   563
+  ],
+  "02_09": [
+   38,
+   106
+  ]
+ },
+ "clips": [
+  {
+   "name": "bekle",
+   "file": "02_07",
+   "warp": [
+    [
+     0,
+     539
+    ],
+    [
+     60,
+     563
+    ]
+   ],
+   "loop": true,
+   "breathe": true,
+   "norm_frames": [
+    539,
+    545,
+    551,
+    557,
+    563
+   ]
+  },
+  {
+   "name": "saldir",
+   "file": "02_07",
+   "warp": [
+    [
+     0,
+     1
+    ],
+    [
+     8.5,
+     22
+    ],
+    [
+     16,
+     34
+    ],
+    [
+     31.5,
+     55
+    ],
+    [
+     36,
+     67
+    ]
+   ],
+   "norm": "guard",
+   "blend_in": 4,
+   "blend_out": 5
+  },
+  {
+   "name": "savustur",
+   "file": "02_09",
+   "warp": [
+    [
+     0,
+     43
+    ],
+    [
+     12,
+     70
+    ],
+    [
+     20,
+     82
+    ],
+    [
+     32,
+     100
+    ]
+   ],
+   "norm_frames": [
+    43
+   ],
+   "blend_in": 5,
+   "blend_out": 6
+  }
+ ],
+ "gy": 0.044,
+ "gp": 0.056,
+ "fb": 15,
+ "f1": 95
+}
