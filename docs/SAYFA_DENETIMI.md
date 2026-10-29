@@ -53,7 +53,7 @@ oynanabilir bir sahneye çeviren fırsat (2.5D Skia ya da 3D).
 | Divan | Günün davası (etkisiz, paylaşım) | Bilerek etkisiz; değişiklik gerekmez | — | — |
 | Yaşam Defteri | Tam geçmiş, sinema modu | **Süzgeç eklendi** (Önemli/Günlük/Dünya); kişi araması | Sayfa çevirme | Yapıldı |
 | Hayat Romanı, Kronik, Ocak | Kayıt ve devir | Mekanik yeterli | — | — |
-| Yeni Oyun | Ad, cinsiyet, huy, doğduğun ocak | **Doğduğun ocak eklendi** (köylü, esnaf, hekim, sipahi): farklı başlangıç akçesi, beceri, babanın mesleği | Prolog sahnesi var | Yapıldı |
+| Giriş + Yeni Oyun | Mevsimlik kasaba sahnesi, altın menü; yeni oyun 3 adım (kimlik, tabiat, ocak) | **Yeniden tasarlandı** (29 Ekim): portre kartları, madalyonlu tabiatlar, resimli ocaklar, doğduğun ocak | Prolog sahnesi var | Yapıldı |
 | Ayarlar, SSS, Emeği Geçenler | — | — | — | — |
 
 ## 3D ve canlandırma
