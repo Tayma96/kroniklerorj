@@ -1,57 +1,20 @@
-import { PageHeader } from "../../lib/ui";
-import { DesignPressable as Pressable } from "../../lib/design-pressable";
-import { useMemo } from "react";
-import { View, Text, ScrollView} from "react-native";
-import Svg, { Defs, LinearGradient, Stop, Rect, Circle } from "react-native-svg";
+// İlişkiler: ocak ve aile, yakın çevre, hasımlar, tanışlar — portre kartları, grup çipleri ve yol gösteren boş durumlar.
+// Yakın çember (en çok 15 kişi, nerede olurlarsa olsunlar) rol etiketiyle kendi grubunda başta; yöre halkı ilişkisine göre dizilir.
+import { useMemo, useRef, useState } from "react";
+import { View, Text, ScrollView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
 import { useMp } from "../../lib/mp/store";
-import { npcsOf, relWith, yoldasAdi, yoldasDurumu, kisiProfil, yakinCember } from "../../lib/game";
 import { useI18n, applyParams } from "../../lib/i18n";
 import { professionNameL, placeName } from "../../lib/locale-data";
-import { Portre, ScreenFresk } from "../../lib/ui";
-import { GameIcon } from "../../lib/icons";
+import { PageHeader, ScreenFresk } from "../../lib/ui";
 import { C, F } from "../../lib/theme";
+import { iliskiModeli, rolTonu, bantOf, GRUPLAR, type Grup, type Kisi } from "../../lib/sayfa/iliskiler/model";
+import { FiltreCipleri, BolumPaneli, KisiKarti, KartIzgarasi, KisiSatiri, IliskiOlcer, IliskiOlcumu, BagCubugu, BosDurum, TumunuGor, CopcatanSatiri, DiyarOyunculari, useBantEtiketi, useGrupMetni, puanYazi, type Filtre, type KartVerisi } from "../../lib/sayfa/iliskiler/ui";
 
-// İlişki bantları (Vercel): eşik + ikon + ton rengi + motto.
-const BANDS = [
-  { id: "dost", min: 50, tone: C.sage },
-  { id: "arkadas", min: 20, tone: C.sage },
-  { id: "tanis", min: -19, tone: C.parchmentDim },
-  { id: "rakip", min: -49, tone: C.ember },
-  { id: "dusman", min: -100, tone: C.blood },
-];
-function bandOf(score: number) { return BANDS.find((b) => score >= b.min) || BANDS[BANDS.length - 1]; }
-
-// -100..+100 → kırmızı→taş→yeşil gradyan + işaretçi (SVG).
-function RelBand({ score }: { score: number }) {
-  const pct = Math.max(0, Math.min(100, ((score + 100) / 200) * 100));
-  const dot = score >= 20 ? C.sage : score <= -20 ? C.blood : C.parchmentDim;
-  return (
-    <View style={{ height: 9, marginTop: 5, justifyContent: "center" }}>
-      <Svg width="100%" height={9}>
-        <Defs>
-          <LinearGradient id="relgrad" x1="0" y1="0" x2="1" y2="0">
-            <Stop offset="0" stopColor="#C84040" stopOpacity={0.5} />
-            <Stop offset="0.5" stopColor="#7A6A4F" stopOpacity={0.45} />
-            <Stop offset="1" stopColor="#4A9A5A" stopOpacity={0.5} />
-          </LinearGradient>
-        </Defs>
-        <Rect x="0" y="3" width="100%" height="3" rx="1.5" fill="url(#relgrad)" />
-        <Circle cx={`${pct}%`} cy="4.5" r="4" fill={dot} stroke="rgba(0,0,0,0.45)" strokeWidth="1" />
-      </Svg>
-    </View>
-  );
-}
-
-function Pill({ text, tone }: { text: string; tone: string }) {
-  return (
-    <View style={{ paddingVertical: 2, paddingHorizontal: 8, borderRadius: 5, borderWidth: 1, borderColor: tone + "66", backgroundColor: tone + "1A" }}>
-      <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 0.5, color: tone }}>{text}</Text>
-    </View>
-  );
-}
+const KISA = 6; // "Hepsi" görünümünde grup başına gösterilen kişi; fazlası grubun çipinde açılır
+const puanTonu = (v: number) => (v >= 20 ? C.sage : v <= -20 ? C.blood : C.parchmentDim);
 
 export default function Iliskiler() {
   const insets = useSafeAreaInsets();
@@ -59,148 +22,79 @@ export default function Iliskiler() {
   const { state, mpMode } = useGame();
   const { snapshot, guestId } = useMp();
   const { lang, t } = useI18n();
-  const npcs = useMemo(() => (state ? npcsOf(state, lang) : []), [state?.pop, state?.seed, state?.turn, lang, state?.player.location_name]); // nüfus yaşar: doğan, ölen, göçen kadroya yansısın
-  if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
-  // Bölgedeki herkes görünür — tanışmadıkların da (ilişki 0) "tanış" bandında çıkar ki üzerine tıklayıp tanışabilesin.
-  // Ailen (anne-baba, eş, evlatlar, kardeşler) kendi panelinde; bantlar ailenin dışındakileri sıralar.
-  // Yakın çember (en çok 15 kişi, nerede olurlarsa olsunlar) en üstte; bantlar çemberin dışında kalan yöre halkını sıralar.
-  const cember = yakinCember(state, lang);
-  const cemberde = new Set(cember.map((x) => x.npc.id));
-  const all = npcs.filter((n) => !cemberde.has(n.id)).map((n) => ({ n, v: relWith(state, n.id) }));
-  const grouped = BANDS.map((b) => ({
-    b,
-    list: all.filter(({ v }) => bandOf(v).id === b.id).sort((a, z) => Math.abs(z.v) - Math.abs(a.v)),
-  }));
-  const total = all.length + cember.length;
+  const bant = useBantEtiketi(); const metin = useGrupMetni();
+  const [filtre, setFiltre] = useState<Filtre>("hepsi");
+  const scroll = useRef<ScrollView>(null);
+  // Nüfus yaşar: doğan, ölen, göçen ve değişen gönüller her durumda kadroya yansır.
+  const model = useMemo(() => (state ? iliskiModeli(state, lang) : null), [state, lang]);
+  if (!state || !model) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
 
+  const p = state.player;
+  const copcatanAcik = !p.married && p.age >= 18; // görücü usulü: bekâr yetişkine talip önerisi
+  const profil = (id: string) => router.push(`/oyun/npc/${id}`);
+  const copcatan = () => router.push("/oyun/copcatan");
+  const mahalle = { icon: "house", label: t("iliskiler.git.mahalle"), onPress: () => router.push("/oyun/mahalle") };
+  const sec = (f: Filtre) => { setFiltre(f); scroll.current?.scrollTo({ y: 0, animated: true }); };
+
+  const kart = (k: Kisi): KartVerisi => {
+    const tone = k.rol ? rolTonu(k.rol) : bantOf(k.v).tone;
+    const sub = `${professionNameL(k.npc.profession, lang, k.npc.gender === "kadın")} · ${k.npc.age}`;
+    const place = k.uzak ? placeName(k.loc, lang) : undefined; const rol = k.rol ? t(k.rol) : undefined;
+    return {
+      key: k.npc.id, seed: k.npc.id, age: k.npc.age, gender: k.npc.gender, name: k.npc.name, sub, place, tone, rol: rol ? { text: rol, tone } : undefined,
+      a11y: [k.npc.name, rol, sub, place, `${bant(k.v)} ${puanYazi(k.v)}`].filter(Boolean).join(", "),
+      olcum: <IliskiOlcumu etiket={bant(k.v)} deger={puanYazi(k.v)} tone={puanTonu(k.v)}><IliskiOlcer v={k.v} /></IliskiOlcumu>,
+      onPress: () => profil(k.npc.id),
+    };
+  };
+  // Çocukluk yoldaşı ("can dostu") çemberde değilse kendi kartıyla: bağ ölçeği ve hâli (ömürlük dost, rakip, yolları ayrıldı).
+  const yoldasKarti = (): KartVerisi | null => {
+    const y = model.yoldas; if (!y) return null;
+    const tone = y.rakip ? C.blood : C.roseDim; const durum = t(y.durumKey); const sub = t("child.friend.of");
+    return {
+      key: "yoldas:" + y.id, seed: y.seed, age: y.age, gender: y.gender, name: y.ad, sub, tone, rol: { text: durum, tone },
+      a11y: `${y.ad}, ${sub}, ${durum}, ${t("iliskiler.bag")} ${y.bag}`,
+      olcum: <IliskiOlcumu etiket={t("iliskiler.bag")} deger={String(y.bag)} tone={tone}><BagCubugu pct={y.bag} tone={tone} /></IliskiOlcumu>,
+      onPress: y.kayitli ? () => profil(y.id) : undefined,
+    };
+  };
+
+  const bolum = (g: Grup) => {
+    const hepsi = filtre === "hepsi"; const n = model.sayi[g]; const sinir = hepsi ? KISA : Infinity;
+    const kisiler = model.gruplar[g];
+    // Boş durumda tek eylem: ailede çöpçatan (uygunsa), tanış ve yakınlarda mahalle (Hepsi görünümünde yinelenmesin diye yalnız tanışlarda).
+    const eylem = g === "aile" ? (copcatanAcik ? { icon: "ring", label: t("iliskiler.git.copcatan"), onPress: copcatan } : undefined)
+      : g === "tanis" || (g === "yakin" && !hepsi) ? mahalle : undefined;
+    let govde;
+    if (n === 0) govde = <BosDurum grup={g} metin={metin[g].bos} eylem={eylem} kisa={hepsi} />;
+    else if (g === "tanis") govde = <View>{kisiler.slice(0, sinir).map((k, i) => <KisiSatiri key={k.npc.id} name={k.npc.name} seed={k.npc.id} age={k.npc.age} gender={k.npc.gender} profession={k.npc.profession} v={k.v} first={i === 0} index={i} onPress={() => profil(k.npc.id)} />)}</View>;
+    else {
+      const yk = model.yoldasGrup === g ? yoldasKarti() : null;
+      const kartlar = [...(yk ? [yk] : []), ...kisiler.map(kart)].slice(0, sinir);
+      govde = <KartIzgarasi>{kartlar.map((k, i) => <KisiKarti key={k.key} k={k} index={i} />)}</KartIzgarasi>;
+    }
+    return <BolumPaneli key={g} grup={g} sayi={n} notsuz={n === 0 && hepsi}>
+      {govde}
+      {n > sinir && <TumunuGor grup={g} sayi={n} onPress={() => sec(g)} />}
+      {g === "aile" && n > 0 && copcatanAcik && <CopcatanSatiri onPress={copcatan} />}
+    </BolumPaneli>;
+  };
+
+  const oyuncular = mpMode && snapshot && snapshot.players.length > 0 ? snapshot.players : null;
   return (
     <ScreenFresk style={{ paddingTop: insets.top }}>
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 14, paddingTop: 14, paddingBottom: insets.bottom + 90 }}>
-        <PageHeader kicker={placeName(state.player.location_name, lang)} title={t("rel.headTitle")} sub={applyParams(t("rel.subSome"), [total])} />
-        {/* ── DİYAR HANEDANLARI: aynı diyarda yaşayan gerçek oyuncular (çok oyunculu) — bölgenin bir parçası gibi hep görünür ── */}
-        {mpMode && snapshot && snapshot.players.length > 0 && (
-          <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(201,168,76,0.4)", borderRadius: 5, marginBottom: 14, overflow: "hidden" }}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 13, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.border, backgroundColor: "rgba(201,168,76,0.08)" }}>
-              <GameIcon name="hanedan" size={13} color={C.gold} />
-              <Text style={{ flex: 1, fontFamily: F.display, fontSize: 13, letterSpacing: 1.5, color: C.gold, textTransform: "uppercase" }}>{t("mp.players")}</Text>
-              <Pill text={`${snapshot.players.filter((x) => x.online && !x.dead).length}`} tone={C.sage} />
-            </View>
-            <View style={{ padding: 10 }}>
-              {snapshot.players.map((pl) => (
-                <View key={pl.id} style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 7 }}>
-                  <Portre age={Math.max(7, pl.age)} gender={pl.gender} size={37} ring={false} seed={pl.id} />
-                  <View style={{ flex: 1, minWidth: 0 }}>
-                    <Text numberOfLines={1} style={{ fontFamily: F.serif, fontSize: 15, color: pl.id === guestId ? C.gold : C.parchment }}>
-                      {pl.name}{pl.id === guestId ? ` ${t("mp.you")}` : ""}{pl.crowned ? " ♔" : ""}
-                    </Text>
-                    <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted }}>{professionNameL(pl.profession, lang, pl.gender === "kadın")} · {pl.age}</Text>
-                  </View>
-                  <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: pl.online ? C.sage : C.parchmentDim }} />
-                </View>
-              ))}
-            </View>
+      <ScrollView ref={scroll} contentContainerStyle={{ paddingHorizontal: 14, paddingTop: 14, paddingBottom: insets.bottom + 90 }}>
+        <PageHeader kicker={placeName(p.location_name, lang)} title={t("rel.headTitle")} sub={applyParams(t("rel.subSome"), [model.toplam])} />
+        {model.toplam > 0 && <FiltreCipleri secili={filtre} sayi={model.sayi} toplam={model.toplam} onSec={sec} />}
+        {/* Diyar hanedanları: aynı diyarda yaşayan gerçek oyuncular (çok oyunculu) */}
+        {oyuncular && filtre === "hepsi" && <DiyarOyunculari players={oyuncular} guestId={guestId} />}
+        {model.toplam === 0 ? (
+          <View style={{ marginBottom: 14, padding: 14, borderWidth: 1, borderColor: C.borderHi, borderRadius: 8, backgroundColor: "rgba(24,18,11,0.9)" }}>
+            <Text accessibilityRole="header" style={{ fontFamily: F.display, fontSize: 17, lineHeight: 23, color: C.gold, textAlign: "center" }}>{t("rel.noneTitle")}</Text>
+            <BosDurum grup="tanis" metin={t("rel.noneBody")} eylem={mahalle} />
+            {copcatanAcik && <CopcatanSatiri onPress={copcatan} />}
           </View>
-        )}
-
-        {/* Görücü usulü / çöpçatan — bekâr yetişkine talip önerisi (yaş/servet filtreli) */}
-        {!state.player.married && state.player.age >= 18 ? (
-          <Pressable onPress={() => { router.push("/oyun/copcatan"); }} style={{ flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: "rgba(192,85,107,0.08)", borderWidth: 1, borderColor: "rgba(192,85,107,0.4)", borderRadius: 5, padding: 13, marginBottom: 12 }}>
-            <GameIcon name="ring" size={18} color={C.roseDim} />
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontFamily: F.display, fontSize: 13, color: C.roseDim, letterSpacing: 0.5 }}>{t("cc.title")}</Text>
-              <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, marginTop: 2 }}>{t("cc.entryHint")}</Text>
-            </View>
-            <Text style={{ fontFamily: F.display, fontSize: 16, color: C.roseDim }}>›</Text>
-          </Pressable>
-        ) : null}
-
-        {/* Çocukluk yoldaşı ("can dostu") — panodan buraya taşındı; ömürlük dost ya da rakip olabilir */}
-        {state.player.child_friend && !cemberde.has(state.player.child_friend.id) ? (() => {
-          const cf = state.player.child_friend!; const nm = yoldasAdi(state, lang) || "";
-          const d = yoldasDurumu(state.player);
-          const rival = d === "rakip" || (d === "cocuk" && (cf.feud || 0) > cf.bond); const tone = rival ? C.blood : C.roseDim;
-          const statusKey = rival ? "child.friend.rivalStatus" : d === "omurluk" ? "child.friend.lifelong" : d === "ayrildi" ? "child.friend.parted" : "child.friend.label";
-          const kayit = kisiProfil(state, cf.id, lang); // gerçek kişiyse yaşı kaydından, dokununca profili
-          return (
-            <Pressable disabled={!kayit} onPress={() => router.push(`/oyun/npc/${cf.id}`)} style={{ backgroundColor: C.card, borderWidth: 1, borderColor: tone + "44", borderRadius: 5, marginBottom: 12, padding: 12 }}>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-                <Portre age={kayit ? kayit.npc.age : Math.max(7, state.player.age)} gender={cf.gender} size={37} ring={false} seed={kayit ? cf.id : "cf_" + cf.seed} />
-                <View style={{ flex: 1, minWidth: 0 }}>
-                  <Text numberOfLines={1} style={{ fontFamily: F.serif, fontSize: 15, color: C.parchment }}>{nm}</Text>
-                  <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted }}>{t("child.friend.of")}</Text>
-                  <View style={{ height: 5, borderRadius: 3, backgroundColor: tone + "22", overflow: "hidden", marginTop: 5 }}>
-                    <View style={{ width: `${Math.max(0, Math.min(100, cf.bond))}%`, height: "100%", backgroundColor: tone }} />
-                  </View>
-                </View>
-                <Pill text={t(statusKey)} tone={tone} />
-              </View>
-            </Pressable>
-          );
-        })() : null}
-
-        {cember.length ? (
-          <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(201,168,76,0.3)", borderRadius: 5, marginBottom: 12, overflow: "hidden" }}>
-            <View style={{ paddingHorizontal: 13, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.border, backgroundColor: "rgba(201,168,76,0.08)" }}>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                <GameIcon name="iliskiler" size={13} color={C.gold} />
-                <Text style={{ flex: 1, fontFamily: F.display, fontSize: 13, letterSpacing: 1.5, color: C.gold, textTransform: "uppercase" }}>{t("cember.baslik")}</Text>
-                <Pill text={`${cember.length} ${t(cember.length === 1 ? "rel.person" : "rel.people")}`} tone={C.gold} />
-              </View>
-              <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, marginTop: 3 }}>{t("cember.not")}</Text>
-            </View>
-            <View style={{ padding: 10 }}>
-              {cember.map(({ npc: n, v, rol, uzak, loc }) => {
-                const tone = rol === "cember.kanli" || rol === "cember.hasim" ? C.blood : rol === "cember.rakip" ? C.ember : rol.startsWith("char.") || /^cember\.(es|evlat|kardes)/.test(rol) ? C.gold : C.sage;
-                return (
-                  <Pressable key={n.id} onPress={() => router.push(`/oyun/npc/${n.id}`)} style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 7 }}>
-                    <Portre age={n.age} gender={n.gender} size={37} ring={false} seed={n.id} />
-                    <View style={{ flex: 1, minWidth: 0 }}>
-                      <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                        <Text numberOfLines={1} style={{ flexShrink: 1, fontFamily: F.serif, fontSize: 15, color: C.parchment }}>{n.name}</Text>
-                        <Pill text={t(rol)} tone={tone} />
-                      </View>
-                      <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted }}>{professionNameL(n.profession, lang, n.gender === "kadın")} · {n.age}{uzak ? ` · ${placeName(loc, lang)}` : ""}</Text>
-                      <RelBand score={v} />
-                    </View>
-                    <Text style={{ fontFamily: F.display, fontSize: 13, color: v >= 20 ? C.sage : v <= -20 ? C.blood : C.parchmentMuted, width: 34, textAlign: "right" }}>{v > 0 ? "+" + v : v}</Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-          </View>
-        ) : null}
-
-        {total === 0 ? (
-          <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 5, padding: 24, alignItems: "center" }}>
-            <Text style={{ fontFamily: F.display, fontSize: 14, color: C.parchment, letterSpacing: 0.5 }}>{t("rel.noneTitle")}</Text>
-            <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, textAlign: "center", marginTop: 7, lineHeight: 22 }}>{t("rel.noneBody")}</Text>
-          </View>
-        ) : grouped.filter(({ list }) => list.length || !cember.length).map(({ b, list }) => ( // çember doluyken boş bantlar gizlenir (dostun çemberdeyken "dost yok" demesin)
-          <View key={b.id} style={{ backgroundColor: C.card, borderWidth: 1, borderColor: b.tone + "30", borderRadius: 5, marginBottom: 12, overflow: "hidden" }}>
-            {/* Panel başlığı */}
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 13, paddingVertical: 10, borderBottomWidth: list.length ? 1 : 0, borderBottomColor: C.border, backgroundColor: b.tone + "10" }}>
-              <View style={{ width: 9, height: 9, borderRadius: 2, backgroundColor: b.tone, transform: [{ rotate: "45deg" }] }} />
-              <Text style={{ flex: 1, fontFamily: F.display, fontSize: 13, letterSpacing: 1.5, color: b.tone, textTransform: "uppercase" }}>{t("relb." + b.id)}</Text>
-              <Pill text={`${list.length} ${t(list.length === 1 ? "rel.person" : "rel.people")}`} tone={b.tone} />
-            </View>
-            {/* Gövde */}
-            <View style={{ padding: list.length ? 10 : 12 }}>
-              {list.length === 0 ? (
-                <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, textAlign: "center", opacity: 0.75 }}>{applyParams(t("rel.bandNone"), [t("relb." + b.id + ".m")])}</Text>
-              ) : list.map(({ n, v }) => (
-                <Pressable key={n.id} onPress={() => router.push(`/oyun/npc/${n.id}`)} style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 7 }}>
-                  <Portre age={n.age} gender={n.gender} size={37} ring={false} seed={n.id} />
-                  <View style={{ flex: 1, minWidth: 0 }}>
-                    <Text numberOfLines={1} style={{ fontFamily: F.serif, fontSize: 15, color: C.parchment }}>{n.name}</Text>
-                    <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted }}>{professionNameL(n.profession, lang, n.gender === "kadın")} · {n.age}</Text>
-                    <RelBand score={v} />
-                  </View>
-                  <Text style={{ fontFamily: F.display, fontSize: 13, color: v >= 20 ? C.sage : v <= -20 ? C.blood : C.parchmentMuted, width: 34, textAlign: "right" }}>{v > 0 ? "+" + v : v}</Text>
-                </Pressable>
-              ))}
-            </View>
-          </View>
-        ))}
+        ) : (filtre === "hepsi" ? GRUPLAR : [filtre]).map(bolum)}
       </ScrollView>
     </ScreenFresk>
   );
