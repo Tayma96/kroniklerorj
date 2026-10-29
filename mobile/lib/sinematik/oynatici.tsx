@@ -1,6 +1,6 @@
 // Sinematik oynatıcı: çekim başına kamera (dolly/pan), çapraz geçiş, ateş/sis/kar/köz katmanları, film greni,
 // sinema bantları, daktilo yer-yıl satırı ve altyazı. Kendiliğinden akar; dokunuş sonraki çekime geçer; Atla her an çalışır.
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { View, Text, Image, StyleSheet, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -100,14 +100,18 @@ function Daktilo({ metin, top, rtl }: { metin: string; top: number; rtl: boolean
     return () => clearInterval(id);
   }, [metin]);
   return (
-    <View accessible accessibilityLabel={metin} style={{ position: "absolute", top, left: 22, right: 22, flexDirection: rtl ? "row-reverse" : "row", alignItems: "center", gap: 10 }}>
+    <View pointerEvents="none" accessible accessibilityLabel={metin} style={{ position: "absolute", top, left: 22, right: 22, flexDirection: rtl ? "row-reverse" : "row", alignItems: "center", gap: 10 }}>
       <View style={{ width: 18, height: 1, backgroundColor: C.gold }} />
-      <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 3, color: C.goldBright, textShadowColor: "#000", textShadowRadius: 6 }}>{metin.slice(0, n).toUpperCase()}</Text>
+      <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: rtl ? 0 : 3, color: C.goldBright, textShadowColor: "#000", textShadowRadius: 6 }}>{metin.slice(0, n).toUpperCase()}</Text>
     </View>
   );
 }
 
-export function Sinematik({ cekimler, onDone }: { cekimler: Cekim[]; onDone: () => void }) {
+export function Sinematik(props: { cekimler: Cekim[]; onDone: () => void }) {
+  return props.cekimler.length ? <SinematikIc {...props} /> : null;
+}
+
+function SinematikIc({ cekimler, onDone }: { cekimler: Cekim[]; onDone: () => void }) {
   const { t, lang } = useI18n();
   const reduced = isReduceMotion();
   const rtl = lang === "ar";
@@ -128,7 +132,13 @@ export function Sinematik({ cekimler, onDone }: { cekimler: Cekim[]; onDone: () 
     return () => clearTimeout(id);
   }, [i, son, sure, cekimler.length]);
   // Perde müziği ve ortamı: aynı perdede yeniden başlamaz.
-  useEffect(() => pushSoundscape(c.ses), [c.ses]);
+  const sesKapat = useRef<(() => void) | null>(null);
+  useEffect(() => {
+    const onceki = sesKapat.current;
+    sesKapat.current = pushSoundscape(c.ses);
+    onceki?.();
+  }, [c.ses]);
+  useEffect(() => () => sesKapat.current?.(), []);
   useEffect(() => {
     if (!c.efekt) return;
     const id = setTimeout(() => playEffect(c.efekt!), c.efektMs ?? 300);
@@ -140,8 +150,23 @@ export function Sinematik({ cekimler, onDone }: { cekimler: Cekim[]; onDone: () 
     const id = c.vo, tm = setTimeout(() => playNarration(id), 650);
     return () => { clearTimeout(tm); stopNarration(id); };
   }, [c, vo]);
-  const ileri = () => { if (son) return; playTap(); setI(i + 1); };
-  const bitir = () => { hap("success"); onDone(); };
+  const ileri = () => { if (son) return; playTap(); setI((n) => Math.min(n + 1, cekimler.length - 1)); };
+  // Atla / Hayata Başla bir kez çalışır; çift dokunuş iki ekran geri gitmez.
+  const bitti = useRef(false);
+  const kapat = (basari: boolean) => {
+    if (bitti.current) return;
+    bitti.current = true;
+    if (c.vo) stopNarration(c.vo);
+    if (basari) hap("success");
+    onDone();
+  };
+  // Başlık kartındaki düğme görünür olmadan basılamaz.
+  const [hazir, setHazir] = useState(false);
+  useEffect(() => {
+    if (!c.baslik) return;
+    const id = setTimeout(() => setHazir(true), reduced ? 1600 : 3400);
+    return () => clearTimeout(id);
+  }, [c.baslik, reduced]);
   const kat = (k: string) => !reduced && !!c.katman?.includes(k as never);
 
   return (
@@ -173,13 +198,13 @@ export function Sinematik({ cekimler, onDone }: { cekimler: Cekim[]; onDone: () 
 
       {c.baslik ? (
         <View pointerEvents="box-none" style={{ position: "absolute", left: 24, right: 24, top: H * 0.3, alignItems: "center" }}>
-          <Animated.Text entering={FadeIn.delay(400).duration(1600)} style={{ fontFamily: F.display, fontSize: 15, letterSpacing: 6, color: C.parchmentDim }}>KRONİKLER</Animated.Text>
+          <Animated.Text entering={FadeIn.delay(400).duration(1600)} style={{ fontFamily: F.display, fontSize: 15, letterSpacing: rtl ? 0 : 6, color: C.parchmentDim }}>KRONİKLER</Animated.Text>
           <Animated.View entering={FadeIn.delay(900).duration(1400)} style={{ width: 150, height: 1, backgroundColor: "rgba(201,168,76,0.6)", marginVertical: 14 }} />
-          <Animated.Text entering={reduced ? FadeIn.delay(1200).duration(600) : FadeInUp.delay(1200).duration(1600)} style={{ fontFamily: F.display, fontSize: W < 360 ? 30 : 36, lineHeight: W < 360 ? 38 : 44, letterSpacing: 1.5, color: C.goldBright, textAlign: "center", textShadowColor: "rgba(255,150,40,0.45)", textShadowRadius: 18 }}>{t("sin.baslik").toLocaleUpperCase(lang === "tr" ? "tr-TR" : undefined)}</Animated.Text>
+          <Animated.Text entering={reduced ? FadeIn.delay(1200).duration(600) : FadeInUp.delay(1200).duration(1600)} style={{ fontFamily: F.display, fontSize: W < 360 ? 30 : 36, lineHeight: W < 360 ? 38 : 44, letterSpacing: rtl ? 0 : 1.5, color: C.goldBright, textAlign: "center", textShadowColor: "rgba(255,150,40,0.45)", textShadowRadius: 18 }}>{t("sin.baslik").toLocaleUpperCase(lang === "tr" ? "tr-TR" : undefined)}</Animated.Text>
           <Animated.View entering={FadeIn.delay(2600).duration(900)} style={{ marginTop: H * 0.16 }}>
-            <Pressable accessibilityRole="button" accessibilityLabel={t("new.beginLife")} onPress={bitir} style={{ minHeight: 52, minWidth: 220, paddingHorizontal: 26, borderRadius: 6, borderWidth: 1, borderColor: C.gold, backgroundColor: "rgba(201,168,76,0.16)", alignItems: "center", justifyContent: "center" }}>
+            <Pressable accessibilityRole="button" accessibilityLabel={t("new.beginLife")} onPress={() => { if (hazir) kapat(true); }} accessibilityState={{ disabled: !hazir }} style={{ minHeight: 52, minWidth: 220, paddingHorizontal: 26, borderRadius: 6, borderWidth: 1, borderColor: C.gold, backgroundColor: "rgba(201,168,76,0.16)", alignItems: "center", justifyContent: "center" }}>
               <Pulse min={0.55} max={1} dur={1100}>
-                <Text style={{ fontFamily: F.display, fontSize: 15, letterSpacing: 2, color: C.goldBright }}>{t("new.beginLife").toLocaleUpperCase(lang === "tr" ? "tr-TR" : undefined)}</Text>
+                <Text style={{ fontFamily: F.display, fontSize: 15, letterSpacing: rtl ? 0 : 2, color: C.goldBright }}>{t("new.beginLife").toLocaleUpperCase(lang === "tr" ? "tr-TR" : undefined)}</Text>
               </Pulse>
             </Pressable>
           </Animated.View>
@@ -198,9 +223,9 @@ export function Sinematik({ cekimler, onDone }: { cekimler: Cekim[]; onDone: () 
         ))}
       </View>
 
-      <Pressable accessibilityRole="button" accessibilityLabel={t("new.skip")} onPress={onDone} hitSlop={8}
+      <Pressable accessibilityRole="button" accessibilityLabel={t("new.skip")} onPress={() => kapat(false)} hitSlop={8}
         style={{ position: "absolute", top: ins.top + Math.max(6, bant / 2 - 18), [rtl ? "left" : "right"]: 16, minHeight: 36, paddingHorizontal: 14, borderRadius: 18, borderWidth: 1, borderColor: "rgba(201,168,76,0.35)", backgroundColor: "rgba(0,0,0,0.45)", alignItems: "center", justifyContent: "center" }}>
-        <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1.5, color: C.parchmentDim }}>{t("new.skip").toLocaleUpperCase(lang === "tr" ? "tr-TR" : undefined)}</Text>
+        <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: rtl ? 0 : 1.5, color: C.parchmentDim }}>{t("new.skip").toLocaleUpperCase(lang === "tr" ? "tr-TR" : undefined)}</Text>
       </Pressable>
     </View>
   );

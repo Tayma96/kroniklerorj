@@ -284,8 +284,10 @@ export default function YeniOyun() {
 
   // Android geri tuşu önce bir önceki adıma döner.
   useEffect(() => {
-    if (cinematic || Platform.OS !== "android") return;
+    if (Platform.OS !== "android") return;
     const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+      // Oyun kuruldu: sinematikte geri tuşu oluşturma ekranına değil oyuna götürür.
+      if (cinematic) { router.replace("/oyun"); return true; }
       if (busy) return true;
       if (step > 1) { goStep((step - 1) as Step); return true; }
       return false;
