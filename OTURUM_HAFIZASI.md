@@ -13,7 +13,7 @@
 
 ## 1. tur
 - tsc kırığı düzeldi; `smoke:full` 300 hayat temiz (`bd471c8`). Tema, `ornament-ui` bileşenleri, NPC kendi portresiyle sahne, ayrı mekân resimleri.
-- Oynanış hatası: 13+ yaşta yemek düğmesi yoktu; "Sofra" eklendi. Tarayıcı botu (scratchpad) 400 ay hatasız oynadı. Cihaz/APK denemesi yok.
+- "Sofra" eklendi (13+ yaşta yemek). Tarayıcı botu 400 ay hatasız oynadı.
 
 ## 3. tur (nihai ana sayfa — kullanıcı kararı)
 - Ana sayfa = `claude-paket/mockup_full.png` ekran 1, ölçüler ×0.82 ile `lib/home-mockup-ui.tsx`ta (sahne 201, portre 84, metin ~12.5 pt). Sahne `heroImage(yaş, mevsim)` (eski mantık). Yan yana karşılaştırarak ayarlandı.
