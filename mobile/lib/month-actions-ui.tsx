@@ -73,161 +73,111 @@ export function EmekPanel() {
   );
 }
 
+// Uğraş bloğu: takat elmasları, isteğe bağlı hayal satırı, iki sütun madalyonlu eylem taşları (≥ 52 pt) ve "takat bitti" notu.
+type UgrasEylem = { k: string; icon: string; label: string; not?: string; cost?: number; kapali?: boolean };
+function UgrasBlok({ tone, en, max, can, acts, onAct, dream, spent }: { tone: string; en: number; max: number; can: boolean; acts: UgrasEylem[]; onAct: (k: string) => void; dream?: React.ReactNode; spent?: string }) {
+  const { t, lang } = useI18n();
+  const rtl = lang === "ar", row = rtl ? "row-reverse" as const : "row" as const;
+  const p = useGame().state!.player;
+  return (
+    <View style={{ marginBottom: 12, padding: 12, borderRadius: 8, borderWidth: 1, borderColor: C.borderHi, borderTopColor: tone + "88", borderTopWidth: 2, backgroundColor: "rgba(29,22,13,0.92)" }}>
+      <View accessible accessibilityLabel={`${t("karakter.takat")}: ${en} / ${max}`} style={{ flexDirection: row, alignItems: "center", gap: 8, marginBottom: 10 }}>
+        <Text style={{ flex: 1, fontFamily: F.display, fontSize: 12.5, letterSpacing: 0.6, color: C.parchmentDim, textAlign: rtl ? "right" : "left" }}>{t("karakter.takat")}</Text>
+        <View style={{ flexDirection: row, gap: 5 }}>
+          {Array.from({ length: max }).map((_, i) => (
+            <View key={i} style={{ width: 11, height: 11, borderRadius: 2, transform: [{ rotate: "45deg" }], backgroundColor: i < en ? tone : "transparent", borderWidth: 1, borderColor: i < en ? tone : C.border }} />
+          ))}
+        </View>
+      </View>
+      {dream}
+      <View style={{ flexDirection: row, flexWrap: "wrap", gap: 8 }}>
+        {acts.map((a, i) => {
+          const dis = !can || !!a.kapali || (a.cost != null && p.money < a.cost);
+          const wide = acts.length % 2 === 1 && i === acts.length - 1;
+          return (
+            <Pressable key={a.k} accessibilityRole="button" accessibilityLabel={a.label + (a.cost != null ? ` · ${a.cost}⚜` : "") + (a.not ? `, ${a.not}` : "")} accessibilityState={{ disabled: dis }} disabled={dis} onPress={() => { if (!dis) onAct(a.k); }}
+              style={({ pressed }) => ({ width: wide ? "100%" : "48.5%", flexGrow: 1, minHeight: 54, flexDirection: row, alignItems: "center", gap: 9, paddingVertical: 7, paddingHorizontal: 9, borderRadius: 8, borderWidth: 1, borderBottomWidth: pressed || dis ? 1 : 2.5, borderColor: dis ? C.border : tone + "88", borderBottomColor: dis ? C.border : "#080503", backgroundColor: dis ? "rgba(10,7,4,0.5)" : pressed ? C.surface : "#241B11", opacity: dis ? 0.5 : 1, transform: [{ translateY: pressed ? 1.5 : 0 }] })}>
+              <View style={{ width: 34, height: 34, borderRadius: 17, alignItems: "center", justifyContent: "center", backgroundColor: "#120C06", borderWidth: 1.5, borderColor: dis ? C.border : tone }}>
+                <GameIcon name={a.icon} size={17} color={dis ? C.parchmentMuted : tone} />
+              </View>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text numberOfLines={2} style={{ fontFamily: F.display, fontSize: 12.5, lineHeight: 16, color: dis ? C.parchmentMuted : C.parchment, textAlign: rtl ? "right" : "left" }}>{a.label}{a.cost != null ? ` · ${a.cost}⚜` : ""}</Text>
+                {a.not ? <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: 13.5, lineHeight: 17, color: C.parchmentMuted, textAlign: rtl ? "right" : "left" }}>{a.not}</Text> : null}
+              </View>
+            </Pressable>
+          );
+        })}
+      </View>
+      {!can && spent ? <Text style={{ fontFamily: F.serifItalic, fontSize: 15, lineHeight: 21, color: C.parchmentMuted, marginTop: 9, textAlign: rtl ? "right" : "left" }}>{spent}</Text> : null}
+    </View>
+  );
+}
+
 export function UgrasPanel() {
   const { state, apply } = useGame();
-  const { t, lang, tg } = useI18n();
-  const router = useRouter();
+  const { t, tg } = useI18n();
   if (!state) return null;
   const p = state.player;
-  return (
-    <>
-      {/* Çocukluk uğraşları (7-12) — çocuğa hareket alanı; çalışma gücünden harcar */}
-      {!p.dead && !inJail(p) && p.age >= 7 && p.age < 13 && (() => {
-        const en = playEnergy(state); const can = en >= PLAY_COST;
-        const acts: { k: ChildAct; icon: string; label: string }[] = [
-          { k: "oyun", icon: "party", label: t("child.act.oyun") },
-          { k: "yardim", icon: "iliskiler", label: t("child.act.yardim") },
-          { k: "yaramazlik", icon: "hood", label: t("child.act.yaramazlik") },
-          { k: "kesif", icon: "firsatlar", label: t("child.act.kesif") },
-        ];
-        const onChild = (k: ChildAct) => { if (!can) return; hap("tap"); const r = childAction(state, k); if (!r.blocked) apply(() => r.state); };
-        return (
-          <View style={{ marginBottom: 12, padding: 14, borderRadius: 6, borderWidth: 1, borderColor: C.borderHi, borderTopColor: "rgba(201,168,76,0.3)", borderTopWidth: 2, backgroundColor: C.card }}>
-            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 9 }}>
-              <Text style={{ flexShrink: 1, fontFamily: F.display, fontSize: 17, color: C.gold }}>{t("child.title")}</Text>
-              <View style={{ flexDirection: "row", gap: 4 }}>
-                {Array.from({ length: maxPlayEnergy(p.age) }).map((_, i) => (
-                  <View key={i} style={{ width: 9, height: 9, borderRadius: 2, transform: [{ rotate: "45deg" }], backgroundColor: i < en ? C.gold : "transparent", borderWidth: 1, borderColor: i < en ? C.gold : C.border }} />
-                ))}
-              </View>
-            </View>
-            {/* Çocukluk yoldaşı ("can dostu") artık İlişkiler ekranında gösteriliyor (pano kalabalığı azaldı). */}
-            {p.child_dream ? (
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 9 }}>
-                <GameIcon name="star" size={11} color={C.gold} />
-                <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted }}>{t("child.dream.label")}: <Text style={{ fontFamily: F.serif, color: C.gold }}>{t("dream." + p.child_dream)}</Text></Text>
-              </View>
-            ) : null}
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-              {acts.map((a) => (
-                <Pressable key={a.k} onPress={() => onChild(a.k)} disabled={!can} style={{ width: "48%", flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 10, paddingHorizontal: 10, borderRadius: 5, borderWidth: 1, borderColor: can ? "rgba(201,168,76,0.4)" : C.border, backgroundColor: can ? C.card : C.bg, opacity: can ? 1 : 0.5 }}>
-                  <GameIcon name={a.icon} size={16} color={can ? C.gold : C.parchmentMuted} />
-                  <Text style={{ fontFamily: F.display, fontSize: 13, color: can ? C.parchment : C.parchmentMuted }}>{a.label}</Text>
-                </Pressable>
-              ))}
-            </View>
-            {!can && <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, marginTop: 8 }}>{tg("child.spent", p.gender === "kadın")}</Text>}
-          </View>
-        );
-      })()}
+  if (p.dead || inJail(p) || p.age < 7) return null;
+  const kadin = p.gender === "kadın";
 
-      {/* Gençlik uğraşları (13-17) — çocukluk oyunu bitti, olgunluk talimi başlamadı: usta, akranlar, gönül, meydan (gerçek kişilerle) */}
-      {!p.dead && !inJail(p) && p.age >= 13 && p.age < 18 && (() => {
-        const en = playEnergy(state); const can = en >= PLAY_COST;
-        const gonulAcik = p.age >= 15 && !!gonulAdayi(state);
-        const acts: { k: GencAct; icon: string; label: string; kapali?: boolean; not?: string }[] = [
-          { k: "usta", icon: "anvil", label: t("genc.act.usta") },
-          { k: "akran", icon: "iliskiler", label: t("genc.act.akran") },
-          { k: "gonul", icon: "ring", label: t("genc.act.gonul"), kapali: !gonulAcik, not: p.age < 15 ? t("genc.gonulYas") : undefined },
-          { k: "huner", icon: "banner", label: t("genc.act.huner") },
-        ];
-        const onYouth = (k: GencAct) => { if (!can) return; hap("tap"); const r = youthAction(state, k); if (!r.blocked) apply(() => r.state); };
-        return (
-          <View style={{ marginBottom: 12, padding: 14, borderRadius: 6, borderWidth: 1, borderColor: C.borderHi, borderTopColor: "rgba(127,166,106,0.32)", borderTopWidth: 2, backgroundColor: C.card }}>
-            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 9 }}>
-              <Text style={{ flexShrink: 1, fontFamily: F.display, fontSize: 17, color: C.sage }}>{t("genc.title")}</Text>
-              <View style={{ flexDirection: "row", gap: 4 }}>
-                {Array.from({ length: maxPlayEnergy(p.age) }).map((_, i) => (
-                  <View key={i} style={{ width: 9, height: 9, borderRadius: 2, transform: [{ rotate: "45deg" }], backgroundColor: i < en ? C.sage : "transparent", borderWidth: 1, borderColor: i < en ? C.sage : C.border }} />
-                ))}
-              </View>
-            </View>
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-              {acts.map((a) => { const dis = !can || !!a.kapali; return (
-                <Pressable key={a.k} onPress={() => { if (!dis) onYouth(a.k); }} disabled={dis} style={{ width: "48%", flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 10, paddingHorizontal: 10, borderRadius: 5, borderWidth: 1, borderColor: dis ? C.border : "rgba(127,166,106,0.45)", backgroundColor: dis ? "transparent" : "rgba(127,166,106,0.08)" }}>
-                  <GameIcon name={a.icon} size={16} color={dis ? C.parchmentMuted : C.sage} />
-                  <View style={{ flex: 1, minWidth: 0 }}>
-                    <Text numberOfLines={1} style={{ fontFamily: F.display, fontSize: 13, color: dis ? C.parchmentMuted : C.parchment }}>{a.label}</Text>
-                    {a.not ? <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted }}>{a.not}</Text> : null}
-                  </View>
-                </Pressable>
-              ); })}
-            </View>
-            {!can && <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, marginTop: 8 }}>{t("genc.spent")}</Text>}
-          </View>
-        );
-      })()}
+  // Çocukluk uğraşları (7-12) — çocuğa hareket alanı; oyun takatinden harcar
+  if (p.age < 13) {
+    const en = playEnergy(state), can = en >= PLAY_COST;
+    const acts: UgrasEylem[] = [
+      { k: "oyun", icon: "party", label: t("child.act.oyun") },
+      { k: "yardim", icon: "iliskiler", label: t("child.act.yardim") },
+      { k: "yaramazlik", icon: "hood", label: t("child.act.yaramazlik") },
+      { k: "kesif", icon: "firsatlar", label: t("child.act.kesif") },
+    ];
+    const onChild = (k: string) => { if (!can) return; hap("tap"); const r = childAction(state, k as ChildAct); if (!r.blocked) apply(() => r.state); };
+    // Çocukluk yoldaşı ("can dostu") İlişkiler ekranında gösteriliyor.
+    const dream = p.child_dream ? (
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 10 }}>
+        <GameIcon name="star" size={13} color={C.gold} />
+        <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted }}>{t("child.dream.label")}: <Text style={{ fontFamily: F.serif, color: C.gold }}>{t("dream." + p.child_dream)}</Text></Text>
+      </View>
+    ) : null;
+    return <UgrasBlok tone={C.gold} en={en} max={maxPlayEnergy(p.age)} can={can} acts={acts} onAct={onChild} dream={dream} spent={tg("child.spent", kadin)} />;
+  }
 
-      {/* Olgunluk uğraşları (18-54) — atıl aylık çalışma gücü işlesin: dört uğraş dört statı besler */}
-      {!p.dead && !inJail(p) && p.age >= 18 && p.age < 55 && (() => {
-        const en = studyEnergy(state); const can = en >= STUDY_COST;
-        const acts: { k: AdultAct; icon: string; label: string; cost?: number }[] = [
-          { k: "talim", icon: "crossed-swords", label: t("adult.act.talim"), cost: ADULT_TRAINER_COST },
-          { k: "meclis", icon: "iliskiler", label: t("adult.act.meclis") },
-          { k: "tefekkur", icon: "scroll", label: t("adult.act.tefekkur") },
-          { k: "yuruyus", icon: "firsatlar", label: t("adult.act.yuruyus") },
-          { k: "ibadet", icon: "prayer-beads", label: t("adult.act.ibadet") },
-        ];
-        const onAdult = (k: AdultAct) => { if (!can) return; hap("tap"); const r = adultAction(state, k); if (!r.blocked) { if (k === "ibadet") playNey(); apply(() => r.state); } };
-        return (
-          <View style={{ marginBottom: 12, padding: 14, borderRadius: 6, borderWidth: 1, borderColor: C.borderHi, borderTopColor: "rgba(111,160,192,0.3)", borderTopWidth: 2, backgroundColor: C.card }}>
-            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 9 }}>
-              <Text style={{ flexShrink: 1, fontFamily: F.display, fontSize: 17, color: C.frost }}>{t("adult.title")}</Text>
-              <View style={{ flexDirection: "row", gap: 4 }}>
-                {Array.from({ length: maxStudyEnergy(p.age) }).map((_, i) => (
-                  <View key={i} style={{ width: 9, height: 9, borderRadius: 2, transform: [{ rotate: "45deg" }], backgroundColor: i < en ? C.frost : "transparent", borderWidth: 1, borderColor: i < en ? C.frost : C.border }} />
-                ))}
-              </View>
-            </View>
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-              {acts.map((a) => {
-                const dis = !can || (a.cost != null && p.money < a.cost);
-                return (
-                  <Pressable key={a.k} onPress={() => { if (!dis) onAdult(a.k); }} disabled={dis} style={{ width: acts.length % 2 === 1 && a.k === acts[acts.length - 1].k ? "100%" : "48%", flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 10, paddingHorizontal: 10, borderRadius: 5, borderWidth: 1, borderColor: dis ? C.border : "rgba(111,160,192,0.4)", backgroundColor: dis ? C.bg : C.card, opacity: dis ? 0.5 : 1 }}>
-                    <GameIcon name={a.icon} size={16} color={dis ? C.parchmentMuted : C.frost} />
-                    <Text style={{ flex: 1, fontFamily: F.display, fontSize: 13, color: dis ? C.parchmentMuted : C.parchment }} numberOfLines={1}>{a.label}{a.cost != null ? ` · ${a.cost}⚜` : ""}</Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-          </View>
-        );
-      })()}
+  // Gençlik uğraşları (13-17) — usta, akranlar, gönül, meydan (gerçek kişilerle)
+  if (p.age < 18) {
+    const en = playEnergy(state), can = en >= PLAY_COST;
+    const gonulAcik = p.age >= 15 && !!gonulAdayi(state);
+    const acts: UgrasEylem[] = [
+      { k: "usta", icon: "anvil", label: t("genc.act.usta") },
+      { k: "akran", icon: "iliskiler", label: t("genc.act.akran") },
+      { k: "gonul", icon: "ring", label: t("genc.act.gonul"), kapali: !gonulAcik, not: p.age < 15 ? t("genc.gonulYas") : undefined },
+      { k: "huner", icon: "banner", label: t("genc.act.huner") },
+    ];
+    const onYouth = (k: string) => { if (!can) return; hap("tap"); const r = youthAction(state, k as GencAct); if (!r.blocked) apply(() => r.state); };
+    return <UgrasBlok tone={C.sage} en={en} max={maxPlayEnergy(p.age)} can={can} acts={acts} onAct={onYouth} spent={t("genc.spent")} />;
+  }
 
-      {/* İhtiyarlık uğraşları (55+) — hayatın akşamına anlam; çalışma gücünden harcar */}
-      {!p.dead && !inJail(p) && p.age >= 55 && (() => {
-        const en = studyEnergy(state); const can = en >= STUDY_COST;
-        const acts: { k: ElderAct; icon: string; label: string }[] = [
-          { k: "nasihat", icon: "speaker", label: t("elder.act.nasihat") },
-          { k: "hayir", icon: "akce", label: t("elder.act.hayir") },
-          { k: "dinlen", icon: "saglik", label: t("elder.act.dinlen") },
-          { k: "ani", icon: "roman", label: t("elder.act.ani") },
-          { k: "tekke", icon: "prayer-beads", label: t("elder.act.tekke") },
-        ];
-        const onElder = (k: ElderAct) => { if (!can) return; hap("tap"); const r = elderAction(state, k); if (!r.blocked) { if (k === "tekke") playNey(); apply(() => r.state); } };
-        return (
-          <View style={{ marginBottom: 12, padding: 14, borderRadius: 6, borderWidth: 1, borderColor: C.borderHi, borderTopColor: "rgba(123,79,175,0.3)", borderTopWidth: 2, backgroundColor: C.card }}>
-            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 9 }}>
-              <Text style={{ flexShrink: 1, fontFamily: F.display, fontSize: 17, color: C.ink }}>{t("elder.title")}</Text>
-              <View style={{ flexDirection: "row", gap: 4 }}>
-                {Array.from({ length: maxStudyEnergy(p.age) }).map((_, i) => (
-                  <View key={i} style={{ width: 9, height: 9, borderRadius: 2, transform: [{ rotate: "45deg" }], backgroundColor: i < en ? C.ink : "transparent", borderWidth: 1, borderColor: i < en ? C.ink : C.border }} />
-                ))}
-              </View>
-            </View>
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-              {acts.map((a) => (
-                <Pressable key={a.k} onPress={() => onElder(a.k)} disabled={!can} style={{ width: acts.length % 2 === 1 && a.k === acts[acts.length - 1].k ? "100%" : "48%", flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 10, paddingHorizontal: 10, borderRadius: 5, borderWidth: 1, borderColor: can ? "rgba(123,79,175,0.4)" : C.border, backgroundColor: can ? C.card : C.bg, opacity: can ? 1 : 0.5 }}>
-                  <GameIcon name={a.icon} size={16} color={can ? C.ink : C.parchmentMuted} />
-                  <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.display, fontSize: 13, color: can ? C.parchment : C.parchmentMuted }}>{a.label}</Text>
-                </Pressable>
-              ))}
-            </View>
-            {!can && <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, marginTop: 8 }}>{tg("child.spent", p.gender === "kadın")}</Text>}
-          </View>
-        );
-      })()}
+  // Olgunluk uğraşları (18-54) — dört uğraş dört statı besler
+  if (p.age < 55) {
+    const en = studyEnergy(state), can = en >= STUDY_COST;
+    const acts: UgrasEylem[] = [
+      { k: "talim", icon: "crossed-swords", label: t("adult.act.talim"), cost: ADULT_TRAINER_COST },
+      { k: "meclis", icon: "iliskiler", label: t("adult.act.meclis") },
+      { k: "tefekkur", icon: "scroll", label: t("adult.act.tefekkur") },
+      { k: "yuruyus", icon: "firsatlar", label: t("adult.act.yuruyus") },
+      { k: "ibadet", icon: "prayer-beads", label: t("adult.act.ibadet") },
+    ];
+    const onAdult = (k: string) => { if (!can) return; hap("tap"); const r = adultAction(state, k as AdultAct); if (!r.blocked) { if (k === "ibadet") playNey(); apply(() => r.state); } };
+    return <UgrasBlok tone={C.frost} en={en} max={maxStudyEnergy(p.age)} can={can} acts={acts} onAct={onAdult} spent={tg("child.spent", kadin)} />;
+  }
 
-    </>
-  );
+  // İhtiyarlık uğraşları (55+) — hayatın akşamına anlam
+  const en = studyEnergy(state), can = en >= STUDY_COST;
+  const acts: UgrasEylem[] = [
+    { k: "nasihat", icon: "speaker", label: t("elder.act.nasihat") },
+    { k: "hayir", icon: "akce", label: t("elder.act.hayir") },
+    { k: "dinlen", icon: "saglik", label: t("elder.act.dinlen") },
+    { k: "ani", icon: "roman", label: t("elder.act.ani") },
+    { k: "tekke", icon: "prayer-beads", label: t("elder.act.tekke") },
+  ];
+  const onElder = (k: string) => { if (!can) return; hap("tap"); const r = elderAction(state, k as ElderAct); if (!r.blocked) { if (k === "tekke") playNey(); apply(() => r.state); } };
+  return <UgrasBlok tone={C.ink} en={en} max={maxStudyEnergy(p.age)} can={can} acts={acts} onAct={onElder} spent={tg("child.spent", kadin)} />;
 }

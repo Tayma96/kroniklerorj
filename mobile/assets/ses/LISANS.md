@@ -1,6 +1,6 @@
 # Kronikler — ses dosyaları: kaynak ve lisans
 
-Bu dizindeki her ses **gerçek bir kayıttır** (canlı icra ya da saha kaydı). Yapay zekâyla üretilmiş müzik, sentezlenmiş ses ya da yapay ses (TTS) yoktur.
+Müzik, ortam ve efekt dosyalarının her biri **gerçek bir kayıttır** (canlı icra ya da saha kaydı); bunlarda yapay zekâyla üretilmiş müzik ya da sentezlenmiş ses yoktur. Tek istisna `vo/` klasöründeki açılış sinematiği anlatıcısıdır: Türkçe anlatı, açık kaynak **Chatterbox Multilingual** (Resemble AI, MIT lisansı) modeliyle bu projede yerelde üretilmiştir; gerçek bir kişinin sesi kopyalanmamıştır (modelin varsayılan sesi). Model çıktıya duyulmayan bir filigran (Perth) ekler.
 Yalnız şu lisanslar kullanıldı: **CC0 1.0**, **Kamu malı (PD)** ve **CC BY 3.0/4.0** (atıf aşağıda). NC (ticari olmayan) ya da belirsiz lisanslı hiçbir kayıt yok.
 
 Bu dosya `scripts/ses/katalog-uret.cjs` ile `assets/ses/kaynak.json`'dan üretilir; elle düzenlemeyin.

@@ -6,6 +6,7 @@ import { isReduceMotion } from './perf';
 import { MUZIK, ORTAM, EFEKT, EFEKT_SURE, type EfektId } from './ses-katalog';
 import { SesMikser, type SesOynatici, type SesPlan, type SesTercih } from './ses-mikser';
 import type { OrtamPlan } from './ses-plan';
+import { ANLATIM } from './sinematik/anlatim';
 
 const KEYS = { effects: 'kronikler_sound_v1', music: 'kronikler_music_v1', ambiance: 'kronikler_ambiance_v1' };
 let prefs: SesTercih = { music: true, ambiance: false, effects: false };
@@ -16,6 +17,7 @@ const sources: Record<string, number> = Object.fromEntries([
   ...Object.entries(MUZIK).map(([id, source]) => ['music:' + id, source]),
   ...Object.entries(ORTAM).map(([id, source]) => ['ambiance:' + id, source]),
   ...Object.entries(EFEKT).map(([id, source]) => ['effect:' + id, source]),
+  ...Object.entries(ANLATIM).map(([id, a]) => ['narration:' + id, a.kaynak]),
 ]);
 function nativePlayer(id: string): SesOynatici {
   const source = sources[id]; if (source == null) throw new Error('Ses kaynağı yok');
@@ -95,6 +97,9 @@ function cue(plan: OrtamPlan, ms = 6500) { if (!mixer.snapshot().active) return;
 export function startMusic() { mixer.setPreferences(prefs); applyPlan(); }
 export function stopMusic() { mixer.setPreferences({ ...prefs, music: false }); }
 export function playEffect(id: EfektId) { mixer.effect('effect:' + id, EFEKT_SURE[id], !id.startsWith('ui_')); }
+// Sinematik anlatıcısı: müzik ya da efekt açıksa çalar, konuşurken müziği kısar.
+export function playNarration(id: string) { const a = ANLATIM[id]; if (a) mixer.effect('narration:' + id, a.ms, true, 'narration'); }
+export function stopNarration(id: string) { mixer.stop('narration:' + id); }
 export function playTap() { playEffect('ui_dokun'); }
 export function playAdvance() { playEffect('ui_ilerle'); }
 export function playFanfare() { playEffect('zafer'); cue({ music: 'zafer', ambiance: 'avlu' }); }

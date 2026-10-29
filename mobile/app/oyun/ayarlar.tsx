@@ -86,6 +86,15 @@ export default function Ayarlar() {
           <Text style={{ fontFamily: F.display, fontSize: 16, color: C.goldDim }}>›</Text>
         </Pressable>
 
+        {/* Açılışı yeniden izle: Küllerin Mirası sinematiği */}
+        <Pressable onPress={() => { hap("tap"); router.push("/sinematik"); }} style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 5, padding: 14, marginBottom: 14 }}>
+          <GameIcon name="scroll" size={20} color={C.gold} />
+          <View style={{ flex: 1, paddingHorizontal: 8 }}>
+            <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.parchment }}>{t("sin.izle")}</Text>
+            <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, marginTop: 3 }}>{t("sin.izleDesc")}</Text>
+          </View>
+          <Text style={{ fontFamily: F.display, fontSize: 16, color: C.goldDim }}>›</Text>
+        </Pressable>
         {/* Emeği Geçenler: üçüncü taraf atıfları ve lisanslar (CC BY simgeler, OFL yazı tipleri, YZ görselleri) */}
         <Pressable onPress={() => { hap("tap"); router.push("/oyun/emek"); }} style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 5, padding: 14, marginBottom: 14 }}>
           <GameIcon name="scroll" size={20} color={C.gold} />

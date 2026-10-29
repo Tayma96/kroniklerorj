@@ -7,6 +7,7 @@ const page = (route: string, titleKey: string, family: DesignFamily, scene: Sahn
 export const SCREEN_DESIGNS: readonly ScreenDesign[] = [
   page("/", "menu.title", "life", "gurbet_yol", "book"),
   page("/yeni-oyun", "new.title", "life", "dogum", "leaf"),
+  page("/sinematik", "sin.baslik", "life", "dogum", "scroll"),
   page("/oyun", "flow.anotherMonth", "life", "gurbet_yol", "hourglass"),
   page("/oyun/karakter", "tab.character", "life", "ev_varlikli", "karakter"),
   page("/oyun/sehir", "scr.sehir", "journey", "cami_avlu", "castle"),

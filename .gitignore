@@ -8,3 +8,6 @@ legacy/frontend/build/
 dist/
 *.apk
 *.aab
+
+# Alt ajanların geçici çalışma kopyaları
+.claude/worktrees/
