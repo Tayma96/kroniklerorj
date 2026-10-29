@@ -131,5 +131,7 @@ const rows: Record<string, string[]> = {
   "d3.savustur": ["Savuştur", "Parry", "Desviar", "Aparar", "صدّ", "Парировать"],
   "d3.fps": ["Çizim %1 FPS · JS %2 FPS", "Render %1 FPS · JS %2 FPS", "Renderizado %1 FPS · JS %2 FPS", "Renderização %1 FPS · JS %2 FPS", "الرسم %1 FPS · JS %2 FPS", "Отрисовка %1 FPS · JS %2 FPS"],
   "d3.loading": ["Model yükleniyor…", "Loading model…", "Cargando modelo…", "Carregando modelo…", "جارٍ تحميل النموذج…", "Загрузка модели…"],
+  "d3.yavas": ["Yavaş çekim ×0,25", "Slow motion ×0.25", "Cámara lenta ×0,25", "Câmera lenta ×0,25", "حركة بطيئة ×0.25", "Замедление ×0,25"],
+  "d3.normal": ["Normal hız", "Normal speed", "Velocidad normal", "Velocidade normal", "السرعة العادية", "Обычная скорость"],
 };
 export const FLOW_METIN = Object.fromEntries((["tr", "en", "es", "pt", "ar", "ru"] as Lang[]).map((lang, i) => [lang, Object.fromEntries(Object.entries(rows).map(([key, values]) => [key, values[i]]))])) as Record<Lang, Record<string, string>>;

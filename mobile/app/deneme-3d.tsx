@@ -25,6 +25,7 @@ export default function Deneme3D() {
   const tutamakRef = useRef<SahneTutamak | null>(null);
   const [aktif, setAktif] = useState<string>(KLIPLER[0]);
   const [fps, setFps] = useState({ ciz: 0, js: 0 });
+  const [yavas, setYavas] = useState(false); // onay denetimi için 0.25× yavaş çekim
   const onHazir = useCallback((h: SahneTutamak | null) => { tutamakRef.current = h; setTutamak(h); }, []);
 
   // "Çizim": Filament çizim döngüsünün gerçek kare hızı; "JS": requestAnimationFrame temposu.
@@ -47,10 +48,11 @@ export default function Deneme3D() {
 
   const geri = () => { hap("tap"); if (router.canGoBack()) router.back(); else router.replace("/"); };
   const oynat = (klip: string) => { hap("tap"); if (tutamak?.oynat(klip)) setAktif(klip); };
+  const hizMetni = t(yavas ? "d3.normal" : "d3.yavas");
 
   return (
     <View style={{ flex: 1, backgroundColor: C.surface }}>
-      <Deneme3DSahne klipler={KLIPLER} arkaPlan={C.surface} onHazir={onHazir} />
+      <Deneme3DSahne klipler={KLIPLER} arkaPlan={C.surface} onHazir={onHazir} yavas={yavas} />
 
       <View pointerEvents="box-none" style={{ position: "absolute", top: 0, left: 0, right: 0, paddingTop: insets.top + 8, paddingHorizontal: L.page }}>
         <View pointerEvents="box-none" style={{ flexDirection: "row", alignItems: "center" }}>
@@ -71,17 +73,24 @@ export default function Deneme3D() {
         </View>
       ) : null}
 
-      <View style={{ position: "absolute", left: 0, right: 0, bottom: 0, flexDirection: "row", gap: 8, paddingHorizontal: L.page, paddingTop: 10, paddingBottom: insets.bottom + 12 }}>
-        {DUGMELER.map((d) => {
-          const mevcut = !!tutamak?.klipler.includes(d.klip), secili = mevcut && aktif === d.klip;
-          return (
-            <Pressable key={d.klip} disabled={!mevcut} onPress={() => oynat(d.klip)} accessibilityLabel={t(d.metin)} accessibilityState={{ disabled: !mevcut, selected: secili }}
-              style={{ flex: 1, minHeight: 56, alignItems: "center", gap: 4, paddingVertical: 8, paddingHorizontal: 4, borderRadius: L.radius, borderWidth: 1, borderColor: secili ? C.gold : C.border, backgroundColor: secili ? C.cardHi : C.card, opacity: mevcut ? 1 : 0.45 }}>
-              <GameIcon name={d.icon} size={20} color={secili ? C.goldBright : C.gold} />
-              <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ color: secili ? C.goldBright : C.parchment, fontFamily: F.display, fontSize: T.label }}>{t(d.metin)}</Text>
-            </Pressable>
-          );
-        })}
+      <View pointerEvents="box-none" style={{ position: "absolute", left: 0, right: 0, bottom: 0, gap: 8, paddingHorizontal: L.page, paddingTop: 10, paddingBottom: insets.bottom + 12 }}>
+        <Pressable onPress={() => { hap("tap"); setYavas((v) => !v); }} accessibilityLabel={hizMetni}
+          style={{ alignSelf: "flex-end", minHeight: L.touch, flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 12, borderRadius: L.radius, borderWidth: 1, borderColor: yavas ? C.gold : C.border, backgroundColor: yavas ? C.cardHi : C.card }}>
+          <GameIcon name="walk" size={18} color={yavas ? C.goldBright : C.gold} />
+          <Text numberOfLines={1} style={{ color: yavas ? C.goldBright : C.parchment, fontFamily: F.display, fontSize: T.label }}>{hizMetni}</Text>
+        </Pressable>
+        <View style={{ flexDirection: "row", gap: 8 }}>
+          {DUGMELER.map((d) => {
+            const mevcut = !!tutamak?.klipler.includes(d.klip), secili = mevcut && aktif === d.klip;
+            return (
+              <Pressable key={d.klip} disabled={!mevcut} onPress={() => oynat(d.klip)} accessibilityLabel={t(d.metin)} accessibilityState={{ disabled: !mevcut, selected: secili }}
+                style={{ flex: 1, minHeight: 56, alignItems: "center", gap: 4, paddingVertical: 8, paddingHorizontal: 4, borderRadius: L.radius, borderWidth: 1, borderColor: secili ? C.gold : C.border, backgroundColor: secili ? C.cardHi : C.card, opacity: mevcut ? 1 : 0.45 }}>
+                <GameIcon name={d.icon} size={20} color={secili ? C.goldBright : C.gold} />
+                <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ color: secili ? C.goldBright : C.parchment, fontFamily: F.display, fontSize: T.label }}>{t(d.metin)}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
       </View>
     </View>
   );

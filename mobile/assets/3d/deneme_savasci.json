@@ -1,0 +1,8 @@
+{
+  "fps": 30,
+  "klipler": {
+    "bekle": { "sure": 2.0, "dongu": true },
+    "saldir": { "sure": 1.2, "temas": 0.55, "agir": false },
+    "savustur": { "sure": 1.0, "temas": 0.35, "agir": false }
+  }
+}
