@@ -131,6 +131,29 @@ Görüşe çevrimiçinde eklenen kalemler (sebep dökümünde görünür):
 | Sözleşme ve ittifak | Biriyle ittifak sözü verdiyse onun düşmanına −15 |
 | Arabuluculuk sonucu | Barış: kırgınlık yarıya iner; şartlı barış: şart yerine gelince sıfırlanır |
 
+### 6.0 Tanıdıklar ve işaretler (oyuncunun elinde)
+
+Karar (Berkay): kimin önemli olduğunu oyun değil oyuncu seçer.
+
+- **Tanıdıklarım listesi:** oyuncu ve NPC profilinde "Tanıdıklarıma ekle" düğmesi var. Listedeki kişi bir
+  işaret alır: **tanıdık · dost · düşman**. Dönüş Kartı ve gerilimler önce bu listedeki kişilerden beslenir.
+  Listede olmayanlardan da önemli olaylar gelir: biri sana saldırırsa ya da teklif yaparsa listeye önerilir.
+- **İşaret ile görüş ayrıdır:**
+  - Senin işaretin, senin niyetin ve takip listendir.
+  - NPC'nin sana bakışı ise yaşadıklarınızdan doğar (§5).
+  - Bir NPC'yi "dost" işaretlemek onu seni sevmeye zorlamaz. Ama dost işaretli NPC'nin derdi ve fırsatı
+    Dönüş Kartı'nda öne çıkar; ona yardım etmek kolaylaşır.
+- **Oyuncular arası:**
+  - **Dostluk karşılıklıdır:** istek gönderilir, kabul edilirse ikiniz de "dost" olursunuz.
+  - **Düşman işareti iki türlüdür:**
+    - **İçinden (gizli):** yalnız sen görürsün. Düşmanca eylemler (§7) için gerekmez; ama gizli yapılan
+      hamle açığa çıkarsa nam kaybı ağırdır.
+    - **Açık husumet:** meydanda ilan edilir; karşı taraf ve yerleşim görür. Düello davetini ve açık
+      rekabeti açar. Açık düşmana yapılan hamlelerin nam bedeli daha hafiftir, çünkü "mertçe"dir. İlan
+      edilen taraf da tetikte olur.
+- **NPC önerisi:** sık etkileştiğin ya da seni etkileyen NPC'ler "listene ekle?" diye önerilir. Liste
+  sınırsızdır; ekranda en yakın 15 kişi öne çıkar.
+
 ### 6.1 Kışkırtma: "düşmanım, bana kızgın NPC'yi ikna edip bana saldırır"
 
 Ahmet (oyuncu) Berkay'ın düşmanıdır. Murat (NPC) Berkay'a −42 bakıyor. Ahmet çarşıda Murat'la buluşur ve
@@ -463,3 +486,68 @@ Kalın olanlar çevrimiçiyle gelir.
 **Ekran:** karakter sayfasındaki meslek sekmesinde ağaç dikey bir şerit olarak görünür. Dallar yan yana durur,
 kilitli düğümün yanında açılış şartı yazar. 3D kuşam karakteri, açılan zırh ve silah düğümleriyle
 görsel olarak değişir.
+
+### 14.4 Her meslek vazgeçilmez (karar, Berkay)
+
+Hedef: herkes hükümdar olmaya koşarsa yerleşim çöker. Bir meslek boş kaldığında eksikliği herkes hisseder.
+Hükümdarın gücü bile zanaatkârların emeğinden gelir.
+
+**Altı mekanizma:**
+1. **Her şey eskir ve tükenir:**
+   - alet, nal, giysi, zırh, ev ve köprü yıpranır;
+   - ekmek bayatlar, et bozulur;
+   - yıpranan her şey yeniden yapılmak ya da onarılmak zorundadır.
+   Bu yüzden talep hiç bitmez.
+2. **Zincirler:** her mesleğin en az iki müşteri mesleği ve en az bir tedarikçisi vardır (aşağıdaki tablo).
+   Bir halka koptuğunda zincirin geri kalanı yavaşlar.
+3. **NPC tabanı var ama zayıf:**
+   - NPC zanaatkâr yalnız çırak ve kalfa kalitesinde çalışır;
+   - ayda sınırlı iş alır, 2-3 kat pahalıdır ve onarım aylar sürer;
+   - usta ve pir işlerini hiç yapamaz.
+   Kimse açlıktan ölmez, kimse kilitlenmez (GDD §1); ama fark çok büyüktür.
+4. **Yerleşim refahı meslek doluluğuna bağlıdır:**
+   - her yerleşimin bir **lonca tablosu** vardır ve hangi mesleklerin dolu, hangilerinin boş olduğu görünür;
+   - boş meslek refahı, savunmayı, nüfus artışını ve vergiyi düşürür. Örnekler:
+     - demirci yoksa saban kırılır, hasat düşer, asker silahsız kalır;
+     - ebe yoksa doğum riski artar;
+     - şifacı yoksa yaralar geç iyileşir ya da öldürür.
+5. **Kıtlık kazanç demektir:**
+   - boş ya da az dolu mesleğin ücreti ve fiyatı yükselir;
+   - o mesleğe başlayana lonca yardımı ve hazır siparişler gelir: "Bu kasabada demirci yok".
+   Oyuncular kendiliğinden boşluklara akar.
+6. **Hükümdar zanaatkâra muhtaçtır:**
+   - beyin ordusu demirci, debbağ, dokumacı ve kervancı ister;
+   - hazinesi vergiden, yani üretimden dolar;
+   - makama aday olmak için bir meslekte en az usta olmak gerekir `[PARAMETRE]`;
+   - makamlar azdır, meslek ise herkese yeter.
+
+**Her mesleğin eşsiz toplumsal gücü** (çevrimiçi etkileşimde yalnız o meslek yapabilir):
+
+| Meslek | Eşsiz rolü |
+|---|---|
+| Demirci | Silah ve zırh: savunma ve suikastte belirleyici; aletsiz hasat yok |
+| Şifacı | Yarayı iyileştirir: düello ve suikast sonrası hayat kurtarır; salgını durdurur |
+| Şifacı (Ebelik dalı) | Doğumu güvenli kılar: hanedanların devamı ona bağlı |
+| Attar | Zehir ve panzehir: suikastin ve korunmanın anahtarı |
+| Kâtip | Sözleşme, vasiyet, mahkeme belgesi: hukuki güvence, kadılık yolu |
+| Hancı | Söylentinin merkezi: haber toplar, yayar, susturur |
+| Ulak | Mektup ve gizli haber: yerleşimler arası iletişim, casusluk |
+| Kervancı | Yerleşimler arası mal ve yolcu; yollar onunla güvenli |
+| Tüccar | Fiyat bilgisi, kredi, uzak mal |
+| Yapı ustası | Ev demektir yerleşimin büyümesi; köprü, sur, han |
+| Çiftçi, Çoban, Değirmenci, Fırıncı, Balıkçı, Avcı | Yerleşimin karnı: kıtlıkta kaderi belirler |
+| Dokumacı, Debbağ | Giysi, çadır, koşum, zırh astarı; kışın ve seferde hayati |
+| Marangoz | Araba, kayık, ev ahşabı; yol ve tarım onunla döner |
+| Kuyumcu | Mühür ve sarraflık: belgeyi mühürler, akçeyi tartar; Kül Yemini mührünü o okur |
+| Müzisyen | Destan yazar: hanedanların namını kalıcı kılar, meclisi coşturur |
+| Asker | Asayiş ve sefer; subaşının kolu |
+
+**Zincir örnekleri:**
+- buğday: çiftçi → değirmenci → fırıncı → herkes;
+- yün ve deri: çoban → dokumacı / debbağ → giysi, zırh astarı, koşum;
+- demir: tüccar / kervancı (ithal) → demirci → çiftçi (saban), asker (kılıç), marangoz (çivi);
+- ev: marangoz + yapı ustası + demirci → yeni hane → yerleşim büyür.
+
+**Kabul ölçütü (simülasyon):** bir yerleşimde bir meslekte hiç oyuncu yokken 2 oyun yılı simüle edilir. Refah,
+fiyat ve savunma ölçülebilir biçimde düşmeli, o mesleğe giren oyuncunun kazancı ortalamanın üstüne çıkmalı.
+Hiçbir meslek bu testi "fark edilmedi" sonucuyla geçmemeli.
