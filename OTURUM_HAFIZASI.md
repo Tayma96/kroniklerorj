@@ -13,7 +13,6 @@
 
 ## 1. tur
 - tsc kırığı düzeldi; `smoke:full` 300 hayat temiz (`bd471c8`). Tema, `ornament-ui` bileşenleri, NPC kendi portresiyle sahne, ayrı mekân resimleri.
-- "Sofra" eklendi (13+ yaşta yemek). Tarayıcı botu 400 ay hatasız oynadı.
 
 ## 3. tur (nihai ana sayfa — kullanıcı kararı)
 - Ana sayfa = mockup ekran 1, ×0.82, `lib/home-mockup-ui.tsx` (süs/renk `lib/mk-sus.tsx`).
