@@ -1,0 +1,46 @@
+// Çevrimiçi dünya "Yakında" ekranı metinleri: [tr, en, es, pt, ar, ru]. AR/RU nötr anlatım.
+export const rows: Record<string, string[]> = {
+  "gir.yakinda": ["YAKINDA", "COMING SOON", "PRÓXIMAMENTE", "EM BREVE", "قريبًا", "СКОРО"],
+  "onl.baslik": ["Çevrimiçi Dünya Hazırlanıyor", "The Online World Is Coming", "El mundo en línea está en camino", "O mundo online está a caminho", "العالم الإلكتروني قيد الإعداد", "Онлайн-мир готовится"],
+  "onl.metin": [
+    "Gerçek oyuncularla aynı kasabada yaşayacaksın: komşun, ustan, rakibin ya da beyin gerçek insanlar olacak.",
+    "You will live in the same town as real players: your neighbour, your master, your rival or your bey will be real people.",
+    "Vivirás en la misma villa que jugadores reales: tu vecino, tu maestro, tu rival o tu bey serán personas de verdad.",
+    "Vais viver na mesma vila que jogadores reais: o vizinho, o mestre, o rival ou o bei serão pessoas de verdade.",
+    "ستعيش الحياة في البلدة نفسها مع لاعبين حقيقيين: الجار والمعلّم والخصم والبيك سيكونون بشرًا حقيقيين.",
+    "Жизнь пойдёт в одном городке с настоящими игроками: соседом, мастером, соперником или беем будут живые люди.",
+  ],
+  "onl.madde1": [
+    "Küçük kasaba dünyaları — herkes birbirini tanır",
+    "Small town worlds — everyone knows everyone",
+    "Mundos de pequeñas villas: todos se conocen",
+    "Mundos de pequenas vilas — todos se conhecem",
+    "عوالم بلدات صغيرة — الجميع يعرف بعضهم",
+    "Маленькие городские миры — все знают друг друга",
+  ],
+  "onl.madde2": [
+    "Google hesabınla güvenli giriş",
+    "Secure sign-in with your Google account",
+    "Inicio de sesión seguro con tu cuenta de Google",
+    "Início de sessão seguro com a conta Google",
+    "تسجيل دخول آمن بحساب Google",
+    "Безопасный вход через аккаунт Google",
+  ],
+  "onl.madde3": [
+    "Sen yokken dünya yaşar; ama hayatını kaçırmazsın",
+    "The world lives on while you're away, yet you never miss your life",
+    "El mundo sigue vivo cuando no estás, pero no te pierdes tu vida",
+    "O mundo continua quando não estás, mas não perdes a tua vida",
+    "يستمر العالم في غيابك، لكن حياتك لا تفوتك",
+    "Мир живёт и без тебя, но своя жизнь не ускользнёт",
+  ],
+  "onl.simdilik": [
+    "Şimdilik tek oyunculu hikâyende hanedanını kur.",
+    "For now, build your dynasty in your single-player story.",
+    "Por ahora, levanta tu dinastía en tu historia de un jugador.",
+    "Por agora, ergue a tua dinastia na história a solo.",
+    "حاليًا، ابنِ سلالتك في حكايتك الفردية.",
+    "А пока создавай свою династию в одиночной истории.",
+  ],
+  "onl.geri": ["Geri Dön", "Go Back", "Volver", "Voltar", "رجوع", "Назад"],
+};

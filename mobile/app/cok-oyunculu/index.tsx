@@ -10,6 +10,8 @@ import { C, F } from "../../lib/theme";
 import { GameIcon } from "../../lib/icons";
 import { hap } from "../../lib/haptics";
 import { BackLabel, PageHeader, ScreenFresk } from "../../lib/ui";
+import { ONLINE_ACIK } from "../../lib/mp/config";
+import { OnlineYakinda } from "../../lib/online-yakinda";
 
 // Kısa diyar kodu üret (paylaşılabilir). Kimlik amaçlı; deterministik olması gerekmez.
 function newRealmCode(): string {
@@ -18,7 +20,7 @@ function newRealmCode(): string {
   return s;
 }
 
-export default function MpLobby() {
+function MpLobbyEkran() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { t } = useI18n();
@@ -131,4 +133,9 @@ export default function MpLobby() {
       </Modal>
     </ScreenFresk>
   );
+}
+
+// Çevrimiçi mod kapalıyken ekran hiç yüklenmez; sunucuya bağlanılmaz.
+export default function MpLobby() {
+  return ONLINE_ACIK ? <MpLobbyEkran /> : <OnlineYakinda />;
 }

@@ -9,12 +9,14 @@ import { BEYLIKS } from "../../lib/game";
 import { C, F } from "../../lib/theme";
 import { hap } from "../../lib/haptics";
 import { BackLabel, ScreenFresk } from "../../lib/ui";
+import { ONLINE_ACIK } from "../../lib/mp/config";
+import { OnlineYakinda } from "../../lib/online-yakinda";
 
 const pf = (s: string, ...a: (string | number)[]) => a.reduce<string>((acc, v, i) => acc.replace("%" + (i + 1), String(v)), s);
 const toneOf = (id: string) => BEYLIKS.find((b) => b.id === id)?.tone || C.gold;
 
 // Paylaşımlı siyasi harita: 5 beylik renk-kodlu, kim bey, nüfuz/vergi, senin durumun.
-export default function Harita() {
+function HaritaEkran() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { t } = useI18n();
@@ -90,4 +92,9 @@ export default function Harita() {
       </ScrollView>
     </ScreenFresk>
   );
+}
+
+// Çevrimiçi mod kapalıyken ekran hiç yüklenmez; sunucuya bağlanılmaz.
+export default function Harita() {
+  return ONLINE_ACIK ? <HaritaEkran /> : <OnlineYakinda />;
 }

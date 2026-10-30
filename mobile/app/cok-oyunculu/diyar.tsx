@@ -14,11 +14,13 @@ import { C, F } from "../../lib/theme";
 import { GameIcon } from "../../lib/icons";
 import { hap } from "../../lib/haptics";
 import { BackLabel, ScreenFresk } from "../../lib/ui";
+import { ONLINE_ACIK } from "../../lib/mp/config";
+import { OnlineYakinda } from "../../lib/online-yakinda";
 
 const REALM_BASE_YEAR = 1247;
 const pf = (s: string, ...a: (string | number)[]) => a.reduce<string>((acc, v, i) => acc.replace("%" + (i + 1), String(v)), s);
 
-export default function Diyar() {
+function DiyarEkran() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { t } = useI18n();
@@ -181,3 +183,7 @@ export default function Diyar() {
   );
 }
 
+// Çevrimiçi mod kapalıyken ekran hiç yüklenmez; sunucuya bağlanılmaz.
+export default function Diyar() {
+  return ONLINE_ACIK ? <DiyarEkran /> : <OnlineYakinda />;
+}

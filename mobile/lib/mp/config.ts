@@ -4,6 +4,10 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // Dağıtımdan sonra buraya Worker adresini yaz (örn "wss://kronikler-mp.<hesap>.workers.dev").
 // Boş bırakılırsa istemci "sunucu ayarlanmadı" der; uygulama-içi ayardan da girilebilir.
+// Yeni çevrimiçi mod hazır olana dek kapalı (KRONIKLER_ONLINE_GDD.md D-13, 30 Ekim 2026):
+// çok oyunculu rotalar "Yakında" ekranını gösterir, istemci eski sunucuya bağlanmaz.
+export const ONLINE_ACIK = false;
+
 export const DEFAULT_SERVER_URL = "wss://kronikler-mp.tayma.workers.dev";
 
 const URL_KEY = "kronikler_mp_server_url";

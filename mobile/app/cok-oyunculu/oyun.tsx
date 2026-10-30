@@ -15,6 +15,8 @@ import { C, F } from "../../lib/theme";
 import { GameIcon } from "../../lib/icons";
 import { hap } from "../../lib/haptics";
 import { BackLabel, ScreenFresk } from "../../lib/ui";
+import { ONLINE_ACIK } from "../../lib/mp/config";
+import { OnlineYakinda } from "../../lib/online-yakinda";
 
 const pf = (s: string, ...a: (string | number)[]) => a.reduce<string>((acc, v, i) => acc.replace("%" + (i + 1), String(v)), s);
 
@@ -31,7 +33,7 @@ const LIFE_SCREENS: { path: string; icon: string; key: string }[] = [
   { path: "/oyun/orgutler", icon: "hood", key: "scr.orgutler" },
 ];
 
-export default function MpOyun() {
+function MpOyunEkran() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { t } = useI18n();
@@ -530,3 +532,8 @@ const miniBtnGold = { paddingVertical: 7, paddingHorizontal: 12, borderRadius: 5
 const miniTxtGold = { fontFamily: F.display, fontSize: 13, color: C.gold, letterSpacing: 0.5 };
 const miniBtnBlood = { flexDirection: "row" as const, alignItems: "center" as const, gap: 5, paddingVertical: 7, paddingHorizontal: 12, borderRadius: 5, borderWidth: 1, borderColor: "rgba(200,64,64,0.5)", backgroundColor: "rgba(200,64,64,0.08)" };
 const miniTxtBlood = { fontFamily: F.display, fontSize: 13, color: C.blood, letterSpacing: 0.5 };
+
+// Çevrimiçi mod kapalıyken ekran hiç yüklenmez; sunucuya bağlanılmaz.
+export default function MpOyun() {
+  return ONLINE_ACIK ? <MpOyunEkran /> : <OnlineYakinda />;
+}

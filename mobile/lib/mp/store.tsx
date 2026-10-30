@@ -1,7 +1,7 @@
 // Çok oyuncu durum deposu — bağlantı yaşam döngüsü + diyar anlık görüntüsü + sohbet.
 import React, { createContext, useContext, useRef, useState, useCallback, useEffect } from "react";
 import { MpClient, NetStatus } from "./net";
-import { getServerUrl, getGuestId } from "./config";
+import { getServerUrl, getGuestId, ONLINE_ACIK } from "./config";
 import { ClientMsg, ServerMsg, RealmSnapshot, PlayerPublic, SharedIntent, TickResult, TickEvent, ChatScope } from "./protocol";
 
 export interface ChatLine { from: string; fromName: string; text: string; at: number; scope?: ChatScope; to?: string }
@@ -81,6 +81,7 @@ export function MpProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const joinRealm = useCallback(async (realmId: string, realmName: string, player: PlayerPublic) => {
+    if (!ONLINE_ACIK) { setError("OFFLINE: çevrimiçi mod henüz kapalı"); setStatus("error"); return; }
     setError(null);
     const url = await getServerUrl();
     if (!url) { setError("NO_SERVER: sunucu adresi ayarlanmadı"); setStatus("error"); return; }

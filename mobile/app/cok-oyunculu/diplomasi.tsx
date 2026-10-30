@@ -13,6 +13,8 @@ import { C, F } from "../../lib/theme";
 import { GameIcon } from "../../lib/icons";
 import { hap } from "../../lib/haptics";
 import { BackLabel, ScreenFresk } from "../../lib/ui";
+import { ONLINE_ACIK } from "../../lib/mp/config";
+import { OnlineYakinda } from "../../lib/online-yakinda";
 
 const pf = (s: string, ...a: (string | number)[]) => a.reduce<string>((acc, v, i) => acc.replace("%" + (i + 1), String(v)), s);
 
@@ -22,7 +24,7 @@ function bondOf(bonds: Bond[], x: string, y: string): Bond | undefined {
   return bonds.find((d) => d.a === a && d.b === b);
 }
 
-export default function Diplomasi() {
+function DiplomasiEkran() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { t } = useI18n();
@@ -278,3 +280,8 @@ const cap = { fontFamily: F.display, fontSize: 13, letterSpacing: 1.5, color: C.
 const rowWrap = { flexDirection: "row" as const, flexWrap: "wrap" as const, gap: 6 };
 const mb = { paddingVertical: 7, paddingHorizontal: 11, borderRadius: 5, borderWidth: 1 };
 const mt = { fontFamily: F.display, fontSize: 13, letterSpacing: 0.3 };
+
+// Çevrimiçi mod kapalıyken ekran hiç yüklenmez; sunucuya bağlanılmaz.
+export default function Diplomasi() {
+  return ONLINE_ACIK ? <DiplomasiEkran /> : <OnlineYakinda />;
+}
