@@ -253,3 +253,81 @@ Her faz ayrı bir uygulama planı ister (yazılacak), kendi oynanabilir testi va
 4. Suikast başarısı: "zor" ne kadar zor olsun? Önerim: iyi hazırlanmış girişimde bile en çok %25.
 5. Tek oyunculuyla içerik paylaşımı: meslek, eşya ve olay metinleri paylaşılsın mı? Kimlik, kayıt ve motor
    ayrı kalır. Önerim: evet.
+
+## 13. Kurallar ve korumalar (kurucu denetiminden sonra) `[ÖNERİ]`
+
+Bir uygulayıcının tahmin etmek zorunda kalacağı 12 nokta, aşağıdaki kurallarla kapatılır. Dönem hukukuna
+dayananlar ayrıca belirtilmiştir.
+
+1. **Çevrimdışıyken ölüm.**
+   - Suikastin ilk işaretiyle sonucu arasında en az 48 gerçek saat geçer.
+   - Hedef bu sürede oyuna girmediyse, ev halkı "tetikte" olur ve başarı şansı yarıya iner.
+   - 7 gün oyuna girmeyen karakter "inziva"ya çekilir ve 5-7. basamaklara kapanır. Ancak hazırlığı daha
+     önce başlamış bir girişim inzivada da sürer; bu sayede tehdit görünce çıkıp saklanma yolu kapanır.
+   - Bildirim isteğe bağlıdır. İşaret her zaman Mevsim Kartı'na düşer.
+2. **Ölümün bedeli ve ölümden kâr.**
+   - Vâris malı %10 veraset vergisiyle alır; vergi kasaba hazinesine gider.
+   - Mal, dönem miras paylarıyla evlatlar arasında bölünür. Bu, büyük servetleri kendiliğinden dağıtır.
+   - Beceriler geçmez. NPC'lerin vârise bakışı, ebeveyne bakışlarının %30'udur.
+   - Kendini öldürmek mümkün değildir.
+   - Ölümüne düello iki tarafın da 20 yaşını geçmiş olmasını ve yılda en çok bir kez yapılmasını gerektirir.
+   - **Katil mirasçı olamaz** (dönem hukuku): miras için aile içi cinayet miras hakkını düşürür.
+3. **Kanıt ve kadı.**
+   - Her kanıtın bir güveni vardır.
+   - Mahkûmiyet için toplam güven eşiği ve en az iki bağımsız kaynak gerekir.
+   - İdam için en yüksek eşik aranır: itiraf ya da **iki bağımsız şahit** (dönem hukuku). Altında kalan
+     davalarda ceza sürgün ya da diyettir.
+   - Yalancı şahitlik yakalanırsa, şahit davadaki cezayı kendisi çeker.
+   - Vekil NPC sorguda, işverenine bağlılığına göre itiraf edebilir.
+   - Her davada bir kez bey divanına itiraz edilebilir (Faz 8).
+4. **Vâris boşluğu.**
+   - Vâris 16 yaşından küçükse, ailede yetişkin bir akraba (kardeş, yeğen) varsa hanedanı o sürdürür. Çocuk
+     vâris, vasinin korumasında büyür.
+   - Yetişkin akraba yoksa oyuncu çocuğu "çocukluk uğraşları"yla oynar, mülkü vasi yönetir.
+5. **Taciz sınırı.**
+   - İki kişi arasında mevsim başına en çok 2 düşmanca eylem yapılabilir. Aynı türün tekrarında getiri azalır.
+   - Arabuluculukla yapılan **barış yemini** 4 mevsim korur. Yemini bozanın namı ağır düşer.
+   - Sohbet için şikâyet ve engelleme vardır. Tekrarlanan davalarda kadı **men** kararı verebilir.
+6. **Terk edilen karakter.**
+   - 30 gün oyuna girmeyen karakter aktif oyuncu sayılmaz; ittifak ve "dostunun dostu" hesabına girmez.
+   - 180 gün sonra mülkü vakıf emanetine geçer.
+   - Karakter doğal ömrünü yaşayıp ölebilir. Oyuncu döndüğünde vâris ya da kendisiyle devam eder.
+7. **Çoklu hesap.**
+   - Bir Google hesabıyla aynı anda tek etkin hanedan kurulabilir.
+   - Oyuncular arası hediye ve borç mevsim başına tavanlıdır, tekrarında getiri azalır.
+   - "Dostunun dostu" kalemi yalnız en az 4 mevsimlik bağları sayar; ±10 tavanı vardır.
+   - Aynı cihazdan açılan hesaplar birbirini sayamaz.
+8. **Eylemlerin çözümü.**
+   - Bir kasabanın bütün eylemlerini tek bir sunucu nesnesi sırayla işler. Aynı NPC için yarışan iki eylemi
+     geliş sırası belirler. Oyuncu–NPC eylemi anında çözülür.
+   - Mevsim dönümünde yalnız gündem, yaşlanma ve ekonomi toplu işlenir.
+9. **Başkasının ilişkisini görmek.**
+   - Bir NPC'nin üçüncü bir kişiye bakışını yalnız şu durumlarda görürsün:
+     - o NPC'ye yakınsan (+30 üstü);
+     - bir söylenti duyduysan;
+     - casus tuttuysan.
+   - Bunun dışında kartta "bilinmiyor" ya da kaba bir aralık ("kızgın görünüyor") yazar. Gerçek ile bilinen
+     ayrı kalır.
+10. **NPC kaynaklı zarar.**
+    - Çevrimdışı oyuncuya NPC'den gelen zarar 1-2. basamakla (laf, boykot) sınırlıdır ve mevsim başına
+      tavanlıdır.
+    - NPC'nin mülke zarar vermesi önce görünür bir tehdit ister, ardından en az bir mevsim bekler.
+    - Bu bir yokluk cezası değildir: aynı kurallar çevrimiçi oyuncuya da işler.
+11. **Ekonomi çevrimi.**
+    - Para üretimle girer: NPC talebi, ücretler, hasat.
+    - Vergi, bakım, tüketim ve veraset vergisiyle çıkar. Vergiler kasaba hazinesinden kamu işlerine harcanır.
+    - Yeni gelen oyuncu seçtiği ocağın ailesiyle (NPC anne-baba-kardeş) ve ocağa göre bir başlangıç kesesiyle
+      gelir. Vakıf yardımı da vardır.
+    - Ücret servete değil beceriye bağlıdır. Böylece geç gelen yetişebilir.
+12. **Kan davasının sonu.**
+    - Kan davası şu yollarla söner:
+      - diyet kabulü;
+      - helallik;
+      - 8 mevsim olaysız geçmesi.
+    - 16 yaş altı hiçbir zaman hedef olamaz.
+    - Kan davası içindeki ölüm de soruşturulur.
+
+**Berkay'ın onayına sunulanlar:**
+- 2. maddedeki dönem miras payları;
+- 4. maddedeki vâris boşluğu varsayılanı;
+- 5. maddedeki taciz sınırının sertliği.
