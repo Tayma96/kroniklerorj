@@ -11,10 +11,19 @@ class_name = "HesapDO"
 name = "DUNYA"
 class_name = "DunyaDO"
 
+# Faz 2: yerleşim başına bir örnek (idFromName("yerlesim:<id>")); ay dönümü DO alarmıyla.
+[[durable_objects.bindings]]
+name = "YERLESIM"
+class_name = "YerlesimDO"
+
 # SQLite tabanlı Durable Object'ler (ücretsiz planda kullanılabilen tür).
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["HesapDO", "DunyaDO"]
+
+[[migrations]]
+tag = "v2"
+new_sqlite_classes = ["YerlesimDO"]
 
 [vars]
 # Google OAuth istemci kimlikleri (Android/iOS/Web), virgülle ayrılmış. Gizli değildir.

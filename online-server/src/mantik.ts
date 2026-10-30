@@ -13,7 +13,9 @@ import {
   type DunyaOzeti,
   type KayitIstegi,
   type Profil,
+  type SakinKaydi,
   type Sonuc,
+  type YerlesimIleti,
 } from "./tipler.ts";
 
 /** Her oyuncu 12 yaşında başlar (yıl). */
@@ -142,12 +144,15 @@ export function profilGirdisiCoz(govde: unknown): Sonuc<ProfilGirdisi> {
 /**
  * Profil oluşturma (hesap başına bir profil = bir etkin hanedan). Aynı `istekNo` aynı sonucu döndürür;
  * dünya kaydı hesap kimliğine göre tekrar güvenlidir, böylece yarıda kalan bir istek de iki kez sayılmaz.
+ * `sakinKayit` verilirse (Faz 2) oyuncu yerleşimine sakin olarak yazılır; o da tekrar güvenlidir ve
+ * başarısızsa profil saklanmaz (aynı istekNo ile yeniden denenir).
  */
 export async function profilOlustur(
   depo: Depo,
   hesapId: string,
   govde: unknown,
   dunyaKayit: (istek: KayitIstegi) => Promise<Sonuc<Profil>>,
+  sakinKayit?: (profil: Profil) => Promise<Sonuc<unknown>>,
 ): Promise<Sonuc<Profil>> {
   const istekNo = istekNoCoz(govde);
   if (!istekNo.ok) return istekNo;
@@ -157,8 +162,37 @@ export async function profilOlustur(
   const girdi = profilGirdisiCoz(govde);
   if (!girdi.ok) return girdi;
   const sonuc = await dunyaKayit({ hesapId, ...girdi.deger });
+  if (sonuc.ok && sakinKayit) {
+    const sakin = await sakinKayit(sonuc.deger);
+    if (!sakin.ok) return sakin;
+  }
   if (sonuc.ok) await depo.koy({ [PROFIL]: sonuc.deger, [ISTEK + istekNo.deger]: sonuc });
   return sonuc;
+}
+
+export function sakinKaydi(p: Profil): SakinKaydi {
+  return { hesapId: p.hesapId, ad: p.ad, cinsiyet: p.cinsiyet, dogumAyi: p.dogumAyi };
+}
+
+/** Yerleşim iletisinin yerleşim işaretçisi olmadan hali (HesapDO profilden tamamlar). */
+export type YerlesimIstegi = YerlesimIleti extends infer I ? (I extends { yerlesim: string } ? Omit<I, "yerlesim"> : never) : never;
+
+/**
+ * İletiyi oyuncunun yerleşimine iletir. Faz 1'de oluşmuş (sakin kaydı olmayan) profil ilk çağrıda sakin
+ * olarak yazılır ve istek bir kez yeniden denenir.
+ */
+export async function yerlesimeIlet(
+  depo: Depo,
+  istek: YerlesimIstegi,
+  cagir: (ileti: YerlesimIleti) => Promise<Sonuc<unknown>>,
+): Promise<Sonuc<unknown>> {
+  const profil = await depo.al<Profil>(PROFIL);
+  if (!profil) return hata("profil_yok");
+  const ileti = { ...istek, yerlesim: profil.yerlesim } as YerlesimIleti;
+  const sonuc = await cagir(ileti);
+  if (sonuc.ok || sonuc.hata !== "sakin_yok") return sonuc;
+  const kayit = await cagir({ islem: "sakinEkle", yerlesim: profil.yerlesim, sakin: sakinKaydi(profil) });
+  return kayit.ok ? cagir(ileti) : kayit;
 }
 
 // ---------------------------------------------------------------- dünya tarafı (DunyaDO)

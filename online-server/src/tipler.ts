@@ -76,6 +76,19 @@ export const HATA_DURUMU = {
   davet_gecersiz: 400,
   davet_yok: 404,
   istekno_gecersiz: 400,
+  sakin_yok: 404,
+  kisi_yok: 404,
+  eylem_gecersiz: 400,
+  isaret_gecersiz: 400,
+  imlec_gecersiz: 400,
+  yas_kapisi: 403,
+  ogrenme_kapali: 403,
+  hedef_uygun_degil: 409,
+  takat_yok: 409,
+  para_yok: 409,
+  zaten_cirak: 409,
+  karar_verildi: 409,
+  puan_yok: 409,
   yapilandirma_eksik: 500,
   sunucu_hatasi: 500,
 } as const satisfies Record<string, number>;
@@ -97,6 +110,8 @@ export function hata(kod: HataKodu): Basarisiz {
 export interface Env {
   HESAP: DurableObjectNamespace;
   DUNYA: DurableObjectNamespace;
+  /** Yerleşim başına bir YerlesimDO (idFromName("yerlesim:<id>")). */
+  YERLESIM: DurableObjectNamespace;
   /** Virgülle ayrılmış Google OAuth istemci kimlikleri ([vars]). */
   GOOGLE_CLIENT_ID?: string;
   /** Worker sırrı; en az 32 karakter. */
@@ -118,7 +133,29 @@ export type HesapIleti =
   | { islem: "profil"; hesapId: string }
   | { islem: "profilOlustur"; hesapId: string; govde: unknown }
   | { islem: "davetOlustur"; hesapId: string }
-  | { islem: "davetCoz"; hesapId: string; kod: string };
+  | { islem: "davetCoz"; hesapId: string; kod: string }
+  | { islem: "yerlesim"; hesapId: string; dil?: string | null }
+  | { islem: "olaylar"; hesapId: string; imlec?: string | null; dil?: string | null }
+  | { islem: "kisi"; hesapId: string; kisi: string; dil?: string | null }
+  | { islem: "eylem"; hesapId: string; govde: unknown }
+  | { islem: "tanidik"; hesapId: string; govde: unknown };
+
+/** Yerleşime sakin kaydı (profil oluşunca HesapDO gönderir; tekrar güvenli). */
+export interface SakinKaydi {
+  hesapId: string;
+  ad: string;
+  cinsiyet: Cinsiyet;
+  dogumAyi: number;
+}
+
+/** HesapDO → YerlesimDO. `yerlesim` profildeki işaretçidir (DO adını bilmez). */
+export type YerlesimIleti =
+  | { islem: "sakinEkle"; yerlesim: string; sakin: SakinKaydi }
+  | { islem: "durum"; yerlesim: string; hesapId: string; dil?: string | null }
+  | { islem: "olaylar"; yerlesim: string; hesapId: string; imlec?: string | null; dil?: string | null }
+  | { islem: "kisi"; yerlesim: string; hesapId: string; kisi: string; dil?: string | null }
+  | { islem: "eylem"; yerlesim: string; hesapId: string; govde: unknown }
+  | { islem: "tanidik"; yerlesim: string; hesapId: string; govde: unknown };
 
 export type DunyaIleti =
   | { islem: "ozet" }

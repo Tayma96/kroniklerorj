@@ -1,6 +1,6 @@
 // Worker ile Durable Object'ler arasındaki iç çağrılar ve JSON yanıt yardımcıları.
 
-import { hata, type DunyaIleti, type Env, type HesapIleti, type Sonuc } from "./tipler.ts";
+import { hata, type DunyaIleti, type Env, type HesapIleti, type Sonuc, type YerlesimIleti } from "./tipler.ts";
 
 /** Tek dünya örneğinin adı. */
 export const DUNYA_ADI = "dunya";
@@ -21,7 +21,7 @@ export async function iletiOku<T>(istek: Request): Promise<T | undefined> {
   }
 }
 
-async function icCagri<T>(stub: DurableObjectStub, ileti: HesapIleti | DunyaIleti): Promise<Sonuc<T>> {
+async function icCagri<T>(stub: DurableObjectStub, ileti: HesapIleti | DunyaIleti | YerlesimIleti): Promise<Sonuc<T>> {
   const yanit = await stub.fetch("https://ic/", {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -32,6 +32,11 @@ async function icCagri<T>(stub: DurableObjectStub, ileti: HesapIleti | DunyaIlet
 
 export function dunyaCagir<T>(env: Env, ileti: DunyaIleti): Promise<Sonuc<T>> {
   return icCagri<T>(env.DUNYA.get(env.DUNYA.idFromName(DUNYA_ADI)), ileti);
+}
+
+/** Yerleşim DO'su: yerleşim başına bir örnek. */
+export function yerlesimCagir<T>(env: Env, ileti: YerlesimIleti): Promise<Sonuc<T>> {
+  return icCagri<T>(env.YERLESIM.get(env.YERLESIM.idFromName(`yerlesim:${ileti.yerlesim}`)), ileti);
 }
 
 /** Google `sub`'ından hesap kimliği: HesapDO'nun kimliği (opak, `sub`'ı göstermez). */

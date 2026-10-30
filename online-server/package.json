@@ -2,7 +2,7 @@
   "name": "kronikler-online",
   "private": true,
   "type": "module",
-  "description": "Kronikler Online sunucusu: Cloudflare Worker + Durable Object (Faz 1: kimlik ve varış)",
+  "description": "Kronikler Online sunucusu: Cloudflare Worker + Durable Object (Faz 1: kimlik ve varış; Faz 2: yaşayan yerleşim)",
   "scripts": {
     "typecheck": "../mobile/node_modules/.bin/tsc --noEmit -p .",
     "test": "node --test \"test/*.test.ts\"",

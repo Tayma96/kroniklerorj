@@ -1,7 +1,7 @@
 // Uçtan uca: gerçek Worker yönlendiricisi + gerçek DO sınıfları, bellekte sahte depolama ve sahte JWKS ile.
 import test from "node:test";
 import assert from "node:assert/strict";
-import isleyici, { DunyaDO, HesapDO } from "../src/index.ts";
+import isleyici, { DunyaDO, HesapDO, YerlesimDO } from "../src/index.ts";
 import type { Env } from "../src/tipler.ts";
 import { googleYuku, ISTEMCI, jwtImzala, rsaAnahtari, sahteAdAlani, sahteJwks } from "./yardimci.ts";
 
@@ -9,6 +9,7 @@ function ortam(ek: Partial<Env> = {}): Env {
   const env = { GOOGLE_CLIENT_ID: `web-istemci,${ISTEMCI}`, OTURUM_ANAHTARI: "o".repeat(48), ...ek } as Env;
   env.HESAP = sahteAdAlani((ctx) => new HesapDO(ctx, env));
   env.DUNYA = sahteAdAlani((ctx) => new DunyaDO(ctx, env));
+  env.YERLESIM = sahteAdAlani((ctx) => new YerlesimDO(ctx, env));
   return env;
 }
 

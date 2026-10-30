@@ -5,6 +5,11 @@
 //   POST /v1/profil {ad, cinsiyet, yerlesim, davet?, istekNo} → profil (oturum gerekir)
 //   POST /v1/davet                       → {kod}                      (oturum gerekir)
 //   GET  /v1/davet/:kod                  → {kod, yerlesim, beylik, davetEden} (oturum gerekir)
+//   GET  /v1/yerlesim?dil=               → saat, yerleşim, karakterim, harita, Dönüş Kartı, imleç (Faz 2)
+//   GET  /v1/olaylar?imlec=&dil=         → imleçten sonraki görünür olaylar (sayfalı)
+//   GET  /v1/kisi/:id?dil=               → profil + bana bakışın dökümü + eylemler (§13.9 görünürlük)
+//   POST /v1/eylem {tur, hedef?, secim?, ozellik?, istekNo, dil?} → şans, zar, sonuç, olay, takat
+//   POST /v1/tanidik {hedef, isaret, dil?}  → tanıdıklar
 // Hata gövdesi {hata: kod}; metin istemcide çevrilir. Hız sınırı hesap başına HesapDO'da.
 
 import { GoogleDogrulayici, GoogleHatasi, istemciKimlikleri } from "./google.ts";
@@ -22,10 +27,12 @@ import {
 
 export { DunyaDO } from "./dunya-do.ts";
 export { HesapDO } from "./hesap-do.ts";
+export { YerlesimDO } from "./yerlesim-do.ts";
 
 const AZAMI_GOVDE = 16 * 1024;
 const OTURUM_ANAHTARI_EN_KISA = 32;
 const DAVET_YOLU = /^\/v1\/davet\/([^/]+)$/;
+const KISI_YOLU = /^\/v1\/kisi\/([^/]+)$/;
 
 /** Örnek yaşadıkça JWKS önbelleğini tutar. `fetch` çağrı anında çözülür (testte değiştirilebilir). */
 const google = new GoogleDogrulayici({ fetch: (url) => fetch(url) });
@@ -108,9 +115,19 @@ async function giris(istek: Request, env: Env): Promise<Response> {
   return jsonYanit({ oturum, profilVar, ...(!profilVar && kimlik.ad ? { adOnerisi: kimlik.ad } : {}) });
 }
 
+/** Gövdeli POST iletisi. */
+function govdeli(istek: Request, env: Env, islem: "eylem" | "tanidik"): Promise<Response> {
+  return hesaba(istek, env, async (hesapId) => {
+    const govde = await govdeOku(istek);
+    return govde.ok ? basarili({ islem, hesapId, govde: govde.deger }) : govde;
+  });
+}
+
 async function yonlendir(istek: Request, env: Env): Promise<Response> {
-  const yol = new URL(istek.url).pathname;
+  const url = new URL(istek.url);
+  const yol = url.pathname;
   const yontem = istek.method;
+  const dil = url.searchParams.get("dil");
   switch (yol) {
     case "/v1/giris":
       return yontem === "POST" ? giris(istek, env) : hataYaniti("yontem_yok");
@@ -129,6 +146,22 @@ async function yonlendir(istek: Request, env: Env): Promise<Response> {
       return yontem === "POST"
         ? hesaba(istek, env, (hesapId) => basarili({ islem: "davetOlustur", hesapId }))
         : hataYaniti("yontem_yok");
+    case "/v1/yerlesim":
+      return yontem === "GET" ? hesaba(istek, env, (hesapId) => basarili({ islem: "yerlesim", hesapId, dil })) : hataYaniti("yontem_yok");
+    case "/v1/olaylar":
+      return yontem === "GET"
+        ? hesaba(istek, env, (hesapId) => basarili({ islem: "olaylar", hesapId, imlec: url.searchParams.get("imlec"), dil }))
+        : hataYaniti("yontem_yok");
+    case "/v1/eylem":
+      return yontem === "POST" ? govdeli(istek, env, "eylem") : hataYaniti("yontem_yok");
+    case "/v1/tanidik":
+      return yontem === "POST" ? govdeli(istek, env, "tanidik") : hataYaniti("yontem_yok");
+  }
+  const kisi = KISI_YOLU.exec(yol);
+  if (kisi?.[1]) {
+    if (yontem !== "GET") return hataYaniti("yontem_yok");
+    const ham = kisi[1];
+    return hesaba(istek, env, (hesapId) => basarili({ islem: "kisi", hesapId, kisi: ham, dil }));
   }
   const davet = DAVET_YOLU.exec(yol);
   if (davet?.[1]) {

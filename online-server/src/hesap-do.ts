@@ -1,9 +1,10 @@
-// HesapDO: Google `sub` başına bir örnek. Hesap, profil, istekNo defteri (tekrar güvenliği) ve hız sınırı.
+// HesapDO: Google `sub` başına bir örnek. Hesap, profil, yerleşim işaretçisi, istekNo defteri (tekrar güvenliği)
+// ve hız sınırı. Yerleşim uçları buradan oyuncunun YerlesimDO'suna iletilir (hız sınırı burada uygulanır).
 // İnce sarmalayıcıdır; kurallar mantik.ts'dedir.
 
 import { doDepo, type Depo } from "./depo.ts";
-import { dunyaCagir, iletiOku, jsonYanit } from "./ic.ts";
-import { girisKaydet, hizKontrol, profilGetir, profilOlustur, type HizDurumu } from "./mantik.ts";
+import { dunyaCagir, iletiOku, jsonYanit, yerlesimCagir } from "./ic.ts";
+import { girisKaydet, hizKontrol, profilGetir, profilOlustur, sakinKaydi, yerlesimeIlet, type HizDurumu, type YerlesimIstegi } from "./mantik.ts";
 import { basarili, hata, type Env, type HesapIleti, type Profil, type Sonuc } from "./tipler.ts";
 
 export class HesapDO {
@@ -34,15 +35,33 @@ export class HesapDO {
       case "profil":
         return profilGetir(this.#depo);
       case "profilOlustur":
-        return profilOlustur(this.#depo, ileti.hesapId, ileti.govde, (k) =>
-          dunyaCagir<Profil>(this.#env, { islem: "kayit", istek: k }),
+        return profilOlustur(
+          this.#depo,
+          ileti.hesapId,
+          ileti.govde,
+          (k) => dunyaCagir<Profil>(this.#env, { islem: "kayit", istek: k }),
+          (p) => yerlesimCagir(this.#env, { islem: "sakinEkle", yerlesim: p.yerlesim, sakin: sakinKaydi(p) }),
         );
       case "davetOlustur":
         return dunyaCagir(this.#env, { islem: "davetOlustur", hesapId: ileti.hesapId });
       case "davetCoz":
         return dunyaCagir(this.#env, { islem: "davetCoz", kod: ileti.kod });
+      case "yerlesim":
+        return this.#yerlesime({ islem: "durum", hesapId: ileti.hesapId, dil: ileti.dil });
+      case "olaylar":
+        return this.#yerlesime({ islem: "olaylar", hesapId: ileti.hesapId, imlec: ileti.imlec, dil: ileti.dil });
+      case "kisi":
+        return this.#yerlesime({ islem: "kisi", hesapId: ileti.hesapId, kisi: ileti.kisi, dil: ileti.dil });
+      case "eylem":
+        return this.#yerlesime({ islem: "eylem", hesapId: ileti.hesapId, govde: ileti.govde });
+      case "tanidik":
+        return this.#yerlesime({ islem: "tanidik", hesapId: ileti.hesapId, govde: ileti.govde });
       default:
         return hata("gecersiz_istek");
     }
+  }
+
+  #yerlesime(istek: YerlesimIstegi): Promise<Sonuc<unknown>> {
+    return yerlesimeIlet(this.#depo, istek, (i) => yerlesimCagir(this.#env, i));
   }
 }

@@ -68,9 +68,16 @@ export function sahteJwks(anahtarlar: TestAnahtari[], maxAge = 3600) {
   };
 }
 
-function sahteDepolama(): DurableObjectStorage {
+export interface SahteDepolama extends DurableObjectStorage {
+  readonly veri: Map<string, unknown>;
+  alarmAni: number | null;
+}
+
+export function sahteDepolama(): SahteDepolama {
   const veri = new Map<string, unknown>();
   const depolama = {
+    veri,
+    alarmAni: null as number | null,
     async get(k: string | string[]) {
       if (!Array.isArray(k)) return structuredClone(veri.get(k));
       const sonuc = new Map<string, unknown>();
@@ -81,20 +88,30 @@ function sahteDepolama(): DurableObjectStorage {
       if (typeof k === "string") veri.set(k, structuredClone(d));
       else for (const [a, v] of Object.entries(k)) veri.set(a, structuredClone(v));
     },
-    async delete(k: string) {
-      return veri.delete(k);
+    async delete(k: string | string[]) {
+      if (!Array.isArray(k)) return veri.delete(k);
+      let n = 0;
+      for (const a of k) if (veri.delete(a)) n++;
+      return n;
+    },
+    async getAlarm() {
+      return depolama.alarmAni;
+    },
+    async setAlarm(an: number) {
+      depolama.alarmAni = an;
     },
   };
-  return depolama as DurableObjectStorage;
+  return depolama as unknown as SahteDepolama;
 }
 
 /** Gerçek DO sınıflarını bellekte çalıştıran ad alanı. Kimlikler "do-" önekiyle opaktır. */
-export function sahteAdAlani(
-  yap: (ctx: DurableObjectState) => { fetch(istek: Request): Promise<Response> },
-): DurableObjectNamespace {
-  const ornekler = new Map<string, { fetch(istek: Request): Promise<Response> }>();
+export function sahteAdAlani<T extends { fetch(istek: Request): Promise<Response> }>(
+  yap: (ctx: DurableObjectState) => T,
+): DurableObjectNamespace & { ornekler: Map<string, { ornek: T; depolama: SahteDepolama }> } {
+  const ornekler = new Map<string, { ornek: T; depolama: SahteDepolama }>();
   const kimlik = (s: string): DurableObjectId => ({ toString: () => s, equals: (o) => o.toString() === s });
   return {
+    ornekler,
     idFromName: (ad) => kimlik(`do-${b64urlKodla(utf8(ad))}`),
     idFromString: (s) => {
       if (!s.startsWith("do-")) throw new TypeError("Invalid Durable Object ID");
@@ -102,12 +119,13 @@ export function sahteAdAlani(
     },
     get: (id) => {
       const anahtar = id.toString();
-      let ornek = ornekler.get(anahtar);
-      if (!ornek) {
-        ornek = yap({ id, storage: sahteDepolama() });
-        ornekler.set(anahtar, ornek);
+      let kayit = ornekler.get(anahtar);
+      if (!kayit) {
+        const depolama = sahteDepolama();
+        kayit = { ornek: yap({ id, storage: depolama }), depolama };
+        ornekler.set(anahtar, kayit);
       }
-      const o = ornek;
+      const o = kayit.ornek;
       return { id, fetch: (girdi, init) => o.fetch(typeof girdi === "string" ? new Request(girdi, init) : girdi) };
     },
   };

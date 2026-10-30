@@ -44,9 +44,13 @@ declare var Response: {
 
 declare var fetch: (input: string | Request, init?: RequestInit) => Promise<Response>;
 
+interface URLSearchParams {
+  get(name: string): string | null;
+}
 interface URL {
   readonly pathname: string;
   readonly hostname: string;
+  readonly searchParams: URLSearchParams;
 }
 declare var URL: { prototype: URL; new (url: string, base?: string): URL };
 
@@ -65,6 +69,8 @@ declare var TextDecoder: {
 declare function btoa(data: string): string;
 declare function atob(data: string): string;
 declare function structuredClone<T>(value: T): T;
+
+declare var performance: { now(): number };
 
 declare var console: {
   log(...veri: unknown[]): void;
@@ -131,6 +137,9 @@ interface DurableObjectStorage {
   put<T>(key: string, value: T): Promise<void>;
   put<T>(entries: Record<string, T>): Promise<void>;
   delete(key: string): Promise<boolean>;
+  delete(keys: string[]): Promise<number>;
+  getAlarm(): Promise<number | null>;
+  setAlarm(scheduledTime: number): Promise<void>;
 }
 interface DurableObjectState {
   readonly id: DurableObjectId;

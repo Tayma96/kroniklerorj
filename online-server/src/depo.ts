@@ -7,14 +7,21 @@ export interface Depo {
   alCok<T>(anahtarlar: string[]): Promise<Map<string, T>>;
   /** Hepsi tek seferde ve birlikte yazılır. */
   koy(kayitlar: Record<string, unknown>): Promise<void>;
+  sil(anahtarlar: string[]): Promise<void>;
 }
 
-/** En fazla 128 anahtar (DO sınırı); dünya verisi bunun altındadır. */
+/** Tek çağrıda okunup yazılabilecek en çok anahtar (DO sınırı). */
+export const DEPO_TOPLU_SINIR = 128;
+
+/** Toplu çağrılarda en fazla 128 anahtar (DO sınırı); çağıran parçalar. */
 export function doDepo(depolama: DurableObjectStorage): Depo {
   return {
     al: <T>(anahtar: string) => depolama.get<T>(anahtar),
     alCok: <T>(anahtarlar: string[]) => depolama.get<T>(anahtarlar),
     koy: (kayitlar) => depolama.put(kayitlar),
+    sil: async (anahtarlar) => {
+      await depolama.delete(anahtarlar);
+    },
   };
 }
 
@@ -37,6 +44,9 @@ export function bellekDepo(): BellekDepo {
     },
     async koy(kayitlar) {
       for (const [a, d] of Object.entries(kayitlar)) veri.set(a, structuredClone(d));
+    },
+    async sil(anahtarlar) {
+      for (const a of anahtarlar) veri.delete(a);
     },
   };
 }
