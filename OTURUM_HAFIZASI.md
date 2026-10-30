@@ -22,7 +22,7 @@
 
 ## Açık işler
 - MP ertelendi; yalnız protokol eşliğini koru.
-- Yöntem: Superpowers (tasarım → plan → uygulama → doğrulama). 10 sayfa + giriş/yeni oyun ✓; sinematik ✓ (lib/sinematik, FLUX+Chatterbox, assets/sinematik/KAYNAK.md). 3D aşama 1 test APK'da (oturum dalı), telefon onayı bekleniyor. KURAL: paralel ajan yok (limit bitiriyor); en çok 1 ajan, inceleme ucuz betikle. 3D: `docs/superpowers/specs/2026-10-28-canli-3d-kusam-design.md`, deneme oturum dalında (Filament).
+- Yöntem: Superpowers (tasarım → plan → uygulama → doğrulama). 10 sayfa + giriş/yeni oyun ✓; sinematik ✓ (lib/sinematik; kaynak assets/sinematik/KAYNAK.md). 3D aşama 1 test APK'da (oturum dalı), telefon onayı bekleniyor. KURAL: paralel ajan yok (limit bitiriyor); en çok 1 ajan, inceleme ucuz betikle. 3D: `docs/superpowers/specs/2026-10-28-canli-3d-kusam-design.md`.
 - 3D: kullanıcı karikatür değil gerçekçi insan istiyor. Hat `.claude/skills/blender-karakter` (her oturumda setup.sh). Kullanıcı onayı olmadan tasarım/oyun entegrasyonuna geçme.
 - Skill'ler `.claude/skills` (Superpowers, ECC seçkisi, ElevenLabs, claude-code-setup); öncelik `kronikler-skill-rehberi`.
 - Denge: bot 40 yaşında nam 100. `game.ts` Math.random göçü sürüyor (`docs/AUDIT.md`).
