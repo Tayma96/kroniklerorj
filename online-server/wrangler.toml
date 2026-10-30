@@ -1,0 +1,23 @@
+# Kronikler Online sunucusu. Dağıtım elle yapılır (README.md). Bu dosyada sır yoktur.
+name = "kronikler-online"
+main = "src/index.ts"
+compatibility_date = "2026-10-01"
+
+[[durable_objects.bindings]]
+name = "HESAP"
+class_name = "HesapDO"
+
+[[durable_objects.bindings]]
+name = "DUNYA"
+class_name = "DunyaDO"
+
+# SQLite tabanlı Durable Object'ler (ücretsiz planda kullanılabilen tür).
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["HesapDO", "DunyaDO"]
+
+[vars]
+# Google OAuth istemci kimlikleri (Android/iOS/Web), virgülle ayrılmış. Gizli değildir.
+# Boşken /v1/giris "yapilandirma_eksik" döner. Oturum anahtarı burada DEĞİL:
+# `wrangler secret put OTURUM_ANAHTARI` ile Worker sırrı olarak konur.
+GOOGLE_CLIENT_ID = ""
