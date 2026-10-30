@@ -49,8 +49,12 @@ Tek oyunculu ad, kayıt ya da profil hiçbir adımda görünmez. Ağ kopsa da ay
 - 6 dil, `GameIcon`, tema; 320/390 px önizleme.
 
 ### 1d. Google girişi (Berkay'ın Google Cloud kimlikleri gelince)
-- Expo v56 belgesine göre yöntem seçilir (yerel Google Sign-In modülü ya da tarayıcı tabanlı yetkilendirme);
-  test APK'sında derleme doğrulanır. Kimlikler gizli değildir, uygulama yapılandırmasına yazılır.
+- Expo belgesi (docs.expo.dev/guides/google-authentication) iki yerel kütüphane sunar:
+  `react-native-nitro-google-signin` (Android Credential Manager dahil) ve
+  `@react-native-google-signin/google-signin` (Credential Manager ücretli sürümde). Ücretsiz yol seçilir; ikisi
+  de Expo Go'da çalışmaz, test APK'sı gerekir.
+- Google Cloud'da: Android OAuth istemcisi (paket adı + imza SHA-1) ve sunucunun `aud` olarak doğrulayacağı
+  Web istemci kimliği. Kimlikler gizli değildir, uygulama yapılandırmasına ve `GOOGLE_CLIENT_ID`'ye yazılır.
 
 ## Doğrulama
 Her adımda tip denetimi + ilgili testler; istemcide i18n/ikon, dil karışması, sayfa tasarımı; önizleme
