@@ -62,6 +62,8 @@ export function Sahne({ gorsel, oran = 0.6, koyu = 0.35, children }: { gorsel: I
     <View pointerEvents="none" style={{ position: "absolute", top: 0, left: 0, right: 0, height: H * oran }}>
       <Image accessible={false} source={gorsel} resizeMode="cover" style={StyleSheet.absoluteFill} />
       <LinearGradient pointerEvents="none" colors={renkler} style={StyleSheet.absoluteFill} />
+      {/* Üst çubuk (geri + adım izi) açık gökyüzünde de okunsun */}
+      <LinearGradient pointerEvents="none" colors={["rgba(10,7,4,0.82)", "rgba(10,7,4,0.45)", "rgba(10,7,4,0)"]} locations={[0, 0.55, 1]} style={{ position: "absolute", top: 0, left: 0, right: 0, height: 160 }} />
     </View>
     {children}
   </View>;
@@ -142,7 +144,7 @@ export function UstBar({ adim, rtl, t, onGeri }: { adim: 1 | 2 | 3; rtl: boolean
             <View style={[{ width: AM, height: AM, borderRadius: AM / 2, alignItems: "center", justifyContent: "center", borderWidth: simdi ? 2 : 1.5, borderColor: bitti || simdi ? C.goldBright : "rgba(168,130,63,0.6)", backgroundColor: bitti ? C.gold : simdi ? C.cardHi : "rgba(14,10,6,0.9)" }, simdi ? GLOW : null]}>
               {bitti ? <Check size={14} /> : <GameIcon name={a.icon} size={simdi ? 15 : 13} color={simdi ? C.goldBright : C.parchmentMuted} />}
             </View>
-            <Text numberOfLines={1} style={[{ alignSelf: "stretch", marginHorizontal: dar ? -6 : -10, marginTop: 4, fontFamily: F.display, fontSize: dar ? 10 : 11, letterSpacing: rtl || dar ? 0 : 0.6, textAlign: "center", color: simdi ? C.goldBright : bitti ? C.gold : C.parchmentMuted }, GOLGE]}>{t(a.etiket)}</Text>
+            <Text numberOfLines={1} style={[{ alignSelf: "stretch", marginHorizontal: dar ? -6 : -10, marginTop: 4, fontFamily: F.display, fontSize: dar ? 10 : 11, textShadowColor: "rgba(0,0,0,0.95)", textShadowRadius: 6, textShadowOffset: { width: 0, height: 1 }, letterSpacing: rtl || dar ? 0 : 0.6, textAlign: "center", color: simdi ? C.goldBright : bitti ? C.gold : C.parchmentMuted }, GOLGE]}>{t(a.etiket)}</Text>
           </View>;
         })}
       </View>
