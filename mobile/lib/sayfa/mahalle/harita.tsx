@@ -6,7 +6,7 @@ import Animated, { FadeIn, FadeInDown, useSharedValue, useAnimatedStyle, withRep
 import { LinearGradient } from "expo-linear-gradient";
 import { DesignPressable as Pressable } from "../../design-pressable";
 import { GameIcon } from "../../icons";
-import { Ornament } from "../../home-mockup-ui";
+import { Ornament } from "../../mk-sus";
 import { C, F } from "../../theme";
 import type { Mekan } from "../../game";
 

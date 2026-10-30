@@ -9,7 +9,7 @@ import { DesignPressable as Pressable } from "./design-pressable";
 import { useI18n } from "./i18n";
 import { C, F } from "./theme";
 import { GameIcon } from "./icons";
-import { MK, Ornament } from "./home-mockup-ui";
+import { MK, Ornament } from "./mk-sus";
 import { isReduceMotion } from "./perf";
 import { hap } from "./haptics";
 
