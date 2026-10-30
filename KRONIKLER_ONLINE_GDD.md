@@ -502,7 +502,7 @@ Etiketler bölüm 0'da tanımlıdır. Berkay'ın yaşam simülasyonu yönü **[K
 
 | Konu | Birleşik tasarım ilkesi | Uygulama etkisi |
 |---|---|---|
-| D-03 — zaman | Genel, oyuncuya görünen tur/ay kapısı yok; dünya olay temelli işler. Kolektif süreç başta ilan edilmiş uzun katılım aralığı ve varsayılan sonuç taşır. | Faz 2; süreler ve ortak çözümleme saatleri parametre/operasyon seçeneği. |
+| D-03 — zaman | Genel, oyuncuya görünen tur/ay kapısı yok; dünya olay temelli işler. Kolektif süreç başta ilan edilmiş uzun katılım aralığı ve varsayılan sonuç taşır. | **[KESİN — Berkay, 30 Ekim 2026]** Ortak takvim: herkes aynı hızda yaşlanır; yokken "olağan düzen" işler, yokluk cezası yok. Hız önerisi 1 gün = 1 mevsim `[PARAMETRE]` (§3). |
 | K-09 — bekleme/FOMO | Arayüz kilitleyen bekleme yok; kaçırma ek ceza üretmez; para/premium para beklemeyi atlatmaz. Alfa başlangıcında kazanılmış oyun içi kaynakla hızlandırma da yok. | Varsayılan tablosu ve kaynak/para kuralları uygulanmadan önce onaylanmalı. |
 | A-03 — savaş tebliği | Dar, canlı katılım penceresi varsayılan değil. İlanlı savaş çözümü popülasyon düzeyinde ölçülen aktif oyuncu giriş aralığı P90'ından önce olmaz; ön emir, delegasyon ve kayıp tavanı asıl korumadır. | P90 tanımı, alfa 36–48 saat aralığı ve savaş parametreleri onay/ölçüm gerektirir. |
 | N-5 — kayıp tavanı | Kayan mülk kaybı tavanı tüm saldırganlara karşı hedef başınadır; siyasi sonuçlar ayrı ama kendi anti-abuse kuralına tabidir. | Sayı, dönem ve direnç bandı faz 8 öncesinde kararlaştırılır. |
@@ -522,7 +522,7 @@ Etiketler bölüm 0'da tanımlıdır. Berkay'ın yaşam simülasyonu yönü **[K
 | D-05 — toplum boyutu | Tek büyük mantıksal toplum mu, birden çok toplum/realm mi? Kayıtlı hesap hedefi ile aynı anda etkin oyuncu farklı ölçülerdir. | **[KESİN — Berkay, 30 Ekim 2026]** Önce küçük kasaba dünyaları (her biri ~50–200 oyuncu, dolunca yenisi); ileride bölgeler arası ticaret/diplomasiyle bağlanır. Sayılar alfa parametresidir. |
 | D-06 — hesap ve kimlik | Kalıcı güç/ekonomi öncesi doğrulanmış hesap bağı; sağlayıcıyı resmi kurallar, kullanıcı erişimi ve kurtarma gereksinimiyle seç. | **[KESİN — Berkay, 30 Ekim 2026]** Google ile giriş. Sunucu Google kimlik belirtecini doğrular; görünen ad ayrı seçilir, SP adına geri düşüş yok. |
 | D-13 — mevcut MP beta güvenliği | Önceki denetimde beta Worker'ın canlı yanıt verdiği, kimlik doğrulamasının bulunmadığı, APK'da MP girişi/host adresi olduğu ve `apk` dalına sunucu değişikliklerinin otomatik deploy edildiği raporlandı. Olası sıra: geri alınabilir sunucu tarafı kapatma anahtarı, ardından kimlik/izin yaması; menü değişikliği sonraki APK ile. | **[KESİN — Berkay, 30 Ekim 2026]** İstemcide çok oyunculu giriş "Yakında" kartına çevrilir, eski sunucuya bağlanılmaz. Canlı Worker'ı kapatma/silme Berkay'ın işidir; bu iş sunucuya dokunmaz. |
-| D-02 — karakter ömrü | A-04a makam devrini uygula; ölüm, vâris ve hane kararını ekonomi tasarımından önce ver. | **[AÇIK KARAR — Berkay]** Faz 6/ekonomik kalıcılık öncesi; ölüm seçeneği zorunlu değil. |
+| D-02 — karakter ömrü | A-04a makam devrini uygula; ölüm, vâris ve hane kararını ekonomi tasarımından önce ver. | **[KESİN — Berkay, 30 Ekim 2026]** Karakter yaşlanır, ölür; hanedan vârisle sürer. Ayrıntı: `docs/online/OYNANIS_TASARIMI.md` §8. |
 | D-09 — ekonomi | Kaynak üretimi, bakım, iş gücü, enflasyon, oyuncu/NPC taban arzı ve geri dönüş yollarını simülasyonla dengele. | **[AÇIK KARAR — Berkay]** Faz 6'da kalıcı ekonomi kurulmadan önce. |
 | D-14 — hızlandırma | İlk alfada kişisel üretim beklemesi oyun içi kazanılmış kaynakla da atlanmasın; kaynak dolaşımı testinden sonra tekrar değerlendir. | **[UZLAŞI — nihai onay bekliyor]** Faz 6 ekonomi simülasyonu sonrası. |
 | D-03 — görünür genel takvim | Oyuncuya görünen genel tur yok; kolektif son tarihler ilanlı/uzun; görünmeyen sunucu kalp atışı yalnız altyapıdır. | **[UZLAŞI — nihai onay bekliyor]** Faz 2. |
@@ -538,7 +538,7 @@ Etiketler bölüm 0'da tanımlıdır. Berkay'ın yaşam simülasyonu yönü **[K
 | 10.000 oyuncu/CCU | 10.000 kayıtlı hesap hedefi, eşzamanlılık ve etki yükü aynı metrik değildir. | **[ÖNERİ]** Ürün ve operasyon ölçümüyle sayısallaştır; yük kanıtı olmadan kapasite sözü verme. |
 | Hosting/ücret ve fiziksel shard | Cloudflare yalnız mevcut adaydır; ücretsiz katman üretim kapasitesi kabul edilmez. | **[AÇIK KARAR — Berkay]** Faz 0 raporu, maliyet tahmini ve yük profili sonrası. |
 | İlk hesap başına karakter ve ad | Bir etkin online karakter ve realm içinde ad benzersizliği başlangıç önerisi; SP fallback yok. | **[ÖNERİ]** Hesap kurtarma, alt hesap ve moderasyon kararıyla Faz 1 öncesi. |
-| Çevrimiçi kayıp şiddeti | Karakter ölümü ve geri döndürülemez kayıp ayrı onay olmadan yok; kurumsal kayıp anlaşılır, kademeli ve telafi yolu olan şekilde tasarlanır. | **[UZLAŞI/ÖNERİ]** Sayısal değerler oyuncu testi olmadan sabit değil. |
+| Çevrimiçi kayıp şiddeti | Karakter ölümü ve geri döndürülemez kayıp ayrı onay olmadan yok; kurumsal kayıp anlaşılır, kademeli ve telafi yolu olan şekilde tasarlanır. | **[KESİN — Berkay, 30 Ekim 2026]** Ölüm mümkün ama zor; hazırlık izi, savunma ve korumalar; kanıtlanırsa ağır ceza ve kan davası (§7). |
 
 ## 20. Codex’e verilecek uygulama promptu
 
