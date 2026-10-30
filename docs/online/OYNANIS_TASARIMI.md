@@ -6,7 +6,7 @@ her faz bu deneyimin bir parçasını kurar. `[PARAMETRE]` işaretli sayılar ka
 
 ## 1. Tek cümlelik vaat
 
-**Küçük bir Anadolu kasabasında, gerçek insanlarla ve onlar kadar canlı NPC'lerle, kuşaklar boyu süren bir
+**Anadolu'nun bir köyünde, kasabasında ya da şehrinde, gerçek insanlarla ve onlar kadar canlı NPC'lerle, kuşaklar boyu süren bir
 hayat yaşarsın; yaptığın her iyilik ve kötülük kasabanın hafızasına yazılır ve bir gün sana geri döner.**
 
 Üç his hedefi:
@@ -19,54 +19,64 @@ hayat yaşarsın; yaptığın her iyilik ve kötülük kasabanın hafızasına y
 
 | Konu | Karar | Tasarım karşılığı |
 |---|---|---|
-| Zaman | Ortak takvim; herkes aynı hızda yaşlanır | Dünya saati sunucuda akar; giren de girmeyen de yaşlanır (§3) |
+| Zaman | Ortak takvim; 12 saat = 1 ay; ay dönümü 00:00 ve 12:00 (TR) | Dünya saati sunucuda akar; giren de girmeyen de yaşlanır (§3) |
 | Çatışma | Ölüm mümkün ama zor; kanıtlanırsa ağır ceza | Çatışma merdiveni, hazırlık izi, kadı ve kan davası (§7) |
 | Hayat | Hanedan sürer | Evlilik, doğum, ölüm, vâris; mal, nam ve husumet vârise geçer (§8) |
 | Gelir | Sonra | Oynanışa güç satan hiçbir şey eklenmez; karar kapalı testten sonra |
-| Dünya | Önce küçük kasabalar, sonra birleştir | Kasaba = bir dünya; ileride bölge yolları (§9) |
+| Dünya | Tek dünya: Anadolu, 7 beylik; arkadaşlar aynı dünyada | Yerleşim başına sunucu parçası; davetle aynı yerleşim (§9) |
 | Giriş | Google | Faz 1 |
 
-## 3. Zaman ve yaş
+## 3. Zaman, yaş ve giriş yolları
 
-**Öneri: 1 gerçek gün = 1 mevsim (3 ay) `[PARAMETRE]`.** Bir yıl 4 gün sürer.
+**Karar (Berkay): 12 gerçek saat = 1 oyun ayı.** Ay dönümleri Türkiye saatiyle **00:00 ve 12:00**'de.
+Bir oyun yılı 6 gün sürer. Herkes aynı takvimle yaşlanır.
 
 | Hayat dönemi | Oyun yılı | Gerçek süre |
 |---|---|---|
-| Çocukluk (7→16), yeni oyuncu | 9 yıl | **İlk oturumda oynanan prolog** (aşağıda) |
-| Gençlik (16→20) | 4 | 16 gün |
-| Yetişkinlik (20→40) | 20 | 80 gün |
-| Olgunluk (40→60) | 20 | 80 gün |
-| Yaşlılık (60→~70) | ~10 | ~40 gün |
-| Bir hayat (16'dan ölüme) | ~50 | **~7 ay** |
-| Oyunda doğan vâris 0→16 | 16 | 64 gün; ebeveyn yaşarken büyür |
+| Çocukluk (10→13) | 3 | 18 gün |
+| İlk gençlik (13→16) | 3 | 18 gün |
+| Gençlik (16→20) | 4 | 24 gün |
+| Yetişkinlik (20→40) | 20 | 120 gün |
+| Olgunluk (40→60) | 20 | 120 gün |
+| Yaşlılık (60→~70) | ~10 | ~60 gün |
+| Bir hayat (10'dan ölüme) | ~60 | **~1 yıl** |
+| Oyunda doğan vâris 0→16 | 16 | 96 gün; ebeveyn yaşarken büyür |
 
-Neden "1 gün = 1 ay" değil: 7'den 13'e 72 gün, bir hayat 600 gün sürerdi. Kuşak hissi kaybolur, kasabaya
-yeni gelen oyuncu aylarca çocuk kalırdı.
+**İki giriş yolu** (ikisi de aynı takvimle yaşlanır; kimse hızlanmaz):
+- **Kasabada doğ — 10 yaş:** açılış sinematiği ve 7→10 yaşını anlatan kısa prolog sahneleriyle başlar.
+  Yerleşimin gerçek NPC'leriyle ve varsa çocuk oyuncularla büyür. Bağlar, dostlar ve ilk husumet
+  çocukluktan gelir.
+- **Kasabaya göç et — 16 yaş:** gurbetçi olarak gelir. Bağı azdır ama hemen her şeyi yapabilir.
+  Arkadaşını davet eden oyuncunun arkadaşı ilk gün yanında olsun isterse bu yolu seçer.
 
-**Çocukluk prologu.** Yeni oyuncu 7 yaşında çocuk olarak beklemez. İlk oturumda açılış sinematiği ve ardından
-gelen 3 çocukluk sahnesiyle 7'den 16'ya kadar oynar:
-- Bu sahneler gerçek kasaba NPC'leriyle geçer: "Demirci Murat'ın oğluyla kavga ettin mi, barıştın mı?"
-- Kararlar mizacı, ilk becerileri ve 2-3 ilk bağı (bir dost, bir küs) belirler.
-- Oyuncu 16 yaşında kasabaya "kendi ayakları üstünde" çıkar. NPC'ler onu tanır, çünkü çocukluğu onlarla geçti.
+**Etkileşimler yaşa göre kademe kademe açılır.** 13'te birden açılmaz; çocukluk boş geçmez:
 
-**Mevsim dönümü.** Her gün sabah 05:00'te (Türkiye saati) dünya bir mevsim ilerler `[PARAMETRE]`:
-- NPC'ler kararlarını verir; ürün, ücret, kira ve vergi işler.
-- Yaşlanma, doğum, ölüm ve olaylar çözülür.
-- Herkese "Mevsim Kartı" hazırlanır.
+| Yaş | Açık olan |
+|---|---|
+| 10+ | Dostluk ve küslük, oyun, ayak işi (küçük para), çıraklık ya da mektep, dedikodu duymak, aile işi; yetişkin oyuncunun çırağı olmak |
+| 13+ | **Kül Yemini mührü gelir** (tek oyunculudaki gibi). Küçük ticaret, sözleşmeli iş, kavga (4. basamak), söylenti yaymak, lonca çıraklığı, flört |
+| 16+ | Mülk, evlilik, düello, makam, ittifak sözü, 5-7. basamaklar |
+
+**Usta–çırak bağı:** yetişkin oyuncu çocuk ya da genç oyuncuyu çırak alabilir. Çırak becerisini ustadan
+öğrenir; usta da emeğinden pay ve sadık bir genç kazanır. İki kuşağı birbirine bağlayan çok oyunculu
+yapıştırıcı budur.
+
+**Ay dönümü** (günde iki kez): NPC kararları; ürün, ücret, kira ve vergi; yaşlanma, doğum, ölüm ve olaylar
+çözülür. Herkese **Dönüş Kartı** hazırlanır.
 
 **Yokken ne olur (yokluk cezası yok):**
-- Karakterin "olağan düzen"ini yaşar: mesleğinde çalışır, evini geçindirir, ailesine bakar. Bunları sen
+- Karakter "olağan düzen"ini yaşar: mesleğinde çalışır, evini geçindirir, ailesine bakar. Bunları sen
   önceden ayarlarsın, varsayılanları da makuldür.
 - Kaçırdığın şey fırsatlardır, ceza değildir.
-- Kullanılmayan takat bir sonraki mevsime en çok 1 mevsimlik kadar taşınır. Böylece iki gün gelmesen
-  de kaybın yoktur, ama biriktirip farm da yapılamaz.
+- Kullanılmayan takat en çok 2 aylık kadar taşınır. Bir gün gelmesen kaybın yoktur, ama biriktirip
+  farm da yapılamaz.
 
 ## 4. Bir oturum: oyuncu ne yapar, ne hisseder
 
 Hedef 5-15 dakika. Ekranlar tek oyunculudakilerle aynı ailedendir: ana sayfa, karakter, ilişkiler, mahalle,
 menü. Fark şu: listelerde gerçek oyuncular da vardır, isimlerinin yanında küçük bir mühür bulunur.
 
-1. **Mevsim Kartı (10 sn):** "Sen yokken" özeti, en çok 5 madde:
+1. **Dönüş Kartı (10 sn):** "Sen yokken" özeti, en çok 5 madde:
    - "Kâtip Hasan senin hakkında iyi konuştu (Hasan: oyuncu)."
    - "Demirci Murat'ın kızı evlendi."
    - "Rakibin Ahmet, Murat'la iki kez görüştü — sebebi bilinmiyor."
@@ -90,13 +100,14 @@ Tek oyunculudaki nüfus ilkeleri aynen geçerli (`mobile/NUFUS.md`): dekor yok, 
 Çevrimiçi farklar:
 
 - **Kalıcı kişi:** her NPC'nin evi, ailesi, mesleği, huyu, hayali ve derdi vardır. Yaşlanır, evlenir, ölür.
-  Kasabada 150-250 NPC ve 30-60 oyuncu `[PARAMETRE]`. Az oyuncu olsa da kasaba canlı kalır.
+  Yerleşim başına NPC ve oyuncu sayısı yerleşim türüne göre değişir `[PARAMETRE: köy ~80 NPC / 10-25 oyuncu,
+  kasaba ~200 / 30-60, şehir ~400 / 60-150]`. Az oyuncu olsa da yerleşim canlı kalır.
 - **Hafızası oyuncuları da kapsar:** görüş, tek oyunculudaki kalemler toplamıdır (`gorus()`). Anılara
   oyuncuların adı yazılır: "Berkay kıtlıkta bana un vermişti."
-- **Gündem:** her mevsim dönümünde NPC ihtiyacına göre bir hedef seçer:
+- **Gündem:** her ay dönümünde NPC ihtiyacına göre bir hedef seçer:
   - geçim, evlilik, borç, intikam, makam, göç;
   - bu hedef oyunculara dokunabilir: "Murat lonca kethüdası olmak istiyor, destek arıyor."
-  - Gündemler Mevsim Kartı'nda fırsat olarak görünür.
+  - Gündemler Dönüş Kartı'nda fırsat olarak görünür.
 - **Yeri ve vakti var:** NPC o mevsim belli bir mekândadır. Mahalle haritasında oyuncularla birlikte görünür.
 - **Konuşur:** söylentiler NPC ağı üzerinden yakından uzağa yayılır. Her söylentinin kaynağı ve güveni vardır;
   her NPC her şeyi bilmez.
@@ -209,18 +220,27 @@ Her basamak bir öncekinden pahalı, daha çok iz bırakan ve daha ağır cezal�
 - Ölümde vâris seçilir. Mal, nam, borç ve husumet vârise geçer. Kasabanın kroniğine bir satır yazılır.
 - Vâris yoksa uzak bir akraba gelir; çevrimiçi hanedan kolay kolay sönmez.
 
-## 9. Kasaba, kurumlar, büyüme
+## 9. Tek dünya: Anadolu, 7 beylik
 
-- **Kasaba = bir dünya:** 30-60 oyuncu ve NPC'ler. Dolunca yeni kasaba açılır.
+**Karar (Berkay):** tek bir dünya. Davet edilen arkadaş, davet edenle aynı dünyada ve görebileceği yerde başlar.
+
+- **Yapı:** 7 beylik; her beylikte bir merkez şehir, kasabalar ve köyler `[PARAMETRE: beylik başına ~1 şehir,
+  2-3 kasaba, 4-6 köy]`. Köy tarım ve hayvancılık, kasaba zanaat ve lonca, şehir ticaret, siyaset ve
+  medrese ağırlıklıdır.
+- **Yerleşim seçimi:** oyuncu beyliği ve yerleşimi seçer. Dolu yerleşimde yeni doğum yerine, aynı beylikteki
+  boş bir yerleşim önerilir.
+- **Davet:** davet linkiyle gelen, davet edenin yerleşiminde başlar; kapasite sınırı davette esnektir.
+  İsterse davet edenin **ailesinin uzak akrabası ya da komşusu** olarak doğar ve ilk bağları hazır gelir.
+- **Yollar:** yerleşimler arasında yolculuk, kervan, göç, evlilik ve ticaret var. Arkadaşın başka beylikte
+  olsa da gidip görebilirsin; yol süresi ve riski vardır.
 - **Kurumlar:**
-  - lonca: kethüda;
-  - kadı;
-  - subaşı: asayiş;
-  - ağa ya da bey: kasabanın yöneticisi;
-  - vakıf ve cami.
-  Makam yoksa ya da boşsa NPC tutar. Oyuncular seçimle ya da atamayla gelir; makam hiçbir zaman tek kişinin
-  girişini beklemez.
-- **Birleştirme (sonra):** kasabalar arasında yol, kervan ve ticaret; sonra diplomasi ve sefer.
+  - köy kethüdası;
+  - kasaba lonca kethüdası, kadı, subaşı;
+  - şehirde ağa ya da bey ve divan;
+  - beylik düzeyinde bey ve beylikler arası diplomasi (Faz 8+).
+  Makam boşsa NPC tutar; makam hiçbir zaman tek kişinin girişini beklemez.
+- **Teknik karşılık:** tek mantıksal dünya, yerleşim başına bir sunucu parçası (GDD §13). Oyuncu bunu görmez.
+  Yerleşimler arası olaylar sırayla ve tekrar güvenli iletilir.
 
 ## 10. Kolaylık ilkeleri
 
@@ -235,8 +255,8 @@ Her faz ayrı bir uygulama planı ister (yazılacak), kendi oynanabilir testi va
 
 | Faz | Oyuncu ne yaşar | İçerik | Kabul (oynanabilir test) |
 |---|---|---|---|
-| 1. Kimlik ve varış | Google ile girer, adını seçer, kasaba seçer, prolog oynar, 16 yaşında kasabaya iner | Google doğrulama, hesap/profil, kasaba listesi, prolog (sinematik + 3 çocukluk sahnesi) | Temiz telefonda 3 dakikada kasabaya iniş; tek oyunculu ad hiç görünmez |
-| 2. Yaşayan kasaba çekirdeği | Bir mevsim yaşar: haritada kim nerede, NPC'lerle sohbet/yardım/iş, Mevsim Kartı | Sunucu saati ve mevsim dönümü, sunucuda NPC nüfusu, mekânlar, takat, görüş dökümü, olağan düzen | 2 gün oynamayan oyuncu döndüğünde gerekçeli özet görür; NPC'ler o yokken yaşamıştır |
+| 1. Kimlik ve varış | Google ile girer, adını seçer, beylik ve yerleşim seçer (ya da davetle arkadaşının yanına), doğar (10) ya da göç eder (16) | Google doğrulama, hesap/profil, kasaba listesi, prolog (sinematik + 3 çocukluk sahnesi) | Temiz telefonda 3 dakikada kasabaya iniş; tek oyunculu ad hiç görünmez |
+| 2. Yaşayan yerleşim çekirdeği | Bir ay yaşar: haritada kim nerede, NPC'lerle sohbet/yardım/iş, Dönüş Kartı | Sunucu saati ve ay dönümü, sunucuda NPC nüfusu, mekânlar, takat, görüş dökümü, olağan düzen | 2 gün oynamayan oyuncu döndüğünde gerekçeli özet görür; NPC'ler o yokken yaşamıştır |
 | 3. Oyuncular arası | Başka oyuncuyu profilinde görür, dostluk/ortaklık/borç teklif eder, gelen kutusu | Teklif ve gelen kutusu, varsayılanlar, sınırlı sohbet, söylenti | İki oyuncu birbirini beklemeden teklifleşir; cevapsız teklif cezasız düşer |
 | 4. Üçgen | Kışkırtma, arabuluculuk, şahitlik, casus | Görüşe "dostunun dostu" ve "duydukları" kalemleri, ittifak sözü, haber verme | §6.1 ve §6.2 senaryoları en az iki farklı sonuçla oynanır |
 | 5. Ekonomi ve meslek | Meslek, sipariş, pazar; NPC taban tedariki | Sipariş/sözleşme, yerel fiyat, farm koruması | Tek bir oyuncu yokken kasaba aç kalmaz |
@@ -247,9 +267,9 @@ Her faz ayrı bir uygulama planı ister (yazılacak), kendi oynanabilir testi va
 
 ## 12. Açık sorular (Berkay'a)
 
-1. Zaman hızı: 1 gün = 1 mevsim uygun mu? (Bir hayat ~7 ay sürer.)
-2. Mevsim dönümü saati: sabah 05:00 mü, başka bir saat mi?
-3. Oyuncu sayısı: kasaba başına 30-60 oyuncu doğru hedef mi?
+1. ~~Zaman hızı~~ — karar: 12 saat = 1 ay; 10 yaşında başlangıç ya da 16 yaşında göç.
+2. ~~Ay dönümü saati~~ — karar: 00:00 ve 12:00 (TR).
+3. Oyuncu sayısı: köy 10-25, kasaba 30-60, şehir 60-150 oyuncu doğru hedef mi?
 4. Suikast başarısı: "zor" ne kadar zor olsun? Önerim: iyi hazırlanmış girişimde bile en çok %25.
 5. Tek oyunculuyla içerik paylaşımı: meslek, eşya ve olay metinleri paylaşılsın mı? Kimlik, kayıt ve motor
    ayrı kalır. Önerim: evet.
@@ -264,7 +284,7 @@ dayananlar ayrıca belirtilmiştir.
    - Hedef bu sürede oyuna girmediyse, ev halkı "tetikte" olur ve başarı şansı yarıya iner.
    - 7 gün oyuna girmeyen karakter "inziva"ya çekilir ve 5-7. basamaklara kapanır. Ancak hazırlığı daha
      önce başlamış bir girişim inzivada da sürer; bu sayede tehdit görünce çıkıp saklanma yolu kapanır.
-   - Bildirim isteğe bağlıdır. İşaret her zaman Mevsim Kartı'na düşer.
+   - Bildirim isteğe bağlıdır. İşaret her zaman Dönüş Kartı'na düşer.
 2. **Ölümün bedeli ve ölümden kâr.**
    - Vâris malı %10 veraset vergisiyle alır; vergi kasaba hazinesine gider.
    - Mal, dönem miras paylarıyla evlatlar arasında bölünür. Bu, büyük servetleri kendiliğinden dağıtır.
@@ -300,7 +320,7 @@ dayananlar ayrıca belirtilmiştir.
 8. **Eylemlerin çözümü.**
    - Bir kasabanın bütün eylemlerini tek bir sunucu nesnesi sırayla işler. Aynı NPC için yarışan iki eylemi
      geliş sırası belirler. Oyuncu–NPC eylemi anında çözülür.
-   - Mevsim dönümünde yalnız gündem, yaşlanma ve ekonomi toplu işlenir.
+   - Ay dönümünde yalnız gündem, yaşlanma ve ekonomi toplu işlenir.
 9. **Başkasının ilişkisini görmek.**
    - Bir NPC'nin üçüncü bir kişiye bakışını yalnız şu durumlarda görürsün:
      - o NPC'ye yakınsan (+30 üstü);
@@ -323,7 +343,7 @@ dayananlar ayrıca belirtilmiştir.
     - Kan davası şu yollarla söner:
       - diyet kabulü;
       - helallik;
-      - 8 mevsim olaysız geçmesi.
+      - 2 oyun yılı (12 gün) olaysız geçmesi.
     - 16 yaş altı hiçbir zaman hedef olamaz.
     - Kan davası içindeki ölüm de soruşturulur.
 
