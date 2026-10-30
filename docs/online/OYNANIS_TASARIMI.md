@@ -26,40 +26,42 @@ hayat yaşarsın; yaptığın her iyilik ve kötülük kasabanın hafızasına y
 | Dünya | Tek dünya: Anadolu, 7 beylik; arkadaşlar aynı dünyada | Yerleşim başına sunucu parçası; davetle aynı yerleşim (§9) |
 | Giriş | Google | Faz 1 |
 
-## 3. Zaman, yaş ve giriş yolları
+## 3. Zaman, yaş ve başlangıç
 
 **Karar (Berkay): 12 gerçek saat = 1 oyun ayı.** Ay dönümleri Türkiye saatiyle **00:00 ve 12:00**'de.
-Bir oyun yılı 6 gün sürer. Herkes aynı takvimle yaşlanır.
+Bir oyun yılı 6 gün sürer; bir mevsim 1,5 gün. Herkes aynı takvimle yaşlanır.
+
+**Karar (Berkay): her oyuncu 12 yaşında başlar.** Tek giriş yolu vardır.
 
 | Hayat dönemi | Oyun yılı | Gerçek süre |
 |---|---|---|
-| Çocukluk (10→13) | 3 | 18 gün |
+| Öğrenme dönemi (12→13) | 1 | **6 gün** |
 | İlk gençlik (13→16) | 3 | 18 gün |
 | Gençlik (16→20) | 4 | 24 gün |
 | Yetişkinlik (20→40) | 20 | 120 gün |
 | Olgunluk (40→60) | 20 | 120 gün |
 | Yaşlılık (60→~70) | ~10 | ~60 gün |
-| Bir hayat (10'dan ölüme) | ~60 | **~1 yıl** |
+| Bir hayat (12'den ölüme) | ~58 | **~1 yıl** |
 | Oyunda doğan vâris 0→16 | 16 | 96 gün; ebeveyn yaşarken büyür |
 
-**İki giriş yolu** (ikisi de aynı takvimle yaşlanır; kimse hızlanmaz):
-- **Kasabada doğ — 10 yaş:** açılış sinematiği ve 7→10 yaşını anlatan kısa prolog sahneleriyle başlar.
-  Yerleşimin gerçek NPC'leriyle ve varsa çocuk oyuncularla büyür. Bağlar, dostlar ve ilk husumet
-  çocukluktan gelir.
-- **Kasabaya göç et — 16 yaş:** gurbetçi olarak gelir. Bağı azdır ama hemen her şeyi yapabilir.
-  Arkadaşını davet eden oyuncunun arkadaşı ilk gün yanında olsun isterse bu yolu seçer.
+**Öğrenme dönemi (ilk 6 gün)** oyunun öğreticisidir; ama gerçek dünyada, gerçek insanlarla geçer:
+- açılış sinematiği ve ocağın kuruluşu;
+- bir zanaatın ilk adımları: çıraklık ya da yetişkin bir oyuncunun yanında çıraklık;
+- mektep: okuma, hesap, ilk özellik puanları;
+- yerleşimin NPC'leri ve çocuk-genç oyuncularla tanışma, ilk dost ve ilk küs;
+- günlük küçük hedefler: oyunu adım adım tanıtır, her gün yeni bir sistem açar.
 
-**Etkileşimler yaşa göre kademe kademe açılır.** 13'te birden açılmaz; çocukluk boş geçmez:
+**Etkileşimler yaşa göre kademe kademe açılır:**
 
 | Yaş | Açık olan |
 |---|---|
-| 10+ | Dostluk ve küslük, oyun, ayak işi (küçük para), çıraklık ya da mektep, dedikodu duymak, aile işi; yetişkin oyuncunun çırağı olmak |
+| 12+ | Dostluk ve küslük, ayak işi (küçük para), çıraklık, mektep, dedikodu duymak, aile işi |
 | 13+ | **Kül Yemini mührü gelir** (tek oyunculudaki gibi). Küçük ticaret, sözleşmeli iş, kavga (4. basamak), söylenti yaymak, lonca çıraklığı, flört |
 | 16+ | Mülk, evlilik, düello, makam, ittifak sözü, 5-7. basamaklar |
 
-**Usta–çırak bağı:** yetişkin oyuncu çocuk ya da genç oyuncuyu çırak alabilir. Çırak becerisini ustadan
-öğrenir; usta da emeğinden pay ve sadık bir genç kazanır. İki kuşağı birbirine bağlayan çok oyunculu
-yapıştırıcı budur.
+**Usta–çırak bağı:** yetişkin oyuncu genç oyuncuyu çırak alabilir. Çırak ustasından daha hızlı öğrenir;
+usta da emeğinden pay, yetenek ağacında "pir" puanı ve sadık bir genç kazanır. Davetle gelen arkadaş,
+davet edenin hanesine akraba ya da çırak olarak yerleşebilir.
 
 **Ay dönümü** (günde iki kez): NPC kararları; ürün, ücret, kira ve vergi; yaşlanma, doğum, ölüm ve olaylar
 çözülür. Herkese **Dönüş Kartı** hazırlanır.
@@ -199,8 +201,24 @@ Her basamak bir öncekinden pahalı, daha çok iz bırakan ve daha ağır cezal�
   kiralık adam arıyormuş". Dost ağı bunları hedefe taşıyabilir.
 - **Savunma:** hedefin kapı kilidi, muhafızı, ev halkı ve dost NPC'leri vardır. Hedef çevrimdışıyken bunlar
   "olağan düzen"le savunur. Çevrimiçiyse ek önlem alabilir.
-- **Şans:** başarı olasılığı düşüktür `[PARAMETRE]`. Başarısız girişim çoğunlukla yaralanma ve büyük iz
-  bırakır.
+- **Şans (karar, Berkay):** iyi hazırlanmış girişim, olağan dikkatteki hedefe karşı **%30**. Hedefin
+  dikkati bunu değiştirir:
+  - **dikkatsiz** hedef (×1,5, en çok %45):
+    - gece yalnız dolaşır;
+    - her gün aynı saatte aynı yerdedir;
+    - meyhanede sızar;
+    - muhafız tutmaz;
+    - uyarıları görmezden gelir;
+    - düşmanıyla aynı sofraya oturur.
+  - **tetikte** hedef (×1/3, ~%10):
+    - muhafızı vardır;
+    - yolunu ve saatini değiştirir;
+    - dostlarıyla gezer;
+    - kapısını kilitler;
+    - yemeğini tattırır (zehre karşı).
+  - "Sezgi" özelliği ve "Göz" dalı işaretleri erken fark ettirir (§14). Attar dalındaki panzehir zehri boşa
+    çıkarır.
+  Başarısız girişim çoğunlukla yaralanma ve büyük iz bırakır.
 - **Korumalar:**
   - Kasabadaki ilk 7 gün ile 16 yaş altı ve 65 yaş üstü karakterler 5-7. basamakların hedefi olamaz.
   - Aynı hedefe yılda bir suikast girişimi yapılabilir.
@@ -217,7 +235,10 @@ Her basamak bir öncekinden pahalı, daha çok iz bırakan ve daha ağır cezal�
 
 - Oyuncular arası evlilik, iki oyuncunun da kabulüyle olur. NPC ile evlilik tek oyunculudaki gibidir.
 - Çocuklar kasabada doğar ve büyür, NPC'lerle çocukluk geçirir.
-- Ölümde vâris seçilir. Mal, nam, borç ve husumet vârise geçer. Kasabanın kroniğine bir satır yazılır.
+- **Vasiyet (karar, Berkay):** mirasın dağılımını oyuncu belirler: hangi evlada, eşe, akrabaya, vakfa ne
+  kalacağı. Vasiyet yoksa mal eşit bölünür. Her mirasta %10 veraset vergisi kasaba hazinesine gider.
+- Az pay alan evlat küsebilir; vasiyet hanede yeni gerilimler doğurur. Kimin nesi var da bilinir.
+- Ölümde vâris seçilir. Mal, nam, borç ve husumet vârise geçer. Yerleşimin kroniğine bir satır yazılır.
 - Vâris yoksa uzak bir akraba gelir; çevrimiçi hanedan kolay kolay sönmez.
 
 ## 9. Tek dünya: Anadolu, 7 beylik
@@ -227,8 +248,14 @@ Her basamak bir öncekinden pahalı, daha çok iz bırakan ve daha ağır cezal�
 - **Yapı:** 7 beylik; her beylikte bir merkez şehir, kasabalar ve köyler `[PARAMETRE: beylik başına ~1 şehir,
   2-3 kasaba, 4-6 köy]`. Köy tarım ve hayvancılık, kasaba zanaat ve lonca, şehir ticaret, siyaset ve
   medrese ağırlıklıdır.
-- **Yerleşim seçimi:** oyuncu beyliği ve yerleşimi seçer. Dolu yerleşimde yeni doğum yerine, aynı beylikteki
-  boş bir yerleşim önerilir.
+- **Yerleşim seçimi:** oyuncu beyliği ve yerleşimi istediği gibi seçer.
+- **Sınır ev sayısıdır, kilit değil:** bir yerleşimde yaşamak için bir hanede yer gerekir: kendi evin, kira,
+  ailenin evi ya da ustanın yanı. Köyün evi azdır, şehrin çoktur. Ev yapılınca yerleşim büyür. Sayılar
+  (köy 10-25, kasaba 30-60, şehir 60-150 etkin oyuncu) bir **yoğunluk hedefidir**. Bu hedefin üç sebebi var:
+  - her oyuncunun çevresinde ~15 önemli kişi kalsın; kalabalıkta kimse kimseyi tanımaz;
+  - NPC'ler kaybolmasın;
+  - yerleşimin toprağı ve işi yetsin.
+  Ayrıca her yerleşim bir sunucu parçasıdır ve bu yoğunluk ücretsiz katmanda rahat çalışır.
 - **Davet:** davet linkiyle gelen, davet edenin yerleşiminde başlar; kapasite sınırı davette esnektir.
   İsterse davet edenin **ailesinin uzak akrabası ya da komşusu** olarak doğar ve ilk bağları hazır gelir.
 - **Yollar:** yerleşimler arasında yolculuk, kervan, göç, evlilik ve ticaret var. Arkadaşın başka beylikte
@@ -269,10 +296,9 @@ Her faz ayrı bir uygulama planı ister (yazılacak), kendi oynanabilir testi va
 
 1. ~~Zaman hızı~~ — karar: 12 saat = 1 ay; 10 yaşında başlangıç ya da 16 yaşında göç.
 2. ~~Ay dönümü saati~~ — karar: 00:00 ve 12:00 (TR).
-3. Oyuncu sayısı: köy 10-25, kasaba 30-60, şehir 60-150 oyuncu doğru hedef mi?
-4. Suikast başarısı: "zor" ne kadar zor olsun? Önerim: iyi hazırlanmış girişimde bile en çok %25.
-5. Tek oyunculuyla içerik paylaşımı: meslek, eşya ve olay metinleri paylaşılsın mı? Kimlik, kayıt ve motor
-   ayrı kalır. Önerim: evet.
+3. ~~Yoğunluk~~ — karar: ev sayısıyla doğal sınır; hedefler köy 10-25, kasaba 30-60, şehir 60-150.
+4. ~~Suikast~~ — karar: iyi hazırlıkta %30; hedefin dikkati ×1,5 ile ×1/3 arası değiştirir (§7).
+5. ~~İçerik paylaşımı~~ — karar: evet; meslekler ve beceriler genişletilir, her mesleğin yetenek ağacı olur (§14).
 
 ## 13. Kurallar ve korumalar (kurucu denetiminden sonra) `[ÖNERİ]`
 
@@ -287,7 +313,7 @@ dayananlar ayrıca belirtilmiştir.
    - Bildirim isteğe bağlıdır. İşaret her zaman Dönüş Kartı'na düşer.
 2. **Ölümün bedeli ve ölümden kâr.**
    - Vâris malı %10 veraset vergisiyle alır; vergi kasaba hazinesine gider.
-   - Mal, dönem miras paylarıyla evlatlar arasında bölünür. Bu, büyük servetleri kendiliğinden dağıtır.
+   - Mal, oyuncunun vasiyetine göre bölünür; vasiyet yoksa eşit pay (§8).
    - Beceriler geçmez. NPC'lerin vârise bakışı, ebeveyne bakışlarının %30'udur.
    - Kendini öldürmek mümkün değildir.
    - Ölümüne düello iki tarafın da 20 yaşını geçmiş olmasını ve yılda en çok bir kez yapılmasını gerektirir.
@@ -347,7 +373,93 @@ dayananlar ayrıca belirtilmiştir.
     - 16 yaş altı hiçbir zaman hedef olamaz.
     - Kan davası içindeki ölüm de soruşturulur.
 
-**Berkay'ın onayına sunulanlar:**
-- 2. maddedeki dönem miras payları;
-- 4. maddedeki vâris boşluğu varsayılanı;
-- 5. maddedeki taciz sınırının sertliği.
+**Berkay'ın kararları (31 Ekim):** miras vasiyetle (2), vâris boşluğu varsayılanı kabul (4), mevsim
+(1,5 gün) başına 2 düşmanca eylem kabul (5).
+
+## 14. Meslekler, özellikler ve yetenek ağaçları
+
+Tek oyunculudaki 15 meslek, 4 özellik ve 4 beceri temeldir; çevrimiçinde derinleşir. İçerik ortaktır (karar,
+Berkay); kimlik, kayıt ve motor ayrıdır.
+
+### 14.1 Özellikler (6) ve genel beceriler (6)
+
+- **Özellikler:** Güç, Çeviklik, Dayanıklılık, Zekâ, Karizma, **Sezgi**. Çeviklik ve Sezgi yeni; Sezgi
+  işaretleri, yalanı ve tehlikeyi fark ettirir.
+- **Genel beceriler:** Dövüş, Söz (ikna, arabuluculuk), Ticaret, Zanaat, İlim (okuma, hesap, hukuk), Gizlilik
+  (casusluk, iz, entrika).
+- Becerinin nasıl artacağı:
+  - yaparak öğrenme: tek oyunculudaki gibi;
+  - mektep;
+  - bir ustadan ders.
+  Ay başına kazanç tavanlıdır; farm yoktur.
+
+### 14.2 Meslek aileleri (21 meslek)
+
+| Aile | Meslekler |
+|---|---|
+| Toprak | Çiftçi, Çoban, Avcı, Balıkçı, **Değirmenci** |
+| Zanaat | Demirci, Marangoz, Kuyumcu, Dokumacı, **Debbağ**, **Yapı ustası** |
+| Ticaret ve hizmet | Tüccar, **Kervancı**, Hancı, Fırıncı |
+| İlim ve şifa | Kâtip, Şifacı, **Attar**, Müzisyen |
+| Kılıç ve yol | Asker, **Ulak** |
+
+Kalın olanlar çevrimiçiyle gelir.
+
+### 14.3 Her mesleğin yetenek ağacı
+
+- **Yapı:** her mesleğin **3 dalı** ve **4 kademesi** vardır. Kademeler Ahilik basamaklarıdır: çırak, kalfa,
+  usta, pir.
+  - Bir kademeye çıkmak için hizmet süresi ve peştamal sınavı gerekir. Tek oyunculudaki 30 aylık kademe kuralı
+    çevrimiçinde 12 ay olur `[PARAMETRE]`.
+  - Her kademede o mesleğin dallarına puan dağıtılır.
+- **Düğümler** şunları açar:
+  - tarif ya da hizmet;
+  - kalite ya da hız;
+  - özel eylem (ör. şaheser sipariş);
+  - toplumsal hak (lonca oyu, çırak alma, dükkân açma).
+- **Uzmanlaşma:** usta ancak bir dalı sonuna kadar götürebilir. Aynı meslekten iki oyuncu farklı ustalar olur,
+  birbirine ihtiyaç duyar.
+- **Meslekler arası bağ:** üst düğümler başka mesleklerin ürününü ister. Ör. demircinin zırhı debbağın derisini
+  ve dokumacının astarını ister. Bu ürünü oyuncu ya da NPC sağlar; NPC tabanı her zaman vardır.
+- **Pişmanlık hakkı:** yılda 1 puan geri alınabilir. Kalıcı kilit yoktur ama hızlı değiştirme de yoktur.
+- **Usta–çırak:** usta, çırağının ağacında öğrettiği daldan **ders** verebilir. Çırak o dalı daha hızlı açar,
+  usta "pir" puanı kazanır. Pir kademesi yalnız çırak yetiştirerek açılır.
+
+**Örnek — Demirci:**
+
+| Kademe | Silah dalı | Alet dalı | Zırh dalı |
+|---|---|---|---|
+| Çırak | Bıçak, hançer | Nal, çivi | Deri yelek onarımı |
+| Kalfa | Kılıç, mızrak ucu (kalite +) | Saban, orak (köylü talebi, ucuz-dayanıklı) | Zincir örme |
+| Usta | **Şaheser kılıç** (sipariş, ün) | Değirmen ve köprü demiri (yapı ustasıyla) | Pul zırh (debbağ derisiyle) |
+| Pir | Kendi damgası: kılıçları tanınır, fiyatı artar | Lonca kethüdalığı hakkı | Ordu siparişi (savaş zamanı) |
+
+**Dallar (her meslek için 3):**
+
+| Meslek | Dallar |
+|---|---|
+| Çiftçi | Tahıl · Bağ-bahçe · Toprak ağalığı (ırgat çalıştırma) |
+| Çoban | Sürü · Süt-yün · Yayla göçü |
+| Avcı | Yay · Tuzak · İz sürme (Sezgi'ye bağlı) |
+| Balıkçı | Ağ · Kayık · Tuzlama |
+| Değirmenci | Un · Su değirmeni · Ambar (kıtlık zamanı) |
+| Demirci | Silah · Alet · Zırh |
+| Marangoz | Yapı · Araba-kayık · Oyma |
+| Kuyumcu | Mühür-yüzük · Süs · Sarraflık |
+| Dokumacı | Kumaş · Halı-kilim · Boya |
+| Debbağ | Deri · Koşum · Zırh astarı |
+| Yapı ustası | Ev · Köprü-sur · Han-cami (vakıf işi) |
+| Tüccar | Pazar · Uzak ticaret · Kredi |
+| Kervancı | Yol · Muhafız · Han ağı |
+| Hancı | Konaklama · Mutfak · Haber (söylentinin merkezi) |
+| Fırıncı | Ekmek · Tatlı · Toplu mutfak (kıtlık) |
+| Kâtip | Belge-sözleşme · Hukuk (kadılık yolu) · Divan (siyaset) |
+| Şifacı | Cerrahlık · Ebelik · Salgın |
+| Attar | Ot · Merhem · Zehir-panzehir |
+| Müzisyen | Saz · Destan (itibar) · Meclis (karizma) |
+| Asker | Kılıç-kalkan · Ok-yay · Komuta |
+| Ulak | Hız · Gizli mektup · Casusluk (Göz) |
+
+**Ekran:** karakter sayfasındaki meslek sekmesinde ağaç dikey bir şerit olarak görünür. Dallar yan yana durur,
+kilitli düğümün yanında açılış şartı yazar. 3D kuşam karakteri, açılan zırh ve silah düğümleriyle
+görsel olarak değişir.
