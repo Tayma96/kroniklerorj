@@ -502,7 +502,7 @@ Etiketler bölüm 0'da tanımlıdır. Berkay'ın yaşam simülasyonu yönü **[K
 
 | Konu | Birleşik tasarım ilkesi | Uygulama etkisi |
 |---|---|---|
-| D-03 — zaman | Genel, oyuncuya görünen tur/ay kapısı yok; dünya olay temelli işler. Kolektif süreç başta ilan edilmiş uzun katılım aralığı ve varsayılan sonuç taşır. | **[KESİN — Berkay]** Ortak takvim: 12 gerçek saat = 1 oyun ayı; ay dönümü 00:00 ve 12:00 (TR). Giriş: 10 yaşında doğum ya da 16 yaşında göç; etkileşimler yaşa göre kademeli. Ayrıntı `docs/online/OYNANIS_TASARIMI.md` §3. |
+| D-03 — zaman | Genel, oyuncuya görünen tur/ay kapısı yok; dünya olay temelli işler. Kolektif süreç başta ilan edilmiş uzun katılım aralığı ve varsayılan sonuç taşır. | **[KESİN — Berkay]** Ortak takvim: 12 gerçek saat = 1 oyun ayı; ay dönümü 00:00 ve 12:00 (TR). Herkes 12 yaşında başlar; ilk 6 gün öğrenme dönemi; etkileşimler 12/13/16'da kademeli açılır. Ayrıntı `docs/online/OYNANIS_TASARIMI.md` §3. |
 | K-09 — bekleme/FOMO | Arayüz kilitleyen bekleme yok; kaçırma ek ceza üretmez; para/premium para beklemeyi atlatmaz. Alfa başlangıcında kazanılmış oyun içi kaynakla hızlandırma da yok. | Varsayılan tablosu ve kaynak/para kuralları uygulanmadan önce onaylanmalı. |
 | A-03 — savaş tebliği | Dar, canlı katılım penceresi varsayılan değil. İlanlı savaş çözümü popülasyon düzeyinde ölçülen aktif oyuncu giriş aralığı P90'ından önce olmaz; ön emir, delegasyon ve kayıp tavanı asıl korumadır. | P90 tanımı, alfa 36–48 saat aralığı ve savaş parametreleri onay/ölçüm gerektirir. |
 | N-5 — kayıp tavanı | Kayan mülk kaybı tavanı tüm saldırganlara karşı hedef başınadır; siyasi sonuçlar ayrı ama kendi anti-abuse kuralına tabidir. | Sayı, dönem ve direnç bandı faz 8 öncesinde kararlaştırılır. |
