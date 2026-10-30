@@ -16,12 +16,12 @@
 - "Sofra" eklendi (13+ yaşta yemek). Tarayıcı botu 400 ay hatasız oynadı.
 
 ## 3. tur (nihai ana sayfa — kullanıcı kararı)
-- Ana sayfa = `claude-paket/mockup_full.png` ekran 1, ölçüler ×0.82 ile `lib/home-mockup-ui.tsx`ta (sahne 201, portre 84, metin ~12.5 pt). Sahne `heroImage(yaş, mevsim)` (eski mantık). Yan yana karşılaştırarak ayarlandı.
+- Ana sayfa = mockup ekran 1, ×0.82, `lib/home-mockup-ui.tsx` (süs/renk `lib/mk-sus.tsx`).
 - Alt menü seçenekleri ESKİ gibi kalır: Ana Sayfa · Karakter · [Ayı İlerlet] · İlişkiler · Menü; yalnız görünüm mockup'a göre. Başka sayfaların yapısını değiştirme.
 - Emek ve yaş uğraşları Karakter ekranında (`lib/month-actions-ui.tsx`), çalışılmamış ayda Karakter rozeti. Semboller yazı tipinde (`scripts/yazitipi`). Smoke en sona.
 
 ## Açık işler
-- MP ertelendi; yalnız protokol eşliğini koru.
+- Çevrimiçi: `docs/online/` (OYNANIS_TASARIMI, FAZ1/2_PLAN). Faz 1 sunucu+ekran ✓ (`online-server/`, `mobile/lib|app/online`, bayrak `ONLINE_GELISTIRME`); Faz 2 sürüyor. Eski beta kapalı (Yakında); `server/` ve eşliği dokunulmaz.
 - Yöntem: Superpowers (tasarım → plan → uygulama → doğrulama). 10 sayfa + giriş/yeni oyun ✓; sinematik ✓ (lib/sinematik; kaynak assets/sinematik/KAYNAK.md). 3D aşama 1 test APK'da (oturum dalı), telefon onayı bekleniyor. KURAL: paralel ajan yok (limit bitiriyor); en çok 1 ajan, inceleme ucuz betikle. 3D: `docs/superpowers/specs/2026-10-28-canli-3d-kusam-design.md`.
 - 3D: kullanıcı karikatür değil gerçekçi insan istiyor. Hat `.claude/skills/blender-karakter` (her oturumda setup.sh). Kullanıcı onayı olmadan tasarım/oyun entegrasyonuna geçme.
 - Skill'ler `.claude/skills` (Superpowers, ECC seçkisi, ElevenLabs, claude-code-setup); öncelik `kronikler-skill-rehberi`.
