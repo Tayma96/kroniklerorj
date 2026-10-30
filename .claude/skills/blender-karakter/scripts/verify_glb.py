@@ -65,16 +65,19 @@ PBn = arm.pose.bones
 for c in ("bekle", "saldir", "savustur"):
     a = acts[c]; arm.animation_data.action = a
     f0, f1 = int(a.frame_range[0]), int(a.frame_range[1])
-    feet0 = None; slide = 0.0; hx = []; hz = []; tipz = []
+    feet0 = None; slide = 0.0; hx = []; hz = []; P = []
     for f in range(f0, f1 + 1):
         sc.frame_set(f)
-        ft = [arm.matrix_world @ PBn[n].head for n in ("LeftFoot", "RightFoot", "LeftToeBase", "RightToeBase")]
+        ft = [arm.matrix_world @ PBn[n].head for n in ("foot_l", "foot_r", "ball_l", "ball_r")]
         if feet0 is None: feet0 = ft
         slide = max(slide, max((x - y).length for x, y in zip(ft, feet0)))
-        h = arm.matrix_world @ PBn["Hips"].head; hx.append(h.xy.length); hz.append(h.z)
-    sc.frame_set(f0); p0 = [pb.matrix.copy() for pb in PBn]; sc.frame_set(f1); p1 = [pb.matrix.copy() for pb in PBn]
-    loopd = max((x.translation - y.translation).length for x, y in zip(p0, p1))
-    print("OLCUM", c, "ayak kayma max %.4f m" % slide, "kalca yatay max %.3f m" % max(hx), "kalca z %.3f-%.3f" % (min(hz), max(hz)), "ilk-son kare kemik farki %.4f m" % loopd)
+        h = arm.matrix_world @ PBn["pelvis"].head; hx.append(h.xy.length); hz.append(h.z)
+        P.append([arm.matrix_world @ pb.tail for pb in PBn])
+    loopd = max((x - y).length for x, y in zip(P[0], P[-1]))
+    steps = [max((x - y).length for x, y in zip(P[i], P[i - 1])) for i in range(1, len(P))]
+    wrap = max((x - y).length for x, y in zip(P[1], P[-2])) / 2 if len(P) > 2 else 0
+    print("OLCUM", c, "ayak kayma max %.4f m" % slide, "kalca yatay max %.3f m" % max(hx), "kalca z %.3f-%.3f" % (min(hz), max(hz)),
+          "ilk-son kare farki %.4f m" % loopd, "dikis adimi %.4f m (ort adim %.4f, maks %.4f)" % (wrap, sum(steps) / len(steps), max(steps)))
 for c in ("bekle", "saldir", "savustur"):
     a = acts[c]; arm.animation_data.action = a
     mid = int(round((a.frame_range[0] + a.frame_range[1]) / 2)); sc.frame_set(mid)

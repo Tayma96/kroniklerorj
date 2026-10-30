@@ -24,6 +24,9 @@ for o in list(bpy.data.objects):
 
 # gövde: şekil anahtarlarını karışımla göm, maskeleri uygula
 activate(body)
+def slot_faces(key):
+    idx = [i for i, m in enumerate(body.data.materials) if m and key in m.name.lower()]
+    return [p for p in body.data.polygons if p.material_index in idx]
 if body.data.shape_keys:
     body.shape_key_add(name="mix", from_mix=True)
     for k in list(body.data.shape_keys.key_blocks)[:-1]:
@@ -33,6 +36,10 @@ for m in list(body.modifiers):
     if m.type == 'MASK':
         bpy.ops.object.modifier_apply(modifier=m.name)
 print("GOVDE maskeden sonra", tris(body))
+lipf = slot_faces('lips'); earf = slot_faces('ears')
+LIPS = [body.data.vertices[i].co.copy() for p in lipf for i in p.vertices]
+EARS = [body.data.vertices[i].co.copy() for p in earf for i in p.vertices]
+LIPIDX = {i for i, m in enumerate(body.data.materials) if m and 'lips' in m.name.lower()}
 
 # giysi altında kalan gövde: köşe normali boyunca 6 cm içinde giysiye çarpıyorsa örtülü
 cloth = [o for o in bpy.data.objects if o.type == 'MESH' and any(k in o.name for k in cfg.get("giysi", ("tunic", "pants", "boots")))]
@@ -110,7 +117,29 @@ for p in me.polygons:
     w = sum(hw[i] for i in p.vertices) / len(p.vertices)
     if w > cfg.get("eldiven_esik", 0.35):
         polys.append([[round(uvl[li].uv[0], 5), round(uvl[li].uv[1], 5)] for li in p.loop_indices])
-json.dump({"polys": polys}, open(cfg.get("uv", OUT.replace(".blend", "_eldiven_uv.json")), "w"))
+# sakal bölgesi (yüz önü, elmacık çizgisi altı, kulak önü, dudak dışı) — yumuşak ağırlık
+def sm(x): x = min(max(x, 0.0), 1.0); return x * x * (3 - 2 * x)
+eyes_ = [o for o in bpy.data.objects if o.type == 'MESH' and ('high-poly' in o.name or 'low-poly' in o.name)]
+EZ_ = sum((o.matrix_world @ v.co).z for o in eyes_ for v in o.data.vertices) / sum(len(o.data.vertices) for o in eyes_)
+MZ = sum(p.z for p in LIPS) / len(LIPS); MW = max(abs(p.x) for p in LIPS); MY = min(p.y for p in LIPS)
+EY = sum(p.y for p in EARS) / len(EARS)
+lipz0, lipz1 = min(p.z for p in LIPS), max(p.z for p in LIPS)
+def beard(p):
+    ax_ = abs(p.x)
+    zc = MZ + 0.019 + (EZ_ - 0.016 - MZ - 0.019) * min(ax_ / 0.068, 1.0) ** 1.3        # elmacık çizgisi
+    top = sm((zc - p.z) / 0.012)
+    bot = sm((p.z - (MZ - 0.095 + 0.03 * min(ax_ / 0.06, 1))) / 0.012)        # çene altı, boyna doğru
+    front = sm(((EY - 0.012) - p.y) / 0.01)                                     # kulak önü
+    lip = 1.0 - sm((0.006 - max(ax_ - MW, 0) - max(p.z - lipz1, lipz0 - p.z, 0)) / 0.004) if (ax_ < MW + 0.004 and lipz0 - 0.004 < p.z < lipz1 + 0.004) else 1.0
+    return top * bot * front * lip
+bw = [beard(v.co) if v.co.z > EZ_ - 0.2 else 0.0 for v in me.vertices]
+spolys = []
+for p in me.polygons:
+    if p.material_index in LIPIDX: continue
+    w = sum(bw[i] for i in p.vertices) / len(p.vertices)
+    if w > 0.02: spolys.append([round(w, 3), [[round(uvl[li].uv[0], 5), round(uvl[li].uv[1], 5)] for li in p.loop_indices]])
+print("SAKAL yuz", len(spolys), "agiz z %.3f gen %.3f kulak y %.3f" % (MZ, MW, EY))
+json.dump({"polys": polys, "sakal": spolys}, open(cfg.get("uv", OUT.replace(".blend", "_eldiven_uv.json")), "w"))
 print("ELDIVEN UV yuz", len(polys))
 
 for o in bpy.data.objects:

@@ -37,6 +37,23 @@ CMU denek 2 hareketleri (BVH'ye çevrilir), Poly Haven HDRI, kızıl şalvar dok
 4. **Render:** `B -b --python scripts/render_shot.py -- in.blend out.png K/hdri/kloof.hdr boy|portre [örnek] [hdri_açı] [kare]`
    Cycles CPU + OIDN. 4 çekirdekte 40-64 örnekle kare başı ~50-60 sn.
 
+### Oyun GLB hattı (canlı 3D, `game_engine` iskeleti, 53 kemik)
+
+Tek komut: `B=<blender> bash scripts/oyun_hatti.sh <çalışma_klasörü> <çıktı.glb>` (~3 dk). Adımlar:
+- `game_prep.py`: ağız içi silinir, giysi altındaki gövde yüzleri ışın testiyle silinir, yüz korunarak
+  kafatası/eller seyreltilir; eldiven ve sakal UV maskeleri JSON'a yazılır.
+- `doku.py` (sistem python3+PIL): eldivenli/sakallı ten, çivit gömlek, boyasız yün şalvar, koyu çizme,
+  yordamsal lamel, zincir, dövme demir, kabza sargısı (≤1024 px, JPEG normal).
+- `equip.py`: 3 eklemli parmaklar kabzaya temasla kapanır (çapraz avuç ekseni); Selçuklu kılıcı (4 cm namlu,
+  balçak, sargılı kabza); konik miğfer + burun siperi + omuza oturan zincir boyunluk; tunikten pul zırh
+  (sert etek ağırlığı tunikle ortak), kemer, eldiven yakası; zırh altında kalan iç katman silinir.
+- `game_anim.py` + `game_clips.json`: CMU 02_07; boyun kaynak YÖNÜYLE sürülür (mutlak hedef boyunu geriye
+  büker), baş düz bakar; 1.25-1.45x zaman bükme, hazırlanma/taşma/geri tepme katmanları, Gauss (σ 1, temasta
+  0.5), baş/namlu gecikmesi, IK ayak kilidi (diz ayak ucu üstünde), sol el hep kabzada, nefesli dikişsiz
+  `bekle`, klipler muhafızda başlar ve taşma-oturmayla biter.
+- Denetim: `clip_check.py` (8 pozda içinden geçme), `verify_glb.py` (BUTCE + ayak kayması + döngü dikişi),
+  `inceleme.py` + `pafta.py` (GLB'den ön/yan, baş, kontak sayfaları, ayak kayması önce/sonra).
+
 ## Doğrulama
 
 Görüntüye bakmadan önce yapıyı ölç (`blender-motion-state-inspection` skill'i):

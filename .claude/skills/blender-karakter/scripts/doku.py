@@ -56,6 +56,19 @@ mask = Image.new('L', (N, N), 0); dr = ImageDraw.Draw(mask)
 for poly in json.load(open(UVJ))["polys"]:
     dr.polygon([(u * N, (1 - v) * N) for u, v in poly], fill=255)
 m = np.asarray(mask.filter(ImageFilter.MaxFilter(5)).filter(ImageFilter.GaussianBlur(2.0)), np.float32)[..., None] / 255
+# sakal: kısa, gür, koyu kahve (bıyık dahil); kıl yönü için yatay+dikey çizgili gürültü
+UVD = json.load(open(UVJ))
+bm_ = Image.new('L', (N, N), 0); dr2 = ImageDraw.Draw(bm_)
+for w, poly in UVD.get("sakal", []):
+    dr2.polygon([(u * N, (1 - v) * N) for u, v in poly], fill=int(255 * min(w, 1)))
+bmask = np.asarray(bm_.filter(ImageFilter.GaussianBlur(3.0)), np.float32)[..., None] / 255
+r2 = np.random.default_rng(3)
+st1 = np.asarray(Image.fromarray((r2.random((N, N // 6)) * 255).astype(np.uint8)).resize((N, N), Image.BICUBIC), np.float32) / 255
+st2 = np.asarray(Image.fromarray((r2.random((N // 6, N)) * 255).astype(np.uint8)).resize((N, N), Image.BICUBIC), np.float32) / 255
+hair = np.clip(0.55 * st1 + 0.45 * st2 + 0.25 * (r2.random((N, N)).astype(np.float32) - 0.5), 0, 1)
+hcol = srgb(C.get("sakal", [40, 30, 24]))[None, None, :] * (0.55 + 0.9 * hair[..., None])
+dens = C.get("sakal_yogun", 0.86)
+sk = sk * (1 - bmask * dens) + hcol * bmask * dens
 L = luma(sk); grain = noise(N, 6, 3, 11)
 leather = srgb(C.get("eldiven", [72, 52, 38]))[None, None, :] * (detail(L, 6, 0.6, 1.5) ** 1.0)[..., None] * (0.85 + 0.3 * grain)[..., None]
 save(sk * (1 - m) + leather * m, "ten.jpg", 90)
@@ -116,7 +129,7 @@ for j in range(-1, NRW + 2):
         d = np.sqrt((xx - cx) ** 2 + (yy - cy) ** 2)
         ring = np.clip(1 - np.abs(d - R * 0.42) / (R * 0.16), 0, 1)
         hm = np.maximum(hm, ring * (0.8 + 0.2 * ((i + j) % 2)))
-save(srgb([70, 72, 76])[None, None, :] * (0.35 + 0.75 * hm)[..., None] * (0.9 + 0.2 * noise(T, 30, 3, 9))[..., None], "zincir.jpg")
+save(srgb([104, 106, 110])[None, None, :] * (0.4 + 0.7 * hm)[..., None] * (0.9 + 0.2 * noise(T, 30, 3, 9))[..., None], "zincir.jpg")
 save(height_to_normal(blur(hm, 0.8), 4.0), "zincir_n.jpg", 92)
 
 # ── 5. dövme demir (miğfer): çekiç izi normal haritası ──
