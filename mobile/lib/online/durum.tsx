@@ -84,10 +84,15 @@ export function OnlineDurumSaglayici({ children, tohum }: { children: ReactNode;
     await oturumSil();
   }, []);
 
-  /** Bir işlemi tek seferlik çalıştırır; oturum hatasında oturumu düşürür. */
-  const calistir = async <T,>(ad: Islem, is: () => Promise<Sonuc<T>>): Promise<Sonuc<T>> => {
-    if (mesgul.current) return basarisiz<T>("hiz_siniri");
-    mesgul.current = true;
+  /**
+   * Bir işlemi çalıştırır, hata durumunu tutar; oturum hatasında oturumu düşürür. `kilit` yalnız yazan işlemlerde
+   * (giriş, profil) çift dokunuşu engeller.
+   */
+  const calistir = async <T,>(ad: Islem, is: () => Promise<Sonuc<T>>, kilit = false): Promise<Sonuc<T>> => {
+    if (kilit) {
+      if (mesgul.current) return basarisiz<T>("hiz_siniri");
+      mesgul.current = true;
+    }
     setIslem(ad);
     setHata(null);
     try {
@@ -98,8 +103,8 @@ export function OnlineDurumSaglayici({ children, tohum }: { children: ReactNode;
       }
       return sonuc;
     } finally {
-      mesgul.current = false;
-      setIslem(null);
+      if (kilit) mesgul.current = false;
+      setIslem((i) => (i === ad ? null : i));
     }
   };
 
@@ -160,7 +165,7 @@ export function OnlineDurumSaglayici({ children, tohum }: { children: ReactNode;
           if (p.ok) setProfil(p.deger);
         }
         return g;
-      }),
+      }, true),
     gelistiriciGiris: () => {
       if (!onlineEkranAcik()) return;
       sahte.current = sahteIstemci();
@@ -208,7 +213,7 @@ export function OnlineDurumSaglayici({ children, tohum }: { children: ReactNode;
           if (!tohum) await taslakSil();
         }
         return s;
-      }),
+      }, true),
     hataTemizle: () => setHata(null),
   };
 
@@ -227,6 +232,7 @@ export function useOnline(): OnlineDurum {
  */
 export function OnlineKapisi({ children }: { children: ReactNode }) {
   const var_ = useContext(Baglam);
+  const [tohum] = useState(onizlemeTohumu);
   if (var_) return <>{children}</>;
-  return <OnlineDurumSaglayici tohum={onizlemeTohumu()}>{children}</OnlineDurumSaglayici>;
+  return <OnlineDurumSaglayici tohum={tohum}>{children}</OnlineDurumSaglayici>;
 }

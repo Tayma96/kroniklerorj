@@ -48,6 +48,11 @@ export const SCREEN_DESIGNS: readonly ScreenDesign[] = [
   page("/cok-oyunculu/harita", "mp.map.title", "journey", "gurbet_yol", "map"),
   page("/cok-oyunculu/diplomasi", "mp.soc.title", "realm", "kadi_divan", "scroll-open"),
   page("/cok-oyunculu/diyar", "mp.realm", "journey", "cami_avlu", "castle"),
+  page("/online", "onl.g.baslik", "system", "gurbet_yol", "compass"),
+  page("/online/profil", "onl.adim.kimlik", "life", "dogum", "karakter"),
+  page("/online/yerlesim", "onl.adim.yerlesim", "journey", "gurbet_yol", "map"),
+  page("/online/davet", "onl.d.ust", "people", "cami_avlu", "family"),
+  page("/online/varis", "onl.adim.varis", "life", "hasat", "house"),
 ];
 export function screenDesign(path: string): ScreenDesign {
   const route = path.replace(/\/$/, "") || "/";

@@ -7,6 +7,9 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 // Yeni çevrimiçi mod hazır olana dek kapalı (KRONIKLER_ONLINE_GDD.md D-13, 30 Ekim 2026):
 // çok oyunculu rotalar "Yakında" ekranını gösterir, istemci eski sunucuya bağlanmaz.
 export const ONLINE_ACIK = false;
+// Yeni çevrimiçi akışın (/online: giriş, profil, yerleşim, davet, varış) geliştirici kapısı. Kapalıyken /online
+// rotaları da "Yakında" gösterir; açıkken geliştirici oturumu sahte veriyle sunucusuz denenebilir.
+export const ONLINE_GELISTIRME = false;
 
 export const DEFAULT_SERVER_URL = "wss://kronikler-mp.tayma.workers.dev";
 

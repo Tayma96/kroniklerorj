@@ -30,3 +30,6 @@ export const oturumHatasiMi = (kod: OnlineHata | null | undefined) =>
   kod === "oturum_yok" || kod === "oturum_gecersiz" || kod === "oturum_suresi_doldu";
 export const adHatasiMi = (kod: OnlineHata | null | undefined) =>
   kod === "ad_uzunluk" || kod === "ad_karakter" || kod === "ad_yasak" || kod === "ad_alinmis";
+/** Giriş ekranında gösterilecek genel hatalar (ağ, sunucu, oturum); form hataları kendi ekranında kalır. */
+export const genelHataMi = (kod: OnlineHata | null | undefined): kod is OnlineHata =>
+  !!kod && !adHatasiMi(kod) && !kod.startsWith("davet") && !kod.startsWith("yerlesim") && kod !== "cinsiyet_gecersiz" && kod !== "profil_yok";
