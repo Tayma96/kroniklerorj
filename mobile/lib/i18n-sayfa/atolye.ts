@@ -1,3 +1,21 @@
 // "atolye" sayfasının çevirileri: "anahtar": [tr, en, es, pt, ar, ru]. Anahtar öneki: "atolye.".
 export const rows: Record<string, string[]> = {
+  "atolye.forge.ready": ["Ocak hazır", "Forge ready", "Fragua lista", "Forja pronta", "الكور جاهز", "Горн готов"],
+  "atolye.forge.rest": ["Ocak dinleniyor", "Forge resting", "La fragua reposa", "A forja repousa", "الكور يستريح", "Горн остывает"],
+  "atolye.forge.closed": ["Tezgâh kapalı", "Bench closed", "Taller cerrado", "Bancada fechada", "الورشة مغلقة", "Мастерская закрыта"],
+  "atolye.forgeLine.ready": ["Bu ay tezgâhta bir iş çıkarabilirsin.", "You can finish one piece at the bench this month.", "Este mes puedes terminar una pieza en el banco.", "Este mês podes terminar uma peça na bancada.", "يمكنك إنجاز قطعة واحدة على المنضدة هذا الشهر.", "В этом месяце можно сделать одну вещь за верстаком."],
+  "atolye.forgeLine.rest": ["Bu ayın işi çıktı; ocak gelecek ay yeniden kızar.", "This month's piece is done; the forge heats again next month.", "La pieza de este mes está hecha; la fragua vuelve a arder el mes próximo.", "A peça deste mês está feita; a forja volta a aquecer no próximo mês.", "أُنجزت قطعة هذا الشهر؛ يحمى الكور من جديد في الشهر القادم.", "Работа этого месяца готова; горн разгорится снова в следующем месяце."],
+  "atolye.forgeLine.closed": ["Zindandayken tezgâha el süremezsin.", "You cannot work the bench while imprisoned.", "No puedes trabajar en el taller mientras estés en prisión.", "Não podes trabalhar na bancada enquanto estás na prisão.", "لا يمكنك العمل في الورشة وأنت في السجن.", "В темнице к верстаку не подойти."],
+  "atolye.busy": ["Tezgâh bu ay dolu", "Bench used this month", "Taller ocupado este mes", "Bancada ocupada este mês", "الورشة مشغولة هذا الشهر", "Верстак занят в этом месяце"],
+  "atolye.jailed": ["Zindanda tezgâh yok", "No workbench in prison", "No hay taller en prisión", "Não há bancada na prisão", "لا ورشة في السجن", "В темнице нет верстака"],
+  "atolye.recipes": ["Tarifler", "Recipes", "Recetas", "Receitas", "الوصفات", "Рецепты"],
+  "atolye.readyCount": ["%1 hazır", "%1 ready", "%1 listas", "%1 prontas", "%1 جاهزة", "Готово: %1"],
+  "atolye.orderTag": ["Sipariş", "Order", "Pedido", "Encomenda", "طلب", "Заказ"],
+  "atolye.step.accept": ["Kabul", "Accepted", "Aceptado", "Aceite", "القبول", "Принят"],
+  "atolye.step.craft": ["Üretim", "Craft", "Fabricar", "Fabrico", "الصنع", "Работа"],
+  "atolye.step.deliver": ["Teslim", "Delivery", "Entrega", "Entrega", "التسليم", "Сдача"],
+  "atolye.showRecipe": ["Tarifi göster", "Show recipe", "Ver receta", "Ver receita", "اعرض الوصفة", "Показать рецепт"],
+  "atolye.xpNext": ["Sonraki seviyeye %1 puan", "%1 points to next level", "%1 puntos para el siguiente nivel", "%1 pontos para o próximo nível", "%1 نقطة للمستوى التالي", "До следующего уровня: %1"],
+  "atolye.maxLevel": ["Ustalığın zirvesi", "Mastery at its peak", "Maestría en su cumbre", "Mestria no auge", "ذروة الإتقان", "Вершина мастерства"],
+  "atolye.skillLabel": ["Zanaat seviyesi %1", "Crafting level %1", "Nivel de artesanía %1", "Nível de ofício %1", "مستوى الحرفة %1", "Уровень ремесла: %1"],
 };
