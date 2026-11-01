@@ -1,7 +1,7 @@
 import { Tabs, useRouter, usePathname } from "expo-router";
-import { View, Pressable, Text, useWindowDimensions } from "react-native";
+import { View, Pressable, Text, StyleSheet, useWindowDimensions } from "react-native";
 import Svg, { Defs, RadialGradient, Stop, Rect, Polygon, Circle } from "react-native-svg";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ComponentProps } from "react";
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming, Easing, cancelAnimation } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -38,6 +38,51 @@ function TabBackground({ width }: { width: number }) {
     <LinearGradient colors={["#2B1F12", "#1B140B", "#110C07"]} locations={[0, 0.5, 1]} style={{ flex: 1 }} />
     <LinearGradient pointerEvents="none" start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} colors={["#6B4F2A", "#E8C46A", "#6B4F2A"]} style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1.5 }} />
     {xs.filter((_, i) => i !== 1).map((x) => <View key={x} pointerEvents="none" style={{ position: "absolute", left: x, top: 14, bottom: 18, width: 1, backgroundColor: "rgba(205,185,143,0.18)" }} />)}
+  </View>;
+}
+
+// Görünür sekmeler; Karakter ile İlişkiler arasında pusula düğmesinin yuvası (ORTA) kalır.
+const SEKMELER = [
+  { name: "index", label: "tab.home", icon: "house" },
+  { name: "karakter", label: "tab.character", icon: "hood" },
+  { name: "iliskiler", label: "tab.relations", icon: "family" },
+  { name: "menu", label: "tab.menu", icon: "book" },
+] as const;
+const ORTA = 84;
+type SekmeProps = Parameters<NonNullable<ComponentProps<typeof Tabs>["tabBar"]>>[0];
+
+// Kendi sekme çubuğumuz. Kütüphanenin çubuğu, çerçeve ölçüsünü yatay sanıp etiketleri simgenin yanına dizebiliyor ve
+// etiketi sığdırırken sıfıra küçültebiliyordu; telefonda menü sola kaydı, sağ sekmeler kayboldu, dokunuşlar boşa gitti.
+// Burada genişlikler ve yerler ekrandan doğrudan hesaplanır; her cihazda aynı yerleşim.
+function SekmeCubugu({ state, navigation, width, bottom, workDue, t }: SekmeProps & { width: number; bottom: number; workDue: boolean; t: (k: string) => string }) {
+  const tab = Math.max(44, (width - ORTA) / 4);
+  const current = state.routes[state.index]?.name;
+  const small = width < 360;
+  return <View style={{ height: 70 + bottom, backgroundColor: "#1B130A", shadowColor: "#000", shadowOpacity: 0.6, shadowRadius: 10, shadowOffset: { width: 0, height: -4 }, elevation: 16 }}>
+    <View pointerEvents="none" style={StyleSheet.absoluteFill}><TabBackground width={width} /></View>
+    <View style={{ flexDirection: "row", paddingTop: 7 }}>
+      {SEKMELER.map((s, i) => {
+        const gap = i === 1 ? ORTA : 0;
+        const route = state.routes.find((r) => r.name === s.name);
+        if (!route) return <View key={s.name} style={{ width: tab, marginRight: gap }} />;
+        const focused = current === s.name;
+        const label = t(s.label);
+        const onPress = () => {
+          const ev = navigation.emit({ type: "tabPress", target: route.key, canPreventDefault: true });
+          if (!focused && !ev.defaultPrevented) navigation.navigate({ name: route.name, params: route.params } as never);
+        };
+        return <Pressable key={s.name} onPress={onPress} accessibilityRole="tab" accessibilityLabel={label} accessibilityState={{ selected: focused }}
+          style={({ pressed }) => ({ width: tab, marginRight: gap, height: 56, alignItems: "center", justifyContent: "center", opacity: pressed ? 0.7 : 1 })}>
+          <View>
+            <TabIcon name={s.icon} focused={focused} />
+            {s.name === "karakter" && workDue ? <View style={{ position: "absolute", top: -5, right: -13, minWidth: 18, height: 18, borderRadius: 9, paddingHorizontal: 4, alignItems: "center", justifyContent: "center", backgroundColor: "#B5331F" }}>
+              <Text style={{ fontFamily: F.display, fontSize: 11, lineHeight: 14, color: "#FFF4E2" }}>!</Text>
+            </View> : null}
+          </View>
+          <Text numberOfLines={1} style={{ marginTop: 3, maxWidth: tab - 4, fontFamily: F.serif, fontSize: small || label.length > 9 ? 10.5 : 12, lineHeight: 15, color: focused ? C.goldBright : "#E6D6B4", textAlign: "center" }}>{label}</Text>
+        </Pressable>;
+      })}
+    </View>
   </View>;
 }
 
@@ -197,25 +242,18 @@ export default function OyunLayout() {
   const router = useRouter();
   const yol = usePathname();
   const { width } = useWindowDimensions();
-  const tabWidth = Math.max(44, (width - 84) / 4);
   // Bu ay emek henüz verilmediyse Karakter sekmesinde rozet (çalışma ana sayfadan Karakter ekranına taşındı)
   const workDue = !mpMode && !!state && !state.player.dead && state.player.age >= 13 && state.player.profession !== "işsiz" && canWork(state);
   useEffect(() => { const ad = yol.replace(/^\/oyun\/?/, "").split("/")[0] || "index"; oturumEkran(ad); }, [yol]); // cihazda kalan oturum kaydı
   return (
     <View style={{ flex: 1 }}>
-      <Tabs screenOptions={{
-        headerShown: false,
-        tabBarStyle: { backgroundColor: "#1B130A", borderTopWidth: 0, height: 70 + insets.bottom, paddingBottom: insets.bottom + 6, paddingTop: 8, shadowColor: "#000", shadowOpacity: 0.6, shadowRadius: 10, shadowOffset: { width: 0, height: -4 }, elevation: 16 },
-        tabBarBackground: () => <TabBackground width={width} />,
-        tabBarActiveTintColor: C.goldBright,
-        tabBarInactiveTintColor: "#E6D6B4",
-        tabBarItemStyle: { flexGrow: 0, flexShrink: 0, width: tabWidth },
-        tabBarLabel: ({ color, children }) => <Text numberOfLines={1} adjustsFontSizeToFit style={{ fontFamily: F.serif, fontSize: width < 360 ? 10.5 : 12, lineHeight: 15, color, textAlign: "center", paddingHorizontal: 1 }}>{children}</Text>,
-      }}>
-        <Tabs.Screen name="index" options={{ title: t("tab.home"), tabBarIcon: ({ focused }) => <TabIcon name="house" focused={focused} /> }} />
-        <Tabs.Screen name="karakter" options={{ title: t("tab.character"), tabBarBadge: workDue ? "!" : undefined, tabBarBadgeStyle: { backgroundColor: "#B5331F", color: "#FFF4E2", fontSize: 11, minWidth: 18, height: 18, lineHeight: 16 }, tabBarItemStyle: { flexGrow: 0, flexShrink: 0, width: tabWidth, marginRight: 84 }, tabBarIcon: ({ focused }) => <TabIcon name="hood" focused={focused} /> }} />
-        <Tabs.Screen name="iliskiler" options={{ title: t("tab.relations"), tabBarIcon: ({ focused }) => <TabIcon name="family" focused={focused} /> }} />
-        <Tabs.Screen name="menu" options={{ title: t("tab.menu"), tabBarIcon: ({ focused }) => <TabIcon name="book" focused={focused} /> }} />
+      <Tabs
+        tabBar={(p) => <SekmeCubugu {...p} width={width} bottom={insets.bottom} workDue={workDue} t={t} />}
+        screenOptions={{ headerShown: false, tabBarStyle: { height: 70 + insets.bottom } }}>
+        <Tabs.Screen name="index" options={{ title: t("tab.home") }} />
+        <Tabs.Screen name="karakter" options={{ title: t("tab.character") }} />
+        <Tabs.Screen name="iliskiler" options={{ title: t("tab.relations") }} />
+        <Tabs.Screen name="menu" options={{ title: t("tab.menu") }} />
         <Tabs.Screen name="sehir" options={{ href: null }} />
         {/* Gizli (sekmede görünmez ama navigasyonla açılır) */}
         <Tabs.Screen name="pazar" options={{ href: null }} />
