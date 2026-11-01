@@ -7,7 +7,6 @@ import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
 import { ARCS } from "../../lib/arcs";
 import { DefterSoy } from "../../lib/defter";
-import { DostHaneler } from "../../lib/dost-ui";
 import { useI18n, applyParams, lakapAdi } from "../../lib/i18n";
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
@@ -45,7 +44,7 @@ export default function Kronik() {
           <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}><GameIcon name="scroll" size={12} color={C.goldDim} /><Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchmentMuted }}>{applyParams(t("kronik.ikilem"), [defter.ikilemler.length])}</Text></View>
         </View>
         {/* Dost Haneler: sunucusuz, yalnız bu cihaz; yalnız kimlik */}
-        <DostHaneler defter={defter} />
+        {/* Dost Haneler tek oyunculudan kaldırıldı: sunucusuz, yalnız kozmetik koddu; çevrimiçi sürümle döner. */}
         {defter.soylar.length === 0 ? (
           <Panel><Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, textAlign: "center", paddingVertical: 10 }}>{t("kronik.bos")}</Text></Panel>
         ) : [...defter.soylar].reverse().map(soyKart)}
