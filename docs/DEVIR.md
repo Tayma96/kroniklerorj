@@ -28,24 +28,29 @@ commit Türkçe tek satır; anahtar sohbete yazılmaz, commit'lenmez.
     Cloudflare'e elle dağıtım (`online-server/README.md`).
 
 ## Sıradaki işler (öncelik sırası)
-1. **ElevenLabs:** `.mcp.json` hazır; Berkay `ELEVENLABS_API_KEY`'i ortam gizlisi olarak ekleyince yeni
-   oturumda `/mcp` ile doğrula. Berkay yeni giriş hikâyesini ve örnek sesini (voice ID) gönderecek.
+1. **ElevenLabs (öncelik: önce ses, 3D sonra):** bağlı ve doğrulandı (Starter, 40.000 karakter/ay; aşım ücreti
+   yok, kota bitince durur — Berkay'a asla ek ücret çıkarma). Anlatıcı sesi "Kronks" (`X1De6TudhbO6mizD7oKo`).
+   Berkay yeni giriş hikâyesini Kronks'a okuttu; ses dosyası ve metin gelecek. Gereken: hikâyeye uygun fon
+   müziği, efekt, ortam; eski hikâyeye göre yapılmış sinematik görseller yerine yeni hikâyeye uygun sinematik
+   video. Kredi: her üretimden önce maliyet onayı, önce küçük örnek.
 2. **Telefonda bulunan hatalar** (ekran görüntüleri Berkay'da). Önce kök neden (systematic-debugging),
    sonra düzeltme ve telefon testi:
    1. Alt menü sola kaymış, seçenekler tıklanmıyor (`app/oyun/_layout.tsx` sekme çubuğu).
    2. Yeni oyunda ad alanı: klavye açılıp hemen kapanıyor (`app/yeni-oyun.tsx`).
-   3. "Kim olacaksın?" başlığı adım etiketlerinin üstüne biniyor; başlık ile ad alanı arası çok boş;
-      sayfayı yeniden düzenle.
+   3. "Kim olacaksın?" başlığı adım etiketlerinin üstüne biniyor (Doğduğun Ocak'ta da aynı); başlık ile ad
+      alanı arası çok boş; sayfayı yeniden düzenle ve güzelleştir.
    4. Doğduğun ocak kartları bozuk: köylü kartı soluk/ölü, hekim resmi yazının üstünde; tek tutarlı kart.
    5. Ana sayfa göstergeler şeridi (sağlık, güç, zekâ, akçe) yarı saydam, okunmuyor; ad büyük harfle
       başlamalı ("Cinkılıç").
    6. Karar bekliyor: **Dost Haneler** (`lib/dost.ts`, `lib/dost-ui.tsx`; yalnız elle girilen kozmetik
       kod) ve **Divan** (`app/oyun/divan.tsx`; oyundan kopuk günlük dava, ödülü yalnız lakap, 7 yaşında
       açık). Öneri: tek oyunculudan kaldır; Divan'ı ileride makama bağlı gerçek mekanik yap.
+   7. Kronik sayfasında "‹ Geri" açık gökyüzü üstünde okunmuyor.
 3. **İki ajan (plan onaylandıktan sonra, sırayla):**
    - ses tasarımcısı ve yönetmeni: ElevenLabs ile 6 dilde anlatıcı, efekt, ortam; lisans notu;
-   - görüntü ve 3D yönetmeni: 3D'nin yeni yolu, görseller.
-   Tanımlar `.claude/agents/` altına yazılacak.
+   - görüntü ve 3D yönetmeni (oyun tasarımcısı edasıyla): önce giriş sinematiği videoları, 3D sonra.
+   Tanımlar `.claude/agents/` altına yazılacak. Ajanlar çalışırken ana oturum Berkay'ın anlık verdiği
+   tasarım/içerik işlerini ve telefon hatalarını yürütür.
 4. Çevrimiçi Faz 2c'yi `faz2-istemci-yarim`'den bitir, sonra Faz 3.
 
 ## Araçlar
