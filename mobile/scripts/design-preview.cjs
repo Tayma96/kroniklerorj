@@ -11,7 +11,7 @@ const stubs={
   'react-native-svg':`import React from 'react';const tag=(t)=>({children,...p})=>React.createElement(t,p,children);export default tag('svg');export const Path=tag('path'),Svg=tag('svg'),Defs=tag('defs'),LinearGradient=tag('linearGradient'),RadialGradient=tag('radialGradient'),Stop=tag('stop'),Rect=tag('rect'),Circle=tag('circle'),Ellipse=tag('ellipse'),G=tag('g'),Line=tag('line'),Polygon=tag('polygon'),Polyline=tag('polyline');`,
   'react-native-gesture-handler':`import React from 'react';const chain=new Proxy(()=>chain,{get:()=>chain,apply:()=>chain});export const Gesture=chain,GestureDetector=({children})=>children,GestureHandlerRootView=({children})=>children;`,
   'react-native-worklets':`export const scheduleOnRN=(fn,...args)=>fn(...args);`,
-  '@react-native-async-storage/async-storage':`export default{getItem:async(k)=>k==='kronikler_lang_v1'?(new URLSearchParams(location.search).get('lang')||'tr'):'1',setItem:async()=>{},removeItem:async()=>{}};`,
+  '@react-native-async-storage/async-storage':`export default{getItem:async(k)=>k==='kronikler_lang_v1'?(new URLSearchParams(location.search).get('lang')==='yok'?null:(new URLSearchParams(location.search).get('lang')||'tr')):'1',setItem:async()=>{},removeItem:async()=>{}};`,
   'expo-file-system':`export const Paths={cache:{uri:'file:///preview/'}},File=class{write(){}},Directory=class{};`,
   'expo-sharing':`export const isAvailableAsync=async()=>false,shareAsync=async()=>{};`,
   '@shopify/react-native-skia':`export const Skia={},ImageFormat={},TileMode={},FontStyle={};`,

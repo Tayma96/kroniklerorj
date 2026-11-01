@@ -3413,7 +3413,7 @@ export function renderEvt(k: string | undefined, fallback: string, p: EvtParam[]
   return cogulCoz(tpl.replace(/%(\d+)/g, (_, n) => resolveEvtParam(p[+n - 1], lang, t, female)), lang);
 }
 
-interface Ctx { lang: Lang; rtl: boolean; setLang: (l: Lang) => void; t: (key: string) => string; tg: (key: string, female: boolean) => string; } // tg: oyuncuya hitap eden metin — kadın oyuncuya .f varyantı (varsa)
+interface Ctx { lang: Lang; rtl: boolean; langChosen: boolean | null; setLang: (l: Lang) => void; t: (key: string) => string; tg: (key: string, female: boolean) => string; } // tg: oyuncuya hitap eden metin — kadın oyuncuya .f varyantı (varsa)
 const LangContext = createContext<Ctx | null>(null);
 
 // Cinzel küçük harfleri küçük büyük harf çizer; Türkçede "i" noktasız "I" görünmesin diye
@@ -3425,13 +3425,15 @@ function displayFontFor(lang: Lang) {
 }
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [lang, setLangState] = useState<Lang>("tr");
-  useEffect(() => { (async () => { try { const v = await AsyncStorage.getItem(KEY); if (v && DICT_BUILDERS[v as Lang]) setLangState(v as Lang); } catch {} })(); }, []);
-  const setLang = useCallback((l: Lang) => { setLangState(l); AsyncStorage.setItem(KEY, l).catch(() => {}); }, []);
+  // langChosen: null = okunuyor; false = hiç seçilmedi (ilk açılış dil ekranı gösterir); true = kayıtlı.
+  const [langChosen, setLangChosen] = useState<boolean | null>(null);
+  useEffect(() => { (async () => { let ok = false; try { const v = await AsyncStorage.getItem(KEY); if (v && DICT_BUILDERS[v as Lang]) { setLangState(v as Lang); ok = true; } } catch {} setLangChosen(ok); })(); }, []);
+  const setLang = useCallback((l: Lang) => { setLangState(l); setLangChosen(true); AsyncStorage.setItem(KEY, l).catch(() => {}); }, []);
   const t = useCallback((key: string) => dictFor(lang)[key] ?? TR[key] ?? key, [lang]);
   const rtl = LANGS.find((l) => l.code === lang)?.rtl ?? false;
   const tg = useCallback((key: string, female: boolean) => { if (female) { const d = dictFor(lang); const f = d[key + ".f"]; if (f) return f; } return t(key); }, [lang, t]);
   displayFontFor(lang);
-  return <LangContext.Provider value={{ lang, rtl, setLang, t, tg }}>{children}</LangContext.Provider>;
+  return <LangContext.Provider value={{ lang, rtl, langChosen, setLang, t, tg }}>{children}</LangContext.Provider>;
 }
 export function useI18n(): Ctx {
   const c = useContext(LangContext);
