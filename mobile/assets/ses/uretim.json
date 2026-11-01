@@ -1,0 +1,580 @@
+[
+ {
+  "dosya": "ui_dokun_1.mp3 (ölçüm adayı olcum_ui_dokun.mp3)",
+  "tur": "efekt",
+  "istem": "kayıtlı değil (ana oturumun birim ölçüm çağrısı)",
+  "model": "eleven_text_to_sound_v2",
+  "sure_sn": 0.5,
+  "dongu": false,
+  "prompt_influence": null,
+  "tohum": null,
+  "maliyet": 5,
+  "maliyet_kaynak": "Character-Cost",
+  "sayac_once": null,
+  "not": "B turundan önce ödendi; tavana sayılmaz",
+  "tarih": "2026-11-01T21:03:26+00:00",
+  "kapi": {
+   "islenmis": "ui_dokun_1_i.wav",
+   "sure": 0.22,
+   "lufs": -28.0,
+   "tp": -5.2,
+   "islik_max": 6,
+   "bant_db": 3.7,
+   "sonuc": "GEÇTİ"
+  },
+  "tur_asama": "B dinleme turu 1 (aday; oyuna yerleşmedi)"
+ },
+ {
+  "dosya": "kis_taban_1.mp3",
+  "tur": "efekt",
+  "istem": "Muffled winter storm heard from inside a closed stone village house at night. Low, dull, broadband wind rush through thick walls, soft gusts slowly swelling and fading, a heavy wooden door gently pressing in its frame, distant snow-laden gusts sweeping across the roof. Dark, warm, noise-like room tone, no melody.",
+  "model": "eleven_text_to_sound_v2",
+  "sure_sn": 26.0,
+  "dongu": true,
+  "prompt_influence": 0.6,
+  "tohum": null,
+  "maliyet": 260,
+  "maliyet_kaynak": "Character-Cost",
+  "sayac_once": 3357,
+  "not": "B1 kış ortamı tabanı, deneme 1",
+  "tarih": "2026-11-01T21:13:35+00:00",
+  "kapi": {
+   "islenmis": "kis_taban_1_i.wav",
+   "sure": 26.0,
+   "lufs": -30.0,
+   "tp": -11.9,
+   "islik_max": 70,
+   "bant_db": -1.1,
+   "sonuc": "GEÇTİ"
+  },
+  "tur_asama": "B dinleme turu 1 (aday; oyuna yerleşmedi)"
+ },
+ {
+  "dosya": "ui_dokun_2.mp3",
+  "tur": "efekt",
+  "istem": "A single very soft fingertip tap on a thick leather-bound book cover. Muted, dry, close, gentle, extremely short.",
+  "model": "eleven_text_to_sound_v2",
+  "sure_sn": 0.5,
+  "dongu": false,
+  "prompt_influence": 0.7,
+  "tohum": null,
+  "maliyet": 5,
+  "maliyet_kaynak": "Character-Cost",
+  "sayac_once": 3617,
+  "not": "B2 arayüz dokunuş",
+  "tarih": "2026-11-01T21:17:58+00:00",
+  "kapi": {
+   "islenmis": "ui_dokun_2_i.wav",
+   "sure": 0.24,
+   "lufs": -28.8,
+   "tp": -1.5,
+   "islik_max": 4,
+   "bant_db": 2.3,
+   "sonuc": "GEÇTİ"
+  },
+  "tur_asama": "B dinleme turu 1 (aday; oyuna yerleşmedi)"
+ },
+ {
+  "dosya": "ui_dokun_3.mp3",
+  "tur": "efekt",
+  "istem": "A single soft touch of a fingertip on thick handmade paper, a tiny muted papery tap. Dry, close, gentle, extremely short.",
+  "model": "eleven_text_to_sound_v2",
+  "sure_sn": 0.5,
+  "dongu": false,
+  "prompt_influence": 0.7,
+  "tohum": null,
+  "maliyet": 5,
+  "maliyet_kaynak": "Character-Cost",
+  "sayac_once": 3617,
+  "not": "B2 arayüz dokunuş",
+  "tarih": "2026-11-01T21:18:01+00:00",
+  "kapi": {
+   "islenmis": "ui_dokun_3_i.wav",
+   "sure": 0.43,
+   "lufs": -28.3,
+   "tp": -1.5,
+   "islik_max": 77,
+   "bant_db": 9.3,
+   "sonuc": "GEÇTİ"
+  },
+  "tur_asama": "B dinleme turu 1 (aday; oyuna yerleşmedi)"
+ },
+ {
+  "dosya": "ui_ilerle_1.mp3",
+  "tur": "efekt",
+  "istem": "Turning one heavy parchment page of an old manuscript book: a thick paper flip with a soft papery swish, ending with a light muted knock of wood on a wooden table. Close, dry, warm.",
+  "model": "eleven_text_to_sound_v2",
+  "sure_sn": 1.0,
+  "dongu": false,
+  "prompt_influence": 0.6,
+  "tohum": null,
+  "maliyet": 10,
+  "maliyet_kaynak": "Character-Cost",
+  "sayac_once": 3617,
+  "not": "B2 ay ilerletme",
+  "tarih": "2026-11-01T21:18:04+00:00",
+  "kapi": {
+   "islenmis": "ui_ilerle_1_i.wav",
+   "sure": 0.89,
+   "lufs": -28.0,
+   "tp": -6.3,
+   "islik_max": 46,
+   "bant_db": 4.3,
+   "sonuc": "GEÇTİ"
+  },
+  "tur_asama": "B dinleme turu 1 (aday; oyuna yerleşmedi)"
+ },
+ {
+  "dosya": "ui_ilerle_2.mp3",
+  "tur": "efekt",
+  "istem": "Turning one heavy parchment page of an old manuscript book: a thick paper flip with a soft papery swish, ending with a light muted knock of wood on a wooden table. Close, dry, warm.",
+  "model": "eleven_text_to_sound_v2",
+  "sure_sn": 1.0,
+  "dongu": false,
+  "prompt_influence": 0.6,
+  "tohum": null,
+  "maliyet": 10,
+  "maliyet_kaynak": "Character-Cost",
+  "sayac_once": 3617,
+  "not": "B2 ay ilerletme",
+  "tarih": "2026-11-01T21:18:07+00:00",
+  "kapi": {
+   "islenmis": "ui_ilerle_2_i.wav",
+   "sure": 0.88,
+   "lufs": -28.0,
+   "tp": -10.9,
+   "islik_max": 32,
+   "bant_db": 2.6,
+   "sonuc": "GEÇTİ"
+  },
+  "tur_asama": "B dinleme turu 1 (aday; oyuna yerleşmedi)"
+ },
+ {
+  "dosya": "ui_ilerle_3.mp3",
+  "tur": "efekt",
+  "istem": "Turning one heavy parchment page of an old manuscript book: a thick paper flip with a soft papery swish, ending with a light muted knock of wood on a wooden table. Close, dry, warm.",
+  "model": "eleven_text_to_sound_v2",
+  "sure_sn": 1.0,
+  "dongu": false,
+  "prompt_influence": 0.6,
+  "tohum": null,
+  "maliyet": 10,
+  "maliyet_kaynak": "Character-Cost",
+  "sayac_once": 3617,
+  "not": "B2 ay ilerletme",
+  "tarih": "2026-11-01T21:18:10+00:00",
+  "kapi": {
+   "islenmis": "ui_ilerle_3_i.wav",
+   "sure": 0.92,
+   "lufs": -28.0,
+   "tp": -6.3,
+   "islik_max": 21,
+   "bant_db": 2.7,
+   "sonuc": "GEÇTİ"
+  },
+  "tur_asama": "B dinleme turu 1 (aday; oyuna yerleşmedi)"
+ },
+ {
+  "dosya": "sayfa_1.mp3",
+  "tur": "efekt",
+  "istem": "A single gentle page turn of an old paper book, crisp soft paper flip. Close, dry, quiet room.",
+  "model": "eleven_text_to_sound_v2",
+  "sure_sn": 0.8,
+  "dongu": false,
+  "prompt_influence": 0.6,
+  "tohum": null,
+  "maliyet": 8,
+  "maliyet_kaynak": "Character-Cost",
+  "sayac_once": 3617,
+  "not": "B2 sayfa",
+  "tarih": "2026-11-01T21:18:13+00:00",
+  "kapi": {
+   "islenmis": "sayfa_1_i.wav",
+   "sure": 0.64,
+   "lufs": -28.0,
+   "tp": -6.4,
+   "islik_max": 52,
+   "bant_db": 4.7,
+   "sonuc": "GEÇTİ"
+  },
+  "tur_asama": "B dinleme turu 1 (aday; oyuna yerleşmedi)"
+ },
+ {
+  "dosya": "sayfa_2.mp3",
+  "tur": "efekt",
+  "istem": "A single gentle page turn of an old paper book, crisp soft paper flip. Close, dry, quiet room.",
+  "model": "eleven_text_to_sound_v2",
+  "sure_sn": 0.8,
+  "dongu": false,
+  "prompt_influence": 0.6,
+  "tohum": null,
+  "maliyet": 8,
+  "maliyet_kaynak": "Character-Cost",
+  "sayac_once": 3617,
+  "not": "B2 sayfa",
+  "tarih": "2026-11-01T21:18:16+00:00",
+  "kapi": {
+   "islenmis": "sayfa_2_i.wav",
+   "sure": 0.63,
+   "lufs": -28.0,
+   "tp": -3.2,
+   "islik_max": 100,
+   "bant_db": 5.0,
+   "sonuc": "GEÇTİ"
+  },
+  "tur_asama": "B dinleme turu 1 (aday; oyuna yerleşmedi)"
+ },
+ {
+  "dosya": "ocak_taban.mp3",
+  "tur": "efekt",
+  "istem": "Low steady breath of a small hearth fire inside a quiet stone village house at night: soft continuous flame rustle, warm room tone, very faint wind far outside, only tiny sparse crackles. Calm, intimate, no voices, no music.",
+  "model": "eleven_text_to_sound_v2",
+  "sure_sn": 20.0,
+  "dongu": true,
+  "prompt_influence": 0.5,
+  "tohum": null,
+  "maliyet": 200,
+  "maliyet_kaynak": "Character-Cost",
+  "sayac_once": 3673,
+  "not": "B3 ocak tabanı",
+  "tarih": "2026-11-01T21:20:11+00:00",
+  "kapi": {
+   "islenmis": "ocak_taban_i.wav",
+   "sure": 20.0,
+   "lufs": -30.0,
+   "tp": -6.7,
+   "islik_max": 31,
+   "bant_db": 1.4,
+   "sonuc": "GEÇTİ"
+  },
+  "tur_asama": "B dinleme turu 1 (aday; oyuna yerleşmedi)"
+ },
+ {
+  "dosya": "yaz_cayir_taban.mp3",
+  "tur": "efekt",
+  "istem": "Warm summer breeze moving through tall dry grass in an open Anatolian meadow: soft continuous rustling, wide open air, calm and spacious. No birds, no insects, no voices, no music.",
+  "model": "eleven_text_to_sound_v2",
+  "sure_sn": 20.0,
+  "dongu": true,
+  "prompt_influence": 0.5,
+  "tohum": null,
+  "maliyet": 200,
+  "maliyet_kaynak": "Character-Cost",
+  "sayac_once": 3673,
+  "not": "B3 yaz çayır tabanı",
+  "tarih": "2026-11-01T21:20:17+00:00",
+  "kapi": {
+   "islenmis": "yaz_cayir_taban_i.wav",
+   "sure": 20.0,
+   "lufs": -30.0,
+   "tp": -3.6,
+   "islik_max": 32,
+   "bant_db": 1.2,
+   "sonuc": "GEÇTİ"
+  },
+  "tur_asama": "B dinleme turu 1 (aday; oyuna yerleşmedi)"
+ },
+ {
+  "dosya": "carsi_taban.mp3",
+  "tur": "efekt",
+  "istem": "A medieval Anatolian bazaar street with stone paving: low murmur of a distant crowd with indistinct voices and no clear words, shuffling footsteps on stone, faint wooden cart wheels far away, open-air echo between stone walls. No engines, no vehicles, no music, no modern sounds.",
+  "model": "eleven_text_to_sound_v2",
+  "sure_sn": 20.0,
+  "dongu": true,
+  "prompt_influence": 0.5,
+  "tohum": null,
+  "maliyet": 200,
+  "maliyet_kaynak": "Character-Cost",
+  "sayac_once": 3673,
+  "not": "B3 çarşı tabanı (13. yy)",
+  "tarih": "2026-11-01T21:20:22+00:00",
+  "kapi": {
+   "islenmis": "carsi_taban_i.wav",
+   "sure": 20.0,
+   "lufs": -30.0,
+   "tp": -7.1,
+   "islik_max": 295,
+   "bant_db": 1.7,
+   "sonuc": "KALDI: ıslık %5 max 295x@673Hz"
+  },
+  "tur_asama": "B dinleme turu 1 (aday; oyuna yerleşmedi)"
+ },
+ {
+  "dosya": "s_ocak_cit.mp3",
+  "tur": "efekt",
+  "istem": "A short burst of wood fire crackling in a stone hearth: a few sharp ember pops and snaps, close, warm quiet room.",
+  "model": "eleven_text_to_sound_v2",
+  "sure_sn": 2.0,
+  "dongu": false,
+  "prompt_influence": 0.5,
+  "tohum": null,
+  "maliyet": 20,
+  "maliyet_kaynak": "Character-Cost",
+  "sayac_once": 4273,
+  "not": "B3 ocak serpiştirme",
+  "tarih": "2026-11-01T21:22:58+00:00",
+  "kapi": {
+   "islenmis": "s_ocak_cit_i.wav",
+   "sure": 1.91,
+   "lufs": -28.0,
+   "tp": -1.0,
+   "islik_max": 25,
+   "bant_db": 3.3,
+   "sonuc": "GEÇTİ"
+  },
+  "tur_asama": "B dinleme turu 1 (aday; oyuna yerleşmedi)"
+ },
+ {
+  "dosya": "s_ocak_kutuk.mp3",
+  "tur": "efekt",
+  "istem": "A burning log shifting and settling in a hearth: soft wooden crunch, a small collapse of glowing embers and a brief hiss of sparks.",
+  "model": "eleven_text_to_sound_v2",
+  "sure_sn": 3.0,
+  "dongu": false,
+  "prompt_influence": 0.5,
+  "tohum": null,
+  "maliyet": 30,
+  "maliyet_kaynak": "Character-Cost",
+  "sayac_once": 4273,
+  "not": "B3 ocak serpiştirme; sinematik köz",
+  "tarih": "2026-11-01T21:23:01+00:00",
+  "kapi": {
+   "islenmis": "s_ocak_kutuk_i.wav",
+   "sure": 3.0,
+   "lufs": -28.0,
+   "tp": -17.8,
+   "islik_max": 291,
+   "bant_db": 2.6,
+   "sonuc": "GEÇTİ"
+  },
+  "tur_asama": "B dinleme turu 1 (aday; oyuna yerleşmedi)"
+ },
+ {
+  "dosya": "s_yaz_toygar.mp3",
+  "tur": "efekt",
+  "istem": "A skylark singing briefly high above an open summer field, distant and airy, natural outdoor recording.",
+  "model": "eleven_text_to_sound_v2",
+  "sure_sn": 3.0,
+  "dongu": false,
+  "prompt_influence": 0.5,
+  "tohum": null,
+  "maliyet": 30,
+  "maliyet_kaynak": "Character-Cost",
+  "sayac_once": 4273,
+  "not": "B3 yaz çayır serpiştirme",
+  "tarih": "2026-11-01T21:23:04+00:00",
+  "kapi": {
+   "islenmis": "s_yaz_toygar_i.wav",
+   "sure": 2.98,
+   "lufs": -28.0,
+   "tp": -16.5,
+   "islik_max": 843,
+   "bant_db": 20.9,
+   "sonuc": "GEÇTİ"
+  },
+  "tur_asama": "B dinleme turu 1 (aday; oyuna yerleşmedi)"
+ },
+ {
+  "dosya": "s_yaz_cekirge.mp3",
+  "tur": "efekt",
+  "istem": "A short burst of grasshopper chirping in dry summer grass nearby, then it stops.",
+  "model": "eleven_text_to_sound_v2",
+  "sure_sn": 2.0,
+  "dongu": false,
+  "prompt_influence": 0.5,
+  "tohum": null,
+  "maliyet": 20,
+  "maliyet_kaynak": "Character-Cost",
+  "sayac_once": 4273,
+  "not": "B3 yaz çayır serpiştirme",
+  "tarih": "2026-11-01T21:23:07+00:00",
+  "kapi": {
+   "islenmis": "s_yaz_cekirge_i.wav",
+   "sure": 2.0,
+   "lufs": -28.0,
+   "tp": -21.5,
+   "islik_max": 198,
+   "bant_db": 10.2,
+   "sonuc": "GEÇTİ"
+  },
+  "tur_asama": "B dinleme turu 1 (aday; oyuna yerleşmedi)"
+ },
+ {
+  "dosya": "s_carsi_bakir.mp3",
+  "tur": "efekt",
+  "istem": "A coppersmith tapping a small hammer on a copper pot a few times inside a workshop, heard from a medieval stone bazaar street.",
+  "model": "eleven_text_to_sound_v2",
+  "sure_sn": 2.5,
+  "dongu": false,
+  "prompt_influence": 0.5,
+  "tohum": null,
+  "maliyet": 25,
+  "maliyet_kaynak": "Character-Cost",
+  "sayac_once": 4273,
+  "not": "B3 çarşı serpiştirme",
+  "tarih": "2026-11-01T21:23:10+00:00",
+  "kapi": {
+   "islenmis": "s_carsi_bakir_i.wav",
+   "sure": 2.31,
+   "lufs": -28.0,
+   "tp": -10.8,
+   "islik_max": 31970,
+   "bant_db": 4.6,
+   "sonuc": "GEÇTİ"
+  },
+  "tur_asama": "B dinleme turu 1 (aday; oyuna yerleşmedi)"
+ },
+ {
+  "dosya": "s_carsi_esek.mp3",
+  "tur": "efekt",
+  "istem": "A donkey braying once in the distance in an old stone market street, natural outdoor recording.",
+  "model": "eleven_text_to_sound_v2",
+  "sure_sn": 3.0,
+  "dongu": false,
+  "prompt_influence": 0.5,
+  "tohum": null,
+  "maliyet": 30,
+  "maliyet_kaynak": "Character-Cost",
+  "sayac_once": 4273,
+  "not": "B3 çarşı serpiştirme",
+  "tarih": "2026-11-01T21:23:13+00:00",
+  "kapi": {
+   "islenmis": "s_carsi_esek_i.wav",
+   "sure": 2.75,
+   "lufs": -28.0,
+   "tp": -16.2,
+   "islik_max": 2886,
+   "bant_db": 20.8,
+   "sonuc": "GEÇTİ"
+  },
+  "tur_asama": "B dinleme turu 1 (aday; oyuna yerleşmedi)"
+ },
+ {
+  "dosya": "giris_muzik.mp3",
+  "tur": "muzik",
+  "istem": {
+   "positive_global_styles": [
+    "instrumental cinematic underscore for a voice-over",
+    "13th-century Anatolia, Seljuk era",
+    "Turkish makam modal music",
+    "ney, kanun, kemencha, bendir frame drum, distant kos war drum",
+    "sparse arrangement",
+    "low drones and airy high textures, mid frequencies left open for narration",
+    "solemn, warm, earthy",
+    "slow tempo, around 60 bpm",
+    "natural acoustic recording, wide reverb"
+   ],
+   "negative_global_styles": [
+    "vocals",
+    "choir",
+    "lyrics",
+    "humming",
+    "electronic",
+    "synth",
+    "modern drum kit",
+    "guitar",
+    "piano",
+    "brass fanfare",
+    "dense mid-range melody",
+    "busy arrangement",
+    "loud"
+   ],
+   "sections": [
+    {
+     "section_name": "Kosedag defeat",
+     "positive_local_styles": [
+      "heavy and mournful aftermath of a lost battle",
+      "sparse distant deep kos drum hits",
+      "low sustained drone",
+      "a single breathy ney phrase far away"
+     ],
+     "negative_local_styles": [
+      "triumphant",
+      "fast"
+     ],
+     "duration_ms": 12800,
+     "lines": []
+    },
+    {
+     "section_name": "Mongol raids",
+     "positive_local_styles": [
+      "tension slowly rising",
+      "low pulsing bendir ostinato building",
+      "dark low string drone",
+      "ominous crescendo"
+     ],
+     "negative_local_styles": [
+      "melody in the vocal range",
+      "release"
+     ],
+     "duration_ms": 8000,
+     "lines": []
+    },
+    {
+     "section_name": "People's hardship",
+     "positive_local_styles": [
+      "sorrowful",
+      "pulse falls away",
+      "soft solo kemencha lament in high register",
+      "very sparse"
+     ],
+     "negative_local_styles": [
+      "drums",
+      "loud"
+     ],
+     "duration_ms": 6000,
+     "lines": []
+    },
+    {
+     "section_name": "Caravans and hope",
+     "positive_local_styles": [
+      "gentle hope and warmth",
+      "soft kanun arpeggios in high register",
+      "slow light walking pulse on frame drum",
+      "brighter makam colour"
+     ],
+     "negative_local_styles": [
+      "epic",
+      "loud"
+     ],
+     "duration_ms": 5600,
+     "lines": []
+    },
+    {
+     "section_name": "Whisper: ash keeps the ember",
+     "positive_local_styles": [
+      "almost silence",
+      "one soft breath of ney",
+      "faint low drone",
+      "a single quiet resolved final chord on kanun and low strings with a long decay"
+     ],
+     "negative_local_styles": [
+      "drums",
+      "build-up",
+      "melody"
+     ],
+     "duration_ms": 7600,
+     "lines": []
+    }
+   ]
+  },
+  "model": "music_v1",
+  "sure_sn": 40.0,
+  "tohum": null,
+  "maliyet": 500,
+  "maliyet_kaynak": "abonelik sayacı farkı",
+  "sayac_once": 4428,
+  "not": "B4 giriş müziği stil örneği (music_v1, respect_sections_durations); birim ölçümü: 40 sn = 500 kredi (≈750/dk, tahmin 400/dk idi)",
+  "tarih": "2026-11-01T21:25:25+00:00",
+  "kapi": {
+   "islenmis": "giris_muzik_i.wav",
+   "sure": 36.96,
+   "lufs": -23.0,
+   "tp": -7.8,
+   "islik_max": 4866,
+   "bant_db": 10.3,
+   "sonuc": "KALDI: son sessizlik 1640 ms"
+  },
+  "tur_asama": "B dinleme turu 1 (aday; oyuna yerleşmedi)"
+ }
+]
