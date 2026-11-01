@@ -2,7 +2,7 @@
 
 ## Yetki ve kalıcı kurallar
 - Repo Tayma96/kroniklerorj; yalnız `apk`. Türkçe, tek satırlı commit; kullanıcı commit/push işine açıkça izin verdi. Diğer sohbetteki bota mesaj gönderme yetkisi yok.
-- Yalnızca ücretsiz araçlar; ücret ihtimali olan görsel/API çağrısı yapma. Anahtarları okuma/yazdırma. APK, PR ve dağıtım istenmedikçe yapma.
+- Berkay'a asla ek ücret çıkarma. Görsel/video yalnız ücretsiz araçlarla. Ses: ElevenLabs Starter kotası içinde, `docs/SES_PLANI.md` kurallarıyla (ölçülü, kayıtlı, onay kapılı). Anahtarları okuma/yazdırma. APK, PR ve dağıtım istenmedikçe yapma.
 - Kullanıcı tüm oyunu derinleştirmemi ve soru/izin istemeden sürdürmemi istedi. Yeni hikâyeden önce işlevsel döngü, karar, bedel ve uzun dönem sonucu.
 - Yeni oyuncu metni tr/en/es/pt/ar/ru. Eski kayıt, çevrimdışı akış, MP protokol eşleşmesi korunmalı; yeni alanlar opsiyonel.
 - Oyunun görsel dili canlı ve profesyonel olmalı. Her NPC'ye yaş/meslek/ruh hâline göre özgün portre; kıyafet atlası veya hero karesi profil resmi sayılmaz. Aybike yalnız örnek.
@@ -22,7 +22,7 @@
 ## Açık işler
 - **Önce `docs/DEVIR.md`yi oku** (1 Kasım devri: ElevenLabs MCP, telefon hataları, 3D yeni yol, ajan planı). ElevenLabs Berkay'ın aboneliğiyle onaylı (`.mcp.json`).
 - Çevrimiçi `docs/online/`; eski beta kapalı (Yakında); `server/` ve eşliği dokunulmaz.
-- KURAL: en çok 1 alt ajan; önce plan, onaydan sonra kod. 3D tasarım: `docs/superpowers/specs/2026-10-28-canli-3d-kusam-design.md`.
+- KURAL: en çok 1 alt ajan (`ses-yonetmeni`, `goruntu-yonetmeni`); önce plan, onaydan sonra kod. Ses planı: `docs/SES_PLANI.md`. 3D tasarım: `docs/superpowers/specs/2026-10-28-canli-3d-kusam-design.md`.
 - 3D: kullanıcı karikatür değil gerçekçi insan istiyor. Hat `.claude/skills/blender-karakter` (her oturumda setup.sh). Kullanıcı onayı olmadan tasarım/oyun entegrasyonuna geçme.
 - Skill'ler `.claude/skills` (Superpowers, ECC seçkisi, ElevenLabs, claude-code-setup); öncelik `kronikler-skill-rehberi`.
 - Denge: bot 40 yaşında nam 100. `game.ts` Math.random göçü sürüyor (`docs/AUDIT.md`).
