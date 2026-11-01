@@ -37,32 +37,30 @@ commit Türkçe tek satır; anahtar sohbete yazılmaz, commit'lenmez.
 - Google Cloud ve Cloudflare: sonra; Berkay "benlik işleri sonra hallederim" dedi.
 
 ## Sıradaki işler (öncelik sırası)
-1. **ElevenLabs:** bağlı.
-   - Kurulum: `.mcp.json` + ortam gizlisi `ELEVENLABS_API_KEY`. Berkay yeni oturumda çalıştığını doğruladı.
-   - Doğrulama: `mcp__ElevenLabs__check_subscription` (kredi harcamaz) ya da
-     `npx -y @elevenlabs/cli@latest onboard check --env-path .env.local`. `.env.local` git dışıdır.
-   - Anahtar sohbete yazılmaz. Bir kez sohbete yapıştırılan anahtarın iptal edildiği Berkay'a
-     hatırlatılmalı.
-   - Berkay'ın getirecekleri:
-     - **yeni giriş hikâyesi**: eskisini beğenmedi, kendisi yazdı;
-     - ElevenLabs'ta okuttuğu **örnek anlatıcı sesi** ve voice ID.
-   - Her üretimden önce tahmini karakter ve kredi gösterilir. Önce Türkçe, onaydan sonra 5 dil.
+1. **ElevenLabs (öncelik: önce ses, 3D sonra):** bağlı ve doğrulandı (Starter, 40.000 kredi/ay; aşım ücreti
+   yok, kota bitince durur — Berkay'a asla ek ücret çıkarma). Anahtar claude.ai bağlayıcısında `xi-api-key`
+   başlığıyla durur (ortam değişkeni değil). Doğrulama: `mcp__ElevenLabs__check_subscription` (kredi harcamaz).
+   - Anlatıcı sesi "Kronks" (`X1De6TudhbO6mizD7oKo`). Berkay yeni giriş hikâyesini Kronks'a okuttu; ses
+     dosyası ve metin gelecek. Gereken: fon müziği, efekt, ortam; eski görseller yerine sinematik video.
+   - Anahtar sohbete yazılmaz. Her üretimden önce kredi tahmini, önce küçük örnek. Önce Türkçe.
 2. **Telefonda bulunan hatalar** (ekran görüntüleri Berkay'da). Önce kök neden (systematic-debugging),
    sonra düzeltme ve telefon testi:
    1. Alt menü sola kaymış, seçenekler tıklanmıyor (`app/oyun/_layout.tsx` sekme çubuğu).
    2. Yeni oyunda ad alanı: klavye açılıp hemen kapanıyor (`app/yeni-oyun.tsx`).
-   3. "Kim olacaksın?" başlığı adım etiketlerinin üstüne biniyor; başlık ile ad alanı arası çok boş;
-      sayfayı yeniden düzenle.
+   3. "Kim olacaksın?" başlığı adım etiketlerinin üstüne biniyor (Doğduğun Ocak'ta da aynı); başlık ile ad
+      alanı arası çok boş; sayfayı yeniden düzenle ve güzelleştir.
    4. Doğduğun ocak kartları bozuk: köylü kartı soluk/ölü, hekim resmi yazının üstünde; tek tutarlı kart.
    5. Ana sayfa göstergeler şeridi (sağlık, güç, zekâ, akçe) yarı saydam, okunmuyor; ad büyük harfle
       başlamalı ("Cinkılıç").
    6. Karar bekliyor: **Dost Haneler** (`lib/dost.ts`, `lib/dost-ui.tsx`; yalnız elle girilen kozmetik
       kod) ve **Divan** (`app/oyun/divan.tsx`; oyundan kopuk günlük dava, ödülü yalnız lakap, 7 yaşında
       açık). Öneri: tek oyunculudan kaldır; Divan'ı ileride makama bağlı gerçek mekanik yap.
+   7. Kronik sayfasında "‹ Geri" açık gökyüzü üstünde okunmuyor.
 3. **İki ajan (plan onaylandıktan sonra, sırayla):**
    - ses tasarımcısı ve yönetmeni: ElevenLabs ile 6 dilde anlatıcı, efekt, ortam; lisans notu;
-   - görüntü ve 3D yönetmeni: 3D'nin yeni yolu, görseller.
-   Tanımlar `.claude/agents/` altına yazılacak.
+   - görüntü ve 3D yönetmeni (oyun tasarımcısı edasıyla): önce giriş sinematiği videoları, 3D sonra.
+   Tanımlar `.claude/agents/` altına yazılacak. Ajanlar çalışırken ana oturum Berkay'ın anlık verdiği
+   tasarım/içerik işlerini ve telefon hatalarını yürütür.
 4. Çevrimiçi Faz 2c'yi `faz2-istemci-yarim`'den bitir, sonra Faz 3.
 
 ## Araçlar
