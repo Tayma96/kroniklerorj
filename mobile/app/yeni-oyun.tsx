@@ -26,7 +26,7 @@ const AnimImage = Animated.createAnimatedComponent(Image);
 type Step = 1 | 2 | 3;
 const GUT = 16;
 const SCENE: Record<string, ImageSourcePropType> = {
-  kimlik: require("../assets/yeni_oyun_bg.png"),
+  kimlik: require("../assets/yeni_oyun_bg.jpg"),
   tabiat: require("../assets/hero/cocuk_yaz.jpg"),
   ocak: require("../assets/arka/dogum.jpg"),
   koylu: require("../assets/arka/hasat.jpg"),
@@ -72,9 +72,10 @@ function CheckBadge({ rtl, size = 26, inset = 8 }: { rtl: boolean; size?: number
 
 // Altın çerçeveli kart: koyu yarı saydam zemin, iç ince hat; seçilince parlak kenar + dış hale.
 function Frame({ active, radius = 10, children, style }: { active: boolean; radius?: number; children: ReactNode; style?: StyleProp<ViewStyle> }) {
-  return <View style={[{ borderRadius: radius }, active ? GLOW : null, style]}>
+  // collapsable={false}: odakta gelen gölge bu katmanı yerel görünüme çevirip metin alanını yeniden bağlamasın (Fabric düzleştirme) — klavye açılıp hemen kapanıyordu.
+  return <View collapsable={false} style={[{ borderRadius: radius }, active ? GLOW : null, style]}>
     {active ? <View pointerEvents="none" style={{ position: "absolute", top: -4, left: -4, right: -4, bottom: -4, borderRadius: radius + 4, borderWidth: 2, borderColor: "rgba(243,210,122,0.32)" }} /> : null}
-    <View style={{ flexGrow: 1, borderRadius: radius, borderWidth: 1.5, borderColor: active ? C.goldBright : "rgba(168,130,63,0.78)", backgroundColor: active ? "rgba(42,31,19,0.95)" : "rgba(22,16,10,0.9)", overflow: "hidden" }}>
+    <View collapsable={false} style={{ flexGrow: 1, borderRadius: radius, borderWidth: 1.5, borderColor: active ? C.goldBright : "rgba(168,130,63,0.78)", backgroundColor: active ? "rgba(42,31,19,0.95)" : "rgba(22,16,10,0.9)", overflow: "hidden" }}>
       {children}
       <View pointerEvents="none" style={{ position: "absolute", top: 3, left: 3, right: 3, bottom: 3, borderRadius: Math.max(radius - 3, 2), borderWidth: 1, borderColor: active ? "rgba(243,210,122,0.3)" : "rgba(201,162,78,0.16)" }} />
     </View>
@@ -102,12 +103,15 @@ function Scene({ k, reduced }: { k: string; reduced: boolean }) {
   const prev = useRef(k);
   const under = prev.current;
   useEffect(() => { prev.current = k; }, [k]);
-  return <View pointerEvents="none" style={StyleSheet.absoluteFill}>
-    <Image accessible={false} source={SCENE[under]} resizeMode="cover" style={StyleSheet.absoluteFill} />
-    <Animated.View key={k} entering={reduced ? undefined : FadeIn.duration(700)} style={StyleSheet.absoluteFill}>
-      <Image accessible={false} source={SCENE[k]} resizeMode="cover" style={StyleSheet.absoluteFill} />
+  // Ölçüler sayı olarak verilir: telefonda kendi boyutunu ebeveyninden alan (absoluteFill) resimler yanlış yere oturup kayboluyordu.
+  const { width, height } = useWindowDimensions();
+  const img = { position: "absolute" as const, top: 0, left: 0, width, height };
+  return <View pointerEvents="none" collapsable={false} style={[StyleSheet.absoluteFill, { overflow: "hidden" }]}>
+    <Image accessible={false} source={SCENE[under]} resizeMode="cover" style={img} />
+    <Animated.View key={k} entering={reduced ? undefined : FadeIn.duration(700)} style={img}>
+      <Image accessible={false} source={SCENE[k]} resizeMode="cover" style={{ width, height }} />
     </Animated.View>
-    <LinearGradient pointerEvents="none" colors={["rgba(10,7,4,0.9)", "rgba(10,7,4,0.4)", "rgba(10,7,4,0.1)", "rgba(10,7,4,0.62)", "rgba(10,7,4,0.95)"]} locations={[0, 0.22, 0.4, 0.68, 1]} style={StyleSheet.absoluteFill} />
+    <LinearGradient pointerEvents="none" colors={["rgba(10,7,4,0.9)", "rgba(10,7,4,0.45)", "rgba(10,7,4,0.15)", "rgba(10,7,4,0.62)", "rgba(10,7,4,0.95)"]} locations={[0, 0.24, 0.42, 0.68, 1]} style={img} />
   </View>;
 }
 
@@ -134,7 +138,7 @@ function Stepper({ step, rtl, onJump, t }: { step: Step; rtl: boolean; onJump: (
 function GenderCard({ val, label, active, dim, rtl, tall, onPress }: { val: "erkek" | "kadın"; label: string; active: boolean; dim: boolean; rtl: boolean; tall: boolean; onPress: () => void }) {
   return <Pressable onPress={onPress} accessibilityRole="radio" accessibilityLabel={label} accessibilityState={{ checked: active, selected: active }} style={({ pressed }) => ({ flex: 1, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
     <Frame active={active} radius={12}>
-      <Image accessible={false} source={PORTRE[val]} resizeMode="cover" style={{ width: "100%", aspectRatio: tall ? 0.84 : 0.92 }} />
+      <Image accessible={false} source={PORTRE[val]} resizeMode="cover" style={{ width: "100%", aspectRatio: tall ? 0.8 : 0.92 }} />
       {dim ? <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: "rgba(10,7,4,0.5)" }]} /> : null}
       <LinearGradient pointerEvents="none" colors={["rgba(14,10,6,0)", "rgba(14,10,6,0.75)", "rgba(14,10,6,0.96)"]} style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: "46%" }} />
       <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, bottom: 12, alignItems: "center" }}>
@@ -161,18 +165,20 @@ function TempCard({ id, name, desc, active, rtl, onPress }: { id: string; name: 
 }
 
 function HouseCard({ id, name, perks, active, rtl, narrow, onPress }: { id: string; name: string; perks: string; active: boolean; rtl: boolean; narrow: boolean; onPress: () => void }) {
+  const W = narrow ? 88 : 108, H = 104;
+  const align = rtl ? "right" as const : "left" as const;
   return <Pressable onPress={onPress} accessibilityRole="radio" accessibilityLabel={name + ". " + perks} accessibilityState={{ checked: active, selected: active }} style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.985 : 1 }] })}>
     <Frame active={active} radius={10}>
-      <View style={{ flexDirection: rtl ? "row-reverse" : "row", minHeight: 94 }}>
-        <View style={{ width: narrow ? 92 : 116 }}>
-          <Image accessible={false} source={SCENE[id]} resizeMode="cover" style={StyleSheet.absoluteFill} />
-          <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: active ? "rgba(10,7,4,0)" : "rgba(10,7,4,0.22)" }]} />
+      <View collapsable={false} style={{ flexDirection: rtl ? "row-reverse" : "row", height: H, backgroundColor: active ? "#2A1F13" : "#17110A" }}>
+        <View collapsable={false} style={{ width: W, height: H, overflow: "hidden", backgroundColor: "#0E0A06" }}>
+          <Image accessible={false} source={SCENE[id]} resizeMode="cover" style={{ width: W, height: H }} />
+          {!active ? <View pointerEvents="none" style={{ position: "absolute", top: 0, left: 0, width: W, height: H, backgroundColor: "rgba(10,7,4,0.18)" }} /> : null}
           {active ? <CheckBadge rtl={!rtl} size={24} inset={6} /> : null}
         </View>
-        <View style={{ width: 1.5, backgroundColor: active ? C.gold : "rgba(168,130,63,0.6)" }} />
-        <View style={{ flex: 1, paddingHorizontal: 12, paddingVertical: 11, justifyContent: "center" }}>
-          <Text style={{ fontFamily: F.display, fontSize: 15, letterSpacing: 0.6, textAlign: rtl ? "right" : "left", color: active ? C.goldBright : C.parchment }}>{name}</Text>
-          <Text style={{ marginTop: 4, fontFamily: F.serif, fontSize: 14.5, lineHeight: 19, textAlign: rtl ? "right" : "left", color: C.parchmentDim }}>{perks}</Text>
+        <View style={{ width: 1.5, height: H, backgroundColor: active ? C.gold : "rgba(168,130,63,0.6)" }} />
+        <View style={{ flex: 1, paddingHorizontal: 12, justifyContent: "center" }}>
+          <Text numberOfLines={1} style={{ fontFamily: F.display, fontSize: 15, letterSpacing: 0.6, textAlign: align, color: active ? C.goldBright : C.gold }}>{name}</Text>
+          <Text numberOfLines={3} style={{ marginTop: 4, fontFamily: F.serif, fontSize: 14.5, lineHeight: 19, textAlign: align, color: C.parchment }}>{perks}</Text>
         </View>
       </View>
     </Frame>
@@ -322,17 +328,16 @@ export default function YeniOyun() {
       </View>
 
       <Animated.View key={step} entering={enter} style={{ flex: 1 }}>
-        <View style={{ alignItems: "center", paddingHorizontal: 20, marginTop: 8, marginBottom: 6 }}>
-          <Text accessibilityRole="header" numberOfLines={2} style={{ fontFamily: F.display, fontSize: narrow ? 22 : 26, lineHeight: narrow ? 28 : 32, letterSpacing: 0.5, textAlign: "center", color: C.parchment, textShadowColor: "rgba(0,0,0,0.9)", textShadowRadius: 10, textShadowOffset: { width: 0, height: 1 } }}>{t(meta.title)}</Text>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginVertical: 6 }}>
-            <View style={{ width: 38, height: 1, backgroundColor: "rgba(201,162,78,0.55)" }} />
-            <Ornament size={12} />
-            <View style={{ width: 38, height: 1, backgroundColor: "rgba(201,162,78,0.55)" }} />
-          </View>
-          <Text numberOfLines={2} style={{ fontFamily: F.serifItalic, fontSize: 16, lineHeight: 21, textAlign: "center", color: C.parchmentDim, textShadowColor: "rgba(0,0,0,0.9)", textShadowRadius: 6 }}>{t(meta.sub)}</Text>
-        </View>
-
-        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1, justifyContent: "flex-end", paddingHorizontal: GUT, paddingTop: 10, paddingBottom: 22 }} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets showsVerticalScrollIndicator={false}>
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1, justifyContent: "center", paddingHorizontal: GUT, paddingTop: 18, paddingBottom: 22 }} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets showsVerticalScrollIndicator={false}>
+            <View style={{ alignItems: "center", paddingHorizontal: 4, marginBottom: 18 }}>
+              <Text accessibilityRole="header" numberOfLines={2} style={{ fontFamily: F.display, fontSize: narrow ? 22 : 26, lineHeight: narrow ? 32 : 37, letterSpacing: 0.5, textAlign: "center", color: C.parchment, textShadowColor: "rgba(0,0,0,0.9)", textShadowRadius: 10, textShadowOffset: { width: 0, height: 1 } }}>{t(meta.title)}</Text>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginVertical: 6 }}>
+                <View style={{ width: 38, height: 1, backgroundColor: "rgba(201,162,78,0.55)" }} />
+                <Ornament size={12} />
+                <View style={{ width: 38, height: 1, backgroundColor: "rgba(201,162,78,0.55)" }} />
+              </View>
+              <Text numberOfLines={2} style={{ fontFamily: F.serifItalic, fontSize: 16, lineHeight: 21, textAlign: "center", color: C.parchmentDim, textShadowColor: "rgba(0,0,0,0.9)", textShadowRadius: 6 }}>{t(meta.sub)}</Text>
+            </View>
           {step === 1 ? <>
             <SectionLabel text={t("new.nameLabel")} rtl={rtl} first />
             <Frame active={focus} radius={9}>
