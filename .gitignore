@@ -11,3 +11,5 @@ dist/
 
 # Alt ajanların geçici çalışma kopyaları
 .claude/worktrees/
+# Local secrets written by `elevenlabs onboard`
+/.env.local
