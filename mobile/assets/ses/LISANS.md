@@ -1,9 +1,9 @@
 # Kronikler — ses dosyaları: kaynak ve lisans
 
-Müzik, ortam ve efekt dosyalarının her biri **gerçek bir kayıttır** (canlı icra ya da saha kaydı); bunlarda yapay zekâyla üretilmiş müzik ya da sentezlenmiş ses yoktur. Tek istisna `vo/` klasöründeki açılış sinematiği anlatıcısıdır: Türkçe anlatı, açık kaynak **Chatterbox Multilingual** (Resemble AI, MIT lisansı) modeliyle bu projede yerelde üretilmiştir; gerçek bir kişinin sesi kopyalanmamıştır (modelin varsayılan sesi). Model çıktıya duyulmayan bir filigran (Perth) ekler.
+Müzik, ortam ve efekt dosyalarının çoğu **gerçek bir kayıttır** (canlı icra ya da saha kaydı). ElevenLabs ile Kronikler için üretilenler (ücretli plan, ticari kullanım) tabloda ayrıca belirtilir; üretim ayrıntıları `uretim.json`'dadır. Tek istisna `vo/` klasöründeki açılış sinematiği anlatıcısıdır: Türkçe anlatı, açık kaynak **Chatterbox Multilingual** (Resemble AI, MIT lisansı) modeliyle bu projede yerelde üretilmiştir; gerçek bir kişinin sesi kopyalanmamıştır (modelin varsayılan sesi). Model çıktıya duyulmayan bir filigran (Perth) ekler.
 Yalnız şu lisanslar kullanıldı: **CC0 1.0**, **Kamu malı (PD)** ve **CC BY 3.0/4.0** (atıf aşağıda). NC (ticari olmayan) ya da belirsiz lisanslı hiçbir kayıt yok.
 
-Bu dosya `scripts/ses/katalog-uret.cjs` ile `assets/ses/kaynak.json`'dan üretilir; elle düzenlemeyin.
+Kaynak kaydı `assets/ses/kaynak.json`; bu tablo onunla birlikte güncellenir.
 
 **Ortak işlemler (tüm dosyalar):** Freesound kayıtlarında sitenin yüksek nitelikli önizlemesi (OGG) ham kaynak olarak alındı. Kesit alındı, 35 Hz (78'liklerde 60 Hz) yüksek geçiren süzgeç uygulandı;
 döngülerde 2,5–3 sn eşit güçlü çapraz geçişle dikişsiz döngü kuruldu, ses yüksekliği (EBU R128) eşitlendi, yumuşak tepe sınırlayıcı (-1 dBFS) uygulandı; 44,1 kHz AAC (.m4a) olarak kodlandı.
@@ -45,7 +45,7 @@ Toplam: **63 dosya, 12.14 MB**.
 | `ortam/yaz_cayir.m4a` | Yaz öğleden sonrası çayır: kuş + cırcırböceği | [Hungary Meadow Afternoon Birds Crickets](https://freesound.org/s/416206/) (Freesound) | Alcappuccino | CC0 1.0 | 20–70 | 379 KB |
 | `ortam/yaz_gece.m4a` | Yaz gecesi cırcırböcekleri | [Crickets At Night - Raw sound](https://freesound.org/s/522299/) (Freesound) | Defelozedd94 | CC0 1.0 | 20–70 | 379 KB |
 | `ortam/guz_ruzgar.m4a` | Güz rüzgârı ve kuru yapraklar | [Autumn wind and dry leaves.wav](https://freesound.org/s/457318/) (Freesound) | Stek59 | CC0 1.0 | 1–42 | 196 KB |
-| `ortam/kis_ruzgar.m4a` | Kış rüzgârının uğultusu (içeriden) | [ATM INT Wind Howl Cold Winter 09 (stereo).wav](https://freesound.org/s/546871/) (Freesound) | Takkyi | CC0 1.0 | 2–52 | 242 KB |
+| `ortam/kis_ruzgar.m4a` | Kış rüzgârı (içeriden), tonsuz dikişsiz döngü | ElevenLabs ses efekti üretimi (`uretim.json`: kis_taban_1) | ElevenLabs, Kronikler için üretildi | ElevenLabs ücretli plan, ticari kullanım | — | 412 KB |
 | `ortam/ocak.m4a` | Ocakta çıtırdayan ateş | [fire crackles](https://freesound.org/s/563766/) (Freesound) | florianreichelt | CC0 1.0 | 2–48 | 222 KB |
 | `ortam/carsi.m4a` | Fes eski şehir çarşısı (araçsız dar sokaklar) | [Fez bazaar](https://freesound.org/s/244107/) (Freesound) | susipekka | CC0 1.0 | 10–65 | 268 KB |
 | `ortam/ors.m4a` | Demirci: çekiç ve örs | [By ther blacksmith-002.wav](https://freesound.org/s/254370/) (Freesound) | Emmaproductions | CC0 1.0 | 3–53 | 239 KB |
