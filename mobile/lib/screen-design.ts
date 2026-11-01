@@ -53,10 +53,15 @@ export const SCREEN_DESIGNS: readonly ScreenDesign[] = [
   page("/online/yerlesim", "onl.adim.yerlesim", "journey", "gurbet_yol", "map"),
   page("/online/davet", "onl.d.ust", "people", "cami_avlu", "family"),
   page("/online/varis", "onl.adim.varis", "life", "hasat", "house"),
+  page("/online/yasam", "onl.nav.yasam", "life", "cami_avlu", "house"),
+  page("/online/mahalle", "onl.nav.mahalle", "people", "cami_avlu", "map"),
+  page("/online/kisi/[id]", "onl.ki.ust", "people", "ev_yoksul", "family"),
+  page("/online/tanidiklar", "onl.nav.tanidiklar", "people", "dugun", "family"),
+  page("/online/karakter", "onl.nav.karakter", "life", "medrese", "hood"),
 ];
 export function screenDesign(path: string): ScreenDesign {
   const route = path.replace(/\/$/, "") || "/";
-  const key = route.startsWith("/oyun/npc/") ? "/oyun/npc/[id]" : route.startsWith("/oyun/diyar/") ? "/oyun/diyar/[name]" : route;
+  const key = route.startsWith("/oyun/npc/") ? "/oyun/npc/[id]" : route.startsWith("/oyun/diyar/") ? "/oyun/diyar/[name]" : route.startsWith("/online/kisi/") ? "/online/kisi/[id]" : route;
   return SCREEN_DESIGNS.find(d => d.route === key) || SCREEN_DESIGNS[2];
 }
 export function screenArt(path: string) { return SAHNE_GORSEL[screenDesign(path).scene]; }

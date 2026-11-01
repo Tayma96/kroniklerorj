@@ -1,0 +1,125 @@
+// Sunucunun {k, p} metinlerini çevirir: anahtar "onl." + k (i18n-sayfa/online2.ts), parametreler sırayla %1, %2 …
+// Kişi parametresi {id, ad} adıyla, kimlik değerleri (gündem, meslek, özellik …) kendi tablosuyla yazılır.
+// Meslek, huy, tuhaflık ve hayal kanonik Türkçe gelir; tek oyunculudaki locale-data tablolarıyla çevrilir.
+import { applyParams } from "../i18n";
+import { goalL, professionNameL, quirkL, traitL, type Lang } from "../locale-data";
+import type { Kalem, Olay, Ozet } from "./protokol";
+
+type Ceviri = (k: string) => string;
+
+/** Her anahtarın parametre sırası (şablondaki %1, %2 …). */
+const PARAM: Record<string, string[]> = {
+  "olay.olum": ["kisi", "yas"],
+  "olay.ustaOldu": ["kisi"],
+  "olay.yakinOldu": ["kisi"],
+  "olay.gundem": ["kisi", "gundem"],
+  "olay.isBuldu": ["kisi", "meslek"],
+  "olay.evlilik": ["a", "b"],
+  "olay.dostluk": ["a", "b"],
+  "olay.dogum": ["anne", "baba", "cocuk"],
+  "olay.goc": ["kisi", "sayi"],
+  "olay.kulYemini": ["kisi"],
+  "olay.ogrenme.gun": ["gun"],
+  "olay.hamle.corba": ["kisi", "sebep"],
+  "olay.hamle.laf": ["kisi", "sebep"],
+  "olay.yeniSakin": ["kisi"],
+  "olay.eylem.mektep": ["kisi"],
+  "olay.ciraklik": ["kisi", "usta", "meslek"],
+  "olay.karar": ["kisi", "secim"],
+  "sonuc.puan": ["ozellik"],
+  "sonuc.karar": ["secim"],
+  "gorus.huyNam": ["huy", "nam"],
+  "gorus.kibir": ["huy"],
+  "sans.bakis": ["gorus"],
+  "sans.huy": ["huy"],
+  "sans.ozellik": ["ozellik"],
+  "sans.beceri": ["beceri"],
+  "sans.tekrar": ["tekrar"],
+};
+function paramSirasi(k: string): string[] {
+  const p = PARAM[k];
+  if (p) return p;
+  if (k.startsWith("olay.eylem.")) return ["kisi", "hedef"];
+  if (k.startsWith("sonuc.")) return ["hedef", "meslek"];
+  if (k.startsWith("ogrenme.hedef.")) return ["sayi"];
+  return [];
+}
+
+/** İşaretli sayı: +5 · −3 · 0 (eksi için tipografik işaret). */
+export const isaretli = (n: number): string => (n > 0 ? `+${n}` : n < 0 ? `−${Math.abs(n)}` : "0");
+
+function degerYaz(ad: string, v: unknown, t: Ceviri, lang: Lang): string {
+  if (v && typeof v === "object") return String((v as { ad?: unknown }).ad ?? "?");
+  if (typeof v === "number") return ad === "gorus" ? isaretli(v) : String(v);
+  if (typeof v !== "string") return "";
+  switch (ad) {
+    case "gundem": return t("onl.gundem." + v);
+    case "meslek": return professionNameL(v, lang);
+    case "secim": return t("onl.karar." + v);
+    case "sebep": return t("onl." + v);
+    case "ozellik": return t("onl.ozellik." + v);
+    case "beceri": return t("onl.beceri." + v);
+    case "nam": return t("onl.nam." + v);
+    case "huy": return traitL(v, lang);
+    default: return v;
+  }
+}
+
+function sablonYaz(k: string, p: Record<string, unknown>, t: Ceviri, lang: Lang): string {
+  const anahtar = "onl." + k;
+  const sablon = t(anahtar);
+  if (sablon === anahtar) return t("onl.olay.bilinmeyen");
+  return applyParams(sablon, paramSirasi(k).map((ad) => degerYaz(ad, p[ad], t, lang)), lang);
+}
+
+/** Olay özeti ya da eylem sonucu; `ek` sunucunun koymadığı parametreleri (ör. hedefin adı) ekler. */
+export function ozetYaz(o: Ozet, t: Ceviri, lang: Lang, ek?: Record<string, unknown>): string {
+  return sablonYaz(o.k, { ...o.p, ...ek }, t, lang);
+}
+/** Görüş ya da şans dökümünde bir kalem. */
+export function kalemYaz(k: Kalem, t: Ceviri, lang: Lang): string {
+  return sablonYaz(k.k, k.p ?? {}, t, lang);
+}
+
+export const meslekYaz = (m: string, lang: Lang, kadin = false) => professionNameL(m, lang, kadin);
+export const huyYaz = (h: string, lang: Lang) => traitL(h, lang);
+export const tuhaflikYaz = (q: string, lang: Lang) => quirkL(q, lang);
+export const hayalYaz = (r: string, lang: Lang) => goalL(r, lang);
+
+/** Görüş değerinin kaba adı (§13.9'daki "kızgın görünüyor" dili): 1 düşmanca … 7 can yoldaşı. */
+export function ruhDerecesi(d: number): number {
+  if (d <= -50) return 1;
+  if (d <= -25) return 2;
+  if (d <= -8) return 3;
+  if (d < 8) return 4;
+  if (d < 25) return 5;
+  if (d < 50) return 6;
+  return 7;
+}
+export const ruhAnahtari = (d: number) => `onl.ruh.${ruhDerecesi(d)}`;
+
+/** Olay türünün simgesi (GameIcon adı). */
+export function olayIkonu(o: Pick<Olay, "ozet" | "tur">): string {
+  const k = o.ozet.k;
+  if (k.startsWith("olay.eylem.")) return eylemIkonu(k.slice(11));
+  const tablo: Record<string, string> = {
+    "olay.olum": "tombstone", "olay.ustaOldu": "tombstone", "olay.yakinOldu": "tombstone", "olay.gundem": "scroll",
+    "olay.isBuldu": "anvil", "olay.evlilik": "ring", "olay.dostluk": "family", "olay.dogum": "baby", "olay.goc": "camel",
+    "olay.kulYemini": "flame", "olay.ogrenme.gun": "graduate-cap", "olay.hamle.corba": "bread", "olay.hamle.laf": "speaker",
+    "olay.yeniSakin": "house", "olay.ciraklik": "anvil", "olay.karar": "compass",
+  };
+  return tablo[k] ?? "scroll-open";
+}
+const EYLEM_IKON: Record<string, string> = {
+  sohbet: "amphora", yardim: "bucket", hediye: "gems", ayakIsi: "walk", cirak: "anvil", cirakRed: "anvil", mektep: "graduate-cap", puan: "star", karar: "compass",
+};
+export const eylemIkonu = (tur: string) => EYLEM_IKON[tur] ?? "scroll";
+export const MEKAN_IKON: Record<string, string> = {
+  carsi: "scales", cami: "prayer-beads", kahvehane: "amphora", meydan: "banner", han: "camel", degirmen: "wheat", mektep: "graduate-cap",
+};
+export const OZELLIK_IKON: Record<string, string> = { guc: "fist", ceviklik: "bow", dayaniklilik: "shield", zeka: "book", karizma: "lyre", sezgi: "star" };
+export const BECERI_IKON: Record<string, string> = { dovus: "crossed-swords", soz: "scroll", ticaret: "scales", zanaat: "anvil", ilim: "book", gizlilik: "hood" };
+export const NAM_IKON: Record<string, string> = { comertlik: "bread", dindarlik: "prayer-beads", mertlik: "shield", caliskanlik: "wheat" };
+export const KARAR_IKON: Record<string, string> = { zanaat: "anvil", ilim: "book", ticaret: "scales", yol: "crossed-swords" };
+export const SISTEM_IKON: Record<string, string> = { mahalle: "map", ciraklik: "anvil", mektep: "graduate-cap", ayakIsi: "walk", dostluk: "family", karar: "compass" };
+export const ISARET_IKON: Record<string, string> = { tanidik: "walk", dost: "family", dusman: "crossed-swords" };

@@ -1,10 +1,13 @@
 // Kronikler Online HTTP istemcisi: JSON, zaman aşımı, Bearer oturumu, sunucu kodlarından türlü hatalar.
-// Yeniden deneme yalnız güvenli isteklerde: GET'ler ve aynı istekNo ile POST /v1/profil (sunucu aynı
-// istekNo'ya aynı sonucu döndürür; yarıda kalan istek iki kez işlenmez). Giriş ve davet oluşturma denenmez.
+// Yeniden deneme yalnız güvenli isteklerde: GET'ler, aynı istekNo ile POST /v1/profil ve /v1/eylem (sunucu aynı
+// istekNo'ya aynı sonucu döndürür; yarıda kalan istek iki kez işlenmez) ve işaret koyan /v1/tanidik (aynı işaret
+// ikinci kez konunca durum değişmez). Giriş ve davet oluşturma denenmez.
 import { DENEME_SAYISI, sunucuAdresi, ZAMAN_ASIMI_MS } from "./ayar";
 import {
-  basarili, basarisiz, davetBilgisiMi, davetKoduYanitiMi, dunyaMi, girisYanitiMi, hataKoduMu, profilMi,
-  type DavetBilgisi, type DunyaOzeti, type GirisYaniti, type HataKodu, type Profil, type ProfilIstegi, type Sonuc,
+  basarili, basarisiz, davetBilgisiMi, davetKoduYanitiMi, dunyaMi, eylemYanitiMi, girisYanitiMi, hataKoduMu, kisiYanitiMi,
+  olaylarYanitiMi, profilMi, tanidikYanitiMi, yerlesimDurumuMi,
+  type DavetBilgisi, type Dil, type DunyaOzeti, type EylemIstegi, type EylemYaniti, type GirisYaniti, type HataKodu, type Kisi,
+  type OlaylarYaniti, type Profil, type ProfilIstegi, type Sonuc, type TanidikIstegi, type TanidikYaniti, type YerlesimDurumu,
 } from "./protokol";
 
 /** Sunucu ve sahte (geliştirici) istemcinin ortak yüzü. */
@@ -15,6 +18,12 @@ export interface OnlineIstemci {
   profilOlustur(istek: ProfilIstegi): Promise<Sonuc<Profil>>;
   davetOlustur(): Promise<Sonuc<{ kod: string }>>;
   davetCoz(kod: string): Promise<Sonuc<DavetBilgisi>>;
+  // Faz 2: yaşayan yerleşim. `dil` yalnız NPC adlarının yazımını seçer.
+  yerlesim(dil: Dil): Promise<Sonuc<YerlesimDurumu>>;
+  olaylar(imlec: number, dil: Dil): Promise<Sonuc<OlaylarYaniti>>;
+  kisi(id: string, dil: Dil): Promise<Sonuc<Kisi>>;
+  eylem(istek: EylemIstegi): Promise<Sonuc<EylemYaniti>>;
+  tanidik(istek: TanidikIstegi): Promise<Sonuc<TanidikYaniti>>;
 }
 
 export interface HttpAyari {
@@ -106,5 +115,12 @@ export function httpIstemci(ayar: HttpAyari): OnlineIstemci {
     profilOlustur: (istek) => cagir({ yontem: "POST", yol: "/v1/profil", govde: istek, yetki: true, tekrar: true }, profilMi),
     davetOlustur: () => cagir({ yontem: "POST", yol: "/v1/davet", yetki: true, tekrar: false }, davetKoduYanitiMi),
     davetCoz: (kod) => cagir({ yontem: "GET", yol: `/v1/davet/${encodeURIComponent(kod)}`, yetki: true, tekrar: true }, davetBilgisiMi),
+    yerlesim: (dil) => cagir({ yontem: "GET", yol: `/v1/yerlesim?dil=${dil}`, yetki: true, tekrar: true }, yerlesimDurumuMi),
+    olaylar: (imlec, dil) =>
+      cagir({ yontem: "GET", yol: `/v1/olaylar?imlec=${Math.max(0, Math.floor(imlec))}&dil=${dil}`, yetki: true, tekrar: true }, olaylarYanitiMi),
+    kisi: (id, dil) => cagir({ yontem: "GET", yol: `/v1/kisi/${encodeURIComponent(id)}?dil=${dil}`, yetki: true, tekrar: true }, kisiYanitiMi),
+    // Aynı gövde (aynı istekNo) ile yeniden denenir; sunucu ikinci kez işlemez, ilk yanıtı döndürür.
+    eylem: (istek) => cagir({ yontem: "POST", yol: "/v1/eylem", govde: istek, yetki: true, tekrar: true }, eylemYanitiMi),
+    tanidik: (istek) => cagir({ yontem: "POST", yol: "/v1/tanidik", govde: istek, yetki: true, tekrar: true }, tanidikYanitiMi),
   };
 }

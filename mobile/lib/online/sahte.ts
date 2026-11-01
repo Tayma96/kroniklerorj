@@ -3,6 +3,7 @@
 // kopyasıdır (sunucu paketi içe aktarılmaz); doluluk sayıları uydurmadır.
 import type { OnlineIstemci } from "./istemci";
 import { adDogrula } from "./ad";
+import { sahteKasabaKur, type SahteKasaba } from "./sahte-yerlesim";
 import {
   basarili, basarisiz, BASLANGIC_YASI, davetKoduGecerli, davetKoduTemizle, yerlesimBul,
   type BeylikOzeti, type DavetBilgisi, type DunyaOzeti, type Mevsim, type Profil, type YerlesimTuru,
@@ -91,10 +92,22 @@ export function sahteProfil(ad: string, cinsiyet: Profil["cinsiyet"], yerlesim: 
   };
 }
 
-export function sahteIstemci(gecikmeMs = 450): OnlineIstemci {
+/** `baslangic` verilirse oturum o profille başlar (tasarım önizlemesi: varış sonrası ekranlar). */
+export function sahteIstemci(gecikmeMs = 450, baslangic: Profil | null = null): OnlineIstemci {
   const dunya = sahteDunya();
-  let profil: Profil | null = null;
+  let profil: Profil | null = baslangic;
+  let kasaba: SahteKasaba | null = null;
   const bekle = () => new Promise<void>((r) => setTimeout(r, gecikmeMs));
+  /** Profilin yerleşimi (Faz 2 uçları): ilk çağrıda kurulur, oturum boyunca aynı kalır. */
+  const yerlesim = (): SahteKasaba | null => {
+    if (!profil) return null;
+    if (!kasaba) {
+      const b = yerlesimBul(dunya, profil.yerlesim) ?? yerlesimBul(dunya, "develi");
+      if (!b) return null;
+      kasaba = sahteKasabaKur(profil, b.yerlesim, b.beylik.id, () => sahteDunya().saat);
+    }
+    return kasaba;
+  };
   return {
     async giris() { await bekle(); return basarili({ oturum: "gelistirici", profilVar: profil !== null }); },
     async dunya() { await bekle(); return basarili(sahteDunya()); },
@@ -125,6 +138,31 @@ export function sahteIstemci(gecikmeMs = 450): OnlineIstemci {
       const temiz = davetKoduTemizle(kod);
       if (!davetKoduGecerli(temiz)) return basarisiz("davet_gecersiz");
       return temiz === SAHTE_DAVET_KODU ? basarili(SAHTE_DAVET) : basarisiz("davet_yok");
+    },
+    async yerlesim(dil) {
+      await bekle();
+      const k = yerlesim();
+      return k ? basarili(k.durum(dil)) : basarisiz("profil_yok");
+    },
+    async olaylar(imlec, dil) {
+      await bekle();
+      const k = yerlesim();
+      return k ? basarili(k.olaylar(imlec, dil)) : basarisiz("profil_yok");
+    },
+    async kisi(id, dil) {
+      await bekle();
+      const k = yerlesim();
+      return k ? k.kisi(id, dil) : basarisiz("profil_yok");
+    },
+    async eylem(istek) {
+      await bekle();
+      const k = yerlesim();
+      return k ? k.eylem(istek) : basarisiz("profil_yok");
+    },
+    async tanidik(istek) {
+      await bekle();
+      const k = yerlesim();
+      return k ? k.tanidik(istek) : basarisiz("profil_yok");
     },
   };
 }

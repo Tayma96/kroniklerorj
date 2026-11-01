@@ -20,6 +20,19 @@ const ANAHTAR: Partial<Record<OnlineHata, string>> = {
   davet_gecersiz: "onl.h.davetGecersiz",
   davet_yok: "onl.h.davetYok",
   profil_yok: "onl.h.profilYok",
+  sakin_yok: "onl.h.sakinYok",
+  kisi_yok: "onl.h.kisiYok",
+  yas_kapisi: "onl.h.yasKapisi",
+  ogrenme_kapali: "onl.h.ogrenmeKapali",
+  hedef_uygun_degil: "onl.h.hedefUygunDegil",
+  takat_yok: "onl.h.takatYok",
+  para_yok: "onl.h.paraYok",
+  zaten_cirak: "onl.h.zatenCirak",
+  karar_verildi: "onl.h.kararVerildi",
+  puan_yok: "onl.h.puanYok",
+  isaret_gecersiz: "onl.h.isaretGecersiz",
+  eylem_gecersiz: "onl.h.genel",
+  imlec_gecersiz: "onl.h.genel",
 };
 
 export function hataAnahtari(kod: OnlineHata): string {
