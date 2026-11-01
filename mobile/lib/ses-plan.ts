@@ -1,7 +1,7 @@
 import type { MuzikId, OrtamId, EfektId } from './ses-katalog';
 import type { SahneTema } from './sahne-tema';
 export function hayatEvre(age: number): MuzikId { return age < 13 ? 'cocukluk' : age < 18 ? 'genclik' : age < 25 ? 'ciraklik' : age < 40 ? 'ustalik' : age < 60 ? 'olgunluk' : 'yaslilik'; }
-export type OrtamPlan = { music: MuzikId; ambiance: OrtamId | null };
+export type OrtamPlan = { music: MuzikId | null; ambiance: OrtamId | null }; // music null: sessiz (ör. kendi müziğini taşıyan giriş sinematiği)
 export type SesBaglam = { path: string; age: number; dead?: boolean; season: string; profession?: string; propertyTypes?: readonly string[] };
 const SEZON: Record<string, OrtamId> = { 'İlkbahar': 'bahar_kus', 'Yaz': 'yaz_cayir', 'Sonbahar': 'guz_ruzgar', 'Kış': 'kis_ruzgar' };
 export function ekranSes(b: SesBaglam): OrtamPlan {
