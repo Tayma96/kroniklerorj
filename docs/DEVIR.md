@@ -27,9 +27,26 @@ commit Türkçe tek satır; anahtar sohbete yazılmaz, commit'lenmez.
   - Berkay'dan beklenen: Google Cloud OAuth istemcileri (Android `com.kronikler.app` + SHA-1, Web) ve
     Cloudflare'e elle dağıtım (`online-server/README.md`).
 
+## Berkay'dan beklenenler
+- Yeni giriş hikâyesi metni ve anlatıcı ses örneği (yukarıda).
+- 3D hakkında ayrıntılı yazı. Mevcut 3D'yi "aşırı kötü, amatör, telefonu donduruyor" buldu.
+- Kararlar:
+  - Dost Haneler ve Divan kaldırılsın mı;
+  - iki ajan sırayla mı çalışsın (öneri: önce ses, sonra 3D).
+- Gelir modeli: sonra.
+- Google Cloud ve Cloudflare: sonra; Berkay "benlik işleri sonra hallederim" dedi.
+
 ## Sıradaki işler (öncelik sırası)
-1. **ElevenLabs:** `.mcp.json` hazır; Berkay `ELEVENLABS_API_KEY`'i ortam gizlisi olarak ekleyince yeni
-   oturumda `/mcp` ile doğrula. Berkay yeni giriş hikâyesini ve örnek sesini (voice ID) gönderecek.
+1. **ElevenLabs:** bağlı.
+   - Kurulum: `.mcp.json` + ortam gizlisi `ELEVENLABS_API_KEY`. Berkay yeni oturumda çalıştığını doğruladı.
+   - Doğrulama: `mcp__ElevenLabs__check_subscription` (kredi harcamaz) ya da
+     `npx -y @elevenlabs/cli@latest onboard check --env-path .env.local`. `.env.local` git dışıdır.
+   - Anahtar sohbete yazılmaz. Bir kez sohbete yapıştırılan anahtarın iptal edildiği Berkay'a
+     hatırlatılmalı.
+   - Berkay'ın getirecekleri:
+     - **yeni giriş hikâyesi**: eskisini beğenmedi, kendisi yazdı;
+     - ElevenLabs'ta okuttuğu **örnek anlatıcı sesi** ve voice ID.
+   - Her üretimden önce tahmini karakter ve kredi gösterilir. Önce Türkçe, onaydan sonra 5 dil.
 2. **Telefonda bulunan hatalar** (ekran görüntüleri Berkay'da). Önce kök neden (systematic-debugging),
    sonra düzeltme ve telefon testi:
    1. Alt menü sola kaymış, seçenekler tıklanmıyor (`app/oyun/_layout.tsx` sekme çubuğu).
