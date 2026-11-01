@@ -53,7 +53,7 @@ export const MENU_DESTS: MenuDest[] = [
   { to: "/oyun/tarih", key: "tarih", icon: "hourglass", group: "defter" },
   { to: "/oyun/roman", key: "roman", icon: "book", group: "defter" },
   { to: "/oyun/basarimlar", key: "basarimlar", icon: "zafer", group: "defter" },
-  { to: "/oyun/divan", key: "divan", icon: "scales", group: "defter" },
+  // Günlük Divan davası tek oyunculudan kaldırıldı (oyundan kopuk; ileride makama bağlı gerçek mekanik olarak döner). Ekran ve kaydı duruyor.
 ];
 
 export function acikMi(d: MenuDest, s: GameState | null): boolean { return !s || !d.acik || d.acik(s); }
