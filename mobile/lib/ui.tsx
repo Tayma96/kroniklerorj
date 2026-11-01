@@ -37,9 +37,12 @@ export function AnimatedNumber({ value, style }: { value: number; style?: StyleP
 }
 
 // Lokalize geri-butonu etiketi (tüm ekranlarda ortak).
+// Geri: koyu zeminli çerçeveli hap — açık gökyüzü/fresk üstünde de okunur (çıplak altın yazı kayboluyordu).
 export function BackLabel() {
-  const { t } = useI18n();
-  return <Text style={{ color: C.gold, fontFamily: F.display, fontSize: 13, lineHeight: 22 }}>{t("common.back")}</Text>;
+  const { t, rtl } = useI18n();
+  return <View style={{ alignSelf: rtl ? "flex-end" : "flex-start", minHeight: 34, justifyContent: "center", paddingHorizontal: 13, borderRadius: 17, backgroundColor: "rgba(14,10,6,0.84)", borderWidth: 1, borderColor: "rgba(201,162,78,0.6)" }}>
+    <Text style={{ color: C.goldBright, fontFamily: F.display, fontSize: 13, lineHeight: 18 }}>{t("common.back")}</Text>
+  </View>;
 }
 
 // Basınca hafifçe küçülen, yaylanarak dönen buton — ortak "his" bileşeni.
