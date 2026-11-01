@@ -16,6 +16,7 @@ import { isSoundEnabled, setSoundEnabled, playTap } from "../lib/sound";
 import { isHapticsEnabled, setHapticsEnabled, hap } from "../lib/haptics";
 import { GameIcon } from "../lib/icons";
 import { LoadingScreen, Ambiance } from "../lib/fx";
+import { DilSecimi } from "../lib/dil-secimi";
 import { townSeasonImage } from "../lib/assets";
 import { currentCalendar } from "../lib/calendar";
 import { useSadeMod } from "../lib/use-sade-mod";
@@ -127,7 +128,7 @@ function CloseMark({ color }: { color: string }) {
 
 export default function MainMenu() {
   const { state, loading } = useGame();
-  const { lang, setLang, t, rtl } = useI18n();
+  const { lang, setLang, t, rtl, langChosen } = useI18n();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { width: W, height: H } = useWindowDimensions();
@@ -140,9 +141,11 @@ export default function MainMenu() {
   const toggleSound = async (v: boolean) => { setSound(v); await setSoundEnabled(v); if (v) playTap(); };
   const toggleHaptics = async (v: boolean) => { setHaptics(v); await setHapticsEnabled(v); if (v) hap("selection"); };
 
-  if (loading) {
+  if (loading || langChosen === null) {
     return <LoadingScreen />;
   }
+  // İlk açılış: dil hiç seçilmediyse önce dil ekranı (anlatıcı ve tüm metinler bu seçime göre).
+  if (!langChosen) return <DilSecimi />;
 
   const hasSave = !!state;
   const season = state ? currentCalendar(state.turn).season : seasonNow();
