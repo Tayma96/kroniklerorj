@@ -9,6 +9,7 @@ const ONEK = "kronikler_online_";
 const OTURUM = ONEK + "oturum";
 const TASLAK = ONEK + "taslak";
 const SINEMATIK = ONEK + "sinematik";
+const IMLEC = ONEK + "imlec";
 
 // Sunucunun oturum biçimi: base64url(yük).base64url(HMAC-SHA256).
 const OTURUM_BICIMI = /^[A-Za-z0-9_-]{1,2048}\.[A-Za-z0-9_-]{43}$/;
@@ -66,6 +67,24 @@ export async function sinematikGoruldu(hesapId: string): Promise<boolean> {
   return (await oku(SINEMATIK)) === hesapId;
 }
 export const sinematikIsaretle = (hesapId: string) => yaz(SINEMATIK, hesapId);
+
+/**
+ * Olay defteri imleci: bu hesapta en son okunan olay sırası (GET /v1/olaylar?imlec=). Hesap kimliğiyle saklanır;
+ * başka hesapla girilince sıfırdan başlar.
+ */
+export async function imlecOku(hesapId: string): Promise<number | null> {
+  const ham = await oku(IMLEC);
+  if (!ham) return null;
+  try {
+    const v: unknown = JSON.parse(ham);
+    if (typeof v !== "object" || v === null) return null;
+    const { h, i } = v as Record<string, unknown>;
+    return h === hesapId && typeof i === "number" && Number.isSafeInteger(i) && i >= 0 ? i : null;
+  } catch {
+    return null;
+  }
+}
+export const imlecYaz = (hesapId: string, imlec: number) => yaz(IMLEC, JSON.stringify({ h: hesapId, i: Math.max(0, Math.floor(imlec)) }));
 
 /** Yeni bir istek numarası: zaman + 20 rastgele karakter (sunucu biçimi [A-Za-z0-9_-]{8,64}). */
 export function istekNoUret(): string {

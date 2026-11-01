@@ -144,8 +144,8 @@ function VarisEkran() {
       </Animated.View>
 
       <Animated.View entering={giris(280)} style={{ marginTop: 14, gap: 10 }}>
-        {/* Faz 2: yerleşimin gün döngüsü ekranı buraya bağlanır; şimdilik ana menüye döner. */}
-        <AltinDugme etiket={t("onl.v.basla")} icon="walk" rtl={rtl} onPress={() => { void sinematikIsaretle(p.hesapId); router.replace("/"); }} />
+        {/* Faz 2: yerleşimdeki yaşam (Dönüş Kartı, takat, öğrenme şeridi) */}
+        <AltinDugme etiket={t("onl.v.basla")} icon="walk" rtl={rtl} onPress={() => { void sinematikIsaretle(p.hesapId); router.replace("/online/yasam"); }} />
         <CizgiDugme etiket={t("onl.v.sinematik")} icon="scroll-open" rtl={rtl} kucuk onPress={() => setSinema(true)} />
       </Animated.View>
     </ScrollView>

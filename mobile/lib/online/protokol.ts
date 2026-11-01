@@ -78,7 +78,9 @@ export const SUNUCU_HATALARI = [
   "gecersiz_istek", "govde_buyuk", "bulunamadi", "yontem_yok", "oturum_yok", "oturum_gecersiz",
   "oturum_suresi_doldu", "google_gecersiz", "google_erisilemiyor", "hiz_siniri", "profil_yok", "profil_var",
   "ad_uzunluk", "ad_karakter", "ad_yasak", "ad_alinmis", "cinsiyet_gecersiz", "yerlesim_gecersiz",
-  "yerlesim_dolu", "davet_gecersiz", "davet_yok", "istekno_gecersiz", "yapilandirma_eksik", "sunucu_hatasi",
+  "yerlesim_dolu", "davet_gecersiz", "davet_yok", "istekno_gecersiz", "sakin_yok", "kisi_yok", "eylem_gecersiz",
+  "isaret_gecersiz", "imlec_gecersiz", "yas_kapisi", "ogrenme_kapali", "hedef_uygun_degil", "takat_yok", "para_yok",
+  "zaten_cirak", "karar_verildi", "puan_yok", "yapilandirma_eksik", "sunucu_hatasi",
 ] as const;
 export type HataKodu = (typeof SUNUCU_HATALARI)[number];
 
@@ -153,3 +155,201 @@ export function yerlesimBul(dunya: DunyaOzeti | null | undefined, id: string): {
   }
   return undefined;
 }
+
+// ================================================================ Faz 2: yaşayan yerleşim
+// online-server/src/yerlesim/motor.ts uç yanıtlarının biçimi (README "Uçlar" ve "İstemci anahtarları").
+// Metinler {k, p} anahtarlarıyla gelir; istemci "onl." + k anahtarıyla çevirir (lib/online/metin.ts).
+
+export type Dil = "tr" | "en" | "es" | "pt" | "ar" | "ru";
+export type Isaret = "tanidik" | "dost" | "dusman";
+export const ISARETLER: readonly Isaret[] = ["tanidik", "dost", "dusman"];
+export const NPC_EYLEMLERI = ["sohbet", "yardim", "hediye", "ayakIsi", "cirak"] as const;
+export type NpcEylemi = (typeof NPC_EYLEMLERI)[number];
+export type EylemTuru = NpcEylemi | "mektep" | "puan" | "karar";
+export const OZELLIKLER = ["guc", "ceviklik", "dayaniklilik", "zeka", "karizma", "sezgi"] as const;
+export const BECERILER = ["dovus", "soz", "ticaret", "zanaat", "ilim", "gizlilik"] as const;
+export const NAMLAR = ["comertlik", "dindarlik", "mertlik", "caliskanlik"] as const;
+export const KARARLAR = ["zanaat", "ilim", "ticaret", "yol"] as const;
+export type Ozellik = (typeof OZELLIKLER)[number];
+export type Karar = (typeof KARARLAR)[number];
+/** Özellik 1-10, beceri ve nam 0-100 (sunucu karakter.ts). */
+export const OZELLIK_EN_COK = 10;
+/** Öğrenme döneminde her eylemin/işaretin açıldığı gün (sunucu ogrenme.ts → OGRENME_GUNLERI.acilan). */
+export const ACILIS_GUNU: Readonly<Record<string, number>> = {
+  sohbet: 1, yardim: 1, tanidik: 1, cirak: 2, mektep: 3, puan: 3, ayakIsi: 4, hediye: 5, dost: 5, dusman: 5, karar: 6,
+};
+
+export interface KisiAdi { id: string; ad: string }
+/** Çevrilecek metin: anahtar + parametreler (kişiler {id, ad}). */
+export interface Ozet { k: string; p: Record<string, unknown> }
+export interface Olay {
+  sira: number;
+  ay: number;
+  tur: string;
+  kim: string | null;
+  hedef: string | null;
+  gorunurluk: "herkes" | "ozel";
+  onem: number;
+  ozet: Ozet;
+}
+export interface Kalem { k: string; d: number; p?: Record<string, string | number> }
+/** Toplam = kalemlerin toplamı (kırpma "sinir" kalemiyle görünür). */
+export interface Dokum { toplam: number; kalemler: Kalem[] }
+export interface HaritaKisisi { id: string; ad: string; oyuncu?: true }
+export interface HaritaMekani { id: string; kisiler: HaritaKisisi[] }
+export interface Odul { para?: number; beceri?: [string, number]; ozellikPuani?: number }
+export interface OgrenmeGunu {
+  gun: number;
+  sistem: string;
+  acik: boolean;
+  hedef: Ozet;
+  ilerleme: number;
+  gerekli: number;
+  tamam: boolean;
+  odul: Odul;
+}
+export interface OgrenmeDurumu { gun: number; suruyor: boolean; gunler: OgrenmeGunu[] }
+export interface Tanidik { id: string; ad: string; isaret: Isaret; oyuncu?: true; gorus?: number }
+export interface AileUyesi { id: string; ad: string; rol: string }
+export interface Ben {
+  id: string;
+  ad: string;
+  cinsiyet: Cinsiyet;
+  yas: number;
+  dogumAyi: number;
+  ozellikler: Record<string, number>;
+  ozellikPuani: number;
+  beceriler: Record<string, number>;
+  nam: Record<string, number>;
+  takat: { kalan: number; tavan: number; aylik: number };
+  para: number;
+  hane: AileUyesi[];
+  usta: { id: string; ad: string; meslek: string } | null;
+  mekan: string | null;
+  karar: string | null;
+  kulYemini: boolean;
+  tanidiklar: Tanidik[];
+  ogrenme: OgrenmeDurumu;
+}
+export interface YerlesimBilgisi { id: string; ad: string; tur: YerlesimTuru; beylik: string; npc: number; oyuncu: number }
+/** GET /v1/yerlesim */
+export interface YerlesimDurumu {
+  saat: SaatOzeti;
+  yerlesim: YerlesimBilgisi;
+  ben: Ben;
+  harita: HaritaMekani[];
+  donusKarti: Olay[];
+  oneriler: { id: string; ad: string; gorus: number }[];
+  imlec: number;
+}
+/** GET /v1/olaylar?imlec= */
+export interface OlaylarYaniti { olaylar: Olay[]; imlec: number; dahaVar: boolean; eksik: boolean }
+export interface Getiri { tekrar: number; carpan: number }
+export interface EylemKarti { tur: NpcEylemi; takat: number; acik: boolean; engel?: HataKodu; sans?: Dokum; getiri: Getiri }
+export interface Bakis { id: string; ad: string; tur: string; deger: number; oyuncu?: true }
+export interface KisiNpc {
+  id: string;
+  ad: string;
+  oyuncu?: undefined;
+  cinsiyet: Cinsiyet;
+  yas: number;
+  meslek: string;
+  huy: string;
+  tuhaflik: string;
+  hayal: string;
+  gundem: string | null;
+  mekan: string | null;
+  aile: AileUyesi[];
+  sanaBakis: Dokum;
+  /** §13.9: yalnız yakınsan (+30 üstü) görünür. */
+  bakislari: { gorunur: boolean; liste: Bakis[] };
+  eylemler: EylemKarti[];
+  tanidik: Isaret | null;
+}
+export interface KisiOyuncu {
+  id: string;
+  ad: string;
+  oyuncu: true;
+  ben: boolean;
+  cinsiyet: Cinsiyet;
+  yas: number;
+  mekan: string | null;
+  tanidik: Isaret | null;
+}
+/** GET /v1/kisi/:id */
+export type Kisi = KisiNpc | KisiOyuncu;
+export interface EylemIstegi { tur: EylemTuru; hedef?: string; secim?: string; ozellik?: string; istekNo: string; dil?: Dil }
+export interface VerilenOdul { gun: number; odul: Odul }
+/** POST /v1/eylem */
+export interface EylemYaniti {
+  tur: EylemTuru;
+  hedef?: string;
+  hedefAd?: string | null;
+  sans?: Dokum;
+  zar?: number;
+  basari: boolean;
+  getiri?: Getiri;
+  sonuc: Ozet;
+  degisim: {
+    gorus?: number;
+    para?: number;
+    beceri?: Record<string, number>;
+    nam?: Record<string, number>;
+    ozellik?: Record<string, number>;
+  };
+  takat: { kalan: number; tavan: number };
+  ogrenme: VerilenOdul[];
+  olay?: Olay;
+}
+export interface TanidikIstegi { hedef: string; isaret: Isaret | null; dil?: Dil }
+/** POST /v1/tanidik */
+export interface TanidikYaniti { tanidiklar: Tanidik[]; ogrenme: VerilenOdul[] }
+
+const dizi = (v: unknown): v is unknown[] => Array.isArray(v);
+const metinYaDaBos = (v: unknown) => v === null || metin(v);
+const ozetMi = (v: unknown): v is Ozet => nesne(v) && metin(v.k) && nesne(v.p);
+function olayMi(v: unknown): v is Olay {
+  return nesne(v) && sayi(v.sira) && sayi(v.ay) && metin(v.tur) && metinYaDaBos(v.kim) && metinYaDaBos(v.hedef) && sayi(v.onem) && ozetMi(v.ozet);
+}
+const kalemMi = (v: unknown): v is Kalem => nesne(v) && metin(v.k) && sayi(v.d) && (v.p === undefined || nesne(v.p));
+const dokumMi = (v: unknown): v is Dokum => nesne(v) && sayi(v.toplam) && dizi(v.kalemler) && v.kalemler.every(kalemMi);
+const kisiAdiMi = (v: unknown): v is Nesne & KisiAdi => nesne(v) && metin(v.id) && metin(v.ad);
+const saatMi = (v: unknown): v is SaatOzeti => nesne(v) && [v.simdi, v.oyunAyi, v.yil, v.ay, v.sonrakiDonum].every(sayi) && metin(v.mevsim);
+const sayiHaritasi = (v: unknown) => nesne(v) && Object.values(v).every(sayi);
+function benMi(v: unknown): v is Ben {
+  if (!nesne(v) || !metin(v.id) || !metin(v.ad) || !cinsiyetMi(v.cinsiyet) || !sayi(v.yas) || !sayi(v.para)) return false;
+  if (!sayiHaritasi(v.ozellikler) || !sayiHaritasi(v.beceriler) || !sayiHaritasi(v.nam) || !sayi(v.ozellikPuani)) return false;
+  const tk = v.takat, og = v.ogrenme;
+  if (!nesne(tk) || !sayi(tk.kalan) || !sayi(tk.tavan) || !sayi(tk.aylik)) return false;
+  if (!dizi(v.hane) || !v.hane.every(kisiAdiMi) || !dizi(v.tanidiklar) || !v.tanidiklar.every(kisiAdiMi)) return false;
+  return nesne(og) && sayi(og.gun) && dizi(og.gunler) && og.gunler.every((g) => nesne(g) && sayi(g.gun) && metin(g.sistem) && ozetMi(g.hedef) && sayi(g.ilerleme) && sayi(g.gerekli) && nesne(g.odul));
+}
+const haritaMi = (v: unknown): v is HaritaMekani[] => dizi(v) && v.every((m) => nesne(m) && metin(m.id) && dizi(m.kisiler) && m.kisiler.every(kisiAdiMi));
+
+export function yerlesimDurumuMi(v: unknown): v is YerlesimDurumu {
+  if (!nesne(v) || !saatMi(v.saat) || !benMi(v.ben) || !haritaMi(v.harita) || !sayi(v.imlec)) return false;
+  const y = v.yerlesim;
+  return nesne(y) && metin(y.id) && metin(y.ad) && turMu(y.tur) && dizi(v.donusKarti) && v.donusKarti.every(olayMi)
+    && dizi(v.oneriler) && v.oneriler.every((o) => kisiAdiMi(o) && sayi(o.gorus));
+}
+export function olaylarYanitiMi(v: unknown): v is OlaylarYaniti {
+  return nesne(v) && dizi(v.olaylar) && v.olaylar.every(olayMi) && sayi(v.imlec) && typeof v.dahaVar === "boolean";
+}
+export function kisiYanitiMi(v: unknown): v is Kisi {
+  if (!kisiAdiMi(v) || !cinsiyetMi(v.cinsiyet) || !sayi(v.yas)) return false;
+  if (v.oyuncu === true) return typeof v.ben === "boolean";
+  const b = v.bakislari;
+  return metin(v.meslek) && metin(v.huy) && dizi(v.aile) && v.aile.every(kisiAdiMi) && dokumMi(v.sanaBakis)
+    && nesne(b) && typeof b.gorunur === "boolean" && dizi(b.liste)
+    && dizi(v.eylemler) && v.eylemler.every((e) => nesne(e) && metin(e.tur) && sayi(e.takat) && typeof e.acik === "boolean" && (e.sans === undefined || dokumMi(e.sans)));
+}
+export function eylemYanitiMi(v: unknown): v is EylemYaniti {
+  return nesne(v) && metin(v.tur) && typeof v.basari === "boolean" && ozetMi(v.sonuc) && nesne(v.degisim)
+    && nesne(v.takat) && sayi(v.takat.kalan) && dizi(v.ogrenme) && (v.sans === undefined || dokumMi(v.sans))
+    && (v.olay === undefined || olayMi(v.olay));
+}
+export function tanidikYanitiMi(v: unknown): v is TanidikYaniti {
+  return nesne(v) && dizi(v.tanidiklar) && v.tanidiklar.every(kisiAdiMi) && dizi(v.ogrenme);
+}
+/** Kişi kimliği biçimi (sunucu ortak.ts kisiCoz): NPC "n<sayı>", oyuncu "o<sayı>". */
+export const kisiKimligiMi = (v: unknown): v is string => typeof v === "string" && /^(n|o)[1-9][0-9]{0,8}$/.test(v);
