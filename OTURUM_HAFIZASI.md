@@ -20,8 +20,9 @@
 - Emek ve yaş uğraşları Karakter ekranında (`lib/month-actions-ui.tsx`), çalışılmamış ayda Karakter rozeti. Semboller yazı tipinde (`scripts/yazitipi`). Smoke en sona.
 
 ## Açık işler
-- Çevrimiçi: `docs/online/` (OYNANIS_TASARIMI, FAZ1/2_PLAN). Faz 1 sunucu+ekran ✓ (`online-server/`, `mobile/lib|app/online`, bayrak `ONLINE_GELISTIRME`); Faz 2 sürüyor. Eski beta kapalı (Yakında); `server/` ve eşliği dokunulmaz.
-- Yöntem: Superpowers (tasarım → plan → uygulama → doğrulama). 10 sayfa + giriş/yeni oyun ✓; sinematik ✓ (lib/sinematik; kaynak assets/sinematik/KAYNAK.md). 3D aşama 1 test APK'da (oturum dalı), telefon onayı bekleniyor. KURAL: paralel ajan yok (limit bitiriyor); en çok 1 ajan, inceleme ucuz betikle. 3D: `docs/superpowers/specs/2026-10-28-canli-3d-kusam-design.md`.
+- **Önce `docs/DEVIR.md`yi oku** (1 Kasım devri: ElevenLabs MCP, telefon hataları, 3D yeni yol, ajan planı). ElevenLabs Berkay'ın aboneliğiyle onaylı (`.mcp.json`).
+- Çevrimiçi `docs/online/`; eski beta kapalı (Yakında); `server/` ve eşliği dokunulmaz.
+- KURAL: en çok 1 alt ajan; önce plan, onaydan sonra kod. 3D tasarım: `docs/superpowers/specs/2026-10-28-canli-3d-kusam-design.md`.
 - 3D: kullanıcı karikatür değil gerçekçi insan istiyor. Hat `.claude/skills/blender-karakter` (her oturumda setup.sh). Kullanıcı onayı olmadan tasarım/oyun entegrasyonuna geçme.
 - Skill'ler `.claude/skills` (Superpowers, ECC seçkisi, ElevenLabs, claude-code-setup); öncelik `kronikler-skill-rehberi`.
 - Denge: bot 40 yaşında nam 100. `game.ts` Math.random göçü sürüyor (`docs/AUDIT.md`).
