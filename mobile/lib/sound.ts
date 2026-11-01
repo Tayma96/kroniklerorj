@@ -36,7 +36,7 @@ let eventPlan: OrtamPlan | null = null, eventTimer: ReturnType<typeof setTimeout
 let epoch = 0, cleanup: (() => void) | null = null;
 function applyPlan() {
   const plan = [...scenes.values()].at(-1) || eventPlan || base;
-  const mapped: SesPlan = { music: 'music:' + plan.music, ambiance: plan.ambiance ? 'ambiance:' + plan.ambiance : null };
+  const mapped: SesPlan = { music: plan.music ? 'music:' + plan.music : null, ambiance: plan.ambiance ? 'ambiance:' + plan.ambiance : null };
   mixer.setPlan(mapped);
 }
 function notify() { mixer.setPreferences(prefs); listeners.forEach(fn => { try { fn(); } catch {} }); }
