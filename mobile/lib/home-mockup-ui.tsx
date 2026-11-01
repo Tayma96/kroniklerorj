@@ -15,6 +15,7 @@ import { ikilemTema, SAHNE_GORSEL } from "./sahne-tema";
 import { etkiler, ETKI } from "./kart3d";
 import { playTap, playEffect } from "./sound";
 import { C, F } from "./theme";
+import { adBicim } from "./ad-bicim";
 
 export { MK, Ornament } from "./mk-sus";
 import { MK, Ornament } from "./mk-sus";
@@ -74,24 +75,28 @@ export function MkHero({ source, topInset, seasonIcon, title, sub, rtl, onBook, 
   </View>;
 }
 
-// Kimlik: 84 pt portre sahneden taşar; sağında ad, meslek, çizgi ve dört gösterge (dar ekranda 2×2).
+// Kimlik: 84 pt portre sahneden taşar; sağında koyu çerçeveli panelde ad, meslek ve dört gösterge (dar ekranda 2×2).
+// Panel zemini opak: sahnenin açık tonlarına bindiğinde yazılar telefonda okunmaz oluyordu. Yazılar sabit boyda (Android'de
+// sığdırma küçültmesi göstergeleri okunmaz hale getiriyordu).
 export function MkIdentity({ age, gender, name, role, stats, rtl, onPortrait, portraitLabel }: { age: number; gender: "erkek" | "kadın"; name: string; role: string; stats: { icon: string; label: string; value: string; tone?: string }[]; rtl: boolean; onPortrait: () => void; portraitLabel: string }) {
   const narrow = useWindowDimensions().width < 360;
-  return <View style={{ marginTop: -40, paddingHorizontal: 14, flexDirection: rtl ? "row-reverse" : "row", alignItems: "flex-start", gap: 12, marginBottom: 10 }}>
+  const { lang } = useI18n();
+  const align = rtl ? "right" as const : "left" as const;
+  return <View style={{ marginTop: -40, paddingHorizontal: 14, flexDirection: rtl ? "row-reverse" : "row", alignItems: "flex-start", gap: 10, marginBottom: 10 }}>
     <PressableScale haptic="tap" accessibilityLabel={portraitLabel} onPress={() => { playTap(); onPortrait(); }} style={{ width: 88, height: 88, borderRadius: 44, padding: 2, backgroundColor: "#0E0A06", borderWidth: 2, borderColor: MK.frameHi, shadowColor: "#000", shadowOpacity: 0.6, shadowRadius: 6, elevation: 6 }}>
       <Portre age={age} gender={gender} size={80} ring={false} />
     </PressableScale>
-    <View style={{ flex: 1, minWidth: 0, paddingTop: 44 }}>
-      <Text numberOfLines={1} adjustsFontSizeToFit style={{ fontFamily: F.serif, fontSize: 19, lineHeight: 23, color: "#F4E8CF", textAlign: rtl ? "right" : "left", textShadowColor: "rgba(0,0,0,0.7)", textShadowRadius: 4 }}>{name}</Text>
-      <Text numberOfLines={1} style={{ fontFamily: F.serif, fontSize: 14, lineHeight: 17, color: MK.muted, textAlign: rtl ? "right" : "left" }}>{role}</Text>
-      <View style={{ height: 1, backgroundColor: "rgba(201,162,78,0.45)", marginTop: 6, marginBottom: 6 }} />
-      <View style={{ flexDirection: rtl ? "row-reverse" : "row", flexWrap: narrow ? "wrap" : "nowrap", rowGap: 6 }}>
-        {stats.map((s, i) => { const sep = narrow ? i % 2 === 1 : i > 0; return <View key={s.label} accessible accessibilityLabel={`${s.label}: ${s.value}`} style={{ flex: narrow ? undefined : 1, width: narrow ? "50%" : undefined, minWidth: 0, flexDirection: rtl ? "row-reverse" : "row", alignItems: "center", gap: 4, paddingHorizontal: 3, borderLeftWidth: !rtl && sep ? 1 : 0, borderRightWidth: rtl && sep ? 1 : 0, borderColor: "rgba(201,162,78,0.3)" }}>
-          <GameIcon name={s.icon} size={16} color={s.tone || MK.gold} />
-          <View style={{ minWidth: 0, flexShrink: 1, alignItems: rtl ? "flex-end" : "flex-start" }}>
-            <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ fontFamily: F.serif, fontSize: 12, lineHeight: 14, color: MK.muted }}>{s.label}</Text>
-            <Text numberOfLines={1} adjustsFontSizeToFit style={{ fontFamily: F.serif, fontSize: 15, lineHeight: 18, color: s.tone || "#F4E8CF" }}>{s.value}</Text>
+    <View style={{ flex: 1, minWidth: 0, marginTop: 30, paddingHorizontal: 11, paddingTop: 8, paddingBottom: 9, borderRadius: 10, borderWidth: 1, borderColor: "rgba(201,162,78,0.5)", backgroundColor: "#16100A", shadowColor: "#000", shadowOpacity: 0.55, shadowRadius: 8, elevation: 5 }}>
+      <Text numberOfLines={1} style={{ fontFamily: F.serif, fontSize: 19, lineHeight: 23, color: "#F7EBD2", textAlign: align }}>{adBicim(name, lang)}</Text>
+      <Text numberOfLines={1} style={{ fontFamily: F.serif, fontSize: 14, lineHeight: 18, color: C.gold, textAlign: align }}>{role}</Text>
+      <View style={{ height: 1, backgroundColor: "rgba(201,162,78,0.4)", marginTop: 6, marginBottom: 7 }} />
+      <View style={{ flexDirection: rtl ? "row-reverse" : "row", flexWrap: narrow ? "wrap" : "nowrap", rowGap: 7 }}>
+        {stats.map((s, i) => { const sep = narrow ? i % 2 === 1 : i > 0; return <View key={s.label} accessible accessibilityLabel={`${s.label}: ${s.value}`} style={{ flex: narrow ? undefined : 1, width: narrow ? "50%" : undefined, minWidth: 0, paddingHorizontal: 5, borderLeftWidth: !rtl && sep ? 1 : 0, borderRightWidth: rtl && sep ? 1 : 0, borderColor: "rgba(201,162,78,0.28)", alignItems: rtl ? "flex-end" : "flex-start" }}>
+          <View style={{ flexDirection: rtl ? "row-reverse" : "row", alignItems: "center", gap: 3 }}>
+            <GameIcon name={s.icon} size={13} color={s.tone || C.goldBright} />
+            <Text numberOfLines={1} style={{ flexShrink: 1, fontFamily: F.serif, fontSize: 11.5, lineHeight: 14, color: "#CDBB98" }}>{s.label}</Text>
           </View>
+          <Text numberOfLines={1} style={{ marginTop: 1, fontFamily: F.serif, fontSize: 16.5, lineHeight: 20, color: s.tone || "#FFF4DE" }}>{s.value}</Text>
         </View>; })}
       </View>
     </View>

@@ -1,5 +1,6 @@
 import { DesignPressable as Pressable } from "../lib/design-pressable";
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { adBicim } from "../lib/ad-bicim";
 import { View, Text, TextInput, ActivityIndicator, ScrollView, Alert, Image, StyleSheet, Dimensions, BackHandler, Keyboard, Platform, useWindowDimensions, type ImageSourcePropType, type StyleProp, type ViewStyle } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -207,7 +208,7 @@ function LineageCard({ icon, title, sub, note, active, rtl, disabled, onPress }:
 export default function YeniOyun() {
   const router = useRouter();
   const { startGame, apply, state, defter, yeniOcak } = useGame();
-  const { t, rtl } = useI18n();
+  const { t, rtl, lang } = useI18n();
   const reduced = useSadeMod();
   const insets = useSafeAreaInsets();
   const narrow = useWindowDimensions().width < 360;
@@ -245,7 +246,7 @@ export default function YeniOyun() {
   const start = () => {
     if (startingRef.current) return;
     setError("");
-    const parts = fullName.trim().split(/\s+/).filter(Boolean);
+    const parts = adBicim(fullName.trim(), lang).split(/\s+/).filter(Boolean); // "berkay cinkılıç" → "Berkay Cinkılıç"
     const first = parts[0] || "";
     const surname = parts.slice(1).join(" ");
     if (first.length < 2) { setError(t("new.errName")); return; }
