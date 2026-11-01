@@ -39,10 +39,11 @@ ortam −30. Mikserdeki oynatıcı ses düzeyleri bu dosya seviyelerine göre ye
 | Ortam tabanı | 15 döngü × 25 sn (+%30 pay) | ~4.900 |
 | Serpiştirme | ~30 kısa ses | ~600 |
 | Giriş sinematiği | ~40 sn özgün müzik + ~10 efekt noktası | ~900 |
-| **Toplam (1. dalga)** | | **~7.750** |
+| Çok dilli anlatıcı | ses seçimi + 5 dilde anlatı (bölüm 9) | ~5.000 |
+| **Toplam (1. dalga)** | | **~12.750** |
 | Oyun içi müzik (2. dalga, ayrı onay) | 21 parça × ~90 sn | ~12.600 |
 
-Tavanlar: 1. dalga en çok 10.000 kredi. Kalan kota 5.000'in altına inerse her şey durur.
+Tavanlar: 1. dalga en çok 15.000 kredi. Kalan kota 5.000'in altına inerse her şey durur.
 
 ## 6. Aşamalar ve onay kapıları
 - **A. Denetim (ücretsiz):** 63 dosyanın ölçüm tablosu ve her çağrı noktasının sahne/sıklık dökümü.
@@ -66,3 +67,21 @@ Tavanlar: 1. dalga en çok 10.000 kredi. Kalan kota 5.000'in altına inerse her 
 ## 8. Lisans
 ElevenLabs ücretli plan çıktıları ticari kullanıma açık. `LISANS.md`deki "yapay zekâ üretimi yok" ifadesi
 güncellenir; kalan gerçek kayıtların atıfları korunur.
+
+## 9. Çok dilli anlatıcı (Kronks)
+Hedef: her dilde anadil telaffuzu, aynı duygu, Kronks'a yakın tını (derin, olgun, ağırbaşlı belgesel anlatıcısı).
+Berkay'ın ElevenLabs seslerinden yalnız Kronks (`X1De6TudhbO6mizD7oKo`, tr) kullanılabilir.
+- **Metin:** Türkçe asıl metin Berkay'ın. 5 dile edebî çeviri ana oturumda: en nötr, es nötr Latin Amerika,
+  pt Brezilya, ar Fasih (MSA), ru standart. Duygu etiketleri aynı yerlerde; "Kül, közü saklar." her dilde kısa,
+  atasözü tadında.
+- **Her dil için 3 aday yolu:** (1) Kronks + `eleven_v4` doğrudan (aksan Türkçe kalabilir); (2) Kronks remix
+  (`/v1/text-to-voice/{id}/remix`: aynı tını, yerel aksan; ses yuvası kullanır, 8 boş); (3) ses kütüphanesinden
+  yerel anlatıcılar (ön dinleme ücretsiz), Kronks'a tını benzerliğine göre yerel konuşmacı gömmesiyle sıralanır.
+- **Seçim:** yerel Whisper ile anlaşılırlık (kelime hata oranı) + Kronks'a tını benzerliği ölçülür; son karar
+  Berkay'ın kulağı. Dinleme sayfasında her dilde aynı örnek cümle, adaylar yan yana.
+- **Üretim:** 5 bölüm halinde `with-timestamps`, önceki/sonraki metin bağlamıyla. Hizalama altyazıyı ve müzik
+  bölümlerini sürer. Müzik bölüm süreleri en uzun dile göre; kısa dillerde bölüm sonunda müzik nefesi.
+- **Uygulama:** ilk açılışta (kayıtlı dil yoksa) dil seçme ekranı; sinematik seçilen dilin kaydını çalar,
+  altyazı her dilde.
+- ElevenLabs "agent" ürünü konuşan sohbet botları içindir; içerik üretiminde aynı modelleri doğrudan API ile
+  kullanmak daha kaliteli ve denetimli. Bu yüzden o yol kullanılmaz.
