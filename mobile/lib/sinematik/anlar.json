@@ -1,0 +1,135 @@
+{
+ "_not": "Hayatın kilit anlarında anlatıcı (Kronks) cümleleri, 6 dil. Plan ve tetikler: docs/ANLATI_ANLAR.md. Cümlede ad yok, oyuncuya hitap yok, cinsiyetsiz anlatım. 'etiket' yalnız seslendirme yönergesidir, altyazıda gösterilmez.",
+ "anlar": [
+  {
+   "id": "basla",
+   "etiket": "[calm]",
+   "tr": "Dört kış geçti. Küllerin arasında, bir ocağın sıcaklığında yeni bir can büyüyordu.",
+   "en": "Four winters passed. Among the ashes, in the warmth of a hearth, a new life was growing.",
+   "es": "Pasaron cuatro inviernos. Entre las cenizas, al calor de un hogar, crecía una nueva vida.",
+   "pt": "Passaram-se quatro invernos. Entre as cinzas, no calor de um lar, crescia uma nova vida.",
+   "ar": "مضت أربعةُ شتاءات. وبين الرماد، في دفءِ موقدٍ، كانت حياةٌ جديدةٌ تكبر.",
+   "ru": "Прошло четыре зимы. Среди пепла, у тёплого очага, росла новая жизнь."
+  },
+  {
+   "id": "genclik",
+   "etiket": "[thoughtful]",
+   "tr": "Çocukluk geride kaldı. Önde, seçilmeyi bekleyen yollar var.",
+   "en": "Childhood was left behind. Ahead lie roads waiting to be chosen.",
+   "es": "La infancia quedó atrás. Por delante, caminos que esperan ser elegidos.",
+   "pt": "A infância ficou para trás. À frente, caminhos à espera de uma escolha.",
+   "ar": "مضت الطفولة. وفي الأفق دروبٌ تنتظر من يختارها.",
+   "ru": "Детство осталось позади. Впереди — дороги, которые ждут выбора."
+  },
+  {
+   "id": "ilk_is",
+   "etiket": "[warm]",
+   "tr": "Eller ilk kez bir zanaatın tozuna bulandı. Emek, közü yeniden alevlendirir.",
+   "en": "For the first time, hands were dusted with the work of a craft. Labor rekindles the ember.",
+   "es": "Por primera vez, las manos se cubrieron del polvo de un oficio. El trabajo aviva de nuevo la brasa.",
+   "pt": "Pela primeira vez, as mãos se cobriram com o pó de um ofício. O trabalho reacende a brasa.",
+   "ar": "لأولِ مرةٍ علِق غبارُ الصنعة بالأيدي. والكدُّ يوقِد الجمرَ من جديد.",
+   "ru": "Впервые руки покрылись пылью ремесла. Труд вновь раздувает жар."
+  },
+  {
+   "id": "evlilik",
+   "etiket": "[warm]",
+   "tr": "İki ocak birleşti. Bir çatı altında, iki kader aynı ateşi paylaştı.",
+   "en": "Two hearths became one. Under one roof, two fates shared the same fire.",
+   "es": "Dos hogares se unieron. Bajo un mismo techo, dos destinos compartieron el mismo fuego.",
+   "pt": "Dois lares se uniram. Sob o mesmo teto, dois destinos compartilharam o mesmo fogo.",
+   "ar": "اجتمع موقدان. وتحت سقفٍ واحد، تقاسم قدَران النارَ نفسها.",
+   "ru": "Два очага стали одним. Под одной крышей две судьбы разделили один огонь."
+  },
+  {
+   "id": "ilk_evlat",
+   "etiket": "[soft]",
+   "tr": "Evi bir bebeğin ağlayışı doldurdu. Kül, közünü bir sonraki ele verdi.",
+   "en": "A baby's cry filled the house. The ash passed its ember to the next hand.",
+   "es": "El llanto de un bebé llenó la casa. La ceniza entregó su brasa a la siguiente mano.",
+   "pt": "O choro de um bebê encheu a casa. A cinza passou sua brasa para a próxima mão.",
+   "ar": "ملأ بكاءُ رضيعٍ البيت. وسلّم الرمادُ جمرته إلى اليد التالية.",
+   "ru": "Плач младенца наполнил дом. Пепел передал свой жар следующей руке."
+  },
+  {
+   "id": "ebeveyn_vefat",
+   "etiket": "[sad]",
+   "tr": "Ocağın büyüğü toprağa verildi. Geride kalanlar, közü korumayı öğrenir.",
+   "en": "The one who held the hearth was laid to rest. Those left behind learn to guard the ember.",
+   "es": "Quien sostenía el hogar descansa ya bajo la tierra. Los que quedan aprenden a guardar la brasa.",
+   "pt": "Quem sustentava o lar descansa agora sob a terra. Os que ficam aprendem a guardar a brasa.",
+   "ar": "وُوري الثرى من كان يحمل الموقد. ويتعلّم الباقون حراسةَ الجمر.",
+   "ru": "Опора очага легла в землю. Оставшиеся учатся беречь жар."
+  },
+  {
+   "id": "usta",
+   "etiket": "[proud]",
+   "tr": "Yılların emeği bir eserde dile geldi. Usta, adını işine yazdı.",
+   "en": "Years of labor found their voice in a single work. A master's name was written into the craft.",
+   "es": "Años de trabajo hallaron voz en una sola obra. Un nombre quedó grabado en el oficio.",
+   "pt": "Anos de trabalho ganharam voz em uma única obra. Um nome ficou gravado no ofício.",
+   "ar": "نطق كدُّ السنين في عملٍ واحد، ونُقش اسمٌ في الصنعة إلى الأبد.",
+   "ru": "Годы труда обрели голос в одной работе. Имя мастера навсегда вошло в ремесло."
+  },
+  {
+   "id": "sohret",
+   "etiket": "[thoughtful]",
+   "tr": "Bu ocağın adı artık çarşıda, kervan yollarında anılıyor.",
+   "en": "This hearth's name is now spoken in the bazaar and along the caravan roads.",
+   "es": "El nombre de este hogar ya se oye en el bazar y en los caminos de las caravanas.",
+   "pt": "O nome deste lar já se ouve no bazar e nas rotas das caravanas.",
+   "ar": "صار اسمُ هذا الموقد يُذكر في السوق وعلى دروب القوافل.",
+   "ru": "Имя этого очага теперь звучит на базаре и на караванных дорогах."
+  },
+  {
+   "id": "yerlesim",
+   "etiket": "[hopeful]",
+   "tr": "Boş bir toprakta ilk ateş yandı. Yeni bir yurt kuruldu.",
+   "en": "The first fire was lit on empty land. A new home was founded.",
+   "es": "En una tierra vacía se encendió el primer fuego. Se fundó un nuevo hogar.",
+   "pt": "Em uma terra vazia, o primeiro fogo foi aceso. Um novo lar foi fundado.",
+   "ar": "أُشعلت النارُ الأولى في أرضٍ خالية، وقام موطنٌ جديد.",
+   "ru": "На пустой земле зажёгся первый огонь. Основан новый дом."
+  },
+  {
+   "id": "tac",
+   "etiket": "[proud]",
+   "tr": "Küllerden yükselen bir ocak, artık bir beyliğe yön veriyor.",
+   "en": "A hearth that rose from the ashes now guides a realm.",
+   "es": "Un hogar que surgió de las cenizas ahora guía un principado.",
+   "pt": "Um lar que se ergueu das cinzas agora guia um principado.",
+   "ar": "موقدٌ نهض من الرماد، صار اليوم يقود إمارة.",
+   "ru": "Очаг, поднявшийся из пепла, теперь правит бейликом."
+  },
+  {
+   "id": "savas",
+   "etiket": "[tense]",
+   "tr": "Kös davulları çaldı. Kılıçlar, kaderi yeniden yazmak için kınından çıktı.",
+   "en": "The war drums sounded. Swords left their scabbards to rewrite fate.",
+   "es": "Sonaron los tambores de guerra. Las espadas salieron de sus vainas para reescribir el destino.",
+   "pt": "Soaram os tambores de guerra. As espadas deixaram as bainhas para reescrever o destino.",
+   "ar": "دوّت طبولُ الحرب، وخرجت السيوفُ من أغمادها لتعيد كتابةَ القدر.",
+   "ru": "Загремели боевые барабаны. Мечи покинули ножны, чтобы переписать судьбу."
+  },
+  {
+   "id": "olum",
+   "etiket": "[solemn]",
+   "tr": "Bir ömür burada tamamlandı. Ama kül, közü saklar.",
+   "en": "Here, a life reached its end. But the ash keeps the ember.",
+   "es": "Aquí se cumplió una vida. Pero la ceniza guarda la brasa.",
+   "pt": "Aqui uma vida chegou ao fim. Mas a cinza guarda a brasa.",
+   "ar": "هنا اكتمل عمرٌ. لكنّ الرمادَ يحفظُ الجمر.",
+   "ru": "Здесь завершилась жизнь. Но пепел хранит жар."
+  },
+  {
+   "id": "varis",
+   "etiket": "[hopeful]",
+   "tr": "Köz, yeni bir ele geçti. Soyun hikâyesi sürüyor.",
+   "en": "The ember passed into new hands. The story of the line goes on.",
+   "es": "La brasa pasó a nuevas manos. La historia del linaje continúa.",
+   "pt": "A brasa passou a novas mãos. A história da linhagem continua.",
+   "ar": "انتقل الجمرُ إلى يدٍ جديدة، وتمضي حكايةُ السلالة.",
+   "ru": "Жар перешёл в новые руки. История рода продолжается."
+  }
+ ]
+}

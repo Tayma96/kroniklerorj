@@ -4825,5 +4825,5969 @@
   "sayac_once": 27249,
   "not": "oyun içi ortam: kervan",
   "tarih": "2026-11-02T10:02:30+00:00"
+ },
+ {
+  "dosya": "usta_tr.mp3",
+  "tur": "vo-an",
+  "istem": "[proud] Yılların emeği bir eserde dile geldi. Usta, adını işine yazdı.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "tr"
+  },
+  "tohum": 1243,
+  "maliyet": 28,
+  "sayac_once": 28149,
+  "not": "kilit an anlatısı",
+  "tarih": "2026-11-02T10:11:01+00:00"
+ },
+ {
+  "dosya": "usta_en.mp3",
+  "tur": "vo-an",
+  "istem": "[proud] Years of labor found their voice in a single work. A master's name was written into the craft.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "en"
+  },
+  "tohum": 1243,
+  "maliyet": 41,
+  "sayac_once": 28149,
+  "not": "kilit an anlatısı",
+  "tarih": "2026-11-02T10:11:05+00:00"
+ },
+ {
+  "dosya": "usta_es.mp3",
+  "tur": "vo-an",
+  "istem": "[proud] Años de trabajo hallaron voz en una sola obra. Un nombre quedó grabado en el oficio.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "es"
+  },
+  "tohum": 1243,
+  "maliyet": 37,
+  "sayac_once": 28149,
+  "not": "kilit an anlatısı",
+  "tarih": "2026-11-02T10:11:09+00:00"
+ },
+ {
+  "dosya": "usta_pt.mp3",
+  "tur": "vo-an",
+  "istem": "[proud] Anos de trabalho ganharam voz em uma única obra. Um nome ficou gravado no ofício.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "pt"
+  },
+  "tohum": 1243,
+  "maliyet": 36,
+  "sayac_once": 28149,
+  "not": "kilit an anlatısı",
+  "tarih": "2026-11-02T10:11:13+00:00"
+ },
+ {
+  "dosya": "usta_ar.mp3",
+  "tur": "vo-an",
+  "istem": "[proud] نطق كدُّ السنين في عملٍ واحد، ونُقش اسمٌ في الصنعة إلى الأبد.",
+  "model": "eleven_v4",
+  "ses": "PA4QGZDhUkvuOKb6ZEkd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "ar"
+  },
+  "tohum": 1243,
+  "maliyet": 28,
+  "sayac_once": 28149,
+  "not": "kilit an anlatısı",
+  "tarih": "2026-11-02T10:11:19+00:00"
+ },
+ {
+  "dosya": "usta_ru.mp3",
+  "tur": "vo-an",
+  "istem": "[proud] Годы труда обрели голос в одной работе. Имя мастера навсегда вошло в ремесло.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "ru"
+  },
+  "tohum": 1243,
+  "maliyet": 34,
+  "sayac_once": 28319,
+  "not": "kilit an anlatısı",
+  "tarih": "2026-11-02T10:11:24+00:00"
+ },
+ {
+  "dosya": "sohret_tr.mp3",
+  "tur": "vo-an",
+  "istem": "[thoughtful] Bu ocağın adı artık çarşıda, kervan yollarında anılıyor.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "tr"
+  },
+  "tohum": 1243,
+  "maliyet": 28,
+  "sayac_once": 28319,
+  "not": "kilit an anlatısı",
+  "tarih": "2026-11-02T10:11:29+00:00"
+ },
+ {
+  "dosya": "sohret_en.mp3",
+  "tur": "vo-an",
+  "istem": "[thoughtful] This hearth's name is now spoken in the bazaar and along the caravan roads.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "en"
+  },
+  "tohum": 1243,
+  "maliyet": 35,
+  "sayac_once": 28319,
+  "not": "kilit an anlatısı",
+  "tarih": "2026-11-02T10:11:32+00:00"
+ },
+ {
+  "dosya": "sohret_es.mp3",
+  "tur": "vo-an",
+  "istem": "[thoughtful] El nombre de este hogar ya se oye en el bazar y en los caminos de las caravanas.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "es"
+  },
+  "tohum": 1243,
+  "maliyet": 37,
+  "sayac_once": 28319,
+  "not": "kilit an anlatısı",
+  "tarih": "2026-11-02T10:11:36+00:00"
+ },
+ {
+  "dosya": "sohret_pt.mp3",
+  "tur": "vo-an",
+  "istem": "[thoughtful] O nome deste lar já se ouve no bazar e nas rotas das caravanas.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "pt"
+  },
+  "tohum": 1243,
+  "maliyet": 30,
+  "sayac_once": 28319,
+  "not": "kilit an anlatısı",
+  "tarih": "2026-11-02T10:11:40+00:00"
+ },
+ {
+  "dosya": "sohret_ar.mp3",
+  "tur": "vo-an",
+  "istem": "[thoughtful] صار اسمُ هذا الموقد يُذكر في السوق وعلى دروب القوافل.",
+  "model": "eleven_v4",
+  "ses": "PA4QGZDhUkvuOKb6ZEkd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "ar"
+  },
+  "tohum": 1243,
+  "maliyet": 26,
+  "sayac_once": 28319,
+  "not": "kilit an anlatısı",
+  "tarih": "2026-11-02T10:11:44+00:00"
+ },
+ {
+  "dosya": "sohret_ru.mp3",
+  "tur": "vo-an",
+  "istem": "[thoughtful] Имя этого очага теперь звучит на базаре и на караванных дорогах.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "ru"
+  },
+  "tohum": 1243,
+  "maliyet": 31,
+  "sayac_once": 28319,
+  "not": "kilit an anlatısı",
+  "tarih": "2026-11-02T10:11:48+00:00"
+ },
+ {
+  "dosya": "yerlesim_tr.mp3",
+  "tur": "vo-an",
+  "istem": "[hopeful] Boş bir toprakta ilk ateş yandı. Yeni bir yurt kuruldu.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "tr"
+  },
+  "tohum": 1243,
+  "maliyet": 26,
+  "sayac_once": 28319,
+  "not": "kilit an anlatısı",
+  "tarih": "2026-11-02T10:11:52+00:00"
+ },
+ {
+  "dosya": "yerlesim_en.mp3",
+  "tur": "vo-an",
+  "istem": "[hopeful] The first fire was lit on empty land. A new home was founded.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "en"
+  },
+  "tohum": 1243,
+  "maliyet": 28,
+  "sayac_once": 28319,
+  "not": "kilit an anlatısı",
+  "tarih": "2026-11-02T10:11:56+00:00"
+ },
+ {
+  "dosya": "yerlesim_es.mp3",
+  "tur": "vo-an",
+  "istem": "[hopeful] En una tierra vacía se encendió el primer fuego. Se fundó un nuevo hogar.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "es"
+  },
+  "tohum": 1243,
+  "maliyet": 33,
+  "sayac_once": 28319,
+  "not": "kilit an anlatısı",
+  "tarih": "2026-11-02T10:12:00+00:00"
+ },
+ {
+  "dosya": "yerlesim_pt.mp3",
+  "tur": "vo-an",
+  "istem": "[hopeful] Em uma terra vazia, o primeiro fogo foi aceso. Um novo lar foi fundado.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "pt"
+  },
+  "tohum": 1243,
+  "maliyet": 32,
+  "sayac_once": 28319,
+  "not": "kilit an anlatısı",
+  "tarih": "2026-11-02T10:12:04+00:00"
+ },
+ {
+  "dosya": "yerlesim_ar.mp3",
+  "tur": "vo-an",
+  "istem": "[hopeful] أُشعلت النارُ الأولى في أرضٍ خالية، وقام موطنٌ جديد.",
+  "model": "eleven_v4",
+  "ses": "PA4QGZDhUkvuOKb6ZEkd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "ar"
+  },
+  "tohum": 1243,
+  "maliyet": 25,
+  "sayac_once": 28659,
+  "not": "kilit an anlatısı",
+  "tarih": "2026-11-02T10:12:08+00:00"
+ },
+ {
+  "dosya": "yerlesim_ru.mp3",
+  "tur": "vo-an",
+  "istem": "[hopeful] На пустой земле зажёгся первый огонь. Основан новый дом.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "ru"
+  },
+  "tohum": 1243,
+  "maliyet": 26,
+  "sayac_once": 28659,
+  "not": "kilit an anlatısı",
+  "tarih": "2026-11-02T10:12:11+00:00"
+ },
+ {
+  "dosya": "tac_tr.mp3",
+  "tur": "vo-an",
+  "istem": "[proud] Küllerden yükselen bir ocak, artık bir beyliğe yön veriyor.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "tr"
+  },
+  "tohum": 1243,
+  "maliyet": 27,
+  "sayac_once": 28659,
+  "not": "kilit an anlatısı",
+  "tarih": "2026-11-02T10:12:15+00:00"
+ },
+ {
+  "dosya": "tac_en.mp3",
+  "tur": "vo-an",
+  "istem": "[proud] A hearth that rose from the ashes now guides a realm.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "en"
+  },
+  "tohum": 1243,
+  "maliyet": 24,
+  "sayac_once": 28659,
+  "not": "kilit an anlatısı",
+  "tarih": "2026-11-02T10:12:18+00:00"
+ },
+ {
+  "dosya": "tac_es.mp3",
+  "tur": "vo-an",
+  "istem": "[proud] Un hogar que surgió de las cenizas ahora guía un principado.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "es"
+  },
+  "tohum": 1243,
+  "maliyet": 27,
+  "sayac_once": 28659,
+  "not": "kilit an anlatısı",
+  "tarih": "2026-11-02T10:12:22+00:00"
+ },
+ {
+  "dosya": "tac_pt.mp3",
+  "tur": "vo-an",
+  "istem": "[proud] Um lar que se ergueu das cinzas agora guia um principado.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "pt"
+  },
+  "tohum": 1243,
+  "maliyet": 26,
+  "sayac_once": 28659,
+  "not": "kilit an anlatısı",
+  "tarih": "2026-11-02T10:12:25+00:00"
+ },
+ {
+  "dosya": "tac_ar.mp3",
+  "tur": "vo-an",
+  "istem": "[proud] موقدٌ نهض من الرماد، صار اليوم يقود إمارة.",
+  "model": "eleven_v4",
+  "ses": "PA4QGZDhUkvuOKb6ZEkd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "ar"
+  },
+  "tohum": 1243,
+  "maliyet": 20,
+  "sayac_once": 28659,
+  "not": "kilit an anlatısı",
+  "tarih": "2026-11-02T10:12:29+00:00"
+ },
+ {
+  "dosya": "tac_ru.mp3",
+  "tur": "vo-an",
+  "istem": "[proud] Очаг, поднявшийся из пепла, теперь правит бейликом.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "ru"
+  },
+  "tohum": 1243,
+  "maliyet": 24,
+  "sayac_once": 28659,
+  "not": "kilit an anlatısı",
+  "tarih": "2026-11-02T10:12:32+00:00"
+ },
+ {
+  "dosya": "savas_tr.mp3",
+  "tur": "vo-an",
+  "istem": "[tense] Kös davulları çaldı. Kılıçlar, kaderi yeniden yazmak için kınından çıktı.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "tr"
+  },
+  "tohum": 1243,
+  "maliyet": 32,
+  "sayac_once": 28659,
+  "not": "kilit an anlatısı",
+  "tarih": "2026-11-02T10:12:36+00:00"
+ },
+ {
+  "dosya": "savas_en.mp3",
+  "tur": "vo-an",
+  "istem": "[tense] The war drums sounded. Swords left their scabbards to rewrite fate.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "en"
+  },
+  "tohum": 1243,
+  "maliyet": 30,
+  "sayac_once": 28659,
+  "not": "kilit an anlatısı",
+  "tarih": "2026-11-02T10:12:42+00:00"
+ },
+ {
+  "dosya": "savas_es.mp3",
+  "tur": "vo-an",
+  "istem": "[tense] Sonaron los tambores de guerra. Las espadas salieron de sus vainas para reescribir el destino.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "es"
+  },
+  "tohum": 1243,
+  "maliyet": 41,
+  "sayac_once": 28659,
+  "not": "kilit an anlatısı",
+  "tarih": "2026-11-02T10:12:49+00:00"
+ },
+ {
+  "dosya": "savas_pt.mp3",
+  "tur": "vo-an",
+  "istem": "[tense] Soaram os tambores de guerra. As espadas deixaram as bainhas para reescrever o destino.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "pt"
+  },
+  "tohum": 1243,
+  "maliyet": 38,
+  "sayac_once": 29111,
+  "not": "kilit an anlatısı",
+  "tarih": "2026-11-02T10:12:55+00:00"
+ },
+ {
+  "dosya": "savas_ar.mp3",
+  "tur": "vo-an",
+  "istem": "[tense] دوّت طبولُ الحرب، وخرجت السيوفُ من أغمادها لتعيد كتابةَ القدر.",
+  "model": "eleven_v4",
+  "ses": "PA4QGZDhUkvuOKb6ZEkd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "ar"
+  },
+  "tohum": 1243,
+  "maliyet": 28,
+  "sayac_once": 29111,
+  "not": "kilit an anlatısı",
+  "tarih": "2026-11-02T10:13:01+00:00"
+ },
+ {
+  "dosya": "savas_ru.mp3",
+  "tur": "vo-an",
+  "istem": "[tense] Загремели боевые барабаны. Мечи покинули ножны, чтобы переписать судьбу.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "ru"
+  },
+  "tohum": 1243,
+  "maliyet": 32,
+  "sayac_once": 29111,
+  "not": "kilit an anlatısı",
+  "tarih": "2026-11-02T10:13:08+00:00"
+ },
+ {
+  "dosya": "olum_tr.mp3",
+  "tur": "vo-an",
+  "istem": "[solemn] Bir ömür burada tamamlandı. Ama kül, közü saklar.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "tr"
+  },
+  "tohum": 1243,
+  "maliyet": 23,
+  "sayac_once": 29111,
+  "not": "kilit an anlatısı",
+  "tarih": "2026-11-02T10:13:18+00:00"
+ },
+ {
+  "dosya": "olum_en.mp3",
+  "tur": "vo-an",
+  "istem": "[solemn] Here, a life reached its end. But the ash keeps the ember.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "en"
+  },
+  "tohum": 1243,
+  "maliyet": 27,
+  "sayac_once": 29111,
+  "not": "kilit an anlatısı",
+  "tarih": "2026-11-02T10:13:25+00:00"
+ },
+ {
+  "dosya": "olum_es.mp3",
+  "tur": "vo-an",
+  "istem": "[solemn] Aquí se cumplió una vida. Pero la ceniza guarda la brasa.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "es"
+  },
+  "tohum": 1243,
+  "maliyet": 26,
+  "sayac_once": 29111,
+  "not": "kilit an anlatısı",
+  "tarih": "2026-11-02T10:13:41+00:00"
+ },
+ {
+  "dosya": "olum_pt.mp3",
+  "tur": "vo-an",
+  "istem": "[solemn] Aqui uma vida chegou ao fim. Mas a cinza guarda a brasa.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "pt"
+  },
+  "tohum": 1243,
+  "maliyet": 26,
+  "sayac_once": 29285,
+  "not": "kilit an anlatısı",
+  "tarih": "2026-11-02T10:13:59+00:00"
+ },
+ {
+  "dosya": "olum_ar.mp3",
+  "tur": "vo-an",
+  "istem": "[solemn] هنا اكتمل عمرٌ. لكنّ الرمادَ يحفظُ الجمر.",
+  "model": "eleven_v4",
+  "ses": "PA4QGZDhUkvuOKb6ZEkd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "ar"
+  },
+  "tohum": 1243,
+  "maliyet": 20,
+  "sayac_once": 29285,
+  "not": "kilit an anlatısı",
+  "tarih": "2026-11-02T10:14:14+00:00"
+ },
+ {
+  "dosya": "olum_ru.mp3",
+  "tur": "vo-an",
+  "istem": "[solemn] Здесь завершилась жизнь. Но пепел хранит жар.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "ru"
+  },
+  "tohum": 1243,
+  "maliyet": 22,
+  "sayac_once": 29285,
+  "not": "kilit an anlatısı",
+  "tarih": "2026-11-02T10:14:25+00:00"
+ },
+ {
+  "dosya": "varis_tr.mp3",
+  "tur": "vo-an",
+  "istem": "[hopeful] Köz, yeni bir ele geçti. Soyun hikâyesi sürüyor.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "tr"
+  },
+  "tohum": 1243,
+  "maliyet": 23,
+  "sayac_once": 29285,
+  "not": "kilit an anlatısı",
+  "tarih": "2026-11-02T10:14:38+00:00"
+ },
+ {
+  "dosya": "varis_en.mp3",
+  "tur": "vo-an",
+  "istem": "[hopeful] The ember passed into new hands. The story of the line goes on.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "en"
+  },
+  "tohum": 1243,
+  "maliyet": 29,
+  "sayac_once": 29285,
+  "not": "kilit an anlatısı",
+  "tarih": "2026-11-02T10:14:53+00:00"
+ },
+ {
+  "dosya": "varis_es.mp3",
+  "tur": "vo-an",
+  "istem": "[hopeful] La brasa pasó a nuevas manos. La historia del linaje continúa.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "es"
+  },
+  "tohum": 1243,
+  "maliyet": 29,
+  "sayac_once": 29376,
+  "not": "kilit an anlatısı",
+  "tarih": "2026-11-02T10:15:06+00:00"
+ },
+ {
+  "dosya": "varis_pt.mp3",
+  "tur": "vo-an",
+  "istem": "[hopeful] A brasa passou a novas mãos. A história da linhagem continua.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "pt"
+  },
+  "tohum": 1243,
+  "maliyet": 28,
+  "sayac_once": 29376,
+  "not": "kilit an anlatısı",
+  "tarih": "2026-11-02T10:15:18+00:00"
+ },
+ {
+  "dosya": "varis_ar.mp3",
+  "tur": "vo-an",
+  "istem": "[hopeful] انتقل الجمرُ إلى يدٍ جديدة، وتمضي حكايةُ السلالة.",
+  "model": "eleven_v4",
+  "ses": "PA4QGZDhUkvuOKb6ZEkd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "ar"
+  },
+  "tohum": 1243,
+  "maliyet": 24,
+  "sayac_once": 29376,
+  "not": "kilit an anlatısı",
+  "tarih": "2026-11-02T10:15:32+00:00"
+ },
+ {
+  "dosya": "varis_ru.mp3",
+  "tur": "vo-an",
+  "istem": "[hopeful] Жар перешёл в новые руки. История рода продолжается.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "ru"
+  },
+  "tohum": 1243,
+  "maliyet": 25,
+  "sayac_once": 29376,
+  "not": "kilit an anlatısı",
+  "tarih": "2026-11-02T10:15:41+00:00"
+ },
+ {
+  "dosya": "M_genc_0.mp3",
+  "tur": "vo-npc",
+  "istem": "[curt] İşim var, başka zaman.",
+  "model": "eleven_v4",
+  "ses": "n098FBfZ6R6xoT1fshLi",
+  "rol": "M_genc",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 12,
+  "sayac_once": 29511,
+  "not": "NPC sözü dlg.hosbes.hitch",
+  "tarih": "2026-11-02T10:28:23+00:00"
+ },
+ {
+  "dosya": "M_genc_1.mp3",
+  "tur": "vo-npc",
+  "istem": "[curt] Ev meselesi evde kalsın.",
+  "model": "eleven_v4",
+  "ses": "n098FBfZ6R6xoT1fshLi",
+  "rol": "M_genc",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 12,
+  "sayac_once": 29511,
+  "not": "NPC sözü dlg.aile.closed3",
+  "tarih": "2026-11-02T10:28:27+00:00"
+ },
+ {
+  "dosya": "M_genc_2.mp3",
+  "tur": "vo-npc",
+  "istem": "[curt] Boş ver.",
+  "model": "eleven_v4",
+  "ses": "n098FBfZ6R6xoT1fshLi",
+  "rol": "M_genc",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 6,
+  "sayac_once": 29511,
+  "not": "NPC sözü dlg.dert.closed3",
+  "tarih": "2026-11-02T10:28:30+00:00"
+ },
+ {
+  "dosya": "M_genc_3.mp3",
+  "tur": "vo-npc",
+  "istem": "[wry] Yarısı doğruysa şükür.",
+  "model": "eleven_v4",
+  "ses": "n098FBfZ6R6xoT1fshLi",
+  "rol": "M_genc",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 11,
+  "sayac_once": 29511,
+  "not": "NPC sözü dlg.dunya.line3",
+  "tarih": "2026-11-02T10:28:34+00:00"
+ },
+ {
+  "dosya": "M_genc_4.mp3",
+  "tur": "vo-npc",
+  "istem": "[dismissive] Bunu bugün kaç kişiye söyledin?",
+  "model": "eleven_v4",
+  "ses": "n098FBfZ6R6xoT1fshLi",
+  "rol": "M_genc",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 18,
+  "sayac_once": 29511,
+  "not": "NPC sözü dlg.iltifat.bad3",
+  "tarih": "2026-11-02T10:28:37+00:00"
+ },
+ {
+  "dosya": "M_genc_5.mp3",
+  "tur": "vo-npc",
+  "istem": "[curt] İşi konuşunca iş kaçar.",
+  "model": "eleven_v4",
+  "ses": "n098FBfZ6R6xoT1fshLi",
+  "rol": "M_genc",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 12,
+  "sayac_once": 29511,
+  "not": "NPC sözü dlg.is.cold3",
+  "tarih": "2026-11-02T10:28:40+00:00"
+ },
+ {
+  "dosya": "M_genc_6.mp3",
+  "tur": "vo-npc",
+  "istem": "[laughing] Bunu akşam herkese anlatacağım!",
+  "model": "eleven_v4",
+  "ses": "n098FBfZ6R6xoT1fshLi",
+  "rol": "M_genc",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 17,
+  "sayac_once": 29511,
+  "not": "NPC sözü dlg.saka.good3",
+  "tarih": "2026-11-02T10:28:43+00:00"
+ },
+ {
+  "dosya": "M_genc_7.mp3",
+  "tur": "vo-npc",
+  "istem": "[amused] Fena değil.",
+  "model": "eleven_v4",
+  "ses": "n098FBfZ6R6xoT1fshLi",
+  "rol": "M_genc",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 8,
+  "sayac_once": 29511,
+  "not": "NPC sözü dlg.saka.mild3",
+  "tarih": "2026-11-02T10:28:46+00:00"
+ },
+ {
+  "dosya": "M_genc_8.mp3",
+  "tur": "vo-npc",
+  "istem": "[dismissive] Yağ çekmeye gerek yok.",
+  "model": "eleven_v4",
+  "ses": "n098FBfZ6R6xoT1fshLi",
+  "rol": "M_genc",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 14,
+  "sayac_once": 29607,
+  "not": "NPC sözü dlg.iltifat.bad",
+  "tarih": "2026-11-02T10:28:49+00:00"
+ },
+ {
+  "dosya": "M_genc_9.mp3",
+  "tur": "vo-npc",
+  "istem": "[dismissive] Şimdi sırası mı?",
+  "model": "eleven_v4",
+  "ses": "n098FBfZ6R6xoT1fshLi",
+  "rol": "M_genc",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 12,
+  "sayac_once": 29607,
+  "not": "NPC sözü dlg.saka.bad",
+  "tarih": "2026-11-02T10:28:52+00:00"
+ },
+ {
+  "dosya": "M_genc_10.mp3",
+  "tur": "vo-npc",
+  "istem": "[pleased] İncesin, sağ ol.",
+  "model": "eleven_v4",
+  "ses": "n098FBfZ6R6xoT1fshLi",
+  "rol": "M_genc",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 10,
+  "sayac_once": 29607,
+  "not": "NPC sözü dlg.iltifat.good2",
+  "tarih": "2026-11-02T10:28:55+00:00"
+ },
+ {
+  "dosya": "M_genc_11.mp3",
+  "tur": "vo-npc",
+  "istem": "[laughing] Amma da iyiydi!",
+  "model": "eleven_v4",
+  "ses": "n098FBfZ6R6xoT1fshLi",
+  "rol": "M_genc",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 10,
+  "sayac_once": 29607,
+  "not": "NPC sözü dlg.saka.good2",
+  "tarih": "2026-11-02T10:28:59+00:00"
+ },
+ {
+  "dosya": "M_genc_12.mp3",
+  "tur": "vo-npc",
+  "istem": "[dismissive] Boş laf işte.",
+  "model": "eleven_v4",
+  "ses": "n098FBfZ6R6xoT1fshLi",
+  "rol": "M_genc",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 10,
+  "sayac_once": 29607,
+  "not": "NPC sözü dlg.iltifat.bad2",
+  "tarih": "2026-11-02T10:29:01+00:00"
+ },
+ {
+  "dosya": "M_genc_13.mp3",
+  "tur": "vo-npc",
+  "istem": "[dismissive] Hiç komik değil.",
+  "model": "eleven_v4",
+  "ses": "n098FBfZ6R6xoT1fshLi",
+  "rol": "M_genc",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 12,
+  "sayac_once": 29607,
+  "not": "NPC sözü dlg.saka.bad2",
+  "tarih": "2026-11-02T10:29:05+00:00"
+ },
+ {
+  "dosya": "M_genc_14.mp3",
+  "tur": "vo-npc",
+  "istem": "[cheerful] Bugün güzel bir gün, değil mi?",
+  "model": "eleven_v4",
+  "ses": "n098FBfZ6R6xoT1fshLi",
+  "rol": "M_genc",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 16,
+  "sayac_once": 29607,
+  "not": "NPC sözü dlg.spont.happy3",
+  "tarih": "2026-11-02T10:29:09+00:00"
+ },
+ {
+  "dosya": "M_genc_15.mp3",
+  "tur": "vo-npc",
+  "istem": "[cheerful] İşler yolunda, şükür!",
+  "model": "eleven_v4",
+  "ses": "n098FBfZ6R6xoT1fshLi",
+  "rol": "M_genc",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 13,
+  "sayac_once": 29607,
+  "not": "NPC sözü dlg.spont.happy4",
+  "tarih": "2026-11-02T10:29:12+00:00"
+ },
+ {
+  "dosya": "M_genc_16.mp3",
+  "tur": "vo-npc",
+  "istem": "[sad] Sorma, zor günler...",
+  "model": "eleven_v4",
+  "ses": "n098FBfZ6R6xoT1fshLi",
+  "rol": "M_genc",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 10,
+  "sayac_once": 29607,
+  "not": "NPC sözü dlg.spont.sad3",
+  "tarih": "2026-11-02T10:29:15+00:00"
+ },
+ {
+  "dosya": "M_genc_17.mp3",
+  "tur": "vo-npc",
+  "istem": "[sad] Uyku tutmuyor bu ara.",
+  "model": "eleven_v4",
+  "ses": "n098FBfZ6R6xoT1fshLi",
+  "rol": "M_genc",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 11,
+  "sayac_once": 29607,
+  "not": "NPC sözü dlg.spont.sad4",
+  "tarih": "2026-11-02T10:29:19+00:00"
+ },
+ {
+  "dosya": "M_genc_18.mp3",
+  "tur": "vo-npc",
+  "istem": "[cheerful] İyi ki rastladık!",
+  "model": "eleven_v4",
+  "ses": "n098FBfZ6R6xoT1fshLi",
+  "rol": "M_genc",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 11,
+  "sayac_once": 29607,
+  "not": "NPC sözü dlg.spont.happy",
+  "tarih": "2026-11-02T10:29:22+00:00"
+ },
+ {
+  "dosya": "M_genc_19.mp3",
+  "tur": "vo-npc",
+  "istem": "[sad] Zor günlerden geçiyorum.",
+  "model": "eleven_v4",
+  "ses": "n098FBfZ6R6xoT1fshLi",
+  "rol": "M_genc",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 12,
+  "sayac_once": 29607,
+  "not": "NPC sözü dlg.spont.sad",
+  "tarih": "2026-11-02T10:29:25+00:00"
+ },
+ {
+  "dosya": "M_genc_20.mp3",
+  "tur": "vo-npc",
+  "istem": "[warm] Senin verdiğin hâlâ evde, baş köşede durur.",
+  "model": "eleven_v4",
+  "ses": "n098FBfZ6R6xoT1fshLi",
+  "rol": "M_genc",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 20,
+  "sayac_once": 29748,
+  "not": "NPC sözü dlg.cb.gift3",
+  "tarih": "2026-11-02T10:29:34+00:00"
+ },
+ {
+  "dosya": "M_genc_21.mp3",
+  "tur": "vo-npc",
+  "istem": "[warm] O gün yanımda olmasaydın hâlim neydi, bir ben bilirim.",
+  "model": "eleven_v4",
+  "ses": "n098FBfZ6R6xoT1fshLi",
+  "rol": "M_genc",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 24,
+  "sayac_once": 29748,
+  "not": "NPC sözü dlg.cb.help3",
+  "tarih": "2026-11-02T10:29:37+00:00"
+ },
+ {
+  "dosya": "M_genc_22.mp3",
+  "tur": "vo-npc",
+  "istem": "[warm] O hediyeni hâlâ unutmadım.",
+  "model": "eleven_v4",
+  "ses": "n098FBfZ6R6xoT1fshLi",
+  "rol": "M_genc",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 13,
+  "sayac_once": 29748,
+  "not": "NPC sözü dlg.cb.gift",
+  "tarih": "2026-11-02T10:29:42+00:00"
+ },
+ {
+  "dosya": "M_genc_23.mp3",
+  "tur": "vo-npc",
+  "istem": "[warm] Bana el uzattığın günü unutmam.",
+  "model": "eleven_v4",
+  "ses": "n098FBfZ6R6xoT1fshLi",
+  "rol": "M_genc",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 15,
+  "sayac_once": 29748,
+  "not": "NPC sözü dlg.cb.help",
+  "tarih": "2026-11-02T10:29:51+00:00"
+ },
+ {
+  "dosya": "M_genc_24.mp3",
+  "tur": "vo-npc",
+  "istem": "[cheerful] Gel, bugün çay benden!",
+  "model": "eleven_v4",
+  "ses": "n098FBfZ6R6xoT1fshLi",
+  "rol": "M_genc",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 13,
+  "sayac_once": 29748,
+  "not": "NPC sözü dlg.spont.happy6",
+  "tarih": "2026-11-02T10:29:54+00:00"
+ },
+ {
+  "dosya": "M_genc_25.mp3",
+  "tur": "vo-npc",
+  "istem": "[sad] Bugün lafın tadı yok, kusura bakma.",
+  "model": "eleven_v4",
+  "ses": "n098FBfZ6R6xoT1fshLi",
+  "rol": "M_genc",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 16,
+  "sayac_once": 29748,
+  "not": "NPC sözü dlg.spont.sad6",
+  "tarih": "2026-11-02T10:30:04+00:00"
+ },
+ {
+  "dosya": "M_genc_26.mp3",
+  "tur": "vo-npc",
+  "istem": "[cheerful] Bugün ne aldıysam yarı fiyatına — kısmet böyle güne denir!",
+  "model": "eleven_v4",
+  "ses": "n098FBfZ6R6xoT1fshLi",
+  "rol": "M_genc",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 28,
+  "sayac_once": 29748,
+  "not": "NPC sözü dlg.spont.happy7",
+  "tarih": "2026-11-02T10:30:07+00:00"
+ },
+ {
+  "dosya": "M_genc_27.mp3",
+  "tur": "vo-npc",
+  "istem": "[sad] Dert büyük, kelam küçük. Başka gün anlatırım.",
+  "model": "eleven_v4",
+  "ses": "n098FBfZ6R6xoT1fshLi",
+  "rol": "M_genc",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 20,
+  "sayac_once": 29748,
+  "not": "NPC sözü dlg.spont.sad7",
+  "tarih": "2026-11-02T10:30:13+00:00"
+ },
+ {
+  "dosya": "M_genc_28.mp3",
+  "tur": "vo-npc",
+  "istem": "[cheerful] Bugün kimsenin tadını kaçırmak yok!",
+  "model": "eleven_v4",
+  "ses": "n098FBfZ6R6xoT1fshLi",
+  "rol": "M_genc",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 18,
+  "sayac_once": 29748,
+  "not": "NPC sözü dlg.spont.happy5",
+  "tarih": "2026-11-02T10:30:18+00:00"
+ },
+ {
+  "dosya": "M_genc_29.mp3",
+  "tur": "vo-npc",
+  "istem": "[sad] Sorma, hiç sorma.",
+  "model": "eleven_v4",
+  "ses": "n098FBfZ6R6xoT1fshLi",
+  "rol": "M_genc",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 9,
+  "sayac_once": 29915,
+  "not": "NPC sözü dlg.spont.sad5",
+  "tarih": "2026-11-02T10:30:27+00:00"
+ },
+ {
+  "dosya": "M_genc_30.mp3",
+  "tur": "vo-npc",
+  "istem": "[cheerful] Tam da seni düşünüyordum!",
+  "model": "eleven_v4",
+  "ses": "n098FBfZ6R6xoT1fshLi",
+  "rol": "M_genc",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 14,
+  "sayac_once": 29915,
+  "not": "NPC sözü dlg.spont.happy2",
+  "tarih": "2026-11-02T10:30:30+00:00"
+ },
+ {
+  "dosya": "M_genc_31.mp3",
+  "tur": "vo-npc",
+  "istem": "[sad] Bu aralar işler yolunda değil.",
+  "model": "eleven_v4",
+  "ses": "n098FBfZ6R6xoT1fshLi",
+  "rol": "M_genc",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 14,
+  "sayac_once": 29915,
+  "not": "NPC sözü dlg.spont.sad2",
+  "tarih": "2026-11-02T10:30:40+00:00"
+ },
+ {
+  "dosya": "M_genc_32.mp3",
+  "tur": "vo-npc",
+  "istem": "[curt] Anlatacak bir şey yok.",
+  "model": "eleven_v4",
+  "ses": "n098FBfZ6R6xoT1fshLi",
+  "rol": "M_genc",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 12,
+  "sayac_once": 29915,
+  "not": "NPC sözü dlg.is.cold2",
+  "tarih": "2026-11-02T10:30:42+00:00"
+ },
+ {
+  "dosya": "M_genc_kd_0.mp3",
+  "tur": "vo-npc",
+  "istem": "[curt] İşim var, başka zaman.",
+  "model": "eleven_v4",
+  "ses": "myUwgeAYqIEk3FykwNzI",
+  "rol": "M_genc_kd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 12,
+  "sayac_once": 29915,
+  "not": "NPC sözü dlg.hosbes.hitch",
+  "tarih": "2026-11-02T10:30:51+00:00"
+ },
+ {
+  "dosya": "M_genc_kd_1.mp3",
+  "tur": "vo-npc",
+  "istem": "[curt] Ev meselesi evde kalsın.",
+  "model": "eleven_v4",
+  "ses": "myUwgeAYqIEk3FykwNzI",
+  "rol": "M_genc_kd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 12,
+  "sayac_once": 29915,
+  "not": "NPC sözü dlg.aile.closed3",
+  "tarih": "2026-11-02T10:30:54+00:00"
+ },
+ {
+  "dosya": "M_genc_kd_2.mp3",
+  "tur": "vo-npc",
+  "istem": "[curt] Boş ver.",
+  "model": "eleven_v4",
+  "ses": "myUwgeAYqIEk3FykwNzI",
+  "rol": "M_genc_kd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 6,
+  "sayac_once": 29915,
+  "not": "NPC sözü dlg.dert.closed3",
+  "tarih": "2026-11-02T10:31:04+00:00"
+ },
+ {
+  "dosya": "M_genc_kd_3.mp3",
+  "tur": "vo-npc",
+  "istem": "[wry] Yarısı doğruysa şükür.",
+  "model": "eleven_v4",
+  "ses": "myUwgeAYqIEk3FykwNzI",
+  "rol": "M_genc_kd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 11,
+  "sayac_once": 29915,
+  "not": "NPC sözü dlg.dunya.line3",
+  "tarih": "2026-11-02T10:31:07+00:00"
+ },
+ {
+  "dosya": "M_genc_kd_4.mp3",
+  "tur": "vo-npc",
+  "istem": "[dismissive] Bunu bugün kaç kişiye söyledin?",
+  "model": "eleven_v4",
+  "ses": "myUwgeAYqIEk3FykwNzI",
+  "rol": "M_genc_kd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 18,
+  "sayac_once": 29915,
+  "not": "NPC sözü dlg.iltifat.bad3",
+  "tarih": "2026-11-02T10:31:13+00:00"
+ },
+ {
+  "dosya": "M_genc_kd_5.mp3",
+  "tur": "vo-npc",
+  "istem": "[curt] İşi konuşunca iş kaçar.",
+  "model": "eleven_v4",
+  "ses": "myUwgeAYqIEk3FykwNzI",
+  "rol": "M_genc_kd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 12,
+  "sayac_once": 30023,
+  "not": "NPC sözü dlg.is.cold3",
+  "tarih": "2026-11-02T10:31:18+00:00"
+ },
+ {
+  "dosya": "M_genc_kd_6.mp3",
+  "tur": "vo-npc",
+  "istem": "[laughing] Bunu akşam herkese anlatacağım!",
+  "model": "eleven_v4",
+  "ses": "myUwgeAYqIEk3FykwNzI",
+  "rol": "M_genc_kd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 17,
+  "sayac_once": 30023,
+  "not": "NPC sözü dlg.saka.good3",
+  "tarih": "2026-11-02T10:31:27+00:00"
+ },
+ {
+  "dosya": "M_genc_kd_7.mp3",
+  "tur": "vo-npc",
+  "istem": "[amused] Fena değil.",
+  "model": "eleven_v4",
+  "ses": "myUwgeAYqIEk3FykwNzI",
+  "rol": "M_genc_kd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 8,
+  "sayac_once": 30023,
+  "not": "NPC sözü dlg.saka.mild3",
+  "tarih": "2026-11-02T10:31:30+00:00"
+ },
+ {
+  "dosya": "M_genc_kd_8.mp3",
+  "tur": "vo-npc",
+  "istem": "[dismissive] Yağ çekmeye gerek yok.",
+  "model": "eleven_v4",
+  "ses": "myUwgeAYqIEk3FykwNzI",
+  "rol": "M_genc_kd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 14,
+  "sayac_once": 30023,
+  "not": "NPC sözü dlg.iltifat.bad",
+  "tarih": "2026-11-02T10:31:39+00:00"
+ },
+ {
+  "dosya": "M_genc_kd_9.mp3",
+  "tur": "vo-npc",
+  "istem": "[dismissive] Şimdi sırası mı?",
+  "model": "eleven_v4",
+  "ses": "myUwgeAYqIEk3FykwNzI",
+  "rol": "M_genc_kd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 12,
+  "sayac_once": 30023,
+  "not": "NPC sözü dlg.saka.bad",
+  "tarih": "2026-11-02T10:31:42+00:00"
+ },
+ {
+  "dosya": "M_genc_kd_10.mp3",
+  "tur": "vo-npc",
+  "istem": "[pleased] İncesin, sağ ol.",
+  "model": "eleven_v4",
+  "ses": "myUwgeAYqIEk3FykwNzI",
+  "rol": "M_genc_kd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 10,
+  "sayac_once": 30023,
+  "not": "NPC sözü dlg.iltifat.good2",
+  "tarih": "2026-11-02T10:31:51+00:00"
+ },
+ {
+  "dosya": "M_genc_kd_11.mp3",
+  "tur": "vo-npc",
+  "istem": "[laughing] Amma da iyiydi!",
+  "model": "eleven_v4",
+  "ses": "myUwgeAYqIEk3FykwNzI",
+  "rol": "M_genc_kd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 10,
+  "sayac_once": 30023,
+  "not": "NPC sözü dlg.saka.good2",
+  "tarih": "2026-11-02T10:31:54+00:00"
+ },
+ {
+  "dosya": "M_genc_kd_12.mp3",
+  "tur": "vo-npc",
+  "istem": "[dismissive] Boş laf işte.",
+  "model": "eleven_v4",
+  "ses": "myUwgeAYqIEk3FykwNzI",
+  "rol": "M_genc_kd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 10,
+  "sayac_once": 30023,
+  "not": "NPC sözü dlg.iltifat.bad2",
+  "tarih": "2026-11-02T10:32:03+00:00"
+ },
+ {
+  "dosya": "M_genc_kd_13.mp3",
+  "tur": "vo-npc",
+  "istem": "[dismissive] Hiç komik değil.",
+  "model": "eleven_v4",
+  "ses": "myUwgeAYqIEk3FykwNzI",
+  "rol": "M_genc_kd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 12,
+  "sayac_once": 30023,
+  "not": "NPC sözü dlg.saka.bad2",
+  "tarih": "2026-11-02T10:32:07+00:00"
+ },
+ {
+  "dosya": "M_genc_kd_14.mp3",
+  "tur": "vo-npc",
+  "istem": "[cheerful] Bugün güzel bir gün, değil mi?",
+  "model": "eleven_v4",
+  "ses": "myUwgeAYqIEk3FykwNzI",
+  "rol": "M_genc_kd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 16,
+  "sayac_once": 30128,
+  "not": "NPC sözü dlg.spont.happy3",
+  "tarih": "2026-11-02T10:32:12+00:00"
+ },
+ {
+  "dosya": "M_genc_kd_15.mp3",
+  "tur": "vo-npc",
+  "istem": "[cheerful] İşler yolunda, şükür!",
+  "model": "eleven_v4",
+  "ses": "myUwgeAYqIEk3FykwNzI",
+  "rol": "M_genc_kd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 13,
+  "sayac_once": 30128,
+  "not": "NPC sözü dlg.spont.happy4",
+  "tarih": "2026-11-02T10:32:22+00:00"
+ },
+ {
+  "dosya": "M_genc_kd_16.mp3",
+  "tur": "vo-npc",
+  "istem": "[sad] Sorma, zor günler...",
+  "model": "eleven_v4",
+  "ses": "myUwgeAYqIEk3FykwNzI",
+  "rol": "M_genc_kd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 10,
+  "sayac_once": 30128,
+  "not": "NPC sözü dlg.spont.sad3",
+  "tarih": "2026-11-02T10:32:25+00:00"
+ },
+ {
+  "dosya": "M_genc_kd_17.mp3",
+  "tur": "vo-npc",
+  "istem": "[sad] Uyku tutmuyor bu ara.",
+  "model": "eleven_v4",
+  "ses": "myUwgeAYqIEk3FykwNzI",
+  "rol": "M_genc_kd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 11,
+  "sayac_once": 30128,
+  "not": "NPC sözü dlg.spont.sad4",
+  "tarih": "2026-11-02T10:32:30+00:00"
+ },
+ {
+  "dosya": "M_genc_kd_18.mp3",
+  "tur": "vo-npc",
+  "istem": "[cheerful] İyi ki rastladık!",
+  "model": "eleven_v4",
+  "ses": "myUwgeAYqIEk3FykwNzI",
+  "rol": "M_genc_kd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 11,
+  "sayac_once": 30128,
+  "not": "NPC sözü dlg.spont.happy",
+  "tarih": "2026-11-02T10:32:39+00:00"
+ },
+ {
+  "dosya": "M_genc_kd_19.mp3",
+  "tur": "vo-npc",
+  "istem": "[sad] Zor günlerden geçiyorum.",
+  "model": "eleven_v4",
+  "ses": "myUwgeAYqIEk3FykwNzI",
+  "rol": "M_genc_kd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 12,
+  "sayac_once": 30128,
+  "not": "NPC sözü dlg.spont.sad",
+  "tarih": "2026-11-02T10:32:42+00:00"
+ },
+ {
+  "dosya": "M_genc_kd_20.mp3",
+  "tur": "vo-npc",
+  "istem": "[warm] Senin verdiğin hâlâ evde, baş köşede durur.",
+  "model": "eleven_v4",
+  "ses": "myUwgeAYqIEk3FykwNzI",
+  "rol": "M_genc_kd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 20,
+  "sayac_once": 30128,
+  "not": "NPC sözü dlg.cb.gift3",
+  "tarih": "2026-11-02T10:32:52+00:00"
+ },
+ {
+  "dosya": "M_genc_kd_21.mp3",
+  "tur": "vo-npc",
+  "istem": "[warm] O gün yanımda olmasaydın hâlim neydi, bir ben bilirim.",
+  "model": "eleven_v4",
+  "ses": "myUwgeAYqIEk3FykwNzI",
+  "rol": "M_genc_kd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 24,
+  "sayac_once": 30128,
+  "not": "NPC sözü dlg.cb.help3",
+  "tarih": "2026-11-02T10:32:56+00:00"
+ },
+ {
+  "dosya": "M_genc_kd_22.mp3",
+  "tur": "vo-npc",
+  "istem": "[warm] O hediyeni hâlâ unutmadım.",
+  "model": "eleven_v4",
+  "ses": "myUwgeAYqIEk3FykwNzI",
+  "rol": "M_genc_kd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 13,
+  "sayac_once": 30128,
+  "not": "NPC sözü dlg.cb.gift",
+  "tarih": "2026-11-02T10:33:01+00:00"
+ },
+ {
+  "dosya": "M_genc_kd_23.mp3",
+  "tur": "vo-npc",
+  "istem": "[warm] Bana el uzattığın günü unutmam.",
+  "model": "eleven_v4",
+  "ses": "myUwgeAYqIEk3FykwNzI",
+  "rol": "M_genc_kd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 15,
+  "sayac_once": 30128,
+  "not": "NPC sözü dlg.cb.help",
+  "tarih": "2026-11-02T10:33:06+00:00"
+ },
+ {
+  "dosya": "M_genc_kd_24.mp3",
+  "tur": "vo-npc",
+  "istem": "[cheerful] Gel, bugün çay benden!",
+  "model": "eleven_v4",
+  "ses": "myUwgeAYqIEk3FykwNzI",
+  "rol": "M_genc_kd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 13,
+  "sayac_once": 30258,
+  "not": "NPC sözü dlg.spont.happy6",
+  "tarih": "2026-11-02T10:33:15+00:00"
+ },
+ {
+  "dosya": "M_genc_kd_25.mp3",
+  "tur": "vo-npc",
+  "istem": "[sad] Bugün lafın tadı yok, kusura bakma.",
+  "model": "eleven_v4",
+  "ses": "myUwgeAYqIEk3FykwNzI",
+  "rol": "M_genc_kd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 16,
+  "sayac_once": 30258,
+  "not": "NPC sözü dlg.spont.sad6",
+  "tarih": "2026-11-02T10:33:19+00:00"
+ },
+ {
+  "dosya": "M_genc_kd_26.mp3",
+  "tur": "vo-npc",
+  "istem": "[cheerful] Bugün ne aldıysam yarı fiyatına — kısmet böyle güne denir!",
+  "model": "eleven_v4",
+  "ses": "myUwgeAYqIEk3FykwNzI",
+  "rol": "M_genc_kd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 28,
+  "sayac_once": 30258,
+  "not": "NPC sözü dlg.spont.happy7",
+  "tarih": "2026-11-02T10:33:25+00:00"
+ },
+ {
+  "dosya": "M_genc_kd_27.mp3",
+  "tur": "vo-npc",
+  "istem": "[sad] Dert büyük, kelam küçük. Başka gün anlatırım.",
+  "model": "eleven_v4",
+  "ses": "myUwgeAYqIEk3FykwNzI",
+  "rol": "M_genc_kd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 20,
+  "sayac_once": 30258,
+  "not": "NPC sözü dlg.spont.sad7",
+  "tarih": "2026-11-02T10:33:31+00:00"
+ },
+ {
+  "dosya": "M_genc_kd_28.mp3",
+  "tur": "vo-npc",
+  "istem": "[cheerful] Bugün kimsenin tadını kaçırmak yok!",
+  "model": "eleven_v4",
+  "ses": "myUwgeAYqIEk3FykwNzI",
+  "rol": "M_genc_kd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 18,
+  "sayac_once": 30258,
+  "not": "NPC sözü dlg.spont.happy5",
+  "tarih": "2026-11-02T10:33:37+00:00"
+ },
+ {
+  "dosya": "M_genc_kd_29.mp3",
+  "tur": "vo-npc",
+  "istem": "[sad] Sorma, hiç sorma.",
+  "model": "eleven_v4",
+  "ses": "myUwgeAYqIEk3FykwNzI",
+  "rol": "M_genc_kd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 9,
+  "sayac_once": 30258,
+  "not": "NPC sözü dlg.spont.sad5",
+  "tarih": "2026-11-02T10:33:42+00:00"
+ },
+ {
+  "dosya": "M_genc_kd_30.mp3",
+  "tur": "vo-npc",
+  "istem": "[cheerful] Tam da seni düşünüyordum!",
+  "model": "eleven_v4",
+  "ses": "myUwgeAYqIEk3FykwNzI",
+  "rol": "M_genc_kd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 14,
+  "sayac_once": 30258,
+  "not": "NPC sözü dlg.spont.happy2",
+  "tarih": "2026-11-02T10:33:48+00:00"
+ },
+ {
+  "dosya": "M_genc_kd_31.mp3",
+  "tur": "vo-npc",
+  "istem": "[sad] Bu aralar işler yolunda değil.",
+  "model": "eleven_v4",
+  "ses": "myUwgeAYqIEk3FykwNzI",
+  "rol": "M_genc_kd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 14,
+  "sayac_once": 30258,
+  "not": "NPC sözü dlg.spont.sad2",
+  "tarih": "2026-11-02T10:33:58+00:00"
+ },
+ {
+  "dosya": "M_genc_kd_32.mp3",
+  "tur": "vo-npc",
+  "istem": "[curt] Anlatacak bir şey yok.",
+  "model": "eleven_v4",
+  "ses": "myUwgeAYqIEk3FykwNzI",
+  "rol": "M_genc_kd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 12,
+  "sayac_once": 30258,
+  "not": "NPC sözü dlg.is.cold2",
+  "tarih": "2026-11-02T10:34:01+00:00"
+ },
+ {
+  "dosya": "M_orta_oa_0.mp3",
+  "tur": "vo-npc",
+  "istem": "[curt] İşim var, başka zaman.",
+  "model": "eleven_v4",
+  "ses": "anu8LIf3pYhCJFkcpxzg",
+  "rol": "M_orta_oa",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 12,
+  "sayac_once": 30258,
+  "not": "NPC sözü dlg.hosbes.hitch",
+  "tarih": "2026-11-02T10:34:07+00:00"
+ },
+ {
+  "dosya": "M_orta_oa_1.mp3",
+  "tur": "vo-npc",
+  "istem": "[curt] Ev meselesi evde kalsın.",
+  "model": "eleven_v4",
+  "ses": "anu8LIf3pYhCJFkcpxzg",
+  "rol": "M_orta_oa",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 12,
+  "sayac_once": 30417,
+  "not": "NPC sözü dlg.aile.closed3",
+  "tarih": "2026-11-02T10:34:13+00:00"
+ },
+ {
+  "dosya": "M_orta_oa_2.mp3",
+  "tur": "vo-npc",
+  "istem": "[curt] Boş ver.",
+  "model": "eleven_v4",
+  "ses": "anu8LIf3pYhCJFkcpxzg",
+  "rol": "M_orta_oa",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 6,
+  "sayac_once": 30417,
+  "not": "NPC sözü dlg.dert.closed3",
+  "tarih": "2026-11-02T10:34:17+00:00"
+ },
+ {
+  "dosya": "M_orta_oa_3.mp3",
+  "tur": "vo-npc",
+  "istem": "[wry] Yarısı doğruysa şükür.",
+  "model": "eleven_v4",
+  "ses": "anu8LIf3pYhCJFkcpxzg",
+  "rol": "M_orta_oa",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 11,
+  "sayac_once": 30417,
+  "not": "NPC sözü dlg.dunya.line3",
+  "tarih": "2026-11-02T10:34:27+00:00"
+ },
+ {
+  "dosya": "M_orta_oa_4.mp3",
+  "tur": "vo-npc",
+  "istem": "[dismissive] Bunu bugün kaç kişiye söyledin?",
+  "model": "eleven_v4",
+  "ses": "anu8LIf3pYhCJFkcpxzg",
+  "rol": "M_orta_oa",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 18,
+  "sayac_once": 30417,
+  "not": "NPC sözü dlg.iltifat.bad3",
+  "tarih": "2026-11-02T10:34:30+00:00"
+ },
+ {
+  "dosya": "M_orta_oa_5.mp3",
+  "tur": "vo-npc",
+  "istem": "[curt] İşi konuşunca iş kaçar.",
+  "model": "eleven_v4",
+  "ses": "anu8LIf3pYhCJFkcpxzg",
+  "rol": "M_orta_oa",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 12,
+  "sayac_once": 30417,
+  "not": "NPC sözü dlg.is.cold3",
+  "tarih": "2026-11-02T10:34:39+00:00"
+ },
+ {
+  "dosya": "M_orta_oa_6.mp3",
+  "tur": "vo-npc",
+  "istem": "[laughing] Bunu akşam herkese anlatacağım!",
+  "model": "eleven_v4",
+  "ses": "anu8LIf3pYhCJFkcpxzg",
+  "rol": "M_orta_oa",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 17,
+  "sayac_once": 30417,
+  "not": "NPC sözü dlg.saka.good3",
+  "tarih": "2026-11-02T10:34:42+00:00"
+ },
+ {
+  "dosya": "M_orta_oa_7.mp3",
+  "tur": "vo-npc",
+  "istem": "[amused] Fena değil.",
+  "model": "eleven_v4",
+  "ses": "anu8LIf3pYhCJFkcpxzg",
+  "rol": "M_orta_oa",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 8,
+  "sayac_once": 30417,
+  "not": "NPC sözü dlg.saka.mild3",
+  "tarih": "2026-11-02T10:34:51+00:00"
+ },
+ {
+  "dosya": "M_orta_oa_8.mp3",
+  "tur": "vo-npc",
+  "istem": "[dismissive] Yağ çekmeye gerek yok.",
+  "model": "eleven_v4",
+  "ses": "anu8LIf3pYhCJFkcpxzg",
+  "rol": "M_orta_oa",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 14,
+  "sayac_once": 30417,
+  "not": "NPC sözü dlg.iltifat.bad",
+  "tarih": "2026-11-02T10:34:55+00:00"
+ },
+ {
+  "dosya": "M_orta_oa_9.mp3",
+  "tur": "vo-npc",
+  "istem": "[dismissive] Şimdi sırası mı?",
+  "model": "eleven_v4",
+  "ses": "anu8LIf3pYhCJFkcpxzg",
+  "rol": "M_orta_oa",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 12,
+  "sayac_once": 30417,
+  "not": "NPC sözü dlg.saka.bad",
+  "tarih": "2026-11-02T10:35:00+00:00"
+ },
+ {
+  "dosya": "M_orta_oa_10.mp3",
+  "tur": "vo-npc",
+  "istem": "[pleased] İncesin, sağ ol.",
+  "model": "eleven_v4",
+  "ses": "anu8LIf3pYhCJFkcpxzg",
+  "rol": "M_orta_oa",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 10,
+  "sayac_once": 30417,
+  "not": "NPC sözü dlg.iltifat.good2",
+  "tarih": "2026-11-02T10:35:09+00:00"
+ },
+ {
+  "dosya": "M_orta_oa_11.mp3",
+  "tur": "vo-npc",
+  "istem": "[laughing] Amma da iyiydi!",
+  "model": "eleven_v4",
+  "ses": "anu8LIf3pYhCJFkcpxzg",
+  "rol": "M_orta_oa",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 10,
+  "sayac_once": 30417,
+  "not": "NPC sözü dlg.saka.good2",
+  "tarih": "2026-11-02T10:35:14+00:00"
+ },
+ {
+  "dosya": "M_orta_oa_12.mp3",
+  "tur": "vo-npc",
+  "istem": "[dismissive] Boş laf işte.",
+  "model": "eleven_v4",
+  "ses": "anu8LIf3pYhCJFkcpxzg",
+  "rol": "M_orta_oa",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 10,
+  "sayac_once": 30549,
+  "not": "NPC sözü dlg.iltifat.bad2",
+  "tarih": "2026-11-02T10:35:19+00:00"
+ },
+ {
+  "dosya": "M_orta_oa_13.mp3",
+  "tur": "vo-npc",
+  "istem": "[dismissive] Hiç komik değil.",
+  "model": "eleven_v4",
+  "ses": "anu8LIf3pYhCJFkcpxzg",
+  "rol": "M_orta_oa",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 12,
+  "sayac_once": 30549,
+  "not": "NPC sözü dlg.saka.bad2",
+  "tarih": "2026-11-02T10:35:24+00:00"
+ },
+ {
+  "dosya": "M_orta_oa_14.mp3",
+  "tur": "vo-npc",
+  "istem": "[cheerful] Bugün güzel bir gün, değil mi?",
+  "model": "eleven_v4",
+  "ses": "anu8LIf3pYhCJFkcpxzg",
+  "rol": "M_orta_oa",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 16,
+  "sayac_once": 30549,
+  "not": "NPC sözü dlg.spont.happy3",
+  "tarih": "2026-11-02T10:35:34+00:00"
+ },
+ {
+  "dosya": "M_orta_oa_15.mp3",
+  "tur": "vo-npc",
+  "istem": "[cheerful] İşler yolunda, şükür!",
+  "model": "eleven_v4",
+  "ses": "anu8LIf3pYhCJFkcpxzg",
+  "rol": "M_orta_oa",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 13,
+  "sayac_once": 30549,
+  "not": "NPC sözü dlg.spont.happy4",
+  "tarih": "2026-11-02T10:35:36+00:00"
+ },
+ {
+  "dosya": "M_orta_oa_16.mp3",
+  "tur": "vo-npc",
+  "istem": "[sad] Sorma, zor günler...",
+  "model": "eleven_v4",
+  "ses": "anu8LIf3pYhCJFkcpxzg",
+  "rol": "M_orta_oa",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 10,
+  "sayac_once": 30549,
+  "not": "NPC sözü dlg.spont.sad3",
+  "tarih": "2026-11-02T10:35:42+00:00"
+ },
+ {
+  "dosya": "M_orta_oa_17.mp3",
+  "tur": "vo-npc",
+  "istem": "[sad] Uyku tutmuyor bu ara.",
+  "model": "eleven_v4",
+  "ses": "anu8LIf3pYhCJFkcpxzg",
+  "rol": "M_orta_oa",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 11,
+  "sayac_once": 30549,
+  "not": "NPC sözü dlg.spont.sad4",
+  "tarih": "2026-11-02T10:35:51+00:00"
+ },
+ {
+  "dosya": "M_orta_oa_18.mp3",
+  "tur": "vo-npc",
+  "istem": "[cheerful] İyi ki rastladık!",
+  "model": "eleven_v4",
+  "ses": "anu8LIf3pYhCJFkcpxzg",
+  "rol": "M_orta_oa",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 11,
+  "sayac_once": 30549,
+  "not": "NPC sözü dlg.spont.happy",
+  "tarih": "2026-11-02T10:35:54+00:00"
+ },
+ {
+  "dosya": "M_orta_oa_19.mp3",
+  "tur": "vo-npc",
+  "istem": "[sad] Zor günlerden geçiyorum.",
+  "model": "eleven_v4",
+  "ses": "anu8LIf3pYhCJFkcpxzg",
+  "rol": "M_orta_oa",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 12,
+  "sayac_once": 30549,
+  "not": "NPC sözü dlg.spont.sad",
+  "tarih": "2026-11-02T10:36:03+00:00"
+ },
+ {
+  "dosya": "M_orta_oa_20.mp3",
+  "tur": "vo-npc",
+  "istem": "[warm] Senin verdiğin hâlâ evde, baş köşede durur.",
+  "model": "eleven_v4",
+  "ses": "anu8LIf3pYhCJFkcpxzg",
+  "rol": "M_orta_oa",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 20,
+  "sayac_once": 30549,
+  "not": "NPC sözü dlg.cb.gift3",
+  "tarih": "2026-11-02T10:36:06+00:00"
+ },
+ {
+  "dosya": "M_orta_oa_21.mp3",
+  "tur": "vo-npc",
+  "istem": "[warm] O gün yanımda olmasaydın hâlim neydi, bir ben bilirim.",
+  "model": "eleven_v4",
+  "ses": "anu8LIf3pYhCJFkcpxzg",
+  "rol": "M_orta_oa",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 24,
+  "sayac_once": 30549,
+  "not": "NPC sözü dlg.cb.help3",
+  "tarih": "2026-11-02T10:36:16+00:00"
+ },
+ {
+  "dosya": "M_orta_oa_22.mp3",
+  "tur": "vo-npc",
+  "istem": "[warm] O hediyeni hâlâ unutmadım.",
+  "model": "eleven_v4",
+  "ses": "anu8LIf3pYhCJFkcpxzg",
+  "rol": "M_orta_oa",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 13,
+  "sayac_once": 30549,
+  "not": "NPC sözü dlg.cb.gift",
+  "tarih": "2026-11-02T10:36:19+00:00"
+ },
+ {
+  "dosya": "M_orta_oa_23.mp3",
+  "tur": "vo-npc",
+  "istem": "[warm] Bana el uzattığın günü unutmam.",
+  "model": "eleven_v4",
+  "ses": "anu8LIf3pYhCJFkcpxzg",
+  "rol": "M_orta_oa",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 15,
+  "sayac_once": 30549,
+  "not": "NPC sözü dlg.cb.help",
+  "tarih": "2026-11-02T10:36:24+00:00"
+ },
+ {
+  "dosya": "M_orta_oa_24.mp3",
+  "tur": "vo-npc",
+  "istem": "[cheerful] Gel, bugün çay benden!",
+  "model": "eleven_v4",
+  "ses": "anu8LIf3pYhCJFkcpxzg",
+  "rol": "M_orta_oa",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 13,
+  "sayac_once": 30726,
+  "not": "NPC sözü dlg.spont.happy6",
+  "tarih": "2026-11-02T10:36:33+00:00"
+ },
+ {
+  "dosya": "M_orta_oa_25.mp3",
+  "tur": "vo-npc",
+  "istem": "[sad] Bugün lafın tadı yok, kusura bakma.",
+  "model": "eleven_v4",
+  "ses": "anu8LIf3pYhCJFkcpxzg",
+  "rol": "M_orta_oa",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 16,
+  "sayac_once": 30726,
+  "not": "NPC sözü dlg.spont.sad6",
+  "tarih": "2026-11-02T10:36:36+00:00"
+ },
+ {
+  "dosya": "M_orta_oa_26.mp3",
+  "tur": "vo-npc",
+  "istem": "[cheerful] Bugün ne aldıysam yarı fiyatına — kısmet böyle güne denir!",
+  "model": "eleven_v4",
+  "ses": "anu8LIf3pYhCJFkcpxzg",
+  "rol": "M_orta_oa",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 28,
+  "sayac_once": 30726,
+  "not": "NPC sözü dlg.spont.happy7",
+  "tarih": "2026-11-02T10:36:43+00:00"
+ },
+ {
+  "dosya": "M_orta_oa_27.mp3",
+  "tur": "vo-npc",
+  "istem": "[sad] Dert büyük, kelam küçük. Başka gün anlatırım.",
+  "model": "eleven_v4",
+  "ses": "anu8LIf3pYhCJFkcpxzg",
+  "rol": "M_orta_oa",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 20,
+  "sayac_once": 30726,
+  "not": "NPC sözü dlg.spont.sad7",
+  "tarih": "2026-11-02T10:36:49+00:00"
+ },
+ {
+  "dosya": "M_orta_oa_28.mp3",
+  "tur": "vo-npc",
+  "istem": "[cheerful] Bugün kimsenin tadını kaçırmak yok!",
+  "model": "eleven_v4",
+  "ses": "anu8LIf3pYhCJFkcpxzg",
+  "rol": "M_orta_oa",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 18,
+  "sayac_once": 30726,
+  "not": "NPC sözü dlg.spont.happy5",
+  "tarih": "2026-11-02T10:36:55+00:00"
+ },
+ {
+  "dosya": "M_orta_oa_29.mp3",
+  "tur": "vo-npc",
+  "istem": "[sad] Sorma, hiç sorma.",
+  "model": "eleven_v4",
+  "ses": "anu8LIf3pYhCJFkcpxzg",
+  "rol": "M_orta_oa",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 9,
+  "sayac_once": 30726,
+  "not": "NPC sözü dlg.spont.sad5",
+  "tarih": "2026-11-02T10:37:00+00:00"
+ },
+ {
+  "dosya": "M_orta_oa_30.mp3",
+  "tur": "vo-npc",
+  "istem": "[cheerful] Tam da seni düşünüyordum!",
+  "model": "eleven_v4",
+  "ses": "anu8LIf3pYhCJFkcpxzg",
+  "rol": "M_orta_oa",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 14,
+  "sayac_once": 30726,
+  "not": "NPC sözü dlg.spont.happy2",
+  "tarih": "2026-11-02T10:37:06+00:00"
+ },
+ {
+  "dosya": "M_orta_oa_31.mp3",
+  "tur": "vo-npc",
+  "istem": "[sad] Bu aralar işler yolunda değil.",
+  "model": "eleven_v4",
+  "ses": "anu8LIf3pYhCJFkcpxzg",
+  "rol": "M_orta_oa",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 14,
+  "sayac_once": 30726,
+  "not": "NPC sözü dlg.spont.sad2",
+  "tarih": "2026-11-02T10:37:15+00:00"
+ },
+ {
+  "dosya": "M_orta_oa_32.mp3",
+  "tur": "vo-npc",
+  "istem": "[curt] Anlatacak bir şey yok.",
+  "model": "eleven_v4",
+  "ses": "anu8LIf3pYhCJFkcpxzg",
+  "rol": "M_orta_oa",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 12,
+  "sayac_once": 30726,
+  "not": "NPC sözü dlg.is.cold2",
+  "tarih": "2026-11-02T10:37:18+00:00"
+ },
+ {
+  "dosya": "M_yasli_kd_0.mp3",
+  "tur": "vo-npc",
+  "istem": "[curt] İşim var, başka zaman.",
+  "model": "eleven_v4",
+  "ses": "MuOq11XzQTthwLhmGZ2V",
+  "rol": "M_yasli_kd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 12,
+  "sayac_once": 30726,
+  "not": "NPC sözü dlg.hosbes.hitch",
+  "tarih": "2026-11-02T10:37:27+00:00"
+ },
+ {
+  "dosya": "M_yasli_kd_1.mp3",
+  "tur": "vo-npc",
+  "istem": "[curt] Ev meselesi evde kalsın.",
+  "model": "eleven_v4",
+  "ses": "MuOq11XzQTthwLhmGZ2V",
+  "rol": "M_yasli_kd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 12,
+  "sayac_once": 30882,
+  "not": "NPC sözü dlg.aile.closed3",
+  "tarih": "2026-11-02T10:37:30+00:00"
+ },
+ {
+  "dosya": "M_yasli_kd_2.mp3",
+  "tur": "vo-npc",
+  "istem": "[curt] Boş ver.",
+  "model": "eleven_v4",
+  "ses": "MuOq11XzQTthwLhmGZ2V",
+  "rol": "M_yasli_kd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 6,
+  "sayac_once": 30882,
+  "not": "NPC sözü dlg.dert.closed3",
+  "tarih": "2026-11-02T10:37:35+00:00"
+ },
+ {
+  "dosya": "M_yasli_kd_3.mp3",
+  "tur": "vo-npc",
+  "istem": "[wry] Yarısı doğruysa şükür.",
+  "model": "eleven_v4",
+  "ses": "MuOq11XzQTthwLhmGZ2V",
+  "rol": "M_yasli_kd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 11,
+  "sayac_once": 30882,
+  "not": "NPC sözü dlg.dunya.line3",
+  "tarih": "2026-11-02T10:37:45+00:00"
+ },
+ {
+  "dosya": "M_yasli_kd_4.mp3",
+  "tur": "vo-npc",
+  "istem": "[dismissive] Bunu bugün kaç kişiye söyledin?",
+  "model": "eleven_v4",
+  "ses": "MuOq11XzQTthwLhmGZ2V",
+  "rol": "M_yasli_kd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 18,
+  "sayac_once": 30882,
+  "not": "NPC sözü dlg.iltifat.bad3",
+  "tarih": "2026-11-02T10:37:48+00:00"
+ },
+ {
+  "dosya": "M_yasli_kd_5.mp3",
+  "tur": "vo-npc",
+  "istem": "[curt] İşi konuşunca iş kaçar.",
+  "model": "eleven_v4",
+  "ses": "MuOq11XzQTthwLhmGZ2V",
+  "rol": "M_yasli_kd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 12,
+  "sayac_once": 30882,
+  "not": "NPC sözü dlg.is.cold3",
+  "tarih": "2026-11-02T10:37:58+00:00"
+ },
+ {
+  "dosya": "M_yasli_kd_6.mp3",
+  "tur": "vo-npc",
+  "istem": "[laughing] Bunu akşam herkese anlatacağım!",
+  "model": "eleven_v4",
+  "ses": "MuOq11XzQTthwLhmGZ2V",
+  "rol": "M_yasli_kd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 17,
+  "sayac_once": 30882,
+  "not": "NPC sözü dlg.saka.good3",
+  "tarih": "2026-11-02T10:38:01+00:00"
+ },
+ {
+  "dosya": "M_yasli_kd_7.mp3",
+  "tur": "vo-npc",
+  "istem": "[amused] Fena değil.",
+  "model": "eleven_v4",
+  "ses": "MuOq11XzQTthwLhmGZ2V",
+  "rol": "M_yasli_kd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 8,
+  "sayac_once": 30882,
+  "not": "NPC sözü dlg.saka.mild3",
+  "tarih": "2026-11-02T10:38:06+00:00"
+ },
+ {
+  "dosya": "M_yasli_kd_8.mp3",
+  "tur": "vo-npc",
+  "istem": "[dismissive] Yağ çekmeye gerek yok.",
+  "model": "eleven_v4",
+  "ses": "MuOq11XzQTthwLhmGZ2V",
+  "rol": "M_yasli_kd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 14,
+  "sayac_once": 30882,
+  "not": "NPC sözü dlg.iltifat.bad",
+  "tarih": "2026-11-02T10:38:15+00:00"
+ },
+ {
+  "dosya": "M_yasli_kd_9.mp3",
+  "tur": "vo-npc",
+  "istem": "[dismissive] Şimdi sırası mı?",
+  "model": "eleven_v4",
+  "ses": "MuOq11XzQTthwLhmGZ2V",
+  "rol": "M_yasli_kd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 12,
+  "sayac_once": 30882,
+  "not": "NPC sözü dlg.saka.bad",
+  "tarih": "2026-11-02T10:38:17+00:00"
+ },
+ {
+  "dosya": "M_yasli_kd_10.mp3",
+  "tur": "vo-npc",
+  "istem": "[pleased] İncesin, sağ ol.",
+  "model": "eleven_v4",
+  "ses": "MuOq11XzQTthwLhmGZ2V",
+  "rol": "M_yasli_kd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 10,
+  "sayac_once": 30992,
+  "not": "NPC sözü dlg.iltifat.good2",
+  "tarih": "2026-11-02T10:38:27+00:00"
+ },
+ {
+  "dosya": "M_yasli_kd_11.mp3",
+  "tur": "vo-npc",
+  "istem": "[laughing] Amma da iyiydi!",
+  "model": "eleven_v4",
+  "ses": "MuOq11XzQTthwLhmGZ2V",
+  "rol": "M_yasli_kd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 10,
+  "sayac_once": 30992,
+  "not": "NPC sözü dlg.saka.good2",
+  "tarih": "2026-11-02T10:38:32+00:00"
+ },
+ {
+  "dosya": "M_yasli_kd_12.mp3",
+  "tur": "vo-npc",
+  "istem": "[dismissive] Boş laf işte.",
+  "model": "eleven_v4",
+  "ses": "MuOq11XzQTthwLhmGZ2V",
+  "rol": "M_yasli_kd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 10,
+  "sayac_once": 30992,
+  "not": "NPC sözü dlg.iltifat.bad2",
+  "tarih": "2026-11-02T10:38:37+00:00"
+ },
+ {
+  "dosya": "M_yasli_kd_13.mp3",
+  "tur": "vo-npc",
+  "istem": "[dismissive] Hiç komik değil.",
+  "model": "eleven_v4",
+  "ses": "MuOq11XzQTthwLhmGZ2V",
+  "rol": "M_yasli_kd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 12,
+  "sayac_once": 30992,
+  "not": "NPC sözü dlg.saka.bad2",
+  "tarih": "2026-11-02T10:38:42+00:00"
+ },
+ {
+  "dosya": "M_yasli_kd_14.mp3",
+  "tur": "vo-npc",
+  "istem": "[cheerful] Bugün güzel bir gün, değil mi?",
+  "model": "eleven_v4",
+  "ses": "MuOq11XzQTthwLhmGZ2V",
+  "rol": "M_yasli_kd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 16,
+  "sayac_once": 30992,
+  "not": "NPC sözü dlg.spont.happy3",
+  "tarih": "2026-11-02T10:38:48+00:00"
+ },
+ {
+  "dosya": "M_yasli_kd_15.mp3",
+  "tur": "vo-npc",
+  "istem": "[cheerful] İşler yolunda, şükür!",
+  "model": "eleven_v4",
+  "ses": "MuOq11XzQTthwLhmGZ2V",
+  "rol": "M_yasli_kd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 13,
+  "sayac_once": 30992,
+  "not": "NPC sözü dlg.spont.happy4",
+  "tarih": "2026-11-02T10:38:57+00:00"
+ },
+ {
+  "dosya": "M_yasli_kd_16.mp3",
+  "tur": "vo-npc",
+  "istem": "[sad] Sorma, zor günler...",
+  "model": "eleven_v4",
+  "ses": "MuOq11XzQTthwLhmGZ2V",
+  "rol": "M_yasli_kd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 10,
+  "sayac_once": 30992,
+  "not": "NPC sözü dlg.spont.sad3",
+  "tarih": "2026-11-02T10:39:00+00:00"
+ },
+ {
+  "dosya": "M_yasli_kd_17.mp3",
+  "tur": "vo-npc",
+  "istem": "[sad] Uyku tutmuyor bu ara.",
+  "model": "eleven_v4",
+  "ses": "MuOq11XzQTthwLhmGZ2V",
+  "rol": "M_yasli_kd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 11,
+  "sayac_once": 30992,
+  "not": "NPC sözü dlg.spont.sad4",
+  "tarih": "2026-11-02T10:39:06+00:00"
+ },
+ {
+  "dosya": "M_yasli_kd_18.mp3",
+  "tur": "vo-npc",
+  "istem": "[cheerful] İyi ki rastladık!",
+  "model": "eleven_v4",
+  "ses": "MuOq11XzQTthwLhmGZ2V",
+  "rol": "M_yasli_kd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 11,
+  "sayac_once": 31084,
+  "not": "NPC sözü dlg.spont.happy",
+  "tarih": "2026-11-02T10:39:15+00:00"
+ },
+ {
+  "dosya": "M_yasli_kd_19.mp3",
+  "tur": "vo-npc",
+  "istem": "[sad] Zor günlerden geçiyorum.",
+  "model": "eleven_v4",
+  "ses": "MuOq11XzQTthwLhmGZ2V",
+  "rol": "M_yasli_kd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 12,
+  "sayac_once": 31084,
+  "not": "NPC sözü dlg.spont.sad",
+  "tarih": "2026-11-02T10:39:20+00:00"
+ },
+ {
+  "dosya": "M_yasli_kd_20.mp3",
+  "tur": "vo-npc",
+  "istem": "[warm] Senin verdiğin hâlâ evde, baş köşede durur.",
+  "model": "eleven_v4",
+  "ses": "MuOq11XzQTthwLhmGZ2V",
+  "rol": "M_yasli_kd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 20,
+  "sayac_once": 31084,
+  "not": "NPC sözü dlg.cb.gift3",
+  "tarih": "2026-11-02T10:39:26+00:00"
+ },
+ {
+  "dosya": "M_yasli_kd_21.mp3",
+  "tur": "vo-npc",
+  "istem": "[warm] O gün yanımda olmasaydın hâlim neydi, bir ben bilirim.",
+  "model": "eleven_v4",
+  "ses": "MuOq11XzQTthwLhmGZ2V",
+  "rol": "M_yasli_kd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 24,
+  "sayac_once": 31084,
+  "not": "NPC sözü dlg.cb.help3",
+  "tarih": "2026-11-02T10:39:32+00:00"
+ },
+ {
+  "dosya": "M_yasli_kd_22.mp3",
+  "tur": "vo-npc",
+  "istem": "[warm] O hediyeni hâlâ unutmadım.",
+  "model": "eleven_v4",
+  "ses": "MuOq11XzQTthwLhmGZ2V",
+  "rol": "M_yasli_kd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 13,
+  "sayac_once": 31084,
+  "not": "NPC sözü dlg.cb.gift",
+  "tarih": "2026-11-02T10:39:37+00:00"
+ },
+ {
+  "dosya": "M_yasli_kd_23.mp3",
+  "tur": "vo-npc",
+  "istem": "[warm] Bana el uzattığın günü unutmam.",
+  "model": "eleven_v4",
+  "ses": "MuOq11XzQTthwLhmGZ2V",
+  "rol": "M_yasli_kd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 15,
+  "sayac_once": 31084,
+  "not": "NPC sözü dlg.cb.help",
+  "tarih": "2026-11-02T10:39:42+00:00"
+ },
+ {
+  "dosya": "M_yasli_kd_24.mp3",
+  "tur": "vo-npc",
+  "istem": "[cheerful] Gel, bugün çay benden!",
+  "model": "eleven_v4",
+  "ses": "MuOq11XzQTthwLhmGZ2V",
+  "rol": "M_yasli_kd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 13,
+  "sayac_once": 31084,
+  "not": "NPC sözü dlg.spont.happy6",
+  "tarih": "2026-11-02T10:39:51+00:00"
+ },
+ {
+  "dosya": "M_yasli_kd_25.mp3",
+  "tur": "vo-npc",
+  "istem": "[sad] Bugün lafın tadı yok, kusura bakma.",
+  "model": "eleven_v4",
+  "ses": "MuOq11XzQTthwLhmGZ2V",
+  "rol": "M_yasli_kd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 16,
+  "sayac_once": 31084,
+  "not": "NPC sözü dlg.spont.sad6",
+  "tarih": "2026-11-02T10:39:55+00:00"
+ },
+ {
+  "dosya": "M_yasli_kd_26.mp3",
+  "tur": "vo-npc",
+  "istem": "[cheerful] Bugün ne aldıysam yarı fiyatına — kısmet böyle güne denir!",
+  "model": "eleven_v4",
+  "ses": "MuOq11XzQTthwLhmGZ2V",
+  "rol": "M_yasli_kd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 28,
+  "sayac_once": 31084,
+  "not": "NPC sözü dlg.spont.happy7",
+  "tarih": "2026-11-02T10:40:00+00:00"
+ },
+ {
+  "dosya": "M_yasli_kd_27.mp3",
+  "tur": "vo-npc",
+  "istem": "[sad] Dert büyük, kelam küçük. Başka gün anlatırım.",
+  "model": "eleven_v4",
+  "ses": "MuOq11XzQTthwLhmGZ2V",
+  "rol": "M_yasli_kd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 20,
+  "sayac_once": 31236,
+  "not": "NPC sözü dlg.spont.sad7",
+  "tarih": "2026-11-02T10:40:10+00:00"
+ },
+ {
+  "dosya": "M_yasli_kd_28.mp3",
+  "tur": "vo-npc",
+  "istem": "[cheerful] Bugün kimsenin tadını kaçırmak yok!",
+  "model": "eleven_v4",
+  "ses": "MuOq11XzQTthwLhmGZ2V",
+  "rol": "M_yasli_kd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 18,
+  "sayac_once": 31236,
+  "not": "NPC sözü dlg.spont.happy5",
+  "tarih": "2026-11-02T10:40:14+00:00"
+ },
+ {
+  "dosya": "M_yasli_kd_29.mp3",
+  "tur": "vo-npc",
+  "istem": "[sad] Sorma, hiç sorma.",
+  "model": "eleven_v4",
+  "ses": "MuOq11XzQTthwLhmGZ2V",
+  "rol": "M_yasli_kd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 9,
+  "sayac_once": 31236,
+  "not": "NPC sözü dlg.spont.sad5",
+  "tarih": "2026-11-02T10:40:19+00:00"
+ },
+ {
+  "dosya": "M_yasli_kd_30.mp3",
+  "tur": "vo-npc",
+  "istem": "[cheerful] Tam da seni düşünüyordum!",
+  "model": "eleven_v4",
+  "ses": "MuOq11XzQTthwLhmGZ2V",
+  "rol": "M_yasli_kd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 14,
+  "sayac_once": 31236,
+  "not": "NPC sözü dlg.spont.happy2",
+  "tarih": "2026-11-02T10:40:25+00:00"
+ },
+ {
+  "dosya": "M_yasli_kd_31.mp3",
+  "tur": "vo-npc",
+  "istem": "[sad] Bu aralar işler yolunda değil.",
+  "model": "eleven_v4",
+  "ses": "MuOq11XzQTthwLhmGZ2V",
+  "rol": "M_yasli_kd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 14,
+  "sayac_once": 31236,
+  "not": "NPC sözü dlg.spont.sad2",
+  "tarih": "2026-11-02T10:40:30+00:00"
+ },
+ {
+  "dosya": "M_yasli_kd_32.mp3",
+  "tur": "vo-npc",
+  "istem": "[curt] Anlatacak bir şey yok.",
+  "model": "eleven_v4",
+  "ses": "MuOq11XzQTthwLhmGZ2V",
+  "rol": "M_yasli_kd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 12,
+  "sayac_once": 31236,
+  "not": "NPC sözü dlg.is.cold2",
+  "tarih": "2026-11-02T10:40:39+00:00"
+ },
+ {
+  "dosya": "F_genc_0.mp3",
+  "tur": "vo-npc",
+  "istem": "[curt] İşim var, başka zaman.",
+  "model": "eleven_v4",
+  "ses": "uPxbcLLbS61WAxoePBhG",
+  "rol": "F_genc",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 12,
+  "sayac_once": 31236,
+  "not": "NPC sözü dlg.hosbes.hitch",
+  "tarih": "2026-11-02T10:40:43+00:00"
+ },
+ {
+  "dosya": "F_genc_1.mp3",
+  "tur": "vo-npc",
+  "istem": "[curt] Ev meselesi evde kalsın.",
+  "model": "eleven_v4",
+  "ses": "uPxbcLLbS61WAxoePBhG",
+  "rol": "F_genc",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 12,
+  "sayac_once": 31236,
+  "not": "NPC sözü dlg.aile.closed3",
+  "tarih": "2026-11-02T10:40:48+00:00"
+ },
+ {
+  "dosya": "F_genc_2.mp3",
+  "tur": "vo-npc",
+  "istem": "[curt] Boş ver.",
+  "model": "eleven_v4",
+  "ses": "uPxbcLLbS61WAxoePBhG",
+  "rol": "F_genc",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 6,
+  "sayac_once": 31236,
+  "not": "NPC sözü dlg.dert.closed3",
+  "tarih": "2026-11-02T10:40:57+00:00"
+ },
+ {
+  "dosya": "F_genc_3.mp3",
+  "tur": "vo-npc",
+  "istem": "[wry] Yarısı doğruysa şükür.",
+  "model": "eleven_v4",
+  "ses": "uPxbcLLbS61WAxoePBhG",
+  "rol": "F_genc",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 11,
+  "sayac_once": 31353,
+  "not": "NPC sözü dlg.dunya.line3",
+  "tarih": "2026-11-02T10:41:02+00:00"
+ },
+ {
+  "dosya": "F_genc_4.mp3",
+  "tur": "vo-npc",
+  "istem": "[dismissive] Bunu bugün kaç kişiye söyledin?",
+  "model": "eleven_v4",
+  "ses": "uPxbcLLbS61WAxoePBhG",
+  "rol": "F_genc",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 18,
+  "sayac_once": 31353,
+  "not": "NPC sözü dlg.iltifat.bad3",
+  "tarih": "2026-11-02T10:41:07+00:00"
+ },
+ {
+  "dosya": "F_genc_5.mp3",
+  "tur": "vo-npc",
+  "istem": "[curt] İşi konuşunca iş kaçar.",
+  "model": "eleven_v4",
+  "ses": "uPxbcLLbS61WAxoePBhG",
+  "rol": "F_genc",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 12,
+  "sayac_once": 31353,
+  "not": "NPC sözü dlg.is.cold3",
+  "tarih": "2026-11-02T10:41:12+00:00"
+ },
+ {
+  "dosya": "F_genc_6.mp3",
+  "tur": "vo-npc",
+  "istem": "[laughing] Bunu akşam herkese anlatacağım!",
+  "model": "eleven_v4",
+  "ses": "uPxbcLLbS61WAxoePBhG",
+  "rol": "F_genc",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 17,
+  "sayac_once": 31353,
+  "not": "NPC sözü dlg.saka.good3",
+  "tarih": "2026-11-02T10:41:21+00:00"
+ },
+ {
+  "dosya": "F_genc_7.mp3",
+  "tur": "vo-npc",
+  "istem": "[amused] Fena değil.",
+  "model": "eleven_v4",
+  "ses": "uPxbcLLbS61WAxoePBhG",
+  "rol": "F_genc",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 8,
+  "sayac_once": 31353,
+  "not": "NPC sözü dlg.saka.mild3",
+  "tarih": "2026-11-02T10:41:25+00:00"
+ },
+ {
+  "dosya": "F_genc_8.mp3",
+  "tur": "vo-npc",
+  "istem": "[dismissive] Yağ çekmeye gerek yok.",
+  "model": "eleven_v4",
+  "ses": "uPxbcLLbS61WAxoePBhG",
+  "rol": "F_genc",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 14,
+  "sayac_once": 31353,
+  "not": "NPC sözü dlg.iltifat.bad",
+  "tarih": "2026-11-02T10:41:30+00:00"
+ },
+ {
+  "dosya": "F_genc_9.mp3",
+  "tur": "vo-npc",
+  "istem": "[dismissive] Şimdi sırası mı?",
+  "model": "eleven_v4",
+  "ses": "uPxbcLLbS61WAxoePBhG",
+  "rol": "F_genc",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 12,
+  "sayac_once": 31353,
+  "not": "NPC sözü dlg.saka.bad",
+  "tarih": "2026-11-02T10:41:38+00:00"
+ },
+ {
+  "dosya": "F_genc_10.mp3",
+  "tur": "vo-npc",
+  "istem": "[pleased] İncesin, sağ ol.",
+  "model": "eleven_v4",
+  "ses": "uPxbcLLbS61WAxoePBhG",
+  "rol": "F_genc",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 10,
+  "sayac_once": 31353,
+  "not": "NPC sözü dlg.iltifat.good2",
+  "tarih": "2026-11-02T10:41:43+00:00"
+ },
+ {
+  "dosya": "F_genc_11.mp3",
+  "tur": "vo-npc",
+  "istem": "[laughing] Amma da iyiydi!",
+  "model": "eleven_v4",
+  "ses": "uPxbcLLbS61WAxoePBhG",
+  "rol": "F_genc",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 10,
+  "sayac_once": 31353,
+  "not": "NPC sözü dlg.saka.good2",
+  "tarih": "2026-11-02T10:41:48+00:00"
+ },
+ {
+  "dosya": "F_genc_12.mp3",
+  "tur": "vo-npc",
+  "istem": "[dismissive] Boş laf işte.",
+  "model": "eleven_v4",
+  "ses": "uPxbcLLbS61WAxoePBhG",
+  "rol": "F_genc",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 10,
+  "sayac_once": 31353,
+  "not": "NPC sözü dlg.iltifat.bad2",
+  "tarih": "2026-11-02T10:41:57+00:00"
+ },
+ {
+  "dosya": "F_genc_13.mp3",
+  "tur": "vo-npc",
+  "istem": "[dismissive] Hiç komik değil.",
+  "model": "eleven_v4",
+  "ses": "uPxbcLLbS61WAxoePBhG",
+  "rol": "F_genc",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 12,
+  "sayac_once": 31353,
+  "not": "NPC sözü dlg.saka.bad2",
+  "tarih": "2026-11-02T10:42:00+00:00"
+ },
+ {
+  "dosya": "F_genc_14.mp3",
+  "tur": "vo-npc",
+  "istem": "[cheerful] Bugün güzel bir gün, değil mi?",
+  "model": "eleven_v4",
+  "ses": "uPxbcLLbS61WAxoePBhG",
+  "rol": "F_genc",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 16,
+  "sayac_once": 31487,
+  "not": "NPC sözü dlg.spont.happy3",
+  "tarih": "2026-11-02T10:42:10+00:00"
+ },
+ {
+  "dosya": "F_genc_15.mp3",
+  "tur": "vo-npc",
+  "istem": "[cheerful] İşler yolunda, şükür!",
+  "model": "eleven_v4",
+  "ses": "uPxbcLLbS61WAxoePBhG",
+  "rol": "F_genc",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 13,
+  "sayac_once": 31487,
+  "not": "NPC sözü dlg.spont.happy4",
+  "tarih": "2026-11-02T10:42:13+00:00"
+ },
+ {
+  "dosya": "F_genc_16.mp3",
+  "tur": "vo-npc",
+  "istem": "[sad] Sorma, zor günler...",
+  "model": "eleven_v4",
+  "ses": "uPxbcLLbS61WAxoePBhG",
+  "rol": "F_genc",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 10,
+  "sayac_once": 31487,
+  "not": "NPC sözü dlg.spont.sad3",
+  "tarih": "2026-11-02T10:42:18+00:00"
+ },
+ {
+  "dosya": "F_genc_17.mp3",
+  "tur": "vo-npc",
+  "istem": "[sad] Uyku tutmuyor bu ara.",
+  "model": "eleven_v4",
+  "ses": "uPxbcLLbS61WAxoePBhG",
+  "rol": "F_genc",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 11,
+  "sayac_once": 31487,
+  "not": "NPC sözü dlg.spont.sad4",
+  "tarih": "2026-11-02T10:42:27+00:00"
+ },
+ {
+  "dosya": "F_genc_18.mp3",
+  "tur": "vo-npc",
+  "istem": "[cheerful] İyi ki rastladık!",
+  "model": "eleven_v4",
+  "ses": "uPxbcLLbS61WAxoePBhG",
+  "rol": "F_genc",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 11,
+  "sayac_once": 31487,
+  "not": "NPC sözü dlg.spont.happy",
+  "tarih": "2026-11-02T10:42:30+00:00"
+ },
+ {
+  "dosya": "F_genc_19.mp3",
+  "tur": "vo-npc",
+  "istem": "[sad] Zor günlerden geçiyorum.",
+  "model": "eleven_v4",
+  "ses": "uPxbcLLbS61WAxoePBhG",
+  "rol": "F_genc",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 12,
+  "sayac_once": 31487,
+  "not": "NPC sözü dlg.spont.sad",
+  "tarih": "2026-11-02T10:42:39+00:00"
+ },
+ {
+  "dosya": "F_genc_20.mp3",
+  "tur": "vo-npc",
+  "istem": "[warm] Senin verdiğin hâlâ evde, baş köşede durur.",
+  "model": "eleven_v4",
+  "ses": "uPxbcLLbS61WAxoePBhG",
+  "rol": "F_genc",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 20,
+  "sayac_once": 31487,
+  "not": "NPC sözü dlg.cb.gift3",
+  "tarih": "2026-11-02T10:42:43+00:00"
+ },
+ {
+  "dosya": "F_genc_21.mp3",
+  "tur": "vo-npc",
+  "istem": "[warm] O gün yanımda olmasaydın hâlim neydi, bir ben bilirim.",
+  "model": "eleven_v4",
+  "ses": "uPxbcLLbS61WAxoePBhG",
+  "rol": "F_genc",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 24,
+  "sayac_once": 31487,
+  "not": "NPC sözü dlg.cb.help3",
+  "tarih": "2026-11-02T10:42:48+00:00"
+ },
+ {
+  "dosya": "F_genc_22.mp3",
+  "tur": "vo-npc",
+  "istem": "[warm] O hediyeni hâlâ unutmadım.",
+  "model": "eleven_v4",
+  "ses": "uPxbcLLbS61WAxoePBhG",
+  "rol": "F_genc",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 13,
+  "sayac_once": 31487,
+  "not": "NPC sözü dlg.cb.gift",
+  "tarih": "2026-11-02T10:42:54+00:00"
+ },
+ {
+  "dosya": "F_genc_23.mp3",
+  "tur": "vo-npc",
+  "istem": "[warm] Bana el uzattığın günü unutmam.",
+  "model": "eleven_v4",
+  "ses": "uPxbcLLbS61WAxoePBhG",
+  "rol": "F_genc",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 15,
+  "sayac_once": 31487,
+  "not": "NPC sözü dlg.cb.help",
+  "tarih": "2026-11-02T10:43:03+00:00"
+ },
+ {
+  "dosya": "F_genc_24.mp3",
+  "tur": "vo-npc",
+  "istem": "[cheerful] Gel, bugün çay benden!",
+  "model": "eleven_v4",
+  "ses": "uPxbcLLbS61WAxoePBhG",
+  "rol": "F_genc",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 13,
+  "sayac_once": 31617,
+  "not": "NPC sözü dlg.spont.happy6",
+  "tarih": "2026-11-02T10:43:07+00:00"
+ },
+ {
+  "dosya": "F_genc_25.mp3",
+  "tur": "vo-npc",
+  "istem": "[sad] Bugün lafın tadı yok, kusura bakma.",
+  "model": "eleven_v4",
+  "ses": "uPxbcLLbS61WAxoePBhG",
+  "rol": "F_genc",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 16,
+  "sayac_once": 31617,
+  "not": "NPC sözü dlg.spont.sad6",
+  "tarih": "2026-11-02T10:43:12+00:00"
+ },
+ {
+  "dosya": "F_genc_26.mp3",
+  "tur": "vo-npc",
+  "istem": "[cheerful] Bugün ne aldıysam yarı fiyatına — kısmet böyle güne denir!",
+  "model": "eleven_v4",
+  "ses": "uPxbcLLbS61WAxoePBhG",
+  "rol": "F_genc",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 28,
+  "sayac_once": 31617,
+  "not": "NPC sözü dlg.spont.happy7",
+  "tarih": "2026-11-02T10:43:22+00:00"
+ },
+ {
+  "dosya": "F_genc_27.mp3",
+  "tur": "vo-npc",
+  "istem": "[sad] Dert büyük, kelam küçük. Başka gün anlatırım.",
+  "model": "eleven_v4",
+  "ses": "uPxbcLLbS61WAxoePBhG",
+  "rol": "F_genc",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 20,
+  "sayac_once": 31617,
+  "not": "NPC sözü dlg.spont.sad7",
+  "tarih": "2026-11-02T10:43:25+00:00"
+ },
+ {
+  "dosya": "F_genc_28.mp3",
+  "tur": "vo-npc",
+  "istem": "[cheerful] Bugün kimsenin tadını kaçırmak yok!",
+  "model": "eleven_v4",
+  "ses": "uPxbcLLbS61WAxoePBhG",
+  "rol": "F_genc",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 18,
+  "sayac_once": 31617,
+  "not": "NPC sözü dlg.spont.happy5",
+  "tarih": "2026-11-02T10:43:31+00:00"
+ },
+ {
+  "dosya": "F_genc_29.mp3",
+  "tur": "vo-npc",
+  "istem": "[sad] Sorma, hiç sorma.",
+  "model": "eleven_v4",
+  "ses": "uPxbcLLbS61WAxoePBhG",
+  "rol": "F_genc",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 9,
+  "sayac_once": 31617,
+  "not": "NPC sözü dlg.spont.sad5",
+  "tarih": "2026-11-02T10:43:36+00:00"
+ },
+ {
+  "dosya": "F_genc_30.mp3",
+  "tur": "vo-npc",
+  "istem": "[cheerful] Tam da seni düşünüyordum!",
+  "model": "eleven_v4",
+  "ses": "uPxbcLLbS61WAxoePBhG",
+  "rol": "F_genc",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 14,
+  "sayac_once": 31617,
+  "not": "NPC sözü dlg.spont.happy2",
+  "tarih": "2026-11-02T10:43:45+00:00"
+ },
+ {
+  "dosya": "F_genc_31.mp3",
+  "tur": "vo-npc",
+  "istem": "[sad] Bu aralar işler yolunda değil.",
+  "model": "eleven_v4",
+  "ses": "uPxbcLLbS61WAxoePBhG",
+  "rol": "F_genc",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 14,
+  "sayac_once": 31617,
+  "not": "NPC sözü dlg.spont.sad2",
+  "tarih": "2026-11-02T10:43:48+00:00"
+ },
+ {
+  "dosya": "F_genc_32.mp3",
+  "tur": "vo-npc",
+  "istem": "[curt] Anlatacak bir şey yok.",
+  "model": "eleven_v4",
+  "ses": "uPxbcLLbS61WAxoePBhG",
+  "rol": "F_genc",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 12,
+  "sayac_once": 31617,
+  "not": "NPC sözü dlg.is.cold2",
+  "tarih": "2026-11-02T10:43:57+00:00"
+ },
+ {
+  "dosya": "F_orta_0.mp3",
+  "tur": "vo-npc",
+  "istem": "[curt] İşim var, başka zaman.",
+  "model": "eleven_v4",
+  "ses": "D2dHiTSPRx6l2bhKGmyJ",
+  "rol": "F_orta",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 12,
+  "sayac_once": 31617,
+  "not": "NPC sözü dlg.hosbes.hitch",
+  "tarih": "2026-11-02T10:44:01+00:00"
+ },
+ {
+  "dosya": "F_orta_1.mp3",
+  "tur": "vo-npc",
+  "istem": "[curt] Ev meselesi evde kalsın.",
+  "model": "eleven_v4",
+  "ses": "D2dHiTSPRx6l2bhKGmyJ",
+  "rol": "F_orta",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 12,
+  "sayac_once": 31788,
+  "not": "NPC sözü dlg.aile.closed3",
+  "tarih": "2026-11-02T10:44:07+00:00"
+ },
+ {
+  "dosya": "F_orta_2.mp3",
+  "tur": "vo-npc",
+  "istem": "[curt] Boş ver.",
+  "model": "eleven_v4",
+  "ses": "D2dHiTSPRx6l2bhKGmyJ",
+  "rol": "F_orta",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 6,
+  "sayac_once": 31788,
+  "not": "NPC sözü dlg.dert.closed3",
+  "tarih": "2026-11-02T10:44:12+00:00"
+ },
+ {
+  "dosya": "F_orta_3.mp3",
+  "tur": "vo-npc",
+  "istem": "[wry] Yarısı doğruysa şükür.",
+  "model": "eleven_v4",
+  "ses": "D2dHiTSPRx6l2bhKGmyJ",
+  "rol": "F_orta",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 11,
+  "sayac_once": 31788,
+  "not": "NPC sözü dlg.dunya.line3",
+  "tarih": "2026-11-02T10:44:21+00:00"
+ },
+ {
+  "dosya": "F_orta_4.mp3",
+  "tur": "vo-npc",
+  "istem": "[dismissive] Bunu bugün kaç kişiye söyledin?",
+  "model": "eleven_v4",
+  "ses": "D2dHiTSPRx6l2bhKGmyJ",
+  "rol": "F_orta",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 18,
+  "sayac_once": 31788,
+  "not": "NPC sözü dlg.iltifat.bad3",
+  "tarih": "2026-11-02T10:44:24+00:00"
+ },
+ {
+  "dosya": "F_orta_5.mp3",
+  "tur": "vo-npc",
+  "istem": "[curt] İşi konuşunca iş kaçar.",
+  "model": "eleven_v4",
+  "ses": "D2dHiTSPRx6l2bhKGmyJ",
+  "rol": "F_orta",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 12,
+  "sayac_once": 31788,
+  "not": "NPC sözü dlg.is.cold3",
+  "tarih": "2026-11-02T10:44:34+00:00"
+ },
+ {
+  "dosya": "F_orta_6.mp3",
+  "tur": "vo-npc",
+  "istem": "[laughing] Bunu akşam herkese anlatacağım!",
+  "model": "eleven_v4",
+  "ses": "D2dHiTSPRx6l2bhKGmyJ",
+  "rol": "F_orta",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 17,
+  "sayac_once": 31788,
+  "not": "NPC sözü dlg.saka.good3",
+  "tarih": "2026-11-02T10:44:37+00:00"
+ },
+ {
+  "dosya": "F_orta_7.mp3",
+  "tur": "vo-npc",
+  "istem": "[amused] Fena değil.",
+  "model": "eleven_v4",
+  "ses": "D2dHiTSPRx6l2bhKGmyJ",
+  "rol": "F_orta",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 8,
+  "sayac_once": 31788,
+  "not": "NPC sözü dlg.saka.mild3",
+  "tarih": "2026-11-02T10:44:42+00:00"
+ },
+ {
+  "dosya": "F_orta_8.mp3",
+  "tur": "vo-npc",
+  "istem": "[dismissive] Yağ çekmeye gerek yok.",
+  "model": "eleven_v4",
+  "ses": "D2dHiTSPRx6l2bhKGmyJ",
+  "rol": "F_orta",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 14,
+  "sayac_once": 31872,
+  "not": "NPC sözü dlg.iltifat.bad",
+  "tarih": "2026-11-02T10:44:52+00:00"
+ },
+ {
+  "dosya": "F_orta_9.mp3",
+  "tur": "vo-npc",
+  "istem": "[dismissive] Şimdi sırası mı?",
+  "model": "eleven_v4",
+  "ses": "D2dHiTSPRx6l2bhKGmyJ",
+  "rol": "F_orta",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 12,
+  "sayac_once": 31872,
+  "not": "NPC sözü dlg.saka.bad",
+  "tarih": "2026-11-02T10:44:55+00:00"
+ },
+ {
+  "dosya": "F_orta_10.mp3",
+  "tur": "vo-npc",
+  "istem": "[pleased] İncesin, sağ ol.",
+  "model": "eleven_v4",
+  "ses": "D2dHiTSPRx6l2bhKGmyJ",
+  "rol": "F_orta",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 10,
+  "sayac_once": 31872,
+  "not": "NPC sözü dlg.iltifat.good2",
+  "tarih": "2026-11-02T10:45:00+00:00"
+ },
+ {
+  "dosya": "F_orta_11.mp3",
+  "tur": "vo-npc",
+  "istem": "[laughing] Amma da iyiydi!",
+  "model": "eleven_v4",
+  "ses": "D2dHiTSPRx6l2bhKGmyJ",
+  "rol": "F_orta",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 10,
+  "sayac_once": 31872,
+  "not": "NPC sözü dlg.saka.good2",
+  "tarih": "2026-11-02T10:45:09+00:00"
+ },
+ {
+  "dosya": "F_orta_12.mp3",
+  "tur": "vo-npc",
+  "istem": "[dismissive] Boş laf işte.",
+  "model": "eleven_v4",
+  "ses": "D2dHiTSPRx6l2bhKGmyJ",
+  "rol": "F_orta",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 10,
+  "sayac_once": 31872,
+  "not": "NPC sözü dlg.iltifat.bad2",
+  "tarih": "2026-11-02T10:45:12+00:00"
+ },
+ {
+  "dosya": "F_orta_13.mp3",
+  "tur": "vo-npc",
+  "istem": "[dismissive] Hiç komik değil.",
+  "model": "eleven_v4",
+  "ses": "D2dHiTSPRx6l2bhKGmyJ",
+  "rol": "F_orta",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 12,
+  "sayac_once": 31872,
+  "not": "NPC sözü dlg.saka.bad2",
+  "tarih": "2026-11-02T10:45:18+00:00"
+ },
+ {
+  "dosya": "F_orta_14.mp3",
+  "tur": "vo-npc",
+  "istem": "[cheerful] Bugün güzel bir gün, değil mi?",
+  "model": "eleven_v4",
+  "ses": "D2dHiTSPRx6l2bhKGmyJ",
+  "rol": "F_orta",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 16,
+  "sayac_once": 31872,
+  "not": "NPC sözü dlg.spont.happy3",
+  "tarih": "2026-11-02T10:45:27+00:00"
+ },
+ {
+  "dosya": "F_orta_15.mp3",
+  "tur": "vo-npc",
+  "istem": "[cheerful] İşler yolunda, şükür!",
+  "model": "eleven_v4",
+  "ses": "D2dHiTSPRx6l2bhKGmyJ",
+  "rol": "F_orta",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 13,
+  "sayac_once": 31872,
+  "not": "NPC sözü dlg.spont.happy4",
+  "tarih": "2026-11-02T10:45:30+00:00"
+ },
+ {
+  "dosya": "F_orta_16.mp3",
+  "tur": "vo-npc",
+  "istem": "[sad] Sorma, zor günler...",
+  "model": "eleven_v4",
+  "ses": "D2dHiTSPRx6l2bhKGmyJ",
+  "rol": "F_orta",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 10,
+  "sayac_once": 31969,
+  "not": "NPC sözü dlg.spont.sad3",
+  "tarih": "2026-11-02T10:45:40+00:00"
+ },
+ {
+  "dosya": "F_orta_17.mp3",
+  "tur": "vo-npc",
+  "istem": "[sad] Uyku tutmuyor bu ara.",
+  "model": "eleven_v4",
+  "ses": "D2dHiTSPRx6l2bhKGmyJ",
+  "rol": "F_orta",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 11,
+  "sayac_once": 31969,
+  "not": "NPC sözü dlg.spont.sad4",
+  "tarih": "2026-11-02T10:45:43+00:00"
+ },
+ {
+  "dosya": "F_orta_18.mp3",
+  "tur": "vo-npc",
+  "istem": "[cheerful] İyi ki rastladık!",
+  "model": "eleven_v4",
+  "ses": "D2dHiTSPRx6l2bhKGmyJ",
+  "rol": "F_orta",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 11,
+  "sayac_once": 31969,
+  "not": "NPC sözü dlg.spont.happy",
+  "tarih": "2026-11-02T10:45:48+00:00"
+ },
+ {
+  "dosya": "F_orta_19.mp3",
+  "tur": "vo-npc",
+  "istem": "[sad] Zor günlerden geçiyorum.",
+  "model": "eleven_v4",
+  "ses": "D2dHiTSPRx6l2bhKGmyJ",
+  "rol": "F_orta",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 12,
+  "sayac_once": 31969,
+  "not": "NPC sözü dlg.spont.sad",
+  "tarih": "2026-11-02T10:45:57+00:00"
+ },
+ {
+  "dosya": "F_orta_20.mp3",
+  "tur": "vo-npc",
+  "istem": "[warm] Senin verdiğin hâlâ evde, baş köşede durur.",
+  "model": "eleven_v4",
+  "ses": "D2dHiTSPRx6l2bhKGmyJ",
+  "rol": "F_orta",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 20,
+  "sayac_once": 31969,
+  "not": "NPC sözü dlg.cb.gift3",
+  "tarih": "2026-11-02T10:46:00+00:00"
+ },
+ {
+  "dosya": "F_orta_21.mp3",
+  "tur": "vo-npc",
+  "istem": "[warm] O gün yanımda olmasaydın hâlim neydi, bir ben bilirim.",
+  "model": "eleven_v4",
+  "ses": "D2dHiTSPRx6l2bhKGmyJ",
+  "rol": "F_orta",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 24,
+  "sayac_once": 31969,
+  "not": "NPC sözü dlg.cb.help3",
+  "tarih": "2026-11-02T10:46:10+00:00"
+ },
+ {
+  "dosya": "F_orta_22.mp3",
+  "tur": "vo-npc",
+  "istem": "[warm] O hediyeni hâlâ unutmadım.",
+  "model": "eleven_v4",
+  "ses": "D2dHiTSPRx6l2bhKGmyJ",
+  "rol": "F_orta",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 13,
+  "sayac_once": 31969,
+  "not": "NPC sözü dlg.cb.gift",
+  "tarih": "2026-11-02T10:46:13+00:00"
+ },
+ {
+  "dosya": "F_orta_23.mp3",
+  "tur": "vo-npc",
+  "istem": "[warm] Bana el uzattığın günü unutmam.",
+  "model": "eleven_v4",
+  "ses": "D2dHiTSPRx6l2bhKGmyJ",
+  "rol": "F_orta",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 15,
+  "sayac_once": 31969,
+  "not": "NPC sözü dlg.cb.help",
+  "tarih": "2026-11-02T10:46:18+00:00"
+ },
+ {
+  "dosya": "F_orta_24.mp3",
+  "tur": "vo-npc",
+  "istem": "[cheerful] Gel, bugün çay benden!",
+  "model": "eleven_v4",
+  "ses": "D2dHiTSPRx6l2bhKGmyJ",
+  "rol": "F_orta",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 13,
+  "sayac_once": 31969,
+  "not": "NPC sözü dlg.spont.happy6",
+  "tarih": "2026-11-02T10:46:27+00:00"
+ },
+ {
+  "dosya": "F_orta_25.mp3",
+  "tur": "vo-npc",
+  "istem": "[sad] Bugün lafın tadı yok, kusura bakma.",
+  "model": "eleven_v4",
+  "ses": "D2dHiTSPRx6l2bhKGmyJ",
+  "rol": "F_orta",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 16,
+  "sayac_once": 31969,
+  "not": "NPC sözü dlg.spont.sad6",
+  "tarih": "2026-11-02T10:46:31+00:00"
+ },
+ {
+  "dosya": "F_orta_26.mp3",
+  "tur": "vo-npc",
+  "istem": "[cheerful] Bugün ne aldıysam yarı fiyatına — kısmet böyle güne denir!",
+  "model": "eleven_v4",
+  "ses": "D2dHiTSPRx6l2bhKGmyJ",
+  "rol": "F_orta",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 28,
+  "sayac_once": 32098,
+  "not": "NPC sözü dlg.spont.happy7",
+  "tarih": "2026-11-02T10:46:36+00:00"
+ },
+ {
+  "dosya": "F_orta_27.mp3",
+  "tur": "vo-npc",
+  "istem": "[sad] Dert büyük, kelam küçük. Başka gün anlatırım.",
+  "model": "eleven_v4",
+  "ses": "D2dHiTSPRx6l2bhKGmyJ",
+  "rol": "F_orta",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 20,
+  "sayac_once": 32098,
+  "not": "NPC sözü dlg.spont.sad7",
+  "tarih": "2026-11-02T10:46:46+00:00"
+ },
+ {
+  "dosya": "F_orta_28.mp3",
+  "tur": "vo-npc",
+  "istem": "[cheerful] Bugün kimsenin tadını kaçırmak yok!",
+  "model": "eleven_v4",
+  "ses": "D2dHiTSPRx6l2bhKGmyJ",
+  "rol": "F_orta",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 18,
+  "sayac_once": 32098,
+  "not": "NPC sözü dlg.spont.happy5",
+  "tarih": "2026-11-02T10:46:49+00:00"
+ },
+ {
+  "dosya": "F_orta_29.mp3",
+  "tur": "vo-npc",
+  "istem": "[sad] Sorma, hiç sorma.",
+  "model": "eleven_v4",
+  "ses": "D2dHiTSPRx6l2bhKGmyJ",
+  "rol": "F_orta",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 9,
+  "sayac_once": 32098,
+  "not": "NPC sözü dlg.spont.sad5",
+  "tarih": "2026-11-02T10:46:54+00:00"
+ },
+ {
+  "dosya": "F_orta_30.mp3",
+  "tur": "vo-npc",
+  "istem": "[cheerful] Tam da seni düşünüyordum!",
+  "model": "eleven_v4",
+  "ses": "D2dHiTSPRx6l2bhKGmyJ",
+  "rol": "F_orta",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 14,
+  "sayac_once": 32098,
+  "not": "NPC sözü dlg.spont.happy2",
+  "tarih": "2026-11-02T10:47:00+00:00"
+ },
+ {
+  "dosya": "F_orta_31.mp3",
+  "tur": "vo-npc",
+  "istem": "[sad] Bu aralar işler yolunda değil.",
+  "model": "eleven_v4",
+  "ses": "D2dHiTSPRx6l2bhKGmyJ",
+  "rol": "F_orta",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 14,
+  "sayac_once": 32098,
+  "not": "NPC sözü dlg.spont.sad2",
+  "tarih": "2026-11-02T10:47:09+00:00"
+ },
+ {
+  "dosya": "F_orta_32.mp3",
+  "tur": "vo-npc",
+  "istem": "[curt] Anlatacak bir şey yok.",
+  "model": "eleven_v4",
+  "ses": "D2dHiTSPRx6l2bhKGmyJ",
+  "rol": "F_orta",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 12,
+  "sayac_once": 32098,
+  "not": "NPC sözü dlg.is.cold2",
+  "tarih": "2026-11-02T10:47:12+00:00"
+ },
+ {
+  "dosya": "F_yasli_0.mp3",
+  "tur": "vo-npc",
+  "istem": "[curt] İşim var, başka zaman.",
+  "model": "eleven_v4",
+  "ses": "SUXoJ0TGQfwCYXPymwgU",
+  "rol": "F_yasli",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 12,
+  "sayac_once": 32229,
+  "not": "NPC sözü dlg.hosbes.hitch",
+  "tarih": "2026-11-02T10:47:22+00:00"
+ },
+ {
+  "dosya": "F_yasli_1.mp3",
+  "tur": "vo-npc",
+  "istem": "[curt] Ev meselesi evde kalsın.",
+  "model": "eleven_v4",
+  "ses": "SUXoJ0TGQfwCYXPymwgU",
+  "rol": "F_yasli",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 12,
+  "sayac_once": 32229,
+  "not": "NPC sözü dlg.aile.closed3",
+  "tarih": "2026-11-02T10:47:24+00:00"
+ },
+ {
+  "dosya": "F_yasli_2.mp3",
+  "tur": "vo-npc",
+  "istem": "[curt] Boş ver.",
+  "model": "eleven_v4",
+  "ses": "SUXoJ0TGQfwCYXPymwgU",
+  "rol": "F_yasli",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 6,
+  "sayac_once": 32229,
+  "not": "NPC sözü dlg.dert.closed3",
+  "tarih": "2026-11-02T10:47:33+00:00"
+ },
+ {
+  "dosya": "F_yasli_3.mp3",
+  "tur": "vo-npc",
+  "istem": "[wry] Yarısı doğruysa şükür.",
+  "model": "eleven_v4",
+  "ses": "SUXoJ0TGQfwCYXPymwgU",
+  "rol": "F_yasli",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 11,
+  "sayac_once": 32229,
+  "not": "NPC sözü dlg.dunya.line3",
+  "tarih": "2026-11-02T10:47:37+00:00"
+ },
+ {
+  "dosya": "F_yasli_4.mp3",
+  "tur": "vo-npc",
+  "istem": "[dismissive] Bunu bugün kaç kişiye söyledin?",
+  "model": "eleven_v4",
+  "ses": "SUXoJ0TGQfwCYXPymwgU",
+  "rol": "F_yasli",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 18,
+  "sayac_once": 32229,
+  "not": "NPC sözü dlg.iltifat.bad3",
+  "tarih": "2026-11-02T10:47:46+00:00"
+ },
+ {
+  "dosya": "F_yasli_5.mp3",
+  "tur": "vo-npc",
+  "istem": "[curt] İşi konuşunca iş kaçar.",
+  "model": "eleven_v4",
+  "ses": "SUXoJ0TGQfwCYXPymwgU",
+  "rol": "F_yasli",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 12,
+  "sayac_once": 32229,
+  "not": "NPC sözü dlg.is.cold3",
+  "tarih": "2026-11-02T10:47:49+00:00"
+ },
+ {
+  "dosya": "F_yasli_6.mp3",
+  "tur": "vo-npc",
+  "istem": "[laughing] Bunu akşam herkese anlatacağım!",
+  "model": "eleven_v4",
+  "ses": "SUXoJ0TGQfwCYXPymwgU",
+  "rol": "F_yasli",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 17,
+  "sayac_once": 32229,
+  "not": "NPC sözü dlg.saka.good3",
+  "tarih": "2026-11-02T10:47:54+00:00"
+ },
+ {
+  "dosya": "F_yasli_7.mp3",
+  "tur": "vo-npc",
+  "istem": "[amused] Fena değil.",
+  "model": "eleven_v4",
+  "ses": "SUXoJ0TGQfwCYXPymwgU",
+  "rol": "F_yasli",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 8,
+  "sayac_once": 32229,
+  "not": "NPC sözü dlg.saka.mild3",
+  "tarih": "2026-11-02T10:48:03+00:00"
+ },
+ {
+  "dosya": "F_yasli_8.mp3",
+  "tur": "vo-npc",
+  "istem": "[dismissive] Yağ çekmeye gerek yok.",
+  "model": "eleven_v4",
+  "ses": "SUXoJ0TGQfwCYXPymwgU",
+  "rol": "F_yasli",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 14,
+  "sayac_once": 32229,
+  "not": "NPC sözü dlg.iltifat.bad",
+  "tarih": "2026-11-02T10:48:06+00:00"
+ },
+ {
+  "dosya": "F_yasli_9.mp3",
+  "tur": "vo-npc",
+  "istem": "[dismissive] Şimdi sırası mı?",
+  "model": "eleven_v4",
+  "ses": "SUXoJ0TGQfwCYXPymwgU",
+  "rol": "F_yasli",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 12,
+  "sayac_once": 32339,
+  "not": "NPC sözü dlg.saka.bad",
+  "tarih": "2026-11-02T10:48:15+00:00"
+ },
+ {
+  "dosya": "F_yasli_10.mp3",
+  "tur": "vo-npc",
+  "istem": "[pleased] İncesin, sağ ol.",
+  "model": "eleven_v4",
+  "ses": "SUXoJ0TGQfwCYXPymwgU",
+  "rol": "F_yasli",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 10,
+  "sayac_once": 32339,
+  "not": "NPC sözü dlg.iltifat.good2",
+  "tarih": "2026-11-02T10:48:18+00:00"
+ },
+ {
+  "dosya": "F_yasli_11.mp3",
+  "tur": "vo-npc",
+  "istem": "[laughing] Amma da iyiydi!",
+  "model": "eleven_v4",
+  "ses": "SUXoJ0TGQfwCYXPymwgU",
+  "rol": "F_yasli",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 10,
+  "sayac_once": 32339,
+  "not": "NPC sözü dlg.saka.good2",
+  "tarih": "2026-11-02T10:48:27+00:00"
+ },
+ {
+  "dosya": "F_yasli_12.mp3",
+  "tur": "vo-npc",
+  "istem": "[dismissive] Boş laf işte.",
+  "model": "eleven_v4",
+  "ses": "SUXoJ0TGQfwCYXPymwgU",
+  "rol": "F_yasli",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 10,
+  "sayac_once": 32339,
+  "not": "NPC sözü dlg.iltifat.bad2",
+  "tarih": "2026-11-02T10:48:30+00:00"
+ },
+ {
+  "dosya": "F_yasli_13.mp3",
+  "tur": "vo-npc",
+  "istem": "[dismissive] Hiç komik değil.",
+  "model": "eleven_v4",
+  "ses": "SUXoJ0TGQfwCYXPymwgU",
+  "rol": "F_yasli",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 12,
+  "sayac_once": 32339,
+  "not": "NPC sözü dlg.saka.bad2",
+  "tarih": "2026-11-02T10:48:39+00:00"
+ },
+ {
+  "dosya": "F_yasli_14.mp3",
+  "tur": "vo-npc",
+  "istem": "[cheerful] Bugün güzel bir gün, değil mi?",
+  "model": "eleven_v4",
+  "ses": "SUXoJ0TGQfwCYXPymwgU",
+  "rol": "F_yasli",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 16,
+  "sayac_once": 32339,
+  "not": "NPC sözü dlg.spont.happy3",
+  "tarih": "2026-11-02T10:48:42+00:00"
+ },
+ {
+  "dosya": "F_yasli_15.mp3",
+  "tur": "vo-npc",
+  "istem": "[cheerful] İşler yolunda, şükür!",
+  "model": "eleven_v4",
+  "ses": "SUXoJ0TGQfwCYXPymwgU",
+  "rol": "F_yasli",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 13,
+  "sayac_once": 32339,
+  "not": "NPC sözü dlg.spont.happy4",
+  "tarih": "2026-11-02T10:48:51+00:00"
+ },
+ {
+  "dosya": "F_yasli_16.mp3",
+  "tur": "vo-npc",
+  "istem": "[sad] Sorma, zor günler...",
+  "model": "eleven_v4",
+  "ses": "SUXoJ0TGQfwCYXPymwgU",
+  "rol": "F_yasli",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 10,
+  "sayac_once": 32339,
+  "not": "NPC sözü dlg.spont.sad3",
+  "tarih": "2026-11-02T10:48:54+00:00"
+ },
+ {
+  "dosya": "F_yasli_17.mp3",
+  "tur": "vo-npc",
+  "istem": "[sad] Uyku tutmuyor bu ara.",
+  "model": "eleven_v4",
+  "ses": "SUXoJ0TGQfwCYXPymwgU",
+  "rol": "F_yasli",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 11,
+  "sayac_once": 32339,
+  "not": "NPC sözü dlg.spont.sad4",
+  "tarih": "2026-11-02T10:49:00+00:00"
+ },
+ {
+  "dosya": "F_yasli_18.mp3",
+  "tur": "vo-npc",
+  "istem": "[cheerful] İyi ki rastladık!",
+  "model": "eleven_v4",
+  "ses": "SUXoJ0TGQfwCYXPymwgU",
+  "rol": "F_yasli",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 11,
+  "sayac_once": 32443,
+  "not": "NPC sözü dlg.spont.happy",
+  "tarih": "2026-11-02T10:49:09+00:00"
+ },
+ {
+  "dosya": "F_yasli_19.mp3",
+  "tur": "vo-npc",
+  "istem": "[sad] Zor günlerden geçiyorum.",
+  "model": "eleven_v4",
+  "ses": "SUXoJ0TGQfwCYXPymwgU",
+  "rol": "F_yasli",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 12,
+  "sayac_once": 32443,
+  "not": "NPC sözü dlg.spont.sad",
+  "tarih": "2026-11-02T10:49:14+00:00"
+ },
+ {
+  "dosya": "F_yasli_20.mp3",
+  "tur": "vo-npc",
+  "istem": "[warm] Senin verdiğin hâlâ evde, baş köşede durur.",
+  "model": "eleven_v4",
+  "ses": "SUXoJ0TGQfwCYXPymwgU",
+  "rol": "F_yasli",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 20,
+  "sayac_once": 32443,
+  "not": "NPC sözü dlg.cb.gift3",
+  "tarih": "2026-11-02T10:49:19+00:00"
+ },
+ {
+  "dosya": "F_yasli_21.mp3",
+  "tur": "vo-npc",
+  "istem": "[warm] O gün yanımda olmasaydın hâlim neydi, bir ben bilirim.",
+  "model": "eleven_v4",
+  "ses": "SUXoJ0TGQfwCYXPymwgU",
+  "rol": "F_yasli",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 24,
+  "sayac_once": 32443,
+  "not": "NPC sözü dlg.cb.help3",
+  "tarih": "2026-11-02T10:49:25+00:00"
+ },
+ {
+  "dosya": "F_yasli_22.mp3",
+  "tur": "vo-npc",
+  "istem": "[warm] O hediyeni hâlâ unutmadım.",
+  "model": "eleven_v4",
+  "ses": "SUXoJ0TGQfwCYXPymwgU",
+  "rol": "F_yasli",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 13,
+  "sayac_once": 32443,
+  "not": "NPC sözü dlg.cb.gift",
+  "tarih": "2026-11-02T10:49:30+00:00"
+ },
+ {
+  "dosya": "F_yasli_23.mp3",
+  "tur": "vo-npc",
+  "istem": "[warm] Bana el uzattığın günü unutmam.",
+  "model": "eleven_v4",
+  "ses": "SUXoJ0TGQfwCYXPymwgU",
+  "rol": "F_yasli",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 15,
+  "sayac_once": 32443,
+  "not": "NPC sözü dlg.cb.help",
+  "tarih": "2026-11-02T10:49:39+00:00"
+ },
+ {
+  "dosya": "F_yasli_24.mp3",
+  "tur": "vo-npc",
+  "istem": "[cheerful] Gel, bugün çay benden!",
+  "model": "eleven_v4",
+  "ses": "SUXoJ0TGQfwCYXPymwgU",
+  "rol": "F_yasli",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 13,
+  "sayac_once": 32443,
+  "not": "NPC sözü dlg.spont.happy6",
+  "tarih": "2026-11-02T10:49:42+00:00"
+ },
+ {
+  "dosya": "F_yasli_25.mp3",
+  "tur": "vo-npc",
+  "istem": "[sad] Bugün lafın tadı yok, kusura bakma.",
+  "model": "eleven_v4",
+  "ses": "SUXoJ0TGQfwCYXPymwgU",
+  "rol": "F_yasli",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 16,
+  "sayac_once": 32443,
+  "not": "NPC sözü dlg.spont.sad6",
+  "tarih": "2026-11-02T10:49:52+00:00"
+ },
+ {
+  "dosya": "F_yasli_26.mp3",
+  "tur": "vo-npc",
+  "istem": "[cheerful] Bugün ne aldıysam yarı fiyatına — kısmet böyle güne denir!",
+  "model": "eleven_v4",
+  "ses": "SUXoJ0TGQfwCYXPymwgU",
+  "rol": "F_yasli",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 28,
+  "sayac_once": 32443,
+  "not": "NPC sözü dlg.spont.happy7",
+  "tarih": "2026-11-02T10:49:55+00:00"
+ },
+ {
+  "dosya": "F_yasli_27.mp3",
+  "tur": "vo-npc",
+  "istem": "[sad] Dert büyük, kelam küçük. Başka gün anlatırım.",
+  "model": "eleven_v4",
+  "ses": "SUXoJ0TGQfwCYXPymwgU",
+  "rol": "F_yasli",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 20,
+  "sayac_once": 32443,
+  "not": "NPC sözü dlg.spont.sad7",
+  "tarih": "2026-11-02T10:50:01+00:00"
+ },
+ {
+  "dosya": "F_yasli_28.mp3",
+  "tur": "vo-npc",
+  "istem": "[cheerful] Bugün kimsenin tadını kaçırmak yok!",
+  "model": "eleven_v4",
+  "ses": "SUXoJ0TGQfwCYXPymwgU",
+  "rol": "F_yasli",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 18,
+  "sayac_once": 32443,
+  "not": "NPC sözü dlg.spont.happy5",
+  "tarih": "2026-11-02T10:50:06+00:00"
+ },
+ {
+  "dosya": "F_yasli_29.mp3",
+  "tur": "vo-npc",
+  "istem": "[sad] Sorma, hiç sorma.",
+  "model": "eleven_v4",
+  "ses": "SUXoJ0TGQfwCYXPymwgU",
+  "rol": "F_yasli",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 9,
+  "sayac_once": 32633,
+  "not": "NPC sözü dlg.spont.sad5",
+  "tarih": "2026-11-02T10:50:16+00:00"
+ },
+ {
+  "dosya": "F_yasli_30.mp3",
+  "tur": "vo-npc",
+  "istem": "[cheerful] Tam da seni düşünüyordum!",
+  "model": "eleven_v4",
+  "ses": "SUXoJ0TGQfwCYXPymwgU",
+  "rol": "F_yasli",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 14,
+  "sayac_once": 32633,
+  "not": "NPC sözü dlg.spont.happy2",
+  "tarih": "2026-11-02T10:50:19+00:00"
+ },
+ {
+  "dosya": "F_yasli_31.mp3",
+  "tur": "vo-npc",
+  "istem": "[sad] Bu aralar işler yolunda değil.",
+  "model": "eleven_v4",
+  "ses": "SUXoJ0TGQfwCYXPymwgU",
+  "rol": "F_yasli",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 14,
+  "sayac_once": 32633,
+  "not": "NPC sözü dlg.spont.sad2",
+  "tarih": "2026-11-02T10:50:25+00:00"
+ },
+ {
+  "dosya": "F_yasli_32.mp3",
+  "tur": "vo-npc",
+  "istem": "[curt] Anlatacak bir şey yok.",
+  "model": "eleven_v4",
+  "ses": "SUXoJ0TGQfwCYXPymwgU",
+  "rol": "F_yasli",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8
+   },
+   "seed": 1247,
+   "language_code": "tr"
+  },
+  "tohum": 1247,
+  "maliyet": 12,
+  "sayac_once": 32633,
+  "not": "NPC sözü dlg.is.cold2",
+  "tarih": "2026-11-02T10:50:30+00:00"
  }
 ]

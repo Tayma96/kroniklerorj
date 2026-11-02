@@ -18,6 +18,7 @@ import { canWork } from "../../lib/game";
 
 const pf = (s: string, ...a: (string | number)[]) => a.reduce<string>((acc, v, i) => acc.replace("%" + (i + 1), String(v)), s);
 import { StatDeltaOverlay } from "../../lib/feel";
+import { AnlarKatmani } from "../../lib/anlar";
 import { Ambiance } from "../../lib/fx";
 import { hap } from "../../lib/haptics";
 import { useSadeMod } from "../../lib/use-sade-mod";
@@ -291,6 +292,7 @@ export default function OyunLayout() {
       {(mpMode || (state && !state.player.dead)) && <NavOrnament bottom={80 + insets.bottom} />}
       <AdvanceFab bottom={insets.bottom} />
       <StatDeltaOverlay />
+      {!mpMode && <AnlarKatmani />}
       {/* MP'deyken kişisel ekranlar SP kabuğunda açılır — oyuncu diyardan koptuğunu sanmasın: dönüş şeridi hep üstte (test bulgusu) */}
       {mpMode && (
         <Pressable onPress={() => { hap("tap"); leave(); exitMp(); router.replace("/cok-oyunculu"); }} style={{ position: "absolute", top: insets.top + 4, alignSelf: "center", flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: 5, paddingHorizontal: 13, borderRadius: 14, borderWidth: 1, borderColor: "rgba(111,160,192,0.65)", backgroundColor: "rgba(8,14,20,0.92)" }}>

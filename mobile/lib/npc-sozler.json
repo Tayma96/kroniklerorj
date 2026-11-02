@@ -1,0 +1,212 @@
+{
+ "_not": "NPC sözleri (Türkçe): diyalog satırlarındaki tırnak içi doğrudan söz; her söz 7 sesle okunur. Plan: docs/ANLATI_ANLAR.md §NPC. Kronks yalnız anlatıcıdır, burada kullanılmaz.",
+ "sesler": {
+  "M_genc": "n098FBfZ6R6xoT1fshLi",
+  "M_genc_kd": "myUwgeAYqIEk3FykwNzI",
+  "M_orta_oa": "anu8LIf3pYhCJFkcpxzg",
+  "M_yasli_kd": "MuOq11XzQTthwLhmGZ2V",
+  "F_genc": "uPxbcLLbS61WAxoePBhG",
+  "F_orta": "D2dHiTSPRx6l2bhKGmyJ",
+  "F_yasli": "SUXoJ0TGQfwCYXPymwgU"
+ },
+ "sozler": [
+  {
+   "n": 0,
+   "k": "dlg.hosbes.hitch",
+   "soz": "İşim var, başka zaman.",
+   "etiket": "[curt]"
+  },
+  {
+   "n": 1,
+   "k": "dlg.aile.closed3",
+   "soz": "Ev meselesi evde kalsın.",
+   "etiket": "[curt]"
+  },
+  {
+   "n": 2,
+   "k": "dlg.dert.closed3",
+   "soz": "Boş ver.",
+   "etiket": "[curt]"
+  },
+  {
+   "n": 3,
+   "k": "dlg.dunya.line3",
+   "soz": "Yarısı doğruysa şükür.",
+   "etiket": "[wry]"
+  },
+  {
+   "n": 4,
+   "k": "dlg.iltifat.bad3",
+   "soz": "Bunu bugün kaç kişiye söyledin?",
+   "etiket": "[dismissive]"
+  },
+  {
+   "n": 5,
+   "k": "dlg.is.cold3",
+   "soz": "İşi konuşunca iş kaçar.",
+   "etiket": "[curt]"
+  },
+  {
+   "n": 6,
+   "k": "dlg.saka.good3",
+   "soz": "Bunu akşam herkese anlatacağım!",
+   "etiket": "[laughing]"
+  },
+  {
+   "n": 7,
+   "k": "dlg.saka.mild3",
+   "soz": "Fena değil.",
+   "etiket": "[amused]"
+  },
+  {
+   "n": 8,
+   "k": "dlg.iltifat.bad",
+   "soz": "Yağ çekmeye gerek yok.",
+   "etiket": "[dismissive]"
+  },
+  {
+   "n": 9,
+   "k": "dlg.saka.bad",
+   "soz": "Şimdi sırası mı?",
+   "etiket": "[dismissive]"
+  },
+  {
+   "n": 10,
+   "k": "dlg.iltifat.good2",
+   "soz": "İncesin, sağ ol.",
+   "etiket": "[pleased]"
+  },
+  {
+   "n": 11,
+   "k": "dlg.saka.good2",
+   "soz": "Amma da iyiydi!",
+   "etiket": "[laughing]"
+  },
+  {
+   "n": 12,
+   "k": "dlg.iltifat.bad2",
+   "soz": "Boş laf işte.",
+   "etiket": "[dismissive]"
+  },
+  {
+   "n": 13,
+   "k": "dlg.saka.bad2",
+   "soz": "Hiç komik değil.",
+   "etiket": "[dismissive]"
+  },
+  {
+   "n": 14,
+   "k": "dlg.spont.happy3",
+   "soz": "Bugün güzel bir gün, değil mi?",
+   "etiket": "[cheerful]"
+  },
+  {
+   "n": 15,
+   "k": "dlg.spont.happy4",
+   "soz": "İşler yolunda, şükür!",
+   "etiket": "[cheerful]"
+  },
+  {
+   "n": 16,
+   "k": "dlg.spont.sad3",
+   "soz": "Sorma, zor günler...",
+   "etiket": "[sad]"
+  },
+  {
+   "n": 17,
+   "k": "dlg.spont.sad4",
+   "soz": "Uyku tutmuyor bu ara.",
+   "etiket": "[sad]"
+  },
+  {
+   "n": 18,
+   "k": "dlg.spont.happy",
+   "soz": "İyi ki rastladık!",
+   "etiket": "[cheerful]"
+  },
+  {
+   "n": 19,
+   "k": "dlg.spont.sad",
+   "soz": "Zor günlerden geçiyorum.",
+   "etiket": "[sad]"
+  },
+  {
+   "n": 20,
+   "k": "dlg.cb.gift3",
+   "soz": "Senin verdiğin hâlâ evde, baş köşede durur.",
+   "etiket": "[warm]"
+  },
+  {
+   "n": 21,
+   "k": "dlg.cb.help3",
+   "soz": "O gün yanımda olmasaydın hâlim neydi, bir ben bilirim.",
+   "etiket": "[warm]"
+  },
+  {
+   "n": 22,
+   "k": "dlg.cb.gift",
+   "soz": "O hediyeni hâlâ unutmadım.",
+   "etiket": "[warm]"
+  },
+  {
+   "n": 23,
+   "k": "dlg.cb.help",
+   "soz": "Bana el uzattığın günü unutmam.",
+   "etiket": "[warm]"
+  },
+  {
+   "n": 24,
+   "k": "dlg.spont.happy6",
+   "soz": "Gel, bugün çay benden!",
+   "etiket": "[cheerful]"
+  },
+  {
+   "n": 25,
+   "k": "dlg.spont.sad6",
+   "soz": "Bugün lafın tadı yok, kusura bakma.",
+   "etiket": "[sad]"
+  },
+  {
+   "n": 26,
+   "k": "dlg.spont.happy7",
+   "soz": "Bugün ne aldıysam yarı fiyatına — kısmet böyle güne denir!",
+   "etiket": "[cheerful]"
+  },
+  {
+   "n": 27,
+   "k": "dlg.spont.sad7",
+   "soz": "Dert büyük, kelam küçük. Başka gün anlatırım.",
+   "etiket": "[sad]"
+  },
+  {
+   "n": 28,
+   "k": "dlg.spont.happy5",
+   "soz": "Bugün kimsenin tadını kaçırmak yok!",
+   "etiket": "[cheerful]"
+  },
+  {
+   "n": 29,
+   "k": "dlg.spont.sad5",
+   "soz": "Sorma, hiç sorma.",
+   "etiket": "[sad]"
+  },
+  {
+   "n": 30,
+   "k": "dlg.spont.happy2",
+   "soz": "Tam da seni düşünüyordum!",
+   "etiket": "[cheerful]"
+  },
+  {
+   "n": 31,
+   "k": "dlg.spont.sad2",
+   "soz": "Bu aralar işler yolunda değil.",
+   "etiket": "[sad]"
+  },
+  {
+   "n": 32,
+   "k": "dlg.is.cold2",
+   "soz": "Anlatacak bir şey yok.",
+   "etiket": "[curt]"
+  }
+ ]
+}

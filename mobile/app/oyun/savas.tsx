@@ -10,6 +10,7 @@ import { ENCOUNTERS, combatPower, armorDefense, weaponClass, hasShield, shieldBl
 import { startBattle, stepBattle, battleMoveCost, MOVES, STANCES, BattleState, Move, Stance, CbLogEntry } from "../../lib/combat";
 import { DuelArena } from "../../lib/duel-arena";
 import { playVictory, playWarDrum, playClash, playDefeat } from "../../lib/sound";
+import { anlat } from "../../lib/anlar";
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
 import { useI18n, yuzdeL, applyParams, kucukHarf } from "../../lib/i18n";
@@ -62,7 +63,7 @@ export default function Savas() {
     apply((s) => {
       if (s.player.dead || inJail(s.player) || s.player.age < 13 || s.player.health < 15 || s.player.battle_turn === s.turn) return s;
       const next = startBattleAttempt(s);
-      setEncId(id); playWarDrum();
+      setEncId(id); playWarDrum(); anlat("savas"); // hayat başına bir kez anlatıcı
       setBs(startBattle(s.player, { ...e, title: id === "nemesis" ? nemTitle : gt("enc." + e.id + ".t", e.title) }, s.rng_state ?? s.seed));
       setApplied(false); setFloats([]);
       return next;
