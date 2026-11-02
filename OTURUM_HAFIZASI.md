@@ -15,8 +15,8 @@
 - Bitti (`apk`): özel sekme çubuğu (`app/oyun/_layout.tsx` SekmeCubugu), yeni oyun klavye/başlık/ocak kartları,
   ana sayfa kimlik paneli + `lib/ad-bicim.ts`, Geri hapı, Divan/Dost girişleri kaldırıldı, ilk açılış dil ekranı
   (`lib/dil-secimi.tsx`), kış ortamı çınlaması (yeni ElevenLabs döngüsü).
-- Sürüyor: giriş anlatıcısı 6 dil + müzik → `assets/ses/giris/giris_<dil>.m4a` + `zaman.json` (tek çizelge).
-  Sonra: sinematik oynatıcıyı yeni hikâyeye bağla; `goruntu-yonetmeni` ile video; oyun içi ses toplu üretimi.
+- 2 Kasım: ses (21 müzik, 15 ortam, 23 efekt, 13 an anlatısı 6 dil, NPC sözleri 7 ses) ve 56 sn giriş videosu `apk`'de; test APK güncel.
+- Sıradaki: sinematik etkileşimli dövüş — `docs/SAVAS_SINEMATIK_PLAN.md`; 3D kalite kanıtı (görüntü ajanı) sürüyor.
 - apk'ye gönderim: scratchpad `araclar/gonder.sh` (ayrı çalışma ağacı); yarım ajan dosyası apk'ye girmez.
 
 ## Açık işler
