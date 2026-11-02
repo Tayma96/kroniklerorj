@@ -22,6 +22,7 @@ import { memoryQuote } from "../../../lib/hafiza-sohbet";
 import { professionNameL, quirkL, goalL, placeName } from "../../../lib/locale-data";
 import { ITEMS, TieKind } from "../../../lib/world";
 import { Portre, BackLabel, ScreenFresk } from "../../../lib/ui";
+import { adBicim } from "../../../lib/ad-bicim";
 import { GameIcon } from "../../../lib/icons";
 import { NpcSceneArt } from "../../../lib/npc-scene-ui";
 import { OrnatePanel } from "../../../lib/ornament-ui";
@@ -131,10 +132,10 @@ export default function NpcDetail() {
   const [lineDelta, setLineDelta] = useState<number>(0);
   const [act, setAct] = useState<string | null>(null); // açık eylem paneli
   const [moreTopics, setMoreTopics] = useState(false);
-  const [tiesOpen, setTiesOpen] = useState(false);
+  const [tiesAc, setTiesOpen] = useState<boolean | null>(null); // null: aile üyesinde açık, diğerlerinde kapalı başlar
   const scroll = useRef<ScrollView>(null), chatY = useRef(0);
   const [gorusAcik, setGorusAcik] = useState(false); // görüş dökümü (neden böyle bakıyor)
-  useEffect(() => { setLine(""); setLineDelta(0); setAct(null); setMoreTopics(false); setTiesOpen(false); }, [id, state?.turn]);
+  useEffect(() => { setLine(""); setLineDelta(0); setAct(null); setMoreTopics(false); setTiesOpen(null); }, [id, state?.turn]); // null: varsayılana dön (aile üyesinde açık)
   // Kişi nüfus kaydından okunur (her yerden; yaşayan ya da rahmetli) — nüfus her eylemde yenilendiği için pop'a bağlı.
   const prof = useMemo(() => (state ? kisiProfil(state, id, lang) : null), [state?.pop, state?.seed, state?.turn, state?.player.location_name, lang, id]);
   const cevre = useMemo(() => (state ? kisiCevresi(state, id, lang) : []), [state?.pop, state?.seed, state?.turn, state?.player.location_name, lang, id]);
@@ -152,6 +153,10 @@ export default function NpcDetail() {
   const ties = cevre
     .map((tt) => ({ kind: tt.tur as TieKind, otherId: tt.npc.id, who: tt.npc, olu: tt.olu, uzak: tt.uzak }))
     .sort((a, z) => TIE_ORDER.indexOf(a.kind) - TIE_ORDER.indexOf(z.kind) || Number(a.olu) - Number(z.olu));
+  // Oyuncu nüfusta bir kişi kaydı değildir; ailesinin bağlarında "Sen" olarak görünür (dokununca Karakter ekranı).
+  const senTur: TieKind | null = state.player.dead ? null : prof.aileRolu === "anne" || prof.aileRolu === "baba" ? "evlat" : prof.aileRolu === "es" ? "es" : prof.aileRolu === "evlat" ? "ebeveyn" : prof.aileRolu === "kardes" ? "kardes" : null;
+  const bagSayisi = ties.length + (senTur ? 1 : 0);
+  const tiesOpen = tiesAc ?? !!prof.aileRolu;
   const couldMarry = prof.burada && !state.player.dead && !state.player.married && state.player.age >= 18 && npc.age >= 18 && npc.gender !== state.player.gender && !prof.aileRolu && !oyuncuAkrabasi(state.player, npc.id);
   const canGoal = prof.burada && !state.player.dead && state.player.age >= 13 && !!npc.goal; // muradına ermiş NPC'nin hedefi kalmaz — yardım/istismar kapanır
   // Kanal-bazlı kilit: her etkileşim (her sohbet niyeti + hediye/flört/dedikodu/hakaret/sadaka) ayrı ayrı ayda bir.
@@ -383,13 +388,27 @@ export default function NpcDetail() {
       </OrnatePanel>
 
       {/* ── Çevresi (NPC↔NPC ilişki ağı) ── */}
-      {ties.length > 0 && (
+      {bagSayisi > 0 && (
         <View style={{ marginBottom: 4 }}>
-          <Pressable accessibilityRole="button" accessibilityState={{ expanded: tiesOpen }} onPress={() => setTiesOpen(x => !x)} style={({ pressed }) => gameActionStyle(pressed, C.goldDim, false, rtl)}>
+          <Pressable accessibilityRole="button" accessibilityState={{ expanded: tiesOpen }} onPress={() => setTiesOpen(!tiesOpen)} style={({ pressed }) => gameActionStyle(pressed, C.goldDim, false, rtl)}>
             <NpcActionIcon name="iliskiler" color={C.goldDim} />
-            <Text numberOfLines={1} style={{ flex: 1, minWidth: 0, fontFamily: F.display, fontSize: T.label, letterSpacing: 1, color: C.goldDim, textTransform: "uppercase" }}>{t("npc.ties")} · {ties.length}</Text>
+            <Text numberOfLines={1} style={{ flex: 1, minWidth: 0, fontFamily: F.display, fontSize: T.label, letterSpacing: 1, color: C.goldDim, textTransform: "uppercase" }}>{t("npc.ties")} · {bagSayisi}</Text>
             <NpcActionChevron rtl={rtl} expanded={tiesOpen} />
           </Pressable>
+          {tiesOpen && senTur ? (() => {
+            const meta = TIE_META[senTur];
+            return <Pressable key="sen" accessibilityRole="button" accessibilityLabel={adBicim(state.player.name, lang) + ". " + t("cb.you")} onPress={() => { hap("tap"); router.push("/oyun/karakter"); }} style={({ pressed }) => gameActionStyle(pressed, meta.tone, false, rtl)}>
+              <Portre age={state.player.age} gender={state.player.gender} size={32} ring={false} />
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text numberOfLines={1} style={{ fontFamily: F.serif, fontSize: T.body, color: C.goldBright }}>{adBicim(state.player.name, lang)}</Text>
+                <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: T.body, color: C.parchmentMuted }}>{t("cb.you")} · {state.player.age}</Text>
+              </View>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 4, paddingVertical: 3, paddingHorizontal: 7, borderRadius: 8, borderWidth: 1, borderColor: meta.tone + "55", backgroundColor: meta.tone + "14" }}>
+                <GameIcon name={meta.icon} size={11} color={meta.tone} />
+                <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 0.5, color: meta.tone }}>{t("tie." + senTur).toUpperCase()}</Text>
+              </View>
+            </Pressable>;
+          })() : null}
           {tiesOpen && ties.map((tt) => {
             const meta = TIE_META[tt.kind];
             return (

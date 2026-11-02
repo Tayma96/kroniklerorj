@@ -552,6 +552,18 @@ function eskiDunyaOf(s: GameState): EskiDunya {
   return { wy, evo: s.world?.npcEvo, born: s.world?.npcBorn, oyuncuEs };
 }
 // Oyuncunun ailesi nüfusta gerçek kişidir: anne-baba ocakta yaşar (yaşlanır, ölür), eş oyuncunun ocağındadır.
+// Ocağın soyadı: oyuncunun annesi (ocağın gelini) ve erkek oyuncunun eşi aile soyadını taşır — baba ve kardeşler gibi.
+// Yalnız sabit soyad metni (sa) yazılır; nüfus değiştirilecekse önce kopyalanır. Tekrar çağrılması zararsızdır.
+function aileSoyadiUyumla(s: GameState) {
+  const p = s.player; if (!p || !p.surname || !s.pop) return;
+  const k0 = s.pop.k;
+  const anneId = p.mother_id && k0[p.mother_id] && (!p.father_id || !k0[p.father_id] || k0[p.father_id].sa === p.surname) && k0[p.mother_id].sa !== p.surname ? p.mother_id : undefined;
+  const esId = p.gender === "erkek" && p.spouse_id && k0[p.spouse_id]?.g === "kadın" && k0[p.spouse_id].sa !== p.surname ? p.spouse_id : undefined;
+  if (!anneId && !esId) return;
+  const pop = nufusHazirla(s);
+  if (anneId) pop.k[anneId].sa = p.surname;
+  if (esId) { pop.k[esId].sa = p.surname; if (p.spouse_name) p.spouse_name = kisiAdi(pop.k[esId], "tr"); }
+}
 // Eski kayıtta adından ibaret aile üyesi aynı adla (aynı tohum) kaydolur; ölmüş olan kurulmaz. Tekrar çağrılması zararsızdır.
 function oyuncuAilesiKur(s: GameState) {
   const p = s.player; if (!s.pop || !p) return; const pop = s.pop; // çağıranlar: nufusHazirla (taze), newGame, continueAsHeir (özel kopya)
@@ -576,7 +588,7 @@ function oyuncuAilesiKur(s: GameState) {
   if (ata && (p.generation || 1) > 1) { if (p.mother === ata) p.mother_dead = true; if (p.father === ata) p.father_dead = true; }
   // Anne-baba: yaşıyorsa ve henüz kişi değilse kurulur; ikisi de yaşıyorsa birbirinin eşidir. Baba oyuncunun soyadını taşır.
   let anne = p.mother_id ? pop.k[p.mother_id] : undefined, baba = p.father_id ? pop.k[p.father_id] : undefined;
-  if (!anne && !p.mother_dead && p.mother && !p.mother_id) { anne = kur("kadın", p.age + 26, p.mother_seed); p.mother_id = anne.id; }
+  if (!anne && !p.mother_dead && p.mother && !p.mother_id) { anne = kur("kadın", p.age + 26, p.mother_seed); p.mother_id = anne.id; if (p.surname) anne.sa = p.surname; } // anne ocağın soyadını taşır
   if (!baba && !p.father_dead && p.father && !p.father_id) { baba = kur("erkek", p.age + 28, p.father_seed); p.father_id = baba.id; if (p.surname) baba.sa = p.surname; }
   if (anne && baba && anne.ol == null && baba.ol == null && !anne.es && !baba.es) { anne.es = baba.id; baba.es = anne.id; anne.ey = baba.ey = wy - p.age - 1; }
   // Evlatlar: kayıtsız olan (eski kayıt) yaşı doğum turundan bulunarak kurulur; yeni oyunda evlat yoktur — ilk evlat evlilikten sonra doğar.
@@ -588,6 +600,7 @@ function oyuncuAilesiKur(s: GameState) {
   }
   if (s.relationships) for (const id of [anne?.id, baba?.id, p.spouse_id]) if (id && s.relationships[id] === undefined) s.relationships[id] = 0; // tanıdık; sevgi akrabalık kaleminden (gorus)
   nufusDegisti(pop);
+  aileSoyadiUyumla(s); // vâris: atanın eşi olan anne de ocağın soyadını taşır
 }
 // Kardeş adı ayrı olsun: oyuncunun ve diğer kardeşlerin ilk adıyla hiçbir dilde çakışmasın (ad tohumu yeniden çekilir).
 const AD_DILLERI: Lang[] = ["tr", "en", "es", "pt", "ar", "ru"];
@@ -838,6 +851,7 @@ function oyuncuEvlenKisi(s: GameState, kisi: Kisi) {
   nufusOyuncuylaEvlen(s, kisi.id);
   const k = nufusHazirla(s).k[kisi.id]; // yazınca kopyalanan nüfusta güncel nesne
   k.loc = p.home_name || p.location_name;
+  if (p.gender === "erkek" && p.surname && k.g === "kadın") k.sa = p.surname; // gelin ocağın soyadını alır
   p.spouse_id = k.id; p.spouse_name = kisiAdi(k, "tr"); p.spouse_seed = k.ns ?? locSeed(k.id);
   p.spouse_mizac = mizacFromTrait(huyOf(k), p.spouse_seed);
   if (s.relationships[k.id] === undefined) s.relationships[k.id] = 0; // tanıdık; eşin sevgisi evlilik kaleminden (gorus)
@@ -12838,6 +12852,7 @@ export function migrate(s: GameState): GameState {
   if (s.orta_son != null && !Number.isFinite(s.orta_son)) s.orta_son = undefined;
   s.schema = 1; // şema damgası: bu sürümün göçlerinden geçti
   if (s.player && s.world) nufusHazirla(s); // yaşayan nüfus: eski kadro (isim, yaş, aile, ilişki) birebir kalıcı kişilere dönüşür
+  if (s.player && s.pop) aileSoyadiUyumla(s); // eski kayıt: anne (ve erkek oyuncunun eşi) ocağın soyadını alır
   if (s.player && s.world && !s.mpRealm) ensureRealmRulers(s);
   if (s.player) { const grandparents = torunKimlikleri(s); if (grandparents.length) p.grandchild_ids = grandparents; } // yalnız nüfusta zaten kanıtlanan soy bağı
   return s;
