@@ -22,7 +22,7 @@ const rows: Record<string, string[]> = {
     "−%1 resistencia",
     "−%1 fôlego",
     "−%1 طاقة",
-    "−%1 выносливости"
+    "−%1 сил"
   ],
   "war.momentum": [
     "Üstünlük %1/3",
