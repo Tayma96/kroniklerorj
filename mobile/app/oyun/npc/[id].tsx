@@ -22,6 +22,7 @@ import { memoryQuote } from "../../../lib/hafiza-sohbet";
 import { professionNameL, quirkL, goalL, placeName } from "../../../lib/locale-data";
 import { ITEMS, TieKind } from "../../../lib/world";
 import { Portre, BackLabel, ScreenFresk } from "../../../lib/ui";
+import { npcSoyle } from "../../../lib/npc-ses";
 import { adBicim } from "../../../lib/ad-bicim";
 import { GameIcon } from "../../../lib/icons";
 import { NpcSceneArt } from "../../../lib/npc-scene-ui";
@@ -138,6 +139,8 @@ export default function NpcDetail() {
   useEffect(() => { setLine(""); setLineDelta(0); setAct(null); setMoreTopics(false); setTiesOpen(null); }, [id, state?.turn]); // null: varsayılana dön (aile üyesinde açık)
   // Kişi nüfus kaydından okunur (her yerden; yaşayan ya da rahmetli) — nüfus her eylemde yenilendiği için pop'a bağlı.
   const prof = useMemo(() => (state ? kisiProfil(state, id, lang) : null), [state?.pop, state?.seed, state?.turn, state?.player.location_name, lang, id]);
+  // Kişinin kendi sesi: satırdaki tırnak içi söz seslendirilmişse onun sesiyle çalar (Türkçe; lib/npc-ses.ts).
+  useEffect(() => { const n = prof?.npc; if (line && n) npcSoyle({ id: n.id, gender: n.gender, age: n.age }, line, lang); }, [line]);
   const cevre = useMemo(() => (state ? kisiCevresi(state, id, lang) : []), [state?.pop, state?.seed, state?.turn, state?.player.location_name, lang, id]);
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   const npc = prof?.npc;

@@ -2,6 +2,7 @@
 // Hepsi aynı ortak zaman çizelgesinde (assets/ses/giris/zaman.json). Kaynak ve lisans: assets/ses/LISANS.md, uretim.json.
 import ZAMAN from "../../assets/ses/giris/zaman.json";
 import { AN_SES } from "./anlar-ses";
+import { NPC_SES } from "./npc-ses";
 const MS: number = ZAMAN.toplamMs;
 export const ANLATIM: Record<string, { kaynak: number; ms: number }> = {
   "giris.tr": { kaynak: require("../../assets/ses/giris/giris_tr.m4a"), ms: MS },
@@ -11,4 +12,5 @@ export const ANLATIM: Record<string, { kaynak: number; ms: number }> = {
   "giris.ar": { kaynak: require("../../assets/ses/giris/giris_ar.m4a"), ms: MS },
   "giris.ru": { kaynak: require("../../assets/ses/giris/giris_ru.m4a"), ms: MS },
   ...AN_SES, // hayatın kilit anları (docs/ANLATI_ANLAR.md)
+  ...NPC_SES, // NPC sözleri (lib/npc-ses.ts)
 };
