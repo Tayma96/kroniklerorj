@@ -166,9 +166,10 @@ export function DuelArena({ bs, youLabel, intentLabel, breathLabel, moveLabel, d
     </View>
 
     {/* Rakibin niyeti: başının üstünde */}
-    {!bs.over && intent && <View style={{ position: "absolute", top: figTop - 30, right: gap - 6, flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, backgroundColor: "rgba(26,15,8,0.82)", borderWidth: 1, borderColor: bs.desperate ? "#E05A30" : "#C9A24E" }}>
+    {/* Kısa rozet (hamle adı); niyetin hikâyeli satırı arenanın altında. Dar ekranda sol bilgilere taşmasın diye yalnız ad. */}
+    {!bs.over && intent && <View accessible accessibilityLabel={`${intentLabel} ${moveLabel(intent.id)}${bs.desperate ? " · " + desperateLabel : ""}`} style={{ position: "absolute", top: figTop - 30, right: gap - 6, maxWidth: W * 0.4, flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, backgroundColor: "rgba(26,15,8,0.82)", borderWidth: 1, borderColor: bs.desperate ? "#E05A30" : "#C9A24E" }}>
       <GameIcon name={bs.desperate ? "flame" : intent.icon} size={14} color={bs.desperate ? "#FF9C6A" : "#F3D27A"} />
-      <Text style={{ fontFamily: F.serif, fontSize: 12, color: "#F6EAD0" }}>{bs.desperate ? desperateLabel : `${intentLabel} ${moveLabel(intent.id)}`}</Text>
+      <Text numberOfLines={1} style={{ fontFamily: F.serif, fontSize: 12, color: "#F6EAD0", flexShrink: 1 }}>{bs.desperate ? `${moveLabel(intent.id)} · ${desperateLabel}` : moveLabel(intent.id)}</Text>
     </View>}
 
     {/* Figürler */}

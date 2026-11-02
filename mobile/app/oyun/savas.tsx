@@ -217,6 +217,7 @@ export default function Savas() {
         {/* Arena: Karagöz perdesi — iki tasvir, rakibin niyeti, can/nefes/üstünlük; tur sonucu canlanır */}
         <Animated.View style={[{ paddingHorizontal: 12, position: "relative" }, shakeStyle]}>
           <DuelArena bs={bs} youLabel={t("cb.you")} intentLabel={t("cb.intent")} breathLabel={`${t("war.breath")} · ${applyParams(t("war.momentum"), [bs.momentum || 0])}`} moveLabel={(m) => t("cb." + m)} desperateLabel={t("cb.desperate")} />
+          {!bs.over && <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchment, textAlign: "center", marginTop: 6, paddingHorizontal: 8, lineHeight: 21 }}>{t(`cb.tel.${yzTuru(encId) === "hayvan" ? "hayvan" : bs.desperate ? "caresiz" : bs.arch}.${bs.enemyIntent}`)}</Text>}
           {(bs.repetition || 0) >= 2 && <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.ember, textAlign: "center", marginTop: 4 }}>{t("war.predictable")}</Text>}
           {floats.map((f) => <FloatingNumber key={f.id} value={f.value} color={f.color} left={f.left} top={f.top} />)}
         </Animated.View>
@@ -239,7 +240,7 @@ export default function Savas() {
                   const on = stance === s.id;
                   return (
                     <Pressable key={s.id} onPress={() => { hap("tap"); setStance(s.id); }} style={{ flex: 1, minHeight: 44, justifyContent: "center", alignItems: "center", paddingVertical: 7, borderRadius: 5, borderWidth: 1, borderColor: on ? "rgba(201,168,76,0.7)" : C.border, backgroundColor: on ? "rgba(201,168,76,0.15)" : C.bg }}>
-                      <Text style={{ fontFamily: F.display, fontSize: 13, color: on ? C.gold : C.parchmentMuted }}>{t("cb.stance." + s.id)}</Text>
+                      <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={{ fontFamily: F.display, fontSize: 13, color: on ? C.gold : C.parchmentMuted }}>{t("cb.stance." + s.id)}</Text>
                       <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginTop: 2 }}>
                         <GameIcon name="crossed-swords" size={8} color={C.parchmentDim} />
                         <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchmentDim }}>{Math.round(s.atk * 100)}%</Text>
@@ -255,7 +256,11 @@ export default function Savas() {
                   <Pressable key={m.id} disabled={m.id === "toparlan" && (bs.breath ?? 100) >= (bs.breathMax ?? 100)} onPress={() => play(m.id)} style={{ opacity: m.id === "toparlan" && (bs.breath ?? 100) >= (bs.breathMax ?? 100) ? 0.45 : 1, flex: 1, alignItems: "center", paddingVertical: 12, borderRadius: 5, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.card }}>
                     <GameIcon name={m.icon} size={20} color={C.gold} />
                     <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchment, marginTop: 5 }}>{t("cb." + m.id)}</Text>
-                    <Text style={{ fontFamily: F.serif, fontSize: 15, color: (bs.breath ?? 100) < battleMoveCost(m.id, stance) ? C.ember : C.parchmentMuted, marginTop: 4 }}>{m.id === "toparlan" ? `+${Math.min((bs.breathMax ?? 100) - (bs.breath ?? 100), 26 + (p.skills?.combat || 0))}` : applyParams(t("war.cost"), [battleMoveCost(m.id, stance)])}</Text>
+                    {/* Nefes bedeli: ikon + sayı (her dilde dar ekrana sığar); tam metin erişilebilirlik etiketinde */}
+                    <View accessible accessibilityLabel={m.id === "toparlan" ? t("war.breath") : applyParams(t("war.cost"), [battleMoveCost(m.id, stance)])} style={{ flexDirection: "row", alignItems: "center", gap: 3, marginTop: 4 }}>
+                      <GameIcon name="hourglass" size={10} color={(bs.breath ?? 100) < battleMoveCost(m.id, stance) ? C.ember : C.parchmentMuted} />
+                      <Text numberOfLines={1} style={{ fontFamily: F.serif, fontSize: 15, color: (bs.breath ?? 100) < battleMoveCost(m.id, stance) ? C.ember : C.parchmentMuted }}>{m.id === "toparlan" ? `+${Math.min((bs.breathMax ?? 100) - (bs.breath ?? 100), 26 + (p.skills?.combat || 0))}` : `−${battleMoveCost(m.id, stance)}`}</Text>
+                    </View>
                   </Pressable>
                 ))}
               </View>
