@@ -15,6 +15,8 @@ YANGIN = dict(pozlama=1.0, beyaz=(1.0, 0.98, 0.98), doygunluk=0.82, golge=(0.33,
               isik=(0.72, 0.52, 0.32), isik_guc=0.12, kontrast=1.16, pivot=0.40, siyah=0.012)
 ALTIN = dict(pozlama=1.02, beyaz=(1.05, 1.0, 0.9), doygunluk=0.9, golge=(0.42, 0.42, 0.5), golge_guc=0.1,
              isik=(0.72, 0.58, 0.38), isik_guc=0.12, kontrast=1.12, pivot=0.42, siyah=0.016)
+GECE = dict(pozlama=1.0, beyaz=(0.95, 0.98, 1.05), doygunluk=0.7, golge=(0.34, 0.44, 0.58), golge_guc=0.16,
+            isik=(0.7, 0.56, 0.38), isik_guc=0.1, kontrast=1.15, pivot=0.40, siyah=0.012)
 KOZ = dict(pozlama=1.0, beyaz=(1.04, 0.98, 0.94), doygunluk=0.9, golge=(0.42, 0.4, 0.44), golge_guc=0.08,
            isik=(0.7, 0.52, 0.34), isik_guc=0.1, kontrast=1.14, pivot=0.36, siyah=0.008)
 
@@ -58,35 +60,32 @@ CEKIMLER = [
          sis=[dict(d=0.6, renk=(0.6, 0.6, 0.6), guc=0.3, hiz=(70, 0), olcek=1.0, esik=0.45, bant=(0.45, 0.6, 0.95, 1.0))],
          parcacik=[dict(tip="kum", sayi=110, derinlik=(0.3, 1.0), hiz=(120, -6), bolge=(0.62, 1.1), opak=0.35)],
          renk=SOGUK),
-    # 28.04–32.6 s · vergi: kar altında yük
-    dict(gorsel="b3_vergi.png", bas=28040, son=32600, gir=("erit", 1200), tohum=6,
-         kamera=dict(zoom=(1.08, 1.15), dolly=(0.0, 0.08), tx=(-12, 12), pivot=0.5, el=0.8),
-         pus=dict(guc=0.16, renk=(0.66, 0.68, 0.72), us=2.0),
-         parcacik=[dict(tip="kar", sayi=420, derinlik=(0.1, 1.0))],
-         renk=SOGUK),
-    # 32.6–36.64 s · çile: yüz, kar
-    dict(gorsel="b3_cile.png", bas=32600, son=36640, gir=("erit", 1200), tohum=7,
-         kamera=dict(zoom=(1.08, 1.14), dolly=(0.0, 0.05), pivot=0.7, el=0.7),
-         parcacik=[dict(tip="kar", sayi=320, derinlik=(0.1, 1.0), odak=0.8)],
-         renk=SOGUK),
-    # 36.64–40.7 s · kervan: altın saat, huzme
-    dict(gorsel="b4_kervan.png", bas=36640, son=40700, gir=("erit", 1600), tohum=8,
-         kamera=dict(zoom=(1.12, 1.12), dolly=(0.0, 0.05), tx=(-26, 26), pivot=0.45, el=0.6),
-         huzme=dict(x=0.5, y=0.4, guc=0.22, esik=0.72, renk=(1.0, 0.78, 0.45)),
-         parcacik=[dict(tip="toz", sayi=200, derinlik=(0.2, 1.0))],
+    # 28.04–36.64 s · halkın çilesi: karlı gecede kapıya dayanmış yolcu (eski FLUX karesi), fener titrer
+    dict(gorsel="eski_yolcu.png", bas=28040, son=36640, gir=("erit", 1200), tohum=6,
+         kamera=dict(zoom=(1.04, 1.15), x=(0.5, 0.44), y=(0.5, 0.47), dolly=(0.0, 0.08), tx=(-10, 10), pivot=0.55, el=0.6),
+         ates=dict(genlik=0.14, isik=0.03),
+         sis=[dict(d=0.3, renk=(0.55, 0.6, 0.7), guc=0.18, hiz=(22, 4), olcek=1.6, esik=0.45)],
+         parcacik=[dict(tip="kar", sayi=380, derinlik=(0.1, 1.0), hiz=(14, 60))],
+         renk=GECE),
+    # 36.64–40.7 s · kervanlar: tepedeki çocuk uzaktaki kervana bakar (eski FLUX karesi), altın saat
+    dict(gorsel="eski_cocukluk_e.png", bas=36640, son=40700, gir=("erit", 1600), tohum=8,
+         kamera=dict(zoom=(1.06, 1.14), y=(0.53, 0.48), dolly=(0.0, 0.06), tx=(-14, 14), pivot=0.5, el=0.6),
+         huzme=dict(x=0.55, y=0.18, guc=0.18, esik=0.72, renk=(1.0, 0.78, 0.45)),
+         parcacik=[dict(tip="toz", sayi=170, derinlik=(0.2, 1.0))],
          renk=ALTIN),
-    # 40.7–44.43 s · umut: profil, toz zerreleri
-    dict(gorsel="b4_umut.png", bas=40700, son=44430, gir=("erit", 1200), tohum=9,
-         kamera=dict(zoom=(1.08, 1.14), dolly=(0.0, 0.06), tx=(10, -10), pivot=0.7, el=0.7),
-         parcacik=[dict(tip="toz", sayi=220, derinlik=(0.1, 1.0), odak=0.75)],
+    # 40.7–44.43 s · umut: rüzgârda başörtüsüyle kız çocuk (eski FLUX karesi), yavaş geri çekiliş
+    dict(gorsel="eski_cocukluk_k.png", bas=40700, son=44430, gir=("erit", 1200), tohum=9,
+         kamera=dict(zoom=(1.13, 1.05), y=(0.5, 0.48), dolly=(0.05, 0.0), tx=(10, -10), pivot=0.5, el=0.6),
+         huzme=dict(x=0.5, y=0.08, guc=0.16, esik=0.75, renk=(1.0, 0.8, 0.5)),
+         parcacik=[dict(tip="toz", sayi=170, derinlik=(0.1, 1.0), odak=0.7)],
          renk=ALTIN),
-    # 44.43–48.5 s · ocak başı
-    dict(gorsel="b5_ocak.png", bas=44430, son=48500, gir=("kara", 1000), kararma=800, tohum=10,
-         kamera=dict(zoom=(1.08, 1.16), dolly=(0.0, 0.07), pivot=0.6, el=0.5),
-         ates=dict(genlik=0.25, isik=0.06), koz=dict(genlik=0.3),
-         parcacik=[dict(tip="koz", sayi=70, derinlik=(0.4, 0.9), hiz=(4, -40))],
+    # 44.43–48.5 s · ocak başı: mührü avucunda tutan yaşlı (eski FLUX karesi), mühre doğru itme
+    dict(gorsel="eski_muhur.png", bas=44430, son=48500, gir=("kara", 1000), kararma=800, tohum=10,
+         kamera=dict(zoom=(1.04, 1.16), x=(0.5, 0.42), y=(0.5, 0.56), dolly=(0.0, 0.07), pivot=0.6, el=0.5),
+         ates=dict(genlik=0.2, isik=0.05), koz=dict(genlik=0.25),
+         parcacik=[dict(tip="koz", sayi=50, derinlik=(0.4, 0.9), hiz=(4, -40), bolge=(0.6, 1.1))],
          renk=KOZ),
-    # 48.5–56.36 s · kül ve köz; kuyrukta orta boş (başlık)
+    # 48.5–56.36 s · kül ve köz; kuyrukta üst bölüm karanlık (başlık)
     dict(gorsel="b5_koz.png", bas=48500, son=56360, gir=("erit", 1600), tohum=11,
          kamera=dict(zoom=[(0.0, 1.3), (0.55, 1.14), (1.0, 1.06)], y=[(0.0, 0.66), (0.55, 0.56), (1.0, 0.52)],
                      dolly=(0.04, 0.0), pivot=0.6, el=0.4),

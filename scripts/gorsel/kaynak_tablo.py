@@ -18,11 +18,17 @@ def main():
     print("| Çekim | Sahne | Tohum | İstem |")
     print("|---|---|---|---|")
     for s in plan["sahneler"]:
+        if s.get("durum") == "uretilmedi":
+            continue
         a, b = araliklar.get(s["id"], (None, None))
         zaman = f"{a / 1000:.2f}–{b / 1000:.2f} sn" if a is not None else "—"
         print(f"| {zaman} | {s['id']} | {s['tohum']} | {s['istem']} |")
     print()
     print(f"Her isteme eklenen ortak son ek: `{plan['ek'].strip()}`")
+    yok = [s["id"] for s in plan["sahneler"] if s.get("durum") == "uretilmedi"]
+    if yok:
+        print()
+        print("Planlanıp üretilmeyen (istemleri sahneler.json'da duruyor): " + ", ".join(yok) + ".")
     red = [(s["id"], r) for s in plan["sahneler"] for r in s.get("reddedilen", [])]
     if red:
         print()

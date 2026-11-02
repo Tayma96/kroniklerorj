@@ -3,7 +3,7 @@
   "metin_kodlayici": "Qwen3-4B-Instruct-2507 Q8_0 (unsloth, Apache 2.0)",
   "vae": "FLUX.1 ae.safetensors (Black Forest Labs, Apache 2.0)",
   "calistirici": "stable-diffusion.cpp (leejet, MIT) sd-cli, CPU",
-  "ayar": "640x1136, 8 adim, euler, cfg 1.0, flash-attn; Real-ESRGAN x4plus ile 4x büyütülüp 1080x1920e indirildi",
+  "ayar": "640x1136, 8 adim, euler, cfg 1.0, flash-attn, OpenBLAS (CPU). Sinematikte Lanczos ile 832 px genislige buyutulup hafif keskinlestirilir (sinematik.py); ESRGAN bu islemcide cok yavas oldugu icin kullanilmadi.",
   "ek": " Shot on 35mm film with an anamorphic lens, photorealistic, natural light, rich texture, highly detailed, cinematic color grading, vertical portrait composition.",
   "sahneler": [
     {
@@ -40,27 +40,37 @@
     {
       "id": "b3_vergi",
       "tohum": 307,
-      "istem": "A line of poor medieval Anatolian peasants in patched brown wool clothes and simple felt caps trudging through a snowy, muddy village square, bent under heavy sacks of grain on their backs, seen from behind, carrying the sacks toward a group of Mongol tax collectors in fur hats sitting on horseback beside a wooden cart piled with sacks, light snowfall, grey winter morning, simple 13th century flat-roofed mud-brick houses with tiny dark window holes around. Everything is handmade from mud brick, wood, wool and leather. Cold desaturated colors, heavy and weary mood."
+      "istem": "A line of poor medieval Anatolian peasants in patched brown wool clothes and simple felt caps trudging through a snowy, muddy village square, bent under heavy sacks of grain on their backs, seen from behind, carrying the sacks toward a group of Mongol tax collectors in fur hats sitting on horseback beside a wooden cart piled with sacks, light snowfall, grey winter morning, simple 13th century flat-roofed mud-brick houses with tiny dark window holes around. Everything is handmade from mud brick, wood, wool and leather. Cold desaturated colors, heavy and weary mood.",
+      "durum": "uretilmedi",
+      "not": "Yavas disk + 14.3 GB paylasilan bellek siniri nedeniyle uretilmedi; yerine eski FLUX karesi kullanildi (KAYNAK.md)."
     },
     {
       "id": "b3_cile",
       "tohum": 313,
-      "istem": "Close-up portrait of a weary middle-aged Anatolian peasant woman of the 13th century, wrapped in a coarse brown wool shawl over a faded headscarf, snowflakes caught on the wool, wind-burned cheeks, tired but enduring eyes looking into the distance, behind her a blurred grey winter village of mud-brick houses with chimney smoke. Soft cold overcast light, shallow depth of field, realistic skin texture."
+      "istem": "Close-up portrait of a weary middle-aged Anatolian peasant woman of the 13th century, wrapped in a coarse brown wool shawl over a faded headscarf, snowflakes caught on the wool, wind-burned cheeks, tired but enduring eyes looking into the distance, behind her a blurred grey winter village of mud-brick houses with chimney smoke. Soft cold overcast light, shallow depth of field, realistic skin texture.",
+      "durum": "uretilmedi",
+      "not": "Yavas disk + 14.3 GB paylasilan bellek siniri nedeniyle uretilmedi; yerine eski FLUX karesi kullanildi (KAYNAK.md)."
     },
     {
       "id": "b4_kervan",
       "tohum": 401,
-      "istem": "A long camel caravan travels along an ancient dirt road across the vast golden Anatolian steppe at sunset, Bactrian camels loaded with bales and rolled carpets, merchants in turbans and long kaftans walking beside them, long shadows, warm dust glowing in the low golden sunlight, in the distance a massive Seljuk stone caravanserai with high walls and a carved stone portal, gentle hills and mountains on the horizon, the sun low near the horizon, hopeful and peaceful atmosphere."
+      "istem": "A long camel caravan travels along an ancient dirt road across the vast golden Anatolian steppe at sunset, Bactrian camels loaded with bales and rolled carpets, merchants in turbans and long kaftans walking beside them, long shadows, warm dust glowing in the low golden sunlight, in the distance a massive Seljuk stone caravanserai with high walls and a carved stone portal, gentle hills and mountains on the horizon, the sun low near the horizon, hopeful and peaceful atmosphere.",
+      "durum": "uretilmedi",
+      "not": "Yavas disk + 14.3 GB paylasilan bellek siniri nedeniyle uretilmedi; yerine eski FLUX karesi kullanildi (KAYNAK.md)."
     },
     {
       "id": "b4_umut",
       "tohum": 409,
-      "istem": "A young Anatolian woman of the 13th century in a simple linen dress and a light cream headscarf walking beside a camel caravan at golden hour, seen in profile, warm low sunlight on her face, a small boy walking at her side, both looking toward the horizon with quiet hope, golden dust glowing in the backlight, camels softly out of focus behind them. Warm golden tones, shallow depth of field."
+      "istem": "A young Anatolian woman of the 13th century in a simple linen dress and a light cream headscarf walking beside a camel caravan at golden hour, seen in profile, warm low sunlight on her face, a small boy walking at her side, both looking toward the horizon with quiet hope, golden dust glowing in the backlight, camels softly out of focus behind them. Warm golden tones, shallow depth of field.",
+      "durum": "uretilmedi",
+      "not": "Yavas disk + 14.3 GB paylasilan bellek siniri nedeniyle uretilmedi; yerine eski FLUX karesi kullanildi (KAYNAK.md)."
     },
     {
       "id": "b5_ocak",
       "tohum": 503,
-      "istem": "Night interior of a humble medieval Anatolian mud-brick house, an old grandmother in a white headscarf sits by a low clay hearth on the floor, gently stirring the grey ashes with an iron poker to reveal glowing orange embers beneath, a small child sits close beside her watching the embers, warm ember light on their faces, the rest of the room in deep darkness, a copper pot and rough wooden beams, intimate, calm and hopeful mood."
+      "istem": "Night interior of a humble medieval Anatolian mud-brick house, an old grandmother in a white headscarf sits by a low clay hearth on the floor, gently stirring the grey ashes with an iron poker to reveal glowing orange embers beneath, a small child sits close beside her watching the embers, warm ember light on their faces, the rest of the room in deep darkness, a copper pot and rough wooden beams, intimate, calm and hopeful mood.",
+      "durum": "uretilmedi",
+      "not": "Yavas disk + 14.3 GB paylasilan bellek siniri nedeniyle uretilmedi; yerine eski FLUX karesi kullanildi (KAYNAK.md)."
     },
     {
       "id": "b5_koz",
