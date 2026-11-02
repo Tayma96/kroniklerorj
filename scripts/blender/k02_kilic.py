@@ -365,41 +365,90 @@ def parmaklari_kapat():
         acik += max(0.0, r - 1.15)
     return kv, acik
 
-en_iyi_kur = None
-for df in (0.006, 0.012, 0.018, 0.024, 0.030):
-    for dn in (-0.005, -0.0025, 0.0008):
-        for aci in (12, 22, 32):
-            kur_kabza(df, dn, aci)
-            kv, acik = parmaklari_kapat()
-            toplam = sum(kv.values())
-            puan = acik * 3.0 - toplam * 0.02
-            if en_iyi_kur is None or puan < en_iyi_kur[0]:
-                en_iyi_kur = (puan, df, dn, aci)
-print("KABZA YERI", en_iyi_kur)
-kur_kabza(*en_iyi_kur[1:])
-kivrim, _ = parmaklari_kapat()
+# Yumruk önce kurulur, kabza yumruğun içindeki kanala oturtulur (en büyük boş silindir).
+YUMRUK = {"index": (62, 88, 48), "middle": (68, 92, 52), "ring": (72, 94, 54), "pinky": (76, 96, 56)}
+el_kose = []
+for v in me.vertices:
+    ws = [(gruplar[gg.group], gg.weight) for gg in v.groups if gruplar[gg.group] in B and gg.weight > 0.01]
+    tw = sum(w for _, w in ws)
+    if tw <= 0: continue
+    ws = [(n, w / tw) for n, w in ws]
+    if sum(w for n, w in ws if n.endswith("_r") and (n == "hand_r" or n.split("_")[0] in ("index", "middle", "ring", "pinky", "thumb"))) > 0.5:
+        el_kose.append((v.co.copy(), ws))
+def yumruk(sc):
+    for ad, angs in YUMRUK.items():
+        for j, a_ in enumerate(angs):
+            dondur(f"{ad}_0{j+1}_r", math.radians(a_ * sc), eksen_bukum)
+def kanal(aci):
+    gg = (k * math.cos(math.radians(aci)) + f * math.sin(math.radians(aci))).normalized()
+    ee = (f - gg * f.dot(gg)).normalized(); xx = gg.cross(ee).normalized()
+    pts = []
+    for p_, ws in el_kose:
+        q = lbs(p_, ws)
+        pts.append(q)
+    o = hd.lerp(mid, 0.78) + npalm * 0.03
+    eks = [(q - o).dot(gg) for q in pts]
+    lo_, hi_ = min((q - o).dot(gg) for q in pts if True), max((q - o).dot(gg) for q in pts)
+    # yalnız avuç genişliğindeki kesit (uçlardaki kemik dışı noktalar hariç)
+    p2 = [((q - o).dot(ee), (q - o).dot(xx)) for q, t in zip(pts, eks) if abs(t) < 0.035]
+    en = (-1, 0, 0)
+    for i in range(-25, 26):
+        for j in range(-25, 26):
+            cx, cy = i * 0.001, j * 0.001
+            dmin = min(((px - cx) / (GRIP_A / GRIP_B)) ** 2 + (py - cy) ** 2 for px, py in p2) ** 0.5
+            if dmin <= en[0]: continue
+            # kapalılık: 12 açısal dilimin en az 11'inde 4 cm içinde deri olmalı (kanal yumruğun içinde)
+            dil = set()
+            for px, py in p2:
+                dx, dy = px - cx, py - cy
+                if dx * dx + dy * dy < 0.0016:
+                    dil.add(int((math.atan2(dy, dx) + math.pi) / (2 * math.pi) * 12) % 12)
+            if len(dil) >= 11: en = (dmin, cx, cy)
+    merkez = o + ee * en[1] + xx * en[2]
+    return en[0], merkez, gg, ee, xx
+sec = None
+for sc_ in (1.0, 0.95, 0.9, 0.85, 0.8, 0.75, 0.7):
+    yumruk(sc_)
+    for aci in (8, 18, 28):
+        r_, mrk, gg, ee, xx = kanal(aci)
+        if sec is None or (r_ >= GRIP_B * 0.92 + 0.0006 and (sec[0] < GRIP_B * 0.92 + 0.0006 or sc_ > sec[1] or (sc_ == sec[1] and r_ > sec[0]))):
+            if sec is None or r_ >= GRIP_B * 0.92 + 0.0006 or r_ > sec[0]:
+                sec = (r_, sc_, aci, mrk, gg, ee, xx)
+    if sec[0] >= GRIP_B * 0.92 + 0.0006:
+        break
+print("KANAL yaricap", round(sec[0], 4), "olcek", sec[1], "aci", sec[2])
+yumruk(sec[1]); g, e, x = sec[4], sec[5], sec[6]
+R = Matrix((x, e, g)).transposed()
+K_rest = Matrix.Translation(sec[3]) @ R.to_4x4(); Minv = K_rest.inverted()
+kivrim = {f"{ad}_0{j+1}_r": math.radians(a_ * sec[1]) for ad, angs in YUMRUK.items() for j, a_ in enumerate(angs)}
+# temas incelemesi: kabza içinde kalan parmak derisi köşesi sayısı
+ic = sum(1 for p_, ws in el_kose if iceride(lbs(p_, ws), -0.0005))
+print("KABZA ICINDE KALAN DERI KOSESI", ic)
 kilic.matrix_world = rig.matrix_world @ K_rest
 # başparmak: kabzanın üstünden işaret parmağının orta boğumuna kapanır (ızgara arama + temas)
 TZ = ("thumb_01_r", "thumb_02_r", "thumb_03_r")
 def bas_carp():
     return any(iceride(nokta(alt, p), 0.0010) for alt in TZ for p in baskin.get(alt, [])[::2])
-def bas_kur(a1, a2, a3):
+def bas_kur(a1, a2, a3, a4=0.0):
     piv = B["thumb_01_r"].head_local
-    Rm = Matrix.Rotation(a1, 4, g) @ Matrix.Rotation(a2, 4, f)
+    Rm = Matrix.Rotation(a1, 4, g) @ Matrix.Rotation(a2, 4, f) @ Matrix.Rotation(a4, 4, npalm)
     dunya["thumb_01_r"] = Matrix.Translation(piv) @ Rm @ Matrix.Translation(-piv)
     dondur("thumb_02_r", a3, eksen_bukum); dondur("thumb_03_r", a3 * 1.1, eksen_bukum)
-hedef_b = aktarim("index_02_r") @ B["index_02_r"].head_local
-hedef_b = hedef_b - npalm * 0.012
-en = (1e9, 0, 0, 0)
-for i1 in range(-12, 13):
-    for i2 in range(-8, 9):
-        for i3 in (0, 10, 20, 30, 40, 50):
-            a1, a2, a3 = math.radians(5 * i1), math.radians(5 * i2), math.radians(i3)
-            bas_kur(a1, a2, a3)
-            uc = aktarim("thumb_03_r") @ B["thumb_03_r"].tail_local
-            d = (uc - hedef_b).length
-            if d < en[0] and not bas_carp():
-                en = (d, a1, a2, a3)
+i2 = (aktarim("index_02_r") @ B["index_02_r"].head_local).lerp(aktarim("index_02_r") @ B["index_02_r"].tail_local, 0.5)
+c_ = K_rest.translation; ax_ = K_rest.to_3x3().col[2]
+dis = (i2 - c_) - ax_ * (i2 - c_).dot(ax_)
+hedef_b = i2 + dis.normalized() * 0.010
+en = (1e9, 0, 0, 0, 0)
+for i1 in range(-6, 7):
+    for i2_ in range(-4, 5):
+        for i4 in range(-4, 5):
+            for i3 in (0, 15, 30, 45, 60):
+                a1, a2, a3, a4 = math.radians(10 * i1), math.radians(10 * i2_), math.radians(i3), math.radians(10 * i4)
+                bas_kur(a1, a2, a3, a4)
+                uc = aktarim("thumb_03_r") @ B["thumb_03_r"].tail_local
+                d = (uc - hedef_b).length
+                if d < en[0] and not bas_carp():
+                    en = (d, a1, a2, a3, a4)
 bas_kur(*en[1:])
 print("BASPARMAK", round(en[0], 4), [round(math.degrees(a), 1) for a in en[1:]])
 for bad in TZ: kivrim[bad] = 0.0
