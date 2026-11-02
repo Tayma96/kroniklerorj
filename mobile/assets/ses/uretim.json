@@ -4213,5 +4213,26 @@
   "sayac_once": 23392,
   "not": "kilit an anlatısı",
   "tarih": "2026-11-02T09:57:32+00:00"
+ },
+ {
+  "dosya": "evlilik_en.mp3",
+  "tur": "vo-an",
+  "istem": "[warm] Two hearths became one. Under one roof, two fates shared the same fire.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "en"
+  },
+  "tohum": 1243,
+  "maliyet": 31,
+  "sayac_once": 23392,
+  "not": "kilit an anlatısı",
+  "tarih": "2026-11-02T09:57:37+00:00"
  }
 ]
