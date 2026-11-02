@@ -1,19 +1,14 @@
-// Açılışı yeniden izle: "Küllerin Mirası" sinematiği, mevcut karakterin ocağı, tabiatı ve adıyla.
+// Açılışı yeniden izle: "Küllerin Mirası" sinematiği, seçili dilde anlatıcıyla.
 import { useMemo } from "react";
 import { useRouter } from "expo-router";
-import { useGame } from "../lib/store";
 import { useI18n } from "../lib/i18n";
 import { Sinematik } from "../lib/sinematik/oynatici";
-import { cekimListesi } from "../lib/sinematik/cekimler";
+import { girisCekimleri, girisParca } from "../lib/sinematik/giris";
 
 export default function SinematikEkrani() {
   const router = useRouter();
-  const { t } = useI18n();
-  const p = useGame().state?.player;
-  const cekimler = useMemo(
-    () => cekimListesi(p?.birth_house ?? "koylu", p?.temperament ?? "yigit", p?.gender ?? "erkek", (p?.name ?? "").split(" ")[0], t),
-    [p?.birth_house, p?.temperament, p?.gender, p?.name, t],
-  );
+  const { t, lang } = useI18n();
+  const cekimler = useMemo(() => girisCekimleri(lang, t), [lang, t]);
   const kapat = () => (router.canGoBack() ? router.back() : router.replace("/oyun"));
-  return <Sinematik cekimler={cekimler} onDone={kapat} />;
+  return <Sinematik cekimler={cekimler} parca={girisParca(lang)} onDone={kapat} />;
 }

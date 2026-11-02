@@ -13,7 +13,8 @@ import { applyTemperament, TEMPERAMENTS, applyBirthHouse, BIRTH_HOUSES } from ".
 import { C, F } from "../lib/theme";
 import { Ambiance, ParticleBurst, Pulse } from "../lib/fx";
 import { Sinematik } from "../lib/sinematik/oynatici";
-import { cekimListesi, type Cekim } from "../lib/sinematik/cekimler";
+import type { Cekim } from "../lib/sinematik/cekimler";
+import { girisCekimleri, girisParca } from "../lib/sinematik/giris";
 import { isReduceMotion } from "../lib/perf";
 import { playTap } from "../lib/sound";
 import { GameIcon } from "../lib/icons";
@@ -236,7 +237,7 @@ export default function YeniOyun() {
       if (soydan && son) await yeniOcak(g, son.secilen, first);
       else await startGame(first, surname, g);
       apply((s) => applyBirthHouse(applyTemperament(s, temp), house));
-      setCinematic(cekimListesi(house, temp, gender, first, t));
+      setCinematic(girisCekimleri(lang, t));
     } catch {
       startingRef.current = false;
       setError(t("save.readError"));
@@ -303,7 +304,7 @@ export default function YeniOyun() {
   }, [step, busy, cinematic]);
 
   if (cinematic) {
-    return <Sinematik cekimler={cinematic} onDone={() => router.replace("/oyun")} />;
+    return <Sinematik cekimler={cinematic} parca={girisParca(lang)} onDone={() => router.replace("/oyun")} />;
   }
 
   const meta = STEPS[step - 1];

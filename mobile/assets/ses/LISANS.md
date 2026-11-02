@@ -1,6 +1,6 @@
 # Kronikler — ses dosyaları: kaynak ve lisans
 
-Müzik, ortam ve efekt dosyalarının çoğu **gerçek bir kayıttır** (canlı icra ya da saha kaydı). ElevenLabs ile Kronikler için üretilenler (ücretli plan, ticari kullanım) tabloda ayrıca belirtilir; üretim ayrıntıları `uretim.json`'dadır. Tek istisna `vo/` klasöründeki açılış sinematiği anlatıcısıdır: Türkçe anlatı, açık kaynak **Chatterbox Multilingual** (Resemble AI, MIT lisansı) modeliyle bu projede yerelde üretilmiştir; gerçek bir kişinin sesi kopyalanmamıştır (modelin varsayılan sesi). Model çıktıya duyulmayan bir filigran (Perth) ekler.
+Müzik, ortam ve efekt dosyalarının çoğu **gerçek bir kayıttır** (canlı icra ya da saha kaydı). ElevenLabs ile Kronikler için üretilenler (ücretli plan, ticari kullanım) tabloda ayrıca belirtilir; üretim ayrıntıları `uretim.json`'dadır. Açılış sinematiğinin anlatıcısı `giris/` bölümündedir (eski Chatterbox kayıtları kaldırıldı).
 Yalnız şu lisanslar kullanıldı: **CC0 1.0**, **Kamu malı (PD)** ve **CC BY 3.0/4.0** (atıf aşağıda). NC (ticari olmayan) ya da belirsiz lisanslı hiçbir kayıt yok.
 
 Kaynak kaydı `assets/ses/kaynak.json`; bu tablo onunla birlikte güncellenir.
@@ -117,7 +117,7 @@ Toplam: **63 dosya, 12.14 MB**.
 
 ## Seslendirme
 
-`vo/` dizini şu an boştur. Oyuna yalnız gerçek seslendirme sanatçılarının kayıtları girer; yapay ses kullanılmaz. Ayrıntı: `docs/seslendirme/`.
+`vo/` dizini boştur. Açılış anlatıcısı Berkay'ın ElevenLabs sesi Kronks'tur (aşağıda, `giris/`).
 
 ## Giriş sinematiği (`giris/`)
 

@@ -21,6 +21,8 @@ export type Cekim = {
   efektMs?: number;
   baslik?: boolean; // son kart: başlık + Hayata Başla
   vo?: string;    // Türkçe anlatıcı kaydının anahtarı (lib/sinematik/anlatim.ts)
+  sureMs?: number;    // sabit çekim süresi (ortak zaman çizelgesi; giriş sinematiği)
+  gecikmeMs?: number; // altyazının çekim başından gecikmesi
 };
 
 const G = {
