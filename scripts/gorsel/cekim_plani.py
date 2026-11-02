@@ -56,7 +56,7 @@ CEKIMLER = [
          kamera=dict(zoom=(1.12, 1.12), dolly=(0.0, 0.05), tx=(24, -24), pivot=0.45, el=0.6),
          pus=dict(guc=0.14, renk=(0.62, 0.64, 0.66), us=2.0),
          sis=[dict(d=0.6, renk=(0.6, 0.6, 0.6), guc=0.3, hiz=(70, 0), olcek=1.0, esik=0.45, bant=(0.45, 0.6, 0.95, 1.0))],
-         parcacik=[dict(tip="kum", sayi=120, derinlik=(0.2, 1.0), hiz=(120, -6))],
+         parcacik=[dict(tip="kum", sayi=110, derinlik=(0.3, 1.0), hiz=(120, -6), bolge=(0.62, 1.1), opak=0.35)],
          renk=SOGUK),
     # 28.04–32.6 s · vergi: kar altında yük
     dict(gorsel="b3_vergi.png", bas=28040, son=32600, gir=("erit", 1200), tohum=6,

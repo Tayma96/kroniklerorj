@@ -4234,5 +4234,401 @@
   "sayac_once": 23392,
   "not": "kilit an anlatısı",
   "tarih": "2026-11-02T09:57:37+00:00"
+ },
+ {
+  "dosya": "evlilik_es.mp3",
+  "tur": "vo-an",
+  "istem": "[warm] Dos hogares se unieron. Bajo un mismo techo, dos destinos compartieron el mismo fuego.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "es"
+  },
+  "tohum": 1243,
+  "maliyet": 37,
+  "sayac_once": 23392,
+  "not": "kilit an anlatısı",
+  "tarih": "2026-11-02T09:57:44+00:00"
+ },
+ {
+  "dosya": "evlilik_pt.mp3",
+  "tur": "vo-an",
+  "istem": "[warm] Dois lares se uniram. Sob o mesmo teto, dois destinos compartilharam o mesmo fogo.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "pt"
+  },
+  "tohum": 1243,
+  "maliyet": 36,
+  "sayac_once": 23392,
+  "not": "kilit an anlatısı",
+  "tarih": "2026-11-02T09:57:50+00:00"
+ },
+ {
+  "dosya": "evlilik_ar.mp3",
+  "tur": "vo-an",
+  "istem": "[warm] اجتمع موقدان. وتحت سقفٍ واحد، تقاسم قدَران النارَ نفسها.",
+  "model": "eleven_v4",
+  "ses": "PA4QGZDhUkvuOKb6ZEkd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "ar"
+  },
+  "tohum": 1243,
+  "maliyet": 25,
+  "sayac_once": 23392,
+  "not": "kilit an anlatısı",
+  "tarih": "2026-11-02T09:57:54+00:00"
+ },
+ {
+  "dosya": "evlilik_ru.mp3",
+  "tur": "vo-an",
+  "istem": "[warm] Два очага стали одним. Под одной крышей две судьбы разделили один огонь.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "ru"
+  },
+  "tohum": 1243,
+  "maliyet": 32,
+  "sayac_once": 23392,
+  "not": "kilit an anlatısı",
+  "tarih": "2026-11-02T09:58:00+00:00"
+ },
+ {
+  "dosya": "ilk_evlat_tr.mp3",
+  "tur": "vo-an",
+  "istem": "[soft] Evi bir bebeğin ağlayışı doldurdu. Kül, közünü bir sonraki ele verdi.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "tr"
+  },
+  "tohum": 1243,
+  "maliyet": 30,
+  "sayac_once": 23392,
+  "not": "kilit an anlatısı",
+  "tarih": "2026-11-02T09:58:07+00:00"
+ },
+ {
+  "dosya": "ilk_evlat_en.mp3",
+  "tur": "vo-an",
+  "istem": "[soft] A baby's cry filled the house. The ash passed its ember to the next hand.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "en"
+  },
+  "tohum": 1243,
+  "maliyet": 32,
+  "sayac_once": 23392,
+  "not": "kilit an anlatısı",
+  "tarih": "2026-11-02T09:58:13+00:00"
+ },
+ {
+  "dosya": "ilk_evlat_es.mp3",
+  "tur": "vo-an",
+  "istem": "[soft] El llanto de un bebé llenó la casa. La ceniza entregó su brasa a la siguiente mano.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "es"
+  },
+  "tohum": 1243,
+  "maliyet": 36,
+  "sayac_once": 23392,
+  "not": "kilit an anlatısı",
+  "tarih": "2026-11-02T09:58:20+00:00"
+ },
+ {
+  "dosya": "ilk_evlat_pt.mp3",
+  "tur": "vo-an",
+  "istem": "[soft] O choro de um bebê encheu a casa. A cinza passou sua brasa para a próxima mão.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "pt"
+  },
+  "tohum": 1243,
+  "maliyet": 34,
+  "sayac_once": 23392,
+  "not": "kilit an anlatısı",
+  "tarih": "2026-11-02T09:58:25+00:00"
+ },
+ {
+  "dosya": "ilk_evlat_ar.mp3",
+  "tur": "vo-an",
+  "istem": "[soft] ملأ بكاءُ رضيعٍ البيت. وسلّم الرمادُ جمرته إلى اليد التالية.",
+  "model": "eleven_v4",
+  "ses": "PA4QGZDhUkvuOKb6ZEkd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "ar"
+  },
+  "tohum": 1243,
+  "maliyet": 27,
+  "sayac_once": 23392,
+  "not": "kilit an anlatısı",
+  "tarih": "2026-11-02T09:58:31+00:00"
+ },
+ {
+  "dosya": "ilk_evlat_ru.mp3",
+  "tur": "vo-an",
+  "istem": "[soft] Плач младенца наполнил дом. Пепел передал свой жар следующей руке.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "ru"
+  },
+  "tohum": 1243,
+  "maliyet": 29,
+  "sayac_once": 23392,
+  "not": "kilit an anlatısı",
+  "tarih": "2026-11-02T09:58:37+00:00"
+ },
+ {
+  "dosya": "ebeveyn_vefat_tr.mp3",
+  "tur": "vo-an",
+  "istem": "[sad] Ocağın büyüğü toprağa verildi. Geride kalanlar, közü korumayı öğrenir.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "tr"
+  },
+  "tohum": 1243,
+  "maliyet": 30,
+  "sayac_once": 23392,
+  "not": "kilit an anlatısı",
+  "tarih": "2026-11-02T09:58:44+00:00"
+ },
+ {
+  "dosya": "ebeveyn_vefat_en.mp3",
+  "tur": "vo-an",
+  "istem": "[sad] The one who held the hearth was laid to rest. Those left behind learn to guard the ember.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "en"
+  },
+  "tohum": 1243,
+  "maliyet": 38,
+  "sayac_once": 23392,
+  "not": "kilit an anlatısı",
+  "tarih": "2026-11-02T09:58:50+00:00"
+ },
+ {
+  "dosya": "ebeveyn_vefat_es.mp3",
+  "tur": "vo-an",
+  "istem": "[sad] Quien sostenía el hogar descansa ya bajo la tierra. Los que quedan aprenden a guardar la brasa.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "es"
+  },
+  "tohum": 1243,
+  "maliyet": 40,
+  "sayac_once": 23392,
+  "not": "kilit an anlatısı",
+  "tarih": "2026-11-02T09:58:55+00:00"
+ },
+ {
+  "dosya": "ebeveyn_vefat_pt.mp3",
+  "tur": "vo-an",
+  "istem": "[sad] Quem sustentava o lar descansa agora sob a terra. Os que ficam aprendem a guardar a brasa.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "pt"
+  },
+  "tohum": 1243,
+  "maliyet": 38,
+  "sayac_once": 23392,
+  "not": "kilit an anlatısı",
+  "tarih": "2026-11-02T09:59:01+00:00"
+ },
+ {
+  "dosya": "ebeveyn_vefat_ar.mp3",
+  "tur": "vo-an",
+  "istem": "[sad] وُوري الثرى من كان يحمل الموقد. ويتعلّم الباقون حراسةَ الجمر.",
+  "model": "eleven_v4",
+  "ses": "PA4QGZDhUkvuOKb6ZEkd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "ar"
+  },
+  "tohum": 1243,
+  "maliyet": 27,
+  "sayac_once": 23392,
+  "not": "kilit an anlatısı",
+  "tarih": "2026-11-02T09:59:09+00:00"
+ },
+ {
+  "dosya": "ebeveyn_vefat_ru.mp3",
+  "tur": "vo-an",
+  "istem": "[sad] Опора очага легла в землю. Оставшиеся учатся беречь жар.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "ru"
+  },
+  "tohum": 1243,
+  "maliyet": 25,
+  "sayac_once": 23392,
+  "not": "kilit an anlatısı",
+  "tarih": "2026-11-02T09:59:12+00:00"
+ },
+ {
+  "dosya": "yenilgi.mp3",
+  "tur": "efekt",
+  "istem": "a dull heavy drum thud followed by a sighing low ney phrase, defeat, sorrow, short",
+  "model": "eleven_text_to_sound_v2",
+  "sure_sn": 2.8,
+  "dongu": false,
+  "prompt_influence": 0.6,
+  "tohum": null,
+  "maliyet": 28,
+  "maliyet_kaynak": "Character-Cost",
+  "sayac_once": 23392,
+  "not": "oyun içi efekt: yenilgi",
+  "tarih": "2026-11-02T09:59:49+00:00"
+ },
+ {
+  "dosya": "dogum.mp3",
+  "tur": "efekt",
+  "istem": "a newborn baby's first soft cries in a quiet village house room, intimate, gentle",
+  "model": "eleven_text_to_sound_v2",
+  "sure_sn": 4.0,
+  "dongu": false,
+  "prompt_influence": 0.6,
+  "tohum": null,
+  "maliyet": 40,
+  "maliyet_kaynak": "Character-Cost",
+  "sayac_once": 23392,
+  "not": "oyun içi efekt: dogum",
+  "tarih": "2026-11-02T09:59:54+00:00"
+ },
+ {
+  "dosya": "saz_vurgu.mp3",
+  "tur": "efekt",
+  "istem": "one strong strummed baglama saz chord accent ringing out, Anatolian folk, close, natural",
+  "model": "eleven_text_to_sound_v2",
+  "sure_sn": 2.2,
+  "dongu": false,
+  "prompt_influence": 0.6,
+  "tohum": null,
+  "maliyet": 22,
+  "maliyet_kaynak": "Character-Cost",
+  "sayac_once": 23392,
+  "not": "oyun içi efekt: saz_vurgu",
+  "tarih": "2026-11-02T09:59:58+00:00"
+ },
+ {
+  "dosya": "nal.mp3",
+  "tur": "efekt",
+  "istem": "a single horse gallops past on a dirt road, hooves approach and fade away, outdoor",
+  "model": "eleven_text_to_sound_v2",
+  "sure_sn": 2.6,
+  "dongu": false,
+  "prompt_influence": 0.6,
+  "tohum": null,
+  "maliyet": 26,
+  "maliyet_kaynak": "Character-Cost",
+  "sayac_once": 23392,
+  "not": "oyun içi efekt: nal",
+  "tarih": "2026-11-02T10:00:03+00:00"
  }
 ]
