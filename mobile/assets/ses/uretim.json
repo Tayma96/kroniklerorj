@@ -4630,5 +4630,35 @@
   "sayac_once": 23392,
   "not": "oyun içi efekt: nal",
   "tarih": "2026-11-02T10:00:03+00:00"
+ },
+ {
+  "dosya": "dugun.mp3",
+  "tur": "efekt",
+  "istem": "a burst of festive village wedding davul and zurna music heard from a short distance, outdoor",
+  "model": "eleven_text_to_sound_v2",
+  "sure_sn": 2.6,
+  "dongu": false,
+  "prompt_influence": 0.6,
+  "tohum": null,
+  "maliyet": 26,
+  "maliyet_kaynak": "Character-Cost",
+  "sayac_once": 23392,
+  "not": "oyun içi efekt: dugun",
+  "tarih": "2026-11-02T10:00:08+00:00"
+ },
+ {
+  "dosya": "ney_nefes.mp3",
+  "tur": "efekt",
+  "istem": "a long breathy ney flute note rising softly, contemplative, sufi, natural reverb",
+  "model": "eleven_text_to_sound_v2",
+  "sure_sn": 3.2,
+  "dongu": false,
+  "prompt_influence": 0.6,
+  "tohum": null,
+  "maliyet": 32,
+  "maliyet_kaynak": "Character-Cost",
+  "sayac_once": 23392,
+  "not": "oyun içi efekt: ney_nefes",
+  "tarih": "2026-11-02T10:00:13+00:00"
  }
 ]
