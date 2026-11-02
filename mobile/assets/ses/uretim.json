@@ -4108,5 +4108,110 @@
   "sayac_once": 23392,
   "not": "kilit an anlatısı",
   "tarih": "2026-11-02T09:57:01+00:00"
+ },
+ {
+  "dosya": "ilk_is_es.mp3",
+  "tur": "vo-an",
+  "istem": "[warm] Por primera vez, las manos se cubrieron del polvo de un oficio. El trabajo aviva de nuevo la brasa.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "es"
+  },
+  "tohum": 1243,
+  "maliyet": 42,
+  "sayac_once": 23392,
+  "not": "kilit an anlatısı",
+  "tarih": "2026-11-02T09:57:06+00:00"
+ },
+ {
+  "dosya": "ilk_is_pt.mp3",
+  "tur": "vo-an",
+  "istem": "[warm] Pela primeira vez, as mãos se cobriram com o pó de um ofício. O trabalho reacende a brasa.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "pt"
+  },
+  "tohum": 1243,
+  "maliyet": 39,
+  "sayac_once": 23392,
+  "not": "kilit an anlatısı",
+  "tarih": "2026-11-02T09:57:12+00:00"
+ },
+ {
+  "dosya": "ilk_is_ar.mp3",
+  "tur": "vo-an",
+  "istem": "[warm] لأولِ مرةٍ علِق غبارُ الصنعة بالأيدي. والكدُّ يوقِد الجمرَ من جديد.",
+  "model": "eleven_v4",
+  "ses": "PA4QGZDhUkvuOKb6ZEkd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "ar"
+  },
+  "tohum": 1243,
+  "maliyet": 30,
+  "sayac_once": 23392,
+  "not": "kilit an anlatısı",
+  "tarih": "2026-11-02T09:57:19+00:00"
+ },
+ {
+  "dosya": "ilk_is_ru.mp3",
+  "tur": "vo-an",
+  "istem": "[warm] Впервые руки покрылись пылью ремесла. Труд вновь раздувает жар.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "ru"
+  },
+  "tohum": 1243,
+  "maliyet": 28,
+  "sayac_once": 23392,
+  "not": "kilit an anlatısı",
+  "tarih": "2026-11-02T09:57:26+00:00"
+ },
+ {
+  "dosya": "evlilik_tr.mp3",
+  "tur": "vo-an",
+  "istem": "[warm] İki ocak birleşti. Bir çatı altında, iki kader aynı ateşi paylaştı.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "tr"
+  },
+  "tohum": 1243,
+  "maliyet": 30,
+  "sayac_once": 23392,
+  "not": "kilit an anlatısı",
+  "tarih": "2026-11-02T09:57:32+00:00"
  }
 ]
