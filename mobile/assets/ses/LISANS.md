@@ -9,7 +9,7 @@ Kaynak kaydı `assets/ses/kaynak.json`; bu tablo onunla birlikte güncellenir.
 döngülerde 2,5–3 sn eşit güçlü çapraz geçişle dikişsiz döngü kuruldu, ses yüksekliği (EBU R128) eşitlendi, yumuşak tepe sınırlayıcı (-1 dBFS) uygulandı; 44,1 kHz AAC (.m4a) olarak kodlandı.
 1930 tarihli 78'lik kayıtta ayrıca 9 kHz alçak geçiren süzgeç ve hafif hışırtı azaltma uygulandı. Kesit saniyeleri özgün kayda göredir. Tekrarlanabilir işlem: `scripts/ses/isle.py`.
 
-Toplam: **63 dosya, 12.14 MB**.
+
 
 ## Müzik (döngü, -18 LUFS) — 2 Kasım 2026'da hepsi özgün bestelerle yenilendi
 
@@ -37,25 +37,25 @@ Toplam: **63 dosya, 12.14 MB**.
 | `muzik/miras.m4a` | legacy, dynasty, generations, the chronicle book; Huseyni makam, nostalgic, timeless, reverent; ud, ney, kanun, soft bendir | ElevenLabs müzik üretimi (`uretim.json`) | ElevenLabs, Kronikler için bestelendi | ElevenLabs ücretli plan, ticari kullanım | — | 613 KB |
 | `muzik/tekke.m4a` | sufi lodge, mosque courtyard, prayer and contemplation; Huseyni makam, meditative, spiritual, serene; ney taksim, bendir zikr pulse, soft kudum | ElevenLabs müzik üretimi (`uretim.json`) | ElevenLabs, Kronikler için bestelendi | ElevenLabs ücretli plan, ticari kullanım | — | 750 KB |
 
-## Ortam (döngü, -27 LUFS)
+## Ortam (döngü, -27 LUFS) — 2 Kasım 2026'da hepsi yenilendi
 
 | Dosya | İçerik | Kaynak kayıt | Yazar / icracı | Lisans | Kesit (sn) | Boyut |
 |---|---|---|---|---|---|---|
-| `ortam/bahar_kus.m4a` | Kırsalda erken bahar sabahı kuşları | [AMBBird_Birds In Rural Area Early Spring Morning_Jaku5.wav](https://freesound.org/s/566147/) (Freesound) | jakubp.jp | CC0 1.0 | 20–70 | 242 KB |
-| `ortam/yaz_cayir.m4a` | Yaz öğleden sonrası çayır: kuş + cırcırböceği | [Hungary Meadow Afternoon Birds Crickets](https://freesound.org/s/416206/) (Freesound) | Alcappuccino | CC0 1.0 | 20–70 | 379 KB |
-| `ortam/yaz_gece.m4a` | Yaz gecesi cırcırböcekleri | [Crickets At Night - Raw sound](https://freesound.org/s/522299/) (Freesound) | Defelozedd94 | CC0 1.0 | 20–70 | 379 KB |
-| `ortam/guz_ruzgar.m4a` | Güz rüzgârı ve kuru yapraklar | [Autumn wind and dry leaves.wav](https://freesound.org/s/457318/) (Freesound) | Stek59 | CC0 1.0 | 1–42 | 196 KB |
+| `ortam/bahar_kus.m4a` | early spring morning in a medieval Anatolian village, gentle songbirds at a distance, ligh | ElevenLabs ses efekti üretimi (`uretim.json`) | ElevenLabs, Kronikler için üretildi | ElevenLabs ücretli plan, ticari kullanım | — | 476 KB |
+| `ortam/yaz_cayir.m4a` | hot summer afternoon meadow in central Anatolia, soft crickets and grasshoppers, a few dis | ElevenLabs ses efekti üretimi (`uretim.json`) | ElevenLabs, Kronikler için üretildi | ElevenLabs ücretli plan, ticari kullanım | — | 475 KB |
+| `ortam/yaz_gece.m4a` | warm summer night outside a village, soft crickets, a distant owl now and then, calm, no m | ElevenLabs ses efekti üretimi (`uretim.json`) | ElevenLabs, Kronikler için üretildi | ElevenLabs ücretli plan, ticari kullanım | — | 477 KB |
+| `ortam/guz_ruzgar.m4a` | autumn wind rustling dry leaves and poplar trees, soft gusts, no whistling, no tonal howl, | ElevenLabs ses efekti üretimi (`uretim.json`) | ElevenLabs, Kronikler için üretildi | ElevenLabs ücretli plan, ticari kullanım | — | 475 KB |
 | `ortam/kis_ruzgar.m4a` | Kış rüzgârı (içeriden), tonsuz dikişsiz döngü | ElevenLabs ses efekti üretimi (`uretim.json`: kis_taban_1) | ElevenLabs, Kronikler için üretildi | ElevenLabs ücretli plan, ticari kullanım | — | 412 KB |
-| `ortam/ocak.m4a` | Ocakta çıtırdayan ateş | [fire crackles](https://freesound.org/s/563766/) (Freesound) | florianreichelt | CC0 1.0 | 2–48 | 222 KB |
-| `ortam/carsi.m4a` | Fes eski şehir çarşısı (araçsız dar sokaklar) | [Fez bazaar](https://freesound.org/s/244107/) (Freesound) | susipekka | CC0 1.0 | 10–65 | 268 KB |
-| `ortam/ors.m4a` | Demirci: çekiç ve örs | [By ther blacksmith-002.wav](https://freesound.org/s/254370/) (Freesound) | Emmaproductions | CC0 1.0 | 3–53 | 239 KB |
-| `ortam/dokuma.m4a` | Dokuma tezgâhı mekiği | [navette de métier à tisser.wav](https://freesound.org/s/510266/) (Freesound) | Naïma | CC0 1.0 | 2–52 | 244 KB |
-| `ortam/degirmen.m4a` | Su değirmeni çarkı | [water_mill.mp3](https://freesound.org/s/221559/) (Freesound) | padyhady | CC0 1.0 | 2–52 | 240 KB |
-| `ortam/dere.m4a` | Küçük dere | [Small river stream](https://freesound.org/s/546804/) (Freesound) | klau78 | CC0 1.0 | 30–80 | 241 KB |
-| `ortam/suru.m4a` | Akşam, sürü çanları | [sheep bells tinkling nearby evening country rural on offmic Mallorca, Spain.flac](https://freesound.org/s/450370/) (Freesound) | kyles | CC0 1.0 | 30–90 | 458 KB |
-| `ortam/avlu.m4a` | Avlu çeşmesi | [S22-02 Water fountain; decorative; courtyard.wav](https://freesound.org/s/675569/) (Freesound) | craigsmith | CC0 1.0 | 1–22 | 94 KB |
-| `ortam/bozkir.m4a` | Bozkır rüzgârı | [Mongolian film windblown steppe1.wav](https://freesound.org/s/667115/) (Freesound) | Jim-Bretherick | CC0 1.0 | 5–60 | 420 KB |
-| `ortam/kervan.m4a` | Pazar yerinde bağlı eşekler, kalabalık (kervan/han avlusu) | [Donkeys braying at the market of Assem Souk](https://freesound.org/s/246406/) (Freesound) | felix.blume | CC0 1.0 | 2–72 | 344 KB |
+| `ortam/ocak.m4a` | a wood fire crackling in a stone hearth inside a mud-brick house at night, soft pops and e | ElevenLabs ses efekti üretimi (`uretim.json`) | ElevenLabs, Kronikler için üretildi | ElevenLabs ücretli plan, ticari kullanım | — | 492 KB |
+| `ortam/carsi.m4a` | a busy 13th-century Anatolian bazaar, murmuring crowd, merchants calling in the distance,  | ElevenLabs ses efekti üretimi (`uretim.json`) | ElevenLabs, Kronikler için üretildi | ElevenLabs ücretli plan, ticari kullanım | — | 477 KB |
+| `ortam/ors.m4a` | a blacksmith workshop, rhythmic hammer strikes on an anvil, bellows breathing, fire roarin | ElevenLabs ses efekti üretimi (`uretim.json`) | ElevenLabs, Kronikler için üretildi | ElevenLabs ücretli plan, ticari kullanım | — | 483 KB |
+| `ortam/dokuma.m4a` | a wooden hand loom weaving a carpet in a quiet room, rhythmic shuttle and beater sounds, n | ElevenLabs ses efekti üretimi (`uretim.json`) | ElevenLabs, Kronikler için üretildi | ElevenLabs ücretli plan, ticari kullanım | — | 474 KB |
+| `ortam/degirmen.m4a` | an old wooden water mill, water rushing over the wheel, wooden gears creaking and turning  | ElevenLabs ses efekti üretimi (`uretim.json`) | ElevenLabs, Kronikler için üretildi | ElevenLabs ücretli plan, ticari kullanım | — | 483 KB |
+| `ortam/dere.m4a` | a small mountain stream flowing over stones, gentle continuous water, a few distant birds, | ElevenLabs ses efekti üretimi (`uretim.json`) | ElevenLabs, Kronikler için üretildi | ElevenLabs ücretli plan, ticari kullanım | — | 484 KB |
+| `ortam/suru.m4a` | a flock of sheep grazing at dusk on a hillside, occasional soft bleats, soft wind, no whis | ElevenLabs ses efekti üretimi (`uretim.json`) | ElevenLabs, Kronikler için üretildi | ElevenLabs ücretli plan, ticari kullanım | — | 476 KB |
+| `ortam/avlu.m4a` | a quiet stone courtyard of a medrese with a small fountain trickling, distant pigeons cooi | ElevenLabs ses efekti üretimi (`uretim.json`) | ElevenLabs, Kronikler için üretildi | ElevenLabs ücretli plan, ticari kullanım | — | 489 KB |
+| `ortam/bozkir.m4a` | the open Anatolian steppe, wide low wind over dry grass, vast and empty, no whistling, no  | ElevenLabs ses efekti üretimi (`uretim.json`) | ElevenLabs, Kronikler için üretildi | ElevenLabs ücretli plan, ticari kullanım | — | 476 KB |
+| `ortam/kervan.m4a` | a caravanserai courtyard, camels grunting and shifting, harness creaking, travelers murmur | ElevenLabs ses efekti üretimi (`uretim.json`) | ElevenLabs, Kronikler için üretildi | ElevenLabs ücretli plan, ticari kullanım | — | 475 KB |
 
 ## Efektler (tek atımlık)
 
@@ -68,55 +68,33 @@ Toplam: **63 dosya, 12.14 MB**.
 | `efekt/ui_ilerle_3.m4a` | Ay ilerletme, üçüncü varyant | ElevenLabs ses efekti üretimi (`uretim.json`: ui_ilerle_3) | ElevenLabs, Kronikler için üretildi | ElevenLabs ücretli plan, ticari kullanım | — | 11 KB |
 | `efekt/sayfa.m4a` | Kalın kağıt sayfa çevirme | ElevenLabs ses efekti üretimi (`uretim.json`: sayfa_1) | ElevenLabs, Kronikler için üretildi | ElevenLabs ücretli plan, ticari kullanım | — | 8 KB |
 | `efekt/kalem.m4a` | Kamış kalem parşömende | [Quill and Parchment.WAV](https://freesound.org/s/507864/) (Freesound) | Nickh69 | CC0 1.0 | 0–54 | 10 KB |
-| `efekt/kapi.m4a` | Ahşap kapıya vuruş | [door_knock.wav](https://freesound.org/s/268500/) (Freesound) | wjtaylor | CC0 1.0 | 0–2.1 | 16 KB |
-| `efekt/akce_tek.m4a` | Tek sikke düşüşü | [Singular Coin Dropping.wav](https://freesound.org/s/630018/) (Freesound) | Flem0527 | CC0 1.0 | 0–1.4 | 11 KB |
-| `efekt/akce_kese.m4a` | Sikkeler dökülüyor | [Multiple Coins Dropping.wav](https://freesound.org/s/629985/) (Freesound) | Flem0527 | CC0 1.0 | 0–2.2 | 18 KB |
-| `efekt/cip_kazanc.m4a` | Zil (parmak zili) | [Finger Cymbals.wav](https://freesound.org/s/175932/) (Freesound) | MirkoMeter84 | CC0 1.0 | 0–2.1 | 18 KB |
-| `efekt/cip_kayip.m4a` | Bas bendir — tek vuruş | [BASS BENDIR](https://freesound.org/s/696751/) (Freesound) | hadescolossus | CC0 1.0 | 0.8–2.8 | 14 KB |
-| `efekt/cip_kin.m4a` | Davul — tek boğuk vuruş | [Davul Room Mid Percussion Bass Drum](https://freesound.org/s/538257/) (Freesound) | McDrok_the_Rhythm | CC0 1.0 | 0–23 | 14 KB |
-| `efekt/cip_minnet.m4a` | Ney nefesi | [Ney Melody_09.wav](https://freesound.org/s/440817/) (Freesound) | avnonsen | CC0 1.0 | 0–2.6 | 22 KB |
-| `efekt/cip_yanki.m4a` | Def şıngırtısı | [Instrument_clinking_shaking_tambourine.aif](https://freesound.org/s/119544/) (Freesound) | vrodge | CC0 1.0 | 0–22 | 11 KB |
-| `efekt/bolum_davul.m4a` | Davul — çift vuruş (bölüm kartı) | [DavulCinematicFX1.wav](https://freesound.org/s/347479/) (Freesound) | Panotsi | CC0 1.0 | 0–4.5 | 31 KB |
-| `efekt/zafer.m4a` | Zurna nidası | [zurna_0001_[turkish]_4_shots_mono.flac](https://freesound.org/s/18661/) (Freesound) | cdrk | CC BY 4.0 | 0–7.4 | 16 KB |
-| `efekt/matem.m4a` | Asma davul — boğuk tek vuruş | [ASMA DAVUL](https://freesound.org/s/696749/) (Freesound) | hadescolossus | CC0 1.0 | 0.9–3.4 | 19 KB |
-| `efekt/zil.m4a` | Parmak zili | [Finger cymbals.WAV by Luc Henrion](https://freesound.org/s/439616/) (Freesound) | Luc Henrion | CC0 1.0 | 0–14 | 17 KB |
-| `efekt/davul_cenk.m4a` | Asma davul — cenk vuruşu | [ASMA DAVUL](https://freesound.org/s/696749/) (Freesound) | hadescolossus | CC0 1.0 | 4–10 | 49 KB |
-| `efekt/kilic.m4a` | Kılıç şakırtısı | [Sword clash 1.wav](https://freesound.org/s/471095/) (Freesound) | spycrah | CC0 1.0 | 0–2.8 | 7 KB |
-| `efekt/yenilgi.m4a` | Davul — iki boğuk vuruş | [Davul Room Mid Percussion Bass Drum](https://freesound.org/s/538257/) (Freesound) | McDrok_the_Rhythm | CC0 1.0 | 0–23 | 25 KB |
-| `efekt/dogum.m4a` | Kemençe uşşak çeşnisi | [ussak_cesni_kemence.wav](https://freesound.org/s/194700/) (Freesound) | ajaysm | CC BY 4.0 | 0.5–7.5 | 57 KB |
-| `efekt/saz_vurgu.m4a` | Saz tezenesi | [SAZ instrument ORIGINAL(Chen)record@130bpm](https://freesound.org/s/749332/) (Freesound) | Hybridkin | CC0 1.0 | 4–7.5 | 27 KB |
-| `efekt/nal.m4a` | Toprakta at nalı | [S01-01_Horse trots in on hard dirt; stops; trotting out.wav](https://freesound.org/s/675422/) (Freesound) | craigsmith | CC0 1.0 | 0–54 | 22 KB |
-| `efekt/dugun.m4a` | Def | [Instrument_clinking_shaking_tambourine.aif](https://freesound.org/s/119544/) (Freesound) | vrodge | CC0 1.0 | 0–22 | 21 KB |
-| `efekt/ney_nefes.m4a` | Ney nefesi | [Ney.wav](https://freesound.org/s/115222/) (Freesound) | Xavier Serra (xserra, MTG-UPF) | CC BY 4.0 | 0–3.6 | 29 KB |
-| `efekt/su.m4a` | Kâseye su dökülmesi | [Water pouring into glass bowl 02](https://freesound.org/s/700353/) (Freesound) | Rudmer_Rotteveel | CC0 1.0 | 0–4.6 | 38 KB |
-| `efekt/mirilti.m4a` | Kedi mırıltısı | [Cat Purring](https://freesound.org/s/485373/) (Freesound) | aunrea | CC0 1.0 | 0–4 | 33 KB |
-| `efekt/hav.m4a` | Köpek havlaması | [Dog Bark](https://freesound.org/s/495658/) (Freesound) | aunrea | CC0 1.0 | 0–4 | 12 KB |
+| `efekt/kapi.m4a` | an old heavy wooden door of a mud-brick village house creaks open slowly and closes with a | ElevenLabs ses efekti üretimi (`uretim.json`) | ElevenLabs, Kronikler için üretildi | ElevenLabs ücretli plan, ticari kullanım | — | 22 KB |
+| `efekt/akce_tek.m4a` | a single small silver coin dropped onto a wooden table, one short metallic clink and a lit | ElevenLabs ses efekti üretimi (`uretim.json`) | ElevenLabs, Kronikler için üretildi | ElevenLabs ücretli plan, ticari kullanım | — | 12 KB |
+| `efekt/akce_kese.m4a` | a leather coin purse with silver coins is shaken and set down on a wooden table, soft jing | ElevenLabs ses efekti üretimi (`uretim.json`) | ElevenLabs, Kronikler için üretildi | ElevenLabs ücretli plan, ticari kullanım | — | 16 KB |
+| `efekt/cip_kazanc.m4a` | two soft ascending plucked kanun zither notes, warm and pleasant reward sound, short, gent | ElevenLabs ses efekti üretimi (`uretim.json`) | ElevenLabs, Kronikler için üretildi | ElevenLabs ücretli plan, ticari kullanım | — | 14 KB |
+| `efekt/cip_kayip.m4a` | two soft descending low oud plucks, muted and somber loss sound, short, no bell | ElevenLabs ses efekti üretimi (`uretim.json`) | ElevenLabs, Kronikler için üretildi | ElevenLabs ücretli plan, ticari kullanım | — | 11 KB |
+| `efekt/cip_kin.m4a` | a low muted frame drum thud followed by a tense scraping bowed string note, ominous grudge | ElevenLabs ses efekti üretimi (`uretim.json`) | ElevenLabs, Kronikler için üretildi | ElevenLabs ücretli plan, ticari kullanım | — | 9 KB |
+| `efekt/cip_minnet.m4a` | a single warm soft breathy ney flute note, gratitude, gentle and kind, short | ElevenLabs ses efekti üretimi (`uretim.json`) | ElevenLabs, Kronikler için üretildi | ElevenLabs ücretli plan, ticari kullanım | — | 19 KB |
+| `efekt/cip_yanki.m4a` | a single soft frame drum tap that echoes far away across stone walls, reputation spreading | ElevenLabs ses efekti üretimi (`uretim.json`) | ElevenLabs, Kronikler için üretildi | ElevenLabs ücretli plan, ticari kullanım | — | 12 KB |
+| `efekt/bolum_davul.m4a` | two deep ceremonial davul drum strikes in a large stone courtyard, chapter beginning, sole | ElevenLabs ses efekti üretimi (`uretim.json`) | ElevenLabs, Kronikler için üretildi | ElevenLabs ücretli plan, ticari kullanım | — | 16 KB |
+| `efekt/zafer.m4a` | short triumphant zurna and davul victory flourish, medieval Anatolian, proud, outdoor, no  | ElevenLabs ses efekti üretimi (`uretim.json`) | ElevenLabs, Kronikler için üretildi | ElevenLabs ücretli plan, ticari kullanım | — | 18 KB |
+| `efekt/matem.m4a` | one low deep kos war drum boom with a long dark decay, mourning toll, no bell | ElevenLabs ses efekti üretimi (`uretim.json`) | ElevenLabs, Kronikler için üretildi | ElevenLabs ücretli plan, ticari kullanım | — | 31 KB |
+| `efekt/zil.m4a` | a bright short kanun zither glissando sparkle, festive good news, no bell, no chime | ElevenLabs ses efekti üretimi (`uretim.json`) | ElevenLabs, Kronikler için üretildi | ElevenLabs ücretli plan, ticari kullanım | — | 16 KB |
+| `efekt/davul_cenk.m4a` | large kos war drums roll and pound in a steady rising rhythm, a medieval army preparing fo | ElevenLabs ses efekti üretimi (`uretim.json`) | ElevenLabs, Kronikler için üretildi | ElevenLabs ücretli plan, ticari kullanım | — | 40 KB |
+| `efekt/kilic.m4a` | a steel sword drawn from a leather scabbard with a sharp ring, close | ElevenLabs ses efekti üretimi (`uretim.json`) | ElevenLabs, Kronikler için üretildi | ElevenLabs ücretli plan, ticari kullanım | — | 4 KB |
+| `efekt/yenilgi.m4a` | a dull heavy drum thud followed by a sighing low ney phrase, defeat, sorrow, short | ElevenLabs ses efekti üretimi (`uretim.json`) | ElevenLabs, Kronikler için üretildi | ElevenLabs ücretli plan, ticari kullanım | — | 29 KB |
+| `efekt/dogum.m4a` | a newborn baby's first soft cries in a quiet village house room, intimate, gentle | ElevenLabs ses efekti üretimi (`uretim.json`) | ElevenLabs, Kronikler için üretildi | ElevenLabs ücretli plan, ticari kullanım | — | 45 KB |
+| `efekt/saz_vurgu.m4a` | one strong strummed baglama saz chord accent ringing out, Anatolian folk, close, natural | ElevenLabs ses efekti üretimi (`uretim.json`) | ElevenLabs, Kronikler için üretildi | ElevenLabs ücretli plan, ticari kullanım | — | 19 KB |
+| `efekt/nal.m4a` | a single horse gallops past on a dirt road, hooves approach and fade away, outdoor | ElevenLabs ses efekti üretimi (`uretim.json`) | ElevenLabs, Kronikler için üretildi | ElevenLabs ücretli plan, ticari kullanım | — | 27 KB |
+| `efekt/dugun.m4a` | a burst of festive village wedding davul and zurna music heard from a short distance, outd | ElevenLabs ses efekti üretimi (`uretim.json`) | ElevenLabs, Kronikler için üretildi | ElevenLabs ücretli plan, ticari kullanım | — | 14 KB |
+| `efekt/ney_nefes.m4a` | a long breathy ney flute note rising softly, contemplative, sufi, natural reverb | ElevenLabs ses efekti üretimi (`uretim.json`) | ElevenLabs, Kronikler için üretildi | ElevenLabs ücretli plan, ticari kullanım | — | 30 KB |
+| `efekt/su.m4a` | water poured from a clay jug into a copper bowl, close, gentle | ElevenLabs ses efekti üretimi (`uretim.json`) | ElevenLabs, Kronikler için üretildi | ElevenLabs ücretli plan, ticari kullanım | — | 32 KB |
+| `efekt/mirilti.m4a` | a contented cat purring close up, soft and warm | ElevenLabs ses efekti üretimi (`uretim.json`) | ElevenLabs, Kronikler için üretildi | ElevenLabs ücretli plan, ticari kullanım | — | 36 KB |
+| `efekt/hav.m4a` | a single dog bark in a village at a medium distance, outdoor | ElevenLabs ses efekti üretimi (`uretim.json`) | ElevenLabs, Kronikler için üretildi | ElevenLabs ücretli plan, ticari kullanım | — | 8 KB |
 
-## Atıf (CC BY) — oyun içi Emek ekranında da gösterilir
+## Atıf
 
-- "sufi-5.wav" — Xavier Serra (xserra, MTG-UPF) (Freesound), https://freesound.org/s/162204/ — lisans: CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). Kesit alındı, düzenlendi. Kullanıldığı yer: ana_tema.
-- "turkish-baglama.wav" — Xavier Serra (xserra, MTG-UPF) (Freesound), https://freesound.org/s/115227/ — lisans: CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). Kesit alındı, düzenlendi. Kullanıldığı yer: genclik.
-- "Selcuk-Sipahioglu-2.wav" — Xavier Serra (xserra, MTG-UPF) (Freesound), https://freesound.org/s/126100/ — lisans: CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). Kesit alındı, düzenlendi. Kullanıldığı yer: ciraklik.
-- "sufi-2.wav" — Xavier Serra (xserra, MTG-UPF) (Freesound), https://freesound.org/s/162199/ — lisans: CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). Kesit alındı, düzenlendi. Kullanıldığı yer: ustalik.
-- "Ruhi-Ayangil-Kanun-1.wav" — Xavier Serra (xserra, MTG-UPF) (Freesound), https://freesound.org/s/115223/ — lisans: CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). Kesit alındı, düzenlendi. Kullanıldığı yer: olgunluk.
-- "Traditional Eastern instrument Kaval - improvisation played by Boris Todorovic.aif" — Tomlija (Freesound), https://freesound.org/s/110332/ — lisans: CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/). Kesit alındı, düzenlendi. Kullanıldığı yer: gunluk.
-- "Istanbul-Sazendeleri-6.wav" — Xavier Serra (xserra, MTG-UPF) (Freesound), https://freesound.org/s/126095/ — lisans: CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). Kesit alındı, düzenlendi. Kullanıldığı yer: carsi.
-- "Turku Nomads of the Silk Road - 12 - -Harman Dali" — Turku, Nomads of the Silk Road (Wikimedia Commons), https://commons.wikimedia.org/wiki/File:Turku_Nomads_of_the_Silk_Road_-_12_-_-Harman_Dali.ogg — lisans: CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). Kesit alındı, düzenlendi. Kullanıldığı yer: senlik.
-- "sufi-6.wav" — Xavier Serra (xserra, MTG-UPF) (Freesound), https://freesound.org/s/162203/ — lisans: CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). Kesit alındı, düzenlendi. Kullanıldığı yer: dogum.
-- "Duduk 3.wav" — juskiddink (Freesound), https://freesound.org/s/184267/ — lisans: CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). Kesit alındı, düzenlendi. Kullanıldığı yer: cenaze.
-- "yayli-tanbur.wav" — Xavier Serra (xserra, MTG-UPF) (Freesound), https://freesound.org/s/115401/ — lisans: CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). Kesit alındı, düzenlendi. Kullanıldığı yer: gerilim.
-- "Ruhi-Ayangil-Kanun-2.wav" — Xavier Serra (xserra, MTG-UPF) (Freesound), https://freesound.org/s/115224/ — lisans: CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). Kesit alındı, düzenlendi. Kullanıldığı yer: divan.
-- "Turku Nomads of the Silk Road - 09 - -Drum Solo" — Turku, Nomads of the Silk Road (Wikimedia Commons), https://commons.wikimedia.org/wiki/File:Turku_Nomads_of_the_Silk_Road_-_09_-_-Drum_Solo.ogg — lisans: CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). Kesit alındı, düzenlendi. Kullanıldığı yer: akin.
-- "Istanbul-Sazendeleri-3.wav" — Xavier Serra (xserra, MTG-UPF) (Freesound), https://freesound.org/s/126092/ — lisans: CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). Kesit alındı, düzenlendi. Kullanıldığı yer: kitlik.
-- "ney.wav" — Xavier Serra (xserra, MTG-UPF) (Freesound), https://freesound.org/s/115398/ — lisans: CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). Kesit alındı, düzenlendi. Kullanıldığı yer: tekke.
-- "zurna_0001_[turkish]_4_shots_mono.flac" — cdrk (Freesound), https://freesound.org/s/18661/ — lisans: CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). Kesit alındı, düzenlendi. Kullanıldığı yer: zafer.
-- "ussak_cesni_kemence.wav" — ajaysm (Freesound), https://freesound.org/s/194700/ — lisans: CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). Kesit alındı, düzenlendi. Kullanıldığı yer: dogum.
-- "Ney.wav" — Xavier Serra (xserra, MTG-UPF) (Freesound), https://freesound.org/s/115222/ — lisans: CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). Kesit alındı, düzenlendi. Kullanıldığı yer: ney_nefes.
-
-## Kamu malı kayıtlar
-
-- dugun: "Hale Makame (1930)" — Emin Efendi (zurna) — Polydor 1106 BN, 1930. https://commons.wikimedia.org/wiki/File:Hale_Makame_(1930).ogg (Wikimedia Commons'ta kamu malı olarak işaretli).
-- zafer: "Hale Makame (1930)" — Emin Efendi (zurna) — Polydor 1106 BN, 1930. https://commons.wikimedia.org/wiki/File:Hale_Makame_(1930).ogg (Wikimedia Commons'ta kamu malı olarak işaretli).
+2 Kasım 2026'dan beri CC BY ya da kamu malı kayıt kullanılmıyor; tüm müzik, ortam ve efektler (kalem hariç) ElevenLabs ile Kronikler için üretildi. Kalem efekti CC0'dır, atıf gerektirmez. Oyun içi Emek ekranındaki liste `lib/ses-atif.ts`.
 
 ## Seslendirme
 

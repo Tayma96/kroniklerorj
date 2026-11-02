@@ -34,7 +34,7 @@ export default function Emek() {
       "FLUX.1 [schnell] — Black Forest Labs (Apache 2.0)",
       "stable-diffusion.cpp — leejet (MIT)",
     ] },
-    { icon: "lyre", baslik: t("emek.ses"), not: t("emek.sesNot"), satirlar: [...SES_ATIF, "Chatterbox Multilingual — Resemble AI (MIT) · Türkçe anlatıcı / narrator"] },
+    { icon: "lyre", baslik: t("emek.ses"), not: t("emek.sesNot"), satirlar: SES_ATIF },
     { icon: "cog", baslik: t("emek.yazilim"), satirlar: [
       "Expo · React Native · React · Expo Router — MIT",
       "Reanimated · Worklets · Gesture Handler · Screens · Safe Area Context — MIT",
