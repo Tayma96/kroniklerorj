@@ -42,7 +42,7 @@ CEKIMLER = [
          pus=dict(guc=0.12, renk=(0.6, 0.56, 0.5), us=2.0),
          sis=[dict(d=0.5, renk=(0.62, 0.56, 0.48), guc=0.5, hiz=(-30, -6), olcek=1.0, esik=0.35, bant=(0.3, 0.5, 0.95, 1.0)),
               dict(d=0.95, renk=(0.6, 0.55, 0.48), guc=0.18, hiz=(60, -10), olcek=0.8, esik=0.5)],
-         parcacik=[dict(tip="kum", sayi=220, derinlik=(0.3, 1.0))],
+         parcacik=[dict(tip="kum", sayi=150, derinlik=(0.3, 1.0), bolge=(0.68, 1.1), opak=0.35)],
          renk=SOGUK),
     # 20.5–24.7 s · yağma: yanan şehir, kozlar
     dict(gorsel="b2_yagma.png", bas=20500, son=24700, gir=("erit", 600), tohum=4,

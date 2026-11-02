@@ -351,7 +351,8 @@ class Parcacik:
         n = int(t.get("sayi", 300))
         self.n = n
         self.x0 = rng.uniform(-0.15, 1.15, n) * sahne.sw
-        self.y0 = rng.uniform(-0.15, 1.15, n) * sahne.sh
+        b0, b1 = t.get("bolge", (-0.15, 1.15))  # dikey doğuş bölgesi (kaynak yüksekliği oranı)
+        self.y0 = rng.uniform(b0, b1, n) * sahne.sh
         d0, d1 = t.get("derinlik", (0.2, 1.0))
         self.dz = rng.uniform(d0, d1, n) ** 0.8
         self.hiz_c = rng.uniform(0.6, 1.4, n)
