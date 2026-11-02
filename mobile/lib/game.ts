@@ -4961,11 +4961,11 @@ function tickEconomy(s: GameState, announce: boolean) {
 function caravanAttackChance(s: GameState): number {
   const p = s.player;
   let c = 0.12;
-  if (p.reputation > 60) c -= 0.04;
-  if (p.reputation > 80) c -= 0.03;
+  if (p.reputation >= 55) c -= 0.04; // itibar "Saygın" kademesi (Hissiyat 2)
+  if (p.reputation >= 80) c -= 0.03;
   if (p.skills.trade >= 4) c -= 0.03;
   if (p.skills.trade >= 8) c -= 0.03;
-  if (p.fear > 50) c -= 0.03;            // korkulan biri daha az gözü kara saldırı çeker
+  if (p.fear >= 55) c -= 0.03;           // korkulan biri ("Korkulan" kademesi) daha az gözü kara saldırı çeker
   c -= (p.retinue || 0) * 0.02;          // maiyet kılıçları kervanla yürür — eşkıya iştahı kırılır
   const stop = s.caravan?.route?.[s.caravan.step ?? 0] || s.caravan?.dest;
   if (stop && crownTreaty(s, regionOf(stop))) c -= 0.04;
@@ -5075,10 +5075,11 @@ export function stockWinter(prev: GameState): GameState {
   push(s, "gunluk", `Kışlık kileri doldurdun (−${cost} akçe): odun istifi, kavurma küpü, bulgur çuvalı. Kar ne zaman isterse gelsin.`, "kişisel", false, { k: "evj.winterStock", p: [cost] });
   return s;
 }
+export const ILTIZAM_SOHRET = 30;
 export function iltizamCost(s: GameState): number { return Math.round(360 * inflationFactor(s)); }
 export function buyIltizam(prev: GameState): GameState {
   const s = clone(prev); const p = s.player;
-  if (p.dead || p.age < 25 || inJail(p) || p.fame < 35) return s; // iltizam ihalesi ancak adı bilinen birine verilir
+  if (p.dead || p.age < 25 || inJail(p) || p.fame < ILTIZAM_SOHRET) return s; // iltizam ihalesi ancak adı bilinen birine verilir (şöhret "Ünlü" kademesi)
   if ((p.iltizam_until ?? 0) > s.turn) return s; // mevcut iltizam bitmeden yenisi alınmaz
   const cost = iltizamCost(s);
   if (p.money < cost) return s;
@@ -5658,7 +5659,7 @@ export function supportWar(prev: GameState): GameState {
 const TITLE_MULT = [1, 1.4, 1.9, 2.15];
 // Ahilik ahlakı: sözü senet esnafa müşteri koşar (şeref ≥ 60 → kazanç +%10); adı kötüye çıkanın kapısından
 // müşteri döner (itibar ≤ −40 → −%10). Yeni gösterge yok: şeref ve itibar zaten oyuncunun önünde; etkisi iş panelinde yazar.
-export function esnafAhlaki(p: Player): number { return p.honor >= 60 ? 0.1 : p.reputation <= -40 ? -0.1 : 0; }
+export function esnafAhlaki(p: Player): number { const h = unKademesi("honor", p.honor); return [0, 0, 0.03, 0.07, 0.1][h] + (p.reputation <= -40 ? -0.1 : p.reputation < 0 ? -0.05 : 0); } // şeref kademesi iş gelirine (Hissiyat 2)
 // Çalışma stilleri (Vercel work_rework.py portu): risk/ödül dengesi.
 export type WorkStyle = "garantici" | "normal" | "hirsli" | "kaytarici";
 export const WORK_STYLES: { id: WorkStyle; mult: number; fail: number }[] = [
@@ -6269,6 +6270,7 @@ export function buyPrice(s: GameState, id: string): number {
   const g = marketGoods(locSeed(p.location_name)).find((x) => x.id === id); if (!g) return 0;
   let disc = p.faction === "tuccar" ? 0.85 : 1;
   if (hasPerk(p, "pazarlikci")) disc -= 0.10;
+  const it = itibarFiyat(p); disc = it > 1 ? disc * it : Math.min(disc, it); // itibar kademesi (Hissiyat 2): indirim öbür indirimlerle yığılmaz
   return Math.max(1, Math.round(marketPrice(g.buy, s.econ) * disc * goodPriceMult(s, id) * merchantPriceMult(s)));
 }
 export function buyItem(prev: GameState, id: string): GameState {
@@ -9539,6 +9541,22 @@ export const SOCIAL_AXES: SocialAxis[] = [
   { key: "fear", label: "Korku", icon: "skull", desc: "Adının uyandırdığı çekince.", tiers: ["Zararsız", "Bilinen", "Çekinilen", "Korkulan", "Diyarın Kâbusu"] },
   { key: "fame", label: "Şöhret", icon: "crown", desc: "Adının ne kadar uzağa ulaştığı.", tiers: ["Meçhul", "Tanınan", "Ünlü", "Meşhur", "Destanlaşan"] },
 ];
+// ── Ün kademeleri (Hissiyat 2): her kademe somut bir şey yapar; arayüz sonraki kazanımı gösterir ──
+export type UnEksen = "reputation" | "honor" | "fame" | "fear";
+// İtibarda 0–29 "Sıradan" (Lekeli yalnız eksi itibar); öbür eksenler socialTierIndex eşikleri (10/30/55/80).
+export function unKademesi(key: UnEksen, value: number): number { if (key === "reputation") return value < 0 ? 0 : value < 30 ? 1 : socialTierIndex(value); return socialTierIndex(value); }
+export const UN_ESIK: Record<UnEksen, number[]> = { reputation: [-Infinity, 0, 30, 55, 80], honor: [0, 10, 30, 55, 80], fame: [0, 10, 30, 55, 80], fear: [0, 10, 30, 55, 80] };
+// Etkisi olan kademeler (metin: un.<eksen>.<kademe>); sayılar aşağıdaki fonksiyonlarla aynı.
+export const UN_ETKI: Record<UnEksen, number[]> = { reputation: [0, 2, 3, 4], honor: [2, 3, 4], fame: [2, 3, 4], fear: [2, 3] };
+// İtibar → çarşı fiyatı. Tüccar/pazarlıkçı indirimiyle yığılmaz (al-sat açığı açılmaz); lekeli itibar pahalıya alır.
+export function itibarFiyat(p: Player): number { return [1.08, 1, 0.96, 0.92, 0.88][unKademesi("reputation", p.reputation)]; }
+// Bir sonraki etkili kademe: adı, kalan puan, etki anahtarı (yoksa null).
+export function unSonraki(key: UnEksen, value: number): { kademe: number; kalan: number } | null {
+  const k = unKademesi(key, value);
+  const n = UN_ETKI[key].find((x) => x > k);
+  if (n == null) return null;
+  return { kademe: n, kalan: Math.max(1, Math.ceil(UN_ESIK[key][n] - value)) };
+}
 export function socialTierIndex(value: number): number {
   const v = Math.max(0, value);
   if (v >= 80) return 4;
