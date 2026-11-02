@@ -2084,5 +2084,1445 @@
   "sayac_once": 9991,
   "not": "oyun içi müzik: genclik",
   "tarih": "2026-11-02T09:32:32+00:00"
+ },
+ {
+  "dosya": "ciraklik.mp3",
+  "tur": "muzik",
+  "istem": {
+   "positive_global_styles": [
+    "instrumental game soundtrack loop",
+    "13th-century Seljuk Anatolia",
+    "authentic Turkish makam modal music",
+    "natural acoustic instruments, warm room reverb",
+    "seamless loop: ends with the same texture, key and tempo it began with, no ending cadence, no fade out",
+    "for: apprenticeship, learning a craft in a workshop",
+    "Nihavend makam, diligent, focused, steady",
+    "tanbur, ud, soft bendir in duyek usul, subtle wooden percussion like work rhythm",
+    "84 bpm"
+   ],
+   "negative_global_styles": [
+    "vocals",
+    "choir",
+    "lyrics",
+    "humming",
+    "electronic",
+    "synth",
+    "modern drum kit",
+    "electric guitar",
+    "acoustic guitar",
+    "piano",
+    "brass",
+    "western orchestra",
+    "trap",
+    "hip hop",
+    "fade out ending",
+    "final cadence"
+   ],
+   "sections": [
+    {
+     "section_name": "A",
+     "positive_local_styles": [
+      "steady tanbur pattern like patient work"
+     ],
+     "negative_local_styles": [
+      "intro silence",
+      "fade in"
+     ],
+     "duration_ms": 18000,
+     "lines": []
+    },
+    {
+     "section_name": "B",
+     "positive_local_styles": [
+      "ud takes a thoughtful melody over the duyek rhythm"
+     ],
+     "negative_local_styles": [],
+     "duration_ms": 18000,
+     "lines": []
+    },
+    {
+     "section_name": "A2",
+     "positive_local_styles": [
+      "tanbur pattern returns, steady and focused",
+      "end exactly as the piece began so it can loop"
+     ],
+     "negative_local_styles": [
+      "ending",
+      "fade out",
+      "ritardando"
+     ],
+     "duration_ms": 18000,
+     "lines": []
+    }
+   ]
+  },
+  "model": "music_v1",
+  "sure_sn": 54.0,
+  "tohum": null,
+  "maliyet": 675,
+  "maliyet_kaynak": "abonelik sayacı farkı",
+  "sayac_once": 10666,
+  "not": "oyun içi müzik: ciraklik",
+  "tarih": "2026-11-02T09:33:34+00:00"
+ },
+ {
+  "dosya": "ustalik.mp3",
+  "tur": "muzik",
+  "istem": {
+   "positive_global_styles": [
+    "instrumental game soundtrack loop",
+    "13th-century Seljuk Anatolia",
+    "authentic Turkish makam modal music",
+    "natural acoustic instruments, warm room reverb",
+    "seamless loop: ends with the same texture, key and tempo it began with, no ending cadence, no fade out",
+    "for: mastery, adulthood at the peak of craft and family",
+    "Rast makam, confident, proud, rich",
+    "kanun, ud, ney, bendir, kudum",
+    "88 bpm"
+   ],
+   "negative_global_styles": [
+    "vocals",
+    "choir",
+    "lyrics",
+    "humming",
+    "electronic",
+    "synth",
+    "modern drum kit",
+    "electric guitar",
+    "acoustic guitar",
+    "piano",
+    "brass",
+    "western orchestra",
+    "trap",
+    "hip hop",
+    "fade out ending",
+    "final cadence"
+   ],
+   "sections": [
+    {
+     "section_name": "A",
+     "positive_local_styles": [
+      "kanun and ud play a confident theme together"
+     ],
+     "negative_local_styles": [
+      "intro silence",
+      "fade in"
+     ],
+     "duration_ms": 18000,
+     "lines": []
+    },
+    {
+     "section_name": "B",
+     "positive_local_styles": [
+      "ney rises with a proud melody, kudum adds weight"
+     ],
+     "negative_local_styles": [],
+     "duration_ms": 18000,
+     "lines": []
+    },
+    {
+     "section_name": "A2",
+     "positive_local_styles": [
+      "kanun and ud theme returns, confident and full",
+      "end exactly as the piece began so it can loop"
+     ],
+     "negative_local_styles": [
+      "ending",
+      "fade out",
+      "ritardando"
+     ],
+     "duration_ms": 18000,
+     "lines": []
+    }
+   ]
+  },
+  "model": "music_v1",
+  "sure_sn": 54.0,
+  "tohum": null,
+  "maliyet": 675,
+  "maliyet_kaynak": "abonelik sayacı farkı",
+  "sayac_once": 11341,
+  "not": "oyun içi müzik: ustalik",
+  "tarih": "2026-11-02T09:34:16+00:00"
+ },
+ {
+  "dosya": "olgunluk.mp3",
+  "tur": "muzik",
+  "istem": {
+   "positive_global_styles": [
+    "instrumental game soundtrack loop",
+    "13th-century Seljuk Anatolia",
+    "authentic Turkish makam modal music",
+    "natural acoustic instruments, warm room reverb",
+    "seamless loop: ends with the same texture, key and tempo it began with, no ending cadence, no fade out",
+    "for: middle age 40-59, responsibility and dignity",
+    "Huzzam makam, reflective, warm melancholy, dignified",
+    "kemence, kanun, soft bendir, low drone",
+    "72 bpm"
+   ],
+   "negative_global_styles": [
+    "vocals",
+    "choir",
+    "lyrics",
+    "humming",
+    "electronic",
+    "synth",
+    "modern drum kit",
+    "electric guitar",
+    "acoustic guitar",
+    "piano",
+    "brass",
+    "western orchestra",
+    "trap",
+    "hip hop",
+    "fade out ending",
+    "final cadence"
+   ],
+   "sections": [
+    {
+     "section_name": "A",
+     "positive_local_styles": [
+      "kemence sings a warm reflective line over kanun"
+     ],
+     "negative_local_styles": [
+      "intro silence",
+      "fade in"
+     ],
+     "duration_ms": 18000,
+     "lines": []
+    },
+    {
+     "section_name": "B",
+     "positive_local_styles": [
+      "kanun takes a gentle variation, bendir breathes slowly"
+     ],
+     "negative_local_styles": [],
+     "duration_ms": 18000,
+     "lines": []
+    },
+    {
+     "section_name": "A2",
+     "positive_local_styles": [
+      "kemence returns, dignified and calm",
+      "end exactly as the piece began so it can loop"
+     ],
+     "negative_local_styles": [
+      "ending",
+      "fade out",
+      "ritardando"
+     ],
+     "duration_ms": 18000,
+     "lines": []
+    }
+   ]
+  },
+  "model": "music_v1",
+  "sure_sn": 54.0,
+  "tohum": null,
+  "maliyet": 675,
+  "maliyet_kaynak": "abonelik sayacı farkı",
+  "sayac_once": 12016,
+  "not": "oyun içi müzik: olgunluk",
+  "tarih": "2026-11-02T09:34:58+00:00"
+ },
+ {
+  "dosya": "yaslilik.mp3",
+  "tur": "muzik",
+  "istem": {
+   "positive_global_styles": [
+    "instrumental game soundtrack loop",
+    "13th-century Seljuk Anatolia",
+    "authentic Turkish makam modal music",
+    "natural acoustic instruments, warm room reverb",
+    "seamless loop: ends with the same texture, key and tempo it began with, no ending cadence, no fade out",
+    "for: old age 60+, memories and legacy",
+    "Saba makam, wistful, tender, slow",
+    "solo ney, tanbur, very soft bendir",
+    "60 bpm"
+   ],
+   "negative_global_styles": [
+    "vocals",
+    "choir",
+    "lyrics",
+    "humming",
+    "electronic",
+    "synth",
+    "modern drum kit",
+    "electric guitar",
+    "acoustic guitar",
+    "piano",
+    "brass",
+    "western orchestra",
+    "trap",
+    "hip hop",
+    "fade out ending",
+    "final cadence"
+   ],
+   "sections": [
+    {
+     "section_name": "A",
+     "positive_local_styles": [
+      "breathy ney phrase full of memory"
+     ],
+     "negative_local_styles": [
+      "intro silence",
+      "fade in"
+     ],
+     "duration_ms": 18000,
+     "lines": []
+    },
+    {
+     "section_name": "B",
+     "positive_local_styles": [
+      "tanbur answers softly, sparse and tender"
+     ],
+     "negative_local_styles": [],
+     "duration_ms": 18000,
+     "lines": []
+    },
+    {
+     "section_name": "A2",
+     "positive_local_styles": [
+      "ney returns, wistful, ending on the opening breath",
+      "end exactly as the piece began so it can loop"
+     ],
+     "negative_local_styles": [
+      "ending",
+      "fade out",
+      "ritardando"
+     ],
+     "duration_ms": 18000,
+     "lines": []
+    }
+   ]
+  },
+  "model": "music_v1",
+  "sure_sn": 54.0,
+  "tohum": null,
+  "maliyet": 675,
+  "maliyet_kaynak": "abonelik sayacı farkı",
+  "sayac_once": 12691,
+  "not": "oyun içi müzik: yaslilik",
+  "tarih": "2026-11-02T09:35:51+00:00"
+ },
+ {
+  "dosya": "gunluk.mp3",
+  "tur": "muzik",
+  "istem": {
+   "positive_global_styles": [
+    "instrumental game soundtrack loop",
+    "13th-century Seljuk Anatolia",
+    "authentic Turkish makam modal music",
+    "natural acoustic instruments, warm room reverb",
+    "seamless loop: ends with the same texture, key and tempo it began with, no ending cadence, no fade out",
+    "for: everyday life, fields, harvest, river, property",
+    "Ussak makam, pastoral, peaceful village morning",
+    "kaval, baglama, soft def, light tambourine-like zil sparingly",
+    "80 bpm"
+   ],
+   "negative_global_styles": [
+    "vocals",
+    "choir",
+    "lyrics",
+    "humming",
+    "electronic",
+    "synth",
+    "modern drum kit",
+    "electric guitar",
+    "acoustic guitar",
+    "piano",
+    "brass",
+    "western orchestra",
+    "trap",
+    "hip hop",
+    "fade out ending",
+    "final cadence"
+   ],
+   "sections": [
+    {
+     "section_name": "A",
+     "positive_local_styles": [
+      "pastoral kaval melody over gentle baglama"
+     ],
+     "negative_local_styles": [
+      "intro silence",
+      "fade in"
+     ],
+     "duration_ms": 18000,
+     "lines": []
+    },
+    {
+     "section_name": "B",
+     "positive_local_styles": [
+      "baglama and def create a calm walking rhythm"
+     ],
+     "negative_local_styles": [],
+     "duration_ms": 18000,
+     "lines": []
+    },
+    {
+     "section_name": "A2",
+     "positive_local_styles": [
+      "kaval returns, peaceful and sunny",
+      "end exactly as the piece began so it can loop"
+     ],
+     "negative_local_styles": [
+      "ending",
+      "fade out",
+      "ritardando"
+     ],
+     "duration_ms": 18000,
+     "lines": []
+    }
+   ]
+  },
+  "model": "music_v1",
+  "sure_sn": 54.0,
+  "tohum": null,
+  "maliyet": 675,
+  "maliyet_kaynak": "abonelik sayacı farkı",
+  "sayac_once": 13366,
+  "not": "oyun içi müzik: gunluk",
+  "tarih": "2026-11-02T09:36:39+00:00"
+ },
+ {
+  "dosya": "carsi.mp3",
+  "tur": "muzik",
+  "istem": {
+   "positive_global_styles": [
+    "instrumental game soundtrack loop",
+    "13th-century Seljuk Anatolia",
+    "authentic Turkish makam modal music",
+    "natural acoustic instruments, warm room reverb",
+    "seamless loop: ends with the same texture, key and tempo it began with, no ending cadence, no fade out",
+    "for: bazaar and city streets, trade and haggling",
+    "Hicaz makam, lively, bustling, colorful",
+    "darbuka, def, kanun, ud, clapping-free",
+    "112 bpm"
+   ],
+   "negative_global_styles": [
+    "vocals",
+    "choir",
+    "lyrics",
+    "humming",
+    "electronic",
+    "synth",
+    "modern drum kit",
+    "electric guitar",
+    "acoustic guitar",
+    "piano",
+    "brass",
+    "western orchestra",
+    "trap",
+    "hip hop",
+    "fade out ending",
+    "final cadence"
+   ],
+   "sections": [
+    {
+     "section_name": "A",
+     "positive_local_styles": [
+      "darbuka groove with a lively kanun hook"
+     ],
+     "negative_local_styles": [
+      "intro silence",
+      "fade in"
+     ],
+     "duration_ms": 18000,
+     "lines": []
+    },
+    {
+     "section_name": "B",
+     "positive_local_styles": [
+      "ud and kanun trade quick phrases like haggling merchants"
+     ],
+     "negative_local_styles": [],
+     "duration_ms": 18000,
+     "lines": []
+    },
+    {
+     "section_name": "A2",
+     "positive_local_styles": [
+      "kanun hook returns over the busy groove",
+      "end exactly as the piece began so it can loop"
+     ],
+     "negative_local_styles": [
+      "ending",
+      "fade out",
+      "ritardando"
+     ],
+     "duration_ms": 18000,
+     "lines": []
+    }
+   ]
+  },
+  "model": "music_v1",
+  "sure_sn": 54.0,
+  "tohum": null,
+  "maliyet": 675,
+  "maliyet_kaynak": "abonelik sayacı farkı",
+  "sayac_once": 14041,
+  "not": "oyun içi müzik: carsi",
+  "tarih": "2026-11-02T09:37:30+00:00"
+ },
+ {
+  "dosya": "dugun.mp3",
+  "tur": "muzik",
+  "istem": {
+   "positive_global_styles": [
+    "instrumental game soundtrack loop",
+    "13th-century Seljuk Anatolia",
+    "authentic Turkish makam modal music",
+    "natural acoustic instruments, warm room reverb",
+    "seamless loop: ends with the same texture, key and tempo it began with, no ending cadence, no fade out",
+    "for: village wedding celebration",
+    "Hicaz makam, festive, joyful, outdoor",
+    "davul and zurna wedding ensemble, def",
+    "120 bpm"
+   ],
+   "negative_global_styles": [
+    "vocals",
+    "choir",
+    "lyrics",
+    "humming",
+    "electronic",
+    "synth",
+    "modern drum kit",
+    "electric guitar",
+    "acoustic guitar",
+    "piano",
+    "brass",
+    "western orchestra",
+    "trap",
+    "hip hop",
+    "fade out ending",
+    "final cadence"
+   ],
+   "sections": [
+    {
+     "section_name": "A",
+     "positive_local_styles": [
+      "zurna plays a festive wedding melody over davul"
+     ],
+     "negative_local_styles": [
+      "intro silence",
+      "fade in"
+     ],
+     "duration_ms": 16000,
+     "lines": []
+    },
+    {
+     "section_name": "B",
+     "positive_local_styles": [
+      "davul and zurna build excitement for the halay dance"
+     ],
+     "negative_local_styles": [],
+     "duration_ms": 16000,
+     "lines": []
+    },
+    {
+     "section_name": "A2",
+     "positive_local_styles": [
+      "festive zurna melody returns, joyful",
+      "end exactly as the piece began so it can loop"
+     ],
+     "negative_local_styles": [
+      "ending",
+      "fade out",
+      "ritardando"
+     ],
+     "duration_ms": 16000,
+     "lines": []
+    }
+   ]
+  },
+  "model": "music_v1",
+  "sure_sn": 48.0,
+  "tohum": null,
+  "maliyet": 600,
+  "maliyet_kaynak": "abonelik sayacı farkı",
+  "sayac_once": 14716,
+  "not": "oyun içi müzik: dugun",
+  "tarih": "2026-11-02T09:38:31+00:00"
+ },
+ {
+  "dosya": "senlik.mp3",
+  "tur": "muzik",
+  "istem": {
+   "positive_global_styles": [
+    "instrumental game soundtrack loop",
+    "13th-century Seljuk Anatolia",
+    "authentic Turkish makam modal music",
+    "natural acoustic instruments, warm room reverb",
+    "seamless loop: ends with the same texture, key and tempo it began with, no ending cadence, no fade out",
+    "for: folk festival, harvest celebration",
+    "Rast makam, joyous, communal",
+    "baglama ensemble, def, kaval, kasik spoons",
+    "116 bpm"
+   ],
+   "negative_global_styles": [
+    "vocals",
+    "choir",
+    "lyrics",
+    "humming",
+    "electronic",
+    "synth",
+    "modern drum kit",
+    "electric guitar",
+    "acoustic guitar",
+    "piano",
+    "brass",
+    "western orchestra",
+    "trap",
+    "hip hop",
+    "fade out ending",
+    "final cadence"
+   ],
+   "sections": [
+    {
+     "section_name": "A",
+     "positive_local_styles": [
+      "baglama ensemble plays a joyful folk dance tune"
+     ],
+     "negative_local_styles": [
+      "intro silence",
+      "fade in"
+     ],
+     "duration_ms": 16000,
+     "lines": []
+    },
+    {
+     "section_name": "B",
+     "positive_local_styles": [
+      "kaval and def lead a call-and-response"
+     ],
+     "negative_local_styles": [],
+     "duration_ms": 16000,
+     "lines": []
+    },
+    {
+     "section_name": "A2",
+     "positive_local_styles": [
+      "folk dance tune returns, joyous",
+      "end exactly as the piece began so it can loop"
+     ],
+     "negative_local_styles": [
+      "ending",
+      "fade out",
+      "ritardando"
+     ],
+     "duration_ms": 16000,
+     "lines": []
+    }
+   ]
+  },
+  "model": "music_v1",
+  "sure_sn": 48.0,
+  "tohum": null,
+  "maliyet": 600,
+  "maliyet_kaynak": "abonelik sayacı farkı",
+  "sayac_once": 15316,
+  "not": "oyun içi müzik: senlik",
+  "tarih": "2026-11-02T09:39:18+00:00"
+ },
+ {
+  "dosya": "dogum.mp3",
+  "tur": "muzik",
+  "istem": {
+   "positive_global_styles": [
+    "instrumental game soundtrack loop",
+    "13th-century Seljuk Anatolia",
+    "authentic Turkish makam modal music",
+    "natural acoustic instruments, warm room reverb",
+    "seamless loop: ends with the same texture, key and tempo it began with, no ending cadence, no fade out",
+    "for: birth of a child, tender family moment",
+    "Ussak makam, tender, lullaby-like, hopeful",
+    "rebab, soft kanun, very soft bendir heartbeat",
+    "64 bpm"
+   ],
+   "negative_global_styles": [
+    "vocals",
+    "choir",
+    "lyrics",
+    "humming",
+    "electronic",
+    "synth",
+    "modern drum kit",
+    "electric guitar",
+    "acoustic guitar",
+    "piano",
+    "brass",
+    "western orchestra",
+    "trap",
+    "hip hop",
+    "fade out ending",
+    "final cadence"
+   ],
+   "sections": [
+    {
+     "section_name": "A",
+     "positive_local_styles": [
+      "rebab sings a lullaby-like melody"
+     ],
+     "negative_local_styles": [
+      "intro silence",
+      "fade in"
+     ],
+     "duration_ms": 15000,
+     "lines": []
+    },
+    {
+     "section_name": "B",
+     "positive_local_styles": [
+      "kanun answers with soft twinkling notes"
+     ],
+     "negative_local_styles": [],
+     "duration_ms": 15000,
+     "lines": []
+    },
+    {
+     "section_name": "A2",
+     "positive_local_styles": [
+      "rebab lullaby returns, warm and hopeful",
+      "end exactly as the piece began so it can loop"
+     ],
+     "negative_local_styles": [
+      "ending",
+      "fade out",
+      "ritardando"
+     ],
+     "duration_ms": 15000,
+     "lines": []
+    }
+   ]
+  },
+  "model": "music_v1",
+  "sure_sn": 45.0,
+  "tohum": null,
+  "maliyet": 562,
+  "maliyet_kaynak": "abonelik sayacı farkı",
+  "sayac_once": 15916,
+  "not": "oyun içi müzik: dogum",
+  "tarih": "2026-11-02T09:40:23+00:00"
+ },
+ {
+  "dosya": "cenaze.mp3",
+  "tur": "muzik",
+  "istem": {
+   "positive_global_styles": [
+    "instrumental game soundtrack loop",
+    "13th-century Seljuk Anatolia",
+    "authentic Turkish makam modal music",
+    "natural acoustic instruments, warm room reverb",
+    "seamless loop: ends with the same texture, key and tempo it began with, no ending cadence, no fade out",
+    "for: death and mourning, funeral",
+    "Saba makam, mournful, grief, solemn",
+    "duduk-like double reed mey, ney, low drone, single slow bendir strokes",
+    "54 bpm"
+   ],
+   "negative_global_styles": [
+    "vocals",
+    "choir",
+    "lyrics",
+    "humming",
+    "electronic",
+    "synth",
+    "modern drum kit",
+    "electric guitar",
+    "acoustic guitar",
+    "piano",
+    "brass",
+    "western orchestra",
+    "trap",
+    "hip hop",
+    "fade out ending",
+    "final cadence"
+   ],
+   "sections": [
+    {
+     "section_name": "A",
+     "positive_local_styles": [
+      "mey plays a mournful elegy over a low drone"
+     ],
+     "negative_local_styles": [
+      "intro silence",
+      "fade in"
+     ],
+     "duration_ms": 16000,
+     "lines": []
+    },
+    {
+     "section_name": "B",
+     "positive_local_styles": [
+      "ney joins with grief, slow bendir like a heartbeat"
+     ],
+     "negative_local_styles": [],
+     "duration_ms": 16000,
+     "lines": []
+    },
+    {
+     "section_name": "A2",
+     "positive_local_styles": [
+      "mey elegy returns, solemn and quiet",
+      "end exactly as the piece began so it can loop"
+     ],
+     "negative_local_styles": [
+      "ending",
+      "fade out",
+      "ritardando"
+     ],
+     "duration_ms": 16000,
+     "lines": []
+    }
+   ]
+  },
+  "model": "music_v1",
+  "sure_sn": 48.0,
+  "tohum": null,
+  "maliyet": 600,
+  "maliyet_kaynak": "abonelik sayacı farkı",
+  "sayac_once": 16478,
+  "not": "oyun içi müzik: cenaze",
+  "tarih": "2026-11-02T09:41:25+00:00"
+ },
+ {
+  "dosya": "gerilim.mp3",
+  "tur": "muzik",
+  "istem": {
+   "positive_global_styles": [
+    "instrumental game soundtrack loop",
+    "13th-century Seljuk Anatolia",
+    "authentic Turkish makam modal music",
+    "natural acoustic instruments, warm room reverb",
+    "seamless loop: ends with the same texture, key and tempo it began with, no ending cadence, no fade out",
+    "for: tension, danger, battle preparation, crime",
+    "Hicaz makam, tense, suspenseful, dark",
+    "yayli tanbur tremolo, low kos drum pulses, kemence harmonics, low drone",
+    "76 bpm"
+   ],
+   "negative_global_styles": [
+    "vocals",
+    "choir",
+    "lyrics",
+    "humming",
+    "electronic",
+    "synth",
+    "modern drum kit",
+    "electric guitar",
+    "acoustic guitar",
+    "piano",
+    "brass",
+    "western orchestra",
+    "trap",
+    "hip hop",
+    "fade out ending",
+    "final cadence"
+   ],
+   "sections": [
+    {
+     "section_name": "A",
+     "positive_local_styles": [
+      "low drone and tense yayli tanbur tremolo"
+     ],
+     "negative_local_styles": [
+      "intro silence",
+      "fade in"
+     ],
+     "duration_ms": 18000,
+     "lines": []
+    },
+    {
+     "section_name": "B",
+     "positive_local_styles": [
+      "kos pulses grow, kemence harmonics heighten the suspense"
+     ],
+     "negative_local_styles": [],
+     "duration_ms": 18000,
+     "lines": []
+    },
+    {
+     "section_name": "A2",
+     "positive_local_styles": [
+      "back to the tense tremolo and drone",
+      "end exactly as the piece began so it can loop"
+     ],
+     "negative_local_styles": [
+      "ending",
+      "fade out",
+      "ritardando"
+     ],
+     "duration_ms": 18000,
+     "lines": []
+    }
+   ]
+  },
+  "model": "music_v1",
+  "sure_sn": 54.0,
+  "tohum": null,
+  "maliyet": 675,
+  "maliyet_kaynak": "abonelik sayacı farkı",
+  "sayac_once": 17078,
+  "not": "oyun içi müzik: gerilim",
+  "tarih": "2026-11-02T09:42:07+00:00"
+ },
+ {
+  "dosya": "divan.mp3",
+  "tur": "muzik",
+  "istem": {
+   "positive_global_styles": [
+    "instrumental game soundtrack loop",
+    "13th-century Seljuk Anatolia",
+    "authentic Turkish makam modal music",
+    "natural acoustic instruments, warm room reverb",
+    "seamless loop: ends with the same texture, key and tempo it began with, no ending cadence, no fade out",
+    "for: court of justice, the kadi's divan, formal hearing",
+    "Segah makam, stately, formal, grave",
+    "kanun, tanbur, kudum in a slow ceremonial usul",
+    "66 bpm"
+   ],
+   "negative_global_styles": [
+    "vocals",
+    "choir",
+    "lyrics",
+    "humming",
+    "electronic",
+    "synth",
+    "modern drum kit",
+    "electric guitar",
+    "acoustic guitar",
+    "piano",
+    "brass",
+    "western orchestra",
+    "trap",
+    "hip hop",
+    "fade out ending",
+    "final cadence"
+   ],
+   "sections": [
+    {
+     "section_name": "A",
+     "positive_local_styles": [
+      "stately kanun theme with measured kudum"
+     ],
+     "negative_local_styles": [
+      "intro silence",
+      "fade in"
+     ],
+     "duration_ms": 18000,
+     "lines": []
+    },
+    {
+     "section_name": "B",
+     "positive_local_styles": [
+      "tanbur develops a grave, judicial melody"
+     ],
+     "negative_local_styles": [],
+     "duration_ms": 18000,
+     "lines": []
+    },
+    {
+     "section_name": "A2",
+     "positive_local_styles": [
+      "kanun theme returns, formal and composed",
+      "end exactly as the piece began so it can loop"
+     ],
+     "negative_local_styles": [
+      "ending",
+      "fade out",
+      "ritardando"
+     ],
+     "duration_ms": 18000,
+     "lines": []
+    }
+   ]
+  },
+  "model": "music_v1",
+  "sure_sn": 54.0,
+  "tohum": null,
+  "maliyet": 675,
+  "maliyet_kaynak": "abonelik sayacı farkı",
+  "sayac_once": 17753,
+  "not": "oyun içi müzik: divan",
+  "tarih": "2026-11-02T09:42:48+00:00"
+ },
+ {
+  "dosya": "akin.mp3",
+  "tur": "muzik",
+  "istem": {
+   "positive_global_styles": [
+    "instrumental game soundtrack loop",
+    "13th-century Seljuk Anatolia",
+    "authentic Turkish makam modal music",
+    "natural acoustic instruments, warm room reverb",
+    "seamless loop: ends with the same texture, key and tempo it began with, no ending cadence, no fade out",
+    "for: Mongol raid, war, battle",
+    "Kurdi makam, urgent, violent, epic",
+    "large kos war drums, zurna, nakkare, low horn-free drones",
+    "132 bpm"
+   ],
+   "negative_global_styles": [
+    "vocals",
+    "choir",
+    "lyrics",
+    "humming",
+    "electronic",
+    "synth",
+    "modern drum kit",
+    "electric guitar",
+    "acoustic guitar",
+    "piano",
+    "brass",
+    "western orchestra",
+    "trap",
+    "hip hop",
+    "fade out ending",
+    "final cadence"
+   ],
+   "sections": [
+    {
+     "section_name": "A",
+     "positive_local_styles": [
+      "pounding kos war drums with urgent nakkare"
+     ],
+     "negative_local_styles": [
+      "intro silence",
+      "fade in"
+     ],
+     "duration_ms": 16000,
+     "lines": []
+    },
+    {
+     "section_name": "B",
+     "positive_local_styles": [
+      "zurna cries a battle melody over the drums"
+     ],
+     "negative_local_styles": [],
+     "duration_ms": 16000,
+     "lines": []
+    },
+    {
+     "section_name": "A2",
+     "positive_local_styles": [
+      "war drums return, relentless",
+      "end exactly as the piece began so it can loop"
+     ],
+     "negative_local_styles": [
+      "ending",
+      "fade out",
+      "ritardando"
+     ],
+     "duration_ms": 16000,
+     "lines": []
+    }
+   ]
+  },
+  "model": "music_v1",
+  "sure_sn": 48.0,
+  "tohum": null,
+  "maliyet": 600,
+  "maliyet_kaynak": "abonelik sayacı farkı",
+  "sayac_once": 18428,
+  "not": "oyun içi müzik: akin",
+  "tarih": "2026-11-02T09:43:41+00:00"
+ },
+ {
+  "dosya": "kitlik.mp3",
+  "tur": "muzik",
+  "istem": {
+   "positive_global_styles": [
+    "instrumental game soundtrack loop",
+    "13th-century Seljuk Anatolia",
+    "authentic Turkish makam modal music",
+    "natural acoustic instruments, warm room reverb",
+    "seamless loop: ends with the same texture, key and tempo it began with, no ending cadence, no fade out",
+    "for: famine, hard winter, scarcity",
+    "Saba makam, bleak, cold, sorrowful",
+    "bass kemence, sparse ney, cold wind-like drone",
+    "58 bpm"
+   ],
+   "negative_global_styles": [
+    "vocals",
+    "choir",
+    "lyrics",
+    "humming",
+    "electronic",
+    "synth",
+    "modern drum kit",
+    "electric guitar",
+    "acoustic guitar",
+    "piano",
+    "brass",
+    "western orchestra",
+    "trap",
+    "hip hop",
+    "fade out ending",
+    "final cadence"
+   ],
+   "sections": [
+    {
+     "section_name": "A",
+     "positive_local_styles": [
+      "bass kemence plays a bleak slow line"
+     ],
+     "negative_local_styles": [
+      "intro silence",
+      "fade in"
+     ],
+     "duration_ms": 18000,
+     "lines": []
+    },
+    {
+     "section_name": "B",
+     "positive_local_styles": [
+      "sparse ney phrases over a cold drone"
+     ],
+     "negative_local_styles": [],
+     "duration_ms": 18000,
+     "lines": []
+    },
+    {
+     "section_name": "A2",
+     "positive_local_styles": [
+      "bass kemence returns, bleak and hollow",
+      "end exactly as the piece began so it can loop"
+     ],
+     "negative_local_styles": [
+      "ending",
+      "fade out",
+      "ritardando"
+     ],
+     "duration_ms": 18000,
+     "lines": []
+    }
+   ]
+  },
+  "model": "music_v1",
+  "sure_sn": 54.0,
+  "tohum": null,
+  "maliyet": 675,
+  "maliyet_kaynak": "abonelik sayacı farkı",
+  "sayac_once": 19028,
+  "not": "oyun içi müzik: kitlik",
+  "tarih": "2026-11-02T09:44:42+00:00"
+ },
+ {
+  "dosya": "yolculuk.mp3",
+  "tur": "muzik",
+  "istem": {
+   "positive_global_styles": [
+    "instrumental game soundtrack loop",
+    "13th-century Seljuk Anatolia",
+    "authentic Turkish makam modal music",
+    "natural acoustic instruments, warm room reverb",
+    "seamless loop: ends with the same texture, key and tempo it began with, no ending cadence, no fade out",
+    "for: travel on the roads, caravans, the map",
+    "Rast makam, adventurous, wide horizon, steady journey",
+    "ud, kaval, camel-gait bendir and def rhythm",
+    "90 bpm"
+   ],
+   "negative_global_styles": [
+    "vocals",
+    "choir",
+    "lyrics",
+    "humming",
+    "electronic",
+    "synth",
+    "modern drum kit",
+    "electric guitar",
+    "acoustic guitar",
+    "piano",
+    "brass",
+    "western orchestra",
+    "trap",
+    "hip hop",
+    "fade out ending",
+    "final cadence"
+   ],
+   "sections": [
+    {
+     "section_name": "A",
+     "positive_local_styles": [
+      "camel-gait rhythm with an ud travelling melody"
+     ],
+     "negative_local_styles": [
+      "intro silence",
+      "fade in"
+     ],
+     "duration_ms": 18000,
+     "lines": []
+    },
+    {
+     "section_name": "B",
+     "positive_local_styles": [
+      "kaval opens the horizon with a soaring line"
+     ],
+     "negative_local_styles": [],
+     "duration_ms": 18000,
+     "lines": []
+    },
+    {
+     "section_name": "A2",
+     "positive_local_styles": [
+      "ud travelling melody returns on the camel-gait rhythm",
+      "end exactly as the piece began so it can loop"
+     ],
+     "negative_local_styles": [
+      "ending",
+      "fade out",
+      "ritardando"
+     ],
+     "duration_ms": 18000,
+     "lines": []
+    }
+   ]
+  },
+  "model": "music_v1",
+  "sure_sn": 54.0,
+  "tohum": null,
+  "maliyet": 675,
+  "maliyet_kaynak": "abonelik sayacı farkı",
+  "sayac_once": 19703,
+  "not": "oyun içi müzik: yolculuk",
+  "tarih": "2026-11-02T09:45:42+00:00"
+ },
+ {
+  "dosya": "zafer.mp3",
+  "tur": "muzik",
+  "istem": {
+   "positive_global_styles": [
+    "instrumental game soundtrack loop",
+    "13th-century Seljuk Anatolia",
+    "authentic Turkish makam modal music",
+    "natural acoustic instruments, warm room reverb",
+    "seamless loop: ends with the same texture, key and tempo it began with, no ending cadence, no fade out",
+    "for: victory and triumph",
+    "Rast makam, triumphant, proud, celebratory",
+    "davul, zurna, nakkare, kos",
+    "120 bpm"
+   ],
+   "negative_global_styles": [
+    "vocals",
+    "choir",
+    "lyrics",
+    "humming",
+    "electronic",
+    "synth",
+    "modern drum kit",
+    "electric guitar",
+    "acoustic guitar",
+    "piano",
+    "brass",
+    "western orchestra",
+    "trap",
+    "hip hop",
+    "fade out ending",
+    "final cadence"
+   ],
+   "sections": [
+    {
+     "section_name": "A",
+     "positive_local_styles": [
+      "triumphant zurna fanfare-like melody over davul and kos"
+     ],
+     "negative_local_styles": [
+      "intro silence",
+      "fade in"
+     ],
+     "duration_ms": 14000,
+     "lines": []
+    },
+    {
+     "section_name": "B",
+     "positive_local_styles": [
+      "nakkare drives a proud victory march"
+     ],
+     "negative_local_styles": [],
+     "duration_ms": 14000,
+     "lines": []
+    },
+    {
+     "section_name": "A2",
+     "positive_local_styles": [
+      "zurna triumph melody returns",
+      "end exactly as the piece began so it can loop"
+     ],
+     "negative_local_styles": [
+      "ending",
+      "fade out",
+      "ritardando"
+     ],
+     "duration_ms": 14000,
+     "lines": []
+    }
+   ]
+  },
+  "model": "music_v1",
+  "sure_sn": 42.0,
+  "tohum": null,
+  "maliyet": 525,
+  "maliyet_kaynak": "abonelik sayacı farkı",
+  "sayac_once": 20378,
+  "not": "oyun içi müzik: zafer",
+  "tarih": "2026-11-02T09:46:39+00:00"
+ },
+ {
+  "dosya": "miras.mp3",
+  "tur": "muzik",
+  "istem": {
+   "positive_global_styles": [
+    "instrumental game soundtrack loop",
+    "13th-century Seljuk Anatolia",
+    "authentic Turkish makam modal music",
+    "natural acoustic instruments, warm room reverb",
+    "seamless loop: ends with the same texture, key and tempo it began with, no ending cadence, no fade out",
+    "for: legacy, dynasty, generations, the chronicle book",
+    "Huseyni makam, nostalgic, timeless, reverent",
+    "ud, ney, kanun, soft bendir",
+    "68 bpm"
+   ],
+   "negative_global_styles": [
+    "vocals",
+    "choir",
+    "lyrics",
+    "humming",
+    "electronic",
+    "synth",
+    "modern drum kit",
+    "electric guitar",
+    "acoustic guitar",
+    "piano",
+    "brass",
+    "western orchestra",
+    "trap",
+    "hip hop",
+    "fade out ending",
+    "final cadence"
+   ],
+   "sections": [
+    {
+     "section_name": "A",
+     "positive_local_styles": [
+      "ud plays a nostalgic chronicle theme"
+     ],
+     "negative_local_styles": [
+      "intro silence",
+      "fade in"
+     ],
+     "duration_ms": 18000,
+     "lines": []
+    },
+    {
+     "section_name": "B",
+     "positive_local_styles": [
+      "ney and kanun weave memories of generations"
+     ],
+     "negative_local_styles": [],
+     "duration_ms": 18000,
+     "lines": []
+    },
+    {
+     "section_name": "A2",
+     "positive_local_styles": [
+      "ud chronicle theme returns, timeless",
+      "end exactly as the piece began so it can loop"
+     ],
+     "negative_local_styles": [
+      "ending",
+      "fade out",
+      "ritardando"
+     ],
+     "duration_ms": 18000,
+     "lines": []
+    }
+   ]
+  },
+  "model": "music_v1",
+  "sure_sn": 54.0,
+  "tohum": null,
+  "maliyet": 675,
+  "maliyet_kaynak": "abonelik sayacı farkı",
+  "sayac_once": 20903,
+  "not": "oyun içi müzik: miras",
+  "tarih": "2026-11-02T09:47:32+00:00"
+ },
+ {
+  "dosya": "tekke.mp3",
+  "tur": "muzik",
+  "istem": {
+   "positive_global_styles": [
+    "instrumental game soundtrack loop",
+    "13th-century Seljuk Anatolia",
+    "authentic Turkish makam modal music",
+    "natural acoustic instruments, warm room reverb",
+    "seamless loop: ends with the same texture, key and tempo it began with, no ending cadence, no fade out",
+    "for: sufi lodge, mosque courtyard, prayer and contemplation",
+    "Huseyni makam, meditative, spiritual, serene",
+    "ney taksim, bendir zikr pulse, soft kudum",
+    "62 bpm"
+   ],
+   "negative_global_styles": [
+    "vocals",
+    "choir",
+    "lyrics",
+    "humming",
+    "electronic",
+    "synth",
+    "modern drum kit",
+    "electric guitar",
+    "acoustic guitar",
+    "piano",
+    "brass",
+    "western orchestra",
+    "trap",
+    "hip hop",
+    "fade out ending",
+    "final cadence"
+   ],
+   "sections": [
+    {
+     "section_name": "A",
+     "positive_local_styles": [
+      "ney taksim over a soft bendir pulse"
+     ],
+     "negative_local_styles": [
+      "intro silence",
+      "fade in"
+     ],
+     "duration_ms": 18000,
+     "lines": []
+    },
+    {
+     "section_name": "B",
+     "positive_local_styles": [
+      "bendir zikr pulse deepens, ney rises in devotion"
+     ],
+     "negative_local_styles": [],
+     "duration_ms": 18000,
+     "lines": []
+    },
+    {
+     "section_name": "A2",
+     "positive_local_styles": [
+      "serene ney returns over the gentle pulse",
+      "end exactly as the piece began so it can loop"
+     ],
+     "negative_local_styles": [
+      "ending",
+      "fade out",
+      "ritardando"
+     ],
+     "duration_ms": 18000,
+     "lines": []
+    }
+   ]
+  },
+  "model": "music_v1",
+  "sure_sn": 54.0,
+  "tohum": null,
+  "maliyet": 675,
+  "maliyet_kaynak": "abonelik sayacı farkı",
+  "sayac_once": 21578,
+  "not": "oyun içi müzik: tekke",
+  "tarih": "2026-11-02T09:48:20+00:00"
  }
 ]
