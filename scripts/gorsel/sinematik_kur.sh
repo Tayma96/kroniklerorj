@@ -32,5 +32,5 @@ ffmpeg -y -loglevel error -i ham.mkv "${ORTAK[@]}" -pass 2 -movflags +faststart 
 # kapak (ilk çekimin açılış kadrajı, tam pozlama) ve bölüm kareleri (gren yok): sira:u:yol
 "$PY" -I "$KOK/sinematik.py" "$SEC" "$IS/durgun" --durgun \
 "0:0.0:$HEDEF/giris_kapak.jpg,1:0.5:$HEDEF/giris_sahneler/bolum1.jpg,3:0.5:$HEDEF/giris_sahneler/bolum2.jpg,\
-5:0.6:$HEDEF/giris_sahneler/bolum3.jpg,6:0.5:$HEDEF/giris_sahneler/bolum4.jpg,8:0.6:$HEDEF/giris_sahneler/bolum5.jpg"
+5:0.6:$HEDEF/giris_sahneler/bolum3.jpg,6:0.5:$HEDEF/giris_sahneler/bolum4.jpg,8:0.3:$HEDEF/giris_sahneler/bolum5.jpg"
 ls -la "$HEDEF/giris.mp4" "$HEDEF/giris_kapak.jpg" "$HEDEF/giris_sahneler"
