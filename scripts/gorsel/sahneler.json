@@ -1,0 +1,83 @@
+{
+  "model": "Z-Image-Turbo (Tongyi-MAI, Apache 2.0) GGUF Q8_0 (leejet/Z-Image-Turbo-GGUF)",
+  "metin_kodlayici": "Qwen3-4B-Instruct-2507 Q8_0 (unsloth, Apache 2.0)",
+  "vae": "FLUX.1 ae.safetensors (Black Forest Labs, Apache 2.0)",
+  "calistirici": "stable-diffusion.cpp (leejet, MIT) sd-cli, CPU",
+  "ayar": "640x1136, 8 adim, euler, cfg 1.0, flash-attn, OpenBLAS (CPU). Sinematikte Lanczos ile 832 px genislige buyutulup hafif keskinlestirilir (sinematik.py); ESRGAN bu islemcide cok yavas oldugu icin kullanilmadi.",
+  "ek": " Shot on 35mm film with an anamorphic lens, photorealistic, natural light, rich texture, highly detailed, cinematic color grading, vertical portrait composition.",
+  "sahneler": [
+    {
+      "id": "b1_kosedag_sis",
+      "tohum": 101,
+      "istem": "Epic wide cinematic film still of a misty mountain pass in eastern Anatolia at cold grey dawn, the morning after a lost medieval battle in the year 1243. In the foreground a torn, faded crimson cloth war banner hangs from a broken wooden lance planted in the muddy grass; dented round wooden shields, broken spears and scattered arrows lie in the wet grass. Below, a deep valley filled with low drifting fog, layers of dark mountain ridges fading into the mist, a pale overcast sky. Cold desaturated blue-grey light, somber, silent, vast."
+    },
+    {
+      "id": "b1_kosedag_asker",
+      "tohum": 112,
+      "istem": "A defeated Seljuk Turkish warrior of the 13th century seen from behind, kneeling alone on a muddy hillside with his head bowed, wearing a dented conical steel helmet with a chainmail aventail and a lamellar armor coat over a torn dark red quilted kaftan, a broken curved sabre lying in the mud beside him. Beyond him a wide valley where the camp of a defeated army is burning, tall columns of grey smoke rising into a heavy overcast sky, abandoned tents and fallen horses far away. Light drizzle, cold muted blue-grey tones, somber atmosphere."
+    },
+    {
+      "id": "b2_mogol_atlilar",
+      "tohum": 203,
+      "istem": "A large band of 13th century Mongol horse archers galloping across a dry Anatolian steppe straight toward the camera, riders wearing fur-trimmed caps and leather lamellar armor, holding composite recurved bows, quivers at their hips, small sturdy steppe horses with flying manes, enormous clouds of dust kicked up behind them, dark brooding storm clouds above, low angle telephoto shot, dramatic and menacing. Muted cold earthy tones."
+    },
+    {
+      "id": "b2_yagma",
+      "tohum": 217,
+      "istem": "Night in the 13th century: an ancient walled Seljuk city in Anatolia is burning in the distance after a Mongol raid, seen from far away across a dark open plain. Huge fires and towering columns of black smoke rise above massive crenellated stone city walls, a tall cylindrical brick minaret and a conical stone dome are silhouetted against the flames, glowing embers drift through the air. In the foreground, on a muddy dirt track through dry grass, a small group of medieval refugees in long hooded dark wool cloaks walk away from the camera in silhouette, one leads an ox pulling a simple wooden cart loaded with bundles of cloth. Everything is handmade from stone, mud brick, wood and wool. Deep blue night sky, orange firelight.",
+      "reddedilen": [
+        {
+          "tohum": 211,
+          "neden": "modern binalar, camli pencereler, sirt cantasi, spor ayakkabi, sokak lambasi"
+        }
+      ]
+    },
+    {
+      "id": "b2_bos_koy",
+      "tohum": 223,
+      "istem": "An abandoned 13th century medieval Anatolian village of simple flat-roofed mud-brick houses with tiny dark window holes and earthen roofs, on a bleak hillside in late autumn, empty and silent, a weathered wooden plank door hanging open on a broken hinge, an overturned wooden ox cart with a broken spoked wheel in the foreground, scattered straw, cold wind blowing dust, a bare leafless tree, grey overcast sky, desaturated cold tones, melancholic, no people. Everything is handmade from mud brick, stone, wood and straw."
+    },
+    {
+      "id": "b3_vergi",
+      "tohum": 307,
+      "istem": "A line of poor medieval Anatolian peasants in patched brown wool clothes and simple felt caps trudging through a snowy, muddy village square, bent under heavy sacks of grain on their backs, seen from behind, carrying the sacks toward a group of Mongol tax collectors in fur hats sitting on horseback beside a wooden cart piled with sacks, light snowfall, grey winter morning, simple 13th century flat-roofed mud-brick houses with tiny dark window holes around. Everything is handmade from mud brick, wood, wool and leather. Cold desaturated colors, heavy and weary mood.",
+      "durum": "uretilmedi",
+      "not": "Yavas disk + 14.3 GB paylasilan bellek siniri nedeniyle uretilmedi; yerine eski FLUX karesi kullanildi (KAYNAK.md)."
+    },
+    {
+      "id": "b3_cile",
+      "tohum": 313,
+      "istem": "Close-up portrait of a weary middle-aged Anatolian peasant woman of the 13th century, wrapped in a coarse brown wool shawl over a faded headscarf, snowflakes caught on the wool, wind-burned cheeks, tired but enduring eyes looking into the distance, behind her a blurred grey winter village of mud-brick houses with chimney smoke. Soft cold overcast light, shallow depth of field, realistic skin texture.",
+      "durum": "uretilmedi",
+      "not": "Yavas disk + 14.3 GB paylasilan bellek siniri nedeniyle uretilmedi; yerine eski FLUX karesi kullanildi (KAYNAK.md)."
+    },
+    {
+      "id": "b4_kervan",
+      "tohum": 401,
+      "istem": "A long camel caravan travels along an ancient dirt road across the vast golden Anatolian steppe at sunset, Bactrian camels loaded with bales and rolled carpets, merchants in turbans and long kaftans walking beside them, long shadows, warm dust glowing in the low golden sunlight, in the distance a massive Seljuk stone caravanserai with high walls and a carved stone portal, gentle hills and mountains on the horizon, the sun low near the horizon, hopeful and peaceful atmosphere.",
+      "durum": "uretilmedi",
+      "not": "Yavas disk + 14.3 GB paylasilan bellek siniri nedeniyle uretilmedi; yerine eski FLUX karesi kullanildi (KAYNAK.md)."
+    },
+    {
+      "id": "b4_umut",
+      "tohum": 409,
+      "istem": "A young Anatolian woman of the 13th century in a simple linen dress and a light cream headscarf walking beside a camel caravan at golden hour, seen in profile, warm low sunlight on her face, a small boy walking at her side, both looking toward the horizon with quiet hope, golden dust glowing in the backlight, camels softly out of focus behind them. Warm golden tones, shallow depth of field.",
+      "durum": "uretilmedi",
+      "not": "Yavas disk + 14.3 GB paylasilan bellek siniri nedeniyle uretilmedi; yerine eski FLUX karesi kullanildi (KAYNAK.md)."
+    },
+    {
+      "id": "b5_ocak",
+      "tohum": 503,
+      "istem": "Night interior of a humble medieval Anatolian mud-brick house, an old grandmother in a white headscarf sits by a low clay hearth on the floor, gently stirring the grey ashes with an iron poker to reveal glowing orange embers beneath, a small child sits close beside her watching the embers, warm ember light on their faces, the rest of the room in deep darkness, a copper pot and rough wooden beams, intimate, calm and hopeful mood.",
+      "durum": "uretilmedi",
+      "not": "Yavas disk + 14.3 GB paylasilan bellek siniri nedeniyle uretilmedi; yerine eski FLUX karesi kullanildi (KAYNAK.md)."
+    },
+    {
+      "id": "b5_koz",
+      "tohum": 509,
+      "istem": "Extreme close-up of an old hearth at night: a bed of soft grey ash with glowing orange-red embers hidden beneath it, a few embers breaking through the ash and glowing brightly, thin wisps of smoke and a few tiny sparks rising into deep black darkness. The glowing embers fill only the bottom third of the frame, the upper two thirds of the image are almost pure black empty darkness. Macro photography, shallow depth of field, warm glow.",
+      "durum": "uretilmedi",
+      "not": "Hiz onceligiyle uretim yarida durduruldu; bitis eski_muhur cekiminin uzatilmasiyla yapildi."
+    }
+  ]
+}

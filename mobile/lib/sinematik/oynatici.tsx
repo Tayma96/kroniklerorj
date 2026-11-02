@@ -233,7 +233,7 @@ function SinematikIc({ cekimler, onDone, parca, video }: { cekimler: Cekim[]; on
         </View>
       ) : (
         <Animated.Text key={"m" + i} pointerEvents="none" entering={reduced ? FadeIn.delay(c.gecikmeMs ?? 300).duration(500) : FadeInUp.delay(c.gecikmeMs ?? 700).duration(1100)} exiting={FadeOut.duration(400)}
-          style={{ position: "absolute", left: 26, right: 26, bottom: bant + ins.bottom + 34, fontFamily: F.serif, fontSize: W < 360 ? 17 : 19, lineHeight: W < 360 ? 26 : 29, color: C.parchment, textAlign: "center", writingDirection: rtl ? "rtl" : "ltr", textShadowColor: "#000", textShadowRadius: 8 }}>
+          style={{ position: "absolute", left: 26, right: 26, ...(c.altyaziUst ? { top: bant + ins.top + 56 } : { bottom: bant + ins.bottom + 34 }), fontFamily: F.serif, fontSize: W < 360 ? 17 : 19, lineHeight: W < 360 ? 26 : 29, color: C.parchment, textAlign: "center", writingDirection: rtl ? "rtl" : "ltr", textShadowColor: "#000", textShadowRadius: 8 }}>
           {c.metin}
         </Animated.Text>
       )}

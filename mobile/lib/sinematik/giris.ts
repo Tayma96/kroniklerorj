@@ -11,23 +11,26 @@ const DILLER = ["tr", "en", "es", "pt", "ar", "ru"] as const;
 // Sinematik kendi müziğini taşır: oyun müziği ve ortamı susar.
 const SESSIZ: OrtamPlan = { music: null, ambiance: null };
 
-// Bölüm başına sahne görseli (video gelene dek; sade modda da kullanılır).
+// Sinematik video (dil bağımsız, sessiz); ses dil başına ayrı parçadan çalar. Görüntü: assets/sinematik/KAYNAK.md.
+export const GIRIS_VIDEO: number = require("../../assets/sinematik/giris.mp4");
+// Bölüm başına durağan kare: sade modda ve video açılamazsa (videodaki çekimlerle aynı dünya).
 const G = {
-  kosedag: require("../../assets/sinematik/kosedag.jpg"),
-  yangin: require("../../assets/sinematik/yangin.jpg"),
-  cile: require("../../assets/hero/cocuk_kis.jpg"),
-  kervan: require("../../assets/arka/gurbet_yol.jpg"),
-  koz: require("../../assets/sinematik/muhur.jpg"),
+  b1: require("../../assets/sinematik/giris_sahneler/bolum1.jpg"),
+  b2: require("../../assets/sinematik/giris_sahneler/bolum2.jpg"),
+  b3: require("../../assets/sinematik/giris_sahneler/bolum3.jpg"),
+  b4: require("../../assets/sinematik/giris_sahneler/bolum4.jpg"),
+  b5: require("../../assets/sinematik/giris_sahneler/bolum5.jpg"),
   sehir: require("../../assets/tasarim/v4/town-yaz.jpg"),
 };
-type Sahne = Pick<Cekim, "gorsel" | "oran" | "odak" | "kamera" | "katman" | "ton" | "gecis">;
-const DIKEY = 9 / 16, W169 = 16 / 9;
+type Sahne = Pick<Cekim, "gorsel" | "oran" | "odak" | "kamera" | "katman" | "ton" | "gecis" | "altyaziUst">;
+const DIKEY = 9 / 16;
 const SAHNE: Sahne[] = [
-  { gorsel: G.kosedag, oran: DIKEY, odak: 0.5, kamera: { s: [1.03, 1.18], x: [0, 0], y: [0, -16] }, katman: ["sis"], ton: "rgba(20,14,10,0.16)", gecis: "kara" },
-  { gorsel: G.yangin, oran: DIKEY, odak: 0.5, kamera: { s: [1.2, 1.04], x: [0, 0], y: [-18, 0] }, katman: ["ates", "koz"] },
-  { gorsel: G.cile, oran: 1, odak: 0.5, kamera: { s: [1.26, 1.08], x: [0, 0], y: [-18, 0] }, katman: ["kar"], ton: "rgba(10,18,52,0.45)" },
-  { gorsel: G.kervan, oran: W169, odak: 0.52, kamera: { s: [1.14, 1.14], x: [34, -34], y: [0, 0] }, katman: ["toz"] },
-  { gorsel: G.koz, oran: DIKEY, odak: 0.5, kamera: { s: [1.04, 1.22], x: [0, 0], y: [0, -30] }, katman: ["ates", "koz"], ton: "rgba(6,4,2,0.2)" },
+  { gorsel: G.b1, oran: DIKEY, odak: 0.5, kamera: { s: [1.03, 1.16], x: [0, 0], y: [0, -14] }, katman: ["sis"], ton: "rgba(20,14,10,0.16)", gecis: "kara" },
+  { gorsel: G.b2, oran: DIKEY, odak: 0.5, kamera: { s: [1.18, 1.04], x: [0, 0], y: [-18, 0] }, katman: ["ates", "koz"] },
+  { gorsel: G.b3, oran: DIKEY, odak: 0.5, kamera: { s: [1.04, 1.16], x: [0, 0], y: [0, -12] }, katman: ["kar"], ton: "rgba(6,8,26,0.12)" },
+  { gorsel: G.b4, oran: DIKEY, odak: 0.5, kamera: { s: [1.12, 1.02], x: [0, 0], y: [10, 0] }, katman: ["toz"] },
+  // Son bölümde mühürlü el ekranın altında: altyazı üste (başlık da orta-üstte belirir).
+  { gorsel: G.b5, oran: DIKEY, odak: 0.5, kamera: { s: [1.04, 1.2], x: [0, 0], y: [0, -30] }, katman: ["ates", "koz"], ton: "rgba(6,4,2,0.2)", altyaziUst: true },
 ];
 
 export const girisParca = (lang: string) => "giris." + ((DILLER as readonly string[]).includes(lang) ? lang : "tr");
