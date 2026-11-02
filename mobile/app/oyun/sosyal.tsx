@@ -5,7 +5,7 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useGame } from "../../lib/store";
-import { SOCIAL_AXES, socialTierIndex, hostFeast, giveAlms, sadakaTasi, intimidate, factionById, NAM_META, rumorAction, playerDominantNam, GameEvent } from "../../lib/game";
+import { SOCIAL_AXES, socialTierIndex, unKademesi, unSonraki, UN_ETKI, UnEksen, hostFeast, giveAlms, sadakaTasi, intimidate, factionById, NAM_META, rumorAction, playerDominantNam, GameEvent } from "../../lib/game";
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
 import { SoylentiKarti } from "../../lib/rumor-ui";
@@ -23,7 +23,7 @@ function Section({ title, sub }: { title: string; sub: string }) {
   );
 }
 
-function Axis({ icon, label, value, tier, desc }: { icon: string; label: string; value: number; tier: string; desc: string }) {
+function Axis({ icon, label, value, tier, desc, etki, sonraki }: { icon: string; label: string; value: number; tier: string; desc: string; etki?: string; sonraki?: string }) {
   const pct = Math.max(0, Math.min(100, value));
   return (
     <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 5, padding: 14, marginBottom: 8 }}>
@@ -32,9 +32,12 @@ function Axis({ icon, label, value, tier, desc }: { icon: string; label: string;
         <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.gold }}>{tier}</Text>
       </View>
       <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchmentMuted, marginTop: 3 }}>{desc}</Text>
+      {/* Kademenin somut etkisi ve bir sonraki kazanım (Hissiyat 2): rakam neye yarıyor, görünsün */}
+      {!!etki && <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchment, marginTop: 6, lineHeight: 21 }}>{etki}</Text>}
       <View style={{ height: 5, backgroundColor: "rgba(255,255,255,0.09)", borderRadius: 3, marginTop: 8 }}>
         <View style={{ width: `${pct}%`, height: 5, backgroundColor: C.gold, borderRadius: 3 }} />
       </View>
+      {!!sonraki && <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, marginTop: 6, lineHeight: 21 }}>{sonraki}</Text>}
     </View>
   );
 }
@@ -95,7 +98,10 @@ export default function Sosyal() {
         <Section title={t("soc.mevki.h")} sub={t("soc.mevki.sub")} />
         {SOCIAL_AXES.map((a) => {
           const v = (p as any)[a.key];
-          return <Axis key={a.key} icon={a.icon} label={t("soc." + a.key + ".l")} value={v} tier={t("soc." + a.key + ".t" + socialTierIndex(v))} desc={t("soc." + a.key + ".d")} />;
+          const key = a.key as UnEksen; const ki = unKademesi(key, v); const nx = unSonraki(key, v);
+          return <Axis key={a.key} icon={a.icon} label={t("soc." + a.key + ".l")} value={v} tier={t("soc." + a.key + ".t" + ki)} desc={t("soc." + a.key + ".d")}
+            etki={UN_ETKI[key].includes(ki) ? t(`un.${key}.${ki}`) : undefined}
+            sonraki={nx ? `${applyParams(t("un.sonraki"), [t("soc." + a.key + ".t" + nx.kademe), nx.kalan])}: ${t(`un.${key}.${nx.kademe}`)}` : undefined} />;
         })}
 
         <Section title={t("soc.nam.h")} sub={t("soc.nam.sub")} />

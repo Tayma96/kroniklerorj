@@ -3,8 +3,8 @@ import { View, Text } from "react-native";
 import Animated, { FadeInUp, FadeOutUp, FadeIn, FadeOut, ZoomIn, Layout } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useGame } from "./store";
-import { socialTierIndex } from "./game";
-import { useI18n } from "./i18n";
+import { unKademesi, unSonraki, UN_ETKI, UnEksen } from "./game";
+import { useI18n, applyParams } from "./i18n";
 import { hap } from "./haptics";
 import { playFanfare, playTap, playToll, playChime, playVictory, playLullaby, playWedding } from "./sound";
 import { C, F } from "./theme";
@@ -13,7 +13,7 @@ import { GameIcon } from "./icons";
 // Hangi alanları izliyoruz + nasıl gösteriliyor. "feel" katmanı: kimlik/itibar değişimleri anında patlar.
 type Watch = { path: string; icon: string; color: string; label: string; min: number; onlyDrop?: boolean; skipFromZero?: boolean };
 
-interface Toast { id: number; text: string; color: string; icon: string }
+interface Toast { id: number; text: string; color: string; icon: string; alt?: string } // alt: rakam neye yaklaştırdı (sonraki kademe ve kalan puan)
 
 let _id = 0;
 
@@ -22,7 +22,7 @@ export function StatDeltaOverlay() {
   const { state } = useGame();
   const { t } = useI18n();
   const [toasts, setToasts] = useState<Toast[]>([]);
-  const [tierUp, setTierUp] = useState<null | { tier: number; tick: number }>(null);
+  const [tierUp, setTierUp] = useState<null | { eksen: UnEksen; tier: number; dustu: boolean; tick: number }>(null);
   const [crown, setCrown] = useState<null | { tick: number }>(null);
   const [settle, setSettle] = useState<null | { name: string; tick: number }>(null);
   const [capstone, setCapstone] = useState<null | { tick: number }>(null);
@@ -31,7 +31,7 @@ export function StatDeltaOverlay() {
   const [mourn, setMourn] = useState<null | { tick: number }>(null);
   const prev = useRef<Record<string, number> | null>(null);
   const gen = useRef<number>(-1);
-  const fameTier = useRef<number>(-1);
+  const unTier = useRef<Record<string, number> | null>(null);
   const wasCrowned = useRef<boolean | null>(null);
   const settleCount = useRef<number>(-1);
   const capstoneCount = useRef<number>(-1);
@@ -123,18 +123,24 @@ export function StatDeltaOverlay() {
     childCount.current = list.length;
   }, [state?.player.children?.length]);
 
-  // Şöhret kademe atlayınca büyük kutlama anı.
+  // Ün kademesi değişince an (Hissiyat 2): yalnız somut etkisi olan kademeye çıkışta kutlama; etkili kademeden düşüşte
+  // ağır dokunuş. Etkisiz ara kademeler sessiz geçer (gürültü yok). Kutlamada kademenin ne kazandırdığı yazılır.
   useEffect(() => {
     if (!state) return;
-    const ti = socialTierIndex(state.player.fame);
-    if (fameTier.current < 0 || gen.current !== state.player.generation) { fameTier.current = ti; return; }
-    if (ti > fameTier.current) {
-      setTierUp({ tier: ti, tick: Date.now() });
-      hap("success"); playFanfare();
-      setTimeout(() => setTierUp(null), 2600);
+    const p = state.player; const EKSEN: UnEksen[] = ["reputation", "honor", "fame", "fear"];
+    const now: Record<string, number> = {}; for (const e of EKSEN) now[e] = unKademesi(e, p[e]);
+    if (!unTier.current || gen.current !== p.generation) { unTier.current = now; return; }
+    for (const e of EKSEN) {
+      const once = unTier.current[e], simdi = now[e];
+      if (simdi > once && UN_ETKI[e].includes(simdi) && !(e === "reputation" && simdi === 0)) {
+        setTierUp({ eksen: e, tier: simdi, dustu: false, tick: Date.now() }); hap("success"); playFanfare(); setTimeout(() => setTierUp(null), 3200); break;
+      }
+      if (simdi < once && (UN_ETKI[e].includes(once) || (e === "reputation" && simdi === 0))) {
+        setTierUp({ eksen: e, tier: simdi, dustu: true, tick: Date.now() }); hap("heavy"); setTimeout(() => setTierUp(null), 3200); break;
+      }
     }
-    fameTier.current = ti;
-  }, [state?.player.fame, state?.player.generation]);
+    unTier.current = now;
+  }, [state?.player.reputation, state?.player.honor, state?.player.fame, state?.player.fear, state?.player.generation]);
 
   // İzlenenler — survival decay (açlık) gürültüsünü dışta tutar; sistemlerimizin "kimlik" eksenine odaklanır.
   const WATCH: Watch[] = [
@@ -149,11 +155,11 @@ export function StatDeltaOverlay() {
     { path: "skills.trade",   icon: "coins", color: C.gold,  label: t("skill.trade"), min: 1 },
     { path: "skills.crafting",icon: "anvil", color: C.azure, label: t("skill.crafting"), min: 1 },
     { path: "skills.social",  icon: "speaker", color: C.sage, label: t("skill.social"), min: 1 },
-    { path: "nam.comert",     icon: "leaf", color: "#7FA66A", label: t("nam.comert"), min: 1 },
-    { path: "nam.zalim",      icon: "skull", color: C.roseDim, label: t("nam.zalim"), min: 1 },
-    { path: "nam.capkin",     icon: "lyre", color: "#C77BA6", label: t("nam.capkin"), min: 1 },
-    { path: "nam.dindar",     icon: "prayer-beads", color: "#9C7BC4", label: t("nam.dindar"), min: 1 },
-    { path: "nam.mert",       icon: "crossed-swords", color: C.emberSoft, label: t("nam.mert"), min: 1 },
+    { path: "nam.comert",     icon: "leaf", color: "#7FA66A", label: t("nam.comert"), min: 3 },
+    { path: "nam.zalim",      icon: "skull", color: C.roseDim, label: t("nam.zalim"), min: 3 },
+    { path: "nam.capkin",     icon: "lyre", color: "#C77BA6", label: t("nam.capkin"), min: 3 },
+    { path: "nam.dindar",     icon: "prayer-beads", color: "#9C7BC4", label: t("nam.dindar"), min: 3 },
+    { path: "nam.mert",       icon: "crossed-swords", color: C.emberSoft, label: t("nam.mert"), min: 3 },
     { path: "spouse_bond",    icon: "ring", color: C.gold, label: t("feel.spouseBond"), min: 2, skipFromZero: true },
     { path: "child_bond._dev", icon: "baby", color: "#7FA66A", label: t("feel.childBond"), min: 2, skipFromZero: true },
   ];
@@ -185,14 +191,20 @@ export function StatDeltaOverlay() {
       if (w.onlyDrop && d > 0) continue;
       const sign = d > 0 ? "+" : "−";
       const txt = w.label ? `${sign}${Math.abs(Math.round(d))} ${w.label}` : `${sign}${Math.abs(Math.round(d))}`;
-      fresh.push({ id: ++_id, text: txt, color: w.color, icon: w.icon });
+      // Ün artışında rakamın neye yaklaştırdığı: "Saygın · 3 puan kaldı" (yalnız artışta; düşüş kademe anında görünür)
+      let alt: string | undefined;
+      if (d > 0 && (w.path === "reputation" || w.path === "honor" || w.path === "fame" || w.path === "fear")) {
+        const nx = unSonraki(w.path, snap[w.path]);
+        if (nx) alt = applyParams(t("un.sonraki"), [t("soc." + w.path + ".t" + nx.kademe), nx.kalan]);
+      }
+      fresh.push({ id: ++_id, text: txt, color: w.color, icon: w.icon, alt });
     }
     prev.current = snap;
     if (fresh.length === 0) return;
 
     setToasts((cur) => [...cur, ...fresh].slice(-5));
     const ids = fresh.map((f) => f.id);
-    setTimeout(() => setToasts((cur) => cur.filter((tt) => !ids.includes(tt.id))), 1750);
+    setTimeout(() => setToasts((cur) => cur.filter((tt) => !ids.includes(tt.id))), fresh.some((f) => f.alt) ? 2600 : 1750); // sonraki kademe satırı okunacak kadar kalır
   }, [state?.player]);
 
   if (toasts.length === 0 && !tierUp && !crown && !settle && !wed && !birth && !mourn && !capstone) return null;
@@ -245,10 +257,11 @@ export function StatDeltaOverlay() {
       )}
       {tierUp && (
         <Animated.View key={"tier" + tierUp.tick} entering={ZoomIn.springify().damping(14)} exiting={FadeOut.duration(400)}
-          style={{ alignItems: "center", backgroundColor: "rgba(13,10,6,0.96)", borderWidth: 1.5, borderColor: C.gold, borderRadius: 14, paddingVertical: 12, paddingHorizontal: 22, marginBottom: 10, shadowColor: C.gold, shadowOpacity: 0.5, shadowRadius: 12, shadowOffset: { width: 0, height: 0 }, elevation: 10 }}>
-          <GameIcon name="crown" size={26} color={C.gold} />
-          <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 2.5, color: C.goldDim, marginTop: 4 }}>{t("feel.fameUp").toUpperCase()}</Text>
-          <Text style={{ fontFamily: F.display, fontSize: 17, letterSpacing: 1, color: C.gold, marginTop: 2 }}>{t("soc.fame.t" + tierUp.tier)}</Text>
+          style={{ alignItems: "center", backgroundColor: "rgba(13,10,6,0.96)", borderWidth: 1.5, borderColor: tierUp.dustu ? C.blood : C.gold, borderRadius: 14, paddingVertical: 12, paddingHorizontal: 22, marginBottom: 10, shadowColor: C.gold, shadowOpacity: 0.5, shadowRadius: 12, shadowOffset: { width: 0, height: 0 }, elevation: 10 }}>
+          <GameIcon name={{ reputation: "karakter", honor: "medal", fame: "crown", fear: "skull" }[tierUp.eksen]} size={26} color={tierUp.dustu ? C.blood : C.gold} />
+          <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 2.5, color: tierUp.dustu ? C.blood : C.goldDim, marginTop: 4 }}>{`${t("soc." + tierUp.eksen + ".l")} · ${t(tierUp.dustu ? "un.dustu" : "un.yeni")}`.toUpperCase()}</Text>
+          <Text style={{ fontFamily: F.display, fontSize: 17, letterSpacing: 1, color: tierUp.dustu ? C.parchment : C.gold, marginTop: 2 }}>{t("soc." + tierUp.eksen + ".t" + tierUp.tier)}</Text>
+          <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchment, marginTop: 4, textAlign: "center", maxWidth: 280, lineHeight: 21 }}>{UN_ETKI[tierUp.eksen].includes(tierUp.tier) ? t(`un.${tierUp.eksen}.${tierUp.tier}`) : t("un.etkisiz")}</Text>
         </Animated.View>
       )}
       {toasts.map((tt) => (
@@ -256,6 +269,7 @@ export function StatDeltaOverlay() {
           style={{ flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: "rgba(13,10,6,0.94)", borderWidth: 1, borderColor: tt.color + "88", borderRadius: 20, paddingVertical: 5, paddingHorizontal: 12, marginBottom: 6, shadowColor: "#000", shadowOpacity: 0.4, shadowRadius: 5, shadowOffset: { width: 0, height: 2 }, elevation: 6 }}>
           <GameIcon name={tt.icon} size={12} color={tt.color} />
           <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 0.3, color: tt.color }}>{tt.text}</Text>
+          {!!tt.alt && <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchmentMuted }}>· {tt.alt}</Text>}
         </Animated.View>
       ))}
     </View>
