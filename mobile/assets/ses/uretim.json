@@ -10789,5 +10789,26 @@
   "sayac_once": 32633,
   "not": "NPC sözü dlg.is.cold2",
   "tarih": "2026-11-02T10:50:30+00:00"
+ },
+ {
+  "dosya": "ilk_is_pt.mp3",
+  "tur": "vo-an",
+  "istem": "[warm] Pela primeira vez, as mãos se cobriram com a poeira de um ofício. O trabalho reacende a brasa.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "pt"
+  },
+  "tohum": 1243,
+  "maliyet": 40,
+  "sayac_once": 32682,
+  "not": "kilit an anlatısı",
+  "tarih": "2026-11-02T14:15:42+00:00"
  }
 ]
