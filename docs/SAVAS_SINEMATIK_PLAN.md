@@ -23,6 +23,14 @@ Oyun metin tabanlı kalır. **Altın kural:** oyuncu karar verir → oyun hesapl
 MPFB/MakeHuman gövde, Poly Haven/ambientCG CC0 doku ve HDRI, CMU hareket kaydı, Quaternius Universal Animation
 Library (CC0). Mixamo yok (bilgisayar yok); gerekirse ileride bir bilgisayardan eklenebilir.
 
+## Yüzleşme katmanı (kuruldu, 2 Kasım)
+- `lib/yuzlesme.ts` (saf çözücü), `game.ts` `applyYuzlesme` (kavgasız kapanış: söz / haraç / kaçış / kaçış bedeli),
+  `lib/i18n-yuzlesme.ts` (6 dil), `app/oyun/savas.tsx` paneli. Türler: eşkıya (haydut, korsan, reis), hayvan (ayı,
+  canavar), düello (meydan okuma, Kara Alp, Bozkır Kurdu); ordu, turnuva, hasım ve Gölge Okçusu doğrudan dövüşe gider.
+- Ay hakkı girişte yanar; kavgasız sonuç ödül kapısını kapatır. Kavgaya dönen sonuç açılışa işlenir (rakip canı,
+  oyuncu canı, nefes, üstünlük) ve anlatısı dövüş günlüğüne düşer.
+- Klip eşlemesi: her `yz.<tür>.<seçim>.<sonuç>` bir klip. Metin önce yazıldı; klip çekilince metin klibe göre düzeltilir.
+
 ## Aşamalar ve onay kapıları
 1. **Kalite kanıtı** (sürüyor): tek piyade, gerçekçi kıyafet/zırh/miğfer/kılıç; bekleme + kılıç saldırısı; telefonda
    video. Kapı: "gerçekçi ve akıcı".

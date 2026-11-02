@@ -10586,6 +10586,38 @@ export function applyBattleOutcome(prev: GameState, id: string, won: boolean, fi
   return s;
 }
 const NEMESIS_NAMES = ["Kara Yusuf", "Çolak Murat", "Deli Hasan", "Topal Bekir", "Azrail Şahin", "Kanlı Doğan"];
+// ── Yüzleşme: dövüşten önce 4 seçenek (lib/yuzlesme.ts saf çözer). Kavgasız biten sonuç burada kayda geçer. ──
+export type YuzlesmeTuru = "eskiya" | "hayvan" | "duello";
+export const YUZLESME_TURU: Record<string, YuzlesmeTuru> = { haydut: "eskiya", korsan: "eskiya", reis: "eskiya", ayi: "hayvan", canavar: "hayvan", duello: "duello", kara_alp: "duello", bozkir_kurdu: "duello" };
+export type YuzlesmeKapanis = "soz" | "harac" | "kac" | "kac_bedel";
+// Haraç (sözle pazarlığın yarım sonucu) ve kaçarken düşen kese: ödülün çağ parasıyla oranı.
+export function yuzlesmeHarac(s: GameState, encId: string): number { const e = ENCOUNTERS.find((x) => x.id === encId); return e ? Math.round(e.reward * 0.8 * inflationFactor(s)) : 0; }
+export function yuzlesmeKese(s: GameState, encId: string): number { const e = ENCOUNTERS.find((x) => x.id === encId); return e ? Math.min(Math.max(0, Math.floor(s.player.money)), Math.round(e.reward * 0.5 * inflationFactor(s))) : 0; }
+export const YUZLESME_YARA = 6; // hayvandan kaçarken sıyrık
+// Ay hakkı girişte yandı (startBattleAttempt); sonuç ödül kapısını kapatır → aynı ay ne dövüş ödülü ne ikinci yüzleşme.
+export function applyYuzlesme(prev: GameState, encId: string, kapanis: YuzlesmeKapanis): GameState {
+  const s = clone(prev); const p = s.player; const e = ENCOUNTERS.find((x) => x.id === encId); const tur = YUZLESME_TURU[encId];
+  if (!e || !tur || p.dead || p.battle_turn !== s.turn || p.battle_award_turn === s.turn) return s;
+  p.battle_award_turn = s.turn;
+  if (kapanis === "soz") {
+    gainSkill(s, "social", 6);
+    if (tur === "eskiya") p.fear = Math.min(100, p.fear + 2);
+    if (tur === "duello") p.honor = Math.min(100, p.honor + 1);
+    push(s, "savaş", `${e.title}: kılıç çekilmeden bitti.`, "kişisel", false, { k: "evj.yz.soz." + tur, p: [{ enc: e.id }] });
+  } else if (kapanis === "harac" && tur === "eskiya") {
+    const bedel = Math.min(Math.max(0, Math.floor(p.money)), yuzlesmeHarac(s, encId));
+    p.money -= bedel; gainSkill(s, "social", 3);
+    push(s, "savaş", `${e.title}: ${bedel} akçe haraçla yol açıldı.`, "kişisel", false, { k: "evj.yz.harac", p: [{ enc: e.id }, bedel] });
+  } else if (kapanis === "kac") {
+    if (tur === "duello") { p.honor = Math.max(0, p.honor - 2); bumpNam(p, "mert", -2); }
+    push(s, "savaş", `${e.title}: geri çekildin.`, "kişisel", false, { k: "evj.yz.kac." + tur, p: [{ enc: e.id }] });
+  } else if (kapanis === "kac_bedel") {
+    if (tur === "eskiya") { const kese = yuzlesmeKese(s, encId); p.money -= kese; push(s, "savaş", `${e.title}: kaçarken kesen düştü (−${kese} akçe).`, "kişisel", false, { k: "evj.yz.kacb.eskiya", p: [{ enc: e.id }, kese] }); }
+    else if (tur === "hayvan") { p.health = Math.max(1, p.health - YUZLESME_YARA); push(s, "savaş", `${e.title}: kaçarken yaralandın.`, "kişisel", false, { k: "evj.yz.kacb.hayvan", p: [{ enc: e.id }, YUZLESME_YARA] }); }
+    else { p.honor = Math.max(0, p.honor - 4); p.fame = Math.max(0, p.fame - 2); bumpNam(p, "mert", -4); push(s, "savaş", `${e.title}: meydandan çekildin; adın korkakla anıldı.`, "kişisel", false, { k: "evj.yz.kacb.duello", p: [{ enc: e.id }] }); }
+  }
+  return s;
+}
 // Hasımla barışma girişimi: hediye kesesi + dil dökme. Şans karizma ve şerefle artar; ayda bir denenir (farm yok — yalnız gider).
 export function reconcileCost(s: GameState): number { return Math.round(70 * inflationFactor(s)); }
 export function reconcileNemesis(prev: GameState): GameState {
