@@ -32,19 +32,33 @@ def _curl(args):
 
 
 def sayac():
-    d = json.loads(_curl([API + "/v1/user/subscription"]))
-    return int(d["character_count"]), int(d["character_limit"])
+    # Geçici API hatasında (hız sınırı vb.) bekleyerek yeniden dener.
+    for bekle in (0, 2, 4, 8, 16):
+        time.sleep(bekle)
+        try:
+            d = json.loads(_curl([API + "/v1/user/subscription"]))
+            return int(d["character_count"]), int(d["character_limit"])
+        except (KeyError, ValueError):
+            continue
+    sys.exit("abonelik sayacı okunamadı")
 
 
 def _kaydet(girdi):
-    veri = []
-    if os.path.exists(KAYIT):
-        with open(KAYIT, encoding="utf-8") as f:
-            veri = json.load(f)
-    veri.append(girdi)
-    with open(KAYIT, "w", encoding="utf-8") as f:
-        json.dump(veri, f, ensure_ascii=False, indent=1)
-        f.write("\n")
+    # Paralel üretimler aynı kayda yazabilir: dosya kilidi + geçici dosyadan atomik değiştirme (yarım okuma olmaz).
+    import fcntl
+    girdi.setdefault("tarih", datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds"))
+    with open(KAYIT + ".kilit", "w") as kilit:
+        fcntl.flock(kilit, fcntl.LOCK_EX)
+        veri = []
+        if os.path.exists(KAYIT):
+            with open(KAYIT, encoding="utf-8") as f:
+                veri = json.load(f)
+        veri.append(girdi)
+        gecici = KAYIT + ".yaz"
+        with open(gecici, "w", encoding="utf-8") as f:
+            json.dump(veri, f, ensure_ascii=False, indent=1)
+            f.write("\n")
+        os.replace(gecici, KAYIT)
 
 
 def _on_kontrol(tahmin, tavan):

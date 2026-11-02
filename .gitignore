@@ -13,3 +13,5 @@ dist/
 .claude/worktrees/
 # Local secrets written by `elevenlabs onboard`
 /.env.local
+mobile/assets/ses/uretim.json.kilit
+mobile/assets/ses/uretim.json.yaz
