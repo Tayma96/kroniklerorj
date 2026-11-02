@@ -15,7 +15,7 @@ export const AN_SES: Record<string, { kaynak: number; ms: number }> = {
   "an.ilk_is.tr": { kaynak: require("../../assets/ses/anlar/ilk_is_tr.m4a"), ms: 6209 },
   "an.ilk_is.en": { kaynak: require("../../assets/ses/anlar/ilk_is_en.m4a"), ms: 6570 },
   "an.ilk_is.es": { kaynak: require("../../assets/ses/anlar/ilk_is_es.m4a"), ms: 7191 },
-  "an.ilk_is.pt": { kaynak: require("../../assets/ses/anlar/ilk_is_pt.m4a"), ms: 6690 },
+  "an.ilk_is.pt": { kaynak: require("../../assets/ses/anlar/ilk_is_pt.m4a"), ms: 6741 },
   "an.ilk_is.ar": { kaynak: require("../../assets/ses/anlar/ilk_is_ar.m4a"), ms: 7003 },
   "an.ilk_is.ru": { kaynak: require("../../assets/ses/anlar/ilk_is_ru.m4a"), ms: 5517 },
   "an.evlilik.tr": { kaynak: require("../../assets/ses/anlar/evlilik_tr.m4a"), ms: 5886 },
