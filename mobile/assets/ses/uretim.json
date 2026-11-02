@@ -576,5 +576,1273 @@
    "sonuc": "KALDI: son sessizlik 1640 ms"
   },
   "tur_asama": "B dinleme turu 1 (aday; oyuna yerleşmedi)"
+ },
+ {
+  "dosya": "a_en_1.mp3",
+  "tur": "vo",
+  "istem": "[thoughtful] The year 1243… [short pause] At the Battle of Köse Dağ, which changed the fate of Anatolia, the Seljuk army suffered a crushing defeat.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "en",
+   "next_text": "[sighs] In its wake, Mongol raids spread to every corner of Anatolia. Cities were plundered; villages stood empty. [sad] Beneath a shifting order and ever heavier taxes, the people struggled to survive. [calm] Still, the caravans kept to their roads. People tried not to lose hope. [whisper] For in Anatolia there was an old saying: [long pause] The ash keeps the ember."
+  },
+  "tohum": 1243,
+  "maliyet": 59,
+  "maliyet_kaynak": "Character-Cost",
+  "sayac_once": 4928,
+  "not": "ses seçimi (a) Kronks doğrudan, en bölüm 1",
+  "tarih": "2026-11-01T21:45:39+00:00",
+  "tur_asama": "E giriş sinematiği 6 dil (nihai)"
+ },
+ {
+  "dosya": "a_es_1.mp3",
+  "tur": "vo",
+  "istem": "[thoughtful] Año 1243… [short pause] En la batalla de Köse Dağ, que cambió el destino de Anatolia, el ejército selyúcida sufrió una dura derrota.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "es",
+   "next_text": "[sighs] Tras aquella derrota, las incursiones mongolas se extendieron por toda Anatolia. Las ciudades fueron saqueadas; las aldeas quedaron vacías. [sad] Bajo un orden que cambiaba y tributos cada vez más pesados, el pueblo luchó por sobrevivir. [calm] Aun así, las caravanas siguieron su camino. La gente intentó no perder la esperanza. [whisper] Porque en Anatolia había un viejo dicho: [long pause] La ceniza guarda la brasa."
+  },
+  "tohum": 1243,
+  "maliyet": 58,
+  "maliyet_kaynak": "Character-Cost",
+  "sayac_once": 4987,
+  "not": "ses seçimi (a) Kronks doğrudan, es bölüm 1",
+  "tarih": "2026-11-01T21:46:20+00:00",
+  "tur_asama": "E giriş sinematiği 6 dil (nihai)"
+ },
+ {
+  "dosya": "a_pt_1.mp3",
+  "tur": "vo",
+  "istem": "[thoughtful] Ano de 1243… [short pause] Na Batalha de Köse Dağ, que mudou o destino da Anatólia, o exército seljúcida sofreu uma dura derrota.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "pt",
+   "next_text": "[sighs] Depois dessa derrota, as incursões mongóis se espalharam por todos os cantos da Anatólia. Cidades foram saqueadas; aldeias ficaram vazias. [sad] Sob uma ordem que mudava e impostos cada vez mais pesados, o povo lutou para sobreviver. [calm] Ainda assim, as caravanas seguiram seu caminho. As pessoas tentaram não perder a esperança. [whisper] Porque na Anatólia havia um velho ditado: [long pause] A cinza guarda a brasa."
+  },
+  "tohum": 1243,
+  "maliyet": 57,
+  "maliyet_kaynak": "Character-Cost",
+  "sayac_once": 4987,
+  "not": "ses seçimi (a) Kronks doğrudan, pt bölüm 1",
+  "tarih": "2026-11-01T21:46:24+00:00",
+  "tur_asama": "E giriş sinematiği 6 dil (nihai)"
+ },
+ {
+  "dosya": "a_ar_1.mp3",
+  "tur": "vo",
+  "istem": "[thoughtful] عامُ ألفٍ ومئتين وثلاثةٍ وأربعين للميلاد… [short pause] في معركة كوسه داغ، التي غيّرت مصير الأناضول، مُني الجيشُ السلجوقيُّ بهزيمةٍ قاسية.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "ar",
+   "next_text": "[sighs] وفي أعقاب تلك الهزيمة، اجتاحت غاراتُ المغول أرجاءَ الأناضول كلَّها. نُهبت المدن، وخلت القرى من أهلها. [sad] وتحت نظامٍ يتبدّل وضرائبَ تزداد ثقلًا، كافح الناسُ من أجل البقاء. [calm] ومع ذلك، مضت القوافلُ في طرقها، وحاول الناسُ ألّا يفقدوا الأمل. [whisper] فقد كان في الأناضول قولٌ قديم: [long pause] الرمادُ يحفظُ الجمر."
+  },
+  "tohum": 1243,
+  "maliyet": 60,
+  "maliyet_kaynak": "Character-Cost",
+  "sayac_once": 4987,
+  "not": "ses seçimi (a) Kronks doğrudan, ar bölüm 1",
+  "tarih": "2026-11-01T21:46:28+00:00",
+  "tur_asama": "E giriş sinematiği 6 dil (nihai)"
+ },
+ {
+  "dosya": "a_ru_1.mp3",
+  "tur": "vo",
+  "istem": "[thoughtful] Тысяча двести сорок третий год… [short pause] В битве при Кёсе-Даге, изменившей судьбу Анатолии, сельджукское войско потерпело тяжёлое поражение.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "ru",
+   "next_text": "[sighs] Вслед за этим монгольские набеги прокатились по всей Анатолии. Города были разграблены, деревни опустели. [sad] Под гнётом нового порядка и всё более тяжёлых податей люди боролись за жизнь. [calm] И всё же караваны продолжали свой путь. Люди старались не терять надежды. [whisper] Ведь в Анатолии издавна говорили: [long pause] Пепел хранит жар."
+  },
+  "tohum": 1243,
+  "maliyet": 63,
+  "maliyet_kaynak": "Character-Cost",
+  "sayac_once": 4987,
+  "not": "ses seçimi (a) Kronks doğrudan, ru bölüm 1",
+  "tarih": "2026-11-01T21:46:32+00:00",
+  "tur_asama": "E giriş sinematiği 6 dil (nihai)"
+ },
+ {
+  "dosya": "b_en_0..2.mp3",
+  "tur": "ses_tasarimi_remix",
+  "istem": {
+   "voice_description": "Same voice as the original: same deep timbre, same mature age and the same calm, solemn documentary narrator delivery. Only the accent changes: a native, neutral American English accent with natural English pronunciation and intonation.",
+   "text": "The year 1243… At the Battle of Köse Dağ, which changed the fate of Anatolia, the Seljuk army suffered a crushing defeat."
+  },
+  "model": "text-to-voice remix (X1De6TudhbO6mizD7oKo)",
+  "tohum": 1243,
+  "maliyet": 121,
+  "maliyet_kaynak": "abonelik sayacı farkı",
+  "sayac_once": 5225,
+  "not": "ses seçimi (b) Kronks remix, en; 3 önizleme",
+  "tarih": "2026-11-01T21:48:25+00:00",
+  "tur_asama": "E giriş sinematiği 6 dil (nihai)"
+ },
+ {
+  "dosya": "b_es_0..2.mp3",
+  "tur": "ses_tasarimi_remix",
+  "istem": {
+   "voice_description": "Same voice as the original: same deep timbre, same mature age and the same calm, solemn documentary narrator delivery. Only the accent changes: a native, neutral Latin American Spanish accent with natural Spanish pronunciation and intonation.",
+   "text": "Año 1243… En la batalla de Köse Dağ, que cambió el destino de Anatolia, el ejército selyúcida sufrió una dura derrota."
+  },
+  "model": "text-to-voice remix (X1De6TudhbO6mizD7oKo)",
+  "tohum": 1243,
+  "maliyet": 118,
+  "maliyet_kaynak": "abonelik sayacı farkı",
+  "sayac_once": 5346,
+  "not": "ses seçimi (b) Kronks remix, es; 3 önizleme",
+  "tarih": "2026-11-01T21:49:24+00:00",
+  "tur_asama": "E giriş sinematiği 6 dil (nihai)"
+ },
+ {
+  "dosya": "b_pt_0..2.mp3",
+  "tur": "ses_tasarimi_remix",
+  "istem": {
+   "voice_description": "Same voice as the original: same deep timbre, same mature age and the same calm, solemn documentary narrator delivery. Only the accent changes: a native Brazilian Portuguese accent with natural Brazilian pronunciation and intonation.",
+   "text": "Ano de 1243… Na Batalha de Köse Dağ, que mudou o destino da Anatólia, o exército seljúcida sofreu uma dura derrota."
+  },
+  "model": "text-to-voice remix (X1De6TudhbO6mizD7oKo)",
+  "tohum": 1243,
+  "maliyet": 115,
+  "maliyet_kaynak": "abonelik sayacı farkı",
+  "sayac_once": 5464,
+  "not": "ses seçimi (b) Kronks remix, pt; 3 önizleme",
+  "tarih": "2026-11-01T21:50:27+00:00",
+  "tur_asama": "E giriş sinematiği 6 dil (nihai)"
+ },
+ {
+  "dosya": "b_ar_0..2.mp3",
+  "tur": "ses_tasarimi_remix",
+  "istem": {
+   "voice_description": "Same voice as the original: same deep timbre, same mature age and the same calm, solemn documentary narrator delivery. Only the accent changes: a native Arabic speaker reading Modern Standard Arabic (Fusha) with classical, natural pronunciation and intonation.",
+   "text": "عامُ ألفٍ ومئتين وثلاثةٍ وأربعين للميلاد… في معركة كوسه داغ، التي غيّرت مصير الأناضول، مُني الجيشُ السلجوقيُّ بهزيمةٍ قاسية."
+  },
+  "model": "text-to-voice remix (X1De6TudhbO6mizD7oKo)",
+  "tohum": 1243,
+  "maliyet": 124,
+  "maliyet_kaynak": "abonelik sayacı farkı",
+  "sayac_once": 5579,
+  "not": "ses seçimi (b) Kronks remix, ar; 3 önizleme",
+  "tarih": "2026-11-01T21:51:21+00:00",
+  "tur_asama": "E giriş sinematiği 6 dil (nihai)"
+ },
+ {
+  "dosya": "b_ru_0..2.mp3",
+  "tur": "ses_tasarimi_remix",
+  "istem": {
+   "voice_description": "Same voice as the original: same deep timbre, same mature age and the same calm, solemn documentary narrator delivery. Only the accent changes: a native, standard Russian accent with natural Russian pronunciation and intonation.",
+   "text": "Тысяча двести сорок третий год… В битве при Кёсе-Даге, изменившей судьбу Анатолии, сельджукское войско потерпело тяжёлое поражение."
+  },
+  "model": "text-to-voice remix (X1De6TudhbO6mizD7oKo)",
+  "tohum": 1243,
+  "maliyet": 131,
+  "maliyet_kaynak": "abonelik sayacı farkı",
+  "sayac_once": 5703,
+  "not": "ses seçimi (b) Kronks remix, ru; 3 önizleme",
+  "tarih": "2026-11-01T21:52:23+00:00",
+  "tur_asama": "E giriş sinematiği 6 dil (nihai)"
+ },
+ {
+  "dosya": "at_kisneme.mp3",
+  "tur": "efekt",
+  "istem": "A single warhorse neighing far away across an open steppe battlefield at dusk, faint low wind, natural outdoor field recording, no music.",
+  "model": "eleven_text_to_sound_v2",
+  "sure_sn": 4.0,
+  "dongu": false,
+  "prompt_influence": 0.6,
+  "tohum": null,
+  "maliyet": 40,
+  "maliyet_kaynak": "Character-Cost",
+  "sayac_once": 5834,
+  "not": "E giriş: bölüm 1 uzak at kişnemesi",
+  "tarih": "2026-11-01T21:55:38+00:00"
+ },
+ {
+  "dosya": "sehir_yangin.mp3",
+  "tur": "efekt",
+  "istem": "A medieval town burning far away at night: low rumbling roar of a large fire, wood cracking and popping, a wooden beam collapsing once, heard from a distance across open fields, no voices, no music.",
+  "model": "eleven_text_to_sound_v2",
+  "sure_sn": 6.0,
+  "dongu": false,
+  "prompt_influence": 0.6,
+  "tohum": null,
+  "maliyet": 60,
+  "maliyet_kaynak": "Character-Cost",
+  "sayac_once": 5834,
+  "not": "E giriş: bölüm 2 uzakta yanan şehir",
+  "tarih": "2026-11-01T21:55:41+00:00"
+ },
+ {
+  "dosya": "kervan.mp3",
+  "tur": "efekt",
+  "istem": "A slow camel caravan passing on a dusty dirt road: soft heavy camel footsteps, one camel grumbling low, wooden saddle creaks and soft rope rattles, outdoors in open country, no bells, no music.",
+  "model": "eleven_text_to_sound_v2",
+  "sure_sn": 6.0,
+  "dongu": false,
+  "prompt_influence": 0.6,
+  "tohum": null,
+  "maliyet": 60,
+  "maliyet_kaynak": "Character-Cost",
+  "sayac_once": 5834,
+  "not": "E giriş: bölüm 4 kervan adımları, deve",
+  "tarih": "2026-11-01T21:55:45+00:00"
+ },
+ {
+  "dosya": "koz_citirti.mp3",
+  "tur": "efekt",
+  "istem": "Close intimate recording of glowing embers in a dying hearth: soft sparse crackles and tiny pops, very quiet, no roaring flames, no music.",
+  "model": "eleven_text_to_sound_v2",
+  "sure_sn": 5.0,
+  "dongu": false,
+  "prompt_influence": 0.6,
+  "tohum": null,
+  "maliyet": 50,
+  "maliyet_kaynak": "Character-Cost",
+  "sayac_once": 5834,
+  "not": "E giriş: bölüm 5 köz çıtırtısı",
+  "tarih": "2026-11-01T21:55:48+00:00"
+ },
+ {
+  "dosya": "koz_nefesi.mp3",
+  "tur": "efekt",
+  "istem": "One soft gentle breath of air blown over glowing embers: a low warm airy whoosh as the embers flare with a faint crackle, then fading to silence.",
+  "model": "eleven_text_to_sound_v2",
+  "sure_sn": 3.0,
+  "dongu": false,
+  "prompt_influence": 0.6,
+  "tohum": null,
+  "maliyet": 30,
+  "maliyet_kaynak": "Character-Cost",
+  "sayac_once": 5834,
+  "not": "E giriş: son köz nefesi",
+  "tarih": "2026-11-01T21:55:52+00:00"
+ },
+ {
+  "dosya": "koz_citirti2.mp3",
+  "tur": "efekt",
+  "istem": "Glowing embers of a wood fire crackling up close: steady soft crackles and small sharp pops of burning charcoal, warm and intimate, natural recording, no wind, no music.",
+  "model": "eleven_text_to_sound_v2",
+  "sure_sn": 5.0,
+  "dongu": false,
+  "prompt_influence": 0.7,
+  "tohum": null,
+  "maliyet": 50,
+  "maliyet_kaynak": "Character-Cost",
+  "sayac_once": 6074,
+  "not": "E giriş: bölüm 5 köz çıtırtısı, 2. deneme (1. deneme -60 LUFS, tonal çizgiler)",
+  "tarih": "2026-11-01T21:56:25+00:00"
+ },
+ {
+  "dosya": "c_es_3hn25giptIBsW5fakCzE.mp3",
+  "tur": "vo",
+  "istem": "[thoughtful] Año 1243… [short pause] En la batalla de Köse Dağ, que cambió el destino de Anatolia, el ejército selyúcida sufrió una dura derrota.",
+  "model": "eleven_v4",
+  "ses": "3hn25giptIBsW5fakCzE",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "es",
+   "next_text": "[sighs] Tras aquella derrota, las incursiones mongolas se extendieron por toda Anatolia. Las ciudades fueron saqueadas; las aldeas quedaron vacías. [sad] Bajo un orden que cambiaba y tributos cada vez más pesados, el pueblo luchó por sobrevivir. [calm] Aun así, las caravanas siguieron su camino. La gente intentó no perder la esperanza. [whisper] Porque en Anatolia había un viejo dicho: [long pause] La ceniza guarda la brasa."
+  },
+  "tohum": 1243,
+  "maliyet": 58,
+  "maliyet_kaynak": "Character-Cost",
+  "sayac_once": 6124,
+  "not": "ses seçimi (c) kütüphane yerel anlatıcı 3hn25giptIBsW5fakCzE, es bölüm 1",
+  "tarih": "2026-11-02T03:27:45+00:00",
+  "tur_asama": "E giriş sinematiği 6 dil (nihai)"
+ },
+ {
+  "dosya": "c_pt_F2CrQM2UonBN6qFJbaKN.mp3",
+  "tur": "vo",
+  "istem": "[thoughtful] Ano de 1243… [short pause] Na Batalha de Köse Dağ, que mudou o destino da Anatólia, o exército seljúcida sofreu uma dura derrota.",
+  "model": "eleven_v4",
+  "ses": "F2CrQM2UonBN6qFJbaKN",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "pt",
+   "next_text": "[sighs] Depois dessa derrota, as incursões mongóis se espalharam por todos os cantos da Anatólia. Cidades foram saqueadas; aldeias ficaram vazias. [sad] Sob uma ordem que mudava e impostos cada vez mais pesados, o povo lutou para sobreviver. [calm] Ainda assim, as caravanas seguiram seu caminho. As pessoas tentaram não perder a esperança. [whisper] Porque na Anatólia havia um velho ditado: [long pause] A cinza guarda a brasa."
+  },
+  "tohum": 1243,
+  "maliyet": 57,
+  "maliyet_kaynak": "Character-Cost",
+  "sayac_once": 6124,
+  "not": "ses seçimi (c) kütüphane yerel anlatıcı F2CrQM2UonBN6qFJbaKN, pt bölüm 1",
+  "tarih": "2026-11-02T03:27:49+00:00",
+  "tur_asama": "E giriş sinematiği 6 dil (nihai)"
+ },
+ {
+  "dosya": "c_pt_dxcgH8U8KbbWUEjmOmwH.mp3",
+  "tur": "vo",
+  "istem": "[thoughtful] Ano de 1243… [short pause] Na Batalha de Köse Dağ, que mudou o destino da Anatólia, o exército seljúcida sofreu uma dura derrota.",
+  "model": "eleven_v4",
+  "ses": "dxcgH8U8KbbWUEjmOmwH",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "pt",
+   "next_text": "[sighs] Depois dessa derrota, as incursões mongóis se espalharam por todos os cantos da Anatólia. Cidades foram saqueadas; aldeias ficaram vazias. [sad] Sob uma ordem que mudava e impostos cada vez mais pesados, o povo lutou para sobreviver. [calm] Ainda assim, as caravanas seguiram seu caminho. As pessoas tentaram não perder a esperança. [whisper] Porque na Anatólia havia um velho ditado: [long pause] A cinza guarda a brasa."
+  },
+  "tohum": 1243,
+  "maliyet": 57,
+  "maliyet_kaynak": "Character-Cost",
+  "sayac_once": 6124,
+  "not": "ses seçimi (c) kütüphane yerel anlatıcı dxcgH8U8KbbWUEjmOmwH, pt bölüm 1",
+  "tarih": "2026-11-02T03:27:53+00:00",
+  "tur_asama": "E giriş sinematiği 6 dil (nihai)"
+ },
+ {
+  "dosya": "c_ar_BrKeRgI6Ivb2zWjD6qte.mp3",
+  "tur": "vo",
+  "istem": "[thoughtful] عامُ ألفٍ ومئتين وثلاثةٍ وأربعين للميلاد… [short pause] في معركة كوسه داغ، التي غيّرت مصير الأناضول، مُني الجيشُ السلجوقيُّ بهزيمةٍ قاسية.",
+  "model": "eleven_v4",
+  "ses": "BrKeRgI6Ivb2zWjD6qte",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "ar",
+   "next_text": "[sighs] وفي أعقاب تلك الهزيمة، اجتاحت غاراتُ المغول أرجاءَ الأناضول كلَّها. نُهبت المدن، وخلت القرى من أهلها. [sad] وتحت نظامٍ يتبدّل وضرائبَ تزداد ثقلًا، كافح الناسُ من أجل البقاء. [calm] ومع ذلك، مضت القوافلُ في طرقها، وحاول الناسُ ألّا يفقدوا الأمل. [whisper] فقد كان في الأناضول قولٌ قديم: [long pause] الرمادُ يحفظُ الجمر."
+  },
+  "tohum": 1243,
+  "maliyet": 60,
+  "maliyet_kaynak": "Character-Cost",
+  "sayac_once": 6124,
+  "not": "ses seçimi (c) kütüphane yerel anlatıcı BrKeRgI6Ivb2zWjD6qte, ar bölüm 1",
+  "tarih": "2026-11-02T03:27:58+00:00",
+  "tur_asama": "E giriş sinematiği 6 dil (nihai)"
+ },
+ {
+  "dosya": "c_ar_apsZFlSToM2vmFpwz5jX.mp3",
+  "tur": "vo",
+  "istem": "[thoughtful] عامُ ألفٍ ومئتين وثلاثةٍ وأربعين للميلاد… [short pause] في معركة كوسه داغ، التي غيّرت مصير الأناضول، مُني الجيشُ السلجوقيُّ بهزيمةٍ قاسية.",
+  "model": "eleven_v4",
+  "ses": "apsZFlSToM2vmFpwz5jX",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "ar",
+   "next_text": "[sighs] وفي أعقاب تلك الهزيمة، اجتاحت غاراتُ المغول أرجاءَ الأناضول كلَّها. نُهبت المدن، وخلت القرى من أهلها. [sad] وتحت نظامٍ يتبدّل وضرائبَ تزداد ثقلًا، كافح الناسُ من أجل البقاء. [calm] ومع ذلك، مضت القوافلُ في طرقها، وحاول الناسُ ألّا يفقدوا الأمل. [whisper] فقد كان في الأناضول قولٌ قديم: [long pause] الرمادُ يحفظُ الجمر."
+  },
+  "tohum": 1243,
+  "maliyet": 60,
+  "maliyet_kaynak": "Character-Cost",
+  "sayac_once": 6124,
+  "not": "ses seçimi (c) kütüphane yerel anlatıcı apsZFlSToM2vmFpwz5jX, ar bölüm 1",
+  "tarih": "2026-11-02T03:28:02+00:00",
+  "tur_asama": "E giriş sinematiği 6 dil (nihai)"
+ },
+ {
+  "dosya": "(ses) Kronks AR (remix) PA4QGZDhUkvuOKb6ZEkd",
+  "tur": "ses_kaydi",
+  "istem": {
+   "generated_voice_id": "PA4QGZDhUkvuOKb6ZEkd",
+   "voice_description": "Same voice as the original: same deep timbre, same mature age and the same calm, solemn documentary narrator delivery. Only the accent changes: a native Arabic speaker reading Modern Standard Arabic (Fusha) with classical, natural pronunciation and intonation."
+  },
+  "model": "text-to-voice (önizlemeden ses)",
+  "tohum": 1243,
+  "maliyet": 0,
+  "maliyet_kaynak": "abonelik sayacı farkı",
+  "sayac_once": 6416,
+  "not": "ar için seçilen ses: Kronks remix önizleme 0 kaydedildi (1 yuva)",
+  "tarih": "2026-11-02T03:33:18+00:00",
+  "tur_asama": "E giriş sinematiği 6 dil (nihai)"
+ },
+ {
+  "dosya": "en_2.mp3",
+  "tur": "vo",
+  "istem": "[sighs] In its wake, Mongol raids spread to every corner of Anatolia. Cities were plundered; villages stood empty.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "en",
+   "previous_text": "[thoughtful] The year 1243… [short pause] At the Battle of Köse Dağ, which changed the fate of Anatolia, the Seljuk army suffered a crushing defeat.",
+   "next_text": "[sad] Beneath a shifting order and ever heavier taxes, the people struggled to survive. [calm] Still, the caravans kept to their roads. People tried not to lose hope. [whisper] For in Anatolia there was an old saying: [long pause] The ash keeps the ember."
+  },
+  "tohum": 1243,
+  "maliyet": 46,
+  "maliyet_kaynak": "Character-Cost",
+  "sayac_once": 6416,
+  "not": "anlatı üretimi en bölüm 2 (Kronks)",
+  "tarih": "2026-11-02T03:33:54+00:00",
+  "tur_asama": "E giriş sinematiği 6 dil (nihai)"
+ },
+ {
+  "dosya": "en_3.mp3",
+  "tur": "vo",
+  "istem": "[sad] Beneath a shifting order and ever heavier taxes, the people struggled to survive.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "en",
+   "previous_text": "[thoughtful] The year 1243… [short pause] At the Battle of Köse Dağ, which changed the fate of Anatolia, the Seljuk army suffered a crushing defeat. [sighs] In its wake, Mongol raids spread to every corner of Anatolia. Cities were plundered; villages stood empty.",
+   "next_text": "[calm] Still, the caravans kept to their roads. People tried not to lose hope. [whisper] For in Anatolia there was an old saying: [long pause] The ash keeps the ember."
+  },
+  "tohum": 1243,
+  "maliyet": 35,
+  "maliyet_kaynak": "Character-Cost",
+  "sayac_once": 6416,
+  "not": "anlatı üretimi en bölüm 3 (Kronks)",
+  "tarih": "2026-11-02T03:33:57+00:00",
+  "tur_asama": "E giriş sinematiği 6 dil (nihai)"
+ },
+ {
+  "dosya": "en_4.mp3",
+  "tur": "vo",
+  "istem": "[calm] Still, the caravans kept to their roads. People tried not to lose hope.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "en",
+   "previous_text": "[thoughtful] The year 1243… [short pause] At the Battle of Köse Dağ, which changed the fate of Anatolia, the Seljuk army suffered a crushing defeat. [sighs] In its wake, Mongol raids spread to every corner of Anatolia. Cities were plundered; villages stood empty. [sad] Beneath a shifting order and ever heavier taxes, the people struggled to survive.",
+   "next_text": "[whisper] For in Anatolia there was an old saying: [long pause] The ash keeps the ember."
+  },
+  "tohum": 1243,
+  "maliyet": 31,
+  "maliyet_kaynak": "Character-Cost",
+  "sayac_once": 6416,
+  "not": "anlatı üretimi en bölüm 4 (Kronks)",
+  "tarih": "2026-11-02T03:34:00+00:00",
+  "tur_asama": "E giriş sinematiği 6 dil (nihai)"
+ },
+ {
+  "dosya": "en_5.mp3",
+  "tur": "vo",
+  "istem": "[whisper] For in Anatolia there was an old saying: [long pause] The ash keeps the ember.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "en",
+   "previous_text": "[thoughtful] The year 1243… [short pause] At the Battle of Köse Dağ, which changed the fate of Anatolia, the Seljuk army suffered a crushing defeat. [sighs] In its wake, Mongol raids spread to every corner of Anatolia. Cities were plundered; villages stood empty. [sad] Beneath a shifting order and ever heavier taxes, the people struggled to survive. [calm] Still, the caravans kept to their roads. People tried not to lose hope."
+  },
+  "tohum": 1243,
+  "maliyet": 35,
+  "maliyet_kaynak": "Character-Cost",
+  "sayac_once": 6416,
+  "not": "anlatı üretimi en bölüm 5 (Kronks)",
+  "tarih": "2026-11-02T03:34:02+00:00",
+  "tur_asama": "E giriş sinematiği 6 dil (nihai)"
+ },
+ {
+  "dosya": "es_2.mp3",
+  "tur": "vo",
+  "istem": "[sighs] Tras aquella derrota, las incursiones mongolas se extendieron por toda Anatolia. Las ciudades fueron saqueadas; las aldeas quedaron vacías.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "es",
+   "previous_text": "[thoughtful] Año 1243… [short pause] En la batalla de Köse Dağ, que cambió el destino de Anatolia, el ejército selyúcida sufrió una dura derrota.",
+   "next_text": "[sad] Bajo un orden que cambiaba y tributos cada vez más pesados, el pueblo luchó por sobrevivir. [calm] Aun así, las caravanas siguieron su camino. La gente intentó no perder la esperanza. [whisper] Porque en Anatolia había un viejo dicho: [long pause] La ceniza guarda la brasa."
+  },
+  "tohum": 1243,
+  "maliyet": 59,
+  "maliyet_kaynak": "Character-Cost",
+  "sayac_once": 6416,
+  "not": "anlatı üretimi es bölüm 2 (Kronks)",
+  "tarih": "2026-11-02T03:34:06+00:00",
+  "tur_asama": "E giriş sinematiği 6 dil (nihai)"
+ },
+ {
+  "dosya": "es_3.mp3",
+  "tur": "vo",
+  "istem": "[sad] Bajo un orden que cambiaba y tributos cada vez más pesados, el pueblo luchó por sobrevivir.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "es",
+   "previous_text": "[thoughtful] Año 1243… [short pause] En la batalla de Köse Dağ, que cambió el destino de Anatolia, el ejército selyúcida sufrió una dura derrota. [sighs] Tras aquella derrota, las incursiones mongolas se extendieron por toda Anatolia. Las ciudades fueron saqueadas; las aldeas quedaron vacías.",
+   "next_text": "[calm] Aun así, las caravanas siguieron su camino. La gente intentó no perder la esperanza. [whisper] Porque en Anatolia había un viejo dicho: [long pause] La ceniza guarda la brasa."
+  },
+  "tohum": 1243,
+  "maliyet": 39,
+  "maliyet_kaynak": "Character-Cost",
+  "sayac_once": 6416,
+  "not": "anlatı üretimi es bölüm 3 (Kronks)",
+  "tarih": "2026-11-02T03:34:09+00:00",
+  "tur_asama": "E giriş sinematiği 6 dil (nihai)"
+ },
+ {
+  "dosya": "es_4.mp3",
+  "tur": "vo",
+  "istem": "[calm] Aun así, las caravanas siguieron su camino. La gente intentó no perder la esperanza.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "es",
+   "previous_text": "[thoughtful] Año 1243… [short pause] En la batalla de Köse Dağ, que cambió el destino de Anatolia, el ejército selyúcida sufrió una dura derrota. [sighs] Tras aquella derrota, las incursiones mongolas se extendieron por toda Anatolia. Las ciudades fueron saqueadas; las aldeas quedaron vacías. [sad] Bajo un orden que cambiaba y tributos cada vez más pesados, el pueblo luchó por sobrevivir.",
+   "next_text": "[whisper] Porque en Anatolia había un viejo dicho: [long pause] La ceniza guarda la brasa."
+  },
+  "tohum": 1243,
+  "maliyet": 36,
+  "maliyet_kaynak": "Character-Cost",
+  "sayac_once": 6416,
+  "not": "anlatı üretimi es bölüm 4 (Kronks)",
+  "tarih": "2026-11-02T03:34:12+00:00",
+  "tur_asama": "E giriş sinematiği 6 dil (nihai)"
+ },
+ {
+  "dosya": "es_5.mp3",
+  "tur": "vo",
+  "istem": "[whisper] Porque en Anatolia había un viejo dicho: [long pause] La ceniza guarda la brasa.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "es",
+   "previous_text": "[thoughtful] Año 1243… [short pause] En la batalla de Köse Dağ, que cambió el destino de Anatolia, el ejército selyúcida sufrió una dura derrota. [sighs] Tras aquella derrota, las incursiones mongolas se extendieron por toda Anatolia. Las ciudades fueron saqueadas; las aldeas quedaron vacías. [sad] Bajo un orden que cambiaba y tributos cada vez más pesados, el pueblo luchó por sobrevivir. [calm] Aun así, las caravanas siguieron su camino. La gente intentó no perder la esperanza."
+  },
+  "tohum": 1243,
+  "maliyet": 36,
+  "maliyet_kaynak": "Character-Cost",
+  "sayac_once": 6416,
+  "not": "anlatı üretimi es bölüm 5 (Kronks)",
+  "tarih": "2026-11-02T03:34:15+00:00",
+  "tur_asama": "E giriş sinematiği 6 dil (nihai)"
+ },
+ {
+  "dosya": "pt_2.mp3",
+  "tur": "vo",
+  "istem": "[sighs] Depois dessa derrota, as incursões mongóis se espalharam por todos os cantos da Anatólia. Cidades foram saqueadas; aldeias ficaram vazias.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "pt",
+   "previous_text": "[thoughtful] Ano de 1243… [short pause] Na Batalha de Köse Dağ, que mudou o destino da Anatólia, o exército seljúcida sofreu uma dura derrota.",
+   "next_text": "[sad] Sob uma ordem que mudava e impostos cada vez mais pesados, o povo lutou para sobreviver. [calm] Ainda assim, as caravanas seguiram seu caminho. As pessoas tentaram não perder a esperança. [whisper] Porque na Anatólia havia um velho ditado: [long pause] A cinza guarda a brasa."
+  },
+  "tohum": 1243,
+  "maliyet": 58,
+  "maliyet_kaynak": "Character-Cost",
+  "sayac_once": 6416,
+  "not": "anlatı üretimi pt bölüm 2 (Kronks)",
+  "tarih": "2026-11-02T03:34:20+00:00",
+  "tur_asama": "E giriş sinematiği 6 dil (nihai)"
+ },
+ {
+  "dosya": "pt_3.mp3",
+  "tur": "vo",
+  "istem": "[sad] Sob uma ordem que mudava e impostos cada vez mais pesados, o povo lutou para sobreviver.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "pt",
+   "previous_text": "[thoughtful] Ano de 1243… [short pause] Na Batalha de Köse Dağ, que mudou o destino da Anatólia, o exército seljúcida sofreu uma dura derrota. [sighs] Depois dessa derrota, as incursões mongóis se espalharam por todos os cantos da Anatólia. Cidades foram saqueadas; aldeias ficaram vazias.",
+   "next_text": "[calm] Ainda assim, as caravanas seguiram seu caminho. As pessoas tentaram não perder a esperança. [whisper] Porque na Anatólia havia um velho ditado: [long pause] A cinza guarda a brasa."
+  },
+  "tohum": 1243,
+  "maliyet": 38,
+  "maliyet_kaynak": "Character-Cost",
+  "sayac_once": 6791,
+  "not": "anlatı üretimi pt bölüm 3 (Kronks)",
+  "tarih": "2026-11-02T03:34:23+00:00",
+  "tur_asama": "E giriş sinematiği 6 dil (nihai)"
+ },
+ {
+  "dosya": "pt_4.mp3",
+  "tur": "vo",
+  "istem": "[calm] Ainda assim, as caravanas seguiram seu caminho. As pessoas tentaram não perder a esperança.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "pt",
+   "previous_text": "[thoughtful] Ano de 1243… [short pause] Na Batalha de Köse Dağ, que mudou o destino da Anatólia, o exército seljúcida sofreu uma dura derrota. [sighs] Depois dessa derrota, as incursões mongóis se espalharam por todos os cantos da Anatólia. Cidades foram saqueadas; aldeias ficaram vazias. [sad] Sob uma ordem que mudava e impostos cada vez mais pesados, o povo lutou para sobreviver.",
+   "next_text": "[whisper] Porque na Anatólia havia um velho ditado: [long pause] A cinza guarda a brasa."
+  },
+  "tohum": 1243,
+  "maliyet": 39,
+  "maliyet_kaynak": "Character-Cost",
+  "sayac_once": 6791,
+  "not": "anlatı üretimi pt bölüm 4 (Kronks)",
+  "tarih": "2026-11-02T03:34:26+00:00",
+  "tur_asama": "E giriş sinematiği 6 dil (nihai)"
+ },
+ {
+  "dosya": "pt_5.mp3",
+  "tur": "vo",
+  "istem": "[whisper] Porque na Anatólia havia um velho ditado: [long pause] A cinza guarda a brasa.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "pt",
+   "previous_text": "[thoughtful] Ano de 1243… [short pause] Na Batalha de Köse Dağ, que mudou o destino da Anatólia, o exército seljúcida sofreu uma dura derrota. [sighs] Depois dessa derrota, as incursões mongóis se espalharam por todos os cantos da Anatólia. Cidades foram saqueadas; aldeias ficaram vazias. [sad] Sob uma ordem que mudava e impostos cada vez mais pesados, o povo lutou para sobreviver. [calm] Ainda assim, as caravanas seguiram seu caminho. As pessoas tentaram não perder a esperança."
+  },
+  "tohum": 1243,
+  "maliyet": 35,
+  "maliyet_kaynak": "Character-Cost",
+  "sayac_once": 6791,
+  "not": "anlatı üretimi pt bölüm 5 (Kronks)",
+  "tarih": "2026-11-02T03:34:29+00:00",
+  "tur_asama": "E giriş sinematiği 6 dil (nihai)"
+ },
+ {
+  "dosya": "ru_2.mp3",
+  "tur": "vo",
+  "istem": "[sighs] Вслед за этим монгольские набеги прокатились по всей Анатолии. Города были разграблены, деревни опустели.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "ru",
+   "previous_text": "[thoughtful] Тысяча двести сорок третий год… [short pause] В битве при Кёсе-Даге, изменившей судьбу Анатолии, сельджукское войско потерпело тяжёлое поражение.",
+   "next_text": "[sad] Под гнётом нового порядка и всё более тяжёлых податей люди боролись за жизнь. [calm] И всё же караваны продолжали свой путь. Люди старались не терять надежды. [whisper] Ведь в Анатолии издавна говорили: [long pause] Пепел хранит жар."
+  },
+  "tohum": 1243,
+  "maliyet": 45,
+  "maliyet_kaynak": "Character-Cost",
+  "sayac_once": 6791,
+  "not": "anlatı üretimi ru bölüm 2 (Kronks)",
+  "tarih": "2026-11-02T03:34:33+00:00",
+  "tur_asama": "E giriş sinematiği 6 dil (nihai)"
+ },
+ {
+  "dosya": "ru_3.mp3",
+  "tur": "vo",
+  "istem": "[sad] Под гнётом нового порядка и всё более тяжёлых податей люди боролись за жизнь.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "ru",
+   "previous_text": "[thoughtful] Тысяча двести сорок третий год… [short pause] В битве при Кёсе-Даге, изменившей судьбу Анатолии, сельджукское войско потерпело тяжёлое поражение. [sighs] Вслед за этим монгольские набеги прокатились по всей Анатолии. Города были разграблены, деревни опустели.",
+   "next_text": "[calm] И всё же караваны продолжали свой путь. Люди старались не терять надежды. [whisper] Ведь в Анатолии издавна говорили: [long pause] Пепел хранит жар."
+  },
+  "tohum": 1243,
+  "maliyet": 33,
+  "maliyet_kaynak": "Character-Cost",
+  "sayac_once": 6791,
+  "not": "anlatı üretimi ru bölüm 3 (Kronks)",
+  "tarih": "2026-11-02T03:34:36+00:00",
+  "tur_asama": "E giriş sinematiği 6 dil (nihai)"
+ },
+ {
+  "dosya": "ru_4.mp3",
+  "tur": "vo",
+  "istem": "[calm] И всё же караваны продолжали свой путь. Люди старались не терять надежды.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "ru",
+   "previous_text": "[thoughtful] Тысяча двести сорок третий год… [short pause] В битве при Кёсе-Даге, изменившей судьбу Анатолии, сельджукское войско потерпело тяжёлое поражение. [sighs] Вслед за этим монгольские набеги прокатились по всей Анатолии. Города были разграблены, деревни опустели. [sad] Под гнётом нового порядка и всё более тяжёлых податей люди боролись за жизнь.",
+   "next_text": "[whisper] Ведь в Анатолии издавна говорили: [long pause] Пепел хранит жар."
+  },
+  "tohum": 1243,
+  "maliyet": 32,
+  "maliyet_kaynak": "Character-Cost",
+  "sayac_once": 6791,
+  "not": "anlatı üretimi ru bölüm 4 (Kronks)",
+  "tarih": "2026-11-02T03:34:39+00:00",
+  "tur_asama": "E giriş sinematiği 6 dil (nihai)"
+ },
+ {
+  "dosya": "ru_5.mp3",
+  "tur": "vo",
+  "istem": "[whisper] Ведь в Анатолии издавна говорили: [long pause] Пепел хранит жар.",
+  "model": "eleven_v4",
+  "ses": "X1De6TudhbO6mizD7oKo",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "ru",
+   "previous_text": "[thoughtful] Тысяча двести сорок третий год… [short pause] В битве при Кёсе-Даге, изменившей судьбу Анатолии, сельджукское войско потерпело тяжёлое поражение. [sighs] Вслед за этим монгольские набеги прокатились по всей Анатолии. Города были разграблены, деревни опустели. [sad] Под гнётом нового порядка и всё более тяжёлых податей люди боролись за жизнь. [calm] И всё же караваны продолжали свой путь. Люди старались не терять надежды."
+  },
+  "tohum": 1243,
+  "maliyet": 30,
+  "maliyet_kaynak": "Character-Cost",
+  "sayac_once": 6791,
+  "not": "anlatı üretimi ru bölüm 5 (Kronks)",
+  "tarih": "2026-11-02T03:34:42+00:00",
+  "tur_asama": "E giriş sinematiği 6 dil (nihai)"
+ },
+ {
+  "dosya": "ar_1.mp3",
+  "tur": "vo",
+  "istem": "[thoughtful] عامُ ألفٍ ومئتين وثلاثةٍ وأربعين للميلاد… [short pause] في معركة كوسه داغ، التي غيّرت مصير الأناضول، مُني الجيشُ السلجوقيُّ بهزيمةٍ قاسية.",
+  "model": "eleven_v4",
+  "ses": "PA4QGZDhUkvuOKb6ZEkd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "ar",
+   "next_text": "[sighs] وفي أعقاب تلك الهزيمة، اجتاحت غاراتُ المغول أرجاءَ الأناضول كلَّها. نُهبت المدن، وخلت القرى من أهلها. [sad] وتحت نظامٍ يتبدّل وضرائبَ تزداد ثقلًا، كافح الناسُ من أجل البقاء. [calm] ومع ذلك، مضت القوافلُ في طرقها، وحاول الناسُ ألّا يفقدوا الأمل. [whisper] فقد كان في الأناضول قولٌ قديم: [long pause] الرمادُ يحفظُ الجمر."
+  },
+  "tohum": 1243,
+  "maliyet": 60,
+  "maliyet_kaynak": "Character-Cost",
+  "sayac_once": 6791,
+  "not": "anlatı üretimi ar bölüm 1 (Kronks AR remix)",
+  "tarih": "2026-11-02T03:34:47+00:00",
+  "tur_asama": "E giriş sinematiği 6 dil (nihai)"
+ },
+ {
+  "dosya": "ar_2.mp3",
+  "tur": "vo",
+  "istem": "[sighs] وفي أعقاب تلك الهزيمة، اجتاحت غاراتُ المغول أرجاءَ الأناضول كلَّها. نُهبت المدن، وخلت القرى من أهلها.",
+  "model": "eleven_v4",
+  "ses": "PA4QGZDhUkvuOKb6ZEkd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "ar",
+   "previous_text": "[thoughtful] عامُ ألفٍ ومئتين وثلاثةٍ وأربعين للميلاد… [short pause] في معركة كوسه داغ، التي غيّرت مصير الأناضول، مُني الجيشُ السلجوقيُّ بهزيمةٍ قاسية.",
+   "next_text": "[sad] وتحت نظامٍ يتبدّل وضرائبَ تزداد ثقلًا، كافح الناسُ من أجل البقاء. [calm] ومع ذلك، مضت القوافلُ في طرقها، وحاول الناسُ ألّا يفقدوا الأمل. [whisper] فقد كان في الأناضول قولٌ قديم: [long pause] الرمادُ يحفظُ الجمر."
+  },
+  "tohum": 1243,
+  "maliyet": 44,
+  "maliyet_kaynak": "Character-Cost",
+  "sayac_once": 6791,
+  "not": "anlatı üretimi ar bölüm 2 (Kronks AR remix)",
+  "tarih": "2026-11-02T03:34:51+00:00",
+  "tur_asama": "E giriş sinematiği 6 dil (nihai)"
+ },
+ {
+  "dosya": "ar_3.mp3",
+  "tur": "vo",
+  "istem": "[sad] وتحت نظامٍ يتبدّل وضرائبَ تزداد ثقلًا، كافح الناسُ من أجل البقاء.",
+  "model": "eleven_v4",
+  "ses": "PA4QGZDhUkvuOKb6ZEkd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "ar",
+   "previous_text": "[thoughtful] عامُ ألفٍ ومئتين وثلاثةٍ وأربعين للميلاد… [short pause] في معركة كوسه داغ، التي غيّرت مصير الأناضول، مُني الجيشُ السلجوقيُّ بهزيمةٍ قاسية. [sighs] وفي أعقاب تلك الهزيمة، اجتاحت غاراتُ المغول أرجاءَ الأناضول كلَّها. نُهبت المدن، وخلت القرى من أهلها.",
+   "next_text": "[calm] ومع ذلك، مضت القوافلُ في طرقها، وحاول الناسُ ألّا يفقدوا الأمل. [whisper] فقد كان في الأناضول قولٌ قديم: [long pause] الرمادُ يحفظُ الجمر."
+  },
+  "tohum": 1243,
+  "maliyet": 28,
+  "maliyet_kaynak": "Character-Cost",
+  "sayac_once": 6791,
+  "not": "anlatı üretimi ar bölüm 3 (Kronks AR remix)",
+  "tarih": "2026-11-02T03:34:54+00:00",
+  "tur_asama": "E giriş sinematiği 6 dil (nihai)"
+ },
+ {
+  "dosya": "ar_4.mp3",
+  "tur": "vo",
+  "istem": "[calm] ومع ذلك، مضت القوافلُ في طرقها، وحاول الناسُ ألّا يفقدوا الأمل.",
+  "model": "eleven_v4",
+  "ses": "PA4QGZDhUkvuOKb6ZEkd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "ar",
+   "previous_text": "[thoughtful] عامُ ألفٍ ومئتين وثلاثةٍ وأربعين للميلاد… [short pause] في معركة كوسه داغ، التي غيّرت مصير الأناضول، مُني الجيشُ السلجوقيُّ بهزيمةٍ قاسية. [sighs] وفي أعقاب تلك الهزيمة، اجتاحت غاراتُ المغول أرجاءَ الأناضول كلَّها. نُهبت المدن، وخلت القرى من أهلها. [sad] وتحت نظامٍ يتبدّل وضرائبَ تزداد ثقلًا، كافح الناسُ من أجل البقاء.",
+   "next_text": "[whisper] فقد كان في الأناضول قولٌ قديم: [long pause] الرمادُ يحفظُ الجمر."
+  },
+  "tohum": 1243,
+  "maliyet": 28,
+  "maliyet_kaynak": "Character-Cost",
+  "sayac_once": 6791,
+  "not": "anlatı üretimi ar bölüm 4 (Kronks AR remix)",
+  "tarih": "2026-11-02T03:34:57+00:00",
+  "tur_asama": "E giriş sinematiği 6 dil (nihai)"
+ },
+ {
+  "dosya": "ar_5.mp3",
+  "tur": "vo",
+  "istem": "[whisper] فقد كان في الأناضول قولٌ قديم: [long pause] الرمادُ يحفظُ الجمر.",
+  "model": "eleven_v4",
+  "ses": "PA4QGZDhUkvuOKb6ZEkd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "ar",
+   "previous_text": "[thoughtful] عامُ ألفٍ ومئتين وثلاثةٍ وأربعين للميلاد… [short pause] في معركة كوسه داغ، التي غيّرت مصير الأناضول، مُني الجيشُ السلجوقيُّ بهزيمةٍ قاسية. [sighs] وفي أعقاب تلك الهزيمة، اجتاحت غاراتُ المغول أرجاءَ الأناضول كلَّها. نُهبت المدن، وخلت القرى من أهلها. [sad] وتحت نظامٍ يتبدّل وضرائبَ تزداد ثقلًا، كافح الناسُ من أجل البقاء. [calm] ومع ذلك، مضت القوافلُ في طرقها، وحاول الناسُ ألّا يفقدوا الأمل."
+  },
+  "tohum": 1243,
+  "maliyet": 30,
+  "maliyet_kaynak": "Character-Cost",
+  "sayac_once": 6791,
+  "not": "anlatı üretimi ar bölüm 5 (Kronks AR remix)",
+  "tarih": "2026-11-02T03:35:00+00:00",
+  "tur_asama": "E giriş sinematiği 6 dil (nihai)"
+ },
+ {
+  "dosya": "giris_muzik_1.mp3",
+  "tur": "muzik",
+  "istem": {
+   "positive_global_styles": [
+    "instrumental cinematic film score for a documentary narrator",
+    "melodic, with one memorable modal theme in a Turkish makam (Hüseyni, then Rast for hope)",
+    "13th-century Anatolia, Seljuk era, medieval Turkish and Persian acoustic instruments",
+    "kös war drums, bowed tanbur, kemençe, rebab, ney, kanun, oud, mey double reed, bendir frame drum",
+    "melodies placed in the low register or the high register, the 300 Hz to 3 kHz midrange kept sparse and open for the spoken voice",
+    "clear changes of mood between sections",
+    "natural acoustic recording, warm hall reverb",
+    "solemn, warm, earthy"
+   ],
+   "negative_global_styles": [
+    "vocals",
+    "choir",
+    "humming",
+    "chanting",
+    "lyrics",
+    "synth",
+    "electronic",
+    "modern drum kit",
+    "cymbals",
+    "guitar",
+    "piano",
+    "brass",
+    "western symphony orchestra",
+    "dense midrange",
+    "busy arrangement",
+    "trailer riser",
+    "loud"
+   ],
+   "sections": [
+    {
+     "section_name": "Kosedag, the lost battle",
+     "positive_local_styles": [
+      "opens with one deep distant kös war drum hit and a low drone",
+      "slow heavy kös strokes far away",
+      "a mournful lament melody on bowed tanbur and kemençe, slow and expressive",
+      "aftermath of a lost battle, grief"
+     ],
+     "negative_local_styles": [
+      "triumphant",
+      "fast",
+      "bright"
+     ],
+     "duration_ms": 15790,
+     "lines": []
+    },
+    {
+     "section_name": "Mongol raids",
+     "positive_local_styles": [
+      "kös drums gradually accelerating",
+      "rising tension and dread",
+      "a dark piercing mey double-reed phrase in the low register",
+      "low bowed string ostinato",
+      "steady crescendo"
+     ],
+     "negative_local_styles": [
+      "melody in the vocal range",
+      "resolution",
+      "major key"
+     ],
+     "duration_ms": 12250,
+     "lines": []
+    },
+    {
+     "section_name": "The people's hardship",
+     "positive_local_styles": [
+      "drums stop abruptly",
+      "solo kemençe or rebab sorrowful melody in a high register, intimate and fragile",
+      "very soft low drone underneath",
+      "sparse"
+     ],
+     "negative_local_styles": [
+      "drums",
+      "loud",
+      "fast"
+     ],
+     "duration_ms": 8600,
+     "lines": []
+    },
+    {
+     "section_name": "Caravans and hope",
+     "positive_local_styles": [
+      "warm hope returns",
+      "gentle kanun arpeggios in the high register and a soft oud melody",
+      "light walking pulse on bendir frame drum",
+      "brighter Rast makam colour"
+     ],
+     "negative_local_styles": [
+      "epic",
+      "loud",
+      "heavy drums"
+     ],
+     "duration_ms": 7790,
+     "lines": []
+    },
+    {
+     "section_name": "Whisper",
+     "positive_local_styles": [
+      "almost silence",
+      "a very soft, barely audible low drone",
+      "stillness, held breath"
+     ],
+     "negative_local_styles": [
+      "melody",
+      "drums",
+      "build-up",
+      "loud"
+     ],
+     "duration_ms": 7170,
+     "lines": []
+    },
+    {
+     "section_name": "The ash keeps the ember",
+     "positive_local_styles": [
+      "a single ney phrase rising gently",
+      "resolves to a clear, consonant final chord on kanun, oud and low strings",
+      "long natural decay into silence"
+     ],
+     "negative_local_styles": [
+      "drums",
+      "abrupt cut",
+      "unresolved ending",
+      "loud"
+     ],
+     "duration_ms": 4760,
+     "lines": []
+    }
+   ]
+  },
+  "model": "music_v1",
+  "ayarlar": {
+   "model_id": "music_v1",
+   "respect_sections_durations": true
+  },
+  "sure_sn": 56.36,
+  "tohum": null,
+  "maliyet": 704,
+  "maliyet_kaynak": "abonelik sayacı farkı",
+  "sayac_once": 7233,
+  "not": "E giriş nihai müzik, deneme 1 (melodik; 6 bölüm çizelgeye birebir)",
+  "tarih": "2026-11-02T03:47:34+00:00",
+  "tur_asama": "E giriş sinematiği 6 dil (nihai)"
+ },
+ {
+  "dosya": "giris_muzik_2.mp3",
+  "tur": "muzik",
+  "istem": {
+   "positive_global_styles": [
+    "instrumental cinematic film score under a documentary narrator, continuous and legato from start to end",
+    "melodic: one lyrical, memorable modal theme in Turkish makam Huseyni, returning in makam Rast for hope",
+    "13th-century Anatolia, Seljuk era, medieval Turkish and Persian acoustic instruments",
+    "kos war drums, bowed tanbur, kemence, rebab, ney, kanun, oud, mey double reed, bendir frame drum",
+    "a sustained low drone underneath everything, no gaps",
+    "melodies in the low register or the high register, the 300 Hz to 3 kHz midrange kept sparse and open for the spoken voice",
+    "natural acoustic recording, warm hall reverb",
+    "solemn, warm, earthy"
+   ],
+   "negative_global_styles": [
+    "vocals",
+    "choir",
+    "humming",
+    "chanting",
+    "lyrics",
+    "synth",
+    "electronic",
+    "modern drum kit",
+    "cymbals",
+    "guitar",
+    "piano",
+    "brass",
+    "western symphony orchestra",
+    "silence",
+    "long pauses",
+    "stop-start phrasing",
+    "trailer impacts",
+    "booming hits",
+    "dense midrange",
+    "loud"
+   ],
+   "sections": [
+    {
+     "section_name": "Kosedag, the lost battle",
+     "positive_local_styles": [
+      "fades in softly over a low sustained drone",
+      "slow, distant, soft kos drum pulse, continuous",
+      "a mournful lyrical lament melody on bowed tanbur and kemence in the low register, long connected phrases",
+      "grief after a lost battle"
+     ],
+     "negative_local_styles": [
+      "triumphant",
+      "fast",
+      "big impact hits",
+      "silence"
+     ],
+     "duration_ms": 15790,
+     "lines": []
+    },
+    {
+     "section_name": "Mongol raids",
+     "positive_local_styles": [
+      "kos and bendir drums steadily accelerating",
+      "rising tension and dread",
+      "a dark mey double-reed melody in the low register",
+      "low bowed string ostinato",
+      "continuous crescendo"
+     ],
+     "negative_local_styles": [
+      "melody in the vocal range",
+      "resolution",
+      "major key",
+      "silence"
+     ],
+     "duration_ms": 12250,
+     "lines": []
+    },
+    {
+     "section_name": "The people's hardship",
+     "positive_local_styles": [
+      "the drums stop",
+      "a solo kemence sorrowful melody in a high register, legato and fragile",
+      "the soft low drone continues underneath"
+     ],
+     "negative_local_styles": [
+      "drums",
+      "loud",
+      "fast",
+      "silence"
+     ],
+     "duration_ms": 8600,
+     "lines": []
+    },
+    {
+     "section_name": "Caravans and hope",
+     "positive_local_styles": [
+      "warm hope returns",
+      "gentle kanun arpeggios in the high register with a soft oud melody",
+      "light steady walking pulse on bendir frame drum",
+      "brighter makam Rast colour"
+     ],
+     "negative_local_styles": [
+      "epic",
+      "loud",
+      "heavy drums",
+      "silence"
+     ],
+     "duration_ms": 7790,
+     "lines": []
+    },
+    {
+     "section_name": "Whisper",
+     "positive_local_styles": [
+      "very quiet, pianissimo",
+      "only a soft sustained low drone and a faint high harmonic shimmer",
+      "stillness, held breath"
+     ],
+     "negative_local_styles": [
+      "melody",
+      "drums",
+      "attacks",
+      "build-up",
+      "loud"
+     ],
+     "duration_ms": 7170,
+     "lines": []
+    },
+    {
+     "section_name": "The ash keeps the ember",
+     "positive_local_styles": [
+      "a single ney phrase rises gently out of the drone",
+      "then a clear, consonant, resolved final chord on kanun, oud and low strings",
+      "the final chord is held and rings to the very end with a long natural decay"
+     ],
+     "negative_local_styles": [
+      "drums",
+      "abrupt cut",
+      "unresolved ending",
+      "silence before the end",
+      "loud"
+     ],
+     "duration_ms": 4760,
+     "lines": []
+    }
+   ]
+  },
+  "model": "music_v1",
+  "ayarlar": {
+   "model_id": "music_v1",
+   "respect_sections_durations": true
+  },
+  "sure_sn": 56.36,
+  "tohum": null,
+  "maliyet": 704,
+  "maliyet_kaynak": "abonelik sayacı farkı",
+  "sayac_once": 7937,
+  "not": "E giriş nihai müzik, deneme 2 (1. denemede ~9 sn'de bir sessizliğe düşen vuruş-sönüm kalıbı, fısıltı bölümü yüksek; istem: sürekli/legato, sessizlik ve darbe yok)",
+  "tarih": "2026-11-02T03:49:31+00:00",
+  "tur_asama": "E giriş sinematiği 6 dil (nihai)"
+ },
+ {
+  "dosya": "(ses kütüphanesi) 5 aday",
+  "tur": "ses_ekle_sil",
+  "istem": {
+   "eklenen": [
+    "es 3hn25giptIBsW5fakCzE Javier",
+    "pt F2CrQM2UonBN6qFJbaKN André Assis",
+    "pt dxcgH8U8KbbWUEjmOmwH BigMarck",
+    "ar BrKeRgI6Ivb2zWjD6qte Celil",
+    "ar apsZFlSToM2vmFpwz5jX Omar"
+   ]
+  },
+  "model": "POST /v1/voices/add + DELETE /v1/voices",
+  "tohum": null,
+  "maliyet": 0,
+  "maliyet_kaynak": "abonelik sayacı farkı (0)",
+  "sayac_once": 6124,
+  "not": "ses seçimi (c): Kronks'a ECAPA benzerliğiyle sıralanan 466 ücretsiz önizlemeden en iyileri eklendi, bölüm 1 denendi (TTS kayıtları ayrı), hiçbiri seçilmedi ve hepsi silindi",
+  "tarih": "2026-11-02T03:59:36+00:00",
+  "tur_asama": "E giriş sinematiği 6 dil (nihai)"
  }
 ]

@@ -118,3 +118,7 @@ Toplam: **63 dosya, 12.14 MB**.
 ## Seslendirme
 
 `vo/` dizini şu an boştur. Oyuna yalnız gerçek seslendirme sanatçılarının kayıtları girer; yapay ses kullanılmaz. Ayrıntı: `docs/seslendirme/`.
+
+## Giriş sinematiği (`giris/`)
+
+Altı dilde tam miks (`giris_<dil>.m4a`, 56,36 sn, ortak çizelge `zaman.json`). Anlatı metni Berkay'ın (`docs/ANLATI_GIRIS.md`); anlatıcı sesi Berkay'ın ElevenLabs sesi **Kronks** (Arapçada aynı sesin Arapça aksanlı remix'i). Anlatı (`eleven_v4`), özgün müzik (`music_v1`) ve efektler ElevenLabs ile Kronikler için üretildi; ücretli plan, ticari kullanım. İstem, model ve maliyetler `uretim.json`'da.

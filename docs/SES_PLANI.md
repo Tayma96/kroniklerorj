@@ -31,17 +31,20 @@ ortam −30. Mikserdeki oynatıcı ses düzeyleri bu dosya seviyelerine göre ye
   (bu teşhisteki yöntem), döngü dikişinde tık, baş/son sessizlik, süre. Spektrogram PNG'si gözle incelenir.
 - Biçim: AAC .m4a 44,1 kHz; efekt/arayüz mono 96 kbps, ortam/müzik stereo 128 kbps.
 
-## 5. Üretim listesi ve kredi tahmini (ölçülen: efekt 10 kredi/sn, müzik ≈ 400 kredi/dk)
-| Grup | İçerik | Tahmin |
+## 5. Üretim listesi ve kredi tahmini
+Ölçülen birimler (`Character-Cost` / sayaç farkı): efekt 10 kredi/sn · müzik `music_v1` ≈ 750 kredi/dk
+(56,4 sn = 704) · TTS `eleven_v4` ≈ 0,4 kredi/karakter (148 karakter = 59) · ses remix önizlemesi ≈ 1 kredi/karakter
+(3 önizleme, ~120 karakter = ~120) · önizlemeden ses kaydı, kütüphaneden ses ekleme/silme 0.
+
+| Grup | İçerik | Tahmin / gerçek |
 |---|---|---|
 | Arayüz | dokun ×3, ilerle ×3, sayfa ×2, kalem, kapı | ~150 |
 | Olay efektleri | mevcut 23 efektin yenisi (+1 deneme payı) | ~1.200 |
 | Ortam tabanı | 15 döngü × 25 sn (+%30 pay) | ~4.900 |
 | Serpiştirme | ~30 kısa ses | ~600 |
-| Giriş sinematiği | ~40 sn özgün müzik + ~10 efekt noktası | ~900 |
-| Çok dilli anlatıcı | ses seçimi + 5 dilde anlatı (bölüm 9) | ~5.000 |
-| **Toplam (1. dalga)** | | **~12.750** |
-| Oyun içi müzik (2. dalga, ayrı onay) | 21 parça × ~90 sn | ~12.600 |
+| Giriş sinematiği, 6 dil (bitti) | ses seçimi, 5 dilde anlatı, 2 müzik denemesi, 6 efekt | **gerçek 3.713** |
+| **Toplam (1. dalga)** | | **~10.600** |
+| Oyun içi müzik (2. dalga, ayrı onay) | yalnız en sık çalan 8 parça × ~90 sn | ~9.000 |
 
 Tavanlar: 1. dalga en çok 15.000 kredi. Kalan kota 5.000'in altına inerse her şey durur.
 
@@ -75,12 +78,27 @@ Berkay'ın ElevenLabs seslerinden yalnız Kronks (`X1De6TudhbO6mizD7oKo`, tr) ku
   pt Brezilya, ar Fasih (MSA), ru standart. Duygu etiketleri aynı yerlerde; "Kül, közü saklar." her dilde kısa,
   atasözü tadında.
 - **Her dil için 3 aday yolu:** (1) Kronks + `eleven_v4` doğrudan (aksan Türkçe kalabilir); (2) Kronks remix
-  (`/v1/text-to-voice/{id}/remix`: aynı tını, yerel aksan; ses yuvası kullanır, 8 boş); (3) ses kütüphanesinden
+  (`/v1/text-to-voice/{id}/remix`: aynı tını, yerel aksan; kaydedilen ses yuva kullanır, 7 boş); (3) ses kütüphanesinden
   yerel anlatıcılar (ön dinleme ücretsiz), Kronks'a tını benzerliğine göre yerel konuşmacı gömmesiyle sıralanır.
 - **Seçim:** yerel Whisper ile anlaşılırlık (kelime hata oranı) + Kronks'a tını benzerliği ölçülür; son karar
   Berkay'ın kulağı. Dinleme sayfasında her dilde aynı örnek cümle, adaylar yan yana.
 - **Üretim:** 5 bölüm halinde `with-timestamps`, önceki/sonraki metin bağlamıyla. Hizalama altyazıyı ve müzik
   bölümlerini sürer. Müzik bölüm süreleri en uzun dile göre; kısa dillerde bölüm sonunda müzik nefesi.
+- **Seçim sonucu (2 Kasım 2026, ölçümle; Berkay tam yetki verdi):** ölçüt bölüm 1'de faster-whisper medium ile
+  kelime hata oranı (özel ad "Köse Dağ" hariç; hiçbir aday doğru yazdırmadı) ve ECAPA (speechbrain) ile Kronks'un
+  Türkçe okumasına kosinüs benzerliği. Kural: en iyi WER + 5 puan içindekilerden benzerliği en yüksek olan.
+  | Dil | Seçilen | WER (a / b / c) | Benzerlik (a / b / c) |
+  |---|---|---|---|
+  | en | (a) Kronks doğrudan | 0 / 0 / – | 0,68 / 0,55 / – |
+  | es | (a) Kronks doğrudan | 5,3 / 5,3 / 5,3 | 0,76 / 0,61 / 0,53 |
+  | pt | (a) Kronks doğrudan | 10,5 / 10,5 / 10,5 | 0,85 / 0,67 / 0,42 |
+  | ar | (b) Kronks AR remix (`PA4QGZDhUkvuOKb6ZEkd`) | 14,3 / 7,1 / 14,3 | 0,81 / 0,74 / 0,37 |
+  | ru | (a) Kronks doğrudan | 0 / 0 / – | 0,87 / 0,76 / – |
+
+  Kütüphanenin en benzer yerel anlatıcıları (466 ücretsiz önizleme) Kronks'a en çok 0,38 benzedi; (a) ve (b) her
+  dilde 0,55'in üstünde. en/ru'da (a) hatasız olduğu için (c) denenmedi (kuralı değiştiremezdi). Arapçada Kronks
+  doğrudan i'râb hatası yaptı (السلجوقية), remix yapmadı. Whisper dil tespiti seçilen tüm seslerde ≥ 0,98.
+  Türkçe: mevcut `eleven_v4` okuması (`OeLxQlb1JIBZNFe0dJKc`) bölümlere kesildi.
 - **Uygulama:** ilk açılışta (kayıtlı dil yoksa) dil seçme ekranı; sinematik seçilen dilin kaydını çalar,
   altyazı her dilde.
 - ElevenLabs "agent" ürünü konuşan sohbet botları içindir; içerik üretiminde aynı modelleri doğrudan API ile
