@@ -11,7 +11,7 @@ import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
 import { useMp } from "../../lib/mp/store";
 import { realmYearMonth } from "../../lib/mp/world";
-import { applyDilemma, rakipYarisi, tezgahKart, tezgahHuner, tezgahHunerStat, tezgahSans, tezgahBasari, resolveTezgah, TEZGAH_HUNER, achievementsOf, GameEvent, resolveOpportunity, resolveMicro, resolveSaga, resolveBloodline, BL_CHOICES, BL_COST, SAGA_CHOICES, SAGA_COST, resolveDivan, inJail, jailBribeCost, bribeJailer, Opportunity, eulogy, playerWar, beylikName, kariyerXp, kisiProfil, gorus, gorusSebebi, echoWorkBlock, npcTeklifYanit, donumAni, acikHesaplar, ayNotu, onemliMi, kapiMetni, hakemIpucu, araciSansi, hayatOzeti, kisiOf, knParam } from "../../lib/game";
+import { applyDilemma, rakipYarisi, tezgahKart, tezgahHuner, tezgahHunerStat, tezgahSans, tezgahBasari, resolveTezgah, TEZGAH_HUNER, achievementsOf, GameEvent, resolveOpportunity, resolveMicro, resolveSaga, resolveBloodline, BL_CHOICES, BL_COST, SAGA_CHOICES, SAGA_COST, resolveDivan, inJail, jailBribeCost, bribeJailer, Opportunity, eulogy, playerWar, beylikName, kariyerXp, kisiProfil, gorus, gorusSebebi, echoWorkBlock, npcTeklifYanit, donumAni, pencereAni, acikHesaplar, ayNotu, onemliMi, kapiMetni, hakemIpucu, araciSansi, hayatOzeti, kisiOf, knParam } from "../../lib/game";
 import { pendingMonthScene, chooseMonthDilemma, progressMonthOpportunity, resolveMonthOpportunity } from "../../lib/month-scene";
 import { ayinSahnesi, Dilemma, Choice } from "../../lib/events";
 import { SinavKartiModal, SinavKartiVeri } from "../../lib/kart3d";
@@ -213,7 +213,7 @@ export default function Dashboard() {
     if (seen === null || q < seen) { seenSeq.current = q; return; } // kayıt yeni yüklendi ya da yeni oyun: eski olaylar yeniden açılmaz
     if (q > seen) {
       const fresh = h.filter((e) => (e.q ?? 0) > seen);
-      const land = [...fresh].reverse().find(donumAni); // yalnız oyuncuya değen büyük an pencere açar (dünya haberleri ay özetinde)
+      const land = [...fresh].reverse().find(pencereAni); // yalnız oyuncuya değen büyük an pencere açar (dünya haberi, çağ, hane teklifi ve aile görevi ay özetinde)
       const yr = [...fresh].reverse().find((e) => e.type === "yıl_dönümü");
       if (land) setMilestone(land);
       if (yr) setYearReport(yr); // bağımsız: aynı ayda büyük an varsa karne onun kapanışını bekler (render guard'ı !milestone)
