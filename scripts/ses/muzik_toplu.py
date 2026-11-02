@@ -22,9 +22,17 @@ def dongu(x, c_sn=3.0):
     # Kuyruk başa eşit güçle karışır: y[son] → y[0] geçişi kesintisizdir.
     c = int(c_sn * SR); L = len(x)
     # sondaki sessizliği at (model bazen kısa kuyruk bırakır)
-    seviye = np.abs(x).max(axis=1); son = L
-    while son > SR and seviye[son - 1] < 1e-3: son -= 1
+    # 50 ms pencerelerde −45 dBFS altına inen sönüm kuyruğu atılır (döngüde susma olmasın)
+    n = int(0.05 * SR); son = L
+    while son > 10 * SR and np.sqrt(np.mean(x[son - n:son] ** 2)) < 10 ** (-45 / 20): son -= n
     x = x[:son]; L = len(x)
+    # Son %30'da iç sessizlik (model parçayı söndürüp yeniden başlatmış) varsa sönüşün başladığı yerden kes.
+    rms = np.array([np.sqrt(np.mean(x[i:i + n] ** 2)) for i in range(0, L - n, n)]); db = 20 * np.log10(rms + 1e-9)
+    for k in range(int(len(db) * 0.7), len(db)):
+        if db[k] < -45:
+            j = k
+            while j > 0 and db[j] < -22: j -= 1
+            x = x[: (j + 1) * n]; L = len(x); break
     t = np.linspace(0, np.pi / 2, c, dtype=np.float32)[:, None]
     y = x[: L - c].copy()
     y[:c] = x[:c] * np.sin(t) + x[L - c:] * np.cos(t)
