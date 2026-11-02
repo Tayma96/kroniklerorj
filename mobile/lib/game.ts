@@ -3149,6 +3149,12 @@ export function donumAni(e: GameEvent): boolean {
   if (e.scope !== "makro") return true;
   const k = e.k || ""; return DONUM_MAKRO.some((x) => k.startsWith(x));
 }
+// Pencere açan an: oyuncunun kendi hayatına değen büyük an. Dünya haberi, çağ, uzak tanıdığın ölümü, hane teklifi ve aile
+// görevi akışta "bu ay" şeridine düşer; ekranı durdurmaz (açılır pencere yorgunluğu, Hissiyat 1). donumAni yönetmen için aynı kalır.
+const PENCERE_DISI = new Set(["dunya_olayi", "hanedan_haber", "cag", "aile_gorevi"]);
+export function pencereAni(e: GameEvent): boolean { return donumAni(e) && !PENCERE_DISI.has(e.type); }
+// Kartı bu yıla düşmeyen şenlik ayı: ekran durmaz, kronikte tek satırlık ortam (şenlik yılda bir kart olur, sırayla).
+export function senlikAni(prev: GameState, ay: number): GameState { const s = clone(prev); push(s, "gunluk", "Şenlik günü geldi; meydan doldu.", "kişisel", false, { k: "evj.senlikSessiz." + ay }); return s; }
 // Son N ayda kroniğe düşmüş, verilen önekle başlayan olay anahtarları (tekrar önleme).
 // Hastalığın sebebi (günlükte TR yedek metin; 6 dil i18n'de).
 const SICK_MEVSIM: Record<string, string> = { "Kış": "kis", "İlkbahar": "bahar", "Yaz": "yaz", "Sonbahar": "guz" };

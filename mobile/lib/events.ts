@@ -1,5 +1,5 @@
 // İkilemler — ay ilerlerken çıkan anlatısal seçimler. Saf veri; etki applyDilemma ile uygulanır.
-import { GameState, Delta, Player, effStat, Opportunity, opportunitiesFor, kapiyaGelen, donumAni, inJail, acikIpler } from "./game";
+import { GameState, Delta, Player, effStat, Opportunity, opportunitiesFor, kapiyaGelen, donumAni, inJail, acikIpler, senlikAni } from "./game";
 
 export interface Choice { label: string; delta: Delta; result: string; rk?: string; sans?: number; risk?: { taban: number; ticaret?: number; zeka?: number; kayip: Delta; metin: string }; gercek?: Delta; } // rk: sonuç metni anahtarı (riskli yolun kötü sonucu) · sans: görünür başarı şansı % · risk: kart açılırken zar atılır (şans = taban + ticaret×beceri + zekâ×stat), tutmazsa kayıp uygulanır · gercek: uygulanacak delta (delta kartta gösterilen)
 export interface Dilemma {
@@ -1377,12 +1377,18 @@ export const FESTIVALS: { month: number; variants: Dilemma[] }[] = [
   },
 ];
 // Bu ayın şenliğini döndür (varsa ve henüz çözülmediyse). Sabit ay → yılda bir; kilit applyDilemma'da kurulur.
+// Şenlik ayı ama kart bu yıl öbür şenliğe düştü: kronikte tek satırlık ortam (Hissiyat 1: yılda üç kart yerine bir).
+function senlikSessiz(s: GameState): boolean {
+  const f = FESTIVALS.find((x) => x.month === s.turn % 12);
+  return !!f && !s.player.dead && s.player.festival_turn !== s.turn && Math.floor(s.turn / 12) % FESTIVALS.length !== FESTIVALS.indexOf(f);
+}
 export function pickFestival(s: GameState, random: () => number = Math.random): Dilemma | null {
   const p = s.player;
   if (p.dead) return null;
   if (p.festival_turn === s.turn) return null; // bu ayın şenliği çözüldü
   const f = FESTIVALS.find((x) => x.month === s.turn % 12);
   if (!f) return null;
+  if (Math.floor(s.turn / 12) % FESTIVALS.length !== FESTIVALS.indexOf(f)) return null; // yılda tek şenlik kartı, sırayla (öbür şenlikler akışta tek satır)
   const uygun = f.variants.filter((d) => !d.when || d.when(p, s));
   return uygun.length ? uygun[Math.floor(random() * uygun.length)] : null;
 }
@@ -1672,12 +1678,13 @@ export function ayinSahnesi(prev: GameState, sonSeq?: number, random: () => numb
   if (orta && ortaGecen >= ORTA_ARA) { const o = ortaKart(); if (o) return o; } // nöbetçinin son ayı: şenlikten de önce
   const fest = ayniTurSerisi(izi, "senlik") >= 3 ? null : pickFestival(prev, random); // (şenlik ayları arka arkaya boş geçerse dördüncüsü bir yıl bekler)
   if (fest) return yaz("senlik", prev, { dilemma: fest });
+  if (senlikSessiz(prev)) prev = senlikAni(prev, prev.turn % 12); // kartı bu yıla düşmeyen şenlik: ortam satırı, ekran durmaz
   const buyukAn = sonSeq != null ? prev.history.some((e) => (e.q ?? 0) > sonSeq && donumAni(e)) : prev.history.some((e) => e.day === prev.turn && donumAni(e));
   if (orta && ortaGecen >= ORTA_ARA - 1) { const o = ortaKart(); if (o) return o; } // nöbetçi: orta yaşın sorusu gecikmez
   if (buyukAn) return yaz("bos"); // bu ayın sahnesi zaten var (dönüm noktası)
   if (orta && ortaGecen >= ORTA_ARA - 3) { const o = ortaKart(); if (o) return o; }
   // Evre eğrisi + son 12 ayın çeşitliliği + açık ipler
-  const w: Record<string, number> = { ikilem: 0.28, firsat: 0.22, kapi: 0.25, bos: 0.25, orta: 0 };
+  const w: Record<string, number> = { ikilem: 0.28, firsat: 0.22, kapi: 0.25, bos: 0.6, orta: 0 }; // Hissiyat 1: az ama ağır kart (eski boş payı 0.25)
   if (p.age < 13) { w.ikilem *= 1.1; w.firsat *= 0.6; } // çocukluk: merak
   else if (p.age < 30) { w.firsat *= 1.2; } // gençlik: sınav
   else if (p.age <= 55) { w.ikilem *= 1.1; w.bos *= 0.7; w.orta = 0.06; } // orta yaş: soru
