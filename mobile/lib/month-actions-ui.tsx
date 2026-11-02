@@ -34,7 +34,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { EmekOngoru } from "./emek-ui";
 import { SoylentiIzi, soylentiLead } from "./rumor-ui";
 import { AileHaberi } from "./evlat-ui";
-import { aileHaberiniOku, varisAdaylari, aileHaberi } from "./game";
+import { aileHaberiniOku, varisAdaylari, aileHaberi, duzenAyarla } from "./game";
 import { ITEMS } from "./world";
 
 // Ayın eylemleri: çalışma (emek) ve yaşa göre uğraşlar. Ana ekrandan Karakter ekranına taşındı;
@@ -43,9 +43,11 @@ export function EmekPanel() {
   const { state, doWork, apply } = useGame();
   const { t, lang } = useI18n();
   const router = useRouter();
-  const [workStyle, setWorkStyle] = useState<WorkStyle>("normal");
+  const [secili, setWorkStyle] = useState<WorkStyle | null>(null);
   if (!state) return null;
   const p = state.player;
+  const workStyle: WorkStyle = secili || p.duzen?.tarz || "normal"; // düzenin tarzı: son seçilen kalıcı
+  const duzenAcik = !p.duzen?.kapali;
   return (
     <>
       {!p.dead && (p.age >= 13 && p.profession !== "işsiz") ? (
@@ -55,7 +57,7 @@ export function EmekPanel() {
             {(["garantici", "normal", "hirsli", "kaytarici"] as const).map((ws) => {
               const on = workStyle === ws;
               return (
-                <Pressable key={ws} accessibilityRole="button" accessibilityLabel={t("work.style." + ws)} accessibilityState={{ selected: on }} onPress={() => { hap("tap"); setWorkStyle(ws); }} style={{ flexBasis: "45%", flexGrow: 1, minHeight: 44, justifyContent: "center", alignItems: "center", paddingVertical: 8, borderRadius: 5, borderWidth: 1, borderColor: on ? C.gold : C.border, backgroundColor: on ? C.cardHi : "transparent" }}>
+                <Pressable key={ws} accessibilityRole="button" accessibilityLabel={t("work.style." + ws)} accessibilityState={{ selected: on }} onPress={() => { hap("tap"); setWorkStyle(ws); apply((s) => duzenAyarla(s, { tarz: ws })); }} style={{ flexBasis: "45%", flexGrow: 1, minHeight: 44, justifyContent: "center", alignItems: "center", paddingVertical: 8, borderRadius: 5, borderWidth: 1, borderColor: on ? C.gold : C.border, backgroundColor: on ? C.cardHi : "transparent" }}>
                   <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 0.3, color: on ? C.gold : C.parchmentMuted }}>{t("work.style." + ws)}</Text>
                 </Pressable>
               );
@@ -66,6 +68,15 @@ export function EmekPanel() {
           <GameButton variant="secondary" accessibilityLabel={worked ? t("act.workedThisTurn") : t("act.work")} icon="calis" rtl={lang === "ar"} onPress={() => { if (worked) return; hap("tap"); playTap(); doWork(workStyle); }} disabled={worked}>
             <Text style={{ fontFamily: F.display, fontSize: 13, color: C.goldBright, letterSpacing: 1.5, textAlign: "center" }}>{worked ? t("act.workedThisTurn") : t("act.work")}</Text>
           </GameButton>); })()}
+          {/* Düzen (Hissiyat 4): ay geçerken rutin kendiliğinden — her ay çalış/ye tıklaması zorunlu değil */}
+          <Pressable accessibilityRole="switch" accessibilityState={{ checked: duzenAcik }} accessibilityLabel={t("duzen.baslik")} onPress={() => { hap("tap"); apply((s) => duzenAyarla(s, { kapali: duzenAcik })); }}
+            style={{ flexDirection: lang === "ar" ? "row-reverse" : "row", alignItems: "center", gap: 10, minHeight: 44, marginTop: 10, paddingVertical: 8, paddingHorizontal: 10, borderRadius: 5, borderWidth: 1, borderColor: duzenAcik ? "rgba(201,168,76,0.55)" : C.border, backgroundColor: duzenAcik ? "rgba(201,168,76,0.10)" : "transparent" }}>
+            <GameIcon name="hourglass" size={16} color={duzenAcik ? C.gold : C.parchmentMuted} />
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: duzenAcik ? C.gold : C.parchmentMuted, textAlign: lang === "ar" ? "right" : "left" }}>{t("duzen.baslik")} · {t(duzenAcik ? "duzen.durumAcik" : "duzen.durumKapali")}</Text>
+              <Text style={{ fontFamily: F.serif, fontSize: 15, lineHeight: 21, color: C.parchmentDim, textAlign: lang === "ar" ? "right" : "left" }}>{t(duzenAcik ? "duzen.acik" : "duzen.kapali")}</Text>
+            </View>
+          </Pressable>
         </OrnatePanel>
       ) : null}
 

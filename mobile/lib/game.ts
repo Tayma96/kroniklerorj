@@ -89,6 +89,7 @@ export interface Player {
   play_energy?: number; // çocukluk günleri hakkı — mektepten AYRI havuz (ders çalışmak oyunu yemez)
   club?: string; teacherBond?: number; // mektep kulübü (haftalık pasif XP) + hoca bağı
   club_standing?: number; last_club_turn?: number; club_grad?: string; // kulüp itibarı + aylık meşk kapısı + mezun olunan kulüp
+  duzen?: { kapali?: boolean; tarz?: WorkStyle }; // Hissiyat 4: ay geçerken rutin (çalış + acıkınca ye) kendiliğinden; kapali=elle
   horse?: boolean; horse_name?: string; // bir atın var mı + adı (hızlı/güvenli "at ile" yolculuğu açar; yolda kaybedilebilir)
   child_acts?: Partial<Record<"oyun" | "yardim" | "yaramazlik" | "kesif", number>>; childhood?: string; // çocukluk eğilim sayacı + reşitlikte belirlenen çocukluk karakteri
   tanistir?: { id: string; until: number }; // tanıdığın tanıştırdığı kişi (açık hesaplarda 12 ay; vârise geçmez)
@@ -5704,6 +5705,19 @@ export function workForecast(s: GameState, style: WorkStyle = "normal"): WorkFor
   return { ...f, min, max, lossMin: Math.round(min * 0.3), lossMax: Math.round(max * 0.3) };
 }
 
+// Düzen (Hissiyat 4): ay geçerken o ay çalışılmadıysa seçili tarzla çalışılır, açsa yenir. Elle çalışma/yemek her zaman
+// önceliklidir; düzen yalnız unutulanı tamamlar (ayda tek maaş kilidi work() içinde aynı). Kapatılınca eski elle akış.
+export function gunlukDuzen(prev: GameState): GameState {
+  const p = prev.player;
+  if (prev.mpRealm || p.dead || p.duzen?.kapali) return prev;
+  let s = prev;
+  if (canWork(s)) s = work(s, p.duzen?.tarz || "normal");
+  if (s.player.age >= 13 && s.player.hunger < 40) s = eat(s, true);
+  return s;
+}
+export function duzenAyarla(prev: GameState, d: { kapali?: boolean; tarz?: WorkStyle }): GameState {
+  const s = clone(prev); s.player.duzen = { ...s.player.duzen, ...d }; return s;
+}
 export function canWork(s: GameState): boolean {
   if (inJail(s.player)) return false; // zindanda tezgâh yok
   const p = s.player;
@@ -6228,15 +6242,15 @@ function cirakTick(s: GameState) {
   cirakMezun(s);
 }
 
-export function eat(prev: GameState): GameState {
+export function eat(prev: GameState, sessiz = false): GameState { // sessiz: düzenin yemeği akışa satır düşmez (aç kalma uyarısı yine düşer)
   const s = clone(prev); const p = s.player;
   if (p.dead || p.hunger >= 100) return s; // ölüye sofra kurulmaz; tokken akçe boşa gitmez
   // önce envanterdeki yiyecek, yoksa 2 akçeye sokak yemeği
   const bonus = hasPerk(p, "tutumlu") ? 10 : 0;
   const foodId = Object.keys(p.inventory).find((id) => p.inventory[id] > 0 && ITEMS[id]?.feed);
-  if (foodId) { const it = ITEMS[foodId]; p.inventory[foodId] -= 1; if (p.inventory[foodId] <= 0) delete p.inventory[foodId]; p.hunger = Math.min(100, p.hunger + (it.feed || 20) + bonus); push(s, "gunluk", `${it.name} yedin.`, "kişisel", false, { k: "evj.eat", p: [{ i: foodId }] }); return s; }
+  if (foodId) { const it = ITEMS[foodId]; p.inventory[foodId] -= 1; if (p.inventory[foodId] <= 0) delete p.inventory[foodId]; p.hunger = Math.min(100, p.hunger + (it.feed || 20) + bonus); if (!sessiz) push(s, "gunluk", `${it.name} yedin.`, "kişisel", false, { k: "evj.eat", p: [{ i: foodId }] }); return s; }
   if (p.money < 2) { push(s, "gunluk", "Yemek alacak akçen yok.", "kişisel", false, { k: "evj.noFood" }); return s; }
-  p.money -= 2; p.hunger = Math.min(100, p.hunger + 25 + bonus); { const sv2 = chance(0.5); push(s, "gunluk", sv2 ? "İki akçeye tezgâhtan sıcak bir tas: kokusu sokağı, buğusu seni doyurdu." : "Sokaktan karnını doyurdun (2 akçe).", "kişisel", false, { k: sv2 ? "evj.eatStreet2" : "evj.eatStreet" }); }
+  p.money -= 2; p.hunger = Math.min(100, p.hunger + 25 + bonus); if (!sessiz) { const sv2 = chance(0.5); push(s, "gunluk", sv2 ? "İki akçeye tezgâhtan sıcak bir tas: kokusu sokağı, buğusu seni doyurdu." : "Sokaktan karnını doyurdun (2 akçe).", "kişisel", false, { k: sv2 ? "evj.eatStreet2" : "evj.eatStreet" }); }
   return s;
 }
 

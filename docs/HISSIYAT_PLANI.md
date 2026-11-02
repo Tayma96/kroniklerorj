@@ -18,7 +18,10 @@ Berkay'ın geri bildirimi: oyun "site gibi", tıklama çok, sonuç hissedilmiyor
    sosyal ekranda her eksenin etkisi ve sonraki kazanımı. Nam bildirimleri ancak 3+ puanda.
 3. **Kararlar geri döner:** ağır karar iz bırakır, 3–18 ay sonra adıyla döner; geri dönen her sonuç sebebini söyler
    (mevcut tohum/ip sistemi üzerine).
-4. **Az tıklama:** rutin (yemek/iş/dinlenme) seçilen düzene göre kendiliğinden; "Ayı İlerlet" tek dokunuş.
+4. **Az tıklama** (yapıldı): düzen (`gunlukDuzen`, `duzenAyarla`; Emek panelinde anahtar, varsayılan açık): ay geçerken
+   çalışılmadıysa son seçilen tarzla çalışılır, açlık <40 ise sessizce yenir; çok aylık ilerleme bekleyen tezgâh kararında
+   durur; düzen açıkken "çalışmadın" rozetleri yok. Ölçüm (6 hayat, yalnız "Ayı İlerlet"): açık → uygun ayların %100'ü
+   çalışıldı, açlık 0, ort. 57 yaş/3.144 akçe; kapalı (eski) → hiç çalışılmadı, ort. 14 yaşta açlık.
 5. **Hayatın derdi:** ana ekranda tek büyük hedef + en çok 3 açık mesele; eylem hedefe katkısını söyler.
 
 Ölçütler `TASARIM_PUSULASI.md`: ölü karar 0, gecikmiş sonucun sebebi %100, görünür gerilim ≤5.

@@ -128,5 +128,25 @@ const rows: Record<string, string[]> = {
   "un.yeni": ["YENİ KADEME", "NEW STANDING", "NUEVO RANGO", "NOVO ESTATUTO", "مكانة جديدة", "НОВОЕ ПОЛОЖЕНИЕ"],
   "un.dustu": ["KADEME DÜŞTÜ", "STANDING LOST", "RANGO PERDIDO", "ESTATUTO PERDIDO", "تراجعت المكانة", "ПОЛОЖЕНИЕ УТРАЧЕНО"],
   "un.etkisiz": ["Bu kademenin bir ayrıcalığı yok.", "This standing grants no privilege.", "Este rango no da ningún privilegio.", "Este estatuto não dá privilégios.", "لا امتياز لهذه المكانة.", "Это положение не даёт преимуществ."],
+  // Düzen (Hissiyat 4)
+  "duzen.baslik": ["Düzen", "Routine", "Rutina", "Rotina", "الروتين", "Распорядок"],
+  "duzen.durumAcik": ["AÇIK", "ON", "ACTIVADA", "ATIVADA", "مُفعَّل", "ВКЛ."],
+  "duzen.durumKapali": ["KAPALI", "OFF", "DESACTIVADA", "DESATIVADA", "مُعطَّل", "ВЫКЛ."],
+  "duzen.acik": [
+    "Her ay geçerken seçili tarzla kendiliğinden çalışılır, acıkınca yemek yenir.",
+    "As each month passes, you work in the chosen style and eat when hungry.",
+    "Cada mes trabajas con el estilo elegido y comes cuando tienes hambre.",
+    "Em cada mês trabalhas no estilo escolhido e comes quando tens fome.",
+    "مع مرور كل شهر يُنجَز العمل بالأسلوب المختار، ويُتناول الطعام عند الجوع.",
+    "Каждый месяц работа идёт в выбранном стиле, а еда — когда голодно.",
+  ],
+  "duzen.kapali": [
+    "Çalışmayı ve yemeği her ay elle yaparsın.",
+    "You work and eat by hand each month.",
+    "Trabajas y comes a mano cada mes.",
+    "Trabalhas e comes à mão em cada mês.",
+    "العمل والطعام يدويًّا كل شهر.",
+    "Работа и еда — вручную каждый месяц.",
+  ],
 };
 export const HISSIYAT_METIN = Object.fromEntries((["tr", "en", "es", "pt", "ar", "ru"] as Lang[]).map((lang, i) => [lang, Object.fromEntries(Object.entries(rows).map(([key, values]) => [key, values[i]]))])) as Record<Lang, Record<string, string>>;

@@ -244,7 +244,7 @@ export default function OyunLayout() {
   const yol = usePathname();
   const { width } = useWindowDimensions();
   // Bu ay emek henüz verilmediyse Karakter sekmesinde rozet (çalışma ana sayfadan Karakter ekranına taşındı)
-  const workDue = !mpMode && !!state && !state.player.dead && state.player.age >= 13 && state.player.profession !== "işsiz" && canWork(state);
+  const workDue = !mpMode && !!state && !state.player.dead && state.player.age >= 13 && state.player.profession !== "işsiz" && canWork(state) && !!state.player.duzen?.kapali; // düzen açıkken ay geçişi çalışır, rozet gereksiz
   useEffect(() => { const ad = yol.replace(/^\/oyun\/?/, "").split("/")[0] || "index"; oturumEkran(ad); }, [yol]); // cihazda kalan oturum kaydı
   return (
     <View style={{ flex: 1 }}>
