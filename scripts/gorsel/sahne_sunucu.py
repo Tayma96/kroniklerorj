@@ -15,7 +15,8 @@ import urllib.request
 KOK = os.path.dirname(os.path.abspath(__file__))
 ADRES = os.environ.get("SD_ADRES", "http://127.0.0.1:7861")
 W, H = int(os.environ.get("SAHNE_W", 640)), int(os.environ.get("SAHNE_H", 1136))
-EK = {"vae_tiling_params": {"enabled": True, "tile_size_w": W, "tile_size_h": H // 2 + 64, "target_overlap": 0.125}}
+# 384 px VAE parçaları: metin kodlayıcı bellekte dururken 14.3 GB sınırının altında kalmak için (640x632 parça OOM verdi)
+EK = {"vae_tiling_params": {"enabled": True, "tile_size_w": 384, "tile_size_h": 384, "target_overlap": 0.125}}
 
 
 def main():
