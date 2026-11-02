@@ -96,7 +96,15 @@ function clearEvent() { if (eventTimer) clearTimeout(eventTimer); eventTimer = u
 function cue(plan: OrtamPlan, ms = 6500) { if (!mixer.snapshot().active) return; clearEvent(); eventPlan = plan; applyPlan(); eventTimer = setTimeout(clearEvent, ms); }
 export function startMusic() { mixer.setPreferences(prefs); applyPlan(); }
 export function stopMusic() { mixer.setPreferences({ ...prefs, music: false }); }
-export function playEffect(id: EfektId) { mixer.effect('effect:' + id, EFEKT_SURE[id], !id.startsWith('ui_')); }
+// Sık çalan seslerin varyantları: aynı ses makineli tüfek gibi tekrarlanmasın; bir öncekini tekrar etmeyen rastgele seçim.
+const VARYANT: Partial<Record<EfektId, EfektId[]>> = { ui_dokun: ['ui_dokun', 'ui_dokun_2'], ui_ilerle: ['ui_ilerle', 'ui_ilerle_2', 'ui_ilerle_3'] };
+const sonVaryant: Partial<Record<EfektId, EfektId>> = {};
+function varyant(id: EfektId): EfektId {
+  const v = VARYANT[id]; if (!v) return id;
+  const aday = v.filter((x) => x !== sonVaryant[id]); const sec = aday[Math.floor(Math.random() * aday.length)] ?? id;
+  sonVaryant[id] = sec; return sec;
+}
+export function playEffect(id: EfektId) { const v = varyant(id); mixer.effect('effect:' + v, EFEKT_SURE[v], !v.startsWith('ui_')); }
 // Sinematik anlatıcısı: müzik ya da efekt açıksa çalar, konuşurken müziği kısar.
 export function playNarration(id: string) { const a = ANLATIM[id]; if (a) mixer.effect('narration:' + id, a.ms, true, 'narration'); }
 export function stopNarration(id: string) { mixer.stop('narration:' + id); }
