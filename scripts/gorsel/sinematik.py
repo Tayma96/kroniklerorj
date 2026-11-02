@@ -264,6 +264,13 @@ class Sahne:
             img = p.ciz(img, kam, ts, self)
 
         img = derecelendir(img, c["renk"], dz)
+        # kuyruk karartması: üst bölüm zamanla kararır (başlık alanı), alt kısım (köz/mühür) aydınlık kalır
+        kr = c.get("karart")
+        if kr:
+            t = yumusak((u - kr["u0"]) / max(kr["u1"] - kr["u0"], 1e-6))
+            if t > 0:
+                yy = (np.arange(H, dtype=np.float32) / H)[:, None, None]
+                img = img * (1 - kr.get("guc", 0.9) * t * (1 - smoothstep(kr["y0"], kr["y1"], yy)))
         return img
 
     def sis(self, img, dz, kam, ts, k):

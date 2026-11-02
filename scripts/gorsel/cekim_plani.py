@@ -79,17 +79,13 @@ CEKIMLER = [
          huzme=dict(x=0.5, y=0.08, guc=0.16, esik=0.75, renk=(1.0, 0.8, 0.5)),
          parcacik=[dict(tip="toz", sayi=170, derinlik=(0.1, 1.0), odak=0.7)],
          renk=ALTIN),
-    # 44.43–48.5 s · ocak başı: mührü avucunda tutan yaşlı (eski FLUX karesi), mühre doğru itme
-    dict(gorsel="eski_muhur.png", bas=44430, son=48500, gir=("kara", 1000), kararma=800, tohum=10,
-         kamera=dict(zoom=(1.04, 1.16), x=(0.5, 0.42), y=(0.5, 0.56), dolly=(0.0, 0.07), pivot=0.6, el=0.5),
-         ates=dict(genlik=0.2, isik=0.05), koz=dict(genlik=0.25),
-         parcacik=[dict(tip="koz", sayi=50, derinlik=(0.4, 0.9), hiz=(4, -40), bolge=(0.6, 1.1))],
-         renk=KOZ),
-    # 48.5–56.36 s · kül ve köz; kuyrukta üst bölüm karanlık (başlık)
-    dict(gorsel="b5_koz.png", bas=48500, son=56360, gir=("erit", 1600), tohum=11,
-         kamera=dict(zoom=[(0.0, 1.3), (0.55, 1.14), (1.0, 1.06)], y=[(0.0, 0.66), (0.55, 0.56), (1.0, 0.52)],
-                     dolly=(0.04, 0.0), pivot=0.6, el=0.4),
-         ates=dict(genlik=0.2, isik=0.03), koz=dict(genlik=0.45), isi=dict(y0=0.3, y1=0.7, genlik=2.2),
-         parcacik=[dict(tip="koz", sayi=90, derinlik=(0.3, 1.0), hiz=(4, -45))],
+    # 44.43–56.36 s · ocak başı → başlık: mührü avucunda tutan yaşlı (eski FLUX karesi); kamera mühre iner,
+    # 52.4 sn'den sonra üst bölüm kararır, aydınlık kalan tek şey köz ışığındaki mühür (başlık orta-üstte okunur)
+    dict(gorsel="eski_muhur.png", bas=44430, son=56360, gir=("kara", 1000), kararma=800, tohum=10,
+         kamera=dict(zoom=[(0.0, 1.04), (0.66, 1.24), (1.0, 1.32)], x=[(0.0, 0.5), (0.66, 0.41), (1.0, 0.39)],
+                     y=[(0.0, 0.5), (0.66, 0.6), (1.0, 0.63)], dolly=(0.0, 0.1), pivot=0.6, el=0.5),
+         ates=dict(genlik=0.2, isik=0.05), koz=dict(genlik=0.3),
+         karart=dict(u0=0.62, u1=0.86, y0=0.5, y1=0.78, guc=0.9),
+         parcacik=[dict(tip="koz", sayi=70, derinlik=(0.3, 0.95), hiz=(4, -42), bolge=(0.45, 1.1))],
          renk=KOZ),
 ]
