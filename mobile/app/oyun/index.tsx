@@ -11,7 +11,7 @@ import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
 import { useMp } from "../../lib/mp/store";
 import { realmYearMonth } from "../../lib/mp/world";
-import { applyDilemma, rakipYarisi, tezgahKart, tezgahHuner, tezgahHunerStat, tezgahSans, tezgahBasari, resolveTezgah, TEZGAH_HUNER, achievementsOf, GameEvent, resolveOpportunity, resolveMicro, resolveSaga, resolveBloodline, BL_CHOICES, BL_COST, SAGA_CHOICES, SAGA_COST, resolveDivan, inJail, jailBribeCost, bribeJailer, Opportunity, eulogy, playerWar, beylikName, kariyerXp, kisiProfil, gorus, gorusSebebi, echoWorkBlock, npcTeklifYanit, donumAni, pencereAni, acikHesaplar, ayNotu, onemliMi, kapiMetni, hakemIpucu, araciSansi, hayatOzeti, kisiOf, knParam } from "../../lib/game";
+import { applyDilemma, rakipYarisi, tezgahKart, tezgahHuner, tezgahHunerStat, tezgahSans, tezgahBasari, resolveTezgah, TEZGAH_HUNER, achievementsOf, GameEvent, resolveOpportunity, resolveMicro, resolveSaga, resolveBloodline, BL_CHOICES, BL_COST, SAGA_CHOICES, SAGA_COST, resolveDivan, inJail, jailBribeCost, bribeJailer, Opportunity, eulogy, playerWar, beylikName, kariyerXp, kisiProfil, gorus, gorusSebebi, echoWorkBlock, npcTeklifYanit, donumAni, pencereAni, izBaslik, acikHesaplar, ayNotu, onemliMi, kapiMetni, hakemIpucu, araciSansi, hayatOzeti, kisiOf, knParam } from "../../lib/game";
 import { pendingMonthScene, chooseMonthDilemma, progressMonthOpportunity, resolveMonthOpportunity } from "../../lib/month-scene";
 import { ayinSahnesi, Dilemma, Choice } from "../../lib/events";
 import { SinavKartiModal, SinavKartiVeri } from "../../lib/kart3d";
@@ -272,7 +272,18 @@ export default function Dashboard() {
       {yarisK ? (
         <SinavKartiModal v={yarisK} onSec={(yol) => { const r = rakipYarisi(state, yol); if (r.basari != null) apply(() => r.state); return r.basari; }} onKapat={() => setYarisK(null)} />
       ) : milestone ? (
-        <MilestoneModal visible={true} type={milestone.type} text={renderEvt(milestone.k, milestone.text, milestone.p, lang, t, p.gender === "kadın")} onClose={() => setMilestone(null)} />
+        <MilestoneModal visible={true} type={milestone.type} text={renderEvt(milestone.k, milestone.text, milestone.p, lang, t, p.gender === "kadın")} onClose={() => setMilestone(null)}
+          kok={(() => { // Hissiyat 3: geri dönen sonucun kökü — kaçıncı yaşta, hangi kart
+            const iz = milestone.kok != null ? (state.hafiza || []).find((x) => x.n === milestone.kok) : undefined; if (!iz) return undefined;
+            const yas = Math.max(0, p.age - Math.floor((state.turn - iz.t) / 12)); const b = izBaslik(iz);
+            const ad = b && typeof b === "object" && "sfx" in b ? t(b.sfx) : "";
+            return ad && ad !== (b as { sfx: string }).sfx ? applyParams(t("kok.satir"), [yas, ad]) : t("kok.genel");
+          })()}
+          etkiler={milestone.etki ? [
+            ...(milestone.etki.money ? [{ icon: "akce", text: `${milestone.etki.money > 0 ? "+" : "−"}${Math.abs(milestone.etki.money)}`, color: C.gold }] : []),
+            ...(milestone.etki.reputation ? [{ icon: "karakter", text: `${milestone.etki.reputation > 0 ? "+" : "−"}${Math.abs(milestone.etki.reputation)} ${t("soc.reputation.l")}`, color: C.sage }] : []),
+            ...(milestone.etki.health ? [{ icon: "saglik", text: `${milestone.etki.health > 0 ? "+" : "−"}${Math.abs(milestone.etki.health)} ${t("char.health")}`, color: C.blood }] : []),
+          ] : undefined} />
       ) : mpMode && dilemma ? (
         <DilemmaModal dilemma={dilemma} onChoose={onChoose} female={p.gender === "kadın"} />
       ) : opp ? (

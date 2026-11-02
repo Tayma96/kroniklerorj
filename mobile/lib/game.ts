@@ -1243,7 +1243,7 @@ function setWarCooldown(s: GameState, a: string, b: string, turns: number) { if 
 // Loncaya katılım eşiği (karizmatik hüneri %20 indirir). UI ile çekirdek tutarlı olsun diye.
 export function joinThreshold(p: Player, f: Faction): number { return p.perks.includes("karizmatik") ? Math.round(f.joinRep * 0.8) : f.joinRep; }
 
-export interface GameEvent { day: number; type: string; text: string; scope: "kişisel" | "makro"; landmark?: boolean; k?: string; p?: EvtParam[]; q?: number; } // q: olay sırası (artan; ekranlar "yeni olay"ı bununla tanır — kronik 250'de kırpılınca uzunluk artmaz)
+export interface GameEvent { day: number; type: string; text: string; scope: "kişisel" | "makro"; landmark?: boolean; k?: string; p?: EvtParam[]; q?: number; kok?: number; etki?: Seed["etki"]; } // kok: geri dönen sonucun kökü (hafıza izi n) · etki: o dönüşün getirdiği (Hissiyat 3) // q: olay sırası (artan; ekranlar "yeni olay"ı bununla tanır — kronik 250'de kırpılınca uzunluk artmaz)
 export interface DynastyRecord { generation: number; name: string; profession: string; diedAge: number; fame: number; reputation: number; faction: string | null; note: string; noteK?: string; causeK?: string; grandchildren?: string[]; } // noteK: kitabe kimliği (6 dile çevrilir); note eski kayıtlar için TR yedek; causeK: ölüm nedeni kodu
 export interface NpcState { mood: number; memories: string[]; anilar?: Memory[]; int_turn?: number; act_turns?: Record<string, number>; rel_gain_turn?: number; rel_gain_amt?: number; son?: SohbetSon; ani_sira?: number; bakis?: BakisDefteri; izlenim?: IzlenimDefteri; konusma?: Konusma; }
 // son: bu kişiyle son sohbetin konusu ve nasıl bittiği — bir dahaki sohbette hatırlanır (diyalog takip katmanı; eski kayıtta yok, sorun değil).
@@ -1846,6 +1846,13 @@ function germinateSeed(s: GameState, t: Seed) {
   if (t.kaynak === "ip_d_kadi") p.reputation = Math.max(-100, Math.min(100, p.reputation + (p.reputation >= 0 ? 2 : -2))); // kadının defteri adı olduğu gibi okur
   if (t.kaynak === "ip_d_kuraklik" && !(s.marketEvent && (s.marketEvent.until ?? 0) > s.turn)) { const ev = MARKET_EVENTS.find((x) => x.key === "kuraklik"); if (ev) s.marketEvent = { goods: ev.goods, mult: ev.mult, until: s.turn + ev.months, key: ev.key }; } // yaşlıların dediği çıkar: kuraklık gerçekten pazara iner
   push(s, "tohum", `Geçmiş kapını çaldı.`, "kişisel", true, { k: ipOdemeAnahtari(s, t), p: [tohumKisi(s, t), p.name] });
+  kokuYaz(s, t); // Hissiyat 3: pencere hangi kararın döndüğünü ve ne getirdiğini söyler
+}
+// Son olaya geri dönüşün kökünü ve etkisini işler (yalnız ekleme alanları; eski kayıtta yoklar, sorun değil).
+function kokuYaz(s: GameState, t: Seed) {
+  const ev = s.history[s.history.length - 1]; if (!ev) return;
+  if (t.iz != null) ev.kok = t.iz;
+  if (t.etki && Object.values(t.etki).some((v) => !!v)) ev.etki = { ...t.etki };
 }
 function seedTick(s: GameState) {
   const seeds = s.seeds; if (!seeds || !seeds.length) return;
@@ -1868,7 +1875,7 @@ function tohumSonucu(s: GameState, t: Seed): boolean {
   const karar = seedKarari(s, t);
   if (karar === "bic") { germinateSeed(s, t); return true; }
   s.seeds = (s.seeds || []).filter((x) => x.id !== t.id);
-  if (karar === "sol" && t.ip) { push(s, "tohum", `Geçmiş kapını çaldı.`, "kişisel", true, { k: t.kaynak === "velinimet" ? "seed.velinimetFakir" : "ip.sondu", p: [tohumKisi(s, t)] }); return true; } // açık ip sessizce sönmez: söz her durumda sebebiyle kapanır
+  if (karar === "sol" && t.ip) { push(s, "tohum", `Geçmiş kapını çaldı.`, "kişisel", true, { k: t.kaynak === "velinimet" ? "seed.velinimetFakir" : "ip.sondu", p: [tohumKisi(s, t)] }); if (t.iz != null) s.history[s.history.length - 1].kok = t.iz; return true; } // açık ip sessizce sönmez: söz her durumda sebebiyle kapanır
   if (karar === "sol") return false;
   if (karar.rep) s.player.reputation = Math.min(100, s.player.reputation + karar.rep);
   push(s, "tohum", `Geçmiş kapını çaldı.`, "kişisel", false, { k: karar.k, p: [tohumKisi(s, t)] });

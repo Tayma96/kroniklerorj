@@ -148,5 +148,8 @@ const rows: Record<string, string[]> = {
     "العمل والطعام يدويًّا كل شهر.",
     "Работа и еда — вручную каждый месяц.",
   ],
+  // Geri dönen sonucun kökü (Hissiyat 3)
+  "kok.satir": ["↺ %1 yaşındaki kararın: “%2”", "↺ Your choice at age %1: “%2”", "↺ Tu decisión a los %1 años: «%2»", "↺ A tua decisão aos %1 anos: «%2»", "↺ قرارك في سنّ %1: «%2»", "↺ Твоё решение (возраст %1): «%2»"],
+  "kok.genel": ["↺ Bu, geçmişteki bir seçiminin karşılığı.", "↺ This answers a choice from your past.", "↺ Es la respuesta a una decisión de tu pasado.", "↺ É a resposta a uma decisão do teu passado.", "↺ هذا جوابُ قرارٍ من ماضيك.", "↺ Это ответ на решение из твоего прошлого."],
 };
 export const HISSIYAT_METIN = Object.fromEntries((["tr", "en", "es", "pt", "ar", "ru"] as Lang[]).map((lang, i) => [lang, Object.fromEntries(Object.entries(rows).map(([key, values]) => [key, values[i]]))])) as Record<Lang, Record<string, string>>;

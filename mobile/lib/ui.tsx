@@ -177,7 +177,7 @@ function IconPulse({ icon, color }: { icon: string; color: string }) {
   return <Animated.View style={st}><GameIcon name={icon} size={42} color={color} /></Animated.View>;
 }
 
-export function MilestoneModal({ visible, type, text, onClose }: { visible: boolean; type: string; text: string; onClose: () => void }) {
+export function MilestoneModal({ visible, type, text, onClose, kok, etkiler }: { visible: boolean; type: string; text: string; onClose: () => void; kok?: string; etkiler?: { icon: string; text: string; color: string }[] }) {
   const meta = MILESTONE_LABEL[type] || { tag: "Dönüm Noktası", icon: "star" };
   const { t } = useI18n();
   const msTag = (() => { const k = "ms." + type; const v = t(k); return v !== k ? v : t("ms.genel"); })(); // her tip 6 dilde; bilinmeyen tip genel "dönüm noktası"na düşer (Türkçe etiket sızmaz)
@@ -200,6 +200,18 @@ export function MilestoneModal({ visible, type, text, onClose }: { visible: bool
             <View style={{ height: 1, width: 24, backgroundColor: accent + "88" }} />
           </View>
           <Text style={{ fontFamily: F.serif, fontSize: 16, color: C.parchment, textAlign: "center", lineHeight: 24, marginTop: 14 }}>{text}</Text>
+          {/* Hissiyat 3: geri dönen sonucun kökü (hangi karar) ve getirdiği — "rastgele" değil, senin seçiminin karşılığı */}
+          {!!kok && <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: accent, textAlign: "center", lineHeight: 22, marginTop: 10 }}>{kok}</Text>}
+          {!!etkiler?.length && (
+            <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: 8, marginTop: 10 }}>
+              {etkiler.map((x, i) => (
+                <View key={i} style={{ flexDirection: "row", alignItems: "center", gap: 5, paddingVertical: 4, paddingHorizontal: 9, borderRadius: 4, borderWidth: 1, borderColor: C.border }}>
+                  <GameIcon name={x.icon} size={11} color={x.color} />
+                  <Text style={{ fontFamily: F.display, fontSize: 13, color: x.color }}>{x.text}</Text>
+                </View>
+              ))}
+            </View>
+          )}
           <Pressable onPress={onClose} style={{ marginTop: 22, paddingVertical: 11, paddingHorizontal: 28, borderRadius: 9, borderWidth: 1.5, borderColor: accent + "99", backgroundColor: accent }}>
             <Text style={{ fontFamily: F.display, fontSize: 12, color: C.inkOnGold, letterSpacing: 1.5 }}>{t("common.continue")}</Text>
           </Pressable>

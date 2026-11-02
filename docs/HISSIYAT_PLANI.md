@@ -16,8 +16,9 @@ Berkay'ın geri bildirimi: oyun "site gibi", tıklama çok, sonuç hissedilmiyor
    −%5/−%10); şöhret 30 iltizam, 55 efsane cenk, 80 destan; korku 30 haydut pazarlığı, 55 kervan güvenliği (eşikler
    kademelere hizalandı). Bildirimde "sonraki kademe · kalan puan"; etkili kademeye çıkış/düşüş anı etkisini yazar;
    sosyal ekranda her eksenin etkisi ve sonraki kazanımı. Nam bildirimleri ancak 3+ puanda.
-3. **Kararlar geri döner:** ağır karar iz bırakır, 3–18 ay sonra adıyla döner; geri dönen her sonuç sebebini söyler
-   (mevcut tohum/ip sistemi üzerine).
+3. **Kararlar geri döner** (yapıldı): tohum/ip sistemi zaten vardı; geri dönüş olayı artık kökünü (`kok`: hafıza izi) ve
+   getirdiğini (`etki`) taşır, pencere "↺ 26 yaşındaki kararın: “Komşunun Yangını”" satırı ve etki çipleriyle açılır.
+   Ölçüm (10 hayat): 241 geri dönüş penceresi; kart kökenli %32'nin hepsinde kart adı çözülüyor (öbürleri kart dışı tohum).
 4. **Az tıklama** (yapıldı): düzen (`gunlukDuzen`, `duzenAyarla`; Emek panelinde anahtar, varsayılan açık): ay geçerken
    çalışılmadıysa son seçilen tarzla çalışılır, açlık <40 ise sessizce yenir; çok aylık ilerleme bekleyen tezgâh kararında
    durur; düzen açıkken "çalışmadın" rozetleri yok. Ölçüm (6 hayat, yalnız "Ayı İlerlet"): açık → uygun ayların %100'ü
