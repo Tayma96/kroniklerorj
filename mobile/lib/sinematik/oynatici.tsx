@@ -107,11 +107,12 @@ function Daktilo({ metin, top, rtl }: { metin: string; top: number; rtl: boolean
   );
 }
 
-export function Sinematik(props: { cekimler: Cekim[]; onDone: () => void }) {
+export function Sinematik(props: { cekimler: Cekim[]; onDone: () => void; parca?: string }) {
   return props.cekimler.length ? <SinematikIc {...props} /> : null;
 }
 
-function SinematikIc({ cekimler, onDone }: { cekimler: Cekim[]; onDone: () => void }) {
+// parca: tüm sinematik boyunca çalan tek ses (dil başına miks); varsa çekimler sabit sürelidir ve dokunuşla atlanmaz (ses kaymasın).
+function SinematikIc({ cekimler, onDone, parca }: { cekimler: Cekim[]; onDone: () => void; parca?: string }) {
   const { t, lang } = useI18n();
   const reduced = isReduceMotion();
   const rtl = lang === "ar";
@@ -122,7 +123,7 @@ function SinematikIc({ cekimler, onDone }: { cekimler: Cekim[]; onDone: () => vo
   const son = i === cekimler.length - 1;
   // Türkçede anlatıcı konuşur; çekim, kayıt bitip kısa bir nefes payı kalana dek sürer.
   const vo = lang === "tr" && c.vo ? ANLATIM[c.vo] : undefined;
-  const sure = useMemo(() => (c.baslik ? 0 : Math.max(sureOf(c), vo ? vo.ms + 1900 : 0)), [c, vo]);
+  const sure = useMemo(() => (c.baslik ? 0 : c.sureMs ?? Math.max(sureOf(c), vo ? vo.ms + 1900 : 0)), [c, vo]);
   const bant = Math.round(H * 0.075);
 
   // Kendiliğinden akış; son kart dokunuş bekler.
@@ -150,13 +151,20 @@ function SinematikIc({ cekimler, onDone }: { cekimler: Cekim[]; onDone: () => vo
     const id = c.vo, tm = setTimeout(() => playNarration(id), 650);
     return () => { clearTimeout(tm); stopNarration(id); };
   }, [c, vo]);
-  const ileri = () => { if (son) return; playTap(); setI((n) => Math.min(n + 1, cekimler.length - 1)); };
+  // Tek parça ses: açılışta bir kez başlar, kapanınca durur.
+  useEffect(() => {
+    if (!parca) return;
+    const tm = setTimeout(() => playNarration(parca), 120);
+    return () => { clearTimeout(tm); stopNarration(parca); };
+  }, [parca]);
+  const ileri = () => { if (son || parca) return; playTap(); setI((n) => Math.min(n + 1, cekimler.length - 1)); };
   // Atla / Hayata Başla bir kez çalışır; çift dokunuş iki ekran geri gitmez.
   const bitti = useRef(false);
   const kapat = (basari: boolean) => {
     if (bitti.current) return;
     bitti.current = true;
     if (c.vo) stopNarration(c.vo);
+    if (parca) stopNarration(parca);
     if (basari) hap("success");
     onDone();
   };
@@ -210,7 +218,7 @@ function SinematikIc({ cekimler, onDone }: { cekimler: Cekim[]; onDone: () => vo
           </Animated.View>
         </View>
       ) : (
-        <Animated.Text key={"m" + i} pointerEvents="none" entering={reduced ? FadeIn.delay(300).duration(500) : FadeInUp.delay(700).duration(1100)} exiting={FadeOut.duration(400)}
+        <Animated.Text key={"m" + i} pointerEvents="none" entering={reduced ? FadeIn.delay(c.gecikmeMs ?? 300).duration(500) : FadeInUp.delay(c.gecikmeMs ?? 700).duration(1100)} exiting={FadeOut.duration(400)}
           style={{ position: "absolute", left: 26, right: 26, bottom: bant + ins.bottom + 34, fontFamily: F.serif, fontSize: W < 360 ? 17 : 19, lineHeight: W < 360 ? 26 : 29, color: C.parchment, textAlign: "center", writingDirection: rtl ? "rtl" : "ltr", textShadowColor: "#000", textShadowRadius: 8 }}>
           {c.metin}
         </Animated.Text>
