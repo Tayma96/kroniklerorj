@@ -23,6 +23,7 @@ export type Cekim = {
   vo?: string;    // Türkçe anlatıcı kaydının anahtarı (lib/sinematik/anlatim.ts)
   sureMs?: number;    // sabit çekim süresi (ortak zaman çizelgesi; giriş sinematiği)
   gecikmeMs?: number; // altyazının çekim başından gecikmesi
+  altyaziUst?: boolean; // altyazı ekranın üst bandında (alt kısım görüntüde önemliyse)
 };
 
 const G = {
