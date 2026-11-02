@@ -1398,5 +1398,451 @@
   "not": "anlatı üretimi ru bölüm 5 (Kronks)",
   "tarih": "2026-11-02T03:34:42+00:00",
   "tur_asama": "E giriş sinematiği 6 dil (nihai)"
+ },
+ {
+  "dosya": "ar_1.mp3",
+  "tur": "vo",
+  "istem": "[thoughtful] عامُ ألفٍ ومئتين وثلاثةٍ وأربعين للميلاد… [short pause] في معركة كوسه داغ، التي غيّرت مصير الأناضول، مُني الجيشُ السلجوقيُّ بهزيمةٍ قاسية.",
+  "model": "eleven_v4",
+  "ses": "PA4QGZDhUkvuOKb6ZEkd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "ar",
+   "next_text": "[sighs] وفي أعقاب تلك الهزيمة، اجتاحت غاراتُ المغول أرجاءَ الأناضول كلَّها. نُهبت المدن، وخلت القرى من أهلها. [sad] وتحت نظامٍ يتبدّل وضرائبَ تزداد ثقلًا، كافح الناسُ من أجل البقاء. [calm] ومع ذلك، مضت القوافلُ في طرقها، وحاول الناسُ ألّا يفقدوا الأمل. [whisper] فقد كان في الأناضول قولٌ قديم: [long pause] الرمادُ يحفظُ الجمر."
+  },
+  "tohum": 1243,
+  "maliyet": 60,
+  "maliyet_kaynak": "Character-Cost",
+  "sayac_once": 6791,
+  "not": "anlatı üretimi ar bölüm 1 (Kronks AR remix)",
+  "tarih": "2026-11-02T03:34:47+00:00",
+  "tur_asama": "E giriş sinematiği 6 dil (nihai)"
+ },
+ {
+  "dosya": "ar_2.mp3",
+  "tur": "vo",
+  "istem": "[sighs] وفي أعقاب تلك الهزيمة، اجتاحت غاراتُ المغول أرجاءَ الأناضول كلَّها. نُهبت المدن، وخلت القرى من أهلها.",
+  "model": "eleven_v4",
+  "ses": "PA4QGZDhUkvuOKb6ZEkd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "ar",
+   "previous_text": "[thoughtful] عامُ ألفٍ ومئتين وثلاثةٍ وأربعين للميلاد… [short pause] في معركة كوسه داغ، التي غيّرت مصير الأناضول، مُني الجيشُ السلجوقيُّ بهزيمةٍ قاسية.",
+   "next_text": "[sad] وتحت نظامٍ يتبدّل وضرائبَ تزداد ثقلًا، كافح الناسُ من أجل البقاء. [calm] ومع ذلك، مضت القوافلُ في طرقها، وحاول الناسُ ألّا يفقدوا الأمل. [whisper] فقد كان في الأناضول قولٌ قديم: [long pause] الرمادُ يحفظُ الجمر."
+  },
+  "tohum": 1243,
+  "maliyet": 44,
+  "maliyet_kaynak": "Character-Cost",
+  "sayac_once": 6791,
+  "not": "anlatı üretimi ar bölüm 2 (Kronks AR remix)",
+  "tarih": "2026-11-02T03:34:51+00:00",
+  "tur_asama": "E giriş sinematiği 6 dil (nihai)"
+ },
+ {
+  "dosya": "ar_3.mp3",
+  "tur": "vo",
+  "istem": "[sad] وتحت نظامٍ يتبدّل وضرائبَ تزداد ثقلًا، كافح الناسُ من أجل البقاء.",
+  "model": "eleven_v4",
+  "ses": "PA4QGZDhUkvuOKb6ZEkd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "ar",
+   "previous_text": "[thoughtful] عامُ ألفٍ ومئتين وثلاثةٍ وأربعين للميلاد… [short pause] في معركة كوسه داغ، التي غيّرت مصير الأناضول، مُني الجيشُ السلجوقيُّ بهزيمةٍ قاسية. [sighs] وفي أعقاب تلك الهزيمة، اجتاحت غاراتُ المغول أرجاءَ الأناضول كلَّها. نُهبت المدن، وخلت القرى من أهلها.",
+   "next_text": "[calm] ومع ذلك، مضت القوافلُ في طرقها، وحاول الناسُ ألّا يفقدوا الأمل. [whisper] فقد كان في الأناضول قولٌ قديم: [long pause] الرمادُ يحفظُ الجمر."
+  },
+  "tohum": 1243,
+  "maliyet": 28,
+  "maliyet_kaynak": "Character-Cost",
+  "sayac_once": 6791,
+  "not": "anlatı üretimi ar bölüm 3 (Kronks AR remix)",
+  "tarih": "2026-11-02T03:34:54+00:00",
+  "tur_asama": "E giriş sinematiği 6 dil (nihai)"
+ },
+ {
+  "dosya": "ar_4.mp3",
+  "tur": "vo",
+  "istem": "[calm] ومع ذلك، مضت القوافلُ في طرقها، وحاول الناسُ ألّا يفقدوا الأمل.",
+  "model": "eleven_v4",
+  "ses": "PA4QGZDhUkvuOKb6ZEkd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "ar",
+   "previous_text": "[thoughtful] عامُ ألفٍ ومئتين وثلاثةٍ وأربعين للميلاد… [short pause] في معركة كوسه داغ، التي غيّرت مصير الأناضول، مُني الجيشُ السلجوقيُّ بهزيمةٍ قاسية. [sighs] وفي أعقاب تلك الهزيمة، اجتاحت غاراتُ المغول أرجاءَ الأناضول كلَّها. نُهبت المدن، وخلت القرى من أهلها. [sad] وتحت نظامٍ يتبدّل وضرائبَ تزداد ثقلًا، كافح الناسُ من أجل البقاء.",
+   "next_text": "[whisper] فقد كان في الأناضول قولٌ قديم: [long pause] الرمادُ يحفظُ الجمر."
+  },
+  "tohum": 1243,
+  "maliyet": 28,
+  "maliyet_kaynak": "Character-Cost",
+  "sayac_once": 6791,
+  "not": "anlatı üretimi ar bölüm 4 (Kronks AR remix)",
+  "tarih": "2026-11-02T03:34:57+00:00",
+  "tur_asama": "E giriş sinematiği 6 dil (nihai)"
+ },
+ {
+  "dosya": "ar_5.mp3",
+  "tur": "vo",
+  "istem": "[whisper] فقد كان في الأناضول قولٌ قديم: [long pause] الرمادُ يحفظُ الجمر.",
+  "model": "eleven_v4",
+  "ses": "PA4QGZDhUkvuOKb6ZEkd",
+  "ayarlar": {
+   "model_id": "eleven_v4",
+   "voice_settings": {
+    "stability": 0.67,
+    "similarity_boost": 0.75
+   },
+   "seed": 1243,
+   "language_code": "ar",
+   "previous_text": "[thoughtful] عامُ ألفٍ ومئتين وثلاثةٍ وأربعين للميلاد… [short pause] في معركة كوسه داغ، التي غيّرت مصير الأناضول، مُني الجيشُ السلجوقيُّ بهزيمةٍ قاسية. [sighs] وفي أعقاب تلك الهزيمة، اجتاحت غاراتُ المغول أرجاءَ الأناضول كلَّها. نُهبت المدن، وخلت القرى من أهلها. [sad] وتحت نظامٍ يتبدّل وضرائبَ تزداد ثقلًا، كافح الناسُ من أجل البقاء. [calm] ومع ذلك، مضت القوافلُ في طرقها، وحاول الناسُ ألّا يفقدوا الأمل."
+  },
+  "tohum": 1243,
+  "maliyet": 30,
+  "maliyet_kaynak": "Character-Cost",
+  "sayac_once": 6791,
+  "not": "anlatı üretimi ar bölüm 5 (Kronks AR remix)",
+  "tarih": "2026-11-02T03:35:00+00:00",
+  "tur_asama": "E giriş sinematiği 6 dil (nihai)"
+ },
+ {
+  "dosya": "giris_muzik_1.mp3",
+  "tur": "muzik",
+  "istem": {
+   "positive_global_styles": [
+    "instrumental cinematic film score for a documentary narrator",
+    "melodic, with one memorable modal theme in a Turkish makam (Hüseyni, then Rast for hope)",
+    "13th-century Anatolia, Seljuk era, medieval Turkish and Persian acoustic instruments",
+    "kös war drums, bowed tanbur, kemençe, rebab, ney, kanun, oud, mey double reed, bendir frame drum",
+    "melodies placed in the low register or the high register, the 300 Hz to 3 kHz midrange kept sparse and open for the spoken voice",
+    "clear changes of mood between sections",
+    "natural acoustic recording, warm hall reverb",
+    "solemn, warm, earthy"
+   ],
+   "negative_global_styles": [
+    "vocals",
+    "choir",
+    "humming",
+    "chanting",
+    "lyrics",
+    "synth",
+    "electronic",
+    "modern drum kit",
+    "cymbals",
+    "guitar",
+    "piano",
+    "brass",
+    "western symphony orchestra",
+    "dense midrange",
+    "busy arrangement",
+    "trailer riser",
+    "loud"
+   ],
+   "sections": [
+    {
+     "section_name": "Kosedag, the lost battle",
+     "positive_local_styles": [
+      "opens with one deep distant kös war drum hit and a low drone",
+      "slow heavy kös strokes far away",
+      "a mournful lament melody on bowed tanbur and kemençe, slow and expressive",
+      "aftermath of a lost battle, grief"
+     ],
+     "negative_local_styles": [
+      "triumphant",
+      "fast",
+      "bright"
+     ],
+     "duration_ms": 15790,
+     "lines": []
+    },
+    {
+     "section_name": "Mongol raids",
+     "positive_local_styles": [
+      "kös drums gradually accelerating",
+      "rising tension and dread",
+      "a dark piercing mey double-reed phrase in the low register",
+      "low bowed string ostinato",
+      "steady crescendo"
+     ],
+     "negative_local_styles": [
+      "melody in the vocal range",
+      "resolution",
+      "major key"
+     ],
+     "duration_ms": 12250,
+     "lines": []
+    },
+    {
+     "section_name": "The people's hardship",
+     "positive_local_styles": [
+      "drums stop abruptly",
+      "solo kemençe or rebab sorrowful melody in a high register, intimate and fragile",
+      "very soft low drone underneath",
+      "sparse"
+     ],
+     "negative_local_styles": [
+      "drums",
+      "loud",
+      "fast"
+     ],
+     "duration_ms": 8600,
+     "lines": []
+    },
+    {
+     "section_name": "Caravans and hope",
+     "positive_local_styles": [
+      "warm hope returns",
+      "gentle kanun arpeggios in the high register and a soft oud melody",
+      "light walking pulse on bendir frame drum",
+      "brighter Rast makam colour"
+     ],
+     "negative_local_styles": [
+      "epic",
+      "loud",
+      "heavy drums"
+     ],
+     "duration_ms": 7790,
+     "lines": []
+    },
+    {
+     "section_name": "Whisper",
+     "positive_local_styles": [
+      "almost silence",
+      "a very soft, barely audible low drone",
+      "stillness, held breath"
+     ],
+     "negative_local_styles": [
+      "melody",
+      "drums",
+      "build-up",
+      "loud"
+     ],
+     "duration_ms": 7170,
+     "lines": []
+    },
+    {
+     "section_name": "The ash keeps the ember",
+     "positive_local_styles": [
+      "a single ney phrase rising gently",
+      "resolves to a clear, consonant final chord on kanun, oud and low strings",
+      "long natural decay into silence"
+     ],
+     "negative_local_styles": [
+      "drums",
+      "abrupt cut",
+      "unresolved ending",
+      "loud"
+     ],
+     "duration_ms": 4760,
+     "lines": []
+    }
+   ]
+  },
+  "model": "music_v1",
+  "ayarlar": {
+   "model_id": "music_v1",
+   "respect_sections_durations": true
+  },
+  "sure_sn": 56.36,
+  "tohum": null,
+  "maliyet": 704,
+  "maliyet_kaynak": "abonelik sayacı farkı",
+  "sayac_once": 7233,
+  "not": "E giriş nihai müzik, deneme 1 (melodik; 6 bölüm çizelgeye birebir)",
+  "tarih": "2026-11-02T03:47:34+00:00",
+  "tur_asama": "E giriş sinematiği 6 dil (nihai)"
+ },
+ {
+  "dosya": "giris_muzik_2.mp3",
+  "tur": "muzik",
+  "istem": {
+   "positive_global_styles": [
+    "instrumental cinematic film score under a documentary narrator, continuous and legato from start to end",
+    "melodic: one lyrical, memorable modal theme in Turkish makam Huseyni, returning in makam Rast for hope",
+    "13th-century Anatolia, Seljuk era, medieval Turkish and Persian acoustic instruments",
+    "kos war drums, bowed tanbur, kemence, rebab, ney, kanun, oud, mey double reed, bendir frame drum",
+    "a sustained low drone underneath everything, no gaps",
+    "melodies in the low register or the high register, the 300 Hz to 3 kHz midrange kept sparse and open for the spoken voice",
+    "natural acoustic recording, warm hall reverb",
+    "solemn, warm, earthy"
+   ],
+   "negative_global_styles": [
+    "vocals",
+    "choir",
+    "humming",
+    "chanting",
+    "lyrics",
+    "synth",
+    "electronic",
+    "modern drum kit",
+    "cymbals",
+    "guitar",
+    "piano",
+    "brass",
+    "western symphony orchestra",
+    "silence",
+    "long pauses",
+    "stop-start phrasing",
+    "trailer impacts",
+    "booming hits",
+    "dense midrange",
+    "loud"
+   ],
+   "sections": [
+    {
+     "section_name": "Kosedag, the lost battle",
+     "positive_local_styles": [
+      "fades in softly over a low sustained drone",
+      "slow, distant, soft kos drum pulse, continuous",
+      "a mournful lyrical lament melody on bowed tanbur and kemence in the low register, long connected phrases",
+      "grief after a lost battle"
+     ],
+     "negative_local_styles": [
+      "triumphant",
+      "fast",
+      "big impact hits",
+      "silence"
+     ],
+     "duration_ms": 15790,
+     "lines": []
+    },
+    {
+     "section_name": "Mongol raids",
+     "positive_local_styles": [
+      "kos and bendir drums steadily accelerating",
+      "rising tension and dread",
+      "a dark mey double-reed melody in the low register",
+      "low bowed string ostinato",
+      "continuous crescendo"
+     ],
+     "negative_local_styles": [
+      "melody in the vocal range",
+      "resolution",
+      "major key",
+      "silence"
+     ],
+     "duration_ms": 12250,
+     "lines": []
+    },
+    {
+     "section_name": "The people's hardship",
+     "positive_local_styles": [
+      "the drums stop",
+      "a solo kemence sorrowful melody in a high register, legato and fragile",
+      "the soft low drone continues underneath"
+     ],
+     "negative_local_styles": [
+      "drums",
+      "loud",
+      "fast",
+      "silence"
+     ],
+     "duration_ms": 8600,
+     "lines": []
+    },
+    {
+     "section_name": "Caravans and hope",
+     "positive_local_styles": [
+      "warm hope returns",
+      "gentle kanun arpeggios in the high register with a soft oud melody",
+      "light steady walking pulse on bendir frame drum",
+      "brighter makam Rast colour"
+     ],
+     "negative_local_styles": [
+      "epic",
+      "loud",
+      "heavy drums",
+      "silence"
+     ],
+     "duration_ms": 7790,
+     "lines": []
+    },
+    {
+     "section_name": "Whisper",
+     "positive_local_styles": [
+      "very quiet, pianissimo",
+      "only a soft sustained low drone and a faint high harmonic shimmer",
+      "stillness, held breath"
+     ],
+     "negative_local_styles": [
+      "melody",
+      "drums",
+      "attacks",
+      "build-up",
+      "loud"
+     ],
+     "duration_ms": 7170,
+     "lines": []
+    },
+    {
+     "section_name": "The ash keeps the ember",
+     "positive_local_styles": [
+      "a single ney phrase rises gently out of the drone",
+      "then a clear, consonant, resolved final chord on kanun, oud and low strings",
+      "the final chord is held and rings to the very end with a long natural decay"
+     ],
+     "negative_local_styles": [
+      "drums",
+      "abrupt cut",
+      "unresolved ending",
+      "silence before the end",
+      "loud"
+     ],
+     "duration_ms": 4760,
+     "lines": []
+    }
+   ]
+  },
+  "model": "music_v1",
+  "ayarlar": {
+   "model_id": "music_v1",
+   "respect_sections_durations": true
+  },
+  "sure_sn": 56.36,
+  "tohum": null,
+  "maliyet": 704,
+  "maliyet_kaynak": "abonelik sayacı farkı",
+  "sayac_once": 7937,
+  "not": "E giriş nihai müzik, deneme 2 (1. denemede ~9 sn'de bir sessizliğe düşen vuruş-sönüm kalıbı, fısıltı bölümü yüksek; istem: sürekli/legato, sessizlik ve darbe yok)",
+  "tarih": "2026-11-02T03:49:31+00:00",
+  "tur_asama": "E giriş sinematiği 6 dil (nihai)"
+ },
+ {
+  "dosya": "(ses kütüphanesi) 5 aday",
+  "tur": "ses_ekle_sil",
+  "istem": {
+   "eklenen": [
+    "es 3hn25giptIBsW5fakCzE Javier",
+    "pt F2CrQM2UonBN6qFJbaKN André Assis",
+    "pt dxcgH8U8KbbWUEjmOmwH BigMarck",
+    "ar BrKeRgI6Ivb2zWjD6qte Celil",
+    "ar apsZFlSToM2vmFpwz5jX Omar"
+   ]
+  },
+  "model": "POST /v1/voices/add + DELETE /v1/voices",
+  "tohum": null,
+  "maliyet": 0,
+  "maliyet_kaynak": "abonelik sayacı farkı (0)",
+  "sayac_once": 6124,
+  "not": "ses seçimi (c): Kronks'a ECAPA benzerliğiyle sıralanan 466 ücretsiz önizlemeden en iyileri eklendi, bölüm 1 denendi (TTS kayıtları ayrı), hiçbiri seçilmedi ve hepsi silindi",
+  "tarih": "2026-11-02T03:59:36+00:00",
+  "tur_asama": "E giriş sinematiği 6 dil (nihai)"
  }
 ]

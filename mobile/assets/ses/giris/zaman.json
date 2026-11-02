@@ -1,0 +1,224 @@
+{
+ "toplamMs": 56360,
+ "bolumler": [
+  {
+   "baslangicMs": 2500,
+   "bitisMs": 15790,
+   "ad": "Kösedağ"
+  },
+  {
+   "baslangicMs": 15790,
+   "bitisMs": 28040,
+   "ad": "Moğol akınları"
+  },
+  {
+   "baslangicMs": 28040,
+   "bitisMs": 36640,
+   "ad": "Halkın çilesi"
+  },
+  {
+   "baslangicMs": 36640,
+   "bitisMs": 44430,
+   "ad": "Kervanlar ve umut"
+  },
+  {
+   "baslangicMs": 44430,
+   "bitisMs": 52360,
+   "ad": "Kül, közü saklar"
+  }
+ ],
+ "diller": {
+  "tr": [
+   {
+    "bolum": 1,
+    "baslangicMs": 2900,
+    "bitisMs": 12060,
+    "metin": "1243 yılı\nAnadolu’nun kaderini değiştiren Kösedağ Savaşı’nda, Selçuklu ordusu ağır bir yenilgi aldı."
+   },
+   {
+    "bolum": 2,
+    "baslangicMs": 16190,
+    "bitisMs": 25440,
+    "metin": "Bu yenilginin ardından Moğol akınları Anadolu’nun dört bir yanına yayıldı. Şehirler yağmalandı, köyler boşaldı."
+   },
+   {
+    "bolum": 3,
+    "baslangicMs": 28440,
+    "bitisMs": 34480,
+    "metin": "Halk, değişen düzenin ve ağırlaşan vergilerin altında yaşam mücadelesi verdi."
+   },
+   {
+    "bolum": 4,
+    "baslangicMs": 37040,
+    "bitisMs": 42780,
+    "metin": "Kervanlar yollarına devam etti. İnsanlar umutlarını kaybetmemeye çalıştı."
+   },
+   {
+    "bolum": 5,
+    "baslangicMs": 44830,
+    "bitisMs": 50420,
+    "metin": "Çünkü Anadolu’da eski bir söz vardı:\nKül, közü saklar."
+   }
+  ],
+  "en": [
+   {
+    "bolum": 1,
+    "baslangicMs": 2900,
+    "bitisMs": 12620,
+    "metin": "The year 1243\nAt the Battle of Köse Dağ, which changed the fate of Anatolia, the Seljuk army suffered a crushing defeat."
+   },
+   {
+    "bolum": 2,
+    "baslangicMs": 16190,
+    "bitisMs": 25860,
+    "metin": "In its wake, Mongol raids spread to every corner of Anatolia. Cities were plundered; villages stood empty."
+   },
+   {
+    "bolum": 3,
+    "baslangicMs": 28440,
+    "bitisMs": 34850,
+    "metin": "Beneath a shifting order and ever heavier taxes, the people struggled to survive."
+   },
+   {
+    "bolum": 4,
+    "baslangicMs": 37040,
+    "bitisMs": 42940,
+    "metin": "Still, the caravans kept to their roads. People tried not to lose hope."
+   },
+   {
+    "bolum": 5,
+    "baslangicMs": 44830,
+    "bitisMs": 52010,
+    "metin": "For in Anatolia there was an old saying:\nThe ash keeps the ember."
+   }
+  ],
+  "es": [
+   {
+    "bolum": 1,
+    "baslangicMs": 2900,
+    "bitisMs": 13690,
+    "metin": "Año 1243\nEn la batalla de Köse Dağ, que cambió el destino de Anatolia, el ejército selyúcida sufrió una dura derrota."
+   },
+   {
+    "bolum": 2,
+    "baslangicMs": 16190,
+    "bitisMs": 27560,
+    "metin": "Tras aquella derrota, las incursiones mongolas se extendieron por toda Anatolia. Las ciudades fueron saqueadas; las aldeas quedaron vacías."
+   },
+   {
+    "bolum": 3,
+    "baslangicMs": 28440,
+    "bitisMs": 35970,
+    "metin": "Bajo un orden que cambiaba y tributos cada vez más pesados, el pueblo luchó por sobrevivir."
+   },
+   {
+    "bolum": 4,
+    "baslangicMs": 37040,
+    "bitisMs": 44230,
+    "metin": "Aun así, las caravanas siguieron su camino. La gente intentó no perder la esperanza."
+   },
+   {
+    "bolum": 5,
+    "baslangicMs": 44830,
+    "bitisMs": 52160,
+    "metin": "Porque en Anatolia había un viejo dicho:\nLa ceniza guarda la brasa."
+   }
+  ],
+  "pt": [
+   {
+    "bolum": 1,
+    "baslangicMs": 2900,
+    "bitisMs": 13860,
+    "metin": "Ano de 1243\nNa Batalha de Köse Dağ, que mudou o destino da Anatólia, o exército seljúcida sofreu uma dura derrota."
+   },
+   {
+    "bolum": 2,
+    "baslangicMs": 16190,
+    "bitisMs": 27840,
+    "metin": "Depois dessa derrota, as incursões mongóis se espalharam por todos os cantos da Anatólia. Cidades foram saqueadas; aldeias ficaram vazias."
+   },
+   {
+    "bolum": 3,
+    "baslangicMs": 28440,
+    "bitisMs": 36440,
+    "metin": "Sob uma ordem que mudava e impostos cada vez mais pesados, o povo lutou para sobreviver."
+   },
+   {
+    "bolum": 4,
+    "baslangicMs": 37040,
+    "bitisMs": 43990,
+    "metin": "Ainda assim, as caravanas seguiram seu caminho. As pessoas tentaram não perder a esperança."
+   },
+   {
+    "bolum": 5,
+    "baslangicMs": 44830,
+    "bitisMs": 52080,
+    "metin": "Porque na Anatólia havia um velho ditado:\nA cinza guarda a brasa."
+   }
+  ],
+  "ar": [
+   {
+    "bolum": 1,
+    "baslangicMs": 2900,
+    "bitisMs": 15590,
+    "metin": "عامُ ألفٍ ومئتين وثلاثةٍ وأربعين للميلاد\nفي معركة كوسه داغ، التي غيّرت مصير الأناضول، مُني الجيشُ السلجوقيُّ بهزيمةٍ قاسية."
+   },
+   {
+    "bolum": 2,
+    "baslangicMs": 16190,
+    "bitisMs": 27300,
+    "metin": "وفي أعقاب تلك الهزيمة، اجتاحت غاراتُ المغول أرجاءَ الأناضول كلَّها. نُهبت المدن، وخلت القرى من أهلها."
+   },
+   {
+    "bolum": 3,
+    "baslangicMs": 28440,
+    "bitisMs": 35960,
+    "metin": "وتحت نظامٍ يتبدّل وضرائبَ تزداد ثقلًا، كافح الناسُ من أجل البقاء."
+   },
+   {
+    "bolum": 4,
+    "baslangicMs": 37040,
+    "bitisMs": 44170,
+    "metin": "ومع ذلك، مضت القوافلُ في طرقها، وحاول الناسُ ألّا يفقدوا الأمل."
+   },
+   {
+    "bolum": 5,
+    "baslangicMs": 44830,
+    "bitisMs": 52110,
+    "metin": "فقد كان في الأناضول قولٌ قديم:\nالرمادُ يحفظُ الجمر."
+   }
+  ],
+  "ru": [
+   {
+    "bolum": 1,
+    "baslangicMs": 2900,
+    "bitisMs": 13540,
+    "metin": "Тысяча двести сорок третий год\nВ битве при Кёсе-Даге, изменившей судьбу Анатолии, сельджукское войско потерпело тяжёлое поражение."
+   },
+   {
+    "bolum": 2,
+    "baslangicMs": 16190,
+    "bitisMs": 25550,
+    "metin": "Вслед за этим монгольские набеги прокатились по всей Анатолии. Города были разграблены, деревни опустели."
+   },
+   {
+    "bolum": 3,
+    "baslangicMs": 28440,
+    "bitisMs": 35200,
+    "metin": "Под гнётом нового порядка и всё более тяжёлых податей люди боролись за жизнь."
+   },
+   {
+    "bolum": 4,
+    "baslangicMs": 37040,
+    "bitisMs": 43210,
+    "metin": "И всё же караваны продолжали свой путь. Люди старались не терять надежды."
+   },
+   {
+    "bolum": 5,
+    "baslangicMs": 44830,
+    "bitisMs": 50640,
+    "metin": "Ведь в Анатолии издавна говорили:\nПепел хранит жар."
+   }
+  ]
+ }
+}
