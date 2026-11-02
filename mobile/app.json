@@ -50,7 +50,8 @@
           "hidden": true
         }
       ],
-      "./plugins/withoutRecordAudio"
+      "./plugins/withoutRecordAudio",
+      "expo-video"
     ],
     "scheme": "kronikler",
     "backgroundColor": "#0a0703",
