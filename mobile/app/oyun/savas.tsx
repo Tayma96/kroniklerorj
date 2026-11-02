@@ -6,7 +6,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
 import { ArmyFront } from "../../lib/army-ui";
-import { ENCOUNTERS, combatPower, armorDefense, weaponClass, hasShield, shieldBlockChance, applyBattleOutcome, nemesisEncounter, applyNemesisOutcome, reconcileNemesis, reconcileCost, diyetBedeli, diyetSansi, diyetOde, kisiProfil, trainCombat, trainCost, startBattleAttempt, inflationFactor, hireGuard, dismissGuards, retinueHireCost, retinueWage, RETINUE_MAX, inJail } from "../../lib/game";
+import { ENCOUNTERS, combatPower, armorDefense, weaponClass, hasShield, shieldBlockChance, applyBattleOutcome, nemesisEncounter, applyNemesisOutcome, reconcileNemesis, reconcileCost, diyetBedeli, diyetSansi, diyetOde, kisiProfil, trainCombat, trainCost, startBattleAttempt, inflationFactor, hireGuard, dismissGuards, retinueHireCost, retinueWage, RETINUE_MAX, inJail, Encounter, applyYuzlesme, yuzlesmeHarac, yuzlesmeKese, YUZLESME_YARA } from "../../lib/game";
+import { YZ_SECIMLER, YzCozum, YzSecim, yzTuru, yzSans, yzOran, yzCoz, yzUygula } from "../../lib/yuzlesme";
 import { startBattle, stepBattle, battleMoveCost, MOVES, STANCES, BattleState, Move, Stance, CbLogEntry } from "../../lib/combat";
 import { DuelArena } from "../../lib/duel-arena";
 import { playVictory, playWarDrum, playClash, playDefeat } from "../../lib/sound";
@@ -39,6 +40,9 @@ export default function Savas() {
   const [applied, setApplied] = useState(false);
   const [floats, setFloats] = useState<{ id: number; value: string; color: string; left: number; top: number }[]>([]);
   const [slashKey, setSlashKey] = useState(0);
+  // Yüzleşme: dövüşten önce 4 seçenek (ay hakkı girişte yandı; sonuç kavga ya da kavgasız kapanış)
+  const [yz, setYz] = useState<{ e: Encounter; rng: number } | null>(null);
+  const [yzC, setYzC] = useState<YzCozum | null>(null);
   const fid = useRef(0);
   const shake = useSharedValue(0);
   const shakeStyle = useAnimatedStyle(() => ({ transform: [{ translateX: shake.value }] }));
@@ -63,13 +67,30 @@ export default function Savas() {
     apply((s) => {
       if (s.player.dead || inJail(s.player) || s.player.age < 13 || s.player.health < 15 || s.player.battle_turn === s.turn) return s;
       const next = startBattleAttempt(s);
+      const enc = { ...e, title: id === "nemesis" ? nemTitle : gt("enc." + e.id + ".t", e.title) };
+      const rng = s.rng_state ?? s.seed;
       setEncId(id); playWarDrum(); anlat("savas"); // hayat başına bir kez anlatıcı
-      setBs(startBattle(s.player, { ...e, title: id === "nemesis" ? nemTitle : gt("enc." + e.id + ".t", e.title) }, s.rng_state ?? s.seed));
+      if (id !== "nemesis" && yzTuru(id)) { setYz({ e: enc, rng }); setYzC(null); } // önce yüzleşme
+      else setBs(startBattle(s.player, enc, rng));
       setApplied(false); setFloats([]);
       return next;
     });
   };
   const beginNemesis = () => begin("nemesis");
+  // Seçim bir kez çözülür (zar yüzleşmenin kendi dalından); sonuç ekranda okunur, sonra kavgaya ya da yola.
+  const yzSec = (secim: YzSecim) => {
+    if (!yz || yzC) return;
+    const c = yzCoz(state, yz.e, secim, yz.rng);
+    hap(c.sonuc === "basarisiz" ? "advance" : "tap");
+    if (secim === "saldir" || secim === "gard" || (c.kavga && c.sonuc === "basarisiz")) playClash();
+    setYzC(c);
+  };
+  const yzBitir = () => {
+    if (!yz || !yzC) return;
+    if (yzC.kavga) setBs(yzUygula(startBattle(p, yz.e, yz.rng), yzC));
+    else if (yzC.kapanis) { const k = yzC.kapanis; const id = encId; apply((s) => applyYuzlesme(s, id, k)); setApplied(true); }
+    setYz(null); setYzC(null);
+  };
   const play = (mv: Move) => {
     if (!bs || bs.over) return;
     const next = stepBattle(bs, p, mv, stance);
@@ -96,6 +117,77 @@ export default function Savas() {
     }
     setBs(null);
   };
+
+  // Yüzleşme ekranı: durum + 4 seçenek → sonuç anlatısı ve etkisi
+  if (yz && !bs) {
+    const tur = yzTuru(yz.e.id) || "eskiya";
+    const ORAN_RENK = { iyi: C.sage, orta: C.gold, zor: C.ember, cokzor: C.blood } as const;
+    const etkiler: { icon: string; metin: string; renk: string }[] = [];
+    if (yzC) {
+      const k = yzC.etki || {};
+      if (k.dusmanPay) etkiler.push({ icon: "skull", metin: `${t("yz.rakip")} −${Math.round((30 + yz.e.power * 4) * -k.dusmanPay)}`, renk: C.ember });
+      if (k.can) etkiler.push({ icon: "healing", metin: `${t("cb.you")} −${Math.abs(k.can)}`, renk: C.blood });
+      if (k.nefes) etkiler.push({ icon: "hourglass", metin: `${t("war.breath")} ${k.nefes > 0 ? "+" : "−"}${Math.abs(k.nefes)}`, renk: k.nefes > 0 ? C.sage : C.ember });
+      if (k.ustunluk) etkiler.push({ icon: "star", metin: t("yz.ustunluk"), renk: C.gold });
+      if (yzC.kapanis === "harac") etkiler.push({ icon: "coins", metin: applyParams(t("yz.etki.harac"), [yuzlesmeHarac(state, yz.e.id)]), renk: C.ember });
+      if (yzC.kapanis === "kac_bedel" && tur === "eskiya") etkiler.push({ icon: "coins", metin: applyParams(t("yz.etki.kese"), [yuzlesmeKese(state, yz.e.id)]), renk: C.ember });
+      if (yzC.kapanis === "kac_bedel" && tur === "hayvan") etkiler.push({ icon: "healing", metin: applyParams(t("yz.etki.yara"), [YUZLESME_YARA]), renk: C.blood });
+      if ((yzC.kapanis === "kac" || yzC.kapanis === "kac_bedel") && tur === "duello") etkiler.push({ icon: "banner", metin: t("yz.etki.seref"), renk: C.blood });
+    }
+    return (
+      <ScreenFresk style={{ paddingTop: insets.top }}>
+        <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 20, paddingBottom: insets.bottom + 100 }}>
+          <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 2, color: C.blood, textAlign: "center", textTransform: "uppercase" }}>{t("yz.baslik")}</Text>
+          <Text style={{ fontFamily: F.display, fontSize: 22, color: C.parchment, textAlign: "center", marginTop: 6 }}>{yz.e.title}</Text>
+          <Text style={{ fontFamily: F.serifItalic, fontSize: 17, color: C.parchment, lineHeight: 26, marginTop: 14, marginBottom: 18, textAlign: "center" }}>{t("yz.dur." + yz.e.id)}</Text>
+          {!yzC ? (
+            <>
+              <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1.5, color: C.parchmentMuted, marginBottom: 8, textTransform: "uppercase" }}>{t("yz.soru")}</Text>
+              {YZ_SECIMLER.map((o) => {
+                const oran = yzOran(yzSans(state, yz.e, o.id));
+                return (
+                  <Pressable key={o.id} onPress={() => yzSec(o.id)} accessibilityRole="button" accessibilityLabel={`${o.harf}. ${t(`yz.${tur}.${o.id}`)}. ${t("yz.oran." + oran)}`} style={{ flexDirection: "row", alignItems: "center", gap: 12, minHeight: 64, paddingVertical: 12, paddingHorizontal: 12, marginBottom: 8, borderRadius: 6, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.card }}>
+                    <View style={{ width: 32, height: 32, borderRadius: 16, borderWidth: 1, borderColor: "rgba(201,168,76,0.6)", alignItems: "center", justifyContent: "center" }}>
+                      <Text style={{ fontFamily: F.display, fontSize: 15, color: C.gold }}>{o.harf}</Text>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                        <GameIcon name={o.icon} size={13} color={C.gold} />
+                        <Text style={{ fontFamily: F.display, fontSize: 15, color: C.parchment, flex: 1 }}>{t(`yz.${tur}.${o.id}`)}</Text>
+                        <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 0.5, color: ORAN_RENK[oran] }}>{t("yz.oran." + oran)}</Text>
+                      </View>
+                      <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchmentMuted, lineHeight: 21, marginTop: 3 }}>{t(`yz.${tur}.${o.id}.d`)}</Text>
+                    </View>
+                  </Pressable>
+                );
+              })}
+            </>
+          ) : (
+            <View style={{ borderRadius: 6, borderWidth: 1, borderColor: yzC.sonuc === "basarisiz" ? "rgba(168,52,52,0.6)" : yzC.sonuc === "basari" ? "rgba(201,168,76,0.6)" : C.borderHi, backgroundColor: C.card, padding: 16 }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 8 }}>
+                <GameIcon name={YZ_SECIMLER.find((o) => o.id === yzC.secim)?.icon || "crossed-swords"} size={13} color={C.gold} />
+                <Text style={{ fontFamily: F.display, fontSize: 14, color: C.gold }}>{t(`yz.${tur}.${yzC.secim}`)}</Text>
+              </View>
+              <Text style={{ fontFamily: F.serif, fontSize: 17, color: C.parchment, lineHeight: 26 }}>{t(yzC.metin)}</Text>
+              {etkiler.length > 0 && (
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
+                  {etkiler.map((x, i) => (
+                    <View key={i} style={{ flexDirection: "row", alignItems: "center", gap: 5, paddingVertical: 5, paddingHorizontal: 9, borderRadius: 4, borderWidth: 1, borderColor: C.border }}>
+                      <GameIcon name={x.icon} size={11} color={x.renk} />
+                      <Text style={{ fontFamily: F.display, fontSize: 13, color: x.renk }}>{x.metin}</Text>
+                    </View>
+                  ))}
+                </View>
+              )}
+              <Pressable onPress={yzBitir} style={{ marginTop: 16, minHeight: 48, justifyContent: "center", borderRadius: 5, borderWidth: 1.5, borderColor: yzC.kavga ? "rgba(168,52,52,0.7)" : "rgba(201,168,76,0.55)", backgroundColor: yzC.kavga ? "rgba(168,52,52,0.2)" : C.gold, alignItems: "center" }}>
+                <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1.5, color: yzC.kavga ? C.blood : C.inkOnGold }}>{yzC.kavga ? t("yz.kavgaya") : t("yz.devam")}</Text>
+              </Pressable>
+            </View>
+          )}
+        </ScrollView>
+      </ScreenFresk>
+    );
+  }
 
   // Savaş ekranı
   if (bs) {
