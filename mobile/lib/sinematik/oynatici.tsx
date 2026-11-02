@@ -11,6 +11,7 @@ import { C, F } from "../theme";
 import { Ambiance, Pulse } from "../fx";
 import { isReduceMotion } from "../perf";
 import { playEffect, playTap, pushSoundscape, playNarration, stopNarration } from "../sound";
+import { useVideoPlayer, VideoView } from "expo-video";
 import { ANLATIM } from "./anlatim";
 import { hap } from "../haptics";
 import type { Cekim } from "./cekimler";
@@ -107,12 +108,22 @@ function Daktilo({ metin, top, rtl }: { metin: string; top: number; rtl: boolean
   );
 }
 
-export function Sinematik(props: { cekimler: Cekim[]; onDone: () => void; parca?: string }) {
+// Tek parça sessiz sinematik video (dil bağımsız); ses ayrı çalar. Yüklenemezse onHata ile sahne görsellerine dönülür.
+function SinemaVideo({ kaynak, onHata }: { kaynak: number; onHata: () => void }) {
+  const player = useVideoPlayer(kaynak, (p) => { p.muted = true; p.loop = false; p.audioMixingMode = "mixWithOthers"; p.play(); });
+  useEffect(() => {
+    const sub = player.addListener("statusChange", ({ status }) => { if (status === "error") onHata(); });
+    return () => sub.remove();
+  }, [player]);
+  return <VideoView player={player} style={ABS} contentFit="cover" nativeControls={false} pointerEvents="none" />;
+}
+
+export function Sinematik(props: { cekimler: Cekim[]; onDone: () => void; parca?: string; video?: number }) {
   return props.cekimler.length ? <SinematikIc {...props} /> : null;
 }
 
 // parca: tüm sinematik boyunca çalan tek ses (dil başına miks); varsa çekimler sabit sürelidir ve dokunuşla atlanmaz (ses kaymasın).
-function SinematikIc({ cekimler, onDone, parca }: { cekimler: Cekim[]; onDone: () => void; parca?: string }) {
+function SinematikIc({ cekimler, onDone, parca, video }: { cekimler: Cekim[]; onDone: () => void; parca?: string; video?: number }) {
   const { t, lang } = useI18n();
   const reduced = isReduceMotion();
   const rtl = lang === "ar";
@@ -176,24 +187,27 @@ function SinematikIc({ cekimler, onDone, parca }: { cekimler: Cekim[]; onDone: (
     return () => clearTimeout(id);
   }, [c.baslik, reduced]);
   const kat = (k: string) => !reduced && !!c.katman?.includes(k as never);
+  const [videoHata, setVideoHata] = useState(false);
+  const videoAcik = !!video && !reduced && !videoHata;
 
   return (
     <View style={{ flex: 1, backgroundColor: "#000" }}>
-      <Animated.View key={c.id} entering={FadeIn.duration(reduced ? 400 : 1300)} exiting={FadeOut.duration(reduced ? 300 : 1300)} style={ABS}>
+      {videoAcik ? <SinemaVideo kaynak={video!} onHata={() => setVideoHata(true)} /> : null}
+      {!videoAcik ? <Animated.View key={c.id} entering={FadeIn.duration(reduced ? 400 : 1300)} exiting={FadeOut.duration(reduced ? 300 : 1300)} style={ABS}>
         <Kamera c={c} sure={sure} W={W} H={H} reduced={reduced} />
         {c.ton ? <View pointerEvents="none" style={[ABS, { backgroundColor: c.ton }]} /> : null}
         {kat("ates") ? <AtesIsigi /> : null}
         {kat("sis") ? <Sis W={W} H={H} renk="rgba(190,196,204,0.16)" /> : null}
         {kat("toz") ? <Sis W={W} H={H} renk="rgba(214,170,110,0.13)" /> : null}
-      </Animated.View>
-      {kat("kar") ? <Ambiance season="Kış" width={W} height={H} embers={false} count={12} /> : null}
-      {kat("koz") ? <Ambiance width={W} height={H} flakes={false} count={10} /> : null}
+      </Animated.View> : null}
+      {!videoAcik && kat("kar") ? <Ambiance season="Kış" width={W} height={H} embers={false} count={12} /> : null}
+      {!videoAcik && kat("koz") ? <Ambiance width={W} height={H} flakes={false} count={10} /> : null}
 
       {/* Okunurluk: üst ve alt koyulaşma, vinyet hissi */}
       <LinearGradient pointerEvents="none" colors={["rgba(0,0,0,0.55)", "transparent"]} style={{ position: "absolute", top: 0, left: 0, right: 0, height: H * 0.28 }} />
       <LinearGradient pointerEvents="none" colors={["transparent", "rgba(0,0,0,0.82)"]} style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: H * 0.42 }} />
       <View pointerEvents="none" style={[ABS, { opacity: 0.07 }]}><Image source={GREN} resizeMode="repeat" style={ABS} /></View>
-      {c.gecis === "kara" || c.gecis === "parla" ? <GecisOrtusu key={"g" + i} tur={c.gecis} /> : null}
+      {!videoAcik && (c.gecis === "kara" || c.gecis === "parla") ? <GecisOrtusu key={"g" + i} tur={c.gecis} /> : null}
 
       {/* Sinema bantları */}
       <View pointerEvents="none" style={{ position: "absolute", top: 0, left: 0, right: 0, height: bant + ins.top, backgroundColor: "#000" }} />
