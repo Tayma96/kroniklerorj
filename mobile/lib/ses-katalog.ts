@@ -42,6 +42,9 @@ export const ORTAM = {
 export const EFEKT = {
   ui_dokun: require('../assets/ses/efekt/ui_dokun.m4a'),
   ui_ilerle: require('../assets/ses/efekt/ui_ilerle.m4a'),
+  ui_dokun_2: require('../assets/ses/efekt/ui_dokun_2.m4a'),
+  ui_ilerle_2: require('../assets/ses/efekt/ui_ilerle_2.m4a'),
+  ui_ilerle_3: require('../assets/ses/efekt/ui_ilerle_3.m4a'),
   sayfa: require('../assets/ses/efekt/sayfa.m4a'),
   kalem: require('../assets/ses/efekt/kalem.m4a'),
   kapi: require('../assets/ses/efekt/kapi.m4a'),
@@ -72,10 +75,13 @@ export type MuzikId = keyof typeof MUZIK;
 export type OrtamId = keyof typeof ORTAM;
 export type EfektId = keyof typeof EFEKT;
 export const EFEKT_SURE: Record<EfektId, number> = {
-  "ui_dokun": 90,
-  "ui_ilerle": 70,
-  "sayfa": 720,
-  "kalem": 1090,
+  "ui_dokun": 200,
+  "ui_ilerle": 850,
+  "ui_dokun_2": 240,
+  "ui_ilerle_2": 860,
+  "ui_ilerle_3": 900,
+  "sayfa": 630,
+  "kalem": 280,
   "kapi": 1810,
   "akce_tek": 1250,
   "akce_kese": 2090,

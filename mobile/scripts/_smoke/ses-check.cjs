@@ -80,7 +80,7 @@ async function bundle(entry, context) {
   for(const [age,music] of [[7,'cocukluk'],[13,'genclik'],[18,'ciraklik'],[25,'ustalik'],[40,'olgunluk'],[60,'yaslilik']]) assert.equal(plans.ekranSes({...bctx,age}).music,music);
   assert.equal(plans.ekranSes({...bctx,path:'/oyun/mulkler'}).ambiance,'ocak'); assert.equal(plans.ekranSes({...bctx,path:'/oyun/mulkler',propertyTypes:['degirmen']}).ambiance,'degirmen');
   assert.equal(plans.olayEfekti([{k:'yanki.comert.0'},{k:'hatir.kin.ad.1'}]),'cip_kin'); assert.equal(plans.olayEfekti([{k:'dunya.foo'}]),null);
-  const catalog=await bundle('lib/ses-katalog.ts',{}); assert.equal(Object.keys(catalog.MUZIK).length,21);assert.equal(Object.keys(catalog.ORTAM).length,15);assert.equal(Object.keys(catalog.EFEKT).length,27);
+  const catalog=await bundle('lib/ses-katalog.ts',{}); assert.equal(Object.keys(catalog.MUZIK).length,21);assert.equal(Object.keys(catalog.ORTAM).length,15);assert.equal(Object.keys(catalog.EFEKT).length,30); // 27 + arayüz varyantları (ui_dokun_2, ui_ilerle_2, ui_ilerle_3)
   for(const key of Object.keys(catalog.EFEKT)) assert(catalog.EFEKT_SURE[key]>0);
-  process.stdout.write('SES: TEMİZ · 200 geçiş · ilk efekt 17→1 oynatıcı · sürekli 2 döngü, geçişte ≤4, efekt ≤4 · yarış/katman/temizleme · 63 kayıt\n');
+  process.stdout.write('SES: TEMİZ · 200 geçiş · ilk efekt 17→1 oynatıcı · sürekli 2 döngü, geçişte ≤4, efekt ≤4 · yarış/katman/temizleme · 66 kayıt\n');
 })().catch(e=>{console.error(e);process.exitCode=1;});

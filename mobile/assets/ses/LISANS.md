@@ -61,9 +61,12 @@ Toplam: **63 dosya, 12.14 MB**.
 
 | Dosya | İçerik | Kaynak kayıt | Yazar / icracı | Lisans | Kesit (sn) | Boyut |
 |---|---|---|---|---|---|---|
-| `efekt/ui_dokun.m4a` | Tahta tık | [Wooden Click](https://freesound.org/s/321083/) (Freesound) | BenjaminNelan | CC0 1.0 | 0–0.2 | 2 KB |
-| `efekt/ui_ilerle.m4a` | Tahta tık | [wood-click-1.wav](https://freesound.org/s/500926/) (Freesound) | husamalhomsi | CC0 1.0 | 0–0.2 | 1 KB |
-| `efekt/sayfa.m4a` | Sayfa çevirme | [Page Turn 02](https://freesound.org/s/397549/) (Freesound) | LilMati | CC0 1.0 | 0–0.7 | 7 KB |
+| `efekt/ui_dokun.m4a` | Yumuşak deri/kağıt dokunuşu | ElevenLabs ses efekti üretimi (`uretim.json`: ui_dokun_1) | ElevenLabs, Kronikler için üretildi | ElevenLabs ücretli plan, ticari kullanım | — | 3 KB |
+| `efekt/ui_ilerle.m4a` | Ay ilerletme: kalın kağıt + ahşap | ElevenLabs ses efekti üretimi (`uretim.json`: ui_ilerle_1) | ElevenLabs, Kronikler için üretildi | ElevenLabs ücretli plan, ticari kullanım | — | 11 KB |
+| `efekt/ui_dokun_2.m4a` | Yumuşak dokunuş, ikinci varyant | ElevenLabs ses efekti üretimi (`uretim.json`: ui_dokun_2) | ElevenLabs, Kronikler için üretildi | ElevenLabs ücretli plan, ticari kullanım | — | 4 KB |
+| `efekt/ui_ilerle_2.m4a` | Ay ilerletme, ikinci varyant | ElevenLabs ses efekti üretimi (`uretim.json`: ui_ilerle_2) | ElevenLabs, Kronikler için üretildi | ElevenLabs ücretli plan, ticari kullanım | — | 11 KB |
+| `efekt/ui_ilerle_3.m4a` | Ay ilerletme, üçüncü varyant | ElevenLabs ses efekti üretimi (`uretim.json`: ui_ilerle_3) | ElevenLabs, Kronikler için üretildi | ElevenLabs ücretli plan, ticari kullanım | — | 11 KB |
+| `efekt/sayfa.m4a` | Kalın kağıt sayfa çevirme | ElevenLabs ses efekti üretimi (`uretim.json`: sayfa_1) | ElevenLabs, Kronikler için üretildi | ElevenLabs ücretli plan, ticari kullanım | — | 8 KB |
 | `efekt/kalem.m4a` | Kamış kalem parşömende | [Quill and Parchment.WAV](https://freesound.org/s/507864/) (Freesound) | Nickh69 | CC0 1.0 | 0–54 | 10 KB |
 | `efekt/kapi.m4a` | Ahşap kapıya vuruş | [door_knock.wav](https://freesound.org/s/268500/) (Freesound) | wjtaylor | CC0 1.0 | 0–2.1 | 16 KB |
 | `efekt/akce_tek.m4a` | Tek sikke düşüşü | [Singular Coin Dropping.wav](https://freesound.org/s/630018/) (Freesound) | Flem0527 | CC0 1.0 | 0–1.4 | 11 KB |
