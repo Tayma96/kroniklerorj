@@ -126,7 +126,7 @@ function BuAySirasi({ onEmek, onUgras }: { onEmek: () => void; onUgras: () => vo
   const seen = p.healer_turn === s.turn, cost = healerCost(s);
   const hseen = p.hamam_turn === s.turn, hcost = hamamCost(s);
   const items = [
-    emekVar && <Madalyon key="emek" icon="calis" label={t("karakter.emek")} a11y={`${t("flow.workTitle")}: ${calisti ? t("act.workedThisTurn") : t("char.workReady")}`} done={calisti} alert={!calisti} onPress={onEmek} />,
+    emekVar && <Madalyon key="emek" icon="calis" label={t("karakter.emek")} a11y={`${t("flow.workTitle")}: ${calisti ? t("act.workedThisTurn") : t("char.workReady")}`} done={calisti} alert={!calisti && !!p.duzen?.kapali} onPress={onEmek} />,
     ugrasVar && <Madalyon key="ugras" icon={ugrasIcon} tone={C.emberSoft} label={t("karakter.ugras")} tag={hak > 0 ? `${hak}` : undefined} a11y={`${t(ugrasKey)}: ${t("char.ugrasSub")}`} done={hak <= 0} onPress={onUgras} />,
     bakimVar && <Madalyon key="hekim" icon="healing" tone={C.sage} label={t("karakter.hekim")} tag={`${cost}⚜`} a11y={seen ? t("char.healerDone") : `${t("char.healer")} · ${cost}⚜`} done={seen} disabled={seen || p.money < cost} onPress={() => apply((x) => visitHealer(x))} />,
     bakimVar && <Madalyon key="hamam" icon="bucket" tone={C.frost} label={t("char.hamam")} tag={`${hcost}⚜`} a11y={hseen ? t("char.hamamDone") : `${t("char.hamam")} · ${hcost}⚜`} done={hseen} disabled={hseen || p.money < hcost} onPress={() => { playWater(); apply((x) => visitHamam(x)); }} />,
