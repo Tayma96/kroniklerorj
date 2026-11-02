@@ -49,7 +49,7 @@ CEKIMLER = [
          kamera=dict(zoom=(1.15, 1.08), y=(0.53, 0.49), dolly=(0.06, 0.0), pivot=0.4, el=0.8),
          ates=dict(genlik=0.22, isik=0.04), isi=dict(y0=0.2, y1=0.5, genlik=2.0),
          sis=[dict(d=0.45, renk=(0.12, 0.1, 0.1), guc=0.4, hiz=(10, -40), olcek=1.2, esik=0.38, bant=(0.0, 0.05, 0.45, 0.6))],
-         parcacik=[dict(tip="koz", sayi=260, derinlik=(0.2, 1.0))],
+         parcacik=[dict(tip="koz", sayi=130, derinlik=(0.1, 0.85), bolge=(0.3, 1.0))],
          renk=YANGIN),
     # 24.7–28.04 s · boşalan köy: yanal kayış
     dict(gorsel="b2_bos_koy.png", bas=24700, son=28040, gir=("erit", 900), tohum=5,
