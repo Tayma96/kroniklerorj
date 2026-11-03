@@ -88,7 +88,7 @@ function hayat(tohum, polAd, opts = {}) {
     if (!iz.ilkMeslek && q.profession !== "işsiz") iz.ilkMeslek = q.profession;
     const has = Object.values(s.relationships || {}).filter((v) => v <= -55).length + (s.story?.nemesis ? 1 : 0);
     iz.maxHasim = Math.max(iz.maxHasim, has);
-    iz.doy = iz.doy || {}; for (const [k, v] of [["itibar", q.reputation], ["seref", q.honor], ["sohret", q.fame]]) if (v >= 100 && iz.doy[k] == null) iz.doy[k] = q.age; iz.y55 = iz.y55 || {}; for (const [k, v] of [["itibar", q.reputation], ["seref", q.honor], ["sohret", q.fame]]) if (v >= 55 && iz.y55[k] == null) iz.y55[k] = q.age;
+    iz.doy = iz.doy || {}; for (const [k, v] of [["itibar", q.reputation], ["seref", q.honor], ["sohret", q.fame]]) if (v >= 100 && iz.doy[k] == null) iz.doy[k] = q.age; iz.y55 = iz.y55 || {}; for (const [k, v] of [["itibar", q.reputation], ["seref", q.honor], ["sohret", q.fame]]) if (v >= 55 && iz.y55[k] == null) iz.y55[k] = q.age; iz.y80 = iz.y80 || {}; for (const [k, v] of [["itibar", q.reputation], ["seref", q.honor], ["sohret", q.fame]]) if (v >= 80 && iz.y80[k] == null) iz.y80[k] = q.age;
     if (q.age === 40 && iz.y40 == null) iz.y40 = { itibar: q.reputation, seref: q.honor, sohret: q.fame, servet: servet(s) };
   }
   const p = s.player; const pr = g.professionById(p.profession);
@@ -97,7 +97,7 @@ function hayat(tohum, polAd, opts = {}) {
     tohum, pol: polAd, olu: !!p.dead, yas: p.age, servet: servet(s), para: Math.round(p.money), itibar: p.reputation, seref: p.honor, sohret: p.fame, korku: p.fear,
     unvan: pr ? g.careerTier(pr, g.kariyerXp(p)) : 0, kademe: g.kademeOf(p), meslek: p.profession, evlendi: iz.evlendi, evlat: (p.children || []).length,
     yasayanEvlat: g.yasayanEvlatAdlari(s).length, sehir: p.location_name, dogum: s.player && iz.sehirler.size, zindan: iz.zindan, hasim: iz.maxHasim, varis, kart: iz.kart,
-    mulk: (p.properties || []).length, nam: p.nam ? Object.entries(p.nam).filter(([, v]) => v >= 20).map(([k]) => k).join("+") : "", doy: iz.doy || {}, y55: iz.y55 || {}, y40: iz.y40, olumNedeni: (s.history.filter((e) => /^evj\.die/.test(e.k || "")).pop() || {}).k || "",
+    mulk: (p.properties || []).length, nam: p.nam ? Object.entries(p.nam).filter(([, v]) => v >= 20).map(([k]) => k).join("+") : "", doy: iz.doy || {}, y55: iz.y55 || {}, y80: iz.y80 || {}, y40: iz.y40, olumNedeni: (s.history.filter((e) => /^evj\.die/.test(e.k || "")).pop() || {}).k || "",
   };
   Math.random = ORJ;
   return out;
@@ -110,13 +110,13 @@ if (require.main === module) {
   // Özet: politika başına medyanlar (doyum yaşı: 100'e / 55'e ilk varış; ulaşamayan "-")
   const med = (a) => { const v = a.filter((x) => x != null && Number.isFinite(x)).sort((x, y) => x - y); return v.length ? v[v.length >> 1] : null; };
   const f = (x) => (x == null ? "-" : Math.round(x));
-  console.log("\nÖZET (medyan) politika | ölüm | servet | itibar | şeref | şöhret | itibar100 | şöhret100 | itibar55 | şöhret55 | 40y itibar | mülk | evli% | evli%(itibar<0) | zindan | hasım");
+  console.log("\nÖZET (medyan) politika | ölüm | servet | itibar | şeref | şöhret | itibar100 | şöhret100 | şeref100 | itibar55 | şöhret55 | şeref55 | itibar80 | şeref80 | 40y itibar | mülk | evli% | evli%(itibar<0) | zindan | hasım");
   const ozet = {};
   for (const pol of POL) {
     const r = sonuc.filter((x) => x.pol === pol); const eks = r.filter((x) => x.itibar < 0);
     ozet[pol] = { servet: med(r.map((x) => x.servet)) };
     console.log([pol, f(med(r.map((x) => x.yas))), f(med(r.map((x) => x.servet))), f(med(r.map((x) => x.itibar))), f(med(r.map((x) => x.seref))), f(med(r.map((x) => x.sohret))),
-      f(med(r.map((x) => x.doy.itibar))), f(med(r.map((x) => x.doy.sohret))), f(med(r.map((x) => x.y55.itibar))), f(med(r.map((x) => x.y55.sohret))), f(med(r.map((x) => x.y40 && x.y40.itibar))),
+      f(med(r.map((x) => x.doy.itibar))), f(med(r.map((x) => x.doy.sohret))), f(med(r.map((x) => x.doy.seref))), f(med(r.map((x) => x.y55.itibar))), f(med(r.map((x) => x.y55.sohret))), f(med(r.map((x) => x.y55.seref))), f(med(r.map((x) => x.y80.itibar))), f(med(r.map((x) => x.y80.seref))), f(med(r.map((x) => x.y40 && x.y40.itibar))),
       f(med(r.map((x) => x.mulk))), Math.round(100 * r.filter((x) => x.evlendi).length / Math.max(1, r.length)), eks.length ? Math.round(100 * eks.filter((x) => x.evlendi).length / eks.length) : "-",
       r.reduce((a, x) => a + x.zindan, 0), r.reduce((a, x) => a + x.hasim, 0)].join(" | "));
   }
