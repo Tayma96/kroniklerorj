@@ -90,7 +90,6 @@ export interface Player {
   club?: string; teacherBond?: number; // mektep kulübü (haftalık pasif XP) + hoca bağı
   club_standing?: number; last_club_turn?: number; club_grad?: string; // kulüp itibarı + aylık meşk kapısı + mezun olunan kulüp
   duzen?: { kapali?: boolean; tarz?: WorkStyle };
-  dert?: { id: DertId; secim: number; alinan?: string[] }; // Hissiyat 5: hayatın derdi (seçim turu; ödülü alınan basamaklar "id:basamak") — vârise geçmez // Hissiyat 4: ay geçerken rutin (çalış + acıkınca ye) kendiliğinden; kapali=elle
   horse?: boolean; horse_name?: string; // bir atın var mı + adı (hızlı/güvenli "at ile" yolculuğu açar; yolda kaybedilebilir)
   child_acts?: Partial<Record<"oyun" | "yardim" | "yaramazlik" | "kesif", number>>; childhood?: string; // çocukluk eğilim sayacı + reşitlikte belirlenen çocukluk karakteri
   tanistir?: { id: string; until: number }; // tanıdığın tanıştırdığı kişi (açık hesaplarda 12 ay; vârise geçmez)
@@ -4224,7 +4223,7 @@ export function advance(prev: GameState, n = 1): GameState {
     if (i === n - 1) factionAITick(s); // fraksiyonlar dünyada görünür eylemler yapar (bağış/sabotaj/nüfuz/suikast)
     npcLifeTick(s); // yaşayan dünya: NPC ölüm/yeni nesil + evlilik/doğum (yılda bir)
     if (i === n - 1) claimAchievements(s); // ay sonunda yeni başarımları ödüllendir
-    if (i === n - 1) { claimFamilyQuests(s); dertOdulleri(s); } // ay sonunda tamamlanan aile/yaşam görevleri ve hayatın derdi basamakları
+    if (i === n - 1) claimFamilyQuests(s); // ay sonunda tamamlanan aile/yaşam görevlerini ödüllendir
     const inBreath = (s.story?.breath || 0) > 0; // doruk sonrası sakin dönem
     if (s.story && !inBreath) s.story.tension = Math.min(100, s.story.tension + 1); // gerilim zamanla birikir (nefeste durur)
     // Durgunluk dedektörü (Vercel story_director "Nefes Kuralı" portu): sessiz aylar birikince
@@ -11151,55 +11150,6 @@ export const FAMILY_QUESTS: FamilyQuest[] = [
   { id: "tastayazili",icon: "castle", title: "Taşa Yazılan Ad",desc: "Bir anıt diktir; adın çağları aşsın.",  minAge: 35, reward: { money: 0, fame: 10, rep: 5 },   done: (s) => !!s.player.legacy?.anit },
   { id: "soyagaci",   icon: "leaf", title: "Soyağacı",      desc: "Hanedanını sürdür (2. nesil ve ötesi).",minAge: 7,  reward: { money: 40, fame: 8 },          done: (s) => s.player.generation >= 2 },
 ];
-// ── Hayatın derdi (Hissiyat 5): oyuncunun seçtiği tek büyük yön; üç basamak var olan sistemlerden ölçülür ──
-export type DertId = "usta" | "servet" | "nam" | "ocak" | "kilic";
-export const DERTLER: { id: DertId; icon: string }[] = [
-  { id: "usta", icon: "anvil" }, { id: "servet", icon: "coins" }, { id: "nam", icon: "crown" }, { id: "ocak", icon: "family" }, { id: "kilic", icon: "crossed-swords" },
-];
-export const DERT_YAS = 14, DERT_ARA = 120; // seçim yaşı · değiştirmek için en az on yıl
-export const DERT_ODUL: { stat: number; fame: number }[] = [{ stat: 1, fame: 0 }, { stat: 1, fame: 4 }, { stat: 2, fame: 8 }];
-const EFSANE_CENK = ["canavar", "kara_alp", "bozkir_kurdu", "golge_okcusu"];
-// Basamağın ölçüsü: şu anki değer ve hedef (UI ilerleme çubuğu ve ödül kapısı aynı sayıyı okur).
-export function dertOlcu(s: GameState, id: DertId, basamak: number): { deger: number; hedef: number } {
-  const p = s.player;
-  switch (id) {
-    case "usta": return { deger: p.profession === "işsiz" ? 0 : kademeOf(p), hedef: basamak + 1 };
-    case "servet": return { deger: Math.max(0, Math.floor(p.money)), hedef: Math.round([600, 1500, 3000][basamak] * inflationFactor(s)) };
-    case "nam": return { deger: p.fame, hedef: [40, 65, 90][basamak] };
-    case "ocak": return basamak === 0 ? { deger: p.married ? 1 : 0, hedef: 1 } : basamak === 1 ? { deger: p.children.length, hedef: 2 } : { deger: (p.grandchildren || []).length, hedef: 1 };
-    default: return basamak < 2 ? { deger: p.zafer || 0, hedef: basamak === 0 ? 3 : 10 } : { deger: EFSANE_CENK.filter((e) => p.enc_won?.[e]).length, hedef: 1 };
-  }
-}
-// Derdin durumu: kaç basamak alındı ve sıradaki basamağın ölçüsü.
-export function dertDurumu(s: GameState): { id: DertId; alinan: number; sonraki: { basamak: number; deger: number; hedef: number } | null } | null {
-  const d = s.player.dert; if (!d) return null;
-  const al = d.alinan || []; let alinan = 0; while (alinan < 3 && al.includes(d.id + ":" + alinan)) alinan++;
-  return { id: d.id, alinan, sonraki: alinan < 3 ? { basamak: alinan, ...dertOlcu(s, d.id, alinan) } : null };
-}
-// Seçilebilir dert: üç basamağı da şimdiden tutulmuş (ya da ödülü alınmış) bir yol seçilmez — hazır "erdin" anlamsız olur.
-export function dertSecilebilir(s: GameState, id: DertId): boolean {
-  const al = s.player.dert?.alinan || [];
-  return [0, 1, 2].some((b) => { if (al.includes(id + ":" + b)) return false; const o = dertOlcu(s, id, b); return o.deger < o.hedef; });
-}
-export function dertDegisebilir(s: GameState): boolean { const d = s.player.dert; return !d || s.turn - d.secim >= DERT_ARA || !dertDurumu(s)?.sonraki; } // derdine eren beklemeden yeni yol seçer
-export function dertSec(prev: GameState, id: DertId): GameState {
-  const s = clone(prev); const p = s.player;
-  if (p.dead || p.age < DERT_YAS || !DERTLER.some((x) => x.id === id) || !dertDegisebilir(s) || p.dert?.id === id || !dertSecilebilir(s, id)) return s;
-  p.dert = { id, secim: s.turn, alinan: [...(p.dert?.alinan || [])] }; // alınan basamaklar ömür boyu: geri dönüp aynı ödül iki kez alınmaz
-  // Seçim anında zaten tutulmuş basamaklar ödülsüz işaretlenir: zengin "Servet"i, ünlü "Nam"ı seçip hazır ödül toplayamaz (farm yok).
-  for (let b = 0; b < 3; b++) { const k = id + ":" + b; if (p.dert.alinan!.includes(k)) continue; const o = dertOlcu(s, id, b); if (o.deger < o.hedef) break; p.dert.alinan!.push(k); }
-  push(s, "dert", `Hayatının derdini seçtin.`, "kişisel", false, { k: "evj.dert.secim", p: [{ sfx: "dert." + id }] });
-  return s;
-}
-// Ay sonu: sıradaki basamak tutulduysa ödül ve an (basamaklar sırayla; ayda en çok bir basamak).
-function dertOdulleri(s: GameState) {
-  const p = s.player; const du = dertDurumu(s); if (p.dead || !du?.sonraki || du.sonraki.deger < du.sonraki.hedef) return;
-  const b = du.sonraki.basamak, o = DERT_ODUL[b];
-  p.dert!.alinan = [...(p.dert!.alinan || []), du.id + ":" + b];
-  p.stat_points += o.stat; if (o.fame) p.fame = Math.min(100, p.fame + o.fame);
-  if (b === 2) push(s, "dert_son", `Derdine erdin.`, "kişisel", true, { k: "evj.dert.son", p: [{ sfx: "dert." + du.id }] });
-  else push(s, "dert", `Derdinde bir basamak aşıldı.`, "kişisel", true, { k: "evj.dert.asama", p: [{ sfx: "dert." + du.id }, b + 1] });
-}
 export function familyQuestsOf(s: GameState): { q: FamilyQuest; done: boolean; claimed: boolean; locked: boolean }[] {
   const p = s.player; const cl = p.fq_claimed || [];
   return FAMILY_QUESTS.map((q) => ({ q, done: q.done(s), claimed: cl.includes(q.id), locked: p.age < q.minAge }));

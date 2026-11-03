@@ -23,10 +23,7 @@ Berkay'ın geri bildirimi: oyun "site gibi", tıklama çok, sonuç hissedilmiyor
    çalışılmadıysa son seçilen tarzla çalışılır, açlık <40 ise ay geçişinden önce ve sonra sessizce yenir (yeni ay boş açlık uyarısıyla açılmaz); çok aylık ilerleme bekleyen tezgâh kararında
    durur; düzen açıkken "çalışmadın" rozetleri yok. Ölçüm (6 hayat, yalnız "Ayı İlerlet"): açık → uygun ayların %100'ü
    çalışıldı, açlık 0, ort. 57 yaş/3.144 akçe; kapalı (eski) → hiç çalışılmadı, ort. 14 yaşta açlık.
-5. **Hayatın derdi** (yapıldı): 14 yaşından sonra beş yoldan biri (`DERTLER`: Ustalık kademe 1/2/3, Servet 600/1500/3000
-   akçe×enflasyon, Nam şöhret 40/65/90, Ocak evlilik/2 evlat/torun, Kılıç 3/10 zafer + efsane cenk). Ana ekranda `MkDert`:
-   sıradaki basamak, ilerleme, ödül (+1/+1 ve 4 şöhret/+2 ve 8 şöhret özellik puanı). Basamak ay sonunda an + ödül; seçim
-   on yıl bağlar (derdine eren hemen yeni seçer); seçimde zaten tutulan basamak ödülsüz işaretlenir, tamamı tutulmuş yol
-   seçilemez (farm yok). Ölçüm: Ocak 24/31/50 yaş, Servet 18/23/35 (son basamak 2/4), Nam 23/28/33, Ustalık 15/20/22.
+5. **Hayatın derdi** (kaldırıldı, 3 Kasım): sonucu olmayan yeni bir panel olduğu için Berkay'ın kararıyla tamamen çıkarıldı.
+   Yön artık `docs/superpowers/specs/2026-11-03-radikal-sonuclar-design.md` planındaki kader kırılmalarından gelecek.
 
 Ölçütler `TASARIM_PUSULASI.md`: ölü karar 0, gecikmiş sonucun sebebi %100, görünür gerilim ≤5.
