@@ -5720,8 +5720,13 @@ export function gunlukDuzen(prev: GameState): GameState {
   if (prev.mpRealm || p.dead || p.duzen?.kapali) return prev;
   let s = prev;
   if (canWork(s)) s = work(s, p.duzen?.tarz || "normal");
-  if (s.player.age >= 13 && s.player.hunger < 40) s = eat(s, true);
-  return s;
+  return duzenYemek(s);
+}
+// Düzenin sofrası: ay geçişinden sonra da bakılır — yeni ay boş "acıktın" uyarısıyla açılmasın (akçe yoksa uyarı kalır).
+export function duzenYemek(prev: GameState): GameState {
+  const p = prev.player;
+  if (prev.mpRealm || p.dead || p.duzen?.kapali || p.age < 13 || p.hunger >= 40) return prev;
+  return eat(prev, true);
 }
 export function duzenAyarla(prev: GameState, d: { kapali?: boolean; tarz?: WorkStyle }): GameState {
   const s = clone(prev); s.player.duzen = { ...s.player.duzen, ...d }; return s;
