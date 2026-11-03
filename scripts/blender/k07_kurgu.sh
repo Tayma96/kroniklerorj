@@ -7,8 +7,10 @@ set -euo pipefail
 K="$1"; T="$2"; mkdir -p "$T"
 VF="vignette=angle=PI/5.5,noise=alls=5:allf=t+u,format=yuv420p"
 ENC=(-c:v libx264 -preset slow -crf 18 -profile:v high -movflags +faststart -an)
-# bekleme: 4 sn döngü
-ffmpeg -y -loglevel error -framerate 24 -i "$K/bekleme/%04d.png" -vf "$VF" "${ENC[@]}" "$T/bekleme.mp4"
+# bekleme: 4 sn döngü (varsa 1. döngü son kareleriyle dikiş kapatılır)
+BK="$K/bekleme"
+if [ -f "$K/bekleme_d1/0008.png" ]; then python3 "$(dirname "$0")/dongu_dikis.py" "$K/bekleme" "$K/bekleme_d1" "$K/bekleme_dongu"; BK="$K/bekleme_dongu"; fi
+ffmpeg -y -loglevel error -framerate 24 -i "$BK/%04d.png" -vf "$VF" "${ENC[@]}" "$T/bekleme.mp4"
 # saldırı: 48 kare/sn hesaplanan kareler -> gerçek hız (her ikinci kare, 24 kare/sn) ve %50 yavaş (tüm kareler, 24 kare/sn)
 ffmpeg -y -loglevel error -framerate 48 -i "$K/saldiri/%04d.png" -vf "fps=24,$VF" "${ENC[@]}" "$T/saldiri.mp4"
 ffmpeg -y -loglevel error -framerate 24 -i "$K/saldiri/%04d.png" -vf "$VF" "${ENC[@]}" "$T/saldiri_yavas.mp4"

@@ -45,6 +45,8 @@ else:  # tek kare (gard)
     st = tr.strips.new("b", ON + 1, bpy.data.actions["bekleme"]); st.extrapolation = 'HOLD'
     kareler = [ON + 1]
     sc.camera = bpy.data.objects[cfg.get("kam", "KamBoy")]
+if cfg.get("sahne_kareleri"):
+    kareler = list(cfg["sahne_kareleri"])
 if cfg.get("kareler"):
     kareler = [kareler[i - 1] for i in cfg["kareler"] if 0 < i <= len(kareler)]
 if "bulanik" in cfg: sc.render.use_motion_blur = bool(cfg["bulanik"])
