@@ -161,5 +161,8 @@ const rows: Record<string, string[]> = {
   "ms.entrika": ["Entrika", "Intrigue", "Intriga", "Intriga", "المكيدة", "Интрига"],
   "ms.ocak_savasi": ["Ocak Savaşı", "War of Houses", "Guerra de casas", "Guerra de casas", "حرب البيوت", "Война домов"],
   "ms.saglik": ["Hastalık", "Sickness", "Enfermedad", "Doença", "المرض", "Недуг"],
+  // Zorunlu / isteğe bağlı ayrımı (radikal sonuçlar planı, aşama 2)
+  "flow.secimBekliyor": ["SEÇİM BEKLİYOR", "AWAITS A CHOICE", "ESPERA DECISIÓN", "AGUARDA ESCOLHA", "بانتظار القرار", "ЖДЁТ ВЫБОРА"],
+  "home.istegeBagli": ["yapmasan da olur", "optional", "opcional", "opcional", "اختياري", "по желанию"],
 };
 export const HISSIYAT_METIN = Object.fromEntries((["tr", "en", "es", "pt", "ar", "ru"] as Lang[]).map((lang, i) => [lang, Object.fromEntries(Object.entries(rows).map(([key, values]) => [key, values[i]]))])) as Record<Lang, Record<string, string>>;

@@ -4,6 +4,8 @@ export interface MonthScene {
   id: string; turn: number; generation: number; kind: "senlik" | "ikilem" | "orta" | "firsat" | "kapi" | "bos"; done: boolean;
   dilemma?: Omit<Dilemma, "when">; opp?: Opportunity;
   stage?: "intro" | "play" | "result"; success?: boolean;
+  // Çözülen kararın izi (radikal sonuçlar planı, aşama 2): ana sayfa seçilen yolu ve GERÇEKLEŞEN etkiyi aynı yerde gösterir.
+  secim?: { id: string; i: number; label: string; etki: Record<string, number> };
 }
 export function pendingMonthScene(s: GameState): MonthScene | undefined {
   const m = s.monthScene;
@@ -15,7 +17,9 @@ export function repairMonthScene(raw: unknown, s: GameState): MonthScene | undef
   const m = raw as MonthScene;
   if (m.turn !== s.turn || m.generation !== (s.player.generation || 1) || m.id !== `month:${m.generation}:${m.turn}` || !["senlik", "ikilem", "orta", "firsat", "kapi", "bos"].includes(m.kind) || typeof m.done !== "boolean") return undefined;
   const base: MonthScene = { id: m.id, turn: m.turn, generation: m.generation, kind: m.kind, done: m.done };
-  if (m.done) return base;
+  const secim = m.secim;
+  if (m.done) return secim && typeof secim.id === "string" && Number.isInteger(secim.i) && typeof secim.label === "string" && secim.label.length <= 400
+    && !!secim.etki && typeof secim.etki === "object" && Object.values(secim.etki).every(Number.isFinite) ? { ...base, secim } : base;
   const text = (v: unknown) => typeof v === "string" && v.length <= 8000;
   const delta = (v: unknown): boolean => !!v && typeof v === "object" && !Array.isArray(v) && Object.entries(v).every(([k, val]) => k === "nam" ? !!val && typeof val === "object" && Object.values(val).every(Number.isFinite) : ["addItem", "veraset"].includes(k) ? text(val) : k === "marry" ? typeof val === "boolean" : typeof val === "number" && Number.isFinite(val));
   if (["senlik", "ikilem", "orta"].includes(m.kind)) {
