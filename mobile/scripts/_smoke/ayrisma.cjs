@@ -23,6 +23,7 @@ function politika(ad, rng) {
     if (ad === "hep1") return Math.min(1, n - 1);
     if (ad === "son") return n - 1;
     if (ad === "rastgele") return Math.floor(rng() * n);
+    if (tur === "kirilma") { const T = { iyi: { teklif: 1, ikinci: 1, haber: 1, alacakli: 0 }, kotu: { teklif: 0, ikinci: 0, haber: 0, alacakli: 2 }, acgoz: { teklif: 0, ikinci: 0, haber: 1, alacakli: 2 } }[ad]; if (T) return Math.min(n - 1, T[ctx] ?? 0); }
     if (ad === "iyi" || ad === "kotu") {
       if (tur === "dilemma") { const sc = ctx.map((c) => ahlak(c.gercek || c.delta)); let bi = 0; for (let i = 1; i < n; i++) if (ad === "iyi" ? sc[i] > sc[bi] : sc[i] < sc[bi]) bi = i; return bi; }
       return ad === "iyi" ? 0 : n - 1;
@@ -66,6 +67,7 @@ function hayat(tohum, polAd, opts = {}) {
       let dokundu = false;
       const m = ms.pendingMonthScene(s);
       if (m?.dilemma) { const i = pick("dilemma", m.dilemma.choices.length, m.dilemma.choices); s = ms.chooseMonthDilemma(s, m.id, i); iz.kart++; iz.secim += i; dokundu = true; }
+      else if (m?.kir) { const i = pick("kirilma", 3, m.kir.tip); s = ms.chooseMonthKirilma(s, m.id, i); iz.kart++; dokundu = true; }
       else if (m?.opp) { const i = pick("opp", 2); iz.kart++; if (i === 0) { s = ms.progressMonthOpportunity(s, m.id, "play"); s = ms.progressMonthOpportunity(s, m.id, "result", rng() < 0.55); s = ms.resolveMonthOpportunity(s, m.id); } else s = ms.resolveMonthOpportunity(s, m.id, true); dokundu = true; }
       if (s.npcTeklif && s.npcTeklif.turn === s.turn) { const i = pick("teklif", 2); const s2 = g.npcTeklifYanit(s, i === 0, i === 0 ? 0 : 1); if (s2 !== s) { s = s2; iz.kart++; dokundu = true; } }
       if (s.hesap) { const i = pick("hesap", 2); s = g.hesapKarari(s, i === 1); dokundu = true; }
@@ -97,7 +99,7 @@ function hayat(tohum, polAd, opts = {}) {
     tohum, pol: polAd, olu: !!p.dead, yas: p.age, servet: servet(s), para: Math.round(p.money), itibar: p.reputation, seref: p.honor, sohret: p.fame, korku: p.fear,
     unvan: pr ? g.careerTier(pr, g.kariyerXp(p)) : 0, kademe: g.kademeOf(p), meslek: p.profession, evlendi: iz.evlendi, evlat: (p.children || []).length,
     yasayanEvlat: g.yasayanEvlatAdlari(s).length, sehir: p.location_name, dogum: s.player && iz.sehirler.size, zindan: iz.zindan, hasim: iz.maxHasim, varis, kart: iz.kart,
-    mulk: (p.properties || []).length, nam: p.nam ? Object.entries(p.nam).filter(([, v]) => v >= 20).map(([k]) => k).join("+") : "", doy: iz.doy || {}, y55: iz.y55 || {}, y80: iz.y80 || {}, y40: iz.y40, olumNedeni: (s.history.filter((e) => /^evj\.die/.test(e.k || "")).pop() || {}).k || "",
+    mulk: (p.properties || []).length, kir: (p.kirilmalar || []).map((k) => k.id === "ortaklik" ? "ort:" + k.yol + (k.ikinci ? "2" : "") : k.id).join("+"), nam: p.nam ? Object.entries(p.nam).filter(([, v]) => v >= 20).map(([k]) => k).join("+") : "", doy: iz.doy || {}, y55: iz.y55 || {}, y80: iz.y80 || {}, y40: iz.y40, olumNedeni: (s.history.filter((e) => /^evj\.die/.test(e.k || "")).pop() || {}).k || "",
   };
   Math.random = ORJ;
   return out;
@@ -120,5 +122,7 @@ if (require.main === module) {
       f(med(r.map((x) => x.mulk))), Math.round(100 * r.filter((x) => x.evlendi).length / Math.max(1, r.length)), eks.length ? Math.round(100 * eks.filter((x) => x.evlendi).length / eks.length) : "-",
       r.reduce((a, x) => a + x.zindan, 0), r.reduce((a, x) => a + x.hasim, 0)].join(" | "));
   }
+  { const kr = sonuc.filter((x) => x.kir); const say = (re) => sonuc.filter((x) => re.test(x.kir || "")).length;
+    console.log(`kırılma: ortaklık teklifi ${kr.length}/${sonuc.length} hayat · büyük ${say(/ort:buyuk/)} · küçük ${say(/ort:kucuk/)} · ret ${say(/ort:ret/)} · satıldı ${say(/ort:satti/)} · tüccar ${say(/tuccar/)} · kâtip ${say(/katip/)} · kaçak ${say(/kacak/)} · ikinci şans ${say(/2/)}`); }
   if (ozet.aktif && ozet.hep0 && ozet.hep0.servet) console.log("etkin/pasif servet oranı:", (ozet.aktif.servet / ozet.hep0.servet).toFixed(1) + "×");
 }

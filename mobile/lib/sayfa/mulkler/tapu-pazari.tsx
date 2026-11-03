@@ -5,7 +5,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { MULK_YAS, PROPERTY_TYPES, buyProperty, mulkSarti, propAlimTahmini, propBuyCost, type GameState } from "../../game";
 import { placeName } from "../../locale-data";
 import { mulkImage } from "../../assets";
-import { useI18n, applyParams } from "../../i18n";
+import { useI18n, applyParams, renderEvt } from "../../i18n";
 import { hap } from "../../haptics";
 import { playCoin } from "../../sound";
 import { useSadeMod } from "../../use-sade-mod";
@@ -42,7 +42,8 @@ function TapuKarti({ id, state, apply, delay }: { id: string; state: GameState; 
       <Akce value={ta.aylik} sign lang={lang} size={15} tone={ta.aylik >= 0 ? C.sage : C.blood} suffix={t("mulkler.ay")} rtl={rtl} />
       {ta.yil != null && <Satir icon="hourglass" text={applyParams(t("mulk.geriOdeme"), [ta.yil], lang)} rtl={rtl} />}
       <Satir icon="iliskiler" text={applyParams(t("mulkler.slots"), [PROPERTY_TYPES[id].slots], lang)} rtl={rtl} />
-      {!sart.ok && <Satir icon="medal" text={applyParams(t("mulk.sart"), [sart.itibar, sart.unvan + 1], lang)} tone={C.ember} rtl={rtl} />}
+      {sart.kapi ? <Satir icon="scroll" text={renderEvt(`kir.kapi.${sart.kapi.id}`, "", [sart.kapi.yas, sart.kapi.kalan ?? 0], lang, t, p.gender === "kadın")} tone={C.ember} rtl={rtl} />
+        : !sart.ok && <Satir icon="medal" text={applyParams(t("mulk.sart"), [sart.itibar, sart.unvan + 1], lang)} tone={C.ember} rtl={rtl} />}
       <View style={{ flexGrow: 1, minHeight: 4 }} />
       <Plaka primary icon="scroll" label={t("mulkler.buy")} cost={cost} costTone={short ? C.blood : undefined} lang={lang} rtl={rtl} disabled={!can}
         a11y={`${t("mulkler.buy")}: ${name}, ${fmt(cost, lang)}`} onPress={() => { hap("success"); playCoin(); apply((s) => buyProperty(s, id)); }} />

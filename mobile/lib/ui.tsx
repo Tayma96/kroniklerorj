@@ -152,12 +152,13 @@ const MILESTONE_LABEL: Record<string, { tag: string; icon: string }> = {
   cirak: { tag: "Peştamal Töreni", icon: "graduate-cap" },
   pabuc: { tag: "Pabucun Dama Atıldı", icon: "boot" },
   suç: { tag: "Zindan", icon: "prisoner" }, suç_yakalandı: { tag: "Yakalandın", icon: "prisoner" }, taht_basarisiz: { tag: "Taht Elden Kaçtı", icon: "crown" },
+  ortaklik: { tag: "Büyük Ortaklık", icon: "scales" }, iflas: { tag: "Kervan Battı", icon: "coins" }, alacakli: { tag: "Alacaklı Kapıda", icon: "scroll" }, katip_bitti: { tag: "Borç Kapandı", icon: "scroll-open" },
   nemesis: { tag: "Hasım", icon: "skull" }, kan_davası: { tag: "Kan Davası", icon: "skull" }, kan_defteri: { tag: "Kan Defteri", icon: "book" },
   entrika: { tag: "Entrika", icon: "hood" }, ocak_savasi: { tag: "Ocak Savaşı", icon: "crossed-swords" }, saglik: { tag: "Hastalık", icon: "healing" },
 };
 // Kötü ve ağır haber (plan aşama 0, Task 1): kutlama efekti yok; kötü olanda kan kırmızısı, ağır olanda köz rengi vurgu.
-export const KOTU_TUR = new Set(["ölüm", "pabuc", "suç", "suç_yakalandı", "taht_basarisiz"]);
-export const AGIR_TUR = new Set([...KOTU_TUR, "nemesis", "kan_davası", "kan_defteri", "entrika", "ocak_savasi", "saglik"]);
+export const KOTU_TUR = new Set(["ölüm", "pabuc", "suç", "suç_yakalandı", "taht_basarisiz", "iflas"]);
+export const AGIR_TUR = new Set([...KOTU_TUR, "nemesis", "kan_davası", "kan_defteri", "entrika", "ocak_savasi", "saglik", "alacakli"]);
 
 const MS_ACCENT: Record<string, string> = {
   doğum: C.ink, dogum: C.ink, evlilik: C.rose, kariyer_terfi: C.gold, başarım: C.gold,

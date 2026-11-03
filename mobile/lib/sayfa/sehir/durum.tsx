@@ -7,7 +7,7 @@ import { GameButton } from "../../ui";
 import { GameIcon } from "../../icons";
 import { hap } from "../../haptics";
 import { playTap } from "../../sound";
-import { asayisOf, cityFx, cityEconomy, publicPerception, locEventsAt, LOC_EVENT_TYPES, worksOf, iltizamCost, buyIltizam, ILTIZAM_SOHRET } from "../../game";
+import { asayisOf, cityFx, cityEconomy, publicPerception, locEventsAt, LOC_EVENT_TYPES, worksOf, iltizamCost, buyIltizam, iltizamAcik } from "../../game";
 import { C, F } from "../../theme";
 import { SPanel, SPanelHeader, Gauge, Bar, Medallion, SK } from "./parcalar";
 
@@ -114,7 +114,7 @@ export function IltizamPaneli() {
   const { state, apply } = useGame(), { t, lang } = useI18n();
   if (!state) return null;
   const p = state.player, rtl = lang === "ar";
-  if (!(p.age >= 25 && p.fame >= ILTIZAM_SOHRET)) return null;
+  if (!(p.age >= 25 && iltizamAcik(state))) return null; // tüccar hâli (Büyük Ortaklık) şöhret şartını kaldırır
   const active = (p.iltizam_until ?? 0) > state.turn;
   const ic = iltizamCost(state), can = p.money >= ic && !p.dead;
   const align = rtl ? "right" as const : "left" as const;
