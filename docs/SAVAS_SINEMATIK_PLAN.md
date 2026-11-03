@@ -21,7 +21,8 @@ Oyun metin tabanlı kalır. **Altın kural:** oyuncu karar verir → oyun hesapl
 
 ## Kaynaklar (ücretsiz, ticari serbest, yapay zekâ yok)
 MPFB/MakeHuman gövde, Poly Haven/ambientCG CC0 doku ve HDRI, CMU hareket kaydı, Quaternius Universal Animation
-Library (CC0). Mixamo yok (bilgisayar yok); gerekirse ileride bir bilgisayardan eklenebilir.
+Library (CC0). Mixamo (3 Kasım): Berkay kendi hesabından indirir, `k09_mixamo.py` piyadeye aktarır; ham FBX depoya
+girmez. Eşyaya göre hareket setleri `docs/SAVAS_HAREKET_HARITASI.md`.
 
 ## Yüzleşme katmanı (kuruldu, 2 Kasım)
 - `lib/yuzlesme.ts` (saf çözücü), `game.ts` `applyYuzlesme` (kavgasız kapanış: söz / haraç / kaçış / kaçış bedeli),
