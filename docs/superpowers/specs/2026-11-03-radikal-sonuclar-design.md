@@ -119,6 +119,20 @@ Berkay'ın sözleriyle:
 - **Ters teşvik:** iyi hayatlar ortalama 53,6, kötüler 65,6 yıl yaşıyor; en ahlaklı seçeneklerin toplam sağlık bedeli −63, en ahlaksızlarınki +8. n=8, daha çok tohumla doğrulanmalı, ama "iyilik ömrü kısaltıyor, kötülük bedelsiz" pusulanın 7. kuralıyla çelişiyor.
 - **Asıl güç menüde, kartlarda değil:** mülk alan "etkin" bot 55 kat zengin; bu da sınırsız bileşik kira (bir farm) ve yine hayatın şeklini değiştirmiyor.
 
+**Aşama 0–2 sonrası ölçüm (3 Kasım, `npm run olc:ayrisma`, 8 tohum, medyan yaş; "–" = ulaşılmadı):**
+
+| politika | itibar 55 | itibar 80 | itibar 100 | şeref 55 | şeref 80 | şöhret 55 | şöhret 100 | servet | evli (itibar<0) |
+|---|---|---|---|---|---|---|---|---|---|
+| hep ilk seçenek | 24 (önce 16) | 44 | – (önce 19) | 27 | 45 | 37 | – (önce 32) | 3.378 | – |
+| rastgele (karma) | 43 | – | – | 37 | – | 42 | – | 3.321 | – |
+| hep iyi | 21 (önce 13) | 36 | 62 (önce 17) | 17 | 31 | 40 | – (önce 39) | 3.020 | – |
+| hep kötü | – | – | – | – | – | 40 | – | 2.640 | %0 (önce %100) |
+| etkin (menüleri kullanan) | 22 | 36 | 51 | 23 | 44 | 34 | 72 | 30.350 (önce 225.686) | – |
+
+Etkin/pasif servet oranı 9,0× (önce 74×). Kural: ün kazancı kademe başına oranla (`unKazanc`: 0–10 tam, 10–30 %75,
+30–55 %33, 55–80 %18, 80+ %10; 16 yaş altında itibar/şöhret yarı), her yeni mülk %15 pahalı, 5–20 bin vergi boşluğu %3,
+itibarı eksi olana görücü gelmez.
+
 **Düzleştiriciler (21 madde, başlıcaları):**
 - Sert tavanlar: itibar ±100, öbür eksenler 0–100; 155 noktada `Math.min(100, …)`.
 - Artışların %68'i ≤3 puan; 167 kartta bir seçeneğin en büyük itibar etkisi medyanı 2, ≥10 olan yok.

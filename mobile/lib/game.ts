@@ -90,6 +90,7 @@ export interface Player {
   club?: string; teacherBond?: number; // mektep kulübü (haftalık pasif XP) + hoca bağı
   club_standing?: number; last_club_turn?: number; club_grad?: string; // kulüp itibarı + aylık meşk kapısı + mezun olunan kulüp
   duzen?: { kapali?: boolean; tarz?: WorkStyle };
+  un_kalan?: Partial<Record<"reputation" | "honor" | "fame" | "fear", number>>; // ün kazancı küsuru (azalan getiri; eski kayıtta yok)
   horse?: boolean; horse_name?: string; // bir atın var mı + adı (hızlı/güvenli "at ile" yolculuğu açar; yolda kaybedilebilir)
   child_acts?: Partial<Record<"oyun" | "yardim" | "yaramazlik" | "kesif", number>>; childhood?: string; // çocukluk eğilim sayacı + reşitlikte belirlenen çocukluk karakteri
   tanistir?: { id: string; until: number }; // tanıdığın tanıştırdığı kişi (açık hesaplarda 12 ay; vârise geçmez)
@@ -288,7 +289,9 @@ export const PROPERTY_TYPES: Record<string, { name: string; icon: string; cost: 
   degirmen: { name: "Değirmen", icon: "anvil", cost: 18000, income: 210, slots: 4 },
 };
 // Güncel alış bedeli = nominal × enflasyon (geç-oyunda mülk pahalanır → nakit erir, değer korunur).
-export function propBuyCost(s: GameState, type: string): number { return Math.round((PROPERTY_TYPES[type]?.cost || 0) * inflationFactor(s)); }
+// Her yeni mülk %15 daha pahalı (radikal sonuçlar planı, aşama 1): kira bileşik büyüyüp tek doğru hamle olmasın
+// (ölçüm: mülk alan oyuncu 74× zengin). Var olan mülk etkilenmez; yalnız sonraki alım.
+export function propBuyCost(s: GameState, type: string): number { return Math.round((PROPERTY_TYPES[type]?.cost || 0) * inflationFactor(s) * (1 + 0.15 * s.player.properties.length)); }
 // Bir konumdaki (bölge) sahip olunan mülk sayısı — kademeli yerleşim kurma şartı.
 export function propsInLoc(s: GameState, loc: string): number { return s.player.properties.filter((pr) => pr.loc === loc).length; }
 // Aylık yaşam gideri (gerçek hayat filtresi): hane masrafı + mülk/yerleşim bakımı + servete göre
@@ -315,6 +318,7 @@ export function lifestyleUpkeep(s: GameState): number {
   // %10 → pasif ~3.4k (bir ev/tarla alır, dükkân alamaz), usta/etkin oyuncu açıkça önde kalır.
   const b0 = 1500 * inf;
   if (w > b0) annual += (Math.min(w, b1) - b0) * 0.10;
+  if (w > b1) annual += (Math.min(w, b2) - b1) * 0.03; // 5–20 bin arası vergi boşluğu kapandı (aşama 1)
   if (w > b2) annual += (Math.min(w, b3) - b2) * 0.06;
   if (w > b3) annual += (w - b3) * 0.10;
   u += annual / 12;
@@ -360,7 +364,7 @@ export function repay(prev: GameState, amount: number): GameState {
     // aynı turda al-öde döngüsüyle bedava itibar pompalanamaz.
     const carried = p.loan_turn !== undefined && s.turn - p.loan_turn >= 3 && amt >= 100; // itibar yalnız gerçek faiz bedeli ödenmişse: ≥100 akçe borç ≥3 ay taşınıp kapanınca (1 akçelik borçla bedava itibar pompalanamaz)
     p.debt = 0; p.loan_turn = undefined;
-    if (carried) p.reputation = Math.min(100, p.reputation + 2);
+    if (carried) unEkle(p, "reputation", 2);
     push(s, "ticaret", `Borcunu tümüyle kapattın; sarraf defterini sildi, sözün yeniden geçer oldu (+itibar).`, "kişisel", true, { k: "evj.repayFull" });
   } else {
     push(s, "ticaret", `Borcuna ${amt} akçe ödedin; kalan borç ${p.debt} akçe.`, "kişisel", false, { k: "evj.repay", p: [amt, p.debt] });
@@ -405,7 +409,7 @@ export function giveZekat(prev: GameState): GameState {
   if (!zekatAvailable(s)) return s;
   const z = zekatDue(s); p.money -= z; p.last_zekat = s.turn;
   bumpNam(p, "dindar", 5); bumpNam(p, "comert", 5);
-  p.reputation = Math.min(100, p.reputation + 3); p.fame = Math.min(100, p.fame + 1);
+  unEkle(p, "reputation", 3); unEkle(p, "fame", 1);
   { const zv2 = chance(0.5); push(s, "bagis", zv2 ? `Kesenin hakkı ayrıldı: ${z} akçe yoksulun avucuna aktı; dualar kapına birikti.` : `Malının zekâtını verdin (${z} akçe yoksula); gönlün ferahladı, eli açık diye anıldın.`, "kişisel", true, { k: zv2 ? "evj.zekat2" : "evj.zekat", p: [z] }); }
   return s;
 }
@@ -450,7 +454,7 @@ export function siraGunu(prev: GameState): GameState {
   p.sira_gunu_year = yil;
   const adet = bags.reduce((acc, pr) => acc + (pr.level || 1), 0);
   p.inventory.sarap = (p.inventory.sarap || 0) + adet;
-  p.reputation = Math.min(100, p.reputation + 2);
+  unEkle(p, "reputation", 2);
   if (p.married && p.spouse_bond !== undefined) p.spouse_bond = Math.min(100, p.spouse_bond + 2);
   push(s, "gunluk", `Şıra günü: bağda salkımlar sıkıldı, ayaklar mora boyandı; küpe ${adet} testi şarap girdi, komşular türküyle döndü.`, "kişisel", false, { k: "evj.siraGunu", p: [adet] });
   return s;
@@ -884,7 +888,7 @@ function ebeveynVefat(s: GameState, rol: "anne" | "baba") {
   const p = s.player;
   if (rol === "anne") p.mother_dead = true; else p.father_dead = true;
   const k = (rol === "anne" ? p.mother_id : p.father_id); const bond = parentBondOf(s, k);
-  p.health = Math.max(1, p.health - (3 + Math.round(bond / 20))); bumpNam(p, "dindar", 2); p.reputation = Math.min(100, p.reputation + 1); // acı, o ebeveynle bağın derinliğine oranlı
+  p.health = Math.max(1, p.health - (3 + Math.round(bond / 20))); bumpNam(p, "dindar", 2); unEkle(p, "reputation", 1); // acı, o ebeveynle bağın derinliğine oranlı
   const kk = k && s.pop ? nufusHazirla(s).k[k] : undefined;
   if (kk && kk.ol == null) { kk.ol = worldYears(s); nufusDegisti(s.pop!); }
   if (rol === "anne") push(s, "kader", `Annen ${p.mother} Hakk'ın rahmetine kavuştu; çocukluğunun bir direği daha gitti.`, "kişisel", true, { k: "evj.motherDied", p: [ebeveynParam(s, "anne")] });
@@ -1049,7 +1053,7 @@ function npcLifeTick(s: GameState) {
     if (!k.gh || k.gd || k.ol != null || Math.random() >= 0.35) continue;
     k.gd = true;
     s.relationships[k.id] = Math.min(100, (s.relationships[k.id] || 0) + 10);
-    p.reputation = Math.min(100, p.reputation + 2);
+    unEkle(p, "reputation", 2);
     push(s, "dunya_olayi", `${kisiAdi(k, "tr")} yıllardır kovaladığı hayaline kavuştu — senin desteğinle. Adın hayır duayla anılıyor.`, "kişisel", true, { k: "npclife.goalDone", p: [knParam(k), { goald: hayalOf(k) }] });
     break; // yılda en çok bir murat haberi
   }
@@ -1494,7 +1498,7 @@ export function npcTeklifYanit(prev: GameState, kabul: boolean, secim?: 0 | 1): 
     const kk = (key: string) => (k.g === "kadın" ? key + ".k" : key); const kf = kfParam(k); const tutar = t.tutar || 0;
     const yardim = t.tur === "kardes";
     if (kabul && p.money >= tutar) {
-      p.money -= tutar; remember(s, { id: t.id, name: nm }, yardim ? "yardim" : "soz_tutma"); bumpNam(p, "comert", yardim ? 2 : 1); p.honor = Math.min(100, p.honor + 1);
+      p.money -= tutar; remember(s, { id: t.id, name: nm }, yardim ? "yardim" : "soz_tutma"); bumpNam(p, "comert", yardim ? 2 : 1); unEkle(p, "honor", 1);
       push(s, "sohbet", yardim ? `Kardeşin ${nm} için kesenden ${tutar} akçe çıktı; gözleri doldu.` : `Mirası kardeşin ${nm} ile paylaştın (${tutar} akçe); kan bağı akçeden ağır geldi.`, "kişisel", false, { k: kk(yardim ? "npct.kardesVer" : "npct.mirasVer"), p: [kf, tutar] });
     } else if (!kabul) {
       remember(s, { id: t.id, name: nm }, yardim ? "yuz_cevirme" : "miras_kavgasi");
@@ -1506,7 +1510,7 @@ export function npcTeklifYanit(prev: GameState, kabul: boolean, secim?: 0 | 1): 
     if (!kabul) { s.relationships[t.id] = Math.max(-100, (s.relationships[t.id] || 0) - 6); push(s, "sohbet", `${nm} ailesinin dünür teklifini geri çevirdin.`, "kişisel", false, { k: "npct.dunurRed", p: [kp] }); return s; }
     if (p.married || p.betrothed || k.es) return s;
     p.married = true; p.married_turn = s.turn; p.spouse_bond = Math.max(40, Math.min(80, Math.round(relWith(s, t.id)))); p.widowed = false;
-    oyuncuEvlenKisi(s, k); p.reputation = Math.min(100, p.reputation + 5);
+    oyuncuEvlenKisi(s, k); unEkle(p, "reputation", 5);
     push(s, "evlilik", `${nm} ile evlendin — yeni bir ocak kuruldu.`, "kişisel", true, { k: "evj.marryNpc", p: [esParam(s)] });
     return s;
   }
@@ -1648,13 +1652,13 @@ function kapiYaniti(s: GameState, t: NonNullable<GameState["npcTeklif"]>, k: Kis
   }
   if (t.tur === "canborcu") { // can borcu: keseyi alırsan hesap kapanır; "borcun yok" dersen ömürlük minnet
     if (kabul) { p.money += tutar; push(s, "nemesis", `${nm} getirdiği ${tutar} akçeyi aldın; can borcu ödendi.`, "kişisel", false, { k: "npct.canborcuAl", p: [kp, tutar] }); }
-    else { an(k, "yardim"); s.relationships[k.id] = Math.min(100, Math.max(30, (s.relationships[k.id] || 0) + 15)); p.honor = Math.min(100, p.honor + 2); bumpNam(p, "mert", 2);
+    else { an(k, "yardim"); s.relationships[k.id] = Math.min(100, Math.max(30, (s.relationships[k.id] || 0) + 15)); unEkle(p, "honor", 2); bumpNam(p, "mert", 2);
       push(s, "nemesis", `${nm} getirdiği keseyi geri çevirdin: "Borcun yok."`, "kişisel", true, { k: "npct.canborcuHelal", p: [kp] }); }
     return;
   }
   if (t.tur === "helal") { // kendisi helallik istemeye geldi: kabul edersen kırgınlık solar; ölüm döşeğindekini geri çevirmek ocağına da yazılır
     const ns = npcStateOf(s, k.id); const olum = t.alt === "olum";
-    if (kabul) { aniHafiflet(ns, m => m.yuk < 0, .3); an(k, "helallik"); p.honor = Math.min(100, p.honor + 2); bumpNam(p, "dindar", 1);
+    if (kabul) { aniHafiflet(ns, m => m.yuk < 0, .3); an(k, "helallik"); unEkle(p, "honor", 2); bumpNam(p, "dindar", 1);
       push(s, "sohbet", `${nm} ile helalleştin.`, "kişisel", olum, { k: olum ? "npct.helalOldu" : "npct.helalBayramOldu", p: [kp] }); }
     else if (olum) { an(k, "yuz_cevirme"); for (const c of k.cocuk || []) { const ck = pop.k[c]; if (ck && ck.ol == null) an(ck, "tatsiz_konu"); }
       push(s, "sohbet", `${nm} helallik istedi; gitmedin.`, "kişisel", false, { k: "npct.helalGitme", p: [kp] }); }
@@ -1667,7 +1671,7 @@ function kapiYaniti(s: GameState, t: NonNullable<GameState["npcTeklif"]>, k: Kis
     if (!n || !e || e.ol != null || n.id !== e.id || p.money < tutar) return; // hasım o arada değiştiyse ya da kese yetmiyorsa düşer
     p.reconcile_turn = s.turn;
     if (Math.random() * 100 < araciSansi(s)) {
-      p.money -= tutar; s.story!.nemesis = null; p.honor = Math.min(100, p.honor + 3); bumpNam(p, "dindar", 1);
+      p.money -= tutar; s.story!.nemesis = null; unEkle(p, "honor", 3); bumpNam(p, "dindar", 1);
       const ns = npcStateOf(s, e.id); aniHafiflet(ns, m => m.tur === "kan", .5);
       an(e, "diyet"); s.relationships[e.id] = Math.max(-20, s.relationships[e.id] || 0); an(k, "icten_sohbet");
       push(s, "kan_davası", `${nm} aracılığıyla ${kisiAdi(e, "tr")} diyeti kabul etti; kan davası kapandı.`, "kişisel", true, { k: "npct.araciOk", p: [kp, knParam(e), tutar] });
@@ -1680,9 +1684,9 @@ function kapiYaniti(s: GameState, t: NonNullable<GameState["npcTeklif"]>, k: Kis
   if (t.tur === "mahkeme") { // adalet mi şeref mi: hükme razı olan davayı kapatır (nam artar, şeref biraz iner); reddeden şerefini kollar, ateş harlanır
     const f = s.feud; if (!f || f.houseId !== t.sebep) return; // dava o arada kapandıysa düşer
     const h = ensureRivals(s).find((x) => x.id === f.houseId); const yer: EvtParam = { pl: p.location_name }; const hn: EvtParam = { hn: f.nameIdx };
-    if (kabul) { s.feud = null; if (h) h.tutum = -30; p.honor = Math.max(0, p.honor - 3); p.reputation = Math.min(100, p.reputation + 3); s.relationships[k.id] = Math.min(100, (s.relationships[k.id] || 0) + 2);
+    if (kabul) { s.feud = null; if (h) h.tutum = -30; p.honor = Math.max(0, p.honor - 3); unEkle(p, "reputation", 3); s.relationships[k.id] = Math.min(100, (s.relationships[k.id] || 0) + 2);
       push(s, "kan_davası", `${p.location_name} kadısı hükmünü verdi; dava kapandı.`, "kişisel", true, { k: "npct.mahkemeOk", p: [kp, yer, hn] }); }
-    else { p.honor = Math.min(100, p.honor + 2); f.heat = Math.min(100, f.heat + 6); bumpNam(p, "mert", 1);
+    else { unEkle(p, "honor", 2); f.heat = Math.min(100, f.heat + 6); bumpNam(p, "mert", 1);
       push(s, "kan_davası", `Kadının davetini geri çevirdin; hesabını kendin göreceksin.`, "kişisel", false, { k: "npct.mahkemeRed", p: [kp, yer, hn] }); }
     return;
   }
@@ -1715,7 +1719,7 @@ function kapiYaniti(s: GameState, t: NonNullable<GameState["npcTeklif"]>, k: Kis
     return;
   }
   if (t.tur === "imece") { // bir günün gider, yorulursun; komşunun minneti kalır (gitmemek göze batar)
-    if (kabul) { p.hunger = Math.max(0, p.hunger - 20); p.health = Math.max(1, p.health - 2); an(k, "yardim"); p.reputation = Math.min(100, p.reputation + 1); push(s, "sohbet", `${nm} imecesinde akşama dek çalıştın.`, "kişisel", false, { k: "npct.imeceGit", p: [kp] }); }
+    if (kabul) { p.hunger = Math.max(0, p.hunger - 20); p.health = Math.max(1, p.health - 2); an(k, "yardim"); unEkle(p, "reputation", 1); push(s, "sohbet", `${nm} imecesinde akşama dek çalıştın.`, "kişisel", false, { k: "npct.imeceGit", p: [kp] }); }
     else { an(k, "rahatsizlik"); push(s, "sohbet", `${nm} imecesine katılmadın.`, "kişisel", false, { k: "npct.imeceGitme", p: [kp] }); }
     return;
   }
@@ -1730,7 +1734,7 @@ function kapiYaniti(s: GameState, t: NonNullable<GameState["npcTeklif"]>, k: Kis
     const w = secim === 0 ? k : b; const l = secim === 0 ? b : k;
     an(w, "hakem_lehte"); an(l, "hakem_aleyhte");
     if (huyGrubu(huyOf(l)) === "ilkeli") { const m = npcStateOf(s, l.id).anilar?.slice(-1)[0]; if (m && m.tur === "hakem_aleyhte") aniHafiflet(npcStateOf(s, l.id), x => x === m, .5, true); } // ilkeli olan hakem kararına boyun eğer
-    if ((t.hakli ?? 0) === secim) { p.honor = Math.min(100, p.honor + 2); p.reputation = Math.min(100, p.reputation + 2); push(s, "sohbet", `${kisiAdi(w, "tr")} lehine karar verdin; haklıydı.`, "kişisel", false, { k: "npct.hakemHakli", p: [knParam(w), knParam(l)] }); }
+    if ((t.hakli ?? 0) === secim) { unEkle(p, "honor", 2); unEkle(p, "reputation", 2); push(s, "sohbet", `${kisiAdi(w, "tr")} lehine karar verdin; haklıydı.`, "kişisel", false, { k: "npct.hakemHakli", p: [knParam(w), knParam(l)] }); }
     else { p.honor = Math.max(0, p.honor - 2); p.reputation = Math.max(-100, p.reputation - 2); push(s, "sohbet", `${kisiAdi(w, "tr")} lehine karar verdin; haklı olan öbürüydü.`, "kişisel", false, { k: "npct.hakemHaksiz", p: [knParam(w), knParam(l)] }); }
   }
 }
@@ -1742,8 +1746,8 @@ function kefaletTiki(s: GameState) {
     if (s.turn < a.vade) { kalan.push(a); continue; }
     const k = pop.k[a.id]; const kp: EvtParam = k ? knParam(k) : "";
     const huy = k ? huyOf(k) : ""; const sans = k && k.ol == null ? (["mert", "dindar", "sabırlı", "cömert", "ciddi"].includes(huy) ? 0.85 : ["kurnaz", "hırslı", "aceleci"].includes(huy) ? 0.5 : 0.7) : 0;
-    if (k && Math.random() < sans) { remember(s, { id: k.id, name: kisiAdi(k, "tr") }, "yardim"); p.reputation = Math.min(100, p.reputation + 1); bumpNam(p, "comert", 1); push(s, "sohbet", `Kefil olduğun ${kisiAdi(k, "tr")} borcunu ödedi.`, "kişisel", false, { k: "npct.kefilOdedi", p: [kp, a.tutar] }); }
-    else if (p.money >= a.tutar) { p.money -= a.tutar; p.reputation = Math.min(100, p.reputation + 1); push(s, "sohbet", `Kefil olduğun borç ödenmedi; ${a.tutar} akçeyi sen ödedin.`, "kişisel", true, { k: "npct.kefilOdemedi", p: [kp, a.tutar] }); }
+    if (k && Math.random() < sans) { remember(s, { id: k.id, name: kisiAdi(k, "tr") }, "yardim"); unEkle(p, "reputation", 1); bumpNam(p, "comert", 1); push(s, "sohbet", `Kefil olduğun ${kisiAdi(k, "tr")} borcunu ödedi.`, "kişisel", false, { k: "npct.kefilOdedi", p: [kp, a.tutar] }); }
+    else if (p.money >= a.tutar) { p.money -= a.tutar; unEkle(p, "reputation", 1); push(s, "sohbet", `Kefil olduğun borç ödenmedi; ${a.tutar} akçeyi sen ödedin.`, "kişisel", true, { k: "npct.kefilOdemedi", p: [kp, a.tutar] }); }
     else { p.money = 0; p.reputation = Math.max(-100, p.reputation - 5); p.honor = Math.max(0, p.honor - 3); push(s, "sohbet", `Kefil olduğun borç ödenmedi; sen de ödeyemedin.`, "kişisel", true, { k: "npct.kefilBatti", p: [kp, a.tutar] }); }
   }
   p.kefaletler = kalan.length ? kalan : undefined;
@@ -1841,9 +1845,9 @@ function germinateSeed(s: GameState, t: Seed) {
     return;
   }
   if (t.etki?.money) p.money = Math.max(0, p.money + t.etki.money);
-  if (t.etki?.reputation) p.reputation = Math.max(-100, Math.min(100, p.reputation + t.etki.reputation));
+  if (t.etki?.reputation) unEkle(p, "reputation", t.etki.reputation);
   if (t.etki?.health) p.health = Math.max(1, Math.min(100, p.health + t.etki.health));
-  if (t.kaynak === "ip_d_kadi") p.reputation = Math.max(-100, Math.min(100, p.reputation + (p.reputation >= 0 ? 2 : -2))); // kadının defteri adı olduğu gibi okur
+  if (t.kaynak === "ip_d_kadi") unEkle(p, "reputation", (p.reputation >= 0 ? 2 : -2)); // kadının defteri adı olduğu gibi okur
   if (t.kaynak === "ip_d_kuraklik" && !(s.marketEvent && (s.marketEvent.until ?? 0) > s.turn)) { const ev = MARKET_EVENTS.find((x) => x.key === "kuraklik"); if (ev) s.marketEvent = { goods: ev.goods, mult: ev.mult, until: s.turn + ev.months, key: ev.key }; } // yaşlıların dediği çıkar: kuraklık gerçekten pazara iner
   push(s, "tohum", `Geçmiş kapını çaldı.`, "kişisel", true, { k: ipOdemeAnahtari(s, t), p: [tohumKisi(s, t), p.name] });
   kokuYaz(s, t); // Hissiyat 3: pencere hangi kararın döndüğünü ve ne getirdiğini söyler
@@ -1877,7 +1881,7 @@ function tohumSonucu(s: GameState, t: Seed): boolean {
   s.seeds = (s.seeds || []).filter((x) => x.id !== t.id);
   if (karar === "sol" && t.ip) { push(s, "tohum", `Geçmiş kapını çaldı.`, "kişisel", true, { k: t.kaynak === "velinimet" ? "seed.velinimetFakir" : "ip.sondu", p: [tohumKisi(s, t)] }); if (t.iz != null) s.history[s.history.length - 1].kok = t.iz; return true; } // açık ip sessizce sönmez: söz her durumda sebebiyle kapanır
   if (karar === "sol") return false;
-  if (karar.rep) s.player.reputation = Math.min(100, s.player.reputation + karar.rep);
+  if (karar.rep) unEkle(s.player, "reputation", karar.rep);
   push(s, "tohum", `Geçmiş kapını çaldı.`, "kişisel", false, { k: karar.k, p: [tohumKisi(s, t)] });
   return true;
 }
@@ -1900,7 +1904,7 @@ export function soyYetenekUygula(s: GameState, id?: string, applyStats = true) {
   const y = id ? SOY_YETENEKLERI.find((x) => x.id === id) : undefined; if (!y) return;
   const p = s.player; p.soy_yetenek = y.id;
   if (applyStats) for (const [k, v] of Object.entries(y.stat || {}) as [keyof Stats, number][]) p.stats[k] = Math.max(1, (p.stats[k] || 1) + v);
-  if (y.rep) p.reputation = Math.max(-100, Math.min(100, p.reputation + y.rep));
+  if (y.rep) unEkle(p, "reputation", y.rep);
   if (y.honor) p.honor = clampStat(p.honor + y.honor);
   push(s, "nesil_devri", `Soydan gelen bir yetenek: ${y.id}.`, "kişisel", false, { k: "soy.miras", p: [{ sfx: "soy." + y.id + ".ad" }] });
 }
@@ -1979,11 +1983,11 @@ function izKisi(s: GameState, iz: Iz): { canli: boolean; p: EvtParam } | null {
 }
 // Eğilimin aylık yankısı: karşılıksız, en az 8 aylık en eski iz geri döner. Etki küçük ve eğilime bağlıdır (farm yok: iz başına bir kez).
 const YANKI_ETKI: Record<IzEt, (p: Player) => void> = {
-  comert: (p) => { p.reputation = Math.min(100, p.reputation + 2); },
+  comert: (p) => { unEkle(p, "reputation", 2); },
   hirs: (p) => { p.reputation = Math.max(-100, p.reputation - 2); },
-  durust: (p) => { p.reputation = Math.min(100, p.reputation + 2); p.honor = clampStat(p.honor + 1); },
+  durust: (p) => { unEkle(p, "reputation", 2); p.honor = clampStat(p.honor + 1); },
   hile: (p) => { p.reputation = Math.max(-100, p.reputation - 3); },
-  cesur: (p) => { p.fame = clampStat(p.fame + 1); p.reputation = Math.min(100, p.reputation + 1); },
+  cesur: (p) => { p.fame = clampStat(p.fame + 1); unEkle(p, "reputation", 1); },
   temkin: (p) => { p.health = clampStat(p.health + 2); },
 };
 export function yankiTick(s: GameState) {
@@ -2017,8 +2021,8 @@ function tutarlilik(s: GameState, et: IzEt, haric: number, yay?: string) {
     const eski = ayni.find((x) => !x.ref) || ayni[ayni.length - 1]; const b = izBaslik(eski); if (!b) return;
     if (!yay && Math.random() >= 0.5) return;
     eski.ref = (eski.ref || 0) + 1;
-    if (yay) { p.reputation = Math.min(100, p.reputation + 3); push(s, "yanki", `Kasaba seni tanıdığı yoldan yürürken gördü.`, "kişisel", false, { k: "yanki.arc.tutarli", p: [{ sfx: "arc." + yay + ".t" }, b] }); }
-    else { if (et === "cesur") p.fame = clampStat(p.fame + 1); else if (et === "hile" || et === "hirs") p.reputation = Math.max(-100, p.reputation - 1); else if (et === "temkin") p.health = clampStat(p.health + 1); else p.reputation = Math.min(100, p.reputation + 1);
+    if (yay) { unEkle(p, "reputation", 3); push(s, "yanki", `Kasaba seni tanıdığı yoldan yürürken gördü.`, "kişisel", false, { k: "yanki.arc.tutarli", p: [{ sfx: "arc." + yay + ".t" }, b] }); }
+    else { if (et === "cesur") p.fame = clampStat(p.fame + 1); else if (et === "hile" || et === "hirs") p.reputation = Math.max(-100, p.reputation - 1); else if (et === "temkin") p.health = clampStat(p.health + 1); else unEkle(p, "reputation", 1);
       push(s, "yanki", `Bu ilk değil; kasaba bu huyunu biliyor.`, "kişisel", false, { k: "yanki.tutarli." + et, p: [b] }); }
   } else if (zit.length >= 2 && !ayni.length) {
     const eski = zit.find((x) => !x.ref) || zit[zit.length - 1]; const b = izBaslik(eski); if (!b) return;
@@ -2143,7 +2147,7 @@ export function hatirTick(s: GameState) {
       const para = Math.round((20 + x.guc * 10) * infl); p.money += para;
       push(s, "kan_hafiza", `${kisiAdi(k, "tr")} darda olduğunu duydu; ${para} akçeyle geldi.`, "kişisel", true, { k: "hatir.minnet.para" + ata + kk(k), p: [kp, para, ...ap] });
     } else {
-      p.reputation = Math.min(100, p.reputation + 1 + Math.floor(x.guc / 2));
+      unEkle(p, "reputation", 1 + Math.floor(x.guc / 2));
       push(s, "kan_hafiza", `${kisiAdi(k, "tr")} iyiliğini çarşıda anlattı.`, "kişisel", false, { k: "hatir.minnet.ad." + (x.ata ? "ata" : String((x.t + x.don) % 3)) + kk(k), p: [kp, ...ap] });
     }
     if (x.don >= 2 || !yoksul) hatirSil(s, x); // hatır borcu ödendi (darda kalana iki kez el uzanır, gerisinde bir kez anılır)
@@ -2275,7 +2279,7 @@ function epochTick(s: GameState) {
   s.epochNext = s.turn + 60 + Math.floor(Math.random() * 36);
   const k = rnd(["savas", "salgin", "taht", "altincag"]);
   if (k === "savas") {
-    s.econ = Math.max(0.7, (s.econ || 1) - 0.2); s.player.fear = Math.min(100, s.player.fear + 2);
+    s.econ = Math.max(0.7, (s.econ || 1) - 0.2); unEkle(s.player, "fear", 2);
     if (s.realm) for (const sn of s.realm) sn.tension = Math.min(120, sn.tension + 15); // savaş sancakları kızıştırır
     push(s, "cag", `Çağın gölgesi: diyarı büyük bir savaş sardı; yollar tehlikeli, pazar daraldı.`, "makro", true, { k: "epoch.savas" });
   } else if (k === "salgin") {
@@ -2311,7 +2315,7 @@ function directorTick(s: GameState) {
   } else if (big && tohumSonucu(s, big)) { // doruk anı: kişiye bağlı tohum o kişinin hâline göre sonuçlanır (vefalıysa ödül, unuttuysa hayal kırıklığı)
   } else if (st.nemesis && Math.random() < 0.6) {
     push(s, "doruk", `Husumet doruğa çıktı: ${st.nemesis.name} gölgeden çıkıp üstüne geldi.`, "kişisel", true, { k: "dir.climaxNemesis", p: [nemAd(s, st.nemesis)] });
-    s.player.fear = Math.min(100, s.player.fear + 4);
+    unEkle(s.player, "fear", 4);
     st.nemesis.power += 3;
   } else {
     // Ödenecek olgun ip yoksa jenerik doruk ("talih döndü", "dengeler sarsıldı") YOK: yönetmen bir soru açar ve gerilimi ona bağlar;
@@ -2463,7 +2467,7 @@ export function rumorAction(prev: GameState, rumorId: string, eylem: "yuzles" | 
     if (Math.random() < sans) {
       if (r.duyanlar) { const source = r.duyanlar.find(h => h.id === o.sourceId); if (source) source.sessiz = true; }
       else s.player_rumors = rumors.filter((x) => x.id !== rumorId);
-      p.reputation = Math.min(100, p.reputation + 2); bumpNam(p, "mert", 3);
+      unEkle(p, "reputation", 2); bumpNam(p, "mert", 3);
       push(s, "söylenti", `Kaynak geri adım attı; duyanların hafızası yerinde.`, "kişisel", false, { k: r.duyanlar ? "rum.reply.confront" : "rum.confront.win" });
     } else {
       r.siddet = Math.min(4, r.siddet + 1);
@@ -2475,7 +2479,7 @@ export function rumorAction(prev: GameState, rumorId: string, eylem: "yuzles" | 
     if (r.yon <= 0) return s; // kendi aleyhine lafı yaymak akıl kârı değil
     if (r.yayildi) return s; // aynı söylenti bir kez yayılır — tıkla-itibar farm'ı kapalı
     r.yayildi = true; r.islemTurn = s.turn;
-    r.siddet = Math.min(4, r.siddet + 1); p.reputation = Math.min(100, p.reputation + 1);
+    r.siddet = Math.min(4, r.siddet + 1); unEkle(p, "reputation", 1);
     push(s, "söylenti", `Sözü sen de salladın; namın büyüyor.`, "kişisel", false, { k: "rum.spread.win" });
     return s;
   }
@@ -2833,13 +2837,13 @@ function locEventPersonal(s: GameState) {
     if (e.type === "veba" && chance(0.15)) { const h = 6 + Math.floor(Math.random() * 8); s.player.health = Math.max(1, s.player.health - h); push(s, "saglik", `${e.loc}'deki veba sana da bulaştı; halsiz düştün (−${h} sağlık).`, "kişisel", false, { k: "lev.veba.hit", p: [h] }); }
     else if (e.type === "panayir" && s.player.horse && chance(0.20)) {
       const hn = s.player.horse_name || "";
-      if (Math.random() < Math.min(0.85, 0.4 + effStat(s.player, "stamina") * 0.05)) { const prize = 20 + Math.floor(Math.random() * 21); s.player.money += prize; s.player.races_won = (s.player.races_won || 0) + 1; s.player.fame = Math.min(100, s.player.fame + 3); bumpNam(s.player, "mert", 1); push(s, "gunluk", `${e.loc} panayırında at yarışına girdin; ${hn} tozu dumana kattı, kese ve alkış senin (+${prize} akçe).`, "kişisel", true, { k: "horse.race.win", p: [{ pl: e.loc }, hn, prize] }); }
+      if (Math.random() < Math.min(0.85, 0.4 + effStat(s.player, "stamina") * 0.05)) { const prize = 20 + Math.floor(Math.random() * 21); s.player.money += prize; s.player.races_won = (s.player.races_won || 0) + 1; unEkle(s.player, "fame", 3); bumpNam(s.player, "mert", 1); push(s, "gunluk", `${e.loc} panayırında at yarışına girdin; ${hn} tozu dumana kattı, kese ve alkış senin (+${prize} akçe).`, "kişisel", true, { k: "horse.race.win", p: [{ pl: e.loc }, hn, prize] }); }
       else { s.player.health = Math.max(1, s.player.health - 2); push(s, "gunluk", `${e.loc} panayırındaki yarışta ${hn} son düzlükte kaldı; toz yuttun ama meydan seni tanıdı.`, "kişisel", false, { k: "horse.race.lose", p: [{ pl: e.loc }, hn] }); }
     }
-    else if (e.type === "panayir" && chance(0.30)) { const g = 5 + Math.floor(Math.random() * 10); s.player.money += g; s.player.reputation = Math.min(100, s.player.reputation + 1); push(s, "gunluk", `${e.loc} panayırında eğlendin, biraz da kazandın (+${g} akçe).`, "kişisel", false, { k: "lev.panayir.gain", p: [g] }); }
-    else if (e.type === "dugun" && chance(0.25)) { const g = 4 + Math.floor(Math.random() * 8); s.player.money += g; s.player.reputation = Math.min(100, s.player.reputation + 1); push(s, "gunluk", `${e.loc}'deki düğün sofrasına oturdun; kesene de neşene de düştü (+${g} akçe).`, "kişisel", false, { k: "lev.dugun.gain", p: [g] }); }
+    else if (e.type === "panayir" && chance(0.30)) { const g = 5 + Math.floor(Math.random() * 10); s.player.money += g; unEkle(s.player, "reputation", 1); push(s, "gunluk", `${e.loc} panayırında eğlendin, biraz da kazandın (+${g} akçe).`, "kişisel", false, { k: "lev.panayir.gain", p: [g] }); }
+    else if (e.type === "dugun" && chance(0.25)) { const g = 4 + Math.floor(Math.random() * 8); s.player.money += g; unEkle(s.player, "reputation", 1); push(s, "gunluk", `${e.loc}'deki düğün sofrasına oturdun; kesene de neşene de düştü (+${g} akçe).`, "kişisel", false, { k: "lev.dugun.gain", p: [g] }); }
     else if (e.type === "kuraklik" && chance(0.25)) { s.player.hunger = Math.max(0, s.player.hunger - 6); push(s, "gunluk", `${e.loc}'de kuraklık; karın doyurmak zorlaştı.`, "kişisel", false, { k: "lev.kuraklik.hit" }); }
-    else if (e.type === "yangin" && chance(0.10)) { s.player.fear = Math.min(100, s.player.fear + 3); push(s, "gunluk", `${e.loc}'deki yangın korku saldı.`, "kişisel", false, { k: "lev.yangin.hit" }); }
+    else if (e.type === "yangin" && chance(0.10)) { unEkle(s.player, "fear", 3); push(s, "gunluk", `${e.loc}'deki yangın korku saldı.`, "kişisel", false, { k: "lev.yangin.hit" }); }
   }
 }
 export function econLabel(econ: number): string {
@@ -3023,7 +3027,7 @@ export function saheserYap(prev: GameState, id: string): GameState {
   const s = clone(prev), sec = SAHESERLER.find((x) => x.id === id);
   if (!sec || !saheserYapabilir(s, id)) return s;
   const p = s.player, bedel = saheserBedeli(s);
-  p.money -= bedel; p.fame = Math.min(100, p.fame + 8); p.reputation = Math.min(100, p.reputation + 6); p.honor = Math.min(100, p.honor + 3);
+  p.money -= bedel; unEkle(p, "fame", 8); unEkle(p, "reputation", 6); unEkle(p, "honor", 3);
   const kayit: SaheserKaydi = { ...sec, yapan: p.name, nesil: p.generation, turn: s.turn };
   (s.saheserler = s.saheserler || []).push(kayit);
   push(s, "şaheser", `${p.name}, ömrünün şaheserini tamamladı.`, "kişisel", true, { k: "se.made", p: [p.name, { tq: "se." + id + ".n" }] });
@@ -3122,7 +3126,7 @@ export function applyTemperament(prev: GameState, id: string): GameState {
   if (id === "yigit") { p.stats.strength += 1; p.skill_xp.combat += 60; bumpNam(p, "mert", 10); }
   else if (id === "kurnaz") { p.stats.charisma += 1; p.skill_xp.social += 60; bumpNam(p, "capkin", 6); }
   else if (id === "merhametli") { p.honor = clampStat(p.honor + 8); bumpNam(p, "comert", 12); }
-  else if (id === "hirsli") { p.stats.intelligence += 1; p.reputation = Math.min(100, p.reputation + 5); }
+  else if (id === "hirsli") { p.stats.intelligence += 1; unEkle(p, "reputation", 5); }
   p.skills.combat = skillLevel(p.skill_xp.combat);
   p.skills.social = skillLevel(p.skill_xp.social);
   return s;
@@ -3140,7 +3144,7 @@ export function applyBirthHouse(prev: GameState, id: string): GameState {
   if (id === "koylu") { p.stats.stamina += 1; p.honor = clampStat(p.honor + 4); p.inventory.bugday = (p.inventory.bugday || 0) + 4; if (baba) baba.prof = "çiftçi"; }
   else if (id === "esnaf") { p.money += 30; p.skill_xp.crafting += 50; p.skill_xp.trade += 30; if (baba) baba.prof = s.seed % 2 ? "demirci" : "fırıncı"; }
   else if (id === "hekim") { p.stats.intelligence += 1; p.skill_xp.social += 40; p.honor = clampStat(p.honor + 2); p.money += 8; if (baba) baba.prof = "şifacı"; }
-  else { p.money += 60; p.reputation = Math.min(100, p.reputation + 6); p.fame = Math.min(100, p.fame + 4); p.skill_xp.combat += 40; bumpNam(p, "zalim", 6); if (baba) baba.prof = "asker"; }
+  else { p.money += 60; unEkle(p, "reputation", 6); unEkle(p, "fame", 4); p.skill_xp.combat += 40; bumpNam(p, "zalim", 6); if (baba) baba.prof = "asker"; }
   for (const k of ["combat", "trade", "crafting", "social"] as const) p.skills[k] = skillLevel(p.skill_xp[k]);
   const TR: Record<string, string> = { koylu: "Bir köylü ocağında doğdun; tarlanın ve harmanın çocuğusun.", esnaf: "Bir esnaf ocağında doğdun; çarşının sesiyle büyüyeceksin.", hekim: "Bir hekim ocağında doğdun; evde kitap ve şifalı ot kokusu eksik olmaz.", sipahi: "Bir sipahi ocağında doğdun; atın ve kılıcın yanında, halkın biraz uzağında büyüyeceksin." };
   push(s, "doğum", TR[id], "kişisel", false, { k: "evj.birthHouse." + id });
@@ -3339,8 +3343,8 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
   const WHOAMI_TR: Record<string, string> = { crowned: "bir hükümdar", fear: "korkulan biri", honor: "şerefli biri", comert: "eli açık biri", dindar: "dindar biri", fame: "tanınan biri", rep: "saygın biri", plain: "sıradan biri" };
   if (p.age >= 40 && fate("40")) { const w = whoAmIId(); push(s, "kader", `Kırkına vardın. Aynaya baktığında ${WHOAMI_TR[w]} görüyorsun. Ömrün yarılandı; bundan sonrası bir miras meselesi.`, "kişisel", true, { k: "evj.fate40", p: [{ wai: w }] }); }
   if (p.age >= 60 && fate("60")) { const w = whoAmIId(); push(s, "kader", `Altmışını devirdin. Saçlar ağardı, geçmişin gölgesi uzadı. Ömrün akşamında ${WHOAMI_TR[w]} olarak anılıyorsun — geriye ne bırakacaksın?`, "kişisel", true, { k: "evj.fate60", p: [{ wai: w }] }); }
-  if (p.age >= 70 && fate("70")) { const w = whoAmIId(); p.reputation = Math.min(100, p.reputation + 6); push(s, "kader", `Yetmişine vardın — az kimseye nasip olan bir ömür. Torunlar dizinin dibinde, diyar seni ${WHOAMI_TR[w]} olarak biliyor; yaşın sana hürmet getiriyor.`, "kişisel", true, { k: "evj.fate70", p: [{ wai: w }] }); }
-  if (p.age >= 80 && fate("80")) { const w = whoAmIId(); p.fame = Math.min(100, p.fame + 8); push(s, "kader", `Sekseni devirdin. Çağın canlı tanığısın; senin gördüklerini gören kalmadı. Adın ${WHOAMI_TR[w]} olmanın ötesinde, bir efsane gibi anılıyor.`, "kişisel", true, { k: "evj.fate80", p: [{ wai: w }] }); }
+  if (p.age >= 70 && fate("70")) { const w = whoAmIId(); unEkle(p, "reputation", 6); push(s, "kader", `Yetmişine vardın — az kimseye nasip olan bir ömür. Torunlar dizinin dibinde, diyar seni ${WHOAMI_TR[w]} olarak biliyor; yaşın sana hürmet getiriyor.`, "kişisel", true, { k: "evj.fate70", p: [{ wai: w }] }); }
+  if (p.age >= 80 && fate("80")) { const w = whoAmIId(); unEkle(p, "fame", 8); push(s, "kader", `Sekseni devirdin. Çağın canlı tanığısın; senin gördüklerini gören kalmadı. Adın ${WHOAMI_TR[w]} olmanın ötesinde, bir efsane gibi anılıyor.`, "kişisel", true, { k: "evj.fate80", p: [{ wai: w }] }); }
   if (p.age < 13 && chance(0.10)) { p.stat_points += 1; const son = [...s.history].reverse().find((e) => /^ev\.cocukluk/.test(e.k || ""))?.k?.replace(/\.f$/, ""); const ak = ["ev.cocukluk", "ev.cocukluk2", "ev.cocukluk3"].filter((k) => k !== son); push(s, "cocukluk", "Yeni bir şeyler öğrendin (özellik puanı kazandın).", "kişisel", false, { k: rnd(ak) }); } // üç ağız, bir öncekini tekrar etmez // %25→%10: mektep grinderi 18'inden önce dört statı da maxlayamasın (ihtiyaç ~34 puan, eski musluk 100+ veriyordu)
   // ── Çocukluk dönüm anıları: 8/10/12 yaşında bir kez tetiklenen, ize bırakan anlar (bazıları yoldaşı anar) ──
   if (p.age >= 8 && p.age < 13 && fate("child8")) {
@@ -3387,7 +3391,10 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
   if (p.dead) return;
   // Görücü usulü evlilik — yalnızca FALLBACK: oyuncu birini kur yapıyorsa (ilişki ≥50) araya girmez, geç başlar, seyrektir.
   const courting = Object.values(s.relationships || {}).some((v) => (v as number) >= 50) || s.story?.active?.id === "gec_sevda"; // aktif sevda yayı da bir kur — görücü araya girmesin
-  if (!p.married && !courting && p.age >= 24 && p.age < 55 && chance(0.035 + p.fame / 2000)) { p.married = true; p.married_turn = s.turn; p.spouse_bond = 35; oyuncuEvlenKisi(s, esBulVeyaKur(s)); const name = p.spouse_name!; p.widowed = false; p.reputation = Math.min(100, p.reputation + 5); { const mv2 = chance(0.5); push(s, "evlilik", mv2 ? `Davul üç gün sustu susmadı; ${name} ile aynı ocağın başına oturdunuz. Evin eşiği o gün iki kez öpüldü.` : `Ailelerin görüşmesiyle ${name} ile evlendin — yeni bir ocak kuruldu.`, "kişisel", true, { k: mv2 ? "evj.marry2" : "evj.marry", p: [esParam(s)] }); } }
+  // Adı kötüye çıkmışa (itibar < 0) yakından görücü gelmez: çok seyrek ve uzak bir yerden gelir (radikal sonuçlar planı,
+  // aşama 1). Evlilik gecikir ama soy kapanmaz; oyuncunun kendi teklifi her zaman açık.
+  const lekeli = p.reputation < 0;
+  if (!p.married && !courting && p.age >= 24 && p.age < 55 && chance((0.035 + p.fame / 2000) * (lekeli ? 0.12 : 1))) { p.married = true; p.married_turn = s.turn; p.spouse_bond = 35; oyuncuEvlenKisi(s, esBulVeyaKur(s, lekeli)); const name = p.spouse_name!; p.widowed = false; unEkle(p, "reputation", 5); { const mv2 = chance(0.5); push(s, "evlilik", mv2 ? `Davul üç gün sustu susmadı; ${name} ile aynı ocağın başına oturdunuz. Evin eşiği o gün iki kez öpüldü.` : `Ailelerin görüşmesiyle ${name} ile evlendin — yeni bir ocak kuruldu.`, "kişisel", true, { k: mv2 ? "evj.marry2" : "evj.marry", p: [esParam(s)] }); } }
   if (p.married && p.age >= 18 && p.age < 50 && p.children.length < 5 && chance(dogumOlasiligi(s))) { const c = cocukAdi(s); p.children.push(c); (p.child_meta = p.child_meta || []).push({ n: c, born: s.turn }); evlatKisiKur(s, c, p.spouse_id); { const bv2 = chance(0.5); push(s, "doğum", bv2 ? `Eve bir nefes daha katıldı: ${c}. Beşik baş köşeye kuruldu; o gece kimse erken uyumadı.` : `Bir evladın dünyaya geldi: ${c}.`, "kişisel", true, { k: bv2 ? "evj.childBorn2" : "evj.childBorn", p: [c] }); } }
   affairTick(s); // yasak ilişki: ateş soğur, piç doğabilir, ifşa yuvarlanır (evli/bekâr sonuçları exposeAffair'de)
   betrothalTick(s); // evli birine kesilen söz: aylar içinde boşanıp evlenir ya da vazgeçer
@@ -3420,12 +3427,12 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
       else if (next === 1) push(s, "cocukluk", `${cm.n} mektebe başladı; heybesinde ekmek, gözlerinde merak.`, "kişisel", false, { k: "evj.kidSchool", p: [cm.n] });
       else if (next === 2) { const tip = Math.round(10 * inflationFactor(s)); p.money += tip; push(s, "cocukluk", `${cm.n} bir ustanın yanına çırak girdi; ilk kazancını eve getirdi (+${tip} akçe).`, "kişisel", false, { k: "evj.kidApprentice", p: [cm.n, tip] }); }
       else {
-        p.reputation = Math.min(100, p.reputation + 2);
+        unEkle(p, "reputation", 2);
         push(s, "doğum", `${cm.n} yetişkin oldu; artık kendi yolunu yürüyor. Soyun dallanıyor.`, "kişisel", true, { k: "evj.kidGrown", p: [cm.n] });
         if ((p.dowry_chest || 0) > 0) { // sandık açılır: birikim evladın yeni ocağına gider; el ağır, ad yüce olur
           const ceyiz = p.dowry_chest || 0; p.dowry_chest = 0; p.dowry_given = true;
           const say = Math.min(8, 2 + Math.floor(ceyiz / 50));
-          p.reputation = Math.min(100, p.reputation + say); p.honor = Math.min(100, p.honor + 2); bumpNam(p, "mert", 2);
+          unEkle(p, "reputation", say); unEkle(p, "honor", 2); bumpNam(p, "mert", 2);
           push(s, "doğum", `Çeyiz sandığı ${cm.n} için açıldı: ${ceyiz} akçelik birikim yeni ocağa gitti; el ağır, ad yüce oldu.`, "kişisel", false, { k: "evj.dowryOut", p: [cm.n, ceyiz] });
         }
       }
@@ -3435,7 +3442,7 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
   // Torun doğumu gerçek yaşayan yetişkin evlada, aynı dünya yılına ve kişinin yerleşimine bağlıdır.
   if (p.age >= 52 && p.children.length >= 1 && torunlar(s).length < 8 && chance(0.06)) {
     const gc = torunDogur(s);
-    if (gc) { p.reputation = Math.min(100, p.reputation + 2);
+    if (gc) { unEkle(p, "reputation", 2);
       const parent = nufusOf(s).k[gc.anne && evlatKimlikleri(p).includes(gc.anne) ? gc.anne : gc.baba!];
       push(s, "doğum", `Evladın ${kisiIlkAd(parent)} bir çocuk sahibi oldu: torunun ${gc.ad}.`, "kişisel", true, { k: "torun.born", p: [kfParam(parent), kfParam(gc), { pl: gc.loc }] });
       evlatHaberiKaydet(s, parent.id);
@@ -3447,8 +3454,8 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
     remember(s, { id: gc.id, name: kisiAdi(gc) }, "icten_sohbet", { yuk: 2 });
     if (age >= 18) push(s, "ihtiyarlik", `Yetişkin torunun ${kisiIlkAd(gc)} kendi yolunu seninle konuştu.`, "kişisel", false, { k: "torun.time.yetiskin", p: [kfParam(gc)] });
     else if (r < 0.22) { p.health = Math.min(100, p.health + 3); push(s, "ihtiyarlik", `Torunun ${kisiIlkAd(gc)} ile vakit geçirdin.`, "kişisel", false, { k: "evj.gcJoy" + gcK, p: [kfParam(gc)] }); }
-    else if (r < 0.44) { bumpNam(p, "mert", 2); p.honor = Math.min(100, p.honor + 2); push(s, "ihtiyarlik", `Torunun ${kisiIlkAd(gc)} ile tecrübeni paylaştın.`, "kişisel", false, { k: "evj.gcWisdom" + gcK, p: [kfParam(gc)] }); }
-    else if (r < 0.66) { p.reputation = Math.min(100, p.reputation + 2); push(s, "ihtiyarlik", `Torunun ${kisiIlkAd(gc)} için armağan yaptırdın.`, "kişisel", false, { k: "evj.gcGift" + gcK, p: [kfParam(gc)] }); }
+    else if (r < 0.44) { bumpNam(p, "mert", 2); unEkle(p, "honor", 2); push(s, "ihtiyarlik", `Torunun ${kisiIlkAd(gc)} ile tecrübeni paylaştın.`, "kişisel", false, { k: "evj.gcWisdom" + gcK, p: [kfParam(gc)] }); }
+    else if (r < 0.66) { unEkle(p, "reputation", 2); push(s, "ihtiyarlik", `Torunun ${kisiIlkAd(gc)} için armağan yaptırdın.`, "kişisel", false, { k: "evj.gcGift" + gcK, p: [kfParam(gc)] }); }
     else if (r < 0.88 || age < 7 || !p.horse || !p.horse_name) push(s, "ihtiyarlik", `Torunun ${kisiIlkAd(gc)} hayatından bir hikâye dinledi.`, "kişisel", false, { k: "evj.gcTale" + gcK, p: [kfParam(gc)] });
     else push(s, "ihtiyarlik", `Torunun ${kisiIlkAd(gc)} ile atını gezdirdiniz.`, "kişisel", false, { k: "evj.gcRide" + gcK, p: [kfParam(gc), p.horse_name] });
   }
@@ -3460,7 +3467,7 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
       const r = Math.random();
       if (r < 0.4) { p.health = Math.min(100, p.health + 4); s.relationships[cf.id] = Math.min(100, (s.relationships[cf.id] || 0) + 2); push(s, "gunluk", "Çocukluk dostun çıkageldi; eski günleri yâd ettiniz, içine bir ferahlık doldu.", "kişisel", false, { k: "evj.oldFriendVisit", p: [cfParam(s, cf)] }); }
       else if ((p.money < 30 || (p.debt || 0) > 0) && r < 0.7) { const help = 20 + Math.floor(Math.random() * 30); p.money += help; push(s, "gunluk", "Çocukluk dostun darda olduğunu duydu; sessizce kesene biraz akçe bıraktı.", "kişisel", false, { k: "evj.oldFriendHelp", p: [cfParam(s, cf), help] }); }
-      else { p.reputation = Math.min(100, p.reputation + 2); push(s, "gunluk", "Çocukluk dostun seni mecliste övdü; sözü itibarına itibar kattı.", "kişisel", false, { k: "evj.oldFriendVouch", p: [cfParam(s, cf)] }); }
+      else { unEkle(p, "reputation", 2); push(s, "gunluk", "Çocukluk dostun seni mecliste övdü; sözü itibarına itibar kattı.", "kişisel", false, { k: "evj.oldFriendVouch", p: [cfParam(s, cf)] }); }
     }
   }
   // ── NPC'nin başlattığı anlar (Aşama 3): dost sofraya çağırır, hasım dile düşürür ya da malına dokunur — her biri görüşünün
@@ -3512,8 +3519,8 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
     if (p.faction === "tuccar") { gainSkill(s, "trade", 3); push(s, "gunluk", "Loncadan bir tüyo geldi: hangi malın nerede para ettiği kulağına fısıldandı.", "kişisel", false, { k: "fsig.tuccar" }); }
     else if (p.faction === "demirci") { gainSkill(s, "crafting", 3); push(s, "gunluk", "Ustalar seni ocağa çağırdı; körük başında geçen akşam eline hüner kattı.", "kişisel", false, { k: "fsig.demirci" }); }
     else if (p.faction === "asker") { gainSkill(s, "combat", 3); push(s, "gunluk", "Ocak talime çağırdı; kılıcınla ter döktün, bileğin sertleşti.", "kişisel", false, { k: "fsig.asker" }); }
-    else if (p.faction === "sifaci") { p.health = Math.min(100, p.health + 3); p.reputation = Math.min(100, p.reputation + 1); push(s, "gunluk", "Meclis şifalı merhemden pay gönderdi; bedenin dinçleşti.", "kişisel", false, { k: "fsig.sifaci" }); }
-    else if (p.faction === "golge") { gainSkill(s, "social", 3); p.fear = Math.min(100, p.fear + 1); push(s, "gunluk", "Kardeşlikten kulağına bir sır fısıldandı; kimin nerede gezdiğini artık biliyorsun.", "kişisel", false, { k: "fsig.golge" }); }
+    else if (p.faction === "sifaci") { p.health = Math.min(100, p.health + 3); unEkle(p, "reputation", 1); push(s, "gunluk", "Meclis şifalı merhemden pay gönderdi; bedenin dinçleşti.", "kişisel", false, { k: "fsig.sifaci" }); }
+    else if (p.faction === "golge") { gainSkill(s, "social", 3); unEkle(p, "fear", 1); push(s, "gunluk", "Kardeşlikten kulağına bir sır fısıldandı; kimin nerede gezdiğini artık biliyorsun.", "kişisel", false, { k: "fsig.golge" }); }
   }
   // ── Dulluk: eş de fanidir; birlikte yaşlandıkça vefat ihtimali artar. Dul kalınca yas + (genç dulsa yeniden evlilik mümkün) ──
   const esK = esKisi(s); const esYas = esK ? worldYears(s) - esK.dy : p.age;
@@ -3553,9 +3560,9 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
     else if (!ihmalDurumu(s).es) { let r = Math.random(); // ihmal edilen eşle "huzurlu akşam" anlatılmaz (ihmal satırıyla çelişmesin); başucunda durmak ve darlıkta el uzatmak sürer
       if (miz === "sefkatli") r *= 0.7;              // şefkatli → daha çok huzurlu akşam
       else if (miz === "dikbasli") r = 0.4 + r * 0.4; // dik başlı → daha çok atışma (sonra barışma)
-      if (r < 0.4) { p.health = Math.min(100, p.health + (miz === "sefkatli" ? 5 : 3)); p.reputation = Math.min(100, p.reputation + 1); bumpNam(p, "comert", 1); if (miz === "dindar") bumpNam(p, "dindar", 1); bond(2); push(s, "evlilik", `${p.spouse_name} ile sessiz, huzurlu bir akşam geçirdiniz; "iyi ki varsın" dedin.`, "kişisel", false, { k: "evj.spouseCalm", p: [sn] }); }
+      if (r < 0.4) { p.health = Math.min(100, p.health + (miz === "sefkatli" ? 5 : 3)); unEkle(p, "reputation", 1); bumpNam(p, "comert", 1); if (miz === "dindar") bumpNam(p, "dindar", 1); bond(2); push(s, "evlilik", `${p.spouse_name} ile sessiz, huzurlu bir akşam geçirdiniz; "iyi ki varsın" dedin.`, "kişisel", false, { k: "evj.spouseCalm", p: [sn] }); }
       else if (r < 0.7) { if (miz === "dikbasli") { bumpNam(p, "mert", 1); addStatXp(s, "strength", 3); } bond(miz === "dikbasli" ? -1 : 1); push(s, "evlilik", `${p.spouse_name} ile küçük bir atışma yaşandı ama akşama kalmadan barıştınız; ocak yeniden ısındı.`, "kişisel", false, { k: "evj.spouseQuarrel", p: [sn] }); }
-      else if (p.age >= 50) { p.reputation = Math.min(100, p.reputation + 2); bumpNam(p, "mert", 1); bond(2); push(s, "evlilik", `${p.spouse_name} ile saçlarınız birlikte ağardı; bir ömrü paylaşmanın huzuru yüzüne vurdu.`, "kişisel", false, { k: "evj.spouseAge", p: [sn] }); }
+      else if (p.age >= 50) { unEkle(p, "reputation", 2); bumpNam(p, "mert", 1); bond(2); push(s, "evlilik", `${p.spouse_name} ile saçlarınız birlikte ağardı; bir ömrü paylaşmanın huzuru yüzüne vurdu.`, "kişisel", false, { k: "evj.spouseAge", p: [sn] }); }
       else { p.health = Math.min(100, p.health + 2); bond(2); push(s, "evlilik", `${p.spouse_name} ile geleceğe dair konuştunuz; küçük hayaller kurmak iyi geldi.`, "kişisel", false, { k: "evj.spouseCalm", p: [sn] }); }
     }
   }
@@ -3612,7 +3619,7 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
         { text: "Çıraklık ettiğin dükkânın önünden geçtin; içerideki yeni çırak sana ustaymışsın gibi baktı.", k: "mem.oldShop" },
         { text: "Kuyu başında sıra bekleyen gençlerin şakalaşmasını dinledin; kovanın ipini hâlâ hepsinden iyi atıyorsun.", k: "mem.wellRope" },
         { text: "Sandıktan babadan kalma bir alet çıktı; sapındaki çentikler senin çentiklerinle aynı yerde.", k: "mem.fatherTool" },
-        { text: "Pazarda birine senin adınla seslendiler; dönüp baktın — kundakta bir bebekmiş. Adın büyümeye başladı bile.", k: "mem.namesake", fn: () => { p.fame = Math.min(100, p.fame + 1); } },
+        { text: "Pazarda birine senin adınla seslendiler; dönüp baktın — kundakta bir bebekmiş. Adın büyümeye başladı bile.", k: "mem.namesake", fn: () => { unEkle(p, "fame", 1); } },
         { text: "Harman yerinde gençlerin taş kaldırmasını seyrettin; biri taşı tam gençliğindeki gibi omuzluyor.", k: "mem.harvestRace" },
         { text: "Mahalle çeşmesinin taşında çocukken kazıdığın harf duruyor; yıllar silmemiş.", k: "mem.carvedInit" },
       );
@@ -3623,9 +3630,9 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
       mem.push(
         { text: "Şafaktan önce uyandın; bütün kasaba uyurken dünya bir süre yalnız sana aitti.", k: "mem.dawn", fn: () => { p.health = Math.min(100, p.health + 1); } },
         { text: "Çarşıda eski bir dostun tezgâhının yerinde başkasını gördün; içinden bir dua geçirdin.", k: "mem.oldFriendGone", fn: () => bumpNam(p, "dindar", 1) },
-        { text: "Ellerine baktın: her nasır bir hikâye. Gençlerin haftada yapamadığını sen bir günde yapardın.", k: "mem.craftHands", fn: () => { p.honor = Math.min(100, p.honor + 1); } },
-        { text: "Bir yolcu, gençliğindeki bir kavganı hikâye diye anlattı; adları değiştirmişler ama sen kendini tanıdın.", k: "mem.nameEcho", fn: () => { p.fame = Math.min(100, p.fame + 1); } },
-        { text: "Sokakta bir çocuğa senin adını seslendiler; adın senden önce yürümeye başladı bile.", k: "mem.grandName", fn: () => { p.reputation = Math.min(100, p.reputation + 1); } },
+        { text: "Ellerine baktın: her nasır bir hikâye. Gençlerin haftada yapamadığını sen bir günde yapardın.", k: "mem.craftHands", fn: () => { unEkle(p, "honor", 1); } },
+        { text: "Bir yolcu, gençliğindeki bir kavganı hikâye diye anlattı; adları değiştirmişler ama sen kendini tanıdın.", k: "mem.nameEcho", fn: () => { unEkle(p, "fame", 1); } },
+        { text: "Sokakta bir çocuğa senin adını seslendiler; adın senden önce yürümeye başladı bile.", k: "mem.grandName", fn: () => { unEkle(p, "reputation", 1); } },
         { text: "Gençken diktiğin ağacın gölgesinde soluklandın; ağaç da sen de sözünüzü tutmuşsunuz.", k: "mem.orchardShade", fn: () => { p.health = Math.min(100, p.health + 1); } },
         { text: "Bir sofrada anandan kalma bir tadı yakaladın; gözlerini kapatınca bir anlığına o mutfağa döndün.", k: "mem.motherTaste", fn: () => { p.hunger = Math.min(100, p.hunger + 2); } },
         { text: "Kış güneşinde duvar dibine oturdun; sıcaklık iliklerine işledi, kimseyle konuşmadan bir öğle geçti.", k: "mem.winterSun" },
@@ -3634,7 +3641,7 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
         { text: "Çarşıda biri arkandan eski lakabınla seslendi; dönüp baktın, tanıyamadın — ama lakap tam yerine oturdu, gülümsedin.", k: "mem.oldNickname" },
         { text: "Sandığın dibinden gençliğinde yazılmış bir mektup çıktı; kâğıt sararmış ama satırlar dünkü gibi. Kimseye göstermeden yerine koydun.", k: "mem.oldLetter" },
         { text: "Çocukluğunun sokağından geçtin; o koca kapı meğer ne alçakmış. Kapı küçülmemiş, sen büyümüşsün.", k: "mem.lowDoor" },
-        { text: "Gençliğinde bileğini bükemediğin rakibinle çeşme başında karşılaştın; iki ihtiyar, bir taş sekide gülüşüp helalleştiniz.", k: "mem.oldRival", fn: () => { p.honor = Math.min(100, p.honor + 1); } },
+        { text: "Gençliğinde bileğini bükemediğin rakibinle çeşme başında karşılaştın; iki ihtiyar, bir taş sekide gülüşüp helalleştiniz.", k: "mem.oldRival", fn: () => { unEkle(p, "honor", 1); } },
         { text: "Mahalle çocuklarına yıldızların adlarını gösterdin; sen de onları bir ihtiyardan öğrenmiştin — yıldızlar hiç yaşlanmamış.", k: "mem.sameStars" },
         { text: "Avluda bir bebek ilk adımını senin dizine tutunarak attı; iki adım o yürüdü, üç adım senin yüreğin.", k: "mem.firstStep" },
         { text: "Tesbihin ipini yenilerken taşları saydın: kırk taş, kırk yılın duası. İpi bağlarken elin hiç titremedi.", k: "mem.beadString" },
@@ -3742,7 +3749,7 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
   // ── Kadı terazisi: dükkân sahibine seyrek çarşı denetimi — şeref yüksekse alnının akıyla, düşükse ceza keserek ──
   if (!p.dead && p.properties.some((pr2) => pr2.type === "dukkan") && chance(0.03)) {
     if (p.honor >= 45 || chance(0.5)) {
-      p.reputation = Math.min(100, p.reputation + 2);
+      unEkle(p, "reputation", 2);
       push(s, "ticaret", `Kadının adamları çarşıyı denetledi; senin terazin dirhemi dirhemine çıktı. Mübaşir defterine iki hoş satır yazdı.`, "kişisel", false, { k: "evj.tartiOk" });
     } else {
       const ceza = Math.round(20 * inflationFactor(s));
@@ -3826,7 +3833,7 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
   }
   // ── At kısmeti: yaralı/başıboş bir atı sırf gönlünle iyileştirip yoldaş edinirsin — atın da kapıya geleni olur (satın alma değil, nadir) ──
   if (!p.dead && !p.horse && p.age >= 14 && !inJail(p) && chance(0.006)) {
-    p.horse = true; p.horse_name = evcilAd(s, "at"); p.reputation = Math.min(100, p.reputation + 1);
+    p.horse = true; p.horse_name = evcilAd(s, "at"); unEkle(p, "reputation", 1);
     push(s, "yolculuk", `Yol kenarında ayağı sakat, sahibi belirsiz bir at buldun; kimse sahiplenmedi. Haftalarca merhemle, sabırla iyileştirdin. Şimdi ${p.horse_name} adıyla senin peşinden geliyor — kimi yoldaş parayla değil, emekle kazanılır.`, "kişisel", true, { k: "evj.horseArrive", p: [p.horse_name] });
   }
   // ── İki yoldaş bir ocakta: kedi ile köpek aynı evde — biri içerinin, biri dışarının nöbetçisi ──
@@ -3848,8 +3855,8 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
   // ── Tanrı misafiri: evi/konağı olanın kapısı ara sıra yolcuya açılır — hediye, övgü ya da uzak diyar hikâyesi kalır ──
   if (!p.dead && p.age >= 18 && ((p.estate || 0) >= 1 || p.properties.some((pr2) => pr2.type === "ev")) && chance(0.045)) {
     const gr = Math.random();
-    if (gr < 0.5) { const g2 = Math.round(8 * inflationFactor(s)); p.money += g2; p.honor = Math.min(100, p.honor + 1); push(s, "sohbet", `Bir yolcu gece kapını çaldı; sofranı açtın, sabah heybesinden bir kese çıkarıp bıraktı (+${g2} akçe). Tanrı misafiri eli boş çıkmaz.`, "kişisel", false, { k: "evj.guest1", p: [g2] }); }
-    else if (gr < 0.8) { p.reputation = Math.min(100, p.reputation + 2); push(s, "sohbet", `Geçen ay ağırladığın yolcu her konakta senin sofranı anlatmış; adın misafirperver diye yayıldı.`, "kişisel", false, { k: "evj.guest2" }); }
+    if (gr < 0.5) { const g2 = Math.round(8 * inflationFactor(s)); p.money += g2; unEkle(p, "honor", 1); push(s, "sohbet", `Bir yolcu gece kapını çaldı; sofranı açtın, sabah heybesinden bir kese çıkarıp bıraktı (+${g2} akçe). Tanrı misafiri eli boş çıkmaz.`, "kişisel", false, { k: "evj.guest1", p: [g2] }); }
+    else if (gr < 0.8) { unEkle(p, "reputation", 2); push(s, "sohbet", `Geçen ay ağırladığın yolcu her konakta senin sofranı anlatmış; adın misafirperver diye yayıldı.`, "kişisel", false, { k: "evj.guest2" }); }
     else { gainSkill(s, "social", 5); push(s, "sohbet", `Konuğun uzak diyarlardan hikâyelerle geldi; ocak başında geceyi kısalttınız, dünyan bir karış genişledi.`, "kişisel", false, { k: "evj.guest3" }); }
   }
   // ── Dar günde dost eli: can dostun (ilişki 70+) yoksulluğu duyar; iki yılda bir kesesini açar ──
@@ -3867,13 +3874,13 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
       const dn = en.n2.name; const dnP = npcP(s, en.n2); // ad dile göre çözülsün
       // Ömürlük dostluğun derin anı: ilişki 88+ ise ara sıra sözün bittiği yerdeki yoldaşlık
       if (en.r >= 88 && Math.random() < 0.3) {
-        p.honor = Math.min(100, p.honor + 1);
+        unEkle(p, "honor", 1);
         push(s, "sohbet", `${dn} ile öyle bir dostluğunuz var ki artık selam bile fazla; bir bakış, bir baş sallayış yetiyor. Kaç kışı birlikte devirdiniz — kimin sırtını kime yasladığınız belli değil, ama ikiniz de biliyorsunuz.`, "kişisel", false, { k: "evj.dostDeep", p: [dnP] });
         return s;
       }
       const fr = Math.random();
       if (fr < 0.34) { gainSkill(s, "social", 3); push(s, "sohbet", `Akşam kapı çalındı: ${dn}, koltuğunda bir testi, dilinde iki hikâye. Ocak başında gece kısaldı; dert bölüşüldü, yarı yarıya hafifledi.`, "kişisel", false, { k: "evj.dost1", p: [dnP] }); }
-      else if (fr < 0.67) { p.honor = Math.min(100, p.honor + 1); push(s, "sohbet", `${dn} yataklara düşmüş diye duydun; bir tas sıcak çorbayla kapısını çaldın. Ayrılırken elini sıkı sıkı tuttu: dost dediğin, gelenmiş.`, "kişisel", false, { k: "evj.dost2", p: [dnP] }); }
+      else if (fr < 0.67) { unEkle(p, "honor", 1); push(s, "sohbet", `${dn} yataklara düşmüş diye duydun; bir tas sıcak çorbayla kapısını çaldın. Ayrılırken elini sıkı sıkı tuttu: dost dediğin, gelenmiş.`, "kişisel", false, { k: "evj.dost2", p: [dnP] }); }
       else push(s, "sohbet", `Çarşıda ${dn} ile göz göze geldiniz; eski bir şakaya ikiniz de aynı anda güldünüz. Etraftakiler anlamadı, ikiniz bildiniz — dostluk biraz da bu.`, "kişisel", false, { k: "evj.dost3", p: [dnP] });
     }
   }
@@ -3882,7 +3889,7 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
   if (!p.dead && p.age >= 14 && s.story) {
     if (s.story.nemesis?.olen && chance(0.05)) { // kanlı hasım: ölünün adıyla musallat olur
       const n = s.story.nemesis; const ok = nufusOf(s).k[n.olen!]; const kz = Math.random() < 0.5;
-      if (kz) p.reputation = Math.max(-100, p.reputation - 3); else p.fear = Math.min(100, p.fear + 2);
+      if (kz) p.reputation = Math.max(-100, p.reputation - 3); else unEkle(p, "fear", 2);
       s.story.tension = Math.min(100, s.story.tension + 3);
       push(s, "nemesis", kz ? `${n.name} çarşıda herkesin içinde seni kanlı diye andı.` : `${n.name} kapına bir kefen bıraktı; dökülen kan unutulmadı.`, "kişisel", false, { k: kz ? "kan.taciz1" : "kan.taciz0", p: [nemAd(s, n), ok ? knParam(ok) : ""] });
     } else if (s.story.nemesis && chance(0.10)) {
@@ -3932,7 +3939,7 @@ function claimAchievements(s: GameState) {
     if (done && !p.claimed.includes(a.id)) {
       p.claimed.push(a.id);
       p.stat_points += 1;
-      p.fame = Math.min(100, p.fame + 2);
+      unEkle(p, "fame", 2);
       push(s, "basarim", `Başarım açıldı: ${a.name} (+1 özellik puanı).`, "kişisel", false, { k: "ev.ach", p: [{ ach: a.id }] });
     }
   }
@@ -4062,7 +4069,7 @@ export function advance(prev: GameState, n = 1): GameState {
       const rentSkip = pr.type === "ev" && pr.tenant && chance(0.04); // kiracı ara sıra aksatır
       if (rentSkip) { if (i === n - 1) push(s, "mülk", `${pr.loc}'daki evin kiracısı bu ay kirayı aksattı; "hasat gelince" dedi, kapıyı yavaş kapattı.`, "kişisel", false, { k: "evj.tenantSkip", p: [{ pl: pr.loc }] }); }
       else inc += base * condProspLevel * typeMult * mevMult * nadasMult;
-      if (pr.type === "ev" && (pr.level || 1) >= 2 && chance(0.04)) s.player.reputation = Math.min(100, s.player.reputation + 1); // köklü ev → itibar damlası
+      if (pr.type === "ev" && (pr.level || 1) >= 2 && chance(0.04)) unEkle(s.player, "reputation", 1); // köklü ev → itibar damlası
       // İşçi ekonomisi: çalışan NPC'ler üretimi artırır ama ücret ister.
       const w = propWorkerStats(s, pr, base, condProspLevel);
       inc += w.gross; wages += w.wage;
@@ -4468,14 +4475,14 @@ function tickDynasties(s: GameState, announce: boolean) {
     const tu = h.tutum ?? 0;
     if (tu <= -20) {
       if (p.fame >= 55 || effStat(p, "charisma") >= 7 || p.fear >= 40) { // namın onları sindirir
-        p.reputation = Math.min(100, p.reputation + 3); bumpNam(p, "mert", 2); h.tutum = Math.max(-100, tu - 2);
+        unEkle(p, "reputation", 3); bumpNam(p, "mert", 2); h.tutum = Math.max(-100, tu - 2);
         push(s, "hanedan_haber", `${h.name} hanedanı sana meydan okumaya kalktı; namın karşısında geri adım attılar.`, "makro", true, { k: "evj.houseTauntCowed", p: [{ hn: h.nameIdx }] });
       } else {
-        p.fear = Math.min(100, p.fear + 4); p.reputation = Math.max(-100, p.reputation - 2);
+        unEkle(p, "fear", 4); p.reputation = Math.max(-100, p.reputation - 2);
         push(s, "hanedan_haber", `${h.name} hanedanı seni açıkça aşağıladı; diyarda itibarın çizik aldı.`, "makro", true, { k: "evj.houseTaunt", p: [{ hn: h.nameIdx }] });
       }
     } else if (tu >= 25) {
-      p.reputation = Math.min(100, p.reputation + 3);
+      unEkle(p, "reputation", 3);
       push(s, "hanedan_haber", `${h.name} hanedanı bir mecliste sana hürmet gösterdi; saygınlığın arttı.`, "makro", false, { k: "evj.houseHonor", p: [{ hn: h.nameIdx }] });
     } else {
       gainSkill(s, "social", 6);
@@ -4549,7 +4556,7 @@ function tickPlot(s: GameState, rivals: RivalHouse[]) {
   if (pl.stage >= 3) { // komplo tamam
     s.plot = null;
     p.plot_wins = (p.plot_wins || 0) + 1;
-    bumpNam(p, "zalim", 1); p.fear = Math.min(100, p.fear + 2);
+    bumpNam(p, "zalim", 1); unEkle(p, "fear", 2);
     if (pl.kind === "leke") {
       h.power = Math.max(20, h.power - 10);
       push(s, "entrika", `Ektiğin söylentiler kök saldı: ${h.name} çarşıda lekelendi, gücü sarsıldı. Kimse senin parmağını görmedi.`, "makro", true, { k: "evj.plotDone.leke", p: [{ hn: h.nameIdx }] });
@@ -4609,7 +4616,7 @@ function tickFeud(s: GameState, rivals: RivalHouse[]) {
       push(s, "kan_davası", `${h.name} pususunu ${guard.name} önceden haber verdi; kıl payı kurtuldun.`, "kişisel", true, { k: "evj.feud.friendWarn", p: [npcP(s, guard), { hn: h.nameIdx }] });
     } else {
       const hurt = 6 + Math.floor(Math.random() * 6);
-      p.health = Math.max(1, p.health - hurt); p.fear = Math.min(100, p.fear + 2); // pusu öldürmez ama iz bırakır — ölüm ancak meydan savaşında
+      p.health = Math.max(1, p.health - hurt); unEkle(p, "fear", 2); // pusu öldürmez ama iz bırakır — ölüm ancak meydan savaşında
       push(s, "kan_davası", `${h.name} pusu kurdu; canını zor kurtardın (sağlık -${hurt}).`, "kişisel", true, { k: "evj.feud.ambush", p: [{ hn: h.nameIdx }, hurt] });
     }
   }
@@ -4646,7 +4653,7 @@ export function feudSuePeace(prev: GameState): GameState {
   if (Math.random() < chance) {
     s.feud = null;
     if (h) h.tutum = -10; // sulh: husumet küle döner ama kor hâlâ sıcak
-    p.honor = Math.min(100, p.honor + 4);
+    unEkle(p, "honor", 4);
     push(s, "kan_davası", `${h?.name || "Hasım hane"} ile sulh oldu: kan parası ödendi (${cost} akçe), dava kapandı.`, "makro", true, { k: "evj.feud.peace", p: [h ? { hn: h.nameIdx } : "", cost] });
   } else {
     f.heat = Math.min(100, f.heat + 5); // reddedilen sulh gururlarını okşadı, ateşi harladı
@@ -4665,7 +4672,7 @@ export function feudStrike(prev: GameState): GameState {
   if (f.stage < 3) {
     h.power = Math.max(20, h.power - 3);
     f.heat = Math.min(100, f.heat + 6);
-    p.fear = Math.min(100, p.fear + 3); p.reputation = Math.max(-100, p.reputation - 2); // misilleme korku salar ama el âlem hoş görmez
+    unEkle(p, "fear", 3); p.reputation = Math.max(-100, p.reputation - 2); // misilleme korku salar ama el âlem hoş görmez
     bumpNam(p, "zalim", 2);
     push(s, "kan_davası", `${h.name}'na misilleme yaptın: adamları geri çekildi ama ateş büyüdü.`, "makro", true, { k: "evj.feud.strike", p: [{ hn: h.nameIdx }] });
     return s;
@@ -4677,7 +4684,7 @@ export function feudStrike(prev: GameState): GameState {
     const loot = Math.round(100 * inflationFactor(s)); // savaş tazminatı çağın parasıyla
     s.feud = null;
     h.power = Math.max(20, h.power - 20); h.tutum = -20;
-    p.money += loot; p.fame = Math.min(100, p.fame + 8); p.fear = Math.min(100, p.fear + 8); p.honor = Math.min(100, p.honor + 4);
+    p.money += loot; unEkle(p, "fame", 8); unEkle(p, "fear", 8); unEkle(p, "honor", 4);
     bumpNam(p, "mert", 6);
     push(s, "kan_davası", `Meydan savaşında ${h.name}'nı dize getirdin: dava bitti, tazminat kesildi (+${loot} akçe).`, "kişisel", true, { k: "evj.feud.win", p: [{ hn: h.nameIdx }, loot] });
   } else {
@@ -4702,10 +4709,10 @@ export function acceptDynastyOffer(prev: GameState, offerId: string): GameState 
   if (!s.allied_houses.includes(offer.houseId)) s.allied_houses.push(offer.houseId);
   if (offer.type === "evlilik" && !p.married) {
     p.married = true; p.married_turn = s.turn; p.spouse_bond = 40; p.widowed = false; oyuncuEvlenKisi(s, esBulVeyaKur(s, true)); // hanedandan gelen gelin/damat ocağına yerleşir
-    p.reputation = Math.min(100, p.reputation + 8); p.fame = Math.min(100, p.fame + 6);
+    unEkle(p, "reputation", 8); unEkle(p, "fame", 6);
     push(s, "evlilik", `${h?.name || "Köklü bir hanedan"} ile evlilik ittifakı kurdun; iki ocak birleşti.`, "kişisel", true, { k: "evj.houseMarryAccept", p: [h ? { hn: h.nameIdx } : "", esParam(s)] });
   } else {
-    p.reputation = Math.min(100, p.reputation + 5);
+    unEkle(p, "reputation", 5);
     push(s, "hanedan_haber", `${h?.name || "Bir hanedan"} ile ittifak kurdun; artık arkanı kollayan bir gücün var.`, "makro", true, { k: "evj.houseAllyAccept", p: [h ? { hn: h.nameIdx } : ""] });
   }
   return s;
@@ -4770,10 +4777,10 @@ export function proposeToHouse(prev: GameState, houseId: string, type: "ittifak"
     s.allied_houses.push(houseId);
     if (type === "evlilik" && !p.married) {
       p.married = true; p.married_turn = s.turn; p.spouse_bond = 40; p.widowed = false; oyuncuEvlenKisi(s, esBulVeyaKur(s, true));
-      p.reputation = Math.min(100, p.reputation + 8); p.fame = Math.min(100, p.fame + 6);
+      unEkle(p, "reputation", 8); unEkle(p, "fame", 6);
       { const hm2 = chance(0.5); push(s, "evlilik", hm2 ? `Dünürcüler ${h.name} kapısında şerbet içti: söz kesildi, iki ocak bir soluk oldu.` : `Dünürcüler ${h.name} kapısından güler yüzle döndü: iki ocak birleşti.`, "kişisel", true, { k: hm2 ? "evj.houseMarryAccept2" : "evj.houseMarryAccept", p: [{ hn: h.nameIdx }, esParam(s)] }); }
     } else {
-      p.reputation = Math.min(100, p.reputation + 5);
+      unEkle(p, "reputation", 5);
       { const ha2 = chance(0.5); push(s, "hanedan_haber", ha2 ? `${h.name} mührünü bastı: bundan böyle yolunuz bir; iki hanenin ocağı aynı rüzgârla yanacak.` : `${h.name} teklifini kabul etti; iki hane el sıkıştı.`, "makro", true, { k: ha2 ? "evj.houseAllyAccept2" : "evj.houseAllyAccept", p: [{ hn: h.nameIdx }] }); }
     }
   } else {
@@ -4843,7 +4850,7 @@ function tickWars(s: GameState, announce: boolean) {
       { const we2 = gameRandom(s) < 0.5; push(s, "ocak_savasi", we2 ? `Kılıçlar kınına döndü; sancak ${wf?.name} elinde kaldı. Pazar yerine önce sükût, sonra fiyatlar döndü.` : `Savaş sona erdi: ${wf?.name} üstün geldi.`, "makro", true, { k: we2 ? "evj.warEnd2" : "evj.warEnd", p: [{ fc: winner }] }); }
     }
     // Oyuncu kazanan tarafın üyesiyse itibar
-    if (s.player.faction === winner) { s.player.faction_standing[winner] = (s.player.faction_standing[winner] || 0) + 8; s.player.fame = Math.min(100, s.player.fame + 4); }
+    if (s.player.faction === winner) { s.player.faction_standing[winner] = (s.player.faction_standing[winner] || 0) + 8; unEkle(s.player, "fame", 4); }
     setWarCooldown(s, w.a, w.b, 12); // savaş sonrası ~1 yıl ateşkes (sürekli savaş döngüsünü kırar)
   }
   s.wars = s.wars.filter((w) => w.turnsLeft > 0);
@@ -5039,7 +5046,7 @@ function tickCaravan(s: GameState) {
   p.money += ret; gainSkill(s, "trade", 10);
   if (c.good) addTradePressure(s, c.dest, c.good, -Math.min(0.20, c.invested / 20000)); // getirdiğin mal hedefte arzı bollaştırır (kalıcı iz, sönümlü)
   const paid = c.invested + (c.lost ?? 0); const net = ret - paid; // gerçek kâr/zarar (yağma dahil)
-  if (net > 200) p.reputation = Math.min(100, p.reputation + 2); // büyük kâr nam getirir
+  if (net > 200) unEkle(p, "reputation", 2); // büyük kâr nam getirir
   const carried = c.good ? { i: c.good } : { i: "bugday" };
   push(s, "kervan", `${c.dest} kervanın vardı: ${paid} akçe yatırmıştın, ${ret} akçe döndü (net ${net >= 0 ? "+" : ""}${net}).`, "kişisel", true, { k: "evj.carArrive2", p: [{ pl: c.dest }, paid, ret, (net >= 0 ? "+" : "") + net, carried] });
   s.caravan = null;
@@ -5433,7 +5440,7 @@ export function giveWarAid(prev: GameState, kind: CivilAid): GameState {
   if (!applyCivilAid(s.warWorld!, regionOf(s.player.location_name), kind, s.turn)) return prev;
   s.player.money -= cost.money;
   if (cost.good) s.player.inventory[cost.good] -= cost.quantity;
-  s.player.reputation = Math.min(100, s.player.reputation + 1);
+  unEkle(s.player, "reputation", 1);
   push(s, "dunya", "Savaşın sivil yaralarını hafiflettin.", "kişisel", false, { k: "ww.aid.done", p: [{ sfx: "ww.aid." + kind }, { pl: s.player.location_name }] });
   return s;
 }
@@ -5648,7 +5655,7 @@ export function supportWar(prev: GameState): GameState {
   if (win) {
     if (mine === "a") w.aScore += 3; else w.bScore += 3;
     const loot = 20 + Math.floor(gameRandom(s) * 25);
-    p.money += loot; p.fame = Math.min(100, p.fame + 4); p.faction_standing[p.faction!] = (p.faction_standing[p.faction!] || 0) + 6;
+    p.money += loot; unEkle(p, "fame", 4); p.faction_standing[p.faction!] = (p.faction_standing[p.faction!] || 0) + 6;
     bumpNam(p, "mert", 4);
     p.health = Math.max(1, p.health - (8 - Math.min(6, Math.round(armorDefense(p) / 2))));
     push(s, "ocak_savasi", `Cephede loncan için savaştın ve üstün geldin (+${loot} akçe, itibar).`, "kişisel", true, { k: "evj.frontWin", p: [loot] });
@@ -5801,7 +5808,7 @@ function rollWorkEvent(s: GameState) {
   if (ok) {
     if (ev.wMoney) p.money += ev.wMoney;
     if (ev.wHealth) p.health = Math.min(100, p.health + ev.wHealth);
-    if (ev.wRep) p.reputation = Math.min(100, p.reputation + ev.wRep);
+    if (ev.wRep) unEkle(p, "reputation", ev.wRep);
     if (ev.skill) gainSkill(s, ev.skill, 4);
     push(s, "çalışma", `${ev.text}: ${ev.win}${ev.wMoney ? ` (+${ev.wMoney} akçe)` : ""}.`, "kişisel", false, { k: "evj.workWin", p: [{ wevt: wevKey }, { wevw: wevKey }, ev.wMoney || 0] });
   } else {
@@ -5853,13 +5860,13 @@ export function professionAction(prev: GameState): GameState {
     // Ustalık eseri (büyük başarı): beceri/özellik ve kariyer kademesi yükseldikçe ihtimal artar (%5 → %30).
     // Her meslek için geçerli — efor ve ustalık ödüllendirilir: daha büyük kazanç, fazladan şöhret ve hızlı kariyer.
     const crit = Math.random() < Math.min(0.30, 0.05 + effStat(p, a.stat) * 0.02 + tier * 0.04);
-    if (a.fame) p.fame = Math.min(100, p.fame + a.fame);
-    if (a.rep) p.reputation = Math.min(100, p.reputation + a.rep);
-    if (a.honor) p.honor = Math.min(100, p.honor + a.honor);
+    if (a.fame) unEkle(p, "fame", a.fame);
+    if (a.rep) unEkle(p, "reputation", a.rep);
+    if (a.honor) unEkle(p, "honor", a.honor);
     if (a.nam && a.namAmt) bumpNam(p, a.nam, a.namAmt);
     gainSkill(s, a.skill, 10); addStatXp(s, a.stat, 5); p.career_xp += 1;
     if (crit) {
-      reward = Math.round(reward * 1.8); p.fame = Math.min(100, p.fame + 3); p.career_xp += 1;
+      reward = Math.round(reward * 1.8); unEkle(p, "fame", 3); p.career_xp += 1;
       p.money += reward;
       { const cv = chance(0.5); push(s, "çalışma", cv ? `Elinden çıkan iş dilden dile gezdi; ustalar bile "kim yaptı" diye sordu (+${reward} akçe).` : `Mesleğinde bir ustalık eseri ortaya koydun; nâmın diyara yayıldı (+${reward} akçe).`, "kişisel", true, { k: cv ? "prof.actCrit2" : "prof.actCrit", p: [reward] }); }
     } else {
@@ -5890,13 +5897,13 @@ function meslekYoluImzaEtkisi(s: GameState, kademe: number) {
   else if (p.profession === "marangoz") { const pr = [...p.properties].sort((a, b) => a.cond - b.cond)[0]; if (pr) pr.cond = Math.min(100, pr.cond + 8 * f); else gainSkill(s, "crafting", 5 * f); }
   else if (p.profession === "çoban") { p.hunger = Math.min(100, p.hunger + 6 * f); p.health = Math.min(100, p.health + f); gainSkill(s, "trade", 3 * f); }
   else if (p.profession === "fırıncı") { p.inventory.ekmek = (p.inventory.ekmek || 0) + f; p.hunger = Math.min(100, p.hunger + 6 * f); }
-  else if (p.profession === "asker") { gainSkill(s, "combat", 6 * f); p.honor = Math.min(100, p.honor + f); }
-  else if (p.profession === "müzisyen") { gainSkill(s, "social", 6 * f); p.fame = Math.min(100, p.fame + f); }
-  else if (p.profession === "şifacı") { p.health = Math.min(100, p.health + 6 * f); p.reputation = Math.min(100, p.reputation + f); }
-  else if (p.profession === "katip") { gainSkill(s, "trade", 5 * f); p.reputation = Math.min(100, p.reputation + f); p.honor = Math.min(100, p.honor + f); }
-  else if (p.profession === "kuyumcu") { p.money += Math.round(18 * f * inflationFactor(s)); p.fame = Math.min(100, p.fame + f); }
-  else if (p.profession === "dokumacı") { gainSkill(s, "crafting", 5 * f); p.reputation = Math.min(100, p.reputation + f); }
-  else if (p.profession === "hancı") { gainSkill(s, "trade", 4 * f); gainSkill(s, "social", 4 * f); p.reputation = Math.min(100, p.reputation + f); }
+  else if (p.profession === "asker") { gainSkill(s, "combat", 6 * f); unEkle(p, "honor", f); }
+  else if (p.profession === "müzisyen") { gainSkill(s, "social", 6 * f); unEkle(p, "fame", f); }
+  else if (p.profession === "şifacı") { p.health = Math.min(100, p.health + 6 * f); unEkle(p, "reputation", f); }
+  else if (p.profession === "katip") { gainSkill(s, "trade", 5 * f); unEkle(p, "reputation", f); unEkle(p, "honor", f); }
+  else if (p.profession === "kuyumcu") { p.money += Math.round(18 * f * inflationFactor(s)); unEkle(p, "fame", f); }
+  else if (p.profession === "dokumacı") { gainSkill(s, "crafting", 5 * f); unEkle(p, "reputation", f); }
+  else if (p.profession === "hancı") { gainSkill(s, "trade", 4 * f); gainSkill(s, "social", 4 * f); unEkle(p, "reputation", f); }
   push(s, "çalışma", `Yılların birikimi işine ayrı bir kuvvet kattı.`, "kişisel", false, { k: "my.effect", p: [{ pr: p.profession }] });
 }
 
@@ -5904,12 +5911,12 @@ function meslekYoluEsikKontrol(s: GameState, oncekiXp: number) {
   const p = s.player;
   if (!(p.capstones || []).includes(p.profession) || kademeOf(p) < 3) return;
   if (oncekiXp < MESLEK_YOLU_ESIK[1] && p.career_xp >= MESLEK_YOLU_ESIK[1]) {
-    p.fame = Math.min(100, p.fame + 4); p.reputation = Math.min(100, p.reputation + 5);
+    unEkle(p, "fame", 4); unEkle(p, "reputation", 5);
     push(s, "meslek_yolu", `Tezgâhın artık yalnız sana değil çevrendekilere de geçim veriyor; mesleğinde kök saldın.`, "kişisel", true, { k: "my.root", p: [{ pr: p.profession }] });
   }
   if (oncekiXp < MESLEK_YOLU_ESIK[2] && p.career_xp >= MESLEK_YOLU_ESIK[2] && !(p.meslek_pirleri || []).includes(p.profession)) {
     (p.meslek_pirleri = p.meslek_pirleri || []).push(p.profession);
-    p.fame = Math.min(100, p.fame + 12); p.reputation = Math.min(100, p.reputation + 10); p.honor = Math.min(100, p.honor + 8);
+    unEkle(p, "fame", 12); unEkle(p, "reputation", 10); unEkle(p, "honor", 8);
     push(s, "meslek_yolu", `Bir hükümdarın tâcı yok belki; fakat senin eserlerinde, yetiştirdiğin ellerde ve halkın dilinde kalan bir ömrün var. Mesleğinin piri oldun.`, "kişisel", true, { k: "my.pir", p: [{ pr: p.profession }] });
   }
 }
@@ -6025,7 +6032,7 @@ export function resolveTezgah(prev: GameState, i: number): GameState {
   const d = ok ? sc.d : sc.risk!;
   if (d.money) p.money = Math.max(0, p.money + d.money);
   if (d.health) p.health = Math.max(1, Math.min(100, p.health + d.health));
-  if (d.reputation) p.reputation = Math.max(-100, Math.min(100, p.reputation + d.reputation));
+  if (d.reputation) unEkle(p, "reputation", d.reputation);
   if (d.honor) p.honor = Math.max(0, Math.min(100, p.honor + d.honor));
   if (d.fear) p.fear = Math.max(0, Math.min(100, p.fear + d.fear));
   if (d.fame) p.fame = Math.max(0, Math.min(100, p.fame + d.fame));
@@ -6084,7 +6091,7 @@ function rakipSonu(s: GameState) {
   const p = s.player; const r = p.rakip; if (!r || r.bitti) return;
   if (r.galip >= RAKIP_HEDEF) {
     r.bitti = "ustun"; r.bittiTur = s.turn; r.yaris = undefined; p.rakip_zafer = (p.rakip_zafer || 0) + 1;
-    p.fame = Math.min(100, p.fame + 5); p.reputation = Math.min(100, p.reputation + 5);
+    unEkle(p, "fame", 5); unEkle(p, "reputation", 5);
     push(s, "rakip", "Çarşının bayrağı artık sende.", "kişisel", true, { k: "evj.rakip.ustun" + rkG(r.g), p: [rkAd(r)] });
   } else if (r.maglup >= RAKIP_HEDEF) {
     r.bitti = "yenik"; r.bittiTur = s.turn; r.yaris = undefined;
@@ -6108,7 +6115,7 @@ function rakipTick(s: GameState) {
   r.bilinen = true;
   if (r.mizac === "kiskanc") { p.reputation = Math.max(-100, p.reputation - 2); push(s, "rakip", "Rakibin hakkında dedikodu yayıyor.", "kişisel", false, { k: "evj.rakip.dedikodu" + rkG(r.g), p: [rkAd(r)] }); }
   else if (r.mizac === "hilebaz") { const kayip = Math.min(25, Math.round(p.money * 0.05)); if (kayip > 0) { p.money -= kayip; push(s, "rakip", "Rakibin müşterini ayarttı.", "kişisel", false, { k: "evj.rakip.musteri" + rkG(r.g), p: [rkAd(r), kayip] }); } }
-  else { p.reputation = Math.min(100, p.reputation + 1); push(s, "rakip", "Rakibin çarşıda işini övdü.", "kişisel", false, { k: "evj.rakip.ovgu" + rkG(r.g), p: [rkAd(r)] }); }
+  else { unEkle(p, "reputation", 1); push(s, "rakip", "Rakibin çarşıda işini övdü.", "kişisel", false, { k: "evj.rakip.ovgu" + rkG(r.g), p: [rkAd(r)] }); }
 }
 export function rakipMeydanHazir(s: GameState): boolean {
   const p = s.player; const r = rakipAktif(p);
@@ -6132,7 +6139,7 @@ export function rakipYarisi(prev: GameState, yol: number): { state: GameState; b
   if (ok) {
     r.galip++;
     const odul = Math.round((15 + kademeOf(p) * 10) * inflationFactor(s)); p.money += odul;
-    p.fame = Math.min(100, p.fame + 2); p.reputation = Math.min(100, p.reputation + 2);
+    unEkle(p, "fame", 2); unEkle(p, "reputation", 2);
     if (yol === 2) { p.honor = Math.max(0, p.honor - 3); r.hile = (r.hile || 0) + 1; }
     push(s, "rakip", "Lonca bayrağı bu yıl senin tezgâhına asıldı.", "kişisel", false, { k: (yol === 2 ? "evj.rakip.winHile" : "evj.rakip.win") + rkG(r.g), p: [rkAd(r), odul] });
   } else {
@@ -6161,7 +6168,7 @@ export function rakipOrtaklikHazir(p: Player): boolean { const r = rakipAktif(p)
 export function rakipOrtaklik(prev: GameState): GameState {
   if (!rakipOrtaklikHazir(prev.player)) return prev;
   const s = clone(prev); const p = s.player; const r = p.rakip!;
-  r.bitti = "ortak"; r.bittiTur = s.turn; p.honor = Math.min(100, p.honor + 2);
+  r.bitti = "ortak"; r.bittiTur = s.turn; unEkle(p, "honor", 2);
   push(s, "rakip", "Rakibinle ortak oldun.", "kişisel", true, { k: "evj.rakip.ortak" + rkG(r.g), p: [rkAd(r)] });
   return s;
 }
@@ -6217,7 +6224,7 @@ function cirakMezun(s: GameState) {
   const p = s.player; const c = p.cirak; if (!c || c.ilerleme < 100) return;
   p.cirak = undefined; p.cirak_yetisen = (p.cirak_yetisen || 0) + 1; p.cirak_bekle = s.turn + 12;
   { const k = c.id ? nufusHazirla(s).k[c.id] : undefined; if (k && k.ol == null) { k.usta = true; k.prof = c.prof; } } // peştamallı usta: senin yetiştirdiğin
-  p.fame = Math.min(100, p.fame + 3); p.reputation = Math.min(100, p.reputation + 3);
+  unEkle(p, "fame", 3); unEkle(p, "reputation", 3);
   sowSeed(s, { kaynak: "cirak_vefa", hmin: 36, hmax: 120, agirlik: "orta", nesil: false, etki: { money: 40, reputation: 3 } });
   push(s, "cirak", "Çırağın peştamal kuşandı.", "kişisel", true, { k: "evj.cirak.pestamal" + ckG(c.g), p: [ckAd(c), p.cirak_yetisen] });
 }
@@ -6244,10 +6251,10 @@ function cirakTick(s: GameState) {
       if (iyi) { c.ilerleme = Math.min(100, c.ilerleme + 2); push(s, "cirak", "Çırağın gece sabahlara dek çalıştı.", "kişisel", false, { k: "evj.cirak.gayret" + ckG(c.g), p: [ckAd(c)] }); }
       else { const z = Math.min(p.money, 8); p.money -= z; push(s, "cirak", "Çırağın aceleyle bir aleti kırdı.", "kişisel", false, { k: "evj.cirak.sakar" + ckG(c.g), p: [ckAd(c), z] }); }
     } else if (c.huy === "yetenekli") {
-      if (iyi) { c.ilerleme = Math.min(100, c.ilerleme + 4); p.fame = Math.min(100, p.fame + 1); push(s, "cirak", "Çırağın senin bile düşünmediğin bir yol buldu.", "kişisel", false, { k: "evj.cirak.bulus" + ckG(c.g), p: [ckAd(c)] }); }
+      if (iyi) { c.ilerleme = Math.min(100, c.ilerleme + 4); unEkle(p, "fame", 1); push(s, "cirak", "Çırağın senin bile düşünmediğin bir yol buldu.", "kişisel", false, { k: "evj.cirak.bulus" + ckG(c.g), p: [ckAd(c)] }); }
       else { c.ilerleme = Math.max(0, c.ilerleme - 3); push(s, "cirak", "Çırağın tembelliğe vurdu.", "kişisel", false, { k: "evj.cirak.tembel" + ckG(c.g), p: [ckAd(c)] }); }
     } else {
-      p.reputation = Math.min(100, p.reputation + 1);
+      unEkle(p, "reputation", 1);
       push(s, "cirak", "Çırağın tezgâhını senin yokluğunda da kolladı.", "kişisel", false, { k: "evj.cirak.sadakat" + ckG(c.g), p: [ckAd(c)] });
     }
   }
@@ -6849,7 +6856,7 @@ export function mentorApprentice(prev: GameState): GameState {
   s.relationships[a.id] = Math.max(-100, Math.min(100, (s.relationships[a.id] || 0) + 3));
   if (a.months >= APPRENTICE_MONTHS) {
     p.apprentice = undefined;
-    p.fame = Math.min(100, p.fame + 5); p.honor = Math.min(100, p.honor + 5);
+    unEkle(p, "fame", 5); unEkle(p, "honor", 5);
     s.relationships[a.id] = Math.max(-100, Math.min(100, (s.relationships[a.id] || 0) + 25));
     { const k = nufusHazirla(s).k[a.id]; if (k) k.usta = true; } // kalıcı iz: senin elinden çıkma usta
     push(s, "çıraklık", `${a.name} yetişti: senin elinden çıkma bir usta artık. Adın onunla da anılacak.`, "kişisel", true, { k: "evj.apr.done", p: [npcP(s, a)] });
@@ -6871,7 +6878,7 @@ export function helpNpcGoal(prev: GameState, npc: NPC): GameState {
   const mrh = p.temperament === "merhametli" ? 1.25 : 1; // merhametli: içten yardım daha derin bağ kurar
   s.relationships[npc.id] = Math.min(100, rel + Math.round((fresh ? 18 : 6) * mrh));
   ns.mood = Math.max(-100, Math.min(100, ns.mood + (fresh ? 18 : 8)));
-  if (fresh) { p.reputation = Math.min(100, p.reputation + 3); bumpNam(p, "comert", 4); }
+  if (fresh) { unEkle(p, "reputation", 3); bumpNam(p, "comert", 4); }
   gainSkill(s, "social", 6);
   ns.memories.push(`Amacına omuz verdin: ${npc.goal}.`);
   if (ns.memories.length > 8) ns.memories = ns.memories.slice(-8);
@@ -6899,7 +6906,7 @@ export function exploitNpcGoal(prev: GameState, npc: NPC): GameState {
   const ns = npcStateOf(s, npc.id);
   s.relationships[npc.id] = Math.max(-100, (s.relationships[npc.id] || 0) - 22);
   ns.mood = Math.max(-100, ns.mood - 25);
-  p.reputation = Math.max(-100, p.reputation - 4); p.fear = Math.min(100, p.fear + 3);
+  p.reputation = Math.max(-100, p.reputation - 4); unEkle(p, "fear", 3);
   bumpNam(p, "zalim", 5);
   ns.memories.push(`Amacını istismar edip seni kullandı.`);
   if (ns.memories.length > 8) ns.memories = ns.memories.slice(-8);
@@ -6926,7 +6933,7 @@ export function proposeMarriage(prev: GameState, npc: NPC): GameState {
     bumpNam(p, "capkin", 3);
     push(s, "sohbet", `${npc.name} yüzü kızararak baktı: "Gönlüm seninle ama önce kendi ocağımı dağıtmam lazım. Bana biraz zaman ver." Söz kesildi; şimdi bekleme sırası sende.`, "kişisel", true, { k: "evj.betrothWait", p: [npcP(s, npc)] });
   } else if (ok) {
-    p.married = true; p.married_turn = s.turn; p.spouse_bond = Math.max(30, Math.min(80, Math.round(relWith(s, npc.id) || 40))); { const k = nufusHazirla(s).k[npc.id]; if (k && k.ol == null) oyuncuEvlenKisi(s, k); else { p.spouse_name = npc.name; p.spouse_seed = locSeed(npc.id); p.spouse_mizac = mizacFromTrait(npc.trait, locSeed(npc.id)); } } p.widowed = false; p.reputation = Math.min(100, p.reputation + 5);
+    p.married = true; p.married_turn = s.turn; p.spouse_bond = Math.max(30, Math.min(80, Math.round(relWith(s, npc.id) || 40))); { const k = nufusHazirla(s).k[npc.id]; if (k && k.ol == null) oyuncuEvlenKisi(s, k); else { p.spouse_name = npc.name; p.spouse_seed = locSeed(npc.id); p.spouse_mizac = mizacFromTrait(npc.trait, locSeed(npc.id)); } } p.widowed = false; unEkle(p, "reputation", 5);
     bumpNam(p, "capkin", 5);
     push(s, "evlilik", `${npc.name} ile evlendin — yeni bir ocak kuruldu.`, "kişisel", true, { k: "evj.marryNpc", p: [esParam(s)] });
   } else {
@@ -6950,7 +6957,7 @@ function betrothalTick(s: GameState) {
   if (chance(0.35)) {
     // Boşandı ve seninle evlendi — dillere düşen bir evlilik.
     p.married = true; p.married_turn = s.turn; p.spouse_bond = 45; p.widowed = false; if (bk) oyuncuEvlenKisi(s, bk); else { p.spouse_name = b.name; p.spouse_seed = b.seed; p.spouse_mizac = undefined; } // eski eşiyle bağı nüfusta çözülür
-    p.fame = Math.min(100, p.fame + 6); p.reputation = clampStat(p.reputation - 4); bumpNam(p, "capkin", 4);
+    unEkle(p, "fame", 6); p.reputation = clampStat(p.reputation - 4); bumpNam(p, "capkin", 4);
     p.betrothed = undefined;
     push(s, "evlilik", `${b.name} sonunda kendi ocağını dağıttı ve seninle evlendi. Diyar bu evliliği uzun süre konuşacak — kimi kutladı, kimi kaş çattı.`, "kişisel", true, { k: "evj.betrothWed", p: [nameParam] });
   } else if (chance(0.18) || b.months >= 10) {
@@ -6988,7 +6995,7 @@ export function proposeArranged(prev: GameState, npc: NPC): GameState {
   p.money -= MATCHMAKER_FEE;
   const ok = sansTut(s, npc, "gorucu");
   if (ok) {
-    p.married = true; p.married_turn = s.turn; p.spouse_bond = Math.max(30, Math.min(80, Math.round(relWith(s, npc.id) || 40))); { const k = nufusHazirla(s).k[npc.id]; if (k && k.ol == null) oyuncuEvlenKisi(s, k); else { p.spouse_name = npc.name; p.spouse_seed = locSeed(npc.id); p.spouse_mizac = mizacFromTrait(npc.trait, locSeed(npc.id)); } } p.widowed = false; p.reputation = Math.min(100, p.reputation + 5);
+    p.married = true; p.married_turn = s.turn; p.spouse_bond = Math.max(30, Math.min(80, Math.round(relWith(s, npc.id) || 40))); { const k = nufusHazirla(s).k[npc.id]; if (k && k.ol == null) oyuncuEvlenKisi(s, k); else { p.spouse_name = npc.name; p.spouse_seed = locSeed(npc.id); p.spouse_mizac = mizacFromTrait(npc.trait, locSeed(npc.id)); } } p.widowed = false; unEkle(p, "reputation", 5);
     push(s, "evlilik", `${npc.name} ile görücü usulü evlendin — iki aile görüştü, yeni bir ocak kuruldu.`, "kişisel", true, { k: "evj.marryNpc", p: [esParam(s)] });
   } else {
     push(s, "sohbet", `Görücüler eli boş döndü: ${npc.name} tarafı teklifi şimdilik geri çevirdi; çöpçatan başka kapı çalacak.`, "kişisel", false, { k: "evj.matchNo", p: [npcP(s, npc)] });
@@ -7002,7 +7009,7 @@ export function insultNpc(prev: GameState, npc: NPC): GameState {
   const ns = npcStateOf(s, npc.id); const rel = s.relationships[npc.id] || 0;
   if (npcActUsed(ns, "insult", s.turn)) return s; markNpcAct(ns, "insult", s.turn); // hakaret kanalı ayda bir
   let drop = 8 + Math.floor(Math.random() * 8);
-  if (npc.trait === "aceleci" || npc.trait === "kibirli" || npc.trait === "mert") { drop += 5; p.fear = Math.min(100, p.fear + 2); } // tez canlı, kibirli ya da mert olan sert karşılık verir
+  if (npc.trait === "aceleci" || npc.trait === "kibirli" || npc.trait === "mert") { drop += 5; unEkle(p, "fear", 2); } // tez canlı, kibirli ya da mert olan sert karşılık verir
   s.relationships[npc.id] = Math.max(-100, rel - drop);
   ns.mood = Math.max(-100, ns.mood - 20);
   p.honor = Math.max(0, p.honor - 2);
@@ -7155,7 +7162,7 @@ export function helallikIste(prev: GameState, npc: NPC, bedel = false): GameStat
   const sans = helalSansi(s, npc, bedel).yuzde; markNpcAct(ns, "helal", s.turn);
   if (Math.random() * 100 < sans) {
     aniHafiflet(ns, m => m.yuk < 0, .4); // kırgınlık solar (travma izi kalır ama hafifler)
-    remember(s, npc, "helallik"); p.honor = Math.min(100, p.honor + 2); bumpNam(p, "dindar", 1);
+    remember(s, npc, "helallik"); unEkle(p, "honor", 2); bumpNam(p, "dindar", 1);
     if (bedel) p.money -= cost;
     push(s, "sohbet", `${npc.name} helallik verdi; aranızdaki kırgınlık hafifledi.`, "kişisel", true, { k: bedel ? "npca.helalOkBedel" : "npca.helalOk", p: [npcP(s, npc), cost] });
   } else {
@@ -7172,7 +7179,7 @@ export function giveMoneyTo(prev: GameState, npc: NPC): GameState {
   p.money -= GIVE_MONEY_AMT;
   const up = rel < 70 ? 9 : 3; // azalan getiri
   s.relationships[npc.id] = Math.min(100, rel + up); ns.mood = Math.max(-100, Math.min(100, ns.mood + 10));
-  p.reputation = Math.min(100, p.reputation + 1); bumpNam(p, "comert", 3); remember(s, npc, "hediye");
+  unEkle(p, "reputation", 1); bumpNam(p, "comert", 3); remember(s, npc, "hediye");
   push(s, "sohbet", `${npc.name}'in avucuna ${GIVE_MONEY_AMT} akçe sıkıştırdın; duası seninle.`, "kişisel", false, { k: "npca.money", p: [npcP(s, npc), GIVE_MONEY_AMT] });
   return s;
 }
@@ -7243,7 +7250,7 @@ export function redeemHorse(prev: GameState): GameState {
 export function buyHorse(prev: GameState): GameState {
   const s = clone(prev); const p = s.player;
   if (p.dead || p.age < 13 || p.horse || p.money < HORSE_COST) return s; // çocuğa at satılmaz
-  p.money -= HORSE_COST; p.horse = true; p.horse_name = evcilAd(s, "at"); p.reputation = Math.min(100, p.reputation + 2);
+  p.money -= HORSE_COST; p.horse = true; p.horse_name = evcilAd(s, "at"); unEkle(p, "reputation", 2);
   { const hv = chance(0.5); push(s, "yolculuk", hv ? `${p.horse_name} ilk gece tavlada huysuzlandı, sabaha avucundan yem yedi; yol arkadaşlığı böyle başlar.` : `${p.horse_name} adında sağlam bir at aldın; artık yollar daha kısa ve emniyetli.`, "kişisel", true, { k: hv ? "horse.named2" : "horse.named", p: [p.horse_name] }); }
   return s;
 }
@@ -7289,7 +7296,7 @@ function rollTravelEvent(s: GameState, route: TravelRoute) {
   }
   else if (ev === "kutsal") {
     // Yol üstü türbe: sakin bir an — test yok, küçük gönül ferahlığı.
-    p.honor = Math.min(100, p.honor + 2); p.health = Math.min(100, p.health + 3); bumpNam(p, "dindar", 1);
+    unEkle(p, "honor", 2); p.health = Math.min(100, p.health + 3); bumpNam(p, "dindar", 1);
     push(s, "yolculuk", "Yol üstünde bir türbeye uğrayıp dua ettin; içine bir ferahlık indi.", "kişisel", false, { k: "evj.trShrine" });
   } else if (ev === "izler") {
     if (test("stamina", 0.06, 0.45)) { gainSkill(s, "combat", 6); push(s, "yolculuk", "Patikada kurt izleri gördün; izleri okuyup sürüden önce davrandın.", "kişisel", false, { k: "evj.trTracksWin" }); }
@@ -7311,7 +7318,7 @@ function rollTravelEvent(s: GameState, route: TravelRoute) {
     else { p.hunger = Math.max(0, p.hunger - 5); push(s, "yolculuk", "Atı çamurdan çekeyim derken kendin dizine kadar battın; hayvan kendi kendine çıktı, sen çamurla döndün.", "kişisel", false, { k: "evj.trReedLose" }); }
   } else if (ev === "menzilci") {
     // Attan düşen menzil ulağı: mektubu yetiştiren posta ücretini ve itibarı alır.
-    if (test("stamina", 0.05, 0.45)) { const pay = Math.round((7 + Math.floor(gameRandom(s) * 9)) * inflationFactor(s)); p.money += pay; p.reputation = Math.min(100, p.reputation + 1); push(s, "yolculuk", `Attan düşen menzil ulağının mektubunu bir sonraki hana sen yetiştirdin; posta ücreti sana kaldı (+${pay}).`, "kişisel", false, { k: "evj.trCourierWin", p: [pay] }); }
+    if (test("stamina", 0.05, 0.45)) { const pay = Math.round((7 + Math.floor(gameRandom(s) * 9)) * inflationFactor(s)); p.money += pay; unEkle(p, "reputation", 1); push(s, "yolculuk", `Attan düşen menzil ulağının mektubunu bir sonraki hana sen yetiştirdin; posta ücreti sana kaldı (+${pay}).`, "kişisel", false, { k: "evj.trCourierWin", p: [pay] }); }
     else push(s, "yolculuk", "Ulağın mektubunu yetiştireyim derken yolu uzattın; han kapanmıştı, mektup sabahı bekledi.", "kişisel", false, { k: "evj.trCourierLose" });
   } else if (ev === "gecates") {
     // Gece çoban ateşi: sofraya oturan türkü ve dinçlikle kalkar; yolu şaşıran soğukta konaklar.
@@ -7325,7 +7332,7 @@ function rollTravelEvent(s: GameState, route: TravelRoute) {
     if (test("intelligence", 0.05, 0.38)) { const loot = Math.round((10 + Math.floor(gameRandom(s) * 18)) * inflationFactor(s)); p.money += loot; push(s, "yolculuk", `Eski bir kervansaray harabesini kolaçan ettin; taşların arasından unutulmuş bir kese çıktı (+${loot} akçe).`, "kişisel", true, { k: "evj.trRuinWin", p: [loot] }); }
     else push(s, "yolculuk", "Eski bir harabeyi kolaçan ettin; örümcek ağından başka bir şey çıkmadı.", "kişisel", false, { k: "evj.trRuinLose" });
   } else if (ev === "kopru") {
-    if (test("intelligence", 0.05, 0.42)) { gainSkill(s, "crafting", 6); p.reputation = Math.min(100, p.reputation + 1); push(s, "yolculuk", "Selin yıktığı köprüde gevşeyen tahtayı yerine oturttun; arkandan gelen kervan da geçti, dualar aldın.", "kişisel", false, { k: "evj.trBridgeWin" }); }
+    if (test("intelligence", 0.05, 0.42)) { gainSkill(s, "crafting", 6); unEkle(p, "reputation", 1); push(s, "yolculuk", "Selin yıktığı köprüde gevşeyen tahtayı yerine oturttun; arkandan gelen kervan da geçti, dualar aldın.", "kişisel", false, { k: "evj.trBridgeWin" }); }
     else { const hurt = 3 + Math.floor(gameRandom(s) * 5); p.health = Math.max(1, p.health - hurt); p.hunger = Math.max(0, p.hunger - 4); push(s, "yolculuk", `Yıkık köprüde dere geçidi aramak zorunda kaldın; sırılsıklam ve yorgun vardın (−${hurt} sağlık).`, "kişisel", false, { k: "evj.trBridgeLose", p: [hurt] }); }
   } else if (ev === "devrikyuk") {
     if (test("strength", 0.06, 0.42)) { const pay = Math.round((7 + Math.floor(gameRandom(s) * 8)) * inflationFactor(s)); p.money += pay; bumpNam(p, "comert", 1); push(s, "yolculuk", `Devrilen yük arabasını omuz verip kaldırdın; arabacı avucuna birkaç akçe sıkıştırdı (+${pay}).`, "kişisel", false, { k: "evj.trCartWin", p: [pay] }); }
@@ -7334,19 +7341,19 @@ function rollTravelEvent(s: GameState, route: TravelRoute) {
     if (test("intelligence", 0.05, 0.45)) { p.hunger = Math.min(100, p.hunger + 5); bumpNam(p, "comert", 1); push(s, "yolculuk", "Devrilen kovanların başında çaresiz kalan arıcıya dumanla yardım ettin; arılar duruldu, yola bir çanak balla devam ettin.", "kişisel", false, { k: "evj.trHiveWin" }); }
     else { const hurt = 2 + Math.floor(gameRandom(s) * 3); p.health = Math.max(1, p.health - hurt); push(s, "yolculuk", `Kovanlara yaklaşınca arılar öfkeyle kalktı; iki sokmayla kaçtın (−${hurt} sağlık). Arıcı özürler diledi.`, "kişisel", false, { k: "evj.trHiveLose", p: [hurt] }); }
   } else if (ev === "atnali") {
-    if (test("intelligence", 0.05, 0.42)) { const pay = Math.round((6 + Math.floor(gameRandom(s) * 7)) * inflationFactor(s)); p.money += pay; p.reputation = Math.min(100, p.reputation + 1); push(s, "yolculuk", `Yol kenarında topal atıyla kalakalmış süvarinin nalını çakıp düzelttin; avucuna akçe sıkıştırıp yola koyuldu (+${pay}).`, "kişisel", false, { k: "evj.trShoeWin", p: [pay] }); }
+    if (test("intelligence", 0.05, 0.42)) { const pay = Math.round((6 + Math.floor(gameRandom(s) * 7)) * inflationFactor(s)); p.money += pay; unEkle(p, "reputation", 1); push(s, "yolculuk", `Yol kenarında topal atıyla kalakalmış süvarinin nalını çakıp düzelttin; avucuna akçe sıkıştırıp yola koyuldu (+${pay}).`, "kişisel", false, { k: "evj.trShoeWin", p: [pay] }); }
     else { p.hunger = Math.max(0, p.hunger - 3); push(s, "yolculuk", "Huysuz at nal tutturmadı; süvariyle yarım saat uğraşıp terledin, at yine topal, sen yine yolda.", "kişisel", false, { k: "evj.trShoeLose" }); }
   } else if (ev === "dervis") {
     if (test("charisma", 0.05, 0.45)) { p.health = Math.min(100, p.health + 3); bumpNam(p, "dindar", 1); push(s, "yolculuk", "Yolda bir gezgin dervişe yoldaş oldun; anlattığı kıssa içindeki düğümü çözdü, ayrılırken duasını aldın.", "kişisel", false, { k: "evj.trDervisWin" }); }
     else push(s, "yolculuk", "Gezgin derviş suskun çıktı; fersah boyu yalnız ayak sesleriniz konuştu. Yine de kötü yoldaş değildi.", "kişisel", false, { k: "evj.trDervisLose" });
   } else if (ev === "kayipcocuk") {
-    if (test("charisma", 0.05, 0.5)) { p.reputation = Math.min(100, p.reputation + 2); bumpNam(p, "mert", 1); push(s, "yolculuk", "Yol kenarında ağlayan, yolunu şaşırmış bir çocuk buldun; elinden tutup köyüne ulaştırdın. Anası kapıda dua etti.", "kişisel", false, { k: "evj.trChildWin" }); }
+    if (test("charisma", 0.05, 0.5)) { unEkle(p, "reputation", 2); bumpNam(p, "mert", 1); push(s, "yolculuk", "Yol kenarında ağlayan, yolunu şaşırmış bir çocuk buldun; elinden tutup köyüne ulaştırdın. Anası kapıda dua etti.", "kişisel", false, { k: "evj.trChildWin" }); }
     else push(s, "yolculuk", "Yolunu şaşırmış bir çocuğa yaklaştın ama ürküp kaçtı; neyse ki az ileride köylüler buldu.", "kişisel", false, { k: "evj.trChildLose" });
   } else if (ev === "siginak") {
     if (test("intelligence", 0.05, 0.45)) { p.hunger = Math.min(100, p.hunger + 6); push(s, "yolculuk", "Gök bir anda karardı; kaya kovuğunu ilk sen gördün, bir yolcuyla kuru kaldınız. Azığından çörek ikram etti.", "kişisel", false, { k: "evj.trShelterWin" }); }
     else { p.health = Math.max(1, p.health - 2); push(s, "yolculuk", "Sağanak açıkta yakaladı; sırılsıklam vardın, akşama kadar titredin (−2 sağlık).", "kişisel", false, { k: "evj.trShelterLose" }); }
   } else if (ev === "atli") {
-    if (test("stamina", 0.05, 0.5)) { p.fame = Math.min(100, p.fame + 2); bumpNam(p, "mert", 1); push(s, "yolculuk", `Yolda bir atlıyla yarıştınız; ${p.horse_name || "atın"} rüzgâr gibi uçtu, adın yol boyu anlatıldı.`, "kişisel", false, { k: "evj.trRaceWin", p: [p.horse_name || ""] }); }
+    if (test("stamina", 0.05, 0.5)) { unEkle(p, "fame", 2); bumpNam(p, "mert", 1); push(s, "yolculuk", `Yolda bir atlıyla yarıştınız; ${p.horse_name || "atın"} rüzgâr gibi uçtu, adın yol boyu anlatıldı.`, "kişisel", false, { k: "evj.trRaceWin", p: [p.horse_name || ""] }); }
     else push(s, "yolculuk", "Yolda bir atlıyla yarıştınız; tozunu yuttun ama iyi koşturdun.", "kişisel", false, { k: "evj.trRaceLose" });
   }
   if (p.health <= 0) die(s, `${p.name}, yolda can verdi.`, { k: "evj.dieRoad", p: [p.name] });
@@ -7558,7 +7565,7 @@ export function studySubject(prev: GameState, id: string): StudyResult {
   }
   if (id === "din") {
     bumpNam(p, "dindar", 4); chips.push({ label: "Dindar +4", col: "#9C7BC4", k: "chip.dindar", p: ["+4"] });
-    if (lucky) { p.honor = Math.min(100, p.honor + 2); chips.push({ label: "Şeref +2", col: "#7FA66A", k: "chip.honor", p: ["+2"] }); key = "ev.study.din.l"; push(s, "mektep", "Dini ilimler okudun; gönlün huzur buldu.", "kişisel", false, { k: key }); }
+    if (lucky) { unEkle(p, "honor", 2); chips.push({ label: "Şeref +2", col: "#7FA66A", k: "chip.honor", p: ["+2"] }); key = "ev.study.din.l"; push(s, "mektep", "Dini ilimler okudun; gönlün huzur buldu.", "kişisel", false, { k: key }); }
     else { const dv = chance(0.5); key = dv ? "ev.study.din.p2" : "ev.study.din.p"; push(s, "mektep", dv ? "Hoca kıssayı yarıda kesti: \"Gerisini siz düşünün.\" Yol boyu düşündün." : "Mektepte dua ve hikmet dinledin.", "kişisel", false, { k: key }); }
   } else if (id === "matematik") {
     if (p.trade_xp_turn !== s.turn) { p.trade_xp_turn = s.turn; gainSkill(s, "trade", 5); } // al-sat XP: tur başına tek (buğday al-sat döngüsüyle beceri farmı kapatıldı); chips.push({ label: "Ticaret +5", col: "#C9A84C", k: "chip.trade", p: ["+5"] });
@@ -7578,16 +7585,16 @@ export function studySubject(prev: GameState, id: string): StudyResult {
     const ev = rnd(SCHOOL_EVENTS);
     const pass = Math.random() < Math.min(0.9, 0.4 + effStat(p, ev.stat) * 0.06);
     const w = pass ? "win" : "lose";
-    if (ev.id === "kopya") { if (pass) { p.honor = Math.min(100, p.honor + 4); chips.push({ label: "Şeref +4", col: "#7FA66A", k: "chip.honor", p: ["+4"] }); } else { p.honor = Math.max(0, p.honor - 3); p.reputation = Math.max(-100, p.reputation - 2); chips.push({ label: "Şeref −3", col: "#C0556B", k: "chip.honor", p: ["−3"] }); } }
-    else if (ev.id === "kavga") { if (pass) { p.honor = Math.min(100, p.honor + 5); p.reputation = Math.min(100, p.reputation + 2); p.health = Math.max(1, p.health - 3); chips.push({ label: "Şeref +5", col: "#7FA66A", k: "chip.honor", p: ["+5"] }); } else { p.health = Math.max(1, p.health - 5); chips.push({ label: "Sağlık −5", col: "#C0556B", k: "chip.health", p: ["−5"] }); } }
-    else if (ev.id === "siir") { if (pass) { gainSkill(s, "social", 8); p.fame = Math.min(100, p.fame + 1); chips.push({ label: "Sosyal +8", col: "#C9A84C", k: "chip.social", p: ["+8"] }); } else { p.honor = Math.max(0, p.honor - 1); } }
+    if (ev.id === "kopya") { if (pass) { unEkle(p, "honor", 4); chips.push({ label: "Şeref +4", col: "#7FA66A", k: "chip.honor", p: ["+4"] }); } else { p.honor = Math.max(0, p.honor - 3); p.reputation = Math.max(-100, p.reputation - 2); chips.push({ label: "Şeref −3", col: "#C0556B", k: "chip.honor", p: ["−3"] }); } }
+    else if (ev.id === "kavga") { if (pass) { unEkle(p, "honor", 5); unEkle(p, "reputation", 2); p.health = Math.max(1, p.health - 3); chips.push({ label: "Şeref +5", col: "#7FA66A", k: "chip.honor", p: ["+5"] }); } else { p.health = Math.max(1, p.health - 5); chips.push({ label: "Sağlık −5", col: "#C0556B", k: "chip.health", p: ["−5"] }); } }
+    else if (ev.id === "siir") { if (pass) { gainSkill(s, "social", 8); unEkle(p, "fame", 1); chips.push({ label: "Sosyal +8", col: "#C9A84C", k: "chip.social", p: ["+8"] }); } else { p.honor = Math.max(0, p.honor - 1); } }
     else if (ev.id === "soru") { if (pass) { if (!seasoned) { p.stat_points += 1; chips.push({ label: "Özellik Puanı +1", col: "#E0BC5A", k: "chip.statpt" }); } else { addStatXp(s, EXAM_STAT[id] || "intelligence", 10); chips.push({ label: "Ustalık", col: "#E0BC5A", k: "chip.ustalik" }); } } }
     else if (ev.id === "yaramazlik") { if (pass) { bumpNam(p, "capkin", 2); } else { p.honor = Math.max(0, p.honor - 2); chips.push({ label: "Şeref −2", col: "#C0556B", k: "chip.honor", p: ["−2"] }); } }
-    else if (ev.id === "yardim") { if (pass) { p.honor = Math.min(100, p.honor + 3); gainSkill(s, "social", 6); chips.push({ label: "Sosyal +6", col: "#C9A84C", k: "chip.social", p: ["+6"] }); } }
+    else if (ev.id === "yardim") { if (pass) { unEkle(p, "honor", 3); gainSkill(s, "social", 6); chips.push({ label: "Sosyal +6", col: "#C9A84C", k: "chip.social", p: ["+6"] }); } }
     else if (ev.id === "hattat") { if (pass) { gainSkill(s, "crafting", 8); chips.push({ label: "Zanaat +8", col: "#C9A84C", k: "chip.craft", p: ["+8"] }); } else { p.honor = Math.max(0, p.honor - 1); } }
-    else if (ev.id === "ezber") { if (pass) { addStatXp(s, "intelligence", 8); p.fame = Math.min(100, p.fame + 1); chips.push({ label: "Ustalık", col: "#E0BC5A", k: "chip.ustalik" }); } }
+    else if (ev.id === "ezber") { if (pass) { addStatXp(s, "intelligence", 8); unEkle(p, "fame", 1); chips.push({ label: "Ustalık", col: "#E0BC5A", k: "chip.ustalik" }); } }
     else if (ev.id === "harita") { if (pass) { addStatXp(s, "intelligence", 8); chips.push({ label: "Ustalık", col: "#E0BC5A", k: "chip.ustalik" }); } else { p.honor = Math.max(0, p.honor - 1); } }
-    else if (ev.id === "misafir") { if (pass) { gainSkill(s, "social", 8); p.fame = Math.min(100, p.fame + 1); chips.push({ label: "Sosyal +8", col: "#C9A84C", k: "chip.social", p: ["+8"] }); } else { p.honor = Math.max(0, p.honor - 1); } }
+    else if (ev.id === "misafir") { if (pass) { gainSkill(s, "social", 8); unEkle(p, "fame", 1); chips.push({ label: "Sosyal +8", col: "#C9A84C", k: "chip.social", p: ["+8"] }); } else { p.honor = Math.max(0, p.honor - 1); } }
     else { if (pass) { addStatXp(s, "stamina", 6); p.hunger = Math.min(100, p.hunger + 2); chips.push({ label: "Ustalık", col: "#C9A84C", k: "chip.ustalik" }); } else { p.health = Math.max(1, p.health - 2); chips.push({ label: "Sağlık −2", col: "#C0556B", k: "chip.health", p: ["−2"] }); } }
     push(s, "mektep", `Mektep: ${SCHOOL_EV_TR[ev.id + "." + w]}`, "kişisel", false, { k: "sch." + ev.id + "." + w });
   }
@@ -7616,7 +7623,7 @@ export function clubPractice(prev: GameState): StudyResult {
   let gain = 1; let key = "";
   if (p.club === "gures") {
     const win = Math.random() < Math.min(0.9, 0.4 + effStat(p, "strength") * 0.05);
-    if (win) { gainSkill(s, "combat", 10); addStatXp(s, "strength", 4); p.fame = Math.min(100, p.fame + 2); gain = 2;
+    if (win) { gainSkill(s, "combat", 10); addStatXp(s, "strength", 4); unEkle(p, "fame", 2); gain = 2;
       chips.push({ label: "Dövüş +10", col: "#C9A84C", k: "chip.fight", p: ["+10"] }, { label: "Şöhret +2", col: "#7B4FAF", k: "chip.fame", p: ["+2"] }); key = "club.gures.win";
       { const v2 = chance(0.5); push(s, "mektep", v2 ? "Kündeden kurtulup rakibini havada döndürdün; minder kenarında ıslıklar çaldı." : "Güreş minderinde rakibini yendin; adın delikanlılar arasında anıldı.", "kişisel", true, { k: v2 ? "club.gures.win2" : "club.gures.win" }); } }
     else { gainSkill(s, "combat", 4); p.health = Math.max(1, p.health - 3);
@@ -7629,7 +7636,7 @@ export function clubPractice(prev: GameState): StudyResult {
     { const v2 = chance(0.5); push(s, "mektep", v2 ? "Ustanın verdiği işi vaktinden önce bitirdin; kalfalar ölçüp ölçüp bir daha baktı." : "Ustanın yanında bir işi bitirdin; emeğinin karşılığını cebine koydun.", "kişisel", true, { k: v2 ? "club.cirak.win2" : "club.cirak.win", p: [pay] }); }
   } else { // koro
     const win = Math.random() < Math.min(0.9, 0.4 + effStat(p, "charisma") * 0.05);
-    if (win) { gainSkill(s, "social", 10); addStatXp(s, "charisma", 4); p.reputation = Math.min(100, p.reputation + 1); gain = 2;
+    if (win) { gainSkill(s, "social", 10); addStatXp(s, "charisma", 4); unEkle(p, "reputation", 1); gain = 2;
       chips.push({ label: "Sosyal +10", col: "#C9A84C", k: "chip.social", p: ["+10"] }, { label: "İtibar +1", col: "#7FA66A", k: "chip.rep", p: ["+1"] }); key = "club.koro.win";
       { const v2 = chance(0.5); push(s, "mektep", v2 ? "Bugün nağmeyi sen yükselttin; hoca gözlerini kapadı, meclis nefesini tuttu." : "Koroda sesin meclisi büyüledi; el üstünde tutuldun.", "kişisel", true, { k: v2 ? "club.koro.win2" : "club.koro.win" }); } }
     else { gainSkill(s, "social", 4);
@@ -7693,7 +7700,7 @@ export function childAction(prev: GameState, kind: ChildAct): StudyResult {
       else { key = "child.oyun"; push(s, "cocukluk", "Yoldaşınla sokakta oyun oynadınız; soluk soluğa ama mutlu.", "kişisel", false, { k: "child.oyun" }); }
     }
   } else if (kind === "yardim") {
-    const earn = 3 + Math.floor(Math.random() * 6); p.money += earn; p.reputation = Math.min(100, p.reputation + 1); gainSkill(s, "crafting", 4);
+    const earn = 3 + Math.floor(Math.random() * 6); p.money += earn; unEkle(p, "reputation", 1); gainSkill(s, "crafting", 4);
     chips.push({ label: `+${earn} akçe`, col: "#E0BC5A" }, { label: "İtibar +1", col: "#7FA66A", k: "chip.rep", p: ["+1"] }); key = "child.yardim";
     push(s, "cocukluk", "Ev işlerinde aileye el verdin; eline biraz harçlık geçti.", "kişisel", false, { k: "child.yardim", p: [earn] });
   } else if (kind === "yaramazlik") {
@@ -7756,7 +7763,7 @@ export function youthAction(prev: GameState, kind: GencAct): StudyResult {
     else {
       const r = Math.random();
       if (r < 0.15) { gainSkill(s, sk, 2); key = gk(u, "genc.ustaAzar"); push(s, "olgunluk", `Bir işi aceleye getirdin; usta ${kisiAdi(u, "tr")} azarladı, baştan yaptırdı.`, "kişisel", false, { k: key, p: [kfParam(u)] }); }
-      else if (r < 0.3) { gainSkill(s, sk, 6); p.reputation = Math.min(100, p.reputation + 1); yakinlas(u.id, 3, 40); key = gk(u, "genc.ustaOver"); push(s, "olgunluk", `Usta ${kisiAdi(u, "tr")} işine baktı, bir şey demedi; ama akşam çarşıda adını övmüş.`, "kişisel", false, { k: key, p: [kfParam(u)] }); }
+      else if (r < 0.3) { gainSkill(s, sk, 6); unEkle(p, "reputation", 1); yakinlas(u.id, 3, 40); key = gk(u, "genc.ustaOver"); push(s, "olgunluk", `Usta ${kisiAdi(u, "tr")} işine baktı, bir şey demedi; ama akşam çarşıda adını övmüş.`, "kişisel", false, { k: key, p: [kfParam(u)] }); }
       else { gainSkill(s, sk, 5); yakinlas(u.id, 2, 40); key = gk(u, "genc.usta"); push(s, "olgunluk", `Usta ${kisiAdi(u, "tr")} yanında bir gün daha: ${p.profession} işinin bir inceliğini daha kaptın.`, "kişisel", false, { k: key, p: [kfParam(u), { prl: p.profession }] }); }
     }
     chips.push({ label: "Beceri ↑", col: "#C9A84C" });
@@ -7783,7 +7790,7 @@ export function youthAction(prev: GameState, kind: GencAct): StudyResult {
     const rakipler = yasitlar(s).filter((k) => k.g === p.gender);
     if (rakipler.length && Math.random() < 0.4) {
       const k = rnd(rakipler); const kaz = Math.random() < 0.35 + (p.stats.strength + p.stats.stamina) * 0.04;
-      if (kaz) { p.reputation = Math.min(100, p.reputation + 1); bumpNam(p, "mert", 1); key = "genc.huner"; push(s, "olgunluk", `Meydanda koşu yarışına girdin; son düzlükte ${kisiAdi(k, "tr")} geride kaldı, alkışlar senindi.`, "kişisel", false, { k: key, p: [kfParam(k)] }); }
+      if (kaz) { unEkle(p, "reputation", 1); bumpNam(p, "mert", 1); key = "genc.huner"; push(s, "olgunluk", `Meydanda koşu yarışına girdin; son düzlükte ${kisiAdi(k, "tr")} geride kaldı, alkışlar senindi.`, "kişisel", false, { k: key, p: [kfParam(k)] }); }
       else { p.health = Math.max(1, p.health - 2); key = gk(k, "genc.hunerKayip"); push(s, "olgunluk", `Meydandaki yarışta ${kisiAdi(k, "tr")} seni geçti; dizlerin kanadı, hırsın bilendi.`, "kişisel", false, { k: key, p: [kfParam(k)] }); }
       if (s.relationships[k.id] === undefined) s.relationships[k.id] = 0;
     } else { key = "genc.huner0"; push(s, "olgunluk", "Meydanda ter döktün; bileğin de nefesin de güçlendi.", "kişisel", false, { k: key }); }
@@ -7821,7 +7828,7 @@ function shapeChildhood(s: GameState) {
   // Çocukluk hayali: edindiğin meslek hayalinin domeniyle örtüşürse hayal gerçek olur (ödül); yoksa başka bahara kalır.
   if (p.child_dream) {
     const got = (PROF_SKILL[p.profession] || "crafting") === p.child_dream;
-    if (got) { p.stat_points += 1; p.reputation = Math.min(100, p.reputation + 4); push(s, "cocukluk", "Çocukluk hayalin gerçek oldu — hayalini kurduğun yola düştün (özellik puanı + itibar).", "kişisel", true, { k: "evj.dreamWin", p: [{ dreamk: p.child_dream }] }); }
+    if (got) { p.stat_points += 1; unEkle(p, "reputation", 4); push(s, "cocukluk", "Çocukluk hayalin gerçek oldu — hayalini kurduğun yola düştün (özellik puanı + itibar).", "kişisel", true, { k: "evj.dreamWin", p: [{ dreamk: p.child_dream }] }); }
     else push(s, "cocukluk", "Çocukluk hayalin başka bahara kaldı; hayat seni başka bir yola çağırdı.", "kişisel", false, { k: "evj.dreamMiss", p: [{ dreamk: p.child_dream }] });
   }
   const total = (c.oyun || 0) + (c.yardim || 0) + (c.yaramazlik || 0) + (c.kesif || 0);
@@ -7829,9 +7836,9 @@ function shapeChildhood(s: GameState) {
   const entries: [string, number][] = [["yaramazlik", c.yaramazlik || 0], ["yardim", c.yardim || 0], ["oyun", c.oyun || 0], ["kesif", c.kesif || 0]];
   entries.sort((a, b) => b[1] - a[1]);
   const dom = entries[0][0];
-  if (dom === "yaramazlik") { p.childhood = "hasari"; p.fear = Math.min(100, p.fear + 6); p.honor = Math.max(0, p.honor - 3); bumpNam(p, "capkin", 8); gainSkill(s, "social", 40);
+  if (dom === "yaramazlik") { p.childhood = "hasari"; unEkle(p, "fear", 6); p.honor = Math.max(0, p.honor - 3); bumpNam(p, "capkin", 8); gainSkill(s, "social", 40);
     push(s, "cocukluk", "Haşarı bir çocuk olarak büyüdün; sokağın diline çabuk düştün, kimse sana laf geçiremedi.", "kişisel", true, { k: "child.grow.hasari" }); }
-  else if (dom === "yardim") { p.childhood = "uslu"; p.reputation = Math.min(100, p.reputation + 6); p.honor = Math.min(100, p.honor + 4); bumpNam(p, "comert", 6); bumpNam(p, "mert", 4);
+  else if (dom === "yardim") { p.childhood = "uslu"; unEkle(p, "reputation", 6); unEkle(p, "honor", 4); bumpNam(p, "comert", 6); bumpNam(p, "mert", 4);
     push(s, "cocukluk", "Uslu, eli işe yatkın bir çocuk olarak büyüdün; mahalle seni hayırla anar.", "kişisel", true, { k: "child.grow.uslu" }); }
   else if (dom === "oyun") { p.childhood = "canli"; if (p.stats.stamina < 10) p.stats.stamina += 1; p.health = Math.min(100, p.health + 6); gainSkill(s, "social", 30);
     push(s, "cocukluk", "Canlı, çevik bir çocuk olarak büyüdün; bedenin sağlam, dilin tatlı.", "kişisel", true, { k: "child.grow.canli" }); }
@@ -7872,7 +7879,7 @@ export function adultAction(prev: GameState, kind: AdultAct): StudyResult {
   } else if (kind === "meclis") {
     p.study_energy = studyEnergy(s) - STUDY_COST;
     p.hunger = Math.max(0, p.hunger - 4);
-    addStatXp(s, "charisma", 5); gainSkill(s, "social", 4); p.reputation = Math.min(100, p.reputation + 1);
+    addStatXp(s, "charisma", 5); gainSkill(s, "social", 4); unEkle(p, "reputation", 1);
     key = "adult.meclis";
     const r = Math.random();
     if (r < Math.max(0.03, 0.09 - effStat(p, "charisma") * 0.007)) { // yanlış söz: dedikodu tohumu
@@ -7895,7 +7902,7 @@ export function adultAction(prev: GameState, kind: AdultAct): StudyResult {
     // Dindar hayatın aktif döngüsü: gönül toplama — küçük tavanlı ödüller, para musluğu yok (enerji kapısı farm'ı keser).
     p.study_energy = studyEnergy(s) - STUDY_COST;
     p.hunger = Math.max(0, p.hunger - 3);
-    bumpNam(p, "dindar", 3); p.reputation = Math.min(100, p.reputation + 1);
+    bumpNam(p, "dindar", 3); unEkle(p, "reputation", 1);
     key = "adult.ibadet";
     if (Math.random() > 0.88) { // derviş sohbeti: parlak an
       bumpNam(p, "dindar", 2); gainSkill(s, "social", 3); p.health = Math.min(100, p.health + 3);
@@ -7929,7 +7936,7 @@ export function elderAction(prev: GameState, kind: ElderAct): StudyResult {
   p.study_energy = studyEnergy(s) - STUDY_COST;
   const chips: { label: string; col: string; k?: string; p?: (string | number)[] }[] = []; let key = "";
   if (kind === "nasihat") {
-    p.reputation = Math.min(100, p.reputation + 2); p.honor = Math.min(100, p.honor + 1); gainSkill(s, "social", 6);
+    unEkle(p, "reputation", 2); unEkle(p, "honor", 1); gainSkill(s, "social", 6);
     chips.push({ label: "İtibar +2", col: "#7FA66A" }, { label: "Şeref +1", col: "#6FA0C0" }); key = "elder.nasihat";
     push(s, "ihtiyarlik", "Gençlere ve torunlara akıl verdin; sözün hürmetle dinlendi.", "kişisel", false, { k: "elder.nasihat" });
   } else if (kind === "hayir") {
@@ -7938,7 +7945,7 @@ export function elderAction(prev: GameState, kind: ElderAct): StudyResult {
       chips.push({ label: "Akçe yok", col: "#C0556B" }); key = "evj.noAlms";
       push(s, "ihtiyarlik", `Hayır dağıtmak istedin ama kesen boştu.`, "kişisel", false, { k: "evj.noAlms" });
     } else {
-      p.money -= cost; p.reputation = Math.min(100, p.reputation + 2); p.honor = Math.min(100, p.honor + 1); bumpNam(p, "comert", 5);
+      p.money -= cost; unEkle(p, "reputation", 2); unEkle(p, "honor", 1); bumpNam(p, "comert", 5);
       chips.push({ label: `−${cost} akçe`, col: "#C0556B" }, { label: "İtibar +2", col: "#7FA66A" }, { label: "Cömert +5", col: "#7FA66A" }); key = "elder.hayir";
       push(s, "ihtiyarlik", `Yoksula sadaka, yolcuya aş dağıttın (−${cost} akçe); hayır duası aldın.`, "kişisel", false, { k: "elder.hayir", p: [cost] });
     }
@@ -7948,11 +7955,11 @@ export function elderAction(prev: GameState, kind: ElderAct): StudyResult {
     push(s, "ihtiyarlik", "Ocağın başında dinlenip biraz toparlandın; yaşlı beden mola ister.", "kişisel", false, { k: "elder.dinlen" });
   } else if (kind === "tekke") {
     // İhtiyarın manevi döngüsü: zikir gönlü dinlendirir — dindar nam yaşlılıkta da aktif işlenir.
-    p.health = Math.min(100, p.health + 4); p.honor = Math.min(100, p.honor + 1); bumpNam(p, "dindar", 4);
+    p.health = Math.min(100, p.health + 4); unEkle(p, "honor", 1); bumpNam(p, "dindar", 4);
     chips.push({ label: "Sağlık +4", col: "#7FA66A" }, { label: "Dindar +4", col: "#9C7BC4" }); key = "elder.tekke";
     push(s, "ihtiyarlik", "Tekkeye gidip zikre katıldın; yaşlı gönül gençleşti, için nurlandı.", "kişisel", false, { k: "elder.tekke" });
   } else {
-    p.fame = Math.min(100, p.fame + 2); addStatXp(s, "intelligence", 6); gainSkill(s, "social", 4);
+    unEkle(p, "fame", 2); addStatXp(s, "intelligence", 6); gainSkill(s, "social", 4);
     chips.push({ label: "Şöhret +2", col: "#7B4FAF", k: "chip.fame", p: ["+2"] }); key = "elder.ani";
     push(s, "ihtiyarlik", "Ömrünün hikâyesini anlattın; adın dilden dile dolaşacak.", "kişisel", false, { k: "elder.ani" });
   }
@@ -8212,7 +8219,7 @@ export function doCrime(prev: GameState, kind: CrimeKind, approach: CrimeApproac
     const cash = loot - hot;
     p.money += cash; if (hot > 0) p.hotGoods = (p.hotGoods || 0) + hot;
     p.crime_wins = (p.crime_wins || 0) + 1; // yeraltı namı: tamamlanan iş merdiveni tırmandırır
-    p.fear = Math.min(100, p.fear + ct.fear);
+    unEkle(p, "fear", ct.fear);
     bumpNam(p, "zalim", ct.nam);
     const witnessChance = approach === "sessiz" ? 0.10 : approach === "zor" ? 0.42 : 0.22;
     const seen = witnessScandal(s, kind === "yankesicilik" || kind === "dukkan_soyma" ? "hirsizlik_tanigi" : "suc_tanigi", witnessChance, kurban?.id, undefined, () => gameRandom(s));
@@ -8240,7 +8247,7 @@ export function fenceHotGoods(prev: GameState): GameState {
   p.hotGoods = 0;
   if (gameRandom(s) < (golge ? 0.05 : 0.18)) {
     const fine = Math.round(hot * 0.4);
-    p.money = Math.max(0, p.money - fine); p.fear = Math.min(100, p.fear + 3); p.reputation = Math.max(-100, p.reputation - 3);
+    p.money = Math.max(0, p.money - fine); unEkle(p, "fear", 3); p.reputation = Math.max(-100, p.reputation - 3);
     push(s, "suç_yakalandı", `Sıcak malı eritirken yakalandın; ${fine} akçe ceza ve leke.`, "kişisel", true, { k: "crime.fenceCaught", p: [fine] });
   } else {
     const got = Math.round(hot * (golge ? 0.8 : 0.55));
@@ -8284,7 +8291,7 @@ export function resolveCrimeScene(prev: GameState, choice: "saklan" | "rusvet" |
     note = { k: escaped ? "crimesc.runWin" : "crimesc.runLose", p: escaped ? [scratch] : undefined };
   }
   if (escaped) {
-    p.fear = Math.min(100, p.fear + 1);
+    unEkle(p, "fear", 1);
     push(s, "suç", `Kesintiyi atlattın.`, "kişisel", true, note);
     startOrDeepenInvestigation(s, kind, approach, intelQuality);
     p.son_kurban = undefined;
@@ -8432,7 +8439,7 @@ export function resolveTrial(prev: GameState, choice: "savun" | "tanik" | "uzlas
     crimeCaught(s, kind, true);
     return s;
   }
-  p.honor = Math.min(100, p.honor + 1); // hükme boyun eğmek de bir duruştur
+  unEkle(p, "honor", 1); // hükme boyun eğmek de bir duruştur
   crimeCaught(s, kind, true);
   return s;
 }
@@ -8524,7 +8531,7 @@ export function cutThread(prev: GameState): GameState {
   const h = ensureRivals(s).find((x) => x.id === ep.houseId);
   if (h) h.tutum = Math.max(-100, (h.tutum ?? 0) - 10); // eli boşa çıkan hane daha da küser
   s.enemyPlot = null; s.enemyPlotCool = s.turn + 12;
-  p.fear = Math.min(100, p.fear + 2);
+  unEkle(p, "fear", 2);
   push(s, "entrika", `Düğümü tam vaktinde kestin: ${h ? h.name : "hane"} adamları eli boş döndü. Diyar, kolay lokma olmadığını konuşuyor.`, "makro", true, { k: "evj.spyCut", p: [{ hn: ep.nameIdx }] });
   return s;
 }
@@ -8630,7 +8637,7 @@ export function resolveOpportunity(prev: GameState, opp: Opportunity, forced?: b
   if (success) {
     let reward = opp.reward;
     if (hasPerk(p, "keskin_goz")) reward = Math.round(reward * 1.3);
-    p.money += reward; p.reputation = Math.min(100, p.reputation + 4);
+    p.money += reward; unEkle(p, "reputation", 4);
     gainSkill(s, opp.stat === "strength" ? "combat" : opp.stat === "charisma" ? "social" : "trade", 7);
     { const ov = chance(0.5); push(s, "görev_tamamlandı", ov ? `"${opp.title}" işi tamamlandı; alın teri keseye akçe oldu (+${reward}).` : `"${opp.title}" görevini başardın (+${reward} akçe).`, "kişisel", true, { k: ov ? "evj.oppWin2" : "evj.oppWin", p: [{ opp: opp.key }, reward] }); }
   }
@@ -8775,13 +8782,13 @@ export function ustalikSinavi(prev: GameState, yol: number): { state: GameState;
   gainSkill(s, (PROF_SKILL[p.profession] || "crafting") as SkillKey, 6); // sınavın kendisi de bir derstir
   if (Math.random() < d.oranlar[yol]) {
     p.kademe = d.hedef; p.sinav_gecme = (p.sinav_gecme || 0) + 1; p.sinav_bekle = undefined;
-    p.reputation = Math.min(100, p.reputation + 3);
+    unEkle(p, "reputation", 3);
     push(s, "pestamal", `Ustalar önünde peştamal kuşandın; adın artık ${pr.tiers[d.hedef]} diye anılıyor.`, "kişisel", true, { k: "evj.pestamal", p: [{ c: [p.profession, d.hedef * 30] }] });
     { const u = ustamKim(s); if (u && relWith(s, u.id) >= 20) { s.relationships[u.id] = Math.min(100, (s.relationships[u.id] || 0) + 5); push(s, "pestamal", `Ustan ${kisiAdi(u, "tr")} peştamalını kendi eliyle kuşattı; gözleri doldu.`, "kişisel", false, { k: u.g === "kadın" ? "evj.ustaIcazet.k" : "evj.ustaIcazet", p: [kfParam(u)] }); } }
     // Zirveye İLK varış: mesleğin taçlanma anı — meslek başına ömürde bir kez (eski otomatik terfiden taşındı; farm yok).
     if (d.hedef === pr.tiers.length - 1 && !(p.capstones || []).includes(p.profession)) {
       (p.capstones = p.capstones || []).push(p.profession);
-      p.fame = Math.min(100, p.fame + 6); p.honor = Math.min(100, p.honor + 4);
+      unEkle(p, "fame", 6); unEkle(p, "honor", 4);
       const odul = Math.round(60 * inflationFactor(s)); p.money += odul;
       { const cv2 = chance(0.5); push(s, "terfi", cv2 ? `Tezgâha girdiğinde bütün çıraklar ayağa kalktı: artık ${pr.tiers[d.hedef]} sensin. Lonca reisi keseyi uzatırken gözlerini kaçırdı — ustalık önünde herkes çıraktır (+${odul} akçe).` : `Mesleğinin zirvesine vardın: ${pr.tiers[d.hedef]} olarak adın diyarda anılıyor; lonca şerefine bir kese açtı (+${odul} akçe).`, "kişisel", true, { k: cv2 ? "evj.capstone2" : "evj.capstone", p: [{ c: [p.profession, d.hedef * 30] }, odul] }); }
     }
@@ -9415,13 +9422,13 @@ export function doFactionTask(prev: GameState, id: string): GameState {
   standing = Math.round(standing);
   const rankBefore = factionRankIndex(p.faction_standing[id] || 0);
   p.faction_standing[id] = (p.faction_standing[id] || 0) + standing;
-  p.reputation = Math.min(100, p.reputation + 2);
+  unEkle(p, "reputation", 2);
   // Rütbe töreni: yalnız ömürde görülen EN YÜKSEK rütbe aşılınca (standing düşebilir — useFactionPower −20, leaveFaction ×0.5; damga tekrar töreni keser).
   const rankAfter = factionRankIndex(p.faction_standing[id] || 0);
   const seenRank = p.fac_rank_seen?.[id] ?? 0;
   if (rankAfter > rankBefore && rankAfter > seenRank) {
     (p.fac_rank_seen = p.fac_rank_seen || {})[id] = rankAfter;
-    p.fame = Math.min(100, p.fame + 2 + rankAfter); p.honor = Math.min(100, p.honor + 2);
+    unEkle(p, "fame", 2 + rankAfter); unEkle(p, "honor", 2);
     push(s, "örgüt_görev", `Ocak meclisi toplandı; ${f.name} seni '${FACTION_RANKS[rankAfter].title}' ilan etti. Kadehler senin adına kalktı.`, "kişisel", true, { k: "evj.facRank" + rankAfter, p: [{ fc: id }] });
   }
   gainSkill(s, f.stat === "strength" ? "combat" : f.stat === "charisma" ? "social" : "trade", 6);
@@ -9439,15 +9446,15 @@ export function doFactionTask(prev: GameState, id: string): GameState {
 function sparkCard(s: GameState) {
   const p = s.player;
   const card = rnd(["yabanci", "eskidost", "kese", "yolcu", "firin", "serce", "ruya", "usta", "mektup", "cesme", "yildiz"]);
-  if (card === "yabanci") { p.reputation = Math.min(100, p.reputation + 1); push(s, "fisilti", "Bir yabancı yolda iki çift laf edip bir haber bıraktı.", "kişisel", false, { k: "spark.yabanci" }); }
+  if (card === "yabanci") { unEkle(p, "reputation", 1); push(s, "fisilti", "Bir yabancı yolda iki çift laf edip bir haber bıraktı.", "kişisel", false, { k: "spark.yabanci" }); }
   else if (card === "eskidost") { gainSkill(s, "social", 6); push(s, "sohbet", "Eski bir dost çıkageldi; hâl hatır sorup gönlünü ferahlattın.", "kişisel", false, { k: "spark.eskidost" }); }
   else if (card === "kese") { const g = 5 + Math.floor(Math.random() * 9); p.money += g; push(s, "gunluk", `Yolda küçük bir kese buldun (+${g} akçe).`, "kişisel", false, { k: "spark.kese", p: [g] }); }
-  else if (card === "yolcu") { p.fame = Math.min(100, p.fame + 1); push(s, "fisilti", "Bir yolcunun uzak diyar masalı dilden dile yayıldı; adın da geçti.", "kişisel", false, { k: "spark.yolcu" }); }
+  else if (card === "yolcu") { unEkle(p, "fame", 1); push(s, "fisilti", "Bir yolcunun uzak diyar masalı dilden dile yayıldı; adın da geçti.", "kişisel", false, { k: "spark.yolcu" }); }
   else if (card === "firin") { p.hunger = Math.min(100, p.hunger + 2); push(s, "gunluk", "Fırının önünden geçerken taze ekmek kokusu sardı; fırıncı sıcak bir uç uzattı: tadına doyulmaz.", "kişisel", false, { k: "spark.firin" }); }
   else if (card === "serce") { p.health = Math.min(100, p.health + 1); push(s, "gunluk", "Duvar dibinde soluklanırken bir serçe yanı başına kondu; bir süre ikiniz de sessizce dünyayı seyrettiniz.", "kişisel", false, { k: "spark.serce" }); }
   else if (card === "usta") { gainSkill(s, "crafting", 6); push(s, "gunluk", "Bir ustanın tezgâhı başında elini uzun uzun seyrettin; bakarak da öğreniliyor.", "kişisel", false, { k: "spark.usta" }); }
-  else if (card === "mektup") { addStatXp(s, "intelligence", 1); p.reputation = Math.min(100, p.reputation + 1); push(s, "gunluk", "Okuması olmayan bir komşuya gelen mektubu okudun; iki satır yazı, iki kelime dua kazandırdı.", "kişisel", false, { k: "spark.mektup" }); }
-  else if (card === "cesme") { p.honor = Math.min(100, p.honor + 1); push(s, "gunluk", "Çeşme başında bir ihtiyarın testisini doldurup evine kadar taşıdın; kapıda iki dua aldın — biri sana, biri soyuna.", "kişisel", false, { k: "spark.cesme" }); }
+  else if (card === "mektup") { addStatXp(s, "intelligence", 1); unEkle(p, "reputation", 1); push(s, "gunluk", "Okuması olmayan bir komşuya gelen mektubu okudun; iki satır yazı, iki kelime dua kazandırdı.", "kişisel", false, { k: "spark.mektup" }); }
+  else if (card === "cesme") { unEkle(p, "honor", 1); push(s, "gunluk", "Çeşme başında bir ihtiyarın testisini doldurup evine kadar taşıdın; kapıda iki dua aldın — biri sana, biri soyuna.", "kişisel", false, { k: "spark.cesme" }); }
   else if (card === "yildiz") { addStatXp(s, "intelligence", 1); push(s, "gunluk", "Damda serinlerken yıldız saydın; biri kaydı, içinden bir dilek geçti. Kimseye söylemedin — söylenirse tutmazmış.", "kişisel", false, { k: "spark.yildiz" }); }
   else { push(s, "gunluk", "Gece tuhaf bir rüya gördün; sabaha içinde bir his kaldı.", "kişisel", false, { k: "spark.ruya" }); }
   if (s.story) s.story.lull = 0;
@@ -9508,7 +9515,7 @@ export function useFactionPower(prev: GameState, kind: "himaye" | "kese" | "sifa
   const f = factionById(fid);
   p.faction_standing[fid] = (p.faction_standing[fid] || 0) - FAC_POWER_COST;
   if (kind === "himaye") { // örgüt himayesi: korku düşer, itibar artar, bir söylenti bastırılır
-    p.fear = Math.max(0, p.fear - 6); p.reputation = Math.min(100, p.reputation + 3);
+    p.fear = Math.max(0, p.fear - 6); unEkle(p, "reputation", 3);
     if (s.player_rumors?.length) {
       const r = s.player_rumors[0]; const origin = r.duyanlar?.find(h => h.id === r.kaynakId) || r.duyanlar?.find(h => h.chain.length === 1);
       if (r.duyanlar) { if (origin) origin.sessiz = true; }
@@ -9536,7 +9543,7 @@ export function joinFaction(prev: GameState, id: string): GameState {
   if (factionBanLeft(p, id, s.turn) > 0) { push(s, "örgüt_katılım", `${f.name} seni henüz geri almıyor; saflarını terk edenin sözü ağır.`, "kişisel", false, { k: "evj.facBanned", p: [{ fc: f.id }] }); return s; }
   const need = hasPerk(p, "karizmatik") ? Math.round(f.joinRep * 0.8) : f.joinRep;
   if ((p.faction_standing[id] || 0) < need) return s;
-  p.faction = id; p.reputation = Math.min(100, p.reputation + 6);
+  p.faction = id; unEkle(p, "reputation", 6);
   push(s, "örgüt_katılım", `${f.name} saflarına katıldın. ${f.perk}`, "kişisel", true, { k: "evj.facJoin", p: [{ fc: f.id }, f.perk] });
   return s;
 }
@@ -9583,6 +9590,20 @@ export function unSonraki(key: UnEksen, value: number): { kademe: number; kalan:
   if (n == null) return null;
   return { kademe: n, kalan: Math.max(1, Math.ceil(UN_ESIK[key][n] - value)) };
 }
+// Ün kazancında azalan getiri (radikal sonuçlar planı, aşama 1): kademe başına oran — 0–10 tam, 10–30 %75, 30–55 %33,
+// 55–80 %18, 80+ %10 (her kademe biraz daha emek ister, hiçbiri kapanmaz). Düşüş tam yansır. Küsur birikir (un_kalan): küçük kazançlar yok
+// olmaz, yalnız yavaşlar. Tavan ve taban aynı (itibar −100..100, öbürleri 0..100). Bütün ün artışları buradan geçer.
+export function unKazanc(v: number, d: number): number { return d <= 0 ? d : d * (v < 10 ? 1 : v < 30 ? 0.75 : v < 55 ? 0.33 : v < 80 ? 0.18 : 0.1); }
+export function unEkle(p: Player, k: UnEksen, d: number): void {
+  if (!d || !Number.isFinite(d)) return;
+  const v = p[k], lo = k === "reputation" ? -100 : 0;
+  if (d < 0) { p[k] = Math.max(lo, Math.min(100, v + d)); return; }
+  const kal = p.un_kalan || (p.un_kalan = {});
+  const cocuk = p.age < 16 && (k === "reputation" || k === "fame") ? 0.5 : 1; // çocuğun adı ailesinin gölgesinde: itibar/şöhret yarı işler
+  const ham = unKazanc(v, d) * cocuk + (kal[k] || 0), tam = Math.floor(ham + 1e-9); // 10 × 0,1 kayan nokta toplamı 0,999… kalmasın
+  kal[k] = ham - tam;
+  p[k] = Math.max(lo, Math.min(100, v + tam));
+}
 export function socialTierIndex(value: number): number {
   const v = Math.max(0, value);
   if (v >= 80) return 4;
@@ -9607,7 +9628,7 @@ export function visitParents(prev: GameState, targetId?: string): GameState {
   const people = nufusOf(s).k;
   const visitedIds = target ? [target.id] : [p.mother_id, p.father_id].filter((id): id is string => !!id && !!people[id] && people[id].ol == null);
   changeParentBond(p, visitedIds, 5);
-  p.honor = Math.min(100, p.honor + 1); bumpNam(p, "dindar", 1);
+  unEkle(p, "honor", 1); bumpNam(p, "dindar", 1);
   if (target) {
     remember(s, { id: target.id, name: kisiAdi(target) }, "icten_sohbet", { yuk: 5 });
     push(s, "gunluk", `${kisiAdi(target)} ile oturup hâlini dinledin.`, "kişisel", false, { k: "sohbet.parentVisit", p: [knParam(target)] });
@@ -9630,7 +9651,7 @@ export function spendWithSpouse(prev: GameState): GameState {
   if (miz === "sefkatli") { bondGain = 7; p.health = Math.min(100, p.health + 1); }
   else if (miz === "caliskan" && paid) { p.money += Math.round(cost / 2); }
   else if (miz === "dikbasli") { bondGain = 5; addStatXp(s, "strength", 3); bumpNam(p, "mert", 1); }
-  else if (miz === "dindar") { p.honor = Math.min(100, p.honor + 1); bumpNam(p, "dindar", 1); }
+  else if (miz === "dindar") { unEkle(p, "honor", 1); bumpNam(p, "dindar", 1); }
   p.spouse_bond = Math.min(100, p.spouse_bond + bondGain);
   p.health = Math.min(100, p.health + 2); p.hunger = Math.max(0, p.hunger - 3);
   const sn: EvtParam = esParam(s);
@@ -9654,12 +9675,12 @@ export function tendChild(prev: GameState, targetName?: string): GameState {
   const bond = (d: number) => { p.child_bond![name] = Math.max(0, Math.min(100, (p.child_bond![name] ?? 50) + d)); };
   if (age < 7) { p.health = Math.min(100, p.health + 2); bond(4); push(s, "doğum", `Minik ${name} ile evin önünde oynadın; kahkahası günün yorgunluğunu sildi.`, "kişisel", false, { k: "evj.childTend.bebek", p: [name] }); }
   else if (age < 13) { bond(4); if (p.child_edu?.[name]) p.child_edu[name].weeks += 1; push(s, "cocukluk", `${name} ile rahlenin başına oturdunuz; harfler sökülünce gözleri parladı.`, "kişisel", false, { k: "evj.childTend.mektepli", p: [name] }); }
-  else if (age < 18) { bond(4); p.reputation = Math.min(100, p.reputation + 1); push(s, "cocukluk", `${name}'e zanaatının inceliğini gösterdin; el alışkanlığı sana çekmiş.`, "kişisel", false, { k: "evj.childTend.genc", p: [name] }); }
-  else { bond(3); p.reputation = Math.min(100, p.reputation + 1); push(s, "gunluk", `Yetişkin evladın ${name} ile oturup kararlarını ve derdini dinledin.`, "kişisel", false, { k: targetName ? "sohbet.adultChildTime" : "evj.childTend.yetiskin", p: [name] }); }
+  else if (age < 18) { bond(4); unEkle(p, "reputation", 1); push(s, "cocukluk", `${name}'e zanaatının inceliğini gösterdin; el alışkanlığı sana çekmiş.`, "kişisel", false, { k: "evj.childTend.genc", p: [name] }); }
+  else { bond(3); unEkle(p, "reputation", 1); push(s, "gunluk", `Yetişkin evladın ${name} ile oturup kararlarını ve derdini dinledin.`, "kişisel", false, { k: targetName ? "sohbet.adultChildTime" : "evj.childTend.yetiskin", p: [name] }); }
   if (targetName && p.child_ids?.[targetName]) remember(s, { id: p.child_ids[targetName], name: targetName }, "icten_sohbet", { yuk: 4 });
   // Derin evlat bağı: bağ 85+ ise ara sıra yaş bandı ötesi bir an — çocuk sana çekmiş, sen çocukta kendini görürsün
   if ((p.child_bond[name] ?? 50) >= 85 && Math.random() < 0.3) {
-    p.honor = Math.min(100, p.honor + 1);
+    unEkle(p, "honor", 1);
     push(s, "gunluk", `${name} bir söz söyledi, bir baktı — bir an aynaya bakar gibi oldun: huyun, kaşının çatılışı, hatta sustuğun yer bile ona geçmiş. Soy dediğin, kan değil biraz da bu.`, "kişisel", false, { k: "evj.childDeep", p: [name] });
   }
   return s;
@@ -9788,40 +9809,40 @@ export function resolveMicro(prev: GameState, choice: 0 | 1): GameState {
   const id = m.id;
   if (id === "saganak") { if (choice === 0) addStatXp(s, "stamina", 3); else p.health = Math.min(100, p.health + 1); }
   else if (id === "sokak_kedisi") { if (choice === 0) { bumpNam(p, "comert", 1); p.hunger = Math.max(0, p.hunger - 2); } else addStatXp(s, "stamina", 2); }
-  else if (id === "cirak_tabla") { if (choice === 0) { p.reputation = Math.min(100, p.reputation + 1); bumpNam(p, "comert", 1); } else if (p.money >= 2) { p.money -= 2; p.hunger = Math.min(100, p.hunger + 4); } }
+  else if (id === "cirak_tabla") { if (choice === 0) { unEkle(p, "reputation", 1); bumpNam(p, "comert", 1); } else if (p.money >= 2) { p.money -= 2; p.hunger = Math.min(100, p.hunger + 4); } }
   else if (id === "eski_turku") { if (choice === 0) gainSkill(s, "social", 3); else p.health = Math.min(100, p.health + 1); }
-  else if (id === "yol_soran") { if (choice === 0) p.reputation = Math.min(100, p.reputation + 1); else addStatXp(s, "intelligence", 2); }
+  else if (id === "yol_soran") { if (choice === 0) unEkle(p, "reputation", 1); else addStatXp(s, "intelligence", 2); }
   else if (id === "yildiz_gecesi") { if (choice === 0) bumpNam(p, "dindar", 1); else addStatXp(s, "intelligence", 2); }
   else if (id === "nalbant_kivilcimi") { if (choice === 0) addStatXp(s, "charisma", 2); else addStatXp(s, "intelligence", 2); }
-  else if (id === "harman_yeli") { if (choice === 0) { bumpNam(p, "comert", 1); p.reputation = Math.min(100, p.reputation + 1); } else p.hunger = Math.min(100, p.hunger + 2); }
+  else if (id === "harman_yeli") { if (choice === 0) { bumpNam(p, "comert", 1); unEkle(p, "reputation", 1); } else p.hunger = Math.min(100, p.hunger + 2); }
   else if (id === "bekci_feneri") { if (choice === 0) bumpNam(p, "dindar", 1); else gainSkill(s, "crafting", 2); }
   else if (id === "kuyu_kovasi") { if (choice === 0) gainSkill(s, "crafting", 2); else bumpNam(p, "comert", 1); }
   else if (id === "pazarci_terazisi") { if (choice === 0) addStatXp(s, "intelligence", 2); else gainSkill(s, "social", 2); }
-  else if (id === "kirlangic_yuvasi") { if (choice === 0) bumpNam(p, "comert", 1); else p.reputation = Math.min(100, p.reputation + 1); }
+  else if (id === "kirlangic_yuvasi") { if (choice === 0) bumpNam(p, "comert", 1); else unEkle(p, "reputation", 1); }
   else if (id === "degirmen_tasi") { if (choice === 0) addStatXp(s, "stamina", 3); else gainSkill(s, "crafting", 2); }
   else if (id === "gurbet_mektubu") { if (choice === 0) gainSkill(s, "social", 2); else addStatXp(s, "intelligence", 2); }
-  else if (id === "firin_koru") { if (choice === 0) { bumpNam(p, "comert", 1); p.reputation = Math.min(100, p.reputation + 1); } else addStatXp(s, "intelligence", 2); }
+  else if (id === "firin_koru") { if (choice === 0) { bumpNam(p, "comert", 1); unEkle(p, "reputation", 1); } else addStatXp(s, "intelligence", 2); }
   else if (id === "cesme_olugu") { if (choice === 0) gainSkill(s, "crafting", 2); else gainSkill(s, "social", 2); }
   else if (id === "kacan_esek") { if (choice === 0) addStatXp(s, "strength", 3); else addStatXp(s, "intelligence", 2); }
-  else if (id === "dugun_davulu") { if (choice === 0) { gainSkill(s, "social", 3); p.fame = Math.min(100, p.fame + 1); } else gainSkill(s, "social", 2); }
+  else if (id === "dugun_davulu") { if (choice === 0) { gainSkill(s, "social", 3); unEkle(p, "fame", 1); } else gainSkill(s, "social", 2); }
   else if (id === "semerci_ciragi") { if (choice === 0) { addStatXp(s, "strength", 3); gainSkill(s, "crafting", 2); } else { addStatXp(s, "intelligence", 3); gainSkill(s, "social", 1); } }
   else if (id === "ikindi_golgesi") { if (choice === 0) { gainSkill(s, "social", 3); addStatXp(s, "intelligence", 2); } else addStatXp(s, "stamina", 2); }
   else if (id === "kar_lapasi") { if (choice === 0) { addStatXp(s, "stamina", 2); p.health = Math.min(100, p.health + 1); } else p.hunger = Math.min(100, p.hunger + 2); }
   else if (id === "sahaf_tezgahi") { if (choice === 0) addStatXp(s, "intelligence", 2); else gainSkill(s, "social", 2); }
-  else if (id === "kopru_dilencisi") { if (choice === 0) { gainSkill(s, "social", 2); bumpNam(p, "comert", 1); } else { bumpNam(p, "comert", 1); p.reputation = Math.min(100, p.reputation + 1); } }
+  else if (id === "kopru_dilencisi") { if (choice === 0) { gainSkill(s, "social", 2); bumpNam(p, "comert", 1); } else { bumpNam(p, "comert", 1); unEkle(p, "reputation", 1); } }
   else if (id === "hamal_dengi") { if (choice === 0) addStatXp(s, "strength", 3); else gainSkill(s, "crafting", 2); }
-  else if (id === "tandir_dumani") { if (choice === 0) { gainSkill(s, "social", 2); bumpNam(p, "comert", 1); } else { p.reputation = Math.min(100, p.reputation + 1); bumpNam(p, "comert", 1); } }
+  else if (id === "tandir_dumani") { if (choice === 0) { gainSkill(s, "social", 2); bumpNam(p, "comert", 1); } else { unEkle(p, "reputation", 1); bumpNam(p, "comert", 1); } }
   else if (id === "at_nali") { if (choice === 0) gainSkill(s, "crafting", 2); else addStatXp(s, "stamina", 3); }
   else if (id === "camasir_ipi") { if (choice === 0) addStatXp(s, "stamina", 2); else { gainSkill(s, "social", 2); bumpNam(p, "comert", 1); } }
-  else if (id === "sira_kazani") { if (choice === 0) addStatXp(s, "strength", 2); else { gainSkill(s, "social", 2); p.reputation = Math.min(100, p.reputation + 1); } }
-  else if (id === "ogul_arisi") { if (choice === 0) { addStatXp(s, "stamina", 2); gainSkill(s, "crafting", 1); } else { gainSkill(s, "social", 2); p.reputation = Math.min(100, p.reputation + 1); } }
+  else if (id === "sira_kazani") { if (choice === 0) addStatXp(s, "strength", 2); else { gainSkill(s, "social", 2); unEkle(p, "reputation", 1); } }
+  else if (id === "ogul_arisi") { if (choice === 0) { addStatXp(s, "stamina", 2); gainSkill(s, "crafting", 1); } else { gainSkill(s, "social", 2); unEkle(p, "reputation", 1); } }
   else if (id === "tikali_arik") { if (choice === 0) { addStatXp(s, "strength", 2); addStatXp(s, "stamina", 1); } else { gainSkill(s, "social", 2); bumpNam(p, "comert", 1); } }
-  else if (id === "kandil_feneri") { if (choice === 0) { gainSkill(s, "social", 2); bumpNam(p, "comert", 1); } else { p.honor = Math.min(100, p.honor + 1); bumpNam(p, "dindar", 1); } }
-  else if (id === "devrilen_tezgah") { if (choice === 0) { addStatXp(s, "stamina", 2); p.hunger = Math.min(100, p.hunger + 2); } else { gainSkill(s, "social", 2); p.reputation = Math.min(100, p.reputation + 1); } }
-  else if (id === "sokak_calgicisi") { if (choice === 0) { p.reputation = Math.min(100, p.reputation + 1); gainSkill(s, "social", 1); } else gainSkill(s, "social", 2); }
+  else if (id === "kandil_feneri") { if (choice === 0) { gainSkill(s, "social", 2); bumpNam(p, "comert", 1); } else { unEkle(p, "honor", 1); bumpNam(p, "dindar", 1); } }
+  else if (id === "devrilen_tezgah") { if (choice === 0) { addStatXp(s, "stamina", 2); p.hunger = Math.min(100, p.hunger + 2); } else { gainSkill(s, "social", 2); unEkle(p, "reputation", 1); } }
+  else if (id === "sokak_calgicisi") { if (choice === 0) { unEkle(p, "reputation", 1); gainSkill(s, "social", 1); } else gainSkill(s, "social", 2); }
   else if (id === "yagmur_sonrasi") { if (choice === 0) { p.health = Math.min(100, p.health + 1); gainSkill(s, "social", 1); } else addStatXp(s, "intelligence", 2); }
   else if (id === "berber_aynasi") { if (choice === 0) { addStatXp(s, "intelligence", 1); p.health = Math.min(100, p.health + 1); } else gainSkill(s, "social", 2); }
-  else if (id === "degirmen_sirasi") { if (choice === 0) { p.honor = Math.min(100, p.honor + 1); gainSkill(s, "social", 1); } else { gainSkill(s, "crafting", 1); addStatXp(s, "intelligence", 1); } }
+  else if (id === "degirmen_sirasi") { if (choice === 0) { unEkle(p, "honor", 1); gainSkill(s, "social", 1); } else { gainSkill(s, "crafting", 1); addStatXp(s, "intelligence", 1); } }
   else if (id === "misket_meydani") { if (choice === 0) { addStatXp(s, "intelligence", 2); gainSkill(s, "social", 1); } else addStatXp(s, "intelligence", 2); }
   else if (id === "leylek_yuvasi") { if (choice === 0) { p.health = Math.min(100, p.health + 1); gainSkill(s, "social", 1); } else addStatXp(s, "intelligence", 2); }
   else if (id === "kagit_gemi") { if (choice === 0) gainSkill(s, "social", 2); else { gainSkill(s, "crafting", 1); addStatXp(s, "intelligence", 1); } }
@@ -9830,9 +9851,9 @@ export function resolveMicro(prev: GameState, choice: 0 | 1): GameState {
   else if (id === "dere_bendi") { if (choice === 0) addStatXp(s, "strength", 2); else addStatXp(s, "intelligence", 2); }
   else if (id === "salincak_ipi") { if (choice === 0) addStatXp(s, "stamina", 2); else { addStatXp(s, "intelligence", 2); gainSkill(s, "social", 1); } }
   else if (id === "cember_cevirme") { if (choice === 0) { addStatXp(s, "stamina", 2); addStatXp(s, "intelligence", 1); } else { gainSkill(s, "social", 2); } }
-  else if (id === "asik_oyunu") { if (choice === 0) { addStatXp(s, "intelligence", 2); } else { p.honor = Math.min(100, p.honor + 1); gainSkill(s, "social", 1); } }
+  else if (id === "asik_oyunu") { if (choice === 0) { addStatXp(s, "intelligence", 2); } else { unEkle(p, "honor", 1); gainSkill(s, "social", 1); } }
   else if (id === "topac_cevirme") { if (choice === 0) { addStatXp(s, "intelligence", 1); gainSkill(s, "social", 1); } else addStatXp(s, "stamina", 2); }
-  else if (id === "kar_topu") { if (choice === 0) addStatXp(s, "stamina", 2); else { p.honor = Math.min(100, p.honor + 1); gainSkill(s, "social", 1); } }
+  else if (id === "kar_topu") { if (choice === 0) addStatXp(s, "stamina", 2); else { unEkle(p, "honor", 1); gainSkill(s, "social", 1); } }
   const rtr = MICRO_R_TR[id];
   push(s, "gunluk", rtr ? rtr[choice] : "", "kişisel", false, { k: `micro.${id}.r${choice}` });
   return s;
@@ -9936,12 +9957,12 @@ export function resolveSaga(prev: GameState, choice: 0 | 1 | 2): GameState {
   sg.scene = null; sg.lastTurn = s.turn; sg.path = { ...sg.path, [id]: choice };
   let endKey: string | null = null;
   if (id === "emanet_muhur") {
-    if (choice === 0) { sg.ch = 1; bumpNam(p, "mert", 1); p.reputation = Math.min(100, p.reputation + 1); }
+    if (choice === 0) { sg.ch = 1; bumpNam(p, "mert", 1); unEkle(p, "reputation", 1); }
     else sg.declined = (sg.declined || 0) + 1; // ret: mühür bekler; 24 ay sonra son bir kez daha sorulur
   } else if (id === "tahsildar_golgesi") {
     sg.ch = 2;
     if (choice === 0) addStatXp(s, "intelligence", 3);
-    else if (choice === 1) { p.fear = Math.min(100, p.fear + 2); p.reputation = Math.min(100, p.reputation + 1); }
+    else if (choice === 1) { unEkle(p, "fear", 2); unEkle(p, "reputation", 1); }
     else gainSkill(s, "social", 3);
   } else if (id === "tas_kapi") {
     sg.ch = 3;
@@ -9949,7 +9970,7 @@ export function resolveSaga(prev: GameState, choice: 0 | 1 | 2): GameState {
     else if (choice === 1) { p.money -= cost; addStatXp(s, "intelligence", 4); }
     else addStatXp(s, "stamina", 2);
   } else if (id === "yemin_defteri") {
-    if (choice === 0) { sg.ch = 4; bumpNam(p, "mert", 2); p.reputation = Math.min(100, p.reputation + 2); }
+    if (choice === 0) { sg.ch = 4; bumpNam(p, "mert", 2); unEkle(p, "reputation", 2); }
     else if (choice === 1) { sg.ch = 5; const kese = Math.round(120 * inflationFactor(s)); p.money += kese; bumpNam(p, "zalim", 1); p.honor = Math.max(0, p.honor - 3); endKey = "saga.act1EndSold"; } // ihanet dalı: perde erken kapanır
     else { sg.ch = 4; p.health = Math.min(100, p.health + 1); } // uzak durmak seni oyundan çıkarmaz — Karakuş yine gelir
   } else if (id === "gece_kapisi") {
@@ -9958,8 +9979,8 @@ export function resolveSaga(prev: GameState, choice: 0 | 1 | 2): GameState {
     else if (choice === 1) { p.money -= cost; gainSkill(s, "social", 4); }
     else addStatXp(s, "stamina", 3);
   } else if (id === "d2_muhur_geri") { // ihanet dalının kefaret sahnesi: mühür geri gelmeden Perde 2 akmaz
-    if (choice === 0) { addStatXp(s, "intelligence", 3); p.fear = Math.min(100, p.fear + 1); }
-    else if (choice === 1) { p.money -= cost; p.honor = Math.min(100, p.honor + 2); }
+    if (choice === 0) { addStatXp(s, "intelligence", 3); unEkle(p, "fear", 1); }
+    else if (choice === 1) { p.money -= cost; unEkle(p, "honor", 2); }
     else { sg.declined = 9; const kese = Math.round(80 * inflationFactor(s)); p.money += kese; p.honor = Math.max(0, p.honor - 4); bumpNam(p, "zalim", 1); } // haberi satan bu ömürde destandan düşer (tek seferlik kese; sentinel tekrar ödemeyi kapatır, vâriste sıfırlanır)
   } else if (id === "d2_cagri") {
     sg.ch = 1;
@@ -9975,17 +9996,17 @@ export function resolveSaga(prev: GameState, choice: 0 | 1 | 2): GameState {
     sg.ch = 3;
     if (choice === 0) { gainSkill(s, "combat", 4); p.health = Math.max(1, p.health - 5); }
     else if (choice === 1) p.money -= cost;
-    else { addStatXp(s, "intelligence", 3); p.fear = Math.min(100, p.fear + 1); }
+    else { addStatXp(s, "intelligence", 3); unEkle(p, "fear", 1); }
   } else if (id === "d2_hain_iz") {
     sg.ch = 4;
-    if (choice === 0) { bumpNam(p, "mert", 2); p.reputation = Math.min(100, p.reputation + 1); }
+    if (choice === 0) { bumpNam(p, "mert", 2); unEkle(p, "reputation", 1); }
     else if (choice === 1) bumpNam(p, "dindar", 1);
     else addStatXp(s, "intelligence", 3);
   } else if (id === "d2_yaris") {
     sg.ch = 5; endKey = "saga.act2End";
     if (choice === 0) { addStatXp(s, "stamina", 4); p.health = Math.max(1, p.health - 3); }
     else if (choice === 1) addStatXp(s, "intelligence", 4);
-    else p.honor = Math.min(100, p.honor + 1); // bölüşme: kan dökülmedi — izi path'te, Perde 3 hatırlayacak
+    else unEkle(p, "honor", 1); // bölüşme: kan dökülmedi — izi path'te, Perde 3 hatırlayacak
   } else if (id === "d3_besinci_kapi") {
     sg.ch = 1;
     if (choice === 0) bumpNam(p, "mert", 2);
@@ -9994,23 +10015,23 @@ export function resolveSaga(prev: GameState, choice: 0 | 1 | 2): GameState {
   } else if (id === "d3_davet") {
     sg.ch = 2;
     if (choice === 0) addStatXp(s, "charisma", 3);
-    else if (choice === 1) { p.money -= cost; p.reputation = Math.min(100, p.reputation + 1); }
-    else p.reputation = Math.min(100, p.reputation + 2);
+    else if (choice === 1) { p.money -= cost; unEkle(p, "reputation", 1); }
+    else unEkle(p, "reputation", 2);
   } else if (id === "d3_konak_hesabi") {
     sg.ch = 3;
-    if (choice === 0) p.honor = Math.min(100, p.honor + 2);
-    else if (choice === 1) p.fear = Math.min(100, p.fear + 2);
+    if (choice === 0) unEkle(p, "honor", 2);
+    else if (choice === 1) unEkle(p, "fear", 2);
     else bumpNam(p, "comert", 1);
   } else if (id === "d3_yemin_gecesi") {
     sg.ch = 4;
-    if (choice === 0) { p.reputation = Math.min(100, p.reputation + 3); bumpNam(p, "comert", 1); }
+    if (choice === 0) { unEkle(p, "reputation", 3); bumpNam(p, "comert", 1); }
     else if (choice === 1) { const pay = Math.round(150 * inflationFactor(s)); p.money += pay; p.honor = Math.max(0, p.honor - 2); bumpNam(p, "zalim", 1); } // tek seferlik hanedan payı — onur bedelli
-    else { p.reputation = Math.min(100, p.reputation + 3); bumpNam(p, "dindar", 2); }
+    else { unEkle(p, "reputation", 3); bumpNam(p, "dindar", 2); }
   } else if (id === "d3_kul_yemini") {
     sg.ch = 5; endKey = "saga.act3End";
     p.fates = p.fates || []; if (!p.fates.includes("kul_yemini")) p.fates.push("kul_yemini"); // kalıcı iz: destan tamam
-    if (choice === 0) { bumpNam(p, "mert", 2); p.reputation = Math.min(100, p.reputation + 2); }
-    else if (choice === 1) p.fear = Math.min(100, p.fear + 3);
+    if (choice === 0) { bumpNam(p, "mert", 2); unEkle(p, "reputation", 2); }
+    else if (choice === 1) unEkle(p, "fear", 3);
     else { gainSkill(s, "combat", 6); p.health = Math.max(1, p.health - 8); }
   }
   const rtr = SAGA_R_TR[id];
@@ -10135,29 +10156,29 @@ export function resolveBloodline(prev: GameState, choice: 0 | 1 | 2): GameState 
   b.scene = null; b.act_turn = s.turn;
   const h = ensureRivals(s).find((x) => x.id === b.houseId);
   if (sc === "bl_yemin") {
-    if (choice === 0) { b.path.push("yemin"); p.fear = Math.min(100, p.fear + 3); if (s.feud && s.feud.houseId === b.houseId) s.feud.heat = Math.min(100, s.feud.heat + 10); bumpNam(p, "mert", 2); }
-    else { b.path.push("sulh"); p.honor = Math.min(100, p.honor + 3); }
+    if (choice === 0) { b.path.push("yemin"); unEkle(p, "fear", 3); if (s.feud && s.feud.houseId === b.houseId) s.feud.heat = Math.min(100, s.feud.heat + 10); bumpNam(p, "mert", 2); }
+    else { b.path.push("sulh"); unEkle(p, "honor", 3); }
   } else if (sc === "bl_bedel") {
-    if (choice === 0) { p.money -= 120; const loot = 180 + Math.floor(Math.random() * 80); p.money += loot; b.path.push("bedel_kan"); bumpNam(p, "zalim", 2); p.fear = Math.min(100, p.fear + 4); if (s.feud && s.feud.houseId === b.houseId) s.feud.heat = Math.min(100, s.feud.heat + 12); if (h) h.tutum = Math.max(-100, (h.tutum ?? 0) - 15); }
-    else { b.path.push("bedel_kadi"); p.reputation = Math.min(100, p.reputation + 4); p.honor = Math.min(100, p.honor + 2); if (s.feud && s.feud.houseId === b.houseId) s.feud.heat = Math.max(0, s.feud.heat - 8); }
+    if (choice === 0) { p.money -= 120; const loot = 180 + Math.floor(Math.random() * 80); p.money += loot; b.path.push("bedel_kan"); bumpNam(p, "zalim", 2); unEkle(p, "fear", 4); if (s.feud && s.feud.houseId === b.houseId) s.feud.heat = Math.min(100, s.feud.heat + 12); if (h) h.tutum = Math.max(-100, (h.tutum ?? 0) - 15); }
+    else { b.path.push("bedel_kadi"); unEkle(p, "reputation", 4); unEkle(p, "honor", 2); if (s.feud && s.feud.houseId === b.houseId) s.feud.heat = Math.max(0, s.feud.heat - 8); }
   } else if (sc === "bl_golge") {
-    if (choice === 0) { b.path.push("golge_meydan"); p.fame = Math.min(100, p.fame + 4); p.fear = Math.min(100, p.fear + 3); p.health = Math.max(1, p.health - 5); if (s.feud && s.feud.houseId === b.houseId) s.feud.heat = Math.min(100, s.feud.heat + 8); }
-    else { b.path.push("golge_sofra"); p.honor = Math.min(100, p.honor + 3); if (h) h.tutum = Math.min(100, (h.tutum ?? 0) + 10); if (s.feud && s.feud.houseId === b.houseId) s.feud.heat = Math.max(0, s.feud.heat - 10); }
+    if (choice === 0) { b.path.push("golge_meydan"); unEkle(p, "fame", 4); unEkle(p, "fear", 3); p.health = Math.max(1, p.health - 5); if (s.feud && s.feud.houseId === b.houseId) s.feud.heat = Math.min(100, s.feud.heat + 8); }
+    else { b.path.push("golge_sofra"); unEkle(p, "honor", 3); if (h) h.tutum = Math.min(100, (h.tutum ?? 0) + 10); if (s.feud && s.feud.houseId === b.houseId) s.feud.heat = Math.max(0, s.feud.heat - 10); }
   } else if (sc === "bl_hukum") { // ÜÇ KUŞAĞIN HÜKMÜ — defter bu sahneyle kapanır
     const rtrH = BL_R_TR[sc];
     if (choice === 0) { // Kıyım: ocak söndürülür — güç kırılır, korku büyür, şeref yanar
       p.money -= 300;
       if (h) { h.power = Math.max(1, Math.round(h.power * 0.5)); h.tutum = -100; }
-      p.fear = Math.min(100, p.fear + 8); bumpNam(p, "zalim", 4); p.honor = Math.max(0, p.honor - 6);
+      unEkle(p, "fear", 8); bumpNam(p, "zalim", 4); p.honor = Math.max(0, p.honor - 6);
       p.bloodline_end = "kiyim";
     } else if (choice === 1) { // Dünürlük: iki soy bir sofrada — ittifak ve şeref
       if (h) { h.tutum = Math.min(100, (h.tutum ?? 0) + 40); if (!s.allied_houses) s.allied_houses = []; if (!s.allied_houses.includes(h.id)) s.allied_houses.push(h.id); }
-      p.honor = Math.min(100, p.honor + 6); bumpNam(p, "comert", 2); p.reputation = Math.min(100, p.reputation + 4);
+      unEkle(p, "honor", 6); bumpNam(p, "comert", 2); unEkle(p, "reputation", 4);
       p.bloodline_end = "dunurluk";
     } else { // Bedel: gümüşle kapanış — söz tutuldu
       p.money += 400;
       if (h) h.tutum = Math.min(100, (h.tutum ?? 0) + 10);
-      p.honor = Math.min(100, p.honor + 2);
+      unEkle(p, "honor", 2);
       p.bloodline_end = "bedel";
     }
     s.feud = null; // dava her hâlükârda kapanır
@@ -10165,9 +10186,9 @@ export function resolveBloodline(prev: GameState, choice: 0 | 1 | 2): GameState 
     s.bloodline = null;
     return s;
   } else if (sc === "bl_devir") {
-    if (choice === 0) { b.path.push("devam" + b.gen); p.fear = Math.min(100, p.fear + 2); bumpNam(p, "mert", 1); }
+    if (choice === 0) { b.path.push("devam" + b.gen); unEkle(p, "fear", 2); bumpNam(p, "mert", 1); }
     else { // defteri yak: destan kapanır — şeref kalır, hane bunu duyar
-      p.honor = Math.min(100, p.honor + 5);
+      unEkle(p, "honor", 5);
       if (h) h.tutum = Math.min(100, (h.tutum ?? 0) + 12);
       push(s, "kan_defteri", "Atadan kalan kan defterini ocağa attın; alevler eski hesapları yuttu.", "kişisel", true, { k: "bl.bl_devir.r1" });
       s.bloodline = null;
@@ -10297,86 +10318,86 @@ export function resolveDivan(prev: GameState, choice: 0 | 1): GameState {
   s.divan = null;
   p.divan_resolved = (p.divan_resolved || 0) + 1; // adil hükümdar sayacı
   if (id === "su_kavgasi") {
-    if (choice === 0) { p.money -= 100; p.crownAuthority = clamp100(crownAuthorityOf(p) + 6); p.reputation = Math.min(100, p.reputation + 4); bumpNam(p, "comert", 2); }
-    else { p.crownAuthority = clamp100(crownAuthorityOf(p) + 2); p.fear = Math.min(100, p.fear + 2); }
+    if (choice === 0) { p.money -= 100; p.crownAuthority = clamp100(crownAuthorityOf(p) + 6); unEkle(p, "reputation", 4); bumpNam(p, "comert", 2); }
+    else { p.crownAuthority = clamp100(crownAuthorityOf(p) + 2); unEkle(p, "fear", 2); }
   } else if (id === "yetim_arazisi") {
     if (choice === 1) sowSeed(s, { kaynak: "divan_yetim_kirgin", hmin: 60, hmax: 180, agirlik: "buyuk", nesil: true, etki: { reputation: -8 } });
-    if (choice === 0) { p.honor = Math.min(100, p.honor + 5); p.reputation = Math.min(100, p.reputation + 4); p.crownAuthority = clamp100(crownAuthorityOf(p) + 4); bumpNam(p, "mert", 2); }
+    if (choice === 0) { unEkle(p, "honor", 5); unEkle(p, "reputation", 4); p.crownAuthority = clamp100(crownAuthorityOf(p) + 4); bumpNam(p, "mert", 2); }
     else { const bag = 120; p.money += bag; p.honor = Math.max(0, p.honor - 5); bumpNam(p, "zalim", 3); }
   } else if (id === "degirmen_kavgasi") {
-    if (choice === 0) { p.money -= 90; p.crownAuthority = clamp100(crownAuthorityOf(p) + 5); p.reputation = Math.min(100, p.reputation + 4); bumpNam(p, "mert", 1); }
-    else { p.crownAuthority = clamp100(crownAuthorityOf(p) + 1); p.fear = Math.min(100, p.fear + 3); p.reputation = Math.max(-100, p.reputation - 3); bumpNam(p, "zalim", 2); }
+    if (choice === 0) { p.money -= 90; p.crownAuthority = clamp100(crownAuthorityOf(p) + 5); unEkle(p, "reputation", 4); bumpNam(p, "mert", 1); }
+    else { p.crownAuthority = clamp100(crownAuthorityOf(p) + 1); unEkle(p, "fear", 3); p.reputation = Math.max(-100, p.reputation - 3); bumpNam(p, "zalim", 2); }
   } else if (id === "veba_soylenti") {
-    if (choice === 0) { p.money -= 130; p.reputation = Math.min(100, p.reputation + 5); p.fame = Math.min(100, p.fame + 2); bumpNam(p, "comert", 2); sowSeed(s, { kaynak: "divan_veba_sukran", hmin: 24, hmax: 96, agirlik: "orta", nesil: false, etki: { reputation: 6 } }); }
-    else { p.crownAuthority = clamp100(crownAuthorityOf(p) + 4); p.fear = Math.min(100, p.fear + 5); p.reputation = Math.max(-100, p.reputation - 4); bumpNam(p, "zalim", 2); }
+    if (choice === 0) { p.money -= 130; unEkle(p, "reputation", 5); unEkle(p, "fame", 2); bumpNam(p, "comert", 2); sowSeed(s, { kaynak: "divan_veba_sukran", hmin: 24, hmax: 96, agirlik: "orta", nesil: false, etki: { reputation: 6 } }); }
+    else { p.crownAuthority = clamp100(crownAuthorityOf(p) + 4); unEkle(p, "fear", 5); p.reputation = Math.max(-100, p.reputation - 4); bumpNam(p, "zalim", 2); }
   } else if (id === "sinir_haraci") {
-    if (choice === 0) { p.money -= 120; p.crownAuthority = clamp100(crownAuthorityOf(p) + 7); p.reputation = Math.min(100, p.reputation + 3); }
+    if (choice === 0) { p.money -= 120; p.crownAuthority = clamp100(crownAuthorityOf(p) + 7); unEkle(p, "reputation", 3); }
     else { p.reputation = Math.max(-100, p.reputation - 3); p.crownAuthority = clamp100(crownAuthorityOf(p) - 3); bumpNam(p, "zalim", 2); }
   } else if (id === "genc_mucit") {
-    if (choice === 0) { p.money -= 150; p.fame = Math.min(100, p.fame + 5); p.reputation = Math.min(100, p.reputation + 3); bumpNam(p, "comert", 3); sowSeed(s, { kaynak: "divan_mucit", hmin: 36, hmax: 96, agirlik: "orta", nesil: false, etki: { money: 250, reputation: 5 } }); }
+    if (choice === 0) { p.money -= 150; unEkle(p, "fame", 5); unEkle(p, "reputation", 3); bumpNam(p, "comert", 3); sowSeed(s, { kaynak: "divan_mucit", hmin: 36, hmax: 96, agirlik: "orta", nesil: false, etki: { money: 250, reputation: 5 } }); }
     else { p.reputation = Math.max(-100, p.reputation - 2); }
   } else if (id === "kacak_asker") {
-    if (choice === 0) { p.honor = Math.min(100, p.honor + 4); p.reputation = Math.min(100, p.reputation + 3); bumpNam(p, "mert", 2); sowSeed(s, { kaynak: "divan_affedilen", hmin: 24, hmax: 96, agirlik: "orta", nesil: false, etki: { reputation: 7 } }); }
-    else { p.crownAuthority = clamp100(crownAuthorityOf(p) + 4); p.fear = Math.min(100, p.fear + 4); bumpNam(p, "zalim", 2); }
+    if (choice === 0) { unEkle(p, "honor", 4); unEkle(p, "reputation", 3); bumpNam(p, "mert", 2); sowSeed(s, { kaynak: "divan_affedilen", hmin: 24, hmax: 96, agirlik: "orta", nesil: false, etki: { reputation: 7 } }); }
+    else { p.crownAuthority = clamp100(crownAuthorityOf(p) + 4); unEkle(p, "fear", 4); bumpNam(p, "zalim", 2); }
   } else if (id === "iki_imam") {
-    if (choice === 0) { p.money -= 200; p.reputation = Math.min(100, p.reputation + 5); bumpNam(p, "dindar", 3); bumpNam(p, "comert", 2); }
+    if (choice === 0) { p.money -= 200; unEkle(p, "reputation", 5); bumpNam(p, "dindar", 3); bumpNam(p, "comert", 2); }
     else { p.crownAuthority = clamp100(crownAuthorityOf(p) + 2); }
   } else if (id === "leke_surulen") {
-    if (choice === 0) { p.honor = Math.min(100, p.honor + 5); p.reputation = Math.min(100, p.reputation + 4); bumpNam(p, "mert", 2); sowSeed(s, { kaynak: "divan_aklanan", hmin: 24, hmax: 72, agirlik: "kucuk", nesil: false, etki: { money: 60, reputation: 4 } }); }
+    if (choice === 0) { unEkle(p, "honor", 5); unEkle(p, "reputation", 4); bumpNam(p, "mert", 2); sowSeed(s, { kaynak: "divan_aklanan", hmin: 24, hmax: 72, agirlik: "kucuk", nesil: false, etki: { money: 60, reputation: 4 } }); }
     else { p.honor = Math.max(0, p.honor - 3); p.reputation = Math.max(-100, p.reputation - 2); }
   } else if (id === "eski_silah_arkadasi") {
-    if (choice === 0) { p.crownAuthority = clamp100(crownAuthorityOf(p) + 5); p.reputation = Math.min(100, p.reputation + 2); bumpNam(p, "mert", 2); }
-    else { p.honor = Math.min(100, p.honor + 2); p.crownAuthority = clamp100(crownAuthorityOf(p) - 4); }
+    if (choice === 0) { p.crownAuthority = clamp100(crownAuthorityOf(p) + 5); unEkle(p, "reputation", 2); bumpNam(p, "mert", 2); }
+    else { unEkle(p, "honor", 2); p.crownAuthority = clamp100(crownAuthorityOf(p) - 4); }
   } else if (id === "kayip_kervan") {
-    if (choice === 0) { p.money -= 130; p.crownAuthority = clamp100(crownAuthorityOf(p) + 5); p.reputation = Math.min(100, p.reputation + 4); bumpNam(p, "comert", 2); sowSeed(s, { kaynak: "divan_kervanci", hmin: 24, hmax: 96, agirlik: "orta", nesil: false, etki: { money: 220, reputation: 4 } }); }
+    if (choice === 0) { p.money -= 130; p.crownAuthority = clamp100(crownAuthorityOf(p) + 5); unEkle(p, "reputation", 4); bumpNam(p, "comert", 2); sowSeed(s, { kaynak: "divan_kervanci", hmin: 24, hmax: 96, agirlik: "orta", nesil: false, etki: { money: 220, reputation: 4 } }); }
     else { p.reputation = Math.max(-100, p.reputation - 3); p.crownAuthority = clamp100(crownAuthorityOf(p) - 2); }
   } else if (id === "zindan_affi") {
-    if (choice === 0) { p.honor = Math.min(100, p.honor + 4); p.reputation = Math.min(100, p.reputation + 3); bumpNam(p, "mert", 2); sowSeed(s, { kaynak: "divan_ana_duasi", hmin: 24, hmax: 72, agirlik: "kucuk", nesil: false, etki: { reputation: 5 } }); }
-    else { p.crownAuthority = clamp100(crownAuthorityOf(p) + 4); p.fear = Math.min(100, p.fear + 2); bumpNam(p, "zalim", 1); }
+    if (choice === 0) { unEkle(p, "honor", 4); unEkle(p, "reputation", 3); bumpNam(p, "mert", 2); sowSeed(s, { kaynak: "divan_ana_duasi", hmin: 24, hmax: 72, agirlik: "kucuk", nesil: false, etki: { reputation: 5 } }); }
+    else { p.crownAuthority = clamp100(crownAuthorityOf(p) + 4); unEkle(p, "fear", 2); bumpNam(p, "zalim", 1); }
   } else if (id === "sel_bendi") {
-    if (choice === 0) { p.money -= 140; p.crownAuthority = clamp100(crownAuthorityOf(p) + 6); p.reputation = Math.min(100, p.reputation + 4); bumpNam(p, "comert", 2); }
+    if (choice === 0) { p.money -= 140; p.crownAuthority = clamp100(crownAuthorityOf(p) + 6); unEkle(p, "reputation", 4); bumpNam(p, "comert", 2); }
     else { p.crownAuthority = clamp100(crownAuthorityOf(p) + 2); p.reputation = Math.max(-100, p.reputation - 1); }
   } else if (id === "sahte_tanik") {
-    if (choice === 0) { p.money -= 110; p.honor = Math.min(100, p.honor + 5); p.reputation = Math.min(100, p.reputation + 4); p.crownAuthority = clamp100(crownAuthorityOf(p) + 4); bumpNam(p, "mert", 2); }
+    if (choice === 0) { p.money -= 110; unEkle(p, "honor", 5); unEkle(p, "reputation", 4); p.crownAuthority = clamp100(crownAuthorityOf(p) + 4); bumpNam(p, "mert", 2); }
     else { p.money += 130; p.honor = Math.max(0, p.honor - 6); bumpNam(p, "zalim", 3); sowSeed(s, { kaynak: "divan_sahte_kirgin", hmin: 48, hmax: 150, agirlik: "buyuk", nesil: true, etki: { reputation: -8 } }); }
   } else if (id === "kuru_kuyu") {
-    if (choice === 0) { p.money -= 120; p.crownAuthority = clamp100(crownAuthorityOf(p) + 5); p.reputation = Math.min(100, p.reputation + 4); bumpNam(p, "comert", 2); }
-    else { p.reputation = Math.max(-100, p.reputation - 2); p.fear = Math.min(100, p.fear + 1); }
+    if (choice === 0) { p.money -= 120; p.crownAuthority = clamp100(crownAuthorityOf(p) + 5); unEkle(p, "reputation", 4); bumpNam(p, "comert", 2); }
+    else { p.reputation = Math.max(-100, p.reputation - 2); unEkle(p, "fear", 1); }
   } else if (id === "mukerrer_bac") {
-    if (choice === 0) { p.money -= 100; p.honor = Math.min(100, p.honor + 4); p.reputation = Math.min(100, p.reputation + 3); p.crownAuthority = clamp100(crownAuthorityOf(p) + 3); bumpNam(p, "mert", 2); }
+    if (choice === 0) { p.money -= 100; unEkle(p, "honor", 4); unEkle(p, "reputation", 3); p.crownAuthority = clamp100(crownAuthorityOf(p) + 3); bumpNam(p, "mert", 2); }
     else { p.money += 80; p.honor = Math.max(0, p.honor - 4); bumpNam(p, "zalim", 2); p.reputation = Math.max(-100, p.reputation - 4); }
   } else if (id === "yanik_koy") {
-    if (choice === 0) { p.money -= 160; p.crownAuthority = clamp100(crownAuthorityOf(p) + 6); p.reputation = Math.min(100, p.reputation + 4); bumpNam(p, "comert", 2); sowSeed(s, { kaynak: "divan_yanik_sukran", hmin: 24, hmax: 96, agirlik: "orta", nesil: false, etki: { reputation: 6 } }); }
+    if (choice === 0) { p.money -= 160; p.crownAuthority = clamp100(crownAuthorityOf(p) + 6); unEkle(p, "reputation", 4); bumpNam(p, "comert", 2); sowSeed(s, { kaynak: "divan_yanik_sukran", hmin: 24, hmax: 96, agirlik: "orta", nesil: false, etki: { reputation: 6 } }); }
     else { p.reputation = Math.max(-100, p.reputation - 3); p.crownAuthority = clamp100(crownAuthorityOf(p) - 2); bumpNam(p, "zalim", 1); }
   } else if (id === "hekim_ucreti") {
-    if (choice === 0) { p.money -= 120; p.crownAuthority = clamp100(crownAuthorityOf(p) + 4); p.reputation = Math.min(100, p.reputation + 4); bumpNam(p, "comert", 2); bumpNam(p, "dindar", 1); sowSeed(s, { kaynak: "divan_hekim_duasi", hmin: 24, hmax: 72, agirlik: "kucuk", nesil: false, etki: { reputation: 5 } }); }
+    if (choice === 0) { p.money -= 120; p.crownAuthority = clamp100(crownAuthorityOf(p) + 4); unEkle(p, "reputation", 4); bumpNam(p, "comert", 2); bumpNam(p, "dindar", 1); sowSeed(s, { kaynak: "divan_hekim_duasi", hmin: 24, hmax: 72, agirlik: "kucuk", nesil: false, etki: { reputation: 5 } }); }
     else { p.reputation = Math.max(-100, p.reputation - 2); p.honor = Math.max(0, p.honor - 2); }
   } else if (id === "koprucu_borcu") {
-    if (choice === 0) { p.money -= 110; p.crownAuthority = clamp100(crownAuthorityOf(p) + 5); p.reputation = Math.min(100, p.reputation + 4); bumpNam(p, "mert", 2); }
+    if (choice === 0) { p.money -= 110; p.crownAuthority = clamp100(crownAuthorityOf(p) + 5); unEkle(p, "reputation", 4); bumpNam(p, "mert", 2); }
     else { p.money += 90; p.honor = Math.max(0, p.honor - 4); p.reputation = Math.max(-100, p.reputation - 3); bumpNam(p, "zalim", 2); }
   } else if (id === "gece_bekcisi") {
-    if (choice === 0) { p.money -= 100; p.crownAuthority = clamp100(crownAuthorityOf(p) + 4); p.reputation = Math.min(100, p.reputation + 3); bumpNam(p, "comert", 2); sowSeed(s, { kaynak: "divan_bekci_duasi", hmin: 24, hmax: 72, agirlik: "kucuk", nesil: false, etki: { reputation: 5 } }); }
+    if (choice === 0) { p.money -= 100; p.crownAuthority = clamp100(crownAuthorityOf(p) + 4); unEkle(p, "reputation", 3); bumpNam(p, "comert", 2); sowSeed(s, { kaynak: "divan_bekci_duasi", hmin: 24, hmax: 72, agirlik: "kucuk", nesil: false, etki: { reputation: 5 } }); }
     else { p.crownAuthority = clamp100(crownAuthorityOf(p) + 1); p.reputation = Math.max(-100, p.reputation - 2); }
   } else if (id === "sinir_cevizi") {
-    if (choice === 0) { p.crownAuthority = clamp100(crownAuthorityOf(p) + 4); p.reputation = Math.min(100, p.reputation + 4); bumpNam(p, "mert", 2); }
+    if (choice === 0) { p.crownAuthority = clamp100(crownAuthorityOf(p) + 4); unEkle(p, "reputation", 4); bumpNam(p, "mert", 2); }
     else { p.money += 60; p.honor = Math.max(0, p.honor - 3); p.reputation = Math.max(-100, p.reputation - 2); bumpNam(p, "zalim", 1); }
   } else if (id === "sahipsiz_sandik") {
-    if (choice === 0) { p.crownAuthority = clamp100(crownAuthorityOf(p) + 3); p.reputation = Math.min(100, p.reputation + 3); p.honor = Math.min(100, p.honor + 3); bumpNam(p, "mert", 1); sowSeed(s, { kaynak: "divan_sandik_sahibi", hmin: 24, hmax: 96, agirlik: "orta", nesil: false, etki: { money: 150, reputation: 4 } }); }
+    if (choice === 0) { p.crownAuthority = clamp100(crownAuthorityOf(p) + 3); unEkle(p, "reputation", 3); unEkle(p, "honor", 3); bumpNam(p, "mert", 1); sowSeed(s, { kaynak: "divan_sandik_sahibi", hmin: 24, hmax: 96, agirlik: "orta", nesil: false, etki: { money: 150, reputation: 4 } }); }
     else { p.money += 140; p.honor = Math.max(0, p.honor - 5); bumpNam(p, "zalim", 2); sowSeed(s, { kaynak: "divan_sandik_kirgin", hmin: 48, hmax: 140, agirlik: "buyuk", nesil: true, etki: { reputation: -7 } }); }
   } else if (id === "iki_dugun") {
-    if (choice === 0) { p.crownAuthority = clamp100(crownAuthorityOf(p) + 3); p.reputation = Math.min(100, p.reputation + 3); bumpNam(p, "mert", 1); }
+    if (choice === 0) { p.crownAuthority = clamp100(crownAuthorityOf(p) + 3); unEkle(p, "reputation", 3); bumpNam(p, "mert", 1); }
     else { p.money += 50; p.honor = Math.max(0, p.honor - 3); p.reputation = Math.max(-100, p.reputation - 2); bumpNam(p, "zalim", 1); }
   } else if (id === "yanlis_damga") {
-    if (choice === 0) { p.crownAuthority = clamp100(crownAuthorityOf(p) + 4); p.reputation = Math.min(100, p.reputation + 4); bumpNam(p, "mert", 2); }
+    if (choice === 0) { p.crownAuthority = clamp100(crownAuthorityOf(p) + 4); unEkle(p, "reputation", 4); bumpNam(p, "mert", 2); }
     else { p.honor = Math.max(0, p.honor - 5); p.reputation = Math.max(-100, p.reputation - 4); bumpNam(p, "zalim", 2); sowSeed(s, { kaynak: "divan_damga_magduru", hmin: 36, hmax: 120, agirlik: "buyuk", nesil: true, etki: { reputation: -6 } }); }
   }
   else if (id === "ac_yil") {
-    if (choice === 0) { p.money -= 180; p.crownAuthority = clamp100(crownAuthorityOf(p) + 7); p.reputation = Math.min(100, p.reputation + 6); bumpNam(p, "comert", 3); p.honor = Math.min(100, p.honor + 3); }
-    else { p.money += 90; p.reputation = Math.max(-100, p.reputation - 5); p.fear = Math.min(100, p.fear + 2); bumpNam(p, "zalim", 1); sowSeed(s, { kaynak: "divan_ac_yil", hmin: 24, hmax: 96, agirlik: "orta", nesil: true, etki: { reputation: -4 } }); }
+    if (choice === 0) { p.money -= 180; p.crownAuthority = clamp100(crownAuthorityOf(p) + 7); unEkle(p, "reputation", 6); bumpNam(p, "comert", 3); unEkle(p, "honor", 3); }
+    else { p.money += 90; p.reputation = Math.max(-100, p.reputation - 5); unEkle(p, "fear", 2); bumpNam(p, "zalim", 1); sowSeed(s, { kaynak: "divan_ac_yil", hmin: 24, hmax: 96, agirlik: "orta", nesil: true, etki: { reputation: -4 } }); }
   }
   else if (id === "esir_fidyesi") {
-    if (choice === 0) { p.money -= 150; p.crownAuthority = clamp100(crownAuthorityOf(p) + 6); p.reputation = Math.min(100, p.reputation + 5); bumpNam(p, "mert", 3); }
-    else { p.crownAuthority = clamp100(crownAuthorityOf(p) - 3); p.reputation = Math.max(-100, p.reputation - 4); p.fear = Math.min(100, p.fear + 2); }
+    if (choice === 0) { p.money -= 150; p.crownAuthority = clamp100(crownAuthorityOf(p) + 6); unEkle(p, "reputation", 5); bumpNam(p, "mert", 3); }
+    else { p.crownAuthority = clamp100(crownAuthorityOf(p) - 3); p.reputation = Math.max(-100, p.reputation - 4); unEkle(p, "fear", 2); }
   }
   p.divan_karar = (p.divan_karar || 0) + 1; // Kanuni lakabının yakıtı: karara bağlanan arzuhaller
   const rtr = DIVAN_R_TR[id];
@@ -10392,7 +10413,7 @@ export function hostFeast(prev: GameState): GameState {
   let fame = 8, rep = 5;
   if (hasPerk(p, "sohret_avcisi")) fame += 5;
   if (hasPerk(p, "diplomat")) { fame = Math.round(fame * 1.5); rep = Math.round(rep * 1.5); }
-  p.money -= cost; p.feast_turn = s.turn; p.fame = Math.min(100, p.fame + fame); p.reputation = Math.min(100, p.reputation + rep);
+  p.money -= cost; p.feast_turn = s.turn; unEkle(p, "fame", fame); unEkle(p, "reputation", rep);
   gainSkill(s, "social", 5); bumpNam(p, "comert", 8);
   const why = recognition(s) > 0.5 ? " Tanınan biri olduğundan ziyafetin çok konuşuldu." : "";
   { const fv = chance(0.5); push(s, "sosyal", fv ? `Sofralar meydana kuruldu; kazanlar kaynadı, türküler gece yarısını buldu.${why}` : `Köye bir ziyafet verdin; adın dilden dile dolaştı.${why}`, "kişisel", true, { k: fv ? "evj.feast2" : "evj.feast", p: [recognition(s) > 0.5 ? { sfx: "sfx.feastWhy" } : ""] }); }
@@ -10410,7 +10431,7 @@ export function sadakaTasi(prev: GameState): GameState {
   p.money -= cost; p.tas_turn = s.turn;
   let honor = 6;
   if (p.temperament === "merhametli") honor += 3;
-  p.honor = Math.min(100, p.honor + honor);
+  unEkle(p, "honor", honor);
   bumpNam(p, "comert", 4); bumpNam(p, "dindar", 4);
   { const tv = chance(0.5); push(s, "sosyal", tv ? "Gece yarısı sadaka taşının oyuğuna keseni bıraktın; sabah taş boştu. Kimin aldığını bilmiyorsun — mesele de bu." : "Sadaka taşına akçe bıraktın; ne veren biliniyor ne alan. Hayrın en makbulü, adı olmayanı.", "kişisel", false, { k: tv ? "evj.tas2" : "evj.tas" }); }
   return s;
@@ -10425,7 +10446,7 @@ export function giveAlms(prev: GameState): GameState {
   if (p.temperament === "merhametli") honor += 3; // merhametli mizaç: hayrın gönülden gelir, adı da öyle anılır
   if (hasPerk(p, "hosgoru")) honor += 5;
   if (hasPerk(p, "diplomat")) { honor = Math.round(honor * 1.5); rep = Math.round(rep * 1.5); }
-  p.money -= cost; p.alms_turn = s.turn; p.honor = Math.min(100, p.honor + honor); p.reputation = Math.min(100, p.reputation + rep);
+  p.money -= cost; p.alms_turn = s.turn; unEkle(p, "honor", honor); unEkle(p, "reputation", rep);
   gainSkill(s, "social", 5);
   bumpNam(p, "comert", 6); bumpNam(p, "dindar", 5);
   { const av = chance(0.5); push(s, "sosyal", av ? "Kapı kapı dolaşmadın; çeşme başına oturdun, gelen aldı. Kimseyi eğdirmeden vermek de bir hünerdir." : "Yoksullara sadaka dağıttın; vicdanın hafifledi, şerefin yükseldi.", "kişisel", false, { k: av ? "evj.alms2" : "evj.alms" }); }
@@ -10446,7 +10467,7 @@ export function intimidate(prev: GameState): GameState {
   if (p.intimidate_turn === s.turn) return s; // ayda tek gözdağı — korku 0→100 spam'i kapatıldı
   p.intimidate_turn = s.turn;
   const ok = Math.random() < Math.min(0.92, 0.5 + p.stats.strength * 0.04 + dread(s) / 300 + (hasPerk(p, "kan_donduran") ? 0.25 : 0)); // perk garantiyi değil olasılığı artırır
-  if (ok) { let fear = hasPerk(p, "kan_donduran") ? 12 : 8; if (hasPerk(p, "diplomat")) fear = Math.round(fear * 1.5); p.fear = Math.min(100, p.fear + fear); p.reputation = Math.max(-100, p.reputation - 3); bumpNam(p, "zalim", 7); witnessScandal(s, "tehdit", 0.5); const why = dread(s) > 30 ? " Zaten korkulan adın, bir bakışın yetti." : ""; push(s, "sosyal", `Birine gözdağı verdin; adın çekinilen biri oldu.${why}`, "kişisel", false, { k: "evj.intimWin", p: [dread(s) > 30 ? { sfx: "sfx.intimWinWhy" } : ""] }); }
+  if (ok) { let fear = hasPerk(p, "kan_donduran") ? 12 : 8; if (hasPerk(p, "diplomat")) fear = Math.round(fear * 1.5); unEkle(p, "fear", fear); p.reputation = Math.max(-100, p.reputation - 3); bumpNam(p, "zalim", 7); witnessScandal(s, "tehdit", 0.5); const why = dread(s) > 30 ? " Zaten korkulan adın, bir bakışın yetti." : ""; push(s, "sosyal", `Birine gözdağı verdin; adın çekinilen biri oldu.${why}`, "kişisel", false, { k: "evj.intimWin", p: [dread(s) > 30 ? { sfx: "sfx.intimWinWhy" } : ""] }); }
   else { p.reputation = Math.max(-100, p.reputation - 5); p.honor = Math.max(0, p.honor - 3); const why = esteem(s) > 25 ? " Sevilen biri olduğundan kimse seni ciddiye almadı." : ""; push(s, "sosyal", `Gözdağın ters tepti; itibarın zarar gördü.${why}`, "kişisel", false, { k: "evj.intimLose", p: [esteem(s) > 25 ? { sfx: "sfx.intimLoseWhy" } : ""] }); }
   return s;
 }
@@ -10613,8 +10634,8 @@ export function applyBattleOutcome(prev: GameState, id: string, won: boolean, fi
   if (won) {
     let reward = Math.round(e.reward * inflationFactor(s)); // ödül çağın parasıyla — geç oyunda dövüş anlamsız kalmasın
     if (hasPerk(p, "savas_ustasi")) reward = Math.round(reward * 1.5);
-    p.money += reward; p.fame = Math.min(100, p.fame + e.fame); p.honor = Math.min(100, p.honor + e.honor);
-    p.fear = Math.min(100, p.fear + Math.round(e.fame / 2));
+    p.money += reward; unEkle(p, "fame", e.fame); unEkle(p, "honor", e.honor);
+    unEkle(p, "fear", Math.round(e.fame / 2));
     bumpNam(p, "mert", 6);
     if (!p.enc_won) p.enc_won = {}; p.enc_won[e.id] = true; // efsane defterine yaz
     const floor = hasPerk(p, "yilmaz") ? 5 : 1;
@@ -10651,8 +10672,8 @@ export function applyYuzlesme(prev: GameState, encId: string, kapanis: YuzlesmeK
   p.battle_award_turn = s.turn;
   if (kapanis === "soz") {
     gainSkill(s, "social", 6);
-    if (tur === "eskiya") p.fear = Math.min(100, p.fear + 2);
-    if (tur === "duello") p.honor = Math.min(100, p.honor + 1);
+    if (tur === "eskiya") unEkle(p, "fear", 2);
+    if (tur === "duello") unEkle(p, "honor", 1);
     push(s, "savaş", `${e.title}: kılıç çekilmeden bitti.`, "kişisel", false, { k: "evj.yz.soz." + tur, p: [{ enc: e.id }] });
   } else if (kapanis === "harac" && tur === "eskiya") {
     const bedel = Math.min(Math.max(0, Math.floor(p.money)), yuzlesmeHarac(s, encId));
@@ -10681,7 +10702,7 @@ export function reconcileNemesis(prev: GameState): GameState {
   if (Math.random() < odds) {
     s.story.nemesis = null;
     p.peace_made = true;
-    p.honor = Math.min(100, p.honor + 6); p.reputation = Math.min(100, p.reputation + 4);
+    unEkle(p, "honor", 6); unEkle(p, "reputation", 4);
     bumpNam(p, "mert", 4);
     if (n.id && kisiOf(s, n.id)) { s.relationships[n.id] = Math.max(-20, s.relationships[n.id] || 0); remember(s, { id: n.id, name: n.name }, "barisma"); } // barışılan hasım hemen yeniden hasım olmaz
     push(s, "nemesis", `${n.name} ile kahve içildi, hediye kabul edildi; eski defter helalleşmeyle kapandı. Çarşı buna kılıçtan çok şaştı.`, "kişisel", true, { k: "evj.nemPeace", p: [nemAd(s, n)] });
@@ -10751,7 +10772,7 @@ function hesapUygula(s: GameState, oldur: boolean) {
   if (!s.kanDefteri.length) s.kanDefteri = undefined;
   if (oldur) {
     k.ol = worldYears(s); if (k.es && k.es !== OYUNCU && pop.k[k.es]?.ol == null) delete pop.k[k.es].es; nufusDegisti(pop);
-    p.honor = Math.max(0, p.honor - 10); bumpNam(p, "zalim", 8); p.fear = Math.min(100, p.fear + 8); p.reputation = Math.max(-100, p.reputation - 6);
+    p.honor = Math.max(0, p.honor - 10); bumpNam(p, "zalim", 8); unEkle(p, "fear", 8); p.reputation = Math.max(-100, p.reputation - 6);
     push(s, "kan_davası", `${nm} yerde yatarken canını aldın. Kan döküldü; bu hesap artık kapanmaz.`, "kişisel", true, { k: "kan.oldur", p: [kp] });
     const tanik = npcsOf(s).filter((n) => n.id !== k.id).sort(() => Math.random() - 0.5).slice(0, 3);
     for (const t of tanik) remember(s, t, "suc_tanigi");
@@ -10763,7 +10784,7 @@ function hesapUygula(s: GameState, oldur: boolean) {
     }
     return;
   }
-  p.honor = Math.min(100, p.honor + 5); bumpNam(p, "mert", 4); p.reputation = Math.min(100, p.reputation + 3); p.fame = Math.min(100, p.fame + 2);
+  unEkle(p, "honor", 5); bumpNam(p, "mert", 4); unEkle(p, "reputation", 3); unEkle(p, "fame", 2);
   const ns = npcStateOf(s, k.id); const g = huyGrubu(huyOf(k)); const ok = olenId ? pop.k[olenId] : undefined;
   if (g === "ilkeli" || g === "sicak") {
     aniHafiflet(ns, m => m.yuk < 0, g === "ilkeli" ? .3 : .4);
@@ -10969,7 +10990,7 @@ export function diyetOde(prev: GameState): GameState {
   const cost = diyetBedeli(s); if (p.money < cost) return s;
   p.reconcile_turn = s.turn;
   if (Math.random() * 100 < diyetSansi(s).yuzde) {
-    p.money -= cost; s.story.nemesis = null; p.honor = Math.min(100, p.honor + 3); bumpNam(p, "dindar", 1);
+    p.money -= cost; s.story.nemesis = null; unEkle(p, "honor", 3); bumpNam(p, "dindar", 1);
     const ns = npcStateOf(s, k.id); aniHafiflet(ns, m => m.tur === "kan", .5);
     remember(s, { id: k.id, name: n.name }, "diyet"); s.relationships[k.id] = Math.max(-20, s.relationships[k.id] || 0);
     push(s, "kan_davası", `${n.name} diyeti kabul etti (${cost} akçe); kan davası kapandı.`, "kişisel", true, { k: "kan.diyetOk", p: [knParam(k), cost] });
@@ -10991,7 +11012,7 @@ export function applyNemesisOutcome(prev: GameState, won: boolean, finalHp: numb
   p.battle_turn = s.turn; // nemesis hesaplaşması da tur başına tek dövüş kapısına dahil (giriş kilidi kurulmamışsa çifte güvence)
   gainSkill(s, "combat", won ? 16 : 8);
   if (won) {
-    p.money += Math.round(90 * inflationFactor(s)); p.fame = Math.min(100, p.fame + 16); p.honor = Math.min(100, p.honor + 8); // ödül çağın parasıyla (nemesisEncounter göstergesiyle aynı)
+    p.money += Math.round(90 * inflationFactor(s)); unEkle(p, "fame", 16); unEkle(p, "honor", 8); // ödül çağın parasıyla (nemesisEncounter göstergesiyle aynı)
     bumpNam(p, "mert", 8);
     const floor = hasPerk(p, "yilmaz") ? 5 : 1; p.health = Math.max(floor, Math.min(Math.round(finalHp), p.health)); // zafer canı giriş canını aşamaz
     s.story.nemesis = null;
@@ -11161,8 +11182,8 @@ function claimFamilyQuests(s: GameState) {
     if (p.age < q.minAge || p.fq_claimed.includes(q.id) || !q.done(s)) continue;
     p.fq_claimed.push(q.id);
     if (q.reward.money) p.money += q.reward.money;
-    if (q.reward.fame) p.fame = Math.min(100, p.fame + q.reward.fame);
-    if (q.reward.rep) p.reputation = Math.min(100, p.reputation + q.reward.rep);
+    if (q.reward.fame) unEkle(p, "fame", q.reward.fame);
+    if (q.reward.rep) unEkle(p, "reputation", q.reward.rep);
     if (q.reward.statPt) p.stat_points += q.reward.statPt;
     push(s, "aile_gorevi", `Aile görevi tamamlandı: ${q.title}.`, "kişisel", true, { k: "evj.familyQuest", p: [{ fq: q.id }] });
   }
@@ -11214,10 +11235,10 @@ export function applyDilemma(prev: GameState, delta: Delta, resultText: string, 
   const jit = (v: number) => { const r = Math.round(v * (0.75 + Math.random() * 0.5)); return v > 0 ? Math.max(1, r) : Math.min(-1, r); };
   if (delta.health) { let hv = jit(delta.health); if (hv < 0) hv = Math.min(-1, hv + Math.floor(effStat(p, "strength") / 4)); p.health = clampStat(p.health + hv); }
   if (delta.hunger) p.hunger = clampStat(p.hunger + delta.hunger);
-  if (delta.reputation) p.reputation = Math.max(-100, Math.min(100, p.reputation + jit(delta.reputation)));
-  if (delta.honor) p.honor = clampStat(p.honor + delta.honor);
-  if (delta.fear) p.fear = clampStat(p.fear + delta.fear);
-  if (delta.fame) p.fame = clampStat(p.fame + delta.fame);
+  if (delta.reputation) unEkle(p, "reputation", jit(delta.reputation));
+  if (delta.honor) unEkle(p, "honor", delta.honor);
+  if (delta.fear) unEkle(p, "fear", delta.fear);
+  if (delta.fame) unEkle(p, "fame", delta.fame);
   if (delta.stat_points) p.stat_points += delta.stat_points;
   if (delta.addItem) p.inventory[delta.addItem] = (p.inventory[delta.addItem] || 0) + 1;
   if (delta.nam) for (const k of Object.keys(delta.nam) as (keyof Nam)[]) bumpNam(p, k, delta.nam[k]!);
@@ -11399,7 +11420,7 @@ export function advanceArc(prev: GameState, choiceIdx: number, loc?: { result?: 
     if (d.money) p.money = Math.max(0, p.money + d.money);
     if (d.health) p.health = Math.max(0, Math.min(100, p.health + d.health));
     if (d.hunger) p.hunger = Math.max(0, Math.min(100, p.hunger + d.hunger));
-    if (d.reputation) p.reputation = Math.max(-100, Math.min(100, p.reputation + d.reputation));
+    if (d.reputation) unEkle(p, "reputation", d.reputation);
     if (d.honor) p.honor = Math.max(0, Math.min(100, p.honor + d.honor));
     if (d.fear) p.fear = Math.max(0, Math.min(100, p.fear + d.fear));
     if (d.fame) p.fame = Math.max(0, Math.min(100, p.fame + d.fame));
@@ -11564,7 +11585,7 @@ export function mekanaGit(prev: GameState, mekan: Mekan): GameState {
   if (mekan === "carsi") { const m = enKitMal(s, p.location_name); gainSkill(s, "trade", 2); push(s, "gunluk", `Çarşıyı dolaştın${ad ? "; " + ad + " ile tanıştın" : ""}. Tezgâhlarda ${m} kıt.`, "kişisel", false, ilk ? { k: "mh.ev.carsi", p: [ilk, { il: m }] } : { k: "mh.ev.carsi0", p: [{ il: m }] }); }
   else if (mekan === "cami") { bumpNam(p, "dindar", 1); p.health = Math.min(100, p.health + 1); push(s, "gunluk", `Camide saf tuttun; gönlün hafifledi.`, "kişisel", false, ilk ? { k: "mh.ev.cami", p: [ilk] } : { k: "mh.ev.cami0" }); }
   else if (mekan === "kahve") { gainSkill(s, "social", 2); push(s, "gunluk", `Kahvehanede lafladın.`, "kişisel", false, ilk ? { k: "mh.ev.kahve", p: [ilk] } : { k: "mh.ev.kahve0" }); }
-  else if (mekan === "meydan") { if (p.age < 14) addStatXp(s, "strength", 2); else p.reputation = Math.min(100, p.reputation + 1); push(s, "gunluk", `Meydanda vakit geçirdin.`, "kişisel", false, ilk ? { k: "mh.ev.meydan", p: [ilk] } : { k: "mh.ev.meydan0" }); }
+  else if (mekan === "meydan") { if (p.age < 14) addStatXp(s, "strength", 2); else unEkle(p, "reputation", 1); push(s, "gunluk", `Meydanda vakit geçirdin.`, "kişisel", false, ilk ? { k: "mh.ev.meydan", p: [ilk] } : { k: "mh.ev.meydan0" }); }
   else { const uzak = LOCATIONS.filter((l) => l !== p.location_name && regionOf(l) === regionOf(p.location_name)); const yer = uzak.length ? rnd(uzak) : rnd(LOCATIONS.filter((l) => l !== p.location_name)); const m = enKitMal(s, yer); gainSkill(s, "trade", 1);
     push(s, "gunluk", `Handa yolcularla oturdun. Bir kervancı anlattı: ${yer} çarşısında ${m} kıt.`, "kişisel", false, ilk ? { k: "mh.ev.han", p: [ilk, { pl: yer }, { il: m }] } : { k: "mh.ev.han0", p: [{ pl: yer }, { il: m }] }); }
   return s;
@@ -11707,12 +11728,12 @@ export function claimThrone(prev: GameState): { state: GameState; success: boole
   if (success) {
     p.crowned = true; p.crownSeat = regionOf(p.home_name || p.location_name);
     p.crownAuthority = 72; // tahta yeni çıkan hükümdarın başlangıç otoritesi
-    p.fame = Math.min(100, p.fame + 25); p.reputation = Math.min(100, p.reputation + 15);
+    unEkle(p, "fame", 25); unEkle(p, "reputation", 15);
     bumpNam(p, "mert", 6);
     { const tw2 = gameRandom(s) < 0.5; push(s, "taht", tw2 ? `Kubbede üç gün mum yandı, kapılarda üç gün aş kaynadı: taht artık ${p.surname || p.name} Hanedanı'nın. İlk ferman: kimse aç yatmasın.` : `Tahta çıktın! Bundan böyle ${p.surname || p.name} Hanedanı diyara hükmediyor.`, "kişisel", true, { k: tw2 ? "ev.throne.win2" : "ev.throne.win" }); }
   } else {
     p.reputation = Math.max(-100, p.reputation - 30); p.fame = Math.max(0, p.fame - 15);
-    p.fear = Math.min(100, p.fear + 10); p.health = Math.max(1, p.health - 25);
+    unEkle(p, "fear", 10); p.health = Math.max(1, p.health - 25);
     push(s, "taht_basarisiz", "Taht iddian bastırıldı — hain ilan edildin, itibarın yerle bir oldu.", "kişisel", true, { k: "ev.throne.lose" });
   }
   return { state: s, success };
@@ -11747,7 +11768,7 @@ export function foundSettlement(prev: GameState, name: string): GameState {
   p.money -= settleFee(s, "mezra");
   if (!s.settlements) s.settlements = [];
   s.settlements.push({ name: name.trim().slice(0, 24), founded: s.turn, dev: 8, tier: "mezra", loc: here });
-  p.fame = Math.min(100, p.fame + 4); p.reputation = Math.min(100, p.reputation + 3);
+  unEkle(p, "fame", 4); unEkle(p, "reputation", 3);
   push(s, "yerlesim", `${name.trim()} adıyla bir mezra kurdun (${here}). Mülk ekleyip geliştirdikçe köye, kasabaya doğru büyüyecek.`, "kişisel", true, { k: "ev.settle.found", p: [name.trim(), { pl: here }] });
   return s;
 }
@@ -11772,7 +11793,7 @@ export function upgradeSettleTier(prev: GameState, index: number): GameState {
   const st = s.settlements![index]; const p = s.player;
   p.money -= settleFee(s, chk.next);
   st.tier = chk.next; st.dev = Math.max(8, st.dev - 30); // büyüyen yerleşim yeniden gelişmeye başlar
-  p.fame = Math.min(100, p.fame + 6); p.reputation = Math.min(100, p.reputation + 4);
+  unEkle(p, "fame", 6); unEkle(p, "reputation", 4);
   push(s, "yerlesim", `${st.name} artık bir ${chk.next}! Hanedanının nüfuzu büyüyor.`, "kişisel", true, { k: "ev.settle.up", p: [st.name, { stt: chk.next }] });
   return s;
 }
@@ -11784,7 +11805,7 @@ export function developSettlement(prev: GameState, index: number): GameState {
   if (!st || st.dev >= 100) return s;
   const cost = developSettlementCost(st); if (p.money < cost) return s;
   p.money -= cost; st.dev = Math.min(100, st.dev + 8);
-  if (st.dev >= 100) p.fame = Math.min(100, p.fame + 3);
+  if (st.dev >= 100) unEkle(p, "fame", 3);
   push(s, "yerlesim", `${st.name} için akçe döktün; ${st.tier || "mezra"} hızla gelişti (gelişmişlik %${st.dev}).`, "kişisel", false, { k: "evj.settleDev", p: [st.name, st.dev] });
   return s;
 }
@@ -11815,7 +11836,7 @@ export function upgradeEstate(prev: GameState): GameState {
   const cost = estateCost(s); if (p.money < cost) return s;
   p.money -= cost; p.estate = t + 1;
   const id = ESTATE_TIERS[t].id;
-  p.fame = Math.min(100, p.fame + 2 + t);
+  unEkle(p, "fame", 2 + t);
   push(s, "konak", `Aile konağına yeni bir bölüm eklendi; hanedanın taş kütüğü büyüyor.`, "kişisel", true, { k: "est.up." + id });
   return s;
 }
@@ -11835,7 +11856,7 @@ export function visitHamam(prev: GameState): GameState {
   p.money -= cost;
   p.health = Math.min(100, p.health + 3);
   gainSkill(s, "social", 4);
-  if (chance(0.35)) { p.reputation = Math.min(100, p.reputation + 1); push(s, "sohbet", `Hamamda keselendin (−${cost} akçe); kubbenin altında bir fısıltı da yakaladın — çarşıdan önce senin kulağında.`, "kişisel", false, { k: "evj.hamam2", p: [cost] }); }
+  if (chance(0.35)) { unEkle(p, "reputation", 1); push(s, "sohbet", `Hamamda keselendin (−${cost} akçe); kubbenin altında bir fısıltı da yakaladın — çarşıdan önce senin kulağında.`, "kişisel", false, { k: "evj.hamam2", p: [cost] }); }
   else push(s, "gunluk", `Hamama gittin (−${cost} akçe); kese, buhar, iki tas su — beden gevşedi, gönül durulandı.`, "kişisel", false, { k: "evj.hamam", p: [cost] });
   return s;
 }
@@ -11899,12 +11920,12 @@ export function donateVakif(prev: GameState, amount: number): GameState {
   p.vakif_turn = s.turn; p.money -= amount;
   const onceki = vakifTier(p.vakif_fon || 0);
   p.vakif_fon = (p.vakif_fon || 0) + amount;
-  p.reputation = Math.min(100, p.reputation + 2); bumpNam(p, "comert", 3);
+  unEkle(p, "reputation", 2); bumpNam(p, "comert", 3);
   push(s, "bagis", `Vakfına ${amount} akçe akıttın; kazanın altında yanan ateş büyüdü.`, "kişisel", false, { k: "est.vakifFund", p: [amount] });
   // Mertebe eşiği aşıldı: bir kezlik büyük an (landmark) — şöhret ve cömert nam mertebeyle büyür.
   const yeni = vakifTier(p.vakif_fon || 0);
   if (yeni > onceki) {
-    p.fame = Math.min(100, p.fame + 3 + yeni * 2); bumpNam(p, "comert", 4 + yeni);
+    unEkle(p, "fame", 3 + yeni * 2); bumpNam(p, "comert", 4 + yeni);
     const VT_TR = ["", "Vakfın mahallenin direği oldu; kapısında kazan hiç sönmüyor.", "Vakfın şehrin dört yanında anılıyor; adın hayırla yazılıyor.", "Vakfın diyarın en büyük hayratlarından sayılıyor; kervanlar bile yolunu değiştirip uğruyor.", "Vakfın çağlara kalacak bir müessese oldu; adın taşa değil gönüllere kazındı."];
     push(s, "bagis", VT_TR[yeni] || VT_TR[1], "kişisel", true, { k: "est.vakifTier" + yeni });
   }
@@ -11926,10 +11947,10 @@ export function fundPrestige(prev: GameState, id: string): GameState {
   p.prestige_turn = s.turn;
   p.money -= cost; p.legacy = p.legacy || {};
   if (id === "hekim") { p.health = Math.min(100, p.health + 16); { const hk2 = chance(0.5); push(s, "saglik", hk2 ? `Hekim nabzını defter gibi okudu, üç şişe ve bir perhiz bıraktı; bir haftada belin doğruldu (+16 sağlık).` : `Usta bir hekim tuttun; sağlığın tazelendi (+16 sağlık).`, "kişisel", false, { k: hk2 ? "ev.prestige.hekim2" : "ev.prestige.hekim" }); } }
-  else if (id === "imaret") { p.reputation = Math.min(100, p.reputation + 9); p.fame = Math.min(100, p.fame + 3); p.legacy.imaret = true; { const im2 = chance(0.5); push(s, "bagis", im2 ? `İmaretin ilk kazanı şafakta kaynadı; kapıda kuyruk, kuyrukta dua vardı. Aş bitti, bereketi kaldı.` : `Bir imaret açtın; yoksullar adını hayırla anıyor (+itibar).`, "kişisel", true, { k: im2 ? "ev.prestige.imaret2" : "ev.prestige.imaret" }); } }
-  else if (id === "hac") { bumpNam(p, "dindar", 16); bumpNam(p, "comert", 6); p.reputation = Math.min(100, p.reputation + 8); p.fame = Math.min(100, p.fame + 4); p.legacy.hac = true; { const hc2 = chance(0.5); push(s, "bagis", hc2 ? `Aylar süren yoldan döndüğünde kapının önü hurma ve zemzem bekleyenlerle doluydu; adının önüne bir hece eklendi: Hacı. O hece, akçeyle alınmayan tek pâyedir.` : `Hacca gidip döndün; artık Hacı diye anılıyorsun, sözün diyarda ağırlık taşıyor (büyük dindar nam + ömür boyu saygınlık).`, "kişisel", true, { k: hc2 ? "ev.prestige.hac2" : "ev.prestige.hac" }); } }
-  else if (id === "vakif") { p.reputation = Math.min(100, p.reputation + 12); p.fame = Math.min(100, p.fame + 9); p.legacy.vakif = true; { const vk2 = chance(0.5); push(s, "bagis", vk2 ? `Vakfiye mühürlendi, şartları taşa yazıldı: çeşme akacak, kervan konaklayacak, yetim okuyacak. Sen gittikten sonra da imzan su verecek.` : `Adına bir vakıf kurdun; hayrın nesiller boyu sürecek (+itibar +şöhret).`, "kişisel", true, { k: vk2 ? "ev.prestige.vakif2" : "ev.prestige.vakif" }); } }
-  else if (id === "anit") { p.fame = Math.min(100, p.fame + 16); p.legacy.anit = true; { const an2 = chance(0.5); push(s, "bagis", an2 ? `Ustalar son taşı yerine koyduğunda meydan alkışla doldu; kaidede adın, tarihin ve tek satır: bu diyar gördü, bu taş unutmayacak.` : `Görkemli bir anıt diktirdin; diyar bu eseri asırlarca konuşacak (+şöhret).`, "kişisel", true, { k: an2 ? "ev.prestige.anit2" : "ev.prestige.anit" }); } }
+  else if (id === "imaret") { unEkle(p, "reputation", 9); unEkle(p, "fame", 3); p.legacy.imaret = true; { const im2 = chance(0.5); push(s, "bagis", im2 ? `İmaretin ilk kazanı şafakta kaynadı; kapıda kuyruk, kuyrukta dua vardı. Aş bitti, bereketi kaldı.` : `Bir imaret açtın; yoksullar adını hayırla anıyor (+itibar).`, "kişisel", true, { k: im2 ? "ev.prestige.imaret2" : "ev.prestige.imaret" }); } }
+  else if (id === "hac") { bumpNam(p, "dindar", 16); bumpNam(p, "comert", 6); unEkle(p, "reputation", 8); unEkle(p, "fame", 4); p.legacy.hac = true; { const hc2 = chance(0.5); push(s, "bagis", hc2 ? `Aylar süren yoldan döndüğünde kapının önü hurma ve zemzem bekleyenlerle doluydu; adının önüne bir hece eklendi: Hacı. O hece, akçeyle alınmayan tek pâyedir.` : `Hacca gidip döndün; artık Hacı diye anılıyorsun, sözün diyarda ağırlık taşıyor (büyük dindar nam + ömür boyu saygınlık).`, "kişisel", true, { k: hc2 ? "ev.prestige.hac2" : "ev.prestige.hac" }); } }
+  else if (id === "vakif") { unEkle(p, "reputation", 12); unEkle(p, "fame", 9); p.legacy.vakif = true; { const vk2 = chance(0.5); push(s, "bagis", vk2 ? `Vakfiye mühürlendi, şartları taşa yazıldı: çeşme akacak, kervan konaklayacak, yetim okuyacak. Sen gittikten sonra da imzan su verecek.` : `Adına bir vakıf kurdun; hayrın nesiller boyu sürecek (+itibar +şöhret).`, "kişisel", true, { k: vk2 ? "ev.prestige.vakif2" : "ev.prestige.vakif" }); } }
+  else if (id === "anit") { unEkle(p, "fame", 16); p.legacy.anit = true; { const an2 = chance(0.5); push(s, "bagis", an2 ? `Ustalar son taşı yerine koyduğunda meydan alkışla doldu; kaidede adın, tarihin ve tek satır: bu diyar gördü, bu taş unutmayacak.` : `Görkemli bir anıt diktirdin; diyar bu eseri asırlarca konuşacak (+şöhret).`, "kişisel", true, { k: an2 ? "ev.prestige.anit2" : "ev.prestige.anit" }); } }
   return s;
 }
 
@@ -11953,7 +11974,7 @@ export function manipulateMarket(prev: GameState, dir: "pump" | "dump"): GameSta
   if (dir === "pump") { s.econ = Math.min(2, (s.econ || 1) + 0.45); push(s, "piyasa", `Pazarı kasıp kavurdun — malları topladın, fiyatlar fırladı. Diyar seni konuşuyor.`, "makro", true, { k: "ev.lever.pump" }); }
   else { s.econ = Math.max(0.5, (s.econ || 1) - 0.45); push(s, "piyasa", `Ambarlarını açtın — piyasayı mala boğdun, fiyatlar düştü. Halk minnettar, tüccarlar küplere bindi.`, "makro", true, { k: "ev.lever.dump" }); }
   if (s.world) s.world.marketLeverUntil = s.turn + 6;
-  p.fame = Math.min(100, p.fame + 3);
+  unEkle(p, "fame", 3);
   return s;
 }
 
@@ -11974,7 +11995,7 @@ export function runForGovernor(prev: GameState, name: string): GameState {
   p.governorships.push(name);
   if (!p.govLeg) p.govLeg = {};
   p.govLeg[name] = 60; // başlangıç meşruiyeti
-  p.reputation = Math.min(100, p.reputation + 5); p.fame = Math.min(100, p.fame + 6);
+  unEkle(p, "reputation", 5); unEkle(p, "fame", 6);
   push(s, "yonetim", `${name} valiliğine getirildin — artık ${GOV_TITLE[placeKind(name)] || "Vali"}sin.`, "kişisel", true, { k: "evj.govAppoint", p: [{ pl: name }] });
   return s;
 }
@@ -12049,8 +12070,8 @@ export function issueEdict(prev: GameState, loc: string, id: string): GameState 
   p.govTreasury[loc] = govTreasuryOf(p, loc) - e.costTreasury + e.treasury;
   p.govHappy[loc] = Math.max(0, Math.min(100, govHappyOf(p, loc) + e.happy));
   p.govLeg[loc] = Math.max(0, Math.min(100, govLegOf(p, loc) + e.leg));
-  p.reputation = Math.max(-100, Math.min(100, p.reputation + e.rep));
-  if (e.honor) p.honor = Math.min(100, p.honor + e.honor);
+  unEkle(p, "reputation", e.rep);
+  if (e.honor) unEkle(p, "honor", e.honor);
   if (e.nam && e.namAmt) bumpNam(p, e.nam, e.namAmt);
   p.govEdict[loc] = s.turn;
   push(s, "yonetim", `${loc}'de ferman çıkardın.`, "kişisel", true, { k: "gov.edict." + id, p: [{ pl: loc }] });
@@ -12091,7 +12112,7 @@ export function fundWork(prev: GameState, loc: string, id: string): GameState {
   p.govTreasury[loc] = govTreasuryOf(p, loc) - w.costTreasury;
   p.govHappy[loc] = Math.min(100, govHappyOf(p, loc) + w.happy);
   p.govLeg[loc] = Math.min(100, govLegOf(p, loc) + w.leg);
-  p.fame = Math.min(100, p.fame + w.fame);
+  unEkle(p, "fame", w.fame);
   if (w.nam && w.namAmt) bumpNam(p, w.nam, w.namAmt);
   p.govWorks[loc] = [...worksOf(p, loc), id];
   (s.eserler = s.eserler || {})[loc] = [...new Set([...(s.eserler[loc] || []), id])]; // eser hanedanın adıyla şehirde kalır
@@ -12238,7 +12259,7 @@ export function issueDecree(prev: GameState, id: string): GameState {
   p.money += d.gold;
   p.crownAuthority = clamp100(crownAuthorityOf(p) + d.authority);
   if (d.fame) p.fame = clamp100(p.fame + d.fame);
-  p.reputation = Math.max(-100, Math.min(100, p.reputation + d.rep));
+  unEkle(p, "reputation", d.rep);
   if (d.honor) p.honor = clamp100(p.honor + d.honor);
   if (d.nam && d.namAmt) bumpNam(p, d.nam, d.namAmt);
   p.crownDecree = s.turn;
@@ -12547,7 +12568,7 @@ function checkCourtPromotion(s: GameState) {
   const p = s.player;
   while ((p.courtRank ?? 0) < COURT_RANKS.length - 1 && (p.courtXp ?? 0) >= COURT_RANK_XP[(p.courtRank ?? 0) + 1] && (p.courtFavor ?? 0) >= 42) {
     p.courtRank = (p.courtRank ?? 0) + 1;
-    p.fame = Math.min(100, p.fame + 4); p.reputation = Math.min(100, p.reputation + 3);
+    unEkle(p, "fame", 4); unEkle(p, "reputation", 3);
     push(s, "saray", `Divanda yükseldin: artık ${courtRankId(p)} rütbesindesin.`, "kişisel", true, { k: "court.promote", p: [{ crk: courtRankId(p) }] });
   }
 }
@@ -12569,7 +12590,7 @@ export function serveCourt(prev: GameState): GameState {
     gainSkill(s, "social", 8); addStatXp(s, "intelligence", 4);
     if (crit) {
       bonus = Math.round(bonus * 2); p.money += bonus;
-      p.courtXp = (p.courtXp ?? 0) + 5; p.courtFavor = Math.min(100, (p.courtFavor ?? 55) + 6); p.fame = Math.min(100, p.fame + 3);
+      p.courtXp = (p.courtXp ?? 0) + 5; p.courtFavor = Math.min(100, (p.courtFavor ?? 55) + 6); unEkle(p, "fame", 3);
       push(s, "saray", `Divanda öyle bir iş gördün ki hükümdar bizzat iltifat etti (+${bonus} akçe).`, "kişisel", true, { k: "court.serveCrit", p: [bonus] });
     } else {
       p.money += bonus;
@@ -12694,7 +12715,7 @@ export function deliverWorkshopOrder(prev: GameState): GameState {
   p.money += Math.max(1, Math.round(o.pay));
   const guild = npcLonca(p.profession);
   if (guild && p.faction === guild) { p.faction_standing = p.faction_standing || {}; p.faction_standing[guild] = Math.min(100, (p.faction_standing[guild] || 0) + 3); }
-  else p.reputation = Math.min(100, p.reputation + 2);
+  else unEkle(p, "reputation", 2);
   p.workshop_order_turn = s.turn;
   addTradePressure(s, o.city, o.good, -0.045);
   delete s.workshopOrder;
