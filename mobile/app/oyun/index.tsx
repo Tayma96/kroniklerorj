@@ -19,7 +19,7 @@ import { rakipKartVerisi } from "../../lib/rakip-ui";
 import { HesapModal } from "../../lib/hesap-ui";
 import { careerTitleL, placeName } from "../../lib/locale-data";
 import { currentCalendar } from "../../lib/calendar";
-import { MK, MkHero, MkIdentity, MkDecision, MkAlert, MkAlertChips, MkRecent, MkBookRow } from "../../lib/home-mockup-ui";
+import { MK, MkHero, MkIdentity, MkDecision, MkDert, MkAlert, MkAlertChips, MkRecent, MkBookRow } from "../../lib/home-mockup-ui";
 import { AnaZemin } from "../../lib/sayfa/ana/zemin";
 import { AyOzeti, useAyFarki, sayi } from "../../lib/sayfa/ana/ay-ozeti";
 import { useSadeMod } from "../../lib/use-sade-mod";
@@ -46,7 +46,7 @@ const EVT: Record<string, { c: string; col: string; gi: string }> = {
   kariyer_terfi: { c: "kariyer", col: C.gold, gi: "crown" }, meslek: { c: "egitim", col: C.azure, gi: "book" },
   meslek_değişimi: { c: "egitim", col: C.azure, gi: "book" }, mektep: { c: "egitim", col: C.azure, gi: "graduate-cap" },
   cocukluk: { c: "egitim", col: C.azure, gi: "kite" }, yolculuk: { c: "seyahat", col: C.azure, gi: "walk" },
-  savaş: { c: "savas", col: C.ember, gi: "crossed-swords" }, savas: { c: "savas", col: C.ember, gi: "crossed-swords" },
+  savaş: { c: "savas", col: C.ember, gi: "crossed-swords" }, dert: { c: "kariyer", col: C.gold, gi: "star" }, dert_son: { c: "kariyer", col: C.goldBright, gi: "crown" }, savas: { c: "savas", col: C.ember, gi: "crossed-swords" },
   savaş_zaferi: { c: "savas", col: C.ember, gi: "crossed-swords" }, savaş_kaybı: { c: "savas", col: C.blood, gi: "shield" },
   evlilik: { c: "aile", col: C.rose, gi: "ring" }, doğum: { c: "aile", col: C.ink, gi: "baby" }, dogum: { c: "aile", col: C.ink, gi: "baby" },
   aile_krizi: { c: "aile", col: C.rose, gi: "family" }, suç: { c: "golge", col: C.ink, gi: "hood" }, suc: { c: "golge", col: C.ink, gi: "hood" },
@@ -484,6 +484,7 @@ export default function Dashboard() {
           <MkAlert icon={alert.icon} title={alert.title} sub={alert.sub} red={alert.tone !== C.gold} rtl={rtl} onPress={() => setSheet(alert.id)} />
           <MkAlertChips rtl={rtl} items={alerts.slice(1).map((a) => ({ key: a.id, icon: a.icon, title: a.title, red: a.tone !== C.gold, onPress: () => setSheet(a.id) }))} />
         </Animated.View>}
+        <Animated.View entering={gir(3)}><MkDert /></Animated.View>
         <Animated.View entering={gir(4)} style={{ flex: 1 }}>
           <MkRecent fill title={t("flow.recent")} seeAll={t("dash.seeAllShort")} empty={t("dash.empty")} more={t("home.recentMore")} rtl={rtl} onSeeAll={() => router.push("/oyun/tarih")} rows={recentRows} />
         </Animated.View>
