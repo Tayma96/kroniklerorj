@@ -1,0 +1,245 @@
+{
+  "_aciklama": "Silah setlerine göre klip tablosu (docs/SAVAS_HAREKET_HARITASI.md). kaynak: Berkay'ın Mixamo'dan indirdiği dosya adı (ham FBX depoda yok). kare: [başlangıç, bitiş] kaynak kare aralığı. durum: hazir | kesilecek | yedek | elendi. Her klip setin gard duruşundan başlar ve gard'a döner (6-8 kare geçiş).",
+  "kilic_kalkan": {
+    "gard": {
+      "kaynak": "sword and shield idle",
+      "kare": [
+        1,
+        76
+      ],
+      "dongu": true,
+      "durum": "hazir"
+    },
+    "gard_kalkan": {
+      "kaynak": "sword and shield block idle",
+      "kare": [
+        1,
+        42
+      ],
+      "dongu": true,
+      "durum": "hazir"
+    },
+    "savustur": {
+      "kaynak": "sword and shield block",
+      "kare": [
+        1,
+        18
+      ],
+      "durum": "hazir"
+    },
+    "savustur_2": {
+      "kaynak": "sword and shield block (2)",
+      "kare": [
+        1,
+        16
+      ],
+      "durum": "hazir"
+    },
+    "hamle": {
+      "kaynak": "sword and shield attack (4)",
+      "kare": [
+        1,
+        31
+      ],
+      "durum": "kesilecek",
+      "not": "önizlemesi çekilecek"
+    },
+    "ozel": {
+      "kaynak": "sword and shield attack (2)",
+      "kare": [
+        1,
+        40
+      ],
+      "durum": "kesilecek",
+      "not": "1,1 m ileri atılır; yarım adıma indirilecek"
+    },
+    "olum": {
+      "kaynak": "Sword And Shield Death",
+      "kare": [
+        1,
+        118
+      ],
+      "durum": "hazir",
+      "not": "1 m geriye düşüş"
+    },
+    "olum_2": {
+      "kaynak": "sword and shield death",
+      "kare": [
+        1,
+        70
+      ],
+      "durum": "yedek"
+    },
+    "cek": {
+      "kaynak": "Withdrawing Sword",
+      "kare": [
+        1,
+        46
+      ],
+      "kavrama": 19,
+      "durum": "hazir",
+      "not": "k10_kin.py ile kına hizalı"
+    },
+    "kinla": {
+      "kaynak": "sheath sword 1",
+      "kare": [
+        1,
+        39
+      ],
+      "durum": "kesilecek",
+      "not": "kına giriş karesi k10 tersine hizalanacak"
+    },
+    "eksik": [
+      "darbe_hafif",
+      "darbe_agir",
+      "toparlan",
+      "zafer"
+    ],
+    "elenen": {
+      "sword and shield attack": "sıçramalı vuruş",
+      "sword and shield attack (3)": "kendi etrafında dönüş",
+      "draw sword 1": "16 kare, aceleci"
+    }
+  },
+  "tek_kilic": {
+    "gard": {
+      "kaynak": "sword and shield idle",
+      "kare": [
+        1,
+        76
+      ],
+      "dongu": true,
+      "durum": "hazir",
+      "not": "sol el gardı yumuşatılacak"
+    },
+    "hamle": {
+      "kaynak": "One Hand Sword Combo",
+      "kare": [
+        1,
+        45
+      ],
+      "durum": "kesilecek",
+      "not": "kaldırış 20, yatay kesik 31, takip 41"
+    },
+    "hamle_2": {
+      "kaynak": "One Hand Sword Combo",
+      "kare": [
+        45,
+        75
+      ],
+      "durum": "kesilecek",
+      "not": "ters el vuruşu"
+    },
+    "ozel": {
+      "kaynak": "One Hand Sword Combo",
+      "kare": [
+        75,
+        137
+      ],
+      "durum": "kesilecek",
+      "not": "en hızlı iniş (91. kare), sonda gard"
+    },
+    "cek": {
+      "ortak": "kilic_kalkan.cek"
+    },
+    "olum": {
+      "ortak": "kilic_kalkan.olum"
+    },
+    "eksik": [
+      "savustur",
+      "darbe_hafif",
+      "darbe_agir",
+      "toparlan",
+      "zafer"
+    ]
+  },
+  "okcu": {
+    "acilis": {
+      "kaynak": "Shooting Arrow",
+      "kare": [
+        1,
+        151
+      ],
+      "durum": "hazir",
+      "not": "ok omuz üstünden sırttaki sadaktan alınır (13–31. kare), yay solda alçakta kirişe takılır (37–61), çekiş ve nişan (73–121)"
+    },
+    "tepme": {
+      "kaynak": "Standing Aim Recoil",
+      "kare": [
+        1,
+        22
+      ],
+      "durum": "hazir"
+    },
+    "olum": {
+      "kaynak": "Standing Death Backward 01",
+      "kare": [
+        1,
+        94
+      ],
+      "durum": "hazir",
+      "not": "1,1 m geriye düşüş"
+    },
+    "eksik": [
+      "gard",
+      "hamle",
+      "savustur",
+      "darbe_hafif",
+      "darbe_agir",
+      "toparlan",
+      "zafer"
+    ],
+    "aksesuar": [
+      "Türk yayı (sol el)",
+      "ok (sağ el, kirişe takılı)",
+      "sadak (sırt; hareketler oku omuz üstünden alıyor)"
+    ],
+    "cek": {
+      "kaynak": "Standing Draw Arrow",
+      "kare": [
+        1,
+        32
+      ],
+      "durum": "hazir",
+      "not": "sırttaki sadaktan ok çekme ve kirişe takma (kısa açılış)"
+    }
+  },
+  "iki_elli": {
+    "olum": {
+      "kaynak": "Two Handed Sword Death",
+      "kare": [
+        1,
+        73
+      ],
+      "durum": "hazir"
+    },
+    "elenen": {
+      "Great Sword Slide Attack": "3,6 m diz üstü kayma; ağır piyadeye uymuyor"
+    },
+    "eksik": [
+      "gard",
+      "hamle",
+      "ozel",
+      "savustur",
+      "darbe_hafif",
+      "darbe_agir",
+      "toparlan",
+      "zafer"
+    ]
+  },
+  "mizrak": {
+    "eksik": [
+      "hepsi"
+    ]
+  },
+  "hancer": {
+    "eksik": [
+      "hepsi"
+    ]
+  },
+  "silahsiz": {
+    "eksik": [
+      "hepsi"
+    ]
+  }
+}
