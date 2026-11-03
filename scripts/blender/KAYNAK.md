@@ -14,7 +14,7 @@ açık lisanslı kaynaklarla kurulur. Rastgelelik tohumu her betikte `1243`.
 | 4 | `k04_kiyafet.py` | Entari + yırtmaçlı etek, kumaşla oturtulmuş şalvar, voksel çizme, GN lamel zırh + deri bağ, kemer, kın, konik miğfer, zincir boyunluk |
 | 5 | `k05_sahne.py` | HDRI (güneş diski kırpılır) + tek güneş + yansıtıcı, toprak/çakıl/kuru ot, kameralar, kumaş benzetimi ayarları |
 | 6 | `k06_isle.py` | Klip işleme (NLA ön-koşu, kumaş sırayla), kare yazma |
-| 7 | `k07_kurgu.sh` | ffmpeg: H.264 720x1280 24 fps, hafif gren + vinyet |
+| 7 | `k07_kurgu.sh`, `dongu_dikis.py` | ffmpeg: H.264 720x1280 24 fps, hafif gren + vinyet; bekleme döngüsünün son 8 karesi önceki döngüyle çapraz geçer |
 | — | `k08_kuyruk.sh` | Hepsini sırayla çalıştırır |
 | denetim | `denetim.py`, `cubuk.py`, `pafta_wb.py`, `onizle.py` | Ölçüyle denetim (ayak kayması, taban, kılıç/gövde aralığı), çubuk ve Workbench paftaları |
 
