@@ -22,7 +22,7 @@ if klip in ("bekleme", "yakin"):
         kareler = list(range(ON + 1 + 96, ON + 1 + 192))            # ikinci döngü: kumaş dönemsel duruma oturmuş
         sc.camera = bpy.data.objects[cfg.get("kam", "KamBoy")]
     else:
-        kareler = list(range(ON + 1, ON + 1 + 144))
+        kareler = list(range(ON + 1, ON + 1 + 120))
         sc.camera = bpy.data.objects["KamYakin"]
         piv = bpy.data.objects["YakinPivot"]
         for fc in piv.animation_data.action.fcurves:

@@ -187,7 +187,7 @@ def malz_deri(ad, renk, olcek=5.0, rough=0.6, asinma=0.4, klasor="brown_leather"
     bs.inputs['Specular IOR Level'].default_value = 0.45; bs.inputs['Coat Weight'].default_value = 0.08
     return m
 
-def malz_demir(ad, taban=(0.50, 0.49, 0.47, 1), olcek=3.0, rough=(0.32, 0.62), pas=0.25, klasor="Metal046A", on="Metal046A_2K-JPG"):
+def malz_demir(ad, taban=(0.50, 0.49, 0.47, 1), olcek=3.0, rough=(0.32, 0.62), pas=0.25, klasor="Metal046A", on="Metal046A_2K-JPG", kenar=True):
     m = bpy.data.materials.new(ad); m.use_nodes = True
     N = m.node_tree.nodes; L = m.node_tree.links; bs = N["Principled BSDF"]; bs.inputs['Metallic'].default_value = 1.0
     at = N.new('ShaderNodeAttribute'); at.attribute_name = "dinlenme"
@@ -203,9 +203,16 @@ def malz_demir(ad, taban=(0.50, 0.49, 0.47, 1), olcek=3.0, rough=(0.32, 0.62), p
     # kenar parlaması (pointiness) + oyuklarda kir/pas
     gi = N.new('ShaderNodeNewGeometry')
     kn = N.new('ShaderNodeMapRange'); kn.inputs['From Min'].default_value = 0.53; kn.inputs['From Max'].default_value = 0.62
-    L.new(gi.outputs['Pointiness'], kn.inputs['Value'])
+    if kenar:
+        L.new(gi.outputs['Pointiness'], kn.inputs['Value'])
+    else:  # ince plakalarda eğrilik yanıltır: aşınma gürültüyle (kabaran kenar yerine rastgele parlak sürtünme lekeleri)
+        nk = N.new('ShaderNodeTexNoise'); nk.inputs['Scale'].default_value = 140; nk.inputs['Detail'].default_value = 4
+        L.new(at.outputs['Vector'], nk.inputs['Vector']); kn.inputs['From Min'].default_value = 0.6; kn.inputs['From Max'].default_value = 0.75
+        L.new(nk.outputs['Fac'], kn.inputs['Value'])
     oy = N.new('ShaderNodeMapRange'); oy.inputs['From Min'].default_value = 0.49; oy.inputs['From Max'].default_value = 0.42
-    oy.inputs['To Max'].default_value = pas; L.new(gi.outputs['Pointiness'], oy.inputs['Value'])
+    oy.inputs['To Max'].default_value = pas
+    if kenar: L.new(gi.outputs['Pointiness'], oy.inputs['Value'])
+    else: oy.inputs['Value'].default_value = 0.5
     nz = N.new('ShaderNodeTexNoise'); nz.inputs['Scale'].default_value = 30; nz.inputs['Detail'].default_value = 8
     L.new(at.outputs['Vector'], nz.inputs['Vector'])
     pr = N.new('ShaderNodeMapRange'); pr.inputs['From Min'].default_value = 0.55; pr.inputs['From Max'].default_value = 0.8
@@ -229,13 +236,13 @@ def malz_demir(ad, taban=(0.50, 0.49, 0.47, 1), olcek=3.0, rough=(0.32, 0.62), p
     return m
 
 ENTARI_M = malz_kumas("EntariKeten", (0.115, 0.030, 0.022, 1), "rough_linen", 6.0, sheen=0.22, kir_alt=0.5, desen_kontrast=0.75, rough=(0.82, 1.0))
-SALVAR_M = malz_kumas("SalvarYun", (0.27, 0.23, 0.17, 1), "denim_fabric", 5.0, sheen=0.6, kir_alt=0.6, desen_kontrast=0.45, rough=(0.85, 1.0))
+SALVAR_M = malz_kumas("SalvarYun", (0.17, 0.145, 0.11, 1), "denim_fabric", 5.0, sheen=0.6, kir_alt=0.6, desen_kontrast=0.45, rough=(0.85, 1.0))
 BASLIK_M = malz_kumas("BaslikKeten", (0.62, 0.55, 0.42, 1), "rough_linen", 14.0, sheen=0.3, kir_alt=0.0)
 CIZME_M = malz_deri("CizmeDeri", (0.55, 0.36, 0.22, 1), olcek=4.0, rough=0.55, asinma=0.55)
-KEMER_M = malz_deri("KemerDeri", (0.38, 0.24, 0.15, 1), olcek=6.0, rough=0.5, asinma=0.35)
+KEMER_M = malz_deri("KemerDeri", (0.24, 0.14, 0.085, 1), olcek=6.0, rough=0.5, asinma=0.35)
 KIN_M = malz_deri("KinDeri", (0.33, 0.20, 0.11, 1), olcek=5.0, rough=0.5, asinma=0.45, klasor="fabric_leather_02")
-BAG_M = malz_deri("LamelBag", (0.36, 0.13, 0.07, 1), olcek=10.0, rough=0.6, asinma=0.3)
-LAMEL_M = malz_demir("LamelDemir", (0.24, 0.23, 0.22, 1), olcek=4.0, rough=(0.50, 0.80), pas=0.45)
+BAG_M = malz_deri("LamelBag", (0.17, 0.065, 0.04, 1), olcek=10.0, rough=0.6, asinma=0.3)
+LAMEL_M = malz_demir("LamelDemir", (0.30, 0.29, 0.28, 1), olcek=4.0, rough=(0.45, 0.75), pas=0.45, kenar=False)
 MIGFER_M = malz_demir("MigferDemir", (0.52, 0.51, 0.49, 1), olcek=2.5, rough=(0.22, 0.48), pas=0.22)
 PIRINC_M = malz_demir("Pirinc", (0.75, 0.55, 0.30, 1), olcek=3.0, rough=(0.25, 0.45), pas=0.3)
 
@@ -295,7 +302,7 @@ def etek_mesh():
             if t < 0.25:
                 r = r_ust[j] + (r_orta[j] - r_ust[j]) * (t / 0.25)
             else:
-                r = r_orta[j] + 0.17 * ((t - 0.25) / 0.75) ** 1.1
+                r = r_orta[j] + 0.12 * ((t - 0.25) / 0.75) ** 1.1
             row.append(bm.verts.new((cx + r * math.cos(a), cy + r * math.sin(a), z)))
         grid.append(row)
     # yırtmaç: yanlarda (a≈0 ve a≈π), t>0.42
@@ -536,14 +543,14 @@ for v in lamel.data.vertices:
     i = pids[v.index]; p = merkez_p.get(i); n_ = nrm_p.get(i)
     if p is None: continue
     yuk = (p.z - v.co.z) / PLAKA_Y      # 0 üst, 1 alt
-    v.co += n_ * (0.0045 * yuk + 0.0010 * srs[v.index] * 0.0)
+    v.co += n_ * (0.0025 * yuk)
     # plakalar sıra içinde pul gibi biner: sağ kenar dışarıda
     yan = (v.co - p).dot(Vector((-n_.y, n_.x, 0)))
     v.co += n_ * (yan / (PLAKA_EN / 2)) * 0.0011
 # sıra yüksekliğine göre dışa kademe: üst sıra dışta (yağmur/darbe aşağı kayar)
 for v in lamel.data.vertices:
     n_ = nrm_p.get(pids[v.index])
-    if n_ is not None: v.co += n_ * (len(siralar) - srs[v.index]) * 0.0016
+    if n_ is not None: v.co += n_ * (len(siralar) - srs[v.index]) * 0.0007
 for p in lamel.data.polygons: p.use_smooth = True; p.material_index = 0
 lamel.data.materials.clear(); lamel.data.materials.append(LAMEL_M)
 # rijit plaka ağırlıkları: plaka merkezine en yakın gövde köşesinin ağırlıkları tüm plakaya
@@ -584,8 +591,8 @@ def serit(ad, zs, kalin=0.006, yuk=0.007, ofs=0.0):
     return ob
 bag_parcalari = []
 for si, zs in enumerate(siralar):
-    kat = (len(siralar) - si) * 0.0016
-    o = serit(f"Bag{si}", zs - PLAKA_Y * 0.80, yuk=0.006, ofs=0.0062 + kat)
+    kat = (len(siralar) - si) * 0.0007
+    o = serit(f"Bag{si}", zs - PLAKA_Y * 0.80, yuk=0.006, ofs=0.0042 + kat)
     bag_parcalari.append(o)
 bpy.ops.object.select_all(action='DESELECT')
 for o in bag_parcalari:
@@ -613,7 +620,7 @@ for zz in zl:
     row = []
     for a_i in range(0, 96, 2):
         a = 2 * math.pi * a_i / 96; r, cy = tasiyici(a_i, zz)
-        r += 0.006 + len(siralar) * 0.0016
+        r += 0.006 + len(siralar) * 0.0007
         row.append(bm.verts.new((r * math.cos(a), cy + r * math.sin(a), zz)))
     tz.append(row)
 for i in range(len(tz) - 1):
@@ -691,20 +698,20 @@ def halka(ad, z, yuk, ofs, malz, nseg=96, egim=0.0):
     for p in ob.data.polygons: p.use_smooth = True
     return ob
 KEMER_Z = 1.035
-kemer = halka("Kemer", KEMER_Z, 0.045, 0.034 + (len(siralar) * 0.0016), KEMER_M)
+kemer = halka("Kemer", KEMER_Z, 0.045, 0.030 + (len(siralar) * 0.0007), KEMER_M)
 # kemer süsleri: demir/pirinç çivi başları ve toka
 susler = []
 for a_i in range(0, 96, 6):
     a = 2 * math.pi * a_i / 96; r, cy = tasiyici(a_i, KEMER_Z)
     n_ = Vector((math.cos(a), math.sin(a), 0))
-    p = Vector((r * math.cos(a), cy + r * math.sin(a), KEMER_Z)) + n_ * (0.034 + len(siralar) * 0.0016 + 0.005)
+    p = Vector((r * math.cos(a), cy + r * math.sin(a), KEMER_Z)) + n_ * (0.030 + len(siralar) * 0.0007 + 0.005)
     bpy.ops.mesh.primitive_uv_sphere_add(radius=0.0055, location=p, segments=12, ring_count=8)
     o = bpy.context.object; o.scale = (1, 1, 1); o.data.materials.append(PIRINC_M)
     o.rotation_euler = n_.to_track_quat('Z', 'Y').to_euler(); o.scale = (1.0, 1.0, 0.45)
     susler.append(o)
 # toka (önde)
 r0, cy0 = tasiyici(72, KEMER_Z)   # a=270° (-Y, ön)
-bpy.ops.mesh.primitive_torus_add(major_radius=0.022, minor_radius=0.0035, location=(0, cy0 - r0 - 0.034 - len(siralar) * 0.0016 - 0.006, KEMER_Z))
+bpy.ops.mesh.primitive_torus_add(major_radius=0.022, minor_radius=0.0035, location=(0, cy0 - r0 - 0.030 - len(siralar) * 0.0007 - 0.006, KEMER_Z))
 tk = bpy.context.object; tk.rotation_euler = (math.radians(90), 0, 0); tk.scale = (1.0, 0.9, 1.0); tk.data.materials.append(PIRINC_M)
 susler.append(tk)
 for o in susler:

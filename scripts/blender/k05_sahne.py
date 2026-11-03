@@ -63,7 +63,7 @@ L.new(tc.outputs['Object'], nz.inputs['Vector'])
 mx = N.new('ShaderNodeMix'); mx.data_type = 'RGBA'; mx.blend_type = 'MULTIPLY'
 mr = N.new('ShaderNodeMapRange'); mr.inputs['To Min'].default_value = 0.0; mr.inputs['To Max'].default_value = 0.45
 L.new(nz.outputs['Fac'], mr.inputs['Value']); L.new(mr.outputs[0], mx.inputs['Factor'])
-L.new(dif.outputs[0], mx.inputs[6]); mx.inputs[7].default_value = (0.72, 0.62, 0.50, 1)
+L.new(dif.outputs[0], mx.inputs[6]); mx.inputs[7].default_value = (0.60, 0.56, 0.50, 1)
 L.new(mx.outputs[2], bs.inputs['Base Color'])
 L.new(ro.outputs[0], bs.inputs['Roughness'])
 nm = N.new('ShaderNodeNormalMap'); nm.inputs['Strength'].default_value = 1.0; L.new(no.outputs[0], nm.inputs['Color'])
@@ -76,10 +76,10 @@ zemin.data.materials.append(m)
 tas_m = bpy.data.materials.new("Tas"); tas_m.use_nodes = True
 tN = tas_m.node_tree.nodes; tL = tas_m.node_tree.links; tbs = tN["Principled BSDF"]
 oi = tN.new('ShaderNodeObjectInfo'); cr = tN.new('ShaderNodeValToRGB')
-cr.color_ramp.elements[0].color = (0.30, 0.26, 0.21, 1); cr.color_ramp.elements[1].color = (0.62, 0.55, 0.46, 1)
+cr.color_ramp.elements[0].color = (0.13, 0.11, 0.09, 1); cr.color_ramp.elements[1].color = (0.32, 0.28, 0.23, 1)
 tL.new(oi.outputs['Random'], cr.inputs[0]); tL.new(cr.outputs[0], tbs.inputs['Base Color'])
-tbs.inputs['Roughness'].default_value = 0.8
-tnz = tN.new('ShaderNodeTexNoise'); tnz.inputs['Scale'].default_value = 60; tbump = tN.new('ShaderNodeBump'); tbump.inputs['Strength'].default_value = 0.4
+tbs.inputs['Roughness'].default_value = 0.85
+tnz = tN.new('ShaderNodeTexNoise'); tnz.inputs['Scale'].default_value = 90; tnz.inputs['Detail'].default_value = 10; tbump = tN.new('ShaderNodeBump'); tbump.inputs['Strength'].default_value = 0.8
 tL.new(tnz.outputs['Fac'], tbump.inputs['Height']); tL.new(tbump.outputs[0], tbs.inputs['Normal'])
 cakil = []
 for i in range(6):
@@ -154,7 +154,7 @@ def kumas(ob, igne, kutle, gerilme, egilme, kalite=8, sonum=5.0, kendi=False):
         bpy.ops.object.modifier_move_up(modifier="Kumas")
     s = cl.settings
     s.quality = kalite; s.mass = kutle; s.air_damping = 1.0
-    s.tension_stiffness = gerilme; s.compression_stiffness = gerilme; s.shear_stiffness = gerilme * 0.4
+    s.tension_stiffness = gerilme; s.compression_stiffness = gerilme * 0.3; s.shear_stiffness = gerilme * 0.3
     s.bending_stiffness = egilme; s.tension_damping = sonum; s.compression_damping = sonum; s.bending_damping = 0.5
     s.vertex_group_mass = igne; s.pin_stiffness = 1.0
     c = cl.collision_settings; c.use_collision = True; c.distance_min = 0.004; c.collision_quality = 3
@@ -177,7 +177,7 @@ for v in en.data.vertices:
         pin = max(pin, 0.55 * w.get("hand_l", 0) * 3 + 0.55 * w.get("hand_r", 0) * 3)
     ig.add([v.index], max(0.0, min(1.0, pin)), 'REPLACE')
 kumas(en, "igne", 0.25, 15.0, 0.7, kalite=10)
-et = bpy.data.objects["EntariEtek"]; kumas(et, "igne", 0.35, 18.0, 0.9, kalite=10)
+et = bpy.data.objects["EntariEtek"]; kumas(et, "igne", 0.42, 16.0, 0.5, kalite=10)
 bo = bpy.data.objects["Boyunluk"]; kumas(bo, "igne", 1.4, 60.0, 0.15, kalite=8, sonum=8.0)
 
 # ------------------------------------------------------------------ kameralar
@@ -188,25 +188,27 @@ def kamera(ad, konum, hedef, lens, f_stop, odak=None):
     cd.dof.use_dof = True; cd.dof.aperture_fstop = f_stop; cd.dof.aperture_blades = 7
     cd.dof.focus_distance = (Vector(odak or hedef) - Vector(konum)).length
     return cam
-kamera("KamBoy", (-3.05, -2.75, 1.02), (0.04, -0.14, 0.97), 52, 3.2, odak=(0.0, -0.15, 1.1))
+kamera("KamBoy", (-3.30, -3.00, 1.08), (0.04, -0.14, 1.06), 50, 3.2, odak=(0.0, -0.15, 1.1))
 kamera("KamTest", (-1.6, -3.2, 1.0), (0.0, -0.05, 0.92), 45, 5.6)
 # yakın plan: göğüs hizasında dönen kamera (boş nesneye bağlı), 6 sn'de ~38° yay + hafif yaklaşma
-piv = bpy.data.objects.new("YakinPivot", None); sc.collection.objects.link(piv); piv.location = (-0.05, -0.18, 1.33)
-yk = kamera("KamYakin", (-0.05 - 0.55, -0.18 - 1.05, 1.42), (-0.05, -0.18, 1.33), 70, 2.4)
-yk.parent = piv; yk.location = (-0.55, -1.05, 0.09)
-yk.rotation_euler = (Vector((0, 0, 0)) - Vector((-0.55, -1.05, 0.09))).to_track_quat('-Z', 'Y').to_euler()
-piv.rotation_euler = (0, 0, math.radians(-12)); piv.keyframe_insert("rotation_euler", frame=1)
-piv.rotation_euler = (0, 0, math.radians(26)); piv.keyframe_insert("rotation_euler", frame=144)
+piv = bpy.data.objects.new("YakinPivot", None); sc.collection.objects.link(piv); piv.location = (-0.08, -0.20, 1.44)
+yk = kamera("KamYakin", (0, 0, 0), (0, 0, 1), 50, 2.8)
+yk.parent = piv; yk.location = (-0.62, -1.08, 0.04)
+yk.rotation_euler = (Vector((0, 0, -0.05)) - Vector((-0.62, -1.08, 0.04))).to_track_quat('-Z', 'Y').to_euler()
+yk.data.dof.focus_distance = 1.18
+# sağ yandan (kılıç eli tarafı) öne doğru yavaş yay: namlu yüzün önünden geçmez
+piv.rotation_euler = (0, 0, math.radians(-34)); piv.keyframe_insert("rotation_euler", frame=1)
+piv.rotation_euler = (0, 0, math.radians(-6)); piv.keyframe_insert("rotation_euler", frame=120)
 for fc in piv.animation_data.action.fcurves:
     for kp in fc.keyframe_points: kp.interpolation = 'BEZIER'; kp.easing = 'EASE_IN_OUT'
 sc.camera = bpy.data.objects["KamBoy"]
 
 # ------------------------------------------------------------------ render ayarları
 sc.render.engine = 'CYCLES'; sc.cycles.device = 'CPU'
-sc.cycles.samples = 64; sc.cycles.use_adaptive_sampling = True; sc.cycles.adaptive_threshold = 0.025
+sc.cycles.samples = 24; sc.cycles.use_adaptive_sampling = True; sc.cycles.adaptive_threshold = 0.04
 sc.cycles.use_denoising = True; sc.cycles.denoiser = 'OPENIMAGEDENOISE'; sc.cycles.denoising_input_passes = 'RGB_ALBEDO_NORMAL'
-sc.cycles.max_bounces = 6; sc.cycles.diffuse_bounces = 3; sc.cycles.glossy_bounces = 3; sc.cycles.transmission_bounces = 4
-sc.cycles.transparent_max_bounces = 16; sc.cycles.caustics_reflective = False; sc.cycles.caustics_refractive = False
+sc.cycles.max_bounces = 5; sc.cycles.diffuse_bounces = 2; sc.cycles.glossy_bounces = 2; sc.cycles.transmission_bounces = 4
+sc.cycles.transparent_max_bounces = 12; sc.cycles.caustics_reflective = False; sc.cycles.caustics_refractive = False
 sc.cycles.sample_clamp_indirect = 6.0; sc.cycles.blur_glossy = 1.0
 sc.render.use_persistent_data = True
 sc.render.resolution_x, sc.render.resolution_y, sc.render.resolution_percentage = 720, 1280, 100
