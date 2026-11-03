@@ -64,6 +64,20 @@ gelince açılıp kontrol edilir; uygun olmayan elenir.
 5. **Hançer:** "stabbing" ve "knife" aramaları.
 6. **Silahsız:** "punching", "body block", "head hit", "stomach hit".
 
+## 4b. Gelenler (3 Kasım; tam tablo `scripts/blender/hareket_seti.json`)
+
+| Set | Hazır | Kesilecek | Eksik |
+|---|---|---|---|
+| kılıç-kalkan | gard, kalkan gardı, 2 savuştur, ölüm, kılıç çekme (kına hizalı) | hamle, özel, kınlama | darbe hafif/ağır, toparlan, zafer |
+| tek kılıç | gard (kılıç-kalkandan) | "One Hand Sword Combo"dan 2 hamle + 1 özel | savuştur, darbe, toparlan, zafer |
+| okçu | ok çekme, tam atış, tepme, ölüm | — | gard (yaylı bekleme), yakın hamle, savuştur (sıçrama), darbe, toparlan, zafer; yay/ok/sadak modelleri |
+| iki elli | ölüm | — | gard, hamle, özel, savuştur, darbe, toparlan, zafer |
+| mızrak, hançer, silahsız | — | — | hepsi |
+
+Elenenler: sıçramalı ve dönen kılıç-kalkan saldırıları, 16 karelik aceleci kılıç çekme, diz üstü kayan büyük kılıç saldırısı.
+Okçu kliplerinin ikisi de oku omuz üstünden sırttaki sadaktan alıyor; sadak sırtta olacak (tarihte Türk okçusunun sadağı sağ
+kalçadaydı; kalça sadağı için oradan çeken bir hareket gerekir).
+
 ## 5. Sıra
 
 1. Gelen dosyalar sete göre ayrılır ve 3. bölümdeki kalıba hizalanır. Her set için gri önizleme paftası çıkarılır.
