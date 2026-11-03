@@ -45,6 +45,7 @@
     "smoke": "node scripts/_smoke/check.cjs quick",
     "smoke:rng": "node scripts/_smoke/check.cjs rng",
     "smoke:full": "node scripts/_smoke/check.cjs full",
+    "olc:ayrisma": "node scripts/_smoke/ayrisma.cjs",
     "smoke:rng:full": "node scripts/_smoke/check.cjs rng-full",
     "design:preview": "node scripts/design-preview.cjs",
     "design:check": "node scripts/check-screen-design.cjs",
