@@ -259,7 +259,7 @@ export default function Dashboard() {
   type Uyari = { id: HomeSheetId; icon: string; title: string; sub: string; tone: string };
   const uyari: Uyari | null = uyariN ? (() => { const r = noticeRows(state, t)[0]; return r ? { id: "uyari" as const, icon: r.icon, title: r.title, sub: r.sub, tone: r.color } : inJail(p) ? { id: "uyari" as const, icon: "prisoner", title: t("jail.title"), sub: applyParams(t("home.alertsSub"), [uyariN]), tone: C.blood } : { id: "uyari" as const, icon: "crossed-swords", title: t("home.uyari"), sub: applyParams(t("home.alertsSub"), [uyariN]), tone: C.blood }; })() : null;
   const sofra: Uyari | null = hungry ? { id: "sofra", icon: "ye", title: t(starving ? "dash.starving" : "dash.eatTitle"), sub: applyParams(t("home.hungerSub"), [Math.round(p.hunger)]), tone: starving ? C.blood : C.ember } : null;
-  const gundem: Uyari | null = gundemN ? { id: "gundem", icon: "scroll", title: t("home.gundem"), sub: applyParams(t("home.alertsSub"), [gundemN]), tone: C.gold } : null;
+  const gundem: Uyari | null = gundemN ? { id: "gundem", icon: "scroll", title: t("home.gundem"), sub: `${applyParams(t("home.alertsSub"), [gundemN])} · ${t("home.istegeBagli")}`, tone: C.gold } : null; // gündem isteğe bağlı: boş geçmek bedelsiz (aşama 2)
   const alerts = [starving ? sofra : null, uyari, starving ? null : sofra, gundem].filter((a): a is Uyari => !!a);
   const alert = alerts[0] || null;
   // Sıradaki ayın notu (yaklaşan gerçek bir şey): Ayın Hesabı'nda görünür; gündem panelinde de durur.

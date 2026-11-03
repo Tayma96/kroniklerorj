@@ -21,7 +21,11 @@ export function chooseMonthDilemma(prev: GameState, id: string, index: number): 
   const m = pendingMonthScene(prev), d = m?.dilemma, choice = Number.isInteger(index) ? d?.choices[index] : undefined;
   if (!m || m.id !== id || !d || !choice) return prev;
   const key = choice.rk || `dil.${d.id}.r${index}`, translated = tFor((prev.dil || "tr") as Lang, key);
-  return finish(applyDilemma(prev, choice.gercek || choice.delta, translated === key ? choice.result : translated, `${d.id}:${index}`, d.id.startsWith("fest_"), key));
+  const s = finish(applyDilemma(prev, choice.gercek || choice.delta, translated === key ? choice.result : translated, `${d.id}:${index}`, d.id.startsWith("fest_"), key));
+  // Gerçekleşen etki (azalan getiri ve zar sonrası): kartın yazdığı değil, oyuncuya gerçekten olan.
+  const etki: Record<string, number> = {};
+  for (const k of ["money", "reputation", "honor", "fame", "fear", "health", "stat_points"] as const) { const v = Math.round((s.player[k] as number) - (prev.player[k] as number)); if (v) etki[k] = v; }
+  return { ...s, monthScene: { ...s.monthScene!, secim: { id: d.id, i: index, label: choice.label, etki } } };
 }
 export function progressMonthOpportunity(prev: GameState, id: string, stage: "play" | "result", success?: boolean): GameState {
   const m = pendingMonthScene(prev);

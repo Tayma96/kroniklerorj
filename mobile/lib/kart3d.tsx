@@ -158,10 +158,12 @@ export const ETKI: Record<string, { icon: string; color: string; big: number }> 
   health: { icon: "saglik", color: C.blood, big: 5 },
   stat_points: { icon: "star", color: C.gold, big: 1 },
 };
-export function etkiler(c: Choice): { k: string; big: boolean }[] {
+export function etkiler(c: Choice): { k: string; big: boolean; yon: 1 | -1 }[] {
   const d = (c.delta || {}) as Record<string, unknown>;
-  return Object.keys(ETKI).filter((k) => typeof d[k] === "number" && d[k] !== 0).map((k) => ({ k, big: Math.abs(d[k] as number) >= ETKI[k].big }));
+  return Object.keys(ETKI).filter((k) => typeof d[k] === "number" && d[k] !== 0).map((k) => ({ k, big: Math.abs(d[k] as number) >= ETKI[k].big, yon: (d[k] as number) > 0 ? 1 as const : -1 as const }));
 }
+// Yön oku: ↑ kazanç, ↓ kayıp; çift ok büyük etki (renk tek başına anlam taşımaz).
+export const yonOku = (e: { big: boolean; yon: 1 | -1 }) => (e.yon > 0 ? "↑" : "↓").repeat(e.big ? 2 : 1);
 export function EtkiIzi({ c }: { c: Choice }) {
   const list = etkiler(c);
   if (!list.length) return null;
