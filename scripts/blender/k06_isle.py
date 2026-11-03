@@ -78,8 +78,13 @@ for f in range(1, son + 1):
     if f in hedef:
         if cfg.get("kam_ozel"): ozel_kamera(cfg["kam_ozel"])
         say += 1
+        yol = os.path.join(cik, cfg.get("dosya", f"{say:04d}") + ("" if "dosya" not in cfg else ("" if len(kareler) == 1 else f"_{say}")) + ".png")
+        if cfg.get("atla", True) and os.path.exists(yol) and os.path.getsize(yol) > 1000:
+            continue   # kesintiden sonra sürdürme: kare hazır, kumaş yine de sırayla ilerledi
         sc.render.filepath = os.path.join(cik, cfg.get("dosya", f"{say:04d}") + ("" if "dosya" not in cfg else ("" if len(kareler) == 1 else f"_{say}")) + ".png")
         t1 = time.time()
         bpy.ops.render.render(write_still=True)
         print(f"KARE {say}/{len(kareler)} (sahne {f}) {time.time() - t1:.1f} sn", flush=True)
+        with open(os.path.join(cik, f"durum_{klip}.json"), "w") as fh:
+            json.dump({"klip": klip, "kare": say, "toplam": len(kareler), "son_kare_sn": round(time.time() - t1, 1)}, fh)
 print("BITTI", klip, len(kareler), "kare", round(time.time() - t0, 1), "sn")
