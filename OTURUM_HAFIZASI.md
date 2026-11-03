@@ -19,7 +19,7 @@
 - Hissiyat 1–4 `docs/HISSIYAT_PLANI.md` `apk`'de; hayatın derdi kaldırıldı.
 - Radikal sonuçlar: `docs/superpowers/specs/2026-11-03-radikal-sonuclar-design.md`; aşama 0–2 bitti, 300 hayat temiz. Aşama 3: kırılma çekirdeği + Büyük Ortaklık (`Player.kirilmalar`, ay sahnesi `kirilma`, `lib/kirilma-ui.tsx`, denetim `scripts/_smoke/kirilma-check.cjs`; plan `.../plans/2026-11-03-asama-3.md`). Sıradaki: aşama 4 (göç, suç, lekeli).
 - Dövüş 3D: Berkay Mixamo'dan indirir; `scripts/blender/` k09 aktarım, k10 kılıç çekme, k11 harmanlama, k12 kalkan görüşü; setler `hareket_seti.json`, harita `docs/SAVAS_HAREKET_HARITASI.md`. Ham FBX depoda yok, gerekirse yeniden yüklenir.
-- apk'ye gönderim: scratchpad `araclar/gonder.sh` (ayrı çalışma ağacı); yarım ajan dosyası apk'ye girmez.
+- Tek dal `apk` (Berkay, 3 Kasım): başka dal açılmaz; 3D hattı dahil her şey burada. `faz2-istemci-yarim` dalında çevrimiçi Faz 2c istemcisinin yarım commit'i var; çevrimiçi işe başlarken önce o incelenir.
 
 ## Açık işler
 - `docs/DEVIR.md` (1 Kasım devri). ElevenLabs Berkay'ın aboneliğiyle onaylı (`.mcp.json`).
