@@ -19,7 +19,18 @@ okçunun açılış atışı), `lib/yuzlesme.ts`. Hat: `scripts/blender/k09_mixa
 
 Kalkan yalnız tek elli silahla takılır (oyun kuralı); iki elli setlerde kalkan sırtta görünür.
 
-## 2. Her setin klip kalıbı (oyundaki hamleye birebir)
+## 2. Her setin klip kalıbı (motorun iç sonucu; oyuncu bunları buton olarak görmez)
+
+**Kural (SAVAS_SINEMATIK_PLAN):** dövüş hikâyelidir. Oyuncu "saldır, vur, geri git, blok" gibi düğmeler görmez; durumu anlatan
+hikâyeli seçeneklerden birini seçer (yüzleşmede konuş, saldır, gard al ya da kaç; turlarda rakibin hikâyeli niyetine karşı üç
+hikâyeli yol). Motor sonucu hesaplar; sinematik 2–4 saniyede gösterir; altında tek anlatı satırı olur. Aşağıdaki adlar
+motorun iç sonuçlarıdır ve klip seçimine yarar. Metin klibe birebir uyar.
+
+**Hikâye anları (haydut pususu örneği):** pusuyu fark etme (dönüş: "turn"), kılıcı çekme ("Withdrawing Sword"), rakibi
+kollayıp çember çizme (yan adım: "strafe"), üstüne yürüyüp ilk kesik (kombo, 1. vuruş), kalkanla karşılayıp sendeleme
+(blok + darbe), ağır iniş (kombo, son vuruş), yaralanıp diz çökme (darbe), kaçış (koşu: "run"), düşüş (ölüm). Bu yüzden
+koşu, yan adım ve dönüş klipleri de kullanılacak.
+
 
 | Klip | Oyundaki karşılığı | Not |
 |---|---|---|
