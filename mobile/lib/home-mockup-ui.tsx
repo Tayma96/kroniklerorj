@@ -11,6 +11,7 @@ import { KenBurns } from "./fx";
 import { useGame } from "./store";
 import { useI18n, applyParams, renderEvt } from "./i18n";
 import { pendingMonthScene, chooseMonthDilemma } from "./month-scene";
+import { DERTLER, DERT_YAS, DERT_ODUL, dertDurumu, dertDegisebilir, dertSec, dertSecilebilir } from "./game";
 import { ikilemTema, SAHNE_GORSEL } from "./sahne-tema";
 import { etkiler, ETKI } from "./kart3d";
 import { playTap, playEffect } from "./sound";
@@ -148,6 +149,62 @@ export function MkDecision() {
         </PressableScale>;
       })}
     </View>
+  </MkPanel>;
+}
+
+// Hayatın derdi (Hissiyat 5): tek büyük yön. Seçilmediyse beş yol; seçildiyse sıradaki basamak, ilerleme ve ödülü.
+// "Neden bunu yapıyorum?" sorusunun cevabı ana ekranda dursun; basamak tutunca ay sonunda an ve ödül gelir.
+export function MkDert() {
+  const { state, apply, mpMode } = useGame(), { t, lang } = useI18n();
+  const [secimAcik, setSecimAcik] = useState(false);
+  if (!state || mpMode || state.player.dead || state.player.age < DERT_YAS) return null;
+  const rtl = lang === "ar", du = dertDurumu(state), al = rtl ? "right" : "left";
+  if (!du || secimAcik) return <MkPanel style={{ marginBottom: 10 }}>
+    <MkPanelHeader title={t("dert.baslik")} rtl={rtl} right={du ? <Pressable accessibilityRole="button" accessibilityLabel={t("cine.close")} onPress={() => setSecimAcik(false)} style={{ minWidth: 44, minHeight: 44, alignItems: "center", justifyContent: "center" }}><Text style={{ fontFamily: F.display, fontSize: 18, color: MK.gold }}>×</Text></Pressable> : undefined} />
+    <Text style={{ fontFamily: F.serif, fontSize: 14, lineHeight: 19, color: MK.muted, paddingHorizontal: 14, paddingBottom: 6, textAlign: al }}>{t("dert.sec")}</Text>
+    <View style={{ paddingHorizontal: 10, paddingBottom: 10, gap: 6 }}>
+      {DERTLER.filter((d) => d.id !== du?.id && dertSecilebilir(state, d.id)).map((d) => (
+        <PressableScale key={d.id} accessibilityLabel={`${t("dert." + d.id)}. ${t("dert." + d.id + ".d")}`} haptic="selection" onPress={() => { playTap(); apply((s) => dertSec(s, d.id)); setSecimAcik(false); }}
+          style={{ minHeight: 52, flexDirection: rtl ? "row-reverse" : "row", alignItems: "center", gap: 10, paddingHorizontal: 10, paddingVertical: 8, borderRadius: 4, borderWidth: 1, borderColor: MK.frame, backgroundColor: CAM_KOYU }}>
+          <GameIcon name={d.icon} size={22} color={MK.gold} />
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Text style={{ fontFamily: F.display, fontSize: 14, color: "#F4E8CF", textAlign: al }}>{t("dert." + d.id)}</Text>
+            <Text style={{ fontFamily: F.serif, fontSize: 13.5, lineHeight: 18, color: MK.muted, textAlign: al }}>{t("dert." + d.id + ".d")}</Text>
+          </View>
+        </PressableScale>
+      ))}
+    </View>
+  </MkPanel>;
+  const sn = du.sonraki;
+  const hedef = !sn ? t("dert.erdin") : du.id === "servet" ? applyParams(t("dert.servet.h"), [sn.hedef]) : du.id === "nam" ? applyParams(t("dert.nam.h"), [sn.hedef])
+    : du.id === "kilic" && sn.basamak < 2 ? applyParams(t("dert.kilic.h"), [sn.hedef]) : t(`dert.${du.id}.${sn.basamak}`);
+  const icon = DERTLER.find((d) => d.id === du.id)?.icon || "star";
+  const odul = sn ? DERT_ODUL[sn.basamak] : null;
+  return <MkPanel style={{ marginBottom: 10 }}>
+    <MkPanelHeader title={t("dert.baslik")} rtl={rtl} right={dertDegisebilir(state) ? <Pressable accessibilityRole="button" onPress={() => setSecimAcik(true)} style={{ minHeight: 44, justifyContent: "center", paddingHorizontal: 6 }}><Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 1, color: MK.muted }}>{t("dert.degis")}</Text></Pressable> : undefined} />
+    <View accessible accessibilityLabel={`${t("dert." + du.id)}: ${hedef}${sn ? ` (${sn.deger}/${sn.hedef})` : ""}`} style={{ flexDirection: rtl ? "row-reverse" : "row", alignItems: "center", gap: 10, paddingHorizontal: 14, paddingBottom: sn ? 6 : 12 }}>
+      <GameIcon name={icon} size={26} color={MK.gold} />
+      <View style={{ flex: 1, minWidth: 0 }}>
+        <Text style={{ fontFamily: F.display, fontSize: 14, color: "#F4E8CF", textAlign: al }}>{t("dert." + du.id)}</Text>
+        <Text style={{ fontFamily: F.serif, fontSize: 14.5, lineHeight: 19, color: sn ? MK.ink : MK.gold, textAlign: al }}>{hedef}</Text>
+      </View>
+      <View style={{ flexDirection: rtl ? "row-reverse" : "row", gap: 5 }}>
+        {[0, 1, 2].map((i) => <View key={i} style={{ width: 9, height: 9, transform: [{ rotate: "45deg" }], borderWidth: 1, borderColor: MK.gold, backgroundColor: i < du.alinan ? MK.gold : "transparent" }} />)}
+      </View>
+    </View>
+    {sn && odul && <View style={{ paddingHorizontal: 14, paddingBottom: 12 }}>
+      <View style={{ height: 5, borderRadius: 3, backgroundColor: "rgba(255,255,255,0.09)", overflow: "hidden" }}>
+        <View style={{ width: `${Math.max(3, Math.min(100, (sn.deger / Math.max(1, sn.hedef)) * 100))}%`, height: 5, backgroundColor: MK.gold, alignSelf: rtl ? "flex-end" : "flex-start" }} />
+      </View>
+      <View style={{ flexDirection: rtl ? "row-reverse" : "row", justifyContent: "space-between", alignItems: "center", marginTop: 5 }}>
+        <Text style={{ fontFamily: F.serif, fontSize: 13.5, color: MK.muted }}>{Math.min(sn.deger, sn.hedef)} / {sn.hedef}</Text>
+        <View style={{ flexDirection: rtl ? "row-reverse" : "row", alignItems: "center", gap: 6 }}>
+          <Text style={{ fontFamily: F.serif, fontSize: 13.5, color: MK.muted }}>{t("dert.odul")}:</Text>
+          <GameIcon name="star" size={12} color={MK.gold} /><Text style={{ fontFamily: F.display, fontSize: 13, color: MK.gold }}>+{odul.stat}</Text>
+          {odul.fame > 0 && <><GameIcon name="crown" size={12} color={MK.gold} /><Text style={{ fontFamily: F.display, fontSize: 13, color: MK.gold }}>+{odul.fame}</Text></>}
+        </View>
+      </View>
+    </View>}
   </MkPanel>;
 }
 
