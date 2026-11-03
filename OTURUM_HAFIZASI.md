@@ -16,8 +16,8 @@
   ana sayfa kimlik paneli + `lib/ad-bicim.ts`, Geri hapı, Divan/Dost girişleri kaldırıldı, ilk açılış dil ekranı
   (`lib/dil-secimi.tsx`), kış ortamı çınlaması (yeni ElevenLabs döngüsü).
 - 2 Kasım: ses (21 müzik, 15 ortam, 23 efekt, 13 an anlatısı 6 dil, NPC sözleri 7 ses) ve 56 sn giriş videosu `apk`'de; test APK güncel.
-- Hissiyat 1–4 `docs/HISSIYAT_PLANI.md` `apk`'de; 5 (hayatın derdi) beğenilmedi, kaldırılacak.
-- Radikal sonuçlar: plan `docs/superpowers/specs/2026-11-03-radikal-sonuclar-design.md`; aşama 0–2 uygulandı (`docs/superpowers/plans/2026-11-03-asama-0-2.md`, ölçüm `npm run olc:ayrisma`). Sıradaki aşama 3+ (kırılmalar): Berkay "kayıp tek tuşla değil; kaybın arkasında yeni yol/içerik olsun" dedi.
+- Hissiyat 1–4 `docs/HISSIYAT_PLANI.md` `apk`'de; hayatın derdi kaldırıldı.
+- Radikal sonuçlar: `docs/superpowers/specs/2026-11-03-radikal-sonuclar-design.md`; aşama 0–2 bitti, 300 hayat temiz. Aşama 3: kırılma çekirdeği + Büyük Ortaklık (`Player.kirilmalar`, ay sahnesi `kirilma`, `lib/kirilma-ui.tsx`, denetim `scripts/_smoke/kirilma-check.cjs`; plan `.../plans/2026-11-03-asama-3.md`). Sıradaki: aşama 4 (göç, suç, lekeli).
 - Dövüş: `docs/SAVAS_SINEMATIK_PLAN.md`; yüzleşme kuruldu, 3D kalite kanıtı (görüntü ajanı) sürüyor.
 - apk'ye gönderim: scratchpad `araclar/gonder.sh` (ayrı çalışma ağacı); yarım ajan dosyası apk'ye girmez.
 

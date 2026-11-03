@@ -45,5 +45,18 @@ const assert = require('node:assert/strict'), path = require('node:path'), esbui
   const mp = copy(dilemma); mp.mpRealm = true; assert(!m.pendingMonthScene(mp)); assert.equal(m.prepareMonthScene(mp), mp); assert.equal(m.advanceWithMonthScene(mp, 6), mp);
   const unrecorded = fresh(); const mpBefore = copy(unrecorded); m.prepareMonthScene(unrecorded); assert.deepEqual(unrecorded, mpBefore, 'hazırlama girdi durumunu değiştirdi');
   const fast = fresh(); fast.turn = 0; const skipped = m.advanceWithMonthScene(fast, 6, true); assert(skipped.turn >= 1 && skipped.turn <= 6); if (m.pendingMonthScene(skipped)) assert.equal(m.advanceWithMonthScene(skipped, 6), skipped);
-  console.log('AYLIK KARAR: kart/risk kaydı, yeniden açılış, sonuç/ret/çift tık, fırsat ara sonucu, hızlı ilerleme, bozuk kayıt, ölüm/hapis ve MP temiz.');
+  // Kader kırılması (aşama 3): 28–50 yaş ve yeterli servette teklif bir tohumda gelir; ay geçmez, seçim kayda yazılır.
+  { const k0 = fresh(); Object.assign(k0.player, { age: 34, base_age: 34, money: 5000, deposit: 0 }); k0.turn = 2; let kir;
+    for (let rng = 1; rng <= 40000 && !kir; rng += 37) { const s = copy(k0); s.rng_state = rng; const pr = m.prepareMonthScene(s, 0); if (pr.monthScene?.kind === 'kirilma') kir = pr; }
+    assert(kir, 'kırılma teklifi hiçbir tohumda gelmedi'); assert(m.pendingMonthScene(kir)); assert.equal(kir.monthScene.kir.tip, 'teklif');
+    const kl = g.migrate(JSON.parse(JSON.stringify(kir))); assert.deepEqual(kl.monthScene, kir.monthScene, 'kırılma sahnesi yüklemede bozuldu');
+    assert.equal(g.advance(kir), kir); assert.equal(m.advanceWithMonthScene(kir, 6, true), kir);
+    assert.equal(m.chooseMonthKirilma(kir, 'bayat-id', 0), kir); assert.equal(m.chooseMonthKirilma(kir, kir.monthScene.id, 9), kir);
+    const sec = m.chooseMonthKirilma(kir, kir.monthScene.id, 0); assert(sec.monthScene.done && !m.pendingMonthScene(sec)); assert.equal(sec.monthScene.secim.id, 'kir.teklif');
+    assert(sec.monthScene.secim.etki.money < 0, 'pay keseden çıkmalı'); assert.equal(m.chooseMonthKirilma(sec, kir.monthScene.id, 0), sec, 'çift tık');
+    const bozuk = copy(kir); bozuk.monthScene.kir.tip = 'yok'; assert.equal(r.repairMonthScene(bozuk.monthScene, bozuk), undefined);
+    const yetim = copy(kir); yetim.monthScene.kir.tip = 'alacakli'; const yr = r.repairMonthScene(yetim.monthScene, yetim); assert(yr && yr.done, 'kayıtta karşılığı olmayan kırılma sahnesi ayı kilitlememeli');
+    const ym = g.migrate(JSON.parse(JSON.stringify(yetim))); assert(!m.pendingMonthScene(ym)); assert(m.advanceWithMonthScene(ym, 1).turn > ym.turn, 'ay ilerlemeli');
+    const ileri = m.advanceWithMonthScene(sec, 6); assert(ileri.turn > sec.turn, 'seçimden sonra ay ilerlemeli'); }
+  console.log('AYLIK KARAR: kart/risk kaydı, yeniden açılış, sonuç/ret/çift tık, fırsat ara sonucu, hızlı ilerleme, bozuk kayıt, ölüm/hapis, kırılma anı ve MP temiz.');
 })().catch(e => { console.error(e); process.exitCode = 1; });

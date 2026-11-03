@@ -1,7 +1,8 @@
 import type { Dilemma } from "./events";
-import type { GameState, Opportunity } from "./game";
+import type { GameState, Opportunity, KirSahne } from "./game";
 export interface MonthScene {
-  id: string; turn: number; generation: number; kind: "senlik" | "ikilem" | "orta" | "firsat" | "kapi" | "bos"; done: boolean;
+  id: string; turn: number; generation: number; kind: "senlik" | "ikilem" | "orta" | "firsat" | "kapi" | "bos" | "kirilma"; done: boolean;
+  kir?: { tip: KirSahne; kisi?: string }; // kader kırılması anı (aşama 3): içerik kayıttan türetilir, yalnız tip ve kişi saklanır
   dilemma?: Omit<Dilemma, "when">; opp?: Opportunity;
   stage?: "intro" | "play" | "result"; success?: boolean;
   // Çözülen kararın izi (radikal sonuçlar planı, aşama 2): ana sayfa seçilen yolu ve GERÇEKLEŞEN etkiyi aynı yerde gösterir.
@@ -9,13 +10,13 @@ export interface MonthScene {
 }
 export function pendingMonthScene(s: GameState): MonthScene | undefined {
   const m = s.monthScene;
-  return !s.mpRealm && !s.player.dead && !(s.player.jail && s.player.jail.left > 0) && m && !m.done && m.turn === s.turn && m.generation === (s.player.generation || 1) && (m.dilemma || m.opp) ? m : undefined;
+  return !s.mpRealm && !s.player.dead && !(s.player.jail && s.player.jail.left > 0) && m && !m.done && m.turn === s.turn && m.generation === (s.player.generation || 1) && (m.dilemma || m.opp || m.kir) ? m : undefined;
 }
 // Kayıt bozulduysa karar üretme veya ödül uydurma; yalnız güvenli veriyi geri yükle.
 export function repairMonthScene(raw: unknown, s: GameState): MonthScene | undefined {
   if (!raw || typeof raw !== "object" || s.mpRealm || s.player.dead) return undefined;
   const m = raw as MonthScene;
-  if (m.turn !== s.turn || m.generation !== (s.player.generation || 1) || m.id !== `month:${m.generation}:${m.turn}` || !["senlik", "ikilem", "orta", "firsat", "kapi", "bos"].includes(m.kind) || typeof m.done !== "boolean") return undefined;
+  if (m.turn !== s.turn || m.generation !== (s.player.generation || 1) || m.id !== `month:${m.generation}:${m.turn}` || !["senlik", "ikilem", "orta", "firsat", "kapi", "bos", "kirilma"].includes(m.kind) || typeof m.done !== "boolean") return undefined;
   const base: MonthScene = { id: m.id, turn: m.turn, generation: m.generation, kind: m.kind, done: m.done };
   const secim = m.secim;
   if (m.done) return secim && typeof secim.id === "string" && Number.isInteger(secim.i) && typeof secim.label === "string" && secim.label.length <= 400
@@ -27,6 +28,16 @@ export function repairMonthScene(raw: unknown, s: GameState): MonthScene | undef
     if (!d || ![d.id, d.title, d.text, d.icon].every(text) || !Array.isArray(d.choices) || d.choices.length < 2 || d.choices.length > 8 || !d.choices.every(c => c && text(c.label) && text(c.result) && delta(c.delta) && (c.gercek === undefined || delta(c.gercek)) && (c.rk === undefined || text(c.rk)) && (c.sans === undefined || Number.isFinite(c.sans) && c.sans >= 0 && c.sans <= 100))) return undefined;
     base.dilemma = { id: d.id, title: d.title, text: d.text, icon: d.icon, ...(text(d.not) ? { not: d.not } : {}), choices: d.choices.map(c => ({ label: c.label, result: c.result, delta: c.delta, ...(c.gercek ? { gercek: c.gercek } : {}), ...(c.rk ? { rk: c.rk } : {}), ...(c.sans !== undefined ? { sans: c.sans } : {}) })) };
     return base;
+  }
+  if (m.kind === "kirilma") {
+    const k = m.kir;
+    if (!k || !["teklif", "haber", "alacakli", "ikinci"].includes(k.tip) || k.kisi !== undefined && (typeof k.kisi !== "string" || k.kisi.length > 64)) return undefined;
+    // Sahne kayıttaki kırılmayla örtüşmüyorsa (bozuk ya da ayıklanmış kayıt) kapanmış sayılır: ay kilitli kalmaz.
+    const kl = Array.isArray(s.player.kirilmalar) ? s.player.kirilmalar : [], ort = kl.filter((x) => x.id === "ortaklik");
+    const uygun = k.tip === "alacakli" ? ort.some((x) => x.faz === "alacakli") : k.tip === "haber" ? ort.some((x) => x.faz === "yolda" && (x.yol === "buyuk" || x.yol === "kucuk"))
+      : k.tip === "ikinci" ? kl.some((x) => x.id === "katip") && !ort.some((x) => x.ikinci) : !ort.length;
+    if (!uygun) return { ...base, done: true };
+    return { ...base, kir: { tip: k.tip, ...(k.kisi ? { kisi: k.kisi } : {}) } };
   }
   if (m.kind === "firsat") {
     const o = m.opp;

@@ -20,6 +20,7 @@ import { HesapModal } from "../../lib/hesap-ui";
 import { careerTitleL, placeName } from "../../lib/locale-data";
 import { currentCalendar } from "../../lib/calendar";
 import { MK, MkHero, MkIdentity, MkDecision, MkAlert, MkAlertChips, MkRecent, MkBookRow } from "../../lib/home-mockup-ui";
+import { MkKirilma, MkHal } from "../../lib/kirilma-ui";
 import { AnaZemin } from "../../lib/sayfa/ana/zemin";
 import { AyOzeti, useAyFarki, sayi } from "../../lib/sayfa/ana/ay-ozeti";
 import { useSadeMod } from "../../lib/use-sade-mod";
@@ -73,7 +74,7 @@ const EVT: Record<string, { c: string; col: string; gi: string }> = {
   suç_yakalandı: { c: "ceza", col: C.blood, gi: "prisoner" }, taht: { c: "kariyer", col: C.gold, gi: "crown" }, taht_basarisiz: { c: "kariyer", col: C.blood, gi: "crown" },
   terfi: { c: "kariyer", col: C.gold, gi: "crown" }, yerlesim: { c: "mulk", col: C.gold, gi: "castle" }, yonetim: { c: "kariyer", col: C.gold, gi: "crown" },
   fisilti: { c: "sohbet", col: C.parchmentMuted, gi: "family" }, hastalik: { c: "saglik", col: C.blood, gi: "healing" }, yaralanma: { c: "saglik", col: C.blood, gi: "healing" },
-  kader: { c: "dunya", col: C.gold, gi: "star" }, nemesis: { c: "savas", col: C.ink, gi: "skull" }, hüner: { c: "beceri", col: C.gold, gi: "medal" },
+  kader: { c: "dunya", col: C.gold, gi: "star" }, ortaklik: { c: "ticaret", col: C.gold, gi: "scales" }, iflas: { c: "ticaret", col: C.blood, gi: "coins" }, alacakli: { c: "ticaret", col: C.ember, gi: "scroll" }, katip_bitti: { c: "ticaret", col: C.sage, gi: "scroll-open" }, nemesis: { c: "savas", col: C.ink, gi: "skull" }, hüner: { c: "beceri", col: C.gold, gi: "medal" },
   örgüt_katılım: { c: "kariyer", col: C.gold, gi: "crown" }, örgüt_ayrılma: { c: "kariyer", col: C.parchmentMuted, gi: "crown" }, örgüt_görev: { c: "gorev", col: C.sage, gi: "scroll-open" },
   söylenti: { c: "dunya", col: C.rose, gi: "speaker" }, tohum: { c: "olay", col: C.gold, gi: "star" },
   doruk: { c: "olay", col: C.goldBright, gi: "crossed-swords" }, huzur: { c: "dunya", col: C.sage, gi: "prayer-beads" },
@@ -479,7 +480,7 @@ export default function Dashboard() {
       )}
 
         </View>
-        <Animated.View entering={gir(2)}><MkDecision /></Animated.View>
+        <Animated.View entering={gir(2)}><MkHal /><MkKirilma /><MkDecision /></Animated.View>
         {!p.dead && alert && <Animated.View entering={gir(3)}>
           <MkAlert icon={alert.icon} title={alert.title} sub={alert.sub} red={alert.tone !== C.gold} rtl={rtl} onPress={() => setSheet(alert.id)} />
           <MkAlertChips rtl={rtl} items={alerts.slice(1).map((a) => ({ key: a.id, icon: a.icon, title: a.title, red: a.tone !== C.gold, onPress: () => setSheet(a.id) }))} />

@@ -212,6 +212,23 @@ Her kırılmada: tetikleyici, 3 seçenek, her seçeneğin **anlık / orta vade (
 - B) **Mülke yatır** (`buyProperty`): düşük gelir; yerleşim kurma yolu (`foundSettlement`); konak vârise.
 - C) **Emanete bırak** (`deposit`): güvenli, yıllık ~%2; hiçbir kapı açılmaz.
 
+**K4 yeniden (3 Kasım, Berkay: "Tek tuşa basıp tüm paranı kaybetmek mi? Bu yolda bir şeyler yok mu?")**
+Kural: kayıp tek tuşla gelmez, servetin tamamını almaz ve arkasından içerikli yeni bir yol açar. K4 bir "yolculuk"tur:
+1. **Teklif** (28–50 yaş, nakit+emanet ≥ 300×enflasyon, ömürde bir kez, son kırılmadan ≥ 96 ay): adı olan bir kervanbaşı.
+   Şans görünür: `38 + 4×ticaret + 1,5×zekâ` (statlar 0–10), %20–80. Zar teklif anında kayda yazılır (yeniden yükleme sonucu değiştirmez).
+   A) Büyük ortaklık: nakit+emanetin %40'ı. B) Küçük pay: %10, iflas yolu yok. C) Reddet: aynı zar çalışır; kervan
+   kazanırsa "fırsat kaçtı", batarsa "temkinin kurtardı" (+şeref).
+2. **Yoldan haber** (4. ay; A ve B): haber %75 doğru bir işarettir. Seçenekler: payını sat (koyduğunun %60'ı döner),
+   bekle, kervana kendin yetiş (güç+karizma şansı; başarırsan kervan kurtulur, başaramazsan −15 sağlık).
+3. **Sonuç** (8. ay): kazanç koyduğunun 2,4 katı; A'da "Tüccar" hâli (yeni ortaklık teklifi kapanır, iltizam şöhret şartı
+   kalkar). Kayıpta B'de yalnız konan pay gider; A'da ortaklığın borcu (konan payın yarısı) alacaklıyla kapıya gelir.
+4. **Alacaklı kapıda** (A kaybı): A) Öde: nakit, emanet, sonra en ucuz mülkler (%60 değerle); kalan tefeci borcuna;
+   +şeref. B) Alacaklının kâtibi ol: 36 ay, iş gelirinin %40'ı alacaklıya, şehirden ayrılamaz ve mülk alamazsın, her yıl
+   ticaret öğrenirsin; bitince borç kapanır, +şeref, alacaklı dost olur ve bir kez "ikinci şans" ortaklığı (+10 şans)
+   gelir. C) Gece kaç: borç silinir; eski şehirdeki mülklere el konur, uzak bir şehre yerleşirsin, eski şehir 10 yıl
+   kapalı; adın geride kalır (itibar 0'a döner, iyi ya da kötü), şöhret yarıya, −8 şeref.
+Vâris: kırılmalar bu dilimde vârise geçmez (kâtiplik borcu ölümle düşer); `kirilmaMirasi` boş döner, iki ekran aynı.
+
 **K5. Göç ya da kök (35–50)**
 - Tetik: `orta_goc` koşulu + eş, ya da kıtlık/savaş bölgesi.
 - A) **Göç et:** yeni fonksiyon `yurtDegistir(s, hedef)` yurdu (`home_name`) değiştirir; eski mülk satılır ya da kiraya verilir; lonca ve çevre bağları yarıya iner; tanınırlık düşer; eş kabullenir ya da küser; vâris yeni bölgede doğar.
@@ -394,6 +411,9 @@ Her aşama ayrı teslim edilir; istersen her aşamadan sonra 300 hayatlık test 
 - **Hissedeceğin:** seçtiğin şeyin ne getirdiğini hemen ve aynı yerde görüyorsun; neyin zorunlu olduğu belli.
 
 ### Aşama 3: Kırılma çekirdeği
+- **Revize (3 Kasım):** çekirdek, ilk dikey dilim olarak "K4 yeniden" (yukarıda) ile birlikte gelir; hâller: ortaklık
+  (yolculuk), kâtip, kaçak, tüccar. Lekeli, sürgün ve kan davası hâlleri aşama 4'e kaydı. Plan:
+  `docs/superpowers/plans/2026-11-03-asama-3.md`.
 - `kirilmalar` kaydı, `KIRILMA_KAPI`, `kapiAcik`, `kirilmaUygula`, `kirilmaMirasi`; sahne türü `"kirilma"`; bekleyen kırılma ay geçişini durdurur; `migrate`.
 - Kırılma anı şablonu (bölüm 6.3): tam ekran, tek cümle, değişen dünya özeti, ses; kapalı kapılarda "Kapalı: … kararın" satırı.
 - İlk dört hâl: lekeli, sürgün, kan davası, iflas.

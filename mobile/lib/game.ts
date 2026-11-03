@@ -205,6 +205,7 @@ export interface Player {
   factionLeaves?: Record<string, number>; // fraksiyondan kaç kez ayrıldın (yasak süresi tırmanır)
   priceMem?: Record<string, number>; // fiyat hafızası: "loc|good" → geçen ay kaydedilen alış fiyatı (pazar 'geçen fiyat' göstergesi)
   debt?: number; loan_turn?: number; // tefeci borcu (aylık faiz işler) + ilk ödünç alınan tur
+  kirilmalar?: Kirilma[]; // kader kırılmaları (radikal sonuçlar, aşama 3): alınan büyük kararlar ve bıraktıkları hâl; eski kayıtta yok
   deposit?: number; // sarraf emaneti (hırsızlık/yağma/haciz olaylarından korunur; yıllık küçük mudârabe getirisi)
   last_zekat?: number; // son zekât verilen tur (yılda bir kapısı); serveti saygınlığa çevirir
   zafer?: number; bozgun?: number; // savaş sicili: kazanılan/kaybedilen çarpışmalar (karşılaşma, cephe, sefer) — vârise geçmez
@@ -1974,6 +1975,7 @@ export function izBaslik(iz: Iz): EvtParam | null {
   const p = iz.k.split(":");
   if (p[0] === "dil") return { sfx: "dil." + p[1] + ".t" };
   if (p[0] === "arc") return { sfx: "arc." + p[1] + ".t" };
+  if (p[0] === "kir") return { sfx: "kir." + p[1] + ".t" };
   return null;
 }
 function izKisi(s: GameState, iz: Iz): { canli: boolean; p: EvtParam } | null {
@@ -4171,6 +4173,7 @@ export function advance(prev: GameState, n = 1): GameState {
       const gain = Math.round((s.player.deposit || 0) * DEPOSIT_ANNUAL_YIELD);
       if (gain > 0) { s.player.deposit = (s.player.deposit || 0) + gain; if (i === n - 1) push(s, "ticaret", `Sarraf emanetini işletti; mudârabe payın ${gain} akçe (emanet ${s.player.deposit} akçe).`, "kişisel", false, { k: "evj.depositYield", p: [gain, s.player.deposit || 0] }); }
     }
+    kirilmaTick(s); // kader kırılmaları: ortaklığın sonucu, kâtiplik yılları, kaçaklığın bitişi
     // Tefeci faizi: borç her ay büyür. Teminat eşiğini aşarsa sarraf alacağına karşılık mülke/nakde el koyar.
     if ((s.player.debt || 0) > 0) {
       s.player.debt = Math.round((s.player.debt || 0) * (1 + loanRate(s)));
@@ -5094,7 +5097,7 @@ export const ILTIZAM_SOHRET = 30;
 export function iltizamCost(s: GameState): number { return Math.round(360 * inflationFactor(s)); }
 export function buyIltizam(prev: GameState): GameState {
   const s = clone(prev); const p = s.player;
-  if (p.dead || p.age < 25 || inJail(p) || p.fame < ILTIZAM_SOHRET) return s; // iltizam ihalesi ancak adı bilinen birine verilir (şöhret "Ünlü" kademesi)
+  if (p.dead || p.age < 25 || inJail(p) || !iltizamAcik(s)) return s; // iltizam ihalesi ancak adı bilinen birine verilir (şöhret "Ünlü" kademesi)
   if ((p.iltizam_until ?? 0) > s.turn) return s; // mevcut iltizam bitmeden yenisi alınmaz
   const cost = iltizamCost(s);
   if (p.money < cost) return s;
@@ -5709,6 +5712,7 @@ export function workForecast(s: GameState, style: WorkStyle = "normal"): WorkFor
   const localWar = regionalWarEffects(s, p.location_name);
   const neededCraft = ["demirci", "şifacı"].includes(p.profession) ? 1 + (localWar.foodDemand - 1) * 0.25 : 1;
   mult *= p.profession === "asker" ? Math.max(0.7, localWar.revenue) : Math.min(1.1, localWar.production * neededCraft);
+  mult *= kirilmaGelir(s); // kâtiplikte kazancın %40'ı alacaklıya
   const tierBefore = pr ? careerTier(pr, kariyerXp(p)) : 0;
   const titleMult = TITLE_MULT[tierBefore] || 1;
   const base = pr ? pr.base : 4;
@@ -7193,6 +7197,7 @@ function markVisit(p: Player, dest: string) {
 export function travelTo(prev: GameState, dest: string): GameState {
   const s = clone(prev); const p = s.player;
   if (p.dead || inJail(p) || dest === p.location_name || !LOCATIONS.includes(dest)) return s;
+  if (!kapiAcik(s, "seyahat").acik || !kapiAcik(s, "eski_yurt", dest).acik) return s; // kâtiplik şehre bağlar; kaçan eski şehre dönemez
   const origin = p.location_name;
   markVisit(p, p.location_name); // kalkış noktası da sayılır (doğduğun yerleşim kaybolmasın)
   p.location_name = dest; markVisit(p, dest); p.hunger = Math.max(0, p.hunger - 5);
@@ -7375,6 +7380,7 @@ export function travelBy(prev: GameState, dest: string, route: TravelRoute): Gam
   const origin = p.location_name;
   if (inJail(p)) return s; // zindandan kervan kalkmaz
   if (p.dead || dest === p.location_name) return s;
+  if (!kapiAcik(s, "seyahat").acik || !kapiAcik(s, "eski_yurt", dest).acik) return s; // kâtiplik şehre bağlar; kaçan eski şehre dönemez
   markVisit(p, p.location_name); // kalkış noktası da sayılır (doğduğun yerleşim kaybolmasın)
   if (route === "at" && !p.horse) route = "anayol"; // at yoksa ana yola düş
   if (route === "kervan") {
@@ -8688,11 +8694,12 @@ export const MULK_YAS = 16; // tapu reşit olmayana verilmez (miras kalan mülk 
 // Büyük tapunun şartı (hafif, iki yollu): han ve değirmen çarşının güvenini ister — ya itibar ya da meslekte unvan.
 // Sınır ya da ceza değil, bir hedef: zanaatkâr unvanla, unvansız olan adıyla ulaşır. Miras kalan mülk şartsız elde kalır.
 export const MULK_SART: Record<string, { itibar: number; unvan: number }> = { han: { itibar: 15, unvan: 1 }, degirmen: { itibar: 30, unvan: 2 } };
-export function mulkSarti(s: GameState, type: string): { ok: boolean; itibar: number; unvan: number } {
-  const sr = MULK_SART[type]; if (!sr) return { ok: true, itibar: 0, unvan: 0 };
+export function mulkSarti(s: GameState, type: string): { ok: boolean; itibar: number; unvan: number; kapi?: { id: KirilmaId; yas: number; kalan?: number } } {
+  const kp = kapiAcik(s, "mulk"), kapi = kp.acik ? {} : { kapi: kp.neden }; // kâtiplikte tapu alınmaz (neden arayüzde)
+  const sr = MULK_SART[type]; if (!sr) return { ok: kp.acik, itibar: 0, unvan: 0, ...kapi };
   const p = s.player; const pr = professionById(p.profession);
   const tier = pr ? careerTier(pr, kariyerXp(p)) : 0;
-  return { ok: p.reputation >= sr.itibar || tier >= sr.unvan, itibar: sr.itibar, unvan: sr.unvan };
+  return { ok: kp.acik && (p.reputation >= sr.itibar || tier >= sr.unvan), itibar: sr.itibar, unvan: sr.unvan, ...kapi };
 }
 export function buyProperty(prev: GameState, type: string): GameState {
   const s = clone(prev); const p = s.player; const t = PROPERTY_TYPES[type];
@@ -8925,7 +8932,7 @@ export function deathEpithet(s: GameState): string {
 export interface EulLine { k: string; p?: EvtParam[]; } // {lk}: lakap kimliği (gösterimde dile + cinsiyete çevrilir)
 // Hayatın özeti (mersiye — TASARIM_PUSULASI ilke 9, doruk ve son): ömrün en büyük üç kişisel anı (zaman sırasıyla) ve
 // ardında bıraktığı insanlar — hayırla anacak en yakın iki kişi (aile dışı) ve unutmayacak bir hasım.
-const AN_ONEM: Record<string, number> = { evlilik: 5, kan_davası: 5, doğum: 4, nemesis: 4, pestamal: 4, terfi: 4, taht: 5, savaş_zafer: 3, tohum: 3, rakip: 3, sinav: 2, cocukluk: 1 };
+const AN_ONEM: Record<string, number> = { iflas: 5, alacakli: 4, ortaklik: 4, katip_bitti: 3, evlilik: 5, kan_davası: 5, doğum: 4, nemesis: 4, pestamal: 4, terfi: 4, taht: 5, savaş_zafer: 3, tohum: 3, rakip: 3, sinav: 2, cocukluk: 1 };
 export function hayatOzeti(s: GameState): { anlar: GameEvent[]; ananlar: string[]; hasim?: string } {
   const p = s.player; const gorulen = new Set<number>(); // ömür defteri + kronik (aynı olay iki kez sayılmaz)
   const kisisel = [...(p.omur_anlari || []), ...s.history].filter((e) => { if (e.q != null) { if (gorulen.has(e.q)) return false; gorulen.add(e.q); } return donumAni(e) && e.scope !== "makro" && !(e.k || "").startsWith("evj.anniv"); }); // yıldönümleri mersiyenin kendi cümlesinde zaten anılır
@@ -9323,6 +9330,7 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
       crowned: p.crowned || false, crownSeat: p.crownSeat, crownConquests: p.crownConquests?.slice(),
       crownAuthority: p.crowned ? Math.max(35, Math.min(70, Math.round(crownAuthorityOf(p) * 0.8))) : undefined,
       appointedGov: p.appointedGov ? Object.fromEntries(Object.entries(p.appointedGov).map(([loc, gov]) => [loc, { ...gov, loyalty: Math.max(15, gov.loyalty - 10) }])) : undefined,
+      kirilmalar: kirilmaMirasi(prev), // bu dilimde hiçbir kırılma vârise geçmez (iki ekran aynı kaynaktan)
       will_pref: "esit", fates: [], claimed: [], governorships: [], // taht irsîdir; kader/başarım/valilik yeni baştan
     },
     history: [{ day: 0, type: "nesil_devri", text: `${gen}. nesil: ${heir}, ${will.label.toLowerCase()} vasiyetiyle mirası devraldı (${inheritMoney} akçe, ${props.length} mülk).${noteStr}`, scope: "kişisel", landmark: true, k: "evj.genHandover", p: [gen, heir, inheritMoney, props.length] }],
@@ -12829,6 +12837,199 @@ function merdivenGoc(s: GameState, m: Record<string, number[]>) {
   };
   (s.history || []).forEach(duzelt); (p?.omur_anlari || []).forEach(duzelt);
 }
+// ── Kader kırılmaları (radikal sonuçlar, aşama 3): büyük kararın hayata bıraktığı kalıcı hâl. Hâl ayrı alanda tutulmaz;
+// kapılar `kirilmalar` dizisinden türetilir (tek kaynak, göç riski yok). İlk dilim Büyük Ortaklık (K4): kayıp tek tuşla
+// gelmez, aylara yayılır ve arkasından üç yol açılır (öde / alacaklının kâtibi ol / gece kaç). Zar teklif anında kayda
+// yazılır (gameRandom): kaydı yükleyip yeniden denemek sonucu değiştirmez. Çok oyunculu dünyada kırılma işlemez.
+export type KirilmaId = "ortaklik" | "katip" | "kacak" | "tuccar";
+const KIRILMA_IDLERI = new Set<string>(["ortaklik", "katip", "kacak", "tuccar"]);
+export interface Kirilma {
+  id: KirilmaId; t: number; kaynak: string; kok?: number; bitis?: number;
+  faz?: "yolda" | "haber" | "alacakli" | "bitti"; yol?: "buyuk" | "kucuk" | "ret" | "satti";
+  pay?: number; sans?: number; zar?: number; hz?: number; ikinci?: boolean; kisi?: string; borc?: number; yer?: string;
+}
+export type Kapi = "seyahat" | "mulk" | "eski_yurt" | "ortaklik" | "golge" | "iltizam";
+// Her hâl en az bir kapı kapatır, en az bir kapı açar (ölü karar olmaz).
+export const KIRILMA_KAPI: Record<"katip" | "kacak" | "tuccar", { kapar: Kapi[]; acar: Kapi[]; gelir?: number }> = {
+  katip: { kapar: ["seyahat", "mulk"], acar: ["ortaklik"], gelir: 0.6 }, // alacaklıya hizmet: şehre bağlı, gelirin %40'ı borca; bitince ikinci şans
+  kacak: { kapar: ["eski_yurt"], acar: ["golge"] }, // gece kaçan: eski şehir 10 yıl kapalı; yolda kaçakçıların kapısı açılır
+  tuccar: { kapar: ["ortaklik"], acar: ["iltizam"] }, // büyük ortaklığı kazanan: adı tüccara çıkar, iltizam şöhret şartı kalkar
+};
+export const ORTAK_KAT = 2.4, ORTAK_SURE = 8, HABER_AY = 4, KATIP_AY = 36, KACAK_AY = 120, KIRILMA_ARA = 96;
+export type KirSahne = "teklif" | "haber" | "alacakli" | "ikinci";
+const kirAktif = (k: Kirilma, turn: number) => k.faz !== "bitti" && (k.bitis == null || k.bitis > turn);
+export function aktifKirilma(p: Player, id: KirilmaId, turn: number): Kirilma | undefined {
+  return (p.kirilmalar || []).find((k) => k.id === id && kirAktif(k, turn));
+}
+// Hayatın hâli (ana ekran satırı): süren kırılmalar.
+export function halOf(s: GameState): Kirilma[] { return (s.player.kirilmalar || []).filter((k) => kirAktif(k, s.turn)); }
+// Kapı açık mı? Kapalıysa nedeni (hangi yaşta alınan hangi kırılma, kaç ay kaldı) arayüzde doğrudan yazılır.
+export function kapiAcik(s: GameState, kapi: Kapi, yer?: string): { acik: boolean; neden?: { id: KirilmaId; yas: number; kalan?: number } } {
+  const p = s.player;
+  for (const k of p.kirilmalar || []) {
+    if (k.id === "ortaklik" || !kirAktif(k, s.turn)) continue;
+    if (!KIRILMA_KAPI[k.id].kapar.includes(kapi) || (kapi === "eski_yurt" && yer !== k.yer)) continue;
+    return { acik: false, neden: { id: k.id, yas: playerAge(p.base_age, k.t), ...(k.bitis != null ? { kalan: k.bitis - s.turn } : {}) } };
+  }
+  return { acik: true };
+}
+export function iltizamAcik(s: GameState): boolean { return s.player.fame >= ILTIZAM_SOHRET || !!aktifKirilma(s.player, "tuccar", s.turn); }
+// Hâlin iş geliri çarpanı (kâtiplikte kazancın %40'ı alacaklıya).
+export function kirilmaGelir(s: GameState): number {
+  let m = 1;
+  for (const k of s.player.kirilmalar || []) { const g = k.id === "ortaklik" ? undefined : KIRILMA_KAPI[k.id].gelir; if (g && kirAktif(k, s.turn)) m *= g; }
+  return m;
+}
+// Vâris: bu dilimde hiçbir hâl vârise geçmez (kâtiplik borcu ölümle düşer). heirPreview ve continueAsHeir aynı kaynaktan okur.
+export function kirilmaMirasi(_prev: GameState): Kirilma[] | undefined { return undefined; }
+const likit = (p: Player) => Math.max(0, p.money) + Math.max(0, p.deposit || 0);
+function kirKisi(s: GameState, id?: string): EvtParam { const k = id ? nufusOf(s).k[id] : undefined; return k ? knParam(k) : { sfx: "kir.kervanbasi" }; }
+function kirKok(s: GameState, n?: number) { const ev = s.history[s.history.length - 1]; if (ev && n != null) ev.kok = n; }
+// Teklifin rakamları: konacak pay (nakit+emanetin %40'ı ya da %10'u) ve görünür şans (stat 0–10).
+export function kirilmaTeklif(s: GameState, ikinci = false): { buyuk: number; kucuk: number; sans: number } {
+  const p = s.player, l = likit(p);
+  const sans = Math.max(20, Math.min(80, Math.round(38 + 4 * (p.skills?.trade || 0) + 1.5 * effStat(p, "intelligence") + (ikinci ? 10 : 0))));
+  return { buyuk: Math.round(l * 0.4), kucuk: Math.round(l * 0.1), sans };
+}
+function yoldaOrtaklik(p: Player): Kirilma | undefined { return (p.kirilmalar || []).find((k) => k.id === "ortaklik" && k.faz === "yolda" && (k.yol === "buyuk" || k.yol === "kucuk")); }
+// Yoldan haber: %75 doğru bir işaret; payını satmak koyduğunun %60'ını geri verir; kervana yetişmek güç+karizmaya bağlı.
+export function kirilmaHaber(s: GameState): { iyi: boolean; geri: number; yetis: number } | null {
+  const p = s.player, o = yoldaOrtaklik(p); if (!o) return null;
+  const iyi = ((o.zar ?? 99) < (o.sans ?? 0)) === ((o.hz ?? 0) < 75);
+  return { iyi, geri: Math.round((o.pay || 0) * 0.6), yetis: Math.max(15, Math.min(85, Math.round(30 + 3 * effStat(p, "strength") + 2 * effStat(p, "charisma")))) };
+}
+// Teklifi getiren: kentteki bir tüccar (yoksa dükkâncı, o da yoksa bir yetişkin); aile değil. Kimse yoksa metin "bir kervanbaşı" der.
+function kervanbasi(s: GameState, random: () => number): string | undefined {
+  const p = s.player, wy = worldYears(s);
+  const yer = Object.values(nufusOf(s).k).filter((k) => k.ol == null && k.loc === p.location_name && wy - k.dy >= 25 && !oyuncuAkrabasi(p, k.id) && k.id !== p.spouse_id && k.es !== OYUNCU);
+  const tuccar = yer.filter((k) => k.prof === "tüccar"), dukkan = yer.filter((k) => DUKKANCI.has(k.prof));
+  const h = tuccar.length ? tuccar : dukkan.length ? dukkan : yer; // tüccar yoksa dükkâncı, o da yoksa kentin bir yetişkini
+  return h.length ? h[Math.floor(random() * h.length)].id : undefined;
+}
+// Bu ay bir kırılma anı var mı? Öncelik: alacaklı > yoldan haber > ikinci şans > teklif (teklif ayda %4).
+export function kirilmaSahnesi(s: GameState, random: () => number = Math.random): { tip: KirSahne; kisi?: string } | null {
+  const p = s.player;
+  if (s.mpRealm || p.dead || inJail(p)) return null;
+  const kl = p.kirilmalar || [], ort = kl.filter((k) => k.id === "ortaklik");
+  const al = ort.find((k) => k.faz === "alacakli"); if (al) return { tip: "alacakli", ...(al.kisi ? { kisi: al.kisi } : {}) };
+  const yol = yoldaOrtaklik(p); if (yol && s.turn - yol.t >= HABER_AY) return { tip: "haber", ...(yol.kisi ? { kisi: yol.kisi } : {}) };
+  if (ort.some((k) => kirAktif(k, s.turn))) return null;
+  const kt = kl.find((k) => k.id === "katip" && !kirAktif(k, s.turn));
+  if (kt && !ort.some((k) => k.ikinci) && p.age <= 62 && likit(p) >= 150 * inflationFactor(s)) return { tip: "ikinci", ...(kt.kisi ? { kisi: kt.kisi } : {}) };
+  if (ort.length || kl.some((k) => kirAktif(k, s.turn)) || p.crowned || p.age < 28 || p.age > 50) return null;
+  if (kl.length && s.turn - Math.max(...kl.map((k) => k.t)) < KIRILMA_ARA) return null;
+  if (likit(p) < 300 * inflationFactor(s) || random() >= 0.04) return null;
+  const kisi = kervanbasi(s, random);
+  return { tip: "teklif", ...(kisi ? { kisi } : {}) };
+}
+function harca(p: Player, n: number) { const a = Math.min(p.money, n); p.money -= a; if (n > a) p.deposit = Math.max(0, (p.deposit || 0) - (n - a)); }
+// Kırılma anında seçim (ay sahnesinden). Uygun durum yoksa ya da seçenek geçersizse kayıt değişmez.
+export function kirilmaSec(prev: GameState, tip: KirSahne, i: number, kisi?: string): GameState {
+  if (prev.mpRealm || prev.player.dead || !Number.isInteger(i) || i < 0 || i > 2) return prev;
+  const s = clone(prev); const p = s.player; const kl = (p.kirilmalar = p.kirilmalar || []);
+  if (tip === "teklif" || tip === "ikinci") {
+    const ikinci = tip === "ikinci", ort = kl.filter((k) => k.id === "ortaklik");
+    if (ikinci ? ort.some((k) => k.ikinci) || !kl.some((k) => k.id === "katip" && !kirAktif(k, s.turn)) : ort.length) return prev;
+    const tk = kirilmaTeklif(s, ikinci), yol = (["buyuk", "kucuk", "ret"] as const)[i];
+    const pay = yol === "buyuk" ? tk.buyuk : yol === "kucuk" ? tk.kucuk : 0;
+    harca(p, pay);
+    const iz = izEkle(s, `kir:${tip}:${i}`, yol === "buyuk" ? "cesur" : "temkin", kisi ? { kisiId: kisi } : undefined);
+    kl.push({ id: "ortaklik", t: s.turn, kaynak: `kir:${tip}:${i}`, kok: iz.n, faz: "yolda", yol, pay, sans: tk.sans, zar: Math.floor(gameRandom(s) * 100), hz: Math.floor(gameRandom(s) * 100), ...(ikinci ? { ikinci: true } : {}), ...(kisi ? { kisi } : {}) });
+    push(s, "kader", yol === "ret" ? "Ortaklığı geri çevirdin; kervan sensiz yola çıktı." : `Kervana ${pay} akçe koydun; sekiz ay sonra döner.`, "kişisel", false, { k: "evj.kir.teklif." + yol, p: [kirKisi(s, kisi), pay] });
+    return s;
+  }
+  if (tip === "haber") {
+    const o = yoldaOrtaklik(p), h = kirilmaHaber(s); if (!o || !h || s.turn - o.t < HABER_AY) return prev;
+    if (i === 0) { p.money += h.geri; o.faz = "bitti"; o.yol = "satti"; push(s, "kader", `Payını sattın; ${h.geri} akçe geri geldi.`, "kişisel", false, { k: "evj.kir.haber.sat", p: [h.geri] }); }
+    else if (i === 1) { o.faz = "haber"; push(s, "kader", `Beklemeyi seçtin; kervan yolunda.`, "kişisel", false, { k: "evj.kir.haber.bekle" }); }
+    else {
+      o.faz = "haber";
+      if (gameRandom(s) * 100 < h.yetis) { o.zar = 0; unEkle(p, "fame", 3); push(s, "kader", `Kervana yetiştin; yükü kurtardın.`, "kişisel", false, { k: "evj.kir.haber.yetisti" }); }
+      else { p.health = Math.max(0, p.health - 15); push(s, "kader", `Kervana yetişemedin; yolda yaralandın.`, "kişisel", false, { k: "evj.kir.haber.yetisemedi" }); if (p.health <= 0) die(s, `${p.name} yolda can verdi.`, { k: "evj.dieRoad", p: [p.name] }); }
+    }
+    return s;
+  }
+  // Alacaklı kapıda: öde / kâtip ol / gece kaç.
+  const a = kl.find((k) => k.id === "ortaklik" && k.faz === "alacakli"); if (!a) return prev;
+  a.faz = "bitti";
+  const borc = a.borc || 0, kp = kirKisi(s, a.kisi);
+  const iz = izEkle(s, `kir:alacakli:${i}`, i === 2 ? "hile" : "durust", a.kisi ? { kisiId: a.kisi } : undefined);
+  if (i === 0) {
+    let kalan = borc;
+    const nak = Math.min(p.money, kalan); p.money -= nak; kalan -= nak;
+    const em = Math.min(p.deposit || 0, kalan); if (em > 0) { p.deposit = (p.deposit || 0) - em; kalan -= em; }
+    let satilan = 0;
+    while (kalan > 0 && p.properties.length) {
+      let idx = 0, lo = Infinity; p.properties.forEach((pr, j) => { const v = PROPERTY_TYPES[pr.type]?.cost || 0; if (v < lo) { lo = v; idx = j; } });
+      const pr = p.properties.splice(idx, 1)[0]; kalan -= Math.round((PROPERTY_TYPES[pr.type]?.cost || 0) * inflationFactor(s) * 0.6); satilan++;
+    }
+    if (kalan < 0) p.money += -kalan;
+    else if (kalan > 0) { p.debt = Math.round((p.debt || 0) + kalan); if (!p.loan_turn) p.loan_turn = s.turn; }
+    unEkle(p, "honor", 6);
+    push(s, "alacakli", `Borcu ödedin; sözün yerde kalmadı.`, "kişisel", true, { k: satilan ? "evj.kir.ode.mulk" : kalan > 0 ? "evj.kir.ode.borc" : "evj.kir.ode", p: [kp, borc, satilan || Math.max(0, kalan)] });
+  } else if (i === 1) {
+    kl.push({ id: "katip", t: s.turn, kaynak: "kir:alacakli:1", kok: iz.n, bitis: s.turn + KATIP_AY, borc, ...(a.kisi ? { kisi: a.kisi } : {}) });
+    push(s, "alacakli", `Alacaklının yanında üç yıl kâtiplik yapacaksın.`, "kişisel", true, { k: "evj.kir.katip", p: [kp, borc] });
+  } else {
+    const eski = p.location_name, bolge = regionOf(eski);
+    const ad = LOCATIONS.filter((l) => l !== eski && regionOf(l) !== bolge), havuz = ad.length ? ad : LOCATIONS.filter((l) => l !== eski);
+    const hedef = havuz[Math.floor(gameRandom(s) * havuz.length)];
+    const giden = p.properties.filter((pr) => pr.loc === eski).length;
+    p.properties = p.properties.filter((pr) => pr.loc !== eski);
+    markVisit(p, eski); p.location_name = hedef; p.home_name = hedef; markVisit(p, hedef);
+    p.reputation = 0; p.fame = Math.floor(p.fame / 2); unEkle(p, "honor", -8);
+    p.faction_standing = { ...p.faction_standing, golge: Math.max(p.faction_standing.golge || 0, 25) };
+    if (p.married && !p.widowed) p.spouse_bond = Math.max(0, (p.spouse_bond ?? 50) - 15);
+    if (s.pop) { // eş ve ocaktaki çocuklar yeni yurda
+      const pop = nufusHazirla(s), wy = worldYears(s);
+      const ocak = [p.spouse_id, ...Object.values(p.child_ids || {})].filter((x): x is string => !!x);
+      for (const id of ocak) { const k = pop.k[id]; if (k && k.ol == null && (id === p.spouse_id || wy - k.dy < 16)) k.loc = hedef; }
+      nufusDegisti(pop);
+    }
+    kl.push({ id: "kacak", t: s.turn, kaynak: "kir:alacakli:2", kok: iz.n, bitis: s.turn + KACAK_AY, yer: eski, ...(a.kisi ? { kisi: a.kisi } : {}) });
+    push(s, "alacakli", `Gece yarısı ${eski}'den kaçtın; ${hedef}'de kimse adını bilmiyor.`, "kişisel", true, { k: giden ? "evj.kir.kac" : "evj.kir.kac0", p: [{ pl: eski }, { pl: hedef }, giden] });
+  }
+  kirKok(s, iz.n);
+  return s;
+}
+// Ayda bir (advance içinde): ortaklığın sonucu, kâtipliğin yılları ve sonu, kaçaklığın bitişi.
+export function kirilmaTick(s: GameState): void {
+  const p = s.player; if (s.mpRealm || p.dead || !p.kirilmalar?.length) return;
+  const kl = p.kirilmalar;
+  for (let j = 0; j < kl.length; j++) {
+    const k = kl[j];
+    if (k.id === "ortaklik" && (k.faz === "yolda" || k.faz === "haber") && s.turn - k.t >= ORTAK_SURE) {
+      const ok = (k.zar ?? 99) < (k.sans ?? 0), kp = kirKisi(s, k.kisi);
+      k.faz = "bitti";
+      if (k.yol === "ret") {
+        if (ok) push(s, "kader", `Geri çevirdiğin kervan kârla döndü.`, "kişisel", false, { k: "evj.kir.ret.kazandi", p: [kp] });
+        else { unEkle(p, "honor", 3); push(s, "kader", `Geri çevirdiğin kervan battı; temkinin seni kurtardı.`, "kişisel", false, { k: "evj.kir.ret.batti", p: [kp] }); }
+      } else if (ok) {
+        const kazanc = Math.round((k.pay || 0) * ORTAK_KAT); p.money += kazanc;
+        if (k.yol === "buyuk") { unEkle(p, "fame", 8); unEkle(p, "honor", 2); if (!aktifKirilma(p, "tuccar", s.turn)) kl.push({ id: "tuccar", t: s.turn, kaynak: k.kaynak, kok: k.kok }); }
+        else unEkle(p, "fame", 2);
+        push(s, k.yol === "buyuk" ? "ortaklik" : "kader", `Kervan kârla döndü: ${kazanc} akçe.`, "kişisel", k.yol === "buyuk", { k: "evj.kir.kazanc." + k.yol, p: [kp, kazanc] });
+        if (k.yol === "buyuk") kirKok(s, k.kok);
+      } else if (k.yol === "buyuk") {
+        k.faz = "alacakli"; k.borc = Math.round((k.pay || 0) * 0.5);
+        push(s, "iflas", `Kervan battı; ortaklığın borcu kapına geldi.`, "kişisel", true, { k: "evj.kir.batti", p: [kp, k.pay || 0, k.borc] });
+        kirKok(s, k.kok);
+      } else push(s, "kader", `Kervan battı; koyduğun pay gitti.`, "kişisel", false, { k: "evj.kir.kayip.kucuk", p: [kp, k.pay || 0] });
+    } else if (k.id === "katip" && k.faz !== "bitti") {
+      const ay = s.turn - k.t;
+      if (k.bitis != null && s.turn >= k.bitis) {
+        k.faz = "bitti"; unEkle(p, "honor", 5);
+        if (k.kisi) s.relationships[k.kisi] = Math.max(s.relationships[k.kisi] || 0, 40);
+        push(s, "katip_bitti", `Kâtipliğin bitti; borç kapandı.`, "kişisel", true, { k: "evj.kir.katip.bitti", p: [kirKisi(s, k.kisi)] });
+        kirKok(s, k.kok);
+      } else if (ay > 0 && ay % 12 === 0) gainSkill(s, "trade", 100);
+    } else if (k.id === "kacak" && k.faz !== "bitti" && k.bitis != null && s.turn >= k.bitis) {
+      k.faz = "bitti";
+      push(s, "kader", `${k.yer} yolu yeniden açıldı.`, "kişisel", false, { k: "evj.kir.kacak.bitti", p: [{ pl: k.yer || "" }] });
+    }
+  }
+}
+
 export function migrate(s: GameState): GameState {
   const p: any = s.player || {};
   // Onarım: yarım yazılmış / elle düzenlenmiş kayıtta çekirdek alanlar eksik ya da sayı-dışıysa motor ilk ayda çökmesin (göç-fuzz denetimi).
@@ -12911,6 +13112,7 @@ export function migrate(s: GameState): GameState {
   if (!p.child_invests) p.child_invests = {};
   if (!p.equipped) p.equipped = { silah: null, zirh: null };
   if (!p.home_name) p.home_name = p.location_name;
+  if (p.kirilmalar !== undefined) { const kl = Array.isArray(p.kirilmalar) ? p.kirilmalar.filter((k: Kirilma) => !!k && typeof k === "object" && KIRILMA_IDLERI.has(k.id) && Number.isFinite(k.t)) : []; if (kl.length) p.kirilmalar = kl; else delete p.kirilmalar; }
   if (!p.mother) p.mother = ["Ayşe","Fatma","Zeynep","Emine","Hatice","Elif"][Math.floor(Math.random()*6)];
   if (!p.father) p.father = ["Mehmet","Ahmet","Mustafa","Hasan","Hüseyin","İbrahim"][Math.floor(Math.random()*6)];
   if (p.crowned === undefined) p.crowned = false;

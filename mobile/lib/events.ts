@@ -1,5 +1,5 @@
 // İkilemler — ay ilerlerken çıkan anlatısal seçimler. Saf veri; etki applyDilemma ile uygulanır.
-import { GameState, Delta, Player, effStat, Opportunity, opportunitiesFor, kapiyaGelen, donumAni, inJail, acikIpler, senlikAni } from "./game";
+import { GameState, Delta, Player, effStat, Opportunity, opportunitiesFor, kapiyaGelen, donumAni, inJail, acikIpler, senlikAni, kirilmaSahnesi, KirSahne } from "./game";
 
 export interface Choice { label: string; delta: Delta; result: string; rk?: string; sans?: number; risk?: { taban: number; ticaret?: number; zeka?: number; kayip: Delta; metin: string }; gercek?: Delta; } // rk: sonuç metni anahtarı (riskli yolun kötü sonucu) · sans: görünür başarı şansı % · risk: kart açılırken zar atılır (şans = taban + ticaret×beceri + zekâ×stat), tutmazsa kayıp uygulanır · gercek: uygulanacak delta (delta kartta gösterilen)
 export interface Dilemma {
@@ -1639,8 +1639,8 @@ export const SON_YAS: Dilemma[] = [
 // eğrisine (çocuklukta merak, gençlikte sınav, orta yaşta soru, yaşlılıkta miras), açık iplere ve son 12 ayın kart türlerine
 // göre puan verir. Nöbetçi: aynı türden kart art arda en çok 3 kez; 30–55 yaş arasında her 18 ayda en az bir orta yaş sorusu.
 // Arayüz yalnız sonucu gösterir (index.tsx); oynanis.cjs aynı işlevi çağırır — ölçülen sıra oyuncunun gördüğü sıradır.
-export type SahneTur = "senlik" | "ikilem" | "orta" | "firsat" | "kapi" | "bos";
-export interface AySahnesi { s: GameState; tur: SahneTur; dilemma?: Dilemma; opp?: Opportunity }
+export type SahneTur = "senlik" | "ikilem" | "orta" | "firsat" | "kapi" | "bos" | "kirilma";
+export interface AySahnesi { s: GameState; tur: SahneTur; dilemma?: Dilemma; opp?: Opportunity; kir?: { tip: KirSahne; kisi?: string } }
 export const ORTA_ARA = 18; // ay: orta yaşta iki soru arasındaki en uzun ara
 const SINIF: Record<string, string> = { ikilem: "ikilem", orta: "orta", firsat: "firsat", kapi: "kapi", senlik: "senlik" }; // orta yaş sorusu kendi destesidir
 // Son gösterilen kartlar (boş aylar atlanır) aynı sınıftan art arda kaç tane?
@@ -1665,6 +1665,8 @@ export function ayinSahnesi(prev: GameState, sonSeq?: number, random: () => numb
   const ortaGecen = orta && ortaSon != null ? prev.turn - ortaSon : 0;
   const kararVar = !!prev.hesap || prev.npcTeklif?.turn === prev.turn;
   if (p.dead || hapis || (kararVar && ortaGecen < ORTA_ARA)) return { s: ortaSon !== prev.orta_son ? { ...prev, orta_son: ortaSon } : prev, tur: "bos" };
+  // Kader kırılması (radikal sonuçlar, aşama 3): vadesi gelen kırılma anı her karttan önce gelir; teklif ayında başka karar yoksa.
+  if (!kararVar) { const kir = kirilmaSahnesi(prev, random); if (kir) return yaz("kirilma", prev, { kir }); }
   const ortaKart = (): AySahnesi | null => {
     const recent = prev.recent_dilemmas || [];
     const son = SON_YAS.filter((d) => (!d.when || d.when(p, prev)) && !recent.includes(d.id));

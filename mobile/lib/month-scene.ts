@@ -1,4 +1,4 @@
-import { GameState, advance, applyDilemma, resolveOpportunity, gameRandom, gunlukDuzen, duzenYemek } from "./game";
+import { GameState, advance, applyDilemma, resolveOpportunity, gameRandom, gunlukDuzen, duzenYemek, kirilmaSec } from "./game";
 import { ayinSahnesi } from "./events";
 import { pendingMonthScene, repairMonthScene, MonthScene } from "./month-scene-state";
 import { tFor } from "./i18n";
@@ -8,7 +8,7 @@ export function prepareMonthScene(prev: GameState, since?: number): GameState {
   if (prev.mpRealm || prev.player.dead || prev.turn <= 0 || prev.monthScene?.turn === prev.turn && prev.monthScene.generation === (prev.player.generation || 1)) return prev;
   const work = { ...prev }, rolled = ayinSahnesi(work, since, () => gameRandom(work));
   const generation = prev.player.generation || 1;
-  const raw: MonthScene = { id: `month:${generation}:${prev.turn}`, generation, turn: prev.turn, kind: rolled.tur, done: !rolled.dilemma && !rolled.opp,
+  const raw: MonthScene = { id: `month:${generation}:${prev.turn}`, generation, turn: prev.turn, kind: rolled.tur, done: !rolled.dilemma && !rolled.opp && !rolled.kir, ...(rolled.kir ? { kir: { ...rolled.kir } } : {}),
     ...(rolled.dilemma ? { dilemma: JSON.parse(JSON.stringify(rolled.dilemma)) } : {}), ...(rolled.opp ? { opp: { ...rolled.opp }, stage: "intro" } : {}) };
   const s = { ...rolled.s, rng_state: work.rng_state };
   return { ...s, monthScene: repairMonthScene(raw, s) };
@@ -26,6 +26,16 @@ export function chooseMonthDilemma(prev: GameState, id: string, index: number): 
   const etki: Record<string, number> = {};
   for (const k of ["money", "reputation", "honor", "fame", "fear", "health", "stat_points"] as const) { const v = Math.round((s.player[k] as number) - (prev.player[k] as number)); if (v) etki[k] = v; }
   return { ...s, monthScene: { ...s.monthScene!, secim: { id: d.id, i: index, label: choice.label, etki } } };
+}
+// Kader kırılması anında seçim: içerik kayıttan türetilir; geçersiz seçim ya da bayat sahne durumu değiştirmez.
+export function chooseMonthKirilma(prev: GameState, id: string, index: number): GameState {
+  const m = pendingMonthScene(prev), k = m?.kir;
+  if (!m || m.id !== id || !k) return prev;
+  const s0 = kirilmaSec(prev, k.tip, index, k.kisi);
+  if (s0 === prev) return prev;
+  const s = finish(s0), etki: Record<string, number> = {};
+  for (const x of ["money", "reputation", "honor", "fame", "fear", "health", "stat_points"] as const) { const v = Math.round((s.player[x] as number) - (prev.player[x] as number)); if (v) etki[x] = v; }
+  return { ...s, monthScene: { ...s.monthScene!, secim: { id: "kir." + k.tip, i: index, label: k.tip, etki } } };
 }
 export function progressMonthOpportunity(prev: GameState, id: string, stage: "play" | "result", success?: boolean): GameState {
   const m = pendingMonthScene(prev);
