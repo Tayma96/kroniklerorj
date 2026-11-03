@@ -23,7 +23,6 @@
 
 ## Açık işler
 - `docs/DEVIR.md` (1 Kasım devri). ElevenLabs Berkay'ın aboneliğiyle onaylı (`.mcp.json`).
-- Çevrimiçi `docs/online/` kapalı; `server/` ve eşliği dokunulmaz.
 - Alt ajan sayısını Berkay belirler (3 Kasım: 3 rol ajanı istedi). Ses planı `docs/SES_PLANI.md`.
 - Ün kazancı tek yerden (`unEkle`, kademe oranları); mülk her alımda %15 pahalı. Math.random göçü sürüyor.
 - Sıradaki (~8 Kasım): çevrimiçi kısım (`docs/online/`, `server/`; protokol eşliği korunur). 3D'de bakış, ayak teması, cilt dokusu.
