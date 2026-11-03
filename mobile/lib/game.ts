@@ -9570,8 +9570,8 @@ export const SOCIAL_AXES: SocialAxis[] = [
 ];
 // ── Ün kademeleri (Hissiyat 2): her kademe somut bir şey yapar; arayüz sonraki kazanımı gösterir ──
 export type UnEksen = "reputation" | "honor" | "fame" | "fear";
-// İtibarda 0–29 "Sıradan" (Lekeli yalnız eksi itibar); öbür eksenler socialTierIndex eşikleri (10/30/55/80).
-export function unKademesi(key: UnEksen, value: number): number { if (key === "reputation") return value < 0 ? 0 : value < 30 ? 1 : socialTierIndex(value); return socialTierIndex(value); }
+// İtibarda 0–29 "Sıradan" (Lekeli yalnız eksi itibar), şerefte 0–29 "Sıradan"; öbür eksenler socialTierIndex eşikleri (10/30/55/80).
+export function unKademesi(key: UnEksen, value: number): number { if (key === "reputation") return value < 0 ? 0 : value < 30 ? 1 : socialTierIndex(value); if (key === "honor") return value < 30 ? 1 : socialTierIndex(value); return socialTierIndex(value); } // şeref eksiye inmez: düşük şeref "Sıradan" (yeni oyuncu "Onursuz" değil)
 export const UN_ESIK: Record<UnEksen, number[]> = { reputation: [-Infinity, 0, 30, 55, 80], honor: [0, 10, 30, 55, 80], fame: [0, 10, 30, 55, 80], fear: [0, 10, 30, 55, 80] };
 // Etkisi olan kademeler (metin: un.<eksen>.<kademe>); sayılar aşağıdaki fonksiyonlarla aynı.
 export const UN_ETKI: Record<UnEksen, number[]> = { reputation: [0, 2, 3, 4], honor: [2, 3, 4], fame: [2, 3, 4], fear: [2, 3] };
