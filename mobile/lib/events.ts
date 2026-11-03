@@ -1522,7 +1522,7 @@ export const SON_YAS: Dilemma[] = [
     when: (p) => p.age >= 50 && (p.properties.length > 0 || p.money >= 500),
     choices: [
       { label: "Hesabı mecliste aç", delta: { reputation: 2, honor: 2, asabiye: 4 }, result: "Kâhya herkesin önünde kızardı; açık kapandı. Hane düzeni sertleşti ama sağlamlaştı." },
-      { label: "Bir keseyle sessizce yolla", delta: { money: -30, asabiye: -3 }, result: "Söylenti çıkmadı; ama evlatlar hanenin gevşediğini kendi aralarında konuştu." },
+      { label: "Bir keseyle sessizce yolla", delta: { money: -30, asabiye: -3, nam: { comert: 3 } }, result: "Söylenti çıkmadı; ama evlatlar hanenin gevşediğini kendi aralarında konuştu." },
       { label: "Defteri büyük evlada devret", delta: { money: -10, asabiye: 5 }, result: "Hesap defterini büyük evlada verdin; ilk gece mum sabaha dek yandı." },
     ],
   },

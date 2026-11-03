@@ -14,7 +14,7 @@ fs.writeFileSync(giris, `export { DILEMMAS, FESTIVALS, ORTA_YAS, SON_YAS } from 
 execSync(`${ESBUILD} ${giris} --bundle --platform=node --format=cjs --outfile=${paket} --log-level=error`, { cwd: mobile, stdio: "inherit" });
 const B = require(paket); fs.unlinkSync(giris); fs.unlinkSync(paket);
 
-const SIRALI = ["money", "health", "hunger", "reputation", "honor", "fame", "stat_points", "standing", "nam.comert", "nam.dindar", "nam.mert"]; // çok = iyi
+const SIRALI = ["money", "health", "hunger", "reputation", "honor", "fame", "stat_points", "standing", "nam.comert", "nam.dindar", "nam.mert", "asabiye"]; // çok = iyi (asabiye: hane birliği 0–100)
 const BELIRSIZ = ["fear", "nam.zalim", "nam.capkin", "addItem"]; // iyi ya da kötü olduğu bağlama bağlı
 const vec = (d) => { const o = {}; for (const [k, v] of Object.entries(d || {})) { if (k === "nam") for (const [n, x] of Object.entries(v)) o["nam." + n] = x; else o[k] = v; } return o; };
 const yener = (a, b) => { // a, b'yi her sıralı değerde tutuyor ve bir yerde geçiyor mu
@@ -26,6 +26,17 @@ const yener = (a, b) => { // a, b'yi her sıralı değerde tutuyor ve bir yerde 
 };
 const kartlar = [...B.DILEMMAS, ...B.ORTA_YAS, ...B.SON_YAS, ...B.FESTIVALS.flatMap((f) => f.variants)]; // orta yaş soruları da (çığır Sütun 3)
 const out = [];
+// Kör nokta bekçisi: SIRALI/BELIRSIZ dışında bir alan "karşılaştırılamaz" sayılıp sessizce atlanır. Bilinmeyen her alan
+// burada adıyla sayılır; yalnız gerekçesi yazılı İZİNLİ alanlar geçer (yeni bir sonuç alanı eklenince denetim körleşmesin).
+const IZINLI = { // alan → gerekçe (sayıyla kıyaslanamayan, yönü bağlama bağlı sonuç)
+  rift: "kardeş kırgınlığı: çok = kötü, ama hep vasiyet/birlik kazancıyla birlikte gelir (bedel); tek başına sıralanmaz",
+  veraset: "vasiyetin satırı (ilk/gozde/esit): sayı değil, yol seçimi",
+  marry: "evlilik: durum değişimi (yay sonu); yol seçer, sayıyla kıyaslanmaz",
+};
+const bilinmeyen = new Map();
+const tara = (kaynak, d) => { for (const k of Object.keys(vec(d))) if (!SIRALI.includes(k) && !BELIRSIZ.includes(k) && !(k in IZINLI)) bilinmeyen.set(k, [...(bilinmeyen.get(k) || []), kaynak]); };
+for (const dl of kartlar) dl.choices.forEach((c, i) => { tara(dl.id + ":" + i, c.delta); if (c.risk) tara(dl.id + ":" + i + "(risk)", c.risk.kayip); });
+for (const arc of B.ARCS) for (const st of Object.values(arc.stages)) st.choices.forEach((c, i) => tara(arc.id + "." + st.id + ":" + i, c.delta));
 for (const dl of kartlar) {
   const ch = dl.choices.map((c, i) => ({ i, label: c.label, seed: B.DILEMMA_SEEDS[dl.id + ":" + i] || B.DILEMMA_IPLERI[dl.id + ":" + i] /* ip açan seçim de gizli sonuçlu */, sonuc: c.risk ? [vec(c.delta), vec(c.risk.kayip)] : [vec(c.delta)] }));
   for (const a of ch) for (const b of ch) {
@@ -39,5 +50,6 @@ for (const arc of B.ARCS) for (const st of Object.values(arc.stages)) { sahne++;
   for (const a of ch) for (const b of ch) if (a !== b && a.next === b.next && yener(a.v, b.v)) out.push(`${arc.id}.${st.id}: [${a.i}] "${a.label}" ${JSON.stringify(a.v)}  ≻  [${b.i}] "${b.label}" ${JSON.stringify(b.v)} (ikisi de → ${a.next})`);
 }
 console.log(`${kartlar.length} kart tarandı (ikilem ${B.DILEMMAS.length}, orta yaş ${B.ORTA_YAS.length}, şenlik ${kartlar.length - B.DILEMMAS.length - B.ORTA_YAS.length}) · ${sahne} yay sahnesi`);
+if (bilinmeyen.size) { for (const [k, yer] of bilinmeyen) console.log(`TANINMAYAN ALAN: ${k} (${yer.length} yerde, ör. ${yer.slice(0, 4).join(", ")}) — SIRALI/BELIRSIZ/IZINLI'ye gerekçeyle ekle`); process.exitCode = 1; }
 if (out.length) { console.log(out.join("\n")); console.log(`ÖLÜ KARAR: ${out.length} kart`); process.exit(1); }
 console.log("ÖLÜ KARAR: TEMİZ (0 kart)");
