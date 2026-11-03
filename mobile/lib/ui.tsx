@@ -151,7 +151,13 @@ const MILESTONE_LABEL: Record<string, { tag: string; icon: string }> = {
   rakip: { tag: "Çarşıda Rakip", icon: "banner" },
   cirak: { tag: "Peştamal Töreni", icon: "graduate-cap" },
   pabuc: { tag: "Pabucun Dama Atıldı", icon: "boot" },
+  suç: { tag: "Zindan", icon: "prisoner" }, suç_yakalandı: { tag: "Yakalandın", icon: "prisoner" }, taht_basarisiz: { tag: "Taht Elden Kaçtı", icon: "crown" },
+  nemesis: { tag: "Hasım", icon: "skull" }, kan_davası: { tag: "Kan Davası", icon: "skull" }, kan_defteri: { tag: "Kan Defteri", icon: "book" },
+  entrika: { tag: "Entrika", icon: "hood" }, ocak_savasi: { tag: "Ocak Savaşı", icon: "crossed-swords" }, saglik: { tag: "Hastalık", icon: "healing" },
 };
+// Kötü ve ağır haber (plan aşama 0, Task 1): kutlama efekti yok; kötü olanda kan kırmızısı, ağır olanda köz rengi vurgu.
+export const KOTU_TUR = new Set(["ölüm", "pabuc", "suç", "suç_yakalandı", "taht_basarisiz"]);
+export const AGIR_TUR = new Set([...KOTU_TUR, "nemesis", "kan_davası", "kan_defteri", "entrika", "ocak_savasi", "saglik"]);
 
 const MS_ACCENT: Record<string, string> = {
   doğum: C.ink, dogum: C.ink, evlilik: C.rose, kariyer_terfi: C.gold, başarım: C.gold,
@@ -181,8 +187,8 @@ export function MilestoneModal({ visible, type, text, onClose, kok, etkiler }: {
   const meta = MILESTONE_LABEL[type] || { tag: "Dönüm Noktası", icon: "star" };
   const { t } = useI18n();
   const msTag = (() => { const k = "ms." + type; const v = t(k); return v !== k ? v : t("ms.genel"); })(); // her tip 6 dilde; bilinmeyen tip genel "dönüm noktası"na düşer (Türkçe etiket sızmaz)
-  const accent = MS_ACCENT[type] || C.gold;
-  const celebratory = type !== "ölüm" && type !== "pabuc"; // utanç anı kutlanmaz
+  const accent = MS_ACCENT[type] || (KOTU_TUR.has(type) ? C.blood : AGIR_TUR.has(type) ? C.ember : C.gold);
+  const celebratory = !AGIR_TUR.has(type); // kötü ve ağır haber kutlanmaz (zindan, hasım, kan davası, hastalık…)
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable onPress={onClose} style={{ flex: 1, backgroundColor: "rgba(6,4,2,0.9)", alignItems: "center", justifyContent: "center", padding: 28 }}>
