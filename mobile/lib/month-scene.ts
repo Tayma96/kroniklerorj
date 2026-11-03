@@ -1,4 +1,4 @@
-import { GameState, advance, applyDilemma, resolveOpportunity, gameRandom, gunlukDuzen } from "./game";
+import { GameState, advance, applyDilemma, resolveOpportunity, gameRandom, gunlukDuzen, duzenYemek } from "./game";
 import { ayinSahnesi } from "./events";
 import { pendingMonthScene, repairMonthScene, MonthScene } from "./month-scene-state";
 import { tFor } from "./i18n";
@@ -41,7 +41,7 @@ export function advanceWithMonthScene(prev: GameState, months = 1, stopAtEvent =
   for (let i = 0; i < Math.min(12, Math.max(0, Math.floor(months))); i++) {
     if (pendingMonthScene(s) || s.player.dead) break;
     s = gunlukDuzen(s); // Hissiyat 4: ayın rutini (çalış, acıkınca ye) ay geçerken kendiliğinden
-    const before = s, next = advance(s, 1);
+    const before = s, next = duzenYemek(advance(s, 1)); // yeni ayın sofrası da düzende
     if (next.turn === before.turn) break;
     s = prepareMonthScene(next, before.hseq ?? 0);
     if (pendingMonthScene(s) || s.pendingScene || s.micro || s.saga?.scene || s.player.crowned && s.divan || s.player.tezgah) break; // tezgâh kararı bekliyorsa çok aylık ilerleme durur

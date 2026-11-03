@@ -20,7 +20,7 @@ Berkay'ın geri bildirimi: oyun "site gibi", tıklama çok, sonuç hissedilmiyor
    getirdiğini (`etki`) taşır, pencere "↺ 26 yaşındaki kararın: “Komşunun Yangını”" satırı ve etki çipleriyle açılır.
    Ölçüm (10 hayat): 241 geri dönüş penceresi; kart kökenli %32'nin hepsinde kart adı çözülüyor (öbürleri kart dışı tohum).
 4. **Az tıklama** (yapıldı): düzen (`gunlukDuzen`, `duzenAyarla`; Emek panelinde anahtar, varsayılan açık): ay geçerken
-   çalışılmadıysa son seçilen tarzla çalışılır, açlık <40 ise sessizce yenir; çok aylık ilerleme bekleyen tezgâh kararında
+   çalışılmadıysa son seçilen tarzla çalışılır, açlık <40 ise ay geçişinden önce ve sonra sessizce yenir (yeni ay boş açlık uyarısıyla açılmaz); çok aylık ilerleme bekleyen tezgâh kararında
    durur; düzen açıkken "çalışmadın" rozetleri yok. Ölçüm (6 hayat, yalnız "Ayı İlerlet"): açık → uygun ayların %100'ü
    çalışıldı, açlık 0, ort. 57 yaş/3.144 akçe; kapalı (eski) → hiç çalışılmadı, ort. 14 yaşta açlık.
 5. **Hayatın derdi** (yapıldı): 14 yaşından sonra beş yoldan biri (`DERTLER`: Ustalık kademe 1/2/3, Servet 600/1500/3000
