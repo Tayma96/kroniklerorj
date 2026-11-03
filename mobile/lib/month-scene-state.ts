@@ -32,6 +32,11 @@ export function repairMonthScene(raw: unknown, s: GameState): MonthScene | undef
   if (m.kind === "kirilma") {
     const k = m.kir;
     if (!k || !["teklif", "haber", "alacakli", "ikinci"].includes(k.tip) || k.kisi !== undefined && (typeof k.kisi !== "string" || k.kisi.length > 64)) return undefined;
+    // Sahne kayıttaki kırılmayla örtüşmüyorsa (bozuk ya da ayıklanmış kayıt) kapanmış sayılır: ay kilitli kalmaz.
+    const kl = Array.isArray(s.player.kirilmalar) ? s.player.kirilmalar : [], ort = kl.filter((x) => x.id === "ortaklik");
+    const uygun = k.tip === "alacakli" ? ort.some((x) => x.faz === "alacakli") : k.tip === "haber" ? ort.some((x) => x.faz === "yolda" && (x.yol === "buyuk" || x.yol === "kucuk"))
+      : k.tip === "ikinci" ? kl.some((x) => x.id === "katip") && !ort.some((x) => x.ikinci) : !ort.length;
+    if (!uygun) return { ...base, done: true };
     return { ...base, kir: { tip: k.tip, ...(k.kisi ? { kisi: k.kisi } : {}) } };
   }
   if (m.kind === "firsat") {

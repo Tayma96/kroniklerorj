@@ -55,6 +55,8 @@ const assert = require('node:assert/strict'), path = require('node:path'), esbui
     const sec = m.chooseMonthKirilma(kir, kir.monthScene.id, 0); assert(sec.monthScene.done && !m.pendingMonthScene(sec)); assert.equal(sec.monthScene.secim.id, 'kir.teklif');
     assert(sec.monthScene.secim.etki.money < 0, 'pay keseden çıkmalı'); assert.equal(m.chooseMonthKirilma(sec, kir.monthScene.id, 0), sec, 'çift tık');
     const bozuk = copy(kir); bozuk.monthScene.kir.tip = 'yok'; assert.equal(r.repairMonthScene(bozuk.monthScene, bozuk), undefined);
+    const yetim = copy(kir); yetim.monthScene.kir.tip = 'alacakli'; const yr = r.repairMonthScene(yetim.monthScene, yetim); assert(yr && yr.done, 'kayıtta karşılığı olmayan kırılma sahnesi ayı kilitlememeli');
+    const ym = g.migrate(JSON.parse(JSON.stringify(yetim))); assert(!m.pendingMonthScene(ym)); assert(m.advanceWithMonthScene(ym, 1).turn > ym.turn, 'ay ilerlemeli');
     const ileri = m.advanceWithMonthScene(sec, 6); assert(ileri.turn > sec.turn, 'seçimden sonra ay ilerlemeli'); }
   console.log('AYLIK KARAR: kart/risk kaydı, yeniden açılış, sonuç/ret/çift tık, fırsat ara sonucu, hızlı ilerleme, bozuk kayıt, ölüm/hapis, kırılma anı ve MP temiz.');
 })().catch(e => { console.error(e); process.exitCode = 1; });
