@@ -78,6 +78,27 @@ Elenenler: sıçramalı ve dönen kılıç-kalkan saldırıları, 16 karelik ace
 Okçu kliplerinin ikisi de oku omuz üstünden sırttaki sadaktan alıyor; sadak sırtta olacak (tarihte Türk okçusunun sadağı sağ
 kalçadaydı; kalça sadağı için oradan çeken bir hareket gerekir).
 
+## 4c. Her klibin geçtiği iyileştirmeler (Mixamo olduğu gibi kullanılmaz)
+
+Hareket:
+1. **Görüş:** gardda kalkanın üst kenarı göz hizasının en az 5 cm altında; darbe gelirken ve savuşturmada kalkar
+   (`k12_kalkan.py`; ilk uygulamada kenar 22 cm yüksekti, gard karelerinde hedefe indi).
+2. **Bakış:** baş ve gözler rakibe kilitli; Mixamo'da baş boşluğa bakıyor.
+3. **Ayak teması:** basan ayak kaymaz, yere gömülmez ya da havada kalmaz (IK kilidi, `denetim.py` ölçüsü).
+4. **Ağırlık ve zamanlama:** silah ağırlığına göre hazırlık, vuruş ve toparlanma oranı; vuruş anında 2–3 karelik
+   darbe duraklaması; zırhlı piyadede sıçrama yok.
+5. **Duruş:** oyun tarzı kambur ve aşırı açık bacak duruşu daraltılır; tarihî piyade daha dik durur, kalkan önde.
+6. **Tutuş:** parmaklar bizim kabzayı sarar; iki elli sapta sol el sapa oturur; kılıç kında, yay ve ok elde doğru yerde.
+7. **İkincil hareket:** entari ve etek kumaşı, lamel zırh, kın ve askıların sallanması, nefes.
+8. **Tekrar kırma:** aynı klip her seferinde birebir aynı görünmesin (küçük zamanlama ve açı farkları).
+
+Görüntü (asıl çekimde; dokular CC0, yapay zekâ yok):
+1. **Cilt:** "plastik" görünüm biter: gözenek normal haritası, pürüz haritası, yüzey altı saçılma ayarı, güneş ve toz izi.
+2. **Kumaş:** dokuma dokusu, yıpranma, toz, kök boya kırmızısı ve çivit gibi dönem renkleri.
+3. **Deri ve metal:** çizik, pas, yağ izi; lamel zırhta deri bağların aşınması.
+4. **Kalkan ve yay:** ahşap gövde, deri kaplama, demir kabara, boyalı motif; boynuz ve sinir katmanlı Türk yayı.
+5. **Işık:** HDRI, gün batımı tonu, havada toz, alan derinliği ve hafif hareket bulanıklığı.
+
 ## 5. Sıra
 
 1. Gelen dosyalar sete göre ayrılır ve 3. bölümdeki kalıba hizalanır. Her set için gri önizleme paftası çıkarılır.
