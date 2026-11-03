@@ -151,5 +151,15 @@ const rows: Record<string, string[]> = {
   // Geri dönen sonucun kökü (Hissiyat 3)
   "kok.satir": ["↺ %1 yaşındaki kararın: “%2”", "↺ Your choice at age %1: “%2”", "↺ Tu decisión a los %1 años: «%2»", "↺ A tua decisão aos %1 anos: «%2»", "↺ قرارك في سنّ %1: «%2»", "↺ Твоё решение (возраст %1): «%2»"],
   "kok.genel": ["↺ Bu, geçmişteki bir seçiminin karşılığı.", "↺ This answers a choice from your past.", "↺ Es la respuesta a una decisión de tu pasado.", "↺ É a resposta a uma decisão do teu passado.", "↺ هذا جوابُ قرارٍ من ماضيك.", "↺ Это ответ на решение из твоего прошлого."],
+  // Ağır ve kötü haber pencere etiketleri (plan aşama 0, Task 1)
+  "ms.suç": ["Zindan", "The Dungeon", "La mazmorra", "A masmorra", "الزنزانة", "Темница"],
+  "ms.suç_yakalandı": ["Yakalandın", "Caught", "Captura", "Captura", "القبض", "Арест"],
+  "ms.taht_basarisiz": ["Taht Elden Kaçtı", "The Throne Slipped Away", "El trono se escapó", "O trono escapou", "ضاع العرش", "Трон упущен"],
+  "ms.nemesis": ["Hasım", "A Sworn Enemy", "Un enemigo jurado", "Um inimigo jurado", "الخصم اللدود", "Заклятый враг"],
+  "ms.kan_davası": ["Kan Davası", "Blood Feud", "Venganza de sangre", "Vingança de sangue", "الثأر", "Кровная месть"],
+  "ms.kan_defteri": ["Kan Defteri", "The Blood Ledger", "El libro de sangre", "O livro de sangue", "سجل الدم", "Книга крови"],
+  "ms.entrika": ["Entrika", "Intrigue", "Intriga", "Intriga", "المكيدة", "Интрига"],
+  "ms.ocak_savasi": ["Ocak Savaşı", "War of Houses", "Guerra de casas", "Guerra de casas", "حرب البيوت", "Война домов"],
+  "ms.saglik": ["Hastalık", "Sickness", "Enfermedad", "Doença", "المرض", "Недуг"],
 };
 export const HISSIYAT_METIN = Object.fromEntries((["tr", "en", "es", "pt", "ar", "ru"] as Lang[]).map((lang, i) => [lang, Object.fromEntries(Object.entries(rows).map(([key, values]) => [key, values[i]]))])) as Record<Lang, Record<string, string>>;
