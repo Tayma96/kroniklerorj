@@ -3,7 +3,7 @@
 # json: {"ad": "harman_kalkan",
 #        "dizi": [["mx_bekleme", 1, 30], ["tk_kombo", 1, 45, 1.0], ["mx_bekleme", 30, 76]],   # [klip, ilk, son, hız]
 #        "gecis": 8,                                                                         # kare
-#        "katman": {"klip": "mx_kalkan_gard", "kemikler": "sol_kol", "agirlik": 1.0},        # ör. kalkan kolu
+#        "katman": {"klip": "mx_kalkan_gard", "kemikler": "sol_kol", "agirlik": 1.0, "bos": [[31, 48]]},  # kalkan kolu
 #        "kalkan": true}                                                                     # basit yuvarlak kalkan
 # Eşyaya göre kullanım: kalkan takılıysa sol kol kalkan gardından gelir (gövdeyle birlikte döner); ağır silahta (gürz,
 # balta) hız < 1 (kaldırış ağır), hançerde hız > 1. Kök: her parça bir öncekinin bittiği yerden başlar (geri kayma yok).
@@ -70,7 +70,13 @@ for t in range(1, toplam + 1):
     if kat_act:
         kp = ornek(kat_act, kat_act.frame_range[0] + ((t - 1) % kL))
         maske = SOL_KOL if kat.get("kemikler") == "sol_kol" else set(kat.get("kemikler", []))
-        for k in maske: poz[k] = slerp(poz[k], kp[k], kat.get("agirlik", 1.0))
+        # Katman pencere dışında tam, "bos" pencerelerde (ör. kalkanlı savuşturma klibi kendi kolunu oynar) 4 karede söner.
+        kw = kat.get("agirlik", 1.0)
+        for a0, a1 in kat.get("bos", []):
+            if a0 - 4 <= t <= a1 + 4:
+                u = 1.0 if a0 <= t <= a1 else (1 - (a0 - t) / 4 if t < a0 else 1 - (t - a1) / 4)
+                kw = min(kw, kat.get("agirlik", 1.0) * (1 - u * u * (3 - 2 * u)))
+        for k in maske: poz[k] = slerp(poz[k], kp[k], kw)
     for k in kemikler:
         q = poz[k]
         if k in onceki and onceki[k].dot(q) < 0: q = -q
