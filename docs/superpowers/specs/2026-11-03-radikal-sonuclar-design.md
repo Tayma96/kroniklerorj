@@ -24,6 +24,12 @@ Bu kararlar gelmeden tasarımın bazı parçaları yazılamaz. Her birinde öner
 | 10 | **Çok oyunculu modda** kırılmalar? | **İlk sürümde kapalı.** | Sunucu turu 5 dakikada bir ilerliyor; bekleyen kırılma onu kilitlerdi. |
 | 11 | **Birleşmeler:** Atölye + Meslek tek ekran, Çöpçatan → kişi sayfasındaki "evlen" yolu? | **Evet, ama son aşamada.** | Riskli yeniden yapı; önce hissedilen değişiklikler. |
 | 12 | **Sinematik ve anlatıcı sesi:** kırılma anları için 2–3 çekimlik mini sahne ve yeni anlatıcı cümleleri (6 dil) ElevenLabs kotasından harcansın mı? | **Önce sessiz ve görselsiz yapılsın, kota durumuna göre sonra eklensin.** | Ek ücret çıkmaması kuralı. |
+| 13 | **Kırılma ömürlük mü?** | **Ömürlük bir iz kalır; telafi yolu yeni bir kapı açar** (eski hâle tam dönüş yok). | Kalıcılık radikal sonucun özü; telafi küstürmeyi önler. |
+| 14 | **Hangi kırılmalar vârise geçer?** | **Kan davası ve bir nesillik "lekeli soy" geçer; sürgün, kaçaklık ve iflas geçmez** (iflasta vâris yalnız "batık ocak" başlangıcı alır). | Ölüp vârisle kırılmadan kaçılamasın, ama soy sonsuza kadar cezalanmasın. |
+| 15 | **Kırılma ölüme götürebilir mi?** (ör. kan davasında suikast) | **Evet, ama yalnız açıkça riskli seçilen yolda** (hasımla hesaplaşma) ve risk seçimden önce görünür. | Bugün ölüm yaşı seçimden bağımsız. |
+| 16 | **Göstergelerin doyması:** iyi oyuncu itibarda 17 yaşında 100'e varıyor, sonraki 40 yılın bütün "+1"leri boşa gidiyor. Azalan kazanç ve beslenmeyen ünün aşınması gelsin mi? Eski kayıtlara nasıl uygulansın? | **Gelsin; eski kayıtlarda yalnız ileriye dönük** (100'deki itibar silinmez, ama artık kendiliğinden korunmaz). | Rakamların bir anlamı olması için tavana erken çarpmamalılar. Bu, Hissiyat 2 kademelerini "herkese açık"tan "kazanılır"a çevirir; oyun biraz zorlaşmış hissedebilir. |
+| 17 | **Mülk farmı kısılsın mı?** Mülk alan bot 60'larında ortalama 169 bin akçeye çıkıyor, pasif oyuncu 3 binde kalıyor (55 kat). | **Evet:** her yeni mülk biraz daha pahalı, 5–20 bin akçe arası vergi boşluğu kapanır. Hedef: etkin oyuncu pasiften 1,5–10 kat zengin. | Sınırsız bileşik kira, kart kararlarını önemsizleştiriyor. |
+| 18 | **Kayıt yükleyip yeniden deneme:** | **Tek otomatik kayıt; kırılmanın zarı kayda bağlı**, yeniden yükleyince aynı sonuç. | Radikal sonuç yeniden deneme isteği doğurur. |
 
 ---
 
@@ -91,7 +97,41 @@ Berkay'ın sözleriyle:
 - **Hiçbir şeyi değiştirmeyen ya da başkasıyla aynı işi yapan ekranlar:** Haberler, Harita, Kronik, Tarih, Roman, Başarımlar, Emeği Geçenler (`emek`), SSS, Divan (ölü), İlişkiler (yalnız yönlendirir); tekrarlar: Atölye/Meslek, Çöpçatan/kişi sayfasında evlilik, Mahalle/kişi sohbeti, Görevler/Hayatın Derdi, Beceriler/Karakter.
 
 ### 3.4 Motor neden sonucu düzleştiriyor (sistem ve denge analisti)
-*(Analist raporu geldiğinde bu bölüm doldurulacak: düzleştirici envanteri, seçim politikalarına göre ayrışma simülasyonu, motor modeli, istismar riskleri, kabul ölçütleri.)*
+
+**Kısa hüküm: seçimler sayıları değiştiriyor, hayatın şeklini değiştirmiyor.**
+
+**Ayrışma ölçümü.** 62 tamamen belirlenimci hayat, 9 seçim politikası, tohum 1000–1007, düzen açık, ölüm ya da 90 yaşa kadar. Betikler: `scratchpad/plan_analist/ayrisma.cjs`, `ozet.cjs`.
+
+| politika | ölüm yaşı | servet | itibar | şeref | şöhret | korku | kademe | evlat | mülk | evli | zindan | hasım | şehir değişti |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| hep ilk seçenek | 66,3 | 3.080 | 99 | 100 | 100 | 14 | 0 | 2,4 | 0 | %100 | 0 | 0 | %0 |
+| hep ikinci seçenek | 63,1 | 2.357 | −34 | 43 | 97 | 80 | 0 | 1,9 | 0 | %100 | 0 | 0,5 | %0 |
+| rastgele | 58,1 | 3.542 | 97 | 91 | 97 | 34 | 0 | 3,0 | 0 | %100 | 0 | 0,5 | %0 |
+| hep iyi | 53,6 | 3.527 | 100 | 100 | 100 | 11 | 0 | 2,1 | 0 | %100 | 0 | 0 | %0 |
+| hep kötü | 65,6 | 2.178 | −87 | 3 | 100 | 100 | 0 | 2,3 | 0 | %100 | 0 | 0 | %0 |
+| açgözlü | 62,3 | 3.690 | 99 | 79 | 100 | 67 | 0 | 2,4 | 0 | %100 | 0 | 0 | %0 |
+| etkin (menüleri kullanan) | 56,1 | 169.167 | 100 | 99 | 96 | 14 | 0 | 2,9 | 27 | %100 | 0 | 0 | %0 |
+| usta (etkin + lonca sınavı) | 56,8 | 248.053 | 100 | 100 | 100 | 15 | 3 | 3,3 | 34 | %100 | 0 | 0 | %0 |
+
+- **Hayatın şekli hiç ayrışmıyor:** aynı tohumlu her çiftte şehir 8/8 aynı, evlilik 8/8 aynı (herkes evli, itibarı −97 olan bile), zindan, kademe ve mülk farkı 0.
+- **Servet ve ölüm yaşındaki fark rastlantı kadar:** "hep ilk" ile "hep ikinci" arasındaki servet farkı 724 akçe, ama aynı politikaya yalnız bir fazladan zar atınca bile fark 638 akçe. En uçtaki iyi-kötü farkı 1.467 akçe.
+- **Göstergeler erken doyuyor:** iyi oyuncu itibarda 100'e 15–18, şerefte 15–22, şöhrette 30–44 yaşında varıyor; kötü oyuncu bile şöhrette 35–43 yaşında 100'de. Sonraki ~40 yılın bütün "+1 itibar"ları boşa gidiyor.
+- **Ters teşvik:** iyi hayatlar ortalama 53,6, kötüler 65,6 yıl yaşıyor; en ahlaklı seçeneklerin toplam sağlık bedeli −63, en ahlaksızlarınki +8. n=8, daha çok tohumla doğrulanmalı, ama "iyilik ömrü kısaltıyor, kötülük bedelsiz" pusulanın 7. kuralıyla çelişiyor.
+- **Asıl güç menüde, kartlarda değil:** mülk alan "etkin" bot 55 kat zengin; bu da sınırsız bileşik kira (bir farm) ve yine hayatın şeklini değiştirmiyor.
+
+**Düzleştiriciler (21 madde, başlıcaları):**
+- Sert tavanlar: itibar ±100, öbür eksenler 0–100; 155 noktada `Math.min(100, …)`.
+- Artışların %68'i ≤3 puan; 167 kartta bir seçeneğin en büyük itibar etkisi medyanı 2, ≥10 olan yok.
+- Kart sonucu (`Delta`, `game.ts:11222`) yalnız sayı taşıyor; hiçbir kart bir kapıyı açıp kapatamıyor.
+- Kendiliğinden görücü usulü evlilik (`game.ts:3389`): 24–55 yaş arası her bekâra ayda ~%3,5; itibar şartı yok → herkes evli.
+- Yaşam bakımı vergisi (`lifestyleUpkeep`, `game.ts:298`) pasif serveti ~3,4 binde sabitliyor; karttan gelen para geri alınıyor.
+- Her ay sağlık +2 iyileşme (`game.ts:4016`): kartların sağlık bedeli birkaç ayda siliniyor.
+- Suç izi her ay kendiliğinden sönüyor (`game.ts:3957`).
+- `jit` (`game.ts:11264`): aynı seçim ±%25 farklı sonuç; sinyal bulanıklaşıyor.
+- Gecikmeli sonuçlar (tohum, ip, yankı) yalnız ±2–8 itibar, 15–120 akçe ödüyor ve zaten doymuş göstergeye yazıyor.
+- Vâris atanın itibarının yarısını alıyor; her nesil ortalamaya çekiliyor.
+- Yönetmen kart türünü yalnız yaş ve çeşitliliğe göre seçiyor; 124 ikilemin ~%63'ünde koşul yalnız yaş. **"Popuplar rastgele" hissinin kaynağı bu:** hayatın durumu kart akışını yönlendirmiyor.
+- Ek kör nokta: ölü karar denetimi (`olu-karar.cjs:20`) tanımadığı alanı "karşılaştırılamaz" sayıp atlıyor; kartlara yeni alan eklenirse sessizce körleşir.
 
 ---
 
@@ -244,10 +284,139 @@ Tam ekran karartma → tek cümle → **değişen dünya özeti** ("Yurdun: Kony
 Kural: kutlama bayrağı olayın **tonuna** bağlanır (iyi / kötü / ağır), bugünkü gibi yalnız iki türe değil. `GameEvent`'e opsiyonel `ton` alanı.
 
 ## 7. Motor tasarımı
-*(Analist raporu geldiğinde: kayıt alanları, değişecek fonksiyonlar, istismar riskleri ve çözümleri.)*
+
+### 7.1 İki katman: kırılma anı ve hayat hâli
+- **Kırılma anı (K1–K8, bölüm 5.4):** oyuncunun önüne gelen büyük karar.
+- **Hayat hâli (kırılmanın bıraktığı iz):** seçimin sonucunda hayata yerleşen kalıcı durum; kapıları kapatır ve açar.
+
+| Hâl | Kapatır | Açar | Ek | Vârise |
+|---|---|---|---|---|
+| **Lekeli** | görücü evliliği, lonca sınavı, vakıf | suç çevresi, haydut pazarlığı | itibar tavanı 30 | 1 nesil |
+| **Sürgün** | o şehre giriş, mülk alma | kervan | gelir −%40, 10 yıl | hayır |
+| **Kan davası** | hasmın şehri | haydut pazarlığı | suikast riski | evet |
+| **İflas (batık)** | mülk alma, kefillik | kervan | 5 yıl | yalnız "batık ocak" başlangıcı |
+| **Himaye (bey adamı)** | — | divan, iltizam, lonca sınavında destek | gelir −%10 (haraç) | hayır |
+| **Kaçak** | şehir, lonca sınavı | suç çevresi, kervan | — | hayır |
+| **Derviş** | mülk alma, iltizam | vakıf | — | hayır |
+
+Kural: her hâl en az bir kapı kapatır ve en az bir kapı açar (ölü karar olmaz); aynı anda en çok 2 telafi yolu açık.
+
+### 7.2 Kayıt (hepsi opsiyonel ve eklemeli)
+```ts
+// Player
+kirilmalar?: Kirilma[];  // ömürde en çok ~6–8; eski kayıtta yok
+export interface Kirilma {
+  id: KirilmaId; t: number;              // hâl kimliği, tur
+  kok?: number;                          // karar izi (Hissiyat 3 "kok" yolu)
+  kaynak: string;                        // "dil:<kart>:<seçenek>" | "seed:<kaynak>" | "arc:…" | "menu:<eylem>" (zorunlu)
+  bitis?: number;                        // yoksa ömürlük
+  telafi?: { adim: number; hedef: number };
+  nesil?: boolean; yer?: string;
+}
+// GameState
+kirilma?: { id: string; turn: number }; // bekleyen kırılma anı (ay geçişini durdurur)
+```
+Hayatın hâli ayrı alanda tutulmaz; `halOf(p)` ile `kirilmalar`dan türetilir (tek kaynak, göç riski yok).
+
+### 7.3 Merkezi kapı tanımı ve fonksiyonlar
+- `KIRILMA_KAPI: Record<KirilmaId, { kapar, acar, gelir?, tavan?, sure?, nesil? }>`: hangi hâlin hangi kapıyı kapattığı tek yerde.
+- `kapiAcik(s, kapi, yer?) → { acik, neden?: { id, kok } }`: arayüz nedeni doğrudan gösterir: "Kapalı: 31 yaşındaki 'Yalancı Şahit' kararın".
+- `kirilmaUygula(s, id, { kaynak, kok, yer })`: id başına ömürde bir kez; kronikte kalıcı olay (pencere açar).
+- `kirilmaMirasi(prev)`: hem `heirPreview` hem `continueAsHeir` kullanır; iki ekran aynı sonucu gösterir.
+- `yurtDegistir(s, hedef)` (yeni): `home_name`'i değiştirir; eski mülk satılır ya da kiraya verilir; lonca bağı ve tanınırlık düşer.
+- İflas kuralı (yeni, küçük): büyük ortaklığın kaybında mülklerin yarısı gider, "batık" hâli.
+
+### 7.4 Değişecek yerler
+
+| Yer | Değişiklik |
+|---|---|
+| `game.ts:11222` `Delta` | `kirilma?: KirilmaId` |
+| `game.ts:11250` `applyDilemma`, `:11441` `advanceArc` | `kirilma` varsa `kirilmaUygula` (kart ve yaylardan) |
+| `game.ts:1788` `Seed.etki`, `:1832` `germinateSeed`, ip sistemi (`ipAc`, `ipTick`) | Büyük kırılmalar 6–24 ay önceden ip olarak görünür; vade dolunca uygulanır; ilgili kişinin huyu son kararı verir |
+| `game.ts:3389` görücü usulü | Kapı açık + itibar ≥0 şartı |
+| `game.ts:6915` `canCourt`, `:6919` `proposeMarriage` | Lekeli ya da kaçakken kabul şansı düşer |
+| `game.ts:8691` `buyProperty`, `:8754` `sinavDurumu`, `:7187` `travelTo` | Hâl kapıları |
+| `game.ts:5733` `canWork`, `:5690` `workForecast`, `:9579` `itibarFiyat`, `:5671` `esnafAhlaki` | Hâlin gelir çarpanı ve itibar tavanı |
+| `events.ts:1397` `pickDilemma`, `:1687` `ayinSahnesi`; `game.ts:8643` `opportunitiesFor`, `:1535` `kapiyaGelen` | Kart ve kapı havuzu hayatın hâline göre (kaçağa suç kartları, bey adamına divan). "Rastgele popup" düzeltmesi |
+| `ayinSahnesi` | Yeni sahne türü `"kirilma"`; koşul + en az ~8 yıl ara |
+| `month-scene.ts` `advanceWithMonthScene`, `advanceUntilEvent`, düzen | Bekleyen kırılmada ay geçmez |
+| `game.ts:12861` `migrate` | `kirilmalar` dizi değilse silinir, bilinmeyen id ayıklanır; varsayılan yazılmaz |
+| `olu-karar.cjs` | `kirilma` tanınır; her hâlde "kapar" ve "açar" boş olamaz kuralı |
+
+### 7.5 Doyumu kırmak (sayı tarafı)
+- **Azalan kazanç:** gösterge 30'un üstündeyken artış `d × (1 − v/120)`; düşüş tam yansır.
+- **Aşınma:** 55 üstü itibar beslenmezse yılda −2.
+- **Pasif kaynaklara tavan:** görücü evliliğinin +5'i, başarım şöhreti ve benzerleri 30/55 kademesini aşmayı beslemez.
+- **Mülk:** her yeni mülk `fiyat × (1 + 0,15 × adet)`; 5–20 bin arası vergi boşluğu kapanır.
+- **Ters teşvik düzeltmesi:** ahlaklı seçeneklerin bedeli sağlıktan paraya ve zamana kayar; kötülüğün gerçek bedeli kırılma olur (lekeli, kan davası).
+
+### 7.6 Zar ve istismar
+- Kırılma zarı yalnız kayda bağlı akıştan (`gameRandom`) atılır; kaydı yükleyip yeniden denemek aynı sonucu verir. `jit` ve `Math.random` yolları kırılmaya karışmaz.
+- Kırılma id'si ömürde bir kez; telafi ödülü tek seferlik ve kırılma öncesindeki düzeyi aşamaz (kasıtlı kırılma farmı olmasın).
+- Çok oyunculu protokol (`mp/protocol.ts` ↔ `server/src/protocol.ts`, bugün bayt-eş) ilk sürümde değişmez; kırılmalar yalnız tek oyunculu.
 
 ## 8. Uygulama aşamaları
-*(Üç rolün sıralaması birleştirildiğinde doldurulacak.)*
+
+Her aşama ayrı teslim edilir; istersen her aşamadan sonra 300 hayatlık test ve test APK'sı. Her aşamanın sonunda "telefonda ne hissedeceksin" yazılı. Her UI adımında: 320 ve 390 piksel, 6 dil (Arapça sağdan sola), sade mod, 44 piksel dokunma alanı.
+
+### Aşama 0: Temizlik ve ölçüm tabanı (yeni sistem yok)
+- Hayatın Derdi'ni kaldır (karar 3).
+- Kötü haberin tonu: `GameEvent`'e opsiyonel `ton`; `MilestoneModal`'da kutlama yalnız iyi tonda; zindan, yakalanma, kan davası için 6 dilde etiket, kasvetli renk ve çan sesi.
+- "Yok sayılırsa kaybolur" metinleri yumuşar; kayıp bedelsiz olduğu söylenir.
+- Ölçüm tabanı: `ayrisma.cjs` `scripts/_smoke/` altına (8 tohum × 4 politika, <2 dk); `olu-karar.cjs` kör noktası kapanır.
+- **Kabul:** taban kayıtlı (servet farkı rastlantı tabanı 638, şekil ölçütlerinde ayrışma 0/6); `migrate-check`, `i18n-icon-check`, `dil-karisma`, `olu-karar` temiz.
+- **Hissedeceğin:** ana ekran bir panel daha sade; zindan artık kutlama gibi açılmıyor.
+
+### Aşama 1: Doyum ve dengeleyiciler
+- Azalan kazanç, aşınma, pasif kaynak tavanı, görücü evliliğe itibar şartı, mülk fiyatı ve vergi boşluğu, ters teşvik düzeltmesi (bölüm 7.5).
+- **Kabul:** iyi politikada itibarın 100'e çıktığı medyan yaş ≥40 (bugün 17); 40 yaşında itibar: "hep ilk" medyanı 45–75, rastgele ≤70, kötü ≤−30; 50 yaşından önce şöhreti 100 olan hayat ≤%25 (bugün %100); itibarı eksi olanlarda evlilik ≤%60 (bugün %100); etkin/pasif servet oranı 1,5–10 kat (bugün 55 kat); iyi ve kötü politikada ölüm yaşı farkı yok ya da iyilik lehine. `check.cjs`, `ekonomi.cjs`, `karakter-ayna.cjs`, `oynanis.cjs`, `migrate-check` temiz.
+- **Hissedeceğin:** "+2 itibar" yeniden bir şey ifade ediyor; ün ve servet kendiliğinden tavana yapışmıyor.
+
+### Aşama 2: Tıkla, gör, hisset (arayüz, düşük risk)
+- Karar seçilince panel yerinde sonuç kartına döner (seçilen yol + işaretli çipler).
+- Önizleme çiplerine yön ve büyüklük (↑↑, ↓).
+- "Bu ay zorunlu" ve "yapmasan da olur" etiketleri (karar paneli ve Ayı İlerlet ipucu).
+- **Kabul:** 320 piksel çip taşması yok, Arapça çip sırası doğru; her seçimin sonucu karar panelinde görünür.
+- **Hissedeceğin:** seçtiğin şeyin ne getirdiğini hemen ve aynı yerde görüyorsun; neyin zorunlu olduğu belli.
+
+### Aşama 3: Kırılma çekirdeği
+- `kirilmalar` kaydı, `KIRILMA_KAPI`, `kapiAcik`, `kirilmaUygula`, `kirilmaMirasi`; sahne türü `"kirilma"`; bekleyen kırılma ay geçişini durdurur; `migrate`.
+- Kırılma anı şablonu (bölüm 6.3): tam ekran, tek cümle, değişen dünya özeti, ses; kapalı kapılarda "Kapalı: … kararın" satırı.
+- İlk dört hâl: lekeli, sürgün, kan davası, iflas.
+- **Kabul:** kırılmasız kayıtta davranış aşama 1 ile aynı (aynı tohum, aynı politika); `heirPreview` = `continueAsHeir` %100; eski kayıt göçü temiz (`migrate-check`, `goc-fuzz`, `kayit-check`, `varis-check`); 6 dil denetimleri temiz.
+
+### Aşama 4: İlk kırılmalar: servet, göç, suç
+- K4 servet sınavı (iflas ve batık hâli), K5 göç ya da kök (`yurtDegistir`), K3 suç eşiği (lekeli ve kaçak hâlleri).
+- İlgili kartların terfisi (bölüm 5.5: K3, K4, K5 listeleri).
+- **Kabul:** iyi ve kötü politikalar aynı tohumda şekil ölçütlerinin (şehir, evlilik, kademe, zindan, hasım, mülk) en az 3'ünde 8 çiftin en az 4'ünde farklı; servet farkı rastlantı tabanının en az 3 katı (≥1.900 akçe); ölü karar 0; kırılmaların %100'ünde kök çözülüyor; kart ≤0,47/ay; açık gerilim ≤5.
+- **Hissedeceğin:** iflas edebiliyor, başka şehre yerleşebiliyor, adın lekelenebiliyor; ana ekran bunu gösteriyor.
+
+### Aşama 5: Kalan kırılmalar ve kartların akıbeti
+- K1 çıraklık, K2 gönül ve hane, K6 hasım, K7 beyin kapısı, K8 son sayfa; himaye ve derviş hâlleri.
+- ~45 kartın kırılmalara bağlanması, 70'ten fazla kartın akışta tek satıra inmesi, tekrar ve ölü kartların silinmesi.
+- Kart ve kapı havuzunun hayatın hâline göre seçilmesi.
+- **Kabul:** kart ayda ~0,2; ömür başına ağır karar ~5–8; tohum ya da ipe bağlı kart oranı ≥%25 (bugün 12/146); kan davası açıkken ölen atanın vârisinde ip %100 açık; `olay-metin`, `olu-karar`, `yanki-check`, `echo-check`, `saga-fuzz`, `kan-check`, `torun-check` temiz.
+
+### Aşama 6: Az ekran
+- "Bu ay sana açık" tek sayfası (Gündem + Karakter'in aylık düğmeleri + teklifler); düzen aile bakımını da üstlenir.
+- Kişi sayfasında 3 görünür eylem + "daha fazlası".
+- Menü 4 grup → 3 (Yer, Güç, Defter); Divan kalkar; Emeği Geçenler ve SSS Ayarlar'a; Haberler Tarih'e filtre.
+- **Kabul:** derin bağlantılar taranır (kalkan ekrana giden `router.push` kalmaz); eski kayıt ölü ekrana açılmaz; gezinme noktası ~20.
+- **Hissedeceğin:** oyun bir ana ekran, bir sayfa ve birkaç sabit yerden oynanıyor.
+
+### Aşama 7: Birleşmeler ve sinematik (en son, onayla)
+- Atölye + Meslek tek ekran; Çöpçatan kişi sayfasındaki evlilik yoluna.
+- Göç, iflas, kan davası için 2–3 çekimlik mini sahneler ve anlatıcı cümleleri (ElevenLabs kotası onayıyla).
 
 ## 9. Riskler
-*(Birleştirildiğinde doldurulacak.)*
+- **Oyun zorlaşmış hissedebilir:** doyumun kırılması kademeleri "kazanılır" yapar. Önlem: aşama 1'den sonra telefonda deneme, eşikleri gerekirse yumuşatma.
+- **Metin yükü:** kırılmalar ve hâller için ~250–320 yeni dize × 6 dil; Arapça ve Rusçada oyuncu cinsiyeti çekimi nötr kurulmalı.
+- **`game.ts` büyük (1,1 MB) ve `Math.random` göçü sürüyor** (252 çağrı): kırılma kodu yalnız `gameRandom` kullanır; ölçüm tabanı her göç dalgasından sonra yeniden alınır.
+- **Yanlış güven:** `olu-karar.cjs` bilmediği alanları atlıyor; aşama 0'da düzeltilmeden kırılma eklenmez.
+- **Sentetik test eğlence kanıtı değildir:** her aşamadan sonra gerçek telefon denemesi şart; "iyilik ömrü kısaltıyor" bulgusu 16+ tohumla doğrulanmalı.
+- **Kapsam kayması:** bu plan dışında yeni sistem eklenmez; her aşama ayrı onayla başlar.
+
+## 10. Kaynak raporlar
+Rol ajanlarının tam raporları bu oturumda; analistin betikleri ve ham verisi:
+`/tmp/claude-0/-home-user-kroniklerorj/acdf051b-2ba5-59dc-bca0-644e20195fd6/scratchpad/plan_analist/` (`ayrisma.cjs`, `ozet.cjs`, `kart_olc.cjs`, `aktif_iz.cjs`, ham `*.jsonl`).
+Onaydan sonra sıradaki adım: aşama 0 için ayrıntılı uygulama planı (Superpowers `writing-plans`).
