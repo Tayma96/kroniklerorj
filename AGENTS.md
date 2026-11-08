@@ -12,6 +12,12 @@ okuma, çıktı ve testlerle kullanıcı limitini tüketmemektir.
 - Alt ajanları (`.claude/agents/`) gerektiğinde kendi kararınla kullan; geniş okumayı `code-explorer`'a
   devret, ana bağlamı koru. Her ajana tek iş, dosya yolları ve bitiş ölçütü ver; aynı işi birden çok ajana okutma.
 
+## Kota kuralı (Berkay, 8 Kasım)
+
+- Her büyük iş yeni oturumda başlar; uzun oturum her mesajda bütün geçmişi yeniden okur ve kotayı hızla tüketir.
+- Paralel alt ajan yalnız kullanıcı açıkça isterse ve en çok 1–2 tane; her ajan ~100 bin token harcar.
+- Görsel/3D işlemede ara kareleri tek tek gösterme; yalnız son paftayı gönder.
+
 ## Arama ve okuma bütçesi
 
 - Önce hedefli `rg`/`rg --files` kullan; bütün depoyu veya büyük dosyaları körlemesine dökme.
