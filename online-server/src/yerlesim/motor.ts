@@ -40,7 +40,11 @@ import {
 } from "./karakter.ts";
 import { acikMi, ogrenmeDurumu, ogrenmeIlerle, sayacArtir } from "./ogrenme.ts";
 import { dilCoz, kisiAdi, kisiCoz, meslekGorunumu, npcAdi, npcKimlik, oyuncuRef, paramYaz, yas } from "./ortak.ts";
+import { loncaTablosu, oyuncuSayaci } from "./lonca.ts";
+import { KADEME_HIZMET, dalAc, dugumAc, dugumGeriAl, kademeAtla, meslekKaydi, meslekSec, yanSec } from "./meslek.ts";
+import { npcdenAl } from "./npc-taban.ts";
 import { tohumlu } from "./rastgele.ts";
+import { temelIsYap } from "./temel-is.ts";
 import { GUNDEM_ADI, type Isaret, type IliskiHaritasi, type Karakter, type Kasaba, type Npc, type Olay, type OlayTaslagi, type Sakin } from "./tipler.ts";
 import { kasabaKur } from "./uret.ts";
 
@@ -573,6 +577,83 @@ export class YerlesimMotoru {
     this.#kirli.add(KAR + kar.o).add(ILI + kar.o).add(SAKIN);
     await this.kaydet();
     return basarili(yanit);
+  }
+
+  /** istekNo'lu yazma işlemlerinin ortak kabuğu: aynı istekNo aynı yanıtı döndürür, ikinci kez etki üretmez. */
+  async #tekrarGuvenli(
+    hesapId: string,
+    govde: unknown,
+    isle: (kar: Karakter, s: Sakin, ay: number) => Sonuc<Record<string, unknown>>,
+  ): Promise<Sonuc<unknown>> {
+    const no = istekNoCoz(govde);
+    if (!no.ok) return no;
+    const r = await this.#oyuncu(hesapId);
+    if (!r.ok) return r;
+    const { s, kar } = r.deger;
+    const onceki = kar.ist.find((x) => x[0] === no.deger);
+    if (onceki) return basarili(onceki[1]);
+    const sonuc = isle(kar, s, this.kasaba.ay);
+    if (!sonuc.ok) return sonuc;
+    const yanit = structuredClone({ ...sonuc.deger, envanter: kar.ev ?? {}, para: kar.pa, takat: kar.tk });
+    kar.ist.push([no.deger, yanit]);
+    if (kar.ist.length > IST_EN_COK) kar.ist.splice(0, kar.ist.length - IST_EN_COK);
+    this.#kirli.add(KAR + kar.o).add(SAKIN);
+    await this.kaydet();
+    return basarili(yanit);
+  }
+
+  /** POST /v1/meslek {islem: sec|yan|kademe|dal|dugum|geriAl, meslek, dal?, dugum?, istekNo}. */
+  async meslek(hesapId: string, govde: unknown): Promise<Sonuc<unknown>> {
+    if (!nesneMi(govde)) return hata("gecersiz_istek");
+    return this.#tekrarGuvenli(hesapId, govde, (kar, s, ay) => {
+      const m = govde.meslek;
+      let r: Sonuc<unknown>;
+      switch (govde.islem) {
+        case "sec":
+          r = meslekSec(kar, m, ay);
+          if (r.ok) s.ms = meslekKaydi(kar).a || undefined;
+          break;
+        case "yan":
+          r = yanSec(kar, m, ay);
+          break;
+        case "kademe":
+          r = kademeAtla(kar, m, ay);
+          break;
+        case "dal":
+          r = dalAc(kar, m, govde.dal);
+          break;
+        case "dugum":
+          r = dugumAc(kar, m, govde.dugum);
+          break;
+        case "geriAl":
+          r = dugumGeriAl(kar, m, govde.dugum, ay);
+          break;
+        default:
+          return hata("gecersiz_istek");
+      }
+      if (!r.ok) return r;
+      return basarili({ meslek: meslekKaydi(kar), kademeHizmet: KADEME_HIZMET });
+    });
+  }
+
+  /** POST /v1/temel-is {is, istekNo}: herkese açık temel iş; çıktı, fırsat dökümü ve envanter. */
+  async temelIs(hesapId: string, govde: unknown): Promise<Sonuc<unknown>> {
+    if (!nesneMi(govde)) return hata("gecersiz_istek");
+    const sayac = oyuncuSayaci(this.kasaba);
+    return this.#tekrarGuvenli(hesapId, govde, (kar, _s, ay) => temelIsYap(kar, govde.is, sayac, ay));
+  }
+
+  /** POST /v1/taban-al {mal, adet, istekNo}: NPC taban arzından pahalı ve kotalı alım. */
+  async tabanAl(hesapId: string, govde: unknown): Promise<Sonuc<unknown>> {
+    if (!nesneMi(govde)) return hata("gecersiz_istek");
+    return this.#tekrarGuvenli(hesapId, govde, (kar, _s, ay) => npcdenAl(kar, govde.mal, govde.adet, ay));
+  }
+
+  /** GET /v1/lonca: yerleşimin lonca tablosu (oyuncunun sakin olması gerekir). */
+  async lonca(hesapId: string): Promise<Sonuc<unknown>> {
+    const r = await this.#oyuncu(hesapId);
+    if (!r.ok) return r;
+    return basarili({ lonca: loncaTablosu(this.kasaba) });
   }
 
   /** POST /v1/tanidik {hedef, isaret: "tanidik" | "dost" | "dusman" | null}. null işareti listeden çıkarır. */

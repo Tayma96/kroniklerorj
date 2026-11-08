@@ -89,6 +89,15 @@ export const HATA_DURUMU = {
   zaten_cirak: 409,
   karar_verildi: 409,
   puan_yok: 409,
+  meslek_gecersiz: 400,
+  meslek_yok: 409,
+  kademe_kapali: 409,
+  dal_kapali: 409,
+  dugum_kapali: 409,
+  geri_alma_dolu: 409,
+  mal_gecersiz: 400,
+  kota_doldu: 409,
+  verim_yok: 409,
   yapilandirma_eksik: 500,
   sunucu_hatasi: 500,
 } as const satisfies Record<string, number>;
@@ -137,8 +146,12 @@ export type HesapIleti =
   | { islem: "yerlesim"; hesapId: string; dil?: string | null }
   | { islem: "olaylar"; hesapId: string; imlec?: string | null; dil?: string | null }
   | { islem: "kisi"; hesapId: string; kisi: string; dil?: string | null }
-  | { islem: "eylem"; hesapId: string; govde: unknown }
-  | { islem: "tanidik"; hesapId: string; govde: unknown };
+  | { islem: GovdeliIslem; hesapId: string; govde: unknown }
+  | { islem: "lonca"; hesapId: string; dil?: string | null };
+
+/** Gövdeli (istekNo'lu ya da yazan) yerleşim işlemleri: HesapDO aynen YerlesimDO'ya iletir. */
+export const GOVDELI_ISLEMLER = ["eylem", "tanidik", "meslek", "temelIs", "tabanAl"] as const;
+export type GovdeliIslem = (typeof GOVDELI_ISLEMLER)[number];
 
 /** Yerleşime sakin kaydı (profil oluşunca HesapDO gönderir; tekrar güvenli). */
 export interface SakinKaydi {
@@ -154,8 +167,8 @@ export type YerlesimIleti =
   | { islem: "durum"; yerlesim: string; hesapId: string; dil?: string | null }
   | { islem: "olaylar"; yerlesim: string; hesapId: string; imlec?: string | null; dil?: string | null }
   | { islem: "kisi"; yerlesim: string; hesapId: string; kisi: string; dil?: string | null }
-  | { islem: "eylem"; yerlesim: string; hesapId: string; govde: unknown }
-  | { islem: "tanidik"; yerlesim: string; hesapId: string; govde: unknown };
+  | { islem: GovdeliIslem; yerlesim: string; hesapId: string; govde: unknown }
+  | { islem: "lonca"; yerlesim: string; hesapId: string; dil?: string | null };
 
 export type DunyaIleti =
   | { islem: "ozet" }

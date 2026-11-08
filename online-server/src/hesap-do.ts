@@ -53,9 +53,13 @@ export class HesapDO {
       case "kisi":
         return this.#yerlesime({ islem: "kisi", hesapId: ileti.hesapId, kisi: ileti.kisi, dil: ileti.dil });
       case "eylem":
-        return this.#yerlesime({ islem: "eylem", hesapId: ileti.hesapId, govde: ileti.govde });
       case "tanidik":
-        return this.#yerlesime({ islem: "tanidik", hesapId: ileti.hesapId, govde: ileti.govde });
+      case "meslek":
+      case "temelIs":
+      case "tabanAl":
+        return this.#yerlesime({ islem: ileti.islem, hesapId: ileti.hesapId, govde: ileti.govde });
+      case "lonca":
+        return this.#yerlesime({ islem: "lonca", hesapId: ileti.hesapId, dil: ileti.dil });
       default:
         return hata("gecersiz_istek");
     }

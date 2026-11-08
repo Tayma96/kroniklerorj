@@ -2,6 +2,8 @@
 // NPC her dönümde yazılır. Dışarıya giden biçimler (uç yanıtları) uzun ve okunur adlar taşır.
 
 import type { YerlesimTuru } from "../dunya-veri.ts";
+import type { MeslekId } from "../icerik/meslekler.ts";
+import type { MeslekKaydi } from "./meslek.ts";
 
 /** NPC'ler arası bağ: [diğer NPC, tür (1 dost, 2 rakip), puan (−100..100), kuruluş ayı]. */
 export type Bag = [diger: number, tur: 1 | 2, puan: number, kurulus: number];
@@ -54,6 +56,8 @@ export interface Sakin {
   /** Bu ay eylemle gittiği mekân ve ayı (harita karakterleri yüklemeden çizilir). */
   mk: string;
   ma: number;
+  /** Ana meslek (lonca tablosu karakterleri yüklemeden sayar; eski kayıtta yok). */
+  ms?: MeslekId;
 }
 
 export type Isaret = "tanidik" | "dost" | "dusman";
@@ -110,6 +114,14 @@ export interface Karakter {
   en: number;
   /** Son istekNo yanıtları (tekrar güvenliği). */
   ist: [string, unknown][];
+  /** Meslek ve beceri ağacı (ana tasarım §5; eski kayıtta yok). */
+  ms?: MeslekKaydi;
+  /** Envanter: mal → adet. */
+  ev?: Record<string, number>;
+  /** Temel iş azalan getiri: iş → yapıldığı aylar. */
+  tz?: Record<string, number[]>;
+  /** NPC taban alım kotası: [ay, mal → adet]. */
+  tb?: [ay: number, adet: Record<string, number>];
 }
 
 /** Anı: [tür, ilk yük, ay]. Yük zamanla söner (yarı ömür). */

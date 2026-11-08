@@ -10,6 +10,10 @@
 //   GET  /v1/kisi/:id?dil=               → profil + bana bakışın dökümü + eylemler (§13.9 görünürlük)
 //   POST /v1/eylem {tur, hedef?, secim?, ozellik?, istekNo, dil?} → şans, zar, sonuç, olay, takat
 //   POST /v1/tanidik {hedef, isaret, dil?}  → tanıdıklar
+//   POST /v1/meslek {islem, meslek, dal?, dugum?, istekNo} → meslek ve ağaç (ana tasarım §5)
+//   POST /v1/temel-is {is, istekNo}      → çıktı, fırsat dökümü, envanter, takat
+//   POST /v1/taban-al {mal, adet, istekNo} → NPC taban alımı, envanter, para
+//   GET  /v1/lonca                       → yerleşimin lonca tablosu
 // Hata gövdesi {hata: kod}; metin istemcide çevrilir. Hız sınırı hesap başına HesapDO'da.
 
 import { GoogleDogrulayici, GoogleHatasi, istemciKimlikleri } from "./google.ts";
@@ -20,6 +24,7 @@ import {
   hata,
   HATA_DURUMU,
   type Env,
+  type GovdeliIslem,
   type HataKodu,
   type HesapIleti,
   type Sonuc,
@@ -116,7 +121,7 @@ async function giris(istek: Request, env: Env): Promise<Response> {
 }
 
 /** Gövdeli POST iletisi. */
-function govdeli(istek: Request, env: Env, islem: "eylem" | "tanidik"): Promise<Response> {
+function govdeli(istek: Request, env: Env, islem: GovdeliIslem): Promise<Response> {
   return hesaba(istek, env, async (hesapId) => {
     const govde = await govdeOku(istek);
     return govde.ok ? basarili({ islem, hesapId, govde: govde.deger }) : govde;
@@ -156,6 +161,14 @@ async function yonlendir(istek: Request, env: Env): Promise<Response> {
       return yontem === "POST" ? govdeli(istek, env, "eylem") : hataYaniti("yontem_yok");
     case "/v1/tanidik":
       return yontem === "POST" ? govdeli(istek, env, "tanidik") : hataYaniti("yontem_yok");
+    case "/v1/meslek":
+      return yontem === "POST" ? govdeli(istek, env, "meslek") : hataYaniti("yontem_yok");
+    case "/v1/temel-is":
+      return yontem === "POST" ? govdeli(istek, env, "temelIs") : hataYaniti("yontem_yok");
+    case "/v1/taban-al":
+      return yontem === "POST" ? govdeli(istek, env, "tabanAl") : hataYaniti("yontem_yok");
+    case "/v1/lonca":
+      return yontem === "GET" ? hesaba(istek, env, (hesapId) => basarili({ islem: "lonca", hesapId, dil })) : hataYaniti("yontem_yok");
   }
   const kisi = KISI_YOLU.exec(yol);
   if (kisi?.[1]) {

@@ -11,18 +11,19 @@
 - Tek oyunculu önce, çevrimiçi sonra. Ana sayfa = mockup ekran 1 (`lib/home-mockup-ui.tsx`, süs `lib/mk-sus.tsx`).
 - Alt menü: Ana Sayfa · Karakter · [Ayı İlerlet] · İlişkiler · Menü. Emek Karakter ekranında, çalışılmamış ayda rozet.
 
-## 1 Kasım turu (Berkay: tam yetki, onay bekleme; tek kural ücret yok)
-- Bitti (`apk`): özel sekme çubuğu (`app/oyun/_layout.tsx` SekmeCubugu), yeni oyun klavye/başlık/ocak kartları,
-  ana sayfa kimlik paneli + `lib/ad-bicim.ts`, Geri hapı, Divan/Dost girişleri kaldırıldı, ilk açılış dil ekranı
-  (`lib/dil-secimi.tsx`), kış ortamı çınlaması (yeni ElevenLabs döngüsü).
-- 2 Kasım: ses (21 müzik, 15 ortam, 23 efekt, 13 an anlatısı 6 dil, NPC sözleri 7 ses) ve 56 sn giriş videosu `apk`'de; test APK güncel.
-- Hissiyat 1–4 `docs/HISSIYAT_PLANI.md` `apk`'de; hayatın derdi kaldırıldı.
-- Radikal sonuçlar: `docs/superpowers/specs/2026-11-03-radikal-sonuclar-design.md`; aşama 0–2 bitti, 300 hayat temiz. Aşama 3: kırılma çekirdeği + Büyük Ortaklık (`Player.kirilmalar`, ay sahnesi `kirilma`, `lib/kirilma-ui.tsx`, denetim `scripts/_smoke/kirilma-check.cjs`; plan `.../plans/2026-11-03-asama-3.md`). Sıradaki: aşama 4 (göç, suç, lekeli).
-- Dövüş 3D: Berkay Mixamo'dan indirir; `scripts/blender/` k09 aktarım, k10 kılıç çekme, k11 harmanlama, k12 kalkan görüşü; setler `hareket_seti.json`, harita `docs/SAVAS_HAREKET_HARITASI.md`. Ham FBX depoda yok, gerekirse yeniden yüklenir.
-- Tek dal `apk`: 3D hattı dahil her şey burada. `faz2-istemci-yarim` dalındaki yarım çevrimiçi istemci commit'i çevrimiçi işte önce incelenir.
+## Önceki turlar (özet)
+- 1–3 Kasım `apk`'de: sekme çubuğu, yeni oyun, ana sayfa, dil ekranı, ses paketi, 56 sn giriş videosu, hissiyat 1–4.
+- Radikal sonuçlar spec `docs/superpowers/specs/2026-11-03-radikal-sonuclar-design.md`; aşama 0–3 bitti, sıradaki aşama 4 (göç, suç, lekeli).
+- Dövüş 3D: `scripts/blender/` k09–k12, `docs/SAVAS_HAREKET_HARITASI.md`; ham FBX depoda yok.
+
+## Çevrimiçi (8 Kasım, Berkay tam yetki)
+- Esas belge: `docs/superpowers/specs/2026-11-08-cevrimici-ana-tasarim-design.md` (GDD v0.4 + Ek A/B `docs/online/gdd/` ile uzlaştırma, 14 meslek + 4 kademeli ağaç, temel iş herkese açık, yönetici paneli, tek faz sırası §8). Eski `FAZn_PLAN.md`ler yalnız içerik kaynağı.
+- Ajanlar: `online-sunucu`, `online-istemci`, `denge-denetcisi` (`.claude/agents/`).
+- Bitti: sıra 2 meslek çekirdeği (plan `docs/superpowers/plans/2026-11-08-meslek-cekirdegi.md`): `/v1/meslek`, `/v1/temel-is`, `/v1/taban-al`, `/v1/lonca`; 97 sunucu testi temiz. Pir için çırak sayacı (`cy`) E3'te bağlanacak.
+- Sıradaki: sıra 1 kapanış (`FAZ_DURUM.md` ilk 3 iş: yarım istemci dalı), sonra sıra 3 dikey dilim (Faz 3 + E1 Hal + E2 istemci).
 
 ## Açık işler
 - `docs/DEVIR.md` (1 Kasım devri). ElevenLabs Berkay'ın aboneliğiyle onaylı (`.mcp.json`).
 - Alt ajan sayısını Berkay belirler (3 Kasım: 3 rol ajanı istedi). Ses planı `docs/SES_PLANI.md`.
 - Ün kazancı tek yerden (`unEkle`, kademe oranları); mülk her alımda %15 pahalı. Math.random göçü sürüyor.
-- Sıradaki (~8 Kasım): çevrimiçi kısım (`docs/online/`, `server/`; protokol eşliği korunur). 3D'de bakış, ayak teması, cilt dokusu.
+- 3D'de bakış, ayak teması, cilt dokusu.
