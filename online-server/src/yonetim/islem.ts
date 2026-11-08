@@ -1,19 +1,25 @@
 // YonetimDO iş kuralları (Workers'tan bağımsız; depo ve dış çağrılar parametre olarak gelir, node --test ile denenir).
 // İlkeler (ana tasarım §7.2):
 // - Rol istemciden alınmaz; her istekte ortamdaki kurucu listesi + depodaki rollerden çözülür.
-// - Her yazan işlem ve her başarısız deneme (yetkisiz dahil) işlem kaydına eklenir; kaydı silen/düzenleyen yol yoktur.
-//   Oyuncu görüntüleme de kayda girer. Yalnız liste okumaları (ben, şikayetler, parametreler, kayıt) kaydedilmez.
-// - Yazan uçlar `istekNo` ile tekrar güvenlidir ve gerekçe ister (en az GEREKCE_EN_KISA karakter).
+// - Her yazan işlem ve rolü olan (ya da rolü alınmış) yöneticinin her başarısız denemesi işlem kaydına eklenir; kayıt
+//   girdi başına ayrı anahtardır, yalnız eklenir, silen/düzenleyen yol yoktur. Oyuncu görüntüleme de kayda girer.
+//   Rolsüz kişinin /yonetim/giris denemesi kaydı şişirmesin diye kayda yazılmaz: günlük sayaçta tutulur ve dakikalık
+//   genel tavanla sınırlanır.
+// - Yazan uçlar `istekNo` ile tekrar güvenlidir (anahtar uç + gövde özetini taşır) ve gerekçe ister.
 // - Kendine fayda yasağı: yönetici kendi oyuncu hesabından yaptırım kaldıramaz, kendi hakkındaki şikayete karar veremez.
 // - Bir DO içinde yalnız depolama beklemeleri arasında başka istek araya girmez; bu yüzden her yazım, dış çağrılardan
 //   (DunyaDO/HesapDO) sonra, yalnız depolama okuyup yazan tek bir bölümde yapılır ve orada tekrar denetimi yinelenir.
+// - HesapDO'ya itme başarısızsa kayıt yine tutulur, yanıt `hesabaYazildi: false` der; aynı istekNo ile yeniden
+//   gönderim ya da aynı hedefte herhangi bir yaptırım işlemi (yaptirim_yok dahil) güncel özeti yeniden iter.
 
+import { b64urlKodla, utf8 } from "../b64.ts";
 import type { Depo } from "../depo.ts";
 import { yerlesimBul } from "../dunya-veri.ts";
 import { istekNoCoz } from "../mantik.ts";
 import {
   basarili,
   hata,
+  YONETIM_UCLARI,
   type Basarisiz,
   type HataKodu,
   type HesapYaptirimi,
@@ -34,7 +40,18 @@ import {
   type ParametreAdi,
   type ParametreKaydi,
 } from "./parametre.ts";
-import { ACIK_KUYRUK_EN_COK, gunlukSay, sikayetGirdisiCoz, SIKAYET_DURUMLARI, type GunlukSayac, type Sikayet, type SikayetDurumu } from "./sikayet.ts";
+import {
+  ACIK_KUYRUK_EN_COK,
+  bildirimBirlestir,
+  gunlukSay,
+  sikayetGirdisiCoz,
+  SIKAYETCI_ACIK_EN_COK,
+  SIKAYET_DURUMLARI,
+  trGunu,
+  type GunlukSayac,
+  type Sikayet,
+  type SikayetDurumu,
+} from "./sikayet.ts";
 import {
   etkinOzet,
   gerekceCoz,
@@ -45,10 +62,11 @@ import {
   yaptirimGirdisiCoz,
   yaptirimSuresiCoz,
   GUN_MS,
+  type Kaldirma,
   type Yaptirim,
   type YaptirimTuru,
 } from "./yaptirim.ts";
-import { epostaDuzenle, rolCoz, rolMu, yetkiler, yetkiVar, type Rol, type YonetimIslemi } from "./yetki.ts";
+import { epostaDuzenle, rolCoz, verilebilirRolMu, yetkiler, yetkiVar, type Rol, type YonetimIslemi } from "./yetki.ts";
 
 /** [PARAMETRE] Sayfa boyları ve duyuru sayısı. */
 export const KAYIT_SAYFASI = 50;
@@ -62,14 +80,17 @@ const SAYAC_YAPTIRIM = "sayac:yaptirim";
 const SAYAC_SIKAYET = "sayac:sikayet";
 const SAYAC_DUYURU = "sayac:duyuru";
 const ROLLER = "roller"; // Record<eposta, Rol>
-const KAYIT = "kayit:"; // + 12 hane → IslemKaydi (yalnız eklenir)
+const KAYIT = "kayit:"; // + 12 hane → IslemKaydi (girdi başına bir anahtar; yalnız eklenir)
 const ISTEK = "istek:"; // + eposta + "\n" + istekNo → IstekKaydi
 const PARAM = "param:"; // + ad → ParametreKaydi
 const YAPTIRIM = "yaptirim:"; // + hesap → Yaptirim[]
 const SIKAYET = "sikayet:"; // + 12 hane → Sikayet
-const SIKAYET_ACIK = "sikayetAcik"; // number[] (eskiden yeniye)
-const SIKAYET_ISTEK = "sikayetIstek:"; // + sikayetci + "\n" + istekNo → Sonuc
+const SIKAYET_ACIK = "sikayetAcik"; // number[] (eskiden yeniye; hedef başına bir kayıt)
+const SIKAYET_HEDEF = "sikayetHedef:"; // + hedef → açık şikayet numarası
+const SIKAYETCI_ACIK = "sikayetciAcik:"; // + sikayetci → içinde bulunduğu şikayet numaraları
+const SIKAYET_ISTEK = "sikayetIstek:"; // + sikayetci + "\n" + istekNo → {ozet, sonuc}
 const SIKAYET_GUN = "sikayetGun:"; // + sikayetci → GunlukSayac
+const YETKISIZ_GIRIS = "yetkisizGiris:"; // + TR günü → sayı
 const DUYURU = "duyuru:"; // + 12 hane → Duyuru
 
 const hane = (n: number): string => String(n).padStart(12, "0");
@@ -87,6 +108,8 @@ export interface IslemKaydi {
 }
 
 interface IstekKaydi {
+  uc: string;
+  ozet: string;
   sonuc: Sonuc<unknown>;
   /** Yaptırım değiştiyse hedef: tekrar gelen istekte özet HesapDO'ya yeniden itilir. */
   hedef?: string;
@@ -107,18 +130,40 @@ export interface YonetimBaglami {
   oyuncuBul: (sorgu: { ad?: string; hesap?: string }) => Promise<Sonuc<Profil>>;
   /** Hesabın etkin yaptırım özetini HesapDO'ya yazar. */
   hesabaYaz: (hedef: string, durum: HesapYaptirimi) => Promise<Sonuc<unknown>>;
+  /** Rolsüz giriş denemeleri için genel (tüm kişiler) dakikalık tavan; false = tavan doldu. Yoksa sınırsız. */
+  yetkisizGirisIzni?: () => boolean;
 }
 
 interface Oturum {
   b: YonetimBaglami;
   y: YoneticiKimligi;
   rol: Rol | undefined;
+  /** Yazan uçlarda istekNo anahtarına giren uç adı ve gövde özeti. */
+  uc: string;
+  ozet: string;
 }
 
 type Ek = { hedef?: string; gerekce?: string; ayrinti?: Record<string, unknown> };
 
 function nesneMi(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
+}
+
+/** Anahtar sırasından bağımsız JSON. */
+function kararliJson(v: unknown): string {
+  if (Array.isArray(v)) return `[${v.map(kararliJson).join(",")}]`;
+  if (nesneMi(v)) {
+    return `{${Object.keys(v)
+      .sort()
+      .map((k) => `${JSON.stringify(k)}:${kararliJson(v[k])}`)
+      .join(",")}}`;
+  }
+  return JSON.stringify(v) ?? "null";
+}
+
+/** Gövdenin SHA-256 özeti (base64url). */
+export async function govdeOzeti(govde: unknown): Promise<string> {
+  return b64urlKodla(await crypto.subtle.digest("SHA-256", utf8(kararliJson(govde))));
 }
 
 // ---------------------------------------------------------------- işlem kaydı
@@ -152,6 +197,16 @@ async function paramDeger(b: YonetimBaglami, ad: ParametreAdi): Promise<number> 
 
 const istekAnahtari = (o: Oturum, no: string): string => `${ISTEK}${o.y.eposta}\n${no}`;
 
+/** Moderatöre başka yöneticilerin e-postası gösterilmez; yerine o anki rolü yazılır. */
+function kimGizle<T extends { kim: string; kimRol?: string }>(o: Oturum, k: T): T {
+  return o.rol === "kurucu" || k.kim === o.y.eposta ? k : { ...k, kim: k.kimRol ?? "yonetici" };
+}
+
+function yaptirimGoster(o: Oturum, y: Yaptirim): Yaptirim {
+  const g = kimGizle(o, y);
+  return g.kaldirma ? { ...g, kaldirma: kimGizle(o, g.kaldirma) } : g;
+}
+
 /** Hedefin güncel etkin özetini HesapDO'ya yazar. */
 async function hesabaIt(b: YonetimBaglami, hedef: string): Promise<Sonuc<HesapYaptirimi>> {
   const ozet = etkinOzet((await b.depo.al<Yaptirim[]>(YAPTIRIM + hedef)) ?? [], b.simdi);
@@ -159,15 +214,29 @@ async function hesabaIt(b: YonetimBaglami, hedef: string): Promise<Sonuc<HesapYa
   return s.ok ? basarili(ozet) : hata("sunucu_hatasi");
 }
 
-/** Önceki aynı istekNo'nun sonucu; yaptırım değiştirdiyse özet yeniden itilir (yarıda kalan itme tamamlanır). */
+/**
+ * Yaptırımı değiştiren işlemin yanıtı: özet HesapDO'ya itilir ve yanıt bunun olup olmadığını açıkça söyler.
+ * Başarısız itme ayrıca kayda girer; işlem kaydı ve yaptırım YonetimDO'da tutulmuştur.
+ */
+async function itVeYanitla(o: Oturum, hedef: string, sonuc: Sonuc<unknown>, islem: string): Promise<Sonuc<unknown>> {
+  if (!sonuc.ok) return sonuc;
+  const it = await hesabaIt(o.b, hedef);
+  if (!it.ok) await o.b.depo.koy(await kayitHazirla(o, `${islem}:hesabaYaz`, "sunucu_hatasi", { hedef }));
+  const deger = nesneMi(sonuc.deger) ? sonuc.deger : { sonuc: sonuc.deger };
+  return basarili({ ...deger, hesabaYazildi: it.ok });
+}
+
+/**
+ * Önceki aynı istekNo'nun sonucu. Uç ya da gövde farklıysa çakışmadır (`istekno_gecersiz`, kayda girer).
+ * Yaptırım değiştirdiyse özet yeniden itilir (yarıda kalan itme tamamlanır).
+ */
 async function tekrar(o: Oturum, no: string): Promise<Sonuc<unknown> | undefined> {
   const k = await o.b.depo.al<IstekKaydi>(istekAnahtari(o, no));
   if (!k) return undefined;
-  if (k.sonuc.ok && k.hedef) {
-    const it = await hesabaIt(o.b, k.hedef);
-    if (!it.ok) return it;
+  if (k.uc !== o.uc || k.ozet !== o.ozet) {
+    return reddet(o, o.uc, "istekno_gecersiz", { ayrinti: { istekNo: no, cakisma: true, oncekiUc: k.uc } });
   }
-  return k.sonuc;
+  return k.hedef ? itVeYanitla(o, k.hedef, k.sonuc, o.uc) : k.sonuc;
 }
 
 /** Başarılı yazımı tek seferde kaydeder: değişiklikler + işlem kaydı + istekNo sonucu. */
@@ -180,7 +249,7 @@ async function yaz(
   sonuc: Sonuc<unknown>,
   hedef?: string,
 ): Promise<void> {
-  const istek: IstekKaydi = hedef ? { sonuc, hedef } : { sonuc };
+  const istek: IstekKaydi = { uc: o.uc, ozet: o.ozet, sonuc, ...(hedef ? { hedef } : {}) };
   await o.b.depo.koy({ ...degisiklik, ...(await kayitHazirla(o, islem, "tamam", ek)), [istekAnahtari(o, no)]: istek });
 }
 
@@ -204,19 +273,27 @@ function bitisHesapla(tur: YaptirimTuru, gun: number | undefined, simdi: number)
 
 async function giris(b: YonetimBaglami, y: YoneticiKimligi): Promise<Sonuc<{ rol: Rol }>> {
   const rol = await rolBul(b, y.eposta);
-  const o: Oturum = { b, y, rol };
-  if (!rol) return reddet(o, "giris", "yetki_yok");
+  if (!rol) {
+    // Kalıcı kayda yazılmaz (herkes Google hesabı açabilir); yalnız günlük sayaç ve genel dakikalık tavan.
+    if (b.yetkisizGirisIzni && !b.yetkisizGirisIzni()) return hata("hiz_siniri");
+    const anahtar = YETKISIZ_GIRIS + trGunu(b.simdi);
+    await b.depo.koy({ [anahtar]: ((await b.depo.al<number>(anahtar)) ?? 0) + 1 });
+    return hata("yetki_yok");
+  }
+  const o: Oturum = { b, y, rol, uc: "giris", ozet: "" };
   await b.depo.koy(await kayitHazirla(o, "giris", "tamam", {}));
   return basarili({ rol });
 }
 
-function ben(o: Oturum): Sonuc<unknown> {
+async function ben(o: Oturum): Promise<Sonuc<unknown>> {
+  const kurucu = o.rol === "kurucu";
   return basarili({
     eposta: o.y.eposta,
     rol: o.rol,
     yetkiler: yetkiler(o.rol),
     kendiHesap: o.y.hesap,
     ortamKurucusu: o.b.kurucular.has(o.y.eposta),
+    ...(kurucu ? { yetkisizGirisBugun: (await o.b.depo.al<number>(YETKISIZ_GIRIS + trGunu(o.b.simdi))) ?? 0 } : {}),
   });
 }
 
@@ -236,7 +313,7 @@ async function oyuncuGor(o: Oturum, sorgu: Record<string, string | null>): Promi
   return basarili({
     profil,
     yerlesim: yer ? { id: yer.id, ad: yer.ad, tur: yer.tur, beylik: yer.beylik } : null,
-    yaptirim: { etkin: etkinOzet(liste, o.b.simdi), liste: [...liste].reverse() },
+    yaptirim: { etkin: etkinOzet(liste, o.b.simdi), liste: [...liste].reverse().map((y) => yaptirimGoster(o, y)) },
     kendi: profil.hesapId === o.y.hesap,
   });
 }
@@ -260,12 +337,12 @@ async function yaptirimUygula(o: Oturum, govde: unknown): Promise<Sonuc<unknown>
   const yarisan = await tekrar(o, istekNo);
   if (yarisan) return yarisan;
   const bitis = bitisHesapla(tur, gun, o.b.simdi);
-  const h = await yaptirimEkleHazirla(o.b, hedef, { tur, baslangic: o.b.simdi, bitis, kim: o.y.eposta, gerekce });
+  const h = await yaptirimEkleHazirla(o.b, hedef, {
+    tur, baslangic: o.b.simdi, bitis, kim: o.y.eposta, kimRol: o.rol, gerekce,
+  });
   const sonuc = basarili({ yaptirim: h.yaptirim, etkin: h.ozet });
   await yaz(o, istekNo, tur, { ...ek, ayrinti: { tur, gun, id: h.yaptirim.id, bitis } }, h.degisiklik, sonuc, hedef);
-
-  const it = await hesabaIt(o.b, hedef);
-  return it.ok ? sonuc : it;
+  return itVeYanitla(o, hedef, sonuc, tur);
 }
 
 async function yaptirimKaldir(o: Oturum, govde: unknown): Promise<Sonuc<unknown>> {
@@ -280,7 +357,6 @@ async function yaptirimKaldir(o: Oturum, govde: unknown): Promise<Sonuc<unknown>
   const gerekce = gerekceCoz(govde.gerekce);
   if (!gerekce.ok) return reddet(o, "yaptirimKaldir", gerekce.hata, ek0);
   const ek: Ek = { hedef: hamHedef, gerekce: gerekce.deger, ayrinti: { tur } };
-  if (!o.rol) return reddet(o, "yaptirimKaldir", "yetki_yok", ek);
   if (hamHedef === o.y.hesap) return reddet(o, "yaptirimKaldir", "kendi_hedef", ek);
   const onceki = await tekrar(o, no.deger);
   if (onceki) return onceki;
@@ -288,19 +364,22 @@ async function yaptirimKaldir(o: Oturum, govde: unknown): Promise<Sonuc<unknown>
   // Yalnız depolama (yetki reddi de yalnız depolamadır).
   const liste = (await o.b.depo.al<Yaptirim[]>(YAPTIRIM + hamHedef)) ?? [];
   const kalkan = liste.filter((y) => yaptirimEtkin(y, o.b.simdi) && (tur === undefined || y.tur === tur));
-  if (kalkan.length === 0) return reddet(o, "yaptirimKaldir", "yaptirim_yok", ek);
+  if (kalkan.length === 0) {
+    const red = await reddet(o, "yaptirimKaldir", "yaptirim_yok", ek);
+    // Onarım: daha önce itilemeyen bir özet varsa HesapDO'yu YonetimDO'daki gerçeğe getirir.
+    if (liste.length > 0) await hesabaIt(o.b, hamHedef);
+    return red;
+  }
   const islem: YonetimIslemi = kalkan.some((y) => y.tur === "kaliciUzaklastirma") ? "kaliciKaldir" : "yaptirimKaldir";
   const red = await yetkiIste(o, islem, ek);
   if (red) return red;
-  const kaldirma = { kim: o.y.eposta, zaman: o.b.simdi, gerekce: gerekce.deger };
+  const kaldirma: Kaldirma = { kim: o.y.eposta, ...(o.rol ? { kimRol: o.rol } : {}), zaman: o.b.simdi, gerekce: gerekce.deger };
   const idler = new Set(kalkan.map((y) => y.id));
   const yeni = liste.map((y) => (idler.has(y.id) ? { ...y, kaldirma } : y));
   const ozet = etkinOzet(yeni, o.b.simdi);
   const sonuc = basarili({ kaldirilan: [...idler], etkin: ozet });
   await yaz(o, no.deger, islem, { ...ek, ayrinti: { tur, idler: [...idler] } }, { [YAPTIRIM + hamHedef]: yeni }, sonuc, hamHedef);
-
-  const it = await hesabaIt(o.b, hamHedef);
-  return it.ok ? sonuc : it;
+  return itVeYanitla(o, hamHedef, sonuc, islem);
 }
 
 // ---------------------------------------------------------------- şikayet
@@ -324,7 +403,7 @@ async function sikayetler(o: Oturum, sorgu: Record<string, string | null>): Prom
     .map((i) => kayitlar.get(SIKAYET + hane(i)))
     .filter((s): s is Sikayet => s !== undefined && s.durum === durum)
     .slice(0, SIKAYET_SAYFASI)
-    .map((s) => ({ ...s, kendi: s.hedef === o.y.hesap }));
+    .map((s) => ({ ...s, ...(s.karar ? { karar: kimGizle(o, s.karar) } : {}), kendi: s.hedef === o.y.hesap }));
   return basarili({ durum, sikayetler: liste, toplamAcik: acik.length });
 }
 
@@ -363,7 +442,7 @@ async function sikayetKarar(o: Oturum, govde: unknown): Promise<Sonuc<unknown>> 
   if (sure) {
     const bitis = bitisHesapla(sure.tur, sure.gun, o.b.simdi);
     const h = await yaptirimEkleHazirla(o.b, s.hedef, {
-      tur: sure.tur, baslangic: o.b.simdi, bitis, kim: o.y.eposta, gerekce: gerekce.deger, sikayet: id,
+      tur: sure.tur, baslangic: o.b.simdi, bitis, kim: o.y.eposta, kimRol: o.rol, gerekce: gerekce.deger, sikayet: id,
     });
     degisiklik = { ...degisiklik, ...h.degisiklik };
     yaptirim = h.yaptirim;
@@ -371,46 +450,91 @@ async function sikayetKarar(o: Oturum, govde: unknown): Promise<Sonuc<unknown>> 
   const guncel: Sikayet = {
     ...s,
     durum: sure ? "yaptirim" : "reddedildi",
-    karar: { kim: o.y.eposta, zaman: o.b.simdi, gerekce: gerekce.deger, ...(yaptirim ? { yaptirim: yaptirim.id } : {}) },
+    karar: {
+      kim: o.y.eposta,
+      ...(o.rol ? { kimRol: o.rol } : {}),
+      zaman: o.b.simdi,
+      gerekce: gerekce.deger,
+      ...(yaptirim ? { yaptirim: yaptirim.id } : {}),
+    },
   };
   degisiklik[anahtar] = guncel;
   const sonuc = basarili({ sikayet: guncel, ...(yaptirim ? { yaptirim } : {}) });
   await yaz(o, no.deger, "sikayetKarar", ekH, degisiklik, sonuc, sure ? s.hedef : undefined);
+  // Hedefin açık kaydı kapandı: sonraki şikayet yeni kayıt açar.
+  if ((await o.b.depo.al<number>(SIKAYET_HEDEF + s.hedef)) === id) await o.b.depo.sil([SIKAYET_HEDEF + s.hedef]);
 
-  if (!sure) return sonuc;
-  const it = await hesabaIt(o.b, s.hedef);
-  return it.ok ? sonuc : it;
+  return sure ? itVeYanitla(o, s.hedef, sonuc, "sikayetKarar") : sonuc;
 }
 
-/** Oyuncu şikayeti (HesapDO'dan; oturum, uzaklaştırma ve susturma orada denetlenmiştir). */
+/**
+ * Oyuncu şikayeti (HesapDO'dan; oturum, uzaklaştırma ve susturma orada denetlenmiştir). Hedef başına tek açık kayıt:
+ * farklı şikayetçiler birleşir (sayaç), aynı şikayetçi ikinci kez sayılmaz. Şikayetçi başına açık şikayet sınırı ve
+ * günlük sınır vardır; kuyruk doluysa yalnız YENİ hedef reddedilir.
+ */
 export async function sikayetEkle(b: YonetimBaglami, sikayetci: string, govde: unknown): Promise<Sonuc<unknown>> {
   const g = sikayetGirdisiCoz(govde);
   if (!g.ok) return g;
   const { hedef, neden, aciklama, istekNo } = g.deger;
   if (hedef === sikayetci) return hata("kendini_sikayet");
   const anahtar = `${SIKAYET_ISTEK}${sikayetci}\n${istekNo}`;
-  const onceki = await b.depo.al<Sonuc<unknown>>(anahtar);
+  const ozet = await govdeOzeti(govde);
+  const oncekiBul = async (): Promise<Sonuc<unknown> | undefined> => {
+    const k = await b.depo.al<{ ozet: string; sonuc: Sonuc<unknown> }>(anahtar);
+    if (!k) return undefined;
+    return k.ozet === ozet ? k.sonuc : hata("istekno_gecersiz");
+  };
+  const onceki = await oncekiBul();
   if (onceki) return onceki;
   const bulunan = await b.oyuncuBul({ hesap: hedef });
   if (!bulunan.ok) return hata("kisi_yok");
   const sinir = await paramDeger(b, "SIKAYET_GUNLUK");
 
   // Yalnız depolama.
-  const yarisan = await b.depo.al<Sonuc<unknown>>(anahtar);
+  const yarisan = await oncekiBul();
   if (yarisan) return yarisan;
+  const benimIdler = (await b.depo.al<number[]>(SIKAYETCI_ACIK + sikayetci)) ?? [];
+  const benimKayitlar = await b.depo.alCok<Sikayet>(benimIdler.map((i) => SIKAYET + hane(i)));
+  const benimAcik = benimIdler.filter((i) => benimKayitlar.get(SIKAYET + hane(i))?.durum === "acik");
+
+  const mevcutId = await b.depo.al<number>(SIKAYET_HEDEF + hedef);
+  const mevcutHam = mevcutId === undefined ? undefined : await b.depo.al<Sikayet>(SIKAYET + hane(mevcutId));
+  const mevcut = mevcutHam?.durum === "acik" ? mevcutHam : undefined;
+
+  if (mevcut && benimAcik.includes(mevcut.id)) {
+    // Aynı şikayetçi aynı hedefi ikinci kez şikayet edemez: tekil, sayılmaz.
+    const sonuc = basarili({ id: mevcut.id, durum: "acik" as const, birlesti: true, yeni: false });
+    await b.depo.koy({ [anahtar]: { ozet, sonuc } });
+    return sonuc;
+  }
   const sayac = gunlukSay(await b.depo.al<GunlukSayac>(SIKAYET_GUN + sikayetci), b.simdi, sinir);
   if (!sayac.izin) return hata("sikayet_siniri");
-  const acik = (await b.depo.al<number[]>(SIKAYET_ACIK)) ?? [];
-  if (acik.length >= ACIK_KUYRUK_EN_COK) return hata("kuyruk_dolu");
-  const id = ((await b.depo.al<number>(SAYAC_SIKAYET)) ?? 0) + 1;
-  const s: Sikayet = { id, sikayetci, hedef, neden, zaman: b.simdi, durum: "acik", ...(aciklama ? { aciklama } : {}) };
-  const sonuc = basarili({ id, durum: "acik" as const, kalan: sinir - sayac.durum.n });
+  if (benimAcik.length >= SIKAYETCI_ACIK_EN_COK) return hata("sikayet_siniri");
+
+  const bildirim = { sikayetci, neden, zaman: b.simdi, ...(aciklama ? { aciklama } : {}) };
+  let id: number;
+  const degisiklik: Record<string, unknown> = {};
+  if (mevcut) {
+    id = mevcut.id;
+    degisiklik[SIKAYET + hane(id)] = bildirimBirlestir(mevcut, bildirim);
+  } else {
+    const acik = (await b.depo.al<number[]>(SIKAYET_ACIK)) ?? [];
+    if (acik.length >= ACIK_KUYRUK_EN_COK) return hata("kuyruk_dolu");
+    id = ((await b.depo.al<number>(SAYAC_SIKAYET)) ?? 0) + 1;
+    const s: Sikayet = { id, ...bildirim, hedef, durum: "acik", sayi: 1, bildirimler: [bildirim] };
+    Object.assign(degisiklik, {
+      [SAYAC_SIKAYET]: id,
+      [SIKAYET + hane(id)]: s,
+      [SIKAYET_ACIK]: [...acik, id],
+      [SIKAYET_HEDEF + hedef]: id,
+    });
+  }
+  const sonuc = basarili({ id, durum: "acik" as const, birlesti: mevcut !== undefined, kalan: sinir - sayac.durum.n });
   await b.depo.koy({
-    [SAYAC_SIKAYET]: id,
-    [SIKAYET + hane(id)]: s,
-    [SIKAYET_ACIK]: [...acik, id],
+    ...degisiklik,
+    [SIKAYETCI_ACIK + sikayetci]: [...benimAcik, id],
     [SIKAYET_GUN + sikayetci]: sayac.durum,
-    [anahtar]: sonuc,
+    [anahtar]: { ozet, sonuc },
   });
   return sonuc;
 }
@@ -475,7 +599,8 @@ async function rolYaz(o: Oturum, govde: unknown): Promise<Sonuc<unknown>> {
   const no = istekNoCoz(g);
   if (!no.ok) return reddet(o, "rolVer", no.hata, ek0);
   if (!eposta) return reddet(o, "rolVer", "eposta_gecersiz");
-  if (g.rol !== null && !rolMu(g.rol)) return reddet(o, "rolVer", "rol_gecersiz", ek0);
+  // Kurucu yalnız ortamdan (YONETICI_EPOSTALAR) gelir; depodan verilebilen tek rol moderatördür.
+  if (g.rol !== null && !verilebilirRolMu(g.rol)) return reddet(o, "rolVer", "rol_gecersiz", { ...ek0, ayrinti: { rol: g.rol } });
   const rol = g.rol;
   const gerekce = gerekceCoz(g.gerekce);
   if (!gerekce.ok) return reddet(o, "rolVer", gerekce.hata, ek0);
@@ -556,9 +681,10 @@ async function yonet(
   govde: unknown,
   sorgu: Record<string, string | null>,
 ): Promise<Sonuc<unknown>> {
-  const o: Oturum = { b, y, rol: await rolBul(b, y.eposta) };
-  // Rolsüz her istek (okuma dahil) yetkisiz deneme olarak kaydedilir.
-  if (!o.rol) return reddet(o, uc, "yetki_yok");
+  const yazan = Object.hasOwn(YONETIM_UCLARI, uc) && YONETIM_UCLARI[uc] === "POST";
+  const o: Oturum = { b, y, rol: await rolBul(b, y.eposta), uc: String(uc).slice(0, 32), ozet: yazan ? await govdeOzeti(govde) : "" };
+  // Geçerli yönetici belirteci taşıyan rolsüz istek (rolü alınmış kişi) kayda girer; belirteç en çok 12 saat yaşar.
+  if (!o.rol) return reddet(o, o.uc, "yetki_yok");
   switch (uc) {
     case "ben":
       return ben(o);
@@ -585,7 +711,7 @@ async function yonet(
     case "kayit":
       return kayitOku(o, sorgu);
     default:
-      return reddet(o, String(uc).slice(0, 32), "bulunamadi");
+      return reddet(o, o.uc, "bulunamadi");
   }
 }
 

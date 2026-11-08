@@ -10,14 +10,30 @@ export type SikayetNedeni = (typeof SIKAYET_NEDENLERI)[number];
 export const SIKAYET_GUNLUK = 5;
 /** [PARAMETRE] Açıklamanın en uzun hali (karakter). */
 export const ACIKLAMA_EN_UZUN = 500;
-/** [PARAMETRE] Açık kuyruğun en çok uzunluğu; dolunca yeni şikayet `kuyruk_dolu` döner. */
+/** [PARAMETRE] Açık kuyruğun en çok uzunluğu (hedef sayısı); dolunca YENİ hedefe şikayet `kuyruk_dolu` döner,
+ *  zaten kuyrukta olan hedefe gelen şikayet yine birleşir. */
 export const ACIK_KUYRUK_EN_COK = 2000;
+/** [PARAMETRE] Şikayetçi başına aynı anda açık şikayet sınırı (sahte hesaplarla kuyruk doldurmayı yavaşlatır). */
+export const SIKAYETCI_ACIK_EN_COK = 10;
+/** [PARAMETRE] Bir şikayet kaydında saklanan bildirim sayısı; fazlası yalnız `sayi`ya eklenir. */
+export const BILDIRIM_EN_COK = 50;
 /** Türkiye sürekli UTC+3. */
 const TR_FARK_MS = 3 * 60 * 60 * 1000;
 
 export type SikayetDurumu = "acik" | "reddedildi" | "yaptirim";
 export const SIKAYET_DURUMLARI = ["acik", "reddedildi", "yaptirim"] as const;
 
+export interface Bildirim {
+  sikayetci: string;
+  neden: SikayetNedeni;
+  aciklama?: string;
+  zaman: number;
+}
+
+/**
+ * Hedef başına tek açık şikayet: aynı hedefe farklı şikayetçilerden gelenler bu kayıtta birleşir (`sayi`).
+ * `sikayetci`, `neden`, `aciklama` ilk bildirimdir.
+ */
 export interface Sikayet {
   id: number;
   sikayetci: string;
@@ -26,7 +42,17 @@ export interface Sikayet {
   aciklama?: string;
   zaman: number;
   durum: SikayetDurumu;
+  /** Birleşen farklı şikayetçi sayısı (ilk dahil). */
+  sayi: number;
+  /** İlk BILDIRIM_EN_COK bildirim. */
+  bildirimler: Bildirim[];
   karar?: Kaldirma & { yaptirim?: number };
+}
+
+/** Saf: aynı hedefe yeni bir şikayetçinin bildirimini birleştirir. */
+export function bildirimBirlestir(s: Sikayet, b: Bildirim): Sikayet {
+  const bildirimler = s.bildirimler.length < BILDIRIM_EN_COK ? [...s.bildirimler, b] : s.bildirimler;
+  return { ...s, sayi: s.sayi + 1, bildirimler };
 }
 
 export interface SikayetGirdisi {

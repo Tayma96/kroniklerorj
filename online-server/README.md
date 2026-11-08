@@ -141,8 +141,16 @@ Kurallar `src/yonetim/` (`yetki.ts` matris, `parametre.ts` kayıt defteri, `yapt
   kaldırılması, oyuncu görüntüleme. Yalnız kurucu = kalıcı uzaklaştırma ve kaldırması, parametre değiştir/geri al,
   rol, duyuru, işlem kaydı. Bilinmeyen işlem reddedilir. Ad değişikliği zorunluluğu ve iade/geri alma matriste var,
   uçları Y2'de.
-- **Kayıt:** her yazan işlem, her başarısız deneme (yetkisiz giriş dahil) ve oyuncu görüntüleme kayda girer.
-  Yazan uçlar `istekNo` ile tekrar güvenlidir ve `gerekce` (10-500 karakter) ister.
+- **Kayıt:** her yazan işlem, rolü olan (ya da rolü alınmış) yöneticinin her başarısız denemesi ve oyuncu görüntüleme
+  kayda girer; kayıt girdi başına ayrı anahtardır, hiç silinmez. Rolsüz kişinin giriş denemesi kaydı şişirmesin diye
+  kayda yazılmaz: günlük sayaçta tutulur (`ben.yetkisizGirisBugun`) ve dakikada toplam 20 ile sınırlıdır.
+  Yazan uçlar `istekNo` ile tekrar güvenlidir (aynı istekNo başka uç ya da gövdeyle `istekno_gecersiz`) ve en az 10
+  harf/rakam içeren `gerekce` ister; görünmez, yön değiştiren ve dolgu karakterleri metinlerden atılır.
+- **HesapDO'ya yazılamazsa:** yaptırım kaydı tutulur, yanıt `hesabaYazildi: false` der ve kayda girer; aynı istekNo ile
+  yeniden göndermek ya da aynı hedefte kaldırma denemesi (`yaptirim_yok` dahil) güncel özeti yeniden yazar.
+- **Şikayet:** hedef başına tek açık kayıt; farklı şikayetçiler birleşir (`sayi`), aynı şikayetçi ikinci kez sayılmaz.
+  Şikayetçi başına en çok 10 açık şikayet ve günlük sınır; kuyruk (2000 hedef) doluysa yalnız yeni hedef reddedilir.
+  Moderatör, başka yöneticilerin e-postası yerine rolünü görür.
 - **Kendine fayda yasağı:** yönetici, Google `sub`ının oyuncu hesabından yaptırım kaldıramaz, kendi hakkındaki
   şikayete karar veremez (`kendi_hedef`).
 - **Yaptırım uygulanır:** uzaklaştırılmış hesabın `/v1/*` istekleri 403 `{hata: "uzaklastirildi", bitis}` döner
@@ -166,7 +174,7 @@ Kurallar `src/yonetim/` (`yetki.ts` matris, `parametre.ts` kayıt defteri, `yapt
 | `GET /yonetim/parametreler` | — | kurucu |
 | `POST /yonetim/parametre` | `{ad, deger, gerekce, istekNo}` | kurucu |
 | `POST /yonetim/parametre-geri` | `{ad, gerekce, istekNo}` | kurucu |
-| `POST /yonetim/rol` | `{eposta, rol: "moderator"\|"kurucu"\|null, gerekce, istekNo}` | kurucu (ortamdaki kurucu düşürülemez) |
+| `POST /yonetim/rol` | `{eposta, rol: "moderator"\|null, gerekce, istekNo}` | kurucu (kurucu yalnız `YONETICI_EPOSTALAR`dan gelir; verilemez, düşürülemez) |
 | `POST /yonetim/duyuru` | `{metin, gerekce, istekNo}` | kurucu |
 | `GET /yonetim/kayit` | `?imlec=` (en çok 50, yeniden eskiye) | kurucu |
 | `POST /v1/sikayet` | `{hedef, neden: kufur\|taciz\|uygunsuzAd\|hile\|dolandiricilik\|spam\|diger, aciklama?, istekNo}` | oyuncu (günde 5, kendini değil) |
@@ -179,8 +187,9 @@ parametre_gecersiz deger_sinir_disi geri_yok rol_gecersiz eposta_gecersiz kurucu
 **Berkay'ın yapacağı:** kurucu e-postasını (Google hesabı) sır olarak koymak:
 `npx wrangler secret put YONETICI_EPOSTALAR` (değer ör. `berkay@gmail.com`; birden çoksa virgülle). Boşken kimse
 yönetici değildir. Panel: `https://kronikler-online.<hesap>.workers.dev/yonetim`; Google ID token'ı elle yapıştırılır
-(belirtecin `aud`ı `GOOGLE_CLIENT_ID` listesinde olmalı; ayrı bir web istemcisi kullanılacaksa isteğe bağlı
-`YONETIM_GOOGLE_CLIENT_ID` değişkeni). Google düğmesi sonraki adımda.
+Yönetim girişi için **`YONETIM_GOOGLE_CLIENT_ID`** zorunludur (yönetim paneline ait Google istemci kimlikleri,
+virgülle; gizli değil). Boşsa `/yonetim/giris` `yapilandirma_eksik` döner; oyuncu `GOOGLE_CLIENT_ID`sine geri
+düşülmez (oyuncu uygulaması için verilmiş bir belirteç yönetim girişinde kullanılamasın). Google düğmesi sonraki adımda.
 
 ## Geliştirme
 

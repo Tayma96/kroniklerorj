@@ -167,7 +167,7 @@ async function yonetimGiris(istek: Request, env: Env): Promise<Response> {
   if (!govde.ok) return hataYaniti(govde.hata);
   const idToken = govde.deger.idToken;
   if (typeof idToken !== "string" || idToken.length === 0 || idToken.length > 8192) return hataYaniti("gecersiz_istek");
-  const kimlikler = istemciKimlikleri(env.YONETIM_GOOGLE_CLIENT_ID || env.GOOGLE_CLIENT_ID);
+  const kimlikler = istemciKimlikleri(env.YONETIM_GOOGLE_CLIENT_ID);
   const anahtar = oturumAnahtari(env);
   if (kimlikler.length === 0 || !anahtar) return hataYaniti("yapilandirma_eksik");
   let kimlik;

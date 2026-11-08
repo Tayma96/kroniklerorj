@@ -19,6 +19,8 @@ export type YaptirimTuru = (typeof YAPTIRIM_TURLERI)[number];
 
 export interface Kaldirma {
   kim: string;
+  /** İşlemi yapanın o andaki rolü; moderatöre e-posta yerine bu gösterilir. */
+  kimRol?: string;
   zaman: number;
   gerekce: string;
 }
@@ -30,6 +32,7 @@ export interface Yaptirim {
   /** null = kalıcı. */
   bitis: number | null;
   kim: string;
+  kimRol?: string;
   gerekce: string;
   /** Şikayet kararından geldiyse şikayet numarası. */
   sikayet?: number;
@@ -55,17 +58,22 @@ export function hesapIdCoz(ham: unknown): string | undefined {
   return typeof ham === "string" && HESAP_DESENI.test(ham) ? ham : undefined;
 }
 
-/** Kırpılmış gerekçe; denetim kontrol karakterlerini atar. */
+/** Kırpılmış gerekçe; en az GEREKCE_EN_KISA harf/rakam içermeli (boşluk, noktalama, görünmez dolgu sayılmaz). */
 export function gerekceCoz(ham: unknown): Sonuc<string> {
   if (typeof ham !== "string") return hata("gerekce_gecersiz");
   const g = metinTemizle(ham);
-  const n = [...g].length;
-  return n >= GEREKCE_EN_KISA && n <= GEREKCE_EN_UZUN ? basarili(g) : hata("gerekce_gecersiz");
+  const harfRakam = g.match(/[\p{L}\p{N}]/gu)?.length ?? 0;
+  return harfRakam >= GEREKCE_EN_KISA && [...g].length <= GEREKCE_EN_UZUN ? basarili(g) : hata("gerekce_gecersiz");
 }
 
-/** Satır sonu dışındaki denetim karakterlerini atar, kırpar. */
+/**
+ * Görünmez ve yön değiştiren karakterleri atar, kırpar: satır sonu dışındaki denetim karakterleri (Cc), biçim
+ * karakterleri (Cf: sıfır genişlikli, bidi U+202A-202E, U+2066-2069, BOM) ve harf sayılan boş dolgular
+ * (Hangul dolgu U+115F, U+1160, U+3164, U+FFA0; Braille boşluğu U+2800).
+ */
+const GORUNMEZ = /[\p{Cc}\p{Cf}\u115f\u1160\u3164\uffa0\u2800]/gu;
 export function metinTemizle(ham: string): string {
-  return ham.normalize("NFC").replace(/[\u0000-\u0009\u000b-\u001f\u007f]/g, "").trim();
+  return ham.normalize("NFC").replace(GORUNMEZ, (c) => (c === "\n" ? c : "")).trim();
 }
 
 export function turMu(v: unknown): v is YaptirimTuru {

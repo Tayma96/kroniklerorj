@@ -73,8 +73,15 @@ export function kurucuListesi(deger: string | undefined): Set<string> {
   return kume;
 }
 
-/** Ortamdaki kurucu her zaman kurucudur; değilse depodaki rol. */
+/** Depoda verilebilen roller: kurucu yalnız ortamdan (YONETICI_EPOSTALAR) gelir, /yonetim/rol ile verilemez. */
+export const VERILEBILIR_ROLLER = ["moderator"] as const;
+
+export function verilebilirRolMu(v: unknown): v is (typeof VERILEBILIR_ROLLER)[number] {
+  return v === "moderator";
+}
+
+/** Ortamdaki kurucu her zaman kurucudur; değilse depodaki rol (yalnız moderatör; depodaki "kurucu" yok sayılır). */
 export function rolCoz(eposta: string, kurucular: ReadonlySet<string>, kayitli: unknown): Rol | undefined {
   if (kurucular.has(eposta)) return "kurucu";
-  return rolMu(kayitli) ? kayitli : undefined;
+  return verilebilirRolMu(kayitli) ? kayitli : undefined;
 }

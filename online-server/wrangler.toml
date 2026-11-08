@@ -41,4 +41,5 @@ new_sqlite_classes = ["YonetimDO"]
 GOOGLE_CLIENT_ID = ""
 # YONETICI_EPOSTALAR (kurucu e-postaları, virgülle ayrılmış) burada DEĞİL: e-posta depoya girmesin diye
 # `wrangler secret put YONETICI_EPOSTALAR` ile sır olarak konur. Boşken hiç kimse yönetici değildir.
-# İsteğe bağlı YONETIM_GOOGLE_CLIENT_ID: yönetici girişinde kabul edilen istemci kimlikleri (yoksa GOOGLE_CLIENT_ID).
+# Zorunlu YONETIM_GOOGLE_CLIENT_ID: yönetici girişinde kabul edilen istemci kimlikleri. Boşsa yönetim girişi kapalıdır
+# (yapilandirma_eksik); oyuncu uygulamasının GOOGLE_CLIENT_ID listesine geri düşülmez.

@@ -114,15 +114,17 @@ async function yaptirimUygula() {
   const tur = $("#yTur").value;
   const govde = { hedef: seciliHesap, tur, gerekce: $("#yGerekce").value, istekNo: istekNo() };
   if (tur !== "kaliciUzaklastirma") govde.gun = Number($("#yGun").value);
-  await api("POST", "yaptirim", govde);
+  const v = await api("POST", "yaptirim", govde);
   $("#yGerekce").value = "";
+  if (v.hesabaYazildi === false) throw new Error("kaydedildi ama oyuncu hesabına yazılamadı; tekrar deneyin");
   await oyuncuAra("hesap=" + encodeURIComponent(seciliHesap));
 }
 async function yaptirimKaldir() {
   const govde = { hedef: seciliHesap, gerekce: $("#yGerekce").value, istekNo: istekNo() };
   if ($("#kTur").value) govde.tur = $("#kTur").value;
-  await api("POST", "yaptirim-kaldir", govde);
+  const v = await api("POST", "yaptirim-kaldir", govde);
   $("#yGerekce").value = "";
+  if (v.hesabaYazildi === false) throw new Error("kaydedildi ama oyuncu hesabına yazılamadı; tekrar deneyin");
   await oyuncuAra("hesap=" + encodeURIComponent(seciliHesap));
 }
 
@@ -132,7 +134,7 @@ async function sikayetYukle() {
   k.append(el("div", { class: "kucuk", metin: "Açık toplam: " + v.toplamAcik }));
   for (const s of v.sikayetler) {
     const kart = el("div", { class: "kart" },
-      el("strong", { metin: "#" + s.id + " " + s.neden }), " · " + zaman(s.zaman),
+      el("strong", { metin: "#" + s.id + " " + s.neden }), " · " + (s.sayi || 1) + " şikayetçi · " + zaman(s.zaman),
       el("div", { class: "kucuk", metin: "Hedef: " + s.hedef + " · Şikayetçi: " + s.sikayetci }),
       s.aciklama ? el("pre", { metin: s.aciklama }) : null,
       s.karar ? el("div", { class: "kucuk", metin: "Karar: " + s.durum + " · " + s.karar.kim + " · " + s.karar.gerekce }) : null,
@@ -246,7 +248,7 @@ const GOVDE = `<header><h1>Kronikler Online · Yönetim</h1><div><span id="benBi
 <button id="dGonder">Duyur</button><div class="hata" id="duyuruHata"></div></section>
 
 <section data-yetki="rolVer" hidden><h2>Roller</h2>
-<div class="satir"><input id="rEposta" type="email" placeholder="E-posta"><select id="rRol"><option value="moderator">Moderatör</option><option value="kurucu">Kurucu</option><option value="">Rolü al</option></select></div>
+<div class="satir"><input id="rEposta" type="email" placeholder="E-posta"><select id="rRol"><option value="moderator">Moderatör</option><option value="">Rolü al</option></select></div>
 <label for="rGerekce">Gerekçe</label><input id="rGerekce">
 <button id="rKaydet">Kaydet</button><div class="hata" id="rolHata"></div></section>
 
