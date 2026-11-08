@@ -119,6 +119,7 @@ interface SubtleCrypto {
   sign(algorithm: AlgoritmaKimligi, key: CryptoKey, data: BufferSource): Promise<ArrayBuffer>;
   verify(algorithm: AlgoritmaKimligi, key: CryptoKey, signature: BufferSource, data: BufferSource): Promise<boolean>;
   generateKey(algorithm: AlgoritmaKimligi, extractable: boolean, keyUsages: string[]): Promise<CryptoKeyPair>;
+  digest(algorithm: AlgoritmaKimligi, data: BufferSource): Promise<ArrayBuffer>;
 }
 interface Crypto {
   readonly subtle: SubtleCrypto;

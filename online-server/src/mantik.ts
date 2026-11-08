@@ -1,7 +1,7 @@
 // İş kuralları. Workers çalışma zamanına bağlı değildir: depo ve dış çağrılar parametre olarak gelir,
 // böylece `node --test` ile doğrudan denenir. HesapDO ve DunyaDO yalnız bunları depolamaya bağlar.
 
-import { adDogrula } from "./ad.ts";
+import { adAnahtari, adDogrula } from "./ad.ts";
 import type { Depo } from "./depo.ts";
 import { BEYLIKLER, yerlesimBul } from "./dunya-veri.ts";
 import { oyunAyi, sonrakiDonum, takvim } from "./saat.ts";
@@ -101,6 +101,10 @@ export async function girisKaydet(
   const kayit: HesapKaydi = onceki ? { ...onceki, sonGiris: simdi } : { hesapId, sub, olusturma: simdi, sonGiris: simdi };
   await depo.koy({ [HESAP]: kayit });
   return { profilVar: (await depo.al<Profil>(PROFIL)) !== undefined };
+}
+
+export function hesapKaydi(depo: Depo): Promise<HesapKaydi | undefined> {
+  return depo.al<HesapKaydi>(HESAP);
 }
 
 export async function profilGetir(depo: Depo): Promise<Sonuc<Profil>> {
@@ -269,6 +273,20 @@ export async function davetCoz(depo: Depo, ham: unknown): Promise<Sonuc<DavetBil
   const profil = sahip === undefined ? undefined : await depo.al<Profil>(KAYIT + sahip);
   if (!profil) return hata("davet_yok");
   return basarili({ kod, yerlesim: profil.yerlesim, beylik: profil.beylik, davetEden: profil.ad });
+}
+
+/** Yönetim: ada (Türkçe büyük/küçük harf duyarsız) ya da hesap kimliğine göre kayıtlı profil. */
+export async function oyuncuBul(depo: Depo, sorgu: { ad?: unknown; hesap?: unknown }): Promise<Sonuc<Profil>> {
+  let hesapId: string | undefined;
+  if (typeof sorgu.ad === "string" && sorgu.ad.length > 0 && sorgu.ad.length <= 64) {
+    hesapId = await depo.al<string>(AD + adAnahtari(sorgu.ad));
+  } else if (typeof sorgu.hesap === "string" && sorgu.hesap.length > 0 && sorgu.hesap.length <= 128) {
+    hesapId = sorgu.hesap;
+  } else {
+    return hata("gecersiz_istek");
+  }
+  const profil = hesapId === undefined ? undefined : await depo.al<Profil>(KAYIT + hesapId);
+  return profil ? basarili(profil) : hata("kisi_yok");
 }
 
 /** GET /v1/dunya: saat + beylikler ve yerleşimlerin doluluğu. */

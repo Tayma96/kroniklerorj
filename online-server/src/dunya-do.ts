@@ -1,9 +1,10 @@
-// DunyaDO: tek örnek ("dunya"). Yerleşim nüfus sayaçları, ad kaydı (benzersizlik), davet kodları.
+// DunyaDO: tek örnek ("dunya"). Yerleşim nüfus sayaçları, ad kaydı (benzersizlik ve yönetimde ad araması),
+// davet kodları.
 // İnce sarmalayıcıdır; kurallar mantik.ts'dedir.
 
 import { doDepo, type Depo } from "./depo.ts";
 import { iletiOku, jsonYanit } from "./ic.ts";
-import { davetCoz, davetOlustur, dunyaOzeti, kayitOl } from "./mantik.ts";
+import { davetCoz, davetOlustur, dunyaOzeti, kayitOl, oyuncuBul } from "./mantik.ts";
 import { basarili, hata, type DunyaIleti, type Env, type Sonuc } from "./tipler.ts";
 
 const rastgele = (bayt: number): Uint8Array => crypto.getRandomValues(new Uint8Array(bayt));
@@ -30,6 +31,8 @@ export class DunyaDO {
         return davetOlustur(this.#depo, ileti.hesapId, rastgele);
       case "davetCoz":
         return davetCoz(this.#depo, ileti.kod);
+      case "oyuncuBul":
+        return oyuncuBul(this.#depo, { ad: ileti.ad, hesap: ileti.hesap });
       default:
         return hata("gecersiz_istek");
     }

@@ -1,17 +1,23 @@
 // HesapDO: Google `sub` başına bir örnek. Hesap, profil, yerleşim işaretçisi, istekNo defteri (tekrar güvenliği)
 // ve hız sınırı. Yerleşim uçları buradan oyuncunun YerlesimDO'suna iletilir (hız sınırı burada uygulanır).
-// İnce sarmalayıcıdır; kurallar mantik.ts'dedir.
+// Yaptırım: YonetimDO'nun yazdığı etkin özet burada her iletiden önce uygulanır (giriş hariç).
+// İnce sarmalayıcıdır; kurallar mantik.ts ve yonetim/yaptirim.ts'dedir.
 
 import { doDepo, type Depo } from "./depo.ts";
-import { dunyaCagir, iletiOku, jsonYanit, yerlesimCagir } from "./ic.ts";
-import { girisKaydet, hizKontrol, profilGetir, profilOlustur, sakinKaydi, yerlesimeIlet, type HizDurumu, type YerlesimIstegi } from "./mantik.ts";
-import { basarili, hata, type Env, type HesapIleti, type Profil, type Sonuc } from "./tipler.ts";
+import { dunyaCagir, iletiOku, jsonYanit, yerlesimCagir, yonetimCagir } from "./ic.ts";
+import { girisKaydet, hesapKaydi, hizKontrol, profilGetir, profilOlustur, sakinKaydi, yerlesimeIlet, type HizDurumu, type YerlesimIstegi } from "./mantik.ts";
+import { basarili, hata, type Env, type HesapIleti, type HesapYaptirimi, type Profil, type Sonuc } from "./tipler.ts";
+import { uzaklastirmaBilgisi, yaptirimEngeli } from "./yonetim/yaptirim.ts";
+
+const YAPTIRIM = "yaptirim";
 
 export class HesapDO {
   readonly #depo: Depo;
   readonly #env: Env;
   /** Bellekte tutulur: örnek uykuya geçince sıfırlanması zararsızdır, depolamaya yazım harcamaz. */
   #hiz: HizDurumu | undefined;
+  /** Yaptırım özeti önbelleği: bu örnek tek yazandır, bu yüzden tutarlıdır. null = yok. */
+  #yaptirim: HesapYaptirimi | null | undefined;
 
   constructor(ctx: DurableObjectState, env: Env) {
     this.#depo = doDepo(ctx.storage);
@@ -22,16 +28,53 @@ export class HesapDO {
     const ileti = await iletiOku<HesapIleti>(istek);
     if (!ileti) return jsonYanit(hata("gecersiz_istek"));
     const simdi = Date.now();
+    // Yönetimin iç yazımı oyuncunun hız sınırına takılmaz.
+    if (ileti.islem === "yaptirimYaz") return jsonYanit(await this.#yaptirimYaz(ileti.durum));
     const hiz = hizKontrol(this.#hiz, simdi);
     this.#hiz = hiz.durum;
     if (!hiz.izin) return jsonYanit(hata("hiz_siniri"));
+    const yaptirim = await this.#yaptirimDurumu();
+    const engel = yaptirimEngeli(yaptirim, ileti.islem, simdi);
+    if (engel) return jsonYanit(engel);
+    if (ileti.islem === "giris") {
+      const g = await girisKaydet(this.#depo, ileti.hesapId, ileti.sub, simdi);
+      const uzak = uzaklastirmaBilgisi(yaptirim, simdi);
+      return jsonYanit(basarili(uzak ? { ...g, uzaklastirma: uzak } : g));
+    }
     return jsonYanit(await this.#isle(ileti, simdi));
+  }
+
+  async #yaptirimDurumu(): Promise<HesapYaptirimi | undefined> {
+    if (this.#yaptirim === undefined) this.#yaptirim = (await this.#depo.al<HesapYaptirimi>(YAPTIRIM)) ?? null;
+    return this.#yaptirim ?? undefined;
+  }
+
+  async #yaptirimYaz(durum: unknown): Promise<Sonuc<unknown>> {
+    if (typeof durum !== "object" || durum === null) return hata("gecersiz_istek");
+    if (!(await hesapKaydi(this.#depo))) return hata("hesap_yok");
+    const d = durum as HesapYaptirimi;
+    const temiz: HesapYaptirimi = {
+      ...(d.uzaklastirma ? { uzaklastirma: { bitis: d.uzaklastirma.bitis ?? null } } : {}),
+      ...(d.susturma ? { susturma: { bitis: d.susturma.bitis ?? null } } : {}),
+    };
+    await this.#depo.koy({ [YAPTIRIM]: temiz });
+    this.#yaptirim = temiz;
+    return basarili(temiz);
   }
 
   async #isle(ileti: HesapIleti, simdi: number): Promise<Sonuc<unknown>> {
     switch (ileti.islem) {
       case "giris":
         return basarili(await girisKaydet(this.#depo, ileti.hesapId, ileti.sub, simdi));
+      case "sikayet":
+        // Şikayet eden kayıtlı oyuncu olmalıdır; kurallar YonetimDO'da.
+        {
+          const profil = await profilGetir(this.#depo);
+          if (!profil.ok) return profil;
+        }
+        return yonetimCagir(this.#env, { islem: "sikayetEkle", sikayetci: ileti.hesapId, govde: ileti.govde });
+      case "duyurular":
+        return yonetimCagir(this.#env, { islem: "duyurular" });
       case "profil":
         return profilGetir(this.#depo);
       case "profilOlustur":

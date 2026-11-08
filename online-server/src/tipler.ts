@@ -98,6 +98,29 @@ export const HATA_DURUMU = {
   mal_gecersiz: 400,
   kota_doldu: 409,
   verim_yok: 409,
+  // Yönetim (Y1) ve yaptırım
+  uzaklastirildi: 403,
+  susturuldu: 403,
+  yetki_yok: 403,
+  eposta_dogrulanmamis: 403,
+  kendi_hedef: 403,
+  gerekce_gecersiz: 400,
+  gun_gecersiz: 400,
+  yaptirim_gecersiz: 400,
+  yaptirim_yok: 409,
+  kendini_sikayet: 409,
+  sikayet_gecersiz: 400,
+  sikayet_yok: 404,
+  sikayet_siniri: 429,
+  kuyruk_dolu: 503,
+  parametre_gecersiz: 400,
+  deger_sinir_disi: 400,
+  geri_yok: 409,
+  rol_gecersiz: 400,
+  eposta_gecersiz: 400,
+  kurucu_degismez: 409,
+  duyuru_gecersiz: 400,
+  hesap_yok: 404,
   yapilandirma_eksik: 500,
   sunucu_hatasi: 500,
 } as const satisfies Record<string, number>;
@@ -105,7 +128,8 @@ export const HATA_DURUMU = {
 export type HataKodu = keyof typeof HATA_DURUMU;
 
 export type Basarili<T> = { ok: true; deger: T };
-export type Basarisiz = { ok: false; hata: HataKodu };
+/** `bitis`: yalnız yaptırım engellerinde (uzaklastirildi/susturuldu); null = kalıcı. */
+export type Basarisiz = { ok: false; hata: HataKodu; bitis?: number | null };
 export type Sonuc<T> = Basarili<T> | Basarisiz;
 
 export function basarili<T>(deger: T): Basarili<T> {
@@ -125,6 +149,12 @@ export interface Env {
   GOOGLE_CLIENT_ID?: string;
   /** Worker sırrı; en az 32 karakter. */
   OTURUM_ANAHTARI?: string;
+  /** Tek örnek YonetimDO (idFromName("yonetim")): roller, işlem kaydı, parametreler, şikayet, yaptırım. */
+  YONETIM: DurableObjectNamespace;
+  /** Kurucu e-postaları, virgülle ayrılmış (sır olarak konur). Boşsa hiç kimse kurucu değildir. */
+  YONETICI_EPOSTALAR?: string;
+  /** İsteğe bağlı: yönetici girişinde kabul edilen Google istemci kimlikleri; yoksa GOOGLE_CLIENT_ID. */
+  YONETIM_GOOGLE_CLIENT_ID?: string;
 }
 
 /** Dünya DO'suna profil kaydı isteği (HesapDO gönderir). */
@@ -147,7 +177,48 @@ export type HesapIleti =
   | { islem: "olaylar"; hesapId: string; imlec?: string | null; dil?: string | null }
   | { islem: "kisi"; hesapId: string; kisi: string; dil?: string | null }
   | { islem: GovdeliIslem; hesapId: string; govde: unknown }
-  | { islem: "lonca"; hesapId: string; dil?: string | null };
+  | { islem: "lonca"; hesapId: string; dil?: string | null }
+  | { islem: "sikayet"; hesapId: string; govde: unknown }
+  | { islem: "duyurular"; hesapId: string }
+  /** YonetimDO → HesapDO: hesabın etkin yaptırım özeti (tamamı yazılır; tekrar güvenli). */
+  | { islem: "yaptirimYaz"; hesapId: string; durum: HesapYaptirimi };
+
+/** Hesabın etkin yaptırımları; alan yoksa o yaptırım yoktur. `bitis: null` = kalıcı. */
+export interface HesapYaptirimi {
+  uzaklastirma?: { bitis: number | null };
+  susturma?: { bitis: number | null };
+}
+
+/** Yönetici kimliği: Worker yönetici belirtecinden çıkarır; rol her istekte YonetimDO'da yeniden çözülür. */
+export interface YoneticiKimligi {
+  eposta: string;
+  sub: string;
+  /** Yöneticinin kendi oyuncu hesabının kimliği (hesapKimligi(sub)); kendine fayda yasağı için. */
+  hesap: string;
+}
+
+export const YONETIM_UCLARI = {
+  ben: "GET",
+  oyuncu: "GET",
+  yaptirim: "POST",
+  "yaptirim-kaldir": "POST",
+  sikayetler: "GET",
+  "sikayet-karar": "POST",
+  parametreler: "GET",
+  parametre: "POST",
+  "parametre-geri": "POST",
+  rol: "POST",
+  duyuru: "POST",
+  kayit: "GET",
+} as const satisfies Record<string, "GET" | "POST">;
+export type YonetimUcu = keyof typeof YONETIM_UCLARI;
+
+export type YonetimIleti =
+  | { islem: "giris"; yonetici: YoneticiKimligi }
+  | { islem: "yonet"; yonetici: YoneticiKimligi; uc: YonetimUcu; govde?: unknown; sorgu?: Record<string, string | null> }
+  /** HesapDO → YonetimDO: oyuncu şikayeti. */
+  | { islem: "sikayetEkle"; sikayetci: string; govde: unknown }
+  | { islem: "duyurular" };
 
 /** Gövdeli (istekNo'lu ya da yazan) yerleşim işlemleri: HesapDO aynen YerlesimDO'ya iletir. */
 export const GOVDELI_ISLEMLER = ["eylem", "tanidik", "meslek", "temelIs", "tabanAl"] as const;
@@ -174,4 +245,6 @@ export type DunyaIleti =
   | { islem: "ozet" }
   | { islem: "kayit"; istek: KayitIstegi }
   | { islem: "davetOlustur"; hesapId: string }
-  | { islem: "davetCoz"; kod: string };
+  | { islem: "davetCoz"; kod: string }
+  /** YonetimDO → DunyaDO: ada ya da hesap kimliğine göre kayıtlı profil. */
+  | { islem: "oyuncuBul"; ad?: string; hesap?: string };

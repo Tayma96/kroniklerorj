@@ -1,5 +1,6 @@
 // Google kimlik belirteci (ID token, JWT RS256) doğrulama. WebCrypto ile; Workers ve Node'da aynı API.
-// Kimlik = `sub`. `email_verified` gerekmez; e-posta hiç okunmaz.
+// Kimlik = `sub`. Oyuncu girişi e-postayı kullanmaz. Yönetici girişi için e-posta yalnız Google onu doğrulamışsa
+// (`email_verified === true`) döndürülür; doğrulanmamış e-posta hiç dönmez.
 
 import { b64urlCoz, b64urlJson, utf8 } from "./b64.ts";
 
@@ -37,6 +38,8 @@ export interface GoogleKimligi {
   sub: string;
   /** Google `given_name`; ad önerisi içindir, kimlik değildir. */
   ad?: string;
+  /** Yalnız `email_verified` doğruysa; küçük harfe çevrilmiş. Yalnız yönetici rolü çözümünde kullanılır. */
+  eposta?: string;
 }
 
 export interface DogrulayiciAyari {
@@ -108,7 +111,12 @@ export class GoogleDogrulayici {
       throw new GoogleHatasi("sub");
     }
     const ad = typeof yuk.given_name === "string" ? yuk.given_name.trim().slice(0, 64) : "";
-    return ad ? { sub: yuk.sub, ad } : { sub: yuk.sub };
+    const kimlik: GoogleKimligi = ad ? { sub: yuk.sub, ad } : { sub: yuk.sub };
+    const dogrulanmis = yuk.email_verified === true || yuk.email_verified === "true";
+    if (dogrulanmis && typeof yuk.email === "string" && yuk.email.length <= 254) {
+      kimlik.eposta = yuk.email.trim().toLowerCase();
+    }
+    return kimlik;
   }
 
   async #anahtar(kid: string): Promise<CryptoKey> {

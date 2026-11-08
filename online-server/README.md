@@ -5,14 +5,15 @@ Faz 1 (kimlik ve varış) ve Faz 2a-2b (yaşayan yerleşim çekirdeği, öğrenm
 Tek oyunculu oyundan ve `server/`'dan tamamen ayrıdır; ayrı ad `kronikler-online` ile dağıtılır.
 
 - **Google girişi:** Google kimlik belirteci (ID token) WebCrypto ile doğrulanır (JWKS önbellekli, RS256, `iss`, `aud`,
-  `exp`/`iat` 60 sn payla). Kimlik = Google `sub`; e-posta okunmaz.
+  `exp`/`iat` 60 sn payla). Kimlik = Google `sub`; oyuncu girişinde e-posta okunmaz (yalnız yönetim girişi
+  doğrulanmış e-postayı kullanır).
 - **Oturum:** 30 günlük, HMAC-SHA256 imzalı sunucu belirteci (`OTURUM_ANAHTARI` sırrıyla).
 - **Dünya saati:** 12 gerçek saat = 1 oyun ayı; dönümler TR 00:00 ve 12:00. Başlangıç 1250 Ocak (`src/saat.ts`).
 - **Dünya:** 7 beylik, her birinde 1 şehir, 2-3 kasaba, 4-6 köy (`src/dunya-veri.ts`).
 - **Profil:** hesap başına bir profil (ad, cinsiyet, beylik, yerleşim, 12 yaşında doğum). Ad Türkçe büyük/küçük harf
   duyarsız eşsizdir. Yerleşim doluysa yalnız davetle girilir; davetle gelen davet edenin yerleşimine yerleşir.
 - **Tekrar güvenliği:** aynı `istekNo` ile gelen profil isteği aynı sonucu döndürür; nüfus iki kez sayılmaz.
-- **Hız sınırı:** hesap başına dakikada 30 istek.
+- **Hız sınırı:** hesap başına dakikada 30 istek; yönetici başına dakikada 60.
 
 Dosyalar: iş kuralları `src/mantik.ts` (Workers'a bağlı değil, testlenir); `src/hesap-do.ts` (`HesapDO`, Google `sub`
 başına) ve `src/dunya-do.ts` (`DunyaDO`, tek örnek) bunları depolamaya bağlayan ince sarmalayıcılardır.
@@ -123,6 +124,63 @@ Dağıtım **elle** yapılır; otomatik dağıtım ve CI yoktur. Anahtar sohbete
 
 Yerel çalışma için (isteğe bağlı) `online-server/.dev.vars` dosyasına `OTURUM_ANAHTARI=...` yazılabilir; bu dosya
 `.gitignore`'dadır.
+
+## Yönetim (Y1 çekirdeği)
+
+Ana tasarım §7. Tek örnek `YonetimDO` (`idFromName("yonetim")`, bağ `YONETIM`, göç `v3`): yönetici rolleri, **yalnız
+eklenen** işlem kaydı (silme/düzenleme ucu yoktur), parametre katmanı, şikayet kuyruğu, yaptırımlar, duyurular.
+Kurallar `src/yonetim/` (`yetki.ts` matris, `parametre.ts` kayıt defteri, `yaptirim.ts`, `sikayet.ts`, `islem.ts`,
+`kimlik.ts` belirteç, `panel.ts` web paneli).
+
+- **Kimlik:** `POST /yonetim/giris {idToken}` → `{oturum, rol}`. Google belirteci doğrulanır; e-posta yalnız
+  `email_verified` doğruysa kabul edilir (`eposta_dogrulanmamis`). Kurucular `YONETICI_EPOSTALAR`dan, moderatörler
+  YonetimDO'dan; rol istemciden alınmaz ve her istekte yeniden çözülür. Yönetici belirteci 12 saatliktir ve
+  `OTURUM_ANAHTARI`ndan türetilmiş ayrı bir anahtarla imzalanır: oyuncu belirteci `/yonetim/*`de, yönetici belirteci
+  `/v1/*`de geçmez.
+- **Yetki:** moderatör = şikayet kuyruğu/karar, susturma (≤30 gün), geçici uzaklaştırma (≤7 gün, parametre), bunların
+  kaldırılması, oyuncu görüntüleme. Yalnız kurucu = kalıcı uzaklaştırma ve kaldırması, parametre değiştir/geri al,
+  rol, duyuru, işlem kaydı. Bilinmeyen işlem reddedilir. Ad değişikliği zorunluluğu ve iade/geri alma matriste var,
+  uçları Y2'de.
+- **Kayıt:** her yazan işlem, her başarısız deneme (yetkisiz giriş dahil) ve oyuncu görüntüleme kayda girer.
+  Yazan uçlar `istekNo` ile tekrar güvenlidir ve `gerekce` (10-500 karakter) ister.
+- **Kendine fayda yasağı:** yönetici, Google `sub`ının oyuncu hesabından yaptırım kaldıramaz, kendi hakkındaki
+  şikayete karar veremez (`kendi_hedef`).
+- **Yaptırım uygulanır:** uzaklaştırılmış hesabın `/v1/*` istekleri 403 `{hata: "uzaklastirildi", bitis}` döner
+  (`bitis: null` = kalıcı). `/v1/giris` açıktır ve yanıta `uzaklastirma: {bitis}` ekler. Susturma Y1'de yalnız
+  kayıtlı bayraktır (sohbet Faz 10'da okuyacak) ve `/v1/sikayet`i kapatır (`susturuldu`).
+- **Parametreler:** izinli adlar, koddaki varsayılan, alt/üst sınır ve açıklama `src/yonetim/parametre.ts`'de.
+  Her değişiklik sürümlüdür; geri al bir önceki sürüme (en sonunda varsayılana) döner. **Y1'de yalnız
+  `SIKAYET_GUNLUK` ve `GECICI_UZAKLASTIRMA_EN_COK_GUN` çalışma anında okunur; `NPC_AYLIK_KOTA`, `NPC_CARPAN`,
+  `KITLIK_PRIM`, `TEMEL_CIKTI`, `AZALAN_PENCERE_IS`, `HIZ_SINIRI` saklanır ama oyun modülleri onları henüz
+  okumaz (koddaki değerle çalışır); okuma Y2'de bağlanacak.**
+
+| Uç | Gövde / sorgu | Kim |
+|---|---|---|
+| `GET /yonetim` | — | panel (HTML; sıkı CSP, `x-frame-options: DENY`) |
+| `GET /yonetim/ben` | — | `{eposta, rol, yetkiler, kendiHesap, ortamKurucusu}` |
+| `GET /yonetim/oyuncu` | `?ad=` ya da `?hesap=` | `{profil, yerlesim, yaptirim: {etkin, liste}, kendi}` |
+| `POST /yonetim/yaptirim` | `{hedef, tur: "susturma"\|"uzaklastirma"\|"kaliciUzaklastirma", gun?, gerekce, istekNo}` | mod / kalıcı: kurucu |
+| `POST /yonetim/yaptirim-kaldir` | `{hedef, tur?, gerekce, istekNo}` | mod / kalıcı: kurucu |
+| `GET /yonetim/sikayetler` | `?durum=acik\|reddedildi\|yaptirim` | mod |
+| `POST /yonetim/sikayet-karar` | `{id, karar: "reddet"\|"yaptirim", tur?, gun?, gerekce, istekNo}` | mod |
+| `GET /yonetim/parametreler` | — | kurucu |
+| `POST /yonetim/parametre` | `{ad, deger, gerekce, istekNo}` | kurucu |
+| `POST /yonetim/parametre-geri` | `{ad, gerekce, istekNo}` | kurucu |
+| `POST /yonetim/rol` | `{eposta, rol: "moderator"\|"kurucu"\|null, gerekce, istekNo}` | kurucu (ortamdaki kurucu düşürülemez) |
+| `POST /yonetim/duyuru` | `{metin, gerekce, istekNo}` | kurucu |
+| `GET /yonetim/kayit` | `?imlec=` (en çok 50, yeniden eskiye) | kurucu |
+| `POST /v1/sikayet` | `{hedef, neden: kufur\|taciz\|uygunsuzAd\|hile\|dolandiricilik\|spam\|diger, aciklama?, istekNo}` | oyuncu (günde 5, kendini değil) |
+| `GET /v1/duyurular` | — | oyuncu: son 5 `{id, metin, zaman}` |
+
+Yeni hata kodları: `uzaklastirildi susturuldu yetki_yok eposta_dogrulanmamis kendi_hedef gerekce_gecersiz gun_gecersiz
+yaptirim_gecersiz yaptirim_yok kendini_sikayet sikayet_gecersiz sikayet_yok sikayet_siniri kuyruk_dolu
+parametre_gecersiz deger_sinir_disi geri_yok rol_gecersiz eposta_gecersiz kurucu_degismez duyuru_gecersiz hesap_yok`.
+
+**Berkay'ın yapacağı:** kurucu e-postasını (Google hesabı) sır olarak koymak:
+`npx wrangler secret put YONETICI_EPOSTALAR` (değer ör. `berkay@gmail.com`; birden çoksa virgülle). Boşken kimse
+yönetici değildir. Panel: `https://kronikler-online.<hesap>.workers.dev/yonetim`; Google ID token'ı elle yapıştırılır
+(belirtecin `aud`ı `GOOGLE_CLIENT_ID` listesinde olmalı; ayrı bir web istemcisi kullanılacaksa isteğe bağlı
+`YONETIM_GOOGLE_CLIENT_ID` değişkeni). Google düğmesi sonraki adımda.
 
 ## Geliştirme
 

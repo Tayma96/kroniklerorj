@@ -1,9 +1,19 @@
 // Worker ile Durable Object'ler arasındaki iç çağrılar ve JSON yanıt yardımcıları.
 
-import { hata, type DunyaIleti, type Env, type HesapIleti, type Sonuc, type YerlesimIleti } from "./tipler.ts";
+import {
+  hata,
+  type DunyaIleti,
+  type Env,
+  type HesapIleti,
+  type Sonuc,
+  type YerlesimIleti,
+  type YonetimIleti,
+} from "./tipler.ts";
 
 /** Tek dünya örneğinin adı. */
 export const DUNYA_ADI = "dunya";
+/** Tek yönetim örneğinin adı. */
+export const YONETIM_ADI = "yonetim";
 
 export function jsonYanit(veri: unknown, durum = 200): Response {
   return new Response(JSON.stringify(veri), {
@@ -21,7 +31,10 @@ export async function iletiOku<T>(istek: Request): Promise<T | undefined> {
   }
 }
 
-async function icCagri<T>(stub: DurableObjectStub, ileti: HesapIleti | DunyaIleti | YerlesimIleti): Promise<Sonuc<T>> {
+async function icCagri<T>(
+  stub: DurableObjectStub,
+  ileti: HesapIleti | DunyaIleti | YerlesimIleti | YonetimIleti,
+): Promise<Sonuc<T>> {
   const yanit = await stub.fetch("https://ic/", {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -32,6 +45,10 @@ async function icCagri<T>(stub: DurableObjectStub, ileti: HesapIleti | DunyaIlet
 
 export function dunyaCagir<T>(env: Env, ileti: DunyaIleti): Promise<Sonuc<T>> {
   return icCagri<T>(env.DUNYA.get(env.DUNYA.idFromName(DUNYA_ADI)), ileti);
+}
+
+export function yonetimCagir<T>(env: Env, ileti: YonetimIleti): Promise<Sonuc<T>> {
+  return icCagri<T>(env.YONETIM.get(env.YONETIM.idFromName(YONETIM_ADI)), ileti);
 }
 
 /** Yerleşim DO'su: yerleşim başına bir örnek. */

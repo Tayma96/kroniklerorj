@@ -10,13 +10,17 @@ const BICIM = /^[A-Za-z0-9_-]{1,2048}\.[A-Za-z0-9_-]{43}$/;
 export type OturumHatasi = "oturum_gecersiz" | "oturum_suresi_doldu";
 export type OturumSonucu = { ok: true; hesapId: string; son: number } | { ok: false; hata: OturumHatasi };
 
-// Çözülmüş anahtar önbellekte tutulur (bekleyen söz istekler arasında paylaşılmaz).
-let onbellek: { gizli: string; anahtar: CryptoKey } | undefined;
+// Çözülmüş anahtarlar önbellekte tutulur (bekleyen söz istekler arasında paylaşılmaz). Oyuncu ve yönetici
+// oturumu ayrı anahtarlar kullanır; ikisi birlikte sığar.
+const onbellek = new Map<string, CryptoKey>();
+const ONBELLEK_EN_COK = 4;
 
 async function anahtarAl(gizli: string): Promise<CryptoKey> {
-  if (onbellek?.gizli === gizli) return onbellek.anahtar;
+  const varolan = onbellek.get(gizli);
+  if (varolan) return varolan;
   const anahtar = await crypto.subtle.importKey("raw", utf8(gizli), HMAC, false, ["sign"]);
-  onbellek = { gizli, anahtar };
+  if (onbellek.size >= ONBELLEK_EN_COK) onbellek.clear();
+  onbellek.set(gizli, anahtar);
   return anahtar;
 }
 
