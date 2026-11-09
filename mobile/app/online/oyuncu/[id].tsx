@@ -16,7 +16,7 @@ import { OnlineKapisi } from "../../../lib/online/durum";
 import { onlineEkranAcik } from "../../../lib/online/kapi";
 import { oyuncuSec } from "../../../lib/online/onizleme";
 import { AltinDugme, Bant, Cerceve, CizgiDugme, GeriDugme, Madalyon, ONL, geriGit, giris, hiza, yon } from "../../../lib/online/ui";
-import { AltPanel, Baslik2, BosKart, KisiYuzu, OnlineSayfa, Rozet, TakatHapi, YerlesimBekle, Yukleniyor, sahneGorseli, useYerlesimEkrani } from "../../../lib/online/yasam-ui";
+import { AltPanel, Baslik2, BosKart, KisiYuzu, OnlineSayfa, Rozet, SatirOku, TakatHapi, YerlesimBekle, Yukleniyor, sahneGorseli, useYerlesimEkrani } from "../../../lib/online/yasam-ui";
 import { MEKAN_IKON, etkiYaz } from "../../../lib/online/metin";
 import { hataAnahtari } from "../../../lib/online/hata";
 import { NAMLAR, type OnlineHata } from "../../../lib/online/protokol";
@@ -57,15 +57,16 @@ function Teveccuh({ p, rtl, t, lang }: { p: OyuncuProfili; rtl: boolean; t: Cevi
 }
 
 /** Mesleki geçmiş: her meslekte kademe ve öğrenilmiş dallar; toplam beceri; unvanlar (sunucu gönderince). */
-function MeslekiGecmis({ p, rtl, t }: { p: OyuncuProfili; rtl: boolean; t: Ceviri }) {
+function MeslekiGecmis({ p, rtl, t, onMeslek }: { p: OyuncuProfili; rtl: boolean; t: Ceviri; onMeslek: (m: string) => void }) {
   const satirlar = [...p.meslekler].sort((a, b) => b.kademe - a.kademe || b.dallar.length - a.dallar.length);
   const toplam = p.meslekler.reduce((a, m) => a + m.dallar.length, 0);
   return <Cerceve ic={{ paddingVertical: 4 }}>
     {satirlar.length ? satirlar.map((m, i) => {
       const rol = m.meslek === p.meslek.ana ? t("onl.tp.mg.ana") : m.meslek === p.meslek.yan ? t("onl.tp.mg.yan") : null;
       const dallar = m.dallar.map((d) => t(`onl.mes.${m.meslek}.${d}`)).join(" · ");
-      return <View key={m.meslek} accessible accessibilityLabel={`${t("onl.mes." + m.meslek)}, ${kademeAdi(t, m.kademe)}. ${dallar || t("onl.tp.mg.dalYok")}`}
-        style={{ flexDirection: yon(rtl), alignItems: "center", gap: 10, paddingHorizontal: 12, paddingVertical: 9, borderTopWidth: i ? 1 : 0, borderColor: "rgba(201,162,78,0.12)" }}>
+      return <Pressable key={m.meslek} accessibilityRole="link" accessibilityLabel={`${t("onl.mes." + m.meslek)}, ${kademeAdi(t, m.kademe)}. ${dallar || t("onl.tp.mg.dalYok")}`}
+        accessibilityHint={t("onl.tp.mg.agac")} onPress={() => { hap("tap"); onMeslek(m.meslek); }}
+        style={({ pressed }) => ({ minHeight: 44, flexDirection: yon(rtl), alignItems: "center", gap: 10, paddingHorizontal: 12, paddingVertical: 9, borderTopWidth: i ? 1 : 0, borderColor: "rgba(201,162,78,0.12)", backgroundColor: pressed ? "rgba(201,162,78,0.08)" : "transparent" })}>
         <Madalyon icon="anvil" size={36} aktif={m.kademe >= 2} />
         <View style={{ flex: 1, gap: 3 }}>
           <View style={{ flexDirection: yon(rtl), flexWrap: "wrap", alignItems: "center", gap: 6 }}>
@@ -74,7 +75,8 @@ function MeslekiGecmis({ p, rtl, t }: { p: OyuncuProfili; rtl: boolean; t: Cevir
           </View>
           <Text style={{ fontFamily: F.serif, fontSize: 14.5, lineHeight: 19, color: dallar ? C.parchmentDim : C.parchmentMuted, textAlign: hiza(rtl) }}>{dallar || t("onl.tp.mg.dalYok")}</Text>
         </View>
-      </View>;
+        <SatirOku rtl={rtl} />
+      </Pressable>;
     }) : <View style={{ padding: 12 }}><Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{t(p.ben ? "onl.tp.mg.bosBen" : "onl.tp.mg.bos")}</Text></View>}
     <View style={{ gap: 6, paddingHorizontal: 12, paddingVertical: 10, borderTopWidth: 1, borderColor: "rgba(201,162,78,0.18)" }}>
       <Text style={{ fontFamily: F.display, fontSize: 12.5, color: C.goldBright, textAlign: hiza(rtl) }}>{applyParams(t("onl.tp.mg.toplam"), [toplam])}</Text>
@@ -340,7 +342,7 @@ function OyuncuEkran() {
 
     {/* Mesleki geçmiş */}
     <Baslik2 metin={t(p.ben ? "onl.tp.mg.baslikBen" : "onl.tp.mg.baslik")} rtl={rtl} />
-    <MeslekiGecmis p={p} rtl={rtl} t={t} />
+    <MeslekiGecmis p={p} rtl={rtl} t={t} onMeslek={(m) => router.push(`/online/beceri-agaci?meslek=${m}`)} />
 
     {/* Nam */}
     <Baslik2 metin={t("onl.ka.nam")} rtl={rtl} />

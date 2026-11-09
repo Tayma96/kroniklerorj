@@ -81,6 +81,7 @@ export const rows: Record<string, string[]> = {
   "onl.tp.mg.baslik": ["MESLEKİ GEÇMİŞİ", "CRAFT HISTORY", "HISTORIAL DE OFICIOS", "HISTÓRICO DE OFÍCIOS", "السجل المهني", "ПУТЬ В РЕМЁСЛАХ"],
   "onl.tp.mg.ana": ["Ana", "Main", "Principal", "Principal", "رئيسية", "Основное"],
   "onl.tp.mg.yan": ["Yan", "Side", "Secundario", "Secundário", "جانبية", "Второе"],
+  "onl.tp.mg.agac": ["Beceri ağacını açar", "Opens the skill tree", "Abre el árbol de habilidades", "Abre a árvore de habilidades", "يفتح شجرة المهارات", "Открывает дерево навыков"],
   "onl.tp.mg.dalYok": ["Henüz dal açılmadı", "No branch opened yet", "Aún sin rama abierta", "Ainda sem ramo aberto", "لم يُفتح فرع بعد", "Ветви пока не открыты"],
   "onl.tp.mg.toplam": ["Öğrenilmiş beceri: %1", "Skills learned: %1", "Habilidades aprendidas: %1", "Habilidades aprendidas: %1", "المهارات المكتسبة: %1", "Освоено навыков: %1"],
   "onl.tp.mg.bos": ["Henüz bir meslekte ilerlemedi.", "No progress in any craft yet.", "Aún no avanza en ningún oficio.", "Ainda não avançou em nenhum ofício.", "لا تقدّم في أي حرفة بعد.", "Пока нет успехов ни в одном ремесле."],
