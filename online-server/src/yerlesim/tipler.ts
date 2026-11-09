@@ -3,6 +3,7 @@
 
 import type { YerlesimTuru } from "../dunya-veri.ts";
 import type { MeslekId } from "../icerik/meslekler.ts";
+import type { BarinmaKaydi } from "./barinma.ts";
 import type { HalKaydi, HalNedeni } from "./hal.ts";
 import type { HanedanKaydi, HanedanKasabasi } from "./hanedan.ts";
 import type { KronikSatiri } from "./kronik.ts";
@@ -162,6 +163,8 @@ export interface Karakter {
   vs?: number[];
   /** Hanedan, evlilik, yaşlılık, ölüm ve vasiyet (Faz 7; eski kayıtta yok → nesil 1). */
   hd?: HanedanKaydi;
+  /** Barınma: misafirhane hakları, kira sözleşmeleri, zincir ve otomatik konaklama (Faz 14; eski kayıtta yok). */
+  br?: BarinmaKaydi;
 }
 
 /** Anı: [tür, ilk yük, ay]. Yük zamanla söner (yarı ömür). */

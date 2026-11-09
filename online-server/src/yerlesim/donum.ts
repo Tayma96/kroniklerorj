@@ -8,6 +8,7 @@ import { AZALAN_PENCERE, iliskiAl } from "./eylem.ts";
 import { aniYuku, gorus, gorusDegeri } from "./gorus.ts";
 import { hanedanYakini, olduMu } from "./hanedan.ts";
 import { hanedanDonumu } from "./hanedan-donum.ts";
+import { zincirAcik } from "./barinma.ts";
 import { gonulDonumu, YAKIN_NPC_TABANI } from "./hal.ts";
 import { beceriEkle } from "./karakter.ts";
 import { GUN_BASINA_AY, OGRENME_SURESI_AY, ogrenmeBaslangici } from "./ogrenme.ts";
@@ -258,7 +259,7 @@ export function ayDonumu(kasaba: Kasaba, ay: number): OlayTaslagi[] {
         !(tp?.ob.some((b) => b.d === "dost" && (b.a === kar.o || b.b === kar.o)) ?? false) &&
         !Object.values(ili).some((i) => i.t >= YAKIN_NPC_TABANI);
       const husumet = tp?.hu.some((h) => h.d === "acik" && (h.g === kar.o || h.h === kar.o)) ?? false;
-      const evsiz = kar.e === 0 || !kasaba.npc.some((n) => n.e === kar.e);
+      const evsiz = !zincirAcik(kasaba.tur) && (kar.e === 0 || !kasaba.npc.some((n) => n.e === kar.e));
       gonulDonumu(kar, ay, { yalniz, husumet, evsiz });
     }
   }
