@@ -320,7 +320,7 @@ export function AltPanel({ acik, onKapat, etiket, children, rtl, t }: { acik: bo
         <ScrollView contentContainerStyle={{ padding: 18, paddingBottom: ins.bottom + 20, gap: 14 }}>
           {children}
         </ScrollView>
-        <Pressable accessibilityLabel={t("onl.kapat")} onPress={onKapat} style={[{ position: "absolute", top: 6 }, rtl ? { left: 8 } : { right: 8 }]}>
+        <Pressable accessibilityLabel={t("onl.kapat")} onPress={onKapat} hitSlop={6} style={[{ position: "absolute", top: 0, width: 44, height: 44, alignItems: "center", justifyContent: "center" }, rtl ? { left: 2 } : { right: 2 }]}>
           <View style={{ width: 32, height: 32, borderRadius: 16, borderWidth: 1, borderColor: ONL.frame, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(14,10,6,0.8)" }}>
             <Text style={{ fontFamily: F.display, fontSize: 15, lineHeight: 18, color: C.goldBright }}>×</Text>
           </View>
