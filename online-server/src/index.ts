@@ -14,6 +14,10 @@
 //   POST /v1/temel-is {is, istekNo}      → çıktı, fırsat dökümü, envanter, takat
 //   POST /v1/taban-al {mal, adet, istekNo} → NPC taban alımı, envanter, para
 //   GET  /v1/lonca                       → yerleşimin lonca tablosu
+//   POST /v1/tarif {tarif, istekNo}      → çıktı, girdi, araç aşınması, hizmet, Hal, tarifler, envanter
+//   POST /v1/sat {mal, adet, istekNo}    → NPC'ye satış: birim dökümü, tutar, aylık kota, para
+//   POST /v1/siparis/teslim {siparis, istekNo, dil?} → ödül, hizmet, görüş, teşekkür izi olayı
+//   GET  /v1/siparisler?dil=             → açık ve son kapanan lonca siparişleri
 //   POST /v1/sikayet {hedef, neden, aciklama?, istekNo} → {id, durum, kalan}
 //   GET  /v1/duyurular                   → son 5 duyuru
 // Uzaklaştırılmış hesapta giriş dışındaki /v1/* uçları 403 {hata: "uzaklastirildi", bitis} döner.
@@ -250,6 +254,14 @@ async function yonlendir(istek: Request, env: Env): Promise<Response> {
       return yontem === "POST" ? govdeli(istek, env, "temelIs") : hataYaniti("yontem_yok");
     case "/v1/taban-al":
       return yontem === "POST" ? govdeli(istek, env, "tabanAl") : hataYaniti("yontem_yok");
+    case "/v1/tarif":
+      return yontem === "POST" ? govdeli(istek, env, "tarif") : hataYaniti("yontem_yok");
+    case "/v1/sat":
+      return yontem === "POST" ? govdeli(istek, env, "sat") : hataYaniti("yontem_yok");
+    case "/v1/siparis/teslim":
+      return yontem === "POST" ? govdeli(istek, env, "siparisTeslim") : hataYaniti("yontem_yok");
+    case "/v1/siparisler":
+      return yontem === "GET" ? hesaba(istek, env, (hesapId) => basarili({ islem: "siparisler", hesapId, dil })) : hataYaniti("yontem_yok");
     case "/v1/lonca":
       return yontem === "GET" ? hesaba(istek, env, (hesapId) => basarili({ islem: "lonca", hesapId, dil })) : hataYaniti("yontem_yok");
     case "/v1/sikayet":

@@ -100,9 +100,14 @@ export class HesapDO {
       case "meslek":
       case "temelIs":
       case "tabanAl":
+      case "tarif":
+      case "sat":
+      case "siparisTeslim":
         return this.#yerlesime({ islem: ileti.islem, hesapId: ileti.hesapId, govde: ileti.govde });
       case "lonca":
         return this.#yerlesime({ islem: "lonca", hesapId: ileti.hesapId, dil: ileti.dil });
+      case "siparisler":
+        return this.#yerlesime({ islem: "siparisler", hesapId: ileti.hesapId, dil: ileti.dil });
       default:
         return hata("gecersiz_istek");
     }

@@ -183,6 +183,7 @@ export type HesapIleti =
   | { islem: "kisi"; hesapId: string; kisi: string; dil?: string | null }
   | { islem: GovdeliIslem; hesapId: string; govde: unknown }
   | { islem: "lonca"; hesapId: string; dil?: string | null }
+  | { islem: "siparisler"; hesapId: string; dil?: string | null }
   | { islem: "sikayet"; hesapId: string; govde: unknown }
   | { islem: "duyurular"; hesapId: string }
   /** YonetimDO → HesapDO: hesabın etkin yaptırım özeti (tamamı yazılır; tekrar güvenli). */
@@ -226,7 +227,7 @@ export type YonetimIleti =
   | { islem: "duyurular" };
 
 /** Gövdeli (istekNo'lu ya da yazan) yerleşim işlemleri: HesapDO aynen YerlesimDO'ya iletir. */
-export const GOVDELI_ISLEMLER = ["eylem", "tanidik", "meslek", "temelIs", "tabanAl"] as const;
+export const GOVDELI_ISLEMLER = ["eylem", "tanidik", "meslek", "temelIs", "tabanAl", "tarif", "sat", "siparisTeslim"] as const;
 export type GovdeliIslem = (typeof GOVDELI_ISLEMLER)[number];
 
 /** Yerleşime sakin kaydı (profil oluşunca HesapDO gönderir; tekrar güvenli). */
@@ -244,7 +245,8 @@ export type YerlesimIleti =
   | { islem: "olaylar"; yerlesim: string; hesapId: string; imlec?: string | null; dil?: string | null }
   | { islem: "kisi"; yerlesim: string; hesapId: string; kisi: string; dil?: string | null }
   | { islem: GovdeliIslem; yerlesim: string; hesapId: string; govde: unknown }
-  | { islem: "lonca"; yerlesim: string; hesapId: string; dil?: string | null };
+  | { islem: "lonca"; yerlesim: string; hesapId: string; dil?: string | null }
+  | { islem: "siparisler"; yerlesim: string; hesapId: string; dil?: string | null };
 
 export type DunyaIleti =
   | { islem: "ozet" }

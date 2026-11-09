@@ -70,6 +70,14 @@ export class YerlesimDO {
         return motor.tabanAl(ileti.hesapId, ileti.govde);
       case "lonca":
         return motor.lonca(ileti.hesapId);
+      case "tarif":
+        return motor.tarif(ileti.hesapId, ileti.govde);
+      case "sat":
+        return motor.sat(ileti.hesapId, ileti.govde);
+      case "siparisTeslim":
+        return motor.siparisTeslim(ileti.hesapId, ileti.govde);
+      case "siparisler":
+        return motor.siparisler(ileti.hesapId, ileti.dil);
       default:
         return hata("gecersiz_istek");
     }

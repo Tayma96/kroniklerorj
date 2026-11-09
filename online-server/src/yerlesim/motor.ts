@@ -3,7 +3,8 @@
 // YerlesimDO yalnız bunu çağıran ince sarmalayıcıdır.
 //
 // Depo anahtarları (kısa): m meta · n0..nK NPC parçaları (100'er) · s sakin dizini · o:<id> karakter ·
-// g:<id> ilişki haritası · e:<sayfa> olay defteri sayfaları (64'er; son 48 sayfa tutulur).
+// g:<id> ilişki haritası · e:<sayfa> olay defteri sayfaları (64'er; son 48 sayfa tutulur) · sp lonca siparişleri
+// (eski kayıtta yok → boş liste).
 
 import { DEPO_TOPLU_SINIR, type Depo } from "../depo.ts";
 import { yerlesimBul } from "../dunya-veri.ts";
@@ -30,7 +31,6 @@ import {
   BECERILER,
   NAMLAR,
   OZELLIKLER,
-  TAKAT_AYLIK,
   TAKAT_TAVAN,
   adlandir,
   karakterOlustur,
@@ -42,7 +42,11 @@ import { acikMi, ogrenmeDurumu, ogrenmeIlerle, sayacArtir } from "./ogrenme.ts";
 import { dilCoz, kisiAdi, kisiCoz, meslekGorunumu, npcAdi, npcKimlik, oyuncuRef, paramYaz, yas } from "./ortak.ts";
 import { loncaTablosu, oyuncuSayaci } from "./lonca.ts";
 import { KADEME_HIZMET, dalAc, dugumAc, dugumGeriAl, kademeAtla, meslekKaydi, meslekSec, yanSec } from "./meslek.ts";
+import { aylikTakat, halGorunumu } from "./hal.ts";
 import { npcdenAl } from "./npc-taban.ts";
+import { npcyeSat } from "./pazar.ts";
+import { siparisDonumu, siparisGorunumu, siparisTeslim, type Siparis } from "./siparis.ts";
+import { tarifListesi, tarifYap } from "./tarif.ts";
 import { tohumlu } from "./rastgele.ts";
 import { temelIsYap } from "./temel-is.ts";
 import { GUNDEM_ADI, type Isaret, type IliskiHaritasi, type Karakter, type Kasaba, type Npc, type Olay, type OlayTaslagi, type Sakin } from "./tipler.ts";
@@ -54,6 +58,7 @@ const SAKIN = "s";
 const KAR = "o:";
 const ILI = "g:";
 const SAYFA = "e:";
+const SIPARIS = "sp";
 
 export const NPC_PARCA = 100;
 export const OLAY_SAYFA = 64;
@@ -122,6 +127,13 @@ function kardesMi(a: Npc, b: Npc): boolean {
   return (a.an !== 0 && a.an === b.an) || (a.ba !== 0 && a.ba === b.ba);
 }
 
+/** #tekrarGuvenli'nin işleyiciye verdiği ekler: ilişki haritası, eklenecek olay, sipariş listesi değişti mi. */
+interface TekrarEki {
+  ili: IliskiHaritasi;
+  olay: OlayTaslagi | undefined;
+  siparis: boolean;
+}
+
 export class YerlesimMotoru {
   readonly kasaba: Kasaba;
   readonly #depo: Depo;
@@ -164,6 +176,7 @@ export class YerlesimMotoru {
     const parcalar = await depo.alCok<Npc[]>(anahtarlar);
     const npc = anahtarlar.flatMap((a) => parcalar.get(a) ?? []);
     const sakin = (await depo.al<Sakin[]>(SAKIN)) ?? [];
+    const sp = (await depo.al<Siparis[]>(SIPARIS)) ?? [];
     const kasaba: Kasaba = {
       y: meta.y,
       tur: y.tur,
@@ -176,6 +189,7 @@ export class YerlesimMotoru {
       sakin,
       kar: new Map(),
       ili: new Map(),
+      sp,
     };
     return new YerlesimMotoru(depo, meta, kasaba);
   }
@@ -195,6 +209,7 @@ export class YerlesimMotoru {
         for (let i = np; i < m.np; i++) this.#silinecek.add(NPC + i);
         m.np = np;
       } else if (a === SAKIN) kayit[a] = k.sakin;
+      else if (a === SIPARIS) kayit[a] = k.sp ?? [];
       else if (a.startsWith(KAR)) kayit[a] = k.kar.get(a.slice(KAR.length));
       else if (a.startsWith(ILI)) kayit[a] = k.ili.get(a.slice(ILI.length));
       else if (a.startsWith(SAYFA)) kayit[a] = this.#sayfalar.get(Number(a.slice(SAYFA.length)));
@@ -303,9 +318,10 @@ export class YerlesimMotoru {
     while (k.ay < hedef && islenen < azami) {
       const ay = k.ay + 1;
       for (const t of ayDonumu(k, ay)) await this.#olayEkle(t, ay);
+      for (const t of siparisDonumu(k, ay)) await this.#olayEkle(t, ay);
       islenen++;
     }
-    this.#kirli.add(NPC);
+    this.#kirli.add(NPC).add(SIPARIS);
     for (const s of k.sakin) this.#kirli.add(KAR + s.o).add(ILI + s.o);
     await this.kaydet();
     return { islenen, kalan: hedef - k.ay };
@@ -384,8 +400,12 @@ export class YerlesimMotoru {
       ozellikPuani: kar.op,
       beceriler: adlandir(BECERILER, kar.be),
       nam: adlandir(NAMLAR, kar.nm),
-      takat: { kalan: kar.tk, tavan: TAKAT_TAVAN, aylik: TAKAT_AYLIK },
+      takat: { kalan: kar.tk, tavan: TAKAT_TAVAN, aylik: aylikTakat(kar, ay) },
       para: kar.pa,
+      hal: halGorunumu(kar, ay),
+      envanter: kar.ev ?? {},
+      meslek: kar.ms ?? null,
+      tarifler: tarifListesi(kar),
       hane: k.npc
         .filter((n) => n.e === kar.e)
         .map((n) => ({ id: npcKimlik(n.i), ad: npcAdi(n, dil), rol: akrabalik(k, n, kar) ?? "hane" })),
@@ -583,21 +603,26 @@ export class YerlesimMotoru {
   async #tekrarGuvenli(
     hesapId: string,
     govde: unknown,
-    isle: (kar: Karakter, s: Sakin, ay: number) => Sonuc<Record<string, unknown>>,
+    isle: (kar: Karakter, s: Sakin, ay: number, ek: TekrarEki) => Sonuc<Record<string, unknown>>,
   ): Promise<Sonuc<unknown>> {
     const no = istekNoCoz(govde);
     if (!no.ok) return no;
     const r = await this.#oyuncu(hesapId);
     if (!r.ok) return r;
-    const { s, kar } = r.deger;
+    const { s, kar, ili } = r.deger;
     const onceki = kar.ist.find((x) => x[0] === no.deger);
     if (onceki) return basarili(onceki[1]);
-    const sonuc = isle(kar, s, this.kasaba.ay);
+    const ay = this.kasaba.ay;
+    const ek: TekrarEki = { ili, olay: undefined, siparis: false };
+    const sonuc = isle(kar, s, ay, ek);
     if (!sonuc.ok) return sonuc;
-    const yanit = structuredClone({ ...sonuc.deger, envanter: kar.ev ?? {}, para: kar.pa, takat: kar.tk });
+    const dil = dilCoz(nesneMi(govde) ? govde.dil : undefined);
+    const olay = ek.olay ? olayYaz(await this.#olayEkle(ek.olay, ay), dil) : undefined;
+    const yanit = structuredClone({ ...sonuc.deger, ...(olay ? { olay } : {}), envanter: kar.ev ?? {}, para: kar.pa, takat: kar.tk });
     kar.ist.push([no.deger, yanit]);
     if (kar.ist.length > IST_EN_COK) kar.ist.splice(0, kar.ist.length - IST_EN_COK);
-    this.#kirli.add(KAR + kar.o).add(SAKIN);
+    this.#kirli.add(KAR + kar.o).add(ILI + kar.o).add(SAKIN);
+    if (ek.siparis) this.#kirli.add(SIPARIS);
     await this.kaydet();
     return basarili(yanit);
   }
@@ -632,7 +657,7 @@ export class YerlesimMotoru {
           return hata("gecersiz_istek");
       }
       if (!r.ok) return r;
-      return basarili({ meslek: meslekKaydi(kar), kademeHizmet: KADEME_HIZMET });
+      return basarili({ meslek: meslekKaydi(kar), kademeHizmet: KADEME_HIZMET, tarifler: tarifListesi(kar) });
     });
   }
 
@@ -647,6 +672,41 @@ export class YerlesimMotoru {
   async tabanAl(hesapId: string, govde: unknown): Promise<Sonuc<unknown>> {
     if (!nesneMi(govde)) return hata("gecersiz_istek");
     return this.#tekrarGuvenli(hesapId, govde, (kar, _s, ay) => npcdenAl(kar, govde.mal, govde.adet, ay));
+  }
+
+  /** POST /v1/tarif {tarif, istekNo}: açık düğümlü tarif; girdi düşer, çıktı eklenir, Hal ve hizmet döner. */
+  async tarif(hesapId: string, govde: unknown): Promise<Sonuc<unknown>> {
+    if (!nesneMi(govde)) return hata("gecersiz_istek");
+    return this.#tekrarGuvenli(hesapId, govde, (kar, _s, ay) => {
+      const r = tarifYap(kar, govde.tarif, ay);
+      return r.ok ? basarili({ ...r.deger, tarifler: tarifListesi(kar) }) : r;
+    });
+  }
+
+  /** POST /v1/sat {mal, adet, istekNo}: NPC'ye satış (aylık kotalı); birim fiyat dökümü ve kota döner. */
+  async sat(hesapId: string, govde: unknown): Promise<Sonuc<unknown>> {
+    if (!nesneMi(govde)) return hata("gecersiz_istek");
+    const sayac = oyuncuSayaci(this.kasaba);
+    return this.#tekrarGuvenli(hesapId, govde, (kar, _s, ay) => npcyeSat(kar, govde.mal, govde.adet, sayac, ay));
+  }
+
+  /** POST /v1/siparis/teslim {siparis, istekNo, dil?}: ilk getiren alır; ödül, hizmet, teşekkür izi olayı. */
+  async siparisTeslim(hesapId: string, govde: unknown): Promise<Sonuc<unknown>> {
+    if (!nesneMi(govde)) return hata("gecersiz_istek");
+    return this.#tekrarGuvenli(hesapId, govde, (kar, _s, ay, ek) => {
+      const r = siparisTeslim(this.kasaba, kar, ek.ili, govde.siparis, ay);
+      if (!r.ok) return r;
+      ek.olay = r.deger.olay;
+      ek.siparis = true;
+      return basarili({ ...r.deger.sonuc, hal: halGorunumu(kar, ay) });
+    });
+  }
+
+  /** GET /v1/siparisler?dil=: açık ve son kapanan siparişler (teşekkür izi), benim elimdeki adet. */
+  async siparisler(hesapId: string, dilHam: unknown): Promise<Sonuc<unknown>> {
+    const r = await this.#oyuncu(hesapId);
+    if (!r.ok) return r;
+    return basarili({ siparisler: siparisGorunumu(this.kasaba, r.deger.kar, this.kasaba.ay, dilCoz(dilHam)) });
   }
 
   /** GET /v1/lonca: yerleşimin lonca tablosu (oyuncunun sakin olması gerekir). */
