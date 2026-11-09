@@ -1,5 +1,7 @@
 // Meslek ve beceri ağacı (ana tasarım §5.3). Saf fonksiyonlar; karakteri yerinde değiştirir.
 // Kademe: çırak → kalfa → usta → pir. Düğüm imkân açar, sayı artırmaz. Meslek değiştirmek ustalığı silmez.
+// Tecrübe (Berkay, 9 Kasım): o meslekte çalıştıkça tecrübe (hz) birikir; her PUAN_TECRUBE tecrübede o mesleğe
+// özel 1 beceri puanı kazanılır ve yalnız o mesleğin ağacında düğüm açmaya harcanır. Kademe toplam tecrübeyle açılır.
 
 import { MESLEKLER_ONLINE, dugumBul, meslekBul, type Kademe, type Meslek, type MeslekId } from "../icerik/meslekler.ts";
 import { basarili, hata, type Sonuc } from "../tipler.ts";
@@ -38,6 +40,42 @@ export const PIR_CIRAK = 2;
 export const GERI_ALMA_ARALIK = 12;
 /** [PARAMETRE] Yan meslek yarı hızda ilerler. */
 export const YAN_CARPAN = 0.5;
+/** [PARAMETRE] Bir beceri puanı için gereken tecrübe ve düğüm bedeli (kademeye göre: çırak, kalfa, usta, pir). */
+export const PUAN_TECRUBE = 6;
+export const DUGUM_BEDEL: readonly number[] = [1, 2, 3, 4];
+/** [PARAMETRE] Mesleğe çırak girince verilen puan: ilk düğüm (çoğu zaman ilk tarif) tecrübesiz açılabilsin. */
+export const BASLANGIC_PUANI = 1;
+
+export interface BeceriPuani {
+  tecrube: number;
+  kazanilan: number;
+  harcanan: number;
+  kalan: number;
+  /** Bir sonraki puana kalan tecrübe (bar). */
+  sonrakiPuan: number;
+  /** Bir sonraki kademeye gereken toplam tecrübe; pir ise null. */
+  sonrakiKademe: number | null;
+}
+
+export function beceriPuani(i: MeslekIlerleme): BeceriPuani {
+  const tecrube = i.hz;
+  const kazanilan = BASLANGIC_PUANI + Math.floor(tecrube / PUAN_TECRUBE);
+  const harcanan = i.dg.reduce((a, id) => a + DUGUM_BEDEL[Number(id.split(".")[2])]!, 0);
+  return {
+    tecrube,
+    kazanilan,
+    harcanan,
+    kalan: kazanilan - harcanan,
+    sonrakiPuan: PUAN_TECRUBE - (tecrube % PUAN_TECRUBE),
+    sonrakiKademe: i.kd >= 3 ? null : KADEME_HIZMET[i.kd + 1]!,
+  };
+}
+
+/** Bütün meslek ilerlemeleri için tecrübe ve beceri puanı görünümü (istemci barı ve ağaç için). */
+export function beceriGorunumu(k: Karakter): Partial<Record<MeslekId, BeceriPuani>> {
+  const s = k.ms?.s ?? {};
+  return Object.fromEntries(Object.entries(s).map(([m, i]) => [m, beceriPuani(i!)])) as Partial<Record<MeslekId, BeceriPuani>>;
+}
 
 export function meslekKaydi(k: Karakter): MeslekKaydi {
   k.ms ??= { a: "", y: "", s: {} };
@@ -126,6 +164,7 @@ export function dugumAc(k: Karakter, id: unknown, dugumId: unknown): Sonuc<strin
   if (d.kd > 0 && !i.dg.includes(`${m.id}.${d.dal}.${d.kd - 1}`)) return hata("dugum_kapali");
   // Uzmanlaşma: pir ucu yalnız bir dalda.
   if (d.kd === 3 && i.dg.some((x) => x.endsWith(".3"))) return hata("dugum_kapali");
+  if (beceriPuani(i).kalan < DUGUM_BEDEL[d.kd]!) return hata("puan_yok");
   i.dg.push(d.id);
   return basarili(i.dg);
 }

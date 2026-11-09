@@ -88,6 +88,10 @@ Dal ve düğüm adları içerik verisidir; uygulama sırasında ihtiyaca göre u
 ### 5.3 Ağaç
 - **Kademe:** Çırak → Kalfa → Usta → Pir. Süre gerçek gün cinsinden [PARAMETRE, D-30]; öneri: kalfa 12 oyun ayı
   (6 gün), usta 24 ay, pir yalnız en az 2 çırağı kalfa yapınca. Parayla atlama yok (D-14).
+- **Tecrübe ve beceri puanı (Berkay, 9 Kasım):** oyuncu bir meslekte çalıştıkça (temel iş, tarif, sipariş, ileride
+  oyuncu siparişi) o mesleğe özel **tecrübe** kazanır. Tecrübe barı her `PUAN_TECRUBE` (6) dolduğunda **1 beceri puanı**
+  gelir; puan yalnız o mesleğin ağacında harcanır. Düğüm bedeli kademeye göre 1/2/3/4; mesleğe girişte 1 başlangıç
+  puanı (ilk tarif açılabilsin). Kademe toplam tecrübeyle açılır. Geri alma puanı iade eder. [PARAMETRE]
 - **Dal:** çırak bir dal seçer; kalfa ikincisini, usta üçüncüsünü açar. **Uzmanlaşma:** yalnız bir dal pir ucuna
   kadar gider; aynı meslekten iki oyuncu farklı ustalar olur ve birbirine ihtiyaç duyar.
 - **Düğüm = imkân:** yeni tarif/hizmet, kalite düzeyi, toplu sipariş, özel eylem (şaheser sipariş) ya da toplumsal hak

@@ -1,6 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
+  BASLANGIC_PUANI,
+  DUGUM_BEDEL,
+  PUAN_TECRUBE,
+  beceriPuani,
   GERI_ALMA_ARALIK,
   KADEME_HIZMET,
   dalAc,
@@ -159,4 +163,42 @@ test("pişmanlık hakkı bütün meslekler için tek: yan meslekte de 12 ay bekl
   dugumAc(c, "ciftci", "ciftci.ekin.0");
   assert.ok(dugumGeriAl(c, "demirci", "demirci.alet.0", k.ay).ok);
   assert.deepEqual(dugumGeriAl(c, "ciftci", "ciftci.ekin.0", k.ay + 1), { ok: false, hata: "geri_alma_dolu" });
+});
+
+test("tecrübe barı beceri puanı verir; düğüm puan harcar, geri alma puanı iade eder", () => {
+  const k = testKasabasi();
+  const c = yasta(k, 20);
+  meslekSec(c, "demirci", k.ay);
+  const i = () => c.ms!.s.demirci!;
+  assert.deepEqual(beceriPuani(i()), { tecrube: 0, kazanilan: BASLANGIC_PUANI, harcanan: 0, kalan: BASLANGIC_PUANI, sonrakiPuan: PUAN_TECRUBE, sonrakiKademe: KADEME_HIZMET[1] });
+  dalAc(c, "demirci", "alet");
+  assert.ok(dugumAc(c, "demirci", "demirci.alet.0").ok, "başlangıç puanı ilk düğümü açar");
+  hizmetEkle(c, "demirci", KADEME_HIZMET[1]!);
+  kademeAtla(c, "demirci", k.ay);
+  const p = beceriPuani(i());
+  assert.equal(p.kazanilan, BASLANGIC_PUANI + Math.floor(KADEME_HIZMET[1]! / PUAN_TECRUBE));
+  assert.equal(p.harcanan, DUGUM_BEDEL[0]);
+  assert.ok(dugumAc(c, "demirci", "demirci.alet.1").ok);
+  assert.equal(beceriPuani(i()).harcanan, DUGUM_BEDEL[0]! + DUGUM_BEDEL[1]!);
+  dalAc(c, "demirci", "silah");
+  // Kalan puan bitince düğüm açılmaz.
+  i().hz = 0;
+  assert.deepEqual(dugumAc(c, "demirci", "demirci.silah.0"), { ok: false, hata: "puan_yok" });
+  i().hz = KADEME_HIZMET[1]!;
+  const once = beceriPuani(i()).kalan;
+  assert.ok(dugumGeriAl(c, "demirci", "demirci.alet.1", k.ay).ok);
+  assert.equal(beceriPuani(i()).kalan, once + DUGUM_BEDEL[1]!, "geri alma puanı iade eder");
+});
+
+test("beceri puanı mesleğe özeldir: demirci tecrübesi çiftçi ağacına puan vermez", () => {
+  const k = testKasabasi();
+  const c = yasta(k, 20);
+  meslekSec(c, "demirci", k.ay);
+  yanSec(c, "ciftci", k.ay);
+  hizmetEkle(c, "demirci", PUAN_TECRUBE * 5);
+  assert.equal(beceriPuani(c.ms!.s.ciftci!).kalan, BASLANGIC_PUANI);
+  assert.equal(beceriPuani(c.ms!.s.demirci!).kalan, BASLANGIC_PUANI + 5);
+  // Bar: 1 tecrübe eklenince bir sonraki puana PUAN_TECRUBE - 1 kalır.
+  hizmetEkle(c, "demirci", 1);
+  assert.equal(beceriPuani(c.ms!.s.demirci!).sonrakiPuan, PUAN_TECRUBE - 1);
 });

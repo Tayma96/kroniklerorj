@@ -41,7 +41,7 @@ import {
 import { acikMi, ogrenmeDurumu, ogrenmeIlerle, sayacArtir } from "./ogrenme.ts";
 import { dilCoz, kisiAdi, kisiCoz, meslekGorunumu, npcAdi, npcKimlik, oyuncuRef, paramYaz, yas } from "./ortak.ts";
 import { loncaTablosu, oyuncuSayaci } from "./lonca.ts";
-import { KADEME_HIZMET, dalAc, dugumAc, dugumGeriAl, kademeAtla, meslekKaydi, meslekSec, yanSec } from "./meslek.ts";
+import { KADEME_HIZMET, beceriGorunumu, dalAc, dugumAc, dugumGeriAl, kademeAtla, meslekKaydi, meslekSec, yanSec } from "./meslek.ts";
 import { aylikTakat, halGorunumu } from "./hal.ts";
 import { npcdenAl } from "./npc-taban.ts";
 import { npcyeSat } from "./pazar.ts";
@@ -406,6 +406,7 @@ export class YerlesimMotoru {
       envanter: kar.ev ?? {},
       meslek: kar.ms ?? null,
       kademeHizmet: KADEME_HIZMET,
+      beceri: beceriGorunumu(kar),
       tarifler: tarifListesi(kar),
       hane: k.npc
         .filter((n) => n.e === kar.e)
@@ -658,7 +659,7 @@ export class YerlesimMotoru {
           return hata("gecersiz_istek");
       }
       if (!r.ok) return r;
-      return basarili({ meslek: meslekKaydi(kar), kademeHizmet: KADEME_HIZMET, tarifler: tarifListesi(kar) });
+      return basarili({ meslek: meslekKaydi(kar), kademeHizmet: KADEME_HIZMET, beceri: beceriGorunumu(kar), tarifler: tarifListesi(kar) });
     });
   }
 
