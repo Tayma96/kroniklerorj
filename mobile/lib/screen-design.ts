@@ -65,10 +65,14 @@ export const SCREEN_DESIGNS: readonly ScreenDesign[] = [
   page("/online/oyuncu/[id]", "onl.tp.ust", "people", "cami_avlu", "family"),
   page("/online/gelen", "onl.tp.gk.baslik", "people", "cami_avlu", "scroll"),
   page("/online/beceri-agaci", "onl.ba.ust", "craft", "atolye_demirci", "anvil"),
+  page("/online/han", "onl.han.kisa", "people", "dugun", "flame"),
+  page("/online/han/[masa]", "onl.han.masaKisa", "people", "dugun", "flame"),
+  page("/online/hanedan", "onl.hd.kisa", "realm", "ev_varlikli", "banner"),
+  page("/online/kronik", "onl.kr.baslik", "book", "medrese", "book"),
 ];
 export function screenDesign(path: string): ScreenDesign {
   const route = path.replace(/\/$/, "") || "/";
-  const key = route.startsWith("/oyun/npc/") ? "/oyun/npc/[id]" : route.startsWith("/oyun/diyar/") ? "/oyun/diyar/[name]" : route.startsWith("/online/kisi/") ? "/online/kisi/[id]" : route.startsWith("/online/oyuncu/") ? "/online/oyuncu/[id]" : route;
+  const key = route.startsWith("/oyun/npc/") ? "/oyun/npc/[id]" : route.startsWith("/oyun/diyar/") ? "/oyun/diyar/[name]" : route.startsWith("/online/kisi/") ? "/online/kisi/[id]" : route.startsWith("/online/oyuncu/") ? "/online/oyuncu/[id]" : route.startsWith("/online/han/") ? "/online/han/[masa]" : route;
   return SCREEN_DESIGNS.find(d => d.route === key) || SCREEN_DESIGNS[2];
 }
 export function screenArt(path: string) { return SAHNE_GORSEL[screenDesign(path).scene]; }
