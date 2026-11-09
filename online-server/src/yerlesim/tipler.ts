@@ -3,6 +3,7 @@
 
 import type { YerlesimTuru } from "../dunya-veri.ts";
 import type { MeslekId } from "../icerik/meslekler.ts";
+import type { BarinmaKaydi } from "./barinma.ts";
 import type { HalKaydi, HalNedeni } from "./hal.ts";
 import type { HanedanKaydi, HanedanKasabasi } from "./hanedan.ts";
 import type { KronikSatiri } from "./kronik.ts";
@@ -168,6 +169,8 @@ export interface Karakter {
   bs?: Record<string, number>;
   /** Kazanılmış kalıcı unvanlar (unvan kimlikleri). */
   un?: string[];
+  /** Barınma: misafirhane hakları, kira sözleşmeleri, zincir ve otomatik konaklama (Faz 14; eski kayıtta yok). */
+  br?: BarinmaKaydi;
 }
 
 /** Süren öğrenme ya da yeniden düzenleme beklemesi (gerçek zaman, ms; bitince tembel tamamlanır). */

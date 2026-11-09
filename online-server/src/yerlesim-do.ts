@@ -129,6 +129,14 @@ export class YerlesimDO {
         return motor.evlilik(ileti.hesapId, ileti.govde);
       case "kronik":
         return motor.kronik(ileti.hesapId, ileti.imlec, ileti.dil);
+      // Barınma (Faz 14): ms damgalı kurallar dünya saatini alır.
+      case "barinma":
+      case "donus":
+        return motor.barinmaOku(ileti.islem, ileti.hesapId, simdi);
+      case "barinmaKira":
+      case "barinmaTesis":
+      case "barinmaOtomatik":
+        return motor.barinmaIslem(ileti.islem, ileti.hesapId, ileti.govde, simdi);
       default:
         return hata("gecersiz_istek");
     }

@@ -167,6 +167,12 @@ export class HesapDO {
       case "hanedan":
       case "devirOnizle":
       case "kronik":
+      // Barınma (Faz 14): ileti aynen yerleşime gider.
+      case "barinma":
+      case "donus":
+      case "barinmaKira":
+      case "barinmaTesis":
+      case "barinmaOtomatik":
         return this.#yerlesime(ileti);
       default:
         return hata("gecersiz_istek");

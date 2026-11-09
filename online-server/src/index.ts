@@ -45,6 +45,11 @@
 //   GET  /v1/han/masa/:no/baglan         → WebSocket yükseltmesi (Upgrade: websocket + oturum); iletiler src/han/tipler.ts
 //   POST /v1/han/eylem {masa, tur, hedef?, olay?, sart?, istekNo} → {olay} (katılım listesiyle)
 //   POST /v1/han/ikram {masa, hedef, ikram, istekNo} → {ikram, fiyat, para, anons}  (ödeme YerlesimDO'da, teveccüh yazılır)
+//   GET  /v1/barinma?dil=                → barınma: durum, konaklama, zincir (eşik/etki), misafirhane, odalar, tesis (Faz 14)
+//   POST /v1/barinma/kira {oda, sure: 1|3|12, istekNo} → {kira, barinma, para}  (NPC hancı: akçe dünyadan çıkar)
+//   POST /v1/barinma/tesis {istekNo}     → {tesis, barinma}  (imaret/zaviye, D-23 önerisi)
+//   POST /v1/barinma/otomatik {mod: kapali|oda|tesis|uyar, istekNo} → {otomatik, barinma}
+//   GET  /v1/donus?dil=                  → dönüş ekranı (yokluk, barınma, Hal, olanlar, tek dokunuş seçenekleri)
 // Uzaklaştırılmış hesapta giriş dışındaki /v1/* uçları 403 {hata: "uzaklastirildi", bitis} döner.
 //
 // Yönetim (ana tasarım §7; oyuncu oturumundan ayrı yönetici belirteci, src/yonetim/kimlik.ts):
@@ -64,6 +69,7 @@ import {
   type Basarisiz,
   type Env,
   type GovdeliIslem,
+  type BarinmaIslem,
   type HanedanIslem,
   type HataKodu,
   type HesapIleti,
@@ -258,10 +264,10 @@ function hanGovdeli(istek: Request, env: Env, islem: "hanEylem" | "hanIkram"): P
 }
 
 /** Gövdeli POST iletisi. */
-function govdeli(istek: Request, env: Env, islem: GovdeliIslem | HanedanIslem): Promise<Response> {
+function govdeli(istek: Request, env: Env, islem: GovdeliIslem | HanedanIslem | BarinmaIslem): Promise<Response> {
   return hesaba(istek, env, async (hesapId) => {
     const govde = await govdeOku(istek);
-    return govde.ok ? basarili({ islem, hesapId, govde: govde.deger }) : govde;
+    return govde.ok ? basarili({ islem, hesapId, govde: govde.deger } as HesapIleti) : govde;
   });
 }
 
@@ -342,6 +348,17 @@ async function yonlendir(istek: Request, env: Env): Promise<Response> {
       return yontem === "GET"
         ? hesaba(istek, env, (hesapId) => basarili({ islem: "kronik", hesapId, imlec: url.searchParams.get("imlec"), dil }))
         : hataYaniti("yontem_yok");
+    case "/v1/barinma":
+    case "/v1/donus": {
+      const islem = yol === "/v1/barinma" ? "barinma" : "donus";
+      return yontem === "GET" ? hesaba(istek, env, (hesapId) => basarili({ islem, hesapId, dil })) : hataYaniti("yontem_yok");
+    }
+    case "/v1/barinma/kira":
+      return yontem === "POST" ? govdeli(istek, env, "barinmaKira") : hataYaniti("yontem_yok");
+    case "/v1/barinma/tesis":
+      return yontem === "POST" ? govdeli(istek, env, "barinmaTesis") : hataYaniti("yontem_yok");
+    case "/v1/barinma/otomatik":
+      return yontem === "POST" ? govdeli(istek, env, "barinmaOtomatik") : hataYaniti("yontem_yok");
     case "/v1/sikayet":
       if (yontem !== "POST") return hataYaniti("yontem_yok");
       return hesaba(istek, env, async (hesapId) => {

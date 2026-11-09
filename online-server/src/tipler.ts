@@ -179,6 +179,18 @@ export const HATA_DURUMU = {
   varis_gecersiz: 400,
   devir_yok: 409,
   devir_degisti: 409,
+  // Barınma (Faz 14)
+  barinma_kapali: 409,
+  oda_gecersiz: 400,
+  sure_gecersiz: 400,
+  oda_var: 409,
+  kira_siniri: 409,
+  han_kapali: 409,
+  konaklama_var: 409,
+  tesis_kapali: 409,
+  tesis_sart: 409,
+  tesis_dolu: 409,
+  mod_gecersiz: 400,
   yapilandirma_eksik: 500,
   sunucu_hatasi: 500,
 } as const satisfies Record<string, number>;
@@ -244,6 +256,7 @@ export type HesapIleti =
   | { islem: "gelen"; hesapId: string; dil?: string | null }
   | { islem: "duzenOku"; hesapId: string }
   | HanedanIletisi
+  | BarinmaIletisi
   | { islem: "sikayet"; hesapId: string; govde: unknown }
   | { islem: "duyurular"; hesapId: string }
   // Han masası (Faz 10): src/han/hesap-kopru.ts
@@ -331,6 +344,14 @@ export type HanedanIletisi =
   | { islem: "devirOnizle"; hesapId: string; varis?: string | null; dil?: string | null }
   | { islem: "kronik"; hesapId: string; imlec?: string | null; dil?: string | null };
 
+/** Barınma (Faz 14) gövdeli işlemleri: POST /v1/barinma/kira, /v1/barinma/tesis, /v1/barinma/otomatik. */
+export const BARINMA_ISLEMLERI = ["barinmaKira", "barinmaTesis", "barinmaOtomatik"] as const;
+export type BarinmaIslem = (typeof BARINMA_ISLEMLERI)[number];
+/** Barınma iletileri (HesapDO aynen YerlesimDO'ya iletir; `yerlesim` eklenir). */
+export type BarinmaIletisi =
+  | { islem: BarinmaIslem; hesapId: string; govde: unknown }
+  | { islem: "barinma" | "donus"; hesapId: string; dil?: string | null };
+
 /** Yerleşime sakin kaydı (profil oluşunca HesapDO gönderir; tekrar güvenli). */
 export interface SakinKaydi {
   hesapId: string;
@@ -356,7 +377,8 @@ export type YerlesimIleti =
   | { islem: "sakinHesabi"; yerlesim: string; hesapId: string; hedef: string }
   /** Han masası bileti için: oyuncunun iki yönlü engel listesi (hesap kimlikleri). */
   | { islem: "engeller"; yerlesim: string; hesapId: string }
-  | (HanedanIletisi & { yerlesim: string });
+  | (HanedanIletisi & { yerlesim: string })
+  | (BarinmaIletisi & { yerlesim: string });
 
 export type DunyaIleti =
   | { islem: "ozet" }
