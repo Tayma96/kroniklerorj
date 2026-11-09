@@ -5,6 +5,8 @@
 import { HUYLAR } from "../icerik/kisilik.ts";
 import { NAMLAR } from "./karakter.ts";
 import { yas } from "./ortak.ts";
+import { soylentiEtkisi } from "./soylenti.ts";
+import { teveccuhEtkisi, teveccuhKademesi } from "./teveccuh.ts";
 import type { Ani, Dokum, IliskiHaritasi, Kalem, Karakter, Kasaba, Npc } from "./tipler.ts";
 
 export const GORUS_SINIRI = 100;
@@ -91,6 +93,9 @@ function dolaysiz(kasaba: Kasaba, npc: Npc, kar: Karakter, ili: IliskiHaritasi |
     const sohret = kar.nm.reduce((a, b) => a + b, 0);
     ekle("gorus.kibir", -sinirla(Math.floor(sohret / 40), HUY_NAM_TAVANI), { huy: HUYLAR[npc.h] ?? "" });
   }
+  // Faz 3: duyduğu söylentiler ve oyuncunun teveccühü (ilk izlenim; tavanlı).
+  ekle("gorus.soylenti", soylentiEtkisi(kasaba, npc.i, kar.o));
+  if (kar.tv) ekle("gorus.teveccuh", teveccuhEtkisi(teveccuhKademesi(kar, ay), "ilkIzlenim"));
   return toplam;
 }
 

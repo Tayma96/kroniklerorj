@@ -48,6 +48,28 @@ import { npcyeSat } from "./pazar.ts";
 import { siparisDonumu, siparisGorunumu, siparisTeslim, type Siparis } from "./siparis.ts";
 import { tarifListesi, tarifYap } from "./tarif.ts";
 import { tohumlu } from "./rastgele.ts";
+import { TANIDIK_EN_COK, dostlukIslem, husumetIslem, oyuncuProfili, bagGorunumu, acikHusumet } from "./iliski.ts";
+import { duzenGorunumu, duzenGuncelle } from "./duzen.ts";
+import { engelKaldir, engelle, engelListesi, engelliMi } from "./engel.ts";
+import { mekanTaniklari, soylentiEkle, soylentiGorunumu, yalanla } from "./soylenti.ts";
+import {
+  TEKLIF_YASI,
+  GORUCU_YASI,
+  ortakPayi,
+  ortaklar,
+  taraflarArasiIptal,
+  teklifBul,
+  teklifCevap,
+  teklifGorunumu,
+  teklifOlustur,
+  teklifTaraflari,
+  vitrinGorunumu,
+  vitrinSec,
+} from "./teklif.ts";
+import { teveccuhGorunumu, teveccuhKademesi, teveccuhEtkisi, TEVECCUH_ETKI } from "./teveccuh.ts";
+import { toplumDonumu } from "./toplum-donum.ts";
+import { OYUNCU_TEKLIF_TURLERI, toplumAl, type Toplum } from "./toplum.ts";
+import { MALLAR } from "../icerik/mallar.ts";
 import { temelIsYap } from "./temel-is.ts";
 import { GUNDEM_ADI, type Isaret, type IliskiHaritasi, type Karakter, type Kasaba, type Npc, type Olay, type OlayTaslagi, type Sakin } from "./tipler.ts";
 import { kasabaKur } from "./uret.ts";
@@ -59,6 +81,10 @@ const KAR = "o:";
 const ILI = "g:";
 const SAYFA = "e:";
 const SIPARIS = "sp";
+const TOPLUM = "tp";
+/** [PARAMETRE] Gelen kutusunda gösterilen son kapanan teklif sayısı; söylenti yalanlamanın takat bedeli. */
+export const GELEN_KAPALI_EN_COK = 20;
+export const YALANLAMA_TAKAT = 1;
 
 export const NPC_PARCA = 100;
 export const OLAY_SAYFA = 64;
@@ -73,7 +99,7 @@ const KART_TARAMA = OKUMA_SAYFA_EN_COK * OLAY_SAYFA;
 /** Bu süreden uzun ara yeni bir giriştir; kısa aradaki yenilemelerde kart korunur. */
 export const OTURUM_ARASI_MS = 30 * 60 * 1000;
 const IST_EN_COK = 10;
-export const TANIDIK_EN_COK = 200;
+export { TANIDIK_EN_COK };
 /** §13.9: NPC'nin üçüncü kişilere bakışını görmek için ona yakınlık eşiği. */
 export const YAKINLIK_ESIGI = 30;
 const ISARETLER: readonly string[] = ["tanidik", "dost", "dusman"];
@@ -132,6 +158,11 @@ interface TekrarEki {
   ili: IliskiHaritasi;
   olay: OlayTaslagi | undefined;
   siparis: boolean;
+  /** Yanıta girmeyen ek olaylar (karşı tarafa özel bildirimler, meydan ilanları). */
+  olaylar: OlayTaslagi[];
+  /** Değişen öteki oyuncular (yerel kimlik) ve toplum kaydı. */
+  digerleri: string[];
+  toplum: boolean;
 }
 
 export class YerlesimMotoru {
@@ -177,6 +208,7 @@ export class YerlesimMotoru {
     const npc = anahtarlar.flatMap((a) => parcalar.get(a) ?? []);
     const sakin = (await depo.al<Sakin[]>(SAKIN)) ?? [];
     const sp = (await depo.al<Siparis[]>(SIPARIS)) ?? [];
+    const tp = await depo.al<Toplum>(TOPLUM);
     const kasaba: Kasaba = {
       y: meta.y,
       tur: y.tur,
@@ -190,6 +222,7 @@ export class YerlesimMotoru {
       kar: new Map(),
       ili: new Map(),
       sp,
+      ...(tp ? { tp } : {}),
     };
     return new YerlesimMotoru(depo, meta, kasaba);
   }
@@ -210,6 +243,7 @@ export class YerlesimMotoru {
         m.np = np;
       } else if (a === SAKIN) kayit[a] = k.sakin;
       else if (a === SIPARIS) kayit[a] = k.sp ?? [];
+      else if (a === TOPLUM) kayit[a] = k.tp;
       else if (a.startsWith(KAR)) kayit[a] = k.kar.get(a.slice(KAR.length));
       else if (a.startsWith(ILI)) kayit[a] = k.ili.get(a.slice(ILI.length));
       else if (a.startsWith(SAYFA)) kayit[a] = this.#sayfalar.get(Number(a.slice(SAYFA.length)));
@@ -319,9 +353,11 @@ export class YerlesimMotoru {
       const ay = k.ay + 1;
       for (const t of ayDonumu(k, ay)) await this.#olayEkle(t, ay);
       for (const t of siparisDonumu(k, ay)) await this.#olayEkle(t, ay);
+      for (const t of toplumDonumu(k, ay)) await this.#olayEkle(t, ay);
       islenen++;
     }
     this.#kirli.add(NPC).add(SIPARIS);
+    if (k.tp) this.#kirli.add(TOPLUM).add(SAKIN);
     for (const s of k.sakin) this.#kirli.add(KAR + s.o).add(ILI + s.o);
     await this.kaydet();
     return { islenen, kalan: hedef - k.ay };
@@ -586,6 +622,13 @@ export class YerlesimMotoru {
     const sonuc = eylemYap(k, kar, ili, girdi.deger, ay, tohumlu("eylem", k.y, ay, kar.o, kar.en));
     if (!sonuc.ok) return sonuc;
     const olay = sonuc.deger.olay ? olayYaz(await this.#olayEkle(sonuc.deger.olay, ay), dil) : undefined;
+    // Söylenti: başarılı hediye ve yardımı aynı mekândaki NPC'ler görür (muhatap NPC zaten bilir).
+    const tur = girdi.deger.tur;
+    const hedefId = sonuc.deger.sonuc.hedef;
+    if (sonuc.deger.sonuc.basari && hedefId && (tur === "hediye" || tur === "yardim")) {
+      const tanik = mekanTaniklari(k, kar.mk, [Number(hedefId.slice(1))], ay, `eylem:${kar.o}:${kar.en}`);
+      if (soylentiEkle(k, tur, kar.o, hedefId, tanik, ay)) this.#kirli.add(TOPLUM);
+    }
     s.mk = kar.mk;
     s.ma = kar.ma;
     const hedef = sonuc.deger.sonuc.hedef;
@@ -615,11 +658,14 @@ export class YerlesimMotoru {
     const onceki = kar.ist.find((x) => x[0] === no.deger);
     if (onceki) return basarili(onceki[1]);
     const ay = this.kasaba.ay;
-    const ek: TekrarEki = { ili, olay: undefined, siparis: false };
+    const ek: TekrarEki = { ili, olay: undefined, siparis: false, olaylar: [], digerleri: [], toplum: false };
     const sonuc = isle(kar, s, ay, ek);
     if (!sonuc.ok) return sonuc;
     const dil = dilCoz(nesneMi(govde) ? govde.dil : undefined);
     const olay = ek.olay ? olayYaz(await this.#olayEkle(ek.olay, ay), dil) : undefined;
+    for (const t of ek.olaylar) await this.#olayEkle(t, ay);
+    for (const o of ek.digerleri) if (this.kasaba.kar.has(o)) this.#kirli.add(KAR + o).add(ILI + o);
+    if (ek.toplum) this.#kirli.add(TOPLUM);
     const yanit = structuredClone({ ...sonuc.deger, ...(olay ? { olay } : {}), envanter: kar.ev ?? {}, para: kar.pa, takat: kar.tk });
     kar.ist.push([no.deger, yanit]);
     if (kar.ist.length > IST_EN_COK) kar.ist.splice(0, kar.ist.length - IST_EN_COK);
@@ -681,7 +727,10 @@ export class YerlesimMotoru {
     if (!nesneMi(govde)) return hata("gecersiz_istek");
     return this.#tekrarGuvenli(hesapId, govde, (kar, _s, ay) => {
       const r = tarifYap(kar, govde.tarif, ay);
-      return r.ok ? basarili({ ...r.deger, tarifler: tarifListesi(kar) }) : r;
+      if (!r.ok) return r;
+      const ur = (kar.ur ??= {});
+      ur[r.deger.cikti.mal] = (ur[r.deger.cikti.mal] ?? 0) + r.deger.cikti.adet;
+      return basarili({ ...r.deger, tarifler: tarifListesi(kar) });
     });
   }
 
@@ -689,18 +738,26 @@ export class YerlesimMotoru {
   async sat(hesapId: string, govde: unknown): Promise<Sonuc<unknown>> {
     if (!nesneMi(govde)) return hata("gecersiz_istek");
     const sayac = oyuncuSayaci(this.kasaba);
-    return this.#tekrarGuvenli(hesapId, govde, (kar, _s, ay) => npcyeSat(kar, govde.mal, govde.adet, sayac, ay));
+    await this.#ortaklariYukle(hesapId);
+    return this.#tekrarGuvenli(hesapId, govde, (kar, _s, ay, ek) => {
+      const r = npcyeSat(kar, govde.mal, govde.adet, sayac, ay);
+      if (!r.ok) return r;
+      return basarili({ ...r.deger, ...this.#ortakPayiYaz(kar, r.deger.tutar, ay, ek) });
+    });
   }
 
   /** POST /v1/siparis/teslim {siparis, istekNo, dil?}: ilk getiren alır; ödül, hizmet, teşekkür izi olayı. */
   async siparisTeslim(hesapId: string, govde: unknown): Promise<Sonuc<unknown>> {
     if (!nesneMi(govde)) return hata("gecersiz_istek");
+    await this.#ortaklariYukle(hesapId);
     return this.#tekrarGuvenli(hesapId, govde, (kar, _s, ay, ek) => {
+      const sp = this.kasaba.sp?.find((x) => x.id === govde.siparis);
+      if (sp && this.#oncelik(kar, sp, ay).bekle) return hata("oncelik_bekle");
       const r = siparisTeslim(this.kasaba, kar, ek.ili, govde.siparis, ay);
       if (!r.ok) return r;
       ek.olay = r.deger.olay;
       ek.siparis = true;
-      return basarili({ ...r.deger.sonuc, hal: halGorunumu(kar, ay) });
+      return basarili({ ...r.deger.sonuc, hal: halGorunumu(kar, ay), ...this.#ortakPayiYaz(kar, r.deger.sonuc.odul, ay, ek) });
     });
   }
 
@@ -708,7 +765,13 @@ export class YerlesimMotoru {
   async siparisler(hesapId: string, dilHam: unknown): Promise<Sonuc<unknown>> {
     const r = await this.#oyuncu(hesapId);
     if (!r.ok) return r;
-    return basarili({ siparisler: siparisGorunumu(this.kasaba, r.deger.kar, this.kasaba.ay, dilCoz(dilHam)) });
+    const k = this.kasaba;
+    const kar = r.deger.kar;
+    const liste = siparisGorunumu(k, kar, k.ay, dilCoz(dilHam)).map((g) => {
+      const sp = k.sp?.find((x) => x.id === g.id);
+      return sp ? { ...g, oncelik: this.#oncelik(kar, sp, k.ay) } : g;
+    });
+    return basarili({ siparisler: liste });
   }
 
   /** GET /v1/lonca: yerleşimin lonca tablosu (oyuncunun sakin olması gerekir). */
@@ -747,6 +810,236 @@ export class YerlesimMotoru {
     this.#kirli.add(KAR + kar.o);
     await this.kaydet();
     return basarili({ tanidiklar: this.#tanidiklar(kar, ili, dilCoz(govde.dil)), ogrenme });
+  }
+  // ---------------------------------------------------------------- oyuncular arası (Faz 3a)
+
+  /** Var olan sakin oyuncunun yerel kimliği. */
+  #sakinKimligi(ham: unknown): string | undefined {
+    const ki = kisiCoz(ham);
+    return ki?.tur === "oyuncu" && this.kasaba.sakin.some((s) => s.o === ki.o) ? ki.o : undefined;
+  }
+
+  async #ortaklariYukle(hesapId: string): Promise<void> {
+    const s = this.kasaba.sakin.find((x) => x.h === hesapId);
+    if (s && this.kasaba.tp) await this.#yukle(ortaklar(this.kasaba, s.o));
+  }
+
+  #ortakPayiYaz(kar: Karakter, tutar: number, ay: number, ek: TekrarEki): { ortakPayi?: { ortak: string; akce: number }[] } {
+    const pay = ortakPayi(this.kasaba, kar, tutar, ay);
+    if (pay.length === 0) return {};
+    ek.digerleri.push(...pay.map((p) => p.ortak));
+    ek.toplum = true;
+    return { ortakPayi: pay };
+  }
+
+  /** Lonca siparişinde teveccüh önceliği: açılış ayında aynı meslekte daha yüksek kademeli biri varsa beklenir. */
+  #oncelik(kar: Karakter, sp: Siparis, ay: number) {
+    const meslek = MALLAR[sp.mal].meslek;
+    const kademe = teveccuhKademesi(kar, ay);
+    let enYuksek = 0;
+    for (const x of this.kasaba.sakin) if (x.o !== kar.o && x.ms === meslek && (x.tv ?? 0) > enYuksek) enYuksek = x.tv ?? 0;
+    const bekle = sp.durum === "acik" && ay === sp.acilis && enYuksek >= TEVECCUH_ETKI.siparisKademe && enYuksek > kademe;
+    return { kademe, enYuksek, bekle, kalem: { k: "siparis.oncelik.teveccuh", d: teveccuhEtkisi(kademe, "siparis") } };
+  }
+
+  /** Karşı oyuncuyu yükler ve istekNo'lu işlemi yürütür (ikisi de yazılır, toplum kaydı da). */
+  async #karsilikli(
+    hesapId: string,
+    govde: Record<string, unknown>,
+    isle: (kar: Karakter, diger: Karakter, ay: number, ek: TekrarEki) => Sonuc<Record<string, unknown>>,
+  ): Promise<Sonuc<unknown>> {
+    const h = this.#sakinKimligi(govde.hedef);
+    if (h) await this.#yukle([h]);
+    return this.#tekrarGuvenli(hesapId, govde, (kar, _s, ay, ek) => {
+      const diger = h ? this.kasaba.kar.get(h) : undefined;
+      if (!diger) return hata("kisi_yok");
+      if (diger.o === kar.o) return hata("kendine");
+      ek.digerleri.push(diger.o);
+      ek.toplum = true;
+      return isle(kar, diger, ay, ek);
+    });
+  }
+
+  #oyuncuEylemleri(kar: Karakter, o: Karakter, ay: number) {
+    const t = this.kasaba.tp;
+    const engel = engelliMi(t, kar.o, o.o);
+    const yasBen = karakterYasi(kar, ay);
+    const yasO = karakterYasi(o, ay);
+    const kapi = (enAz: number) => (engel ? "engelli" : yasBen < enAz || yasO < enAz ? "yas_kapisi" : undefined);
+    const bag = bagGorunumu(t, kar.o, o.o);
+    const liste: { tur: string; islem?: string; acik: boolean; engel?: string }[] = [];
+    const ekle = (tur: string, islem: string | undefined, e: string | undefined) =>
+      liste.push({ tur, ...(islem ? { islem } : {}), acik: e === undefined, ...(e ? { engel: e } : {}) });
+    ekle("dostluk", bag === "dost" ? "bitir" : bag === "istekGeldi" ? "kabul" : bag === "istekGonderildi" ? "bekliyor" : "iste", bag === "dost" ? undefined : kapi(TEKLIF_YASI));
+    for (const tur of OYUNCU_TEKLIF_TURLERI) ekle(`teklif.${tur}`, undefined, kapi(tur === "gorucu" ? GORUCU_YASI : TEKLIF_YASI));
+    ekle("husumet", acikHusumet(t, kar.o, o.o) ? "kaldir" : "ilan", undefined);
+    ekle("engelle", (t?.eg[kar.o] ?? []).includes(o.o) ? "kaldir" : "engelle", undefined);
+    ekle("sikayet", undefined, undefined);
+    return liste;
+  }
+
+  /** GET /v1/oyuncu/:id?dil=: oyuncu profili (yalnız görünür alanlar; kendi kimliğinle `ben: true`). */
+  async oyuncu(hesapId: string, idHam: unknown, dilHam: unknown): Promise<Sonuc<unknown>> {
+    const dil = dilCoz(dilHam);
+    const r = await this.#oyuncu(hesapId);
+    if (!r.ok) return r;
+    const { kar } = r.deger;
+    const h = this.#sakinKimligi(idHam);
+    if (!h) return hata("kisi_yok");
+    await this.#yukle([h]);
+    const o = this.kasaba.kar.get(h);
+    if (!o) return hata("kisi_yok");
+    const ay = this.kasaba.ay;
+    return basarili({
+      ...oyuncuProfili(this.kasaba, kar, o, dil),
+      meslekler: Object.entries(o.ms?.s ?? {}).map(([meslek, i]) => ({ meslek, kademe: i!.kd, dallar: i!.dl })),
+      teveccuh: teveccuhGorunumu(o, ay),
+      vitrin: vitrinGorunumu(o),
+      eylemler: o.o === kar.o ? [] : this.#oyuncuEylemleri(kar, o, ay),
+    });
+  }
+
+  /** POST /v1/dostluk {hedef, islem: iste|kabul|ret|bitir, istekNo}. */
+  async dostluk(hesapId: string, govde: unknown): Promise<Sonuc<unknown>> {
+    if (!nesneMi(govde)) return hata("gecersiz_istek");
+    return this.#karsilikli(hesapId, govde, (kar, o, ay, ek) => {
+      const r = dostlukIslem(this.kasaba, kar, o, govde.islem, ay);
+      if (!r.ok) return r;
+      ek.olaylar.push(...r.deger.olaylar);
+      return basarili({ hedef: o.o, bag: r.deger.bag });
+    });
+  }
+
+  /** POST /v1/husumet {hedef, islem: ilan|kaldir, istekNo}. */
+  async husumet(hesapId: string, govde: unknown): Promise<Sonuc<unknown>> {
+    if (!nesneMi(govde)) return hata("gecersiz_istek");
+    return this.#karsilikli(hesapId, govde, (kar, o, ay, ek) => {
+      const r = husumetIslem(this.kasaba, kar, o, govde.islem, ay);
+      if (!r.ok) return r;
+      ek.olaylar.push(...r.deger.olaylar);
+      return basarili({ hedef: o.o, husumet: r.deger.husumet });
+    });
+  }
+
+  /** POST /v1/teklif {tur, hedef, ...şartlar, istekNo}: emanet hemen kilitlenir; alıcıya özel olay düşer. */
+  async teklif(hesapId: string, govde: unknown): Promise<Sonuc<unknown>> {
+    if (!nesneMi(govde)) return hata("gecersiz_istek");
+    const dil = dilCoz(govde.dil);
+    return this.#karsilikli(hesapId, govde, (kar, o, ay, ek) => {
+      const r = teklifOlustur(this.kasaba, kar, o, govde, ay);
+      if (!r.ok) return r;
+      ek.olaylar.push(...r.deger.olaylar);
+      return basarili({ teklif: teklifGorunumu(this.kasaba, r.deger.teklif, kar.o, dil) });
+    });
+  }
+
+  /** POST /v1/teklif/:id/cevap {cevap: kabul|ret|geri|bitir|ode, tutar?, istekNo}. */
+  async teklifCevap(hesapId: string, govde: unknown): Promise<Sonuc<unknown>> {
+    if (!nesneMi(govde)) return hata("gecersiz_istek");
+    const dil = dilCoz(govde.dil);
+    const k = this.kasaba;
+    const t = teklifBul(k, govde.teklif);
+    if (t) await this.#yukle([...teklifTaraflari(t), ...(t.s.yp ? [t.s.yp] : [])]);
+    return this.#tekrarGuvenli(hesapId, govde, (kar, _s, ay, ek) => {
+      const r = teklifCevap(k, kar, govde.teklif, govde.cevap, govde, ay);
+      if (!r.ok) return r;
+      ek.olaylar.push(...r.deger.olaylar);
+      ek.digerleri.push(...teklifTaraflari(r.deger.teklif).filter((x) => x !== kar.o));
+      ek.toplum = true;
+      return basarili({ teklif: teklifGorunumu(k, r.deger.teklif, kar.o, dil) });
+    });
+  }
+
+  /** GET /v1/gelen?dil=: gelen/giden açık teklifler, süren anlaşmalar, son kapananlar, dostluk, husumet, söylenti. */
+  async gelen(hesapId: string, dilHam: unknown): Promise<Sonuc<unknown>> {
+    const dil = dilCoz(dilHam);
+    const r = await this.#oyuncu(hesapId);
+    if (!r.ok) return r;
+    const { kar } = r.deger;
+    const k = this.kasaba;
+    const t = k.tp;
+    const benim = (t?.tk ?? []).filter((x) => x.g === kar.o || x.a === kar.o);
+    const g = (x: (typeof benim)[number]) => teklifGorunumu(k, x, kar.o, dil);
+    const ad = (id: string) => ({ id, ad: k.sakin.find((s) => s.o === id)?.ad ?? "?" });
+    const bagli = (t?.ob ?? []).filter((b) => b.a === kar.o || b.b === kar.o);
+    const diger = (b: { a: string; b: string }) => (b.a === kar.o ? b.b : b.a);
+    return basarili({
+      ay: k.ay,
+      gelen: benim.filter((x) => x.d === "acik" && x.a === kar.o).map(g),
+      giden: benim.filter((x) => x.d === "acik" && x.g === kar.o).map(g),
+      suren: benim.filter((x) => x.d === "surer").map(g),
+      kapanan: benim.filter((x) => x.d !== "acik" && x.d !== "surer").slice(-GELEN_KAPALI_EN_COK).reverse().map(g),
+      dostluk: {
+        gelen: bagli.filter((b) => b.d === "istek" && b.g !== kar.o).map((b) => ({ ...ad(diger(b)), ay: b.ay })),
+        giden: bagli.filter((b) => b.d === "istek" && b.g === kar.o).map((b) => ({ ...ad(diger(b)), ay: b.ay })),
+        dostlar: bagli.filter((b) => b.d === "dost").map((b) => ({ ...ad(diger(b)), ay: b.ay })),
+      },
+      husumetler: (t?.hu ?? [])
+        .filter((h) => h.d === "acik" && (h.g === kar.o || h.h === kar.o))
+        .map((h) => ({ ...ad(h.g === kar.o ? h.h : h.g), yon: h.g === kar.o ? "ilanEttim" : "ilanEdildi", ay: h.ay })),
+      soylentiler: soylentiGorunumu(k, kar, dil),
+      engellenenler: engelListesi(t, kar.o).map(ad),
+    });
+  }
+
+  /** POST /v1/engelle {hedef, islem: engelle|kaldir, istekNo}: açık teklifler iptal (emanet iade), dostluk biter. */
+  async engelle(hesapId: string, govde: unknown): Promise<Sonuc<unknown>> {
+    if (!nesneMi(govde)) return hata("gecersiz_istek");
+    // İptal edilen tekliflerin emaneti iade edilir: karşı tarafın teklifleri için onun karakteri de yüklüdür.
+    return this.#karsilikli(hesapId, govde, (kar, o, ay) => {
+      const k = this.kasaba;
+      const t = toplumAl(k);
+      let liste: readonly string[];
+      if (govde.islem === "kaldir") liste = engelKaldir(t, kar.o, o.o);
+      else if (govde.islem === undefined || govde.islem === "engelle") {
+        const r = engelle(t, kar.o, o.o);
+        if (!r.ok) return r;
+        liste = r.deger;
+        taraflarArasiIptal(k, kar.o, o.o, ay);
+        if (kar.tn[o.o] === "dost") kar.tn[o.o] = "tanidik";
+        if (o.tn[kar.o] === "dost") o.tn[kar.o] = "tanidik";
+      } else return hata("gecersiz_istek");
+      return basarili({ engellenenler: liste.map((id) => ({ id, ad: k.sakin.find((s) => s.o === id)?.ad ?? "?" })) });
+    });
+  }
+
+  /** GET /v1/duzen: olağan düzen ayarları. */
+  async duzenOku(hesapId: string): Promise<Sonuc<unknown>> {
+    const r = await this.#oyuncu(hesapId);
+    if (!r.ok) return r;
+    return basarili({ duzen: duzenGorunumu(r.deger.kar) });
+  }
+
+  /** POST /v1/duzen {gelen?, borcCevap?, borcEnCok?, istekNo}: yalnız sonradan açılan tekliflere uygulanır. */
+  async duzen(hesapId: string, govde: unknown): Promise<Sonuc<unknown>> {
+    if (!nesneMi(govde)) return hata("gecersiz_istek");
+    return this.#tekrarGuvenli(hesapId, govde, (kar) => {
+      const r = duzenGuncelle(kar, govde);
+      return r.ok ? basarili({ duzen: duzenGorunumu(kar) }) : r;
+    });
+  }
+
+  /** POST /v1/yalanla {soylenti, istekNo}: kendi hakkındaki söylentiyi bir kez yalanlar (takat 1). */
+  async yalanla(hesapId: string, govde: unknown): Promise<Sonuc<unknown>> {
+    if (!nesneMi(govde)) return hata("gecersiz_istek");
+    const dil = dilCoz(govde.dil);
+    return this.#tekrarGuvenli(hesapId, govde, (kar, _s, _ay, ek) => {
+      if (kar.tk < YALANLAMA_TAKAT) return hata("takat_yok");
+      const r = yalanla(this.kasaba, kar, govde.soylenti);
+      if (!r.ok) return r;
+      kar.tk -= YALANLAMA_TAKAT;
+      ek.toplum = true;
+      return basarili({ soylentiler: soylentiGorunumu(this.kasaba, kar, dil) });
+    });
+  }
+
+  /** POST /v1/vitrin {goster: armaganId[], istekNo}: sahibi vitrinde gösterilecek armağanları seçer. */
+  async vitrin(hesapId: string, govde: unknown): Promise<Sonuc<unknown>> {
+    if (!nesneMi(govde)) return hata("gecersiz_istek");
+    return this.#tekrarGuvenli(hesapId, govde, (kar) => {
+      const r = vitrinSec(kar, govde.goster);
+      return r.ok ? basarili({ vitrin: vitrinGorunumu(kar) }) : r;
+    });
   }
 }
 

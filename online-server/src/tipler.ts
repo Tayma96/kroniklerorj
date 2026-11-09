@@ -103,6 +103,21 @@ export const HATA_DURUMU = {
   mal_yok: 409,
   siparis_yok: 404,
   siparis_kapandi: 409,
+  // Oyuncular arası (Faz 3a)
+  teklif_gecersiz: 400,
+  teklif_yok: 404,
+  teklif_kapandi: 409,
+  teklif_siniri: 429,
+  taraf_degil: 403,
+  kendine: 409,
+  engelli: 403,
+  tavan_doldu: 409,
+  hediye_dongu: 409,
+  aralik_dolu: 409,
+  istek_yok: 404,
+  soylenti_yok: 404,
+  duzen_gecersiz: 400,
+  oncelik_bekle: 409,
   // Yönetim (Y1) ve yaptırım
   uzaklastirildi: 403,
   susturuldu: 403,
@@ -184,6 +199,9 @@ export type HesapIleti =
   | { islem: GovdeliIslem; hesapId: string; govde: unknown }
   | { islem: "lonca"; hesapId: string; dil?: string | null }
   | { islem: "siparisler"; hesapId: string; dil?: string | null }
+  | { islem: "oyuncu"; hesapId: string; oyuncu: string; dil?: string | null }
+  | { islem: "gelen"; hesapId: string; dil?: string | null }
+  | { islem: "duzenOku"; hesapId: string }
   | { islem: "sikayet"; hesapId: string; govde: unknown }
   | { islem: "duyurular"; hesapId: string }
   /** YonetimDO → HesapDO: hesabın etkin yaptırım özeti (tamamı yazılır; tekrar güvenli). */
@@ -227,7 +245,25 @@ export type YonetimIleti =
   | { islem: "duyurular" };
 
 /** Gövdeli (istekNo'lu ya da yazan) yerleşim işlemleri: HesapDO aynen YerlesimDO'ya iletir. */
-export const GOVDELI_ISLEMLER = ["eylem", "tanidik", "meslek", "temelIs", "tabanAl", "tarif", "sat", "siparisTeslim"] as const;
+export const GOVDELI_ISLEMLER = [
+  "eylem",
+  "tanidik",
+  "meslek",
+  "temelIs",
+  "tabanAl",
+  "tarif",
+  "sat",
+  "siparisTeslim",
+  // Faz 3a: oyuncular arası
+  "dostluk",
+  "teklif",
+  "teklifCevap",
+  "husumet",
+  "engelle",
+  "duzen",
+  "yalanla",
+  "vitrin",
+] as const;
 export type GovdeliIslem = (typeof GOVDELI_ISLEMLER)[number];
 
 /** Yerleşime sakin kaydı (profil oluşunca HesapDO gönderir; tekrar güvenli). */
@@ -246,7 +282,10 @@ export type YerlesimIleti =
   | { islem: "kisi"; yerlesim: string; hesapId: string; kisi: string; dil?: string | null }
   | { islem: GovdeliIslem; yerlesim: string; hesapId: string; govde: unknown }
   | { islem: "lonca"; yerlesim: string; hesapId: string; dil?: string | null }
-  | { islem: "siparisler"; yerlesim: string; hesapId: string; dil?: string | null };
+  | { islem: "siparisler"; yerlesim: string; hesapId: string; dil?: string | null }
+  | { islem: "oyuncu"; yerlesim: string; hesapId: string; oyuncu: string; dil?: string | null }
+  | { islem: "gelen"; yerlesim: string; hesapId: string; dil?: string | null }
+  | { islem: "duzenOku"; yerlesim: string; hesapId: string };
 
 export type DunyaIleti =
   | { islem: "ozet" }

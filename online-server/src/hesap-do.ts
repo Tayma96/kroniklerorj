@@ -103,7 +103,21 @@ export class HesapDO {
       case "tarif":
       case "sat":
       case "siparisTeslim":
+      case "dostluk":
+      case "teklif":
+      case "teklifCevap":
+      case "husumet":
+      case "engelle":
+      case "duzen":
+      case "yalanla":
+      case "vitrin":
         return this.#yerlesime({ islem: ileti.islem, hesapId: ileti.hesapId, govde: ileti.govde });
+      case "oyuncu":
+        return this.#yerlesime({ islem: "oyuncu", hesapId: ileti.hesapId, oyuncu: ileti.oyuncu, dil: ileti.dil });
+      case "gelen":
+        return this.#yerlesime({ islem: "gelen", hesapId: ileti.hesapId, dil: ileti.dil });
+      case "duzenOku":
+        return this.#yerlesime({ islem: "duzenOku", hesapId: ileti.hesapId });
       case "lonca":
         return this.#yerlesime({ islem: "lonca", hesapId: ileti.hesapId, dil: ileti.dil });
       case "siparisler":

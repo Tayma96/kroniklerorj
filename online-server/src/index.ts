@@ -18,6 +18,16 @@
 //   POST /v1/sat {mal, adet, istekNo}    → NPC'ye satış: birim dökümü, tutar, aylık kota, para
 //   POST /v1/siparis/teslim {siparis, istekNo, dil?} → ödül, hizmet, görüş, teşekkür izi olayı
 //   GET  /v1/siparisler?dil=             → açık ve son kapanan lonca siparişleri
+//   GET  /v1/oyuncu/:id?dil=             → oyuncu profili (yalnız görünür alanlar; Faz 3a)
+//   POST /v1/dostluk {hedef, islem: iste|kabul|ret|bitir, istekNo} → {hedef, bag}
+//   POST /v1/teklif {tur, hedef, ...şartlar, istekNo} → {teklif}
+//   POST /v1/teklif/:id/cevap {cevap: kabul|ret|geri|bitir|ode, tutar?, istekNo} → {teklif}
+//   GET  /v1/gelen?dil=                  → gelen/giden/süren/kapanan teklifler, dostluk, husumet, söylenti, engel
+//   POST /v1/husumet {hedef, islem: ilan|kaldir, istekNo} → {hedef, husumet}
+//   POST /v1/engelle {hedef, islem: engelle|kaldir, istekNo} → {engellenenler}
+//   GET|POST /v1/duzen {gelen?, borcCevap?, borcEnCok?, istekNo} → {duzen}
+//   POST /v1/yalanla {soylenti, istekNo} → {soylentiler}
+//   POST /v1/vitrin {goster: armaganId[], istekNo} → {vitrin}
 //   POST /v1/sikayet {hedef, neden, aciklama?, istekNo} → {id, durum, kalan}
 //   GET  /v1/duyurular                   → son 5 duyuru
 // Uzaklaştırılmış hesapta giriş dışındaki /v1/* uçları 403 {hata: "uzaklastirildi", bitis} döner.
@@ -57,6 +67,8 @@ const AZAMI_GOVDE = 16 * 1024;
 const OTURUM_ANAHTARI_EN_KISA = 32;
 const DAVET_YOLU = /^\/v1\/davet\/([^/]+)$/;
 const KISI_YOLU = /^\/v1\/kisi\/([^/]+)$/;
+const OYUNCU_YOLU = /^\/v1\/oyuncu\/([^/]+)$/;
+const TEKLIF_CEVAP_YOLU = /^\/v1\/teklif\/([^/]+)\/cevap$/;
 
 /** Örnek yaşadıkça JWKS önbelleğini tutar. `fetch` çağrı anında çözülür (testte değiştirilebilir). */
 const google = new GoogleDogrulayici({ fetch: (url) => fetch(url) });
@@ -270,6 +282,23 @@ async function yonlendir(istek: Request, env: Env): Promise<Response> {
         const govde = await govdeOku(istek);
         return govde.ok ? basarili({ islem: "sikayet", hesapId, govde: govde.deger }) : govde;
       });
+    case "/v1/dostluk":
+      return yontem === "POST" ? govdeli(istek, env, "dostluk") : hataYaniti("yontem_yok");
+    case "/v1/teklif":
+      return yontem === "POST" ? govdeli(istek, env, "teklif") : hataYaniti("yontem_yok");
+    case "/v1/husumet":
+      return yontem === "POST" ? govdeli(istek, env, "husumet") : hataYaniti("yontem_yok");
+    case "/v1/engelle":
+      return yontem === "POST" ? govdeli(istek, env, "engelle") : hataYaniti("yontem_yok");
+    case "/v1/yalanla":
+      return yontem === "POST" ? govdeli(istek, env, "yalanla") : hataYaniti("yontem_yok");
+    case "/v1/vitrin":
+      return yontem === "POST" ? govdeli(istek, env, "vitrin") : hataYaniti("yontem_yok");
+    case "/v1/gelen":
+      return yontem === "GET" ? hesaba(istek, env, (hesapId) => basarili({ islem: "gelen", hesapId, dil })) : hataYaniti("yontem_yok");
+    case "/v1/duzen":
+      if (yontem === "GET") return hesaba(istek, env, (hesapId) => basarili({ islem: "duzenOku", hesapId }));
+      return yontem === "POST" ? govdeli(istek, env, "duzen") : hataYaniti("yontem_yok");
     case "/v1/duyurular":
       return yontem === "GET" ? hesaba(istek, env, (hesapId) => basarili({ islem: "duyurular", hesapId })) : hataYaniti("yontem_yok");
     case "/yonetim":
@@ -287,6 +316,21 @@ async function yonlendir(istek: Request, env: Env): Promise<Response> {
     if (yontem !== "GET") return hataYaniti("yontem_yok");
     const ham = kisi[1];
     return hesaba(istek, env, (hesapId) => basarili({ islem: "kisi", hesapId, kisi: ham, dil }));
+  }
+  const oyuncu = OYUNCU_YOLU.exec(yol);
+  if (oyuncu?.[1]) {
+    if (yontem !== "GET") return hataYaniti("yontem_yok");
+    const ham = oyuncu[1];
+    return hesaba(istek, env, (hesapId) => basarili({ islem: "oyuncu", hesapId, oyuncu: ham, dil }));
+  }
+  const cevap = TEKLIF_CEVAP_YOLU.exec(yol);
+  if (cevap?.[1]) {
+    if (yontem !== "POST") return hataYaniti("yontem_yok");
+    const teklif = cevap[1];
+    return hesaba(istek, env, async (hesapId) => {
+      const govde = await govdeOku(istek);
+      return govde.ok ? basarili({ islem: "teklifCevap", hesapId, govde: { ...govde.deger, teklif } }) : govde;
+    });
   }
   const davet = DAVET_YOLU.exec(yol);
   if (davet?.[1]) {

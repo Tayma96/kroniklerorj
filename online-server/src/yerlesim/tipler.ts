@@ -6,6 +6,9 @@ import type { MeslekId } from "../icerik/meslekler.ts";
 import type { HalKaydi, HalNedeni } from "./hal.ts";
 import type { MeslekKaydi } from "./meslek.ts";
 import type { Siparis } from "./siparis.ts";
+import type { Duzen } from "./duzen.ts";
+import type { Armagan, Toplum } from "./toplum.ts";
+import type { TeveccuhKaydi } from "./teveccuh.ts";
 
 /** NPC'ler arası bağ: [diğer NPC, tür (1 dost, 2 rakip), puan (−100..100), kuruluş ayı]. */
 export type Bag = [diger: number, tur: 1 | 2, puan: number, kurulus: number];
@@ -60,6 +63,8 @@ export interface Sakin {
   ma: number;
   /** Ana meslek (lonca tablosu karakterleri yüklemeden sayar; eski kayıtta yok). */
   ms?: MeslekId;
+  /** Teveccüh kademesi (sipariş önceliği karakterleri yüklemeden bakar; değişince yazılır). */
+  tv?: number;
 }
 
 export type Isaret = "tanidik" | "dost" | "dusman";
@@ -132,6 +137,23 @@ export interface Karakter {
   as?: Record<string, number>;
   /** NPC'ye satış kotası: [ay, mal → adet]. */
   ns?: [ay: number, adet: Record<string, number>];
+  /** Olağan düzen (yokken uygulanan ayarlar; eski kayıtta yok → varsayılan). */
+  dz?: Duzen;
+  /** Oyunculara hediye: bu ay verilen ve alınan toplam [ay, akçe]; alıcı → verildiği aylar (azalan getiri). */
+  hv?: [ay: number, akce: number];
+  ha?: [ay: number, akce: number];
+  hg?: Record<string, number[]>;
+  /** Usta: kalfa yaptığı çıraklar "o5:demirci" (pir sayacı tek sefer izi). */
+  cs?: string[];
+  /** Kendi ürettiği mal sayacı (armağanda "yapan" izi; envanterle kırpılır). */
+  ur?: Record<string, number>;
+  /** Son NPC teklifinin kapandığı ay (aralık). */
+  nt?: number;
+  /** Teveccüh defteri (§6.2). */
+  tv?: TeveccuhKaydi;
+  /** Alınan son armağanlar ve vitrinde gösterilmek üzere seçilenler (armağan kimlikleri). */
+  av?: Armagan[];
+  vs?: number[];
 }
 
 /** Anı: [tür, ilk yük, ay]. Yük zamanla söner (yarı ömür). */
@@ -214,4 +236,6 @@ export interface Kasaba {
   ili: Map<string, IliskiHaritasi>;
   /** Lonca siparişleri (kalıcı; eski kayıtta yok). */
   sp?: Siparis[];
+  /** Oyuncular arası durum (Faz 3; eski kayıtta yok). */
+  tp?: Toplum;
 }

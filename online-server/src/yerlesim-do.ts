@@ -78,6 +78,28 @@ export class YerlesimDO {
         return motor.siparisTeslim(ileti.hesapId, ileti.govde);
       case "siparisler":
         return motor.siparisler(ileti.hesapId, ileti.dil);
+      case "oyuncu":
+        return motor.oyuncu(ileti.hesapId, ileti.oyuncu, ileti.dil);
+      case "gelen":
+        return motor.gelen(ileti.hesapId, ileti.dil);
+      case "duzenOku":
+        return motor.duzenOku(ileti.hesapId);
+      case "dostluk":
+        return motor.dostluk(ileti.hesapId, ileti.govde);
+      case "teklif":
+        return motor.teklif(ileti.hesapId, ileti.govde);
+      case "teklifCevap":
+        return motor.teklifCevap(ileti.hesapId, ileti.govde);
+      case "husumet":
+        return motor.husumet(ileti.hesapId, ileti.govde);
+      case "engelle":
+        return motor.engelle(ileti.hesapId, ileti.govde);
+      case "duzen":
+        return motor.duzen(ileti.hesapId, ileti.govde);
+      case "yalanla":
+        return motor.yalanla(ileti.hesapId, ileti.govde);
+      case "vitrin":
+        return motor.vitrin(ileti.hesapId, ileti.govde);
       default:
         return hata("gecersiz_istek");
     }
