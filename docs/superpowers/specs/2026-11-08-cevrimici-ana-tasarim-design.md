@@ -85,6 +85,8 @@ Bir meslek ancak dört soruya cevap verirse vardır: **kim ister, çıktısı ne
 
 Dal ve düğüm adları içerik verisidir; uygulama sırasında ihtiyaca göre uyarlanır (D-31).
 
+> **9 Kasım:** §5.3 yerine `docs/superpowers/specs/2026-11-09-beceri-agaci-v2-design.md` geçerlidir (RPG beceri ağacı, öğrenme süresi, Tam Özgürlük Modeli, kalıcı bilgi).
+
 ### 5.3 Ağaç
 - **Kademe:** Çırak → Kalfa → Usta → Pir. Süre gerçek gün cinsinden [PARAMETRE, D-30]; öneri: kalfa 12 oyun ayı
   (6 gün), usta 24 ay, pir yalnız en az 2 çırağı kalfa yapınca. Parayla atlama yok (D-14).
