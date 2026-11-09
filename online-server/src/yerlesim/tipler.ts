@@ -12,6 +12,7 @@ import type { Siparis } from "./siparis.ts";
 import type { Duzen } from "./duzen.ts";
 import type { Armagan, Toplum } from "./toplum.ts";
 import type { TeveccuhKaydi } from "./teveccuh.ts";
+import type { Baris, Duyum, UcgenDefteri } from "./bilgi.ts";
 
 /** NPC'ler arası bağ: [diğer NPC, tür (1 dost, 2 rakip), puan (−100..100), kuruluş ayı]. */
 export type Bag = [diger: number, tur: 1 | 2, puan: number, kurulus: number];
@@ -203,6 +204,10 @@ export interface Iliski {
   /** Aylık görüş kazancı tavanı: ayı ve o ayki kazanç. */
   ka: number;
   kg: number;
+  /** Faz 4 (eski kayıtta yok): bu NPC'nin oyuncu hakkında duydukları, arabuluculuk izi, boykot bitiş ayı. */
+  du?: Duyum[];
+  ab?: Baris;
+  bk?: number;
 }
 
 /** NPC kimliği (sayı metni) → ilişki. */
@@ -279,4 +284,6 @@ export interface Kasaba {
   /** Depoya yazılmayı bekleyen kronik satırları ve sonraki oyuncu numarası (Faz 7). */
   kq?: KronikSatiri[];
   no?: number;
+  /** Üçgen defteri: ittifak sözleri, arabuluculuk talepleri, casuslar (Faz 4; depo anahtarı "ug"; eski kayıtta yok). */
+  ug?: UcgenDefteri;
 }

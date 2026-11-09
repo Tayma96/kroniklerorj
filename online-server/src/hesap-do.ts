@@ -128,6 +128,7 @@ export class HesapDO {
       case "duzen":
       case "yalanla":
       case "vitrin":
+      case "ucgen":
         return this.#yerlesime({ islem: ileti.islem, hesapId: ileti.hesapId, govde: ileti.govde });
       case "engelle": {
         const r = await this.#yerlesime({ islem: "engelle", hesapId: ileti.hesapId, govde: ileti.govde });
@@ -146,6 +147,8 @@ export class HesapDO {
         return this.#yerlesime({ islem: "gelen", hesapId: ileti.hesapId, dil: ileti.dil });
       case "duzenOku":
         return this.#yerlesime({ islem: "duzenOku", hesapId: ileti.hesapId });
+      case "ucgenOku":
+        return this.#yerlesime({ islem: "ucgenOku", hesapId: ileti.hesapId, npc: ileti.npc, hedef: ileti.hedef, dil: ileti.dil });
       case "lonca":
         return this.#yerlesime({ islem: "lonca", hesapId: ileti.hesapId, dil: ileti.dil });
       case "beceri":

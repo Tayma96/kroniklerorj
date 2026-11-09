@@ -110,6 +110,10 @@ export class YerlesimDO {
         return motor.yalanla(ileti.hesapId, ileti.govde);
       case "vitrin":
         return motor.vitrin(ileti.hesapId, ileti.govde);
+      case "ucgen":
+        return motor.ucgen(ileti.hesapId, ileti.govde);
+      case "ucgenOku":
+        return motor.ucgenOku(ileti.hesapId, ileti.npc, ileti.hedef, ileti.dil);
       case "hanIkram":
         return motor.hanIkram(ileti.hesapId, ileti.govde);
       case "sakinHesabi":

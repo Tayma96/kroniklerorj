@@ -33,6 +33,8 @@
 //   GET|POST /v1/duzen {gelen?, borcCevap?, borcEnCok?, istekNo} → {duzen}
 //   POST /v1/yalanla {soylenti, istekNo} → {soylentiler}
 //   POST /v1/vitrin {goster: armaganId[], istekNo} → {vitrin}
+//   GET  /v1/ucgen?npc=&hedef=&dil=      → sözlerim, arabuluculuk talepleri, casusum, barışlar, parametreler, önizleme (Faz 4)
+//   POST /v1/ucgen {tur: kiskirt|katil|sozBoz|araciIste|araciKapat|arabulucu|sartOde|casus, ..., istekNo} → şans dökümü, zar, sonuç
 //   GET  /v1/hanedan?dil=                → hanedan, eş, çocuklar, vâris adayları, vasiyet, yaşlılık (Faz 7)
 //   POST /v1/vasiyet {vasiyet, istekNo}  → vasiyet (null siler)
 //   GET  /v1/devir/onizle?varis=&dil=    → {plan, pk, varsayim}
@@ -377,6 +379,12 @@ async function yonlendir(istek: Request, env: Env): Promise<Response> {
       return yontem === "POST" ? govdeli(istek, env, "yalanla") : hataYaniti("yontem_yok");
     case "/v1/vitrin":
       return yontem === "POST" ? govdeli(istek, env, "vitrin") : hataYaniti("yontem_yok");
+    case "/v1/ucgen":
+      if (yontem === "GET") {
+        const q = url.searchParams;
+        return hesaba(istek, env, (hesapId) => basarili({ islem: "ucgenOku", hesapId, npc: q.get("npc"), hedef: q.get("hedef"), dil }));
+      }
+      return yontem === "POST" ? govdeli(istek, env, "ucgen") : hataYaniti("yontem_yok");
     case "/v1/gelen":
       return yontem === "GET" ? hesaba(istek, env, (hesapId) => basarili({ islem: "gelen", hesapId, dil })) : hataYaniti("yontem_yok");
     case "/v1/duzen":
