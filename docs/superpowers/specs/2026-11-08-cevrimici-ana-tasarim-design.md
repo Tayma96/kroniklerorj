@@ -139,6 +139,20 @@ oynanmaz; D-35/D-46 ceza yalnız bölge göstergelerine. Sayısal eşikler [PARA
   (premium para yok, D-18 önerisi). Alanda "X'in armağanı" rozeti/görünüşü; oyun etkisi yok; devredilemez, satılamaz,
   akçeye dönmez; hancıya ya da alana para payı yok; günlük sınır; Cömertler Levhası tutar/sıra göstermez.
 
+## 6.2 Profil sayfası ve teveccüh (Berkay, 9 Kasım) [KARAR]
+- GDD kuralları spontane yazıldı; bağlayıcı değil yön göstericidir. Gelir gerekir ama oyuncu küstürülmez:
+  sonuç satılmaz; görünürlük, kimlik, rahatlık ve sınırlı **sosyal** avantaj satılabilir.
+- **Profil sayfası:** her oyuncunun; kendisi "Karakterim"den, başkaları kişi/masa/listeden görür. Ad, yaş, meslek ve
+  kademe, hane/hanedan, nam, teveccüh kademesi, armağan vitrini ("X'in armağanı"), şaheserler, Debdebe çerçevesi,
+  ortak tanıdıklar; başkasında: dostluk, teklif, armağan, engelle, şikayet. Sahibi vitrinde gösterilecekleri seçer.
+- **Teveccüh:** alınan hediyelerden (ikram, armağan, Debdebe armağanı) doğan ayrı itibar. **Oyunda işe yarar**:
+  seçim/makam adaylığında sınırlı meşruiyet desteği, NPC ilk izlenimine küçük artı, hancı/aşçı/esnafa NPC müşteri ve
+  sipariş önceliği, ozana sahne önceliği ve müdavim hızı, ahi başı adaylık şartı. Bilinçli "sosyal P2W": kendine değil,
+  başkasından gelir.
+- **Sınırlar [PARAMETRE]:** farklı verenin sayısı tutardan ağır basar (kişi başı aylık katkı tavanı); azalan getiri
+  (logaritmik); yavaş sönme; aynı hesap kümesi, aynı hane ve yeni/etkin olmayan hesaplar sayılmaz; her etkinin tavanı
+  var; ustalık ve takatin yerine geçmez. Kademeyle gösterilir (sıra numarası/tutar yok).
+
 ## 7. Yönetici paneli (yeni)
 
 ### 7.1 Rol ve yetki
