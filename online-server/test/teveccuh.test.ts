@@ -82,3 +82,29 @@ test("teveccüh NPC bakışında görünür kalemdir (tavanlı); armağan kabul�
   assert.ok(vitrinSec(b, [`t${t.deger.teklif.i}`]).ok);
   assert.equal(vitrinGorunumu(b).length, 1);
 });
+
+test("lonca siparişi: açılış ayında aynı meslekte daha yüksek teveccühlü varsa beklenir; öncelik görünür kalemdir", async () => {
+  const { YerlesimMotoru } = await import("../src/yerlesim/motor.ts");
+  const { doDepo } = await import("../src/depo.ts");
+  const { sahteDepolama } = await import("./yardimci.ts");
+  const simdi = Date.UTC(2026, 10, 9, 10);
+  const m = (await YerlesimMotoru.ac(doDepo(sahteDepolama()), "develi", simdi))!;
+  const k = m.kasaba;
+  const sakin = { cinsiyet: "kadın" as const, dogumAyi: k.ay - 160 };
+  await m.sakinEkle({ hesapId: "h-1", ad: "Ayşe", ...sakin });
+  await m.sakinEkle({ hesapId: "h-2", ad: "Zehra", ...sakin });
+  const [s1, s2] = k.sakin;
+  s1!.ms = "demirci";
+  s1!.tv = 2;
+  const z = k.kar.get(s2!.o)!;
+  z.ev = { nal: 3 };
+  k.sp = [{ id: `s${k.ay}_1`, mal: "nal", adet: 3, odul: 18, hizmet: 3, npc: k.npc[0]!.i, acilis: k.ay, son: k.ay + 4, durum: "acik" }];
+  const liste = ((await m.siparisler("h-2", "tr")) as { ok: true; deger: { siparisler: Record<string, any>[] } }).deger.siparisler;
+  assert.equal(liste[0]!.oncelik.bekle, true);
+  assert.equal(liste[0]!.oncelik.enYuksek, 2);
+  assert.equal(liste[0]!.oncelik.kalem.k, "siparis.oncelik.teveccuh");
+  assert.deepEqual(await m.siparisTeslim("h-2", { siparis: `s${k.ay}_1`, istekNo: "teslim-0001" }), { ok: false, hata: "oncelik_bekle" });
+  k.sp[0]!.acilis = k.ay - 1; // ertesi ay: öncelik penceresi kapandı
+  const r = await m.siparisTeslim("h-2", { siparis: `s${k.ay}_1`, istekNo: "teslim-0002" });
+  assert.ok(r.ok, JSON.stringify(r));
+});
