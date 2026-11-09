@@ -2,6 +2,9 @@
 // ve tecrübeyi işin mesleğine yazar (beceri ağacı v2: faaliyetle tecrübe). Usta iş temel çıktının YERİNE geçmez,
 // ayrı bir iştir ve meslek düğümü ister (sert odun seç, cevher ayıkla, ince yün ayıkla, şifalı ot seç).
 // "Basit onarım" herkese açıktır ve demircinin işidir: aşınmış aracın kullanım sayacını düşürür.
+// Beceri ağacı v2: her meslekte tecrübe veren en az bir iş vardır; malı olmayan meslekte "yamaklık" (mal çıkmaz,
+// akçe doğmaz, yalnız tecrübe; azalan getiri aynı). Usta işini düğüm seviyesi açar (`IS_KILIDI`); verim ve araç
+// (alet: balta/kazma) etkileri çıktıyı artırır, araç aşınır.
 // Aynı işte azalan getiri vardır (ana mesleğin kendi işinde pencere kısa); sıfır verimli iş takat harcatmaz.
 // Fırsat maliyeti ve sonraki verim döküm olarak görünür: "bu takatle mesleğinde ne kazanırdın".
 
@@ -10,19 +13,23 @@ import type { MeslekId } from "../icerik/meslekler.ts";
 import { basarili, hata, type Sonuc } from "../tipler.ts";
 import { IS_KONDISYON, halDegistir, halGorunumu, type HalGorunumu } from "./hal.ts";
 import { karakterYasi, takatHarca, takatTazele } from "./karakter.ts";
-import { dugumAcikMi, hizmetEkle, meslekKaydi } from "./meslek.ts";
+import { IS_KILIDI } from "../icerik/agaclar/index.ts";
+import { aracArtisi, basariSay, isAcik, verimArtisi } from "./beceri-etki.ts";
+import { hizmetEkle, meslekKaydi } from "./meslek.ts";
 import { envanterEkle, saticiDegeri } from "./npc-taban.ts";
-import { ALET_OMRU } from "./tarif.ts";
+import { ALET_OMRU, aletOmru, aracAsindir } from "./tarif.ts";
 import type { Dokum, Karakter } from "./tipler.ts";
 
 interface TemelIs {
-  /** Çıktı malı; onarımda yok (aracın sayacı düşer). */
+  /** Çıktı malı; onarımda ve yamaklıkta yok. */
   mal?: MalId;
   /** Bu işi kendi işi sayan meslek (tecrübe buna yazılır). */
   meslek: MeslekId;
-  /** Usta iş: gereken düğüm. */
-  dugum?: string;
-  /** Azalan getiriden önceki çıktı. */
+  /** Usta iş (kilidi `IS_KILIDI`'nde). */
+  usta?: true;
+  /** Yamaklık: mal çıkmaz, yalnız tecrübe. */
+  yamak?: true;
+  /** Azalan getiriden önceki çıktı (yamaklıkta emek birimi). */
   cikti: number;
 }
 
@@ -38,11 +45,23 @@ export const TEMEL_ISLER = {
   yun: { mal: "yun", meslek: "ciftci", cikti: TEMEL_CIKTI },
   su: { mal: "su", meslek: "hanci", cikti: TEMEL_CIKTI },
   onarim: { meslek: "demirci", cikti: ONARIM_CIKTI },
+  // Yamaklık: malı olmayan mesleklerin tecrübe işi (usta yanında ayak işi); demircide körük çekmek (onarım
+  // aşınmış alet ister, ilk tecrübe aletsiz de kazanılabilsin)
+  koruk: { meslek: "demirci", yamak: true, cikti: TEMEL_CIKTI },
+  tezgah: { meslek: "marangoz", yamak: true, cikti: TEMEL_CIKTI },
+  tarak: { meslek: "dokumaci", yamak: true, cikti: TEMEL_CIKTI },
+  mutfak: { meslek: "asci", yamak: true, cikti: TEMEL_CIKTI },
+  ezber: { meslek: "ozan", yamak: true, cikti: TEMEL_CIKTI },
+  kalem: { meslek: "katip", yamak: true, cikti: TEMEL_CIKTI },
+  hamal: { meslek: "tuccar", yamak: true, cikti: TEMEL_CIKTI },
+  sahitlik: { meslek: "arabulucu", yamak: true, cikti: TEMEL_CIKTI },
+  karakol: { meslek: "asker", yamak: true, cikti: TEMEL_CIKTI },
+  evrak: { meslek: "divan", yamak: true, cikti: TEMEL_CIKTI },
   // Usta işleri (ayrı iş, ayrı azalan getiri)
-  sertOdun: { mal: "sertOdun", meslek: "oduncu", dugum: "oduncu.orman.0", cikti: USTA_IS_CIKTI },
-  cevher: { mal: "cevher", meslek: "oduncu", dugum: "oduncu.maden.0", cikti: USTA_IS_CIKTI },
-  inceYun: { mal: "inceYun", meslek: "ciftci", dugum: "ciftci.suru.0", cikti: USTA_IS_CIKTI },
-  sifaliOt: { mal: "sifaliOt", meslek: "sifaci", dugum: "sifaci.otlar.0", cikti: USTA_IS_CIKTI },
+  sertOdun: { mal: "sertOdun", meslek: "oduncu", usta: true, cikti: USTA_IS_CIKTI },
+  cevher: { mal: "cevher", meslek: "oduncu", usta: true, cikti: USTA_IS_CIKTI },
+  inceYun: { mal: "inceYun", meslek: "ciftci", usta: true, cikti: USTA_IS_CIKTI },
+  sifaliOt: { mal: "sifaliOt", meslek: "sifaci", usta: true, cikti: USTA_IS_CIKTI },
 } as const satisfies Record<string, TemelIs>;
 export type IsId = keyof typeof TEMEL_ISLER;
 
@@ -72,13 +91,16 @@ function onarilacak(k: Karakter): { mal: MalId; kullanim: number } | undefined {
 }
 
 export interface Verim {
-  /** Çıktı malı (onarımda onarılan araç; yoksa null). */
+  /** Çıktı malı (onarımda onarılan araç; yamaklıkta ve yoksa null). */
   mal: MalId | null;
   adet: number;
   /** Bu işi bir kez daha yaparsan sonraki adet (önizleme). */
   sonraki: number;
   usta: boolean;
+  yamak: boolean;
   acik: boolean;
+  /** Araç etkisi (öğrenilmiş): araç malı, artış, envanterde var mı. */
+  arac: { mal: string; arti: number; var: boolean } | null;
   /** Pencere içindeki tekrar ve pencere (ay). */
   tekrar: number;
   pencere: number;
@@ -86,18 +108,22 @@ export interface Verim {
 
 function verim(k: Karakter, id: IsId, ay: number): Verim {
   const is: TemelIs = TEMEL_ISLER[id];
-  const acik = is.dugum === undefined || dugumAcikMi(k, is.dugum);
+  const acik = isAcik(k, id);
   const p = pencere(k, id);
   const n = (k.tz?.[id] ?? []).filter((x) => ay - x < p).length;
-  const ham = Math.floor(is.cikti / (1 + n));
-  const hamSonraki = Math.floor(is.cikti / (2 + n));
+  const ae = aracArtisi(k, id);
+  const arac = ae ? { ...ae, var: (k.ev?.[ae.mal] ?? 0) > 0 } : null;
+  const taban = is.cikti + verimArtisi(k, id).arti + (arac?.var ? arac.arti : 0);
+  const ham = Math.floor(taban / (1 + n));
+  const hamSonraki = Math.floor(taban / (2 + n));
+  const ortak = { usta: is.usta === true, yamak: is.yamak === true, acik, arac, tekrar: n, pencere: p };
   if (id === "onarim") {
     const a = onarilacak(k);
     const adet = a ? Math.min(ham, a.kullanim) : 0;
     const sonraki = a ? Math.min(hamSonraki, a.kullanim - adet) : 0;
-    return { mal: a?.mal ?? null, adet, sonraki: Math.max(0, sonraki), usta: false, acik, tekrar: n, pencere: p };
+    return { mal: a?.mal ?? null, adet, sonraki: Math.max(0, sonraki), ...ortak };
   }
-  return { mal: is.mal!, adet: acik ? ham : 0, sonraki: acik ? hamSonraki : 0, usta: is.dugum !== undefined, acik, tekrar: n, pencere: p };
+  return { mal: is.mal ?? null, adet: acik ? ham : 0, sonraki: acik ? hamSonraki : 0, ...ortak };
 }
 
 /** Bir birim çıktının değeri (onarımda bir kullanımın payı: taban ÷ ömür, yukarı). */
@@ -123,7 +149,8 @@ export function temelIsOnizleme(k: Karakter, oyuncuSayisi: (m: MeslekId) => numb
   return (Object.keys(TEMEL_ISLER) as IsId[]).map((id) => ({
     is: id,
     meslek: TEMEL_ISLER[id].meslek,
-    dugum: (TEMEL_ISLER[id] as TemelIs).dugum ?? null,
+    dugum: IS_KILIDI[id]?.dugum ?? null,
+    seviye: IS_KILIDI[id]?.seviye ?? null,
     ...verim(k, id, ay),
     takat: TEMEL_TAKAT,
     firsat: firsatMaliyeti(k, id, oyuncuSayisi, ay),
@@ -137,8 +164,11 @@ export type TemelIsSonucu = {
   /** Aynı işin sonraki verimi (önizleme). */
   sonraki: number;
   usta: boolean;
-  /** Onarımda: aracın kalan kullanım sayacı (ömür ALET_OMRU). */
+  yamak: boolean;
+  /** Onarımda: aracın kalan kullanım sayacı ve etkin ömrü. */
   onarim?: { mal: MalId; kullanim: number; omur: number };
+  /** Araçla yapıldıysa aşınma. */
+  arac?: { mal: MalId; kullanim: number; omur: number; asindi: boolean };
   hizmet: number;
   firsat: Dokum;
   takat: number;
@@ -152,7 +182,7 @@ export function temelIsYap(k: Karakter, idHam: unknown, oyuncuSayisi: (m: Meslek
   const v = verim(k, id, ay);
   if (!v.acik) return hata("dugum_kapali");
   if (id === "onarim" && !v.mal) return hata("arac_yok");
-  if (v.adet <= 0 || !v.mal) return hata("verim_yok");
+  if (v.adet <= 0 || (!v.mal && !v.yamak)) return hata("verim_yok");
   takatTazele(k, ay);
   const firsat = firsatMaliyeti(k, id, oyuncuSayisi, ay);
   if (!takatHarca(k, ay, TEMEL_TAKAT)) return hata("takat_yok");
@@ -161,11 +191,13 @@ export function temelIsYap(k: Karakter, idHam: unknown, oyuncuSayisi: (m: Meslek
   let onarim: TemelIsSonucu["onarim"];
   if (id === "onarim") {
     const as = (k.as ??= {});
-    const kalan = (as[v.mal] ?? 0) - v.adet;
-    if (kalan > 0) as[v.mal] = kalan;
-    else delete as[v.mal];
-    onarim = { mal: v.mal, kullanim: Math.max(0, kalan), omur: ALET_OMRU };
-  } else envanterEkle(k, v.mal, v.adet);
+    const kalan = (as[v.mal!] ?? 0) - v.adet;
+    if (kalan > 0) as[v.mal!] = kalan;
+    else delete as[v.mal!];
+    onarim = { mal: v.mal!, kullanim: Math.max(0, kalan), omur: aletOmru(k, v.mal!) };
+  } else if (v.mal) envanterEkle(k, v.mal, v.adet);
+  const arac = v.arac?.var && id !== "onarim" ? aracAsindir(k, v.arac.mal as MalId) : undefined;
+  basariSay(k, `is:${id}`, v.adet);
   const hizmet = hizmetEkle(k, TEMEL_ISLER[id].meslek, 1);
   halDegistir(k, ay, { kondisyon: -IS_KONDISYON * TEMEL_TAKAT }, "hal.neden.temelIs");
   const sonra = verim(k, id, ay);
@@ -175,7 +207,9 @@ export function temelIsYap(k: Karakter, idHam: unknown, oyuncuSayisi: (m: Meslek
     adet: v.adet,
     sonraki: sonra.adet,
     usta: v.usta,
+    yamak: v.yamak,
     ...(onarim ? { onarim } : {}),
+    ...(arac ? { arac } : {}),
     hizmet,
     firsat,
     takat: k.tk,

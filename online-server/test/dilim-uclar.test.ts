@@ -1,4 +1,4 @@
-// Uçtan uca dikey dilim: demirci (yan meslek oduncu) temel işle cevher çıkarır, NPC'den odun alır, kömür ve nal
+// Uçtan uca dikey dilim: demirci (oduncu becerisiyle) temel işle cevher çıkarır, NPC'den odun alır, kömür ve nal
 // tarifini yapar, NPC'ye satar ve lonca siparişini teslim eder; olay defterinde teşekkür izi görünür.
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -75,11 +75,20 @@ test("dikey dilim uçları: Hal, tarif, satış, sipariş teslimi ve teşekkür 
       return r.govde;
     };
     await tamam("/v1/meslek", { islem: "sec", meslek: "demirci" });
-    await tamam("/v1/meslek", { islem: "dal", meslek: "demirci", dal: "alet" });
-    await tamam("/v1/meslek", { islem: "dugum", meslek: "demirci", dugum: "demirci.alet.0" });
     await tamam("/v1/meslek", { islem: "yan", meslek: "oduncu" });
-    await tamam("/v1/meslek", { islem: "dal", meslek: "oduncu", dal: "maden" });
-    const m = await tamam("/v1/meslek", { islem: "dugum", meslek: "oduncu", dugum: "oduncu.maden.0" });
+    // Beceriler v1 kaydıyla gelir (eski kayıt göçü: alet.0 → Aletçilik 1, maden.0 → Madencilik 2); öğrenme
+    // süresi akışı beceri-uclar testinde. Bellekteki motor atılır, yeni örnek depodan okur.
+    for (const [ad, kayit] of yerlesimler.ornekler) {
+      for (const [a, v] of kayit.depolama.veri) {
+        if (!a.startsWith("o:")) continue;
+        const kar = v as Nesne;
+        if (kar.ms?.a !== "demirci") continue;
+        kar.ms.s.demirci = { ...kar.ms.s.demirci, dl: ["alet"], dg: ["demirci.alet.0"] };
+        kar.ms.s.oduncu = { kd: 0, hz: 0, cy: 0, dl: ["maden"], dg: ["oduncu.maden.0"] };
+      }
+      kayit.ornek = new YerlesimDO({ id: { toString: () => ad }, storage: kayit.depolama } as never, env, () => saat);
+    }
+    const m = (await cagir("GET", "/v1/yerlesim", { oturum })).govde.ben;
     assert.equal(m.tarifler.find((t: Nesne) => t.id === "nal").acik, true);
     assert.equal(m.tarifler.find((t: Nesne) => t.id === "komur").acik, true);
 

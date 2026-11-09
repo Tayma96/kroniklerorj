@@ -1,5 +1,6 @@
 // Han masası uçtan uca: gerçek Worker yönlendiricisi + gerçek DO sınıfları (MasaDO dahil), sahte hibernation soketleri.
 import test from "node:test";
+import { IKRAM_MENUSU } from "../src/han/ikram.ts";
 import assert from "node:assert/strict";
 import isleyici, { DunyaDO, HesapDO, MasaDO, YerlesimDO, YonetimDO } from "../src/index.ts";
 import { hesapCagir } from "../src/ic.ts";
@@ -93,6 +94,7 @@ test("han listesi, yükseltme, otur, sohbet (saklanmaz), eylem (katılım, tekra
 
   const doluluk = await cagir("GET", "/v1/han", { oturum: bora.oturum });
   assert.equal(doluluk.govde.masalar[0].oturan, 2);
+  assert.deepEqual(doluluk.govde.menu, Object.entries(IKRAM_MENUSU).map(([id, m]) => ({ id, fiyat: m.fiyat })), "ikram menüsü");
 
   const istekNo = no();
   const eylem = { masa: 1, tur: "ittifak", hedef: bora.hesap, istekNo };

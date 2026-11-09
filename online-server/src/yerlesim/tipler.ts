@@ -162,6 +162,29 @@ export interface Karakter {
   vs?: number[];
   /** Hanedan, evlilik, yaşlılık, ölüm ve vasiyet (Faz 7; eski kayıtta yok → nesil 1). */
   hd?: HanedanKaydi;
+  /** Beceri ağacı v2: tek öğrenme sırası (bütün meslekler için; yoksa boş). */
+  bo?: BeceriOgrenme;
+  /** Başarı sayaçları (artar, hiç azalmaz): tarif:<id>, is:<id>, sat:akce, teslim:<mal> → adet/akçe. */
+  bs?: Record<string, number>;
+  /** Kazanılmış kalıcı unvanlar (unvan kimlikleri). */
+  un?: string[];
+}
+
+/** Süren öğrenme ya da yeniden düzenleme beklemesi (gerçek zaman, ms; bitince tembel tamamlanır). */
+export interface BeceriOgrenme {
+  /** "o" öğrenme, "y" yeniden düzenleme beklemesi. */
+  t: "o" | "y";
+  m: MeslekId;
+  /** Düğüm ve hedef seviye ("y"de boş ve 0). */
+  d: string;
+  s: number;
+  /** Başlangıç ve bitiş anı (ms). */
+  b: number;
+  e: number;
+  /** Ayrılmış puan (iptalde iade). */
+  p: number;
+  /** Usta eğitimiyle kısaltıldı (bir kez). */
+  k?: 1;
 }
 
 /** Anı: [tür, ilk yük, ay]. Yük zamanla söner (yarı ömür). */

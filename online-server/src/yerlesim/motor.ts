@@ -41,7 +41,9 @@ import {
 import { acikMi, ogrenmeDurumu, ogrenmeIlerle, sayacArtir } from "./ogrenme.ts";
 import { dilCoz, kisiAdi, kisiCoz, meslekGorunumu, npcAdi, npcKimlik, oyuncuRef, paramYaz, yas } from "./ortak.ts";
 import { loncaTablosu, oyuncuSayaci } from "./lonca.ts";
-import { KADEME_HIZMET, beceriGorunumu, dalAc, dugumAc, dugumGeriAl, kademeAtla, meslekKaydi, meslekSec, yanSec } from "./meslek.ts";
+import { KADEME_HIZMET, beceriGorunumu, kademeAtla, meslekKaydi, meslekSec, yanSec } from "./meslek.ts";
+import { agacGorunumu, beceriHizlandir, beceriIptal, beceriOgren, beceriOzeti, beceriYeniden, mesleki, ogrenmeTamamla } from "./beceri.ts";
+import { basariSay } from "./beceri-etki.ts";
 import { aylikTakat, halGorunumu } from "./hal.ts";
 import { NPC_AYLIK_KOTA, npcdenAl, npcdenAlinan, stokGorunumu, type KasabaStogu } from "./npc-taban.ts";
 import { kalanSatisKotasi, NPC_SATIS_KOTASI, npcyeSat } from "./pazar.ts";
@@ -53,6 +55,7 @@ import { duzenGorunumu, duzenGuncelle } from "./duzen.ts";
 import { engelKaldir, engelle, engelListesi, engelliMi } from "./engel.ts";
 import { mekanTaniklari, soylentiEkle, soylentiGorunumu, yalanla } from "./soylenti.ts";
 import {
+  ciraklikUstasi,
   TEKLIF_YASI,
   GORUCU_YASI,
   ortakPayi,
@@ -75,11 +78,11 @@ import { MALLAR, MAL_IDLERI } from "../icerik/mallar.ts";
 import { temelIsOnizleme, temelIsYap } from "./temel-is.ts";
 import { devirHesapla, devirUygula, kimlikTasiyiciEkle, planKarmasi } from "./devir.ts";
 import { npcEvlilikTeklifi } from "./evlilik.ts";
-import { hanedanKaydi, olduMu, oyuncuNoAl, type HanedanKasabasi } from "./hanedan.ts";
+import { hanedanKasabasi, hanedanKaydi, olduMu, oyuncuNoAl, type HanedanKasabasi } from "./hanedan.ts";
 import { hanedanGorunumu, hanedanOzeti } from "./hanedan-gorunum.ts";
 import { KRONIK_SAYFA, KRONIK_YANIT_EN_COK, kronikYaz, type KronikSatiri } from "./kronik.ts";
 import { vasiyetDogrula } from "./vasiyet.ts";
-import { GUNDEM_ADI, type Isaret, type IliskiHaritasi, type Karakter, type Kasaba, type Npc, type Olay, type OlayTaslagi, type Sakin } from "./tipler.ts";
+import { GUNDEM_ADI, type Isaret, type IliskiHaritasi, type Karakter, type Kasaba, type Npc, type Olay, type OlayParam, type OlayTaslagi, type Sakin } from "./tipler.ts";
 import { kasabaKur } from "./uret.ts";
 
 // Faz 3 kayıtları (borç, teklif, engel, husumet) devirde vârise bağlanır.
@@ -190,6 +193,8 @@ export class YerlesimMotoru {
   readonly #kronikler = new Map<number, KronikSatiri[]>();
   readonly #kirli = new Set<string>();
   readonly #silinecek = new Set<string>();
+  /** Son isteğin gerçek zamanı (ms; `yetistir` yazar): beceri öğrenme süreleri buna göre işler. */
+  #simdi = 0;
 
   private constructor(depo: Depo, meta: Meta, kasaba: Kasaba) {
     this.#depo = depo;
@@ -372,6 +377,7 @@ export class YerlesimMotoru {
    */
   async yetistir(simdi: number, azami = AZAMI_YETISTIRME): Promise<{ islenen: number; kalan: number }> {
     const k = this.kasaba;
+    this.#simdi = Math.max(this.#simdi, simdi);
     const hedef = oyunAyi(simdi);
     if (k.ay >= hedef) return { islenen: 0, kalan: 0 };
     await this.#yukle(k.sakin.map((s) => s.o));
@@ -472,6 +478,7 @@ export class YerlesimMotoru {
       meslek: kar.ms ?? null,
       kademeHizmet: KADEME_HIZMET,
       beceri: beceriGorunumu(kar),
+      beceriOzet: beceriOzeti(kar, this.#simdi),
       tarifler: tarifListesi(kar),
       temelIsler: temelIsOnizleme(kar, oyuncuSayaci(k), ay),
       npcKota: {
@@ -523,6 +530,8 @@ export class YerlesimMotoru {
     oneriler.sort((a, b) => Math.abs(b.gorus) - Math.abs(a.gorus));
 
     const y = yerlesimBul(k.y);
+    this.#simdi = Math.max(this.#simdi, simdi);
+    await this.#beceriTamamla(kar);
     const ben = this.#ben(kar, ili, dil);
     this.#kirli.add(KAR + kar.o);
     await this.kaydet();
@@ -697,9 +706,13 @@ export class YerlesimMotoru {
     if (onceki) return basarili(onceki[1]);
     if (olduMu(kar)) return hata("olu");
     const ay = this.kasaba.ay;
+    const bitti = await this.#beceriTamamla(kar);
     const ek: TekrarEki = { ili, olay: undefined, siparis: false, olaylar: [], digerleri: [], toplum: false };
     const sonuc = isle(kar, s, ay, ek);
-    if (!sonuc.ok) return sonuc;
+    if (!sonuc.ok) {
+      if (bitti) await this.kaydet();
+      return sonuc;
+    }
     const dil = dilCoz(nesneMi(govde) ? govde.dil : undefined);
     const olay = ek.olay ? olayYaz(await this.#olayEkle(ek.olay, ay), dil) : undefined;
     for (const t of ek.olaylar) await this.#olayEkle(t, ay);
@@ -714,7 +727,59 @@ export class YerlesimMotoru {
     return basarili(yanit);
   }
 
-  /** POST /v1/meslek {islem: sec|yan|kademe|dal|dugum|geriAl, meslek, dal?, dugum?, istekNo}. */
+  /** Süresi dolan beceri öğrenmesini tamamlar; oyuncuya özel olay (Dönüş Kartı maddesi) düşer. */
+  async #beceriTamamla(kar: Karakter) {
+    const t = ogrenmeTamamla(kar, this.#simdi);
+    if (!t) return null;
+    const p: Record<string, OlayParam> = t.tur === "ogrenme" ? { meslek: t.meslek, dugum: t.dugum, seviye: t.seviye } : { meslek: t.meslek };
+    await this.#olayEkle({ t: "beceri", w: kar.o, h: kar.o, g: kar.o, n: 4, k: t.tur === "ogrenme" ? "olay.beceri.tamam" : "olay.beceri.yeniden", p }, this.kasaba.ay);
+    this.#kirli.add(KAR + kar.o);
+    return t;
+  }
+
+  /** GET /v1/beceri?meslek=: ağaç + oyuncu durumu (beceri ağacı v2). */
+  async beceri(hesapId: string, meslekHam: unknown): Promise<Sonuc<unknown>> {
+    const r = await this.#oyuncu(hesapId);
+    if (!r.ok) return r;
+    const { kar } = r.deger;
+    const bitti = await this.#beceriTamamla(kar);
+    const g = agacGorunumu(kar, meslekHam, this.#simdi);
+    if (bitti) await this.kaydet();
+    return g;
+  }
+
+  /**
+   * Beceri yazma işlemleri (istekNo'lu): ogren {meslek, dugum}, iptal {}, hizlandir {kaynak}, yeniden {meslek}.
+   * Yanıtta süren öğrenme ve ilgili meslek ağacının puanı döner.
+   */
+  async beceriYaz(hesapId: string, islem: "ogren" | "iptal" | "hizlandir" | "yeniden", govde: unknown): Promise<Sonuc<unknown>> {
+    if (!nesneMi(govde)) return hata("gecersiz_istek");
+    const simdi = this.#simdi;
+    if (islem === "hizlandir") {
+      // Eğitimde ustanın karakteri gerekir (kademesine göre oran).
+      const r = await this.#oyuncu(hesapId);
+      if (r.ok && r.deger.kar.bo) {
+        const u = ciraklikUstasi(this.kasaba, r.deger.kar.o, r.deger.kar.bo.m);
+        if (u) await this.#yukle([u]);
+      }
+    }
+    return this.#tekrarGuvenli(hesapId, govde, (kar) => {
+      let r: Sonuc<Record<string, unknown>>;
+      if (islem === "ogren") r = beceriOgren(kar, govde.meslek, govde.dugum, simdi);
+      else if (islem === "iptal") r = beceriIptal(kar, simdi);
+      else if (islem === "hizlandir")
+        r = beceriHizlandir(kar, govde.kaynak, simdi, (m) => {
+          const o = ciraklikUstasi(this.kasaba, kar.o, m);
+          const u = o ? this.kasaba.kar.get(o) : undefined;
+          return u ? { o: u.o, kademe: u.ms?.s[m]?.kd ?? 0 } : undefined;
+        });
+      else r = beceriYeniden(kar, govde.meslek, simdi, hanedanKasabasi(this.kasaba));
+      if (!r.ok) return r;
+      return basarili({ ...r.deger, beceri: beceriGorunumu(kar), beceriOzet: beceriOzeti(kar, simdi) });
+    });
+  }
+
+  /** POST /v1/meslek {islem: sec|yan|kademe, meslek, istekNo}. Düğüm öğrenme /v1/beceri/ogren'dedir (v2). */
   async meslek(hesapId: string, govde: unknown): Promise<Sonuc<unknown>> {
     if (!nesneMi(govde)) return hata("gecersiz_istek");
     return this.#tekrarGuvenli(hesapId, govde, (kar, s, ay) => {
@@ -730,15 +795,6 @@ export class YerlesimMotoru {
           break;
         case "kademe":
           r = kademeAtla(kar, m, ay);
-          break;
-        case "dal":
-          r = dalAc(kar, m, govde.dal);
-          break;
-        case "dugum":
-          r = dugumAc(kar, m, govde.dugum);
-          break;
-        case "geriAl":
-          r = dugumGeriAl(kar, m, govde.dugum, ay);
           break;
         default:
           return hata("gecersiz_istek");
@@ -781,6 +837,7 @@ export class YerlesimMotoru {
     return this.#tekrarGuvenli(hesapId, govde, (kar, _s, ay, ek) => {
       const r = npcyeSat(kar, govde.mal, govde.adet, sayac, ay, (this.kasaba.st ??= {}) as KasabaStogu);
       if (!r.ok) return r;
+      basariSay(kar, "sat:akce", r.deger.tutar);
       return basarili({ ...r.deger, ...this.#ortakPayiYaz(kar, r.deger.tutar, ay, ek) });
     });
   }
@@ -794,6 +851,7 @@ export class YerlesimMotoru {
       if (sp && this.#oncelik(kar, sp, ay).bekle) return hata("oncelik_bekle");
       const r = siparisTeslim(this.kasaba, kar, ek.ili, govde.siparis, ay);
       if (!r.ok) return r;
+      if (sp) basariSay(kar, `teslim:${sp.mal}`, sp.adet);
       ek.olay = r.deger.olay;
       ek.siparis = true;
       return basarili({ ...r.deger.sonuc, hal: halGorunumu(kar, ay), ...this.#ortakPayiYaz(kar, r.deger.sonuc.odul, ay, ek) });
@@ -854,6 +912,14 @@ export class YerlesimMotoru {
   // ---------------------------------------------------------------- oyuncular arası (Faz 3a)
 
   /** Var olan sakin oyuncunun yerel kimliği. */
+  /** Şikayet için: yerleşimdeki oyuncunun yerel kimliği → hesap kimliği (yalnız sakin olan sorar). */
+  async sakinHesabi(hesapId: string, hedef: unknown): Promise<Sonuc<{ hesap: string }>> {
+    if (!this.kasaba.sakin.some((x) => x.h === hesapId)) return hata("sakin_yok");
+    const o = this.#sakinKimligi(hedef);
+    const s = o ? this.kasaba.sakin.find((x) => x.o === o) : undefined;
+    return s ? basarili({ hesap: s.h }) : hata("kisi_yok");
+  }
+
   #sakinKimligi(ham: unknown): string | undefined {
     const ki = kisiCoz(ham);
     return ki?.tur === "oyuncu" && this.kasaba.sakin.some((s) => s.o === ki.o) ? ki.o : undefined;
@@ -932,7 +998,7 @@ export class YerlesimMotoru {
     const ay = this.kasaba.ay;
     return basarili({
       ...oyuncuProfili(this.kasaba, kar, o, dil),
-      meslekler: Object.entries(o.ms?.s ?? {}).map(([meslek, i]) => ({ meslek, kademe: i!.kd, dallar: i!.dl })),
+      mesleki: mesleki(o, this.#simdi),
       teveccuh: teveccuhGorunumu(o, ay),
       vitrin: vitrinGorunumu(o),
       eylemler: o.o === kar.o ? [] : this.#oyuncuEylemleri(kar, o, ay),

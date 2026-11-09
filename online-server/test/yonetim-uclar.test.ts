@@ -312,7 +312,11 @@ test("şikayet ve kendine fayda yasağı: kendini şikayet, sınır, susturma, k
     const cakisma = await cagir("POST", "/v1/sikayet", { oturum: mehmet.oturum, govde: { ...sk, neden: "spam" } });
     assert.equal(cakisma.govde.hata, "istekno_gecersiz", "aynı istekNo farklı gövdeyle çakışmadır");
     // (Şikayetçi, hedef) tekildir: ikinci kez sayılmaz, günlük hakkı yemez.
-    const tekil = await cagir("POST", "/v1/sikayet", { oturum: mehmet.oturum, govde: { hedef: ayse.hesap, neden: "spam", istekNo: no() } });
+    // Profilin verdiği yerel kimlik (`o..`) şikayet edenin yerleşiminde hesap kimliğine çözülür.
+    const ayseYerel = (await cagir("GET", "/v1/yerlesim", { oturum: ayse.oturum })).govde.ben.id as string;
+    assert.match(ayseYerel, /^o[0-9]+$/);
+    assert.equal((await cagir("POST", "/v1/sikayet", { oturum: mehmet.oturum, govde: { hedef: "o999", neden: "spam", istekNo: no() } })).govde.hata, "kisi_yok");
+    const tekil = await cagir("POST", "/v1/sikayet", { oturum: mehmet.oturum, govde: { hedef: ayseYerel, neden: "spam", istekNo: no() } });
     assert.deepEqual([tekil.govde.id, tekil.govde.birlesti, tekil.govde.yeni], [s1.govde.id, true, false]);
     const s2 = await cagir("POST", "/v1/sikayet", { oturum: ayse.oturum, govde: { hedef: mehmet.hesap, neden: "kufur", istekNo: no() } });
     assert.equal(s2.durum, 200);

@@ -4,7 +4,9 @@ import { TARIFLER } from "../src/icerik/tarifler.ts";
 import { MALLAR } from "../src/icerik/mallar.ts";
 import { meslekBul } from "../src/icerik/meslekler.ts";
 import { IS_KONDISYON, halAl } from "../src/yerlesim/hal.ts";
-import { dalAc, dugumAc, meslekKaydi, meslekSec, yanSec } from "../src/yerlesim/meslek.ts";
+import { TARIF_KILIDI, beceriDugumu, gocKarsiligi } from "../src/icerik/agaclar/index.ts";
+import { seviyeVer } from "../src/yerlesim/beceri.ts";
+import { meslekKaydi, meslekSec } from "../src/yerlesim/meslek.ts";
 import { ALET_OMRU, tarifListesi, tarifYap } from "../src/yerlesim/tarif.ts";
 import { temelIsYap } from "../src/yerlesim/temel-is.ts";
 import type { Karakter, Kasaba } from "../src/yerlesim/tipler.ts";
@@ -15,15 +17,16 @@ function usta(k: Kasaba, meslek: string, dal: string, no = 1): Karakter {
   c.tk = 18;
   c.ta = k.ay;
   meslekSec(c, meslek, k.ay);
-  dalAc(c, meslek, dal);
-  dugumAc(c, meslek, `${meslek}.${dal}.0`);
+  const y = gocKarsiligi(`${meslek}.${dal}.0`)!;
+  seviyeVer(c, y.dugum, y.seviye);
   return c;
 }
 
 test("tarif içeriği tutarlı: düğüm var, girdi/çıktı malı geçerli, takat ve hizmet pozitif", () => {
   for (const t of Object.values(TARIFLER)) {
-    const m = meslekBul(t.meslek);
-    assert.ok(m?.dugumler.some((d) => d.id === t.dugum), t.id);
+    assert.ok(meslekBul(t.meslek), t.id);
+    const kilit = TARIF_KILIDI[t.id];
+    assert.ok(kilit && beceriDugumu(kilit.dugum), `${t.id}: tarifi açan düğüm`);
     assert.ok(Object.hasOwn(MALLAR, t.cikti[0]) && t.cikti[1] > 0, t.id);
     for (const mal of Object.keys(t.girdi)) assert.ok(Object.hasOwn(MALLAR, mal), `${t.id}:${mal}`);
     assert.ok(t.takat > 0 && t.hizmet > 0, t.id);
@@ -67,17 +70,15 @@ test("düğüm kapalı, bilinmeyen tarif, takat yok", () => {
   assert.equal(c.ev.cevher, 9);
 });
 
-test("yan meslekte açılan düğüm tarifi açar; meslek değişse de açık kalır, tecrübe faaliyetin mesleğine tam", () => {
+test("başka meslekte öğrenilen düğüm tarifi açar; meslek değişse de açık kalır, tecrübe faaliyetin mesleğine tam", () => {
   const k = testKasabasi();
   const c = usta(k, "demirci", "alet");
-  yanSec(c, "oduncu", k.ay);
-  dalAc(c, "oduncu", "maden");
-  dugumAc(c, "oduncu", "oduncu.maden.0");
+  seviyeVer(c, "oduncu.madencilik", 1);
   c.ev = { odun: 2 };
   const r = tarifYap(c, "komur", k.ay);
   assert.ok(r.ok);
   assert.equal(r.deger.hizmet, TARIFLER.komur.hizmet, "tam tecrübe");
-  meslekSec(c, "ciftci", k.ay); // ana meslek değişti; demirci düğümü açık kalır
+  assert.ok(meslekSec(c, "ciftci", k.ay + 12).ok); // ana meslek değişti (yılda bir); demirci düğümü açık kalır
   c.ev = { cevher: 1, komur: 1 };
   const n = tarifYap(c, "nal", k.ay);
   assert.ok(n.ok);

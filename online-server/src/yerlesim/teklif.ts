@@ -108,6 +108,12 @@ function surenler(k: Kasaba, o: string, tur: Teklif["t"]): Teklif[] {
   return (k.tp?.tk ?? []).filter((t) => t.d === "surer" && t.t === tur && (t.g === o || t.a === o));
 }
 
+/** Süren çıraklıkta bu oyuncunun bu meslekteki ustası (yerel kimlik; beceri süresi kısaltma için). */
+export function ciraklikUstasi(k: Kasaba, cirakO: string, m: MeslekId): string | undefined {
+  const t = surenler(k, cirakO, "cirak").find((x) => cirak(x) === cirakO && x.s.m === m);
+  return t ? usta(t) : undefined;
+}
+
 /** Meslek ilerlemesi (kayıt yoksa undefined). */
 function ilerleme(kar: Karakter, m: MeslekId) {
   return kar.ms?.s[m];

@@ -69,6 +69,7 @@ export async function hanListesi(b: HanHesapBaglami, dil: unknown): Promise<Sonu
     han: { tur, ad: HAN_TURU_ADLARI[tur][dilCoz(dil)] },
     koltuk: KOLTUK_SAYISI,
     masalar,
+    menu: Object.entries(IKRAM_MENUSU).map(([id, m]) => ({ id, fiyat: m.fiyat })),
   });
 }
 

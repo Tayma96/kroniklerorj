@@ -10,7 +10,12 @@
 //   GET  /v1/kisi/:id?dil=               → profil + bana bakışın dökümü + eylemler (§13.9 görünürlük)
 //   POST /v1/eylem {tur, hedef?, secim?, ozellik?, istekNo, dil?} → şans, zar, sonuç, olay, takat
 //   POST /v1/tanidik {hedef, isaret, dil?}  → tanıdıklar
-//   POST /v1/meslek {islem, meslek, dal?, dugum?, istekNo} → meslek ve ağaç (ana tasarım §5)
+//   POST /v1/meslek {islem: sec|yan|kademe, meslek, istekNo} → meslek kaydı, beceri puanı, tarifler (ana tasarım §5)
+//   GET  /v1/beceri?meslek=              → beceri ağacı v2: düğümler, seviyeler, puan, öğrenme, kilit nedenleri
+//   POST /v1/beceri/ogren {meslek, dugum, istekNo} → öğrenme başlar (tek sıra; süre bitince tembel açılır)
+//   POST /v1/beceri/iptal {istekNo}      → puan iadesi
+//   POST /v1/beceri/hizlandir {kaynak: egitim|debdebe, istekNo} → süre kısaltma (debdebe: hizlandirma_kapali)
+//   POST /v1/beceri/yeniden {meslek, istekNo} → kalfa+ sıfırlanır, puan iade, akçe + bekleme
 //   POST /v1/temel-is {is, istekNo}      → çıktı, fırsat dökümü, envanter, takat
 //   POST /v1/taban-al {mal, adet, istekNo} → NPC taban alımı, envanter, para
 //   GET  /v1/lonca                       → yerleşimin lonca tablosu
@@ -301,6 +306,18 @@ async function yonlendir(istek: Request, env: Env): Promise<Response> {
       return yontem === "POST" ? govdeli(istek, env, "tabanAl") : hataYaniti("yontem_yok");
     case "/v1/tarif":
       return yontem === "POST" ? govdeli(istek, env, "tarif") : hataYaniti("yontem_yok");
+    case "/v1/beceri":
+      return yontem === "GET"
+        ? hesaba(istek, env, (hesapId) => basarili({ islem: "beceri", hesapId, meslek: url.searchParams.get("meslek")?.slice(0, 32) ?? null }))
+        : hataYaniti("yontem_yok");
+    case "/v1/beceri/ogren":
+      return yontem === "POST" ? govdeli(istek, env, "beceriOgren") : hataYaniti("yontem_yok");
+    case "/v1/beceri/iptal":
+      return yontem === "POST" ? govdeli(istek, env, "beceriIptal") : hataYaniti("yontem_yok");
+    case "/v1/beceri/hizlandir":
+      return yontem === "POST" ? govdeli(istek, env, "beceriHizlandir") : hataYaniti("yontem_yok");
+    case "/v1/beceri/yeniden":
+      return yontem === "POST" ? govdeli(istek, env, "beceriYeniden") : hataYaniti("yontem_yok");
     case "/v1/sat":
       return yontem === "POST" ? govdeli(istek, env, "sat") : hataYaniti("yontem_yok");
     case "/v1/siparis/teslim":

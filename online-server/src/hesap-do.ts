@@ -76,6 +76,16 @@ export class HesapDO {
           const profil = await profilGetir(this.#depo);
           if (!profil.ok) return profil;
         }
+        {
+          // Profil yalnız yerel oyuncu kimliği (`o12`) verir: şikayet edenin yerleşiminde hesap kimliğine çözülür.
+          // Hesap kimliği biçimi (eski) olduğu gibi geçer.
+          const g = ileti.govde;
+          if (typeof g === "object" && g !== null && !Array.isArray(g) && typeof (g as { hedef?: unknown }).hedef === "string" && /^o[1-9][0-9]{0,8}$/.test((g as { hedef: string }).hedef)) {
+            const r = await this.#yerlesime({ islem: "sakinHesabi", hesapId: ileti.hesapId, hedef: (g as { hedef: string }).hedef });
+            if (!r.ok) return r;
+            return yonetimCagir(this.#env, { islem: "sikayetEkle", sikayetci: ileti.hesapId, govde: { ...g, hedef: (r.deger as { hesap: string }).hesap } });
+          }
+        }
         return yonetimCagir(this.#env, { islem: "sikayetEkle", sikayetci: ileti.hesapId, govde: ileti.govde });
       case "duyurular":
         return yonetimCagir(this.#env, { islem: "duyurular" });
@@ -107,6 +117,10 @@ export class HesapDO {
       case "tarif":
       case "sat":
       case "siparisTeslim":
+      case "beceriOgren":
+      case "beceriIptal":
+      case "beceriHizlandir":
+      case "beceriYeniden":
       case "dostluk":
       case "teklif":
       case "teklifCevap":
@@ -134,6 +148,8 @@ export class HesapDO {
         return this.#yerlesime({ islem: "duzenOku", hesapId: ileti.hesapId });
       case "lonca":
         return this.#yerlesime({ islem: "lonca", hesapId: ileti.hesapId, dil: ileti.dil });
+      case "beceri":
+        return this.#yerlesime({ islem: "beceri", hesapId: ileti.hesapId, meslek: ileti.meslek });
       case "han":
         return hanListesi(await this.#han(ileti.hesapId, simdi), ileti.dil);
       case "masaBilet":

@@ -95,6 +95,18 @@ export const HATA_DURUMU = {
   dal_kapali: 409,
   dugum_kapali: 409,
   geri_alma_dolu: 409,
+  // Beceri ağacı v2
+  meslek_degisim_dolu: 409,
+  dugum_gecersiz: 400,
+  dugum_gizli: 409,
+  seviye_tavan: 409,
+  on_kosul_eksik: 409,
+  ogrenme_suruyor: 409,
+  ogrenme_yok: 409,
+  kaynak_gecersiz: 400,
+  hizlandirma_kapali: 403,
+  hizlandirma_yok: 409,
+  yeniden_bos: 409,
   mal_gecersiz: 400,
   kota_doldu: 409,
   verim_yok: 409,
@@ -227,6 +239,7 @@ export type HesapIleti =
   | { islem: GovdeliIslem; hesapId: string; govde: unknown }
   | { islem: "lonca"; hesapId: string; dil?: string | null }
   | { islem: "siparisler"; hesapId: string; dil?: string | null }
+  | { islem: "beceri"; hesapId: string; meslek?: string | null }
   | { islem: "oyuncu"; hesapId: string; oyuncu: string; dil?: string | null }
   | { islem: "gelen"; hesapId: string; dil?: string | null }
   | { islem: "duzenOku"; hesapId: string }
@@ -289,6 +302,11 @@ export const GOVDELI_ISLEMLER = [
   "tarif",
   "sat",
   "siparisTeslim",
+  // Beceri ağacı v2
+  "beceriOgren",
+  "beceriIptal",
+  "beceriHizlandir",
+  "beceriYeniden",
   // Faz 3a: oyuncular arası
   "dostluk",
   "teklif",
@@ -330,9 +348,12 @@ export type YerlesimIleti =
   | { islem: GovdeliIslem; yerlesim: string; hesapId: string; govde: unknown }
   | { islem: "lonca"; yerlesim: string; hesapId: string; dil?: string | null }
   | { islem: "siparisler"; yerlesim: string; hesapId: string; dil?: string | null }
+  | { islem: "beceri"; yerlesim: string; hesapId: string; meslek?: string | null }
   | { islem: "oyuncu"; yerlesim: string; hesapId: string; oyuncu: string; dil?: string | null }
   | { islem: "gelen"; yerlesim: string; hesapId: string; dil?: string | null }
   | { islem: "duzenOku"; yerlesim: string; hesapId: string }
+  /** Şikayet hedefi: yerel oyuncu kimliği (`o12`) → hesap kimliği (aynı yerleşimin sakini). */
+  | { islem: "sakinHesabi"; yerlesim: string; hesapId: string; hedef: string }
   /** Han masası bileti için: oyuncunun iki yönlü engel listesi (hesap kimlikleri). */
   | { islem: "engeller"; yerlesim: string; hesapId: string }
   | (HanedanIletisi & { yerlesim: string });

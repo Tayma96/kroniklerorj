@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { dalAc, dugumAc, meslekSec } from "../src/yerlesim/meslek.ts";
+import { seviyeVer } from "../src/yerlesim/beceri.ts";
+import { meslekSec } from "../src/yerlesim/meslek.ts";
 import { AZALAN_PENCERE_KENDI, ONARIM_CIKTI, TEMEL_CIKTI, USTA_IS_CIKTI, firsatMaliyeti, temelIsOnizleme, temelIsYap } from "../src/yerlesim/temel-is.ts";
 import type { Karakter, Kasaba } from "../src/yerlesim/tipler.ts";
 import { oyuncuEkle, testKasabasi } from "./kasaba-yardimci.ts";
@@ -41,8 +42,7 @@ test("oduncu kendi işinde hizmet kazanır; sert odun ayrı usta işidir (düğ�
   const r = temelIsYap(c, "odun", hicKimse, k.ay);
   assert.ok(r.ok && r.deger.hizmet === 1);
   assert.deepEqual(temelIsYap(c, "sertOdun", hicKimse, k.ay), { ok: false, hata: "dugum_kapali" });
-  dalAc(c, "oduncu", "orman");
-  dugumAc(c, "oduncu", "oduncu.orman.0");
+  seviyeVer(c, "oduncu.baltacilik", 2);
   const u = temelIsYap(c, "sertOdun", hicKimse, k.ay);
   assert.ok(u.ok);
   assert.equal(u.deger.mal, "sertOdun");

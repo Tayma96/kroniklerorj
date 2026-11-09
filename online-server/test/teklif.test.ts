@@ -219,7 +219,7 @@ test("ortaklık: tedarik zinciri şartı; gelir payı ortağa aktarılır, aylı
   assert.ok(meslekSec(a, "demirci", k.ay).ok);
   assert.ok(meslekSec(b, "ozan", k.ay).ok);
   assert.deepEqual(teklifOlustur(k, a, b, { tur: "ortak", pay: 10, sure: 6 }, k.ay), { ok: false, hata: "teklif_gecersiz" });
-  assert.ok(meslekSec(b, "oduncu", k.ay).ok);
+  assert.ok(meslekSec(b, "oduncu", k.ay + 12).ok); // ana meslek yılda bir değişir
   const t = teklifOlustur(k, a, b, { tur: "ortak", pay: 20, sure: 6 }, k.ay);
   assert.ok(t.ok);
   assert.ok(teklifCevap(k, b, `t${t.deger.teklif.i}`, "kabul", {}, k.ay).ok);

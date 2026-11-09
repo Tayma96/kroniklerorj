@@ -72,6 +72,16 @@ export class YerlesimDO {
         return motor.lonca(ileti.hesapId);
       case "tarif":
         return motor.tarif(ileti.hesapId, ileti.govde);
+      case "beceri":
+        return motor.beceri(ileti.hesapId, ileti.meslek);
+      case "beceriOgren":
+        return motor.beceriYaz(ileti.hesapId, "ogren", ileti.govde);
+      case "beceriIptal":
+        return motor.beceriYaz(ileti.hesapId, "iptal", ileti.govde);
+      case "beceriHizlandir":
+        return motor.beceriYaz(ileti.hesapId, "hizlandir", ileti.govde);
+      case "beceriYeniden":
+        return motor.beceriYaz(ileti.hesapId, "yeniden", ileti.govde);
       case "sat":
         return motor.sat(ileti.hesapId, ileti.govde);
       case "siparisTeslim":
@@ -102,6 +112,8 @@ export class YerlesimDO {
         return motor.vitrin(ileti.hesapId, ileti.govde);
       case "hanIkram":
         return motor.hanIkram(ileti.hesapId, ileti.govde);
+      case "sakinHesabi":
+        return motor.sakinHesabi(ileti.hesapId, ileti.hedef);
       case "engeller":
         return motor.engeller(ileti.hesapId);
       // Hanedan (Faz 7)

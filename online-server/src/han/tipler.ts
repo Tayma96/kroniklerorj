@@ -172,4 +172,6 @@ export interface HanOzeti {
   han: { tur: HanTuru; ad: string };
   koltuk: number;
   masalar: MasaOzeti[];
+  /** İkram menüsü (fiyat akçe; ödeme YerlesimDO'da). */
+  menu: { id: string; fiyat: number }[];
 }

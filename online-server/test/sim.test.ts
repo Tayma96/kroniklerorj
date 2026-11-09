@@ -99,7 +99,14 @@ test("simülasyon: dikey dilim ekonomisi — en kârlı oyunda bile aylık akçe
   const { halAl } = await import("../src/yerlesim/hal.ts");
   const { takatTazele } = await import("../src/yerlesim/karakter.ts");
   const { oyuncuSayaci } = await import("../src/yerlesim/lonca.ts");
-  const { dalAc, dugumAc, kademeAtla, meslekSec } = await import("../src/yerlesim/meslek.ts");
+  const { kademeAtla, meslekSec } = await import("../src/yerlesim/meslek.ts");
+  const { seviyeVer } = await import("../src/yerlesim/beceri.ts");
+  const { gocKarsiligi } = await import("../src/icerik/agaclar/index.ts");
+  // v1 düğümünü göç tablosundaki karşılığıyla verir (öğrenme süresi simülasyon dışı).
+  const dugumAc = (c: Parameters<typeof seviyeVer>[0], _m: string, eski: string) => {
+    const y = gocKarsiligi(eski)!;
+    seviyeVer(c, y.dugum, y.seviye);
+  };
   const { satisDegeri } = await import("../src/yerlesim/npc-taban.ts");
   const { NPC_SATIS_KOTASI, npcyeSat, satilan } = await import("../src/yerlesim/pazar.ts");
   const { siparisDonumu, siparisTeslim } = await import("../src/yerlesim/siparis.ts");
@@ -116,7 +123,6 @@ test("simülasyon: dikey dilim ekonomisi — en kârlı oyunda bile aylık akçe
     const m = meslekler[i % 3]!;
     meslekSec(c, m, k.ay);
     k.sakin.find((s) => s.o === c.o)!.ms = m;
-    dalAc(c, m, plan[m].dal);
     dugumAc(c, m, `${m}.${plan[m].dal}.0`);
     return { c, m };
   });
@@ -202,7 +208,14 @@ export const SIM_MESLEK_FARKI = 0.35;
 async function dengeSim(N: number) {
   const { MALLAR, MAL_IDLERI } = await import("../src/icerik/mallar.ts");
   const { oyuncuSayaci } = await import("../src/yerlesim/lonca.ts");
-  const { dalAc, dugumAc, kademeAtla, meslekSec } = await import("../src/yerlesim/meslek.ts");
+  const { kademeAtla, meslekSec } = await import("../src/yerlesim/meslek.ts");
+  const { seviyeVer } = await import("../src/yerlesim/beceri.ts");
+  const { gocKarsiligi } = await import("../src/icerik/agaclar/index.ts");
+  // v1 düğümünü göç tablosundaki karşılığıyla verir (öğrenme süresi simülasyon dışı).
+  const dugumAc = (c: Parameters<typeof seviyeVer>[0], _m: string, eski: string) => {
+    const y = gocKarsiligi(eski)!;
+    seviyeVer(c, y.dugum, y.seviye);
+  };
   const { NPC_AYLIK_KOTA, npcFiyat, npcdenAl, npcdenAlinan, saticiDegeri, stokFiyat, malMeslegindeMi } = await import("../src/yerlesim/npc-taban.ts");
   const { NPC_SATIS_KOTASI, npcyeSat, satilan } = await import("../src/yerlesim/pazar.ts");
   const { siparisDonumu, siparisTeslim } = await import("../src/yerlesim/siparis.ts");
@@ -221,7 +234,6 @@ async function dengeSim(N: number) {
     const m = (["ciftci", "oduncu", "demirci"] as M[])[i % 3]!;
     meslekSec(c, m, k.ay);
     k.sakin.find((s) => s.o === c.o)!.ms = m;
-    dalAc(c, m, dal[m]);
     dugumAc(c, m, `${m}.${dal[m]}.0`);
     return { c, m };
   }).sort((a, b) => sira.indexOf(a.m) - sira.indexOf(b.m));
