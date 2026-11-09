@@ -157,6 +157,12 @@ oynanmaz; D-35/D-46 ceza yalnız bölge göstergelerine. Sayısal eşikler [PARA
   üretilmesin). Etki kademeleri görünür ve hissedilir; sönme çok yavaş (ödenen paranın etkisi kaybolmasın). Kademeyle
   gösterilir.
 
+## 6.3 Barınma: aile evi (Berkay, 9 Kasım) [KARAR]
+- Ailesinin evinde (ocak; yaşayan aile hanesi) kalan oyuncu konaklamış sayılır, evsizlik zincirine girmez.
+- Memleketine dönüp aile evinde kalan oyuncu da evsiz sayılmaz (aradan geçen süre ve başka şehirde geçirilen zaman
+  fark etmez). Şehirler arası göç geldiğinde (`barinma.ts` `OCAK_KONAKLAMA`) memleket = doğduğu yerleşim + aile hanesi
+  yaşıyorsa kuralı uygulanır; hane tükenirse (aile kalmadıysa) bu hak düşer.
+
 ## 7. Yönetici paneli (yeni)
 
 ### 7.1 Rol ve yetki
