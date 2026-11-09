@@ -4,7 +4,7 @@
 // okisi (kişi ekranı: "n12"/"o2" kimliği, "t0" tanıdık sırası, "h0" hane sırası; yoksa en yakın tanıdık).
 // Faz 2 ekranları (yaşam, mahalle, kişi, tanıdıklar, karakter) varmış bir profille ve sahte yerleşimle açılır.
 // Meslek ekranları: oyas (karakterin yaşı; meslek, işler ve lonca ekranlarında öntanımlı 14), omes (o meslekte kalfa
-// olarak başlar; "yok" ya da boş = mesleksiz, meslek ekranında öntanımlı demirci).
+// olarak başlar; "yok" ya da boş = mesleksiz, meslek, işler ve siparişler ekranında öntanımlı demirci).
 import { onizlemeMi } from "./kapi";
 import { sahteDunya, sahteProfil, SAHTE_DAVET_KODU } from "./sahte";
 import { MESLEK_IDLERI, kisiKimligiMi, yerlesimBul, type Cinsiyet, type DunyaOzeti, type MeslekId, type Profil, type YerlesimDurumu } from "./protokol";
@@ -22,7 +22,9 @@ export interface Tohum {
   meslek?: MeslekId;
 }
 
-const MESLEK_EKRANLARI = ["/online/meslek", "/online/isler", "/online/lonca"];
+const MESLEK_EKRANLARI = ["/online/meslek", "/online/isler", "/online/lonca", "/online/siparisler"];
+/** Bu ekranlar öntanımlı demirci kalfasıyla açılır (ağaç, tarif, ambar ve teslim edilebilir sipariş görünsün). */
+const DEMIRCI_EKRANLARI = ["/online/meslek", "/online/isler", "/online/siparisler"];
 const VARMIS = ["/online/varis", "/online/yasam", "/online/mahalle", "/online/kisi/[id]", "/online/tanidiklar", "/online/karakter", ...MESLEK_EKRANLARI];
 
 function parametre(ad: string): string | null {
@@ -69,6 +71,6 @@ function meslekTohumu(yol: string): { yas?: number; meslek?: MeslekId } {
   const yasHam = Number(parametre("oyas"));
   const yas = Number.isInteger(yasHam) && yasHam >= 12 && yasHam <= 80 ? yasHam : MESLEK_EKRANLARI.includes(yol) ? 14 : undefined;
   const mes = parametre("omes");
-  const meslek = mes && (MESLEK_IDLERI as readonly string[]).includes(mes) ? (mes as MeslekId) : mes === null && yol === "/online/meslek" ? "demirci" : undefined;
+  const meslek = mes && (MESLEK_IDLERI as readonly string[]).includes(mes) ? (mes as MeslekId) : mes === null && DEMIRCI_EKRANLARI.includes(yol) ? "demirci" : undefined;
   return { ...(yas ? { yas } : {}), ...(meslek ? { meslek } : {}) };
 }

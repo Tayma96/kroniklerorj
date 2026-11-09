@@ -149,9 +149,11 @@ oynanmaz; D-35/D-46 ceza yalnız bölge göstergelerine. Sayısal eşikler [PARA
   seçim/makam adaylığında sınırlı meşruiyet desteği, NPC ilk izlenimine küçük artı, hancı/aşçı/esnafa NPC müşteri ve
   sipariş önceliği, ozana sahne önceliği ve müdavim hızı, ahi başı adaylık şartı. Bilinçli "sosyal P2W": kendine değil,
   başkasından gelir.
-- **Sınırlar [PARAMETRE]:** farklı verenin sayısı tutardan ağır basar (kişi başı aylık katkı tavanı); azalan getiri
-  (logaritmik); yavaş sönme; aynı hesap kümesi, aynı hane ve yeni/etkin olmayan hesaplar sayılmaz; her etkinin tavanı
-  var; ustalık ve takatin yerine geçmez. Kademeyle gösterilir (sıra numarası/tutar yok).
+- **Sınırlar [PARAMETRE] (Berkay, 9 Kasım: "zengin oyuncu etkisini görmeli"):** teveccüh hediyenin **tutarıyla**
+  artar; veren başına tavan yok, farklı veren şartı yok. Debdebe (gerçek para) armağanı her kaynaktan tam sayılır.
+  Akçeyle ikram/armağan aynı hesap kümesinden ya da aynı haneden gelirse sayılmaz (bedava akçe döndürerek teveccüh
+  üretilmesin). Etki kademeleri görünür ve hissedilir; sönme çok yavaş (ödenen paranın etkisi kaybolmasın). Kademeyle
+  gösterilir.
 
 ## 7. Yönetici paneli (yeni)
 

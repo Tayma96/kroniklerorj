@@ -1,5 +1,5 @@
 // Çevrimiçi lonca tablosu (ana tasarım §5.5, GET /v1/lonca): yerleşimde 14 mesleğin oyuncu ve yetişkin NPC sayısı,
-// durum rozeti (boş, az, dolu). Boş meslek kıtlık fırsatıdır: o malı satan oyuncu prim alır.
+// durum rozeti (boş, az, dolu). Boş meslek kıtlık fırsatıdır: o malı satan oyuncu prim alır; lonca siparişleri ayrı ekranda.
 import { View, Text, useWindowDimensions } from "react-native";
 import { useRouter } from "expo-router";
 import Animated from "react-native-reanimated";
@@ -72,7 +72,8 @@ function LoncaEkran() {
         })}
       </Cerceve>}
     <Text style={{ marginTop: 8, fontFamily: F.serifItalic, fontSize: 13.5, lineHeight: 18, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{t("onl.lo.npcNot")}</Text>
-    <View style={{ marginTop: 22 }}>
+    <View style={{ marginTop: 22, gap: 8 }}>
+      <CizgiDugme etiket={t("onl.sp.baslik")} icon="scroll-open" rtl={rtl} kucuk onPress={() => router.push("/online/siparisler")} />
       <CizgiDugme etiket={t("onl.ms.ust")} icon="anvil" rtl={rtl} kucuk onPress={() => router.push("/online/meslek")} />
     </View>
   </OnlineSayfa>;

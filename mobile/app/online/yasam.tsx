@@ -105,6 +105,8 @@ function YasamEkran() {
 
   useEffect(() => { const id = setInterval(() => setSimdi(Date.now()), 30_000); return () => clearInterval(id); }, []);
   useEffect(() => { if (y && !o.defter.length) void o.olaylarYukle(); }, [!!y]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Lonca siparişleri kısayolu açık ilan sayısını gösterir (sessiz yükleme; hata kısayolu kilitlemez).
+  useEffect(() => { if (y && !o.siparisler) void o.siparisleriYukle(true); }, [!!y]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const isaretler = useMemo(() => new Map((y?.ben.tanidiklar ?? []).map((k) => [k.id, k.isaret] as const)), [y]);
   const kart = useMemo(() => {
@@ -295,6 +297,24 @@ function YasamEkran() {
         </Cerceve>
       </Pressable>)}
     </View>
+
+    {/* Lonca siparişleri */}
+    {(() => {
+      const acikIlan = o.siparisler?.filter((x) => x.durum === "acik" && x.kalanAy > 0) ?? [];
+      const verebilir = acikIlan.some((x) => x.teslimEdebilir);
+      const alt = !o.siparisler ? t("onl.sp.yaAlt") : acikIlan.length ? applyParams(t("onl.sp.yaAcik"), [acikIlan.length]) : t("onl.sp.yaYok");
+      return <Pressable accessibilityLabel={`${t("onl.sp.baslik")}: ${alt}`} onPress={() => { hap("tap"); router.push("/online/siparisler"); }}
+        style={({ pressed }) => ({ marginTop: 8, transform: [{ scale: pressed ? 0.985 : 1 }] })}>
+        <Cerceve aktif={verebilir} ic={{ flexDirection: yon(rtl), alignItems: "center", gap: 10, paddingVertical: 10, paddingHorizontal: 12, minHeight: 64 }}>
+          <Madalyon icon="scroll-open" size={38} aktif={verebilir} />
+          <View style={{ flex: 1, gap: 2 }}>
+            <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ fontFamily: F.display, fontSize: 13.5, color: C.parchment, textAlign: hiza(rtl) }}>{t("onl.sp.baslik")}</Text>
+            <Text numberOfLines={2} style={{ fontFamily: F.serif, fontSize: 13.5, lineHeight: 18, color: verebilir ? C.goldBright : C.parchmentDim, textAlign: hiza(rtl) }}>{verebilir ? t("onl.sp.yaVerebilir") : alt}</Text>
+          </View>
+          {acikIlan.length ? <Rozet metin={String(acikIlan.length)} renk={C.goldBright} dolu={verebilir} /> : null}
+        </Cerceve>
+      </Pressable>;
+    })()}
 
     {/* Yerleşim defteri */}
     <Baslik2 metin={t("onl.ya.defter")} rtl={rtl} sag={o.defterYeni > 0 ? <Rozet metin={applyParams(t("onl.ya.yeni"), [o.defterYeni])} renk={C.goldBright} dolu /> : undefined} />

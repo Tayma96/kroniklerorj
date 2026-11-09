@@ -18,6 +18,8 @@ import {
   useYerlesimEkrani, yuzBilgisi,
 } from "../../lib/online/yasam-ui";
 import { EylemSonucu } from "../../lib/online/eylem-ui";
+import { HalKarti } from "../../lib/online/hal-ui";
+import type { Lang } from "../../lib/locale-data";
 import { BECERI_IKON, KARAR_IKON, NAM_IKON, OZELLIK_IKON, SISTEM_IKON, meslekYaz, ozetYaz } from "../../lib/online/metin";
 import { hataAnahtari } from "../../lib/online/hata";
 import { ACILIS_GUNU, BECERILER, KARARLAR, NAMLAR, OZELLIK_EN_COK, OZELLIKLER, type EylemYaniti, type Karar, type Ozellik } from "../../lib/online/protokol";
@@ -82,6 +84,14 @@ function KarakterEkran() {
         <TakatGostergesi kalan={ben.takat.kalan} tavan={ben.takat.tavan} aylik={ben.takat.aylik} rtl={rtl} t={t} />
       </Cerceve>
     </Animated.View>
+
+    {/* Hal: can, kondisyon, gönül (sunucu ben.hal; eski sunucuda yok) */}
+    {ben.hal ? <>
+      <Baslik2 metin={t("onl.hal.baslik")} rtl={rtl} sag={<Text style={{ fontFamily: F.display, fontSize: 12, color: C.gold }}>{applyParams(t("onl.hal.takatAylik"), [ben.takat.aylik])}</Text>} />
+      <Animated.View entering={giris(90)}>
+        <HalKarti hal={ben.hal} ay={y.saat.oyunAyi} rtl={rtl} t={t} lang={lang as Lang} />
+      </Animated.View>
+    </> : null}
 
     {/* Özellikler */}
     <Baslik2 metin={t("onl.ka.ozellikler")} rtl={rtl} />
