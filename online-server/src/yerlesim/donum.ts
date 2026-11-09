@@ -6,6 +6,8 @@
 import { MESLEKLER } from "../icerik/kisilik.ts";
 import { AZALAN_PENCERE, iliskiAl } from "./eylem.ts";
 import { aniYuku, gorus, gorusDegeri } from "./gorus.ts";
+import { hanedanYakini, olduMu } from "./hanedan.ts";
+import { hanedanDonumu } from "./hanedan-donum.ts";
 import { beceriEkle } from "./karakter.ts";
 import { GUN_BASINA_AY, OGRENME_SURESI_AY, ogrenmeBaslangici } from "./ogrenme.ts";
 import { npcKimlik, npcRef, oyuncuRef, yas } from "./ortak.ts";
@@ -109,7 +111,7 @@ export function ayDonumu(kasaba: Kasaba, ay: number): OlayTaslagi[] {
         if (kar.us === n.i) {
           kar.us = 0;
           olaylar.push(olay("olum", "olay.ustaOldu", 8, { kisi: npcRef(n) }, { w: npcKimlik(n.i), h: kar.o, g: kar.o }));
-        } else if (n.i === kar.an || n.i === kar.ba) {
+        } else if (n.i === kar.an || n.i === kar.ba || hanedanYakini(kar, n.i)) {
           olaylar.push(olay("olum", "olay.yakinOldu", 9, { kisi: npcRef(n) }, { w: npcKimlik(n.i), h: kar.o, g: kar.o }));
         }
       }
@@ -210,7 +212,7 @@ export function ayDonumu(kasaba: Kasaba, ay: number): OlayTaslagi[] {
     }
     const kar = kasaba.kar.get(s.o);
     const ili = kasaba.ili.get(s.o);
-    if (!kar || !ili) continue;
+    if (!kar || !ili || olduMu(kar)) continue;
     if (kar.us && kasaba.dizin.has(kar.us)) {
       kar.pa += 1;
       beceriEkle(kar, ay, "zanaat", 1);
@@ -248,6 +250,9 @@ export function ayDonumu(kasaba: Kasaba, ay: number): OlayTaslagi[] {
       if (i.t === 0 && i.an.length === 0 && Object.keys(i.az).length === 0) delete ili[a];
     }
   }
+
+  // 7. Hanedan (Faz 7): yaşlılık, ölüm, oyuncu hanesinde doğum, süresi dolan devir (kendi tohumuyla).
+  olaylar.push(...hanedanDonumu(kasaba, ay));
 
   kasaba.ay = ay;
   return olaylar;

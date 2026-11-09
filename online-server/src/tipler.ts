@@ -126,6 +126,15 @@ export const HATA_DURUMU = {
   kurucu_degismez: 409,
   duyuru_gecersiz: 400,
   hesap_yok: 404,
+  // Hanedan (Faz 7)
+  olu: 403,
+  evli: 409,
+  akraba_evlilik: 409,
+  gorus_yetersiz: 409,
+  vasiyet_gecersiz: 400,
+  varis_gecersiz: 400,
+  devir_yok: 409,
+  devir_degisti: 409,
   yapilandirma_eksik: 500,
   sunucu_hatasi: 500,
 } as const satisfies Record<string, number>;
@@ -184,6 +193,7 @@ export type HesapIleti =
   | { islem: GovdeliIslem; hesapId: string; govde: unknown }
   | { islem: "lonca"; hesapId: string; dil?: string | null }
   | { islem: "siparisler"; hesapId: string; dil?: string | null }
+  | HanedanIletisi
   | { islem: "sikayet"; hesapId: string; govde: unknown }
   | { islem: "duyurular"; hesapId: string }
   /** YonetimDO → HesapDO: hesabın etkin yaptırım özeti (tamamı yazılır; tekrar güvenli). */
@@ -230,6 +240,16 @@ export type YonetimIleti =
 export const GOVDELI_ISLEMLER = ["eylem", "tanidik", "meslek", "temelIs", "tabanAl", "tarif", "sat", "siparisTeslim"] as const;
 export type GovdeliIslem = (typeof GOVDELI_ISLEMLER)[number];
 
+/** Hanedan (Faz 7) gövdeli işlemleri: POST /v1/vasiyet, /v1/devir, /v1/evlilik. */
+export const HANEDAN_ISLEMLERI = ["vasiyet", "devir", "evlilik"] as const;
+export type HanedanIslem = (typeof HANEDAN_ISLEMLERI)[number];
+/** Hanedan iletileri (HesapDO aynen YerlesimDO'ya iletir; `yerlesim` eklenir). */
+export type HanedanIletisi =
+  | { islem: HanedanIslem; hesapId: string; govde: unknown }
+  | { islem: "hanedan"; hesapId: string; dil?: string | null }
+  | { islem: "devirOnizle"; hesapId: string; varis?: string | null; dil?: string | null }
+  | { islem: "kronik"; hesapId: string; imlec?: string | null; dil?: string | null };
+
 /** Yerleşime sakin kaydı (profil oluşunca HesapDO gönderir; tekrar güvenli). */
 export interface SakinKaydi {
   hesapId: string;
@@ -246,7 +266,8 @@ export type YerlesimIleti =
   | { islem: "kisi"; yerlesim: string; hesapId: string; kisi: string; dil?: string | null }
   | { islem: GovdeliIslem; yerlesim: string; hesapId: string; govde: unknown }
   | { islem: "lonca"; yerlesim: string; hesapId: string; dil?: string | null }
-  | { islem: "siparisler"; yerlesim: string; hesapId: string; dil?: string | null };
+  | { islem: "siparisler"; yerlesim: string; hesapId: string; dil?: string | null }
+  | (HanedanIletisi & { yerlesim: string });
 
 export type DunyaIleti =
   | { islem: "ozet" }

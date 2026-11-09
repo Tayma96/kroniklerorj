@@ -6,6 +6,7 @@ import { HUYLAR, MESLEKLER } from "../icerik/kisilik.ts";
 import { hata, basarili, type HataKodu, type Sonuc } from "../tipler.ts";
 import { mektepMekani, npcMekani } from "./cizelge.ts";
 import { gorusDegeri } from "./gorus.ts";
+import { olduMu } from "./hanedan.ts";
 import { GONUL_SOHBET, gonulSansi, halDegistir, halOngor } from "./hal.ts";
 import {
   BECERILER,
@@ -140,6 +141,7 @@ function hedefKapisi(tur: EylemTuru, npc: Npc, kar: Karakter, ay: number): HataK
 /** Eylemin şu an yapılıp yapılamayacağı (yaş, öğrenme günü, hedef, para, takat). */
 export function eylemKapisi(kasaba: Kasaba, tur: EylemTuru, kar: Karakter, npc: Npc | undefined, ay: number): HataKodu | undefined {
   const t = EYLEMLER[tur];
+  if (olduMu(kar)) return "olu";
   if (karakterYasi(kar, ay) < t.yas) return "yas_kapisi";
   if (!acikMi(kar, ay, tur)) return "ogrenme_kapali";
   if (t.npc) {

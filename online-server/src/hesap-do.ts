@@ -108,6 +108,14 @@ export class HesapDO {
         return this.#yerlesime({ islem: "lonca", hesapId: ileti.hesapId, dil: ileti.dil });
       case "siparisler":
         return this.#yerlesime({ islem: "siparisler", hesapId: ileti.hesapId, dil: ileti.dil });
+      // Hanedan (Faz 7): ileti aynen yerleşime gider.
+      case "vasiyet":
+      case "devir":
+      case "evlilik":
+      case "hanedan":
+      case "devirOnizle":
+      case "kronik":
+        return this.#yerlesime(ileti);
       default:
         return hata("gecersiz_istek");
     }
