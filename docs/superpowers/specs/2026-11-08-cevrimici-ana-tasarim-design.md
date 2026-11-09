@@ -126,6 +126,19 @@ meşruiyet, müzakereli özerklik, darbe zinciri, bağımsız devlet) bu belgeyl
 kararlar [KARAR — Claude, 8 Kasım]: D-38 karışık atama; D-39 **7 bölge**; D-40 Sultan başta NPC; D-41 Moğol v1'de
 oynanmaz; D-35/D-46 ceza yalnız bölge göstergelerine. Sayısal eşikler [PARAMETRE] olarak kalır, alfa ile ayarlanır.
 
+## 6.1 Han hediyeleri ve yaş (Berkay, 9 Kasım) [KARAR]
+- **Yaş sınırı şimdilik yok** (metin ve ileride ses masaları dahil). Mağaza yaş derecelendirmesi yayın öncesi ayrıca ele alınır.
+- **İkram (akçeyle, handan):** masadaki biri hancının menüsünden ikram (şerbet, ekmek, yemek, gül suyu) sipariş edip
+  masadaki birine gönderir. Ürün **handan satın alınır**: oyuncu hancıda akçe işletme kasasına girer (stok aşçıdan),
+  NPC hancıda sabit pahalı menü ve akçe dünyadan çıkar. Etki: alanın gönlü küçük artış, ilişki küçük artış (tavanlı,
+  azalan getiri), masaya anons. Anında tüketilir, devredilmez.
+- **Armağan (envanterden):** oyuncunun kendi malı (demircinin kılıcı, dokumacının kumaşı) alanın envanterine geçer ve
+  kullanılabilir; malda yapanın adı yazar (teşekkür izi/usta damgası). Servet pompalamaya karşı aylık tavan, aynı
+  kişiye azalan getiri, hesap kümesi denetimi (Faz 3 hediye kuralları). Her yerde verilir; masada verilirse anons.
+- **Debdebe armağanı (gerçek parayla, yalnız görünüş):** hil'at, gül yağmuru, sancak animasyonu; doğrudan sabit fiyat
+  (premium para yok, D-18 önerisi). Alanda "X'in armağanı" rozeti/görünüşü; oyun etkisi yok; devredilemez, satılamaz,
+  akçeye dönmez; hancıya ya da alana para payı yok; günlük sınır; Cömertler Levhası tutar/sıra göstermez.
+
 ## 7. Yönetici paneli (yeni)
 
 ### 7.1 Rol ve yetki
