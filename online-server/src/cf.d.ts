@@ -29,6 +29,8 @@ declare var Request: { prototype: Request; new (input: string | Request, init?: 
 interface ResponseInit {
   status?: number;
   headers?: HeadersInit;
+  /** Workers: 101 yükseltme yanıtında istemci ucu. */
+  webSocket?: WebSocket | null;
 }
 interface Response {
   readonly status: number;
@@ -155,3 +157,14 @@ interface DurableObjectNamespace {
   idFromString(id: string): DurableObjectId;
   get(id: DurableObjectId): DurableObjectStub;
 }
+
+// --- WebSocket (Workers; Durable Object hibernation API'si için gereken kadar) ---
+interface WebSocket {
+  readonly readyState: number;
+  send(message: string | ArrayBuffer | ArrayBufferView): void;
+  close(code?: number, reason?: string): void;
+  /** Hibernation: soketle birlikte saklanan küçük ek (≤2 KB, yapılandırılmış kopya). */
+  serializeAttachment(value: unknown): void;
+  deserializeAttachment(): unknown;
+}
+declare var WebSocketPair: { new (): { 0: WebSocket; 1: WebSocket } };

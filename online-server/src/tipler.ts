@@ -117,6 +117,23 @@ export const HATA_DURUMU = {
   sikayet_gecersiz: 400,
   sikayet_yok: 404,
   sikayet_siniri: 429,
+  // Han masası (Faz 10)
+  masa_gecersiz: 400,
+  masa_kapali: 409,
+  masa_kalabalik: 409,
+  koltuk_dolu: 409,
+  zaten_oturuyor: 409,
+  oturmuyor: 409,
+  metin_gecersiz: 400,
+  hedef_masada_degil: 409,
+  engelli: 403,
+  kavga_yasak: 409,
+  olay_yok: 404,
+  atildi: 403,
+  eylem_siniri: 429,
+  ikram_gecersiz: 400,
+  ikram_kapali: 503,
+  yukseltme_gerekli: 426,
   kuyruk_dolu: 503,
   parametre_gecersiz: 400,
   deger_sinir_disi: 400,
@@ -154,6 +171,8 @@ export interface Env {
   GOOGLE_CLIENT_ID?: string;
   /** Worker sırrı; en az 32 karakter. */
   OTURUM_ANAHTARI?: string;
+  /** Han masası: masa başına bir MasaDO (idFromName("masa:<yerlesim>:<han>:<no>")); para tutmaz. */
+  MASA: DurableObjectNamespace;
   /** Tek örnek YonetimDO (idFromName("yonetim")): roller, işlem kaydı, parametreler, şikayet, yaptırım. */
   YONETIM: DurableObjectNamespace;
   /** Kurucu e-postaları, virgülle ayrılmış (sır olarak konur). Boşsa hiç kimse kurucu değildir. */
@@ -186,6 +205,10 @@ export type HesapIleti =
   | { islem: "siparisler"; hesapId: string; dil?: string | null }
   | { islem: "sikayet"; hesapId: string; govde: unknown }
   | { islem: "duyurular"; hesapId: string }
+  // Han masası (Faz 10): src/han/hesap-kopru.ts
+  | { islem: "han"; hesapId: string; dil?: string | null }
+  | { islem: "masaBilet"; hesapId: string; masa: string }
+  | { islem: "hanEylem" | "hanIkram"; hesapId: string; govde: unknown }
   /** YonetimDO → HesapDO: hesabın etkin yaptırım özeti (tamamı yazılır; tekrar güvenli). */
   | { islem: "yaptirimYaz"; hesapId: string; durum: HesapYaptirimi };
 
@@ -224,7 +247,9 @@ export type YonetimIleti =
   | { islem: "yonet"; yonetici: YoneticiKimligi; uc: YonetimUcu; govde?: unknown; sorgu?: Record<string, string | null> }
   /** HesapDO → YonetimDO: oyuncu şikayeti. */
   | { islem: "sikayetEkle"; sikayetci: string; govde: unknown }
-  | { islem: "duyurular" };
+  | { islem: "duyurular" }
+  /** MasaDO → YonetimDO: masa başının çıkarması (yalnız eklenen kayıt; src/han/y1-kayit.ts). */
+  | { islem: "masaAtma"; masa: string; kim: string; hedef: string; olay: number; zaman: number };
 
 /** Gövdeli (istekNo'lu ya da yazan) yerleşim işlemleri: HesapDO aynen YerlesimDO'ya iletir. */
 export const GOVDELI_ISLEMLER = ["eylem", "tanidik", "meslek", "temelIs", "tabanAl", "tarif", "sat", "siparisTeslim"] as const;

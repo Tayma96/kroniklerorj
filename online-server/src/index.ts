@@ -20,6 +20,10 @@
 //   GET  /v1/siparisler?dil=             → açık ve son kapanan lonca siparişleri
 //   POST /v1/sikayet {hedef, neden, aciklama?, istekNo} → {id, durum, kalan}
 //   GET  /v1/duyurular                   → son 5 duyuru
+//   GET  /v1/han?dil=                    → yerleşimin hanı ve masaları (doluluk)          (Faz 10, src/han/)
+//   GET  /v1/han/masa/:no/baglan         → WebSocket yükseltmesi (Upgrade: websocket + oturum); iletiler src/han/tipler.ts
+//   POST /v1/han/eylem {masa, tur, hedef?, olay?, sart?, istekNo} → {olay} (katılım listesiyle)
+//   POST /v1/han/ikram {masa, hedef, ikram, istekNo} → {ikram, fiyat, para, anons}  (ödeme YerlesimDO'ya bağlanınca)
 // Uzaklaştırılmış hesapta giriş dışındaki /v1/* uçları 403 {hata: "uzaklastirildi", bitis} döner.
 //
 // Yönetim (ana tasarım §7; oyuncu oturumundan ayrı yönetici belirteci, src/yonetim/kimlik.ts):
@@ -47,9 +51,12 @@ import {
 } from "./tipler.ts";
 import { yoneticiOturumuDogrula, yoneticiOturumuOlustur } from "./yonetim/kimlik.ts";
 import { panelYaniti } from "./yonetim/panel.ts";
+import { masayaYukselt } from "./han/ic.ts";
+import type { MasaBileti } from "./han/tipler.ts";
 
 export { DunyaDO } from "./dunya-do.ts";
 export { HesapDO } from "./hesap-do.ts";
+export { MasaDO } from "./masa-do.ts";
 export { YerlesimDO } from "./yerlesim-do.ts";
 export { YonetimDO } from "./yonetim-do.ts";
 
@@ -57,6 +64,7 @@ const AZAMI_GOVDE = 16 * 1024;
 const OTURUM_ANAHTARI_EN_KISA = 32;
 const DAVET_YOLU = /^\/v1\/davet\/([^/]+)$/;
 const KISI_YOLU = /^\/v1\/kisi\/([^/]+)$/;
+const MASA_YOLU = /^\/v1\/han\/masa\/([^/]+)\/baglan$/;
 
 /** Örnek yaşadıkça JWKS önbelleğini tutar. `fetch` çağrı anında çözülür (testte değiştirilebilir). */
 const google = new GoogleDogrulayici({ fetch: (url) => fetch(url) });
@@ -207,6 +215,24 @@ async function yonetimUcu(istek: Request, env: Env, uc: YonetimUcu, url: URL): P
   return sonucYaniti(await yonetimCagir(env, { islem: "yonet", yonetici: yetki.deger, uc, govde, sorgu }));
 }
 
+/** Han masasına WebSocket: oturum + HesapDO bileti (yaptırım, plaka), sonra MasaDO yükseltmesi. */
+async function masaBaglan(istek: Request, env: Env, no: string): Promise<Response> {
+  if ((istek.headers.get("upgrade") ?? "").toLowerCase() !== "websocket") return hataYaniti("yukseltme_gerekli");
+  const yetki = await yetkilendir(istek, env);
+  if (!yetki.ok) return hataYaniti(yetki.hata);
+  const bilet = await hesapCagir<MasaBileti>(env, yetki.deger, { islem: "masaBilet", hesapId: yetki.deger, masa: no.slice(0, 8) });
+  if (!bilet.ok) return basarisizYanit(bilet);
+  return masayaYukselt(env, bilet.deger);
+}
+
+/** Gövdeli han POST iletisi. */
+function hanGovdeli(istek: Request, env: Env, islem: "hanEylem" | "hanIkram"): Promise<Response> {
+  return hesaba(istek, env, async (hesapId) => {
+    const govde = await govdeOku(istek);
+    return govde.ok ? basarili({ islem, hesapId, govde: govde.deger }) : govde;
+  });
+}
+
 /** Gövdeli POST iletisi. */
 function govdeli(istek: Request, env: Env, islem: GovdeliIslem): Promise<Response> {
   return hesaba(istek, env, async (hesapId) => {
@@ -272,6 +298,12 @@ async function yonlendir(istek: Request, env: Env): Promise<Response> {
       });
     case "/v1/duyurular":
       return yontem === "GET" ? hesaba(istek, env, (hesapId) => basarili({ islem: "duyurular", hesapId })) : hataYaniti("yontem_yok");
+    case "/v1/han":
+      return yontem === "GET" ? hesaba(istek, env, (hesapId) => basarili({ islem: "han", hesapId, dil })) : hataYaniti("yontem_yok");
+    case "/v1/han/eylem":
+      return yontem === "POST" ? hanGovdeli(istek, env, "hanEylem") : hataYaniti("yontem_yok");
+    case "/v1/han/ikram":
+      return yontem === "POST" ? hanGovdeli(istek, env, "hanIkram") : hataYaniti("yontem_yok");
     case "/yonetim":
     case "/yonetim/":
       return yontem === "GET" ? panelYaniti() : hataYaniti("yontem_yok");
@@ -282,6 +314,8 @@ async function yonlendir(istek: Request, env: Env): Promise<Response> {
     const uc = yol.slice("/yonetim/".length);
     return Object.hasOwn(YONETIM_UCLARI, uc) ? yonetimUcu(istek, env, uc as YonetimUcu, url) : hataYaniti("bulunamadi");
   }
+  const masa = MASA_YOLU.exec(yol);
+  if (masa?.[1]) return yontem === "GET" ? masaBaglan(istek, env, masa[1]) : hataYaniti("yontem_yok");
   const kisi = KISI_YOLU.exec(yol);
   if (kisi?.[1]) {
     if (yontem !== "GET") return hataYaniti("yontem_yok");
