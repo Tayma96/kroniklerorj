@@ -22,6 +22,7 @@ import {
   gorusRengi, gunDurumu, ISARET_RENK, odulYaz, sahneGorseli, useYerlesimEkrani, yuzBilgisi,
 } from "../../lib/online/yasam-ui";
 import { EylemSonucu } from "../../lib/online/eylem-ui";
+import { YasamHanGirisi } from "../../lib/online/yasam-han-giris";
 import { SISTEM_IKON, isaretli, olayIkonu, ozetYaz, ruhAnahtari } from "../../lib/online/metin";
 import { hataAnahtari } from "../../lib/online/hata";
 import type { EylemYaniti, Isaret, Olay, OgrenmeGunu, YerlesimDurumu } from "../../lib/online/protokol";
@@ -317,6 +318,7 @@ function YasamEkran() {
         </Cerceve>
       </Pressable>;
     })()}
+    <YasamHanGirisi ben={ben} />
 
     {/* Gelen kutusu: cevap bekleyen teklif ve dostluk istekleri (Faz 3a) */}
     <GelenKutusuKarti />

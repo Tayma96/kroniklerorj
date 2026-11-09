@@ -5,6 +5,7 @@ import { applyParams } from "../i18n";
 import { goalL, professionNameL, quirkL, traitL, type Lang } from "../locale-data";
 import type { Kalem, Olay, Ozet } from "./protokol";
 import { TOPLUM_PARAM } from "./toplum-metin";
+import { HANEDAN_PARAM } from "./hanedan-metin";
 
 type Ceviri = (k: string) => string;
 
@@ -56,7 +57,7 @@ const PARAM: Record<string, string[]> = {
 /** İşaretli yazılan sayılar (görüş, şans puanı, emek başına kondisyon). */
 const ISARETLI = new Set(["gorus", "sans", "isBasina"]);
 function paramSirasi(k: string): string[] {
-  const p = PARAM[k];
+  const p = PARAM[k] ?? HANEDAN_PARAM[k];
   if (p) return p;
   if (k.startsWith("olay.eylem.")) return ["kisi", "hedef"];
   if (k.startsWith("sonuc.")) return ["hedef", "meslek"];
