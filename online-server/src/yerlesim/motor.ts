@@ -405,6 +405,7 @@ export class YerlesimMotoru {
       hal: halGorunumu(kar, ay),
       envanter: kar.ev ?? {},
       meslek: kar.ms ?? null,
+      kademeHizmet: KADEME_HIZMET,
       tarifler: tarifListesi(kar),
       hane: k.npc
         .filter((n) => n.e === kar.e)

@@ -11,13 +11,13 @@ import type { Dokum, Karakter } from "./tipler.ts";
 /** [PARAMETRE] Oyuncu başına mal başına aylık NPC alım kotası. */
 export const NPC_SATIS_KOTASI = 6;
 
-export interface SatisSonucu {
+export type SatisSonucu = {
   mal: MalId;
   adet: number;
   birim: Dokum;
   tutar: number;
   kota: { satilan: number; tavan: number; kalan: number };
-}
+};
 
 /** Bu ay bu maldan satılan adet. */
 export function satilan(k: Karakter, mal: MalId, ay: number): number {
