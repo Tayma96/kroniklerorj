@@ -108,7 +108,7 @@ export function sahteIstemci(gecikmeMs = 450, baslangic: Profil | null = null, a
       const b = yerlesimBul(dunya, profil.yerlesim) ?? yerlesimBul(dunya, "develi");
       if (!b) return null;
       kasaba = sahteKasabaKur(profil, b.yerlesim, b.beylik.id, () => sahteDunya().saat, ayar.yas);
-      meslekler = sahteMeslekKur(kasaba, ayar.meslek);
+      meslekler = sahteMeslekKur(kasaba, ayar.meslek, profil.ad);
     }
     return kasaba;
   };
@@ -149,8 +149,11 @@ export function sahteIstemci(gecikmeMs = 450, baslangic: Profil | null = null, a
       const k = yerlesim();
       if (!k) return basarisiz("profil_yok");
       const d = k.durum(dil);
-      // Sunucunun #ben'e eklemesi beklenen meslek, kademe eşikleri ve envanter (protokol.ts Ben notu).
-      return basarili({ ...d, ben: { ...d.ben, ...meslek()?.benEki() } });
+      // Sunucu #ben'in dikey dilim alanları: meslek, beceri, envanter, Hal, tarifler; aylık takat kondisyona bağlı.
+      const ek = meslek()?.benEki();
+      if (!ek) return basarili(d);
+      const { takatAylik, ...alanlar } = ek;
+      return basarili({ ...d, ben: { ...d.ben, ...alanlar, takat: { ...d.ben.takat, aylik: takatAylik } } });
     },
     async olaylar(imlec, dil) {
       await bekle();
@@ -191,6 +194,26 @@ export function sahteIstemci(gecikmeMs = 450, baslangic: Profil | null = null, a
       await bekle();
       const m = meslek();
       return m ? basarili(m.lonca()) : basarisiz("profil_yok");
+    },
+    async tarif(istek) {
+      await bekle();
+      const m = meslek();
+      return m ? m.tarif(istek) : basarisiz("profil_yok");
+    },
+    async sat(istek) {
+      await bekle();
+      const m = meslek();
+      return m ? m.sat(istek) : basarisiz("profil_yok");
+    },
+    async siparisler(dil) {
+      await bekle();
+      const m = meslek();
+      return m ? basarili(m.siparisler(dil)) : basarisiz("profil_yok");
+    },
+    async siparisTeslim(istek) {
+      await bekle();
+      const m = meslek();
+      return m ? m.siparisTeslim(istek) : basarisiz("profil_yok");
     },
   };
 }

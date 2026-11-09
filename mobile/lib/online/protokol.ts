@@ -81,7 +81,8 @@ export const SUNUCU_HATALARI = [
   "yerlesim_dolu", "davet_gecersiz", "davet_yok", "istekno_gecersiz", "sakin_yok", "kisi_yok", "eylem_gecersiz",
   "isaret_gecersiz", "imlec_gecersiz", "yas_kapisi", "ogrenme_kapali", "hedef_uygun_degil", "takat_yok", "para_yok",
   "zaten_cirak", "karar_verildi", "puan_yok", "meslek_gecersiz", "meslek_yok", "kademe_kapali", "dal_kapali", "dugum_kapali",
-  "geri_alma_dolu", "mal_gecersiz", "kota_doldu", "verim_yok", "yapilandirma_eksik", "sunucu_hatasi",
+  "geri_alma_dolu", "mal_gecersiz", "kota_doldu", "verim_yok", "tarif_gecersiz", "girdi_yok", "mal_yok", "siparis_yok", "siparis_kapandi",
+  "yapilandirma_eksik", "sunucu_hatasi",
 ] as const;
 export type HataKodu = (typeof SUNUCU_HATALARI)[number];
 
@@ -232,12 +233,15 @@ export interface Ben {
   tanidiklar: Tanidik[];
   ogrenme: OgrenmeDurumu;
   /**
-   * Meslek kaydı, kademe hizmet eşikleri ve envanter. DİKKAT: sunucu `motor.ts #ben` bunları henüz göndermiyor
-   * (yalnız POST /v1/meslek, /v1/temel-is, /v1/taban-al yanıtlarında gelir); gelirse istemci doğrudan kullanır.
+   * Dikey dilim (motor.ts #ben): meslek kaydı (hiç meslek seçilmemiş eski kayıtta null), kademe hizmet eşikleri,
+   * envanter, mesleğe özel tecrübe/beceri puanı, Hal ve tarifler. Eski sunucu göndermeyebilir: hepsi opsiyonel.
    */
-  meslek?: MeslekKaydi;
+  meslek?: MeslekKaydi | null;
   kademeHizmet?: number[];
   envanter?: Envanter;
+  beceri?: BeceriHaritasi;
+  hal?: HalGorunumu;
+  tarifler?: TarifSatiri[];
 }
 export interface YerlesimBilgisi { id: string; ad: string; tur: YerlesimTuru; beylik: string; npc: number; oyuncu: number }
 /** GET /v1/yerlesim */
@@ -304,6 +308,8 @@ export interface EylemYaniti {
     beceri?: Record<string, number>;
     nam?: Record<string, number>;
     ozellik?: Record<string, number>;
+    /** Hal: başarılı sohbet/yardımın gönüle katkısı. */
+    gonul?: number;
   };
   takat: { kalan: number; tavan: number };
   ogrenme: VerilenOdul[];
@@ -330,7 +336,13 @@ function benMi(v: unknown): v is Ben {
   const tk = v.takat, og = v.ogrenme;
   if (!nesne(tk) || !sayi(tk.kalan) || !sayi(tk.tavan) || !sayi(tk.aylik)) return false;
   if (!dizi(v.hane) || !v.hane.every(kisiAdiMi) || !dizi(v.tanidiklar) || !v.tanidiklar.every(kisiAdiMi)) return false;
-  return nesne(og) && sayi(og.gun) && dizi(og.gunler) && og.gunler.every((g) => nesne(g) && sayi(g.gun) && metin(g.sistem) && ozetMi(g.hedef) && sayi(g.ilerleme) && sayi(g.gerekli) && nesne(g.odul));
+  if (!(nesne(og) && sayi(og.gun) && dizi(og.gunler) && og.gunler.every((g) => nesne(g) && sayi(g.gun) && metin(g.sistem) && ozetMi(g.hedef) && sayi(g.ilerleme) && sayi(g.gerekli) && nesne(g.odul)))) return false;
+  // Dikey dilim alanları opsiyoneldir; gelmişse biçimi doğru olmalı.
+  if (v.meslek !== undefined && v.meslek !== null && !meslekKaydiMi(v.meslek)) return false;
+  if (v.envanter !== undefined && !envanterMi(v.envanter)) return false;
+  if (v.beceri !== undefined && !beceriHaritasiMi(v.beceri)) return false;
+  if (v.hal !== undefined && !halMi(v.hal)) return false;
+  return v.tarifler === undefined || tarifListesiMi(v.tarifler);
 }
 const haritaMi = (v: unknown): v is HaritaMekani[] => dizi(v) && v.every((m) => nesne(m) && metin(m.id) && dizi(m.kisiler) && m.kisiler.every(kisiAdiMi));
 
@@ -408,8 +420,8 @@ export type MeslekIslemi = "sec" | "yan" | "kademe" | "dal" | "dugum" | "geriAl"
 export interface MeslekIstegi { islem: MeslekIslemi; meslek: MeslekId; dal?: string; dugum?: string; istekNo: string }
 /** #tekrarGuvenli her yazma yanıtına envanter, para ve takatin kalanını (sayı) ekler. */
 export interface YazmaOrtak { envanter: Envanter; para: number; takat: number }
-/** POST /v1/meslek yanıtı. */
-export interface MeslekYaniti extends YazmaOrtak { meslek: MeslekKaydi; kademeHizmet: number[] }
+/** POST /v1/meslek yanıtı (beceri ve tarifler dikey dilimde eklendi; eski sunucuda yok). */
+export interface MeslekYaniti extends YazmaOrtak { meslek: MeslekKaydi; kademeHizmet: number[]; beceri?: BeceriHaritasi; tarifler?: TarifSatiri[] }
 /** POST /v1/temel-is gövdesi. */
 export interface TemelIsIstegi { is: IsId; istekNo: string }
 /** POST /v1/temel-is yanıtı: çıktı, usta iş mi, eklenen hizmet ve fırsat dökümü (kalemler bu_is, meslekte). */
@@ -439,7 +451,8 @@ export function meslekKaydiMi(v: unknown): v is MeslekKaydi {
 const envanterMi = (v: unknown): v is Envanter => nesne(v) && Object.values(v).every(sayi);
 const yazmaOrtakMi = (v: Nesne) => envanterMi(v.envanter) && sayi(v.para) && sayi(v.takat);
 export function meslekYanitiMi(v: unknown): v is MeslekYaniti {
-  return nesne(v) && yazmaOrtakMi(v) && meslekKaydiMi(v.meslek) && dizi(v.kademeHizmet) && v.kademeHizmet.every(sayi);
+  return nesne(v) && yazmaOrtakMi(v) && meslekKaydiMi(v.meslek) && dizi(v.kademeHizmet) && v.kademeHizmet.every(sayi)
+    && (v.beceri === undefined || beceriHaritasiMi(v.beceri)) && (v.tarifler === undefined || tarifListesiMi(v.tarifler));
 }
 export function temelIsYanitiMi(v: unknown): v is TemelIsYaniti {
   return nesne(v) && yazmaOrtakMi(v) && metin(v.is) && metin(v.mal) && MAL_KUMESI.has(v.mal) && sayi(v.adet)
@@ -451,4 +464,147 @@ export function tabanAlYanitiMi(v: unknown): v is TabanAlYaniti {
 export function loncaYanitiMi(v: unknown): v is LoncaYaniti {
   return nesne(v) && dizi(v.lonca) && v.lonca.every((r) => nesne(r) && meslekIdMi(r.meslek) && sayi(r.oyuncu) && sayi(r.npc)
     && (r.durum === "bos" || r.durum === "az" || r.durum === "dolu"));
+}
+
+// ================================================================ Dikey dilim (Faz 3 + E1 Hal + E2)
+// online-server/src/yerlesim/hal.ts (halGorunumu), meslek.ts (beceriGorunumu), tarif.ts (tarifListesi, tarifYap),
+// pazar.ts (npcyeSat), siparis.ts (siparisGorunumu, siparisTeslim) ve motor.ts (tarif, sat, siparisTeslim,
+// siparisler) yanıtlarının birebir biçimi. Etki ve neden metinleri anahtardır ("onl." + k ile çevrilir).
+
+/** Mesleğe özel tecrübe ve beceri puanı (sunucu meslek.ts BeceriPuani). */
+export interface BeceriPuani {
+  tecrube: number;
+  kazanilan: number;
+  harcanan: number;
+  kalan: number;
+  /** Bir sonraki puana kalan tecrübe. */
+  sonrakiPuan: number;
+  /** Bir sonraki kademeye gereken toplam tecrübe; pir ise null. */
+  sonrakiKademe: number | null;
+}
+export type BeceriHaritasi = Partial<Record<MeslekId, BeceriPuani>>;
+
+export type Gosterge = "can" | "kondisyon" | "gonul";
+export type CanDurumu = "saglam" | "yarali";
+export type KondisyonKademesi = "iyi" | "yorgun" | "bitkin";
+export type GonulDurumu = "sen" | "olagan" | "kirgin";
+/** Etki: i18n anahtarı (hal.can.saglam …) ve sayılar (gizli sayı yok). */
+export interface HalEtki { k: string; p: Record<string, number> }
+export interface HalNedeni { gosterge: Gosterge; fark: number; neden: string; ay: number }
+export interface HalGorunumu {
+  can: { deger: number; durum: CanDurumu; etki: HalEtki };
+  kondisyon: { deger: number; kademe: KondisyonKademesi; etki: HalEtki };
+  gonul: { deger: number; durum: GonulDurumu; etki: HalEtki };
+  nedenler: HalNedeni[];
+}
+/** tarifListesi satırı: düğüm açık mı, eksik girdi, araç ve aşınması, şu an yapılabilir mi (takat dahil). */
+export interface TarifSatiri {
+  id: string;
+  meslek: MeslekId;
+  dugum: string;
+  girdi: Envanter;
+  cikti: { mal: MalId; adet: number };
+  takat: number;
+  hizmet: number;
+  arac: { mal: MalId; adet: number; var: boolean; kullanim: number; omur: number } | null;
+  acik: boolean;
+  eksik: Envanter;
+  yapilabilir: boolean;
+}
+/** POST /v1/tarif gövdesi ve yanıtı. */
+export interface TarifIstegi { tarif: string; istekNo: string }
+export interface TarifYaniti extends YazmaOrtak {
+  tarif: string;
+  cikti: { mal: MalId; adet: number };
+  girdi: Envanter;
+  arac: { mal: MalId; kullanim: number; omur: number; asindi: boolean } | null;
+  hizmet: number;
+  hal: HalGorunumu;
+  tarifler: TarifSatiri[];
+}
+/** POST /v1/sat gövdesi ve yanıtı: birim fiyat dökümü (taban, kitlik), tutar ve aylık kota. */
+export interface SatIstegi { mal: MalId; adet: number; istekNo: string }
+export interface SatYaniti extends YazmaOrtak {
+  mal: MalId;
+  adet: number;
+  birim: Dokum;
+  tutar: number;
+  kota: { satilan: number; tavan: number; kalan: number };
+}
+export type SiparisDurumu = "acik" | "teslim" | "dustu";
+/** GET /v1/siparisler satırı (en yeni önce). */
+export interface SiparisSatiri {
+  id: string;
+  mal: MalId;
+  adet: number;
+  odul: number;
+  hizmet: number;
+  meslek: MeslekId;
+  acilis: number;
+  son: number;
+  kalanAy: number;
+  durum: SiparisDurumu;
+  isteyen: KisiAdi | null;
+  alan: KisiAdi | null;
+  teslimAy: number | null;
+  elde: number;
+  teslimEdebilir: boolean;
+}
+export interface SiparislerYaniti { siparisler: SiparisSatiri[] }
+/** POST /v1/siparis/teslim gövdesi ve yanıtı: ödül, hizmet, gönül, görüş artışları (kimlik → artış), teşekkür izi. */
+export interface SiparisTeslimIstegi { siparis: string; istekNo: string; dil?: Dil }
+export interface SiparisTeslimYaniti extends YazmaOrtak {
+  siparis: string;
+  mal: MalId;
+  adet: number;
+  odul: number;
+  hizmet: number;
+  gonul: number;
+  gorus: Record<string, number>;
+  hal: HalGorunumu;
+  olay?: Olay;
+}
+
+const malIdMi = (v: unknown): v is MalId => typeof v === "string" && MAL_KUMESI.has(v);
+const etkiMi = (v: unknown): v is HalEtki => nesne(v) && metin(v.k) && sayiHaritasi(v.p);
+const gostergeMi = (v: unknown) => nesne(v) && sayi(v.deger) && etkiMi(v.etki);
+function halMi(v: unknown): v is HalGorunumu {
+  if (!nesne(v) || !gostergeMi(v.can) || !gostergeMi(v.kondisyon) || !gostergeMi(v.gonul) || !dizi(v.nedenler)) return false;
+  if (!metin((v.can as Nesne).durum) || !metin((v.kondisyon as Nesne).kademe) || !metin((v.gonul as Nesne).durum)) return false;
+  return v.nedenler.every((n) => nesne(n) && metin(n.gosterge) && sayi(n.fark) && metin(n.neden) && sayi(n.ay));
+}
+function beceriHaritasiMi(v: unknown): v is BeceriHaritasi {
+  return nesne(v) && Object.entries(v).every(([m, b]) => meslekIdMi(m) && nesne(b)
+    && [b.tecrube, b.kazanilan, b.harcanan, b.kalan, b.sonrakiPuan].every(sayi) && (b.sonrakiKademe === null || sayi(b.sonrakiKademe)));
+}
+const ciktiMi = (v: unknown) => nesne(v) && malIdMi(v.mal) && sayi(v.adet);
+function tarifSatiriMi(v: unknown): v is TarifSatiri {
+  if (!nesne(v) || !metin(v.id) || !meslekIdMi(v.meslek) || !metin(v.dugum) || !envanterMi(v.girdi) || !ciktiMi(v.cikti)) return false;
+  if (!sayi(v.takat) || !sayi(v.hizmet) || typeof v.acik !== "boolean" || !envanterMi(v.eksik) || typeof v.yapilabilir !== "boolean") return false;
+  const a = v.arac;
+  return a === null || (nesne(a) && malIdMi(a.mal) && sayi(a.adet) && typeof a.var === "boolean" && sayi(a.kullanim) && sayi(a.omur));
+}
+const tarifListesiMi = (v: unknown): v is TarifSatiri[] => dizi(v) && v.every(tarifSatiriMi);
+export function tarifYanitiMi(v: unknown): v is TarifYaniti {
+  if (!nesne(v) || !yazmaOrtakMi(v) || !metin(v.tarif) || !ciktiMi(v.cikti) || !envanterMi(v.girdi) || !sayi(v.hizmet) || !halMi(v.hal)) return false;
+  const a = v.arac;
+  return (a === null || (nesne(a) && malIdMi(a.mal) && sayi(a.kullanim) && sayi(a.omur) && typeof a.asindi === "boolean")) && tarifListesiMi(v.tarifler);
+}
+export function satYanitiMi(v: unknown): v is SatYaniti {
+  const k = nesne(v) ? v.kota : null;
+  return nesne(v) && yazmaOrtakMi(v) && malIdMi(v.mal) && sayi(v.adet) && dokumMi(v.birim) && sayi(v.tutar)
+    && nesne(k) && sayi(k.satilan) && sayi(k.tavan) && sayi(k.kalan);
+}
+const kisiYaDaBos = (v: unknown) => v === null || kisiAdiMi(v);
+function siparisSatiriMi(v: unknown): v is SiparisSatiri {
+  return nesne(v) && metin(v.id) && malIdMi(v.mal) && [v.adet, v.odul, v.hizmet, v.acilis, v.son, v.kalanAy, v.elde].every(sayi)
+    && meslekIdMi(v.meslek) && (v.durum === "acik" || v.durum === "teslim" || v.durum === "dustu")
+    && kisiYaDaBos(v.isteyen) && kisiYaDaBos(v.alan) && (v.teslimAy === null || sayi(v.teslimAy)) && typeof v.teslimEdebilir === "boolean";
+}
+export function siparislerYanitiMi(v: unknown): v is SiparislerYaniti {
+  return nesne(v) && dizi(v.siparisler) && v.siparisler.every(siparisSatiriMi);
+}
+export function siparisTeslimYanitiMi(v: unknown): v is SiparisTeslimYaniti {
+  return nesne(v) && yazmaOrtakMi(v) && metin(v.siparis) && malIdMi(v.mal) && [v.adet, v.odul, v.hizmet, v.gonul].every(sayi)
+    && sayiHaritasi(v.gorus) && halMi(v.hal) && (v.olay === undefined || olayMi(v.olay));
 }

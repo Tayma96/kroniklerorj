@@ -40,6 +40,11 @@ const ANAHTAR: Partial<Record<OnlineHata, string>> = {
   mal_gecersiz: "onl.h.malGecersiz",
   kota_doldu: "onl.h.kotaDoldu",
   verim_yok: "onl.h.verimYok",
+  tarif_gecersiz: "onl.h.tarifGecersiz",
+  girdi_yok: "onl.h.girdiYok",
+  mal_yok: "onl.h.malYok",
+  siparis_yok: "onl.h.siparisYok",
+  siparis_kapandi: "onl.h.siparisKapandi",
   eylem_gecersiz: "onl.h.genel",
   imlec_gecersiz: "onl.h.genel",
 };

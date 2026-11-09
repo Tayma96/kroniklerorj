@@ -94,6 +94,7 @@ export function EylemSonucu({ y, rtl, t, lang, onTamam }: { y: EylemYaniti; rtl:
   const parcalar: { icon: string; metin: string; olumlu: boolean }[] = [];
   if (d.gorus) parcalar.push({ icon: "family", metin: applyParams(t("onl.ey.gorusArti"), [isaretli(d.gorus)]), olumlu: d.gorus > 0 });
   if (d.para) parcalar.push({ icon: "coins", metin: applyParams(t("onl.ey.para"), [isaretli(d.para)]), olumlu: d.para > 0 });
+  if (d.gonul) parcalar.push({ icon: "sun", metin: applyParams(t("onl.hal.degisim.gonul"), [isaretli(d.gonul)]), olumlu: d.gonul > 0 });
   for (const [b, n] of Object.entries(d.beceri ?? {})) parcalar.push({ icon: BECERI_IKON[b] ?? "star", metin: `${isaretli(n)} ${t("onl.beceri." + b)}`, olumlu: n > 0 });
   for (const [b, n] of Object.entries(d.nam ?? {})) parcalar.push({ icon: NAM_IKON[b] ?? "star", metin: `${isaretli(n)} ${t("onl.nam." + b)}`, olumlu: n > 0 });
   for (const [b, n] of Object.entries(d.ozellik ?? {})) parcalar.push({ icon: OZELLIK_IKON[b] ?? "star", metin: `${isaretli(n)} ${t("onl.ozellik." + b)}`, olumlu: n > 0 });

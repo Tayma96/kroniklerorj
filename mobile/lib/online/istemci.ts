@@ -1,12 +1,13 @@
 // Kronikler Online HTTP istemcisi: JSON, zaman aşımı, Bearer oturumu, sunucu kodlarından türlü hatalar.
 // Yeniden deneme yalnız güvenli isteklerde: GET'ler, aynı istekNo ile POST /v1/profil ve /v1/eylem (sunucu aynı
 // istekNo'ya aynı sonucu döndürür; yarıda kalan istek iki kez işlenmez) ve işaret koyan /v1/tanidik (aynı işaret
-// ikinci kez konunca durum değişmez). Meslek, temel iş ve taban alımı da istekNo'lu ve tekrar güvenlidir (sunucu
-// motor.ts #tekrarGuvenli). Giriş ve davet oluşturma denenmez.
+// ikinci kez konunca durum değişmez). Meslek, temel iş, taban alımı, tarif, satış ve sipariş teslimi de istekNo'lu ve
+// tekrar güvenlidir (sunucu motor.ts #tekrarGuvenli). Giriş ve davet oluşturma denenmez.
 import { DENEME_SAYISI, sunucuAdresi, ZAMAN_ASIMI_MS } from "./ayar";
 import {
   basarili, basarisiz, davetBilgisiMi, davetKoduYanitiMi, dunyaMi, eylemYanitiMi, girisYanitiMi, hataKoduMu, kisiYanitiMi,
-  loncaYanitiMi, meslekYanitiMi, olaylarYanitiMi, profilMi, tabanAlYanitiMi, tanidikYanitiMi, temelIsYanitiMi, yerlesimDurumuMi,
+  loncaYanitiMi, meslekYanitiMi, satYanitiMi, siparislerYanitiMi, siparisTeslimYanitiMi, tarifYanitiMi,
+  type SatIstegi, type SatYaniti, type SiparislerYaniti, type SiparisTeslimIstegi, type SiparisTeslimYaniti, type TarifIstegi, type TarifYaniti, olaylarYanitiMi, profilMi, tabanAlYanitiMi, tanidikYanitiMi, temelIsYanitiMi, yerlesimDurumuMi,
   type LoncaYaniti, type MeslekIstegi, type MeslekYaniti, type TabanAlIstegi, type TabanAlYaniti, type TemelIsIstegi, type TemelIsYaniti,
   type DavetBilgisi, type Dil, type DunyaOzeti, type EylemIstegi, type EylemYaniti, type GirisYaniti, type HataKodu, type Kisi,
   type OlaylarYaniti, type Profil, type ProfilIstegi, type Sonuc, type TanidikIstegi, type TanidikYaniti, type YerlesimDurumu,
@@ -31,6 +32,11 @@ export interface OnlineIstemci {
   temelIs(istek: TemelIsIstegi): Promise<Sonuc<TemelIsYaniti>>;
   tabanAl(istek: TabanAlIstegi): Promise<Sonuc<TabanAlYaniti>>;
   lonca(): Promise<Sonuc<LoncaYaniti>>;
+  // Dikey dilim: usta iş (tarif), NPC'ye satış, lonca siparişleri.
+  tarif(istek: TarifIstegi): Promise<Sonuc<TarifYaniti>>;
+  sat(istek: SatIstegi): Promise<Sonuc<SatYaniti>>;
+  siparisler(dil: Dil): Promise<Sonuc<SiparislerYaniti>>;
+  siparisTeslim(istek: SiparisTeslimIstegi): Promise<Sonuc<SiparisTeslimYaniti>>;
 }
 
 export interface HttpAyari {
@@ -133,5 +139,9 @@ export function httpIstemci(ayar: HttpAyari): OnlineIstemci {
     temelIs: (istek) => cagir({ yontem: "POST", yol: "/v1/temel-is", govde: istek, yetki: true, tekrar: true }, temelIsYanitiMi),
     tabanAl: (istek) => cagir({ yontem: "POST", yol: "/v1/taban-al", govde: istek, yetki: true, tekrar: true }, tabanAlYanitiMi),
     lonca: () => cagir({ yontem: "GET", yol: "/v1/lonca", yetki: true, tekrar: true }, loncaYanitiMi),
+    tarif: (istek) => cagir({ yontem: "POST", yol: "/v1/tarif", govde: istek, yetki: true, tekrar: true }, tarifYanitiMi),
+    sat: (istek) => cagir({ yontem: "POST", yol: "/v1/sat", govde: istek, yetki: true, tekrar: true }, satYanitiMi),
+    siparisler: (dil) => cagir({ yontem: "GET", yol: `/v1/siparisler?dil=${dil}`, yetki: true, tekrar: true }, siparislerYanitiMi),
+    siparisTeslim: (istek) => cagir({ yontem: "POST", yol: "/v1/siparis/teslim", govde: istek, yetki: true, tekrar: true }, siparisTeslimYanitiMi),
   };
 }

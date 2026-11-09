@@ -2,6 +2,8 @@
 // boş meslekte kıtlık fırsatı); varsa beceri ağacı — üç dal yan yana dikey şerit, dört kademe (çırak, kalfa, usta, pir),
 // açık/açılabilir/kilitli düğüm ve kilit şartı, hizmet ilerlemesi, kademe atla, dal aç, düğüm aç, geri al (yılda bir),
 // yan sanat. Her işlem sunucuya niyet olarak gider (POST /v1/meslek); sonucu sunucu belirler.
+// Tecrübe ve beceri puanı (ben.beceri): her PUAN_TECRUBE tecrübede o mesleğe özel 1 puan; düğüm kademesine göre
+// 1/2/3/4 puana açılır. Tarifler (ben.tarifler): usta iş girdiyi çıktıya çevirir (POST /v1/tarif).
 import { useState } from "react";
 import { View, Text, useWindowDimensions } from "react-native";
 import { useRouter } from "expo-router";
@@ -15,13 +17,15 @@ import { OnlineYakinda } from "../../lib/online-yakinda";
 import { OnlineKapisi, type MeslekGirdisi } from "../../lib/online/durum";
 import { onlineEkranAcik } from "../../lib/online/kapi";
 import { AltinDugme, Bant, Cerceve, Check, CizgiDugme, GLOW, GeriDugme, Madalyon, ONL, geriGit, giris, hiza, yon } from "../../lib/online/ui";
-import { AltPanel, Baslik2, Hap, OnlineSayfa, Rozet, SayfaBasi, TakatHapi, YerlesimBekle, sahneGorseli, useBirKez, useYerlesimEkrani } from "../../lib/online/yasam-ui";
+import { AltPanel, Baslik2, BosKart, Hap, OnlineSayfa, Rozet, SayfaBasi, TakatHapi, YerlesimBekle, sahneGorseli, useBirKez, useYerlesimEkrani } from "../../lib/online/yasam-ui";
 import { hataAnahtari } from "../../lib/online/hata";
 import {
-  AGIR_KALFA_YASI, AILE_IKON, GERI_ALMA_ARALIK, KADEME_HIZMET_VARSAYILAN, MALLAR, MESLEKLER, MESLEK_IKON, MESLEK_YASI, PIR_CIRAK, TUR_IKON,
-  dalHakki, dugumHali, geriAlinabilir, type Dugum, type KilitSebebi, type MeslekTanimi,
+  AGIR_KALFA_YASI, AILE_IKON, DUGUM_BEDEL, GERI_ALMA_ARALIK, KADEME_HIZMET_VARSAYILAN, MALLAR, MESLEKLER, MESLEK_IKON, MESLEK_YASI, PIR_CIRAK, PUAN_TECRUBE, TUR_IKON,
+  beceriPuaniYerel, dalHakki, dugumHali, geriAlinabilir, type Dugum, type KilitSebebi, type MeslekTanimi,
 } from "../../lib/online/meslek-veri";
-import { KADEMELER, MESLEK_IDLERI, type Kademe, type LoncaSatiri, type MeslekId, type MeslekIlerleme, type MeslekKaydi } from "../../lib/online/protokol";
+import { KADEMELER, MESLEK_IDLERI, type BeceriPuani, type Kademe, type LoncaSatiri, type MeslekId, type MeslekIlerleme, type MeslekKaydi, type OnlineHata, type TarifYaniti } from "../../lib/online/protokol";
+import { TarifListesi, TarifSonucu } from "../../lib/online/tarif-ui";
+import type { Lang } from "../../lib/locale-data";
 
 type Ceviri = (k: string) => string;
 type Panel = { tur: "sec"; meslek: MeslekId; mod: "ana" | "yan" } | { tur: "dugum"; meslek: MeslekId; dugum: string } | null;
@@ -45,6 +49,7 @@ function kilitMetni(t: Ceviri, sebep: KilitSebebi, d: Dugum, m: MeslekTanimi): s
     case "kademe": return applyParams(t("onl.ms.kilit.kademe"), [kademeAdi(t, d.kd)]);
     case "onceki": return applyParams(t("onl.ms.kilit.onceki"), [dugumAdi(t, `${m.id}.${d.dal}.${d.kd - 1}`)]);
     case "pirTek": return t("onl.ms.kilit.pirTek");
+    case "puan": return applyParams(t("onl.ms.kilit.puan"), [DUGUM_BEDEL[d.kd]]);
   }
 }
 
@@ -80,12 +85,13 @@ function MeslekKarti({ m, satir, tur, rtl, t, lang, onSec }: { m: MeslekTanimi; 
 }
 
 /** Dört kademe izi + hizmet çubuğu + kademe atla. */
-function KademeKarti({ m, i, kademeHizmet, yas, yan, rtl, t, bekliyor, onAtla }: {
-  m: MeslekTanimi; i: MeslekIlerleme; kademeHizmet: number[]; yas: number; yan: boolean; rtl: boolean; t: Ceviri; bekliyor: boolean; onAtla: () => void;
+function KademeKarti({ m, i, b, kademeHizmet, yas, yan, rtl, t, bekliyor, onAtla }: {
+  m: MeslekTanimi; i: MeslekIlerleme; b: BeceriPuani; kademeHizmet: number[]; yas: number; yan: boolean; rtl: boolean; t: Ceviri; bekliyor: boolean; onAtla: () => void;
 }) {
   const dar = useWindowDimensions().width < 360;
   const hedef = (i.kd + 1) as Kademe;
-  const gerek = i.kd < 3 ? kademeHizmet[hedef] ?? KADEME_HIZMET_VARSAYILAN[hedef] : 0;
+  const gerek = i.kd < 3 ? b.sonrakiKademe ?? kademeHizmet[hedef] ?? KADEME_HIZMET_VARSAYILAN[hedef] : 0;
+  const puanOran = Math.max(0, Math.min(1, (PUAN_TECRUBE - b.sonrakiPuan) / PUAN_TECRUBE));
   const sartlar: { metin: string; tamam: boolean }[] = [];
   if (i.kd < 3) {
     sartlar.push({ metin: applyParams(t("onl.ms.sart.hizmet"), [hzYaz(i.hz), gerek]), tamam: i.hz >= gerek });
@@ -110,6 +116,23 @@ function KademeKarti({ m, i, kademeHizmet, yas, yan, rtl, t, bekliyor, onAtla }:
         </View>;
       })}
     </View>
+    {/* Tecrübe → beceri puanı */}
+    <View style={{ gap: 6 }}>
+      <View style={{ flexDirection: yon(rtl), alignItems: "center", gap: 8 }}>
+        <Text style={{ flexShrink: 1, fontFamily: F.display, fontSize: 12.5, letterSpacing: rtl ? 0 : 1, color: C.goldBright, textAlign: hiza(rtl) }}>{t("onl.ms.puanBaslik")}</Text>
+        <View style={{ flex: 1 }} />
+        <Rozet icon="star" metin={applyParams(t("onl.ms.puanKalan"), [b.kalan])} renk={b.kalan > 0 ? C.goldBright : C.parchmentMuted} dolu={b.kalan > 0} />
+      </View>
+      <View accessible accessibilityLabel={`${applyParams(t("onl.ms.puanKalan"), [b.kalan])}. ${applyParams(t("onl.ms.sonrakiPuan"), [hzYaz(b.sonrakiPuan)])}`}
+        style={{ height: 8, borderRadius: 4, backgroundColor: "rgba(201,162,78,0.15)", overflow: "hidden", flexDirection: yon(rtl) }}>
+        <View style={{ width: `${Math.max(puanOran * 100, puanOran > 0 ? 3 : 0)}%`, backgroundColor: C.sage, borderRadius: 4 }} />
+      </View>
+      <View style={{ flexDirection: yon(rtl), flexWrap: "wrap", justifyContent: "space-between", columnGap: 10, rowGap: 2 }}>
+        <Text style={{ fontFamily: F.serif, fontSize: 13.5, color: C.parchmentDim, textAlign: hiza(rtl) }}>{applyParams(t("onl.ms.sonrakiPuan"), [hzYaz(b.sonrakiPuan)])}</Text>
+        <Text style={{ fontFamily: F.serif, fontSize: 13.5, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{applyParams(t("onl.ms.puanOzet"), [b.kazanilan, b.harcanan])}</Text>
+      </View>
+    </View>
+    {/* Kademe ilerlemesi: toplam tecrübe / sonraki kademe */}
     <View style={{ gap: 6 }}>
       <View style={{ flexDirection: yon(rtl), justifyContent: "space-between", gap: 8 }}>
         <Text style={{ flexShrink: 1, fontFamily: F.display, fontSize: 12.5, letterSpacing: rtl ? 0 : 1, color: C.goldBright }}>{t("onl.ms.hizmet")}</Text>
@@ -137,8 +160,8 @@ function KademeKarti({ m, i, kademeHizmet, yas, yan, rtl, t, bekliyor, onAtla }:
 }
 
 /** Beceri ağacı: üç dal yan yana; her şeritte dal başı ve çıraktan pire dört düğüm. */
-function Agac({ m, i, rtl, t, bekliyor, onDal, onDugum }: {
-  m: MeslekTanimi; i: MeslekIlerleme; rtl: boolean; t: Ceviri; bekliyor: boolean; onDal: (dal: string) => void; onDugum: (d: Dugum) => void;
+function Agac({ m, i, puan, rtl, t, bekliyor, onDal, onDugum }: {
+  m: MeslekTanimi; i: MeslekIlerleme; puan?: number; rtl: boolean; t: Ceviri; bekliyor: boolean; onDal: (dal: string) => void; onDugum: (d: Dugum) => void;
 }) {
   const { width } = useWindowDimensions();
   const dar = width < 360;
@@ -160,11 +183,11 @@ function Agac({ m, i, rtl, t, bekliyor, onDal, onDugum }: {
             : <Text numberOfLines={3} style={{ fontFamily: F.serif, fontSize: dar ? 11.5 : 12.5, lineHeight: dar ? 14 : 16, color: C.parchmentMuted, textAlign: "center" }}>{applyParams(t("onl.ms.dalSonra"), [kademeAdi(t, Math.min(i.dl.length, 2))])}</Text>}
         </View>
         {dugumler.map((d, n) => {
-          const h = dugumHali(m, i, d);
+          const h = dugumHali(m, i, d, puan);
           const renk = h.hal === "acik" ? C.goldBright : h.hal === "acilabilir" ? C.gold : C.parchmentMuted;
           return <View key={d.id}>
             {n > 0 ? <View style={{ alignSelf: "center", width: 2, height: 8, backgroundColor: h.hal === "acik" ? C.gold : "rgba(201,162,78,0.25)" }} /> : null}
-            <Pressable accessibilityLabel={`${kademeAdi(t, d.kd)}: ${dugumAdi(t, d.id)}. ${t("onl.ms.hal." + h.hal)}${h.sebep ? ". " + kilitMetni(t, h.sebep, d, m) : ""}`}
+            <Pressable accessibilityLabel={`${kademeAdi(t, d.kd)}: ${dugumAdi(t, d.id)}. ${t("onl.ms.hal." + h.hal)}. ${applyParams(t("onl.ms.bedel"), [DUGUM_BEDEL[d.kd]])}${h.sebep ? ". " + kilitMetni(t, h.sebep, d, m) : ""}`}
               onPress={() => { hap("tap"); onDugum(d); }}
               style={({ pressed }) => [{ minHeight: 96, alignItems: "center", gap: 4, paddingVertical: 7, paddingHorizontal: 3, borderRadius: 8, borderWidth: h.hal === "kilitli" ? 1 : 1.5,
                 borderStyle: h.hal === "kilitli" ? "dashed" : "solid", borderColor: h.hal === "kilitli" ? "rgba(168,130,63,0.4)" : renk,
@@ -173,6 +196,7 @@ function Agac({ m, i, rtl, t, bekliyor, onDal, onDugum }: {
                 {h.hal === "acik" ? <Check size={12} /> : <GameIcon name={TUR_IKON[d.tur]} size={13} color={renk} />}
               </View>
               <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ fontFamily: F.display, fontSize: 9.5, letterSpacing: 0.5, color: renk }}>{kademeAdi(t, d.kd)}</Text>
+              {h.hal !== "acik" ? <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ fontFamily: F.display, fontSize: 10, color: h.sebep === "puan" ? C.emberSoft : C.gold }}>{applyParams(t("onl.ms.bedel"), [DUGUM_BEDEL[d.kd]])}</Text> : null}
               <Text numberOfLines={3} style={{ fontFamily: F.serif, fontSize: dar ? 12 : 13, lineHeight: dar ? 14.5 : 16, color: h.hal === "kilitli" ? C.parchmentMuted : C.parchment, textAlign: "center" }}>{dugumAdi(t, d.id)}</Text>
               {h.sebep ? <Text numberOfLines={2} style={{ fontFamily: F.serifItalic, fontSize: dar ? 10.5 : 11.5, lineHeight: dar ? 13 : 14, color: C.emberSoft, textAlign: "center" }}>{kilitMetni(t, h.sebep, d, m)}</Text> : null}
             </Pressable>
@@ -193,6 +217,8 @@ function MeslekEkran() {
   const [gorunen, setGorunen] = useState<"a" | "y">("a");
   const [hata, setHata] = useState<string | null>(null);
   const [bilgi, setBilgi] = useState<string | null>(null);
+  const [tarifSonuc, setTarifSonuc] = useState<TarifYaniti | null>(null);
+  const [tarifHata, setTarifHata] = useState<{ id: string; metin: string } | null>(null);
   useBirKez(() => { void o.loncaYukle(true); }, !!y);
   if (!y) return <YerlesimBekle rtl={rtl} t={t} onGiris={() => router.replace("/online")} />;
 
@@ -207,7 +233,21 @@ function MeslekEkran() {
   const aktifId = (gorunen === "y" && kayit.y ? kayit.y : kayit.a) || null;
   const aktif = aktifId ? MESLEKLER[aktifId] : null;
   const ilerleme = aktifId ? kayit.s[aktifId] : undefined;
+  // Tecrübe ve beceri puanı sunucudan (ben.beceri); eski sunucuda kayıttan gösterim kopyası.
+  const beceriAl = (id: MeslekId | null): BeceriPuani | undefined => {
+    if (!id || !kayit.s[id]) return undefined;
+    return md?.beceri?.[id] ?? beceriPuaniYerel(kayit.s[id]!, kademeHizmet);
+  };
+  const beceri = beceriAl(aktifId);
+  const sunucuPuani = (id: MeslekId | null) => (id && md?.beceri?.[id] ? md.beceri[id]!.kalan : undefined);
   const bekliyor = o.islem === "meslek";
+  const ev = o.envanter ?? ben.envanter ?? {};
+  const tarifler = aktifId && o.tarifler ? o.tarifler.filter((x) => x.meslek === aktifId) : null;
+  const tarifYap = async (id: string) => {
+    setTarifHata(null);
+    const s = await o.tarifYap(id);
+    if (s.ok) { hap("success"); setTarifSonuc(s.deger); } else { hap("error"); setTarifHata({ id, metin: tarifHatasi(s.hata, t) }); }
+  };
   const geri = () => geriGit(router, "/online/yasam");
 
   const gonder = async (g: MeslekGirdisi, basari?: string) => {
@@ -216,7 +256,10 @@ function MeslekEkran() {
     const s = await o.meslekIslem(g);
     if (s.ok) { hap("success"); setPanel(null); if (basari) setBilgi(basari); return true; }
     hap("error");
-    setHata(t(hataAnahtari(s.hata)));
+    if (s.hata === "puan_yok" && g.dugum) {
+      const d = MESLEKLER[g.meslek].dugumler.find((x) => x.id === g.dugum);
+      setHata(applyParams(t("onl.ms.h.puan"), [DUGUM_BEDEL[d?.kd ?? 0], beceriAl(g.meslek)?.kalan ?? 0]));
+    } else setHata(t(hataAnahtari(s.hata)));
     return false;
   };
 
@@ -226,7 +269,7 @@ function MeslekEkran() {
   const pm = dugumPanel ? MESLEKLER[dugumPanel.meslek] : null;
   const pd = pm && dugumPanel ? pm.dugumler.find((d) => d.id === dugumPanel.dugum) : undefined;
   const pi = dugumPanel ? kayit.s[dugumPanel.meslek] : undefined;
-  const ph = pm && pd ? dugumHali(pm, pi, pd) : null;
+  const ph = pm && pd && dugumPanel ? dugumHali(pm, pi, pd, sunucuPuani(dugumPanel.meslek) ?? beceriAl(dugumPanel.meslek)?.kalan) : null;
   const geriHakAyi = kayit.ga !== undefined ? kayit.ga + GERI_ALMA_ARALIK : undefined;
   const geriBekle = geriHakAyi !== undefined && ay < geriHakAyi;
 
@@ -275,12 +318,15 @@ function MeslekEkran() {
             {applyParams(t("onl.ms.ister"), [pd.ister.map((x) => `${malAdi(t, x)} (${meslekAdi(t, MALLAR[x].meslek)})`).join(", ")])}
           </Text> : null}
         </View>
-        <View style={{ flexDirection: yon(rtl), alignItems: "center", justifyContent: "center", gap: 8 }}>
+        <View style={{ flexDirection: yon(rtl), flexWrap: "wrap", alignItems: "center", justifyContent: "center", gap: 8 }}>
           <Rozet metin={t("onl.ms.hal." + ph.hal)} renk={ph.hal === "acik" ? C.sage : ph.hal === "acilabilir" ? C.goldBright : C.parchmentMuted} dolu={ph.hal === "acik"} />
+          <Rozet icon="star" metin={applyParams(t("onl.ms.bedel"), [DUGUM_BEDEL[pd.kd]])} renk={C.gold} />
+          {dugumPanel && beceriAl(dugumPanel.meslek) ? <Rozet metin={applyParams(t("onl.ms.puanKalan"), [beceriAl(dugumPanel.meslek)!.kalan])} renk={C.parchmentDim} /> : null}
         </View>
         {ph.sebep ? <Bant tur="bilgi" metin={`${t("onl.ms.acilisSarti")}: ${kilitMetni(t, ph.sebep, pd, pm)}`} rtl={rtl} /> : null}
         {ph.hal === "acik" && geriAlinabilir(pm, pi, pd) ? <View style={{ gap: 8 }}>
           <Text style={{ fontFamily: F.serifItalic, fontSize: 14.5, lineHeight: 20, color: C.emberSoft, textAlign: "center" }}>{applyParams(t("onl.ms.geriUyari"), [GERI_ALMA_ARALIK])}</Text>
+          <Text style={{ fontFamily: F.serif, fontSize: 14, lineHeight: 19, color: C.sage, textAlign: "center" }}>{applyParams(t("onl.ms.geriIade"), [DUGUM_BEDEL[pd.kd]])}</Text>
           {geriBekle ? <Text style={{ fontFamily: F.serif, fontSize: 14, lineHeight: 19, color: C.parchmentDim, textAlign: "center" }}>{applyParams(t("onl.ms.geriBekle"), [geriHakAyi! - ay])}</Text> : null}
         </View> : null}
         {hata ? <Bant metin={hata} rtl={rtl} /> : null}
@@ -290,6 +336,9 @@ function MeslekEkran() {
             onPress={() => { void gonder({ islem: "geriAl", meslek: pm.id, dugum: pd.id }, applyParams(t("onl.ms.geriAlindi"), [dugumAdi(t, pd.id)])); }} />
           : null}
       </> : null}
+    </AltPanel>
+    <AltPanel acik={!!tarifSonuc} onKapat={() => setTarifSonuc(null)} etiket={t("onl.tf.sonuc")} rtl={rtl} t={t}>
+      {tarifSonuc ? <TarifSonucu y={tarifSonuc} rtl={rtl} t={t} lang={lang as Lang} onTamam={() => setTarifSonuc(null)} /> : null}
     </AltPanel>
   </>;
 
@@ -353,15 +402,22 @@ function MeslekEkran() {
     </View> : null}
     {aktif && ilerleme ? <>
       <Animated.View entering={giris(40)} style={{ marginTop: 14 }}>
-        <KademeKarti m={aktif} i={ilerleme} kademeHizmet={kademeHizmet} yas={ben.yas} yan={gorunen === "y"} rtl={rtl} t={t} bekliyor={bekliyor}
+        <KademeKarti m={aktif} i={ilerleme} b={beceri ?? beceriPuaniYerel(ilerleme, kademeHizmet)} kademeHizmet={kademeHizmet} yas={ben.yas} yan={gorunen === "y"} rtl={rtl} t={t} bekliyor={bekliyor}
           onAtla={() => { void gonder({ islem: "kademe", meslek: aktif.id }, applyParams(t("onl.ms.kademeOldu"), [kademeAdi(t, ilerleme.kd + 1)])); }} />
       </Animated.View>
       <Baslik2 metin={t("onl.ms.agac")} rtl={rtl} sag={<Text style={{ fontFamily: F.display, fontSize: 12, color: C.gold }}>{`${ilerleme.dl.length}/${dalHakki(ilerleme)} · ${ilerleme.dg.length}/12`}</Text>} />
       <Text style={{ marginBottom: 10, fontFamily: F.serif, fontSize: 14, lineHeight: 19, color: C.parchmentDim, textAlign: hiza(rtl) }}>{t("onl.ms.agacNot")}</Text>
       {hata && !panel ? <View style={{ marginBottom: 10 }}><Bant metin={hata} rtl={rtl} /></View> : null}
-      <Agac m={aktif} i={ilerleme} rtl={rtl} t={t} bekliyor={bekliyor}
+      <Agac m={aktif} i={ilerleme} puan={sunucuPuani(aktif.id) ?? beceri?.kalan} rtl={rtl} t={t} bekliyor={bekliyor}
         onDal={(dal) => { void gonder({ islem: "dal", meslek: aktif.id, dal }, applyParams(t("onl.ms.dalAcildi"), [t(`onl.mes.${aktif.id}.${dal}`)])); }}
         onDugum={(d) => { setHata(null); setPanel({ tur: "dugum", meslek: aktif.id, dugum: d.id }); }} />
+
+      {/* Tarifler (usta iş) */}
+      <Baslik2 metin={t("onl.tf.baslik")} rtl={rtl} sag={tarifler?.length ? <Text style={{ fontFamily: F.display, fontSize: 12, color: C.gold }}>{`${tarifler.filter((x) => x.acik).length}/${tarifler.length}`}</Text> : undefined} />
+      <Text style={{ marginBottom: 10, fontFamily: F.serif, fontSize: 14, lineHeight: 19, color: C.parchmentDim, textAlign: hiza(rtl) }}>{t("onl.tf.alt")}</Text>
+      {tarifler === null ? <BosKart icon="scroll-open" metin={t("onl.tf.bilinmiyor")} rtl={rtl} />
+        : tarifler.length ? <TarifListesi tarifler={tarifler} ev={ev} rtl={rtl} t={t} bekliyor={o.islem === "tarif"} hata={tarifHata} onYap={(id) => { void tarifYap(id); }} />
+        : <BosKart icon="scroll-open" metin={t("onl.tf.yok")} rtl={rtl} />}
     </> : <View style={{ marginTop: 14 }}><Bant tur="bilgi" metin={t("onl.ms.bilinmiyor")} rtl={rtl} /></View>}
 
     <Baslik2 metin={t("onl.ms.sanatlar")} rtl={rtl} />
@@ -377,6 +433,12 @@ function MeslekEkran() {
     </Cerceve>
     {altBag}
   </OnlineSayfa>;
+}
+
+/** Tarif hatası: takat ve girdi anlaşılır cümleyle; gerisi genel hata metniyle. */
+function tarifHatasi(h: OnlineHata, t: Ceviri): string {
+  if (h === "takat_yok") return t("onl.is.h.takat");
+  return t(hataAnahtari(h));
 }
 
 export default function OnlineMeslek() {

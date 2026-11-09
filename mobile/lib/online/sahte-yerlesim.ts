@@ -98,7 +98,13 @@ export interface SahteKasaba {
   eylem(govde: { tur: EylemTuru; hedef?: string; secim?: string; ozellik?: string; istekNo: string; dil?: Dil }): Sonuc<EylemYaniti>;
   tanidik(govde: { hedef: string; isaret: Isaret | null; dil?: Dil }): Sonuc<TanidikYaniti>;
   /** Sahte meslek uçlarının (sahte-meslek.ts) paylaştığı karakter durumu: akçe ve takat aynı nesnededir. */
-  ekonomi(): { kar: { pa: number; tk: number }; yas: number; ay: number; npcMeslekleri: () => string[] };
+  ekonomi(): {
+    kar: { pa: number; tk: number }; yas: number; ay: number; npcMeslekleri: () => string[];
+    /** Dikey dilim: kendi kimliğim, yetişkin NPC'ler (sipariş isteyeni) ve olay defterine yazma. */
+    benId: string;
+    yetiskinler: (dil: Dil) => { id: string; ad: string; m: string }[];
+    olayYaz: (o: { t: string; w: string; h: string; n: number; anahtar: string; p: Record<string, string | number | { r: string }> }, dil: Dil, ayFarki?: number) => Olay;
+  };
 }
 
 /** Profilin yerleşiminde inandırıcı bir kasaba kurar (tohum: yerleşim kimliği; aynı yerleşim hep aynı nüfus). */
@@ -407,7 +413,12 @@ export function sahteKasabaKur(profil: Profil, yerlesim: YerlesimOzeti, beylik: 
   };
 
   return {
-    ekonomi: () => ({ kar, yas: benYas, ay: saatAl().oyunAyi, npcMeslekleri: () => npc.filter((n) => n.yas >= 16).map((n) => n.m) }),
+    ekonomi: () => ({
+      kar, yas: benYas, ay: saatAl().oyunAyi, npcMeslekleri: () => npc.filter((n) => n.yas >= 16).map((n) => n.m), benId,
+      yetiskinler: (dil: Dil) => npc.filter((n) => n.yas >= 16).map((n) => ({ id: nid(n), ad: npcAdi(n, dil), m: n.m })),
+      olayYaz: (o: { t: string; w: string; h: string; n: number; anahtar: string; p: Record<string, string | number | Ref> }, dil: Dil, ayFarki = 0) =>
+        olayYaz(olayEkle({ t: o.t, w: o.w, h: o.h, ozel: false, n: o.n, ak: o.anahtar, p: o.p }, saatAl().oyunAyi - ayFarki), dil),
+    }),
     durum(dil) {
       const saat = saatAl();
       const harita: HaritaMekani[] = yerler.map((id) => ({ id, kisiler: [] }));

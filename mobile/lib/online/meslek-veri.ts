@@ -1,8 +1,8 @@
-// Çevrimiçi meslek içeriği: online-server/src/icerik/meslekler.ts, mallar.ts ve yerlesim/meslek.ts, temel-is.ts,
-// npc-taban.ts [PARAMETRE] değerlerinin kopyası (sunucu paketi içe aktarılmaz; sunucuda değişirse burası da aynı
+// Çevrimiçi meslek içeriği: online-server/src/icerik/meslekler.ts, mallar.ts, tarifler.ts ve yerlesim/meslek.ts,
+// temel-is.ts, npc-taban.ts, tarif.ts, pazar.ts, hal.ts [PARAMETRE] değerlerinin kopyası (sunucu paketi içe aktarılmaz; sunucuda değişirse burası da aynı
 // committe güncellenir). Yalnız arayüzde açılış şartını, ağacın biçimini ve NPC etiket fiyatını yazmak içindir;
 // sonucu (kademe, düğüm, çıktı, fırsat, ödenen fiyat) her zaman sunucu belirler.
-import type { Kademe, MalId, MeslekId, MeslekIlerleme } from "./protokol";
+import type { BeceriPuani, Envanter, Kademe, KondisyonKademesi, MalId, MeslekId, MeslekIlerleme, TarifSatiri } from "./protokol";
 import { IS_IDLERI, MAL_IDLERI, MESLEK_IDLERI, type IsId } from "./protokol";
 
 export type DugumTuru = "tarif" | "kalite" | "toplu" | "ozel" | "hak";
@@ -103,15 +103,19 @@ export const TUR_IKON: Record<DugumTuru, string> = { tarif: "scroll-open", kalit
 // ---------------------------------------------------------------- açılış şartı (yalnız gösterim; karar sunucuda)
 
 export type DugumHali = "acik" | "acilabilir" | "kilitli";
-export type KilitSebebi = "dal" | "kademe" | "onceki" | "pirTek";
+export type KilitSebebi = "dal" | "kademe" | "onceki" | "pirTek" | "puan";
 
-/** Düğümün arayüz hâli ve kilitliyse sunucu meslek.ts dugumAc koşullarından hangisine takıldığı. */
-export function dugumHali(m: MeslekTanimi, i: MeslekIlerleme | undefined, d: Dugum): { hal: DugumHali; sebep?: KilitSebebi } {
+/**
+ * Düğümün arayüz hâli ve kilitliyse sunucu meslek.ts dugumAc koşullarından hangisine takıldığı. `puan`: o meslekte
+ * kalan beceri puanı (sunucu ben.beceri); bilinmiyorsa puan koşulu gösterilmez (karar yine sunucuda).
+ */
+export function dugumHali(m: MeslekTanimi, i: MeslekIlerleme | undefined, d: Dugum, puan?: number): { hal: DugumHali; sebep?: KilitSebebi } {
   if (i?.dg.includes(d.id)) return { hal: "acik" };
   if (!i || !i.dl.includes(d.dal)) return { hal: "kilitli", sebep: "dal" };
   if (d.kd > i.kd) return { hal: "kilitli", sebep: "kademe" };
   if (d.kd > 0 && !i.dg.includes(`${m.id}.${d.dal}.${d.kd - 1}`)) return { hal: "kilitli", sebep: "onceki" };
   if (d.kd === 3 && i.dg.some((x) => x.endsWith(".3"))) return { hal: "kilitli", sebep: "pirTek" };
+  if (puan !== undefined && puan < DUGUM_BEDEL[d.kd]) return { hal: "kilitli", sebep: "puan" };
   return { hal: "acilabilir" };
 }
 /** Açık düğüm geri alınabilir mi (üstündeki düğüm açık değilse). Pişmanlık aralığını sunucu denetler. */
@@ -119,3 +123,66 @@ export const geriAlinabilir = (m: MeslekTanimi, i: MeslekIlerleme | undefined, d
   !!i?.dg.includes(d.id) && !i.dg.includes(`${m.id}.${d.dal}.${d.kd + 1}`);
 /** Kaç dal açılabilir (çırak 1, kalfa 2, usta ve pir 3). */
 export const dalHakki = (i: MeslekIlerleme | undefined) => Math.min((i?.kd ?? 0) + 1, 3);
+
+// ---------------------------------------------------------------- tecrübe ve beceri puanı (sunucu meslek.ts)
+
+/** [PARAMETRE] Bir beceri puanı için tecrübe, düğüm bedeli (çırak, kalfa, usta, pir), mesleğe girişte verilen puan. */
+export const PUAN_TECRUBE = 6;
+export const DUGUM_BEDEL: readonly number[] = [1, 2, 3, 4];
+export const BASLANGIC_PUANI = 1;
+/** Sunucu beceriPuani kopyası: yalnız sahte istemci ve eski sunucu (ben.beceri yok) gösterimi için. */
+export function beceriPuaniYerel(i: MeslekIlerleme, kademeHizmet: readonly number[] = KADEME_HIZMET_VARSAYILAN): BeceriPuani {
+  const kazanilan = BASLANGIC_PUANI + Math.floor(i.hz / PUAN_TECRUBE);
+  const harcanan = i.dg.reduce((a, id) => a + (DUGUM_BEDEL[Number(id.split(".")[2])] ?? 0), 0);
+  return {
+    tecrube: i.hz, kazanilan, harcanan, kalan: kazanilan - harcanan, sonrakiPuan: PUAN_TECRUBE - (i.hz % PUAN_TECRUBE),
+    sonrakiKademe: i.kd >= 3 ? null : kademeHizmet[i.kd + 1] ?? null,
+  };
+}
+
+// ---------------------------------------------------------------- tarifler, satış ve Hal (sunucu tarifler.ts, tarif.ts, pazar.ts, hal.ts)
+
+export interface TarifTanimi { id: string; meslek: MeslekId; dugum: string; girdi: Partial<Record<MalId, number>>; cikti: [MalId, number]; takat: number; hizmet: number; arac?: { mal: MalId; adet: number } }
+/** [PARAMETRE] Dikey dilim tarifleri (çiftçi–oduncu–demirci zinciri). Adları istemcide onl.tarif.<id>. */
+export const TARIFLER: readonly TarifTanimi[] = [
+  { id: "kereste", meslek: "oduncu", dugum: "oduncu.orman.0", girdi: { odun: 2 }, cikti: ["kereste", 1], takat: 1, hizmet: 2 },
+  { id: "komur", meslek: "oduncu", dugum: "oduncu.maden.0", girdi: { odun: 2 }, cikti: ["komur", 1], takat: 1, hizmet: 2 },
+  { id: "nal", meslek: "demirci", dugum: "demirci.alet.0", girdi: { cevher: 1, komur: 1 }, cikti: ["nal", 2], takat: 1, hizmet: 2 },
+  { id: "alet", meslek: "demirci", dugum: "demirci.alet.1", girdi: { cevher: 2, komur: 1, kereste: 1 }, cikti: ["alet", 1], takat: 2, hizmet: 3 },
+  { id: "hasat", meslek: "ciftci", dugum: "ciftci.ekin.0", girdi: {}, cikti: ["tahil", 3], takat: 2, hizmet: 2, arac: { mal: "alet", adet: 5 } },
+  { id: "kirkim", meslek: "ciftci", dugum: "ciftci.suru.0", girdi: {}, cikti: ["yun", 2], takat: 1, hizmet: 1 },
+];
+export const TARIF_IKON: Record<string, string> = { kereste: "saw", komur: "flame", nal: "anvil", alet: "anvil", hasat: "wheat", kirkim: "sheep" };
+/** [PARAMETRE] Aletin kullanım ömrü; NPC'nin oyuncudan aylık alım kotası (mal başına); kıtlık primi oranı. */
+export const ALET_OMRU = 4;
+export const NPC_SATIS_KOTASI = 6;
+export const KITLIK_PRIM = 0.5;
+/** Satılabilen mallar (su ticarete girmez). */
+export const satilirMi = (mal: MalId) => MALLAR[mal].taban > 0;
+/** Kıtlık primi (o malın mesleğinde oyuncu yoksa); asıl fiyat dökümünü satıştan sonra sunucu verir. */
+export const kitlikPrimi = (mal: MalId) => Math.ceil(MALLAR[mal].taban * KITLIK_PRIM);
+
+/** Sunucu tarifListesi kopyası: yalnız sahte istemci ve eski sunucu (ben.tarifler yok) gösterimi için. */
+export function tarifListesiYerel(acikMi: (dugum: string) => boolean, ev: Envanter, takat: number, kullanim: Partial<Record<string, number>> = {}): TarifSatiri[] {
+  return TARIFLER.map((t) => {
+    const eksik: Envanter = {};
+    for (const [mal, n] of Object.entries(t.girdi)) if ((ev[mal] ?? 0) < (n ?? 0)) eksik[mal] = (n ?? 0) - (ev[mal] ?? 0);
+    const aracVar = !!t.arac && (ev[t.arac.mal] ?? 0) > 0;
+    const acik = acikMi(t.dugum);
+    return {
+      id: t.id, meslek: t.meslek, dugum: t.dugum, girdi: { ...t.girdi }, cikti: { mal: t.cikti[0], adet: aracVar && t.arac ? t.arac.adet : t.cikti[1] },
+      takat: t.takat, hizmet: t.hizmet,
+      arac: t.arac ? { mal: t.arac.mal, adet: t.arac.adet, var: aracVar, kullanim: kullanim[t.arac.mal] ?? 0, omur: ALET_OMRU } : null,
+      acik, eksik, yapilabilir: acik && Object.keys(eksik).length === 0 && takat >= t.takat,
+    };
+  });
+}
+
+/** [PARAMETRE] Hal (sunucu hal.ts): kondisyon kademesinin alt sınırı ve aylık takat; gösterge tavanı. */
+export const HAL_TAVAN = 100;
+export const KONDISYON_KADEMELERI: readonly { kademe: KondisyonKademesi; alt: number; takat: number }[] = [
+  { kademe: "iyi", alt: 60, takat: 6 },
+  { kademe: "yorgun", alt: 30, takat: 5 },
+  { kademe: "bitkin", alt: 0, takat: 4 },
+];
+export const HAL_IKON = { can: "healing", kondisyon: "boot", gonul: "sun" } as const;

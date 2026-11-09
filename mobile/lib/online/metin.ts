@@ -35,7 +35,24 @@ const PARAM: Record<string, string[]> = {
   "sans.ozellik": ["ozellik"],
   "sans.beceri": ["beceri"],
   "sans.tekrar": ["tekrar"],
+  "sans.gonul": ["gonul"],
+  // Dikey dilim: lonca siparişi olayları (isteyen ölmüşse "…Kimsesiz" biçimi) ve Hal etkileri.
+  "olay.siparis.acildi": ["isteyen", "adet", "mal", "odul"],
+  "olay.siparis.dustu": ["isteyen", "adet", "mal"],
+  "olay.siparis.dustuKimsesiz": ["adet", "mal"],
+  "olay.siparis.teslim": ["kim", "adet", "mal", "isteyen"],
+  "olay.siparis.teslimKimsesiz": ["kim", "adet", "mal"],
+  "hal.can.saglam": ["toparlama", "esik", "taban"],
+  "hal.can.yarali": ["kondisyonToparlama", "toparlama", "esik"],
+  "hal.kondisyon.iyi": ["takatAylik", "isBasina"],
+  "hal.kondisyon.yorgun": ["takatAylik", "isBasina"],
+  "hal.kondisyon.bitkin": ["takatAylik", "isBasina"],
+  "hal.gonul.sen": ["sans", "denge"],
+  "hal.gonul.olagan": ["denge"],
+  "hal.gonul.kirgin": ["sans", "denge"],
 };
+/** İşaretli yazılan sayılar (görüş, şans puanı, emek başına kondisyon). */
+const ISARETLI = new Set(["gorus", "sans", "isBasina"]);
 function paramSirasi(k: string): string[] {
   const p = PARAM[k];
   if (p) return p;
@@ -50,7 +67,7 @@ export const isaretli = (n: number): string => (n > 0 ? `+${n}` : n < 0 ? `−${
 
 function degerYaz(ad: string, v: unknown, t: Ceviri, lang: Lang): string {
   if (v && typeof v === "object") return String((v as { ad?: unknown }).ad ?? "?");
-  if (typeof v === "number") return ad === "gorus" ? isaretli(v) : String(v);
+  if (typeof v === "number") return ISARETLI.has(ad) ? isaretli(v) : String(v);
   if (typeof v !== "string") return "";
   switch (ad) {
     case "gundem": return t("onl.gundem." + v);
@@ -61,11 +78,15 @@ function degerYaz(ad: string, v: unknown, t: Ceviri, lang: Lang): string {
     case "beceri": return t("onl.beceri." + v);
     case "nam": return t("onl.nam." + v);
     case "huy": return traitL(v, lang);
+    case "mal": return t("onl.mal." + v);
     default: return v;
   }
 }
 
-function sablonYaz(k: string, p: Record<string, unknown>, t: Ceviri, lang: Lang): string {
+/** İsteyeni olmayan (ölmüş NPC) sipariş olayı kendi biçimiyle yazılır. */
+const KIMSESIZ: ReadonlySet<string> = new Set(["olay.siparis.dustu", "olay.siparis.teslim"]);
+function sablonYaz(kHam: string, p: Record<string, unknown>, t: Ceviri, lang: Lang): string {
+  const k = KIMSESIZ.has(kHam) && !p.isteyen ? kHam + "Kimsesiz" : kHam;
   const anahtar = "onl." + k;
   const sablon = t(anahtar);
   if (sablon === anahtar) return t("onl.olay.bilinmeyen");
@@ -75,6 +96,10 @@ function sablonYaz(k: string, p: Record<string, unknown>, t: Ceviri, lang: Lang)
 /** Olay özeti ya da eylem sonucu; `ek` sunucunun koymadığı parametreleri (ör. hedefin adı) ekler. */
 export function ozetYaz(o: Ozet, t: Ceviri, lang: Lang, ek?: Record<string, unknown>): string {
   return sablonYaz(o.k, { ...o.p, ...ek }, t, lang);
+}
+/** Hal etkisi (sunucu {k, p}): sayılar açıkça yazılır. */
+export function etkiYaz(e: { k: string; p: Record<string, number> }, t: Ceviri, lang: Lang): string {
+  return sablonYaz(e.k, e.p, t, lang);
 }
 /** Görüş ya da şans dökümünde bir kalem. */
 export function kalemYaz(k: Kalem, t: Ceviri, lang: Lang): string {
@@ -107,6 +132,7 @@ export function olayIkonu(o: Pick<Olay, "ozet" | "tur">): string {
     "olay.isBuldu": "anvil", "olay.evlilik": "ring", "olay.dostluk": "family", "olay.dogum": "baby", "olay.goc": "camel",
     "olay.kulYemini": "flame", "olay.ogrenme.gun": "graduate-cap", "olay.hamle.corba": "bread", "olay.hamle.laf": "speaker",
     "olay.yeniSakin": "house", "olay.ciraklik": "anvil", "olay.karar": "compass",
+    "olay.siparis.acildi": "scroll-open", "olay.siparis.dustu": "hourglass", "olay.siparis.teslim": "medal",
   };
   return tablo[k] ?? "scroll-open";
 }
