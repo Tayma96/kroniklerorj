@@ -13,6 +13,7 @@ import { OnlineYakinda } from "../../lib/online-yakinda";
 import { OnlineKapisi } from "../../lib/online/durum";
 import { onlineEkranAcik } from "../../lib/online/kapi";
 import { Cerceve, ONL, giris, hiza, yon } from "../../lib/online/ui";
+import { kisiYolu } from "../../lib/online/toplum-veri";
 import {
   Baslik2, BosKart, GorusOlcegi, IsaretRozeti, KisiYuzu, Muhur, OnlineSayfa, SatirOku, SayfaBasi, TakatHapi, YerlesimBekle, gorusRengi, sahneGorseli,
   useYerlesimEkrani, yuzBilgisi,
@@ -38,7 +39,7 @@ function TanidiklarEkran() {
   const ben = y.ben;
   const liste = ben.tanidiklar.filter((k) => uyar(k, suzgec));
   const gorunen = hepsi ? liste : liste.slice(0, ONE_CIKAN);
-  const git = (id: string) => { hap("tap"); router.push(`/online/kisi/${id}`); };
+  const git = (id: string) => { hap("tap"); router.push(kisiYolu(id)); };
 
   return <OnlineSayfa gorsel={sahneGorseli(y.yerlesim.tur, y.saat.mevsim)} oran={0.3} sekme="tanidiklar" rtl={rtl} t={t} rozet={{ karakter: ben.ozellikPuani > 0 }}>
     <SayfaBasi ust={y.yerlesim.ad} baslik={t("onl.ta.baslik")} alt={applyParams(t("onl.ta.alt"), [ben.tanidiklar.length])} rtl={rtl}

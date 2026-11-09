@@ -15,6 +15,7 @@ import { OnlineYakinda } from "../../lib/online-yakinda";
 import { OnlineKapisi } from "../../lib/online/durum";
 import { onlineEkranAcik } from "../../lib/online/kapi";
 import { AltinDugme, Bant, Cerceve, CizgiDugme, GLOW, GeriDugme, Madalyon, geriGit, giris, hiza, yon } from "../../lib/online/ui";
+import { kisiYolu } from "../../lib/online/toplum-veri";
 import { AltPanel, Baslik2, BosKart, Degisim, Hap, OnlineSayfa, Rozet, SayfaBasi, YerlesimBekle, Yukleniyor, sahneGorseli, useBirKez, useYerlesimEkrani } from "../../lib/online/yasam-ui";
 import { hataAnahtari } from "../../lib/online/hata";
 import { isaretli, ozetYaz } from "../../lib/online/metin";
@@ -95,7 +96,7 @@ function SiparislerEkran() {
   const yukHata = o.hataIslem === "siparisler" ? o.hata : null;
   const acik = liste?.filter((s) => s.durum === "acik" && s.kalanAy > 0) ?? [];
   const kapali = liste?.filter((s) => !(s.durum === "acik" && s.kalanAy > 0)) ?? [];
-  const kisiyeGit = (id: string) => router.push(`/online/kisi/${id}`);
+  const kisiyeGit = (id: string) => router.push(kisiYolu(id));
 
   // Görüşü artanların adları: ilan sahibi, tanıdıklar, hane, önbellekteki kişiler, haritadakiler.
   const adlar = new Map<string, string>();

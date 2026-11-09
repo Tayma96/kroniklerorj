@@ -12,6 +12,7 @@ import { imlecOku, imlecYaz, istekNoUret, meslekOku, meslekYaz, oturumOku, oturu
 import { useI18n } from "../i18n";
 import { oturumHatasiMi } from "./hata";
 import { httpIstemci, type OnlineIstemci } from "./istemci";
+import type { ToplumIstemci } from "./toplum-istemci";
 import { onlineEkranAcik } from "./kapi";
 import { onizlemeTohumu, type Tohum } from "./onizleme";
 import { sahteIstemci } from "./sahte";
@@ -99,6 +100,8 @@ export interface OnlineDurum {
   /** Aynı eylem ağ hatasından sonra yeniden denenirse aynı istekNo gider (sunucu iki kez işlemez). */
   eylemYap(girdi: EylemGirdisi): Promise<Sonuc<EylemYaniti>>;
   tanidikIsaretle(hedef: string, isaret: Isaret | null): Promise<Sonuc<TanidikYaniti>>;
+  /** Faz 3a oyuncular arası uçlar (o anki oturumun istemcisi; durum toplum-durum.tsx'te). */
+  toplumIstemci(): ToplumIstemci;
   // Meslek çekirdeği
   /** Bilinen son meslek durumu (GET /v1/yerlesim ben.meslek, yoksa son yazma yanıtı ya da yerel kopyası); bilinmiyorsa null. */
   meslekDurumu: MeslekDurumu | null;
@@ -450,6 +453,7 @@ export function OnlineDurumSaglayici({ children, tohum }: { children: ReactNode;
     yerlesimYukle: (sessiz = false) => (sessiz ? yerlesimAl() : calistir("yerlesim", yerlesimAl)),
     olaylarYukle: (devam = false) => calistir("olaylar", () => defterCek(devam)),
     kisiYukle: (id) => calistir("kisi", () => kisiAl(id)),
+    toplumIstemci: () => istemci().toplum,
     eylemYap: (g) =>
       calistir("eylem", async () => {
         const anahtar = [g.tur, g.hedef ?? "", g.secim ?? "", g.ozellik ?? ""].join("|");

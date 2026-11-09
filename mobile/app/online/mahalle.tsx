@@ -15,6 +15,7 @@ import { MahalleHaritasi, PIN_YERI, type HaritaIgnesi } from "../../lib/sayfa/ma
 import { OnlineKapisi } from "../../lib/online/durum";
 import { onlineEkranAcik } from "../../lib/online/kapi";
 import { Bant, Cerceve, CizgiDugme, GLOW, Madalyon, hiza, yon } from "../../lib/online/ui";
+import { kisiYolu } from "../../lib/online/toplum-veri";
 import {
   AltPanel, BosKart, KisiYuzu, Muhur, OnlineSayfa, Rozet, SayfaBasi, TakatHapi, YerlesimBekle, haritaGorseli, sahneGorseli, useYerlesimEkrani, yuzBilgisi,
 } from "../../lib/online/yasam-ui";
@@ -167,7 +168,7 @@ function MahalleEkran() {
           const benMi = k.id === ben.id;
           const bilgi = benMi ? { yas: ben.yas, cinsiyet: ben.cinsiyet } : yuzBilgisi(o.kisiler, k.id);
           return <Pressable key={k.id} accessibilityLabel={`${benMi ? t("onl.mh.sen") : k.ad}${k.oyuncu && !benMi ? " · " + t("onl.mh.oyuncu") : ""}${isaret ? " · " + t("onl.isaret." + isaret) : ""}`}
-            onPress={() => { hap("tap"); router.push(benMi ? "/online/karakter" : `/online/kisi/${k.id}`); }}
+            onPress={() => { hap("tap"); router.push(benMi ? "/online/karakter" : kisiYolu(k.id)); }}
             style={({ pressed }) => ({ width: `${100 / sutun}%`, alignItems: "center", gap: 5, paddingHorizontal: 3, opacity: pressed ? 0.75 : 1 })}>
             <KisiYuzu id={k.id} ad={k.ad} boyut={52} oyuncu={!!k.oyuncu && !benMi} ben={benMi} isaret={isaret} {...bilgi} />
             <Text numberOfLines={2} style={{ fontFamily: benMi ? F.display : F.serif, fontSize: benMi ? 12 : 13.5, lineHeight: 16, color: benMi ? C.goldBright : k.oyuncu ? "#F0D490" : C.parchment, textAlign: "center" }}>{benMi ? t("onl.mh.sen") : k.ad}</Text>

@@ -5,6 +5,7 @@ import type { OnlineIstemci } from "./istemci";
 import { adDogrula } from "./ad";
 import { sahteKasabaKur, type SahteKasaba } from "./sahte-yerlesim";
 import { sahteMeslekKur, type SahteMeslek } from "./sahte-meslek";
+import { sahteToplumKur } from "./sahte-toplum";
 import {
   basarili, basarisiz, BASLANGIC_YASI, davetKoduGecerli, davetKoduTemizle, yerlesimBul,
   type BeylikOzeti, type DavetBilgisi, type DunyaOzeti, type Mevsim, type MeslekId, type Profil, type YerlesimTuru,
@@ -175,6 +176,7 @@ export function sahteIstemci(gecikmeMs = 450, baslangic: Profil | null = null, a
       const k = yerlesim();
       return k ? k.tanidik(istek) : basarisiz("profil_yok");
     },
+    toplum: sahteToplumKur(() => yerlesim(), () => meslek(), () => profil, bekle),
     async meslek(istek) {
       await bekle();
       const m = meslek();

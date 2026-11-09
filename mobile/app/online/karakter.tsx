@@ -13,6 +13,7 @@ import { OnlineYakinda } from "../../lib/online-yakinda";
 import { OnlineKapisi } from "../../lib/online/durum";
 import { onlineEkranAcik } from "../../lib/online/kapi";
 import { AltinDugme, Bant, Cerceve, Check, GLOW, Madalyon, ONL, giris, hiza, yon } from "../../lib/online/ui";
+import { KarakterToplumBolumu } from "../../lib/online/toplum-ui";
 import {
   AltPanel, Baslik2, Hap, KisiYuzu, OnlineSayfa, Rozet, SatirOku, SayfaBasi, TakatGostergesi, YerlesimBekle, gunDurumu, odulYaz, sahneGorseli,
   useYerlesimEkrani, yuzBilgisi,
@@ -84,6 +85,9 @@ function KarakterEkran() {
         <TakatGostergesi kalan={ben.takat.kalan} tavan={ben.takat.tavan} aylik={ben.takat.aylik} rtl={rtl} t={t} />
       </Cerceve>
     </Animated.View>
+
+    {/* Faz 3a: profil sayfam, gelen kutusu, olağan düzen */}
+    <KarakterToplumBolumu benId={ben.id} />
 
     {/* Hal: can, kondisyon, gönül (sunucu ben.hal; eski sunucuda yok) */}
     {ben.hal ? <>

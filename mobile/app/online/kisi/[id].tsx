@@ -12,7 +12,7 @@ import { DesignPressable as Pressable } from "../../../lib/design-pressable";
 import { hap } from "../../../lib/haptics";
 import { OnlineYakinda } from "../../../lib/online-yakinda";
 import { OnlineKapisi } from "../../../lib/online/durum";
-import { onlineEkranAcik } from "../../../lib/online/kapi";
+import { onizlemeMi, onlineEkranAcik } from "../../../lib/online/kapi";
 import { kisiSec } from "../../../lib/online/onizleme";
 import { AltinDugme, Bant, Cerceve, GeriDugme, Madalyon, ONL, geriGit, giris, hiza, yon } from "../../../lib/online/ui";
 import {
@@ -22,6 +22,7 @@ import {
 import { EylemOnizleme, EylemSonucu, engelMetni } from "../../../lib/online/eylem-ui";
 import { ISARET_IKON, MEKAN_IKON, eylemIkonu, hayalYaz, huyYaz, isaretli, kalemYaz, meslekYaz, ruhAnahtari, tuhaflikYaz } from "../../../lib/online/metin";
 import { hataAnahtari } from "../../../lib/online/hata";
+import { kisiYolu, oyuncuKimligiMi } from "../../../lib/online/toplum-veri";
 import { ACILIS_GUNU, ISARETLER, type EylemKarti, type EylemYaniti, type Isaret, type Kisi, type KisiNpc, type OnlineHata } from "../../../lib/online/protokol";
 
 type Ceviri = (k: string) => string;
@@ -88,6 +89,8 @@ function KisiEkran() {
 
   useEffect(() => { if (id && y) void o.kisiYukle(id); }, [id, !!y]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (kisi?.oyuncu && kisi.ben) router.replace("/online/karakter"); }, [kisi]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Faz 3a: oyuncular kendi profil sayfasında açılır (dostluk, teklif, armağan, vitrin).
+  useEffect(() => { if (oyuncuKimligiMi(id) && !onizlemeMi()) router.replace(kisiYolu(id)); }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!y) return <YerlesimBekle rtl={rtl} t={t} onGiris={() => router.replace("/online")} />;
   const geri = () => geriGit(router, "/online/mahalle");
@@ -244,7 +247,7 @@ function KisiEkran() {
     {/* Başkalarına bakışı (§13.9) */}
     <Baslik2 metin={t("onl.ki.bakislari")} rtl={rtl} />
     {n.bakislari.gorunur ? (n.bakislari.liste.length ? <Cerceve ic={{ paddingVertical: 4 }}>
-      {n.bakislari.liste.map((b, i) => <Pressable key={b.id} accessibilityLabel={`${b.ad} · ${t("onl.rol." + b.tur)} · ${isaretli(b.deger)}`} onPress={() => router.push(`/online/kisi/${b.id}`)}
+      {n.bakislari.liste.map((b, i) => <Pressable key={b.id} accessibilityLabel={`${b.ad} · ${t("onl.rol." + b.tur)} · ${isaretli(b.deger)}`} onPress={() => router.push(kisiYolu(b.id))}
         style={{ flexDirection: yon(rtl), alignItems: "center", gap: 10, paddingHorizontal: 12, paddingVertical: 6, borderTopWidth: i ? 1 : 0, borderColor: "rgba(201,162,78,0.12)" }}>
         <KisiYuzu id={b.id} ad={b.ad} boyut={36} oyuncu={!!b.oyuncu} {...yuzBilgisi(o.kisiler, b.id)} />
         <View style={{ flex: 1, gap: 4 }}>

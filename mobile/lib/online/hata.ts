@@ -1,7 +1,9 @@
 // Hata kodu → oyuncuya gösterilecek i18n anahtarı (metinler i18n-sayfa/online.ts'te, 6 dil).
 import type { OnlineHata } from "./protokol";
+import { TOPLUM_HATA_ANAHTARI } from "./toplum-metin";
 
 const ANAHTAR: Partial<Record<OnlineHata, string>> = {
+  ...TOPLUM_HATA_ANAHTARI,
   sunucu_yok: "onl.h.sunucuYok",
   ag_yok: "onl.h.ag",
   zaman_asimi: "onl.h.ag",

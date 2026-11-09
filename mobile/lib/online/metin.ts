@@ -4,11 +4,13 @@
 import { applyParams } from "../i18n";
 import { goalL, professionNameL, quirkL, traitL, type Lang } from "../locale-data";
 import type { Kalem, Olay, Ozet } from "./protokol";
+import { TOPLUM_PARAM } from "./toplum-metin";
 
 type Ceviri = (k: string) => string;
 
 /** Her anahtarın parametre sırası (şablondaki %1, %2 …). */
 const PARAM: Record<string, string[]> = {
+  ...TOPLUM_PARAM,
   "olay.olum": ["kisi", "yas"],
   "olay.ustaOldu": ["kisi"],
   "olay.yakinOldu": ["kisi"],
@@ -79,6 +81,7 @@ function degerYaz(ad: string, v: unknown, t: Ceviri, lang: Lang): string {
     case "nam": return t("onl.nam." + v);
     case "huy": return traitL(v, lang);
     case "mal": return t("onl.mal." + v);
+    case "tur": return t("onl.tp.tur." + v);
     default: return v;
   }
 }

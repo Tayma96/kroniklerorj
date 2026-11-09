@@ -73,6 +73,8 @@ export interface ProfilIstegi {
   istekNo: string;
 }
 
+// Faz 3a oyuncular arası hata kodları ayrı dosyada (toplum-veri.ts; yalnız tip alır, döngü yok).
+import { TOPLUM_HATALARI, type ToplumHataKodu } from "./toplum-veri";
 /** Sunucunun hata kodları (tipler.ts HATA_DURUMU ile aynı sıra). */
 export const SUNUCU_HATALARI = [
   "gecersiz_istek", "govde_buyuk", "bulunamadi", "yontem_yok", "oturum_yok", "oturum_gecersiz",
@@ -84,7 +86,7 @@ export const SUNUCU_HATALARI = [
   "geri_alma_dolu", "mal_gecersiz", "kota_doldu", "verim_yok", "tarif_gecersiz", "girdi_yok", "mal_yok", "siparis_yok", "siparis_kapandi",
   "yapilandirma_eksik", "sunucu_hatasi",
 ] as const;
-export type HataKodu = (typeof SUNUCU_HATALARI)[number];
+export type HataKodu = (typeof SUNUCU_HATALARI)[number] | ToplumHataKodu;
 
 /** Yalnız istemcide doğan hatalar: adres boş, ağ yok, zaman aşımı, anlaşılmayan yanıt. */
 export type IstemciHatasi = "sunucu_yok" | "ag_yok" | "zaman_asimi" | "gecersiz_yanit";
@@ -95,7 +97,7 @@ export type Sonuc<T> = { ok: true; deger: T } | { ok: false; hata: OnlineHata };
 export const basarili = <T,>(deger: T): Sonuc<T> => ({ ok: true, deger });
 export const basarisiz = <T = never,>(hata: OnlineHata): Sonuc<T> => ({ ok: false, hata });
 
-const KODLAR: ReadonlySet<string> = new Set(SUNUCU_HATALARI);
+const KODLAR: ReadonlySet<string> = new Set<string>([...SUNUCU_HATALARI, ...TOPLUM_HATALARI]);
 export function hataKoduMu(v: unknown): v is HataKodu {
   return typeof v === "string" && KODLAR.has(v);
 }

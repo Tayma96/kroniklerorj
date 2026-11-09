@@ -12,6 +12,7 @@ import {
   type DavetBilgisi, type Dil, type DunyaOzeti, type EylemIstegi, type EylemYaniti, type GirisYaniti, type HataKodu, type Kisi,
   type OlaylarYaniti, type Profil, type ProfilIstegi, type Sonuc, type TanidikIstegi, type TanidikYaniti, type YerlesimDurumu,
 } from "./protokol";
+import { toplumUclari, type ToplumIstemci } from "./toplum-istemci";
 
 /** Sunucu ve sahte (geliştirici) istemcinin ortak yüzü. */
 export interface OnlineIstemci {
@@ -27,6 +28,8 @@ export interface OnlineIstemci {
   kisi(id: string, dil: Dil): Promise<Sonuc<Kisi>>;
   eylem(istek: EylemIstegi): Promise<Sonuc<EylemYaniti>>;
   tanidik(istek: TanidikIstegi): Promise<Sonuc<TanidikYaniti>>;
+  /** Faz 3a oyuncular arası uçlar (toplum-istemci.ts). */
+  toplum: ToplumIstemci;
   // Meslek çekirdeği (ana tasarım §5): istekNo'lu yazmalar ve lonca tablosu.
   meslek(istek: MeslekIstegi): Promise<Sonuc<MeslekYaniti>>;
   temelIs(istek: TemelIsIstegi): Promise<Sonuc<TemelIsYaniti>>;
@@ -135,6 +138,7 @@ export function httpIstemci(ayar: HttpAyari): OnlineIstemci {
     // Aynı gövde (aynı istekNo) ile yeniden denenir; sunucu ikinci kez işlemez, ilk yanıtı döndürür.
     eylem: (istek) => cagir({ yontem: "POST", yol: "/v1/eylem", govde: istek, yetki: true, tekrar: true }, eylemYanitiMi),
     tanidik: (istek) => cagir({ yontem: "POST", yol: "/v1/tanidik", govde: istek, yetki: true, tekrar: true }, tanidikYanitiMi),
+    toplum: toplumUclari(cagir),
     meslek: (istek) => cagir({ yontem: "POST", yol: "/v1/meslek", govde: istek, yetki: true, tekrar: true }, meslekYanitiMi),
     temelIs: (istek) => cagir({ yontem: "POST", yol: "/v1/temel-is", govde: istek, yetki: true, tekrar: true }, temelIsYanitiMi),
     tabanAl: (istek) => cagir({ yontem: "POST", yol: "/v1/taban-al", govde: istek, yetki: true, tekrar: true }, tabanAlYanitiMi),

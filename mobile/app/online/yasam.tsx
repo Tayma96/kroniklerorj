@@ -15,6 +15,8 @@ import { OnlineYakinda } from "../../lib/online-yakinda";
 import { OnlineKapisi } from "../../lib/online/durum";
 import { onlineEkranAcik } from "../../lib/online/kapi";
 import { Bant, Cerceve, CizgiDugme, Madalyon, ONL, TUR_IKON, giris, hiza, yon } from "../../lib/online/ui";
+import { kisiYolu } from "../../lib/online/toplum-veri";
+import { GelenKutusuKarti } from "../../lib/online/toplum-ui";
 import {
   AltPanel, Baslik2, BosKart, GorusOlcegi, Hap, KisiYuzu, OgrenmeSeridi, OnlineSayfa, Rozet, SatirOku, TakatGostergesi, YerlesimBekle,
   gorusRengi, gunDurumu, ISARET_RENK, odulYaz, sahneGorseli, useYerlesimEkrani, yuzBilgisi,
@@ -128,7 +130,7 @@ function YasamEkran() {
   const gorunenDefter = tumDefter ? yeniler : yeniler.slice(0, 8);
   const benYer = y.harita.find((m) => m.kisiler.some((k) => k.id === ben.id));
 
-  const kisiyeGit = (id: string | null) => { if (id) router.push(`/online/kisi/${id}`); };
+  const kisiyeGit = (id: string | null) => { if (id) router.push(kisiYolu(id)); };
   const mektep = async () => {
     setEylemHata(null);
     const s = await o.eylemYap({ tur: "mektep" });
@@ -315,6 +317,9 @@ function YasamEkran() {
         </Cerceve>
       </Pressable>;
     })()}
+
+    {/* Gelen kutusu: cevap bekleyen teklif ve dostluk istekleri (Faz 3a) */}
+    <GelenKutusuKarti />
 
     {/* Yerleşim defteri */}
     <Baslik2 metin={t("onl.ya.defter")} rtl={rtl} sag={o.defterYeni > 0 ? <Rozet metin={applyParams(t("onl.ya.yeni"), [o.defterYeni])} renk={C.goldBright} dolu /> : undefined} />

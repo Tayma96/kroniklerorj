@@ -25,7 +25,7 @@ export interface Tohum {
 const MESLEK_EKRANLARI = ["/online/meslek", "/online/isler", "/online/lonca", "/online/siparisler"];
 /** Bu ekranlar öntanımlı demirci kalfasıyla açılır (ağaç, tarif, ambar ve teslim edilebilir sipariş görünsün). */
 const DEMIRCI_EKRANLARI = ["/online/meslek", "/online/isler", "/online/siparisler"];
-const VARMIS = ["/online/varis", "/online/yasam", "/online/mahalle", "/online/kisi/[id]", "/online/tanidiklar", "/online/karakter", ...MESLEK_EKRANLARI];
+const VARMIS = ["/online/varis", "/online/yasam", "/online/mahalle", "/online/kisi/[id]", "/online/tanidiklar", "/online/karakter", ...MESLEK_EKRANLARI, "/online/oyuncu/[id]", "/online/gelen"];
 
 function parametre(ad: string): string | null {
   const arama = (globalThis as { location?: { search?: string } }).location?.search ?? "";
@@ -65,6 +65,16 @@ export function kisiSec(param: string | undefined, yerlesim: YerlesimDurumu | nu
   if (ok && /^h[0-9]$/.test(ok)) return ben?.hane[Number(ok.slice(1))]?.id;
   if (ok && /^t[0-9]$/.test(ok)) return ben?.tanidiklar[Number(ok.slice(1))]?.id;
   return ben?.tanidiklar[0]?.id;
+}
+
+/**
+ * Oyuncu profili ekranının açacağı kimlik: rota parametresi "o<sayı>" ise o; önizlemede ooyuncu parametresi
+ * ("o1", "ben"; yoksa o1). "ben" kendi kimliğine çözülür.
+ */
+export function oyuncuSec(param: string | undefined, benId: string | undefined): string | undefined {
+  const ham = onizlemeMi() ? parametre("ooyuncu") ?? "o1" : param;
+  if (ham === "ben") return benId;
+  return ham && /^o[1-9][0-9]{0,8}$/.test(ham) ? ham : undefined;
 }
 
 function meslekTohumu(yol: string): { yas?: number; meslek?: MeslekId } {
