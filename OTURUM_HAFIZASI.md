@@ -16,11 +16,11 @@
 - Radikal sonuçlar spec `docs/superpowers/specs/2026-11-03-radikal-sonuclar-design.md`; aşama 0–3 bitti, sıradaki aşama 4 (göç, suç, lekeli).
 - Dövüş 3D: `scripts/blender/` k09–k12, `docs/SAVAS_HAREKET_HARITASI.md`; ham FBX depoda yok.
 
-## Çevrimiçi (8 Kasım, Berkay tam yetki)
-- Esas belge: `docs/superpowers/specs/2026-11-08-cevrimici-ana-tasarim-design.md` (GDD v0.4 + Ek A/B `docs/online/gdd/` ile uzlaştırma, 14 meslek + 4 kademeli ağaç, temel iş herkese açık, yönetici paneli, tek faz sırası §8). Eski `FAZn_PLAN.md`ler yalnız içerik kaynağı.
-- Ajanlar: `online-sunucu`, `online-istemci`, `denge-denetcisi` (`.claude/agents/`).
-- Bitti: sıra 2 meslek çekirdeği (plan `docs/superpowers/plans/2026-11-08-meslek-cekirdegi.md`): `/v1/meslek`, `/v1/temel-is`, `/v1/taban-al`, `/v1/lonca`; 97 sunucu testi temiz. Pir için çırak sayacı (`cy`) E3'te bağlanacak.
-- Sıradaki: sıra 1 kapanış (`FAZ_DURUM.md` ilk 3 iş: yarım istemci dalı), sonra sıra 3 dikey dilim (Faz 3 + E1 Hal + E2 istemci).
+## Çevrimiçi (8–9 Kasım, Berkay tam yetki; "talimat bekleme, hepsini bitir")
+- Esas: `docs/superpowers/specs/2026-11-08-cevrimici-ana-tasarim-design.md` (§6.1 hediye, §6.2 teveccüh tutarla, §6.3 aile evi, §8 sıra) + `2026-11-09-beceri-agaci-v2-design.md` (RPG ağacı, öğrenme süresi, Tam Özgürlük). GDD'ler yön gösterici.
+- `apk`de: meslek çekirdeği, dikey dilim, Y1 yönetici, Faz 3, han masası, hanedan, profil, beceri ağacı v2 sunucusu, Faz 4 üçgen, Faz 14 barınma (sunucu 280 test).
+- Sürüyor: 14 ağaç istemcisi, Faz 6 ekonomi (ana çalışma alanı, yarım), Faz 4/14 ekranları, Faz 5 NPC gündemi (ayrı kopyalar). Birleşim kopyası: scratchpad `birlesim2` (dal `birlesim-2`).
+- Sonra: Faz 12–13, E4, E5, Faz 7+P1–P4, Faz 8+P5–P6, E6–E7, Faz 11/15 (ödeme bağlantısı hariç), Y2–Y3, Faz 9. Paralel ≤4 ajan; limitte send_later ile kendiliğinden devam.
 
 ## Açık işler
 - `docs/DEVIR.md` (1 Kasım devri). ElevenLabs Berkay'ın aboneliğiyle onaylı (`.mcp.json`).
