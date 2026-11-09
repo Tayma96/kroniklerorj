@@ -3,6 +3,8 @@
 // "gorus.sinir" kalemiyle görünür, böylece kalemlerin toplamı her zaman toplama eşittir.
 
 import { HUYLAR } from "../icerik/kisilik.ts";
+import { barisEtkisi, duyulanEtkisi, ittifakEtkisi, ittifakOrtagiEtkisi, oyuncuDostuEtkisi } from "./bilgi.ts";
+import { yariOmur } from "./hafiza.ts";
 import { NAMLAR } from "./karakter.ts";
 import { yas } from "./ortak.ts";
 import { soylentiEtkisi } from "./soylenti.ts";
@@ -36,7 +38,7 @@ const KIBIRLI = HUYLAR.indexOf("kibirli");
 
 export function aniYuku(ani: Ani, ay: number): number {
   const gecen = Math.max(0, ay - ani[2]);
-  return Math.round(ani[1] * Math.pow(0.5, gecen / ANI_YARI_OMRU));
+  return Math.round(ani[1] * Math.pow(0.5, gecen / yariOmur(ani[0], ANI_YARI_OMRU)));
 }
 
 /** NPC oyuncunun nesi olur (ocağın ailesi)? */
@@ -96,6 +98,11 @@ function dolaysiz(kasaba: Kasaba, npc: Npc, kar: Karakter, ili: IliskiHaritasi |
   // Faz 3: duyduğu söylentiler ve oyuncunun teveccühü (ilk izlenim; tavanlı).
   ekle("gorus.soylenti", soylentiEtkisi(kasaba, npc.i, kar.o));
   if (kar.tv) ekle("gorus.teveccuh", teveccuhEtkisi(teveccuhKademesi(kar, ay), "ilkIzlenim"));
+  // Faz 4: duydukları (kaynağa güvenle), arabuluculuk barışı, ittifak sözü (ortağın hedefi / ortağın kendisi).
+  ekle("gorus.duyulan", duyulanEtkisi(i, ay));
+  ekle("gorus.baris", barisEtkisi(i));
+  ekle("gorus.ittifak", ittifakEtkisi(kasaba, npc.i, kar.o, ay));
+  ekle("gorus.ittifakOrtagi", ittifakOrtagiEtkisi(kasaba, npc.i, kar.o, ay));
   return toplam;
 }
 
@@ -110,13 +117,33 @@ function dostunDostu(kasaba: Kasaba, npc: Npc, kar: Karakter, ili: IliskiHaritas
   return sinirla(Math.round(ham), DOST_DOSTU_TAVANI);
 }
 
+/** Düşmanının dostu (Faz 4): en az 4 mevsimlik rakiplerinin sana olumlu bakışının %10'u eksi, ±10. */
+function dusmaninDostu(kasaba: Kasaba, npc: Npc, kar: Karakter, ili: IliskiHaritasi | undefined, ay: number): number {
+  let ham = 0;
+  for (const b of npc.b) {
+    if (b[1] !== 2 || ay - b[3] < BAG_ESKI_AY) continue;
+    const rakip = kasaba.dizin.get(b[0]);
+    if (rakip) ham -= Math.max(0, dolaysiz(kasaba, rakip, kar, ili, ay)) * DOST_DOSTU_ORANI;
+  }
+  return sinirla(Math.round(ham), DOST_DOSTU_TAVANI);
+}
+
 function topla(kasaba: Kasaba, npc: Npc, kar: Karakter, ili: IliskiHaritasi | undefined, ay: number, kalemler?: Kalem[]): number {
   let ham = dolaysiz(kasaba, npc, kar, ili, ay, kalemler);
-  const dd = dostunDostu(kasaba, npc, kar, ili, ay);
-  if (dd !== 0) {
-    ham += dd;
-    kalemler?.push({ k: "gorus.dostunDostu", d: dd });
+  // Bağ kalemleri (NPC dostları, rakipleri, dost baktığı oyuncuların beyanı) toplamda ±DOST_DOSTU_TAVANI.
+  let bag = 0;
+  for (const [k, d] of [
+    ["gorus.dostunDostu", dostunDostu(kasaba, npc, kar, ili, ay)],
+    ["gorus.dusmaninDostu", dusmaninDostu(kasaba, npc, kar, ili, ay)],
+    ["gorus.oyuncuDostu", oyuncuDostuEtkisi(kasaba, npc.i, kar.o)],
+  ] as const) {
+    if (d === 0) continue;
+    bag += d;
+    kalemler?.push({ k, d });
   }
+  const bagKirp = sinirla(bag, DOST_DOSTU_TAVANI);
+  if (bagKirp !== bag) kalemler?.push({ k: "gorus.bagSinir", d: bagKirp - bag });
+  ham += bagKirp;
   const toplam = ham > GORUS_SINIRI ? GORUS_SINIRI : ham < -GORUS_SINIRI ? -GORUS_SINIRI : ham;
   if (toplam !== ham) kalemler?.push({ k: "gorus.sinir", d: toplam - ham });
   return toplam;

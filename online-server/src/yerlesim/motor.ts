@@ -81,6 +81,9 @@ import { KRONIK_SAYFA, KRONIK_YANIT_EN_COK, kronikYaz, type KronikSatiri } from 
 import { vasiyetDogrula } from "./vasiyet.ts";
 import { GUNDEM_ADI, type Isaret, type IliskiHaritasi, type Karakter, type Kasaba, type Npc, type Olay, type OlayTaslagi, type Sakin } from "./tipler.ts";
 import { kasabaKur } from "./uret.ts";
+import type { UcgenDefteri } from "./bilgi.ts";
+import { eksenler } from "./hafiza.ts";
+import { ucgenDonumu, ucgenGorunumu, ucgenIslem, ucgenOkumaYuklenecek, ucgenYuklenecek } from "./ucgen.ts";
 
 // Faz 3 kayıtları (borç, teklif, engel, husumet) devirde vârise bağlanır.
 kimlikTasiyiciEkle(toplumKimligiTasi);
@@ -93,6 +96,7 @@ const ILI = "g:";
 const SAYFA = "e:";
 const SIPARIS = "sp";
 const TOPLUM = "tp";
+const UCGEN = "ug";
 /** [PARAMETRE] Gelen kutusunda gösterilen son kapanan teklif sayısı; söylenti yalanlamanın takat bedeli. */
 export const GELEN_KAPALI_EN_COK = 20;
 export const YALANLAMA_TAKAT = 1;
@@ -228,6 +232,7 @@ export class YerlesimMotoru {
     const sakin = (await depo.al<Sakin[]>(SAKIN)) ?? [];
     const sp = (await depo.al<Siparis[]>(SIPARIS)) ?? [];
     const tp = await depo.al<Toplum>(TOPLUM);
+    const ug = await depo.al<UcgenDefteri>(UCGEN);
     const kasaba: Kasaba = {
       y: meta.y,
       tur: y.tur,
@@ -242,6 +247,7 @@ export class YerlesimMotoru {
       ili: new Map(),
       sp,
       ...(tp ? { tp } : {}),
+      ...(ug ? { ug } : {}),
       no: meta.no,
       ...(meta.hd ? { hd: meta.hd } : {}),
       ...(meta.st ? { st: meta.st } : {}),
@@ -270,6 +276,7 @@ export class YerlesimMotoru {
       } else if (a === SAKIN) kayit[a] = k.sakin;
       else if (a === SIPARIS) kayit[a] = k.sp ?? [];
       else if (a === TOPLUM) kayit[a] = k.tp;
+      else if (a === UCGEN) kayit[a] = k.ug;
       else if (a.startsWith(KAR)) kayit[a] = k.kar.get(a.slice(KAR.length));
       else if (a.startsWith(ILI)) kayit[a] = k.ili.get(a.slice(ILI.length));
       else if (a.startsWith(SAYFA)) kayit[a] = this.#sayfalar.get(Number(a.slice(SAYFA.length)));
@@ -381,10 +388,12 @@ export class YerlesimMotoru {
       for (const t of ayDonumu(k, ay)) await this.#olayEkle(t, ay);
       for (const t of siparisDonumu(k, ay)) await this.#olayEkle(t, ay);
       for (const t of toplumDonumu(k, ay)) await this.#olayEkle(t, ay);
+      for (const t of ucgenDonumu(k, ay)) await this.#olayEkle(t, ay);
       islenen++;
     }
     this.#kirli.add(NPC).add(SIPARIS).add(SAKIN);
     if (k.tp) this.#kirli.add(TOPLUM);
+    if (k.ug) this.#kirli.add(UCGEN);
     for (const s of k.sakin) this.#kirli.add(KAR + s.o).add(ILI + s.o);
     // Ölüler de yazılır (devir arşivi); devirle gelen vâris yeni kimliktedir.
     for (const o of k.kar.keys()) this.#kirli.add(KAR + o).add(ILI + o);
@@ -637,6 +646,7 @@ export class YerlesimMotoru {
       mekan: npcMekani(k, npc, ay) ?? null,
       aile,
       sanaBakis: bakis,
+      sanaBakisEksen: eksenler(bakis),
       bakislari: { gorunur: yakin, liste },
       eylemler,
       tanidik: kar.tn[id] ?? null,
@@ -1110,6 +1120,29 @@ export class YerlesimMotoru {
       ek.toplum = true;
       return basarili({ soylentiler: soylentiGorunumu(this.kasaba, kar, dil) });
     });
+  }
+
+  /** POST /v1/ucgen {tur, ..., istekNo}: üçgen eylemleri (ucgen.ts); ilgili oyuncular önce yüklenir. */
+  async ucgen(hesapId: string, govde: unknown): Promise<Sonuc<unknown>> {
+    if (!nesneMi(govde)) return hata("gecersiz_istek");
+    await this.#yukle(ucgenYuklenecek(this.kasaba, govde));
+    return this.#tekrarGuvenli(hesapId, govde, (kar, s, ay, ek) => {
+      const r = ucgenIslem(this.kasaba, kar, ek.ili, s, govde, ay);
+      if (!r.ok) return r;
+      ek.olaylar.push(...r.deger.olaylar);
+      ek.digerleri.push(...r.deger.digerleri);
+      this.#kirli.add(UCGEN);
+      return basarili(r.deger.yanit);
+    });
+  }
+
+  /** GET /v1/ucgen?npc=&hedef=&dil=: üçgen görünümü ve önizleme (§13.9 görünürlüğüyle). */
+  async ucgenOku(hesapId: string, npc: unknown, hedef: unknown, dilHam: unknown): Promise<Sonuc<unknown>> {
+    const r = await this.#oyuncu(hesapId);
+    if (!r.ok) return r;
+    const { kar, ili } = r.deger;
+    await this.#yukle(ucgenOkumaYuklenecek(this.kasaba, kar.o, hedef));
+    return basarili(ucgenGorunumu(this.kasaba, kar, ili, { npc, hedef }, dilCoz(dilHam)));
   }
 
   /** POST /v1/vitrin {goster: armaganId[], istekNo}: sahibi vitrinde gösterilecek armağanları seçer. */

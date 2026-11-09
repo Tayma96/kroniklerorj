@@ -6,6 +6,8 @@
 import { MESLEKLER } from "../icerik/kisilik.ts";
 import { AZALAN_PENCERE, iliskiAl } from "./eylem.ts";
 import { aniYuku, gorus, gorusDegeri } from "./gorus.ts";
+import { ateskesMi } from "./bilgi.ts";
+import { ucgenIzliMi } from "./hafiza.ts";
 import { hanedanYakini, olduMu } from "./hanedan.ts";
 import { hanedanDonumu } from "./hanedan-donum.ts";
 import { gonulDonumu, YAKIN_NPC_TABANI } from "./hal.ts";
@@ -233,7 +235,7 @@ export function ayDonumu(kasaba: Kasaba, ay: number): OlayTaslagi[] {
         kar.pa += 1;
         const sebep = enAgirSebep(gorus(kasaba, npc, kar, ili, ay).kalemler, 1);
         olaylar.push(olay("hamle", "olay.hamle.corba", 5, { kisi: npcRef(npc), sebep }, { w: npcKimlik(i), h: kar.o, g: kar.o }));
-      } else if (!laf && v <= HASIM_ESIGI && r() < ORAN.laf) {
+      } else if (!laf && v <= HASIM_ESIGI && !ateskesMi(ili[i], ay) && r() < ORAN.laf) {
         laf = true;
         const sebep = enAgirSebep(gorus(kasaba, npc, kar, ili, ay).kalemler, -1);
         for (const b of npc.b) if (b[1] === 1 && kasaba.dizin.has(b[0])) iliskiAl(ili, b[0]).an.push(["laf", LAF_YUKU, ay]);
@@ -248,7 +250,7 @@ export function ayDonumu(kasaba: Kasaba, ay: number): OlayTaslagi[] {
         if (kalan.length) i.az[tur] = kalan;
         else delete i.az[tur];
       }
-      if (i.t === 0 && i.an.length === 0 && Object.keys(i.az).length === 0) delete ili[a];
+      if (i.t === 0 && i.an.length === 0 && Object.keys(i.az).length === 0 && !ucgenIzliMi(i)) delete ili[a];
     }
     // Hal: gönülü düşüren durumlar (öğrenme döneminden sonra): yalnızlık, açık husumet, evsizlik.
     if (gecen >= OGRENME_SURESI_AY) {

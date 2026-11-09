@@ -4,6 +4,7 @@
 
 import { HUYLAR, MESLEKLER } from "../icerik/kisilik.ts";
 import { hata, basarili, type HataKodu, type Sonuc } from "../tipler.ts";
+import { boykotSansi } from "./bilgi.ts";
 import { mektepMekani, npcMekani } from "./cizelge.ts";
 import { gorusDegeri } from "./gorus.ts";
 import { olduMu } from "./hanedan.ts";
@@ -187,6 +188,7 @@ export function eylemSansi(
   ekle("sans.bakis", Math.round(g / 4), { gorus: g });
   const huy = HUYLAR[npc.h] ?? "";
   ekle("sans.huy", HUY_SANS[tur]?.[huy] ?? 0, { huy });
+  ekle("sans.boykot", boykotSansi(ili?.[npc.i], ay));
   ekle("sans.gonul", gonulSansi(kar, ay, tur), { gonul: halOngor(kar, ay).gonul });
   for (const o of t.ozellik ?? []) {
     const deger = kar.oz[OZELLIKLER.indexOf(o)] ?? 5;

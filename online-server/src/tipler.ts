@@ -167,6 +167,16 @@ export const HATA_DURUMU = {
   varis_gecersiz: 400,
   devir_yok: 409,
   devir_degisti: 409,
+  // Üçgen (Faz 4)
+  ucgen_gecersiz: 400,
+  soz_yok: 404,
+  talep_yok: 404,
+  sart_yok: 404,
+  dost_degil: 403,
+  guven_yetersiz: 409,
+  kirgin_degil: 409,
+  casus_var: 409,
+  hedef_siniri: 429,
   yapilandirma_eksik: 500,
   sunucu_hatasi: 500,
 } as const satisfies Record<string, number>;
@@ -230,6 +240,7 @@ export type HesapIleti =
   | { islem: "oyuncu"; hesapId: string; oyuncu: string; dil?: string | null }
   | { islem: "gelen"; hesapId: string; dil?: string | null }
   | { islem: "duzenOku"; hesapId: string }
+  | { islem: "ucgenOku"; hesapId: string; npc?: string | null; hedef?: string | null; dil?: string | null }
   | HanedanIletisi
   | { islem: "sikayet"; hesapId: string; govde: unknown }
   | { islem: "duyurular"; hesapId: string }
@@ -298,6 +309,8 @@ export const GOVDELI_ISLEMLER = [
   "duzen",
   "yalanla",
   "vitrin",
+  // Faz 4 üçgen: kışkırtma, katılım, arabuluculuk, casus
+  "ucgen",
   // Faz 10 han masası: ikram ödemesi (HesapDO masa kontrolünden sonra çağırır; istemci doğrudan ulaşamaz)
   "hanIkram",
 ] as const;
@@ -333,6 +346,7 @@ export type YerlesimIleti =
   | { islem: "oyuncu"; yerlesim: string; hesapId: string; oyuncu: string; dil?: string | null }
   | { islem: "gelen"; yerlesim: string; hesapId: string; dil?: string | null }
   | { islem: "duzenOku"; yerlesim: string; hesapId: string }
+  | { islem: "ucgenOku"; yerlesim: string; hesapId: string; npc?: string | null; hedef?: string | null; dil?: string | null }
   /** Han masası bileti için: oyuncunun iki yönlü engel listesi (hesap kimlikleri). */
   | { islem: "engeller"; yerlesim: string; hesapId: string }
   | (HanedanIletisi & { yerlesim: string });
