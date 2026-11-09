@@ -3,7 +3,9 @@
 
 import type { YerlesimTuru } from "../dunya-veri.ts";
 import type { MeslekId } from "../icerik/meslekler.ts";
+import type { HalKaydi, HalNedeni } from "./hal.ts";
 import type { MeslekKaydi } from "./meslek.ts";
+import type { Siparis } from "./siparis.ts";
 
 /** NPC'ler arası bağ: [diğer NPC, tür (1 dost, 2 rakip), puan (−100..100), kuruluş ayı]. */
 export type Bag = [diger: number, tur: 1 | 2, puan: number, kurulus: number];
@@ -122,6 +124,14 @@ export interface Karakter {
   tz?: Record<string, number[]>;
   /** NPC taban alım kotası: [ay, mal → adet]. */
   tb?: [ay: number, adet: Record<string, number>];
+  /** Hal: [can, kondisyon, gönül, son işlenen ay] (eski kayıtta yok → tam Hal). */
+  hl?: HalKaydi;
+  /** Hal'in son değişim nedenleri (en yeni önce). */
+  hn?: HalNedeni[];
+  /** Araç aşınması: araç malı → kullanım sayacı. */
+  as?: Record<string, number>;
+  /** NPC'ye satış kotası: [ay, mal → adet]. */
+  ns?: [ay: number, adet: Record<string, number>];
 }
 
 /** Anı: [tür, ilk yük, ay]. Yük zamanla söner (yarı ömür). */
@@ -202,4 +212,6 @@ export interface Kasaba {
   /** Yüklenmiş karakterler ve ilişki haritaları (yerel kimlikle). */
   kar: Map<string, Karakter>;
   ili: Map<string, IliskiHaritasi>;
+  /** Lonca siparişleri (kalıcı; eski kayıtta yok). */
+  sp?: Siparis[];
 }

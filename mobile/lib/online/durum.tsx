@@ -1,11 +1,12 @@
 // Çevrimiçi istemci durumu (React bağlamı): oturum, profil, dünya, profil taslağı, davet, yükleniyor/hata;
 // Faz 2: yerleşim durumu, kişi önbelleği, olay defteri (kalıcı imleçli), eylem (istekNo ile güvenli tekrar), tanıdık.
+// Meslek çekirdeği: meslek kaydı, envanter, lonca tablosu; meslek/temel iş/taban alımı istekNo'lu niyet olarak gider.
 // Sağlayıcı app/online/_layout.tsx'te durur; bütün /online ekranları aynı durumu paylaşır.
 // Tek oyunculu motor, kayıt ya da eski MP katmanı içe aktarılmaz.
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { ONLINE_SUNUCU_URL, sunucuAdresi } from "./ayar";
 import { adDuzenle } from "./ad";
-import { imlecOku, imlecYaz, istekNoUret, oturumOku, oturumSil, oturumYaz, taslakOku, taslakSil, taslakYaz, type Taslak } from "./depo";
+import { imlecOku, imlecYaz, istekNoUret, meslekOku, meslekYaz, oturumOku, oturumSil, oturumYaz, taslakOku, taslakSil, taslakYaz, type Taslak } from "./depo";
 import { useI18n } from "../i18n";
 import { oturumHatasiMi } from "./hata";
 import { httpIstemci, type OnlineIstemci } from "./istemci";
@@ -13,7 +14,9 @@ import { onlineEkranAcik } from "./kapi";
 import { onizlemeTohumu, type Tohum } from "./onizleme";
 import { sahteIstemci } from "./sahte";
 import {
-  basarisiz,
+  basarisiz, meslekKaydiMi,
+  type Envanter, type IsId, type LoncaSatiri, type MalId, type MeslekIslemi, type MeslekId, type MeslekKaydi, type MeslekYaniti,
+  type TabanAlYaniti, type TemelIsYaniti, type YazmaOrtak,
   type DavetBilgisi, type Dil, type DunyaOzeti, type EylemTuru, type EylemYaniti, type GirisYaniti, type Isaret, type Kisi, type Olay,
   type OlaylarYaniti, type OnlineHata, type Profil, type Sonuc, type TanidikYaniti, type YerlesimDurumu,
 } from "./protokol";
@@ -24,7 +27,12 @@ export interface OnlineOturum {
   /** Google hesabındaki addan öneri (yalnız profil yokken). */
   adOnerisi?: string;
 }
-export type Islem = "geriYukle" | "giris" | "dunya" | "profil" | "davet" | "yerlesim" | "olaylar" | "kisi" | "eylem" | "tanidik";
+export type Islem = "geriYukle" | "giris" | "dunya" | "profil" | "davet" | "yerlesim" | "olaylar" | "kisi" | "eylem" | "tanidik"
+  | "meslek" | "temelIs" | "tabanAl" | "lonca";
+/** POST /v1/meslek gövdesi (istekNo durum katmanında eklenir). */
+export interface MeslekGirdisi { islem: MeslekIslemi; meslek: MeslekId; dal?: string; dugum?: string }
+/** Bilinen meslek durumu: kayıt ve kademe hizmet eşikleri (sunucudan gelen son değer). */
+export interface MeslekDurumu { kayit: MeslekKaydi; kademeHizmet: number[] }
 /** POST /v1/eylem gövdesi (istekNo ve dil durum katmanında eklenir). */
 export interface EylemGirdisi { tur: EylemTuru; hedef?: string; secim?: string; ozellik?: string }
 /** Defterde bellekte tutulan en çok olay; ilk açılışta son kaç olaydan başlanır; bir yüklemede en çok kaç sayfa. */
@@ -86,6 +94,15 @@ export interface OnlineDurum {
   /** Aynı eylem ağ hatasından sonra yeniden denenirse aynı istekNo gider (sunucu iki kez işlemez). */
   eylemYap(girdi: EylemGirdisi): Promise<Sonuc<EylemYaniti>>;
   tanidikIsaretle(hedef: string, isaret: Isaret | null): Promise<Sonuc<TanidikYaniti>>;
+  // Meslek çekirdeği
+  /** Bilinen son meslek durumu (GET /v1/yerlesim ben.meslek, yoksa son yazma yanıtı ya da yerel kopyası); bilinmiyorsa null. */
+  meslekDurumu: MeslekDurumu | null;
+  envanter: Envanter | null;
+  lonca: LoncaSatiri[] | null;
+  meslekIslem(girdi: MeslekGirdisi): Promise<Sonuc<MeslekYaniti>>;
+  temelIsYap(is: IsId): Promise<Sonuc<TemelIsYaniti>>;
+  tabanAl(mal: MalId, adet: number): Promise<Sonuc<TabanAlYaniti>>;
+  loncaYukle(sessiz?: boolean): Promise<Sonuc<{ lonca: LoncaSatiri[] }>>;
 }
 
 const Baglam = createContext<OnlineDurum | null>(null);
@@ -110,6 +127,9 @@ export function OnlineDurumSaglayici({ children, tohum }: { children: ReactNode;
   const [defterDahaVar, setDefterDahaVar] = useState(false);
   const [defterYeni, setDefterYeni] = useState(0);
   const [defterOkunan, setDefterOkunan] = useState(-1);
+  const [meslekDurumu, setMeslekDurumu] = useState<MeslekDurumu | null>(null);
+  const [envanter, setEnvanter] = useState<Envanter | null>(null);
+  const [lonca, setLonca] = useState<LoncaSatiri[] | null>(null);
   const defterImlec = useRef<number | null>(null);
   const okunanImlec = useRef<number | null>(null);
   const bekleyenEylem = useRef(new Map<string, string>());
@@ -119,7 +139,7 @@ export function OnlineDurumSaglayici({ children, tohum }: { children: ReactNode;
   const belirtec = useRef<string | null>(null);
   const mesgul = useRef(false);
   const http = useMemo(() => httpIstemci({ adres: sunucu, oturum: () => belirtec.current }), [sunucu]);
-  const sahte = useRef<OnlineIstemci | null>(tohum?.gelistirici ? sahteIstemci(tohum.gecikme ?? 450, tohum.profil ?? null) : null);
+  const sahte = useRef<OnlineIstemci | null>(tohum?.gelistirici ? sahteIstemci(tohum.gecikme ?? 450, tohum.profil ?? null, { yas: tohum.yas, meslek: tohum.meslek }) : null);
   const istemci = (): OnlineIstemci => (oturum?.tur === "gelistirici" && sahte.current ? sahte.current : http);
 
   const yerlesimiBirak = () => {
@@ -131,6 +151,9 @@ export function OnlineDurumSaglayici({ children, tohum }: { children: ReactNode;
     defterImlec.current = null;
     okunanImlec.current = null;
     bekleyenEylem.current.clear();
+    setMeslekDurumu(null);
+    setEnvanter(null);
+    setLonca(null);
   };
   const oturumuDusur = useCallback(async () => {
     belirtec.current = null;
@@ -198,13 +221,51 @@ export function OnlineDurumSaglayici({ children, tohum }: { children: ReactNode;
   // --- Faz 2: yaşayan yerleşim
   const yerlesimAl = async (): Promise<Sonuc<YerlesimDurumu>> => {
     const y = await istemci().yerlesim(dil);
-    if (y.ok) { setYerlesim(y.deger); setYerlesimAlindi(Date.now()); }
+    if (y.ok) {
+      setYerlesim(y.deger);
+      setYerlesimAlindi(Date.now());
+      const b = y.deger.ben;
+      if (meslekKaydiMi(b.meslek)) {
+        setMeslekDurumu({ kayit: b.meslek, kademeHizmet: b.kademeHizmet ?? [] });
+        if (b.envanter) setEnvanter(b.envanter);
+      } else if (!meslekDurumu && !tohum && oturum?.tur === "sunucu" && profil) {
+        // Sunucu ben.meslek göndermiyorsa bilinen son durum yerel kopyadan gelir (ilk yazma yanıtı doğrusunu verir).
+        const k = await meslekOku(profil.hesapId);
+        if (k && meslekKaydiMi(k.m)) {
+          setMeslekDurumu({ kayit: k.m, kademeHizmet: Array.isArray(k.k) ? (k.k as number[]) : [] });
+          if (k.e && typeof k.e === "object") setEnvanter(k.e as Envanter);
+        }
+      }
+    }
     return y;
+  };
+  /** Yazma yanıtındaki ortak alanlar: envanter, akçe ve kalan takat yerleşim durumuna işlenir. */
+  const ortakIsle = (v: YazmaOrtak, meslek?: MeslekDurumu) => {
+    setEnvanter(v.envanter);
+    setYerlesim((d) => (d ? { ...d, ben: { ...d.ben, para: v.para, takat: { ...d.ben.takat, kalan: v.takat }, envanter: v.envanter, ...(meslek ? { meslek: meslek.kayit, kademeHizmet: meslek.kademeHizmet } : {}) } } : d));
+    const hesap = profil?.hesapId;
+    if (!tohum && oturum?.tur === "sunucu" && hesap) {
+      const m = meslek ?? meslekDurumu;
+      void meslekYaz(hesap, m?.kayit ?? null, m?.kademeHizmet ?? null, v.envanter);
+    }
+  };
+  /** istekNo'lu yazma: aynı niyet geçici hatadan sonra yeniden denenirse aynı istekNo gider. */
+  const niyetle = async <T,>(anahtar: string, gonder: (istekNo: string) => Promise<Sonuc<T>>): Promise<Sonuc<T>> => {
+    const istekNo = bekleyenEylem.current.get(anahtar) ?? istekNoUret();
+    bekleyenEylem.current.set(anahtar, istekNo);
+    const s = await gonder(istekNo);
+    if (s.ok || !geciciHata(s.hata)) bekleyenEylem.current.delete(anahtar);
+    return s;
   };
   const kisiAl = async (id: string): Promise<Sonuc<Kisi>> => {
     const k = await istemci().kisi(id, dil);
     if (k.ok) setKisiler((m) => ({ ...m, [id]: k.deger }));
     return k;
+  };
+  const loncaAl = async () => {
+    const l = await istemci().lonca();
+    if (l.ok) setLonca(l.deger.lonca);
+    return l;
   };
   /** Eylem ya da işaretten sonra sessiz tazeleme: görüş, şans, takat ve öğrenme sunucudan yeniden gelir. */
   const tazele = async (kisi?: string) => {
@@ -370,6 +431,34 @@ export function OnlineDurumSaglayici({ children, tohum }: { children: ReactNode;
         }
         return s;
       }, true),
+    meslekDurumu,
+    envanter,
+    lonca,
+    meslekIslem: (g) =>
+      calistir("meslek", async () => {
+        const s = await niyetle(["meslek", g.islem, g.meslek, g.dal ?? "", g.dugum ?? ""].join("|"), (istekNo) => istemci().meslek({ ...g, istekNo }));
+        if (s.ok) {
+          const m = { kayit: s.deger.meslek, kademeHizmet: s.deger.kademeHizmet };
+          setMeslekDurumu(m);
+          ortakIsle(s.deger, m);
+          // Ana meslek değişince lonca sayıları da değişir.
+          if (g.islem === "sec") void loncaAl();
+        }
+        return s;
+      }, true),
+    temelIsYap: (is) =>
+      calistir("temelIs", async () => {
+        const s = await niyetle("temelIs|" + is, (istekNo) => istemci().temelIs({ is, istekNo }));
+        if (s.ok) ortakIsle(s.deger);
+        return s;
+      }, true),
+    tabanAl: (mal, adet) =>
+      calistir("tabanAl", async () => {
+        const s = await niyetle(`tabanAl|${mal}|${adet}`, (istekNo) => istemci().tabanAl({ mal, adet, istekNo }));
+        if (s.ok) ortakIsle(s.deger);
+        return s;
+      }, true),
+    loncaYukle: (sessiz = false) => (sessiz ? loncaAl() : calistir("lonca", loncaAl)),
   };
 
   return <Baglam.Provider value={deger}>{children}</Baglam.Provider>;

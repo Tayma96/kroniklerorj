@@ -97,10 +97,12 @@ export interface SahteKasaba {
   kisi(id: string, dil: Dil): Sonuc<Kisi>;
   eylem(govde: { tur: EylemTuru; hedef?: string; secim?: string; ozellik?: string; istekNo: string; dil?: Dil }): Sonuc<EylemYaniti>;
   tanidik(govde: { hedef: string; isaret: Isaret | null; dil?: Dil }): Sonuc<TanidikYaniti>;
+  /** Sahte meslek uçlarının (sahte-meslek.ts) paylaştığı karakter durumu: akçe ve takat aynı nesnededir. */
+  ekonomi(): { kar: { pa: number; tk: number }; yas: number; ay: number; npcMeslekleri: () => string[] };
 }
 
 /** Profilin yerleşiminde inandırıcı bir kasaba kurar (tohum: yerleşim kimliği; aynı yerleşim hep aynı nüfus). */
-export function sahteKasabaKur(profil: Profil, yerlesim: YerlesimOzeti, beylik: string, saatAl: () => SaatOzeti): SahteKasaba {
+export function sahteKasabaKur(profil: Profil, yerlesim: YerlesimOzeti, beylik: string, saatAl: () => SaatOzeti, benYas = 12): SahteKasaba {
   const R = rastgele(karistir("kasaba:" + yerlesim.id));
   const ri = (n: number) => Math.floor(R() * n);
   const tur = yerlesim.tur;
@@ -204,7 +206,7 @@ export function sahteKasabaKur(profil: Profil, yerlesim: YerlesimOzeti, beylik: 
   const oyuncular: SOyuncu[] = [
     { o: "o1", ad: "Ayşe", k: "kadın", yas: 14, mk: mektepYeri },
     { o: "o2", ad: "Kerem", k: "erkek", yas: 13, mk: "kahvehane" },
-    { o: benId, ad: profil.ad, k: profil.cinsiyet, yas: 12, mk: "carsi" },
+    { o: benId, ad: profil.ad, k: profil.cinsiyet, yas: benYas, mk: "carsi" },
     { o: "o4", ad: "Deniz", k: "erkek", yas: 12, mk: "meydan" },
   ];
   // Öğrenme döneminin 5. günü: 1, 3, 4 tamam; 2 (çıraklık) kaçtı, hâlâ yapılabilir; bugünün hedefi dostluk.
@@ -405,6 +407,7 @@ export function sahteKasabaKur(profil: Profil, yerlesim: YerlesimOzeti, beylik: 
   };
 
   return {
+    ekonomi: () => ({ kar, yas: benYas, ay: saatAl().oyunAyi, npcMeslekleri: () => npc.filter((n) => n.yas >= 16).map((n) => n.m) }),
     durum(dil) {
       const saat = saatAl();
       const harita: HaritaMekani[] = yerler.map((id) => ({ id, kisiler: [] }));
@@ -416,7 +419,7 @@ export function sahteKasabaKur(profil: Profil, yerlesim: YerlesimOzeti, beylik: 
       }
       const usta = kar.us ? dizin.get(kar.us) : undefined;
       const ben: Ben = {
-        id: benId, ad: profil.ad, cinsiyet: profil.cinsiyet, yas: 12, dogumAyi: profil.dogumAyi,
+        id: benId, ad: profil.ad, cinsiyet: profil.cinsiyet, yas: benYas, dogumAyi: profil.dogumAyi,
         ozellikler: Object.fromEntries(OZELLIKLER.map((o, i) => [o, kar.oz[i]])), ozellikPuani: kar.op,
         beceriler: Object.fromEntries(BECERILER.map((b, i) => [b, kar.be[i]])),
         nam: Object.fromEntries(NAMLAR.map((b, i) => [b, kar.nm[i]])),

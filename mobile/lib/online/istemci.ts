@@ -1,11 +1,13 @@
 // Kronikler Online HTTP istemcisi: JSON, zaman aşımı, Bearer oturumu, sunucu kodlarından türlü hatalar.
 // Yeniden deneme yalnız güvenli isteklerde: GET'ler, aynı istekNo ile POST /v1/profil ve /v1/eylem (sunucu aynı
 // istekNo'ya aynı sonucu döndürür; yarıda kalan istek iki kez işlenmez) ve işaret koyan /v1/tanidik (aynı işaret
-// ikinci kez konunca durum değişmez). Giriş ve davet oluşturma denenmez.
+// ikinci kez konunca durum değişmez). Meslek, temel iş ve taban alımı da istekNo'lu ve tekrar güvenlidir (sunucu
+// motor.ts #tekrarGuvenli). Giriş ve davet oluşturma denenmez.
 import { DENEME_SAYISI, sunucuAdresi, ZAMAN_ASIMI_MS } from "./ayar";
 import {
   basarili, basarisiz, davetBilgisiMi, davetKoduYanitiMi, dunyaMi, eylemYanitiMi, girisYanitiMi, hataKoduMu, kisiYanitiMi,
-  olaylarYanitiMi, profilMi, tanidikYanitiMi, yerlesimDurumuMi,
+  loncaYanitiMi, meslekYanitiMi, olaylarYanitiMi, profilMi, tabanAlYanitiMi, tanidikYanitiMi, temelIsYanitiMi, yerlesimDurumuMi,
+  type LoncaYaniti, type MeslekIstegi, type MeslekYaniti, type TabanAlIstegi, type TabanAlYaniti, type TemelIsIstegi, type TemelIsYaniti,
   type DavetBilgisi, type Dil, type DunyaOzeti, type EylemIstegi, type EylemYaniti, type GirisYaniti, type HataKodu, type Kisi,
   type OlaylarYaniti, type Profil, type ProfilIstegi, type Sonuc, type TanidikIstegi, type TanidikYaniti, type YerlesimDurumu,
 } from "./protokol";
@@ -24,6 +26,11 @@ export interface OnlineIstemci {
   kisi(id: string, dil: Dil): Promise<Sonuc<Kisi>>;
   eylem(istek: EylemIstegi): Promise<Sonuc<EylemYaniti>>;
   tanidik(istek: TanidikIstegi): Promise<Sonuc<TanidikYaniti>>;
+  // Meslek çekirdeği (ana tasarım §5): istekNo'lu yazmalar ve lonca tablosu.
+  meslek(istek: MeslekIstegi): Promise<Sonuc<MeslekYaniti>>;
+  temelIs(istek: TemelIsIstegi): Promise<Sonuc<TemelIsYaniti>>;
+  tabanAl(istek: TabanAlIstegi): Promise<Sonuc<TabanAlYaniti>>;
+  lonca(): Promise<Sonuc<LoncaYaniti>>;
 }
 
 export interface HttpAyari {
@@ -122,5 +129,9 @@ export function httpIstemci(ayar: HttpAyari): OnlineIstemci {
     // Aynı gövde (aynı istekNo) ile yeniden denenir; sunucu ikinci kez işlemez, ilk yanıtı döndürür.
     eylem: (istek) => cagir({ yontem: "POST", yol: "/v1/eylem", govde: istek, yetki: true, tekrar: true }, eylemYanitiMi),
     tanidik: (istek) => cagir({ yontem: "POST", yol: "/v1/tanidik", govde: istek, yetki: true, tekrar: true }, tanidikYanitiMi),
+    meslek: (istek) => cagir({ yontem: "POST", yol: "/v1/meslek", govde: istek, yetki: true, tekrar: true }, meslekYanitiMi),
+    temelIs: (istek) => cagir({ yontem: "POST", yol: "/v1/temel-is", govde: istek, yetki: true, tekrar: true }, temelIsYanitiMi),
+    tabanAl: (istek) => cagir({ yontem: "POST", yol: "/v1/taban-al", govde: istek, yetki: true, tekrar: true }, tabanAlYanitiMi),
+    lonca: () => cagir({ yontem: "GET", yol: "/v1/lonca", yetki: true, tekrar: true }, loncaYanitiMi),
   };
 }

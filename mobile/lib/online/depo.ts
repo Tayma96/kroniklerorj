@@ -10,6 +10,7 @@ const OTURUM = ONEK + "oturum";
 const TASLAK = ONEK + "taslak";
 const SINEMATIK = ONEK + "sinematik";
 const IMLEC = ONEK + "imlec";
+const MESLEK = ONEK + "meslek";
 
 // Sunucunun oturum biçimi: base64url(yük).base64url(HMAC-SHA256).
 const OTURUM_BICIMI = /^[A-Za-z0-9_-]{1,2048}\.[A-Za-z0-9_-]{43}$/;
@@ -85,6 +86,25 @@ export async function imlecOku(hesapId: string): Promise<number | null> {
   }
 }
 export const imlecYaz = (hesapId: string, imlec: number) => yaz(IMLEC, JSON.stringify({ h: hesapId, i: Math.max(0, Math.floor(imlec)) }));
+
+/**
+ * Son meslek yanıtının yerel kopyası (meslek kaydı, kademe eşikleri, envanter). Sunucu GET /v1/yerlesim'de meslek
+ * göndermediği sürece ekran açılışında bilinen son durumu gösterir; sunucu her yazma yanıtında doğrusunu döndürür.
+ * Biçim denetimi çağıranda (protokol.ts meslekKaydiMi) yapılır.
+ */
+export async function meslekOku(hesapId: string): Promise<{ m: unknown; k: unknown; e: unknown } | null> {
+  const ham = await oku(MESLEK);
+  if (!ham) return null;
+  try {
+    const v: unknown = JSON.parse(ham);
+    if (typeof v !== "object" || v === null) return null;
+    const { h, m, k, e } = v as Record<string, unknown>;
+    return h === hesapId ? { m, k, e } : null;
+  } catch {
+    return null;
+  }
+}
+export const meslekYaz = (hesapId: string, m: unknown, k: unknown, e: unknown) => yaz(MESLEK, JSON.stringify({ h: hesapId, m, k, e }));
 
 /** Yeni bir istek numarası: zaman + 20 rastgele karakter (sunucu biçimi [A-Za-z0-9_-]{8,64}). */
 export function istekNoUret(): string {

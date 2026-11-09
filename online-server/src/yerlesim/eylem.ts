@@ -6,6 +6,7 @@ import { HUYLAR, MESLEKLER } from "../icerik/kisilik.ts";
 import { hata, basarili, type HataKodu, type Sonuc } from "../tipler.ts";
 import { mektepMekani, npcMekani } from "./cizelge.ts";
 import { gorusDegeri } from "./gorus.ts";
+import { GONUL_SOHBET, gonulSansi, halDegistir, halOngor } from "./hal.ts";
 import {
   BECERILER,
   OZELLIKLER,
@@ -176,6 +177,7 @@ export function eylemSansi(
   ekle("sans.bakis", Math.round(g / 4), { gorus: g });
   const huy = HUYLAR[npc.h] ?? "";
   ekle("sans.huy", HUY_SANS[tur]?.[huy] ?? 0, { huy });
+  ekle("sans.gonul", gonulSansi(kar, ay, tur), { gonul: halOngor(kar, ay).gonul });
   for (const o of t.ozellik ?? []) {
     const deger = kar.oz[OZELLIKLER.indexOf(o)] ?? 5;
     ekle("sans.ozellik", Math.round(((deger - 5) * 3) / (t.ozellik?.length ?? 1)), { ozellik: o });
@@ -235,6 +237,8 @@ export interface EylemSonucu {
     beceri?: Partial<Record<Beceri, number>>;
     nam?: Partial<Record<Nam, number>>;
     ozellik?: Partial<Record<Ozellik, number>>;
+    /** Hal: gönül değişimi (başarılı sohbet/yardım). */
+    gonul?: number;
   };
   takat: { kalan: number; tavan: number };
   ogrenme: VerilenOdul[];
@@ -264,6 +268,10 @@ export function eylemYap(
   const beceriKat = (b: Beceri, m: number) => {
     const e = beceriEkle(kar, ay, b, m);
     if (e) degisim.beceri = { ...degisim.beceri, [b]: e };
+  };
+  const gonulKat = (neden: string) => {
+    const g = halDegistir(kar, ay, { gonul: GONUL_SOHBET }, neden).gonul;
+    if (g) degisim.gonul = g;
   };
   const namKat = (n: Nam, m: number) => {
     const e = namEkle(kar, ay, n, m);
@@ -367,9 +375,11 @@ export function eylemYap(
     switch (girdi.tur) {
       case "sohbet":
         sayacArtir(kar, "sohbet");
+        gonulKat("hal.neden.sohbet");
         olay = herkese("olay.eylem.sohbet", 1);
         break;
       case "yardim":
+        gonulKat("hal.neden.yardim");
         olay = herkese("olay.eylem.yardim", 2);
         break;
       case "hediye":

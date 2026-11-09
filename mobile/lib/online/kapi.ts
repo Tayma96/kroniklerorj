@@ -6,7 +6,7 @@
 // küresel varken doğrudur; telefondaki uygulamada Platform.OS hiçbir zaman "web" olmadığından açılamaz.
 // Önizleme kapıyı açar ve sahte verili geliştirici oturumuyla başlar (lib/online/onizleme.ts).
 import { Platform } from "react-native";
-import { ONLINE_GELISTIRME } from "../mp/config";
+import { ONLINE_GELISTIRME } from "./ayar";
 
 export function onizlemeMi(): boolean {
   if (Platform.OS !== "web") return false;

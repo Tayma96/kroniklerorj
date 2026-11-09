@@ -4,9 +4,10 @@
 import type { OnlineIstemci } from "./istemci";
 import { adDogrula } from "./ad";
 import { sahteKasabaKur, type SahteKasaba } from "./sahte-yerlesim";
+import { sahteMeslekKur, type SahteMeslek } from "./sahte-meslek";
 import {
   basarili, basarisiz, BASLANGIC_YASI, davetKoduGecerli, davetKoduTemizle, yerlesimBul,
-  type BeylikOzeti, type DavetBilgisi, type DunyaOzeti, type Mevsim, type Profil, type YerlesimTuru,
+  type BeylikOzeti, type DavetBilgisi, type DunyaOzeti, type Mevsim, type MeslekId, type Profil, type YerlesimTuru,
 } from "./protokol";
 
 const AY_MS = 12 * 60 * 60 * 1000;
@@ -93,10 +94,12 @@ export function sahteProfil(ad: string, cinsiyet: Profil["cinsiyet"], yerlesim: 
 }
 
 /** `baslangic` verilirse oturum o profille başlar (tasarım önizlemesi: varış sonrası ekranlar). */
-export function sahteIstemci(gecikmeMs = 450, baslangic: Profil | null = null): OnlineIstemci {
+/** `ayar.yas` / `ayar.meslek`: önizlemede karakterin yaşı ve (kalfa olarak) başladığı meslek. */
+export function sahteIstemci(gecikmeMs = 450, baslangic: Profil | null = null, ayar: { yas?: number; meslek?: MeslekId } = {}): OnlineIstemci {
   const dunya = sahteDunya();
   let profil: Profil | null = baslangic;
   let kasaba: SahteKasaba | null = null;
+  let meslekler: SahteMeslek | null = null;
   const bekle = () => new Promise<void>((r) => setTimeout(r, gecikmeMs));
   /** Profilin yerleşimi (Faz 2 uçları): ilk çağrıda kurulur, oturum boyunca aynı kalır. */
   const yerlesim = (): SahteKasaba | null => {
@@ -104,10 +107,12 @@ export function sahteIstemci(gecikmeMs = 450, baslangic: Profil | null = null): 
     if (!kasaba) {
       const b = yerlesimBul(dunya, profil.yerlesim) ?? yerlesimBul(dunya, "develi");
       if (!b) return null;
-      kasaba = sahteKasabaKur(profil, b.yerlesim, b.beylik.id, () => sahteDunya().saat);
+      kasaba = sahteKasabaKur(profil, b.yerlesim, b.beylik.id, () => sahteDunya().saat, ayar.yas);
+      meslekler = sahteMeslekKur(kasaba, ayar.meslek);
     }
     return kasaba;
   };
+  const meslek = (): SahteMeslek | null => (yerlesim() ? meslekler : null);
   return {
     async giris() { await bekle(); return basarili({ oturum: "gelistirici", profilVar: profil !== null }); },
     async dunya() { await bekle(); return basarili(sahteDunya()); },
@@ -142,7 +147,10 @@ export function sahteIstemci(gecikmeMs = 450, baslangic: Profil | null = null): 
     async yerlesim(dil) {
       await bekle();
       const k = yerlesim();
-      return k ? basarili(k.durum(dil)) : basarisiz("profil_yok");
+      if (!k) return basarisiz("profil_yok");
+      const d = k.durum(dil);
+      // Sunucunun #ben'e eklemesi beklenen meslek, kademe eşikleri ve envanter (protokol.ts Ben notu).
+      return basarili({ ...d, ben: { ...d.ben, ...meslek()?.benEki() } });
     },
     async olaylar(imlec, dil) {
       await bekle();
@@ -163,6 +171,26 @@ export function sahteIstemci(gecikmeMs = 450, baslangic: Profil | null = null): 
       await bekle();
       const k = yerlesim();
       return k ? k.tanidik(istek) : basarisiz("profil_yok");
+    },
+    async meslek(istek) {
+      await bekle();
+      const m = meslek();
+      return m ? m.meslek(istek) : basarisiz("profil_yok");
+    },
+    async temelIs(istek) {
+      await bekle();
+      const m = meslek();
+      return m ? m.temelIs(istek) : basarisiz("profil_yok");
+    },
+    async tabanAl(istek) {
+      await bekle();
+      const m = meslek();
+      return m ? m.tabanAl(istek) : basarisiz("profil_yok");
+    },
+    async lonca() {
+      await bekle();
+      const m = meslek();
+      return m ? basarili(m.lonca()) : basarisiz("profil_yok");
     },
   };
 }

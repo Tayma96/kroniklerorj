@@ -1,4 +1,10 @@
-// Kronikler Online istemci ayarları.
+// Kronikler Online istemci ayarları. Eski MP katmanından (lib/mp) hiçbir şey içe aktarılmaz.
+
+/**
+ * Yeni çevrimiçi akışın (/online) geliştirici kapısı. Kapalıyken /online rotaları "Yakında" gösterir; açıkken
+ * geliştirici oturumu sahte veriyle sunucusuz denenebilir. (Eski MP'nin ONLINE_ACIK bayrağı lib/mp/config'te kalır.)
+ */
+export const ONLINE_GELISTIRME = false;
 
 /**
  * online-server Worker adresi (örn. "https://kronikler-online.<hesap>.workers.dev"). Berkay ilk dağıtımdan sonra

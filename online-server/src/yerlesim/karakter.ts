@@ -1,6 +1,7 @@
 // Oyuncu karakteri: yaş (doğum ayından), 6 özellik ve 6 genel beceri (§14.1), nam, takat (ayda 6, en çok
 // 2 aylık taşınır), hane (ocağın NPC ailesi), tanıdıklar ve işaretler. Saf fonksiyonlar; karakteri yerinde değiştirir.
 
+import { halOngor, kondisyonKademesi } from "./hal.ts";
 import { karma } from "./rastgele.ts";
 import { yas } from "./ortak.ts";
 import type { Karakter, Kasaba, Npc, Sakin } from "./tipler.ts";
@@ -90,10 +91,17 @@ export function karakterOlustur(sakin: Omit<Sakin, "e" | "mk" | "ma">, ocak: { e
   };
 }
 
-/** Takatı bu aya getirir: geçen her ay +6, tavan 18 (kullanılmayan en çok 2 ay taşınır). */
+/**
+ * Takatı bu aya getirir: geçen her ay, önceki ayın sonundaki kondisyon kademesine göre +6/+5/+4 (Ç5); tavan 18
+ * (kullanılmayan en çok 2 aylık taşınır). Hal'i değiştirmez, yalnız öngörür (tembel; eski kayıtta iyi = 6).
+ */
 export function takatTazele(k: Karakter, ay: number): void {
   if (ay <= k.ta) return;
-  k.tk = Math.min(TAKAT_TAVAN, k.tk + TAKAT_AYLIK * (ay - k.ta));
+  let eklenen = 0;
+  for (let m = k.ta + 1; m <= ay && k.tk + eklenen < TAKAT_TAVAN; m++) {
+    eklenen += kondisyonKademesi(halOngor(k, m - 1).kondisyon).takat;
+  }
+  k.tk = Math.min(TAKAT_TAVAN, k.tk + eklenen);
   k.ta = ay;
 }
 

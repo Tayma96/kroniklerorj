@@ -98,6 +98,11 @@ export const HATA_DURUMU = {
   mal_gecersiz: 400,
   kota_doldu: 409,
   verim_yok: 409,
+  tarif_gecersiz: 400,
+  girdi_yok: 409,
+  mal_yok: 409,
+  siparis_yok: 404,
+  siparis_kapandi: 409,
   // Yönetim (Y1) ve yaptırım
   uzaklastirildi: 403,
   susturuldu: 403,

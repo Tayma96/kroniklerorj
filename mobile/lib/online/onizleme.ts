@@ -3,9 +3,11 @@
 // Sorgu parametreleri: oad (ad), ocins (erkek|kadın), osec (yerleşim kimliği), odavet (davet kodu),
 // okisi (kişi ekranı: "n12"/"o2" kimliği, "t0" tanıdık sırası, "h0" hane sırası; yoksa en yakın tanıdık).
 // Faz 2 ekranları (yaşam, mahalle, kişi, tanıdıklar, karakter) varmış bir profille ve sahte yerleşimle açılır.
+// Meslek ekranları: oyas (karakterin yaşı; meslek, işler ve lonca ekranlarında öntanımlı 14), omes (o meslekte kalfa
+// olarak başlar; "yok" ya da boş = mesleksiz, meslek ekranında öntanımlı demirci).
 import { onizlemeMi } from "./kapi";
 import { sahteDunya, sahteProfil, SAHTE_DAVET_KODU } from "./sahte";
-import { kisiKimligiMi, yerlesimBul, type Cinsiyet, type DunyaOzeti, type Profil, type YerlesimDurumu } from "./protokol";
+import { MESLEK_IDLERI, kisiKimligiMi, yerlesimBul, type Cinsiyet, type DunyaOzeti, type MeslekId, type Profil, type YerlesimDurumu } from "./protokol";
 
 export interface Tohum {
   gelistirici: boolean;
@@ -15,9 +17,13 @@ export interface Tohum {
   davetKodu?: string;
   /** Sahte istemcinin yanıt gecikmesi (ms). */
   gecikme?: number;
+  /** Sahte karakterin yaşı ve başladığı meslek (meslek ekranları). */
+  yas?: number;
+  meslek?: MeslekId;
 }
 
-const VARMIS = ["/online/varis", "/online/yasam", "/online/mahalle", "/online/kisi/[id]", "/online/tanidiklar", "/online/karakter"];
+const MESLEK_EKRANLARI = ["/online/meslek", "/online/isler", "/online/lonca"];
+const VARMIS = ["/online/varis", "/online/yasam", "/online/mahalle", "/online/kisi/[id]", "/online/tanidiklar", "/online/karakter", ...MESLEK_EKRANLARI];
 
 function parametre(ad: string): string | null {
   const arama = (globalThis as { location?: { search?: string } }).location?.search ?? "";
@@ -41,6 +47,7 @@ export function onizlemeTohumu(): Tohum | null {
     gecikme: VARMIS.includes(yol) ? 60 : undefined,
     profil: VARMIS.includes(yol) ? sahteProfil(ad, cinsiyet, varis?.yerlesim.id ?? "develi", varis?.beylik.id ?? "demirhan", davet ? "Ayşe" : undefined) : undefined,
     davetKodu: davet === "1" ? SAHTE_DAVET_KODU : davet,
+    ...meslekTohumu(yol),
   };
 }
 
@@ -56,4 +63,12 @@ export function kisiSec(param: string | undefined, yerlesim: YerlesimDurumu | nu
   if (ok && /^h[0-9]$/.test(ok)) return ben?.hane[Number(ok.slice(1))]?.id;
   if (ok && /^t[0-9]$/.test(ok)) return ben?.tanidiklar[Number(ok.slice(1))]?.id;
   return ben?.tanidiklar[0]?.id;
+}
+
+function meslekTohumu(yol: string): { yas?: number; meslek?: MeslekId } {
+  const yasHam = Number(parametre("oyas"));
+  const yas = Number.isInteger(yasHam) && yasHam >= 12 && yasHam <= 80 ? yasHam : MESLEK_EKRANLARI.includes(yol) ? 14 : undefined;
+  const mes = parametre("omes");
+  const meslek = mes && (MESLEK_IDLERI as readonly string[]).includes(mes) ? (mes as MeslekId) : mes === null && yol === "/online/meslek" ? "demirci" : undefined;
+  return { ...(yas ? { yas } : {}), ...(meslek ? { meslek } : {}) };
 }

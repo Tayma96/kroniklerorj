@@ -281,6 +281,21 @@ function YasamEkran() {
       </Pressable>)}
     </View>
 
+    {/* Geçim: meslek, temel işler, lonca */}
+    <View style={{ marginTop: 8, flexDirection: yon(rtl), gap: 8 }}>
+      {[
+        { id: "meslek", icon: "anvil", baslik: t("onl.ms.ust"), alt: o.meslekDurumu?.kayit.a ? t("onl.mes." + o.meslekDurumu.kayit.a) : ben.yas < 13 ? t("onl.ya.hizliMeslekGenc") : t("onl.ya.hizliMeslekSec"), yol: "/online/meslek", vurgu: !o.meslekDurumu?.kayit.a && ben.yas >= 13 },
+        { id: "isler", icon: "saw", baslik: t("onl.is.kisa"), alt: t("onl.ya.hizliIsler"), yol: "/online/isler" },
+        { id: "lonca", icon: "banner", baslik: t("onl.lo.kisa"), alt: t("onl.ya.hizliLonca"), yol: "/online/lonca" },
+      ].map((h) => <Pressable key={h.id} accessibilityLabel={`${h.baslik}: ${h.alt}`} onPress={() => { hap("tap"); router.push(h.yol); }} style={({ pressed }) => ({ flex: 1, transform: [{ scale: pressed ? 0.97 : 1 }] })}>
+        <Cerceve aktif={!!h.vurgu} ic={{ alignItems: "center", gap: 6, paddingVertical: 12, paddingHorizontal: 6, minHeight: 104 }}>
+          <Madalyon icon={h.icon} size={38} aktif={!!h.vurgu} />
+          <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ fontFamily: F.display, fontSize: dar ? 11.5 : 12.5, color: C.parchment, textAlign: "center" }}>{h.baslik}</Text>
+          <Text numberOfLines={2} style={{ fontFamily: F.serif, fontSize: dar ? 12.5 : 13.5, lineHeight: 17, color: h.vurgu ? C.goldBright : C.parchmentDim, textAlign: "center" }}>{h.alt}</Text>
+        </Cerceve>
+      </Pressable>)}
+    </View>
+
     {/* Yerleşim defteri */}
     <Baslik2 metin={t("onl.ya.defter")} rtl={rtl} sag={o.defterYeni > 0 ? <Rozet metin={applyParams(t("onl.ya.yeni"), [o.defterYeni])} renk={C.goldBright} dolu /> : undefined} />
     {gorunenDefter.length ? <Cerceve ic={{ paddingVertical: 4 }}>

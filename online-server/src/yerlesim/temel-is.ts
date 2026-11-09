@@ -6,6 +6,7 @@
 import { MALLAR, type MalId } from "../icerik/mallar.ts";
 import type { MeslekId } from "../icerik/meslekler.ts";
 import { basarili, hata, type Sonuc } from "../tipler.ts";
+import { IS_KONDISYON, halDegistir, halGorunumu, type HalGorunumu } from "./hal.ts";
 import { karakterYasi, takatHarca, takatTazele } from "./karakter.ts";
 import { dugumAcikMi, hizmetEkle, meslekKaydi } from "./meslek.ts";
 import { envanterEkle, satisDegeri } from "./npc-taban.ts";
@@ -63,7 +64,7 @@ export function temelIsYap(
   idHam: unknown,
   oyuncuSayisi: (m: MeslekId) => number,
   ay: number,
-): Sonuc<{ is: IsId; mal: MalId; adet: number; usta: boolean; hizmet: number; firsat: Dokum; takat: number }> {
+): Sonuc<{ is: IsId; mal: MalId; adet: number; usta: boolean; hizmet: number; firsat: Dokum; takat: number; hal: HalGorunumu }> {
   const id = isBul(idHam);
   if (!id) return hata("eylem_gecersiz");
   if (karakterYasi(k, ay) < TEMEL_IS_YASI) return hata("yas_kapisi");
@@ -76,5 +77,6 @@ export function temelIsYap(
   tz[id] = [...(tz[id] ?? []).filter((x) => ay - x < AZALAN_PENCERE_IS), ay];
   envanterEkle(k, v.mal, v.adet);
   const hizmet = hizmetEkle(k, TEMEL_ISLER[id].meslek, 1);
-  return basarili({ is: id, ...v, hizmet, firsat, takat: k.tk });
+  halDegistir(k, ay, { kondisyon: -IS_KONDISYON * TEMEL_TAKAT }, "hal.neden.temelIs");
+  return basarili({ is: id, ...v, hizmet, firsat, takat: k.tk, hal: halGorunumu(k, ay) });
 }

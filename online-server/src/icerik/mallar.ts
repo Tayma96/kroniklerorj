@@ -1,5 +1,7 @@
 // Çevrimiçi mallar ve NPC taban fiyatları (ana tasarım §5.4–5.5). Fiyatlar akçedir. [PARAMETRE]
 // `meslek`: malı asıl üreten meslek (lonca doluluğu ve kıtlık primi buna göre hesaplanır).
+// Zincirde her tarif az da olsa değer katar (tarifler.ts): 2 odun (2) → kereste/kömür (3); cevher + kömür (6) →
+// 2 nal (8); 2 cevher + kömür + kereste (12) → alet (14). Alet asıl değerini hasatta (+2 tahil × 4 kullanım) verir.
 
 import type { MeslekId } from "./meslekler.ts";
 
@@ -32,11 +34,11 @@ export const MALLAR: Record<MalId, { taban: number; meslek: MeslekId }> = {
   su: { taban: 0, meslek: "hanci" },
   kereste: { taban: 3, meslek: "oduncu" },
   cevher: { taban: 3, meslek: "oduncu" },
-  komur: { taban: 2, meslek: "oduncu" },
+  komur: { taban: 3, meslek: "oduncu" },
   tahil: { taban: 2, meslek: "ciftci" },
   deri: { taban: 3, meslek: "dokumaci" },
-  alet: { taban: 8, meslek: "demirci" },
-  nal: { taban: 3, meslek: "demirci" },
+  alet: { taban: 14, meslek: "demirci" },
+  nal: { taban: 4, meslek: "demirci" },
   sifaliOt: { taban: 3, meslek: "sifaci" },
   inceYun: { taban: 4, meslek: "ciftci" },
 };
