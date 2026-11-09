@@ -74,6 +74,8 @@ export interface MasaBileti {
   no: number;
   plaka: Plaka;
   yt: HesapYaptirimi;
+  /** İki yönlü engel listesi (hesap kimlikleri; YerlesimDO'dan, bilet alınırken). Eski bilette yok. */
+  eg?: string[];
 }
 
 /** İstemci → sunucu (WebSocket metin çerçevesi, JSON). */
@@ -130,7 +132,9 @@ export type MasaIleti =
   /** İkram öncesi: gönderen oturuyor mu, alan masada mı, engel var mı (ödeme bundan sonra yapılır). */
   | { islem: "ikramKontrol"; masa: string; hesap: string; hedef: string }
   /** Masaya anons: saklanmaz, katılım listesi yoktur. */
-  | { islem: "anons"; masa: string; anons: MasaAnonsu };
+  | { islem: "anons"; masa: string; anons: MasaAnonsu }
+  /** Oyuncu masadayken engel listesi değişti (HesapDO bildirir; iki yönlü liste). */
+  | { islem: "engel"; masa: string; hesap: string; liste: string[] };
 
 /**
  * Masaya anons türleri (hediye ailesi). Bu fazda yalnız `ikram` (NPC hancı menüsünden akçeyle) çalışır;

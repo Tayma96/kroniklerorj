@@ -8,7 +8,7 @@ import { dunyaCagir, iletiOku, jsonYanit, yerlesimCagir, yonetimCagir } from "./
 import { girisKaydet, hesapKaydi, hizKontrol, profilGetir, profilOlustur, sakinKaydi, yerlesimeIlet, type HizDurumu, type YerlesimIstegi } from "./mantik.ts";
 import { basarili, hata, type Env, type HesapIleti, type HesapYaptirimi, type Profil, type Sonuc } from "./tipler.ts";
 import { uzaklastirmaBilgisi, yaptirimEngeli } from "./yonetim/yaptirim.ts";
-import { hanEylemi, hanIkrami, hanListesi, masaBileti, yaptirimiMasayaBildir, type HanHesapBaglami } from "./han/hesap-kopru.ts";
+import { engeliMasayaBildir, hanEylemi, hanIkrami, hanListesi, masaBileti, yaptirimiMasayaBildir, type HanHesapBaglami } from "./han/hesap-kopru.ts";
 import { masaCagir } from "./han/ic.ts";
 import { ikramOdeyici } from "./han/yerlesim-kopru.ts";
 
@@ -111,11 +111,21 @@ export class HesapDO {
       case "teklif":
       case "teklifCevap":
       case "husumet":
-      case "engelle":
       case "duzen":
       case "yalanla":
       case "vitrin":
         return this.#yerlesime({ islem: ileti.islem, hesapId: ileti.hesapId, govde: ileti.govde });
+      case "engelle": {
+        const r = await this.#yerlesime({ islem: "engelle", hesapId: ileti.hesapId, govde: ileti.govde });
+        if (r.ok && this.#env.MASA) {
+          const eg = await this.#yerlesime({ islem: "engeller", hesapId: ileti.hesapId });
+          if (eg.ok) {
+            const liste = (eg.deger as { engeller: string[] }).engeller;
+            await engeliMasayaBildir({ depo: this.#depo, hesapId: ileti.hesapId, masaCagir: (ad, i) => masaCagir(this.#env, ad, i) }, liste);
+          }
+        }
+        return r;
+      }
       case "oyuncu":
         return this.#yerlesime({ islem: "oyuncu", hesapId: ileti.hesapId, oyuncu: ileti.oyuncu, dil: ileti.dil });
       case "gelen":
@@ -156,6 +166,7 @@ export class HesapDO {
       yaptirim: await this.#yaptirimDurumu(),
       masaCagir: (ad, i) => masaCagir(env, ad, i),
       ikramOde: ikramOdeyici(env),
+      engelSor: (yerlesim) => yerlesimCagir(env, { islem: "engeller", yerlesim, hesapId }),
     };
   }
 

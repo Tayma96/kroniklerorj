@@ -6,9 +6,10 @@
 // HENÜZ OKUMAZ; o modüller koddaki varsayılanla çalışmaya devam eder. Okuma Y2'de bağlanacaktır.
 
 import { HIZ_SINIRI } from "../mantik.ts";
-import { KITLIK_PRIM, NPC_AYLIK_KOTA, NPC_CARPAN } from "../yerlesim/npc-taban.ts";
+import { KITLIK_PRIM, NPC_AYLIK_KOTA, NPC_CARPAN, STOK_CARPAN } from "../yerlesim/npc-taban.ts";
+import { SIPARIS_ODUL_CARPANI } from "../yerlesim/siparis.ts";
 import { AZALAN_PENCERE_IS, TEMEL_CIKTI } from "../yerlesim/temel-is.ts";
-import { basarili, hata, type Sonuc } from "../tipler.ts";
+import { basarili, hata, type HataKodu, type Sonuc } from "../tipler.ts";
 import { SIKAYET_GUNLUK } from "./sikayet.ts";
 import { GECICI_UZAKLASTIRMA_EN_COK_GUN } from "./yaptirim.ts";
 
@@ -39,6 +40,14 @@ export const PARAMETRELER = {
     varsayilan: KITLIK_PRIM, alt: 0, ust: 1, tam: false, uygulama: "Y2",
     aciklama: "Meslekte oyuncu yokken kıtlık primi oranı", kaynak: "src/yerlesim/npc-taban.ts",
   },
+  SIPARIS_ODUL_CARPANI: {
+    varsayilan: SIPARIS_ODUL_CARPANI, alt: 1, ust: 3, tam: false, uygulama: "Y2",
+    aciklama: "Lonca siparişi ödülü: adet × satış değeri × çarpan", kaynak: "src/yerlesim/siparis.ts",
+  },
+  STOK_CARPAN: {
+    varsayilan: STOK_CARPAN, alt: 1, ust: 5, tam: false, uygulama: "Y2",
+    aciklama: "Kasaba stoğundan satış çarpanı (taban × çarpan)", kaynak: "src/yerlesim/npc-taban.ts",
+  },
   TEMEL_CIKTI: {
     varsayilan: TEMEL_CIKTI, alt: 1, ust: 6, tam: true, uygulama: "Y2",
     aciklama: "Temel işin çıktı adedi (azalan getiriden önce)", kaynak: "src/yerlesim/temel-is.ts",
@@ -61,6 +70,27 @@ export const PARAMETRELER = {
   },
 } as const satisfies Record<string, ParametreTanimi>;
 export type ParametreAdi = keyof typeof PARAMETRELER;
+
+/**
+ * Çapraz sınırlar (denge denetimi madde 11): tek tek sınır içinde kalan değerler birlikte takatsiz kâr açmasın.
+ *  - NPC'den alıp kıtlık primli siparişe teslim kâr etmez: (1 + KITLIK_PRIM) × SIPARIS_ODUL_CARPANI < NPC_CARPAN.
+ *  - Stoktan alıp NPC'ye kıtlıklı satmak kâr etmez: STOK_CARPAN ≥ 1 + KITLIK_PRIM.
+ * İhlal edilen kuralların adlarını döndürür (boş = geçerli).
+ */
+export const CAPRAZ_KURALLAR = {
+  siparisNpc: (d: (ad: ParametreAdi) => number) => (1 + d("KITLIK_PRIM")) * d("SIPARIS_ODUL_CARPANI") < d("NPC_CARPAN"),
+  stokKitlik: (d: (ad: ParametreAdi) => number) => d("STOK_CARPAN") >= 1 + d("KITLIK_PRIM"),
+} as const;
+
+export function caprazIhlaller(d: (ad: ParametreAdi) => number): (keyof typeof CAPRAZ_KURALLAR)[] {
+  return (Object.keys(CAPRAZ_KURALLAR) as (keyof typeof CAPRAZ_KURALLAR)[]).filter((k) => !CAPRAZ_KURALLAR[k](d));
+}
+
+/** Yeni etkin değerle (öbürleri mevcut etkin değer) çapraz sınırları denetler. */
+export function caprazDenetle(ad: ParametreAdi, yeni: number, etkin: (ad: ParametreAdi) => number): { hata: HataKodu; kurallar: string[] } | undefined {
+  const ihlal = caprazIhlaller((x) => (x === ad ? yeni : etkin(x)));
+  return ihlal.length ? { hata: "parametre_capraz", kurallar: ihlal } : undefined;
+}
 
 /** [PARAMETRE] Parametre kaydında tutulan geçmiş uzunluğu (tam geçmiş işlem kaydındadır). */
 export const PARAMETRE_GECMIS_EN_COK = 100;

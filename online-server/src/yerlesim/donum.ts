@@ -8,6 +8,7 @@ import { AZALAN_PENCERE, iliskiAl } from "./eylem.ts";
 import { aniYuku, gorus, gorusDegeri } from "./gorus.ts";
 import { hanedanYakini, olduMu } from "./hanedan.ts";
 import { hanedanDonumu } from "./hanedan-donum.ts";
+import { gonulDonumu, YAKIN_NPC_TABANI } from "./hal.ts";
 import { beceriEkle } from "./karakter.ts";
 import { GUN_BASINA_AY, OGRENME_SURESI_AY, ogrenmeBaslangici } from "./ogrenme.ts";
 import { npcKimlik, npcRef, oyuncuRef, yas } from "./ortak.ts";
@@ -248,6 +249,17 @@ export function ayDonumu(kasaba: Kasaba, ay: number): OlayTaslagi[] {
         else delete i.az[tur];
       }
       if (i.t === 0 && i.an.length === 0 && Object.keys(i.az).length === 0) delete ili[a];
+    }
+    // Hal: gönülü düşüren durumlar (öğrenme döneminden sonra): yalnızlık, açık husumet, evsizlik.
+    if (gecen >= OGRENME_SURESI_AY) {
+      const tp = kasaba.tp;
+      const yalniz =
+        !Object.values(kar.tn).includes("dost") &&
+        !(tp?.ob.some((b) => b.d === "dost" && (b.a === kar.o || b.b === kar.o)) ?? false) &&
+        !Object.values(ili).some((i) => i.t >= YAKIN_NPC_TABANI);
+      const husumet = tp?.hu.some((h) => h.d === "acik" && (h.g === kar.o || h.h === kar.o)) ?? false;
+      const evsiz = kar.e === 0 || !kasaba.npc.some((n) => n.e === kar.e);
+      gonulDonumu(kar, ay, { yalniz, husumet, evsiz });
     }
   }
 

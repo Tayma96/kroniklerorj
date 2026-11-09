@@ -28,6 +28,7 @@ import { kronikEkle, type KronikSatiri } from "./kronik.ts";
 import { kisiCoz, npcAdi, npcKimlik, oyuncuRef, yas } from "./ortak.ts";
 import { dizinSec, karma, tohumlu } from "./rastgele.ts";
 import type { Karakter, Kasaba, KisiRef, OlayTaslagi } from "./tipler.ts";
+import { teveccuhPuani } from "./teveccuh.ts";
 import { VAKIF } from "./vasiyet.ts";
 
 /** [PARAMETRE] Veraset vergisi (yüzde, aşağı yuvarlanır; kasaba hazinesine). */
@@ -42,6 +43,10 @@ export const KUSME_YUKU = -15;
 /** [PARAMETRE] Uzak akraba bu yaşta gelir. */
 export const UZAK_AKRABA_YASI = 16;
 export const UZAK = "uzak";
+/** [PARAMETRE] Aile adı: vâris, ölen ebeveynin (ölüm ayındaki) teveccühünün bu oranıyla başlar; en çok bu kadar.
+ * Hediye teveccühü (verenler) geçmez; yalnız bu küçük başlangıç ayrı bir döküm kalemi olarak yazılır. */
+export const AILE_ADI_ORANI = 0.1;
+export const AILE_ADI_EN_COK = 20;
 
 export type DevirKalemi =
   /** Akçe payı: kime "n12" (NPC emanetine), "o3" (oyuncu eş), "vakif" ya da vâris kimliği (plan.varis.id). */
@@ -52,6 +57,8 @@ export type DevirKalemi =
   | { tur: "envanter"; mallar: Record<string, number> }
   | { tur: "nam"; nam: number[] }
   | { tur: "aileMeslegi"; meslek: MeslekId; carpan: number }
+  /** Aile adı: vârisin başlangıç teveccühü (ölenin teveccühünden küçük pay; veren listesi boş). */
+  | { tur: "aileAdi"; puan: number }
   | { tur: "ata"; npc: number; yuk: number }
   | { tur: "kusme"; npc: number; yuk: number }
   /** Bir oyuncunun ölüye düşman işareti vârise geçer (husumet). */
@@ -178,6 +185,8 @@ export function devirHesapla(kasaba: Kasaba, oluO: string, varisHam: unknown, ay
   if (nam.some((x) => x > 0)) kalemler.push({ tur: "nam", nam });
   const am = (olu.ms?.a || olu.hd?.am) as MeslekId | "" | undefined;
   if (am) kalemler.push({ tur: "aileMeslegi", meslek: am, carpan: AILE_MESLEGI_CARPANI });
+  const aileAdi = Math.min(AILE_ADI_EN_COK, Math.floor(teveccuhPuani(olu, ol) * AILE_ADI_ORANI));
+  if (aileAdi > 0) kalemler.push({ tur: "aileAdi", puan: aileAdi });
 
   // Ata namı: NPC'lerin ölüye bakışı (ölüm ayında) vârise sönümlü anı olarak geçer; kin de geçer.
   const ata: { npc: number; yuk: number }[] = [];
@@ -325,6 +334,9 @@ export function devirUygula(kasaba: Kasaba, plan: DevirPlani, ay: number): Sonuc
         break;
       case "aileMeslegi":
         hd.am = k.meslek;
+        break;
+      case "aileAdi":
+        kar.tv = { p: k.puan, a: ay, v: [] };
         break;
       case "ata":
         iliskiAl(ili, k.npc).an.push(["ata", k.yuk, ay]);

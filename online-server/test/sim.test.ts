@@ -191,3 +191,146 @@ test("simülasyon: dikey dilim ekonomisi — en kârlı oyunda bile aylık akçe
   assert.ok(ikinciYil <= ilkYil * 1.5 + 2, `artış: ${ilkYil} → ${ikinciYil}`);
   assert.ok(ort(hepsi) > 0, "emek bir şey kazandırır");
 });
+
+// Denge simülasyonu (denge denetimi 9 Kasım, "Önerilen değişiklikler"): 3 ve 6 oyunculu kasaba (çiftçi, oduncu,
+// demirci sırayla), 24 ay. Her oyuncu her ay takatini en kârlı işe harcar (temel iş, usta iş, tarif; eksik girdiyi
+// önce kasaba stoğundan, yoksa NPC'den alır), siparişleri teslim eder ve kotası kadar NPC'ye satar. Ölçülen: meslek
+// başına aylık net akçe. Ölçüt: üç meslek birbirinin ±%35'i içinde; akçe yalnız satış, sipariş ve alımla değişir.
+/** [PARAMETRE] Meslekler arası aylık akçe farkı sınırı (en yüksek ≤ en düşük × (1 + bu)). */
+export const SIM_MESLEK_FARKI = 0.35;
+
+async function dengeSim(N: number) {
+  const { MALLAR, MAL_IDLERI } = await import("../src/icerik/mallar.ts");
+  const { oyuncuSayaci } = await import("../src/yerlesim/lonca.ts");
+  const { dalAc, dugumAc, kademeAtla, meslekSec } = await import("../src/yerlesim/meslek.ts");
+  const { NPC_AYLIK_KOTA, npcFiyat, npcdenAl, npcdenAlinan, saticiDegeri, stokFiyat, malMeslegindeMi } = await import("../src/yerlesim/npc-taban.ts");
+  const { NPC_SATIS_KOTASI, npcyeSat, satilan } = await import("../src/yerlesim/pazar.ts");
+  const { siparisDonumu, siparisTeslim } = await import("../src/yerlesim/siparis.ts");
+  const { tarifListesi, tarifYap } = await import("../src/yerlesim/tarif.ts");
+  const { temelIsOnizleme, temelIsYap } = await import("../src/yerlesim/temel-is.ts");
+  const { takatTazele } = await import("../src/yerlesim/karakter.ts");
+  type M = "ciftci" | "oduncu" | "demirci";
+  type Mal = (typeof MAL_IDLERI)[number];
+  const k = testKasabasi("develi", 0);
+  const stok: Partial<Record<Mal, number>> = {};
+  k.st = stok;
+  const sira: M[] = ["oduncu", "ciftci", "demirci"];
+  const dal: Record<M, string> = { ciftci: "ekin", oduncu: "maden", demirci: "alet" };
+  const oyuncular = Array.from({ length: N }, (_, i) => {
+    const c = oyuncuEkle(k, i + 1, k.ay - 16 * 12);
+    const m = (["ciftci", "oduncu", "demirci"] as M[])[i % 3]!;
+    meslekSec(c, m, k.ay);
+    k.sakin.find((s) => s.o === c.o)!.ms = m;
+    dalAc(c, m, dal[m]);
+    dugumAc(c, m, `${m}.${dal[m]}.0`);
+    return { c, m };
+  }).sort((a, b) => sira.indexOf(a.m) - sira.indexOf(b.m));
+  const sayac = () => oyuncuSayaci(k);
+  const aylik = new Map<M, number[]>(sira.map((m) => [m, []]));
+  let kaynak = 0;
+  let degisim = 0;
+
+  for (let ay = 1; ay <= AY; ay++) {
+    k.ay = ay;
+    siparisDonumu(k, ay);
+    for (const { c, m } of oyuncular) {
+      const pa0 = c.pa;
+      let akis = 0;
+      takatTazele(c, ay);
+      const deger = (mal: Mal) => saticiDegeri(c, mal, sayac()).toplam;
+      const satilabilir = (mal: Mal, adet: number) => Math.min(adet, Math.max(0, NPC_SATIS_KOTASI - satilan(c, mal, ay) - (c.ev?.[mal] ?? 0)));
+      const alimMaliyeti = (mal: Mal, n: number): number => {
+        if (n <= 0) return 0;
+        const st = malMeslegindeMi(c, mal) ? 0 : Math.min(stok[mal] ?? 0, n);
+        const npc = n - st;
+        if (npcdenAlinan(c, mal, ay) + npc > NPC_AYLIK_KOTA) return Number.POSITIVE_INFINITY;
+        return st * stokFiyat(mal).toplam + npc * npcFiyat(mal).toplam;
+      };
+      for (let adim = 0; adim < 40 && c.tk > 0; adim++) {
+        let enIyi: { tur: "is" | "tarif"; id: string; d: number; al?: [Mal, number][] } | undefined;
+        for (const v of temelIsOnizleme(c, sayac(), ay)) {
+          if (!v.acik || v.adet <= 0 || !v.mal || v.is === "onarim") continue;
+          const d = satilabilir(v.mal, v.adet) * deger(v.mal);
+          if (d > 0 && (!enIyi || d > enIyi.d)) enIyi = { tur: "is", id: v.is, d };
+        }
+        for (const t of tarifListesi(c)) {
+          if (!t.acik || c.tk < t.takat) continue;
+          let maliyet = 0;
+          let odeme = 0;
+          const al: [Mal, number][] = [];
+          for (const [mal, n] of Object.entries(t.girdi) as [Mal, number][]) {
+            const var_ = Math.min(c.ev?.[mal] ?? 0, n);
+            const a = alimMaliyeti(mal, n - var_);
+            maliyet += var_ * deger(mal) + a;
+            odeme += a;
+            if (n > var_) al.push([mal, n - var_]);
+          }
+          if (odeme > c.pa) continue;
+          const d = (satilabilir(t.cikti.mal, t.cikti.adet) * deger(t.cikti.mal) - maliyet) / t.takat;
+          if (d > 0 && (!enIyi || d > enIyi.d)) enIyi = { tur: "tarif", id: t.id, d, al };
+        }
+        if (!enIyi) break;
+        if (enIyi.tur === "is") {
+          assert.ok(temelIsYap(c, enIyi.id, sayac(), ay).ok);
+          continue;
+        }
+        for (const [mal, n] of enIyi.al ?? []) {
+          const r = npcdenAl(c, mal, n, ay, stok);
+          assert.ok(r.ok, JSON.stringify(r));
+          akis -= r.deger.tutar;
+        }
+        assert.ok(tarifYap(c, enIyi.id, ay).ok);
+      }
+      for (const s of k.sp ?? []) {
+        if (s.durum !== "acik") continue;
+        const r = siparisTeslim(k, c, k.ili.get(c.o)!, s.id, ay);
+        if (r.ok) akis += r.deger.sonuc.odul;
+      }
+      for (const mal of MAL_IDLERI) {
+        const adet = Math.min(c.ev?.[mal] ?? 0, NPC_SATIS_KOTASI - satilan(c, mal, ay));
+        if (adet <= 0 || MALLAR[mal].taban === 0) continue;
+        const r = npcyeSat(c, mal, adet, sayac(), ay, stok);
+        assert.ok(r.ok);
+        akis += r.deger.tutar;
+      }
+      kaynak += akis;
+      degisim += c.pa - pa0;
+      aylik.get(m)!.push(c.pa - pa0);
+      if (kademeAtla(c, m, ay).ok) dugumAc(c, m, `${m}.${dal[m]}.1`);
+    }
+  }
+  const ort = (a: number[]) => a.reduce((x, y) => x + y, 0) / Math.max(1, a.length);
+  const sonuc = Object.fromEntries(sira.map((m) => [m, ort(aylik.get(m)!)])) as Record<M, number>;
+  return { sonuc, kaynak, degisim, teslim: (k.sp ?? []).filter((s) => s.durum === "teslim").length };
+}
+
+for (const N of [3, 6]) {
+  test(`denge simülasyonu: ${N} oyuncu — çiftçi/oduncu/demirci aylık akçesi birbirinin ±%35'i içinde`, async () => {
+    const { sonuc, kaynak, degisim, teslim } = await dengeSim(N);
+    const d = Object.values(sonuc);
+    console.log(`sim-denge N=${N}: ciftci=${sonuc.ciftci.toFixed(1)} oduncu=${sonuc.oduncu.toFixed(1)} demirci=${sonuc.demirci.toFixed(1)} teslim=${teslim}`);
+    assert.equal(degisim, kaynak, "akçe yalnız satış, sipariş ve alımla değişti");
+    assert.ok(Math.min(...d) > 0, "her meslek kazanır");
+    assert.ok(Math.max(...d) <= Math.min(...d) * (1 + SIM_MESLEK_FARKI), JSON.stringify(sonuc));
+  });
+}
+
+test("takatsiz kâr yolu yok: NPC'den ya da stoktan alıp satmak, NPC'den alıp siparişe teslim etmek kâr etmez", async () => {
+  const { MALLAR } = await import("../src/icerik/mallar.ts");
+  const { npcFiyat, satisDegeri, stokFiyat } = await import("../src/yerlesim/npc-taban.ts");
+  const { SIPARIS_MALLARI, SIPARIS_ODUL_CARPANI } = await import("../src/yerlesim/siparis.ts");
+  for (const [mal, m] of Object.entries(MALLAR) as [keyof typeof MALLAR, (typeof MALLAR)[keyof typeof MALLAR]][]) {
+    if (m.taban === 0) continue;
+    const enIyiSatis = satisDegeri(mal, 0).toplam; // kıtlık primli
+    assert.ok(npcFiyat(mal).toplam > enIyiSatis, `${mal}: NPC al → sat`);
+    assert.ok(stokFiyat(mal).toplam >= enIyiSatis, `${mal}: stok al → sat`);
+  }
+  for (const liste of Object.values(SIPARIS_MALLARI)) {
+    for (const { mal, alt, ust } of liste!) {
+      for (let adet = alt; adet <= ust; adet++) {
+        const odul = Math.ceil(adet * satisDegeri(mal, 0).toplam * SIPARIS_ODUL_CARPANI);
+        assert.ok(adet * npcFiyat(mal).toplam > odul, `${mal}×${adet}: NPC al → sipariş`);
+      }
+    }
+  }
+});

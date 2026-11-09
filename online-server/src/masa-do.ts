@@ -5,7 +5,7 @@
 // İnce sarmalayıcıdır; kurallar src/han/masa.ts ve src/han/eylem.ts'dedir.
 
 import { doDepo, type Depo } from "./depo.ts";
-import { engelliMi } from "./han/engel-kopru.ts";
+import { ENGEL_ANAHTARI, engelListesiCoz, engelSorgusuKur, type EngelSorgusu } from "./han/engel-kopru.ts";
 import { ATMA, atmaUygula, eylemUygula } from "./han/eylem.ts";
 import { BILET_BASLIGI } from "./han/ic.ts";
 import { KAPANIS, surer, VARSAYILAN_AYAR } from "./han/kurallar.ts";
@@ -58,7 +58,7 @@ function biletCoz(ham: string | null): MasaBileti | undefined {
   try {
     const b = JSON.parse(decodeURIComponent(ham)) as MasaBileti;
     if (typeof b?.masa === "string" && typeof b.no === "number" && typeof b.plaka?.hesap === "string" && typeof b.plaka.ad === "string") {
-      return { masa: b.masa, no: b.no, plaka: { hesap: b.plaka.hesap, ad: b.plaka.ad }, yt: b.yt ?? {} };
+      return { masa: b.masa, no: b.no, plaka: { hesap: b.plaka.hesap, ad: b.plaka.ad }, yt: b.yt ?? {}, eg: engelListesiCoz(b.eg) };
     }
   } catch {
     // aşağıda
@@ -73,6 +73,12 @@ export class MasaDO {
   readonly #araclar: MasaAraclari;
   readonly #sarmal = new WeakMap<WebSocket, MasaSoketi>();
   #ayar: MasaAyari | undefined;
+  /** Hesap başına iki yönlü engel listesi önbelleği (asıl kayıt depoda `eg:<hesap>`). */
+  readonly #engeller = new Map<string, readonly string[] | undefined>();
+  readonly #engelliMi: EngelSorgusu = engelSorgusuKur(async (h) => {
+    if (!this.#engeller.has(h)) this.#engeller.set(h, await this.#depo.al<string[]>(ENGEL_ANAHTARI + h));
+    return this.#engeller.get(h);
+  });
 
   constructor(ctx: WebSocketDurumu, env: Env, araclar: MasaAraclari = VARSAYILAN_ARACLAR) {
     this.#ctx = ctx;
@@ -156,7 +162,7 @@ export class MasaDO {
         .map((w) => this.#sar(w)),
       ayar: await this.#ayarAl(),
       simdi,
-      engelliMi,
+      engelliMi: this.#engelliMi,
       rapor: (kim, govde) => hesapCagir(env, kim, { islem: "sikayet", hesapId: kim, govde }),
       atma: async (kim, hedef, katilim) => {
         const olay = await atmaUygula(depo, masa, kim, hedef, katilim, simdi);
@@ -179,10 +185,17 @@ export class MasaDO {
     if (engel) {
       return jsonYanit(engel.bitis !== undefined ? { hata: engel.hata, bitis: engel.bitis } : { hata: engel.hata }, HATA_DURUMU[engel.hata]);
     }
+    await this.#engelYaz(bilet.plaka.hesap, bilet.eg ?? []);
     const [istemci, sunucu] = this.#araclar.cift();
     this.#ctx.acceptWebSocket(sunucu);
     baglan(b, this.#sar(sunucu), bilet);
     return this.#araclar.yukselt(istemci);
+  }
+
+  async #engelYaz(hesap: string, liste: readonly string[]): Promise<void> {
+    this.#engeller.set(hesap, liste);
+    if (liste.length) await this.#depo.koy({ [ENGEL_ANAHTARI + hesap]: liste });
+    else await this.#depo.sil([ENGEL_ANAHTARI + hesap]);
   }
 
   async #isle(ileti: MasaIleti): Promise<Sonuc<unknown>> {
@@ -219,6 +232,9 @@ export class MasaDO {
         if (await b.engelliMi(ileti.hedef, ileti.hesap)) return hata("engelli");
         return basarili({});
       }
+      case "engel":
+        await this.#engelYaz(ileti.hesap, engelListesiCoz(ileti.liste));
+        return basarili({});
       case "anons":
         for (const r of kayitlar(b.soketler)) r.soket.gonder({ t: "anons", anons: ileti.anons });
         return basarili({});

@@ -38,6 +38,8 @@ export const KARARLAR = { zanaat: "zanaat", ilim: "ilim", ticaret: "ticaret", yo
 
 /** [PARAMETRE] Azalan getiri penceresi (ay) ve NPC başına aylık görüş kazancı tavanı. */
 export const AZALAN_PENCERE = 6;
+/** [PARAMETRE] Ayak işi: oyuncu başına ayda en çok bu kadar deneme (NPC değiştirerek tavansız kazanç olmasın). */
+export const AYAK_ISI_AYLIK = 3;
 export const AYLIK_GORUS_TAVANI = 10;
 export const SANS_ALT = 5;
 export const SANS_UST = 95;
@@ -74,7 +76,7 @@ export const EYLEMLER: Readonly<Record<EylemTuru, Tanim>> = {
   },
   ayakIsi: {
     takat: 1, yas: 12, npc: true, temel: 70, kazanc: 3, beceri: ["ticaret", 1], nam: ["caliskanlik", 1], hedefYas: 16,
-    ucret: 3, ozellik: ["ceviklik"], becerisi: "ticaret",
+    ucret: 2, ozellik: ["ceviklik"], becerisi: "ticaret",
   },
   cirak: {
     takat: 1, yas: 12, npc: true, temel: 35, kazanc: 6, beceri: ["zanaat", 2], nam: ["caliskanlik", 1], hedefYas: 20,
@@ -152,9 +154,15 @@ export function eylemKapisi(kasaba: Kasaba, tur: EylemTuru, kar: Karakter, npc: 
   if (t.bedel && kar.pa < t.bedel) return "para_yok";
   if (tur === "karar" && kar.kr) return "karar_verildi";
   if (tur === "puan" && kar.op <= 0) return "puan_yok";
+  if (tur === "ayakIsi" && ayakIsiSayisi(kar, ay) >= AYAK_ISI_AYLIK) return "kota_doldu";
   takatTazele(kar, ay);
   if (kar.tk < t.takat) return "takat_yok";
   return undefined;
+}
+
+/** Bu ay yapılan ayak işi denemesi. */
+export function ayakIsiSayisi(kar: Karakter, ay: number): number {
+  return kar.ai && kar.ai[0] === ay ? kar.ai[1] : 0;
 }
 
 /** Kabul şansı (yüzde) = kalemlerin toplamı; 5..95'e kırpılırsa fark "sans.sinir" kalemiyle görünür. */
@@ -244,6 +252,8 @@ export interface EylemSonucu {
   };
   takat: { kalan: number; tavan: number };
   ogrenme: VerilenOdul[];
+  /** Ayak işi: bu ayki deneme ve aylık tavan. */
+  kota?: { yapilan: number; tavan: number };
 }
 
 /**
@@ -265,6 +275,7 @@ export function eylemYap(
   if (engel) return hata(engel);
   if (!takatHarca(kar, ay, t.takat)) return hata("takat_yok");
   kar.en++;
+  if (girdi.tur === "ayakIsi") kar.ai = [ay, ayakIsiSayisi(kar, ay) + 1];
 
   const degisim: EylemSonucu["degisim"] = {};
   const beceriKat = (b: Beceri, m: number) => {
@@ -287,6 +298,7 @@ export function eylemYap(
       degisim,
       takat: { kalan: kar.tk, tavan: TAKAT_TAVAN },
       ogrenme,
+      ...(girdi.tur === "ayakIsi" ? { kota: { yapilan: ayakIsiSayisi(kar, ay), tavan: AYAK_ISI_AYLIK } } : {}),
     };
     return basarili(olay ? { sonuc, olay } : { sonuc });
   };

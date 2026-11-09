@@ -1,21 +1,30 @@
 // NPC'ye satış (dikey dilim E2): oyuncu ürettiğini kasabaya (NPC alıcılara) satar. Akçe NPC'den gelir — tanımlı
 // kaynaktır ve oyuncu başına mal başına aylık kotayla sınırlıdır (farm yok). Birim fiyat `satisDegeri`dir
-// (taban + kıtlık primi), döküm olarak döner. Su satılmaz. Hata olursa hiçbir şey değişmez.
+// (taban + kıtlık primi; kıtlık sayımında satıcının kendisi sayılmaz), döküm olarak döner. Su satılmaz. Satılan mal
+// kasaba stoğuna girer (npc-taban.ts stok kanalı). Hata olursa hiçbir şey değişmez.
 
 import { MALLAR, malBul, type MalId } from "../icerik/mallar.ts";
 import type { MeslekId } from "../icerik/meslekler.ts";
 import { basarili, hata, type Sonuc } from "../tipler.ts";
-import { envanterEkle, satisDegeri } from "./npc-taban.ts";
+import { envanterEkle, saticiDegeri, stogaEkle, type KasabaStogu } from "./npc-taban.ts";
 import type { Dokum, Karakter } from "./tipler.ts";
 
 /** [PARAMETRE] Oyuncu başına mal başına aylık NPC alım kotası. */
 export const NPC_SATIS_KOTASI = 6;
+/** [PARAMETRE] Kıtlık primi oyuncu başına mal başına ayda yalnız bu kadar birime ödenir (kıt pazar çabuk doyar;
+ * tek üreticinin yüksek katma değerli malında primin aylık kazancı sınırlı kalır). */
+export const KITLIK_KOTASI = 2;
 
 export type SatisSonucu = {
   mal: MalId;
   adet: number;
+  /** İlk birimin fiyat dökümü (kıtlık kotası dolmadıysa primli). */
   birim: Dokum;
   tutar: number;
+  /** Bütün satışın dökümü: taban × adet, primli birim sayısı kadar kıtlık. */
+  dokum: Dokum;
+  /** Bu ay bu malda kalan primli birim. */
+  kitlikKalan: number;
   kota: { satilan: number; tavan: number; kalan: number };
 };
 
@@ -30,6 +39,7 @@ export function npcyeSat(
   adetHam: unknown,
   oyuncuSayisi: (m: MeslekId) => number,
   ay: number,
+  stok?: KasabaStogu,
 ): Sonuc<SatisSonucu> {
   const mal = malBul(malHam);
   if (!mal || MALLAR[mal].taban === 0) return hata("mal_gecersiz");
@@ -37,12 +47,34 @@ export function npcyeSat(
   if ((k.ev?.[mal] ?? 0) < adetHam) return hata("mal_yok");
   const once = satilan(k, mal, ay);
   if (once + adetHam > NPC_SATIS_KOTASI) return hata("kota_doldu");
-  const birim = satisDegeri(mal, oyuncuSayisi(MALLAR[mal].meslek));
-  const tutar = birim.toplam * adetHam;
+  const primli = saticiDegeri(k, mal, oyuncuSayisi);
+  const prim = primli.kalemler.find((x) => x.k === "kitlik")?.d ?? 0;
+  const primAdet = prim > 0 ? Math.min(adetHam, Math.max(0, KITLIK_KOTASI - once)) : 0;
+  const taban = MALLAR[mal].taban;
+  const birim: Dokum = primAdet > 0 || prim === 0 ? primli : { toplam: taban, kalemler: [{ k: "taban", d: taban }] };
+  const kalemler = [{ k: "taban", d: taban * adetHam }];
+  if (primAdet > 0) kalemler.push({ k: "kitlik", d: prim * primAdet });
+  const tutar = kalemler.reduce((a, x) => a + x.d, 0);
   if (!k.ns || k.ns[0] !== ay) k.ns = [ay, {}];
   k.ns[1][mal] = once + adetHam;
   envanterEkle(k, mal, -adetHam);
   k.pa += tutar;
+  if (stok) stogaEkle(stok, mal, adetHam);
   const s = once + adetHam;
-  return basarili({ mal, adet: adetHam, birim, tutar, kota: { satilan: s, tavan: NPC_SATIS_KOTASI, kalan: NPC_SATIS_KOTASI - s } });
+  return basarili({
+    mal,
+    adet: adetHam,
+    birim,
+    tutar,
+    dokum: { toplam: tutar, kalemler },
+    kitlikKalan: prim > 0 ? Math.max(0, KITLIK_KOTASI - s) : 0,
+    kota: { satilan: s, tavan: NPC_SATIS_KOTASI, kalan: NPC_SATIS_KOTASI - s },
+  });
+}
+
+/** Kalan NPC alım kotası (NPC'nin bu ay oyuncudan daha kaç adet alacağı), ticareti yapılan her mal için. */
+export function kalanSatisKotasi(k: Karakter, ay: number): Partial<Record<MalId, number>> {
+  const kota: Partial<Record<MalId, number>> = {};
+  for (const [mal, m] of Object.entries(MALLAR) as [MalId, (typeof MALLAR)[MalId]][]) if (m.taban > 0) kota[mal] = NPC_SATIS_KOTASI - satilan(k, mal, ay);
+  return kota;
 }

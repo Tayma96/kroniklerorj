@@ -36,7 +36,7 @@ test("kömür: girdi düşer, çıktı eklenir, hizmet ve kondisyon kaybı", () 
   c.ev = { odun: 5 };
   const r = tarifYap(c, "komur", k.ay);
   assert.ok(r.ok, JSON.stringify(r));
-  assert.deepEqual(c.ev, { odun: 3, komur: 1 });
+  assert.deepEqual(c.ev, { odun: 5 - TARIFLER.komur.girdi.odun, komur: 1 });
   assert.equal(r.deger.hizmet, TARIFLER.komur.hizmet);
   assert.equal(meslekKaydi(c).s.oduncu?.hz, TARIFLER.komur.hizmet);
   assert.equal(c.tk, 18 - TARIFLER.komur.takat);
@@ -67,7 +67,7 @@ test("düğüm kapalı, bilinmeyen tarif, takat yok", () => {
   assert.equal(c.ev.cevher, 9);
 });
 
-test("yan meslekte açılan düğüm tarifi açar; meslek değişse de açık kalır, hizmet yalnız ilgili meslekte", () => {
+test("yan meslekte açılan düğüm tarifi açar; meslek değişse de açık kalır, tecrübe faaliyetin mesleğine tam", () => {
   const k = testKasabasi();
   const c = usta(k, "demirci", "alet");
   yanSec(c, "oduncu", k.ay);
@@ -76,12 +76,12 @@ test("yan meslekte açılan düğüm tarifi açar; meslek değişse de açık ka
   c.ev = { odun: 2 };
   const r = tarifYap(c, "komur", k.ay);
   assert.ok(r.ok);
-  assert.equal(r.deger.hizmet, TARIFLER.komur.hizmet / 2, "yan meslek yarı hızda");
+  assert.equal(r.deger.hizmet, TARIFLER.komur.hizmet, "tam tecrübe");
   meslekSec(c, "ciftci", k.ay); // ana meslek değişti; demirci düğümü açık kalır
   c.ev = { cevher: 1, komur: 1 };
   const n = tarifYap(c, "nal", k.ay);
   assert.ok(n.ok);
-  assert.equal(n.deger.hizmet, 0);
+  assert.equal(n.deger.hizmet, TARIFLER.nal.hizmet, "nal döven demircilik tecrübesi kazanır");
   assert.equal(c.ev.nal, 2);
 });
 

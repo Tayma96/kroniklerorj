@@ -98,6 +98,8 @@ export const HATA_DURUMU = {
   mal_gecersiz: 400,
   kota_doldu: 409,
   verim_yok: 409,
+  arac_yok: 409,
+  parametre_capraz: 409,
   tarif_gecersiz: 400,
   girdi_yok: 409,
   mal_yok: 409,
@@ -146,7 +148,6 @@ export const HATA_DURUMU = {
   atildi: 403,
   eylem_siniri: 429,
   ikram_gecersiz: 400,
-  ikram_kapali: 503,
   yukseltme_gerekli: 426,
   kuyruk_dolu: 503,
   parametre_gecersiz: 400,
@@ -297,6 +298,8 @@ export const GOVDELI_ISLEMLER = [
   "duzen",
   "yalanla",
   "vitrin",
+  // Faz 10 han masası: ikram ödemesi (HesapDO masa kontrolünden sonra çağırır; istemci doğrudan ulaşamaz)
+  "hanIkram",
 ] as const;
 export type GovdeliIslem = (typeof GOVDELI_ISLEMLER)[number];
 
@@ -330,6 +333,8 @@ export type YerlesimIleti =
   | { islem: "oyuncu"; yerlesim: string; hesapId: string; oyuncu: string; dil?: string | null }
   | { islem: "gelen"; yerlesim: string; hesapId: string; dil?: string | null }
   | { islem: "duzenOku"; yerlesim: string; hesapId: string }
+  /** Han masası bileti için: oyuncunun iki yönlü engel listesi (hesap kimlikleri). */
+  | { islem: "engeller"; yerlesim: string; hesapId: string }
   | (HanedanIletisi & { yerlesim: string });
 
 export type DunyaIleti =

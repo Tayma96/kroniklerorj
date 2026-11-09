@@ -61,15 +61,17 @@ test("meslek değiştirmek ustalığı silmez", () => {
   assert.equal(c.ms?.s.tuccar?.kd, 0);
 });
 
-test("hizmet: ana tam, yan yarı, diğerleri 0", () => {
+test("hizmet: faaliyetin mesleğine tam yazılır (ana/yan ayrımı yok, Tam Özgürlük)", () => {
   const k = testKasabasi();
   const c = yasta(k, 14);
   meslekSec(c, "demirci", k.ay);
   yanSec(c, "ciftci", k.ay);
   assert.equal(hizmetEkle(c, "demirci", 2), 2);
-  assert.equal(hizmetEkle(c, "ciftci", 2), 1);
-  assert.equal(hizmetEkle(c, "asker", 2), 0);
-  assert.equal(c.ms?.s.asker, undefined);
+  assert.equal(hizmetEkle(c, "ciftci", 2), 2);
+  assert.equal(hizmetEkle(c, "asker", 2), 2);
+  assert.equal(c.ms?.s.asker?.hz, 2, "seçilmemiş meslekte de ilerleme açılır");
+  assert.equal(c.ms?.a, "demirci", "aktif meslek değişmez");
+  assert.equal(hizmetEkle(c, "asker", 0), 0);
 });
 
 test("kademe eşiği, ağır meslekte yaş ve pir için çırak şartı", () => {

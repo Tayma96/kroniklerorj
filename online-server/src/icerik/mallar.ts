@@ -1,7 +1,8 @@
 // Çevrimiçi mallar ve NPC taban fiyatları (ana tasarım §5.4–5.5). Fiyatlar akçedir. [PARAMETRE]
 // `meslek`: malı asıl üreten meslek (lonca doluluğu ve kıtlık primi buna göre hesaplanır).
-// Zincirde her tarif az da olsa değer katar (tarifler.ts): 2 odun (2) → kereste/kömür (3); cevher + kömür (6) →
-// 2 nal (8); 2 cevher + kömür + kereste (12) → alet (14). Alet asıl değerini hasatta (+2 tahil × 4 kullanım) verir.
+// Zincirde her tarif az da olsa değer katar (tarifler.ts; denge denetimi 9 Kasım): 1 odun (1) → kereste/kömür (3);
+// cevher + kömür (6) → 2 nal (16); 2 cevher + kömür + kereste (12) → alet (24). Alet asıl değerini hasatta
+// (+2 tahil × 4 kullanım) ve "basit onarım"la uzayan ömründe verir. Fiyat kuralı: MESLEK_AGACLARI §3.1.
 
 import type { MeslekId } from "./meslekler.ts";
 
@@ -27,7 +28,7 @@ export type MalId = (typeof MAL_IDLERI)[number];
 /** taban: NPC'nin oyuncudan alırken ödediği temel değer; 0 = ticareti yapılmaz (su). */
 export const MALLAR: Record<MalId, { taban: number; meslek: MeslekId }> = {
   odun: { taban: 1, meslek: "oduncu" },
-  sertOdun: { taban: 4, meslek: "oduncu" },
+  sertOdun: { taban: 3, meslek: "oduncu" },
   tas: { taban: 1, meslek: "oduncu" },
   ot: { taban: 1, meslek: "sifaci" },
   yun: { taban: 2, meslek: "ciftci" },
@@ -37,8 +38,8 @@ export const MALLAR: Record<MalId, { taban: number; meslek: MeslekId }> = {
   komur: { taban: 3, meslek: "oduncu" },
   tahil: { taban: 2, meslek: "ciftci" },
   deri: { taban: 3, meslek: "dokumaci" },
-  alet: { taban: 14, meslek: "demirci" },
-  nal: { taban: 4, meslek: "demirci" },
+  alet: { taban: 24, meslek: "demirci" },
+  nal: { taban: 8, meslek: "demirci" },
   sifaliOt: { taban: 3, meslek: "sifaci" },
   inceYun: { taban: 4, meslek: "ciftci" },
 };

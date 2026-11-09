@@ -87,10 +87,11 @@ test("dikey dilim uçları: Hal, tarif, satış, sipariş teslimi ve teşekkür 
     const takat0 = (await cagir("GET", "/v1/yerlesim", { oturum })).govde.ben.takat.kalan as number;
     assert.deepEqual((await yaz("/v1/tarif", { tarif: "nal" })).govde, { hata: "girdi_yok" });
 
-    // Temel iş: taş → usta cevher (maden düğümü); odun kes, NPC'den bir odun al.
-    const tas = await tamam("/v1/temel-is", { is: "tas" });
-    assert.equal(tas.mal, "cevher");
-    assert.equal(tas.envanter.cevher, 3);
+    // Usta iş: cevher ayıkla (maden düğümü; azalan getiri 2, 1); odun kes, NPC'den bir odun al.
+    const c1 = await tamam("/v1/temel-is", { is: "cevher" });
+    assert.deepEqual([c1.mal, c1.adet, c1.sonraki], ["cevher", 2, 1]);
+    const c2 = await tamam("/v1/temel-is", { is: "cevher" });
+    assert.equal(c2.envanter.cevher, 3);
     await tamam("/v1/temel-is", { is: "odun" });
     const al = await tamam("/v1/taban-al", { mal: "odun", adet: 1 });
     assert.equal(al.envanter.odun, 4);
@@ -101,14 +102,14 @@ test("dikey dilim uçları: Hal, tarif, satış, sipariş teslimi ve teşekkür 
     const k2 = await cagir("POST", "/v1/tarif", { oturum, govde: komurIstek });
     assert.equal(k1.durum, 200, JSON.stringify(k1.govde));
     assert.deepEqual(k2.govde, k1.govde);
-    assert.equal(k1.govde.envanter.odun, 2);
+    assert.equal(k1.govde.envanter.odun, 3, "kömür 1 odun ister");
     await tamam("/v1/tarif", { tarif: "komur" });
     await tamam("/v1/tarif", { tarif: "nal" });
     const nal = await tamam("/v1/tarif", { tarif: "nal" });
-    assert.deepEqual(nal.envanter, { cevher: 1, nal: 4 });
+    assert.deepEqual(nal.envanter, { cevher: 1, nal: 4, odun: 2 });
     assert.ok(nal.hal.kondisyon.deger < 100);
     assert.ok(nal.hal.nedenler.some((x: Nesne) => x.neden === "hal.neden.tarif"));
-    assert.equal(nal.takat, takat0 - 1 - 1 - 1 - 1 - 1 - 1);
+    assert.equal(nal.takat, takat0 - 2 - 1 - 1 - 1 - 1 - 1);
 
     // Sipariş listesi: açık bir demirci siparişi (nal ya da alet) olmalı; yoksa listede kıt meslek siparişi vardır.
     const liste = (await cagir("GET", "/v1/siparisler", { oturum })).govde.siparisler as Nesne[];
@@ -121,7 +122,15 @@ test("dikey dilim uçları: Hal, tarif, satış, sipariş teslimi ve teşekkür 
     // Elde yetecek nal yoksa önce yap (adet ≤ 4).
     assert.ok(sip.adet <= 4);
     assert.equal(sip.teslimEdebilir, true);
-    const once = (await cagir("GET", "/v1/yerlesim", { oturum })).govde.ben.para as number;
+    assert.equal(sip.meslekUygun, true);
+    assert.equal(sip.odulDokum.kalemler.reduce((t: number, x: Nesne) => t + x.d, 0), sip.odul, "ödül dökümü toplamı");
+    const b0 = (await cagir("GET", "/v1/yerlesim", { oturum })).govde.ben;
+    const once = b0.para as number;
+    // GET önizlemeleri: temel işin sonraki verimi, kalan NPC alım kotası.
+    const cv = b0.temelIsler.find((x: Nesne) => x.is === "cevher");
+    assert.deepEqual([cv.adet, cv.sonraki, cv.acik], [0, 0, true], "pencerede 2 kez yapıldı: verim yok");
+    assert.equal(b0.npcKota.sat.nal, 6);
+    assert.equal(b0.npcKota.al.odun, 2);
     const teslimIstek = { siparis: sip.id, istekNo: "teslim-0001" };
     const t1 = await cagir("POST", "/v1/siparis/teslim", { oturum, govde: teslimIstek });
     assert.equal(t1.durum, 200, JSON.stringify(t1.govde));
@@ -164,7 +173,9 @@ test("dikey dilim uçları: Hal, tarif, satış, sipariş teslimi ve teşekkür 
     assert.deepEqual((await yaz("/v1/sat", { mal: "cevher", adet: 1 })).govde, { hata: "mal_yok" });
 
     // Kalıcılık: motor yeniden yüklenince sipariş durumu korunur (sp anahtarı).
-    const d1 = (await cagir("GET", "/v1/yerlesim", { oturum })).govde.ben;
+    const d1y = await cagir("GET", "/v1/yerlesim", { oturum });
+    assert.equal(d1y.durum, 200, JSON.stringify(d1y.govde));
+    const d1 = d1y.govde.ben;
     assert.equal(d1.meslek.a, "demirci");
     assert.equal(d1.envanter.nal ?? 0, 4 - sip.adet);
     assert.ok(d1.hal.nedenler.length > 0);

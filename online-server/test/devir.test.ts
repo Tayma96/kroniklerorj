@@ -152,3 +152,43 @@ test("eski pk: koşul değişince plan karması değişir", () => {
   assert.ok(once.ok && sonra.ok);
   assert.notEqual(planKarmasi(once.deger), planKarmasi(sonra.deger));
 });
+
+test("devir: aile adı küçük başlangıç teveccühü verir (veren listesi geçmez); borç/teklif/engel vârise bağlanır", async () => {
+  const { AILE_ADI_EN_COK, AILE_ADI_ORANI } = await import("../src/yerlesim/devir.ts");
+  const { teveccuhEkle, teveccuhPuani } = await import("../src/yerlesim/teveccuh.ts");
+  const { toplumAl } = await import("../src/yerlesim/toplum.ts");
+  // Taşıyıcı kaydı motor modülündedir (YerlesimDO yüklerken bağlanır).
+  await import("../src/yerlesim/motor.ts");
+  const { k, kar, c } = ailesiyle([30]);
+  const alacakli = oyuncuEkle(k, 2, k.ay - 30 * 12);
+  const ortak = oyuncuEkle(k, 3, k.ay - 30 * 12);
+  alacakli.e = 9001;
+  ortak.e = 9002;
+  teveccuhEkle(kar, alacakli, "armagan", k.ay, 60);
+  const tp = toplumAl(k);
+  const borcVar = { i: 1, t: "borc" as const, g: "o2", a: "o1", s: { tu: 20, fz: 0, va: 6, yn: "ver" as const }, e: 0, ac: k.ay, sa: k.ay, v: "ret" as const, d: "surer" as const, kl: 20, vd: k.ay + 6 };
+  const borcAlacak = { i: 2, t: "borc" as const, g: "o1", a: "o3", s: { tu: 10, fz: 0, va: 6, yn: "ver" as const }, e: 0, ac: k.ay, sa: k.ay, v: "ret" as const, d: "surer" as const, kl: 10, vd: k.ay + 6 };
+  const acikHediye = { i: 3, t: "hediye" as const, g: "o1", a: "o3", s: { tu: 7 }, e: 7, ac: k.ay, sa: k.ay + 1, v: "ret" as const, d: "acik" as const };
+  const cirak: import("../src/yerlesim/toplum.ts").Teklif = { i: 4, t: "cirak" as const, g: "o1", a: "o3", s: { m: "demirci" as const, us: "o1" }, e: 0, ac: k.ay, sa: k.ay, v: "ret" as const, d: "surer" as const };
+  tp.tk.push(borcVar, borcAlacak, acikHediye, cirak);
+  tp.eg.o2 = ["o1"];
+  oyuncuOlumu(k, kar, k.ay);
+  const plan = devirHesapla(k, "o1", undefined, k.ay);
+  assert.ok(plan.ok);
+  const beklenen = Math.min(AILE_ADI_EN_COK, Math.floor(teveccuhPuani(kar, plan.deger.ol) * AILE_ADI_ORANI));
+  assert.equal(beklenen, 6);
+  assert.deepEqual(plan.deger.kalemler.find((x) => x.tur === "aileAdi"), { tur: "aileAdi", puan: beklenen });
+  const once = toplamAkce(k);
+  const r = devirUygula(k, plan.deger, k.ay);
+  assert.ok(r.ok);
+  const v = r.deger.kar;
+  assert.equal(v.tv?.p, beklenen, "aile adı");
+  assert.deepEqual(v.tv?.v, [], "hediye verenleri geçmez");
+  assert.deepEqual([borcVar.a, borcVar.d, borcVar.kl], [v.o, "surer", 20], "borç vârise geçer");
+  assert.deepEqual([borcAlacak.g, borcAlacak.d], [v.o, "surer"], "alacak vârise geçer");
+  assert.equal(acikHediye.g, v.o, "açık armağan teklifi (emanetiyle) vârisin");
+  assert.deepEqual([cirak.d, cirak.sn], ["bitti", "oldu"], "çıraklık kişiye bağlıdır, kapanır");
+  assert.deepEqual(tp.eg.o2, [v.o], "engel vârise de geçerli");
+  assert.equal(toplamAkce(k), once, "akçe korunur");
+  void c;
+});

@@ -30,6 +30,7 @@ import {
   type YonetimUcu,
 } from "../tipler.ts";
 import {
+  caprazDenetle,
   degerDogrula,
   etkinDeger,
   parametreAdiCoz,
@@ -582,6 +583,10 @@ async function parametreYaz(o: Oturum, govde: unknown, geri: boolean): Promise<S
     yeni = parametreDegistir(t, kayit, deger, iz);
   }
   const son = yeni.gecmis.at(-1);
+  const adlar = Object.keys(PARAMETRELER) as ParametreAdi[];
+  const kayitlar = await o.b.depo.alCok<ParametreKaydi>(adlar.map((a) => PARAM + a));
+  const capraz = caprazDenetle(ad, etkinDeger(t, yeni), (x) => etkinDeger(PARAMETRELER[x], kayitlar.get(PARAM + x)));
+  if (capraz) return reddet(o, islem, capraz.hata, { ...ek0, gerekce: gerekce.deger, ayrinti: { deger: etkinDeger(t, yeni), kurallar: capraz.kurallar } });
   const sonuc = basarili(parametreOzeti(ad, yeni));
   const ek: Ek = { hedef: ad, gerekce: gerekce.deger, ayrinti: { onceki: son?.onceki, deger: son?.deger, surum: yeni.surum } };
   await yaz(o, no.deger, islem, ek, { [PARAM + ad]: yeni }, sonuc);

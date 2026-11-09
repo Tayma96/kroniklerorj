@@ -145,3 +145,20 @@ test("madde 4+7: görünmez/bidi/dolgu karakterleri atılır; gerekçe en az 10 
   assert.deepEqual(gerekceCoz("a​b​c​d​e​f​g​h​i"), hata("gerekce_gecersiz"));
   assert.deepEqual(gerekceCoz("küfür 2 kez, uyarı"), basarili("küfür 2 kez, uyarı"));
 });
+
+test("parametre çapraz sınırı: (1 + KITLIK_PRIM) × sipariş çarpanı < NPC_CARPAN ve STOK_CARPAN ≥ 1 + KITLIK_PRIM", async () => {
+  const { depo, yonet } = ortam();
+  // Varsayılanlar geçerli: (1,5 × 1,5 = 2,25) < 2,5; 1,5 ≥ 1,5.
+  const { caprazIhlaller, PARAMETRELER } = await import("../src/yonetim/parametre.ts");
+  assert.deepEqual(caprazIhlaller((a) => PARAMETRELER[a].varsayilan), []);
+  // NPC çarpanı tek başına sınır içinde (2,2) ama çapraz kuralı bozar → reddedilir, değer değişmez.
+  const r = await yonet(KURUCU, "parametre", { ad: "NPC_CARPAN", deger: 2.2, gerekce: G, istekNo: no() });
+  assert.deepEqual(r, hata("parametre_capraz"));
+  assert.equal(await depo.al("param:NPC_CARPAN"), undefined);
+  assert.ok(kayitlar(depo).some((k) => k.sonuc === "parametre_capraz"), "red kayda girer");
+  // Kıtlık primi düşerse aynı NPC çarpanı geçer.
+  assert.ok((await yonet(KURUCU, "parametre", { ad: "KITLIK_PRIM", deger: 0.2, gerekce: G, istekNo: no() })).ok);
+  assert.ok((await yonet(KURUCU, "parametre", { ad: "NPC_CARPAN", deger: 2.2, gerekce: G, istekNo: no() })).ok);
+  // Stok çarpanı kıtlıklı satış değerinin altına inemez.
+  assert.deepEqual(await yonet(KURUCU, "parametre", { ad: "STOK_CARPAN", deger: 1.1, gerekce: G, istekNo: no() }), hata("parametre_capraz"));
+});

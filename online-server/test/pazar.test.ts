@@ -59,3 +59,68 @@ test("geçersiz: su satılmaz, negatif/kesirli/sıfır adet, bilinmeyen mal, env
   assert.equal(c.pa, pa);
   assert.deepEqual(c.ev, { su: 5, odun: 2 });
 });
+
+test("kıtlık sayımında satıcı hariç: tek oduncu kendi malına prim alır; ikinci oduncu varsa almaz", async () => {
+  const { meslekSec } = await import("../src/yerlesim/meslek.ts");
+  const k = testKasabasi();
+  const c = oyuncuEkle(k, 1, k.ay - 16 * 12);
+  meslekSec(c, "oduncu", k.ay);
+  c.ev = { kereste: 4 };
+  const tekOduncu = (m: string) => (m === "oduncu" ? 1 : 0);
+  const r = npcyeSat(c, "kereste", 1, tekOduncu, k.ay);
+  assert.ok(r.ok);
+  assert.deepEqual(r.deger.birim, satisDegeri("kereste", 0), "kendisi sayılmaz → kıtlık primi");
+  const ikiOduncu = (m: string) => (m === "oduncu" ? 2 : 0);
+  const r2 = npcyeSat(c, "kereste", 1, ikiOduncu, k.ay);
+  assert.ok(r2.ok);
+  assert.deepEqual(r2.deger.birim, satisDegeri("kereste", 1));
+});
+
+test("kasaba stok kanalı: satılan mal stoğa girer; başka meslekten alıcı önce stoktan taban × 1,5 öder; al-sat kâr etmez", async () => {
+  const { meslekSec } = await import("../src/yerlesim/meslek.ts");
+  const { STOK_CARPAN, npcFiyat, npcdenAl, stokFiyat } = await import("../src/yerlesim/npc-taban.ts");
+  const k = testKasabasi();
+  const stok = {};
+  const oduncu = oyuncuEkle(k, 1, k.ay - 16 * 12);
+  meslekSec(oduncu, "oduncu", k.ay);
+  oduncu.ev = { komur: 3 };
+  assert.ok(npcyeSat(oduncu, "komur", 3, hicKimse, k.ay, stok).ok);
+  assert.deepEqual(stok, { komur: 3 });
+  // Oduncu kendi mesleğinin malını stoktan alamaz (NPC'den alır).
+  const kendi = npcdenAl(oduncu, "komur", 1, k.ay, stok);
+  assert.ok(kendi.ok);
+  assert.deepEqual([kendi.deger.stoktan, kendi.deger.npcden], [0, 1]);
+  const demirci = oyuncuEkle(k, 2, k.ay - 16 * 12);
+  meslekSec(demirci, "demirci", k.ay);
+  demirci.pa = 100;
+  const al = npcdenAl(demirci, "komur", 4, k.ay, stok);
+  assert.ok(al.ok, JSON.stringify(al));
+  assert.equal(stokFiyat("komur").toplam, Math.ceil(MALLAR.komur.taban * STOK_CARPAN));
+  assert.deepEqual([al.deger.stoktan, al.deger.npcden], [3, 1]);
+  assert.equal(al.deger.tutar, 3 * stokFiyat("komur").toplam + npcFiyat("komur").toplam);
+  assert.equal(100 - demirci.pa, al.deger.tutar);
+  assert.deepEqual(stok, {});
+  assert.deepEqual(al.deger.kota, { alinan: 1, tavan: 3, kalan: 2 }, "NPC kotasına yalnız NPC'den alınan sayılır");
+  // Takatsiz kâr yok: her mal için stok fiyatı ≥ kıtlık primli satış değeri.
+  for (const m of Object.keys(MALLAR) as (keyof typeof MALLAR)[]) {
+    if (MALLAR[m].taban === 0) continue;
+    assert.ok(stokFiyat(m).toplam >= satisDegeri(m, 0).toplam, m);
+  }
+});
+
+test("kıtlık kotası: prim ayda mal başına yalnız KITLIK_KOTASI birime; döküm ve kalan primli birim döner", async () => {
+  const { KITLIK_KOTASI } = await import("../src/yerlesim/pazar.ts");
+  const { KITLIK_PRIM } = await import("../src/yerlesim/npc-taban.ts");
+  const k = testKasabasi();
+  const c = oyuncuEkle(k);
+  c.ev = { nal: 6 };
+  const prim = Math.ceil(MALLAR.nal.taban * KITLIK_PRIM);
+  const r = npcyeSat(c, "nal", 4, hicKimse, k.ay);
+  assert.ok(r.ok);
+  assert.equal(r.deger.tutar, 4 * MALLAR.nal.taban + KITLIK_KOTASI * prim);
+  assert.equal(r.deger.dokum.kalemler.reduce((t, x) => t + x.d, 0), r.deger.tutar);
+  assert.equal(r.deger.kitlikKalan, 0);
+  const r2 = npcyeSat(c, "nal", 1, hicKimse, k.ay);
+  assert.ok(r2.ok);
+  assert.deepEqual(r2.deger.birim, { toplam: MALLAR.nal.taban, kalemler: [{ k: "taban", d: MALLAR.nal.taban }] }, "kota dolunca primsiz");
+});

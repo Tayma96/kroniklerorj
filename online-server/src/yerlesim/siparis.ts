@@ -1,5 +1,6 @@
 // Lonca siparişi (ana tasarım §5.5, dikey dilim E2): kıtlık kazanç demektir. Ay dönümünde, oyuncusu az ya da
 // hiç olmayan ve kasabada NPC müşterisi bulunan meslek için bir NPC sipariş açar ("Kasabaya 3 nal lazım").
+// Yalnız malın mesleği ana ya da yan mesleği olan teslim eder (dışarıdan alıp teslim etmek kapalı).
 // Teslim tek seferliktir: ilk getiren alır (YerlesimDO istekleri sırayla işler), ödül + hizmet kazanır, herkese
 // görünen teşekkür izi olayı düşer ve teslim edenle bağı olan NPC'lerin görüşü (aylık tavanla) biraz artar.
 // Akçe kaynağı tanımlıdır: sipariş ödülü (kasaba öder), sipariş başına bir kez. Deterministik tohum.
@@ -13,10 +14,10 @@ import { AYLIK_GORUS_TAVANI, iliskiAl } from "./eylem.ts";
 import { GONUL_SIPARIS, halDegistir } from "./hal.ts";
 import { loncaTablosu, NPC_YETISKIN, oyuncuSayaci, type LoncaDurumu } from "./lonca.ts";
 import { hizmetEkle } from "./meslek.ts";
-import { envanterEkle, satisDegeri } from "./npc-taban.ts";
+import { envanterEkle, malMeslegindeMi, satisDegeri } from "./npc-taban.ts";
 import { npcAdi, npcKimlik, npcRef, oyuncuRef, yas } from "./ortak.ts";
 import { agirlikliSec, aralik, dizinSec, tohumlu } from "./rastgele.ts";
-import type { IliskiHaritasi, Karakter, Kasaba, Npc, OlayTaslagi } from "./tipler.ts";
+import type { Dokum, IliskiHaritasi, Karakter, Kasaba, Npc, OlayTaslagi } from "./tipler.ts";
 
 export interface Siparis {
   /** "s<ay>_<sıra>". */
@@ -36,6 +37,8 @@ export interface Siparis {
   alan?: string;
   alanAd?: string;
   teslimAy?: number;
+  /** Ödül dökümü (açılışta yazılır; eski kayıtta yok → tek "odul" kalemi). */
+  dk?: Dokum["kalemler"];
 }
 
 /** [PARAMETRE] Aynı anda en çok açık sipariş, süre (ay), dönüm başına en çok yeni sipariş. */
@@ -47,8 +50,8 @@ export const SIPARIS_ODUL_CARPANI = 1.5;
 export const SIPARIS_HIZMET = 3;
 /** [PARAMETRE] Kapanan siparişler bu kadar ay listede kalır (teşekkür izi görünsün). */
 export const SIPARIS_TUTMA_AY = 6;
-/** [PARAMETRE] Lonca durumuna göre seçilme ağırlığı (dolu meslek sipariş almaz). */
-export const SIPARIS_AGIRLIK: Record<LoncaDurumu, number> = { bos: 2, az: 1, dolu: 0 };
+/** [PARAMETRE] Lonca durumuna göre seçilme ağırlığı (denge 9 Kasım: dolu meslek de sipariş alır, daha seyrek). */
+export const SIPARIS_AGIRLIK: Record<LoncaDurumu, number> = { bos: 3, az: 2, dolu: 1 };
 /** [PARAMETRE] Görüş: isteyen NPC'ye, teslim edenle bağı olan NPC'lere; etkilenen bağlı NPC sayısı sınırı. */
 export const SIPARIS_ISTEYEN_GORUS = 6;
 export const SIPARIS_GORUS = 2;
@@ -117,7 +120,10 @@ export function siparisDonumu(kasaba: Kasaba, ay: number): OlayTaslagi[] {
     if (!a) break;
     const isteyen = a.musteri[dizinSec(a.musteri.length, r)]!;
     const adet = aralik(r, a.alt, a.ust);
-    const odul = Math.ceil(adet * satisDegeri(a.mal, oyuncu(a.meslek)).toplam * SIPARIS_ODUL_CARPANI);
+    const birim = satisDegeri(a.mal, oyuncu(a.meslek));
+    const odul = Math.ceil(adet * birim.toplam * SIPARIS_ODUL_CARPANI);
+    const dk = birim.kalemler.map((x) => ({ k: x.k, d: x.d * adet }));
+    dk.push({ k: "siparis_carpani", d: odul - adet * birim.toplam });
     const s: Siparis = {
       id: `s${ay}_${yeni}`,
       mal: a.mal,
@@ -128,6 +134,7 @@ export function siparisDonumu(kasaba: Kasaba, ay: number): OlayTaslagi[] {
       acilis: ay,
       son: ay + SIPARIS_SURE,
       durum: "acik",
+      dk,
     };
     kasaba.sp.push(s);
     olaylar.push(olay("olay.siparis.acildi", 3, { isteyen: npcRef(isteyen), mal: a.mal, adet, odul }, npcKimlik(isteyen.i)));
@@ -156,6 +163,7 @@ export interface TeslimSonucu {
   mal: MalId;
   adet: number;
   odul: number;
+  odulDokum: Dokum;
   hizmet: number;
   gonul: number;
   /** Görüşü artan NPC'ler: kimlik → artış. */
@@ -172,6 +180,7 @@ export function siparisTeslim(
   const s = typeof idHam === "string" ? kasaba.sp?.find((x) => x.id === idHam) : undefined;
   if (!s) return hata("siparis_yok");
   if (s.durum !== "acik" || ay >= s.son) return hata("siparis_kapandi");
+  if (!malMeslegindeMi(kar, s.mal)) return hata("meslek_yok");
   if ((kar.ev?.[s.mal] ?? 0) < s.adet) return hata("mal_yok");
   envanterEkle(kar, s.mal, -s.adet);
   kar.pa += s.odul;
@@ -199,9 +208,14 @@ export function siparisTeslim(
   const p: OlayTaslagi["p"] = { kim: oyuncuRef(kar), mal: s.mal, adet: s.adet };
   if (isteyen) p.isteyen = npcRef(isteyen);
   return basarili({
-    sonuc: { siparis: s.id, mal: s.mal, adet: s.adet, odul: s.odul, hizmet, gonul, gorus },
+    sonuc: { siparis: s.id, mal: s.mal, adet: s.adet, odul: s.odul, odulDokum: odulDokumu(s), hizmet, gonul, gorus },
     olay: olay("olay.siparis.teslim", 5, p, kar.o, isteyen ? npcKimlik(isteyen.i) : ""),
   });
+}
+
+/** Ödül dökümü: taban, kıtlık ve sipariş çarpanı payı (toplam = ödül). */
+export function odulDokumu(s: Siparis): Dokum {
+  return { toplam: s.odul, kalemler: s.dk ?? [{ k: "odul", d: s.odul }] };
 }
 
 /** Liste görünümü (en yeni önce): açık siparişler ve son kapananlar; teşekkür izi teslim edenin adıyla. */
@@ -210,13 +224,16 @@ export function siparisGorunumu(kasaba: Kasaba, kar: Karakter, ay: number, dil: 
     const n = kasaba.dizin.get(s.npc);
     const elde = kar.ev?.[s.mal] ?? 0;
     const acik = s.durum === "acik" && ay < s.son;
+    const meslekUygun = malMeslegindeMi(kar, s.mal);
     return {
       id: s.id,
       mal: s.mal,
       adet: s.adet,
       odul: s.odul,
+      odulDokum: odulDokumu(s),
       hizmet: s.hizmet,
       meslek: MALLAR[s.mal].meslek,
+      meslekUygun,
       acilis: s.acilis,
       son: s.son,
       kalanAy: Math.max(0, s.son - ay),
@@ -225,7 +242,7 @@ export function siparisGorunumu(kasaba: Kasaba, kar: Karakter, ay: number, dil: 
       alan: s.alan ? { id: s.alan, ad: s.alanAd ?? "" } : null,
       teslimAy: s.teslimAy ?? null,
       elde,
-      teslimEdebilir: acik && elde >= s.adet,
+      teslimEdebilir: acik && meslekUygun && elde >= s.adet,
     };
   });
 }

@@ -121,3 +121,24 @@ test("başarılı sohbet gönülü artırır; gönül yüksekken şans dökümü
   assert.equal(s.kalemler.reduce((a, x) => a + x.d, 0), s.toplam);
   assert.equal(eylemSansi(k, "cirak", npc, kar, ili, k.ay).kalemler.some((x) => x.k === "sans.gonul"), false);
 });
+
+test("iş başı kondisyon 2,5: ayda 6 takat tam çalışılsa da 'iyi' kademe sürdürülür", async () => {
+  const { halOngor } = await import("../src/yerlesim/hal.ts");
+  const k = testKasabasi();
+  const kar = oyuncuEkle(k);
+  for (let ay = k.ay; ay < k.ay + 24; ay++) halDegistir(kar, ay, { kondisyon: -IS_KONDISYON * 6 }, "hal.neden.tarif");
+  assert.equal(kondisyonKademesi(halOngor(kar, k.ay + 24).kondisyon).kademe, "iyi");
+});
+
+test("gönülü düşürenler: yalnızlık, açık husumet, evsizlik dökümde neden olarak görünür ve gönül yavaşça iner", async () => {
+  const { GONUL_YALNIZLIK, gonulDonumu } = await import("../src/yerlesim/hal.ts");
+  const k = testKasabasi();
+  const kar = oyuncuEkle(k);
+  const once = halAl(kar, k.ay).gonul;
+  assert.equal(gonulDonumu(kar, k.ay, { yalniz: true, husumet: false, evsiz: false }), -GONUL_YALNIZLIK);
+  assert.equal(halAl(kar, k.ay).gonul, once - GONUL_YALNIZLIK);
+  assert.ok(halGorunumu(kar, k.ay).nedenler.some((n) => n.neden === "hal.neden.yalnizlik"));
+  for (let ay = k.ay + 1; ay <= k.ay + 30; ay++) gonulDonumu(kar, ay, { yalniz: true, husumet: true, evsiz: true });
+  assert.equal(gonulKademesi(halAl(kar, k.ay + 30).gonul).durum, "kirgin");
+  assert.equal(gonulDonumu(kar, k.ay + 31, { yalniz: false, husumet: false, evsiz: false }), 0);
+});

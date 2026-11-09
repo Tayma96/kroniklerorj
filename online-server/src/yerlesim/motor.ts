@@ -43,8 +43,8 @@ import { dilCoz, kisiAdi, kisiCoz, meslekGorunumu, npcAdi, npcKimlik, oyuncuRef,
 import { loncaTablosu, oyuncuSayaci } from "./lonca.ts";
 import { KADEME_HIZMET, beceriGorunumu, dalAc, dugumAc, dugumGeriAl, kademeAtla, meslekKaydi, meslekSec, yanSec } from "./meslek.ts";
 import { aylikTakat, halGorunumu } from "./hal.ts";
-import { npcdenAl } from "./npc-taban.ts";
-import { npcyeSat } from "./pazar.ts";
+import { NPC_AYLIK_KOTA, npcdenAl, npcdenAlinan, stokGorunumu, type KasabaStogu } from "./npc-taban.ts";
+import { kalanSatisKotasi, NPC_SATIS_KOTASI, npcyeSat } from "./pazar.ts";
 import { siparisDonumu, siparisGorunumu, siparisTeslim, type Siparis } from "./siparis.ts";
 import { tarifListesi, tarifYap } from "./tarif.ts";
 import { tohumlu } from "./rastgele.ts";
@@ -63,15 +63,17 @@ import {
   teklifGorunumu,
   teklifOlustur,
   teklifTaraflari,
+  toplumKimligiTasi,
   vitrinGorunumu,
   vitrinSec,
 } from "./teklif.ts";
-import { teveccuhGorunumu, teveccuhKademesi, teveccuhEtkisi, TEVECCUH_ETKI } from "./teveccuh.ts";
+import { teveccuhEkle, teveccuhGorunumu, teveccuhKademesi, teveccuhEtkisi, TEVECCUH_ETKI } from "./teveccuh.ts";
+import { IKRAM_MENUSU, ikramOdemesi, type IkramId } from "../han/ikram.ts";
 import { toplumDonumu } from "./toplum-donum.ts";
 import { OYUNCU_TEKLIF_TURLERI, toplumAl, type Toplum } from "./toplum.ts";
-import { MALLAR } from "../icerik/mallar.ts";
-import { temelIsYap } from "./temel-is.ts";
-import { devirHesapla, devirUygula, planKarmasi } from "./devir.ts";
+import { MALLAR, MAL_IDLERI } from "../icerik/mallar.ts";
+import { temelIsOnizleme, temelIsYap } from "./temel-is.ts";
+import { devirHesapla, devirUygula, kimlikTasiyiciEkle, planKarmasi } from "./devir.ts";
 import { npcEvlilikTeklifi } from "./evlilik.ts";
 import { hanedanKaydi, olduMu, oyuncuNoAl, type HanedanKasabasi } from "./hanedan.ts";
 import { hanedanGorunumu, hanedanOzeti } from "./hanedan-gorunum.ts";
@@ -79,6 +81,9 @@ import { KRONIK_SAYFA, KRONIK_YANIT_EN_COK, kronikYaz, type KronikSatiri } from 
 import { vasiyetDogrula } from "./vasiyet.ts";
 import { GUNDEM_ADI, type Isaret, type IliskiHaritasi, type Karakter, type Kasaba, type Npc, type Olay, type OlayTaslagi, type Sakin } from "./tipler.ts";
 import { kasabaKur } from "./uret.ts";
+
+// Faz 3 kayıtları (borç, teklif, engel, husumet) devirde vârise bağlanır.
+kimlikTasiyiciEkle(toplumKimligiTasi);
 
 const META = "m";
 const NPC = "n";
@@ -129,6 +134,8 @@ interface Meta {
   /** Hanedan defteri ve kronik satır sayısı (Faz 7; eski kayıtta yok). */
   hd?: HanedanKasabasi;
   kr?: number;
+  /** Kasaba stoğu (denge 9 Kasım; eski kayıtta yok). */
+  st?: Partial<Record<string, number>>;
 }
 
 export interface OlayGorunumu {
@@ -237,6 +244,7 @@ export class YerlesimMotoru {
       ...(tp ? { tp } : {}),
       no: meta.no,
       ...(meta.hd ? { hd: meta.hd } : {}),
+      ...(meta.st ? { st: meta.st } : {}),
     };
     return new YerlesimMotoru(depo, meta, kasaba);
   }
@@ -250,6 +258,7 @@ export class YerlesimMotoru {
     m.ne = k.ne;
     m.no = k.no ?? m.no;
     if (k.hd) m.hd = k.hd;
+    if (k.st) m.st = k.st;
     await this.#kronikBosalt();
     const kayit: Record<string, unknown> = {};
     for (const a of this.#kirli) {
@@ -464,6 +473,14 @@ export class YerlesimMotoru {
       kademeHizmet: KADEME_HIZMET,
       beceri: beceriGorunumu(kar),
       tarifler: tarifListesi(kar),
+      temelIsler: temelIsOnizleme(kar, oyuncuSayaci(k), ay),
+      npcKota: {
+        sat: kalanSatisKotasi(kar, ay),
+        satTavan: NPC_SATIS_KOTASI,
+        al: Object.fromEntries(MAL_IDLERI.filter((m) => MALLAR[m].taban > 0).map((m) => [m, NPC_AYLIK_KOTA - npcdenAlinan(kar, m, ay)])),
+        alTavan: NPC_AYLIK_KOTA,
+      },
+      stok: stokGorunumu(k.st as KasabaStogu | undefined, kar),
       hane: k.npc
         .filter((n) => n.e === kar.e)
         .map((n) => ({ id: npcKimlik(n.i), ad: npcAdi(n, dil), rol: akrabalik(k, n, kar) ?? "hane" })),
@@ -741,7 +758,7 @@ export class YerlesimMotoru {
   /** POST /v1/taban-al {mal, adet, istekNo}: NPC taban arzından pahalı ve kotalı alım. */
   async tabanAl(hesapId: string, govde: unknown): Promise<Sonuc<unknown>> {
     if (!nesneMi(govde)) return hata("gecersiz_istek");
-    return this.#tekrarGuvenli(hesapId, govde, (kar, _s, ay) => npcdenAl(kar, govde.mal, govde.adet, ay));
+    return this.#tekrarGuvenli(hesapId, govde, (kar, _s, ay) => npcdenAl(kar, govde.mal, govde.adet, ay, (this.kasaba.st ??= {}) as KasabaStogu));
   }
 
   /** POST /v1/tarif {tarif, istekNo}: açık düğümlü tarif; girdi düşer, çıktı eklenir, Hal ve hizmet döner. */
@@ -762,7 +779,7 @@ export class YerlesimMotoru {
     const sayac = oyuncuSayaci(this.kasaba);
     await this.#ortaklariYukle(hesapId);
     return this.#tekrarGuvenli(hesapId, govde, (kar, _s, ay, ek) => {
-      const r = npcyeSat(kar, govde.mal, govde.adet, sayac, ay);
+      const r = npcyeSat(kar, govde.mal, govde.adet, sayac, ay, (this.kasaba.st ??= {}) as KasabaStogu);
       if (!r.ok) return r;
       return basarili({ ...r.deger, ...this.#ortakPayiYaz(kar, r.deger.tutar, ay, ek) });
     });
@@ -1023,6 +1040,45 @@ export class YerlesimMotoru {
         if (o.tn[kar.o] === "dost") o.tn[kar.o] = "tanidik";
       } else return hata("gecersiz_istek");
       return basarili({ engellenenler: liste.map((id) => ({ id, ad: k.sakin.find((s) => s.o === id)?.ad ?? "?" })) });
+    });
+  }
+
+  /** Han masası bileti: oyuncunun engellediği ve onu engelleyen oyuncuların hesap kimlikleri (iki yönlü). */
+  async engeller(hesapId: string): Promise<Sonuc<{ engeller: string[] }>> {
+    const s = this.kasaba.sakin.find((x) => x.h === hesapId);
+    if (!s) return hata("sakin_yok");
+    const eg = this.kasaba.tp?.eg ?? {};
+    const yerel = new Set<string>(eg[s.o] ?? []);
+    for (const [kim, liste] of Object.entries(eg)) if (liste.includes(s.o)) yerel.add(kim);
+    const hesaplar = new Set<string>();
+    for (const x of this.kasaba.sakin) if (x.h !== hesapId && yerel.has(x.o)) hesaplar.add(x.h);
+    return basarili({ engeller: [...hesaplar].sort() });
+  }
+
+  /**
+   * Han ikramı (HesapDO masa kontrolünden sonra; govde {hedef: hesap kimliği, ikram, istekNo}). Fiyat yalnız
+   * IKRAM_MENUSU'ndan: verenin akçesi düşer, NPC hancıda dünyadan çıkar; alanın verene teveccühü tutar kadar artar
+   * (aynı hane/küme sayılmaz). istekNo ile tekrar güvenli.
+   */
+  async hanIkram(hesapId: string, govde: unknown): Promise<Sonuc<unknown>> {
+    if (!nesneMi(govde)) return hata("gecersiz_istek");
+    const ikram = govde.ikram;
+    if (typeof ikram !== "string" || !Object.hasOwn(IKRAM_MENUSU, ikram)) return hata("ikram_gecersiz");
+    const hs = typeof govde.hedef === "string" ? this.kasaba.sakin.find((x) => x.h === govde.hedef) : undefined;
+    if (hs) await this.#yukle([hs.o]);
+    return this.#tekrarGuvenli(hesapId, govde, (kar, _s, ay, ek) => {
+      const alan = hs ? this.kasaba.kar.get(hs.o) : undefined;
+      if (!alan || olduMu(alan)) return hata("kisi_yok");
+      if (alan.o === kar.o) return hata("kendi_hedef");
+      if (engelliMi(this.kasaba.tp, kar.o, alan.o)) return hata("engelli");
+      const odeme = ikramOdemesi(kar.pa, ikram as IkramId);
+      if (!odeme.ok) return odeme;
+      kar.pa = odeme.deger.para;
+      const teveccuh = teveccuhEkle(alan, kar, "ikram", ay, odeme.deger.batak);
+      const sk = this.kasaba.sakin.find((x) => x.o === alan.o);
+      if (sk) sk.tv = teveccuhKademesi(alan, ay) || undefined;
+      ek.digerleri.push(alan.o);
+      return basarili({ ikram, fiyat: odeme.deger.batak, batak: odeme.deger.batak, teveccuh });
     });
   }
 

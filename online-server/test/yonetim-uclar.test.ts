@@ -385,7 +385,7 @@ test("parametreler: sürümlü değiştir, sınır, geri al ve duyurular (son 5,
     const liste = await cagir("GET", "/yonetim/parametreler", { oturum: yb });
     const adlar = (liste.govde.parametreler as { ad: string }[]).map((p) => p.ad);
     assert.deepEqual(adlar, [
-      "NPC_AYLIK_KOTA", "NPC_CARPAN", "KITLIK_PRIM", "TEMEL_CIKTI", "AZALAN_PENCERE_IS", "HIZ_SINIRI", "SIKAYET_GUNLUK", "GECICI_UZAKLASTIRMA_EN_COK_GUN",
+      "NPC_AYLIK_KOTA", "NPC_CARPAN", "KITLIK_PRIM", "SIPARIS_ODUL_CARPANI", "STOK_CARPAN", "TEMEL_CIKTI", "AZALAN_PENCERE_IS", "HIZ_SINIRI", "SIKAYET_GUNLUK", "GECICI_UZAKLASTIRMA_EN_COK_GUN",
     ]);
     const yaz = (ad: string, deger: unknown) =>
       cagir("POST", "/yonetim/parametre", { oturum: yb, govde: { ad, deger, gerekce: "denge ayarı denemesi", istekNo: no() } });

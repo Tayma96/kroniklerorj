@@ -39,7 +39,7 @@
 //   GET  /v1/han?dil=                    → yerleşimin hanı ve masaları (doluluk)          (Faz 10, src/han/)
 //   GET  /v1/han/masa/:no/baglan         → WebSocket yükseltmesi (Upgrade: websocket + oturum); iletiler src/han/tipler.ts
 //   POST /v1/han/eylem {masa, tur, hedef?, olay?, sart?, istekNo} → {olay} (katılım listesiyle)
-//   POST /v1/han/ikram {masa, hedef, ikram, istekNo} → {ikram, fiyat, para, anons}  (ödeme YerlesimDO'ya bağlanınca)
+//   POST /v1/han/ikram {masa, hedef, ikram, istekNo} → {ikram, fiyat, para, anons}  (ödeme YerlesimDO'da, teveccüh yazılır)
 // Uzaklaştırılmış hesapta giriş dışındaki /v1/* uçları 403 {hata: "uzaklastirildi", bitis} döner.
 //
 // Yönetim (ana tasarım §7; oyuncu oturumundan ayrı yönetici belirteci, src/yonetim/kimlik.ts):

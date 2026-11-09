@@ -628,3 +628,37 @@ export function vitrinGorunumu(kar: Karakter) {
 }
 
 export { acikNpcTeklifi };
+
+/** [PARAMETRE] Devirde kişiye bağlı olduğu için vârise geçmeyen teklif türleri (kapanır: "oldu"). */
+export const DEVIRDE_KAPANAN: readonly Teklif["t"][] = ["cirak", "gorucu", "npcDunur"];
+
+/**
+ * Devir kimlik taşıyıcısı (devir.ts `kimlikTasiyiciEkle`): ölünün açık ve süregelen teklifleri (borç, ortaklık,
+ * armağan, NPC işi/borcu) vârise geçer — alacak da borç da, emanet de. Kişiye bağlı olanlar (çıraklık, görücü)
+ * kapanır; açıksa emaneti vârise iade edilir. Engeller ve açık husumet ilanları da vârisin kimliğine taşınır.
+ * Saf ve tekrar güvenlidir (ikinci çağrıda eski kimlik artık geçmez).
+ */
+export function toplumKimligiTasi(k: Kasaba, eski: string, yeni: string): void {
+  const tp = k.tp;
+  if (!tp || eski === yeni) return;
+  const cevir = (x: string) => (x === eski ? yeni : x);
+  for (const t of tp.tk) {
+    if (t.d !== "acik" && t.d !== "surer") continue;
+    if (t.g !== eski && t.a !== eski && t.s.us !== eski) continue;
+    t.g = cevir(t.g);
+    t.a = cevir(t.a);
+    if (t.s.us) t.s.us = cevir(t.s.us);
+    if (DEVIRDE_KAPANAN.includes(t.t)) kapat(k, t, t.d === "acik" ? "iptal" : "bitti", k.ay, "oldu");
+  }
+  const eg: Record<string, string[]> = {};
+  for (const [kim, liste] of Object.entries(tp.eg)) {
+    const yeniListe = [...new Set(liste.map(cevir))].filter((x) => x !== cevir(kim));
+    if (yeniListe.length) eg[cevir(kim)] = [...new Set([...(eg[cevir(kim)] ?? []), ...yeniListe])];
+  }
+  tp.eg = eg;
+  for (const h of tp.hu) {
+    if (h.d !== "acik") continue;
+    h.g = cevir(h.g);
+    h.h = cevir(h.h);
+  }
+}

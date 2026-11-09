@@ -104,7 +104,8 @@ test("NPC başına aylık görüş kazancı tavanlı; para, beceri ve nam deği�
   const ai = yap(k, kar, { tur: "ayakIsi", hedef: `n${a.i}` });
   assert.ok(ai.ok);
   assert.equal(ai.deger.sonuc.degisim.gorus, undefined, "tavan doldu");
-  assert.equal(ai.deger.sonuc.degisim.para, 3);
+  assert.equal(ai.deger.sonuc.degisim.para, 2);
+  assert.deepEqual(ai.deger.sonuc.kota, { yapilan: 1, tavan: 3 });
   const i = k.ili.get(kar.o)![a.i]!;
   assert.equal(i.t + i.an.reduce((t, x) => t + x[1], 0), AYLIK_GORUS_TAVANI);
   // Başarısız eylem görüşü değiştirmez, takatı yer.
@@ -154,4 +155,15 @@ test("gövde çözümü: tür, hedef, karar ve özellik doğrulanır", () => {
   assert.deepEqual(eylemGirdisiCoz({ tur: "karar", secim: "baska" }), { ok: false, hata: "gecersiz_istek" });
   assert.deepEqual(eylemGirdisiCoz({ tur: "puan", ozellik: "sezgi" }), { ok: true, deger: { tur: "puan", ozellik: "sezgi" } });
   assert.deepEqual(eylemGirdisiCoz([]), { ok: false, hata: "gecersiz_istek" });
+});
+
+test("ayak işi: NPC değiştirerek de ayda en çok 3 deneme (kota_doldu); ertesi ay yeniden açılır", async () => {
+  const { AYAK_ISI_AYLIK } = await import("../src/yerlesim/eylem.ts");
+  const k = testKasabasi();
+  const kar = yetkin(k, 1);
+  kar.tk = 18;
+  const hedefler = k.npc.filter((n) => n.e !== kar.e && n.d < k.ay - 20 * 12 && n.m !== MESLEKLER.indexOf("işsiz")).slice(0, AYAK_ISI_AYLIK + 1);
+  for (let i = 0; i < AYAK_ISI_AYLIK; i++) assert.ok(yap(k, kar, { tur: "ayakIsi", hedef: `n${hedefler[i]!.i}` }).ok, `deneme ${i}`);
+  assert.deepEqual(yap(k, kar, { tur: "ayakIsi", hedef: `n${hedefler[AYAK_ISI_AYLIK]!.i}` }), { ok: false, hata: "kota_doldu" });
+  assert.ok(yap(k, kar, { tur: "ayakIsi", hedef: `n${hedefler[AYAK_ISI_AYLIK]!.i}` }, k.ay + 1).ok);
 });

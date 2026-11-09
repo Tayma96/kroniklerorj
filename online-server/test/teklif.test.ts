@@ -1,6 +1,7 @@
 // Oyuncular arası teklifler (Faz 3a, saf): yaşam döngüsü ve süre dolumu, emanet iadesi, hediye/borç tavanları,
 // karşılıklı döngü, engel, çıraklık (aylık tecrübe + pir sayacı), ortaklık payı ve olağan düzenin yokken uygulanması.
 import test from "node:test";
+import { MALLAR } from "../src/icerik/mallar.ts";
 import assert from "node:assert/strict";
 import { duzenGuncelle } from "../src/yerlesim/duzen.ts";
 import { engelle, engelliMi } from "../src/yerlesim/engel.ts";
@@ -91,8 +92,8 @@ test("armağan: mal envanterden alana geçer, yapan izi yazılır, alıcı ve ve
   assert.equal(b.av?.[0]?.yp, a.o);
   // Döngü: b hemen a'ya armağan veremez.
   assert.deepEqual(teklifOlustur(k, b, a, { tur: "hediye", tutar: 1 }, k.ay), { ok: false, hata: "hediye_dongu" });
-  // Verme tavanı: nal değeri 4×2 = 8 bu ay sayıldı; tavanı aşan reddedilir.
-  assert.equal(a.hv?.[1], 8);
+  // Verme tavanı: nal değeri taban × 2 bu ay sayıldı; tavanı aşan reddedilir.
+  assert.equal(a.hv?.[1], MALLAR.nal.taban * 2);
   const c = oyuncuEkle(k, 3, k.ay - 13 * 12 - 2);
   c.e = 999;
   a.hv = [k.ay, HEDIYE_VERME_AYLIK - 1];

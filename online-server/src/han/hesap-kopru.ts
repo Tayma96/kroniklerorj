@@ -30,7 +30,12 @@ export interface HanHesapBaglami {
   yaptirim: HesapYaptirimi | undefined;
   masaCagir: MasaCagir;
   ikramOde: IkramOdeyici;
+  /** Yerleşimdeki iki yönlü engel listesi (hesap kimlikleri). Yoksa liste boş sayılır (birim testleri). */
+  engelSor?: EngelListeleyici;
 }
+
+/** HesapDO → YerlesimDO "engeller" çağrısı. */
+export type EngelListeleyici = (yerlesim: string) => Promise<Sonuc<{ engeller: string[] }>>;
 
 interface HanYeri {
   yerlesim: string;
@@ -87,12 +92,18 @@ export async function masaBileti(b: HanHesapBaglami, hamNo: unknown): Promise<So
       // en iyi çaba: önceki masa yanıt vermezse bağlantı kendiliğinden düşer
     }
   }
+  let eg: string[] = [];
+  if (b.engelSor) {
+    const r = await b.engelSor(yer.deger.yerlesim);
+    if (!r.ok) return r;
+    eg = r.deger.engeller;
+  }
   if (onceki !== ad) await b.depo.koy({ [SON_MASA]: ad });
   const yt: HesapYaptirimi = {
     ...(b.yaptirim?.uzaklastirma ? { uzaklastirma: b.yaptirim.uzaklastirma } : {}),
     ...(b.yaptirim?.susturma ? { susturma: b.yaptirim.susturma } : {}),
   };
-  return basarili({ masa: ad, no, plaka: { hesap: b.hesapId, ad: profil.deger.ad }, yt });
+  return basarili({ masa: ad, no, plaka: { hesap: b.hesapId, ad: profil.deger.ad }, yt, eg });
 }
 
 /** POST /v1/han/eylem: istekNo ile tekrar güvenli; günlük tavan yalnız başarılı eylemi sayar. */
@@ -164,5 +175,16 @@ export async function yaptirimiMasayaBildir(b: Pick<HanHesapBaglami, "depo" | "h
     await b.masaCagir(masa, { islem: "yaptirim", masa, hesap: b.hesapId, durum });
   } catch {
     // en iyi çaba: bağlantı yeniden kurulurken bilet zaten güncel yaptırımı taşır
+  }
+}
+
+/** Oyuncu engelleyince/kaldırınca: güncel iki yönlü listeyi son masasına bildirir (en iyi çaba). */
+export async function engeliMasayaBildir(b: Pick<HanHesapBaglami, "depo" | "hesapId" | "masaCagir">, liste: string[]): Promise<void> {
+  const masa = await b.depo.al<string>(SON_MASA);
+  if (!masa) return;
+  try {
+    await b.masaCagir(masa, { islem: "engel", masa, hesap: b.hesapId, liste });
+  } catch {
+    // en iyi çaba: bir sonraki bağlanışta bilet güncel listeyi taşır
   }
 }

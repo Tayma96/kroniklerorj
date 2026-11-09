@@ -63,7 +63,7 @@ async function kur() {
   return { env, cagir, oyuncu, baglan, yolla, masaOrnegi, tumDepolar };
 }
 
-test("han listesi, yükseltme, otur, sohbet (saklanmaz), eylem (katılım, tekrar güvenli), ikram kapalı", async () => {
+test("han listesi, yükseltme, otur, sohbet (saklanmaz), eylem (katılım, tekrar güvenli), ikram ödenir ve teveccüh yazar", async () => {
   const { env, cagir, oyuncu, baglan, yolla, masaOrnegi, tumDepolar } = await kur();
   const ayse = await oyuncu("110000000000000000101", "Ayşe");
   const bora = await oyuncu("110000000000000000102", "Bora");
@@ -107,13 +107,42 @@ test("han listesi, yükseltme, otur, sohbet (saklanmaz), eylem (katılım, tekra
   const kabul = await cagir("POST", "/v1/han/eylem", { oturum: bora.oturum, govde: { masa: 1, tur: "kabul", olay: e1.govde.olay.no, istekNo: no() } });
   assert.equal(kabul.govde.olay.tur, "kabul");
 
-  const ikram = await cagir("POST", "/v1/han/ikram", { oturum: ayse.oturum, govde: { masa: 1, hedef: bora.hesap, ikram: "serbet", istekNo: no() } });
-  assert.deepEqual([ikram.durum, ikram.govde.hata], [503, "ikram_kapali"], "ödeme YerlesimDO'ya bağlanana kadar kapalı");
-  assert.equal(b.soket.son("anons"), undefined);
+  const paraOnce = (await cagir("GET", "/v1/yerlesim", { oturum: ayse.oturum })).govde.ben.para as number;
+  const ikramGovde = { masa: 1, hedef: bora.hesap, ikram: "serbet", istekNo: no() };
+  const ikram = await cagir("POST", "/v1/han/ikram", { oturum: ayse.oturum, govde: ikramGovde });
+  assert.equal(ikram.durum, 200, JSON.stringify(ikram.govde));
+  assert.deepEqual([ikram.govde.fiyat, ikram.govde.para], [3, paraOnce - 3], "akçe YerlesimDO'da düşer");
+  assert.equal(b.soket.son("anons")?.anons.oge, "serbet");
+  const ikram2 = await cagir("POST", "/v1/han/ikram", { oturum: ayse.oturum, govde: ikramGovde });
+  assert.deepEqual(ikram2.govde, ikram.govde, "aynı istekNo ikinci kez ödetmez");
+  assert.equal((await cagir("GET", "/v1/yerlesim", { oturum: ayse.oturum })).govde.ben.para, paraOnce - 3);
+  const boraId = (await cagir("GET", "/v1/yerlesim", { oturum: bora.oturum })).govde.ben.id as string;
+  const profil = await cagir("GET", `/v1/oyuncu/${boraId}`, { oturum: ayse.oturum });
+  assert.equal(profil.durum, 200, JSON.stringify(profil.govde));
+  const ayseYerlesim = (await cagir("GET", "/v1/yerlesim", { oturum: ayse.oturum })).govde.ben;
+  assert.deepEqual([profil.govde.teveccuh.puan, profil.govde.teveccuh.verenSayisi], [3, 1], "alanın verene teveccühü tutar kadar");
+  const pahali = await cagir("POST", "/v1/han/ikram", { oturum: ayse.oturum, govde: { masa: 1, hedef: bora.hesap, ikram: "gulSuyu", istekNo: no() } });
+  assert.equal(pahali.govde.hata, "para_yok");
+
+  // Engel: Bora Ayşe'yi engeller → Ayşe'nin iletisi Bora'ya gitmez, ikram reddedilir (masaya bildirildi).
+  const ayseId = ayseYerlesim.id as string;
+  const eg = await cagir("POST", "/v1/engelle", { oturum: bora.oturum, govde: { hedef: ayseId, istekNo: no() } });
+  assert.equal(eg.durum, 200, JSON.stringify(eg.govde));
+  const oncekiIleti = b.soket.giden.filter((g) => g.t === "ileti").length;
+  await yolla(a.soket, { t: "yaz", metin: "selam" });
+  assert.equal(b.soket.giden.filter((g) => g.t === "ileti").length, oncekiIleti, "engelleyen engellenenin iletisini görmez");
+  const engelli = await cagir("POST", "/v1/han/ikram", { oturum: ayse.oturum, govde: { masa: 1, hedef: bora.hesap, ikram: "ekmek", istekNo: no() } });
+  assert.equal(engelli.govde.hata, "engelli");
+  // Yeniden bağlanınca da liste biletle gelir.
+  const a2 = await baglan(ayse.oturum);
+  assert.ok(a2.soket);
+  await yolla(a2.soket, { t: "otur" });
+  await yolla(a2.soket, { t: "yaz", metin: "yine selam" });
+  assert.equal(b.soket.giden.filter((g) => g.t === "ileti").length, oncekiIleti);
 
   // Masa deposunda yalnız olay, sayaç ve istek kaydı var; sohbet ve para yok.
   const masaAnahtarlari = [...masaOrnegi("masa:kizilca:menzil:1").depolama.veri.keys()].sort();
-  assert.ok(masaAnahtarlari.every((k) => /^(olay#|olay:\d{8}|istek:)/.test(k)), masaAnahtarlari.join(","));
+  assert.ok(masaAnahtarlari.every((k) => /^(olay#|olay:\d{8}|istek:|eg:)/.test(k)), masaAnahtarlari.join(","));
   void env;
 });
 

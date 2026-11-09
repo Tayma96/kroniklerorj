@@ -4,6 +4,7 @@ import { MALLAR, type MalId } from "../src/icerik/mallar.ts";
 import { meslekSec } from "../src/yerlesim/meslek.ts";
 import { npcFiyat } from "../src/yerlesim/npc-taban.ts";
 import {
+  SIPARIS_AGIRLIK,
   SIPARIS_EN_COK,
   SIPARIS_HIZMET,
   SIPARIS_MALLARI,
@@ -63,13 +64,13 @@ test("ödül: adet × satış değeri × 1.5 (yukarı); NPC'den alıp teslim etm
   }
 });
 
-test("süre dolunca 'dustu' ve olay; dolu meslek için yeni sipariş açılmaz", () => {
+test("süre dolunca 'dustu' ve olay; dolu meslek de sipariş alır (ağırlık boş 3, az 2, dolu 1)", () => {
   const k = testKasabasi("develi", 0);
   const olaylar = ilerlet(k, 20);
   assert.ok(olaylar.some((o) => o.k === "olay.siparis.acildi" && o.g === ""));
   assert.ok(olaylar.some((o) => o.k === "olay.siparis.dustu"));
   assert.ok(k.sp!.every((s) => s.durum !== "acik" || k.ay < s.son));
-  // Her mesleğe 2 oyuncu: hepsi dolu → yeni sipariş yok.
+  // Her mesleğe 2 oyuncu: hepsi dolu → sipariş yine açılır (denge 9 Kasım; 6–10 oyuncuda teslim 0 olmasın).
   let no = 1;
   for (const m of Object.keys(SIPARIS_MALLARI)) {
     for (let i = 0; i < 2; i++) {
@@ -80,8 +81,8 @@ test("süre dolunca 'dustu' ve olay; dolu meslek için yeni sipariş açılmaz",
     }
   }
   const sonraki = ilerlet(k, 40);
-  assert.equal(sonraki.filter((o) => o.k === "olay.siparis.acildi").length, 0);
-  assert.equal(k.sp!.filter((s) => s.durum === "acik").length, 0);
+  assert.ok(sonraki.filter((o) => o.k === "olay.siparis.acildi").length > 0);
+  assert.deepEqual(SIPARIS_AGIRLIK, { bos: 3, az: 2, dolu: 1 });
 });
 
 test("teslim: mal düşer, ödül + hizmet, teşekkür izi olayı, görüş artışı; ikinci teslim siparis_kapandi", () => {
@@ -99,11 +100,17 @@ test("teslim: mal düşer, ödül + hizmet, teşekkür izi olayı, görüş art�
   const pa = a.pa;
 
   const eksik = oyuncuEkle(k, 3, k.ay - 16 * 12);
+  meslekSec(eksik, meslek, k.ay);
   assert.deepEqual(siparisTeslim(k, eksik, k.ili.get(eksik.o)!, s.id, k.ay), { ok: false, hata: "mal_yok" });
+  // Malı olsa da mesleği (ana/yan) o malın mesleği olmayan teslim edemez.
+  assert.deepEqual(siparisTeslim(k, b, k.ili.get(b.o)!, s.id, k.ay), { ok: false, hata: "meslek_yok" });
+  assert.equal(siparisGorunumu(k, b, k.ay, "tr").find((x) => x.id === s.id)!.teslimEdebilir, false);
 
   const r = siparisTeslim(k, a, k.ili.get(a.o)!, s.id, k.ay);
   assert.ok(r.ok, JSON.stringify(r));
   assert.equal(a.pa - pa, s.odul, "akçe yalnız ödül kadar");
+  assert.equal(r.deger.sonuc.odulDokum.toplam, s.odul);
+  assert.equal(r.deger.sonuc.odulDokum.kalemler.reduce((t, x) => t + x.d, 0), s.odul, "döküm toplamı = ödül");
   assert.equal(a.ev[s.mal], 1);
   assert.equal(r.deger.sonuc.hizmet, SIPARIS_HIZMET);
   assert.equal(s.durum, "teslim");
@@ -114,6 +121,7 @@ test("teslim: mal düşer, ödül + hizmet, teşekkür izi olayı, görüş art�
   assert.ok(gorusDegeri(k, npc, a, k.ili.get(a.o), k.ay) > once, "isteyen NPC'nin görüşü artar");
 
   const pb = b.pa;
+  meslekSec(b, meslek, k.ay);
   assert.deepEqual(siparisTeslim(k, b, k.ili.get(b.o)!, s.id, k.ay), { ok: false, hata: "siparis_kapandi" });
   assert.equal(b.pa, pb);
   assert.equal(b.ev[s.mal], s.adet);

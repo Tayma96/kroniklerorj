@@ -19,8 +19,8 @@ export interface Tarif {
 }
 
 export const TARIFLER = {
-  kereste: { id: "kereste", meslek: "oduncu", dugum: "oduncu.orman.0", girdi: { odun: 2 }, cikti: ["kereste", 1], takat: 1, hizmet: 2 },
-  komur: { id: "komur", meslek: "oduncu", dugum: "oduncu.maden.0", girdi: { odun: 2 }, cikti: ["komur", 1], takat: 1, hizmet: 2 },
+  kereste: { id: "kereste", meslek: "oduncu", dugum: "oduncu.orman.0", girdi: { odun: 1 }, cikti: ["kereste", 1], takat: 1, hizmet: 2 },
+  komur: { id: "komur", meslek: "oduncu", dugum: "oduncu.maden.0", girdi: { odun: 1 }, cikti: ["komur", 1], takat: 1, hizmet: 2 },
   nal: { id: "nal", meslek: "demirci", dugum: "demirci.alet.0", girdi: { cevher: 1, komur: 1 }, cikti: ["nal", 2], takat: 1, hizmet: 2 },
   alet: {
     id: "alet", meslek: "demirci", dugum: "demirci.alet.1", girdi: { cevher: 2, komur: 1, kereste: 1 }, cikti: ["alet", 1], takat: 2,

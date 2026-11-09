@@ -1,6 +1,7 @@
 // Teveccüh (§6.2, Berkay 9 Kasım): hediyenin tutarıyla artar (veren başına tavan yok), aynı haneden akçe armağanı
 // sayılmaz, Debdebe armağanı aynı haneden de sayılır, sönme çok yavaştır, NPC bakışında görünür kalemdir.
 import test from "node:test";
+import { MALLAR } from "../src/icerik/mallar.ts";
 import assert from "node:assert/strict";
 import { gorus } from "../src/yerlesim/gorus.ts";
 import { teklifCevap, teklifOlustur, vitrinGorunumu, vitrinSec } from "../src/yerlesim/teklif.ts";
@@ -75,7 +76,7 @@ test("teveccüh NPC bakışında görünür kalemdir (tavanlı); armağan kabul�
   const t = teklifOlustur(k2, a, b, { tur: "hediye", mal: "alet", adet: 1 }, k2.ay);
   assert.ok(t.ok, JSON.stringify(t));
   assert.ok(teklifCevap(k2, b, `t${t.deger.teklif.i}`, "kabul", {}, k2.ay).ok);
-  assert.equal(teveccuhPuani(b, k2.ay), 14, "alet değeri (taban 14) kadar");
+  assert.equal(teveccuhPuani(b, k2.ay), MALLAR.alet.taban, "alet değeri (taban) kadar");
   assert.deepEqual(b.ev, { alet: 1 });
   assert.equal(vitrinGorunumu(b)[0]?.mal, "alet");
   assert.deepEqual(vitrinSec(b, ["t999"]), { ok: false, hata: "teklif_yok" });
@@ -98,6 +99,7 @@ test("lonca siparişi: açılış ayında aynı meslekte daha yüksek teveccühl
   s1!.tv = 2;
   const z = k.kar.get(s2!.o)!;
   z.ev = { nal: 3 };
+  z.ms = { a: "demirci", y: "", s: { demirci: { kd: 0, dl: [], dg: [], hz: 0, cy: 0 } } };
   k.sp = [{ id: `s${k.ay}_1`, mal: "nal", adet: 3, odul: 18, hizmet: 3, npc: k.npc[0]!.i, acilis: k.ay, son: k.ay + 4, durum: "acik" }];
   const liste = ((await m.siparisler("h-2", "tr")) as { ok: true; deger: { siparisler: Record<string, any>[] } }).deger.siparisler;
   assert.equal(liste[0]!.oncelik.bekle, true);

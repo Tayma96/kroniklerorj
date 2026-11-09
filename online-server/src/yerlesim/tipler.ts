@@ -139,6 +139,8 @@ export interface Karakter {
   hn?: HalNedeni[];
   /** Araç aşınması: araç malı → kullanım sayacı. */
   as?: Record<string, number>;
+  /** Ayak işi aylık sayacı (denemeler): [ay, sayı]. */
+  ai?: [ay: number, sayi: number];
   /** NPC'ye satış kotası: [ay, mal → adet]. */
   ns?: [ay: number, adet: Record<string, number>];
   /** Olağan düzen (yokken uygulanan ayarlar; eski kayıtta yok → varsayılan). */
@@ -246,6 +248,8 @@ export interface Kasaba {
   tp?: Toplum;
   /** Hanedan defteri: hazine, vakıf, emanet, tereke (Faz 7; meta'da saklanır). */
   hd?: HanedanKasabasi;
+  /** Kasaba stoğu (oyuncunun NPC'ye sattığı mallar; meta'da saklanır; eski kayıtta yok). */
+  st?: Partial<Record<string, number>>;
   /** Depoya yazılmayı bekleyen kronik satırları ve sonraki oyuncu numarası (Faz 7). */
   kq?: KronikSatiri[];
   no?: number;

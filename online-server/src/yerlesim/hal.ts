@@ -22,10 +22,17 @@ export const CAN_YARALI_ESIGI = 50;
 export const GONUL_DENGE = 50;
 export const GONUL_AYLIK_DENGE = 5;
 /** [PARAMETRE] Emek (temel iş, tarif) harcanan takat başına kondisyon kaybı. */
-export const IS_KONDISYON = 3;
+export const IS_KONDISYON = 2.5;
 /** [PARAMETRE] Başarılı sohbet/yardımın gönüle katkısı; siparişi teslim etmenin katkısı. */
 export const GONUL_SOHBET = 3;
 export const GONUL_SIPARIS = 3;
+/** [PARAMETRE] Ay dönümünde gönülü düşürenler (aylık; dengeye dönüşten büyük olunca gönül yavaşça düşer):
+ * yalnızlık (dost işareti, dost oyuncu ve yakın NPC yok), açık husumet, evsizlik (yaşayan hanesi yok). */
+export const GONUL_YALNIZLIK = 6;
+export const GONUL_HUSUMET = 4;
+export const GONUL_EVSIZLIK = 6;
+/** [PARAMETRE] Yalnızlık için: bir NPC'yle "aranızda geçenler" tabanı bu kadarsa yalnız sayılmazsın. */
+export const YAKIN_NPC_TABANI = 10;
 /** [PARAMETRE] Kondisyon kademeleri (alt sınır → aylık takat). */
 export const KONDISYON_KADEMELERI = [
   { kademe: "iyi", alt: 60, takat: 6 },
@@ -176,3 +183,19 @@ export function halGorunumu(k: Karakter, ay: number) {
   };
 }
 export type HalGorunumu = ReturnType<typeof halGorunumu>;
+
+export interface GonulDurumGirdisi {
+  yalniz: boolean;
+  husumet: boolean;
+  evsiz: boolean;
+}
+
+/** Ay dönümü: gönülü düşüren durumlar uygulanır (nedenleri dökümde). Gerçekte uygulanan toplam farkı döndürür. */
+export function gonulDonumu(k: Karakter, ay: number, d: GonulDurumGirdisi): number {
+  let toplam = 0;
+  const uygula = (miktar: number, neden: string) => (toplam += halDegistir(k, ay, { gonul: -miktar }, neden).gonul ?? 0);
+  if (d.yalniz) uygula(GONUL_YALNIZLIK, "hal.neden.yalnizlik");
+  if (d.husumet) uygula(GONUL_HUSUMET, "hal.neden.husumet");
+  if (d.evsiz) uygula(GONUL_EVSIZLIK, "hal.neden.evsizlik");
+  return toplam;
+}

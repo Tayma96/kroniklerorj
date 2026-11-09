@@ -1,5 +1,6 @@
 // Meslek ve beceri ağacı (ana tasarım §5.3). Saf fonksiyonlar; karakteri yerinde değiştirir.
-// Kademe: çırak → kalfa → usta → pir. Düğüm imkân açar, sayı artırmaz. Meslek değiştirmek ustalığı silmez.
+// Kademe: çırak → kalfa → usta → pir. Düğüm imkân açar, sayı artırmaz. Meslek değiştirmek ustalığı silmez; açılan
+// düğüm her yerde kullanılır (Tam Özgürlük, beceri ağacı v2 §1). Tecrübe faaliyetin mesleğine gider.
 // Tecrübe (Berkay, 9 Kasım): o meslekte çalıştıkça tecrübe (hz) birikir; her PUAN_TECRUBE tecrübede o mesleğe
 // özel 1 beceri puanı kazanılır ve yalnız o mesleğin ağacında düğüm açmaya harcanır. Kademe toplam tecrübeyle açılır.
 
@@ -39,7 +40,8 @@ export const KADEME_HIZMET: readonly number[] = [0, 24, 72, 72];
 export const PIR_CIRAK = 2;
 /** [PARAMETRE] Pişmanlık hakkı: iki düğüm geri alma arasında en az bu kadar ay. */
 export const GERI_ALMA_ARALIK = 12;
-/** [PARAMETRE] Yan meslek yarı hızda ilerler. */
+/** [PARAMETRE] Eski kural (yan meslek yarı hız). Beceri ağacı v2 ile tecrübe faaliyetin mesleğine tam yazılır;
+ * sabit geriye uyum için durur, kullanılmaz. */
 export const YAN_CARPAN = 0.5;
 /** [PARAMETRE] Bir beceri puanı için gereken tecrübe ve düğüm bedeli (kademeye göre: çırak, kalfa, usta, pir). */
 export const PUAN_TECRUBE = 6;
@@ -119,13 +121,15 @@ export function yanSec(k: Karakter, id: unknown, ay: number): Sonuc<MeslekKaydi>
   return basarili(kayit);
 }
 
-/** Hizmet ekler: ana meslekte tam, yan meslekte yarı, diğerlerinde hiç. Eklenen miktarı döndürür. */
+/**
+ * Tecrübe (hizmet) ekler: faaliyetin mesleğine TAM yazılır; ana/yan ayrımı yoktur (beceri ağacı v2, Tam Özgürlük:
+ * silah döven demircilik tecrübesi kazanır, aktif mesleği çiftçi olsa bile). Farm sınırı faaliyetin kendisindedir
+ * (takat, azalan getiri, kota). Hanedanın aile mesleği çarpanı uygulanır. Eklenen miktarı döndürür.
+ */
 export function hizmetEkle(k: Karakter, id: MeslekId, puan: number): number {
-  const kayit = meslekKaydi(k);
-  const carpan = kayit.a === id ? 1 : kayit.y === id ? YAN_CARPAN : 0;
-  if (carpan === 0 || puan <= 0) return 0;
-  const eklenen = puan * carpan * aileMeslegiCarpani(k, id);
-  ilerleme(kayit, id).hz += eklenen;
+  if (!(puan > 0) || !Object.hasOwn(MESLEKLER_ONLINE, id)) return 0;
+  const eklenen = puan * aileMeslegiCarpani(k, id);
+  ilerleme(meslekKaydi(k), id).hz += eklenen;
   return eklenen;
 }
 
