@@ -16,6 +16,7 @@ import { rows as online2 } from "./online2";
 import { rows as online3 } from "./online3";
 import { rows as online4 } from "./online4";
 import { rows as onlineToplum } from "./online-toplum";
+import { rows as online7 } from "./online7";
 
-const all: Record<string, string[]> = { ...ana, ...karakter, ...iliskiler, ...menu, ...sehir, ...pazar, ...atolye, ...meslek, ...mulkler, ...mahalle, ...sinematik, ...online, ...online2, ...online3, ...online4, ...onlineToplum };
+const all: Record<string, string[]> = { ...ana, ...karakter, ...iliskiler, ...menu, ...sehir, ...pazar, ...atolye, ...meslek, ...mulkler, ...mahalle, ...sinematik, ...online, ...online2, ...online3, ...online4, ...onlineToplum, ...online7 };
 export const SAYFA_METIN = Object.fromEntries((["tr", "en", "es", "pt", "ar", "ru"] as Lang[]).map((lang, i) => [lang, Object.fromEntries(Object.entries(all).map(([key, values]) => [key, values[i]]))])) as Record<Lang, Record<string, string>>;

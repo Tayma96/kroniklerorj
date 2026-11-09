@@ -64,6 +64,7 @@ export const SCREEN_DESIGNS: readonly ScreenDesign[] = [
   page("/online/siparisler", "onl.sp.kisa", "people", "atolye_demirci", "scroll-open"),
   page("/online/oyuncu/[id]", "onl.tp.ust", "people", "cami_avlu", "family"),
   page("/online/gelen", "onl.tp.gk.baslik", "people", "cami_avlu", "scroll"),
+  page("/online/beceri-agaci", "onl.ba.ust", "craft", "atolye_demirci", "anvil"),
 ];
 export function screenDesign(path: string): ScreenDesign {
   const route = path.replace(/\/$/, "") || "/";
