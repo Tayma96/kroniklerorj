@@ -17,7 +17,7 @@ azalan getiri) · hiçbir düğüm yalnız sayı artırmaz · NPC tabanı her za
 |---|---|---|
 | 1 | Tecrübe tavansız: puan = 1 + ⌊tecrübe/6⌋ (`meslek.ts:60-72`). Bütün ağaç 22 puan; ~126 tecrübede her şey alınır. Uzmanlaşma yalnız "tek pir ucu"nda kalır. | Artan bar (6, 10, 14…) + **16 puanlık tavan**. Usta 12 puanla 22'lik ağacın ancak yarısını alır (§1.4). |
 | 2 | Yedi meslek (hancı hariç hizmet/toplum meslekleri ve tüccar) için **hiç tecrübe kaynağı yok**. Hancı yalnız su taşıyarak, şifacı yalnız ot toplayarak ilerler (`temel-is.ts:175-181`, `tarifler.ts:21-35`). | Hizmet tarifi + kasaba görevi + NPC hizmet talebi + oyuncu hizmet ilanı (§7). |
-| 3 | Kademe hızı süre kapısız: kalfa 24, usta 72 tecrübe (`meslek.ts:36`). Demirci nalda takat başına 2 tecrübe alır; kalfalık 1–2 gerçek gün sürer (spec: 6 gün). | `KADEME_HIZMET=[0,70,240,240]` + asgari ay `[0,10,24,12]` (§6). |
+| 3 | Kademe hızı süre kapısız: kalfa 24, usta 72 tecrübe (`meslek.ts:36`). Demirci nalda takat başına 2 tecrübe alır; kalfalık 1–2 gerçek gün sürer (spec: 6 gün). | `KADEME_HIZMET=[0,70,240,240]` + asgari ay `[0,12,24,12]` (§6). |
 | 4 | Lonca tablosu kademeyi saymıyor (`lonca.ts:23,37`); 7 mesleğin NPC karşılığı yok (`meslekler.ts:192`). "Boş meslek refahı düşürür" kuralı kodda yok (`loncaTablosu` yalnız sipariş ve `/v1/lonca`da kullanılıyor). | Kasaba hâli: 5 gösterge (§1.5); kurum NPC'si (§1.6); doluluk kademeye göre. |
 | 5 | Meslek değiştirmek her an mümkün (`meslek.ts:98`); eski meslekte açılan düğümler sonsuza dek kullanılır (`meslek.ts:188`). Bir oyuncu zamanla birçok mesleğin ustası olur, birbirine muhtaçlık söner. | Ana meslek yılda bir değişir. Düğüm yalnız ana ve yan meslekte etkindir; eski meslek uyur, dönünce aynen uyanır (§1.3; denge denetimiyle aynı). |
 
@@ -769,15 +769,346 @@ aşınmış aracın sayacı −1; demircinin kendi işi). Ana mesleğin kendi te
 |---|---|---|
 | `mallar.ts` | 15 mal; alan: `taban`, `meslek` | +55 mal (§3.2); alanlar `kd`, `bozulur`, `omur`, `armagan`, `uzak`; nal 8, sert odun 3, alet 24 |
 | `mallar.ts:39` | `deri` → dokumacı, kaynağı yok | `post` (çiftçi) → `tabak` tarifi → `deri` |
-| `tarifler.ts` | 6 tarif; takat başına tecrübe 1–2 (Z3) | +58 mal tarifi (§3.3) + hizmet tarifleri (§7). Tecrübe alanı kaldırılır, 2 × takat hesaplanır. Kereste ve kömürde odun 2→1. Yeni alanlar: `arac.zorunlu`, `ayda?` (ayda en çok), `toplu?` |
+| `tarifler.ts` | 6 tarif; takat başına tecrübe 1–2 (Z3) | +55 tarif (§3.3; ziyafet dahil) + hizmet tarifleri (§7). Tecrübe alanı kaldırılır, 2 × takat hesaplanır. Kereste ve kömürde odun 2→1. Yeni alanlar: `arac.zorunlu`, `ayda?` (ayda en çok), `toplu?` |
 | `temel-is.ts:175-181` | Usta işi temel çıktının yerine geçiyor | Ayrı usta işleri + "basit onarım"; su girdi oluyor |
 | `meslekler.ts:52,169` | Tür kademeden kör atanıyor | Düğüm başına tür. Varsayılandan sapanlar: `ciftci.suru.1`, `oduncu.orman.2`, `demirci.alet.1`, `hanci.etkinlik.1` → tarif; `demirci.alet.3` → özel; `marangoz.yapi.1`, `asci.firin.2`, `hanci.konaklama.2`, `tuccar.pazar.2` → toplu |
 | `meslekler.ts` `ister` | Elle yazılmış, uygulanmıyor | Tarif girdilerinden türetilir (yalnız başka mesleğin malları); düğüm kartında gösterilir |
 | `meslekler.ts` `musteri/tedarik` | Kısmi (ör. çiftçinin tedarikçisi yalnız demirci) | §4'teki grafik |
 | `meslekler.ts:192` | 10 NPC mesleği eşleniyor | + `KURUM_NPC`: oduncu, marangoz, dokumacı, hancı, kâtip, arabulucu, divan için sanal kalfa |
-| `meslek.ts:36,44-47,60-72` | Tecrübe tavansız, sabit bar | `PUAN_ARTIS=4`, `PUAN_TAVAN=16`, `PIR_ICAZET=3`, `KADEME_HIZMET=[0,70,240,240]`, `KADEME_ASGARI_AY=[0,10,24,12]` |
+| `meslek.ts:36,44-47,60-72` | Tecrübe tavansız, sabit bar | `PUAN_ARTIS=4`, `PUAN_TAVAN=16`, `PIR_ICAZET=3`, `KADEME_HIZMET=[0,70,240,240]`, `KADEME_ASGARI_AY=[0,12,24,12]` |
 | `meslek.ts:98,188` | Sınırsız meslek değişimi; düğüm her yerde etkin | `MESLEK_DEGISIM_ARALIK=12`; düğüm yalnız ana ve yan meslekte etkin |
 | `meslek.ts:131` `kademeAtla` | Sınav yok | Peştamal (3 teslim) ve ustalık eseri şartı |
 | `lonca.ts` | Kademesiz doluluk | Kademe sayımı, dolu = ≥2 ve ≥1 usta, kasaba hâli bağı |
 | `siparis.ts:51,58-71` | 3 mesleğin malı; dolu meslek sipariş almaz | Her mesleğin `kd ≤ 1` mallarından sipariş. Ağırlık {boş 3, az 2, dolu 1} (denge). Yalnız ana/yan meslekte teslim. Hizmet talebi aynı modelle (§7) |
 | İstemci `online3.ts` `onl.mes.*` | 168 ad | 14 ad değişir: `ciftci.suru.1`, `oduncu.orman.2`, `demirci.alet.1`, `demirci.zirh.3`, `marangoz.yapi.2`, `marangoz.arac.2`, `marangoz.tezyin.0`, `dokumaci.deri.3`, `dokumaci.cadir.3`, `asci.firin.2`, `asci.saklama.1`, `hanci.etkinlik.0`, `sifaci.ebelik.2`, `tuccar.pazar.3`. Ayrıca 168 etki satırı (`onl.mes.<id>.e`) |
+
+---
+
+## 4. Meslekler arası bağ grafiği
+
+Ok yönü: tedarikçi → müşteri; etiket = mal ya da hizmet. Her meslekte en az 2 müşteri ve en az 1 tedarikçi vardır.
+
+```mermaid
+flowchart LR
+  CF[Çiftçi]; MO[Oduncu / madenci]; DM[Demirci]; MR[Marangoz]; DK[Dokumacı / debbağ]; AF[Aşçı / fırıncı]
+  HN[Hancı]; SF[Şifacı]; OZ[Ozan / derviş]; KT[Kâtip / ulak]; TK[Tüccar / kervancı]; AB[Arabulucu]; AS[Asker]; DV[Divan]
+  CF -->|tahıl, buğday, et, bakla| AF
+  CF -->|yün, ince yün, post| DK
+  CF -->|zahire| AS
+  CF -->|zahire| TK
+  CF -->|kervan arpası| HN
+  MO -->|cevher, kömür, bakır, gümüş| DM
+  MO -->|kereste, kiriş, taş, blok| MR
+  MO -->|odun, değirmen taşı| AF
+  MO -->|odun| HN
+  MO -->|kereste| DK
+  DM -->|alet, saban| CF
+  DM -->|alet| MO
+  DM -->|çivi, nal| MR
+  DM -->|mızrak, kılıç, kalkan, zırh| AS
+  DM -->|nal| TK
+  DM -->|kazan| AF
+  DM -->|mühür| KT
+  MR -->|doğrama, han| HN
+  MR -->|kağnı| CF
+  MR -->|araba, köprü| TK
+  MR -->|saz| OZ
+  DK -->|deri, astar| DM
+  DK -->|koşum, deri| MR
+  DK -->|çadır, giysi, sancak| AS
+  DK -->|koşum, çadır| TK
+  DK -->|bez| HN
+  DK -->|bez| SF
+  DK -->|bez, yayla çadırı| CF
+  DK -->|çizme| KT
+  AF -->|aş| HN
+  AF -->|peksimet, kuru et| AS
+  AF -->|pastırma| TK
+  AF -->|barış sofrası| AB
+  HN -->|konak, fiyat haberi| TK
+  HN -->|sahne| OZ
+  SF -->|merhem, bakım| AS
+  SF -->|kök boya| DK
+  SF -->|şifalı ot| AF
+  OZ -->|saz gecesi| HN
+  OZ -->|barış ilahisi| AB
+  OZ -->|destan, övgü| DV
+  KT -->|senet, defter| TK
+  KT -->|senet, tercüme| AB
+  KT -->|defter, tahrir| DV
+  TK -->|kâğıt| KT
+  TK -->|tuz, baharat| AF
+  TK -->|uzak ot| SF
+  TK -->|tezgâh, uzak satış| CF
+  TK -->|uzak cevher, satış| DM
+  TK -->|ipek, satış| DK
+  AB -->|elçilik, kasaba töresi| DV
+  AB -->|hakem, yol izni| TK
+  AS -->|muhafız| TK
+  AS -->|garnizon, asayiş| DV
+  DV -->|ulufe, buyruk| AS
+  DV -->|proje bütçesi| MR
+```
+
+**Zincir kopunca ne olur** (o meslekte oyuncu yoksa; NPC tabanı devrede):
+
+| Kopan halka | Hemen | 2 oyun yılında | Kim kazanır |
+|---|---|---|---|
+| Oduncu | Kereste ve kömür NPC'den, ×2,5 ve ayda 3 | Kiriş ve blok yok: köprü, han ve sur projesi açılmaz; Bakım ~30'a iner | Mesleğe giren oduncu: kıtlık primi + "proje kerestesi" siparişleri |
+| Demirci | Alet pahalı, onarım 2 ay | Hasat aletsiz döner (3 yerine 5 tahıl kaybı); asker NPC mızrağıyla kalır; Asayiş ve Bakım düşer | Demirci: "Bu kasabada demirci yok" siparişleri (ağırlık 3) |
+| Dokumacı | Bez ve deri pahalı | Pul zırh, çadır ve koşum yok: kervan ve sefer durur | Debbağ: astar ve çadır kurum siparişleri |
+| Çiftçi | Tahıl NPC'den | Aşçı girdisiz kalır, Erzak 30'da; kıtlıkta oyuncu ambarı yok | Çiftçi: kıtlık primi + garnizon zahiresi |
+| Aşçı | Sofra yalnız NPC ekmeği | Kondisyon toparlaması zayıflar; kıtlıkta toplu mutfak açılmaz | Aşçı: aşevi ve garnizon ekmeği siparişleri |
+| Marangoz | Onarım NPC'den | Yeni hane ve han yok, nüfus büyümez; hanın temiz odası kurulmaz | Marangoz: proje başlatıcı |
+| Hancı | NPC misafirhanesi, ayda 1 gece | Kervan konaklayamaz, Asayiş ve Huzur düşer; ozan sahnesiz kalır | Hancı: yolcu talepleri |
+| Şifacı | Ayda 1 NPC bakımı | Yaralılık uzar, doğum riski artar, Sağlık düşer | Şifacı: kaza ve doğum talepleri |
+| Ozan | NPC türküsü | Huzur 40'ın altına iner, gönül dengesi 40'a çeker | Ozan: yaslı hane ve düğün talepleri |
+| Kâtip | Kadı naibi, bir ay gecikmeli | Oyuncular arası senet ve sözleşme pahalı; tüccarın toptan alımı durur | Kâtip: belge talepleri |
+| Tüccar | Yerleşim kendi kotasına kapanır | Kotası dolan üretici satamaz; uzak mal ×4 | Tüccar: iki kasaba arası fiyat farkı |
+| Arabulucu | NPC ihtiyar zayıf | Husumet tırmanır, Asayiş ve Huzur düşer | Arabulucu: küslük talepleri |
+| Asker | NPC garnizon | Hırsızlık ve haydut olasılığı artar; kervan uğramaz | Asker: nöbet ulufesi ve muhafız ücreti |
+| Divan [Faz 7] | NPC muhtar | Vergi kaydı kaçar, bütçe varsayılanda kalır | Divan görevlisi: kasaba görevleri |
+
+**Kabul ölçütü (§14.4 simülasyonu, aynen):** Bir meslekte oyuncu yokken 2 oyun yılı simüle edilir. O mesleğin göstergesi
+ölçülebilir biçimde düşmeli ve o mesleğe giren oyuncunun aylık kazancı kasaba ortalamasının üstüne çıkmalıdır. 14 meslek de
+"fark edilmedi" sonucu vermemelidir.
+
+---
+
+## 5. Uzmanlaşma ve pir
+
+### 5.1 Pir uçları (her dalda ne verir)
+
+Bir oyuncu yalnız **bir** pir ucu açar (kod: `meslek.ts:167`). Pir uçlarının çoğu kasabaya hizmet eden bir koltuktur. Böylece pir
+olmak hem kişisel ödül hem kamu görevidir.
+
+| Meslek | Dal 1 pir ucu | Dal 2 pir ucu | Dal 3 pir ucu |
+|---|---|---|---|
+| Çiftçi | İmece: köyü tarlaya çağırma | Mera: sürünün otu ve kuraklık kararı | Ambar emini: kıtlıkta dağıtım sırası |
+| Oduncu | Koru: dikimle herkesin baltasını yenileme | Ocak: NPC madenci işletme | Sur taşı: kale onarımı ve kitabe |
+| Demirci | Damga + mühür (kuyumculuk) | Cephane: garnizonun silahı | Ordu zırhçıbaşı: sefer onarımı |
+| Marangoz | Yapı emini: proje sırası | Köprübaşı: geçiş akçesi ve bakım | Nakkaş başı: arma çizme |
+| Dokumacı | Ev tezgâhları: NPC hanelere iş | Debbağ ahisi: debbağhane ve ahi sofrası | Ordugâh: konak ve sefer çadırı |
+| Aşçı | Fırın beratı: ekmek narhı | Aşhane: yoksula aş | Kiler emini: kurum erzakı |
+| Hancı | Han beratı: müdavim ve kira | Şenlik önerisi [E7] | Han meclisi: kasabaya çağrı |
+| Şifacı | Darüşşifa: NPC şifacı usta kalitesinde | Ebe başı: bütün doğumlar güvende | Attar: hastanın ilk kapısı |
+| Ozan | Ozan postu: sahne ve hiciv | Tekke postu: kimsesize zaviye | Kronik kalemi: yılın kaydı |
+| Kâtip | Sicil: itirazsız tasdik | Menzilhane: hızlı ulak ağı | Defterdarlık yolu |
+| Tüccar | Pazar başı: pazar günü bereketi | Kervanbaşı: kafile ve risk paylaşımı | Yol emini: yol akçesi ve güvenlik |
+| Arabulucu | İhtiyar heyeti: husumet listesi | Elçi beratı [P1] | Naiplik / kadılık yolu |
+| Asker | Garnizon ağası: NPC talimi | Sancak: birlik önderliği | Öncü: yol devriyesi |
+| Divan | Hazine emini | Subaşılık | Makam adaylığı |
+
+### 5.2 Usta–çırak (E3) ve pir şartı
+
+| Kural | Öneri [PARAMETRE] |
+|---|---|
+| Bağ | Çırak (aynı ana meslek, `kd=0`) bir ustaya (usta ya da pir) başvurur, usta kabul eder. Usta aynı anda en çok 2 çırak alır. Aynı hesap kümesi olamaz. Aynı haneden çırak olabilir (baba–oğul geleneği) ama pir sayımında en çok 1 kez sayılır. |
+| Ders | Ayda en çok 2. Usta 1 takatle dersi hazırlar; çırak ay içinde 1 takatle alır (eşzamanlı çevrimiçi olmak gerekmez). Çırak +4, usta +1 tecrübe alır. **Ders, ustanın açık bir düğümünün tarifini çırağa o ay bir kez denetir.** Çırak düğümü açmadan önce tadına bakar; bu bir sayı değil, bir imkândır. |
+| Peştamal | Çırak kalfa olurken bağlı ustası varsa tören ustanın adıyla kayda geçer. Çırak en az 6 ders almış ve 10 ay bağlı kalmışsa ustanın sayacı artar (`cy` +1). |
+| NPC çırak | Usta kasabadaki 12–15 yaşında bir NPC genci çırak alabilir. 12 ay ve 6 ders sonra NPC kalfa olur: o meslekte kasabanın NPC tabanına bir **kalfa** eklenir (lonca tablosunda görünür) ve `cy` +1. Pir için en çok 1 NPC çırak sayılır. Boş sunucuda da pir yolu açık kalır, katkısı da kasabaya gider. |
+| Pir şartı | Usta + en az 12 ay ustalık + `cy ≥ 2` (en çok 1'i NPC). Pir olunca +3 icazet puanı, tek pir ucu, kethüda adaylığı. |
+| Kötüye kullanım | Ders tecrübesi ayda 2 dersle sınırlı. Bağ en az 10 ay sürmeden koparsa `cy` yazılmaz. Çırağı değiştirerek sayaç doldurulamaz: bir çırak bir ustaya yalnız bir kez sayılır. |
+
+### 5.3 Aynı meslekten iki usta birbirine nasıl muhtaç olur
+
+Bütçe tavanı (§1.4) yüzünden bir usta ağacın en çok 16/22'sini alır. Aşağıdaki işler iki farklı uzmanlığı birlikte ister:
+kurum siparişleri ve projeler **payla teslim** edilir (her katkı isimle yazılır), oyuncular birbirine mal satar.
+
+| Meslek | Usta A | Usta B | İkisini birden isteyen iş |
+|---|---|---|---|
+| Demirci | Silah (kılıç, şaheser) | Zırh (zincir, pul zırh) | "Sefer takımı" kurum siparişi: 2 mızrak + 2 kalkan + 1 zincir; şaheser kılıçlı birlik pul zırh da ister |
+| Çiftçi | Ekin (seçme buğday) | Sürü (et, post) | Aşçının ziyafeti hem has un hem et ister; kıtlık ambarı zahire, yayla göçü ise çadır ister |
+| Oduncu | Orman (kiriş) | Taş (blok) | Han, köprü ve sur projeleri kiriş ile bloğu birlikte ister |
+| Marangoz | Yapı (han inşası) | Tezyin (kündekâri) | Han projesi bir kündekâri kapı ister; minber eseri doğrama ister |
+| Dokumacı | Kumaş (kumaş, halı) | Deri (astar, koşum) | Astar kumaş ister; pul zırhın astarı deri ustasındadır, sancak kumaş ustasında |
+| Aşçı | Fırın (has un) | Saklama (pastırma, kuru et) | Erzak sandığı peksimet ve kuru et ister; ziyafet un ister |
+| Hancı | Konaklama (kervan konağı) | Etkinlik (saz gecesi, düğün) | Düğün yemeği yatak ve sahneyi birlikte ister |
+| Şifacı | Hekim (dikiş) | Otçu (şifa şerbeti, panzehir) | Yara dikişi şifa şerbeti ister; panzehir otçudadır |
+| Ozan | Sahne | Sahne (bir başkası) | Meydan atışması yalnız **iki ozanla** olur |
+| Kâtip | Belge (vasiyet, sicil) | Ulak (mühürlü mektup) | Mühürlü mektup mühür ister; vasiyet uzak vârise ulakla gider |
+| Tüccar | Kervan (uzak kervan) | Yol (güvenli yol, fiyat haberi) | Kervancı yol bilgisini yol ustasından satın alır; kafile birden çok tüccarla kurulur |
+| Arabulucu | Uzlaştırma | Hüküm (şahit, hakem) | Kan davası diyeti töre bilgisi ister; hakem kararı şahit dinlemeye dayanır |
+| Asker | Nöbet | Sefer | Saf düzeni en az 3 asker ister; muhafızlık ile gözcülük aynı kervanda birleşir |
+
+---
+
+## 6. İlerleme hızı
+
+### 6.1 Varsayımlar
+
+- 12 gerçek saat = 1 oyun ayı. Takat ayda 6 dolar, en çok 18 birikir (`karakter.ts:17-19`).
+- Takat başına tecrübe 2'dir (tarif ve hizmet). Teslim +3 (ayda ~1), temel iş +1.
+- Oyuncu tipleri:
+  - **Gayretli:** her 12 saatte girer, takatin tamamı meslekte; ~13 tecrübe/ay.
+  - **Normal:** günde 1 giriş, takatin ~%70'i meslekte; ~9 tecrübe/ay.
+  - **Arada:** iki günde 1 giriş, birikim tavanı 18 yüzünden bir kısmı yanar; ~5 tecrübe/ay.
+
+### 6.2 Önerilen eşikler [PARAMETRE]
+
+| Sabit | Mevcut | Öneri | Neden |
+|---|---|---|---|
+| `KADEME_HIZMET` (toplam tecrübe) | [0, 24, 72, 72] | [0, 70, 240, 240] | Normal oyuncu eşiğe asgari süreden önce ulaşır; arada oynayan biraz geç ulaşır ama kilitlenmez |
+| `KADEME_ASGARI_AY` (önceki kademeden beri) | yok | [0, 12, 24, 12] | Spec §5.3: kalfa 12 ay, usta +24 ay. Pir için ustalıkta 12 ay. |
+| `PUAN_TECRUBE` / `PUAN_ARTIS` | 6 / yok | 6 / 4 | Bar 6, 10, 14…: başta sık, sonra seyrek ödül |
+| `PUAN_TAVAN` / `PIR_ICAZET` | yok | 16 / 3 | 22'lik ağacın 16'sı (§1.4) |
+| `MESLEK_DEGISIM_ARALIK` | yok | 12 ay | Meslek atlamayla ağaç toplama kapanır |
+
+### 6.3 Gerçek gün karşılığı
+
+| Oyuncu | Kalfa | Usta | Pir (en erken) | Puan sıklığı |
+|---|---|---|---|---|
+| Gayretli | 12 ay = **6 gün** (asgari süre bağlar) | 36 ay = **18 gün** | +12 ay ve 2 çırak ≈ **24–26 gün** | Çırakken ~her 0,5 gün, ustayken ~her 1,5 gün |
+| Normal | 12 ay = **6 gün** (tecrübe ~105) | 36 ay ≈ **18 gün** (tecrübe ~320) | ≈ **26–30 gün** | Çırakken ~her gün, ustayken ~her 2,5 gün |
+| Arada | 14 ay ≈ **7 gün** | ~48 ay ≈ **24 gün** | ≈ **35–40 gün** | ~2–4 günde bir |
+| Yan meslek (normal) | ~16 ay ≈ 8 gün | ~54 ay ≈ 27 gün | — | yarı hız |
+
+**Neden bu hız:**
+- Asgari süre gayretli ile normal oyuncuyu eşitler: hız oturum sayısına değil, takvime bağlıdır. Kaçırma korkusu ve seri
+  baskısı yoktur.
+- Puan barı ilk günlerde neredeyse her gün dolar; peştamal günü biriken puanla 2–3 düğüm açılır. Bu iki anı sıkıcılığı kırar.
+- Usta ~3 oyun yılında (karakter ~16 yaşında) olur, pir ~5 yılda; ömür onlarca oyun yılıdır. Ustalık hayatın ortası değil
+  başıdır. Ondan sonrası koltuk, çırak, eser ve makamdır.
+- Puan, kalfalıkta 6–7, ustalık girişinde 12–13 olur; tavan 16'ya ustalıktan ~25 ay sonra ya da pirlikte (+3) ulaşılır.
+
+**Farm denetimi:** Tecrübe yalnız takatle ya da kotalı teslimle gelir. Takat aylıktır, ders ayda 2'dir, teslim alıcı başına ayda 2
+sayılır, temel işte azalan getiri vardır. Gerçek gün başına tecrübenin üst sınırı ~2 × 12 + 6 ≈ 30'dur.
+
+---
+
+## 7. Hizmet meslekleri: mal üretmeyen düğümler nasıl çalışır
+
+### 7.1 Model: hizmet tarifi
+
+```ts
+interface HizmetTarifi {
+  id: string;                 // "yaraBak", "yatak", "nobet" ...
+  meslek: MeslekId;
+  dugum: string;              // "sifaci.hekimlik.0"
+  girdi: Partial<Record<MalId, number>>;
+  takat: number;
+  hedef: "kisi" | "hane" | "iki_taraf" | "kasaba";
+  etki: { tur: "hal" | "gorus" | "nam" | "gosterge" | "bilgi" | "kayit"; alan: string; deger?: number }[];
+  /** Hazır hizmet: hazırlanır, ilanda bekler, bozulur. Yoksa anında uygulanır (görev, iki taraf). */
+  hazir?: { adet: number; gecerlilikAy: number };
+  aydaEnCok?: number;
+}
+```
+
+Etkiler, var olan sistemlerin görünür alanlarına yazar: Hal (`halDegistir`, nedeniyle birlikte), görüş (`gorusKat`, aylık tavanlı),
+nam (`NAM_AYLIK_TAVAN`), kasaba göstergesi (§1.5), bilgi (söylenti kaynağı, NPC derdi) ya da kayıt (senet, vasiyet, kitabe).
+Gizli etki yoktur; her etki dönüş kartında ve dökümde yazılıdır.
+
+**Tecrübe:** hazırlıkta 1 × takat, teslimde +1 × takat (toplam 2 × takat, mal tarifleriyle eşit), NPC talebinde ayrıca +3.
+Teslim edilmeyen hazır hizmet bozulur ve yarı tecrübede kalır. Böylece "kimse almasa da üret" yolu yarı yoldur.
+
+### 7.2 Dört teslim yolu
+
+| Yol | Nasıl işler | Eşzamanlı olmak gerekir mi | Örnek |
+|---|---|---|---|
+| **1. Hazır hizmet + ilan** | Hizmetçi takatini **önceden** harcar ve "hazır" adetler üretir (ör. 2 yatak, 2 ay geçerli). Fiyatı kendi koyar, ilan dükkân ya da han listesinde görünür. Alıcı istediği an ücretini öder, etki anında uygulanır. | Hayır | Yatak, temiz oda, şerbet, türkü sahnesi, yara bakımı, tabaklama, onarım |
+| **2. NPC hizmet talebi** | `siparis.ts` modeli genellenir: `tur: "hizmet"`, mal yerine `gerek: dugum`. Talep dönüm olaylarından doğar: ocak kazası → yaralı; `donum.ts` doğumu → lohusa; ölüm → yaslı hane; evlilik → düğün; görüş ≤ −20 → küslük; NPC kervan → konak. İlk getiren alır; ödülü kasaba öder (taban × 1,5); teşekkür izi düşer. | Hayır | Yaralı ocak işçisi, güç doğum, yaslı hane, iki komşunun küslüğü |
+| **3. Kasaba görevi** | Kasabada aylık **koltuklu** görevler: nöbet 4, sayım 1, meclis kaydı 1, talim 2. Ulufeyi kasaba öder; etki göstergeye yazar. | Hayır | Sur nöbeti, vergi sayımı, talim |
+| **4. İki taraflı iş** | Teklif ve kabul. Gerekiyorsa kâtip senediyle bağlanır. Etki iki tarafa ya da bir ilişkiye yazar. | Hayır (teklif bekler, 1 ay geçerli) | Hakem kararı, muhafız sözleşmesi, uzlaşma, vasiyet, mektup |
+
+### 7.3 Kim alır, NPC tabanı ne
+
+| Meslek | Başlıca alıcı | Yollar | NPC tabanı (fiyat, kota) | NPC talep sıklığı (kasaba başına) |
+|---|---|---|---|---|
+| Hancı | Yolcu, evsiz, tüccar, düğün sahibi | 1, 2 | Han kâhyası: yatak 8 akçe, ayda 1 | Yolcu ve kervan: ayda ~2 |
+| Şifacı | Yaralı, doğum yapan hane, asker | 1, 2, 4 | NPC şifacı: yara bakımı 15 akçe, ayda 1, bir ay sonra | Kaza, doğum ve hastalık: ayda ~2 |
+| Ozan | Handakiler, yaslı ve kırgın kişi, hanedan | 1, 2 | NPC ozan: ayda bir türkü (+2 gönül) | Yas ve düğün: ayda ~1–2 |
+| Kâtip | Tüccar, hane, arabulucu | 1, 2, 4 | Kadı naibi: senet 20 akçe, mektup 10, bir ay gecikmeli | Mektup ve senet: ayda ~2 |
+| Tüccar | Üretici, komşu yerleşim | 1, 4 | NPC tüccar: kotalı sade arz | Kotası dolan üreticiler (doğal) |
+| Arabulucu | Küs kişi ve hane, komşu yerleşim | 2, 4 | NPC ihtiyar: ayda 1 deneme, düşük şans | Küslük: görüş ≤ −20 olan her çift aday |
+| Asker | Kasaba, tüccar | 3, 4 | NPC garnizon: Asayiş tabanı 30 | Nöbet koltuğu: ayda 4 |
+| Divan [Faz 7] | Kasaba, halk | 3 | NPC muhtar: varsayılan bütçe | Görev koltuğu: ayda 3 |
+
+Önerilen oyuncu hizmet fiyatı tabanları (NPC ödülü = taban × 1,5; NPC kendi sattığında × 2,5) [PARAMETRE]:
+
+| Hizmet | Taban (akçe) |
+|---|---|
+| Yatak | 3 |
+| Temiz oda | 6 |
+| Yara bakımı | 6 |
+| Kırık sarma | 12 |
+| Lohusa bakımı | 5 |
+| Güç doğum | 14 |
+| Türkü sahnesi | 2 (dinleyici başı) |
+| Teselli | 3 |
+| Mektup | 4 |
+| Ara bulma | 5 |
+| Barış sofrası | 12 |
+| Şahit dinleme | 4 |
+| Nöbet ulufesi | 4 |
+| Muhafız (sefer başına) | 10 |
+| Tabaklama ve onarım ilanı | Girdi + takat × 2 |
+
+### 7.4 Kötüye kullanım kuralları
+
+- Aynı hizmetçiden aynı alıcıya ayda en çok 2 teslim tecrübe ve teveccüh sayar. Aynı hesap kümesi hiç sayılmaz.
+- Kendine hizmet serbesttir (kendi yarasını sarmak) ama teslim tecrübesi vermez; yalnız hazırlık tecrübesi yazılır.
+- NPC talebinin ödülü kasabanın tanımlı akçe kaynağıdır ve talep başına bir kez verilir. Denge denetiminin çapraz sınırı geçerlidir:
+  `(1 + KITLIK_PRIM) × talep çarpanı < NPC_CARPAN`.
+- Göstergeye katkı aylık tavanlıdır (+12). Tek bir oyuncu bütün kasabayı tek başına taşıyamaz; topluluk gerekir.
+
+### 7.5 Teveccühle bağ (özet)
+
+Hancı, aşçı ve ozanın NPC müşterisi ve sahne sırası teveccüh kademesine göredir. Ziyafet ve ikram, sofra sahibine teveccüh yazar.
+Armağan malları zanaatkârın ürünüdür. Ayrıntı §1.7'dedir. Teveccüh işi kimseden almaz, yalnız sıra belirler; NPC talebi yine ilk
+getirene gider. Sıra yalnız aynı anda birden çok uygun aday olduğunda devreye girer.
+
+---
+
+## 8. Uygulama sırası (E2 sonrası → E4)
+
+Her adım ana tasarım §8 kalıbını izler: plan (`docs/superpowers/plans/`), sunucu modülü ve testi, istemci ekranı, 6 dil, 320/390
+önizleme, denge-denetçisi koşusu. **Ortak kabul ölçütü (her adım):**
+- (a) Adımdaki her düğümün en az bir testi var: açılır, etkisini uygular, şartı eksikken reddeder.
+- (b) Sistemi gelmemiş düğümler "X ile gelir" diye kilitli görünür ve puan almaz.
+- (c) §4'teki "meslek boşken 2 yıl" simülasyonu her yeni meslek için geçer.
+- (d) Akçe değişmezi ve farm testleri temiz.
+- (e) Gizli sayı yok: her etki dökümde.
+
+| Adım | İçerik | Ön koşul (ana sıra) | Özel kabul ölçütü |
+|---|---|---|---|
+| **E4.0 Ortak altyapı** | Artan bar + tavan + icazet; asgari ay + peştamal/ustalık eseri; düğüm yalnız ana/yan meslekte; meslek değişim aralığı; lonca kademe sayımı; kasaba hâli (5 gösterge); kurum NPC'si; mal alanları (bozulma, ömür, armağan); toplu mod + kurum siparişi + payla teslim; proje (ortak katkı, kitabe); koltuk modeli; hizmet tarifi + 4 teslim yolu | E3 (sıra 6): usta–çırak, şaheser, Ustalar Levhası | 2 ustanın aynı meslekte farklı düğüm setiyle bittiği sim; tavan 16 hiçbir yolla aşılamıyor; boş meslek göstergesi düşüyor ve 30'da duruyor; hazır hizmet bozuluyor |
+| **E4.1 E2 tamamlama** | Çiftçi, oduncu, demirci: 36 düğümün tamamı (bugün yalnız 6 tarif var) | E4.0 | Demirci boşken Bakım düşer; demirciye giren ortalamanın üstünde kazanır; sefer takımı iki demirciyle payla teslim edilir |
+| **E4.2 Zanaat** | Dokumacı → marangoz → aşçı (bu sırayla: deri ve astar pul zırhı kapatır, kağnı toplu harmanı, sofra Erzak'ı) | E4.1, barınma (sıra 8) | Pul zırh uçtan uca (post → deri → astar → zırh); ilk kasaba projesi (yeni hane) 3 farklı oyuncunun katkısıyla biter ve kitabe görünür; sofra kondisyon etkisi Hal'de yazar |
+| **E4.3 Hizmet I** | Şifacı, hancı, ozan (Hal toparlayıcıları; hizmet altyapısını ilk sınayanlar) | E4.0, söylenti (sıra 5), han masası (sıra 7) | NPC talebi en az 3 kaynaktan doğar (kaza, doğum, yas); yatak ilanı sahibi çevrimdışıyken satılır; teveccüh sırası dökümde görünür |
+| **E4.4 Ticaret ve yazı** | Kâtip + tüccar (birlikte: senet olmadan toptan alım, kâğıt olmadan senet yok) | En az 2 yerleşim ve aralarında yol; pazar ve sözleşme (sıra 6) | Kervan bir kasabanın fazlasını kıtlık primli komşuya taşır ve kâr dökümde görünür; senet bozan "sözünde durmadı" izi alır |
+| **E4.5 Toplum** | Asker + arabulucu (nöbet, muhafız, küslük, aile barışı, rızalı hakem) | Husumet ve söylenti (sıra 5) | Asker boşken Asayiş düşer ve hırsızlık olasılığı dökümde artar; hakem kararı senet tutarını aşamaz; Faz 8 ve P düğümleri kilitli görünür |
+| **E4.6 Divan** | Divan mesleği ve dalları | Kurum ve makam (sıra 12: Faz 7 + P1) | Vergi sayımı yapılmayan ayda "kayıt dışı" kalemi görünür; makam adaylığı usta şartını doğrular |
+| **Sonra** | Kilitli düğümler sistemleriyle açılır: Faz H (ebelik, vasiyet, yadigâr), Faz 8 (dikiş, panzehir, kan davası, zırh etkisi), P (elçilik, ordu, sancak), E6/E7 (kıtlık, şenlik), Faz 17 (zaviye) | İlgili faz | O fazın planı, açtığı düğümleri listeler ve test eder |
+
+---
+
+## 9. Açık sorular (Berkay'a)
+
+1. **S1 — Ağaç bütçesi:** Usta 12 puan, pir 16 puan; 22'lik ağacın en çok 16'sı alınır ve bar artarak uzar (6, 10, 14…). Bu sertlik
+   doğru mu, yoksa tavan 14 mü (daha keskin uzmanlaşma) ya da 18 mi (daha geniş usta) olsun?
+2. **S2 — Hız:** Normal oyuncu için kalfa ~6 gün, usta ~18 gün, pir ~4 hafta. Asgari süre gayretli ile normal oyuncuyu eşitliyor.
+   Uygun mu?
+3. **S3 — Divan:** Divan mesleği E4'te değil, kurum ve makam fazıyla (sıra 12) açılsın mı? O zamana dek lonca tablosunda "kurumla gelir"
+   yazar; 13 meslek oynanır.
+4. **S4 — Hüküm dalı:** D-28 ertelenmişken arabulucunun hüküm dalı "rızalı hakem + naiplik (1 ay itirazlı karar)" olarak açılsın mı,
+   yoksa bütün dal D-28'e mi kalsın (o durumda arabulucu 9 düğümle oynanır)?
+5. **S5 — Zehir:** Şifacının panzehir düğümüyle zehir yapımı da gelsin mi (suç, iz bırakır, Faz 8 kuralları), yoksa v1'de yalnız
+   panzehir mi olsun?
+
+---
+
+## Kaynaklar (tarihî doku ve adlar)
+
+- Ahilik derece ve törenleri (yamak, çırak, kalfa, usta; peştamal/şed kuşanma, tuz geleneği; kalfanın ustalığa geçerken eser
+  sunması; fütüvvetnameler, Burgazi): Belleten tam metin — https://belleten.gov.tr/tam-metin/2301/tur ;
+  https://belleten.gov.tr/tam-metin/1736/tur ; DergiPark makaleleri — https://dergipark.org.tr/tr/download/article-file/1926706 ,
+  https://dergipark.org.tr/en/download/article-file/3060738
+- Ahi Evran, Kayseri debbağhanesi, debbağların piri; ahi baba, kethüda, yiğitbaşı; ustalığı onaylayan kurul:
+  Kür Ansiklopedi "Ahilik" — https://kureansiklopedi.com/tr/detay/ahilik-5 ; Hürriyet Daily News, "Organizing trade: The ahis
+  and guilds of Anatolia" — https://hurriyetdailynews.com/organizing-trade-the-ahis-and-guilds-of-anatolia--76705 ; Ticaret
+  Bakanlığı, Ahilik Panelleri — https://ticaret.gov.tr/data/633bf5ac13b876b344b0fdd1/Ahilik%20Panelleri%20Kitap%20%C3%87al%C4%B1%C5%9Fmas%C4%B1%20--03.10.2022--.pdf
+- "Papucu dama atılmak" deyiminin ahilikteki kökeni: Milli Gazete — https://www.milligazete.com.tr/ahilik-nedir-temel-prensipleri-nelerdir-iste-ahilige-ornek-olacak-o-anekdot-papucu-dama-atilmak-deyimi-nereden-geliyor
+- Dönem dokusu (genel bilgi; kaynak taraması yapılmadı, alfa öncesi doğrulanmalı): Selçuklu darüşşifaları (Kayseri Gevher Nesibe,
+  Sivas), kervansaray ve menzil ağı, Kayseri pastırması, Küre bakırı, kündekâri (Selçuklu minberleri), muhtesip ve narh, tahrir
+  defteri (Osmanlı uygulaması; 13. yüzyıl için esnek kullanılmıştır), çayın dönem dışı olması.
