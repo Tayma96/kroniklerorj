@@ -4,6 +4,8 @@
 import type { YerlesimTuru } from "../dunya-veri.ts";
 import type { MeslekId } from "../icerik/meslekler.ts";
 import type { HalKaydi, HalNedeni } from "./hal.ts";
+import type { HanedanKaydi, HanedanKasabasi } from "./hanedan.ts";
+import type { KronikSatiri } from "./kronik.ts";
 import type { MeslekKaydi } from "./meslek.ts";
 import type { Siparis } from "./siparis.ts";
 import type { Duzen } from "./duzen.ts";
@@ -35,7 +37,7 @@ export interface Npc {
   r: number;
   /** Hane numarası. */
   e: number;
-  /** Eş, anne, baba (yoksa ya da öldüyse 0). */
+  /** Eş, anne, baba (yoksa ya da öldüyse 0). Eş negatifse oyuncudur: "o" + |es| (Faz 7). */
   es: number;
   an: number;
   ba: number;
@@ -43,6 +45,8 @@ export interface Npc {
   b: Bag[];
   /** Gündem (GUNDEM). */
   g: number;
+  /** Oyuncu ebeveynler (yerel kimlik; Faz 7, eski kayıtta yok). */
+  oe?: string[];
 }
 
 /** Sakin oyuncu dizini (ay dönümü karakterleri yüklemeden yaş ve öğrenme olaylarını üretir). */
@@ -154,6 +158,8 @@ export interface Karakter {
   /** Alınan son armağanlar ve vitrinde gösterilmek üzere seçilenler (armağan kimlikleri). */
   av?: Armagan[];
   vs?: number[];
+  /** Hanedan, evlilik, yaşlılık, ölüm ve vasiyet (Faz 7; eski kayıtta yok → nesil 1). */
+  hd?: HanedanKaydi;
 }
 
 /** Anı: [tür, ilk yük, ay]. Yük zamanla söner (yarı ömür). */
@@ -238,4 +244,9 @@ export interface Kasaba {
   sp?: Siparis[];
   /** Oyuncular arası durum (Faz 3; eski kayıtta yok). */
   tp?: Toplum;
+  /** Hanedan defteri: hazine, vakıf, emanet, tereke (Faz 7; meta'da saklanır). */
+  hd?: HanedanKasabasi;
+  /** Depoya yazılmayı bekleyen kronik satırları ve sonraki oyuncu numarası (Faz 7). */
+  kq?: KronikSatiri[];
+  no?: number;
 }

@@ -4,7 +4,7 @@
 //
 // Depo anahtarları (kısa): m meta · n0..nK NPC parçaları (100'er) · s sakin dizini · o:<id> karakter ·
 // g:<id> ilişki haritası · e:<sayfa> olay defteri sayfaları (64'er; son 48 sayfa tutulur) · sp lonca siparişleri
-// (eski kayıtta yok → boş liste).
+// (eski kayıtta yok → boş liste) · kronik:<sayfa> yerleşim kroniği (64'er; budanmaz, Faz 7).
 
 import { DEPO_TOPLU_SINIR, type Depo } from "../depo.ts";
 import { yerlesimBul } from "../dunya-veri.ts";
@@ -71,6 +71,12 @@ import { toplumDonumu } from "./toplum-donum.ts";
 import { OYUNCU_TEKLIF_TURLERI, toplumAl, type Toplum } from "./toplum.ts";
 import { MALLAR } from "../icerik/mallar.ts";
 import { temelIsYap } from "./temel-is.ts";
+import { devirHesapla, devirUygula, planKarmasi } from "./devir.ts";
+import { npcEvlilikTeklifi } from "./evlilik.ts";
+import { hanedanKaydi, olduMu, oyuncuNoAl, type HanedanKasabasi } from "./hanedan.ts";
+import { hanedanGorunumu, hanedanOzeti } from "./hanedan-gorunum.ts";
+import { KRONIK_SAYFA, KRONIK_YANIT_EN_COK, kronikYaz, type KronikSatiri } from "./kronik.ts";
+import { vasiyetDogrula } from "./vasiyet.ts";
 import { GUNDEM_ADI, type Isaret, type IliskiHaritasi, type Karakter, type Kasaba, type Npc, type Olay, type OlayTaslagi, type Sakin } from "./tipler.ts";
 import { kasabaKur } from "./uret.ts";
 
@@ -85,6 +91,7 @@ const TOPLUM = "tp";
 /** [PARAMETRE] Gelen kutusunda gösterilen son kapanan teklif sayısı; söylenti yalanlamanın takat bedeli. */
 export const GELEN_KAPALI_EN_COK = 20;
 export const YALANLAMA_TAKAT = 1;
+const KRONIK = "kronik:";
 
 export const NPC_PARCA = 100;
 export const OLAY_SAYFA = 64;
@@ -119,6 +126,9 @@ interface Meta {
   ep: number;
   /** Sonraki oyuncu numarası. */
   no: number;
+  /** Hanedan defteri ve kronik satır sayısı (Faz 7; eski kayıtta yok). */
+  hd?: HanedanKasabasi;
+  kr?: number;
 }
 
 export interface OlayGorunumu {
@@ -170,6 +180,7 @@ export class YerlesimMotoru {
   readonly #depo: Depo;
   readonly #meta: Meta;
   readonly #sayfalar = new Map<number, Olay[]>();
+  readonly #kronikler = new Map<number, KronikSatiri[]>();
   readonly #kirli = new Set<string>();
   readonly #silinecek = new Set<string>();
 
@@ -194,6 +205,7 @@ export class YerlesimMotoru {
       const y = yerlesimId === undefined ? undefined : yerlesimBul(yerlesimId);
       if (!y) return undefined;
       const kasaba = kasabaKur(y, oyunAyi(simdi));
+      kasaba.no = 1;
       const m: Meta = { v: 1, y: y.id, sa: kasaba.ay, sq: 0, ni: kasaba.ni, ne: kasaba.ne, np: 0, ep: 0, no: 1 };
       const motor = new YerlesimMotoru(depo, m, kasaba);
       motor.#kirli.add(NPC).add(SAKIN);
@@ -223,6 +235,8 @@ export class YerlesimMotoru {
       ili: new Map(),
       sp,
       ...(tp ? { tp } : {}),
+      no: meta.no,
+      ...(meta.hd ? { hd: meta.hd } : {}),
     };
     return new YerlesimMotoru(depo, meta, kasaba);
   }
@@ -234,6 +248,9 @@ export class YerlesimMotoru {
     m.sa = k.ay;
     m.ni = k.ni;
     m.ne = k.ne;
+    m.no = k.no ?? m.no;
+    if (k.hd) m.hd = k.hd;
+    await this.#kronikBosalt();
     const kayit: Record<string, unknown> = {};
     for (const a of this.#kirli) {
       if (a === NPC) {
@@ -247,6 +264,7 @@ export class YerlesimMotoru {
       else if (a.startsWith(KAR)) kayit[a] = k.kar.get(a.slice(KAR.length));
       else if (a.startsWith(ILI)) kayit[a] = k.ili.get(a.slice(ILI.length));
       else if (a.startsWith(SAYFA)) kayit[a] = this.#sayfalar.get(Number(a.slice(SAYFA.length)));
+      else if (a.startsWith(KRONIK)) kayit[a] = this.#kronikler.get(Number(a.slice(KRONIK.length)));
     }
     kayit[META] = m;
     const girdiler = Object.entries(kayit).filter(([, v]) => v !== undefined);
@@ -356,9 +374,11 @@ export class YerlesimMotoru {
       for (const t of toplumDonumu(k, ay)) await this.#olayEkle(t, ay);
       islenen++;
     }
-    this.#kirli.add(NPC).add(SIPARIS);
-    if (k.tp) this.#kirli.add(TOPLUM).add(SAKIN);
+    this.#kirli.add(NPC).add(SIPARIS).add(SAKIN);
+    if (k.tp) this.#kirli.add(TOPLUM);
     for (const s of k.sakin) this.#kirli.add(KAR + s.o).add(ILI + s.o);
+    // Ölüler de yazılır (devir arşivi); devirle gelen vâris yeni kimliktedir.
+    for (const o of k.kar.keys()) this.#kirli.add(KAR + o).add(ILI + o);
     await this.kaydet();
     return { islenen, kalan: hedef - k.ay };
   }
@@ -377,7 +397,7 @@ export class YerlesimMotoru {
     ) {
       return hata("gecersiz_istek");
     }
-    const o = `o${this.#meta.no++}`;
+    const o = oyuncuNoAl(k);
     const ocak = ocakSec(k, kayit.hesapId);
     const sakin: Sakin = { o, h: kayit.hesapId, ad: kayit.ad, k: kayit.cinsiyet === "kadın" ? 1 : 0, d: kayit.dogumAyi, e: ocak.e, mk: "", ma: -1e9 };
     const kar = karakterOlustur(sakin, ocak, k.ay);
@@ -451,6 +471,7 @@ export class YerlesimMotoru {
       mekan: kar.ma === ay ? kar.mk : null,
       karar: kar.kr || null,
       kulYemini: kar.ky === 1,
+      hanedan: hanedanOzeti(kar, ay),
       tanidiklar: this.#tanidiklar(kar, ili, dil),
       ogrenme: ogrenmeDurumu(kar, ay),
     };
@@ -657,6 +678,7 @@ export class YerlesimMotoru {
     const { s, kar, ili } = r.deger;
     const onceki = kar.ist.find((x) => x[0] === no.deger);
     if (onceki) return basarili(onceki[1]);
+    if (olduMu(kar)) return hata("olu");
     const ay = this.kasaba.ay;
     const ek: TekrarEki = { ili, olay: undefined, siparis: false, olaylar: [], digerleri: [], toplum: false };
     const sonuc = isle(kar, s, ay, ek);
@@ -787,6 +809,7 @@ export class YerlesimMotoru {
     const r = await this.#oyuncu(hesapId);
     if (!r.ok) return r;
     const { kar, ili } = r.deger;
+    if (olduMu(kar)) return hata("olu");
     const k = this.kasaba;
     const ay = k.ay;
     const ki = kisiCoz(govde.hedef);
@@ -1040,6 +1063,131 @@ export class YerlesimMotoru {
       const r = vitrinSec(kar, govde.goster);
       return r.ok ? basarili({ vitrin: vitrinGorunumu(kar) }) : r;
     });
+  }
+
+  // --- Hanedan (Faz 7): kurallar hanedan.ts, evlilik.ts, yaslilik.ts, vasiyet.ts, devir.ts, kronik.ts ---
+
+  async #kronikSayfa(p: number): Promise<KronikSatiri[]> {
+    let s = this.#kronikler.get(p);
+    if (!s) {
+      s = (await this.#depo.al<KronikSatiri[]>(KRONIK + p)) ?? [];
+      this.#kronikler.set(p, s);
+    }
+    return s;
+  }
+
+  /** Kuyruktaki kronik satırlarına sıra verip sayfalara yazar. */
+  async #kronikBosalt(): Promise<void> {
+    const kq = this.kasaba.kq;
+    if (!kq?.length) return;
+    for (const satir of kq.splice(0)) {
+      const s = (this.#meta.kr ?? 0) + 1;
+      this.#meta.kr = s;
+      const p = Math.floor((s - 1) / KRONIK_SAYFA);
+      (await this.#kronikSayfa(p)).push({ ...satir, s });
+      this.#kirli.add(KRONIK + p);
+    }
+  }
+
+  #hepsiKirli(): void {
+    this.#kirli.add(NPC).add(SAKIN);
+    for (const o of this.kasaba.kar.keys()) this.#kirli.add(KAR + o).add(ILI + o);
+  }
+
+  /** GET /v1/hanedan: hanedan, eş, çocuklar, akrabalar, vâris adayları, vasiyet, yaşlılık, tereke, kurallar. */
+  async hanedan(hesapId: string, dilHam: unknown): Promise<Sonuc<unknown>> {
+    const r = await this.#oyuncu(hesapId);
+    if (!r.ok) return r;
+    return basarili(hanedanGorunumu(this.kasaba, r.deger.kar, this.kasaba.ay, dilCoz(dilHam)));
+  }
+
+  /** POST /v1/vasiyet {vasiyet: {varis?, paylar?} | null, istekNo}. */
+  async vasiyet(hesapId: string, govde: unknown): Promise<Sonuc<unknown>> {
+    if (!nesneMi(govde)) return hata("gecersiz_istek");
+    return this.#tekrarGuvenli(hesapId, govde, (kar) => {
+      const v = vasiyetDogrula(this.kasaba, kar, govde.vasiyet);
+      if (!v.ok) return v;
+      const hd = hanedanKaydi(this.kasaba, kar);
+      if (v.deger) hd.vs = v.deger;
+      else delete hd.vs;
+      return basarili({ vasiyet: hd.vs ?? null });
+    });
+  }
+
+  /** GET /v1/devir/onizle?varis=: sunucunun devir planı ve karması. Canlıyken "bu ay ölse" varsayımıdır. */
+  async devirOnizle(hesapId: string, varisHam: unknown, dilHam: unknown): Promise<Sonuc<unknown>> {
+    const r = await this.#oyuncu(hesapId);
+    if (!r.ok) return r;
+    const k = this.kasaba;
+    await this.#yukle(k.sakin.map((s) => s.o));
+    const p = devirHesapla(k, r.deger.kar.o, varisHam ?? undefined, k.ay);
+    if (!p.ok) return p;
+    return basarili({ plan: p.deger, pk: planKarmasi(p.deger), varsayim: !olduMu(r.deger.kar), kronik: kronikYaz({ a: k.ay, ...p.deger.kronik }, dilCoz(dilHam)) });
+  }
+
+  /** POST /v1/devir {varis?, pk, istekNo}: önizlenen plan aynen uygulanır; pk tutmazsa devir_degisti (409). */
+  async devir(hesapId: string, govde: unknown): Promise<Sonuc<unknown>> {
+    if (!nesneMi(govde)) return hata("gecersiz_istek");
+    const no = istekNoCoz(govde);
+    if (!no.ok) return no;
+    const r = await this.#oyuncu(hesapId);
+    if (!r.ok) return r;
+    const { kar } = r.deger;
+    const onceki = kar.ist.find((x) => x[0] === no.deger);
+    if (onceki) return basarili(onceki[1]);
+    if (!olduMu(kar)) return hata("devir_yok");
+    const k = this.kasaba;
+    await this.#yukle(k.sakin.map((s) => s.o));
+    const plan = devirHesapla(k, kar.o, govde.varis, k.ay);
+    if (!plan.ok) return plan;
+    if (typeof govde.pk !== "string" || govde.pk !== planKarmasi(plan.deger)) return hata("devir_degisti");
+    const u = devirUygula(k, plan.deger, k.ay);
+    if (!u.ok) return u;
+    const dil = dilCoz(govde.dil);
+    const olay = olayYaz(await this.#olayEkle(u.deger.olay, k.ay), dil);
+    const varis = u.deger.kar;
+    const yanit = structuredClone({ id: varis.o, pk: govde.pk, plan: plan.deger, olay, para: varis.pa, hanedan: hanedanOzeti(varis, k.ay) });
+    // Aynı istekNo, hesap artık vârise baksa da aynı yanıtı döndürür.
+    for (const x of [kar, varis]) x.ist.push([no.deger, yanit]);
+    this.#hepsiKirli();
+    await this.kaydet();
+    return basarili(yanit);
+  }
+
+  /** POST /v1/evlilik {hedef, istekNo}: NPC ile evlilik (oyuncu–oyuncu Faz 3 görücü teklifiyle). */
+  async evlilik(hesapId: string, govde: unknown): Promise<Sonuc<unknown>> {
+    if (!nesneMi(govde)) return hata("gecersiz_istek");
+    return this.#tekrarGuvenli(hesapId, govde, (kar, _s, ay, ek) => {
+      const r = npcEvlilikTeklifi(this.kasaba, kar, ek.ili, govde.hedef, ay);
+      if (!r.ok) return r;
+      ek.olay = r.deger.olay;
+      this.#kirli.add(NPC);
+      return basarili(r.deger.sonuc);
+    });
+  }
+
+  /** GET /v1/kronik?imlec=: imleçten sonraki kronik satırları (budanmaz; 49. sayfadan sonra da okunur). */
+  async kronik(hesapId: string, imlecHam: unknown, dilHam: unknown): Promise<Sonuc<unknown>> {
+    let imlec = 0;
+    if (imlecHam !== undefined && imlecHam !== null && imlecHam !== "") {
+      if (typeof imlecHam !== "string" || !/^[0-9]{1,12}$/.test(imlecHam)) return hata("imlec_gecersiz");
+      imlec = Number(imlecHam);
+    }
+    const r = await this.#oyuncu(hesapId);
+    if (!r.ok) return r;
+    const toplam = this.#meta.kr ?? 0;
+    const satirlar: KronikSatiri[] = [];
+    let s = imlec + 1;
+    while (s <= toplam && satirlar.length < KRONIK_YANIT_EN_COK) {
+      const p = Math.floor((s - 1) / KRONIK_SAYFA);
+      for (const x of await this.#kronikSayfa(p)) {
+        if ((x.s ?? 0) >= s && satirlar.length < KRONIK_YANIT_EN_COK) satirlar.push(x);
+      }
+      s = (p + 1) * KRONIK_SAYFA + 1;
+    }
+    const son = satirlar.at(-1)?.s ?? Math.min(imlec, toplam);
+    const dil = dilCoz(dilHam);
+    return basarili({ kronik: satirlar.map((x) => kronikYaz(x, dil)), imlec: son, dahaVar: son < toplam });
   }
 }
 

@@ -4,6 +4,7 @@
 import { halOngor, kondisyonKademesi } from "./hal.ts";
 import { karma } from "./rastgele.ts";
 import { yas } from "./ortak.ts";
+import { yaslilikTakatTavani } from "./yaslilik.ts";
 import type { Karakter, Kasaba, Npc, Sakin } from "./tipler.ts";
 
 export const OZELLIKLER = ["guc", "ceviklik", "dayaniklilik", "zeka", "karizma", "sezgi"] as const;
@@ -99,7 +100,7 @@ export function takatTazele(k: Karakter, ay: number): void {
   if (ay <= k.ta) return;
   let eklenen = 0;
   for (let m = k.ta + 1; m <= ay && k.tk + eklenen < TAKAT_TAVAN; m++) {
-    eklenen += kondisyonKademesi(halOngor(k, m - 1).kondisyon).takat;
+    eklenen += Math.min(kondisyonKademesi(halOngor(k, m - 1).kondisyon).takat, yaslilikTakatTavani(yas(k.d, m - 1)));
   }
   k.tk = Math.min(TAKAT_TAVAN, k.tk + eklenen);
   k.ta = ay;

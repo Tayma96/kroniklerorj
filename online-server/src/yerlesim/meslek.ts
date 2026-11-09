@@ -5,6 +5,7 @@
 
 import { MESLEKLER_ONLINE, dugumBul, meslekBul, type Kademe, type Meslek, type MeslekId } from "../icerik/meslekler.ts";
 import { basarili, hata, type Sonuc } from "../tipler.ts";
+import { aileMeslegiCarpani } from "./hanedan.ts";
 import { karakterYasi } from "./karakter.ts";
 import type { Karakter } from "./tipler.ts";
 
@@ -123,7 +124,7 @@ export function hizmetEkle(k: Karakter, id: MeslekId, puan: number): number {
   const kayit = meslekKaydi(k);
   const carpan = kayit.a === id ? 1 : kayit.y === id ? YAN_CARPAN : 0;
   if (carpan === 0 || puan <= 0) return 0;
-  const eklenen = puan * carpan;
+  const eklenen = puan * carpan * aileMeslegiCarpani(k, id);
   ilerleme(kayit, id).hz += eklenen;
   return eklenen;
 }

@@ -134,6 +134,14 @@ export class HesapDO {
         return hanIkrami(await this.#han(ileti.hesapId, simdi), ileti.govde);
       case "siparisler":
         return this.#yerlesime({ islem: "siparisler", hesapId: ileti.hesapId, dil: ileti.dil });
+      // Hanedan (Faz 7): ileti aynen yerleşime gider.
+      case "vasiyet":
+      case "devir":
+      case "evlilik":
+      case "hanedan":
+      case "devirOnizle":
+      case "kronik":
+        return this.#yerlesime(ileti);
       default:
         return hata("gecersiz_istek");
     }

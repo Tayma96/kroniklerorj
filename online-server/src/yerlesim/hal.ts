@@ -5,7 +5,9 @@
 // Etkiler: kondisyon aylık takat yenilenmesini belirler (iyi 6, yorgun 5, bitkin 4); can 50'nin altındaysa
 // kondisyon yarı hızda toparlanır, can tabanı 10'dur (bu fazda ölüm yok); gönül sosyal eylemlerin şansını değiştirir.
 
+import { yas } from "./ortak.ts";
 import type { Karakter } from "./tipler.ts";
+import { yaslilikTakatTavani } from "./yaslilik.ts";
 
 /** [PARAMETRE] Gösterge tavanı ve can tabanı (evsizlik dahil can bunun altına inmez; Ç9). */
 export const HAL_TAVAN = 100;
@@ -130,7 +132,7 @@ export function gonulKademesi(gonul: number): (typeof GONUL_KADEMELERI)[number] 
 
 /** Bir sonraki ay yenilenecek takat (bu ayın sonundaki kondisyona göre). */
 export function aylikTakat(k: Karakter, ay: number): number {
-  return kondisyonKademesi(halOngor(k, ay).kondisyon).takat;
+  return Math.min(kondisyonKademesi(halOngor(k, ay).kondisyon).takat, yaslilikTakatTavani(yas(k.d, ay)));
 }
 
 /** Sosyal eylemin şansına gönül etkisi (yüzde puanı; döküm kalemi olarak gösterilir). */

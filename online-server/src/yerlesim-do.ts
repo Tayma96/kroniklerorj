@@ -100,6 +100,19 @@ export class YerlesimDO {
         return motor.yalanla(ileti.hesapId, ileti.govde);
       case "vitrin":
         return motor.vitrin(ileti.hesapId, ileti.govde);
+      // Hanedan (Faz 7)
+      case "hanedan":
+        return motor.hanedan(ileti.hesapId, ileti.dil);
+      case "vasiyet":
+        return motor.vasiyet(ileti.hesapId, ileti.govde);
+      case "devirOnizle":
+        return motor.devirOnizle(ileti.hesapId, ileti.varis, ileti.dil);
+      case "devir":
+        return motor.devir(ileti.hesapId, ileti.govde);
+      case "evlilik":
+        return motor.evlilik(ileti.hesapId, ileti.govde);
+      case "kronik":
+        return motor.kronik(ileti.hesapId, ileti.imlec, ileti.dil);
       default:
         return hata("gecersiz_istek");
     }
