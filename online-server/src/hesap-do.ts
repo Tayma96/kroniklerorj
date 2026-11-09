@@ -8,6 +8,9 @@ import { dunyaCagir, iletiOku, jsonYanit, yerlesimCagir, yonetimCagir } from "./
 import { girisKaydet, hesapKaydi, hizKontrol, profilGetir, profilOlustur, sakinKaydi, yerlesimeIlet, type HizDurumu, type YerlesimIstegi } from "./mantik.ts";
 import { basarili, hata, type Env, type HesapIleti, type HesapYaptirimi, type Profil, type Sonuc } from "./tipler.ts";
 import { uzaklastirmaBilgisi, yaptirimEngeli } from "./yonetim/yaptirim.ts";
+import { hanEylemi, hanIkrami, hanListesi, masaBileti, yaptirimiMasayaBildir, type HanHesapBaglami } from "./han/hesap-kopru.ts";
+import { masaCagir } from "./han/ic.ts";
+import { ikramOdeyici } from "./han/yerlesim-kopru.ts";
 
 const YAPTIRIM = "yaptirim";
 
@@ -29,7 +32,7 @@ export class HesapDO {
     if (!ileti) return jsonYanit(hata("gecersiz_istek"));
     const simdi = Date.now();
     // Yönetimin iç yazımı oyuncunun hız sınırına takılmaz.
-    if (ileti.islem === "yaptirimYaz") return jsonYanit(await this.#yaptirimYaz(ileti.durum));
+    if (ileti.islem === "yaptirimYaz") return jsonYanit(await this.#yaptirimYaz(ileti.durum, ileti.hesapId));
     const hiz = hizKontrol(this.#hiz, simdi);
     this.#hiz = hiz.durum;
     if (!hiz.izin) return jsonYanit(hata("hiz_siniri"));
@@ -49,7 +52,7 @@ export class HesapDO {
     return this.#yaptirim ?? undefined;
   }
 
-  async #yaptirimYaz(durum: unknown): Promise<Sonuc<unknown>> {
+  async #yaptirimYaz(durum: unknown, hesapId: string): Promise<Sonuc<unknown>> {
     if (typeof durum !== "object" || durum === null) return hata("gecersiz_istek");
     if (!(await hesapKaydi(this.#depo))) return hata("hesap_yok");
     const d = durum as HesapYaptirimi;
@@ -59,6 +62,7 @@ export class HesapDO {
     };
     await this.#depo.koy({ [YAPTIRIM]: temiz });
     this.#yaptirim = temiz;
+    if (this.#env.MASA) await yaptirimiMasayaBildir({ depo: this.#depo, hesapId, masaCagir: (ad, i) => masaCagir(this.#env, ad, i) }, temiz);
     return basarili(temiz);
   }
 
@@ -120,11 +124,31 @@ export class HesapDO {
         return this.#yerlesime({ islem: "duzenOku", hesapId: ileti.hesapId });
       case "lonca":
         return this.#yerlesime({ islem: "lonca", hesapId: ileti.hesapId, dil: ileti.dil });
+      case "han":
+        return hanListesi(await this.#han(ileti.hesapId, simdi), ileti.dil);
+      case "masaBilet":
+        return masaBileti(await this.#han(ileti.hesapId, simdi), ileti.masa);
+      case "hanEylem":
+        return hanEylemi(await this.#han(ileti.hesapId, simdi), ileti.govde);
+      case "hanIkram":
+        return hanIkrami(await this.#han(ileti.hesapId, simdi), ileti.govde);
       case "siparisler":
         return this.#yerlesime({ islem: "siparisler", hesapId: ileti.hesapId, dil: ileti.dil });
       default:
         return hata("gecersiz_istek");
     }
+  }
+
+  async #han(hesapId: string, simdi: number): Promise<HanHesapBaglami> {
+    const env = this.#env;
+    return {
+      depo: this.#depo,
+      hesapId,
+      simdi,
+      yaptirim: await this.#yaptirimDurumu(),
+      masaCagir: (ad, i) => masaCagir(env, ad, i),
+      ikramOde: ikramOdeyici(env),
+    };
   }
 
   #yerlesime(istek: YerlesimIstegi): Promise<Sonuc<unknown>> {

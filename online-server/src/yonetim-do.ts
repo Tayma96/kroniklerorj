@@ -8,6 +8,7 @@ import { HIZ_PENCERESI_MS, hizKontrol, type HizDurumu } from "./mantik.ts";
 import { hata, type Env, type Profil, type YonetimIleti } from "./tipler.ts";
 import { yonetimIsle, type YonetimBaglami } from "./yonetim/islem.ts";
 import { kurucuListesi } from "./yonetim/yetki.ts";
+import { masaAtmaKaydet } from "./han/y1-kayit.ts";
 
 /** [PARAMETRE] Yönetici (e-posta) başına dakikadaki istek sınırı. */
 export const YONETIM_HIZ_SINIRI = 60;
@@ -53,6 +54,7 @@ export class YonetimDO {
     const ileti = await iletiOku<YonetimIleti>(istek);
     if (!ileti) return jsonYanit(hata("gecersiz_istek"));
     const simdi = Date.now();
+    if (ileti.islem === "masaAtma") return jsonYanit(await masaAtmaKaydet(this.#depo, ileti));
     if (ileti.islem === "giris" || ileti.islem === "yonet") {
       if (!hizTablosuSay(this.#hiz, ileti.yonetici.eposta, simdi)) return jsonYanit(hata("hiz_siniri"));
     }

@@ -21,6 +21,11 @@ class_name = "YerlesimDO"
 name = "YONETIM"
 class_name = "YonetimDO"
 
+# Faz 10 han masası: masa başına bir örnek (idFromName("masa:<yerlesim>:<han>:<no>")); WebSocket hibernation, para tutmaz.
+[[durable_objects.bindings]]
+name = "MASA"
+class_name = "MasaDO"
+
 # SQLite tabanlı Durable Object'ler (ücretsiz planda kullanılabilen tür).
 [[migrations]]
 tag = "v1"
@@ -33,6 +38,10 @@ new_sqlite_classes = ["YerlesimDO"]
 [[migrations]]
 tag = "v3"
 new_sqlite_classes = ["YonetimDO"]
+
+[[migrations]]
+tag = "v4"
+new_sqlite_classes = ["MasaDO"]
 
 [vars]
 # Google OAuth istemci kimlikleri (Android/iOS/Web), virgülle ayrılmış. Gizli değildir.
