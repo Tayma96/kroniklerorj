@@ -362,6 +362,7 @@ function MeslekEkran() {
   const altBag = <View style={{ marginTop: 22, gap: 8 }}>
     <CizgiDugme etiket={t("onl.is.baslik")} icon="saw" rtl={rtl} kucuk onPress={() => router.push("/online/isler")} />
     <CizgiDugme etiket={t("onl.lo.baslik")} icon="banner" rtl={rtl} kucuk onPress={() => router.push("/online/lonca")} />
+    <CizgiDugme etiket={t("onl.ba.git")} icon="anvil" rtl={rtl} kucuk onPress={() => router.push("/online/beceri-agaci")} />
   </View>;
 
   // --- seçim listesi (mesleğim yok, değiştiriyorum ya da yan sanat seçiyorum)
