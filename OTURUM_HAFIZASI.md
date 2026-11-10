@@ -16,11 +16,11 @@
 - Radikal sonuçlar spec `docs/superpowers/specs/2026-11-03-radikal-sonuclar-design.md`; aşama 0–3 bitti, sıradaki aşama 4 (göç, suç, lekeli).
 - Dövüş 3D: `scripts/blender/` k09–k12, `docs/SAVAS_HAREKET_HARITASI.md`; ham FBX depoda yok.
 
-## Çevrimiçi (8–9 Kasım, Berkay tam yetki; "talimat bekleme, hepsini bitir")
-- Esas: `docs/superpowers/specs/2026-11-08-cevrimici-ana-tasarim-design.md` (§6.1 hediye, §6.2 teveccüh tutarla, §6.3 aile evi, §8 sıra) + `2026-11-09-beceri-agaci-v2-design.md` (RPG ağacı, öğrenme süresi, Tam Özgürlük). GDD'ler yön gösterici.
-- `apk`de: meslek çekirdeği, dikey dilim, Y1 yönetici, Faz 3, han masası, hanedan, profil, beceri ağacı v2 sunucusu, Faz 4 üçgen, Faz 14 barınma (sunucu 280 test).
-- Sürüyor: 14 ağaç istemcisi, Faz 6 ekonomi (ana çalışma alanı, yarım), Faz 4/14 ekranları, Faz 5 NPC gündemi (ayrı kopyalar). Birleşim kopyası: scratchpad `birlesim2` (dal `birlesim-2`).
-- Sonra: Faz 12–13, E4, E5, Faz 7+P1–P4, Faz 8+P5–P6, E6–E7, Faz 11/15 (ödeme bağlantısı hariç), Y2–Y3, Faz 9. Paralel ≤4 ajan; limitte send_later ile kendiliğinden devam.
+## Çevrimiçi (10 Kasım durumu)
+- Esas: `docs/superpowers/specs/2026-11-08-cevrimici-ana-tasarim-design.md` (§6.1 hediye, §6.2 teveccüh tutarla, §6.3 aile evi, §8 sıra) + `2026-11-09-beceri-agaci-v2-design.md`. GDD'ler yön gösterici.
+- `apk`de sunucu (334 test): meslek + 14 RPG ağacı, dikey dilim, Y1 yönetici, Faz 3–6, han masası, hanedan, Faz 12–13 mülk/işletme/çalışan, Faz 14 barınma, E5–E7 topluluk, Faz 7 + Ek B P1–P4 siyaset, Debdebe (ödeme kapalı, `DEBDEBE_ACIK`). İstemci: profil, gelen, han, hanedan, ağaçlar, üçgen, barınma; ekonomi/mülk ekranları son ajanda.
+- Kalan: Faz 8 + P5–P6 darbe/bağımsızlık; Ayan/sezon tamamlama, Y2 ekonomi sağlığı + parametre okuma, Y3 telafi; E4 11 meslekte `kanca` etkileri; siyaset/topluluk/Debdebe/Meşrep ekranları; meslek gelir dengesi (sim todo, oran ~2,6); Faz 9 yayın kapısı; sonra test sürümü (test girişi + çevrimiçi APK; Berkay sunucuyu `wrangler deploy` eder).
+- Kural: test/denetim yalnız iş sonunda; ≤4 ajan; çakışma çözücü scratchpad `coz.py` (geçici).
 
 ## Açık işler
 - `docs/DEVIR.md` (1 Kasım devri). ElevenLabs Berkay'ın aboneliğiyle onaylı (`.mcp.json`).
