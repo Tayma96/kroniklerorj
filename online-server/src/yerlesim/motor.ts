@@ -14,6 +14,7 @@ import { istekNoCoz } from "../mantik.ts";
 import { oyunAyi, sonrakiDonum, takvim } from "../saat.ts";
 import { basarili, hata, type SakinKaydi, type Sonuc } from "../tipler.ts";
 import { harita, npcMekani } from "./cizelge.ts";
+import { arkaPlanGorunumu, type ArkaPlan } from "./arka-plan.ts";
 import { ayDonumu } from "./donum.ts";
 import { donusKartiSec, gorebilir } from "./donus.ts";
 import {
@@ -145,6 +146,8 @@ interface Meta {
   kr?: number;
   /** Kasaba stoğu (denge 9 Kasım; eski kayıtta yok). */
   st?: Partial<Record<string, number>>;
+  /** Arka plan: kasaba özeti, sayaçlar, tetikler (Faz 5; eski kayıtta yok). */
+  ap?: ArkaPlan;
 }
 
 export interface OlayGorunumu {
@@ -258,6 +261,7 @@ export class YerlesimMotoru {
       no: meta.no,
       ...(meta.hd ? { hd: meta.hd } : {}),
       ...(meta.st ? { st: meta.st } : {}),
+      ...(meta.ap ? { ap: meta.ap } : {}),
     };
     return new YerlesimMotoru(depo, meta, kasaba);
   }
@@ -272,6 +276,7 @@ export class YerlesimMotoru {
     m.no = k.no ?? m.no;
     if (k.hd) m.hd = k.hd;
     if (k.st) m.st = k.st;
+    if (k.ap) m.ap = k.ap;
     await this.#kronikBosalt();
     const kayit: Record<string, unknown> = {};
     for (const a of this.#kirli) {
@@ -551,7 +556,7 @@ export class YerlesimMotoru {
     await this.kaydet();
     return basarili({
       saat: { simdi, oyunAyi: ay, ...takvim(ay), sonrakiDonum: sonrakiDonum(simdi) },
-      yerlesim: { id: k.y, ad: y?.ad ?? k.y, tur: k.tur, beylik: y?.beylik ?? "", npc: k.npc.length, oyuncu: k.sakin.length },
+      yerlesim: { id: k.y, ad: y?.ad ?? k.y, tur: k.tur, beylik: y?.beylik ?? "", npc: k.npc.length, oyuncu: k.sakin.length, nabiz: arkaPlanGorunumu(k.ap, ay) },
       ben,
       harita: harita(k, ay, dil),
       donusKarti: kart.map((o) => olayYaz(o, dil)),
