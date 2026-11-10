@@ -17,6 +17,7 @@ import { IS_KILIDI } from "../icerik/agaclar/index.ts";
 import { aracArtisi, basariSay, isAcik, verimArtisi } from "./beceri-etki.ts";
 import { hizmetEkle, meslekKaydi } from "./meslek.ts";
 import { envanterEkle, saticiDegeri } from "./npc-taban.ts";
+import { ALET_KALITE_VERIM, enIyiKalite } from "./kalite.ts";
 import { ALET_OMRU, aletOmru, aracAsindir } from "./tarif.ts";
 import type { Dokum, Karakter } from "./tipler.ts";
 
@@ -99,8 +100,8 @@ export interface Verim {
   usta: boolean;
   yamak: boolean;
   acik: boolean;
-  /** Araç etkisi (öğrenilmiş): araç malı, artış, envanterde var mı. */
-  arac: { mal: string; arti: number; var: boolean } | null;
+  /** Araç etkisi (öğrenilmiş): araç malı, artış (aracı yapanın kalitesi dahil), envanterde var mı, kalitesi. */
+  arac: { mal: string; arti: number; var: boolean; kalite: number } | null;
   /** Pencere içindeki tekrar ve pencere (ay). */
   tekrar: number;
   pencere: number;
@@ -112,7 +113,8 @@ function verim(k: Karakter, id: IsId, ay: number): Verim {
   const p = pencere(k, id);
   const n = (k.tz?.[id] ?? []).filter((x) => ay - x < p).length;
   const ae = aracArtisi(k, id);
-  const arac = ae ? { ...ae, var: (k.ev?.[ae.mal] ?? 0) > 0 } : null;
+  const kq = ae ? enIyiKalite(k, ae.mal) : 0;
+  const arac = ae ? { mal: ae.mal, arti: ae.arti + (ALET_KALITE_VERIM[kq] ?? 0), var: (k.ev?.[ae.mal] ?? 0) > 0, kalite: kq } : null;
   const taban = is.cikti + verimArtisi(k, id).arti + (arac?.var ? arac.arti : 0);
   const ham = Math.floor(taban / (1 + n));
   const hamSonraki = Math.floor(taban / (2 + n));
@@ -168,7 +170,7 @@ export type TemelIsSonucu = {
   /** Onarımda: aracın kalan kullanım sayacı ve etkin ömrü. */
   onarim?: { mal: MalId; kullanim: number; omur: number };
   /** Araçla yapıldıysa aşınma. */
-  arac?: { mal: MalId; kullanim: number; omur: number; asindi: boolean };
+  arac?: { mal: MalId; kullanim: number; omur: number; asindi: boolean; kalite: number };
   hizmet: number;
   firsat: Dokum;
   takat: number;

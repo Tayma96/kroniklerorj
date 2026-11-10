@@ -84,6 +84,12 @@ import { KRONIK_SAYFA, KRONIK_YANIT_EN_COK, kronikYaz, type KronikSatiri } from 
 import { vasiyetDogrula } from "./vasiyet.ts";
 import { GUNDEM_ADI, type Isaret, type IliskiHaritasi, type Karakter, type Kasaba, type Npc, type Olay, type OlayParam, type OlayTaslagi, type Sakin } from "./tipler.ts";
 import { kasabaKur } from "./uret.ts";
+import { defterYaz } from "./defter.ts";
+import { ekonomiDonumu } from "./ekonomi-donum.ts";
+import { ismarlamaSicili } from "./ismarlama.ts";
+import { kaliteGorunumu } from "./kalite.ts";
+import { levhaYaz } from "./levha.ts";
+import type { EkonomiKaydi } from "./pazar-tahta.ts";
 
 // Faz 3 kayıtları (borç, teklif, engel, husumet) devirde vârise bağlanır.
 kimlikTasiyiciEkle(toplumKimligiTasi);
@@ -96,6 +102,8 @@ const ILI = "g:";
 const SAYFA = "e:";
 const SIPARIS = "sp";
 const TOPLUM = "tp";
+/** Oyuncu pazarı, ısmarlama ve Ustalar Levhası (Faz 6). */
+const EKONOMI = "ek";
 /** [PARAMETRE] Gelen kutusunda gösterilen son kapanan teklif sayısı; söylenti yalanlamanın takat bedeli. */
 export const GELEN_KAPALI_EN_COK = 20;
 export const YALANLAMA_TAKAT = 1;
@@ -174,7 +182,7 @@ function kardesMi(a: Npc, b: Npc): boolean {
 }
 
 /** #tekrarGuvenli'nin işleyiciye verdiği ekler: ilişki haritası, eklenecek olay, sipariş listesi değişti mi. */
-interface TekrarEki {
+export interface TekrarEki {
   ili: IliskiHaritasi;
   olay: OlayTaslagi | undefined;
   siparis: boolean;
@@ -183,6 +191,9 @@ interface TekrarEki {
   /** Değişen öteki oyuncular (yerel kimlik) ve toplum kaydı. */
   digerleri: string[];
   toplum: boolean;
+  /** Faz 6: ekonomi kaydı değişti; deftere açık kalemler [oyuncu, kalem, tutar] (kalanı varsayılan kaleme yazılır). */
+  ekonomi?: boolean;
+  defter?: [o: string, kalem: string, tutar: number][];
 }
 
 export class YerlesimMotoru {
@@ -233,6 +244,7 @@ export class YerlesimMotoru {
     const sakin = (await depo.al<Sakin[]>(SAKIN)) ?? [];
     const sp = (await depo.al<Siparis[]>(SIPARIS)) ?? [];
     const tp = await depo.al<Toplum>(TOPLUM);
+    const ek = await depo.al<EkonomiKaydi>(EKONOMI);
     const kasaba: Kasaba = {
       y: meta.y,
       tur: y.tur,
@@ -247,6 +259,7 @@ export class YerlesimMotoru {
       ili: new Map(),
       sp,
       ...(tp ? { tp } : {}),
+      ...(ek ? { ek } : {}),
       no: meta.no,
       ...(meta.hd ? { hd: meta.hd } : {}),
       ...(meta.st ? { st: meta.st } : {}),
@@ -275,6 +288,7 @@ export class YerlesimMotoru {
       } else if (a === SAKIN) kayit[a] = k.sakin;
       else if (a === SIPARIS) kayit[a] = k.sp ?? [];
       else if (a === TOPLUM) kayit[a] = k.tp;
+      else if (a === EKONOMI) kayit[a] = k.ek;
       else if (a.startsWith(KAR)) kayit[a] = k.kar.get(a.slice(KAR.length));
       else if (a.startsWith(ILI)) kayit[a] = k.ili.get(a.slice(ILI.length));
       else if (a.startsWith(SAYFA)) kayit[a] = this.#sayfalar.get(Number(a.slice(SAYFA.length)));
@@ -384,13 +398,18 @@ export class YerlesimMotoru {
     let islenen = 0;
     while (k.ay < hedef && islenen < azami) {
       const ay = k.ay + 1;
+      // Faz 6: süresi dolan ilan/ısmarlama iadeleri kendi defter kalemleriyle; kalan akçe farkı "donum" kalemine.
+      for (const t of ekonomiDonumu(k, ay)) await this.#olayEkle(t, ay);
+      const pa0 = new Map([...k.kar].map(([o, c]) => [o, c.pa]));
       for (const t of ayDonumu(k, ay)) await this.#olayEkle(t, ay);
       for (const t of siparisDonumu(k, ay)) await this.#olayEkle(t, ay);
       for (const t of toplumDonumu(k, ay)) await this.#olayEkle(t, ay);
+      for (const [o, c] of k.kar) defterYaz(c, ay, "donum", c.pa - (pa0.get(o) ?? c.pa));
       islenen++;
     }
     this.#kirli.add(NPC).add(SIPARIS).add(SAKIN);
     if (k.tp) this.#kirli.add(TOPLUM);
+    if (k.ek) this.#kirli.add(EKONOMI);
     for (const s of k.sakin) this.#kirli.add(KAR + s.o).add(ILI + s.o);
     // Ölüler de yazılır (devir arşivi); devirle gelen vâris yeni kimliktedir.
     for (const o of k.kar.keys()) this.#kirli.add(KAR + o).add(ILI + o);
@@ -475,6 +494,8 @@ export class YerlesimMotoru {
       para: kar.pa,
       hal: halGorunumu(kar, ay),
       envanter: kar.ev ?? {},
+      envanterKalite: kaliteGorunumu(kar),
+      ismarlamaSicili: ismarlamaSicili(kar),
       meslek: kar.ms ?? null,
       kademeHizmet: KADEME_HIZMET,
       beceri: beceriGorunumu(kar),
@@ -666,8 +687,10 @@ export class YerlesimMotoru {
     const k = this.kasaba;
     const ay = k.ay;
     const dil = dilCoz(nesneMi(govde) ? govde.dil : undefined);
+    const pa0 = kar.pa;
     const sonuc = eylemYap(k, kar, ili, girdi.deger, ay, tohumlu("eylem", k.y, ay, kar.o, kar.en));
     if (!sonuc.ok) return sonuc;
+    defterYaz(kar, ay, "eylem", kar.pa - pa0);
     const olay = sonuc.deger.olay ? olayYaz(await this.#olayEkle(sonuc.deger.olay, ay), dil) : undefined;
     // Söylenti: başarılı hediye ve yardımı aynı mekândaki NPC'ler görür (muhatap NPC zaten bilir).
     const tur = girdi.deger.tur;
@@ -696,6 +719,7 @@ export class YerlesimMotoru {
     hesapId: string,
     govde: unknown,
     isle: (kar: Karakter, s: Sakin, ay: number, ek: TekrarEki) => Sonuc<Record<string, unknown>>,
+    kalem = "diger",
   ): Promise<Sonuc<unknown>> {
     const no = istekNoCoz(govde);
     if (!no.ok) return no;
@@ -708,11 +732,13 @@ export class YerlesimMotoru {
     const ay = this.kasaba.ay;
     const bitti = await this.#beceriTamamla(kar);
     const ek: TekrarEki = { ili, olay: undefined, siparis: false, olaylar: [], digerleri: [], toplum: false };
+    const pa0 = new Map([...this.kasaba.kar].map(([o, c]) => [o, c.pa]));
     const sonuc = isle(kar, s, ay, ek);
     if (!sonuc.ok) {
       if (bitti) await this.kaydet();
       return sonuc;
     }
+    this.#defterIsle(pa0, ek, ay, kalem);
     const dil = dilCoz(nesneMi(govde) ? govde.dil : undefined);
     const olay = ek.olay ? olayYaz(await this.#olayEkle(ek.olay, ay), dil) : undefined;
     for (const t of ek.olaylar) await this.#olayEkle(t, ay);
@@ -723,8 +749,65 @@ export class YerlesimMotoru {
     if (kar.ist.length > IST_EN_COK) kar.ist.splice(0, kar.ist.length - IST_EN_COK);
     this.#kirli.add(KAR + kar.o).add(ILI + kar.o).add(SAKIN);
     if (ek.siparis) this.#kirli.add(SIPARIS);
+    if (ek.ekonomi) this.#kirli.add(EKONOMI);
     await this.kaydet();
     return basarili(yanit);
+  }
+
+  /** Defter (Faz 6): açık kalemleri, sonra akçesi değişen her oyuncunun kalan farkını varsayılan kaleme yazar. */
+  #defterIsle(pa0: Map<string, number>, ek: TekrarEki, ay: number, kalem: string): void {
+    const acik = new Map<string, number>();
+    for (const [o, km, tutar] of ek.defter ?? []) {
+      const c = this.kasaba.kar.get(o);
+      if (!c) continue;
+      defterYaz(c, ay, km, tutar);
+      acik.set(o, (acik.get(o) ?? 0) + tutar);
+    }
+    for (const [o, c] of this.kasaba.kar) {
+      const once = pa0.get(o);
+      if (once === undefined) continue;
+      const fark = c.pa - once - (acik.get(o) ?? 0);
+      if (fark !== 0) defterYaz(c, ay, kalem, fark);
+      if (c.pa !== once) this.#kirli.add(KAR + o);
+    }
+  }
+
+  /**
+   * Faz 6 ekonomi uçlarının yazma kabuğu (ekonomi-uclar.ts): `yukle` oyuncularını yükler, istekNo'lu işlemi
+   * yürütür; ekonomi kaydı, değişen öteki oyuncular ve defter yazılır.
+   */
+  async ekonomiYaz(
+    hesapId: string,
+    govde: unknown,
+    kalem: string,
+    yukle: readonly string[],
+    isle: (kar: Karakter, ay: number, ek: TekrarEki) => Sonuc<Record<string, unknown>>,
+  ): Promise<Sonuc<unknown>> {
+    const k = this.kasaba;
+    const yuklenecek = yukle.filter((o) => k.sakin.some((x) => x.o === o));
+    if (yuklenecek.length > 0) await this.#yukle(yuklenecek);
+    return this.#tekrarGuvenli(
+      hesapId,
+      govde,
+      (kar, _s, ay, ek) => {
+        const r = isle(kar, ay, ek);
+        if (r.ok) ek.ekonomi = true;
+        return r;
+      },
+      kalem,
+    );
+  }
+
+  /** Faz 6 ekonomi okuma uçları: sakin karakteriyle okur (yazmaz). */
+  async ekonomiOku(hesapId: string, oku: (kar: Karakter, ay: number) => Sonuc<unknown>): Promise<Sonuc<unknown>> {
+    const r = await this.#oyuncu(hesapId);
+    if (!r.ok) return r;
+    return oku(r.deger.kar, this.kasaba.ay);
+  }
+
+  /** Yerel oyuncu kimliğini çözer (yalnız bu yerleşimin sakini). */
+  sakinKimligi(ham: unknown): string | undefined {
+    return this.#sakinKimligi(ham);
   }
 
   /** Süresi dolan beceri öğrenmesini tamamlar; oyuncuya özel olay (Dönüş Kartı maddesi) düşer. */
@@ -776,7 +859,7 @@ export class YerlesimMotoru {
       else r = beceriYeniden(kar, govde.meslek, simdi, hanedanKasabasi(this.kasaba));
       if (!r.ok) return r;
       return basarili({ ...r.deger, beceri: beceriGorunumu(kar), beceriOzet: beceriOzeti(kar, simdi) });
-    });
+    }, "beceri");
   }
 
   /** POST /v1/meslek {islem: sec|yan|kademe, meslek, istekNo}. Düğüm öğrenme /v1/beceri/ogren'dedir (v2). */
@@ -814,18 +897,23 @@ export class YerlesimMotoru {
   /** POST /v1/taban-al {mal, adet, istekNo}: NPC taban arzından pahalı ve kotalı alım. */
   async tabanAl(hesapId: string, govde: unknown): Promise<Sonuc<unknown>> {
     if (!nesneMi(govde)) return hata("gecersiz_istek");
-    return this.#tekrarGuvenli(hesapId, govde, (kar, _s, ay) => npcdenAl(kar, govde.mal, govde.adet, ay, (this.kasaba.st ??= {}) as KasabaStogu));
+    return this.#tekrarGuvenli(hesapId, govde, (kar, _s, ay) => npcdenAl(kar, govde.mal, govde.adet, ay, (this.kasaba.st ??= {}) as KasabaStogu), "npcAlim");
   }
 
   /** POST /v1/tarif {tarif, istekNo}: açık düğümlü tarif; girdi düşer, çıktı eklenir, Hal ve hizmet döner. */
   async tarif(hesapId: string, govde: unknown): Promise<Sonuc<unknown>> {
     if (!nesneMi(govde)) return hata("gecersiz_istek");
-    return this.#tekrarGuvenli(hesapId, govde, (kar, _s, ay) => {
+    return this.#tekrarGuvenli(hesapId, govde, (kar, _s, ay, ek) => {
       const r = tarifYap(kar, govde.tarif, ay);
       if (!r.ok) return r;
+      const lv = levhaYaz(this.kasaba, kar, r.deger.tarif, r.deger.cikti.mal, r.deger.kalite.kademe, ay);
+      if (lv) {
+        ek.olaylar.push(lv.olay);
+        ek.ekonomi = true;
+      }
       const ur = (kar.ur ??= {});
       ur[r.deger.cikti.mal] = (ur[r.deger.cikti.mal] ?? 0) + r.deger.cikti.adet;
-      return basarili({ ...r.deger, tarifler: tarifListesi(kar) });
+      return basarili({ ...r.deger, levha: lv ? true : false, tarifler: tarifListesi(kar) });
     });
   }
 
@@ -839,7 +927,7 @@ export class YerlesimMotoru {
       if (!r.ok) return r;
       basariSay(kar, "sat:akce", r.deger.tutar);
       return basarili({ ...r.deger, ...this.#ortakPayiYaz(kar, r.deger.tutar, ay, ek) });
-    });
+    }, "npcSatis");
   }
 
   /** POST /v1/siparis/teslim {siparis, istekNo, dil?}: ilk getiren alır; ödül, hizmet, teşekkür izi olayı. */
@@ -855,7 +943,7 @@ export class YerlesimMotoru {
       ek.olay = r.deger.olay;
       ek.siparis = true;
       return basarili({ ...r.deger.sonuc, hal: halGorunumu(kar, ay), ...this.#ortakPayiYaz(kar, r.deger.sonuc.odul, ay, ek) });
-    });
+    }, "siparis");
   }
 
   /** GET /v1/siparisler?dil=: açık ve son kapanan siparişler (teşekkür izi), benim elimdeki adet. */
@@ -963,7 +1051,7 @@ export class YerlesimMotoru {
       ek.digerleri.push(diger.o);
       ek.toplum = true;
       return isle(kar, diger, ay, ek);
-    });
+    }, "teklif");
   }
 
   #oyuncuEylemleri(kar: Karakter, o: Karakter, ay: number) {
@@ -1000,6 +1088,7 @@ export class YerlesimMotoru {
       ...oyuncuProfili(this.kasaba, kar, o, dil),
       mesleki: mesleki(o, this.#simdi),
       teveccuh: teveccuhGorunumu(o, ay),
+      ismarlamaSicili: ismarlamaSicili(o),
       vitrin: vitrinGorunumu(o),
       eylemler: o.o === kar.o ? [] : this.#oyuncuEylemleri(kar, o, ay),
     });
@@ -1053,7 +1142,7 @@ export class YerlesimMotoru {
       ek.digerleri.push(...teklifTaraflari(r.deger.teklif).filter((x) => x !== kar.o));
       ek.toplum = true;
       return basarili({ teklif: teklifGorunumu(k, r.deger.teklif, kar.o, dil) });
-    });
+    }, "teklif");
   }
 
   /** GET /v1/gelen?dil=: gelen/giden açık teklifler, süren anlaşmalar, son kapananlar, dostluk, husumet, söylenti. */
@@ -1145,7 +1234,7 @@ export class YerlesimMotoru {
       if (sk) sk.tv = teveccuhKademesi(alan, ay) || undefined;
       ek.digerleri.push(alan.o);
       return basarili({ ikram, fiyat: odeme.deger.batak, batak: odeme.deger.batak, teveccuh });
-    });
+    }, "ikram");
   }
 
   /** GET /v1/duzen: olağan düzen ayarları. */
@@ -1285,7 +1374,7 @@ export class YerlesimMotoru {
       ek.olay = r.deger.olay;
       this.#kirli.add(NPC);
       return basarili(r.deger.sonuc);
-    });
+    }, "hanedan");
   }
 
   /** GET /v1/kronik?imlec=: imleçten sonraki kronik satırları (budanmaz; 49. sayfadan sonra da okunur). */

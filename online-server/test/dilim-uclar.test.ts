@@ -56,7 +56,7 @@ test("dikey dilim uçları: Hal, tarif, satış, sipariş teslimi ve teşekkür 
     assert.deepEqual(d0.envanter, {});
     assert.equal(d0.meslek, null);
     assert.deepEqual(d0.kademeHizmet, [0, 24, 72, 72]);
-    assert.equal(d0.tarifler.length, 6);
+    assert.ok(d0.tarifler.length >= 6, "dikey dilimin 6 tarifi ve Faz 6 tarifleri");
     assert.equal(d0.takat.aylik, 6);
 
     // 7 gün = 14 oyun ayı: 13 yaş; bu sırada kıt mesleklere sipariş açılır.

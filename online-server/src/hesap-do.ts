@@ -167,6 +167,16 @@ export class HesapDO {
       case "hanedan":
       case "devirOnizle":
       case "kronik":
+      // Ekonomi (Faz 6): ileti aynen yerleşime gider.
+      case "pazarIlan":
+      case "pazarIslem":
+      case "pazarGeri":
+      case "ismarla":
+      case "ismarlamaCevap":
+      case "pazar":
+      case "ismarlamalar":
+      case "levha":
+      case "defter":
         return this.#yerlesime(ileti);
       default:
         return hata("gecersiz_istek");

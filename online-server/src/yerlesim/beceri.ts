@@ -8,6 +8,7 @@ import { MESLEK_IDLERI, meslekBul, type Kademe, type MeslekId } from "../icerik/
 import { TARIFLER } from "../icerik/tarifler.ts";
 import { basarili, hata, type HataKodu, type Sonuc } from "../tipler.ts";
 import { gizliGorunur } from "./beceri-etki.ts";
+import { kaliteHedefiMi } from "./kalite.ts";
 import {
   KADEME_HIZMET,
   beceriPuani,
@@ -44,9 +45,12 @@ export function kancaMi(e: Etki): boolean {
     case "verim":
       return !Object.hasOwn(TARIFLER, e.hedef) && !Object.hasOwn(TEMEL_ISLER, e.hedef);
     case "arac":
-      return !Object.hasOwn(TEMEL_ISLER, e.hedef) || !Object.hasOwn(MALLAR, e.mal);
+      return (!Object.hasOwn(TEMEL_ISLER, e.hedef) && !Object.hasOwn(TARIFLER, e.hedef)) || !Object.hasOwn(MALLAR, e.mal);
     case "omur":
       return !Object.values(TARIFLER).some((t) => "arac" in t && t.arac.mal === e.mal);
+    case "kalite":
+      // Faz 6: ürün kalitesi (kalite.ts); hedef tarif kimliği ya da tarif grubu olmalı.
+      return !kaliteHedefiMi(e.hedef);
     default:
       return true;
   }

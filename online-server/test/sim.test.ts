@@ -266,7 +266,7 @@ async function dengeSim(N: number) {
           if (d > 0 && (!enIyi || d > enIyi.d)) enIyi = { tur: "is", id: v.is, d };
         }
         for (const t of tarifListesi(c)) {
-          if (!t.acik || c.tk < t.takat) continue;
+          if (!t.acik || c.tk < t.takat || (t.arac?.zorunlu && !t.arac.var)) continue; // zorunlu araç (Faz 6)
           let maliyet = 0;
           let odeme = 0;
           const al: [Mal, number][] = [];

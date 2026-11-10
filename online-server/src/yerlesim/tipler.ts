@@ -11,6 +11,9 @@ import type { Siparis } from "./siparis.ts";
 import type { Duzen } from "./duzen.ts";
 import type { Armagan, Toplum } from "./toplum.ts";
 import type { TeveccuhKaydi } from "./teveccuh.ts";
+import type { KaliteParti } from "./kalite.ts";
+import type { DefterAyi } from "./defter.ts";
+import type { EkonomiKaydi } from "./pazar-tahta.ts";
 
 /** NPC'ler arası bağ: [diğer NPC, tür (1 dost, 2 rakip), puan (−100..100), kuruluş ayı]. */
 export type Bag = [diger: number, tur: 1 | 2, puan: number, kurulus: number];
@@ -168,6 +171,12 @@ export interface Karakter {
   bs?: Record<string, number>;
   /** Kazanılmış kalıcı unvanlar (unvan kimlikleri). */
   un?: string[];
+  /** Faz 6 ekonomi: envanterin izli partileri (kalite + yapan; mal → partiler; izsiz kalan sade). */
+  kq?: Record<string, KaliteParti[]>;
+  /** Gelir-gider defteri (son DEFTER_AY ay). */
+  df?: DefterAyi[];
+  /** Ismarlama ustalık sicili: [teslim, gecikme] (lonca güveni; profilde görünür). */
+  ig?: [teslim: number, gecikme: number];
 }
 
 /** Süren öğrenme ya da yeniden düzenleme beklemesi (gerçek zaman, ms; bitince tembel tamamlanır). */
@@ -273,6 +282,8 @@ export interface Kasaba {
   hd?: HanedanKasabasi;
   /** Kasaba stoğu (oyuncunun NPC'ye sattığı mallar; meta'da saklanır; eski kayıtta yok). */
   st?: Partial<Record<string, number>>;
+  /** Oyuncu pazarı, ısmarlamalar ve Ustalar Levhası (Faz 6; depo anahtarı "ek"; eski kayıtta yok). */
+  ek?: EkonomiKaydi;
   /** Depoya yazılmayı bekleyen kronik satırları ve sonraki oyuncu numarası (Faz 7). */
   kq?: KronikSatiri[];
   no?: number;

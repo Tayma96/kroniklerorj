@@ -2,6 +2,7 @@
 
 declare module "node:test" {
   function test(name: string, fn: () => void | Promise<void>): Promise<void>;
+  function test(name: string, secenek: { todo?: string | boolean; skip?: string | boolean }, fn: () => void | Promise<void>): Promise<void>;
   export default test;
 }
 

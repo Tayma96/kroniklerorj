@@ -1,12 +1,13 @@
 // Demircilik ağacı: spec 2026-11-09 §8 aynen. Aletçilik nal/alet tariflerini açar ve alet ömrünü uzatır; Tarım
 // Aletleri Ustalığı aletle hasadı artırır (bilgi kullananındır: Tam Özgürlük, bkz. beceri.ts).
+// Faz 6: Metal İşleme 1 çivi tarifini de açar (doğrama, araba, koşum girdisi).
 import { agacKur, arac, aracVerimi, hak, hizmet, is, kalite, omur, sinerji, tarif, tasarruf, verim } from "./tipler.ts";
 
 export default agacKur("demirci", {
   cirak: [
     { a: "aletcilik", i: "cekic", e: [[tarif("nal")], [tarif("alet")], [omur("alet", 1)]] },
     { a: "temelDovme", i: "ors", e: [[tarif("bicak")], [tasarruf("dovme", "komur", 25)], [verim("onarim", 1), hizmet("onarimHizmeti")]] },
-    { a: "metalIsleme", i: "kulce", e: [[tarif("kulce")], [verim("kulce", 1)], [tarif("tunc")]] },
+    { a: "metalIsleme", i: "kulce", e: [[tarif("kulce"), tarif("civi")], [verim("kulce", 1)], [tarif("tunc")]] },
   ],
   kalfa: [
     { a: "tarimAletleri", i: "orak", e: [[tarif("saban")], [tarif("orak")], [aracVerimi("hasat", 20)]] },

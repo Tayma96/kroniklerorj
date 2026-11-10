@@ -39,6 +39,15 @@
 //   POST /v1/devir {varis?, pk, istekNo} → vâris karakteri, plan (pk tutmazsa 409 devir_degisti)
 //   POST /v1/evlilik {hedef, istekNo}    → NPC ile evlilik (görüş eşiği, düğün bedeli)
 //   GET  /v1/kronik?imlec=&dil=          → yerleşim kroniği (sayfalı, budanmaz)
+//   GET  /v1/pazar?mal=&dil=             → oyuncu pazarı: açık ilanlar (NPC taban karşılaştırmalı), benim ilanlarım (Faz 6)
+//   POST /v1/pazar/ilan {tur: sat|al, mal, adet, fiyat, sure?, kalite?, istekNo} → {ilan} (emanet kilitlenir)
+//   POST /v1/pazar/islem {ilan, adet, kalite?, istekNo} → {islem: tutar, bac, net, karsilastirma, pompa}
+//   POST /v1/pazar/geri {ilan, istekNo}  → {ilan, iade}
+//   GET  /v1/ismarlama?dil=              → gelen/giden ısmarlamalar, ustalık sicili
+//   POST /v1/ismarlama {hedef, mal, adet, kalite?, sure, ucret, istekNo} → {ismarlama} (ücret emanete)
+//   POST /v1/ismarlama/cevap {ismarlama, cevap: kabul|ret|geri|teslim, kalite?, istekNo} → {ismarlama, teslim?}
+//   GET  /v1/levha?mal=                  → Ustalar Levhası (üstün/şaheser ürünler: kim, ne, ay)
+//   GET  /v1/defter?ay=                  → gelir-gider dökümü (son N ay), emanetteki akçe
 //   POST /v1/sikayet {hedef, neden, aciklama?, istekNo} → {id, durum, kalan}
 //   GET  /v1/duyurular                   → son 5 duyuru
 //   GET  /v1/han?dil=                    → yerleşimin hanı ve masaları (doluluk)          (Faz 10, src/han/)
@@ -65,6 +74,7 @@ import {
   type Env,
   type GovdeliIslem,
   type HanedanIslem,
+  type EkonomiIslem,
   type HataKodu,
   type HesapIleti,
   type Sonuc,
@@ -265,6 +275,14 @@ function govdeli(istek: Request, env: Env, islem: GovdeliIslem | HanedanIslem): 
   });
 }
 
+/** Gövdeli ekonomi POST iletisi (Faz 6). */
+function ekonomiGovdeli(istek: Request, env: Env, islem: EkonomiIslem): Promise<Response> {
+  return hesaba(istek, env, async (hesapId) => {
+    const govde = await govdeOku(istek);
+    return govde.ok ? basarili({ islem, hesapId, govde: govde.deger }) : govde;
+  });
+}
+
 async function yonlendir(istek: Request, env: Env): Promise<Response> {
   const url = new URL(istek.url);
   const yol = url.pathname;
@@ -341,6 +359,30 @@ async function yonlendir(istek: Request, env: Env): Promise<Response> {
     case "/v1/kronik":
       return yontem === "GET"
         ? hesaba(istek, env, (hesapId) => basarili({ islem: "kronik", hesapId, imlec: url.searchParams.get("imlec"), dil }))
+        : hataYaniti("yontem_yok");
+    // Ekonomi (Faz 6): src/yerlesim/ekonomi-uclar.ts
+    case "/v1/pazar":
+      return yontem === "GET"
+        ? hesaba(istek, env, (hesapId) => basarili({ islem: "pazar", hesapId, mal: url.searchParams.get("mal"), dil }))
+        : hataYaniti("yontem_yok");
+    case "/v1/pazar/ilan":
+      return yontem === "POST" ? ekonomiGovdeli(istek, env, "pazarIlan") : hataYaniti("yontem_yok");
+    case "/v1/pazar/islem":
+      return yontem === "POST" ? ekonomiGovdeli(istek, env, "pazarIslem") : hataYaniti("yontem_yok");
+    case "/v1/pazar/geri":
+      return yontem === "POST" ? ekonomiGovdeli(istek, env, "pazarGeri") : hataYaniti("yontem_yok");
+    case "/v1/ismarlama":
+      if (yontem === "GET") return hesaba(istek, env, (hesapId) => basarili({ islem: "ismarlamalar", hesapId, dil }));
+      return yontem === "POST" ? ekonomiGovdeli(istek, env, "ismarla") : hataYaniti("yontem_yok");
+    case "/v1/ismarlama/cevap":
+      return yontem === "POST" ? ekonomiGovdeli(istek, env, "ismarlamaCevap") : hataYaniti("yontem_yok");
+    case "/v1/levha":
+      return yontem === "GET"
+        ? hesaba(istek, env, (hesapId) => basarili({ islem: "levha", hesapId, mal: url.searchParams.get("mal") }))
+        : hataYaniti("yontem_yok");
+    case "/v1/defter":
+      return yontem === "GET"
+        ? hesaba(istek, env, (hesapId) => basarili({ islem: "defter", hesapId, ay: url.searchParams.get("ay") }))
         : hataYaniti("yontem_yok");
     case "/v1/sikayet":
       if (yontem !== "POST") return hataYaniti("yontem_yok");

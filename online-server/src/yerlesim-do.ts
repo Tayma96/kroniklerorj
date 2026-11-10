@@ -3,6 +3,7 @@
 // sırayla, çağrı başına sınırlı yetiştirilir. İnce sarmalayıcıdır; kurallar src/yerlesim/*.ts'dedir.
 
 import { doDepo, type Depo } from "./depo.ts";
+import { defterOku, ismarlaUc, ismarlamaCevapUc, ismarlamaOku, levhaOku, pazarGeri, pazarIlan, pazarIslem, pazarOku } from "./yerlesim/ekonomi-uclar.ts";
 import { iletiOku, jsonYanit } from "./ic.ts";
 import { hata, type Env, type Sonuc, type YerlesimIleti } from "./tipler.ts";
 import { sonrakiAlarm, YerlesimMotoru } from "./yerlesim/motor.ts";
@@ -129,6 +130,25 @@ export class YerlesimDO {
         return motor.evlilik(ileti.hesapId, ileti.govde);
       case "kronik":
         return motor.kronik(ileti.hesapId, ileti.imlec, ileti.dil);
+      // Ekonomi (Faz 6): src/yerlesim/ekonomi-uclar.ts
+      case "pazar":
+        return pazarOku(motor, ileti.hesapId, ileti.mal);
+      case "pazarIlan":
+        return pazarIlan(motor, ileti.hesapId, ileti.govde);
+      case "pazarIslem":
+        return pazarIslem(motor, ileti.hesapId, ileti.govde);
+      case "pazarGeri":
+        return pazarGeri(motor, ileti.hesapId, ileti.govde);
+      case "ismarlamalar":
+        return ismarlamaOku(motor, ileti.hesapId);
+      case "ismarla":
+        return ismarlaUc(motor, ileti.hesapId, ileti.govde);
+      case "ismarlamaCevap":
+        return ismarlamaCevapUc(motor, ileti.hesapId, ileti.govde);
+      case "levha":
+        return levhaOku(motor, ileti.hesapId, ileti.mal);
+      case "defter":
+        return defterOku(motor, ileti.hesapId, ileti.ay);
       default:
         return hata("gecersiz_istek");
     }
