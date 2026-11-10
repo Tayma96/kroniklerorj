@@ -20,7 +20,7 @@
 - Esas: `docs/superpowers/specs/2026-11-08-cevrimici-ana-tasarim-design.md` (§6.1 hediye, §6.2 teveccüh tutarla, §6.3 aile evi, §8 sıra) + `2026-11-09-beceri-agaci-v2-design.md`. GDD'ler yön gösterici.
 - `apk`de sunucu (334 test): meslek + 14 RPG ağacı, dikey dilim, Y1 yönetici, Faz 3–6, han masası, hanedan, Faz 12–13 mülk/işletme/çalışan, Faz 14 barınma, E5–E7 topluluk, Faz 7 + Ek B P1–P4 siyaset, Debdebe (ödeme kapalı, `DEBDEBE_ACIK`). İstemci: profil, gelen, han, hanedan, ağaçlar, üçgen, barınma; ekonomi/mülk ekranları son ajanda.
 - Kalan: Faz 8 + P5–P6 darbe/bağımsızlık; Ayan/sezon tamamlama, Y2 ekonomi sağlığı + parametre okuma, Y3 telafi; E4 11 meslekte `kanca` etkileri; siyaset/topluluk/Debdebe/Meşrep ekranları; meslek gelir dengesi (sim todo, oran ~2,6); Faz 9 yayın kapısı; sonra test sürümü (test girişi + çevrimiçi APK; Berkay sunucuyu `wrangler deploy` eder).
-- Kural: test/denetim yalnız iş sonunda; ≤4 ajan; çakışma çözücü scratchpad `coz.py` (geçici).
+- Devir notu: `docs/online/DEVIR_2026-11-10.md` (yeni hesap buradan devam eder).
 
 ## Açık işler
 - `docs/DEVIR.md` (1 Kasım devri). ElevenLabs Berkay'ın aboneliğiyle onaylı (`.mcp.json`).
