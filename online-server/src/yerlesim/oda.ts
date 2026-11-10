@@ -9,6 +9,7 @@ import { HAN_DUZENI } from "../han/kurallar.ts";
 import type { HanTuru } from "../han/tipler.ts";
 import type { YerlesimTuru } from "../dunya-veri.ts";
 import { basarili, hata, type Sonuc } from "../tipler.ts";
+import { HAN_ODA_SEVIYESI } from "../mulk/kurallar.ts";
 
 /**
  * [PARAMETRE] Oda kademeleri: aylık kira (akçe) ve odanın getirdikleri. `kondisyon`: konaklanan her ay dönümünde
@@ -91,20 +92,25 @@ export function kiraSuresiMs(sure: KiraSuresi): number {
   return sure * AY_MS;
 }
 
-/** Hanın oda kataloğu. NPC han: yerleşim türünün hanı ve sabit fiyat. Oyuncu hanı Faz 12'de. */
-export function hanOdalari(han: HanKaynagi, tur: YerlesimTuru): Sonuc<OdaTeklifi[]> {
-  if (han.tur !== "npc") return hata("han_kapali");
-  return basarili(
-    HAN_ODALARI[HAN_DUZENI[tur].tur].map((oda) => {
-      const n = ODALAR[oda];
-      return {
-        oda,
-        aylik: n.aylik,
-        nitelik: { ...n },
-        fiyatlar: { 1: kiraFiyati(n.aylik, 1), 3: kiraFiyati(n.aylik, 3), 12: kiraFiyati(n.aylik, 12) },
-      };
-    }),
-  );
+/** Oyuncu hanının (Faz 12) panelden gelen katalog girdileri: fiyat çarpanı (%) ve seviye (has oda seviyeyle açılır). */
+export interface OyuncuHaniKatalogu {
+  fc: number;
+  seviye: number;
+}
+
+function odaTeklifi(oda: OdaId, carpan: number): OdaTeklifi {
+  const n = ODALAR[oda];
+  const f = (s: KiraSuresi) => Math.max(1, Math.ceil((kiraFiyati(n.aylik, s) * carpan) / 100 - 1e-9));
+  return { oda, aylik: n.aylik, nitelik: { ...n }, fiyatlar: { 1: f(1), 3: f(3), 12: f(12) } };
+}
+
+/** Hanın oda kataloğu. NPC han: yerleşim türünün hanı ve sabit fiyat. Oyuncu hanı: seviyeye göre odalar, çarpanlı fiyat. */
+export function hanOdalari(han: HanKaynagi, tur: YerlesimTuru, oyuncu?: OyuncuHaniKatalogu): Sonuc<OdaTeklifi[]> {
+  if (han.tur !== "npc") {
+    if (!oyuncu) return hata("han_kapali");
+    return basarili((Object.keys(ODALAR) as OdaId[]).filter((o) => HAN_ODA_SEVIYESI[o] <= oyuncu.seviye).map((o) => odaTeklifi(o, oyuncu.fc)));
+  }
+  return basarili(HAN_ODALARI[HAN_DUZENI[tur].tur].map((oda) => odaTeklifi(oda, 100)));
 }
 
 /** En ucuz oda (otomatik konaklama 1. mod ve dönüş ekranı önerisi). */
@@ -117,7 +123,8 @@ export function enUcuzOda(tur: YerlesimTuru): OdaId {
  * transfer protokolüyle) gidecek; şimdilik kapalı. Para yetmezse `para_yok`.
  */
 export function kiraOdemesi(han: HanKaynagi, para: number, fiyat: number): Sonuc<{ para: number; batak: number; kasaya: number }> {
-  if (han.tur !== "npc") return hata("han_kapali");
   if (!Number.isFinite(para) || para < fiyat) return hata("para_yok");
+  // Oyuncu hanı (Faz 12): tutar işletme kasasına gider (çıkış kutusu, src/mulk/transfer.ts); dünyadan çıkmaz.
+  if (han.tur !== "npc") return basarili({ para: para - fiyat, batak: 0, kasaya: fiyat });
   return basarili({ para: para - fiyat, batak: fiyat, kasaya: 0 });
 }

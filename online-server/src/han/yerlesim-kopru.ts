@@ -22,8 +22,9 @@ export interface IkramOdemeIletisi {
   govde: IkramOdemeGovdesi;
 }
 
-export type IkramOdeyici = (ileti: IkramOdemeIletisi) => Promise<Sonuc<{ para: number }>>;
+/** `fiyat`: oyuncu hanında çarpanlı menü fiyatı (Faz 12); yoksa sabit menü. */
+export type IkramOdeyici = (ileti: IkramOdemeIletisi) => Promise<Sonuc<{ para: number; fiyat?: number }>>;
 
 export function ikramOdeyici(env: Env): IkramOdeyici {
-  return (ileti) => yerlesimCagir<{ para: number }>(env, ileti);
+  return (ileti) => yerlesimCagir<{ para: number; fiyat?: number }>(env, ileti);
 }

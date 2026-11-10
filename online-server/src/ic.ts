@@ -9,6 +9,7 @@ import {
   type YerlesimIleti,
   type YonetimIleti,
 } from "./tipler.ts";
+import type { IsletmeIleti } from "./mulk/islem.ts";
 
 /** Tek dünya örneğinin adı. */
 export const DUNYA_ADI = "dunya";
@@ -33,7 +34,7 @@ export async function iletiOku<T>(istek: Request): Promise<T | undefined> {
 
 async function icCagri<T>(
   stub: DurableObjectStub,
-  ileti: HesapIleti | DunyaIleti | YerlesimIleti | YonetimIleti,
+  ileti: HesapIleti | DunyaIleti | YerlesimIleti | YonetimIleti | IsletmeIleti,
 ): Promise<Sonuc<T>> {
   const yanit = await stub.fetch("https://ic/", {
     method: "POST",
@@ -54,6 +55,11 @@ export function yonetimCagir<T>(env: Env, ileti: YonetimIleti): Promise<Sonuc<T>
 /** Yerleşim DO'su: yerleşim başına bir örnek. */
 export function yerlesimCagir<T>(env: Env, ileti: YerlesimIleti): Promise<Sonuc<T>> {
   return icCagri<T>(env.YERLESIM.get(env.YERLESIM.idFromName(`yerlesim:${ileti.yerlesim}`)), ileti);
+}
+
+/** İşletme DO'su: işletme başına bir örnek (Faz 12; src/isletme-do.ts). */
+export function isletmeCagir<T>(env: Env, ileti: IsletmeIleti): Promise<Sonuc<T>> {
+  return icCagri<T>(env.ISLETME!.get(env.ISLETME!.idFromName(`isletme:${ileti.isletme}`)), ileti);
 }
 
 /** Google `sub`'ından hesap kimliği: HesapDO'nun kimliği (opak, `sub`'ı göstermez). */

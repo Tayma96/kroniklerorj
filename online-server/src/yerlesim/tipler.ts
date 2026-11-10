@@ -1,6 +1,7 @@
 // Yerleşim çekirdeğinin veri biçimleri. Depolanan kayıtlarda alan adları kısadır: kasaba başına yüzlerce
 // NPC her dönümde yazılır. Dışarıya giden biçimler (uç yanıtları) uzun ve okunur adlar taşır.
 
+import type { MulkDefteri } from "../mulk/tapu.ts";
 import type { YerlesimTuru } from "../dunya-veri.ts";
 import type { MeslekId } from "../icerik/meslekler.ts";
 import type { BarinmaKaydi } from "./barinma.ts";
@@ -289,6 +290,8 @@ export interface Kasaba {
   no?: number;
   /** Üçgen defteri: ittifak sözleri, arabuluculuk talepleri, casuslar (Faz 4; depo anahtarı "ug"; eski kayıtta yok). */
   ug?: UcgenDefteri;
+  /** Mülk defteri: tapu, cüzdan ↔ kasa transferleri, işletme yansıları (Faz 12–13; depo anahtarı "mk"; eski kayıtta yok). */
+  mk?: MulkDefteri;
   /** Arka plan: kasaba özeti, uzak sayaçlar, kasaba tetikleri (Faz 5; meta'da saklanır; eski kayıtta yok). */
   ap?: ArkaPlan;
 }

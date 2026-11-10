@@ -176,6 +176,8 @@ export class HesapDO {
       case "barinmaKira":
       case "barinmaTesis":
       case "barinmaOtomatik":
+      // Mülk ve işletme (Faz 12–13): ileti aynen yerleşime gider (bağlam ve işletme çağrısı orada).
+      case "mulk":
         return this.#yerlesime(ileti);
       default:
         return hata("gecersiz_istek");

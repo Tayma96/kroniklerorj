@@ -57,6 +57,12 @@
 // Yönetim (ana tasarım §7; oyuncu oturumundan ayrı yönetici belirteci, src/yonetim/kimlik.ts):
 //   GET  /yonetim                        → tek sayfalık panel (HTML, sıkı CSP)
 //   POST /yonetim/giris {idToken}        → {oturum, rol}
+//   GET  /v1/mulk                        → yuvalar (boş/sahipli, bedel), benim, çalıştığım, teklifler, edinim şartı, bekleyen transferler (Faz 12)
+//   POST /v1/mulk/edin {tur: han|dukkan|atolye, istekNo} → {edinim, transferDurumu, para}  (akçe + nam ya da lonca; D-17)
+//   GET  /v1/isletme/:id                 → panel (konuma ve yetkiye göre; dışarıdan vitrin)
+//   GET  /v1/isletme/:id/devir           → devir önizlemesi: kasa, emanet, borç, sözleşmeler, sicil, sürüm
+//   POST /v1/isletme/:id/<islem> {..., istekNo}: yatir {tutar} | cek {tutar} | emanet {yon, tutar} | ad {ad} |
+//        tezyin {grup, secim} | fiyat {carpan} | kapi {acik} | personel {islem, ...} | devir {islem: teklif|geri|kabul}
 //   GET|POST /yonetim/<uc>               → YONETIM_UCLARI (src/tipler.ts); kurallar src/yonetim/islem.ts
 // Hata gövdesi {hata: kod}; metin istemcide çevrilir. Hız sınırı hesap başına HesapDO'da.
 
@@ -85,6 +91,7 @@ import { masayaYukselt } from "./han/ic.ts";
 import type { MasaBileti } from "./han/tipler.ts";
 
 export { DunyaDO } from "./dunya-do.ts";
+export { IsletmeDO } from "./isletme-do.ts";
 export { HesapDO } from "./hesap-do.ts";
 export { MasaDO } from "./masa-do.ts";
 export { YerlesimDO } from "./yerlesim-do.ts";
@@ -97,6 +104,8 @@ const KISI_YOLU = /^\/v1\/kisi\/([^/]+)$/;
 const OYUNCU_YOLU = /^\/v1\/oyuncu\/([^/]+)$/;
 const TEKLIF_CEVAP_YOLU = /^\/v1\/teklif\/([^/]+)\/cevap$/;
 const MASA_YOLU = /^\/v1\/han\/masa\/([^/]+)\/baglan$/;
+const ISLETME_YOLU = /^\/v1\/isletme\/([^/]{1,64})(?:\/([a-z]{1,16}))?$/;
+const ISLETME_POST = new Set(["yatir", "cek", "emanet", "ad", "tezyin", "fiyat", "kapi", "personel", "devir"]);
 
 /** Örnek yaşadıkça JWKS önbelleğini tutar. `fetch` çağrı anında çözülür (testte değiştirilebilir). */
 const google = new GoogleDogrulayici({ fetch: (url) => fetch(url) });
@@ -398,6 +407,14 @@ async function yonlendir(istek: Request, env: Env): Promise<Response> {
       return yontem === "POST" ? hanGovdeli(istek, env, "hanEylem") : hataYaniti("yontem_yok");
     case "/v1/han/ikram":
       return yontem === "POST" ? hanGovdeli(istek, env, "hanIkram") : hataYaniti("yontem_yok");
+    case "/v1/mulk":
+      return yontem === "GET" ? hesaba(istek, env, (hesapId) => basarili({ islem: "mulk", hesapId, alt: "liste", dil })) : hataYaniti("yontem_yok");
+    case "/v1/mulk/edin":
+      if (yontem !== "POST") return hataYaniti("yontem_yok");
+      return hesaba(istek, env, async (hesapId) => {
+        const govde = await govdeOku(istek);
+        return govde.ok ? basarili({ islem: "mulk", hesapId, alt: "edin", govde: govde.deger }) : govde;
+      });
     case "/yonetim":
     case "/yonetim/":
       return yontem === "GET" ? panelYaniti() : hataYaniti("yontem_yok");
@@ -407,6 +424,21 @@ async function yonlendir(istek: Request, env: Env): Promise<Response> {
   if (yol.startsWith("/yonetim/")) {
     const uc = yol.slice("/yonetim/".length);
     return Object.hasOwn(YONETIM_UCLARI, uc) ? yonetimUcu(istek, env, uc as YonetimUcu, url) : hataYaniti("bulunamadi");
+  }
+  const isl = ISLETME_YOLU.exec(yol);
+  if (isl?.[1]) {
+    const isletme = isl[1];
+    const alt = isl[2];
+    if (alt === undefined || alt === "devir") {
+      if (yontem === "GET") return hesaba(istek, env, (hesapId) => basarili({ islem: "mulk", hesapId, alt: alt ? "devirOnizle" : "panel", isletme, dil }));
+      if (alt === undefined) return hataYaniti("yontem_yok");
+    }
+    if (!ISLETME_POST.has(alt!)) return hataYaniti("bulunamadi");
+    if (yontem !== "POST") return hataYaniti("yontem_yok");
+    return hesaba(istek, env, async (hesapId) => {
+      const govde = await govdeOku(istek);
+      return govde.ok ? basarili({ islem: "mulk", hesapId, alt: alt as "yatir", isletme, govde: govde.deger }) : govde;
+    });
   }
   const masa = MASA_YOLU.exec(yol);
   if (masa?.[1]) return yontem === "GET" ? masaBaglan(istek, env, masa[1]) : hataYaniti("yontem_yok");
