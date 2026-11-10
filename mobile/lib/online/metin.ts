@@ -6,12 +6,14 @@ import { goalL, professionNameL, quirkL, traitL, type Lang } from "../locale-dat
 import type { Kalem, Olay, Ozet } from "./protokol";
 import { TOPLUM_PARAM } from "./toplum-metin";
 import { HANEDAN_PARAM } from "./hanedan-metin";
+import { UCGEN_BARINMA_PARAM, ucgenBarinmaAnahtar, ucgenBarinmaDeger, ucgenBarinmaIkon } from "./ucgen-barinma-metin";
 
 type Ceviri = (k: string) => string;
 
 /** Her anahtarın parametre sırası (şablondaki %1, %2 …). */
 const PARAM: Record<string, string[]> = {
   ...TOPLUM_PARAM,
+  ...UCGEN_BARINMA_PARAM,
   "olay.olum": ["kisi", "yas"],
   "olay.ustaOldu": ["kisi"],
   "olay.yakinOldu": ["kisi"],
@@ -68,7 +70,9 @@ function paramSirasi(k: string): string[] {
 /** İşaretli sayı: +5 · −3 · 0 (eksi için tipografik işaret). */
 export const isaretli = (n: number): string => (n > 0 ? `+${n}` : n < 0 ? `−${Math.abs(n)}` : "0");
 
-function degerYaz(ad: string, v: unknown, t: Ceviri, lang: Lang): string {
+function degerYaz(ad: string, v: unknown, t: Ceviri, lang: Lang, k = ""): string {
+  const ozel = ucgenBarinmaDeger(k, ad, v, t);
+  if (ozel !== undefined) return ozel;
   if (v && typeof v === "object") return String((v as { ad?: unknown }).ad ?? "?");
   if (typeof v === "number") return ISARETLI.has(ad) ? isaretli(v) : String(v);
   if (typeof v !== "string") return "";
@@ -90,11 +94,11 @@ function degerYaz(ad: string, v: unknown, t: Ceviri, lang: Lang): string {
 /** İsteyeni olmayan (ölmüş NPC) sipariş olayı kendi biçimiyle yazılır. */
 const KIMSESIZ: ReadonlySet<string> = new Set(["olay.siparis.dustu", "olay.siparis.teslim"]);
 function sablonYaz(kHam: string, p: Record<string, unknown>, t: Ceviri, lang: Lang): string {
-  const k = KIMSESIZ.has(kHam) && !p.isteyen ? kHam + "Kimsesiz" : kHam;
+  const k = KIMSESIZ.has(kHam) && !p.isteyen ? kHam + "Kimsesiz" : ucgenBarinmaAnahtar(kHam, p);
   const anahtar = "onl." + k;
   const sablon = t(anahtar);
   if (sablon === anahtar) return t("onl.olay.bilinmeyen");
-  return applyParams(sablon, paramSirasi(k).map((ad) => degerYaz(ad, p[ad], t, lang)), lang);
+  return applyParams(sablon, paramSirasi(k).map((ad) => degerYaz(ad, p[ad], t, lang, k)), lang);
 }
 
 /** Olay özeti ya da eylem sonucu; `ek` sunucunun koymadığı parametreleri (ör. hedefin adı) ekler. */
@@ -131,6 +135,8 @@ export const ruhAnahtari = (d: number) => `onl.ruh.${ruhDerecesi(d)}`;
 export function olayIkonu(o: Pick<Olay, "ozet" | "tur">): string {
   const k = o.ozet.k;
   if (k.startsWith("olay.eylem.")) return eylemIkonu(k.slice(11));
+  const ub = ucgenBarinmaIkon(k);
+  if (ub) return ub;
   const tablo: Record<string, string> = {
     "olay.olum": "tombstone", "olay.ustaOldu": "tombstone", "olay.yakinOldu": "tombstone", "olay.gundem": "scroll",
     "olay.isBuldu": "anvil", "olay.evlilik": "ring", "olay.dostluk": "family", "olay.dogum": "baby", "olay.goc": "camel",

@@ -22,6 +22,7 @@ import {
 import { EylemOnizleme, EylemSonucu, engelMetni } from "../../../lib/online/eylem-ui";
 import { ISARET_IKON, MEKAN_IKON, eylemIkonu, hayalYaz, huyYaz, isaretli, kalemYaz, meslekYaz, ruhAnahtari, tuhaflikYaz } from "../../../lib/online/metin";
 import { hataAnahtari } from "../../../lib/online/hata";
+import { UcgenBolumu } from "../../../lib/online/ucgen-ui";
 import { kisiYolu, oyuncuKimligiMi } from "../../../lib/online/toplum-veri";
 import { ACILIS_GUNU, ISARETLER, type EylemKarti, type EylemYaniti, type Isaret, type Kisi, type KisiNpc, type OnlineHata } from "../../../lib/online/protokol";
 
@@ -228,6 +229,9 @@ function KisiEkran() {
         <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 14.5, lineHeight: 19, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{t("onl.ki.yas13")}</Text>
       </View>
     </View>
+
+    {/* Üçgen (Faz 4): eksenler, kışkırtma, casus, arabuluculuk, sözler */}
+    <UcgenBolumu kisi={n} />
 
     {/* Ailesi */}
     {n.aile.length ? <>
