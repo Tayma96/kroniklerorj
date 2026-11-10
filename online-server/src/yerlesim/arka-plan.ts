@@ -9,6 +9,7 @@
 import { takvim } from "../saat.ts";
 import { npcKimlik, npcRef, yas } from "./ortak.ts";
 import { dizinSec, tohumlu } from "./rastgele.ts";
+import { gostergeTetikCarpani } from "./topluluk-kayit.ts";
 import { GUNDEM, GUNDEM_ADI, type Kasaba, type Npc, type OlayTaslagi } from "./tipler.ts";
 import { ISSIZ } from "./uret.ts";
 
@@ -153,7 +154,8 @@ export function kasabaOlayi(k: Kasaba, ap: ArkaPlan, ay: number, bos: boolean): 
   const adaylar: { t: KasabaTetigi; p: number; sebep: string }[] = [];
   for (const t of KASABA_TETIKLERI) {
     if (tetikSurer(ap, t, ay)) continue;
-    let p = TETIK_ORANI[t] * (bos ? BOS_OLAY_CARPANI : 1);
+    // E6: ortak dert başarısızlığıyla düşen bölge göstergesi (arz/moral) olasılığı tavanlı artırır.
+    let p = TETIK_ORANI[t] * (bos ? BOS_OLAY_CARPANI : 1) * gostergeTetikCarpani(k, t);
     let sebep = t === "kitlik" ? "kasaba.kitlik.hasat" : "kasaba.haydut.yol";
     if (t === "kitlik" && mevsim === "kis") {
       p *= KIS_KITLIK_CARPANI;

@@ -61,6 +61,12 @@
 //   POST /v1/barinma/tesis {istekNo}     → {tesis, barinma}  (imaret/zaviye, D-23 önerisi)
 //   POST /v1/barinma/otomatik {mod: kapali|oda|tesis|uyar, istekNo} → {otomatik, barinma}
 //   GET  /v1/donus?dil=                  → dönüş ekranı (yokluk, barınma, Hal, olanlar, tek dokunuş seçenekleri)
+//   GET  /v1/topluluk?dil=               → meşrep, hami, ortak dertler (defter), şenlik (Cömertler Levhası), müdavim, zaviye, göstergeler (E5–E7)
+//   POST /v1/mesrep {el, cesaret, gurur, istekNo} → {mesrep}  (her eksen bir uç ya da "orta"; etkiler yazılı)
+//   POST /v1/hami {islem: teklif|iste|kabul|ret|birak, hedef, istekNo} → {bag, hami}  (hami akçe almaz, aşamada nam)
+//   POST /v1/ortak-dert {dert, katki, mal?, adet?, istekNo} → {dert, katki (döküm), odul, basardi}
+//   POST /v1/senlik {katki: yemek|sus|hayir, mal?, adet?, tutar?, istekNo} → {senlik, katki, odul}
+//   POST /v1/zaviye {islem: kur|davet|katil|reddet|ayril|cikar|yatir|ver|arma|oy, ..., istekNo} → {zaviye, zaviyeler}
 // Uzaklaştırılmış hesapta giriş dışındaki /v1/* uçları 403 {hata: "uzaklastirildi", bitis} döner.
 //
 // Yönetim (ana tasarım §7; oyuncu oturumundan ayrı yönetici belirteci, src/yonetim/kimlik.ts):
@@ -83,6 +89,7 @@ import {
   type BarinmaIslem,
   type HanedanIslem,
   type EkonomiIslem,
+  type ToplulukIslem,
   type HataKodu,
   type HesapIleti,
   type Sonuc,
@@ -283,6 +290,14 @@ function govdeli(istek: Request, env: Env, islem: GovdeliIslem | HanedanIslem | 
   });
 }
 
+/** Gövdeli topluluk POST iletisi (E5–E7). */
+function toplulukGovdeli(istek: Request, env: Env, islem: ToplulukIslem): Promise<Response> {
+  return hesaba(istek, env, async (hesapId) => {
+    const govde = await govdeOku(istek);
+    return govde.ok ? basarili({ islem, hesapId, govde: govde.deger }) : govde;
+  });
+}
+
 /** Gövdeli ekonomi POST iletisi (Faz 6). */
 function ekonomiGovdeli(istek: Request, env: Env, islem: EkonomiIslem): Promise<Response> {
   return hesaba(istek, env, async (hesapId) => {
@@ -368,6 +383,19 @@ async function yonlendir(istek: Request, env: Env): Promise<Response> {
       return yontem === "GET"
         ? hesaba(istek, env, (hesapId) => basarili({ islem: "kronik", hesapId, imlec: url.searchParams.get("imlec"), dil }))
         : hataYaniti("yontem_yok");
+    // Topluluk (E5–E7): src/yerlesim/topluluk-uclar.ts
+    case "/v1/topluluk":
+      return yontem === "GET" ? hesaba(istek, env, (hesapId) => basarili({ islem: "topluluk", hesapId, dil })) : hataYaniti("yontem_yok");
+    case "/v1/mesrep":
+      return yontem === "POST" ? toplulukGovdeli(istek, env, "mesrep") : hataYaniti("yontem_yok");
+    case "/v1/hami":
+      return yontem === "POST" ? toplulukGovdeli(istek, env, "hami") : hataYaniti("yontem_yok");
+    case "/v1/ortak-dert":
+      return yontem === "POST" ? toplulukGovdeli(istek, env, "ortakDert") : hataYaniti("yontem_yok");
+    case "/v1/senlik":
+      return yontem === "POST" ? toplulukGovdeli(istek, env, "senlik") : hataYaniti("yontem_yok");
+    case "/v1/zaviye":
+      return yontem === "POST" ? toplulukGovdeli(istek, env, "zaviye") : hataYaniti("yontem_yok");
     // Ekonomi (Faz 6): src/yerlesim/ekonomi-uclar.ts
     case "/v1/pazar":
       return yontem === "GET"

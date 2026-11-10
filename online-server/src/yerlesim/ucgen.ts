@@ -34,6 +34,7 @@ import { olduMu } from "./hanedan.ts";
 import { BECERILER, beceriEkle, karakterYasi, takatHarca, takatTazele } from "./karakter.ts";
 import { kisiAdi, kisiCoz, npcAdi, npcKimlik, npcRef, oyuncuRef, yas } from "./ortak.ts";
 import { tohumlu, type Zar } from "./rastgele.ts";
+import { mesrepRiskSansi, mesrepYakalanma } from "./mesrep.ts";
 import type { Dokum, IliskiHaritasi, Kalem, Karakter, Kasaba, Npc, OlayTaslagi, Sakin } from "./tipler.ts";
 import {
   GORUNURLUK_ESIGI,
@@ -276,6 +277,7 @@ export function kiskirtSansi(k: Kasaba, npc: Npc, fail: Karakter, hedef: Karakte
   const tekrar = tekrarSayisi(failIli?.[npc.i], "kiskirt", ay);
   d.ekle("sans.tekrar", -TEKRAR_CEZASI * tekrar, { tekrar });
   if (ateskesMi(hedefIli?.[npc.i], ay)) d.ekle("sans.ateskes", -ATESKES_CEZASI);
+  d.ekle("sans.mesrep", mesrepRiskSansi(fail));
   return d.bitir();
 }
 
@@ -431,6 +433,7 @@ export function katilSansi(k: Kasaba, npc: Npc, fail: Karakter, hedef: Karakter,
   d.ekle("sans.hamle", KATIL_HAMLE[hamle], { hamle });
   const leke = k.ug?.lk[npc.i];
   if (leke !== undefined && leke > ay) d.ekle("sans.leke", -LEKE_CEZASI);
+  d.ekle("sans.mesrep", mesrepRiskSansi(fail));
   return d.bitir();
 }
 
@@ -484,7 +487,8 @@ export function katil(b: UcgenBaglami, g: { soz: number; hamle: Hamle }, zar: Za
     iliskiAl(hedefIli, npc.i).bk = ay + BOYKOT_SURE;
     etki.boykotBitis = ay + BOYKOT_SURE;
   }
-  const yakalandi = zar() < YAKALANMA[g.hamle];
+  // E5 meşrep (cesaret): temkinli sezer (×0,8), gözü pek ağır yakalanır (×1,25); çarpan meşrep görünümünde yazılı.
+  const yakalandi = zar() < YAKALANMA[g.hamle] * mesrepYakalanma(kar);
   if (yakalandi) {
     ug.lk[npc.i] = ay + LEKE_SURE;
     if (g.hamle === "laf") for (const a of alicilar) duyumYalanla(hedefIli[a.i], nk, "laf", ay);
