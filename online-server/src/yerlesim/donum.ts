@@ -1,9 +1,12 @@
 // Ay dönümü (§3, §13.8: yalnız gündem, yaşlanma ve ekonomi toplu işlenir). Sıra sabittir ve tohumludur
 // (yerleşim + ay): ölüm → gündem → gündem çözümü (geçim, evlilik, dostluk) → doğum → göç → oyuncular
-// (Kül Yemini kancası, öğrenme günü, çırak harçlığı, NPC'nin kendiliğinden hamlesi) → anı sönmesi.
+// (Kül Yemini kancası, öğrenme günü, çırak harçlığı, NPC'nin kendiliğinden hamlesi) → anı sönmesi → hanedan →
+// katmanlı gündem (Faz 5, `gundem.ts`).
 // Yaş saklanmaz, doğum ayından hesaplanır; böylece yaşlanma her dönümde kendiliğinden ilerler.
 
 import { MESLEKLER } from "../icerik/kisilik.ts";
+import { GUNDEM_OMRU } from "./arka-plan.ts";
+import { katmanliGundem } from "./gundem.ts";
 import { AZALAN_PENCERE, iliskiAl } from "./eylem.ts";
 import { aniYuku, gorus, gorusDegeri } from "./gorus.ts";
 import { hanedanYakini, olduMu } from "./hanedan.ts";
@@ -123,6 +126,7 @@ export function ayDonumu(kasaba: Kasaba, ay: number): OlayTaslagi[] {
   const yeniGundem: Npc[] = [];
   for (const n of kasaba.npc) {
     if ((((ay - n.d) % 12) + 12) % 12 !== 0) continue;
+    if (n.g >= GUNDEM.ambar && ay - (n.ga ?? -1e9) < GUNDEM_OMRU) continue; // süren katmanlı gündem (Faz 5)
     const y = yas(n.d, ay);
     let g: number = GUNDEM.yok;
     if (y >= 16 && n.m === ISSIZ) g = GUNDEM.gecim;
@@ -265,6 +269,9 @@ export function ayDonumu(kasaba: Kasaba, ay: number): OlayTaslagi[] {
 
   // 7. Hanedan (Faz 7): yaşlılık, ölüm, oyuncu hanesinde doğum, süresi dolan devir (kendi tohumuyla).
   olaylar.push(...hanedanDonumu(kasaba, ay));
+
+  // 8. Katmanlı NPC gündemi (Faz 5): kendi tohumuyla; ana dönümün zar sırasına dokunmaz.
+  olaylar.push(...katmanliGundem(kasaba, ay, olaylar));
 
   kasaba.ay = ay;
   return olaylar;

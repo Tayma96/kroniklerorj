@@ -11,13 +11,14 @@ import type { Siparis } from "./siparis.ts";
 import type { Duzen } from "./duzen.ts";
 import type { Armagan, Toplum } from "./toplum.ts";
 import type { TeveccuhKaydi } from "./teveccuh.ts";
+import type { ArkaPlan } from "./arka-plan.ts";
 
 /** NPC'ler arası bağ: [diğer NPC, tür (1 dost, 2 rakip), puan (−100..100), kuruluş ayı]. */
 export type Bag = [diger: number, tur: 1 | 2, puan: number, kurulus: number];
 
-/** Gündem kodları (ihtiyaç → hedef). */
-export const GUNDEM = { yok: 0, gecim: 1, evlilik: 2, dostluk: 3 } as const;
-export const GUNDEM_ADI = ["", "gecim", "evlilik", "dostluk"] as const;
+/** Gündem kodları (ihtiyaç → hedef). 4+ katmanlı gündemdir (Faz 5, `gundem.ts`); sıra değişmez (kayıt kod tutar). */
+export const GUNDEM = { yok: 0, gecim: 1, evlilik: 2, dostluk: 3, ambar: 4, nobet: 5, borc: 6, itibar: 7, goc: 8, merak: 9 } as const;
+export const GUNDEM_ADI = ["", "gecim", "evlilik", "dostluk", "ambar", "nobet", "borc", "itibar", "goc", "merak"] as const;
 
 export interface Npc {
   /** Kimlik (1'den başlar); dışarıda "n" + i. */
@@ -45,6 +46,8 @@ export interface Npc {
   b: Bag[];
   /** Gündem (GUNDEM). */
   g: number;
+  /** Katmanlı gündemin başladığı ay (Faz 5; eski kayıtta yok). */
+  ga?: number;
   /** Oyuncu ebeveynler (yerel kimlik; Faz 7, eski kayıtta yok). */
   oe?: string[];
 }
@@ -276,4 +279,6 @@ export interface Kasaba {
   /** Depoya yazılmayı bekleyen kronik satırları ve sonraki oyuncu numarası (Faz 7). */
   kq?: KronikSatiri[];
   no?: number;
+  /** Arka plan: kasaba özeti, uzak sayaçlar, kasaba tetikleri (Faz 5; meta'da saklanır; eski kayıtta yok). */
+  ap?: ArkaPlan;
 }

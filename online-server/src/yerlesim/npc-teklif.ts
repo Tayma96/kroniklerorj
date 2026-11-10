@@ -12,7 +12,7 @@ import { beceriEkle, karakterYasi, takatHarca } from "./karakter.ts";
 import { npcKimlik, npcRef, yas } from "./ortak.ts";
 import { aralik, dizinSec, tohumlu } from "./rastgele.ts";
 import { toplumAl, type NpcTeklifTuru, type Teklif } from "./toplum.ts";
-import type { Karakter, Kasaba, Npc, OlayTaslagi } from "./tipler.ts";
+import { GUNDEM, type Karakter, type Kasaba, type Npc, type OlayTaslagi } from "./tipler.ts";
 
 /** [PARAMETRE] NPC teklifleri. */
 export const NPC_TEKLIF_ORANI = 0.25;
@@ -27,6 +27,8 @@ export const NPC_BORC_ALT = 2;
 export const NPC_BORC_UST = 6;
 export const NPC_BORC_VADE = 6;
 export const NPC_BORC_GORUS = 8;
+/** [PARAMETRE] Yakınlarda borç gündemli NPC varken teklif olasılığı (akçe üretmez: borç aynen döner). */
+export const NPC_BORC_GUNDEM_ORANI = 0.6;
 const ISSIZ = MESLEKLER.indexOf("işsiz");
 
 export function acikNpcTeklifi(k: Kasaba, o: string): Teklif | undefined {
@@ -51,7 +53,8 @@ export function npcTeklifUret(k: Kasaba, ay: number): OlayTaslagi[] {
     if (!kar || !ili || karakterYasi(kar, ay) < NPC_TEKLIF_YASI) continue;
     if (acikNpcTeklifi(k, kar.o) || ay - (kar.nt ?? -1e9) < NPC_TEKLIF_ARALIK) continue;
     const r = tohumlu("npcTeklif", k.y, ay, kar.o);
-    if (r() >= NPC_TEKLIF_ORANI) continue;
+    const zar = r();
+    if (zar >= Math.max(NPC_TEKLIF_ORANI, NPC_BORC_GUNDEM_ORANI)) continue;
     const adaylar = new Set<number>();
     for (const a of Object.keys(ili)) if (a !== "0") adaylar.add(Number(a));
     if (kar.e) for (const n of k.npc) if (n.e === kar.e) adaylar.add(n.i);
@@ -60,12 +63,15 @@ export function npcTeklifUret(k: Kasaba, ay: number): OlayTaslagi[] {
       .map((i) => k.dizin.get(i))
       .filter((n): n is Npc => !!n && yas(n.d, ay) >= 16 && gorusDegeri(k, n, kar, ili, ay) >= 0);
     if (uygun.length === 0) continue;
-    const npc = uygun[dizinSec(uygun.length, r)]!;
+    // Borç sıkışması gündemi (Faz 5): böyle bir yakın varsa isteği o yapar (gerekçe olayda), oran daha yüksektir.
+    const borclu = uygun.filter((n) => n.g === GUNDEM.borc);
+    if (zar >= (borclu.length ? NPC_BORC_GUNDEM_ORANI : NPC_TEKLIF_ORANI)) continue;
+    const npc = borclu.length ? borclu[dizinSec(borclu.length, r)]! : uygun[dizinSec(uygun.length, r)]!;
     const secenek: NpcTeklifTuru[] = ["npcBorc"];
-    if (npc.m !== ISSIZ) secenek.push("npcIs");
-    const aday = karakterYasi(kar, ay) >= NPC_DUNUR_YASI && npc.e !== kar.e ? dunurAdayi(k, npc, kar, ay) : undefined;
+    if (!borclu.length && npc.m !== ISSIZ) secenek.push("npcIs");
+    const aday = !borclu.length && karakterYasi(kar, ay) >= NPC_DUNUR_YASI && npc.e !== kar.e ? dunurAdayi(k, npc, kar, ay) : undefined;
     if (aday) secenek.push("npcDunur");
-    const tur = secenek[dizinSec(secenek.length, r)]!;
+    const tur = secenek.length === 1 ? secenek[0]! : secenek[dizinSec(secenek.length, r)]!;
     const s_: Teklif["s"] =
       tur === "npcIs" ? { tu: NPC_IS_UCRET } : tur === "npcBorc" ? { tu: aralik(r, NPC_BORC_ALT, NPC_BORC_UST), va: NPC_BORC_VADE } : { dn: aday!.i };
     const tp = toplumAl(k);
@@ -85,6 +91,7 @@ export function npcTeklifUret(k: Kasaba, ay: number): OlayTaslagi[] {
     const p: OlayTaslagi["p"] = { kisi: npcRef(npc), teklif: `t${t.i}` };
     if (s_.tu) p.tutar = s_.tu;
     if (aday) p.aday = npcRef(aday);
+    if (borclu.length) p.sebep = "gundem.borc";
     olaylar.push({ t: "teklif", w: npcKimlik(npc.i), h: kar.o, g: kar.o, n: 6, k: `olay.npcTeklif.${tur}`, p });
   }
   return olaylar;
