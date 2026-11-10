@@ -60,11 +60,32 @@ export type IstemciIletisi =
   | { t: "susturKaldir"; hedef: string }
   | { t: "at"; hedef: string }
   | { t: "oneAl"; hedef: string }
-  | { t: "rapor"; hedef: string; neden: SikayetNedeni; aciklama?: string; istekNo: string };
+  | { t: "rapor"; hedef: string; neden: SikayetNedeni; aciklama?: string; istekNo: string }
+  // Faz 16 ses (sunucu han/tipler.ts): konuşma göstergesi, masa başının ses kesmesi, söz isteme
+  | { t: "konus"; acik: boolean }
+  | { t: "sesKapat"; hedef: string }
+  | { t: "sesAc"; hedef: string }
+  | { t: "sozIste" }
+  | { t: "sozGeri" }
+  | { t: "sozVer"; hedef: string; kabul?: boolean };
+
+/** Masanın ses durumu (sunucu SesDurumu). Yalnız kimlikler; ses kaydedilmez. */
+export interface SesDurumu {
+  acik: boolean;
+  neden?: "yapilandirilmadi" | "masa_sessiz";
+  yayin: { hesap: string; iz: string }[];
+  konusan: string[];
+  kapali: string[];
+  soz: Plaka[];
+}
+export type SesAlt = "oturum" | "yayin" | "dinle" | "anlas" | "kapat";
+export interface IceSunucusu { urls: string[] | string; username?: string; credential?: string }
+export interface SdpYaniti { type: "offer" | "answer"; sdp: string }
 
 /** Sunucu → istemci. */
 export type SunucuIletisi =
-  | { t: "hosgeldin"; ben: Plaka; susturma: { bitis: number | null } | null; masa: MasaGorunumu }
+  | { t: "hosgeldin"; ben: Plaka; susturma: { bitis: number | null } | null; masa: MasaGorunumu; ses?: SesDurumu }
+  | { t: "sesDurum"; ses: SesDurumu }
   | { t: "durum"; masa: MasaGorunumu }
   | { t: "ileti"; hesap: string; ad: string; koltuk: number; metin: string; zaman: number }
   | { t: "olay"; olay: MasaOlayi }
@@ -105,6 +126,9 @@ const hanOzetiMi = (v: unknown): v is HanOzeti =>
   nesneMi(v) && nesneMi(v.yerlesim) && metinMi(v.yerlesim.ad) && nesneMi(v.han) && metinMi(v.han.ad) && metinMi(v.han.tur)
   && sayiMi(v.koltuk) && Array.isArray(v.masalar) && v.masalar.every(masaOzetiMi)
   && (v.menu === undefined || (Array.isArray(v.menu) && v.menu.every((m) => nesneMi(m) && metinMi(m.id) && sayiMi(m.fiyat))));
+export const sesDurumuMu = (v: unknown): v is SesDurumu =>
+  nesneMi(v) && typeof v.acik === "boolean" && Array.isArray(v.yayin) && v.yayin.every((y) => nesneMi(y) && metinMi(y.hesap) && metinMi(y.iz))
+  && Array.isArray(v.konusan) && v.konusan.every(metinMi) && Array.isArray(v.kapali) && v.kapali.every(metinMi) && Array.isArray(v.soz) && v.soz.every(plakaMi);
 const eylemYanitiMi = (v: unknown): v is { olay: MasaOlayi } => nesneMi(v) && masaOlayiMi(v.olay);
 const ikramYanitiMi = (v: unknown): v is IkramSonucu => nesneMi(v) && metinMi(v.ikram) && sayiMi(v.fiyat) && sayiMi(v.para) && anonsMu(v.anons);
 
@@ -116,7 +140,8 @@ export function sunucuIletisiCoz(ham: unknown): SunucuIletisi | undefined {
   }
   if (!nesneMi(v) || !metinMi(v.t)) return undefined;
   switch (v.t) {
-    case "hosgeldin": return plakaMi(v.ben) && masaGorunumuMu(v.masa) ? (v as SunucuIletisi) : undefined;
+    case "hosgeldin": return plakaMi(v.ben) && masaGorunumuMu(v.masa) && (v.ses === undefined || sesDurumuMu(v.ses)) ? (v as SunucuIletisi) : undefined;
+    case "sesDurum": return sesDurumuMu(v.ses) ? (v as SunucuIletisi) : undefined;
     case "durum": return masaGorunumuMu(v.masa) ? (v as SunucuIletisi) : undefined;
     case "ileti": return metinMi(v.hesap) && metinMi(v.ad) && sayiMi(v.koltuk) && metinMi(v.metin) && sayiMi(v.zaman) ? (v as SunucuIletisi) : undefined;
     case "olay": return masaOlayiMi(v.olay) ? (v as SunucuIletisi) : undefined;
@@ -149,6 +174,10 @@ export interface HanIstemci {
   ikram(g: IkramGirdisi): Promise<EkSonuc<IkramSonucu>>;
   /** Masaya yeni bağlantı açar; adres yoksa undefined. */
   soket(no: number): HamSoket | undefined;
+  /** Faz 16 ses uçları (POST /v1/han/masa/:no/ses/<alt>); sunucu Realtime'a vekildir. */
+  ses(no: number, alt: SesAlt, govde: Record<string, unknown>): Promise<EkSonuc<Record<string, unknown>>>;
+  /** Önizleme/geliştirici hanı: ses yerel modül olmadan taklit edilir. */
+  sahte?: boolean;
 }
 
 export function httpHanIstemci(soketAc: (no: number) => HamSoket | undefined): HanIstemci {
@@ -158,6 +187,8 @@ export function httpHanIstemci(soketAc: (no: number) => HamSoket | undefined): H
     eylem: (g) => ekCagir({ yontem: "POST", yol: "/v1/han/eylem", govde: g, tekrar: true }, eylemYanitiMi),
     ikram: (g) => ekCagir({ yontem: "POST", yol: "/v1/han/ikram", govde: g, tekrar: true }, ikramYanitiMi),
     soket: soketAc,
+    // Ses çağrıları tekrar edilmez: her biri SFU durumunu değiştirir (yanıtı kaybolan istek yeniden kurulur).
+    ses: (no, alt, govde) => ekCagir({ yontem: "POST", yol: `/v1/han/masa/${no}/ses/${alt}`, govde, tekrar: false }, nesneMi),
   };
 }
 

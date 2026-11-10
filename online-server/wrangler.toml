@@ -73,3 +73,7 @@ GOOGLE_CLIENT_ID = ""
 # `wrangler secret put YONETICI_EPOSTALAR` ile sır olarak konur. Boşken hiç kimse yönetici değildir.
 # Zorunlu YONETIM_GOOGLE_CLIENT_ID: yönetici girişinde kabul edilen istemci kimlikleri. Boşsa yönetim girişi kapalıdır
 # (yapilandirma_eksik); oyuncu uygulamasının GOOGLE_CLIENT_ID listesine geri düşülmez.
+# Faz 16 sesli sohbet: Cloudflare Realtime uygulama kimliği (gizli değil). Boşken ses kapalıdır (uçlar 503 ses_kapali).
+# Uygulama anahtarı burada DEĞİL: `wrangler secret put REALTIME_APP_TOKEN`. İsteğe bağlı TURN: REALTIME_TURN_ID (vars) +
+# `wrangler secret put REALTIME_TURN_TOKEN`.
+REALTIME_APP_ID = ""

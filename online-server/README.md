@@ -125,6 +125,32 @@ Dağıtım **elle** yapılır; otomatik dağıtım ve CI yoktur. Anahtar sohbete
 Yerel çalışma için (isteğe bağlı) `online-server/.dev.vars` dosyasına `OTURUM_ANAHTARI=...` yazılabilir; bu dosya
 `.gitignore`'dadır.
 
+## Sesli sohbet (Faz 16, handa WePlay tarzı)
+
+Masaya oturan mikrofonunu açıp konuşur, masadakiler (ayaktaki dinleyenler dahil) duyar. Altyapı **Cloudflare
+Realtime SFU**'dur (ayda 1.000 GB ücretsiz; aşılmadıkça ek ücret yok). Ses SFU'dan geçer, **kaydedilmez ve
+saklanmaz**; sunucu yalnız oturum/iz kimliklerini soket ekinde tutar. Yaş sınırı yoktur (spec §6.1).
+
+- **Yetki kapısı MasaDO'dur** (`src/han/ses.ts`): yalnız oturan, Y1'de susturulmamış ve masa başının sesini
+  kesmediği oyuncu yayın açar. Ayaktaki dinler; "söz iste" ile masa başı onaylarsa boş koltuğa geçer. Kalkma,
+  susturma, atma, ayrılma ve masa başının ses kesmesi yayını SFU'da hemen kapatır. Engelli çiftler birbirini duymaz.
+- Worker Realtime API'sine vekildir (`src/han/realtime.ts`); uygulama anahtarı istemciye hiçbir yanıtta gitmez.
+  Uçlar: `POST /v1/han/masa/:no/ses/{oturum,yayin,dinle,anlas,kapat}`. Masa soketi `sesDurum` iletisi yollar
+  (yayındakiler, konuşanlar, sesi kesilenler, söz isteyenler); komutlar `konus`, `sesKapat`/`sesAc`, `sozIste`/`sozGeri`, `sozVer`.
+- `REALTIME_APP_ID` ya da `REALTIME_APP_TOKEN` boşsa ses kapalıdır: uçlar `503 ses_kapali` döner, istemci düğmeyi gizler.
+
+Berkay'ın adımları:
+
+1. Cloudflare panelinde **Realtime → SFU → Create application** ile bir uygulama oluşturun.
+2. Uygulama kimliğini `wrangler.toml` `[vars]` altındaki `REALTIME_APP_ID = ""` değerine yazın (gizli değil).
+3. Uygulama anahtarını sır olarak koyun: `cd online-server && npx wrangler secret put REALTIME_APP_TOKEN`
+   (anahtar sohbete yazılmaz, commit'lenmez).
+4. İsteğe bağlı (kısıtlı ağlarda bağlantı için): panelde bir **TURN anahtarı** oluşturup kimliğini `REALTIME_TURN_ID`
+   olarak `[vars]`a, anahtarını `npx wrangler secret put REALTIME_TURN_TOKEN` ile koyun. Yoksa Cloudflare STUN'u kullanılır.
+5. `npx wrangler deploy`.
+6. **Yeni APK gerekir**: ses `react-native-webrtc` yerel modülüyle çalışır; Expo Go'da ve eski APK'da düğme görünmez
+   (neden yazılır). Android mikrofon izni (`RECORD_AUDIO`) ilk açılışta sorulur.
+
 ## Yönetim (Y1 çekirdeği)
 
 Ana tasarım §7. Tek örnek `YonetimDO` (`idFromName("yonetim")`, bağ `YONETIM`, göç `v3`): yönetici rolleri, **yalnız

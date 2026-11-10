@@ -11,7 +11,7 @@ import { gunlukSay, type GunlukSayac } from "../yonetim/sikayet.ts";
 import { eylemGirdisiCoz } from "./eylem.ts";
 import { IKRAM_GUNLUK, IKRAM_MENUSU, ikramGirdisiCoz } from "./ikram.ts";
 import { HAN_DUZENI, HAN_EYLEM_GUNLUK, HAN_TURU_ADLARI, KOLTUK_SAYISI, masaAdi, masaNoCoz, masaSayisi } from "./kurallar.ts";
-import type { HanOzeti, HanTuru, MasaAnonsu, MasaBileti, MasaIleti, MasaOlayi, MasaOzeti } from "./tipler.ts";
+import type { HanOzeti, HanTuru, MasaAnonsu, SesAlt, MasaBileti, MasaIleti, MasaOlayi, MasaOzeti } from "./tipler.ts";
 import type { IkramOdeyici } from "./yerlesim-kopru.ts";
 
 // HesapDO depo anahtarları (yalnız "han:" önekli; başka anahtara dokunulmaz)
@@ -166,6 +166,19 @@ export async function hanIkrami(b: HanHesapBaglami, govde: unknown): Promise<Son
   const sonuc = basarili({ ikram, fiyat: odeme.deger.fiyat ?? fiyat, para: odeme.deger.para, anons });
   await b.depo.koy({ [anahtar]: sonuc, [IKRAM_SAYAC]: sayac.durum });
   return sonuc;
+}
+
+/**
+ * POST /v1/han/masa/:no/ses/<alt> (Faz 16): masa adı oyuncunun yerleşiminden çözülür, iş MasaDO'dadır
+ * (yetki kapısı ve Realtime vekilliği). Hız sınırı ve uzaklaştırma engeli HesapDO'da bu çağrıdan önce uygulanır.
+ */
+export async function hanSesi(b: HanHesapBaglami, hamNo: unknown, alt: SesAlt, govde: unknown): Promise<Sonuc<unknown>> {
+  const yer = await hanYeri(b.depo);
+  if (!yer.ok) return yer;
+  const no = masaNoCoz(hamNo, yer.deger.masa);
+  if (no === undefined) return hata("masa_gecersiz");
+  const ad = masaAdi(yer.deger.yerlesim, yer.deger.tur, no);
+  return b.masaCagir(ad, { islem: "ses", masa: ad, hesap: b.hesapId, alt, govde });
 }
 
 /** Y1 yaptırımı değişince: oyuncunun son masasına bildirir (susturma hemen etkili, uzaklaştırma bağlantıyı keser). */

@@ -5,6 +5,7 @@ import type { YerlesimTuru } from "./dunya-veri.ts";
 import type { Mevsim } from "./saat.ts";
 import type { CikisKaydi } from "./mulk/transfer.ts";
 import type { MulkAlt } from "./mulk/yerlesim-mulk.ts";
+import type { SesAlt } from "./han/tipler.ts";
 
 /** Mülk uçları (Faz 12–13; src/mulk/yerlesim-mulk.ts). */
 export type MulkIletisiH = { islem: "mulk"; hesapId: string; alt: MulkAlt; isletme?: string | null; govde?: unknown; dil?: string | null };
@@ -166,6 +167,14 @@ export const HATA_DURUMU = {
   eylem_siniri: 429,
   ikram_gecersiz: 400,
   yukseltme_gerekli: 426,
+  // Faz 16 sesli sohbet
+  ses_kapali: 503,
+  ses_hatasi: 502,
+  masa_sessiz: 409,
+  masada_degil: 409,
+  ses_oturumu_yok: 409,
+  sesi_kesildi: 403,
+  soz_istegi_yok: 404,
   kuyruk_dolu: 503,
   parametre_gecersiz: 400,
   deger_sinir_disi: 400,
@@ -342,6 +351,13 @@ export interface Env {
   /** Siyaset: bölge başına BolgeDO (idFromName("bolge:<id>")) ve tek SultanlikDO (idFromName("sultanlik")). */
   BOLGE: DurableObjectNamespace;
   SULTANLIK: DurableObjectNamespace;
+  /** Faz 16 sesli sohbet: Cloudflare Realtime uygulama kimliği ([vars]). Boşsa ses kapalı (`ses_kapali`). */
+  REALTIME_APP_ID?: string;
+  /** Realtime uygulama anahtarı (sır: `wrangler secret put REALTIME_APP_TOKEN`). İstemciye hiç gitmez. */
+  REALTIME_APP_TOKEN?: string;
+  /** İsteğe bağlı TURN anahtarı (kısıtlı ağlar); yoksa STUN kullanılır. */
+  REALTIME_TURN_ID?: string;
+  REALTIME_TURN_TOKEN?: string;
 }
 
 /** Dünya DO'suna profil kaydı isteği (HesapDO gönderir). */
@@ -381,6 +397,7 @@ export type HesapIleti =
   | { islem: "han"; hesapId: string; dil?: string | null }
   | { islem: "masaBilet"; hesapId: string; masa: string }
   | { islem: "hanEylem" | "hanIkram"; hesapId: string; govde: unknown }
+  | { islem: "hanSes"; hesapId: string; masa: string; alt: SesAlt; govde: unknown }
   // Debdebe (src/debdebe/hesap.ts)
   | { islem: "debdebe" | "debdebeLevha" | "debdebeSezon"; hesapId: string }
   | { islem: "debdebeDene"; hesapId: string; urun: string | null; dil?: string | null }

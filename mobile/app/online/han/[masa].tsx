@@ -23,7 +23,8 @@ import {
   type HanEylemi, type IkramId, type MasaOlayi, type MenuSatiri, type Plaka, type SikayetNedeni,
 } from "../../../lib/online/han-veri";
 import { kapanisAnahtari, useMasa, type AkisOgesi } from "../../../lib/online/han-soket";
-import { AnonsSeridi, EYLEM_IKON, HanSayfa, IKRAM_IKON, IsimPlakasi, Not } from "../../../lib/online/han-ui";
+import { AnonsSeridi, EYLEM_IKON, HanSayfa, IKRAM_IKON, IsimPlakasi, Not, type PlakaSesi } from "../../../lib/online/han-ui";
+import { useSes } from "../../../lib/online/ses";
 import type { Dil } from "../../../lib/online/protokol";
 
 type Ceviri = (k: string) => string;
@@ -42,9 +43,11 @@ function masaNo(param: unknown): number {
 }
 
 /** Yuvarlak masa ve çevresindeki koltuklar (koltuk sayısına göre elips üstünde eşit aralık). */
-function MasaCizimi({ koltuklar, ben, bas, sessiz, rtl, t, onKoltuk, no, ayakta }: {
+function MasaCizimi({ koltuklar, ben, bas, sessiz, rtl, t, onKoltuk, no, ayakta, sesi }: {
   koltuklar: (Plaka | null)[]; ben: string | null; bas: string | null; sessiz: string[]; rtl: boolean; t: Ceviri; no: number; ayakta: number;
   onKoltuk: (i: number, p: Plaka | null) => void;
+  /** Faz 16: plakanın ses durumu (konuşuyor, mikrofon açık, sesi kesik). */
+  sesi: (hesap: string) => PlakaSesi | undefined;
 }) {
   const { width } = useWindowDimensions();
   const W = Math.min(width - 32, 460);
@@ -73,10 +76,11 @@ function MasaCizimi({ koltuklar, ben, bas, sessiz, rtl, t, onKoltuk, no, ayakta 
       const left = W / 2 + x - plakaW / 2;
       const top = H / 2 + y - 35;
       const benim = !!p && p.hesap === ben;
-      const etiket = p ? `${applyParams(t("onl.han.koltuk"), [i + 1])}: ${p.ad}${p.hesap === bas ? ", " + t("onl.han.masaBasi") : ""}` : `${applyParams(t("onl.han.koltuk"), [i + 1])}: ${t(benOturuyor ? "onl.han.bosKoltuk" : "onl.han.oturErisim")}`;
+      const ps = p ? sesi(p.hesap) : undefined;
+      const etiket = p ? `${applyParams(t("onl.han.koltuk"), [i + 1])}: ${p.ad}${p.hesap === bas ? ", " + t("onl.han.masaBasi") : ""}${ps ? ", " + t("onl.ses.plaka." + ps) : ""}` : `${applyParams(t("onl.han.koltuk"), [i + 1])}: ${t(benOturuyor ? "onl.han.bosKoltuk" : "onl.han.oturErisim")}`;
       return <Pressable key={i} accessibilityRole="button" accessibilityLabel={etiket} onPress={() => { hap("tap"); onKoltuk(i, p); }}
         style={({ pressed }) => ({ position: "absolute", left, top, width: plakaW, minHeight: 70, transform: [{ scale: pressed ? 0.96 : 1 }] })}>
-        {p ? <IsimPlakasi plaka={p} ben={benim} bas={p.hesap === bas} sessiz={sessiz.includes(p.hesap)} genislik={plakaW} rtl={rtl} />
+        {p ? <IsimPlakasi plaka={p} ben={benim} bas={p.hesap === bas} sessiz={sessiz.includes(p.hesap)} genislik={plakaW} rtl={rtl} ses={ps} />
           : <View style={{ width: plakaW, minHeight: 70, borderRadius: 9, borderWidth: 1, borderStyle: "dashed", borderColor: "rgba(201,162,78,0.55)", backgroundColor: "rgba(14,10,6,0.55)", alignItems: "center", justifyContent: "center", gap: 2, paddingHorizontal: 4 }}>
             <GameIcon name="house" size={14} color={C.goldDim} />
             <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ fontFamily: F.display, fontSize: 11, color: benOturuyor ? C.parchmentMuted : C.goldBright }}>{t(benOturuyor ? "onl.han.bosKoltuk" : "onl.han.otur")}</Text>
@@ -136,6 +140,10 @@ function MasaEkran() {
   const digerOturanlar = (masa?.koltuklar.filter((p): p is Plaka => !!p && p.hesap !== ben)) ?? [];
   const susturuldu = !!d.susturma && (d.susturma.bitis === null || d.susturma.bitis > Date.now());
   const acik = d.bag === "acik" && !!masa;
+  const ses = useSes({ no, istemci, ses: d.ses, ben, oturuyor, bagli: acik, sessiz: d.sessiz, gonder: m.gonderHam });
+  const sesi = (h: string): PlakaSesi | undefined => (ses.kesik(h) ? "kesik" : ses.konusuyor(h) ? "konusuyor" : ses.mikAcik(h) ? "acik" : undefined);
+  const benKesik = !!ben && ses.kesik(ben);
+  const sozIstedim = !!ben && ses.sozIstedi(ben);
 
   const panelAc = (p: "eylem" | "ikram" | "rapor", h: string | null) => { istekNo.current = istekNoUret(); setHedef(h); setKisi(null); setPanel(p); setBilgi(null); };
   const gonder = () => {
@@ -243,7 +251,7 @@ function MasaEkran() {
 
     {!masa ? (d.bag === "kapandi" ? null : <Yukleniyor metin={t("onl.han.baglaniyor")} />) : <>
       <View style={{ marginTop: 12 }}>
-        <MasaCizimi koltuklar={masa.koltuklar} ben={ben} bas={masa.masaBasi} sessiz={d.sessiz} rtl={rtl} t={t} no={no} ayakta={masa.ayakta}
+        <MasaCizimi koltuklar={masa.koltuklar} ben={ben} bas={masa.masaBasi} sessiz={d.sessiz} rtl={rtl} t={t} no={no} ayakta={masa.ayakta} sesi={sesi}
           onKoltuk={(i, p) => {
             if (!p) { if (!oturuyor) m.otur(i); return; }
             setKisi(p);
@@ -257,6 +265,32 @@ function MasaEkran() {
           : <AltinDugme etiket={t(bosVar ? "onl.han.bosaOtur" : "onl.han.siraGir")} icon={bosVar ? "house" : "hourglass"} rtl={rtl} kapali={!acik} onPress={() => m.otur()} />}
         {susturuldu ? <Not metin={suresiz ? t("onl.han.susturulduSuresiz") : applyParams(t("onl.han.susturulduBitis"), [new Date(d.susturma!.bitis!).toLocaleString(lang)])} rtl={rtl} icon="speaker" /> : null}
       </View>
+
+      {/* sesli sohbet (Faz 16): oturan mikrofon açar, ayaktaki dinler ve söz ister */}
+      <View style={{ marginTop: 8, gap: 8 }}>
+        {ses.gorunur ? (oturuyor
+          ? <AltinDugme etiket={t(ses.mik ? "onl.ses.mikKapat" : "onl.ses.mikAc")} icon="speaker" rtl={rtl} bekliyor={ses.bekliyor} kapali={!acik || benKesik || susturuldu} onPress={ses.mikDegistir}
+              erisim={t(ses.mik ? "onl.ses.mikKapatErisim" : "onl.ses.mikAcErisim")} />
+          : <CizgiDugme etiket={t(sozIstedim ? "onl.ses.sozGeri" : "onl.ses.sozIste")} icon="star" rtl={rtl} kucuk kapali={!acik} onPress={() => (sozIstedim ? m.sozGeri() : m.sozIste())} />) : null}
+        {ses.gorunur && oturuyor && benKesik ? <Not metin={t("onl.ses.kesildin")} rtl={rtl} icon="speaker" /> : null}
+        {ses.gorunur && !oturuyor ? <Not metin={t(sozIstedim ? "onl.ses.sozBekliyor" : "onl.ses.dinliyorsun")} rtl={rtl} icon="speaker" /> : null}
+        {ses.gorunur && ses.mik ? <Not metin={t("onl.ses.kayitYok")} rtl={rtl} icon="speaker" /> : null}
+        {ses.neden ? <Not metin={t(ses.neden)} rtl={rtl} icon="speaker" /> : null}
+        {ses.hata ? <Bant metin={t(ses.hata === "izin" ? "onl.ses.izinYok" : ekHataAnahtari(ses.hata))} rtl={rtl} eylem={t("onl.kapat")} onEylem={ses.hataTemizle} /> : null}
+      </View>
+
+      {basBen && d.ses?.soz.length ? <>
+        <Baslik2 metin={applyParams(t("onl.ses.sozBaslik"), [d.ses.soz.length])} rtl={rtl} />
+        <View style={{ gap: 6 }}>
+          {d.ses.soz.map((p) => <View key={p.hesap} style={{ flexDirection: yon(rtl), alignItems: "center", gap: 8, minHeight: 44, paddingHorizontal: 10, borderRadius: 8, backgroundColor: "rgba(14,10,6,0.7)", borderWidth: 1, borderColor: "rgba(201,162,78,0.25)" }}>
+            <GameIcon name="star" size={14} color={C.goldBright} />
+            <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.serif, fontSize: 15, color: C.parchment, textAlign: hiza(rtl) }}>{p.ad}</Text>
+            <CizgiDugme etiket={t("onl.ses.sozVer")} icon="house" rtl={rtl} kucuk kapali={!acik || !bosVar} onPress={() => m.sozVer(p.hesap)} />
+            <CizgiDugme etiket={t("onl.ses.reddet")} rtl={rtl} kucuk kapali={!acik} onPress={() => m.sozVer(p.hesap, false)} />
+          </View>)}
+          {!bosVar ? <Text style={{ fontFamily: F.serifItalic, fontSize: 13, lineHeight: 18, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{t("onl.ses.sozDolu")}</Text> : null}
+        </View>
+      </> : null}
 
       {masa.sira.length ? <>
         <Baslik2 metin={applyParams(t("onl.han.siraBaslik"), [masa.sira.length])} rtl={rtl} />
@@ -296,7 +330,7 @@ function MasaEkran() {
     <AltPanel acik={!!kisi} onKapat={() => setKisi(null)} etiket={kisi?.ad ?? ""} rtl={rtl} t={t}>
       {kisi ? <>
         <View style={{ flexDirection: yon(rtl), alignItems: "center", gap: 10, paddingEnd: 36 }}>
-          <IsimPlakasi plaka={kisi} bas={kisi.hesap === masa?.masaBasi} ben={kisi.hesap === ben} sessiz={d.sessiz.includes(kisi.hesap)} genislik={180} rtl={rtl} />
+          <IsimPlakasi plaka={kisi} bas={kisi.hesap === masa?.masaBasi} ben={kisi.hesap === ben} sessiz={d.sessiz.includes(kisi.hesap)} genislik={180} rtl={rtl} ses={sesi(kisi.hesap)} />
           {kisi.hesap === masa?.masaBasi ? <Rozet icon="crown" metin={t("onl.han.masaBasi")} renk={C.goldBright} /> : null}
         </View>
         {kisi.hesap === ben ? <CizgiDugme etiket={t("onl.han.kalk")} icon="walk" rtl={rtl} onPress={() => { m.kalk(); setKisi(null); }} /> : <>
@@ -306,6 +340,10 @@ function MasaEkran() {
             ? <CizgiDugme etiket={t("onl.han.sesiAc")} icon="speaker" rtl={rtl} onPress={() => { m.susturKaldir(kisi.hesap); setKisi(null); }} />
             : <CizgiDugme etiket={t("onl.han.sessizeAl")} icon="speaker" rtl={rtl} onPress={() => { m.sustur(kisi.hesap); setKisi(null); }} />}
           <Text style={{ fontFamily: F.serifItalic, fontSize: 13, lineHeight: 18, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{t("onl.han.sessizNot")}</Text>
+          {ses.gorunur ? <Text style={{ fontFamily: F.serifItalic, fontSize: 13, lineHeight: 18, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{t("onl.ses.yerelNot")}</Text> : null}
+          {basBen && ses.gorunur ? (ses.kesik(kisi.hesap)
+            ? <CizgiDugme etiket={t("onl.ses.sesiniAc")} icon="speaker" rtl={rtl} onPress={() => { m.sesAc(kisi.hesap); setKisi(null); }} />
+            : <CizgiDugme etiket={t("onl.ses.sesiniKes")} icon="speaker" rtl={rtl} onPress={() => { m.sesKapat(kisi.hesap); setKisi(null); }} />) : null}
           <CizgiDugme etiket={t("onl.han.sikayet")} icon="shield" rtl={rtl} onPress={() => panelAc("rapor", kisi.hesap)} />
           {basBen && masa?.sira.some((p) => p.hesap === kisi.hesap) ? <CizgiDugme etiket={t("onl.han.oneAl")} icon="hourglass" rtl={rtl} onPress={() => { m.oneAl(kisi.hesap); setKisi(null); }} /> : null}
           {basBen ? <CizgiDugme etiket={t("onl.han.masadanCikar")} icon="walk" rtl={rtl} onPress={() => { m.at(kisi.hesap); setKisi(null); }} /> : null}

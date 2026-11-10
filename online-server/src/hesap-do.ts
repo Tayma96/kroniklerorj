@@ -9,7 +9,7 @@ import { girisKaydet, hesapKaydi, hizKontrol, profilGetir, profilOlustur, sakinK
 import { basarili, hata, type Env, type HesapIleti, type HesapYaptirimi, type Profil, type Sonuc, type YerlesimIleti } from "./tipler.ts";
 import type { MasaIleti } from "./han/tipler.ts";
 import { uzaklastirmaBilgisi, yaptirimEngeli } from "./yonetim/yaptirim.ts";
-import { engeliMasayaBildir, hanEylemi, hanIkrami, hanListesi, masaBileti, yaptirimiMasayaBildir, type HanHesapBaglami } from "./han/hesap-kopru.ts";
+import { engeliMasayaBildir, hanEylemi, hanIkrami, hanListesi, hanSesi, masaBileti, yaptirimiMasayaBildir, type HanHesapBaglami } from "./han/hesap-kopru.ts";
 import { masaCagir } from "./han/ic.ts";
 import { ikramOdeyici } from "./han/yerlesim-kopru.ts";
 import * as debdebe from "./debdebe/hesap.ts";
@@ -216,6 +216,8 @@ export class HesapDO {
       }
       case "hanEylem":
         return hanEylemi(await this.#han(ileti.hesapId, simdi), ileti.govde);
+      case "hanSes":
+        return hanSesi(await this.#han(ileti.hesapId, simdi), ileti.masa, ileti.alt, ileti.govde);
       case "hanIkram": {
         const r = await hanIkrami(await this.#han(ileti.hesapId, simdi), ileti.govde);
         // Oyun içi cömertlik de Cömertler Levhası'nda anılır (yalnız görünürlüğü açık olan; oyun etkisi yok).

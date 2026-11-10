@@ -1,7 +1,7 @@
 // Han ekranlarının görsel parçaları: sıcak ışıklı han sayfası, isim plakası (Debdebe çerçevesi için yer), anons şeridi
 // (ikram, armağan, Debdebe türlerine ayrı süs), ikram ikonları. Görsel dil yasam-ui.tsx ile aynıdır.
-import type { ReactNode } from "react";
-import { View, Text, ScrollView, StyleSheet } from "react-native";
+import { useEffect, useRef, type ReactNode } from "react";
+import { View, Text, ScrollView, StyleSheet, Animated, Easing } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { GameIcon } from "../icons";
@@ -39,13 +39,46 @@ export function Not({ metin, rtl, icon = "scroll" }: { metin: string; rtl: boole
   </View>;
 }
 
+/** Plakadaki ses durumu (Faz 16): konuşuyor (ışık + dalga), mikrofon açık, masa başı sesini kesti. */
+export type PlakaSesi = "konusuyor" | "acik" | "kesik";
+const KONUSMA_RENK = "#7FD89A";
+
+/** Konuşan plakanın çevresinde nabız gibi atan ışık halkası (yerel sürücü; ağ yok). */
+function KonusmaIsigi() {
+  const a = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const d = Animated.loop(Animated.sequence([
+      Animated.timing(a, { toValue: 1, duration: 520, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+      Animated.timing(a, { toValue: 0, duration: 520, easing: Easing.in(Easing.quad), useNativeDriver: true }),
+    ]));
+    d.start();
+    return () => d.stop();
+  }, [a]);
+  return <Animated.View pointerEvents="none" style={{ position: "absolute", top: -3, left: -3, right: -3, bottom: -3, borderRadius: 11, borderWidth: 2, borderColor: KONUSMA_RENK,
+    opacity: a.interpolate({ inputRange: [0, 1], outputRange: [0.45, 1] }), transform: [{ scale: a.interpolate({ inputRange: [0, 1], outputRange: [1, 1.04] }) }] }} />;
+}
+
+/** Üç çubuklu küçük ses dalgası (konuşurken). */
+function SesDalgasi() {
+  const a = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const d = Animated.loop(Animated.timing(a, { toValue: 1, duration: 700, easing: Easing.linear, useNativeDriver: true }));
+    d.start();
+    return () => d.stop();
+  }, [a]);
+  return <View pointerEvents="none" style={{ flexDirection: "row", alignItems: "center", gap: 2, height: 12 }}>
+    {[0, 1, 2].map((i) => <Animated.View key={i} style={{ width: 2.5, height: 12, borderRadius: 2, backgroundColor: KONUSMA_RENK,
+      transform: [{ scaleY: a.interpolate({ inputRange: [0, 0.5, 1], outputRange: i === 1 ? [1, 0.35, 1] : [0.35, 1, 0.35] }) }] }} />)}
+  </View>;
+}
+
 /**
  * İsim plakası. `cerceve` Debdebe çerçevesinin yeridir (Faz 15): varsa çift yaldız kenar çizilir; oyun mantığı okumaz.
  * Masa başına küçük taç, bana parlak kenar.
  */
-export function IsimPlakasi({ plaka, ben, bas, sessiz, genislik, rtl }: { plaka: Plaka; ben?: boolean; bas?: boolean; sessiz?: boolean; genislik: number; rtl: boolean }) {
+export function IsimPlakasi({ plaka, ben, bas, sessiz, genislik, rtl, ses }: { plaka: Plaka; ben?: boolean; bas?: boolean; sessiz?: boolean; genislik: number; rtl: boolean; ses?: PlakaSesi }) {
   const debdebe = !!plaka.cerceve;
-  return <View style={[{ width: genislik, minHeight: 70, borderRadius: 9, borderWidth: debdebe ? 2 : 1.5, borderColor: ben ? C.goldBright : debdebe ? "#F3D27A" : ONL.frame, overflow: "hidden" }, ben ? GLOW : null]}>
+  return <View>{ses === "konusuyor" ? <KonusmaIsigi /> : null}<View style={[{ width: genislik, minHeight: 70, borderRadius: 9, borderWidth: debdebe ? 2 : 1.5, borderColor: ben ? C.goldBright : debdebe ? "#F3D27A" : ONL.frame, overflow: "hidden" }, ben ? GLOW : null]}>
     <LinearGradient pointerEvents="none" colors={debdebe ? ["#4A2E12", "#2A180A"] : ["#3A2A18", "#1E150C"]} style={StyleSheet.absoluteFill} />
     {debdebe ? <View pointerEvents="none" style={{ position: "absolute", top: 2, left: 2, right: 2, bottom: 2, borderRadius: 7, borderWidth: 1, borderColor: "rgba(243,210,122,0.55)" }} /> : null}
     <View style={{ alignItems: "center", gap: 3, paddingHorizontal: 4, paddingTop: 6, paddingBottom: 5, flex: 1 }}>
@@ -56,7 +89,10 @@ export function IsimPlakasi({ plaka, ben, bas, sessiz, genislik, rtl }: { plaka:
       {bas ? <GameIcon name="crown" size={12} color={C.goldBright} /> : null}
       {sessiz ? <GameIcon name="speaker" size={12} color={C.parchmentMuted} /> : null}
     </View> : null}
-  </View>;
+    {ses ? <View pointerEvents="none" style={[{ position: "absolute", top: 3, flexDirection: "row", alignItems: "center", gap: 2 }, rtl ? { right: 4 } : { left: 4 }]}>
+      {ses === "konusuyor" ? <SesDalgasi /> : <GameIcon name="speaker" size={12} color={ses === "kesik" ? C.ember : KONUSMA_RENK} />}
+    </View> : null}
+  </View></View>;
 }
 
 const ANONS_SUS: Record<AnonsTuru, { icon: string; renk: string; zemin: [string, string]; etiket: string }> = {

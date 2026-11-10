@@ -1,9 +1,10 @@
-// İstenmeyen izinleri kaldırır: kayıt (RECORD_AUDIO), ekran-üstü (SYSTEM_ALERT_WINDOW),
-// eski depolama izinleri. Ses çalma için gerekenler (MODIFY_AUDIO_SETTINGS, FOREGROUND_SERVICE*)
-// ve INTERNET/VIBRATE bırakılır. Çevrimdışı oyun; mikrofon/depolama/overlay gerekmez.
+// İstenmeyen izinleri kaldırır: ekran-üstü (SYSTEM_ALERT_WINDOW), eski depolama izinleri, kamera.
+// Ses çalma için gerekenler (MODIFY_AUDIO_SETTINGS, FOREGROUND_SERVICE*) ve INTERNET/VIBRATE bırakılır.
+// RECORD_AUDIO artık kaldırılmaz: çevrimiçi handa sesli sohbet (Faz 16, react-native-webrtc) mikrofon ister;
+// izin yalnız oyuncu masada mikrofonu açınca sorulur, ses kaydedilmez. Dosya adı geriye uyum için korunur.
 const { withAndroidManifest } = require("@expo/config-plugins");
 const STRIP = [
-  "android.permission.RECORD_AUDIO",
+  "android.permission.CAMERA",
   "android.permission.SYSTEM_ALERT_WINDOW",
   "android.permission.READ_EXTERNAL_STORAGE",
   "android.permission.WRITE_EXTERNAL_STORAGE",

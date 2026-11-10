@@ -10,7 +10,8 @@ export type MasaTuru = "acik" | "ozel" | "meclis" | "tuccar";
 
 /**
  * Masa ayarı (kalıcı masa durumu). Hancı (mekân sahibi, Faz 13) masa açar/kapatır, kavgayı yasaklar.
- * `sesli` Faz 16 (ses) için yer tutucudur (Berkay: yaş sınırı yok, yaş kapısı alanı bilerek konmadı).
+ * `sesli`: Faz 16 sesli sohbet bu masada açık mı (varsayılan açık; sunucuda Realtime yapılandırılmamışsa yine kapalı).
+ * Berkay: yaş sınırı yok, yaş kapısı alanı bilerek konmadı (spec §6.1).
  * Para, koltuk satışı, atılmazlık ya da gizli giriş alanı bilerek yoktur.
  */
 export interface MasaAyari {
@@ -87,11 +88,37 @@ export type IstemciIletisi =
   | { t: "susturKaldir"; hedef: string }
   | { t: "at"; hedef: string }
   | { t: "oneAl"; hedef: string }
-  | { t: "rapor"; hedef: string; neden: string; aciklama?: string; istekNo: string };
+  | { t: "rapor"; hedef: string; neden: string; aciklama?: string; istekNo: string }
+  // Faz 16 ses: konuşma göstergesi (yalnız yayındayken), masa başının ses kesmesi, söz isteme
+  | { t: "konus"; acik: boolean }
+  | { t: "sesKapat"; hedef: string }
+  | { t: "sesAc"; hedef: string }
+  | { t: "sozIste" }
+  | { t: "sozGeri" }
+  | { t: "sozVer"; hedef: string; kabul?: boolean };
+
+/**
+ * Masanın ses durumu (Faz 16). Yalnız kimlikler ve iz adları; ses verisi ve kayıt yoktur.
+ * İz adı istemcinin `POST /ses/dinle` ile çekeceği yayını adlandırır; yayının Realtime oturum kimliği gizlidir.
+ */
+export interface SesDurumu {
+  /** Sunucuda Realtime yapılandırılmış ve masa sesli. */
+  acik: boolean;
+  neden?: "yapilandirilmadi" | "masa_sessiz";
+  /** Mikrofonu açık (yayında) olanlar, koltuk sırasıyla. */
+  yayin: { hesap: string; iz: string }[];
+  /** Şu an konuşanlar (yayındakilerin kendi bildirdiği ses etkinliği). */
+  konusan: string[];
+  /** Masa başının sesini kestikleri (bu masada yayın açamaz). */
+  kapali: string[];
+  /** Söz isteyen ayaktakiler, istek sırasıyla. */
+  soz: Plaka[];
+}
 
 /** Sunucu → istemci. */
 export type SunucuIletisi =
-  | { t: "hosgeldin"; ben: Plaka; susturma: { bitis: number | null } | null; masa: MasaGorunumu }
+  | { t: "hosgeldin"; ben: Plaka; susturma: { bitis: number | null } | null; masa: MasaGorunumu; ses?: SesDurumu }
+  | { t: "sesDurum"; ses: SesDurumu }
   | { t: "durum"; masa: MasaGorunumu }
   | { t: "ileti"; hesap: string; ad: string; koltuk: number; metin: string; zaman: number }
   | { t: "olay"; olay: MasaOlayi }
@@ -121,7 +148,17 @@ export interface SoketEki {
   yt: HesapYaptirimi;
   /** 1 = devredildi ya da çıkarıldı: hesaba katılmaz, kapanışı yok sayılır. */
   x?: 1;
+  /** Faz 16 ses: Realtime oturumu (o), yayın izi adı (i) ve mid'i (d), konuşuyor (k). Ses verisi yok. */
+  ses?: { o: string; i?: string; d?: string; k?: 1 };
+  /** Masa başı bu oyuncunun sesini kesti. */
+  sm?: 1;
+  /** Söz isteği anı (ayakta dinleyen). */
+  si?: number;
 }
+
+/** Ses uçları: POST /v1/han/masa/:no/ses/<alt>. */
+export const SES_ALTLARI = ["oturum", "yayin", "dinle", "anlas", "kapat"] as const;
+export type SesAlt = (typeof SES_ALTLARI)[number];
 
 /** HesapDO → MasaDO iç iletileri. */
 export type MasaIleti =
@@ -134,7 +171,9 @@ export type MasaIleti =
   /** Masaya anons: saklanmaz, katılım listesi yoktur. */
   | { islem: "anons"; masa: string; anons: MasaAnonsu }
   /** Oyuncu masadayken engel listesi değişti (HesapDO bildirir; iki yönlü liste). */
-  | { islem: "engel"; masa: string; hesap: string; liste: string[] };
+  | { islem: "engel"; masa: string; hesap: string; liste: string[] }
+  /** Faz 16 ses: MasaDO yetki kapısıdır (oturuyor mu, susturuldu mu, sesi kesildi mi), Realtime'a vekildir. */
+  | { islem: "ses"; masa: string; hesap: string; alt: SesAlt; govde: unknown };
 
 /**
  * Masaya anons türleri (hediye ailesi). Bu fazda yalnız `ikram` (NPC hancı menüsünden akçeyle) çalışır;

@@ -38,9 +38,10 @@
 
 ## İzinler (temizlendi)
 `plugins/withoutRecordAudio.js` config plugin'i şu izinleri kaldırır:
-`RECORD_AUDIO`, `SYSTEM_ALERT_WINDOW`, `READ/WRITE_EXTERNAL_STORAGE`.
-Kalan izinler: `INTERNET`, `VIBRATE`, `MODIFY_AUDIO_SETTINGS`, `FOREGROUND_SERVICE*`
-(ses çalma için; sesi tümüyle kaldırırsan bunlar da gider).
+`CAMERA`, `SYSTEM_ALERT_WINDOW`, `READ/WRITE_EXTERNAL_STORAGE` (`CAMERA` ayrıca `android.blockedPermissions`te).
+Kalan izinler: `INTERNET`, `VIBRATE`, `MODIFY_AUDIO_SETTINGS`, `FOREGROUND_SERVICE*` (ses çalma) ve
+`RECORD_AUDIO` + ağ/bluetooth izinleri (`react-native-webrtc`, handa sesli sohbet; mikrofon yalnız masada açılınca
+sorulur, ses kaydedilmez). Play Console veri güvenliği formunda "ses: kaydedilmez/paylaşılmaz, gerçek zamanlı" belirtilir.
 - Doğrulama: `npx expo config --type introspect` → manifest izinlerine bak.
 
 ## Play Console'a yüklemeden önce gerekenler (repo dışı, senin hazırlaman gereken)

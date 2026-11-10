@@ -19,7 +19,10 @@
       },
       "predictiveBackGestureEnabled": false,
       "package": "com.kronikler.app",
-      "versionCode": 100
+      "versionCode": 100,
+      "blockedPermissions": [
+        "android.permission.CAMERA"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -48,6 +51,12 @@
         "expo-navigation-bar",
         {
           "hidden": true
+        }
+      ],
+      [
+        "@config-plugins/react-native-webrtc",
+        {
+          "microphonePermission": "Kronikler uses the microphone only for voice chat at inn tables; audio is never recorded."
         }
       ],
       "./plugins/withoutRecordAudio",

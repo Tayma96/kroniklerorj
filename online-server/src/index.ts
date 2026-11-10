@@ -55,6 +55,11 @@
 //   GET  /v1/han?dil=                    → yerleşimin hanı ve masaları (doluluk)          (Faz 10, src/han/)
 //   GET  /v1/han/masa/:no/baglan         → WebSocket yükseltmesi (Upgrade: websocket + oturum); iletiler src/han/tipler.ts
 //   POST /v1/han/eylem {masa, tur, hedef?, olay?, sart?, istekNo} → {olay} (katılım listesiyle)
+//   POST /v1/han/masa/:no/ses/oturum {}            → {ice}  (Faz 16 ses; Realtime yoksa 503 ses_kapali)
+//   POST /v1/han/masa/:no/ses/yayin {sdp, mid}     → {sdp, yeniden, iz}  (yalnız oturan, susturulmamış, sesi kesilmemiş)
+//   POST /v1/han/masa/:no/ses/dinle {izler}        → {sdp, yeniden, izler:[{mid, iz, hesap}]}  (ayaktakiler de dinler)
+//   POST /v1/han/masa/:no/ses/anlas {sdp}          → {}  (çekilen izler için istemci answer'ı)
+//   POST /v1/han/masa/:no/ses/kapat {mids?, sdp?, tum?} → {sdp}  (ses kaydedilmez; uygulama anahtarı istemciye gitmez)
 //   POST /v1/han/ikram {masa, hedef, ikram, istekNo} → {ikram, fiyat, para, anons}  (ödeme YerlesimDO'da, teveccüh yazılır)
 //   GET  /v1/barinma?dil=                → barınma: durum, konaklama, zincir (eşik/etki), misafirhane, odalar, tesis (Faz 14)
 //   POST /v1/barinma/kira {oda, sure: 1|3|12, istekNo} → {kira, barinma, para}  (NPC hancı: akçe dünyadan çıkar)
@@ -117,7 +122,8 @@ import {
 import { yoneticiOturumuDogrula, yoneticiOturumuOlustur } from "./yonetim/kimlik.ts";
 import { panelYaniti } from "./yonetim/panel.ts";
 import { masayaYukselt } from "./han/ic.ts";
-import type { MasaBileti } from "./han/tipler.ts";
+import type { MasaBileti, SesAlt } from "./han/tipler.ts";
+import { realtimeAyari } from "./han/realtime.ts";
 
 export { DunyaDO } from "./dunya-do.ts";
 export { IsletmeDO } from "./isletme-do.ts";
@@ -135,6 +141,7 @@ const KISI_YOLU = /^\/v1\/kisi\/([^/]+)$/;
 const OYUNCU_YOLU = /^\/v1\/oyuncu\/([^/]+)$/;
 const TEKLIF_CEVAP_YOLU = /^\/v1\/teklif\/([^/]+)\/cevap$/;
 const MASA_YOLU = /^\/v1\/han\/masa\/([^/]+)\/baglan$/;
+const SES_YOLU = /^\/v1\/han\/masa\/([^/]{1,8})\/ses\/(oturum|yayin|dinle|anlas|kapat)$/;
 const DEBDEBE_KISI_YOLU = /^\/v1\/debdebe\/kisi\/([^/]+)$/;
 const DEBDEBE_YAZMA: Readonly<Record<string, DebdebeIslem>> = {
   "/v1/debdebe/satin-al": "debdebeSatinAl",
@@ -566,6 +573,18 @@ async function yonlendir(istek: Request, env: Env): Promise<Response> {
   }
   const masa = MASA_YOLU.exec(yol);
   if (masa?.[1]) return yontem === "GET" ? masaBaglan(istek, env, masa[1]) : hataYaniti("yontem_yok");
+  const ses = SES_YOLU.exec(yol);
+  if (ses?.[1] && ses[2]) {
+    if (yontem !== "POST") return hataYaniti("yontem_yok");
+    // Realtime yapılandırılmamışsa DO'lara hiç gitmeden kapalı döner.
+    if (!realtimeAyari(env)) return hataYaniti("ses_kapali");
+    const masaNo = ses[1];
+    const alt = ses[2] as SesAlt;
+    return hesaba(istek, env, async (hesapId) => {
+      const govde = await govdeOku(istek);
+      return govde.ok ? basarili({ islem: "hanSes", hesapId, masa: masaNo, alt, govde: govde.deger }) : govde;
+    });
+  }
   const kisi = KISI_YOLU.exec(yol);
   if (kisi?.[1]) {
     if (yontem !== "GET") return hataYaniti("yontem_yok");

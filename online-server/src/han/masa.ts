@@ -1,6 +1,8 @@
 // Masa çekirdeği: koltuk, sıra, sohbet yayını, yerel sessize alma, masa başı yetkileri, rapor.
 // Workers'a bağlı değildir: soketler `MasaSoketi` arayüzüyle gelir (DO'da hibernation WebSocket'i, testte sahte).
 // Durum soket eklerindedir (bağlı olanlar gerçeğin kaynağıdır); sohbet metni hiçbir eke ya da depoya yazılmaz.
+// Faz 16 ses: yayın kimlikleri de soket ekindedir; masadan çıkan, kalkan, susturulan ya da sesi kesilenin yayını
+// `sesKapat` ile SFU'da hemen kapatılır (ses verisi buradan geçmez, kaydedilmez).
 
 import { hata, type Basarisiz, type HataKodu, type Sonuc } from "../tipler.ts";
 import { ACIKLAMA_EN_UZUN } from "../yonetim/sikayet.ts";
@@ -27,6 +29,7 @@ import type {
   MasaOlayi,
   MasaOzeti,
   Plaka,
+  SesDurumu,
   SoketEki,
   SunucuIletisi,
 } from "./tipler.ts";
@@ -51,6 +54,10 @@ export interface MasaBaglami {
   rapor(kim: string, govde: Record<string, unknown>): Promise<Sonuc<unknown>>;
   /** Masa başının çıkarması: olay ve dönüş yasağı yazılır, Y1 kaydına düşer. */
   atma(kim: string, hedef: string, katilim: string[]): Promise<MasaOlayi>;
+  /** Faz 16: sunucuda Realtime yapılandırılmış mı (yoksa ses kapalı). */
+  sesYapilandi?: boolean;
+  /** Faz 16: yayın izini SFU'da zorla kapatır (en iyi çaba; DO işlem sonunda bekler). */
+  sesKapat?(oturum: string, mid: string): void;
 }
 
 export interface Kayit {
@@ -121,6 +128,47 @@ function durumYayinla(b: MasaBaglami, tum: readonly Kayit[]): void {
   yayinla(tum, { t: "durum", masa: gorunum(b.no, tum, b.ayar) });
 }
 
+// ---------------------------------------------------------------- ses (Faz 16)
+
+/** Masanın ses durumu: yayındakiler (yalnız oturanlar), konuşanlar, sesi kesilenler, söz isteyenler. */
+export function sesDurumu(b: Pick<MasaBaglami, "ayar" | "sesYapilandi">, tum: readonly Kayit[]): SesDurumu {
+  const acik = b.sesYapilandi === true && b.ayar.sesli;
+  const yayinda = tum
+    .filter((r) => r.ek.k !== null && r.ek.ses?.i)
+    .sort((a, c) => (a.ek.k as number) - (c.ek.k as number));
+  return {
+    acik,
+    ...(acik ? {} : { neden: b.sesYapilandi === true ? ("masa_sessiz" as const) : ("yapilandirilmadi" as const) }),
+    yayin: yayinda.map((r) => ({ hesap: r.ek.h, iz: r.ek.ses?.i as string })),
+    konusan: yayinda.filter((r) => r.ek.ses?.k).map((r) => r.ek.h),
+    kapali: tum.filter((r) => r.ek.sm).map((r) => r.ek.h),
+    soz: tum
+      .filter((r) => r.ek.k === null && r.ek.si !== undefined)
+      .sort((a, c) => (a.ek.si as number) - (c.ek.si as number))
+      .map((r) => plaka(r.ek)),
+  };
+}
+
+export function sesYayinla(b: MasaBaglami, tum: readonly Kayit[]): void {
+  yayinla(tum, { t: "sesDurum", ses: sesDurumu(b, tum) });
+}
+
+/** Eki değiştirir (yazmaz): yayın varsa SFU'da kapatılır. Yayın vardıysa true. */
+export function yayiniKes(b: Pick<MasaBaglami, "sesKapat">, ek: SoketEki): boolean {
+  const s = ek.ses;
+  if (!s?.i) return false;
+  if (s.d) b.sesKapat?.(s.o, s.d);
+  delete s.i;
+  delete s.d;
+  delete s.k;
+  return true;
+}
+
+/** Ekte ses ile ilgili bir şey var mı (çıkınca sesDurum yayını gerekir). */
+function sesliEk(ek: SoketEki): boolean {
+  return Boolean(ek.ses?.i || ek.sm || ek.si !== undefined);
+}
+
 function hataGonder(soket: MasaSoketi, kod: HataKodu, istek?: string, bitis?: number | null): void {
   soket.gonder({ t: "hata", hata: kod, ...(istek ? { istek } : {}), ...(bitis !== undefined ? { bitis } : {}) });
 }
@@ -138,8 +186,12 @@ function siradanOturt(kalan: readonly Kayit[], koltuk: number, simdi: number): v
 
 /** Verilen kayıtları masadan çıkarır (soketi kapatır), koltuklarını sıraya devreder, durumu yayınlar. */
 function cikar(b: MasaBaglami, cikanlar: readonly Kayit[], kalan: readonly Kayit[], kod: number, neden: string): void {
+  let ses = false;
   for (const r of cikanlar) {
     const koltuk = r.ek.k;
+    if (sesliEk(r.ek)) ses = true;
+    yayiniKes(b, r.ek);
+    delete r.ek.ses;
     r.ek.x = 1;
     r.ek.k = null;
     r.ek.s = null;
@@ -148,6 +200,7 @@ function cikar(b: MasaBaglami, cikanlar: readonly Kayit[], kalan: readonly Kayit
     if (koltuk !== null) siradanOturt(kalan, koltuk, b.simdi);
   }
   durumYayinla(b, kalan);
+  if (ses) sesYayinla(b, kalan);
 }
 
 // ---------------------------------------------------------------- bağlantı
@@ -177,8 +230,14 @@ export function baglan(b: MasaBaglami, yeni: MasaSoketi, bilet: MasaBileti): voi
     ek.o = once.ek.o;
     ek.s = once.ek.s;
     ek.sus = once.ek.sus;
+    if (once.ek.sm) ek.sm = 1;
+    if (once.ek.si !== undefined) ek.si = once.ek.si;
   }
+  let sesDegisti = false;
   for (const r of eski) {
+    // Eski bağlantının yayını yeni bağlantıya geçmez (yeni WebRTC bağlantısı kurulur): SFU'da kapatılır.
+    if (yayiniKes(b, r.ek)) sesDegisti = true;
+    delete r.ek.ses;
     r.ek.x = 1;
     r.soket.ekYaz(r.ek);
     r.soket.kapat(KAPANIS.baskaBaglanti, "baska_baglanti");
@@ -188,8 +247,9 @@ export function baglan(b: MasaBaglami, yeni: MasaSoketi, bilet: MasaBileti): voi
   const hepsi = [...digerleri, { soket: yeni, ek }];
   const sus = surer(ek.yt.susturma, b.simdi) ? { bitis: ek.yt.susturma.bitis } : null;
   const masa = gorunum(b.no, hepsi, b.ayar);
-  yeni.gonder({ t: "hosgeldin", ben: plaka(ek), susturma: sus, masa });
+  yeni.gonder({ t: "hosgeldin", ben: plaka(ek), susturma: sus, masa, ses: sesDurumu(b, hepsi) });
   yayinla(digerleri, { t: "durum", masa });
+  if (sesDegisti) sesYayinla(b, digerleri);
 }
 
 /** Bağlantı kapandı (ya da hata verdi). */
@@ -212,10 +272,14 @@ export function hesabiCikar(b: MasaBaglami, hesap: string, kod: number, neden: s
 /** Y1 yaptırımı bağlantı sürerken değişti: eke yazılır; uzaklaştırma bağlantıyı keser. */
 export function yaptirimGuncelle(b: MasaBaglami, hesap: string, durum: HesapYaptirimi): void {
   const bulunan = kayitlar(b.soketler).filter((r) => r.ek.h === hesap);
+  let ses = false;
   for (const r of bulunan) {
     r.ek.yt = durum;
+    // Y1 susturması sesi de keser: yayın hemen kapanır.
+    if (surer(durum.susturma, b.simdi) && yayiniKes(b, r.ek)) ses = true;
     r.soket.ekYaz(r.ek);
   }
+  if (ses) sesYayinla(b, kayitlar(b.soketler));
   if (bulunan.length > 0 && surer(durum.uzaklastirma, b.simdi)) {
     hesabiCikar(b, hesap, KAPANIS.uzaklastirildi, "uzaklastirildi");
   }
@@ -275,6 +339,16 @@ async function komutIsle(
       return oneAl(b, kaynak, ek, ileti.hedef);
     case "rapor":
       return rapor(b, kaynak, ek, ileti);
+    case "konus":
+      return konus(b, kaynak, ek, ileti.acik);
+    case "sesKapat":
+    case "sesAc":
+      return sesKes(b, kaynak, ek, ileti.hedef, ileti.t === "sesKapat");
+    case "sozIste":
+    case "sozGeri":
+      return sozIste(b, kaynak, ek, ileti.t === "sozIste");
+    case "sozVer":
+      return sozVer(b, kaynak, ek, ileti.hedef, ileti.kabul !== false);
     default:
       return hata("gecersiz_istek");
   }
@@ -307,8 +381,11 @@ function otur(b: MasaBaglami, kaynak: MasaSoketi, ek: SoketEki, koltuk: unknown)
     ek.o = b.simdi;
     ek.s = null;
   }
+  const soz = ek.k !== null && ek.si !== undefined;
+  if (soz) delete ek.si;
   kaynak.ekYaz(ek);
   durumYayinla(b, tum);
+  if (soz) sesYayinla(b, tum);
   return undefined;
 }
 
@@ -318,7 +395,10 @@ function kalk(b: MasaBaglami, kaynak: MasaSoketi, ek: SoketEki): Basarisiz | und
     const koltuk = ek.k;
     ek.k = null;
     ek.o = null;
+    // Ayakta yayın yok: kalkanın mikrofonu kapanır (dinlemeye devam eder).
+    const ses = yayiniKes(b, ek);
     kaynak.ekYaz(ek);
+    if (ses) sesYayinla(b, tum);
     siradanOturt(
       tum.filter((r) => r.soket !== kaynak),
       koltuk,
@@ -420,5 +500,78 @@ async function rapor(
   const sonuc = await b.rapor(ek.h, { hedef, neden: ileti.neden, aciklama, istekNo: ileti.istekNo });
   if (!sonuc.ok) return sonuc;
   kaynak.gonder({ t: "rapor", sonuc: sonuc.deger });
+  return undefined;
+}
+
+// ---------------------------------------------------------------- ses komutları (Faz 16)
+
+/** Konuşma göstergesi: yalnız yayındaki kendi durumunu bildirir; değişince yayınlanır. */
+function konus(b: MasaBaglami, kaynak: MasaSoketi, ek: SoketEki, acik: unknown): Basarisiz | undefined {
+  if (typeof acik !== "boolean") return hata("gecersiz_istek");
+  if (!ek.ses?.i) return hata("ses_oturumu_yok");
+  if (Boolean(ek.ses.k) === acik) return undefined;
+  if (acik) ek.ses.k = 1;
+  else delete ek.ses.k;
+  kaynak.ekYaz(ek);
+  sesYayinla(b, tumu(b, kaynak, ek));
+  return undefined;
+}
+
+/** Masa başı birinin sesini keser (yayını hemen kapanır) ya da geri açar. Metin sohbetine dokunmaz. */
+function sesKes(b: MasaBaglami, kaynak: MasaSoketi, ek: SoketEki, ham: unknown, kes: boolean): Basarisiz | undefined {
+  const tum = tumu(b, kaynak, ek);
+  if (masaBasi(tum) !== ek.h) return hata("yetki_yok");
+  const hedef = hesapIdCoz(ham);
+  if (!hedef) return hata("gecersiz_istek");
+  if (hedef === ek.h) return hata("kendi_hedef");
+  const kayit = tum.find((r) => r.ek.h === hedef);
+  if (!kayit) return hata("hedef_masada_degil");
+  if (kes) {
+    kayit.ek.sm = 1;
+    yayiniKes(b, kayit.ek);
+  } else {
+    delete kayit.ek.sm;
+  }
+  kayit.soket.ekYaz(kayit.ek);
+  sesYayinla(b, tum);
+  return undefined;
+}
+
+/** Ayaktaki dinleyen söz ister (ya da isteğini geri alır); masa başı `sozVer` ile koltuğa alır. */
+function sozIste(b: MasaBaglami, kaynak: MasaSoketi, ek: SoketEki, iste: boolean): Basarisiz | undefined {
+  if (iste) {
+    if (ek.k !== null) return hata("zaten_oturuyor");
+    if (ek.si !== undefined) return undefined;
+    ek.si = b.simdi;
+  } else {
+    if (ek.si === undefined) return hata("soz_istegi_yok");
+    delete ek.si;
+  }
+  kaynak.ekYaz(ek);
+  sesYayinla(b, tumu(b, kaynak, ek));
+  return undefined;
+}
+
+/** Masa başı söz isteğini kabul eder (boş koltuğa oturtur) ya da reddeder. */
+function sozVer(b: MasaBaglami, kaynak: MasaSoketi, ek: SoketEki, ham: unknown, kabul: boolean): Basarisiz | undefined {
+  const tum = tumu(b, kaynak, ek);
+  if (masaBasi(tum) !== ek.h) return hata("yetki_yok");
+  const hedef = hesapIdCoz(ham);
+  const kayit = tum.find((r) => r.ek.h === hedef);
+  if (!kayit) return hata("hedef_masada_degil");
+  if (kayit.ek.si === undefined || kayit.ek.k !== null) return hata("soz_istegi_yok");
+  if (kabul) {
+    const dolu = new Set(oturanlar(tum).map((o) => o.koltuk));
+    let bos: number | undefined;
+    for (let i = 0; i < KOLTUK_SAYISI && bos === undefined; i++) if (!dolu.has(i)) bos = i;
+    if (bos === undefined) return hata("koltuk_dolu");
+    kayit.ek.k = bos;
+    kayit.ek.o = b.simdi;
+    kayit.ek.s = null;
+  }
+  delete kayit.ek.si;
+  kayit.soket.ekYaz(kayit.ek);
+  if (kabul) durumYayinla(b, tum);
+  sesYayinla(b, tum);
   return undefined;
 }

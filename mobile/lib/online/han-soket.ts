@@ -7,7 +7,7 @@ import { ekHataMi, type EkHata } from "./ek-istemci";
 import { hataKoduMu } from "./protokol";
 import {
   KAPANIS, useHanIstemci, type HamSoket, type IstemciIletisi, type MasaAnonsu, type MasaGorunumu, type MasaOlayi, type Plaka,
-  type SikayetNedeni, type SunucuIletisi,
+  type SesDurumu, type SikayetNedeni, type SunucuIletisi,
 } from "./han-veri";
 
 /** [PARAMETRE] Akışta bellekte tutulan en çok satır. */
@@ -42,9 +42,11 @@ export interface MasaDurumu {
   hata: { kod: EkHata; bitis?: number | null } | null;
   /** Son şikâyet sunucuya ulaştı mı. */
   raporlandi: number;
+  /** Faz 16 ses durumu (eski sunucu göndermezse null: ses düğmesi gizli). */
+  ses: SesDurumu | null;
 }
 
-const BASLANGIC: MasaDurumu = { bag: "baglaniyor", deneme: 0, kapanis: null, ben: null, masa: null, susturma: null, akis: [], kabuller: {}, sessiz: [], sonAnons: null, hata: null, raporlandi: 0 };
+const BASLANGIC: MasaDurumu = { bag: "baglaniyor", deneme: 0, kapanis: null, ben: null, masa: null, susturma: null, akis: [], kabuller: {}, sessiz: [], sonAnons: null, hata: null, raporlandi: 0, ses: null };
 
 type Eylem =
   | { t: "bag"; bag: BagDurumu; deneme?: number; kapanis?: number | null }
@@ -63,7 +65,8 @@ function indirge(d: MasaDurumu, e: Eylem): MasaDurumu {
     case "sunucu": {
       const v = e.v;
       switch (v.t) {
-        case "hosgeldin": return { ...d, bag: "acik", deneme: 0, kapanis: null, ben: v.ben, masa: v.masa, susturma: v.susturma, hata: null };
+        case "hosgeldin": return { ...d, bag: "acik", deneme: 0, kapanis: null, ben: v.ben, masa: v.masa, susturma: v.susturma, hata: null, ses: v.ses ?? null };
+        case "sesDurum": return { ...d, ses: v.ses };
         case "durum": return { ...d, masa: v.masa };
         case "ileti":
           if (d.sessiz.includes(v.hesap)) return d;
@@ -173,6 +176,13 @@ export function useMasa(no: number | undefined) {
     susturKaldir: (hedef: string) => gonder({ t: "susturKaldir", hedef }),
     at: (hedef: string) => gonder({ t: "at", hedef }),
     oneAl: (hedef: string) => gonder({ t: "oneAl", hedef }),
+    /** Ham ileti (ses kancası konuşma göstergesini yollar). */
+    gonderHam: gonder,
+    sesKapat: (hedef: string) => gonder({ t: "sesKapat", hedef }),
+    sesAc: (hedef: string) => gonder({ t: "sesAc", hedef }),
+    sozIste: () => gonder({ t: "sozIste" }),
+    sozGeri: () => gonder({ t: "sozGeri" }),
+    sozVer: (hedef: string, kabul = true) => gonder(kabul ? { t: "sozVer", hedef } : { t: "sozVer", hedef, kabul: false }),
     rapor: (hedef: string, neden: SikayetNedeni, aciklama?: string) =>
       gonder({ t: "rapor", hedef, neden, ...(aciklama?.trim() ? { aciklama: aciklama.trim() } : {}), istekNo: istekNoUret() }),
     yenidenBaglan: () => { deneme.current = 0; gonderD({ t: "hata", kod: null }); baglan(); },

@@ -45,8 +45,8 @@ export const KAPANIS = {
   baskaMasa: 4005,
 } as const;
 
-/** Yeni masanın varsayılan ayarı (hancı Faz 13'te değiştirecek). */
-export const VARSAYILAN_AYAR: Readonly<MasaAyari> = { tur: "acik", acik: true, sesli: false, kavgaYasak: false };
+/** Yeni masanın varsayılan ayarı (hancı Faz 13'te değiştirecek). Ses varsayılan açık (Faz 16; Realtime yoksa kapalı). */
+export const VARSAYILAN_AYAR: Readonly<MasaAyari> = { tur: "acik", acik: true, sesli: true, kavgaYasak: false };
 
 /** Mekân türünün 6 dilde adı (yerleşim adı istemcide eklenir). */
 export const HAN_TURU_ADLARI: Readonly<Record<HanTuru, Readonly<Record<Dil, string>>>> = {

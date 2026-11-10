@@ -1,17 +1,18 @@
 // Geliştirici oturumu ve tasarım önizlemesi için sahte han: bellekte dört masa, birkaç uydurma oyuncu ve sahte soket.
 // Sunucunun masa kurallarını (otur/kalk/sıra/masa başı/at/öne al/sustur, butonlu eylem, ikram) kabaca taklit eder;
 // sunucuya hiç bağlanmaz. Sohbet örnekleri oyuncu yazısı yerine geçer (çeviri sözlüğü değildir).
+// Faz 16 ses de taklit edilir (yerel WebRTC modülü olmadan): yayın/konuşan/ses kesme/söz isteme durumları gelir, ses yoktur.
 import { ekBasarili, ekBasarisiz, type EkSonuc } from "./ek-istemci";
 import type {
   HamSoket, HanEylemGirdisi, HanOzeti, IkramGirdisi, IkramId, IkramSonucu, IstemciIletisi, MasaAnonsu, MasaAyari,
-  MasaGorunumu, MasaOlayi, MenuSatiri, Plaka, SunucuIletisi, HanIstemci,
+  MasaGorunumu, MasaOlayi, MenuSatiri, Plaka, SesDurumu, SunucuIletisi, HanIstemci,
 } from "./han-veri";
 import type { Dil } from "./protokol";
 
 const KOLTUK = 6;
 const MENU: MenuSatiri[] = [{ id: "ekmek", fiyat: 2 }, { id: "serbet", fiyat: 3 }, { id: "yemek", fiyat: 6 }, { id: "gulSuyu", fiyat: 10 }];
 const HAN_ADI: Record<Dil, string> = { tr: "Küçük Han", en: "Small Inn", es: "Posada pequeña", pt: "Pequena estalagem", ar: "خان صغير", ru: "Малый постоялый двор" };
-const AYAR: MasaAyari = { tur: "acik", acik: true, sesli: false, kavgaYasak: false };
+const AYAR: MasaAyari = { tur: "acik", acik: true, sesli: true, kavgaYasak: false };
 const KISILER: Plaka[] = [
   { hesap: "oy-kerim", ad: "Kerim Usta" }, { hesap: "oy-ayse", ad: "Ayşe Hatun" }, { hesap: "oy-osman", ad: "Osman Kalfa" },
   { hesap: "oy-zeynep", ad: "Zeynep" }, { hesap: "oy-mehmet", ad: "Mehmet Çelebi", cerceve: "yaldiz" }, { hesap: "oy-hatice", ad: "Hatice Kadın" },
@@ -63,13 +64,18 @@ class SahteSoket implements HamSoket {
   private dongu: ReturnType<typeof setInterval> | null = null;
   private sessiz = new Set<string>();
   private kapali = false;
+  private yayin = new Set<string>();
+  private konusan = new Set<string>();
+  private sesKesik = new Set<string>();
+  private soz: Plaka[] = [];
   constructor(readonly no: number, readonly ben: Plaka) {
     const w = dunyaAl();
     w.soket?.kapat();
     w.soket = this;
     this.sonra(150, () => {
       this.d?.acildi();
-      this.yolla({ t: "hosgeldin", ben, susturma: null, masa: this.gor() });
+      if (no === 1) this.yayin.add("oy-kerim").add("oy-ayse");
+      this.yolla({ t: "hosgeldin", ben, susturma: null, masa: this.gor(), ses: this.sesGor() });
       if (no !== 1) return;
       // Önizleme için anons türleri ve bir teklif: ikram, armağan, Debdebe süsleri ayrı görünsün.
       this.sonra(900, () => this.anons({ tur: "ikram", kim: "oy-ayse", hedef: "oy-kerim", oge: "serbet", zaman: Date.now() }));
@@ -78,6 +84,35 @@ class SahteSoket implements HamSoket {
       this.sonra(13000, () => this.anons({ tur: "debdebe", kim: "oy-mehmet", hedef: "oy-ayse", oge: "gulYagmuru", zaman: Date.now() }));
     });
     this.dongu = setInterval(() => this.sohbet(), 6500);
+    this.zaman.push(setInterval(() => this.sesOyna(), 2300) as unknown as ReturnType<typeof setTimeout>);
+  }
+  private sesGor(): SesDurumu {
+    const m = this.masa();
+    const oturan = new Set(oturanlar(m).map((x) => x.p.hesap));
+    const yayin = [...this.yayin].filter((h) => oturan.has(h) && !this.sesKesik.has(h));
+    return { acik: true, yayin: yayin.map((h) => ({ hesap: h, iz: "sahte-" + h })), konusan: [...this.konusan].filter((h) => yayin.includes(h)), kapali: [...this.sesKesik], soz: [...this.soz] };
+  }
+  private sesYolla() { this.yolla({ t: "sesDurum", ses: this.sesGor() }); }
+  /** Uydurma konuşanlar: yayındaki sahte oyunculardan biri arada bir konuşur. */
+  private sesOyna() {
+    const adaylar = [...this.yayin].filter((h) => h !== this.ben.hesap);
+    if (!adaylar.length) return;
+    const h = adaylar[Math.floor(Math.random() * adaylar.length)]!;
+    if (this.konusan.has(h)) this.konusan.delete(h); else this.konusan.add(h);
+    this.sesYolla();
+  }
+  /** Sahte yayın: oturan ve sesi kesilmemişse açılır. */
+  sesYayin(acik: boolean): "oturmuyor" | "sesi_kesildi" | null {
+    if (acik) {
+      if (!this.masa().koltuklar.some((p) => p?.hesap === this.ben.hesap)) return "oturmuyor";
+      if (this.sesKesik.has(this.ben.hesap)) return "sesi_kesildi";
+      this.yayin.add(this.ben.hesap);
+    } else {
+      this.yayin.delete(this.ben.hesap);
+      this.konusan.delete(this.ben.hesap);
+    }
+    this.sesYolla();
+    return null;
   }
   private masa() { return dunyaAl().masalar[this.no - 1]!; }
   private gor() { return gorunum(this.no, this.masa(), this.ben, true); }
@@ -107,6 +142,7 @@ class SahteSoket implements HamSoket {
     if (i >= 0) m.koltuklar[i] = null;
     m.sira = m.sira.filter((p) => p.hesap !== this.ben.hesap);
     this.kapali = true;
+    this.yayin.clear();
     this.zaman.forEach(clearTimeout);
     if (this.dongu) clearInterval(this.dongu);
     const w = dunyaAl();
@@ -134,6 +170,7 @@ class SahteSoket implements HamSoket {
           m.koltuklar[benKoltuk] = null;
           const ilk = m.sira.shift();
           if (ilk) { m.koltuklar[benKoltuk] = ilk; m.oturma[benKoltuk] = Date.now(); m.ayakta = Math.max(0, m.ayakta - 1); }
+          if (this.yayin.delete(this.ben.hesap)) { this.konusan.delete(this.ben.hesap); this.sesYolla(); }
         } else if (m.sira.some((p) => p.hesap === this.ben.hesap)) m.sira = m.sira.filter((p) => p.hesap !== this.ben.hesap);
         else return this.hata("oturmuyor");
         return this.durum();
@@ -171,6 +208,36 @@ class SahteSoket implements HamSoket {
       case "rapor":
         if (ileti.hedef === this.ben.hesap) return this.hata("kendini_sikayet", ileti.istekNo);
         return this.yolla({ t: "rapor", sonuc: { sikayet: "s-" + ileti.istekNo.slice(0, 6) } });
+      case "konus":
+        if (!this.yayin.has(this.ben.hesap)) return this.hata("ses_oturumu_yok");
+        if (ileti.acik) this.konusan.add(this.ben.hesap); else this.konusan.delete(this.ben.hesap);
+        return this.sesYolla();
+      case "sesKapat":
+      case "sesAc":
+        if (!masaninBasi) return this.hata("yetki_yok");
+        if (ileti.hedef === this.ben.hesap) return this.hata("kendi_hedef");
+        if (!bulunan(ileti.hedef)) return this.hata("hedef_masada_degil");
+        if (ileti.t === "sesKapat") { this.sesKesik.add(ileti.hedef); this.konusan.delete(ileti.hedef); } else this.sesKesik.delete(ileti.hedef);
+        return this.sesYolla();
+      case "sozIste":
+        if (benKoltuk >= 0) return this.hata("zaten_oturuyor");
+        if (!this.soz.some((p) => p.hesap === this.ben.hesap)) this.soz.push(this.ben);
+        this.sesYolla();
+        // Sahte masa başı birkaç saniye sonra söz verir (boş koltuk varsa).
+        return this.sonra(3000, () => {
+          if (!this.soz.some((p) => p.hesap === this.ben.hesap)) return;
+          this.soz = this.soz.filter((p) => p.hesap !== this.ben.hesap);
+          const bos = this.masa().koltuklar.findIndex((p) => p === null);
+          if (bos >= 0) { this.masa().koltuklar[bos] = this.ben; this.masa().oturma[bos] = Date.now(); this.durum(); }
+          this.sesYolla();
+        });
+      case "sozGeri":
+        if (!this.soz.some((p) => p.hesap === this.ben.hesap)) return this.hata("soz_istegi_yok");
+        this.soz = this.soz.filter((p) => p.hesap !== this.ben.hesap);
+        return this.sesYolla();
+      case "sozVer":
+        if (!masaninBasi) return this.hata("yetki_yok");
+        return this.hata("soz_istegi_yok");
     }
   }
 }
@@ -259,5 +326,15 @@ export function sahteHanIstemci(hesap: string, ad: string): HanIstemci {
       return gecikme(ekBasarili(yanit));
     },
     soket: (no) => (no >= 1 && no <= dunyaAl().masalar.length ? new SahteSoket(no, ben) : undefined),
+    sahte: true,
+    ses: (no, alt) => {
+      const s = dunyaAl().soket;
+      if (!s || s.no !== no) return gecikme(ekBasarisiz("masada_degil"));
+      if (alt === "yayin" || alt === "kapat") {
+        const h = s.sesYayin(alt === "yayin");
+        if (h) return gecikme(ekBasarisiz(h));
+      }
+      return gecikme(ekBasarili({}));
+    },
   };
 }

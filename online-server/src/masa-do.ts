@@ -3,6 +3,7 @@
 // Kalıcı olanlar: masa ayarı, olaylar (katılım listesiyle), istekNo kaydı, masa başının dönüş yasakları.
 // Sohbet iletileri depoya ya da soket ekine yazılmaz; yalnız bağlı istemcilere gönderilir.
 // İnce sarmalayıcıdır; kurallar src/han/masa.ts ve src/han/eylem.ts'dedir.
+// Faz 16 ses: yetki kapısı src/han/ses.ts, Realtime istemcisi src/han/realtime.ts. Ses depoya yazılmaz, kaydedilmez.
 
 import { doDepo, type Depo } from "./depo.ts";
 import { ENGEL_ANAHTARI, engelListesiCoz, engelSorgusuKur, type EngelSorgusu } from "./han/engel-kopru.ts";
@@ -23,6 +24,8 @@ import {
   type MasaSoketi,
 } from "./han/masa.ts";
 import type { MasaAyari, MasaBileti, MasaIleti, SoketEki, SunucuIletisi } from "./han/tipler.ts";
+import { Realtime, realtimeAyari, type Getir } from "./han/realtime.ts";
+import { sesIsle } from "./han/ses.ts";
 import { hesapCagir, iletiOku, jsonYanit, yonetimCagir } from "./ic.ts";
 import { basarili, hata, HATA_DURUMU, type Env, type Sonuc } from "./tipler.ts";
 
@@ -36,6 +39,8 @@ export interface WebSocketDurumu extends DurableObjectState {
 export interface MasaAraclari {
   cift(): [istemci: WebSocket, sunucu: WebSocket];
   yukselt(istemci: WebSocket): Response;
+  /** Realtime API çağrısı (yoksa global fetch; testte sahte). */
+  getir?: Getir;
 }
 
 const VARSAYILAN_ARACLAR: MasaAraclari = {
@@ -73,6 +78,8 @@ export class MasaDO {
   readonly #araclar: MasaAraclari;
   readonly #sarmal = new WeakMap<WebSocket, MasaSoketi>();
   #ayar: MasaAyari | undefined;
+  /** İşlem sırasında sıraya alınan SFU iz kapatmaları; işlem sonunda beklenir. */
+  readonly #bekleyen: Promise<unknown>[] = [];
   /** Hesap başına iki yönlü engel listesi önbelleği (asıl kayıt depoda `eg:<hesap>`). */
   readonly #engeller = new Map<string, readonly string[] | undefined>();
   readonly #engelliMi: EngelSorgusu = engelSorgusuKur(async (h) => {
@@ -91,13 +98,25 @@ export class MasaDO {
     if ((istek.headers.get("upgrade") ?? "").toLowerCase() === "websocket") return this.#baglan(istek);
     const ileti = await iletiOku<MasaIleti>(istek);
     if (!ileti || typeof ileti.masa !== "string") return jsonYanit(hata("gecersiz_istek"));
-    return jsonYanit(await this.#isle(ileti));
+    const sonuc = await this.#isle(ileti);
+    await this.#bosalt();
+    return jsonYanit(sonuc);
   }
 
   async webSocketMessage(ws: WebSocket, mesaj: string | ArrayBuffer): Promise<void> {
     const ek = this.#sar(ws).ek();
     if (!ek) return;
     await iletiIsle(await this.#baglam(ek.m), this.#sar(ws), mesaj);
+    await this.#bosalt();
+  }
+
+  #realtime(): Realtime | undefined {
+    const ayar = realtimeAyari(this.#env);
+    return ayar ? new Realtime(ayar, this.#araclar.getir ?? ((u, i) => fetch(u, i))) : undefined;
+  }
+
+  async #bosalt(): Promise<void> {
+    while (this.#bekleyen.length) await Promise.all(this.#bekleyen.splice(0));
   }
 
   async webSocketClose(ws: WebSocket): Promise<void> {
@@ -111,6 +130,7 @@ export class MasaDO {
   async #kapandi(ws: WebSocket): Promise<void> {
     const ek = this.#sar(ws).ek();
     if (ek) ayril(await this.#baglam(ek.m, ws), this.#sar(ws));
+    await this.#bosalt();
     try {
       ws.close(1000, "ayrildi");
     } catch {
@@ -163,6 +183,11 @@ export class MasaDO {
       ayar: await this.#ayarAl(),
       simdi,
       engelliMi: this.#engelliMi,
+      sesYapilandi: realtimeAyari(env) !== undefined,
+      sesKapat: (oturum, mid) => {
+        const rt = this.#realtime();
+        if (rt) this.#bekleyen.push(rt.izKapat(oturum, [mid]).catch(() => undefined));
+      },
       rapor: (kim, govde) => hesapCagir(env, kim, { islem: "sikayet", hesapId: kim, govde }),
       atma: async (kim, hedef, katilim) => {
         const olay = await atmaUygula(depo, masa, kim, hedef, katilim, simdi);
@@ -189,6 +214,7 @@ export class MasaDO {
     const [istemci, sunucu] = this.#araclar.cift();
     this.#ctx.acceptWebSocket(sunucu);
     baglan(b, this.#sar(sunucu), bilet);
+    await this.#bosalt();
     return this.#araclar.yukselt(istemci);
   }
 
@@ -235,6 +261,8 @@ export class MasaDO {
       case "engel":
         await this.#engelYaz(ileti.hesap, engelListesiCoz(ileti.liste));
         return basarili({});
+      case "ses":
+        return sesIsle(b, this.#realtime(), ileti.hesap, ileti.alt, ileti.govde);
       case "anons":
         for (const r of kayitlar(b.soketler)) r.soket.gonder({ t: "anons", anons: ileti.anons });
         return basarili({});
