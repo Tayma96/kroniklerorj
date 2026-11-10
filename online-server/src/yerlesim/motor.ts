@@ -97,6 +97,8 @@ import type { UcgenDefteri } from "./bilgi.ts";
 import { eksenler } from "./hafiza.ts";
 import { mulkluIkram, mulkluKira } from "../mulk/tapu.ts";
 import type { MulkDefteri } from "../mulk/tapu.ts";
+import { toplulukDonumu } from "./topluluk.ts";
+import type { ToplulukKaydi } from "./topluluk-kayit.ts";
 import { ucgenDonumu, ucgenGorunumu, ucgenIslem, ucgenOkumaYuklenecek, ucgenYuklenecek } from "./ucgen.ts";
 
 // Faz 3 kayıtları (borç, teklif, engel, husumet) devirde vârise bağlanır.
@@ -112,6 +114,8 @@ const SIPARIS = "sp";
 const TOPLUM = "tp";
 /** Oyuncu pazarı, ısmarlama ve Ustalar Levhası (Faz 6). */
 const EKONOMI = "ek";
+/** Topluluk: hami, ortak dert, şenlik, zaviye, bölge göstergeleri (E6–E7). */
+const TOPLULUK = "tl";
 const UCGEN = "ug";
 const MULK = "mk";
 /** [PARAMETRE] Gelen kutusunda gösterilen son kapanan teklif sayısı; söylenti yalanlamanın takat bedeli. */
@@ -206,6 +210,8 @@ export interface TekrarEki {
   /** Faz 6: ekonomi kaydı değişti; deftere açık kalemler [oyuncu, kalem, tutar] (kalanı varsayılan kaleme yazılır). */
   ekonomi?: boolean;
   defter?: [o: string, kalem: string, tutar: number][];
+  /** E6–E7: topluluk kaydı değişti. */
+  topluluk?: boolean;
 }
 
 export class YerlesimMotoru {
@@ -259,6 +265,7 @@ export class YerlesimMotoru {
     const ek = await depo.al<EkonomiKaydi>(EKONOMI);
     const ug = await depo.al<UcgenDefteri>(UCGEN);
     const mk = await depo.al<MulkDefteri>(MULK);
+    const tl = await depo.al<ToplulukKaydi>(TOPLULUK);
     const kasaba: Kasaba = {
       y: meta.y,
       tur: y.tur,
@@ -276,6 +283,7 @@ export class YerlesimMotoru {
       ...(ek ? { ek } : {}),
       ...(ug ? { ug } : {}),
       ...(mk ? { mk } : {}),
+      ...(tl ? { tl } : {}),
       no: meta.no,
       ...(meta.hd ? { hd: meta.hd } : {}),
       ...(meta.st ? { st: meta.st } : {}),
@@ -309,6 +317,7 @@ export class YerlesimMotoru {
       else if (a === EKONOMI) kayit[a] = k.ek;
       else if (a === UCGEN) kayit[a] = k.ug;
       else if (a === MULK) kayit[a] = k.mk;
+      else if (a === TOPLULUK) kayit[a] = k.tl;
       else if (a.startsWith(KAR)) kayit[a] = k.kar.get(a.slice(KAR.length));
       else if (a.startsWith(ILI)) kayit[a] = k.ili.get(a.slice(ILI.length));
       else if (a.startsWith(SAYFA)) kayit[a] = this.#sayfalar.get(Number(a.slice(SAYFA.length)));
@@ -427,12 +436,14 @@ export class YerlesimMotoru {
       for (const [o, c] of k.kar) defterYaz(c, ay, "donum", c.pa - (pa0.get(o) ?? c.pa));
       for (const t of barinmaDonumu(k, ay)) await this.#olayEkle(t, ay);
       for (const t of ucgenDonumu(k, ay)) await this.#olayEkle(t, ay);
+      for (const t of toplulukDonumu(k, ay)) await this.#olayEkle(t, ay);
       islenen++;
     }
     this.#kirli.add(NPC).add(SIPARIS).add(SAKIN);
     if (k.tp) this.#kirli.add(TOPLUM);
     if (k.ek) this.#kirli.add(EKONOMI);
     if (k.ug) this.#kirli.add(UCGEN);
+    if (k.tl) this.#kirli.add(TOPLULUK);
     for (const s of k.sakin) this.#kirli.add(KAR + s.o).add(ILI + s.o);
     // Ölüler de yazılır (devir arşivi); devirle gelen vâris yeni kimliktedir.
     for (const o of k.kar.keys()) this.#kirli.add(KAR + o).add(ILI + o);
@@ -778,6 +789,7 @@ export class YerlesimMotoru {
     this.#kirli.add(KAR + kar.o).add(ILI + kar.o).add(SAKIN);
     if (ek.siparis) this.#kirli.add(SIPARIS);
     if (ek.ekonomi) this.#kirli.add(EKONOMI);
+    if (ek.topluluk) this.#kirli.add(TOPLULUK);
     await this.kaydet();
     return basarili(yanit);
   }
@@ -831,6 +843,56 @@ export class YerlesimMotoru {
     const r = await this.#oyuncu(hesapId);
     if (!r.ok) return r;
     return oku(r.deger.kar, this.kasaba.ay);
+  }
+
+  /**
+   * E5–E7 topluluk uçlarının yazma kabuğu (topluluk-uclar.ts): `yukle` oyuncularını yükler, istekNo'lu işlemi
+   * yürütür; topluluk kaydı, değişen öteki oyuncular ve defter ("topluluk" kalemi) yazılır. `simdi` gerçek zamandır.
+   */
+  async toplulukYaz(
+    hesapId: string,
+    govde: unknown,
+    yukle: readonly string[],
+    isle: (kar: Karakter, ay: number, ek: TekrarEki, simdi: number) => Sonuc<Record<string, unknown>>,
+  ): Promise<Sonuc<unknown>> {
+    const k = this.kasaba;
+    const yuklenecek = yukle.filter((o) => k.sakin.some((x) => x.o === o));
+    if (yuklenecek.length > 0) await this.#yukle(yuklenecek);
+    return this.#tekrarGuvenli(
+      hesapId,
+      govde,
+      (kar, _s, ay, ek) => {
+        const r = isle(kar, ay, ek, this.#simdi);
+        if (r.ok) ek.topluluk = true;
+        return r;
+      },
+      "topluluk",
+    );
+  }
+
+  /** Topluluk okuma ucu: sakin karakteriyle okur (yazmaz). */
+  async toplulukOku(hesapId: string, oku: (kar: Karakter, ay: number, simdi: number) => Sonuc<unknown>): Promise<Sonuc<unknown>> {
+    const r = await this.#oyuncu(hesapId);
+    if (!r.ok) return r;
+    return oku(r.deger.kar, this.kasaba.ay, this.#simdi);
+  }
+
+  /** İç yazma (istekNo'suz, doğası gereği tekrar güvenli; ör. müdavim ziyareti): karakter, sakin ve olaylar yazılır. */
+  async karakterYaz(
+    hesapId: string,
+    isle: (kar: Karakter, s: Sakin, ay: number, simdi: number) => Sonuc<{ deger: unknown; olaylar: OlayTaslagi[] }>,
+  ): Promise<Sonuc<unknown>> {
+    const r = await this.#oyuncu(hesapId);
+    if (!r.ok) return r;
+    const { s, kar } = r.deger;
+    if (olduMu(kar)) return hata("olu");
+    const ay = this.kasaba.ay;
+    const sonuc = isle(kar, s, ay, this.#simdi);
+    if (!sonuc.ok) return sonuc;
+    for (const t of sonuc.deger.olaylar) await this.#olayEkle(t, ay);
+    this.#kirli.add(KAR + kar.o).add(SAKIN);
+    await this.kaydet();
+    return basarili(sonuc.deger.deger);
   }
 
   /** Yerel oyuncu kimliğini çözer (yalnız bu yerleşimin sakini). */

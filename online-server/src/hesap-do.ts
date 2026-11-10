@@ -155,8 +155,12 @@ export class HesapDO {
         return this.#yerlesime({ islem: "beceri", hesapId: ileti.hesapId, meslek: ileti.meslek });
       case "han":
         return hanListesi(await this.#han(ileti.hesapId, simdi), ileti.dil);
-      case "masaBilet":
-        return masaBileti(await this.#han(ileti.hesapId, simdi), ileti.masa);
+      case "masaBilet": {
+        const bilet = await masaBileti(await this.#han(ileti.hesapId, simdi), ileti.masa);
+        // E7 müdavim: sunucuda kesilen bilet han ziyaretidir (gün başına bir kez sayılır; hata bileti etkilemez).
+        if (bilet.ok) await this.#yerlesime({ islem: "mudavimZiyaret", hesapId: ileti.hesapId }).catch(() => undefined);
+        return bilet;
+      }
       case "hanEylem":
         return hanEylemi(await this.#han(ileti.hesapId, simdi), ileti.govde);
       case "hanIkram":
@@ -170,6 +174,13 @@ export class HesapDO {
       case "hanedan":
       case "devirOnizle":
       case "kronik":
+      // Topluluk (E5–E7): ileti aynen yerleşime gider.
+      case "topluluk":
+      case "mesrep":
+      case "hami":
+      case "ortakDert":
+      case "senlik":
+      case "zaviye":
       // Ekonomi (Faz 6): ileti aynen yerleşime gider.
       case "pazarIlan":
       case "pazarIslem":

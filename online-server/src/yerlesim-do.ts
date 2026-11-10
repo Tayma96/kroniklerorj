@@ -3,6 +3,7 @@
 // sırayla, çağrı başına sınırlı yetiştirilir. İnce sarmalayıcıdır; kurallar src/yerlesim/*.ts'dedir.
 
 import { doDepo, type Depo } from "./depo.ts";
+import { hamiUc, mesrepUc, mudavimUc, ortakDertUc, senlikUc, toplulukOku, zaviyeUc } from "./yerlesim/topluluk-uclar.ts";
 import { defterOku, ismarlaUc, ismarlamaCevapUc, ismarlamaOku, levhaOku, pazarGeri, pazarIlan, pazarIslem, pazarOku } from "./yerlesim/ekonomi-uclar.ts";
 import { iletiOku, isletmeCagir, jsonYanit } from "./ic.ts";
 import { hata, type Env, type Sonuc, type YerlesimIleti } from "./tipler.ts";
@@ -141,6 +142,21 @@ export class YerlesimDO {
         return motor.evlilik(ileti.hesapId, ileti.govde);
       case "kronik":
         return motor.kronik(ileti.hesapId, ileti.imlec, ileti.dil);
+      // Topluluk (E5–E7): src/yerlesim/topluluk-uclar.ts
+      case "topluluk":
+        return toplulukOku(motor, ileti.hesapId);
+      case "mesrep":
+        return mesrepUc(motor, ileti.hesapId, ileti.govde);
+      case "hami":
+        return hamiUc(motor, ileti.hesapId, ileti.govde);
+      case "ortakDert":
+        return ortakDertUc(motor, ileti.hesapId, ileti.govde);
+      case "senlik":
+        return senlikUc(motor, ileti.hesapId, ileti.govde);
+      case "zaviye":
+        return zaviyeUc(motor, ileti.hesapId, ileti.govde);
+      case "mudavimZiyaret":
+        return mudavimUc(motor, ileti.hesapId);
       // Ekonomi (Faz 6): src/yerlesim/ekonomi-uclar.ts
       case "pazar":
         return pazarOku(motor, ileti.hesapId, ileti.mal);

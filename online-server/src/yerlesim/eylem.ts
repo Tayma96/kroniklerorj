@@ -27,6 +27,7 @@ import {
 import { acikMi, ogrenmeIlerle, sayacArtir, type VerilenOdul } from "./ogrenme.ts";
 import { kisiCoz, npcKimlik, npcRef, oyuncuRef, sinirla, yas } from "./ortak.ts";
 import type { Zar } from "./rastgele.ts";
+import { mesrepNam, mesrepSans } from "./mesrep.ts";
 import type { Dokum, Iliski, IliskiHaritasi, Kalem, Karakter, Kasaba, Npc, OlayTaslagi } from "./tipler.ts";
 
 export const EYLEM_TURLERI = ["sohbet", "yardim", "hediye", "ayakIsi", "cirak", "mektep", "puan", "karar"] as const;
@@ -190,6 +191,7 @@ export function eylemSansi(
   ekle("sans.huy", HUY_SANS[tur]?.[huy] ?? 0, { huy });
   ekle("sans.boykot", boykotSansi(ili?.[npc.i], ay));
   ekle("sans.gonul", gonulSansi(kar, ay, tur), { gonul: halOngor(kar, ay).gonul });
+  if (kar.mr) ekle("sans.mesrep", mesrepSans(kar, tur));
   for (const o of t.ozellik ?? []) {
     const deger = kar.oz[OZELLIKLER.indexOf(o)] ?? 5;
     ekle("sans.ozellik", Math.round(((deger - 5) * 3) / (t.ozellik?.length ?? 1)), { ozellik: o });
@@ -289,7 +291,7 @@ export function eylemYap(
     if (g) degisim.gonul = g;
   };
   const namKat = (n: Nam, m: number) => {
-    const e = namEkle(kar, ay, n, m);
+    const e = namEkle(kar, ay, n, mesrepNam(kar, girdi.tur, m));
     if (e) degisim.nam = { ...degisim.nam, [n]: e };
   };
   const sonucYap = (ek: Omit<EylemSonucu, "tur" | "degisim" | "takat" | "ogrenme">, olay?: OlayTaslagi) => {

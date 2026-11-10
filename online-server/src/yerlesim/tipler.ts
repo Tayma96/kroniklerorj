@@ -18,6 +18,9 @@ import type { DefterAyi } from "./defter.ts";
 import type { EkonomiKaydi } from "./pazar-tahta.ts";
 import type { Baris, Duyum, UcgenDefteri } from "./bilgi.ts";
 import type { ArkaPlan } from "./arka-plan.ts";
+import type { MesrepKaydi } from "./mesrep.ts";
+import type { MudavimKaydi } from "./mudavim.ts";
+import type { ToplulukKaydi } from "./topluluk-kayit.ts";
 
 /** NPC'ler arası bağ: [diğer NPC, tür (1 dost, 2 rakip), puan (−100..100), kuruluş ayı]. */
 export type Bag = [diger: number, tur: 1 | 2, puan: number, kurulus: number];
@@ -78,6 +81,8 @@ export interface Sakin {
   ms?: MeslekId;
   /** Teveccüh kademesi (sipariş önceliği karakterleri yüklemeden bakar; değişince yazılır). */
   tv?: number;
+  /** Müdavim rozeti kademesi (E7; profil ve plaka karakteri yüklemeden okur). */
+  md?: number;
 }
 
 export type Isaret = "tanidik" | "dost" | "dusman";
@@ -185,6 +190,10 @@ export interface Karakter {
   ig?: [teslim: number, gecikme: number];
   /** Barınma: misafirhane hakları, kira sözleşmeleri, zincir ve otomatik konaklama (Faz 14; eski kayıtta yok). */
   br?: BarinmaKaydi;
+  /** Meşrep (E5): üç eksen seçimi; müdavim ziyaret günleri ve rozet (E7); hami namı aylık sayacı [ay, nam] (E6). */
+  mr?: MesrepKaydi;
+  md?: MudavimKaydi;
+  hk?: [ay: number, nam: number];
 }
 
 /** Süren öğrenme ya da yeniden düzenleme beklemesi (gerçek zaman, ms; bitince tembel tamamlanır). */
@@ -305,4 +314,6 @@ export interface Kasaba {
   mk?: MulkDefteri;
   /** Arka plan: kasaba özeti, uzak sayaçlar, kasaba tetikleri (Faz 5; meta'da saklanır; eski kayıtta yok). */
   ap?: ArkaPlan;
+  /** Topluluk: hami bağları, ortak dertler, şenlik, zaviyeler, bölge göstergeleri (E6–E7; depo anahtarı "tl"). */
+  tl?: ToplulukKaydi;
 }

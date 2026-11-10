@@ -243,6 +243,27 @@ export const HATA_DURUMU = {
   vekil_var: 409,
   sozlesme_yok: 404,
   han_dolu: 409,
+  // Topluluk (E5–E7)
+  mesrep_gecersiz: 400,
+  mesrep_erken: 409,
+  mesrep_kilitli: 409,
+  hami_gecersiz: 400,
+  hami_uygun_degil: 409,
+  hami_var: 409,
+  hami_dolu: 409,
+  bag_yok: 404,
+  dert_yok: 404,
+  dert_kapandi: 409,
+  katki_gecersiz: 400,
+  katki_siniri: 429,
+  senlik_yok: 409,
+  zaviye_gecersiz: 400,
+  zaviye_yok: 404,
+  zaviye_var: 409,
+  zaviye_dolu: 409,
+  zaviye_kuruluyor: 409,
+  kidem_yetersiz: 409,
+  aday_uygun_degil: 409,
   yapilandirma_eksik: 500,
   sunucu_hatasi: 500,
 } as const satisfies Record<string, number>;
@@ -312,6 +333,7 @@ export type HesapIleti =
   | { islem: "ucgenOku"; hesapId: string; npc?: string | null; hedef?: string | null; dil?: string | null }
   | HanedanIletisi
   | EkonomiIletisi
+  | ToplulukIletisi
   | BarinmaIletisi
   | { islem: "sikayet"; hesapId: string; govde: unknown }
   | { islem: "duyurular"; hesapId: string }
@@ -404,6 +426,12 @@ export type HanedanIletisi =
   | { islem: "devirOnizle"; hesapId: string; varis?: string | null; dil?: string | null }
   | { islem: "kronik"; hesapId: string; imlec?: string | null; dil?: string | null };
 
+/** Topluluk (E5–E7) gövdeli işlemleri: POST /v1/mesrep, /v1/hami, /v1/ortak-dert, /v1/senlik, /v1/zaviye. */
+export const TOPLULUK_ISLEMLERI = ["mesrep", "hami", "ortakDert", "senlik", "zaviye"] as const;
+export type ToplulukIslem = (typeof TOPLULUK_ISLEMLERI)[number];
+/** Topluluk iletileri (HesapDO aynen YerlesimDO'ya iletir; `yerlesim` eklenir). */
+export type ToplulukIletisi = { islem: ToplulukIslem; hesapId: string; govde: unknown } | { islem: "topluluk"; hesapId: string; dil?: string | null };
+
 /** Ekonomi (Faz 6) gövdeli işlemleri: POST /v1/pazar/ilan, /v1/pazar/islem, /v1/pazar/geri, /v1/ismarlama,
  * /v1/ismarlama/cevap. */
 export const EKONOMI_ISLEMLERI = ["pazarIlan", "pazarIslem", "pazarGeri", "ismarla", "ismarlamaCevap"] as const;
@@ -454,6 +482,9 @@ export type YerlesimIleti =
   | { islem: "mulkGiris"; yerlesim: string; hesapId: string; kayitlar: CikisKaydi[] }
   | (HanedanIletisi & { yerlesim: string })
   | (EkonomiIletisi & { yerlesim: string })
+  | (ToplulukIletisi & { yerlesim: string })
+  /** HesapDO → YerlesimDO (masa bileti sonrası): müdavim han ziyareti; istemci doğrudan ulaşamaz. */
+  | { islem: "mudavimZiyaret"; yerlesim: string; hesapId: string }
   | (BarinmaIletisi & { yerlesim: string });
 
 export type DunyaIleti =
