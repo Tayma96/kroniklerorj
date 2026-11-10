@@ -201,6 +201,24 @@ export const HATA_DURUMU = {
   kirgin_degil: 409,
   casus_var: 409,
   hedef_siniri: 429,
+  // Siyaset (Faz 7 + Ek B P1–P4)
+  bolge_gecersiz: 400,
+  makam_yok: 404,
+  makam_kapali: 409,
+  secim_kapali: 409,
+  aday_uygun_degil: 409,
+  zaten_aday: 409,
+  kume_cakisma: 409,
+  ardisik_donem: 409,
+  oy_hakki_yok: 403,
+  sinir_asildi: 409,
+  kasa_yetersiz: 409,
+  vekil_gecersiz: 400,
+  itiraz_yok: 404,
+  itiraz_kapali: 409,
+  ozerklik_var: 409,
+  ozerklik_yok: 409,
+  soguma: 409,
   yapilandirma_eksik: 500,
   sunucu_hatasi: 500,
 } as const satisfies Record<string, number>;
@@ -237,6 +255,9 @@ export interface Env {
   YONETICI_EPOSTALAR?: string;
   /** İsteğe bağlı: yönetici girişinde kabul edilen Google istemci kimlikleri; yoksa GOOGLE_CLIENT_ID. */
   YONETIM_GOOGLE_CLIENT_ID?: string;
+  /** Siyaset: bölge başına BolgeDO (idFromName("bolge:<id>")) ve tek SultanlikDO (idFromName("sultanlik")). */
+  BOLGE: DurableObjectNamespace;
+  SULTANLIK: DurableObjectNamespace;
 }
 
 /** Dünya DO'suna profil kaydı isteği (HesapDO gönderir). */
@@ -274,6 +295,9 @@ export type HesapIleti =
   | { islem: "han"; hesapId: string; dil?: string | null }
   | { islem: "masaBilet"; hesapId: string; masa: string }
   | { islem: "hanEylem" | "hanIkram"; hesapId: string; govde: unknown }
+  // Siyaset (Faz 7 + Ek B P1–P4): src/siyaset/hesap-kopru.ts
+  | { islem: "siyaset"; hesapId: string; bolge?: string | null; kayitSayfa?: string | null }
+  | { islem: "siyasetYaz"; hesapId: string; govde: unknown }
   /** YonetimDO → HesapDO: hesabın etkin yaptırım özeti (tamamı yazılır; tekrar güvenli). */
   | { islem: "yaptirimYaz"; hesapId: string; durum: HesapYaptirimi };
 
@@ -391,6 +415,8 @@ export type YerlesimIleti =
   | { islem: "ucgenOku"; yerlesim: string; hesapId: string; npc?: string | null; hedef?: string | null; dil?: string | null }
   /** Han masası bileti için: oyuncunun iki yönlü engel listesi (hesap kimlikleri). */
   | { islem: "engeller"; yerlesim: string; hesapId: string }
+  /** Siyaset (Faz 7/P1): HesapDO → YerlesimDO, doğrulanmış siyasi kimlik (src/siyaset/hesap-kopru.ts). */
+  | { islem: "siyasetKimlik"; yerlesim: string; hesapId: string }
   | (HanedanIletisi & { yerlesim: string })
   | (BarinmaIletisi & { yerlesim: string });
 
