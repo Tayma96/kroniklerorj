@@ -46,7 +46,7 @@ import { KADEME_HIZMET, beceriGorunumu, kademeAtla, meslekKaydi, meslekSec, yanS
 import { agacGorunumu, beceriHizlandir, beceriIptal, beceriOgren, beceriOzeti, beceriYeniden, mesleki, ogrenmeTamamla } from "./beceri.ts";
 import { basariSay } from "./beceri-etki.ts";
 import { aylikTakat, halGorunumu } from "./hal.ts";
-import { barinmaDonumu, barinmaGorunumu, kiraTut, otomatikAyarla, tesisKonakla } from "./barinma.ts";
+import { barinmaDonumu, barinmaGorunumu, otomatikAyarla, tesisKonakla } from "./barinma.ts";
 import { donusHazirla, donusOku } from "./donus-ekrani.ts";
 import { NPC_AYLIK_KOTA, npcdenAl, npcdenAlinan, stokGorunumu, type KasabaStogu } from "./npc-taban.ts";
 import { kalanSatisKotasi, NPC_SATIS_KOTASI, npcyeSat } from "./pazar.ts";
@@ -74,7 +74,7 @@ import {
   vitrinSec,
 } from "./teklif.ts";
 import { teveccuhEkle, teveccuhGorunumu, teveccuhKademesi, teveccuhEtkisi, TEVECCUH_ETKI } from "./teveccuh.ts";
-import { IKRAM_MENUSU, ikramOdemesi, type IkramId } from "../han/ikram.ts";
+import { IKRAM_MENUSU, type IkramId } from "../han/ikram.ts";
 import { toplumDonumu } from "./toplum-donum.ts";
 import { OYUNCU_TEKLIF_TURLERI, toplumAl, type Toplum } from "./toplum.ts";
 import { MALLAR, MAL_IDLERI } from "../icerik/mallar.ts";
@@ -95,6 +95,8 @@ import { levhaYaz } from "./levha.ts";
 import type { EkonomiKaydi } from "./pazar-tahta.ts";
 import type { UcgenDefteri } from "./bilgi.ts";
 import { eksenler } from "./hafiza.ts";
+import { mulkluIkram, mulkluKira } from "../mulk/tapu.ts";
+import type { MulkDefteri } from "../mulk/tapu.ts";
 import { ucgenDonumu, ucgenGorunumu, ucgenIslem, ucgenOkumaYuklenecek, ucgenYuklenecek } from "./ucgen.ts";
 
 // Faz 3 kayıtları (borç, teklif, engel, husumet) devirde vârise bağlanır.
@@ -111,6 +113,7 @@ const TOPLUM = "tp";
 /** Oyuncu pazarı, ısmarlama ve Ustalar Levhası (Faz 6). */
 const EKONOMI = "ek";
 const UCGEN = "ug";
+const MULK = "mk";
 /** [PARAMETRE] Gelen kutusunda gösterilen son kapanan teklif sayısı; söylenti yalanlamanın takat bedeli. */
 export const GELEN_KAPALI_EN_COK = 20;
 export const YALANLAMA_TAKAT = 1;
@@ -255,6 +258,7 @@ export class YerlesimMotoru {
     const tp = await depo.al<Toplum>(TOPLUM);
     const ek = await depo.al<EkonomiKaydi>(EKONOMI);
     const ug = await depo.al<UcgenDefteri>(UCGEN);
+    const mk = await depo.al<MulkDefteri>(MULK);
     const kasaba: Kasaba = {
       y: meta.y,
       tur: y.tur,
@@ -271,6 +275,7 @@ export class YerlesimMotoru {
       ...(tp ? { tp } : {}),
       ...(ek ? { ek } : {}),
       ...(ug ? { ug } : {}),
+      ...(mk ? { mk } : {}),
       no: meta.no,
       ...(meta.hd ? { hd: meta.hd } : {}),
       ...(meta.st ? { st: meta.st } : {}),
@@ -303,6 +308,7 @@ export class YerlesimMotoru {
       else if (a === TOPLUM) kayit[a] = k.tp;
       else if (a === EKONOMI) kayit[a] = k.ek;
       else if (a === UCGEN) kayit[a] = k.ug;
+      else if (a === MULK) kayit[a] = k.mk;
       else if (a.startsWith(KAR)) kayit[a] = k.kar.get(a.slice(KAR.length));
       else if (a.startsWith(ILI)) kayit[a] = k.ili.get(a.slice(ILI.length));
       else if (a.startsWith(SAYFA)) kayit[a] = this.#sayfalar.get(Number(a.slice(SAYFA.length)));
@@ -1248,14 +1254,15 @@ export class YerlesimMotoru {
       if (!alan || olduMu(alan)) return hata("kisi_yok");
       if (alan.o === kar.o) return hata("kendi_hedef");
       if (engelliMi(this.kasaba.tp, kar.o, alan.o)) return hata("engelli");
-      const odeme = ikramOdemesi(kar.pa, ikram as IkramId);
+      // Faz 12: yerleşimin hanı oyuncu işletmesiyse akçe kasaya (çıkış kutusu), değilse dünyadan çıkar.
+      this.#kirli.add(MULK);
+      const odeme = mulkluIkram(this.kasaba, kar, ikram as IkramId, this.#simdi, String(govde.istekNo));
       if (!odeme.ok) return odeme;
-      kar.pa = odeme.deger.para;
-      const teveccuh = teveccuhEkle(alan, kar, "ikram", ay, odeme.deger.batak);
+      const teveccuh = teveccuhEkle(alan, kar, "ikram", ay, odeme.deger.fiyat);
       const sk = this.kasaba.sakin.find((x) => x.o === alan.o);
       if (sk) sk.tv = teveccuhKademesi(alan, ay) || undefined;
       ek.digerleri.push(alan.o);
-      return basarili({ ikram, fiyat: odeme.deger.batak, batak: odeme.deger.batak, teveccuh });
+      return basarili({ ikram, fiyat: odeme.deger.fiyat, batak: odeme.deger.batak, ...(odeme.deger.kasaya ? { kasaya: odeme.deger.kasaya, transfer: { islem: odeme.deger.islem } } : {}), teveccuh });
     }, "ikram");
   }
 
@@ -1437,8 +1444,36 @@ export class YerlesimMotoru {
   async barinmaIslem(islem: "barinmaKira" | "barinmaTesis" | "barinmaOtomatik", hesapId: string, govde: unknown, simdi: number): Promise<Sonuc<unknown>> {
     const k = this.kasaba;
     return this.#tekrarGuvenli(hesapId, govde, (kar) =>
-      islem === "barinmaKira" ? kiraTut(k, kar, govde, simdi) : islem === "barinmaTesis" ? tesisKonakla(k, kar, simdi) : otomatikAyarla(k, kar, govde, simdi),
+      islem === "barinmaKira" ? (this.#kirli.add(MULK), mulkluKira(k, kar, govde, simdi)) : islem === "barinmaTesis" ? tesisKonakla(k, kar, simdi) : otomatikAyarla(k, kar, govde, simdi),
     );
+  }
+
+  // ── Mülk (Faz 12–13): src/mulk/yerlesim-mulk.ts kullanır; mülk defteri karakterle aynı yazımda kaydolur. ──
+
+  async mulkOyuncu(hesapId: string): Promise<Sonuc<{ kar: Karakter }>> {
+    const r = await this.#oyuncu(hesapId);
+    return r.ok ? basarili({ kar: r.deger.kar }) : r;
+  }
+
+  /** istekNo'lu yerel adım (cüzdan, tapu, çıkış kutusu). `yukle`: etkilenen diğer karakterler. */
+  async mulkAdimi(hesapId: string, govde: unknown, yukle: string[], isle: (kar: Karakter) => Sonuc<Record<string, unknown>>): Promise<Sonuc<unknown>> {
+    if (yukle.length) await this.#yukle(yukle);
+    this.#kirli.add(MULK);
+    return this.#tekrarGuvenli(hesapId, govde, (kar, _s, _ay, ek) => {
+      const r = isle(kar);
+      if (r.ok) for (const o of yukle) if (o !== kar.o) ek.digerleri.push(o);
+      return r;
+    });
+  }
+
+  /** İstekNo'suz iç adım (gelen transfer, uzlaştırma kapanışı, telafi): yükler, uygular, kaydeder. */
+  async mulkIslem<T>(yukle: string[], isle: () => T): Promise<T> {
+    if (yukle.length) await this.#yukle(yukle);
+    const r = isle();
+    this.#kirli.add(MULK);
+    for (const o of yukle) if (this.kasaba.kar.has(o)) this.#kirli.add(KAR + o);
+    await this.kaydet();
+    return r;
   }
 
   /** GET /v1/kronik?imlec=: imleçten sonraki kronik satırları (budanmaz; 49. sayfadan sonra da okunur). */

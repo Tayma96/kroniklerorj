@@ -26,6 +26,11 @@ class_name = "YonetimDO"
 name = "MASA"
 class_name = "MasaDO"
 
+# Faz 12 işletme: işletme başına bir örnek (idFromName("isletme:<yerleşim>.<tür>.<no>")); kasa, emanet, personel, muhasebe.
+[[durable_objects.bindings]]
+name = "ISLETME"
+class_name = "IsletmeDO"
+
 # SQLite tabanlı Durable Object'ler (ücretsiz planda kullanılabilen tür).
 [[migrations]]
 tag = "v1"
@@ -42,6 +47,10 @@ new_sqlite_classes = ["YonetimDO"]
 [[migrations]]
 tag = "v4"
 new_sqlite_classes = ["MasaDO"]
+
+[[migrations]]
+tag = "v5"
+new_sqlite_classes = ["IsletmeDO"]
 
 [vars]
 # Google OAuth istemci kimlikleri (Android/iOS/Web), virgülle ayrılmış. Gizli değildir.

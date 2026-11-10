@@ -3,6 +3,11 @@
 
 import type { YerlesimTuru } from "./dunya-veri.ts";
 import type { Mevsim } from "./saat.ts";
+import type { CikisKaydi } from "./mulk/transfer.ts";
+import type { MulkAlt } from "./mulk/yerlesim-mulk.ts";
+
+/** Mülk uçları (Faz 12–13; src/mulk/yerlesim-mulk.ts). */
+export type MulkIletisiH = { islem: "mulk"; hesapId: string; alt: MulkAlt; isletme?: string | null; govde?: unknown; dil?: string | null };
 
 export type Cinsiyet = "erkek" | "kadın";
 
@@ -212,6 +217,32 @@ export const HATA_DURUMU = {
   kirgin_degil: 409,
   casus_var: 409,
   hedef_siniri: 429,
+  // Mülkiyet ve işletme (Faz 12–13)
+  isletme_yok: 404,
+  isletme_kapali: 409,
+  mulk_tur_gecersiz: 400,
+  mulk_dolu: 409,
+  mulk_siniri: 409,
+  edinim_sarti: 409,
+  ad_jetonu_yok: 409,
+  tezyin_gecersiz: 400,
+  tezyin_var: 409,
+  tezyin_siniri: 409,
+  tutar_gecersiz: 400,
+  kasa_yetersiz: 409,
+  cekim_tavani: 409,
+  emanet_yetersiz: 409,
+  transfer_bekliyor: 503,
+  carpan_gecersiz: 400,
+  yetki_gecersiz: 400,
+  maas_gecersiz: 400,
+  maas_kesinti: 409,
+  personel_dolu: 409,
+  zaten_calisan: 409,
+  teklif_var: 409,
+  vekil_var: 409,
+  sozlesme_yok: 404,
+  han_dolu: 409,
   yapilandirma_eksik: 500,
   sunucu_hatasi: 500,
 } as const satisfies Record<string, number>;
@@ -244,6 +275,8 @@ export interface Env {
   MASA: DurableObjectNamespace;
   /** Tek örnek YonetimDO (idFromName("yonetim")): roller, işlem kaydı, parametreler, şikayet, yaptırım. */
   YONETIM: DurableObjectNamespace;
+  /** Faz 12: işletme başına IsletmeDO (idFromName("isletme:<yerleşim>.<tür>.<no>")); kasa ve muhasebenin tek yazıcısı. */
+  ISLETME?: DurableObjectNamespace;
   /** Kurucu e-postaları, virgülle ayrılmış (sır olarak konur). Boşsa hiç kimse kurucu değildir. */
   YONETICI_EPOSTALAR?: string;
   /** İsteğe bağlı: yönetici girişinde kabul edilen Google istemci kimlikleri; yoksa GOOGLE_CLIENT_ID. */
@@ -286,6 +319,8 @@ export type HesapIleti =
   | { islem: "han"; hesapId: string; dil?: string | null }
   | { islem: "masaBilet"; hesapId: string; masa: string }
   | { islem: "hanEylem" | "hanIkram"; hesapId: string; govde: unknown }
+  /** Mülk ve işletme (Faz 12–13): aynen yerleşime gider. */
+  | MulkIletisiH
   /** YonetimDO → HesapDO: hesabın etkin yaptırım özeti (tamamı yazılır; tekrar güvenli). */
   | { islem: "yaptirimYaz"; hesapId: string; durum: HesapYaptirimi };
 
@@ -414,6 +449,9 @@ export type YerlesimIleti =
   | { islem: "ucgenOku"; yerlesim: string; hesapId: string; npc?: string | null; hedef?: string | null; dil?: string | null }
   /** Han masası bileti için: oyuncunun iki yönlü engel listesi (hesap kimlikleri). */
   | { islem: "engeller"; yerlesim: string; hesapId: string }
+  | (MulkIletisiH & { yerlesim: string })
+  /** IsletmeDO → YerlesimDO: işletmenin çıkış kutusu (kasa → cüzdan, yansı, iflas); işlem kimliğiyle bir kez uygulanır. */
+  | { islem: "mulkGiris"; yerlesim: string; hesapId: string; kayitlar: CikisKaydi[] }
   | (HanedanIletisi & { yerlesim: string })
   | (EkonomiIletisi & { yerlesim: string })
   | (BarinmaIletisi & { yerlesim: string });
