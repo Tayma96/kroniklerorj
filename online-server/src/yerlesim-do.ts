@@ -3,21 +3,26 @@
 // sırayla, çağrı başına sınırlı yetiştirilir. İnce sarmalayıcıdır; kurallar src/yerlesim/*.ts'dedir.
 
 import { doDepo, type Depo } from "./depo.ts";
+import { hamiUc, mesrepUc, mudavimUc, ortakDertUc, senlikUc, toplulukOku, zaviyeUc } from "./yerlesim/topluluk-uclar.ts";
 import { defterOku, ismarlaUc, ismarlamaCevapUc, ismarlamaOku, levhaOku, pazarGeri, pazarIlan, pazarIslem, pazarOku } from "./yerlesim/ekonomi-uclar.ts";
-import { iletiOku, jsonYanit } from "./ic.ts";
 import { armaganGeri, armaganTeveccuh } from "./yerlesim/armagan-uclar.ts";
+import { iletiOku, isletmeCagir, jsonYanit } from "./ic.ts";
 import { hata, type Env, type Sonuc, type YerlesimIleti } from "./tipler.ts";
 import { sonrakiAlarm, YerlesimMotoru } from "./yerlesim/motor.ts";
+import { mulkIsle, teslimAl, uzlastir, type IsletmeCagir } from "./mulk/yerlesim-mulk.ts";
 
 export class YerlesimDO {
   readonly #depolama: DurableObjectStorage;
   readonly #depo: Depo;
   readonly #saat: () => number;
+  /** Mülk (Faz 12): IsletmeDO çağrısı (bağlı değilse işletme uçları `isletme_yok`). */
+  readonly #isletme: IsletmeCagir;
   /** Bellekteki kasaba; hata olursa atılır ve bir sonraki istekte depodan yeniden yüklenir. */
   #motor: YerlesimMotoru | undefined;
   #alarmVar = false;
 
-  constructor(ctx: DurableObjectState, _env: Env, saat: () => number = Date.now) {
+  constructor(ctx: DurableObjectState, env: Env, saat: () => number = Date.now) {
+    this.#isletme = (i) => (env.ISLETME ? isletmeCagir(env, i) : Promise.resolve({ ok: false, hata: "isletme_yok" }));
     this.#depolama = ctx.storage;
     this.#depo = doDepo(ctx.storage);
     this.#saat = saat;
@@ -39,7 +44,10 @@ export class YerlesimDO {
     const ileti = await iletiOku<YerlesimIleti>(istek);
     if (!ileti || typeof ileti.yerlesim !== "string") return jsonYanit(hata("gecersiz_istek"));
     try {
-      return jsonYanit(await this.#isle(ileti, this.#saat()));
+      const simdi = this.#saat();
+      const sonuc = await this.#isle(ileti, simdi);
+      await this.#mulkUzlastir(simdi, ileti.islem === "hanIkram" || ileti.islem === "barinmaKira");
+      return jsonYanit(sonuc);
     } catch (e) {
       this.#motor = undefined;
       throw e;
@@ -127,6 +135,8 @@ export class YerlesimDO {
         return motor.sakinHesabi(ileti.hesapId, ileti.hedef);
       case "engeller":
         return motor.engeller(ileti.hesapId);
+      case "siyasetKimlik":
+        return motor.siyasetKimlik(ileti.hesapId);
       // Hanedan (Faz 7)
       case "hanedan":
         return motor.hanedan(ileti.hesapId, ileti.dil);
@@ -140,6 +150,21 @@ export class YerlesimDO {
         return motor.evlilik(ileti.hesapId, ileti.govde);
       case "kronik":
         return motor.kronik(ileti.hesapId, ileti.imlec, ileti.dil);
+      // Topluluk (E5–E7): src/yerlesim/topluluk-uclar.ts
+      case "topluluk":
+        return toplulukOku(motor, ileti.hesapId);
+      case "mesrep":
+        return mesrepUc(motor, ileti.hesapId, ileti.govde);
+      case "hami":
+        return hamiUc(motor, ileti.hesapId, ileti.govde);
+      case "ortakDert":
+        return ortakDertUc(motor, ileti.hesapId, ileti.govde);
+      case "senlik":
+        return senlikUc(motor, ileti.hesapId, ileti.govde);
+      case "zaviye":
+        return zaviyeUc(motor, ileti.hesapId, ileti.govde);
+      case "mudavimZiyaret":
+        return mudavimUc(motor, ileti.hesapId);
       // Ekonomi (Faz 6): src/yerlesim/ekonomi-uclar.ts
       case "pazar":
         return pazarOku(motor, ileti.hesapId, ileti.mal);
@@ -167,9 +192,24 @@ export class YerlesimDO {
       case "barinmaTesis":
       case "barinmaOtomatik":
         return motor.barinmaIslem(ileti.islem, ileti.hesapId, ileti.govde, simdi);
+      // Mülk (Faz 12–13): istemci uçları ve IsletmeDO'dan gelen kasa → cüzdan kayıtları.
+      case "mulk":
+        return mulkIsle(motor, ileti, simdi, this.#isletme);
+      case "mulkGiris":
+        return { ok: true, deger: { sonuclar: await teslimAl(motor, ileti.kayitlar, simdi) } };
       default:
         return hata("gecersiz_istek");
     }
+  }
+
+  /** Bekleyen çıkış kayıtlarını teslim eder; kalan varsa alarmı yeniden deneme anına çeker. */
+  async #mulkUzlastir(simdi: number, hepsi: boolean): Promise<void> {
+    const motor = this.#motor;
+    if (!motor?.kasaba.mk?.cik.k.length) return;
+    const sonraki = await uzlastir(motor, simdi, this.#isletme, hepsi);
+    if (sonraki === null) return;
+    const mevcut = await this.#depolama.getAlarm();
+    if (mevcut === null || mevcut > sonraki) await this.#depolama.setAlarm(Math.max(sonraki, simdi + 1));
   }
 
   /** Ay dönümü alarmı: kaçanları yetiştirir; kaldıysa 1 sn sonra, yoksa bir sonraki dönümde yeniden kurar. */
@@ -181,6 +221,7 @@ export class YerlesimDO {
       const { kalan } = await motor.yetistir(simdi);
       await this.#depolama.setAlarm(sonrakiAlarm(simdi, kalan));
       this.#alarmVar = true;
+      await this.#mulkUzlastir(simdi, false);
     } catch (e) {
       this.#motor = undefined;
       throw e;

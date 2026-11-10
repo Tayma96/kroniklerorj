@@ -70,11 +70,25 @@
 //   GET  /v1/debdebe/levha               → Cömertler Levhası (yalnız adlar, alfabetik; tutar/sıra yok)
 //   GET  /v1/debdebe/sezon               → Sezon Defteri (bedava + ücretli iz)
 //   GET  /v1/debdebe/kisi/:id            → başkasının Debdebe görünüşü (kuşanılan, seviye etiketi, rozetler)
+//   GET  /v1/topluluk?dil=               → meşrep, hami, ortak dertler (defter), şenlik (Cömertler Levhası), müdavim, zaviye, göstergeler (E5–E7)
+//   POST /v1/mesrep {el, cesaret, gurur, istekNo} → {mesrep}  (her eksen bir uç ya da "orta"; etkiler yazılı)
+//   POST /v1/hami {islem: teklif|iste|kabul|ret|birak, hedef, istekNo} → {bag, hami}  (hami akçe almaz, aşamada nam)
+//   POST /v1/ortak-dert {dert, katki, mal?, adet?, istekNo} → {dert, katki (döküm), odul, basardi}
+//   POST /v1/senlik {katki: yemek|sus|hayir, mal?, adet?, tutar?, istekNo} → {senlik, katki, odul}
+//   POST /v1/zaviye {islem: kur|davet|katil|reddet|ayril|cikar|yatir|ver|arma|oy, ..., istekNo} → {zaviye, zaviyeler}
+//   GET  /v1/siyaset?bolge=&kayit=       → bölge, makamlar, seçimler, kasa/defter, meşruiyet, Sultanlık, Moğol, kayıt (Faz 7, src/siyaset/)
+//   POST /v1/siyaset {islem: aday|adayCekil|oy|onay|yetki|itiraz|ozerklikCevap|ozerklikBirak, makam?, ..., istekNo} → {sonuc, gorunum}
 // Uzaklaştırılmış hesapta giriş dışındaki /v1/* uçları 403 {hata: "uzaklastirildi", bitis} döner.
 //
 // Yönetim (ana tasarım §7; oyuncu oturumundan ayrı yönetici belirteci, src/yonetim/kimlik.ts):
 //   GET  /yonetim                        → tek sayfalık panel (HTML, sıkı CSP)
 //   POST /yonetim/giris {idToken}        → {oturum, rol}
+//   GET  /v1/mulk                        → yuvalar (boş/sahipli, bedel), benim, çalıştığım, teklifler, edinim şartı, bekleyen transferler (Faz 12)
+//   POST /v1/mulk/edin {tur: han|dukkan|atolye, istekNo} → {edinim, transferDurumu, para}  (akçe + nam ya da lonca; D-17)
+//   GET  /v1/isletme/:id                 → panel (konuma ve yetkiye göre; dışarıdan vitrin)
+//   GET  /v1/isletme/:id/devir           → devir önizlemesi: kasa, emanet, borç, sözleşmeler, sicil, sürüm
+//   POST /v1/isletme/:id/<islem> {..., istekNo}: yatir {tutar} | cek {tutar} | emanet {yon, tutar} | ad {ad} |
+//        tezyin {grup, secim} | fiyat {carpan} | kapi {acik} | personel {islem, ...} | devir {islem: teklif|geri|kabul}
 //   GET|POST /yonetim/<uc>               → YONETIM_UCLARI (src/tipler.ts); kurallar src/yonetim/islem.ts
 // Hata gövdesi {hata: kod}; metin istemcide çevrilir. Hız sınırı hesap başına HesapDO'da.
 
@@ -92,6 +106,7 @@ import {
   type BarinmaIslem,
   type HanedanIslem,
   type EkonomiIslem,
+  type ToplulukIslem,
   type HataKodu,
   type HesapIleti,
   type DebdebeIslem,
@@ -105,8 +120,11 @@ import { masayaYukselt } from "./han/ic.ts";
 import type { MasaBileti } from "./han/tipler.ts";
 
 export { DunyaDO } from "./dunya-do.ts";
+export { IsletmeDO } from "./isletme-do.ts";
 export { HesapDO } from "./hesap-do.ts";
 export { MasaDO } from "./masa-do.ts";
+export { BolgeDO } from "./bolge-do.ts";
+export { SultanlikDO } from "./sultanlik-do.ts";
 export { YerlesimDO } from "./yerlesim-do.ts";
 export { YonetimDO } from "./yonetim-do.ts";
 
@@ -124,6 +142,8 @@ const DEBDEBE_YAZMA: Readonly<Record<string, DebdebeIslem>> = {
   "/v1/debdebe/armagan": "debdebeArmagan",
   "/v1/debdebe/levha-gorunur": "debdebeLevhaGorunur",
 };
+const ISLETME_YOLU = /^\/v1\/isletme\/([^/]{1,64})(?:\/([a-z]{1,16}))?$/;
+const ISLETME_POST = new Set(["yatir", "cek", "emanet", "ad", "tezyin", "fiyat", "kapi", "personel", "devir"]);
 
 /** Örnek yaşadıkça JWKS önbelleğini tutar. `fetch` çağrı anında çözülür (testte değiştirilebilir). */
 const google = new GoogleDogrulayici({ fetch: (url) => fetch(url) });
@@ -300,6 +320,14 @@ function govdeli(istek: Request, env: Env, islem: GovdeliIslem | HanedanIslem | 
   });
 }
 
+/** Gövdeli topluluk POST iletisi (E5–E7). */
+function toplulukGovdeli(istek: Request, env: Env, islem: ToplulukIslem): Promise<Response> {
+  return hesaba(istek, env, async (hesapId) => {
+    const govde = await govdeOku(istek);
+    return govde.ok ? basarili({ islem, hesapId, govde: govde.deger }) : govde;
+  });
+}
+
 /** Gövdeli ekonomi POST iletisi (Faz 6). */
 function ekonomiGovdeli(istek: Request, env: Env, islem: EkonomiIslem): Promise<Response> {
   return hesaba(istek, env, async (hesapId) => {
@@ -385,6 +413,19 @@ async function yonlendir(istek: Request, env: Env): Promise<Response> {
       return yontem === "GET"
         ? hesaba(istek, env, (hesapId) => basarili({ islem: "kronik", hesapId, imlec: url.searchParams.get("imlec"), dil }))
         : hataYaniti("yontem_yok");
+    // Topluluk (E5–E7): src/yerlesim/topluluk-uclar.ts
+    case "/v1/topluluk":
+      return yontem === "GET" ? hesaba(istek, env, (hesapId) => basarili({ islem: "topluluk", hesapId, dil })) : hataYaniti("yontem_yok");
+    case "/v1/mesrep":
+      return yontem === "POST" ? toplulukGovdeli(istek, env, "mesrep") : hataYaniti("yontem_yok");
+    case "/v1/hami":
+      return yontem === "POST" ? toplulukGovdeli(istek, env, "hami") : hataYaniti("yontem_yok");
+    case "/v1/ortak-dert":
+      return yontem === "POST" ? toplulukGovdeli(istek, env, "ortakDert") : hataYaniti("yontem_yok");
+    case "/v1/senlik":
+      return yontem === "POST" ? toplulukGovdeli(istek, env, "senlik") : hataYaniti("yontem_yok");
+    case "/v1/zaviye":
+      return yontem === "POST" ? toplulukGovdeli(istek, env, "zaviye") : hataYaniti("yontem_yok");
     // Ekonomi (Faz 6): src/yerlesim/ekonomi-uclar.ts
     case "/v1/pazar":
       return yontem === "GET"
@@ -451,6 +492,15 @@ async function yonlendir(istek: Request, env: Env): Promise<Response> {
       return yontem === "POST" ? govdeli(istek, env, "duzen") : hataYaniti("yontem_yok");
     case "/v1/duyurular":
       return yontem === "GET" ? hesaba(istek, env, (hesapId) => basarili({ islem: "duyurular", hesapId })) : hataYaniti("yontem_yok");
+    case "/v1/siyaset":
+      if (yontem === "GET") {
+        return hesaba(istek, env, (hesapId) => basarili({ islem: "siyaset", hesapId, bolge: url.searchParams.get("bolge"), kayitSayfa: url.searchParams.get("kayit") }));
+      }
+      if (yontem !== "POST") return hataYaniti("yontem_yok");
+      return hesaba(istek, env, async (hesapId) => {
+        const govde = await govdeOku(istek);
+        return govde.ok ? basarili({ islem: "siyasetYaz", hesapId, govde: govde.deger }) : govde;
+      });
     case "/v1/han":
       return yontem === "GET" ? hesaba(istek, env, (hesapId) => basarili({ islem: "han", hesapId, dil })) : hataYaniti("yontem_yok");
     case "/v1/han/eylem":
@@ -467,6 +517,14 @@ async function yonlendir(istek: Request, env: Env): Promise<Response> {
       return yontem === "GET"
         ? hesaba(istek, env, (hesapId) => basarili({ islem: "debdebeDene", hesapId, urun: url.searchParams.get("urun")?.slice(0, 40) ?? null, dil }))
         : hataYaniti("yontem_yok");
+    case "/v1/mulk":
+      return yontem === "GET" ? hesaba(istek, env, (hesapId) => basarili({ islem: "mulk", hesapId, alt: "liste", dil })) : hataYaniti("yontem_yok");
+    case "/v1/mulk/edin":
+      if (yontem !== "POST") return hataYaniti("yontem_yok");
+      return hesaba(istek, env, async (hesapId) => {
+        const govde = await govdeOku(istek);
+        return govde.ok ? basarili({ islem: "mulk", hesapId, alt: "edin", govde: govde.deger }) : govde;
+      });
     case "/yonetim":
     case "/yonetim/":
       return yontem === "GET" ? panelYaniti() : hataYaniti("yontem_yok");
@@ -490,6 +548,21 @@ async function yonlendir(istek: Request, env: Env): Promise<Response> {
   if (yol.startsWith("/yonetim/")) {
     const uc = yol.slice("/yonetim/".length);
     return Object.hasOwn(YONETIM_UCLARI, uc) ? yonetimUcu(istek, env, uc as YonetimUcu, url) : hataYaniti("bulunamadi");
+  }
+  const isl = ISLETME_YOLU.exec(yol);
+  if (isl?.[1]) {
+    const isletme = isl[1];
+    const alt = isl[2];
+    if (alt === undefined || alt === "devir") {
+      if (yontem === "GET") return hesaba(istek, env, (hesapId) => basarili({ islem: "mulk", hesapId, alt: alt ? "devirOnizle" : "panel", isletme, dil }));
+      if (alt === undefined) return hataYaniti("yontem_yok");
+    }
+    if (!ISLETME_POST.has(alt!)) return hataYaniti("bulunamadi");
+    if (yontem !== "POST") return hataYaniti("yontem_yok");
+    return hesaba(istek, env, async (hesapId) => {
+      const govde = await govdeOku(istek);
+      return govde.ok ? basarili({ islem: "mulk", hesapId, alt: alt as "yatir", isletme, govde: govde.deger }) : govde;
+    });
   }
   const masa = MASA_YOLU.exec(yol);
   if (masa?.[1]) return yontem === "GET" ? masaBaglan(istek, env, masa[1]) : hataYaniti("yontem_yok");

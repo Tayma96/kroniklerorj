@@ -32,8 +32,10 @@ import {
   npcHani,
   odaCoz,
   sureCoz,
+  type HanKaynagi,
   type KiraSozlesmesi,
   type OdaId,
+  type OyuncuHaniKatalogu,
 } from "./oda.ts";
 import type { Karakter, Kasaba, OlayTaslagi } from "./tipler.ts";
 
@@ -75,7 +77,7 @@ export const GUNLUK_EN_COK = 10;
 export const OTOMATIK_MODLAR = ["kapali", "oda", "tesis", "uyar"] as const;
 export type OtomatikMod = (typeof OTOMATIK_MODLAR)[number];
 
-export type KonaklamaTuru = "oda" | "ocak" | "misafirhane" | "tesis";
+export type KonaklamaTuru = "oda" | "ocak" | "misafirhane" | "tesis" | "hami";
 export type ZincirAsamasi = "uyari" | "evsiz" | "canKaybi";
 export type BarinmaDurumu = "kapali" | "konakli" | "misafir" | ZincirAsamasi;
 const ASAMA_SIRASI: Readonly<Record<ZincirAsamasi, number>> = { uyari: 0, evsiz: 1, canKaybi: 2 };
@@ -111,6 +113,8 @@ export interface BarinmaKaydi {
   og: number;
   /** Günlük (en yeni önce). */
   gl: BarinmaGunlugu[];
+  /** Hamisinin evinde misafirlik (E6, §18 misafir daveti): [yerleşim, başlangıç, bitiş) ms, hami. */
+  hm?: [yerlesim: string, b: number, s: number, hami: string];
 }
 
 export interface Konaklama {
@@ -192,6 +196,8 @@ export function kapsama(br: BarinmaKaydi, yerlesim: string, ocak: boolean, an: n
   if (m && m[0] <= an && an < m[1]) return { tur: "misafirhane", bitis: m[1] };
   const t = br.ts.find((x) => x[0] === yerlesim && x[1] <= an && an < x[2]);
   if (t) return { tur: "tesis", bitis: t[2] };
+  const h = br.hm;
+  if (h && h[0] === yerlesim && h[1] <= an && an < h[2]) return { tur: "hami", bitis: h[2] };
   return undefined;
 }
 
@@ -203,6 +209,7 @@ export function zincirBasi(br: BarinmaKaydi, yerlesim: string, an: number): numb
   for (const t of br.ts) if (t[0] === yerlesim && t[2] <= an) z = Math.max(z, t[2]);
   const m = br.mh[yerlesim];
   if (m && m[1] <= an) z = Math.max(z, m[1]);
+  if (br.hm && br.hm[0] === yerlesim && br.hm[2] <= an) z = Math.max(z, br.hm[2]);
   return Math.min(z, an);
 }
 
@@ -383,26 +390,35 @@ function nesneMi(v: unknown): v is Record<string, unknown> {
 }
 
 /** POST /v1/barinma/kira {oda, sure: 1|3|12}: peşin kira; aynı odada uzatır (bitişten devam), başka oda `oda_var`. */
-export function kiraTut(kasaba: Kasaba, kar: Karakter, govde: unknown, simdi: number): Sonuc<Record<string, unknown>> {
+export function kiraTut(
+  kasaba: Kasaba,
+  kar: Karakter,
+  govde: unknown,
+  simdi: number,
+  /** Faz 12: yerleşimin hanı oyuncu işletmesiyse katalog, fiyat ve boş oda (kapasite) buradan; ödeme kasaya. */
+  oyuncuHan?: OyuncuHaniKatalogu & { isletme: string; bos: number },
+): Sonuc<Record<string, unknown>> {
   if (!zincirAcik(kasaba.tur)) return hata("barinma_kapali");
   if (!nesneMi(govde)) return hata("gecersiz_istek");
   const oda = odaCoz(govde.oda);
   const sure = sureCoz(govde.sure);
   if (!oda) return hata("oda_gecersiz");
   if (!sure) return hata("sure_gecersiz");
-  const han = npcHani(kasaba.y);
-  const katalog = hanOdalari(han, kasaba.tur);
+  const han: HanKaynagi = oyuncuHan ? { tur: "oyuncu", isletme: oyuncuHan.isletme } : npcHani(kasaba.y);
+  const katalog = hanOdalari(han, kasaba.tur, oyuncuHan);
   if (!katalog.ok) return katalog;
-  if (!katalog.deger.some((x) => x.oda === oda)) return hata("oda_gecersiz");
+  const teklif = katalog.deger.find((x) => x.oda === oda);
+  if (!teklif) return hata("oda_gecersiz");
   const ocak = ocakVar(kasaba, kar);
   barinmaIlerlet(kasaba, kar, simdi, ocak);
   const br = kar.br!;
   const etkin = br.od.find((s) => s.y === kasaba.y && s.b <= simdi && simdi < s.s);
-  if (etkin && etkin.o !== oda) return hata("oda_var");
+  if (etkin && (etkin.o !== oda || etkin.h !== hanKodu(han))) return hata("oda_var");
+  if (oyuncuHan && !etkin && oyuncuHan.bos <= 0) return hata("han_dolu");
   const bas = etkin ? etkin.s : simdi;
   const bitis = bas + kiraSuresiMs(sure);
   if (bitis - simdi > KIRA_EN_UZUN_AY * AY_MS) return hata("kira_siniri");
-  const fiyat = kiraFiyati(ODALAR[oda].aylik, sure);
+  const fiyat = teklif.fiyatlar[sure];
   const odeme = kiraOdemesi(han, kar.pa, fiyat);
   if (!odeme.ok) return odeme;
   kar.pa = odeme.deger.para;
@@ -414,7 +430,16 @@ export function kiraTut(kasaba: Kasaba, kar: Karakter, govde: unknown, simdi: nu
   gunlukEkle(br, simdi, etkin ? "oda.uzatildi" : "oda.kiralandi", { oda, sure, fiyat, bitis });
   zincirKapat(br, simdi, "oda");
   return basarili({
-    kira: { oda, sure, fiyat, batak: odeme.deger.batak, baslangic: etkin ? etkin.b : simdi, bitis, uzatildi: !!etkin },
+    kira: {
+      oda,
+      sure,
+      fiyat,
+      batak: odeme.deger.batak,
+      ...(oyuncuHan ? { kasaya: odeme.deger.kasaya, han: hanKodu(han) } : {}),
+      baslangic: etkin ? etkin.b : simdi,
+      bitis,
+      uzatildi: !!etkin,
+    },
     barinma: barinmaGorunumu(kasaba, kar, simdi),
   });
 }

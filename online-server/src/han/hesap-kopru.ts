@@ -163,7 +163,7 @@ export async function hanIkrami(b: HanHesapBaglami, govde: unknown): Promise<Son
   } catch {
     // yut
   }
-  const sonuc = basarili({ ikram, fiyat, para: odeme.deger.para, anons });
+  const sonuc = basarili({ ikram, fiyat: odeme.deger.fiyat ?? fiyat, para: odeme.deger.para, anons });
   await b.depo.koy({ [anahtar]: sonuc, [IKRAM_SAYAC]: sayac.durum });
   return sonuc;
 }

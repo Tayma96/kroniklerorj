@@ -3,6 +3,11 @@
 
 import type { YerlesimTuru } from "./dunya-veri.ts";
 import type { Mevsim } from "./saat.ts";
+import type { CikisKaydi } from "./mulk/transfer.ts";
+import type { MulkAlt } from "./mulk/yerlesim-mulk.ts";
+
+/** Mülk uçları (Faz 12–13; src/mulk/yerlesim-mulk.ts). */
+export type MulkIletisiH = { islem: "mulk"; hesapId: string; alt: MulkAlt; isletme?: string | null; govde?: unknown; dil?: string | null };
 
 export type Cinsiyet = "erkek" | "kadın";
 
@@ -229,6 +234,69 @@ export const HATA_DURUMU = {
   stok_yok: 409,
   armagan_siniri: 429,
   islem_yok: 404,
+  // Mülkiyet ve işletme (Faz 12–13)
+  isletme_yok: 404,
+  isletme_kapali: 409,
+  mulk_tur_gecersiz: 400,
+  mulk_dolu: 409,
+  mulk_siniri: 409,
+  edinim_sarti: 409,
+  ad_jetonu_yok: 409,
+  tezyin_gecersiz: 400,
+  tezyin_var: 409,
+  tezyin_siniri: 409,
+  tutar_gecersiz: 400,
+  kasa_yetersiz: 409,
+  cekim_tavani: 409,
+  emanet_yetersiz: 409,
+  transfer_bekliyor: 503,
+  carpan_gecersiz: 400,
+  yetki_gecersiz: 400,
+  maas_gecersiz: 400,
+  maas_kesinti: 409,
+  personel_dolu: 409,
+  zaten_calisan: 409,
+  teklif_var: 409,
+  vekil_var: 409,
+  sozlesme_yok: 404,
+  han_dolu: 409,
+  // Topluluk (E5–E7)
+  mesrep_gecersiz: 400,
+  mesrep_erken: 409,
+  mesrep_kilitli: 409,
+  hami_gecersiz: 400,
+  hami_uygun_degil: 409,
+  hami_var: 409,
+  hami_dolu: 409,
+  bag_yok: 404,
+  dert_yok: 404,
+  dert_kapandi: 409,
+  katki_gecersiz: 400,
+  katki_siniri: 429,
+  senlik_yok: 409,
+  zaviye_gecersiz: 400,
+  zaviye_yok: 404,
+  zaviye_var: 409,
+  zaviye_dolu: 409,
+  zaviye_kuruluyor: 409,
+  kidem_yetersiz: 409,
+  aday_uygun_degil: 409,
+  // Siyaset (Faz 7 + Ek B P1–P4)
+  bolge_gecersiz: 400,
+  makam_yok: 404,
+  makam_kapali: 409,
+  secim_kapali: 409,
+  zaten_aday: 409,
+  kume_cakisma: 409,
+  ardisik_donem: 409,
+  oy_hakki_yok: 403,
+  sinir_asildi: 409,
+  vekil_gecersiz: 400,
+  itiraz_yok: 404,
+  itiraz_kapali: 409,
+  ozerklik_var: 409,
+  ozerklik_yok: 409,
+  soguma: 409,
   yapilandirma_eksik: 500,
   sunucu_hatasi: 500,
 } as const satisfies Record<string, number>;
@@ -261,6 +329,8 @@ export interface Env {
   MASA: DurableObjectNamespace;
   /** Tek örnek YonetimDO (idFromName("yonetim")): roller, işlem kaydı, parametreler, şikayet, yaptırım. */
   YONETIM: DurableObjectNamespace;
+  /** Faz 12: işletme başına IsletmeDO (idFromName("isletme:<yerleşim>.<tür>.<no>")); kasa ve muhasebenin tek yazıcısı. */
+  ISLETME?: DurableObjectNamespace;
   /** Kurucu e-postaları, virgülle ayrılmış (sır olarak konur). Boşsa hiç kimse kurucu değildir. */
   YONETICI_EPOSTALAR?: string;
   /** İsteğe bağlı: yönetici girişinde kabul edilen Google istemci kimlikleri; yoksa GOOGLE_CLIENT_ID. */
@@ -269,6 +339,9 @@ export interface Env {
   DEBDEBE_ACIK?: string;
   /** "1": mağaza test (sandbox/lisans testçisi) satın almaları kabul edilir. Üretimde konmaz. */
   DEBDEBE_TEST_MAKBUZ?: string;
+  /** Siyaset: bölge başına BolgeDO (idFromName("bolge:<id>")) ve tek SultanlikDO (idFromName("sultanlik")). */
+  BOLGE: DurableObjectNamespace;
+  SULTANLIK: DurableObjectNamespace;
 }
 
 /** Dünya DO'suna profil kaydı isteği (HesapDO gönderir). */
@@ -300,6 +373,7 @@ export type HesapIleti =
   | { islem: "ucgenOku"; hesapId: string; npc?: string | null; hedef?: string | null; dil?: string | null }
   | HanedanIletisi
   | EkonomiIletisi
+  | ToplulukIletisi
   | BarinmaIletisi
   | { islem: "sikayet"; hesapId: string; govde: unknown }
   | { islem: "duyurular"; hesapId: string }
@@ -317,6 +391,11 @@ export type HesapIleti =
   | { islem: "debdebeRozetSil"; hesapId: string; id: string }
   | { islem: "debdebeGorunum"; hesapId: string }
   | { islem: "debdebeIade"; hesapId: string; islemKimligi: string }
+  /** Mülk ve işletme (Faz 12–13): aynen yerleşime gider. */
+  | MulkIletisiH
+  // Siyaset (Faz 7 + Ek B P1–P4): src/siyaset/hesap-kopru.ts
+  | { islem: "siyaset"; hesapId: string; bolge?: string | null; kayitSayfa?: string | null }
+  | { islem: "siyasetYaz"; hesapId: string; govde: unknown }
   /** YonetimDO → HesapDO: hesabın etkin yaptırım özeti (tamamı yazılır; tekrar güvenli). */
   | { islem: "yaptirimYaz"; hesapId: string; durum: HesapYaptirimi };
 
@@ -408,6 +487,12 @@ export type HanedanIletisi =
   | { islem: "devirOnizle"; hesapId: string; varis?: string | null; dil?: string | null }
   | { islem: "kronik"; hesapId: string; imlec?: string | null; dil?: string | null };
 
+/** Topluluk (E5–E7) gövdeli işlemleri: POST /v1/mesrep, /v1/hami, /v1/ortak-dert, /v1/senlik, /v1/zaviye. */
+export const TOPLULUK_ISLEMLERI = ["mesrep", "hami", "ortakDert", "senlik", "zaviye"] as const;
+export type ToplulukIslem = (typeof TOPLULUK_ISLEMLERI)[number];
+/** Topluluk iletileri (HesapDO aynen YerlesimDO'ya iletir; `yerlesim` eklenir). */
+export type ToplulukIletisi = { islem: ToplulukIslem; hesapId: string; govde: unknown } | { islem: "topluluk"; hesapId: string; dil?: string | null };
+
 /** Ekonomi (Faz 6) gövdeli işlemleri: POST /v1/pazar/ilan, /v1/pazar/islem, /v1/pazar/geri, /v1/ismarlama,
  * /v1/ismarlama/cevap. */
 export const EKONOMI_ISLEMLERI = ["pazarIlan", "pazarIslem", "pazarGeri", "ismarla", "ismarlamaCevap"] as const;
@@ -453,11 +538,20 @@ export type YerlesimIleti =
   | { islem: "ucgenOku"; yerlesim: string; hesapId: string; npc?: string | null; hedef?: string | null; dil?: string | null }
   /** Han masası bileti için: oyuncunun iki yönlü engel listesi (hesap kimlikleri). */
   | { islem: "engeller"; yerlesim: string; hesapId: string }
+  | (MulkIletisiH & { yerlesim: string })
+  /** IsletmeDO → YerlesimDO: işletmenin çıkış kutusu (kasa → cüzdan, yansı, iflas); işlem kimliğiyle bir kez uygulanır. */
+  | { islem: "mulkGiris"; yerlesim: string; hesapId: string; kayitlar: CikisKaydi[] }
+  /** Siyaset (Faz 7/P1): HesapDO → YerlesimDO, doğrulanmış siyasi kimlik (src/siyaset/hesap-kopru.ts). */
+  | { islem: "siyasetKimlik"; yerlesim: string; hesapId: string }
   | (HanedanIletisi & { yerlesim: string })
   | (EkonomiIletisi & { yerlesim: string })
   | (BarinmaIletisi & { yerlesim: string })
   /** Debdebe armağanı teveccühü ve iadede geri alınması (HesapDO gönderir; istemci ulaşamaz). */
-  | { islem: "armaganTeveccuh" | "armaganGeri"; yerlesim: string; hesapId: string; govde: unknown };
+  | { islem: "armaganTeveccuh" | "armaganGeri"; yerlesim: string; hesapId: string; govde: unknown }
+  | (ToplulukIletisi & { yerlesim: string })
+  /** HesapDO → YerlesimDO (masa bileti sonrası): müdavim han ziyareti; istemci doğrudan ulaşamaz. */
+  | { islem: "mudavimZiyaret"; yerlesim: string; hesapId: string }
+  | (BarinmaIletisi & { yerlesim: string });
 
 export type DunyaIleti =
   | { islem: "ozet" }
