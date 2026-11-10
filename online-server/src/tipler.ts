@@ -190,6 +190,28 @@ export const HATA_DURUMU = {
   ismarlama_yok: 404,
   ismarlama_kapandi: 409,
   ismarlama_siniri: 429,
+  // Barınma (Faz 14)
+  barinma_kapali: 409,
+  oda_gecersiz: 400,
+  sure_gecersiz: 400,
+  oda_var: 409,
+  kira_siniri: 409,
+  han_kapali: 409,
+  konaklama_var: 409,
+  tesis_kapali: 409,
+  tesis_sart: 409,
+  tesis_dolu: 409,
+  mod_gecersiz: 400,
+  // Üçgen (Faz 4)
+  ucgen_gecersiz: 400,
+  soz_yok: 404,
+  talep_yok: 404,
+  sart_yok: 404,
+  dost_degil: 403,
+  guven_yetersiz: 409,
+  kirgin_degil: 409,
+  casus_var: 409,
+  hedef_siniri: 429,
   yapilandirma_eksik: 500,
   sunucu_hatasi: 500,
 } as const satisfies Record<string, number>;
@@ -254,8 +276,10 @@ export type HesapIleti =
   | { islem: "oyuncu"; hesapId: string; oyuncu: string; dil?: string | null }
   | { islem: "gelen"; hesapId: string; dil?: string | null }
   | { islem: "duzenOku"; hesapId: string }
+  | { islem: "ucgenOku"; hesapId: string; npc?: string | null; hedef?: string | null; dil?: string | null }
   | HanedanIletisi
   | EkonomiIletisi
+  | BarinmaIletisi
   | { islem: "sikayet"; hesapId: string; govde: unknown }
   | { islem: "duyurular"; hesapId: string }
   // Han masası (Faz 10): src/han/hesap-kopru.ts
@@ -328,6 +352,8 @@ export const GOVDELI_ISLEMLER = [
   "duzen",
   "yalanla",
   "vitrin",
+  // Faz 4 üçgen: kışkırtma, katılım, arabuluculuk, casus
+  "ucgen",
   // Faz 10 han masası: ikram ödemesi (HesapDO masa kontrolünden sonra çağırır; istemci doğrudan ulaşamaz)
   "hanIkram",
 ] as const;
@@ -354,6 +380,13 @@ export type EkonomiIletisi =
   | { islem: "ismarlamalar"; hesapId: string; dil?: string | null }
   | { islem: "levha"; hesapId: string; mal?: string | null }
   | { islem: "defter"; hesapId: string; ay?: string | null };
+/** Barınma (Faz 14) gövdeli işlemleri: POST /v1/barinma/kira, /v1/barinma/tesis, /v1/barinma/otomatik. */
+export const BARINMA_ISLEMLERI = ["barinmaKira", "barinmaTesis", "barinmaOtomatik"] as const;
+export type BarinmaIslem = (typeof BARINMA_ISLEMLERI)[number];
+/** Barınma iletileri (HesapDO aynen YerlesimDO'ya iletir; `yerlesim` eklenir). */
+export type BarinmaIletisi =
+  | { islem: BarinmaIslem; hesapId: string; govde: unknown }
+  | { islem: "barinma" | "donus"; hesapId: string; dil?: string | null };
 
 /** Yerleşime sakin kaydı (profil oluşunca HesapDO gönderir; tekrar güvenli). */
 export interface SakinKaydi {
@@ -378,10 +411,12 @@ export type YerlesimIleti =
   | { islem: "duzenOku"; yerlesim: string; hesapId: string }
   /** Şikayet hedefi: yerel oyuncu kimliği (`o12`) → hesap kimliği (aynı yerleşimin sakini). */
   | { islem: "sakinHesabi"; yerlesim: string; hesapId: string; hedef: string }
+  | { islem: "ucgenOku"; yerlesim: string; hesapId: string; npc?: string | null; hedef?: string | null; dil?: string | null }
   /** Han masası bileti için: oyuncunun iki yönlü engel listesi (hesap kimlikleri). */
   | { islem: "engeller"; yerlesim: string; hesapId: string }
   | (HanedanIletisi & { yerlesim: string })
-  | (EkonomiIletisi & { yerlesim: string });
+  | (EkonomiIletisi & { yerlesim: string })
+  | (BarinmaIletisi & { yerlesim: string });
 
 export type DunyaIleti =
   | { islem: "ozet" }

@@ -74,7 +74,7 @@ export function EylemOnizleme({ kart, hedefAd, rtl, t, lang, bekliyor, hata, onD
 }
 
 /** Zar şeridi: 1-100; şansa kadar olan bölüm başarı, işaret zarın düştüğü yer. */
-function ZarSeridi({ zar, sans, rtl, t }: { zar: number; sans: number; rtl: boolean; t: Ceviri }) {
+export function ZarSeridi({ zar, sans, rtl, t }: { zar: number; sans: number; rtl: boolean; t: Ceviri }) {
   const basari = zar <= sans;
   return <View accessible accessibilityLabel={applyParams(t("onl.ey.zarErisim"), [zar, sans])} style={{ gap: 6 }}>
     <View style={{ height: 14, borderRadius: 7, overflow: "hidden", flexDirection: yon(rtl), backgroundColor: "rgba(200,90,64,0.25)", borderWidth: 1, borderColor: "rgba(201,162,78,0.35)" }}>

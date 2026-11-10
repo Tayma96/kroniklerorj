@@ -27,7 +27,7 @@ const MESLEK_EKRANLARI = ["/online/meslek", "/online/isler", "/online/lonca", "/
 const DEMIRCI_EKRANLARI = ["/online/meslek", "/online/isler", "/online/siparisler"];
 /** Han ve hanedan ekranları (Faz 10, Faz 7) varmış bir profille açılır. */
 const HAN_HANEDAN = ["/online/han", "/online/han/[masa]", "/online/hanedan", "/online/kronik"];
-const VARMIS = [...HAN_HANEDAN, "/online/varis", "/online/yasam", "/online/mahalle", "/online/kisi/[id]", "/online/tanidiklar", "/online/karakter", ...MESLEK_EKRANLARI, "/online/oyuncu/[id]", "/online/gelen"];
+const VARMIS = [...HAN_HANEDAN, "/online/varis", "/online/yasam", "/online/mahalle", "/online/kisi/[id]", "/online/tanidiklar", "/online/karakter", ...MESLEK_EKRANLARI, "/online/oyuncu/[id]", "/online/gelen", "/online/donus"];
 
 function parametre(ad: string): string | null {
   const arama = (globalThis as { location?: { search?: string } }).location?.search ?? "";

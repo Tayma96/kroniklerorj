@@ -1,13 +1,19 @@
 // Ay dönümü (§3, §13.8: yalnız gündem, yaşlanma ve ekonomi toplu işlenir). Sıra sabittir ve tohumludur
 // (yerleşim + ay): ölüm → gündem → gündem çözümü (geçim, evlilik, dostluk) → doğum → göç → oyuncular
-// (Kül Yemini kancası, öğrenme günü, çırak harçlığı, NPC'nin kendiliğinden hamlesi) → anı sönmesi.
+// (Kül Yemini kancası, öğrenme günü, çırak harçlığı, NPC'nin kendiliğinden hamlesi) → anı sönmesi → hanedan →
+// katmanlı gündem (Faz 5, `gundem.ts`).
 // Yaş saklanmaz, doğum ayından hesaplanır; böylece yaşlanma her dönümde kendiliğinden ilerler.
 
 import { MESLEKLER } from "../icerik/kisilik.ts";
+import { GUNDEM_OMRU } from "./arka-plan.ts";
+import { katmanliGundem } from "./gundem.ts";
 import { AZALAN_PENCERE, iliskiAl } from "./eylem.ts";
 import { aniYuku, gorus, gorusDegeri } from "./gorus.ts";
+import { ateskesMi } from "./bilgi.ts";
+import { ucgenIzliMi } from "./hafiza.ts";
 import { hanedanYakini, olduMu } from "./hanedan.ts";
 import { hanedanDonumu } from "./hanedan-donum.ts";
+import { zincirAcik } from "./barinma.ts";
 import { gonulDonumu, YAKIN_NPC_TABANI } from "./hal.ts";
 import { beceriEkle } from "./karakter.ts";
 import { GUN_BASINA_AY, OGRENME_SURESI_AY, ogrenmeBaslangici } from "./ogrenme.ts";
@@ -123,6 +129,7 @@ export function ayDonumu(kasaba: Kasaba, ay: number): OlayTaslagi[] {
   const yeniGundem: Npc[] = [];
   for (const n of kasaba.npc) {
     if ((((ay - n.d) % 12) + 12) % 12 !== 0) continue;
+    if (n.g >= GUNDEM.ambar && ay - (n.ga ?? -1e9) < GUNDEM_OMRU) continue; // süren katmanlı gündem (Faz 5)
     const y = yas(n.d, ay);
     let g: number = GUNDEM.yok;
     if (y >= 16 && n.m === ISSIZ) g = GUNDEM.gecim;
@@ -233,7 +240,7 @@ export function ayDonumu(kasaba: Kasaba, ay: number): OlayTaslagi[] {
         kar.pa += 1;
         const sebep = enAgirSebep(gorus(kasaba, npc, kar, ili, ay).kalemler, 1);
         olaylar.push(olay("hamle", "olay.hamle.corba", 5, { kisi: npcRef(npc), sebep }, { w: npcKimlik(i), h: kar.o, g: kar.o }));
-      } else if (!laf && v <= HASIM_ESIGI && r() < ORAN.laf) {
+      } else if (!laf && v <= HASIM_ESIGI && !ateskesMi(ili[i], ay) && r() < ORAN.laf) {
         laf = true;
         const sebep = enAgirSebep(gorus(kasaba, npc, kar, ili, ay).kalemler, -1);
         for (const b of npc.b) if (b[1] === 1 && kasaba.dizin.has(b[0])) iliskiAl(ili, b[0]).an.push(["laf", LAF_YUKU, ay]);
@@ -248,7 +255,7 @@ export function ayDonumu(kasaba: Kasaba, ay: number): OlayTaslagi[] {
         if (kalan.length) i.az[tur] = kalan;
         else delete i.az[tur];
       }
-      if (i.t === 0 && i.an.length === 0 && Object.keys(i.az).length === 0) delete ili[a];
+      if (i.t === 0 && i.an.length === 0 && Object.keys(i.az).length === 0 && !ucgenIzliMi(i)) delete ili[a];
     }
     // Hal: gönülü düşüren durumlar (öğrenme döneminden sonra): yalnızlık, açık husumet, evsizlik.
     if (gecen >= OGRENME_SURESI_AY) {
@@ -258,13 +265,16 @@ export function ayDonumu(kasaba: Kasaba, ay: number): OlayTaslagi[] {
         !(tp?.ob.some((b) => b.d === "dost" && (b.a === kar.o || b.b === kar.o)) ?? false) &&
         !Object.values(ili).some((i) => i.t >= YAKIN_NPC_TABANI);
       const husumet = tp?.hu.some((h) => h.d === "acik" && (h.g === kar.o || h.h === kar.o)) ?? false;
-      const evsiz = kar.e === 0 || !kasaba.npc.some((n) => n.e === kar.e);
+      const evsiz = !zincirAcik(kasaba.tur) && (kar.e === 0 || !kasaba.npc.some((n) => n.e === kar.e));
       gonulDonumu(kar, ay, { yalniz, husumet, evsiz });
     }
   }
 
   // 7. Hanedan (Faz 7): yaşlılık, ölüm, oyuncu hanesinde doğum, süresi dolan devir (kendi tohumuyla).
   olaylar.push(...hanedanDonumu(kasaba, ay));
+
+  // 8. Katmanlı NPC gündemi (Faz 5): kendi tohumuyla; ana dönümün zar sırasına dokunmaz.
+  olaylar.push(...katmanliGundem(kasaba, ay, olaylar));
 
   kasaba.ay = ay;
   return olaylar;

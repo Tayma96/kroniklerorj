@@ -70,6 +70,10 @@ export function npcMekani(kasaba: Kasaba, npc: Npc, ay: number, agirlik: number[
   if (npc.g === GUNDEM.gecim) agirlik[0] = (agirlik[0] ?? 0) * 1.5;
   else if (npc.g === GUNDEM.evlilik) agirlik[3] = (agirlik[3] ?? 0) * 1.3;
   else if (npc.g === GUNDEM.dostluk) agirlik[2] = (agirlik[2] ?? 0) * 1.5;
+  else if (npc.g === GUNDEM.nobet) agirlik[3] = (agirlik[3] ?? 0) * 2;
+  else if (npc.g === GUNDEM.ambar || npc.g === GUNDEM.borc) agirlik[0] = (agirlik[0] ?? 0) * 1.4;
+  else if (npc.g === GUNDEM.itibar) agirlik[3] = (agirlik[3] ?? 0) * 1.3;
+  else if (npc.g === GUNDEM.merak || npc.g === GUNDEM.goc) agirlik[4] = (agirlik[4] ?? 0) * 2;
   const i = agirlikliSec(agirlik, tohumlu("mekan", kasaba.y, ay, npc.i));
   return yerler[i < 0 ? 0 : i];
 }

@@ -3,6 +3,7 @@
 
 import type { YerlesimTuru } from "../dunya-veri.ts";
 import type { MeslekId } from "../icerik/meslekler.ts";
+import type { BarinmaKaydi } from "./barinma.ts";
 import type { HalKaydi, HalNedeni } from "./hal.ts";
 import type { HanedanKaydi, HanedanKasabasi } from "./hanedan.ts";
 import type { KronikSatiri } from "./kronik.ts";
@@ -14,13 +15,15 @@ import type { TeveccuhKaydi } from "./teveccuh.ts";
 import type { KaliteParti } from "./kalite.ts";
 import type { DefterAyi } from "./defter.ts";
 import type { EkonomiKaydi } from "./pazar-tahta.ts";
+import type { Baris, Duyum, UcgenDefteri } from "./bilgi.ts";
+import type { ArkaPlan } from "./arka-plan.ts";
 
 /** NPC'ler arası bağ: [diğer NPC, tür (1 dost, 2 rakip), puan (−100..100), kuruluş ayı]. */
 export type Bag = [diger: number, tur: 1 | 2, puan: number, kurulus: number];
 
-/** Gündem kodları (ihtiyaç → hedef). */
-export const GUNDEM = { yok: 0, gecim: 1, evlilik: 2, dostluk: 3 } as const;
-export const GUNDEM_ADI = ["", "gecim", "evlilik", "dostluk"] as const;
+/** Gündem kodları (ihtiyaç → hedef). 4+ katmanlı gündemdir (Faz 5, `gundem.ts`); sıra değişmez (kayıt kod tutar). */
+export const GUNDEM = { yok: 0, gecim: 1, evlilik: 2, dostluk: 3, ambar: 4, nobet: 5, borc: 6, itibar: 7, goc: 8, merak: 9 } as const;
+export const GUNDEM_ADI = ["", "gecim", "evlilik", "dostluk", "ambar", "nobet", "borc", "itibar", "goc", "merak"] as const;
 
 export interface Npc {
   /** Kimlik (1'den başlar); dışarıda "n" + i. */
@@ -48,6 +51,8 @@ export interface Npc {
   b: Bag[];
   /** Gündem (GUNDEM). */
   g: number;
+  /** Katmanlı gündemin başladığı ay (Faz 5; eski kayıtta yok). */
+  ga?: number;
   /** Oyuncu ebeveynler (yerel kimlik; Faz 7, eski kayıtta yok). */
   oe?: string[];
 }
@@ -177,6 +182,8 @@ export interface Karakter {
   df?: DefterAyi[];
   /** Ismarlama ustalık sicili: [teslim, gecikme] (lonca güveni; profilde görünür). */
   ig?: [teslim: number, gecikme: number];
+  /** Barınma: misafirhane hakları, kira sözleşmeleri, zincir ve otomatik konaklama (Faz 14; eski kayıtta yok). */
+  br?: BarinmaKaydi;
 }
 
 /** Süren öğrenme ya da yeniden düzenleme beklemesi (gerçek zaman, ms; bitince tembel tamamlanır). */
@@ -209,6 +216,10 @@ export interface Iliski {
   /** Aylık görüş kazancı tavanı: ayı ve o ayki kazanç. */
   ka: number;
   kg: number;
+  /** Faz 4 (eski kayıtta yok): bu NPC'nin oyuncu hakkında duydukları, arabuluculuk izi, boykot bitiş ayı. */
+  du?: Duyum[];
+  ab?: Baris;
+  bk?: number;
 }
 
 /** NPC kimliği (sayı metni) → ilişki. */
@@ -287,4 +298,8 @@ export interface Kasaba {
   /** Depoya yazılmayı bekleyen kronik satırları ve sonraki oyuncu numarası (Faz 7). */
   kq?: KronikSatiri[];
   no?: number;
+  /** Üçgen defteri: ittifak sözleri, arabuluculuk talepleri, casuslar (Faz 4; depo anahtarı "ug"; eski kayıtta yok). */
+  ug?: UcgenDefteri;
+  /** Arka plan: kasaba özeti, uzak sayaçlar, kasaba tetikleri (Faz 5; meta'da saklanır; eski kayıtta yok). */
+  ap?: ArkaPlan;
 }

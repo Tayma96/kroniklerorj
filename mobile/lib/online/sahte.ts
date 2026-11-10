@@ -1,6 +1,7 @@
 // Geliştirici oturumu ve tasarım önizlemesi için sahte istemci: sunucuya hiç bağlanmaz, bellekte çalışır.
 // Yalnız ONLINE_GELISTIRME açıkken (ya da önizlemede) kullanılır. Dünya verisi online-server/src/dunya-veri.ts'in
 // kopyasıdır (sunucu paketi içe aktarılmaz); doluluk sayıları uydurmadır.
+import { sahteBeceriIstemci } from "./beceri-agaci/sahte-beceri";
 import type { OnlineIstemci } from "./istemci";
 import { adDogrula } from "./ad";
 import { sahteKasabaKur, type SahteKasaba } from "./sahte-yerlesim";
@@ -176,6 +177,7 @@ export function sahteIstemci(gecikmeMs = 450, baslangic: Profil | null = null, a
       const k = yerlesim();
       return k ? k.tanidik(istek) : basarisiz("profil_yok");
     },
+    beceri: sahteBeceriIstemci(bekle),
     toplum: sahteToplumKur(() => yerlesim(), () => meslek(), () => profil, bekle),
     async meslek(istek) {
       await bekle();
