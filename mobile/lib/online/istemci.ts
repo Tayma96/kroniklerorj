@@ -13,6 +13,7 @@ import {
   type OlaylarYaniti, type Profil, type ProfilIstegi, type Sonuc, type TanidikIstegi, type TanidikYaniti, type YerlesimDurumu,
 } from "./protokol";
 import { toplumUclari, type ToplumIstemci } from "./toplum-istemci";
+import { beceriUclari, type BeceriIstemci } from "./beceri-agaci/beceri-veri";
 
 /** Sunucu ve sahte (geliştirici) istemcinin ortak yüzü. */
 export interface OnlineIstemci {
@@ -30,6 +31,8 @@ export interface OnlineIstemci {
   tanidik(istek: TanidikIstegi): Promise<Sonuc<TanidikYaniti>>;
   /** Faz 3a oyuncular arası uçlar (toplum-istemci.ts). */
   toplum: ToplumIstemci;
+  /** Beceri ağacı v2 uçları (beceri-agaci/beceri-veri.ts). */
+  beceri: BeceriIstemci;
   // Meslek çekirdeği (ana tasarım §5): istekNo'lu yazmalar ve lonca tablosu.
   meslek(istek: MeslekIstegi): Promise<Sonuc<MeslekYaniti>>;
   temelIs(istek: TemelIsIstegi): Promise<Sonuc<TemelIsYaniti>>;
@@ -139,6 +142,7 @@ export function httpIstemci(ayar: HttpAyari): OnlineIstemci {
     eylem: (istek) => cagir({ yontem: "POST", yol: "/v1/eylem", govde: istek, yetki: true, tekrar: true }, eylemYanitiMi),
     tanidik: (istek) => cagir({ yontem: "POST", yol: "/v1/tanidik", govde: istek, yetki: true, tekrar: true }, tanidikYanitiMi),
     toplum: toplumUclari(cagir),
+    beceri: beceriUclari(cagir, () => cagir({ yontem: "GET", yol: "/v1/profil", yetki: true, tekrar: true }, (v): v is unknown => typeof v === "object" && v !== null)),
     meslek: (istek) => cagir({ yontem: "POST", yol: "/v1/meslek", govde: istek, yetki: true, tekrar: true }, meslekYanitiMi),
     temelIs: (istek) => cagir({ yontem: "POST", yol: "/v1/temel-is", govde: istek, yetki: true, tekrar: true }, temelIsYanitiMi),
     tabanAl: (istek) => cagir({ yontem: "POST", yol: "/v1/taban-al", govde: istek, yetki: true, tekrar: true }, tabanAlYanitiMi),
