@@ -5,6 +5,7 @@
 import { doDepo, type Depo } from "./depo.ts";
 import { defterOku, ismarlaUc, ismarlamaCevapUc, ismarlamaOku, levhaOku, pazarGeri, pazarIlan, pazarIslem, pazarOku } from "./yerlesim/ekonomi-uclar.ts";
 import { iletiOku, jsonYanit } from "./ic.ts";
+import { armaganGeri, armaganTeveccuh } from "./yerlesim/armagan-uclar.ts";
 import { hata, type Env, type Sonuc, type YerlesimIleti } from "./tipler.ts";
 import { sonrakiAlarm, YerlesimMotoru } from "./yerlesim/motor.ts";
 
@@ -117,6 +118,11 @@ export class YerlesimDO {
         return motor.ucgenOku(ileti.hesapId, ileti.npc, ileti.hedef, ileti.dil);
       case "hanIkram":
         return motor.hanIkram(ileti.hesapId, ileti.govde);
+      // Debdebe armağanı (HesapDO'dan; tutar değer olarak gelir, cosmetic okunmaz)
+      case "armaganTeveccuh":
+        return armaganTeveccuh(motor, ileti.hesapId, ileti.govde);
+      case "armaganGeri":
+        return armaganGeri(motor, ileti.hesapId, ileti.govde);
       case "sakinHesabi":
         return motor.sakinHesabi(ileti.hesapId, ileti.hedef);
       case "engeller":

@@ -877,7 +877,7 @@ export class YerlesimMotoru {
           const o = ciraklikUstasi(this.kasaba, kar.o, m);
           const u = o ? this.kasaba.kar.get(o) : undefined;
           return u ? { o: u.o, kademe: u.ms?.s[m]?.kd ?? 0 } : undefined;
-        });
+        }, nesneMi(govde.kisaltma) ? (govde.kisaltma as { dk?: number; oran?: number }) : undefined);
       else r = beceriYeniden(kar, govde.meslek, simdi, hanedanKasabasi(this.kasaba));
       if (!r.ok) return r;
       return basarili({ ...r.deger, beceri: beceriGorunumu(kar), beceriOzet: beceriOzeti(kar, simdi) });

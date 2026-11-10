@@ -4,13 +4,17 @@
 // İnce sarmalayıcıdır; kurallar mantik.ts ve yonetim/yaptirim.ts'dedir.
 
 import { doDepo, type Depo } from "./depo.ts";
-import { dunyaCagir, iletiOku, jsonYanit, yerlesimCagir, yonetimCagir } from "./ic.ts";
+import { dunyaCagir, hesapCagir, iletiOku, jsonYanit, yerlesimCagir, yonetimCagir } from "./ic.ts";
 import { girisKaydet, hesapKaydi, hizKontrol, profilGetir, profilOlustur, sakinKaydi, yerlesimeIlet, type HizDurumu, type YerlesimIstegi } from "./mantik.ts";
-import { basarili, hata, type Env, type HesapIleti, type HesapYaptirimi, type Profil, type Sonuc } from "./tipler.ts";
+import { basarili, hata, type Env, type HesapIleti, type HesapYaptirimi, type Profil, type Sonuc, type YerlesimIleti } from "./tipler.ts";
+import type { MasaIleti } from "./han/tipler.ts";
 import { uzaklastirmaBilgisi, yaptirimEngeli } from "./yonetim/yaptirim.ts";
 import { engeliMasayaBildir, hanEylemi, hanIkrami, hanListesi, masaBileti, yaptirimiMasayaBildir, type HanHesapBaglami } from "./han/hesap-kopru.ts";
 import { masaCagir } from "./han/ic.ts";
 import { ikramOdeyici } from "./han/yerlesim-kopru.ts";
+import * as debdebe from "./debdebe/hesap.ts";
+import { yapilandirilmamisDogrulayici, type MakbuzDogrulayici } from "./debdebe/makbuz.ts";
+import { SEZON_KAYNAK_PUANI } from "./debdebe/sezon.ts";
 
 const YAPTIRIM = "yaptirim";
 
@@ -22,9 +26,13 @@ export class HesapDO {
   /** Yaptırım özeti önbelleği: bu örnek tek yazandır, bu yüzden tutarlıdır. null = yok. */
   #yaptirim: HesapYaptirimi | null | undefined;
 
-  constructor(ctx: DurableObjectState, env: Env) {
+  readonly #dogrulayici: MakbuzDogrulayici;
+
+  /** `secenek.dogrulayici`: yalnız testte sahte mağaza doğrulayıcısı; üretimde mağaza bağlantısı (yapılandırılmamış). */
+  constructor(ctx: DurableObjectState, env: Env, secenek: { dogrulayici?: MakbuzDogrulayici } = {}) {
     this.#depo = doDepo(ctx.storage);
     this.#env = env;
+    this.#dogrulayici = secenek.dogrulayici ?? yapilandirilmamisDogrulayici;
   }
 
   async fetch(istek: Request): Promise<Response> {
@@ -33,6 +41,11 @@ export class HesapDO {
     const simdi = Date.now();
     // Yönetimin iç yazımı oyuncunun hız sınırına takılmaz.
     if (ileti.islem === "yaptirimYaz") return jsonYanit(await this.#yaptirimYaz(ileti.durum, ileti.hesapId));
+    // Debdebe iç iletileri (başka HesapDO ya da YonetimDO): hız sınırı ve yaptırım uygulanmaz.
+    if (ileti.islem === "debdebeRozet") return jsonYanit(await debdebe.rozetAl(this.#depo, ileti.rozet));
+    if (ileti.islem === "debdebeRozetSil") return jsonYanit(await debdebe.rozetKaldir(this.#depo, ileti.id));
+    if (ileti.islem === "debdebeGorunum") return jsonYanit(await debdebe.gorunumVer(this.#depo, simdi));
+    if (ileti.islem === "debdebeIade") return jsonYanit(await debdebe.iadeIsle(this.#debdebe(ileti.hesapId, simdi), ileti.islemKimligi));
     const hiz = hizKontrol(this.#hiz, simdi);
     this.#hiz = hiz.durum;
     if (!hiz.izin) return jsonYanit(hata("hiz_siniri"));
@@ -44,7 +57,35 @@ export class HesapDO {
       const uzak = uzaklastirmaBilgisi(yaptirim, simdi);
       return jsonYanit(basarili(uzak ? { ...g, uzaklastirma: uzak } : g));
     }
-    return jsonYanit(await this.#isle(ileti, simdi));
+    const sonuc = await this.#isle(ileti, simdi);
+    // Sezon Defteri: başarılı oyun yazması oynayarak ilerletir (günlük tavan, istekNo izi; yalnız kozmetik ödül).
+    if (sonuc.ok && "govde" in ileti && Object.hasOwn(SEZON_KAYNAK_PUANI, ileti.islem)) {
+      try {
+        await debdebe.sezonaYaz(this.#depo, simdi, ileti.islem, ileti.govde);
+      } catch {
+        // en iyi çaba
+      }
+    }
+    return jsonYanit(sonuc);
+  }
+
+  #debdebe(hesapId: string, simdi: number): debdebe.DebdebeBaglami {
+    const env = this.#env;
+    return {
+      depo: this.#depo,
+      hesapId,
+      simdi,
+      acik: env.DEBDEBE_ACIK === "1",
+      testMakbuz: env.DEBDEBE_TEST_MAKBUZ === "1",
+      dogrulayici: this.#dogrulayici,
+      defter: (kayit) => yonetimCagir(env, { islem: "debdebeKayit", kayit }),
+      yerlesime: (i) => this.#yerlesime(i),
+      yerlesimeDogrudan: (yerlesim, i) => yerlesimCagir(env, { ...i, yerlesim } as YerlesimIleti),
+      hesaba: (hedef, i) => hesapCagir(env, hedef, i),
+      levhaya: (yazim) => dunyaCagir(env, { islem: "levhaYaz", yazim }),
+      levhaGetir: (beylik) => dunyaCagir(env, { islem: "levhaOku", beylik }),
+      ...(env.MASA ? { masaCagir: (ad: string, i: MasaIleti) => masaCagir(env, ad, i) } : {}),
+    };
   }
 
   async #yaptirimDurumu(): Promise<HesapYaptirimi | undefined> {
@@ -109,6 +150,12 @@ export class HesapDO {
         return this.#yerlesime({ islem: "olaylar", hesapId: ileti.hesapId, imlec: ileti.imlec, dil: ileti.dil });
       case "kisi":
         return this.#yerlesime({ islem: "kisi", hesapId: ileti.hesapId, kisi: ileti.kisi, dil: ileti.dil });
+      case "beceriHizlandir":
+        // Debdebe kısaltması stoktan harcanır; miktar katalogdan gelir (istemcinin `kisaltma` alanı hiç geçmez).
+        if (typeof ileti.govde === "object" && ileti.govde !== null && (ileti.govde as { kaynak?: unknown }).kaynak === "debdebe") {
+          return debdebe.hizlandir(this.#debdebe(ileti.hesapId, simdi), ileti.govde);
+        }
+        return this.#yerlesime({ islem: "beceriHizlandir", hesapId: ileti.hesapId, govde: { ...(ileti.govde as object), kisaltma: undefined } });
       case "eylem":
       case "tanidik":
       case "meslek":
@@ -119,7 +166,6 @@ export class HesapDO {
       case "siparisTeslim":
       case "beceriOgren":
       case "beceriIptal":
-      case "beceriHizlandir":
       case "beceriYeniden":
       case "dostluk":
       case "teklif":
@@ -159,10 +205,39 @@ export class HesapDO {
         return masaBileti(await this.#han(ileti.hesapId, simdi), ileti.masa);
       case "hanEylem":
         return hanEylemi(await this.#han(ileti.hesapId, simdi), ileti.govde);
-      case "hanIkram":
-        return hanIkrami(await this.#han(ileti.hesapId, simdi), ileti.govde);
+      case "hanIkram": {
+        const r = await hanIkrami(await this.#han(ileti.hesapId, simdi), ileti.govde);
+        // Oyun içi cömertlik de Cömertler Levhası'nda anılır (yalnız görünürlüğü açık olan; oyun etkisi yok).
+        if (r.ok) {
+          try {
+            await debdebe.ikramLevhaya(this.#debdebe(ileti.hesapId, simdi), r.deger.fiyat);
+          } catch {
+            // en iyi çaba
+          }
+        }
+        return r;
+      }
       case "siparisler":
         return this.#yerlesime({ islem: "siparisler", hesapId: ileti.hesapId, dil: ileti.dil });
+      // Debdebe (Faz 11 + 15): src/debdebe/hesap.ts
+      case "debdebe":
+        return debdebe.debdebeOku(this.#debdebe(ileti.hesapId, simdi));
+      case "debdebeDene":
+        return debdebe.deneOku(this.#debdebe(ileti.hesapId, simdi), ileti.urun, ileti.dil);
+      case "debdebeLevha":
+        return debdebe.levhaGoster(this.#debdebe(ileti.hesapId, simdi));
+      case "debdebeSezon":
+        return debdebe.sezonOku(this.#debdebe(ileti.hesapId, simdi));
+      case "debdebeKisi":
+        return debdebe.kisiGorunumu(this.#debdebe(ileti.hesapId, simdi), ileti.kisi);
+      case "debdebeSatinAl":
+        return debdebe.satinAl(this.#debdebe(ileti.hesapId, simdi), ileti.govde);
+      case "debdebeKusan":
+        return debdebe.kusanUc(this.#debdebe(ileti.hesapId, simdi), ileti.govde);
+      case "debdebeArmagan":
+        return debdebe.armaganVer(this.#debdebe(ileti.hesapId, simdi), ileti.govde);
+      case "debdebeLevhaGorunur":
+        return debdebe.levhaGorunurUc(this.#debdebe(ileti.hesapId, simdi), ileti.govde);
       // Hanedan (Faz 7): ileti aynen yerleşime gider.
       case "vasiyet":
       case "devir":

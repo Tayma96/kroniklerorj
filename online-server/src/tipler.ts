@@ -212,6 +212,23 @@ export const HATA_DURUMU = {
   kirgin_degil: 409,
   casus_var: 409,
   hedef_siniri: 429,
+  // Debdebe (Faz 11 + 15)
+  debdebe_kapali: 403,
+  urun_gecersiz: 400,
+  urun_satilmaz: 409,
+  zaten_sahip: 409,
+  magaza_gecersiz: 400,
+  magaza_yapilandirilmamis: 503,
+  makbuz_gecersiz: 400,
+  makbuz_kullanilmis: 409,
+  makbuz_iade: 409,
+  odeme_beklemede: 409,
+  yuva_gecersiz: 400,
+  yuva_kapali: 409,
+  sahip_degil: 403,
+  stok_yok: 409,
+  armagan_siniri: 429,
+  islem_yok: 404,
   yapilandirma_eksik: 500,
   sunucu_hatasi: 500,
 } as const satisfies Record<string, number>;
@@ -248,6 +265,10 @@ export interface Env {
   YONETICI_EPOSTALAR?: string;
   /** İsteğe bağlı: yönetici girişinde kabul edilen Google istemci kimlikleri; yoksa GOOGLE_CLIENT_ID. */
   YONETIM_GOOGLE_CLIENT_ID?: string;
+  /** Debdebe satışı: "1" açık; başka her değer ya da yoksa kapalı (varsayılan). */
+  DEBDEBE_ACIK?: string;
+  /** "1": mağaza test (sandbox/lisans testçisi) satın almaları kabul edilir. Üretimde konmaz. */
+  DEBDEBE_TEST_MAKBUZ?: string;
 }
 
 /** Dünya DO'suna profil kaydı isteği (HesapDO gönderir). */
@@ -286,6 +307,16 @@ export type HesapIleti =
   | { islem: "han"; hesapId: string; dil?: string | null }
   | { islem: "masaBilet"; hesapId: string; masa: string }
   | { islem: "hanEylem" | "hanIkram"; hesapId: string; govde: unknown }
+  // Debdebe (src/debdebe/hesap.ts)
+  | { islem: "debdebe" | "debdebeLevha" | "debdebeSezon"; hesapId: string }
+  | { islem: "debdebeDene"; hesapId: string; urun: string | null; dil?: string | null }
+  | { islem: "debdebeKisi"; hesapId: string; kisi: string }
+  | { islem: DebdebeIslem; hesapId: string; govde: unknown }
+  /** İç: başka HesapDO'dan rozet ekle/sil, görünüş; YonetimDO'dan iade. İstemci ulaşamaz. */
+  | { islem: "debdebeRozet"; hesapId: string; rozet: { id: string; u: string; v: string; z: number } }
+  | { islem: "debdebeRozetSil"; hesapId: string; id: string }
+  | { islem: "debdebeGorunum"; hesapId: string }
+  | { islem: "debdebeIade"; hesapId: string; islemKimligi: string }
   /** YonetimDO → HesapDO: hesabın etkin yaptırım özeti (tamamı yazılır; tekrar güvenli). */
   | { islem: "yaptirimYaz"; hesapId: string; durum: HesapYaptirimi };
 
@@ -316,6 +347,8 @@ export const YONETIM_UCLARI = {
   rol: "POST",
   duyuru: "POST",
   kayit: "GET",
+  debdebe: "GET",
+  "debdebe-iade": "POST",
 } as const satisfies Record<string, "GET" | "POST">;
 export type YonetimUcu = keyof typeof YONETIM_UCLARI;
 
@@ -326,7 +359,13 @@ export type YonetimIleti =
   | { islem: "sikayetEkle"; sikayetci: string; govde: unknown }
   | { islem: "duyurular" }
   /** MasaDO → YonetimDO: masa başının çıkarması (yalnız eklenen kayıt; src/han/y1-kayit.ts). */
-  | { islem: "masaAtma"; masa: string; kim: string; hedef: string; olay: number; zaman: number };
+  | { islem: "masaAtma"; masa: string; kim: string; hedef: string; olay: number; zaman: number }
+  /** HesapDO → YonetimDO: Debdebe işlem kimliğinin sahiplenilmesi (bütün hesaplarda tek; src/yonetim/y3.ts). */
+  | { islem: "debdebeKayit"; kayit: { islem: string; magaza: string; urun: string; hesap: string; zaman: number; test?: boolean } };
+
+/** Debdebe gövdeli işlemleri: POST /v1/debdebe/satin-al, /kusan, /armagan, /levha-gorunur. */
+export const DEBDEBE_ISLEMLERI = ["debdebeSatinAl", "debdebeKusan", "debdebeArmagan", "debdebeLevhaGorunur"] as const;
+export type DebdebeIslem = (typeof DEBDEBE_ISLEMLERI)[number];
 
 /** Gövdeli (istekNo'lu ya da yazan) yerleşim işlemleri: HesapDO aynen YerlesimDO'ya iletir. */
 export const GOVDELI_ISLEMLER = [
@@ -416,7 +455,9 @@ export type YerlesimIleti =
   | { islem: "engeller"; yerlesim: string; hesapId: string }
   | (HanedanIletisi & { yerlesim: string })
   | (EkonomiIletisi & { yerlesim: string })
-  | (BarinmaIletisi & { yerlesim: string });
+  | (BarinmaIletisi & { yerlesim: string })
+  /** Debdebe armağanı teveccühü ve iadede geri alınması (HesapDO gönderir; istemci ulaşamaz). */
+  | { islem: "armaganTeveccuh" | "armaganGeri"; yerlesim: string; hesapId: string; govde: unknown };
 
 export type DunyaIleti =
   | { islem: "ozet" }
@@ -424,4 +465,7 @@ export type DunyaIleti =
   | { islem: "davetOlustur"; hesapId: string }
   | { islem: "davetCoz"; kod: string }
   /** YonetimDO → DunyaDO: ada ya da hesap kimliğine göre kayıtlı profil. */
-  | { islem: "oyuncuBul"; ad?: string; hesap?: string };
+  | { islem: "oyuncuBul"; ad?: string; hesap?: string }
+  /** Cömertler Levhası (src/debdebe/levha.ts). */
+  | { islem: "levhaYaz"; yazim: { beylik: string; hesap: string; ad: string; puan: number; seviye: string | null; gorunur: boolean } }
+  | { islem: "levhaOku"; beylik: string };

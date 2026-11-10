@@ -65,6 +65,7 @@ export class YonetimDO {
       kurucular: kurucuListesi(env.YONETICI_EPOSTALAR),
       oyuncuBul: (sorgu) => dunyaCagir<Profil>(env, { islem: "oyuncuBul", ...sorgu }),
       hesabaYaz: (hedef, durum) => hesapCagir(env, hedef, { islem: "yaptirimYaz", hesapId: hedef, durum }),
+      hesabaIlet: (hedef, ileti) => hesapCagir(env, hedef, ileti),
       yetkisizGirisIzni: () => {
         const h = hizKontrol(this.#yetkisiz, simdi, YETKISIZ_GIRIS_DAKIKA);
         this.#yetkisiz = h.durum;

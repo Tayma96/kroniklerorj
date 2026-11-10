@@ -61,6 +61,15 @@
 //   POST /v1/barinma/tesis {istekNo}     → {tesis, barinma}  (imaret/zaviye, D-23 önerisi)
 //   POST /v1/barinma/otomatik {mod: kapali|oda|tesis|uyar, istekNo} → {otomatik, barinma}
 //   GET  /v1/donus?dil=                  → dönüş ekranı (yokluk, barınma, Hal, olanlar, tek dokunuş seçenekleri)
+//   GET  /v1/debdebe                     → {acik, katalog, fiyatKademeleri, seviyeler, ben, sezon, armagan, paraliKutu:false} (Faz 11/15)
+//   GET  /v1/debdebe/dene?urun=&dil=     → {urun, tur, gercekOyuncuYok, sahneler: [hanMasasi|sehirKapisi|profilKarti]}
+//   POST /v1/debdebe/satin-al {urun, magaza: google|apple, makbuz, istekNo} → {urun, islem, verilen, tekrar, ben}
+//   POST /v1/debdebe/kusan {yuva, urun|null, sira?, istekNo} → {kusanilan}
+//   POST /v1/debdebe/armagan {urun, hedef, masa?, istekNo} → {urun, hedef, teveccuh, stok, gunluk, anons?}
+//   POST /v1/debdebe/levha-gorunur {gorunur, istekNo} → {levhaGorunur}
+//   GET  /v1/debdebe/levha               → Cömertler Levhası (yalnız adlar, alfabetik; tutar/sıra yok)
+//   GET  /v1/debdebe/sezon               → Sezon Defteri (bedava + ücretli iz)
+//   GET  /v1/debdebe/kisi/:id            → başkasının Debdebe görünüşü (kuşanılan, seviye etiketi, rozetler)
 // Uzaklaştırılmış hesapta giriş dışındaki /v1/* uçları 403 {hata: "uzaklastirildi", bitis} döner.
 //
 // Yönetim (ana tasarım §7; oyuncu oturumundan ayrı yönetici belirteci, src/yonetim/kimlik.ts):
@@ -85,6 +94,7 @@ import {
   type EkonomiIslem,
   type HataKodu,
   type HesapIleti,
+  type DebdebeIslem,
   type Sonuc,
   type YoneticiKimligi,
   type YonetimUcu,
@@ -107,6 +117,13 @@ const KISI_YOLU = /^\/v1\/kisi\/([^/]+)$/;
 const OYUNCU_YOLU = /^\/v1\/oyuncu\/([^/]+)$/;
 const TEKLIF_CEVAP_YOLU = /^\/v1\/teklif\/([^/]+)\/cevap$/;
 const MASA_YOLU = /^\/v1\/han\/masa\/([^/]+)\/baglan$/;
+const DEBDEBE_KISI_YOLU = /^\/v1\/debdebe\/kisi\/([^/]+)$/;
+const DEBDEBE_YAZMA: Readonly<Record<string, DebdebeIslem>> = {
+  "/v1/debdebe/satin-al": "debdebeSatinAl",
+  "/v1/debdebe/kusan": "debdebeKusan",
+  "/v1/debdebe/armagan": "debdebeArmagan",
+  "/v1/debdebe/levha-gorunur": "debdebeLevhaGorunur",
+};
 
 /** Örnek yaşadıkça JWKS önbelleğini tutar. `fetch` çağrı anında çözülür (testte değiştirilebilir). */
 const google = new GoogleDogrulayici({ fetch: (url) => fetch(url) });
@@ -440,11 +457,35 @@ async function yonlendir(istek: Request, env: Env): Promise<Response> {
       return yontem === "POST" ? hanGovdeli(istek, env, "hanEylem") : hataYaniti("yontem_yok");
     case "/v1/han/ikram":
       return yontem === "POST" ? hanGovdeli(istek, env, "hanIkram") : hataYaniti("yontem_yok");
+    case "/v1/debdebe":
+    case "/v1/debdebe/levha":
+    case "/v1/debdebe/sezon": {
+      const islem = yol === "/v1/debdebe" ? "debdebe" : yol === "/v1/debdebe/levha" ? "debdebeLevha" : "debdebeSezon";
+      return yontem === "GET" ? hesaba(istek, env, (hesapId) => basarili({ islem, hesapId })) : hataYaniti("yontem_yok");
+    }
+    case "/v1/debdebe/dene":
+      return yontem === "GET"
+        ? hesaba(istek, env, (hesapId) => basarili({ islem: "debdebeDene", hesapId, urun: url.searchParams.get("urun")?.slice(0, 40) ?? null, dil }))
+        : hataYaniti("yontem_yok");
     case "/yonetim":
     case "/yonetim/":
       return yontem === "GET" ? panelYaniti() : hataYaniti("yontem_yok");
     case "/yonetim/giris":
       return yontem === "POST" ? yonetimGiris(istek, env) : hataYaniti("yontem_yok");
+  }
+  if (Object.hasOwn(DEBDEBE_YAZMA, yol)) {
+    if (yontem !== "POST") return hataYaniti("yontem_yok");
+    const islem = DEBDEBE_YAZMA[yol]!;
+    return hesaba(istek, env, async (hesapId) => {
+      const govde = await govdeOku(istek);
+      return govde.ok ? basarili({ islem, hesapId, govde: govde.deger }) : govde;
+    });
+  }
+  const dk = DEBDEBE_KISI_YOLU.exec(yol);
+  if (dk?.[1]) {
+    if (yontem !== "GET") return hataYaniti("yontem_yok");
+    const kisi = dk[1].slice(0, 16);
+    return hesaba(istek, env, (hesapId) => basarili({ islem: "debdebeKisi", hesapId, kisi }));
   }
   if (yol.startsWith("/yonetim/")) {
     const uc = yol.slice("/yonetim/".length);

@@ -22,6 +22,7 @@ import {
   YONETIM_UCLARI,
   type Basarisiz,
   type HataKodu,
+  type HesapIleti,
   type HesapYaptirimi,
   type Profil,
   type Sonuc,
@@ -67,6 +68,7 @@ import {
   type Yaptirim,
   type YaptirimTuru,
 } from "./yaptirim.ts";
+import { debdebeIade, debdebeKayit, debdebeListesi } from "./y3.ts";
 import { epostaDuzenle, rolCoz, verilebilirRolMu, yetkiler, yetkiVar, type Rol, type YonetimIslemi } from "./yetki.ts";
 
 /** [PARAMETRE] Sayfa boyları ve duyuru sayısı. */
@@ -94,7 +96,7 @@ const SIKAYET_GUN = "sikayetGun:"; // + sikayetci → GunlukSayac
 const YETKISIZ_GIRIS = "yetkisizGiris:"; // + TR günü → sayı
 const DUYURU = "duyuru:"; // + 12 hane → Duyuru
 
-const hane = (n: number): string => String(n).padStart(12, "0");
+export const hane = (n: number): string => String(n).padStart(12, "0");
 
 export interface IslemKaydi {
   no: number;
@@ -131,11 +133,13 @@ export interface YonetimBaglami {
   oyuncuBul: (sorgu: { ad?: string; hesap?: string }) => Promise<Sonuc<Profil>>;
   /** Hesabın etkin yaptırım özetini HesapDO'ya yazar. */
   hesabaYaz: (hedef: string, durum: HesapYaptirimi) => Promise<Sonuc<unknown>>;
+  /** Debdebe iadesi (Y3): hedef HesapDO'ya iç ileti. Yoksa iade yapılamaz. */
+  hesabaIlet?: (hedef: string, ileti: HesapIleti) => Promise<Sonuc<unknown>>;
   /** Rolsüz giriş denemeleri için genel (tüm kişiler) dakikalık tavan; false = tavan doldu. Yoksa sınırsız. */
   yetkisizGirisIzni?: () => boolean;
 }
 
-interface Oturum {
+export interface Oturum {
   b: YonetimBaglami;
   y: YoneticiKimligi;
   rol: Rol | undefined;
@@ -144,7 +148,7 @@ interface Oturum {
   ozet: string;
 }
 
-type Ek = { hedef?: string; gerekce?: string; ayrinti?: Record<string, unknown> };
+export type Ek = { hedef?: string; gerekce?: string; ayrinti?: Record<string, unknown> };
 
 function nesneMi(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
@@ -169,19 +173,19 @@ export async function govdeOzeti(govde: unknown): Promise<string> {
 
 // ---------------------------------------------------------------- işlem kaydı
 
-async function kayitHazirla(o: Oturum, islem: string, sonuc: "tamam" | HataKodu, ek: Ek): Promise<Record<string, unknown>> {
+export async function kayitHazirla(o: Oturum, islem: string, sonuc: "tamam" | HataKodu, ek: Ek): Promise<Record<string, unknown>> {
   const no = ((await o.b.depo.al<number>(SAYAC_KAYIT)) ?? 0) + 1;
   const k: IslemKaydi = { no, zaman: o.b.simdi, kim: o.y.eposta, rol: o.rol ?? null, islem, sonuc, ...ek };
   return { [SAYAC_KAYIT]: no, [KAYIT + hane(no)]: k };
 }
 
 /** Başarısız denemeyi kaydeder ve hatayı döndürür. */
-async function reddet(o: Oturum, islem: string, kod: HataKodu, ek: Ek = {}): Promise<Basarisiz> {
+export async function reddet(o: Oturum, islem: string, kod: HataKodu, ek: Ek = {}): Promise<Basarisiz> {
   await o.b.depo.koy(await kayitHazirla(o, islem, kod, ek));
   return hata(kod);
 }
 
-async function yetkiIste(o: Oturum, islem: YonetimIslemi, ek: Ek = {}): Promise<Basarisiz | undefined> {
+export async function yetkiIste(o: Oturum, islem: YonetimIslemi, ek: Ek = {}): Promise<Basarisiz | undefined> {
   return yetkiVar(o.rol, islem) ? undefined : reddet(o, islem, "yetki_yok", ek);
 }
 
@@ -231,7 +235,7 @@ async function itVeYanitla(o: Oturum, hedef: string, sonuc: Sonuc<unknown>, isle
  * Önceki aynı istekNo'nun sonucu. Uç ya da gövde farklıysa çakışmadır (`istekno_gecersiz`, kayda girer).
  * Yaptırım değiştirdiyse özet yeniden itilir (yarıda kalan itme tamamlanır).
  */
-async function tekrar(o: Oturum, no: string): Promise<Sonuc<unknown> | undefined> {
+export async function tekrar(o: Oturum, no: string): Promise<Sonuc<unknown> | undefined> {
   const k = await o.b.depo.al<IstekKaydi>(istekAnahtari(o, no));
   if (!k) return undefined;
   if (k.uc !== o.uc || k.ozet !== o.ozet) {
@@ -241,7 +245,7 @@ async function tekrar(o: Oturum, no: string): Promise<Sonuc<unknown> | undefined
 }
 
 /** Başarılı yazımı tek seferde kaydeder: değişiklikler + işlem kaydı + istekNo sonucu. */
-async function yaz(
+export async function yaz(
   o: Oturum,
   no: string,
   islem: string,
@@ -715,6 +719,10 @@ async function yonet(
       return duyuruYaz(o, govde);
     case "kayit":
       return kayitOku(o, sorgu);
+    case "debdebe":
+      return debdebeListesi(o, sorgu);
+    case "debdebe-iade":
+      return debdebeIade(o, govde);
     default:
       return reddet(o, o.uc, "bulunamadi");
   }
@@ -730,6 +738,8 @@ export async function yonetimIsle(b: YonetimBaglami, ileti: YonetimIleti): Promi
       return sikayetEkle(b, ileti.sikayetci, ileti.govde);
     case "duyurular":
       return duyurular(b);
+    case "debdebeKayit":
+      return debdebeKayit(b, ileti.kayit);
     default:
       return hata("gecersiz_istek");
   }

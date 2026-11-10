@@ -201,6 +201,8 @@ export interface BeceriOgrenme {
   p: number;
   /** Usta eğitimiyle kısaltıldı (bir kez). */
   k?: 1;
+  /** Debdebe kısaltması kullanım sayısı (öğrenme başına tavanlı). */
+  dk?: number;
 }
 
 /** Anı: [tür, ilk yük, ay]. Yük zamanla söner (yarı ömür). */

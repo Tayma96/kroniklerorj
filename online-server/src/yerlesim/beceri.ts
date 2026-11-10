@@ -31,6 +31,12 @@ export const YENIDEN_AKCE_TABAN = 20;
 export const YENIDEN_AKCE_PUAN = 2;
 export const YENIDEN_SURE_DK = 24 * 60;
 export const HIZLANDIRMA_KAYNAKLARI = ["egitim", "debdebe"] as const;
+/** [PARAMETRE] Debdebe (gerçek para) kısaltması: öğrenme başına en çok kullanım, sabit dakikanın ve payın üst sınırı. */
+export const DEBDEBE_KISALTMA_EN_COK = 3;
+export const DEBDEBE_KISALTMA_DK_EN_COK = 12 * 60;
+export const DEBDEBE_KISALTMA_ORAN_EN_COK = 0.5;
+/** Debdebe kısaltması: miktar HesapDO'daki katalogdan gelir (oyun modülü Debdebe verisini okumaz). */
+export type DebdebeKisaltma = { dk?: number; oran?: number };
 const DK = 60_000;
 
 // ---------------------------------------------------------------- etki bağları
@@ -162,8 +168,8 @@ export function beceriIptal(k: Karakter, simdi: number): Sonuc<{ iptal: { meslek
 export type EgitimUstasi = (m: MeslekId) => { o: string; kademe: Kademe } | undefined;
 
 export type HizlandirmaSonucu = {
-  kaynak: "egitim";
-  usta: string;
+  kaynak: "egitim" | "debdebe";
+  usta: string | null;
   oran: number;
   kisaltmaMs: number;
   ogrenme: OgrenmeGorunumu | null;
@@ -174,12 +180,26 @@ export type HizlandirmaSonucu = {
  * Süre kısaltma. "egitim": ustası varsa kalan süre ustanın kademesine göre kısalır (öğrenme başına bir kez).
  * "debdebe" (gerçek para): sunucu sözleşmesi hazırdır, ödeme entegrasyonu Faz 11'e dek `hizlandirma_kapali`.
  */
-export function beceriHizlandir(k: Karakter, kaynak: unknown, simdi: number, ustaBul: EgitimUstasi): Sonuc<HizlandirmaSonucu> {
+export function beceriHizlandir(k: Karakter, kaynak: unknown, simdi: number, ustaBul: EgitimUstasi, debdebe?: DebdebeKisaltma): Sonuc<HizlandirmaSonucu> {
   if (typeof kaynak !== "string" || !(HIZLANDIRMA_KAYNAKLARI as readonly string[]).includes(kaynak)) return hata("kaynak_gecersiz");
   ogrenmeTamamla(k, simdi);
   const bo = k.bo;
   if (!bo || bo.t !== "o") return hata("ogrenme_yok");
-  if (kaynak === "debdebe") return hata("hizlandirma_kapali");
+  if (kaynak === "debdebe") {
+    // Yalnız süre kısalır: puan ayrılmıştır, ön koşul öğrenme başlarken denetlenmiştir; ikisi de atlanmaz.
+    const dk = debdebe?.dk;
+    const oranHam = debdebe?.oran;
+    const sabit = typeof dk === "number" && Number.isFinite(dk) && dk > 0 ? Math.min(dk, DEBDEBE_KISALTMA_DK_EN_COK) * DK : 0;
+    const pay = typeof oranHam === "number" && Number.isFinite(oranHam) && oranHam > 0 ? Math.min(oranHam, DEBDEBE_KISALTMA_ORAN_EN_COK) : 0;
+    if (sabit === 0 && pay === 0) return hata("hizlandirma_kapali");
+    if ((bo.dk ?? 0) >= DEBDEBE_KISALTMA_EN_COK) return hata("hizlandirma_yok");
+    const kalan = bo.e - simdi;
+    const kisaltmaMs = Math.min(kalan, Math.floor(sabit + kalan * pay));
+    bo.e -= kisaltmaMs;
+    bo.dk = (bo.dk ?? 0) + 1;
+    const tamamlanan = ogrenmeTamamla(k, simdi);
+    return basarili({ kaynak: "debdebe", usta: null, oran: pay, kisaltmaMs, ogrenme: beceriOgrenmeDurumu(k, simdi), tamamlanan });
+  }
   if (bo.k === 1) return hata("hizlandirma_yok");
   const u = ustaBul(bo.m);
   const oran = u ? EGITIM_KISALTMA[u.kademe] ?? 0 : 0;

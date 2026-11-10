@@ -37,6 +37,9 @@ export const YETKI = {
   iade: KURUCU,
   /** Y2: işlem geri alma (telafi WorldEvent'i). */
   geriAlma: KURUCU,
+  /** Y3: Debdebe satın alma defteri ve iadesi (§7.1: yalnız Kurucu). */
+  debdebeGor: KURUCU,
+  debdebeIade: KURUCU,
 } as const satisfies Record<string, readonly Rol[]>;
 export type YonetimIslemi = keyof typeof YETKI;
 

@@ -6,6 +6,7 @@ import { doDepo, type Depo } from "./depo.ts";
 import { iletiOku, jsonYanit } from "./ic.ts";
 import { davetCoz, davetOlustur, dunyaOzeti, kayitOl, oyuncuBul } from "./mantik.ts";
 import { basarili, hata, type DunyaIleti, type Env, type Sonuc } from "./tipler.ts";
+import { levhaOku, levhaYaz, type LevhaYazimi } from "./debdebe/levha.ts";
 
 const rastgele = (bayt: number): Uint8Array => crypto.getRandomValues(new Uint8Array(bayt));
 
@@ -33,6 +34,11 @@ export class DunyaDO {
         return davetCoz(this.#depo, ileti.kod);
       case "oyuncuBul":
         return oyuncuBul(this.#depo, { ad: ileti.ad, hesap: ileti.hesap });
+      // Cömertler Levhası (Faz 15)
+      case "levhaYaz":
+        return levhaYaz(this.#depo, ileti.yazim as LevhaYazimi, simdi);
+      case "levhaOku":
+        return levhaOku(this.#depo, ileti.beylik, simdi);
       default:
         return hata("gecersiz_istek");
     }

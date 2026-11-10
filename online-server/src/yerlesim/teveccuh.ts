@@ -71,6 +71,16 @@ export function teveccuhEkle(alan: Karakter, veren: Karakter | string, tur: Teve
   return tutar;
 }
 
+/** İade: Debdebe armağanının yazdığı teveccühü geri alır (en çok mevcut puan kadar). Düşülen puanı döndürür. */
+export function teveccuhCikar(alan: Karakter, ay: number, tutar: number): number {
+  if (!(tutar > 0)) return 0;
+  const t = tazele(alan, ay);
+  if (!t) return 0;
+  const d = Math.min(t.p, tutar);
+  t.p -= d;
+  return d;
+}
+
 export function teveccuhPuani(k: Karakter, ay: number): number {
   const t = k.tv;
   if (!t) return 0;
