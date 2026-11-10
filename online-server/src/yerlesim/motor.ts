@@ -44,7 +44,7 @@ import { dilCoz, kisiAdi, kisiCoz, meslekGorunumu, npcAdi, npcKimlik, oyuncuRef,
 import { loncaTablosu, oyuncuSayaci } from "./lonca.ts";
 import { KADEME_HIZMET, beceriGorunumu, kademeAtla, meslekKaydi, meslekSec, yanSec } from "./meslek.ts";
 import { agacGorunumu, beceriHizlandir, beceriIptal, beceriOgren, beceriOzeti, beceriYeniden, mesleki, ogrenmeTamamla } from "./beceri.ts";
-import { basariSay } from "./beceri-etki.ts";
+import { acikEtkiler, basariSay } from "./beceri-etki.ts";
 import { aylikTakat, halGorunumu } from "./hal.ts";
 import { barinmaDonumu, barinmaGorunumu, otomatikAyarla, tesisKonakla } from "./barinma.ts";
 import { donusHazirla, donusOku } from "./donus-ekrani.ts";
@@ -1289,6 +1289,28 @@ export class YerlesimMotoru {
   }
 
   /** Han masası bileti: oyuncunun engellediği ve onu engelleyen oyuncuların hesap kimlikleri (iki yönlü). */
+  /** Siyaset (Faz 7/P1): sunucunun doğruladığı siyasi kimlik (yalnız okur; BolgeDO adaylık ve küme için kullanır). */
+  async siyasetKimlik(hesapId: string): Promise<Sonuc<unknown>> {
+    const r = await this.#oyuncu(hesapId);
+    if (!r.ok) return r;
+    const { kar } = r.deger;
+    const haklar = new Set<string>();
+    for (const e of acikEtkiler(kar)) if (e.tur === "hak" && (e.hak === "kasabaMakami" || e.hak === "bolgeMakami")) haklar.add(e.hak);
+    const k = this.kasaba;
+    return basarili({
+      kisi: `${k.y}/${kar.o}`,
+      hesap: hesapId,
+      ad: kar.ad,
+      yerlesim: k.y,
+      yas: yas(kar.d, k.ay),
+      e: kar.e,
+      olu: olduMu(kar),
+      nam: kar.nm.reduce((t, x) => t + x, 0),
+      teveccuh: teveccuhKademesi(kar, k.ay),
+      haklar: [...haklar].sort(),
+    });
+  }
+
   async engeller(hesapId: string): Promise<Sonuc<{ engeller: string[] }>> {
     const s = this.kasaba.sakin.find((x) => x.h === hesapId);
     if (!s) return hata("sakin_yok");

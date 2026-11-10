@@ -11,6 +11,7 @@ import { uzaklastirmaBilgisi, yaptirimEngeli } from "./yonetim/yaptirim.ts";
 import { engeliMasayaBildir, hanEylemi, hanIkrami, hanListesi, masaBileti, yaptirimiMasayaBildir, type HanHesapBaglami } from "./han/hesap-kopru.ts";
 import { masaCagir } from "./han/ic.ts";
 import { ikramOdeyici } from "./han/yerlesim-kopru.ts";
+import { siyasetOku, siyasetYaz, siyasetYoklama } from "./siyaset/hesap-kopru.ts";
 
 const YAPTIRIM = "yaptirim";
 
@@ -104,7 +105,13 @@ export class HesapDO {
       case "davetCoz":
         return dunyaCagir(this.#env, { islem: "davetCoz", kod: ileti.kod });
       case "yerlesim":
+        await siyasetYoklama(this.#depo, this.#env, ileti.hesapId, simdi);
         return this.#yerlesime({ islem: "durum", hesapId: ileti.hesapId, dil: ileti.dil });
+      // Siyaset (Faz 7 + Ek B P1-P4): kimlik yerleşimden doğrulanır, iş BolgeDO'dadır.
+      case "siyaset":
+        return siyasetOku(this.#depo, this.#env, ileti.hesapId, ileti.bolge, ileti.kayitSayfa, simdi, (i) => yerlesimCagir(this.#env, i));
+      case "siyasetYaz":
+        return siyasetYaz(this.#depo, this.#env, ileti.hesapId, ileti.govde, simdi, (i) => yerlesimCagir(this.#env, i));
       case "olaylar":
         return this.#yerlesime({ islem: "olaylar", hesapId: ileti.hesapId, imlec: ileti.imlec, dil: ileti.dil });
       case "kisi":

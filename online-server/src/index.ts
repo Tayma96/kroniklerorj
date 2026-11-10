@@ -67,6 +67,8 @@
 //   POST /v1/ortak-dert {dert, katki, mal?, adet?, istekNo} → {dert, katki (döküm), odul, basardi}
 //   POST /v1/senlik {katki: yemek|sus|hayir, mal?, adet?, tutar?, istekNo} → {senlik, katki, odul}
 //   POST /v1/zaviye {islem: kur|davet|katil|reddet|ayril|cikar|yatir|ver|arma|oy, ..., istekNo} → {zaviye, zaviyeler}
+//   GET  /v1/siyaset?bolge=&kayit=       → bölge, makamlar, seçimler, kasa/defter, meşruiyet, Sultanlık, Moğol, kayıt (Faz 7, src/siyaset/)
+//   POST /v1/siyaset {islem: aday|adayCekil|oy|onay|yetki|itiraz|ozerklikCevap|ozerklikBirak, makam?, ..., istekNo} → {sonuc, gorunum}
 // Uzaklaştırılmış hesapta giriş dışındaki /v1/* uçları 403 {hata: "uzaklastirildi", bitis} döner.
 //
 // Yönetim (ana tasarım §7; oyuncu oturumundan ayrı yönetici belirteci, src/yonetim/kimlik.ts):
@@ -111,6 +113,8 @@ export { DunyaDO } from "./dunya-do.ts";
 export { IsletmeDO } from "./isletme-do.ts";
 export { HesapDO } from "./hesap-do.ts";
 export { MasaDO } from "./masa-do.ts";
+export { BolgeDO } from "./bolge-do.ts";
+export { SultanlikDO } from "./sultanlik-do.ts";
 export { YerlesimDO } from "./yerlesim-do.ts";
 export { YonetimDO } from "./yonetim-do.ts";
 
@@ -471,6 +475,15 @@ async function yonlendir(istek: Request, env: Env): Promise<Response> {
       return yontem === "POST" ? govdeli(istek, env, "duzen") : hataYaniti("yontem_yok");
     case "/v1/duyurular":
       return yontem === "GET" ? hesaba(istek, env, (hesapId) => basarili({ islem: "duyurular", hesapId })) : hataYaniti("yontem_yok");
+    case "/v1/siyaset":
+      if (yontem === "GET") {
+        return hesaba(istek, env, (hesapId) => basarili({ islem: "siyaset", hesapId, bolge: url.searchParams.get("bolge"), kayitSayfa: url.searchParams.get("kayit") }));
+      }
+      if (yontem !== "POST") return hataYaniti("yontem_yok");
+      return hesaba(istek, env, async (hesapId) => {
+        const govde = await govdeOku(istek);
+        return govde.ok ? basarili({ islem: "siyasetYaz", hesapId, govde: govde.deger }) : govde;
+      });
     case "/v1/han":
       return yontem === "GET" ? hesaba(istek, env, (hesapId) => basarili({ islem: "han", hesapId, dil })) : hataYaniti("yontem_yok");
     case "/v1/han/eylem":

@@ -30,6 +30,14 @@ class_name = "MasaDO"
 [[durable_objects.bindings]]
 name = "ISLETME"
 class_name = "IsletmeDO"
+# Faz 7 + Ek B P1-P4 siyaset: bölge başına BolgeDO (idFromName("bolge:<id>")), tek düşük frekanslı SultanlikDO.
+[[durable_objects.bindings]]
+name = "BOLGE"
+class_name = "BolgeDO"
+
+[[durable_objects.bindings]]
+name = "SULTANLIK"
+class_name = "SultanlikDO"
 
 # SQLite tabanlı Durable Object'ler (ücretsiz planda kullanılabilen tür).
 [[migrations]]
@@ -51,6 +59,10 @@ new_sqlite_classes = ["MasaDO"]
 [[migrations]]
 tag = "v5"
 new_sqlite_classes = ["IsletmeDO"]
+
+[[migrations]]
+tag = "v6"
+new_sqlite_classes = ["BolgeDO", "SultanlikDO"]
 
 [vars]
 # Google OAuth istemci kimlikleri (Android/iOS/Web), virgülle ayrılmış. Gizli değildir.
