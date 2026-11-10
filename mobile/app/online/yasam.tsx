@@ -23,6 +23,7 @@ import {
 } from "../../lib/online/yasam-ui";
 import { EylemSonucu } from "../../lib/online/eylem-ui";
 import { YasamHanGirisi } from "../../lib/online/yasam-han-giris";
+import { BarinmaKarti } from "../../lib/online/barinma-ui";
 import { SISTEM_IKON, isaretli, olayIkonu, ozetYaz, ruhAnahtari } from "../../lib/online/metin";
 import { hataAnahtari } from "../../lib/online/hata";
 import type { EylemYaniti, Isaret, Olay, OgrenmeGunu, YerlesimDurumu } from "../../lib/online/protokol";
@@ -182,6 +183,9 @@ function YasamEkran() {
         <TakatGostergesi kalan={ben.takat.kalan} tavan={ben.takat.tavan} aylik={ben.takat.aylik} rtl={rtl} t={t} />
       </Cerceve>
     </Animated.View>
+
+    {/* Barınma (Faz 14); 24 saati aşan yoklukta dönüş ekranını açar */}
+    <BarinmaKarti />
 
     {/* Öğrenme dönemi */}
     {og.suruyor ? <Animated.View entering={giris(200)} style={{ marginTop: 12 }}>
