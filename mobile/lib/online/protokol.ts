@@ -85,6 +85,9 @@ export const SUNUCU_HATALARI = [
   "zaten_cirak", "karar_verildi", "puan_yok", "meslek_gecersiz", "meslek_yok", "kademe_kapali", "dal_kapali", "dugum_kapali",
   "geri_alma_dolu", "mal_gecersiz", "kota_doldu", "verim_yok", "tarif_gecersiz", "girdi_yok", "mal_yok", "siparis_yok", "siparis_kapandi",
   "yapilandirma_eksik", "sunucu_hatasi",
+  // Beceri ağacı v2 (online-server yerlesim/beceri.ts)
+  "meslek_degisim_dolu", "dugum_gecersiz", "dugum_gizli", "seviye_tavan", "on_kosul_eksik", "ogrenme_suruyor", "ogrenme_yok",
+  "kaynak_gecersiz", "hizlandirma_kapali", "hizlandirma_yok", "yeniden_bos",
 ] as const;
 export type HataKodu = (typeof SUNUCU_HATALARI)[number] | ToplumHataKodu;
 

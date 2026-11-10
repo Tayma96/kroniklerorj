@@ -8,15 +8,17 @@ import { GameIcon } from "../../icons";
 import { C, F } from "../../theme";
 import { hap } from "../../haptics";
 import { BECERI_IKON, type KatmanRengi } from "./ikonlar";
-import type { BeceriDugumu } from "./demirci-ornek";
-import type { DugumHali } from "./sahte";
+import type { AgacTema } from "./tema";
 
-/** Ağaç paleti: koyu demir zemin, öğrenilmiş için buz mavisi, seçili için altın. */
+/** Düğümün çizim hâli: tam (azami seviye), öğrenildi (kısmen), öğreniliyor, açık, kilitli, gizli. */
+export type DugumHali = "tam" | "ogrenildi" | "ogreniliyor" | "acik" | "kilitli" | "gizli";
+/** Çizim için gereken alanlar ("meslek": mesleğin renkli zemini, "altin": Pir). */
+export interface DugumCizim { ikon: string; azami: number; vurgu?: "meslek" | "altin" }
+
+/** Ağaç durum paleti (bütün mesleklerde aynı): öğrenilmiş için buz mavisi, seçili için altın. Zemin mesleğin temasından. */
 export const AG = {
   mavi: "#86C8F0",
   maviKoyu: "#3F7FA8",
-  zemin: ["#2A2621", "#16130F"] as [string, string],
-  kizil: ["#5E2119", "#2A0E0A"] as [string, string],
   altin: ["#4C3613", "#1E150A"] as [string, string],
   kenar: "rgba(170,160,140,0.45)",
   gumus: "#D6D0C4",
@@ -53,15 +55,15 @@ export function GizliMuhur({ boyut }: { boyut: number }) {
 }
 
 export interface DugumOzellik {
-  n: BeceriDugumu; hali: DugumHali; secili: boolean; seviye: number; oran?: number; kalanMetin?: string;
-  w: number; h: number; ad: string; erisim: string; onSec: () => void;
+  n: DugumCizim; hali: DugumHali; secili: boolean; seviye: number; oran?: number; kalanMetin?: string;
+  w: number; h: number; ad: string; erisim: string; onSec: () => void; tema: AgacTema;
 }
 
-export function Dugum({ n, hali, secili, seviye, oran = 0, kalanMetin, w, h, ad, erisim, onSec }: DugumOzellik) {
+export function Dugum({ n, hali, secili, seviye, oran = 0, kalanMetin, w, h, ad, erisim, onSec, tema }: DugumOzellik) {
   const kilitli = hali === "kilitli", gizli = hali === "gizli", tam = hali === "tam", ogren = hali === "ogreniliyor";
   const kenar = secili ? C.goldBright : tam ? AG.mavi : hali === "ogrenildi" ? AG.maviKoyu : ogren ? C.emberSoft : AG.kenar;
   const ikonRenk = kilitli || gizli ? "#8A8276" : tam ? "#EAF5FC" : secili ? "#F1E6CF" : AG.gumus;
-  const zemin = n.vurgu === "kizil" ? AG.kizil : n.vurgu === "altin" ? AG.altin : AG.zemin;
+  const zemin = n.vurgu === "meslek" ? tema.renkli : n.vurgu === "altin" ? AG.altin : tema.zemin;
   const iconS = Math.round(w * 0.44);
   const fs = w < 82 ? 10.5 : 11.5;
   const r = 10;
@@ -76,7 +78,7 @@ export function Dugum({ n, hali, secili, seviye, oran = 0, kalanMetin, w, h, ad,
         <View pointerEvents="none" style={{ position: "absolute", top: 3, left: 3, right: 3, bottom: 3, borderRadius: r - 3, borderWidth: 1, borderColor: secili ? "rgba(243,210,122,0.35)" : "rgba(255,255,255,0.06)" }} />
         <View style={{ flex: 1, alignItems: "center", paddingTop: 7, paddingHorizontal: 4, paddingBottom: 11 }}>
           <View style={{ height: iconS, justifyContent: "center" }}>
-            {gizli ? <GizliMuhur boyut={iconS} /> : <BeceriIkon ad={n.ikon} boyut={iconS} renk={ikonRenk} vurgu={kilitli ? AG.sonuk : n.vurgu === "kizil" ? C.ember : C.goldBright} />}
+            {gizli ? <GizliMuhur boyut={iconS} /> : <BeceriIkon ad={n.ikon} boyut={iconS} renk={ikonRenk} vurgu={kilitli ? AG.sonuk : n.vurgu === "meslek" ? tema.vurguKoyu : tema.vurgu} />}
           </View>
           <View style={{ flex: 1, justifyContent: "center" }}>
             <Text numberOfLines={3} style={{ fontFamily: F.serif, fontSize: fs, lineHeight: fs + 2, textAlign: "center", color: kilitli || gizli ? C.parchmentMuted : C.parchment }}>{ad}</Text>
@@ -121,14 +123,14 @@ export function Celenk({ boyut }: { boyut: number }) {
 }
 
 /** Kademe bölüm şeridi: iki ucu sivri, altın kenarlı; üst ortada elmas. */
-export function KademeSeridi({ en, boy, baslik, alt }: { en: number; boy: number; baslik: string; alt: string }) {
+export function KademeSeridi({ en, boy, baslik, alt, dolgu = "#18140F" }: { en: number; boy: number; baslik: string; alt: string; dolgu?: string }) {
   const u = 16;
   const nokta = `${u},1 ${en - u},1 ${en - 1},${boy / 2} ${en - u},${boy - 1} ${u},${boy - 1} 1,${boy / 2}`;
   const ic = `${u + 3},5 ${en - u - 3},5 ${en - 6},${boy / 2} ${en - u - 3},${boy - 5} ${u + 3},${boy - 5} 6,${boy / 2}`;
   return <View style={{ width: en, height: boy }}>
     <Svg pointerEvents="none" width={en} height={boy + 8} style={{ position: "absolute", top: -4, left: 0 }}>
       <G transform="translate(0 4)">
-        <Polygon points={nokta} fill="#18140F" stroke="rgba(201,162,78,0.75)" strokeWidth={1.4} />
+        <Polygon points={nokta} fill={dolgu} stroke="rgba(201,162,78,0.75)" strokeWidth={1.4} />
         <Polygon points={ic} fill="none" stroke="rgba(201,162,78,0.22)" strokeWidth={1} />
         <Line x1={en * 0.3} y1={boy - 1} x2={en * 0.7} y2={boy - 1} stroke={C.goldBright} strokeWidth={1} strokeOpacity={0.5} />
       </G>
