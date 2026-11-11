@@ -37,6 +37,19 @@ export interface HizmetStogu {
   sa: number;
 }
 
+/** Hizmet teslim/ödül defteri; hesap kimliği yerine yerel oyuncu kimliği tutulur. */
+export interface HizmetTeslimKaydi {
+  i: number;
+  o: string;
+  h: string;
+  alici: string;
+  aliciHane: number;
+  ay: number;
+  adet: number;
+  odul: number;
+  tutar: number;
+}
+
 export type HizmetIlanDurumu = "acik" | "bitti" | "geri" | "dustu";
 export interface HizmetIlan {
   i: number;
@@ -63,12 +76,14 @@ export interface EkonomiKaydi {
   lv: LevhaKaydi[];
   hs?: HizmetStogu[];
   hi?: HizmetIlan[];
+  ht?: HizmetTeslimKaydi[];
 }
 
 export function ekonomiAl(k: Kasaba): EkonomiKaydi {
-  k.ek ??= { n: 1, il: [], is: [], lv: [], hs: [], hi: [] };
+  k.ek ??= { n: 1, il: [], is: [], lv: [], hs: [], hi: [], ht: [] };
   k.ek.hs ??= [];
   k.ek.hi ??= [];
+  k.ek.ht ??= [];
   return k.ek;
 }
 
