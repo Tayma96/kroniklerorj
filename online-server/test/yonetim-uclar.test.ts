@@ -533,7 +533,7 @@ test("Y3 telafi: akçe olayı tekrar güvenli, kendi hesap kümesine kapalı ve 
     const liste = await cagir("GET", "/yonetim/telafiler", { oturum: yb });
     assert.equal(liste.durum, 200);
     assert.equal(liste.govde.telafiler.length, 2);
-    assert.ok(liste.govde.telafiler.some((x: { hedef: string; tur: string }) => x.hedef === mehmet.hesap && x.tur === "akce"));
+    assert.ok(liste.govde.telafiler.some((x: { hedef: string; hedefAd: string; tur: string }) => x.hedef === mehmet.hesap && x.hedefAd === "Mehmet" && x.tur === "akce"));
     assert.ok(liste.govde.telafiler.some((x: { hedef: string; tur: string }) => x.hedef === mehmet.hesap && x.tur === "esya"));
   } finally {
     globalThis.fetch = eskiFetch;
