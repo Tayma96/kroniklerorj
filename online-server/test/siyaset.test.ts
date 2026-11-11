@@ -386,3 +386,48 @@ test("P5 garnizon sadakati tavana yaklaşınca yalnız gereken akçe tahsil edil
   assert.equal(d.kasa, once - 20);
   assert.ok(defterTutarli(d));
 });
+
+
+test("P5 Moğol müdahalesi darbe liderini görevden alır; bağımsız devlet kurulmaz", () => {
+  const d = bolgeKur("demirhan", 0);
+  const vali = kimlik("vali-mogol");
+  valiYap(d, vali);
+  d.sultanlik = sultanlikOzeti(sultanlikKur(0));
+  d.sultanlik.mogol.kademe = 3;
+  d.darbe = {
+    v: 1, id: "demirhan:darbe:mogol", durum: "catışma",
+    baslatanKisi: vali.kisi, baslatanHesap: vali.hesap,
+    acilisAy: d.ay, sogumaSonAy: d.ay, destekler: [],
+    garnizonSadakati: 20, yatirilan: 0, mod: "baskin",
+    ilanAy: d.ay, cozumAy: d.ay + 1, izler: [],
+  };
+  bolgeAyi(d, d.ay + 1, SIMDI);
+  assert.equal(d.darbe?.durum, "mogol");
+  assert.equal(koltukBul(d, "vali:demirhan")?.s.npc, true);
+  assert.equal(d.devlet, undefined);
+});
+
+test("P5 güçler yakınsa çıkmaz statükoyu korur", async () => {
+  const { darbeAyi } = await import("../src/siyaset/darbe.ts");
+  const d = bolgeKur("demirhan", 0);
+  const sehir = koltukBul(d, "sehirBeyi:demirhan")!;
+  const ahi = koltukBul(d, "ahiBasi:demirhan")!;
+  d.sultanlik = sultanlikOzeti(sultanlikKur(0));
+  d.mesruiyet.puan = 50;
+  d.g.moral = 50;
+  d.g.guvenlik = 50;
+  d.darbe = {
+    v: 1, id: "demirhan:darbe:pat", durum: "catışma",
+    baslatanKisi: "vali/pat", baslatanHesap: "hesap-pat",
+    acilisAy: 0, sogumaSonAy: 0,
+    destekler: [
+      { kisi: "sehir/1", hesap: "hesap-1", ad: "Şehir", koltuk: sehir.id, rol: "sehirBeyi", kume: ["h:1"], ay: 0 },
+      { kisi: "ahi/1", hesap: "hesap-2", ad: "Ahi", koltuk: ahi.id, rol: "ahiBasi", kume: ["h:2"], ay: 0 },
+    ],
+    garnizonSadakati: 50, yatirilan: 0, mod: "acik",
+    ilanAy: 0, cozumAy: 1, izler: [],
+  };
+  darbeAyi(d, 1);
+  assert.equal(d.darbe?.durum, "pat");
+  assert.equal(d.devlet, undefined);
+});
