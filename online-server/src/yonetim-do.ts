@@ -77,8 +77,11 @@ export class YonetimDO {
       telafiYaz: (yerlesim, hedef, govde) => yerlesimCagir(env, { islem: "yonetimTelafi", yerlesim, hesapId: hedef, govde }),
       ekonomiOku: async () => {
         type Satir = { yerlesim: string; oyuncuSayisi: number; npcSayisi: number; toplamAkce: number; ortalamaAkce: number; medyanAkce: number; enDusukAkce: number; enYuksekAkce: number; son12Ay: { gelir: number; gider: number; net: number }; kasabaStokAdet: number; acikSiparis: number };
-        const sonuclar = await Promise.all(YERLESIMLER.map((y) => yerlesimCagir<Satir>(env, { islem: "ekonomiSagligi", yerlesim: y.id })));
-        const satirlar = sonuclar.flatMap((r, i) => r.ok ? [{ ...r.deger, ad: YERLESIMLER[i]!.ad, beylik: YERLESIMLER[i]!.beylik }] : []);
+        const sonuclar = await Promise.all(YERLESIMLER.map(async (y) => {
+          try { return await yerlesimCagir<Satir>(env, { islem: "ekonomiSagligi", yerlesim: y.id }); }
+          catch { return null; }
+        }));
+        const satirlar = sonuclar.flatMap((r, i) => r?.ok ? [{ ...r.deger, ad: YERLESIMLER[i]!.ad, beylik: YERLESIMLER[i]!.beylik }] : []);
         const topla = (alan: "oyuncuSayisi" | "npcSayisi" | "toplamAkce" | "kasabaStokAdet" | "acikSiparis") => satirlar.reduce((s, r) => s + r[alan], 0);
         const gelir = satirlar.reduce((s, r) => s + r.son12Ay.gelir, 0);
         const gider = satirlar.reduce((s, r) => s + r.son12Ay.gider, 0);
