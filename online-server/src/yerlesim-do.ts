@@ -60,6 +60,7 @@ export class YerlesimDO {
   async #isle(ileti: YerlesimIleti, simdi: number): Promise<Sonuc<unknown>> {
     const motor = await this.#ac(ileti.yerlesim, simdi);
     if (!motor) return hata("yerlesim_gecersiz");
+    motor.parametreleriGuncelle({});
     const parametreler = await yonetimCagir(this.#env, { islem: "parametrelerCalisma" });
     if (parametreler.ok && typeof parametreler.deger === "object" && parametreler.deger !== null) {
       motor.parametreleriGuncelle(parametreler.deger as CalismaParametreleri);
