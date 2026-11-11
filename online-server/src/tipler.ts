@@ -548,6 +548,7 @@ export interface SakinKaydi {
 
 /** HesapDO → YerlesimDO. `yerlesim` profildeki işaretçidir (DO adını bilmez). */
 export type YerlesimIleti =
+  | { islem: "ekonomiSagligi"; yerlesim: string }
   | { islem: "sakinEkle"; yerlesim: string; sakin: SakinKaydi }
   | { islem: "durum"; yerlesim: string; hesapId: string; dil?: string | null }
   | { islem: "olaylar"; yerlesim: string; hesapId: string; imlec?: string | null; dil?: string | null }
