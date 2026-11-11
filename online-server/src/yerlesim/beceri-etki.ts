@@ -9,6 +9,8 @@ import type { Karakter } from "./tipler.ts";
 
 /** [PARAMETRE] Araçlı çıktı yüzdesi tavanı (birden çok düğümün yüzdesi toplanır, bu kadarla kırpılır). */
 export const VERIM_YUZDE_TAVAN = 50;
+/** [PARAMETRE] Girdi tasarrufu etkilerinin toplam üst sınırı. */
+export const TASARRUF_YUZDE_TAVAN = 50;
 
 /** Karakterin öğrendiği bütün seviyelerin etkileri (her meslekte). */
 export function* acikEtkiler(k: Karakter): Generator<Etki> {
@@ -53,6 +55,15 @@ export function aracArtisi(k: Karakter, hedef: string): { mal: string; arti: num
     if (e.mal === sonuc.mal) sonuc.arti += e.arti;
   }
   return sonuc;
+}
+
+/** Tarif/iş kimliği ya da tarif gruplarında, belirtilen girdiye uygulanan tasarruf yüzdesi. */
+export function tasarrufOrani(k: Karakter, hedefler: readonly string[], mal: string): number {
+  let yuzde = 0;
+  for (const e of acikEtkiler(k)) {
+    if (e.tur === "tasarruf" && e.mal === mal && hedefler.includes(e.hedef)) yuzde += e.yuzde;
+  }
+  return Math.min(TASARRUF_YUZDE_TAVAN, yuzde);
 }
 
 /** Aracın ömür artışı (kullanım). */
