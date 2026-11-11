@@ -233,3 +233,13 @@ test("uçlar: satın alma, kuşanma, armağan + teveccüh + rozet, kısaltma sto
   assert.deepEqual((await al(ayse.oturum, "cerceve_oymali", mb)).govde, { hata: "makbuz_iade" }, "iade edilen makbuz yeniden varlık vermez");
   assert.equal((await iade("google:YOK.1")).govde.hata, "islem_yok");
 });
+
+
+test("Sezon Defteri: istek izi sezon boyunca korunur, eski isteğin ertesi gün tekrarı puan üretmez", () => {
+  const sz = sezonKaydi(undefined, T0);
+  assert.equal(sezonIlerle(sz, "eylem", "ilk", T0).eklenen, 10);
+  for (let i = 0; i < 70; i++) sezonIlerle(sz, "eylem", `gun1-${i}`, T0);
+  const ertesiGun = T0 + 24 * 60 * 60 * 1000;
+  assert.equal(sezonIlerle(sz, "eylem", "ilk", ertesiGun).eklenen, 0);
+  assert.ok(sz.iz.includes("ilk"), "ilk istek izi sezonluk listede kalmalı");
+});
