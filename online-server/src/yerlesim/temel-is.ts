@@ -130,15 +130,15 @@ function verim(k: Karakter, id: IsId, ay: number, p?: CalismaParametreleri): Ver
 }
 
 /** Bir birim çıktının değeri (onarımda bir kullanımın payı: taban ÷ ömür, yukarı). */
-function birimDeger(k: Karakter, id: IsId, mal: MalId, oyuncuSayisi: (m: MeslekId) => number): number {
+function birimDeger(k: Karakter, id: IsId, mal: MalId, oyuncuSayisi: (m: MeslekId) => number, p?: CalismaParametreleri): number {
   if (id === "onarim") return Math.ceil(MALLAR[mal].taban / ALET_OMRU);
-  return saticiDegeri(k, mal, oyuncuSayisi).toplam;
+  return saticiDegeri(k, mal, oyuncuSayisi, p).toplam;
 }
 
 /** Bu işin değeri ile aynı takatin mesleğindeki tahmini değeri (ana meslek bu iş değilse). */
 export function firsatMaliyeti(k: Karakter, id: IsId, oyuncuSayisi: (m: MeslekId) => number, ay: number, p?: CalismaParametreleri): Dokum {
   const v = verim(k, id, ay, p);
-  const kalemler = [{ k: "bu_is", d: v.mal ? v.adet * birimDeger(k, id, v.mal, oyuncuSayisi) : 0 }];
+  const kalemler = [{ k: "bu_is", d: v.mal ? v.adet * birimDeger(k, id, v.mal, oyuncuSayisi, p) : 0 }];
   const kayit = meslekKaydi(k);
   if (kayit.a && kayit.a !== TEMEL_ISLER[id].meslek) {
     const kd = kayit.s[kayit.a]?.kd ?? 0;
