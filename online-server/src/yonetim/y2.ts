@@ -109,7 +109,7 @@ export async function telafiUygula(o: Oturum, govde: unknown): Promise<Sonuc<unk
   const sayac = ((await o.b.depo.al<number>(SAYAC)) ?? 0) + 1;
   const kayit: TelafiKaydi = {
     no: sayac, id: olayId, hedef, yerlesim: hedefProfil.deger.yerlesim, tur,
-    ...(tutar !== undefined ? { tutar } : { mal, adet }),
+    ...(tutar !== undefined ? { tutar } : { mal: mal!, adet: adet! }),
     kim: o.y.eposta, zaman: o.b.simdi, gerekce: gerekce.deger,
   };
   const sonuc = basarili({ telafi: kayit, uygulama: uygulama.deger });
