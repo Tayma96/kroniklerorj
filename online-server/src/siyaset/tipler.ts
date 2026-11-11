@@ -174,6 +174,39 @@ export interface MogolGorunumu {
   talep: number;
 }
 
+export type DarbeAsamasi = "hazirlik" | "ilan" | "catışma" | "bastirildi" | "pat" | "basarili" | "mogol" | "iptal";
+export type DarbeDestekRolu = "sehirBeyi" | "ahiBasi";
+export interface DarbeDestegi {
+  kisi: string;
+  hesap: string;
+  koltuk: string;
+  rol: DarbeDestekRolu;
+  kume: string[];
+  ay: number;
+}
+export interface DarbeIzi {
+  ay: number;
+  tur: "hazirlik" | "destek" | "ikmal" | "ilan" | "baskin";
+  guvenilirlik: number;
+  gorunurluk: "vali" | "ileriGelen" | "bolge";
+}
+export interface DarbePlani {
+  v: 1;
+  id: string;
+  durum: DarbeAsamasi;
+  baslatanKisi: string;
+  baslatanHesap: string;
+  acilisAy: number;
+  sogumaSonAy: number;
+  destekler: DarbeDestegi[];
+  garnizonSadakati: number;
+  yatirilan: number;
+  mod?: "acik" | "baskin";
+  ilanAy?: number;
+  cozumAy?: number;
+  izler: DarbeIzi[];
+}
+
 export interface BolgeDurumu {
   v: 1;
   id: string;
@@ -199,6 +232,8 @@ export interface BolgeDurumu {
   sultanHaksiz: number;
   aziller: AzilKaydi[];
   ozerklik?: Ozerklik;
+  /** P5 darbe planı; gizli hazırlık izleri genel bölge görünümüne sızdırılmaz. */
+  darbe?: DarbePlani;
   /** Son çekilen Sultanlık özeti (GET'ler Sultanlığa gitmez: sıcak global nesne yok). */
   sultanlik?: SultanlikOzeti;
   mesruiyet: Mesruiyet;
