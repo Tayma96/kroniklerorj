@@ -8,6 +8,8 @@ import { TARIF_KILIDI, beceriDugumu, gocKarsiligi } from "../src/icerik/agaclar/
 import { kancaMi, seviyeVer } from "../src/yerlesim/beceri.ts";
 import { meslekKaydi, meslekSec } from "../src/yerlesim/meslek.ts";
 import { ALET_OMRU, tarifListesi, tarifYap } from "../src/yerlesim/tarif.ts";
+import { hizmetAcik } from "../src/yerlesim/beceri-etki.ts";
+import { mulkluIkram } from "../src/mulk/tapu.ts";
 import { temelIsYap } from "../src/yerlesim/temel-is.ts";
 import type { Karakter, Kasaba } from "../src/yerlesim/tipler.ts";
 import { oyuncuEkle, testKasabasi } from "./kasaba-yardimci.ts";
@@ -146,4 +148,23 @@ test("Demirci temel dövme düğümü dövme grubu tariflerinde kömür tasarruf
   assert.ok(r.ok, JSON.stringify(r));
   assert.equal(r.deger.girdi.komur, 1);
   assert.equal(c.ev.komur, 1);
+});
+
+
+test("Hancı ikram hizmeti menü fiyatına indirim uygular ve kanca bağlı sayılır", () => {
+  const k = testKasabasi();
+  const c = oyuncuEkle(k, 90, k.ay - 16 * 12);
+  c.tk = 18;
+  c.ta = k.ay;
+  meslekSec(c, "hanci", k.ay);
+  seviyeVer(c, "hanci.serbetOcagi", 3);
+  const etki = beceriDugumu("hanci.serbetOcagi")!.seviyeler[2]!.etkiler[0]!;
+  assert.equal(kancaMi(etki), false);
+  assert.equal(hizmetAcik(c, "ikram"), true);
+  c.pa = 100;
+  const r = mulkluIkram(k, c, "gulSuyu", k.ay, "hanci-ikram-indirim");
+  assert.ok(r.ok, JSON.stringify(r));
+  assert.equal(r.deger.fiyat, 9);
+  assert.equal(r.deger.batak, 9);
+  assert.equal(c.pa, 91);
 });
