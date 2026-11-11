@@ -271,6 +271,8 @@ export const DARBE = {
   dusukMesruiyet: 40,
   valiDestekAhiEsik: 2,
   tebligAy: 1,
+  catışmaAy: 1,
+  sonucFarki: 25,
   sogumaAy: 6,
 } as const;
 
