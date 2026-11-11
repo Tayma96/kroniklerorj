@@ -299,6 +299,7 @@ export class HesapDO {
       masaCagir: (ad, i) => masaCagir(env, ad, i),
       ikramOde: ikramOdeyici(env),
       engelSor: (yerlesim) => yerlesimCagir(env, { islem: "engeller", yerlesim, hesapId }),
+      plakaCerçevesi: () => debdebe.plakaCerçevesi(this.#depo, simdi),
     };
   }
 
