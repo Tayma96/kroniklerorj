@@ -5,6 +5,7 @@ import assert from "node:assert/strict";
 import isleyici, { DunyaDO, HesapDO, YerlesimDO } from "../src/index.ts";
 import type { Env } from "../src/tipler.ts";
 import type { Siparis } from "../src/yerlesim/siparis.ts";
+import { oyunAyi } from "../src/saat.ts";
 import { googleYuku, ISTEMCI, jwtImzala, rsaAnahtari, sahteAdAlani, sahteJwks } from "./yardimci.ts";
 
 type Nesne = Record<string, any>;
@@ -124,8 +125,23 @@ test("dikey dilim uçları: Hal, tarif, satış, sipariş teslimi ve teşekkür 
     const liste = (await cagir("GET", "/v1/siparisler", { oturum })).govde.siparisler as Nesne[];
     assert.ok(liste.length > 0, "kıt mesleklere sipariş açıldı");
     assert.equal((await cagir("POST", "/v1/siparisler", { oturum })).durum, 405);
-    const sip = liste.find((s) => s.durum === "acik" && s.mal === "nal");
-    assert.ok(sip, `açık nal siparişi: ${JSON.stringify(liste.map((s) => [s.mal, s.durum, s.adet]))}`);
+    let sip: Nesne | undefined = liste.find((s) => s.durum === "acik" && s.mal === "nal");
+    if (!sip) {
+      // Aylık rastgele sipariş seçimi belirli bir malı garanti etmez; teslim dikey dilimini sabit bir test siparişiyle sürdür.
+      const aday = liste.find((s) => s.isteyen?.ad);
+      assert.ok(aday, "siparişlerde yaşayan bir NPC isteyen bulunur");
+      const sp = (depolama.veri.get("sp") as Siparis[] | undefined) ?? [];
+      const npc = sp.find((s) => s.id === aday.id)!.npc;
+      const ay = oyunAyi(saat);
+      sp.push({ id: "s_test_nal_" + ay, mal: "nal", adet: 2, odul: 50, hizmet: 3, npc, acilis: ay, son: ay + 4, durum: "acik" });
+      depolama.veri.set("sp", sp);
+      for (const [ad, kayit] of yerlesimler.ornekler) {
+        kayit.ornek = new YerlesimDO({ id: { toString: () => ad }, storage: kayit.depolama } as never, env, () => saat);
+      }
+      const yenilenen = (await cagir("GET", "/v1/siparisler", { oturum })).govde.siparisler as Nesne[];
+      sip = yenilenen.find((s) => s.durum === "acik" && s.mal === "nal");
+    }
+    assert.ok(sip, "teslim testi için açık nal siparişi bulunur");
     assert.ok(sip.isteyen?.ad, "isteyen NPC adı görünür");
 
     // Elde yetecek nal yoksa önce yap (adet ≤ 4).
