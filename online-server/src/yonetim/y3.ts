@@ -3,8 +3,7 @@
 // güvenlidir; yönetici kendi oyuncu hesabının satın alımını iade edemez (kendine fayda yasağı). İade varlığı
 // HesapDO'da geri alır; defter "iade" olur ve aynı makbuz bir daha varlık vermez.
 // TODO(Y3): akçe/eşya telafi olayı (gerekçeli, kendi hesap kümesine yasak) ve mağaza iade bildirimleri (Google RTDN,
-// App Store Server Notifications V2) bu deftere `iade` yazacak uç; TODO(Y2): ekonomi sağlığı ucu ve parametrelerin
-// oyun modüllerince çalışma anında okunması.
+// App Store Server Notifications V2) bu deftere `iade` yazacak uç.
 
 import { istekNoCoz } from "../mantik.ts";
 import { basarili, hata, type Sonuc } from "../tipler.ts";
