@@ -524,12 +524,13 @@ export type ToplulukIletisi = { islem: ToplulukIslem; hesapId: string; govde: un
 
 /** Ekonomi (Faz 6) gövdeli işlemleri: POST /v1/pazar/ilan, /v1/pazar/islem, /v1/pazar/geri, /v1/ismarlama,
  * /v1/ismarlama/cevap. */
-export const EKONOMI_ISLEMLERI = ["pazarIlan", "pazarIslem", "pazarGeri", "ismarla", "ismarlamaCevap"] as const;
+export const EKONOMI_ISLEMLERI = ["pazarIlan", "pazarIslem", "pazarGeri", "ismarla", "ismarlamaCevap", "hizmetHazirla"] as const;
 export type EkonomiIslem = (typeof EKONOMI_ISLEMLERI)[number];
 /** Ekonomi iletileri (HesapDO aynen YerlesimDO'ya iletir; `yerlesim` eklenir). */
 export type EkonomiIletisi =
   | { islem: EkonomiIslem; hesapId: string; govde: unknown }
   | { islem: "pazar"; hesapId: string; mal?: string | null; dil?: string | null }
+  | { islem: "hizmet"; hesapId: string; dil?: string | null }
   | { islem: "ismarlamalar"; hesapId: string; dil?: string | null }
   | { islem: "levha"; hesapId: string; mal?: string | null }
   | { islem: "defter"; hesapId: string; ay?: string | null };
