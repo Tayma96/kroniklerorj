@@ -324,12 +324,18 @@ test("P5 çatışma sonucu bağımsız devlet kurar; P6 yönetim kararları ve g
   assert.equal(d.devlet?.sultan, "bagimsiz");
   assert.equal(d.devlet?.yeminler && Object.keys(d.devlet.yeminler).length, 0);
   assert.equal(bolgeGorunumu(d, SIMDI, bey).bolge.devlet?.ad, d.devlet?.ad);
+  const oncekiHarcama = d.cikan;
+  bolgeAyi(d, d.ay + 1, SIMDI);
+  assert.ok(d.cikan > oncekiHarcama, "bağımsız devlet harac tercihi Moğol payını doğrudan öder");
 
   assert.equal(eylem(d, bey, { islem: "devletYonet", tur: "ad", ad: "Demirhan Beyliği" }).ok, true);
   assert.equal(eylem(d, bey, { islem: "devletYonet", tur: "vergi", deger: 4 }).ok, true);
   assert.equal(d.devlet?.vergiOrani, 4);
   assert.equal(eylem(d, bey, { islem: "devletYonet", tur: "mogol", deger: "diren" }).ok, true);
   assert.equal(d.devlet?.mogol, "diren");
+  const direnOncesi = d.cikan;
+  bolgeAyi(d, d.ay + 1, SIMDI);
+  assert.equal(d.cikan, direnOncesi, "direnişte Moğol haracı ödenmez");
   assert.equal(eylem(d, bey, { islem: "devletYonet", tur: "sultanBaris" }).ok, true);
   assert.equal(d.devlet?.sultan, "barisTalebi");
   d.mesruiyet.puan = 60;
