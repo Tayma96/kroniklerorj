@@ -25,6 +25,7 @@ export interface MasaAyari {
 export interface Plaka {
   hesap: string;
   ad: string;
+  cerceve?: string;
 }
 
 export interface MasaGorunumu {
@@ -134,6 +135,8 @@ export interface SoketEki {
   no: number;
   h: string;
   a: string;
+  /** Debdebe plaka çerçevesi (kozmetik ürün kimliği; oyun mantığı okumaz). */
+  cf?: string;
   /** Koltuk dizini ya da null (ayakta). */
   k: number | null;
   /** Oturma anı (masa başı için). */
