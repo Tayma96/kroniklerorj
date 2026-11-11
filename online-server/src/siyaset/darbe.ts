@@ -133,6 +133,7 @@ export function darbeAyi(d: BolgeDurumu, ay: number): void {
       kurulusAy: ay,
       beyKisi: p.baslatanKisi,
       beyHesap: p.baslatanHesap,
+      beyAd: vali?.s.ad ?? d.id,
       vergiOrani: vali?.ayar.vergiOrani ?? 2,
       divan: p.destekler.slice(0, 5).map((x) => ({ kisi: x.kisi, hesap: x.hesap, ad: x.ad, rol: "divan" as const })),
       mogol: "harac",
