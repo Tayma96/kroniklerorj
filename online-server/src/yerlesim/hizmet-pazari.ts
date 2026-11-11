@@ -9,7 +9,7 @@ import { ayniKume } from "./teveccuh.ts";
 import { takatHarca } from "./karakter.ts";
 import { hizmetTarifiBul, type HizmetTarifi } from "./hizmet-tarif.ts";
 import type { EkonomiKaydi, HizmetIlan, HizmetStogu } from "./pazar-tahta.ts";
-import type { Karakter } from "./tipler.ts";
+import type { Karakter, Kasaba } from "./tipler.ts";
 import { basarili, hata, type Sonuc } from "../tipler.ts";
 
 /** [PARAMETRE] Tek hazırlamada en çok 5, oyuncu/hizmet başına süresi geçmemiş stokta en çok 20 adet. */
@@ -67,6 +67,36 @@ export function hizmetHazirla(
 /** Süresi dolan stok ekranda/işlemde kullanılamaz; eski kayıtlar silinmeden geçmişte kalır. */
 export function hizmetStoguGecerli(stok: HizmetStogu, ay: number): boolean {
   return stok.n > 0 && stok.sa >= ay;
+}
+
+/**
+ * Ay dönümünde süresi dolan hizmet stoğunu bozar. Hazır stok veya açık ilandaki
+ * satılmamış adet başına yarım hizmet tecrübesi verilir; kayıt sıfırlanarak
+ * sonraki dönümlerde aynı stoktan tekrar ödül alınması engellenir.
+ *
+ * Motor ay dönümünden önce bütün sakin karakterlerini yüklediği için satıcı
+ * çevrimdışı olsa da kalıcı karakter kaydı üzerinden tecrübe yazılır.
+ */
+export function hizmetStokDonumu(kasaba: Kasaba, ay: number): void {
+  const ek = kasaba.ek;
+  if (!ek) return;
+
+  for (const stok of ek.hs ?? []) {
+    if (stok.n <= 0 || stok.sa >= ay) continue;
+    const tarif = hizmetTarifiBul(stok.h);
+    const satici = kasaba.kar.get(stok.o);
+    if (tarif && satici) hizmetEkle(satici, tarif.meslek, stok.n / 2);
+    stok.n = 0;
+  }
+
+  for (const ilan of ek.hi ?? []) {
+    if (ilan.d !== "acik" || ilan.n <= 0 || ilan.sa >= ay) continue;
+    const tarif = hizmetTarifiBul(ilan.h);
+    const satici = kasaba.kar.get(ilan.o);
+    if (tarif && satici) hizmetEkle(satici, tarif.meslek, ilan.n / 2);
+    ilan.n = 0;
+    ilan.d = "dustu";
+  }
 }
 
 export function hizmetStoguGorunumu(stok: HizmetStogu, ay: number) {
