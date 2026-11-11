@@ -195,3 +195,32 @@ test("E4.3-A hizmet ilanı: süre dolunca alım kapanır ve listeden düşer", (
   assert.equal(alici.pa, 50);
   assert.equal(ilan.deger.n, 1);
 });
+
+
+test("E4.3-A hizmet ödülü: aynı hizmetçi-alıcı çifti ayda yalnız iki teslim tecrübesi kazanır", () => {
+  const satici = sifaciKarakter(2, 3, 6);
+  satici.pa = 0;
+  const alici = sifaciKarakter(0, 0, 6);
+  alici.o = "o2";
+  alici.h = "hesap-2";
+  alici.e = 2;
+  alici.pa = 100;
+  const ek = ekonomi();
+  const hazir = hizmetHazirla(ek, satici, "yaraBak", 3, 12);
+  assert.equal(hazir.ok, true);
+  if (!hazir.ok) return;
+  const ilan = hizmetIlanAc(ek, satici, `h${hazir.deger.stok.i}`, 3, 6, 12);
+  assert.equal(ilan.ok, true);
+  if (!ilan.ok) return;
+
+  const ilk = hizmetIlanIsle(ek, alici, satici, `hi${ilan.deger.i}`, 1, 12);
+  const ikinci = hizmetIlanIsle(ek, alici, satici, `hi${ilan.deger.i}`, 1, 12);
+  const ucuncu = hizmetIlanIsle(ek, alici, satici, `hi${ilan.deger.i}`, 1, 12);
+  assert.equal(ilk.ok && ilk.deger.odul, 1);
+  assert.equal(ikinci.ok && ikinci.deger.odul, 1);
+  assert.equal(ucuncu.ok && ucuncu.deger.odul, 0);
+  assert.equal(ilk.ok && ilk.deger.hizmetPuani, 1);
+  assert.equal(ikinci.ok && ikinci.deger.hizmetPuani, 1);
+  assert.equal(ucuncu.ok && ucuncu.deger.hizmetPuani, 0);
+  assert.equal(ek.ht?.reduce((n, x) => n + x.odul, 0), 2);
+});
