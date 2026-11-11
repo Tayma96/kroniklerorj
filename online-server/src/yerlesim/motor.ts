@@ -474,7 +474,7 @@ export class YerlesimMotoru {
       t.gider += d.gider;
       return t;
     }, { gelir: 0, gider: 0 });
-    const stokAdet = Object.values(k.st ?? {}).reduce((s, n) => s + (n ?? 0), 0);
+    const stokAdet = Object.values(k.st ?? {}).reduce<number>((s, n) => s + (n ?? 0), 0);
     return basarili({
       yerlesim: k.y,
       oyunAyi: k.ay,
