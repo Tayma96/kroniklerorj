@@ -38,9 +38,12 @@ export class YerlesimDO {
   }
 
   async #parametreleriYukle(motor: YerlesimMotoru): Promise<void> {
-    await this.#parametreleriYukle(motor);
+    motor.parametreleriGuncelle({});
+    const parametreler = await yonetimCagir(this.#env, { islem: "parametrelerCalisma" });
+    if (parametreler.ok && typeof parametreler.deger === "object" && parametreler.deger !== null) {
+      motor.parametreleriGuncelle(parametreler.deger as CalismaParametreleri);
+    }
   }
-
   async #alarmKur(simdi: number, kalan: number): Promise<void> {
     if (this.#alarmVar && kalan === 0) return;
     if (kalan > 0 || (await this.#depolama.getAlarm()) === null) await this.#depolama.setAlarm(sonrakiAlarm(simdi, kalan));
@@ -64,11 +67,7 @@ export class YerlesimDO {
   async #isle(ileti: YerlesimIleti, simdi: number): Promise<Sonuc<unknown>> {
     const motor = await this.#ac(ileti.yerlesim, simdi);
     if (!motor) return hata("yerlesim_gecersiz");
-    motor.parametreleriGuncelle({});
-    const parametreler = await yonetimCagir(this.#env, { islem: "parametrelerCalisma" });
-    if (parametreler.ok && typeof parametreler.deger === "object" && parametreler.deger !== null) {
-      motor.parametreleriGuncelle(parametreler.deger as CalismaParametreleri);
-    }
+    await this.#parametreleriYukle(motor);
     const { kalan } = await motor.yetistir(simdi);
     await this.#alarmKur(simdi, kalan);
     switch (ileti.islem) {
