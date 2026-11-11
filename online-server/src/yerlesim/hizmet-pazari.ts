@@ -208,12 +208,22 @@ export function hizmetIlanIsle(
   alici.pa -= tutar;
   satici.pa += tutar;
   const etki = halDegistir(alici, ay, fark, `hizmet.${tarif.id}`);
-  // Aynı hesap/hane kümesinde hizmet verilebilir; ancak satıcıya tecrübe ödülü üretilmez.
-  const hizmetPuani = ayniKume(alici, satici) ? 0 : hizmetEkle(satici, tarif.meslek, adet);
+  // Aynı hizmetçi → aynı alıcı için ayda en çok iki ödüllü teslim; hesap/hane kümesinde ödül yok.
+  const teslimler = (ek.ht ??= []).filter((x) => x.ay >= ay - 2);
+  const oncekiOdul = teslimler
+    .filter((x) => x.o === satici.o && x.alici === alici.o && x.ay === ay)
+    .reduce((toplam, x) => toplam + x.odul, 0);
+  const odul = ayniKume(alici, satici) ? 0 : Math.min(adet, Math.max(0, 2 - oncekiOdul));
+  const hizmetPuani = odul > 0 ? hizmetEkle(satici, tarif.meslek, odul) : 0;
+  teslimler.push({
+    i: ek.n++, o: satici.o, h: tarif.id, alici: alici.o, aliciHane: alici.e,
+    ay, adet, odul, tutar,
+  });
+  ek.ht = teslimler;
   ilan.n -= adet;
   ilan.is ??= [];
   ilan.is.push([ay, alici.o, adet, tutar]);
   if (ilan.is.length > 10) ilan.is.splice(0, ilan.is.length - 10);
   if (ilan.n === 0) ilan.d = "bitti";
-  return basarili({ ilan, adet, tutar, etki, hizmetPuani });
+  return basarili({ ilan, adet, tutar, etki, hizmetPuani, odul });
 }
