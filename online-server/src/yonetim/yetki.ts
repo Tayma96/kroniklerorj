@@ -13,6 +13,8 @@ export const YETKI = {
   giris: HEPSI,
   ben: HEPSI,
   ekonomi: KURUCU,
+  telafiler: KURUCU,
+  telafi: KURUCU,
   oyuncuGor: HEPSI,
   sikayetGor: HEPSI,
   sikayetKarar: HEPSI,
