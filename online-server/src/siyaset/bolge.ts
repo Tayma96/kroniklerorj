@@ -7,6 +7,7 @@ import { basarili, hata, type HataKodu, type Sonuc } from "../tipler.ts";
 import { mesruiyetGorunumu, bolgeMesruiyeti } from "./mesruiyet.ts";
 import { mogolEtkisi } from "./mogol.ts";
 import { darbeAyi, darbeDestekle, darbeEsigi, darbeGorunumu, darbeHazirla, darbeIlanEt, darbeSadakatYatir, darbeVazgec } from "./darbe.ts";
+import { devletGorunumu, devletYemin, devletYonet } from "./devlet.ts";
 import {
   adayUygunMu,
   adayYap,
@@ -624,6 +625,18 @@ export function bolgeEylem(d: BolgeDurumu, kimlik: SiyasiKimlik, g: Govde, simdi
       if (h) return hata(h);
       kayitEkle(d, ay, "darbeIptal", kimlik.kisi, { k: "kayit.darbeIptal" });
       return basarili({ islem: "darbeVazgec", dokum: darbeGorunumu(d, kimlik) });
+    }
+    case "devletYonet": {
+      const h = devletYonet(d, kimlik, g);
+      if (h) return hata(h);
+      kayitEkle(d, ay, "devletKarari", kimlik.kisi, { k: "kayit.devletKarari", p: { tur: g.tur } });
+      return basarili({ islem: "devletYonet", dokum: devletGorunumu(d.devlet) });
+    }
+    case "devletYemin": {
+      const h = devletYemin(d, kimlik, g.deger);
+      if (h) return hata(h);
+      kayitEkle(d, ay, "devletYemin", kimlik.kisi, { k: "kayit.devletYemin", p: { deger: g.deger as string } });
+      return basarili({ islem: "devletYemin", dokum: devletGorunumu(d.devlet) });
     }
     case "ozerklikBirak": {
       const r = oyuncuKoltugu(d, vali(d).id, kimlik, simdi);
