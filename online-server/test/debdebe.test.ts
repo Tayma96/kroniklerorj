@@ -253,5 +253,6 @@ test("masa plakası yalnız sahip olunan ve kuşanılmış çerçeveyi verir", a
   assert.equal(kusan(c, "cerceve", "cerceve_oymali", 0, T0).ok, true);
   const depo = { al: async () => c } as unknown as Depo;
   assert.equal(await plakaCerçevesi(depo, T0), "cerceve_oymali");
-  assert.equal(await plakaCerçevesi(depo, T0 + 31 * 24 * 60 * 60 * 1000), undefined);
+  iadeUygula(c, "google:plaka", T0);
+  assert.equal(await plakaCerçevesi(depo, T0), undefined);
 });
