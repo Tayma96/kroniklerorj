@@ -13,6 +13,8 @@ import { denePaketi } from "../src/debdebe/dene.ts";
 import { sezonIlerle, sezonKaydi, SEZON_GUNLUK_TAVAN } from "../src/debdebe/sezon.ts";
 import { beceriHizlandir, DEBDEBE_KISALTMA_EN_COK } from "../src/yerlesim/beceri.ts";
 import type { Karakter } from "../src/yerlesim/tipler.ts";
+import type { Depo } from "../src/depo.ts";
+import { plakaCerçevesi } from "../src/debdebe/hesap.ts";
 import { googleYuku, ISTEMCI, jwtImzala, rsaAnahtari, sahteAdAlani, sahteJwks } from "./yardimci.ts";
 import { makbuz, sahteDogrulayici } from "./debdebe-yardimci.ts";
 
@@ -242,4 +244,14 @@ test("Sezon Defteri: istek izi sezon boyunca korunur, eski isteğin ertesi gün 
   const ertesiGun = T0 + 24 * 60 * 60 * 1000;
   assert.equal(sezonIlerle(sz, "eylem", "ilk", ertesiGun).eklenen, 0);
   assert.ok(sz.iz.includes("ilk"), "ilk istek izi sezonluk listede kalmalı");
+});
+
+
+test("masa plakası yalnız sahip olunan ve kuşanılmış çerçeveyi verir", async () => {
+  const c = bosCosmetic();
+  assert.equal(satinAlimUygula(c, "cerceve_oymali", b("google:plaka", "cerceve_oymali"), T0).ok, true);
+  assert.equal(kusan(c, "cerceve", "cerceve_oymali", 0, T0).ok, true);
+  const depo = { al: async () => c } as unknown as Depo;
+  assert.equal(await plakaCerçevesi(depo, T0), "cerceve_oymali");
+  assert.equal(await plakaCerçevesi(depo, T0 + 31 * 24 * 60 * 60 * 1000), undefined);
 });
