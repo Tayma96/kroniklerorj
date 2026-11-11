@@ -331,6 +331,11 @@ test("P5 çatışma sonucu bağımsız devlet kurar; P6 yönetim kararları ve g
   assert.equal(d.devlet?.mogol, "diren");
   assert.equal(eylem(d, bey, { islem: "devletYonet", tur: "sultanBaris" }).ok, true);
   assert.equal(d.devlet?.sultan, "barisTalebi");
+  d.mesruiyet.puan = 60;
+  d.sultanlik.mesruiyet.puan = 60;
+  const { devletAyi } = await import("../src/siyaset/devlet.ts");
+  assert.equal(devletAyi(d, d.ay + 2), "barisKabul");
+  assert.equal(d.devlet?.sultan, "sultanligaDondu");
 
   const oyuncu = kimlik("gönüllü", { bolge: "demirhan" });
   assert.equal(eylem(d, oyuncu, { islem: "devletYemin", deger: "bagli" }).ok, true);
