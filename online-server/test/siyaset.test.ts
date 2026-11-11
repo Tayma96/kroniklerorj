@@ -3,7 +3,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { BEYLIKLER } from "../src/dunya-veri.ts";
-import { akceGir, bolgeAyi, bolgeEylem, bolgeKur, defterTutarli, haracOnayla } from "../src/siyaset/bolge.ts";
+import { akceGir, bolgeAyi, bolgeEylem, bolgeGorunumu, bolgeKur, defterTutarli, haracOnayla } from "../src/siyaset/bolge.ts";
 import { etkinKisi, koltukBul, kumeCakisir, kumeAnahtarlari, oyuncuTutucu, yetkiAcik, yeterOran } from "../src/siyaset/makam.ts";
 import { hedefTutum, mogolAyi, mogolBaslangic, mogolEtkisi } from "../src/siyaset/mogol.ts";
 import { ozerklikAyi } from "../src/siyaset/ozerklik.ts";
@@ -251,4 +251,32 @@ test("P5 darbe hazırlığı: şehir/ahi desteği ve garnizon eşiği olmadan il
   assert.equal(d.darbe?.durum, "ilan");
   darbeAyi(d, d.ay + 1);
   assert.equal(d.darbe?.durum, "catışma");
+});
+
+
+test("P5 hazırlık izi gizlidir; ilanla birlikte yalnız durum bölgeye açılır", async () => {
+  const { darbeHazirla, darbeIlanEt } = await import("../src/siyaset/darbe.ts");
+  const d = bolgeKur("demirhan", 0);
+  const vali = kimlik("vali-gizlilik");
+  const yabanci = kimlik("yabanci-gizlilik");
+  valiYap(d, vali);
+
+  assert.equal(eylem(d, yabanci, { islem: "darbeHazirla" }).hata, "yetki_yok");
+  assert.equal(eylem(d, vali, { islem: "darbeHazirla" }).ok, true);
+  assert.equal(eylem(d, vali, { islem: "darbeHazirla" }).hata, "darbe_var");
+
+  const gizli = bolgeGorunumu(d, SIMDI, yabanci).bolge.darbe;
+  const katilimci = bolgeGorunumu(d, SIMDI, vali).bolge.darbe;
+  assert.equal(gizli, null);
+  assert.ok(katilimci && "izler" in katilimci);
+  assert.equal(darbeHazirla(d, vali, d.ay), "darbe_var");
+
+  // İlan sonrası dışarıdan yalnız kamusal durum görünür; hazırlık izleri ve taahhüt dökümü sızmaz.
+  d.darbe!.durum = "ilan";
+  d.darbe!.mod = "acik";
+  d.darbe!.ilanAy = d.ay;
+  d.darbe!.cozumAy = d.ay + 1;
+  assert.equal(darbeIlanEt(d, "acik", d.ay), "darbe_yok");
+  const acik = bolgeGorunumu(d, SIMDI, yabanci).bolge.darbe;
+  assert.ok(acik && !("izler" in acik) && !("destekler" in acik));
 });
