@@ -76,7 +76,7 @@ export class YonetimDO {
       siyasiKimlikOku: (hesapId, yerlesim) => yerlesimCagir<SiyasiKimlik>(env, { islem: "siyasetKimlik", yerlesim, hesapId }),
       telafiYaz: (yerlesim, hedef, govde) => yerlesimCagir(env, { islem: "yonetimTelafi", yerlesim, hesapId: hedef, govde }),
       ekonomiOku: async () => {
-        type Satir = { yerlesim: string; oyuncuSayisi: number; npcSayisi: number; toplamAkce: number; ortalamaAkce: number; medyanAkce: number; enDusukAkce: number; enYuksekAkce: number; son12Ay: { gelir: number; gider: number; net: number }; kasabaStokAdet: number; acikSiparis: number };
+        type Satir = { yerlesim: string; oyuncuSayisi: number; npcSayisi: number; toplamAkce: number; bakiyeler: number[]; ortalamaAkce: number; medyanAkce: number; enDusukAkce: number; enYuksekAkce: number; son12Ay: { gelir: number; gider: number; net: number }; kasabaStokAdet: number; acikSiparis: number };
         const sonuclar = await Promise.all(YERLESIMLER.map(async (y) => {
           try { return await yerlesimCagir<Satir>(env, { islem: "ekonomiSagligi", yerlesim: y.id }); }
           catch { return null; }
@@ -85,10 +85,29 @@ export class YonetimDO {
         const topla = (alan: "oyuncuSayisi" | "npcSayisi" | "toplamAkce" | "kasabaStokAdet" | "acikSiparis") => satirlar.reduce((s, r) => s + r[alan], 0);
         const gelir = satirlar.reduce((s, r) => s + r.son12Ay.gelir, 0);
         const gider = satirlar.reduce((s, r) => s + r.son12Ay.gider, 0);
+        const oyuncuSayisi = topla("oyuncuSayisi");
+        const toplamAkce = topla("toplamAkce");
+        const bakiyeler = satirlar.flatMap((r) => r.bakiyeler).sort((a, b) => a - b);
+        const orta = Math.floor(bakiyeler.length / 2);
+        const medyanAkce = bakiyeler.length === 0 ? 0 : bakiyeler.length % 2
+          ? bakiyeler[orta]!
+          : Math.round((bakiyeler[orta - 1]! + bakiyeler[orta]!) / 2);
+        const yerlesimler = satirlar.map((r) => ({
+          yerlesim: r.yerlesim, ad: r.ad, beylik: r.beylik, oyuncuSayisi: r.oyuncuSayisi, npcSayisi: r.npcSayisi,
+          toplamAkce: r.toplamAkce, ortalamaAkce: r.ortalamaAkce, medyanAkce: r.medyanAkce,
+          enDusukAkce: r.enDusukAkce, enYuksekAkce: r.enYuksekAkce, son12Ay: r.son12Ay,
+          kasabaStokAdet: r.kasabaStokAdet, acikSiparis: r.acikSiparis,
+        }));
         return basarili({
-          yerlesimler: satirlar.sort((a, b) => a.ad.localeCompare(b.ad, "tr")),
+          yerlesimler: yerlesimler.sort((a, b) => a.ad.localeCompare(b.ad, "tr")),
           eksikYerlesim: YERLESIMLER.length - satirlar.length,
-          toplam: { oyuncuSayisi: topla("oyuncuSayisi"), npcSayisi: topla("npcSayisi"), toplamAkce: topla("toplamAkce"), kasabaStokAdet: topla("kasabaStokAdet"), acikSiparis: topla("acikSiparis"), son12Ay: { gelir, gider, net: gelir - gider } },
+          toplam: {
+            oyuncuSayisi, npcSayisi: topla("npcSayisi"), toplamAkce,
+            ortalamaAkce: oyuncuSayisi ? Math.round(toplamAkce / oyuncuSayisi) : 0,
+            medyanAkce, enDusukAkce: bakiyeler[0] ?? 0, enYuksekAkce: bakiyeler.at(-1) ?? 0,
+            kasabaStokAdet: topla("kasabaStokAdet"), acikSiparis: topla("acikSiparis"),
+            son12Ay: { gelir, gider, net: gelir - gider },
+          },
         });
       },
       hesabaYaz: (hedef, durum) => hesapCagir(env, hedef, { islem: "yaptirimYaz", hesapId: hedef, durum }),
