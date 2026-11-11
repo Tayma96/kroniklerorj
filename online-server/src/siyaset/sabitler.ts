@@ -257,6 +257,23 @@ export const MESRUIYET_KADEMELERI = ["zayif", "dengeli", "guclu"] as const;
 export type MesruiyetKademesi = (typeof MESRUIYET_KADEMELERI)[number];
 
 /** [PARAMETRE] Müzakereli özerklik (P4). */
+/** [PARAMETRE] P5 darbe eşikleri; alfa verisiyle ayarlanır (Ek B §8.2). */
+export const DARBE = {
+  sehirDestekOrani: 1,
+  ahiDestekMin: 2,
+  garnizonBaslangic: 20,
+  garnizonEsik: 60,
+  yatirimBirim: 20,
+  sadakatBirim: 10,
+  yatirimEnAz: 20,
+  yatirimEnCok: 200,
+  hazineRezerv: 40,
+  dusukMesruiyet: 40,
+  valiDestekAhiEsik: 2,
+  tebligAy: 1,
+  sogumaAy: 6,
+} as const;
+
 export const OZERKLIK = {
   indirimEnAz: 0.1,
   indirimEnCok: 0.5,
