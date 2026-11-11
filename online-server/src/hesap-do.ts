@@ -5,7 +5,7 @@
 
 import { doDepo, type Depo } from "./depo.ts";
 import { dunyaCagir, hesapCagir, iletiOku, jsonYanit, yerlesimCagir, yonetimCagir } from "./ic.ts";
-import { girisKaydet, hesapKaydi, hizKontrol, profilGetir, profilOlustur, sakinKaydi, yerlesimeIlet, type HizDurumu, type YerlesimIstegi } from "./mantik.ts";
+import { girisKaydet, hesapKaydi, hizKontrol, profilGetir, profilOlustur, sakinKaydi, yerlesimeIlet, HIZ_SINIRI, type HizDurumu, type YerlesimIstegi } from "./mantik.ts";
 import { basarili, hata, type Env, type HesapIleti, type HesapYaptirimi, type Profil, type Sonuc, type YerlesimIleti } from "./tipler.ts";
 import type { MasaIleti } from "./han/tipler.ts";
 import { uzaklastirmaBilgisi, yaptirimEngeli } from "./yonetim/yaptirim.ts";
@@ -47,7 +47,12 @@ export class HesapDO {
     if (ileti.islem === "debdebeRozetSil") return jsonYanit(await debdebe.rozetKaldir(this.#depo, ileti.id));
     if (ileti.islem === "debdebeGorunum") return jsonYanit(await debdebe.gorunumVer(this.#depo, simdi));
     if (ileti.islem === "debdebeIade") return jsonYanit(await debdebe.iadeIsle(this.#debdebe(ileti.hesapId, simdi), ileti.islemKimligi));
-    const hiz = hizKontrol(this.#hiz, simdi);
+    const calisma = await yonetimCagir(this.#env, { islem: "parametrelerCalisma" });
+    const sinir = calisma.ok && typeof calisma.deger === "object" && calisma.deger !== null
+      && typeof (calisma.deger as Record<string, unknown>).HIZ_SINIRI === "number"
+      ? (calisma.deger as Record<string, number>).HIZ_SINIRI
+      : HIZ_SINIRI;
+    const hiz = hizKontrol(this.#hiz, simdi, sinir);
     this.#hiz = hiz.durum;
     if (!hiz.izin) return jsonYanit(hata("hiz_siniri"));
     const yaptirim = await this.#yaptirimDurumu();
