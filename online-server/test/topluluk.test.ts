@@ -129,6 +129,20 @@ test("asker nöbet hizmeti beceriyle açılır ve ana meslek değişse de sunucu
   const sonuc = ortakDertKatki(k, askerBecerili, { dert: d.i, katki: "nobet" }, ay);
   assert.ok(sonuc.ok, JSON.stringify(sonuc));
 
+  const ozanBecerili = oyuncuEkle(k, 13, k.ay - 20 * 12);
+  ozanBecerili.ms = {
+    a: "demirci",
+    y: "",
+    s: {
+      demirci: { kd: 0, hz: 0, cy: 0 },
+      ozan: { kd: 0, hz: 0, cy: 0, sv: { "ozan.turkuMani": 1 } },
+    },
+  };
+  assert.ok(uygunKatkilar(ozanBecerili).includes("moral"));
+  ozanBecerili.tk = 18;
+  const moralSonuc = ortakDertKatki(k, ozanBecerili, { dert: d.i, katki: "moral" }, ay);
+  assert.ok(moralSonuc.ok, JSON.stringify(moralSonuc));
+
   const becerisiz = oyuncuEkle(k, 12, k.ay - 20 * 12);
   assert.ok(!uygunKatkilar(becerisiz).includes("nobet"));
   assert.deepEqual(ortakDertKatki(k, becerisiz, { dert: d.i, katki: "nobet" }, ay), { ok: false, hata: "katki_gecersiz" });
