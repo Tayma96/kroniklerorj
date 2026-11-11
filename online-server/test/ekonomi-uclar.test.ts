@@ -71,7 +71,7 @@ test("ekonomi uçları: pazar ilanı/işlem/geri, ısmarlama, levha, defter", as
     assert.equal(hizmetKatalog.govde.katalog.find((x: Nesne) => x.id === "turku").acik, true);
     const zPara0 = (await ben(zehra)).para as number;
     const aPara0 = (await ben(ayse)).para as number;
-    const zGonul0 = (await ben(zehra)).hal.gonul as number;
+    const zGonul0 = (await ben(zehra)).hal.gonul.deger as number;
 
     const hazir = await yaz("/v1/hizmet/hazirla", { hizmet: "turku", adet: 1 }, ayse, "hizmet-hazir-0001");
     assert.equal(hazir.durum, 200, JSON.stringify(hazir.govde));
@@ -99,7 +99,7 @@ test("ekonomi uçları: pazar ilanı/işlem/geri, ısmarlama, levha, defter", as
     const aPara1 = await ben(ayse);
     assert.equal(zPara1.para, zPara0 - 2);
     assert.equal(aPara1.para, aPara0 + 2);
-    assert.equal(zPara1.hal.gonul, zGonul0 + 3);
+    assert.equal(zPara1.hal.gonul.deger, zGonul0 + 3);
 
     // Ayşe oduncu olur, odun keser; pazar boş, kurallar görünür.
     assert.equal((await yaz("/v1/meslek", { islem: "sec", meslek: "oduncu" }, ayse)).durum, 200);
