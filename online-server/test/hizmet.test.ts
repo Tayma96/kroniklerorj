@@ -259,3 +259,24 @@ test("E4.3-A süresi dolan hazır ve ilandaki hizmet stoğu yarım tecrübe veri
   hizmetStokDonumu(ilanKasaba, 16);
   assert.equal((ilanSatici.ms?.s.sifaci?.hz ?? 0) - ilanOnce, 1);
 });
+
+
+test("E4.3 hizmet kataloğu: lohusa bakımı ve teselli gerçek beceri düğümlerinden açılır", () => {
+  const ebe = sifaciKarakter(1, 3, 6);
+  ebe.ms!.s.sifaci!.sv = { "sifaci.lohusaBakimi": 1 };
+  const ebeEk = ekonomi();
+  const lohusa = hizmetHazirla(ebeEk, ebe, "lohusa", 1, 12);
+  assert.equal(lohusa.ok, true);
+  if (lohusa.ok) {
+    assert.equal(ebe.ev?.sifaliOt, 2);
+    assert.equal(ebe.ev?.bez, -1);
+    assert.equal(ebe.tk, 4);
+  }
+
+  const ozan = sifaciKarakter(0, 0, 6);
+  ozan.o = "o9";
+  ozan.h = "hesap-9";
+  ozan.ms = { a: "ozan", y: "", s: { ozan: { kd: 0, hz: 0, cy: 0, sv: { "ozan.teselli": 1 } } } } as unknown as typeof ozan.ms;
+  const teselli = hizmetHazirla(ekonomi(), ozan, "teselli", 1, 12);
+  assert.equal(teselli.ok, true);
+});
