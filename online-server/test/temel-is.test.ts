@@ -129,3 +129,19 @@ test("fırsat maliyeti görünür: demircide meslekte kalemi negatif, oduncuda y
   const o = hazir(k, "oduncu", 2);
   assert.equal(firsatMaliyeti(o, "odun", hicKimse, k.ay).kalemler.some((x) => x.k === "meslekte"), false);
 });
+
+
+test("Y2 runtime temel iş çıktısı ve azalan getiri penceresi uygulanır", () => {
+  const k = testKasabasi();
+  const c = hazir(k, "demirci");
+  const p = { TEMEL_CIKTI: 5, AZALAN_PENCERE_IS: 2 };
+  const ilk = temelIsYap(c, "odun", hicKimse, k.ay, p);
+  assert.ok(ilk.ok);
+  assert.equal(ilk.deger.adet, 5);
+  const ikinci = temelIsYap(c, "odun", hicKimse, k.ay, p);
+  assert.ok(ikinci.ok);
+  assert.equal(ikinci.deger.adet, 2);
+  const pencereSonrasi = temelIsYap(c, "odun", hicKimse, k.ay + 2, p);
+  assert.ok(pencereSonrasi.ok);
+  assert.equal(pencereSonrasi.deger.adet, 5);
+});
