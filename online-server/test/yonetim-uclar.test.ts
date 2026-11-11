@@ -5,6 +5,7 @@ import assert from "node:assert/strict";
 import isleyici, { DunyaDO, HesapDO, YerlesimDO, YonetimDO } from "../src/index.ts";
 import type { Env } from "../src/tipler.ts";
 import { yonetimCagir } from "../src/ic.ts";
+import { kumeAnahtarlari, kumeKesisir } from "../src/siyaset/makam.ts";
 import { PANEL_PARCALARI } from "../src/yonetim/panel.ts";
 import { googleYuku, ISTEMCI, jwtImzala, rsaAnahtari, sahteAdAlani, sahteJwks, type TestAnahtari } from "./yardimci.ts";
 
@@ -532,4 +533,11 @@ test("Y3 telafi: akçe olayı tekrar güvenli, kendi hesap kümesine kapalı ve 
   } finally {
     globalThis.fetch = eskiFetch;
   }
+});
+
+
+test("Y3 telafi küme denetimi aynı hanedeki farklı hesapları da yakalar", () => {
+  const yonetici = { hesap: "hesap-a", yerlesim: "kizilca", e: 7 };
+  const altHesap = { hesap: "hesap-b", yerlesim: "kizilca", e: 7 };
+  assert.equal(kumeKesisir(kumeAnahtarlari(yonetici), kumeAnahtarlari(altHesap)), true);
 });
