@@ -245,7 +245,7 @@ test("P5 darbe hazırlığı: şehir/ahi desteği ve garnizon eşiği olmadan il
   assert.equal(darbeDestekle(d, s3, ahi2.id, "ahiBasi", d.ay), null);
   assert.equal(darbeDestekle(d, kimlik("alt", { e: s2.e, yerlesim: "demirhan" }), "ahiBasi:demirhan", "ahiBasi", d.ay), "kume_cakisma");
   assert.equal(darbeSadakatYatir(d, 80, d.ay), "kasa_yetersiz");
-  assert.equal(darbeSadakatYatir(d, 40, d.ay), null);
+  assert.equal(darbeSadakatYatir(d, 40, d.ay), 40);
   assert.equal(darbeEsigi(d).uygun, true);
   assert.equal(darbeIlanEt(d, "acik", d.ay), null);
   assert.equal(d.darbe?.durum, "ilan");
@@ -365,4 +365,19 @@ test("P5 savunma üstün gelirse darbe bastırılır ve vali makamı boşalır",
   bolgeAyi(d, d.ay + 1, SIMDI);
   assert.equal(d.darbe?.durum, "bastirildi");
   assert.equal(koltukBul(d, "vali:demirhan")?.s.npc, true);
+});
+
+
+test("P5 garnizon sadakati tavana yaklaşınca yalnız gereken akçe tahsil edilir", async () => {
+  const { darbeHazirla, darbeSadakatYatir } = await import("../src/siyaset/darbe.ts");
+  const d = bolgeKur("demirhan", 0);
+  const vali = kimlik("vali-yatirim");
+  valiYap(d, vali);
+  assert.equal(eylem(d, vali, { islem: "darbeHazirla" }).ok, true);
+  d.darbe!.garnizonSadakati = 95;
+  const once = d.kasa;
+  assert.equal(darbeSadakatYatir(d, 40, d.ay), 20);
+  assert.equal(d.darbe?.garnizonSadakati, 100);
+  assert.equal(d.darbe?.yatirilan, 20);
+  assert.equal(d.kasa, once, "saf kural kasayı düşürmez; eylem katmanı yalnız 20 akçe düşer");
 });
