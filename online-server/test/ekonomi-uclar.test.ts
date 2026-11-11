@@ -53,17 +53,53 @@ test("ekonomi uçları: pazar ilanı/işlem/geri, ısmarlama, levha, defter", as
     for (let i = 0; i < 5; i++) await ornek.alarm();
     const aId = (await ben(ayse)).id as string;
 
-    // Hizmet HTTP uçları aynı oturum/JWKS düzeninde: katalog, beceri kilidi ve geçersiz ilan kimlikleri.
-    const hizmetKatalog = await cagir("GET", "/v1/hizmet", { oturum: zehra });
+    // Ozan becerisini gerçek oyun eylemleriyle aç: ezber yamaklığı 6 tecrübe → 1 puan → 15 dk öğrenme.
+    assert.equal((await yaz("/v1/meslek", { islem: "sec", meslek: "ozan" }, ayse)).durum, 200);
+    for (let i = 0; i < 3; i++) assert.equal((await yaz("/v1/temel-is", { is: "ezber" }, ayse)).durum, 200);
+    saat += GUN;
+    for (let i = 0; i < 3; i++) await ornek.alarm();
+    for (let i = 0; i < 3; i++) assert.equal((await yaz("/v1/temel-is", { is: "ezber" }, ayse)).durum, 200);
+    const ogren = await yaz("/v1/beceri/ogren", { meslek: "ozan", dugum: "ozan.turkuMani" }, ayse);
+    assert.equal(ogren.durum, 200, JSON.stringify(ogren.govde));
+    saat += 15 * 60_000;
+    await ben(ayse); // öğrenme süresini tamamla
+    saat += 7 * GUN;
+    for (let i = 0; i < 5; i++) await ornek.alarm();
+
+    const hizmetKatalog = await cagir("GET", "/v1/hizmet", { oturum: ayse });
     assert.equal(hizmetKatalog.durum, 200, JSON.stringify(hizmetKatalog.govde));
-    assert.ok(hizmetKatalog.govde.katalog.some((x: Nesne) => x.id === "yaraBak"));
-    assert.deepEqual(hizmetKatalog.govde.stok, []);
-    assert.deepEqual(hizmetKatalog.govde.ilanlar, []);
-    assert.ok(hizmetKatalog.govde.katalog.every((x: Nesne) => x.acik === false));
-    assert.equal((await yaz("/v1/hizmet/hazirla", { hizmet: "yaraBak", adet: 1 }, zehra)).govde.hata, "dugum_kapali");
-    assert.equal((await yaz("/v1/hizmet/ilan", { stok: "h999", adet: 1, fiyat: 6 }, zehra)).govde.hata, "stok_yok");
-    assert.equal((await yaz("/v1/hizmet/satin-al", { ilan: "hi999", adet: 1 }, zehra)).govde.hata, "ilan_yok");
-    assert.equal((await yaz("/v1/hizmet/geri", { ilan: "hi999" }, zehra)).govde.hata, "ilan_yok");
+    assert.equal(hizmetKatalog.govde.katalog.find((x: Nesne) => x.id === "turku").acik, true);
+    const zPara0 = (await ben(zehra)).para as number;
+    const aPara0 = (await ben(ayse)).para as number;
+    const zGonul0 = (await ben(zehra)).hal.gonul as number;
+
+    const hazir = await yaz("/v1/hizmet/hazirla", { hizmet: "turku", adet: 1 }, ayse, "hizmet-hazir-0001");
+    assert.equal(hazir.durum, 200, JSON.stringify(hazir.govde));
+    const stokId = hazir.govde.stok.id as string;
+    const ilanGirdi = { stok: stokId, adet: 1, fiyat: 2 };
+    const hizmetIlani = await yaz("/v1/hizmet/ilan", ilanGirdi, ayse, "hizmet-ilan-0001");
+    const hizmetIlaniTekrar = await yaz("/v1/hizmet/ilan", ilanGirdi, ayse, "hizmet-ilan-0001");
+    assert.equal(hizmetIlani.durum, 200, JSON.stringify(hizmetIlani.govde));
+    assert.deepEqual(hizmetIlaniTekrar.govde, hizmetIlani.govde, "ilan istekNo tekrarı stoğu ikinci kez ayırmaz");
+    const hizmetIlanId = hizmetIlani.govde.ilan.id as string;
+
+    // Yerleşim DO'yu aynı depoyla yeniden aç: satıcı bellekten düşmüş/çevrimdışı; satın alma depodan yüklemeli.
+    const [doKey, doKayit] = [...yerlesimler.ornekler.entries()][0]!;
+    const doId = yerlesimler.idFromString(doKey);
+    yerlesimler.ornekler.set(doKey, {
+      ornek: new YerlesimDO({ id: doId, storage: doKayit.depolama } as any, env, () => saat),
+      depolama: doKayit.depolama,
+    });
+    const satinGirdi = { ilan: hizmetIlanId, adet: 1 };
+    const hizmetSatis = await yaz("/v1/hizmet/satin-al", satinGirdi, zehra, "hizmet-satis-0001");
+    const hizmetSatisTekrar = await yaz("/v1/hizmet/satin-al", satinGirdi, zehra, "hizmet-satis-0001");
+    assert.equal(hizmetSatis.durum, 200, JSON.stringify(hizmetSatis.govde));
+    assert.deepEqual(hizmetSatisTekrar.govde, hizmetSatis.govde, "satin-al istekNo tekrarı çift ödeme/etki üretmez");
+    const zPara1 = await ben(zehra);
+    const aPara1 = await ben(ayse);
+    assert.equal(zPara1.para, zPara0 - 2);
+    assert.equal(aPara1.para, aPara0 + 2);
+    assert.equal(zPara1.hal.gonul, zGonul0 + 3);
 
     // Ayşe oduncu olur, odun keser; pazar boş, kurallar görünür.
     assert.equal((await yaz("/v1/meslek", { islem: "sec", meslek: "oduncu" }, ayse)).durum, 200);
