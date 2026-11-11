@@ -440,6 +440,7 @@ export interface YoneticiKimligi {
 
 export const YONETIM_UCLARI = {
   ben: "GET",
+  ekonomi: "GET",
   oyuncu: "GET",
   yaptirim: "POST",
   "yaptirim-kaldir": "POST",
