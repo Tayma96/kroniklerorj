@@ -3,6 +3,9 @@ import assert from "node:assert/strict";
 import { ETKILER } from "../src/icerik/agaclar/index.ts";
 import { MALLAR } from "../src/icerik/mallar.ts";
 import { HIZMET_TARIFLERI, hizmetTarifiBul } from "../src/yerlesim/hizmet-tarif.ts";
+import { hizmetHazirla, hizmetStoguGecerli } from "../src/yerlesim/hizmet-pazari.ts";
+import type { Karakter } from "../src/yerlesim/tipler.ts";
+import type { EkonomiKaydi } from "../src/yerlesim/pazar-tahta.ts";
 
 test("E4.3 hizmet kataloğu: kimlikler tekil, girdiler mal dizininde ve beceri kapıları gerçek", () => {
   assert.equal(new Set(HIZMET_TARIFLERI.map((x) => x.id)).size, HIZMET_TARIFLERI.length);
@@ -15,4 +18,65 @@ test("E4.3 hizmet kataloğu: kimlikler tekil, girdiler mal dizininde ve beceri k
   }
   assert.equal(hizmetTarifiBul("olmayan"), undefined);
   assert.equal(hizmetTarifiBul({ id: "yaraBak" }), undefined);
+});
+
+
+function sifaciKarakter(seviye = 2, sifaliOt = 3, takat = 6): Karakter {
+  return {
+    o: "o1",
+    h: "hesap-1",
+    ad: "Şifacı",
+    e: 1,
+    d: 0,
+    ev: { sifaliOt },
+    tk: takat,
+    ta: 12,
+    ms: { a: "sifaci", y: "", s: { sifaci: { a: "sifaci", kd: 0, hz: 0, cy: 0, sv: { "sifaci.sargiMerhem": seviye } } } },
+  } as unknown as Karakter;
+}
+
+function ekonomi(): EkonomiKaydi {
+  return { n: 1, il: [], is: [], lv: [], hs: [] };
+}
+
+test("E4.3-A hizmet hazırlama: beceri, girdi ve takat birlikte doğrulanır; stok süreli yazılır", () => {
+  const kar = sifaciKarakter();
+  const ek = ekonomi();
+  const r = hizmetHazirla(ek, kar, "yaraBak", 2, 12);
+  assert.equal(r.ok, true);
+  if (!r.ok) return;
+  assert.deepEqual(r.deger.harcanan, { girdiler: { sifaliOt: 2 }, takat: 2 });
+  assert.equal(kar.ev?.sifaliOt, 1);
+  assert.equal(kar.tk, 4);
+  assert.equal(r.deger.stok.n, 2);
+  assert.equal(r.deger.stok.sa, 14);
+  assert.equal(ek.hs?.length, 1);
+  assert.equal(hizmetStoguGecerli(r.deger.stok, 14), true);
+  assert.equal(hizmetStoguGecerli(r.deger.stok, 15), false);
+});
+
+test("E4.3-A hizmet hazırlama: beceri kilidi, eksik girdi ve takat hatasında mal/stoğa dokunulmaz", () => {
+  const kilitli = sifaciKarakter(1, 3, 6);
+  const kilitliEk = ekonomi();
+  const kilit = hizmetHazirla(kilitliEk, kilitli, "yaraBak", 1, 12);
+  assert.equal(kilit.ok, false);
+  if (!kilit.ok) assert.equal(kilit.hata, "dugum_kapali");
+  assert.equal(kilitli.ev?.sifaliOt, 3);
+  assert.equal(kilitliEk.hs?.length, 0);
+
+  const girdisiz = sifaciKarakter(2, 0, 6);
+  const girdisizEk = ekonomi();
+  const girdi = hizmetHazirla(girdisizEk, girdisiz, "yaraBak", 1, 12);
+  assert.equal(girdi.ok, false);
+  if (!girdi.ok) assert.equal(girdi.hata, "girdi_yok");
+  assert.equal(girdisiz.tk, 6);
+  assert.equal(girdisizEk.hs?.length, 0);
+
+  const takatsiz = sifaciKarakter(2, 3, 0);
+  const takatsizEk = ekonomi();
+  const takat = hizmetHazirla(takatsizEk, takatsiz, "yaraBak", 1, 12);
+  assert.equal(takat.ok, false);
+  if (!takat.ok) assert.equal(takat.hata, "takat_yok");
+  assert.equal(takatsiz.ev?.sifaliOt, 3);
+  assert.equal(takatsizEk.hs?.length, 0);
 });
