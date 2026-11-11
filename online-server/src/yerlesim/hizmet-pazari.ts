@@ -39,7 +39,7 @@ export function hizmetHazirla(
     .reduce((toplam, x) => toplam + x.n, 0);
   if (eldeki + adet > HIZMET_STOK_EN_COK) return hata("kota_doldu");
 
-  const girdiler: Partial<Record<string, number>> = {};
+  const girdiler: Record<string, number> = {};
   for (const [mal, birim] of Object.entries(tarif.girdi)) {
     const gereken = (birim ?? 0) * adet;
     if ((kar.ev?.[mal] ?? 0) < gereken) return hata("girdi_yok");
