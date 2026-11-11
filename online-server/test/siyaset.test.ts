@@ -263,9 +263,13 @@ test("P5 hazırlık izi gizlidir; ilanla birlikte yalnız durum bölgeye açıl�
   const yabanci = kimlik("yabanci-gizlilik");
   valiYap(d, vali);
 
-  assert.equal(eylem(d, yabanci, { islem: "darbeHazirla" }).hata, "yetki_yok");
+  const yabanciSonuc = eylem(d, yabanci, { islem: "darbeHazirla" });
+  assert.equal(yabanciSonuc.ok, false);
+  if (!yabanciSonuc.ok) assert.equal(yabanciSonuc.hata, "yetki_yok");
   assert.equal(eylem(d, vali, { islem: "darbeHazirla" }).ok, true);
-  assert.equal(eylem(d, vali, { islem: "darbeHazirla" }).hata, "darbe_var");
+  const tekrarSonuc = eylem(d, vali, { islem: "darbeHazirla" });
+  assert.equal(tekrarSonuc.ok, false);
+  if (!tekrarSonuc.ok) assert.equal(tekrarSonuc.hata, "darbe_var");
 
   const gizli = bolgeGorunumu(d, SIMDI, yabanci).bolge.darbe;
   const katilimci = bolgeGorunumu(d, SIMDI, vali).bolge.darbe;
@@ -356,7 +360,9 @@ test("P5 çatışma sonucu bağımsız devlet kurar; P6 yönetim kararları ve g
   const tarafsiz = kimlik("tarafsiz", { bolge: "demirhan" });
   assert.equal(eylem(d, tarafsiz, { islem: "devletYemin", deger: "tarafsiz" }).ok, true);
   assert.equal(d.devlet?.yeminler[tarafsiz.hesap], "tarafsiz");
-  assert.equal(eylem(d, kimlik("sahte-bey", { bolge: "demirhan" }), { islem: "devletYonet", tur: "vergi", deger: 1 }).hata, "yetki_yok");
+  const sahteBeySonuc = eylem(d, kimlik("sahte-bey", { bolge: "demirhan" }), { islem: "devletYonet", tur: "vergi", deger: 1 });
+  assert.equal(sahteBeySonuc.ok, false);
+  if (!sahteBeySonuc.ok) assert.equal(sahteBeySonuc.hata, "yetki_yok");
 });
 
 test("P5 savunma üstün gelirse darbe bastırılır ve vali makamı boşalır", () => {
