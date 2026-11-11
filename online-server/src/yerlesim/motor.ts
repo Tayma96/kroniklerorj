@@ -502,19 +502,19 @@ export class YerlesimMotoru {
       if (govde.tur === "akce") {
         if (typeof govde.tutar !== "number" || !Number.isInteger(govde.tutar) || govde.tutar < 1 || govde.tutar > 10000) return hata("deger_sinir_disi");
         kar.pa += govde.tutar;
-        olayParam = { tur: "akce", tutar: govde.tutar, gerekce };
+        olayParam = { tutar: govde.tutar, gerekce };
         yanit = { tur: "akce", tutar: govde.tutar, gerekce };
       } else if (govde.tur === "esya") {
         const mal = malBul(govde.mal);
         if (!mal) return hata("mal_gecersiz");
         if (typeof govde.adet !== "number" || !Number.isInteger(govde.adet) || govde.adet < 1 || govde.adet > 50) return hata("deger_sinir_disi");
         envanterEkle(kar, mal, govde.adet);
-        olayParam = { tur: "esya", mal, adet: govde.adet, gerekce };
+        olayParam = { mal, adet: govde.adet, gerekce };
         yanit = { tur: "esya", mal, adet: govde.adet, gerekce };
       } else {
         return hata("deger_sinir_disi");
       }
-      ek.olay = { t: "yonetimTelafi", w: "kurum", h: kar.o, g: kar.o, n: 5, k: "olay.yonetim.telafi", p: olayParam };
+      ek.olay = { t: "yonetimTelafi", w: "kurum", h: kar.o, g: kar.o, n: 5, k: govde.tur === "akce" ? "olay.yonetim.telafiAkce" : "olay.yonetim.telafiEsya", p: olayParam };
       return basarili(yanit);
     });
   }
