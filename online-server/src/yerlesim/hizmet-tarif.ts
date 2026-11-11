@@ -1,5 +1,4 @@
-// E4.3 hizmet pazarı: bütün hazır hizmetler bu katalogdan tanımlanır. Bu ilk dilim katalog sözleşmesini
-// kurar; hazırlama/ilan/teslim yürütücüsü henüz bu kayıtlara bağlanmış değildir. İstemci girdisine güvenilmez.
+// E4.3 hizmet pazarı: bütün hazır hizmetler bu katalogdan tanımlanır. İstemci girdisine güvenilmez.
 import type { MalId } from "../icerik/mallar.ts";
 import type { MeslekId } from "../icerik/meslekler.ts";
 
@@ -45,10 +44,7 @@ export const HIZMET_TARIFLERI: readonly HizmetTarifi[] = [
     girdi: { bez: 1, kereste: 1, sifaliOt: 1 },
     takat: 2,
     hedef: "kisi",
-    etki: [
-      { tur: "hal", alan: "can", deger: 20 },
-      { tur: "kayit", alan: "yaraliDurumunuBitir" },
-    ],
+    etki: [{ tur: "hal", alan: "can", deger: 20 }],
     hazir: { adet: 1, gecerlilikAy: 2 },
     fiyatTaban: 12,
   },
@@ -59,7 +55,7 @@ export const HIZMET_TARIFLERI: readonly HizmetTarifi[] = [
     seviye: 1,
     girdi: {},
     takat: 1,
-    hedef: "kasaba",
+    hedef: "kisi",
     etki: [{ tur: "hal", alan: "gonul", deger: 3 }],
     hazir: { adet: 1, gecerlilikAy: 1 },
     fiyatTaban: 2,
