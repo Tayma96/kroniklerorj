@@ -501,7 +501,7 @@ test("Y3 telafi: akçe olayı tekrar güvenli, kendi hesap kümesine kapalı ve 
       oturum: yb,
       govde: { hedef: ayse.hesap, tur: "akce", tutar: 500, gerekce: "Hatalı işlem düzeltmesi", istekNo: no() },
     });
-    assert.deepEqual([kendine.durum, kendine.govde], [409, { hata: "kendi_hedef" }]);
+    assert.deepEqual([kendine.durum, kendine.govde], [403, { hata: "kendi_hedef" }]);
 
     const govde = { hedef: mehmet.hesap, tur: "akce", tutar: 500, gerekce: "Hatalı işlem düzeltmesi", istekNo: no() };
     const ilk = await cagir("POST", "/yonetim/telafi", { oturum: yb, govde });
