@@ -8,10 +8,7 @@ export type Rol = (typeof ROLLER)[number];
 const HEPSI = ["kurucu", "moderator"] as const;
 const KURUCU = ["kurucu"] as const;
 
-/**
- * İşlem → izinli roller. "Y2" işaretliler için henüz uç yoktur; yetkisi şimdiden tanımlıdır ki uç eklenince
- * matris değişmesin.
- */
+/** İşlem → izinli roller. Yetki matrisi varsayılan olarak kapalıdır. */
 export const YETKI = {
   giris: HEPSI,
   ben: HEPSI,
