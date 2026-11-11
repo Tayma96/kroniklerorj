@@ -217,6 +217,7 @@ export interface BagimsizDevlet {
   kurulusAy: number;
   beyKisi: string;
   beyHesap: string;
+  beyAd: string;
   vergiOrani: number;
   divan: { kisi: string; hesap: string; ad: string; rol: "divan" }[];
   mogol: MogolBaglantisi;
