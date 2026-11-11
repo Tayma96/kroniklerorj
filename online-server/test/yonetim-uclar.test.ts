@@ -494,6 +494,7 @@ test("Y3 telafi: akçe olayı tekrar güvenli, kendi hesap kümesine kapalı ve 
     const { cagir, oyuncu, yonetici } = await kur();
     const ayse = await oyuncu(KURUCU_SUB, "Ayşe");
     const mehmet = await oyuncu("220000000000000000002", "Mehmet", "develi");
+    const ali = await oyuncu("220000000000000000003", "Ali", "develi");
     const yb = (await yonetici(KURUCU_SUB, KURUCU)).govde.oturum as string;
 
     const kendine = await cagir("POST", "/yonetim/telafi", {
@@ -508,6 +509,8 @@ test("Y3 telafi: akçe olayı tekrar güvenli, kendi hesap kümesine kapalı ve 
     assert.equal(ilk.govde.telafi.hedef, mehmet.hesap);
     assert.equal(ilk.govde.telafi.tutar, 500);
     assert.ok(ilk.govde.uygulama.olay, "hedef oyuncuya özel kronik olayı oluşturulur");
+    const aliOlaylari = await cagir("GET", "/v1/olaylar", { oturum: ali.oturum });
+    assert.ok(!JSON.stringify(aliOlaylari.govde).includes("olay.yonetim.telafiAkce"), "telafi olayı aynı yerleşimdeki diğer oyuncuya görünmez");
 
     const tekrar = await cagir("POST", "/yonetim/telafi", { oturum: yb, govde });
     assert.deepEqual(tekrar.govde, ilk.govde, "aynı istekNo ikinci kez para üretmez");
