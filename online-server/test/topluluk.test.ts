@@ -9,7 +9,7 @@ import { hamiDonumu, hamiIslem, HAMI_NAM } from "../src/yerlesim/hami.ts";
 import { ZAVIYE_EN_AZ, ZAVIYE_KURULUS_BEDELI, zaviyeDonumu, zaviyeIslem } from "../src/yerlesim/lonca-grup.ts";
 import { MESREP_ETKI, mesrepGorus, mesrepGorunumu, mesrepNam, mesrepSec, mesrepYakalanma } from "../src/yerlesim/mesrep.ts";
 import { GUN_MS, MUDAVIM_ESIKLERI, mudavimZiyaret } from "../src/yerlesim/mudavim.ts";
-import { DERT_BASARISIZ_DUSUS, ORTAK_DERT_KISI_EN_COK, ortakDertDonumu, ortakDertKatki } from "../src/yerlesim/ortak-dert.ts";
+import { DERT_BASARISIZ_DUSUS, ORTAK_DERT_KISI_EN_COK, ortakDertDonumu, ortakDertKatki, uygunKatkilar } from "../src/yerlesim/ortak-dert.ts";
 import { comertlerLevhasi, senlikDurumu, senlikKatki, SENLIK_SURE_AY } from "../src/yerlesim/senlik.ts";
 import { GOSTERGE_DENGE, gostergeOku, gostergeTetikCarpani } from "../src/yerlesim/topluluk-kayit.ts";
 import { toplulukDonumu } from "../src/yerlesim/topluluk.ts";
@@ -107,6 +107,31 @@ test("ortak dert: kıtlıkta açılır, katkı defterde adla, kişi tavanı, ba�
   assert.equal(a.pa, pa);
   assert.equal(JSON.stringify(a.hl), hl);
   assert.ok(gostergeTetikCarpani(k, "haydut") > 1);
+});
+
+test("asker nöbet hizmeti beceriyle açılır ve ana meslek değişse de sunucuda doğrulanır", () => {
+  const k = testKasabasi("develi", 300);
+  const ay = k.ay + 1;
+  arkaPlanAl(k).tt.haydut = ay + 2;
+  ortakDertDonumu(k, ay);
+  const d = k.tl!.od.find((x) => x.t === "haydut")!;
+  const askerBecerili = oyuncuEkle(k, 11, k.ay - 20 * 12);
+  askerBecerili.ms = {
+    a: "demirci",
+    y: "",
+    s: {
+      demirci: { kd: 0, hz: 0, cy: 0 },
+      asker: { kd: 0, hz: 0, cy: 0, sv: { "asker.surNobeti": 1 } },
+    },
+  };
+  assert.ok(uygunKatkilar(askerBecerili).includes("nobet"));
+  askerBecerili.tk = 18;
+  const sonuc = ortakDertKatki(k, askerBecerili, { dert: d.i, katki: "nobet" }, ay);
+  assert.ok(sonuc.ok, JSON.stringify(sonuc));
+
+  const becerisiz = oyuncuEkle(k, 12, k.ay - 20 * 12);
+  assert.ok(!uygunKatkilar(becerisiz).includes("nobet"));
+  assert.deepEqual(ortakDertKatki(k, becerisiz, { dert: d.i, katki: "nobet" }, ay), { ok: false, hata: "katki_gecersiz" });
 });
 
 function oyuncuEkleK(k: ReturnType<typeof testKasabasi>): ReturnType<typeof testKasabasi> {
