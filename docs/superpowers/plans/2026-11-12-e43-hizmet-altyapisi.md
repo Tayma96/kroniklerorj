@@ -2,7 +2,7 @@
 
 **Tarih:** 12 Kasım 2026  
 **Dal:** `feature/online-p5-darbe-zinciri`  
-**Durum:** Plan; henüz genel hizmet pazarı olarak uygulanmadı.
+**Durum:** E4.3-A hazırlama/katalog altyapısı kısmen uygulandı; ilan/satın alma henüz yok.
 
 ## Neden bu plan
 
@@ -57,6 +57,12 @@ Her POST, `istekNo` ile tekrar güvenli olmalı. Yerleşim sınırları ve yetki
 ## Uygulama sırası
 
 ### E4.3-A — Ortak katalog ve hazır hizmet pazarı
+- [x] Ortak katalog ve sunucu tarafı beceri kapısı.
+- [x] Hazırlama: girdi + takat aynı işlemde düşer; geçerli süreli stok oluşur.
+- [x] `GET /v1/hizmet` ve `POST /v1/hizmet/hazirla` uçları.
+- [ ] Hazır stoktan süreli ilan açma/kapatma.
+- [ ] Alımda alıcı ödemesi, satıcı bakiyesi ve hedef etkisini aynı ekonomi işlemi içinde yazma.
+- [ ] Çevrimdışı satıcı, stok yarışı, hesap/hane kümesi, kendi hizmeti ve süre dolumu regresyonları.
 - Önce `yaraBak`, `turku`, `yatak`/oda gibi mevcut oyun durumuna doğrudan etki eden 3–4 hizmet.
 - Hazırlıkta girdiler ve takat düşer; ilan satıcı çevrimdışıyken de satın alınabilir.
 - Satın almada alıcı öder, satıcı kazanır, etki hedefe yazılır.
