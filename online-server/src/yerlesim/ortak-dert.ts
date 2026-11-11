@@ -18,6 +18,7 @@ import { halDegistir } from "./hal.ts";
 import { olduMu } from "./hanedan.ts";
 import { namEkle, takatHarca, type Nam } from "./karakter.ts";
 import { mesrepEtkisi } from "./mesrep.ts";
+import { hizmetAcik } from "./beceri-etki.ts";
 import { envanterEkle } from "./npc-taban.ts";
 import { oyuncuRef } from "./ortak.ts";
 import { tohumlu } from "./rastgele.ts";
@@ -197,8 +198,9 @@ function anaMeslek(kar: Karakter): { m: MeslekId | undefined; kd: number } {
 export function uygunKatkilar(kar: Karakter): KatkiTuru[] {
   const { m } = anaMeslek(kar);
   const liste = new Set<KatkiTuru>(["erzak", "malzeme", "alet", "elEmegi"]);
-  if (m) liste.add(MESLEK_KATKI[m]);
-  if (mesrepEtkisi(kar, "nobet") > 0) liste.add("nobet");
+  if (m && m !== "asker") liste.add(MESLEK_KATKI[m]);
+  // Asker nöbeti, mesleği ne olursa olsun ilgili beceri hizmetini öğrenenlere açılır.
+  if (hizmetAcik(kar, "nobet") || mesrepEtkisi(kar, "nobet") > 0) liste.add("nobet");
   return KATKI_TURLERI.filter((t) => liste.has(t));
 }
 
