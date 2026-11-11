@@ -81,7 +81,7 @@ export function devletYemin(d: BolgeDurumu, kimlik: SiyasiKimlik, deger: unknown
   if (!s) return "devlet_yok";
   if (kimlik.bolge !== d.id) return "yerlesim_gecersiz";
   if (deger !== "bagli" && deger !== "tarafsiz") return "deger_sinir_disi";
-  s.yeminler[kimlik.kisi] = deger;
+  s.yeminler[kimlik.hesap] = deger;
   return null;
 }
 
@@ -90,7 +90,7 @@ export function devletGorunumu(s: BagimsizDevlet | undefined) {
   const yeminler = Object.values(s.yeminler);
   return {
     v: s.v, ad: s.ad, kurulusAy: s.kurulusAy,
-    bey: { kisi: s.beyKisi, hesap: s.beyHesap },
+    bey: { kisi: s.beyKisi },
     vergiOrani: s.vergiOrani,
     divan: s.divan.map((x) => ({ ad: x.ad, rol: x.rol })),
     mogol: s.mogol, sultan: s.sultan, sultanSonuc: s.sultanSonuc ?? null, taninma: s.taninma,
