@@ -17,7 +17,7 @@ import { hizmetEkle } from "./meslek.ts";
 import { envanterEkle, malMeslegindeMi, satisDegeri } from "./npc-taban.ts";
 import { npcAdi, npcKimlik, npcRef, oyuncuRef, yas } from "./ortak.ts";
 import { agirlikliSec, aralik, dizinSec, tohumlu } from "./rastgele.ts";
-import type { Dokum, IliskiHaritasi, Karakter, Kasaba, Npc, OlayTaslagi } from "./tipler.ts";
+import type { CalismaParametreleri, Dokum, IliskiHaritasi, Karakter, Kasaba, Npc, OlayTaslagi } from "./tipler.ts";
 
 export interface Siparis {
   /** "s<ay>_<sıra>". */
