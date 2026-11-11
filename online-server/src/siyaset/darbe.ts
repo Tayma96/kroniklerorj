@@ -32,18 +32,18 @@ export function darbeDestekle(d: BolgeDurumu, kimlik: SiyasiKimlik, koltuk: stri
   return null;
 }
 
-export function darbeSadakatYatir(d: BolgeDurumu, tutar: number, ay: number): HataKodu | null {
+export function darbeSadakatYatir(d: BolgeDurumu, tutar: number, ay: number): HataKodu | number {
   const p = d.darbe;
   if (!p || p.durum !== "hazirlik") return "darbe_yok";
   if (!Number.isInteger(tutar) || tutar < DARBE.yatirimEnAz || tutar > DARBE.yatirimEnCok || tutar % DARBE.yatirimBirim !== 0) return "deger_sinir_disi";
   if (d.kasa - tutar < DARBE.hazineRezerv) return "kasa_yetersiz";
   if (p.garnizonSadakati >= 100) return "sinir_asildi";
   const artis = Math.min(100 - p.garnizonSadakati, (tutar / DARBE.yatirimBirim) * DARBE.sadakatBirim);
-  const harcanan = (artis / DARBE.sadakatBirim) * DARBE.yatirimBirim;
+  const harcanan = Math.min(tutar, Math.ceil(artis / DARBE.sadakatBirim) * DARBE.yatirimBirim);
   p.garnizonSadakati += artis;
   p.yatirilan += harcanan;
   p.izler.push({ ay, tur: "ikmal", guvenilirlik: 90, gorunurluk: "ileriGelen" });
-  return null;
+  return harcanan;
 }
 
 export function darbeEsigi(d: BolgeDurumu) {
