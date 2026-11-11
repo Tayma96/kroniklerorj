@@ -73,7 +73,7 @@ export class YonetimDO {
       kurucular: kurucuListesi(env.YONETICI_EPOSTALAR),
       oyuncuBul: (sorgu) => dunyaCagir<Profil>(env, { islem: "oyuncuBul", ...sorgu }),
       ekonomiOku: async () => {
-        type Satir = { yerlesim: string; oyuncuSayisi: number; npcSayisi: number; toplamAkce: number; son12Ay: { gelir: number; gider: number; net: number }; kasabaStokAdet: number; acikSiparis: number };
+        type Satir = { yerlesim: string; oyuncuSayisi: number; npcSayisi: number; toplamAkce: number; ortalamaAkce: number; medyanAkce: number; enDusukAkce: number; enYuksekAkce: number; son12Ay: { gelir: number; gider: number; net: number }; kasabaStokAdet: number; acikSiparis: number };
         const sonuclar = await Promise.all(YERLESIMLER.map((y) => yerlesimCagir<Satir>(env, { islem: "ekonomiSagligi", yerlesim: y.id })));
         const satirlar = sonuclar.flatMap((r, i) => r.ok ? [{ ...r.deger, ad: YERLESIMLER[i]!.ad, beylik: YERLESIMLER[i]!.beylik }] : []);
         const topla = (alan: "oyuncuSayisi" | "npcSayisi" | "toplamAkce" | "kasabaStokAdet" | "acikSiparis") => satirlar.reduce((s, r) => s + r[alan], 0);
