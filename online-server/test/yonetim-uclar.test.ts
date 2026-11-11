@@ -244,6 +244,8 @@ test("roller ve yetki: moderatör kalıcı/parametre/rol yapamaz (kayda girer), 
     const ben = await cagir("GET", "/yonetim/ben", { oturum: mb });
     assert.ok(!(ben.govde.yetkiler as string[]).includes("parametreDegistir"));
     assert.ok(!(ben.govde.yetkiler as string[]).includes("ekonomi"), "ekonomi sağlığı yalnız kurucuya açık");
+    assert.ok(!(ben.govde.yetkiler as string[]).includes("telafi"), "telafi yalnız kurucuya açık");
+    assert.ok(!(ben.govde.yetkiler as string[]).includes("telafiler"), "telafi geçmişi yalnız kurucuya açık");
 
     const gecici = await cagir("POST", "/yonetim/yaptirim", {
       oturum: mb, govde: { hedef: mehmet.hesap, tur: "susturma", gun: 2, gerekce: "sohbette ısrarlı spam", istekNo: no() },
