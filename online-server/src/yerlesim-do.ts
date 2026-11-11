@@ -6,12 +6,14 @@ import { doDepo, type Depo } from "./depo.ts";
 import { hamiUc, mesrepUc, mudavimUc, ortakDertUc, senlikUc, toplulukOku, zaviyeUc } from "./yerlesim/topluluk-uclar.ts";
 import { defterOku, ismarlaUc, ismarlamaCevapUc, ismarlamaOku, levhaOku, pazarGeri, pazarIlan, pazarIslem, pazarOku } from "./yerlesim/ekonomi-uclar.ts";
 import { armaganGeri, armaganTeveccuh } from "./yerlesim/armagan-uclar.ts";
-import { iletiOku, isletmeCagir, jsonYanit } from "./ic.ts";
+import { iletiOku, isletmeCagir, jsonYanit, yonetimCagir } from "./ic.ts";
 import { hata, type Env, type Sonuc, type YerlesimIleti } from "./tipler.ts";
+import type { CalismaParametreleri } from "./yerlesim/tipler.ts";
 import { sonrakiAlarm, YerlesimMotoru } from "./yerlesim/motor.ts";
 import { mulkIsle, teslimAl, uzlastir, type IsletmeCagir } from "./mulk/yerlesim-mulk.ts";
 
 export class YerlesimDO {
+  readonly #env: Env;
   readonly #depolama: DurableObjectStorage;
   readonly #depo: Depo;
   readonly #saat: () => number;
@@ -22,6 +24,7 @@ export class YerlesimDO {
   #alarmVar = false;
 
   constructor(ctx: DurableObjectState, env: Env, saat: () => number = Date.now) {
+    this.#env = env;
     this.#isletme = (i) => (env.ISLETME ? isletmeCagir(env, i) : Promise.resolve({ ok: false, hata: "isletme_yok" }));
     this.#depolama = ctx.storage;
     this.#depo = doDepo(ctx.storage);
@@ -57,6 +60,10 @@ export class YerlesimDO {
   async #isle(ileti: YerlesimIleti, simdi: number): Promise<Sonuc<unknown>> {
     const motor = await this.#ac(ileti.yerlesim, simdi);
     if (!motor) return hata("yerlesim_gecersiz");
+    const parametreler = await yonetimCagir(this.#env, { islem: "parametrelerCalisma" });
+    if (parametreler.ok && typeof parametreler.deger === "object" && parametreler.deger !== null) {
+      motor.parametreleriGuncelle(parametreler.deger as CalismaParametreleri);
+    }
     const { kalan } = await motor.yetistir(simdi);
     await this.#alarmKur(simdi, kalan);
     switch (ileti.islem) {
