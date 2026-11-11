@@ -187,6 +187,7 @@ async function ekonomiYukle() {
     el("div", { class: "kart" }, el("strong", { metin: fmt(o.toplamAkce) }), el("div", { class: "kucuk", metin: "Oyuncu cüzdanlarındaki akçe" })),
     el("div", { class: "kart" }, el("strong", { metin: fmt(o.acikSiparis) }), el("div", { class: "kucuk", metin: "Açık lonca siparişi" })),
     el("div", { class: "kart" }, el("strong", { metin: fmt(o.kasabaStokAdet) }), el("div", { class: "kucuk", metin: "Kasaba stok adedi" }))));
+  t.append(el("div", { class: "kucuk", metin: "Cüzdan medyanı " + fmt(o.medyanAkce) + " · ortalama " + fmt(o.ortalamaAkce) + " · aralık " + fmt(o.enDusukAkce) + "–" + fmt(o.enYuksekAkce) + " akçe" }));
   t.append(el("div", { class: "kucuk", metin: "Son 12 ay: gelir +" + fmt(o.son12Ay.gelir) + " · gider -" + fmt(o.son12Ay.gider) + " · net " + fmt(o.son12Ay.net) + " akçe · NPC nüfusu " + fmt(o.npcSayisi) }));
   const k = $("#ekonomiListe"); k.textContent = "";
   for (const y of v.yerlesimler) {
