@@ -2,7 +2,7 @@
 
 **Tarih:** 12 Kasım 2026  
 **Dal:** `feature/online-p5-darbe-zinciri`  
-**Durum:** E4.3-A katalog, hazırlama, ilan, iptal ve oyuncu tesliminin ilk sunucu dilimi uygulandı; uçtan uca HTTP testleri ve NPC talebi sonraki adımlar.
+**Durum:** E4.3-A katalog, hazırlama, ilan, iptal, oyuncu teslimi ve süresi dolan stok işlemleri uygulandı; CI run #170 başarılı. Sonraki adım NPC talebi.
 
 ## Neden bu plan
 
@@ -64,7 +64,7 @@ Her POST, `istekNo` ile tekrar güvenli olmalı. Yerleşim sınırları ve yetki
 - [x] Alımda alıcı ödemesi, satıcı bakiyesi ve hedef etkisini aynı ekonomi işlemi içinde yazma; satıcı tecrübesi aynı hesap/hane kümesinde verilmez.
 - [x] Stok kapasitesi, hesap-hane kümesi, kendi hizmeti ve süre dolumu için çekirdek regresyon testleri.
 - [x] HTTP uçtan uca istekNo tekrar güvenliği ve satıcıyı kalıcı depodan yükleme testi (DO yeniden açılışıyla).
-- [x] Süresi dolan hazır stok ve açık ilan stoğu ay dönümünde kapanır; satılmayan adet başına yarım hizmet tecrübesi verilir ve tekrar ödül engellenir (CI doğrulaması bekliyor).
+- [x] Süresi dolan hazır stok ve açık ilan stoğu ay dönümünde kapanır; satılmayan adet başına yarım hizmet tecrübesi verilir ve tekrar ödül engellenir.
 - Önce `yaraBak`, `turku`, `yatak`/oda gibi mevcut oyun durumuna doğrudan etki eden 3–4 hizmet.
 - Hazırlıkta girdiler ve takat düşer; ilan satıcı çevrimdışıyken de satın alınabilir.
 - Satın almada alıcı öder, satıcı kazanır, etki hedefe yazılır.
