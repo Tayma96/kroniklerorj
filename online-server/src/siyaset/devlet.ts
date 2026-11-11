@@ -15,8 +15,8 @@ export function devletYonet(d: BolgeDurumu, kimlik: SiyasiKimlik, govde: Record<
   switch (govde.tur) {
     case "ad": {
       if (typeof govde.ad !== "string") return "deger_sinir_disi";
-      const ad = govde.ad.trim().replace(/\\s+/g, " ");
-      if (ad.length < 3 || ad.length > 32 || !/^[\\p{L}\\p{N}][\\p{L}\\p{N} '\\u2019-]*[\\p{L}\\p{N}]$/u.test(ad)) return "deger_sinir_disi";
+      const ad = govde.ad.trim().replace(/\s+/g, " ");
+      if (ad.length < 3 || ad.length > 32 || !/^[\p{L}\p{N}][\p{L}\p{N} '\u2019-]*[\p{L}\p{N}]$/u.test(ad)) return "deger_sinir_disi";
       s.ad = ad;
       return null;
     }
