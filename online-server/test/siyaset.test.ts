@@ -323,6 +323,7 @@ test("P5 çatışma sonucu bağımsız devlet kurar; P6 yönetim kararları ve g
   assert.equal(d.devlet?.divan.length, 3);
   assert.equal(d.devlet?.sultan, "bagimsiz");
   assert.equal(d.devlet?.yeminler && Object.keys(d.devlet.yeminler).length, 0);
+  assert.equal(bolgeGorunumu(d, SIMDI, bey).bolge.devlet?.ad, d.devlet?.ad);
 
   assert.equal(eylem(d, bey, { islem: "devletYonet", tur: "ad", ad: "Demirhan Beyliği" }).ok, true);
   assert.equal(eylem(d, bey, { islem: "devletYonet", tur: "vergi", deger: 4 }).ok, true);
@@ -339,10 +340,10 @@ test("P5 çatışma sonucu bağımsız devlet kurar; P6 yönetim kararları ve g
 
   const oyuncu = kimlik("gönüllü", { bolge: "demirhan" });
   assert.equal(eylem(d, oyuncu, { islem: "devletYemin", deger: "bagli" }).ok, true);
-  assert.equal(d.devlet?.yeminler[oyuncu.kisi], "bagli");
+  assert.equal(d.devlet?.yeminler[oyuncu.hesap], "bagli");
   const tarafsiz = kimlik("tarafsiz", { bolge: "demirhan" });
   assert.equal(eylem(d, tarafsiz, { islem: "devletYemin", deger: "tarafsiz" }).ok, true);
-  assert.equal(d.devlet?.yeminler[tarafsiz.kisi], "tarafsiz");
+  assert.equal(d.devlet?.yeminler[tarafsiz.hesap], "tarafsiz");
   assert.equal(eylem(d, kimlik("sahte-bey", { bolge: "demirhan" }), { islem: "devletYonet", tur: "vergi", deger: 1 }).hata, "yetki_yok");
 });
 
