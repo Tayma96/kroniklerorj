@@ -57,6 +57,11 @@ export function aracArtisi(k: Karakter, hedef: string): { mal: string; arti: num
   return sonuc;
 }
 
+/** Öğrenilmiş mesleki hizmet yetkisi; tüketen sistem kendi eyleminde sunucu tarafında doğrular. */
+export function hizmetAcik(k: Karakter, hizmet: string): boolean {
+  return [...acikEtkiler(k)].some((e) => e.tur === "hizmet" && e.hizmet === hizmet);
+}
+
 /** Tarif/iş kimliği ya da tarif gruplarında, belirtilen girdiye uygulanan tasarruf yüzdesi. */
 export function tasarrufOrani(k: Karakter, hedefler: readonly string[], mal: string): number {
   let yuzde = 0;
