@@ -14,6 +14,7 @@
 
 import { b64urlKodla, utf8 } from "../b64.ts";
 import type { Depo } from "../depo.ts";
+import type { SiyasiKimlik } from "../siyaset/tipler.ts";
 import { yerlesimBul } from "../dunya-veri.ts";
 import { istekNoCoz } from "../mantik.ts";
 import {
@@ -69,6 +70,7 @@ import {
   type YaptirimTuru,
 } from "./yaptirim.ts";
 import { debdebeIade, debdebeKayit, debdebeListesi } from "./y3.ts";
+import { telafiListesi, telafiUygula } from "./y2.ts";
 import { epostaDuzenle, rolCoz, verilebilirRolMu, yetkiler, yetkiVar, type Rol, type YonetimIslemi } from "./yetki.ts";
 
 /** [PARAMETRE] Sayfa boyları ve duyuru sayısı. */
@@ -133,6 +135,10 @@ export interface YonetimBaglami {
   oyuncuBul: (sorgu: { ad?: string; hesap?: string }) => Promise<Sonuc<Profil>>;
   /** Y2: yerleşimlerden kimliksiz ekonomi sağlığı özeti. */
   ekonomiOku?: () => Promise<Sonuc<unknown>>;
+  /** Y3: hedef ve yönetici hesabının aynı hesap/hane kümesinde olmadığını doğrulamak için siyasi kimlik. */
+  siyasiKimlikOku?: (hesapId: string, yerlesim: string) => Promise<Sonuc<SiyasiKimlik>>;
+  /** Y3: akçe/eşya telafisini hedef yerleşimde tekrar güvenli uygular. */
+  telafiYaz?: (yerlesim: string, hedef: string, govde: unknown) => Promise<Sonuc<unknown>>;
   /** Hesabın etkin yaptırım özetini HesapDO'ya yazar. */
   hesabaYaz: (hedef: string, durum: HesapYaptirimi) => Promise<Sonuc<unknown>>;
   /** Debdebe iadesi (Y3): hedef HesapDO'ya iç ileti. Yoksa iade yapılamaz. */
@@ -701,6 +707,10 @@ async function yonet(
       return ben(o);
     case "ekonomi":
       return o.b.ekonomiOku ? o.b.ekonomiOku() : hata("gecersiz_istek");
+    case "telafiler":
+      return telafiListesi(o, sorgu);
+    case "telafi":
+      return telafiUygula(o, govde);
     case "oyuncu":
       return oyuncuGor(o, sorgu);
     case "yaptirim":
