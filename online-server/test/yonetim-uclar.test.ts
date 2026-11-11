@@ -4,6 +4,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import isleyici, { DunyaDO, HesapDO, YerlesimDO, YonetimDO } from "../src/index.ts";
 import type { Env } from "../src/tipler.ts";
+import { yonetimCagir } from "../src/ic.ts";
 import { PANEL_PARCALARI } from "../src/yonetim/panel.ts";
 import { googleYuku, ISTEMCI, jwtImzala, rsaAnahtari, sahteAdAlani, sahteJwks, type TestAnahtari } from "./yardimci.ts";
 
@@ -382,11 +383,13 @@ test("şikayet ve kendine fayda yasağı: kendini şikayet, sınır, susturma, k
 
 test("parametreler: sürümlü değiştir, sınır, geri al ve duyurular (son 5, yazan gizli)", async () => {
   try {
-    const { cagir, oyuncu, yonetici } = await kur();
+    const { env: kurucuEnv, cagir, oyuncu, yonetici } = await kur();
     const mehmet = await oyuncu("220000000000000000002", "Mehmet");
     const yb = (await yonetici(KURUCU_SUB, KURUCU)).govde.oturum as string;
 
     const liste = await cagir("GET", "/yonetim/parametreler", { oturum: yb });
+    const ilkCalisma = await yonetimCagir<Record<string, number>>(kurucuEnv, { islem: "parametrelerCalisma" });
+    assert.equal(ilkCalisma.ok && ilkCalisma.deger.NPC_CARPAN, 2.5);
     const adlar = (liste.govde.parametreler as { ad: string }[]).map((p) => p.ad);
     assert.deepEqual(adlar, [
       "NPC_AYLIK_KOTA", "NPC_CARPAN", "KITLIK_PRIM", "SIPARIS_ODUL_CARPANI", "STOK_CARPAN", "TEMEL_CIKTI", "AZALAN_PENCERE_IS", "HIZ_SINIRI", "SIKAYET_GUNLUK", "GECICI_UZAKLASTIRMA_EN_COK_GUN",
@@ -396,6 +399,8 @@ test("parametreler: sürümlü değiştir, sınır, geri al ve duyurular (son 5,
     assert.equal((await yaz("BILINMEYEN", 1)).govde.hata, "parametre_gecersiz");
     assert.equal((await yaz("NPC_CARPAN", 99)).govde.hata, "deger_sinir_disi");
     assert.equal((await yaz("NPC_CARPAN", 3)).govde.deger, 3);
+    const yeniCalisma = await yonetimCagir<Record<string, number>>(kurucuEnv, { islem: "parametrelerCalisma" });
+    assert.equal(yeniCalisma.ok && yeniCalisma.deger.NPC_CARPAN, 3, "YonetimDO oyun modülüne etkin sürümü verir");
     const ikinci = await yaz("NPC_CARPAN", 3.5);
     assert.deepEqual([ikinci.govde.deger, ikinci.govde.surum, ikinci.govde.varsayilan], [3.5, 2, 2.5]);
     const geri = (gerekce = "yanlış ayar geri alındı") =>
