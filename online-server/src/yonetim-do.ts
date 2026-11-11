@@ -57,8 +57,8 @@ export class YonetimDO {
     const simdi = Date.now();
     if (ileti.islem === "parametrelerCalisma") {
       const adlar = Object.keys(PARAMETRELER) as ParametreAdi[];
-      const kayitlar = await this.#depo.alCok<ParametreKaydi>(adlar.map((ad) => `parametre:${ad}`));
-      const degerler = Object.fromEntries(adlar.map((ad) => [ad, etkinDeger(PARAMETRELER[ad], kayitlar.get(`parametre:${ad}`))]));
+      const kayitlar = await this.#depo.alCok<ParametreKaydi>(adlar.map((ad) => `param:${ad}`));
+      const degerler = Object.fromEntries(adlar.map((ad) => [ad, etkinDeger(PARAMETRELER[ad], kayitlar.get(`param:${ad}`))]));
       return jsonYanit(basarili(degerler));
     }
     if (ileti.islem === "masaAtma") return jsonYanit(await masaAtmaKaydet(this.#depo, ileti));
