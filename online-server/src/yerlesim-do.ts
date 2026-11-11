@@ -71,6 +71,8 @@ export class YerlesimDO {
     const { kalan } = await motor.yetistir(simdi);
     await this.#alarmKur(simdi, kalan);
     switch (ileti.islem) {
+      case "ekonomiSagligi":
+        return motor.ekonomiSagligi();
       case "sakinEkle":
         return motor.sakinEkle(ileti.sakin);
       case "durum":
