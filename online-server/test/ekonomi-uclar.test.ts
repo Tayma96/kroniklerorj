@@ -122,3 +122,66 @@ test("ekonomi uçları: pazar ilanı/işlem/geri, ısmarlama, levha, defter", as
     globalThis.fetch = eskiFetch;
   }
 });
+
+
+test("hizmet HTTP uçları: katalog okunur, kilitli hazırlama ve geçersiz ilan işlemleri reddedilir", async () => {
+  const anahtar = await rsaAnahtari("kid-hizmet");
+  const jwks = sahteJwks([anahtar]);
+  const eskiFetch = globalThis.fetch;
+  globalThis.fetch = jwks.getir;
+  try {
+    let saat = Date.now();
+    const env = { GOOGLE_CLIENT_ID: ISTEMCI, OTURUM_ANAHTARI: "h".repeat(48) } as Env;
+    env.HESAP = sahteAdAlani((ctx) => new HesapDO(ctx, env));
+    env.DUNYA = sahteAdAlani((ctx) => new DunyaDO(ctx, env));
+    const yerlesimler = sahteAdAlani((ctx) => new YerlesimDO(ctx, env, () => saat));
+    env.YERLESIM = yerlesimler;
+    const cagir = async (yontem: string, yol: string, govde?: unknown, oturum?: string) => {
+      const basliklar: Record<string, string> = {};
+      if (oturum) basliklar.authorization = `Bearer ${oturum}`;
+      const yanit = await isleyici.fetch(new Request(`https://kronikler-online.test${yol}`, {
+        method: yontem, headers: basliklar, body: govde === undefined ? null : JSON.stringify(govde),
+      }), env);
+      return { durum: yanit.status, govde: (await yanit.json()) as Nesne };
+    };
+    const token = await jwtImzala(anahtar, googleYuku(saat, { sub: "hizmet-oyuncu" }));
+    const oturum = (await cagir("POST", "/v1/giris", { idToken: token })).govde.oturum as string;
+    const profil = await cagir("POST", "/v1/profil", {
+      ad: "Hizmetçi", cinsiyet: "kadın", yerlesim: "develi", istekNo: "hizmet-profil",
+    }, oturum);
+    assert.equal(profil.durum, 200, JSON.stringify(profil.govde));
+
+    saat += 7 * GUN;
+    const { ornek } = [...yerlesimler.ornekler.values()][0]!;
+    for (let i = 0; i < 5; i++) await ornek.alarm();
+
+    const katalog = await cagir("GET", "/v1/hizmet", undefined, oturum);
+    assert.equal(katalog.durum, 200, JSON.stringify(katalog.govde));
+    assert.ok(katalog.govde.katalog.some((x: Nesne) => x.id === "yaraBak"));
+    assert.deepEqual(katalog.govde.stok, []);
+    assert.deepEqual(katalog.govde.ilanlar, []);
+    assert.ok(katalog.govde.katalog.every((x: Nesne) => x.acik === false));
+
+    const hazirla = await cagir("POST", "/v1/hizmet/hazirla", {
+      hizmet: "yaraBak", adet: 1, istekNo: "hizmet-kilitli",
+    }, oturum);
+    assert.equal(hazirla.govde.hata, "dugum_kapali");
+
+    const ilan = await cagir("POST", "/v1/hizmet/ilan", {
+      stok: "h999", adet: 1, fiyat: 6, istekNo: "hizmet-stok-yok",
+    }, oturum);
+    assert.equal(ilan.govde.hata, "stok_yok");
+
+    const satin = await cagir("POST", "/v1/hizmet/satin-al", {
+      ilan: "hi999", adet: 1, istekNo: "hizmet-ilan-yok",
+    }, oturum);
+    assert.equal(satin.govde.hata, "ilan_yok");
+
+    const geri = await cagir("POST", "/v1/hizmet/geri", {
+      ilan: "hi999", istekNo: "hizmet-geri-yok",
+    }, oturum);
+    assert.equal(geri.govde.hata, "ilan_yok");
+  } finally {
+    globalThis.fetch = eskiFetch;
+  }
+});
