@@ -3,9 +3,12 @@
 import type { MalId } from "../icerik/mallar.ts";
 import { hizmetAcik } from "./beceri-etki.ts";
 import { envanterEkle } from "./npc-taban.ts";
+import { halDegistir, type Hal } from "./hal.ts";
+import { hizmetEkle } from "./meslek.ts";
+import { ayniKume } from "./teveccuh.ts";
 import { takatHarca } from "./karakter.ts";
 import { hizmetTarifiBul, type HizmetTarifi } from "./hizmet-tarif.ts";
-import type { EkonomiKaydi, HizmetStogu } from "./pazar-tahta.ts";
+import type { EkonomiKaydi, HizmetIlan, HizmetStogu } from "./pazar-tahta.ts";
 import type { Karakter } from "./tipler.ts";
 import { basarili, hata, type Sonuc } from "../tipler.ts";
 
@@ -74,4 +77,139 @@ export function hizmetStoguGorunumu(stok: HizmetStogu, ay: number) {
     kalanAy: Math.max(0, stok.sa - ay),
     fiyatTaban: tarif?.fiyatTaban ?? null,
   };
+}
+
+
+/** [PARAMETRE] Oyuncu başına en çok 5 açık hizmet ilanı; alımda tek istekte en çok 5 adet. */
+export const HIZMET_ILAN_EN_COK = 5;
+export const HIZMET_ALIM_ADET_EN_COK = 5;
+
+export function hizmetIlanKimlik(i: number): string {
+  return `hi${i}`;
+}
+
+export function hizmetIlanBul(ek: EkonomiKaydi | undefined, id: unknown): HizmetIlan | undefined {
+  if (typeof id !== "string") return undefined;
+  const eslesme = /^hi(\\d+)$/.exec(id);
+  if (!eslesme) return undefined;
+  return ek?.hi?.find((x) => x.i === Number(eslesme[1]));
+}
+
+export function hizmetIlanlar(ek: EkonomiKaydi | undefined, ay: number): HizmetIlan[] {
+  return (ek?.hi ?? []).filter((x) => x.d === "acik" && x.sa >= ay && x.n > 0);
+}
+
+export function hizmetIlanGorunumu(ilan: HizmetIlan, benim: string, ay: number) {
+  const tarif = hizmetTarifiBul(ilan.h);
+  return {
+    id: hizmetIlanKimlik(ilan.i),
+    hizmet: ilan.h,
+    ad: ilan.oa,
+    adet: ilan.n,
+    birimFiyat: ilan.f,
+    toplamFiyat: ilan.f * ilan.n,
+    acilisAy: ilan.ac,
+    sonAy: ilan.sa,
+    kalanAy: Math.max(0, ilan.sa - ay),
+    benim: ilan.o === benim,
+    fiyatTaban: tarif?.fiyatTaban ?? null,
+  };
+}
+
+/** Hazır stoğun bir kısmını süresi dolmadan hizmet ilanına taşır. */
+export function hizmetIlanAc(
+  ek: EkonomiKaydi,
+  satici: Karakter,
+  stokHam: unknown,
+  adetHam: unknown,
+  fiyatHam: unknown,
+  ay: number,
+): Sonuc<HizmetIlan> {
+  if (typeof stokHam !== "string") return hata("ilan_gecersiz");
+  const eslesme = /^h(\\d+)$/.exec(stokHam);
+  if (!eslesme) return hata("ilan_gecersiz");
+  const stok = ek.hs?.find((x) => x.i === Number(eslesme[1]) && x.o === satici.o);
+  if (!stok || !hizmetStoguGecerli(stok, ay)) return hata("stok_yok");
+  if (!Number.isInteger(adetHam) || (adetHam as number) < 1 || (adetHam as number) > stok.n)
+    return hata("ilan_gecersiz");
+  const tarif = hizmetTarifiBul(stok.h);
+  if (!tarif) return hata("tarif_gecersiz");
+  const alt = Math.max(1, Math.floor(tarif.fiyatTaban * 0.5));
+  const ust = Math.max(alt, Math.ceil(tarif.fiyatTaban * 3));
+  if (!Number.isInteger(fiyatHam) || (fiyatHam as number) < alt || (fiyatHam as number) > ust)
+    return hata("ilan_gecersiz");
+  const acik = (ek.hi ??= []).filter((x) => x.o === satici.o && x.d === "acik" && x.sa >= ay);
+  if (acik.length >= HIZMET_ILAN_EN_COK) return hata("ilan_siniri");
+
+  const adet = adetHam as number;
+  stok.n -= adet;
+  const ilan: HizmetIlan = {
+    i: ek.n++, o: satici.o, oa: satici.ad, h: stok.h, s: stok.i,
+    n: adet, n0: adet, f: fiyatHam as number, ac: ay, sa: stok.sa, d: "acik",
+  };
+  ek.hi.push(ilan);
+  return basarili(ilan);
+}
+
+/** İlanı kapatır; yalnız süresi dolmamış kalan stoğu sahibine geri verir. */
+export function hizmetIlanGeri(
+  ek: EkonomiKaydi,
+  satici: Karakter,
+  id: unknown,
+  ay: number,
+): Sonuc<{ ilan: HizmetIlan; iade: number }> {
+  const ilan = hizmetIlanBul(ek, id);
+  if (!ilan) return hata("ilan_yok");
+  if (ilan.o !== satici.o) return hata("ilan_gecersiz");
+  if (ilan.d !== "acik" || ilan.sa < ay) return hata("ilan_kapandi");
+  const iade = ilan.n;
+  const stok = ek.hs?.find((x) => x.i === ilan.s && x.o === satici.o);
+  if (stok && stok.sa >= ay) stok.n += iade;
+  ilan.n = 0;
+  ilan.d = "geri";
+  return basarili({ ilan, iade: stok && stok.sa >= ay ? iade : 0 });
+}
+
+/** Satın alma: alıcı ödemesi, satıcı geliri, hizmet etkisi ve satıcı tecrübesi tek ekonomi yazımında gerçekleşir. */
+export function hizmetIlanIsle(
+  ek: EkonomiKaydi,
+  alici: Karakter,
+  satici: Karakter | undefined,
+  id: unknown,
+  adetHam: unknown,
+  ay: number,
+): Sonuc<{ ilan: HizmetIlan; adet: number; tutar: number; etki: Partial<Hal>; hizmetPuani: number }> {
+  const ilan = hizmetIlanBul(ek, id);
+  if (!ilan) return hata("ilan_yok");
+  if (ilan.d !== "acik" || ilan.sa < ay || ilan.n < 1) return hata("ilan_kapandi");
+  if (!satici || satici.o !== ilan.o) return hata("ilan_kapandi");
+  if (satici.o === alici.o) return hata("ilan_gecersiz");
+  if (!Number.isInteger(adetHam) || (adetHam as number) < 1 || (adetHam as number) > HIZMET_ALIM_ADET_EN_COK || (adetHam as number) > ilan.n)
+    return hata("ilan_gecersiz");
+  const tarif = hizmetTarifiBul(ilan.h);
+  if (!tarif) return hata("tarif_gecersiz");
+  if (tarif.hedef !== "kisi") return hata("hedef_uygun_degil");
+
+  const adet = adetHam as number;
+  const fark: Partial<Hal> = {};
+  for (const etki of tarif.etki) {
+    if (etki.tur !== "hal" || !["can", "kondisyon", "gonul"].includes(etki.alan))
+      return hata("hedef_uygun_degil");
+    const alan = etki.alan as keyof Hal;
+    fark[alan] = (fark[alan] ?? 0) + etki.deger * adet;
+  }
+  const tutar = ilan.f * adet;
+  if (alici.pa < tutar) return hata("para_yok");
+
+  alici.pa -= tutar;
+  satici.pa += tutar;
+  const etki = halDegistir(alici, ay, fark, `hizmet.${tarif.id}`);
+  // Aynı hesap/hane kümesinde hizmet verilebilir; ancak satıcıya tecrübe ödülü üretilmez.
+  const hizmetPuani = ayniKume(alici, satici) ? 0 : hizmetEkle(satici, tarif.meslek, adet);
+  ilan.n -= adet;
+  ilan.is ??= [];
+  ilan.is.push([ay, alici.o, adet, tutar]);
+  if (ilan.is.length > 10) ilan.is.splice(0, ilan.is.length - 10);
+  if (ilan.n === 0) ilan.d = "bitti";
+  return basarili({ ilan, adet, tutar, etki, hizmetPuani });
 }
