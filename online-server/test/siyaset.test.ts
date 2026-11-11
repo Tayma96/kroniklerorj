@@ -245,7 +245,9 @@ test("P5 darbe hazırlığı: şehir/ahi desteği ve garnizon eşiği olmadan il
   assert.equal(darbeDestekle(d, s3, ahi2.id, "ahiBasi", d.ay), null);
   assert.equal(darbeDestekle(d, kimlik("alt", { e: s2.e, yerlesim: "demirhan" }), "ahiBasi:demirhan", "ahiBasi", d.ay), "kume_cakisma");
   assert.equal(darbeSadakatYatir(d, 80, d.ay), "kasa_yetersiz");
-  assert.equal(darbeSadakatYatir(d, 40, d.ay), 40);
+  d.kasa = 120;
+  assert.equal(darbeSadakatYatir(d, 80, d.ay), 80);
+  d.kasa -= 80;
   assert.equal(darbeEsigi(d).uygun, true);
   assert.equal(darbeIlanEt(d, "acik", d.ay), null);
   assert.equal(d.darbe?.durum, "ilan");
