@@ -433,7 +433,11 @@ async function yonlendir(istek: Request, env: Env): Promise<Response> {
       return yontem === "POST" ? toplulukGovdeli(istek, env, "senlik") : hataYaniti("yontem_yok");
     case "/v1/zaviye":
       return yontem === "POST" ? toplulukGovdeli(istek, env, "zaviye") : hataYaniti("yontem_yok");
-    // Ekonomi (Faz 6): src/yerlesim/ekonomi-uclar.ts
+    // Ekonomi (Faz 6) ve hizmet pazarı (E4.3): src/yerlesim/ekonomi-uclar.ts
+    case "/v1/hizmet":
+      return yontem === "GET" ? hesaba(istek, env, (hesapId) => basarili({ islem: "hizmet", hesapId, dil })) : hataYaniti("yontem_yok");
+    case "/v1/hizmet/hazirla":
+      return yontem === "POST" ? ekonomiGovdeli(istek, env, "hizmetHazirla") : hataYaniti("yontem_yok");
     case "/v1/pazar":
       return yontem === "GET"
         ? hesaba(istek, env, (hesapId) => basarili({ islem: "pazar", hesapId, mal: url.searchParams.get("mal"), dil }))
