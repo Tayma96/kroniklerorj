@@ -15,6 +15,7 @@ const KURUCU = ["kurucu"] as const;
 export const YETKI = {
   giris: HEPSI,
   ben: HEPSI,
+  ekonomi: KURUCU,
   oyuncuGor: HEPSI,
   sikayetGor: HEPSI,
   sikayetKarar: HEPSI,
