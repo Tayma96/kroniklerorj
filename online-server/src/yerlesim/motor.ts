@@ -48,7 +48,7 @@ import { acikEtkiler, basariSay } from "./beceri-etki.ts";
 import { aylikTakat, halGorunumu } from "./hal.ts";
 import { barinmaDonumu, barinmaGorunumu, otomatikAyarla, tesisKonakla } from "./barinma.ts";
 import { donusHazirla, donusOku } from "./donus-ekrani.ts";
-import { NPC_AYLIK_KOTA, npcdenAl, npcdenAlinan, stokGorunumu, type KasabaStogu } from "./npc-taban.ts";
+import { NPC_AYLIK_KOTA, envanterEkle, npcdenAl, npcdenAlinan, stokGorunumu, type KasabaStogu } from "./npc-taban.ts";
 import { kalanSatisKotasi, NPC_SATIS_KOTASI, npcyeSat } from "./pazar.ts";
 import { siparisDonumu, siparisGorunumu, siparisTeslim, type Siparis } from "./siparis.ts";
 import { tarifListesi, tarifYap } from "./tarif.ts";
@@ -77,7 +77,7 @@ import { teveccuhEkle, teveccuhGorunumu, teveccuhKademesi, teveccuhEtkisi, TEVEC
 import { IKRAM_MENUSU, type IkramId } from "../han/ikram.ts";
 import { toplumDonumu } from "./toplum-donum.ts";
 import { OYUNCU_TEKLIF_TURLERI, toplumAl, type Toplum } from "./toplum.ts";
-import { MALLAR, MAL_IDLERI } from "../icerik/mallar.ts";
+import { MALLAR, MAL_IDLERI, malBul } from "../icerik/mallar.ts";
 import { temelIsOnizleme, temelIsYap } from "./temel-is.ts";
 import { devirHesapla, devirUygula, kimlikTasiyiciEkle, planKarmasi } from "./devir.ts";
 import { npcEvlilikTeklifi } from "./evlilik.ts";
@@ -488,6 +488,34 @@ export class YerlesimMotoru {
       son12Ay: { gelir: akis.gelir, gider: akis.gider, net: akis.gelir - akis.gider },
       kasabaStokAdet: stokAdet,
       acikSiparis: k.sp?.filter((s) => s.durum === "acik").length ?? 0,
+    });
+  }
+
+  /** Y3: Kurucu telafisi. Yalnız hedef oyuncuya görünen olay ve karakter bazlı tekrar güvenliği. */
+  async yonetimTelafi(hesapId: string, govde: unknown): Promise<Sonuc<unknown>> {
+    if (!nesneMi(govde)) return hata("gecersiz_istek");
+    return this.#tekrarGuvenli(hesapId, govde, (kar, _s, ay, ek) => {
+      if (typeof govde.gerekce !== "string" || govde.gerekce.trim().length < 10 || govde.gerekce.trim().length > 240) return hata("gerekce_gecersiz");
+      const gerekce = govde.gerekce.trim();
+      let olayParam: Record<string, string | number>;
+      let yanit: Record<string, unknown>;
+      if (govde.tur === "akce") {
+        if (typeof govde.tutar !== "number" || !Number.isInteger(govde.tutar) || govde.tutar < 1 || govde.tutar > 10000) return hata("deger_sinir_disi");
+        kar.pa += govde.tutar;
+        olayParam = { tur: "akce", tutar: govde.tutar, gerekce };
+        yanit = { tur: "akce", tutar: govde.tutar, gerekce };
+      } else if (govde.tur === "esya") {
+        const mal = malBul(govde.mal);
+        if (!mal) return hata("mal_gecersiz");
+        if (typeof govde.adet !== "number" || !Number.isInteger(govde.adet) || govde.adet < 1 || govde.adet > 50) return hata("deger_sinir_disi");
+        envanterEkle(kar, mal, govde.adet);
+        olayParam = { tur: "esya", mal, adet: govde.adet, gerekce };
+        yanit = { tur: "esya", mal, adet: govde.adet, gerekce };
+      } else {
+        return hata("deger_sinir_disi");
+      }
+      ek.olay = { t: "yonetimTelafi", w: "kurum", h: kar.o, g: kar.o, n: 5, k: "olay.yonetim.telafi", p: olayParam };
+      return basarili(yanit);
     });
   }
 
