@@ -76,7 +76,7 @@ test("ekonomi uçları: pazar ilanı/işlem/geri, ısmarlama, levha, defter", as
     const hazir = await yaz("/v1/hizmet/hazirla", { hizmet: "turku", adet: 1 }, ayse, "hizmet-hazir-0001");
     assert.equal(hazir.durum, 200, JSON.stringify(hazir.govde));
     const stokId = hazir.govde.stok.id as string;
-    const ilanGirdi = { stok: stokId, adet: 1, fiyat: 2 };
+    const ilanGirdi = { stok: stokId, adet: 1, fiyat: 1 };
     const hizmetIlani = await yaz("/v1/hizmet/ilan", ilanGirdi, ayse, "hizmet-ilan-0001");
     const hizmetIlaniTekrar = await yaz("/v1/hizmet/ilan", ilanGirdi, ayse, "hizmet-ilan-0001");
     assert.equal(hizmetIlani.durum, 200, JSON.stringify(hizmetIlani.govde));
@@ -97,8 +97,8 @@ test("ekonomi uçları: pazar ilanı/işlem/geri, ısmarlama, levha, defter", as
     assert.deepEqual(hizmetSatisTekrar.govde, hizmetSatis.govde, "satin-al istekNo tekrarı çift ödeme/etki üretmez");
     const zPara1 = await ben(zehra);
     const aPara1 = await ben(ayse);
-    assert.equal(zPara1.para, zPara0 - 2);
-    assert.equal(aPara1.para, aPara0 + 2);
+    assert.equal(zPara1.para, zPara0 - 1);
+    assert.equal(aPara1.para, aPara0 + 1);
     assert.equal(zPara1.hal.gonul.deger, zGonul0 + 3);
 
     // Ayşe oduncu olur, odun keser; pazar boş, kurallar görünür.
