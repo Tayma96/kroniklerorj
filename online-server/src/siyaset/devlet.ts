@@ -34,12 +34,29 @@ export function devletYonet(d: BolgeDurumu, kimlik: SiyasiKimlik, govde: Record<
       if (s.sultan === "sultanligaDondu") return "devlet_kapali";
       if (s.sultan === "barisTalebi") return "devlet_talep_var";
       s.sultan = "barisTalebi";
+      s.sultanTalepAy = d.ay;
+      delete s.sultanSonuc;
       return null;
+    }
+    case "divanEkle": {
+      const destek = d.darbe?.destekler.find((x) => x.kisi === govde.kisi);
+      if (!destek) return "hedef_uygun_degil";
+      if (s.divan.some((x) => x.kisi === destek.kisi || x.hesap === destek.hesap)) return "devlet_talep_var";
+      if (s.divan.length >= 5) return "sinir_asildi";
+      s.divan.push({ kisi: destek.kisi, hesap: destek.hesap, ad: destek.ad, rol: "divan" });
+      return null;
+    }
+    case "divanCikar": {
+      if (typeof govde.kisi !== "string") return "deger_sinir_disi";
+      const once = s.divan.length;
+      s.divan = s.divan.filter((x) => x.kisi !== govde.kisi);
+      return s.divan.length === once ? "hedef_uygun_degil" : null;
     }
     case "taninma": {
       if (s.taninma === "tanindi") return "devlet_kapali";
       if (s.taninma === "talepEdildi") return "devlet_talep_var";
       s.taninma = "talepEdildi";
+      s.taninmaTalepAy = d.ay;
       return null;
     }
     default:
@@ -47,7 +64,19 @@ export function devletYonet(d: BolgeDurumu, kimlik: SiyasiKimlik, govde: Record<
   }
 }
 
+/** Sultan barış talebi iki ay sonra meşruiyet koşuluyla sonuçlanır; tanınma talebi başka devlet yanıtı gelene kadar bekler. */
+export function devletAyi(d: BolgeDurumu, ay: number): "barisKabul" | "barisRet" | null {
+  const s = d.devlet;
+  if (!s || s.sultan !== "barisTalebi" || s.sultanTalepAy === undefined || ay < s.sultanTalepAy + 2) return null;
+  const kabul = d.mesruiyet.puan >= 55 && (d.sultanlik?.mesruiyet.puan ?? 0) >= 55;
+  s.sultan = kabul ? "sultanligaDondu" : "bagimsiz";
+  s.sultanSonuc = kabul ? "kabul" : "ret";
+  delete s.sultanTalepAy;
+  return kabul ? "barisKabul" : "barisRet";
+}
+
 /** Her oyuncu kendi siyasi bağlılığını seçer; seçim yokluğu tarafsızlıktır, zorunlu yemin yoktur. */
+ seçim yokluğu tarafsızlıktır, zorunlu yemin yoktur. */
 export function devletYemin(d: BolgeDurumu, kimlik: SiyasiKimlik, deger: unknown): HataKodu | null {
   const s = d.devlet;
   if (!s) return "devlet_yok";
@@ -65,7 +94,7 @@ export function devletGorunumu(s: BagimsizDevlet | undefined) {
     bey: { kisi: s.beyKisi, hesap: s.beyHesap },
     vergiOrani: s.vergiOrani,
     divan: s.divan.map((x) => ({ ad: x.ad, rol: x.rol })),
-    mogol: s.mogol, sultan: s.sultan, taninma: s.taninma,
+    mogol: s.mogol, sultan: s.sultan, sultanSonuc: s.sultanSonuc ?? null, taninma: s.taninma,
     yemin: { bagli: yeminler.filter((x) => x === "bagli").length, tarafsiz: yeminler.filter((x) => x === "tarafsiz").length },
   };
 }
