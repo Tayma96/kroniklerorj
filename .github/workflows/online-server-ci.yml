@@ -1,0 +1,39 @@
+name: Online server CI
+
+on:
+  pull_request:
+    paths:
+      - "online-server/**"
+      - "mobile/package.json"
+      - "mobile/package-lock.json"
+      - ".github/workflows/online-server-ci.yml"
+  push:
+    branches: [apk]
+    paths:
+      - "online-server/**"
+      - "mobile/package.json"
+      - "mobile/package-lock.json"
+      - ".github/workflows/online-server-ci.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  online-server:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+      - name: Install TypeScript toolchain
+        working-directory: mobile
+        run: npm ci --no-audit --no-fund
+      - name: Online server tests
+        working-directory: online-server
+        run: npm test
+      - name: Online server typecheck
+        working-directory: online-server
+        run: npm run typecheck
