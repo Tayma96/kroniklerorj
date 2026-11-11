@@ -47,11 +47,16 @@ export class HesapDO {
     if (ileti.islem === "debdebeRozetSil") return jsonYanit(await debdebe.rozetKaldir(this.#depo, ileti.id));
     if (ileti.islem === "debdebeGorunum") return jsonYanit(await debdebe.gorunumVer(this.#depo, simdi));
     if (ileti.islem === "debdebeIade") return jsonYanit(await debdebe.iadeIsle(this.#debdebe(ileti.hesapId, simdi), ileti.islemKimligi));
-    const calisma = await yonetimCagir(this.#env, { islem: "parametrelerCalisma" });
-    const sinir = calisma.ok && typeof calisma.deger === "object" && calisma.deger !== null
-      && typeof (calisma.deger as Record<string, unknown>).HIZ_SINIRI === "number"
-      ? (calisma.deger as Record<string, number>).HIZ_SINIRI
-      : HIZ_SINIRI;
+    let sinir = HIZ_SINIRI;
+    try {
+      const calisma = await yonetimCagir(this.#env, { islem: "parametrelerCalisma" });
+      if (calisma.ok && typeof calisma.deger === "object" && calisma.deger !== null
+        && typeof (calisma.deger as Record<string, unknown>).HIZ_SINIRI === "number") {
+        sinir = (calisma.deger as Record<string, number>).HIZ_SINIRI;
+      }
+    } catch {
+      // Yönetim DO erişilemezse hesap varsayılan hız sınırını kullanır.
+    }
     const hiz = hizKontrol(this.#hiz, simdi, sinir);
     this.#hiz = hiz.durum;
     if (!hiz.izin) return jsonYanit(hata("hiz_siniri"));
