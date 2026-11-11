@@ -82,10 +82,6 @@ export class YerlesimDO {
     const { kalan } = await motor.yetistir(simdi);
     await this.#alarmKur(simdi, kalan);
     switch (ileti.islem) {
-      case "ekonomiSagligi":
-        return motor.ekonomiSagligi();
-      case "yonetimTelafi":
-        return motor.yonetimTelafi(ileti.hesapId, ileti.govde);
       case "sakinEkle":
         return motor.sakinEkle(ileti.sakin);
       case "durum":
@@ -161,8 +157,6 @@ export class YerlesimDO {
         return motor.sakinHesabi(ileti.hesapId, ileti.hedef);
       case "engeller":
         return motor.engeller(ileti.hesapId);
-      case "siyasetKimlik":
-        return motor.siyasetKimlik(ileti.hesapId);
       // Hanedan (Faz 7)
       case "hanedan":
         return motor.hanedan(ileti.hesapId, ileti.dil);
