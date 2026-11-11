@@ -11,7 +11,7 @@ import { basarili, hata, type Sonuc } from "../tipler.ts";
 import { IS_KONDISYON, halDegistir, halGorunumu, type HalGorunumu } from "./hal.ts";
 import { takatHarca, takatTazele } from "./karakter.ts";
 import { TARIF_KILIDI } from "../icerik/agaclar/index.ts";
-import { acikEtkiler, aracArtisi, basariSay, omurArtisi, tarifAcik, verimArtisi } from "./beceri-etki.ts";
+import { acikEtkiler, aracArtisi, basariSay, omurArtisi, tasarrufOrani, tarifAcik, verimArtisi } from "./beceri-etki.ts";
 import {
   ALET_KALITE_OMUR,
   ALET_KALITE_VERIM,
@@ -104,9 +104,20 @@ export function kaliteBecerisi(k: Karakter, t: Tarif): number {
   return Math.min(KALITE_BECERI_TAVAN, toplam);
 }
 
+/** Öğrenilmiş tasarruf etkileri sonrası gerçek girdi miktarı; tam sayı mallarda en az 1 korunur. */
+export function girdiGorunumu(k: Karakter, t: Tarif): Partial<Record<MalId, number>> {
+  const girdi: Partial<Record<MalId, number>> = {};
+  const hedefler = [t.id, ...(t.grup ?? [])];
+  for (const [mal, n] of Object.entries(t.girdi) as [MalId, number][]) {
+    const tasarruf = tasarrufOrani(k, hedefler, mal);
+    girdi[mal] = tasarruf > 0 ? Math.max(1, Math.floor(n * (100 - tasarruf) / 100)) : n;
+  }
+  return girdi;
+}
+
 function eksikGirdi(k: Karakter, t: Tarif): Partial<Record<MalId, number>> {
   const eksik: Partial<Record<MalId, number>> = {};
-  for (const [mal, n] of Object.entries(t.girdi) as [MalId, number][]) {
+  for (const [mal, n] of Object.entries(girdiGorunumu(k, t)) as [MalId, number][]) {
     const var_ = k.ev?.[mal] ?? 0;
     if (var_ < n) eksik[mal] = n - var_;
   }
@@ -128,7 +139,7 @@ export function tarifListesi(k: Karakter) {
       meslek: t.meslek,
       dugum: kilit?.dugum ?? null,
       seviye: kilit?.seviye ?? null,
-      girdi: t.girdi,
+      girdi: girdiGorunumu(k, t),
       cikti: { mal: t.cikti[0], adet: ciktiAdedi(k, t, aracVar) },
       yan: t.yan ?? null,
       takat: t.takat,
@@ -183,7 +194,8 @@ export function tarifYap(k: Karakter, idHam: unknown, ay: number, zar?: Zar): So
   if (t.arac?.zorunlu && !aracVar) return hata("arac_yok");
   takatTazele(k, ay);
   if (!takatHarca(k, ay, t.takat)) return hata("takat_yok");
-  for (const [mal, n] of Object.entries(t.girdi) as [MalId, number][]) envanterEkle(k, mal, -n);
+  const girdi = girdiGorunumu(k, t);
+  for (const [mal, n] of Object.entries(girdi) as [MalId, number][]) envanterEkle(k, mal, -n);
   const adet = ciktiAdedi(k, t, aracVar);
   const araclar = kullanilanAraclar(k, t);
   const aracKalite = araclar.length > 0 ? (Math.max(...araclar.map((m) => enIyiKalite(k, m))) as Kalite) : null;
@@ -201,7 +213,7 @@ export function tarifYap(k: Karakter, idHam: unknown, ay: number, zar?: Zar): So
     tarif: t.id,
     cikti: { mal: t.cikti[0], adet },
     yan: t.yan ?? null,
-    girdi: t.girdi,
+    girdi,
     arac,
     etkiAraci: etki,
     kalite,
