@@ -515,7 +515,7 @@ test("Y3 telafi: akçe olayı tekrar güvenli, kendi hesap kümesine kapalı ve 
     const tekrar = await cagir("POST", "/yonetim/telafi", { oturum: yb, govde });
     assert.deepEqual(tekrar.govde, ilk.govde, "aynı istekNo ikinci kez para üretmez");
 
-    const durum = await cagir("GET", "/v1/durum", { oturum: mehmet.oturum });
+    const durum = await cagir("GET", "/v1/yerlesim", { oturum: mehmet.oturum });
     assert.equal(durum.durum, 200);
     assert.equal(durum.govde.ben.para, ilk.govde.uygulama.para);
 
