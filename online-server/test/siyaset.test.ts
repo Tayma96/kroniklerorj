@@ -293,3 +293,70 @@ test("P5 hazırlık iptali altı aylık soğuma uygular", async () => {
   assert.equal(darbeHazirla(d, vali, d.ay + 5), "darbe_soguma");
   assert.equal(darbeHazirla(d, vali, d.ay + 6), null);
 });
+
+
+test("P5 çatışma sonucu bağımsız devlet kurar; P6 yönetim kararları ve gönüllü yemin çalışır", async () => {
+  const { darbeAyi } = await import("../src/siyaset/darbe.ts");
+  const d = bolgeKur("demirhan", 0);
+  const bey = kimlik("kurucu");
+  const sehir = koltukBul(d, "sehirBeyi:demirhan")!;
+  const ahi1 = koltukBul(d, "ahiBasi:demirhan")!;
+  const ahi2 = koltukBul(d, "ahiBasi:develi")!;
+  const destek = [
+    { kisi: "sehir/oyuncu", hesap: "hesap-sehir", ad: "Şehir Beyi", koltuk: sehir.id, rol: "sehirBeyi" as const, kume: ["h:hesap-sehir"], ay: 0 },
+    { kisi: "demirhan/ahi1", hesap: "hesap-ahi1", ad: "Ahi 1", koltuk: ahi1.id, rol: "ahiBasi" as const, kume: ["h:hesap-ahi1"], ay: 0 },
+    { kisi: "develi/ahi2", hesap: "hesap-ahi2", ad: "Ahi 2", koltuk: ahi2.id, rol: "ahiBasi" as const, kume: ["h:hesap-ahi2"], ay: 0 },
+  ];
+  d.g.moral = 100;
+  d.mesruiyet.puan = 0;
+  d.sultanlik = sultanlikOzeti(sultanlikKur(0));
+  d.darbe = {
+    v: 1, id: "demirhan:darbe:test", durum: "catışma",
+    baslatanKisi: bey.kisi, baslatanHesap: bey.hesap,
+    acilisAy: 0, sogumaSonAy: 0, destekler: destek,
+    garnizonSadakati: 100, yatirilan: 100, mod: "acik",
+    ilanAy: 0, cozumAy: 1, izler: [],
+  };
+  darbeAyi(d, 1);
+  assert.equal(d.darbe?.durum, "basarili");
+  assert.equal(d.devlet?.beyKisi, bey.kisi);
+  assert.equal(d.devlet?.divan.length, 3);
+  assert.equal(d.devlet?.sultan, "bagimsiz");
+  assert.equal(d.devlet?.yeminler && Object.keys(d.devlet.yeminler).length, 0);
+
+  assert.equal(eylem(d, bey, { islem: "devletYonet", tur: "ad", ad: "Demirhan Beyliği" }).ok, true);
+  assert.equal(eylem(d, bey, { islem: "devletYonet", tur: "vergi", deger: 4 }).ok, true);
+  assert.equal(d.devlet?.vergiOrani, 4);
+  assert.equal(eylem(d, bey, { islem: "devletYonet", tur: "mogol", deger: "diren" }).ok, true);
+  assert.equal(d.devlet?.mogol, "diren");
+  assert.equal(eylem(d, bey, { islem: "devletYonet", tur: "sultanBaris" }).ok, true);
+  assert.equal(d.devlet?.sultan, "barisTalebi");
+
+  const oyuncu = kimlik("gönüllü", { bolge: "demirhan" });
+  assert.equal(eylem(d, oyuncu, { islem: "devletYemin", deger: "bagli" }).ok, true);
+  assert.equal(d.devlet?.yeminler[oyuncu.kisi], "bagli");
+  const tarafsiz = kimlik("tarafsiz", { bolge: "demirhan" });
+  assert.equal(eylem(d, tarafsiz, { islem: "devletYemin", deger: "tarafsiz" }).ok, true);
+  assert.equal(d.devlet?.yeminler[tarafsiz.kisi], "tarafsiz");
+  assert.equal(eylem(d, kimlik("sahte-bey", { bolge: "demirhan" }), { islem: "devletYonet", tur: "vergi", deger: 1 }).hata, "yetki_yok");
+});
+
+test("P5 savunma üstün gelirse darbe bastırılır ve vali makamı boşalır", () => {
+  const d = bolgeKur("demirhan", 0);
+  const vali = kimlik("vali-savunma");
+  valiYap(d, vali);
+  d.mesruiyet.puan = 90;
+  d.g.guvenlik = 100;
+  d.sultanlik = sultanlikOzeti(sultanlikKur(0));
+  d.sultanlik.mesruiyet.puan = 100;
+  d.darbe = {
+    v: 1, id: "demirhan:darbe:savunma", durum: "catışma",
+    baslatanKisi: vali.kisi, baslatanHesap: vali.hesap,
+    acilisAy: d.ay, sogumaSonAy: d.ay, destekler: [],
+    garnizonSadakati: 0, yatirilan: 0, mod: "baskin",
+    ilanAy: d.ay, cozumAy: d.ay + 1, izler: [],
+  };
+  bolgeAyi(d, d.ay + 1, SIMDI);
+  assert.equal(d.darbe?.durum, "bastirildi");
+  assert.equal(koltukBul(d, "vali:demirhan")?.s.npc, true);
+});
