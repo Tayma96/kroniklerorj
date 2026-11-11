@@ -7,7 +7,7 @@ import { MALLAR, malBul, type MalId } from "../icerik/mallar.ts";
 import type { MeslekId } from "../icerik/meslekler.ts";
 import { basarili, hata, type Sonuc } from "../tipler.ts";
 import { envanterEkle, saticiDegeri, stogaEkle, type KasabaStogu } from "./npc-taban.ts";
-import type { Dokum, Karakter } from "./tipler.ts";
+import type { CalismaParametreleri, Dokum, Karakter } from "./tipler.ts";
 
 /** [PARAMETRE] Oyuncu başına mal başına aylık NPC alım kotası. */
 export const NPC_SATIS_KOTASI = 6;
@@ -40,6 +40,7 @@ export function npcyeSat(
   oyuncuSayisi: (m: MeslekId) => number,
   ay: number,
   stok?: KasabaStogu,
+  parametreler?: CalismaParametreleri,
 ): Sonuc<SatisSonucu> {
   const mal = malBul(malHam);
   if (!mal || MALLAR[mal].taban === 0) return hata("mal_gecersiz");
@@ -47,7 +48,7 @@ export function npcyeSat(
   if ((k.ev?.[mal] ?? 0) < adetHam) return hata("mal_yok");
   const once = satilan(k, mal, ay);
   if (once + adetHam > NPC_SATIS_KOTASI) return hata("kota_doldu");
-  const primli = saticiDegeri(k, mal, oyuncuSayisi);
+  const primli = saticiDegeri(k, mal, oyuncuSayisi, parametreler);
   const prim = primli.kalemler.find((x) => x.k === "kitlik")?.d ?? 0;
   const primAdet = prim > 0 ? Math.min(adetHam, Math.max(0, KITLIK_KOTASI - once)) : 0;
   const taban = MALLAR[mal].taban;
