@@ -23,7 +23,7 @@ Dal: `feature/online-p5-darbe-zinciri`.
 
 Bütün değerler `online-server/src/siyaset/sabitler.ts` içindeki `DARBE` nesnesindedir:
 - Tüm şehir beyi koltuklarından destek (en az bir).
-- En az iki ahi başı desteği.
+- En az bir ahi başı desteği; ikinci ahi başı desteği veya 40 ve altı bölge meşruiyeti ek gerekçe sağlar.
 - Garnizon sadakati en az 60; başlangıç 20.
 - Hazine rezervi 40 akçe.
 - Meşruiyet 40 veya altı ya da iki ahi başı desteği.
