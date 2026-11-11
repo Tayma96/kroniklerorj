@@ -8,7 +8,7 @@ import type {
 } from "./ekonomi-veri";
 
 const AY = 40;
-const ADLAR: KaliteAdi[] = ["sade", "iyi", "ustun", "saheser"];
+const ADLARI: KaliteAdi[] = ["sade", "iyi", "ustun", "saheser"];
 const CARPAN = [1, 1.25, 1.6, 2.5];
 const TABAN: Record<string, number> = { odun: 1, sertOdun: 4, tas: 1, ot: 1, yun: 2, kereste: 3, cevher: 3, komur: 3, tahil: 2, deri: 3, alet: 14, nal: 4, sifaliOt: 3, inceYun: 4 };
 const bekle = () => new Promise<void>((r) => setTimeout(r, 60));
