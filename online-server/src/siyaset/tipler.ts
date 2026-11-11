@@ -221,7 +221,10 @@ export interface BagimsizDevlet {
   divan: { kisi: string; hesap: string; ad: string; rol: "divan" }[];
   mogol: MogolBaglantisi;
   sultan: SultanBaglantisi;
+  sultanTalepAy?: number;
+  sultanSonuc?: "kabul" | "ret";
   taninma: "taninmadi" | "talepEdildi" | "tanindi";
+  taninmaTalepAy?: number;
   yeminler: Record<string, "bagli" | "tarafsiz">;
 }
 
