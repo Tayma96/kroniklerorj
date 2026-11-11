@@ -81,6 +81,8 @@ export class YerlesimDO {
     switch (ileti.islem) {
       case "ekonomiSagligi":
         return motor.ekonomiSagligi();
+      case "yonetimTelafi":
+        return motor.yonetimTelafi(ileti.hesapId, ileti.govde);
       case "sakinEkle":
         return motor.sakinEkle(ileti.sakin);
       case "durum":
