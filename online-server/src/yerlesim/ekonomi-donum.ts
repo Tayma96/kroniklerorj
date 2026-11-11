@@ -3,9 +3,11 @@
 
 import { ismarlamaDonumu } from "./ismarlama.ts";
 import { ilanDonumu } from "./pazar-tahta.ts";
+import { hizmetStokDonumu } from "./hizmet-pazari.ts";
 import type { Kasaba, OlayTaslagi } from "./tipler.ts";
 
 export function ekonomiDonumu(k: Kasaba, ay: number): OlayTaslagi[] {
   if (!k.ek) return [];
+  hizmetStokDonumu(k, ay);
   return [...ilanDonumu(k, ay), ...ismarlamaDonumu(k, ay)];
 }
