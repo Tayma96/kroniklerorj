@@ -604,11 +604,11 @@ export function bolgeEylem(d: BolgeDurumu, kimlik: SiyasiKimlik, g: Govde, simdi
       if (!r.ok || r.deger.neden !== "sahip") return hata("yetki_yok");
       const tutar = tamsayi(g.tutar, DARBE.yatirimEnAz, DARBE.yatirimEnCok);
       if (tutar === null) return hata("deger_sinir_disi");
-      const h = darbeSadakatYatir(d, tutar, ay);
-      if (h) return hata(h);
-      akceCik(d, tutar, "darbeIkmal", ay, kimlik.kisi, r.deger.k.id);
-      kayitEkle(d, ay, "darbeSadakat", kimlik.kisi, { k: "kayit.darbeSadakat", p: { tutar } }, { koltuk: r.deger.k.id });
-      return basarili({ islem: "darbeSadakat", dokum: darbeGorunumu(d, kimlik) });
+      const harcanan = darbeSadakatYatir(d, tutar, ay);
+      if (typeof harcanan === "string") return hata(harcanan);
+      akceCik(d, harcanan, "darbeIkmal", ay, kimlik.kisi, r.deger.k.id);
+      kayitEkle(d, ay, "darbeSadakat", kimlik.kisi, { k: "kayit.darbeSadakat", p: { tutar: harcanan } }, { koltuk: r.deger.k.id });
+      return basarili({ islem: "darbeSadakat", dokum: { darbe: darbeGorunumu(d, kimlik), harcanan } });
     }
     case "darbeIlan": {
       const r = oyuncuKoltugu(d, `vali:${d.id}`, kimlik, simdi);
