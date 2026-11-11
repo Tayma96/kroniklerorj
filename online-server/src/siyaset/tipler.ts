@@ -179,6 +179,7 @@ export type DarbeDestekRolu = "sehirBeyi" | "ahiBasi";
 export interface DarbeDestegi {
   kisi: string;
   hesap: string;
+  ad: string;
   koltuk: string;
   rol: DarbeDestekRolu;
   kume: string[];
@@ -204,6 +205,7 @@ export interface DarbePlani {
   mod?: "acik" | "baskin";
   ilanAy?: number;
   cozumAy?: number;
+  sonuc?: { tur: "bastirildi" | "pat" | "basarili" | "mogol"; saldiran: number; savunan: number; ay: number };
   izler: DarbeIzi[];
 }
 
