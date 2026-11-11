@@ -182,7 +182,7 @@ export function hizmetIlanIsle(
   id: unknown,
   adetHam: unknown,
   ay: number,
-): Sonuc<{ ilan: HizmetIlan; adet: number; tutar: number; etki: Partial<Hal>; hizmetPuani: number }> {
+): Sonuc<{ ilan: HizmetIlan; adet: number; tutar: number; etki: Partial<Hal>; hizmetPuani: number; odul: number }> {
   const ilan = hizmetIlanBul(ek, id);
   if (!ilan) return hata("ilan_yok");
   if (ilan.d !== "acik" || ilan.sa < ay || ilan.n < 1) return hata("ilan_kapandi");
