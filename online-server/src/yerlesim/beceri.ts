@@ -59,6 +59,8 @@ export function kancaMi(e: Etki): boolean {
       return !kaliteHedefiMi(e.hedef);
     case "tasarruf":
       return (!kaliteHedefiMi(e.hedef) && !Object.hasOwn(TEMEL_ISLER, e.hedef)) || !Object.hasOwn(MALLAR, e.mal);
+    case "hizmet":
+      return e.hizmet !== "ikram";
     default:
       return true;
   }
