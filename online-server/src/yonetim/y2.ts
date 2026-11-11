@@ -60,17 +60,31 @@ export async function telafiUygula(o: Oturum, govde: unknown): Promise<Sonuc<unk
   const onceki = await tekrar(o, no.deger);
   if (onceki) return onceki;
 
-  if (!o.b.siyasiKimlikOku || !o.b.telafiYaz) return reddet(o, "telafi", "yapilandirma_eksik", ek);
-  const [yoneticiProfil, hedefProfil] = await Promise.all([
-    o.b.oyuncuBul({ hesap: o.y.hesap }),
-    o.b.oyuncuBul({ hesap: hedef }),
-  ]);
+  const kimlikOku = o.b.siyasiKimlikOku;
+  const telafiYaz = o.b.telafiYaz;
+  if (!kimlikOku || !telafiYaz) return reddet(o, "telafi", "yapilandirma_eksik", ek);
+  let yoneticiProfil: Awaited<ReturnType<typeof o.b.oyuncuBul>>;
+  let hedefProfil: Awaited<ReturnType<typeof o.b.oyuncuBul>>;
+  try {
+    [yoneticiProfil, hedefProfil] = await Promise.all([
+      o.b.oyuncuBul({ hesap: o.y.hesap }),
+      o.b.oyuncuBul({ hesap: hedef }),
+    ]);
+  } catch {
+    return reddet(o, "telafi", "sunucu_hatasi", ek);
+  }
   if (!yoneticiProfil.ok) return reddet(o, "telafi", "hesap_yok", ek);
   if (!hedefProfil.ok) return reddet(o, "telafi", "kisi_yok", ek);
-  const [yoneticiKimlik, hedefKimlik] = await Promise.all([
-    o.b.siyasiKimlikOku(o.y.hesap, yoneticiProfil.deger.yerlesim),
-    o.b.siyasiKimlikOku(hedef, hedefProfil.deger.yerlesim),
-  ]);
+  let yoneticiKimlik: Awaited<ReturnType<typeof kimlikOku>>;
+  let hedefKimlik: Awaited<ReturnType<typeof kimlikOku>>;
+  try {
+    [yoneticiKimlik, hedefKimlik] = await Promise.all([
+      kimlikOku(o.y.hesap, yoneticiProfil.deger.yerlesim),
+      kimlikOku(hedef, hedefProfil.deger.yerlesim),
+    ]);
+  } catch {
+    return reddet(o, "telafi", "sunucu_hatasi", ek);
+  }
   if (!yoneticiKimlik.ok || !hedefKimlik.ok) return reddet(o, "telafi", "hedef_uygun_degil", ek);
   if (kumeKesisir(kumeAnahtarlari(yoneticiKimlik.deger), kumeAnahtarlari(hedefKimlik.deger))) {
     return reddet(o, "telafi", "kendi_hedef", ek);
@@ -82,11 +96,11 @@ export async function telafiUygula(o: Oturum, govde: unknown): Promise<Sonuc<unk
     tur,
     gerekce: gerekce.deger,
     istekNo: olayId,
-    ...(tutar !== undefined ? { tutar } : { mal, adet }),
+    ...(tutar !== undefined ? { tutar } : { mal: mal!, adet: adet! }),
   };
   let uygulama: Sonuc<unknown>;
   try {
-    uygulama = await o.b.telafiYaz(hedefProfil.deger.yerlesim, hedef, hedefGovde);
+    uygulama = await telafiYaz(hedefProfil.deger.yerlesim, hedef, hedefGovde);
   } catch {
     return reddet(o, "telafi", "sunucu_hatasi", ek);
   }
