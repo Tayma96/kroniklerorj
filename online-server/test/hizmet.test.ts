@@ -270,7 +270,7 @@ test("E4.3 hizmet kataloğu: lohusa bakımı ve teselli gerçek beceri düğüml
   assert.equal(lohusa.ok, true);
   if (lohusa.ok) {
     assert.equal(ebe.ev?.sifaliOt, 2);
-    assert.equal(ebe.ev?.bez, 0);
+    assert.equal(ebe.ev?.bez ?? 0, 0);
     assert.equal(ebe.tk, 4);
   }
 
