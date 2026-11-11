@@ -235,15 +235,15 @@ export function mulkluKira(k: Kasaba, kar: Karakter, govde: unknown, an: number)
 export function mulkluIkram(k: Kasaba, kar: Karakter, ikram: IkramId, an: number, istekNo: string): Sonuc<{ fiyat: number; batak: number; kasaya: number; islem?: string }> {
   const oh = oyuncuHani(k);
   const taban = IKRAM_MENUSU[ikram].fiyat;
-  // Hancı "ikram" hizmeti, menü taban fiyatına %10 meslek indirimi sağlar.
-  const indirimliTaban = hizmetAcik(kar, "ikram") ? Math.max(1, Math.round(taban * 0.9)) : taban;
   if (!oh) {
-    if (kar.pa < indirimliTaban) return hata("para_yok");
-    kar.pa -= indirimliTaban;
-    return basarili({ fiyat: indirimliTaban, batak: indirimliTaban, kasaya: 0 });
+    // Hancı "ikram" hizmeti yalnız NPC menüsünde %10 meslek indirimi sağlar; oyuncu hanının fiyatını sahibi belirler.
+    const fiyat = hizmetAcik(kar, "ikram") ? Math.max(1, Math.round(taban * 0.9)) : taban;
+    if (kar.pa < fiyat) return hata("para_yok");
+    kar.pa -= fiyat;
+    return basarili({ fiyat, batak: fiyat, kasaya: 0 });
   }
   if (oh.kapasite === 0) return hata("han_kapali");
-  const fiyat = Math.max(1, Math.ceil((indirimliTaban * oh.fc) / 100 - 1e-9));
+  const fiyat = Math.max(1, Math.ceil((taban * oh.fc) / 100 - 1e-9));
   const c = kasayaCikis(k, kar, oh.isletme, fiyat, "ikram", an, `y:${k.y}:${kar.o}:ikram:${istekNo}`, true);
   if (!c.ok) return c;
   return basarili({ fiyat, batak: 0, kasaya: fiyat, islem: c.deger.islem });
