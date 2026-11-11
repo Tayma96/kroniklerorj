@@ -53,6 +53,18 @@ test("ekonomi uçları: pazar ilanı/işlem/geri, ısmarlama, levha, defter", as
     for (let i = 0; i < 5; i++) await ornek.alarm();
     const aId = (await ben(ayse)).id as string;
 
+    // Hizmet HTTP uçları aynı oturum/JWKS düzeninde: katalog, beceri kilidi ve geçersiz ilan kimlikleri.
+    const hizmetKatalog = await cagir("GET", "/v1/hizmet", { oturum: zehra });
+    assert.equal(hizmetKatalog.durum, 200, JSON.stringify(hizmetKatalog.govde));
+    assert.ok(hizmetKatalog.govde.katalog.some((x: Nesne) => x.id === "yaraBak"));
+    assert.deepEqual(hizmetKatalog.govde.stok, []);
+    assert.deepEqual(hizmetKatalog.govde.ilanlar, []);
+    assert.ok(hizmetKatalog.govde.katalog.every((x: Nesne) => x.acik === false));
+    assert.equal((await yaz("/v1/hizmet/hazirla", { hizmet: "yaraBak", adet: 1 }, zehra)).govde.hata, "dugum_kapali");
+    assert.equal((await yaz("/v1/hizmet/ilan", { stok: "h999", adet: 1, fiyat: 6 }, zehra)).govde.hata, "stok_yok");
+    assert.equal((await yaz("/v1/hizmet/satin-al", { ilan: "hi999", adet: 1 }, zehra)).govde.hata, "ilan_yok");
+    assert.equal((await yaz("/v1/hizmet/geri", { ilan: "hi999" }, zehra)).govde.hata, "ilan_yok");
+
     // Ayşe oduncu olur, odun keser; pazar boş, kurallar görünür.
     assert.equal((await yaz("/v1/meslek", { islem: "sec", meslek: "oduncu" }, ayse)).durum, 200);
     assert.equal((await yaz("/v1/temel-is", { is: "odun" }, ayse)).durum, 200);
@@ -118,72 +130,6 @@ test("ekonomi uçları: pazar ilanı/işlem/geri, ısmarlama, levha, defter", as
     // Kalıcılık: DO yeniden açılınca ilan ve ısmarlama kaydı yerinde.
     const p1 = await cagir("GET", "/v1/pazar", { oturum: ayse });
     assert.equal(p1.govde.benim[0].durum, "geri");
-  } finally {
-    globalThis.fetch = eskiFetch;
-  }
-});
-
-
-test("hizmet HTTP uçları: katalog okunur, kilitli hazırlama ve geçersiz ilan işlemleri reddedilir", async () => {
-  const anahtar = await rsaAnahtari("kid-hizmet");
-  const jwks = sahteJwks([anahtar]);
-  const eskiFetch = globalThis.fetch;
-  globalThis.fetch = jwks.getir;
-  try {
-    let saat = Date.now();
-    const env = { GOOGLE_CLIENT_ID: ISTEMCI, OTURUM_ANAHTARI: "h".repeat(48) } as Env;
-    env.HESAP = sahteAdAlani((ctx) => new HesapDO(ctx, env));
-    env.DUNYA = sahteAdAlani((ctx) => new DunyaDO(ctx, env));
-    const yerlesimler = sahteAdAlani((ctx) => new YerlesimDO(ctx, env, () => saat));
-    env.YERLESIM = yerlesimler;
-    const cagir = async (yontem: string, yol: string, secenek: { govde?: unknown; oturum?: string } = {}) => {
-      const basliklar: Record<string, string> = {};
-      if (secenek.oturum) basliklar.authorization = `Bearer ${secenek.oturum}`;
-      const yanit = await isleyici.fetch(new Request(`https://kronikler-online.test${yol}`, {
-        method: yontem, headers: basliklar, body: secenek.govde === undefined ? null : JSON.stringify(secenek.govde),
-      }), env);
-      return { durum: yanit.status, govde: (await yanit.json()) as Nesne };
-    };
-    const token = await jwtImzala(anahtar, googleYuku(saat));
-    const giris = await cagir("POST", "/v1/giris", { govde: { idToken: token } });
-    assert.equal(giris.durum, 200, JSON.stringify(giris.govde));
-    const oturum = giris.govde.oturum as string;
-    assert.ok(oturum, JSON.stringify(giris.govde));
-    const profil = await cagir("POST", "/v1/profil", { oturum, govde: {
-      ad: "Hizmetçi", cinsiyet: "kadın", yerlesim: "develi", istekNo: "hizmet-profil",
-    } });
-    assert.equal(profil.durum, 200, JSON.stringify(profil.govde));
-
-    saat += 7 * GUN;
-    const { ornek } = [...yerlesimler.ornekler.values()][0]!;
-    for (let i = 0; i < 5; i++) await ornek.alarm();
-
-    const katalog = await cagir("GET", "/v1/hizmet", { oturum });
-    assert.equal(katalog.durum, 200, JSON.stringify(katalog.govde));
-    assert.ok(katalog.govde.katalog.some((x: Nesne) => x.id === "yaraBak"));
-    assert.deepEqual(katalog.govde.stok, []);
-    assert.deepEqual(katalog.govde.ilanlar, []);
-    assert.ok(katalog.govde.katalog.every((x: Nesne) => x.acik === false));
-
-    const hazirla = await cagir("POST", "/v1/hizmet/hazirla", { oturum, govde: {
-      hizmet: "yaraBak", adet: 1, istekNo: "hizmet-kilitli",
-    } });
-    assert.equal(hazirla.govde.hata, "dugum_kapali");
-
-    const ilan = await cagir("POST", "/v1/hizmet/ilan", { oturum, govde: {
-      stok: "h999", adet: 1, fiyat: 6, istekNo: "hizmet-stok-yok",
-    } });
-    assert.equal(ilan.govde.hata, "stok_yok");
-
-    const satin = await cagir("POST", "/v1/hizmet/satin-al", { oturum, govde: {
-      ilan: "hi999", adet: 1, istekNo: "hizmet-ilan-yok",
-    } });
-    assert.equal(satin.govde.hata, "ilan_yok");
-
-    const geri = await cagir("POST", "/v1/hizmet/geri", { oturum, govde: {
-      ilan: "hi999", istekNo: "hizmet-geri-yok",
-    } });
-    assert.equal(geri.govde.hata, "ilan_yok");
   } finally {
     globalThis.fetch = eskiFetch;
   }
