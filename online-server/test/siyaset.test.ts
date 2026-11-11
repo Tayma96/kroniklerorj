@@ -280,3 +280,16 @@ test("P5 hazırlık izi gizlidir; ilanla birlikte yalnız durum bölgeye açıl�
   const acik = bolgeGorunumu(d, SIMDI, yabanci).bolge.darbe;
   assert.ok(acik && !("izler" in acik) && !("destekler" in acik));
 });
+
+
+test("P5 hazırlık iptali altı aylık soğuma uygular", async () => {
+  const { darbeHazirla, darbeVazgec } = await import("../src/siyaset/darbe.ts");
+  const d = bolgeKur("demirhan", 0);
+  const vali = kimlik("vali-soguma");
+  valiYap(d, vali);
+  assert.equal(darbeHazirla(d, vali, d.ay), null);
+  assert.equal(darbeVazgec(d, vali.kisi, d.ay), null);
+  assert.equal(d.darbe?.durum, "iptal");
+  assert.equal(darbeHazirla(d, vali, d.ay + 5), "darbe_soguma");
+  assert.equal(darbeHazirla(d, vali, d.ay + 6), null);
+});
