@@ -123,6 +123,7 @@ export async function hizmetIslemUc(m: YerlesimMotoru, hesapId: string, govde: u
         tutar: r.deger.tutar,
         etki: r.deger.etki,
         hizmetPuani: r.deger.hizmetPuani,
+        odul: r.deger.odul,
       },
     });
   });
