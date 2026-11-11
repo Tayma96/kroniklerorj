@@ -141,7 +141,7 @@ function npcNufusu(id: string): number {
 
 /** Aylık NPC halk vergisi (dökümüyle): nüfus × taban × oran çarpanı × pazar × arz × meşruiyet. */
 export function vergiDokumu(d: BolgeDurumu) {
-  const oran = ayarOku(vali(d), "vergiOrani", VERGI.baslangic);
+  const oran = d.devlet?.vergiOrani ?? ayarOku(vali(d), "vergiOrani", VERGI.baslangic);
   const pazar = PAZAR.ek[ayarOku(turKoltugu(d, "sehirBeyi"), "pazarVergisi")] ?? 0;
   const arz = 0.5 + d.g.arz / 100;
   const mesr = d.mesruiyet.kademe === "zayif" ? MESRUIYET.zayifVergi : 1;
@@ -224,7 +224,8 @@ export function bolgeAyi(d: BolgeDurumu, ay: number, simdi: number, ozet?: Sulta
   d.sonGelir = vergi.tutar;
   akceGir(d, vergi.tutar, "vergi", ay, "halk");
   // 4. Haraç → Sultan hazinesi (yolda; Sultanlık onaylayınca gönderilene geçer). Gecikme kademelidir.
-  const beklenen = Math.round(vergi.tutar * HARAC.pay * (1 - haracIndirimi(d)));
+  const bagimsiz = !!d.devlet && d.devlet.sultan !== "sultanligaDondu";
+  const beklenen = bagimsiz ? 0 : Math.round(vergi.tutar * HARAC.pay * (1 - haracIndirimi(d)));
   const odenen = Math.min(beklenen, d.kasa);
   let harac: AyCiktisi["harac"] = null;
   if (odenen > 0) {
@@ -233,6 +234,11 @@ export function bolgeAyi(d: BolgeDurumu, ay: number, simdi: number, ozet?: Sulta
     d.yolda[anahtar] = (d.yolda[anahtar] ?? 0) + odenen;
     kayitEkle(d, ay, "harac", v.id, { k: "kayit.harac", p: { tutar: odenen, beklenen } }, { akce: -odenen, kasa: d.kasa, koltuk: v.id });
     harac = { anahtar, tutar: d.yolda[anahtar]! };
+  }
+  // Bağımsız devlet Sultan'a haraç ödemez; Moğol tercihi "haraç" ise pay doğrudan dünyadan çıkar.
+  if (bagimsiz && d.devlet?.mogol === "harac") {
+    const mogolHaraci = Math.min(Math.round(vergi.tutar * HARAC.pay), d.kasa);
+    if (mogolHaraci > 0) akceCik(d, mogolHaraci, "mogolHaraci", ay, "mogol");
   }
   d.gecikme = odenen < beklenen ? d.gecikme + 1 : 0;
   if (d.gecikme > 0) kayitEkle(d, ay, "haracGecikme", v.id, { k: "kayit.haracGecikme", p: { kademe: HARAC.kademeler[Math.min(3, d.gecikme)] ?? "yaptirim", ay: d.gecikme } });
@@ -244,7 +250,15 @@ export function bolgeAyi(d: BolgeDurumu, ay: number, simdi: number, ozet?: Sulta
     kayitEkle(d, ay, "ozerklikKarari", "divan", { k: "kayit.ozerklikKarari", p: { karar: karar.karar!.tur, skor: karar.karar!.skor } });
   }
   const bitis = ozerklikAyi(d, ay, tutum);
+  const darbeOnce = d.darbe?.durum;
   darbeAyi(d, ay);
+  if (darbeOnce === "catışma" && d.darbe?.durum === "bastirildi") {
+    const valiKoltugu = koltukBul(d, `vali:${d.id}`);
+    if (valiKoltugu && valiKoltugu.s.kisi === d.darbe.baslatanKisi) bosalt(d, valiKoltugu, ay, "darbeBastirildi");
+    kayitEkle(d, ay, "darbeSonuc", "kurum", { k: "kayit.darbeSonuc", p: { sonuc: "bastirildi" } });
+  } else if (darbeOnce === "catışma" && d.darbe?.sonuc) {
+    kayitEkle(d, ay, "darbeSonuc", "kurum", { k: "kayit.darbeSonuc", p: { sonuc: d.darbe.sonuc.tur, saldiran: d.darbe.sonuc.saldiran, savunan: d.darbe.sonuc.savunan } });
+  }
   if (bitis) kayitEkle(d, ay, "ozerklikBitti", "divan", { k: "kayit.ozerklikBitti", p: { neden: bitis } });
   // 6. NPC Sultan: haraçta yaptırım kademesindeki oyuncu valiyi doğrulanmış gerekçeyle azleder (itiraz yolu açık).
   if (!v.s.npc && d.gecikme >= HARAC.azilGecikme) azlet(d, v, "harac", "sultan", ay, true);
