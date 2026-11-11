@@ -131,6 +131,8 @@ export interface YonetimBaglami {
   /** Ortamdaki kurucular (YONETICI_EPOSTALAR). */
   kurucular: ReadonlySet<string>;
   oyuncuBul: (sorgu: { ad?: string; hesap?: string }) => Promise<Sonuc<Profil>>;
+  /** Y2: yerleşimlerden kimliksiz ekonomi sağlığı özeti. */
+  ekonomiOku?: () => Promise<Sonuc<unknown>>;
   /** Hesabın etkin yaptırım özetini HesapDO'ya yazar. */
   hesabaYaz: (hedef: string, durum: HesapYaptirimi) => Promise<Sonuc<unknown>>;
   /** Debdebe iadesi (Y3): hedef HesapDO'ya iç ileti. Yoksa iade yapılamaz. */
@@ -697,6 +699,8 @@ async function yonet(
   switch (uc) {
     case "ben":
       return ben(o);
+    case "ekonomi":
+      return o.b.ekonomiOku ? o.b.ekonomiOku() : hata("gecersiz_istek");
     case "oyuncu":
       return oyuncuGor(o, sorgu);
     case "yaptirim":
