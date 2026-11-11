@@ -80,3 +80,21 @@ test("E4.3-A hizmet hazırlama: beceri kilidi, eksik girdi ve takat hatasında m
   assert.equal(takatsiz.ev?.sifaliOt, 3);
   assert.equal(takatsizEk.hs?.length, 0);
 });
+
+
+test("E4.3-A hizmet stoğu oyuncu/hizmet başına 20 adette durur; kota hatası harcama yapmaz", () => {
+  const kar = sifaciKarakter(2, 25, 30);
+  const ek = ekonomi();
+  for (let i = 0; i < 4; i++) {
+    const r = hizmetHazirla(ek, kar, "yaraBak", 5, 12);
+    assert.equal(r.ok, true);
+  }
+  const onceEnvanter = kar.ev?.sifaliOt;
+  const onceTakat = kar.tk;
+  const fazla = hizmetHazirla(ek, kar, "yaraBak", 1, 12);
+  assert.equal(fazla.ok, false);
+  if (!fazla.ok) assert.equal(fazla.hata, "kota_doldu");
+  assert.equal(kar.ev?.sifaliOt, onceEnvanter);
+  assert.equal(kar.tk, onceTakat);
+  assert.equal(ek.hs?.reduce((n, x) => n + x.n, 0), 20);
+});
