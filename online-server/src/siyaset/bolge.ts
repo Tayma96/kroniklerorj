@@ -253,10 +253,12 @@ export function bolgeAyi(d: BolgeDurumu, ay: number, simdi: number, ozet?: Sulta
   const bitis = ozerklikAyi(d, ay, tutum);
   const darbeOnce = d.darbe?.durum;
   darbeAyi(d, ay);
-  if (darbeOnce === "catışma" && d.darbe?.durum === "bastirildi") {
+  if (darbeOnce === "catışma" && (d.darbe?.durum === "bastirildi" || d.darbe?.durum === "mogol")) {
     const valiKoltugu = koltukBul(d, `vali:${d.id}`);
-    if (valiKoltugu && valiKoltugu.s.kisi === d.darbe.baslatanKisi) bosalt(d, valiKoltugu, ay, "darbeBastirildi");
-    kayitEkle(d, ay, "darbeSonuc", "kurum", { k: "kayit.darbeSonuc", p: { sonuc: "bastirildi" } });
+    if (valiKoltugu && valiKoltugu.s.kisi === d.darbe.baslatanKisi) {
+      bosalt(d, valiKoltugu, ay, d.darbe.durum === "mogol" ? "mogolMud" : "darbeBastirildi");
+    }
+    kayitEkle(d, ay, "darbeSonuc", "kurum", { k: "kayit.darbeSonuc", p: { sonuc: d.darbe.durum } });
   } else if (darbeOnce === "catışma" && d.darbe?.sonuc) {
     kayitEkle(d, ay, "darbeSonuc", "kurum", { k: "kayit.darbeSonuc", p: { sonuc: d.darbe.sonuc.tur, saldiran: d.darbe.sonuc.saldiran, savunan: d.darbe.sonuc.savunan } });
   }
