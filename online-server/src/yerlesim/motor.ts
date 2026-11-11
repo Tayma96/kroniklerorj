@@ -87,7 +87,7 @@ import { KRONIK_SAYFA, KRONIK_YANIT_EN_COK, kronikYaz, type KronikSatiri } from 
 import { vasiyetDogrula } from "./vasiyet.ts";
 import { GUNDEM_ADI, type CalismaParametreleri, type Isaret, type IliskiHaritasi, type Karakter, type Kasaba, type Npc, type Olay, type OlayParam, type OlayTaslagi, type Sakin } from "./tipler.ts";
 import { kasabaKur } from "./uret.ts";
-import { defterYaz } from "./defter.ts";
+import { defterGorunumu, defterYaz } from "./defter.ts";
 import { ekonomiDonumu } from "./ekonomi-donum.ts";
 import { ismarlamaSicili } from "./ismarlama.ts";
 import { kaliteGorunumu } from "./kalite.ts";
@@ -454,6 +454,41 @@ export class YerlesimMotoru {
     for (const o of k.kar.keys()) this.#kirli.add(KAR + o).add(ILI + o);
     await this.kaydet();
     return { islenen, kalan: hedef - k.ay };
+  }
+
+  /** Yönetim Y2: kimliksiz, yerleşim toplamlarından oluşan ekonomi sağlığı özeti. */
+  async ekonomiSagligi(): Promise<Sonuc<unknown>> {
+    const k = this.kasaba;
+    await this.#yukle(k.sakin.map((s) => s.o));
+    const oyuncular = [...k.kar.values()];
+    const bakiyeler = oyuncular.map((c) => c.pa).filter(Number.isFinite).sort((a, b) => a - b);
+    const toplamAkce = bakiyeler.reduce((s, x) => s + x, 0);
+    const ortalamaAkce = bakiyeler.length ? Math.round(toplamAkce / bakiyeler.length) : 0;
+    const orta = Math.floor(bakiyeler.length / 2);
+    const medyanAkce = bakiyeler.length === 0 ? 0 : bakiyeler.length % 2
+      ? bakiyeler[orta]!
+      : Math.round((bakiyeler[orta - 1]! + bakiyeler[orta]!) / 2);
+    const akis = oyuncular.reduce((t, c) => {
+      const d = defterGorunumu(c, k.ay, 12).toplam;
+      t.gelir += d.gelir;
+      t.gider += d.gider;
+      return t;
+    }, { gelir: 0, gider: 0 });
+    const stokAdet = Object.values(k.st ?? {}).reduce((s, n) => s + (n ?? 0), 0);
+    return basarili({
+      yerlesim: k.y,
+      oyunAyi: k.ay,
+      oyuncuSayisi: bakiyeler.length,
+      npcSayisi: k.npc.length,
+      toplamAkce,
+      ortalamaAkce,
+      medyanAkce,
+      enDusukAkce: bakiyeler[0] ?? 0,
+      enYuksekAkce: bakiyeler.at(-1) ?? 0,
+      son12Ay: { gelir: akis.gelir, gider: akis.gider, net: akis.gelir - akis.gider },
+      kasabaStokAdet: stokAdet,
+      acikSiparis: k.sp?.filter((s) => s.durum === "acik").length ?? 0,
+    });
   }
 
   /** Sakin kaydı (tekrar güvenli): ocak seçilir, karakter kurulur, yerleşime "yeni gelen" olayı düşer. */
