@@ -260,7 +260,7 @@ export type MesruiyetKademesi = (typeof MESRUIYET_KADEMELERI)[number];
 /** [PARAMETRE] P5 darbe eşikleri; alfa verisiyle ayarlanır (Ek B §8.2). */
 export const DARBE = {
   sehirDestekOrani: 1,
-  ahiDestekMin: 2,
+  ahiDestekMin: 1,
   garnizonBaslangic: 20,
   garnizonEsik: 60,
   yatirimBirim: 20,
