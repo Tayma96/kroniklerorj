@@ -242,6 +242,7 @@ test("roller ve yetki: moderatör kalıcı/parametre/rol yapamaz (kayda girer), 
     const mb = mg.govde.oturum as string;
     const ben = await cagir("GET", "/yonetim/ben", { oturum: mb });
     assert.ok(!(ben.govde.yetkiler as string[]).includes("parametreDegistir"));
+    assert.ok(!(ben.govde.yetkiler as string[]).includes("ekonomi"), "ekonomi sağlığı yalnız kurucuya açık");
 
     const gecici = await cagir("POST", "/yonetim/yaptirim", {
       oturum: mb, govde: { hedef: mehmet.hesap, tur: "susturma", gun: 2, gerekce: "sohbette ısrarlı spam", istekNo: no() },
