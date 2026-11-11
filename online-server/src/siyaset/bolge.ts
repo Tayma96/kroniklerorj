@@ -6,6 +6,7 @@ import { BEYLIKLER } from "../dunya-veri.ts";
 import { basarili, hata, type HataKodu, type Sonuc } from "../tipler.ts";
 import { mesruiyetGorunumu, bolgeMesruiyeti } from "./mesruiyet.ts";
 import { mogolEtkisi } from "./mogol.ts";
+import { darbeAyi, darbeDestekle, darbeEsigi, darbeGorunumu, darbeHazirla, darbeIlanEt, darbeSadakatYatir, darbeVazgec } from "./darbe.ts";
 import {
   adayUygunMu,
   adayYap,
@@ -34,6 +35,7 @@ import {
   AZIL,
   BASLANGIC,
   BAYINDIRLIK,
+  DARBE,
   ESNAF,
   GOSTERGE,
   HARAC,
@@ -242,6 +244,7 @@ export function bolgeAyi(d: BolgeDurumu, ay: number, simdi: number, ozet?: Sulta
     kayitEkle(d, ay, "ozerklikKarari", "divan", { k: "kayit.ozerklikKarari", p: { karar: karar.karar!.tur, skor: karar.karar!.skor } });
   }
   const bitis = ozerklikAyi(d, ay, tutum);
+  darbeAyi(d, ay);
   if (bitis) kayitEkle(d, ay, "ozerklikBitti", "divan", { k: "kayit.ozerklikBitti", p: { neden: bitis } });
   // 6. NPC Sultan: haraçta yaptırım kademesindeki oyuncu valiyi doğrulanmış gerekçeyle azleder (itiraz yolu açık).
   if (!v.s.npc && d.gecikme >= HARAC.azilGecikme) azlet(d, v, "harac", "sultan", ay, true);
@@ -562,6 +565,52 @@ export function bolgeEylem(d: BolgeDurumu, kimlik: SiyasiKimlik, g: Govde, simdi
       kayitEkle(d, ay, "ozerklikCevap", kimlik.kisi, { k: "kayit.ozerklikCevap", p: { kabul: g.kabul } });
       return basarili({ islem: "ozerklikCevap", dokum: d.ozerklik });
     }
+    case "darbeHazirla": {
+      const r = oyuncuKoltugu(d, `vali:${d.id}`, kimlik, simdi);
+      if (!r.ok || r.deger.neden !== "sahip") return hata("yetki_yok");
+      const h = darbeHazirla(d, kimlik, ay);
+      if (h) return hata(h);
+      kayitEkle(d, ay, "darbeHazirlik", kimlik.kisi, { k: "kayit.darbeHazirlik" });
+      return basarili({ islem: "darbeHazirla", dokum: darbeGorunumu(d, kimlik) });
+    }
+    case "darbeDestek": {
+      const r = oyuncuKoltugu(d, g.makam, kimlik, simdi);
+      if (!r.ok || r.deger.neden !== "sahip") return hata("yetki_yok");
+      if (r.deger.k.tur !== "sehirBeyi" && r.deger.k.tur !== "ahiBasi") return hata("yetki_yok");
+      const h = darbeDestekle(d, kimlik, r.deger.k.id, r.deger.k.tur, ay);
+      if (h) return hata(h);
+      kayitEkle(d, ay, "darbeDestek", kimlik.kisi, { k: "kayit.darbeDestek", p: { rol: r.deger.k.tur } }, { koltuk: r.deger.k.id });
+      return basarili({ islem: "darbeDestek", dokum: darbeGorunumu(d, kimlik) });
+    }
+    case "darbeSadakat": {
+      const r = oyuncuKoltugu(d, `vali:${d.id}`, kimlik, simdi);
+      if (!r.ok || r.deger.neden !== "sahip") return hata("yetki_yok");
+      const tutar = tamsayi(g.tutar, DARBE.yatirimEnAz, DARBE.yatirimEnCok);
+      if (tutar === null) return hata("deger_sinir_disi");
+      const h = darbeSadakatYatir(d, tutar, ay);
+      if (h) return hata(h);
+      akceCik(d, tutar, "darbeIkmal", ay, kimlik.kisi, r.deger.k.id);
+      kayitEkle(d, ay, "darbeSadakat", kimlik.kisi, { k: "kayit.darbeSadakat", p: { tutar } }, { koltuk: r.deger.k.id });
+      return basarili({ islem: "darbeSadakat", dokum: darbeGorunumu(d, kimlik) });
+    }
+    case "darbeIlan": {
+      const r = oyuncuKoltugu(d, `vali:${d.id}`, kimlik, simdi);
+      if (!r.ok || r.deger.neden !== "sahip") return hata("yetki_yok");
+      if (g.mod !== "acik" && g.mod !== "baskin") return hata("gecersiz_istek");
+      const esik = darbeEsigi(d);
+      const h = darbeIlanEt(d, g.mod, ay);
+      if (h) return hata(h);
+      kayitEkle(d, ay, "darbeIlan", kimlik.kisi, { k: "kayit.darbeIlan", p: { mod: g.mod, cozumAy: d.darbe?.cozumAy ?? ay } });
+      return basarili({ islem: "darbeIlan", dokum: { esik: esik.dokum, darbe: darbeGorunumu(d, kimlik) } });
+    }
+    case "darbeVazgec": {
+      const r = oyuncuKoltugu(d, `vali:${d.id}`, kimlik, simdi);
+      if (!r.ok || r.deger.neden !== "sahip") return hata("yetki_yok");
+      const h = darbeVazgec(d, kimlik.kisi, ay);
+      if (h) return hata(h);
+      kayitEkle(d, ay, "darbeIptal", kimlik.kisi, { k: "kayit.darbeIptal" });
+      return basarili({ islem: "darbeVazgec", dokum: darbeGorunumu(d, kimlik) });
+    }
     case "ozerklikBirak": {
       const r = oyuncuKoltugu(d, vali(d).id, kimlik, simdi);
       if (!r.ok || r.deger.neden !== "sahip") return hata("yetki_yok");
@@ -644,6 +693,7 @@ export function bolgeGorunumu(d: BolgeDurumu, simdi: number, kimlik?: SiyasiKiml
       harac: { pay: HARAC.pay, indirim: haracIndirimi(d), gecikme: d.gecikme, kademe: HARAC.kademeler[Math.min(3, d.gecikme)] },
       alarm: ALARM.seviyeler[ayarOku(vali(d), "alarm")],
       ozerklik: d.ozerklik ?? null,
+    darbe: darbeGorunumu(d, kimlik),
     },
     makamlar: d.koltuklar.map((k) => koltukGorunumu(d, k, simdi, benim)),
     aziller: d.aziller.slice(-5).map((a) => ({ n: a.n, ay: a.ay, makam: a.koltuk, ad: a.eski.ad, gerekce: a.gerekce, dogrulandi: a.dogrulandi, itiraz: a.itiraz, hakem: a.hakem ?? null, itirazSon: a.ay + AZIL.itirazAy })),
