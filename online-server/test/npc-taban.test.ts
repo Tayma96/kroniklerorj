@@ -58,3 +58,15 @@ test("envanterEkle sıfıra inince anahtarı siler, negatife düşmez", () => {
   assert.equal(envanterEkle(c, "odun", -5), 0);
   assert.equal(c.ev?.odun, undefined);
 });
+
+
+test("Y2 runtime ekonomi parametreleri NPC fiyatı, kıtlık primi ve alım kotasını değiştirir", () => {
+  const k = testKasabasi();
+  const c = oyuncuEkle(k, 1, k.ay - 14 * 12);
+  c.pa = 5000;
+  const parametre = { NPC_CARPAN: 3, KITLIK_PRIM: 0.8, NPC_AYLIK_KOTA: 1, STOK_CARPAN: 2 };
+  assert.equal(npcFiyat("alet", parametre).toplam, Math.ceil(MALLAR.alet.taban * 3));
+  assert.equal(satisDegeri("alet", 0, parametre).toplam, MALLAR.alet.taban + Math.ceil(MALLAR.alet.taban * 0.8));
+  assert.ok(npcdenAl(c, "nal", 1, k.ay, undefined, parametre).ok);
+  assert.deepEqual(npcdenAl(c, "nal", 1, k.ay, undefined, parametre), { ok: false, hata: "kota_doldu" });
+});
