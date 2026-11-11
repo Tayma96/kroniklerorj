@@ -4,6 +4,7 @@
 // Cüzdan (karakterin akçesi) ve tapu aynı DO'da olduğu için edinim ve devir ödemesi tek yazımda atomiktir.
 
 import { karakterYasi } from "../yerlesim/karakter.ts";
+import { hizmetAcik } from "../yerlesim/beceri-etki.ts";
 import { kiraTut } from "../yerlesim/barinma.ts";
 import { ayniKume } from "../yerlesim/teveccuh.ts";
 import { olduMu } from "../yerlesim/hanedan.ts";
@@ -234,13 +235,15 @@ export function mulkluKira(k: Kasaba, kar: Karakter, govde: unknown, an: number)
 export function mulkluIkram(k: Kasaba, kar: Karakter, ikram: IkramId, an: number, istekNo: string): Sonuc<{ fiyat: number; batak: number; kasaya: number; islem?: string }> {
   const oh = oyuncuHani(k);
   const taban = IKRAM_MENUSU[ikram].fiyat;
+  // Hancı "ikram" hizmeti, menü taban fiyatına %10 meslek indirimi sağlar.
+  const indirimliTaban = hizmetAcik(kar, "ikram") ? Math.max(1, Math.round(taban * 0.9)) : taban;
   if (!oh) {
-    if (kar.pa < taban) return hata("para_yok");
-    kar.pa -= taban;
-    return basarili({ fiyat: taban, batak: taban, kasaya: 0 });
+    if (kar.pa < indirimliTaban) return hata("para_yok");
+    kar.pa -= indirimliTaban;
+    return basarili({ fiyat: indirimliTaban, batak: indirimliTaban, kasaya: 0 });
   }
   if (oh.kapasite === 0) return hata("han_kapali");
-  const fiyat = Math.max(1, Math.ceil((taban * oh.fc) / 100 - 1e-9));
+  const fiyat = Math.max(1, Math.ceil((indirimliTaban * oh.fc) / 100 - 1e-9));
   const c = kasayaCikis(k, kar, oh.isletme, fiyat, "ikram", an, `y:${k.y}:${kar.o}:ikram:${istekNo}`, true);
   if (!c.ok) return c;
   return basarili({ fiyat, batak: 0, kasaya: fiyat, islem: c.deger.islem });
