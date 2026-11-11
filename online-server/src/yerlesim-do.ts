@@ -37,6 +37,10 @@ export class YerlesimDO {
     return this.#motor;
   }
 
+  async #parametreleriYukle(motor: YerlesimMotoru): Promise<void> {
+    await this.#parametreleriYukle(motor);
+  }
+
   async #alarmKur(simdi: number, kalan: number): Promise<void> {
     if (this.#alarmVar && kalan === 0) return;
     if (kalan > 0 || (await this.#depolama.getAlarm()) === null) await this.#depolama.setAlarm(sonrakiAlarm(simdi, kalan));
@@ -226,6 +230,7 @@ export class YerlesimDO {
     try {
       const motor = await this.#ac(undefined, simdi);
       if (!motor) return;
+      await this.#parametreleriYukle(motor);
       const { kalan } = await motor.yetistir(simdi);
       await this.#depolama.setAlarm(sonrakiAlarm(simdi, kalan));
       this.#alarmVar = true;
