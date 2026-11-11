@@ -1,47 +1,68 @@
-# Ek B P5 — darbe hazırlığı uygulama notu
+# Ek B P5–P6 — darbe ve bağımsız devlet uygulama notu
 
-Durum: ilk sunucu dilimi uygulandı; çatışma çözümü ve bağımsız devlet henüz uygulanmadı.
-Kapsam: feature/online-p5-darbe-zinciri dalı.
+Durum: sunucu tarafında ilk oynanabilir dilim; eşikler alfa parametresidir. Bu not, tamamlanmış olmayan diplomatik tanınma/çok-devlet bağlantısını açıkça ayırır.
+Dal: `feature/online-p5-darbe-zinciri`.
 
-## Bu dilimdeki akış
+## P5 — darbe akışı
 
-1. Bölge valisi yalnız kendi etkin vali makamı üzerinden darbe hazırlığı açabilir.
-2. Planın ilk aşaması gizlidir. Hazırlık izi ve destek/ikmal dökümü yalnız planı başlatan ve destek taahhüdü veren oyunculara gösterilir.
-3. Şehir beyi ve ahi başı makamlarının gerçek sahipleri, kendi makamlarıyla yazılı destek taahhüdü verebilir. Vekil destek veremez.
-4. Aynı hesap veya hane kümesinden ikinci destek kabul edilmez.
-5. Vali, bölge kasasından garnizon sadakati yatırımı yapabilir. Her yatırımda hazine rezervi korunur; hareket deftere gider.
-6. İlan, taahhüt eşiği karşılanmadan açılamaz. Açık ilan bir oyun ayı tebliğ süresinden sonra çatışmaya geçer; ani baskın doğrudan çatışma aşamasına geçer.
-7. Hazırlık aşamasında başlatan vazgeçebilir; vazgeçme sonrası soğuma uygulanır.
+1. Yalnız etkin vali kendi bölgesinde gizli hazırlık başlatabilir.
+2. Şehir beyi ve ahi başı makamlarının gerçek sahipleri taahhüt verir; vekiller veremez.
+3. Aynı hesap veya hane kümesinden ikinci taahhüt alınmaz.
+4. Vali bölge kasasından garnizon sadakati yatırımı yapabilir; akçe defteri korunur ve hazine rezervi bırakılır.
+5. Eşik tamamlanmadan açık ilan veya baskın açılamaz.
+6. Açık ilan bir ay tebliğden sonra çatışmaya geçer; baskın çatışmayı başlatır. Çatışma bir sonraki aylık adımda deterministik, denetlenebilir güç hesabıyla çözülür.
+7. Sonuçlar:
+   - Bastırıldı: vali makamı boşaltılır; karakter ve mülkleri silinmez.
+   - Pat/çıkmaz: mevcut statüko korunur.
+   - Başarı: kurucu bey olur ve P6 bağımsız devlet kaydı oluşturulur.
+   - Moğol müdahalesi: Moğol tutumu sefer kademesindeyse müdahale sonucu çıkar; otomatik ilhak veya karakter silme yoktur.
+8. Çözümde çevrimiçi oyuncu beklenmez; savunma gücü mevcut makamlar, güvenlik, Sultan meşruiyeti ve garnizon sadakati üzerinden hesaplanır. Sessizlik teslimiyet sayılmaz.
+9. Hazırlık aşamasında kurucu vazgeçebilir; altı aylık soğuma uygulanır. Bölge başına tek açık plan vardır.
 
-## İlk dilimdeki eşikler
+## P5 — alfa parametreleri
 
-Bütün değerler online-server/src/siyaset/sabitler.ts içindeki DARBE nesnesindedir ve alfa verisiyle ayarlanacak parametrelerdir:
-
-- Bölgedeki şehir beyi koltuklarının tamamından destek (en az bir).
+Bütün değerler `online-server/src/siyaset/sabitler.ts` içindeki `DARBE` nesnesindedir:
+- Tüm şehir beyi koltuklarından destek (en az bir).
 - En az iki ahi başı desteği.
-- Garnizon sadakati en az 60.
-- Bölge kasasında en az 40 akçe rezerv.
-- Meşruiyet 40 veya altı ya da en az iki ahi başı desteğiyle görünür yerel ileri gelen desteği.
-- Garnizon yatırımı 20 akçelik birimlerle, 20–200 aralığında yapılır; her birim sadakati 10 artırır.
+- Garnizon sadakati en az 60; başlangıç 20.
+- Hazine rezervi 40 akçe.
+- Meşruiyet 40 veya altı ya da iki ahi başı desteği.
+- Garnizon yatırımı 20 akçelik birimlerle, 20–200 aralığında; birim başına 10 sadakat.
+- Tebliğ ve çatışma süreleri birer oyun ayı; sonuç farkı 25.
 
-Bu eşikler geçici oyun parametreleridir; GDD'deki D-43 kararı gereği alfa verisi olmadan nihai kabul edilmemelidir.
+Bunlar nihai tasarım kararı değildir. GDD'deki D-43 ve D-46 kararları uyarınca alfa verisiyle ayarlanmalıdır. Çatışma hesabı şu an mülk kaybı üretmez; mülk kaybı tavanı/ganimet sistemi eklenene kadar mülke otomatik el koyma yoktur.
+
+## P6 — bağımsız devlet v1
+
+- Başarılı darbe, kurucuyu Bey yapar; destekçilerden en çok beş kişi ilk Divan'a girer.
+- Bey devlet adını (3–32 karakter) ve vergi kademesini ayarlayabilir.
+- Bey Divan'a yalnız darbe taahhüdü veren kişilerden üye ekleyip çıkarabilir; en çok beş üye.
+- Moğol ilişkisi `harac` veya `diren` seçilebilir. Harac seçilirse vergi gelirinin Sultan haraç payına denk gelen kısmı doğrudan dünyadan çıkar; diren seçilirse ödeme yapılmaz.
+- Sultan'a barışla dönüş talebi verilebilir. İki oyun ayı sonra bölge ve Sultan meşruiyeti en az 55 ise kabul edilir; değilse talep reddedilir. Kabul edilene kadar bölge bağımsızdır.
+- Tanınma talebi kayda alınır; başka bağımsız devletlerin diplomatik yanıt uçları henüz yoktur.
+- Her oyuncu kendi bağlılığını isteğe bağlı olarak `bagli` veya `tarafsiz` seçebilir. Eylemsizlik tarafsızlıktır; toplu/zorunlu yemin yoktur.
 
 ## Güvenlik ve veri ilkeleri
 
-- İstemcinin gönderdiği makam veya siyasi kimlik yetki kanıtı sayılmaz; eylemde mevcut oyuncuKoltugu ve yerleşimden doğrulanan SiyasiKimlik kullanılır.
-- Tek bölge için tek açık plan vardır.
-- Destek taahhütleri hesap/hane kümesine göre tekilleştirilir.
-- Hazırlık izleri herkese yayınlanmaz.
-- Garnizon ikmali bölge kasasından çıkar; mevcut defter değişmezi korunur.
-- BolgeDurumu.darbe isteğe bağlıdır; eski Durable Object kayıtları için geriye dönük uyumludur.
+- İstemci makamı veya siyasi kimliği yetki kanıtı değildir; eylem sunucunun doğruladığı siyasi kimlik ve gerçek makam sahibiyle kontrol edilir.
+- Hazırlık izleri yalnız katılımcılara görünür; ilan/çatışma ve sonuç bölgeye açılır.
+- Destek hesap/hane kümesine göre tekilleştirilir.
+- Bölge kasası yatırımları ve haraç hareketleri kayıtlıdır; eski Durable Object kayıtlarında yeni alanlar isteğe bağlıdır.
+- Başarısız darbe karakteri silmez; mülk otomatik aktarılmaz.
+- Oyuncu bağlılığı bireysel ve gönüllüdür.
 
-## Bu dilimde olmayanlar
+## Henüz tamamlanmayan bağlantılar
 
-- Çatışma çözümü, tarafların ön talimatları, çevrimdışı savunma ve otomatik ateşkes.
-- Bastırılma, çıkmaz/ateşkes, başarı ve Moğol müdahalesi sonuçları.
-- Başarılı darbeden sonra bağımsız Polity, Divan, vergi çerçevesi ve diplomatik tanınma.
-- Oyuncu/mülk vergisi tahsilatından vergiYatir kancasına çağrı noktası. Mevcut BolgeDO alıcısı var; tahsilatın gerçek para düşümüyle aynı işlem/tekrar güvenliği içinde bağlanacağı kaynak henüz belirlenmedi.
+- Başka bağımsız devletler arasında tanıma, ittifak, ticaret, sınır ve diplomatik anlaşma uçları.
+- Tanınma talebine dış devlet yanıtı ve Divan'ın gerçek oyuncu koltuklarıyla yönetimi.
+- Savunma ön talimatlarının ayrı oyuncu eylemleri; mevcut çözüm çevrimdışı güvenliği otomatik güç hesabıyla sağlar.
+- Gerçek oyuncu/mülk vergi tahsilatının `vergiYatir` kancasına kaynak işlemle atomik bağlanması. BolgeDO alıcısı ve anahtar tekrar güvenliği var; tahsilat çağrı noktası henüz bulunup bağlanmadı.
+- Çatışma sırasında açık müzakere, ateşkes şartları ve mülk kaybı tavanı. Şimdilik çıkmaz statükoyu korur ve mülk kaybı uygulanmaz.
 
-## Sonraki dilim
+## Doğrulama
 
-Önce bu hazırlık akışını derleme ve testlerle doğrula. Ardından Faz 8 / GDD §10 ile uyumlu tek çatışma fazı, ön talimatlı çevrimdışı savunma, kayıp tavanı ve dört sonucun sunucu tarafı çözümünü ekle. Sayısal süre ve kayıp tavanları GDD'deki [PARAMETRE] olarak kalmalıdır.
+`online-server/package.json` komutları:
+- `npm run typecheck`
+- `npm test`
+
+Bu dalda GitHub kaynak güncellemeleri yapıldı; CI sonucu alınmadan testlerin geçtiği kabul edilmemelidir.
