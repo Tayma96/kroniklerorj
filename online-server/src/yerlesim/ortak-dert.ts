@@ -201,6 +201,8 @@ export function uygunKatkilar(kar: Karakter): KatkiTuru[] {
   if (m && m !== "asker") liste.add(MESLEK_KATKI[m]);
   // Asker nöbeti, mesleği ne olursa olsun ilgili beceri hizmetini öğrenenlere açılır.
   if (hizmetAcik(kar, "nobet") || mesrepEtkisi(kar, "nobet") > 0) liste.add("nobet");
+  // Ozanın türkü hizmeti, ana mesleği farklı olan oyuncuya da salgın/hasat moral desteği açar.
+  if (hizmetAcik(kar, "turku")) liste.add("moral");
   return KATKI_TURLERI.filter((t) => liste.has(t));
 }
 
