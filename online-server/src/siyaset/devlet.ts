@@ -90,7 +90,7 @@ export function devletGorunumu(s: BagimsizDevlet | undefined) {
   const yeminler = Object.values(s.yeminler);
   return {
     v: s.v, ad: s.ad, kurulusAy: s.kurulusAy,
-    bey: { kisi: s.beyKisi },
+    bey: { kisi: s.beyKisi, ad: s.beyAd },
     vergiOrani: s.vergiOrani,
     divan: s.divan.map((x) => ({ ad: x.ad, rol: x.rol })),
     mogol: s.mogol, sultan: s.sultan, sultanSonuc: s.sultanSonuc ?? null, taninma: s.taninma,
