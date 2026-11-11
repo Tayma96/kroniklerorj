@@ -457,7 +457,7 @@ test("panel: Türkçe HTML, sıkı CSP (özetli satır içi betik/stil), çerçe
   assert.ok(!/https?:\/\//.test(html), "dış kaynak yok");
   assert.ok(!/\son[a-z]+=/i.test(html), "satır içi olay işleyicisi yok");
   assert.ok(!html.includes("innerHTML"));
-  for (const bolum of ["Giriş", "Oyuncu ara", "Şikayet kuyruğu", "Parametreler", "Duyuru", "İşlem kaydı"]) assert.ok(html.includes(bolum), bolum);
+  for (const bolum of ["Giriş", "Oyuncu ara", "Şikayet kuyruğu", "Ekonomi sağlığı", "Parametreler", "Duyuru", "İşlem kaydı"]) assert.ok(html.includes(bolum), bolum);
   const ozet = async (m: string) => {
     const b = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(m)));
     return `'sha256-${btoa(String.fromCharCode(...b))}'`;
@@ -466,4 +466,22 @@ test("panel: Türkçe HTML, sıkı CSP (özetli satır içi betik/stil), çerçe
   assert.ok(csp.includes(`style-src ${await ozet(PANEL_PARCALARI.STIL)}`));
   assert.ok(html.includes(`<script>${PANEL_PARCALARI.BETIK}</script>`));
   assert.equal((await cagir("POST", "/yonetim")).durum, 405);
+});
+
+
+test("Y2 ekonomi sağlığı: kurucu yerleşim toplamlarını görür, oyuncu kimlikleri açığa çıkmaz", async () => {
+  try {
+    const { cagir, oyuncu, yonetici } = await kur();
+    const mehmet = await oyuncu("220000000000000000002", "Mehmet", "kizilca");
+    const yb = (await yonetici(KURUCU_SUB, KURUCU)).govde.oturum as string;
+    const rapor = await cagir("GET", "/yonetim/ekonomi", { oturum: yb });
+    assert.equal(rapor.durum, 200);
+    assert.ok(rapor.govde.toplam.oyuncuSayisi >= 1);
+    assert.ok(rapor.govde.yerlesimler.some((x: { yerlesim: string }) => x.yerlesim === "kizilca"));
+    assert.equal(rapor.govde.eksikYerlesim, 0);
+    assert.ok(!JSON.stringify(rapor.govde).includes(mehmet.hesap), "raporda hesap kimliği yok");
+    assert.ok(rapor.govde.yerlesimler.every((x: Record<string, unknown>) => !("oyuncular" in x) && !("hesaplar" in x)));
+  } finally {
+    globalThis.fetch = eskiFetch;
+  }
 });
