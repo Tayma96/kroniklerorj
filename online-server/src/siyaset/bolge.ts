@@ -7,7 +7,7 @@ import { basarili, hata, type HataKodu, type Sonuc } from "../tipler.ts";
 import { mesruiyetGorunumu, bolgeMesruiyeti } from "./mesruiyet.ts";
 import { mogolEtkisi } from "./mogol.ts";
 import { darbeAyi, darbeDestekle, darbeEsigi, darbeGorunumu, darbeHazirla, darbeIlanEt, darbeSadakatYatir, darbeVazgec } from "./darbe.ts";
-import { devletGorunumu, devletYemin, devletYonet } from "./devlet.ts";
+import { devletAyi, devletGorunumu, devletYemin, devletYonet } from "./devlet.ts";
 import {
   adayUygunMu,
   adayYap,
@@ -267,6 +267,8 @@ export function bolgeAyi(d: BolgeDurumu, ay: number, simdi: number, ozet?: Sulta
   itirazlariCoz(d, ay);
   for (const k of d.koltuklar) koltukAyi(d, k, ay, simdi);
   mesruiyetHesapla(d);
+  const devletKarari = devletAyi(d, ay);
+  if (devletKarari) kayitEkle(d, ay, "devletDiplomasi", "divan", { k: "kayit.devletDiplomasi", p: { sonuc: devletKarari } });
   const dt = turKoltugu(d, "divanTemsilcisi")!;
   const rapor: BolgeRaporu = {
     ay,
