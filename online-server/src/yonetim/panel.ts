@@ -205,7 +205,7 @@ async function telafiYukle() {
   for (const x of v.telafiler) {
     const odul = x.tur === "akce" ? fmtAkce(x.tutar) : String(x.adet) + " × " + x.mal;
     k.append(el("div", { class: "kart" },
-      el("strong", { metin: odul + " · " + x.hedef }),
+      el("strong", { metin: odul + " · " + (x.hedefAd || x.hedef) }),
       el("div", { class: "kucuk", metin: x.yerlesim + " · " + new Date(x.zaman).toLocaleString("tr-TR") + " · " + x.kim }),
       el("div", { class: "kucuk", metin: x.gerekce })));
   }
