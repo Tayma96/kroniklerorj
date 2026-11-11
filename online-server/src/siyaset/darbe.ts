@@ -152,7 +152,7 @@ export function darbeGorunumu(d: BolgeDurumu, kimlik?: SiyasiKimlik) {
   const esik = darbeEsigi(d).dokum;
   return {
     id: p.id, durum: p.durum, mod: p.mod ?? null,
-    ilanAy: p.ilanAy ?? null, cozumAy: p.cozumAy ?? null,
+    ilanAy: p.ilanAy ?? null, cozumAy: p.cozumAy ?? null, sonuc: p.sonuc ?? null,
     ...(katilimci ? { esik, destekler: p.destekler.length, garnizonSadakati: p.garnizonSadakati, yatirilan: p.yatirilan, izler: p.izler } : {}),
   };
 }
