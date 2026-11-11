@@ -65,6 +65,35 @@ export const HIZMET_TARIFLERI: readonly HizmetTarifi[] = [
     hazir: { adet: 1, gecerlilikAy: 1 },
     fiyatTaban: 2,
   },
+  {
+    id: "lohusa",
+    meslek: "sifaci",
+    dugum: "sifaci.lohusaBakimi",
+    seviye: 1,
+    girdi: { sifaliOt: 1, bez: 1 },
+    takat: 2,
+    aylikTavan: 8,
+    hedef: "kisi",
+    etki: [
+      { tur: "hal", alan: "can", deger: 5 },
+      { tur: "hal", alan: "kondisyon", deger: 8 },
+    ],
+    hazir: { adet: 1, gecerlilikAy: 1 },
+    fiyatTaban: 5,
+  },
+  {
+    id: "teselli",
+    meslek: "ozan",
+    dugum: "ozan.teselli",
+    seviye: 1,
+    girdi: {},
+    takat: 1,
+    aylikTavan: 12,
+    hedef: "kisi",
+    etki: [{ tur: "hal", alan: "gonul", deger: 5 }],
+    hazir: { adet: 1, gecerlilikAy: 1 },
+    fiyatTaban: 3,
+  },
 ] as const;
 
 const DIZIN = new Map(HIZMET_TARIFLERI.map((x) => [x.id, x]));
