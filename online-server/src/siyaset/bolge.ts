@@ -155,7 +155,7 @@ function mesruiyetHesapla(d: BolgeDurumu): void {
   const v = vali(d);
   d.haksiz = d.haksiz.filter((a) => a > d.ay - MESRUIYET.pencere);
   d.mesruiyet = bolgeMesruiyeti({
-    vergiOrani: ayarOku(v, "vergiOrani", VERGI.baslangic),
+    vergiOrani: d.devlet?.vergiOrani ?? ayarOku(v, "vergiOrani", VERGI.baslangic),
     gostergeOrt: (d.g.arz + d.g.moral + d.g.guvenlik) / 3,
     haksizAzil: d.haksiz.length,
     onayliVali: !v.s.npc && !v.gecici,
