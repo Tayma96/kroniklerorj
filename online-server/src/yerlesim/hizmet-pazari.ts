@@ -1,5 +1,4 @@
-// E4.3-A: öğrenilmiş hizmeti girdiler ve takat karşılığında süreli stoğa hazırlar.
-// Bu modül yalnız stok üretimini yönetir; ilan/satın alma bir sonraki dilimde aynı ekonomi emanet defterine bağlanır.
+// E4.3: öğrenilmiş hizmeti süreli stoğa hazırlar; ilan, satın alma, teslim ve bozulma akışını yönetir.
 import type { MalId } from "../icerik/mallar.ts";
 import { hizmetAcik } from "./beceri-etki.ts";
 import { envanterEkle } from "./npc-taban.ts";
