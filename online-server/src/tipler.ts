@@ -524,7 +524,7 @@ export type ToplulukIletisi = { islem: ToplulukIslem; hesapId: string; govde: un
 
 /** Ekonomi (Faz 6) gövdeli işlemleri: POST /v1/pazar/ilan, /v1/pazar/islem, /v1/pazar/geri, /v1/ismarlama,
  * /v1/ismarlama/cevap. */
-export const EKONOMI_ISLEMLERI = ["pazarIlan", "pazarIslem", "pazarGeri", "ismarla", "ismarlamaCevap", "hizmetHazirla"] as const;
+export const EKONOMI_ISLEMLERI = ["pazarIlan", "pazarIslem", "pazarGeri", "ismarla", "ismarlamaCevap", "hizmetHazirla", "hizmetIlan", "hizmetIslem", "hizmetGeri"] as const;
 export type EkonomiIslem = (typeof EKONOMI_ISLEMLERI)[number];
 /** Ekonomi iletileri (HesapDO aynen YerlesimDO'ya iletir; `yerlesim` eklenir). */
 export type EkonomiIletisi =
