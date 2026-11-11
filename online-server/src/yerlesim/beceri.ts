@@ -57,6 +57,8 @@ export function kancaMi(e: Etki): boolean {
     case "kalite":
       // Faz 6: ürün kalitesi (kalite.ts); hedef tarif kimliği ya da tarif grubu olmalı.
       return !kaliteHedefiMi(e.hedef);
+    case "tasarruf":
+      return (!Object.hasOwn(TARIFLER, e.hedef) && !Object.values(TARIFLER).some((t) => t.grup?.includes(e.hedef)) && !Object.hasOwn(TEMEL_ISLER, e.hedef)) || !Object.hasOwn(MALLAR, e.mal);
     default:
       return true;
   }
