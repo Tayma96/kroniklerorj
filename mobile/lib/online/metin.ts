@@ -145,6 +145,7 @@ export function olayIkonu(o: Pick<Olay, "ozet" | "tur">): string {
     "olay.kulYemini": "flame", "olay.ogrenme.gun": "graduate-cap", "olay.hamle.corba": "bread", "olay.hamle.laf": "speaker",
     "olay.yeniSakin": "house", "olay.ciraklik": "anvil", "olay.karar": "compass",
     "olay.siparis.acildi": "scroll-open", "olay.siparis.dustu": "hourglass", "olay.siparis.teslim": "medal",
+    "olay.yonetim.telafiAkce": "gift", "olay.yonetim.telafiEsya": "gift",
   };
   return tablo[k] ?? "scroll-open";
 }
