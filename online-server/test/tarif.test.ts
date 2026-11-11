@@ -130,7 +130,10 @@ test("temel iş de kondisyon düşürür", () => {
 
 test("Demirci temel dövme düğümü dövme grubu tariflerinde kömür tasarrufu sağlar", () => {
   const k = testKasabasi();
-  const c = usta(k, "demirci", "temelDovme");
+  const c = oyuncuEkle(k, 1, k.ay - 16 * 12);
+  c.tk = 18;
+  c.ta = k.ay;
+  meslekSec(c, "demirci", k.ay);
   seviyeVer(c, "demirci.temelDovme", 2);
   const kilit = TARIF_KILIDI.kilic!;
   seviyeVer(c, kilit.dugum, kilit.seviye);
