@@ -4,8 +4,11 @@
 // ve defter.ts'dedir; burada yalnız yükleme, defter kalemleri ve görünüm vardır.
 
 import { MALLAR, malBul, type MalId } from "../icerik/mallar.ts";
+import { HIZMET_TARIFLERI } from "../icerik/agaclar/index.ts";
 import { basarili, hata, type Sonuc } from "../tipler.ts";
 import { DEFTER_AY, defterGorunumu } from "./defter.ts";
+import { hizmetAcik } from "./beceri-etki.ts";
+import { hizmetHazirla, hizmetStoguGecerli, hizmetStoguGorunumu } from "./hizmet-pazari.ts";
 import {
   ISMARLAMA_ADET_EN_COK,
   ISMARLAMA_MUSTERI_EN_COK,
@@ -45,6 +48,39 @@ function nesneMi(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
 }
 const aylik = (s: [number, number] | undefined, ay: number) => (s && s[0] === ay ? s[1] : 0);
+
+/** GET /v1/hizmet: öğrenilmiş hizmet kataloğu ve oyuncunun süresi geçmemiş hazır stoğu. */
+export function hizmetOku(m: YerlesimMotoru, hesapId: string): Promise<Sonuc<unknown>> {
+  return m.ekonomiOku(hesapId, (kar, ay) => {
+    const katalog = HIZMET_TARIFLERI.map((tarif) => ({
+      id: tarif.id,
+      meslek: tarif.meslek,
+      dugum: tarif.dugum,
+      seviye: tarif.seviye,
+      girdi: tarif.girdi,
+      takat: tarif.takat,
+      hedef: tarif.hedef,
+      etki: tarif.etki,
+      hazir: tarif.hazir,
+      fiyatTaban: tarif.fiyatTaban,
+      acik: hizmetAcik(kar, tarif.id),
+    }));
+    const stok = (m.kasaba.ek?.hs ?? [])
+      .filter((x) => x.o === kar.o && hizmetStoguGecerli(x, ay))
+      .map((x) => hizmetStoguGorunumu(x, ay));
+    return basarili({ katalog, stok, kurallar: { tekHazirlamaEnCok: 5, hizmetStokEnCok: 20 } });
+  });
+}
+
+/** POST /v1/hizmet/hazirla {hizmet, adet, istekNo}: mal ve takat harcayıp süreli hizmet stoğu üretir. */
+export function hizmetHazirlaUc(m: YerlesimMotoru, hesapId: string, govde: unknown): Promise<Sonuc<unknown>> {
+  if (!nesneMi(govde)) return Promise.resolve(hata("gecersiz_istek"));
+  return m.ekonomiYaz(hesapId, govde, "hizmetHazirla", [], (kar, ay) => {
+    const r = hizmetHazirla(ekonomiAl(m.kasaba), kar, govde.hizmet, govde.adet, ay);
+    if (!r.ok) return r;
+    return basarili({ hazirlama: r.deger, stok: hizmetStoguGorunumu(r.deger.stok, ay) });
+  });
+}
 
 /** Pazar kuralları (ekranda açıkça yazılır; gizli sayı yok). */
 export const PAZAR_KURALLARI = {
