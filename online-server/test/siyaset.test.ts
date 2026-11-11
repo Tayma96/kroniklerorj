@@ -221,3 +221,34 @@ test("müzakereli özerklik: şartlı → kabul → şart ihlalinde geri alını
   bolgeAyi(z, 3, SIMDI);
   assert.equal(z.ozerklik!.durum, "ret");
 });
+
+
+test("P5 darbe hazırlığı: şehir/ahi desteği ve garnizon eşiği olmadan ilan edilemez", async () => {
+  const { darbeHazirla, darbeDestekle, darbeSadakatYatir, darbeEsigi, darbeIlanEt, darbeAyi } = await import("../src/siyaset/darbe.ts");
+  const d = bolgeKur("demirhan", 0);
+  const a = kimlik("vali");
+  valiYap(d, a);
+  d.kasa = 100;
+  assert.equal(darbeHazirla(d, a, d.ay), null);
+  assert.equal(darbeIlanEt(d, "acik", d.ay), "darbe_esik_eksik");
+  const sehir = koltukBul(d, "sehirBeyi:demirhan")!;
+  const ahi1 = koltukBul(d, "ahiBasi:demirhan")!;
+  const ahi2 = koltukBul(d, "ahiBasi:develi")!;
+  const s1 = kimlik("sehir", { yerlesim: "demirhan" });
+  const s2 = kimlik("ahi1", { yerlesim: "demirhan" });
+  const s3 = kimlik("ahi2", { yerlesim: "develi" });
+  sehir.s = oyuncuTutucu(s1, 20, SIMDI);
+  ahi1.s = oyuncuTutucu(s2, 20, SIMDI);
+  ahi2.s = oyuncuTutucu(s3, 20, SIMDI);
+  assert.equal(darbeDestekle(d, s1, sehir.id, "sehirBeyi", d.ay), null);
+  assert.equal(darbeDestekle(d, s2, ahi1.id, "ahiBasi", d.ay), null);
+  assert.equal(darbeDestekle(d, s3, ahi2.id, "ahiBasi", d.ay), null);
+  assert.equal(darbeDestekle(d, kimlik("alt", { e: s2.e, yerlesim: "demirhan" }), "ahiBasi:demirhan", "ahiBasi", d.ay), "kume_cakisma");
+  assert.equal(darbeSadakatYatir(d, 80, d.ay), "kasa_yetersiz");
+  assert.equal(darbeSadakatYatir(d, 40, d.ay), null);
+  assert.equal(darbeEsigi(d).uygun, true);
+  assert.equal(darbeIlanEt(d, "acik", d.ay), null);
+  assert.equal(d.darbe?.durum, "ilan");
+  darbeAyi(d, d.ay + 1);
+  assert.equal(d.darbe?.durum, "catışma");
+});
