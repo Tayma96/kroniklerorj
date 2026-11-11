@@ -280,6 +280,9 @@ export class HesapDO {
       case "pazarIslem":
       case "pazarGeri":
       case "hizmetHazirla":
+      case "hizmetIlan":
+      case "hizmetIslem":
+      case "hizmetGeri":
       case "hizmet":
       case "ismarla":
       case "ismarlamaCevap":
