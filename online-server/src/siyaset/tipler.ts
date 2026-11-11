@@ -207,6 +207,22 @@ export interface DarbePlani {
   izler: DarbeIzi[];
 }
 
+export type MogolBaglantisi = "harac" | "diren";
+export type SultanBaglantisi = "bagimsiz" | "barisTalebi" | "sultanligaDondu";
+export interface BagimsizDevlet {
+  v: 1;
+  ad: string;
+  kurulusAy: number;
+  beyKisi: string;
+  beyHesap: string;
+  vergiOrani: number;
+  divan: { kisi: string; hesap: string; ad: string; rol: "divan" }[];
+  mogol: MogolBaglantisi;
+  sultan: SultanBaglantisi;
+  taninma: "taninmadi" | "talepEdildi" | "tanindi";
+  yeminler: Record<string, "bagli" | "tarafsiz">;
+}
+
 export interface BolgeDurumu {
   v: 1;
   id: string;
@@ -234,6 +250,8 @@ export interface BolgeDurumu {
   ozerklik?: Ozerklik;
   /** P5 darbe planı; gizli hazırlık izleri genel bölge görünümüne sızdırılmaz. */
   darbe?: DarbePlani;
+  /** P6: darbe başarıya ulaşırsa kurulan, oyuncu bağlılığı gönüllü olan siyasi yapı. */
+  devlet?: BagimsizDevlet;
   /** Son çekilen Sultanlık özeti (GET'ler Sultanlığa gitmez: sıcak global nesne yok). */
   sultanlik?: SultanlikOzeti;
   mesruiyet: Mesruiyet;
