@@ -75,6 +75,9 @@ export class YerlesimDO {
     const motor = await this.#ac(ileti.yerlesim, simdi);
     if (!motor) return hata("yerlesim_gecersiz");
     if (ileti.islem === "ekonomiSagligi") return motor.ekonomiSagligi();
+    // YonetimDO → YerlesimDO iç çağrıları geri döngü oluşturmamak için parametre/ay dönümü çağırmaz.
+    if (ileti.islem === "siyasetKimlik") return motor.siyasetKimlik(ileti.hesapId);
+    if (ileti.islem === "yonetimTelafi") return motor.yonetimTelafi(ileti.hesapId, ileti.govde);
     await this.#parametreleriYukle(motor);
     const { kalan } = await motor.yetistir(simdi);
     await this.#alarmKur(simdi, kalan);
