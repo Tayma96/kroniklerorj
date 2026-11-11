@@ -441,6 +441,8 @@ export interface YoneticiKimligi {
 export const YONETIM_UCLARI = {
   ben: "GET",
   ekonomi: "GET",
+  telafiler: "GET",
+  telafi: "POST",
   oyuncu: "GET",
   yaptirim: "POST",
   "yaptirim-kaldir": "POST",
@@ -550,6 +552,7 @@ export interface SakinKaydi {
 /** HesapDO → YerlesimDO. `yerlesim` profildeki işaretçidir (DO adını bilmez). */
 export type YerlesimIleti =
   | { islem: "ekonomiSagligi"; yerlesim: string }
+  | { islem: "yonetimTelafi"; yerlesim: string; hesapId: string; govde: unknown }
   | { islem: "sakinEkle"; yerlesim: string; sakin: SakinKaydi }
   | { islem: "durum"; yerlesim: string; hesapId: string; dil?: string | null }
   | { islem: "olaylar"; yerlesim: string; hesapId: string; imlec?: string | null; dil?: string | null }
