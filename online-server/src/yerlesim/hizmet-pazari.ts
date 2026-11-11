@@ -1,5 +1,6 @@
 // E4.3-A: öğrenilmiş hizmeti girdiler ve takat karşılığında süreli stoğa hazırlar.
 // Bu modül yalnız stok üretimini yönetir; ilan/satın alma bir sonraki dilimde aynı ekonomi emanet defterine bağlanır.
+import type { MalId } from "../icerik/mallar.ts";
 import { hizmetAcik } from "./beceri-etki.ts";
 import { envanterEkle } from "./npc-taban.ts";
 import { takatHarca } from "./karakter.ts";
@@ -47,7 +48,7 @@ export function hizmetHazirla(
   const takat = tarif.takat * adet;
   // Takat denetimi girdiler tüketilmeden yapılır; takatHarca başarısızsa mal kaybı olmaz.
   if (!takatHarca(kar, ay, takat)) return hata("takat_yok");
-  for (const [mal, miktar] of Object.entries(girdiler)) envanterEkle(kar, mal as keyof typeof kar.ev & string, -miktar);
+  for (const [mal, miktar] of Object.entries(girdiler)) envanterEkle(kar, mal as MalId, -miktar);
 
   const stok: HizmetStogu = {
     i: ek.n++, o: kar.o, oa: kar.ad, h: tarif.id, n: adet, ac: ay, sa: ay + tarif.hazir.gecerlilikAy,
