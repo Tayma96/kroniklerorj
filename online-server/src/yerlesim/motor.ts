@@ -436,7 +436,7 @@ export class YerlesimMotoru {
       for (const t of ekonomiDonumu(k, ay)) await this.#olayEkle(t, ay);
       const pa0 = new Map([...k.kar].map(([o, c]) => [o, c.pa]));
       for (const t of ayDonumu(k, ay)) await this.#olayEkle(t, ay);
-      for (const t of siparisDonumu(k, ay)) await this.#olayEkle(t, ay);
+      for (const t of siparisDonumu(k, ay, k.pr)) await this.#olayEkle(t, ay);
       for (const t of toplumDonumu(k, ay)) await this.#olayEkle(t, ay);
       for (const [o, c] of k.kar) defterYaz(c, ay, "donum", c.pa - (pa0.get(o) ?? c.pa));
       for (const t of barinmaDonumu(k, ay)) await this.#olayEkle(t, ay);
@@ -540,14 +540,14 @@ export class YerlesimMotoru {
       beceri: beceriGorunumu(kar),
       beceriOzet: beceriOzeti(kar, this.#simdi),
       tarifler: tarifListesi(kar),
-      temelIsler: temelIsOnizleme(kar, oyuncuSayaci(k), ay),
+      temelIsler: temelIsOnizleme(kar, oyuncuSayaci(k), ay, k.pr),
       npcKota: {
         sat: kalanSatisKotasi(kar, ay),
         satTavan: NPC_SATIS_KOTASI,
         al: Object.fromEntries(MAL_IDLERI.filter((m) => MALLAR[m].taban > 0).map((m) => [m, NPC_AYLIK_KOTA - npcdenAlinan(kar, m, ay)])),
         alTavan: NPC_AYLIK_KOTA,
       },
-      stok: stokGorunumu(k.st as KasabaStogu | undefined, kar),
+      stok: stokGorunumu(k.st as KasabaStogu | undefined, kar, k.pr),
       hane: k.npc
         .filter((n) => n.e === kar.e)
         .map((n) => ({ id: npcKimlik(n.i), ad: npcAdi(n, dil), rol: akrabalik(k, n, kar) ?? "hane" })),
@@ -992,7 +992,7 @@ export class YerlesimMotoru {
   /** POST /v1/taban-al {mal, adet, istekNo}: NPC taban arzından pahalı ve kotalı alım. */
   async tabanAl(hesapId: string, govde: unknown): Promise<Sonuc<unknown>> {
     if (!nesneMi(govde)) return hata("gecersiz_istek");
-    return this.#tekrarGuvenli(hesapId, govde, (kar, _s, ay) => npcdenAl(kar, govde.mal, govde.adet, ay, (this.kasaba.st ??= {}) as KasabaStogu), "npcAlim");
+    return this.#tekrarGuvenli(hesapId, govde, (kar, _s, ay) => npcdenAl(kar, govde.mal, govde.adet, ay, (this.kasaba.st ??= {}) as KasabaStogu, this.kasaba.pr), "npcAlim");
   }
 
   /** POST /v1/tarif {tarif, istekNo}: açık düğümlü tarif; girdi düşer, çıktı eklenir, Hal ve hizmet döner. */
@@ -1018,7 +1018,7 @@ export class YerlesimMotoru {
     const sayac = oyuncuSayaci(this.kasaba);
     await this.#ortaklariYukle(hesapId);
     return this.#tekrarGuvenli(hesapId, govde, (kar, _s, ay, ek) => {
-      const r = npcyeSat(kar, govde.mal, govde.adet, sayac, ay, (this.kasaba.st ??= {}) as KasabaStogu);
+      const r = npcyeSat(kar, govde.mal, govde.adet, sayac, ay, (this.kasaba.st ??= {}) as KasabaStogu, this.kasaba.pr);
       if (!r.ok) return r;
       basariSay(kar, "sat:akce", r.deger.tutar);
       return basarili({ ...r.deger, ...this.#ortakPayiYaz(kar, r.deger.tutar, ay, ek) });
