@@ -40,6 +40,10 @@ export function hizmetHazirla(
   const eldeki = stoklar
     .filter((x) => x.o === kar.o && x.h === tarif.id && x.sa >= ay)
     .reduce((toplam, x) => toplam + x.n, 0);
+  const buAyHazirlanan = stoklar
+    .filter((x) => x.o === kar.o && x.h === tarif.id && x.ac === ay)
+    .reduce((toplam, x) => toplam + (x.n0 ?? x.n), 0);
+  if (buAyHazirlanan + adet > tarif.aylikTavan) return hata("kota_doldu");
   if (eldeki + adet > HIZMET_STOK_EN_COK) return hata("kota_doldu");
 
   const girdiler: Record<string, number> = {};
@@ -54,7 +58,7 @@ export function hizmetHazirla(
   for (const [mal, miktar] of Object.entries(girdiler)) envanterEkle(kar, mal as MalId, -miktar);
 
   const stok: HizmetStogu = {
-    i: ek.n++, o: kar.o, oa: kar.ad, h: tarif.id, n: adet, ac: ay, sa: ay + tarif.hazir.gecerlilikAy,
+    i: ek.n++, o: kar.o, oa: kar.ad, h: tarif.id, n: adet, n0: adet, ac: ay, sa: ay + tarif.hazir.gecerlilikAy,
   };
   stoklar.push(stok);
   return basarili({ stok, harcanan: { girdiler, takat } });
