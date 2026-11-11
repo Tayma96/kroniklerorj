@@ -76,7 +76,6 @@ export function devletAyi(d: BolgeDurumu, ay: number): "barisKabul" | "barisRet"
 }
 
 /** Her oyuncu kendi siyasi bağlılığını seçer; seçim yokluğu tarafsızlıktır, zorunlu yemin yoktur. */
- seçim yokluğu tarafsızlıktır, zorunlu yemin yoktur. */
 export function devletYemin(d: BolgeDurumu, kimlik: SiyasiKimlik, deger: unknown): HataKodu | null {
   const s = d.devlet;
   if (!s) return "devlet_yok";
