@@ -554,6 +554,7 @@ export class YerlesimMotoru {
     const k = this.kasaba;
     const ay = k.ay;
     const usta = kar.us ? k.dizin.get(kar.us) : undefined;
+    const npcAlimTavan = k.pr?.NPC_AYLIK_KOTA ?? NPC_AYLIK_KOTA;
     return {
       id: kar.o,
       ad: kar.ad,
@@ -579,8 +580,8 @@ export class YerlesimMotoru {
       npcKota: {
         sat: kalanSatisKotasi(kar, ay),
         satTavan: NPC_SATIS_KOTASI,
-        al: Object.fromEntries(MAL_IDLERI.filter((m) => MALLAR[m].taban > 0).map((m) => [m, NPC_AYLIK_KOTA - npcdenAlinan(kar, m, ay)])),
-        alTavan: NPC_AYLIK_KOTA,
+        al: Object.fromEntries(MAL_IDLERI.filter((m) => MALLAR[m].taban > 0).map((m) => [m, npcAlimTavan - npcdenAlinan(kar, m, ay)])),
+        alTavan: npcAlimTavan,
       },
       stok: stokGorunumu(k.st as KasabaStogu | undefined, kar, k.pr),
       hane: k.npc
