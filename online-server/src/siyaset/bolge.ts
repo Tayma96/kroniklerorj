@@ -633,7 +633,7 @@ export function bolgeEylem(d: BolgeDurumu, kimlik: SiyasiKimlik, g: Govde, simdi
     case "devletYonet": {
       const h = devletYonet(d, kimlik, g);
       if (h) return hata(h);
-      kayitEkle(d, ay, "devletKarari", kimlik.kisi, { k: "kayit.devletKarari", p: { tur: g.tur } });
+      kayitEkle(d, ay, "devletKarari", kimlik.kisi, { k: "kayit.devletKarari", p: { tur: String(g.tur) } });
       return basarili({ islem: "devletYonet", dokum: devletGorunumu(d.devlet) });
     }
     case "devletYemin": {
