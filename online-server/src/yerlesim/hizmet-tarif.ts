@@ -30,7 +30,7 @@ export const HIZMET_TARIFLERI: readonly HizmetTarifi[] = [
     meslek: "sifaci",
     dugum: "sifaci.sargiMerhem",
     seviye: 2,
-    girdi: { merhem: 1 },
+    girdi: { sifaliOt: 1 },
     takat: 1,
     hedef: "kisi",
     etki: [{ tur: "hal", alan: "can", deger: 10 }],
@@ -42,7 +42,7 @@ export const HIZMET_TARIFLERI: readonly HizmetTarifi[] = [
     meslek: "sifaci",
     dugum: "sifaci.kirikSarma",
     seviye: 1,
-    girdi: { bez: 1, kereste: 1, merhem: 1 },
+    girdi: { bez: 1, kereste: 1, sifaliOt: 1 },
     takat: 2,
     hedef: "kisi",
     etki: [
