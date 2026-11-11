@@ -47,6 +47,8 @@ const PARAM: Record<string, string[]> = {
   "olay.siparis.dustuKimsesiz": ["adet", "mal"],
   "olay.siparis.teslim": ["kim", "adet", "mal", "isteyen"],
   "olay.siparis.teslimKimsesiz": ["kim", "adet", "mal"],
+  "olay.yonetim.telafiAkce": ["tutar", "gerekce"],
+  "olay.yonetim.telafiEsya": ["adet", "mal", "gerekce"],
   "hal.can.saglam": ["toparlama", "esik", "taban"],
   "hal.can.yarali": ["kondisyonToparlama", "toparlama", "esik"],
   "hal.kondisyon.iyi": ["takatAylik", "isBasina"],
