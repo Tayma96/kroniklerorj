@@ -5,7 +5,8 @@
 import { doDepo, type Depo } from "./depo.ts";
 import { dunyaCagir, hesapCagir, iletiOku, jsonYanit } from "./ic.ts";
 import { HIZ_PENCERESI_MS, hizKontrol, type HizDurumu } from "./mantik.ts";
-import { hata, type Env, type Profil, type YonetimIleti } from "./tipler.ts";
+import { basarili, hata, type Env, type Profil, type YonetimIleti } from "./tipler.ts";
+import { etkinDeger, PARAMETRELER, type ParametreAdi, type ParametreKaydi } from "./yonetim/parametre.ts";
 import { yonetimIsle, type YonetimBaglami } from "./yonetim/islem.ts";
 import { kurucuListesi } from "./yonetim/yetki.ts";
 import { masaAtmaKaydet } from "./han/y1-kayit.ts";
@@ -54,6 +55,12 @@ export class YonetimDO {
     const ileti = await iletiOku<YonetimIleti>(istek);
     if (!ileti) return jsonYanit(hata("gecersiz_istek"));
     const simdi = Date.now();
+    if (ileti.islem === "parametrelerCalisma") {
+      const adlar = Object.keys(PARAMETRELER) as ParametreAdi[];
+      const kayitlar = await this.#depo.alCok<ParametreKaydi>(adlar.map((ad) => `parametre:${ad}`));
+      const degerler = Object.fromEntries(adlar.map((ad) => [ad, etkinDeger(PARAMETRELER[ad], kayitlar.get(`parametre:${ad}`))]));
+      return jsonYanit(basarili(degerler));
+    }
     if (ileti.islem === "masaAtma") return jsonYanit(await masaAtmaKaydet(this.#depo, ileti));
     if (ileti.islem === "giris" || ileti.islem === "yonet") {
       if (!hizTablosuSay(this.#hiz, ileti.yonetici.eposta, simdi)) return jsonYanit(hata("hiz_siniri"));
