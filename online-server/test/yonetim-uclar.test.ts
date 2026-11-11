@@ -515,11 +515,20 @@ test("Y3 telafi: akçe olayı tekrar güvenli, kendi hesap kümesine kapalı ve 
     assert.equal(durum.durum, 200);
     assert.equal(durum.govde.ben.para, ilk.govde.uygulama.para);
 
+    const esya = await cagir("POST", "/yonetim/telafi", {
+      oturum: yb,
+      govde: { hedef: mehmet.hesap, tur: "esya", mal: "nal", adet: 2, gerekce: "Eksik eşya telafisi", istekNo: no() },
+    });
+    assert.equal(esya.durum, 200);
+    assert.ok(esya.govde.uygulama.envanter.nal >= 2);
+    const durum2 = await cagir("GET", "/v1/durum", { oturum: mehmet.oturum });
+    assert.ok(durum2.govde.ben.envanter.nal >= 2);
+
     const liste = await cagir("GET", "/yonetim/telafiler", { oturum: yb });
     assert.equal(liste.durum, 200);
-    assert.equal(liste.govde.telafiler.length, 1);
-    assert.equal(liste.govde.telafiler[0].hedef, mehmet.hesap);
-    assert.equal(liste.govde.telafiler[0].gerekce, "Hatalı işlem düzeltmesi");
+    assert.equal(liste.govde.telafiler.length, 2);
+    assert.ok(liste.govde.telafiler.some((x: { hedef: string; tur: string }) => x.hedef === mehmet.hesap && x.tur === "akce"));
+    assert.ok(liste.govde.telafiler.some((x: { hedef: string; tur: string }) => x.hedef === mehmet.hesap && x.tur === "esya"));
   } finally {
     globalThis.fetch = eskiFetch;
   }
