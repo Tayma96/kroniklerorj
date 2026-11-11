@@ -235,7 +235,7 @@ test("P5 darbe hazırlığı: şehir/ahi desteği ve garnizon eşiği olmadan il
   const ahi1 = koltukBul(d, "ahiBasi:demirhan")!;
   const ahi2 = koltukBul(d, "ahiBasi:develi")!;
   const s1 = kimlik("sehir", { yerlesim: "demirhan" });
-  const s2 = kimlik("ahi1", { yerlesim: "demirhan" });
+  const s2 = kimlik("ahi1", { yerlesim: "demirhan", e: 7 });
   const s3 = kimlik("ahi2", { yerlesim: "develi" });
   sehir.s = oyuncuTutucu(s1, 20, SIMDI);
   ahi1.s = oyuncuTutucu(s2, 20, SIMDI);
