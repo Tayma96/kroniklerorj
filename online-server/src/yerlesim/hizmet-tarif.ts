@@ -15,6 +15,8 @@ export interface HizmetTarifi {
   seviye: number;
   girdi: Partial<Record<MalId, number>>;
   takat: number;
+  /** Oyuncu başına hizmet başına aylık hazırlama tavanı. */
+  aylikTavan: number;
   hedef: HizmetHedefi;
   etki: readonly HizmetEtki[];
   /** Hazır hizmet stoğu; ilan beklerken bu süre sonunda bozulur. */
@@ -31,6 +33,7 @@ export const HIZMET_TARIFLERI: readonly HizmetTarifi[] = [
     seviye: 2,
     girdi: { sifaliOt: 1 },
     takat: 1,
+    aylikTavan: 20,
     hedef: "kisi",
     etki: [{ tur: "hal", alan: "can", deger: 10 }],
     hazir: { adet: 1, gecerlilikAy: 2 },
@@ -43,6 +46,7 @@ export const HIZMET_TARIFLERI: readonly HizmetTarifi[] = [
     seviye: 1,
     girdi: { bez: 1, kereste: 1, sifaliOt: 1 },
     takat: 2,
+    aylikTavan: 10,
     hedef: "kisi",
     etki: [{ tur: "hal", alan: "can", deger: 20 }],
     hazir: { adet: 1, gecerlilikAy: 2 },
@@ -55,6 +59,7 @@ export const HIZMET_TARIFLERI: readonly HizmetTarifi[] = [
     seviye: 1,
     girdi: {},
     takat: 1,
+    aylikTavan: 20,
     hedef: "kisi",
     etki: [{ tur: "hal", alan: "gonul", deger: 3 }],
     hazir: { adet: 1, gecerlilikAy: 1 },
