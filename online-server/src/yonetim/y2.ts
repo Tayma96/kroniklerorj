@@ -19,6 +19,7 @@ export interface TelafiKaydi {
   no: number;
   id: string;
   hedef: string;
+  hedefAd: string;
   yerlesim: string;
   tur: "akce" | "esya";
   tutar?: number;
@@ -108,7 +109,7 @@ export async function telafiUygula(o: Oturum, govde: unknown): Promise<Sonuc<unk
 
   const sayac = ((await o.b.depo.al<number>(SAYAC)) ?? 0) + 1;
   const kayit: TelafiKaydi = {
-    no: sayac, id: olayId, hedef, yerlesim: hedefProfil.deger.yerlesim, tur,
+    no: sayac, id: olayId, hedef, hedefAd: hedefProfil.deger.ad, yerlesim: hedefProfil.deger.yerlesim, tur,
     ...(tutar !== undefined ? { tutar } : { mal: mal!, adet: adet! }),
     kim: o.y.eposta, zaman: o.b.simdi, gerekce: gerekce.deger,
   };
