@@ -74,7 +74,7 @@ export function pazarOku(m: YerlesimMotoru, hesapId: string, malHam: unknown): P
     const acik = acikIlanlar(k.ek).filter((x) => !mal || x.ml === mal);
     const ozet = new Map<MalId, { mal: MalId; npcTaban: number; npcdenAlis: number; enUcuzSatis: number | null; enYuksekAlim: number | null }>();
     for (const x of acik) {
-      const o = ozet.get(x.ml) ?? { mal: x.ml, npcTaban: MALLAR[x.ml].taban, npcdenAlis: npcFiyat(x.ml).toplam, enUcuzSatis: null, enYuksekAlim: null };
+      const o = ozet.get(x.ml) ?? { mal: x.ml, npcTaban: MALLAR[x.ml].taban, npcdenAlis: npcFiyat(x.ml, m.kasaba.pr).toplam, enUcuzSatis: null, enYuksekAlim: null };
       if (x.t === "sat") o.enUcuzSatis = o.enUcuzSatis === null ? x.f : Math.min(o.enUcuzSatis, x.f);
       else o.enYuksekAlim = o.enYuksekAlim === null ? x.f : Math.max(o.enYuksekAlim, x.f);
       ozet.set(x.ml, o);
