@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { ETKILER } from "../src/icerik/agaclar/index.ts";
 import { MALLAR } from "../src/icerik/mallar.ts";
 import { HIZMET_TARIFLERI, hizmetTarifiBul } from "../src/yerlesim/hizmet-tarif.ts";
-import { hizmetHazirla, hizmetStoguGecerli } from "../src/yerlesim/hizmet-pazari.ts";
+import { hizmetHazirla, hizmetIlanAc, hizmetIlanBul, hizmetIlanGeri, hizmetIlanIsle, hizmetIlanlar, hizmetStoguGecerli } from "../src/yerlesim/hizmet-pazari.ts";
 import type { Karakter } from "../src/yerlesim/tipler.ts";
 import type { EkonomiKaydi } from "../src/yerlesim/pazar-tahta.ts";
 
@@ -28,6 +28,10 @@ function sifaciKarakter(seviye = 2, sifaliOt = 3, takat = 6): Karakter {
     ad: "Şifacı",
     e: 1,
     d: 0,
+    k: 0,
+    pa: 50,
+    hl: [30, 50, 50, 12],
+    hn: [],
     ev: { sifaliOt },
     tk: takat,
     ta: 12,
@@ -97,4 +101,97 @@ test("E4.3-A hizmet stoğu oyuncu/hizmet başına 20 adette durur; kota hatası 
   assert.equal(kar.ev?.sifaliOt, onceEnvanter);
   assert.equal(kar.tk, onceTakat);
   assert.equal(ek.hs?.reduce((n, x) => n + x.n, 0), 20);
+});
+
+
+test("E4.3-A hizmet ilanı: stok ayrılır, alıcı etkisi ve satıcı tecrübesi atomik uygulanır", () => {
+  const satici = sifaciKarakter(2, 3, 6);
+  satici.pa = 0;
+  const alici = sifaciKarakter(0, 0, 6);
+  alici.o = "o2";
+  alici.h = "hesap-2";
+  alici.e = 2;
+  alici.pa = 100;
+  const ek = ekonomi();
+  const hazir = hizmetHazirla(ek, satici, "yaraBak", 2, 12);
+  assert.equal(hazir.ok, true);
+  if (!hazir.ok) return;
+  const ilan = hizmetIlanAc(ek, satici, `h${hazir.deger.stok.i}`, 2, 6, 12);
+  assert.equal(ilan.ok, true);
+  if (!ilan.ok) return;
+  assert.equal(hazir.deger.stok.n, 0);
+  assert.equal(hizmetIlanBul(ek, `hi${ilan.deger.i}`)?.n, 2);
+
+  const ilk = hizmetIlanIsle(ek, alici, satici, `hi${ilan.deger.i}`, 1, 12);
+  assert.equal(ilk.ok, true);
+  if (!ilk.ok) return;
+  assert.equal(alici.pa, 94);
+  assert.equal(satici.pa, 6);
+  assert.equal(alici.hl?.[0], 40);
+  assert.equal(ilk.deger.hizmetPuani, 1);
+  assert.equal(ilan.deger.n, 1);
+
+  const ikinci = hizmetIlanIsle(ek, alici, satici, `hi${ilan.deger.i}`, 1, 12);
+  assert.equal(ikinci.ok, true);
+  assert.equal(ilan.deger.n, 0);
+  assert.equal(ilan.deger.d, "bitti");
+  assert.equal(alici.pa, 88);
+  assert.equal(satici.pa, 12);
+});
+
+test("E4.3-A hizmet pazarı: ilan iadesi, kendi ilanını alma ve aynı hane ödülsüzlüğü", () => {
+  const satici = sifaciKarakter(2, 5, 10);
+  const ek = ekonomi();
+  const hazir = hizmetHazirla(ek, satici, "yaraBak", 2, 12);
+  assert.equal(hazir.ok, true);
+  if (!hazir.ok) return;
+  const ilan = hizmetIlanAc(ek, satici, `h${hazir.deger.stok.i}`, 2, 6, 12);
+  assert.equal(ilan.ok, true);
+  if (!ilan.ok) return;
+  const kendi = hizmetIlanIsle(ek, satici, satici, `hi${ilan.deger.i}`, 1, 12);
+  assert.equal(kendi.ok, false);
+  if (!kendi.ok) assert.equal(kendi.hata, "ilan_gecersiz");
+  assert.equal(ilan.deger.n, 2);
+
+  const kapat = hizmetIlanGeri(ek, satici, `hi${ilan.deger.i}`, 12);
+  assert.equal(kapat.ok, true);
+  if (!kapat.ok) return;
+  assert.equal(kapat.deger.iade, 2);
+  assert.equal(hazir.deger.stok.n, 2);
+
+  const yeni = hizmetIlanAc(ek, satici, `h${hazir.deger.stok.i}`, 1, 6, 12);
+  assert.equal(yeni.ok, true);
+  if (!yeni.ok) return;
+  const haneAl = sifaciKarakter(0, 0, 6);
+  haneAl.o = "o3";
+  haneAl.h = "hesap-3";
+  haneAl.e = satici.e;
+  haneAl.pa = 100;
+  const onceTecrube = satici.ms?.s.sifaci?.hz ?? 0;
+  const satin = hizmetIlanIsle(ek, haneAl, satici, `hi${yeni.deger.i}`, 1, 12);
+  assert.equal(satin.ok, true);
+  if (satin.ok) assert.equal(satin.deger.hizmetPuani, 0);
+  assert.equal(satici.ms?.s.sifaci?.hz ?? 0, onceTecrube);
+});
+
+test("E4.3-A hizmet ilanı: süre dolunca alım kapanır ve listeden düşer", () => {
+  const satici = sifaciKarakter(2, 3, 6);
+  const alici = sifaciKarakter(0, 0, 6);
+  alici.o = "o4";
+  alici.h = "hesap-4";
+  alici.e = 4;
+  const ek = ekonomi();
+  const hazir = hizmetHazirla(ek, satici, "yaraBak", 1, 12);
+  assert.equal(hazir.ok, true);
+  if (!hazir.ok) return;
+  const ilan = hizmetIlanAc(ek, satici, `h${hazir.deger.stok.i}`, 1, 6, 12);
+  assert.equal(ilan.ok, true);
+  if (!ilan.ok) return;
+  assert.equal(hizmetIlanlar(ek, 14).length, 1);
+  assert.equal(hizmetIlanlar(ek, 15).length, 0);
+  const satin = hizmetIlanIsle(ek, alici, satici, `hi${ilan.deger.i}`, 1, 15);
+  assert.equal(satin.ok, false);
+  if (!satin.ok) assert.equal(satin.hata, "ilan_kapandi");
+  assert.equal(alici.pa, 50);
+  assert.equal(ilan.deger.n, 1);
 });
