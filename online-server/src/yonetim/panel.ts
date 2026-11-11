@@ -90,6 +90,7 @@ async function yukle() {
   if (yetkiler.includes("sikayetGor")) await sikayetYukle();
   if (yetkiler.includes("parametreGor")) await parametreYukle();
   if (yetkiler.includes("ekonomi")) await ekonomiYukle();
+  if (yetkiler.includes("telafiler")) await telafiYukle();
   if (yetkiler.includes("kayitGor")) { kayitImleci = ""; $("#kayitListe").textContent = ""; await kayitYukle(); }
 }
 
@@ -197,6 +198,18 @@ async function ekonomiYukle() {
   }
   $("#ekonomiEksik").textContent = v.eksikYerlesim ? "Ulaşılamayan yerleşim: " + fmt(v.eksikYerlesim) : "Tüm yerleşimler güncel.";
 }
+async function telafiYukle() {
+  const v = await api("GET", "telafiler");
+  const k = $("#telafiListe"); k.textContent = "";
+  for (const x of v.telafiler) {
+    const odul = x.tur === "akce" ? fmtAkce(x.tutar) : String(x.adet) + " × " + x.mal;
+    k.append(el("div", { class: "kart" },
+      el("strong", { metin: odul + " · " + x.hedef }),
+      el("div", { class: "kucuk", metin: x.yerlesim + " · " + new Date(x.zaman).toLocaleString("tr-TR") + " · " + x.kim }),
+      el("div", { class: "kucuk", metin: x.gerekce })));
+  }
+}
+function fmtAkce(n) { return Number(n || 0).toLocaleString("tr-TR") + " akçe"; }
 async function kayitYukle() {
   const v = await api("GET", "kayit" + (kayitImleci ? "?imlec=" + kayitImleci : ""));
   const k = $("#kayitListe");
@@ -220,6 +233,16 @@ $("#yUygula").addEventListener("click", (e) => dugme(e.target, "#oyuncuHata", ya
 $("#yKaldir").addEventListener("click", (e) => dugme(e.target, "#oyuncuHata", yaptirimKaldir));
 $("#sYenile").addEventListener("click", (e) => dugme(e.target, "#sikayetHata", sikayetYukle));
 $("#eYenile").addEventListener("click", (e) => dugme(e.target, "#ekonomiHata", ekonomiYukle));
+$("#tYenile").addEventListener("click", (e) => dugme(e.target, "#telafiHata", telafiYukle));
+$("#tTur").addEventListener("change", () => { const akce = $("#tTur").value === "akce"; $("#tAkceAlan").hidden = !akce; $("#tEsyaAlan").hidden = akce; });
+$("#tGonder").addEventListener("click", (e) => dugme(e.target, "#telafiHata", async () => {
+  const tur = $("#tTur").value;
+  const govde = { hedef: $("#tHedef").value.trim(), tur, gerekce: $("#tGerekce").value, istekNo: istekNo() };
+  if (tur === "akce") govde.tutar = Number($("#tTutar").value);
+  else { govde.mal = $("#tMal").value.trim(); govde.adet = Number($("#tAdet").value); }
+  await api("POST", "telafi", govde);
+  await telafiYukle();
+}));
 $("#dGonder").addEventListener("click", (e) => dugme(e.target, "#duyuruHata", async () => {
   await api("POST", "duyuru", { metin: $("#dMetin").value, gerekce: $("#dGerekce").value, istekNo: istekNo() });
   $("#dMetin").value = ""; $("#dGerekce").value = ""; $("#duyuruHata").textContent = "Duyuru kaydedildi.";
@@ -242,6 +265,15 @@ const GOVDE = `<header><h1>Kronikler Online · Yönetim</h1><div><span id="benBi
 <button id="girisDugme">Giriş</button><div class="hata" id="girisHata"></div></section>
 
 <section data-yetki="ben" hidden><h2>Ben</h2><div id="benYetki" class="kucuk"></div></section>
+
+<section data-yetki="telafi" hidden><h2>Oyuncu telafisi</h2>
+<p class="kucuk">Yalnız Kurucu. Hedefin kendi hesabın veya aynı hane kümen olması reddedilir. Her işlem gerekçe ve tekrar güvenli istek numarasıyla kaydedilir.</p>
+<label>Hedef hesap kimliği <input id="tHedef" autocomplete="off"></label>
+<label>Telafi türü <select id="tTur"><option value="akce">Akçe</option><option value="esya">Eşya</option></select></label>
+<div id="tAkceAlan"><label>Akçe (1–10.000) <input id="tTutar" type="number" min="1" max="10000" value="100"></label></div>
+<div id="tEsyaAlan" hidden><label>Mal kimliği <input id="tMal" autocomplete="off"></label><label>Adet (1–50) <input id="tAdet" type="number" min="1" max="50" value="1"></label></div>
+<label>Gerekçe (10–240 karakter) <textarea id="tGerekce" rows="3"></textarea></label>
+<button id="tGonder">Telafiyi uygula</button><button class="ikincil" id="tYenile">Geçmişi yenile</button><div class="hata" id="telafiHata"></div><div id="telafiListe"></div></section>
 
 <section data-yetki="ekonomi" hidden><h2>Ekonomi sağlığı</h2>
 <p class="kucuk">Yerleşim bazında kimliksiz toplulaştırılmış cüzdan bakiyesi, 12 aylık gelir-gider, stok ve açık sipariş özeti.</p>
