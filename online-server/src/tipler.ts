@@ -457,6 +457,7 @@ export const YONETIM_UCLARI = {
 export type YonetimUcu = keyof typeof YONETIM_UCLARI;
 
 export type YonetimIleti =
+  | { islem: "parametrelerCalisma" }
   | { islem: "giris"; yonetici: YoneticiKimligi }
   | { islem: "yonet"; yonetici: YoneticiKimligi; uc: YonetimUcu; govde?: unknown; sorgu?: Record<string, string | null> }
   /** HesapDO → YonetimDO: oyuncu şikayeti. */
