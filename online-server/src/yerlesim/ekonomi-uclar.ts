@@ -60,6 +60,7 @@ export function hizmetOku(m: YerlesimMotoru, hesapId: string): Promise<Sonuc<unk
       seviye: tarif.seviye,
       girdi: tarif.girdi,
       takat: tarif.takat,
+      aylikTavan: tarif.aylikTavan,
       hedef: tarif.hedef,
       etki: tarif.etki,
       hazir: tarif.hazir,
