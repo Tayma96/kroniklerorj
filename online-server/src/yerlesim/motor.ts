@@ -481,6 +481,7 @@ export class YerlesimMotoru {
       oyuncuSayisi: bakiyeler.length,
       npcSayisi: k.npc.length,
       toplamAkce,
+      bakiyeler,
       ortalamaAkce,
       medyanAkce,
       enDusukAkce: bakiyeler[0] ?? 0,
