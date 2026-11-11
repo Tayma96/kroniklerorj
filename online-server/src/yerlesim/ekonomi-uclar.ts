@@ -8,7 +8,7 @@ import { HIZMET_TARIFLERI } from "./hizmet-tarif.ts";
 import { basarili, hata, type Sonuc } from "../tipler.ts";
 import { DEFTER_AY, defterGorunumu } from "./defter.ts";
 import { hizmetAcik } from "./beceri-etki.ts";
-import { hizmetHazirla, hizmetStoguGecerli, hizmetStoguGorunumu } from "./hizmet-pazari.ts";
+import { hizmetHazirla, hizmetIlanAc, hizmetIlanBul, hizmetIlanGeri, hizmetIlanGorunumu, hizmetIlanIsle, hizmetIlanlar, hizmetStoguGecerli, hizmetStoguGorunumu } from "./hizmet-pazari.ts";
 import {
   ISMARLAMA_ADET_EN_COK,
   ISMARLAMA_MUSTERI_EN_COK,
@@ -66,10 +66,13 @@ export function hizmetOku(m: YerlesimMotoru, hesapId: string): Promise<Sonuc<unk
       fiyatTaban: tarif.fiyatTaban,
       acik: hizmetAcik(kar, tarif.id),
     }));
-    const stok = (m.kasaba.ek?.hs ?? [])
+    const ek = m.kasaba.ek;
+    const stok = (ek?.hs ?? [])
       .filter((x) => x.o === kar.o && hizmetStoguGecerli(x, ay))
       .map((x) => hizmetStoguGorunumu(x, ay));
-    return basarili({ katalog, stok, kurallar: { tekHazirlamaEnCok: 5, hizmetStokEnCok: 20 } });
+    const ilanlar = hizmetIlanlar(ek, ay).map((x) => hizmetIlanGorunumu(x, kar.o, ay));
+    const benimIlanlar = hizmetIlanlar(ek, ay).filter((x) => x.o === kar.o).map((x) => hizmetIlanGorunumu(x, kar.o, ay));
+    return basarili({ katalog, stok, ilanlar, benimIlanlar, kurallar: { tekHazirlamaEnCok: 5, hizmetStokEnCok: 20, acikIlanEnCok: 5, alimAdetEnCok: 5 } });
   });
 }
 
@@ -80,6 +83,47 @@ export function hizmetHazirlaUc(m: YerlesimMotoru, hesapId: string, govde: unkno
     const r = hizmetHazirla(ekonomiAl(m.kasaba), kar, govde.hizmet, govde.adet, ay);
     if (!r.ok) return r;
     return basarili({ hazirlama: r.deger, stok: hizmetStoguGorunumu(r.deger.stok, ay) });
+  });
+}
+
+/** POST /v1/hizmet/ilan {stok, adet, fiyat, istekNo}: hazır stoğu pazara ayırır. */
+export function hizmetIlanUc(m: YerlesimMotoru, hesapId: string, govde: unknown): Promise<Sonuc<unknown>> {
+  if (!nesneMi(govde)) return Promise.resolve(hata("gecersiz_istek"));
+  return m.ekonomiYaz(hesapId, govde, "hizmetIlan", [], (kar, ay) => {
+    const r = hizmetIlanAc(ekonomiAl(m.kasaba), kar, govde.stok, govde.adet, govde.fiyat, ay);
+    if (!r.ok) return r;
+    return basarili({ ilan: hizmetIlanGorunumu(r.deger, kar.o, ay) });
+  });
+}
+
+/** POST /v1/hizmet/geri {ilan, istekNo}: açık ilanı kapatır ve bozulmamış stoğu iade eder. */
+export function hizmetGeriUc(m: YerlesimMotoru, hesapId: string, govde: unknown): Promise<Sonuc<unknown>> {
+  if (!nesneMi(govde)) return Promise.resolve(hata("gecersiz_istek"));
+  return m.ekonomiYaz(hesapId, govde, "hizmetGeri", [], (kar, ay) => {
+    const r = hizmetIlanGeri(ekonomiAl(m.kasaba), kar, govde.ilan, ay);
+    if (!r.ok) return r;
+    return basarili({ ilan: hizmetIlanGorunumu(r.deger.ilan, kar.o, ay), iade: r.deger.iade });
+  });
+}
+
+/** POST /v1/hizmet/satin-al {ilan, adet, istekNo}: satıcı çevrimdışı olsa da aynı ekonomi yazımında yüklenir. */
+export async function hizmetIslemUc(m: YerlesimMotoru, hesapId: string, govde: unknown): Promise<Sonuc<unknown>> {
+  if (!nesneMi(govde)) return hata("gecersiz_istek");
+  const ilan = hizmetIlanBul(m.kasaba.ek, govde.ilan);
+  return m.ekonomiYaz(hesapId, govde, "hizmetSatis", ilan ? [ilan.o] : [], (alici, ay, ek) => {
+    const satici = ilan ? m.kasaba.kar.get(ilan.o) : undefined;
+    const r = hizmetIlanIsle(ekonomiAl(m.kasaba), alici, satici, govde.ilan, govde.adet, ay);
+    if (!r.ok) return r;
+    if (satici) ek.digerleri.push(satici.o);
+    return basarili({
+      islem: {
+        ilan: hizmetIlanGorunumu(r.deger.ilan, alici.o, ay),
+        adet: r.deger.adet,
+        tutar: r.deger.tutar,
+        etki: r.deger.etki,
+        hizmetPuani: r.deger.hizmetPuani,
+      },
+    });
   });
 }
 
