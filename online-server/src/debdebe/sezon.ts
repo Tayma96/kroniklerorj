@@ -27,8 +27,11 @@ export const SEZON_KAYNAK_PUANI: Readonly<Record<string, number>> = {
   hanEylem: 10,
   hanIkram: 10,
 };
-/** [PARAMETRE] İdempotentlik için tutulan son istek izleri. */
-export const SEZON_IZ_EN_COK = 64;
+/**
+ * [PARAMETRE] Tam sezon boyunca istek izleri. Günlük tavan 150, en küçük kaynak puanı 5 ve sezon 28 gün:
+ * teorik üst sınır 840 başarılı kaynak izi; 900, aynı sezon içinde eski isteğin tekrar oynatılmasını engeller.
+ */
+export const SEZON_IZ_EN_COK = 900;
 
 export type Iz = "bedava" | "ucretli";
 
