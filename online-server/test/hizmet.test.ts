@@ -3,8 +3,8 @@ import assert from "node:assert/strict";
 import { ETKILER } from "../src/icerik/agaclar/index.ts";
 import { MALLAR } from "../src/icerik/mallar.ts";
 import { HIZMET_TARIFLERI, hizmetTarifiBul } from "../src/yerlesim/hizmet-tarif.ts";
-import { hizmetHazirla, hizmetIlanAc, hizmetIlanBul, hizmetIlanGeri, hizmetIlanIsle, hizmetIlanlar, hizmetStoguGecerli } from "../src/yerlesim/hizmet-pazari.ts";
-import type { Karakter } from "../src/yerlesim/tipler.ts";
+import { hizmetHazirla, hizmetIlanAc, hizmetIlanBul, hizmetIlanGeri, hizmetIlanIsle, hizmetIlanlar, hizmetStoguGecerli, hizmetStokDonumu } from "../src/yerlesim/hizmet-pazari.ts";
+import type { Karakter, Kasaba } from "../src/yerlesim/tipler.ts";
 import type { EkonomiKaydi } from "../src/yerlesim/pazar-tahta.ts";
 
 test("E4.3 hizmet kataloğu: kimlikler tekil, girdiler mal dizininde ve beceri kapıları gerçek", () => {
@@ -223,4 +223,39 @@ test("E4.3-A hizmet ödülü: aynı hizmetçi-alıcı çifti ayda yalnız iki te
   assert.equal(ikinci.ok && ikinci.deger.hizmetPuani, 1);
   assert.equal(ucuncu.ok && ucuncu.deger.hizmetPuani, 0);
   assert.equal(ek.ht?.reduce((n, x) => n + x.odul, 0), 2);
+});
+
+
+test("E4.3-A süresi dolan hazır ve ilandaki hizmet stoğu yarım tecrübe verir, tekrar ödül üretmez", () => {
+  const hazirSatici = sifaciKarakter(2, 3, 6);
+  const hazirEk = ekonomi();
+  const hazir = hizmetHazirla(hazirEk, hazirSatici, "yaraBak", 2, 12);
+  assert.equal(hazir.ok, true);
+  if (!hazir.ok) return;
+  const hazirOnce = hazirSatici.ms?.s.sifaci?.hz ?? 0;
+  const hazirKasaba = { ek: hazirEk, kar: new Map([[hazirSatici.o, hazirSatici]]) } as unknown as Kasaba;
+
+  hizmetStokDonumu(hazirKasaba, 15);
+  assert.equal(hazir.deger.stok.n, 0);
+  assert.equal((hazirSatici.ms?.s.sifaci?.hz ?? 0) - hazirOnce, 1);
+  hizmetStokDonumu(hazirKasaba, 16);
+  assert.equal((hazirSatici.ms?.s.sifaci?.hz ?? 0) - hazirOnce, 1);
+
+  const ilanSatici = sifaciKarakter(2, 3, 6);
+  const ilanEk = ekonomi();
+  const ilanHazir = hizmetHazirla(ilanEk, ilanSatici, "yaraBak", 2, 12);
+  assert.equal(ilanHazir.ok, true);
+  if (!ilanHazir.ok) return;
+  const ilan = hizmetIlanAc(ilanEk, ilanSatici, `h${ilanHazir.deger.stok.i}`, 2, 6, 12);
+  assert.equal(ilan.ok, true);
+  if (!ilan.ok) return;
+  const ilanOnce = ilanSatici.ms?.s.sifaci?.hz ?? 0;
+  const ilanKasaba = { ek: ilanEk, kar: new Map([[ilanSatici.o, ilanSatici]]) } as unknown as Kasaba;
+
+  hizmetStokDonumu(ilanKasaba, 15);
+  assert.equal(ilan.deger.n, 0);
+  assert.equal(ilan.deger.d, "dustu");
+  assert.equal((ilanSatici.ms?.s.sifaci?.hz ?? 0) - ilanOnce, 1);
+  hizmetStokDonumu(ilanKasaba, 16);
+  assert.equal((ilanSatici.ms?.s.sifaci?.hz ?? 0) - ilanOnce, 1);
 });
