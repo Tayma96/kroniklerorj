@@ -50,9 +50,9 @@ export class HesapDO {
     let sinir = HIZ_SINIRI;
     try {
       const calisma = await yonetimCagir(this.#env, { islem: "parametrelerCalisma" });
-      if (calisma.ok && typeof calisma.deger === "object" && calisma.deger !== null
-        && typeof (calisma.deger as Record<string, unknown>).HIZ_SINIRI === "number") {
-        sinir = (calisma.deger as Record<string, number>).HIZ_SINIRI;
+      if (calisma.ok && typeof calisma.deger === "object" && calisma.deger !== null) {
+        const etkinSinir = (calisma.deger as Record<string, unknown>).HIZ_SINIRI;
+        if (typeof etkinSinir === "number") sinir = etkinSinir;
       }
     } catch {
       // Yönetim DO erişilemezse hesap varsayılan hız sınırını kullanır.
