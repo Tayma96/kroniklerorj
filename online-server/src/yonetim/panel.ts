@@ -167,7 +167,7 @@ async function parametreYukle() {
     for (const s of p.gecmis) gecmis.append(el("div", { class: "kucuk", metin: "s" + s.surum + " " + s.islem + ": " + s.onceki + " → " + s.deger + " · " + s.kim + " · " + zaman(s.zaman) + " · " + s.gerekce }));
     k.append(el("div", { class: "kart" },
       el("strong", { metin: p.ad }), " = " + p.deger + (p.deger !== p.varsayilan ? " (varsayılan " + p.varsayilan + ")" : " (varsayılan)"),
-      el("div", { class: "kucuk", metin: p.aciklama + " · sınır " + p.alt + "–" + p.ust + (p.tam ? " (tam sayı)" : "") + " · " + p.kaynak + " · " + (p.uygulama === "Y1" ? "çalışma anında okunur" : "Y2: yalnız saklanır, oyun henüz okumaz") }),
+      el("div", { class: "kucuk", metin: p.aciklama + " · sınır " + p.alt + "–" + p.ust + (p.tam ? " (tam sayı)" : "") + " · " + p.kaynak + " · " + (p.uygulama === "Y1" ? "yönetim modülünde çalışma anında okunur" : "YerleşimDO/HesapDO her istekte çalışma anında okur") }),
       el("div", { class: "satir" }, yeni, g),
       el("button", { metin: "Kaydet", tik: (e) => dugme(e.target, "#parametreHata", async () => { await api("POST", "parametre", { ad: p.ad, deger: Number(yeni.value), gerekce: g.value, istekNo: istekNo() }); await parametreYukle(); }) }),
       el("button", { class: "ikincil", metin: "Geri al", tik: (e) => dugme(e.target, "#parametreHata", async () => { await api("POST", "parametre-geri", { ad: p.ad, gerekce: g.value, istekNo: istekNo() }); await parametreYukle(); }) }),
