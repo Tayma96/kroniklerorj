@@ -264,6 +264,7 @@ test("E4.3-A süresi dolan hazır ve ilandaki hizmet stoğu yarım tecrübe veri
 test("E4.3 hizmet kataloğu: lohusa bakımı ve teselli gerçek beceri düğümlerinden açılır", () => {
   const ebe = sifaciKarakter(1, 3, 6);
   ebe.ms!.s.sifaci!.sv = { "sifaci.lohusaBakimi": 1 };
+  ebe.ev!.bez = 1;
   const ebeEk = ekonomi();
   const lohusa = hizmetHazirla(ebeEk, ebe, "lohusa", 1, 12);
   assert.equal(lohusa.ok, true);
