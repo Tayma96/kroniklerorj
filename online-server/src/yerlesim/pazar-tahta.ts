@@ -35,18 +35,38 @@ export interface HizmetStogu {
   sa: number;
 }
 
-/** Yerleşimin ekonomi kaydı (depo anahtarı "ek"): sonraki kimlik, ilanlar, ısmarlamalar, levha ve hizmet stoğu. */
+export type HizmetIlanDurumu = "acik" | "bitti" | "geri" | "dustu";
+export interface HizmetIlan {
+  i: number;
+  o: string;
+  oa: string;
+  h: string;
+  /** Stoğun kaynak kaydı; iptalde yalnız süresi geçmediyse geri verilir. */
+  s: number;
+  n: number;
+  n0: number;
+  f: number;
+  ac: number;
+  sa: number;
+  d: HizmetIlanDurumu;
+  /** Son işlemler: [ay, alıcı yerel kimliği, adet, tutar]. */
+  is?: [ay: number, alici: string, adet: number, tutar: number][];
+}
+
+/** Yerleşimin ekonomi kaydı (depo anahtarı "ek"): sonraki kimlik, ilanlar, ısmarlamalar, levha ve hizmet pazarı. */
 export interface EkonomiKaydi {
   n: number;
   il: Ilan[];
   is: Ismarlama[];
   lv: LevhaKaydi[];
   hs?: HizmetStogu[];
+  hi?: HizmetIlan[];
 }
 
 export function ekonomiAl(k: Kasaba): EkonomiKaydi {
-  k.ek ??= { n: 1, il: [], is: [], lv: [], hs: [] };
+  k.ek ??= { n: 1, il: [], is: [], lv: [], hs: [], hi: [] };
   k.ek.hs ??= [];
+  k.ek.hi ??= [];
   return k.ek;
 }
 
