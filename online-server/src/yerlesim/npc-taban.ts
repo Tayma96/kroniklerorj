@@ -9,7 +9,7 @@ import { MALLAR, malBul, type MalId } from "../icerik/mallar.ts";
 import type { MeslekId } from "../icerik/meslekler.ts";
 import { basarili, hata, type Sonuc } from "../tipler.ts";
 import { kaliteKirp } from "./kalite.ts";
-import type { Dokum, Karakter } from "./tipler.ts";
+import type { CalismaParametreleri, Dokum, Karakter } from "./tipler.ts";
 
 /** [PARAMETRE] NPC satış çarpanı, oyuncu başına mal başına aylık alım kotası, kıtlık primi oranı. */
 export const NPC_CARPAN = 2.5;
@@ -34,24 +34,24 @@ export function envanterEkle(k: Karakter, mal: MalId, adet: number): number {
 }
 
 /** NPC'den bir birimin fiyatı. */
-export function npcFiyat(mal: MalId): Dokum {
+export function npcFiyat(mal: MalId, p?: CalismaParametreleri): Dokum {
   const taban = MALLAR[mal].taban;
-  const toplam = Math.ceil(taban * NPC_CARPAN);
+  const toplam = Math.ceil(taban * (p?.NPC_CARPAN ?? NPC_CARPAN));
   return { toplam, kalemler: [{ k: "taban", d: taban }, { k: "npc_pahali", d: toplam - taban }] };
 }
 
 /** Kasaba stoğundan bir birimin fiyatı. */
-export function stokFiyat(mal: MalId): Dokum {
+export function stokFiyat(mal: MalId, p?: CalismaParametreleri): Dokum {
   const taban = MALLAR[mal].taban;
-  const toplam = Math.ceil(taban * STOK_CARPAN);
+  const toplam = Math.ceil(taban * (p?.STOK_CARPAN ?? STOK_CARPAN));
   return { toplam, kalemler: [{ k: "taban", d: taban }, { k: "stok", d: toplam - taban }] };
 }
 
 /** Bir birimin satış değeri; o malın mesleğinde (satıcı hariç) oyuncu yoksa kıtlık primi eklenir. */
-export function satisDegeri(mal: MalId, oyuncuSayisi: number): Dokum {
+export function satisDegeri(mal: MalId, oyuncuSayisi: number, p?: CalismaParametreleri): Dokum {
   const taban = MALLAR[mal].taban;
   const kalemler = [{ k: "taban", d: taban }];
-  if (oyuncuSayisi <= 0 && taban > 0) kalemler.push({ k: "kitlik", d: Math.ceil(taban * KITLIK_PRIM) });
+  if (oyuncuSayisi <= 0 && taban > 0) kalemler.push({ k: "kitlik", d: Math.ceil(taban * (p?.KITLIK_PRIM ?? KITLIK_PRIM)) });
   return { toplam: kalemler.reduce((a, x) => a + x.d, 0), kalemler };
 }
 
@@ -62,8 +62,8 @@ export function saticiHaricSayi(satici: Karakter, mal: MalId, oyuncuSayisi: (m: 
 }
 
 /** Satıcıya göre birim satış değeri (kıtlıkta satıcı sayılmaz). */
-export function saticiDegeri(satici: Karakter, mal: MalId, oyuncuSayisi: (m: MeslekId) => number): Dokum {
-  return satisDegeri(mal, saticiHaricSayi(satici, mal, oyuncuSayisi));
+export function saticiDegeri(satici: Karakter, mal: MalId, oyuncuSayisi: (m: MeslekId) => number, p?: CalismaParametreleri): Dokum {
+  return satisDegeri(mal, saticiHaricSayi(satici, mal, oyuncuSayisi), p);
 }
 
 /** Malın mesleği karakterin ana ya da yan mesleği mi (sipariş teslimi ve stok kapısı). */
@@ -91,7 +91,7 @@ export type AlimSonucu = {
   kota: { alinan: number; tavan: number; kalan: number };
 };
 
-export function npcdenAl(k: Karakter, malHam: unknown, adetHam: unknown, ay: number, stok?: KasabaStogu): Sonuc<AlimSonucu> {
+export function npcdenAl(k: Karakter, malHam: unknown, adetHam: unknown, ay: number, stok?: KasabaStogu, p?: CalismaParametreleri): Sonuc<AlimSonucu> {
   const mal = malBul(malHam);
   if (!mal || MALLAR[mal].taban === 0) return hata("mal_gecersiz");
   if (typeof adetHam !== "number" || !Number.isInteger(adetHam) || adetHam < 1) return hata("mal_gecersiz");
@@ -99,9 +99,10 @@ export function npcdenAl(k: Karakter, malHam: unknown, adetHam: unknown, ay: num
   const stoktan = Math.min(stokVar, adetHam);
   const npcden = adetHam - stoktan;
   const alinan = npcdenAlinan(k, mal, ay);
-  if (alinan + npcden > NPC_AYLIK_KOTA) return hata("kota_doldu");
-  const fiyat = npcFiyat(mal);
-  const sf = stokFiyat(mal);
+  const kotaTavan = p?.NPC_AYLIK_KOTA ?? NPC_AYLIK_KOTA;
+  if (alinan + npcden > kotaTavan) return hata("kota_doldu");
+  const fiyat = npcFiyat(mal, p);
+  const sf = stokFiyat(mal, p);
   const tutar = sf.toplam * stoktan + fiyat.toplam * npcden;
   if (k.pa < tutar) return hata("para_yok");
   k.pa -= tutar;
@@ -124,7 +125,7 @@ export function npcdenAl(k: Karakter, malHam: unknown, adetHam: unknown, ay: num
     npcden,
     tutar,
     para: k.pa,
-    kota: { alinan: a, tavan: NPC_AYLIK_KOTA, kalan: NPC_AYLIK_KOTA - a },
+    kota: { alinan: a, tavan: kotaTavan, kalan: kotaTavan - a },
   });
 }
 
@@ -135,9 +136,9 @@ export function stogaEkle(stok: KasabaStogu, mal: MalId, adet: number): void {
 }
 
 /** Stok görünümü: adet ve birim fiyat dökümü; alıcı için açık mı (kendi mesleğinin malı stoktan alınmaz). */
-export function stokGorunumu(stok: KasabaStogu | undefined, k: Karakter) {
+export function stokGorunumu(stok: KasabaStogu | undefined, k: Karakter, p?: CalismaParametreleri) {
   return (Object.entries(stok ?? {}) as [MalId, number][])
     .filter(([, n]) => n > 0)
     .sort(([a], [b]) => (a < b ? -1 : 1))
-    .map(([mal, adet]) => ({ mal, adet, fiyat: stokFiyat(mal), acik: !malMeslegindeMi(k, mal) }));
+    .map(([mal, adet]) => ({ mal, adet, fiyat: stokFiyat(mal, p), acik: !malMeslegindeMi(k, mal) }));
 }
