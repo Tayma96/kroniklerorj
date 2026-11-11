@@ -23,16 +23,30 @@ import type { Ismarlama } from "./ismarlama.ts";
 import type { LevhaKaydi } from "./levha.ts";
 import type { Dokum, Karakter, Kasaba, OlayTaslagi } from "./tipler.ts";
 
-/** Yerleşimin ekonomi kaydı (depo anahtarı "ek"): sonraki kimlik, ilanlar, ısmarlamalar, Ustalar Levhası. */
+/** Hazırlanmış hizmet stoğu (E4.3): süreli, sahibine bağlı ve ilan açılana dek kullanılamaz. */
+export interface HizmetStogu {
+  i: number;
+  o: string;
+  oa: string;
+  /** Hizmet kataloğu kimliği. */
+  h: string;
+  n: number;
+  ac: number;
+  sa: number;
+}
+
+/** Yerleşimin ekonomi kaydı (depo anahtarı "ek"): sonraki kimlik, ilanlar, ısmarlamalar, levha ve hizmet stoğu. */
 export interface EkonomiKaydi {
   n: number;
   il: Ilan[];
   is: Ismarlama[];
   lv: LevhaKaydi[];
+  hs?: HizmetStogu[];
 }
 
 export function ekonomiAl(k: Kasaba): EkonomiKaydi {
-  k.ek ??= { n: 1, il: [], is: [], lv: [] };
+  k.ek ??= { n: 1, il: [], is: [], lv: [], hs: [] };
+  k.ek.hs ??= [];
   return k.ek;
 }
 
