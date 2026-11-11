@@ -31,6 +31,8 @@ export interface HizmetStogu {
   /** Hizmet kataloğu kimliği. */
   h: string;
   n: number;
+  /** İlk hazırlanan adet; stok ilan edilip azalsa da aylık kota hesabı için korunur. */
+  n0?: number;
   ac: number;
   sa: number;
 }
