@@ -94,7 +94,7 @@ export function hizmetIlanKimlik(i: number): string {
 
 export function hizmetIlanBul(ek: EkonomiKaydi | undefined, id: unknown): HizmetIlan | undefined {
   if (typeof id !== "string") return undefined;
-  const eslesme = /^hi(\\d+)$/.exec(id);
+  const eslesme = /^hi(\d+)$/.exec(id);
   if (!eslesme) return undefined;
   return ek?.hi?.find((x) => x.i === Number(eslesme[1]));
 }
@@ -130,7 +130,7 @@ export function hizmetIlanAc(
   ay: number,
 ): Sonuc<HizmetIlan> {
   if (typeof stokHam !== "string") return hata("ilan_gecersiz");
-  const eslesme = /^h(\\d+)$/.exec(stokHam);
+  const eslesme = /^h(\d+)$/.exec(stokHam);
   if (!eslesme) return hata("ilan_gecersiz");
   const stok = ek.hs?.find((x) => x.i === Number(eslesme[1]) && x.o === satici.o);
   if (!stok || !hizmetStoguGecerli(stok, ay)) return hata("stok_yok");
