@@ -486,3 +486,41 @@ test("Y2 ekonomi sağlığı: kurucu yerleşim toplamlarını görür, oyuncu ki
     globalThis.fetch = eskiFetch;
   }
 });
+
+
+test("Y3 telafi: akçe olayı tekrar güvenli, kendi hesap kümesine kapalı ve yönetim defterine yazılır", async () => {
+  try {
+    const { cagir, oyuncu, yonetici } = await kur();
+    const ayse = await oyuncu(KURUCU_SUB, "Ayşe");
+    const mehmet = await oyuncu("220000000000000000002", "Mehmet");
+    const yb = (await yonetici(KURUCU_SUB, KURUCU)).govde.oturum as string;
+
+    const kendine = await cagir("POST", "/yonetim/telafi", {
+      oturum: yb,
+      govde: { hedef: ayse.hesap, tur: "akce", tutar: 500, gerekce: "Hatalı işlem düzeltmesi", istekNo: no() },
+    });
+    assert.deepEqual([kendine.durum, kendine.govde], [409, { hata: "kendi_hedef" }]);
+
+    const govde = { hedef: mehmet.hesap, tur: "akce", tutar: 500, gerekce: "Hatalı işlem düzeltmesi", istekNo: no() };
+    const ilk = await cagir("POST", "/yonetim/telafi", { oturum: yb, govde });
+    assert.equal(ilk.durum, 200);
+    assert.equal(ilk.govde.telafi.hedef, mehmet.hesap);
+    assert.equal(ilk.govde.telafi.tutar, 500);
+    assert.ok(ilk.govde.uygulama.olay, "hedef oyuncuya özel kronik olayı oluşturulur");
+
+    const tekrar = await cagir("POST", "/yonetim/telafi", { oturum: yb, govde });
+    assert.deepEqual(tekrar.govde, ilk.govde, "aynı istekNo ikinci kez para üretmez");
+
+    const durum = await cagir("GET", "/v1/durum", { oturum: mehmet.oturum });
+    assert.equal(durum.durum, 200);
+    assert.equal(durum.govde.ben.para, ilk.govde.uygulama.para);
+
+    const liste = await cagir("GET", "/yonetim/telafiler", { oturum: yb });
+    assert.equal(liste.durum, 200);
+    assert.equal(liste.govde.telafiler.length, 1);
+    assert.equal(liste.govde.telafiler[0].hedef, mehmet.hesap);
+    assert.equal(liste.govde.telafiler[0].gerekce, "Hatalı işlem düzeltmesi");
+  } finally {
+    globalThis.fetch = eskiFetch;
+  }
+});
