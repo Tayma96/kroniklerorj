@@ -145,7 +145,10 @@ test("hizmet HTTP uçları: katalog okunur, kilitli hazırlama ve geçersiz ilan
       return { durum: yanit.status, govde: (await yanit.json()) as Nesne };
     };
     const token = await jwtImzala(anahtar, googleYuku(saat));
-    const oturum = (await cagir("POST", "/v1/giris", { govde: { idToken: token } })).govde.oturum as string;
+    const giris = await cagir("POST", "/v1/giris", { govde: { idToken: token } });
+    assert.equal(giris.durum, 200, JSON.stringify(giris.govde));
+    const oturum = giris.govde.oturum as string;
+    assert.ok(oturum, JSON.stringify(giris.govde));
     const profil = await cagir("POST", "/v1/profil", { oturum, govde: {
       ad: "Hizmetçi", cinsiyet: "kadın", yerlesim: "develi", istekNo: "hizmet-profil",
     } });
