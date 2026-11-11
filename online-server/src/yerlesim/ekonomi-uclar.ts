@@ -4,7 +4,7 @@
 // ve defter.ts'dedir; burada yalnız yükleme, defter kalemleri ve görünüm vardır.
 
 import { MALLAR, malBul, type MalId } from "../icerik/mallar.ts";
-import { HIZMET_TARIFLERI } from "../icerik/agaclar/index.ts";
+import { HIZMET_TARIFLERI } from "./hizmet-tarif.ts";
 import { basarili, hata, type Sonuc } from "../tipler.ts";
 import { DEFTER_AY, defterGorunumu } from "./defter.ts";
 import { hizmetAcik } from "./beceri-etki.ts";
