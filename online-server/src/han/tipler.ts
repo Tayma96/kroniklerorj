@@ -21,7 +21,7 @@ export interface MasaAyari {
   kavgaYasak: boolean;
 }
 
-/** İsim plakası: yalnız kimlik ve görünen ad. Debdebe çerçevesi Faz 15'te eklenecek (oyun mantığı okumaz). */
+/** İsim plakası: kimlik, görünen ad ve isteğe bağlı Debdebe çerçevesi (oyun mantığı okumaz). */
 export interface Plaka {
   hesap: string;
   ad: string;
