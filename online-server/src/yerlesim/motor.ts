@@ -85,7 +85,7 @@ import { hanedanKasabasi, hanedanKaydi, olduMu, oyuncuNoAl, type HanedanKasabasi
 import { hanedanGorunumu, hanedanOzeti } from "./hanedan-gorunum.ts";
 import { KRONIK_SAYFA, KRONIK_YANIT_EN_COK, kronikYaz, type KronikSatiri } from "./kronik.ts";
 import { vasiyetDogrula } from "./vasiyet.ts";
-import { GUNDEM_ADI, type Isaret, type IliskiHaritasi, type Karakter, type Kasaba, type Npc, type Olay, type OlayParam, type OlayTaslagi, type Sakin } from "./tipler.ts";
+import { GUNDEM_ADI, type CalismaParametreleri, type Isaret, type IliskiHaritasi, type Karakter, type Kasaba, type Npc, type Olay, type OlayParam, type OlayTaslagi, type Sakin } from "./tipler.ts";
 import { kasabaKur } from "./uret.ts";
 import { defterYaz } from "./defter.ts";
 import { ekonomiDonumu } from "./ekonomi-donum.ts";
@@ -234,6 +234,11 @@ export class YerlesimMotoru {
   /** Son olay sırası (imleç başı). */
   get imlec(): number {
     return this.#meta.sq;
+  }
+
+  /** Y2: yönetim panelinden gelen izinli parametreler yalnız bellek görünümüne yazılır, kasaba kaydına girmez. */
+  parametreleriGuncelle(parametreler: CalismaParametreleri): void {
+    this.kasaba.pr = { ...parametreler };
   }
 
   /**
