@@ -493,7 +493,7 @@ test("Y3 telafi: akçe olayı tekrar güvenli, kendi hesap kümesine kapalı ve 
   try {
     const { cagir, oyuncu, yonetici } = await kur();
     const ayse = await oyuncu(KURUCU_SUB, "Ayşe");
-    const mehmet = await oyuncu("220000000000000000002", "Mehmet");
+    const mehmet = await oyuncu("220000000000000000002", "Mehmet", "develi");
     const yb = (await yonetici(KURUCU_SUB, KURUCU)).govde.oturum as string;
 
     const kendine = await cagir("POST", "/yonetim/telafi", {
