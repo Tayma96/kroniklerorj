@@ -5,6 +5,7 @@
 import { doDepo, type Depo } from "./depo.ts";
 import { dunyaCagir, hesapCagir, iletiOku, jsonYanit, yerlesimCagir } from "./ic.ts";
 import { YERLESIMLER } from "./dunya-veri.ts";
+import type { SiyasiKimlik } from "./siyaset/tipler.ts";
 import { HIZ_PENCERESI_MS, hizKontrol, type HizDurumu } from "./mantik.ts";
 import { basarili, hata, type Env, type Profil, type YonetimIleti } from "./tipler.ts";
 import { etkinDeger, PARAMETRELER, type ParametreAdi, type ParametreKaydi } from "./yonetim/parametre.ts";
@@ -72,6 +73,8 @@ export class YonetimDO {
       simdi,
       kurucular: kurucuListesi(env.YONETICI_EPOSTALAR),
       oyuncuBul: (sorgu) => dunyaCagir<Profil>(env, { islem: "oyuncuBul", ...sorgu }),
+      siyasiKimlikOku: (hesapId, yerlesim) => yerlesimCagir<SiyasiKimlik>(env, { islem: "siyasetKimlik", yerlesim, hesapId }),
+      telafiYaz: (yerlesim, hedef, govde) => yerlesimCagir(env, { islem: "yonetimTelafi", yerlesim, hesapId: hedef, govde }),
       ekonomiOku: async () => {
         type Satir = { yerlesim: string; oyuncuSayisi: number; npcSayisi: number; toplamAkce: number; ortalamaAkce: number; medyanAkce: number; enDusukAkce: number; enYuksekAkce: number; son12Ay: { gelir: number; gider: number; net: number }; kasabaStokAdet: number; acikSiparis: number };
         const sonuclar = await Promise.all(YERLESIMLER.map((y) => yerlesimCagir<Satir>(env, { islem: "ekonomiSagligi", yerlesim: y.id })));
