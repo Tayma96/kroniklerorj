@@ -337,6 +337,10 @@ test("P5 çatışma sonucu bağımsız devlet kurar; P6 yönetim kararları ve g
   const { devletAyi } = await import("../src/siyaset/devlet.ts");
   assert.equal(devletAyi(d, d.ay + 2), "barisKabul");
   assert.equal(d.devlet?.sultan, "sultanligaDondu");
+  assert.equal(eylem(d, bey, { islem: "devletYonet", tur: "divanCikar", kisi: destek[0]!.kisi }).ok, true);
+  assert.equal(eylem(d, bey, { islem: "devletYonet", tur: "divanEkle", kisi: destek[0]!.kisi }).ok, true);
+  assert.equal(eylem(d, bey, { islem: "devletYonet", tur: "taninma" }).ok, true);
+  assert.equal(d.devlet?.taninma, "talepEdildi");
 
   const oyuncu = kimlik("gönüllü", { bolge: "demirhan" });
   assert.equal(eylem(d, oyuncu, { islem: "devletYemin", deger: "bagli" }).ok, true);
