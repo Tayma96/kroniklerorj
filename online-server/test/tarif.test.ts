@@ -5,7 +5,7 @@ import { MALLAR } from "../src/icerik/mallar.ts";
 import { meslekBul } from "../src/icerik/meslekler.ts";
 import { IS_KONDISYON, halAl } from "../src/yerlesim/hal.ts";
 import { TARIF_KILIDI, beceriDugumu, gocKarsiligi } from "../src/icerik/agaclar/index.ts";
-import { seviyeVer } from "../src/yerlesim/beceri.ts";
+import { kancaMi, seviyeVer } from "../src/yerlesim/beceri.ts";
 import { meslekKaydi, meslekSec } from "../src/yerlesim/meslek.ts";
 import { ALET_OMRU, tarifListesi, tarifYap } from "../src/yerlesim/tarif.ts";
 import { temelIsYap } from "../src/yerlesim/temel-is.ts";
@@ -125,4 +125,22 @@ test("temel iş de kondisyon düşürür", () => {
   const r = temelIsYap(c, "odun", () => 0, k.ay);
   assert.ok(r.ok);
   assert.equal(halAl(c, k.ay).kondisyon, 100 - IS_KONDISYON);
+});
+
+
+test("Demirci temel dövme düğümü dövme grubu tariflerinde kömür tasarrufu sağlar", () => {
+  const k = testKasabasi();
+  const c = usta(k, "demirci", "temelDovme");
+  seviyeVer(c, "demirci.temelDovme", 2);
+  const kilit = TARIF_KILIDI.kilic!;
+  seviyeVer(c, kilit.dugum, kilit.seviye);
+  c.ev = { cevher: 2, komur: 2, deri: 1 };
+  const etki = beceriDugumu("demirci.temelDovme")!.seviyeler[1]!.etkiler[0]!;
+  assert.equal(kancaMi(etki), false, "tasarruf etkisi bağlı sayılır");
+  const liste = tarifListesi(c).find((x) => x.id === "kilic")!;
+  assert.equal(liste.girdi.komur, 1, "iki kömür girdisi bir kömüre iner");
+  const r = tarifYap(c, "kilic", k.ay);
+  assert.ok(r.ok, JSON.stringify(r));
+  assert.equal(r.deger.girdi.komur, 1);
+  assert.equal(c.ev.komur, 1);
 });
