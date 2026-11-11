@@ -7,7 +7,7 @@ import { hamiUc, mesrepUc, mudavimUc, ortakDertUc, senlikUc, toplulukOku, zaviye
 import { defterOku, ismarlaUc, ismarlamaCevapUc, ismarlamaOku, levhaOku, pazarGeri, pazarIlan, pazarIslem, pazarOku } from "./yerlesim/ekonomi-uclar.ts";
 import { armaganGeri, armaganTeveccuh } from "./yerlesim/armagan-uclar.ts";
 import { iletiOku, isletmeCagir, jsonYanit, yonetimCagir } from "./ic.ts";
-import { hata, type Env, type Sonuc, type YerlesimIleti } from "./tipler.ts";
+import { basarili, hata, type Env, type Sonuc, type YerlesimIleti } from "./tipler.ts";
 import type { CalismaParametreleri } from "./yerlesim/tipler.ts";
 import { sonrakiAlarm, YerlesimMotoru } from "./yerlesim/motor.ts";
 import { mulkIsle, teslimAl, uzlastir, type IsletmeCagir } from "./mulk/yerlesim-mulk.ts";
@@ -65,8 +65,12 @@ export class YerlesimDO {
   }
 
   async #isle(ileti: YerlesimIleti, simdi: number): Promise<Sonuc<unknown>> {
+    if (ileti.islem === "ekonomiSagligi" && !(await this.#depo.al("m"))) {
+      return basarili({ yerlesim: ileti.yerlesim, oyuncuSayisi: 0, npcSayisi: 0, toplamAkce: 0, ortalamaAkce: 0, medyanAkce: 0, enDusukAkce: 0, enYuksekAkce: 0, son12Ay: { gelir: 0, gider: 0, net: 0 }, kasabaStokAdet: 0, acikSiparis: 0 });
+    }
     const motor = await this.#ac(ileti.yerlesim, simdi);
     if (!motor) return hata("yerlesim_gecersiz");
+    if (ileti.islem === "ekonomiSagligi") return motor.ekonomiSagligi();
     await this.#parametreleriYukle(motor);
     const { kalan } = await motor.yetistir(simdi);
     await this.#alarmKur(simdi, kalan);
