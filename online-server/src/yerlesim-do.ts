@@ -39,9 +39,13 @@ export class YerlesimDO {
 
   async #parametreleriYukle(motor: YerlesimMotoru): Promise<void> {
     motor.parametreleriGuncelle({});
-    const parametreler = await yonetimCagir(this.#env, { islem: "parametrelerCalisma" });
-    if (parametreler.ok && typeof parametreler.deger === "object" && parametreler.deger !== null) {
-      motor.parametreleriGuncelle(parametreler.deger as CalismaParametreleri);
+    try {
+      const parametreler = await yonetimCagir(this.#env, { islem: "parametrelerCalisma" });
+      if (parametreler.ok && typeof parametreler.deger === "object" && parametreler.deger !== null) {
+        motor.parametreleriGuncelle(parametreler.deger as CalismaParametreleri);
+      }
+    } catch {
+      // Yönetim DO erişilemezse oyun güvenli varsayılan parametrelerle çalışmaya devam eder.
     }
   }
   async #alarmKur(simdi: number, kalan: number): Promise<void> {
