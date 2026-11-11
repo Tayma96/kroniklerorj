@@ -1,9 +1,8 @@
 // Parametre kayıt defteri ve sürümleme (ana tasarım §7.2). Değerler kod sabitlerinin üstüne yazılan sunucu
 // ayarıdır; ayar yoksa koddaki varsayılan geçerlidir. Her değişiklik sürümlüdür; geri al bir önceki sürüme döner.
 //
-// Y1 KAPSAMI: Parametreler YonetimDO'da saklanır, okunur ve geri alınır. `uygulama: "Y1"` olanları (yönetimin
-// kendi sınırları) YonetimDO çalışma anında okur. `uygulama: "Y2"` olanları oyun modülleri (YerlesimDO, HesapDO)
-// HENÜZ OKUMAZ; o modüller koddaki varsayılanla çalışmaya devam eder. Okuma Y2'de bağlanacaktır.
+// Y1: parametreler YonetimDO'da saklanır, sürümlenir ve geri alınır. Y1 sınırları yönetim modülünde,
+// Y2 ekonomi ve istek sınırları YerlesimDO/HesapDO tarafından her istekte çalışma anında okunur.
 
 import { HIZ_SINIRI } from "../mantik.ts";
 import { KITLIK_PRIM, NPC_AYLIK_KOTA, NPC_CARPAN, STOK_CARPAN } from "../yerlesim/npc-taban.ts";
@@ -22,7 +21,7 @@ export interface ParametreTanimi {
   aciklama: string;
   /** Sabitin koddaki yeri. */
   kaynak: string;
-  /** Y1: çalışma anında okunur. Y2: yalnız saklanır; oyun modülü henüz okumaz. */
+  /** Y1: yönetim sınırı; Y2: oyun modülü çalışma anında okur. */
   uygulama: "Y1" | "Y2";
 }
 
