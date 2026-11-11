@@ -32,6 +32,8 @@ export interface HanHesapBaglami {
   ikramOde: IkramOdeyici;
   /** Yerleşimdeki iki yönlü engel listesi (hesap kimlikleri). Yoksa liste boş sayılır (birim testleri). */
   engelSor?: EngelListeleyici;
+  /** Debdebe çerçevesi (oyun etkisi yok); yoksa sade plaka. */
+  plakaCerçevesi?: () => Promise<string | undefined>;
 }
 
 /** HesapDO → YerlesimDO "engeller" çağrısı. */
@@ -100,11 +102,13 @@ export async function masaBileti(b: HanHesapBaglami, hamNo: unknown): Promise<So
     eg = r.deger.engeller;
   }
   if (onceki !== ad) await b.depo.koy({ [SON_MASA]: ad });
+  let cerceve: string | undefined;
+  try { cerceve = await b.plakaCerçevesi?.(); } catch { /* kozmetik hatası han bağlantısını engellemez */ }
   const yt: HesapYaptirimi = {
     ...(b.yaptirim?.uzaklastirma ? { uzaklastirma: b.yaptirim.uzaklastirma } : {}),
     ...(b.yaptirim?.susturma ? { susturma: b.yaptirim.susturma } : {}),
   };
-  return basarili({ masa: ad, no, plaka: { hesap: b.hesapId, ad: profil.deger.ad }, yt, eg });
+  return basarili({ masa: ad, no, plaka: { hesap: b.hesapId, ad: profil.deger.ad, ...(cerceve ? { cerceve } : {}) }, yt, eg });
 }
 
 /** POST /v1/han/eylem: istekNo ile tekrar güvenli; günlük tavan yalnız başarılı eylemi sayar. */
