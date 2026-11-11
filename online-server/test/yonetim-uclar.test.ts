@@ -525,7 +525,7 @@ test("Y3 telafi: akçe olayı tekrar güvenli, kendi hesap kümesine kapalı ve 
     });
     assert.equal(esya.durum, 200);
     assert.ok(esya.govde.uygulama.envanter.nal >= 2);
-    const durum2 = await cagir("GET", "/v1/durum", { oturum: mehmet.oturum });
+    const durum2 = await cagir("GET", "/v1/yerlesim", { oturum: mehmet.oturum });
     assert.ok(durum2.govde.ben.envanter.nal >= 2);
 
     const liste = await cagir("GET", "/yonetim/telafiler", { oturum: yb });
