@@ -369,15 +369,16 @@ test("P5 savunma üstün gelirse darbe bastırılır ve vali makamı boşalır",
 
 
 test("P5 garnizon sadakati tavana yaklaşınca yalnız gereken akçe tahsil edilir", async () => {
-  const { darbeHazirla, darbeSadakatYatir } = await import("../src/siyaset/darbe.ts");
+  const { darbeHazirla } = await import("../src/siyaset/darbe.ts");
   const d = bolgeKur("demirhan", 0);
   const vali = kimlik("vali-yatirim");
   valiYap(d, vali);
   assert.equal(eylem(d, vali, { islem: "darbeHazirla" }).ok, true);
   d.darbe!.garnizonSadakati = 95;
   const once = d.kasa;
-  assert.equal(darbeSadakatYatir(d, 40, d.ay), 20);
+  assert.equal(eylem(d, vali, { islem: "darbeSadakat", tutar: 40 }).ok, true);
   assert.equal(d.darbe?.garnizonSadakati, 100);
   assert.equal(d.darbe?.yatirilan, 20);
-  assert.equal(d.kasa, once, "saf kural kasayı düşürmez; eylem katmanı yalnız 20 akçe düşer");
+  assert.equal(d.kasa, once - 20);
+  assert.ok(defterTutarli(d));
 });
