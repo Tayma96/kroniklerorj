@@ -34,6 +34,7 @@ import {
   PAZAR_KUME_CARPANI,
   PAZAR_SURE_EN_COK,
   acikIlanlar,
+  ekonomiAl,
   ilanAc,
   ilanBul,
   ilanGeri,
