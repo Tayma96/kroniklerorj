@@ -47,6 +47,7 @@ const ANAHTAR: Partial<Record<OnlineHata, string>> = {
   mal_yok: "onl.h.malYok",
   siparis_yok: "onl.h.siparisYok",
   siparis_kapandi: "onl.h.siparisKapandi",
+  stok_yok: "onl.h.stokYok",
   darbe_kapali: "onl.h.darbeKapali",
   devlet_talep_var: "onl.h.devletTalepVar",
   taraf_degil: "onl.h.tarafDegil",
