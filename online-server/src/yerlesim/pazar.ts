@@ -84,7 +84,10 @@ export function npcyeSat(
 /** Kalan NPC alım kotası (NPC'nin bu ay oyuncudan daha kaç adet alacağı), ticareti yapılan her mal için. */
 export function kalanSatisKotasi(k: Karakter, ay: number, oyuncuSayisi: (m: MeslekId) => number = () => 0): Partial<Record<MalId, number>> {
   const kota: Partial<Record<MalId, number>> = {};
-  for (const [mal, m] of Object.entries(MALLAR) as [MalId, (typeof MALLAR)[MalId]][]) if (m.taban > 0) const digerMeslektas = Math.max(0, oyuncuSayisi(m.meslek) - (k.ms?.a === m.meslek ? 1 : 0));
+  for (const [mal, m] of Object.entries(MALLAR) as [MalId, (typeof MALLAR)[MalId]][]) {
+    if (m.taban <= 0) continue;
+    const digerMeslektas = Math.max(0, oyuncuSayisi(m.meslek) - (k.ms?.a === m.meslek ? 1 : 0));
     kota[mal] = npcSatisKotasi(mal, digerMeslektas) - satilan(k, mal, ay);
+  }
   return kota;
 }
