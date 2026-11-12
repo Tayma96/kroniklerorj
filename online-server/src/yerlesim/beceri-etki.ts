@@ -62,6 +62,16 @@ export function hizmetAcik(k: Karakter, hizmet: string): boolean {
   return [...acikEtkiler(k)].some((e) => e.tur === "hizmet" && e.hizmet === hizmet);
 }
 
+/** Öğrenilmiş toplumsal hak; her yazma ucu kendi eyleminde bu çözümleyiciyi sunucuda çağırmalıdır. */
+export function hakAcik(k: Karakter, hak: string): boolean {
+  return [...acikEtkiler(k)].some((e) => e.tur === "hak" && e.hak === hak);
+}
+
+/** Çapraz meslek sinerjisi: açan düğüm tek başına yetmez, tanımlı öteki düğüm/seviye de öğrenilmiş olmalıdır. */
+export function sinerjiAcik(k: Karakter, acar: string): boolean {
+  return [...acikEtkiler(k)].some((e) => e.tur === "sinerji" && e.acar === acar && dugumSeviyesi(k, e.dugum) >= e.seviye);
+}
+
 /** Tarif/iş kimliği ya da tarif gruplarında, belirtilen girdiye uygulanan tasarruf yüzdesi. */
 export function tasarrufOrani(k: Karakter, hedefler: readonly string[], mal: string): number {
   let yuzde = 0;
