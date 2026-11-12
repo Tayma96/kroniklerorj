@@ -704,6 +704,28 @@ test("fiziksel senet eki: alacaklı senedi tekliften kabul/ret akışına göre 
     assert.equal(b.ev?.senet ?? 0, 0, "alacaklı kabulünde senet tüketilir");
     assert.equal(r.deger.teklif.s.sn, 1);
   }
+  // Göndericinin geri çekmesi ve cevapsız kalma da emanet senedini yalnız bir kez iade eder.
+  {
+    const { k, a, b } = kur();
+    a.ev = { senet: 1 };
+    const r = teklifOlustur(k, a, b, { tur: "borc", yon: "ver", tutar: 8, vade: 2, senetli: true }, k.ay);
+    assert.ok(r.ok);
+    if (!r.ok) return;
+    assert.ok(teklifCevap(k, a, `t${r.deger.teklif.i}`, "geri", {}, k.ay).ok);
+    assert.equal(a.ev?.senet ?? 0, 1);
+    assert.equal(r.deger.teklif.s.se, undefined);
+  }
+  {
+    const { k, a, b } = kur();
+    a.ev = { senet: 1 };
+    const r = teklifOlustur(k, a, b, { tur: "borc", yon: "ver", tutar: 8, vade: 2, senetli: true }, k.ay);
+    assert.ok(r.ok);
+    if (!r.ok) return;
+    bekle(k, TEKLIF_SURE_AY);
+    assert.equal(r.deger.teklif.d, "dustu");
+    assert.equal(a.ev?.senet ?? 0, 1);
+    assert.equal(r.deger.teklif.s.se, undefined);
+  }
   // Alacaklının fiziksel senedi yoksa kabul reddedilir ve para/borç durumu değişmez.
   {
     const { k, a, b } = kur();
