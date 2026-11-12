@@ -157,7 +157,7 @@ export const TARIF_IKON: Record<string, string> = { kereste: "saw", komur: "flam
 export const ALET_OMRU = 4;
 export const NPC_SATIS_KOTASI = 6;
 /** Kasaba talebi: yüksek değerli demirci mallarında daha dar aylık alım. */
-export const npcSatisKotasi = (mal: MalId) => mal === "alet" || mal === "nal" ? 2 : NPC_SATIS_KOTASI;
+export const npcSatisKotasi = (mal: MalId, digerMeslektas = 0) => (mal === "alet" || mal === "nal") && digerMeslektas <= 0 ? 2 : NPC_SATIS_KOTASI;
 export const KITLIK_PRIM = 0.5;
 /** Satılabilen mallar (su ticarete girmez). */
 export const satilirMi = (mal: MalId) => MALLAR[mal].taban > 0;
