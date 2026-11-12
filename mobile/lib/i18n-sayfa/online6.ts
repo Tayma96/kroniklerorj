@@ -410,4 +410,8 @@ export const rows: Record<string, string[]> = {
   "onl.topluluk.rozet.yok": ["Henüz yok", "None yet", "Ninguno", "Nenhum", "لا يوجد", "Пока нет"],
   "onl.topluluk.zaviye": ["Zaviyeler: kasabada %1 · benim zaviyem %2", "Zawiyas: %1 in town · my group %2", "Zawiyas: %1 en el pueblo · mi grupo %2", "Zawiyas: %1 na vila · o meu grupo %2", "الزوايا: %1 في البلدة · زاويتي %2", "Завии: %1 в поселении · моя группа %2"],
 
+  "onl.topluluk.dert.katilanlar": ["Katılanlar: %1", "Contributors: %1", "Participantes: %1", "Participantes: %1", "المساهمون: %1", "Участники: %1"],
+  "onl.topluluk.senlik.levha": ["Cömertler Levhası", "Contributors' board", "Tablón de colaboradores", "Quadro de contribuintes", "لوحة المساهمين", "Доска участников"],
+  "onl.topluluk.senlik.levhaBos": ["Henüz adı yazılan yok.", "No names recorded yet.", "Aún no hay nombres.", "Ainda não há nomes.", "لم تُسجّل أسماء بعد.", "Пока имён нет."],
+
 };
