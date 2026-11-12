@@ -600,3 +600,34 @@ test("iki taraflı işler: oyuncunun aynı anda taşıyabileceği sözleşme say
   const da = teklifOlustur(k, d, a, { tur: "is", is: "mektup", tutar: 5, mektupHedef: b.o, mektupMetni: "Üçüncü mektup." }, k.ay);
   assert.deepEqual(da, { ok: false, hata: "teklif_siniri" });
 });
+
+
+test("E4.3-D: bekleyen iş teklifi sonradan kabul edilse bile gönderenin aktif iş tavanı aşılmaz", () => {
+  const { k, a, b } = kur();
+  const c = oyuncuEkle(k, 3, k.ay - 13 * 12 - 2);
+  const d = oyuncuEkle(k, 4, k.ay - 13 * 12 - 2);
+  const e = oyuncuEkle(k, 5, k.ay - 13 * 12 - 2);
+  for (const [x, h, ev] of [[a, "yarisan-a", 901], [b, "yarisan-b", 902], [c, "yarisan-c", 903], [d, "yarisan-d", 904], [e, "yarisan-e", 905]] as const) {
+    x.h = h; x.e = ev;
+  }
+  const ilk = teklifOlustur(k, b, a, { tur: "is", is: "mektup", tutar: 3, mektupHedef: e.o, mektupMetni: "İlk iş." }, k.ay);
+  assert.ok(ilk.ok);
+  if (!ilk.ok) return;
+  isBecerisi(a, "katip", "katip.koyMektubu");
+  assert.ok(teklifCevap(k, a, `t${ilk.deger.teklif.i}`, "kabul", {}, k.ay).ok);
+
+  const bekleyen = teklifOlustur(k, a, c, { tur: "is", is: "mektup", tutar: 4, mektupHedef: d.o, mektupMetni: "Bekleyen iş." }, k.ay);
+  assert.ok(bekleyen.ok);
+  if (!bekleyen.ok) return;
+
+  const ikinci = teklifOlustur(k, d, a, { tur: "is", is: "mektup", tutar: 5, mektupHedef: e.o, mektupMetni: "İkinci iş." }, k.ay);
+  assert.ok(ikinci.ok);
+  isBecerisi(a, "katip", "katip.koyMektubu");
+  assert.ok(teklifCevap(k, a, `t${ikinci.deger.teklif.i}`, "kabul", {}, k.ay).ok);
+  assert.equal([ilk.deger.teklif, ikinci.deger.teklif].filter((t) => t.d === "surer").length, 2);
+
+  isBecerisi(c, "katip", "katip.koyMektubu");
+  assert.deepEqual(teklifCevap(k, c, `t${bekleyen.deger.teklif.i}`, "kabul", {}, k.ay), { ok: false, hata: "teklif_siniri" });
+  assert.equal(bekleyen.deger.teklif.d, "acik", "sınır doluyken bekleyen teklif açık kalır");
+  assert.equal(a.pa, 100 - 3 - 5, "reddedilen kabul üçüncü emaneti kilitlemez");
+});
