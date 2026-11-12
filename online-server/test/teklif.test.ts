@@ -662,3 +662,58 @@ test("senet: yalnız borçlu ödeme yapar; kısmi ödeme ve fazla ödeme kalan t
   assert.deepEqual(t.bo, [[k.ay, 10], [k.ay, 23]], "fazla talep yalnız kalan borç kadar tahsil edilir");
   assert.equal(teklifCevap(k, b, id, "ode", { tutar: 1 }, k.ay).ok, false, "kapanan senet tekrar tahsil edilemez");
 });
+
+
+test("fiziksel senet eki: alacaklı senedi tekliften kabul/ret akışına göre tüketilir veya iade edilir", () => {
+  // Alacaklı teklifi açarsa senet emanet alınır; ret/geri çekme/süre aşımında geri döner.
+  {
+    const { k, a, b } = kur();
+    a.ev = { senet: 1 };
+    const r = teklifOlustur(k, a, b, { tur: "borc", yon: "ver", tutar: 12, vade: 3, senetli: true }, k.ay);
+    assert.ok(r.ok);
+    if (!r.ok) return;
+    assert.equal(a.ev.senet, 0, "senet teklif süresince emanette");
+    assert.equal(r.deger.teklif.s.se, 1);
+    assert.ok(teklifCevap(k, b, `t${r.deger.teklif.i}`, "ret", {}, k.ay).ok);
+    assert.equal(a.ev.senet, 1, "ret senedi iade eder");
+    assert.equal(r.deger.teklif.s.sn, 1);
+    assert.equal(r.deger.teklif.s.se, undefined);
+  }
+  // Kabul edilince emanet senet kesinleşir; borç kapanana kadar senet eki kayıtta kalır.
+  {
+    const { k, a, b } = kur();
+    a.ev = { senet: 1 };
+    const r = teklifOlustur(k, a, b, { tur: "borc", yon: "ver", tutar: 12, vade: 3, senetli: true }, k.ay);
+    assert.ok(r.ok);
+    if (!r.ok) return;
+    assert.ok(teklifCevap(k, b, `t${r.deger.teklif.i}`, "kabul", {}, k.ay).ok);
+    assert.equal(a.ev.senet, 0);
+    assert.equal(r.deger.teklif.s.se, undefined);
+    assert.equal(r.deger.teklif.s.sn, 1);
+    assert.equal(teklifGorunumu(k, r.deger.teklif, a.o, "tr").sartlar.senetli, true);
+  }
+  // Borç isteyen taraf göndericiyse senet, alacaklı olan kabul eden oyuncudan alınır.
+  {
+    const { k, a, b } = kur();
+    b.ev = { senet: 1 };
+    const r = teklifOlustur(k, a, b, { tur: "borc", yon: "iste", tutar: 12, vade: 3, senetli: true }, k.ay);
+    assert.ok(r.ok);
+    if (!r.ok) return;
+    assert.equal(b.ev.senet, 1, "teklif cevabı gelmeden senet alınmaz");
+    assert.ok(teklifCevap(k, b, `t${r.deger.teklif.i}`, "kabul", {}, k.ay).ok);
+    assert.equal(b.ev.senet, 0, "alacaklı kabulünde senet tüketilir");
+    assert.equal(r.deger.teklif.s.sn, 1);
+  }
+  // Alacaklının fiziksel senedi yoksa kabul reddedilir ve para/borç durumu değişmez.
+  {
+    const { k, a, b } = kur();
+    const r = teklifOlustur(k, a, b, { tur: "borc", yon: "iste", tutar: 12, vade: 3, senetli: true }, k.ay);
+    assert.ok(r.ok);
+    if (!r.ok) return;
+    const onceA = a.pa, onceB = b.pa;
+    assert.deepEqual(teklifCevap(k, b, `t${r.deger.teklif.i}`, "kabul", {}, k.ay), { ok: false, hata: "mal_yok" });
+    assert.equal(a.pa, onceA);
+    assert.equal(b.pa, onceB);
+    assert.equal(r.deger.teklif.d, "acik");
+  }
+});
