@@ -299,6 +299,12 @@ test("oyuncu hanı: kira ve ikram kasaya, çarpanlı fiyat; aynı hane ve karş�
   a.ms!.s.hanci!.sv = { "hanci.yatakAhir": 1, "hanci.temizOda": 1 };
   assert.equal(oyuncuHanOdaAcik(a, "oda"), true, "temiz oda düğümü oda türünü açar");
   assert.equal(oyuncuHanOdaAcik(a, "hasOda"), false, "has oda için üçüncü seviye ve marangoz sinerjisi gerekir");
+  assert.deepEqual(barinmaGorunumu(k, b, AN, { isletme: "develi.han.1", fc: 150, seviye: 0, kapasite: 3, sahip: a }).odalar.map((o) => o.oda), ["yatak", "oda"]);
+  assert.ok(meslekSec(a, "marangoz", AY + 12).ok);
+  a.ms!.s.marangoz!.sv = { "marangoz.kundekari": 1 };
+  a.ms!.s.hanci!.sv = { "hanci.yatakAhir": 1, "hanci.temizOda": 3 };
+  assert.equal(oyuncuHanOdaAcik(a, "hasOda"), true, "has oda iki mesleğin gerçek sinerjisiyle açılır");
+  assert.equal(oyuncuHanOdaAcik(a, "hasOda"), false, "has oda için üçüncü seviye ve marangoz sinerjisi gerekir");
   const gorunumOda = barinmaGorunumu(k, b, AN, { isletme: "develi.han.1", fc: 150, seviye: 0, kapasite: 3, sahip: a });
   assert.deepEqual(gorunumOda.odalar.map((o) => o.oda), ["yatak", "oda"]);
   assert.ok(meslekSec(a, "marangoz", AY + 12).ok);
