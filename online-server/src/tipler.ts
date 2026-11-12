@@ -342,6 +342,10 @@ export interface Env {
   GOOGLE_CLIENT_ID?: string;
   /** Worker sırrı; en az 32 karakter. */
   OTURUM_ANAHTARI?: string;
+  /** Davet kodlu anonim test girişi; yalnız ayrılmış test Worker'ında "1" yapılır. */
+  TEST_GIRIS_ACIK?: string;
+  /** Yalnız test Worker'ında kullanılan en az 32 karakterlik davet sırrı. */
+  TEST_GIRIS_KODU?: string;
   /** Han masası: masa başına bir MasaDO (idFromName("masa:<yerlesim>:<han>:<no>")); para tutmaz. */
   MASA: DurableObjectNamespace;
   /** Tek örnek YonetimDO (idFromName("yonetim")): roller, işlem kaydı, parametreler, şikayet, yaptırım. */
