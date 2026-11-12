@@ -6,7 +6,7 @@
 
 import type { Dil } from "../icerik/adlar.ts";
 import { basarili, hata, type HataKodu, type Sonuc } from "../tipler.ts";
-import { npcyeOde, ucgenAl, type AraciBedeli, type AraciTalebi } from "./bilgi.ts";
+import { ARACI_BEDELLERI, npcyeOde, ucgenAl, type AraciBedeli, type AraciTalebi } from "./bilgi.ts";
 import { getiriCarpani, iliskiAl, tekrarSayisi } from "./eylem.ts";
 import { engelliMi } from "./engel.ts";
 import { gorus, gorusDegeri } from "./gorus.ts";
@@ -122,11 +122,74 @@ export function araciIste(b: UcgenBaglami, g: { arabulucu: string; npc: number; 
   return basarili({ yanit: { tur: "araciIste", talep: talepGorunumu(k, t, "tr"), ...(g.miktar ? { degisim: { para: -g.miktar } } : {}) }, olaylar: [olay], digerleri: [ar.o] });
 }
 
+/** Ücretli teklif sözleşmesinin kabulünde, var olan NPC arabuluculuk kurallarıyla aynı kapıları doğrular. */
+export function araciSozlesmeKontrol(
+  k: Kasaba,
+  taraf: Karakter,
+  arabulucu: Karakter,
+  npcNo: number,
+  bedel: AraciBedeli,
+  miktar: number,
+  ay: number,
+): Sonuc<null> {
+  if (!ARACI_BEDELLERI.includes(bedel)) return hata("ucgen_gecersiz");
+  if (bedel === "tazminat" ? (!Number.isInteger(miktar) || miktar < 1 || miktar > TAZMINAT_TAVANI) : miktar !== 0) return hata("ucgen_gecersiz");
+  if (taraf.o === arabulucu.o || olduMu(arabulucu)) return hata(taraf.o === arabulucu.o ? "kendine" : "kisi_yok");
+  if (karakterYasi(taraf, ay) < ILISKI_YASI || karakterYasi(arabulucu, ay) < ILISKI_YASI) return hata("yas_kapisi");
+  if (engelliMi(k.tp, taraf.o, arabulucu.o)) return hata("engelli");
+  if (!dostMu(k.tp, taraf.o, arabulucu.o)) return hata("dost_degil");
+  const npc = k.dizin.get(npcNo);
+  if (!npc) return hata("kisi_yok");
+  if (yas(npc.d, ay) < ARACI_NPC_YASI) return hata("hedef_uygun_degil");
+  if (gorusDegeri(k, npc, taraf, k.ili.get(taraf.o), ay) >= 0) return hata("kirgin_degil");
+  const acik = (k.ug?.at ?? []).filter((x) => x.t === taraf.o && x.d === "acik");
+  if (acik.some((x) => x.n === npcNo)) return hata("aralik_dolu");
+  if (acik.length >= TALEP_ACIK_EN_COK) return hata("teklif_siniri");
+  return basarili(null);
+}
+
+/** Kabul edilmiş ücretli teklif, arabuluculuk defterinde gerçek ve tekil bir talep açar.
+ * Tazminat teklif emanetinden ayrıldığı için burada tarafın cüzdanından ikinci kez düşülmez. */
+export function araciSozlesmeAc(
+  k: Kasaba,
+  taraf: Karakter,
+  arabulucu: Karakter,
+  npcNo: number,
+  bedel: AraciBedeli,
+  miktar: number,
+  ay: number,
+  teklifNo: number,
+): Sonuc<{ talep: AraciTalebi; olay: OlayTaslagi }> {
+  const kontrol = araciSozlesmeKontrol(k, taraf, arabulucu, npcNo, bedel, miktar, ay);
+  if (!kontrol.ok) return kontrol;
+  const npc = k.dizin.get(npcNo)!;
+  const ug = ucgenAl(k);
+  const talep: AraciTalebi = {
+    i: ug.n++, t: taraf.o, ar: arabulucu.o, n: npcNo, b: bedel, m: miktar,
+    ac: ay, sa: ay + TALEP_SURE, d: "acik", teklif: teklifNo,
+  };
+  ug.at.push(talep);
+  const olay: OlayTaslagi = {
+    t: "ucgen", w: taraf.o, h: arabulucu.o, g: arabulucu.o, n: 6, k: "olay.ucgen.araciTalebi",
+    p: { kisi: oyuncuRef(taraf), npc: npcRef(npc), bedel, talep: talepKimlik(talep.i), ...(miktar ? { miktar } : {}), sozlesme: true },
+  };
+  return basarili({ talep, olay });
+}
+
+/** Sözleşme iptal/sona erme durumunda henüz denenmemiş arabuluculuk talebinin tazminat emanetini geri verir. */
+export function araciSozlesmeIptal(k: Kasaba, talepNo: number, teklifNo: number, ay: number): void {
+  const t = k.ug?.at.find((x) => x.i === talepNo);
+  if (!t || t.teklif !== teklifNo || t.d !== "acik") return;
+  iade(k, t);
+  kapat(k, t, "geri", "sozlesmeIptal", ay);
+}
+
 /** Taraf geri çeker ya da arabulucu reddeder: emanet iade, öbür tarafa olay. Cezasız. */
 export function araciKapat(b: UcgenBaglami, g: { talep: number }): Sonuc<UcgenCiktisi> {
   const { k, kar, ay } = b;
   const t = k.ug?.at.find((x) => x.i === g.talep);
   if (!t || t.d !== "acik") return hata("talep_yok");
+  if (t.teklif !== undefined) return hata("talep_yok");
   if (t.t !== kar.o && t.ar !== kar.o) return hata("taraf_degil");
   const geri = t.t === kar.o;
   iade(k, t);
@@ -185,10 +248,10 @@ export function sonucBandi(atilan: number, sans: number): AraciSonucu {
 }
 
 /** Arabulucu dener. Sonuç `Iliski.ab` olarak kalır ve "gorus.baris" kalemiyle görünür. */
-export function arabulucuYap(b: UcgenBaglami, g: { talep: number }, zar: Zar): Sonuc<UcgenCiktisi> {
+export function arabulucuYap(b: UcgenBaglami, g: { talep: number }, zar: Zar, teklifNo?: number): Sonuc<UcgenCiktisi> {
   const { k, kar, ili, ay } = b;
   const t = k.ug?.at.find((x) => x.i === g.talep);
-  if (!t) return hata("talep_yok");
+  if (!t || t.teklif !== teklifNo) return hata("talep_yok");
   const engel = arabulucuKapisi(k, kar, t, ay);
   if (engel) return hata(engel);
   if (!takatHarca(kar, ay, UCGEN_TAKAT.arabulucu)) return hata("takat_yok");
