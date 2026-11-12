@@ -1,8 +1,9 @@
-// Oyuncu–oyuncu arabuluculuğu: üç tarafın açık rızasına dayalı davet ve tarafsızlık kapısı.
-// Bu modül henüz para/uzlaşma uygulamaz; D2-B yalnızca güvenli katılım durumunu yönetir.
+// Oyuncu–oyuncu arabuluculuğu: üç tarafın açık rızası, tarafsızlık ve çift imzalı mali uzlaşma.
+// Emanet, taraflardan biri ölürse terekeye iade edilerek dosya cezasız kapatılır.
 
 import { basarili, hata, type Sonuc } from "../tipler.ts";
 import { engelliMi } from "./engel.ts";
+import { olduMu } from "./hanedan.ts";
 import { oyuncuArabuluculukAl, toplumAl, oyuncuMu, type OyuncuArabuluculuk, type Toplum } from "./toplum.ts";
 import type { Karakter, Kasaba } from "./tipler.ts";
 
@@ -204,6 +205,11 @@ export function oyuncuArabuluculukUygula(
   }
   const s = k.kar.get(d.s), kk = k.kar.get(d.k);
   if (!s || !kk) return hata("sakin_yok");
+  // Taraflardan biri imzadan sonra öldüyse ödeme yapılmaz; iki emanet de özgün sahibine döner.
+  if (olduMu(s) || olduMu(kk)) {
+    if (!emanetIadeEt(k, d, ay)) return hata("sakin_yok");
+    return basarili(d);
+  }
   if (!Number.isSafeInteger(s.pa + d.od.k) || !Number.isSafeInteger(kk.pa + d.od.s)) return hata("deger_sinir_disi");
   s.pa += d.od.k;
   kk.pa += d.od.s;
@@ -217,6 +223,18 @@ export function oyuncuArabuluculukUygula(
 export function oyuncuArabuluculukDonumu(k: Kasaba, ay: number): number {
   let sayi = 0;
   for (const d of oyuncuArabuluculukAl(toplumAl(k))) {
+    const sikayetci = k.kar.get(d.s), karsi = k.kar.get(d.k);
+    const tarafOldu = !!sikayetci && !!karsi && (olduMu(sikayetci) || olduMu(karsi));
+    if (tarafOldu && d.d === "emanette") {
+      if (emanetIadeEt(k, d, ay)) sayi++;
+      continue;
+    }
+    if (tarafOldu && ["davet", "taslak", "imzaBekliyor"].includes(d.d)) {
+      d.d = "dustu";
+      d.kp = ay;
+      sayi++;
+      continue;
+    }
     if (d.d === "emanette" && d.sonAy !== undefined && ay > d.sonAy && emanetIadeEt(k, d, ay)) {
       sayi++;
       continue;
