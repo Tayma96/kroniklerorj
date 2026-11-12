@@ -71,7 +71,7 @@ new_sqlite_classes = ["BolgeDO", "SultanlikDO"]
 # Boşken /v1/giris "yapilandirma_eksik" döner. Oturum anahtarı burada DEĞİL:
 # `wrangler secret put OTURUM_ANAHTARI` ile Worker sırrı olarak konur.
 GOOGLE_CLIENT_ID = ""
-# Google'sız davet kodlu test girişi production Worker üzerinde daima kapalıdır.
+# Ayrı test Worker'ında davet kodlu test girişi açık; TEST_GIRIS_KODU olmadan uç 404 döner.
 TEST_GIRIS_ACIK = "1"
 # TEST_GIRIS_KODU yalnız test Worker'ında sır olarak tanımlanır; wrangler secret put ile yüklenir.
 # YONETICI_EPOSTALAR (kurucu e-postaları, virgülle ayrılmış) burada DEĞİL: e-posta depoya girmesin diye
