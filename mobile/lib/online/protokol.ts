@@ -89,7 +89,7 @@ export const SUNUCU_HATALARI = [
   "meslek_degisim_dolu", "dugum_gecersiz", "dugum_gizli", "seviye_tavan", "on_kosul_eksik", "ogrenme_suruyor", "ogrenme_yok",
   "kaynak_gecersiz", "hizlandirma_kapali", "hizlandirma_yok", "yeniden_bos",
   // P5 siyaset: darbe çatışması ve iki taraflı ateşkes.
-  "darbe_kapali", "devlet_talep_var", "taraf_degil", "deger_sinir_disi",
+  "darbe_kapali", "devlet_talep_var", "taraf_degil", "deger_sinir_disi", "stok_yok",
 ] as const;
 export type HataKodu = (typeof SUNUCU_HATALARI)[number] | ToplumHataKodu;
 
