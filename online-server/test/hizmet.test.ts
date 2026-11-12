@@ -339,6 +339,7 @@ function npcHizmetKasabasi(ek: EkonomiKaydi, kar: Karakter, hazine = 30) {
 
 function lohusaKarakter(hane = 1): Karakter {
   const kar = sifaciKarakter(1, 1, 6);
+  kar.pa = 0;
   kar.e = hane;
   kar.ev = { sifaliOt: 1, bez: 1 };
   kar.ms!.s.sifaci!.sv = { "sifaci.lohusaBakimi": 1 };
