@@ -57,6 +57,8 @@ export const rows: Record<string, string[]> = {
   "onl.tarif.alet": ["Alet dövmek", "Forging tools", "Forjar herramientas", "Forjar ferramentas", "طرق الأدوات", "Ковка орудий"],
   "onl.tarif.hasat": ["Hasat", "Harvest", "Cosecha", "Colheita", "الحصاد", "Жатва"],
   "onl.tarif.kirkim": ["Kırkım", "Shearing", "Esquila", "Tosquia", "الجزّ", "Стрижка овец"],
+  "onl.tarif.murekkep": ["Mürekkep hazırlamak", "Making ink", "Preparar tinta", "Preparar tinta", "إعداد الحبر", "Приготовление чернил"],
+  "onl.tarif.senet": ["Senet yazmak", "Writing a deed", "Redactar pagaré", "Redigir promissória", "كتابة سند", "Составление расписки"],
   "onl.tf.baslik": ["Tarifler", "Recipes", "Recetas", "Receitas", "الوصفات", "Рецепты"],
   "onl.tf.alt": ["Usta iş girdiyi çıktıya çevirir; akçe doğurmaz. Ürünü kasabaya satarak ya da siparişe vererek kazanırsın.", "Skilled work turns inputs into goods; it doesn't make coin. You earn by selling to the town or filling orders.", "El trabajo de oficio convierte insumos en bienes; no crea dinero. Se gana vendiendo al pueblo o cumpliendo encargos.", "O trabalho de ofício transforma insumos em bens; não cria dinheiro. Ganha-se vendendo à vila ou cumprindo encomendas.", "العمل الحِرفي يحوّل المواد إلى بضائع ولا يولّد مالًا. الكسب ببيعها للبلدة أو بتسليم الطلبيات.", "Ремесленная работа превращает сырьё в товар, но не рождает денег. Заработок — продажа городу или выполнение заказов."],
   "onl.tf.acik": ["Açık", "Open", "Abierta", "Aberta", "مفتوحة", "Открыт"],
