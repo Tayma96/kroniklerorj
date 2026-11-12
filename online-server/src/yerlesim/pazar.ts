@@ -9,12 +9,17 @@ import { basarili, hata, type Sonuc } from "../tipler.ts";
 import { envanterEkle, saticiDegeri, stogaEkle, type KasabaStogu } from "./npc-taban.ts";
 import type { CalismaParametreleri, Dokum, Karakter } from "./tipler.ts";
 
-/** [PARAMETRE] Oyuncu başına mal başına aylık NPC alım kotası. */
+/** [PARAMETRE] Genel mal grubu için oyuncu başına aylık NPC alım kotası. */
 export const NPC_SATIS_KOTASI = 6;
-/** [DENGE] Tek demircinin pahalı alet/nal için NPC'ye sınırsız satış rantı oluşmasın;
- * kasabada ikinci demirci varsa talep genişler. Callback, satıcı dışındaki oyuncuları sayar. */
+/** [DENGE] Oduncunun ham ve yarı mamul ürünlerinde arz daha fazla, değer birimi daha düşüktür. */
+export const NPC_ODUNCU_SATIS_KOTASI = 8;
+/** [DENGE] Tek demircinin yüksek değerli alet/nal satışında aylık akçe yoğunlaşmasını sınırlar;
+ * ikinci demirci gelince kasaba talebi genel kotaya çıkar. Callback, satıcı dışındaki oyuncuları sayar. */
 export function npcSatisKotasi(mal: MalId, digerMeslektas = 0): number {
-  return (mal === "alet" || mal === "nal") && digerMeslektas <= 0 ? 2 : NPC_SATIS_KOTASI;
+  if (mal === "alet" && digerMeslektas <= 0) return 1;
+  if (mal === "nal" && digerMeslektas <= 0) return 2;
+  if (MALLAR[mal].meslek === "oduncu") return NPC_ODUNCU_SATIS_KOTASI;
+  return NPC_SATIS_KOTASI;
 }
 /** [PARAMETRE] Kıtlık primi oyuncu başına mal başına ayda yalnız bu kadar birime ödenir (kıt pazar çabuk doyar;
  * tek üreticinin yüksek katma değerli malında primin aylık kazancı sınırlı kalır). */
