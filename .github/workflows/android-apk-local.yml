@@ -21,6 +21,10 @@ on:
         description: "Yalnız test APK'sında /online ekranlarını aç"
         type: boolean
         default: false
+      online_test_giris:
+        description: "Yalnız test APK'sında davet koduyla Google'sız giriş göster"
+        type: boolean
+        default: false
       online_sunucu_url:
         description: "Test Worker adresi (online_gelistirme açıkken zorunlu)"
         type: string
@@ -94,7 +98,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.daemon=false"
-      EXPO_PUBLIC_ONLINE_GELISTIRME: ${{ inputs.kanal == 'test' && inputs.online_gelistirme && '1' || '0' }}
+      EXPO_PUBLIC_ONLINE_GELISTIRME: ${{ inputs.kanal == 'test' && (inputs.online_gelistirme || inputs.online_test_giris) && '1' || '0' }}
+      EXPO_PUBLIC_ONLINE_TEST_GIRIS: ${{ inputs.kanal == 'test' && inputs.online_test_giris && '1' || '0' }}
       EXPO_PUBLIC_ONLINE_SUNUCU_URL: ${{ inputs.kanal == 'test' && inputs.online_sunucu_url || '' }}
     steps:
       - uses: actions/checkout@v4
@@ -122,7 +127,7 @@ jobs:
         working-directory: mobile
         run: node scripts/surum-artir.cjs --goster
       - name: Validate test online settings
-        if: inputs.kanal == 'test' && inputs.online_gelistirme
+        if: inputs.kanal == 'test' && (inputs.online_gelistirme || inputs.online_test_giris)
         run: |
           if [ -z "$EXPO_PUBLIC_ONLINE_SUNUCU_URL" ]; then
             echo "::error::Online test ekranlarını açmak için online_sunucu_url girilmeli."
