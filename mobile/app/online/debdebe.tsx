@@ -88,6 +88,15 @@ function DebdebeEkran() {
         <Text style={{ fontFamily: F.serif, color: C.parchmentDim, fontSize: 12.5 }}>{applyParams(t("onl.db.gunluk"), [veri.sezon.bugun.kazanilan, veri.sezon.bugun.tavan])}</Text>
         <CizgiDugme etiket={veri.ben.levhaGorunur ? t("onl.db.levhaKapat") : t("onl.db.levhaAc")} icon="award" rtl={rtl} kucuk kapali={yukleniyor} onPress={() => void levha()} />
       </Cerceve>
+      <Baslik2 metin={t("onl.db.sezonDefteri")} rtl={rtl} />
+      {veri.sezon.oduller.map((o) => <Cerceve key={o.seviye + o.iz + o.urun} ic={{ padding: 10, gap: 4 }}>
+        <View style={{ flexDirection: yon(rtl), justifyContent: "space-between", alignItems: "center" }}>
+          <Text style={{ fontFamily: F.display, color: C.goldBright }}>{applyParams(t("onl.db.sezonOdul"), [o.seviye])}</Text>
+          <Text style={{ fontFamily: F.serif, color: C.parchmentDim, fontSize: 12 }}>{t("onl.db.iz." + o.iz)}</Text>
+        </View>
+        <Text style={{ fontFamily: F.display, color: C.parchment }}>{urunAdi(t, o.urun)}</Text>
+        <Text style={{ fontFamily: F.serif, color: o.sahip ? C.sage : o.acik ? C.gold : C.parchmentMuted, fontSize: 12 }}>{t(o.sahip ? "onl.db.odulSahip" : o.acik ? "onl.db.odulAcik" : "onl.db.odulKilitli")}</Text>
+      </Cerceve>)}
       <Baslik2 metin={t("onl.db.katalog")} rtl={rtl} sag={<Text style={{ color: C.gold }}>{veri.katalog.length}</Text>} />
       <View style={{ gap: 8 }}>
         {veri.katalog.map((x) => {
