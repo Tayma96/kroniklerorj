@@ -400,6 +400,71 @@ test("P5 çatışma sonucu bağımsız devlet kurar; P6 yönetim kararları ve g
   if (!sahteBeySonuc.ok) assert.equal(sahteBeySonuc.hata, "yetki_yok");
 });
 
+test("P6 ittifak: iki taraflı istek, kabul teyidi, ret ve süre aşımı idempotent işler", async () => {
+  const { devletYonet, ittifakIstekAl, ittifakYanitAl, ittifakOnayAl, devletAyi } = await import("../src/siyaset/devlet.ts");
+  const ad = (id: string) => BEYLIKLER.find((x) => x.id === id)!.ad;
+  const devletKur = (id: string, kisi: SiyasiKimlik) => {
+    const d = bolgeKur(id, 0);
+    d.devlet = {
+      v: 1, ad: ad(id), kurulusAy: 0, beyKisi: kisi.kisi, beyHesap: kisi.hesap, beyAd: kisi.ad,
+      vergiOrani: 0, divan: [], mogol: "diren", sultan: "bagimsiz", taninma: "taninmadi", yeminler: {},
+    };
+    return d;
+  };
+
+  const kaynakBey = kimlik("ittifak-kaynak", { yerlesim: "demirhan", bolge: "demirhan" });
+  const hedefBey = kimlik("ittifak-hedef", { yerlesim: "aksehir", bolge: "aksehir" });
+  const kaynak = devletKur("demirhan", kaynakBey);
+  const hedef = devletKur("aksehir", hedefBey);
+
+  assert.equal(devletYonet(kaynak, kaynakBey, { tur: "ittifak", hedefBolge: "aksehir" }), null);
+  const istek = kaynak.diplomasiGiden?.find((x) => x.tur === "ittifakIstek");
+  assert.ok(istek && istek.tur === "ittifakIstek");
+  assert.equal(ittifakIstekAl(hedef, "demirhan", istek.istekId, 0, ad("demirhan")), null);
+  assert.equal(ittifakIstekAl(hedef, "demirhan", istek.istekId, 0, ad("demirhan")), null, "aynı istek tekrar güvenli");
+  assert.equal(ittifakIstekAl(hedef, "demirhan", "sahte-istek", 0, "sahte ad"), "deger_sinir_disi");
+  assert.equal(devletYonet(hedef, hedefBey, { tur: "ittifakYanit", kaynakBolge: "demirhan", istekId: istek.istekId, karar: "kabul" }), null);
+  assert.equal(hedef.devlet?.ittifakGelen?.demirhan?.yanitlandi, true);
+  assert.equal(hedef.devlet?.ittifaklar?.demirhan?.durum, "kabulBekliyor");
+
+  const yanit = hedef.diplomasiGiden?.find((x) => x.tur === "ittifakYanit");
+  assert.ok(yanit && yanit.tur === "ittifakYanit");
+  assert.equal(ittifakYanitAl(kaynak, "aksehir", istek.istekId, "kabul", 0, ad("aksehir")), null);
+  assert.equal(kaynak.devlet?.ittifaklar?.aksehir?.durum, "aktif");
+  const onay = kaynak.diplomasiGiden?.find((x) => x.tur === "ittifakOnay");
+  assert.ok(onay && onay.tur === "ittifakOnay");
+  assert.equal(ittifakOnayAl(hedef, "demirhan", istek.istekId, 0, ad("demirhan")), null);
+  assert.equal(hedef.devlet?.ittifaklar?.demirhan?.durum, "aktif");
+  assert.equal(ittifakOnayAl(hedef, "demirhan", istek.istekId, 0, ad("demirhan")), null, "son teyit tekrar güvenli");
+  assert.equal(ittifakOnayAl(hedef, "demirhan", "sahte-istek", 0, ad("demirhan")), "hedef_uygun_degil");
+
+  const retKaynakBey = kimlik("ittifak-ret-kaynak", { yerlesim: "demirhan", bolge: "demirhan" });
+  const retHedefBey = kimlik("ittifak-ret-hedef", { yerlesim: "aksaray", bolge: "aksaray" });
+  const retKaynak = devletKur("demirhan", retKaynakBey);
+  const retHedef = devletKur("aksaray", retHedefBey);
+  assert.equal(devletYonet(retKaynak, retKaynakBey, { tur: "ittifak", hedefBolge: "aksaray" }), null);
+  const retIstek = retKaynak.diplomasiGiden?.find((x) => x.tur === "ittifakIstek");
+  assert.ok(retIstek && retIstek.tur === "ittifakIstek");
+  assert.equal(ittifakIstekAl(retHedef, "demirhan", retIstek.istekId, 0, ad("demirhan")), null);
+  assert.equal(devletYonet(retHedef, retHedefBey, { tur: "ittifakYanit", kaynakBolge: "demirhan", istekId: retIstek.istekId, karar: "ret" }), null);
+  assert.equal(ittifakYanitAl(retKaynak, "aksaray", retIstek.istekId, "ret", 0, ad("aksaray")), null);
+  assert.equal(retKaynak.devlet?.ittifaklar?.aksaray?.durum, "ret");
+  assert.equal(retKaynak.diplomasiGiden?.some((x) => x.tur === "ittifakOnay"), false);
+
+  const sureKaynak = devletKur("demirhan", kimlik("sure-kaynak", { yerlesim: "demirhan", bolge: "demirhan" }));
+  const sureHedef = devletKur("aksaray", kimlik("sure-hedef", { yerlesim: "aksaray", bolge: "aksaray" }));
+  const sureBey = { kisi: sureKaynak.devlet!.beyKisi, hesap: sureKaynak.devlet!.beyHesap, ad: sureKaynak.devlet!.beyAd, yerlesim: "demirhan", bolge: "demirhan", yas: 30, e: 0, olu: false, nam: 40, teveccuh: 0, haklar: ["bolgeMakami"] } as SiyasiKimlik;
+  assert.equal(devletYonet(sureKaynak, sureBey, { tur: "ittifak", hedefBolge: "aksaray" }), null);
+  const sureIstek = sureKaynak.diplomasiGiden?.find((x) => x.tur === "ittifakIstek");
+  assert.ok(sureIstek && sureIstek.tur === "ittifakIstek");
+  assert.equal(ittifakIstekAl(sureHedef, "demirhan", sureIstek.istekId, 0, ad("demirhan")), null);
+  devletAyi(sureKaynak, 3);
+  devletAyi(sureHedef, 3);
+  assert.equal(sureKaynak.devlet?.ittifakTalep, undefined);
+  assert.equal(sureKaynak.devlet?.ittifaklar?.aksaray?.durum, "suresiDoldu");
+  assert.equal(sureHedef.diplomasiGiden?.some((x) => x.tur === "ittifakYanit" && x.karar === "ret"), true, "yanıtsız gelen istek süre sonunda reddedilir");
+});
+
 test("P5 savunma üstün gelirse darbe bastırılır ve vali makamı boşalır", () => {
   const d = bolgeKur("demirhan", 0);
   const vali = kimlik("vali-savunma");
