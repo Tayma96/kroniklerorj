@@ -58,6 +58,8 @@ import {
   oyuncuArabuluculukCevap,
   oyuncuArabuluculukDonumu,
   oyuncuArabuluculukGeriAl,
+  oyuncuArabuluculukTaslak,
+  oyuncuArabuluculukImzala,
 } from "../src/yerlesim/arabuluculuk-oyuncu.ts";
 
 test("oyuncu arabuluculuk üç ayrı rıza olmadan taslağa geçmez", () => {
@@ -132,4 +134,47 @@ test("cevapsız oyuncu arabuluculuk daveti gerçek toplum ay dönümünde cezas�
   toplumDonumu(k, ac.deger.sa + 1);
   assert.equal(ac.deger.d, "dustu");
   assert.equal(ac.deger.kp, ac.deger.sa + 1);
+});
+
+
+test("arabulucu sürümlü uzlaşma taslağı oluşturur; iki tarafın güncel imzası olmadan onaylanmaz", () => {
+  const k = testKasabasi("develi", 700);
+  const s = oyuncuEkle(k, 161), kk = oyuncuEkle(k, 162), ar = oyuncuEkle(k, 163);
+  const ac = oyuncuArabuluculukAc(k, s, kk, ar, k.ay);
+  assert.ok(ac.ok);
+  if (!ac.ok) return;
+  const id = String(ac.deger.i);
+  assert.ok(oyuncuArabuluculukCevap(k, s, id, "kabul", k.ay).ok);
+  assert.ok(oyuncuArabuluculukCevap(k, kk, id, "kabul", k.ay).ok);
+  assert.ok(oyuncuArabuluculukCevap(k, ar, id, "kabul", k.ay).ok);
+  assert.equal(ac.deger.d, "taslak");
+
+  assert.ok(oyuncuArabuluculukTaslak(k, ar, id, 120, 0, "Zarar karşılığı ödeme", k.ay).ok);
+  assert.equal(ac.deger.d, "imzaBekliyor");
+  assert.equal(ac.deger.sv, 2);
+  assert.deepEqual(ac.deger.uz, { s: 120, k: 0, not: "Zarar karşılığı ödeme" });
+  assert.deepEqual(ac.deger.im, {});
+
+  assert.deepEqual(oyuncuArabuluculukImzala(k, ar, id, 2, k.ay), { ok: false, hata: "taraf_degil" });
+  assert.deepEqual(oyuncuArabuluculukImzala(k, s, id, 1, k.ay), { ok: false, hata: "teklif_gecersiz" });
+  assert.ok(oyuncuArabuluculukImzala(k, s, id, 2, k.ay).ok);
+  assert.equal(ac.deger.d, "imzaBekliyor", "tek taraf imzalayınca dosya onaylanmaz");
+  assert.ok(oyuncuArabuluculukImzala(k, kk, id, 2, k.ay).ok);
+  assert.equal(ac.deger.d, "onaylandi");
+});
+
+test("uzlaşma taslağı değişirse eski imzalar ve sürüm geçersizleşir", () => {
+  const k = testKasabasi("develi", 710);
+  const s = oyuncuEkle(k, 171), kk = oyuncuEkle(k, 172), ar = oyuncuEkle(k, 173);
+  const ac = oyuncuArabuluculukAc(k, s, kk, ar, k.ay);
+  assert.ok(ac.ok);
+  if (!ac.ok) return;
+  const id = String(ac.deger.i);
+  for (const x of [s, kk, ar]) assert.ok(oyuncuArabuluculukCevap(k, x, id, "kabul", k.ay).ok);
+  assert.ok(oyuncuArabuluculukTaslak(k, ar, id, 50, 10, undefined, k.ay).ok);
+  assert.ok(oyuncuArabuluculukImzala(k, s, id, 2, k.ay).ok);
+  assert.ok(oyuncuArabuluculukTaslak(k, ar, id, 60, 10, undefined, k.ay).ok);
+  assert.equal(ac.deger.sv, 3);
+  assert.deepEqual(ac.deger.im, {}, "taslak değişince eski imzalar silinir");
+  assert.equal(ac.deger.d, "imzaBekliyor");
 });
