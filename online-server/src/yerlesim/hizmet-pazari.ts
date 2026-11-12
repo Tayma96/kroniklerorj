@@ -1,6 +1,6 @@
 // E4.3: öğrenilmiş hizmeti süreli stoğa hazırlar; ilan, satın alma, teslim ve bozulma akışını yönetir.
 import type { MalId } from "../icerik/mallar.ts";
-import { hizmetAcik } from "./beceri-etki.ts";
+import { hizmetAcik, sinerjiAcik } from "./beceri-etki.ts";
 import { envanterEkle } from "./npc-taban.ts";
 import { halDegistir, type Hal } from "./hal.ts";
 import { hizmetEkle } from "./meslek.ts";
@@ -14,6 +14,11 @@ import { basarili, hata, type Sonuc } from "../tipler.ts";
 /** [PARAMETRE] Tek hazırlamada en çok 5, oyuncu/hizmet başına süresi geçmemiş stokta en çok 20 adet. */
 export const HIZMET_HAZIR_ADET_EN_COK = 5;
 export const HIZMET_STOK_EN_COK = 20;
+
+/** Hizmet düğümü ve varsa tarifte tanımlı çapraz meslek sinerjisi birlikte aranır. */
+export function hizmetYetkiliMi(kar: Karakter, tarif: HizmetTarifi): boolean {
+  return hizmetAcik(kar, tarif.id) && (!tarif.acar || sinerjiAcik(kar, tarif.acar));
+}
 
 export interface HizmetHazirlamaSonucu {
   stok: HizmetStogu;
@@ -33,7 +38,7 @@ export function hizmetHazirla(
   if (!Number.isInteger(adetHam) || (adetHam as number) < 1 || (adetHam as number) > HIZMET_HAZIR_ADET_EN_COK)
     return hata("gecersiz_istek");
   const adet = adetHam as number;
-  if (!hizmetAcik(kar, tarif.id)) return hata("dugum_kapali");
+  if (!hizmetYetkiliMi(kar, tarif)) return hata("dugum_kapali");
 
   const stoklar = (ek.hs ??= []);
   const eldeki = stoklar
