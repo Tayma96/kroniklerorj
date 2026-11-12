@@ -1,6 +1,6 @@
 // E5–E7 topluluk yüzeyi: meşrep seçimi, ortak dert katkısı, şenlik, hami/müdavim ve zaviye özeti.
 import { useCallback, useEffect, useState } from "react";
-import { View, Text, ScrollView } from "react-native";
+import { View, Text, TextInput, ScrollView } from "react-native";
 import { useRouter } from "expo-router";
 import { useI18n, applyParams } from "../../lib/i18n";
 import { C, F } from "../../lib/theme";
@@ -31,7 +31,7 @@ function ToplulukEkran() {
   const [secim, setSecim] = useState<Mesrep>({ el: "orta", cesaret: "orta", gurur: "orta" });
   const [yukleniyor, setYukleniyor] = useState(false);
   const [hata, setHata] = useState<string | null>(null);
-  const [bilgi, setBilgi] = useState<string | null>(null);
+  const [bilgi, setBilgi] = useState<string | null>(null);\n  const [hedefId, setHedefId] = useState("");
 
   const yukle = useCallback(async () => {
     if (!online.profil) return;
@@ -148,9 +148,35 @@ function ToplulukEkran() {
         onPress={() => void gonder(() => istemci.senlik({ katki: "hayir", tutar: 1, istekNo: istekNoUret() }), t("onl.topluluk.senlik.katildi"))} /> : null}
     </Cerceve> : <Text style={{ fontFamily: F.serif, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{t("onl.topluluk.senlik.yok")}</Text>}
 
+    <Baslik2 metin={t("onl.topluluk.hami.baslik")} rtl={rtl} />
+    {durum?.hami.gelen.map((b) => <Cerceve key={b.gonderen + b.acilis} ic={{ padding: 11, gap: 8 }}>
+      <Text style={{ fontFamily: F.serif, color: C.parchment, fontSize: 14, textAlign: hiza(rtl) }}>{applyParams(t("onl.topluluk.hami.teklif"), [b.hami.ad, b.cirak.ad])}</Text>
+      <View style={{ flexDirection: yon(rtl), gap: 8 }}>
+        <CizgiDugme etiket={t("onl.topluluk.hami.kabul")} icon="check" rtl={rtl} kucuk kapali={yukleniyor}
+          onPress={() => void gonder(() => istemci.hami({ islem: "kabul", hedef: b.gonderen, istekNo: istekNoUret() }), t("onl.topluluk.hami.kabulEdildi"))} />
+        <CizgiDugme etiket={t("onl.topluluk.hami.ret")} icon="x" rtl={rtl} kucuk kapali={yukleniyor}
+          onPress={() => void gonder(() => istemci.hami({ islem: "ret", hedef: b.gonderen, istekNo: istekNoUret() }), t("onl.topluluk.hami.reddedildi"))} />
+      </View>
+    </Cerceve>)}
+    {durum?.hami.suren.map((b) => {
+      const diger = b.rolu === "hami" ? b.cirak.ad : b.hami.ad;
+      const hedef = b.rolu === "hami" ? b.cirak.id : b.hami.id;
+      return <Cerceve key={b.hami.id + b.cirak.id} ic={{ padding: 11, gap: 8 }}>
+        <Text style={{ fontFamily: F.serif, color: C.parchment, fontSize: 14, textAlign: hiza(rtl) }}>{applyParams(t("onl.topluluk.hami.aktif"), [diger])}</Text>
+        <CizgiDugme etiket={t("onl.topluluk.hami.birak")} icon="unlink" rtl={rtl} kucuk kapali={yukleniyor}
+          onPress={() => void gonder(() => istemci.hami({ islem: "birak", hedef, istekNo: istekNoUret() }), t("onl.topluluk.hami.birakildi"))} />
+      </Cerceve>;
+    })}
+    {durum?.hami.giden.map((b) => <Text key={b.gonderen + b.acilis} style={{ fontFamily: F.serif, fontSize: 13, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{applyParams(t("onl.topluluk.hami.bekliyor"), [b.hami.ad, b.cirak.ad])}</Text>)}
+    {durum && (durum.hami.hamiOlabilir || durum.hami.yeniGelen) ? <Cerceve ic={{ padding: 12, gap: 8 }}>
+      <Text style={{ fontFamily: F.serif, color: C.parchmentDim, fontSize: 13, textAlign: hiza(rtl) }}>{t(durum.hami.hamiOlabilir ? "onl.topluluk.hami.uygun" : "onl.topluluk.hami.yeniGelen")}</Text>
+      <TextInput value={hedefId} onChangeText={setHedefId} autoCapitalize="none" placeholder={t("onl.topluluk.hami.hedef")} placeholderTextColor={C.parchmentMuted}
+        style={{ minHeight: 42, borderWidth: 1, borderColor: C.goldDim, borderRadius: 8, color: C.parchment, paddingHorizontal: 10, textAlign: hiza(rtl), fontFamily: F.display }} />
+      <CizgiDugme etiket={t(durum.hami.hamiOlabilir ? "onl.topluluk.hami.teklifVer" : "onl.topluluk.hami.iste")} icon="handshake" rtl={rtl} kapali={yukleniyor || !/^o[1-9][0-9]{0,8}$/.test(hedefId.trim())}
+        onPress={() => void gonder(() => istemci.hami({ islem: durum.hami.hamiOlabilir ? "teklif" : "iste", hedef: hedefId.trim(), istekNo: istekNoUret() }), t("onl.topluluk.hami.gonderildi"))} />
+    </Cerceve> : null}
     <Baslik2 metin={t("onl.topluluk.toplumsal")} rtl={rtl} />
     {durum ? <Cerceve ic={{ padding: 12, gap: 8 }}>
-      <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchment, textAlign: hiza(rtl) }}>{applyParams(t("onl.topluluk.hami"), [durum.hami.suren.length, durum.hami.gelen.length])}</Text>
       <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchment, textAlign: hiza(rtl) }}>{applyParams(t("onl.topluluk.mudavim"), [durum.mudavim.rozet ? t("onl.topluluk.rozet." + durum.mudavim.rozet) : t("onl.topluluk.rozet.yok"), durum.mudavim.ziyaret])}</Text>
       <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchment, textAlign: hiza(rtl) }}>{applyParams(t("onl.topluluk.zaviye"), [durum.zaviye.kasabada.length, durum.zaviye.benim ? 1 : 0])}</Text>
     </Cerceve> : null}
