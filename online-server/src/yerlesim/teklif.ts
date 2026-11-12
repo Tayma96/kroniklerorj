@@ -408,8 +408,10 @@ function kabulUygula(k: Kasaba, t: Teklif, ay: number): Sonuc<OlayTaslagi[]> {
       t.sn = "kayit";
       break;
     case "is": {
-      const aktifIsSayisi = (k.tp?.tk ?? []).filter((x) => x.t === "is" && x.d === "surer" && (x.g === alici.o || x.a === alici.o)).length;
-      if (aktifIsSayisi >= IS_SURER_EN_COK) return hata("teklif_siniri");
+      // Teklif açılırken iki taraf da denetlenir; fakat karşı tarafın bekleyen başka teklifi
+      // bu arada kabul edilmiş olabilir. Kabul anında göndereni ve çalışanı birlikte yeniden say.
+      const aktifIsSayisi = (oyuncu: string) => (k.tp?.tk ?? []).filter((x) => x.t === "is" && x.d === "surer" && (x.g === oyuncu || x.a === oyuncu)).length;
+      if (aktifIsSayisi(gon.o) >= IS_SURER_EN_COK || aktifIsSayisi(alici.o) >= IS_SURER_EN_COK) return hata("teklif_siniri");
       const kural = isKurali(t.s.it);
       if (!kural || !hizmetAcik(alici, kural.hizmet)) return hata("dugum_kapali");
       if (t.s.it === "arabuluculuk") {
