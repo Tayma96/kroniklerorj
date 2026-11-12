@@ -183,7 +183,7 @@ export function sahteToplumKur(kasabaAl: () => SahteKasaba | null, meslekAl: () 
       eksenler: (["el", "cesaret", "gurur"] as const).map((eksen) => ({
         eksen, secili: secim[eksen], uclar: [{ uc: "comert", etkiler: [] }, { uc: "hesapli", etkiler: [] }, { uc: "temkinli", etkiler: [] }, { uc: "gozupek", etkiler: [] }, { uc: "mutevazi", etkiler: [] }, { uc: "gururlu", etkiler: [] }],
       })) },
-    hami: { suren: [], gelen: [], giden: [], biten: [] },
+    hami: { hamiOlabilir: true, yeniGelen: false, suren: [], gelen: [{ hami: { id: "o1", ad: "Ayşe", meslek: "demirci" }, cirak: { id: benId(), ad: benAd().ad, meslek: null }, gonderen: "o1", rolu: "cirak", durum: "acik", acilis: ay(), asamalar: [] }], giden: [], biten: [], buAyHamiNami: 0 },
     ortakDert: { acik: [{ id: "d1", tur: "haydut", durum: "acik", acilis: ay() - 1, bitis: ay() + 3, esik: 60, puan: dertPuan, halk: 8, defter: [], benim: { sayi: 0, kalan: 3, puan: 0 } }], son: [], uygunKatkilarim: ["elEmegi", "nobet", "moral"], kurallar: {} },
     senlik: { simdiki: { id: "nevruz-1252", tur: "nevruz", durum: "acik", acilis: ay() - 1, bitis: ay() + 2, levha: [], benim: { sayi: senlikSayi, kalan: 3 - senlikSayi } }, sonKapanan: null, kurallar: {} },
     mudavim: { rozet: "mudavim", ziyaret: 4, sonraki: { rozet: "hanDemirbasi", gereken: 6 }, indirim: { deger: 2, tavan: 5 } },
@@ -191,7 +191,7 @@ export function sahteToplumKur(kasabaAl: () => SahteKasaba | null, meslekAl: () 
     gostergeler: { arz: 56, moral: 61, asayis: 48, denge: 50, taban: 0, tavan: 100 },
   });
   return {
-    async toplulukOku() { await bekle(); return basarili(pano()); },
+    async toplulukOku() { await bekle(); return basarili(pano()); },\n    async hami(i) { await bekle(); return basarili({ islem: i.islem }); },
     async mesrep(i) { await bekle(); secim = { el: i.el, cesaret: i.cesaret, gurur: i.gurur }; return basarili({ mesrep: pano().mesrep }); },
     async ortakDert(i) { await bekle(); dertPuan += i.katki === "elEmegi" ? 4 : 8; return basarili({ puan: dertPuan }); },
     async senlik(i) { await bekle(); senlikSayi = Math.min(3, senlikSayi + 1); return basarili({ sayi: senlikSayi }); },
