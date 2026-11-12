@@ -207,3 +207,26 @@ test("emanete alma: taraflardan birinin bakiyesi yetmezse ikinci imza ve iki bak
   assert.equal(s.pa, onceS, "şikâyetçinin bakiyesi kısmen kesilmez");
   assert.equal(kk.pa, onceK, "karşı tarafın bakiyesi de değişmez");
 });
+
+
+test("imza öncesi her katılımcı taslaktan çekilebilir; ilk imzadan sonra tek taraflı çekilme kapanır", () => {
+  const k = testKasabasi("develi", 730);
+  const s = oyuncuEkle(k, 191), kk = oyuncuEkle(k, 192), ar = oyuncuEkle(k, 193);
+  const ac = oyuncuArabuluculukAc(k, s, kk, ar, k.ay);
+  assert.ok(ac.ok);
+  if (!ac.ok) return;
+  const id = String(ac.deger.i);
+  for (const x of [s, kk, ar]) assert.ok(oyuncuArabuluculukCevap(k, x, id, "kabul", k.ay).ok);
+  assert.ok(oyuncuArabuluculukTaslak(k, ar, id, 40, 0, undefined, k.ay).ok);
+  assert.ok(oyuncuArabuluculukGeriAl(k, kk, id, k.ay).ok);
+  assert.equal(ac.deger.d, "geri");
+
+  const ac2 = oyuncuArabuluculukAc(k, s, kk, ar, k.ay);
+  assert.ok(ac2.ok);
+  if (!ac2.ok) return;
+  const id2 = String(ac2.deger.i);
+  for (const x of [s, kk, ar]) assert.ok(oyuncuArabuluculukCevap(k, x, id2, "kabul", k.ay).ok);
+  assert.ok(oyuncuArabuluculukTaslak(k, ar, id2, 40, 0, undefined, k.ay).ok);
+  assert.ok(oyuncuArabuluculukImzala(k, s, id2, 2).ok);
+  assert.deepEqual(oyuncuArabuluculukGeriAl(k, kk, id2, k.ay), { ok: false, hata: "teklif_kapandi" });
+});
