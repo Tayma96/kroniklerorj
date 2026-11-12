@@ -9,6 +9,7 @@ import {
   TEKLIF_TURLERI, TOPLUM_SINIR,
   type BagDurumu, type DuzenGorunumu, type GelenCevap, type GelenYaniti, type OyuncuEylemi, type OyuncuMeslekSatiri, type OyuncuProfili,
   type SoylentiGorunumu, type TeklifGorunumu, type TeklifSartlari, type TeklifTuru, type TeveccuhGorunumu, type VitrinArmagani,
+  type ToplulukDurumu,
 } from "./toplum-veri";
 
 interface SOyuncu { o: string; ad: string; k: Cinsiyet; yas: number; meslekler: OyuncuMeslekSatiri[]; tv: number; vitrin: VitrinArmagani[]; nam: number[] }
@@ -174,7 +175,26 @@ export function sahteToplumKur(kasabaAl: () => SahteKasaba | null, meslekAl: () 
     if (d !== "bitti") x.emanet = 0;
   };
 
+  let secim = { el: "orta", cesaret: "orta", gurur: "orta" };
+  let dertPuan = 28;
+  let senlikSayi = 1;
+  const pano = (): ToplulukDurumu => ({
+    mesrep: { secildi: Object.values(secim).some((x) => x !== "orta"), secimAcik: true,
+      eksenler: (["el", "cesaret", "gurur"] as const).map((eksen) => ({
+        eksen, secili: secim[eksen], uclar: [{ uc: "comert", etkiler: [] }, { uc: "hesapli", etkiler: [] }, { uc: "temkinli", etkiler: [] }, { uc: "gozupek", etkiler: [] }, { uc: "mutevazi", etkiler: [] }, { uc: "gururlu", etkiler: [] }],
+      })) },
+    hami: { suren: [], gelen: [], giden: [], biten: [] },
+    ortakDert: { acik: [{ id: "d1", tur: "haydut", durum: "acik", acilis: ay() - 1, bitis: ay() + 3, esik: 60, puan: dertPuan, halk: 8, defter: [], benim: { sayi: 0, kalan: 3, puan: 0 } }], son: [], uygunKatkilarim: ["elEmegi", "nobet", "moral"], kurallar: {} },
+    senlik: { simdiki: { id: "nevruz-1252", tur: "nevruz", durum: "acik", acilis: ay() - 1, bitis: ay() + 2, levha: [], benim: { sayi: senlikSayi, kalan: 3 - senlikSayi } }, sonKapanan: null, kurallar: {} },
+    mudavim: { rozet: "hanMudavimi", ziyaret: 4, sonraki: { rozet: "hanDemirbasi", gereken: 6 }, indirim: { deger: 2, tavan: 5 } },
+    zaviye: { benim: null, davetler: [], kasabada: [], ahiSarti: { teveccuhKademe: 2, benimKademem: 1, adayim: false } },
+    gostergeler: { arz: 56, moral: 61, asayis: 48, denge: 50, taban: 0, tavan: 100 },
+  });
   return {
+    async toplulukOku() { await bekle(); return basarili(pano()); },
+    async mesrep(i) { await bekle(); secim = { el: i.el, cesaret: i.cesaret, gurur: i.gurur }; return basarili({ mesrep: pano().mesrep }); },
+    async ortakDert(i) { await bekle(); dertPuan += i.katki === "elEmegi" ? 4 : 8; return basarili({ puan: dertPuan }); },
+    async senlik(i) { await bekle(); senlikSayi = Math.min(3, senlikSayi + 1); return basarili({ sayi: senlikSayi }); },
     async oyuncu(id, dil) { await bekle(); return profil(id, dil); },
     async gelen(dil) { await bekle(); return eko() ? basarili(gelen(dil)) : basarisiz("profil_yok"); },
     async dostluk(i) {
