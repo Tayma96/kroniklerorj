@@ -129,12 +129,21 @@ export interface SoylentiGorunumu {
 }
 export type AyliKisi = KisiAdi & { ay: number };
 /** GET /v1/gelen */
+export interface OyuncuArabuluculukGorunumu {
+  id: string; durum: string; rol: "sikayetci" | "karsi" | "arabulucu";
+  sikayetci: KisiAdi; karsi: KisiAdi; arabulucu: KisiAdi;
+  riza: { s?: number; k?: number; ar?: number };
+  uzlasma?: { s: number; k: number; not?: string };
+  surum: number; imza: { s?: number; k?: number };
+  acilisAyi: number; sonCevapAyi: number; kapanisAyi?: number;
+}
 export interface GelenYaniti {
   ay: number;
   gelen: TeklifGorunumu[];
   giden: TeklifGorunumu[];
   suren: TeklifGorunumu[];
   kapanan: TeklifGorunumu[];
+  arabuluculuk: OyuncuArabuluculukGorunumu[];
   dostluk: { gelen: AyliKisi[]; giden: AyliKisi[]; dostlar: AyliKisi[] };
   husumetler: (AyliKisi & { yon: "ilanEttim" | "ilanEdildi" })[];
   soylentiler: SoylentiGorunumu[];
@@ -215,7 +224,11 @@ const teklifListesi = (v: unknown) => dizi(v) && v.every(teklifMi);
 export function gelenMi(v: unknown): v is GelenYaniti {
   if (!nesne(v) || !sayi(v.ay)) return false;
   const d = v.dostluk;
-  return teklifListesi(v.gelen) && teklifListesi(v.giden) && teklifListesi(v.suren) && teklifListesi(v.kapanan)
+  const arabuluculuk = dizi(v.arabuluculuk) && v.arabuluculuk.every((x) => nesne(x) && metin(x.id) && metin(x.durum)
+    && (x.rol === "sikayetci" || x.rol === "karsi" || x.rol === "arabulucu") && kisiMi(x.sikayetci) && kisiMi(x.karsi) && kisiMi(x.arabulucu)
+    && nesne(x.riza) && sayi(x.surum) && nesne(x.imza) && sayi(x.acilisAyi) && sayi(x.sonCevapAyi)
+    && (x.uzlasma === undefined || (nesne(x.uzlasma) && sayi(x.uzlasma.s) && sayi(x.uzlasma.k))));
+  return teklifListesi(v.gelen) && teklifListesi(v.giden) && teklifListesi(v.suren) && teklifListesi(v.kapanan) && arabuluculuk
     && nesne(d) && ayliListe(d.gelen) && ayliListe(d.giden) && ayliListe(d.dostlar) && ayliListe(v.husumetler)
     && dizi(v.soylentiler) && v.soylentiler.every((s) => nesne(s) && metin(s.id) && metin(s.tur) && sayi(s.bilen) && mantik(s.yalanlandi))
     && dizi(v.engellenenler) && v.engellenenler.every(kisiMi);
