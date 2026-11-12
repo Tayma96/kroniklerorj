@@ -672,10 +672,10 @@ test("fiziksel senet eki: alacaklı senedi tekliften kabul/ret akışına göre 
     const r = teklifOlustur(k, a, b, { tur: "borc", yon: "ver", tutar: 12, vade: 3, senetli: true }, k.ay);
     assert.ok(r.ok);
     if (!r.ok) return;
-    assert.equal(a.ev.senet, 0, "senet teklif süresince emanette");
+    assert.equal(a.ev?.senet ?? 0, 0, "senet teklif süresince emanette");
     assert.equal(r.deger.teklif.s.se, 1);
     assert.ok(teklifCevap(k, b, `t${r.deger.teklif.i}`, "ret", {}, k.ay).ok);
-    assert.equal(a.ev.senet, 1, "ret senedi iade eder");
+    assert.equal(a.ev?.senet ?? 0, 1, "ret senedi iade eder");
     assert.equal(r.deger.teklif.s.sn, 1);
     assert.equal(r.deger.teklif.s.se, undefined);
   }
@@ -699,9 +699,9 @@ test("fiziksel senet eki: alacaklı senedi tekliften kabul/ret akışına göre 
     const r = teklifOlustur(k, a, b, { tur: "borc", yon: "iste", tutar: 12, vade: 3, senetli: true }, k.ay);
     assert.ok(r.ok);
     if (!r.ok) return;
-    assert.equal(b.ev.senet, 1, "teklif cevabı gelmeden senet alınmaz");
+    assert.equal(b.ev?.senet ?? 0, 1, "teklif cevabı gelmeden senet alınmaz");
     assert.ok(teklifCevap(k, b, `t${r.deger.teklif.i}`, "kabul", {}, k.ay).ok);
-    assert.equal(b.ev.senet, 0, "alacaklı kabulünde senet tüketilir");
+    assert.equal(b.ev?.senet ?? 0, 0, "alacaklı kabulünde senet tüketilir");
     assert.equal(r.deger.teklif.s.sn, 1);
   }
   // Alacaklının fiziksel senedi yoksa kabul reddedilir ve para/borç durumu değişmez.
