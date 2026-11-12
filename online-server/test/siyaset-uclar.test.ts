@@ -270,9 +270,6 @@ test("P6 ittifak iki bölge arasında üç aşamalı, tekrar güvenli outbox ile
 
   // Hedef ittifak süresi dolduktan sonra eski teyit mesajı onu yeniden açamaz.
   hedefSon.devlet!.ittifaklar!.demirhan!.durum = "suresiDoldu";
-  const gecikmisTeyit = await bolgeCagir(env, {
-    islem: "ittifakOnayAl", bolge: "aksehir", kaynak: "demirhan",
-    istekId: gelen.istekId, ay, ad: "Demirhan Beyliği",
-  });
-  assert.equal(gecikmisTeyit.ok, false);
+  const { ittifakOnayAl } = await import("../src/siyaset/devlet.ts");
+  assert.equal(ittifakOnayAl(hedefSon, "demirhan", gelen.istekId, ay, "Demirhan Beyliği"), "hedef_uygun_degil");
 });
