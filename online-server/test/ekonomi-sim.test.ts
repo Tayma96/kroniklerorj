@@ -42,6 +42,8 @@ const PAZAR_STOK = 10;
 const ALIM_PAYI = 1.3;
 /** Alet ve nalda alıcı rekabeti daha güçlü; botun başlangıç teklifini tabana yaklaştırır. */
 const alimPayi = (mal: MalId) => mal === "alet" || mal === "nal" ? 1.1 : ALIM_PAYI;
+/** Test pazarında tek tedarikçili alet/nal alım ilanı 1,3× tabanı aşamaz. */
+const pazarTavan = (mal: MalId) => mal === "alet" || mal === "nal" ? 1.3 : NPC_CARPAN;
 
 type M = "ciftci" | "oduncu" | "demirci" | "marangoz" | "dokumaci" | "asci";
 /** Oyuncu planı: meslek ve verilen düğümler (öğrenme süresi simülasyon dışı). Oduncular ya madende (cevher, kömür)
@@ -163,7 +165,7 @@ function ekonomiSim(pompali: boolean) {
           const son = (k.ek?.il ?? []).filter((x) => x.t === "al" && x.o === c.o && x.ml === mal && x.d !== "acik").at(-1);
           let pay = teklifPayi.get(anahtar) ?? alimPayi(mal);
           if (son && son.i !== sonIlan.get(anahtar)) {
-            pay = son.n > 0 ? Math.min(NPC_CARPAN, pay * 1.25) : Math.max(1, pay * 0.95);
+            pay = son.n > 0 ? Math.min(pazarTavan(mal), pay * 1.25) : Math.max(1, pay * 0.95);
             sonIlan.set(anahtar, son.i);
           }
           teklifPayi.set(anahtar, pay);
@@ -266,7 +268,7 @@ function ekonomiSim(pompali: boolean) {
         const son = (k.ek?.il ?? []).filter((x) => x.t === "sat" && x.o === c.o && x.ml === mal && x.d !== "acik").at(-1);
         let pay = satisPayi.get(anahtar) ?? alimPayi(mal);
         if (son && son.i !== sonIlan.get(anahtar)) {
-          pay = son.n === 0 ? Math.min(NPC_CARPAN, pay * 1.15) : Math.max(1, pay * 0.9);
+          pay = son.n === 0 ? Math.min(pazarTavan(mal), pay * 1.15) : Math.max(1, pay * 0.9);
           sonIlan.set(anahtar, son.i);
         }
         satisPayi.set(anahtar, pay);
