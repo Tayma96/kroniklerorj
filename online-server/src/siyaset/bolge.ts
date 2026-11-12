@@ -6,7 +6,7 @@ import { BEYLIKLER } from "../dunya-veri.ts";
 import { basarili, hata, type HataKodu, type Sonuc } from "../tipler.ts";
 import { mesruiyetGorunumu, bolgeMesruiyeti } from "./mesruiyet.ts";
 import { mogolEtkisi } from "./mogol.ts";
-import { darbeAyi, darbeDestekle, darbeEsigi, darbeGorunumu, darbeHazirla, darbeIlanEt, darbeSadakatYatir, darbeSavunmaYaz, darbeVazgec } from "./darbe.ts";
+import { darbeAyi, darbeBarisTeklifEt, darbeBarisYanit, darbeDestekle, darbeEsigi, darbeGorunumu, darbeHazirla, darbeIlanEt, darbeSadakatYatir, darbeSavunmaYaz, darbeVazgec } from "./darbe.ts";
 import { devletAyi, devletGorunumu, devletYemin, devletYonet } from "./devlet.ts";
 import {
   adayUygunMu,
@@ -609,6 +609,21 @@ export function bolgeEylem(d: BolgeDurumu, kimlik: SiyasiKimlik, g: Govde, simdi
       if (h) return hata(h);
       kayitEkle(d, ay, "darbeSavunma", kimlik.kisi, { k: "kayit.darbeSavunma", p: { rol: r.deger.k.tur } }, { koltuk: r.deger.k.id });
       return basarili({ islem: "darbeSavunma", dokum: darbeGorunumu(d, kimlik) });
+    }
+    case "darbeBarisTeklif": {
+      const h = darbeBarisTeklifEt(d, kimlik, g.istekId, ay);
+      if (h) return hata(h);
+      kayitEkle(d, ay, "darbeBarisTeklif", kimlik.kisi, { k: "kayit.darbeBarisTeklif" });
+      return basarili({ islem: "darbeBarisTeklif", dokum: darbeGorunumu(d, kimlik) });
+    }
+    case "darbeBarisYanit": {
+      const h = darbeBarisYanit(d, kimlik, g.istekId, g.karar, ay);
+      if (h) return hata(h);
+      const kabul = g.karar === "kabul";
+      kayitEkle(d, ay, kabul ? "darbeBarisKabul" : "darbeBarisRet", kimlik.kisi, {
+        k: kabul ? "kayit.darbeBarisKabul" : "kayit.darbeBarisRet",
+      });
+      return basarili({ islem: "darbeBarisYanit", dokum: darbeGorunumu(d, kimlik) });
     }
     case "darbeSadakat": {
       const r = oyuncuKoltugu(d, `vali:${d.id}`, kimlik, simdi);
