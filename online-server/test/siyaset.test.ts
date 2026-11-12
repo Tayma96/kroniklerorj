@@ -450,7 +450,7 @@ test("P6 ittifak: iki taraflı istek, kabul teyidi, ret ve süre aşımı idempo
   assert.equal(ittifakIstekAl(retHedef, "demirhan", retIstek.istekId, 0, ad("demirhan")), null);
   assert.equal(devletYonet(retHedef, retHedefBey, { tur: "ittifakYanit", kaynakBolge: "demirhan", istekId: retIstek.istekId, karar: "ret" }), null);
   assert.equal(ittifakYanitAl(retKaynak, "yenisehir", retIstek.istekId, "ret", 0, ad("yenisehir")), null);
-  assert.equal(retKaynak.devlet?.ittifaklar?.aksaray?.durum, "ret");
+  assert.equal(retKaynak.devlet?.ittifaklar?.yenisehir?.durum, "ret");
   assert.equal(retKaynak.diplomasiGiden?.some((x) => x.tur === "ittifakOnay"), false);
 
   const sureKaynak = devletKur("demirhan", kimlik("sure-kaynak", { yerlesim: "demirhan", bolge: "demirhan" }));
