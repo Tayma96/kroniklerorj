@@ -1,0 +1,45 @@
+# Yalnız elle tetiklenir: çevrimiçi Worker'ı seçilen dalın koduyla dağıtır.
+# apk push'larına bağlanmaz; eski server/ (Diyar MP) dağıtımına dokunmaz.
+# Gerekli GitHub Actions secret: CLOUDFLARE_API_TOKEN.
+# Worker secrets (OTURUM_ANAHTARI, YONETICI_EPOSTALAR, REALTIME_APP_TOKEN vb.)
+# Cloudflare Worker üzerinde önceden tanımlanmalıdır; bu iş akışı bunları okumaz veya yazmaz.
+name: Deploy Online Server
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+      - name: Check Cloudflare deployment credential
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
+            echo "::error::GitHub Actions secret CLOUDFLARE_API_TOKEN tanımlı değil."
+            exit 1
+          fi
+      - name: Install TypeScript toolchain
+        working-directory: mobile
+        run: npm ci --no-audit --no-fund
+      - name: Online server tests
+        working-directory: online-server
+        run: npm test
+      - name: Online server typecheck
+        working-directory: online-server
+        run: npm run typecheck
+      - name: Deploy selected branch to Cloudflare
+        working-directory: online-server
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: npx wrangler deploy
