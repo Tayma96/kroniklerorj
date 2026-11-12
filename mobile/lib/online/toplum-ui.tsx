@@ -500,7 +500,7 @@ export function ArabuluculukKarti({ x, toplum }: { x: OyuncuArabuluculukGorunumu
       <CizgiDugme etiket={t("onl.tp.arb.taslakKaydet")} icon="scroll" rtl={rtl} kucuk onPress={() => { void gonder("taslak", { sTutari, kTutari, not }); }} />
     </View> : null}
     {x.durum === "imzaBekliyor" && taraf && !imzali ? <AltinDugme etiket={t("onl.tp.arb.imzala") + " · v" + x.surum} icon="check-circle" rtl={rtl} bekliyor={toplum.bekliyor("arabuluculuk:" + x.id + ":imza")} onPress={() => { void gonder("imza", { surum: x.surum }); }} /> : null}
-    {x.durum === "emanette" ? <AltinDugme etiket={t("onl.tp.arb.emanetiUygula")} icon="check-circle" rtl={rtl} bekliyor={toplum.bekliyor("arabuluculuk:" + x.id + ":uygula")} onPress={() => { void gonder("uygula"); }} /> : null}
+    {x.durum === "emanette" && taraf ? <AltinDugme etiket={t("onl.tp.arb.emanetiUygula")} icon="check-circle" rtl={rtl} bekliyor={toplum.bekliyor("arabuluculuk:" + x.id + ":uygula")} onPress={() => { void gonder("uygula"); }} /> : null}
     {hata ? <Bant metin={t(hataAnahtari(hata))} rtl={rtl} /> : null}
     {tamam ? <Bant tur="bilgi" metin={t("onl.tp.arb.islendi")} rtl={rtl} /> : null}
   </Cerceve>;
