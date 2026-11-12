@@ -73,7 +73,7 @@ export type MalId = (typeof MAL_IDLERI)[number];
  * akçesiyle denk; §3.1'in 2'si işleyen meslekleri girdi kıtlığında aç bırakıyordu). Ham mallar (buğday, bakla, et,
  * post) katalog değerinde; dikey dilim malları (denge denetimi 9 Kasım) değişmedi. */
 export const MALLAR: Record<MalId, { taban: number; meslek: MeslekId; omur?: number }> = {
-  odun: { taban: 2, meslek: "oduncu" },
+  odun: { taban: 1, meslek: "oduncu" },
   sertOdun: { taban: 3, meslek: "oduncu" },
   tas: { taban: 1, meslek: "oduncu" },
   ot: { taban: 1, meslek: "sifaci" },
