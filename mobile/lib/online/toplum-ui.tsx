@@ -483,6 +483,7 @@ export function ArabuluculukKarti({ x, toplum }: { x: OyuncuArabuluculukGorunumu
     </View>
     {[x.sikayetci, x.karsi, x.arabulucu].map((kisi, i) => <Text key={kisi.id} style={{ fontFamily: F.serif, fontSize: 14, color: C.parchmentDim, textAlign: hiza(rtl) }}>{[t("onl.tp.arb.sikayetci"), t("onl.tp.arb.karsi"), t("onl.tp.arb.arabulucu")][i]}: {kisi.ad}</Text>)}
     <Text style={{ fontFamily: F.serifItalic, fontSize: 12.5, lineHeight: 17, color: C.parchmentMuted }}>{t("onl.tp.arb.emanetNot")}</Text>
+    {x.husumetCozuldu ? <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.sage, textAlign: hiza(rtl) }}>{t("onl.tp.arb.husumetCozuldu")}</Text> : null}
     {x.uzlasma ? <View style={{ gap: 3 }}>
       <Text style={{ fontFamily: F.display, fontSize: 12, color: C.gold }}>{t("onl.tp.arb.uzlasma")} · v{x.surum}</Text>
       <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchmentDim, textAlign: hiza(rtl) }}>{t("onl.tp.arb.sOder")}: {x.uzlasma.s} · {t("onl.tp.arb.kOder")}: {x.uzlasma.k}</Text>
