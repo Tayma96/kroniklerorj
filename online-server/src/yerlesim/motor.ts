@@ -1283,6 +1283,11 @@ export class YerlesimMotoru {
   async teklif(hesapId: string, govde: unknown): Promise<Sonuc<unknown>> {
     if (!nesneMi(govde)) return hata("gecersiz_istek");
     const dil = dilCoz(govde.dil);
+    if (govde.is === "mektup") {
+      const hedef = this.#sakinKimligi(govde.mektupHedef);
+      if (!hedef) return hata("kisi_yok");
+      await this.#yukle([hedef]);
+    }
     return this.#karsilikli(hesapId, govde, (kar, o, ay, ek) => {
       const r = teklifOlustur(this.kasaba, kar, o, govde, ay);
       if (!r.ok) return r;
