@@ -284,8 +284,9 @@ function isBecerisi(kar: Karakter, meslek: "arabulucu" | "asker" | "katip", dugu
 test("iki taraflı mektup işi: emanet, açık rıza, beceri kapısı, teslim ve tek ödeme", () => {
   const { k, a, b } = kur();
   a.h = "is-veren"; b.h = "is-yapan"; a.e = 101; b.e = 202;
+  const hedef = oyuncuEkle(k, 3, k.ay - 13 * 12 - 2); hedef.e = 303;
   const ilkPara = a.pa;
-  const teklif = teklifOlustur(k, a, b, { tur: "is", is: "mektup", tutar: 12 }, k.ay);
+  const teklif = teklifOlustur(k, a, b, { tur: "is", is: "mektup", tutar: 12, mektupHedef: hedef.o, mektupMetni: "Akşam hanın avlusunda buluşalım." }, k.ay);
   assert.ok(teklif.ok);
   if (!teklif.ok) return;
   const id = `t${teklif.deger.teklif.i}`;
@@ -320,6 +321,7 @@ test("iki taraflı muhafız işi: zincir zırhı olmadan teslim olmaz; teslimde 
   const id = `t${teklif.deger.teklif.i}`;
   isBecerisi(b, "asker", "asker.kervanMuhafizligi");
   b.ms!.s.asker!.kd = 2; // kervan muhafızlığı kalfa-2 düğümüdür.
+  b.ms!.s.asker!.sv!["asker.kervanMuhafizligi"] = 2; // zincir aracı açılır.
   assert.ok(teklifCevap(k, b, id, "kabul", {}, k.ay).ok);
   assert.deepEqual(teklifCevap(k, b, id, "teslim", {}, k.ay), { ok: false, hata: "arac_yok" });
   b.ev = { zincir: 1 };
@@ -334,13 +336,17 @@ test("iki taraflı muhafız işi: zincir zırhı olmadan teslim olmaz; teslimde 
 test("iki taraflı işler: aynı hesap/hane engeli, ret, iptal ve süre aşımında emanet iadesi", () => {
   const { k, a, b } = kur();
   a.h = "is-kume-a"; b.h = "is-kume-b"; a.e = 505; b.e = 606;
+  const c = oyuncuEkle(k, 3, k.ay - 13 * 12 - 2); c.e = 707;
+  const d = oyuncuEkle(k, 4, k.ay - 13 * 12 - 2); d.e = 708;
+  const e = oyuncuEkle(k, 5, k.ay - 13 * 12 - 2); e.e = 709;
   const ilkPara = a.pa;
-  const ayniHesap = teklifOlustur(k, a, { ...b, h: a.h }, { tur: "is", is: "mektup", tutar: 5 }, k.ay);
+  const sart = (hedef: Karakter) => ({ tur: "is" as const, is: "mektup" as const, tutar: 5, mektupHedef: hedef.o, mektupMetni: "Mühürlü not." });
+  const ayniHesap = teklifOlustur(k, a, { ...b, h: a.h }, sart(c), k.ay);
   assert.deepEqual(ayniHesap, { ok: false, hata: "ayni_kume" });
-  const ayniHane = teklifOlustur(k, a, { ...b, e: a.e }, { tur: "is", is: "mektup", tutar: 5 }, k.ay);
+  const ayniHane = teklifOlustur(k, a, { ...b, e: a.e }, sart(c), k.ay);
   assert.deepEqual(ayniHane, { ok: false, hata: "ayni_kume" });
 
-  const ret = teklifOlustur(k, a, b, { tur: "is", is: "mektup", tutar: 5 }, k.ay);
+  const ret = teklifOlustur(k, a, b, sart(c), k.ay);
   assert.ok(ret.ok);
   if (!ret.ok) return;
   assert.ok(teklifCevap(k, b, `t${ret.deger.teklif.i}`, "ret", {}, k.ay).ok);
@@ -355,7 +361,7 @@ test("iki taraflı işler: aynı hesap/hane engeli, ret, iptal ve süre aşımı
   assert.equal(iptal.deger.teklif.d, "iptal");
   assert.equal(a.pa, ilkPara);
 
-  const dusen = teklifOlustur(k, a, b, { tur: "is", is: "mektup", tutar: 7 }, k.ay);
+  const dusen = teklifOlustur(k, a, b, { ...sart(d), tutar: 7 }, k.ay);
   assert.ok(dusen.ok);
   if (!dusen.ok) return;
   isBecerisi(b, "katip", "katip.koyMektubu");
