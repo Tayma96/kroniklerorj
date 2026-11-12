@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { oyuncuArabuluculukAl, toplumAl, type OyuncuArabuluculuk, type Toplum } from "../src/yerlesim/toplum.ts";
-import { testKasabasi } from "./kasaba-yardimci.ts";
+import { testKasabasi, oyuncuEkle } from "./kasaba-yardimci.ts";
 
 test("eski toplum kaydında oyuncu arabuluculuk defteri ilk erişimde açılır; NPC üçgen kaydı ayrıdır", () => {
   const k = testKasabasi("develi", 120);
