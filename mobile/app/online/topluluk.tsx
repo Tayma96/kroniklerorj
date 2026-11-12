@@ -1,0 +1,156 @@
+// E5–E7 topluluk yüzeyi: meşrep seçimi, ortak dert katkısı, şenlik, hami/müdavim ve zaviye özeti.
+import { useCallback, useEffect, useState } from "react";
+import { View, Text, ScrollView } from "react-native";
+import { useRouter } from "expo-router";
+import { useI18n, applyParams } from "../../lib/i18n";
+import { C, F } from "../../lib/theme";
+import { hap } from "../../lib/haptics";
+import { OnlineYakinda } from "../../lib/online-yakinda";
+import { OnlineKapisi, useOnline } from "../../lib/online/durum";
+import { onlineEkranAcik } from "../../lib/online/kapi";
+import { Bant, Cerceve, CizgiDugme, GeriDugme, Madalyon, geriGit, hiza, yon } from "../../lib/online/ui";
+import { Baslik2, SayfaBasi, Yukleniyor } from "../../lib/online/yasam-ui";
+import { hataAnahtari } from "../../lib/online/hata";
+import { istekNoUret } from "../../lib/online/depo";
+import type { ToplulukDurumu } from "../../lib/online/toplum-veri";
+
+type Mesrep = { el: "comert" | "hesapli" | "orta"; cesaret: "temkinli" | "gozupek" | "orta"; gurur: "mutevazi" | "gururlu" | "orta" };
+const EKSENLER: { id: keyof Mesrep; secenekler: readonly string[] }[] = [
+  { id: "el", secenekler: ["comert", "hesapli", "orta"] },
+  { id: "cesaret", secenekler: ["temkinli", "gozupek", "orta"] },
+  { id: "gurur", secenekler: ["mutevazi", "gururlu", "orta"] },
+];
+const MAL_KATKILARI = new Set(["erzak", "malzeme", "alet"]);
+
+function ToplulukEkran() {
+  const router = useRouter();
+  const { t, rtl } = useI18n();
+  const online = useOnline();
+  const istemci = online.toplumIstemci();
+  const [durum, setDurum] = useState<ToplulukDurumu | null>(null);
+  const [secim, setSecim] = useState<Mesrep>({ el: "orta", cesaret: "orta", gurur: "orta" });
+  const [yukleniyor, setYukleniyor] = useState(false);
+  const [hata, setHata] = useState<string | null>(null);
+  const [bilgi, setBilgi] = useState<string | null>(null);
+
+  const yukle = useCallback(async () => {
+    if (!online.profil) return;
+    setYukleniyor(true);
+    const r = await istemci.toplulukOku();
+    setYukleniyor(false);
+    if (!r.ok) { setHata(t(hataAnahtari(r.hata))); return; }
+    setDurum(r.deger);
+    setSecim({
+      el: (r.deger.mesrep.eksenler.find((x) => x.eksen === "el")?.secili ?? "orta") as Mesrep["el"],
+      cesaret: (r.deger.mesrep.eksenler.find((x) => x.eksen === "cesaret")?.secili ?? "orta") as Mesrep["cesaret"],
+      gurur: (r.deger.mesrep.eksenler.find((x) => x.eksen === "gurur")?.secili ?? "orta") as Mesrep["gurur"],
+    });
+    setHata(null);
+  }, [istemci, online.profil?.hesapId, t]);
+
+  useEffect(() => { void yukle(); }, [yukle]);
+
+  const gonder = async (yap: () => Promise<{ ok: boolean; hata?: string }>, mesaj: string) => {
+    setHata(null); setBilgi(null); setYukleniyor(true);
+    const r = await yap();
+    setYukleniyor(false);
+    if (!r.ok) { hap("error"); setHata(t(hataAnahtari(r.hata as never))); return; }
+    hap("success"); setBilgi(mesaj);
+    await online.yerlesimYukle(true);
+    await yukle();
+  };
+
+  if (!online.profil) return <View style={{ flex: 1, backgroundColor: C.bg, padding: 18, justifyContent: "center" }}>
+    <Bant tur="bilgi" metin={t("onl.v.profilYok")} rtl={rtl} eylem={t("onl.p.giriseDon")} onEylem={() => router.replace("/online")} />
+  </View>;
+
+  const dertKatilari = durum?.ortakDert.uygunKatkilarim.filter((x) => !MAL_KATKILARI.has(x)) ?? [];
+  return <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 28, gap: 12 }}>
+    <View style={{ flexDirection: yon(rtl), alignItems: "center" }}>
+      <GeriDugme rtl={rtl} etiket={t("onl.geri")} onPress={() => geriGit(router, "/online/yasam")} />
+    </View>
+    <SayfaBasi ust={online.yerlesim?.yerlesim.ad ?? online.profil.yerlesim} baslik={t("onl.topluluk.baslik")} alt={t("onl.topluluk.alt")} rtl={rtl} />
+    {hata ? <Bant metin={hata} rtl={rtl} /> : null}
+    {bilgi ? <Bant tur="bilgi" metin={bilgi} rtl={rtl} /> : null}
+    {yukleniyor && !durum ? <Yukleniyor metin={t("onl.topluluk.yukleniyor")} /> : null}
+
+    <Baslik2 metin={t("onl.topluluk.gostergeler")} rtl={rtl} />
+    {durum ? <Cerceve ic={{ padding: 12, gap: 12 }}>
+      {(["arz", "moral", "asayis"] as const).map((alan) => {
+        const deger = durum.gostergeler[alan];
+        const oran = Math.max(0, Math.min(100, deger));
+        return <View key={alan} style={{ gap: 5 }}>
+          <View style={{ flexDirection: yon(rtl), justifyContent: "space-between" }}>
+            <Text style={{ fontFamily: F.display, color: C.parchment, fontSize: 13 }}>{t("onl.topluluk.gosterge." + alan)}</Text>
+            <Text style={{ fontFamily: F.display, color: C.goldBright, fontSize: 13 }}>{deger}/100</Text>
+          </View>
+          <View style={{ height: 7, borderRadius: 5, overflow: "hidden", backgroundColor: "rgba(201,162,78,0.16)" }}>
+            <View style={{ width: oran + "%", height: 7, backgroundColor: alan === "asayis" ? C.sage : C.gold, borderRadius: 5 }} />
+          </View>
+        </View>;
+      })}
+    </Cerceve> : null}
+
+    <Baslik2 metin={t("onl.topluluk.mesrep")} rtl={rtl} />
+    {durum ? <Cerceve ic={{ padding: 12, gap: 10 }}>
+      <Text style={{ fontFamily: F.serif, fontSize: 14, lineHeight: 20, color: C.parchmentDim, textAlign: hiza(rtl) }}>{t(durum.mesrep.secildi ? "onl.topluluk.mesrep.secildi" : "onl.topluluk.mesrep.aciklama")}</Text>
+      {EKSENLER.map((e) => <View key={e.id} style={{ gap: 6 }}>
+        <Text style={{ fontFamily: F.display, fontSize: 13, color: C.goldBright, textAlign: hiza(rtl) }}>{t("onl.topluluk.mesrep.eksen." + e.id)}</Text>
+        <View style={{ flexDirection: yon(rtl), flexWrap: "wrap", gap: 6 }}>
+          {e.secenekler.map((v) => {
+            const aktif = secim[e.id] === v;
+            return <CizgiDugme key={v} etiket={t("onl.topluluk.mesrep.uc." + v)} icon={aktif ? "check-circle" : "circle"} rtl={rtl} kucuk kapali={!durum.mesrep.secimAcik || yukleniyor}
+              onPress={() => setSecim((p) => ({ ...p, [e.id]: v }))} />;
+          })}
+        </View>
+      </View>)}
+      {durum.mesrep.secimAcik ? <CizgiDugme etiket={t("onl.topluluk.mesrep.kaydet")} icon="check" rtl={rtl} kapali={yukleniyor}
+        onPress={() => void gonder(() => istemci.mesrep({ ...secim, istekNo: istekNoUret() }), t("onl.topluluk.mesrep.kaydedildi"))} /> : null}
+    </Cerceve> : null}
+
+    <Baslik2 metin={t("onl.topluluk.ortakDert")} rtl={rtl} sag={durum ? <Text style={{ fontFamily: F.display, color: C.gold }}>{durum.ortakDert.acik.length}</Text> : undefined} />
+    {durum?.ortakDert.acik.length ? durum.ortakDert.acik.map((d) => <Cerceve key={d.id} ic={{ padding: 12, gap: 9 }}>
+      <View style={{ flexDirection: yon(rtl), alignItems: "center", gap: 9 }}>
+        <Madalyon icon="shield-alert" size={38} aktif />
+        <View style={{ flex: 1, gap: 2 }}>
+          <Text style={{ fontFamily: F.display, fontSize: 15, color: C.parchment, textAlign: hiza(rtl) }}>{t("onl.topluluk.dert." + d.tur)}</Text>
+          <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchmentDim, textAlign: hiza(rtl) }}>{applyParams(t("onl.topluluk.dert.ilerleme"), [d.puan, d.esik, d.bitis])}</Text>
+        </View>
+      </View>
+      <View style={{ height: 6, borderRadius: 4, backgroundColor: "rgba(201,162,78,0.16)", overflow: "hidden" }}>
+        <View style={{ width: Math.min(100, Math.round(d.puan / Math.max(1, d.esik) * 100)) + "%", height: 6, backgroundColor: C.sage }} />
+      </View>
+      <Text style={{ fontFamily: F.serif, fontSize: 12.5, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{applyParams(t("onl.topluluk.dert.katilim"), [d.benim?.kalan ?? 0])}</Text>
+      <View style={{ flexDirection: yon(rtl), flexWrap: "wrap", gap: 6 }}>
+        {dertKatilari.map((katki) => <CizgiDugme key={katki} etiket={t("onl.topluluk.katki." + katki)} icon="hand-heart" rtl={rtl} kucuk kapali={yukleniyor || (d.benim?.kalan ?? 0) <= 0}
+          onPress={() => void gonder(() => istemci.ortakDert({ dert: d.id, katki, istekNo: istekNoUret() }), t("onl.topluluk.katkiYapildi"))} />)}
+      </View>
+    </Cerceve>) : <Text style={{ fontFamily: F.serif, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{t("onl.topluluk.dert.bos")}</Text>}
+
+    <Baslik2 metin={t("onl.topluluk.senlik")} rtl={rtl} />
+    {durum?.senlik.simdiki ? <Cerceve ic={{ padding: 12, gap: 8 }}>
+      <View style={{ flexDirection: yon(rtl), alignItems: "center", gap: 10 }}>
+        <Madalyon icon="calendar-heart" size={40} aktif />
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontFamily: F.display, fontSize: 15, color: C.parchment, textAlign: hiza(rtl) }}>{t("onl.topluluk.senlik." + durum.senlik.simdiki.tur)}</Text>
+          <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchmentDim, textAlign: hiza(rtl) }}>{applyParams(t("onl.topluluk.senlik.bilgi"), [durum.senlik.simdiki.bitis])}</Text>
+        </View>
+      </View>
+      <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{applyParams(t("onl.topluluk.senlik.katilim"), [durum.senlik.simdiki.benim.sayi, durum.senlik.simdiki.benim.kalan])}</Text>
+      {durum.senlik.simdiki.durum === "acik" ? <CizgiDugme etiket={t("onl.topluluk.senlik.hayir")} icon="coins" rtl={rtl} kucuk kapali={yukleniyor || durum.senlik.simdiki.benim.kalan <= 0}
+        onPress={() => void gonder(() => istemci.senlik({ katki: "hayir", tutar: 1, istekNo: istekNoUret() }), t("onl.topluluk.senlik.katildi"))} /> : null}
+    </Cerceve> : <Text style={{ fontFamily: F.serif, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{t("onl.topluluk.senlik.yok")}</Text>}
+
+    <Baslik2 metin={t("onl.topluluk.toplumsal")} rtl={rtl} />
+    {durum ? <Cerceve ic={{ padding: 12, gap: 8 }}>
+      <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchment, textAlign: hiza(rtl) }}>{applyParams(t("onl.topluluk.hami"), [durum.hami.suren.length, durum.hami.gelen.length])}</Text>
+      <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchment, textAlign: hiza(rtl) }}>{applyParams(t("onl.topluluk.mudavim"), [durum.mudavim.rozet ? t("onl.topluluk.rozet." + durum.mudavim.rozet) : t("onl.topluluk.rozet.yok"), durum.mudavim.ziyaret])}</Text>
+      <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchment, textAlign: hiza(rtl) }}>{applyParams(t("onl.topluluk.zaviye"), [durum.zaviye.kasabada.length, durum.zaviye.benim ? 1 : 0])}</Text>
+    </Cerceve> : null}
+    <CizgiDugme etiket={t("onl.topluluk.yenile")} icon="refresh-cw" rtl={rtl} kucuk kapali={yukleniyor} onPress={() => void yukle()} />
+  </ScrollView>;
+}
+
+export default function OnlineTopluluk() {
+  return onlineEkranAcik() ? <OnlineKapisi><ToplulukEkran /></OnlineKapisi> : <OnlineYakinda />;
+}
