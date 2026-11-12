@@ -40,6 +40,8 @@ const BASLANGIC_SERMAYE = 80;
 const PAZAR_STOK = 10;
 /** Botun ilk alım ilanı fiyatı: taban × bu (sonra fiyat keşfiyle değişir). */
 const ALIM_PAYI = 1.3;
+/** Alet ve nalda alıcı rekabeti daha güçlü; botun başlangıç teklifini tabana yaklaştırır. */
+const alimPayi = (mal: MalId) => mal === "alet" || mal === "nal" ? 1.1 : ALIM_PAYI;
 
 type M = "ciftci" | "oduncu" | "demirci" | "marangoz" | "dokumaci" | "asci";
 /** Oyuncu planı: meslek ve verilen düğümler (öğrenme süresi simülasyon dışı). Oduncular ya madende (cevher, kömür)
@@ -139,7 +141,7 @@ function ekonomiSim(pompali: boolean) {
           kalan -= a2;
         }
         // Kalan: başka mesleğin girdisiyse pazarda satılması beklenen birimler (satış fiyatının %80'iyle, en çok 10).
-        if (kalan > 0 && girdiMi(mal)) toplam += Math.min(kalan, Math.max(0, PAZAR_STOK - elde)) * MALLAR[mal].taban * (satisPayi.get(`${c.o}:${mal}`) ?? ALIM_PAYI) * 0.8;
+        if (kalan > 0 && girdiMi(mal)) toplam += Math.min(kalan, Math.max(0, PAZAR_STOK - elde)) * MALLAR[mal].taban * (satisPayi.get(`${c.o}:${mal}`) ?? alimPayi(mal)) * 0.8;
         return toplam;
       };
       /** Eksik girdinin en ucuz birim maliyeti: pazar ilanı, kasaba stoğu ya da NPC. */
