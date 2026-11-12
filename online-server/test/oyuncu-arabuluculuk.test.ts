@@ -247,12 +247,12 @@ test("imzalı uzlaşma üç ay içinde uygulanmazsa emanet iki tarafa iade edili
   assert.ok(oyuncuArabuluculukImzala(k, kk, id, ac.deger.sv).ok);
   assert.equal(s.pa, 380);
   assert.equal(kk.pa, 420);
-  assert.equal(oyuncuArabuluculukDonumu(k, ac.deger.sonAy + 1), 1);
+  assert.equal(oyuncuArabuluculukDonumu(k, ac.deger.sonAy! + 1), 1);
   assert.equal(ac.deger.d, "iptal");
   assert.equal(ac.deger.od?.iade, 1);
   assert.equal(s.pa, 500);
   assert.equal(kk.pa, 500);
-  assert.equal(oyuncuArabuluculukDonumu(k, ac.deger.sonAy + 2), 0, "emanet ikinci kez iade edilmez");
+  assert.equal(oyuncuArabuluculukDonumu(k, ac.deger.sonAy! + 2), 0, "emanet ikinci kez iade edilmez");
   assert.equal(s.pa, 500);
   assert.equal(kk.pa, 500);
 });
