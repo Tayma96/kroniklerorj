@@ -463,7 +463,7 @@ test("P6 ittifak: iki taraflı istek, kabul teyidi, ret ve süre aşımı idempo
   devletAyi(sureKaynak, 3);
   devletAyi(sureHedef, 3);
   assert.equal(sureKaynak.devlet?.ittifakTalep, undefined);
-  assert.equal(sureKaynak.devlet?.ittifaklar?.aksaray?.durum, "suresiDoldu");
+  assert.equal(sureKaynak.devlet?.ittifaklar?.yenisehir?.durum, "suresiDoldu");
   assert.equal(sureHedef.diplomasiGiden?.some((x) => x.tur === "ittifakYanit" && x.karar === "ret"), true, "yanıtsız gelen istek süre sonunda reddedilir");
 
   const devletsiz = bolgeKur("gumushisar", 0);
