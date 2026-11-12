@@ -5,7 +5,9 @@
 import type { MeslekId } from "../icerik/meslekler.ts";
 import type { Kasaba } from "./tipler.ts";
 
-export const OYUNCU_TEKLIF_TURLERI = ["cirak", "ortak", "borc", "hediye", "gorucu"] as const;
+export const OYUNCU_TEKLIF_TURLERI = ["cirak", "ortak", "borc", "hediye", "gorucu", "is"] as const;
+export const IKI_TARAF_ISLERI = ["arabuluculuk", "muhafiz", "mektup"] as const;
+export type IkiTarafIsi = (typeof IKI_TARAF_ISLERI)[number];
 export const NPC_TEKLIF_TURLERI = ["npcIs", "npcBorc", "npcDunur"] as const;
 export type OyuncuTeklifTuru = (typeof OYUNCU_TEKLIF_TURLERI)[number];
 export type NpcTeklifTuru = (typeof NPC_TEKLIF_TURLERI)[number];
@@ -33,6 +35,8 @@ export interface Sartlar {
   sr?: number;
   /** Görücü/dünürcü: aday NPC (yalnız kayıt). */
   dn?: number;
+  /** İki taraflı oyuncu işi: arabuluculuk, muhafızlık veya mektup taşıma. */
+  it?: IkiTarafIsi;
   /** Armağan (envanterden, Berkay §6.1): mal, adet ve biliniyorsa malı üreten oyuncu. */
   ml?: string;
   mn?: number;
