@@ -353,13 +353,15 @@ test("P5 çatışma sonucu bağımsız devlet kurar; P6 yönetim kararları ve g
   assert.equal(eylem(d, bey, { islem: "devletYonet", tur: "divanEkle", kisi: destek[0]!.kisi }).ok, true);
   assert.equal(eylem(d, bey, { islem: "devletYonet", tur: "taninma" }).ok, true);
   assert.equal(d.devlet?.taninma, "talepEdildi");
-  assert.equal(eylem(d, bey, { islem: "devletYonet", tur: "taninmaYanit", kaynakBolge: "aksehir", kaynakAd: "Akşehir Beyliği", karar: "kabul" }).ok, true);
-  assert.deepEqual(d.devlet?.taninmaYanits?.aksehir, { karar: "kabul", ay: d.ay, ad: "Akşehir Beyliği" });
-  assert.deepEqual(bolgeGorunumu(d, SIMDI, bey).bolge.devlet?.taninmaYanits, [{ bolge: "aksehir", karar: "kabul", ay: d.ay, ad: "Akşehir Beyliği" }]);
-  const tekrarYanit = eylem(d, bey, { islem: "devletYonet", tur: "taninmaYanit", kaynakBolge: "aksehir", kaynakAd: "Akşehir Beyliği", karar: "ret" });
+  assert.equal(eylem(d, bey, { islem: "devletYonet", tur: "taninmaYanit", kaynakBolge: "aksehir", karar: "kabul" }).ok, true);
+  assert.deepEqual(d.devlet?.taninmaYanits?.aksehir, { karar: "kabul", ay: d.ay, ad: "Akşehir Sancağı" });
+  assert.deepEqual(bolgeGorunumu(d, SIMDI, bey).bolge.devlet?.taninmaYanits, [{ bolge: "aksehir", karar: "kabul", ay: d.ay, ad: "Akşehir Sancağı" }]);
+  const tekrarYanit = eylem(d, bey, { islem: "devletYonet", tur: "taninmaYanit", kaynakBolge: "aksehir", karar: "ret" });
   assert.equal(tekrarYanit.ok, false, "aynı beylik için karar değiştirerek tekrar yazılamaz");
-  const kendineYanit = eylem(d, bey, { islem: "devletYonet", tur: "taninmaYanit", kaynakBolge: "demirhan", kaynakAd: "Demirhan", karar: "kabul" });
+  const kendineYanit = eylem(d, bey, { islem: "devletYonet", tur: "taninmaYanit", kaynakBolge: "demirhan", karar: "kabul" });
   assert.equal(kendineYanit.ok, false, "kendi devletine tanınma yanıtı veremez");
+  const sahteBolge = eylem(d, bey, { islem: "devletYonet", tur: "taninmaYanit", kaynakBolge: "hayali-beylik", karar: "kabul" });
+  assert.equal(sahteBolge.ok, false, "gerçek beylik listesinde olmayan kaynak reddedilir");
 
 
   const oyuncu = kimlik("gönüllü", { bolge: "demirhan" });
