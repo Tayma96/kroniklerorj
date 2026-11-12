@@ -174,7 +174,18 @@ export interface MogolGorunumu {
   talep: number;
 }
 
-export type DarbeAsamasi = "hazirlik" | "ilan" | "catışma" | "bastirildi" | "pat" | "basarili" | "mogol" | "iptal";
+export type DarbeAsamasi = "hazirlik" | "ilan" | "catışma" | "ateskes" | "bastirildi" | "pat" | "basarili" | "mogol" | "iptal";
+export type DarbeTarafi = "saldiran" | "savunan";
+export interface DarbeBarisTeklifi {
+  taraf: DarbeTarafi;
+  kisi: string;
+  hesap: string;
+  istekId: string;
+  ay: number;
+  durum: "bekliyor" | "kabul" | "ret";
+  yanitlayan?: string;
+  yanitAy?: number;
+}
 export type DarbeDestekRolu = "sehirBeyi" | "ahiBasi";
 export interface DarbeDestegi {
   kisi: string;
