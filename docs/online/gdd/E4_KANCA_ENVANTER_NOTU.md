@@ -19,7 +19,7 @@ Durum: kısmi uygulama. `tasarruf` tüketicisi, ortak-durum/han tüketicileri, E
 14 beceri ağacı dosyasının tamamı tarandı. Şu an mevcut sistem tüketicisi bulunmayan etkiler:
 - `hizmet`: 52 kullanımın 17 tanesi gerçek tüketiciye bağlandı (`ikram`, `yatak`, `oda`, `nobet`, `talim`, `vergiSayimi`, `meclisKaydi`, `turku`, `yaraBak`, `kirikSar`, `lohusa`, `teselli`, `sazGecesi`, `barisSofrasi`, `araBul`, `muhafizlik`, `mektup`); 35 kullanım kaldı. E4.3-A/B/C tamamlandı; E4.3-D'nin ilk dilimi sunucu/mobil/6 dilde çalışır.
 - `hak`: 203 kullanım — makam, lonca, ticaret, garnizon, sosyal yardım ve toplumsal ayrıcalıklar için sunucu tarafı yetki/eylem matrisi gerekir.
-- `sinerji`: 21 kullanım — `ortakSahne` sinerjisi `sazGecesi`, `barisCorbasi` sinerjisi `barisSofrasi`, `seckinOda` sinerjisi oyuncu hanındaki has odayı açmak, `barisSansi` sinerjisi NPC arabuluculuğunda +10 şans, `yaylaCadiri` sinerjisi çadır kalite katkısı, `pulZirhAstari` sinerjisi pul zırh kalite katkısı, `ozelPastirma` sinerjisi pastırma kalite katkısı, `kasabaDegirmeni` sinerjisi un kalite katkısı ve `hanKirisi` sinerjisi kiriş kalite katkısı için tüketiliyor; 12 kullanım kaldı. Diğer kimliklerin gerçek tüketicileri henüz yok.
+- `sinerji`: 21 kullanım — `ortakSahne` sinerjisi `sazGecesi`, `barisCorbasi` sinerjisi `barisSofrasi`, `seckinOda` sinerjisi oyuncu hanındaki has odayı açmak, `barisSansi` sinerjisi NPC arabuluculuğunda +10 şans, `yaylaCadiri` sinerjisi çadır kalite katkısı, `pulZirhAstari` sinerjisi pul zırh kalite katkısı, `ozelPastirma` sinerjisi pastırma kalite katkısı, `kasabaDegirmeni` sinerjisi un kalite katkısı, `hanKirisi` sinerjisi kiriş kalite katkısı, `kopruDemiri` sinerjisi ahşap köprü hakkı, `kagniHarmani` sinerjisi kağnı kalite katkısı ve `baklaYemegi` sinerjisi ziyafet hizmeti için tüketiliyor; 9 kullanım kaldı. Diğer kimliklerin gerçek tüketicileri henüz yok.
 - `tasarruf`: 1 kullanım vardı; bu dalda bağlandı.
 - `hakAcik(kar, hak)` ve `sinerjiAcik(kar, acar)` ortak sunucu çözümleyicileri eklendi. Sinerji çözümleyicisi hem açan becerinin etkisini hem de diğer meslekteki gerçek düğüm/seviyeyi doğrular. Bunlar altyapıdır; henüz 203 hak ve 15 sinerji tüketicisi açık kalır.
 
@@ -68,3 +68,11 @@ Bu üç sistem, farklı oyun döngülerini etkilediği için tek bir genel bonus
 - Oduncu `kirisDirek` ikinci seviyesi ve Marangoz `hanInsasi` birinci seviyesi aynı karakterdeyse `kiris` tarifinin kalite becerisine +10 eklenir.
 - Sinerji yalnız kiriş üretimine uygulanır; kereste gibi diğer tarifleri etkilemez.
 - Regresyon testi iki düğümün birlikte gerekliliğini, tek düğüm durumlarını ve tarif kapsamını doğrular.
+
+
+### 13 Kasım — üç sinerji tüketicisi daha
+- `kopruDemiri`: Marangoz `koprucu` düğümünün açtığı `ahsapKopru` hakkı, Demirci `gelismisAletler` ikinci seviye olmadan kullanılamaz. Hak çözümleyicisi bu özel çapraz koşulu sunucu tarafında doğrular.
+- `kagniHarmani`: Çiftçi `topluHarman` üçüncü seviye + Marangoz `tekerlek` birinci seviye kağnı tarifine +10 kalite becerisi verir.
+- `baklaYemegi`: Aşçı `senlikZiyafeti` hizmeti, Çiftçi `nadas` birinci seviye sinerjisiyle birlikte açılır; ziyafet un, ekmek ve çorba tüketir, hedefte +8 gönül etkisi verir.
+- Üç tüketicinin de tek düğüm/eksik seviye durumları için regresyon testleri eklendi.
+- Güncel E4 sinerji sayımı: 12/21 tüketici bağlı, 9 kaldı. CI henüz doğrulanmadı.
