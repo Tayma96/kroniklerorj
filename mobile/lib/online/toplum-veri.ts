@@ -238,7 +238,7 @@ export interface ToplulukDert {
 }
 export interface ToplulukSenlik {
   id: string; tur: string; durum: "ilan" | "acik"; acilis: number; bitis: number;
-  levha: KisiAdi[]; benim: { sayi: number; kalan: number };
+  levha: { id: string; ad: string; katkilar: string[] }[]; benim: { sayi: number; kalan: number };
 }
 export interface ToplulukDurumu {
   mesrep: { secildi: boolean; secimAcik: boolean; kapali?: string; eksenler: { eksen: string; secili: string; uclar: { uc: string; etkiler: { k: string; tur: string; p: Record<string, number> }[] }[] }[] };
