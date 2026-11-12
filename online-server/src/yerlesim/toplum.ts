@@ -149,7 +149,9 @@ export interface OyuncuArabuluculuk {
   /** Uzlaşma teklifi: s, şikâyetçinin karsi tarafa; k, karşı tarafın şikâyetçiye ödeyeceği akçe. */
   uz?: { s: number; k: number; not?: string };
   /** Ödeme tutarları ve para emanetine alındığı bilgisi. */
-  od?: { s: number; k: number; emanet?: 1; uygulandi?: 1 };
+  od?: { s: number; k: number; emanet?: 1; uygulandi?: 1; iade?: 1 };
+  /** İmzalı uzlaşmanın son uygulama ayı; aşılırsa iki tarafa da emanet iade edilir. */
+  sonAy?: number;
   /** Açılış, cevap ve kapanış ayları. */
   ac: number;
   sa: number;
