@@ -12,7 +12,8 @@ import { Bant, Cerceve, CizgiDugme, GeriDugme, Madalyon, geriGit, hiza, yon } fr
 import { Baslik2, SayfaBasi, Yukleniyor } from "../../lib/online/yasam-ui";
 import { hataAnahtari } from "../../lib/online/hata";
 import { istekNoUret } from "../../lib/online/depo";
-import type { ToplulukDurumu } from "../../lib/online/toplum-veri";
+import type { ToplulukDurumu, ZaviyeIstegi } from "../../lib/online/toplum-veri";
+import { Secenekler } from "../../lib/online/toplum-ui";
 
 type Mesrep = { el: "comert" | "hesapli" | "orta"; cesaret: "temkinli" | "gozupek" | "orta"; gurur: "mutevazi" | "gururlu" | "orta" };
 const EKSENLER: { id: keyof Mesrep; secenekler: readonly string[] }[] = [
@@ -33,6 +34,15 @@ function ToplulukEkran() {
   const [hata, setHata] = useState<string | null>(null);
   const [bilgi, setBilgi] = useState<string | null>(null);
   const [hedefId, setHedefId] = useState("");
+  const [zaviyeAd, setZaviyeAd] = useState("");
+  const [zaviyeHedef, setZaviyeHedef] = useState("");
+  const [zaviyeTutar, setZaviyeTutar] = useState("10");
+  const [zaviyeSekil, setZaviyeSekil] = useState("kalkan");
+  const [zaviyeRenk, setZaviyeRenk] = useState("al");
+  const [zaviyeAday, setZaviyeAday] = useState("");
+  const zaviyeEylem = (islem: ZaviyeIstegi["islem"], ek: Partial<ZaviyeIstegi> = {}, mesaj = "onl.topluluk.zaviye.islemTamam") =>
+    void gonder(() => istemci.zaviye({ islem, ...ek, istekNo: istekNoUret() }), t(mesaj));
+
 
   const yukle = useCallback(async () => {
     if (!online.profil) return;
@@ -181,6 +191,71 @@ function ToplulukEkran() {
       <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchment, textAlign: hiza(rtl) }}>{applyParams(t("onl.topluluk.mudavim"), [durum.mudavim.rozet ? t("onl.topluluk.rozet." + durum.mudavim.rozet) : t("onl.topluluk.rozet.yok"), durum.mudavim.ziyaret])}</Text>
       <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchment, textAlign: hiza(rtl) }}>{applyParams(t("onl.topluluk.zaviye"), [durum.zaviye.kasabada.length, durum.zaviye.benim ? 1 : 0])}</Text>
     </Cerceve> : null}
+    <Baslik2 metin={t("onl.topluluk.zaviye.baslik")} rtl={rtl} />
+    {durum ? <>
+      {durum.zaviye.davetler.map((d) => <Cerceve key={d.id} ic={{ padding: 11, gap: 8 }}>
+        <Text style={{ fontFamily: F.display, color: C.parchment, textAlign: hiza(rtl) }}>{applyParams(t("onl.topluluk.zaviye.davet"), [d.ad, d.uyeSayisi])}</Text>
+        <View style={{ flexDirection: yon(rtl), gap: 7 }}>
+          <View style={{ flex: 1 }}><CizgiDugme etiket={t("onl.topluluk.zaviye.katil")} icon="check" rtl={rtl} kucuk kapali={yukleniyor} onPress={() => zaviyeEylem("katil", { zaviye: d.id })} /></View>
+          <View style={{ flex: 1 }}><CizgiDugme etiket={t("onl.topluluk.zaviye.reddet")} icon="x" rtl={rtl} kucuk kapali={yukleniyor} onPress={() => zaviyeEylem("reddet", { zaviye: d.id })} /></View>
+        </View>
+      </Cerceve>)}
+      {!durum.zaviye.ben ? <Cerceve ic={{ padding: 12, gap: 8 }}>
+        <Text style={{ fontFamily: F.serif, color: C.parchmentDim, fontSize: 13, textAlign: hiza(rtl) }}>{t("onl.topluluk.zaviye.kurAciklama")}</Text>
+        <TextInput value={zaviyeAd} onChangeText={setZaviyeAd} maxLength={28} placeholder={t("onl.topluluk.zaviye.ad")} placeholderTextColor={C.parchmentMuted}
+          style={{ minHeight: 42, borderWidth: 1, borderColor: C.goldDim, borderRadius: 8, color: C.parchment, paddingHorizontal: 10, textAlign: hiza(rtl), fontFamily: F.display }} />
+        <Text style={{ fontFamily: F.display, color: C.goldBright }}>{t("onl.topluluk.zaviye.sekil")}</Text>
+        <Secenekler secenekler={["kalkan", "hilal", "yildiz", "lale", "ok", "cark"]} secili={zaviyeSekil} onSec={setZaviyeSekil} etiket={(v) => t("onl.topluluk.zaviye.sekil." + v)} />
+        <Text style={{ fontFamily: F.display, color: C.goldBright }}>{t("onl.topluluk.zaviye.renk")}</Text>
+        <Secenekler secenekler={["al", "lacivert", "yesil", "altin", "siyah", "beyaz"]} secili={zaviyeRenk} onSec={setZaviyeRenk} etiket={(v) => t("onl.topluluk.zaviye.renk." + v)} />
+        <CizgiDugme etiket={t("onl.topluluk.zaviye.kur")} icon="flag" rtl={rtl} kapali={yukleniyor || zaviyeAd.trim().length < 3}
+          onPress={() => zaviyeEylem("kur", { ad: zaviyeAd.trim(), sekil: zaviyeSekil, renk: zaviyeRenk })} />
+      </Cerceve> : <Cerceve ic={{ padding: 12, gap: 9 }}>
+        <View style={{ flexDirection: yon(rtl), alignItems: "center", gap: 9 }}>
+          <Madalyon icon="flag" size={40} aktif />
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontFamily: F.display, color: C.goldBright, fontSize: 15, textAlign: hiza(rtl) }}>{durum.zaviye.ben.ad}</Text>
+            <Text style={{ fontFamily: F.serif, color: C.parchmentDim, fontSize: 12.5, textAlign: hiza(rtl) }}>{applyParams(t("onl.topluluk.zaviye.uyeSayisi"), [durum.zaviye.ben.uyeSayisi, durum.zaviye.ben.sinir.enCok])} · {t("onl.topluluk.zaviye.durum." + durum.zaviye.ben.durum)}</Text>
+          </View>
+        </View>
+        <Text style={{ fontFamily: F.serif, color: C.parchmentDim, fontSize: 12.5 }}>{applyParams(t("onl.topluluk.zaviye.kasa"), [durum.zaviye.ben.kasa ?? 0])}</Text>
+        <Text style={{ fontFamily: F.serif, color: C.parchmentDim, fontSize: 12.5 }}>{applyParams(t("onl.topluluk.zaviye.ahi"), [durum.zaviye.ben.ahiBasi?.ad ?? t("onl.topluluk.zaviye.bos")])}</Text>
+        <Baslik2 metin={t("onl.topluluk.zaviye.uyeler")} rtl={rtl} />
+        {durum.zaviye.ben.uyeler.map((u) => <View key={u.id} style={{ flexDirection: yon(rtl), justifyContent: "space-between", gap: 8 }}>
+          <Text style={{ flex: 1, fontFamily: F.serif, color: C.parchment, textAlign: hiza(rtl) }}>{u.ad} · {t("onl.topluluk.zaviye.rol." + u.rol)}</Text>
+          <Text style={{ fontFamily: F.serif, color: C.parchmentDim }}>{u.meslek ?? "—"}</Text>
+        </View>)}
+        {durum.zaviye.ben.davetler?.length ? <Text style={{ fontFamily: F.serif, color: C.parchmentDim, fontSize: 12 }}>{applyParams(t("onl.topluluk.zaviye.bekleyenDavet"), [durum.zaviye.ben.davetler.map((x) => x.ad).join(" · ")])}</Text> : null}
+        <Text style={{ fontFamily: F.display, color: C.goldBright }}>{t("onl.topluluk.zaviye.kasaIslemleri")}</Text>
+        <TextInput value={zaviyeTutar} onChangeText={setZaviyeTutar} keyboardType="number-pad" maxLength={4} placeholder="10" placeholderTextColor={C.parchmentMuted}
+          style={{ minHeight: 40, borderWidth: 1, borderColor: C.goldDim, borderRadius: 8, color: C.parchment, paddingHorizontal: 10, textAlign: hiza(rtl), fontFamily: F.display }} />
+        <View style={{ flexDirection: yon(rtl), gap: 7 }}>
+          <View style={{ flex: 1 }}><CizgiDugme etiket={t("onl.topluluk.zaviye.yatir")} icon="arrow-down-to-line" rtl={rtl} kucuk kapali={yukleniyor || !/^\\d+$/.test(zaviyeTutar) || Number(zaviyeTutar) < 1} onPress={() => zaviyeEylem("yatir", { tutar: Number(zaviyeTutar) })} /></View>
+          {durum.zaviye.ben.rolum === "yonetici" ? <View style={{ flex: 1 }}><CizgiDugme etiket={t("onl.topluluk.zaviye.ver")} icon="hand-coins" rtl={rtl} kucuk kapali={yukleniyor || !zaviyeHedef} onPress={() => zaviyeEylem("ver", { hedef: zaviyeHedef, tutar: Number(zaviyeTutar) })} /></View> : null}
+        </View>
+        {durum.zaviye.ben.rolum === "yonetici" ? <>
+          <Text style={{ fontFamily: F.display, color: C.goldBright }}>{t("onl.topluluk.zaviye.uyeYonetimi")}</Text>
+          <TextInput value={zaviyeHedef} onChangeText={setZaviyeHedef} autoCapitalize="none" placeholder={t("onl.topluluk.zaviye.hedefId")} placeholderTextColor={C.parchmentMuted}
+            style={{ minHeight: 40, borderWidth: 1, borderColor: C.goldDim, borderRadius: 8, color: C.parchment, paddingHorizontal: 10, textAlign: hiza(rtl), fontFamily: F.display }} />
+          <View style={{ flexDirection: yon(rtl), gap: 7 }}>
+            <View style={{ flex: 1 }}><CizgiDugme etiket={t("onl.topluluk.zaviye.davetEt")} icon="user-plus" rtl={rtl} kucuk kapali={yukleniyor || !/^o[1-9][0-9]{0,8}$/.test(zaviyeHedef.trim())} onPress={() => zaviyeEylem("davet", { hedef: zaviyeHedef.trim() })} /></View>
+            <View style={{ flex: 1 }}><CizgiDugme etiket={t("onl.topluluk.zaviye.cikar")} icon="user-minus" rtl={rtl} kucuk kapali={yukleniyor || !/^o[1-9][0-9]{0,8}$/.test(zaviyeHedef.trim())} onPress={() => zaviyeEylem("cikar", { hedef: zaviyeHedef.trim() })} /></View>
+          </View>
+          <Text style={{ fontFamily: F.display, color: C.goldBright }}>{t("onl.topluluk.zaviye.arma")}</Text>
+          <Secenekler secenekler={["kalkan", "hilal", "yildiz", "lale", "ok", "cark"]} secili={zaviyeSekil} onSec={setZaviyeSekil} etiket={(v) => t("onl.topluluk.zaviye.sekil." + v)} />
+          <Secenekler secenekler={["al", "lacivert", "yesil", "altin", "siyah", "beyaz"]} secili={zaviyeRenk} onSec={setZaviyeRenk} etiket={(v) => t("onl.topluluk.zaviye.renk." + v)} />
+          <CizgiDugme etiket={t("onl.topluluk.zaviye.armaKaydet")} icon="shield" rtl={rtl} kucuk kapali={yukleniyor} onPress={() => zaviyeEylem("arma", { sekil: zaviyeSekil, renk: zaviyeRenk })} />
+        </> : null}
+        <Text style={{ fontFamily: F.display, color: C.goldBright }}>{t("onl.topluluk.zaviye.ahiOyu")}</Text>
+        <Secenekler secenekler={durum.zaviye.ben.uyeler.filter((u) => u.id !== online.profil?.hesapId).map((u) => u.id)} secili={zaviyeAday} onSec={setZaviyeAday} etiket={(id) => durum.zaviye.ben?.uyeler.find((u) => u.id === id)?.ad ?? id} />
+        <CizgiDugme etiket={t("onl.topluluk.zaviye.oyVer")} icon="vote" rtl={rtl} kucuk kapali={yukleniyor || !zaviyeAday || !durum.zaviye.ahiSarti.adayim} onPress={() => zaviyeEylem("oy", { hedef: zaviyeAday })} />
+        <Text style={{ fontFamily: F.serif, color: C.parchmentDim, fontSize: 12 }}>{t(durum.zaviye.ahiSarti.adayim ? "onl.topluluk.zaviye.oyUygun" : "onl.topluluk.zaviye.oyKapali")}</Text>
+        <CizgiDugme etiket={t("onl.topluluk.zaviye.ayril")} icon="log-out" rtl={rtl} kucuk kapali={yukleniyor} onPress={() => zaviyeEylem("ayril")} />
+        {durum.zaviye.ben.kasaDefteri?.slice(-5).reverse().map((h, i) => <Text key={h.ay + h.kim + i} style={{ fontFamily: F.serif, color: C.parchmentMuted, fontSize: 11.5 }}>{applyParams(t("onl.topluluk.zaviye.defter"), [h.ay, h.kim, h.alan ?? t("onl.topluluk.zaviye.kasa"), h.tutar])}</Text>)}
+      </Cerceve>}
+      <Baslik2 metin={t("onl.topluluk.zaviye.kasabalar")} rtl={rtl} />
+      {durum.zaviye.kasabada.map((z) => <Text key={z.id} style={{ fontFamily: F.serif, color: C.parchmentDim, fontSize: 12.5 }}>{z.ad} · {z.uyeSayisi} · {t("onl.topluluk.zaviye.durum." + z.durum)} · {z.ahiBasi ?? "—"}</Text>)}
+    </> : null}
     <CizgiDugme etiket={t("onl.topluluk.yenile")} icon="refresh-cw" rtl={rtl} kucuk kapali={yukleniyor} onPress={() => void yukle()} />
   </ScrollView>;
 }
