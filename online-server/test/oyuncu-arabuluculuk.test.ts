@@ -439,3 +439,40 @@ test("taraf öldükten sonra uygulama isteği ödeme yerine emaneti iade ederek 
   assert.equal(s.pa, 500);
   assert.equal(kk.pa, 500);
 });
+
+
+test("bozuk emanet kaydı vade veya ölüm kaynaklı iadede bakiye değiştiremez", () => {
+  const hazirla = (no: number) => {
+    const k = testKasabasi("develi", no);
+    const s = oyuncuEkle(k, no + 1), kk = oyuncuEkle(k, no + 2), ar = oyuncuEkle(k, no + 3);
+    const ac = oyuncuArabuluculukAc(k, s, kk, ar, k.ay);
+    assert.ok(ac.ok);
+    if (!ac.ok) throw new Error("arabuluculuk açılamadı");
+    const id = String(ac.deger.i);
+    for (const x of [s, kk, ar]) assert.ok(oyuncuArabuluculukCevap(k, x, id, "kabul", k.ay).ok);
+    s.pa = 500;
+    kk.pa = 500;
+    assert.ok(oyuncuArabuluculukTaslak(k, ar, id, 120, 80, undefined, k.ay).ok);
+    assert.ok(oyuncuArabuluculukImzala(k, s, id, ac.deger.sv).ok);
+    assert.ok(oyuncuArabuluculukImzala(k, kk, id, ac.deger.sv).ok);
+    assert.equal(ac.deger.d, "emanette");
+    return { k, s, kk, d: ac.deger };
+  };
+
+  const vade = hazirla(810);
+  const vadeS = vade.s.pa, vadeK = vade.kk.pa;
+  vade.d.od!.s = -1;
+  assert.equal(oyuncuArabuluculukDonumu(vade.k, vade.d.sonAy! + 1), 0);
+  assert.equal(vade.s.pa, vadeS, "geçersiz negatif emanet şikâyetçinin bakiyesini değiştirmez");
+  assert.equal(vade.kk.pa, vadeK, "geçersiz emanet karşı tarafın bakiyesini değiştirmez");
+  assert.equal(vade.d.d, "emanette", "geçersiz kayıt sessizce kapatılmaz");
+
+  const olum = hazirla(820);
+  const olumS = olum.s.pa, olumK = olum.kk.pa;
+  olum.d.im.k = olum.d.sv - 1;
+  olum.s.hd = { h: olum.s.o, n: 1, s: 0, ol: olum.k.ay };
+  assert.equal(oyuncuArabuluculukDonumu(olum.k, olum.k.ay), 0);
+  assert.equal(olum.s.pa, olumS, "eski imzalı emanet ölüm iadesinde bakiye değiştirmez");
+  assert.equal(olum.kk.pa, olumK);
+  assert.equal(olum.d.d, "emanette", "imzası bozuk emanet inceleme için kilitli kalır");
+});
