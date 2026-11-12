@@ -23,6 +23,7 @@ export interface HizmetIlanSatiri {
 export interface HizmetNpcTalepSatiri {
   id: string; hizmet: string; hedef: string; acilisAy: number; sonAy: number; odul: number;
 }
+export interface HizmetGorevSatiri { id: string; tur: string; acilisAy: number; sonAy: number; odul: number; takat: number; arac: string | null; }
 export interface HizmetDurumu {
   katalog: HizmetTarifSatiri[]; stok: HizmetStokSatiri[];
   ilanlar: HizmetIlanSatiri[]; benimIlanlar: HizmetIlanSatiri[];
