@@ -18,6 +18,7 @@ import type { YerlesimTuru } from "../dunya-veri.ts";
 import { AY_MS, DUNYA_BASLANGICI_MS } from "../saat.ts";
 import { basarili, hata, type Sonuc } from "../tipler.ts";
 import { GONUL_EVSIZLIK, HAL_TABAN_CAN, halDegistir } from "./hal.ts";
+import { hizmetAcik, sinerjiAcik } from "./beceri-etki.ts";
 import { olduMu } from "./hanedan.ts";
 import {
   KIRA_EN_UZUN_AY,
@@ -123,6 +124,14 @@ export interface Konaklama {
   bitis: number | null;
   oda?: OdaId;
   han?: string;
+}
+
+/** Oyuncu hanında oda türünü açan hancı becerisi; has oda ek olarak marangoz sinerjisi ister. */
+export function oyuncuHanOdaAcik(sahip: Karakter, oda: unknown): boolean {
+  if (oda === "yatak") return hizmetAcik(sahip, "yatak");
+  if (oda === "oda") return hizmetAcik(sahip, "oda");
+  if (oda === "hasOda") return hizmetAcik(sahip, "oda") && sinerjiAcik(sahip, "seckinOda");
+  return false;
 }
 
 export interface BarinmaAni {
@@ -471,12 +480,19 @@ export function otomatikAyarla(kasaba: Kasaba, kar: Karakter, govde: unknown, si
 }
 
 /** GET /v1/barinma: durum, konaklama, zincir (eşikler ve etkiler sayılarıyla), misafirhane hakkı, odalar, tesis. */
-export function barinmaGorunumu(kasaba: Kasaba, kar: Karakter, simdi: number) {
+export function barinmaGorunumu(
+  kasaba: Kasaba,
+  kar: Karakter,
+  simdi: number,
+  oyuncuHan?: { isletme: string; fc: number; seviye: number; sahip: Karakter },
+) {
   const ocak = ocakVar(kasaba, kar);
   const r = barinmaIlerlet(kasaba, kar, simdi, ocak);
   const br = kar.br!;
   const y = kasaba.y;
-  const katalog = hanOdalari(npcHani(y), kasaba.tur);
+  const katalog = oyuncuHan
+    ? hanOdalari({ tur: "oyuncu", isletme: oyuncuHan.isletme }, kasaba.tur, { fc: oyuncuHan.fc, seviye: oyuncuHan.seviye })
+    : hanOdalari(npcHani(y), kasaba.tur);
   const k = r.konaklama;
   const zincirde = r.z !== null && (r.durum === "uyari" || r.durum === "evsiz" || r.durum === "canKaybi");
   const tesis = tesisUygunlugu(br, kar, kasaba.tur, simdi);
@@ -515,7 +531,7 @@ export function barinmaGorunumu(kasaba: Kasaba, kar: Karakter, simdi: number) {
       hakMs: y === br.iy ? ILK_KORUMA_MS : SEHIR_KORUMA_MS,
       buSehir: m ? { baslangic: m[0], bitis: m[1], kullanildi: true } : { kullanildi: false },
     },
-    odalar: katalog.ok ? katalog.deger.map((o) => ({ ...o, yeterli: kar.pa >= o.fiyatlar[1] })) : [],
+    odalar: katalog.ok ? katalog.deger.filter((o) => !oyuncuHan || oyuncuHanOdaAcik(oyuncuHan.sahip, o.oda)).map((o) => ({ ...o, yeterli: kar.pa >= o.fiyatlar[1] })) : [],
     tesis: {
       tur: SOSYAL_TESIS[kasaba.tur],
       acik: SOSYAL_TESIS_ACIK,
