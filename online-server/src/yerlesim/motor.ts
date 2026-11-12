@@ -97,7 +97,7 @@ import { levhaYaz } from "./levha.ts";
 import type { EkonomiKaydi } from "./pazar-tahta.ts";
 import type { UcgenDefteri } from "./bilgi.ts";
 import { eksenler } from "./hafiza.ts";
-import { mulkluIkram, mulkluKira } from "../mulk/tapu.ts";
+import { mulkluIkram, mulkluKira, oyuncuHani } from "../mulk/tapu.ts";
 import type { MulkDefteri } from "../mulk/tapu.ts";
 import { toplulukDonumu } from "./topluluk.ts";
 import type { ToplulukKaydi } from "./topluluk-kayit.ts";
@@ -1650,7 +1650,12 @@ export class YerlesimMotoru {
     const r = await this.#oyuncu(hesapId);
     if (!r.ok) return r;
     const kar = r.deger.kar;
-    const deger = islem === "barinma" ? { barinma: barinmaGorunumu(this.kasaba, kar, simdi) } : { donusEkrani: donusOku(this.kasaba, kar, simdi) };
+    const oh = islem === "barinma" ? oyuncuHani(this.kasaba) : undefined;
+    if (oh) await this.#yukle([oh.sahip]);
+    const sahip = oh ? this.kasaba.kar.get(oh.sahip) : undefined;
+    const deger = islem === "barinma"
+      ? { barinma: barinmaGorunumu(this.kasaba, kar, simdi, oh && sahip ? { ...oh, sahip } : undefined) }
+      : { donusEkrani: donusOku(this.kasaba, kar, simdi) };
     this.#kirli.add(KAR + kar.o);
     await this.kaydet();
     return basarili(deger);
@@ -1659,6 +1664,10 @@ export class YerlesimMotoru {
   /** POST /v1/barinma/kira | tesis | otomatik (istekNo ile tekrar güvenli; kira NPC hancıya, akçe dünyadan çıkar). */
   async barinmaIslem(islem: "barinmaKira" | "barinmaTesis" | "barinmaOtomatik", hesapId: string, govde: unknown, simdi: number, vergiOrani = 0): Promise<Sonuc<unknown>> {
     const k = this.kasaba;
+    if (islem === "barinmaKira") {
+      const oh = oyuncuHani(k);
+      if (oh) await this.#yukle([oh.sahip]);
+    }
     return this.#tekrarGuvenli(hesapId, govde, (kar) =>
       islem === "barinmaKira" ? (this.#kirli.add(MULK), mulkluKira(k, kar, govde, simdi, vergiOrani)) : islem === "barinmaTesis" ? tesisKonakla(k, kar, simdi) : otomatikAyarla(k, kar, govde, simdi),
     );
