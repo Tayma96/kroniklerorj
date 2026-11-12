@@ -2,7 +2,7 @@
 
 **Tarih:** 12 Kasım 2026  
 **Dal:** `feature/online-p5-darbe-zinciri`  
-**Durum:** E4.3-A ve E4.3-B uygulandı. NPC talebi yalnız gerçek doğum/ölüm olaylarından açılır; ödül hazineye rezerve edilir, tek teslimliktir, süre/ hedef ölümü halinde iade edilir. Mobil hizmet ekranı NPC taleplerini de gösterir ve teslim eder. E4.3-C/D ile kalan beceri tüketicileri açık.
+**Durum:** E4.3-A, E4.3-B ve E4.3-C uygulandı. Oyuncu pazarı, gerçek doğum/ölüm olaylarından NPC talebi ve kasaba hazinesinden önceden rezerve edilen aylık kamu görevleri sunucu ve mobil akışa bağlandı. E4.3-D iki taraflı işler ile kalan beceri tüketicileri açık.
 
 ## Neden bu plan
 
@@ -85,9 +85,12 @@ Her POST, `istekNo` ile tekrar güvenli olmalı. Yerleşim sınırları ve yetki
 - [x] GitHub Actions [run #285](https://github.com/Tayma96/kroniklerorj/actions/runs/43136662787): **385 test / 384 geçti / 0 başarısız / 1 atlandı**; mobil TypeScript, 62 görsel yolu, sunucu testleri ve sunucu TypeScript başarılı.
 
 ### E4.3-C — Kasaba görevleri
-- Nöbet 4, sayım 1, meclis kaydı 1, talim 2 koltuk.
-- Ay başında kota, uygun beceri, ulufe ve görünür gösterge etkisi.
-- Görevler kapanınca tekrar teslim kabul edilmez.
+- [x] Aylık pano: 4 sur nöbeti, 1 vergi sayımı, 1 meclis kaydı, 2 mızrak talimi koltuğu. Görevler yalnız kasaba hanesinde yeterli bakiye varsa açılır; her koltuğun 4 akçelik ulufesi açılışta rezerve edilir.
+- [x] Nöbet için Asker `surNobeti` + mızrak; talim için Asker `mizrakTalimi`; sayım için Divan `vergiSayimi`; meclis kaydı için Divan `meclisKatipligi` hizmet düğümü sunucuda doğrulanır.
+- [x] Nöbet/talim asayişi, sayım asayişi ve meclis kaydı morali artırır. Asayiş veya moral düşüklüğü haydut olay riskini yükseltir; nöbet bu riski doğrudan azaltan göstergeyi iyileştirir.
+- [x] Aynı hesap veya aynı hane ayda birden fazla kamu görevi ulufesi alamaz. Görev koltuğu tek teslimlidir; ay sonunda kullanılmayan ulufe hazineye iade edilir. Eski kayıtlar için 12 aylık görev defteri sınırı uygulanır.
+- [x] `GET /v1/hizmet` görev panosunu döndürür; istekNo'lu `POST /v1/hizmet/gorev` görevi teslim eder. Mobil hizmet ekranında 6 dilde görev adı, ulufe, takat ve teslim akışı vardır; tamamlanma kroniği 6 dilde çevrilir.
+- [x] Testler: aylık koltuk sayısı, hazine rezervi/iadesi, beceri kapısı, mızrak gereksinimi ve aşınması, takat, hesap/hane tekilliği, tek teslim ve asayiş/moral etkisi.
 
 ### E4.3-D — İki taraflı işler
 - Arabuluculuk, muhafız sözleşmesi, mektup/senet gibi işler mevcut teklif akışına bağlanır.
