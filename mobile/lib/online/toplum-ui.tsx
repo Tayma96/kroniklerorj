@@ -1,7 +1,7 @@
 // Faz 3a ortak parçalar: teklif kartı (şartlar, emanet, son ay, "cevapsız kalırsa"), teklif formu (tür, şartlar,
 // ön izleme), olağan düzen kartı, gelen kutusu kısayolu, sayaç ve seçim çipleri. Metinler i18n-sayfa/online-toplum.ts.
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { View, Text, useWindowDimensions } from "react-native";
+import { View, Text, TextInput, useWindowDimensions } from "react-native";
 import { useRouter } from "expo-router";
 import { useI18n, applyParams } from "../i18n";
 import { C, F } from "../theme";
@@ -60,7 +60,10 @@ export function sartYaz(t: Ceviri, x: TeklifGorunumu, ay: number): string[] {
     case "borc": satir.push(applyParams(t("onl.tp.s.borc"), [s.tutar ?? 0, s.faiz ?? 0, s.vade ?? 0, ad(x.borclu)])); break;
     case "hediye": satir.push(applyParams(t("onl.tp.s.hediye"), [armaganYaz(t, s)])); break;
     case "gorucu": satir.push(t("onl.tp.s.gorucu")); break;
-    case "is": satir.push(applyParams(t("onl.tp.s.is"), [t("onl.tp.is." + (s.is ?? "mektup")), s.tutar ?? 0, s.is === "mektup" ? 1 : 2])); break;
+    case "is":
+      satir.push(applyParams(t("onl.tp.s.is"), [t("onl.tp.is." + (s.is ?? "mektup")), s.tutar ?? 0, s.is === "mektup" ? 1 : 2]));
+      if (s.is === "mektup" && s.hedef) satir.push(applyParams(t("onl.tp.s.mektupHedef"), [s.hedef.ad]), s.mesaj ?? "");
+      break;
     case "npcIs": satir.push(applyParams(t("onl.tp.s.npcIs"), [s.tutar ?? 0, TOPLUM_SINIR.npcIsTakat])); break;
     case "npcBorc": satir.push(applyParams(t("onl.tp.s.npcBorc"), [s.tutar ?? 0, s.vade ?? 0])); break;
     case "npcDunur": satir.push(applyParams(t("onl.tp.s.npcDunur"), [s.aday?.ad ?? "?"])); break;
@@ -221,6 +224,8 @@ export function TeklifFormu({ p, baslangic, onBitti }: { p: OyuncuProfili; basla
   const [adet, setAdet] = useState(1);
   const [isTuru, setIsTuru] = useState<"arabuluculuk" | "muhafiz" | "mektup">("mektup");
   const [isUcret, setIsUcret] = useState(() => Math.max(1, Math.min(8, para)));
+  const [mektupHedef, setMektupHedef] = useState("");
+  const [mektupMetni, setMektupMetni] = useState("");
   const [hata, setHata] = useState<OnlineHata | null>(null);
   const [bitti, setBitti] = useState(false);
   useEffect(() => { setMeslek(cirakAday[0] ?? null); }, [ustaBen]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -233,9 +238,9 @@ export function TeklifFormu({ p, baslangic, onBitti }: { p: OyuncuProfili; basla
     : tur === "ortak" ? { pay, sure }
     : tur === "borc" ? { yon: borcYon, tutar, vade, faiz }
     : tur === "hediye" ? { ...(akce ? { tutar: akce } : {}), ...(mal ? { mal, adet } : {}) }
-    : tur === "is" ? { is: isTuru, tutar: isUcret }
+    : tur === "is" ? { is: isTuru, tutar: isUcret, ...(isTuru === "mektup" ? { mektupHedef, mektupMetni } : {}) }
     : {};
-  const gecerli = !kapi(tur) && (tur !== "cirak" || !!meslek) && (tur !== "hediye" || (hediyeDeger >= 1 && hediyeDeger <= TOPLUM_SINIR.hediyeEnCok)) && (tur !== "is" || (isUcret >= 1 && isUcret <= Math.min(TOPLUM_SINIR.isEnCok, para)));
+  const gecerli = !kapi(tur) && (tur !== "cirak" || !!meslek) && (tur !== "hediye" || (hediyeDeger >= 1 && hediyeDeger <= TOPLUM_SINIR.hediyeEnCok)) && (tur !== "is" || (isUcret >= 1 && isUcret <= Math.min(TOPLUM_SINIR.isEnCok, para) && (isTuru !== "mektup" || (mektupHedef.trim().startsWith("o") && mektupMetni.trim().length >= 1 && mektupMetni.trim().length <= 240))));
   const anahtar = `teklif:${p.id}:${tur}:${JSON.stringify(sart)}`;
   const gonder = async () => {
     setHata(null);
@@ -288,6 +293,15 @@ export function TeklifFormu({ p, baslangic, onBitti }: { p: OyuncuProfili; basla
       <Text style={{ fontFamily: F.serifItalic, fontSize: 14.5, lineHeight: 20, color: C.parchmentDim, textAlign: hiza(rtl) }}>{t("onl.tp.is.d." + isTuru)}</Text>
       <Sayac etiket={t("onl.tp.f.isUcret")} deger={isUcret} en={1} cok={Math.max(1, Math.min(TOPLUM_SINIR.isEnCok, para))} onDegis={setIsUcret} birim={t("onl.tp.akceBirim")} />
       {isUcret > para ? <Bant tur="bilgi" metin={applyParams(t("onl.tp.f.paraAz"), [para])} rtl={rtl} /> : null}
+      {isTuru === "mektup" ? <>
+        <Text style={{ fontFamily: F.display, fontSize: 11.5, color: C.goldBright, textAlign: hiza(rtl) }}>{t("onl.tp.f.mektupHedef")}</Text>
+        <TextInput value={mektupHedef} onChangeText={setMektupHedef} placeholder={t("onl.tp.f.mektupHedefOrnek")} placeholderTextColor={C.parchmentMuted}
+          autoCapitalize="none" autoCorrect={false} maxLength={10} style={{ minHeight: 44, borderWidth: 1, borderColor: ONL.frameHi, borderRadius: 8, paddingHorizontal: 11, color: C.parchment, backgroundColor: "rgba(14,10,6,0.7)", fontFamily: F.serif, textAlign: hiza(rtl) }} />
+        <Text style={{ fontFamily: F.display, fontSize: 11.5, color: C.goldBright, textAlign: hiza(rtl) }}>{t("onl.tp.f.mektupMetni")}</Text>
+        <TextInput value={mektupMetni} onChangeText={setMektupMetni} placeholder={t("onl.tp.f.mektupMetniOrnek")} placeholderTextColor={C.parchmentMuted}
+          multiline maxLength={240} textAlignVertical="top" style={{ minHeight: 92, borderWidth: 1, borderColor: ONL.frameHi, borderRadius: 8, padding: 11, color: C.parchment, backgroundColor: "rgba(14,10,6,0.7)", fontFamily: F.serif, textAlign: hiza(rtl) }} />
+        <Text style={{ fontFamily: F.serif, fontSize: 12, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{applyParams(t("onl.tp.f.mektupSayac"), [mektupMetni.trim().length])}</Text>
+      </> : null}
     </Alan> : null}
     {tur === "hediye" ? <Alan baslik={t("onl.tp.f.sartlar")}>
       <Sayac etiket={t("onl.tp.f.akce")} deger={akce} en={0} cok={Math.min(TOPLUM_SINIR.hediyeEnCok, para)} onDegis={setAkce} birim={t("onl.tp.akceBirim")} />
