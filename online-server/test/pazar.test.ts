@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { MALLAR } from "../src/icerik/mallar.ts";
 import { satisDegeri } from "../src/yerlesim/npc-taban.ts";
-import { NPC_SATIS_KOTASI, npcyeSat } from "../src/yerlesim/pazar.ts";
+import { NPC_SATIS_KOTASI, npcSatisKotasi, npcyeSat } from "../src/yerlesim/pazar.ts";
 import { oyuncuEkle, testKasabasi } from "./kasaba-yardimci.ts";
 
 const hicKimse = () => 0;
@@ -18,8 +18,8 @@ test("NPC'ye satış: akçe birim × adet kadar artar, envanter düşer, fiyat d
   assert.deepEqual(r.deger.birim, satisDegeri("nal", 3));
   assert.equal(r.deger.tutar, MALLAR.nal.taban * 3);
   assert.equal(c.pa - pa, r.deger.tutar, "akçe yalnız satış tutarı kadar değişir");
-  assert.deepEqual(c.ev, { nal: 1 });
-  assert.deepEqual(r.deger.kota, { satilan: 3, tavan: NPC_SATIS_KOTASI, kalan: NPC_SATIS_KOTASI - 3 });
+  assert.deepEqual(c.ev, { nal: 2 });
+  assert.deepEqual(r.deger.kota, { satilan: 2, tavan: npcSatisKotasi("nal"), kalan: npcSatisKotasi("nal") - 2 });
 });
 
 test("kıtlık primi: malın mesleğinde oyuncu yoksa birim fiyata prim eklenir", () => {
@@ -43,6 +43,17 @@ test("kota ay içinde dolar, ay değişince sıfırlanır", () => {
   assert.equal(c.ev.odun, 50 - NPC_SATIS_KOTASI);
   assert.deepEqual(npcyeSat(c, "tas", 1, herkes, k.ay), { ok: false, hata: "mal_yok" }, "envanterde yok");
   assert.ok(npcyeSat(c, "odun", 2, herkes, k.ay + 1).ok, "yeni ay, yeni kota");
+});
+
+test("yüksek değerli demirci mallarında kasaba talebi ayrı ve daha düşüktür", () => {
+  const k = testKasabasi();
+  const c = oyuncuEkle(k);
+  c.ev = { alet: 5, odun: 10 };
+  assert.equal(npcSatisKotasi("alet"), 2);
+  assert.ok(npcyeSat(c, "alet", 2, herkes, k.ay).ok);
+  assert.deepEqual(npcyeSat(c, "alet", 1, herkes, k.ay), { ok: false, hata: "kota_doldu" });
+  assert.equal(npcSatisKotasi("odun"), NPC_SATIS_KOTASI);
+  assert.ok(npcyeSat(c, "odun", NPC_SATIS_KOTASI, herkes, k.ay).ok);
 });
 
 test("geçersiz: su satılmaz, negatif/kesirli/sıfır adet, bilinmeyen mal, envanter yetmez", () => {
