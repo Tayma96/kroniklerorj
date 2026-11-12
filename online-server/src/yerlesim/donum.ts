@@ -107,7 +107,11 @@ export function ayDonumu(kasaba: Kasaba, ay: number): OlayTaslagi[] {
     kasaba.npc = kasaba.npc.filter((n) => !olu.has(n.i));
     for (const n of olenler) {
       kasaba.dizin.delete(n.i);
-      olaylar.push(olay("olum", "olay.olum", 3, { kisi: npcRef(n), yas: yas(n.d, ay) }, { w: npcKimlik(n.i) }));
+      const yasliYakini = (n.es > 0 ? kasaba.dizin.get(n.es) : undefined)
+        ?? kasaba.npc.find((x) => x.e === n.e && yas(x.d, ay) >= 16);
+      olaylar.push(olay("olum", "olay.olum", 3, { kisi: npcRef(n), yas: yas(n.d, ay) }, {
+        w: npcKimlik(n.i), ...(yasliYakini ? { h: npcKimlik(yasliYakini.i) } : {}),
+      }));
     }
     for (const n of kasaba.npc) {
       if (n.es && olu.has(n.es)) n.es = 0;
