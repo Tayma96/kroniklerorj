@@ -12,6 +12,7 @@ on:
       - "mobile/scripts/**"
       - "mobile/tsconfig.json"
       - ".github/workflows/online-server-ci.yml"
+      - ".github/workflows/deploy-online-server.yml"
   push:
     branches: [apk]
     paths:
