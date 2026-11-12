@@ -2,7 +2,7 @@
 
 **Tarih:** 12 Kasım 2026  
 **Dal:** `feature/online-p5-darbe-zinciri`  
-**Durum:** E4.3-A katalog, hazırlama, ilan, iptal, oyuncu teslimi ve süresi dolan stok işlemleri uygulandı; `lohusa` ve `teselli` katalog kayıtları da eklendi. CI run #178 başarılı (test ve typecheck). E4.3-B/C/D henüz açık.
+**Durum:** E4.3-A katalog, hazırlama, ilan, iptal, oyuncu teslimi ve süresi dolan stok işlemleri uygulandı; `lohusa`, `teselli` ve `sazGecesi` katalog kayıtları da eklendi. `sazGecesi`, Hancı düğümüne ek olarak Ozan `sazUstaligi` ile açılan `ortakSahne` sinerjisini zorunlu tutar. CI run #178 başarılı (test ve typecheck). E4.3-B/C/D henüz açık.
 
 ## Neden bu plan
 
@@ -66,6 +66,7 @@ Her POST, `istekNo` ile tekrar güvenli olmalı. Yerleşim sınırları ve yetki
 - [x] HTTP uçtan uca istekNo tekrar güvenliği ve satıcıyı kalıcı depodan yükleme testi (DO yeniden açılışıyla).
 - [x] Süresi dolan hazır stok ve açık ilan stoğu ay dönümünde kapanır; satılmayan adet başına yarım hizmet tecrübesi verilir ve tekrar ödül engellenir.
 - [x] `lohusa` ve `teselli` gerçek beceri düğümlerine bağlandı; hazırlama ve girdi tüketimi regresyon testleri eklendi.
+- [x] `sazGecesi` Hancı + Ozan çapraz meslek sinerjisiyle açılır; sinerji yoksa hazırlama sunucuda reddedilir.
 - [ ] 6 dilde hizmet katalog/pazar metinleri ve mobil hizmet ekranı.
 
 - Önce `yaraBak`, `turku`, `yatak`/oda gibi mevcut oyun durumuna doğrudan etki eden 3–4 hizmet.
