@@ -7,8 +7,7 @@ import { MALLAR, malBul, type MalId } from "../icerik/mallar.ts";
 import { HIZMET_TARIFLERI } from "./hizmet-tarif.ts";
 import { basarili, hata, type Sonuc } from "../tipler.ts";
 import { DEFTER_AY, defterGorunumu } from "./defter.ts";
-import { hizmetAcik } from "./beceri-etki.ts";
-import { hizmetHazirla, hizmetIlanAc, hizmetIlanBul, hizmetIlanGeri, hizmetIlanGorunumu, hizmetIlanIsle, hizmetIlanlar, hizmetStoguGecerli, hizmetStoguGorunumu } from "./hizmet-pazari.ts";
+import { hizmetHazirla, hizmetIlanAc, hizmetIlanBul, hizmetIlanGeri, hizmetIlanGorunumu, hizmetIlanIsle, hizmetIlanlar, hizmetStoguGecerli, hizmetStoguGorunumu, hizmetYetkiliMi } from "./hizmet-pazari.ts";
 import {
   ISMARLAMA_ADET_EN_COK,
   ISMARLAMA_MUSTERI_EN_COK,
@@ -65,7 +64,7 @@ export function hizmetOku(m: YerlesimMotoru, hesapId: string): Promise<Sonuc<unk
       etki: tarif.etki,
       hazir: tarif.hazir,
       fiyatTaban: tarif.fiyatTaban,
-      acik: hizmetAcik(kar, tarif.id),
+      acik: hizmetYetkiliMi(kar, tarif),
     }));
     const ek = m.kasaba.ek;
     const stok = (ek?.hs ?? [])
