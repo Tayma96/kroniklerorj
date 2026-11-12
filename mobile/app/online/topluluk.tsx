@@ -151,7 +151,7 @@ function ToplulukEkran() {
 
     <Baslik2 metin={t("onl.topluluk.hami.baslik")} rtl={rtl} />
     {durum?.hami.gelen.map((b) => <Cerceve key={b.gonderen + b.acilis} ic={{ padding: 11, gap: 8 }}>
-      <Text style={{ fontFamily: F.serif, color: C.parchment, fontSize: 14, textAlign: hiza(rtl) }}>{b.rolum === "hami" ? applyParams(t("onl.topluluk.hami.istekGeldi"), [b.cirak.ad]) : applyParams(t("onl.topluluk.hami.teklif"), [b.hami.ad, b.cirak.ad])}</Text>
+      <Text style={{ fontFamily: F.serif, color: C.parchment, fontSize: 14, textAlign: hiza(rtl) }}>{b.rolu === "hami" ? applyParams(t("onl.topluluk.hami.istekGeldi"), [b.cirak.ad]) : applyParams(t("onl.topluluk.hami.teklif"), [b.hami.ad, b.cirak.ad])}</Text>
       <View style={{ flexDirection: yon(rtl), gap: 8 }}>
         <CizgiDugme etiket={t("onl.topluluk.hami.kabul")} icon="check" rtl={rtl} kucuk kapali={yukleniyor}
           onPress={() => void gonder(() => istemci.hami({ islem: "kabul", hedef: b.gonderen, istekNo: istekNoUret() }), t("onl.topluluk.hami.kabulEdildi"))} />
@@ -160,7 +160,7 @@ function ToplulukEkran() {
       </View>
     </Cerceve>)}
     {durum?.hami.suren.map((b) => {
-      const diger = b.rolum === "hami" ? b.cirak.ad : b.hami.ad;
+      const diger = b.rolu === "hami" ? b.cirak.ad : b.hami.ad;
       const hedef = b.rolu === "hami" ? b.cirak.id : b.hami.id;
       return <Cerceve key={b.hami.id + b.cirak.id} ic={{ padding: 11, gap: 8 }}>
         <Text style={{ fontFamily: F.serif, color: C.parchment, fontSize: 14, textAlign: hiza(rtl) }}>{applyParams(t("onl.topluluk.hami.aktif"), [diger])}</Text>
