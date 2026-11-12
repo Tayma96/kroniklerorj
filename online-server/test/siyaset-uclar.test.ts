@@ -119,8 +119,10 @@ test("P6 tanınma isteği ve kararı iki BolgeDO arasında outbox ile teslim edi
   const ilkHedef = await bolgeCagir(env, { islem: "gorunum", bolge: "aksehir", hesapId: hedefKimlik.hesap });
   assert.equal(ilkKaynak.ok, true);
   assert.equal(ilkHedef.ok, true);
-  const kaynakKaydi = [...bolgeler.ornekler.entries()].find(([id]) => id.includes("demirhan"))?.[1];
-  const hedefKaydi = [...bolgeler.ornekler.entries()].find(([id]) => id.includes("aksehir"))?.[1];
+  const kaynakId = env.BOLGE.idFromName("bolge:demirhan").toString();
+  const hedefId = env.BOLGE.idFromName("bolge:aksehir").toString();
+  const kaynakKaydi = bolgeler.ornekler.get(kaynakId);
+  const hedefKaydi = bolgeler.ornekler.get(hedefId);
   assert.ok(kaynakKaydi && hedefKaydi);
   const kaynakDurum = bolgeKur("demirhan", ay);
   kaynakDurum.devlet = devlet(kaynakKimlik, "Demirhan Beyliği");
@@ -128,8 +130,8 @@ test("P6 tanınma isteği ve kararı iki BolgeDO arasında outbox ile teslim edi
   hedefDurum.devlet = devlet(hedefKimlik, "Akşehir Beyliği");
   kaynakKaydi.depolama.veri.set("bolge", kaynakDurum);
   hedefKaydi.depolama.veri.set("bolge", hedefDurum);
-  kaynakKaydi.ornek = new BolgeDO({ id: env.BOLGE.idFromString([...bolgeler.ornekler.entries()].find(([, x]) => x === kaynakKaydi)![0]), storage: kaynakKaydi.depolama } as unknown as DurableObjectState, env, () => saat);
-  hedefKaydi.ornek = new BolgeDO({ id: env.BOLGE.idFromString([...bolgeler.ornekler.entries()].find(([, x]) => x === hedefKaydi)![0]), storage: hedefKaydi.depolama } as unknown as DurableObjectState, env, () => saat);
+  kaynakKaydi.ornek = new BolgeDO({ id: env.BOLGE.idFromString(kaynakId), storage: kaynakKaydi.depolama } as unknown as DurableObjectState, env, () => saat);
+  hedefKaydi.ornek = new BolgeDO({ id: env.BOLGE.idFromString(hedefId), storage: hedefKaydi.depolama } as unknown as DurableObjectState, env, () => saat);
 
   const talep = await bolgeCagir(env, {
     islem: "yaz", bolge: "demirhan", hesapId: kaynakKimlik.hesap, kimlik: kaynakKimlik,
