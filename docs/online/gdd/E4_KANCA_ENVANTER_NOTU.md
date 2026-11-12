@@ -26,7 +26,7 @@ Durum: kısmi uygulama. `tasarruf` tüketicisi, üç ortak-durum/han tüketicisi
 
 1. `hak` için tek bir yetki kayıt/çözümleyici kur; istemci düğüm seviyesini yetki kanıtı saymasın. Her eylem sunucuda `hakAcik` üzerinden doğrulansın.
 2. `hizmet` için kalan iki taraflı iş akışlarını tamamla; ödeme kaynağı, teslim etkisi, iptal ve itibar akışını doğrula. E4.3-A/B/C tamamlandı.
-3. `sinerji` için ortak çözümleyici ve 20 `acar` kimliğinin gerçek tüketicileri ekle; bir düğümün varlığı tek başına açılma sağlamasın, iki meslekteki seviye koşulu aranmalı.
+3. `sinerji` için ortak çözümleyici ve kalan 19 `acar` kimliğinin gerçek tüketicilerini ekle; bir düğümün varlığı tek başına açılma sağlamasın, iki meslekteki seviye koşulu aranmalı.
 4. Her bağ için gizli/öğrenilmiş seviye, hesap/hane tekilliği, tekrar güvenliği ve çevrimdışı davranış testleri yaz.
 
 Bu üç sistem, farklı oyun döngülerini etkilediği için tek bir genel bonus yüzdesine indirgenmemelidir.
