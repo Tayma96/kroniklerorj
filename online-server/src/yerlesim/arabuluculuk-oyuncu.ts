@@ -195,7 +195,8 @@ export function oyuncuArabuluculukUygula(
 ): Sonuc<OyuncuArabuluculuk> {
   const d = dosyaBul(toplumAl(k), id);
   if (!d) return hata("talep_yok");
-  if (!rol(d, ben.o)) return hata("taraf_degil");
+  // Arabulucu taslağı sunar; imzalı mali uzlaşmanın tarafı değildir ve emaneti uygulayamaz.
+  if (ben.o !== d.s && ben.o !== d.k) return hata("taraf_degil");
   if (d.d !== "emanette" || !d.od || d.od.emanet !== 1 || d.od.uygulandi === 1 || d.od.iade === 1) return hata("teklif_kapandi");
   if (d.sonAy !== undefined && ay > d.sonAy) {
     if (!emanetIadeEt(k, d, ay)) return hata("sakin_yok");
