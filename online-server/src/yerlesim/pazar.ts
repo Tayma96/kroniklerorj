@@ -52,7 +52,9 @@ export function npcyeSat(
   if (typeof adetHam !== "number" || !Number.isInteger(adetHam) || adetHam < 1) return hata("mal_gecersiz");
   if ((k.ev?.[mal] ?? 0) < adetHam) return hata("mal_yok");
   const once = satilan(k, mal, ay);
-  const kotaTavan = npcSatisKotasi(mal, oyuncuSayisi(MALLAR[mal].meslek));
+  const meslek = MALLAR[mal].meslek;
+  const digerMeslektas = Math.max(0, oyuncuSayisi(meslek) - (k.ms?.a === meslek ? 1 : 0));
+  const kotaTavan = npcSatisKotasi(mal, digerMeslektas);
   if (once + adetHam > kotaTavan) return hata("kota_doldu");
   const primli = saticiDegeri(k, mal, oyuncuSayisi, parametreler);
   const prim = primli.kalemler.find((x) => x.k === "kitlik")?.d ?? 0;
@@ -82,6 +84,7 @@ export function npcyeSat(
 /** Kalan NPC alım kotası (NPC'nin bu ay oyuncudan daha kaç adet alacağı), ticareti yapılan her mal için. */
 export function kalanSatisKotasi(k: Karakter, ay: number, oyuncuSayisi: (m: MeslekId) => number = () => 0): Partial<Record<MalId, number>> {
   const kota: Partial<Record<MalId, number>> = {};
-  for (const [mal, m] of Object.entries(MALLAR) as [MalId, (typeof MALLAR)[MalId]][]) if (m.taban > 0) kota[mal] = npcSatisKotasi(mal, oyuncuSayisi(m.meslek)) - satilan(k, mal, ay);
+  for (const [mal, m] of Object.entries(MALLAR) as [MalId, (typeof MALLAR)[MalId]][]) if (m.taban > 0) const digerMeslektas = Math.max(0, oyuncuSayisi(m.meslek) - (k.ms?.a === m.meslek ? 1 : 0));
+    kota[mal] = npcSatisKotasi(mal, digerMeslektas) - satilan(k, mal, ay);
   return kota;
 }
