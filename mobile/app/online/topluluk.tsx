@@ -121,6 +121,7 @@ function ToplulukEkran() {
         <View style={{ width: `${Math.min(100, Math.round(d.puan / Math.max(1, d.esik) * 100))}%` as `${number}%`, height: 6, backgroundColor: C.sage }} />
       </View>
       <Text style={{ fontFamily: F.serif, fontSize: 12.5, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{applyParams(t("onl.topluluk.dert.katilim"), [d.benim?.kalan ?? 0])}</Text>
+      {d.defter.length ? <Text style={{ fontFamily: F.serif, fontSize: 12.5, color: C.parchmentDim, textAlign: hiza(rtl) }}>{applyParams(t("onl.topluluk.dert.katilanlar"), [d.defter.slice(0, 5).map((x) => x.ad).join(" · ")])}</Text> : null}
       <View style={{ flexDirection: yon(rtl), flexWrap: "wrap", gap: 6 }}>
         {dertKatilari.map((katki) => <CizgiDugme key={katki} etiket={t("onl.topluluk.katki." + katki)} icon="hand-heart" rtl={rtl} kucuk kapali={yukleniyor || (d.benim?.kalan ?? 0) <= 0}
           onPress={() => void gonder(() => istemci.ortakDert({ dert: d.id, katki, istekNo: istekNoUret() }), t("onl.topluluk.katkiYapildi"))} />)}
@@ -137,6 +138,12 @@ function ToplulukEkran() {
         </View>
       </View>
       <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{applyParams(t("onl.topluluk.senlik.katilim"), [durum.senlik.simdiki.benim.sayi, durum.senlik.simdiki.benim.kalan])}</Text>
+      <View style={{ gap: 3 }}>
+        <Text style={{ fontFamily: F.display, fontSize: 11, color: C.goldBright, textAlign: hiza(rtl) }}>{t("onl.topluluk.senlik.levha")}</Text>
+        <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchmentDim, textAlign: hiza(rtl) }}>
+          {durum.senlik.simdiki.levha.length ? durum.senlik.simdiki.levha.slice(0, 8).map((x) => x.ad).join(" · ") : t("onl.topluluk.senlik.levhaBos")}
+        </Text>
+      </View>
       {durum.senlik.simdiki.durum === "acik" ? <CizgiDugme etiket={t("onl.topluluk.senlik.hayir")} icon="coins" rtl={rtl} kucuk kapali={yukleniyor || durum.senlik.simdiki.benim.kalan <= 0}
         onPress={() => void gonder(() => istemci.senlik({ katki: "hayir", tutar: 1, istekNo: istekNoUret() }), t("onl.topluluk.senlik.katildi"))} /> : null}
     </Cerceve> : <Text style={{ fontFamily: F.serif, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{t("onl.topluluk.senlik.yok")}</Text>}
