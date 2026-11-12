@@ -194,3 +194,49 @@ test("Faz 1 profili: sakin kaydı yoksa ilk yerleşim çağrısında yazılır v
   );
   assert.equal(cagrilar[0]?.yerlesim, "develi");
 });
+
+
+test("oyuncu arabuluculuğu API'si üç hesabın rızasını, sürümlü taslağı ve gelen kutusunu kalıcı işler", async () => {
+  const { depo, m } = await kur(3);
+  const acGovde = { islem: "ac", hedef: "o2", arabulucu: "o3", istekNo: "arb-ac-api-0001" };
+  const ac = deger(await m.oyuncuArabuluculuk("hesap-1", acGovde));
+  assert.equal(ac.dosya.durum, "davet");
+  assert.deepEqual(deger(await m.oyuncuArabuluculuk("hesap-1", acGovde)), ac, "aynı istekNo daveti ikinci kez açmaz");
+  const id = ac.dosya.id as string;
+
+  const cevap = (hesapId: string, istekNo: string) =>
+    m.oyuncuArabuluculuk(hesapId, { islem: "cevap", dosya: id, cevap: "kabul", istekNo });
+  assert.equal(deger(await cevap("hesap-1", "arb-s-0001")).dosya.durum, "davet");
+  assert.equal(deger(await cevap("hesap-2", "arb-k-0001")).dosya.durum, "davet");
+  assert.equal(deger(await cevap("hesap-3", "arb-ar-0001")).dosya.durum, "taslak");
+
+  const taslak = deger(await m.oyuncuArabuluculuk("hesap-3", {
+    islem: "taslak", dosya: id, sTutari: 125, kTutari: 0, not: "Zarar karşılığı", istekNo: "arb-taslak-0001",
+  }));
+  assert.equal(taslak.dosya.surum, 2);
+  assert.deepEqual(taslak.dosya.uzlasma, { s: 125, k: 0, not: "Zarar karşılığı" });
+  assert.deepEqual(await m.oyuncuArabuluculuk("hesap-3", {
+    islem: "imza", dosya: id, surum: 2, istekNo: "arb-ar-imza-0001",
+  }), { ok: false, hata: "taraf_degil" });
+
+  const imzaS = deger(await m.oyuncuArabuluculuk("hesap-1", {
+    islem: "imza", dosya: id, surum: 2, istekNo: "arb-s-imza-0001",
+  }));
+  assert.equal(imzaS.dosya.durum, "imzaBekliyor");
+  const imzaK = deger(await m.oyuncuArabuluculuk("hesap-2", {
+    islem: "imza", dosya: id, surum: 2, istekNo: "arb-k-imza-0001",
+  }));
+  assert.equal(imzaK.dosya.durum, "onaylandi");
+
+  const gelen1 = deger(await m.gelen("hesap-1", "tr"));
+  assert.equal(gelen1.arabuluculuk[0].id, id);
+  assert.equal(gelen1.arabuluculuk[0].durum, "onaylandi");
+  assert.equal(gelen1.arabuluculuk[0].uzlasma.s, 125);
+  const gelen2 = deger(await m.gelen("hesap-2", "tr"));
+  assert.equal(gelen2.arabuluculuk[0].imza.k, 2);
+
+  const m2 = (await YerlesimMotoru.ac(depo, "develi", an(0)))!;
+  const gelen3 = deger(await m2.gelen("hesap-3", "tr"));
+  assert.equal(gelen3.arabuluculuk[0].durum, "onaylandi", "dosya yeniden açılışta kalıcıdır");
+  assert.equal(gelen3.arabuluculuk[0].uzlasma.s, 125);
+});
