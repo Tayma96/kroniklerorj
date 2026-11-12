@@ -257,3 +257,24 @@ test("ozelPastirma sinerjisi aşçı pastırmacı ve çiftçi kesim/post bilgisi
   assert.equal(kaliteBecerisi(diger, pastirma), 0);
   assert.equal(kaliteBecerisi(c, TARIFLER.kuruEt), 0, "sinerji kuru ete taşmaz");
 });
+
+
+test("kasabaDegirmeni sinerjisi oduncu değirmen taşı ve aşçı değirmen unu birlikteyken yalnız un kalitesini artırır", () => {
+  const k = testKasabasi();
+  const c = oyuncuEkle(k, 97, k.ay - 16 * 12);
+  const un = TARIFLER.un;
+
+  seviyeVer(c, "asci.degirmenUnu", 3);
+  assert.equal(sinerjiAcik(c, "kasabaDegirmeni"), false, "aşçı düğümü tek başına sinerji vermez");
+  assert.equal(kaliteBecerisi(c, un), 15, "aşçının kendi +15 un kalite etkisi korunur");
+
+  seviyeVer(c, "oduncu.degirmenTasi", 2);
+  assert.equal(sinerjiAcik(c, "kasabaDegirmeni"), true);
+  assert.equal(kaliteBecerisi(c, un), 25, "iki düğüm birlikte una +10 ekler");
+
+  const diger = oyuncuEkle(k, 98, k.ay - 16 * 12);
+  seviyeVer(diger, "oduncu.degirmenTasi", 2);
+  assert.equal(sinerjiAcik(diger, "kasabaDegirmeni"), false, "oduncu düğümü tek başına sinerji vermez");
+  assert.equal(kaliteBecerisi(diger, un), 0);
+  assert.equal(kaliteBecerisi(c, TARIFLER.ekmek), 0, "sinerji ekmek tarifine taşmaz");
+});
