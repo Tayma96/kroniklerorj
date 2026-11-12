@@ -467,7 +467,7 @@ test("E4.3-D mektup: aynı ay aynı hedefe ikinci teklif ve engelli hedef teslim
   assert.ok(r.ok);
   assert.deepEqual(teklifOlustur(k, a, b, girdi, k.ay), { ok: false, hata: "teklif_siniri" });
   assert.ok(teklifCevap(k, b, `t${r.deger.teklif.i}`, "kabul", {}, k.ay).ok);
-  assert.ok(engelle(toplumAl(k), hedef, a.o).ok);
+  assert.ok(engelle(toplumAl(k), a.o, hedef.o).ok);
   assert.deepEqual(teklifCevap(k, b, `t${r.deger.teklif.i}`, "teslim", {}, k.ay), { ok: false, hata: "engelli" });
   assert.equal(b.pa, 100, "engelli teslimde ücret aktarılmaz");
   assert.equal(r.deger.teklif.d, "surer", "başarısız teslim sözleşmeyi ve emaneti korur");
