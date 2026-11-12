@@ -338,3 +338,19 @@ test("sinerji çözümleyicisi iki meslekteki gerçek düğüm seviyesini birlik
   assert.equal(sinerjiAcik(c, "seckinOda"), true);
   assert.equal(sinerjiAcik(c, "olmayanSinerji"), false);
 });
+
+
+test("ahsapKopru hakkı marangoz köprücülük ve demirci gelişmiş aletler birlikteyken açılır", () => {
+  const k = testKasabasi();
+  const c = kisi(k);
+  seviyeVer(c, "marangoz.koprucu", 1);
+  assert.equal(hakAcik(c, "ahsapKopru"), false, "köprücülük hakkı tek başına yetmez");
+  seviyeVer(c, "demirci.gelismisAletler", 1);
+  assert.equal(hakAcik(c, "ahsapKopru"), false, "demirci ikinci seviye gerekir");
+  seviyeVer(c, "demirci.gelismisAletler", 2);
+  assert.equal(sinerjiAcik(c, "kopruDemiri"), true);
+  assert.equal(hakAcik(c, "ahsapKopru"), true);
+  const diger = kisi(k, 2);
+  seviyeVer(diger, "demirci.gelismisAletler", 2);
+  assert.equal(hakAcik(diger, "ahsapKopru"), false, "marangoz köprücülük olmadan açılmaz");
+});
