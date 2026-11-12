@@ -226,17 +226,26 @@ test("oyuncu arabuluculuğu API'si üç hesabın rızasını, sürümlü taslağ
   const imzaK = deger(await m.oyuncuArabuluculuk("hesap-2", {
     islem: "imza", dosya: id, surum: 2, istekNo: "arb-k-imza-0001",
   }));
-  assert.equal(imzaK.dosya.durum, "onaylandi");
+  assert.equal(imzaK.dosya.durum, "emanette");
+  const sPaEmanet = m.kasaba.kar.get("o1")!.pa;
+  const kPaEmanet = m.kasaba.kar.get("o2")!.pa;
+  assert.ok(sPaEmanet < 125 + kPaEmanet, "emanet kesintisi oyuncu bakiyesine yansır");
+  const uygulama = deger(await m.oyuncuArabuluculuk("hesap-3", {
+    islem: "uygula", dosya: id, istekNo: "arb-uygula-0001",
+  }));
+  assert.equal(uygulama.dosya.durum, "tamam");
+  assert.equal(m.kasaba.kar.get("o2")!.pa, kPaEmanet + 125);
+  assert.equal(m.kasaba.kar.get("o1")!.pa, sPaEmanet);
 
   const gelen1 = deger(await m.gelen("hesap-1", "tr"));
   assert.equal(gelen1.arabuluculuk[0].id, id);
-  assert.equal(gelen1.arabuluculuk[0].durum, "onaylandi");
+  assert.equal(gelen1.arabuluculuk[0].durum, "tamam");
   assert.equal(gelen1.arabuluculuk[0].uzlasma.s, 125);
   const gelen2 = deger(await m.gelen("hesap-2", "tr"));
   assert.equal(gelen2.arabuluculuk[0].imza.k, 2);
 
   const m2 = (await YerlesimMotoru.ac(depo, "develi", an(0)))!;
   const gelen3 = deger(await m2.gelen("hesap-3", "tr"));
-  assert.equal(gelen3.arabuluculuk[0].durum, "onaylandi", "dosya yeniden açılışta kalıcıdır");
+  assert.equal(gelen3.arabuluculuk[0].durum, "tamam", "dosya yeniden açılışta kalıcıdır");
   assert.equal(gelen3.arabuluculuk[0].uzlasma.s, 125);
 });
