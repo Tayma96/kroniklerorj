@@ -158,3 +158,22 @@ test("P6 tanınma isteği ve kararı iki BolgeDO arasında outbox ile teslim edi
   assert.equal(hedefGuncel.diplomasiGiden?.length ?? 0, 0, "kaynak teyit edince yanıt outbox boşalır");
   assert.equal(hedefGuncel.devlet?.taninmaGelen?.demirhan?.yanitlandi, true);
 });
+
+
+test("oyuncu işletmesi vergisi bölge kasasına aynı anahtarla yalnız bir kez yazılır", async () => {
+  const saat = Date.now();
+  const env = {} as Env;
+  const bolgeler = sahteAdAlani((ctx) => new BolgeDO(ctx, env, () => saat));
+  env.BOLGE = bolgeler;
+  const ileti = { islem: "vergiYatir" as const, bolge: "demirhan", anahtar: "develi:vergi:tek-0001", tutar: 7, yerlesim: "develi" };
+  const ilk = await bolgeCagir(env, ileti);
+  assert.equal(ilk.ok, true, JSON.stringify(ilk));
+  if (!ilk.ok) return;
+  assert.equal(ilk.deger.tekrar, false);
+  const ikinci = await bolgeCagir(env, ileti);
+  assert.equal(ikinci.ok, true, JSON.stringify(ikinci));
+  if (!ikinci.ok) return;
+  assert.equal(ikinci.deger.tekrar, true);
+  assert.equal(ikinci.deger.kasa, ilk.deger.kasa, "aynı anahtar ikinci kez vergi eklemez");
+  assert.equal(ikinci.deger.kasa, 7);
+});
