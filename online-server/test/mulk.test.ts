@@ -168,6 +168,7 @@ test("kasa ↔ cüzdan: yarım işlem ve çift gönderim toplam akçeyi değişt
 test("yetki matrisi: roller, tek tek yetki, vekâlet, NPC çalışan", () => {
   const { k, a, b } = hazir();
   const br = kopru(k);
+  a.ms = { a: "", y: "", s: {} };
   edin(k, a, { tur: "han" }, AN, "e-0000001");
   br.yerlesimdenTeslim();
   br.is.kasa = 500;
@@ -333,6 +334,7 @@ test("oyuncu hanı: kira ve ikram kasaya, çarpanlı fiyat; aynı hane ve karş�
 test("oyuncu hanı geliri bölge vergisini kesir biriktirerek outbox'a ayırır", () => {
   const { k, a, b } = hazir();
   const br = kopru(k);
+  a.ms = { a: "hanci", y: "", at: AY, s: { hanci: { kd: 0, hz: 0, cy: 0, sv: { "hanci.yatakAhir": 1 } } } };
   b.pa = 1000;
   edin(k, a, { tur: "han" }, AN, "e-vergi-0001");
   br.yerlesimdenTeslim();
