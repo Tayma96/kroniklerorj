@@ -165,7 +165,10 @@ function SiyasetEkran() {
           {applyParams(t("onl.siyaset.ittifakTalepBekliyor"), [beylikAdi(devlet.ittifakTalep.hedef)])}
         </Text> : null}
         {(devlet.ittifaklar ?? []).length ? (devlet.ittifaklar as Record<string, any>[]).map((x) => <View key={x.bolge} style={{ flexDirection: yon(rtl), justifyContent: "space-between", alignItems: "center", gap: 8, paddingVertical: 5, borderBottomWidth: 1, borderColor: C.border }}>
-          <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 13, color: C.parchment, textAlign: hiza(rtl) }}>{x.ad ?? beylikAdi(x.bolge)}</Text>
+          <View style={{ flex: 1, gap: 2 }}>
+            <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchment, textAlign: hiza(rtl) }}>{x.ad ?? beylikAdi(x.bolge)}</Text>
+            {x.durum === "aktif" || x.durum === "kabulBekliyor" ? <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{applyParams(t("onl.siyaset.ittifakSonAy"), [x.sonAy])}</Text> : null}
+          </View>
           <Rozet metin={t("onl.siyaset.ittifakDurum." + x.durum)} renk={x.durum === "aktif" ? C.sage : C.goldBright} />
         </View>) : null}
         {(devlet.ittifaklar ?? []).length === 0 ? <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchmentDim, textAlign: hiza(rtl) }}>{t("onl.siyaset.ittifakYok")}</Text> : null}
