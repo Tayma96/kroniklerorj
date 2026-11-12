@@ -103,7 +103,7 @@ export const MALLAR: Record<MalId, { taban: number; meslek: MeslekId; omur?: num
   mizrak: { taban: 17, meslek: "demirci", omur: 6 },
   kalkan: { taban: 17, meslek: "demirci" },
   kilic: { taban: 38, meslek: "demirci" },
-  zincir: { taban: 35, meslek: "demirci" },
+  zincir: { taban: 35, meslek: "demirci", omur: 6 },
   pulZirh: { taban: 129, meslek: "demirci" },
   dograma: { taban: 21, meslek: "marangoz" },
   kagni: { taban: 46, meslek: "marangoz", omur: 8 },
