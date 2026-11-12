@@ -280,10 +280,13 @@ export function hizmetNpcTalebiAc(kasaba: Kasaba, ay: number, olaylar: OlayTasla
   const acilan: OlayTaslagi[] = [];
   for (const olay of olaylar) {
     const hizmet = olay.t === "dogum" ? "lohusa" : olay.t === "olum" ? "teselli" : undefined;
-    if (!hizmet || !olay.w || !olay.h) continue;
+    const hedefId = olay.t === "dogum"
+      ? olay.h
+      : (typeof olay.p.yakini === "object" && olay.p.yakini !== null ? olay.p.yakini.i : undefined);
+    if (!hizmet || !olay.w || typeof hedefId !== "string") continue;
     const tarif = hizmetTarifiBul(hizmet);
-    if (!tarif?.npcOdul || !/^n([1-9][0-9]{0,8})$/.test(olay.h)) continue;
-    const hedefNo = Number(olay.h.slice(1));
+    if (!tarif?.npcOdul || !/^n([1-9][0-9]{0,8})$/.test(hedefId)) continue;
+    const hedefNo = Number(hedefId.slice(1));
     const hedef = kasaba.dizin.get(hedefNo);
     if (!hedef) continue;
     // Aynı hane için aynı ayda birden fazla açık talep ve aynı kaynak olayın tekrarı yok.
@@ -294,7 +297,7 @@ export function hizmetNpcTalebiAc(kasaba: Kasaba, ay: number, olaylar: OlayTasla
     if (hazine.hz < tarif.npcOdul) continue;
     hazine.hz -= tarif.npcOdul;
     const talep: HizmetNpcTalebi = {
-      i: ek.n++, olay: olay.w, h: hizmet, hedef: olay.h, hane: hedef.e,
+      i: ek.n++, olay: olay.w, h: hizmet, hedef: hedefId, hane: hedef.e,
       ac: ay, sa: ay + 1, odul: tarif.npcOdul, d: "acik",
     };
     talepler.push(talep);
@@ -341,7 +344,7 @@ export function hizmetNpcTalepTeslim(
   talep.d = "tamam";
   talep.teslim = { o: satici.o, ad: satici.ad, ay };
   const olay: OlayTaslagi = {
-    t: "hizmetTalep", w: satici.o, h: npcKimlik(hedef.i), g: satici.o, n: 3,
+    t: "hizmetTalep", w: npcKimlik(hedef.i), h: satici.o, g: satici.o, n: 3,
     k: "olay.hizmetTalepTeslim",
     p: { oyuncu: oyuncuRef(satici), kisi: npcRef(hedef), hizmet: talep.h, odul: talep.odul },
   };
