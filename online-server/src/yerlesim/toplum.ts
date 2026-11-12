@@ -28,6 +28,10 @@ export interface Sartlar {
   /** Faiz yüzdesi ve vade (ay sayısı) — borç. */
   fz?: number;
   va?: number;
+  /** Fiziksel kâtip senedi borca eklenmiştir. */
+  sn?: 1;
+  /** Teklif kabulüne kadar göndericinin senedi emanette tutulur. */
+  se?: 1;
   /** Borç yönü: ver = gönderen borç verir, iste = gönderen borç ister. */
   yn?: "ver" | "iste";
   /** Gelir payı yüzdesi ve süre (ay) — ortaklık. */
