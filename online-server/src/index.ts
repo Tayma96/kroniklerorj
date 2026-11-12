@@ -48,6 +48,7 @@
 //   GET  /v1/ismarlama?dil=              → gelen/giden ısmarlamalar, ustalık sicili
 //   POST /v1/ismarlama {hedef, mal, adet, kalite?, sure, ucret, istekNo} → {ismarlama} (ücret emanete)
 //   POST /v1/ismarlama/cevap {ismarlama, cevap: kabul|ret|geri|teslim, kalite?, istekNo} → {ismarlama, teslim?}
+//   POST /v1/hizmet/talep-teslim {talep, istekNo} → ödüllü NPC doğum/yas hizmet talebini tamamlar
 //   GET  /v1/levha?mal=                  → Ustalar Levhası (üstün/şaheser ürünler: kim, ne, ay)
 //   GET  /v1/defter?ay=                  → gelir-gider dökümü (son N ay), emanetteki akçe
 //   POST /v1/sikayet {hedef, neden, aciklama?, istekNo} → {id, durum, kalan}
@@ -444,6 +445,8 @@ async function yonlendir(istek: Request, env: Env): Promise<Response> {
       return yontem === "POST" ? ekonomiGovdeli(istek, env, "hizmetIslem") : hataYaniti("yontem_yok");
     case "/v1/hizmet/geri":
       return yontem === "POST" ? ekonomiGovdeli(istek, env, "hizmetGeri") : hataYaniti("yontem_yok");
+    case "/v1/hizmet/talep-teslim":
+      return yontem === "POST" ? ekonomiGovdeli(istek, env, "hizmetTalepTeslim") : hataYaniti("yontem_yok");
     case "/v1/pazar":
       return yontem === "GET"
         ? hesaba(istek, env, (hesapId) => basarili({ islem: "pazar", hesapId, mal: url.searchParams.get("mal"), dil }))
