@@ -447,6 +447,8 @@ async function yonlendir(istek: Request, env: Env): Promise<Response> {
       return yontem === "POST" ? ekonomiGovdeli(istek, env, "hizmetGeri") : hataYaniti("yontem_yok");
     case "/v1/hizmet/talep-teslim":
       return yontem === "POST" ? ekonomiGovdeli(istek, env, "hizmetTalepTeslim") : hataYaniti("yontem_yok");
+    case "/v1/hizmet/gorev":
+      return yontem === "POST" ? ekonomiGovdeli(istek, env, "hizmetGorev") : hataYaniti("yontem_yok");
     case "/v1/pazar":
       return yontem === "GET"
         ? hesaba(istek, env, (hesapId) => basarili({ islem: "pazar", hesapId, mal: url.searchParams.get("mal"), dil }))
