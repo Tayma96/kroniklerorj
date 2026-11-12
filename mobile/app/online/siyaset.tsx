@@ -85,7 +85,7 @@ function SiyasetEkran() {
         <View style={{ flexDirection: yon(rtl), gap: 8 }}>
           {(["arz", "moral", "guvenlik"] as const).map((ad) => {
             const g = gosterge[ad];
-            return <View key={ad} style={{ flex: 1, borderWidth: 1, borderColor: C.line, borderRadius: 8, padding: 8, gap: 3 }}>
+            return <View key={ad} style={{ flex: 1, borderWidth: 1, borderColor: C.border, borderRadius: 8, padding: 8, gap: 3 }}>
               <Text style={{ fontFamily: F.display, fontSize: 11, color: C.parchmentDim, textAlign: "center" }}>{t("onl.siyaset.gosterge." + ad)}</Text>
               <Text style={{ fontFamily: F.display, fontSize: 20, color: C.goldBright, textAlign: "center" }}>{g?.deger ?? "—"}</Text>
             </View>;
@@ -144,7 +144,7 @@ function SiyasetEkran() {
     {durum?.kayit.slice(-8).reverse().map((x, i) => {
       const k = typeof x.m?.k === "string" ? "onl." + x.m.k : "";
       const metin = k ? t(k) : "";
-      return <View key={x.n ?? i} style={{ flexDirection: yon(rtl), alignItems: "center", gap: 8, paddingVertical: 7, borderBottomWidth: 1, borderColor: C.line }}>
+      return <View key={x.n ?? i} style={{ flexDirection: yon(rtl), alignItems: "center", gap: 8, paddingVertical: 7, borderBottomWidth: 1, borderColor: C.border }}>
         <Text style={{ fontFamily: F.display, fontSize: 11, color: C.goldDim }}>{x.ay ?? ""}</Text>
         <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 13, color: C.parchmentDim, textAlign: hiza(rtl) }}>{metin && metin !== k ? metin : (x.kim ?? x.tur ?? "")}</Text>
       </View>;
