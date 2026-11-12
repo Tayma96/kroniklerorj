@@ -142,8 +142,39 @@ export function oyuncuArabuluculukImzala(
   if (r !== "s" && r !== "k") return hata("taraf_degil");
   if (d.d !== "imzaBekliyor" || !d.uz) return hata("teklif_kapandi");
   if (!Number.isSafeInteger(surum) || surum !== d.sv) return hata("teklif_gecersiz");
-  d.im[r] = d.sv;
-  if (d.im.s !== undefined && d.im.k !== undefined) d.d = "onaylandi";
+  const digerRol: "s" | "k" = r === "s" ? "k" : "s";
+  if (d.im[digerRol] !== undefined) {
+    const s = k.kar.get(d.s), kk = k.kar.get(d.k);
+    if (!s || !kk || !d.uz) return hata("sakin_yok");
+    if (!Number.isSafeInteger(s.pa - d.uz.s) || !Number.isSafeInteger(kk.pa - d.uz.k)
+      || s.pa < d.uz.s || kk.pa < d.uz.k) return hata("para_yok");
+    // İkinci imza ve iki tarafın bakiyesinden emanet kesintisi tek yerleşim yazımında birlikte kaydedilir.
+    s.pa -= d.uz.s;
+    kk.pa -= d.uz.k;
+    d.od = { s: d.uz.s, k: d.uz.k, emanet: 1 };
+    d.im[r] = d.sv;
+    d.d = "emanette";
+  } else {
+    d.im[r] = d.sv;
+  }
+  return basarili(d);
+}
+
+export function oyuncuArabuluculukUygula(
+  k: Kasaba, ben: Karakter, id: unknown, ay: number
+): Sonuc<OyuncuArabuluculuk> {
+  const d = dosyaBul(toplumAl(k), id);
+  if (!d) return hata("talep_yok");
+  if (!rol(d, ben.o)) return hata("taraf_degil");
+  if (d.d !== "emanette" || !d.od || d.od.emanet !== 1 || d.od.uygulandi === 1) return hata("teklif_kapandi");
+  const s = k.kar.get(d.s), kk = k.kar.get(d.k);
+  if (!s || !kk) return hata("sakin_yok");
+  if (!Number.isSafeInteger(s.pa + d.od.k) || !Number.isSafeInteger(kk.pa + d.od.s)) return hata("deger_sinir_disi");
+  s.pa += d.od.k;
+  kk.pa += d.od.s;
+  d.od.uygulandi = 1;
+  d.d = "tamam";
+  d.kp = ay;
   return basarili(d);
 }
 
