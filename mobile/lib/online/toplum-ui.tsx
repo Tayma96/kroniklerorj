@@ -61,8 +61,13 @@ export function sartYaz(t: Ceviri, x: TeklifGorunumu, ay: number): string[] {
     case "hediye": satir.push(applyParams(t("onl.tp.s.hediye"), [armaganYaz(t, s)])); break;
     case "gorucu": satir.push(t("onl.tp.s.gorucu")); break;
     case "is":
-      satir.push(applyParams(t("onl.tp.s.is"), [t("onl.tp.is." + (s.is ?? "mektup")), s.tutar ?? 0, s.is === "mektup" ? 1 : 2]));
+      satir.push(applyParams(t("onl.tp.s.is"), [t("onl.tp.is." + (s.is ?? "mektup")), s.tutar ?? 0, s.is === "muhafiz" ? 2 : 1]));
       if (s.is === "mektup" && s.hedef) satir.push(applyParams(t("onl.tp.s.mektupHedef"), [s.hedef.ad]), s.mesaj ?? "");
+      if (s.is === "arabuluculuk") {
+        if (s.arabuluculukNpc) satir.push(applyParams(t("onl.tp.s.arabuluculukNpc"), [s.arabuluculukNpc.ad]));
+        if (s.arabuluculukBedel) satir.push(t("onl.tp.arabuluculukBedel." + s.arabuluculukBedel));
+        if (s.arabuluculukMiktar) satir.push(applyParams(t("onl.tp.f.arabuluculukTazminat"), [s.arabuluculukMiktar]));
+      }
       break;
     case "npcIs": satir.push(applyParams(t("onl.tp.s.npcIs"), [s.tutar ?? 0, TOPLUM_SINIR.npcIsTakat])); break;
     case "npcBorc": satir.push(applyParams(t("onl.tp.s.npcBorc"), [s.tutar ?? 0, s.vade ?? 0])); break;
