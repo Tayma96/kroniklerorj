@@ -135,7 +135,7 @@ export interface OyuncuArabuluculukGorunumu {
   riza: { s?: number; k?: number; ar?: number };
   uzlasma?: { s: number; k: number; not?: string };
   surum: number; imza: { s?: number; k?: number };
-  acilisAyi: number; sonCevapAyi: number; kapanisAyi?: number;
+  acilisAyi: number; sonCevapAyi: number; sonAy?: number; kapanisAyi?: number;
 }
 export interface GelenYaniti {
   ay: number;
@@ -226,7 +226,7 @@ export function gelenMi(v: unknown): v is GelenYaniti {
   const d = v.dostluk;
   const arabuluculuk = dizi(v.arabuluculuk) && v.arabuluculuk.every((x) => nesne(x) && metin(x.id) && metin(x.durum)
     && (x.rol === "sikayetci" || x.rol === "karsi" || x.rol === "arabulucu") && kisiMi(x.sikayetci) && kisiMi(x.karsi) && kisiMi(x.arabulucu)
-    && nesne(x.riza) && sayi(x.surum) && nesne(x.imza) && sayi(x.acilisAyi) && sayi(x.sonCevapAyi)
+    && nesne(x.riza) && sayi(x.surum) && nesne(x.imza) && sayi(x.acilisAyi) && sayi(x.sonCevapAyi) && (x.sonAy === undefined || sayi(x.sonAy))
     && (x.uzlasma === undefined || (nesne(x.uzlasma) && sayi(x.uzlasma.s) && sayi(x.uzlasma.k))));
   return teklifListesi(v.gelen) && teklifListesi(v.giden) && teklifListesi(v.suren) && teklifListesi(v.kapanan) && (v.arabuluculuk === undefined || arabuluculuk)
     && nesne(d) && ayliListe(d.gelen) && ayliListe(d.giden) && ayliListe(d.dostlar) && ayliListe(v.husumetler)
