@@ -80,7 +80,7 @@ export const rows: Record<string, string[]> = {
 
   // --- NPC'ye satış
   "onl.sat.baslik": ["Kasabaya sat", "Sell to the town", "Vender al pueblo", "Vender à vila", "البيع للبلدة", "Продать городу"],
-  "onl.sat.alt": ["Ürettiğini kasabanın alıcılarına sat. Her maldan ayda en çok %1 adet alınır.", "Sell what you make to the town's buyers. Each good is bought at most %1 a month.", "Vende lo que produces a los compradores del pueblo. De cada bien compran como mucho %1 al mes.", "Vende o que produzes aos compradores da vila. De cada bem compram no máximo %1 por mês.", "بِع ما تصنعه لمشتري البلدة. يُشترى من كل بضاعة %1 قطع شهريًا على الأكثر.", "Продавайте сделанное покупателям города. Каждого товара берут не больше %1 в месяц."],
+  "onl.sat.alt": ["Kasaba NPC alım kotası ürüne göre değişir; kalan hak her malın yanında gösterilir.", "Town NPC demand varies by item; remaining quota is shown beside each good.", "La demanda NPC del pueblo varía por artículo; la cuota restante aparece junto a cada bien.", "A demanda dos NPCs da vila varia por item; a cota restante aparece ao lado de cada bem.", "يختلف طلب تجار البلدة حسب السلعة؛ ويظهر المتبقي بجانب كل سلعة.", "Спрос NPC зависит от товара; остаток квоты показан рядом с каждым товаром."],
   "onl.sat.sat": ["Sat", "Sell", "Vender", "Vender", "بِع", "Продать"],
   "onl.sat.satilmaz": ["satılmaz", "not sold", "no se vende", "não se vende", "لا يُباع", "не продаётся"],
   "onl.sat.elde": ["Ambarında %1", "%1 in store", "%1 en el almacén", "%1 no armazém", "في المخزن %1", "На складе: %1"],
