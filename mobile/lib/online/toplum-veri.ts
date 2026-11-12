@@ -77,6 +77,8 @@ export interface TeklifGorunumu {
   alacakli?: string;
   kalan?: number | null;
   vadeAyi?: number | null;
+  /** Senet ödeme dökümü: [ödeme ayı, tahsil edilen akçe]. */
+  odemeler?: [number, number][];
   bitisAyi?: number;
 }
 
