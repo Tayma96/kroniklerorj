@@ -94,13 +94,14 @@ Her POST, `istekNo` ile tekrar güvenli olmalı. Yerleşim sınırları ve yetki
 
 ### E4.3-D — İki taraflı işler
 - [x] Ayrı sözleşme motoru yazılmadı; mevcut teklif/cevap akışına `is` türü eklendi. Müşteri ücreti teklif açarken emanet olarak kilitler; çalışan kabul eder, işi teslim eder ve ödeme ancak teslimde çalışana geçer.
-- [x] Arabuluculuk (`arabulucu.araBulma`): 2 takat, hizmet tecrübesi ve kasaba morali +1.
+- [x] Arabuluculuk (`arabulucu.araBulma`): 1 takat; teklif NPC hedefi ve uzlaşma bedeli seçer, kabulde gerçek üçgen talebi açılır, teslimde NPC–oyuncu ilişkisi mevcut arabuluculuk motoruyla değişir. İş ücreti arabulucuya, tazminat NPC/iadeye gider; moral sonuç yönüne göre artar/azalır.
 - [x] Kervan muhafızlığı (`asker.kervanMuhafizligi`): 2 takat, zincir ustalığı düğümü ve zincir gerekir; teslimde zincir aşınır, kasaba asayişi +1.
 - [x] Mektup (`katip.koyMektubu`): müşteri aynı kasabadaki üçüncü oyuncuyu seçer ve en çok 240 karakterlik metin verir. Çalışan teslim ettiğinde alıcıya özel kronik olayı gönderilir; müşteri de teslim bildirimi alır. Aynı gönderen-hedef çifti ayda bir mektup iletebilir; engel ve hesap/hane kümesi kontrolleri hem açılışta hem teslimde uygulanır.
 - [x] Teklif başına istekNo tekrar güvenliği; oyuncu başına en çok iki açık iş sözleşmesi; kabul, ret, iptal, süre aşımı, yanlış tarafın teslimi, çift teslim ve emanet iadesi mevcut teklif defterinde doğrulanır.
 - [x] İş türü, mektup hedefi/metni, alıcıya özel olay ve sözleşme durumları mobilde 6 dilde. Alıcı dost listesinden seçilebilir veya oyuncu koduyla girilebilir.
 - [x] Regresyonlar: hizmet düğümü, zincir ustalığı, zincir aşınması, takat, moral/asayiş, emanet/ödeme, aynı hesap-hane, aynı hedefe aylık mektup sınırı, engelli hedef ve özel olay alıcısı.
-- [ ] Derinleştirme: arabuluculuk şu an kasaba moraline katkı verir; henüz iki oyuncunun husumetini kapatmaz. Muhafızlık kasaba asayişini artırır; henüz belirli kervan rotasında haydut saldırısını önlemez. Senet/borç kaydı ayrı bir sözleşme eki olarak eklenmedi.
+- [x] Arabuluculuk teklifi gerçek NPC uzlaşma motoruna bağlandı; sözleşme ücreti ve NPC tazminatı ayrı emanetlenir, teslim/ret/iptal/süre aşımında tekil sonuç ve iade uygulanır. Bu kapsam NPC–oyuncu kırgınlığıdır; iki oyuncu arasındaki husumet için ayrı hakem/uzlaşma protokolü henüz yok.
+- [ ] Muhafızlık kasaba asayişini artırır; henüz belirli kervan rotasında haydut saldırısını önlemez. Senet/borç kaydı ayrı bir sözleşme eki olarak eklenmedi.
 - [x] GitHub Actions [run #364](https://github.com/Tayma96/kroniklerorj/actions/runs/43141638764): **402 test / 401 geçti / 0 başarısız / 1 atlandı**; mobil TypeScript, 62 statik görsel yolu, sunucu testleri ve sunucu TypeScript başarılı.
 
 ## Kabul ölçütleri
