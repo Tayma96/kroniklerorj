@@ -15,6 +15,7 @@ import { kirginlikSebebi } from "./hafiza.ts";
 import { olduMu } from "./hanedan.ts";
 import { ILISKI_YASI, dostMu } from "./iliski.ts";
 import { beceriEkle, karakterYasi, namEkle, takatHarca } from "./karakter.ts";
+import { sinerjiAcik } from "./beceri-etki.ts";
 import { kisiAdi, kisiCoz, npcAdi, npcKimlik, npcRef, oyuncuRef, sinirla, yas } from "./ortak.ts";
 import type { Zar } from "./rastgele.ts";
 import type { Dokum, Karakter, Kasaba, OlayTaslagi } from "./tipler.ts";
@@ -28,6 +29,8 @@ export const TALEP_ACIK_EN_COK = 3;
 export const TAZMINAT_TAVANI = 15;
 /** [PARAMETRE] Şans: temel, güven/2, kırgınlık/3, sebep ağırlığı (hafiza.SEBEP_AGIRLIGI), bedel, tanıklar. */
 export const ARACI_TEMEL = 30;
+/** Ozan barisIlahisi + Arabulucu araBulma sinerjisi: arabuluculuk şansına ek katkı. */
+export const ARACI_BARIS_SANSI = 10;
 export const GUVEN_BOLEN = 2;
 export const KIRGINLIK_BOLEN = 3;
 export const BEDEL_SANS: Readonly<Record<Exclude<AraciBedeli, "tazminat">, number>> = { ozur: 5, helallik: 10, ortakIs: 10 };
@@ -219,6 +222,7 @@ export function arabuluculukSansi(k: Kasaba, ar: Karakter, t: AraciTalebi, ay: n
   const taraf = k.kar.get(t.t)!;
   const d = dokumKur();
   d.ekle("sans.temel", ARACI_TEMEL);
+  if (sinerjiAcik(ar, "barisSansi")) d.ekle("sans.barisSansi", ARACI_BARIS_SANSI);
   const ga = gorusDegeri(k, npc, ar, k.ili.get(ar.o), ay);
   d.ekle("sans.guven", Math.round(ga / GUVEN_BOLEN), { gorus: ga });
   const gt = gorus(k, npc, taraf, k.ili.get(taraf.o), ay);
