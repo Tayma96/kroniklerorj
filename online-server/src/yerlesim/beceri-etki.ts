@@ -66,7 +66,7 @@ export function hizmetAcik(k: Karakter, hizmet: string): boolean {
 export function hakAcik(k: Karakter, hak: string): boolean {
   const acik = [...acikEtkiler(k)].some((e) => e.tur === "hak" && e.hak === hak);
   // Ahşap köprü projesi, marangozun köprücülük hakkına ek olarak demircinin dişli/metal ustalığını ister.
-  return acik && (hak !== "ahsapKopru" || sinerjiAcik(k, "kopruDemiri"));
+  return acik && (hak !== "ahsapKopru" || sinerjiAcik(k, "degirmenKopruDemiri"));
 }
 
 /** Çapraz meslek sinerjisi: açan düğüm tek başına yetmez, tanımlı öteki düğüm/seviye de öğrenilmiş olmalıdır. */
