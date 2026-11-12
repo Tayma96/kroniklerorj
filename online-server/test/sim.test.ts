@@ -163,7 +163,7 @@ test("simülasyon: dikey dilim ekonomisi — en kârlı oyunda bile aylık akçe
         if (r.ok) kazanc += r.deger.sonuc.odul;
       }
       for (const mal of MAL_IDLERI) {
-        const adet = Math.min(c.ev?.[mal] ?? 0, npcSatisKotasi(mal) - satilan(c, mal, ay));
+        const adet = Math.min(c.ev?.[mal] ?? 0, npcSatisKotasi(mal, oyuncuSayaci(k)(MALLAR[mal].meslek)) - satilan(c, mal, ay));
         if (adet <= 0 || MALLAR[mal].taban === 0) continue;
         const r = npcyeSat(c, mal, adet, oyuncuSayaci(k), ay);
         assert.ok(r.ok, JSON.stringify(r));
