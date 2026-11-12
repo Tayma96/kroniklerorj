@@ -17,7 +17,7 @@ import { KADEMELER, MAL_IDLERI, type MalId, type MeslekId, type OnlineHata } fro
 import { useToplum, type Toplum } from "./toplum-durum";
 import {
   OYUNCU_TEKLIF_TURLERI, TEKLIF_TURLERI, TOPLUM_SINIR,
-  type GelenCevap, type OyuncuProfili, type OyuncuTeklifTuru, type TeklifCevabi, type TeklifGorunumu, type TeklifSartGirdisi, type TeklifTuru,
+  type GelenCevap, type OyuncuProfili, type OyuncuTeklifTuru, type TeklifCevabi, type TeklifGorunumu, type TeklifSartGirdisi, type TeklifTuru, type OyuncuArabuluculukGorunumu,
 } from "./toplum-veri";
 
 type Ceviri = (k: string) => string;
@@ -451,4 +451,53 @@ export function KarakterToplumBolumu({ benId }: { benId: string }) {
     <GelenKutusuKarti ust={0} />
     <OlaganDuzenKarti />
   </View>;
+}
+
+
+/** Oyuncu–oyuncu arabuluculuk dosyası: üçlü davet, arabulucu taslağı ve iki tarafın sürüm imzası. */
+export function ArabuluculukKarti({ x, toplum }: { x: OyuncuArabuluculukGorunumu; toplum: Toplum }) {
+  const { t, rtl } = useI18n();
+  const [sTutari, setSTutari] = useState(x.uzlasma?.s ?? 0);
+  const [kTutari, setKTutari] = useState(x.uzlasma?.k ?? 0);
+  const [not, setNot] = useState(x.uzlasma?.not ?? "");
+  const [hata, setHata] = useState<OnlineHata | null>(null);
+  const [tamam, setTamam] = useState(false);
+  const gonder = async (islem: "cevap" | "geri" | "taslak" | "imza", ek: Record<string, unknown> = {}) => {
+    setHata(null); setTamam(false);
+    const sonuc = await toplum.arabuluculuk({ islem, dosya: x.id, ...ek } as Parameters<Toplum["arabuluculuk"]>[0]);
+    if (sonuc.ok) { hap("success"); setTamam(true); }
+    else { hap("error"); setHata(sonuc.hata); }
+  };
+  const imzali = x.rol === "sikayetci" ? x.imza.s === x.surum : x.rol === "karsi" ? x.imza.k === x.surum : false;
+  const taraf = x.rol !== "arabulucu";
+  return <Cerceve ic={{ padding: 12, gap: 8 }}>
+    <View style={{ flexDirection: yon(rtl), alignItems: "center", gap: 8 }}>
+      <Madalyon icon="scales" size={38} aktif={x.durum === "davet" || x.durum === "imzaBekliyor"} />
+      <View style={{ flex: 1, gap: 2 }}>
+        <Text style={{ fontFamily: F.display, fontSize: 14, color: C.parchment, textAlign: hiza(rtl) }}>{t("onl.tp.arb.baslik")} · #{x.id}</Text>
+        <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{t("onl.tp.arb.d." + x.durum)} · {t("onl.tp.arb.rol." + x.rol)}</Text>
+      </View>
+    </View>
+    {[x.sikayetci, x.karsi, x.arabulucu].map((kisi, i) => <Text key={kisi.id} style={{ fontFamily: F.serif, fontSize: 14, color: C.parchmentDim, textAlign: hiza(rtl) }}>{[t("onl.tp.arb.sikayetci"), t("onl.tp.arb.karsi"), t("onl.tp.arb.arabulucu")][i]}: {kisi.ad}</Text>)}
+    {x.uzlasma ? <View style={{ gap: 3 }}>
+      <Text style={{ fontFamily: F.display, fontSize: 12, color: C.gold }}>{t("onl.tp.arb.uzlasma")} · v{x.surum}</Text>
+      <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchmentDim, textAlign: hiza(rtl) }}>{t("onl.tp.arb.sOder")}: {x.uzlasma.s} · {t("onl.tp.arb.kOder")}: {x.uzlasma.k}</Text>
+      {x.uzlasma.not ? <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.parchmentMuted }}>{x.uzlasma.not}</Text> : null}
+      <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchmentMuted }}>{t("onl.tp.arb.imzaDurum")}: {x.imza.s === x.surum ? "✓" : "—"} / {x.imza.k === x.surum ? "✓" : "—"}</Text>
+    </View> : null}
+    {x.durum === "davet" ? <View style={{ flexDirection: yon(rtl), gap: 8 }}>
+      <View style={{ flex: 1 }}><AltinDugme etiket={t("onl.tp.c.kabul")} rtl={rtl} bekliyor={toplum.bekliyor("arabuluculuk:" + x.id + ":cevap")} onPress={() => { void gonder("cevap", { cevap: "kabul" }); }} /></View>
+      <View style={{ flex: 1 }}><CizgiDugme etiket={t("onl.tp.c.ret")} rtl={rtl} kucuk onPress={() => { void gonder("cevap", { cevap: "ret" }); }} /></View>
+      <View style={{ flex: 1 }}><CizgiDugme etiket={t("onl.tp.c.geri")} rtl={rtl} kucuk onPress={() => { void gonder("geri"); }} /></View>
+    </View> : null}
+    {(x.durum === "taslak" || x.durum === "imzaBekliyor") && x.rol === "arabulucu" ? <View style={{ gap: 8 }}>
+      <Sayac etiket={t("onl.tp.arb.sOder")} deger={sTutari} en={0} cok={100000} onDegis={setSTutari} birim={t("onl.tp.akceBirim")} />
+      <Sayac etiket={t("onl.tp.arb.kOder")} deger={kTutari} en={0} cok={100000} onDegis={setKTutari} birim={t("onl.tp.akceBirim")} />
+      <TextInput value={not} onChangeText={setNot} maxLength={240} placeholder={t("onl.tp.arb.not")} placeholderTextColor={C.parchmentMuted} style={{ minHeight: 42, borderWidth: 1, borderColor: "rgba(201,162,78,0.35)", borderRadius: 8, padding: 10, color: C.parchment, fontFamily: F.serif, textAlign: hiza(rtl) }} />
+      <CizgiDugme etiket={t("onl.tp.arb.taslakKaydet")} icon="scroll" rtl={rtl} kucuk onPress={() => { void gonder("taslak", { sTutari, kTutari, not }); }} />
+    </View> : null}
+    {x.durum === "imzaBekliyor" && taraf && !imzali ? <AltinDugme etiket={t("onl.tp.arb.imzala") + " · v" + x.surum} icon="check-circle" rtl={rtl} bekliyor={toplum.bekliyor("arabuluculuk:" + x.id + ":imza")} onPress={() => { void gonder("imza", { surum: x.surum }); }} /> : null}
+    {hata ? <Bant metin={t(hataAnahtari(hata))} rtl={rtl} /> : null}
+    {tamam ? <Bant tur="bilgi" metin={t("onl.tp.arb.islendi")} rtl={rtl} /> : null}
+  </Cerceve>;
 }
