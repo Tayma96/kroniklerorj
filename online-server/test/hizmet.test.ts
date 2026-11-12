@@ -491,6 +491,24 @@ test("E4.3-C nöbet görevi: beceri ve mızrak gerekir; takat, mızrak aşınmas
   assert.equal(hizmetGorevTeslim(k, kar, gorev.id, ay).ok, false);
 });
 
+test("E4.3-C mızrak, altı nöbet kullanımında aşınır", () => {
+  const k = testKasabasi("develi", 300);
+  k.hd = { hz: 1_000, vk: 0, em: {}, tr: [] };
+  const kar = gorevKarakter(k, 21, "asker", "asker.surNobeti");
+  kar.ev = { mizrak: 1 };
+  const ilkAy = k.ay + 1;
+  for (let i = 0; i < 6; i++) {
+    const ay = ilkAy + i;
+    hizmetGorevDonumu(k, ay);
+    const gorev = hizmetGorevleri(k.ek, ay).find((x) => x.tur === "nobet")!;
+    const r = hizmetGorevTeslim(k, kar, gorev.id, ay);
+    assert.equal(r.ok, true, r.ok ? "" : r.hata);
+    if (i < 5) assert.equal(kar.ev?.mizrak, 1);
+  }
+  assert.equal(kar.ev?.mizrak ?? 0, 0);
+  assert.equal(kar.as?.mizrak, undefined);
+});
+
 test("E4.3-C görevleri beceri kapısı, hane tekilliği ve araç eksikliğinde ödül üretmez", () => {
   const k = testKasabasi("develi", 300);
   k.hd = { hz: 100, vk: 0, em: {}, tr: [] };
