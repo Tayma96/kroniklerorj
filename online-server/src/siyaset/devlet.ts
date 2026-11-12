@@ -58,7 +58,8 @@ export function devletYonet(d: BolgeDurumu, kimlik: SiyasiKimlik, govde: Record<
       const hedef = typeof govde.hedefBolge === "string" ? BEYLIKLER.find((x) => x.id === govde.hedefBolge) : undefined;
       const kaynakAd = BEYLIKLER.find((x) => x.id === d.id)?.ad;
       if (!hedef || hedef.id === d.id || !kaynakAd) return "deger_sinir_disi";
-      const mevcut = s.ittifaklar?.[hedef.id]?.durum;\n      if (mevcut === "aktif" || mevcut === "kabulBekliyor") return "devlet_talep_var";
+      const mevcut = s.ittifaklar?.[hedef.id]?.durum;
+      if (mevcut === "aktif" || mevcut === "kabulBekliyor") return "devlet_talep_var";
       const istekId = `${d.id}:${d.kn + 1}:${d.ay}:ittifak`;
       s.ittifakTalep = { hedef: hedef.id, istekId, ay: d.ay };
       (d.diplomasiGiden ??= []).push({ tur: "ittifakIstek", hedef: hedef.id, istekId, ay: d.ay, ad: kaynakAd });
@@ -217,7 +218,8 @@ export function ittifakYanitAl(
   const b = typeof kaynak === "string" ? BEYLIKLER.find((x) => x.id === kaynak) : undefined;
   if (!b || b.id === d.id || typeof istekId !== "string" || !Number.isInteger(ay) || (ay as number) < 0
     || ad !== b.ad || (karar !== "kabul" && karar !== "ret")) return "deger_sinir_disi";
-  const onceki = s.ittifakYanits?.[b.id];\n  if (onceki?.istekId === istekId) return onceki.karar === karar ? null : "hedef_uygun_degil";
+  const onceki = s.ittifakYanits?.[b.id];
+  if (onceki?.istekId === istekId) return onceki.karar === karar ? null : "hedef_uygun_degil";
   if (s.ittifakTalep?.hedef !== b.id || s.ittifakTalep.istekId !== istekId) return "hedef_uygun_degil";
   (s.ittifakYanits ??= {})[b.id] = { karar, ay: ay as number, ad: b.ad, istekId };
   (s.ittifaklar ??= {})[b.id] = {
