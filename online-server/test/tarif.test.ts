@@ -168,3 +168,24 @@ test("Hancı ikram hizmeti menü fiyatına indirim uygular ve kanca bağlı say�
   assert.equal(r.deger.batak, 9);
   assert.equal(c.pa, 91);
 });
+
+
+test("Kâtip senet zinciri: düğüm seviyesi mürekkep ve senet tariflerini açar; girdiler gerçek envanterden tüketilir", () => {
+  const k = testKasabasi();
+  const c = usta(k, "katip", "dilekceSenet");
+  c.ev = { komur: 1, ot: 1, kagit: 1 };
+  const kilit = TARIF_KILIDI.senet!;
+  assert.equal(TARIF_KILIDI.murekkep?.dugum, "katip.dilekceSenet");
+  seviyeVer(c, "katip.dilekceSenet", 1);
+  assert.equal(tarifListesi(c).find((x) => x.id === "murekkep")?.acik, true);
+  assert.equal(tarifListesi(c).find((x) => x.id === "senet")?.acik, false, "senet ikinci seviyede açılır");
+  const m = tarifYap(c, "murekkep", k.ay);
+  assert.ok(m.ok, JSON.stringify(m));
+  assert.deepEqual(c.ev, { kagit: 1, murekkep: 2 });
+  seviyeVer(c, "katip.dilekceSenet", kilit.seviye);
+  const s = tarifYap(c, "senet", k.ay);
+  assert.ok(s.ok, JSON.stringify(s));
+  assert.equal(c.ev.senet, 1);
+  assert.equal(c.ev.kagit, undefined);
+  assert.equal(c.ev.murekkep, 1);
+});
