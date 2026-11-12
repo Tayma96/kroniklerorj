@@ -66,4 +66,4 @@ Bunlar nihai tasarım kararı değildir. GDD'deki D-43 ve D-46 kararları uyarı
 - `npm run typecheck`
 - `npm test`
 
-Bu dalda GitHub kaynak güncellemeleri yapıldı; CI sonucu alınmadan testlerin geçtiği kabul edilmemelidir.
+CI run #201 başarılı (commit `71445a6`): 374 test / 373 geçti / 0 başarısız / 1 atlandı; mobil TypeScript, 62 statik görsel yolu ve sunucu TypeScript kontrolü başarılı. Savunma ön emri testleri bu çalışmada doğrulandı.
