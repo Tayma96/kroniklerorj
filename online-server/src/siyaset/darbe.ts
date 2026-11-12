@@ -226,7 +226,10 @@ export function darbeGorunumu(d: BolgeDurumu, kimlik?: SiyasiKimlik) {
     id: p.id, durum: p.durum, mod: p.mod ?? null,
     ilanAy: p.ilanAy ?? null, cozumAy: p.cozumAy ?? null, sonuc: p.sonuc ?? null,
     barisTeklifi: p.barisTeklifi ?? null,
-    ...(kimlik ? { benimTaraf: p.baslatanKisi === kimlik.kisi ? "saldiran" : (p.savunma ?? []).some((x) => x.hesap === kimlik.hesap) ? "savunan" : null } : {}),
+    ...(kimlik ? {
+      benimTaraf: p.baslatanKisi === kimlik.kisi ? "saldiran" : (p.savunma ?? []).some((x) => x.hesap === kimlik.hesap) ? "savunan" : null,
+      benimDestek: p.destekler.some((x) => x.hesap === kimlik.hesap),
+    } : {}),
     ...(katilimci ? { esik, destekler: p.destekler.length, savunma: (p.savunma ?? []).length, garnizonSadakati: p.garnizonSadakati, yatirilan: p.yatirilan, izler: p.izler } : {}),
   };
 }
