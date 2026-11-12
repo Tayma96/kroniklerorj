@@ -43,6 +43,12 @@ jobs:
       - name: Validate static mobile image assets
         working-directory: mobile
         run: npm run assets:check
+      - name: Validate mobile translation keys and icon names
+        working-directory: mobile
+        run: node scripts/_smoke/i18n-icon-check.cjs
+      - name: Validate language isolation
+        working-directory: mobile
+        run: node scripts/_smoke/dil-karisma.cjs
       - name: Online server tests
         working-directory: online-server
         run: npm test
