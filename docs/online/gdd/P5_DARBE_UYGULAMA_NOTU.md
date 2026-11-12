@@ -16,7 +16,7 @@ Dal: `feature/online-p5-darbe-zinciri`.
    - Pat/çıkmaz: mevcut statüko korunur.
    - Başarı: kurucu bey olur ve P6 bağımsız devlet kaydı oluşturulur.
    - Moğol müdahalesi: Moğol tutumu sefer kademesindeyse müdahale sonucu çıkar; otomatik ilhak veya karakter silme yoktur.
-8. Çözümde çevrimiçi oyuncu beklenmez; savunma gücü mevcut makamlar, güvenlik, Sultan meşruiyeti ve garnizon sadakati üzerinden hesaplanır. Sessizlik teslimiyet sayılmaz.
+8. Çözümde çevrimiçi oyuncu beklenmez; sessiz makamlar otomatik savunma tabanını korur. İlan sonrası şehir beyi ve ahi başı makamlarının gerçek sahipleri `darbeSavunma` ön emri verebilir; emirler çatışma çözülmeden önce kaydedilir, aynı hesap/hane kümesi ikinci emir veremez ve açık savunma puanı çatışma hesabına eklenir. Vekil emir veremez.
 9. Hazırlık aşamasında kurucu vazgeçebilir; altı aylık soğuma uygulanır. Bölge başına tek açık plan vardır.
 
 ## P5 — alfa parametreleri
@@ -29,6 +29,7 @@ Bütün değerler `online-server/src/siyaset/sabitler.ts` içindeki `DARBE` nesn
 - Meşruiyet 40 veya altı ya da iki ahi başı desteği.
 - Garnizon yatırımı 20 akçelik birimlerle, 20–200 aralığında; birim başına 10 sadakat.
 - Tebliğ ve çatışma süreleri birer oyun ayı; sonuç farkı 25.
+- Açık savunma emri: şehir beyi +6, ahi başı +3; toplam savunma emri katkısı en çok +30.
 
 Bunlar nihai tasarım kararı değildir. GDD'deki D-43 ve D-46 kararları uyarınca alfa verisiyle ayarlanmalıdır. Çatışma hesabı şu an mülk kaybı üretmez; mülk kaybı tavanı/ganimet sistemi eklenene kadar mülke otomatik el koyma yoktur.
 
@@ -55,7 +56,7 @@ Bunlar nihai tasarım kararı değildir. GDD'deki D-43 ve D-46 kararları uyarı
 
 - Başka bağımsız devletler arasında tanıma, ittifak, ticaret, sınır ve diplomatik anlaşma uçları.
 - Tanınma talebine dış devlet yanıtı ve Divan'ın gerçek oyuncu koltuklarıyla yönetimi.
-- Savunma ön talimatlarının ayrı oyuncu eylemleri; mevcut çözüm çevrimdışı güvenliği otomatik güç hesabıyla sağlar.
+- Savunma ön emirlerinin mobil ekranı, 6 dilde metinleri ve çatışma raporunda emir dökümü henüz yok; sunucu eylemi ve güç hesabı eklendi.
 - Gerçek oyuncu/mülk vergi tahsilatının `vergiYatir` kancasına kaynak işlemle atomik bağlanması. BolgeDO alıcısı ve anahtar tekrar güvenliği var; tahsilat çağrı noktası henüz bulunup bağlanmadı.
 - Çatışma sırasında açık müzakere, ateşkes şartları ve mülk kaybı tavanı. Şimdilik çıkmaz statükoyu korur ve mülk kaybı uygulanmaz.
 
