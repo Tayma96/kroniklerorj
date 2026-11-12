@@ -11,7 +11,7 @@ import { MESREP_ETKI, mesrepGorus, mesrepGorunumu, mesrepNam, mesrepSec, mesrepY
 import { GUN_MS, MUDAVIM_ESIKLERI, mudavimZiyaret } from "../src/yerlesim/mudavim.ts";
 import { DERT_BASARISIZ_DUSUS, ORTAK_DERT_KISI_EN_COK, ortakDertDonumu, ortakDertKatki, uygunKatkilar } from "../src/yerlesim/ortak-dert.ts";
 import { comertlerLevhasi, senlikDurumu, senlikKatki, SENLIK_SURE_AY } from "../src/yerlesim/senlik.ts";
-import { GOSTERGE_DENGE, gostergeOku, gostergeTetikCarpani } from "../src/yerlesim/topluluk-kayit.ts";
+import { GOSTERGE_DENGE, gostergeDegistir, gostergeOku, gostergeTetikCarpani, toplulukAl } from "../src/yerlesim/topluluk-kayit.ts";
 import { toplulukDonumu } from "../src/yerlesim/topluluk.ts";
 import type { Karakter } from "../src/yerlesim/tipler.ts";
 import { oyuncuEkle, testKasabasi } from "./kasaba-yardimci.ts";
@@ -232,4 +232,17 @@ test("zaviye: kuruluş bedeli, 5 kişiyle açılır, kasa akçeyi korur, kıdem 
   for (const u of uyeler.slice(0, 3)) assert.ok(zaviyeIslem(k, u, { islem: "oy", hedef: digerleri[0]!.o }, ay).ok);
   assert.ok(zaviyeDonumu(k, ay + 1).some((o) => o.k === "olay.zaviye.ahiBasi"));
   assert.equal(k.tl!.zv[0]!.ab, digerleri[0]!.o);
+});
+
+
+test("E4.3-C nöbet asayişi haydut olayını azaltır; moral veya asayiş düşüklüğü riski artırır", () => {
+  const k = testKasabasi("develi", 300);
+  const tl = toplulukAl(k);
+  gostergeDegistir(tl, "asayis", -10);
+  assert.equal(gostergeTetikCarpani(k, "haydut"), 1.1);
+  gostergeDegistir(tl, "asayis", 10);
+  gostergeDegistir(tl, "moral", -15);
+  assert.equal(gostergeTetikCarpani(k, "haydut"), 1.15);
+  gostergeDegistir(tl, "moral", 15);
+  assert.equal(gostergeTetikCarpani(k, "haydut"), 1);
 });
