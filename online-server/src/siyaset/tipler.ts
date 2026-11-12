@@ -230,6 +230,8 @@ export interface BagimsizDevlet {
   sultanSonuc?: "kabul" | "ret";
   taninma: "taninmadi" | "talepEdildi" | "tanindi";
   taninmaTalepAy?: number;
+  /** Başka beyliklerin tanınma taleplerine verilen yerel yanıtlar; kaynak beylik DO'su ayrıca güncellenmez. */
+  taninmaYanits?: Record<string, { karar: "kabul" | "ret"; ay: number; ad: string }>;
   yeminler: Record<string, "bagli" | "tarafsiz">;
 }
 
