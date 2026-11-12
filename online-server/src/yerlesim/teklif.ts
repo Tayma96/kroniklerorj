@@ -7,6 +7,7 @@
 
 import type { Dil } from "../icerik/adlar.ts";
 import { MALLAR, malBul, type MalId } from "../icerik/mallar.ts";
+import { ARACI_BEDELLERI, type AraciBedeli } from "./bilgi.ts";
 import { meslekBul, type MeslekId } from "../icerik/meslekler.ts";
 import { TARIFLER } from "../icerik/tarifler.ts";
 import { basarili, hata, type Sonuc } from "../tipler.ts";
