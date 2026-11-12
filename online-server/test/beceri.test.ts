@@ -17,7 +17,7 @@ import {
   ogrenmeTamamla,
   seviyeVer,
 } from "../src/yerlesim/beceri.ts";
-import { basariSay, gizliGorunur } from "../src/yerlesim/beceri-etki.ts";
+import { basariSay, gizliGorunur, hakAcik, sinerjiAcik } from "../src/yerlesim/beceri-etki.ts";
 import { KADEME_HIZMET, beceriPuani, dugumAcikMi, dugumSeviyesi, hizmetEkle, kademeAtla, meslekSec } from "../src/yerlesim/meslek.ts";
 import { ALET_OMRU, tarifYap } from "../src/yerlesim/tarif.ts";
 import { TEMEL_CIKTI, USTA_IS_CIKTI, temelIsYap } from "../src/yerlesim/temel-is.ts";
@@ -315,4 +315,26 @@ test("ağaç görünümü: kilit nedenleri, öğreniliyor durumu, puan ve sonrak
   assert.ok("seviyeler" in ta && ta.seviyeler[0]!.etkiler[0]!.kanca === true, "saban tarifi kanca");
   hizmetEkle(c, "demirci", KADEME_HIZMET[1]!);
   assert.deepEqual(agacGorunumu(c, "korsan", T0), { ok: false, hata: "meslek_gecersiz" });
+});
+
+
+test("hak çözümleyicisi yalnız öğrenilmiş beceri etkisini açar", () => {
+  const k = testKasabasi();
+  const c = kisi(k);
+  assert.equal(hakAcik(c, "yasliHane"), false);
+  seviyeVer(c, "ozan.teselli", 2);
+  assert.equal(hakAcik(c, "yasliHane"), false, "hak düğümün üçüncü seviyesinde");
+  seviyeVer(c, "ozan.teselli", 3);
+  assert.equal(hakAcik(c, "yasliHane"), true);
+  assert.equal(hakAcik(c, "olmayanHak"), false);
+});
+
+test("sinerji çözümleyicisi iki meslekteki gerçek düğüm seviyesini birlikte ister", () => {
+  const k = testKasabasi();
+  const c = kisi(k);
+  seviyeVer(c, "hanci.temizOda", 3);
+  assert.equal(sinerjiAcik(c, "seckinOda"), false, "marangoz düğümü olmadan açılmaz");
+  seviyeVer(c, "marangoz.kundekari", 1);
+  assert.equal(sinerjiAcik(c, "seckinOda"), true);
+  assert.equal(sinerjiAcik(c, "olmayanSinerji"), false);
 });
