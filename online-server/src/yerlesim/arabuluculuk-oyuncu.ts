@@ -134,7 +134,7 @@ export function oyuncuArabuluculukTaslak(
 
 /** Şikâyetçi ve karşı taraf yalnız kendi adına, mevcut taslak sürümünü imzalayabilir. */
 export function oyuncuArabuluculukImzala(
-  k: Kasaba, ben: Karakter, id: unknown, surum: unknown, ay: number
+  k: Kasaba, ben: Karakter, id: unknown, surum: unknown
 ): Sonuc<OyuncuArabuluculuk> {
   const d = dosyaBul(toplumAl(k), id);
   if (!d) return hata("talep_yok");
@@ -142,7 +142,7 @@ export function oyuncuArabuluculukImzala(
   if (r !== "s" && r !== "k") return hata("taraf_degil");
   if (d.d !== "imzaBekliyor" || !d.uz) return hata("teklif_kapandi");
   if (!Number.isSafeInteger(surum) || surum !== d.sv) return hata("teklif_gecersiz");
-  d.im[r] = ay;
+  d.im[r] = d.sv;
   if (d.im.s !== undefined && d.im.k !== undefined) d.d = "onaylandi";
   return basarili(d);
 }
