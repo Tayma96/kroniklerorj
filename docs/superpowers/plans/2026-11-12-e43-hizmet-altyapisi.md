@@ -101,7 +101,7 @@ Her POST, `istekNo` ile tekrar güvenli olmalı. Yerleşim sınırları ve yetki
 - [x] İş türü, mektup hedefi/metni, alıcıya özel olay ve sözleşme durumları mobilde 6 dilde. Alıcı dost listesinden seçilebilir veya oyuncu koduyla girilebilir.
 - [x] Regresyonlar: hizmet düğümü, zincir ustalığı, zincir aşınması, takat, moral/asayiş, emanet/ödeme, aynı hesap-hane, aynı hedefe aylık mektup sınırı, engelli hedef ve özel olay alıcısı.
 - [ ] Derinleştirme: arabuluculuk şu an kasaba moraline katkı verir; henüz iki oyuncunun husumetini kapatmaz. Muhafızlık kasaba asayişini artırır; henüz belirli kervan rotasında haydut saldırısını önlemez. Senet/borç kaydı ayrı bir sözleşme eki olarak eklenmedi.
-- [x] GitHub Actions [run #355](https://github.com/Tayma96/kroniklerorj/actions/runs/43141089447): **402 test / 401 geçti / 0 başarısız / 1 atlandı**; mobil TypeScript, 62 statik görsel yolu, sunucu testleri ve sunucu TypeScript başarılı.
+- [x] GitHub Actions [run #358](https://github.com/Tayma96/kroniklerorj/actions/runs/43141286615): **402 test / 401 geçti / 0 başarısız / 1 atlandı**; mobil TypeScript, 62 statik görsel yolu, sunucu testleri ve sunucu TypeScript başarılı.
 
 ## Kabul ölçütleri
 
