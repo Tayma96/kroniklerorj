@@ -64,6 +64,18 @@ export interface HizmetNpcTalebi {
   teslim?: { o: string; ad: string; ay: number };
 }
 
+/** Aylık, kasaba hazinesinden önceden ayrılmış koltuklu hizmet görevi. */
+export type HizmetGorevTuru = "nobet" | "vergiSayimi" | "meclisKaydi" | "talim";
+export interface HizmetKasabaGorevi {
+  i: number;
+  tur: HizmetGorevTuru;
+  ac: number;
+  sa: number;
+  odul: number;
+  d: "acik" | "tamam" | "dustu";
+  teslim?: { o: string; ad: string; hesap: string; hane: number; ay: number };
+}
+
 export type HizmetIlanDurumu = "acik" | "bitti" | "geri" | "dustu";
 export interface HizmetIlan {
   i: number;
@@ -93,6 +105,9 @@ export interface EkonomiKaydi {
   ht?: HizmetTeslimKaydi[];
   /** Doğum ve ölüm olaylarından açılan NPC hizmet talepleri. */
   hn?: HizmetNpcTalebi[];
+  /** Kasaba görevleri ve son üretim ayı; eski ekonomi kayıtlarıyla uyumlu. */
+  hg?: HizmetKasabaGorevi[];
+  hga?: number;
 }
 
 export function ekonomiAl(k: Kasaba): EkonomiKaydi {
@@ -101,6 +116,7 @@ export function ekonomiAl(k: Kasaba): EkonomiKaydi {
   k.ek.hi ??= [];
   k.ek.ht ??= [];
   k.ek.hn ??= [];
+  k.ek.hg ??= [];
   return k.ek;
 }
 
