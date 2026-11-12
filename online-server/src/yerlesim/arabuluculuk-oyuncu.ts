@@ -108,6 +108,45 @@ export function oyuncuArabuluculukGeriAl(k: Kasaba, ben: Karakter, id: unknown, 
   return basarili(d);
 }
 
+
+/** Arabulucu, para hareketi yapmadan sürümlü uzlaşma teklifini kaydeder. */
+export function oyuncuArabuluculukTaslak(
+  k: Kasaba, ben: Karakter, id: unknown, sTutari: unknown, kTutari: unknown, notHam: unknown, ay: number
+): Sonuc<OyuncuArabuluculuk> {
+  const d = dosyaBul(toplumAl(k), id);
+  if (!d) return hata("talep_yok");
+  if (ben.o !== d.ar) return hata("taraf_degil");
+  if (d.d !== "taslak" && d.d !== "imzaBekliyor") return hata("teklif_kapandi");
+  if (!Number.isSafeInteger(sTutari) || (sTutari as number) < 0 || (sTutari as number) > 100000
+    || !Number.isSafeInteger(kTutari) || (kTutari as number) < 0 || (kTutari as number) > 100000
+    || ((sTutari as number) === 0 && (kTutari as number) === 0)) return hata("deger_sinir_disi");
+  if (notHam !== undefined && (typeof notHam !== "string" || notHam.trim().length > 240)) return hata("gerekce_gecersiz");
+  const onceki = d.uz;
+  const yeni = { s: sTutari as number, k: kTutari as number, ...(typeof notHam === "string" && notHam.trim() ? { not: notHam.trim() } : {}) };
+  if (onceki && onceki.s === yeni.s && onceki.k === yeni.k && onceki.not === yeni.not) return basarili(d);
+  d.uz = yeni;
+  d.sv++;
+  d.im = {};
+  d.d = "imzaBekliyor";
+  d.kp = undefined;
+  return basarili(d);
+}
+
+/** Şikâyetçi ve karşı taraf yalnız kendi adına, mevcut taslak sürümünü imzalayabilir. */
+export function oyuncuArabuluculukImzala(
+  k: Kasaba, ben: Karakter, id: unknown, surum: unknown, ay: number
+): Sonuc<OyuncuArabuluculuk> {
+  const d = dosyaBul(toplumAl(k), id);
+  if (!d) return hata("talep_yok");
+  const r = rol(d, ben.o);
+  if (r !== "s" && r !== "k") return hata("taraf_degil");
+  if (d.d !== "imzaBekliyor" || !d.uz) return hata("teklif_kapandi");
+  if (!Number.isSafeInteger(surum) || surum !== d.sv) return hata("teklif_guncel_degil");
+  d.im[r] = ay;
+  if (d.im.s !== undefined && d.im.k !== undefined) d.d = "onaylandi";
+  return basarili(d);
+}
+
 /** Süresi dolan davetler cezasız düşer. */
 export function oyuncuArabuluculukDonumu(k: Kasaba, ay: number): number {
   let sayi = 0;
