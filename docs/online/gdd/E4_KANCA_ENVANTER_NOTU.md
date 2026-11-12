@@ -1,6 +1,6 @@
 # E4 — beceri ağacı kanca envanteri
 
-Durum: kısmi uygulama. `tasarruf` tüketicisi, üç ortak-durum/han tüketicisi ve E4.3-A/B/C hizmet pazarı, NPC talepleri ve kasaba görevleri çalışır. Katalog ve görevlerin tümü gerçek beceri düğümlerine bağlıdır; E4.3-D iki taraflı iş akışı ve kalan tüketiciler açıktır.
+Durum: kısmi uygulama. `tasarruf` tüketicisi, üç ortak-durum/han tüketicisi ve E4.3-A/B/C hizmet pazarı, NPC talepleri, kasaba görevleri çalışır; E4.3-D iki taraflı teklif sözleşmelerinin ilk dilimi (arabuluculuk, muhafızlık, özel mektup) mevcut teklif motoruna bağlandı. Derin husumet/kervan etkileri ve kalan tüketiciler açıktır.
 
 ## Bu dalda bağlanan etki
 
@@ -16,7 +16,7 @@ Durum: kısmi uygulama. `tasarruf` tüketicisi, üç ortak-durum/han tüketicisi
 ## Kalan kancaların envanteri
 
 14 beceri ağacı dosyasının tamamı tarandı. Şu an mevcut sistem tüketicisi bulunmayan etkiler:
-- `hizmet`: 52 kullanımın 11 tanesi gerçek tüketiciye bağlandı (`ikram`, `nobet`, `talim`, `vergiSayimi`, `meclisKaydi`, `turku`, `yaraBak`, `kirikSar`, `lohusa`, `teselli`, `sazGecesi`); 41 kullanım kaldı. E4.3-A/B/C sunucu ve mobil akışları tamamlandı; iki taraflı işler açık.
+- `hizmet`: 52 kullanımın 14 tanesi gerçek tüketiciye bağlandı (`ikram`, `nobet`, `talim`, `vergiSayimi`, `meclisKaydi`, `turku`, `yaraBak`, `kirikSar`, `lohusa`, `teselli`, `sazGecesi`, `araBul`, `muhafizlik`, `mektup`); 38 kullanım kaldı. E4.3-A/B/C tamamlandı; E4.3-D'nin ilk dilimi sunucu/mobil/6 dilde çalışır.
 - `hak`: 203 kullanım — makam, lonca, ticaret, garnizon, sosyal yardım ve toplumsal ayrıcalıklar için sunucu tarafı yetki/eylem matrisi gerekir.
 - `sinerji`: 21 kullanım — `ortakSahne` sinerjisi `sazGecesi` hizmetini açmak için tüketiliyor; 20 kullanım kaldı. Diğer kimliklerin gerçek tüketicileri henüz yok.
 - `tasarruf`: 1 kullanım vardı; bu dalda bağlandı.
