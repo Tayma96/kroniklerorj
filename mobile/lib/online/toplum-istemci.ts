@@ -13,6 +13,7 @@ import {
 export interface ToplumIstemci {
   oyuncu(id: string, dil: Dil): Promise<Sonuc<OyuncuProfili>>;
   gelen(dil: Dil): Promise<Sonuc<GelenYaniti>>;
+  arabuluculuk(istek: { islem: "ac" | "cevap" | "geri" | "taslak" | "imza"; hedef?: string; arabulucu?: string; dosya?: string; cevap?: "kabul" | "ret"; sTutari?: number; kTutari?: number; not?: string; surum?: number; istekNo: string }): Promise<Sonuc<{ dosya: Record<string, unknown> }>>;
   dostluk(istek: DostlukIstegi): Promise<Sonuc<{ hedef: string; bag: BagDurumu }>>;
   teklif(istek: TeklifIstegi): Promise<Sonuc<{ teklif: TeklifGorunumu }>>;
   teklifCevap(istek: TeklifCevapIstegi): Promise<Sonuc<{ teklif: TeklifGorunumu }>>;
@@ -42,6 +43,7 @@ export function toplumUclari(cagir: Cagir): ToplumIstemci {
   return {
     oyuncu: (id, dil) => al(`/v1/oyuncu/${encodeURIComponent(id)}?dil=${dil}`, oyuncuProfiliMi),
     gelen: (dil) => al(`/v1/gelen?dil=${dil}`, gelenMi),
+    arabuluculuk: (istek) => yaz("/v1/arabuluculuk", istek, nesneYanitiMi),
     dostluk: (i) => yaz("/v1/dostluk", i, dostlukYanitiMi),
     teklif: (i) => yaz("/v1/teklif", i, teklifYanitiMi),
     teklifCevap: ({ teklif, ...govde }) => yaz(`/v1/teklif/${encodeURIComponent(teklif)}/cevap`, govde, teklifYanitiMi),
