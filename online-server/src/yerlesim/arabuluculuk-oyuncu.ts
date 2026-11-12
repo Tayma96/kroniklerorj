@@ -4,6 +4,7 @@
 import { basarili, hata, type Sonuc } from "../tipler.ts";
 import { engelliMi } from "./engel.ts";
 import { olduMu } from "./hanedan.ts";
+import { acikHusumet, husumetIslem } from "./iliski.ts";
 import { oyuncuArabuluculukAl, toplumAl, oyuncuMu, type OyuncuArabuluculuk, type Toplum } from "./toplum.ts";
 import type { Karakter, Kasaba } from "./tipler.ts";
 
@@ -214,6 +215,21 @@ function emanetKaydiGecerliMi(d: OyuncuArabuluculuk): boolean {
     && Number.isSafeInteger(od.k) && od.k >= 0 && od.k === uz.k;
 }
 
+/** İki tarafın imzalayıp uyguladığı uzlaşma, aralarındaki tek/çift yönlü açık meydan husumetini de kaldırır. */
+function husumetiUzlasmaylaKapat(k: Kasaba, d: OyuncuArabuluculuk, ay: number): boolean {
+  const t = k.tp;
+  const s = k.kar.get(d.s), kk = k.kar.get(d.k);
+  if (!t || !s || !kk) return false;
+  const varMi = !!acikHusumet(t, d.s, d.k) || !!acikHusumet(t, d.k, d.s);
+  if (!varMi) return false;
+  // Her ilanı yalnız kendi ilan edenin kaldırma kuralıyla kapat; imzalı uzlaşma iki tarafın rızasını zaten taşır.
+  const a = husumetIslem(k, s, kk, "kaldir", ay);
+  const b = husumetIslem(k, kk, s, "kaldir", ay);
+  if (!a.ok || !b.ok) return false;
+  d.hs = 1;
+  return true;
+}
+
 function emanetIadeEt(k: Kasaba, d: OyuncuArabuluculuk, ay: number): boolean {
   if (d.d !== "emanette" || !d.od || d.od.emanet !== 1 || d.od.uygulandi === 1 || d.od.iade === 1
     || !emanetKaydiGecerliMi(d)) return false;
@@ -253,6 +269,7 @@ export function oyuncuArabuluculukUygula(
   s.pa += d.od.k;
   kk.pa += d.od.s;
   d.od.uygulandi = 1;
+  husumetiUzlasmaylaKapat(k, d, ay);
   d.d = "tamam";
   d.kp = ay;
   return basarili(d);
