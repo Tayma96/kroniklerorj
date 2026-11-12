@@ -23,7 +23,7 @@ export interface Sartlar {
   m?: MeslekId;
   /** Usta oyuncu (çıraklık). */
   us?: string;
-  /** Tutar (borç, hediye, NPC işi ücreti, NPC borcu). */
+  /** Tutar (borç, hediye, NPC işi, iki taraflı iş ücreti, NPC borcu). */
   tu?: number;
   /** Faiz yüzdesi ve vade (ay sayısı) — borç. */
   fz?: number;
@@ -54,7 +54,7 @@ export interface Teklif {
   a: string;
   s: Sartlar;
   /** Emanet: gönderenden kilitlenen akçe; iş sözleşmesinde teslimde çalışana ödenir; ret, düşme, geri çekme ya da iptalde iade edilir. Armağan malı da
-   * (s.ml × s.mn) gönderenin envanterinden emanete alınır ve aynı yolla iade edilir. */
+   * (s.ml × s.mn) gönderenin envanterinden emanete alınır ve aynı yolla iade edilir. İş ücreti teslimde çalışana aktarılır. */
   e: number;
   /** Açılış ayı ve son cevap ayı (bu ay dahil; sonraki dönümde varsayılan uygulanır). */
   ac: number;
