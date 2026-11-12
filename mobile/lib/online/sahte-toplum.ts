@@ -186,7 +186,7 @@ export function sahteToplumKur(kasabaAl: () => SahteKasaba | null, meslekAl: () 
     hami: { suren: [], gelen: [], giden: [], biten: [] },
     ortakDert: { acik: [{ id: "d1", tur: "haydut", durum: "acik", acilis: ay() - 1, bitis: ay() + 3, esik: 60, puan: dertPuan, halk: 8, defter: [], benim: { sayi: 0, kalan: 3, puan: 0 } }], son: [], uygunKatkilarim: ["elEmegi", "nobet", "moral"], kurallar: {} },
     senlik: { simdiki: { id: "nevruz-1252", tur: "nevruz", durum: "acik", acilis: ay() - 1, bitis: ay() + 2, levha: [], benim: { sayi: senlikSayi, kalan: 3 - senlikSayi } }, sonKapanan: null, kurallar: {} },
-    mudavim: { rozet: "hanMudavimi", ziyaret: 4, sonraki: { rozet: "hanDemirbasi", gereken: 6 }, indirim: { deger: 2, tavan: 5 } },
+    mudavim: { rozet: "mudavim", ziyaret: 4, sonraki: { rozet: "hanDemirbasi", gereken: 6 }, indirim: { deger: 2, tavan: 5 } },
     zaviye: { benim: null, davetler: [], kasabada: [], ahiSarti: { teveccuhKademe: 2, benimKademem: 1, adayim: false } },
     gostergeler: { arz: 56, moral: 61, asayis: 48, denge: 50, taban: 0, tavan: 100 },
   });
