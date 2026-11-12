@@ -278,3 +278,24 @@ test("kasabaDegirmeni sinerjisi oduncu değirmen taşı ve aşçı değirmen unu
   assert.equal(kaliteBecerisi(diger, un), 0);
   assert.equal(kaliteBecerisi(c, TARIFLER.ekmek), 0, "sinerji ekmek tarifine taşmaz");
 });
+
+
+test("hanKirisi sinerjisi oduncu kiriş/direk ve marangoz han inşası birlikteyken yalnız kiriş kalitesini artırır", () => {
+  const k = testKasabasi();
+  const c = oyuncuEkle(k, 99, k.ay - 16 * 12);
+  const kiris = TARIFLER.kiris;
+
+  seviyeVer(c, "oduncu.kirisDirek", 2);
+  assert.equal(sinerjiAcik(c, "hanKirisi"), false, "oduncu düğümü tek başına sinerji vermez");
+  assert.equal(kaliteBecerisi(c, kiris), 0);
+
+  seviyeVer(c, "marangoz.hanInsasi", 1);
+  assert.equal(sinerjiAcik(c, "hanKirisi"), true);
+  assert.equal(kaliteBecerisi(c, kiris), 10, "iki düğüm birlikte kirişe +10 kalite verir");
+
+  const diger = oyuncuEkle(k, 100, k.ay - 16 * 12);
+  seviyeVer(diger, "marangoz.hanInsasi", 1);
+  assert.equal(sinerjiAcik(diger, "hanKirisi"), false, "marangoz düğümü tek başına sinerji vermez");
+  assert.equal(kaliteBecerisi(diger, kiris), 0);
+  assert.equal(kaliteBecerisi(c, TARIFLER.kereste), 0, "sinerji kereste tarifine taşmaz");
+});
