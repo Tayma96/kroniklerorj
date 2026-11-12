@@ -219,6 +219,8 @@ test("oyuncu arabuluculuğu API'si üç hesabın rızasını, sürümlü taslağ
     islem: "imza", dosya: id, surum: 2, istekNo: "arb-ar-imza-0001",
   }), { ok: false, hata: "taraf_degil" });
 
+  m.kasaba.kar.get("o1")!.pa = 1000;
+  m.kasaba.kar.get("o2")!.pa = 1000;
   const imzaS = deger(await m.oyuncuArabuluculuk("hesap-1", {
     islem: "imza", dosya: id, surum: 2, istekNo: "arb-s-imza-0001",
   }));
