@@ -105,6 +105,13 @@ function HizmetEkran() {
         ? <CizgiDugme etiket={t("onl.hizmet.ilanGeri")} icon="undo" rtl={rtl} kucuk kapali={yukleniyor} onPress={() => void islem(() => istemci!.geri(x.id), t("onl.hizmet.ilanIade"))} />
         : <CizgiDugme etiket={t("onl.hizmet.satinAl")} icon="coins" rtl={rtl} kucuk kapali={yukleniyor} onPress={() => void islem(() => istemci!.satinAl(x.id, 1), t("onl.hizmet.satinAlindi"))} />}
     </HizmetKarti>) : <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{t("onl.hizmet.pazarBos")}</Text>}
+    <Baslik2 metin={t("onl.hizmet.gorevler")} rtl={rtl} sag={durum ? <Text style={{ fontFamily: F.display, color: C.gold }}>{durum.gorevler.length}</Text> : undefined} />
+    {durum?.gorevler.length ? durum.gorevler.map((x) => <HizmetKarti key={x.id} baslik={t("onl.hizmet.gorev.ad." + x.tur)}
+      alt={applyParams(t("onl.hizmet.gorev.bilgi"), [x.odul, x.takat, x.sonAy])} icon="shield-check" rtl={rtl}>
+      <CizgiDugme etiket={t("onl.hizmet.gorev.teslim")} icon="check-circle" rtl={rtl} kucuk kapali={yukleniyor}
+        onPress={() => void islem(() => istemci!.gorevTeslim(x.id), t("onl.hizmet.gorev.tamam"))} />
+    </HizmetKarti>) : <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{t("onl.hizmet.gorev.bos")}</Text>}
+
     <Baslik2 metin={t("onl.hizmet.npcTalepleri")} rtl={rtl} sag={durum ? <Text style={{ fontFamily: F.display, color: C.gold }}>{durum.npcTalepleri.length}</Text> : undefined} />
     {durum?.npcTalepleri.length ? durum.npcTalepleri.map((x) => {
       const stokVar = durum.stok.some((s) => s.hizmet === x.hizmet && s.adet > 0);
