@@ -1385,7 +1385,7 @@ export class YerlesimMotoru {
         .slice(-GELEN_KAPALI_EN_COK).reverse()
         .map(x => ({ id: String(x.i), durum: x.d, rol: x.s === kar.o ? "sikayetci" : x.k === kar.o ? "karsi" : "arabulucu",
           sikayetci: ad(x.s), karsi: ad(x.k), arabulucu: ad(x.ar), riza: { ...x.rs }, uzlasma: x.uz ? { ...x.uz } : undefined, surum: x.sv, imza: { ...x.im },
-          acilisAyi: x.ac, sonCevapAyi: x.sa, sonAy: x.sonAy, kapanisAyi: x.kp })),
+          acilisAyi: x.ac, sonCevapAyi: x.sa, sonAy: x.sonAy, kapanisAyi: x.kp, husumetCozuldu: x.hs === 1 })),
       dostluk: {
         gelen: bagli.filter((b) => b.d === "istek" && b.g !== kar.o).map((b) => ({ ...ad(diger(b)), ay: b.ay })),
         giden: bagli.filter((b) => b.d === "istek" && b.g === kar.o).map((b) => ({ ...ad(diger(b)), ay: b.ay })),
