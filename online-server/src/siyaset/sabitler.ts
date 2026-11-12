@@ -273,6 +273,10 @@ export const DARBE = {
   tebligAy: 1,
   catışmaAy: 1,
   sonucFarki: 25,
+  /** [PARAMETRE] İlan sonrası açık savunma emrinin çatışma gücüne katkısı. */
+  savunmaSehirBeyiPuan: 6,
+  savunmaAhiPuan: 3,
+  savunmaPuanTavan: 30,
   sogumaAy: 6,
 } as const;
 
