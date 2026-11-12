@@ -9,7 +9,7 @@ import {
   TEKLIF_TURLERI, TOPLUM_SINIR,
   type BagDurumu, type DuzenGorunumu, type GelenCevap, type GelenYaniti, type OyuncuEylemi, type OyuncuMeslekSatiri, type OyuncuProfili,
   type SoylentiGorunumu, type TeklifGorunumu, type TeklifSartlari, type TeklifTuru, type TeveccuhGorunumu, type VitrinArmagani,
-  type ToplulukDurumu,
+  type ToplulukDurumu, type ZaviyeIstegi, type ZaviyeGorunumu,
 } from "./toplum-veri";
 
 interface SOyuncu { o: string; ad: string; k: Cinsiyet; yas: number; meslekler: OyuncuMeslekSatiri[]; tv: number; vitrin: VitrinArmagani[]; nam: number[] }
