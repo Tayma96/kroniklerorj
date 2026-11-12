@@ -355,6 +355,7 @@ test("P5 çatışma sonucu bağımsız devlet kurar; P6 yönetim kararları ve g
   assert.equal(d.devlet?.taninma, "talepEdildi");
   assert.equal(eylem(d, bey, { islem: "devletYonet", tur: "taninmaYanit", kaynakBolge: "aksehir", kaynakAd: "Akşehir Beyliği", karar: "kabul" }).ok, true);
   assert.deepEqual(d.devlet?.taninmaYanits?.aksehir, { karar: "kabul", ay: d.ay, ad: "Akşehir Beyliği" });
+  assert.deepEqual(bolgeGorunumu(d, SIMDI, bey).bolge.devlet?.taninmaYanits, [{ bolge: "aksehir", karar: "kabul", ay: d.ay, ad: "Akşehir Beyliği" }]);
   const tekrarYanit = eylem(d, bey, { islem: "devletYonet", tur: "taninmaYanit", kaynakBolge: "aksehir", kaynakAd: "Akşehir Beyliği", karar: "ret" });
   assert.equal(tekrarYanit.ok, false, "aynı beylik için karar değiştirerek tekrar yazılamaz");
   const kendineYanit = eylem(d, bey, { islem: "devletYonet", tur: "taninmaYanit", kaynakBolge: "demirhan", kaynakAd: "Demirhan", karar: "kabul" });
