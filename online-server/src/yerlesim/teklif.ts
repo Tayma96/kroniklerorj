@@ -197,6 +197,12 @@ function sartlarCoz(tur: OyuncuTeklifTuru, g: Record<string, unknown>, gon: Kara
     case "is": {
       const it = g.is;
       if (typeof it !== "string" || !["arabuluculuk", "muhafiz", "mektup"].includes(it) || !tamsayi(g.tutar, 1, 20)) return hata("teklif_gecersiz");
+      if (it === "mektup") {
+        const hedef = typeof g.mektupHedef === "string" ? g.mektupHedef.trim() : "";
+        const mesaj = typeof g.mektupMetni === "string" ? g.mektupMetni.trim() : "";
+        if (!/^o[1-9][0-9]{0,8}$/.test(hedef) || mesaj.length < 1 || mesaj.length > 240) return hata("teklif_gecersiz");
+        return basarili({ it, tu: g.tutar, he: hedef, ms: mesaj });
+      }
       return basarili({ it: it as "arabuluculuk" | "muhafiz" | "mektup", tu: g.tutar });
     }
   }
@@ -223,6 +229,12 @@ export function teklifOlustur(k: Kasaba, gon: Karakter, alici: Karakter, govde: 
   const sr = sartlarCoz(t_, govde, gon, alici);
   if (!sr.ok) return sr;
   const s = sr.deger;
+  if (t_ === "is" && s.it === "mektup") {
+    const hedef = s.he ? k.kar.get(s.he) : undefined;
+    if (!hedef || hedef.o === gon.o || hedef.o === alici.o) return hata("kisi_yok");
+    if (engelliMi(k.tp, gon.o, hedef.o) || engelliMi(k.tp, alici.o, hedef.o)) return hata("engelli");
+    if (gon.h === hedef.h || alici.h === hedef.h || (gon.e !== 0 && gon.e === hedef.e) || (alici.e !== 0 && alici.e === hedef.e)) return hata("ayni_kume");
+  }
   let e = 0;
   if (t_ === "cirak") {
     const u = s.us === gon.o ? gon : alici;
@@ -386,7 +398,7 @@ function kabulUygula(k: Kasaba, t: Teklif, ay: number): Sonuc<OlayTaslagi[]> {
 
 /** Teklifin tarafı olan oyuncu kimlikleri (yüklenecekler). */
 export function teklifTaraflari(t: Teklif): string[] {
-  return [t.g, t.a].filter((x) => x.startsWith("o"));
+  return [t.g, t.a, ...(t.s.he ? [t.s.he] : [])].filter((x) => x.startsWith("o"));
 }
 
 export function teklifBul(k: Kasaba, idHam: unknown): Teklif | undefined {
@@ -435,6 +447,9 @@ export function teklifCevap(k: Kasaba, ben: Karakter, idHam: unknown, cevap: unk
     case "teslim": {
       if (t.d !== "surer" || t.t !== "is" || t.a !== ben.o) return hata("teklif_kapandi");
       if (ay > t.sa) return hata("teklif_kapandi");
+      const mektupHedef = t.s.it === "mektup" ? k.kar.get(t.s.he ?? "") : undefined;
+      const mektupGonderen = t.s.it === "mektup" ? k.kar.get(t.g) : undefined;
+      if (t.s.it === "mektup" && (!mektupHedef || !mektupGonderen || !t.s.ms)) return hata("kisi_yok");
       const kural = isKurali(t.s.it);
       if (!kural || !hizmetAcik(ben, kural.hizmet)) return hata("dugum_kapali");
       if (kural.arac && (!kural.aracHedef || aracArtisi(ben, kural.aracHedef)?.mal !== kural.arac || (ben.ev?.[kural.arac] ?? 0) < 1)) return hata("arac_yok");
@@ -449,6 +464,16 @@ export function teklifCevap(k: Kasaba, ben: Karakter, idHam: unknown, cevap: unk
       t.kp = ay;
       t.sn = "teslim";
       olaylar.push({ t: "teklif", w: ben.o, h: t.g, g: t.g, n: 6, k: "olay.teklif.teslim.is", p: { kisi: oyuncuRef(ben), tutar: odul } });
+      if (mektupHedef && mektupGonderen && t.s.ms) {
+        olaylar.push({
+          t: "teklif", w: ben.o, h: mektupHedef.o, g: mektupHedef.o, n: 7,
+          k: "olay.teklif.mektupUlasti", p: { kisi: oyuncuRef(mektupGonderen), mesaj: t.s.ms },
+        });
+        olaylar.push({
+          t: "teklif", w: ben.o, h: mektupGonderen.o, g: mektupGonderen.o, n: 5,
+          k: "olay.teklif.mektupTeslim", p: { kisi: oyuncuRef(mektupHedef) },
+        });
+      }
       break;
     }
     case "ode": {
@@ -635,6 +660,8 @@ export function teklifGorunumu(k: Kasaba, t: Teklif, ben: string, dil: Dil) {
     ...(s.sr !== undefined ? { sure: s.sr } : {}),
     ...(s.ml ? { mal: s.ml, adet: s.mn ?? 0 } : {}),
     ...(s.it ? { is: s.it } : {}),
+    ...(s.he ? { hedef: kisi(s.he) } : {}),
+    ...(s.ms ? { mesaj: s.ms } : {}),
     ...(s.yp ? { yapan: kisi(s.yp) } : {}),
     ...(aday ? { aday: { id: `n${aday.i}`, ad: npcAdi(aday, dil) } } : {}),
   };
