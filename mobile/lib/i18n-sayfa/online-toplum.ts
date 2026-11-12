@@ -297,6 +297,7 @@ export const rows: Record<string, string[]> = {
   "onl.tp.arb.taslakKaydet": ["Taslağı sun", "Submit proposal", "Enviar propuesta", "Enviar proposta", "إرسال العرض", "Отправить предложение"],
   "onl.tp.arb.imzala": ["Uzlaşmayı imzala", "Sign settlement", "Firmar acuerdo", "Assinar acordo", "توقيع التسوية", "Подписать соглашение"],
   "onl.tp.arb.islendi": ["İşlem kaydedildi.", "Action saved.", "Acción guardada.", "Ação salva.", "تم حفظ الإجراء.", "Действие сохранено."],
+  "onl.tp.arb.husumetCozuldu": ["İmzalı uzlaşma, iki taraf arasındaki açık husumeti kaldırdı.", "The signed settlement ended the open hostility between both parties.", "El acuerdo firmado puso fin a la hostilidad abierta entre ambas partes.", "O acordo assinado encerrou a hostilidade aberta entre as duas partes.", "أنهت التسوية الموقعة العداوة القائمة بين الطرفين.", "Подписанное соглашение прекратило открытую вражду между сторонами."],
   "onl.tp.arb.davet": ["Üç tarafın rızası bekleniyor", "Waiting for all three parties", "Esperando a las tres partes", "Aguardando as três partes", "بانتظار الأطراف الثلاثة", "Ожидание трёх сторон"],
   "onl.tp.arb.taslak": ["Taslak aşaması", "Draft stage", "Etapa de borrador", "Etapa de rascunho", "مرحلة المسودة", "Этап проекта"],
   "onl.tp.arb.imzaBekliyor": ["İmzalar bekleniyor", "Awaiting signatures", "Esperando firmas", "Aguardando assinaturas", "بانتظار التوقيعات", "Ожидание подписей"],
