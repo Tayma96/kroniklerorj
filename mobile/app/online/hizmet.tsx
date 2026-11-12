@@ -46,21 +46,21 @@ function HizmetEkran() {
   const [sonuc, setSonuc] = useState<string | null>(null);
 
   const yukle = useCallback(async () => {
-    if (!istemci) return;
+    if (!istemci || !online.profil) return;
     setYukleniyor(true);
     const r = await istemci.yukle();
     setYukleniyor(false);
     if (r.ok) { setDurum(r.deger); setHata(null); }
     else setHata(t(ekHataAnahtari(r.hata)));
-  }, [istemci, t]);
+  }, [istemci, t, online.profil?.hesapId]);
 
   useEffect(() => { void yukle(); }, [yukle]);
 
   const islem = async (yap: () => ReturnType<HizmetIstemci["hazirla"]>, mesaj: string) => {
-    if (!istemci) return;
+    if (!istemci || !online.profil) return;
     setHata(null); setSonuc(null);
     const r = await yap();
-    if (r.ok) { hap("success"); setSonuc(mesaj); await yukle(); }
+    if (r.ok) { hap("success"); setSonuc(mesaj); await online.yerlesimYukle(true); await yukle(); }
     else { hap("error"); setHata(t(ekHataAnahtari(r.hata))); }
   };
 
@@ -72,7 +72,7 @@ function HizmetEkran() {
     <View style={{ flexDirection: yon(rtl), alignItems: "center" }}>
       <GeriDugme rtl={rtl} etiket={t("onl.geri")} onPress={() => geriGit(router, "/online/yasam")} />
     </View>
-    <SayfaBasi ust={online.profil.yerlesim} baslik={t("onl.hizmet.baslik")} alt={t("onl.hizmet.alt")} rtl={rtl} />
+    <SayfaBasi ust={online.yerlesim?.yerlesim.ad ?? online.profil.yerlesim} baslik={t("onl.hizmet.baslik")} alt={t("onl.hizmet.alt")} rtl={rtl} />
     {!istemci ? <Bant tur="bilgi" metin={t("onl.hizmet.onizlemeYok")} rtl={rtl} /> : null}
     {hata ? <Bant metin={hata} rtl={rtl} /> : null}
     {sonuc ? <Bant tur="bilgi" metin={sonuc} rtl={rtl} /> : null}
