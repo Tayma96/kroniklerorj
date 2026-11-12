@@ -9,6 +9,7 @@ import { OnlineYakinda } from "../../lib/online-yakinda";
 import { OnlineKapisi, useOnline } from "../../lib/online/durum";
 import { onlineEkranAcik } from "../../lib/online/kapi";
 import { Bant, Cerceve, CizgiDugme, GeriDugme, Madalyon, geriGit, hiza, yon } from "../../lib/online/ui";
+import { Secenekler } from "../../lib/online/toplum-ui";
 import { Baslik2, Rozet, SayfaBasi, Yukleniyor } from "../../lib/online/yasam-ui";
 import { ekHataAnahtari } from "../../lib/online/ek-istemci";
 import { istekNoUret } from "../../lib/online/depo";
@@ -23,6 +24,7 @@ function SiyasetEkran() {
   const [hata, setHata] = useState<string | null>(null);
   const [sonuc, setSonuc] = useState<string | null>(null);
   const [yukleniyor, setYukleniyor] = useState(false);
+  const [ittifakHedef, setIttifakHedef] = useState("");
 
   const yukle = useCallback(async () => {
     if (!istemci || !online.profil) return;
@@ -34,6 +36,7 @@ function SiyasetEkran() {
   }, [istemci, online.profil?.hesapId, t]);
 
   useEffect(() => { void yukle(); }, [yukle]);
+  useEffect(() => { if (!online.dunya) void online.dunyaYukle(); }, [online.dunya, online.dunyaYukle]);
 
   const islem = async (govde: Record<string, unknown>, mesaj: string) => {
     if (!istemci || !online.profil) return;
@@ -63,6 +66,11 @@ function SiyasetEkran() {
   const savunmaMakam = durum?.makamlar.find((m) => (m.tur === "sehirBeyi" || m.tur === "ahiBasi") && durum.benim?.makamlar.includes(m.id));
   const savunmaVerebilir = pencereAcik && !!savunmaMakam && !taraf && !darbe?.benimDestek;
   const gosterge = bolge?.gostergeler ?? {};
+  const devlet = bolge?.devlet as Record<string, any> | null | undefined;
+  const devletBeyi = !!devlet && devlet.bey?.kisi === durum?.benim?.kisi;
+  const beylikler = online.dunya?.beylikler ?? [];
+  const ittifakSecenekleri = beylikler.filter((x) => x.id !== bolge?.id).map((x) => x.id);
+  const beylikAdi = (id: string) => beylikler.find((x) => x.id === id)?.ad ?? id;
 
   return <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 26, gap: 12 }}>
     <View style={{ flexDirection: yon(rtl), alignItems: "center" }}>
@@ -147,6 +155,40 @@ function SiyasetEkran() {
       </Cerceve> : <Cerceve ic={{ padding: 12, gap: 4 }}>
         <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchmentDim, textAlign: hiza(rtl) }}>{t("onl.siyaset.darbeYok")}</Text>
       </Cerceve>}
+    </> : null}
+
+    {devlet ? <>
+      <Baslik2 metin={t("onl.siyaset.ittifakBaslik")} rtl={rtl} />
+      <Cerceve ic={{ padding: 12, gap: 9 }}>
+        <Text style={{ fontFamily: F.serif, fontSize: 13, lineHeight: 19, color: C.parchmentDim, textAlign: hiza(rtl) }}>{t("onl.siyaset.ittifakNotu")}</Text>
+        {devlet.ittifakTalep ? <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.goldBright, textAlign: hiza(rtl) }}>
+          {applyParams(t("onl.siyaset.ittifakTalepBekliyor"), [beylikAdi(devlet.ittifakTalep.hedef)])}
+        </Text> : null}
+        {(devlet.ittifaklar ?? []).length ? (devlet.ittifaklar as Record<string, any>[]).map((x) => <View key={x.bolge} style={{ flexDirection: yon(rtl), justifyContent: "space-between", alignItems: "center", gap: 8, paddingVertical: 5, borderBottomWidth: 1, borderColor: C.border }}>
+          <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 13, color: C.parchment, textAlign: hiza(rtl) }}>{x.ad ?? beylikAdi(x.bolge)}</Text>
+          <Rozet metin={t("onl.siyaset.ittifakDurum." + x.durum)} renk={x.durum === "aktif" ? C.sage : C.goldBright} />
+        </View>) : null}
+        {(devlet.ittifaklar ?? []).length === 0 ? <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchmentDim, textAlign: hiza(rtl) }}>{t("onl.siyaset.ittifakYok")}</Text> : null}
+        {(devlet.ittifakGelen ?? []).filter((x: Record<string, any>) => !x.yanitlandi).map((x: Record<string, any>) => <View key={x.bolge + ":" + x.istekId} style={{ gap: 7, paddingVertical: 8, borderTopWidth: 1, borderColor: C.border }}>
+          <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchment, textAlign: hiza(rtl) }}>{applyParams(t("onl.siyaset.ittifakGelen"), [x.ad ?? beylikAdi(x.bolge)])}</Text>
+          {devletBeyi ? <View style={{ flexDirection: yon(rtl), gap: 7 }}>
+            <View style={{ flex: 1 }}>
+              <CizgiDugme etiket={t("onl.siyaset.ittifakKabul")} icon="check" rtl={rtl} kapali={yukleniyor}
+                onPress={() => void islem({ islem: "devletYonet", tur: "ittifakYanit", kaynakBolge: x.bolge, istekId: x.istekId, karar: "kabul" }, t("onl.siyaset.ittifakKabulEdildi"))} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <CizgiDugme etiket={t("onl.siyaset.ittifakRet")} icon="x" rtl={rtl} kucuk kapali={yukleniyor}
+                onPress={() => void islem({ islem: "devletYonet", tur: "ittifakYanit", kaynakBolge: x.bolge, istekId: x.istekId, karar: "ret" }, t("onl.siyaset.ittifakReddedildi"))} />
+            </View>
+          </View> : null}
+        </View>)}
+        {devletBeyi && !devlet.ittifakTalep ? <>
+          <Text style={{ fontFamily: F.display, fontSize: 11.5, color: C.goldBright, textAlign: hiza(rtl) }}>{t("onl.siyaset.ittifakHedef")}</Text>
+          <Secenekler secenekler={ittifakSecenekleri} secili={ittifakHedef || null} onSec={setIttifakHedef} etiket={beylikAdi} />
+          <CizgiDugme etiket={t("onl.siyaset.ittifakGonder")} icon="handshake" rtl={rtl} kapali={yukleniyor || !ittifakHedef}
+            onPress={() => void islem({ islem: "devletYonet", tur: "ittifak", hedefBolge: ittifakHedef }, t("onl.siyaset.ittifakGonderildi"))} />
+        </> : null}
+      </Cerceve>
     </> : null}
 
     <Baslik2 metin={t("onl.siyaset.kayitlar")} rtl={rtl} />
