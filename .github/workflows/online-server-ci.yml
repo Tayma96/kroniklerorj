@@ -57,6 +57,9 @@ jobs:
       - name: Online server typecheck
         working-directory: online-server
         run: npm run typecheck
+      - name: Check Phase 9 load script syntax
+        working-directory: online-server
+        run: node --check scripts/yuk-test.mjs
       - name: Validate production and isolated test Worker configs
         working-directory: online-server
         run: |
