@@ -128,6 +128,34 @@ export interface Soylenti {
   y?: 1;
 }
 
+/** Oyuncu–oyuncu arabuluculuk dosyası. NPC arabuluculuk taleplerinden ayrı tutulur. */
+export type OyuncuArabuluculukDurumu =
+  | "davet" | "taslak" | "imzaBekliyor" | "emanette"
+  | "tamam" | "ret" | "geri" | "dustu" | "iptal";
+
+export interface OyuncuArabuluculuk {
+  /** Toplum.tn ile ortak, tekrar etmeyen kayıt kimliği. */
+  i: number;
+  /** Şikâyetçi, karşı taraf ve tarafsız arabulucu oyuncu kimlikleri. */
+  s: string;
+  k: string;
+  ar: string;
+  d: OyuncuArabuluculukDurumu;
+  /** Üç tarafın ayrı katılım rızası; sessizlik hiçbir zaman kabul değildir. */
+  rs: { s?: number; k?: number; ar?: number };
+  /** Uzlaşma taslağı sürümü ve iki tarafın imzaladığı sürüm. */
+  sv: number;
+  im: { s?: number; k?: number };
+  /** Ödeme tutarları ve para emanetine alındığı bilgisi. */
+  od?: { s: number; k: number; emanet?: 1; uygulandi?: 1 };
+  /** Açılış, cevap ve kapanış ayları. */
+  ac: number;
+  sa: number;
+  kp?: number;
+  /** Özel müzakere metni halka açık olaylara kopyalanmaz. */
+  not?: string;
+}
+
 export interface Toplum {
   /** Sonraki teklif ve söylenti kimliği. */
   tn: number;
@@ -140,12 +168,19 @@ export interface Toplum {
   sy: Soylenti[];
   /** Reddedilen dostluk istekleri (sıralı çift, isteyen, ay): aynı kişiye hemen yeniden istek atılamaz. */
   rd?: { a: string; b: string; g: string; ay: number }[];
+  /** Oyuncu–oyuncu arabuluculuk dosyaları; eski kayıtlarda yoktur ve ilk yazımda oluşturulur. */
+  oa?: OyuncuArabuluculuk[];
 }
 
 /** Kasabanın toplum kaydı; yoksa kurar (yazım gerektiği yerde çağrılır). */
 export function toplumAl(k: Kasaba): Toplum {
   k.tp ??= { tn: 1, sn: 1, tk: [], ob: [], hu: [], eg: {}, sy: [] };
   return k.tp;
+}
+
+/** Eski toplum kayıtları için geriye uyumlu, tembel arabuluculuk defteri. */
+export function oyuncuArabuluculukAl(t: Toplum): OyuncuArabuluculuk[] {
+  return (t.oa ??= []);
 }
 
 export const teklifKimlik = (i: number): string => `t${i}`;
