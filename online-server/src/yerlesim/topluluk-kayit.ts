@@ -12,7 +12,7 @@ import type { SenlikKaydi } from "./senlik.ts";
 import type { Zaviye } from "./lonca-grup.ts";
 import type { Kasaba } from "./tipler.ts";
 
-export const GOSTERGELER = ["arz", "moral"] as const;
+export const GOSTERGELER = ["arz", "moral", "asayis"] as const;
 export type Gosterge = (typeof GOSTERGELER)[number];
 /** [PARAMETRE] Gösterge dengesi, tabanı, tavanı ve aylık dengeye dönüşü. */
 export const GOSTERGE_DENGE = 50;
@@ -34,35 +34,41 @@ export interface ToplulukKaydi {
   /** Zaviyeler ve sonraki kimlik. */
   zv: Zaviye[];
   zn: number;
-  /** Bölge göstergeleri: [arz, moral]. */
+  /** Bölge göstergeleri: [arz, moral]. Eski kayıtlardaki iki eleman korunur. */
   gs: [arz: number, moral: number];
+  /** Kasaba asayiş göstergesi (eski kayıtlarda yoksa denge 50 kabul edilir). */
+  as?: number;
   /** Son salgın ayı (aralık). */
   ss?: number;
 }
 
 export function toplulukAl(k: Kasaba): ToplulukKaydi {
-  k.tl ??= { hb: [], od: [], on: 1, sn: [], zv: [], zn: 1, gs: [GOSTERGE_DENGE, GOSTERGE_DENGE] };
+  k.tl ??= { hb: [], od: [], on: 1, sn: [], zv: [], zn: 1, gs: [GOSTERGE_DENGE, GOSTERGE_DENGE], as: GOSTERGE_DENGE };
+  k.tl.as ??= GOSTERGE_DENGE;
   return k.tl;
 }
 
 export function gostergeOku(k: Pick<Kasaba, "tl">, g: Gosterge): number {
-  return k.tl?.gs[GOSTERGELER.indexOf(g)] ?? GOSTERGE_DENGE;
+  if (g === "asayis") return k.tl?.as ?? GOSTERGE_DENGE;
+  return k.tl?.gs[g === "arz" ? 0 : 1] ?? GOSTERGE_DENGE;
 }
 
 /** Göstergeyi değiştirir (taban/tavan içinde); gerçekte uygulanan farkı döndürür. */
 export function gostergeDegistir(tl: ToplulukKaydi, g: Gosterge, d: number): number {
-  const i = GOSTERGELER.indexOf(g);
-  const once = tl.gs[i] ?? GOSTERGE_DENGE;
+  const once = g === "asayis" ? (tl.as ?? GOSTERGE_DENGE) : (tl.gs[g === "arz" ? 0 : 1] ?? GOSTERGE_DENGE);
   const yeni = Math.max(GOSTERGE_TABAN, Math.min(GOSTERGE_TAVAN, once + d));
-  tl.gs[i] = yeni;
+  if (g === "asayis") tl.as = yeni;
+  else tl.gs[g === "arz" ? 0 : 1] = yeni;
   return yeni - once;
 }
 
 /** Aylık dengeye dönüş. */
 export function gostergeDonumu(tl: ToplulukKaydi): void {
-  tl.gs.forEach((v, i) => {
-    tl.gs[i] = v > GOSTERGE_DENGE ? Math.max(GOSTERGE_DENGE, v - GOSTERGE_AYLIK_DONUS) : Math.min(GOSTERGE_DENGE, v + GOSTERGE_AYLIK_DONUS);
-  });
+  for (const g of GOSTERGELER) {
+    const v = gostergeOku({ tl }, g);
+    const hedef = v > GOSTERGE_DENGE ? Math.max(GOSTERGE_DENGE, v - GOSTERGE_AYLIK_DONUS) : Math.min(GOSTERGE_DENGE, v + GOSTERGE_AYLIK_DONUS);
+    gostergeDegistir(tl, g, hedef - v);
+  }
 }
 
 /** Kasaba olayı olasılık çarpanı: kıtlık ← arz, haydut ← moral (yalnız dengenin altı; tavanlı). */
@@ -78,6 +84,7 @@ export function gostergeGorunumu(k: Pick<Kasaba, "tl">) {
   return {
     arz: gostergeOku(k, "arz"),
     moral: gostergeOku(k, "moral"),
+    asayis: gostergeOku(k, "asayis"),
     denge: GOSTERGE_DENGE,
     taban: GOSTERGE_TABAN,
     tavan: GOSTERGE_TAVAN,
