@@ -58,7 +58,8 @@ export function devletYonet(d: BolgeDurumu, kimlik: SiyasiKimlik, govde: Record<
       const hedef = typeof govde.hedefBolge === "string" ? BEYLIKLER.find((x) => x.id === govde.hedefBolge) : undefined;
       const kaynakAd = BEYLIKLER.find((x) => x.id === d.id)?.ad;
       if (!hedef || hedef.id === d.id || !kaynakAd) return "deger_sinir_disi";
-      if (s.ittifaklar?.[hedef.id]?.durum === "aktif" || Object.values(s.ittifaklar ?? {}).filter((x) => x.durum === "aktif").length >= 3) return "devlet_talep_var";
+      if (s.ittifaklar?.[hedef.id]?.durum === "aktif") return "devlet_talep_var";
+      if (Object.values(s.ittifaklar ?? {}).filter((x) => x.durum === "aktif").length >= 3) return "sinir_asildi";
       const istekId = `${d.id}:${d.kn + 1}:${d.ay}:ittifak`;
       s.ittifakTalep = { hedef: hedef.id, istekId, ay: d.ay };
       (d.diplomasiGiden ??= []).push({ tur: "ittifakIstek", hedef: hedef.id, istekId, ay: d.ay, ad: kaynakAd });
@@ -202,13 +203,13 @@ export function ittifakYanitAl(
   (s.ittifakYanits ??= {})[b.id] = { karar, ay: ay as number, ad: b.ad, istekId };
   (s.ittifaklar ??= {})[b.id] = {
     durum: karar === "kabul" ? "aktif" : "ret",
-    baslangicAy: d.ay, sonAy: d.ay + 12, ad: b.ad, istekId,
+    baslangicAy: ay as number, sonAy: (ay as number) + 12, ad: b.ad, istekId,
   };
   delete s.ittifakTalep;
   if (karar === "kabul") {
     const kendiAd = BEYLIKLER.find((x) => x.id === d.id)?.ad;
     if (!kendiAd) return "deger_sinir_disi";
-    (d.diplomasiGiden ??= []).push({ tur: "ittifakOnay", hedef: b.id, istekId, ay: d.ay, ad: kendiAd });
+    (d.diplomasiGiden ??= []).push({ tur: "ittifakOnay", hedef: b.id, istekId, ay: ay as number, ad: kendiAd });
   }
   return null;
 }
@@ -223,7 +224,7 @@ export function ittifakOnayAl(
   if (!b || b.id === d.id || typeof istekId !== "string" || !Number.isInteger(ay) || (ay as number) < 0 || ad !== b.ad) return "deger_sinir_disi";
   const kayit = s.ittifaklar?.[b.id];
   if (kayit?.durum === "aktif" && kayit.istekId === istekId) return null;
-  if (!kayit || kayit.durum !== "kabulBekliyor" || kayit.istekId !== istekId || s.ittifakYanits?.[b.id]?.karar !== "kabul") return "hedef_uygun_degil";
+  if (!kayit || kayit.durum !== "kabulBekliyor" || kayit.istekId !== istekId || kayit.baslangicAy !== ay || s.ittifakYanits?.[b.id]?.karar !== "kabul") return "hedef_uygun_degil";
   kayit.durum = "aktif";
   return null;
 }
