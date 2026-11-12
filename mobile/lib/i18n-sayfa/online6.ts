@@ -414,4 +414,21 @@ export const rows: Record<string, string[]> = {
   "onl.topluluk.senlik.levha": ["Cömertler Levhası", "Contributors' board", "Tablón de colaboradores", "Quadro de contribuintes", "لوحة المساهمين", "Доска участников"],
   "onl.topluluk.senlik.levhaBos": ["Henüz adı yazılan yok.", "No names recorded yet.", "Aún no hay nombres.", "Ainda não há nomes.", "لم تُسجّل أسماء بعد.", "Пока имён нет."],
 
+  "onl.topluluk.hami.baslik": ["Hamilik", "Patronage", "Patrocinio", "Tutoria", "الرعاية", "Покровительство"],
+  "onl.topluluk.hami.teklif": ["%1, %2 için hamilik teklif ediyor.", "%1 offers to mentor %2.", "%1 ofrece ser mentor de %2.", "%1 oferece tutoria a %2.", "%1 يعرض رعاية %2.", "%1 предлагает стать наставником %2."],
+  "onl.topluluk.hami.kabul": ["Kabul et", "Accept", "Aceptar", "Aceitar", "قبول", "Принять"],
+  "onl.topluluk.hami.ret": ["Reddet", "Decline", "Rechazar", "Recusar", "رفض", "Отклонить"],
+  "onl.topluluk.hami.kabulEdildi": ["Hamilik bağı kuruldu.", "Mentorship established.", "Se ha establecido el vínculo.", "A tutoria foi estabelecida.", "تم إنشاء رابطة الرعاية.", "Связь наставничества установлена."],
+  "onl.topluluk.hami.reddedildi": ["Teklif reddedildi.", "Offer declined.", "Oferta rechazada.", "Convite recusado.", "رُفض العرض.", "Предложение отклонено."],
+  "onl.topluluk.hami.aktif": ["Hamilik bağın: %1", "Your mentorship: %1", "Tu vínculo de mentoría: %1", "A tua tutoria: %1", "رابطة الرعاية: %1", "Твоя связь наставничества: %1"],
+  "onl.topluluk.hami.birak": ["Bağı bitir", "End the bond", "Terminar vínculo", "Terminar laço", "إنهاء الرابطة", "Завершить связь"],
+  "onl.topluluk.hami.birakildi": ["Hamilik bağı sona erdi.", "Mentorship ended.", "El vínculo terminó.", "A tutoria terminou.", "انتهت رابطة الرعاية.", "Связь наставничества завершена."],
+  "onl.topluluk.hami.bekliyor": ["%1 → %2: yanıt bekliyor.", "%1 → %2: awaiting a response.", "%1 → %2: esperando respuesta.", "%1 → %2: à espera de resposta.", "%1 ← %2: بانتظار الرد.", "%1 → %2: ожидает ответа."],
+  "onl.topluluk.hami.uygun": ["Deneyimliysen yeni gelen bir oyuncuya hamilik teklif edebilirsin.", "If experienced, you can offer to mentor a newcomer.", "Si tienes experiencia, puedes ofrecer mentoría a un recién llegado.", "Se tens experiência, podes oferecer tutoria a alguém novo.", "إذا كنت خبيراً يمكنك رعاية لاعب جديد.", "Если у тебя есть опыт, предложи наставничество новичку."],
+  "onl.topluluk.hami.yeniGelen": ["Yeni geldiysen deneyimli bir oyuncudan hamilik isteyebilirsin.", "As a newcomer, you can ask an experienced player to mentor you.", "Como recién llegado, puedes pedir mentoría a alguien experimentado.", "Como recém-chegado, podes pedir tutoria a alguém experiente.", "إن كنت جديداً يمكنك طلب رعاية لاعب خبير.", "Новичок может попросить опытного игрока стать наставником."],
+  "onl.topluluk.hami.hedef": ["Oyuncu kodu (ör. o123)", "Player code (e.g. o123)", "Código de jugador (p. ej. o123)", "Código de jogador (ex. o123)", "رمز اللاعب (مثل o123)", "Код игрока (например, o123)"],
+  "onl.topluluk.hami.teklifVer": ["Hamilik teklif et", "Offer mentorship", "Ofrecer mentoría", "Oferecer tutoria", "اعرض الرعاية", "Предложить наставничество"],
+  "onl.topluluk.hami.iste": ["Hamilik iste", "Ask for mentorship", "Pedir mentoría", "Pedir tutoria", "اطلب الرعاية", "Попросить наставника"],
+  "onl.topluluk.hami.gonderildi": ["Hamilik isteğin gönderildi.", "Mentorship request sent.", "Solicitud de mentoría enviada.", "Pedido de tutoria enviado.", "أُرسل طلب الرعاية.", "Запрос наставничества отправлен."],
+
 };
