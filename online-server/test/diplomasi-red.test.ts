@@ -75,7 +75,7 @@ test("hedefin reddettiği son teyit, kaynaktaki aktif ittifakı tek taraflı bı
 
 test("devleti olmayan bölgede ve tanınma yanıtında hiçbir şey değişmez, hata fırlatmaz", () => {
   const d = bolgeKur("demirhan", 10);
-  assert.doesNotThrow(() => diplomasiReddedildi(d, { tur: "taninmaIstek", hedef: "aksehir", istekId: "x", ay: 10, ad: "Demirhan" }));
+  diplomasiReddedildi(d, { tur: "taninmaIstek", hedef: "aksehir", istekId: "x", ay: 10, ad: "Demirhan" });
   assert.equal(d.devlet, undefined);
   const e = devletli();
   const once = JSON.stringify(e.devlet);
