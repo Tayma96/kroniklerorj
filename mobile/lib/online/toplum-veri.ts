@@ -240,7 +240,9 @@ export interface ToplulukSenlik {
   id: string; tur: string; durum: "ilan" | "acik"; acilis: number; bitis: number;
   levha: { id: string; ad: string; katkilar: string[] }[]; benim: { sayi: number; kalan: number };
 }
-export interface HamiBagGorunumu { hami: KisiAdi & { meslek: string | null }; cirak: KisiAdi & { meslek: string | null }; gonderen: string; rolu: "hami" | "cirak" | null; durum: string; acilis: number; asamalar: { asama: string; durum: string; nam: number }[] }\nexport interface HamiIstegi { islem: "teklif" | "iste" | "kabul" | "ret" | "birak"; hedef: string; istekNo: string }\nexport interface ToplulukDurumu {
+export interface HamiBagGorunumu { hami: KisiAdi & { meslek: string | null }; cirak: KisiAdi & { meslek: string | null }; gonderen: string; rolu: "hami" | "cirak" | null; durum: string; acilis: number; asamalar: { asama: string; durum: string; nam: number }[] }
+export interface HamiIstegi { islem: "teklif" | "iste" | "kabul" | "ret" | "birak"; hedef: string; istekNo: string }
+export interface ToplulukDurumu {
   mesrep: { secildi: boolean; secimAcik: boolean; kapali?: string; eksenler: { eksen: string; secili: string; uclar: { uc: string; etkiler: { k: string; tur: string; p: Record<string, number> }[] }[] }[] };
   hami: { hamiOlabilir: boolean; yeniGelen: boolean; suren: HamiBagGorunumu[]; gelen: HamiBagGorunumu[]; giden: HamiBagGorunumu[]; biten: HamiBagGorunumu[]; buAyHamiNami: number };
   ortakDert: { acik: ToplulukDert[]; son: ToplulukDert[]; uygunKatkilarim: string[]; kurallar: Record<string, unknown> };
