@@ -51,8 +51,8 @@ function isHatasi(h: OnlineHata, t: Ceviri): string {
   return t(hataAnahtari(h));
 }
 /** Satış hatası: kota satış kotasıyla, mal_yok ambarla anlatılır. */
-function satHatasi(h: OnlineHata, t: Ceviri, mal: MalId): string {
-  if (h === "kota_doldu") return applyParams(t("onl.sat.h.kota"), [npcSatisKotasi(mal)]);
+function satHatasi(h: OnlineHata, t: Ceviri, tavan: number): string {
+  if (h === "kota_doldu") return applyParams(t("onl.sat.h.kota"), [tavan]);
   if (h === "mal_yok") return t("onl.h.malYok");
   return t(hataAnahtari(h));
 }
@@ -65,6 +65,7 @@ function IslerEkran() {
   const dar = useWindowDimensions().width < 360;
   const o = useYerlesimEkrani();
   const y = o.yerlesim;
+  const satisTavan = (m: MalId) => npcSatisKotasi(m, o.lonca?.find((x) => x.meslek === MALLAR[m].meslek)?.oyuncu ?? 0);
   const [sonuc, setSonuc] = useState<Sonuc>(null);
   const [isHata, setIsHata] = useState<{ is: IsId; metin: string } | null>(null);
   const [alim, setAlim] = useState<{ mal: MalId; adet: number } | null>(null);
@@ -96,10 +97,10 @@ function IslerEkran() {
     if (!satim) return;
     setSatimHata(null);
     const s = await o.sat(satim.mal, satim.adet);
-    if (s.ok) { hap("success"); setSatim(null); setSonuc({ tur: "sat", y: s.deger }); } else { hap("error"); setSatimHata(satHatasi(s.hata, t, satim.mal)); }
+    if (s.ok) { hap("success"); setSatim(null); setSonuc({ tur: "sat", y: s.deger }); } else { hap("error"); setSatimHata(satHatasi(s.hata, t, satisTavan(satim.mal))); }
   };
   const kitlikVar = (m: MalId) => o.lonca?.find((x) => x.meslek === MALLAR[m].meslek)?.oyuncu === 0;
-  const satisKalan = (m: MalId) => o.satisKotasi(m)?.kalan ?? npcSatisKotasi(m);
+  const satisKalan = (m: MalId) => o.satisKotasi(m)?.kalan ?? satisTavan(m);
   const satimEnCok = satim ? Math.max(0, Math.min(ev?.[satim.mal] ?? 0, satisKalan(satim.mal))) : 0;
 
   const paneller = <>
@@ -181,7 +182,7 @@ function IslerEkran() {
           })}
         </View> : null}
         <Text style={{ fontFamily: F.serif, fontSize: 14, lineHeight: 19, color: C.parchmentMuted, textAlign: "center" }}>
-          {o.satisKotasi(satim.mal) ? applyParams(t("onl.sat.kalan"), [satisKalan(satim.mal), npcSatisKotasi(satim.mal)]) : applyParams(t("onl.sat.kotaNot"), [npcSatisKotasi(satim.mal)])}
+          {o.satisKotasi(satim.mal) ? applyParams(t("onl.sat.kalan"), [satisKalan(satim.mal), satisTavan(satim.mal)]) : applyParams(t("onl.sat.kotaNot"), [npcSatisKotasi(satim.mal)])}
         </Text>
         {satimHata ? <Bant metin={satimHata} rtl={rtl} /> : satisKalan(satim.mal) <= 0 ? <Bant tur="bilgi" metin={applyParams(t("onl.sat.h.kota"), [npcSatisKotasi(satim.mal)])} rtl={rtl} /> : null}
         <AltinDugme etiket={applyParams(t("onl.sat.dugme"), [Math.min(satim.adet, Math.max(1, satimEnCok))])} icon="coins" rtl={rtl} kapali={satimEnCok <= 0} bekliyor={o.islem === "sat"} onPress={() => { void sat(); }} />
