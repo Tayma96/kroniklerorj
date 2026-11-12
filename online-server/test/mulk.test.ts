@@ -283,6 +283,7 @@ test("oyuncu hanı: kira ve ikram kasaya, çarpanlı fiyat; aynı hane ve karş�
   br.komut(a, "fiyat", { carpan: 150 }, "f-0000001");
   br.isletmedenTeslim(br.is.cik.k);
   const pa = b.pa;
+  assert.deepEqual(barinmaGorunumu(k, b, AN, { isletme: "develi.han.1", fc: 150, seviye: 0, kapasite: 3, sahip: a }).odalar, [], "becerisiz hancı odaları kataloğa çıkaramaz");
   assert.deepEqual(mulkluKira(k, b, { oda: "yatak", sure: 1, istekNo: "k-beceri-kilitli" }, AN), { ok: false, hata: "dugum_kapali" }, "oyuncu hanında yatak becerisi olmadan oda açılamaz");
   assert.ok(meslekSec(a, "hanci", AY).ok);
   a.ms!.s.hanci!.sv = { "hanci.yatakAhir": 1 };
