@@ -13,13 +13,13 @@ test("NPC'ye satış: akçe birim × adet kadar artar, envanter düşer, fiyat d
   const c = oyuncuEkle(k);
   c.ev = { nal: 4 };
   const pa = c.pa;
-  const r = npcyeSat(c, "nal", 2, herkes, k.ay);
+  const r = npcyeSat(c, "nal", 3, herkes, k.ay);
   assert.ok(r.ok, JSON.stringify(r));
   assert.deepEqual(r.deger.birim, satisDegeri("nal", 3));
-  assert.equal(r.deger.tutar, MALLAR.nal.taban * 2);
+  assert.equal(r.deger.tutar, MALLAR.nal.taban * 3);
   assert.equal(c.pa - pa, r.deger.tutar, "akçe yalnız satış tutarı kadar değişir");
-  assert.deepEqual(c.ev, { nal: 2 });
-  assert.deepEqual(r.deger.kota, { satilan: 2, tavan: npcSatisKotasi("nal"), kalan: npcSatisKotasi("nal") - 2 });
+  assert.deepEqual(c.ev, { nal: 1 });
+  assert.deepEqual(r.deger.kota, { satilan: 3, tavan: npcSatisKotasi("nal", 3), kalan: npcSatisKotasi("nal", 3) - 3 });
 });
 
 test("kıtlık primi: malın mesleğinde oyuncu yoksa birim fiyata prim eklenir", () => {
@@ -50,6 +50,7 @@ test("yüksek değerli demirci mallarında kasaba talebi ayrı ve daha düşükt
   const c = oyuncuEkle(k);
   c.ev = { alet: 5, odun: 10 };
   assert.equal(npcSatisKotasi("alet"), 2);
+  assert.equal(npcSatisKotasi("alet", 1), NPC_SATIS_KOTASI, "başka demirci varsa kasaba talebi genişler");
   assert.ok(npcyeSat(c, "alet", 2, herkes, k.ay).ok);
   assert.deepEqual(npcyeSat(c, "alet", 1, herkes, k.ay), { ok: false, hata: "kota_doldu" });
   assert.equal(npcSatisKotasi("odun"), NPC_SATIS_KOTASI);
