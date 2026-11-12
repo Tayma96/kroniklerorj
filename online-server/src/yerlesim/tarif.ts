@@ -11,7 +11,7 @@ import { basarili, hata, type Sonuc } from "../tipler.ts";
 import { IS_KONDISYON, halDegistir, halGorunumu, type HalGorunumu } from "./hal.ts";
 import { takatHarca, takatTazele } from "./karakter.ts";
 import { TARIF_KILIDI } from "../icerik/agaclar/index.ts";
-import { acikEtkiler, aracArtisi, basariSay, omurArtisi, tasarrufOrani, tarifAcik, verimArtisi } from "./beceri-etki.ts";
+import { acikEtkiler, aracArtisi, basariSay, omurArtisi, sinerjiAcik, tasarrufOrani, tarifAcik, verimArtisi } from "./beceri-etki.ts";
 import {
   ALET_KALITE_OMUR,
   ALET_KALITE_VERIM,
@@ -96,11 +96,15 @@ export function ciktiAdedi(k: Karakter, t: Tarif, aracVar: boolean): number {
   return aracVar && v.yuzde > 0 ? Math.floor((taban * (100 + v.yuzde)) / 100) : taban;
 }
 
+/** [PARAMETRE] Çiftçi yayla göçü + dokumacı kışlık çadır bilgisiyle çadır kalitesine ek katkı. */
+export const YAYLA_CADIRI_KALITE_BONUS = 10;
+
 /** Tarifin kalite düğümü yüzdeleri (hedef: tarif kimliği ya da grubu), tavanlı. */
 export function kaliteBecerisi(k: Karakter, t: Tarif): number {
   const hedefler = new Set([t.id, ...(t.grup ?? [])]);
   let toplam = 0;
   for (const e of acikEtkiler(k)) if (e.tur === "kalite" && hedefler.has(e.hedef)) toplam += e.yuzde;
+  if (t.id === "cadir" && sinerjiAcik(k, "yaylaCadiri")) toplam += YAYLA_CADIRI_KALITE_BONUS;
   return Math.min(KALITE_BECERI_TAVAN, toplam);
 }
 
