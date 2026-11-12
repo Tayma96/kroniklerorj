@@ -251,4 +251,6 @@ test("oyuncu arabuluculuğu API'si üç hesabın rızasını, sürümlü taslağ
   const gelen3 = deger(await m2.gelen("hesap-3", "tr"));
   assert.equal(gelen3.arabuluculuk[0].durum, "tamam", "dosya yeniden açılışta kalıcıdır");
   assert.equal(gelen3.arabuluculuk[0].uzlasma.s, 125);
+  assert.equal(gelen3.arabuluculuk[0].sikayetci.ad, "Oyuncu1", "soğuk açılışta diğer tarafın adı yüklenir");
+  assert.equal(gelen3.arabuluculuk[0].karsi.ad, "Oyuncu2", "soğuk açılışta karşı tarafın adı yüklenir");
 });
