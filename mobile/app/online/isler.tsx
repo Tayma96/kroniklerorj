@@ -65,7 +65,7 @@ function IslerEkran() {
   const dar = useWindowDimensions().width < 360;
   const o = useYerlesimEkrani();
   const y = o.yerlesim;
-  const digerMeslekSayisi = (meslek: MeslekId) => Math.max(0, (o.lonca?.find((x) => x.meslek === meslek)?.oyuncu ?? 0) - (y?.ben.meslek?.a === meslek ? 1 : 0));
+  const digerMeslekSayisi = (meslek: string) => Math.max(0, (o.lonca?.find((x) => x.meslek === meslek)?.oyuncu ?? 0) - (y?.ben.meslek?.a === meslek ? 1 : 0));
   const satisTavan = (m: MalId) => npcSatisKotasi(m, digerMeslekSayisi(MALLAR[m].meslek));
   const [sonuc, setSonuc] = useState<Sonuc>(null);
   const [isHata, setIsHata] = useState<{ is: IsId; metin: string } | null>(null);
