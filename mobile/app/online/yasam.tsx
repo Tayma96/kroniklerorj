@@ -189,6 +189,7 @@ function YasamEkran() {
     <BarinmaKarti />
     <NabizKarti />
     <EkonomiGirisi />
+    <CizgiDugme etiket={t("onl.db.baslik")} icon="sparkles" rtl={rtl} kucuk onPress={() => router.push("/online/debdebe")} />
 
     {/* Öğrenme dönemi */}
     {og.suruyor ? <Animated.View entering={giris(200)} style={{ marginTop: 12 }}>
