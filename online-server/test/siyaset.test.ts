@@ -4,7 +4,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { BEYLIKLER } from "../src/dunya-veri.ts";
 import { akceGir, bolgeAyi, bolgeEylem, bolgeGorunumu, bolgeKur, defterTutarli, haracOnayla } from "../src/siyaset/bolge.ts";
-import { darbeBarisTeklifEt, darbeBarisYanit } from "../src/siyaset/darbe.ts";
+import { darbeBarisTeklifEt, darbeBarisYanit, darbeGorunumu } from "../src/siyaset/darbe.ts";
 import { etkinKisi, koltukBul, kumeCakisir, kumeAnahtarlari, oyuncuTutucu, yetkiAcik, yeterOran } from "../src/siyaset/makam.ts";
 import { hedefTutum, mogolAyi, mogolBaslangic, mogolEtkisi } from "../src/siyaset/mogol.ts";
 import { ozerklikAyi } from "../src/siyaset/ozerklik.ts";
@@ -547,6 +547,18 @@ function darbeCatismaDurumu() {
   };
   return { d, saldiran, savunan };
 }
+
+test("darbe görünümü: destek veren oyuncu savunma ön emri düğmesini yanlışlıkla açamaz", () => {
+  const { d } = darbeCatismaDurumu();
+  const destekci = kimlik("o3", { e: 3 });
+  d.darbe!.destekler.push({
+    kisi: destekci.kisi, hesap: destekci.hesap, ad: destekci.ad,
+    koltuk: "ahiBasi:demirhan", rol: "ahiBasi", kume: ["h:hesap-o3"], ay: 1,
+  });
+  const gorunum = darbeGorunumu(d, destekci)!;
+  assert.equal(gorunum.benimDestek, true);
+  assert.equal(gorunum.benimTaraf, null, "destekçi savunma tarafı sayılmaz");
+});
 
 test("darbe ateşkesi: karşı tarafın açık kabulü gerekir, statüko korunur ve soğuma başlar", () => {
   const { d, saldiran, savunan } = darbeCatismaDurumu();
