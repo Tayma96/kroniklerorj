@@ -272,4 +272,24 @@ test("P6 ittifak iki bölge arasında üç aşamalı, tekrar güvenli outbox ile
   hedefSon.devlet!.ittifaklar!.demirhan!.durum = "suresiDoldu";
   const { ittifakOnayAl } = await import("../src/siyaset/devlet.ts");
   assert.equal(ittifakOnayAl(hedefSon, "demirhan", gelen.istekId, ay, "Demirhan Beyliği"), "hedef_uygun_degil");
+
+  // Yeni bir ittifakın tek taraflı feshi iki DO'ya kalıcı outbox ile ulaşır.
+  const yeniIstek = gelen.istekId + ":yenileme";
+  kaynakSon.devlet!.ittifaklar!.aksehir = { durum: "aktif", baslangicAy: ay, sonAy: ay + 12, ad: "Akşehir Beyliği", istekId: yeniIstek };
+  hedefSon.devlet!.ittifaklar!.demirhan = { durum: "aktif", baslangicAy: ay, sonAy: ay + 12, ad: "Demirhan Beyliği", istekId: yeniIstek };
+  const boz = await bolgeCagir(env, {
+    islem: "yaz", bolge: "demirhan", hesapId: kaynakKimlik.hesap, kimlik: kaynakKimlik,
+    govde: { islem: "devletYonet", tur: "ittifakBoz", hedefBolge: "aksehir", istekNo: "ittifak-boz-001" },
+  });
+  assert.equal(boz.ok, true, JSON.stringify(boz));
+  const kaynakBozuk = kaynakKaydi.depolama.veri.get("bolge") as BolgeDurumu;
+  const hedefBozuk = hedefKaydi.depolama.veri.get("bolge") as BolgeDurumu;
+  assert.equal(kaynakBozuk.devlet?.ittifaklar?.aksehir?.durum, "bozuldu");
+  assert.equal(hedefBozuk.devlet?.ittifaklar?.demirhan?.durum, "bozuldu");
+  assert.equal(kaynakBozuk.diplomasiGiden?.length ?? 0, 0, "uzak bölge kalıcı kaydedince bozma outbox'ı silinir");
+  const bozTekrar = await bolgeCagir(env, {
+    islem: "ittifakBozAl", bolge: "aksehir", kaynak: "demirhan",
+    istekId: yeniIstek, ay, ad: "Demirhan Beyliği",
+  });
+  assert.equal(bozTekrar.ok, true, "aynı bozma iletisi tekrar güvenlidir");
 });
