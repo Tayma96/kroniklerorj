@@ -2,7 +2,7 @@
 
 **Tarih:** 12 Kasım 2026  
 **Dal:** `feature/online-p5-darbe-zinciri`  
-**Durum:** E4.3-A/B/C tamamlandı. E4.3-D sözleşme altyapısı, NPC–oyuncu arabuluculuk entegrasyonu ve mektup akışı sunucu, mobil ve 6 dilde uygulandı. İki oyuncu arasındaki hakemlik, gerçek kervan rotası koruması ve senet defteri açık; kalan beceri tüketicileri de açık.
+**Durum:** E4.3-A/B/C tamamlandı. E4.3-D sözleşme altyapısı, NPC–oyuncu ve oyuncu–oyuncu arabuluculuk, mektup akışı ve senet tahsilat dökümü sunucu/mobil/6 dilde uygulandı. Gerçek kervan rotası koruması, rota sistemi bulunmadığı için blokeli; kalan beceri tüketicileri de açık.
 
 ## Neden bu plan
 
@@ -101,7 +101,9 @@ Her POST, `istekNo` ile tekrar güvenli olmalı. Yerleşim sınırları ve yetki
 - [x] İş türü, mektup hedefi/metni, alıcıya özel olay ve sözleşme durumları mobilde 6 dilde. Alıcı dost listesinden seçilebilir veya oyuncu koduyla girilebilir.
 - [x] Regresyonlar: hizmet düğümü, zincir ustalığı, zincir aşınması, takat, moral/asayiş, emanet/ödeme, aynı hesap-hane, aynı hedefe aylık mektup sınırı, engelli hedef ve özel olay alıcısı.
 - [x] Arabuluculuk teklifi gerçek NPC uzlaşma motoruna bağlandı; sözleşme ücreti ve NPC tazminatı ayrı emanetlenir, teslim/ret/iptal/süre aşımında tekil sonuç ve iade uygulanır. Bu kapsam NPC–oyuncu kırgınlığıdır; iki oyuncu arasındaki husumet için ayrı hakem/uzlaşma protokolü henüz yok.
-- [ ] İki oyuncu arasındaki husumet için ayrı hakem/uzlaşma protokolü henüz yoktur. Muhafızlık kasaba asayişini artırır; henüz belirli kervan rotasında haydut saldırısını önlemez. Senet/borç kaydı ayrı bir sözleşme eki olarak eklenmedi.
+- [x] İki oyuncu arasındaki husumet için ayrı hakem/uzlaşma protokolü tamamlandı (D2-A–E; ayrıntı aşağıda).
+- [ ] Kervan muhafızlığı hâlâ yalnız sözleşme tesliminde zincir aşındırıp kasaba asayişini artırır. Gerçek rota koruması için çevrimiçi oyunda kervan seferi/rota/konum ve yolculuk adımı modeli yoktur; haydut yalnız kasaba tetiği ve ortak derttir. Bu bağlantı, gerçek rota/sefer sistemi eklenmeden tamamlanmış sayılmayacak.
+- [x] Oyuncu borcu mevcut teklif kaydında zaten faiz, vade, kalan borç ve kısmi tahsilatla tutuluyordu. Senet eki olarak her tahsilatın ayı ve tutarı kalıcı `bo` dökümüne yazılır; aktif ve kapanmış borç kartında altı dilde gösterilir. Eski kayıtlar için alan isteğe bağlıdır.
 - [x] Mobil teklif formu haritadaki NPC hedefini, uzlaşma bedelini ve isteğe bağlı tazminatı seçtirir; teklif kartı ve sonuç nedeni altı dilde gösterilir. Eski hedefi olmayan arabuluculuk teklifleri emanet iadesiyle kapanır.
 - [x] GitHub Actions [run #439](https://github.com/Tayma96/kroniklerorj/actions/runs/43195634565): **412 test / 411 geçti / 0 başarısız / 1 atlandı**; mobil TypeScript, 62 görsel yolu, sunucu testleri ve sunucu TypeScript başarılı.
 - [x] GitHub Actions [run #364](https://github.com/Tayma96/kroniklerorj/actions/runs/43141638764): **402 test / 401 geçti / 0 başarısız / 1 atlandı**; mobil TypeScript, 62 statik görsel yolu, sunucu testleri ve sunucu TypeScript başarılı.
