@@ -394,7 +394,7 @@ export type MeslekId = (typeof MESLEK_IDLERI)[number];
 export const KADEMELER = ["cirak", "kalfa", "usta", "pir"] as const;
 export type Kademe = 0 | 1 | 2 | 3;
 export const MAL_IDLERI = [
-  "odun", "sertOdun", "tas", "ot", "yun", "su", "kereste", "cevher", "komur", "tahil", "deri", "alet", "nal", "sifaliOt", "inceYun",
+  "odun", "sertOdun", "tas", "ot", "yun", "su", "kereste", "cevher", "komur", "tahil", "deri", "alet", "nal", "sifaliOt", "inceYun", "kagit", "murekkep", "senet",
 ] as const;
 export type MalId = (typeof MAL_IDLERI)[number];
 export const IS_IDLERI = ["odun", "tas", "ot", "yun", "su"] as const;
