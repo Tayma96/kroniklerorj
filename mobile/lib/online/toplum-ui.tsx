@@ -473,7 +473,7 @@ export function ArabuluculukKarti({ x, toplum }: { x: OyuncuArabuluculukGorunumu
   const taraf = x.rol !== "arabulucu";
   return <Cerceve ic={{ padding: 12, gap: 8 }}>
     <View style={{ flexDirection: yon(rtl), alignItems: "center", gap: 8 }}>
-      <Madalyon icon="scales" size={38} aktif={x.durum === "davet" || x.durum === "imzaBekliyor"} />
+      <Madalyon icon="scales" size={38} aktif={x.durum === "davet" || x.durum === "imzaBekliyor" || x.durum === "emanette"} />
       <View style={{ flex: 1, gap: 2 }}>
         <Text style={{ fontFamily: F.display, fontSize: 14, color: C.parchment, textAlign: hiza(rtl) }}>{t("onl.tp.arb.baslik")} · #{x.id}</Text>
         <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{t("onl.tp.arb.d." + x.durum)} · {t("onl.tp.arb.rol." + x.rol)}</Text>
