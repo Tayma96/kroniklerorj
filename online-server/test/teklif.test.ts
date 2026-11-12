@@ -149,6 +149,30 @@ test("arabuluculuk işi dostluk ve gerçek NPC kırgınlığı olmadan teklif ed
   }, k.ay), { ok: false, hata: "kirgin_degil" });
 });
 
+test("eski NPC hedefsiz arabuluculuk teklifleri kabul/teslimde emanet kilitlemeden kapanır", () => {
+  const { k, a, b } = kur();
+  const eski = (i: number, durum: "acik" | "surer") => ({
+    i, t: "is" as const, g: a.o, a: b.o, s: { it: "arabuluculuk" as const, tu: 8 },
+    e: 8, ac: k.ay, sa: k.ay + 1, v: "dustu" as const, d: durum,
+    ...(durum === "surer" ? { ka: k.ay } : {}),
+  });
+  a.pa = 84;
+  const acik = eski(9001, "acik");
+  toplumAl(k).tk.push(acik as unknown as (typeof toplumAl extends (...args: never[]) => infer R ? R : never)["tk"][number]);
+  assert.ok(teklifCevap(k, b, "t9001", "kabul", {}, k.ay).ok);
+  assert.equal(acik.d, "dustu");
+  assert.equal(a.pa, 92);
+  assert.equal(acik.e, 0);
+
+  const suren = eski(9002, "surer");
+  toplumAl(k).tk.push(suren as unknown as (typeof toplumAl extends (...args: never[]) => infer R ? R : never)["tk"][number]);
+  a.pa = 84;
+  assert.ok(teklifCevap(k, b, "t9002", "teslim", {}, k.ay).ok);
+  assert.equal(suren.d, "iptal");
+  assert.equal(a.pa, 92);
+  assert.equal(suren.e, 0);
+});
+
 test("teklif yaşam döngüsü: hediye emaneti kilitlenir, cevapsız kalınca cezasız düşer ve emanet döner", () => {
   const { k, a, b } = kur();
   const r = teklifOlustur(k, a, b, { tur: "hediye", tutar: 5 }, k.ay);
