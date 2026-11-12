@@ -134,7 +134,8 @@ export function araciSozlesmeKontrol(
 ): Sonuc<null> {
   if (!ARACI_BEDELLERI.includes(bedel)) return hata("ucgen_gecersiz");
   if (bedel === "tazminat" ? (!Number.isInteger(miktar) || miktar < 1 || miktar > TAZMINAT_TAVANI) : miktar !== 0) return hata("ucgen_gecersiz");
-  if (taraf.o === arabulucu.o || olduMu(arabulucu)) return hata(taraf.o === arabulucu.o ? "kendine" : "kisi_yok");
+  if (taraf.o === arabulucu.o) return hata("kendine");
+  if (olduMu(taraf) || olduMu(arabulucu)) return hata("kisi_yok");
   if (karakterYasi(taraf, ay) < ILISKI_YASI || karakterYasi(arabulucu, ay) < ILISKI_YASI) return hata("yas_kapisi");
   if (engelliMi(k.tp, taraf.o, arabulucu.o)) return hata("engelli");
   if (!dostMu(k.tp, taraf.o, arabulucu.o)) return hata("dost_degil");
