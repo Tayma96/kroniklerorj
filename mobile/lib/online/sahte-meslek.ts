@@ -297,10 +297,11 @@ export function sahteMeslekKur(kasaba: SahteKasaba, baslangic?: MeslekId, profil
         if ((ev[g.mal] ?? 0) < g.adet) return hata("mal_yok");
         if (ns[0] !== ay) ns = [ay, {}];
         const once = ns[1][g.mal] ?? 0;
-        const kotaTavan = npcSatisKotasi(g.mal, oyuncuSayisi(bilgi.meslek));
+        const digerMeslektas = Math.max(0, oyuncuSayisi(bilgi.meslek) - (kar.ms?.a === bilgi.meslek ? 1 : 0));
+        const kotaTavan = npcSatisKotasi(g.mal, digerMeslektas);
         if (once + g.adet > kotaTavan) return hata("kota_doldu");
         const kalemler = [{ k: "taban", d: bilgi.taban }];
-        if (oyuncuSayisi(bilgi.meslek) === 0) kalemler.push({ k: "kitlik", d: kitlikPrimi(g.mal) });
+        if (digerMeslektas === 0) kalemler.push({ k: "kitlik", d: kitlikPrimi(g.mal) });
         const birim: Dokum = { toplam: kalemler.reduce((a, x) => a + x.d, 0), kalemler };
         ns[1][g.mal] = once + g.adet;
         envanterEkle(g.mal, -g.adet);
