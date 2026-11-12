@@ -104,6 +104,8 @@ export const PUL_ZIRH_ASTARI_KALITE_BONUS = 10;
 export const OZEL_PASTIRMA_KALITE_BONUS = 10;
 /** [PARAMETRE] Oduncu değirmen taşı + aşçı değirmen unu bilgisiyle un kalitesine ek katkı. */
 export const KASABA_DEGIRMENI_KALITE_BONUS = 10;
+/** [PARAMETRE] Oduncu kiriş/direk + marangoz han inşası bilgisiyle kiriş kalitesine ek katkı. */
+export const HAN_KIRISI_KALITE_BONUS = 10;
 
 /** Tarifin kalite düğümü yüzdeleri (hedef: tarif kimliği ya da grubu), tavanlı. */
 export function kaliteBecerisi(k: Karakter, t: Tarif): number {
@@ -114,6 +116,7 @@ export function kaliteBecerisi(k: Karakter, t: Tarif): number {
   if (t.id === "pulZirh" && sinerjiAcik(k, "pulZirhAstari")) toplam += PUL_ZIRH_ASTARI_KALITE_BONUS;
   if (t.id === "pastirma" && sinerjiAcik(k, "ozelPastirma")) toplam += OZEL_PASTIRMA_KALITE_BONUS;
   if (t.id === "un" && sinerjiAcik(k, "kasabaDegirmeni")) toplam += KASABA_DEGIRMENI_KALITE_BONUS;
+  if (t.id === "kiris" && sinerjiAcik(k, "hanKirisi")) toplam += HAN_KIRISI_KALITE_BONUS;
   return Math.min(KALITE_BECERI_TAVAN, toplam);
 }
 
