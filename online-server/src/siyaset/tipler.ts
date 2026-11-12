@@ -197,6 +197,8 @@ export interface DarbePlani {
   durum: DarbeAsamasi;
   baslatanKisi: string;
   baslatanHesap: string;
+  /** Başlatanın hesap/hane kümesi; eski kayıtlar için isteğe bağlı. */
+  baslatanKume?: string[];
   acilisAy: number;
   sogumaSonAy: number;
   destekler: DarbeDestegi[];
