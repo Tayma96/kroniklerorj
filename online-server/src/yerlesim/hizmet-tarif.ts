@@ -13,6 +13,8 @@ export interface HizmetTarifi {
   meslek: MeslekId;
   dugum: string;
   seviye: number;
+  /** Varsa hizmet düğümüne ek olarak açılması gereken çapraz meslek sinerjisi. */
+  acar?: string;
   girdi: Partial<Record<MalId, number>>;
   takat: number;
   /** Oyuncu başına hizmet başına aylık hazırlama tavanı. */
@@ -80,6 +82,20 @@ export const HIZMET_TARIFLERI: readonly HizmetTarifi[] = [
     ],
     hazir: { adet: 1, gecerlilikAy: 1 },
     fiyatTaban: 5,
+  },
+  {
+    id: "sazGecesi",
+    meslek: "hanci",
+    dugum: "hanci.sazGecesi",
+    seviye: 1,
+    acar: "ortakSahne",
+    girdi: { ekmek: 1, corba: 1 },
+    takat: 2,
+    aylikTavan: 4,
+    hedef: "kisi",
+    etki: [{ tur: "hal", alan: "gonul", deger: 5 }],
+    hazir: { adet: 1, gecerlilikAy: 1 },
+    fiyatTaban: 6,
   },
   {
     id: "teselli",
