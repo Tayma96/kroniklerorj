@@ -1,6 +1,6 @@
 # Ek B P5–P6 — darbe ve bağımsız devlet uygulama notu
 
-Durum: sunucu tarafında ilk oynanabilir dilim; eşikler alfa parametresidir. Bu not, tamamlanmış olmayan diplomatik tanınma/çok-devlet bağlantısını açıkça ayırır.
+Durum: sunucu tarafında ilk oynanabilir dilim; eşikler alfa parametresidir. Tanınma isteği/yanıtı iki bölge DO'su arasında tekrar güvenli outbox teslimiyle çalışır; ittifak ve kapsamlı diplomatik anlaşmalar bu sürümün dışında kalır.
 Dal: `feature/online-p5-darbe-zinciri`.
 
 ## P5 — darbe akışı
@@ -67,3 +67,11 @@ Bunlar nihai tasarım kararı değildir. GDD'deki D-43 ve D-46 kararları uyarı
 - `npm test`
 
 CI run #201 başarılı (commit `71445a6`): 374 test / 373 geçti / 0 başarısız / 1 atlandı; mobil TypeScript, 62 statik görsel yolu ve sunucu TypeScript kontrolü başarılı. Savunma ön emri testleri bu çalışmada doğrulandı.
+
+## P6 iki bölgeli tanınma köprüsü
+- `BolgeIleti` yalnız DO iç çağrıları için `taninmaIstekAl` ve `taninmaYanitAl` mesajlarını tanımlar; Worker'ın oyuncu uçları bunları kabul etmez.
+- `BolgeDO` kalıcı `diplomasiGiden` outbox'ını alıcı DO onaylayana kadar tutar; alarm ve sonraki isteklerde tekrar dener.
+- Alıcı tarafı kanonik beylik kimliğini/adını doğrular, aynı isteği tekrar güvenli kabul eder ve bekleyen istek üstüne ikinci istek almaz.
+- Kaynak tarafı yalnız bekleyen hedef/istek kimliği eşleşen kararı kabul eder. DO→DO geri çağrı döngüsü iç iletilerde gönderim yapmayarak engellenir.
+- Entegrasyon testi iki bölge DO'su arasında tam istek/kabul akışını doğrular.
+- CI [#43132539771](https://github.com/Tayma96/kroniklerorj/actions/runs/43132539771): **375 test / 374 geçti / 0 başarısız / 1 atlandı**; tüm TypeScript ve görsel yolu kontrolleri başarılı.
