@@ -118,7 +118,7 @@ function ekonomiSim(pompali: boolean) {
     for (const { c, m } of oyuncular) {
       takatTazele(c, ay);
       const deger = (mal: MalId) => saticiDegeri(c, mal, sayac()).toplam;
-      const npcKalan = (mal: MalId) => Math.max(0, npcSatisKotasi(mal) - satilan(c, mal, ay));
+      const npcKalan = (mal: MalId) => Math.max(0, npcSatisKotasi(mal, sayac(MALLAR[mal].meslek)) - satilan(c, mal, ay));
       const alIlanlari = (mal: MalId) => acikIlanlar(k.ek).filter((x) => x.t === "al" && x.ml === mal && x.o !== c.o).sort((a, b) => b.f - a.f || a.i - b.i);
       /** `adet` yeni birimin değeri: önce NPC kotası (satış değeri), sonra başkalarının alım ilanları (ilan fiyatı). */
       const getiri = (mal: MalId, adet: number): number => {
