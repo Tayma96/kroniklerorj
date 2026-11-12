@@ -131,6 +131,7 @@ export const HATA_DURUMU = {
   taraf_degil: 403,
   kendine: 409,
   engelli: 403,
+  arabulucu_tarafsiz_degil: 409,
   tavan_doldu: 409,
   hediye_dongu: 409,
   aralik_dolu: 409,
