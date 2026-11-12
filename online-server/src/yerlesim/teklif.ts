@@ -490,6 +490,13 @@ export function teklifCevap(k: Kasaba, ben: Karakter, idHam: unknown, cevap: unk
     case "teslim": {
       if (t.d !== "surer" || t.t !== "is" || t.a !== ben.o) return hata("teklif_kapandi");
       if (ay > t.sa) return hata("teklif_kapandi");
+      // Eski sürümde kabul edilmiş NPC hedefi olmayan arabuluculuk sözleşmesi teslim edilemez.
+      // Kilitli hizmet ücretini sahibine iade edip sözleşmeyi kapat.
+      if (t.s.it === "arabuluculuk" && t.s.ta === undefined) {
+        kapat(k, t, "iptal", ay, "iptal");
+        olaylar.push({ t: "teklif", w: ben.o, h: t.g, g: t.g, n: 6, k: "olay.teklif.bitti.is", p: { kisi: oyuncuRef(ben), teklif: teklifKimlik(t.i) } });
+        break;
+      }
       const mektupHedef = t.s.it === "mektup" ? k.kar.get(t.s.he ?? "") : undefined;
       const mektupGonderen = t.s.it === "mektup" ? k.kar.get(t.g) : undefined;
       if (t.s.it === "mektup" && (!mektupHedef || !mektupGonderen || !t.s.ms)) return hata("kisi_yok");
