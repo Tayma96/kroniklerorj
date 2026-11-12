@@ -247,9 +247,9 @@ test("P6 ittifak iki bölge arasında üç aşamalı, tekrar güvenli outbox ile
   const hedefBekleyen = hedefKaydi.depolama.veri.get("bolge") as BolgeDurumu;
   assert.equal(hedefBekleyen.diplomasiGiden?.length ?? 0, 0, "yanıt aynı çağrıda kaynağa teslim edilir");
 
-  // Kaynak kabulü aldı; son teyit outbox'ı kaynakta bekler.
+  // Kaynak kabulü aldı; son teyit hedefe kalıcı ulaşana kadar kaynakta da beklemede kalır.
   const kaynakAktif = kaynakKaydi.depolama.veri.get("bolge") as BolgeDurumu;
-  assert.equal(kaynakAktif.devlet?.ittifaklar?.aksehir?.durum, "aktif");
+  assert.equal(kaynakAktif.devlet?.ittifaklar?.aksehir?.durum, "kabulBekliyor");
   assert.equal(kaynakAktif.diplomasiGiden?.[0]?.tur, "ittifakOnay");
 
   // Kaynak onayı tekrar hedefe gider; iki taraf da ancak son teyitle aktif görünür.
