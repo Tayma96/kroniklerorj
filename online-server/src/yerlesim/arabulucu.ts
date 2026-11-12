@@ -171,7 +171,7 @@ export function araciSozlesmeAc(
   ug.at.push(talep);
   const olay: OlayTaslagi = {
     t: "ucgen", w: taraf.o, h: arabulucu.o, g: arabulucu.o, n: 6, k: "olay.ucgen.araciTalebi",
-    p: { kisi: oyuncuRef(taraf), npc: npcRef(npc), bedel, talep: talepKimlik(talep.i), ...(miktar ? { miktar } : {}), sozlesme: true },
+    p: { kisi: oyuncuRef(taraf), npc: npcRef(npc), bedel, talep: talepKimlik(talep.i), ...(miktar ? { miktar } : {}), sozlesme: "evet" },
   };
   return basarili({ talep, olay });
 }
