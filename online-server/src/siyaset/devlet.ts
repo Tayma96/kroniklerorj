@@ -59,7 +59,6 @@ export function devletYonet(d: BolgeDurumu, kimlik: SiyasiKimlik, govde: Record<
       const kaynakAd = BEYLIKLER.find((x) => x.id === d.id)?.ad;
       if (!hedef || hedef.id === d.id || !kaynakAd) return "deger_sinir_disi";
       if (s.ittifaklar?.[hedef.id]?.durum === "aktif") return "devlet_talep_var";
-      if (Object.values(s.ittifaklar ?? {}).filter((x) => x.durum === "aktif").length >= 3) return "sinir_asildi";
       const istekId = `${d.id}:${d.kn + 1}:${d.ay}:ittifak`;
       s.ittifakTalep = { hedef: hedef.id, istekId, ay: d.ay };
       (d.diplomasiGiden ??= []).push({ tur: "ittifakIstek", hedef: hedef.id, istekId, ay: d.ay, ad: kaynakAd });
@@ -127,7 +126,27 @@ export function devletYonet(d: BolgeDurumu, kimlik: SiyasiKimlik, govde: Record<
 /** Sultan barış talebi iki ay sonra meşruiyet koşuluyla sonuçlanır; tanınma talebi başka devlet yanıtı gelene kadar bekler. */
 export function devletAyi(d: BolgeDurumu, ay: number): "barisKabul" | "barisRet" | null {
   const s = d.devlet;
-  if (s) for (const x of Object.values(s.ittifaklar ?? {})) if (x.durum === "aktif" && ay > x.sonAy) x.durum = "suresiDoldu";
+  if (s) {
+    for (const [bolge, x] of Object.entries(s.ittifaklar ?? {})) {
+      if ((x.durum === "aktif" || x.durum === "kabulBekliyor") && ay > x.sonAy) x.durum = "suresiDoldu";
+    }
+    const talep = s.ittifakTalep;
+    if (talep && ay > talep.ay + 2) {
+      const hedefAd = BEYLIKLER.find((x) => x.id === talep.hedef)?.ad ?? talep.hedef;
+      (s.ittifakYanits ??= {})[talep.hedef] = { karar: "ret", ay, ad: hedefAd, istekId: talep.istekId };
+      (s.ittifaklar ??= {})[talep.hedef] = { durum: "suresiDoldu", baslangicAy: talep.ay, sonAy: ay, ad: hedefAd, istekId: talep.istekId };
+      delete s.ittifakTalep;
+      d.diplomasiGiden = (d.diplomasiGiden ?? []).filter((x) => !(x.tur === "ittifakIstek" && x.istekId === talep.istekId));
+    }
+    for (const [bolge, gelen] of Object.entries(s.ittifakGelen ?? {})) {
+      if (gelen.yanitlandi || ay <= gelen.ay + 2) continue;
+      gelen.yanitlandi = true;
+      (s.ittifakYanits ??= {})[bolge] = { karar: "ret", ay, ad: gelen.ad, istekId: gelen.istekId };
+      (s.ittifaklar ??= {})[bolge] = { durum: "suresiDoldu", baslangicAy: gelen.ay, sonAy: ay, ad: gelen.ad, istekId: gelen.istekId };
+      const kendiAd = BEYLIKLER.find((x) => x.id === d.id)?.ad;
+      if (kendiAd) (d.diplomasiGiden ??= []).push({ tur: "ittifakYanit", hedef: bolge, istekId: gelen.istekId, karar: "ret", ay, ad: kendiAd });
+    }
+  }
   if (!s || s.sultan !== "barisTalebi" || s.sultanTalepAy === undefined || ay < s.sultanTalepAy + 2) return null;
   const kabul = d.mesruiyet.puan >= 55 && (d.sultanlik?.mesruiyet.puan ?? 0) >= 55;
   s.sultan = kabul ? "sultanligaDondu" : "bagimsiz";
@@ -223,7 +242,7 @@ export function ittifakOnayAl(
   const b = typeof kaynak === "string" ? BEYLIKLER.find((x) => x.id === kaynak) : undefined;
   if (!b || b.id === d.id || typeof istekId !== "string" || !Number.isInteger(ay) || (ay as number) < 0 || ad !== b.ad) return "deger_sinir_disi";
   const kayit = s.ittifaklar?.[b.id];
-  if (kayit?.durum === "aktif" && kayit.istekId === istekId) return null;
+  if ((kayit?.durum === "aktif" || kayit?.durum === "suresiDoldu") && kayit.istekId === istekId) return null;
   if (!kayit || kayit.durum !== "kabulBekliyor" || kayit.istekId !== istekId || kayit.baslangicAy !== ay || s.ittifakYanits?.[b.id]?.karar !== "kabul") return "hedef_uygun_degil";
   kayit.durum = "aktif";
   return null;
