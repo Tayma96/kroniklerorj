@@ -57,6 +57,8 @@ export interface AraciTalebi {
   d: "acik" | "bitti" | "ret" | "dustu" | "geri";
   sn?: string;
   kp?: number;
+  /** Teklifte ücretli arabuluculuk işiyle bağlıysa doğrudan üçgen ucundan tamamlanamaz. */
+  teklif?: number;
 }
 
 /** Casus: sahip `s`, NPC `n`'ye `iz`'i izletir; [a, b) aylarını ay dönümünde rapor eder. */
