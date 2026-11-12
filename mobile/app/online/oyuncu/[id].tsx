@@ -22,7 +22,7 @@ import { hataAnahtari } from "../../../lib/online/hata";
 import { NAMLAR, type OnlineHata } from "../../../lib/online/protokol";
 import { useToplum, type Toplum } from "../../../lib/online/toplum-durum";
 import { GelenKutusuKarti, Secenekler, TeklifFormu, armaganYaz, ayFarki, kademeAdi, kapiMetni } from "../../../lib/online/toplum-ui";
-import { SIKAYET_NEDENLERI, TOPLUM_SINIR, kisiYolu, type OyuncuProfili, type OyuncuTeklifTuru, type SikayetNedeni, type VitrinArmagani } from "../../../lib/online/toplum-veri";
+import { SIKAYET_NEDENLERI, TOPLUM_SINIR, kisiYolu, oyuncuKimligiMi, type OyuncuProfili, type OyuncuTeklifTuru, type SikayetNedeni, type VitrinArmagani } from "../../../lib/online/toplum-veri";
 
 type Ceviri = (k: string) => string;
 type Onay = { tur: "husumet" | "engelle" | "dostlukBitir"; islem: string };
@@ -236,7 +236,7 @@ function OyuncuEkran() {
   const teklifKapi = teklifKapali ? kapiMetni(t, "teklif.cirak", eylem("teklif.cirak")?.engel) : null;
   const ana = p.meslek.ana;
   const yan = p.meslek.yan;
-  const arabulucuAdaylari = p.ortakTanidiklar.filter((k) => k.id.startsWith("o") && k.id !== y.ben.id && k.id !== p.id);
+  const arabulucuAdaylari = p.ortakTanidiklar.filter((k) => oyuncuKimligiMi(k.id) && k.id !== y.ben.id && k.id !== p.id);
   const arabuluculukBaslat = async () => {
     if (!arabulucuId) return;
     setHata(null);
