@@ -202,8 +202,21 @@ export function oyuncuArabuluculukImzala(
   return basarili(d);
 }
 
+/** Emanet hem uygulama hem iade yolunda aynı imza/sürüm/tutar bütünlüğünü taşımalıdır. */
+function emanetKaydiGecerliMi(d: OyuncuArabuluculuk): boolean {
+  const od = d.od, uz = d.uz;
+  return !!od && !!uz
+    && Number.isSafeInteger(d.sv) && d.sv >= 1
+    && d.im.s === d.sv && d.im.k === d.sv
+    && Number.isSafeInteger(uz.s) && uz.s >= 0 && uz.s <= 100000
+    && Number.isSafeInteger(uz.k) && uz.k >= 0 && uz.k <= 100000
+    && Number.isSafeInteger(od.s) && od.s >= 0 && od.s === uz.s
+    && Number.isSafeInteger(od.k) && od.k >= 0 && od.k === uz.k;
+}
+
 function emanetIadeEt(k: Kasaba, d: OyuncuArabuluculuk, ay: number): boolean {
-  if (d.d !== "emanette" || !d.od || d.od.emanet !== 1 || d.od.uygulandi === 1 || d.od.iade === 1) return false;
+  if (d.d !== "emanette" || !d.od || d.od.emanet !== 1 || d.od.uygulandi === 1 || d.od.iade === 1
+    || !emanetKaydiGecerliMi(d)) return false;
   const s = k.kar.get(d.s), kk = k.kar.get(d.k);
   if (!s || !kk) return false;
   if (!Number.isSafeInteger(s.pa + d.od.s) || !Number.isSafeInteger(kk.pa + d.od.k)) return false;
@@ -223,13 +236,8 @@ export function oyuncuArabuluculukUygula(
   // Arabulucu taslağı sunar; imzalı mali uzlaşmanın tarafı değildir ve emaneti uygulayamaz.
   if (ben.o !== d.s && ben.o !== d.k) return hata("taraf_degil");
   if (d.d !== "emanette" || !d.od || d.od.emanet !== 1 || d.od.uygulandi === 1 || d.od.iade === 1) return hata("teklif_kapandi");
-  // Kalıcı kayıt elle/eski sürümle bozulmuşsa "emanette" durumu tek başına ödeme yetkisi vermez:
-  // iki imza da mevcut taslak sürümüne ait olmalı ve emanet tutarları geçerli tam sayılar olmalı.
-  if (!d.uz || !Number.isSafeInteger(d.sv) || d.sv < 1
-    || d.im.s !== d.sv || d.im.k !== d.sv
-    || !Number.isSafeInteger(d.od.s) || d.od.s < 0
-    || !Number.isSafeInteger(d.od.k) || d.od.k < 0
-    || d.od.s !== d.uz.s || d.od.k !== d.uz.k) return hata("teklif_gecersiz");
+  // Kalıcı kayıt elle/eski sürümle bozulmuşsa uygulama veya iade para hareketi yapamaz.
+  if (!emanetKaydiGecerliMi(d)) return hata("teklif_gecersiz");
   if (d.sonAy !== undefined && ay > d.sonAy) {
     if (!emanetIadeEt(k, d, ay)) return hata("sakin_yok");
     return basarili(d);
