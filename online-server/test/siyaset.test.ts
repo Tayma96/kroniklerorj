@@ -379,6 +379,7 @@ test("P5 çatışma sonucu bağımsız devlet kurar; P6 yönetim kararları ve g
   assert.equal(d.devlet?.taninma, "tanindi");
   assert.equal(d.devlet?.taninmaSonuc, "kabul");
   assert.equal(taninmaYanitAl(d, "aksehir", istek.istekId, "kabul", hedef.ay, hedefAd), null, "yanıt tekrar güvenli");
+  assert.equal(taninmaYanitAl(d, "aksehir", istek.istekId, "ret", hedef.ay, hedefAd), "hedef_uygun_degil", "aynı istek kimliğiyle çelişkili karar reddedilir");
   assert.equal(taninmaYanitAl(d, "aksehir", "sahte-istek", "ret", hedef.ay, hedefAd), "hedef_uygun_degil");
   assert.deepEqual(bolgeGorunumu(d, SIMDI, bey).bolge.devlet?.taninmaTalep?.cevap, {
     kaynak: "aksehir", karar: "kabul", ay: hedef.ay, ad: hedefAd, istekId: istek.istekId,
@@ -431,6 +432,7 @@ test("P6 ittifak: iki taraflı istek, kabul teyidi, ret ve süre aşımı idempo
   assert.ok(yanit && yanit.tur === "ittifakYanit");
   assert.equal(ittifakYanitAl(kaynak, "aksehir", istek.istekId, "kabul", 0, ad("aksehir")), null);
   assert.equal(kaynak.devlet?.ittifaklar?.aksehir?.durum, "aktif");
+  assert.equal(ittifakYanitAl(kaynak, "aksehir", istek.istekId, "ret", 0, ad("aksehir")), "hedef_uygun_degil", "aynı ittifak isteğine çelişkili yanıt reddedilir");
   const onay = kaynak.diplomasiGiden?.find((x) => x.tur === "ittifakOnay");
   assert.ok(onay && onay.tur === "ittifakOnay");
   assert.equal(ittifakOnayAl(hedef, "demirhan", istek.istekId, 0, ad("demirhan")), null);
@@ -463,6 +465,12 @@ test("P6 ittifak: iki taraflı istek, kabul teyidi, ret ve süre aşımı idempo
   assert.equal(sureKaynak.devlet?.ittifakTalep, undefined);
   assert.equal(sureKaynak.devlet?.ittifaklar?.aksaray?.durum, "suresiDoldu");
   assert.equal(sureHedef.diplomasiGiden?.some((x) => x.tur === "ittifakYanit" && x.karar === "ret"), true, "yanıtsız gelen istek süre sonunda reddedilir");
+
+  const devletsiz = bolgeKur("gumushisar", 0);
+  assert.equal(ittifakIstekAl(devletsiz, "demirhan", "demirhan:9:0:ittifak", 0, ad("demirhan")), null);
+  assert.equal(ittifakIstekAl(devletsiz, "demirhan", "demirhan:9:0:ittifak", 0, ad("demirhan")), null, "devletsiz otomatik ret tekrar güvenli");
+  assert.equal(devletsiz.diplomasiGiden?.filter((x) => x.tur === "ittifakYanit" && x.istekId === "demirhan:9:0:ittifak").length, 1);
+
 });
 
 test("P5 savunma üstün gelirse darbe bastırılır ve vali makamı boşalır", () => {
