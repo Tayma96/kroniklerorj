@@ -39,6 +39,9 @@ jobs:
       - name: Mobile TypeScript typecheck
         working-directory: mobile
         run: npm run typecheck
+      - name: Validate static mobile image assets
+        working-directory: mobile
+        run: npm run assets:check
       - name: Online server tests
         working-directory: online-server
         run: npm test
