@@ -344,6 +344,28 @@ test("imzalı uzlaşmada taraf ölürse ay dönümünde iki emanet de terekeye i
 });
 
 
+
+test("arabulucu imzalı uzlaşmadan sonra ölürse tarafların anlaşması geçerliliğini korur", () => {
+  const k = testKasabasi("develi", 797);
+  const s = oyuncuEkle(k, 261), kk = oyuncuEkle(k, 262), ar = oyuncuEkle(k, 263);
+  const ac = oyuncuArabuluculukAc(k, s, kk, ar, k.ay);
+  assert.ok(ac.ok);
+  if (!ac.ok) return;
+  const id = String(ac.deger.i);
+  for (const x of [s, kk, ar]) assert.ok(oyuncuArabuluculukCevap(k, x, id, "kabul", k.ay).ok);
+  s.pa = 500; kk.pa = 500;
+  assert.ok(oyuncuArabuluculukTaslak(k, ar, id, 120, 80, undefined, k.ay).ok);
+  assert.ok(oyuncuArabuluculukImzala(k, s, id, ac.deger.sv).ok);
+  assert.ok(oyuncuArabuluculukImzala(k, kk, id, ac.deger.sv).ok);
+  ar.hd = { h: ar.o, n: 1, s: 0, ol: k.ay };
+  assert.equal(oyuncuArabuluculukDonumu(k, k.ay), 0, "arabulucunun ölümü imzalı emanetin iadesini tetiklemez");
+  assert.equal(ac.deger.d, "emanette");
+  assert.ok(oyuncuArabuluculukUygula(k, s, id, k.ay).ok);
+  assert.equal(ac.deger.d, "tamam");
+  assert.equal(s.pa, 380);
+  assert.equal(kk.pa, 620);
+});
+
 test("ilk imzadan sonra taraf ölürse ikinci imza emanet kesintisi yapmadan dosyayı düşürür", () => {
   const k = testKasabasi("develi", 795);
   const s = oyuncuEkle(k, 256), kk = oyuncuEkle(k, 257), ar = oyuncuEkle(k, 258);
