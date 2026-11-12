@@ -13,7 +13,9 @@ export const TOPLUM_HATALARI = [
 ] as const;
 export type ToplumHataKodu = (typeof TOPLUM_HATALARI)[number];
 
-export const OYUNCU_TEKLIF_TURLERI = ["cirak", "ortak", "borc", "hediye", "gorucu"] as const;
+export const OYUNCU_TEKLIF_TURLERI = ["cirak", "ortak", "borc", "hediye", "gorucu", "is"] as const;
+export const IKI_TARAF_ISLERI = ["arabuluculuk", "muhafiz", "mektup"] as const;
+export type IkiTarafIsi = (typeof IKI_TARAF_ISLERI)[number];
 export const NPC_TEKLIF_TURLERI = ["npcIs", "npcBorc", "npcDunur"] as const;
 export type OyuncuTeklifTuru = (typeof OYUNCU_TEKLIF_TURLERI)[number];
 export type NpcTeklifTuru = (typeof NPC_TEKLIF_TURLERI)[number];
@@ -21,7 +23,7 @@ export type TeklifTuru = OyuncuTeklifTuru | NpcTeklifTuru;
 export const TEKLIF_TURLERI: readonly TeklifTuru[] = [...OYUNCU_TEKLIF_TURLERI, ...NPC_TEKLIF_TURLERI];
 export type TeklifDurumu = "acik" | "surer" | "bitti" | "ret" | "dustu" | "geri" | "iptal";
 export type VarsayilanSonuc = "kabul" | "ret" | "dustu";
-export type TeklifCevabi = "kabul" | "ret" | "geri" | "bitir" | "ode";
+export type TeklifCevabi = "kabul" | "ret" | "geri" | "bitir" | "ode" | "teslim";
 export type BagDurumu = "dost" | "istekGonderildi" | "istekGeldi" | null;
 export type GelenCevap = "bekle" | "kabul" | "ret";
 export const GELEN_CEVAPLARI: readonly GelenCevap[] = ["bekle", "kabul", "ret"];
@@ -31,7 +33,7 @@ export const TOPLUM_SINIR = {
   teklifYasi: 13, gorucuYasi: 16, teklifSureAy: 2, npcTeklifSureAy: 3,
   ortakPay: 25, ortakSure: 12, borcEnCok: 50, borcFaiz: 20, borcVade: 12, borcToplam: 60,
   hediyeEnCok: 40, hediyeAylik: 60, hediyeTakat: 1, yalanlamaTakat: 1, vitrinEnCok: 6, duzenBorcEnCok: 20,
-  npcIsTakat: 2,
+  npcIsTakat: 2, isEnCok: 20,
 } as const;
 
 /** teklifGorunumu.sartlar (uzun adlar). */
@@ -48,6 +50,7 @@ export interface TeklifSartlari {
   adet?: number;
   yapan?: KisiAdi;
   aday?: KisiAdi;
+  is?: IkiTarafIsi;
 }
 export interface TeklifGorunumu {
   id: string;
@@ -156,6 +159,7 @@ export interface TeklifSartGirdisi {
   faiz?: number;
   mal?: MalId;
   adet?: number;
+  is?: IkiTarafIsi;
 }
 export interface TeklifIstegi extends TeklifSartGirdisi { tur: OyuncuTeklifTuru; hedef: string; istekNo: string; dil?: Dil }
 export interface TeklifCevapIstegi { teklif: string; cevap: TeklifCevabi; tutar?: number; istekNo: string; dil?: Dil }
