@@ -70,6 +70,8 @@ export interface MulkDefteri {
   batak: number;
   /** Bölge DO'suna aktarılmayı bekleyen oyuncu işletmesi vergileri (kalıcı outbox). */
   vergiGiden?: { anahtar: string; tutar: number; yerlesim: string }[];
+  /** İşletme bazında kuruş altı vergi birikimi (yüzde payı; 0–99). */
+  vergiKesir?: Record<string, number>;
 }
 
 /** [PARAMETRE] Karşılıklı işlem izleme penceresi için tutulan en çok ödeme çifti. */
@@ -208,6 +210,14 @@ export function oyuncuHani(k: Kasaba): OyuncuHani | undefined {
   return { isletme: id, sahip: t.s, fc: y?.fc ?? 100, seviye: y?.seviye ?? 0, kapasite: y && y.durum === "acik" && y.kapi ? y.kapasite : 0 };
 }
 
+function vergiAyir(md: MulkDefteri, isletme: string, tutar: number, oran: number): { vergi: number; net: number } {
+  const eski = md.vergiKesir?.[isletme] ?? 0;
+  const toplam = eski + tutar * oran;
+  const vergi = Math.floor(toplam / 100);
+  (md.vergiKesir ??= {})[isletme] = toplam % 100;
+  return { vergi, net: tutar - vergi };
+}
+
 function bosOda(md: MulkDefteri, isletme: string, kapasite: number, an: number): number {
   const l = (md.od[isletme] ?? []).filter(([, s]) => s > an);
   md.od[isletme] = l;
@@ -226,8 +236,7 @@ export function mulkluKira(k: Kasaba, kar: Karakter, govde: unknown, an: number,
   if (!r.ok) return r;
   const kira = r.deger.kira as { kasaya: number; bitis: number };
   const oran = Number.isInteger(vergiOrani) && vergiOrani >= 0 && vergiOrani <= 4 ? vergiOrani : 0;
-  const vergi = Math.floor((kira.kasaya * oran) / 100);
-  const net = kira.kasaya - vergi;
+  const { vergi, net } = vergiAyir(md, oh.isletme, kira.kasaya, oran);
   const c = kasayaCikis(k, kar, oh.isletme, net, "kira", an, `y:${k.y}:${kar.o}:kira:${istekNo}`, false);
   if (!c.ok) return c;
   if (vergi > 0) (md.vergiGiden ??= []).push({ anahtar: `y:${k.y}:${kar.o}:kira:${istekNo}:vergi`, tutar: vergi, yerlesim: k.y });
@@ -251,8 +260,7 @@ export function mulkluIkram(k: Kasaba, kar: Karakter, ikram: IkramId, an: number
   if (oh.kapasite === 0) return hata("han_kapali");
   const fiyat = Math.max(1, Math.ceil((taban * oh.fc) / 100 - 1e-9));
   const oran = Number.isInteger(vergiOrani) && vergiOrani >= 0 && vergiOrani <= 4 ? vergiOrani : 0;
-  const vergi = Math.floor((fiyat * oran) / 100);
-  const net = fiyat - vergi;
+  const { vergi, net } = vergiAyir(mulkDefteri(k), oh.isletme, fiyat, oran);
   const c = kasayaCikis(k, kar, oh.isletme, net, "ikram", an, `y:${k.y}:${kar.o}:ikram:${istekNo}`, true);
   if (!c.ok) return c;
   if (vergi > 0) {
