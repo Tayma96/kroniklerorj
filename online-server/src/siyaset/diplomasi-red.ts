@@ -38,7 +38,7 @@ export function diplomasiReddedildi(d: BolgeDurumu, ileti: DiplomasiGiden): void
     case "ittifakOnay": {
       // Hedef son teyidi reddettiyse bizde "aktif" görünen ittifak tek taraflı kalmasın.
       const k = s.ittifaklar?.[ileti.hedef];
-      if (k?.istekId === ileti.istekId && k.durum === "aktif") {
+      if (k?.istekId === ileti.istekId && (k.durum === "aktif" || k.durum === "kabulBekliyor")) {
         k.durum = "suresiDoldu";
         k.sonAy = d.ay;
       }
