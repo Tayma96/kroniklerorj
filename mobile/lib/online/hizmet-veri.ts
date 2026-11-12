@@ -26,7 +26,7 @@ export interface HizmetNpcTalepSatiri {
 export interface HizmetDurumu {
   katalog: HizmetTarifSatiri[]; stok: HizmetStokSatiri[];
   ilanlar: HizmetIlanSatiri[]; benimIlanlar: HizmetIlanSatiri[];
-  npcTalepleri: HizmetNpcTalepSatiri[];
+  npcTalepleri: HizmetNpcTalepSatiri[]; gorevler: HizmetGorevSatiri[];
   kurallar: { tekHazirlamaEnCok: number; hizmetStokEnCok: number; acikIlanEnCok: number; alimAdetEnCok: number };
 }
 export interface HizmetIslemYaniti {
@@ -40,8 +40,9 @@ export interface HizmetIslemYaniti {
 const stokMu = (v: unknown): v is HizmetStokSatiri => nesneMi(v) && metinMi(v.id) && metinMi(v.hizmet) && metinMi(v.ad) && sayiMi(v.adet) && sayiMi(v.sonAy);
 const ilanMu = (v: unknown): v is HizmetIlanSatiri => nesneMi(v) && metinMi(v.id) && metinMi(v.hizmet) && metinMi(v.ad) && sayiMi(v.adet) && sayiMi(v.birimFiyat) && typeof v.benim === "boolean";
 const npcTalepMu = (v: unknown): v is HizmetNpcTalepSatiri => nesneMi(v) && metinMi(v.id) && metinMi(v.hizmet) && metinMi(v.hedef) && sayiMi(v.acilisAy) && sayiMi(v.sonAy) && sayiMi(v.odul);
+const gorevMu = (v: unknown): v is HizmetGorevSatiri => nesneMi(v) && metinMi(v.id) && metinMi(v.tur) && sayiMi(v.odul) && sayiMi(v.takat) && (v.arac === null || metinMi(v.arac));
 const tarifMu = (v: unknown): v is HizmetTarifSatiri => nesneMi(v) && metinMi(v.id) && metinMi(v.meslek) && metinMi(v.dugum) && sayiMi(v.seviye) && sayiMi(v.takat) && typeof v.acik === "boolean";
-const durumMu = (v: unknown): v is HizmetDurumu => nesneMi(v) && Array.isArray(v.katalog) && v.katalog.every(tarifMu) && Array.isArray(v.stok) && v.stok.every(stokMu) && Array.isArray(v.ilanlar) && v.ilanlar.every(ilanMu) && Array.isArray(v.benimIlanlar) && v.benimIlanlar.every(ilanMu) && Array.isArray(v.npcTalepleri) && v.npcTalepleri.every(npcTalepMu) && nesneMi(v.kurallar);
+const durumMu = (v: unknown): v is HizmetDurumu => nesneMi(v) && Array.isArray(v.katalog) && v.katalog.every(tarifMu) && Array.isArray(v.stok) && v.stok.every(stokMu) && Array.isArray(v.ilanlar) && v.ilanlar.every(ilanMu) && Array.isArray(v.benimIlanlar) && v.benimIlanlar.every(ilanMu) && Array.isArray(v.npcTalepleri) && v.npcTalepleri.every(npcTalepMu) && Array.isArray(v.gorevler) && v.gorevler.every(gorevMu) && nesneMi(v.kurallar);
 const islemMu = (v: unknown): v is HizmetIslemYaniti => nesneMi(v);
 
 export interface HizmetIstemci {
@@ -51,6 +52,7 @@ export interface HizmetIstemci {
   satinAl(ilan: string, adet: number): Promise<EkSonuc<HizmetIslemYaniti>>;
   geri(ilan: string): Promise<EkSonuc<HizmetIslemYaniti>>;
   talepTeslim(talep: string): Promise<EkSonuc<HizmetIslemYaniti>>;
+  gorevTeslim(gorev: string): Promise<EkSonuc<HizmetIslemYaniti>>;
 }
 const istek = (govde: Record<string, unknown>) => ({ ...govde, istekNo: istekNoUret() });
 
@@ -62,6 +64,7 @@ export function httpHizmetIstemci(): HizmetIstemci {
     satinAl: (ilan, adet) => ekCagir({ yontem: "POST", yol: "/v1/hizmet/satin-al", govde: istek({ ilan, adet }), tekrar: true }, islemMu),
     geri: (ilan) => ekCagir({ yontem: "POST", yol: "/v1/hizmet/geri", govde: istek({ ilan }), tekrar: true }, islemMu),
     talepTeslim: (talep) => ekCagir({ yontem: "POST", yol: "/v1/hizmet/talep-teslim", govde: istek({ talep }), tekrar: true }, islemMu),
+    gorevTeslim: (gorev) => ekCagir({ yontem: "POST", yol: "/v1/hizmet/gorev", govde: istek({ gorev }), tekrar: true }, islemMu),
   };
 }
 
