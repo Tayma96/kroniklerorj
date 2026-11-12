@@ -6,6 +6,7 @@ import { oturumOku } from "./depo";
 import { hataAnahtari } from "./hata";
 import { hataKoduMu, type OnlineHata } from "./protokol";
 import { UCGEN_BARINMA_HATALARI } from "./ucgen-barinma-metin";
+import { EKO_MULK_HATALARI } from "./eko-hata";
 
 /** online-server/src/tipler.ts HATA_DURUMU'nda olup ortak listede bulunmayan, han ve hanedan ekranlarının kodları. */
 export const EK_HATALAR = [
@@ -15,7 +16,7 @@ export const EK_HATALAR = [
   "ses_kapali", "ses_hatasi", "masa_sessiz", "masada_degil", "ses_oturumu_yok", "sesi_kesildi", "soz_istegi_yok",
   "stok_yok", "ilan_gecersiz", "ilan_kapandi", "ilan_siniri",
   "olu", "evli", "akraba_evlilik", "gorus_yetersiz", "vasiyet_gecersiz", "varis_gecersiz", "devir_yok", "devir_degisti",
-  ...UCGEN_BARINMA_HATALARI,
+  ...UCGEN_BARINMA_HATALARI, ...EKO_MULK_HATALARI,
 ] as const;
 export type EkHataKodu = (typeof EK_HATALAR)[number];
 export type EkHata = OnlineHata | EkHataKodu;
