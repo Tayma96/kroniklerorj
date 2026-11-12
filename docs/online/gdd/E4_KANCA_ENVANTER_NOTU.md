@@ -19,7 +19,7 @@ Durum: kısmi uygulama. `tasarruf` tüketicisi, ortak-durum/han tüketicileri, E
 14 beceri ağacı dosyasının tamamı tarandı. Şu an mevcut sistem tüketicisi bulunmayan etkiler:
 - `hizmet`: 52 kullanımın 17 tanesi gerçek tüketiciye bağlandı (`ikram`, `yatak`, `oda`, `nobet`, `talim`, `vergiSayimi`, `meclisKaydi`, `turku`, `yaraBak`, `kirikSar`, `lohusa`, `teselli`, `sazGecesi`, `barisSofrasi`, `araBul`, `muhafizlik`, `mektup`); 35 kullanım kaldı. E4.3-A/B/C tamamlandı; E4.3-D'nin ilk dilimi sunucu/mobil/6 dilde çalışır.
 - `hak`: 203 kullanım — makam, lonca, ticaret, garnizon, sosyal yardım ve toplumsal ayrıcalıklar için sunucu tarafı yetki/eylem matrisi gerekir.
-- `sinerji`: 21 kullanım — `ortakSahne` sinerjisi `sazGecesi`, `barisCorbasi` sinerjisi `barisSofrasi`, `seckinOda` sinerjisi oyuncu hanındaki has odayı açmak, `barisSansi` sinerjisi NPC arabuluculuğunda +10 şans ve `yaylaCadiri` sinerjisi çadır kalite katkısı için tüketiliyor; 16 kullanım kaldı. Diğer kimliklerin gerçek tüketicileri henüz yok.
+- `sinerji`: 21 kullanım — `ortakSahne` sinerjisi `sazGecesi`, `barisCorbasi` sinerjisi `barisSofrasi`, `seckinOda` sinerjisi oyuncu hanındaki has odayı açmak, `barisSansi` sinerjisi NPC arabuluculuğunda +10 şans, `yaylaCadiri` sinerjisi çadır kalite katkısı ve `pulZirhAstari` sinerjisi pul zırh kalite katkısı için tüketiliyor; 15 kullanım kaldı. Diğer kimliklerin gerçek tüketicileri henüz yok.
 - `tasarruf`: 1 kullanım vardı; bu dalda bağlandı.
 - `hakAcik(kar, hak)` ve `sinerjiAcik(kar, acar)` ortak sunucu çözümleyicileri eklendi. Sinerji çözümleyicisi hem açan becerinin etkisini hem de diğer meslekteki gerçek düğüm/seviyeyi doğrular. Bunlar altyapıdır; henüz 203 hak ve 17 sinerji tüketicisi açık kalır.
 
@@ -44,3 +44,9 @@ Bu üç sistem, farklı oyun döngülerini etkilediği için tek bir genel bonus
 - Çiftçi `yaylaGocu` ve Dokumacı `kislikCadir` düğümleri aynı karakterde öğrenilmişse `cadir` tarifinin kalite becerisine +10 eklenir.
 - Yalnız bir düğüm öğrenilmişse katkı oluşmaz; sinerji mevcut sunucu çözümleyicisiyle doğrulanır.
 - Regresyon testi Çiftçi `yaylaGocu` ikinci seviye ve Dokumacı `kislikCadir` birinci seviye koşullarını; tek düğüm durumlarını kapsar.
+
+
+### 13 Kasım — pulZirhAstari sinerjisi
+- Dokumacı `zirhAstari` ve Demirci `zirhUstaligi` birinci seviyeleri aynı karakterde öğrenilmişse `pulZirh` tarifinin kalite becerisine +10 eklenir.
+- Demirci düğümünün kendi +25 zırh kalite etkisi korunur; sinerji yalnız `pulZirh` tarifine uygulanır, zincir ve kalkan gibi diğer zırh tariflerine yayılmaz.
+- Regresyon testi iki düğümün birlikte gerekliliğini, tek düğüm durumlarını ve bonusun tarif kapsamını doğrular.
