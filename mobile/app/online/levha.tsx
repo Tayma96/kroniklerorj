@@ -5,10 +5,10 @@ import { useRouter } from "expo-router";
 import { useI18n, applyParams } from "../../lib/i18n";
 import { C, F } from "../../lib/theme";
 import { OnlineYakinda } from "../../lib/online-yakinda";
-import { OnlineKapisi } from "../../lib/online/durum";
+import { OnlineKapisi, useOnline } from "../../lib/online/durum";
 import { onlineEkranAcik } from "../../lib/online/kapi";
 import { Bant, Cerceve, GeriDugme, Madalyon, geriGit, hiza, yon } from "../../lib/online/ui";
-import { Baslik2, BosKart, OnlineSayfa, SayfaBasi, Yukleniyor } from "../../lib/online/yasam-ui";
+import { Baslik2, BosKart, OnlineSayfa, SayfaBasi, Yukleniyor, YerlesimBekle, sahneGorseli } from "../../lib/online/yasam-ui";
 import { useEkonomiIstemci, type LevhaYaniti } from "../../lib/online/ekonomi-veri";
 import { malAdi, kaliteAdi } from "../../lib/online/ekonomi-ui";
 import { ekHataAnahtari, type EkHata } from "../../lib/online/ek-istemci";
@@ -17,6 +17,7 @@ function LevhaEkran() {
   const router = useRouter();
   const { t, rtl } = useI18n();
   const ist = useEkonomiIstemci();
+  const y = useOnline().yerlesim;
   const [veri, setVeri] = useState<LevhaYaniti | null>(null);
   const [hata, setHata] = useState<EkHata | null>(null);
   const yukle = useCallback(async () => {
@@ -24,7 +25,8 @@ function LevhaEkran() {
     if (r.ok) { setVeri(r.deger); setHata(null); } else setHata(r.hata);
   }, [ist]);
   useEffect(() => { void yukle(); }, [yukle]);
-  return <OnlineSayfa>
+  if (!y) return <YerlesimBekle rtl={rtl} t={t} onGiris={() => router.replace("/online")} />;
+  return <OnlineSayfa gorsel={sahneGorseli(y.yerlesim.tur, y.saat.mevsim)} oran={0.3} rtl={rtl} t={t}>
     <GeriDugme rtl={rtl} etiket={t("onl.geri")} onPress={() => geriGit(router, "/online/yasam")} />
     <SayfaBasi ust={t("onl.eko.baslik")} baslik={t("onl.lv.baslik")} alt={t("onl.lv.alt")} rtl={rtl} />
     {hata && !veri ? <Bant metin={t(ekHataAnahtari(hata))} rtl={rtl} /> : null}
