@@ -51,6 +51,8 @@ export interface TeklifSartlari {
   yapan?: KisiAdi;
   aday?: KisiAdi;
   is?: IkiTarafIsi;
+  hedef?: KisiAdi;
+  mesaj?: string;
 }
 export interface TeklifGorunumu {
   id: string;
@@ -160,6 +162,8 @@ export interface TeklifSartGirdisi {
   mal?: MalId;
   adet?: number;
   is?: IkiTarafIsi;
+  mektupHedef?: string;
+  mektupMetni?: string;
 }
 export interface TeklifIstegi extends TeklifSartGirdisi { tur: OyuncuTeklifTuru; hedef: string; istekNo: string; dil?: Dil }
 export interface TeklifCevapIstegi { teklif: string; cevap: TeklifCevabi; tutar?: number; istekNo: string; dil?: Dil }
