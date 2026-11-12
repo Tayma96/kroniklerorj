@@ -15,7 +15,7 @@ export function darbeHazirla(d: BolgeDurumu, kimlik: SiyasiKimlik, ay: number): 
   d.darbe = {
     v: 1, id: d.id + ":darbe:" + ay + ":" + d.kn, durum: "hazirlik",
     baslatanKisi: kimlik.kisi, baslatanHesap: kimlik.hesap,
-    acilisAy: ay, sogumaSonAy: ay, destekler: [],
+    acilisAy: ay, sogumaSonAy: ay, destekler: [], savunma: [], baslatanKume: kumeAnahtarlari(kimlik),
     garnizonSadakati: DARBE.garnizonBaslangic, yatirilan: 0,
     izler: [{ ay, tur: "hazirlik", guvenilirlik: 100, gorunurluk: "vali" }],
   };
@@ -29,6 +29,27 @@ export function darbeDestekle(d: BolgeDurumu, kimlik: SiyasiKimlik, koltuk: stri
   if (p.destekler.some((x) => x.hesap === kimlik.hesap || kumeKesisir(x.kume, kume))) return "kume_cakisma";
   p.destekler.push({ kisi: kimlik.kisi, hesap: kimlik.hesap, ad: kimlik.ad, koltuk, rol, kume, ay });
   p.izler.push({ ay, tur: "destek", guvenilirlik: 85, gorunurluk: "ileriGelen" });
+  return null;
+}
+
+/** İlan sonrası açık savunma emri: yalnız makam sahibi, çatışma çözülmeden önce bir kez yazabilir. */
+export function darbeSavunmaYaz(
+  d: BolgeDurumu,
+  kimlik: SiyasiKimlik,
+  koltuk: string,
+  rol: DarbeDestekRolu,
+  ay: number,
+): HataKodu | null {
+  const p = d.darbe;
+  if (!p || (p.durum !== "ilan" && p.durum !== "catışma")) return "darbe_kapali";
+  if (p.cozumAy === undefined || ay >= p.cozumAy) return "darbe_kapali";
+  const kume = kumeAnahtarlari(kimlik);
+  if (p.baslatanHesap === kimlik.hesap || kumeKesisir(p.baslatanKume ?? [], kume)) return "kume_cakisma";
+  const savunma = (p.savunma ??= []);
+  const onceki = [...p.destekler, ...savunma];
+  if (onceki.some((x) => x.hesap === kimlik.hesap || kumeKesisir(x.kume, kume))) return "kume_cakisma";
+  savunma.push({ kisi: kimlik.kisi, hesap: kimlik.hesap, ad: kimlik.ad, koltuk, rol, kume, ay });
+  p.izler.push({ ay, tur: "savunma", guvenilirlik: 100, gorunurluk: "bolge" });
   return null;
 }
 
@@ -107,11 +128,13 @@ export function darbeAyi(d: BolgeDurumu, ay: number): void {
     sehirDestegi * 24 + ahiDestegi * 12 + p.garnizonSadakati * 0.45 +
     Math.max(0, 50 - d.mesruiyet.puan) * 0.25 + d.g.moral * 0.1
   );
+  const savunmaEmirleri = p.savunma ?? [];
+  const savunmaPuani = Math.min(DARBE.savunmaPuanTavan, savunmaEmirleri.reduce((toplam, x) => toplam + (x.rol === "sehirBeyi" ? DARBE.savunmaSehirBeyiPuan : DARBE.savunmaAhiPuan), 0));
   const savunan = Math.round(
     Math.max(0, sehirToplam - sehirDestegi) * 18 +
     Math.max(0, ahiToplam - ahiDestegi) * 9 +
     (100 - p.garnizonSadakati) * 0.45 + d.g.guvenlik * 0.25 +
-    sultanMesruiyeti * 0.2
+    sultanMesruiyeti * 0.2 + savunmaPuani
   );
 
   let tur: "bastirildi" | "pat" | "basarili" | "mogol";
@@ -147,13 +170,13 @@ export function darbeAyi(d: BolgeDurumu, ay: number): void {
 export function darbeGorunumu(d: BolgeDurumu, kimlik?: SiyasiKimlik) {
   const p = d.darbe;
   if (!p) return null;
-  const katilimci = !!kimlik && (kimlik.kisi === p.baslatanKisi || p.destekler.some((x) => x.hesap === kimlik.hesap));
+  const katilimci = !!kimlik && (kimlik.kisi === p.baslatanKisi || p.destekler.some((x) => x.hesap === kimlik.hesap) || (p.savunma ?? []).some((x) => x.hesap === kimlik.hesap));
   const yayin = ["ilan", "catışma", "bastirildi", "pat", "basarili", "mogol"].includes(p.durum);
   if (!katilimci && !yayin) return null;
   const esik = darbeEsigi(d).dokum;
   return {
     id: p.id, durum: p.durum, mod: p.mod ?? null,
     ilanAy: p.ilanAy ?? null, cozumAy: p.cozumAy ?? null, sonuc: p.sonuc ?? null,
-    ...(katilimci ? { esik, destekler: p.destekler.length, garnizonSadakati: p.garnizonSadakati, yatirilan: p.yatirilan, izler: p.izler } : {}),
+    ...(katilimci ? { esik, destekler: p.destekler.length, savunma: (p.savunma ?? []).length, garnizonSadakati: p.garnizonSadakati, yatirilan: p.yatirilan, izler: p.izler } : {}),
   };
 }
