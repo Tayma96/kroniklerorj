@@ -14,7 +14,7 @@ import { varsayilanSonuc } from "./duzen.ts";
 import { engelliMi } from "./engel.ts";
 import { AZALAN_PENCERE, getiriCarpani } from "./eylem.ts";
 import { karakterYasi, namEkle, takatHarca } from "./karakter.ts";
-import { hizmetAcik } from "./beceri-etki.ts";
+import { aracArtisi, hizmetAcik } from "./beceri-etki.ts";
 import { hizmetEkle, meslekKaydi } from "./meslek.ts";
 import { aracAsindir } from "./tarif.ts";
 import { gostergeDegistir, toplulukAl } from "./topluluk-kayit.ts";
@@ -370,6 +370,7 @@ function kabulUygula(k: Kasaba, t: Teklif, ay: number): Sonuc<OlayTaslagi[]> {
     case "is": {
       const kural = isKurali(t.s.it);
       if (!kural || !hizmetAcik(alici, kural.hizmet)) return hata("dugum_kapali");
+      if (kural.arac && (!kural.aracHedef || aracArtisi(alici, kural.aracHedef)?.mal !== kural.arac || (alici.ev?.[kural.arac] ?? 0) < 1)) return hata("arac_yok");
       t.d = "surer";
       t.sa = ay + 1; // kabulden sonra bir oyun ayı teslim penceresi
       break;
@@ -436,7 +437,7 @@ export function teklifCevap(k: Kasaba, ben: Karakter, idHam: unknown, cevap: unk
       if (ay > t.sa) return hata("teklif_kapandi");
       const kural = isKurali(t.s.it);
       if (!kural || !hizmetAcik(ben, kural.hizmet)) return hata("dugum_kapali");
-      if (kural.arac && (ben.ev?.[kural.arac] ?? 0) < 1) return hata("arac_yok");
+      if (kural.arac && (!kural.aracHedef || aracArtisi(ben, kural.aracHedef)?.mal !== kural.arac || (ben.ev?.[kural.arac] ?? 0) < 1)) return hata("arac_yok");
       if (!takatHarca(ben, ay, kural.takat)) return hata("takat_yok");
       if (kural.arac) aracAsindir(ben, kural.arac);
       gostergeDegistir(toplulukAl(k), kural.gosterge, 1);
@@ -482,11 +483,11 @@ function borcOde(k: Kasaba, t: Teklif, tutar: number, ay: number, borclu: string
   return [{ t: "teklif", w: borclu, h: alacakli, g: alacakli, n: 4, k: "olay.borc.taksit", p: { kisi: oyuncuRef(b), tutar, kalan: t.kl } }];
 }
 
-interface IsKurali { hizmet: string; meslek: "arabulucu" | "asker" | "katip"; takat: number; gosterge: "moral" | "asayis"; arac?: "zincir"; }
+interface IsKurali { hizmet: string; meslek: "arabulucu" | "asker" | "katip"; takat: number; gosterge: "moral" | "asayis"; arac?: "zincir"; aracHedef?: string; }
 function isKurali(tur: Sartlar["it"]): IsKurali | undefined {
   switch (tur) {
     case "arabuluculuk": return { hizmet: "araBul", meslek: "arabulucu", takat: 2, gosterge: "moral" };
-    case "muhafiz": return { hizmet: "muhafizlik", meslek: "asker", takat: 2, gosterge: "asayis", arac: "zincir" };
+    case "muhafiz": return { hizmet: "muhafizlik", meslek: "asker", takat: 2, gosterge: "asayis", arac: "zincir", aracHedef: "muhafizlik" };
     case "mektup": return { hizmet: "mektup", meslek: "katip", takat: 1, gosterge: "moral" };
     default: return undefined;
   }
@@ -633,6 +634,7 @@ export function teklifGorunumu(k: Kasaba, t: Teklif, ben: string, dil: Dil) {
     ...(s.py !== undefined ? { pay: s.py } : {}),
     ...(s.sr !== undefined ? { sure: s.sr } : {}),
     ...(s.ml ? { mal: s.ml, adet: s.mn ?? 0 } : {}),
+    ...(s.it ? { is: s.it } : {}),
     ...(s.yp ? { yapan: kisi(s.yp) } : {}),
     ...(aday ? { aday: { id: `n${aday.i}`, ad: npcAdi(aday, dil) } } : {}),
   };
