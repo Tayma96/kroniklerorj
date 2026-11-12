@@ -40,8 +40,6 @@ function ToplulukEkran() {
   const [zaviyeSekil, setZaviyeSekil] = useState("kalkan");
   const [zaviyeRenk, setZaviyeRenk] = useState("al");
   const [zaviyeAday, setZaviyeAday] = useState("");
-  const zaviyeEylem = (islem: ZaviyeIstegi["islem"], ek: Partial<ZaviyeIstegi> = {}, mesaj = "onl.topluluk.zaviye.islemTamam") =>
-    void gonder(() => istemci.zaviye({ islem, ...ek, istekNo: istekNoUret() }), t(mesaj));
 
 
   const yukle = useCallback(async () => {
@@ -70,6 +68,8 @@ function ToplulukEkran() {
     await online.yerlesimYukle(true);
     await yukle();
   };
+  const zaviyeEylem = (islem: ZaviyeIstegi["islem"], ek: Partial<ZaviyeIstegi> = {}, mesaj = "onl.topluluk.zaviye.islemTamam") =>
+    void gonder(() => istemci.zaviye({ islem, ...ek, istekNo: istekNoUret() }), t(mesaj));
 
   if (!online.profil) return <View style={{ flex: 1, backgroundColor: C.bg, padding: 18, justifyContent: "center" }}>
     <Bant tur="bilgi" metin={t("onl.v.profilYok")} rtl={rtl} eylem={t("onl.p.giriseDon")} onEylem={() => router.replace("/online")} />
@@ -247,7 +247,7 @@ function ToplulukEkran() {
           <CizgiDugme etiket={t("onl.topluluk.zaviye.armaKaydet")} icon="shield" rtl={rtl} kucuk kapali={yukleniyor} onPress={() => zaviyeEylem("arma", { sekil: zaviyeSekil, renk: zaviyeRenk })} />
         </> : null}
         <Text style={{ fontFamily: F.display, color: C.goldBright }}>{t("onl.topluluk.zaviye.ahiOyu")}</Text>
-        <Secenekler secenekler={durum.zaviye.ben.uyeler.filter((u) => u.id !== online.profil?.hesapId).map((u) => u.id)} secili={zaviyeAday} onSec={setZaviyeAday} etiket={(id) => durum.zaviye.ben?.uyeler.find((u) => u.id === id)?.ad ?? id} />
+        <Secenekler secenekler={durum.zaviye.ben.uyeler.filter((u) => u.id !== online.yerlesim?.ben.id).map((u) => u.id)} secili={zaviyeAday} onSec={setZaviyeAday} etiket={(id) => durum.zaviye.ben?.uyeler.find((u) => u.id === id)?.ad ?? id} />
         <CizgiDugme etiket={t("onl.topluluk.zaviye.oyVer")} icon="vote" rtl={rtl} kucuk kapali={yukleniyor || !zaviyeAday || !durum.zaviye.ahiSarti.adayim} onPress={() => zaviyeEylem("oy", { hedef: zaviyeAday })} />
         <Text style={{ fontFamily: F.serif, color: C.parchmentDim, fontSize: 12 }}>{t(durum.zaviye.ahiSarti.adayim ? "onl.topluluk.zaviye.oyUygun" : "onl.topluluk.zaviye.oyKapali")}</Text>
         <CizgiDugme etiket={t("onl.topluluk.zaviye.ayril")} icon="log-out" rtl={rtl} kucuk kapali={yukleniyor} onPress={() => zaviyeEylem("ayril")} />
