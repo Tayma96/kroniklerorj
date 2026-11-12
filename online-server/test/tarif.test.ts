@@ -215,3 +215,24 @@ test("yaylaCadiri sinerjisi yalnız iki meslek düğümü birlikteyken çadır k
   assert.equal(sinerjiAcik(diger, "yaylaCadiri"), false, "çiftçi düğümü tek başına yetmez");
   assert.equal(kaliteBecerisi(diger, cadir), 0);
 });
+
+
+test("pulZirhAstari sinerjisi yalnız dokumacı astarı ve demirci zırh ustalığı birlikteyken pul zırh kalitesini artırır", () => {
+  const k = testKasabasi();
+  const c = oyuncuEkle(k, 93, k.ay - 16 * 12);
+  const pulZirh = TARIFLER.pulZirh;
+
+  seviyeVer(c, "demirci.zirhUstaligi", 1);
+  assert.equal(sinerjiAcik(c, "pulZirhAstari"), false, "demirci düğümü tek başına sinerji vermez");
+  assert.equal(kaliteBecerisi(c, pulZirh), 25, "demircinin kendi +25 zırh kalitesi korunur");
+
+  seviyeVer(c, "dokumaci.zirhAstari", 1);
+  assert.equal(sinerjiAcik(c, "pulZirhAstari"), true);
+  assert.equal(kaliteBecerisi(c, pulZirh), 35, "iki düğüm birlikte pul zırha +10 ekler");
+
+  const diger = oyuncuEkle(k, 94, k.ay - 16 * 12);
+  seviyeVer(diger, "dokumaci.zirhAstari", 1);
+  assert.equal(sinerjiAcik(diger, "pulZirhAstari"), false, "dokumacı düğümü tek başına sinerji vermez");
+  assert.equal(kaliteBecerisi(diger, pulZirh), 0);
+  assert.equal(kaliteBecerisi(c, TARIFLER.zincir), 25, "sinerji başka zırh tariflerine taşmaz");
+});
