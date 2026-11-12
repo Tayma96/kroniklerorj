@@ -44,6 +44,14 @@ function dosyaBul(t: Toplum, id: unknown): OyuncuArabuluculuk | undefined {
   return oyuncuArabuluculukAl(t).find(x => x.i === Number(id));
 }
 
+/** Emanet alınmadan önce üç katılımcı da hayatta ve yerleşimde yüklü olmalıdır. */
+function katilimciEksikVeyaOlmus(k: Kasaba, d: OyuncuArabuluculuk): boolean {
+  return [d.s, d.k, d.ar].some((o) => {
+    const kisi = k.kar.get(o);
+    return !kisi || olduMu(kisi);
+  });
+}
+
 /** İmza bekleyen taslak vadesi geçince kapanır; henüz emanet alınmadığı için para hareketi yoktur. */
 function uzlasmaVadesiDoldu(d: OyuncuArabuluculuk, ay: number): boolean {
   if (d.d !== "imzaBekliyor" || d.sonAy === undefined || ay <= d.sonAy) return false;
@@ -85,6 +93,11 @@ export function oyuncuArabuluculukCevap(
   const r = rol(d, ben.o);
   if (!r) return hata("taraf_degil");
   if (d.d !== "davet") return hata("teklif_kapandi");
+  if (katilimciEksikVeyaOlmus(k, d)) {
+    d.d = "dustu";
+    d.kp = ay;
+    return hata("teklif_kapandi");
+  }
   if (ay > d.sa) {
     d.d = "dustu";
     d.kp = ay;
@@ -129,6 +142,11 @@ export function oyuncuArabuluculukTaslak(
   if (uzlasmaVadesiDoldu(d, ay)) return hata("teklif_kapandi");
   if (ben.o !== d.ar) return hata("taraf_degil");
   if (d.d !== "taslak" && d.d !== "imzaBekliyor") return hata("teklif_kapandi");
+  if (katilimciEksikVeyaOlmus(k, d)) {
+    d.d = "dustu";
+    d.kp = ay;
+    return hata("teklif_kapandi");
+  }
   const s = k.kar.get(d.s), kk = k.kar.get(d.k), ar = k.kar.get(d.ar);
   if (!s || !kk || !ar) return hata("sakin_yok");
   if (engelliMi(k.tp, d.s, d.k) || engelliMi(k.tp, d.s, d.ar) || engelliMi(k.tp, d.k, d.ar)) return hata("engelli");
@@ -159,6 +177,12 @@ export function oyuncuArabuluculukImzala(
   if (r !== "s" && r !== "k") return hata("taraf_degil");
   if (uzlasmaVadesiDoldu(d, ay)) return hata("teklif_kapandi");
   if (d.d !== "imzaBekliyor" || !d.uz) return hata("teklif_kapandi");
+  const sikayetci = k.kar.get(d.s), karsi = k.kar.get(d.k);
+  if (!sikayetci || !karsi || olduMu(sikayetci) || olduMu(karsi)) {
+    d.d = "dustu";
+    d.kp = ay;
+    return hata("teklif_kapandi");
+  }
   if (!Number.isSafeInteger(surum) || surum !== d.sv) return hata("teklif_gecersiz");
   const digerRol: "s" | "k" = r === "s" ? "k" : "s";
   if (d.im[digerRol] !== undefined) {
@@ -225,11 +249,11 @@ export function oyuncuArabuluculukDonumu(k: Kasaba, ay: number): number {
   for (const d of oyuncuArabuluculukAl(toplumAl(k))) {
     const sikayetci = k.kar.get(d.s), karsi = k.kar.get(d.k);
     const tarafOldu = !!sikayetci && !!karsi && (olduMu(sikayetci) || olduMu(karsi));
-    if (tarafOldu && d.d === "emanette") {
+    if (d.d === "emanette" && tarafOldu) {
       if (emanetIadeEt(k, d, ay)) sayi++;
       continue;
     }
-    if (tarafOldu && ["davet", "taslak", "imzaBekliyor"].includes(d.d)) {
+    if (["davet", "taslak", "imzaBekliyor"].includes(d.d) && katilimciEksikVeyaOlmus(k, d)) {
       d.d = "dustu";
       d.kp = ay;
       sayi++;
