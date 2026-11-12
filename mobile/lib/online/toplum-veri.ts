@@ -240,9 +240,9 @@ export interface ToplulukSenlik {
   id: string; tur: string; durum: "ilan" | "acik"; acilis: number; bitis: number;
   levha: { id: string; ad: string; katkilar: string[] }[]; benim: { sayi: number; kalan: number };
 }
-export interface ToplulukDurumu {
+export interface HamiBagGorunumu { hami: KisiAdi & { meslek: string | null }; cirak: KisiAdi & { meslek: string | null }; gonderen: string; rolu: "hami" | "cirak" | null; durum: string; acilis: number; asamalar: { asama: string; durum: string; nam: number }[] }\nexport interface HamiIstegi { islem: "teklif" | "iste" | "kabul" | "ret" | "birak"; hedef: string; istekNo: string }\nexport interface ToplulukDurumu {
   mesrep: { secildi: boolean; secimAcik: boolean; kapali?: string; eksenler: { eksen: string; secili: string; uclar: { uc: string; etkiler: { k: string; tur: string; p: Record<string, number> }[] }[] }[] };
-  hami: { suren: unknown[]; gelen: unknown[]; giden: unknown[]; biten: unknown[] };
+  hami: { hamiOlabilir: boolean; yeniGelen: boolean; suren: HamiBagGorunumu[]; gelen: HamiBagGorunumu[]; giden: HamiBagGorunumu[]; biten: HamiBagGorunumu[]; buAyHamiNami: number };
   ortakDert: { acik: ToplulukDert[]; son: ToplulukDert[]; uygunKatkilarim: string[]; kurallar: Record<string, unknown> };
   senlik: { simdiki: ToplulukSenlik | null; sonKapanan: unknown; kurallar: Record<string, unknown> };
   mudavim: { rozet: string | null; ziyaret: number; sonraki: { rozet: string; gereken: number } | null; indirim?: { deger: number; tavan: number } };
@@ -257,7 +257,7 @@ export function toplulukDurumuMi(v: unknown): v is ToplulukDurumu {
   if (!nesne(v) || !nesne(v.mesrep) || !dizi(v.mesrep.eksenler) || !mantik(v.mesrep.secildi) || !mantik(v.mesrep.secimAcik)) return false;
   if (!nesne(v.ortakDert) || !dizi(v.ortakDert.acik) || !dizi(v.ortakDert.son) || !dizi(v.ortakDert.uygunKatkilarim)) return false;
   if (!nesne(v.senlik) || !(v.senlik.simdiki === null || nesne(v.senlik.simdiki))) return false;
-  if (!nesne(v.hami) || !dizi(v.hami.suren) || !dizi(v.hami.gelen) || !dizi(v.hami.giden)) return false;
+  if (!nesne(v.hami) || !mantik(v.hami.hamiOlabilir) || !mantik(v.hami.yeniGelen) || !sayi(v.hami.buAyHamiNami) || !dizi(v.hami.suren) || !dizi(v.hami.gelen) || !dizi(v.hami.giden) || !dizi(v.hami.biten)) return false;
   if (!nesne(v.mudavim) || !sayi(v.mudavim.ziyaret) || !(v.mudavim.rozet === null || metin(v.mudavim.rozet))) return false;
   if (!nesne(v.zaviye) || !dizi(v.zaviye.kasabada) || !dizi(v.zaviye.davetler)) return false;
   return nesne(v.gostergeler) && sayi(v.gostergeler.arz) && sayi(v.gostergeler.moral) && sayi(v.gostergeler.asayis);
