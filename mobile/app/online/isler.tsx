@@ -19,7 +19,7 @@ import { AltPanel, Baslik2, BosKart, Degisim, Hap, OnlineSayfa, Rozet, SayfaBasi
 import { hataAnahtari } from "../../lib/online/hata";
 import { isaretli, kalemYaz } from "../../lib/online/metin";
 import {
-  IS_IKON, ISLER, MALLAR, MAL_IKON, NPC_AYLIK_KOTA, NPC_MALLARI, NPC_SATIS_KOTASI, npcSatisKotasi, TEMEL_ISLER, TEMEL_IS_YASI, TEMEL_TAKAT, kitlikPrimi, npcEtiketFiyati, satilirMi,
+  IS_IKON, ISLER, MALLAR, MAL_IKON, NPC_AYLIK_KOTA, NPC_MALLARI, npcSatisKotasi, TEMEL_ISLER, TEMEL_IS_YASI, TEMEL_TAKAT, kitlikPrimi, npcEtiketFiyati, satilirMi,
 } from "../../lib/online/meslek-veri";
 import { MAL_IDLERI, type Dokum, type IsId, type MalId, type OnlineHata, type SatYaniti, type TabanAlYaniti, type TemelIsYaniti } from "../../lib/online/protokol";
 import type { Lang } from "../../lib/locale-data";
