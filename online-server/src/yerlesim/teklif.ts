@@ -65,6 +65,9 @@ export const ARMAGAN_TUTULAN = 20;
 export const VITRIN_EN_COK = 6;
 
 export const CEVAPLAR = ["kabul", "ret", "geri", "bitir", "ode", "teslim"] as const;
+/** [PARAMETRE] Bir oyuncunun aynı anda taşıyabileceği aktif iş sözleşmesi. */
+export const IS_SURER_EN_COK = 2;
+export const IS_UCRET_EN_COK = 20;
 
 function nesneMi(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
@@ -196,7 +199,7 @@ function sartlarCoz(tur: OyuncuTeklifTuru, g: Record<string, unknown>, gon: Kara
       return basarili({});
     case "is": {
       const it = g.is;
-      if (typeof it !== "string" || !["arabuluculuk", "muhafiz", "mektup"].includes(it) || !tamsayi(g.tutar, 1, 20)) return hata("teklif_gecersiz");
+      if (typeof it !== "string" || !["arabuluculuk", "muhafiz", "mektup"].includes(it) || !tamsayi(g.tutar, 1, IS_UCRET_EN_COK)) return hata("teklif_gecersiz");
       if (it === "mektup") {
         const hedef = typeof g.mektupHedef === "string" ? g.mektupHedef.trim() : "";
         const mesaj = typeof g.mektupMetni === "string" ? g.mektupMetni.trim() : "";
@@ -210,7 +213,7 @@ function sartlarCoz(tur: OyuncuTeklifTuru, g: Record<string, unknown>, gon: Kara
 
 /**
  * POST /v1/teklif: teklif açar. Ortak kapılar: kendine teklif yok, engel yok, ikisi de 13+, açık teklif sınırları,
- * aynı çift arasında aynı türde tek açık teklif. Emanet (borç ver: tutar; armağan: akçe + mal) hemen kilitlenir.
+ * aynı çift arasında aynı türde tek açık teklif. İş sözleşmesinde ücret gönderenden emanet alınır; kabul/teslim ve iade sunucuda yönetilir.
  */
 export function teklifOlustur(k: Kasaba, gon: Karakter, alici: Karakter, govde: Record<string, unknown>, ay: number): Sonuc<{ teklif: Teklif; olaylar: OlayTaslagi[] }> {
   const tur = govde.tur;
@@ -225,7 +228,11 @@ export function teklifOlustur(k: Kasaba, gon: Karakter, alici: Karakter, govde: 
   if (acik.filter((t) => t.g === gon.o).length >= TEKLIF_ACIK_EN_COK) return hata("teklif_siniri");
   if (acik.filter((t) => t.a === alici.o).length >= GELEN_ACIK_EN_COK) return hata("teklif_siniri");
   if (acik.some((t) => t.t === t_ && ((t.g === gon.o && t.a === alici.o) || (t.g === alici.o && t.a === gon.o)))) return hata("teklif_siniri");
-  if (t_ === "is" && (k.tp?.tk ?? []).some((t) => t.t === "is" && t.d === "surer" && ((t.g === gon.o && t.a === alici.o) || (t.g === alici.o && t.a === gon.o)))) return hata("teklif_siniri");
+  if (t_ === "is") {
+    const aktifIsSayisi = (oyuncu: string) => (k.tp?.tk ?? []).filter((t) => t.t === "is" && t.d === "surer" && (t.g === oyuncu || t.a === oyuncu)).length;
+    if (aktifIsSayisi(gon.o) >= IS_SURER_EN_COK || aktifIsSayisi(alici.o) >= IS_SURER_EN_COK) return hata("teklif_siniri");
+    if ((k.tp?.tk ?? []).some((t) => t.t === "is" && t.d === "surer" && ((t.g === gon.o && t.a === alici.o) || (t.g === alici.o && t.a === gon.o)))) return hata("teklif_siniri");
+  }
   const sr = sartlarCoz(t_, govde, gon, alici);
   if (!sr.ok) return sr;
   const s = sr.deger;
@@ -381,6 +388,8 @@ function kabulUygula(k: Kasaba, t: Teklif, ay: number): Sonuc<OlayTaslagi[]> {
       t.sn = "kayit";
       break;
     case "is": {
+      const aktifIsSayisi = (k.tp?.tk ?? []).filter((x) => x.t === "is" && x.d === "surer" && (x.g === alici.o || x.a === alici.o)).length;
+      if (aktifIsSayisi >= IS_SURER_EN_COK) return hata("teklif_siniri");
       const kural = isKurali(t.s.it);
       if (!kural || !hizmetAcik(alici, kural.hizmet)) return hata("dugum_kapali");
       if (kural.arac && (!kural.aracHedef || aracArtisi(alici, kural.aracHedef)?.mal !== kural.arac || (alici.ev?.[kural.arac] ?? 0) < 1)) return hata("arac_yok");
@@ -520,7 +529,7 @@ function isKurali(tur: Sartlar["it"]): IsKurali | undefined {
   }
 }
 
-/** Engelleme: aralarındaki açık teklifler iptal (emanet iade), süren çıraklık ve ortaklık biter. Borç sürer. */
+/** Engelleme: açık teklifler ve iş sözleşmeleri emanet iadesiyle iptal; süren çıraklık/ortaklık biter, borç sürer. */
 export function taraflarArasiIptal(k: Kasaba, x: string, y: string, ay: number): void {
   for (const t of k.tp?.tk ?? []) {
     const arada = (t.g === x && t.a === y) || (t.g === y && t.a === x);
