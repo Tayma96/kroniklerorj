@@ -37,3 +37,4 @@ Bu üç sistem, farklı oyun döngülerini etkilediği için tek bir genel bonus
 - Ozan `barisIlahisi` ve Arabulucu `araBulma` düğümleri aynı karakterde öğrenilmişse `sinerjiAcik(ar, "barisSansi")` doğrulanır.
 - NPC arabuluculuğunun gerekçeli şans dökümüne ayrı `sans.barisSansi` kalemiyle +10 eklenir; yalnız tek düğüm öğrenilmişse bonus verilmez.
 - Mobil şans dökümünde kalem altı dilde açıklanır. Sinerji etkisi birden fazla kez eklenmez.
+- GitHub Actions [run #732](https://github.com/Tayma96/kroniklerorj/actions/runs/43306958896): **452 test / 451 geçti / 0 başarısız / 1 atlandı**; mobil TypeScript, çeviri/dil kontrolleri, sunucu TypeScript ve Worker yapılandırma kontrolleri başarılı.
