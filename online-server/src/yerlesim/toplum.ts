@@ -160,6 +160,8 @@ export interface OyuncuArabuluculuk {
   kp?: number;
   /** Özel müzakere metni halka açık olaylara kopyalanmaz. */
   not?: string;
+  /** İmzalı uzlaşma uygulandığında iki taraf arasındaki açık husumet kaldırıldı. */
+  hs?: 1;
 }
 
 export interface Toplum {
