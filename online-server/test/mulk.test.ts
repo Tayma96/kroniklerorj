@@ -3,6 +3,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { AY_MS, DUNYA_BASLANGICI_MS } from "../src/saat.ts";
+import { meslekSec } from "../src/yerlesim/meslek.ts";
+import { oyuncuHanOdaAcik } from "../src/yerlesim/barinma.ts";
 import { bosDefter, bosKutu, cikisAc, cikisKapat, denemeErtele, girisUygula, transferDurumu, type CikisKaydi } from "../src/mulk/transfer.ts";
 import { isletmeIsle, type IsletmeIleti, type TapuOzeti } from "../src/mulk/islem.ts";
 import { ayIlerlet, kapasite, yetkiDurumu, type Baglam, type Isletme } from "../src/mulk/isletme.ts";
@@ -281,11 +283,19 @@ test("oyuncu hanı: kira ve ikram kasaya, çarpanlı fiyat; aynı hane ve karş�
   br.komut(a, "fiyat", { carpan: 150 }, "f-0000001");
   br.isletmedenTeslim(br.is.cik.k);
   const pa = b.pa;
+  assert.deepEqual(mulkluKira(k, b, { oda: "yatak", sure: 1, istekNo: "k-beceri-kilitli" }, AN), { ok: false, hata: "dugum_kapali" }, "oyuncu hanında yatak becerisi olmadan oda açılamaz");
+  assert.ok(meslekSec(a, "hanci", AY).ok);
+  a.ms!.s.hanci!.sv = { "hanci.yatakAhir": 1 };
+  assert.equal(oyuncuHanOdaAcik(a, "yatak"), true);
+  assert.equal(oyuncuHanOdaAcik(a, "oda"), false, "temiz oda ayrı beceri ister");
+  assert.equal(oyuncuHanOdaAcik(a, "hasOda"), false, "has oda çapraz meslek sinerjisi ister");
   const kira = mulkluKira(k, b, { oda: "yatak", sure: 1, istekNo: "k-0000001" }, AN);
   assert.ok(kira.ok, JSON.stringify(kira));
   const kv = kira.deger.kira as { fiyat: number; batak: number; kasaya: number };
   assert.deepEqual([kv.fiyat, kv.batak, kv.kasaya], [3, 0, 3]);
   assert.equal(b.pa, pa - 3);
+  a.ms!.s.hanci!.sv = { "hanci.yatakAhir": 1, "hanci.temizOda": 1 };
+  assert.equal(oyuncuHanOdaAcik(a, "oda"), true, "temiz oda düğümü oda türünü açar");
   const ik = mulkluIkram(k, b, "serbet", AN, "i-0000001");
   assert.ok(ik.ok);
   assert.deepEqual([ik.deger.fiyat, ik.deger.batak, ik.deger.kasaya], [5, 0, 5]);
