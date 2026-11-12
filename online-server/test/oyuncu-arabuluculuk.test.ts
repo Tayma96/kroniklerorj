@@ -476,3 +476,33 @@ test("bozuk emanet kaydı vade veya ölüm kaynaklı iadede bakiye değiştireme
   assert.equal(olum.kk.pa, olumK);
   assert.equal(olum.d.d, "emanette", "imzası bozuk emanet inceleme için kilitli kalır");
 });
+
+
+test("imzalı oyuncu uzlaşması iki yönlü açık husumeti kaldırır ve düşman işaretlerini temizler", () => {
+  const k = testKasabasi("develi", 830);
+  const s = oyuncuEkle(k, 271), kk = oyuncuEkle(k, 272), ar = oyuncuEkle(k, 273);
+  const tp = toplumAl(k);
+  tp.hu.push(
+    { g: s.o, h: kk.o, ay: k.ay - 2, d: "acik" },
+    { g: kk.o, h: s.o, ay: k.ay - 1, d: "acik" },
+  );
+  s.tn[kk.o] = "dusman";
+  kk.tn[s.o] = "dusman";
+  const ac = oyuncuArabuluculukAc(k, s, kk, ar, k.ay);
+  assert.ok(ac.ok);
+  if (!ac.ok) return;
+  const id = String(ac.deger.i);
+  for (const x of [s, kk, ar]) assert.ok(oyuncuArabuluculukCevap(k, x, id, "kabul", k.ay).ok);
+  s.pa = 500; kk.pa = 500;
+  assert.ok(oyuncuArabuluculukTaslak(k, ar, id, 80, 40, "Meydandaki husumeti bitirme", k.ay).ok);
+  assert.ok(oyuncuArabuluculukImzala(k, s, id, ac.deger.sv).ok);
+  assert.ok(oyuncuArabuluculukImzala(k, kk, id, ac.deger.sv).ok);
+  assert.ok(oyuncuArabuluculukUygula(k, s, id, k.ay).ok);
+  assert.equal(ac.deger.d, "tamam");
+  assert.equal(ac.deger.hs, 1);
+  assert.ok(tp.hu.every((h) => h.d === "kalkti"), "iki tarafın ayrı ilanları da kapanır");
+  assert.ok(tp.hu.every((h) => h.ka === k.ay), "kaldırılma ayı kaydedilir");
+  assert.equal(s.tn[kk.o], "tanidik");
+  assert.equal(kk.tn[s.o], "tanidik");
+  assert.equal(tp.hu.filter((h) => h.d === "acik").length, 0);
+});
