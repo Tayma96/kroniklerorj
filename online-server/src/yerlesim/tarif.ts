@@ -109,6 +109,13 @@ export const HAN_KIRISI_KALITE_BONUS = 10;
 /** [PARAMETRE] Çiftçi toplu harman + marangoz tekerlek bilgisiyle kağnı kalitesine ek katkı. */
 export const KAGNI_HARMANI_KALITE_BONUS = 10;
 
+/** [PARAMETRE] Kervan arabası üretiminde çapraz meslek kalite katkısı. */
+export const KERVAN_ARABASI_KALITE_BONUS = 10;
+/** [PARAMETRE] Ulak çizmesi üretiminde çapraz meslek kalite katkısı. */
+export const ULAK_CIZMESI_KALITE_BONUS = 10;
+/** [PARAMETRE] Ticaret senedi üretiminde çapraz meslek kalite katkısı. */
+export const TICARET_SENEDI_KALITE_BONUS = 10;
+
 /** Tarifin kalite düğümü yüzdeleri (hedef: tarif kimliği ya da grubu), tavanlı. */
 export function kaliteBecerisi(k: Karakter, t: Tarif): number {
   const hedefler = new Set([t.id, ...(t.grup ?? [])]);
@@ -120,6 +127,9 @@ export function kaliteBecerisi(k: Karakter, t: Tarif): number {
   if (t.id === "un" && sinerjiAcik(k, "kasabaDegirmeni")) toplam += KASABA_DEGIRMENI_KALITE_BONUS;
   if (t.id === "kiris" && sinerjiAcik(k, "hanKirisi")) toplam += HAN_KIRISI_KALITE_BONUS;
   if (t.id === "kagni" && sinerjiAcik(k, "kagniHarmani")) toplam += KAGNI_HARMANI_KALITE_BONUS;
+  if (t.id === "araba" && sinerjiAcik(k, "kervanArabasi")) toplam += KERVAN_ARABASI_KALITE_BONUS;
+  if (t.id === "cizme" && sinerjiAcik(k, "ulakCizmesi")) toplam += ULAK_CIZMESI_KALITE_BONUS;
+  if (t.id === "senet" && sinerjiAcik(k, "ticaretSenedi")) toplam += TICARET_SENEDI_KALITE_BONUS;
   return Math.min(KALITE_BECERI_TAVAN, toplam);
 }
 
