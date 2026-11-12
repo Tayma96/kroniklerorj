@@ -9,11 +9,12 @@ import { istekNoCoz } from "./mantik.ts";
 import { oyunAyi, sonrakiDonum } from "./saat.ts";
 import { bolgeAyi, bolgeEylem, bolgeGorunumu, bolgeKur, bolgeVar, haracOnayla, vergiYatir } from "./siyaset/bolge.ts";
 import { ittifakIstekAl, ittifakOnayAl, ittifakYanitAl, taninmaIstekAl, taninmaYanitAl } from "./siyaset/devlet.ts";
+import { diplomasiReddedildi } from "./siyaset/diplomasi-red.ts";
 import { bolgeCagir, sultanlikCagir } from "./siyaset/ic.ts";
 import { kimlikGor } from "./siyaset/makam.ts";
 import { KAYIT } from "./siyaset/sabitler.ts";
 import type { BolgeDurumu, BolgeIleti, KayitSatiri, SultanlikOzeti } from "./siyaset/tipler.ts";
-import { basarili, hata, type Env, type Sonuc } from "./tipler.ts";
+import { basarili, HATA_DURUMU, hata, type Env, type Sonuc } from "./tipler.ts";
 
 const DURUM = "bolge";
 const IST = "ist:";
@@ -125,7 +126,12 @@ export class BolgeDO {
     await this.#kaydet(d, d.kn);
   }
 
-  /** Tanınma isteği/yanıtı outbox'ı: alıcı bölge kaydettiğini onaylayınca gönderim kaydı silinir. */
+  /**
+   * Tanınma ve ittifak outbox'ı: alıcı bölge kaydettiğini onaylayınca gönderim kaydı silinir.
+   * Geçici hata (5xx, istisna) iletiyi kuyrukta bırakır ve sonra yeniden denenir. Kalıcı ret (4xx) iletiyi
+   * düşürür ve kaynaktaki bekleyen durumu kapatır; aksi hâlde ret edilen ileti kuyruğun başında takılır,
+   * sonraki iletileri engeller ve her istekte yeniden denenirdi. Önceki iletilerin silinmesi hata olsa da kaydedilir.
+   */
   async #gonderDiplomasi(d: BolgeDurumu): Promise<void> {
     const giden = d.diplomasiGiden ?? [];
     let degisti = false;
@@ -165,9 +171,13 @@ export class BolgeDO {
             break;
         }
       } catch {
-        return;
+        break;
       }
-      if (!r.ok) return;
+      if (!r.ok) {
+        if (HATA_DURUMU[r.hata] >= 500) break;
+        diplomasiReddedildi(d, ileti);
+        degisti = true;
+      }
       const i = d.diplomasiGiden?.findIndex((x) => x.tur === ileti.tur && x.hedef === ileti.hedef && x.istekId === ileti.istekId) ?? -1;
       if (i >= 0) {
         d.diplomasiGiden!.splice(i, 1);
