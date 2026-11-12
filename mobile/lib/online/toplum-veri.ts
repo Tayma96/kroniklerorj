@@ -43,6 +43,7 @@ export interface TeklifSartlari {
   tutar?: number;
   faiz?: number;
   vade?: number;
+  senetli?: boolean;
   yon?: "ver" | "iste";
   pay?: number;
   sure?: number;
