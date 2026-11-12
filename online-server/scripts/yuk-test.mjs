@@ -25,8 +25,9 @@ if (!base || !invite) {
 }
 let url;
 try { url = new URL(base); } catch { fail("TEST_WORKER_URL geçerli URL değil."); process.exit(); }
-if (url.protocol !== "https:" || !url.hostname.includes("kronikler-online-test")) {
-  fail("Güvenlik kilidi: yalnız https://kronikler-online-test.* adresine yük testi gönderilebilir.");
+const host = url.hostname.toLowerCase().split(".");
+if (url.protocol !== "https:" || host.length !== 3 || host[0] !== "kronikler-online-test" || host[2] !== "workers.dev") {
+  fail("Güvenlik kilidi: yalnız https://kronikler-online-test.<hesap>.workers.dev adresine yük testi gönderilebilir.");
   process.exit();
 }
 if (!Number.isInteger(requests) || requests < 10 || requests > 500 || !Number.isInteger(concurrency) || concurrency < 1 || concurrency > 50) {
