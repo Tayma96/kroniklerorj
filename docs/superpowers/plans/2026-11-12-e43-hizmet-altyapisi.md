@@ -2,7 +2,7 @@
 
 **Tarih:** 12 Kasım 2026  
 **Dal:** `feature/online-p5-darbe-zinciri`  
-**Durum:** E4.3-A katalog, hazırlama, ilan, iptal, oyuncu teslimi ve süresi dolan stok işlemleri uygulandı; CI run #170 başarılı. Sonraki adım NPC talebi.
+**Durum:** E4.3-A katalog, hazırlama, ilan, iptal, oyuncu teslimi ve süresi dolan stok işlemleri uygulandı; `lohusa` ve `teselli` katalog kayıtları da eklendi. CI run #178 başarılı (test ve typecheck). E4.3-B/C/D henüz açık.
 
 ## Neden bu plan
 
@@ -65,15 +65,19 @@ Her POST, `istekNo` ile tekrar güvenli olmalı. Yerleşim sınırları ve yetki
 - [x] Stok kapasitesi, hesap-hane kümesi, kendi hizmeti ve süre dolumu için çekirdek regresyon testleri.
 - [x] HTTP uçtan uca istekNo tekrar güvenliği ve satıcıyı kalıcı depodan yükleme testi (DO yeniden açılışıyla).
 - [x] Süresi dolan hazır stok ve açık ilan stoğu ay dönümünde kapanır; satılmayan adet başına yarım hizmet tecrübesi verilir ve tekrar ödül engellenir.
+- [x] `lohusa` ve `teselli` gerçek beceri düğümlerine bağlandı; hazırlama ve girdi tüketimi regresyon testleri eklendi.
+- [ ] 6 dilde hizmet katalog/pazar metinleri ve mobil hizmet ekranı.
+
 - Önce `yaraBak`, `turku`, `yatak`/oda gibi mevcut oyun durumuna doğrudan etki eden 3–4 hizmet.
 - Hazırlıkta girdiler ve takat düşer; ilan satıcı çevrimdışıyken de satın alınabilir.
 - Satın almada alıcı öder, satıcı kazanır, etki hedefe yazılır.
 - Satıcı/alıcı hesap kümesi tekilleştirmesi, kendi hizmeti, stok yarışı, süre dolumu ve tekrar güvenliği testleri.
 
 ### E4.3-B — NPC hizmet talepleri
-- Önce kaza → yaralı, doğum → lohusa, ölüm → yaslı hane talepleri.
-- Talep başına tek ödeme; ilk geçerli teslim alır.
-- Ödül kaynağı ve NPC çarpanı ekonomi değişmeziyle sınanır.
+- [ ] Önce gerçek olay kaynaklarıyla doğum → lohusa ve ölüm → yaslı hane talepleri; yaralı/kaza ancak oyunda gerçek bir yaralanma olayı ve hedef sağlık modeli bulunduğunda açılır.
+- [ ] Talep başına tek ödeme; ilk geçerli teslim alır.
+- [ ] Ödül kasaba hazinesinden ayrılır; bakiye yetersizse talep açılmaz/ödül verilmez. Kasaba hazinesi ve talep defteri aynı kalıcı yazımda güncellenir.
+- [ ] İstekNo, hesap/hane tekilliği, süre sonu, çevrimdışı NPC ve iki kez teslim regresyonları.
 
 ### E4.3-C — Kasaba görevleri
 - Nöbet 4, sayım 1, meclis kaydı 1, talim 2 koltuk.
