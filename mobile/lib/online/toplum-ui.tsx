@@ -76,9 +76,9 @@ export function sartYaz(t: Ceviri, x: TeklifGorunumu, ay: number): string[] {
   if (x.durum === "surer") {
     if (x.tur === "is") satir.push(applyParams(t("onl.tp.s.isSon"), [ayFarki(t, x.sonAy, ay)]));
     if (x.kalan != null) satir.push(applyParams(t("onl.tp.s.kalan"), [x.kalan, x.vadeAyi != null ? ayFarki(t, x.vadeAyi, ay) : "?"]));
-    if (x.tur === "borc" && x.odemeler?.length) satir.push(applyParams(t("onl.tp.s.odemeKaydi"), [x.odemeler.map(([odemeAyi, tutar]) => `${odemeAyi}: ${tutar}`).join(" · ")]));
     if (x.bitisAyi !== undefined) satir.push(applyParams(t("onl.tp.s.bitis"), [ayFarki(t, x.bitisAyi, ay)]));
   }
+  if (x.tur === "borc" && x.odemeler?.length) satir.push(applyParams(t("onl.tp.s.odemeKaydi"), [x.odemeler.map(([odemeAyi, tutar]) => `${odemeAyi}: ${tutar}`).join(" · ")]));
   return satir;
 }
 
