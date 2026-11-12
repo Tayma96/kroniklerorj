@@ -182,6 +182,8 @@ export class YerlesimDO {
         return motor.teklif(ileti.hesapId, ileti.govde);
       case "teklifCevap":
         return motor.teklifCevap(ileti.hesapId, ileti.govde);
+      case "oyuncuArabuluculuk":
+        return motor.oyuncuArabuluculuk(ileti.hesapId, ileti.govde);
       case "husumet":
         return motor.husumet(ileti.hesapId, ileti.govde);
       case "engelle":
