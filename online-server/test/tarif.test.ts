@@ -206,7 +206,7 @@ test("yaylaCadiri sinerjisi yalnız iki meslek düğümü birlikteyken çadır k
   assert.equal(kaliteBecerisi(c, cadir), 0, "dokumacı düğümü tek başına sinerji vermez");
   assert.equal(sinerjiAcik(c, "yaylaCadiri"), false);
 
-  seviyeVer(c, "ciftci.yaylaGocu", 1);
+  seviyeVer(c, "ciftci.yaylaGocu", 2);
   assert.equal(sinerjiAcik(c, "yaylaCadiri"), true);
   assert.equal(kaliteBecerisi(c, cadir), 10, "iki düğüm birlikte çadır kalite katkısını açar");
 
