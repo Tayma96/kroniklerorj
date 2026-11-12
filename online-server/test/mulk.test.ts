@@ -325,7 +325,7 @@ test("oyuncu hanı geliri bölge vergisini kesir biriktirerek outbox'a ayırır"
   assert.equal(br.is.kasa, 48);
 
   const kira = mulkluKira(k, b, { oda: "yatak", sure: 1, istekNo: "kira-vergi-0001" }, AN, 4);
-  assert.equal(kira.ok, true, JSON.stringify(kira));
+  if (!kira.ok) throw new Error(JSON.stringify(kira));
   assert.equal((kira.deger.vergi as { tutar: number }).tutar, 0, "küçük tek işlemde vergi kesri birikir, erken yuvarlanmaz");
   assert.equal(mulkDefteri(k).vergiKesir?.["develi.han.1"], 8);
 });
