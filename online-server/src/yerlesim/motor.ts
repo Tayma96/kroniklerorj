@@ -76,7 +76,7 @@ import {
 import { teveccuhEkle, teveccuhGorunumu, teveccuhKademesi, teveccuhEtkisi, TEVECCUH_ETKI } from "./teveccuh.ts";
 import { IKRAM_MENUSU, type IkramId } from "../han/ikram.ts";
 import { toplumDonumu } from "./toplum-donum.ts";
-import { oyuncuArabuluculukAc, oyuncuArabuluculukCevap, oyuncuArabuluculukGeriAl } from "./arabuluculuk-oyuncu.ts";
+import { oyuncuArabuluculukAc, oyuncuArabuluculukCevap, oyuncuArabuluculukGeriAl, oyuncuArabuluculukTaslak, oyuncuArabuluculukImzala } from "./arabuluculuk-oyuncu.ts";
 import { OYUNCU_TEKLIF_TURLERI, oyuncuArabuluculukAl, toplumAl, type OyuncuArabuluculuk, type Toplum } from "./toplum.ts";
 import { MALLAR, MAL_IDLERI, malBul } from "../icerik/mallar.ts";
 import { temelIsOnizleme, temelIsYap } from "./temel-is.ts";
@@ -1340,12 +1340,16 @@ export class YerlesimMotoru {
         sonuc = oyuncuArabuluculukCevap(k, kar, govde.dosya, govde.cevap, ay);
       } else if (govde.islem === "geri") {
         sonuc = oyuncuArabuluculukGeriAl(k, kar, govde.dosya, ay);
+      } else if (govde.islem === "taslak") {
+        sonuc = oyuncuArabuluculukTaslak(k, kar, govde.dosya, govde.sTutari, govde.kTutari, govde.not, ay);
+      } else if (govde.islem === "imza") {
+        sonuc = oyuncuArabuluculukImzala(k, kar, govde.dosya, govde.surum, ay);
       } else return hata("gecersiz_istek");
       if (!sonuc.ok) return sonuc;
       const d = sonuc.deger;
       ek.digerleri.push(...[d.s, d.k, d.ar].filter(o => o !== kar.o));
       ek.toplum = true;
-      return basarili({ dosya: { id: String(d.i), durum: d.d, sikayetci: d.s, karsi: d.k, arabulucu: d.ar, riza: d.rs, acilisAyi: d.ac, sonCevapAyi: d.sa } });
+      return basarili({ dosya: { id: String(d.i), durum: d.d, sikayetci: d.s, karsi: d.k, arabulucu: d.ar, riza: d.rs, uzlasma: d.uz, surum: d.sv, imza: d.im, acilisAyi: d.ac, sonCevapAyi: d.sa } });
     }, "arabuluculuk");
   }
 
@@ -1374,7 +1378,7 @@ export class YerlesimMotoru {
         .filter(x => x.s === kar.o || x.k === kar.o || x.ar === kar.o)
         .slice(-GELEN_KAPALI_EN_COK).reverse()
         .map(x => ({ id: String(x.i), durum: x.d, rol: x.s === kar.o ? "sikayetci" : x.k === kar.o ? "karsi" : "arabulucu",
-          sikayetci: ad(x.s), karsi: ad(x.k), arabulucu: ad(x.ar), riza: { ...x.rs }, surum: x.sv,
+          sikayetci: ad(x.s), karsi: ad(x.k), arabulucu: ad(x.ar), riza: { ...x.rs }, uzlasma: x.uz ? { ...x.uz } : undefined, surum: x.sv, imza: { ...x.im },
           acilisAyi: x.ac, sonCevapAyi: x.sa, kapanisAyi: x.kp })),
       dostluk: {
         gelen: bagli.filter((b) => b.d === "istek" && b.g !== kar.o).map((b) => ({ ...ad(diger(b)), ay: b.ay })),
