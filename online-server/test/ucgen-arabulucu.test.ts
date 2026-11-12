@@ -5,7 +5,8 @@ import assert from "node:assert/strict";
 import { ucgenAl, ucgenEmanet } from "../src/yerlesim/bilgi.ts";
 import { gorus, gorusDegeri } from "../src/yerlesim/gorus.ts";
 import { tohumlu } from "../src/yerlesim/rastgele.ts";
-import { araciIste, araciKapat, arabulucuYap, sartOde, sonucBandi, talepDonumu } from "../src/yerlesim/arabulucu.ts";
+import { seviyeVer } from "../src/yerlesim/beceri.ts";
+import { araciIste, araciKapat, arabulucuYap, arabuluculukSansi, sartOde, sonucBandi, talepDonumu } from "../src/yerlesim/arabulucu.ts";
 import { kiskirt, ucgenDonumu } from "../src/yerlesim/ucgen.ts";
 import type { Kasaba } from "../src/yerlesim/tipler.ts";
 import { toplamAkce } from "./hanedan-yardimci.ts";
@@ -31,6 +32,18 @@ function oyna(tohum: number, bedel: "ozur" | "tazminat" = "ozur", miktar = 0) {
   assert.equal(akce(s.k), once, "toplam akçe korunur");
   return { s, c: r.deger };
 }
+
+test("barış ilahisi sinerjisi iki meslek düğümü de öğrenilince arabuluculuk şansına +10 ekler", () => {
+  const s = hazir();
+  const talep = ucgenAl(s.k).at[0]!;
+  const temel = arabuluculukSansi(s.k, s.hasan, talep, s.k.ay).sans.toplam;
+  seviyeVer(s.hasan, "ozan.barisIlahisi", 1);
+  const tekMeslek = arabuluculukSansi(s.k, s.hasan, talep, s.k.ay).sans.toplam;
+  assert.equal(tekMeslek, temel, "yalnız ozan düğümü çapraz meslek sinerjisini açmaz");
+  seviyeVer(s.hasan, "arabulucu.araBulma", 1);
+  const ikiMeslek = arabuluculukSansi(s.k, s.hasan, talep, s.k.ay).sans.toplam;
+  assert.equal(ikiMeslek, temel + 10, "iki düğüm birlikte öğrenilince bonus tek kez eklenir");
+});
 
 test("senaryo 6.2: dört sonuç da tohumla üretilir; bantlar şansa bağlı", () => {
   const goruldu = new Set<string>();
