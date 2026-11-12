@@ -189,7 +189,7 @@ function ToplulukEkran() {
     <Baslik2 metin={t("onl.topluluk.toplumsal")} rtl={rtl} />
     {durum ? <Cerceve ic={{ padding: 12, gap: 8 }}>
       <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchment, textAlign: hiza(rtl) }}>{applyParams(t("onl.topluluk.mudavim"), [durum.mudavim.rozet ? t("onl.topluluk.rozet." + durum.mudavim.rozet) : t("onl.topluluk.rozet.yok"), durum.mudavim.ziyaret])}</Text>
-      <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchment, textAlign: hiza(rtl) }}>{applyParams(t("onl.topluluk.zaviye"), [durum.zaviye.kasabada.length, durum.zaviye.benimim ? 1 : 0])}</Text>
+      <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchment, textAlign: hiza(rtl) }}>{applyParams(t("onl.topluluk.zaviye"), [durum.zaviye.kasabada.length, durum.zaviye.benim ? 1 : 0])}</Text>
     </Cerceve> : null}
     <Baslik2 metin={t("onl.topluluk.zaviye.baslik")} rtl={rtl} />
     {durum ? <>
