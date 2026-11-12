@@ -4,6 +4,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { BEYLIKLER } from "../src/dunya-veri.ts";
 import { akceGir, bolgeAyi, bolgeEylem, bolgeGorunumu, bolgeKur, defterTutarli, haracOnayla } from "../src/siyaset/bolge.ts";
+import { darbeBarisTeklifEt, darbeBarisYanit } from "../src/siyaset/darbe.ts";
 import { etkinKisi, koltukBul, kumeCakisir, kumeAnahtarlari, oyuncuTutucu, yetkiAcik, yeterOran } from "../src/siyaset/makam.ts";
 import { hedefTutum, mogolAyi, mogolBaslangic, mogolEtkisi } from "../src/siyaset/mogol.ts";
 import { ozerklikAyi } from "../src/siyaset/ozerklik.ts";
@@ -526,4 +527,54 @@ test("P5 savunma ön emirleri çatışma gücüne tanımlı ve tavanlı katkı v
   ];
   assert.equal(plan(emirler) - plan([]), 9);
   assert.equal(plan(Array.from({ length: 20 }, (_, i) => ({ ...emirler[i % 2]!, hesap: "h" + i, kume: ["h" + i] }))) - plan([]), 30, "savunma puanı tavanı");
+});
+
+
+
+function darbeCatismaDurumu() {
+  const d = bolgeKur("demirhan", 0);
+  const saldiran = kimlik("o1");
+  const savunan = kimlik("o2", { e: 2 });
+  d.darbe = {
+    v: 1, id: "demirhan:darbe:ateskes-test", durum: "catışma",
+    baslatanKisi: saldiran.kisi, baslatanHesap: saldiran.hesap,
+    acilisAy: 1, sogumaSonAy: 0, destekler: [],
+    savunma: [{
+      kisi: savunan.kisi, hesap: savunan.hesap, ad: savunan.ad, koltuk: "sehirBeyi:demirhan",
+      rol: "sehirBeyi", kume: ["h:hesap-o2"], ay: 1,
+    }],
+    garnizonSadakati: 60, yatirilan: 80, mod: "acik", ilanAy: 1, cozumAy: 4, izler: [],
+  };
+  return { d, saldiran, savunan };
+}
+
+test("darbe ateşkesi: karşı tarafın açık kabulü gerekir, statüko korunur ve soğuma başlar", () => {
+  const { d, saldiran, savunan } = darbeCatismaDurumu();
+  assert.equal(darbeBarisTeklifEt(d, saldiran, "ateskes-istek-0001", 2), null);
+  assert.equal(darbeBarisYanit(d, saldiran, "ateskes-istek-0001", "kabul", 2), "taraf_degil", "teklif sahibi kendi teklifini kabul edemez");
+  assert.equal(darbeBarisYanit(d, savunan, "ateskes-istek-0001", "kabul", 2), null);
+  assert.equal(d.darbe?.durum, "ateskes");
+  assert.equal(d.darbe?.sonuc, undefined, "ateşkes zafer/yenilgi gibi kaydedilmez");
+  assert.equal(d.darbe?.sogumaSonAy, 8);
+  assert.equal(d.darbe?.barisTeklifi?.durum, "kabul");
+  assert.equal(darbeBarisTeklifEt(d, saldiran, "ateskes-istek-0002", 3), "darbe_kapali", "ateşkesten sonra yeni teklif açılamaz");
+});
+
+test("darbe ateşkesi: savunma tarafı da teklif edebilir, saldıran kabul ya da reddedebilir", () => {
+  const { d, saldiran, savunan } = darbeCatismaDurumu();
+  assert.equal(darbeBarisTeklifEt(d, savunan, "ateskes-istek-0003", 2), null);
+  assert.equal(darbeBarisYanit(d, savunan, "ateskes-istek-0003", "ret", 2), "taraf_degil");
+  assert.equal(darbeBarisYanit(d, saldiran, "ateskes-istek-0003", "ret", 2), null);
+  assert.equal(d.darbe?.durum, "catışma", "ret çatışmayı sürdürür");
+  assert.equal(d.darbe?.barisTeklifi?.durum, "ret");
+  assert.equal(darbeBarisTeklifEt(d, savunan, "ateskes-istek-0004", 2), null, "ret sonrası yeni teklif mümkün");
+});
+
+test("darbe ateşkesi: emir vermemiş üçüncü kişi taraf olamaz ve çözüm ayı geçince teklif kapanır", () => {
+  const { d, saldiran, savunan } = darbeCatismaDurumu();
+  assert.equal(darbeBarisTeklifEt(d, kimlik("o3"), "ateskes-istek-0005", 2), "taraf_degil");
+  assert.equal(darbeBarisTeklifEt(d, saldiran, "ateskes-istek-0006", 4), "darbe_kapali");
+  assert.equal(darbeBarisTeklifEt(d, saldiran, "kisa", 2), "deger_sinir_disi");
+  assert.equal(darbeBarisTeklifEt(d, saldiran, "ateskes-istek-0007", 2), null);
+  assert.equal(darbeBarisYanit(d, savunan, "yanlis-istek-0000", "kabul", 2), "hedef_uygun_degil");
 });
