@@ -323,6 +323,7 @@ function YasamEkran() {
       </Pressable>;
     })()}
     <YasamHanGirisi ben={ben} />
+    <CizgiDugme etiket={t("onl.hizmet.kisa")} icon="briefcase" rtl={rtl} kucuk onPress={() => router.push("/online/hizmet")} />
 
     {/* Gelen kutusu: cevap bekleyen teklif ve dostluk istekleri (Faz 3a) */}
     <GelenKutusuKarti />
