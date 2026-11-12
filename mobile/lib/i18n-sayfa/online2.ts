@@ -621,6 +621,7 @@ export const rows: Record<string, string[]> = {
   "onl.sans.ozellik": ["Özelliğin: %1", "Your attribute: %1", "Tu atributo: %1", "O teu atributo: %1", "صفتك: %1", "Твоё свойство: %1"],
   "onl.sans.beceri": ["Becerin: %1", "Your skill: %1", "Tu habilidad: %1", "A tua perícia: %1", "مهارتك: %1", "Твой навык: %1"],
   "onl.sans.tekrar": ["Önceki retler (%1)", "Earlier refusals (%1)", "Rechazos anteriores (%1)", "Recusas anteriores (%1)", "رفضٌ سابق (%1)", "Прежние отказы (%1)"],
+  "onl.sans.barisSansi": ["Barış ilahisi sinerjisi: +%1 şans", "Hymn of peace synergy: +%1 chance", "Sinergia del himno de paz: +%1 de probabilidad", "Sinergia do hino da paz: +%1 de hipótese", "تآزر أنشودة السلام: +%1 فرصة", "Синергия гимна мира: +%1 к шансу"],
   "onl.sans.sinir": ["Sınır (5–95)", "Limit (5–95)", "Límite (5–95)", "Limite (5–95)", "الحدّ (5–95)", "Предел (5–95)"],
 
   // --- hatalar (Faz 2)
