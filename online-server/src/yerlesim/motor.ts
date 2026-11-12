@@ -1351,7 +1351,7 @@ export class YerlesimMotoru {
       const d = sonuc.deger;
       ek.digerleri.push(...[d.s, d.k, d.ar].filter(o => o !== kar.o));
       ek.toplum = true;
-      return basarili({ dosya: { id: String(d.i), durum: d.d, sikayetci: d.s, karsi: d.k, arabulucu: d.ar, riza: d.rs, uzlasma: d.uz, surum: d.sv, imza: d.im, acilisAyi: d.ac, sonCevapAyi: d.sa } });
+      return basarili({ dosya: { id: String(d.i), durum: d.d, sikayetci: d.s, karsi: d.k, arabulucu: d.ar, riza: d.rs, uzlasma: d.uz, surum: d.sv, imza: d.im, acilisAyi: d.ac, sonCevapAyi: d.sa, sonAy: d.sonAy } });
     }, "arabuluculuk");
   }
 
@@ -1381,7 +1381,7 @@ export class YerlesimMotoru {
         .slice(-GELEN_KAPALI_EN_COK).reverse()
         .map(x => ({ id: String(x.i), durum: x.d, rol: x.s === kar.o ? "sikayetci" : x.k === kar.o ? "karsi" : "arabulucu",
           sikayetci: ad(x.s), karsi: ad(x.k), arabulucu: ad(x.ar), riza: { ...x.rs }, uzlasma: x.uz ? { ...x.uz } : undefined, surum: x.sv, imza: { ...x.im },
-          acilisAyi: x.ac, sonCevapAyi: x.sa, kapanisAyi: x.kp })),
+          acilisAyi: x.ac, sonCevapAyi: x.sa, sonAy: x.sonAy, kapanisAyi: x.kp })),
       dostluk: {
         gelen: bagli.filter((b) => b.d === "istek" && b.g !== kar.o).map((b) => ({ ...ad(diger(b)), ay: b.ay })),
         giden: bagli.filter((b) => b.d === "istek" && b.g === kar.o).map((b) => ({ ...ad(diger(b)), ay: b.ay })),
