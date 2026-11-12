@@ -10,7 +10,7 @@ import { OnlineYakinda } from "../../lib/online-yakinda";
 import { OnlineKapisi, useOnline } from "../../lib/online/durum";
 import { onlineEkranAcik } from "../../lib/online/kapi";
 import { Bant, Cerceve, CizgiDugme, GeriDugme, Madalyon, geriGit, hiza, yon } from "../../lib/online/ui";
-import { Baslik2, BosKart, Hap, OnlineSayfa, SayfaBasi, Yukleniyor } from "../../lib/online/yasam-ui";
+import { Baslik2, BosKart, Hap, OnlineSayfa, SayfaBasi, Yukleniyor, YerlesimBekle, sahneGorseli } from "../../lib/online/yasam-ui";
 import { Secenekler } from "../../lib/online/toplum-ui";
 import { istekNoUret } from "../../lib/online/depo";
 import { ekHataAnahtari, type EkHata } from "../../lib/online/ek-istemci";
@@ -97,8 +97,8 @@ function IsmarlamaEkran() {
     await Promise.all([yukle(), o.yerlesimYukle(true)]);
   };
 
-  if (!y) return <OnlineSayfa><Yukleniyor metin={t("onl.im.yukleniyor")} /></OnlineSayfa>;
-  return <OnlineSayfa>
+  if (!y) return <YerlesimBekle rtl={rtl} t={t} onGiris={() => router.replace("/online")} />;
+  return <OnlineSayfa gorsel={sahneGorseli(y.yerlesim.tur, y.saat.mevsim)} oran={0.3} rtl={rtl} t={t}>
     <View style={{ flexDirection: yon(rtl), alignItems: "center", gap: 8 }}>
       <GeriDugme rtl={rtl} etiket={t("onl.geri")} onPress={() => geriGit(router, "/online/yasam")} />
       <View style={{ flex: 1 }} />
