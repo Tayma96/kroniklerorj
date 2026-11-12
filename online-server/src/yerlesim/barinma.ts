@@ -484,7 +484,7 @@ export function barinmaGorunumu(
   kasaba: Kasaba,
   kar: Karakter,
   simdi: number,
-  oyuncuHan?: { isletme: string; fc: number; seviye: number; sahip: Karakter },
+  oyuncuHan?: { isletme: string; fc: number; seviye: number; kapasite: number; sahip: Karakter },
 ) {
   const ocak = ocakVar(kasaba, kar);
   const r = barinmaIlerlet(kasaba, kar, simdi, ocak);
@@ -531,7 +531,7 @@ export function barinmaGorunumu(
       hakMs: y === br.iy ? ILK_KORUMA_MS : SEHIR_KORUMA_MS,
       buSehir: m ? { baslangic: m[0], bitis: m[1], kullanildi: true } : { kullanildi: false },
     },
-    odalar: katalog.ok ? katalog.deger.filter((o) => !oyuncuHan || oyuncuHanOdaAcik(oyuncuHan.sahip, o.oda)).map((o) => ({ ...o, yeterli: kar.pa >= o.fiyatlar[1] })) : [],
+    odalar: katalog.ok ? katalog.deger.filter((o) => !oyuncuHan || (oyuncuHan.kapasite > 0 && oyuncuHanOdaAcik(oyuncuHan.sahip, o.oda))).map((o) => ({ ...o, yeterli: kar.pa >= o.fiyatlar[1] })) : [],
     tesis: {
       tur: SOSYAL_TESIS[kasaba.tur],
       acik: SOSYAL_TESIS_ACIK,
