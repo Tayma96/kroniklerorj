@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { ETKILER } from "../src/icerik/agaclar/index.ts";
 import { MALLAR } from "../src/icerik/mallar.ts";
 import { HIZMET_TARIFLERI, hizmetTarifiBul } from "../src/yerlesim/hizmet-tarif.ts";
-import { hizmetHazirla, hizmetIlanAc, hizmetIlanBul, hizmetIlanGeri, hizmetIlanIsle, hizmetIlanlar, hizmetStoguGecerli, hizmetStokDonumu } from "../src/yerlesim/hizmet-pazari.ts";
+import { hizmetHazirla, hizmetIlanAc, hizmetIlanBul, hizmetIlanGeri, hizmetIlanIsle, hizmetIlanlar, hizmetStoguGecerli, hizmetStokDonumu, hizmetYetkiliMi } from "../src/yerlesim/hizmet-pazari.ts";
 import type { Karakter, Kasaba } from "../src/yerlesim/tipler.ts";
 import type { EkonomiKaydi } from "../src/yerlesim/pazar-tahta.ts";
 
