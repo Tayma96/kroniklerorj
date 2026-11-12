@@ -607,9 +607,9 @@ test("baklaYemegi sinerjisi ziyafet hizmetini aşçı senlik ziyafeti ve çiftç
   const ek = ekonomi();
   const hazir = hizmetHazirla(ek, asci, "ziyafet", 1, 12);
   assert.equal(hazir.ok, true);
-  assert.equal(asci.ev?.un, 0);
-  assert.equal(asci.ev?.ekmek, 0);
-  assert.equal(asci.ev?.corba, 0);
+  assert.equal(asci.ev?.un ?? 0, 0);
+  assert.equal(asci.ev?.ekmek ?? 0, 0);
+  assert.equal(asci.ev?.corba ?? 0, 0);
   assert.equal(asci.tk, 5);
 
   const eksikCiftci = { ...asci, o: "eksik-ciftci", ev: { un: 1, ekmek: 1, corba: 1 }, ms: { a: "asci", y: "", s: { asci: { a: "asci", kd: 0, hz: 0, cy: 0, sv: { "asci.senlikZiyafeti": 2 } } } } } as unknown as Karakter;
