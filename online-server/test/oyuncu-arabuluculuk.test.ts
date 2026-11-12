@@ -155,11 +155,11 @@ test("arabulucu sürümlü uzlaşma taslağı oluşturur; iki tarafın güncel i
   assert.deepEqual(ac.deger.uz, { s: 120, k: 0, not: "Zarar karşılığı ödeme" });
   assert.deepEqual(ac.deger.im, {});
 
-  assert.deepEqual(oyuncuArabuluculukImzala(k, ar, id, 2, k.ay), { ok: false, hata: "taraf_degil" });
-  assert.deepEqual(oyuncuArabuluculukImzala(k, s, id, 1, k.ay), { ok: false, hata: "teklif_gecersiz" });
-  assert.ok(oyuncuArabuluculukImzala(k, s, id, 2, k.ay).ok);
+  assert.deepEqual(oyuncuArabuluculukImzala(k, ar, id, 2), { ok: false, hata: "taraf_degil" });
+  assert.deepEqual(oyuncuArabuluculukImzala(k, s, id, 1), { ok: false, hata: "teklif_gecersiz" });
+  assert.ok(oyuncuArabuluculukImzala(k, s, id, 2).ok);
   assert.equal(ac.deger.d, "imzaBekliyor", "tek taraf imzalayınca dosya onaylanmaz");
-  assert.ok(oyuncuArabuluculukImzala(k, kk, id, 2, k.ay).ok);
+  assert.ok(oyuncuArabuluculukImzala(k, kk, id, 2).ok);
   assert.equal(ac.deger.d, "onaylandi");
 });
 
@@ -172,7 +172,7 @@ test("uzlaşma taslağı değişirse eski imzalar ve sürüm geçersizleşir", (
   const id = String(ac.deger.i);
   for (const x of [s, kk, ar]) assert.ok(oyuncuArabuluculukCevap(k, x, id, "kabul", k.ay).ok);
   assert.ok(oyuncuArabuluculukTaslak(k, ar, id, 50, 10, undefined, k.ay).ok);
-  assert.ok(oyuncuArabuluculukImzala(k, s, id, 2, k.ay).ok);
+  assert.ok(oyuncuArabuluculukImzala(k, s, id, 2).ok);
   assert.ok(oyuncuArabuluculukTaslak(k, ar, id, 60, 10, undefined, k.ay).ok);
   assert.equal(ac.deger.sv, 3);
   assert.deepEqual(ac.deger.im, {}, "taslak değişince eski imzalar silinir");
