@@ -131,7 +131,7 @@ export interface Soylenti {
 /** Oyuncu–oyuncu arabuluculuk dosyası. NPC arabuluculuk taleplerinden ayrı tutulur. */
 export type OyuncuArabuluculukDurumu =
   | "davet" | "taslak" | "imzaBekliyor" | "emanette"
-  | "tamam" | "ret" | "geri" | "dustu" | "iptal";
+  | "tamam" | "onaylandi" | "ret" | "geri" | "dustu" | "iptal";
 
 export interface OyuncuArabuluculuk {
   /** Toplum.tn ile ortak, tekrar etmeyen kayıt kimliği. */
@@ -146,6 +146,8 @@ export interface OyuncuArabuluculuk {
   /** Uzlaşma taslağı sürümü ve iki tarafın imzaladığı sürüm. */
   sv: number;
   im: { s?: number; k?: number };
+  /** Uzlaşma teklifi: s, şikâyetçinin karsi tarafa; k, karşı tarafın şikâyetçiye ödeyeceği akçe. */
+  uz?: { s: number; k: number; not?: string };
   /** Ödeme tutarları ve para emanetine alındığı bilgisi. */
   od?: { s: number; k: number; emanet?: 1; uygulandi?: 1 };
   /** Açılış, cevap ve kapanış ayları. */
