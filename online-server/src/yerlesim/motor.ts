@@ -76,6 +76,7 @@ import {
 import { teveccuhEkle, teveccuhGorunumu, teveccuhKademesi, teveccuhEtkisi, TEVECCUH_ETKI } from "./teveccuh.ts";
 import { IKRAM_MENUSU, type IkramId } from "../han/ikram.ts";
 import { toplumDonumu } from "./toplum-donum.ts";
+import { oyuncuArabuluculukAc, oyuncuArabuluculukCevap, oyuncuArabuluculukGeriAl } from "./arabuluculuk-oyuncu.ts";
 import { OYUNCU_TEKLIF_TURLERI, toplumAl, type Toplum } from "./toplum.ts";
 import { MALLAR, MAL_IDLERI, malBul } from "../icerik/mallar.ts";
 import { temelIsOnizleme, temelIsYap } from "./temel-is.ts";
@@ -1311,6 +1312,36 @@ export class YerlesimMotoru {
       ek.toplum = true;
       return basarili({ teklif: teklifGorunumu(k, r.deger.teklif, kar.o, dil) });
     }, "teklif");
+  }
+
+
+  /** POST /v1/arabuluculuk {islem: ac|cevap|geri, hedef?, arabulucu?, dosya?, cevap?, istekNo}.
+   * Her işlem çağıranın kendi karakteriyle yapılır; üçüncü taraflar yalnız yerleşim kaydında güncellenir. */
+  async oyuncuArabuluculuk(hesapId: string, govde: unknown): Promise<Sonuc<unknown>> {
+    if (!nesneMi(govde)) return hata("gecersiz_istek");
+    const k = this.kasaba;
+    const hedef = govde.islem === "ac" ? this.#sakinKimligi(govde.hedef) : undefined;
+    const arabulucu = govde.islem === "ac" ? this.#sakinKimligi(govde.arabulucu) : undefined;
+    if (govde.islem === "ac" && (!hedef || !arabulucu)) return hata("kisi_yok");
+    if (hedef && arabulucu) await this.#yukle([hedef, arabulucu]);
+    return this.#tekrarGuvenli(hesapId, govde, (kar, _s, ay, ek) => {
+      let sonuc;
+      if (govde.islem === "ac") {
+        const karsi = hedef ? k.kar.get(hedef) : undefined;
+        const ar = arabulucu ? k.kar.get(arabulucu) : undefined;
+        if (!karsi || !ar) return hata("sakin_yok");
+        sonuc = oyuncuArabuluculukAc(k, kar, karsi, ar, ay);
+      } else if (govde.islem === "cevap") {
+        sonuc = oyuncuArabuluculukCevap(k, kar, govde.dosya, govde.cevap, ay);
+      } else if (govde.islem === "geri") {
+        sonuc = oyuncuArabuluculukGeriAl(k, kar, govde.dosya, ay);
+      } else return hata("gecersiz_istek");
+      if (!sonuc.ok) return sonuc;
+      const d = sonuc.deger;
+      ek.digerleri.push(...[d.s, d.k, d.ar].filter(o => o !== kar.o));
+      ek.toplum = true;
+      return basarili({ dosya: { id: String(d.i), durum: d.d, sikayetci: d.s, karsi: d.k, arabulucu: d.ar, riza: d.rs, acilisAyi: d.ac, sonCevapAyi: d.sa } });
+    }, "arabuluculuk");
   }
 
   /** GET /v1/gelen?dil=: gelen/giden açık teklifler, süren anlaşmalar, son kapananlar, dostluk, husumet, söylenti. */
