@@ -111,7 +111,7 @@ function HizmetEkran() {
       return <HizmetKarti key={x.id} baslik={t("onl.hizmet.ad." + x.hizmet)}
         alt={applyParams(t("onl.hizmet.npcTalepBilgi"), [t("onl.hizmet.npcTalepKisi"), x.odul, x.sonAy])}
         icon="scroll-open" rtl={rtl}>
-        <CizgiDugme etiket={t("onl.hizmet.npcTalepTeslim")} icon="hand-heart" rtl={rtl} kucuk kapali={yukleniyor || !stokVar}
+        <CizgiDugme etiket={t("onl.hizmet.npcTalepTeslim")} icon="hands-helping" rtl={rtl} kucuk kapali={yukleniyor || !stokVar}
           onPress={() => void islem(() => istemci!.talepTeslim(x.id), t("onl.hizmet.npcTalepTamam"))} />
       </HizmetKarti>;
     }) : <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{t("onl.hizmet.npcTalepBos")}</Text>}
