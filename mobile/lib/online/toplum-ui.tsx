@@ -79,7 +79,7 @@ export function sartYaz(t: Ceviri, x: TeklifGorunumu, ay: number): string[] {
   }
   // Senet kapanmış olsa da kalan bakiye (0 dahil) ve vade kaydı görünür kalır.
   if (x.tur === "borc" && x.kalan != null) satir.push(applyParams(t("onl.tp.s.kalan"), [x.kalan, x.vadeAyi != null ? ayFarki(t, x.vadeAyi, ay) : "?"]));
-  if (x.tur === "borc" && x.odemeler?.length) satir.push(applyParams(t("onl.tp.s.odemeKaydi"), [x.odemeler.map(([odemeAyi, tutar]) => `${odemeAyi}: ${tutar}`).join(" · ")]));
+  if (x.tur === "borc" && x.odemeler?.length) satir.push(applyParams(t("onl.tp.s.odemeKaydi"), [x.odemeler.map(([odemeAyi, tutar]) => `${odemeAyi} (${ayFarki(t, odemeAyi, ay)}): ${tutar}`).join(" · ")]));
   return satir;
 }
 
