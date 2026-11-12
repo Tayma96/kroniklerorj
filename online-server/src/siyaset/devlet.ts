@@ -1,5 +1,6 @@
 // P6: darbe başarısı sonrası bağımsız devletin sınırlı v1 yönetimi.
 import type { HataKodu } from "../tipler.ts";
+import { BEYLIKLER } from "../dunya-veri.ts";
 import type { BagimsizDevlet, BolgeDurumu, SiyasiKimlik } from "./tipler.ts";
 
 function beyMi(d: BolgeDurumu, kimlik: SiyasiKimlik): boolean {
@@ -54,14 +55,13 @@ export function devletYonet(d: BolgeDurumu, kimlik: SiyasiKimlik, govde: Record<
     }
     case "taninmaYanit": {
       const kaynak = govde.kaynakBolge;
-      const kaynakAd = typeof govde.kaynakAd === "string" ? govde.kaynakAd.trim().replace(/\s+/g, " ") : "";
+      const beylik = typeof kaynak === "string" ? BEYLIKLER.find((x) => x.id === kaynak) : undefined;
       const karar = govde.karar;
-      if (typeof kaynak !== "string" || !/^[a-z0-9-]{2,32}$/.test(kaynak) || kaynak === d.id) return "deger_sinir_disi";
-      if (kaynakAd.length < 2 || kaynakAd.length > 40 || !/^[\p{L}\p{N}][\p{L}\p{N} '\u2019-]*[\p{L}\p{N}]$/u.test(kaynakAd)) return "deger_sinir_disi";
+      if (!beylik || beylik.id === d.id) return "deger_sinir_disi";
       if (karar !== "kabul" && karar !== "ret") return "deger_sinir_disi";
       const yanitlar = (s.taninmaYanits ??= {});
-      if (yanitlar[kaynak]) return "devlet_talep_var";
-      yanitlar[kaynak] = { karar, ay: d.ay, ad: kaynakAd };
+      if (yanitlar[beylik.id]) return "devlet_talep_var";
+      yanitlar[beylik.id] = { karar, ay: d.ay, ad: beylik.ad };
       return null;
     }
     case "taninma": {
