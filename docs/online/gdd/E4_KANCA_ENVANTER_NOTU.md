@@ -1,6 +1,6 @@
 # E4 — beceri ağacı kanca envanteri
 
-Durum: kısmi uygulama. `tasarruf` tüketicisi, üç ortak-durum/han tüketicisi ve E4.3 hizmet kataloğu/pazarı ilk dilimi çalışır. Katalogdaki her hizmet gerçek beceri düğümüne bağlıdır; NPC talebi, görev ve iki taraflı iş akışları henüz tamamlanmadı.
+Durum: kısmi uygulama. `tasarruf` tüketicisi, üç ortak-durum/han tüketicisi ve E4.3-A/B/C hizmet pazarı, NPC talepleri ve kasaba görevleri çalışır. Katalog ve görevlerin tümü gerçek beceri düğümlerine bağlıdır; E4.3-D iki taraflı iş akışı ve kalan tüketiciler açıktır.
 
 ## Bu dalda bağlanan etki
 
@@ -16,7 +16,7 @@ Durum: kısmi uygulama. `tasarruf` tüketicisi, üç ortak-durum/han tüketicisi
 ## Kalan kancaların envanteri
 
 14 beceri ağacı dosyasının tamamı tarandı. Şu an mevcut sistem tüketicisi bulunmayan etkiler:
-- `hizmet`: 52 kullanımın 8 tanesi gerçek tüketiciye bağlandı (`ikram`, `nobet`, `turku`, `yaraBak`, `kirikSar`, `lohusa`, `teselli`, `sazGecesi`); 44 kullanım kaldı. Katalog ve oyuncu pazarı ilk dilimdir; NPC talepleri, kasaba görevleri, iki taraflı işler, 6 dil ve istemci akışı hâlâ açık.
+- `hizmet`: 52 kullanımın 12 tanesi gerçek tüketiciye bağlandı (`ikram`, `nobet`, `talim`, `vergiSayimi`, `meclisKaydi`, `turku`, `yaraBak`, `kirikSar`, `lohusa`, `teselli`, `sazGecesi` ve ortak derdin diğer hizmet kancaları); 40 kullanım kaldı. E4.3-A/B/C sunucu ve mobil akışları tamamlandı; iki taraflı işler açık.
 - `hak`: 203 kullanım — makam, lonca, ticaret, garnizon, sosyal yardım ve toplumsal ayrıcalıklar için sunucu tarafı yetki/eylem matrisi gerekir.
 - `sinerji`: 21 kullanım — `ortakSahne` sinerjisi `sazGecesi` hizmetini açmak için tüketiliyor; 20 kullanım kaldı. Diğer kimliklerin gerçek tüketicileri henüz yok.
 - `tasarruf`: 1 kullanım vardı; bu dalda bağlandı.
@@ -25,7 +25,7 @@ Durum: kısmi uygulama. `tasarruf` tüketicisi, üç ortak-durum/han tüketicisi
 ## Uygulama sırası
 
 1. `hak` için tek bir yetki kayıt/çözümleyici kur; istemci düğüm seviyesini yetki kanıtı saymasın. Her eylem sunucuda `hakAcik` üzerinden doğrulansın.
-2. `hizmet` için katalog/pazarın ardından NPC talebi, kasaba görevi ve iki taraflı iş akışlarını tamamla; ödeme kaynağı, teslim etkisi, iptal ve itibar akışını doğrula.
+2. `hizmet` için kalan iki taraflı iş akışlarını tamamla; ödeme kaynağı, teslim etkisi, iptal ve itibar akışını doğrula. E4.3-A/B/C tamamlandı.
 3. `sinerji` için ortak çözümleyici ve 20 `acar` kimliğinin gerçek tüketicileri ekle; bir düğümün varlığı tek başına açılma sağlamasın, iki meslekteki seviye koşulu aranmalı.
 4. Her bağ için gizli/öğrenilmiş seviye, hesap/hane tekilliği, tekrar güvenliği ve çevrimdışı davranış testleri yaz.
 
