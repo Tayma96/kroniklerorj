@@ -72,7 +72,7 @@ function GelenEkran() {
     gelen: (g?.gelen.length ?? 0) + (g?.dostluk.gelen.length ?? 0),
     giden: (g?.giden.length ?? 0) + (g?.dostluk.giden.length ?? 0),
     suren: g?.suren.length ?? 0,
-    arabuluculuk: g?.arabuluculuk.length ?? 0,
+    arabuluculuk: g?.arabuluculuk?.length ?? 0,
     soylenti: g?.soylentiler.filter((s) => s.yayiliyor && !s.yalanlandi).length ?? 0,
     gecmis: g?.kapanan.length ?? 0,
   };
@@ -131,7 +131,7 @@ function GelenEkran() {
       </>;
       case "arabuluculuk": return <>
         <Baslik2 metin={t("onl.tp.arb.baslik")} rtl={rtl} ust={14} />
-        {g.arabuluculuk.length ? <View style={{ gap: 10 }}>{g.arabuluculuk.map((x) => <ArabuluculukKarti key={x.id} x={x} toplum={toplum} />)}</View>
+        {(g.arabuluculuk?.length ?? 0) ? <View style={{ gap: 10 }}>{(g.arabuluculuk ?? []).map((x) => <ArabuluculukKarti key={x.id} x={x} toplum={toplum} />)}</View>
           : <BosKart icon="scales" metin={t("onl.tp.gk.surenBos")} rtl={rtl} />}
       </>;
       case "soylenti": return <>
