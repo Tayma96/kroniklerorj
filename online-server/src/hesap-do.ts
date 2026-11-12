@@ -283,6 +283,7 @@ export class HesapDO {
       case "hizmetIlan":
       case "hizmetIslem":
       case "hizmetGeri":
+      case "hizmetTalepTeslim":
       case "hizmet":
       case "ismarla":
       case "ismarlamaCevap":
