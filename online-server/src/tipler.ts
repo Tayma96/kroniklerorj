@@ -499,6 +499,7 @@ export const GOVDELI_ISLEMLER = [
   "dostluk",
   "teklif",
   "teklifCevap",
+  "oyuncuArabuluculuk",
   "husumet",
   "engelle",
   "duzen",
