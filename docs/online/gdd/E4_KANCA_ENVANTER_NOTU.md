@@ -1,12 +1,13 @@
 # E4 — beceri ağacı kanca envanteri
 
-Durum: kısmi uygulama. `tasarruf` tüketicisi, üç ortak-durum/han tüketicisi ve E4.3-A/B/C hizmet pazarı, NPC talepleri, kasaba görevleri çalışır; E4.3-D iki taraflı teklif sözleşmelerinin ilk dilimi (arabuluculuk, muhafızlık, özel mektup) mevcut teklif motoruna bağlandı. Derin husumet/kervan etkileri ve kalan tüketiciler açıktır.
+Durum: kısmi uygulama. `tasarruf` tüketicisi, üç ortak-durum/han tüketicisi, E4.3-A/B/C hizmet altyapısı ve E4.3-D sözleşmeleri çalışır. Oyuncu hanında yatak/oda kiralama artık hancının `yatak`/`oda` becerisine, has oda ise marangoz `kundekari` sinerjisine bağlıdır. Gerçek rota/kervan koruması ve kalan tüketiciler açıktır.
 
 ## Bu dalda bağlanan etki
 
 - `tasarruf(hedef, mal, yuzde)`: beceri etkisi tarife kimliği veya tarif grubu ile eşleştirilir. Gerçek girdi gereksinimi, önizleme, eksik girdi kontrolü ve üretimden düşülen miktar aynı hesaplayıcıyı kullanır.
 - Tasarruf yüzdesi toplamda %50 ile sınırlıdır. Bölünemeyen mal miktarında tam sayı aşağı yuvarlanır; her girdi türünden en az 1 adet gerekir.
 - Hancı `hizmet("ikram")`: öğrenilmiş `serbetOcagi` üçüncü seviyesi NPC han menüsünde %10 indirim sağlar. Oyuncu işletmesinin fiyatı bu indirimle değiştirilmez; işletme sahibinin fiyat kontrolü korunur.
+- Hancı `hizmet("yatak")` / `hizmet("oda")`: oyuncu hanında yatak ve oda kiralama kataloğunu açar; sunucu sahibi kalıcı karakterini yükleyip beceriyi doğrular. `hasOda`, `oda` hizmetine ek olarak Hancı `temizOda` üçüncü seviye + Marangoz `kundekari` birinci seviye `seckinOda` sinerjisini ister. GET barınma kataloğu yalnız yetkili oda türlerini gösterir; kapalı han oda sunmaz.
 - Asker `hizmet("nobet")`: öğrenilmiş `surNobeti` ilk seviyesi, ana meslek artık asker olmasa da Haydut ortak derdine nöbet katkısı verir. Sunucu hem görünümde hem katkı yazarken beceriyi doğrular; askerin ana mesleği olması tek başına yeterli değildir.
 - Ozan `hizmet("turku")`: öğrenilmiş `turkuMani` ilk seviyesi, ana meslek artık ozan olmasa da ortak derdin moral katkısını verir. Sunucu görünüm ve katkı yazımında beceriyi doğrular.
 - Hizmet kataloğu: Şifacı `yaraBak` ve `kirikSar`, Ozan `turku`, Şifacı `lohusa` (`lohusaBakimi`, şifalı ot + bez girdisi), Ozan `teselli` (`teselli`, gönül etkisi), Hancı `sazGecesi` (`hanci.sazGecesi`, ekmek + çorba; `ortakSahne` sinerjisi) ve Arabulucu `barisSofrasi` (ekmek + çorba; `barisCorbasi` sinerjisi). Katalog hizmetleri gerçek beceri düğümü/seviyesiyle açılır; hazırlama, stok, ilan, alım ve teslim altyapısı bunları tüketir.
@@ -16,9 +17,9 @@ Durum: kısmi uygulama. `tasarruf` tüketicisi, üç ortak-durum/han tüketicisi
 ## Kalan kancaların envanteri
 
 14 beceri ağacı dosyasının tamamı tarandı. Şu an mevcut sistem tüketicisi bulunmayan etkiler:
-- `hizmet`: 52 kullanımın 15 tanesi gerçek tüketiciye bağlandı (`ikram`, `nobet`, `talim`, `vergiSayimi`, `meclisKaydi`, `turku`, `yaraBak`, `kirikSar`, `lohusa`, `teselli`, `sazGecesi`, `barisSofrasi`, `araBul`, `muhafizlik`, `mektup`); 37 kullanım kaldı. E4.3-A/B/C tamamlandı; E4.3-D'nin ilk dilimi sunucu/mobil/6 dilde çalışır.
+- `hizmet`: 52 kullanımın 17 tanesi gerçek tüketiciye bağlandı (`ikram`, `yatak`, `oda`, `nobet`, `talim`, `vergiSayimi`, `meclisKaydi`, `turku`, `yaraBak`, `kirikSar`, `lohusa`, `teselli`, `sazGecesi`, `barisSofrasi`, `araBul`, `muhafizlik`, `mektup`); 35 kullanım kaldı. E4.3-A/B/C tamamlandı; E4.3-D'nin ilk dilimi sunucu/mobil/6 dilde çalışır.
 - `hak`: 203 kullanım — makam, lonca, ticaret, garnizon, sosyal yardım ve toplumsal ayrıcalıklar için sunucu tarafı yetki/eylem matrisi gerekir.
-- `sinerji`: 21 kullanım — `ortakSahne` sinerjisi `sazGecesi`, `barisCorbasi` sinerjisi `barisSofrasi` hizmetini açmak için tüketiliyor; 19 kullanım kaldı. Diğer kimliklerin gerçek tüketicileri henüz yok.
+- `sinerji`: 21 kullanım — `ortakSahne` sinerjisi `sazGecesi`, `barisCorbasi` sinerjisi `barisSofrasi`, `seckinOda` sinerjisi oyuncu hanındaki has odayı açmak için tüketiliyor; 18 kullanım kaldı. Diğer kimliklerin gerçek tüketicileri henüz yok.
 - `tasarruf`: 1 kullanım vardı; bu dalda bağlandı.
 - `hakAcik(kar, hak)` ve `sinerjiAcik(kar, acar)` ortak sunucu çözümleyicileri eklendi. Sinerji çözümleyicisi hem açan becerinin etkisini hem de diğer meslekteki gerçek düğüm/seviyeyi doğrular. Bunlar altyapıdır; henüz 203 hak ve 21 sinerji tüketicisi bağlanmış sayılmaz.
 
