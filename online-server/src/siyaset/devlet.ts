@@ -201,8 +201,9 @@ export function ittifakIstekAl(
   const gelen = d.devlet?.ittifakGelen ?? {};
   const onceki = gelen[b.id];
   if (onceki?.istekId === istekId) return null;
-  if (!d.devlet || d.devlet.ittifaklar?.[b.id]?.durum === "aktif" || (onceki && !onceki.yanitlandi)) {
-    (d.diplomasiGiden ??= []).push({ tur: "ittifakYanit", hedef: b.id, istekId, karar: "ret", ay: d.ay, ad: kendiAd });
+  if (!d.devlet || d.devlet.ittifaklar?.[b.id]?.durum === "aktif" || d.devlet.ittifaklar?.[b.id]?.durum === "kabulBekliyor" || (onceki && !onceki.yanitlandi)) {
+    const yinelenen = (d.diplomasiGiden ?? []).some((x) => x.tur === "ittifakYanit" && x.hedef === b.id && x.istekId === istekId);
+    if (!yinelenen) (d.diplomasiGiden ??= []).push({ tur: "ittifakYanit", hedef: b.id, istekId, karar: "ret", ay: d.ay, ad: kendiAd });
     return null;
   }
   (d.devlet.ittifakGelen ??= {})[b.id] = { istekId, ay: ay as number, ad: b.ad, yanitlandi: false };
