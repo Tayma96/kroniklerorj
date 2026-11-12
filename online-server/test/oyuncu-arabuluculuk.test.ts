@@ -270,7 +270,8 @@ test("uzlaşma vadesi dolduktan sonra ikinci imza emanet kesintisi oluşturamaz"
   assert.ok(oyuncuArabuluculukTaslak(k, ar, id, 120, 80, undefined, k.ay).ok);
   assert.ok(oyuncuArabuluculukImzala(k, s, id, ac.deger.sv).ok);
   assert.deepEqual(oyuncuArabuluculukImzala(k, kk, id, ac.deger.sv, ac.deger.sonAy! + 1), { ok: false, hata: "teklif_kapandi" });
-  assert.equal(ac.deger.d, "imzaBekliyor");
+  assert.equal(ac.deger.d, "dustu", "vadesi geçen taslak kapanır");
+  assert.equal(ac.deger.kp, ac.deger.sonAy! + 1);
   assert.equal(ac.deger.od, undefined);
   assert.equal(s.pa, 500);
   assert.equal(kk.pa, 500);
