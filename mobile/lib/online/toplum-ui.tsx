@@ -220,9 +220,7 @@ export function TeklifFormu({ p, baslangic, onBitti }: { p: OyuncuProfili; basla
   const [mal, setMal] = useState<MalId | null>(null);
   const [adet, setAdet] = useState(1);
   const [isTuru, setIsTuru] = useState<"arabuluculuk" | "muhafiz" | "mektup">("mektup");
-  const [isUcret, setIsUcret] = useState(8);
-  const [isTuru, setIsTuru] = useState<"arabuluculuk" | "muhafiz" | "mektup">("mektup");
-  const [isUcret, setIsUcret] = useState(8);
+  const [isUcret, setIsUcret] = useState(() => Math.max(1, Math.min(8, para)));
   const [hata, setHata] = useState<OnlineHata | null>(null);
   const [bitti, setBitti] = useState(false);
   useEffect(() => { setMeslek(cirakAday[0] ?? null); }, [ustaBen]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -284,12 +282,6 @@ export function TeklifFormu({ p, baslangic, onBitti }: { p: OyuncuProfili; basla
       <Sayac etiket={t("onl.tp.f.faiz")} deger={faiz} en={0} cok={TOPLUM_SINIR.borcFaiz} onDegis={setFaiz} birim="%" />
       <Sayac etiket={t("onl.tp.f.vade")} deger={vade} en={1} cok={TOPLUM_SINIR.borcVade} onDegis={setVade} birim={t("onl.tp.ayBirim")} />
       {borcYon === "ver" && tutar > para ? <Bant tur="bilgi" metin={applyParams(t("onl.tp.f.paraAz"), [para])} rtl={rtl} /> : null}
-    </Alan> : null}
-    {tur === "is" ? <Alan baslik={t("onl.tp.f.sartlar")}>
-      <Secenekler secenekler={["arabuluculuk", "muhafiz", "mektup"] as const} secili={isTuru} onSec={setIsTuru} etiket={(x) => t("onl.tp.is." + x)} ikon={(x) => x === "muhafiz" ? "shield" : x === "arabuluculuk" ? "scale" : "mail"} />
-      <Text style={{ fontFamily: F.serifItalic, fontSize: 14.5, lineHeight: 20, color: C.parchmentDim, textAlign: hiza(rtl) }}>{t("onl.tp.is.d." + isTuru)}</Text>
-      <Sayac etiket={t("onl.tp.f.isUcret")} deger={isUcret} en={1} cok={Math.max(1, Math.min(TOPLUM_SINIR.isEnCok, para))} onDegis={setIsUcret} birim={t("onl.tp.akceBirim")} />
-      {isUcret > para ? <Bant tur="bilgi" metin={applyParams(t("onl.tp.f.paraAz"), [para])} rtl={rtl} /> : null}
     </Alan> : null}
     {tur === "is" ? <Alan baslik={t("onl.tp.f.sartlar")}>
       <Secenekler secenekler={["arabuluculuk", "muhafiz", "mektup"] as const} secili={isTuru} onSec={setIsTuru} etiket={(x) => t("onl.tp.is." + x)} ikon={(x) => x === "muhafiz" ? "shield" : x === "arabuluculuk" ? "scale" : "mail"} />
