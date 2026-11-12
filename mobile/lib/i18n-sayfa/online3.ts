@@ -290,6 +290,9 @@ export const rows: Record<string, string[]> = {
   "onl.mal.nal": ["Nal", "Horseshoes", "Herraduras", "Ferraduras", "الحدوات", "Подковы"],
   "onl.mal.sifaliOt": ["Şifalı ot", "Healing herbs", "Hierbas medicinales", "Ervas medicinais", "الأعشاب الشافية", "Целебные травы"],
   "onl.mal.inceYun": ["İnce yün", "Fine wool", "Lana fina", "Lã fina", "الصوف الناعم", "Тонкая шерсть"],
+  "onl.mal.kagit": ["Kâğıt", "Paper", "Papel", "Papel", "ورق", "Бумага"],
+  "onl.mal.murekkep": ["Mürekkep", "Ink", "Tinta", "Tinta", "حبر", "Чернила"],
+  "onl.mal.senet": ["Senet", "Deed", "Pagaré", "Promissória", "سند", "Расписка"],
   // --- döküm kalemleri (sunucu Kalem.k → "onl." + k)
   "onl.bu_is": ["Bu işin değeri", "Value of this job", "Valor de este trabajo", "Valor deste trabalho", "قيمة هذا العمل", "Ценность этой работы"],
   "onl.meslekte": ["Aynı takatle mesleğinde", "Same stamina in your trade", "La misma energía en tu oficio", "A mesma energia no teu ofício", "الطاقة نفسها في الحرفة", "Те же силы в своём ремесле"],
