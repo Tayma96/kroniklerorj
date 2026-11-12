@@ -8,7 +8,7 @@ import { iletiOku, jsonYanit } from "./ic.ts";
 import { istekNoCoz } from "./mantik.ts";
 import { oyunAyi, sonrakiDonum } from "./saat.ts";
 import { bolgeAyi, bolgeEylem, bolgeGorunumu, bolgeKur, bolgeVar, haracOnayla, vergiYatir } from "./siyaset/bolge.ts";
-import { taninmaIstekAl, taninmaYanitAl } from "./siyaset/devlet.ts";
+import { ittifakIstekAl, ittifakOnayAl, ittifakYanitAl, taninmaIstekAl, taninmaYanitAl } from "./siyaset/devlet.ts";
 import { bolgeCagir, sultanlikCagir } from "./siyaset/ic.ts";
 import { kimlikGor } from "./siyaset/makam.ts";
 import { KAYIT } from "./siyaset/sabitler.ts";
@@ -132,15 +132,38 @@ export class BolgeDO {
     for (const ileti of [...giden]) {
       let r: Sonuc<unknown>;
       try {
-        r = ileti.tur === "taninmaIstek"
-          ? await bolgeCagir(this.#env, {
+        switch (ileti.tur) {
+          case "taninmaIstek":
+            r = await bolgeCagir(this.#env, {
               islem: "taninmaIstekAl", bolge: ileti.hedef, kaynak: d.id,
               istekId: ileti.istekId, ay: ileti.ay, ad: ileti.ad,
-            })
-          : await bolgeCagir(this.#env, {
+            });
+            break;
+          case "taninmaYanit":
+            r = await bolgeCagir(this.#env, {
               islem: "taninmaYanitAl", bolge: ileti.hedef, kaynak: d.id,
               istekId: ileti.istekId, karar: ileti.karar, ay: ileti.ay, ad: ileti.ad,
             });
+            break;
+          case "ittifakIstek":
+            r = await bolgeCagir(this.#env, {
+              islem: "ittifakIstekAl", bolge: ileti.hedef, kaynak: d.id,
+              istekId: ileti.istekId, ay: ileti.ay, ad: ileti.ad,
+            });
+            break;
+          case "ittifakYanit":
+            r = await bolgeCagir(this.#env, {
+              islem: "ittifakYanitAl", bolge: ileti.hedef, kaynak: d.id,
+              istekId: ileti.istekId, karar: ileti.karar, ay: ileti.ay, ad: ileti.ad,
+            });
+            break;
+          case "ittifakOnay":
+            r = await bolgeCagir(this.#env, {
+              islem: "ittifakOnayAl", bolge: ileti.hedef, kaynak: d.id,
+              istekId: ileti.istekId, ay: ileti.ay, ad: ileti.ad,
+            });
+            break;
+        }
       } catch {
         return;
       }
@@ -159,10 +182,28 @@ export class BolgeDO {
     if (!d) return hata("bolge_gecersiz");
     await this.#yetistir(d, simdi);
     // İç bölge iletilerinde karşı DO'ya geri çağrı yapma: DO→DO döngüsel beklemeyi önle.
-    if (ileti.islem !== "taninmaIstekAl" && ileti.islem !== "taninmaYanitAl") await this.#gonderDiplomasi(d);
+    if (!["taninmaIstekAl", "taninmaYanitAl", "ittifakIstekAl", "ittifakYanitAl", "ittifakOnayAl"].includes(ileti.islem)) await this.#gonderDiplomasi(d);
     switch (ileti.islem) {
       case "taninmaIstekAl": {
         const h = taninmaIstekAl(d, ileti.kaynak, ileti.istekId, ileti.ay, ileti.ad);
+        if (h) return hata(h);
+        await this.#kaydet(d, d.kn);
+        return basarili({ tamam: true });
+      }
+      case "ittifakIstekAl": {
+        const h = ittifakIstekAl(d, ileti.kaynak, ileti.istekId, ileti.ay, ileti.ad);
+        if (h) return hata(h);
+        await this.#kaydet(d, d.kn);
+        return basarili({ tamam: true });
+      }
+      case "ittifakYanitAl": {
+        const h = ittifakYanitAl(d, ileti.kaynak, ileti.istekId, ileti.karar, ileti.ay, ileti.ad);
+        if (h) return hata(h);
+        await this.#kaydet(d, d.kn);
+        return basarili({ tamam: true });
+      }
+      case "ittifakOnayAl": {
+        const h = ittifakOnayAl(d, ileti.kaynak, ileti.istekId, ileti.ay, ileti.ad);
         if (h) return hata(h);
         await this.#kaydet(d, d.kn);
         return basarili({ tamam: true });
