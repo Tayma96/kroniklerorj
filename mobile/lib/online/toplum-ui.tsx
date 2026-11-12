@@ -463,7 +463,7 @@ export function ArabuluculukKarti({ x, toplum }: { x: OyuncuArabuluculukGorunumu
   const [hata, setHata] = useState<OnlineHata | null>(null);
   const [tamam, setTamam] = useState(false);
   useEffect(() => { setSTutari(x.uzlasma?.s ?? 0); setKTutari(x.uzlasma?.k ?? 0); setNot(x.uzlasma?.not ?? ""); }, [x.surum, x.uzlasma?.s, x.uzlasma?.k, x.uzlasma?.not]);
-  const gonder = async (islem: "cevap" | "geri" | "taslak" | "imza", ek: Record<string, unknown> = {}) => {
+  const gonder = async (islem: "cevap" | "geri" | "taslak" | "imza" | "uygula", ek: Record<string, unknown> = {}) => {
     setHata(null); setTamam(false);
     const sonuc = await toplum.arabuluculuk({ islem, dosya: x.id, ...ek } as Parameters<Toplum["arabuluculuk"]>[0]);
     if (sonuc.ok) { hap("success"); setTamam(true); }
@@ -499,6 +499,7 @@ export function ArabuluculukKarti({ x, toplum }: { x: OyuncuArabuluculukGorunumu
       <CizgiDugme etiket={t("onl.tp.arb.taslakKaydet")} icon="scroll" rtl={rtl} kucuk onPress={() => { void gonder("taslak", { sTutari, kTutari, not }); }} />
     </View> : null}
     {x.durum === "imzaBekliyor" && taraf && !imzali ? <AltinDugme etiket={t("onl.tp.arb.imzala") + " · v" + x.surum} icon="check-circle" rtl={rtl} bekliyor={toplum.bekliyor("arabuluculuk:" + x.id + ":imza")} onPress={() => { void gonder("imza", { surum: x.surum }); }} /> : null}
+    {x.durum === "emanette" ? <AltinDugme etiket={t("onl.tp.arb.emanetiUygula")} icon="check-circle" rtl={rtl} bekliyor={toplum.bekliyor("arabuluculuk:" + x.id + ":uygula")} onPress={() => { void gonder("uygula"); }} /> : null}
     {hata ? <Bant metin={t(hataAnahtari(hata))} rtl={rtl} /> : null}
     {tamam ? <Bant tur="bilgi" metin={t("onl.tp.arb.islendi")} rtl={rtl} /> : null}
   </Cerceve>;
