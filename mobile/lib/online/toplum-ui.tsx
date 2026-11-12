@@ -230,6 +230,7 @@ export function TeklifFormu({ p, baslangic, onBitti }: { p: OyuncuProfili; basla
   const [bitti, setBitti] = useState(false);
   useEffect(() => { setMeslek(cirakAday[0] ?? null); }, [ustaBen]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (!o.meslekDurumu && !o.yerlesim) void o.yerlesimYukle(true); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (!toplum.gelen) void toplum.gelenYukle(); }, [toplum.gelen, toplum.gelenYukle]);
 
   const malDeger = mal ? Math.max(1, MALLAR[mal]?.taban ?? 1) * adet : 0;
   const hediyeDeger = akce + malDeger;
@@ -295,6 +296,7 @@ export function TeklifFormu({ p, baslangic, onBitti }: { p: OyuncuProfili; basla
       {isUcret > para ? <Bant tur="bilgi" metin={applyParams(t("onl.tp.f.paraAz"), [para])} rtl={rtl} /> : null}
       {isTuru === "mektup" ? <>
         <Text style={{ fontFamily: F.display, fontSize: 11.5, color: C.goldBright, textAlign: hiza(rtl) }}>{t("onl.tp.f.mektupHedef")}</Text>
+        {(toplum.gelen?.dostluk.dostlar.length ?? 0) > 0 ? <Secenekler secenekler={toplum.gelen!.dostluk.dostlar.map((x) => x.id)} secili={mektupHedef} onSec={setMektupHedef} etiket={(id) => toplum.gelen!.dostluk.dostlar.find((x) => x.id === id)?.ad ?? id} /> : null}
         <TextInput value={mektupHedef} onChangeText={setMektupHedef} placeholder={t("onl.tp.f.mektupHedefOrnek")} placeholderTextColor={C.parchmentMuted}
           autoCapitalize="none" autoCorrect={false} maxLength={10} style={{ minHeight: 44, borderWidth: 1, borderColor: ONL.frameHi, borderRadius: 8, paddingHorizontal: 11, color: C.parchment, backgroundColor: "rgba(14,10,6,0.7)", fontFamily: F.serif, textAlign: hiza(rtl) }} />
         <Text style={{ fontFamily: F.display, fontSize: 11.5, color: C.goldBright, textAlign: hiza(rtl) }}>{t("onl.tp.f.mektupMetni")}</Text>
