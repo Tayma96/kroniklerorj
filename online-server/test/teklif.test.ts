@@ -471,3 +471,40 @@ test("E4.3-D mektup: aynı ay aynı hedefe ikinci teklif ve engelli hedef teslim
   assert.equal(b.pa, 100, "engelli teslimde ücret aktarılmaz");
   assert.equal(r.deger.teklif.d, "surer", "başarısız teslim sözleşmeyi ve emaneti korur");
 });
+
+
+test("iki taraflı arabuluculuk işi: gerçek araBul hizmet düğümü teslimde morali artırır", () => {
+  const { k, a, b } = kur();
+  a.h = "arabulucu-veren"; b.h = "arabulucu-yapan"; a.e = 701; b.e = 702;
+  const teklif = teklifOlustur(k, a, b, { tur: "is", is: "arabuluculuk", tutar: 9 }, k.ay);
+  assert.ok(teklif.ok);
+  if (!teklif.ok) return;
+  isBecerisi(b, "arabulucu", "arabulucu.araBulma");
+  assert.ok(teklifCevap(k, b, `t${teklif.deger.teklif.i}`, "kabul", {}, k.ay).ok);
+  const moral = gostergeOku(k, "moral");
+  const para = b.pa;
+  assert.ok(teklifCevap(k, b, `t${teklif.deger.teklif.i}`, "teslim", {}, k.ay).ok);
+  assert.equal(gostergeOku(k, "moral"), moral + 1);
+  assert.equal(b.pa, para + 9);
+});
+
+test("iki taraflı işler: oyuncunun aynı anda taşıyabileceği sözleşme sayısı ikiyle sınırlı", () => {
+  const { k, a, b } = kur();
+  const c = oyuncuEkle(k, 3, k.ay - 13 * 12 - 2);
+  const d = oyuncuEkle(k, 4, k.ay - 13 * 12 - 2);
+  a.h = "aktif-a"; b.h = "aktif-b"; c.h = "aktif-c"; d.h = "aktif-d";
+  a.e = 801; b.e = 802; c.e = 803; d.e = 804;
+  const ab = teklifOlustur(k, a, b, { tur: "is", is: "mektup", tutar: 5 }, k.ay);
+  assert.ok(ab.ok);
+  if (!ab.ok) return;
+  isBecerisi(b, "katip", "katip.koyMektubu");
+  assert.ok(teklifCevap(k, b, `t${ab.deger.teklif.i}`, "kabul", {}, k.ay).ok);
+
+  const ca = teklifOlustur(k, c, a, { tur: "is", is: "mektup", tutar: 5 }, k.ay);
+  assert.ok(ca.ok);
+  isBecerisi(a, "katip", "katip.koyMektubu");
+  assert.ok(teklifCevap(k, a, `t${ca.deger.teklif.i}`, "kabul", {}, k.ay).ok);
+
+  const da = teklifOlustur(k, d, a, { tur: "is", is: "mektup", tutar: 5 }, k.ay);
+  assert.deepEqual(da, { ok: false, hata: "teklif_siniri" });
+});
