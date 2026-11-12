@@ -60,6 +60,8 @@ function SiyasetEkran() {
     && typeof darbe.cozumAy === "number" && !!durum && durum.ay < darbe.cozumAy;
   const teklifVerebilir = pencereAcik && !!taraf && (!baris || baris.durum === "ret");
   const yanitlayabilir = pencereAcik && baris?.durum === "bekliyor" && !!taraf && taraf !== baris.taraf;
+  const savunmaMakam = durum?.makamlar.find((m) => (m.tur === "sehirBeyi" || m.tur === "ahiBasi") && durum.benim?.makamlar.includes(m.id));
+  const savunmaVerebilir = pencereAcik && !!savunmaMakam && !taraf && !darbe?.benimDestek;
   const gosterge = bolge?.gostergeler ?? {};
 
   return <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 26, gap: 12 }}>
@@ -126,6 +128,13 @@ function SiyasetEkran() {
         {baris ? <Text style={{ fontFamily: F.serif, fontSize: 13, lineHeight: 19, color: C.parchmentDim, textAlign: hiza(rtl) }}>
           {applyParams(t("onl.siyaset.barisDurum"), [t("onl.siyaset.taraf." + baris.taraf), t("onl.siyaset.baris." + baris.durum)])}
         </Text> : null}
+        {savunmaVerebilir ? <>
+          <Text style={{ fontFamily: F.serif, fontSize: 13, lineHeight: 19, color: C.parchmentDim, textAlign: hiza(rtl) }}>{applyParams(t("onl.siyaset.savunmaAlt"), [t("onl.siyaset.makam." + savunmaMakam.tur)])}</Text>
+          <CizgiDugme etiket={t("onl.siyaset.savunmaEmri")} icon="shield-check" rtl={rtl} kapali={yukleniyor}
+            onPress={() => void islem({ islem: "darbeSavunma", makam: savunmaMakam.id }, t("onl.siyaset.savunmaVerildi"))} />
+        </> : null}
+        {darbe?.benimDestek ? <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchmentDim, textAlign: hiza(rtl) }}>{t("onl.siyaset.savunmaDestekCakisma")}</Text> : null}
+        {taraf === "savunan" ? <Rozet metin={t("onl.siyaset.savunmaKayitli")} renk={C.sage} /> : null}
         {teklifVerebilir ? <CizgiDugme etiket={t("onl.siyaset.barisTeklif")} icon="handshake" rtl={rtl} kapali={yukleniyor}
           onPress={() => void islem({ islem: "darbeBarisTeklif", istekId: istekNoUret() }, t("onl.siyaset.barisTeklifEdildi"))} /> : null}
         {yanitlayabilir ? <>
