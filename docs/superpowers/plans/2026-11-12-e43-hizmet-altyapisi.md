@@ -158,5 +158,6 @@ Bu dilim, NPC arabuluculuğunu oyunculara doğrudan uygulamaz. Oyuncu–oyuncu a
 - Emanet, yalnızca uzlaşmanın iki tarafından birinin tek seferlik uygulama isteğiyle alacaklı tarafa aktarılır; arabulucu aktarımı başlatamaz. Tekrar istek ikinci aktarım oluşturmaz.
 - İmzalı uzlaşmaya varsayılan üç aylık uygulama süresi eklendi. Süre aşılırsa emanet iki tarafa da özgün tutarlarıyla iade edilir; iade izi ikinci iade/ödeme girişimini engeller. Süresi dolan taslak ikinci imzayla emanet kesintisi yapamaz. Gelen kutusu kartında son uygulama ayı gösterilir; altı dilde çevrildi.
 - Arabulucu taslağı sunmadan hemen önce üç karakterin de yüklü olduğunu, engel kayıtlarını ve tarafsızlık koşullarını yeniden doğrular.
-- **Henüz kapsam dışı:** mal/ürün teslimi, arabulucu ücreti, ayrı bir son teslim tarihi ve imza sonrası ölüm/hesap kapatma gibi istisna akışları. Bunlar tamamlanmadan D2 bütünüyle bitmiş sayılmayacak.
+- İmzadan sonra şikâyetçi veya karşı taraf ölürse dosya cezasız kapanır ve iki tarafın emanetleri özgün karakter kayıtlarına (ölünün tereke kaydı dâhil) iade edilir. Ay dönümü bunu otomatik yapar; tarafın uygulama isteği de ay dönümünü beklemeden aynı güvenli iadeyi tetikler.
+- **Henüz kapsam dışı:** mal/ürün teslimi, arabulucu ücreti, ayrı bir son teslim tarihi ve hesabın kapanıp karakter kaydının bulunamaması. Bu başlıklar tamamlanmadan D2 bütünüyle bitmiş sayılmayacak.
 
