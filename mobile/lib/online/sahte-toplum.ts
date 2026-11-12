@@ -216,7 +216,7 @@ export function sahteToplumKur(kasabaAl: () => SahteKasaba | null, meslekAl: () 
       if (i.islem === "kur") {
         if (zaviyeBen) return basarisiz("zaviye_var");
         const ad = (i.ad ?? "").trim();
-        if (ad.length < 3) return basarisiz("ad_gecersiz");
+        if (ad.length < 3) return basarisiz("gecersiz_istek");
         const kurucu = benAd();
         zaviyeBen = {
           id: "z1", ad, arma: { sekil: i.sekil ?? "kalkan", renk: i.renk ?? "al" }, durum: "kuruluyor",
