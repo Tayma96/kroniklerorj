@@ -7,8 +7,10 @@ import { hizmetEkle } from "./meslek.ts";
 import { ayniKume } from "./teveccuh.ts";
 import { takatHarca } from "./karakter.ts";
 import { hizmetTarifiBul, type HizmetTarifi } from "./hizmet-tarif.ts";
-import type { EkonomiKaydi, HizmetIlan, HizmetStogu } from "./pazar-tahta.ts";
-import type { Karakter, Kasaba } from "./tipler.ts";
+import { ekonomiAl, type EkonomiKaydi, type HizmetIlan, type HizmetStogu, type HizmetNpcTalebi } from "./pazar-tahta.ts";
+import { hanedanKasabasi } from "./hanedan.ts";
+import { npcKimlik, npcRef, oyuncuRef } from "./ortak.ts";
+import type { Karakter, Kasaba, Npc, OlayTaslagi } from "./tipler.ts";
 import { basarili, hata, type Sonuc } from "../tipler.ts";
 
 /** [PARAMETRE] Tek hazırlamada en çok 5, oyuncu/hizmet başına süresi geçmemiş stokta en çok 20 adet. */
@@ -100,6 +102,16 @@ export function hizmetStokDonumu(kasaba: Kasaba, ay: number): void {
     if (tarif && satici) hizmetEkle(satici, tarif.meslek, ilan.n / 2);
     ilan.n = 0;
     ilan.d = "dustu";
+  }
+
+  // NPC talebi süresi dolduysa veya hedef NPC artık yaşamıyorsa rezerve hazine ödülü iade edilir.
+  for (const talep of ek.hn ?? []) {
+    if (talep.d !== "acik") continue;
+    const eslesme = /^n([1-9][0-9]{0,8})$/.exec(talep.hedef);
+    const hedefVar = !!eslesme && kasaba.dizin.has(Number(eslesme[1]));
+    if (talep.sa >= ay && hedefVar) continue;
+    talep.d = "dustu";
+    hanedanKasabasi(kasaba).hz += talep.odul;
   }
 }
 
@@ -260,4 +272,78 @@ export function hizmetIlanIsle(
   if (ilan.is.length > 10) ilan.is.splice(0, ilan.is.length - 10);
   if (ilan.n === 0) ilan.d = "bitti";
   return basarili({ ilan, adet, tutar, etki, hizmetPuani, odul });
+}
+
+
+/** Olaydan doğan NPC talepleri: doğum → lohusa bakımı, ölüm → yaşayan eşe teselli. */
+export function hizmetNpcTalebiAc(kasaba: Kasaba, ay: number, olaylar: OlayTaslagi[]): OlayTaslagi[] {
+  const acilan: OlayTaslagi[] = [];
+  for (const olay of olaylar) {
+    const hizmet = olay.t === "dogum" ? "lohusa" : olay.t === "olum" ? "teselli" : undefined;
+    if (!hizmet || !olay.w || !olay.h) continue;
+    const tarif = hizmetTarifiBul(hizmet);
+    if (!tarif?.npcOdul || !/^n([1-9][0-9]{0,8})$/.test(olay.h)) continue;
+    const hedefNo = Number(olay.h.slice(1));
+    const hedef = kasaba.dizin.get(hedefNo);
+    if (!hedef) continue;
+    // Aynı hane için aynı ayda birden fazla açık talep ve aynı kaynak olayın tekrarı yok.
+    const ek = ekonomiAl(kasaba);
+    const talepler = (ek.hn ??= []);
+    if (talepler.some((x) => x.olay === olay.w || (x.d === "acik" && x.hane === hedef.e))) continue;
+    const hazine = hanedanKasabasi(kasaba);
+    if (hazine.hz < tarif.npcOdul) continue;
+    hazine.hz -= tarif.npcOdul;
+    const talep: HizmetNpcTalebi = {
+      i: ek.n++, olay: olay.w, h: hizmet, hedef: olay.h, hane: hedef.e,
+      ac: ay, sa: ay + 1, odul: tarif.npcOdul, d: "acik",
+    };
+    talepler.push(talep);
+    acilan.push({
+      t: "hizmetTalep", w: npcKimlik(hedef.i), h: "", g: "", n: 2,
+      k: "olay.hizmetTalep",
+      p: { kisi: npcRef(hedef), hizmet, odul: tarif.npcOdul },
+    });
+  }
+  return acilan;
+}
+
+/** Açık, tek teslimlik NPC taleplerini istemciye okunur biçimde sunar. */
+export function hizmetNpcTalepleri(ek: EkonomiKaydi | undefined, ay: number) {
+  return (ek?.hn ?? [])
+    .filter((x) => x.d === "acik" && x.sa >= ay)
+    .map((x) => ({
+      id: `hn${x.i}`, hizmet: x.h, hedef: x.hedef,
+      acilisAy: x.ac, sonAy: x.sa, odul: x.odul,
+    }));
+}
+
+/** Hazır hizmet stoğunu yaşayan NPC talebine teslim eder; hazine ödülü açılışta rezerve edilmiştir. */
+export function hizmetNpcTalepTeslim(
+  ek: EkonomiKaydi, kasaba: Kasaba, satici: Karakter, id: unknown, ay: number,
+): Sonuc<{ talep: HizmetNpcTalebi; odul: number; olay: OlayTaslagi }> {
+  if (typeof id !== "string") return hata("hedef_uygun_degil");
+  const eslesme = /^hn([1-9][0-9]{0,8})$/.exec(id);
+  if (!eslesme) return hata("hedef_uygun_degil");
+  const talep = ek.hn?.find((x) => x.i === Number(eslesme[1]));
+  if (!talep || talep.d !== "acik" || talep.sa < ay) return hata("siparis_kapandi");
+  if (satici.e !== 0 && satici.e === talep.hane) return hata("hedef_uygun_degil");
+  const hedefNo = /^n([1-9][0-9]{0,8})$/.exec(talep.hedef);
+  const hedef: Npc | undefined = hedefNo ? kasaba.dizin.get(Number(hedefNo[1])) : undefined;
+  if (!hedef) return hata("hedef_uygun_degil");
+  const tarif = hizmetTarifiBul(talep.h);
+  if (!tarif || !tarif.npcOdul) return hata("tarif_gecersiz");
+  const stok = (ek.hs ?? []).find((x) => x.o === satici.o && x.h === talep.h && hizmetStoguGecerli(x, ay));
+  if (!stok) return hata("stok_yok");
+
+  stok.n -= 1;
+  satici.pa += talep.odul;
+  const hizmetPuani = hizmetEkle(satici, tarif.meslek, 1);
+  talep.d = "tamam";
+  talep.teslim = { o: satici.o, ad: satici.ad, ay };
+  const olay: OlayTaslagi = {
+    t: "hizmetTalep", w: satici.o, h: npcKimlik(hedef.i), g: satici.o, n: 3,
+    k: "olay.hizmetTalepTeslim",
+    p: { oyuncu: oyuncuRef(satici), kisi: npcRef(hedef), hizmet: talep.h, odul: talep.odul },
+  };
+  return basarili({ talep, odul: talep.odul, olay: { ...olay, p: { ...olay.p, hizmetPuani } } });
 }
