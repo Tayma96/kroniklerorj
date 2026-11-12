@@ -281,3 +281,47 @@ test("E4.3 hizmet kataloğu: lohusa bakımı ve teselli gerçek beceri düğüml
   const teselli = hizmetHazirla(ekonomi(), ozan, "teselli", 1, 12);
   assert.equal(teselli.ok, true);
 });
+
+
+function hanciKarakter(hanciSeviye: number, sazSeviye: number): Karakter {
+  return {
+    o: "o9",
+    h: "hesap-9",
+    ad: "Hancı",
+    e: 9,
+    d: 0,
+    k: 0,
+    pa: 20,
+    ev: { ekmek: 2, corba: 2 },
+    tk: 8,
+    ta: 12,
+    ms: {
+      a: "hanci",
+      y: "",
+      s: {
+        hanci: { a: "hanci", kd: 0, hz: 0, cy: 0, sv: { "hanci.sazGecesi": hanciSeviye } },
+        ozan: { a: "ozan", kd: 0, hz: 0, cy: 0, sv: { "ozan.sazUstaligi": sazSeviye } },
+      },
+    },
+  } as unknown as Karakter;
+}
+
+test("E4 sinerji kapısı: saz gecesi hem hancı düğümünü hem ozan saz ustalığını ister", () => {
+  const eksikOzan = hanciKarakter(3, 0);
+  const saz = hizmetTarifiBul("sazGecesi")!;
+  assert.equal(hizmetYetkiliMi(eksikOzan, saz), false);
+  const kapali = hizmetHazirla(ekonomi(), eksikOzan, "sazGecesi", 1, 12);
+  assert.deepEqual(kapali, { ok: false, hata: "dugum_kapali" });
+
+  const eksikHanci = hanciKarakter(1, 1);
+  assert.equal(hizmetYetkiliMi(eksikHanci, saz), false, "hancı sinerji seviyesine ulaşmamış");
+
+  const birlikte = hanciKarakter(3, 1);
+  assert.equal(hizmetYetkiliMi(birlikte, saz), true);
+  const ek = ekonomi();
+  const hazir = hizmetHazirla(ek, birlikte, "sazGecesi", 1, 12);
+  assert.equal(hazir.ok, true);
+  assert.equal(birlikte.ev?.ekmek, 1);
+  assert.equal(birlikte.ev?.corba, 1);
+  assert.equal(birlikte.tk, 6);
+});
