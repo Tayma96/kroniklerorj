@@ -187,6 +187,7 @@ export class HesapDO {
       case "dostluk":
       case "teklif":
       case "teklifCevap":
+      case "oyuncuArabuluculuk":
       case "husumet":
       case "duzen":
       case "yalanla":
