@@ -77,7 +77,7 @@ import { teveccuhEkle, teveccuhGorunumu, teveccuhKademesi, teveccuhEtkisi, TEVEC
 import { IKRAM_MENUSU, type IkramId } from "../han/ikram.ts";
 import { toplumDonumu } from "./toplum-donum.ts";
 import { oyuncuArabuluculukAc, oyuncuArabuluculukCevap, oyuncuArabuluculukGeriAl } from "./arabuluculuk-oyuncu.ts";
-import { OYUNCU_TEKLIF_TURLERI, toplumAl, type Toplum } from "./toplum.ts";
+import { OYUNCU_TEKLIF_TURLERI, toplumAl, type OyuncuArabuluculuk, type Toplum } from "./toplum.ts";
 import { MALLAR, MAL_IDLERI, malBul } from "../icerik/mallar.ts";
 import { temelIsOnizleme, temelIsYap } from "./temel-is.ts";
 import { devirHesapla, devirUygula, kimlikTasiyiciEkle, planKarmasi } from "./devir.ts";
@@ -1325,7 +1325,7 @@ export class YerlesimMotoru {
     if (govde.islem === "ac" && (!hedef || !arabulucu)) return hata("kisi_yok");
     if (hedef && arabulucu) await this.#yukle([hedef, arabulucu]);
     return this.#tekrarGuvenli(hesapId, govde, (kar, _s, ay, ek) => {
-      let sonuc;
+      let sonuc: Sonuc<OyuncuArabuluculuk>;
       if (govde.islem === "ac") {
         const karsi = hedef ? k.kar.get(hedef) : undefined;
         const ar = arabulucu ? k.kar.get(arabulucu) : undefined;
