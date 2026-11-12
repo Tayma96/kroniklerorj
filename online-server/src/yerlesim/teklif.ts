@@ -275,10 +275,11 @@ export function teklifOlustur(k: Kasaba, gon: Karakter, alici: Karakter, govde: 
     const tazminatEmaneti = t_ === "is" && s.it === "arabuluculuk" ? (s.am ?? 0) : 0;
     e = (s.tu ?? 0) + tazminatEmaneti;
     if (gon.pa < e) return hata("para_yok");
-  } else if (t_ === "borc" && s.sn === 1 && s.yn === "ver") {
-    if ((gon.ev?.senet ?? 0) < 1) return hata("mal_yok");
-    envanterEkle(gon, "senet", -1);
-    s.se = 1;
+    if (t_ === "borc" && s.sn === 1) {
+      if ((gon.ev?.senet ?? 0) < 1) return hata("mal_yok");
+      envanterEkle(gon, "senet", -1);
+      s.se = 1;
+    }
   } else if (t_ === "hediye") {
     if (donguVar(k, gon, alici, ay)) return hata("hediye_dongu");
     const deger = hediyeDegeri(s) * ocakCarpani(gon, alici);
