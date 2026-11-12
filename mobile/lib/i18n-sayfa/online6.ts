@@ -431,4 +431,6 @@ export const rows: Record<string, string[]> = {
   "onl.topluluk.hami.iste": ["Hamilik iste", "Ask for mentorship", "Pedir mentoría", "Pedir tutoria", "اطلب الرعاية", "Попросить наставника"],
   "onl.topluluk.hami.gonderildi": ["Hamilik isteğin gönderildi.", "Mentorship request sent.", "Solicitud de mentoría enviada.", "Pedido de tutoria enviado.", "أُرسل طلب الرعاية.", "Запрос наставничества отправлен."],
 
+  "onl.topluluk.hami.istekGeldi": ["%1 senden hamilik istiyor.", "%1 asks you to be their mentor.", "%1 te pide que seas su mentor.", "%1 pede que sejas seu mentor.", "%1 يطلب منك أن تكون راعياً له.", "%1 просит тебя стать наставником."],
+
 };
