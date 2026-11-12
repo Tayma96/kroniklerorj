@@ -48,6 +48,8 @@ function bekle(k: Kasaba, ay: number): void {
 
 function hizmetciKur(k: Kasaba, id: number, meslek: "arabulucu" | "asker" | "katip", dugum: string, seviye = 1): Karakter {
   const kar = oyuncuEkle(k, id, k.ay - 13 * 12 - 2);
+  kar.h = "hizmetci-hesap-" + id;
+  kar.pa = 100;
   kar.ms = {
     a: meslek,
     y: "",
@@ -275,8 +277,8 @@ test("olağan düzen: alıcı yokken varsayılan cevap uygulanır; evlilik kanca
 });
 
 
-function isBecerisi(kar: Karakter, meslek: "arabulucu" | "asker" | "katip", dugum: string): void {
-  kar.ms = { a: meslek, y: "", s: { [meslek]: { kd: 0, hz: 0, cy: 0, sv: { [dugum]: 1 } } } };
+function isBecerisi(kar: Karakter, meslek: "arabulucu" | "asker" | "katip", dugum: string, seviye = 1): void {
+  kar.ms = { a: meslek, y: "", s: { [meslek]: { kd: 0, hz: 0, cy: 0, sv: { [dugum]: seviye } } } };
   kar.tk = 18;
   kar.ta = 200;
 }
@@ -319,7 +321,7 @@ test("iki taraflı muhafız işi: zincir zırhı olmadan teslim olmaz; teslimde 
   assert.ok(teklif.ok);
   if (!teklif.ok) return;
   const id = `t${teklif.deger.teklif.i}`;
-  isBecerisi(b, "asker", "asker.kervanMuhafizligi");
+  isBecerisi(b, "asker", "asker.kervanMuhafizligi", 2);
   b.ms!.s.asker!.kd = 2; // kervan muhafızlığı kalfa-2 düğümüdür.
   b.ms!.s.asker!.sv!["asker.kervanMuhafizligi"] = 2; // zincir aracı açılır.
   assert.ok(teklifCevap(k, b, id, "kabul", {}, k.ay).ok);
@@ -423,7 +425,7 @@ test("E4.3-D mektup işi: kâtip mektubu üçüncü oyuncuya özel ulaştırır;
   const { k, a } = kur();
   const b = hizmetciKur(k, 3, "katip", "koyMektubu");
   const hedef = oyuncuEkle(k, 4, k.ay - 13 * 12 - 2);
-  hedef.e = 400;
+  hedef.h = "mektup-hedef-316"; hedef.e = 400;
   b.pa = 0;
   const mesaj = "Yarın güneş doğarken hanın önünde buluşalım.";
   const r = teklifOlustur(k, a, b, {
@@ -449,10 +451,11 @@ test("E4.3-D mektup işi: kâtip mektubu üçüncü oyuncuya özel ulaştırır;
 
 test("E4.3-D iş sözleşmesi: aynı hane reddedilir, iki taraflı iptal emaneti iade eder", () => {
   const { k, a, b } = kur();
+  a.h = "is-veren-316"; a.e = 200;
   const hizmetci = hizmetciKur(k, 3, "katip", "koyMektubu");
   const ilkHizmetciPara = hizmetci.pa;
   const hedef = oyuncuEkle(k, 4, k.ay - 13 * 12 - 2);
-  hedef.e = 400;
+  hedef.h = "mektup-hedef-317"; hedef.e = 400;
   const sart = { tur: "is" as const, is: "mektup" as const, tutar: 4, mektupHedef: hedef.o, mektupMetni: "Mühürlü not." };
   hizmetci.e = a.e;
   assert.deepEqual(teklifOlustur(k, a, hizmetci, sart, k.ay), { ok: false, hata: "ayni_kume" });
@@ -469,6 +472,7 @@ test("E4.3-D iş sözleşmesi: aynı hane reddedilir, iki taraflı iptal emaneti
 
 test("E4.3-D mektup: aynı ay aynı hedefe ikinci teklif ve engelli hedef teslimi reddedilir", () => {
   const { k, a } = kur();
+  a.h = "is-veren-317";
   const b = hizmetciKur(k, 3, "katip", "koyMektubu");
   b.pa = 100;
   const hedef = oyuncuEkle(k, 4, k.ay - 13 * 12 - 2);
