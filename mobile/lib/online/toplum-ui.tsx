@@ -240,7 +240,7 @@ export function TeklifFormu({ p, baslangic, onBitti }: { p: OyuncuProfili; basla
     : tur === "hediye" ? { ...(akce ? { tutar: akce } : {}), ...(mal ? { mal, adet } : {}) }
     : tur === "is" ? { is: isTuru, tutar: isUcret, ...(isTuru === "mektup" ? { mektupHedef, mektupMetni } : {}) }
     : {};
-  const gecerli = !kapi(tur) && (tur !== "cirak" || !!meslek) && (tur !== "hediye" || (hediyeDeger >= 1 && hediyeDeger <= TOPLUM_SINIR.hediyeEnCok)) && (tur !== "is" || (isUcret >= 1 && isUcret <= Math.min(TOPLUM_SINIR.isEnCok, para) && (isTuru !== "mektup" || (mektupHedef.trim().startsWith("o") && mektupMetni.trim().length >= 1 && mektupMetni.trim().length <= 240))));
+  const gecerli = !kapi(tur) && (tur !== "cirak" || !!meslek) && (tur !== "hediye" || (hediyeDeger >= 1 && hediyeDeger <= TOPLUM_SINIR.hediyeEnCok)) && (tur !== "is" || (isUcret >= 1 && isUcret <= Math.min(TOPLUM_SINIR.isEnCok, para) && (isTuru !== "mektup" || (new RegExp("^o[1-9][0-9]{0,8}$").test(mektupHedef.trim()) && mektupMetni.trim().length >= 1 && mektupMetni.trim().length <= 240))));
   const anahtar = `teklif:${p.id}:${tur}:${JSON.stringify(sart)}`;
   const gonder = async () => {
     setHata(null);
