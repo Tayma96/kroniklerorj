@@ -631,3 +631,34 @@ test("E4.3-D: bekleyen iş teklifi sonradan kabul edilse bile gönderenin aktif 
   assert.equal(bekleyen.deger.teklif.d, "acik", "sınır doluyken bekleyen teklif açık kalır");
   assert.equal(a.pa, 100 - 4, "reddedilen kabul üçüncü emaneti kilitlemez");
 });
+
+
+test("senet: yalnız borçlu ödeme yapar; kısmi ödeme ve fazla ödeme kalan tutarı aşmaz", () => {
+  const { k, a, b } = kur();
+  const r = teklifOlustur(k, a, b, { tur: "borc", yon: "ver", tutar: 30, faiz: 10, vade: 4 }, k.ay);
+  assert.ok(r.ok);
+  if (!r.ok) return;
+  const t = r.deger.teklif;
+  const id = `t${t.i}`;
+  assert.ok(teklifCevap(k, b, id, "kabul", {}, k.ay).ok);
+  const borcBakiye = b.pa;
+  const alacakBakiye = a.pa;
+
+  assert.deepEqual(teklifCevap(k, a, id, "ode", { tutar: 10 }, k.ay), { ok: false, hata: "taraf_degil" }, "alacaklı borçlu adına tahsilat başlatamaz");
+  assert.deepEqual(teklifCevap(k, b, id, "ode", { tutar: 0 }, k.ay), { ok: false, hata: "teklif_gecersiz" });
+  assert.deepEqual(teklifCevap(k, b, id, "ode", { tutar: 1.5 }, k.ay), { ok: false, hata: "teklif_gecersiz" });
+  assert.equal(b.pa, borcBakiye);
+  assert.equal(a.pa, alacakBakiye);
+  assert.equal(t.kl, 33);
+
+  const ilk = teklifCevap(k, b, id, "ode", { tutar: 10 }, k.ay);
+  assert.ok(ilk.ok);
+  assert.equal(t.kl, 23);
+  assert.deepEqual(t.bo, [[k.ay, 10]]);
+  const fazla = teklifCevap(k, b, id, "ode", { tutar: 100 }, k.ay);
+  assert.ok(fazla.ok);
+  assert.equal(t.kl, 0);
+  assert.equal(t.d, "bitti");
+  assert.deepEqual(t.bo, [[k.ay, 10], [k.ay, 23]], "fazla talep yalnız kalan borç kadar tahsil edilir");
+  assert.equal(teklifCevap(k, b, id, "ode", { tutar: 1 }, k.ay).ok, false, "kapanan senet tekrar tahsil edilemez");
+});
