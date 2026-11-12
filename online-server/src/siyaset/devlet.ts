@@ -224,7 +224,7 @@ export function ittifakYanitAl(
   if (s.ittifakTalep?.hedef !== b.id || s.ittifakTalep.istekId !== istekId) return "hedef_uygun_degil";
   (s.ittifakYanits ??= {})[b.id] = { karar, ay: ay as number, ad: b.ad, istekId };
   (s.ittifaklar ??= {})[b.id] = {
-    durum: karar === "kabul" ? "aktif" : "ret",
+    durum: karar === "kabul" ? "kabulBekliyor" : "ret",
     baslangicAy: ay as number, sonAy: (ay as number) + 12, ad: b.ad, istekId,
   };
   delete s.ittifakTalep;
@@ -249,6 +249,12 @@ export function ittifakOnayAl(
   if (!kayit || kayit.durum !== "kabulBekliyor" || kayit.istekId !== istekId || kayit.baslangicAy !== ay || s.ittifakYanits?.[b.id]?.karar !== "kabul") return "hedef_uygun_degil";
   kayit.durum = "aktif";
   return null;
+}
+
+/** Kaynak DO, hedefin son teyidi başarıyla kaydedildikten sonra ittifakı etkinleştirir. */
+export function ittifakOnaylandi(d: BolgeDurumu, hedef: string, istekId: string): void {
+  const kayit = d.devlet?.ittifaklar?.[hedef];
+  if (kayit?.durum === "kabulBekliyor" && kayit.istekId === istekId) kayit.durum = "aktif";
 }
 
 /** Her oyuncu kendi siyasi bağlılığını seçer; seçim yokluğu tarafsızlıktır, zorunlu yemin yoktur. */
