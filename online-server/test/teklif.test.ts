@@ -443,10 +443,13 @@ test("E4.3-D mektup işi: kâtip mektubu üçüncü oyuncuya özel ulaştırır;
 test("E4.3-D iş sözleşmesi: aynı hane reddedilir, iki taraflı iptal emaneti iade eder", () => {
   const { k, a, b } = kur();
   const hizmetci = hizmetciKur(k, 3, "katip", "koyMektubu");
+  const hedef = oyuncuEkle(k, 4, k.ay - 13 * 12 - 2);
+  hedef.e = 400;
+  const sart = { tur: "is" as const, is: "mektup" as const, tutar: 4, mektupHedef: hedef.o, mektupMetni: "Mühürlü not." };
   hizmetci.e = a.e;
-  assert.deepEqual(teklifOlustur(k, a, hizmetci, { tur: "is", is: "mektup", tutar: 4 }, k.ay), { ok: false, hata: "ayni_kume" });
+  assert.deepEqual(teklifOlustur(k, a, hizmetci, sart, k.ay), { ok: false, hata: "ayni_kume" });
   hizmetci.e = 300;
-  const r = teklifOlustur(k, a, hizmetci, { tur: "is", is: "mektup", tutar: 4 }, k.ay);
+  const r = teklifOlustur(k, a, hizmetci, sart, k.ay);
   assert.ok(r.ok);
   assert.ok(teklifCevap(k, hizmetci, `t${r.deger.teklif.i}`, "kabul", {}, k.ay).ok);
   assert.ok(teklifCevap(k, a, `t${r.deger.teklif.i}`, "bitir", {}, k.ay).ok);
@@ -494,17 +497,17 @@ test("iki taraflı işler: oyuncunun aynı anda taşıyabileceği sözleşme say
   const d = oyuncuEkle(k, 4, k.ay - 13 * 12 - 2);
   a.h = "aktif-a"; b.h = "aktif-b"; c.h = "aktif-c"; d.h = "aktif-d";
   a.e = 801; b.e = 802; c.e = 803; d.e = 804;
-  const ab = teklifOlustur(k, a, b, { tur: "is", is: "mektup", tutar: 5 }, k.ay);
+  const ab = teklifOlustur(k, a, b, { tur: "is", is: "mektup", tutar: 5, mektupHedef: c.o, mektupMetni: "Birinci mektup." }, k.ay);
   assert.ok(ab.ok);
   if (!ab.ok) return;
   isBecerisi(b, "katip", "katip.koyMektubu");
   assert.ok(teklifCevap(k, b, `t${ab.deger.teklif.i}`, "kabul", {}, k.ay).ok);
 
-  const ca = teklifOlustur(k, c, a, { tur: "is", is: "mektup", tutar: 5 }, k.ay);
+  const ca = teklifOlustur(k, c, a, { tur: "is", is: "mektup", tutar: 5, mektupHedef: d.o, mektupMetni: "İkinci mektup." }, k.ay);
   assert.ok(ca.ok);
   isBecerisi(a, "katip", "katip.koyMektubu");
   assert.ok(teklifCevap(k, a, `t${ca.deger.teklif.i}`, "kabul", {}, k.ay).ok);
 
-  const da = teklifOlustur(k, d, a, { tur: "is", is: "mektup", tutar: 5 }, k.ay);
+  const da = teklifOlustur(k, d, a, { tur: "is", is: "mektup", tutar: 5, mektupHedef: b.o, mektupMetni: "Üçüncü mektup." }, k.ay);
   assert.deepEqual(da, { ok: false, hata: "teklif_siniri" });
 });
