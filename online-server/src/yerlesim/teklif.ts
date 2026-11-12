@@ -745,6 +745,7 @@ export function teklifGorunumu(k: Kasaba, t: Teklif, ben: string, dil: Dil) {
     ...(s.fz !== undefined ? { faiz: s.fz } : {}),
     ...(s.va !== undefined ? { vade: s.va } : {}),
     ...(s.yn ? { yon: s.yn } : {}),
+    ...(s.sn === 1 ? { senetli: true } : {}),
     ...(s.py !== undefined ? { pay: s.py } : {}),
     ...(s.sr !== undefined ? { sure: s.sr } : {}),
     ...(s.ml ? { mal: s.ml, adet: s.mn ?? 0 } : {}),
