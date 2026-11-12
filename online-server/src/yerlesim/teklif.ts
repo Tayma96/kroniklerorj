@@ -179,7 +179,8 @@ function sartlarCoz(tur: OyuncuTeklifTuru, g: Record<string, unknown>, gon: Kara
       if (!tamsayi(g.tutar, 1, BORC_EN_COK) || !tamsayi(g.vade, 1, BORC_VADE_EN_COK)) return hata("teklif_gecersiz");
       const fz = g.faiz === undefined ? 0 : g.faiz;
       if (!tamsayi(fz, 0, BORC_FAIZ_EN_COK)) return hata("teklif_gecersiz");
-      return basarili({ yn, tu: g.tutar, va: g.vade, fz });
+      if (g.senetli !== undefined && g.senetli !== true && g.senetli !== false) return hata("teklif_gecersiz");
+      return basarili({ yn, tu: g.tutar, va: g.vade, fz, ...(g.senetli === true ? { sn: 1 as const } : {}) });
     }
     case "hediye": {
       const s: Sartlar = {};
@@ -274,6 +275,10 @@ export function teklifOlustur(k: Kasaba, gon: Karakter, alici: Karakter, govde: 
     const tazminatEmaneti = t_ === "is" && s.it === "arabuluculuk" ? (s.am ?? 0) : 0;
     e = (s.tu ?? 0) + tazminatEmaneti;
     if (gon.pa < e) return hata("para_yok");
+  } else if (t_ === "borc" && s.sn === 1 && s.yn === "ver") {
+    if ((gon.ev?.senet ?? 0) < 1) return hata("senet_yok");
+    envanterEkle(gon, "senet", -1);
+    s.se = 1;
   } else if (t_ === "hediye") {
     if (donguVar(k, gon, alici, ay)) return hata("hediye_dongu");
     const deger = hediyeDegeri(s) * ocakCarpani(gon, alici);
@@ -314,6 +319,10 @@ function iade(k: Kasaba, t: Teklif): void {
     envanterEkle(gon, t.s.ml as MalId, t.s.mn);
     if (t.s.yp === gon.o) (gon.ur ??= {})[t.s.ml] = (gon.ur[t.s.ml] ?? 0) + t.s.mn;
     t.s.mn = 0;
+  }
+  if (t.t === "borc" && t.s.se === 1) {
+    envanterEkle(gon, "senet", 1);
+    delete t.s.se;
   }
 }
 
@@ -365,10 +374,15 @@ function kabulUygula(k: Kasaba, t: Teklif, ay: number): Sonuc<OlayTaslagi[]> {
       if (kalanBorc(k, borclu) + kl > BORC_TOPLAM_EN_COK) return hata("tavan_doldu");
       const b = k.kar.get(borclu)!;
       const a = k.kar.get(alacakli)!;
+      if (t.s.sn === 1 && t.s.yn === "iste" && (a.ev?.senet ?? 0) < 1) return hata("senet_yok");
       if (t.s.yn === "iste") {
         if (a.pa < tu) return hata("para_yok");
         a.pa -= tu;
-      } else t.e = 0; // emanet borçluya geçer
+      } else {
+        t.e = 0; // emanet borçluya geçer
+        if (t.s.se === 1) delete t.s.se; // göndericinin senedi kabulde kesinleşir
+      }
+      if (t.s.sn === 1 && t.s.yn === "iste") envanterEkle(a, "senet", -1);
       b.pa += tu;
       t.kl = kl;
       t.vd = ay + t.s.va!;
