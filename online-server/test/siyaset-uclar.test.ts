@@ -115,8 +115,8 @@ test("P6 tanınma isteği ve kararı iki BolgeDO arasında outbox ile teslim edi
     vergiOrani: 0, divan: [] as { kisi: string; hesap: string; ad: string; rol: "divan" }[],
     mogol: "diren" as const, sultan: "bagimsiz" as const, taninma: "taninmadi" as const, yeminler: {},
   });
-  const [ilkKaynak] = await bolgeCagir(env, { islem: "gorunum", bolge: "demirhan", hesapId: kaynakKimlik.hesap });
-  const [ilkHedef] = await bolgeCagir(env, { islem: "gorunum", bolge: "aksehir", hesapId: hedefKimlik.hesap });
+  const ilkKaynak = await bolgeCagir(env, { islem: "gorunum", bolge: "demirhan", hesapId: kaynakKimlik.hesap });
+  const ilkHedef = await bolgeCagir(env, { islem: "gorunum", bolge: "aksehir", hesapId: hedefKimlik.hesap });
   assert.equal(ilkKaynak.ok, true);
   assert.equal(ilkHedef.ok, true);
   const kaynakKaydi = [...bolgeler.ornekler.entries()].find(([id]) => id.includes("demirhan"))?.[1];
