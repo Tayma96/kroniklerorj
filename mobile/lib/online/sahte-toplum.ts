@@ -214,7 +214,7 @@ export function sahteToplumKur(kasabaAl: () => SahteKasaba | null, meslekAl: () 
       await bekle();
       const kisi = (id: string) => oyuncular.find((x) => x.o === id);
       if (i.islem === "kur") {
-        if (zaviyeBen) return basarisiz("zaviye_var");
+        if (zaviyeBen) return basarisiz("gecersiz_istek");
         const ad = (i.ad ?? "").trim();
         if (ad.length < 3) return basarisiz("gecersiz_istek");
         const kurucu = benAd();
