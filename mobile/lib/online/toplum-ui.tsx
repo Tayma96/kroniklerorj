@@ -57,7 +57,10 @@ export function sartYaz(t: Ceviri, x: TeklifGorunumu, ay: number): string[] {
       break;
     }
     case "ortak": satir.push(applyParams(t("onl.tp.s.ortak"), [s.pay ?? 0, s.sure ?? 0])); break;
-    case "borc": satir.push(applyParams(t("onl.tp.s.borc"), [s.tutar ?? 0, s.faiz ?? 0, s.vade ?? 0, ad(x.borclu)])); break;
+    case "borc":
+      satir.push(applyParams(t("onl.tp.s.borc"), [s.tutar ?? 0, s.faiz ?? 0, s.vade ?? 0, ad(x.borclu)]));
+      if (s.senetli) satir.push(t("onl.tp.s.senetli"));
+      break;
     case "hediye": satir.push(applyParams(t("onl.tp.s.hediye"), [armaganYaz(t, s)])); break;
     case "gorucu": satir.push(t("onl.tp.s.gorucu")); break;
     case "is":
