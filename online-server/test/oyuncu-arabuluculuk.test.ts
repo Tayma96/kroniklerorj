@@ -60,6 +60,7 @@ import {
   oyuncuArabuluculukGeriAl,
   oyuncuArabuluculukTaslak,
   oyuncuArabuluculukImzala,
+  oyuncuArabuluculukUygula,
 } from "../src/yerlesim/arabuluculuk-oyuncu.ts";
 
 test("oyuncu arabuluculuk üç ayrı rıza olmadan taslağa geçmez", () => {
@@ -157,10 +158,18 @@ test("arabulucu sürümlü uzlaşma taslağı oluşturur; iki tarafın güncel i
 
   assert.deepEqual(oyuncuArabuluculukImzala(k, ar, id, 2), { ok: false, hata: "taraf_degil" });
   assert.deepEqual(oyuncuArabuluculukImzala(k, s, id, 1), { ok: false, hata: "teklif_gecersiz" });
+  s.pa = 500; kk.pa = 500;
   assert.ok(oyuncuArabuluculukImzala(k, s, id, 2).ok);
   assert.equal(ac.deger.d, "imzaBekliyor", "tek taraf imzalayınca dosya onaylanmaz");
   assert.ok(oyuncuArabuluculukImzala(k, kk, id, 2).ok);
-  assert.equal(ac.deger.d, "onaylandi");
+  assert.equal(ac.deger.d, "emanette");
+  assert.equal(s.pa, 380, "şikâyetçi tutarı imza tamamlanınca emanete alınır");
+  assert.equal(kk.pa, 500);
+  assert.ok(oyuncuArabuluculukUygula(k, ar, id, k.ay).ok);
+  assert.equal(ac.deger.d, "tamam");
+  assert.equal(s.pa, 380);
+  assert.equal(kk.pa, 620, "emanet karşı tarafa aktarılır");
+  assert.equal(ac.deger.od?.uygulandi, 1);
 });
 
 test("uzlaşma taslağı değişirse eski imzalar ve sürüm geçersizleşir", () => {
