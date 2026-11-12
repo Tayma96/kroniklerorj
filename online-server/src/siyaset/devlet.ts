@@ -127,7 +127,7 @@ export function devletYonet(d: BolgeDurumu, kimlik: SiyasiKimlik, govde: Record<
 export function devletAyi(d: BolgeDurumu, ay: number): "barisKabul" | "barisRet" | null {
   const s = d.devlet;
   if (s) {
-    for (const [bolge, x] of Object.entries(s.ittifaklar ?? {})) {
+    for (const x of Object.values(s.ittifaklar ?? {})) {
       if ((x.durum === "aktif" || x.durum === "kabulBekliyor") && ay > x.sonAy) x.durum = "suresiDoldu";
     }
     const talep = s.ittifakTalep;
