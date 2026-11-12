@@ -11,6 +11,7 @@ const TASLAK = ONEK + "taslak";
 const SINEMATIK = ONEK + "sinematik";
 const IMLEC = ONEK + "imlec";
 const MESLEK = ONEK + "meslek";
+const TEST_CIHAZ = ONEK + "testCihaz";
 
 // Sunucunun oturum biçimi: base64url(yük).base64url(HMAC-SHA256).
 const OTURUM_BICIMI = /^[A-Za-z0-9_-]{1,2048}\.[A-Za-z0-9_-]{43}$/;
@@ -105,6 +106,15 @@ export async function meslekOku(hesapId: string): Promise<{ m: unknown; k: unkno
   }
 }
 export const meslekYaz = (hesapId: string, m: unknown, k: unknown, e: unknown) => yaz(MESLEK, JSON.stringify({ h: hesapId, m, k, e }));
+
+/** Test hesabını cihazda sabit tutar; aynı cihaz sonraki girişte aynı test hesabına döner. */
+export async function testCihazKimligi(): Promise<string> {
+  const onceki = await oku(TEST_CIHAZ);
+  if (onceki && /^test-[A-Za-z0-9_-]{16,64}$/.test(onceki)) return onceki;
+  const yeni = "test-" + istekNoUret().replace(/[^A-Za-z0-9_-]/g, "");
+  await yaz(TEST_CIHAZ, yeni);
+  return yeni;
+}
 
 /** Yeni bir istek numarası: zaman + 20 rastgele karakter (sunucu biçimi [A-Za-z0-9_-]{8,64}). */
 export function istekNoUret(): string {
