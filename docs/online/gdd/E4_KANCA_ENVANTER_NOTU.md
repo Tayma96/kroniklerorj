@@ -20,6 +20,7 @@ Durum: kısmi uygulama. `tasarruf` tüketicisi, üç ortak-durum/han tüketicisi
 - `hak`: 203 kullanım — makam, lonca, ticaret, garnizon, sosyal yardım ve toplumsal ayrıcalıklar için sunucu tarafı yetki/eylem matrisi gerekir.
 - `sinerji`: 21 kullanım — 20 farklı `acar` kimliği var; mevcut tarif ve temel iş kataloglarında bunlara karşılık gelen tüketici bulunmuyor. Çapraz meslek koşulu sağlanınca yeni tarif/hizmet/eylem açılmalı.
 - `tasarruf`: 1 kullanım vardı; bu dalda bağlandı.
+- `hakAcik(kar, hak)` ve `sinerjiAcik(kar, acar)` ortak sunucu çözümleyicileri eklendi. Sinerji çözümleyicisi hem açan becerinin etkisini hem de diğer meslekteki gerçek düğüm/seviyeyi doğrular. Bunlar altyapıdır; henüz 203 hak ve 21 sinerji tüketicisi bağlanmış sayılmaz.
 
 ## Uygulama sırası
 
