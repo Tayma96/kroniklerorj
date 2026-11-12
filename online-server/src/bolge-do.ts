@@ -8,7 +8,8 @@ import { iletiOku, jsonYanit } from "./ic.ts";
 import { istekNoCoz } from "./mantik.ts";
 import { oyunAyi, sonrakiDonum } from "./saat.ts";
 import { bolgeAyi, bolgeEylem, bolgeGorunumu, bolgeKur, bolgeVar, haracOnayla, vergiYatir } from "./siyaset/bolge.ts";
-import { sultanlikCagir } from "./siyaset/ic.ts";
+import { taninmaIstekAl, taninmaYanitAl } from "./siyaset/devlet.ts";
+import { bolgeCagir, sultanlikCagir } from "./siyaset/ic.ts";
 import { kimlikGor } from "./siyaset/makam.ts";
 import { KAYIT } from "./siyaset/sabitler.ts";
 import type { BolgeDurumu, BolgeIleti, KayitSatiri, SultanlikOzeti } from "./siyaset/tipler.ts";
@@ -91,6 +92,7 @@ export class BolgeDO {
       bolgeAyi(d, d.ay + 1, simdi);
       await this.#kaydet(d, kn);
       await this.#gonder(d);
+      await this.#gonderDiplomasi(d);
     }
     await this.#ctx.storage.setAlarm(sonrakiDonum(simdi) + (d.id.length % 7) * 1000);
   }
@@ -121,11 +123,52 @@ export class BolgeDO {
     await this.#kaydet(d, d.kn);
   }
 
+  /** Tanınma isteği/yanıtı outbox'ı: alıcı bölge kaydettiğini onaylayınca gönderim kaydı silinir. */
+  async #gonderDiplomasi(d: BolgeDurumu): Promise<void> {
+    const giden = d.diplomasiGiden ?? [];
+    let degisti = false;
+    for (const ileti of [...giden]) {
+      let r: Sonuc<unknown>;
+      try {
+        r = ileti.tur === "taninmaIstek"
+          ? await bolgeCagir(this.#env, {
+              islem: "taninmaIstekAl", bolge: ileti.hedef, kaynak: d.id,
+              istekId: ileti.istekId, ay: ileti.ay, ad: ileti.ad,
+            })
+          : await bolgeCagir(this.#env, {
+              islem: "taninmaYanitAl", bolge: ileti.hedef, kaynak: d.id,
+              istekId: ileti.istekId, karar: ileti.karar, ay: ileti.ay, ad: ileti.ad,
+            });
+      } catch {
+        return;
+      }
+      if (!r.ok) return;
+      const i = d.diplomasiGiden?.findIndex((x) => x.tur === ileti.tur && x.hedef === ileti.hedef && x.istekId === ileti.istekId) ?? -1;
+      if (i >= 0) {
+        d.diplomasiGiden!.splice(i, 1);
+        degisti = true;
+      }
+    }
+    if (degisti) await this.#kaydet(d, d.kn);
+  }
+
   async #isle(ileti: BolgeIleti, simdi: number): Promise<Sonuc<unknown>> {
     const d = await this.#ac(ileti.bolge, simdi);
     if (!d) return hata("bolge_gecersiz");
     await this.#yetistir(d, simdi);
     switch (ileti.islem) {
+      case "taninmaIstekAl": {
+        const h = taninmaIstekAl(d, ileti.kaynak, ileti.istekId, ileti.ay, ileti.ad);
+        if (h) return hata(h);
+        await this.#kaydet(d, d.kn);
+        return basarili({ tamam: true });
+      }
+      case "taninmaYanitAl": {
+        const h = taninmaYanitAl(d, ileti.kaynak, ileti.istekId, ileti.karar, ileti.ay, ileti.ad);
+        if (h) return hata(h);
+        await this.#kaydet(d, d.kn);
+        return basarili({ tamam: true });
+      }
       case "gorunum": {
         if (ileti.kimlik) {
           const kn = d.kn;
@@ -158,6 +201,7 @@ export class BolgeDO {
         defter.push([no.deger, yanit]);
         if (defter.length > KAYIT.istekEnCok) defter.splice(0, defter.length - KAYIT.istekEnCok);
         await this.#kaydet(d, kn, { [anahtar]: defter });
+        await this.#gonderDiplomasi(d);
         return basarili(yanit);
       }
       case "yoklama": {
