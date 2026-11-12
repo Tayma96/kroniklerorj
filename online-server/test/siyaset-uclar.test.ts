@@ -3,7 +3,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import isleyici, { BolgeDO, DunyaDO, HesapDO, SultanlikDO, YerlesimDO } from "../src/index.ts";
-import { AY_MS } from "../src/saat.ts";
+import { AY_MS, oyunAyi } from "../src/saat.ts";
+import { bolgeCagir } from "../src/siyaset/ic.ts";
+import { bolgeKur } from "../src/siyaset/bolge.ts";
 import type { BolgeDurumu } from "../src/siyaset/tipler.ts";
 import type { Env } from "../src/tipler.ts";
 import { googleYuku, ISTEMCI, jwtImzala, rsaAnahtari, sahteAdAlani, sahteJwks } from "./yardimci.ts";
@@ -90,4 +92,67 @@ test("siyaset uçları: görünüm, şart, tekrar güvenliği, ay dönümü ve h
   } finally {
     globalThis.fetch = eskiFetch;
   }
+});
+
+
+
+test("P6 tanınma isteği ve kararı iki BolgeDO arasında outbox ile teslim edilir", async () => {
+  let saat = Date.now();
+  const env = {} as Env;
+  const bolgeler = sahteAdAlani((ctx) => new BolgeDO(ctx, env, () => saat));
+  env.BOLGE = bolgeler;
+  const ay = oyunAyi(saat);
+  const kaynakKimlik = {
+    kisi: "develi/o1", hesap: "hesap-kaynak", ad: "Kaynak Bey", yerlesim: "develi",
+    bolge: "demirhan", yas: 30, e: 0, olu: false, nam: 50, teveccuh: 3, haklar: ["bolgeMakami"],
+  };
+  const hedefKimlik = {
+    kisi: "aksehir/o2", hesap: "hesap-hedef", ad: "Akşehir Beyi", yerlesim: "aksehir",
+    bolge: "aksehir", yas: 30, e: 0, olu: false, nam: 50, teveccuh: 3, haklar: ["bolgeMakami"],
+  };
+  const devlet = (kimlik: typeof kaynakKimlik | typeof hedefKimlik, ad: string) => ({
+    v: 1 as const, ad, kurulusAy: ay, beyKisi: kimlik.kisi, beyHesap: kimlik.hesap, beyAd: kimlik.ad,
+    vergiOrani: 0, divan: [] as { kisi: string; hesap: string; ad: string; rol: "divan" }[],
+    mogol: "diren" as const, sultan: "bagimsiz" as const, taninma: "taninmadi" as const, yeminler: {},
+  });
+  const [ilkKaynak] = await bolgeCagir(env, { islem: "gorunum", bolge: "demirhan", hesapId: kaynakKimlik.hesap });
+  const [ilkHedef] = await bolgeCagir(env, { islem: "gorunum", bolge: "aksehir", hesapId: hedefKimlik.hesap });
+  assert.equal(ilkKaynak.ok, true);
+  assert.equal(ilkHedef.ok, true);
+  const kaynakKaydi = [...bolgeler.ornekler.entries()].find(([id]) => id.includes("demirhan"))?.[1];
+  const hedefKaydi = [...bolgeler.ornekler.entries()].find(([id]) => id.includes("aksehir"))?.[1];
+  assert.ok(kaynakKaydi && hedefKaydi);
+  const kaynakDurum = bolgeKur("demirhan", ay);
+  kaynakDurum.devlet = devlet(kaynakKimlik, "Demirhan Beyliği");
+  const hedefDurum = bolgeKur("aksehir", ay);
+  hedefDurum.devlet = devlet(hedefKimlik, "Akşehir Beyliği");
+  kaynakKaydi.depolama.veri.set("bolge", kaynakDurum);
+  hedefKaydi.depolama.veri.set("bolge", hedefDurum);
+  kaynakKaydi.ornek = new BolgeDO({ id: env.BOLGE.idFromString([...bolgeler.ornekler.entries()].find(([, x]) => x === kaynakKaydi)![0]), storage: kaynakKaydi.depolama } as unknown as DurableObjectState, env, () => saat);
+  hedefKaydi.ornek = new BolgeDO({ id: env.BOLGE.idFromString([...bolgeler.ornekler.entries()].find(([, x]) => x === hedefKaydi)![0]), storage: hedefKaydi.depolama } as unknown as DurableObjectState, env, () => saat);
+
+  const talep = await bolgeCagir(env, {
+    islem: "yaz", bolge: "demirhan", hesapId: kaynakKimlik.hesap, kimlik: kaynakKimlik,
+    govde: { islem: "devletYonet", tur: "taninma", hedefBolge: "aksehir", istekNo: "taninma-kaynak-01" },
+  });
+  assert.equal(talep.ok, true, JSON.stringify(talep));
+  const kaynakSon = kaynakKaydi.depolama.veri.get("bolge") as BolgeDurumu;
+  const hedefSon = hedefKaydi.depolama.veri.get("bolge") as BolgeDurumu;
+  assert.equal(kaynakSon.devlet?.taninma, "talepEdildi");
+  assert.equal(kaynakSon.diplomasiGiden?.length ?? 0, 0, "alıcı teyit edince kaynak outbox boşalır");
+  const gelen = hedefSon.devlet?.taninmaGelen?.demirhan;
+  assert.ok(gelen);
+  assert.equal(gelen.yanitlandi, false);
+
+  const karar = await bolgeCagir(env, {
+    islem: "yaz", bolge: "aksehir", hesapId: hedefKimlik.hesap, kimlik: hedefKimlik,
+    govde: { islem: "devletYonet", tur: "taninmaYanit", kaynakBolge: "demirhan", istekId: gelen.istekId, karar: "kabul", istekNo: "taninma-hedef-01" },
+  });
+  assert.equal(karar.ok, true, JSON.stringify(karar));
+  const kaynakGuncel = kaynakKaydi.depolama.veri.get("bolge") as BolgeDurumu;
+  const hedefGuncel = hedefKaydi.depolama.veri.get("bolge") as BolgeDurumu;
+  assert.equal(kaynakGuncel.devlet?.taninma, "tanindi");
+  assert.equal(kaynakGuncel.devlet?.taninmaCevap?.kaynak, "aksehir");
+  assert.equal(hedefGuncel.diplomasiGiden?.length ?? 0, 0, "kaynak teyit edince yanıt outbox boşalır");
+  assert.equal(hedefGuncel.devlet?.taninmaGelen?.demirhan?.yanitlandi, true);
 });
