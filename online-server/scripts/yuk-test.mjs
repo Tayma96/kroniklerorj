@@ -78,7 +78,7 @@ const elapsed = performance.now() - started;
 const p50 = percentile(results, 0.50);
 const p95 = percentile(results, 0.95);
 const errorRate = errors / requests;
-console.log(`[load-test] requests=${requests} concurrency=${concurrency} ok=${results.length - errors} errors=${errors} errorRate=${(errorRate * 100).toFixed(2)}% wall=${elapsed.toFixed(0)}ms p50=${p50.toFixed(0)}ms p95=${p95.toFixed(0)}ms`);
+console.log(`[load-test] requests=${requests} concurrency=${concurrency} ok=${requests - errors} errors=${errors} errorRate=${(errorRate * 100).toFixed(2)}% wall=${elapsed.toFixed(0)}ms p50=${p50.toFixed(0)}ms p95=${p95.toFixed(0)}ms`);
 if (errors > 0 || p95 > p95Limit) {
   fail(`Yük kapısı başarısız: hata=${errors}, p95=${p95.toFixed(0)}ms (limit ${p95Limit}ms).`);
 } else {
