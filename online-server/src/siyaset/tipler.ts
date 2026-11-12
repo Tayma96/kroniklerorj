@@ -215,6 +215,8 @@ export interface DarbePlani {
   destekler: DarbeDestegi[];
   /** İlan sonrası şehir beyi/ahi başının verdiği açık savunma ön emirleri. */
   savunma?: DarbeDestegi[];
+  /** Çatışma çözülmeden önce iki tarafın açık onayıyla sonuçlanabilen statüko ateşkesi. */
+  barisTeklifi?: DarbeBarisTeklifi;
   garnizonSadakati: number;
   yatirilan: number;
   mod?: "acik" | "baskin";
