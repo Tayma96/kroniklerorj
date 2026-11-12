@@ -9,7 +9,7 @@ import type { Karakter } from "./tipler.ts";
 export const GELEN_CEVAPLARI = ["bekle", "kabul", "ret"] as const;
 export type GelenCevap = (typeof GELEN_CEVAPLARI)[number];
 const TURLER: readonly TeklifTuru[] = [...OYUNCU_TEKLIF_TURLERI, ...NPC_TEKLIF_TURLERI];
-/** Evlilik kancaları yokken kabul edilmez (Faz 7'de evlilik doğurur; rıza yüz yüze verilir). */
+/** Görücü ve ücretli işler otomatik kabul edilmez; ikisi de açık rıza gerektirir. */
 export const KENDILIGINDEN_KABUL_YOK: readonly TeklifTuru[] = ["gorucu", "npcDunur", "is"];
 /** [PARAMETRE] Borç isteyene kendiliğinden verilebilecek en çok tutar (bir istek için). */
 export const DUZEN_BORC_EN_COK = 20;
