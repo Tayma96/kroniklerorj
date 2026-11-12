@@ -50,7 +50,7 @@ export interface Teklif {
   g: string;
   a: string;
   s: Sartlar;
-  /** Emanet: gönderenden kilitlenen akçe; ret, düşme, geri çekme ya da iptalde iade edilir. Armağan malı da
+  /** Emanet: gönderenden kilitlenen akçe; iş sözleşmesinde teslimde çalışana ödenir; ret, düşme, geri çekme ya da iptalde iade edilir. Armağan malı da
    * (s.ml × s.mn) gönderenin envanterinden emanete alınır ve aynı yolla iade edilir. */
   e: number;
   /** Açılış ayı ve son cevap ayı (bu ay dahil; sonraki dönümde varsayılan uygulanır). */
