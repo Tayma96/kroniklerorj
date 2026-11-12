@@ -299,3 +299,19 @@ test("hanKirisi sinerjisi oduncu kiriş/direk ve marangoz han inşası birliktey
   assert.equal(kaliteBecerisi(diger, kiris), 0);
   assert.equal(kaliteBecerisi(c, TARIFLER.kereste), 0, "sinerji kereste tarifine taşmaz");
 });
+
+
+test("kagniHarmani sinerjisi çiftçi toplu harman ve marangoz tekerlek birlikteyken yalnız kağnı kalitesini artırır", () => {
+  const k = testKasabasi();
+  const c = oyuncuEkle(k, 101, k.ay - 16 * 12);
+  seviyeVer(c, "marangoz.tekerlek", 1);
+  assert.equal(sinerjiAcik(c, "kagniHarmani"), false, "çiftçi düğümü olmadan sinerji açılmaz");
+  assert.equal(kaliteBecerisi(c, TARIFLER.kagni), 0);
+  seviyeVer(c, "ciftci.topluHarman", 3);
+  assert.equal(sinerjiAcik(c, "kagniHarmani"), true);
+  assert.equal(kaliteBecerisi(c, TARIFLER.kagni), 10);
+  assert.equal(kaliteBecerisi(c, TARIFLER.araba), 0, "bonus araba tarifine taşmaz");
+  const diger = oyuncuEkle(k, 102, k.ay - 16 * 12);
+  seviyeVer(diger, "ciftci.topluHarman", 3);
+  assert.equal(sinerjiAcik(diger, "kagniHarmani"), false, "marangoz tekerlek olmadan açılmaz");
+});
