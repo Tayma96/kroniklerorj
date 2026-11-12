@@ -3,7 +3,8 @@
 import type { Dil, KisiAdi, Sonuc } from "./protokol";
 import {
   dostlukYanitiMi, duzenYanitiMi, engelYanitiMi, gelenMi, husumetYanitiMi, oyuncuProfiliMi, sikayetYanitiMi, teklifYanitiMi,
-  vitrinYanitiMi, yalanlaYanitiMi, toplulukDurumuMi,\n  type ToplulukDurumu, type MesrepIstegi, type OrtakDertIstegi, type SenlikIstegi,
+  vitrinYanitiMi, yalanlaYanitiMi, toplulukDurumuMi,
+  type ToplulukDurumu, type MesrepIstegi, type OrtakDertIstegi, type SenlikIstegi,
   type BagDurumu, type DostlukIstegi, type DuzenGorunumu, type DuzenIstegi, type EngelIstegi, type GelenYaniti, type HusumetIstegi,
   type OyuncuProfili, type SikayetIstegi, type SikayetYaniti, type SoylentiGorunumu, type TeklifCevapIstegi, type TeklifGorunumu,
   type TeklifIstegi, type VitrinArmagani,
@@ -21,8 +22,14 @@ export interface ToplumIstemci {
   duzen(istek: DuzenIstegi): Promise<Sonuc<{ duzen: DuzenGorunumu }>>;
   yalanla(istek: { soylenti: string; istekNo: string; dil?: Dil }): Promise<Sonuc<{ soylentiler: SoylentiGorunumu[] }>>;
   vitrin(istek: { goster: string[]; istekNo: string }): Promise<Sonuc<{ vitrin: VitrinArmagani[] }>>;
-  sikayet(istek: SikayetIstegi): Promise<Sonuc<SikayetYaniti>>;\n  toplulukOku(): Promise<Sonuc<ToplulukDurumu>>;\n  mesrep(istek: MesrepIstegi): Promise<Sonuc<Record<string, unknown>>>;\n  ortakDert(istek: OrtakDertIstegi): Promise<Sonuc<Record<string, unknown>>>;\n  senlik(istek: SenlikIstegi): Promise<Sonuc<Record<string, unknown>>>;
+  sikayet(istek: SikayetIstegi): Promise<Sonuc<SikayetYaniti>>;
+  toplulukOku(): Promise<Sonuc<ToplulukDurumu>>;
+  mesrep(istek: MesrepIstegi): Promise<Sonuc<Record<string, unknown>>>;
+  ortakDert(istek: OrtakDertIstegi): Promise<Sonuc<Record<string, unknown>>>;
+  senlik(istek: SenlikIstegi): Promise<Sonuc<Record<string, unknown>>>;
 }
+
+const nesneYanitiMi = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
 
 type Istek = { yontem: "GET" | "POST"; yol: string; govde?: unknown; yetki: boolean; tekrar: boolean };
 export type Cagir = <T>(istek: Istek, bicim: (v: unknown) => v is T) => Promise<Sonuc<T>>;
@@ -42,6 +49,10 @@ export function toplumUclari(cagir: Cagir): ToplumIstemci {
     duzen: (i) => yaz("/v1/duzen", i, duzenYanitiMi),
     yalanla: (i) => yaz("/v1/yalanla", i, yalanlaYanitiMi),
     vitrin: (i) => yaz("/v1/vitrin", i, vitrinYanitiMi),
-    sikayet: (i) => yaz("/v1/sikayet", i, sikayetYanitiMi),\n    toplulukOku: () => al("/v1/topluluk", toplulukDurumuMi),\n    mesrep: (i) => yaz("/v1/mesrep", i, genelYanitiMi),\n    ortakDert: (i) => yaz("/v1/ortak-dert", i, genelYanitiMi),\n    senlik: (i) => yaz("/v1/senlik", i, genelYanitiMi),
+    sikayet: (i) => yaz("/v1/sikayet", i, sikayetYanitiMi),
+    toplulukOku: () => al("/v1/topluluk", toplulukDurumuMi),
+    mesrep: (i) => yaz("/v1/mesrep", i, nesneYanitiMi),
+    ortakDert: (i) => yaz("/v1/ortak-dert", i, nesneYanitiMi),
+    senlik: (i) => yaz("/v1/senlik", i, nesneYanitiMi),
   };
 }
