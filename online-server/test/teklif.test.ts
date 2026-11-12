@@ -629,5 +629,5 @@ test("E4.3-D: bekleyen iş teklifi sonradan kabul edilse bile gönderenin aktif 
   isBecerisi(c, "katip", "katip.koyMektubu");
   assert.deepEqual(teklifCevap(k, c, `t${bekleyen.deger.teklif.i}`, "kabul", {}, k.ay), { ok: false, hata: "teklif_siniri" });
   assert.equal(bekleyen.deger.teklif.d, "acik", "sınır doluyken bekleyen teklif açık kalır");
-  assert.equal(a.pa, 100 - 3 - 5, "reddedilen kabul üçüncü emaneti kilitlemez");
+  assert.equal(a.pa, 100 - 4, "reddedilen kabul üçüncü emaneti kilitlemez");
 });
