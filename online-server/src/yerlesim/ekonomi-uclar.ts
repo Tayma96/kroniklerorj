@@ -7,7 +7,7 @@ import { MALLAR, malBul, type MalId } from "../icerik/mallar.ts";
 import { HIZMET_TARIFLERI } from "./hizmet-tarif.ts";
 import { basarili, hata, type Sonuc } from "../tipler.ts";
 import { DEFTER_AY, defterGorunumu } from "./defter.ts";
-import { hizmetHazirla, hizmetIlanAc, hizmetIlanBul, hizmetIlanGeri, hizmetIlanGorunumu, hizmetIlanIsle, hizmetIlanlar, hizmetStoguGecerli, hizmetStoguGorunumu, hizmetYetkiliMi } from "./hizmet-pazari.ts";
+import { hizmetHazirla, hizmetIlanAc, hizmetIlanBul, hizmetIlanGeri, hizmetIlanGorunumu, hizmetIlanIsle, hizmetIlanlar, hizmetNpcTalepleri, hizmetNpcTalepTeslim, hizmetStoguGecerli, hizmetStoguGorunumu, hizmetYetkiliMi } from "./hizmet-pazari.ts";
 import {
   ISMARLAMA_ADET_EN_COK,
   ISMARLAMA_MUSTERI_EN_COK,
@@ -64,6 +64,7 @@ export function hizmetOku(m: YerlesimMotoru, hesapId: string): Promise<Sonuc<unk
       etki: tarif.etki,
       hazir: tarif.hazir,
       fiyatTaban: tarif.fiyatTaban,
+      npcOdul: tarif.npcOdul ?? null,
       acik: hizmetYetkiliMi(kar, tarif),
     }));
     const ek = m.kasaba.ek;
@@ -72,7 +73,7 @@ export function hizmetOku(m: YerlesimMotoru, hesapId: string): Promise<Sonuc<unk
       .map((x) => hizmetStoguGorunumu(x, ay));
     const ilanlar = hizmetIlanlar(ek, ay).map((x) => hizmetIlanGorunumu(x, kar.o, ay));
     const benimIlanlar = hizmetIlanlar(ek, ay).filter((x) => x.o === kar.o).map((x) => hizmetIlanGorunumu(x, kar.o, ay));
-    return basarili({ katalog, stok, ilanlar, benimIlanlar, kurallar: { tekHazirlamaEnCok: 5, hizmetStokEnCok: 20, acikIlanEnCok: 5, alimAdetEnCok: 5 } });
+    return basarili({ katalog, stok, ilanlar, benimIlanlar, npcTalepleri: hizmetNpcTalepleri(ek, ay), kurallar: { tekHazirlamaEnCok: 5, hizmetStokEnCok: 20, acikIlanEnCok: 5, alimAdetEnCok: 5 } });
   });
 }
 
@@ -125,6 +126,18 @@ export async function hizmetIslemUc(m: YerlesimMotoru, hesapId: string, govde: u
         odul: r.deger.odul,
       },
     });
+  });
+}
+
+/** POST /v1/hizmet/talep-teslim {talep, istekNo}: hazine ödüllü NPC hizmet talebini tek kez tamamlar. */
+export function hizmetTalepTeslimUc(m: YerlesimMotoru, hesapId: string, govde: unknown): Promise<Sonuc<unknown>> {
+  if (!nesneMi(govde)) return Promise.resolve(hata("gecersiz_istek"));
+  return m.ekonomiYaz(hesapId, govde, "hizmetNpcTalep", [], (kar, ay, ek) => {
+    const r = hizmetNpcTalepTeslim(ekonomiAl(m.kasaba), m.kasaba, kar, govde.talep, ay);
+    if (!r.ok) return r;
+    ek.olaylar.push(r.deger.olay);
+    (ek.defter ??= []).push([kar.o, "hizmetNpc", r.deger.odul]);
+    return basarili({ talep: r.deger.talep, odul: r.deger.odul });
   });
 }
 
