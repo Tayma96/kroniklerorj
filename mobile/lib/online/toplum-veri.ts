@@ -228,3 +228,37 @@ export const sikayetYanitiMi = (v: unknown): v is SikayetYaniti => nesne(v) && s
 export const oyuncuKimligiMi = (id: string | null | undefined): id is string => !!id && /^o[1-9][0-9]{0,8}$/.test(id);
 /** Kişi satırının gideceği sayfa: oyuncu profili ya da NPC kişi ekranı. */
 export const kisiYolu = (id: string) => (oyuncuKimligiMi(id) ? `/online/oyuncu/${id}` : `/online/kisi/${id}`);
+
+
+// E5–E7 topluluk panosu: meşrep, ortak dert, şenlik, hami, müdavim ve zaviye.
+export interface ToplulukDert {
+  id: string; tur: string; durum: string; acilis: number; bitis: number; esik: number; puan: number; halk: number;
+  defter: { id: string; ad: string; katkilar: string[] }[];
+  benim?: { sayi: number; kalan: number; puan: number };
+}
+export interface ToplulukSenlik {
+  id: string; tur: string; durum: "ilan" | "acik"; acilis: number; bitis: number;
+  levha: KisiAdi[]; benim: { sayi: number; kalan: number };
+}
+export interface ToplulukDurumu {
+  mesrep: { secildi: boolean; secimAcik: boolean; kapali?: string; eksenler: { eksen: string; secili: string; uclar: { uc: string; etkiler: { k: string; tur: string; p: Record<string, number> }[] }[] }[] };
+  hami: { suren: unknown[]; gelen: unknown[]; giden: unknown[]; biten: unknown[] };
+  ortakDert: { acik: ToplulukDert[]; son: ToplulukDert[]; uygunKatkilarim: string[]; kurallar: Record<string, unknown> };
+  senlik: { simdiki: ToplulukSenlik | null; sonKapanan: unknown; kurallar: Record<string, unknown> };
+  mudavim: { rozet: string | null; ziyaret: number; sonraki: { rozet: string; gereken: number } | null; indirim?: { deger: number; tavan: number } };
+  zaviye: { benim: unknown; davetler: unknown[]; kasabada: unknown[]; ahiSarti: Record<string, unknown> };
+  gostergeler: { arz: number; moral: number; asayis: number; denge: number; taban: number; tavan: number };
+}
+export interface MesrepIstegi { el: "comert" | "hesapli" | "orta"; cesaret: "temkinli" | "gozupek" | "orta"; gurur: "mutevazi" | "gururlu" | "orta"; istekNo: string }
+export interface OrtakDertIstegi { dert: string; katki: string; mal?: MalId; adet?: number; istekNo: string }
+export interface SenlikIstegi { katki: "yemek" | "sus" | "hayir"; mal?: MalId; adet?: number; tutar?: number; istekNo: string }
+const genelYanitiMi = (v: unknown): v is Record<string, unknown> => nesne(v);
+export function toplulukDurumuMi(v: unknown): v is ToplulukDurumu {
+  if (!nesne(v) || !nesne(v.mesrep) || !dizi(v.mesrep.eksenler) || !mantik(v.mesrep.secildi) || !mantik(v.mesrep.secimAcik)) return false;
+  if (!nesne(v.ortakDert) || !dizi(v.ortakDert.acik) || !dizi(v.ortakDert.son) || !dizi(v.ortakDert.uygunKatkilarim)) return false;
+  if (!nesne(v.senlik) || !(v.senlik.simdiki === null || nesne(v.senlik.simdiki))) return false;
+  if (!nesne(v.hami) || !dizi(v.hami.suren) || !dizi(v.hami.gelen) || !dizi(v.hami.giden)) return false;
+  if (!nesne(v.mudavim) || !sayi(v.mudavim.ziyaret) || !(v.mudavim.rozet === null || metin(v.mudavim.rozet))) return false;
+  if (!nesne(v.zaviye) || !dizi(v.zaviye.kasabada) || !dizi(v.zaviye.davetler)) return false;
+  return nesne(v.gostergeler) && sayi(v.gostergeler.arz) && sayi(v.gostergeler.moral) && sayi(v.gostergeler.asayis);
+}
