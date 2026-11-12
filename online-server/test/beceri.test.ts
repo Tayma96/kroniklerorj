@@ -348,7 +348,7 @@ test("ahsapKopru hakkı marangoz köprücülük ve demirci gelişmiş aletler bi
   seviyeVer(c, "demirci.gelismisAletler", 1);
   assert.equal(hakAcik(c, "ahsapKopru"), false, "demirci ikinci seviye gerekir");
   seviyeVer(c, "demirci.gelismisAletler", 2);
-  assert.equal(sinerjiAcik(c, "kopruDemiri"), true);
+  assert.equal(sinerjiAcik(c, "degirmenKopruDemiri"), true);
   assert.equal(hakAcik(c, "ahsapKopru"), true);
   const diger = kisi(k, 2);
   seviyeVer(diger, "demirci.gelismisAletler", 2);
