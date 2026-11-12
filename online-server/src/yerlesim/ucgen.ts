@@ -589,9 +589,9 @@ export function ucgenGorunumu(k: Kasaba, kar: Karakter, ili: IliskiHaritasi, sor
     ay,
     sozler: (ug?.sz ?? []).filter((s) => s.f === kar.o && s.b > ay).map((s) => sozGorunumu(k, s, ay, dil)),
     talepler: {
-      giden: (ug?.at ?? []).filter((t) => t.t === kar.o && t.d === "acik").map((t) => talepGorunumu(k, t, dil)),
-      gelen: (ug?.at ?? []).filter((t) => t.ar === kar.o && t.d === "acik").map((t) => ({ ...talepGorunumu(k, t, dil), onizleme: arabulucuOnizle(k, kar, t, ay) })),
-      kapanan: (ug?.at ?? []).filter((t) => (t.t === kar.o || t.ar === kar.o) && t.d !== "acik").slice(-10).reverse().map((t) => talepGorunumu(k, t, dil)),
+      giden: (ug?.at ?? []).filter((t) => t.t === kar.o && t.d === "acik" && t.teklif === undefined).map((t) => talepGorunumu(k, t, dil)),
+      gelen: (ug?.at ?? []).filter((t) => t.ar === kar.o && t.d === "acik" && t.teklif === undefined).map((t) => ({ ...talepGorunumu(k, t, dil), onizleme: arabulucuOnizle(k, kar, t, ay) })),
+      kapanan: (ug?.at ?? []).filter((t) => (t.t === kar.o || t.ar === kar.o) && t.d !== "acik" && t.teklif === undefined).slice(-10).reverse().map((t) => talepGorunumu(k, t, dil)),
     },
     casus: casus ? { id: `c${casus.i}`, npc: { id: npcKimlik(casus.n), ad: kisiAdi(k, npcKimlik(casus.n), dil) ?? "?" }, izlenen: ad(casus.iz), bitis: casus.b } : null,
     barislar,
@@ -633,7 +633,7 @@ export function ucgenGorunumu(k: Kasaba, kar: Karakter, ili: IliskiHaritasi, sor
 
 /** GET önizlemesinde yüklenecek oyuncular: hedef ve gelen taleplerin tarafları. */
 export function ucgenOkumaYuklenecek(k: Kasaba, ben: string, hedefHam: unknown): string[] {
-  const liste = (k.ug?.at ?? []).filter((t) => t.ar === ben && t.d === "acik").map((t) => t.t);
+  const liste = (k.ug?.at ?? []).filter((t) => t.ar === ben && t.d === "acik" && t.teklif === undefined).map((t) => t.t);
   const h = oyuncuNo(hedefHam);
   if (h) liste.push(h);
   return liste.filter((o) => k.sakin.some((s) => s.o === o));
