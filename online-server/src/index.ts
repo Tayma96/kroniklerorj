@@ -27,6 +27,7 @@
 //   POST /v1/dostluk {hedef, islem: iste|kabul|ret|bitir, istekNo} → {hedef, bag}
 //   POST /v1/teklif {tur, hedef, ...şartlar, istekNo} → {teklif}
 //   POST /v1/teklif/:id/cevap {cevap: kabul|ret|geri|bitir|ode, tutar?, istekNo} → {teklif}
+//   POST /v1/arabuluculuk {islem: ac|cevap|geri, hedef?, arabulucu?, dosya?, cevap?, istekNo} → {dosya}
 //   GET  /v1/gelen?dil=                  → gelen/giden/süren/kapanan teklifler, dostluk, husumet, söylenti, engel
 //   POST /v1/husumet {hedef, islem: ilan|kaldir, istekNo} → {hedef, husumet}
 //   POST /v1/engelle {hedef, islem: engelle|kaldir, istekNo} → {engellenenler}
@@ -524,6 +525,8 @@ async function yonlendir(istek: Request, env: Env): Promise<Response> {
       return yontem === "POST" ? govdeli(istek, env, "dostluk") : hataYaniti("yontem_yok");
     case "/v1/teklif":
       return yontem === "POST" ? govdeli(istek, env, "teklif") : hataYaniti("yontem_yok");
+    case "/v1/arabuluculuk":
+      return yontem === "POST" ? govdeli(istek, env, "oyuncuArabuluculuk") : hataYaniti("yontem_yok");
     case "/v1/husumet":
       return yontem === "POST" ? govdeli(istek, env, "husumet") : hataYaniti("yontem_yok");
     case "/v1/engelle":
