@@ -1,10 +1,9 @@
 // E4.3 hizmet pazarı: öğrenilmiş hizmeti hazırla, ilan et, satın al veya ilanı geri çek.
 import { useCallback, useEffect, useState } from "react";
-import { View, Text, TextInput, type ReactNode } from "react-native";
+import { View, Text, TextInput, ScrollView, type ReactNode } from "react-native";
 import { useRouter } from "expo-router";
 import { useI18n, applyParams } from "../../lib/i18n";
 import { C, F } from "../../lib/theme";
-import { GameIcon } from "../../lib/icons";
 import { hap } from "../../lib/haptics";
 import { OnlineYakinda } from "../../lib/online-yakinda";
 import { OnlineKapisi, useOnline } from "../../lib/online/durum";
@@ -68,7 +67,7 @@ function HizmetEkran() {
     <Bant tur="bilgi" metin={t("onl.v.profilYok")} rtl={rtl} eylem={t("onl.p.giriseDon")} onEylem={() => router.replace("/online")} />
   </View>;
 
-  return <View style={{ flex: 1, backgroundColor: C.bg, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 24, gap: 12 }}>
+  return <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 24, gap: 12 }}>
     <View style={{ flexDirection: yon(rtl), alignItems: "center" }}>
       <GeriDugme rtl={rtl} etiket={t("onl.geri")} onPress={() => geriGit(router, "/online/yasam")} />
     </View>
@@ -106,7 +105,7 @@ function HizmetEkran() {
         : <CizgiDugme etiket={t("onl.hizmet.satinAl")} icon="coins" rtl={rtl} kucuk kapali={yukleniyor} onPress={() => void islem(() => istemci!.satinAl(x.id, 1), t("onl.hizmet.satinAlindi"))} />}
     </HizmetKarti>) : <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{t("onl.hizmet.pazarBos")}</Text>}
     <CizgiDugme etiket={t("onl.hizmet.yenile")} icon="refresh-cw" rtl={rtl} kucuk kapali={yukleniyor} onPress={() => void yukle()} />
-  </View>;
+  </ScrollView>;
 }
 
 export default function OnlineHizmet() {
