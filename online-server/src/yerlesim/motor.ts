@@ -77,7 +77,7 @@ import { teveccuhEkle, teveccuhGorunumu, teveccuhKademesi, teveccuhEtkisi, TEVEC
 import { IKRAM_MENUSU, type IkramId } from "../han/ikram.ts";
 import { toplumDonumu } from "./toplum-donum.ts";
 import { oyuncuArabuluculukAc, oyuncuArabuluculukCevap, oyuncuArabuluculukGeriAl } from "./arabuluculuk-oyuncu.ts";
-import { OYUNCU_TEKLIF_TURLERI, toplumAl, type OyuncuArabuluculuk, type Toplum } from "./toplum.ts";
+import { OYUNCU_TEKLIF_TURLERI, oyuncuArabuluculukAl, toplumAl, type OyuncuArabuluculuk, type Toplum } from "./toplum.ts";
 import { MALLAR, MAL_IDLERI, malBul } from "../icerik/mallar.ts";
 import { temelIsOnizleme, temelIsYap } from "./temel-is.ts";
 import { devirHesapla, devirUygula, kimlikTasiyiciEkle, planKarmasi } from "./devir.ts";
@@ -1324,6 +1324,11 @@ export class YerlesimMotoru {
     const arabulucu = govde.islem === "ac" ? this.#sakinKimligi(govde.arabulucu) : undefined;
     if (govde.islem === "ac" && (!hedef || !arabulucu)) return hata("kisi_yok");
     if (hedef && arabulucu) await this.#yukle([hedef, arabulucu]);
+    if (govde.islem === "cevap" || govde.islem === "geri") {
+      const id = typeof govde.dosya === "string" && /^[1-9][0-9]{0,8}$/.test(govde.dosya) ? Number(govde.dosya) : -1;
+      const dosya = oyuncuArabuluculukAl(toplumAl(k)).find(x => x.i === id);
+      if (dosya) await this.#yukle([dosya.s, dosya.k, dosya.ar]);
+    }
     return this.#tekrarGuvenli(hesapId, govde, (kar, _s, ay, ek) => {
       let sonuc: Sonuc<OyuncuArabuluculuk>;
       if (govde.islem === "ac") {
@@ -1365,6 +1370,12 @@ export class YerlesimMotoru {
       giden: benim.filter((x) => x.d === "acik" && x.g === kar.o).map(g),
       suren: benim.filter((x) => x.d === "surer").map(g),
       kapanan: benim.filter((x) => x.d !== "acik" && x.d !== "surer").slice(-GELEN_KAPALI_EN_COK).reverse().map(g),
+      arabuluculuk: oyuncuArabuluculukAl(toplumAl(k))
+        .filter(x => x.s === kar.o || x.k === kar.o || x.ar === kar.o)
+        .slice(-GELEN_KAPALI_EN_COK).reverse()
+        .map(x => ({ id: String(x.i), durum: x.d, rol: x.s === kar.o ? "sikayetci" : x.k === kar.o ? "karsi" : "arabulucu",
+          sikayetci: ad(x.s), karsi: ad(x.k), arabulucu: ad(x.ar), riza: { ...x.rs }, surum: x.sv,
+          acilisAyi: x.ac, sonCevapAyi: x.sa, kapanisAyi: x.kp })),
       dostluk: {
         gelen: bagli.filter((b) => b.d === "istek" && b.g !== kar.o).map((b) => ({ ...ad(diger(b)), ay: b.ay })),
         giden: bagli.filter((b) => b.d === "istek" && b.g === kar.o).map((b) => ({ ...ad(diger(b)), ay: b.ay })),
