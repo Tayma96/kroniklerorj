@@ -119,6 +119,10 @@ export function oyuncuArabuluculukTaslak(
   if (!d) return hata("talep_yok");
   if (ben.o !== d.ar) return hata("taraf_degil");
   if (d.d !== "taslak" && d.d !== "imzaBekliyor") return hata("teklif_kapandi");
+  const s = k.kar.get(d.s), kk = k.kar.get(d.k), ar = k.kar.get(d.ar);
+  if (!s || !kk || !ar) return hata("sakin_yok");
+  if (engelliMi(k.tp, d.s, d.k) || engelliMi(k.tp, d.s, d.ar) || engelliMi(k.tp, d.k, d.ar)) return hata("engelli");
+  if (!oyuncuArabulucuTarafsizMi(k.tp, s, kk, ar)) return hata("arabulucu_tarafsiz_degil");
   if (!Number.isSafeInteger(sTutari) || (sTutari as number) < 0 || (sTutari as number) > 100000
     || !Number.isSafeInteger(kTutari) || (kTutari as number) < 0 || (kTutari as number) > 100000
     || ((sTutari as number) === 0 && (kTutari as number) === 0)) return hata("deger_sinir_disi");
