@@ -446,7 +446,7 @@ test("iki taraflı işler: aynı hesap/hane engeli, ret, iptal ve süre aşımı
   assert.equal(iptal.deger.teklif.d, "iptal");
   assert.equal(a.pa, ilkPara);
 
-  const dusen = teklifOlustur(k, a, b, { ...sart(d), tutar: 7 }, k.ay);
+  const dusen = teklifOlustur(k, a, b, { ...sart(e), tutar: 7 }, k.ay);
   assert.ok(dusen.ok);
   if (!dusen.ok) return;
   isBecerisi(b, "katip", "katip.koyMektubu");
