@@ -1,5 +1,5 @@
 // Debdebe mağazası ve ücretsiz Dene sahneleri. Gerçek satın alma, mağaza makbuz doğrulaması bağlanana kadar kapalıdır.
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { View, Text } from "react-native";
 import { useRouter } from "expo-router";
 import { useI18n, applyParams } from "../../lib/i18n";
@@ -43,7 +43,6 @@ function DebdebeEkran() {
     setSecili((onceki) => onceki && r.deger.katalog.some((x) => x.id === onceki) ? onceki : r.deger.katalog[0]?.id ?? "");
   }, [ist, t]);
   useEffect(() => { void yukle(); }, [yukle]);
-  const urun = useMemo(() => veri?.katalog.find((x) => x.id === secili), [veri, secili]);
   const deneAc = async (id: string) => {
     setSecili(id); setDene(null); setHata(null); setYukleniyor(true);
     const r = await ist.dene(id);
