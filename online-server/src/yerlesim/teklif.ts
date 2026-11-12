@@ -234,6 +234,7 @@ export function teklifOlustur(k: Kasaba, gon: Karakter, alici: Karakter, govde: 
     if (!hedef || hedef.o === gon.o || hedef.o === alici.o) return hata("kisi_yok");
     if (engelliMi(k.tp, gon.o, hedef.o) || engelliMi(k.tp, alici.o, hedef.o)) return hata("engelli");
     if (gon.h === hedef.h || alici.h === hedef.h || (gon.e !== 0 && gon.e === hedef.e) || (alici.e !== 0 && alici.e === hedef.e)) return hata("ayni_kume");
+    if ((k.tp?.tk ?? []).some((x) => x.t === "is" && x.s.it === "mektup" && x.g === gon.o && x.s.he === hedef.o && x.ac === ay)) return hata("teklif_siniri");
   }
   let e = 0;
   if (t_ === "cirak") {
@@ -450,6 +451,7 @@ export function teklifCevap(k: Kasaba, ben: Karakter, idHam: unknown, cevap: unk
       const mektupHedef = t.s.it === "mektup" ? k.kar.get(t.s.he ?? "") : undefined;
       const mektupGonderen = t.s.it === "mektup" ? k.kar.get(t.g) : undefined;
       if (t.s.it === "mektup" && (!mektupHedef || !mektupGonderen || !t.s.ms)) return hata("kisi_yok");
+      if (mektupHedef && (engelliMi(k.tp, t.g, mektupHedef.o) || engelliMi(k.tp, ben.o, mektupHedef.o))) return hata("engelli");
       const kural = isKurali(t.s.it);
       if (!kural || !hizmetAcik(ben, kural.hizmet)) return hata("dugum_kapali");
       if (kural.arac && (!kural.aracHedef || aracArtisi(ben, kural.aracHedef)?.mal !== kural.arac || (ben.ev?.[kural.arac] ?? 0) < 1)) return hata("arac_yok");
