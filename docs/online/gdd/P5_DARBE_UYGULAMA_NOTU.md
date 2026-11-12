@@ -75,3 +75,14 @@ CI run #201 başarılı (commit `71445a6`): 374 test / 373 geçti / 0 başarıs�
 - Kaynak tarafı yalnız bekleyen hedef/istek kimliği eşleşen kararı kabul eder. DO→DO geri çağrı döngüsü iç iletilerde gönderim yapmayarak engellenir.
 - Entegrasyon testi iki bölge DO'su arasında tam istek/kabul akışını doğrular.
 - CI [#43132539771](https://github.com/Tayma96/kroniklerorj/actions/runs/43132539771): **375 test / 374 geçti / 0 başarısız / 1 atlandı**; tüm TypeScript ve görsel yolu kontrolleri başarılı.
+
+## İki taraflı statüko ateşkesi — 12 Kasım 2026
+
+- Açık darbe ilanı veya çatışma çözülmeden önce saldıran tarafın gerçek başlatıcısı ya da açık savunma ön emri vermiş makam sahibi statüko ateşkesi önerebilir.
+- Teklif, kendi tarafınca kabul edilemez. Yalnız karşı tarafın gerçek katılımcısı aynı istek kimliğiyle kabul/ret verebilir.
+- Kabul edilirse darbe `ateskes` durumuna geçer ve altı aylık soğuma başlar. Sonuç zafer/yenilgi diye yazılmaz; otomatik ganimet, mülk devri veya el koyma yapılmaz.
+- Ret çatışmayı sürdürür; teklif sahibi/karşı taraf yeniden teklif verebilir. Çözüm ayı geçtikten sonra teklif ve yanıt kapalıdır.
+- İstek kimliği ve dış DO yazma kabuğu tekrar güvenli çalışır; yeni hata kodları mobil protokolde tanınır ve üç özel hata altı dilde çevrilmiştir.
+- Testler: saldıranın teklifi/savunmanın kabulü, savunmanın teklifi/saldıranın reddi, üçüncü kişi reddi, yanlış istek kimliği, teklif süresi ve soğuma.
+- GitHub Actions [run #259](https://github.com/Tayma96/kroniklerorj/actions/runs/43135264076): **380 test / 379 geçti / 0 başarısız / 1 atlandı**; sunucu TypeScript kontrolü başarılı.
+- Sınır: bu ilk dilim yalnız müzakere/ateşkes protokolüdür. Mülk kaybı ve ganimet hâlâ uygulanmaz; mülk kaybı tavanı ayrı tasarım/uygulama gerektirir.
