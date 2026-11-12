@@ -248,13 +248,27 @@ export interface ToplulukSenlik {
 }
 export interface HamiBagGorunumu { hami: KisiAdi & { meslek: string | null }; cirak: KisiAdi & { meslek: string | null }; gonderen: string; rolum: "hami" | "cirak" | null; durum: string; acilis: number; asamalar: { asama: string; durum: string; nam: number }[] }
 export interface HamiIstegi { islem: "teklif" | "iste" | "kabul" | "ret" | "birak"; hedef: string; istekNo: string }
+export interface ZaviyeUyeGorunumu { id: string; ad: string; meslek: string | null; katilis: number; rol: string; oy?: number }
+export interface ZaviyeGorunumu {
+  id: string; ad: string; arma: { sekil: string; renk: string }; durum: "kuruluyor" | "acik";
+  kurulus: number; uyeSayisi: number; sinir: { enAz: number; enCok: number };
+  ahiBasi: { id: string; ad: string } | null; yonetici: { id: string; ad: string; vekil: boolean } | null;
+  uyeler: ZaviyeUyeGorunumu[]; kasa?: number;
+  kasaDefteri?: { ay: number; kim: string; alan: string | null; tutar: number }[];
+  davetler?: { id: string; ad: string; ay: number }[]; oyum?: string | null; oyEsigi?: number;
+  ustaCirak?: { usta: string; cirak: string; meslek: string | null }[]; rolum?: "yonetici" | "uye";
+}
+export interface ZaviyeIstegi {
+  islem: "kur" | "davet" | "katil" | "reddet" | "ayril" | "cikar" | "yatir" | "ver" | "arma" | "oy";
+  istekNo: string; hedef?: string; zaviye?: string; ad?: string; tutar?: number; sekil?: string; renk?: string;
+}
 export interface ToplulukDurumu {
   mesrep: { secildi: boolean; secimAcik: boolean; kapali?: string; eksenler: { eksen: string; secili: string; uclar: { uc: string; etkiler: { k: string; tur: string; p: Record<string, number> }[] }[] }[] };
   hami: { hamiOlabilir: boolean; yeniGelen: boolean; suren: HamiBagGorunumu[]; gelen: HamiBagGorunumu[]; giden: HamiBagGorunumu[]; biten: HamiBagGorunumu[]; buAyHamiNami: number };
   ortakDert: { acik: ToplulukDert[]; son: ToplulukDert[]; uygunKatkilarim: string[]; kurallar: Record<string, unknown> };
   senlik: { simdiki: ToplulukSenlik | null; sonKapanan: unknown; kurallar: Record<string, unknown> };
   mudavim: { rozet: string | null; ziyaret: number; sonraki: { rozet: string; gereken: number } | null; indirim?: { deger: number; tavan: number } };
-  zaviye: { benim: unknown; davetler: unknown[]; kasabada: unknown[]; ahiSarti: Record<string, unknown> };
+  zaviye: { benim: ZaviyeGorunumu | null; davetler: { id: string; ad: string; uyeSayisi: number }[]; kasabada: { id: string; ad: string; arma: { sekil: string; renk: string }; uyeSayisi: number; durum: string; ahiBasi: string | null }[]; ahiSarti: { teveccuhKademe: number; benimKademem: number; adayim: boolean } };
   gostergeler: { arz: number; moral: number; asayis: number; denge: number; taban: number; tavan: number };
 }
 export interface MesrepIstegi { el: "comert" | "hesapli" | "orta"; cesaret: "temkinli" | "gozupek" | "orta"; gurur: "mutevazi" | "gururlu" | "orta"; istekNo: string }
