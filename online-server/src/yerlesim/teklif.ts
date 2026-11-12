@@ -22,7 +22,7 @@ import { envanterEkle } from "./npc-taban.ts";
 import { araciSozlesmeAc, araciSozlesmeKontrol, araciSozlesmeIptal, TAZMINAT_TAVANI } from "./arabulucu.ts";
 import { arabulucuSozlesmeTeslim } from "./ucgen.ts";
 import { acikNpcTeklifi, npcBorcTahsil, npcKabul } from "./npc-teklif.ts";
-import { kisiAdi, kisiCoz, npcAdi, oyuncuRef } from "./ortak.ts";
+import { kisiAdi, kisiCoz, npcAdi, npcKimlik, oyuncuRef } from "./ortak.ts";
 import { haneTaniklari, soylentiEkle } from "./soylenti.ts";
 import { teveccuhEkle, teveccuhKademesi } from "./teveccuh.ts";
 import { OYUNCU_TEKLIF_TURLERI, teklifCoz, teklifKimlik, toplumAl, type OyuncuTeklifTuru, type Sartlar, type Teklif } from "./toplum.ts";
@@ -558,7 +558,7 @@ function borcOde(k: Kasaba, t: Teklif, tutar: number, ay: number, borclu: string
 interface IsKurali { hizmet: string; meslek: "arabulucu" | "asker" | "katip"; takat: number; gosterge: "moral" | "asayis"; arac?: "zincir"; aracHedef?: string; }
 function isKurali(tur: Sartlar["it"]): IsKurali | undefined {
   switch (tur) {
-    case "arabuluculuk": return { hizmet: "araBul", meslek: "arabulucu", takat: 2, gosterge: "moral" };
+    case "arabuluculuk": return { hizmet: "araBul", meslek: "arabulucu", takat: 1, gosterge: "moral" };
     case "muhafiz": return { hizmet: "muhafizlik", meslek: "asker", takat: 2, gosterge: "asayis", arac: "zincir", aracHedef: "muhafizlik" };
     case "mektup": return { hizmet: "mektup", meslek: "katip", takat: 1, gosterge: "moral" };
     default: return undefined;
