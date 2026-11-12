@@ -1656,6 +1656,7 @@ export class YerlesimMotoru {
     const deger = islem === "barinma"
       ? { barinma: barinmaGorunumu(this.kasaba, kar, simdi, oh && sahip ? { ...oh, sahip } : undefined) }
       : { donusEkrani: donusOku(this.kasaba, kar, simdi) };
+    if (oh && sahip) this.#kirli.add(KAR + sahip.o);
     this.#kirli.add(KAR + kar.o);
     await this.kaydet();
     return basarili(deger);
@@ -1666,7 +1667,10 @@ export class YerlesimMotoru {
     const k = this.kasaba;
     if (islem === "barinmaKira") {
       const oh = oyuncuHani(k);
-      if (oh) await this.#yukle([oh.sahip]);
+      if (oh) {
+        await this.#yukle([oh.sahip]);
+        this.#kirli.add(KAR + oh.sahip);
+      }
     }
     return this.#tekrarGuvenli(hesapId, govde, (kar) =>
       islem === "barinmaKira" ? (this.#kirli.add(MULK), mulkluKira(k, kar, govde, simdi, vergiOrani)) : islem === "barinmaTesis" ? tesisKonakla(k, kar, simdi) : otomatikAyarla(k, kar, govde, simdi),
