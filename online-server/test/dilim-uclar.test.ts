@@ -154,7 +154,7 @@ test("dikey dilim uçları: Hal, tarif, satış, sipariş teslimi ve teşekkür 
     // GET önizlemeleri: temel işin sonraki verimi, kalan NPC alım kotası.
     const cv = b0.temelIsler.find((x: Nesne) => x.is === "cevher");
     assert.deepEqual([cv.adet, cv.sonraki, cv.acik], [0, 0, true], "pencerede 2 kez yapıldı: verim yok");
-    assert.equal(b0.npcKota.sat.nal, 6);
+    assert.equal(b0.npcKota.sat.nal, 2, "nal alım talebi özel kotayla sınırlı");
     assert.equal(b0.npcKota.al.odun, 2);
     const teslimIstek = { siparis: sip.id, istekNo: "teslim-0001" };
     const t1 = await cagir("POST", "/v1/siparis/teslim", { oturum, govde: teslimIstek });
