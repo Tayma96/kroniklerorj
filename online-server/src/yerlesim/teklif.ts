@@ -19,8 +19,8 @@ import { hizmetEkle, meslekKaydi } from "./meslek.ts";
 import { aracAsindir } from "./tarif.ts";
 import { gostergeDegistir, toplulukAl } from "./topluluk-kayit.ts";
 import { envanterEkle } from "./npc-taban.ts";
-import { araciSozlesmeAc, araciSozlesmeKontrol, araciSozlesmeIptal, TAZMINAT_TAVANI } from "./arabulucu.ts";
-import { arabulucuSozlesmeTeslim } from "./ucgen.ts";
+import { araciSozlesmeAc, araciSozlesmeKontrol, araciSozlesmeIptal, arabulucuYap, TAZMINAT_TAVANI } from "./arabulucu.ts";
+import { tohumlu } from "./rastgele.ts";
 import { acikNpcTeklifi, npcBorcTahsil, npcKabul } from "./npc-teklif.ts";
 import { kisiAdi, kisiCoz, npcAdi, npcKimlik, oyuncuRef } from "./ortak.ts";
 import { haneTaniklari, soylentiEkle } from "./soylenti.ts";
@@ -491,7 +491,10 @@ export function teklifCevap(k: Kasaba, ben: Karakter, idHam: unknown, cevap: unk
       let arabuluculukSonucu: string | undefined;
       if (t.s.it === "arabuluculuk") {
         if (t.s.ta === undefined) return hata("talep_yok");
-        const mr = arabulucuSozlesmeTeslim(k, ben, t.s.ta, t.i, ay);
+        const ili = k.ili.get(ben.o);
+        const sakin = k.sakin.find((x) => x.o === ben.o);
+        if (!ili || !sakin) return hata("sakin_yok");
+        const mr = arabulucuYap({ k, kar: ben, ili, s: sakin, ay }, { talep: t.s.ta }, tohumlu("ucgen", k.y, ay, ben.o, "arabulucu", t.s.ta), t.i);
         if (!mr.ok) return mr;
         olaylar.push(...mr.deger.olaylar);
         arabuluculukSonucu = String(mr.deger.yanit.sonuc ?? "");
