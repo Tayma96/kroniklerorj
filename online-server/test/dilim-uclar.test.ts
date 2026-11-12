@@ -192,7 +192,7 @@ test("dikey dilim uçları: Hal, tarif, satış, sipariş teslimi ve teşekkür 
     const s1 = await tamam("/v1/sat", { mal: "cevher", adet: 1 });
     assert.equal(s1.tutar, s1.birim.toplam);
     assert.equal(s1.para, t1.govde.para + s1.tutar);
-    assert.deepEqual(s1.kota, { satilan: 1, tavan: 6, kalan: 5 });
+    assert.deepEqual(s1.kota, { satilan: 1, tavan: 8, kalan: 7 }, "oduncu cevherinde genişletilmiş kota");
     assert.deepEqual((await yaz("/v1/sat", { mal: "nal", adet: 1.5 })).govde, { hata: "mal_gecersiz" });
     assert.deepEqual((await yaz("/v1/sat", { mal: "su", adet: 1 })).govde, { hata: "mal_gecersiz" });
     assert.deepEqual((await yaz("/v1/sat", { mal: "cevher", adet: 1 })).govde, { hata: "mal_yok" });
