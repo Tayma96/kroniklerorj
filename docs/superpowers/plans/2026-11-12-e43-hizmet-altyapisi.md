@@ -2,7 +2,7 @@
 
 **Tarih:** 12 Kasım 2026  
 **Dal:** `feature/online-p5-darbe-zinciri`  
-**Durum:** E4.3-A, E4.3-B ve E4.3-C uygulandı. Oyuncu pazarı, gerçek doğum/ölüm olaylarından NPC talebi ve kasaba hazinesinden önceden rezerve edilen aylık kamu görevleri sunucu ve mobil akışa bağlandı. E4.3-D iki taraflı işler ile kalan beceri tüketicileri açık.
+**Durum:** E4.3-A/B/C tamamlandı. E4.3-D iki taraflı iş sözleşmelerinin ilk dilimi sunucu, mobil ve 6 dilde uygulandı; gerçek anlaşmazlık çözümü, gerçek kervan rotası koruması ve senet defteri gibi daha derin etkiler açık. Kalan beceri tüketicileri de açık.
 
 ## Neden bu plan
 
@@ -93,8 +93,15 @@ Her POST, `istekNo` ile tekrar güvenli olmalı. Yerleşim sınırları ve yetki
 - [x] Testler: aylık koltuk sayısı, hazine rezervi/iadesi, beceri kapısı, mızrak gereksinimi ve aşınması, takat, hesap/hane tekilliği, tek teslim ve asayiş/moral etkisi.
 
 ### E4.3-D — İki taraflı işler
-- Arabuluculuk, muhafız sözleşmesi, mektup/senet gibi işler mevcut teklif akışına bağlanır.
-- Kabul, ret, süre aşımı, iptal ve tarafların hesap kümeleri doğrulanır.
+- [x] Ayrı sözleşme motoru yazılmadı; mevcut teklif/cevap akışına `is` türü eklendi. Müşteri ücreti teklif açarken emanet olarak kilitler; çalışan kabul eder, işi teslim eder ve ödeme ancak teslimde çalışana geçer.
+- [x] Arabuluculuk (`arabulucu.araBulma`): 2 takat, hizmet tecrübesi ve kasaba morali +1.
+- [x] Kervan muhafızlığı (`asker.kervanMuhafizligi`): 2 takat, zincir ustalığı düğümü ve zincir gerekir; teslimde zincir aşınır, kasaba asayişi +1.
+- [x] Mektup (`katip.koyMektubu`): müşteri aynı kasabadaki üçüncü oyuncuyu seçer ve en çok 240 karakterlik metin verir. Çalışan teslim ettiğinde alıcıya özel kronik olayı gönderilir; müşteri de teslim bildirimi alır. Aynı gönderen-hedef çifti ayda bir mektup iletebilir; engel ve hesap/hane kümesi kontrolleri hem açılışta hem teslimde uygulanır.
+- [x] Teklif başına istekNo tekrar güvenliği; oyuncu başına en çok iki açık iş sözleşmesi; kabul, ret, iptal, süre aşımı, yanlış tarafın teslimi, çift teslim ve emanet iadesi mevcut teklif defterinde doğrulanır.
+- [x] İş türü, mektup hedefi/metni, alıcıya özel olay ve sözleşme durumları mobilde 6 dilde. Alıcı dost listesinden seçilebilir veya oyuncu koduyla girilebilir.
+- [x] Regresyonlar: hizmet düğümü, zincir ustalığı, zincir aşınması, takat, moral/asayiş, emanet/ödeme, aynı hesap-hane, aynı hedefe aylık mektup sınırı, engelli hedef ve özel olay alıcısı.
+- [ ] Derinleştirme: arabuluculuk şu an kasaba moraline katkı verir; henüz iki oyuncunun husumetini kapatmaz. Muhafızlık kasaba asayişini artırır; henüz belirli kervan rotasında haydut saldırısını önlemez. Senet/borç kaydı ayrı bir sözleşme eki olarak eklenmedi.
+- [x] GitHub Actions [run #355](https://github.com/Tayma96/kroniklerorj/actions/runs/43141089447): **402 test / 401 geçti / 0 başarısız / 1 atlandı**; mobil TypeScript, 62 statik görsel yolu, sunucu testleri ve sunucu TypeScript başarılı.
 
 ## Kabul ölçütleri
 
