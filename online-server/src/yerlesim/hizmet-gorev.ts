@@ -45,6 +45,7 @@ export function hizmetGorevDonumu(kasaba: Kasaba, ay: number): void {
     gorev.d = "dustu";
     hazine.hz += gorev.odul;
   }
+  ek.hg = (ek.hg ?? []).filter((x) => x.d === "acik" || x.ac >= ay - 12);
   if (ek.hga === ay) return;
   ek.hga = ay;
   for (const tur of GOREV_ADLARI) {
