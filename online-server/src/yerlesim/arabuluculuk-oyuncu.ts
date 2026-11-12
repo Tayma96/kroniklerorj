@@ -141,7 +141,7 @@ export function oyuncuArabuluculukImzala(
   const r = rol(d, ben.o);
   if (r !== "s" && r !== "k") return hata("taraf_degil");
   if (d.d !== "imzaBekliyor" || !d.uz) return hata("teklif_kapandi");
-  if (!Number.isSafeInteger(surum) || surum !== d.sv) return hata("teklif_guncel_degil");
+  if (!Number.isSafeInteger(surum) || surum !== d.sv) return hata("teklif_gecersiz");
   d.im[r] = ay;
   if (d.im.s !== undefined && d.im.k !== undefined) d.d = "onaylandi";
   return basarili(d);
