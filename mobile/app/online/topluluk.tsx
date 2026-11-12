@@ -85,7 +85,7 @@ function ToplulukEkran() {
             <Text style={{ fontFamily: F.display, color: C.goldBright, fontSize: 13 }}>{deger}/100</Text>
           </View>
           <View style={{ height: 7, borderRadius: 5, overflow: "hidden", backgroundColor: "rgba(201,162,78,0.16)" }}>
-            <View style={{ width: oran + "%", height: 7, backgroundColor: alan === "asayis" ? C.sage : C.gold, borderRadius: 5 }} />
+            <View style={{ width: `${oran}%` as `${number}%`, height: 7, backgroundColor: alan === "asayis" ? C.sage : C.gold, borderRadius: 5 }} />
           </View>
         </View>;
       })}
@@ -118,7 +118,7 @@ function ToplulukEkran() {
         </View>
       </View>
       <View style={{ height: 6, borderRadius: 4, backgroundColor: "rgba(201,162,78,0.16)", overflow: "hidden" }}>
-        <View style={{ width: Math.min(100, Math.round(d.puan / Math.max(1, d.esik) * 100)) + "%", height: 6, backgroundColor: C.sage }} />
+        <View style={{ width: `${Math.min(100, Math.round(d.puan / Math.max(1, d.esik) * 100))}%` as `${number}%`, height: 6, backgroundColor: C.sage }} />
       </View>
       <Text style={{ fontFamily: F.serif, fontSize: 12.5, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{applyParams(t("onl.topluluk.dert.katilim"), [d.benim?.kalan ?? 0])}</Text>
       <View style={{ flexDirection: yon(rtl), flexWrap: "wrap", gap: 6 }}>
