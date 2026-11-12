@@ -13,13 +13,14 @@ test("NPC'ye satış: akçe birim × adet kadar artar, envanter düşer, fiyat d
   const c = oyuncuEkle(k);
   c.ev = { nal: 4 };
   const pa = c.pa;
+  const digerMeslektas = Math.max(0, 3 - (c.ms?.a === "demirci" ? 1 : 0));
   const r = npcyeSat(c, "nal", 3, herkes, k.ay);
   assert.ok(r.ok, JSON.stringify(r));
-  assert.deepEqual(r.deger.birim, satisDegeri("nal", 3));
+  assert.deepEqual(r.deger.birim, satisDegeri("nal", digerMeslektas));
   assert.equal(r.deger.tutar, MALLAR.nal.taban * 3);
   assert.equal(c.pa - pa, r.deger.tutar, "akçe yalnız satış tutarı kadar değişir");
   assert.deepEqual(c.ev, { nal: 1 });
-  assert.deepEqual(r.deger.kota, { satilan: 3, tavan: npcSatisKotasi("nal", 3), kalan: npcSatisKotasi("nal", 3) - 3 });
+  assert.deepEqual(r.deger.kota, { satilan: 3, tavan: npcSatisKotasi("nal", digerMeslektas), kalan: npcSatisKotasi("nal", digerMeslektas) - 3 });
 });
 
 test("kıtlık primi: malın mesleğinde oyuncu yoksa birim fiyata prim eklenir", () => {
