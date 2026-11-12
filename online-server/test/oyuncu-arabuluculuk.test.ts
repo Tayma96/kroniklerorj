@@ -343,6 +343,26 @@ test("imzalı uzlaşmada taraf ölürse ay dönümünde iki emanet de terekeye i
   assert.equal(oyuncuArabuluculukDonumu(k, k.ay + 1), 0, "iade tekrarlanmaz");
 });
 
+
+test("ilk imzadan sonra taraf ölürse ikinci imza emanet kesintisi yapmadan dosyayı düşürür", () => {
+  const k = testKasabasi("develi", 795);
+  const s = oyuncuEkle(k, 256), kk = oyuncuEkle(k, 257), ar = oyuncuEkle(k, 258);
+  const ac = oyuncuArabuluculukAc(k, s, kk, ar, k.ay);
+  assert.ok(ac.ok);
+  if (!ac.ok) return;
+  const id = String(ac.deger.i);
+  for (const x of [s, kk, ar]) assert.ok(oyuncuArabuluculukCevap(k, x, id, "kabul", k.ay).ok);
+  s.pa = 500; kk.pa = 500;
+  assert.ok(oyuncuArabuluculukTaslak(k, ar, id, 120, 80, undefined, k.ay).ok);
+  assert.ok(oyuncuArabuluculukImzala(k, s, id, ac.deger.sv).ok);
+  s.hd = { h: s.o, n: 1, s: 0, ol: k.ay };
+  assert.deepEqual(oyuncuArabuluculukImzala(k, kk, id, ac.deger.sv), { ok: false, hata: "teklif_kapandi" });
+  assert.equal(ac.deger.d, "dustu");
+  assert.equal(ac.deger.od, undefined, "ikinci imza emanet kesintisini başlatmaz");
+  assert.equal(s.pa, 500);
+  assert.equal(kk.pa, 500);
+});
+
 test("taraf öldükten sonra uygulama isteği ödeme yerine emaneti iade ederek kapatır", () => {
   const k = testKasabasi("develi", 790);
   const s = oyuncuEkle(k, 251), kk = oyuncuEkle(k, 252), ar = oyuncuEkle(k, 253);
