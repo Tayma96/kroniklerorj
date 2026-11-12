@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { ETKILER } from "../src/icerik/agaclar/index.ts";
 import { MALLAR } from "../src/icerik/mallar.ts";
 import { HIZMET_TARIFLERI, hizmetTarifiBul } from "../src/yerlesim/hizmet-tarif.ts";
-import { hizmetHazirla, hizmetIlanAc, hizmetIlanBul, hizmetIlanGeri, hizmetIlanIsle, hizmetIlanlar, hizmetStoguGecerli, hizmetStokDonumu, hizmetYetkiliMi } from "../src/yerlesim/hizmet-pazari.ts";
+import { hizmetHazirla, hizmetIlanAc, hizmetIlanBul, hizmetIlanGeri, hizmetIlanIsle, hizmetIlanlar, hizmetNpcTalepleri, hizmetNpcTalebiAc, hizmetNpcTalepTeslim, hizmetStoguGecerli, hizmetStokDonumu, hizmetYetkiliMi } from "../src/yerlesim/hizmet-pazari.ts";
 import type { Karakter, Kasaba } from "../src/yerlesim/tipler.ts";
 import type { EkonomiKaydi } from "../src/yerlesim/pazar-tahta.ts";
 
@@ -324,4 +324,109 @@ test("E4 sinerji kapısı: saz gecesi hem hancı düğümünü hem ozan saz usta
   assert.equal(birlikte.ev?.ekmek, 1);
   assert.equal(birlikte.ev?.corba, 1);
   assert.equal(birlikte.tk, 6);
+});
+
+
+function npcHizmetKasabasi(ek: EkonomiKaydi, kar: Karakter, hazine = 30) {
+  const hedef = { i: 1, a: 0, s: 0, k: 1, d: 0, m: 0, h: 0, q: 0, r: 0, e: 7, es: 0, an: 0, ba: 0, b: [], g: 0 };
+  return {
+    y: "develi", tur: "kasaba", hedef: 60, ay: 12,
+    npc: [hedef], dizin: new Map([[hedef.i, hedef]]), ni: 2, ne: 8,
+    sakin: [], kar: new Map([[kar.o, kar]]), ili: new Map(),
+    hd: { hz: hazine, vk: 0, em: {}, tr: [] }, ek,
+  } as unknown as Kasaba;
+}
+
+function lohusaKarakter(hane = 1): Karakter {
+  const kar = sifaciKarakter(1, 1, 6);
+  kar.e = hane;
+  kar.ev = { sifaliOt: 1, bez: 1 };
+  kar.ms!.s.sifaci!.sv = { "sifaci.lohusaBakimi": 1 };
+  return kar;
+}
+
+test("E4.3-B gerçek doğum olayı NPC lohusa talebi açar, hazineyi rezerve eder ve aynı olay tekrarlanmaz", () => {
+  const kar = lohusaKarakter();
+  const ek = ekonomi();
+  const kasaba = npcHizmetKasabasi(ek, kar, 20);
+  const dogum = { t: "dogum", w: "n2", h: "n1", g: "", n: 3, k: "olay.dogum", p: {} } as unknown as import("../src/yerlesim/tipler.ts").OlayTaslagi;
+  const acilan = hizmetNpcTalebiAc(kasaba, 12, [dogum]);
+  assert.equal(acilan.length, 1);
+  assert.equal(kasaba.hd?.hz, 12);
+  assert.deepEqual(hizmetNpcTalepleri(ek, 12), [{ id: "hn1", hizmet: "lohusa", hedef: "n1", acilisAy: 12, sonAy: 13, odul: 8 }]);
+  assert.equal(hizmetNpcTalebiAc(kasaba, 12, [dogum]).length, 0);
+  assert.equal(kasaba.hd?.hz, 12);
+});
+
+test("E4.3-B lohusa talebi: hazır hizmet tek kez teslim edilir, ödül hazineden önceden ayrılmıştır", () => {
+  const kar = lohusaKarakter();
+  const ek = ekonomi();
+  const kasaba = npcHizmetKasabasi(ek, kar, 20);
+  const dogum = { t: "dogum", w: "n2", h: "n1", g: "", n: 3, k: "olay.dogum", p: {} } as unknown as import("../src/yerlesim/tipler.ts").OlayTaslagi;
+  hizmetNpcTalebiAc(kasaba, 12, [dogum]);
+  const hazir = hizmetHazirla(ek, kar, "lohusa", 1, 12);
+  assert.equal(hazir.ok, true);
+  if (!hazir.ok) return;
+  const teslim = hizmetNpcTalepTeslim(ek, kasaba, kar, "hn1", 12);
+  assert.equal(teslim.ok, true);
+  if (!teslim.ok) return;
+  assert.equal(kar.pa, 8);
+  assert.equal(hazir.deger.stok.n, 0);
+  assert.equal(teslim.deger.talep.d, "tamam");
+  assert.equal(kasaba.hd?.hz, 12, "ödül açılışta rezerve edildi; teslimde hazine ikinci kez düşmez");
+  const tekrar = hizmetNpcTalepTeslim(ek, kasaba, kar, "hn1", 12);
+  assert.deepEqual(tekrar, { ok: false, hata: "siparis_kapandi" });
+  assert.equal(kar.pa, 8);
+});
+
+test("E4.3-B doğum/ölüm talepleri gerçek olay türlerine bağlanır; yetersiz hazine talep açmaz", () => {
+  const kar = lohusaKarakter();
+  const ek = ekonomi();
+  const kasaba = npcHizmetKasabasi(ek, kar, 5);
+  const dogum = { t: "dogum", w: "n2", h: "n1", g: "", n: 3, k: "olay.dogum", p: {} } as unknown as import("../src/yerlesim/tipler.ts").OlayTaslagi;
+  assert.equal(hizmetNpcTalebiAc(kasaba, 12, [dogum]).length, 0);
+  kasaba.hd!.hz = 20;
+  const olum = { t: "olum", w: "n3", h: "n1", g: "", n: 3, k: "olay.olum", p: {} } as unknown as import("../src/yerlesim/tipler.ts").OlayTaslagi;
+  const acilan = hizmetNpcTalebiAc(kasaba, 12, [olum]);
+  assert.equal(acilan.length, 1);
+  assert.equal(ek.hn?.[0]?.h, "teselli");
+  assert.equal(ek.hn?.[0]?.odul, 5);
+  assert.equal(kasaba.hd?.hz, 15);
+});
+
+test("E4.3-B NPC talebi süresi dolunca veya hedef ölünce rezerve ödül hazineye döner", () => {
+  const kar = lohusaKarakter();
+  const ek = ekonomi();
+  const kasaba = npcHizmetKasabasi(ek, kar, 20);
+  const dogum = { t: "dogum", w: "n2", h: "n1", g: "", n: 3, k: "olay.dogum", p: {} } as unknown as import("../src/yerlesim/tipler.ts").OlayTaslagi;
+  hizmetNpcTalebiAc(kasaba, 12, [dogum]);
+  assert.equal(kasaba.hd?.hz, 12);
+  hizmetStokDonumu(kasaba, 14);
+  assert.equal(ek.hn?.[0]?.d, "dustu");
+  assert.equal(kasaba.hd?.hz, 20);
+  hizmetStokDonumu(kasaba, 15);
+  assert.equal(kasaba.hd?.hz, 20, "iade ikinci kez yazılmaz");
+
+  const ikinci = npcHizmetKasabasi(ekonomi(), kar, 20);
+  hizmetNpcTalebiAc(ikinci, 12, [dogum]);
+  ikinci.dizin.delete(1);
+  hizmetStokDonumu(ikinci, 13);
+  assert.equal(ikinci.ek?.hn?.[0]?.d, "dustu");
+  assert.equal(ikinci.hd?.hz, 20);
+});
+
+test("E4.3-B aynı hanedeki oyuncu kendi hanesine açılmış NPC talebinden ödül alamaz", () => {
+  const kar = lohusaKarakter(7);
+  const ek = ekonomi();
+  const kasaba = npcHizmetKasabasi(ek, kar, 20);
+  const dogum = { t: "dogum", w: "n2", h: "n1", g: "", n: 3, k: "olay.dogum", p: {} } as unknown as import("../src/yerlesim/tipler.ts").OlayTaslagi;
+  hizmetNpcTalebiAc(kasaba, 12, [dogum]);
+  const hazir = hizmetHazirla(ek, kar, "lohusa", 1, 12);
+  assert.equal(hazir.ok, true);
+  if (!hazir.ok) return;
+  const oncePara = kar.pa;
+  const teslim = hizmetNpcTalepTeslim(ek, kasaba, kar, "hn1", 12);
+  assert.deepEqual(teslim, { ok: false, hata: "hedef_uygun_degil" });
+  assert.equal(kar.pa, oncePara);
+  assert.equal(hazir.deger.stok.n, 1);
 });
