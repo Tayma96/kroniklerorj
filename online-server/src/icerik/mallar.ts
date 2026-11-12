@@ -22,6 +22,10 @@ export const MAL_IDLERI = [
   "nal",
   "sifaliOt",
   "inceYun",
+  // Kâtiplik: kâğıt tüccardan alınır; mürekkep ve senet kâtip tarafından hazırlanır.
+  "kagit",
+  "murekkep",
+  "senet",
   // Faz 6 ekonomi: meslek kataloğu (MESLEK_AGACLARI §3.2) — çiftçi, oduncu, demirci, marangoz, dokumacı, aşçı
   "bugday",
   "bakla",
@@ -88,6 +92,9 @@ export const MALLAR: Record<MalId, { taban: number; meslek: MeslekId; omur?: num
   nal: { taban: 8, meslek: "demirci" },
   sifaliOt: { taban: 3, meslek: "sifaci" },
   inceYun: { taban: 4, meslek: "ciftci" },
+  kagit: { taban: 6, meslek: "tuccar" },
+  murekkep: { taban: 0, meslek: "katip" },
+  senet: { taban: 0, meslek: "katip" },
   bugday: { taban: 3, meslek: "ciftci" },
   bakla: { taban: 3, meslek: "ciftci" },
   post: { taban: 2, meslek: "ciftci" },
