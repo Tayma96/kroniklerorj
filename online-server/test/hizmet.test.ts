@@ -387,7 +387,7 @@ test("E4.3-B doğum/ölüm talepleri gerçek olay türlerine bağlanır; yetersi
   const dogum = { t: "dogum", w: "n2", h: "n1", g: "", n: 3, k: "olay.dogum", p: {} } as unknown as import("../src/yerlesim/tipler.ts").OlayTaslagi;
   assert.equal(hizmetNpcTalebiAc(kasaba, 12, [dogum]).length, 0);
   kasaba.hd!.hz = 20;
-  const olum = { t: "olum", w: "n3", h: "n1", g: "", n: 3, k: "olay.olum", p: {} } as unknown as import("../src/yerlesim/tipler.ts").OlayTaslagi;
+  const olum = { t: "olum", w: "n3", h: "", g: "", n: 3, k: "olay.olum", p: { yakini: { i: "n1", a: 0, s: 0, k: 1 } } } as unknown as import("../src/yerlesim/tipler.ts").OlayTaslagi;
   const acilan = hizmetNpcTalebiAc(kasaba, 12, [olum]);
   assert.equal(acilan.length, 1);
   assert.equal(ek.hn?.[0]?.h, "teselli");
