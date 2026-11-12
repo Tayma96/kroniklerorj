@@ -26,7 +26,7 @@ on:
         type: boolean
         default: false
       online_sunucu_url:
-        description: "Test Worker adresi (online_gelistirme açıkken zorunlu)"
+        description: "Test Worker adresi (online_gelistirme veya online_test_giris açıkken zorunlu)"
         type: string
         default: ""
 
