@@ -1343,7 +1343,7 @@ export class YerlesimMotoru {
       } else if (govde.islem === "taslak") {
         sonuc = oyuncuArabuluculukTaslak(k, kar, govde.dosya, govde.sTutari, govde.kTutari, govde.not, ay);
       } else if (govde.islem === "imza") {
-        sonuc = oyuncuArabuluculukImzala(k, kar, govde.dosya, govde.surum);
+        sonuc = oyuncuArabuluculukImzala(k, kar, govde.dosya, govde.surum, ay);
       } else if (govde.islem === "uygula") {
         sonuc = oyuncuArabuluculukUygula(k, kar, govde.dosya, ay);
       } else return hata("gecersiz_istek");
