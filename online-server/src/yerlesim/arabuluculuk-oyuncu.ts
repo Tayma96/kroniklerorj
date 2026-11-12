@@ -8,6 +8,7 @@ import type { Karakter, Kasaba } from "./tipler.ts";
 
 export const OYUNCU_ARABULUCU_DAVET_AY = 2;
 export const OYUNCU_ARABULUCU_ACIK_TAVAN = 3;
+export const OYUNCU_ARABULUCU_UZLASMA_VADE_AY = 3;
 
 type Rol = "s" | "k" | "ar";
 
@@ -126,6 +127,7 @@ export function oyuncuArabuluculukTaslak(
   const yeni = { s: sTutari as number, k: kTutari as number, ...(typeof notHam === "string" && notHam.trim() ? { not: notHam.trim() } : {}) };
   if (onceki && onceki.s === yeni.s && onceki.k === yeni.k && onceki.not === yeni.not) return basarili(d);
   d.uz = yeni;
+  d.sonAy = ay + OYUNCU_ARABULUCU_UZLASMA_VADE_AY;
   d.sv++;
   d.im = {};
   d.d = "imzaBekliyor";
@@ -161,13 +163,30 @@ export function oyuncuArabuluculukImzala(
   return basarili(d);
 }
 
+function emanetIadeEt(k: Kasaba, d: OyuncuArabuluculuk, ay: number): boolean {
+  if (d.d !== "emanette" || !d.od || d.od.emanet !== 1 || d.od.uygulandi === 1 || d.od.iade === 1) return false;
+  const s = k.kar.get(d.s), kk = k.kar.get(d.k);
+  if (!s || !kk) return false;
+  if (!Number.isSafeInteger(s.pa + d.od.s) || !Number.isSafeInteger(kk.pa + d.od.k)) return false;
+  s.pa += d.od.s;
+  kk.pa += d.od.k;
+  d.od.iade = 1;
+  d.d = "iptal";
+  d.kp = ay;
+  return true;
+}
+
 export function oyuncuArabuluculukUygula(
   k: Kasaba, ben: Karakter, id: unknown, ay: number
 ): Sonuc<OyuncuArabuluculuk> {
   const d = dosyaBul(toplumAl(k), id);
   if (!d) return hata("talep_yok");
   if (!rol(d, ben.o)) return hata("taraf_degil");
-  if (d.d !== "emanette" || !d.od || d.od.emanet !== 1 || d.od.uygulandi === 1) return hata("teklif_kapandi");
+  if (d.d !== "emanette" || !d.od || d.od.emanet !== 1 || d.od.uygulandi === 1 || d.od.iade === 1) return hata("teklif_kapandi");
+  if (d.sonAy !== undefined && ay > d.sonAy) {
+    if (!emanetIadeEt(k, d, ay)) return hata("sakin_yok");
+    return basarili(d);
+  }
   const s = k.kar.get(d.s), kk = k.kar.get(d.k);
   if (!s || !kk) return hata("sakin_yok");
   if (!Number.isSafeInteger(s.pa + d.od.k) || !Number.isSafeInteger(kk.pa + d.od.s)) return hata("deger_sinir_disi");
@@ -183,6 +202,10 @@ export function oyuncuArabuluculukUygula(
 export function oyuncuArabuluculukDonumu(k: Kasaba, ay: number): number {
   let sayi = 0;
   for (const d of oyuncuArabuluculukAl(toplumAl(k))) {
+    if (d.d === "emanette" && d.sonAy !== undefined && ay > d.sonAy && emanetIadeEt(k, d, ay)) {
+      sayi++;
+      continue;
+    }
     if (d.d === "davet" && ay > d.sa) {
       d.d = "dustu";
       d.kp = ay;
