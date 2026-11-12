@@ -217,7 +217,7 @@ async function dengeSim(N: number) {
     seviyeVer(c, y.dugum, y.seviye);
   };
   const { NPC_AYLIK_KOTA, npcFiyat, npcdenAl, npcdenAlinan, saticiDegeri, stokFiyat, malMeslegindeMi } = await import("../src/yerlesim/npc-taban.ts");
-  const { NPC_SATIS_KOTASI, npcyeSat, satilan } = await import("../src/yerlesim/pazar.ts");
+  const { npcSatisKotasi, npcyeSat, satilan } = await import("../src/yerlesim/pazar.ts");
   const { siparisDonumu, siparisTeslim } = await import("../src/yerlesim/siparis.ts");
   const { tarifListesi, tarifYap } = await import("../src/yerlesim/tarif.ts");
   const { temelIsOnizleme, temelIsYap } = await import("../src/yerlesim/temel-is.ts");
@@ -250,7 +250,7 @@ async function dengeSim(N: number) {
       let akis = 0;
       takatTazele(c, ay);
       const deger = (mal: Mal) => saticiDegeri(c, mal, sayac()).toplam;
-      const satilabilir = (mal: Mal, adet: number) => Math.min(adet, Math.max(0, NPC_SATIS_KOTASI - satilan(c, mal, ay) - (c.ev?.[mal] ?? 0)));
+      const satilabilir = (mal: Mal, adet: number) => Math.min(adet, Math.max(0, npcSatisKotasi(mal) - satilan(c, mal, ay) - (c.ev?.[mal] ?? 0)));
       const alimMaliyeti = (mal: Mal, n: number): number => {
         if (n <= 0) return 0;
         const st = malMeslegindeMi(c, mal) ? 0 : Math.min(stok[mal] ?? 0, n);
