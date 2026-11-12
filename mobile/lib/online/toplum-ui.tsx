@@ -485,6 +485,7 @@ export function ArabuluculukKarti({ x, toplum }: { x: OyuncuArabuluculukGorunumu
       <Text style={{ fontFamily: F.display, fontSize: 12, color: C.gold }}>{t("onl.tp.arb.uzlasma")} · v{x.surum}</Text>
       <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchmentDim, textAlign: hiza(rtl) }}>{t("onl.tp.arb.sOder")}: {x.uzlasma.s} · {t("onl.tp.arb.kOder")}: {x.uzlasma.k}</Text>
       {x.uzlasma.not ? <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.parchmentMuted }}>{x.uzlasma.not}</Text> : null}
+      {x.sonAy !== undefined ? <Text style={{ fontFamily: F.serif, fontSize: 12.5, color: C.gold }}>{t("onl.tp.arb.sonAy")}: {x.sonAy}</Text> : null}
       <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchmentMuted }}>{t("onl.tp.arb.imzaDurum")}: {x.imza.s === x.surum ? "✓" : "—"} / {x.imza.k === x.surum ? "✓" : "—"}</Text>
     </View> : null}
     {x.durum === "davet" ? <View style={{ flexDirection: yon(rtl), gap: 8 }}>
