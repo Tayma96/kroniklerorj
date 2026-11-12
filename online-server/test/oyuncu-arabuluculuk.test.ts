@@ -173,6 +173,10 @@ test("arabulucu sürümlü uzlaşma taslağı oluşturur; iki tarafın güncel i
   assert.equal(s.pa, 380);
   assert.equal(kk.pa, 620, "emanet karşı tarafa aktarılır");
   assert.equal(ac.deger.od?.uygulandi, 1);
+  const sondaS = s.pa, sondaK = kk.pa;
+  assert.deepEqual(oyuncuArabuluculukUygula(k, kk, id, k.ay), { ok: false, hata: "teklif_kapandi" }, "ikinci tarafın tekrarı ikinci ödeme üretmez");
+  assert.equal(s.pa, sondaS, "tekrar uygulama şikâyetçinin bakiyesini değiştirmez");
+  assert.equal(kk.pa, sondaK, "tekrar uygulama karşı tarafın bakiyesini değiştirmez");
 });
 
 test("uzlaşma taslağı değişirse eski imzalar ve sürüm geçersizleşir", () => {
