@@ -98,6 +98,8 @@ export function ciktiAdedi(k: Karakter, t: Tarif, aracVar: boolean): number {
 
 /** [PARAMETRE] Çiftçi yayla göçü + dokumacı kışlık çadır bilgisiyle çadır kalitesine ek katkı. */
 export const YAYLA_CADIRI_KALITE_BONUS = 10;
+/** [PARAMETRE] Dokumacı zırh astarı + demirci zırh ustalığıyla pul zırh kalitesine ek katkı. */
+export const PUL_ZIRH_ASTARI_KALITE_BONUS = 10;
 
 /** Tarifin kalite düğümü yüzdeleri (hedef: tarif kimliği ya da grubu), tavanlı. */
 export function kaliteBecerisi(k: Karakter, t: Tarif): number {
@@ -105,6 +107,7 @@ export function kaliteBecerisi(k: Karakter, t: Tarif): number {
   let toplam = 0;
   for (const e of acikEtkiler(k)) if (e.tur === "kalite" && hedefler.has(e.hedef)) toplam += e.yuzde;
   if (t.id === "cadir" && sinerjiAcik(k, "yaylaCadiri")) toplam += YAYLA_CADIRI_KALITE_BONUS;
+  if (t.id === "pulZirh" && sinerjiAcik(k, "pulZirhAstari")) toplam += PUL_ZIRH_ASTARI_KALITE_BONUS;
   return Math.min(KALITE_BECERI_TAVAN, toplam);
 }
 
