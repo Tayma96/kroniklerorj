@@ -7,8 +7,8 @@ import { IS_KONDISYON, halAl } from "../src/yerlesim/hal.ts";
 import { TARIF_KILIDI, beceriDugumu, gocKarsiligi } from "../src/icerik/agaclar/index.ts";
 import { kancaMi, seviyeVer } from "../src/yerlesim/beceri.ts";
 import { meslekKaydi, meslekSec } from "../src/yerlesim/meslek.ts";
-import { ALET_OMRU, tarifListesi, tarifYap } from "../src/yerlesim/tarif.ts";
-import { hizmetAcik } from "../src/yerlesim/beceri-etki.ts";
+import { ALET_OMRU, kaliteBecerisi, tarifListesi, tarifYap } from "../src/yerlesim/tarif.ts";
+import { hizmetAcik, sinerjiAcik } from "../src/yerlesim/beceri-etki.ts";
 import { mulkluIkram } from "../src/mulk/tapu.ts";
 import { temelIsYap } from "../src/yerlesim/temel-is.ts";
 import type { Karakter, Kasaba } from "../src/yerlesim/tipler.ts";
@@ -192,4 +192,26 @@ test("Kâtip senet zinciri: düğüm seviyesi mürekkep ve senet tariflerini aç
   assert.equal(c.ev.senet, 1);
   assert.equal(c.ev.kagit, undefined);
   assert.equal(c.ev.murekkep, 1);
+});
+
+
+test("yaylaCadiri sinerjisi yalnız iki meslek düğümü birlikteyken çadır kalitesini artırır", () => {
+  const k = testKasabasi();
+  const c = oyuncuEkle(k, 91, k.ay - 16 * 12);
+  c.tk = 18;
+  c.ta = k.ay;
+  const cadir = TARIFLER.cadir;
+
+  seviyeVer(c, "dokumaci.kislikCadir", 1);
+  assert.equal(kaliteBecerisi(c, cadir), 0, "dokumacı düğümü tek başına sinerji vermez");
+  assert.equal(sinerjiAcik(c, "yaylaCadiri"), false);
+
+  seviyeVer(c, "ciftci.yaylaGocu", 1);
+  assert.equal(sinerjiAcik(c, "yaylaCadiri"), true);
+  assert.equal(kaliteBecerisi(c, cadir), 10, "iki düğüm birlikte çadır kalite katkısını açar");
+
+  const diger = oyuncuEkle(k, 92, k.ay - 16 * 12);
+  seviyeVer(diger, "ciftci.yaylaGocu", 1);
+  assert.equal(sinerjiAcik(diger, "yaylaCadiri"), false, "çiftçi düğümü tek başına yetmez");
+  assert.equal(kaliteBecerisi(diger, cadir), 0);
 });
