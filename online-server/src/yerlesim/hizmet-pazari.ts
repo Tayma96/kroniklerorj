@@ -70,9 +70,22 @@ export function hizmetHazirla(
   return basarili({ stok, harcanan: { girdiler, takat } });
 }
 
-/** Süresi dolan stok ekranda/işlemde kullanılamaz; eski kayıtlar silinmeden geçmişte kalır. */
+/** Süresi dolan stok ekranda/işlemde kullanılamaz; ay dönümünde tecrübesi verilip budanır (hizmetKayitBuda). */
 export function hizmetStoguGecerli(stok: HizmetStogu, ay: number): boolean {
   return stok.n > 0 && stok.sa >= ay;
+}
+
+/** [PARAMETRE] Kapanmış (satıldı, geri çekildi, düştü) ilan kayıtları son kullanma ayından sonra bu kadar ay saklanır. */
+export const HIZMET_KAPALI_ILAN_SAKLAMA_AY = 6;
+
+/**
+ * Ekonomi kaydı yerleşim DO'sunda tek değer olarak durduğu için bitmiş hizmet kayıtları silinir.
+ * Süresi dolmuş stok (adedi sıfırlanmış, tecrübesi verilmiş) ve eski kapalı ilanlar budanır;
+ * açık ilanlara, geçerli stoğa ve aylık hazırlama kotası için içinde bulunulan ayın kayıtlarına dokunulmaz.
+ */
+export function hizmetKayitBuda(ek: EkonomiKaydi, ay: number): void {
+  if (ek.hs) ek.hs = ek.hs.filter((x) => x.sa >= ay);
+  if (ek.hi) ek.hi = ek.hi.filter((x) => x.d === "acik" || x.sa >= ay - HIZMET_KAPALI_ILAN_SAKLAMA_AY);
 }
 
 /**
@@ -113,6 +126,8 @@ export function hizmetStokDonumu(kasaba: Kasaba, ay: number): void {
     talep.d = "dustu";
     hanedanKasabasi(kasaba).hz += talep.odul;
   }
+
+  hizmetKayitBuda(ek, ay);
 }
 
 export function hizmetStoguGorunumu(stok: HizmetStogu, ay: number) {
@@ -346,7 +361,7 @@ export function hizmetNpcTalepTeslim(
   const olay: OlayTaslagi = {
     t: "hizmetTalep", w: npcKimlik(hedef.i), h: satici.o, g: satici.o, n: 3,
     k: "olay.hizmetTalepTeslim",
-    p: { oyuncu: oyuncuRef(satici), kisi: npcRef(hedef), hizmet: talep.h, odul: talep.odul },
+    p: { oyuncu: oyuncuRef(satici), kisi: npcRef(hedef), hizmet: talep.h, odul: talep.odul, hizmetPuani },
   };
-  return basarili({ talep, odul: talep.odul, olay: { ...olay, p: { ...olay.p, hizmetPuani } } });
+  return basarili({ talep, odul: talep.odul, olay });
 }
