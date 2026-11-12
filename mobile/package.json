@@ -51,7 +51,8 @@
     "smoke:rng:full": "node scripts/_smoke/check.cjs rng-full",
     "design:preview": "node scripts/design-preview.cjs",
     "design:check": "node scripts/check-screen-design.cjs",
-    "design:gallery": "node scripts/design-gallery-check.cjs"
+    "design:gallery": "node scripts/design-gallery-check.cjs",
+    "assets:check": "node scripts/check-assets.cjs"
   },
   "private": true,
   "license": "UNLICENSED"
