@@ -8,7 +8,7 @@ import { iletiOku, jsonYanit } from "./ic.ts";
 import { istekNoCoz } from "./mantik.ts";
 import { oyunAyi, sonrakiDonum } from "./saat.ts";
 import { bolgeAyi, bolgeEylem, bolgeGorunumu, bolgeKur, bolgeVar, haracOnayla, vergiYatir } from "./siyaset/bolge.ts";
-import { ittifakIstekAl, ittifakOnayAl, ittifakYanitAl, taninmaIstekAl, taninmaYanitAl } from "./siyaset/devlet.ts";
+import { ittifakIstekAl, ittifakOnayAl, ittifakYanitAl, ittifakOnaylandi, taninmaIstekAl, taninmaYanitAl } from "./siyaset/devlet.ts";
 import { diplomasiReddedildi } from "./siyaset/diplomasi-red.ts";
 import { bolgeCagir, sultanlikCagir } from "./siyaset/ic.ts";
 import { kimlikGor } from "./siyaset/makam.ts";
@@ -176,6 +176,9 @@ export class BolgeDO {
       if (!r.ok) {
         if (HATA_DURUMU[r.hata] >= 500) break;
         diplomasiReddedildi(d, ileti);
+        degisti = true;
+      } else if (ileti.tur === "ittifakOnay") {
+        ittifakOnaylandi(d, ileti.hedef, ileti.istekId);
         degisti = true;
       }
       const i = d.diplomasiGiden?.findIndex((x) => x.tur === ileti.tur && x.hedef === ileti.hedef && x.istekId === ileti.istekId) ?? -1;
