@@ -105,7 +105,17 @@ function HizmetEkran() {
         ? <CizgiDugme etiket={t("onl.hizmet.ilanGeri")} icon="undo" rtl={rtl} kucuk kapali={yukleniyor} onPress={() => void islem(() => istemci!.geri(x.id), t("onl.hizmet.ilanIade"))} />
         : <CizgiDugme etiket={t("onl.hizmet.satinAl")} icon="coins" rtl={rtl} kucuk kapali={yukleniyor} onPress={() => void islem(() => istemci!.satinAl(x.id, 1), t("onl.hizmet.satinAlindi"))} />}
     </HizmetKarti>) : <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{t("onl.hizmet.pazarBos")}</Text>}
-    <CizgiDugme etiket={t("onl.hizmet.yenile")} icon="refresh-cw" rtl={rtl} kucuk kapali={yukleniyor} onPress={() => void yukle()} />
+    <Baslik2 metin={t("onl.hizmet.npcTalepleri")} rtl={rtl} sag={durum ? <Text style={{ fontFamily: F.display, color: C.gold }}>{durum.npcTalepleri.length}</Text> : undefined} />
+    {durum?.npcTalepleri.length ? durum.npcTalepleri.map((x) => {
+      const stokVar = durum.stok.some((s) => s.hizmet === x.hizmet && s.adet > 0);
+      return <HizmetKarti key={x.id} baslik={t("onl.hizmet.ad." + x.hizmet)}
+        alt={applyParams(t("onl.hizmet.npcTalepBilgi"), [t("onl.hizmet.npcTalepKisi"), x.odul, x.sonAy])}
+        icon="scroll-open" rtl={rtl}>
+        <CizgiDugme etiket={t("onl.hizmet.npcTalepTeslim")} icon="hand-heart" rtl={rtl} kucuk kapali={yukleniyor || !stokVar}
+          onPress={() => void islem(() => istemci!.talepTeslim(x.id), t("onl.hizmet.npcTalepTamam"))} />
+      </HizmetKarti>;
+    }) : <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{t("onl.hizmet.npcTalepBos")}</Text>}
+        <CizgiDugme etiket={t("onl.hizmet.yenile")} icon="refresh-cw" rtl={rtl} kucuk kapali={yukleniyor} onPress={() => void yukle()} />
   </ScrollView>;
 }
 
