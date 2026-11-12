@@ -52,6 +52,18 @@ export function devletYonet(d: BolgeDurumu, kimlik: SiyasiKimlik, govde: Record<
       s.divan = s.divan.filter((x) => x.kisi !== govde.kisi);
       return s.divan.length === once ? "hedef_uygun_degil" : null;
     }
+    case "taninmaYanit": {
+      const kaynak = govde.kaynakBolge;
+      const kaynakAd = typeof govde.kaynakAd === "string" ? govde.kaynakAd.trim().replace(/\\s+/g, " ") : "";
+      const karar = govde.karar;
+      if (typeof kaynak !== "string" || !/^[a-z0-9-]{2,32}$/.test(kaynak) || kaynak === d.id) return "deger_sinir_disi";
+      if (kaynakAd.length < 2 || kaynakAd.length > 40 || !/^[\\p{L}\\p{N}][\\p{L}\\p{N} '\\u2019-]*[\\p{L}\\p{N}]$/u.test(kaynakAd)) return "deger_sinir_disi";
+      if (karar !== "kabul" && karar !== "ret") return "deger_sinir_disi";
+      const yanitlar = (s.taninmaYanits ??= {});
+      if (yanitlar[kaynak]) return "devlet_talep_var";
+      yanitlar[kaynak] = { karar, ay: d.ay, ad: kaynakAd };
+      return null;
+    }
     case "taninma": {
       if (s.taninma === "tanindi") return "devlet_kapali";
       if (s.taninma === "talepEdildi") return "devlet_talep_var";
@@ -93,7 +105,7 @@ export function devletGorunumu(s: BagimsizDevlet | undefined) {
     bey: { kisi: s.beyKisi, ad: s.beyAd },
     vergiOrani: s.vergiOrani,
     divan: s.divan.map((x) => ({ ad: x.ad, rol: x.rol })),
-    mogol: s.mogol, sultan: s.sultan, sultanSonuc: s.sultanSonuc ?? null, taninma: s.taninma,
+    mogol: s.mogol, sultan: s.sultan, sultanSonuc: s.sultanSonuc ?? null, taninma: s.taninma, taninmaYanits: Object.entries(s.taninmaYanits ?? {}).map(([bolge, x]) => ({ bolge, ...x })),
     yemin: { bagli: yeminler.filter((x) => x === "bagli").length, tarafsiz: yeminler.filter((x) => x === "tarafsiz").length },
   };
 }
