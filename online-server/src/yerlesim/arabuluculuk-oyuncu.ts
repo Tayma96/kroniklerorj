@@ -1,0 +1,122 @@
+// Oyuncu–oyuncu arabuluculuğu: üç tarafın açık rızasına dayalı davet ve tarafsızlık kapısı.
+// Bu modül henüz para/uzlaşma uygulamaz; D2-B yalnızca güvenli katılım durumunu yönetir.
+
+import { basarili, hata, type Sonuc } from "../tipler.ts";
+import { engelliMi } from "./engel.ts";
+import { oyuncuArabuluculukAl, toplumAl, oyuncuMu, type OyuncuArabuluculuk, type Toplum } from "./toplum.ts";
+import type { Karakter, Kasaba } from "./tipler.ts";
+
+export const OYUNCU_ARABULUCU_DAVET_AY = 2;
+export const OYUNCU_ARABULUCU_ACIK_TAVAN = 3;
+
+type Rol = "s" | "k" | "ar";
+
+function ayniKume(a: Karakter, b: Karakter): boolean {
+  return a.h === b.h || (a.e !== 0 && a.e === b.e);
+}
+
+function rol(d: OyuncuArabuluculuk, o: string): Rol | undefined {
+  if (d.s === o) return "s";
+  if (d.k === o) return "k";
+  if (d.ar === o) return "ar";
+  return undefined;
+}
+
+/** Arabulucu, iki taraftan hiçbiriyle dostluk/husumet/engel veya hesap-ocak bağı taşıyamaz. */
+export function oyuncuArabulucuTarafsizMi(t: Toplum | undefined, sikayetci: Karakter, karsi: Karakter, arabulucu: Karakter): boolean {
+  if (arabulucu.o === sikayetci.o || arabulucu.o === karsi.o || sikayetci.o === karsi.o) return false;
+  if (ayniKume(arabulucu, sikayetci) || ayniKume(arabulucu, karsi)) return false;
+  if (engelliMi(t, arabulucu.o, sikayetci.o) || engelliMi(t, arabulucu.o, karsi.o)) return false;
+  const dost = (a: string, b: string) => (t?.ob ?? []).some(x =>
+    x.d === "dost" && ((x.a === a && x.b === b) || (x.a === b && x.b === a))
+  );
+  const husumet = (a: string, b: string) => (t?.hu ?? []).some(x =>
+    x.d === "acik" && ((x.g === a && x.h === b) || (x.g === b && x.h === a))
+  );
+  return !dost(arabulucu.o, sikayetci.o) && !dost(arabulucu.o, karsi.o)
+    && !husumet(arabulucu.o, sikayetci.o) && !husumet(arabulucu.o, karsi.o);
+}
+
+function dosyaBul(t: Toplum, id: unknown): OyuncuArabuluculuk | undefined {
+  if (typeof id !== "string" || !/^[1-9][0-9]{0,8}$/.test(id)) return undefined;
+  return oyuncuArabuluculukAl(t).find(x => x.i === Number(id));
+}
+
+/** Şikâyetçi davet açar. Üç oyuncu da yüklenmiş olmalı; aynı taraf çifti için tek açık dosya vardır. */
+export function oyuncuArabuluculukAc(
+  k: Kasaba, sikayetci: Karakter, karsi: Karakter, arabulucu: Karakter, ay: number
+): Sonuc<OyuncuArabuluculuk> {
+  if (![sikayetci.o, karsi.o, arabulucu.o].every(oyuncuMu)) return hata("kisi_yok");
+  if (sikayetci.o === karsi.o || sikayetci.o === arabulucu.o || karsi.o === arabulucu.o) return hata("kendine");
+  if (ay < k.ay || !Number.isInteger(ay)) return hata("teklif_gecersiz");
+  const tp = k.tp;
+  if (engelliMi(tp, sikayetci.o, karsi.o) || engelliMi(tp, sikayetci.o, arabulucu.o) || engelliMi(tp, karsi.o, arabulucu.o)) return hata("engelli");
+  if (ayniKume(sikayetci, karsi) || ayniKume(sikayetci, arabulucu) || ayniKume(karsi, arabulucu)) return hata("ayni_kume");
+  if (!oyuncuArabulucuTarafsizMi(tp, sikayetci, karsi, arabulucu)) return hata("arabulucu_tarafsiz_degil");
+  const dosyalar = oyuncuArabuluculukAl(toplumAl(k));
+  const [a, b] = [sikayetci.o, karsi.o].sort();
+  if (dosyalar.filter(x => ["davet", "taslak", "imzaBekliyor", "emanette"].includes(x.d)).length >= OYUNCU_ARABULUCU_ACIK_TAVAN) return hata("teklif_siniri");
+  if (dosyalar.some(x => ["davet", "taslak", "imzaBekliyor", "emanette"].includes(x.d) && [x.s, x.k].sort()[0] === a && [x.s, x.k].sort()[1] === b)) return hata("teklif_siniri");
+  const d: OyuncuArabuluculuk = {
+    i: k.tp!.tn++,
+    s: sikayetci.o, k: karsi.o, ar: arabulucu.o,
+    d: "davet", rs: {}, sv: 1, im: {}, ac: ay, sa: ay + OYUNCU_ARABULUCU_DAVET_AY - 1,
+  };
+  dosyalar.push(d);
+  return basarili(d);
+}
+
+/** Her oyuncu yalnız kendi rolünün rızasını kaydedebilir. Ret dosyayı kapatır; sessizlik kabul sayılmaz. */
+export function oyuncuArabuluculukCevap(
+  k: Kasaba, ben: Karakter, id: unknown, cevap: unknown, ay: number
+): Sonuc<OyuncuArabuluculuk> {
+  const d = dosyaBul(toplumAl(k), id);
+  if (!d) return hata("talep_yok");
+  const r = rol(d, ben.o);
+  if (!r) return hata("taraf_degil");
+  if (d.d !== "davet") return hata("teklif_kapandi");
+  if (ay > d.sa) {
+    d.d = "dustu";
+    d.kp = ay;
+    return hata("teklif_kapandi");
+  }
+  if (cevap === "ret") {
+    d.d = "ret";
+    d.kp = ay;
+    return basarili(d);
+  }
+  if (cevap !== "kabul") return hata("gecersiz_istek");
+  // Her kabul anında tarafların hâlâ aynı kasabada ve arabulucunun hâlâ tarafsız olduğu doğrulanır.
+  const s = k.kar.get(d.s), kk = k.kar.get(d.k), ar = k.kar.get(d.ar);
+  if (!s || !kk || !ar) return hata("sakin_yok");
+  if (engelliMi(k.tp, d.s, d.k) || engelliMi(k.tp, d.s, d.ar) || engelliMi(k.tp, d.k, d.ar)) return hata("engelli");
+  if (!oyuncuArabulucuTarafsizMi(k.tp, s, kk, ar)) return hata("arabulucu_tarafsiz_degil");
+  d.rs[r] = ay;
+  if (d.rs.s !== undefined && d.rs.k !== undefined && d.rs.ar !== undefined) d.d = "taslak";
+  return basarili(d);
+}
+
+/** Taraflar taslak başlamadan kendi rızalarını geri alabilir. */
+export function oyuncuArabuluculukGeriAl(k: Kasaba, ben: Karakter, id: unknown, ay: number): Sonuc<OyuncuArabuluculuk> {
+  const d = dosyaBul(toplumAl(k), id);
+  if (!d) return hata("talep_yok");
+  const r = rol(d, ben.o);
+  if (!r) return hata("taraf_degil");
+  if (d.d !== "davet") return hata("teklif_kapandi");
+  d.d = "geri";
+  d.kp = ay;
+  return basarili(d);
+}
+
+/** Süresi dolan davetler cezasız düşer. */
+export function oyuncuArabuluculukDonumu(k: Kasaba, ay: number): number {
+  let sayi = 0;
+  for (const d of oyuncuArabuluculukAl(toplumAl(k))) {
+    if (d.d === "davet" && ay > d.sa) {
+      d.d = "dustu";
+      d.kp = ay;
+      sayi++;
+    }
+  }
+  return sayi;
+}
