@@ -230,10 +230,20 @@ export interface BagimsizDevlet {
   sultanSonuc?: "kabul" | "ret";
   taninma: "taninmadi" | "talepEdildi" | "tanindi";
   taninmaTalepAy?: number;
-  /** Başka beyliklerin tanınma taleplerine verilen yerel yanıtlar; kaynak beylik DO'su ayrıca güncellenmez. */
-  taninmaYanits?: Record<string, { karar: "kabul" | "ret"; ay: number; ad: string }>;
+  taninmaHedef?: string;
+  taninmaIstekId?: string;
+  taninmaSonuc?: "kabul" | "ret";
+  taninmaCevap?: { kaynak: string; karar: "kabul" | "ret"; ay: number; ad: string; istekId: string };
+  /** Başka beyliklerden gelen tanınma talepleri; istek kimliğiyle tekrar güvenli. */
+  taninmaGelen?: Record<string, { istekId: string; ay: number; ad: string; yanitlandi: boolean }>;
+  /** Başka beyliklerin tanınma taleplerine verilen yanıtlar. */
+  taninmaYanits?: Record<string, { karar: "kabul" | "ret"; ay: number; ad: string; istekId: string }>;
   yeminler: Record<string, "bagli" | "tarafsiz">;
 }
+
+export type DiplomasiGiden =
+  | { tur: "taninmaIstek"; hedef: string; istekId: string; ay: number; ad: string }
+  | { tur: "taninmaYanit"; hedef: string; istekId: string; karar: "kabul" | "ret"; ay: number; ad: string };
 
 export interface BolgeDurumu {
   v: 1;
@@ -248,6 +258,8 @@ export interface BolgeDurumu {
   gonderilen: number;
   /** Sultanlığa yolda olan haraç (outbox; anahtar → tutar). */
   yolda: Record<string, number>;
+  /** Bölgeler arası tanınma isteği/yanıtı outbox; alıcı teyit etmeden silinmez. */
+  diplomasiGiden?: DiplomasiGiden[];
   /** Ardışık haraç gecikmesi (ay). */
   gecikme: number;
   sonGelir: number;
@@ -316,7 +328,10 @@ export type BolgeIleti =
   | { islem: "yaz"; bolge: string; hesapId: string; kimlik: SiyasiKimlik; govde: unknown }
   | { islem: "yoklama"; bolge: string; hesapId: string }
   /** Faz 6 kancası: oyuncu/mülk vergisi vali kasasına (anahtar ile tekrar güvenli; akçe çağıranda düşülmüş olmalı). */
-  | { islem: "vergiYatir"; bolge: string; anahtar: string; tutar: number; yerlesim: string };
+  | { islem: "vergiYatir"; bolge: string; anahtar: string; tutar: number; yerlesim: string }
+  /** Yalnız DO'lar arası iç iletiler; Worker'ın oyuncu API yönlendiricisinden sunulmaz. */
+  | { islem: "taninmaIstekAl"; bolge: string; kaynak: string; istekId: string; ay: number; ad: string }
+  | { islem: "taninmaYanitAl"; bolge: string; kaynak: string; istekId: string; karar: "kabul" | "ret"; ay: number; ad: string };
 
 /** BolgeDO → SultanlikDO. */
 export type SultanlikIleti =
