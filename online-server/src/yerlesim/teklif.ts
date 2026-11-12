@@ -392,7 +392,6 @@ function kabulUygula(k: Kasaba, t: Teklif, ay: number): Sonuc<OlayTaslagi[]> {
       if (aktifIsSayisi >= IS_SURER_EN_COK) return hata("teklif_siniri");
       const kural = isKurali(t.s.it);
       if (!kural || !hizmetAcik(alici, kural.hizmet)) return hata("dugum_kapali");
-      if (kural.arac && (!kural.aracHedef || aracArtisi(alici, kural.aracHedef)?.mal !== kural.arac || (alici.ev?.[kural.arac] ?? 0) < 1)) return hata("arac_yok");
       t.d = "surer";
       t.sa = ay + 1; // kabulden sonra bir oyun ayı teslim penceresi
       break;
