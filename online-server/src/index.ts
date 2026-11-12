@@ -27,7 +27,7 @@
 //   POST /v1/dostluk {hedef, islem: iste|kabul|ret|bitir, istekNo} → {hedef, bag}
 //   POST /v1/teklif {tur, hedef, ...şartlar, istekNo} → {teklif}
 //   POST /v1/teklif/:id/cevap {cevap: kabul|ret|geri|bitir|ode, tutar?, istekNo} → {teklif}
-//   POST /v1/arabuluculuk {islem: ac|cevap|geri|taslak|imza, hedef?, arabulucu?, dosya?, cevap?, sTutari?, kTutari?, not?, surum?, istekNo} → {dosya}
+//   POST /v1/arabuluculuk {islem: ac|cevap|geri|taslak|imza|uygula, hedef?, arabulucu?, dosya?, cevap?, sTutari?, kTutari?, not?, surum?, istekNo} → {dosya}
 //   GET  /v1/gelen?dil=                  → gelen/giden/süren/kapanan teklifler, dostluk, husumet, söylenti, engel
 //   POST /v1/husumet {hedef, islem: ilan|kaldir, istekNo} → {hedef, husumet}
 //   POST /v1/engelle {hedef, islem: engelle|kaldir, istekNo} → {engellenenler}
