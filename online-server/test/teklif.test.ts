@@ -450,6 +450,7 @@ test("E4.3-D mektup işi: kâtip mektubu üçüncü oyuncuya özel ulaştırır;
 test("E4.3-D iş sözleşmesi: aynı hane reddedilir, iki taraflı iptal emaneti iade eder", () => {
   const { k, a, b } = kur();
   const hizmetci = hizmetciKur(k, 3, "katip", "koyMektubu");
+  const ilkHizmetciPara = hizmetci.pa;
   const hedef = oyuncuEkle(k, 4, k.ay - 13 * 12 - 2);
   hedef.e = 400;
   const sart = { tur: "is" as const, is: "mektup" as const, tutar: 4, mektupHedef: hedef.o, mektupMetni: "Mühürlü not." };
@@ -462,13 +463,14 @@ test("E4.3-D iş sözleşmesi: aynı hane reddedilir, iki taraflı iptal emaneti
   assert.ok(teklifCevap(k, a, `t${r.deger.teklif.i}`, "bitir", {}, k.ay).ok);
   assert.equal(r.deger.teklif.d, "iptal");
   assert.equal(a.pa, 100);
-  assert.equal(hizmetci.pa, 100);
+  assert.equal(hizmetci.pa, ilkHizmetciPara);
 });
 
 
 test("E4.3-D mektup: aynı ay aynı hedefe ikinci teklif ve engelli hedef teslimi reddedilir", () => {
   const { k, a } = kur();
   const b = hizmetciKur(k, 3, "katip", "koyMektubu");
+  b.pa = 100;
   const hedef = oyuncuEkle(k, 4, k.ay - 13 * 12 - 2);
   hedef.e = 400;
   const girdi = { tur: "is" as const, is: "mektup" as const, tutar: 3, mektupHedef: hedef.o, mektupMetni: "Selam." };
