@@ -28,7 +28,7 @@ export interface HizmetTarifi {
   npcOdul?: number;
 }
 
-/** Oyuncu pazarındaki hazır hizmetler: şifacı, ozan, hancı ve çapraz meslek sinerjili arabulucu hizmetleri. */
+/** Oyuncu pazarındaki hazır hizmetler: şifacı, ozan, hancı, aşçı ve çapraz meslek sinerjili hizmetler. */
 export const HIZMET_TARIFLERI: readonly HizmetTarifi[] = [
   {
     id: "yaraBak",
@@ -113,6 +113,20 @@ export const HIZMET_TARIFLERI: readonly HizmetTarifi[] = [
     etki: [{ tur: "hal", alan: "gonul", deger: 6 }],
     hazir: { adet: 1, gecerlilikAy: 1 },
     fiyatTaban: 7,
+  },
+  {
+    id: "ziyafet",
+    meslek: "asci",
+    dugum: "asci.senlikZiyafeti",
+    seviye: 1,
+    acar: "baklaYemegi",
+    girdi: { un: 1, ekmek: 1, corba: 1 },
+    takat: 3,
+    aylikTavan: 3,
+    hedef: "kisi",
+    etki: [{ tur: "hal", alan: "gonul", deger: 8 }],
+    hazir: { adet: 1, gecerlilikAy: 1 },
+    fiyatTaban: 10,
   },
   {
     id: "teselli",
