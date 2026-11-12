@@ -51,8 +51,8 @@ test("yüksek değerli demirci mallarında kasaba talebi ayrı ve daha düşükt
   c.ev = { alet: 5, odun: 10 };
   assert.equal(npcSatisKotasi("alet"), 2);
   assert.equal(npcSatisKotasi("alet", 1), NPC_SATIS_KOTASI, "başka demirci varsa kasaba talebi genişler");
-  assert.ok(npcyeSat(c, "alet", 2, herkes, k.ay).ok);
-  assert.deepEqual(npcyeSat(c, "alet", 1, herkes, k.ay), { ok: false, hata: "kota_doldu" });
+  assert.ok(npcyeSat(c, "alet", 2, hicKimse, k.ay).ok);
+  assert.deepEqual(npcyeSat(c, "alet", 1, hicKimse, k.ay), { ok: false, hata: "kota_doldu" });
   assert.equal(npcSatisKotasi("odun"), NPC_SATIS_KOTASI);
   assert.ok(npcyeSat(c, "odun", NPC_SATIS_KOTASI, herkes, k.ay).ok);
 });
