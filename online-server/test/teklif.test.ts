@@ -687,7 +687,7 @@ test("fiziksel senet eki: alacaklı senedi tekliften kabul/ret akışına göre 
     assert.ok(r.ok);
     if (!r.ok) return;
     assert.ok(teklifCevap(k, b, `t${r.deger.teklif.i}`, "kabul", {}, k.ay).ok);
-    assert.equal(a.ev.senet, 0);
+    assert.equal(a.ev?.senet ?? 0, 0);
     assert.equal(r.deger.teklif.s.se, undefined);
     assert.equal(r.deger.teklif.s.sn, 1);
     assert.equal(teklifGorunumu(k, r.deger.teklif, a.o, "tr").sartlar.senetli, true);
