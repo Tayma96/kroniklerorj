@@ -37,11 +37,12 @@ test("kota ay içinde dolar, ay değişince sıfırlanır", () => {
   const k = testKasabasi();
   const c = oyuncuEkle(k);
   c.ev = { odun: 50 };
-  assert.ok(npcyeSat(c, "odun", NPC_SATIS_KOTASI, herkes, k.ay).ok);
+  const kota = npcSatisKotasi("odun");
+  assert.ok(npcyeSat(c, "odun", kota, herkes, k.ay).ok);
   const pa = c.pa;
   assert.deepEqual(npcyeSat(c, "odun", 1, herkes, k.ay), { ok: false, hata: "kota_doldu" });
   assert.equal(c.pa, pa);
-  assert.equal(c.ev.odun, 50 - NPC_SATIS_KOTASI);
+  assert.equal(c.ev.odun, 50 - kota);
   assert.deepEqual(npcyeSat(c, "tas", 1, herkes, k.ay), { ok: false, hata: "mal_yok" }, "envanterde yok");
   assert.ok(npcyeSat(c, "odun", 2, herkes, k.ay + 1).ok, "yeni ay, yeni kota");
 });
@@ -50,12 +51,13 @@ test("yüksek değerli demirci mallarında kasaba talebi ayrı ve daha düşükt
   const k = testKasabasi();
   const c = oyuncuEkle(k);
   c.ev = { alet: 5, odun: 10 };
-  assert.equal(npcSatisKotasi("alet"), 2);
+  assert.equal(npcSatisKotasi("alet"), 1, "tek demircide yüksek fiyatlı alet birimi sınırlıdır");
+  assert.equal(npcSatisKotasi("nal"), 2, "nal kotası ayrı kalır");
   assert.equal(npcSatisKotasi("alet", 1), NPC_SATIS_KOTASI, "başka demirci varsa kasaba talebi genişler");
-  assert.ok(npcyeSat(c, "alet", 2, hicKimse, k.ay).ok);
+  assert.ok(npcyeSat(c, "alet", 1, hicKimse, k.ay).ok);
   assert.deepEqual(npcyeSat(c, "alet", 1, hicKimse, k.ay), { ok: false, hata: "kota_doldu" });
-  assert.equal(npcSatisKotasi("odun"), NPC_SATIS_KOTASI);
-  assert.ok(npcyeSat(c, "odun", NPC_SATIS_KOTASI, herkes, k.ay).ok);
+  assert.equal(npcSatisKotasi("odun"), 8, "oduncu ham ve yarı mamul arzı için daha geniş kota");
+  assert.ok(npcyeSat(c, "odun", 8, herkes, k.ay).ok);
 });
 
 test("geçersiz: su satılmaz, negatif/kesirli/sıfır adet, bilinmeyen mal, envanter yetmez", () => {
