@@ -108,7 +108,7 @@ test("simülasyon: dikey dilim ekonomisi — en kârlı oyunda bile aylık akçe
     seviyeVer(c, y.dugum, y.seviye);
   };
   const { satisDegeri } = await import("../src/yerlesim/npc-taban.ts");
-  const { NPC_SATIS_KOTASI, npcyeSat, satilan } = await import("../src/yerlesim/pazar.ts");
+  const { npcSatisKotasi, npcyeSat, satilan } = await import("../src/yerlesim/pazar.ts");
   const { siparisDonumu, siparisTeslim } = await import("../src/yerlesim/siparis.ts");
   const { tarifListesi, tarifYap } = await import("../src/yerlesim/tarif.ts");
   const { TEMEL_ISLER, firsatMaliyeti, temelIsYap } = await import("../src/yerlesim/temel-is.ts");
@@ -163,7 +163,7 @@ test("simülasyon: dikey dilim ekonomisi — en kârlı oyunda bile aylık akçe
         if (r.ok) kazanc += r.deger.sonuc.odul;
       }
       for (const mal of MAL_IDLERI) {
-        const adet = Math.min(c.ev?.[mal] ?? 0, NPC_SATIS_KOTASI - satilan(c, mal, ay));
+        const adet = Math.min(c.ev?.[mal] ?? 0, npcSatisKotasi(mal) - satilan(c, mal, ay));
         if (adet <= 0 || MALLAR[mal].taban === 0) continue;
         const r = npcyeSat(c, mal, adet, oyuncuSayaci(k), ay);
         assert.ok(r.ok, JSON.stringify(r));
