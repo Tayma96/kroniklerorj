@@ -11,6 +11,11 @@ import type { CalismaParametreleri, Dokum, Karakter } from "./tipler.ts";
 
 /** [PARAMETRE] Oyuncu başına mal başına aylık NPC alım kotası. */
 export const NPC_SATIS_KOTASI = 6;
+/** [DENGE] Kasabanın aylık talebi: pahalı alet ve nal alımı ham mallardan daha sınırlıdır. */
+const NPC_SATIS_KOTA_MAL: Partial<Record<MalId, number>> = { alet: 2, nal: 2 };
+export function npcSatisKotasi(mal: MalId): number {
+  return NPC_SATIS_KOTA_MAL[mal] ?? NPC_SATIS_KOTASI;
+}
 /** [PARAMETRE] Kıtlık primi oyuncu başına mal başına ayda yalnız bu kadar birime ödenir (kıt pazar çabuk doyar;
  * tek üreticinin yüksek katma değerli malında primin aylık kazancı sınırlı kalır). */
 export const KITLIK_KOTASI = 2;
@@ -47,7 +52,8 @@ export function npcyeSat(
   if (typeof adetHam !== "number" || !Number.isInteger(adetHam) || adetHam < 1) return hata("mal_gecersiz");
   if ((k.ev?.[mal] ?? 0) < adetHam) return hata("mal_yok");
   const once = satilan(k, mal, ay);
-  if (once + adetHam > NPC_SATIS_KOTASI) return hata("kota_doldu");
+  const kotaTavan = npcSatisKotasi(mal);
+  if (once + adetHam > kotaTavan) return hata("kota_doldu");
   const primli = saticiDegeri(k, mal, oyuncuSayisi, parametreler);
   const prim = primli.kalemler.find((x) => x.k === "kitlik")?.d ?? 0;
   const primAdet = prim > 0 ? Math.min(adetHam, Math.max(0, KITLIK_KOTASI - once)) : 0;
@@ -69,13 +75,13 @@ export function npcyeSat(
     tutar,
     dokum: { toplam: tutar, kalemler },
     kitlikKalan: prim > 0 ? Math.max(0, KITLIK_KOTASI - s) : 0,
-    kota: { satilan: s, tavan: NPC_SATIS_KOTASI, kalan: NPC_SATIS_KOTASI - s },
+    kota: { satilan: s, tavan: kotaTavan, kalan: kotaTavan - s },
   });
 }
 
 /** Kalan NPC alım kotası (NPC'nin bu ay oyuncudan daha kaç adet alacağı), ticareti yapılan her mal için. */
 export function kalanSatisKotasi(k: Karakter, ay: number): Partial<Record<MalId, number>> {
   const kota: Partial<Record<MalId, number>> = {};
-  for (const [mal, m] of Object.entries(MALLAR) as [MalId, (typeof MALLAR)[MalId]][]) if (m.taban > 0) kota[mal] = NPC_SATIS_KOTASI - satilan(k, mal, ay);
+  for (const [mal, m] of Object.entries(MALLAR) as [MalId, (typeof MALLAR)[MalId]][]) if (m.taban > 0) kota[mal] = npcSatisKotasi(mal) - satilan(k, mal, ay);
   return kota;
 }
