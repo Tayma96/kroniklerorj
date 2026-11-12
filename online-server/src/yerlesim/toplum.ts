@@ -40,6 +40,11 @@ export interface Sartlar {
   /** Mektup işinin üçüncü alıcısı ve özel mesajı (yalnız iş sözleşmesinde). */
   he?: string;
   ms?: string;
+  /** Ücretli arabuluculuk işi: NPC hedefi, uzlaşma bedeli, tazminat tutarı ve kabulde açılan talep kimliği. */
+  an?: number;
+  ab?: import("./bilgi.ts").AraciBedeli;
+  am?: number;
+  ta?: number;
   /** Armağan (envanterden, Berkay §6.1): mal, adet ve biliniyorsa malı üreten oyuncu. */
   ml?: string;
   mn?: number;
