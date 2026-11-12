@@ -14,10 +14,10 @@ import type { CalismaParametreleri, Dokum, Karakter } from "./tipler.ts";
 /** [PARAMETRE] NPC satış çarpanı, oyuncu başına mal başına aylık alım kotası, kıtlık primi oranı. */
 export const NPC_CARPAN = 2.5;
 export const NPC_AYLIK_KOTA = 3;
-export const KITLIK_PRIM = 0.5;
+export const KITLIK_PRIM = 0.3;
 /** [PARAMETRE] Kasaba stoğundan satış çarpanı ve mal başına stok tavanı. */
-export const STOK_CARPAN = 1.5;
-export const STOK_EN_COK = 12;
+export const STOK_CARPAN = 1.8;
+export const STOK_EN_COK = 8;
 
 /** Kasaba stoğu: mal → adet (yerleşim kaydında). */
 export type KasabaStogu = Partial<Record<MalId, number>>;
