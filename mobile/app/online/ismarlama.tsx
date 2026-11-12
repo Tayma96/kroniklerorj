@@ -14,12 +14,11 @@ import { Baslik2, BosKart, Hap, OnlineSayfa, SayfaBasi, Yukleniyor } from "../..
 import { Secenekler } from "../../lib/online/toplum-ui";
 import { istekNoUret } from "../../lib/online/depo";
 import { ekHataAnahtari, type EkHata } from "../../lib/online/ek-istemci";
-import { MALLAR, NPC_MALLARI } from "../../lib/online/meslek-veri";
+import { NPC_MALLARI } from "../../lib/online/meslek-veri";
 import { useEkonomiIstemci, type IsmarlamaGorunumu, type IsmarlamaYaniti, type Kademe4 } from "../../lib/online/ekonomi-veri";
 import { malAdi, kaliteAdi } from "../../lib/online/ekonomi-ui";
 
 type Ceviri = (k: string) => string;
-const DURUMLAR = ["acik", "surer", "teslim", "ret", "geri", "dustu", "gecikti"] as const;
 
 function IsmarlamaKarti({ x, t, rtl, bekliyor, onCevap }: {
   x: IsmarlamaGorunumu; t: Ceviri; rtl: boolean; bekliyor: boolean;
@@ -42,7 +41,7 @@ function IsmarlamaKarti({ x, t, rtl, bekliyor, onCevap }: {
       <Text style={{ fontFamily: F.serif, color: C.parchmentDim, fontSize: 12.5 }}>{t("onl.im.durum." + x.durum)}</Text>
     </View>
     {x.emanet > 0 ? <Text style={{ fontFamily: F.serif, fontSize: 12.5, color: C.gold }}>{applyParams(t("onl.im.emanet"), [x.emanet])}</Text> : null}
-    {x.durum === "teslim" && x.teslimKalitesi ? <Text style={{ fontFamily: F.serif, fontSize: 12.5, color: C.sage }}>{applyParams(t("onl.im.teslimKalite"), [kaliteAdi(t, DURUMLAR.indexOf(x.durum) as Kademe4)])}</Text> : null}
+    {x.durum === "teslim" && x.teslimKalitesi ? <Text style={{ fontFamily: F.serif, fontSize: 12.5, color: C.sage }}>{applyParams(t("onl.im.teslimKalite"), [kaliteAdi(t, ["sade", "iyi", "ustun", "saheser"].indexOf(x.teslimKalitesi))])}</Text> : null}
     {x.durum === "acik" && gelen ? <View style={{ flexDirection: yon(rtl), gap: 8 }}>
       <View style={{ flex: 1 }}><CizgiDugme etiket={t("onl.im.kabul")} icon="check" rtl={rtl} kucuk kapali={bekliyor} onPress={() => onCevap("kabul")} /></View>
       <View style={{ flex: 1 }}><CizgiDugme etiket={t("onl.im.ret")} icon="x" rtl={rtl} kucuk kapali={bekliyor} onPress={() => onCevap("ret")} /></View>
