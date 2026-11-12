@@ -24,7 +24,7 @@ import {
 import { toplumAl } from "../src/yerlesim/toplum.ts";
 import { ucgenAl } from "../src/yerlesim/bilgi.ts";
 import { arabulucuYap } from "../src/yerlesim/arabulucu.ts";
-import { baglam, dostYap, senaryo } from "./ucgen-yardimci.ts";
+import { baglam, dostYap, gorusAyarla, senaryo } from "./ucgen-yardimci.ts";
 import { gostergeOku } from "../src/yerlesim/topluluk-kayit.ts";
 import type { Karakter, Kasaba } from "../src/yerlesim/tipler.ts";
 import { oyuncuEkle, testKasabasi } from "./kasaba-yardimci.ts";
@@ -142,8 +142,6 @@ test("arabuluculuk işi dostluk ve gerçek NPC kırgınlığı olmadan teklif ed
   }, k.ay), { ok: false, hata: "dost_degil" });
   dostYap(k, berkay.o, hasan.o);
   // NPC'ye karşı kırgınlık yoksa teklif yine sunucu tarafından reddedilir.
-  const ili = k.ili.get(berkay.o)!;
-  const { gorusAyarla } = await import("./ucgen-yardimci.ts");
   gorusAyarla(k, murat, berkay, 0);
   assert.deepEqual(teklifOlustur(k, berkay, hasan, {
     tur: "is", is: "arabuluculuk", tutar: 5,
