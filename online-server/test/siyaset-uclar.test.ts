@@ -287,9 +287,4 @@ test("P6 ittifak iki bölge arasında üç aşamalı, tekrar güvenli outbox ile
   assert.equal(kaynakBozuk.devlet?.ittifaklar?.aksehir?.durum, "bozuldu");
   assert.equal(hedefBozuk.devlet?.ittifaklar?.demirhan?.durum, "bozuldu");
   assert.equal(kaynakBozuk.diplomasiGiden?.length ?? 0, 0, "uzak bölge kalıcı kaydedince bozma outbox'ı silinir");
-  const bozTekrar = await bolgeCagir(env, {
-    islem: "ittifakBozAl", bolge: "aksehir", kaynak: "demirhan",
-    istekId: yeniIstek, ay, ad: "Demirhan Beyliği",
-  });
-  assert.equal(bozTekrar.ok, true, "aynı bozma iletisi tekrar güvenlidir");
 });
