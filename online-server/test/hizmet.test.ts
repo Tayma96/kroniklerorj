@@ -544,8 +544,8 @@ test("E4.3-C divan sayımı ve meclis kaydı gerçek hizmet düğümlerini doğr
   hizmetGorevDonumu(k, ay);
   const sayim = hizmetGorevleri(k.ek, ay).find((x) => x.tur === "vergiSayimi")!;
   const kayit = hizmetGorevleri(k.ek, ay).find((x) => x.tur === "meclisKaydi")!;
-  const sayman = gorevKarakter(k, 10, "divan", "divan.vergiSayimi");
-  const kayitKatibi = gorevKarakter(k, 11, "divan", "divan.meclisKatipligi");
+  const sayman = gorevKarakter(k, 10, "divan", "divan.vergiSayimi", "sayim-hesap");
+  const kayitKatibi = gorevKarakter(k, 11, "divan", "divan.meclisKatipligi", "meclis-hesap");
   const moral0 = gostergeOku(k, "moral");
   assert.equal(hizmetGorevTeslim(k, sayman, sayim.id, ay).ok, true);
   assert.equal(hizmetGorevTeslim(k, kayitKatibi, kayit.id, ay).ok, true);
