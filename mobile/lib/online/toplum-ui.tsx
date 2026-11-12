@@ -462,6 +462,7 @@ export function ArabuluculukKarti({ x, toplum }: { x: OyuncuArabuluculukGorunumu
   const [not, setNot] = useState(x.uzlasma?.not ?? "");
   const [hata, setHata] = useState<OnlineHata | null>(null);
   const [tamam, setTamam] = useState(false);
+  useEffect(() => { setSTutari(x.uzlasma?.s ?? 0); setKTutari(x.uzlasma?.k ?? 0); setNot(x.uzlasma?.not ?? ""); }, [x.surum, x.uzlasma?.s, x.uzlasma?.k, x.uzlasma?.not]);
   const gonder = async (islem: "cevap" | "geri" | "taslak" | "imza", ek: Record<string, unknown> = {}) => {
     setHata(null); setTamam(false);
     const sonuc = await toplum.arabuluculuk({ islem, dosya: x.id, ...ek } as Parameters<Toplum["arabuluculuk"]>[0]);
@@ -479,6 +480,7 @@ export function ArabuluculukKarti({ x, toplum }: { x: OyuncuArabuluculukGorunumu
       </View>
     </View>
     {[x.sikayetci, x.karsi, x.arabulucu].map((kisi, i) => <Text key={kisi.id} style={{ fontFamily: F.serif, fontSize: 14, color: C.parchmentDim, textAlign: hiza(rtl) }}>{[t("onl.tp.arb.sikayetci"), t("onl.tp.arb.karsi"), t("onl.tp.arb.arabulucu")][i]}: {kisi.ad}</Text>)}
+    <Text style={{ fontFamily: F.serifItalic, fontSize: 12.5, lineHeight: 17, color: C.parchmentMuted }}>{t("onl.tp.arb.emanetNot")}</Text>
     {x.uzlasma ? <View style={{ gap: 3 }}>
       <Text style={{ fontFamily: F.display, fontSize: 12, color: C.gold }}>{t("onl.tp.arb.uzlasma")} · v{x.surum}</Text>
       <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchmentDim, textAlign: hiza(rtl) }}>{t("onl.tp.arb.sOder")}: {x.uzlasma.s} · {t("onl.tp.arb.kOder")}: {x.uzlasma.k}</Text>
