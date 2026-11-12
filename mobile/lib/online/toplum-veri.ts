@@ -175,6 +175,7 @@ export interface TeklifSartGirdisi {
   tutar?: number;
   vade?: number;
   faiz?: number;
+  senetli?: boolean;
   mal?: MalId;
   adet?: number;
   is?: IkiTarafIsi;
