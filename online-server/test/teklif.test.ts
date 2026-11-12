@@ -413,9 +413,10 @@ test("E4.3-D muhafızlık işi: araç düğümü ve zincir gerekir; teslim zinci
   eksik.ev = { zincir: 1 };
   const r2 = teklifOlustur(k2, a2, eksik, { tur: "is", is: "muhafiz", tutar: 7 }, k2.ay);
   assert.ok(r2.ok);
-  assert.deepEqual(teklifCevap(k2, eksik, `t${r2.deger.teklif.i}`, "kabul", {}, k2.ay), { ok: false, hata: "arac_yok" });
-  assert.equal(r2.deger.teklif.d, "acik");
-  assert.equal(a2.pa, 93, "başarısız kabul emaneti değiştirmez");
+  assert.ok(teklifCevap(k2, eksik, `t${r2.deger.teklif.i}`, "kabul", {}, k2.ay).ok, "hizmet yetkisiyle iş kabul edilebilir");
+  assert.deepEqual(teklifCevap(k2, eksik, `t${r2.deger.teklif.i}`, "teslim", {}, k2.ay), { ok: false, hata: "arac_yok" }, "zincir aracı yeteneği olmadan teslim edilemez");
+  assert.equal(r2.deger.teklif.d, "surer");
+  assert.equal(a2.pa, 93, "teslim başarısızken emanet kilitli kalır");
 });
 
 test("E4.3-D mektup işi: kâtip mektubu üçüncü oyuncuya özel ulaştırır; süre aşımında emanet müşteriye döner", () => {
