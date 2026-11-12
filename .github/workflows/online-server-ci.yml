@@ -6,6 +6,11 @@ on:
       - "online-server/**"
       - "mobile/package.json"
       - "mobile/package-lock.json"
+      - "mobile/app/**"
+      - "mobile/components/**"
+      - "mobile/lib/**"
+      - "mobile/scripts/**"
+      - "mobile/tsconfig.json"
       - ".github/workflows/online-server-ci.yml"
   push:
     branches: [apk]
@@ -31,6 +36,9 @@ jobs:
       - name: Install TypeScript toolchain
         working-directory: mobile
         run: npm ci --no-audit --no-fund
+      - name: Mobile TypeScript typecheck
+        working-directory: mobile
+        run: npm run typecheck
       - name: Online server tests
         working-directory: online-server
         run: npm test
