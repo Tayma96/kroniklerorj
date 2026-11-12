@@ -445,3 +445,51 @@ test("P5 güçler yakınsa çıkmaz statükoyu korur", async () => {
   assert.equal(d.darbe?.durum, "pat");
   assert.equal(d.devlet, undefined);
 });
+
+
+test("P5 savunma ön emri: ilan sonrası makam sahibi yazabilir; aynı hane ikinci emri veremez", () => {
+  const d = bolgeKur("demirhan", 0);
+  const savunan = kimlik("savunma", { yerlesim: "develi", e: 55 });
+  const savunanKoltuk = koltukBul(d, "sehirBeyi:develi")!;
+  savunanKoltuk.s = oyuncuTutucu(savunan, 0, SIMDI);
+  const ayniHane = kimlik("ahi-savunma", { yerlesim: "develi", e: 55 });
+  const ahiKoltuk = koltukBul(d, "ahiBasi:develi")!;
+  ahiKoltuk.s = oyuncuTutucu(ayniHane, 0, SIMDI);
+
+  d.darbe = {
+    v: 1, id: "demirhan:darbe:savunma", durum: "ilan",
+    baslatanKisi: "vali/oyuncu", baslatanHesap: "hesap-vali", baslatanKume: ["hesap:hesap-vali"],
+    acilisAy: 0, sogumaSonAy: 0, destekler: [], savunma: [],
+    garnizonSadakati: 20, yatirilan: 0, mod: "acik", ilanAy: 0, cozumAy: 2, izler: [],
+  };
+
+  assert.equal(eylem(d, savunan, { islem: "darbeSavunma", makam: "sehirBeyi:develi" }).ok, true);
+  assert.deepEqual(eylem(d, ayniHane, { islem: "darbeSavunma", makam: "ahiBasi:develi" }), { ok: false, hata: "kume_cakisma" });
+  assert.equal(d.darbe.savunma?.length, 1);
+  assert.equal(d.darbe.savunma?.[0]?.rol, "sehirBeyi");
+
+  d.ay = 2;
+  d.darbe.cozumAy = 2;
+  assert.deepEqual(eylem(d, savunan, { islem: "darbeSavunma", makam: "sehirBeyi:develi" }), { ok: false, hata: "darbe_kapali" });
+});
+
+test("P5 savunma ön emirleri çatışma gücüne tanımlı ve tavanlı katkı verir", async () => {
+  const { darbeAyi } = await import("../src/siyaset/darbe.ts");
+  const plan = (savunma: NonNullable<BolgeDurumu["darbe"]>["savunma"]) => {
+    const d = bolgeKur("demirhan", 0);
+    d.darbe = {
+      v: 1, id: "demirhan:darbe:puan", durum: "catışma",
+      baslatanKisi: "vali/oyuncu", baslatanHesap: "hesap-vali",
+      acilisAy: 0, sogumaSonAy: 0, destekler: [], savunma,
+      garnizonSadakati: 20, yatirilan: 0, mod: "baskin", cozumAy: 1, izler: [],
+    };
+    darbeAyi(d, 1);
+    return d.darbe!.sonuc!.savunan;
+  };
+  const emirler = [
+    { kisi: "sehir/1", hesap: "h1", ad: "Şehir", koltuk: "sehirBeyi:develi", rol: "sehirBeyi" as const, kume: ["h1"], ay: 0 },
+    { kisi: "ahi/2", hesap: "h2", ad: "Ahi", koltuk: "ahiBasi:develi", rol: "ahiBasi" as const, kume: ["h2"], ay: 0 },
+  ];
+  assert.equal(plan(emirler) - plan([]), 9);
+  assert.equal(plan(Array.from({ length: 20 }, (_, i) => ({ ...emirler[i % 2]!, hesap: "h" + i, kume: ["h" + i] }))) - plan([]), 30, "savunma puanı tavanı");
+});
