@@ -324,6 +324,7 @@ function YasamEkran() {
     })()}
     <YasamHanGirisi ben={ben} />
     <CizgiDugme etiket={t("onl.hizmet.kisa")} icon="briefcase" rtl={rtl} kucuk onPress={() => router.push("/online/hizmet")} />
+    <CizgiDugme etiket={t("onl.siyaset.baslik")} icon="castle" rtl={rtl} kucuk onPress={() => router.push("/online/siyaset")} />
 
     {/* Gelen kutusu: cevap bekleyen teklif ve dostluk istekleri (Faz 3a) */}
     <GelenKutusuKarti />
