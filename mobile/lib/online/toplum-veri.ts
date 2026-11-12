@@ -51,6 +51,9 @@ export interface TeklifSartlari {
   yapan?: KisiAdi;
   aday?: KisiAdi;
   is?: IkiTarafIsi;
+  arabuluculukNpc?: KisiAdi;
+  arabuluculukBedel?: "ozur" | "tazminat" | "helallik" | "ortakIs";
+  arabuluculukMiktar?: number;
   hedef?: KisiAdi;
   mesaj?: string;
 }
@@ -162,6 +165,9 @@ export interface TeklifSartGirdisi {
   mal?: MalId;
   adet?: number;
   is?: IkiTarafIsi;
+  arabuluculukNpc?: string;
+  arabuluculukBedel?: "ozur" | "tazminat" | "helallik" | "ortakIs";
+  arabuluculukMiktar?: number;
   mektupHedef?: string;
   mektupMetni?: string;
 }
