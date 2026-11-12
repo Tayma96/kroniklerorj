@@ -210,7 +210,7 @@ async function hesaba(
   return sonucYaniti(await hesapCagir(env, yetki.deger, hazir.deger));
 }
 
-async function testGiris(istek: Request, env: Env): Promise<Response> {
+export async function testGiris(istek: Request, env: Env): Promise<Response> {
   // Kapalıysa uç dışarıdan görünmez. Açık tutulacaksa bu Worker yalnız test ortamı olmalıdır.
   const gizliKod = env.TEST_GIRIS_KODU;
   if (env.TEST_GIRIS_ACIK !== "1" || typeof gizliKod !== "string" || gizliKod.length < 32) {
