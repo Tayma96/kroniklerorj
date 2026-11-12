@@ -588,3 +588,30 @@ test("E4.3-C divan sayımı ve meclis kaydı gerçek hizmet düğümlerini doğr
   assert.equal(gostergeOku(k, "asayis"), 51);
   assert.equal(gostergeOku(k, "moral"), moral0 + 1);
 });
+
+
+test("baklaYemegi sinerjisi ziyafet hizmetini aşçı senlik ziyafeti ve çiftçi nadas birlikteyken açar", () => {
+  const asci: Karakter = {
+    o: "ziyafet-usta", h: "hesap-ziyafet", ad: "Aşçı", e: 1, d: 0, k: 0, pa: 30,
+    ev: { un: 1, ekmek: 1, corba: 1 }, tk: 8, ta: 12,
+    ms: {
+      a: "asci", y: "",
+      s: {
+        asci: { a: "asci", kd: 0, hz: 0, cy: 0, sv: { "asci.senlikZiyafeti": 2 } },
+        ciftci: { a: "ciftci", kd: 0, hz: 0, cy: 0, sv: { "ciftci.nadas": 1 } },
+      },
+    },
+  } as unknown as Karakter;
+  const ziyafet = hizmetTarifiBul("ziyafet")!;
+  assert.equal(hizmetYetkiliMi(asci, ziyafet), true);
+  const ek = ekonomi();
+  const hazir = hizmetHazirla(ek, asci, "ziyafet", 1, 12);
+  assert.equal(hazir.ok, true);
+  assert.equal(asci.ev?.un, 0);
+  assert.equal(asci.ev?.ekmek, 0);
+  assert.equal(asci.ev?.corba, 0);
+  assert.equal(asci.tk, 5);
+
+  const eksikCiftci = { ...asci, o: "eksik-ciftci", ev: { un: 1, ekmek: 1, corba: 1 }, ms: { a: "asci", y: "", s: { asci: { a: "asci", kd: 0, hz: 0, cy: 0, sv: { "asci.senlikZiyafeti": 2 } } } } } as unknown as Karakter;
+  assert.equal(hizmetYetkiliMi(eksikCiftci, ziyafet), false);
+});
