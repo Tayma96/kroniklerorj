@@ -1,6 +1,7 @@
 // E4.3 hizmet pazarı: öğrenilmiş hizmeti hazırla, ilan et, satın al veya ilanı geri çek.
 import { useCallback, useEffect, useState } from "react";
-import { View, Text, TextInput, ScrollView, type ReactNode } from "react-native";
+import { View, Text, TextInput, ScrollView } from "react-native";
+import type { ReactNode } from "react";
 import { useRouter } from "expo-router";
 import { useI18n, applyParams } from "../../lib/i18n";
 import { C, F } from "../../lib/theme";
