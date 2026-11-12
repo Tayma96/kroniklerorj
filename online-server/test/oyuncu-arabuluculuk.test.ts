@@ -275,3 +275,18 @@ test("uzlaşma vadesi dolduktan sonra ikinci imza emanet kesintisi oluşturamaz"
   assert.equal(s.pa, 500);
   assert.equal(kk.pa, 500);
 });
+
+
+test("taslak sunulurken arabulucu tarafsızlığı ve engel ilişkileri yeniden doğrulanır", () => {
+  const k = testKasabasi("develi", 760);
+  const s = oyuncuEkle(k, 221), kk = oyuncuEkle(k, 222), ar = oyuncuEkle(k, 223);
+  const ac = oyuncuArabuluculukAc(k, s, kk, ar, k.ay);
+  assert.ok(ac.ok);
+  if (!ac.ok) return;
+  const id = String(ac.deger.i);
+  for (const x of [s, kk, ar]) assert.ok(oyuncuArabuluculukCevap(k, x, id, "kabul", k.ay).ok);
+  k.tp!.eg[ar.o] = [s.o];
+  assert.deepEqual(oyuncuArabuluculukTaslak(k, ar, id, 100, 0, undefined, k.ay), { ok: false, hata: "engelli" });
+  assert.equal(ac.deger.d, "taslak");
+  assert.equal(ac.deger.uz, undefined);
+});
