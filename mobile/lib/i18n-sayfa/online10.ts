@@ -57,7 +57,6 @@ export const rows: Record<string, string[]> = {
   "onl.pz.ay": v("ay", "months", "meses", "meses", "أشهر", "мес."),
   "onl.pz.tabanBilgi": v("NPC taban değeri: {0} akçe", "NPC base value: {0} akçe", "Valor base del NPC: {0} akçe", "Valor-base do NPC: {0} akçe", "القيمة الأساسية: {0} أقجة", "Базовая цена NPC: {0} акче"),
   "onl.pz.ilanAc": v("İlanı yayımla", "Publish listing", "Publicar anuncio", "Publicar anúncio", "انشر الإعلان", "Опубликовать"),
-  "onl.pz.alt": v("İlan ayrıntısı", "Listing details", "Detalles del anuncio", "Detalhes do anúncio", "تفاصيل الإعلان", "Детали объявления"),
   "onl.pz.kurallar": v("Pazar kuralları", "Market rules", "Reglas del mercado", "Regras do mercado", "قواعد السوق", "Правила рынка"),
   "onl.pz.kuralMetni": v("En çok {1} açık ilan; süre {2} ayı, adet {3} sınırını aşamaz. Satış bacı %{0}.", "Up to {1} open listings; duration cannot exceed {2} months or {3} items. Sales duty: {0}%.", "Hasta {1} anuncios; máximo {2} meses y {3} unidades. Impuesto: {0}%.", "Até {1} anúncios; máximo de {2} meses e {3} unidades. Tributo: {0}%.", "حتى {1} إعلانًا؛ والمدة لا تتجاوز {2} شهرًا والكمية {3}. الضريبة {0}%.", "До {1} объявлений; срок до {2} мес., количество до {3}. Сбор: {0}%."),
   "onl.pz.pompaMetni": v("Adil fiyat bandı %{0}–%{1}. Hediye tavanı: veren {2}, alan {3}.", "Fair price band: {0}–{1}%. Gift limits: giver {2}, receiver {3}.", "Banda justa: {0}–{1}%. Límites de regalos: emisor {2}, receptor {3}.", "Faixa justa: {0}–{1}%. Limites de presentes: quem dá {2}, quem recebe {3}.", "نطاق السعر العادل {0}–{1}%. حد الهدايا: المانح {2} والمتلقي {3}.", "Справедливый диапазон: {0}–{1}%. Лимит подарков: даритель {2}, получатель {3}."),
@@ -195,5 +194,4 @@ export const rows: Record<string, string[]> = {
   "onl.hh.vekil_var": v("İşletmenin zaten bir vekili var.", "The business already has a deputy.", "El negocio ya tiene un representante.", "O negócio já tem um representante.", "للمنشأة وكيل بالفعل.", "У предприятия уже есть управляющий."),
   "onl.hh.sozlesme_yok": v("Personel sözleşmesi bulunamadı.", "Staff contract not found.", "No se encontró el contrato laboral.", "Contrato de trabalho não encontrado.", "لم يُعثر على عقد الموظف.", "Трудовой договор не найден."),
   "onl.hh.han_dolu": v("Handa uygun oda veya koltuk kalmadı.", "No suitable room or seat remains at the inn.", "No quedan habitaciones ni asientos adecuados en la posada.", "Não restam quartos ou lugares adequados na estalagem.", "لم تبقَ غرفة أو مقعد مناسب في الخان.", "В постоялом дворе не осталось подходящих комнат или мест."),
-  "onl.hh.ilan_gecersiz": v("İlan bilgisi geçersiz.", "Invalid listing details.", "Datos de anuncio no válidos.", "Dados do anúncio inválidos.", "بيانات الإعلان غير صالحة.", "Некорректные данные объявления."),
 };
