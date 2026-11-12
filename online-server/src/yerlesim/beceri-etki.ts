@@ -64,7 +64,9 @@ export function hizmetAcik(k: Karakter, hizmet: string): boolean {
 
 /** Öğrenilmiş toplumsal hak; her yazma ucu kendi eyleminde bu çözümleyiciyi sunucuda çağırmalıdır. */
 export function hakAcik(k: Karakter, hak: string): boolean {
-  return [...acikEtkiler(k)].some((e) => e.tur === "hak" && e.hak === hak);
+  const acik = [...acikEtkiler(k)].some((e) => e.tur === "hak" && e.hak === hak);
+  // Ahşap köprü projesi, marangozun köprücülük hakkına ek olarak demircinin dişli/metal ustalığını ister.
+  return acik && (hak !== "ahsapKopru" || sinerjiAcik(k, "kopruDemiri"));
 }
 
 /** Çapraz meslek sinerjisi: açan düğüm tek başına yetmez, tanımlı öteki düğüm/seviye de öğrenilmiş olmalıdır. */
