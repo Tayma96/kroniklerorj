@@ -102,7 +102,8 @@ export function oyuncuArabuluculukGeriAl(k: Kasaba, ben: Karakter, id: unknown, 
   if (!d) return hata("talep_yok");
   const r = rol(d, ben.o);
   if (!r) return hata("taraf_degil");
-  if (d.d !== "davet") return hata("teklif_kapandi");
+  const imzaYok = d.im.s === undefined && d.im.k === undefined;
+  if (d.d !== "davet" && !((d.d === "taslak" || d.d === "imzaBekliyor") && imzaYok)) return hata("teklif_kapandi");
   d.d = "geri";
   d.kp = ay;
   return basarili(d);
