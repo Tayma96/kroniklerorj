@@ -161,7 +161,7 @@ function ekonomiSim(pompali: boolean) {
           // Fiyat keşfi: son alım ilanı dolmadan düştüyse teklif %25 artar (en çok NPC fiyatı), dolduysa %5 iner.
           const anahtar = `${c.o}:${mal}`;
           const son = (k.ek?.il ?? []).filter((x) => x.t === "al" && x.o === c.o && x.ml === mal && x.d !== "acik").at(-1);
-          let pay = teklifPayi.get(anahtar) ?? ALIM_PAYI;
+          let pay = teklifPayi.get(anahtar) ?? alimPayi(mal);
           if (son && son.i !== sonIlan.get(anahtar)) {
             pay = son.n > 0 ? Math.min(NPC_CARPAN, pay * 1.25) : Math.max(1, pay * 0.95);
             sonIlan.set(anahtar, son.i);
@@ -264,7 +264,7 @@ function ekonomiSim(pompali: boolean) {
         if (acikIlanlar(k.ek, c.o).length >= PAZAR_ILAN_EN_COK || acikIlanlar(k.ek, c.o).some((x) => x.ml === mal)) continue;
         const anahtar = `${c.o}:${mal}`;
         const son = (k.ek?.il ?? []).filter((x) => x.t === "sat" && x.o === c.o && x.ml === mal && x.d !== "acik").at(-1);
-        let pay = satisPayi.get(anahtar) ?? ALIM_PAYI;
+        let pay = satisPayi.get(anahtar) ?? alimPayi(mal);
         if (son && son.i !== sonIlan.get(anahtar)) {
           pay = son.n === 0 ? Math.min(NPC_CARPAN, pay * 1.15) : Math.max(1, pay * 0.9);
           sonIlan.set(anahtar, son.i);
