@@ -226,9 +226,18 @@ export function TeklifFormu({ p, baslangic, onBitti }: { p: OyuncuProfili; basla
   const [isUcret, setIsUcret] = useState(() => Math.max(1, Math.min(8, para)));
   const [mektupHedef, setMektupHedef] = useState("");
   const [mektupMetni, setMektupMetni] = useState("");
+  const npcAdaylari = useMemo(() => {
+    const adlar = new Map<string, string>();
+    for (const yer of o.yerlesim?.harita ?? []) for (const kisi of yer.kisiler) if (/^n[1-9][0-9]{0,8}$/.test(kisi.id)) adlar.set(kisi.id, kisi.ad);
+    return [...adlar].map(([id, ad]) => ({ id, ad }));
+  }, [o.yerlesim?.harita]);
+  const [arabuluculukNpc, setArabuluculukNpc] = useState("");
+  const [arabuluculukBedel, setArabuluculukBedel] = useState<NonNullable<TeklifSartGirdisi["arabuluculukBedel"]>>("ozur");
+  const [arabuluculukMiktar, setArabuluculukMiktar] = useState(5);
   const [hata, setHata] = useState<OnlineHata | null>(null);
   const [bitti, setBitti] = useState(false);
   useEffect(() => { setMeslek(cirakAday[0] ?? null); }, [ustaBen]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (!npcAdaylari.some((x) => x.id === arabuluculukNpc)) setArabuluculukNpc(npcAdaylari[0]?.id ?? ""); }, [npcAdaylari, arabuluculukNpc]);
   useEffect(() => { if (!o.meslekDurumu && !o.yerlesim) void o.yerlesimYukle(true); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (!toplum.gelen) void toplum.gelenYukle(); }, [toplum.gelen, toplum.gelenYukle]);
 
@@ -239,9 +248,9 @@ export function TeklifFormu({ p, baslangic, onBitti }: { p: OyuncuProfili; basla
     : tur === "ortak" ? { pay, sure }
     : tur === "borc" ? { yon: borcYon, tutar, vade, faiz }
     : tur === "hediye" ? { ...(akce ? { tutar: akce } : {}), ...(mal ? { mal, adet } : {}) }
-    : tur === "is" ? { is: isTuru, tutar: isUcret, ...(isTuru === "mektup" ? { mektupHedef, mektupMetni } : {}) }
+    : tur === "is" ? { is: isTuru, tutar: isUcret, ...(isTuru === "mektup" ? { mektupHedef, mektupMetni } : {}), ...(isTuru === "arabuluculuk" ? { arabuluculukNpc, arabuluculukBedel, ...(arabuluculukBedel === "tazminat" ? { arabuluculukMiktar } : {}) } : {}) }
     : {};
-  const gecerli = !kapi(tur) && (tur !== "cirak" || !!meslek) && (tur !== "hediye" || (hediyeDeger >= 1 && hediyeDeger <= TOPLUM_SINIR.hediyeEnCok)) && (tur !== "is" || (isUcret >= 1 && isUcret <= Math.min(TOPLUM_SINIR.isEnCok, para) && (isTuru !== "mektup" || (new RegExp("^o[1-9][0-9]{0,8}$").test(mektupHedef.trim()) && mektupMetni.trim().length >= 1 && mektupMetni.trim().length <= 240))));
+  const gecerli = !kapi(tur) && (tur !== "cirak" || !!meslek) && (tur !== "hediye" || (hediyeDeger >= 1 && hediyeDeger <= TOPLUM_SINIR.hediyeEnCok)) && (tur !== "is" || (isUcret >= 1 && isUcret <= Math.min(TOPLUM_SINIR.isEnCok, para) && (isTuru !== "mektup" || (new RegExp("^o[1-9][0-9]{0,8}$").test(mektupHedef.trim()) && mektupMetni.trim().length >= 1 && mektupMetni.trim().length <= 240)) && (isTuru !== "arabuluculuk" || (!!arabuluculukNpc && npcAdaylari.some((x) => x.id === arabuluculukNpc) && isUcret + (arabuluculukBedel === "tazminat" ? arabuluculukMiktar : 0) <= para))));
   const anahtar = `teklif:${p.id}:${tur}:${JSON.stringify(sart)}`;
   const gonder = async () => {
     setHata(null);
@@ -263,7 +272,11 @@ export function TeklifFormu({ p, baslangic, onBitti }: { p: OyuncuProfili; basla
   if (tur === "ortak") onizleme.push(t("onl.tp.f.ortakNot"));
   if (tur === "cirak") onizleme.push(t("onl.tp.f.cirakNot"));
   if (tur === "gorucu") onizleme.push(t("onl.tp.s.gorucu"));
-  if (tur === "is") onizleme.push(applyParams(t("onl.tp.f.isEmanet"), [isUcret]), applyParams(t("onl.tp.f.isSure"), [isTuru === "mektup" ? 1 : 2]));
+  if (tur === "is") {
+    if (isTuru === "arabuluculuk") onizleme.push(applyParams(t("onl.tp.f.arabuluculukEmanet"), [isUcret, arabuluculukBedel === "tazminat" ? arabuluculukMiktar : 0]));
+    else onizleme.push(applyParams(t("onl.tp.f.isEmanet"), [isUcret]));
+    onizleme.push(applyParams(t("onl.tp.f.isSure"), [isTuru === "muhafiz" ? 2 : 1]));
+  }
   onizleme.push(t("onl.tp.f.sure"), t("onl.tp.f.cevapsiz"));
 
   return <View style={{ gap: 14 }}>
@@ -294,6 +307,15 @@ export function TeklifFormu({ p, baslangic, onBitti }: { p: OyuncuProfili; basla
       <Text style={{ fontFamily: F.serifItalic, fontSize: 14.5, lineHeight: 20, color: C.parchmentDim, textAlign: hiza(rtl) }}>{t("onl.tp.is.d." + isTuru)}</Text>
       <Sayac etiket={t("onl.tp.f.isUcret")} deger={isUcret} en={1} cok={Math.max(1, Math.min(TOPLUM_SINIR.isEnCok, para))} onDegis={setIsUcret} birim={t("onl.tp.akceBirim")} />
       {isUcret > para ? <Bant tur="bilgi" metin={applyParams(t("onl.tp.f.paraAz"), [para])} rtl={rtl} /> : null}
+      {isTuru === "arabuluculuk" ? <>
+        <Text style={{ fontFamily: F.display, fontSize: 11.5, color: C.goldBright, textAlign: hiza(rtl) }}>{t("onl.tp.f.arabuluculukNpc")}</Text>
+        {npcAdaylari.length ? <Secenekler secenekler={npcAdaylari.map((x) => x.id)} secili={arabuluculukNpc} onSec={setArabuluculukNpc} etiket={(id) => npcAdaylari.find((x) => x.id === id)?.ad ?? id} ikon={() => "user"} />
+          : <BosKart icon="users" metin={t("onl.tp.f.arabuluculukNpcYok")} rtl={rtl} />}
+        <Text style={{ fontFamily: F.display, fontSize: 11.5, color: C.goldBright, textAlign: hiza(rtl) }}>{t("onl.tp.f.arabuluculukBedel")}</Text>
+        <Secenekler secenekler={["ozur", "helallik", "ortakIs", "tazminat"] as const} secili={arabuluculukBedel} onSec={setArabuluculukBedel} etiket={(x) => t("onl.tp.arabuluculukBedel." + x)} />
+        {arabuluculukBedel === "tazminat" ? <Sayac etiket={t("onl.tp.f.arabuluculukTazminat")} deger={arabuluculukMiktar} en={1} cok={15} onDegis={setArabuluculukMiktar} birim={t("onl.tp.akceBirim")} /> : null}
+        <Text style={{ fontFamily: F.serifItalic, fontSize: 13.5, lineHeight: 18, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{t("onl.tp.f.arabuluculukNot")}</Text>
+      </> : null}
       {isTuru === "mektup" ? <>
         <Text style={{ fontFamily: F.display, fontSize: 11.5, color: C.goldBright, textAlign: hiza(rtl) }}>{t("onl.tp.f.mektupHedef")}</Text>
         <Text style={{ fontFamily: F.serifItalic, fontSize: 12.5, lineHeight: 18, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{t("onl.tp.f.mektupDostlar")}</Text>
