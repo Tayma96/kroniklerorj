@@ -187,7 +187,7 @@ export interface DarbeDestegi {
 }
 export interface DarbeIzi {
   ay: number;
-  tur: "hazirlik" | "destek" | "ikmal" | "ilan" | "baskin";
+  tur: "hazirlik" | "destek" | "savunma" | "ikmal" | "ilan" | "baskin";
   guvenilirlik: number;
   gorunurluk: "vali" | "ileriGelen" | "bolge";
 }
@@ -200,6 +200,8 @@ export interface DarbePlani {
   acilisAy: number;
   sogumaSonAy: number;
   destekler: DarbeDestegi[];
+  /** İlan sonrası şehir beyi/ahi başının verdiği açık savunma ön emirleri. */
+  savunma?: DarbeDestegi[];
   garnizonSadakati: number;
   yatirilan: number;
   mod?: "acik" | "baskin";
