@@ -320,14 +320,14 @@ test("kagniHarmani sinerjisi çiftçi toplu harman ve marangoz tekerlek birlikte
 test("kervanArabasi sinerjisi tüccar yükü ve marangoz araba yapımı birlikteyken yalnız araba kalitesini artırır", () => {
   const k = testKasabasi();
   const c = oyuncuEkle(k, 103, k.ay - 16 * 12);
-  seviyeVer(c, "marangoz.arabaYapimi", 1);
+  seviyeVer(c, "marangoz.arabaYapimi", 2);
   assert.equal(sinerjiAcik(c, "kervanArabasi"), false);
   assert.equal(kaliteBecerisi(c, TARIFLER.araba), 15, "marangozun kendi +15 araba kalite etkisi korunur");
-  seviyeVer(c, "tuccar.topluYuk", 1);
+  seviyeVer(c, "tuccar.topluYuk", 3);
   assert.equal(sinerjiAcik(c, "kervanArabasi"), true);
   assert.equal(kaliteBecerisi(c, TARIFLER.araba), 25);
   const diger = oyuncuEkle(k, 104, k.ay - 16 * 12);
-  seviyeVer(diger, "tuccar.topluYuk", 1);
+  seviyeVer(diger, "tuccar.topluYuk", 3);
   assert.equal(sinerjiAcik(diger, "kervanArabasi"), false);
   assert.equal(kaliteBecerisi(diger, TARIFLER.araba), 0);
 });
@@ -335,7 +335,7 @@ test("kervanArabasi sinerjisi tüccar yükü ve marangoz araba yapımı birlikte
 test("ulakCizmesi sinerjisi kâtip hızlı ulak ve dokumacı kösele birlikteyken yalnız çizme kalitesini artırır", () => {
   const k = testKasabasi();
   const c = oyuncuEkle(k, 105, k.ay - 16 * 12);
-  seviyeVer(c, "katip.hizliUlak", 1);
+  seviyeVer(c, "katip.hizliUlak", 2);
   assert.equal(sinerjiAcik(c, "ulakCizmesi"), false);
   assert.equal(kaliteBecerisi(c, TARIFLER.cizme), 0);
   seviyeVer(c, "dokumaci.kosele", 2);
@@ -352,13 +352,14 @@ test("ticaretSenedi sinerjisi tüccar toptan alım ve kâtip sözleşme bilgisi 
   const k = testKasabasi();
   const c = oyuncuEkle(k, 107, k.ay - 16 * 12);
   seviyeVer(c, "katip.vasiyetSozlesme", 2);
+  seviyeVer(c, "katip.dilekceSenet", 3);
   assert.equal(sinerjiAcik(c, "ticaretSenedi"), false);
   assert.equal(kaliteBecerisi(c, TARIFLER.senet), 15, "kâtibin kendi +15 senet kalite etkisi korunur");
-  seviyeVer(c, "tuccar.toptanAlim", 1);
+  seviyeVer(c, "tuccar.toptanAlim", 2);
   assert.equal(sinerjiAcik(c, "ticaretSenedi"), true);
   assert.equal(kaliteBecerisi(c, TARIFLER.senet), 25);
   const diger = oyuncuEkle(k, 108, k.ay - 16 * 12);
-  seviyeVer(diger, "tuccar.toptanAlim", 1);
+  seviyeVer(diger, "tuccar.toptanAlim", 2);
   assert.equal(sinerjiAcik(diger, "ticaretSenedi"), false);
   assert.equal(kaliteBecerisi(diger, TARIFLER.senet), 0);
 });
