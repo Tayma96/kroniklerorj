@@ -252,7 +252,7 @@ export interface BagimsizDevlet {
   /** Başka beyliklerin tanınma taleplerine verilen yanıtlar. */
   taninmaYanits?: Record<string, { karar: "kabul" | "ret"; ay: number; ad: string; istekId: string }>;
   /** İttifaklar: kaynak onayı gelene kadar hedefte kabulBekliyor tutulur. */
-  ittifaklar?: Record<string, { durum: "kabulBekliyor" | "aktif" | "ret" | "suresiDoldu"; baslangicAy: number; sonAy: number; ad: string; istekId: string }>;
+  ittifaklar?: Record<string, { durum: "kabulBekliyor" | "aktif" | "ret" | "suresiDoldu" | "bozuldu"; baslangicAy: number; sonAy: number; ad: string; istekId: string }>;
   ittifakTalep?: { hedef: string; istekId: string; ay: number };
   ittifakGelen?: Record<string, { istekId: string; ay: number; ad: string; yanitlandi: boolean }>;
   ittifakYanits?: Record<string, { karar: "kabul" | "ret"; ay: number; ad: string; istekId: string }>;
@@ -264,7 +264,8 @@ export type DiplomasiGiden =
   | { tur: "taninmaYanit"; hedef: string; istekId: string; karar: "kabul" | "ret"; ay: number; ad: string }
   | { tur: "ittifakIstek"; hedef: string; istekId: string; ay: number; ad: string }
   | { tur: "ittifakYanit"; hedef: string; istekId: string; karar: "kabul" | "ret"; ay: number; ad: string }
-  | { tur: "ittifakOnay"; hedef: string; istekId: string; ay: number; ad: string };
+  | { tur: "ittifakOnay"; hedef: string; istekId: string; ay: number; ad: string }
+  | { tur: "ittifakBoz"; hedef: string; istekId: string; ay: number; ad: string };
 
 export interface BolgeDurumu {
   v: 1;
@@ -355,7 +356,8 @@ export type BolgeIleti =
   | { islem: "taninmaYanitAl"; bolge: string; kaynak: string; istekId: string; karar: "kabul" | "ret"; ay: number; ad: string }
   | { islem: "ittifakIstekAl"; bolge: string; kaynak: string; istekId: string; ay: number; ad: string }
   | { islem: "ittifakYanitAl"; bolge: string; kaynak: string; istekId: string; karar: "kabul" | "ret"; ay: number; ad: string }
-  | { islem: "ittifakOnayAl"; bolge: string; kaynak: string; istekId: string; ay: number; ad: string };
+  | { islem: "ittifakOnayAl"; bolge: string; kaynak: string; istekId: string; ay: number; ad: string }
+  | { islem: "ittifakBozAl"; bolge: string; kaynak: string; istekId: string; ay: number; ad: string };
 
 /** BolgeDO → SultanlikDO. */
 export type SultanlikIleti =

@@ -44,6 +44,9 @@ export function diplomasiReddedildi(d: BolgeDurumu, ileti: DiplomasiGiden): void
       }
       return;
     }
+    case "ittifakBoz":
+      // Kaynakta ittifak yerel olarak kapatılmıştır; uzak bölgeye kalıcı teslim başarısız olsa da geri açılmaz.
+      return;
     case "taninmaYanit":
       // Verdiğimiz yanıt zaten kayıtlı (yanitlandi); karşı taraf kabul etmediyse yapılacak bir şey yok.
       return;

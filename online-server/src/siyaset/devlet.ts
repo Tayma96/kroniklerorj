@@ -65,6 +65,17 @@ export function devletYonet(d: BolgeDurumu, kimlik: SiyasiKimlik, govde: Record<
       (d.diplomasiGiden ??= []).push({ tur: "ittifakIstek", hedef: hedef.id, istekId, ay: d.ay, ad: kaynakAd });
       return null;
     }
+    case "ittifakBoz": {
+      const hedef = typeof govde.hedefBolge === "string" ? BEYLIKLER.find((x) => x.id === govde.hedefBolge) : undefined;
+      const kaynakAd = BEYLIKLER.find((x) => x.id === d.id)?.ad;
+      if (!hedef || hedef.id === d.id || !kaynakAd) return "deger_sinir_disi";
+      const kayit = s.ittifaklar?.[hedef.id];
+      if (!kayit || kayit.durum !== "aktif") return "hedef_uygun_degil";
+      kayit.durum = "bozuldu";
+      kayit.sonAy = d.ay;
+      (d.diplomasiGiden ??= []).push({ tur: "ittifakBoz", hedef: hedef.id, istekId: kayit.istekId, ay: d.ay, ad: kaynakAd });
+      return null;
+    }
     case "ittifakYanit": {
       const kaynak = govde.kaynakBolge;
       const beylik = typeof kaynak === "string" ? BEYLIKLER.find((x) => x.id === kaynak) : undefined;
@@ -256,6 +267,23 @@ export function ittifakOnayAl(
 export function ittifakOnaylandi(d: BolgeDurumu, hedef: string, istekId: string): void {
   const kayit = d.devlet?.ittifaklar?.[hedef];
   if (kayit?.durum === "kabulBekliyor" && kayit.istekId === istekId) kayit.durum = "aktif";
+}
+
+/** İttifak bozma bildirimi: yalnız aynı istek kimliğine sahip etkin ittifak kapanır; eski ileti yeni ittifakı bozamaz. */
+export function ittifakBozAl(
+  d: BolgeDurumu, kaynak: unknown, istekId: unknown, ay: unknown, ad: unknown,
+): HataKodu | null {
+  const s = d.devlet;
+  if (!s) return "devlet_yok";
+  const b = typeof kaynak === "string" ? BEYLIKLER.find((x) => x.id === kaynak) : undefined;
+  if (!b || b.id === d.id || typeof istekId !== "string" || istekId.length < 3 || istekId.length > 128
+    || !Number.isInteger(ay) || (ay as number) < 0 || ad !== b.ad) return "deger_sinir_disi";
+  const kayit = s.ittifaklar?.[b.id];
+  if (kayit?.istekId === istekId && kayit.durum === "bozuldu") return null;
+  if (!kayit || kayit.istekId !== istekId || kayit.durum !== "aktif") return "hedef_uygun_degil";
+  kayit.durum = "bozuldu";
+  kayit.sonAy = ay as number;
+  return null;
 }
 
 /** Her oyuncu kendi siyasi bağlılığını seçer; seçim yokluğu tarafsızlıktır, zorunlu yemin yoktur. */

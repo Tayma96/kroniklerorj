@@ -479,6 +479,40 @@ test("P6 ittifak: iki taraflı istek, kabul teyidi, ret ve süre aşımı idempo
 
 });
 
+test("P6 ittifak: tek taraflı bozma iki bölgede idempotenttir ve eski ileti yeni ittifakı bozamaz", async () => {
+  const { devletYonet, ittifakBozAl } = await import("../src/siyaset/devlet.ts");
+  const ad = (id: string) => BEYLIKLER.find((x) => x.id === id)!.ad;
+  const kur = (id: string, bey: SiyasiKimlik) => {
+    const d = bolgeKur(id, 0);
+    d.devlet = {
+      v: 1, ad: ad(id), kurulusAy: 0, beyKisi: bey.kisi, beyHesap: bey.hesap, beyAd: bey.ad,
+      vergiOrani: 0, divan: [], mogol: "diren", sultan: "bagimsiz", taninma: "taninmadi", yeminler: {},
+    };
+    return d;
+  };
+  const kaynakBey = kimlik("ittifak-boz-kaynak", { yerlesim: "demirhan", bolge: "demirhan" });
+  const hedefBey = kimlik("ittifak-boz-hedef", { yerlesim: "aksehir", bolge: "aksehir" });
+  const kaynak = kur("demirhan", kaynakBey);
+  const hedef = kur("aksehir", hedefBey);
+  const istekId = "demirhan:1:0:ittifak";
+  kaynak.devlet!.ittifaklar = { aksehir: { durum: "aktif", baslangicAy: 0, sonAy: 12, ad: ad("aksehir"), istekId } };
+  hedef.devlet!.ittifaklar = { demirhan: { durum: "aktif", baslangicAy: 0, sonAy: 12, ad: ad("demirhan"), istekId } };
+
+  assert.equal(devletYonet(kaynak, kaynakBey, { tur: "ittifakBoz", hedefBolge: "aksehir" }), null);
+  assert.equal(kaynak.devlet!.ittifaklar!.aksehir!.durum, "bozuldu");
+  const ileti = kaynak.diplomasiGiden?.find((x) => x.tur === "ittifakBoz");
+  assert.ok(ileti && ileti.tur === "ittifakBoz");
+  assert.equal(ittifakBozAl(hedef, "demirhan", ileti.istekId, 1, ad("demirhan")), null);
+  assert.equal(hedef.devlet!.ittifaklar!.demirhan!.durum, "bozuldu");
+  assert.equal(ittifakBozAl(hedef, "demirhan", ileti.istekId, 1, ad("demirhan")), null, "aynı bozma tekrar güvenli");
+
+  const yeniIstek = "demirhan:2:1:ittifak";
+  hedef.devlet!.ittifaklar!.demirhan = { durum: "aktif", baslangicAy: 1, sonAy: 13, ad: ad("demirhan"), istekId: yeniIstek };
+  assert.equal(ittifakBozAl(hedef, "demirhan", istekId, 2, ad("demirhan")), "hedef_uygun_degil");
+  assert.equal(hedef.devlet!.ittifaklar!.demirhan!.durum, "aktif", "eski bozma yeni ittifakı kapatamaz");
+  assert.equal(devletYonet(kaynak, kaynakBey, { tur: "ittifakBoz", hedefBolge: "aksehir" }), "hedef_uygun_degil");
+});
+
 test("P5 savunma üstün gelirse darbe bastırılır ve vali makamı boşalır", () => {
   const d = bolgeKur("demirhan", 0);
   const vali = kimlik("vali-savunma");

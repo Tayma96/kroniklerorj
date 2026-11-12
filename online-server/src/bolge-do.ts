@@ -8,7 +8,7 @@ import { iletiOku, jsonYanit } from "./ic.ts";
 import { istekNoCoz } from "./mantik.ts";
 import { oyunAyi, sonrakiDonum } from "./saat.ts";
 import { bolgeAyi, bolgeEylem, bolgeGorunumu, bolgeKur, bolgeVar, haracOnayla, vergiYatir } from "./siyaset/bolge.ts";
-import { ittifakIstekAl, ittifakOnayAl, ittifakYanitAl, ittifakOnaylandi, taninmaIstekAl, taninmaYanitAl } from "./siyaset/devlet.ts";
+import { ittifakBozAl, ittifakIstekAl, ittifakOnayAl, ittifakYanitAl, ittifakOnaylandi, taninmaIstekAl, taninmaYanitAl } from "./siyaset/devlet.ts";
 import { diplomasiReddedildi } from "./siyaset/diplomasi-red.ts";
 import { bolgeCagir, sultanlikCagir } from "./siyaset/ic.ts";
 import { kimlikGor } from "./siyaset/makam.ts";
@@ -169,6 +169,12 @@ export class BolgeDO {
               istekId: ileti.istekId, ay: ileti.ay, ad: ileti.ad,
             });
             break;
+          case "ittifakBoz":
+            r = await bolgeCagir(this.#env, {
+              islem: "ittifakBozAl", bolge: ileti.hedef, kaynak: d.id,
+              istekId: ileti.istekId, ay: ileti.ay, ad: ileti.ad,
+            });
+            break;
         }
       } catch {
         break;
@@ -195,7 +201,7 @@ export class BolgeDO {
     if (!d) return hata("bolge_gecersiz");
     await this.#yetistir(d, simdi);
     // İç bölge iletilerinde karşı DO'ya geri çağrı yapma: DO→DO döngüsel beklemeyi önle.
-    if (!["taninmaIstekAl", "taninmaYanitAl", "ittifakIstekAl", "ittifakYanitAl", "ittifakOnayAl"].includes(ileti.islem)) await this.#gonderDiplomasi(d);
+    if (!["taninmaIstekAl", "taninmaYanitAl", "ittifakIstekAl", "ittifakYanitAl", "ittifakOnayAl", "ittifakBozAl"].includes(ileti.islem)) await this.#gonderDiplomasi(d);
     switch (ileti.islem) {
       case "taninmaIstekAl": {
         const h = taninmaIstekAl(d, ileti.kaynak, ileti.istekId, ileti.ay, ileti.ad);
@@ -217,6 +223,12 @@ export class BolgeDO {
       }
       case "ittifakOnayAl": {
         const h = ittifakOnayAl(d, ileti.kaynak, ileti.istekId, ileti.ay, ileti.ad);
+        if (h) return hata(h);
+        await this.#kaydet(d, d.kn);
+        return basarili({ tamam: true });
+      }
+      case "ittifakBozAl": {
+        const h = ittifakBozAl(d, ileti.kaynak, ileti.istekId, ileti.ay, ileti.ad);
         if (h) return hata(h);
         await this.#kaydet(d, d.kn);
         return basarili({ tamam: true });
