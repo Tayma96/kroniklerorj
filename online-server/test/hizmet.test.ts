@@ -3,6 +3,9 @@ import assert from "node:assert/strict";
 import { ETKILER } from "../src/icerik/agaclar/index.ts";
 import { MALLAR } from "../src/icerik/mallar.ts";
 import { HIZMET_TARIFLERI, hizmetTarifiBul } from "../src/yerlesim/hizmet-tarif.ts";
+import { hizmetGorevDonumu, hizmetGorevTeslim, hizmetGorevleri } from "../src/yerlesim/hizmet-gorev.ts";
+import { gostergeOku } from "../src/yerlesim/topluluk-kayit.ts";
+import { oyuncuEkle, testKasabasi } from "./kasaba-yardimci.ts";
 import { hizmetHazirla, hizmetIlanAc, hizmetIlanBul, hizmetIlanGeri, hizmetIlanIsle, hizmetIlanlar, hizmetNpcTalepleri, hizmetNpcTalebiAc, hizmetNpcTalepTeslim, hizmetStoguGecerli, hizmetStokDonumu, hizmetYetkiliMi } from "../src/yerlesim/hizmet-pazari.ts";
 import type { Karakter, Kasaba } from "../src/yerlesim/tipler.ts";
 import type { EkonomiKaydi } from "../src/yerlesim/pazar-tahta.ts";
@@ -430,4 +433,106 @@ test("E4.3-B aynı hanedeki oyuncu kendi hanesine açılmış NPC talebinden öd
   assert.deepEqual(teslim, { ok: false, hata: "hedef_uygun_degil" });
   assert.equal(kar.pa, oncePara);
   assert.equal(hazir.deger.stok.n, 1);
+});
+
+
+function gorevKarakter(k: Kasaba, no: number, meslek: "asker" | "divan", dugum: string, hesap = "gorev-hesap"): Karakter {
+  const kar = oyuncuEkle(k, no);
+  kar.h = hesap;
+  kar.pa = 10;
+  kar.tk = 18;
+  kar.ta = k.ay;
+  kar.ms = {
+    a: meslek, y: "",
+    s: { [meslek]: { kd: 0, hz: 0, cy: 0, sv: { [dugum]: 1 } } },
+  };
+  return kar;
+}
+
+test("E4.3-C kasaba görevleri: 4 nöbet, 1 sayım, 1 meclis kaydı, 2 talim; ulufe önceden ayrılır ve süresi dolunca iade edilir", () => {
+  const k = testKasabasi("develi", 300);
+  k.hd = { hz: 100, vk: 0, em: {}, tr: [] };
+  const ay = k.ay + 1;
+  hizmetGorevDonumu(k, ay);
+  const gorevler = hizmetGorevleri(k.ek, ay);
+  assert.equal(gorevler.length, 8);
+  assert.deepEqual(
+    Object.fromEntries(["nobet", "vergiSayimi", "meclisKaydi", "talim"].map((tur) => [tur, gorevler.filter((x) => x.tur === tur).length])),
+    { nobet: 4, vergiSayimi: 1, meclisKaydi: 1, talim: 2 },
+  );
+  assert.equal(k.hd.hz, 100 - 8 * 4);
+  hizmetGorevDonumu(k, ay + 1);
+  assert.equal(gorevler.filter((x) => x.sonAy === ay).length, 8);
+  assert.equal(k.hd.hz, 100 - 8 * 4); // Eski rezerv iade edilir, yeni ayın sekiz koltuğu yeniden rezerve edilir.
+  assert.equal(hizmetGorevleri(k.ek, ay + 1).length, 8);
+  assert.equal(k.ek?.hg?.filter((x) => x.ac === ay && x.d === "dustu").length, 8);
+});
+
+test("E4.3-C nöbet görevi: beceri ve mızrak gerekir; takat, mızrak aşınması, ulufe ve asayiş birlikte yazılır", () => {
+  const k = testKasabasi("develi", 300);
+  k.hd = { hz: 100, vk: 0, em: {}, tr: [] };
+  const ay = k.ay + 1;
+  hizmetGorevDonumu(k, ay);
+  const gorev = hizmetGorevleri(k.ek, ay).find((x) => x.tur === "nobet")!;
+  const kar = gorevKarakter(k, 1, "asker", "asker.surNobeti");
+  kar.ev = { mizrak: 1 };
+  const oncePa = kar.pa;
+  const onceAsayis = gostergeOku(k, "asayis");
+  const r = hizmetGorevTeslim(k, kar, gorev.id, ay);
+  assert.equal(r.ok, true, r.ok ? "" : r.hata);
+  if (!r.ok) return;
+  assert.equal(kar.pa, oncePa + 4);
+  assert.equal(kar.tk, 16);
+  assert.equal(kar.ev?.mizrak, 1);
+  assert.equal(kar.as?.mizrak, 1);
+  assert.equal(gostergeOku(k, "asayis"), onceAsayis + 1);
+  assert.equal(kar.ms?.s.asker?.hz, 4);
+  assert.equal(r.deger.hizmetPuani, 4);
+  assert.equal(hizmetGorevTeslim(k, kar, gorev.id, ay).ok, false);
+});
+
+test("E4.3-C görevleri beceri kapısı, hane tekilliği ve araç eksikliğinde ödül üretmez", () => {
+  const k = testKasabasi("develi", 300);
+  k.hd = { hz: 100, vk: 0, em: {}, tr: [] };
+  const ay = k.ay + 1;
+  hizmetGorevDonumu(k, ay);
+  const nobet = hizmetGorevleri(k.ek, ay).find((x) => x.tur === "nobet")!;
+  const talim = hizmetGorevleri(k.ek, ay).find((x) => x.tur === "talim")!;
+  const becerisiz = oyuncuEkle(k, 7);
+  const para0 = becerisiz.pa;
+  const takat0 = becerisiz.tk;
+  assert.deepEqual(hizmetGorevTeslim(k, becerisiz, nobet.id, ay), { ok: false, hata: "dugum_kapali" });
+  assert.equal(becerisiz.pa, para0);
+  assert.equal(becerisiz.tk, takat0);
+
+  const asker = gorevKarakter(k, 8, "asker", "asker.surNobeti", "ortak-hesap");
+  assert.deepEqual(hizmetGorevTeslim(k, asker, nobet.id, ay), { ok: false, hata: "arac_yok" });
+  assert.equal(asker.pa, 10);
+  assert.equal(asker.tk, 18);
+
+  asker.ev = { mizrak: 1 };
+  assert.equal(hizmetGorevTeslim(k, asker, nobet.id, ay).ok, true);
+  const ayniHane = gorevKarakter(k, 9, "asker", "asker.mizrakTalimi", "baska-hesap");
+  ayniHane.e = asker.e;
+  assert.deepEqual(hizmetGorevTeslim(k, ayniHane, talim.id, ay), { ok: false, hata: "ayni_kume" });
+  assert.equal(ayniHane.pa, 10);
+  assert.equal(ayniHane.tk, 18);
+});
+
+test("E4.3-C divan sayımı ve meclis kaydı gerçek hizmet düğümlerini doğrular", () => {
+  const k = testKasabasi("develi", 300);
+  k.hd = { hz: 100, vk: 0, em: {}, tr: [] };
+  const ay = k.ay + 1;
+  hizmetGorevDonumu(k, ay);
+  const sayim = hizmetGorevleri(k.ek, ay).find((x) => x.tur === "vergiSayimi")!;
+  const kayit = hizmetGorevleri(k.ek, ay).find((x) => x.tur === "meclisKaydi")!;
+  const sayman = gorevKarakter(k, 10, "divan", "divan.vergiSayimi");
+  const kayitKatibi = gorevKarakter(k, 11, "divan", "divan.meclisKatipligi");
+  const moral0 = gostergeOku(k, "moral");
+  assert.equal(hizmetGorevTeslim(k, sayman, sayim.id, ay).ok, true);
+  assert.equal(hizmetGorevTeslim(k, kayitKatibi, kayit.id, ay).ok, true);
+  assert.equal(sayman.pa, 14);
+  assert.equal(kayitKatibi.pa, 14);
+  assert.equal(gostergeOku(k, "asayis"), 51);
+  assert.equal(gostergeOku(k, "moral"), moral0 + 1);
 });
