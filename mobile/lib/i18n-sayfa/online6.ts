@@ -336,5 +336,6 @@ export const rows: Record<string, string[]> = {
   "onl.hh.ilan_gecersiz": ["İlan bilgisi geçersiz.", "Invalid listing details.", "Datos del anuncio no válidos.", "Dados do anúncio inválidos.", "بيانات الإعلان غير صالحة.", "Неверные данные объявления."],
   "onl.hh.ilan_kapandi": ["Bu ilan kapanmış veya süresi dolmuş.", "This listing has closed or expired.", "Este anuncio está cerrado o caducado.", "Este anúncio foi encerrado ou expirou.", "أُغلق الإعلان أو انتهت صلاحيته.", "Объявление закрыто или истёк срок."],
   "onl.hh.ilan_siniri": ["Açık ilan sınırına ulaştın.", "You have reached the open listing limit.", "Has alcanzado el límite de anuncios abiertos.", "Atingiste o limite de anúncios abertos.", "بلغت حد الإعلانات المفتوحة.", "Достигнут лимит открытых объявлений."],
+  "onl.hizmet.kisa": ["Hizmet Pazarı", "Service Market", "Mercado de servicios", "Mercado de serviços", "سوق الخدمات", "Рынок услуг"],
 
 };
