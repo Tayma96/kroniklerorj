@@ -323,6 +323,7 @@ function YasamEkran() {
       </Pressable>;
     })()}
     <YasamHanGirisi ben={ben} />
+    <CizgiDugme etiket={t("onl.topluluk.baslik")} icon="users" rtl={rtl} kucuk onPress={() => router.push("/online/topluluk")} />
     <CizgiDugme etiket={t("onl.hizmet.kisa")} icon="briefcase" rtl={rtl} kucuk onPress={() => router.push("/online/hizmet")} />
     <CizgiDugme etiket={t("onl.siyaset.baslik")} icon="castle" rtl={rtl} kucuk onPress={() => router.push("/online/siyaset")} />
 
