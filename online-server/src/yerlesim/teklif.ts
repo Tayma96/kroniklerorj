@@ -571,6 +571,7 @@ function borcOde(k: Kasaba, t: Teklif, tutar: number, ay: number, borclu: string
   if (!b || !a || tutar <= 0) return [];
   b.pa -= tutar;
   a.pa += tutar;
+  (t.bo ??= []).push([ay, tutar]);
   t.kl = (t.kl ?? 0) - tutar;
   if (t.kl <= 0) {
     t.kl = 0;
@@ -757,7 +758,7 @@ export function teklifGorunumu(k: Kasaba, t: Teklif, ben: string, dil: Dil) {
     ...(t.ka !== undefined ? { kabulAyi: t.ka } : {}),
     ...(t.kp !== undefined ? { kapanisAyi: t.kp } : {}),
     ...(t.sn ? { neden: t.sn } : {}),
-    ...(borc ? { borclu: borc.borclu, alacakli: borc.alacakli, kalan: t.kl ?? null, vadeAyi: t.vd ?? null } : {}),
+    ...(borc ? { borclu: borc.borclu, alacakli: borc.alacakli, kalan: t.kl ?? null, vadeAyi: t.vd ?? null, odemeler: t.bo ?? [] } : {}),
     ...(t.bt !== undefined ? { bitisAyi: t.bt } : {}),
   };
 }
