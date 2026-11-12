@@ -165,7 +165,9 @@ test("arabulucu sürümlü uzlaşma taslağı oluşturur; iki tarafın güncel i
   assert.equal(ac.deger.d, "emanette");
   assert.equal(s.pa, 380, "şikâyetçi tutarı imza tamamlanınca emanete alınır");
   assert.equal(kk.pa, 500);
-  assert.ok(oyuncuArabuluculukUygula(k, ar, id, k.ay).ok);
+  assert.deepEqual(oyuncuArabuluculukUygula(k, ar, id, k.ay), { ok: false, hata: "taraf_degil" }, "arabulucu taraf olmadığı için emaneti uygulayamaz");
+  assert.equal(ac.deger.d, "emanette");
+  assert.ok(oyuncuArabuluculukUygula(k, s, id, k.ay).ok, "uzlaşmanın taraflarından biri uygulayabilir");
   assert.equal(ac.deger.d, "tamam");
   assert.equal(s.pa, 380);
   assert.equal(kk.pa, 620, "emanet karşı tarafa aktarılır");
