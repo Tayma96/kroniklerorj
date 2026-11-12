@@ -11,7 +11,7 @@ Durum: kısmi uygulama. `tasarruf` tüketicisi, ortak-durum/han tüketicileri, E
 - Asker `hizmet("nobet")`: öğrenilmiş `surNobeti` ilk seviyesi, ana meslek artık asker olmasa da Haydut ortak derdine nöbet katkısı verir. Sunucu hem görünümde hem katkı yazarken beceriyi doğrular; askerin ana mesleği olması tek başına yeterli değildir.
 - Ozan `hizmet("turku")`: öğrenilmiş `turkuMani` ilk seviyesi, ana meslek artık ozan olmasa da ortak derdin moral katkısını verir. Sunucu görünüm ve katkı yazımında beceriyi doğrular.
 - Hizmet kataloğu: Şifacı `yaraBak` ve `kirikSar`, Ozan `turku`, Şifacı `lohusa` (`lohusaBakimi`, şifalı ot + bez girdisi), Ozan `teselli` (`teselli`, gönül etkisi), Hancı `sazGecesi` (`hanci.sazGecesi`, ekmek + çorba; `ortakSahne` sinerjisi) ve Arabulucu `barisSofrasi` (ekmek + çorba; `barisCorbasi` sinerjisi). Katalog hizmetleri gerçek beceri düğümü/seviyesiyle açılır; hazırlama, stok, ilan, alım ve teslim altyapısı bunları tüketir.
-- Demirci `temelDovme` düğümünün `dovme/komur` etkisi, dövme grubu tariflerinde uygulanır. Kanca sayımı artık bu etkiyi bağlı kabul eder.\n- Çiftçi `yaylaGocu` + Dokumacı `kislikCadir` düğümleri birlikte öğrenilmişse `yaylaCadiri` sinerjisi çadır tarifinin kalite becerisine +10 ekler; tek düğüm yeterli değildir.
+- Demirci `temelDovme` düğümünün `dovme/komur` etkisi, dövme grubu tariflerinde uygulanır. Kanca sayımı artık bu etkiyi bağlı kabul eder.\n- Çiftçi `yaylaGocu` ikinci seviye + Dokumacı `kislikCadir` birinci seviye birlikte öğrenilmişse `yaylaCadiri` sinerjisi çadır tarifinin kalite becerisine +10 ekler; tek düğüm yeterli değildir.
 - Regresyon testi, kilit tarifi önizlemesi ve gerçek envanter düşümünü doğrular.
 
 ## Kalan kancaların envanteri
@@ -43,4 +43,4 @@ Bu üç sistem, farklı oyun döngülerini etkilediği için tek bir genel bonus
 ### 13 Kasım — yaylaCadiri sinerjisi
 - Çiftçi `yaylaGocu` ve Dokumacı `kislikCadir` düğümleri aynı karakterde öğrenilmişse `cadir` tarifinin kalite becerisine +10 eklenir.
 - Yalnız bir düğüm öğrenilmişse katkı oluşmaz; sinerji mevcut sunucu çözümleyicisiyle doğrulanır.
-- Regresyon testi iki düğümün birlikte gerekliliğini ve tek düğüm durumlarını kapsar.
+- Regresyon testi Çiftçi `yaylaGocu` ikinci seviye ve Dokumacı `kislikCadir` birinci seviye koşullarını; tek düğüm durumlarını kapsar.
