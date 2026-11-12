@@ -31,7 +31,8 @@ function ToplulukEkran() {
   const [secim, setSecim] = useState<Mesrep>({ el: "orta", cesaret: "orta", gurur: "orta" });
   const [yukleniyor, setYukleniyor] = useState(false);
   const [hata, setHata] = useState<string | null>(null);
-  const [bilgi, setBilgi] = useState<string | null>(null);\n  const [hedefId, setHedefId] = useState("");
+  const [bilgi, setBilgi] = useState<string | null>(null);
+  const [hedefId, setHedefId] = useState("");
 
   const yukle = useCallback(async () => {
     if (!online.profil) return;
