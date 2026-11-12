@@ -5,6 +5,7 @@
   "description": "Kronikler Online sunucusu: Cloudflare Worker + Durable Object (Faz 1: kimlik ve varış; Faz 2: yaşayan yerleşim)",
   "scripts": {
     "typecheck": "../mobile/node_modules/.bin/tsc --noEmit -p .",
+    "test:load": "node scripts/yuk-test.mjs",
     "test": "node --test \"test/*.test.ts\"",
     "deploy": "npx wrangler deploy"
   }
