@@ -449,8 +449,8 @@ test("P5 güçler yakınsa çıkmaz statükoyu korur", async () => {
 
 test("P5 savunma ön emri: ilan sonrası makam sahibi yazabilir; aynı hane ikinci emri veremez", () => {
   const d = bolgeKur("demirhan", 0);
-  const savunan = kimlik("savunma", { yerlesim: "develi", e: 55 });
-  const savunanKoltuk = koltukBul(d, "sehirBeyi:develi")!;
+  const savunan = kimlik("savunma", { yerlesim: "demirhan", e: 55 });
+  const savunanKoltuk = koltukBul(d, "sehirBeyi:demirhan")!;
   savunanKoltuk.s = oyuncuTutucu(savunan, 0, SIMDI);
   const ayniHane = kimlik("ahi-savunma", { yerlesim: "develi", e: 55 });
   const ahiKoltuk = koltukBul(d, "ahiBasi:develi")!;
@@ -463,14 +463,14 @@ test("P5 savunma ön emri: ilan sonrası makam sahibi yazabilir; aynı hane ikin
     garnizonSadakati: 20, yatirilan: 0, mod: "acik", ilanAy: 0, cozumAy: 2, izler: [],
   };
 
-  assert.equal(eylem(d, savunan, { islem: "darbeSavunma", makam: "sehirBeyi:develi" }).ok, true);
+  assert.equal(eylem(d, savunan, { islem: "darbeSavunma", makam: "sehirBeyi:demirhan" }).ok, true);
   assert.deepEqual(eylem(d, ayniHane, { islem: "darbeSavunma", makam: "ahiBasi:develi" }), { ok: false, hata: "kume_cakisma" });
   assert.equal(d.darbe.savunma?.length, 1);
   assert.equal(d.darbe.savunma?.[0]?.rol, "sehirBeyi");
 
   d.ay = 2;
   d.darbe.cozumAy = 2;
-  assert.deepEqual(eylem(d, savunan, { islem: "darbeSavunma", makam: "sehirBeyi:develi" }), { ok: false, hata: "darbe_kapali" });
+  assert.deepEqual(eylem(d, savunan, { islem: "darbeSavunma", makam: "sehirBeyi:demirhan" }), { ok: false, hata: "darbe_kapali" });
 });
 
 test("P5 savunma ön emirleri çatışma gücüne tanımlı ve tavanlı katkı verir", async () => {
