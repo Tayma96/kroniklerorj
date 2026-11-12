@@ -223,6 +223,13 @@ export function oyuncuArabuluculukUygula(
   // Arabulucu taslağı sunar; imzalı mali uzlaşmanın tarafı değildir ve emaneti uygulayamaz.
   if (ben.o !== d.s && ben.o !== d.k) return hata("taraf_degil");
   if (d.d !== "emanette" || !d.od || d.od.emanet !== 1 || d.od.uygulandi === 1 || d.od.iade === 1) return hata("teklif_kapandi");
+  // Kalıcı kayıt elle/eski sürümle bozulmuşsa "emanette" durumu tek başına ödeme yetkisi vermez:
+  // iki imza da mevcut taslak sürümüne ait olmalı ve emanet tutarları geçerli tam sayılar olmalı.
+  if (!d.uz || !Number.isSafeInteger(d.sv) || d.sv < 1
+    || d.im.s !== d.sv || d.im.k !== d.sv
+    || !Number.isSafeInteger(d.od.s) || d.od.s < 0
+    || !Number.isSafeInteger(d.od.k) || d.od.k < 0
+    || d.od.s !== d.uz.s || d.od.k !== d.uz.k) return hata("teklif_gecersiz");
   if (d.sonAy !== undefined && ay > d.sonAy) {
     if (!emanetIadeEt(k, d, ay)) return hata("sakin_yok");
     return basarili(d);
