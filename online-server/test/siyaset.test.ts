@@ -553,11 +553,13 @@ test("darbe görünümü: destek veren oyuncu savunma ön emri düğmesini yanl�
   const destekci = kimlik("o3", { e: 3 });
   d.darbe!.destekler.push({
     kisi: destekci.kisi, hesap: destekci.hesap, ad: destekci.ad,
-    koltuk: "ahiBasi:demirhan", rol: "ahiBasi", kume: ["h:hesap-o3"], ay: 1,
+    koltuk: "ahiBasi:demirhan", rol: "ahiBasi", kume: kumeAnahtarlari(destekci), ay: 1,
   });
   const gorunum = darbeGorunumu(d, destekci)!;
   assert.equal(gorunum.benimDestek, true);
   assert.equal(gorunum.benimTaraf, null, "destekçi savunma tarafı sayılmaz");
+  const ayniHane = kimlik("o4", { e: 3 });
+  assert.equal(darbeGorunumu(d, ayniHane)!.benimDestek, true, "aynı hane hesabı da destek kümesinde sayılır");
 });
 
 test("darbe ateşkesi: karşı tarafın açık kabulü gerekir, statüko korunur ve soğuma başlar", () => {
