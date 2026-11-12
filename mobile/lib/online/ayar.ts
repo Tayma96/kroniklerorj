@@ -6,6 +6,9 @@
  */
 export const ONLINE_GELISTIRME = process.env.EXPO_PUBLIC_ONLINE_GELISTIRME === "1";
 
+/** Davet kodlu Google'sız test girişi; yalnız test APK derlemesinde açılır. */
+export const ONLINE_TEST_GIRIS = process.env.EXPO_PUBLIC_ONLINE_TEST_GIRIS === "1";
+
 /**
  * online-server Worker adresi (örn. "https://kronikler-online.<hesap>.workers.dev"). Berkay ilk dağıtımdan sonra
  * doldurur. Boşken istemci hiçbir isteği göndermez, "sunucu_yok" hatası döner; arayüz dostça bir not gösterir.
