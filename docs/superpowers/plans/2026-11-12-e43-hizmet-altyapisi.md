@@ -103,6 +103,20 @@ Her POST, `istekNo` ile tekrar güvenli olmalı. Yerleşim sınırları ve yetki
 - [x] Arabuluculuk teklifi gerçek NPC uzlaşma motoruna bağlandı; sözleşme ücreti ve NPC tazminatı ayrı emanetlenir, teslim/ret/iptal/süre aşımında tekil sonuç ve iade uygulanır. Bu kapsam NPC–oyuncu kırgınlığıdır; iki oyuncu arasındaki husumet için ayrı hakem/uzlaşma protokolü henüz yok.
 - [x] İki oyuncu arasındaki husumet için ayrı hakem/uzlaşma protokolü tamamlandı (D2-A–E; ayrıntı aşağıda).
 - [ ] Kervan muhafızlığı hâlâ yalnız sözleşme tesliminde zincir aşındırıp kasaba asayişini artırır. Gerçek rota koruması için çevrimiçi oyunda kervan seferi/rota/konum ve yolculuk adımı modeli yoktur; haydut yalnız kasaba tetiği ve ortak derttir. Bu bağlantı, gerçek rota/sefer sistemi eklenmeden tamamlanmış sayılmayacak.
+
+### Kervan seferi — gerçek rota entegrasyonu için teknik ön tasarım
+
+**Mevcut engel:** Çevrimiçi sunucuda yerleşimler arası komşuluk grafiği, yol düğümü, sefer kaydı veya dünya saatiyle ilerleyen taşıma işi bulunamadı. Eski tek oyunculu `legacy/backend/game_routes.py` içindeki kervan olayı, çevrimiçi modele taşınmış kabul edilemez. Bu nedenle mevcut muhafız sözleşmesine sahte bir "rota korundu" sonucu eklenmez.
+
+**İlk dikey dilim (uygulama sırası):**
+1. **Harita kaynağı:** Yerleşim kimliklerini tekil düğüm yapan, komşu bağlantıları ve yol türünü içeren sunucu taraflı rota grafiği. İstemci rota listesi gönderse bile sunucu bağlantıların ardışık ve geçerli olduğunu doğrular.
+2. **Sefer kaydı:** `seferId`, sahip/taşıyıcı, çıkış-varış, sunucunun doğruladığı rota, mevcut bacak, başlama ve tahmini bitiş dünya zamanı, yük özeti, muhafız sözleşmesi, durum ve sürüm. Hassas yük/hesap ayrıntısı kamu akışına yazılmaz.
+3. **Zaman ilerlemesi:** Her dünya nabzında yalnız vadesi gelen sefer bacakları işlenir. Çevrimdışı kalmak ilerlemeyi durdurmaz; aynı nabzın tekrar çalışması bacağı iki kez ilerletemez.
+4. **Risk ve karşı oyun:** Her bacağın sabitlenmiş tehlike bandı ve olay tohumu olur. Haydut karşılaşması olasılık/kanıt/sonuç olarak kaydedilir; muhafızlık riski azaltır, saldırıyı kesin olarak sıfırlamaz. İzci/rehber bilgisi eskime süresiyle çalışır.
+5. **Muhafız sözleşmesi:** Mevcut `muhafiz` iş sözleşmesi yalnız aktif bir sefer kimliğine bağlanır. Teslim anında seferin hâlâ aynı bacakta ve sözleşmenin geçerli olduğu doğrulanır; zincir/takat tüketimi ile koruma etkisi tek atomik işlemde yazılır. Kasaba asayişi artışı, gerçek yol korumasının yerine geçmez.
+6. **Görünürlük ve test:** Sahip ve yetkili muhafız seferin ayrıntısını; diğerleri yalnız haberin ulaşabileceği ölçüde olay özetini görür. Tekrarlanan nabız, sahte rota, yanlış taraf, iptal, varış, saldırı, muhafızın risk azaltması ve eski kayıt geçişi test edilir.
+
+**Bağımlılık / karar:** Önce çevrimiçi dünya haritasının kalıcı kimlikleri ve bölge geçiş kaynağı bulunup doğrulanmalı. Bu kaynak olmadan yeni rota kimlikleri elle uydurulmayacak; ilk PR yalnız harita kaynağı ve sefer veri sözleşmesiyle sınırlı tutulacak.
 - [x] Oyuncu borcu mevcut teklif kaydında zaten faiz, vade, kalan borç ve kısmi tahsilatla tutuluyordu. Senet eki olarak her tahsilatın ayı ve tutarı kalıcı `bo` dökümüne yazılır; aktif ve kapanmış borç kartında altı dilde gösterilir. Eski kayıtlar için alan isteğe bağlıdır.
 - [x] Senet kartı borç kapandıktan sonra da `kalan 0` bakiyesini ve vade bilgisini göstermeye devam eder; kapanmış borç yalnızca geçmiş ödeme listesi olarak görünmez, kapanış bakiyesi de anlaşılır. Tahsilat dökümünde mutlak oyun ayına ek olarak yerelleştirilmiş göreli zaman (bu ay/kaç ay önce) gösterilir.
 - [x] Mobil teklif formu haritadaki NPC hedefini, uzlaşma bedelini ve isteğe bağlı tazminatı seçtirir; teklif kartı ve sonuç nedeni altı dilde gösterilir. Eski hedefi olmayan arabuluculuk teklifleri emanet iadesiyle kapanır.
