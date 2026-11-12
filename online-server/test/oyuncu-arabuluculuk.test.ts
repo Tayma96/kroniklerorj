@@ -187,3 +187,23 @@ test("uzlaşma taslağı değişirse eski imzalar ve sürüm geçersizleşir", (
   assert.deepEqual(ac.deger.im, {}, "taslak değişince eski imzalar silinir");
   assert.equal(ac.deger.d, "imzaBekliyor");
 });
+
+
+test("emanete alma: taraflardan birinin bakiyesi yetmezse ikinci imza ve iki bakiye de değişmez", () => {
+  const k = testKasabasi("develi", 720);
+  const s = oyuncuEkle(k, 181), kk = oyuncuEkle(k, 182), ar = oyuncuEkle(k, 183);
+  const ac = oyuncuArabuluculukAc(k, s, kk, ar, k.ay);
+  assert.ok(ac.ok);
+  if (!ac.ok) return;
+  const id = String(ac.deger.i);
+  for (const x of [s, kk, ar]) assert.ok(oyuncuArabuluculukCevap(k, x, id, "kabul", k.ay).ok);
+  assert.ok(oyuncuArabuluculukTaslak(k, ar, id, 500, 0, undefined, k.ay).ok);
+  s.pa = 100; kk.pa = 1000;
+  assert.ok(oyuncuArabuluculukImzala(k, s, id, 2).ok);
+  const onceS = s.pa, onceK = kk.pa;
+  assert.deepEqual(oyuncuArabuluculukImzala(k, kk, id, 2), { ok: false, hata: "para_yok" });
+  assert.equal(ac.deger.d, "imzaBekliyor");
+  assert.equal(ac.deger.im.k, undefined);
+  assert.equal(s.pa, onceS, "şikâyetçinin bakiyesi kısmen kesilmez");
+  assert.equal(kk.pa, onceK, "karşı tarafın bakiyesi de değişmez");
+});
