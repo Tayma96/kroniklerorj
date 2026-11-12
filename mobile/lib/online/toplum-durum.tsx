@@ -111,6 +111,12 @@ export function useToplum() {
         if (s.ok || s.hata === "teklif_kapandi" || s.hata === "teklif_yok") tazele(undefined, s.ok);
         return s;
       }),
+    arabuluculuk: (istek: { islem: "ac" | "cevap" | "geri" | "taslak" | "imza"; hedef?: string; arabulucu?: string; dosya?: string; cevap?: "kabul" | "ret"; sTutari?: number; kTutari?: number; not?: string; surum?: number }) =>
+      calis(`arabuluculuk:${istek.dosya ?? istek.hedef ?? "yeni"}:${istek.islem}:${JSON.stringify(istek)}`, async (istekNo) => {
+        const s = await k().arabuluculuk({ ...istek, istekNo });
+        if (s.ok) tazele(istek.hedef, false);
+        return s;
+      }),
     husumet: (hedef: string, islem: "ilan" | "kaldir") =>
       calis(`husumet:${hedef}:${islem}`, async (istekNo): Promise<Sonuc<{ hedef: string; husumet: boolean }>> => {
         const s = await k().husumet({ hedef, islem, istekNo });
