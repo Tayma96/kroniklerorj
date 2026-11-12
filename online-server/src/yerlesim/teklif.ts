@@ -488,6 +488,13 @@ export function teklifCevap(k: Kasaba, ben: Karakter, idHam: unknown, cevap: unk
       olaylar.push({ t: "teklif", w: ben.o, h: t.g === ben.o ? t.a : t.g, g: t.g === ben.o ? t.a : t.g, n: 6, k: `olay.teklif.bitti.${t.t}`, p: { kisi: oyuncuRef(ben), teklif: teklifKimlik(t.i) } });
       break;
     case "teslim": {
+      // Eski sürümdeki NPC hedefi bulunmayan arabuluculuk sözleşmeleri gerçek talep defterine taşınamaz.
+      // Teslim denemesinde ücret emanetini sahibine iade edip eski kaydı kapat.
+      if (t.d === "surer" && t.t === "is" && t.a === ben.o && t.s.it === "arabuluculuk" && t.s.an === undefined && t.s.ta === undefined) {
+        kapat(k, t, "iptal", ay, "eskiArabuluculuk");
+        olaylar.push({ t: "teklif", w: ben.o, h: t.g, g: t.g, n: 5, k: "olay.teklif.bitti.is", p: { kisi: oyuncuRef(ben), teklif: teklifKimlik(t.i) } });
+        break;
+      }
       if (t.d !== "surer" || t.t !== "is" || t.a !== ben.o) return hata("teklif_kapandi");
       if (ay > t.sa) return hata("teklif_kapandi");
       // Eski sürümde kabul edilmiş NPC hedefi olmayan arabuluculuk sözleşmesi teslim edilemez.
