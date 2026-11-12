@@ -155,7 +155,10 @@ export function devletGorunumu(s: BagimsizDevlet | undefined) {
     bey: { kisi: s.beyKisi, ad: s.beyAd },
     vergiOrani: s.vergiOrani,
     divan: s.divan.map((x) => ({ ad: x.ad, rol: x.rol })),
-    mogol: s.mogol, sultan: s.sultan, sultanSonuc: s.sultanSonuc ?? null, taninma: s.taninma, taninmaYanits: Object.entries(s.taninmaYanits ?? {}).map(([bolge, x]) => ({ bolge, ...x })),
+    mogol: s.mogol, sultan: s.sultan, sultanSonuc: s.sultanSonuc ?? null, taninma: s.taninma,
+    taninmaTalep: s.taninmaHedef ? { hedef: s.taninmaHedef, istekId: s.taninmaIstekId ?? null, sonuc: s.taninmaSonuc ?? null, cevap: s.taninmaCevap ?? null } : null,
+    taninmaGelen: Object.entries(s.taninmaGelen ?? {}).map(([bolge, x]) => ({ bolge, ...x })),
+    taninmaYanits: Object.entries(s.taninmaYanits ?? {}).map(([bolge, x]) => ({ bolge, ...x })),
     yemin: { bagli: yeminler.filter((x) => x === "bagli").length, tarafsiz: yeminler.filter((x) => x === "tarafsiz").length },
   };
 }
