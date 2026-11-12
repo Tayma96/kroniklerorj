@@ -4,7 +4,7 @@ import type { Dil, KisiAdi, Sonuc } from "./protokol";
 import {
   dostlukYanitiMi, duzenYanitiMi, engelYanitiMi, gelenMi, husumetYanitiMi, oyuncuProfiliMi, sikayetYanitiMi, teklifYanitiMi,
   vitrinYanitiMi, yalanlaYanitiMi, toplulukDurumuMi,
-  type ToplulukDurumu, type MesrepIstegi, type OrtakDertIstegi, type SenlikIstegi, type HamiIstegi,
+  type ToplulukDurumu, type MesrepIstegi, type OrtakDertIstegi, type SenlikIstegi, type HamiIstegi, type ZaviyeIstegi,
   type BagDurumu, type DostlukIstegi, type DuzenGorunumu, type DuzenIstegi, type EngelIstegi, type GelenYaniti, type HusumetIstegi,
   type OyuncuProfili, type SikayetIstegi, type SikayetYaniti, type SoylentiGorunumu, type TeklifCevapIstegi, type TeklifGorunumu,
   type TeklifIstegi, type VitrinArmagani,
@@ -28,6 +28,7 @@ export interface ToplumIstemci {
   mesrep(istek: MesrepIstegi): Promise<Sonuc<Record<string, unknown>>>;
   ortakDert(istek: OrtakDertIstegi): Promise<Sonuc<Record<string, unknown>>>;
   senlik(istek: SenlikIstegi): Promise<Sonuc<Record<string, unknown>>>;
+  zaviye(istek: ZaviyeIstegi): Promise<Sonuc<Record<string, unknown>>>;
 }
 
 const nesneYanitiMi = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
@@ -56,5 +57,6 @@ export function toplumUclari(cagir: Cagir): ToplumIstemci {
     mesrep: (i) => yaz("/v1/mesrep", i, nesneYanitiMi),
     ortakDert: (i) => yaz("/v1/ortak-dert", i, nesneYanitiMi),
     senlik: (i) => yaz("/v1/senlik", i, nesneYanitiMi),
+    zaviye: (i) => yaz("/v1/zaviye", i, nesneYanitiMi),
   };
 }
