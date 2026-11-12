@@ -24,6 +24,8 @@ export interface HizmetTarifi {
   /** Hazır hizmet stoğu; ilan beklerken bu süre sonunda bozulur. */
   hazir: { adet: number; gecerlilikAy: number };
   fiyatTaban: number;
+  /** NPC olay talebi varsa hazineden ayrılacak ödül; açılışta rezerve edilir. */
+  npcOdul?: number;
 }
 
 /** İlk uygulanacak hizmetler: şifacının doğrudan iyileştirmesi ve ozanın han sahnesi. */
@@ -69,6 +71,7 @@ export const HIZMET_TARIFLERI: readonly HizmetTarifi[] = [
   },
   {
     id: "lohusa",
+    npcOdul: 8,
     meslek: "sifaci",
     dugum: "sifaci.lohusaBakimi",
     seviye: 1,
@@ -99,6 +102,7 @@ export const HIZMET_TARIFLERI: readonly HizmetTarifi[] = [
   },
   {
     id: "teselli",
+    npcOdul: 5,
     meslek: "ozan",
     dugum: "ozan.teselli",
     seviye: 1,
