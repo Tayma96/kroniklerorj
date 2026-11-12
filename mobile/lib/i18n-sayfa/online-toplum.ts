@@ -110,6 +110,7 @@ export const rows: Record<string, string[]> = {
   "onl.tp.ay.sonra": ["%1 ay sonra", "in %1 months", "en %1 meses", "daqui a %1 meses", "بعد %1 أشهر", "через %1 мес."],
   "onl.tp.ay.once": ["%1 ay önce", "%1 months ago", "hace %1 meses", "há %1 meses", "قبل %1 أشهر", "%1 мес. назад"],
   // --- Teklif türleri ve kartı
+  "onl.tp.f.d.is": ["Oyuncu sana bir iş önerir; kabul edersen becerine göre teslim edip emanet ücreti kazanırsın.", "A player offers paid work; accept, complete it using your skill, and collect the escrowed fee.", "Otro jugador ofrece un trabajo; acéptalo, complétalo con tu habilidad y cobra el depósito.", "Outro jogador oferece um trabalho; aceita, conclui com a tua habilidade e recebe a caução.", "يعرض لاعب عملاً مدفوعاً؛ اقبله وأنجزه بمهارتك لتحصل على الأجر المحجوز.", "Игрок предлагает работу: прими её, выполни с помощью навыка и получи залог."],
   "onl.tp.tur.is": ["İş sözleşmesi", "Service contract", "Contrato de servicio", "Contrato de serviço", "عقد خدمة", "Договор услуг"],
   "onl.tp.is.arabuluculuk": ["Arabuluculuk", "Mediation", "Mediación", "Mediação", "وساطة", "Посредничество"],
   "onl.tp.is.muhafiz": ["Muhafızlık", "Guard duty", "Servicio de guardia", "Serviço de guarda", "حراسة", "Охрана"],
