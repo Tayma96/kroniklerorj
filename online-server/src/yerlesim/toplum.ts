@@ -37,6 +37,9 @@ export interface Sartlar {
   dn?: number;
   /** İki taraflı oyuncu işi: arabuluculuk, muhafızlık veya mektup taşıma. */
   it?: IkiTarafIsi;
+  /** Mektup işinin üçüncü alıcısı ve özel mesajı (yalnız iş sözleşmesinde). */
+  he?: string;
+  ms?: string;
   /** Armağan (envanterden, Berkay §6.1): mal, adet ve biliniyorsa malı üreten oyuncu. */
   ml?: string;
   mn?: number;
