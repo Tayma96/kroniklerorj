@@ -332,7 +332,7 @@ export function OlaganDuzenKarti() {
     const s = await toplum.duzenKaydet({ gelen, borcCevap: taslak.borcCevap, borcEnCok: taslak.borcEnCok });
     if (s.ok) { hap("success"); setKayit(true); } else hap("error");
   };
-  const kendiliginden = d?.sinir.kendiligindenKabulYok ?? ["gorucu", "npcDunur"];
+  const kendiliginden = d?.sinir.kendiligindenKabulYok ?? ["gorucu", "npcDunur", "is"];
   const hata = toplum.hataOf("duzenOku");
   const kayitHata = toplum.hata?.islem.startsWith("duzen:") ? toplum.hata.kod : null;
   return <Cerceve ic={{ padding: 12, gap: 10 }}>
