@@ -50,6 +50,20 @@ export interface HizmetTeslimKaydi {
   tutar: number;
 }
 
+/** Gerçek NPC doğum/ölüm olaylarından açılan, hazineden ödülü rezerve edilmiş tek teslimlik talep. */
+export interface HizmetNpcTalebi {
+  i: number;
+  olay: string;
+  h: string;
+  hedef: string;
+  hane: number;
+  ac: number;
+  sa: number;
+  odul: number;
+  d: "acik" | "tamam" | "dustu";
+  teslim?: { o: string; ad: string; ay: number };
+}
+
 export type HizmetIlanDurumu = "acik" | "bitti" | "geri" | "dustu";
 export interface HizmetIlan {
   i: number;
@@ -77,6 +91,8 @@ export interface EkonomiKaydi {
   hs?: HizmetStogu[];
   hi?: HizmetIlan[];
   ht?: HizmetTeslimKaydi[];
+  /** Doğum ve ölüm olaylarından açılan NPC hizmet talepleri. */
+  hn?: HizmetNpcTalebi[];
 }
 
 export function ekonomiAl(k: Kasaba): EkonomiKaydi {
@@ -84,6 +100,7 @@ export function ekonomiAl(k: Kasaba): EkonomiKaydi {
   k.ek.hs ??= [];
   k.ek.hi ??= [];
   k.ek.ht ??= [];
+  k.ek.hn ??= [];
   return k.ek;
 }
 
