@@ -23,7 +23,6 @@ import {
 } from "../src/yerlesim/teklif.ts";
 import { toplumAl } from "../src/yerlesim/toplum.ts";
 import { gostergeOku } from "../src/yerlesim/topluluk-kayit.ts";
-import { gostergeOku } from "../src/yerlesim/topluluk-kayit.ts";
 import type { Karakter, Kasaba } from "../src/yerlesim/tipler.ts";
 import { oyuncuEkle, testKasabasi } from "./kasaba-yardimci.ts";
 
