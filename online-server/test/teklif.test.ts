@@ -18,6 +18,7 @@ import {
   teklifDonumu,
   teklifGorunumu,
   teklifOlustur,
+  teklifTaraflari,
   tedarikZinciriMi,
 } from "../src/yerlesim/teklif.ts";
 import { toplumAl } from "../src/yerlesim/toplum.ts";
@@ -412,20 +413,32 @@ test("E4.3-D muhafızlık işi: araç düğümü ve zincir gerekir; teslim zinci
   assert.equal(a2.pa, 93, "başarısız kabul emaneti değiştirmez");
 });
 
-test("E4.3-D mektup işi: yetkili kâtip teslimde moral/tecrübe alır; süre aşımında emanet müşteriye döner", () => {
+test("E4.3-D mektup işi: kâtip mektubu üçüncü oyuncuya özel ulaştırır; süre aşımında emanet müşteriye döner", () => {
   const { k, a } = kur();
   const b = hizmetciKur(k, 3, "katip", "koyMektubu");
+  const hedef = oyuncuEkle(k, 4, k.ay - 13 * 12 - 2);
+  hedef.e = 400;
   b.pa = 0;
-  const r = teklifOlustur(k, a, b, { tur: "is", is: "mektup", tutar: 5 }, k.ay);
+  const mesaj = "Yarın güneş doğarken hanın önünde buluşalım.";
+  const r = teklifOlustur(k, a, b, {
+    tur: "is", is: "mektup", tutar: 5, mektupHedef: hedef.o, mektupMetni: mesaj,
+  }, k.ay);
   assert.ok(r.ok);
   const t = r.deger.teklif;
+  assert.deepEqual(teklifTaraflari(t), [a.o, b.o, hedef.o]);
+  const gorunum = teklifGorunumu(k, t, a.o, "tr");
+  assert.equal(gorunum.sartlar.hedef?.ad, hedef.ad);
+  assert.equal(gorunum.sartlar.mesaj, mesaj);
   assert.ok(teklifCevap(k, b, `t${t.i}`, "kabul", {}, k.ay).ok);
   assert.deepEqual(teklifCevap(k, a, `t${t.i}`, "teslim", {}, k.ay), { ok: false, hata: "teklif_kapandi" }, "yalnız çalışan teslim eder");
-  bekle(k, 2);
-  assert.equal(t.d, "dustu");
-  assert.equal(t.e, 0);
-  assert.equal(a.pa, 100, "emanet iade");
-  assert.equal(b.pa, 0, "teslim edilmeyen iş ücret üretmez");
+  const teslim = teklifCevap(k, b, `t${t.i}`, "teslim", {}, k.ay);
+  assert.ok(teslim.ok);
+  assert.ok(teslim.deger.olaylar.some((o) => o.g === hedef.o && o.k === "olay.teklif.mektupUlasti" && o.p.mesaj === mesaj));
+  assert.ok(teslim.deger.olaylar.some((o) => o.g === a.o && o.k === "olay.teklif.mektupTeslim"));
+  assert.equal(t.d, "bitti");
+  assert.equal(b.pa, 5);
+  assert.equal(gostergeOku(k, "moral"), 51);
+  assert.deepEqual(teklifCevap(k, b, `t${t.i}`, "teslim", {}, k.ay), { ok: false, hata: "teklif_kapandi" });
 });
 
 test("E4.3-D iş sözleşmesi: aynı hane reddedilir, iki taraflı iptal emaneti iade eder", () => {
@@ -441,4 +454,21 @@ test("E4.3-D iş sözleşmesi: aynı hane reddedilir, iki taraflı iptal emaneti
   assert.equal(r.deger.teklif.d, "iptal");
   assert.equal(a.pa, 100);
   assert.equal(hizmetci.pa, 100);
+});
+
+
+test("E4.3-D mektup: aynı ay aynı hedefe ikinci teklif ve engelli hedef teslimi reddedilir", () => {
+  const { k, a } = kur();
+  const b = hizmetciKur(k, 3, "katip", "koyMektubu");
+  const hedef = oyuncuEkle(k, 4, k.ay - 13 * 12 - 2);
+  hedef.e = 400;
+  const girdi = { tur: "is" as const, is: "mektup" as const, tutar: 3, mektupHedef: hedef.o, mektupMetni: "Selam." };
+  const r = teklifOlustur(k, a, b, girdi, k.ay);
+  assert.ok(r.ok);
+  assert.deepEqual(teklifOlustur(k, a, b, girdi, k.ay), { ok: false, hata: "teklif_siniri" });
+  assert.ok(teklifCevap(k, b, `t${r.deger.teklif.i}`, "kabul", {}, k.ay).ok);
+  assert.ok(engelle(toplumAl(k), hedef, a.o).ok);
+  assert.deepEqual(teklifCevap(k, b, `t${r.deger.teklif.i}`, "teslim", {}, k.ay), { ok: false, hata: "engelli" });
+  assert.equal(b.pa, 100, "engelli teslimde ücret aktarılmaz");
+  assert.equal(r.deger.teklif.d, "surer", "başarısız teslim sözleşmeyi ve emaneti korur");
 });
