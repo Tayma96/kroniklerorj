@@ -5,6 +5,7 @@ import { ATA_NAMI_ORANI, KUSME_YUKU, NAM_DEVIR_ORANI, devirHesapla, devirUygula,
 import { iliskiAl } from "../src/yerlesim/eylem.ts";
 import { olduMu } from "../src/yerlesim/hanedan.ts";
 import { meslekSec } from "../src/yerlesim/meslek.ts";
+import { teklifCevap } from "../src/yerlesim/teklif.ts";
 import { npcKimlik } from "../src/yerlesim/ortak.ts";
 import type { Karakter, Kasaba } from "../src/yerlesim/tipler.ts";
 import { vasiyetDogrula } from "../src/yerlesim/vasiyet.ts";
