@@ -402,7 +402,7 @@ test("P5 çatışma sonucu bağımsız devlet kurar; P6 yönetim kararları ve g
 });
 
 test("P6 ittifak: iki taraflı istek, kabul teyidi, ret ve süre aşımı idempotent işler", async () => {
-  const { devletYonet, ittifakIstekAl, ittifakYanitAl, ittifakOnayAl, devletAyi } = await import("../src/siyaset/devlet.ts");
+  const { devletYonet, ittifakIstekAl, ittifakYanitAl, ittifakOnayAl, ittifakOnaylandi, devletAyi } = await import("../src/siyaset/devlet.ts");
   const ad = (id: string) => BEYLIKLER.find((x) => x.id === id)!.ad;
   const devletKur = (id: string, kisi: SiyasiKimlik) => {
     const d = bolgeKur(id, 0);
@@ -434,6 +434,8 @@ test("P6 ittifak: iki taraflı istek, kabul teyidi, ret ve süre aşımı idempo
   const yanit = hedef.diplomasiGiden?.find((x) => x.tur === "ittifakYanit");
   assert.ok(yanit && yanit.tur === "ittifakYanit");
   assert.equal(ittifakYanitAl(kaynak, "aksehir", istek.istekId, "kabul", 0, ad("aksehir")), null);
+  assert.equal(kaynak.devlet?.ittifaklar?.aksehir?.durum, "kabulBekliyor", "kaynak son teyit gelene kadar bekler");
+  ittifakOnaylandi(kaynak, "aksehir", istek.istekId);
   assert.equal(kaynak.devlet?.ittifaklar?.aksehir?.durum, "aktif");
   assert.equal(devletYonet(kaynak, kaynakBey, { tur: "ittifak", hedefBolge: "aksehir" }), "devlet_talep_var", "aktif ittifaka ikinci kez talep gönderilemez");
   assert.equal(ittifakYanitAl(kaynak, "aksehir", istek.istekId, "ret", 0, ad("aksehir")), "hedef_uygun_degil", "aynı ittifak isteğine çelişkili yanıt reddedilir");
