@@ -277,6 +277,7 @@ export const rows: Record<string, string[]> = {
   "onl.tp.gk.bekleyen": ["%1 cevap bekliyor", "%1 awaiting your reply", "%1 esperan respuesta", "%1 aguardam resposta", "بانتظار ردك: %1", "Ждут ответа: %1"],
   "onl.tp.gk.suren": ["%1 anlaşma sürüyor", "%1 agreements ongoing", "%1 acuerdos en curso", "%1 acordos em curso", "اتفاقات جارية: %1", "Действующих договоров: %1"],
   "onl.tp.gk.bos": ["Yeni teklif yok", "No new offers", "Sin ofertas nuevas", "Sem propostas novas", "لا عروض جديدة", "Новых предложений нет"],
+  "onl.tp.arb.emanetNot": ["Bu aşama yalnızca taslağı ve imzaları kaydeder; henüz para aktarılmaz.", "This stage records only the proposal and signatures; no money is transferred yet.", "Esta etapa solo registra la propuesta y las firmas; aún no se transfiere dinero.", "Esta etapa apenas registra a proposta e as assinaturas; nenhum dinheiro é transferido ainda.", "تسجل هذه المرحلة العرض والتوقيعات فقط؛ لا يتم تحويل الأموال بعد.", "На этом этапе фиксируются только предложение и подписи; деньги пока не переводятся."],
   "onl.tp.arb.baslik": ["ARABULUCULUK DOSYASI", "MEDIATION CASE", "CASO DE MEDIACIÓN", "CASO DE MEDIAÇÃO", "ملف الوساطة", "ДЕЛО О ПОСРЕДНИЧЕСТВЕ"],
   "onl.tp.arb.sikayetci": ["Şikâyetçi", "Complainant", "Demandante", "Reclamante", "المشتكي", "Заявитель"],
   "onl.tp.arb.karsi": ["Karşı taraf", "Other party", "Parte contraria", "Outra parte", "الطرف الآخر", "Другая сторона"],
