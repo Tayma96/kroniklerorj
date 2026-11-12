@@ -11,10 +11,10 @@ import type { CalismaParametreleri, Dokum, Karakter } from "./tipler.ts";
 
 /** [PARAMETRE] Oyuncu başına mal başına aylık NPC alım kotası. */
 export const NPC_SATIS_KOTASI = 6;
-/** [DENGE] Kasabanın aylık talebi: pahalı alet ve nal alımı ham mallardan daha sınırlıdır. */
-const NPC_SATIS_KOTA_MAL: Partial<Record<MalId, number>> = { alet: 2, nal: 2 };
-export function npcSatisKotasi(mal: MalId): number {
-  return NPC_SATIS_KOTA_MAL[mal] ?? NPC_SATIS_KOTASI;
+/** [DENGE] Tek demircinin pahalı alet/nal için NPC'ye sınırsız satış rantı oluşmasın;
+ * kasabada ikinci demirci varsa talep genişler. Callback, satıcı dışındaki oyuncuları sayar. */
+export function npcSatisKotasi(mal: MalId, digerMeslektas = 0): number {
+  return (mal === "alet" || mal === "nal") && digerMeslektas <= 0 ? 2 : NPC_SATIS_KOTASI;
 }
 /** [PARAMETRE] Kıtlık primi oyuncu başına mal başına ayda yalnız bu kadar birime ödenir (kıt pazar çabuk doyar;
  * tek üreticinin yüksek katma değerli malında primin aylık kazancı sınırlı kalır). */
@@ -52,7 +52,7 @@ export function npcyeSat(
   if (typeof adetHam !== "number" || !Number.isInteger(adetHam) || adetHam < 1) return hata("mal_gecersiz");
   if ((k.ev?.[mal] ?? 0) < adetHam) return hata("mal_yok");
   const once = satilan(k, mal, ay);
-  const kotaTavan = npcSatisKotasi(mal);
+  const kotaTavan = npcSatisKotasi(mal, oyuncuSayisi(MALLAR[mal].meslek));
   if (once + adetHam > kotaTavan) return hata("kota_doldu");
   const primli = saticiDegeri(k, mal, oyuncuSayisi, parametreler);
   const prim = primli.kalemler.find((x) => x.k === "kitlik")?.d ?? 0;
@@ -80,8 +80,8 @@ export function npcyeSat(
 }
 
 /** Kalan NPC alım kotası (NPC'nin bu ay oyuncudan daha kaç adet alacağı), ticareti yapılan her mal için. */
-export function kalanSatisKotasi(k: Karakter, ay: number): Partial<Record<MalId, number>> {
+export function kalanSatisKotasi(k: Karakter, ay: number, oyuncuSayisi: (m: MeslekId) => number = () => 0): Partial<Record<MalId, number>> {
   const kota: Partial<Record<MalId, number>> = {};
-  for (const [mal, m] of Object.entries(MALLAR) as [MalId, (typeof MALLAR)[MalId]][]) if (m.taban > 0) kota[mal] = npcSatisKotasi(mal) - satilan(k, mal, ay);
+  for (const [mal, m] of Object.entries(MALLAR) as [MalId, (typeof MALLAR)[MalId]][]) if (m.taban > 0) kota[mal] = npcSatisKotasi(mal, oyuncuSayisi(m.meslek)) - satilan(k, mal, ay);
   return kota;
 }
