@@ -275,12 +275,26 @@ export interface MesrepIstegi { el: "comert" | "hesapli" | "orta"; cesaret: "tem
 export interface OrtakDertIstegi { dert: string; katki: string; mal?: MalId; adet?: number; istekNo: string }
 export interface SenlikIstegi { katki: "yemek" | "sus" | "hayir"; mal?: MalId; adet?: number; tutar?: number; istekNo: string }
 const genelYanitiMi = (v: unknown): v is Record<string, unknown> => nesne(v);
+function zaviyeGorunumuMi(v: unknown): v is ZaviyeGorunumu {
+  if (!nesne(v) || !metin(v.id) || !metin(v.ad) || !nesne(v.arma) || !metin(v.arma.sekil) || !metin(v.arma.renk)
+    || !metin(v.durum) || !sayi(v.kurulus) || !sayi(v.uyeSayisi) || !nesne(v.sinir) || !sayi(v.sinir.enAz) || !sayi(v.sinir.enCok)
+    || !(v.ahiBasi === null || (nesne(v.ahiBasi) && metin(v.ahiBasi.id) && metin(v.ahiBasi.ad)))
+    || !(v.yonetici === null || (nesne(v.yonetici) && metin(v.yonetici.id) && metin(v.yonetici.ad) && mantik(v.yonetici.vekil)))
+    || !dizi(v.uyeler) || !v.uyeler.every((u) => nesne(u) && metin(u.id) && metin(u.ad) && (u.meslek === null || metin(u.meslek)) && sayi(u.katilis) && metin(u.rol))) return false;
+  if (v.kasa !== undefined && !sayi(v.kasa)) return false;
+  if (v.kasaDefteri !== undefined && (!dizi(v.kasaDefteri) || !v.kasaDefteri.every((h) => nesne(h) && sayi(h.ay) && metin(h.kim) && (h.alan === null || metin(h.alan)) && sayi(h.tutar)))) return false;
+  if (v.davetler !== undefined && (!dizi(v.davetler) || !v.davetler.every((d) => nesne(d) && metin(d.id) && metin(d.ad) && sayi(d.ay)))) return false;
+  return true;
+}
 export function toplulukDurumuMi(v: unknown): v is ToplulukDurumu {
   if (!nesne(v) || !nesne(v.mesrep) || !dizi(v.mesrep.eksenler) || !mantik(v.mesrep.secildi) || !mantik(v.mesrep.secimAcik)) return false;
   if (!nesne(v.ortakDert) || !dizi(v.ortakDert.acik) || !dizi(v.ortakDert.son) || !dizi(v.ortakDert.uygunKatkilarim)) return false;
   if (!nesne(v.senlik) || !(v.senlik.simdiki === null || nesne(v.senlik.simdiki))) return false;
   if (!nesne(v.hami) || !mantik(v.hami.hamiOlabilir) || !mantik(v.hami.yeniGelen) || !sayi(v.hami.buAyHamiNami) || !dizi(v.hami.suren) || !dizi(v.hami.gelen) || !dizi(v.hami.giden) || !dizi(v.hami.biten)) return false;
   if (!nesne(v.mudavim) || !sayi(v.mudavim.ziyaret) || !(v.mudavim.rozet === null || metin(v.mudavim.rozet))) return false;
-  if (!nesne(v.zaviye) || !dizi(v.zaviye.kasabada) || !dizi(v.zaviye.davetler)) return false;
+  if (!nesne(v.zaviye) || !(v.zaviye.ben === null || zaviyeGorunumuMi(v.zaviye.ben))
+    || !dizi(v.zaviye.davetler) || !v.zaviye.davetler.every((d) => nesne(d) && metin(d.id) && metin(d.ad) && sayi(d.uyeSayisi))
+    || !dizi(v.zaviye.kasabada) || !v.zaviye.kasabada.every((z) => nesne(z) && metin(z.id) && metin(z.ad) && sayi(z.uyeSayisi) && metin(z.durum))
+    || !nesne(v.zaviye.ahiSarti) || !sayi(v.zaviye.ahiSarti.teveccuhKademe) || !sayi(v.zaviye.ahiSarti.benimKademem) || !mantik(v.zaviye.ahiSarti.adayim)) return false;
   return nesne(v.gostergeler) && sayi(v.gostergeler.arz) && sayi(v.gostergeler.moral) && sayi(v.gostergeler.asayis);
 }
