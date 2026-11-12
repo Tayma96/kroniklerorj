@@ -1,0 +1,34 @@
+name: Online test Worker load gate
+
+on:
+  workflow_dispatch:
+    inputs:
+      requests:
+        description: "Toplam istek (10–500)"
+        type: number
+        default: 120
+      concurrency:
+        description: "Eşzamanlı istek (1–50)"
+        type: number
+        default: 20
+
+jobs:
+  load:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Run bounded load test against isolated test Worker
+        working-directory: online-server
+        env:
+          TEST_WORKER_URL: ${{ secrets.TEST_WORKER_URL }}
+          TEST_GIRIS_KODU: ${{ secrets.TEST_GIRIS_KODU }}
+          LOAD_REQUESTS: ${{ inputs.requests }}
+          LOAD_CONCURRENCY: ${{ inputs.concurrency }}
+          LOAD_P95_MS: "2500"
+        run: node scripts/yuk-test.mjs
