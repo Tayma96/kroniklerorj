@@ -231,10 +231,8 @@ test("P6 ittifak iki bölge arasında üç aşamalı, tekrar güvenli outbox ile
   assert.equal(istek.ok, true, JSON.stringify(istek));
   const kaynakBekleyen = kaynakKaydi.depolama.veri.get("bolge") as BolgeDurumu;
   assert.equal(kaynakBekleyen.devlet?.ittifakTalep?.hedef, "aksehir");
-  assert.equal(kaynakBekleyen.diplomasiGiden?.length, 1);
+  assert.equal(kaynakBekleyen.diplomasiGiden?.length ?? 0, 0, "yazı sonrası outbox aynı çağrıda hedefe teslim edilir");
 
-  // Kaynak DO'nun sonraki isteği outbox'ı hedefe teslim eder.
-  await bolgeCagir(env, { islem: "gorunum", bolge: "demirhan", hesapId: kaynakKimlik.hesap });
   const hedefGelen = hedefKaydi.depolama.veri.get("bolge") as BolgeDurumu;
   const gelen = hedefGelen.devlet?.ittifakGelen?.demirhan;
   assert.ok(gelen);
@@ -247,14 +245,14 @@ test("P6 ittifak iki bölge arasında üç aşamalı, tekrar güvenli outbox ile
   });
   assert.equal(kabul.ok, true, JSON.stringify(kabul));
   const hedefBekleyen = hedefKaydi.depolama.veri.get("bolge") as BolgeDurumu;
-  assert.equal(hedefBekleyen.devlet?.ittifaklar?.demirhan?.durum, "kabulBekliyor");
-  assert.equal(hedefBekleyen.diplomasiGiden?.[0]?.tur, "ittifakYanit");
+  assert.equal(hedefBekleyen.diplomasiGiden?.length ?? 0, 0, "yanıt aynı çağrıda kaynağa teslim edilir");
 
-  // Hedef yanıtı kaynağa, kaynak onayı tekrar hedefe gider; iki taraf da ancak son teyitle aktif görünür.
-  await bolgeCagir(env, { islem: "gorunum", bolge: "aksehir", hesapId: hedefKimlik.hesap });
+  // Kaynak kabulü aldı; son teyit outbox'ı kaynakta bekler.
   const kaynakAktif = kaynakKaydi.depolama.veri.get("bolge") as BolgeDurumu;
   assert.equal(kaynakAktif.devlet?.ittifaklar?.aksehir?.durum, "aktif");
   assert.equal(kaynakAktif.diplomasiGiden?.[0]?.tur, "ittifakOnay");
+
+  // Kaynak onayı tekrar hedefe gider; iki taraf da ancak son teyitle aktif görünür.
   await bolgeCagir(env, { islem: "gorunum", bolge: "demirhan", hesapId: kaynakKimlik.hesap });
   const kaynakSon = kaynakKaydi.depolama.veri.get("bolge") as BolgeDurumu;
   const hedefSon = hedefKaydi.depolama.veri.get("bolge") as BolgeDurumu;
