@@ -1365,7 +1365,11 @@ export class YerlesimMotoru {
     const t = k.tp;
     const benim = (t?.tk ?? []).filter((x) => x.g === kar.o || x.a === kar.o);
     const mektupHedefleri = benim.flatMap((x) => x.s.he ? [x.s.he] : []);
-    if (mektupHedefleri.length) await this.#yukle(mektupHedefleri);
+    const arabuluculukDosyalari = oyuncuArabuluculukAl(toplumAl(k))
+      .filter(x => x.s === kar.o || x.k === kar.o || x.ar === kar.o);
+    const arabuluculukTaraflari = arabuluculukDosyalari.flatMap(x => [x.s, x.k, x.ar]);
+    const yuklenecekler = [...new Set([...mektupHedefleri, ...arabuluculukTaraflari])];
+    if (yuklenecekler.length) await this.#yukle(yuklenecekler);
     const g = (x: (typeof benim)[number]) => teklifGorunumu(k, x, kar.o, dil);
     const ad = (id: string) => ({ id, ad: k.sakin.find((s) => s.o === id)?.ad ?? "?" });
     const bagli = (t?.ob ?? []).filter((b) => b.a === kar.o || b.b === kar.o);
