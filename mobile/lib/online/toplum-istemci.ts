@@ -13,7 +13,7 @@ import {
 export interface ToplumIstemci {
   oyuncu(id: string, dil: Dil): Promise<Sonuc<OyuncuProfili>>;
   gelen(dil: Dil): Promise<Sonuc<GelenYaniti>>;
-  arabuluculuk(istek: { islem: "ac" | "cevap" | "geri" | "taslak" | "imza"; hedef?: string; arabulucu?: string; dosya?: string; cevap?: "kabul" | "ret"; sTutari?: number; kTutari?: number; not?: string; surum?: number; istekNo: string }): Promise<Sonuc<Record<string, unknown>>>;
+  arabuluculuk(istek: { islem: "ac" | "cevap" | "geri" | "taslak" | "imza" | "uygula"; hedef?: string; arabulucu?: string; dosya?: string; cevap?: "kabul" | "ret"; sTutari?: number; kTutari?: number; not?: string; surum?: number; istekNo: string }): Promise<Sonuc<Record<string, unknown>>>;
   dostluk(istek: DostlukIstegi): Promise<Sonuc<{ hedef: string; bag: BagDurumu }>>;
   teklif(istek: TeklifIstegi): Promise<Sonuc<{ teklif: TeklifGorunumu }>>;
   teklifCevap(istek: TeklifCevapIstegi): Promise<Sonuc<{ teklif: TeklifGorunumu }>>;
