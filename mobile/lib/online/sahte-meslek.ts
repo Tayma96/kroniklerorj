@@ -5,7 +5,7 @@
 import type { SahteKasaba } from "./sahte-yerlesim";
 import {
   ALET_OMRU, DUGUM_BEDEL, GERI_ALMA_ARALIK, HAL_TAVAN, KADEME_HIZMET_VARSAYILAN, KONDISYON_KADEMELERI, MALLAR, MESLEKLER, MESLEK_YASI,
-  AGIR_KALFA_YASI, NPC_AYLIK_KOTA, NPC_CARPAN, NPC_SATIS_KOTASI, PIR_CIRAK, TARIFLER, TEMEL_ISLER, TEMEL_IS_YASI, TEMEL_TAKAT,
+  AGIR_KALFA_YASI, NPC_AYLIK_KOTA, NPC_CARPAN, NPC_SATIS_KOTASI, npcSatisKotasi, PIR_CIRAK, TARIFLER, TEMEL_ISLER, TEMEL_IS_YASI, TEMEL_TAKAT,
   beceriPuaniYerel, kitlikPrimi, tarifListesiYerel,
 } from "./meslek-veri";
 import {
@@ -297,7 +297,8 @@ export function sahteMeslekKur(kasaba: SahteKasaba, baslangic?: MeslekId, profil
         if ((ev[g.mal] ?? 0) < g.adet) return hata("mal_yok");
         if (ns[0] !== ay) ns = [ay, {}];
         const once = ns[1][g.mal] ?? 0;
-        if (once + g.adet > NPC_SATIS_KOTASI) return hata("kota_doldu");
+        const kotaTavan = npcSatisKotasi(g.mal);
+        if (once + g.adet > kotaTavan) return hata("kota_doldu");
         const kalemler = [{ k: "taban", d: bilgi.taban }];
         if (oyuncuSayisi(bilgi.meslek) === 0) kalemler.push({ k: "kitlik", d: kitlikPrimi(g.mal) });
         const birim: Dokum = { toplam: kalemler.reduce((a, x) => a + x.d, 0), kalemler };
@@ -305,7 +306,7 @@ export function sahteMeslekKur(kasaba: SahteKasaba, baslangic?: MeslekId, profil
         envanterEkle(g.mal, -g.adet);
         kar.pa += birim.toplam * g.adet;
         const satilan = once + g.adet;
-        return basarili({ mal: g.mal, adet: g.adet, birim, tutar: birim.toplam * g.adet, kota: { satilan, tavan: NPC_SATIS_KOTASI, kalan: NPC_SATIS_KOTASI - satilan } });
+        return basarili({ mal: g.mal, adet: g.adet, birim, tutar: birim.toplam * g.adet, kota: { satilan, tavan: kotaTavan, kalan: kotaTavan - satilan } });
       });
     },
     siparisler(dil) {
