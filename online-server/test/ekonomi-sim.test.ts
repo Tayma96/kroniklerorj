@@ -76,7 +76,8 @@ function ekonomiSim(pompali: boolean) {
   const herkes = oyuncular.map((x) => x.c);
   const [pa, pb] = [herkes[8]!, herkes[9]!];
   const sayac = () => oyuncuSayaci(k);
-  const toplam = () => herkes.reduce((a, c) => a + c.pa, 0) + pazarEmaneti(k.ek) + ismarlamaEmaneti(k.ek) + (k.hd?.hz ?? 0);
+  const gorevEmaneti = () => (k.ek?.hg ?? []).filter((x) => x.d === "acik").reduce((a, x) => a + x.odul, 0);
+  const toplam = () => herkes.reduce((a, c) => a + c.pa, 0) + pazarEmaneti(k.ek) + ismarlamaEmaneti(k.ek) + (k.hd?.hz ?? 0) + gorevEmaneti();
   /** Oyuncunun serveti: akçe + kendi emanetindeki akçe (alım ilanı, ısmarlama avansı). */
   const servet = (c: Karakter) => c.pa + pazarEmaneti(k.ek, c.o) + ismarlamaEmaneti(k.ek, c.o);
   const t0 = toplam();
