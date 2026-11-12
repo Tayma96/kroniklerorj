@@ -151,6 +151,7 @@ export function sahteToplumKur(kasabaAl: () => SahteKasaba | null, meslekAl: () 
       giden: teklifler.filter((x) => x.durum === "acik" && x.gonderen.id === b).map(g),
       suren: teklifler.filter((x) => x.durum === "surer").map(g),
       kapanan: teklifler.filter((x) => x.durum !== "acik" && x.durum !== "surer").slice(-20).reverse().map(g),
+      arabuluculuk: [],
       dostluk: {
         gelen: Object.entries(bag).filter(([, v]) => v === "istekGeldi").map(([o]) => ({ ...kisi(o), ay: ay() - 1 })),
         giden: Object.entries(bag).filter(([, v]) => v === "istekGonderildi").map(([o]) => ({ ...kisi(o), ay: ay() })),
@@ -261,6 +262,7 @@ export function sahteToplumKur(kasabaAl: () => SahteKasaba | null, meslekAl: () 
 
     async oyuncu(id, dil) { await bekle(); return profil(id, dil); },
     async gelen(dil) { await bekle(); return eko() ? basarili(gelen(dil)) : basarisiz("profil_yok"); },
+    async arabuluculuk() { await bekle(); return basarili({ dosya: {} }); },
     async dostluk(i) {
       await bekle();
       const o = oyuncular.find((x) => x.o === i.hedef);
