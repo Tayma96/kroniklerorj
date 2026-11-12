@@ -35,7 +35,7 @@ Faz 2: kurallar `src/yerlesim/*.ts` (saf), içerik `src/icerik/*.ts` (tek oyuncu
 
 ## Faz 9 — kontrollü test Worker yük denemesi
 
-- `npm run test:load` yalnız `TEST_WORKER_URL` ve `TEST_GIRIS_KODU` ortam değişkenleriyle çalışır. URL koruması yalnız HTTPS `kronikler-online-test.*` hostunu kabul eder; üretim hostuna yük göndermeyi reddeder.
+- `npm run test:load` yalnız `TEST_WORKER_URL` ve `TEST_GIRIS_KODU` ortam değişkenleriyle çalışır. URL koruması yalnız HTTPS `kronikler-online-test.<hesap>.workers.dev` hostunu kabul eder; diğer hostlara (özellikle üretime) yük göndermeyi reddeder.
 - Varsayılan koşu 120 istek / 20 eşzamanlı bağlantıdır. Yarısı `/v1/dunya`, yarısı imzalı test oturumuyla `/v1/profil` okur; p50/p95, hata sayısı ve toplam süreyi raporlar. Hata oranı sıfırdan büyükse veya p95 2500 ms'yi aşarsa başarısız olur.
 - GitHub Actions → **Online test Worker load gate** manuel workflow'u aynı betiği çalıştırır. Repository Actions secrets olarak `TEST_WORKER_URL` ve `TEST_GIRIS_KODU` tanımlanmalı. İstek/eşzamanlılık girdileri sırasıyla 10–500 ve 1–50 ile sınırlıdır.
 - Bu smoke yük kapısıdır; gerçek üretim kapasitesi veya kapsamlı saldırı güvenlik denetimi yerine geçmez. Yalnız ayrı test verisi üzerinde çalıştırılmalıdır.
