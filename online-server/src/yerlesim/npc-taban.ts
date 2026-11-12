@@ -14,10 +14,10 @@ import type { CalismaParametreleri, Dokum, Karakter } from "./tipler.ts";
 /** [PARAMETRE] NPC satış çarpanı, oyuncu başına mal başına aylık alım kotası, kıtlık primi oranı. */
 export const NPC_CARPAN = 2.5;
 export const NPC_AYLIK_KOTA = 3;
-export const KITLIK_PRIM = 0.3;
+export const KITLIK_PRIM = 0.5;
 /** [PARAMETRE] Kasaba stoğundan satış çarpanı ve mal başına stok tavanı. */
-export const STOK_CARPAN = 1.8;
-export const STOK_EN_COK = 8;
+export const STOK_CARPAN = 1.5;
+export const STOK_EN_COK = 12;
 
 /** Kasaba stoğu: mal → adet (yerleşim kaydında). */
 export type KasabaStogu = Partial<Record<MalId, number>>;
@@ -51,7 +51,13 @@ export function stokFiyat(mal: MalId, p?: CalismaParametreleri): Dokum {
 export function satisDegeri(mal: MalId, oyuncuSayisi: number, p?: CalismaParametreleri): Dokum {
   const taban = MALLAR[mal].taban;
   const kalemler = [{ k: "taban", d: taban }];
-  if (oyuncuSayisi <= 0 && taban > 0) kalemler.push({ k: "kitlik", d: Math.ceil(taban * (p?.KITLIK_PRIM ?? KITLIK_PRIM)) });
+  if (oyuncuSayisi <= 0 && taban > 0) {
+    // Yüksek değerli demirci araçları/at takımları tek satıcıda sınırsız %50 kıtlık rantı üretmesin.
+    // Yönetim parametresi bu özel tavanı daha da indirebilir; diğer mallarda genel prim aynen geçerlidir.
+    const genel = p?.KITLIK_PRIM ?? KITLIK_PRIM;
+    const oran = mal === "alet" ? Math.min(genel, 0.2) : mal === "nal" ? Math.min(genel, 0.25) : genel;
+    kalemler.push({ k: "kitlik", d: Math.ceil(taban * oran) });
+  }
   return { toplam: kalemler.reduce((a, x) => a + x.d, 0), kalemler };
 }
 
