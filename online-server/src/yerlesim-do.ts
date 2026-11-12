@@ -4,7 +4,7 @@
 
 import { doDepo, type Depo } from "./depo.ts";
 import { hamiUc, mesrepUc, mudavimUc, ortakDertUc, senlikUc, toplulukOku, zaviyeUc } from "./yerlesim/topluluk-uclar.ts";
-import { defterOku, hizmetGeriUc, hizmetHazirlaUc, hizmetIlanUc, hizmetIslemUc, hizmetOku, hizmetTalepTeslimUc, ismarlaUc, ismarlamaCevapUc, ismarlamaOku, levhaOku, pazarGeri, pazarIlan, pazarIslem, pazarOku } from "./yerlesim/ekonomi-uclar.ts";
+import { defterOku, hizmetGeriUc, hizmetHazirlaUc, hizmetIlanUc, hizmetIslemUc, hizmetOku, hizmetTalepTeslimUc, hizmetGorevTeslimUc, ismarlaUc, ismarlamaCevapUc, ismarlamaOku, levhaOku, pazarGeri, pazarIlan, pazarIslem, pazarOku } from "./yerlesim/ekonomi-uclar.ts";
 import { armaganGeri, armaganTeveccuh } from "./yerlesim/armagan-uclar.ts";
 import { iletiOku, isletmeCagir, jsonYanit, yonetimCagir } from "./ic.ts";
 import { bolgeCagir } from "./siyaset/ic.ts";
@@ -248,6 +248,8 @@ export class YerlesimDO {
         return hizmetGeriUc(motor, ileti.hesapId, ileti.govde);
       case "hizmetTalepTeslim":
         return hizmetTalepTeslimUc(motor, ileti.hesapId, ileti.govde);
+      case "hizmetGorev":
+        return hizmetGorevTeslimUc(motor, ileti.hesapId, ileti.govde);
       case "pazar":
         return pazarOku(motor, ileti.hesapId, ileti.mal);
       case "pazarIlan":
