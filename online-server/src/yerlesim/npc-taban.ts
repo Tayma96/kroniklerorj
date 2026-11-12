@@ -51,13 +51,7 @@ export function stokFiyat(mal: MalId, p?: CalismaParametreleri): Dokum {
 export function satisDegeri(mal: MalId, oyuncuSayisi: number, p?: CalismaParametreleri): Dokum {
   const taban = MALLAR[mal].taban;
   const kalemler = [{ k: "taban", d: taban }];
-  if (oyuncuSayisi <= 0 && taban > 0) {
-    // Yüksek değerli demirci araçları/at takımları tek satıcıda sınırsız %50 kıtlık rantı üretmesin.
-    // Yönetim parametresi bu özel tavanı daha da indirebilir; diğer mallarda genel prim aynen geçerlidir.
-    const genel = p?.KITLIK_PRIM ?? KITLIK_PRIM;
-    const oran = mal === "alet" ? Math.min(genel, 0.2) : mal === "nal" ? Math.min(genel, 0.25) : genel;
-    kalemler.push({ k: "kitlik", d: Math.ceil(taban * oran) });
-  }
+  if (oyuncuSayisi <= 0 && taban > 0) kalemler.push({ k: "kitlik", d: Math.ceil(taban * (p?.KITLIK_PRIM ?? KITLIK_PRIM)) });
   return { toplam: kalemler.reduce((a, x) => a + x.d, 0), kalemler };
 }
 
