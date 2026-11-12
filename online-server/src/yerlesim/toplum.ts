@@ -74,6 +74,8 @@ export interface Teklif {
   kl?: number;
   vd?: number;
   od?: 1;
+  /** Senet eki: [ödeme ayı, tahsil edilen akçe]; eski kayıtlarda yoktur. */
+  bo?: [ay: number, tutar: number][];
   /** Ortaklık/çıraklık bitiş ayı; ortaklık aylık aktarım sayacı [ay, akçe]. */
   bt?: number;
   pa?: [ay: number, akce: number];
