@@ -120,3 +120,29 @@ Her POST, `istekNo` ile tekrar güvenli olmalı. Yerleşim sınırları ve yetki
 
 - Bu plan, bütün 52 hizmet etkisini tek seferde bağlamaz.
 - Diplomatik tanınma, çatışma ateşkesi ve mağaza iade bildirimleri bu hizmet fazının parçası değildir.
+
+
+## E4.3-D2 — Oyuncu–oyuncu arabuluculuğu (tasarım sözleşmesi)
+
+Bu dilim, NPC arabuluculuğunu oyunculara doğrudan uygulamaz. Oyuncu–oyuncu anlaşmazlığında üç ayrı irade vardır: şikâyetçi, karşı taraf ve tarafsız arabulucu. Hiçbir tarafın sessizliği kabul sayılmaz; NPC akışındaki rastgele başarı/ret zarı burada kullanılmaz.
+
+### Değişmezler
+
+1. **Üçlü açık rıza:** Dosya açan oyuncu, karşı taraf ve arabulucu ayrı ayrı katılımı kabul eder. Bir davet cevapsız kalırsa süre sonunda yalnızca dosya düşer; para/itibar cezası uygulanmaz.
+2. **Tarafsızlık:** Arabulucu taraflardan biri olamaz; taraflardan biriyle aynı hesap/ocak kümesinde olamaz; taraflardan biriyle engel kaydı varsa dosya açılamaz. Arabulucunun iki tarafla dostluk veya açık husumet bağı varsa tarafsızlık kontrolü başarısız olur. Bu kontroller hem açılışta hem son teklif öncesinde yenilenir.
+3. **Bağlayıcı karar yok, çift imzalı uzlaşma var:** Arabulucu hüküm vermez; yalnızca tek bir uzlaşma taslağı sunar. Taslakta tarafların yapacağı ödeme/teslim ve son tarih açıkça yer alır. İki taraf da aynı sürüm numarasını onaylamadan uygulanmaz.
+4. **Emanet ve atomiklik:** Para/mal, yalnızca taslak iki tarafça onaylandıktan ve iki tarafın da gerekli bakiyesi doğrulandıktan sonra emanet hesabına alınır. Her iki tarafın emanetinin alınması tek işlemde gerçekleşir; biri başarısızsa ikisi de değişmeden kalır. Teslim/ödeme bir kez uygulanır; tekrar istek aynı sonucu döndürür.
+5. **Geri çekme sınırı:** Her taraf taslak imzalanmadan önce çekilebilir. İki imzadan sonra tek taraflı iptal yoktur; yalnızca süreli yükümlülük/emanet iadesi kuralları işler. Süre aşımı, karşı tarafa otomatik zafer veya yeni akçe üretmez; yatırılmış emanet sözleşmede belirtilen iade/teslim kuralına göre kapanır.
+6. **Arabulucu ücreti:** Ücret başta emanetlenir; yalnızca iki taraflı imza ve başarılı kapanıştan sonra ödenir. Arabulucu kendi davasında taraf olamaz ve kendi hesabı/ocağına bağlı dosyadan ücret kazanamaz.
+7. **Gizlilik ve kayıt:** Her iki tarafa özel müzakere metni herkese açık olay olarak yayımlanmaz. Meydanda yalnızca tarafların uzlaşmayı imzaladığı ve dosyanın kapandığı bilgisi görünür; kişisel hesap kimlikleri veya özel mesajlar deftere yazılmaz.
+8. **İstek tekilliği:** Dosya kimliği, sürüm ve istekNo ile idempotent olur. Aynı taraf çifti için aynı anda tek açık dosya; aynı istekNo ile tekrar açılış ikinci emanet/ödeme oluşturmaz.
+
+### Uygulama sırası
+
+- D2-A: Kalıcı dosya/katılım/durum modeli ve salt doğrulama fonksiyonları.
+- D2-B: Üçlü davet, kabul/ret/çekilme ve tarafsızlık kontrolleri.
+- D2-C: Sürümlü uzlaşma taslağı, çift imza ve atomik emanet.
+- D2-D: Süre sonu, idempotency, engelleme/ölüm/karakter yüklenememesi ve tekrar teslim testleri.
+- D2-E: API, mobil ekran ve altı dil.
+
+**İlk kod dilimi için kapsam:** D2-A; mevcut `Toplum` kayıt şemasına isteğe bağlı alan eklemeden önce kalıcı verinin sürümleme/varsayılan okuma biçimi incelenecek. NPC arabuluculuk defteriyle aynı diziye karıştırılmayacak.
