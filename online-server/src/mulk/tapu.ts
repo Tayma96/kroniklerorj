@@ -228,9 +228,9 @@ export function mulkluKira(k: Kasaba, kar: Karakter, govde: unknown, an: number,
   const oran = Number.isInteger(vergiOrani) && vergiOrani >= 0 && vergiOrani <= 4 ? vergiOrani : 0;
   const vergi = Math.floor((kira.kasaya * oran) / 100);
   const net = kira.kasaya - vergi;
-  if (vergi > 0) (md.vergiGiden ??= []).push({ anahtar: `y:${k.y}:${kar.o}:kira:${istekNo}:vergi`, tutar: vergi, yerlesim: k.y });
   const c = kasayaCikis(k, kar, oh.isletme, net, "kira", an, `y:${k.y}:${kar.o}:kira:${istekNo}`, false);
   if (!c.ok) return c;
+  if (vergi > 0) (md.vergiGiden ??= []).push({ anahtar: `y:${k.y}:${kar.o}:kira:${istekNo}:vergi`, tutar: vergi, yerlesim: k.y });
   const l = md.od[oh.isletme]!.filter(([o]) => o !== kar.o);
   l.push([kar.o, kira.bitis]);
   md.od[oh.isletme] = l;
@@ -253,12 +253,12 @@ export function mulkluIkram(k: Kasaba, kar: Karakter, ikram: IkramId, an: number
   const oran = Number.isInteger(vergiOrani) && vergiOrani >= 0 && vergiOrani <= 4 ? vergiOrani : 0;
   const vergi = Math.floor((fiyat * oran) / 100);
   const net = fiyat - vergi;
+  const c = kasayaCikis(k, kar, oh.isletme, net, "ikram", an, `y:${k.y}:${kar.o}:ikram:${istekNo}`, true);
+  if (!c.ok) return c;
   if (vergi > 0) {
     const md = mulkDefteri(k);
     (md.vergiGiden ??= []).push({ anahtar: `y:${k.y}:${kar.o}:ikram:${istekNo}:vergi`, tutar: vergi, yerlesim: k.y });
   }
-  const c = kasayaCikis(k, kar, oh.isletme, net, "ikram", an, `y:${k.y}:${kar.o}:ikram:${istekNo}`, true);
-  if (!c.ok) return c;
   return basarili({ fiyat, batak: 0, kasaya: net, vergi, islem: c.deger.islem });
 }
 
