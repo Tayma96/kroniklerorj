@@ -1,0 +1,84 @@
+# Kronikler Online sunucusu. Dağıtım elle yapılır (README.md). Bu dosyada sır yoktur.
+# Ayrı test Worker'ı: kendi Durable Object ad alanı ve kendi sırları vardır.
+# Üretim verisine bağlanmaz. TEST_GIRIS_KODU ve OTURUM_ANAHTARI bu config için ayrı secret olarak yüklenir.
+name = "kronikler-online-test"
+main = "src/index.ts"
+compatibility_date = "2026-10-01"
+
+[[durable_objects.bindings]]
+name = "HESAP"
+class_name = "HesapDO"
+
+[[durable_objects.bindings]]
+name = "DUNYA"
+class_name = "DunyaDO"
+
+# Faz 2: yerleşim başına bir örnek (idFromName("yerlesim:<id>")); ay dönümü DO alarmıyla.
+[[durable_objects.bindings]]
+name = "YERLESIM"
+class_name = "YerlesimDO"
+
+# Y1 yönetim: tek örnek (idFromName("yonetim")). Roller, yalnız eklenen işlem kaydı, parametreler, şikayet, yaptırım.
+[[durable_objects.bindings]]
+name = "YONETIM"
+class_name = "YonetimDO"
+
+# Faz 10 han masası: masa başına bir örnek (idFromName("masa:<yerlesim>:<han>:<no>")); WebSocket hibernation, para tutmaz.
+[[durable_objects.bindings]]
+name = "MASA"
+class_name = "MasaDO"
+
+# Faz 12 işletme: işletme başına bir örnek (idFromName("isletme:<yerleşim>.<tür>.<no>")); kasa, emanet, personel, muhasebe.
+[[durable_objects.bindings]]
+name = "ISLETME"
+class_name = "IsletmeDO"
+# Faz 7 + Ek B P1-P4 siyaset: bölge başına BolgeDO (idFromName("bolge:<id>")), tek düşük frekanslı SultanlikDO.
+[[durable_objects.bindings]]
+name = "BOLGE"
+class_name = "BolgeDO"
+
+[[durable_objects.bindings]]
+name = "SULTANLIK"
+class_name = "SultanlikDO"
+
+# SQLite tabanlı Durable Object'ler (ücretsiz planda kullanılabilen tür).
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["HesapDO", "DunyaDO"]
+
+[[migrations]]
+tag = "v2"
+new_sqlite_classes = ["YerlesimDO"]
+
+[[migrations]]
+tag = "v3"
+new_sqlite_classes = ["YonetimDO"]
+
+[[migrations]]
+tag = "v4"
+new_sqlite_classes = ["MasaDO"]
+
+[[migrations]]
+tag = "v5"
+new_sqlite_classes = ["IsletmeDO"]
+
+[[migrations]]
+tag = "v6"
+new_sqlite_classes = ["BolgeDO", "SultanlikDO"]
+
+[vars]
+# Google OAuth istemci kimlikleri (Android/iOS/Web), virgülle ayrılmış. Gizli değildir.
+# Boşken /v1/giris "yapilandirma_eksik" döner. Oturum anahtarı burada DEĞİL:
+# `wrangler secret put OTURUM_ANAHTARI` ile Worker sırrı olarak konur.
+GOOGLE_CLIENT_ID = ""
+# Google'sız davet kodlu test girişi production Worker üzerinde daima kapalıdır.
+TEST_GIRIS_ACIK = "1"
+# TEST_GIRIS_KODU yalnız test Worker'ında sır olarak tanımlanır; wrangler secret put ile yüklenir.
+# YONETICI_EPOSTALAR (kurucu e-postaları, virgülle ayrılmış) burada DEĞİL: e-posta depoya girmesin diye
+# `wrangler secret put YONETICI_EPOSTALAR` ile sır olarak konur. Boşken hiç kimse yönetici değildir.
+# Zorunlu YONETIM_GOOGLE_CLIENT_ID: yönetici girişinde kabul edilen istemci kimlikleri. Boşsa yönetim girişi kapalıdır
+# (yapilandirma_eksik); oyuncu uygulamasının GOOGLE_CLIENT_ID listesine geri düşülmez.
+# Faz 16 sesli sohbet: Cloudflare Realtime uygulama kimliği (gizli değil). Boşken ses kapalıdır (uçlar 503 ses_kapali).
+# Uygulama anahtarı burada DEĞİL: `wrangler secret put REALTIME_APP_TOKEN`. İsteğe bağlı TURN: REALTIME_TURN_ID (vars) +
+# `wrangler secret put REALTIME_TURN_TOKEN`.
+REALTIME_APP_ID = ""
