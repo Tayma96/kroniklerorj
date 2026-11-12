@@ -8,6 +8,7 @@ import { HIZMET_TARIFLERI } from "./hizmet-tarif.ts";
 import { basarili, hata, type Sonuc } from "../tipler.ts";
 import { DEFTER_AY, defterGorunumu } from "./defter.ts";
 import { hizmetHazirla, hizmetIlanAc, hizmetIlanBul, hizmetIlanGeri, hizmetIlanGorunumu, hizmetIlanIsle, hizmetIlanlar, hizmetNpcTalepleri, hizmetNpcTalepTeslim, hizmetStoguGecerli, hizmetStoguGorunumu, hizmetYetkiliMi } from "./hizmet-pazari.ts";
+import { hizmetGorevleri, hizmetGorevTeslim } from "./hizmet-gorev.ts";
 import {
   ISMARLAMA_ADET_EN_COK,
   ISMARLAMA_MUSTERI_EN_COK,
@@ -73,7 +74,7 @@ export function hizmetOku(m: YerlesimMotoru, hesapId: string): Promise<Sonuc<unk
       .map((x) => hizmetStoguGorunumu(x, ay));
     const ilanlar = hizmetIlanlar(ek, ay).map((x) => hizmetIlanGorunumu(x, kar.o, ay));
     const benimIlanlar = hizmetIlanlar(ek, ay).filter((x) => x.o === kar.o).map((x) => hizmetIlanGorunumu(x, kar.o, ay));
-    return basarili({ katalog, stok, ilanlar, benimIlanlar, npcTalepleri: hizmetNpcTalepleri(ek, ay), kurallar: { tekHazirlamaEnCok: 5, hizmetStokEnCok: 20, acikIlanEnCok: 5, alimAdetEnCok: 5 } });
+    return basarili({ katalog, stok, ilanlar, benimIlanlar, npcTalepleri: hizmetNpcTalepleri(ek, ay), gorevler: hizmetGorevleri(ek, ay), kurallar: { tekHazirlamaEnCok: 5, hizmetStokEnCok: 20, acikIlanEnCok: 5, alimAdetEnCok: 5 } });
   });
 }
 
@@ -138,6 +139,24 @@ export function hizmetTalepTeslimUc(m: YerlesimMotoru, hesapId: string, govde: u
     ek.olaylar.push(r.deger.olay);
     (ek.defter ??= []).push([kar.o, "hizmetNpc", r.deger.odul]);
     return basarili({ talep: r.deger.talep, odul: r.deger.odul });
+  });
+}
+
+/** POST /v1/hizmet/gorev {gorev, istekNo}: koltuklu kasaba görevini tek kez tamamlar. */
+export function hizmetGorevTeslimUc(m: YerlesimMotoru, hesapId: string, govde: unknown): Promise<Sonuc<unknown>> {
+  if (!nesneMi(govde)) return Promise.resolve(hata("gecersiz_istek"));
+  return m.ekonomiYaz(hesapId, govde, "hizmetGorev", [], (kar, ay, ek) => {
+    const r = hizmetGorevTeslim(m.kasaba, kar, govde.gorev, ay);
+    if (!r.ok) return r;
+    ek.topluluk = true;
+    ek.olaylar.push(r.deger.olay);
+    (ek.defter ??= []).push([kar.o, "hizmetGorev", r.deger.odul]);
+    return basarili({
+      gorev: { id: "kg" + r.deger.gorev.i, tur: r.deger.gorev.tur, durum: r.deger.gorev.d },
+      odul: r.deger.odul,
+      hizmetPuani: r.deger.hizmetPuani,
+      arac: r.deger.arac ?? null,
+    });
   });
 }
 
