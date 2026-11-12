@@ -92,7 +92,6 @@ export class BolgeDO {
       bolgeAyi(d, d.ay + 1, simdi);
       await this.#kaydet(d, kn);
       await this.#gonder(d);
-      await this.#gonderDiplomasi(d);
     }
     await this.#ctx.storage.setAlarm(sonrakiDonum(simdi) + (d.id.length % 7) * 1000);
   }
@@ -156,6 +155,8 @@ export class BolgeDO {
     const d = await this.#ac(ileti.bolge, simdi);
     if (!d) return hata("bolge_gecersiz");
     await this.#yetistir(d, simdi);
+    // İç bölge iletilerinde karşı DO'ya geri çağrı yapma: DO→DO döngüsel beklemeyi önle.
+    if (ileti.islem !== "taninmaIstekAl" && ileti.islem !== "taninmaYanitAl") await this.#gonderDiplomasi(d);
     switch (ileti.islem) {
       case "taninmaIstekAl": {
         const h = taninmaIstekAl(d, ileti.kaynak, ileti.istekId, ileti.ay, ileti.ad);
