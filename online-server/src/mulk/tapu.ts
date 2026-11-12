@@ -6,6 +6,7 @@
 import { karakterYasi } from "../yerlesim/karakter.ts";
 import { hizmetAcik } from "../yerlesim/beceri-etki.ts";
 import { kiraTut, oyuncuHanOdaAcik } from "../yerlesim/barinma.ts";
+import { odaCoz } from "../yerlesim/oda.ts";
 import { ayniKume } from "../yerlesim/teveccuh.ts";
 import { olduMu } from "../yerlesim/hanedan.ts";
 import { npcAdi } from "../yerlesim/ortak.ts";
@@ -230,7 +231,8 @@ export function mulkluKira(k: Kasaba, kar: Karakter, govde: unknown, an: number,
   const md = mulkDefteri(k);
   if (oh.sahip === kar.o) return hata("kendine");
   const sahip = k.kar.get(oh.sahip);
-  const oda = nesneMi(govde) ? govde.oda : undefined;
+  const oda = nesneMi(govde) ? odaCoz(govde.oda) : undefined;
+  if (!oda) return hata("oda_gecersiz");
   if (!sahip || !oyuncuHanOdaAcik(sahip, oda)) return hata("dugum_kapali");
   if (md.cik.k.length >= CIKIS_EN_COK) return hata("transfer_bekliyor");
   const istekNo = nesneMi(govde) ? String(govde.istekNo) : "";
