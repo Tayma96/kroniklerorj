@@ -362,8 +362,8 @@ test("arabulucu imzalı uzlaşmadan sonra ölürse tarafların anlaşması geçe
   assert.equal(ac.deger.d, "emanette");
   assert.ok(oyuncuArabuluculukUygula(k, s, id, k.ay).ok);
   assert.equal(ac.deger.d, "tamam");
-  assert.equal(s.pa, 380);
-  assert.equal(kk.pa, 620);
+  assert.equal(s.pa, 460, "şikâyetçi kendi ödediği tutarın ardından karşı tarafın payını alır");
+  assert.equal(kk.pa, 540, "karşı taraf da imzalı uzlaşma tutarını alır");
 });
 
 test("ilk imzadan sonra taraf ölürse ikinci imza emanet kesintisi yapmadan dosyayı düşürür", () => {
