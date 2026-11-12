@@ -76,7 +76,7 @@ import {
 import { teveccuhEkle, teveccuhGorunumu, teveccuhKademesi, teveccuhEtkisi, TEVECCUH_ETKI } from "./teveccuh.ts";
 import { IKRAM_MENUSU, type IkramId } from "../han/ikram.ts";
 import { toplumDonumu } from "./toplum-donum.ts";
-import { oyuncuArabuluculukAc, oyuncuArabuluculukCevap, oyuncuArabuluculukGeriAl, oyuncuArabuluculukTaslak, oyuncuArabuluculukImzala } from "./arabuluculuk-oyuncu.ts";
+import { oyuncuArabuluculukAc, oyuncuArabuluculukCevap, oyuncuArabuluculukGeriAl, oyuncuArabuluculukTaslak, oyuncuArabuluculukImzala, oyuncuArabuluculukUygula } from "./arabuluculuk-oyuncu.ts";
 import { OYUNCU_TEKLIF_TURLERI, oyuncuArabuluculukAl, toplumAl, type OyuncuArabuluculuk, type Toplum } from "./toplum.ts";
 import { MALLAR, MAL_IDLERI, malBul } from "../icerik/mallar.ts";
 import { temelIsOnizleme, temelIsYap } from "./temel-is.ts";
@@ -1324,7 +1324,7 @@ export class YerlesimMotoru {
     const arabulucu = govde.islem === "ac" ? this.#sakinKimligi(govde.arabulucu) : undefined;
     if (govde.islem === "ac" && (!hedef || !arabulucu)) return hata("kisi_yok");
     if (hedef && arabulucu) await this.#yukle([hedef, arabulucu]);
-    if (govde.islem === "cevap" || govde.islem === "geri") {
+    if (["cevap", "geri", "taslak", "imza", "uygula"].includes(String(govde.islem))) {
       const id = typeof govde.dosya === "string" && /^[1-9][0-9]{0,8}$/.test(govde.dosya) ? Number(govde.dosya) : -1;
       const dosya = oyuncuArabuluculukAl(toplumAl(k)).find(x => x.i === id);
       if (dosya) await this.#yukle([dosya.s, dosya.k, dosya.ar]);
@@ -1344,6 +1344,8 @@ export class YerlesimMotoru {
         sonuc = oyuncuArabuluculukTaslak(k, kar, govde.dosya, govde.sTutari, govde.kTutari, govde.not, ay);
       } else if (govde.islem === "imza") {
         sonuc = oyuncuArabuluculukImzala(k, kar, govde.dosya, govde.surum);
+      } else if (govde.islem === "uygula") {
+        sonuc = oyuncuArabuluculukUygula(k, kar, govde.dosya, ay);
       } else return hata("gecersiz_istek");
       if (!sonuc.ok) return sonuc;
       const d = sonuc.deger;
