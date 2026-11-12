@@ -2,7 +2,7 @@
 // Gizli hazırlık izleri yalnız plan katılımcılarına görünür; ilan sonrası bölgeye yayınlanır.
 
 import { DARBE } from "./sabitler.ts";
-import type { DarbeDestekRolu, BolgeDurumu, SiyasiKimlik } from "./tipler.ts";
+import type { DarbeDestekRolu, BolgeDurumu, SiyasiKimlik, DarbeTarafi } from "./tipler.ts";
 import { kumeAnahtarlari, kumeKesisir } from "./makam.ts";
 import type { HataKodu } from "../tipler.ts";
 
@@ -50,6 +50,54 @@ export function darbeSavunmaYaz(
   if (onceki.some((x) => x.hesap === kimlik.hesap || kumeKesisir(x.kume, kume))) return "kume_cakisma";
   savunma.push({ kisi: kimlik.kisi, hesap: kimlik.hesap, ad: kimlik.ad, koltuk, rol, kume, ay });
   p.izler.push({ ay, tur: "savunma", guvenilirlik: 100, gorunurluk: "bolge" });
+  return null;
+}
+
+/**
+ * Çatışma çözülmeden önce yalnız gerçek saldıran lideri veya savunma emri vermiş makam sahibi
+ * statüko ateşkesi önerebilir. Teklif ganimet/mülk devri içermez.
+ */
+export function darbeBarisTeklifEt(d: BolgeDurumu, kimlik: SiyasiKimlik, istekId: unknown, ay: number): HataKodu | null {
+  const p = d.darbe;
+  if (!p || (p.durum !== "ilan" && p.durum !== "catışma") || p.cozumAy === undefined || ay >= p.cozumAy)
+    return "darbe_kapali";
+  if (typeof istekId !== "string" || istekId.length < 8 || istekId.length > 128) return "deger_sinir_disi";
+
+  let taraf: DarbeTarafi;
+  if (p.baslatanKisi === kimlik.kisi && p.baslatanHesap === kimlik.hesap) taraf = "saldiran";
+  else if ((p.savunma ?? []).some((x) => x.kisi === kimlik.kisi && x.hesap === kimlik.hesap)) taraf = "savunan";
+  else return "taraf_degil";
+
+  if (p.barisTeklifi?.durum === "bekliyor") return "devlet_talep_var";
+  if (p.barisTeklifi?.istekId === istekId) return "devlet_talep_var";
+  p.barisTeklifi = { taraf, kisi: kimlik.kisi, hesap: kimlik.hesap, istekId, ay, durum: "bekliyor" };
+  return null;
+}
+
+/** Ateşkes ancak karşı tarafın aynı teklif kimliğine açık kabulüyle yürürlüğe girer. */
+export function darbeBarisYanit(
+  d: BolgeDurumu, kimlik: SiyasiKimlik, istekId: unknown, karar: unknown, ay: number,
+): HataKodu | null {
+  const p = d.darbe;
+  const teklif = p?.barisTeklifi;
+  if (!p || (p.durum !== "ilan" && p.durum !== "catışma") || p.cozumAy === undefined || ay >= p.cozumAy)
+    return "darbe_kapali";
+  if (!teklif || teklif.durum !== "bekliyor" || teklif.istekId !== istekId) return "hedef_uygun_degil";
+  if (karar !== "kabul" && karar !== "ret") return "deger_sinir_disi";
+
+  const karsiTaraf: DarbeTarafi = teklif.taraf === "saldiran" ? "savunan" : "saldiran";
+  const yetkili = karsiTaraf === "saldiran"
+    ? p.baslatanKisi === kimlik.kisi && p.baslatanHesap === kimlik.hesap
+    : (p.savunma ?? []).some((x) => x.kisi === kimlik.kisi && x.hesap === kimlik.hesap);
+  if (!yetkili) return "taraf_degil";
+
+  teklif.durum = karar;
+  teklif.yanitlayan = kimlik.kisi;
+  teklif.yanitAy = ay;
+  if (karar === "kabul") {
+    p.durum = "ateskes";
+    p.sogumaSonAy = ay + DARBE.sogumaAy;
+  }
   return null;
 }
 
@@ -171,12 +219,13 @@ export function darbeGorunumu(d: BolgeDurumu, kimlik?: SiyasiKimlik) {
   const p = d.darbe;
   if (!p) return null;
   const katilimci = !!kimlik && (kimlik.kisi === p.baslatanKisi || p.destekler.some((x) => x.hesap === kimlik.hesap) || (p.savunma ?? []).some((x) => x.hesap === kimlik.hesap));
-  const yayin = ["ilan", "catışma", "bastirildi", "pat", "basarili", "mogol"].includes(p.durum);
+  const yayin = ["ilan", "catışma", "ateskes", "bastirildi", "pat", "basarili", "mogol"].includes(p.durum);
   if (!katilimci && !yayin) return null;
   const esik = darbeEsigi(d).dokum;
   return {
     id: p.id, durum: p.durum, mod: p.mod ?? null,
     ilanAy: p.ilanAy ?? null, cozumAy: p.cozumAy ?? null, sonuc: p.sonuc ?? null,
+    barisTeklifi: p.barisTeklifi ?? null,
     ...(katilimci ? { esik, destekler: p.destekler.length, savunma: (p.savunma ?? []).length, garnizonSadakati: p.garnizonSadakati, yatirilan: p.yatirilan, izler: p.izler } : {}),
   };
 }
