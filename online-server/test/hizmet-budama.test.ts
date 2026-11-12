@@ -40,7 +40,7 @@ test("açık ilan budanmaz; kapalı ilan saklama süresi dolunca silinir", () =>
 
 test("kayıt dizisi olmayan ekonomi kaydında hata vermez ve alan oluşturmaz", () => {
   const ek = kayit({ n: 1 });
-  assert.doesNotThrow(() => hizmetKayitBuda(ek, 5));
+  hizmetKayitBuda(ek, 5);
   assert.equal(ek.hs, undefined);
   assert.equal(ek.hi, undefined);
 });
