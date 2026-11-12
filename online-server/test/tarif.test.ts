@@ -172,7 +172,11 @@ test("Hancı ikram hizmeti menü fiyatına indirim uygular ve kanca bağlı say�
 
 test("Kâtip senet zinciri: düğüm seviyesi mürekkep ve senet tariflerini açar; girdiler gerçek envanterden tüketilir", () => {
   const k = testKasabasi();
-  const c = usta(k, "katip", "dilekceSenet");
+  const c = oyuncuEkle(k, 1, k.ay - 16 * 12);
+  c.tk = 18;
+  c.ta = k.ay;
+  meslekSec(c, "katip", k.ay);
+  seviyeVer(c, "katip.dilekceSenet", 1);
   c.ev = { komur: 1, ot: 1, kagit: 1 };
   const kilit = TARIF_KILIDI.senet!;
   assert.equal(TARIF_KILIDI.murekkep?.dugum, "katip.dilekceSenet");
