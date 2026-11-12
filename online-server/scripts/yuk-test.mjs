@@ -40,11 +40,11 @@ const giris = await fetch(new URL("/v1/test-giris", url), {
   body: JSON.stringify({ kod: invite, cihazId }), signal: timeout,
 });
 const girisJson = await giris.json().catch(() => null);
-if (!giris.ok || girisJson?.ok !== true || typeof girisJson?.deger?.oturum !== "string") {
+if (!giris.ok || typeof girisJson?.oturum !== "string") {
   fail(`Test oturumu açılamadı (HTTP ${giris.status}). Test Worker sırlarını kontrol et.`);
   process.exit();
 }
-const token = girisJson.deger.oturum;
+const token = girisJson.oturum;
 const results = [];
 let errors = 0;
 let cursor = 0;
