@@ -116,10 +116,11 @@ function DebdebeEkran() {
       <Baslik2 metin={t("onl.db.deneBaslik")} rtl={rtl} />
       {!dene ? <BosKart icon="eye" metin={t("onl.db.deneBos")} rtl={rtl} /> : <>
         <Text style={{ fontFamily: F.serif, color: C.parchmentDim, fontSize: 12.5 }}>{t("onl.db.deneGuvenlik")}</Text>
-        <View style={{ flexDirection: yon(rtl), gap: 6 }}>
-          {dene.sahneler.map((x) => <View key={x.sahne} style={{ flex: 1 }}><CizgiDugme etiket={sahneAdi(t, x.sahne)} icon="eye" rtl={rtl} kucuk onPress={() => setSahne(x.sahne)} /></View>)}
-        </View>
-        {dene.sahneler.filter(x => x.sahne === sahne).map(x => <Cerceve key={x.sahne} ic={{ padding: 13, gap: 8 }}>
+        {dene.sahneler.length ? <>
+          <View style={{ flexDirection: yon(rtl), gap: 6 }}>
+            {dene.sahneler.map((x) => <View key={x.sahne} style={{ flex: 1 }}><CizgiDugme etiket={sahneAdi(t, x.sahne)} icon="eye" rtl={rtl} kucuk onPress={() => setSahne(x.sahne)} /></View>)}
+          </View>
+          {dene.sahneler.filter(x => x.sahne === sahne).map(x => <Cerceve key={x.sahne} ic={{ padding: 13, gap: 8 }}>
           <Text style={{ fontFamily: F.display, color: C.goldBright, fontSize: 13 }}>{sahneAdi(t, x.sahne)}</Text>
           <Text style={{ fontFamily: F.display, color: C.parchment, fontSize: 15 }}>{x.ben.ad}</Text>
           {Object.entries(x.ben.kusanilan).map(([yuva, id]) => <View key={yuva} style={{ flexDirection: yon(rtl), justifyContent: "space-between" }}>
@@ -128,7 +129,8 @@ function DebdebeEkran() {
           </View>)}
           {x.armagan ? <Bant metin={t("onl.db.armaganGoster")} rtl={rtl} /> : null}
           <Text style={{ fontFamily: F.serif, color: C.parchmentDim, fontSize: 12 }}>{t("onl.db.figuranlar")}: {x.figuranlar.map(f => f.ad).join(" · ")}</Text>
-        </Cerceve>)}
+          </Cerceve>)}
+        </> : <Bant tur="bilgi" metin={t("onl.db.deneSahnesiz")} rtl={rtl} />}
       </>}
       <CizgiDugme etiket={t("onl.db.levha")} icon="trophy" rtl={rtl} kucuk onPress={() => router.push("/online/levha")} />
       <Text style={{ fontFamily: F.serif, color: C.parchmentMuted, fontSize: 11.5 }}>{t("onl.db.kutuYok")}</Text>
