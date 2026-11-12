@@ -67,7 +67,7 @@ Her POST, `istekNo` ile tekrar güvenli olmalı. Yerleşim sınırları ve yetki
 - [x] Süresi dolan hazır stok ve açık ilan stoğu ay dönümünde kapanır; satılmayan adet başına yarım hizmet tecrübesi verilir ve tekrar ödül engellenir.
 - [x] `lohusa` ve `teselli` gerçek beceri düğümlerine bağlandı; hazırlama ve girdi tüketimi regresyon testleri eklendi.
 - [x] `sazGecesi` Hancı + Ozan çapraz meslek sinerjisiyle açılır; sinerji yoksa hazırlama sunucuda reddedilir.
-- [ ] 6 dilde hizmet katalog/pazar metinleri ve mobil hizmet ekranı.
+- [x] 6 dilde hizmet katalog/pazar metinleri ve mobil hizmet ekranı: `mobile/app/online/hizmet.tsx` ekranı katalog, hazırlama, hazır stok, fiyatlı ilan, satın alma, ilanı geri çekme ve yenileme akışlarını sunucu uçlarına bağlar; tüm ekran metinleri `online6.ts` içinde 6 dilde tanımlıdır. Yaşam ekranından doğrudan erişilir.
 
 - Önce `yaraBak`, `turku`, `yatak`/oda gibi mevcut oyun durumuna doğrudan etki eden 3–4 hizmet.
 - Hazırlıkta girdiler ve takat düşer; ilan satıcı çevrimdışıyken de satın alınabilir.
