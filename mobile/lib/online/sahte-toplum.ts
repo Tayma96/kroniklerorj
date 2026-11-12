@@ -177,7 +177,10 @@ export function sahteToplumKur(kasabaAl: () => SahteKasaba | null, meslekAl: () 
 
   let secim = { el: "orta", cesaret: "orta", gurur: "orta" };
   let dertPuan = 28;
-  let senlikSayi = 1;\n  let hamiGelen = true;\n  let hamiGiden = false;\n  let hamiSuren = false;
+  let senlikSayi = 1;
+  let hamiGelen = true;
+  let hamiGiden = false;
+  let hamiSuren = false;
   const pano = (): ToplulukDurumu => ({
     mesrep: { secildi: Object.values(secim).some((x) => x !== "orta"), secimAcik: true,
       eksenler: (["el", "cesaret", "gurur"] as const).map((eksen) => ({
@@ -191,7 +194,8 @@ export function sahteToplumKur(kasabaAl: () => SahteKasaba | null, meslekAl: () 
     gostergeler: { arz: 56, moral: 61, asayis: 48, denge: 50, taban: 0, tavan: 100 },
   });
   return {
-    async toplulukOku() { await bekle(); return basarili(pano()); },\n    async hami(i) {
+    async toplulukOku() { await bekle(); return basarili(pano()); },
+    async hami(i) {
       await bekle();
       if (i.islem === "kabul") { hamiGelen = false; hamiSuren = true; }
       else if (i.islem === "ret") hamiGelen = false;
