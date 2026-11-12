@@ -197,14 +197,6 @@ export function ucgenYuklenecek(k: Kasaba, govde: unknown): string[] {
   return liste.filter((o) => k.sakin.some((s) => s.o === o));
 }
 
-/** Ücretli teklifin arabuluculuk teslimi; aynı deterministik zar ve aynı mevcut ilişki/şans kuralları kullanılır. */
-export function arabulucuSozlesmeTeslim(k: Kasaba, ar: Karakter, talep: number, teklif: number, ay: number): Sonuc<UcgenCiktisi> {
-  const ili = k.ili.get(ar.o);
-  const s = k.sakin.find((x) => x.o === ar.o);
-  if (!ili || !s) return hata("sakin_yok");
-  return arabulucuYap({ k, kar: ar, ili, s, ay }, { talep }, tohumlu("ucgen", k.y, ay, ar.o, "arabulucu", talep), teklif);
-}
-
 /** Tek giriş: girdiyi çözer, tohumlu zarı kurar (aynı ay + fail + NPC + tür aynı zarı verir; yeniden atma yok). */
 export function ucgenIslem(k: Kasaba, kar: Karakter, ili: IliskiHaritasi, s: Sakin, govde: unknown, ay: number): Sonuc<UcgenCiktisi> {
   const g = ucgenGirdisiCoz(govde);
