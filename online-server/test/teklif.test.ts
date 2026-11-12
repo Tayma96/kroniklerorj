@@ -419,7 +419,7 @@ test("E4.3-D mektup işi: yetkili kâtip teslimde moral/tecrübe alır; süre a�
   assert.ok(r.ok);
   const t = r.deger.teklif;
   assert.ok(teklifCevap(k, b, `t${t.i}`, "kabul", {}, k.ay).ok);
-  assert.equal(teklifCevap(k, a, `t${t.i}`, "teslim", {}, k.ay).hata, "teklif_kapandi", "yalnız çalışan teslim eder");
+  assert.deepEqual(teklifCevap(k, a, `t${t.i}`, "teslim", {}, k.ay), { ok: false, hata: "teklif_kapandi" }, "yalnız çalışan teslim eder");
   bekle(k, 2);
   assert.equal(t.d, "dustu");
   assert.equal(t.e, 0);
