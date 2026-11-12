@@ -454,6 +454,13 @@ export function teklifCevap(k: Kasaba, ben: Karakter, idHam: unknown, cevap: unk
     case "kabul": {
       if (t.a !== ben.o) return hata("taraf_degil");
       if (t.d !== "acik" || ay > t.sa) return hata("teklif_kapandi");
+      // Eski sürümde açılmış, NPC hedefi bulunmayan arabuluculuk teklifleri yeni gerçek akışa taşınamaz;
+      // kabulde eski emaneti sessizce kilitlemek yerine kapatıp sahibine iade et.
+      if (t.t === "is" && t.s.it === "arabuluculuk" && t.s.an === undefined) {
+        kapat(k, t, "dustu", ay, "dustu");
+        olaylar.push({ t: "teklif", w: ben.o, h: t.g, g: t.g, n: 5, k: "olay.teklif.bitti.is", p: { kisi: oyuncuRef(ben), teklif: teklifKimlik(t.i) } });
+        break;
+      }
       const r = kabulUygula(k, t, ay);
       if (!r.ok) return r;
       olaylar.push(...(t.g.startsWith("n") ? [] : r.deger));
