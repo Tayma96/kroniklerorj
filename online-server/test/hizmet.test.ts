@@ -329,6 +329,40 @@ test("E4 sinerji kapısı: saz gecesi hem hancı düğümünü hem ozan saz usta
   assert.equal(birlikte.tk, 6);
 });
 
+function arabulucuSofrasi(arabulucuSeviye = 3, asciSeviye = 0): Karakter {
+  return {
+    o: "o1", h: "hesap-1", ad: "Arabulucu", e: 1, d: 0, k: 0, pa: 30,
+    ev: { ekmek: 2, corba: 2 }, tk: 8, ta: 12,
+    ms: {
+      a: "arabulucu", y: "",
+      s: {
+        arabulucu: { a: "arabulucu", kd: 0, hz: 0, cy: 0, sv: { "arabulucu.barisSofrasi": arabulucuSeviye } },
+        ...(asciSeviye > 0 ? { asci: { a: "asci", kd: 0, hz: 0, cy: 0, sv: { "asci.corbaci": asciSeviye } } } : {}),
+      },
+    },
+  } as unknown as Karakter;
+}
+
+test("E4 sinerji kapısı: barış sofrası arabulucu ustalığı ve aşçı çorbacı becerisini birlikte ister", () => {
+  const eksikAsci = arabulucuSofrasi(3, 0);
+  const sofra = hizmetTarifiBul("barisSofrasi")!;
+  assert.equal(hizmetYetkiliMi(eksikAsci, sofra), false);
+  assert.deepEqual(hizmetHazirla(ekonomi(), eksikAsci, "barisSofrasi", 1, 12), { ok: false, hata: "dugum_kapali" });
+
+  const eksikArabulucu = arabulucuSofrasi(1, 1);
+  assert.equal(hizmetYetkiliMi(eksikArabulucu, sofra), false, "arabulucu sinerji seviyesine ulaşmamış");
+
+  const birlikte = arabulucuSofrasi(3, 1);
+  assert.equal(hizmetYetkiliMi(birlikte, sofra), true);
+  const ek = ekonomi();
+  const hazir = hizmetHazirla(ek, birlikte, "barisSofrasi", 1, 12);
+  assert.equal(hazir.ok, true);
+  assert.equal(birlikte.ev?.ekmek, 1);
+  assert.equal(birlikte.ev?.corba, 1);
+  assert.equal(birlikte.tk, 6);
+});
+
+
 
 function npcHizmetKasabasi(ek: EkonomiKaydi, kar: Karakter, hazine = 30) {
   const hedef = { i: 1, a: 0, s: 0, k: 1, d: 0, m: 0, h: 0, q: 0, r: 0, e: 7, es: 0, an: 0, ba: 0, b: [], g: 0 };

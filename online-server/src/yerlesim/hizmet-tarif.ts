@@ -28,7 +28,7 @@ export interface HizmetTarifi {
   npcOdul?: number;
 }
 
-/** İlk uygulanacak hizmetler: şifacının doğrudan iyileştirmesi ve ozanın han sahnesi. */
+/** Oyuncu pazarındaki hazır hizmetler: şifacı, ozan, hancı ve çapraz meslek sinerjili arabulucu hizmetleri. */
 export const HIZMET_TARIFLERI: readonly HizmetTarifi[] = [
   {
     id: "yaraBak",
@@ -99,6 +99,20 @@ export const HIZMET_TARIFLERI: readonly HizmetTarifi[] = [
     etki: [{ tur: "hal", alan: "gonul", deger: 5 }],
     hazir: { adet: 1, gecerlilikAy: 1 },
     fiyatTaban: 6,
+  },
+  {
+    id: "barisSofrasi",
+    meslek: "arabulucu",
+    dugum: "arabulucu.barisSofrasi",
+    seviye: 1,
+    acar: "barisCorbasi",
+    girdi: { ekmek: 1, corba: 1 },
+    takat: 2,
+    aylikTavan: 4,
+    hedef: "kisi",
+    etki: [{ tur: "hal", alan: "gonul", deger: 6 }],
+    hazir: { adet: 1, gecerlilikAy: 1 },
+    fiyatTaban: 7,
   },
   {
     id: "teselli",
