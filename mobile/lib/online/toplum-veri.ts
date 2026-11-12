@@ -138,6 +138,7 @@ export interface OyuncuArabuluculukGorunumu {
   uzlasma?: { s: number; k: number; not?: string };
   surum: number; imza: { s?: number; k?: number };
   acilisAyi: number; sonCevapAyi: number; sonAy?: number; kapanisAyi?: number;
+  husumetCozuldu?: boolean;
 }
 export interface GelenYaniti {
   ay: number;
