@@ -306,6 +306,9 @@ test("borç: tutar ve borçlu toplam tavanı; vadede tahsilat, eksik kalırsa ka
   assert.equal(t.deger.teklif.d, "bitti");
   assert.deepEqual(t.deger.teklif.bo, [[k.ay - 1, 30], [k.ay, 25]], "ikinci tahsilat da senet dökümüne eklenir");
   assert.deepEqual(teklifGorunumu(k, t.deger.teklif, a.o, "tr").odemeler, [[k.ay - 1, 30], [k.ay, 25]], "senet tahsilatları API görünümüne çıkar");
+  const kapananSenet = teklifGorunumu(k, t.deger.teklif, a.o, "tr");
+  assert.equal(kapananSenet.kalan, 0, "kapanmış senet sıfır bakiyeyi korur");
+  assert.equal(kapananSenet.vadeAyi, t.deger.teklif.vd, "kapanmış senet vade bilgisini korur");
   assert.equal(a.pa, 105, "anapara + faiz");
   assert.equal(b.pa, 15);
 });
