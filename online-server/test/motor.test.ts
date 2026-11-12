@@ -232,9 +232,10 @@ test("oyuncu arabuluculuğu API'si üç hesabın rızasını, sürümlü taslağ
   const sPaEmanet = m.kasaba.kar.get("o1")!.pa;
   const kPaEmanet = m.kasaba.kar.get("o2")!.pa;
   assert.ok(sPaEmanet < 125 + kPaEmanet, "emanet kesintisi oyuncu bakiyesine yansır");
-  const uygulama = deger(await m.oyuncuArabuluculuk("hesap-3", {
-    islem: "uygula", dosya: id, istekNo: "arb-uygula-0001",
-  }));
+  const uygulaGovde = { islem: "uygula", dosya: id, istekNo: "arb-uygula-0001" };
+  const uygulama = deger(await m.oyuncuArabuluculuk("hesap-3", uygulaGovde));
+  assert.deepEqual(deger(await m.oyuncuArabuluculuk("hesap-3", uygulaGovde)), uygulama, "aynı istekNo ikinci ödeme yapmaz");
+  assert.deepEqual(await m.oyuncuArabuluculuk("hesap-3", { ...uygulaGovde, istekNo: "arb-uygula-0002" }), { ok: false, hata: "teklif_kapandi" });
   assert.equal(uygulama.dosya.durum, "tamam");
   assert.equal(m.kasaba.kar.get("o2")!.pa, kPaEmanet + 125);
   assert.equal(m.kasaba.kar.get("o1")!.pa, sPaEmanet);
