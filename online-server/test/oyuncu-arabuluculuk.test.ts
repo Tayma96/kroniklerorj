@@ -120,3 +120,16 @@ test("aynı iki oyuncu arasında aynı anda ikinci açık arabuluculuk dosyası 
   assert.ok(oyuncuArabuluculukAc(k, s, kk, ar, k.ay).ok);
   assert.deepEqual(oyuncuArabuluculukAc(k, s, kk, ar2, k.ay), { ok: false, hata: "teklif_siniri" });
 });
+
+import { toplumDonumu } from "../src/yerlesim/toplum-donum.ts";
+
+test("cevapsız oyuncu arabuluculuk daveti gerçek toplum ay dönümünde cezasız düşer", () => {
+  const k = testKasabasi("develi", 500);
+  const s = oyuncuEkle(k, 151), kk = oyuncuEkle(k, 152), ar = oyuncuEkle(k, 153);
+  const ac = oyuncuArabuluculukAc(k, s, kk, ar, k.ay);
+  assert.ok(ac.ok);
+  if (!ac.ok) return;
+  toplumDonumu(k, ac.deger.sa + 1);
+  assert.equal(ac.deger.d, "dustu");
+  assert.equal(ac.deger.kp, ac.deger.sa + 1);
+});
