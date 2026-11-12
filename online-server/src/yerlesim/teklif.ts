@@ -276,7 +276,7 @@ export function teklifOlustur(k: Kasaba, gon: Karakter, alici: Karakter, govde: 
     e = (s.tu ?? 0) + tazminatEmaneti;
     if (gon.pa < e) return hata("para_yok");
   } else if (t_ === "borc" && s.sn === 1 && s.yn === "ver") {
-    if ((gon.ev?.senet ?? 0) < 1) return hata("senet_yok");
+    if ((gon.ev?.senet ?? 0) < 1) return hata("mal_yok");
     envanterEkle(gon, "senet", -1);
     s.se = 1;
   } else if (t_ === "hediye") {
@@ -374,7 +374,7 @@ function kabulUygula(k: Kasaba, t: Teklif, ay: number): Sonuc<OlayTaslagi[]> {
       if (kalanBorc(k, borclu) + kl > BORC_TOPLAM_EN_COK) return hata("tavan_doldu");
       const b = k.kar.get(borclu)!;
       const a = k.kar.get(alacakli)!;
-      if (t.s.sn === 1 && t.s.yn === "iste" && (a.ev?.senet ?? 0) < 1) return hata("senet_yok");
+      if (t.s.sn === 1 && t.s.yn === "iste" && (a.ev?.senet ?? 0) < 1) return hata("mal_yok");
       if (t.s.yn === "iste") {
         if (a.pa < tu) return hata("para_yok");
         a.pa -= tu;
