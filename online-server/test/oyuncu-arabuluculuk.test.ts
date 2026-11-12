@@ -322,6 +322,37 @@ test("vadesi dolan tek imzalı uzlaşma kapanır; emanete alınmayan para deği�
 });
 
 
+
+
+test("emanet uygulaması kalıcı kayıtta iki güncel imza ve tutar eşleşmesini yeniden doğrular", () => {
+  const k = testKasabasi("develi", 790);
+  const s = oyuncuEkle(k, 251), kk = oyuncuEkle(k, 252), ar = oyuncuEkle(k, 253);
+  const ac = oyuncuArabuluculukAc(k, s, kk, ar, k.ay);
+  assert.ok(ac.ok);
+  if (!ac.ok) return;
+  const id = String(ac.deger.i);
+  for (const x of [s, kk, ar]) assert.ok(oyuncuArabuluculukCevap(k, x, id, "kabul", k.ay).ok);
+  s.pa = 500; kk.pa = 500;
+  assert.ok(oyuncuArabuluculukTaslak(k, ar, id, 120, 80, undefined, k.ay).ok);
+  assert.ok(oyuncuArabuluculukImzala(k, s, id, ac.deger.sv).ok);
+  assert.ok(oyuncuArabuluculukImzala(k, kk, id, ac.deger.sv).ok);
+  assert.equal(ac.deger.d, "emanette");
+  const sOnce = s.pa, kOnce = kk.pa;
+
+  ac.deger.im.k = ac.deger.sv - 1;
+  assert.deepEqual(oyuncuArabuluculukUygula(k, s, id, k.ay), { ok: false, hata: "teklif_gecersiz" });
+  assert.equal(s.pa, sOnce);
+  assert.equal(kk.pa, kOnce);
+  assert.equal(ac.deger.d, "emanette");
+
+  ac.deger.im.k = ac.deger.sv;
+  ac.deger.od!.k = ac.deger.uz!.k + 1;
+  assert.deepEqual(oyuncuArabuluculukUygula(k, s, id, k.ay), { ok: false, hata: "teklif_gecersiz" });
+  assert.equal(s.pa, sOnce);
+  assert.equal(kk.pa, kOnce);
+  assert.equal(ac.deger.d, "emanette");
+});
+
 test("imzalı uzlaşmada taraf ölürse ay dönümünde iki emanet de terekeye iade edilir", () => {
   const k = testKasabasi("develi", 780);
   const s = oyuncuEkle(k, 241), kk = oyuncuEkle(k, 242), ar = oyuncuEkle(k, 243);
