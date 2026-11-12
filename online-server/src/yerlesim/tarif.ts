@@ -126,6 +126,7 @@ export function kaliteBecerisi(k: Karakter, t: Tarif): number {
   if (t.id === "pastirma" && sinerjiAcik(k, "ozelPastirma")) toplam += OZEL_PASTIRMA_KALITE_BONUS;
   if (t.id === "un" && sinerjiAcik(k, "kasabaDegirmeni")) toplam += KASABA_DEGIRMENI_KALITE_BONUS;
   if (t.id === "kiris" && sinerjiAcik(k, "hanKirisi")) toplam += HAN_KIRISI_KALITE_BONUS;
+  // Çapraz meslek sinerjileri ürün kimliğiyle sınırlandırılır; komşu tariflere yayılmaz.
   if (t.id === "kagni" && sinerjiAcik(k, "kagniHarmani")) toplam += KAGNI_HARMANI_KALITE_BONUS;
   if (t.id === "araba" && sinerjiAcik(k, "kervanArabasi")) toplam += KERVAN_ARABASI_KALITE_BONUS;
   if (t.id === "cizme" && sinerjiAcik(k, "ulakCizmesi")) toplam += ULAK_CIZMESI_KALITE_BONUS;
