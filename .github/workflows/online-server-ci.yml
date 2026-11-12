@@ -13,6 +13,7 @@ on:
       - "mobile/tsconfig.json"
       - ".github/workflows/online-server-ci.yml"
       - ".github/workflows/deploy-online-server.yml"
+      - ".github/workflows/android-apk-local.yml"
   push:
     branches: [apk]
     paths:
