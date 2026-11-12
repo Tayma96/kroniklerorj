@@ -245,7 +245,8 @@ export function ittifakOnayAl(
   const b = typeof kaynak === "string" ? BEYLIKLER.find((x) => x.id === kaynak) : undefined;
   if (!b || b.id === d.id || typeof istekId !== "string" || !Number.isInteger(ay) || (ay as number) < 0 || ad !== b.ad) return "deger_sinir_disi";
   const kayit = s.ittifaklar?.[b.id];
-  if ((kayit?.durum === "aktif" || kayit?.durum === "suresiDoldu") && kayit.istekId === istekId) return null;
+  if (kayit?.durum === "aktif" && kayit.istekId === istekId) return null;
+  // Süresi dolmuş ittifak eski bir outbox teyidiyle yeniden etkinleşemez.
   if (!kayit || kayit.durum !== "kabulBekliyor" || kayit.istekId !== istekId || kayit.baslangicAy !== ay || s.ittifakYanits?.[b.id]?.karar !== "kabul") return "hedef_uygun_degil";
   kayit.durum = "aktif";
   return null;
