@@ -26,6 +26,8 @@ export function darbeDestekle(d: BolgeDurumu, kimlik: SiyasiKimlik, koltuk: stri
   const p = d.darbe;
   if (!p || p.durum !== "hazirlik") return "darbe_yok";
   const kume = kumeAnahtarlari(kimlik);
+  // Başlatan ve onun hesap/hane kümesi kendi planına destek yazamaz (savunma emriyle aynı kural).
+  if (p.baslatanHesap === kimlik.hesap || kumeKesisir(p.baslatanKume ?? [], kume)) return "kume_cakisma";
   if (p.destekler.some((x) => x.hesap === kimlik.hesap || kumeKesisir(x.kume, kume))) return "kume_cakisma";
   p.destekler.push({ kisi: kimlik.kisi, hesap: kimlik.hesap, ad: kimlik.ad, koltuk, rol, kume, ay });
   p.izler.push({ ay, tur: "destek", guvenilirlik: 85, gorunurluk: "ileriGelen" });
