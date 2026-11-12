@@ -153,6 +153,7 @@ Bu dilim, NPC arabuluculuğunu oyunculara doğrudan uygulamaz. Oyuncu–oyuncu a
 - Sürümlü uzlaşma taslağı ve iki tarafın ayrı ayrı aynı sürümü imzalaması API ve gelen kutusu ekranına bağlandı.
 - İkinci imzada iki tarafın bakiyesi birlikte doğrulanıyor; yetersiz bakiye varsa imza ve iki bakiye de değişmiyor. Yeterliyse iki ödeme tek yerleşim yazımında emanete alınıyor.
 - Emanet, katılımcılardan herhangi birinin tek seferlik uygulama isteğiyle alacaklı tarafa aktarılıyor; tekrar istek ikinci aktarım oluşturmuyor.
-- İmzalı uzlaşmaya varsayılan üç aylık uygulama süresi eklendi. Süre aşılırsa emanet iki tarafa da özgün tutarlarıyla iade edilir; iade izi ikinci iade/ödeme girişimini engeller. Gelen kutusu kartında son uygulama ayı gösterilir; altı dilde çevrildi.
+- İmzalı uzlaşmaya varsayılan üç aylık uygulama süresi eklendi. Süre aşılırsa emanet iki tarafa da özgün tutarlarıyla iade edilir; iade izi ikinci iade/ödeme girişimini engeller. Süresi dolan taslak ikinci imzayla emanet kesintisi yapamaz. Gelen kutusu kartında son uygulama ayı gösterilir; altı dilde çevrildi.
+- Arabulucu taslağı sunmadan hemen önce üç karakterin de yüklü olduğunu, engel kayıtlarını ve tarafsızlık koşullarını yeniden doğrular.
 - **Henüz kapsam dışı:** mal/ürün teslimi, arabulucu ücreti, son teslim tarihi, emanetin zaman aşımında iadesi ve imza sonrası ölüm/hesap kapatma gibi istisna akışları. Bunlar tamamlanmadan D2 bütünüyle bitmiş sayılmayacak.
 
