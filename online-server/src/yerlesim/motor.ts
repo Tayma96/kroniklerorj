@@ -89,6 +89,7 @@ import { GUNDEM_ADI, type CalismaParametreleri, type Isaret, type IliskiHaritasi
 import { kasabaKur } from "./uret.ts";
 import { defterGorunumu, defterYaz } from "./defter.ts";
 import { ekonomiDonumu } from "./ekonomi-donum.ts";
+import { hizmetNpcTalebiAc } from "./hizmet-pazari.ts";
 import { ismarlamaSicili } from "./ismarlama.ts";
 import { kaliteGorunumu } from "./kalite.ts";
 import { levhaYaz } from "./levha.ts";
@@ -435,7 +436,9 @@ export class YerlesimMotoru {
       // Faz 6: süresi dolan ilan/ısmarlama iadeleri kendi defter kalemleriyle; kalan akçe farkı "donum" kalemine.
       for (const t of ekonomiDonumu(k, ay)) await this.#olayEkle(t, ay);
       const pa0 = new Map([...k.kar].map(([o, c]) => [o, c.pa]));
-      for (const t of ayDonumu(k, ay)) await this.#olayEkle(t, ay);
+      const ayOlaylari = ayDonumu(k, ay);
+      for (const t of ayOlaylari) await this.#olayEkle(t, ay);
+      for (const t of hizmetNpcTalebiAc(k, ay, ayOlaylari)) await this.#olayEkle(t, ay);
       for (const t of siparisDonumu(k, ay, k.pr)) await this.#olayEkle(t, ay);
       for (const t of toplumDonumu(k, ay)) await this.#olayEkle(t, ay);
       for (const [o, c] of k.kar) defterYaz(c, ay, "donum", c.pa - (pa0.get(o) ?? c.pa));
