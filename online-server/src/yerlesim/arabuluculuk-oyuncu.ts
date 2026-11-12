@@ -43,6 +43,14 @@ function dosyaBul(t: Toplum, id: unknown): OyuncuArabuluculuk | undefined {
   return oyuncuArabuluculukAl(t).find(x => x.i === Number(id));
 }
 
+/** İmza bekleyen taslak vadesi geçince kapanır; henüz emanet alınmadığı için para hareketi yoktur. */
+function uzlasmaVadesiDoldu(d: OyuncuArabuluculuk, ay: number): boolean {
+  if (d.d !== "imzaBekliyor" || d.sonAy === undefined || ay <= d.sonAy) return false;
+  d.d = "dustu";
+  d.kp = ay;
+  return true;
+}
+
 /** Şikâyetçi davet açar. Üç oyuncu da yüklenmiş olmalı; aynı taraf çifti için tek açık dosya vardır. */
 export function oyuncuArabuluculukAc(
   k: Kasaba, sikayetci: Karakter, karsi: Karakter, arabulucu: Karakter, ay: number
@@ -117,6 +125,7 @@ export function oyuncuArabuluculukTaslak(
 ): Sonuc<OyuncuArabuluculuk> {
   const d = dosyaBul(toplumAl(k), id);
   if (!d) return hata("talep_yok");
+  if (uzlasmaVadesiDoldu(d, ay)) return hata("teklif_kapandi");
   if (ben.o !== d.ar) return hata("taraf_degil");
   if (d.d !== "taslak" && d.d !== "imzaBekliyor") return hata("teklif_kapandi");
   const s = k.kar.get(d.s), kk = k.kar.get(d.k), ar = k.kar.get(d.ar);
@@ -147,9 +156,9 @@ export function oyuncuArabuluculukImzala(
   if (!d) return hata("talep_yok");
   const r = rol(d, ben.o);
   if (r !== "s" && r !== "k") return hata("taraf_degil");
+  if (uzlasmaVadesiDoldu(d, ay)) return hata("teklif_kapandi");
   if (d.d !== "imzaBekliyor" || !d.uz) return hata("teklif_kapandi");
   if (!Number.isSafeInteger(surum) || surum !== d.sv) return hata("teklif_gecersiz");
-  if (d.sonAy !== undefined && ay > d.sonAy) return hata("teklif_kapandi");
   const digerRol: "s" | "k" = r === "s" ? "k" : "s";
   if (d.im[digerRol] !== undefined) {
     const s = k.kar.get(d.s), kk = k.kar.get(d.k);
@@ -208,6 +217,10 @@ export function oyuncuArabuluculukDonumu(k: Kasaba, ay: number): number {
   let sayi = 0;
   for (const d of oyuncuArabuluculukAl(toplumAl(k))) {
     if (d.d === "emanette" && d.sonAy !== undefined && ay > d.sonAy && emanetIadeEt(k, d, ay)) {
+      sayi++;
+      continue;
+    }
+    if (uzlasmaVadesiDoldu(d, ay)) {
       sayi++;
       continue;
     }
