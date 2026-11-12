@@ -4,7 +4,7 @@ import type { Dil, KisiAdi, Sonuc } from "./protokol";
 import {
   dostlukYanitiMi, duzenYanitiMi, engelYanitiMi, gelenMi, husumetYanitiMi, oyuncuProfiliMi, sikayetYanitiMi, teklifYanitiMi,
   vitrinYanitiMi, yalanlaYanitiMi, toplulukDurumuMi,
-  type ToplulukDurumu, type MesrepIstegi, type OrtakDertIstegi, type SenlikIstegi,
+  type ToplulukDurumu, type MesrepIstegi, type OrtakDertIstegi, type SenlikIstegi, type HamiIstegi,
   type BagDurumu, type DostlukIstegi, type DuzenGorunumu, type DuzenIstegi, type EngelIstegi, type GelenYaniti, type HusumetIstegi,
   type OyuncuProfili, type SikayetIstegi, type SikayetYaniti, type SoylentiGorunumu, type TeklifCevapIstegi, type TeklifGorunumu,
   type TeklifIstegi, type VitrinArmagani,
@@ -23,7 +23,7 @@ export interface ToplumIstemci {
   yalanla(istek: { soylenti: string; istekNo: string; dil?: Dil }): Promise<Sonuc<{ soylentiler: SoylentiGorunumu[] }>>;
   vitrin(istek: { goster: string[]; istekNo: string }): Promise<Sonuc<{ vitrin: VitrinArmagani[] }>>;
   sikayet(istek: SikayetIstegi): Promise<Sonuc<SikayetYaniti>>;
-  toplulukOku(): Promise<Sonuc<ToplulukDurumu>>;
+  toplulukOku(): Promise<Sonuc<ToplulukDurumu>>;\n  hami(istek: HamiIstegi): Promise<Sonuc<Record<string, unknown>>>;
   mesrep(istek: MesrepIstegi): Promise<Sonuc<Record<string, unknown>>>;
   ortakDert(istek: OrtakDertIstegi): Promise<Sonuc<Record<string, unknown>>>;
   senlik(istek: SenlikIstegi): Promise<Sonuc<Record<string, unknown>>>;
@@ -50,7 +50,7 @@ export function toplumUclari(cagir: Cagir): ToplumIstemci {
     yalanla: (i) => yaz("/v1/yalanla", i, yalanlaYanitiMi),
     vitrin: (i) => yaz("/v1/vitrin", i, vitrinYanitiMi),
     sikayet: (i) => yaz("/v1/sikayet", i, sikayetYanitiMi),
-    toplulukOku: () => al("/v1/topluluk", toplulukDurumuMi),
+    toplulukOku: () => al("/v1/topluluk", toplulukDurumuMi),\n    hami: (i) => yaz("/v1/hami", i, nesneYanitiMi),
     mesrep: (i) => yaz("/v1/mesrep", i, nesneYanitiMi),
     ortakDert: (i) => yaz("/v1/ortak-dert", i, nesneYanitiMi),
     senlik: (i) => yaz("/v1/senlik", i, nesneYanitiMi),
