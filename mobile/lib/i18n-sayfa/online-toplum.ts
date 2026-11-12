@@ -285,6 +285,7 @@ export const rows: Record<string, string[]> = {
   "onl.tp.arb.uzlasma": ["Uzlaşma teklifi", "Settlement proposal", "Propuesta", "Proposta", "عرض التسوية", "Предложение"],
   "onl.tp.arb.sOder": ["Şikâyetçi öder", "Complainant pays", "Paga demandante", "Reclamante paga", "يدفع المشتكي", "Платит заявитель"],
   "onl.tp.arb.kOder": ["Karşı taraf öder", "Other party pays", "Paga la otra parte", "Outra parte paga", "يدفع الطرف الآخر", "Платит другая сторона"],
+  "onl.tp.arb.sonAy": ["Son uygulama ayı", "Finalization month", "Mes de ejecución", "Mês de execução", "شهر التنفيذ النهائي", "Месяц исполнения"],
   "onl.tp.arb.imzaDurum": ["İmzalar", "Signatures", "Firmas", "Assinaturas", "التوقيعات", "Подписи"],
   "onl.tp.arb.not": ["Uzlaşma notu (isteğe bağlı)", "Settlement note (optional)", "Nota (opcional)", "Nota (opcional)", "ملاحظة اختيارية", "Примечание"],
   "onl.tp.arb.taslakKaydet": ["Taslağı sun", "Submit proposal", "Enviar propuesta", "Enviar proposta", "إرسال العرض", "Отправить предложение"],
