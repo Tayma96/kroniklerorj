@@ -1397,7 +1397,7 @@ export class YerlesimMotoru {
    * IKRAM_MENUSU'ndan: verenin akçesi düşer, NPC hancıda dünyadan çıkar; alanın verene teveccühü tutar kadar artar
    * (aynı hane/küme sayılmaz). istekNo ile tekrar güvenli.
    */
-  async hanIkram(hesapId: string, govde: unknown): Promise<Sonuc<unknown>> {
+  async hanIkram(hesapId: string, govde: unknown, vergiOrani = 0): Promise<Sonuc<unknown>> {
     if (!nesneMi(govde)) return hata("gecersiz_istek");
     const ikram = govde.ikram;
     if (typeof ikram !== "string" || !Object.hasOwn(IKRAM_MENUSU, ikram)) return hata("ikram_gecersiz");
@@ -1410,7 +1410,7 @@ export class YerlesimMotoru {
       if (engelliMi(this.kasaba.tp, kar.o, alan.o)) return hata("engelli");
       // Faz 12: yerleşimin hanı oyuncu işletmesiyse akçe kasaya (çıkış kutusu), değilse dünyadan çıkar.
       this.#kirli.add(MULK);
-      const odeme = mulkluIkram(this.kasaba, kar, ikram as IkramId, this.#simdi, String(govde.istekNo));
+      const odeme = mulkluIkram(this.kasaba, kar, ikram as IkramId, this.#simdi, String(govde.istekNo), vergiOrani);
       if (!odeme.ok) return odeme;
       const teveccuh = teveccuhEkle(alan, kar, "ikram", ay, odeme.deger.fiyat);
       const sk = this.kasaba.sakin.find((x) => x.o === alan.o);
@@ -1595,10 +1595,10 @@ export class YerlesimMotoru {
   }
 
   /** POST /v1/barinma/kira | tesis | otomatik (istekNo ile tekrar güvenli; kira NPC hancıya, akçe dünyadan çıkar). */
-  async barinmaIslem(islem: "barinmaKira" | "barinmaTesis" | "barinmaOtomatik", hesapId: string, govde: unknown, simdi: number): Promise<Sonuc<unknown>> {
+  async barinmaIslem(islem: "barinmaKira" | "barinmaTesis" | "barinmaOtomatik", hesapId: string, govde: unknown, simdi: number, vergiOrani = 0): Promise<Sonuc<unknown>> {
     const k = this.kasaba;
     return this.#tekrarGuvenli(hesapId, govde, (kar) =>
-      islem === "barinmaKira" ? (this.#kirli.add(MULK), mulkluKira(k, kar, govde, simdi)) : islem === "barinmaTesis" ? tesisKonakla(k, kar, simdi) : otomatikAyarla(k, kar, govde, simdi),
+      islem === "barinmaKira" ? (this.#kirli.add(MULK), mulkluKira(k, kar, govde, simdi, vergiOrani)) : islem === "barinmaTesis" ? tesisKonakla(k, kar, simdi) : otomatikAyarla(k, kar, govde, simdi),
     );
   }
 
