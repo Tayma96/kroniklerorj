@@ -277,6 +277,7 @@ test("kapasite parayla artmaz; iflas mülkü beyliğe döndürür, karakteri sil
 
 test("oyuncu hanı: kira ve ikram kasaya, çarpanlı fiyat; aynı hane ve karşılıklı işlem izlenir", () => {
   const { k, a, b } = hazir();
+  a.ms = { a: "", y: "", s: {} };
   const br = kopru(k);
   edin(k, a, { tur: "han" }, AN, "e-0000001");
   br.yerlesimdenTeslim();
@@ -286,33 +287,32 @@ test("oyuncu hanı: kira ve ikram kasaya, çarpanlı fiyat; aynı hane ve karş�
   const pa = b.pa;
   assert.deepEqual(barinmaGorunumu(k, b, AN, { isletme: "develi.han.1", fc: 150, seviye: 0, kapasite: 3, sahip: a }).odalar, [], "becerisiz hancı odaları kataloğa çıkaramaz");
   assert.deepEqual(mulkluKira(k, b, { oda: "yatak", sure: 1, istekNo: "k-beceri-kilitli" }, AN), { ok: false, hata: "dugum_kapali" }, "oyuncu hanında yatak becerisi olmadan oda açılamaz");
+
   assert.ok(meslekSec(a, "hanci", AY).ok);
   a.ms!.s.hanci!.sv = { "hanci.yatakAhir": 1 };
   assert.equal(oyuncuHanOdaAcik(a, "yatak"), true);
   assert.equal(oyuncuHanOdaAcik(a, "oda"), false, "temiz oda ayrı beceri ister");
-  assert.equal(oyuncuHanOdaAcik(a, "hasOda"), false, "has oda çapraz meslek sinerjisi ister");
+  assert.equal(oyuncuHanOdaAcik(a, "hasOda"), false, "has oda için temiz oda ustalığı ve marangoz sinerjisi gerekir");
   const gorunumYatak = barinmaGorunumu(k, b, AN, { isletme: "develi.han.1", fc: 150, seviye: 0, kapasite: 3, sahip: a });
-  assert.deepEqual(gorunumYatak.odalar.map((o) => o.oda), ["yatak"], "barınma kataloğu yalnız öğrenilmiş yatak hizmetini gösterir");
+  assert.deepEqual(gorunumYatak.odalar.map((o) => o.oda), ["yatak"], "katalog yalnız öğrenilmiş yatak hizmetini gösterir");
+
   const kira = mulkluKira(k, b, { oda: "yatak", sure: 1, istekNo: "k-0000001" }, AN);
   assert.ok(kira.ok, JSON.stringify(kira));
   const kv = kira.deger.kira as { fiyat: number; batak: number; kasaya: number };
   assert.deepEqual([kv.fiyat, kv.batak, kv.kasaya], [3, 0, 3]);
   assert.equal(b.pa, pa - 3);
+
   a.ms!.s.hanci!.sv = { "hanci.yatakAhir": 1, "hanci.temizOda": 1 };
   assert.equal(oyuncuHanOdaAcik(a, "oda"), true, "temiz oda düğümü oda türünü açar");
   assert.equal(oyuncuHanOdaAcik(a, "hasOda"), false, "has oda için üçüncü seviye ve marangoz sinerjisi gerekir");
-  assert.deepEqual(barinmaGorunumu(k, b, AN, { isletme: "develi.han.1", fc: 150, seviye: 0, kapasite: 3, sahip: a }).odalar.map((o) => o.oda), ["yatak", "oda"]);
-  assert.ok(meslekSec(a, "marangoz", AY + 12).ok);
-  a.ms!.s.marangoz!.sv = { "marangoz.kundekari": 1 };
-  a.ms!.s.hanci!.sv = { "hanci.yatakAhir": 1, "hanci.temizOda": 3 };
-  assert.equal(oyuncuHanOdaAcik(a, "hasOda"), true, "has oda iki mesleğin gerçek sinerjisiyle açılır");
-  assert.equal(oyuncuHanOdaAcik(a, "hasOda"), false, "has oda için üçüncü seviye ve marangoz sinerjisi gerekir");
   const gorunumOda = barinmaGorunumu(k, b, AN, { isletme: "develi.han.1", fc: 150, seviye: 0, kapasite: 3, sahip: a });
   assert.deepEqual(gorunumOda.odalar.map((o) => o.oda), ["yatak", "oda"]);
+
   assert.ok(meslekSec(a, "marangoz", AY + 12).ok);
   a.ms!.s.marangoz!.sv = { "marangoz.kundekari": 1 };
   a.ms!.s.hanci!.sv = { "hanci.yatakAhir": 1, "hanci.temizOda": 3 };
   assert.equal(oyuncuHanOdaAcik(a, "hasOda"), true, "has oda iki mesleğin gerçek sinerjisiyle açılır");
+
   const ik = mulkluIkram(k, b, "serbet", AN, "i-0000001");
   assert.ok(ik.ok);
   assert.deepEqual([ik.deger.fiyat, ik.deger.batak, ik.deger.kasaya], [5, 0, 5]);
@@ -329,7 +329,6 @@ test("oyuncu hanı: kira ve ikram kasaya, çarpanlı fiyat; aynı hane ve karş�
   assert.equal(br.is.iz.m.at(-1)![2], "kume");
   assert.deepEqual(mulkluKira(k, a, { oda: "yatak", sure: 1, istekNo: "k-0000002" }, AN), { ok: false, hata: "kendine" });
 });
-
 
 test("oyuncu hanı geliri bölge vergisini kesir biriktirerek outbox'a ayırır", () => {
   const { k, a, b } = hazir();
