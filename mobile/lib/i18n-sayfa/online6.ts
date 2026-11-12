@@ -404,6 +404,9 @@ export const rows: Record<string, string[]> = {
   "onl.topluluk.toplumsal": ["Toplumsal bağlar", "Social ties", "Vínculos sociales", "Laços sociais", "الروابط الاجتماعية", "Общественные связи"],
   "onl.topluluk.hami": ["Hamilik bağları: %1 sürüyor · %2 gelen teklif", "Patron ties: %1 active · %2 incoming offers", "Vínculos de mentoría: %1 activos · %2 ofertas recibidas", "Laços de tutela: %1 ativos · %2 convites recebidos", "روابط الرعاية: %1 قائمة · %2 عروض واردة", "Покровительство: активно %1 · входящих предложений %2"],
   "onl.topluluk.mudavim": ["Han müdavimliği: %1 · ziyaret %2", "Inn regular: %1 · visits %2", "Habitual de la posada: %1 · visitas %2", "Frequentador da estalagem: %1 · visitas %2", "مواظب الخان: %1 · الزيارات %2", "Постоялец: %1 · посещений %2"],
+  "onl.topluluk.rozet.tanidik": ["Tanıdık", "Known face", "Conocido", "Conhecido", "وجه مألوف", "Знакомый"],
+  "onl.topluluk.rozet.mudavim": ["Müdavim", "Regular", "Habitual", "Frequentador", "مواظب", "Постоялец"],
+  "onl.topluluk.rozet.demirbas": ["Demirbaş", "Fixture", "Asiduo", "Presença assídua", "من رواد الخان", "Завсегдатай"],
   "onl.topluluk.rozet.yok": ["Henüz yok", "None yet", "Ninguno", "Nenhum", "لا يوجد", "Пока нет"],
   "onl.topluluk.zaviye": ["Zaviyeler: kasabada %1 · benim zaviyem %2", "Zawiyas: %1 in town · my group %2", "Zawiyas: %1 en el pueblo · mi grupo %2", "Zawiyas: %1 na vila · o meu grupo %2", "الزوايا: %1 في البلدة · زاويتي %2", "Завии: %1 в поселении · моя группа %2"],
 
