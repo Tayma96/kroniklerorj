@@ -330,6 +330,8 @@ function YasamEkran() {
     <CizgiDugme etiket={t("onl.topluluk.baslik")} icon="users" rtl={rtl} kucuk onPress={() => router.push("/online/topluluk")} />
     <CizgiDugme etiket={t("onl.hizmet.kisa")} icon="briefcase" rtl={rtl} kucuk onPress={() => router.push("/online/hizmet")} />
     <CizgiDugme etiket={t("onl.siyaset.baslik")} icon="castle" rtl={rtl} kucuk onPress={() => router.push("/online/siyaset")} />
+    <CizgiDugme etiket={t("onl.lv.baslik")} icon="award" rtl={rtl} kucuk onPress={() => router.push("/online/levha")} />
+    <CizgiDugme etiket={t("onl.df.baslik")} icon="scroll-open" rtl={rtl} kucuk onPress={() => router.push("/online/defter")} />
 
     {/* Gelen kutusu: cevap bekleyen teklif ve dostluk istekleri (Faz 3a) */}
     <GelenKutusuKarti />
