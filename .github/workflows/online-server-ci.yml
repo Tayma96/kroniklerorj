@@ -56,3 +56,8 @@ jobs:
       - name: Online server typecheck
         working-directory: online-server
         run: npm run typecheck
+      - name: Validate production and isolated test Worker configs
+        working-directory: online-server
+        run: |
+          npx --yes wrangler@4 deploy --dry-run --config wrangler.toml
+          npx --yes wrangler@4 deploy --dry-run --config wrangler.test.toml
