@@ -165,7 +165,7 @@ test("eski NPC hedefsiz arabuluculuk teklifleri kabul/teslimde emanet kilitlemed
   assert.equal(acik.e, 0);
 
   const suren = eski(9002, "surer");
-  toplumAl(k).tk.push(suren as unknown as (typeof toplumAl extends (...args: never[]) => infer R ? R : never)["tk"][number]);
+  toplumAl(k).tk.push(suren as unknown as import("../src/yerlesim/toplum.ts").Teklif);
   a.pa = 84;
   assert.ok(teklifCevap(k, b, "t9002", "teslim", {}, k.ay).ok);
   assert.equal(suren.d, "iptal");
