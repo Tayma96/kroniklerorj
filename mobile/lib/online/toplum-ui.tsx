@@ -61,7 +61,6 @@ export function sartYaz(t: Ceviri, x: TeklifGorunumu, ay: number): string[] {
     case "hediye": satir.push(applyParams(t("onl.tp.s.hediye"), [armaganYaz(t, s)])); break;
     case "gorucu": satir.push(t("onl.tp.s.gorucu")); break;
     case "is": satir.push(applyParams(t("onl.tp.s.is"), [t("onl.tp.is." + (s.is ?? "mektup")), s.tutar ?? 0, s.is === "mektup" ? 1 : 2])); break;
-    case "is": satir.push(applyParams(t("onl.tp.s.is"), [t("onl.tp.is." + (s.is ?? "mektup")), s.tutar ?? 0, s.is === "mektup" ? 1 : 2])); break;
     case "npcIs": satir.push(applyParams(t("onl.tp.s.npcIs"), [s.tutar ?? 0, TOPLUM_SINIR.npcIsTakat])); break;
     case "npcBorc": satir.push(applyParams(t("onl.tp.s.npcBorc"), [s.tutar ?? 0, s.vade ?? 0])); break;
     case "npcDunur": satir.push(applyParams(t("onl.tp.s.npcDunur"), [s.aday?.ad ?? "?"])); break;
@@ -260,7 +259,6 @@ export function TeklifFormu({ p, baslangic, onBitti }: { p: OyuncuProfili; basla
   if (tur === "ortak") onizleme.push(t("onl.tp.f.ortakNot"));
   if (tur === "cirak") onizleme.push(t("onl.tp.f.cirakNot"));
   if (tur === "gorucu") onizleme.push(t("onl.tp.s.gorucu"));
-  if (tur === "is") onizleme.push(applyParams(t("onl.tp.f.isEmanet"), [isUcret]), applyParams(t("onl.tp.f.isSure"), [isTuru === "mektup" ? 1 : 2]));
   if (tur === "is") onizleme.push(applyParams(t("onl.tp.f.isEmanet"), [isUcret]), applyParams(t("onl.tp.f.isSure"), [isTuru === "mektup" ? 1 : 2]));
   onizleme.push(t("onl.tp.f.sure"), t("onl.tp.f.cevapsiz"));
 
