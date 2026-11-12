@@ -158,7 +158,7 @@ test("eski NPC hedefsiz arabuluculuk teklifleri kabul/teslimde emanet kilitlemed
   });
   a.pa = 84;
   const acik = eski(9001, "acik");
-  toplumAl(k).tk.push(acik as unknown as (typeof toplumAl extends (...args: never[]) => infer R ? R : never)["tk"][number]);
+  toplumAl(k).tk.push(acik as unknown as import("../src/yerlesim/toplum.ts").Teklif);
   assert.ok(teklifCevap(k, b, "t9001", "kabul", {}, k.ay).ok);
   assert.equal(acik.d, "dustu");
   assert.equal(a.pa, 92);
