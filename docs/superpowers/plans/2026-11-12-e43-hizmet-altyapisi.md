@@ -2,7 +2,7 @@
 
 **Tarih:** 12 Kasım 2026  
 **Dal:** `feature/online-p5-darbe-zinciri`  
-**Durum:** E4.3-A katalog, hazırlama, ilan, iptal, oyuncu teslimi ve süresi dolan stok işlemleri uygulandı; `lohusa`, `teselli` ve `sazGecesi` katalog kayıtları da eklendi. `sazGecesi`, Hancı düğümüne ek olarak Ozan `sazUstaligi` ile açılan `ortakSahne` sinerjisini zorunlu tutar. CI run #178 başarılı (test ve typecheck). E4.3-B/C/D henüz açık.
+**Durum:** E4.3-A ve E4.3-B uygulandı. NPC talebi yalnız gerçek doğum/ölüm olaylarından açılır; ödül hazineye rezerve edilir, tek teslimliktir, süre/ hedef ölümü halinde iade edilir. Mobil hizmet ekranı NPC taleplerini de gösterir ve teslim eder. E4.3-C/D ile kalan beceri tüketicileri açık.
 
 ## Neden bu plan
 
@@ -75,10 +75,14 @@ Her POST, `istekNo` ile tekrar güvenli olmalı. Yerleşim sınırları ve yetki
 - Satıcı/alıcı hesap kümesi tekilleştirmesi, kendi hizmeti, stok yarışı, süre dolumu ve tekrar güvenliği testleri.
 
 ### E4.3-B — NPC hizmet talepleri
-- [ ] Önce gerçek olay kaynaklarıyla doğum → lohusa ve ölüm → yaslı hane talepleri; yaralı/kaza ancak oyunda gerçek bir yaralanma olayı ve hedef sağlık modeli bulunduğunda açılır.
-- [ ] Talep başına tek ödeme; ilk geçerli teslim alır.
-- [ ] Ödül kasaba hazinesinden ayrılır; bakiye yetersizse talep açılmaz/ödül verilmez. Kasaba hazinesi ve talep defteri aynı kalıcı yazımda güncellenir.
-- [ ] İstekNo, hesap/hane tekilliği, süre sonu, çevrimdışı NPC ve iki kez teslim regresyonları.
+- [x] Gerçek aylık olay kaynakları: doğum → anneye lohusa bakımı; ölüm → yaşayan eşe, yoksa aynı hanedeki yetişkin yakına teselli. Yaralı/kaza talebi eklenmedi; oyunda gerçek yaralanma olayı ve NPC sağlık modeli yok.
+- [x] Talep başına tek teslim ve tek ödeme. Teslim, bir adet hazırlanmış hizmet stoğunu tüketir, hizmetçi tecrübesi verir ve tamamlanma kaydını kroniğe yazar.
+- [x] Ödül tarifte tanımlıdır (lohusa 8, teselli 5 akçe). Açılışta kasaba hanesinden rezerve edilir; bakiye yetersizse talep açılmaz. Süre dolumu veya hedef NPC'nin ölümü halinde rezerv hazineye iade edilir.
+- [x] Aynı hanedeki oyuncu kendi hanesine açılan NPC talebinden ödül alamaz; aynı hane için aynı anda birden fazla açık talep ve aynı kaynak olayın tekrarından doğan kopya engellenir.
+- [x] İstekNo'lu `POST /v1/hizmet/talep-teslim`; tamamlanmış talebin ikinci kez teslimi ödeme/tecrübe üretmez. Mobil ekranda açık NPC talepleri, ödül ve son ay gösterilir; hazırlanmış uygun stok yoksa teslim düğmesi kapanır.
+- [x] Talep açılış/teslim kronik metinleri ve ekran metinleri 6 dilde. NPC'lerin oyuncu `Hal` modeli bulunmadığı için teslim, olmayan bir sağlık değerini değiştirmez; bakım/teselli hizmeti görünür olay ve hazine ödülüyle kayda geçer.
+- [x] Regresyonlar: doğum/ölüm talep türü, yetersiz hazine, tekrar açılış, hane engeli, teslim ve çift teslim, stok tüketimi, süre sonu/hedef ölümü iadesi.
+- [x] GitHub Actions [run #284](https://github.com/Tayma96/kroniklerorj/actions/runs/43136553629): **385 test / 384 geçti / 0 başarısız / 1 atlandı**; mobil TypeScript, 62 görsel yolu, sunucu testleri ve sunucu TypeScript başarılı. Run #285 doğrulaması (ikon düzeltmesi) sürüyor.
 
 ### E4.3-C — Kasaba görevleri
 - Nöbet 4, sayım 1, meclis kaydı 1, talim 2 koltuk.
