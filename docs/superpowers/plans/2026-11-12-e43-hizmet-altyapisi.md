@@ -82,7 +82,7 @@ Her POST, `istekNo` ile tekrar güvenli olmalı. Yerleşim sınırları ve yetki
 - [x] İstekNo'lu `POST /v1/hizmet/talep-teslim`; tamamlanmış talebin ikinci kez teslimi ödeme/tecrübe üretmez. Mobil ekranda açık NPC talepleri, ödül ve son ay gösterilir; hazırlanmış uygun stok yoksa teslim düğmesi kapanır.
 - [x] Talep açılış/teslim kronik metinleri ve ekran metinleri 6 dilde. NPC'lerin oyuncu `Hal` modeli bulunmadığı için teslim, olmayan bir sağlık değerini değiştirmez; bakım/teselli hizmeti görünür olay ve hazine ödülüyle kayda geçer.
 - [x] Regresyonlar: doğum/ölüm talep türü, yetersiz hazine, tekrar açılış, hane engeli, teslim ve çift teslim, stok tüketimi, süre sonu/hedef ölümü iadesi.
-- [x] GitHub Actions [run #284](https://github.com/Tayma96/kroniklerorj/actions/runs/43136553629): **385 test / 384 geçti / 0 başarısız / 1 atlandı**; mobil TypeScript, 62 görsel yolu, sunucu testleri ve sunucu TypeScript başarılı. Run #285 doğrulaması (ikon düzeltmesi) sürüyor.
+- [x] GitHub Actions [run #285](https://github.com/Tayma96/kroniklerorj/actions/runs/43136662787): **385 test / 384 geçti / 0 başarısız / 1 atlandı**; mobil TypeScript, 62 görsel yolu, sunucu testleri ve sunucu TypeScript başarılı.
 
 ### E4.3-C — Kasaba görevleri
 - Nöbet 4, sayım 1, meclis kaydı 1, talim 2 koltuk.
