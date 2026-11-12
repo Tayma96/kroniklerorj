@@ -610,7 +610,7 @@ export class YerlesimMotoru {
       tarifler: tarifListesi(kar),
       temelIsler: temelIsOnizleme(kar, oyuncuSayaci(k), ay, k.pr),
       npcKota: {
-        sat: kalanSatisKotasi(kar, ay),
+        sat: kalanSatisKotasi(kar, ay, oyuncuSayaci(k)),
         satTavan: NPC_SATIS_KOTASI,
         al: Object.fromEntries(MAL_IDLERI.filter((m) => MALLAR[m].taban > 0).map((m) => [m, npcAlimTavan - npcdenAlinan(kar, m, ay)])),
         alTavan: npcAlimTavan,
