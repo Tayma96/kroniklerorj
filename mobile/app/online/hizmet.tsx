@@ -1,6 +1,6 @@
 // E4.3 hizmet pazarı: öğrenilmiş hizmeti hazırla, ilan et, satın al veya ilanı geri çek.
 import { useCallback, useEffect, useState } from "react";
-import { View, Text, TextInput } from "react-native";
+import { View, Text, TextInput, type ReactNode } from "react-native";
 import { useRouter } from "expo-router";
 import { useI18n, applyParams } from "../../lib/i18n";
 import { C, F } from "../../lib/theme";
@@ -12,7 +12,7 @@ import { onlineEkranAcik } from "../../lib/online/kapi";
 import { Bant, Cerceve, CizgiDugme, GeriDugme, Madalyon, geriGit, hiza, yon } from "../../lib/online/ui";
 import { Baslik2, Rozet, SayfaBasi, Yukleniyor } from "../../lib/online/yasam-ui";
 import { ekHataAnahtari } from "../../lib/online/ek-istemci";
-import { useHizmetIstemci, type HizmetDurumu } from "../../lib/online/hizmet-veri";
+import { useHizmetIstemci, type HizmetDurumu, type HizmetIstemci } from "../../lib/online/hizmet-veri";
 
 type Ceviri = (k: string) => string;
 const sayi = (v: string, varsayilan: number) => {
@@ -20,7 +20,7 @@ const sayi = (v: string, varsayilan: number) => {
   return Number.isInteger(n) && n > 0 ? n : varsayilan;
 };
 
-function HizmetKarti({ baslik, alt, icon, rtl, children }: { baslik: string; alt: string; icon: string; rtl: boolean; children: React.ReactNode }) {
+function HizmetKarti({ baslik, alt, icon, rtl, children }: { baslik: string; alt: string; icon: string; rtl: boolean; children: ReactNode }) {
   return <Cerceve ic={{ padding: 12, gap: 9 }}>
     <View style={{ flexDirection: yon(rtl), alignItems: "center", gap: 10 }}>
       <Madalyon icon={icon} size={42} />
@@ -56,7 +56,7 @@ function HizmetEkran() {
 
   useEffect(() => { void yukle(); }, [yukle]);
 
-  const islem = async (yap: () => ReturnType<NonNullable<typeof istemci>["hazirla"]>, mesaj: string) => {
+  const islem = async (yap: () => ReturnType<HizmetIstemci["hazirla"]>, mesaj: string) => {
     if (!istemci) return;
     setHata(null); setSonuc(null);
     const r = await yap();
@@ -75,7 +75,7 @@ function HizmetEkran() {
     <SayfaBasi ust={online.profil.yerlesim} baslik={t("onl.hizmet.baslik")} alt={t("onl.hizmet.alt")} rtl={rtl} />
     {!istemci ? <Bant tur="bilgi" metin={t("onl.hizmet.onizlemeYok")} rtl={rtl} /> : null}
     {hata ? <Bant metin={hata} rtl={rtl} /> : null}
-    {sonuc ? <Bant tur="basari" metin={sonuc} rtl={rtl} /> : null}
+    {sonuc ? <Bant tur="bilgi" metin={sonuc} rtl={rtl} /> : null}
     {yukleniyor && !durum ? <Yukleniyor metin={t("onl.hizmet.yukleniyor")} /> : null}
 
     <Baslik2 metin={t("onl.hizmet.katalog")} rtl={rtl} sag={durum ? <Text style={{ fontFamily: F.display, color: C.gold }}>{durum.katalog.length}</Text> : undefined} />
@@ -103,7 +103,7 @@ function HizmetEkran() {
     {durum?.ilanlar.length ? durum.ilanlar.map((x) => <HizmetKarti key={x.id} baslik={t("onl.hizmet.ad." + x.hizmet)} alt={applyParams(t("onl.hizmet.ilanBilgi"), [x.ad, x.adet, x.birimFiyat, x.kalanAy])} icon="store" rtl={rtl}>
       {x.benim
         ? <CizgiDugme etiket={t("onl.hizmet.ilanGeri")} icon="undo" rtl={rtl} kucuk kapali={yukleniyor} onPress={() => void islem(() => istemci!.geri(x.id), t("onl.hizmet.ilanIade"))} />
-        : <CizgiDugme etiket={t("onl.hizmet.satinAl")} icon="coins" rtl={rtl} kucuk kapali={yukleniyor || online.profil?.hesapId === x.ad} onPress={() => void islem(() => istemci!.satinAl(x.id, 1), t("onl.hizmet.satinAlindi"))} />}
+        : <CizgiDugme etiket={t("onl.hizmet.satinAl")} icon="coins" rtl={rtl} kucuk kapali={yukleniyor} onPress={() => void islem(() => istemci!.satinAl(x.id, 1), t("onl.hizmet.satinAlindi"))} />}
     </HizmetKarti>) : <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{t("onl.hizmet.pazarBos")}</Text>}
     <CizgiDugme etiket={t("onl.hizmet.yenile")} icon="refresh-cw" rtl={rtl} kucuk kapali={yukleniyor} onPress={() => void yukle()} />
   </View>;
