@@ -61,11 +61,11 @@ export function devletYonet(d: BolgeDurumu, kimlik: SiyasiKimlik, govde: Record<
       if (karar !== "kabul" && karar !== "ret") return "deger_sinir_disi";
       const gelen = s.taninmaGelen?.[beylik.id];
       if (!gelen || gelen.yanitlandi || gelen.istekId !== govde.istekId) return "hedef_uygun_degil";
+      const hedefAd = BEYLIKLER.find((x) => x.id === d.id)?.ad;
+      if (!hedefAd) return "deger_sinir_disi";
       const yanitlar = (s.taninmaYanits ??= {});
       yanitlar[beylik.id] = { karar, ay: d.ay, ad: beylik.ad, istekId: gelen.istekId };
       gelen.yanitlandi = true;
-      const hedefAd = BEYLIKLER.find((x) => x.id === d.id)?.ad;
-      if (!hedefAd) return "deger_sinir_disi";
       (d.diplomasiGiden ??= []).push({
         tur: "taninmaYanit", hedef: beylik.id, istekId: gelen.istekId, karar, ay: d.ay, ad: hedefAd,
       });
