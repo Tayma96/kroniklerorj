@@ -16,7 +16,7 @@ Durum: kısmi uygulama. `tasarruf` tüketicisi, üç ortak-durum/han tüketicisi
 ## Kalan kancaların envanteri
 
 14 beceri ağacı dosyasının tamamı tarandı. Şu an mevcut sistem tüketicisi bulunmayan etkiler:
-- `hizmet`: 52 kullanımın 12 tanesi gerçek tüketiciye bağlandı (`ikram`, `nobet`, `talim`, `vergiSayimi`, `meclisKaydi`, `turku`, `yaraBak`, `kirikSar`, `lohusa`, `teselli`, `sazGecesi` ve ortak derdin diğer hizmet kancaları); 40 kullanım kaldı. E4.3-A/B/C sunucu ve mobil akışları tamamlandı; iki taraflı işler açık.
+- `hizmet`: 52 kullanımın 11 tanesi gerçek tüketiciye bağlandı (`ikram`, `nobet`, `talim`, `vergiSayimi`, `meclisKaydi`, `turku`, `yaraBak`, `kirikSar`, `lohusa`, `teselli`, `sazGecesi`); 41 kullanım kaldı. E4.3-A/B/C sunucu ve mobil akışları tamamlandı; iki taraflı işler açık.
 - `hak`: 203 kullanım — makam, lonca, ticaret, garnizon, sosyal yardım ve toplumsal ayrıcalıklar için sunucu tarafı yetki/eylem matrisi gerekir.
 - `sinerji`: 21 kullanım — `ortakSahne` sinerjisi `sazGecesi` hizmetini açmak için tüketiliyor; 20 kullanım kaldı. Diğer kimliklerin gerçek tüketicileri henüz yok.
 - `tasarruf`: 1 kullanım vardı; bu dalda bağlandı.
