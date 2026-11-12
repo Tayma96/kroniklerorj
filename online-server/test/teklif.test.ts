@@ -20,6 +20,7 @@ import {
   tedarikZinciriMi,
 } from "../src/yerlesim/teklif.ts";
 import { toplumAl } from "../src/yerlesim/toplum.ts";
+import { gostergeOku } from "../src/yerlesim/topluluk-kayit.ts";
 import type { Karakter, Kasaba } from "../src/yerlesim/tipler.ts";
 import { oyuncuEkle, testKasabasi } from "./kasaba-yardimci.ts";
 
@@ -250,4 +251,94 @@ test("olağan düzen: alıcı yokken varsayılan cevap uygulanır; evlilik kanca
   const buyuk = teklifOlustur(k, oyuncuEkle(k, 5, k.ay - 200), b, { tur: "borc", yon: "iste", tutar: 11, vade: 2 }, k.ay);
   assert.ok(buyuk.ok);
   assert.equal(buyuk.deger.teklif.v, "dustu");
+});
+
+
+function isBecerisi(kar: Karakter, meslek: "arabulucu" | "asker" | "katip", dugum: string): void {
+  kar.ms = { a: meslek, y: "", s: { [meslek]: { kd: 0, hz: 0, cy: 0, sv: { [dugum]: 1 } } } };
+  kar.tk = 18;
+  kar.ta = 200;
+}
+
+test("iki taraflı mektup işi: emanet, açık rıza, beceri kapısı, teslim ve tek ödeme", () => {
+  const { k, a, b } = kur();
+  a.h = "is-veren"; b.h = "is-yapan"; a.e = 101; b.e = 202;
+  const ilkPara = a.pa;
+  const teklif = teklifOlustur(k, a, b, { tur: "is", is: "mektup", tutar: 12 }, k.ay);
+  assert.ok(teklif.ok);
+  if (!teklif.ok) return;
+  const id = `t${teklif.deger.teklif.i}`;
+  assert.equal(a.pa, ilkPara - 12);
+  assert.equal(teklif.deger.teklif.e, 12);
+  assert.equal(teklif.deger.teklif.v, "dustu", "iş sözleşmesi çevrimdışı otomatik kabul edilmez");
+  assert.deepEqual(duzenGuncelle(b, { gelen: { is: "kabul" } }), { ok: false, hata: "duzen_gecersiz" });
+  assert.deepEqual(teklifCevap(k, b, id, "kabul", {}, k.ay), { ok: false, hata: "dugum_kapali" });
+
+  isBecerisi(b, "katip", "katip.koyMektubu");
+  assert.ok(teklifCevap(k, b, id, "kabul", {}, k.ay).ok);
+  assert.equal(teklif.deger.teklif.d, "surer");
+  assert.equal(teklif.deger.teklif.sa, k.ay + 1);
+  const onceMoral = gostergeOku(k, "moral");
+  const oncePara = b.pa;
+  assert.ok(teklifCevap(k, b, id, "teslim", {}, k.ay).ok);
+  assert.equal(teklif.deger.teklif.d, "bitti");
+  assert.equal(teklif.deger.teklif.e, 0);
+  assert.equal(b.pa, oncePara + 12);
+  assert.equal(a.pa, ilkPara - 12);
+  assert.equal(b.tk, 17);
+  assert.equal(gostergeOku(k, "moral"), onceMoral + 1);
+  assert.equal(teklifCevap(k, b, id, "teslim", {}, k.ay).ok, false, "aynı sözleşme ikinci kez ödenmez");
+});
+
+test("iki taraflı muhafız işi: zincir zırhı olmadan teslim olmaz; teslimde asayiş ve ücret birlikte işlenir", () => {
+  const { k, a, b } = kur();
+  a.h = "muhafiz-veren"; b.h = "muhafiz-yapan"; a.e = 303; b.e = 404;
+  const teklif = teklifOlustur(k, a, b, { tur: "is", is: "muhafiz", tutar: 8 }, k.ay);
+  assert.ok(teklif.ok);
+  if (!teklif.ok) return;
+  const id = `t${teklif.deger.teklif.i}`;
+  isBecerisi(b, "asker", "asker.kervanMuhafizligi");
+  assert.ok(teklifCevap(k, b, id, "kabul", {}, k.ay).ok);
+  assert.deepEqual(teklifCevap(k, b, id, "teslim", {}, k.ay), { ok: false, hata: "arac_yok" });
+  b.ev = { zincir: 1 };
+  const onceAsayis = gostergeOku(k, "asayis");
+  const oncePara = b.pa;
+  assert.ok(teklifCevap(k, b, id, "teslim", {}, k.ay).ok);
+  assert.equal(b.pa, oncePara + 8);
+  assert.equal(gostergeOku(k, "asayis"), onceAsayis + 1);
+  assert.equal(b.as?.zincir, 1);
+});
+
+test("iki taraflı işler: aynı hesap/hane engeli, ret, iptal ve süre aşımında emanet iadesi", () => {
+  const { k, a, b } = kur();
+  a.h = "is-kume-a"; b.h = "is-kume-b"; a.e = 505; b.e = 606;
+  const ilkPara = a.pa;
+  const ayniHesap = teklifOlustur(k, a, { ...b, h: a.h }, { tur: "is", is: "mektup", tutar: 5 }, k.ay);
+  assert.deepEqual(ayniHesap, { ok: false, hata: "ayni_kume" });
+  const ayniHane = teklifOlustur(k, a, { ...b, e: a.e }, { tur: "is", is: "mektup", tutar: 5 }, k.ay);
+  assert.deepEqual(ayniHane, { ok: false, hata: "ayni_kume" });
+
+  const ret = teklifOlustur(k, a, b, { tur: "is", is: "mektup", tutar: 5 }, k.ay);
+  assert.ok(ret.ok);
+  if (!ret.ok) return;
+  assert.ok(teklifCevap(k, b, `t${ret.deger.teklif.i}`, "ret", {}, k.ay).ok);
+  assert.equal(a.pa, ilkPara);
+
+  const iptal = teklifOlustur(k, a, b, { tur: "is", is: "arabuluculuk", tutar: 6 }, k.ay);
+  assert.ok(iptal.ok);
+  if (!iptal.ok) return;
+  isBecerisi(b, "arabulucu", "arabulucu.araBulma");
+  assert.ok(teklifCevap(k, b, `t${iptal.deger.teklif.i}`, "kabul", {}, k.ay).ok);
+  assert.ok(teklifCevap(k, a, `t${iptal.deger.teklif.i}`, "bitir", {}, k.ay).ok);
+  assert.equal(iptal.deger.teklif.d, "iptal");
+  assert.equal(a.pa, ilkPara);
+
+  const dusen = teklifOlustur(k, a, b, { tur: "is", is: "mektup", tutar: 7 }, k.ay);
+  assert.ok(dusen.ok);
+  if (!dusen.ok) return;
+  isBecerisi(b, "katip", "katip.koyMektubu");
+  assert.ok(teklifCevap(k, b, `t${dusen.deger.teklif.i}`, "kabul", {}, k.ay).ok);
+  bekle(k, 2);
+  assert.equal(dusen.deger.teklif.d, "dustu");
+  assert.equal(a.pa, ilkPara);
 });
