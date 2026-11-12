@@ -19,7 +19,7 @@ import { takatTazele } from "../src/yerlesim/karakter.ts";
 import { oyuncuSayaci } from "../src/yerlesim/lonca.ts";
 import { meslekSec } from "../src/yerlesim/meslek.ts";
 import { NPC_AYLIK_KOTA, NPC_CARPAN, malMeslegindeMi, npcFiyat, npcdenAl, npcdenAlinan, saticiDegeri, stokFiyat } from "../src/yerlesim/npc-taban.ts";
-import { NPC_SATIS_KOTASI, npcyeSat, satilan } from "../src/yerlesim/pazar.ts";
+import { npcSatisKotasi, npcyeSat, satilan } from "../src/yerlesim/pazar.ts";
 import { PAZAR_ILAN_EN_COK, acikIlanlar, ilanAc, ilanGeri, ilanIsle, pazarEmaneti } from "../src/yerlesim/pazar-tahta.ts";
 import { siparisDonumu, siparisTeslim } from "../src/yerlesim/siparis.ts";
 import { tarifListesi, tarifYap } from "../src/yerlesim/tarif.ts";
@@ -118,7 +118,7 @@ function ekonomiSim(pompali: boolean) {
     for (const { c, m } of oyuncular) {
       takatTazele(c, ay);
       const deger = (mal: MalId) => saticiDegeri(c, mal, sayac()).toplam;
-      const npcKalan = (mal: MalId) => Math.max(0, NPC_SATIS_KOTASI - satilan(c, mal, ay));
+      const npcKalan = (mal: MalId) => Math.max(0, npcSatisKotasi(mal) - satilan(c, mal, ay));
       const alIlanlari = (mal: MalId) => acikIlanlar(k.ek).filter((x) => x.t === "al" && x.ml === mal && x.o !== c.o).sort((a, b) => b.f - a.f || a.i - b.i);
       /** `adet` yeni birimin değeri: önce NPC kotası (satış değeri), sonra başkalarının alım ilanları (ilan fiyatı). */
       const getiri = (mal: MalId, adet: number): number => {
@@ -271,7 +271,7 @@ function ekonomiSim(pompali: boolean) {
         assert.ok(ilanAc(k, c, { tur: "sat", mal, adet: n, fiyat: Math.ceil(MALLAR[mal].taban * pay), sure: 1 }, ay).ok);
       }
       for (const mal of MAL_IDLERI) {
-        const adet = Math.min(c.ev?.[mal] ?? 0, NPC_SATIS_KOTASI - satilan(c, mal, ay));
+        const adet = Math.min(c.ev?.[mal] ?? 0, npcSatisKotasi(mal) - satilan(c, mal, ay));
         if (adet <= 0 || MALLAR[mal].taban === 0) continue;
         const r = npcyeSat(c, mal, adet, sayac(), ay, k.st);
         assert.ok(r.ok);
