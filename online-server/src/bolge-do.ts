@@ -142,7 +142,7 @@ export class BolgeDO {
           case "taninmaYanit":
             r = await bolgeCagir(this.#env, {
               islem: "taninmaYanitAl", bolge: ileti.hedef, kaynak: d.id,
-              istekId: ileti.istekId, karar: ileti.karar, ay: ileti.ay, ad: ileti.ad,
+              istekId: ileti.istekId, karar: "karar" in ileti ? ileti.karar : "ret", ay: ileti.ay, ad: ileti.ad,
             });
             break;
           case "ittifakIstek":
