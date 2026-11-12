@@ -273,7 +273,7 @@ function ekonomiSim(pompali: boolean) {
         assert.ok(ilanAc(k, c, { tur: "sat", mal, adet: n, fiyat: Math.ceil(MALLAR[mal].taban * pay), sure: 1 }, ay).ok);
       }
       for (const mal of MAL_IDLERI) {
-        const adet = Math.min(c.ev?.[mal] ?? 0, npcSatisKotasi(mal) - satilan(c, mal, ay));
+        const adet = Math.min(c.ev?.[mal] ?? 0, npcKalan(mal));
         if (adet <= 0 || MALLAR[mal].taban === 0) continue;
         const r = npcyeSat(c, mal, adet, sayac(), ay, k.st);
         assert.ok(r.ok);
