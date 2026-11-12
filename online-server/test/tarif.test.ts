@@ -236,3 +236,24 @@ test("pulZirhAstari sinerjisi yalnız dokumacı astarı ve demirci zırh ustalı
   assert.equal(kaliteBecerisi(diger, pulZirh), 0);
   assert.equal(kaliteBecerisi(c, TARIFLER.zincir), 25, "sinerji başka zırh tariflerine taşmaz");
 });
+
+
+test("ozelPastirma sinerjisi aşçı pastırmacı ve çiftçi kesim/post bilgisi birlikteyken yalnız pastırma kalitesini artırır", () => {
+  const k = testKasabasi();
+  const c = oyuncuEkle(k, 95, k.ay - 16 * 12);
+  const pastirma = TARIFLER.pastirma;
+
+  seviyeVer(c, "asci.pastirmaci", 3);
+  assert.equal(sinerjiAcik(c, "ozelPastirma"), false, "aşçı düğümü tek başına sinerji vermez");
+  assert.equal(kaliteBecerisi(c, pastirma), 20, "pastırmacının kendi +20 kalite etkisi korunur");
+
+  seviyeVer(c, "ciftci.kesimVePost", 1);
+  assert.equal(sinerjiAcik(c, "ozelPastirma"), true);
+  assert.equal(kaliteBecerisi(c, pastirma), 30, "iki düğüm birlikte pastırmaya +10 ekler");
+
+  const diger = oyuncuEkle(k, 96, k.ay - 16 * 12);
+  seviyeVer(diger, "ciftci.kesimVePost", 1);
+  assert.equal(sinerjiAcik(diger, "ozelPastirma"), false, "çiftçi düğümü tek başına sinerji vermez");
+  assert.equal(kaliteBecerisi(diger, pastirma), 0);
+  assert.equal(kaliteBecerisi(c, TARIFLER.kuruEt), 0, "sinerji kuru ete taşmaz");
+});
