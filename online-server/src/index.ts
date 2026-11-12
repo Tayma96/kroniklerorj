@@ -100,7 +100,7 @@
 
 import { GoogleDogrulayici, GoogleHatasi, istemciKimlikleri } from "./google.ts";
 import { dunyaCagir, hesapCagir, hesapKimligi, jsonYanit, yonetimCagir } from "./ic.ts";
-import { oturumDogrula, oturumOlustur } from "./oturum.ts";
+import { oturumDogrula, oturumOlustur, sabitSurecliEsit } from "./oturum.ts";
 import {
   basarili,
   hata,
@@ -208,6 +208,35 @@ async function hesaba(
   const hazir = await ileti(yetki.deger);
   if (!hazir.ok) return basarisizYanit(hazir);
   return sonucYaniti(await hesapCagir(env, yetki.deger, hazir.deger));
+}
+
+async function testGiris(istek: Request, env: Env): Promise<Response> {
+  // Kapalıysa uç dışarıdan görünmez. Açık tutulacaksa bu Worker yalnız test ortamı olmalıdır.
+  const gizliKod = env.TEST_GIRIS_KODU;
+  if (env.TEST_GIRIS_ACIK !== "1" || typeof gizliKod !== "string" || gizliKod.length < 32) {
+    return hataYaniti("bulunamadi");
+  }
+  const govde = await govdeOku(istek);
+  if (!govde.ok) return hataYaniti(govde.hata);
+  const kod = govde.deger.kod;
+  const cihazId = govde.deger.cihazId;
+  if (typeof kod !== "string" || kod.length !== gizliKod.length || typeof cihazId !== "string"
+    || !/^test-[A-Za-z0-9_-]{16,64}$/.test(cihazId)) return hataYaniti("gecersiz_istek");
+  const kodBayt = new TextEncoder().encode(kod);
+  const gizliBayt = new TextEncoder().encode(gizliKod);
+  if (!sabitSurecliEsit(kodBayt, gizliBayt)) return hataYaniti("gecersiz_istek");
+  const anahtar = oturumAnahtari(env);
+  if (!anahtar) return hataYaniti("yapilandirma_eksik");
+
+  // Cihaz kimliği yerel depoda üretilir; "test:" ad alanı Google sub'larıyla çakışmaz.
+  const sub = `test:${cihazId}`;
+  const hesapId = hesapKimligi(env, sub);
+  const kayit = await hesapCagir<{ profilVar: boolean; uzaklastirma?: { bitis: number | null } }>(env, hesapId, {
+    islem: "giris", hesapId, sub,
+  });
+  if (!kayit.ok) return basarisizYanit(kayit);
+  const oturum = await oturumOlustur(hesapId, anahtar, Date.now());
+  return jsonYanit({ oturum, profilVar: kayit.deger.profilVar, ...(kayit.deger.uzaklastirma ? { uzaklastirma: kayit.deger.uzaklastirma } : {}) });
 }
 
 async function giris(istek: Request, env: Env): Promise<Response> {
@@ -350,6 +379,8 @@ async function yonlendir(istek: Request, env: Env): Promise<Response> {
   const yontem = istek.method;
   const dil = url.searchParams.get("dil");
   switch (yol) {
+    case "/v1/test-giris":
+      return yontem === "POST" ? testGiris(istek, env) : hataYaniti("yontem_yok");
     case "/v1/giris":
       return yontem === "POST" ? giris(istek, env) : hataYaniti("yontem_yok");
     case "/v1/dunya":
