@@ -331,6 +331,7 @@ function YasamEkran() {
     <CizgiDugme etiket={t("onl.hizmet.kisa")} icon="briefcase" rtl={rtl} kucuk onPress={() => router.push("/online/hizmet")} />
     <CizgiDugme etiket={t("onl.siyaset.baslik")} icon="castle" rtl={rtl} kucuk onPress={() => router.push("/online/siyaset")} />
     <CizgiDugme etiket={t("onl.eko.pazar")} icon="shopping-basket" rtl={rtl} kucuk onPress={() => router.push("/online/pazar")} />
+    <CizgiDugme etiket={t("onl.eko.mulk")} icon="house" rtl={rtl} kucuk onPress={() => router.push("/online/mulk")} />
     <CizgiDugme etiket={t("onl.lv.baslik")} icon="award" rtl={rtl} kucuk onPress={() => router.push("/online/levha")} />
     <CizgiDugme etiket={t("onl.df.baslik")} icon="scroll-open" rtl={rtl} kucuk onPress={() => router.push("/online/defter")} />
 
