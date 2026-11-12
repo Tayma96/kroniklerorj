@@ -22,6 +22,9 @@ import {
   tedarikZinciriMi,
 } from "../src/yerlesim/teklif.ts";
 import { toplumAl } from "../src/yerlesim/toplum.ts";
+import { ucgenAl } from "../src/yerlesim/bilgi.ts";
+import { arabulucuYap } from "../src/yerlesim/arabulucu.ts";
+import { baglam, dostYap, senaryo } from "./ucgen-yardimci.ts";
 import { gostergeOku } from "../src/yerlesim/topluluk-kayit.ts";
 import type { Karakter, Kasaba } from "../src/yerlesim/tipler.ts";
 import { oyuncuEkle, testKasabasi } from "./kasaba-yardimci.ts";
@@ -65,6 +68,88 @@ function hizmetciKur(k: Kasaba, id: number, meslek: "arabulucu" | "asker" | "kat
   } as unknown as NonNullable<Karakter["ms"]>;
   return kar;
 }
+
+function arabulucuBeceri(kar: Karakter): void {
+  kar.ms = {
+    a: "arabulucu",
+    y: "",
+    s: { arabulucu: { a: "arabulucu", kd: 0, hz: 0, cy: 0, sv: { "arabulucu.araBulma": 1 } } },
+  } as unknown as NonNullable<Karakter["ms"]>;
+}
+
+test("teklif arabuluculuğu gerçek NPC uzlaşmasını çalıştırır, ücreti ve tazminatı ayrı emanet yönetir", () => {
+  const { k, berkay, hasan, murat } = senaryo("kurnaz", -42, 35);
+  dostYap(k, berkay.o, hasan.o);
+  arabulucuBeceri(hasan);
+  berkay.pa = 50;
+  hasan.pa = 100;
+  const once = teklifOlustur(k, berkay, hasan, {
+    tur: "is", is: "arabuluculuk", tutar: 5,
+    arabuluculukNpc: `n${murat.i}`, arabuluculukBedel: "tazminat", arabuluculukMiktar: 7,
+  }, k.ay);
+  assert.ok(once.ok, JSON.stringify(once));
+  const t = once.deger.teklif;
+  assert.equal(berkay.pa, 38, "iş ücreti + tazminat birlikte rezerve edilir");
+  assert.equal(t.e, 12);
+  assert.ok(teklifCevap(k, hasan, `t${t.i}`, "kabul", {}, k.ay).ok);
+  assert.equal(t.d, "surer");
+  assert.equal(t.e, 5, "tazminat ayrı arabuluculuk talebine aktarıldı");
+  assert.ok(t.s.ta !== undefined);
+  const talep = ucgenAl(k).at.find((x) => x.i === t.s.ta)!;
+  assert.equal(talep.teklif, t.i);
+  assert.equal(talep.m, 7);
+  assert.deepEqual(arabulucuYap(baglam(k, hasan), { talep: talep.i }, () => 0), { ok: false, hata: "talep_yok" }, "üçgen ucundan sözleşme atlanamaz");
+  const teslim = teklifCevap(k, hasan, `t${t.i}`, "teslim", {}, k.ay);
+  assert.ok(teslim.ok, JSON.stringify(teslim));
+  assert.equal(t.d, "bitti");
+  assert.equal(t.e, 0);
+  assert.equal(t.sn?.startsWith("arabuluculuk_"), true);
+  assert.equal(hasan.pa, 105, "yalnız iş ücreti arabulucuya ödenir");
+  assert.ok(["bitti", "ret"].includes(talep.d), "gerçek NPC arabuluculuk talebi sonuçlandı");
+  assert.deepEqual(teklifCevap(k, hasan, `t${t.i}`, "teslim", {}, k.ay), { ok: false, hata: "teklif_kapandi" });
+});
+
+test("ücretli arabuluculuk sözleşmesi iptalinde hem hizmet ücreti hem NPC tazminatı iade edilir", () => {
+  const { k, berkay, hasan, murat } = senaryo("kurnaz", -42, 35);
+  dostYap(k, berkay.o, hasan.o);
+  arabulucuBeceri(hasan);
+  berkay.pa = 50;
+  hasan.pa = 100;
+  const ac = teklifOlustur(k, berkay, hasan, {
+    tur: "is", is: "arabuluculuk", tutar: 5,
+    arabuluculukNpc: `n${murat.i}`, arabuluculukBedel: "tazminat", arabuluculukMiktar: 7,
+  }, k.ay);
+  assert.ok(ac.ok, JSON.stringify(ac));
+  const t = ac.deger.teklif;
+  assert.ok(teklifCevap(k, hasan, `t${t.i}`, "kabul", {}, k.ay).ok);
+  const talep = ucgenAl(k).at.find((x) => x.i === t.s.ta)!;
+  assert.equal(berkay.pa, 38);
+  assert.ok(teklifCevap(k, hasan, `t${t.i}`, "bitir", {}, k.ay).ok);
+  assert.equal(t.d, "iptal");
+  assert.equal(t.e, 0);
+  assert.equal(talep.d, "geri");
+  assert.equal(talep.m, 0);
+  assert.equal(berkay.pa, 50, "tazminat ve iş ücreti tam iade");
+  assert.equal(hasan.pa, 100, "iptalde arabulucu ücret alamaz");
+});
+
+test("arabuluculuk işi dostluk ve gerçek NPC kırgınlığı olmadan teklif edilemez", () => {
+  const { k, berkay, hasan, murat } = senaryo("kurnaz", -42, 35);
+  arabulucuBeceri(hasan);
+  assert.deepEqual(teklifOlustur(k, berkay, hasan, {
+    tur: "is", is: "arabuluculuk", tutar: 5,
+    arabuluculukNpc: `n${murat.i}`, arabuluculukBedel: "ozur",
+  }, k.ay), { ok: false, hata: "dost_degil" });
+  dostYap(k, berkay.o, hasan.o);
+  // NPC'ye karşı kırgınlık yoksa teklif yine sunucu tarafından reddedilir.
+  const ili = k.ili.get(berkay.o)!;
+  const { gorusAyarla } = await import("./ucgen-yardimci.ts");
+  gorusAyarla(k, murat, berkay, 0);
+  assert.deepEqual(teklifOlustur(k, berkay, hasan, {
+    tur: "is", is: "arabuluculuk", tutar: 5,
+    arabuluculukNpc: `n${murat.i}`, arabuluculukBedel: "ozur",
+  }, k.ay), { ok: false, hata: "kirgin_degil" });
+});
 
 test("teklif yaşam döngüsü: hediye emaneti kilitlenir, cevapsız kalınca cezasız düşer ve emanet döner", () => {
   const { k, a, b } = kur();
