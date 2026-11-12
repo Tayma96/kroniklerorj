@@ -247,8 +247,8 @@ function ToplulukEkran() {
           <CizgiDugme etiket={t("onl.topluluk.zaviye.armaKaydet")} icon="shield" rtl={rtl} kucuk kapali={yukleniyor} onPress={() => zaviyeEylem("arma", { sekil: zaviyeSekil, renk: zaviyeRenk })} />
         </> : null}
         <Text style={{ fontFamily: F.display, color: C.goldBright }}>{t("onl.topluluk.zaviye.ahiOyu")}</Text>
-        <Secenekler secenekler={durum.zaviye.ben.uyeler.filter((u) => u.id !== online.yerlesim?.ben.id).map((u) => u.id)} secili={zaviyeAday} onSec={setZaviyeAday} etiket={(id) => durum.zaviye.ben?.uyeler.find((u) => u.id === id)?.ad ?? id} />
-        <CizgiDugme etiket={t("onl.topluluk.zaviye.oyVer")} icon="vote" rtl={rtl} kucuk kapali={yukleniyor || !zaviyeAday || !durum.zaviye.ahiSarti.adayim} onPress={() => zaviyeEylem("oy", { hedef: zaviyeAday })} />
+        <Secenekler secenekler={durum.zaviye.ben.uyeler.map((u) => u.id)} secili={zaviyeAday} onSec={setZaviyeAday} etiket={(id) => durum.zaviye.ben?.uyeler.find((u) => u.id === id)?.ad ?? id} />
+        <CizgiDugme etiket={t("onl.topluluk.zaviye.oyVer")} icon="vote" rtl={rtl} kucuk kapali={yukleniyor || !zaviyeAday} onPress={() => zaviyeEylem("oy", { hedef: zaviyeAday })} />
         <Text style={{ fontFamily: F.serif, color: C.parchmentDim, fontSize: 12 }}>{t(durum.zaviye.ahiSarti.adayim ? "onl.topluluk.zaviye.oyUygun" : "onl.topluluk.zaviye.oyKapali")}</Text>
         <CizgiDugme etiket={t("onl.topluluk.zaviye.ayril")} icon="log-out" rtl={rtl} kucuk kapali={yukleniyor} onPress={() => zaviyeEylem("ayril")} />
         {durum.zaviye.ben.kasaDefteri?.slice(-5).reverse().map((h, i) => <Text key={h.ay + h.kim + i} style={{ fontFamily: F.serif, color: C.parchmentMuted, fontSize: 11.5 }}>{applyParams(t("onl.topluluk.zaviye.defter"), [h.ay, h.kim, h.alan ?? t("onl.topluluk.zaviye.kasa"), h.tutar])}</Text>)}
