@@ -427,7 +427,7 @@ test("P6 ittifak: iki taraflı istek, kabul teyidi, ret ve süre aşımı idempo
   assert.equal(devletYonet(hedef, hedefBey, { tur: "ittifakYanit", kaynakBolge: "demirhan", istekId: istek.istekId, karar: "kabul" }), null);
   assert.equal(hedef.devlet?.ittifakGelen?.demirhan?.yanitlandi, true);
   assert.equal(hedef.devlet?.ittifaklar?.demirhan?.durum, "kabulBekliyor");
-  const ikinciIstek = "demirhan:2:0:ittifak";
+  const ikinciIstek = "demirhan:ikinci:0:ittifak";
   assert.equal(ittifakIstekAl(hedef, "demirhan", ikinciIstek, 0, ad("demirhan")), null);
   assert.equal(hedef.diplomasiGiden?.some((x) => x.tur === "ittifakYanit" && x.istekId === ikinciIstek && x.karar === "ret"), true, "kabul bekleyen ilişkiye ikinci istek otomatik reddedilir");
 
