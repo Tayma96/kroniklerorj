@@ -1,6 +1,6 @@
 // Debdebe mağazası ve ücretsiz Dene sahneleri. Gerçek satın alma, mağaza makbuz doğrulaması bağlanana kadar kapalıdır.
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { View, Text, ScrollView } from "react-native";
+import { View, Text } from "react-native";
 import { useRouter } from "expo-router";
 import { useI18n, applyParams } from "../../lib/i18n";
 import { C, F } from "../../lib/theme";
@@ -9,7 +9,7 @@ import { OnlineKapisi, useOnline } from "../../lib/online/durum";
 import { onlineEkranAcik } from "../../lib/online/kapi";
 import { Bant, Cerceve, CizgiDugme, GeriDugme, Madalyon, geriGit, hiza, yon } from "../../lib/online/ui";
 import { Baslik2, BosKart, Hap, OnlineSayfa, SayfaBasi, Yukleniyor, YerlesimBekle, sahneGorseli } from "../../lib/online/yasam-ui";
-import { useDebdebeIstemci, type DebdebeGorunumu, type DenePaketi } from "../../lib/online/debdebe-veri";
+import { useDebdebeIstemci, type DebdebeGorunumu, type DenePaketi, type DebdebeUrun } from "../../lib/online/debdebe-veri";
 import { ekHataAnahtari } from "../../lib/online/ek-istemci";
 import { hap } from "../../lib/haptics";
 import { istekNoUret } from "../../lib/online/depo";
@@ -44,7 +44,6 @@ function DebdebeEkran() {
   }, [ist, t]);
   useEffect(() => { void yukle(); }, [yukle]);
   const urun = useMemo(() => veri?.katalog.find((x) => x.id === secili), [veri, secili]);
-  const sahip = !!veri?.ben.sahip.includes(secili);
   const deneAc = async (id: string) => {
     setSecili(id); setDene(null); setHata(null); setYukleniyor(true);
     const r = await ist.dene(id);
@@ -52,10 +51,10 @@ function DebdebeEkran() {
     if (!r.ok) { setHata(t(ekHataAnahtari(r.hata))); hap("error"); return; }
     setDene(r.deger); setSahne(r.deger.sahneler[0]?.sahne ?? "hanMasasi"); hap("success");
   };
-  const kusan = async () => {
-    if (!urun?.yuva) return;
+  const kusan = async (hedefUrun: DebdebeUrun) => {
+    if (!hedefUrun.yuva) return;
     setYukleniyor(true); setHata(null); setBilgi(null);
-    const r = await ist.kusan({ yuva: urun.yuva, urun: urun.id, sira: 0, istekNo: istekNoUret() });
+    const r = await ist.kusan({ yuva: hedefUrun.yuva, urun: hedefUrun.id, sira: 0, istekNo: istekNoUret() });
     setYukleniyor(false);
     if (!r.ok) { setHata(t(ekHataAnahtari(r.hata))); hap("error"); return; }
     setBilgi(t("onl.db.kusandi")); await yukle(); hap("success");
@@ -109,7 +108,7 @@ function DebdebeEkran() {
             {x.teveccuh ? <Text style={{ fontFamily: F.serif, color: C.parchmentDim, fontSize: 12 }}>{applyParams(t("onl.db.teveccuh"), [x.teveccuh])}</Text> : null}
             <View style={{ flexDirection: yon(rtl), gap: 7 }}>
               <View style={{ flex: 1 }}><CizgiDugme etiket={t("onl.db.dene")} icon="eye" rtl={rtl} kucuk kapali={yukleniyor} onPress={() => void deneAc(x.id)} /></View>
-              {sahipMi && x.yuva ? <View style={{ flex: 1 }}><CizgiDugme etiket={t("onl.db.kusan")} icon="shirt" rtl={rtl} kucuk kapali={yukleniyor} onPress={() => { setSecili(x.id); void kusan(); }} /></View> : null}
+              {sahipMi && x.yuva ? <View style={{ flex: 1 }}><CizgiDugme etiket={t("onl.db.kusan")} icon="shirt" rtl={rtl} kucuk kapali={yukleniyor} onPress={() => { setSecili(x.id); void kusan(x); }} /></View> : null}
             </View>
             {x.satilik ? <Text style={{ fontFamily: F.serif, color: C.parchmentMuted, fontSize: 11.5 }}>{t("onl.db.satinAlKapali")}</Text> : null}
           </Cerceve>;
@@ -119,7 +118,7 @@ function DebdebeEkran() {
       {!dene ? <BosKart icon="eye" metin={t("onl.db.deneBos")} rtl={rtl} /> : <>
         <Text style={{ fontFamily: F.serif, color: C.parchmentDim, fontSize: 12.5 }}>{t("onl.db.deneGuvenlik")}</Text>
         <View style={{ flexDirection: yon(rtl), gap: 6 }}>
-          {dene.sahneler.map((x) => <View key={x.sahne} style={{ flex: 1 }}><CizgiDugme etiket={sahneAdi(t, x.sahne)} icon="eye" rtl={rtl} kucuk secili={sahne === x.sahne} onPress={() => setSahne(x.sahne)} /></View>)}
+          {dene.sahneler.map((x) => <View key={x.sahne} style={{ flex: 1 }}><CizgiDugme etiket={sahneAdi(t, x.sahne)} icon="eye" rtl={rtl} kucuk onPress={() => setSahne(x.sahne)} /></View>)}
         </View>
         {dene.sahneler.filter(x => x.sahne === sahne).map(x => <Cerceve key={x.sahne} ic={{ padding: 13, gap: 8 }}>
           <Text style={{ fontFamily: F.display, color: C.goldBright, fontSize: 13 }}>{sahneAdi(t, x.sahne)}</Text>
