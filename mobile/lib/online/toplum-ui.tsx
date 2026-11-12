@@ -225,6 +225,7 @@ export function TeklifFormu({ p, baslangic, onBitti }: { p: OyuncuProfili; basla
   const [tutar, setTutar] = useState(10);
   const [vade, setVade] = useState(6);
   const [faiz, setFaiz] = useState(0);
+  const [senetli, setSenetli] = useState(false);
   const [akce, setAkce] = useState(0);
   const malVar = MAL_IDLERI.filter((m) => (o.envanter?.[m] ?? 0) > 0);
   const [mal, setMal] = useState<MalId | null>(null);
@@ -253,7 +254,7 @@ export function TeklifFormu({ p, baslangic, onBitti }: { p: OyuncuProfili; basla
   const sart: TeklifSartGirdisi =
     tur === "cirak" ? { ...(meslek ? { meslek } : {}), ustaBen }
     : tur === "ortak" ? { pay, sure }
-    : tur === "borc" ? { yon: borcYon, tutar, vade, faiz }
+    : tur === "borc" ? { yon: borcYon, tutar, vade, faiz, ...(senetli ? { senetli: true } : {}) }
     : tur === "hediye" ? { ...(akce ? { tutar: akce } : {}), ...(mal ? { mal, adet } : {}) }
     : tur === "is" ? { is: isTuru, tutar: isUcret, ...(isTuru === "mektup" ? { mektupHedef, mektupMetni } : {}), ...(isTuru === "arabuluculuk" ? { arabuluculukNpc, arabuluculukBedel, ...(arabuluculukBedel === "tazminat" ? { arabuluculukMiktar } : {}) } : {}) }
     : {};
@@ -274,7 +275,10 @@ export function TeklifFormu({ p, baslangic, onBitti }: { p: OyuncuProfili; basla
   // Ön izleme: gönderince ne kilitlenir, ne kadar süre beklenir, cevapsız kalırsa ne olur.
   const onizleme: string[] = [];
   if (tur === "borc" && borcYon === "ver") onizleme.push(applyParams(t("onl.tp.f.emanetBorc"), [tutar]));
-  if (tur === "borc") onizleme.push(applyParams(t("onl.tp.f.geriOdeme"), [Math.round((tutar * (100 + faiz)) / 100), vade]));
+  if (tur === "borc") {
+    onizleme.push(applyParams(t("onl.tp.f.geriOdeme"), [Math.round((tutar * (100 + faiz)) / 100), vade]));
+    if (senetli) onizleme.push(t("onl.tp.f.senetOnizleme"));
+  }
   if (tur === "hediye") onizleme.push(applyParams(t("onl.tp.f.emanetHediye"), [armaganYaz(t, { akce, ...(mal ? { mal, adet } : {}) }) || "—", TOPLUM_SINIR.hediyeTakat]));
   if (tur === "ortak") onizleme.push(t("onl.tp.f.ortakNot"));
   if (tur === "cirak") onizleme.push(t("onl.tp.f.cirakNot"));
@@ -307,6 +311,9 @@ export function TeklifFormu({ p, baslangic, onBitti }: { p: OyuncuProfili; basla
       <Sayac etiket={t("onl.tp.f.tutar")} deger={tutar} en={1} cok={TOPLUM_SINIR.borcEnCok} onDegis={setTutar} birim={t("onl.tp.akceBirim")} />
       <Sayac etiket={t("onl.tp.f.faiz")} deger={faiz} en={0} cok={TOPLUM_SINIR.borcFaiz} onDegis={setFaiz} birim="%" />
       <Sayac etiket={t("onl.tp.f.vade")} deger={vade} en={1} cok={TOPLUM_SINIR.borcVade} onDegis={setVade} birim={t("onl.tp.ayBirim")} />
+      <Secenekler secenekler={["yok", "senet"] as const} secili={senetli ? "senet" : "yok"} onSec={(x) => setSenetli(x === "senet")} etiket={(x) => t("onl.tp.f.senet." + x)} ikon={(x) => x === "senet" ? "scroll" : "minus"} />
+      {senetli && borcYon === "ver" && (o.envanter?.senet ?? 0) < 1 ? <Bant tur="bilgi" metin={t("onl.tp.f.senetEksikBen")} rtl={rtl} /> : null}
+      {senetli && borcYon === "iste" ? <Text style={{ fontFamily: F.serifItalic, fontSize: 12.5, lineHeight: 18, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{t("onl.tp.f.senetEksikKarsi")}</Text> : null}
       {borcYon === "ver" && tutar > para ? <Bant tur="bilgi" metin={applyParams(t("onl.tp.f.paraAz"), [para])} rtl={rtl} /> : null}
     </Alan> : null}
     {tur === "is" ? <Alan baslik={t("onl.tp.f.sartlar")}>
