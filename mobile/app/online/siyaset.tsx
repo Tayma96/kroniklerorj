@@ -164,12 +164,16 @@ function SiyasetEkran() {
         {devlet.ittifakTalep ? <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.goldBright, textAlign: hiza(rtl) }}>
           {applyParams(t("onl.siyaset.ittifakTalepBekliyor"), [beylikAdi(devlet.ittifakTalep.hedef)])}
         </Text> : null}
-        {(devlet.ittifaklar ?? []).length ? (devlet.ittifaklar as Record<string, any>[]).map((x) => <View key={x.bolge} style={{ flexDirection: yon(rtl), justifyContent: "space-between", alignItems: "center", gap: 8, paddingVertical: 5, borderBottomWidth: 1, borderColor: C.border }}>
-          <View style={{ flex: 1, gap: 2 }}>
-            <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchment, textAlign: hiza(rtl) }}>{x.ad ?? beylikAdi(x.bolge)}</Text>
-            {x.durum === "aktif" || x.durum === "kabulBekliyor" ? <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{applyParams(t("onl.siyaset.ittifakSonAy"), [x.sonAy])}</Text> : null}
+        {(devlet.ittifaklar ?? []).length ? (devlet.ittifaklar as Record<string, any>[]).map((x) => <View key={x.bolge} style={{ gap: 6, paddingVertical: 7, borderBottomWidth: 1, borderColor: C.border }}>
+          <View style={{ flexDirection: yon(rtl), justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+            <View style={{ flex: 1, gap: 2 }}>
+              <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchment, textAlign: hiza(rtl) }}>{x.ad ?? beylikAdi(x.bolge)}</Text>
+              {x.durum === "aktif" || x.durum === "kabulBekliyor" ? <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{applyParams(t("onl.siyaset.ittifakSonAy"), [x.sonAy])}</Text> : null}
+            </View>
+            <Rozet metin={t("onl.siyaset.ittifakDurum." + x.durum)} renk={x.durum === "aktif" ? C.sage : C.goldBright} />
           </View>
-          <Rozet metin={t("onl.siyaset.ittifakDurum." + x.durum)} renk={x.durum === "aktif" ? C.sage : C.goldBright} />
+          {devletBeyi && x.durum === "aktif" ? <CizgiDugme etiket={t("onl.siyaset.ittifakBoz")} icon="x" rtl={rtl} kucuk kapali={yukleniyor}
+            onPress={() => void islem({ islem: "devletYonet", tur: "ittifakBoz", hedefBolge: x.bolge }, t("onl.siyaset.ittifakBozuldu"))} /> : null}
         </View>) : null}
         {(devlet.ittifaklar ?? []).length === 0 ? <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchmentDim, textAlign: hiza(rtl) }}>{t("onl.siyaset.ittifakYok")}</Text> : null}
         {(devlet.ittifakGelen ?? []).filter((x: Record<string, any>) => !x.yanitlandi).map((x: Record<string, any>) => <View key={x.bolge + ":" + x.istekId} style={{ gap: 7, paddingVertical: 8, borderTopWidth: 1, borderColor: C.border }}>
