@@ -184,3 +184,89 @@ test("oyuncu işletmesi vergisi bölge kasasına aynı anahtarla yalnız bir kez
   assert.equal(ikinciDeger.kasa, ilkDeger.kasa, "aynı anahtar ikinci kez vergi eklemez");
   assert.equal(ikinciDeger.kasa, baslangicKasa + 7);
 });
+
+
+test("P6 ittifak iki bölge arasında üç aşamalı, tekrar güvenli outbox ile etkinleşir", async () => {
+  let saat = Date.now();
+  const env = {} as Env;
+  const bolgeler = sahteAdAlani((ctx) => new BolgeDO(ctx, env, () => saat));
+  env.BOLGE = bolgeler;
+  const ay = oyunAyi(saat);
+  const kaynakKimlik = {
+    kisi: "develi/o11", hesap: "hesap-ittifak-kaynak", ad: "Demirhan Beyi", yerlesim: "develi",
+    bolge: "demirhan", yas: 30, e: 0, olu: false, nam: 50, teveccuh: 3, haklar: ["bolgeMakami"],
+  };
+  const hedefKimlik = {
+    kisi: "aksehir/o12", hesap: "hesap-ittifak-hedef", ad: "Akşehir Beyi", yerlesim: "aksehir",
+    bolge: "aksehir", yas: 30, e: 0, olu: false, nam: 50, teveccuh: 3, haklar: ["bolgeMakami"],
+  };
+  const devlet = (kimlik: typeof kaynakKimlik | typeof hedefKimlik, ad: string) => ({
+    v: 1 as const, ad, kurulusAy: ay, beyKisi: kimlik.kisi, beyHesap: kimlik.hesap, beyAd: kimlik.ad,
+    vergiOrani: 0, divan: [] as { kisi: string; hesap: string; ad: string; rol: "divan" }[],
+    mogol: "diren" as const, sultan: "bagimsiz" as const, taninma: "taninmadi" as const, yeminler: {},
+  });
+  const [kaynakIlk, hedefIlk] = await Promise.all([
+    bolgeCagir(env, { islem: "gorunum", bolge: "demirhan", hesapId: kaynakKimlik.hesap }),
+    bolgeCagir(env, { islem: "gorunum", bolge: "aksehir", hesapId: hedefKimlik.hesap }),
+  ]);
+  assert.equal(kaynakIlk.ok, true);
+  assert.equal(hedefIlk.ok, true);
+  const kaynakId = env.BOLGE.idFromName("bolge:demirhan").toString();
+  const hedefId = env.BOLGE.idFromName("bolge:aksehir").toString();
+  const kaynakKaydi = bolgeler.ornekler.get(kaynakId)!;
+  const hedefKaydi = bolgeler.ornekler.get(hedefId)!;
+  const kaynakDurum = bolgeKur("demirhan", ay);
+  kaynakDurum.devlet = devlet(kaynakKimlik, "Demirhan Beyliği");
+  const hedefDurum = bolgeKur("aksehir", ay);
+  hedefDurum.devlet = devlet(hedefKimlik, "Akşehir Beyliği");
+  kaynakKaydi.depolama.veri.set("bolge", kaynakDurum);
+  hedefKaydi.depolama.veri.set("bolge", hedefDurum);
+  kaynakKaydi.ornek = new BolgeDO({ id: env.BOLGE.idFromString(kaynakId), storage: kaynakKaydi.depolama } as unknown as DurableObjectState, env, () => saat);
+  hedefKaydi.ornek = new BolgeDO({ id: env.BOLGE.idFromString(hedefId), storage: hedefKaydi.depolama } as unknown as DurableObjectState, env, () => saat);
+
+  const istek = await bolgeCagir(env, {
+    islem: "yaz", bolge: "demirhan", hesapId: kaynakKimlik.hesap, kimlik: kaynakKimlik,
+    govde: { islem: "devletYonet", tur: "ittifak", hedefBolge: "aksehir", istekNo: "ittifak-kaynak-001" },
+  });
+  assert.equal(istek.ok, true, JSON.stringify(istek));
+  const kaynakBekleyen = kaynakKaydi.depolama.veri.get("bolge") as BolgeDurumu;
+  assert.equal(kaynakBekleyen.devlet?.ittifakTalep?.hedef, "aksehir");
+  assert.equal(kaynakBekleyen.diplomasiGiden?.length, 1);
+
+  // Kaynak DO'nun sonraki isteği outbox'ı hedefe teslim eder.
+  await bolgeCagir(env, { islem: "gorunum", bolge: "demirhan", hesapId: kaynakKimlik.hesap });
+  const hedefGelen = hedefKaydi.depolama.veri.get("bolge") as BolgeDurumu;
+  const gelen = hedefGelen.devlet?.ittifakGelen?.demirhan;
+  assert.ok(gelen);
+  assert.equal(gelen.yanitlandi, false);
+  assert.equal((kaynakKaydi.depolama.veri.get("bolge") as BolgeDurumu).diplomasiGiden?.length ?? 0, 0);
+
+  const kabul = await bolgeCagir(env, {
+    islem: "yaz", bolge: "aksehir", hesapId: hedefKimlik.hesap, kimlik: hedefKimlik,
+    govde: { islem: "devletYonet", tur: "ittifakYanit", kaynakBolge: "demirhan", istekId: gelen.istekId, karar: "kabul", istekNo: "ittifak-hedef-001" },
+  });
+  assert.equal(kabul.ok, true, JSON.stringify(kabul));
+  const hedefBekleyen = hedefKaydi.depolama.veri.get("bolge") as BolgeDurumu;
+  assert.equal(hedefBekleyen.devlet?.ittifaklar?.demirhan?.durum, "kabulBekliyor");
+  assert.equal(hedefBekleyen.diplomasiGiden?.[0]?.tur, "ittifakYanit");
+
+  // Hedef yanıtı kaynağa, kaynak onayı tekrar hedefe gider; iki taraf da ancak son teyitle aktif görünür.
+  await bolgeCagir(env, { islem: "gorunum", bolge: "aksehir", hesapId: hedefKimlik.hesap });
+  const kaynakAktif = kaynakKaydi.depolama.veri.get("bolge") as BolgeDurumu;
+  assert.equal(kaynakAktif.devlet?.ittifaklar?.aksehir?.durum, "aktif");
+  assert.equal(kaynakAktif.diplomasiGiden?.[0]?.tur, "ittifakOnay");
+  await bolgeCagir(env, { islem: "gorunum", bolge: "demirhan", hesapId: kaynakKimlik.hesap });
+  const kaynakSon = kaynakKaydi.depolama.veri.get("bolge") as BolgeDurumu;
+  const hedefSon = hedefKaydi.depolama.veri.get("bolge") as BolgeDurumu;
+  assert.equal(kaynakSon.devlet?.ittifaklar?.aksehir?.durum, "aktif");
+  assert.equal(hedefSon.devlet?.ittifaklar?.demirhan?.durum, "aktif");
+  assert.equal(kaynakSon.diplomasiGiden?.length ?? 0, 0);
+  assert.equal(hedefSon.diplomasiGiden?.length ?? 0, 0);
+
+  // Aynı onay iletisi tekrar gelse de etkin ittifakın kaydı değişmez.
+  const tekrar = await bolgeCagir(env, {
+    islem: "ittifakOnayAl", bolge: "aksehir", kaynak: "demirhan",
+    istekId: gelen.istekId, ay, ad: "Demirhan",
+  });
+  assert.equal(tekrar.ok, true);
+});
