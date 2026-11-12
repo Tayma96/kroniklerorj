@@ -296,6 +296,7 @@ test("borç: tutar ve borçlu toplam tavanı; vadede tahsilat, eksik kalırsa ka
   assert.equal(b.pa, 0);
   assert.equal(a.pa, 50 + 30);
   assert.equal(t.deger.teklif.kl, 25);
+  assert.deepEqual(t.deger.teklif.bo, [[k.ay, 30]], "vade günündeki tahsilat senede yazılır");
   assert.equal(t.deger.teklif.d, "surer", "uyku borcu silmez");
   assert.equal(t.deger.teklif.od, 1);
   const sy = k.tp!.sy.filter((s) => s.t === "borcOdenmedi");
@@ -303,6 +304,7 @@ test("borç: tutar ve borçlu toplam tavanı; vadede tahsilat, eksik kalırsa ka
   b.pa = 40;
   bekle(k, 1);
   assert.equal(t.deger.teklif.d, "bitti");
+  assert.deepEqual(t.deger.teklif.bo, [[k.ay - 1, 30], [k.ay, 25]], "ikinci tahsilat da senet dökümüne eklenir");
   assert.equal(a.pa, 105, "anapara + faiz");
   assert.equal(b.pa, 15);
 });
