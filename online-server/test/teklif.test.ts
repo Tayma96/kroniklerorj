@@ -319,6 +319,7 @@ test("iki taraflı muhafız işi: zincir zırhı olmadan teslim olmaz; teslimde 
   if (!teklif.ok) return;
   const id = `t${teklif.deger.teklif.i}`;
   isBecerisi(b, "asker", "asker.kervanMuhafizligi");
+  b.ms!.s.asker!.kd = 2; // kervan muhafızlığı kalfa-2 düğümüdür.
   assert.ok(teklifCevap(k, b, id, "kabul", {}, k.ay).ok);
   assert.deepEqual(teklifCevap(k, b, id, "teslim", {}, k.ay), { ok: false, hata: "arac_yok" });
   b.ev = { zincir: 1 };
