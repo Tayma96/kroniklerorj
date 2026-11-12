@@ -71,11 +71,13 @@ export function gostergeDonumu(tl: ToplulukKaydi): void {
   }
 }
 
-/** Kasaba olayı olasılık çarpanı: kıtlık ← arz, haydut ← moral (yalnız dengenin altı; tavanlı). */
+/** Kasaba olayı olasılık çarpanı: kıtlık ← arz; haydut ← moral veya asayiş (düşük olan belirler; tavanlı). */
 export function gostergeTetikCarpani(k: Pick<Kasaba, "tl">, tetik: string): number {
-  const g: Gosterge | undefined = tetik === "kitlik" ? "arz" : tetik === "haydut" ? "moral" : undefined;
-  if (!g) return 1;
-  const eksik = Math.max(0, GOSTERGE_DENGE - gostergeOku(k, g));
+  if (tetik !== "kitlik" && tetik !== "haydut") return 1;
+  const deger = tetik === "kitlik"
+    ? gostergeOku(k, "arz")
+    : Math.min(gostergeOku(k, "moral"), gostergeOku(k, "asayis"));
+  const eksik = Math.max(0, GOSTERGE_DENGE - deger);
   return Math.min(GOSTERGE_TETIK_TAVAN, 1 + eksik * GOSTERGE_TETIK_ORANI);
 }
 
