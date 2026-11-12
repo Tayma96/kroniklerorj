@@ -8,6 +8,10 @@ const source = path.resolve(__dirname, "../lib/assets.ts");
 const root = path.dirname(source);
 const sourceText = fs.readFileSync(source, "utf8");
 const matches = [...sourceText.matchAll(/require\(["']([^"']+)["']\)/g)];
+if (matches.length === 0) {
+  console.error("Görsel haritasında statik require yolu bulunamadı.");
+  process.exit(1);
+}
 const missing = [];
 
 for (const match of matches) {
