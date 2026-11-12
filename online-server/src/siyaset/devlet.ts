@@ -54,10 +54,10 @@ export function devletYonet(d: BolgeDurumu, kimlik: SiyasiKimlik, govde: Record<
     }
     case "taninmaYanit": {
       const kaynak = govde.kaynakBolge;
-      const kaynakAd = typeof govde.kaynakAd === "string" ? govde.kaynakAd.trim().replace(/\\s+/g, " ") : "";
+      const kaynakAd = typeof govde.kaynakAd === "string" ? govde.kaynakAd.trim().replace(/\s+/g, " ") : "";
       const karar = govde.karar;
       if (typeof kaynak !== "string" || !/^[a-z0-9-]{2,32}$/.test(kaynak) || kaynak === d.id) return "deger_sinir_disi";
-      if (kaynakAd.length < 2 || kaynakAd.length > 40 || !/^[\\p{L}\\p{N}][\\p{L}\\p{N} '\\u2019-]*[\\p{L}\\p{N}]$/u.test(kaynakAd)) return "deger_sinir_disi";
+      if (kaynakAd.length < 2 || kaynakAd.length > 40 || !/^[\p{L}\p{N}][\p{L}\p{N} '\u2019-]*[\p{L}\p{N}]$/u.test(kaynakAd)) return "deger_sinir_disi";
       if (karar !== "kabul" && karar !== "ret") return "deger_sinir_disi";
       const yanitlar = (s.taninmaYanits ??= {});
       if (yanitlar[kaynak]) return "devlet_talep_var";
