@@ -302,3 +302,30 @@ test("oyuncu hanı: kira ve ikram kasaya, çarpanlı fiyat; aynı hane ve karş�
   assert.equal(br.is.iz.m.at(-1)![2], "kume");
   assert.deepEqual(mulkluKira(k, a, { oda: "yatak", sure: 1, istekNo: "k-0000002" }, AN), { ok: false, hata: "kendine" });
 });
+
+
+test("oyuncu hanı geliri bölge vergisini kesir biriktirerek outbox'a ayırır", () => {
+  const { k, a, b } = hazir();
+  const br = kopru(k);
+  b.pa = 1000;
+  edin(k, a, { tur: "han" }, AN, "e-vergi-0001");
+  br.yerlesimdenTeslim();
+  br.komut(a, "fiyat", { carpan: 100 }, "f-vergi-0001");
+  br.isletmedenTeslim(br.is.cik.k);
+
+  for (let i = 1; i <= 25; i++) {
+    const r = mulkluIkram(k, b, "ekmek", AN, `ikram-vergi-${String(i).padStart(4, "0")}`, 4);
+    assert.equal(r.ok, true, JSON.stringify(r));
+  }
+  const md = mulkDefteri(k);
+  assert.equal(md.vergiGiden?.reduce((t, x) => t + x.tutar, 0), 2, "50 akçe ciroda %4 toplam 2 akçe vergi");
+  assert.equal(md.vergiKesir?.["develi.han.1"], 0, "yüzde payı bir tam akçeye dönüşünce sıfırlanır");
+  assert.equal(md.cik.k.reduce((t, x) => t + x.a, 0), 48, "işletme kasasına vergi sonrası net 48 akçe çıkar");
+  br.yerlesimdenTeslim();
+  assert.equal(br.is.kasa, 48);
+
+  const kira = mulkluKira(k, b, { oda: "yatak", sure: 1, istekNo: "kira-vergi-0001" }, AN, 4);
+  assert.equal(kira.ok, true, JSON.stringify(kira));
+  assert.equal((kira.deger.vergi as { tutar: number }).tutar, 0, "küçük tek işlemde vergi kesri birikir, erken yuvarlanmaz");
+  assert.equal(mulkDefteri(k).vergiKesir?.["develi.han.1"], 12);
+});
