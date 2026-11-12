@@ -52,7 +52,10 @@ export class BolgeDO {
   async alarm(): Promise<void> {
     await this.#sirayla(async () => {
       const d = await this.#ac(undefined, this.#saat());
-      if (d) await this.#yetistir(d, this.#saat());
+      if (d) {
+        await this.#yetistir(d, this.#saat());
+        await this.#gonderDiplomasi(d);
+      }
     });
   }
 
