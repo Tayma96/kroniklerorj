@@ -117,7 +117,7 @@ export function hizmetGorevTeslim(
     g: kar.o,
     n: 3,
     k: "olay.hizmetGorevTamam",
-    p: { gorev: gorev.tur, oyuncu: kar.ad, odul: gorev.odul, hizmetPuani, takat: kural.takat },
+    p: { oyuncu: kar.ad, odul: gorev.odul, hizmetPuani, takat: kural.takat },
   };
   return basarili({ gorev, odul: gorev.odul, hizmetPuani, ...(arac ? { arac } : {}), olay });
 }
