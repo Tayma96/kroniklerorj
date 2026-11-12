@@ -84,5 +84,5 @@ CI run #201 başarılı (commit `71445a6`): 374 test / 373 geçti / 0 başarıs�
 - Ret çatışmayı sürdürür; teklif sahibi/karşı taraf yeniden teklif verebilir. Çözüm ayı geçtikten sonra teklif ve yanıt kapalıdır.
 - İstek kimliği ve dış DO yazma kabuğu tekrar güvenli çalışır; yeni hata kodları mobil protokolde tanınır ve üç özel hata altı dilde çevrilmiştir.
 - Testler: saldıranın teklifi/savunmanın kabulü, savunmanın teklifi/saldıranın reddi, üçüncü kişi reddi, yanlış istek kimliği, teklif süresi ve soğuma.
-- GitHub Actions [run #259](https://github.com/Tayma96/kroniklerorj/actions/runs/43135264076): **380 test / 379 geçti / 0 başarısız / 1 atlandı**; sunucu TypeScript kontrolü başarılı.
+- GitHub Actions [run #265](https://github.com/Tayma96/kroniklerorj/actions/runs/43135546373): **380 test / 379 geçti / 0 başarısız / 1 atlandı**; mobil TypeScript, 62 statik görsel yolu, sunucu testleri ve sunucu TypeScript başarılı. Ateşkes kayıtları altı dilde çevrildi.
 - Sınır: bu ilk dilim yalnız müzakere/ateşkes protokolüdür. Mülk kaybı ve ganimet hâlâ uygulanmaz; mülk kaybı tavanı ayrı tasarım/uygulama gerektirir.
