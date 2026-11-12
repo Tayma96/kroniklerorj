@@ -38,8 +38,11 @@ test("barış ilahisi sinerjisi iki meslek düğümü de öğrenilince arabulucu
   const talep = ucgenAl(s.k).at[0]!;
   const temel = arabuluculukSansi(s.k, s.hasan, talep, s.k.ay).sans.toplam;
   seviyeVer(s.hasan, "ozan.barisIlahisi", 1);
+  const ilkSeviye = arabuluculukSansi(s.k, s.hasan, talep, s.k.ay).sans.toplam;
+  assert.equal(ilkSeviye, temel, "barış ilahisinin ilk seviyesi sinerji için yetmez");
+  seviyeVer(s.hasan, "ozan.barisIlahisi", 2);
   const tekMeslek = arabuluculukSansi(s.k, s.hasan, talep, s.k.ay).sans.toplam;
-  assert.equal(tekMeslek, temel, "yalnız ozan düğümü çapraz meslek sinerjisini açmaz");
+  assert.equal(tekMeslek, temel, "açan düğüm tek başına çapraz meslek sinerjisini açmaz");
   seviyeVer(s.hasan, "arabulucu.araBulma", 1);
   const ikiMeslek = arabuluculukSansi(s.k, s.hasan, talep, s.k.ay).sans.toplam;
   assert.equal(ikiMeslek, temel + 10, "iki düğüm birlikte öğrenilince bonus tek kez eklenir");
