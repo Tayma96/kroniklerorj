@@ -266,7 +266,7 @@ test("P6 ittifak iki bölge arasında üç aşamalı, tekrar güvenli outbox ile
   // Aynı onay iletisi tekrar gelse de etkin ittifakın kaydı değişmez.
   const tekrar = await bolgeCagir(env, {
     islem: "ittifakOnayAl", bolge: "aksehir", kaynak: "demirhan",
-    istekId: gelen.istekId, ay, ad: "Demirhan",
+    istekId: gelen.istekId, ay, ad: "Demirhan Beyliği",
   });
   assert.equal(tekrar.ok, true);
 });
