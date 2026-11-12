@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { oyuncuArabuluculukAl, toplumAl, type OyuncuArabuluculuk, type Toplum } from "../src/yerlesim/toplum.ts";
 import { testKasabasi, oyuncuEkle } from "./kasaba-yardimci.ts";
+import { olduMu } from "../src/yerlesim/hanedan.ts";
 
 test("eski toplum kaydında oyuncu arabuluculuk defteri ilk erişimde açılır; NPC üçgen kaydı ayrıdır", () => {
   const k = testKasabasi("develi", 120);
@@ -314,4 +315,50 @@ test("vadesi dolan tek imzalı uzlaşma kapanır; emanete alınmayan para deği�
   assert.equal(kk.pa, 500);
   assert.deepEqual(oyuncuArabuluculukImzala(k, kk, id, ac.deger.sv), { ok: false, hata: "teklif_kapandi" });
   assert.deepEqual(oyuncuArabuluculukTaslak(k, ar, id, 100, 0, undefined, ac.deger.sonAy! + 2), { ok: false, hata: "teklif_kapandi" });
+});
+
+
+test("imzalı uzlaşmada taraf ölürse ay dönümünde iki emanet de terekeye iade edilir", () => {
+  const k = testKasabasi("develi", 780);
+  const s = oyuncuEkle(k, 241), kk = oyuncuEkle(k, 242), ar = oyuncuEkle(k, 243);
+  const ac = oyuncuArabuluculukAc(k, s, kk, ar, k.ay);
+  assert.ok(ac.ok);
+  if (!ac.ok) return;
+  const id = String(ac.deger.i);
+  for (const x of [s, kk, ar]) assert.ok(oyuncuArabuluculukCevap(k, x, id, "kabul", k.ay).ok);
+  s.pa = 500; kk.pa = 500;
+  assert.ok(oyuncuArabuluculukTaslak(k, ar, id, 120, 80, undefined, k.ay).ok);
+  assert.ok(oyuncuArabuluculukImzala(k, s, id, ac.deger.sv).ok);
+  assert.ok(oyuncuArabuluculukImzala(k, kk, id, ac.deger.sv).ok);
+  assert.equal(s.pa, 380);
+  assert.equal(kk.pa, 420);
+
+  s.hd = { h: s.o, n: 1, s: 0, ol: k.ay };
+  assert.equal(olduMu(s), true);
+  assert.equal(oyuncuArabuluculukDonumu(k, k.ay), 1);
+  assert.equal(ac.deger.d, "iptal");
+  assert.equal(ac.deger.od?.iade, 1);
+  assert.equal(s.pa, 500, "ölen tarafın payı tereke kaydında kalır");
+  assert.equal(kk.pa, 500, "sağ kalan tarafın yatırdığı tutar da iade edilir");
+  assert.equal(oyuncuArabuluculukDonumu(k, k.ay + 1), 0, "iade tekrarlanmaz");
+});
+
+test("taraf öldükten sonra uygulama isteği ödeme yerine emaneti iade ederek kapatır", () => {
+  const k = testKasabasi("develi", 790);
+  const s = oyuncuEkle(k, 251), kk = oyuncuEkle(k, 252), ar = oyuncuEkle(k, 253);
+  const ac = oyuncuArabuluculukAc(k, s, kk, ar, k.ay);
+  assert.ok(ac.ok);
+  if (!ac.ok) return;
+  const id = String(ac.deger.i);
+  for (const x of [s, kk, ar]) assert.ok(oyuncuArabuluculukCevap(k, x, id, "kabul", k.ay).ok);
+  s.pa = 500; kk.pa = 500;
+  assert.ok(oyuncuArabuluculukTaslak(k, ar, id, 120, 80, undefined, k.ay).ok);
+  assert.ok(oyuncuArabuluculukImzala(k, s, id, ac.deger.sv).ok);
+  assert.ok(oyuncuArabuluculukImzala(k, kk, id, ac.deger.sv).ok);
+  s.hd = { h: s.o, n: 1, s: 0, ol: k.ay };
+  assert.ok(oyuncuArabuluculukUygula(k, kk, id, k.ay).ok);
+  assert.equal(ac.deger.d, "iptal");
+  assert.equal(ac.deger.od?.iade, 1);
+  assert.equal(s.pa, 500);
+  assert.equal(kk.pa, 500);
 });
