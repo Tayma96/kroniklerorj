@@ -250,7 +250,8 @@ async function dengeSim(N: number) {
       let akis = 0;
       takatTazele(c, ay);
       const deger = (mal: Mal) => saticiDegeri(c, mal, sayac()).toplam;
-      const satilabilir = (mal: Mal, adet: number) => Math.min(adet, Math.max(0, npcSatisKotasi(mal) - satilan(c, mal, ay) - (c.ev?.[mal] ?? 0)));
+      const kotaTavan = (mal: Mal) => npcSatisKotasi(mal, Math.max(0, sayac()(MALLAR[mal].meslek) - (c.ms?.a === MALLAR[mal].meslek ? 1 : 0)));
+      const satilabilir = (mal: Mal, adet: number) => Math.min(adet, Math.max(0, kotaTavan(mal) - satilan(c, mal, ay) - (c.ev?.[mal] ?? 0)));
       const alimMaliyeti = (mal: Mal, n: number): number => {
         if (n <= 0) return 0;
         const st = malMeslegindeMi(c, mal) ? 0 : Math.min(stok[mal] ?? 0, n);
@@ -299,7 +300,7 @@ async function dengeSim(N: number) {
         if (r.ok) akis += r.deger.sonuc.odul;
       }
       for (const mal of MAL_IDLERI) {
-        const adet = Math.min(c.ev?.[mal] ?? 0, npcSatisKotasi(mal) - satilan(c, mal, ay));
+        const adet = Math.min(c.ev?.[mal] ?? 0, kotaTavan(mal) - satilan(c, mal, ay));
         if (adet <= 0 || MALLAR[mal].taban === 0) continue;
         const r = npcyeSat(c, mal, adet, sayac(), ay, stok);
         assert.ok(r.ok);
