@@ -8,7 +8,7 @@ import { OnlineYakinda } from "../../lib/online-yakinda";
 import { OnlineKapisi } from "../../lib/online/durum";
 import { onlineEkranAcik } from "../../lib/online/kapi";
 import { Bant, Cerceve, CizgiDugme, GeriDugme, geriGit, hiza, yon } from "../../lib/online/ui";
-import { Baslik2, BosKart, Hap, OnlineSayfa, SayfaBasi, Yukleniyor } from "../../lib/online/yasam-ui";
+import { Baslik2, BosKart, OnlineSayfa, SayfaBasi, Yukleniyor } from "../../lib/online/yasam-ui";
 import { useEkonomiIstemci, type DefterYaniti } from "../../lib/online/ekonomi-veri";
 import { ekHataAnahtari, type EkHata } from "../../lib/online/ek-istemci";
 
