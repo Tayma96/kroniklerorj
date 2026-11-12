@@ -14,7 +14,9 @@ import { varsayilanSonuc } from "./duzen.ts";
 import { engelliMi } from "./engel.ts";
 import { AZALAN_PENCERE, getiriCarpani } from "./eylem.ts";
 import { karakterYasi, namEkle, takatHarca } from "./karakter.ts";
-import { hizmetEkle, meslekKaydi } from "./meslek.ts";
+import { hizmetAcik, hizmetEkle, meslekKaydi } from "./meslek.ts";
+import { aracAsindir } from "./tarif.ts";
+import { gostergeDegistir, toplulukAl } from "./topluluk-kayit.ts";
 import { envanterEkle } from "./npc-taban.ts";
 import { acikNpcTeklifi, npcBorcTahsil, npcKabul } from "./npc-teklif.ts";
 import { kisiAdi, npcAdi, oyuncuRef } from "./ortak.ts";
@@ -61,7 +63,7 @@ export const GORUCU_YASI = 16;
 export const ARMAGAN_TUTULAN = 20;
 export const VITRIN_EN_COK = 6;
 
-export const CEVAPLAR = ["kabul", "ret", "geri", "bitir", "ode"] as const;
+export const CEVAPLAR = ["kabul", "ret", "geri", "bitir", "ode", "teslim"] as const;
 
 function nesneMi(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
@@ -191,6 +193,11 @@ function sartlarCoz(tur: OyuncuTeklifTuru, g: Record<string, unknown>, gon: Kara
     }
     case "gorucu":
       return basarili({});
+    case "is": {
+      const it = g.is;
+      if (typeof it !== "string" || !["arabuluculuk", "muhafiz", "mektup"].includes(it) || !tamsayi(g.tutar, 1, 20)) return hata("teklif_gecersiz");
+      return basarili({ it: it as "arabuluculuk" | "muhafiz" | "mektup", tu: g.tutar });
+    }
   }
 }
 
@@ -206,10 +213,12 @@ export function teklifOlustur(k: Kasaba, gon: Karakter, alici: Karakter, govde: 
   if (engelliMi(k.tp, gon.o, alici.o)) return hata("engelli");
   if (karakterYasi(gon, ay) < TEKLIF_YASI || karakterYasi(alici, ay) < TEKLIF_YASI) return hata("yas_kapisi");
   if (t_ === "gorucu" && (karakterYasi(gon, ay) < GORUCU_YASI || karakterYasi(alici, ay) < GORUCU_YASI)) return hata("yas_kapisi");
+  if (t_ === "is" && (gon.h === alici.h || (gon.e !== 0 && gon.e === alici.e))) return hata("ayni_kume");
   const acik = (k.tp?.tk ?? []).filter((t) => t.d === "acik");
   if (acik.filter((t) => t.g === gon.o).length >= TEKLIF_ACIK_EN_COK) return hata("teklif_siniri");
   if (acik.filter((t) => t.a === alici.o).length >= GELEN_ACIK_EN_COK) return hata("teklif_siniri");
   if (acik.some((t) => t.t === t_ && ((t.g === gon.o && t.a === alici.o) || (t.g === alici.o && t.a === gon.o)))) return hata("teklif_siniri");
+  if (t_ === "is" && (k.tp?.tk ?? []).some((t) => t.t === "is" && t.d === "surer" && ((t.g === gon.o && t.a === alici.o) || (t.g === alici.o && t.a === gon.o)))) return hata("teklif_siniri");
   const sr = sartlarCoz(t_, govde, gon, alici);
   if (!sr.ok) return sr;
   const s = sr.deger;
@@ -222,9 +231,9 @@ export function teklifOlustur(k: Kasaba, gon: Karakter, alici: Karakter, govde: 
   } else if (t_ === "ortak") {
     const d = ortakDenetle(k, gon, alici);
     if (!d.ok) return d;
-  } else if (t_ === "borc" && s.yn === "ver") {
-    if (gon.pa < s.tu!) return hata("para_yok");
-    e = s.tu!;
+  } else if ((t_ === "borc" && s.yn === "ver") || t_ === "is") {
+    if (gon.pa < (s.tu ?? 0)) return hata("para_yok");
+    e = s.tu ?? 0;
   } else if (t_ === "hediye") {
     if (donguVar(k, gon, alici, ay)) return hata("hediye_dongu");
     const deger = hediyeDegeri(s) * ocakCarpani(gon, alici);
@@ -357,6 +366,13 @@ function kabulUygula(k: Kasaba, t: Teklif, ay: number): Sonuc<OlayTaslagi[]> {
       t.d = "bitti";
       t.sn = "kayit";
       break;
+    case "is": {
+      const kural = isKurali(t.s.it);
+      if (!kural || !hizmetAcik(alici, kural.hizmet)) return hata("dugum_kapali");
+      t.d = "surer";
+      t.sa = ay + 1; // kabulden sonra bir oyun ayı teslim penceresi
+      break;
+    }
     default:
       return hata("teklif_gecersiz");
   }
@@ -405,10 +421,34 @@ export function teklifCevap(k: Kasaba, ben: Karakter, idHam: unknown, cevap: unk
       kapat(k, t, "geri", ay);
       break;
     case "bitir":
-      if (t.d !== "surer" || (t.t !== "ortak" && t.t !== "cirak")) return hata("teklif_kapandi");
+      if (t.d !== "surer" || (t.t !== "ortak" && t.t !== "cirak" && t.t !== "is")) return hata("teklif_kapandi");
+      if (t.t === "is") {
+        kapat(k, t, "iptal", ay, "iptal");
+        olaylar.push({ t: "teklif", w: ben.o, h: t.g === ben.o ? t.a : t.g, g: t.g === ben.o ? t.a : t.g, n: 6, k: "olay.teklif.bitti.is", p: { kisi: oyuncuRef(ben), teklif: teklifKimlik(t.i) } });
+        break;
+      }
       kapat(k, t, "bitti", ay, "bitirildi");
       olaylar.push({ t: "teklif", w: ben.o, h: t.g === ben.o ? t.a : t.g, g: t.g === ben.o ? t.a : t.g, n: 6, k: `olay.teklif.bitti.${t.t}`, p: { kisi: oyuncuRef(ben), teklif: teklifKimlik(t.i) } });
       break;
+    case "teslim": {
+      if (t.d !== "surer" || t.t !== "is" || t.a !== ben.o) return hata("teklif_kapandi");
+      if (ay > t.sa) return hata("teklif_kapandi");
+      const kural = isKurali(t.s.it);
+      if (!kural || !hizmetAcik(ben, kural.hizmet)) return hata("dugum_kapali");
+      if (kural.arac && (ben.ev?.[kural.arac] ?? 0) < 1) return hata("arac_yok");
+      if (!takatHarca(ben, ay, kural.takat)) return hata("takat_yok");
+      if (kural.arac) aracAsindir(ben, kural.arac);
+      gostergeDegistir(toplulukAl(k), kural.gosterge, 1);
+      const odul = t.e;
+      ben.pa += odul;
+      t.e = 0;
+      hizmetEkle(ben, kural.meslek, kural.takat * 2);
+      t.d = "bitti";
+      t.kp = ay;
+      t.sn = "teslim";
+      olaylar.push({ t: "teklif", w: ben.o, h: t.g, g: t.g, n: 6, k: "olay.teklif.teslim.is", p: { kisi: oyuncuRef(ben), tutar: odul } });
+      break;
+    }
     case "ode": {
       if (t.d !== "surer" || t.t !== "borc") return hata("teklif_kapandi");
       const { borclu, alacakli } = borcTaraflari(t);
@@ -441,6 +481,16 @@ function borcOde(k: Kasaba, t: Teklif, tutar: number, ay: number, borclu: string
   return [{ t: "teklif", w: borclu, h: alacakli, g: alacakli, n: 4, k: "olay.borc.taksit", p: { kisi: oyuncuRef(b), tutar, kalan: t.kl } }];
 }
 
+interface IsKurali { hizmet: string; meslek: "arabulucu" | "asker" | "katip"; takat: number; gosterge: "moral" | "asayis"; arac?: "zincir"; }
+function isKurali(tur: Sartlar["it"]): IsKurali | undefined {
+  switch (tur) {
+    case "arabuluculuk": return { hizmet: "araBul", meslek: "arabulucu", takat: 2, gosterge: "moral" };
+    case "muhafiz": return { hizmet: "muhafizlik", meslek: "asker", takat: 2, gosterge: "asayis", arac: "zincir" };
+    case "mektup": return { hizmet: "mektup", meslek: "katip", takat: 1, gosterge: "moral" };
+    default: return undefined;
+  }
+}
+
 /** Engelleme: aralarındaki açık teklifler iptal (emanet iade), süren çıraklık ve ortaklık biter. Borç sürer. */
 export function taraflarArasiIptal(k: Kasaba, x: string, y: string, ay: number): void {
   for (const t of k.tp?.tk ?? []) {
@@ -448,6 +498,7 @@ export function taraflarArasiIptal(k: Kasaba, x: string, y: string, ay: number):
     if (!arada) continue;
     if (t.d === "acik") kapat(k, t, "iptal", ay, "engel");
     else if (t.d === "surer" && (t.t === "ortak" || t.t === "cirak")) kapat(k, t, "bitti", ay, "engel");
+    else if (t.d === "surer" && t.t === "is") kapat(k, t, "iptal", ay, "engel");
   }
 }
 
@@ -506,6 +557,7 @@ export function teklifDonumu(k: Kasaba, ay: number): OlayTaslagi[] {
     if (t.d !== "surer") continue;
     if (t.t === "cirak") olaylar.push(...ciraklikDonumu(k, t, ay));
     else if (t.t === "ortak" && ay >= (t.bt ?? 0)) kapat(k, t, "bitti", ay, "sure");
+    else if (t.t === "is" && ay > t.sa) kapat(k, t, "dustu", ay, "sure");
     else if (t.t === "npcBorc") olaylar.push(...npcBorcTahsil(k, t, ay));
     else if (t.t === "borc" && ay >= (t.vd ?? 0)) {
       const { borclu, alacakli } = borcTaraflari(t);
@@ -636,7 +688,7 @@ export function vitrinGorunumu(kar: Karakter) {
 export { acikNpcTeklifi };
 
 /** [PARAMETRE] Devirde kişiye bağlı olduğu için vârise geçmeyen teklif türleri (kapanır: "oldu"). */
-export const DEVIRDE_KAPANAN: readonly Teklif["t"][] = ["cirak", "gorucu", "npcDunur"];
+export const DEVIRDE_KAPANAN: readonly Teklif["t"][] = ["cirak", "gorucu", "npcDunur", "is"];
 
 /**
  * Devir kimlik taşıyıcısı (devir.ts `kimlikTasiyiciEkle`): ölünün açık ve süregelen teklifleri (borç, ortaklık,
@@ -654,7 +706,7 @@ export function toplumKimligiTasi(k: Kasaba, eski: string, yeni: string): void {
     t.g = cevir(t.g);
     t.a = cevir(t.a);
     if (t.s.us) t.s.us = cevir(t.s.us);
-    if (DEVIRDE_KAPANAN.includes(t.t)) kapat(k, t, t.d === "acik" ? "iptal" : "bitti", k.ay, "oldu");
+    if (DEVIRDE_KAPANAN.includes(t.t)) kapat(k, t, t.t === "is" || t.d === "acik" ? "iptal" : "bitti", k.ay, "oldu");
   }
   const eg: Record<string, string[]> = {};
   for (const [kim, liste] of Object.entries(tp.eg)) {
