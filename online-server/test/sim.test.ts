@@ -299,7 +299,7 @@ async function dengeSim(N: number) {
         if (r.ok) akis += r.deger.sonuc.odul;
       }
       for (const mal of MAL_IDLERI) {
-        const adet = Math.min(c.ev?.[mal] ?? 0, NPC_SATIS_KOTASI - satilan(c, mal, ay));
+        const adet = Math.min(c.ev?.[mal] ?? 0, npcSatisKotasi(mal) - satilan(c, mal, ay));
         if (adet <= 0 || MALLAR[mal].taban === 0) continue;
         const r = npcyeSat(c, mal, adet, sayac(), ay, stok);
         assert.ok(r.ok);
