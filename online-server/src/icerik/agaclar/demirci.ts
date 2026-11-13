@@ -20,7 +20,7 @@ export default agacKur("demirci", {
     { a: "zirhUstaligi", i: "zirh", e: [[tarif("pulZirh")], [kalite("zirhDayanikliligi", 25)]] },
   ],
   usta: [
-    { a: "mekanizmaUstaligi", i: "kilit", e: [[tarif("kilitMentese")], [tarif("degirmenMekanizmasi"), sinerji("marangoz", "arabaYapimi", 1, "arbalet")]] },
+    { a: "mekanizmaUstaligi", i: "kilit", e: [[tarif("kilitMentese")], [tarif("degirmenMekanizmasi"), tarif("arbalet"), sinerji("marangoz", "arabaYapimi", 1, "arbalet")]] },
     { a: "efsaneviSilahlar", i: "kilicTac", e: [[hak("saheserKilicSiparisi")], [hak("orduSiparisi")]] },
     { a: "ozelZirhlar", i: "migfer", e: [[hizmet("ismarlamaZirh")], [tarif("komutanZirhi")]] },
   ],
