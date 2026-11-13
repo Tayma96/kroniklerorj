@@ -98,3 +98,10 @@ Bu üç sistem, farklı oyun döngülerini etkilediği için tek bir genel bonus
 - Saz gecesi hizmeti, `ortakSahne` ve Ozan ağacındaki karşılıklı `sazGecesi` kayıtlarını birlikte ister. Hizmet kataloğu artık birden fazla sinerji kapısını destekler.
 - Testler her iki karşılıklı kaydın da tek başına değil, iki meslek düğümü birlikte öğrenildiğinde açıldığını doğrular.
 - E4 sinerji envanteri: 20/21 etki bildirimi bağlı; yalnız `uzakAnlasma` gerçek uzak şehir/rota sistemi bekliyor.
+
+
+### 13 Kasım — ulak siparişi yetkisi
+- Kâtip `koyMektubu` üçüncü seviyesiyle açılan `ulakSiparisi` hakkı, oyuncunun başka bir oyuncuya mektup taşıma işi verebildiği teklif oluşturma ucunda sunucu tarafında doğrulanır.
+- Siparişi verenin `ulakSiparisi` hakkı ile işi kabul eden kâtibin `mektup` hizmet yetkisi ayrı ayrı aranır; yalnız kâtibin becerili olması sipariş açmaya yetmez.
+- Regresyon testleri hakkı olmayan sipariş vereni, üçüncü seviye ile açılan siparişi, mevcut teslim/emanet/ret/iptal akışlarını kapsar. CI #786 sonucu bekleniyor.
+- Bağlanan hak tüketicisi: `ulakSiparisi` (203 hak kullanımından 1'i için gerçek sunucu eylem kapısı).
