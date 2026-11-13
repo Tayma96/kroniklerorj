@@ -8,7 +8,7 @@ import { TARIF_KILIDI, beceriDugumu, gocKarsiligi } from "../src/icerik/agaclar/
 import { kancaMi, seviyeVer } from "../src/yerlesim/beceri.ts";
 import { meslekKaydi, meslekSec } from "../src/yerlesim/meslek.ts";
 import { ALET_OMRU, kaliteBecerisi, tarifListesi, tarifYap } from "../src/yerlesim/tarif.ts";
-import { hizmetAcik, sinerjiAcik } from "../src/yerlesim/beceri-etki.ts";
+import { hizmetAcik, sinerjiAcik, tarifAcik } from "../src/yerlesim/beceri-etki.ts";
 import { mulkluIkram } from "../src/mulk/tapu.ts";
 import { temelIsYap } from "../src/yerlesim/temel-is.ts";
 import type { Karakter, Kasaba } from "../src/yerlesim/tipler.ts";
@@ -362,4 +362,35 @@ test("ticaretSenedi sinerjisi tüccar toptan alım ve kâtip sözleşme bilgisi 
   seviyeVer(diger, "tuccar.toptanAlim", 2);
   assert.equal(sinerjiAcik(diger, "ticaretSenedi"), false);
   assert.equal(kaliteBecerisi(diger, TARIFLER.senet), 0);
+});
+
+
+test("arbalet tarifi demirci mekanizma ustalığı ve marangoz araba yapımı birlikteyken açılır", () => {
+  const k = testKasabasi();
+  const c = oyuncuEkle(k, 121, k.ay - 16 * 12);
+  seviyeVer(c, "demirci.mekanizmaUstaligi", 2);
+  assert.equal(tarifAcik(c, "arbalet"), false, "demirci tek başına arbalet açamaz");
+  seviyeVer(c, "marangoz.arabaYapimi", 1);
+  assert.equal(sinerjiAcik(c, "arbalet"), true);
+  assert.equal(tarifAcik(c, "arbalet"), true);
+  c.ev = { kereste: 2, civi: 3, deri: 1 };
+  const sonuc = tarifYap(c, "arbalet", k.ay);
+  assert.ok(sonuc.ok, JSON.stringify(sonuc));
+  assert.equal(c.ev.arbalet, 1);
+  assert.equal(c.ev.kereste, undefined);
+});
+
+test("ticaretSozlesmesi tarifi kâtip sözleşme ve tüccar toptan alım birlikteyken açılır", () => {
+  const k = testKasabasi();
+  const c = oyuncuEkle(k, 122, k.ay - 16 * 12);
+  seviyeVer(c, "katip.vasiyetSozlesme", 2);
+  assert.equal(tarifAcik(c, "sozlesme"), false, "kâtip tek başına ticaret sözleşmesi hazırlayamaz");
+  seviyeVer(c, "tuccar.toptanAlim", 1);
+  assert.equal(sinerjiAcik(c, "ticaretSozlesmesi"), true);
+  assert.equal(tarifAcik(c, "sozlesme"), true);
+  c.ev = { kagit: 1, murekkep: 1 };
+  const sonuc = tarifYap(c, "sozlesme", k.ay);
+  assert.ok(sonuc.ok, JSON.stringify(sonuc));
+  assert.equal(c.ev.sozlesme, 1);
+  assert.equal(c.ev.kagit, undefined);
 });
