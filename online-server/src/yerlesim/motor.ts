@@ -101,6 +101,7 @@ import { mulkluIkram, mulkluKira, oyuncuHani } from "../mulk/tapu.ts";
 import type { MulkDefteri } from "../mulk/tapu.ts";
 import { toplulukDonumu } from "./topluluk.ts";
 import type { ToplulukKaydi } from "./topluluk-kayit.ts";
+import { istekBul, istekYaz } from "./istek-defteri.ts";
 import { ucgenDonumu, ucgenGorunumu, ucgenIslem, ucgenOkumaYuklenecek, ucgenYuklenecek } from "./ucgen.ts";
 
 // Faz 3 kayıtları (borç, teklif, engel, husumet) devirde vârise bağlanır.
@@ -137,7 +138,6 @@ export const OLAY_YANIT_EN_COK = 50;
 const KART_TARAMA = OKUMA_SAYFA_EN_COK * OLAY_SAYFA;
 /** Bu süreden uzun ara yeni bir giriştir; kısa aradaki yenilemelerde kart korunur. */
 export const OTURUM_ARASI_MS = 30 * 60 * 1000;
-const IST_EN_COK = 10;
 export { TANIDIK_EN_COK };
 /** §13.9: NPC'nin üçüncü kişilere bakışını görmek için ona yakınlık eşiği. */
 export const YAKINLIK_ESIGI = 30;
@@ -793,8 +793,8 @@ export class YerlesimMotoru {
     const r = await this.#oyuncu(hesapId);
     if (!r.ok) return r;
     const { s, kar, ili } = r.deger;
-    const onceki = kar.ist.find((x) => x[0] === no.deger);
-    if (onceki) return basarili(onceki[1]);
+    const onceki = istekBul(kar, no.deger);
+    if (onceki) return onceki.tur === "yanit" ? basarili(onceki.yanit) : hata("istek_tekrar");
     const girdi = eylemGirdisiCoz(govde);
     if (!girdi.ok) return girdi;
     const k = this.kasaba;
@@ -820,8 +820,7 @@ export class YerlesimMotoru {
       ...(hedef ? { hedefAd: kisiAdi(k, hedef, dil) ?? null } : {}),
       ...(olay ? { olay } : {}),
     };
-    kar.ist.push([no.deger, yanit]);
-    if (kar.ist.length > IST_EN_COK) kar.ist.splice(0, kar.ist.length - IST_EN_COK);
+    istekYaz(kar, no.deger, yanit, this.#simdi);
     this.#kirli.add(KAR + kar.o).add(ILI + kar.o).add(SAKIN);
     await this.kaydet();
     return basarili(yanit);
@@ -839,8 +838,8 @@ export class YerlesimMotoru {
     const r = await this.#oyuncu(hesapId);
     if (!r.ok) return r;
     const { s, kar, ili } = r.deger;
-    const onceki = kar.ist.find((x) => x[0] === no.deger);
-    if (onceki) return basarili(onceki[1]);
+    const onceki = istekBul(kar, no.deger);
+    if (onceki) return onceki.tur === "yanit" ? basarili(onceki.yanit) : hata("istek_tekrar");
     if (olduMu(kar)) return hata("olu");
     const ay = this.kasaba.ay;
     const bitti = await this.#beceriTamamla(kar);
@@ -858,8 +857,7 @@ export class YerlesimMotoru {
     for (const o of ek.digerleri) if (this.kasaba.kar.has(o)) this.#kirli.add(KAR + o).add(ILI + o);
     if (ek.toplum) this.#kirli.add(TOPLUM);
     const yanit = structuredClone({ ...sonuc.deger, ...(olay ? { olay } : {}), envanter: kar.ev ?? {}, para: kar.pa, takat: kar.tk });
-    kar.ist.push([no.deger, yanit]);
-    if (kar.ist.length > IST_EN_COK) kar.ist.splice(0, kar.ist.length - IST_EN_COK);
+    istekYaz(kar, no.deger, yanit, this.#simdi);
     this.#kirli.add(KAR + kar.o).add(ILI + kar.o).add(SAKIN);
     if (ek.siparis) this.#kirli.add(SIPARIS);
     if (ek.ekonomi) this.#kirli.add(EKONOMI);
@@ -1612,8 +1610,8 @@ export class YerlesimMotoru {
     const r = await this.#oyuncu(hesapId);
     if (!r.ok) return r;
     const { kar } = r.deger;
-    const onceki = kar.ist.find((x) => x[0] === no.deger);
-    if (onceki) return basarili(onceki[1]);
+    const onceki = istekBul(kar, no.deger);
+    if (onceki) return onceki.tur === "yanit" ? basarili(onceki.yanit) : hata("istek_tekrar");
     if (!olduMu(kar)) return hata("devir_yok");
     const k = this.kasaba;
     await this.#yukle(k.sakin.map((s) => s.o));
@@ -1627,7 +1625,7 @@ export class YerlesimMotoru {
     const varis = u.deger.kar;
     const yanit = structuredClone({ id: varis.o, pk: govde.pk, plan: plan.deger, olay, para: varis.pa, hanedan: hanedanOzeti(varis, k.ay) });
     // Aynı istekNo, hesap artık vârise baksa da aynı yanıtı döndürür.
-    for (const x of [kar, varis]) x.ist.push([no.deger, yanit]);
+    for (const x of [kar, varis]) istekYaz(x, no.deger, yanit, this.#simdi);
     this.#hepsiKirli();
     await this.kaydet();
     return basarili(yanit);

@@ -5,6 +5,7 @@ import isleyici, { DunyaDO, HesapDO, YerlesimDO } from "../src/index.ts";
 import { HIZ_SINIRI } from "../src/mantik.ts";
 import { oturumOlustur, oturumDogrula } from "../src/oturum.ts";
 import type { Env } from "../src/tipler.ts";
+import { TELAFI_GUNLUK_AKCE, telafiGunlukEkle } from "../src/yonetim/y2.ts";
 import { sahteAdAlani, sahteDepolama } from "./yardimci.ts";
 
 const KOD = "Kronikler-Test-Davet-Kodu-2026-Sonbahar";
@@ -155,4 +156,13 @@ test("oturum belirteci sürüm taşır; sürümsüz belirteç sürüm 0", async 
   assert.ok(s0.ok && s3.ok);
   assert.equal(s0.surum, 0);
   assert.equal(s3.surum, 3);
+});
+
+test("telafi günlük akçe tavanı: aynı gün birikir, yeni TR gününde sıfırlanır", () => {
+  const gun = Date.UTC(2026, 10, 13, 9);
+  const a = telafiGunlukEkle(undefined, gun, TELAFI_GUNLUK_AKCE - 1);
+  assert.ok(a);
+  assert.equal(telafiGunlukEkle(a, gun, 2), undefined);
+  assert.equal(telafiGunlukEkle(a, gun, 1)?.n, TELAFI_GUNLUK_AKCE);
+  assert.equal(telafiGunlukEkle(a, gun + 24 * 60 * 60 * 1000, TELAFI_GUNLUK_AKCE)?.n, TELAFI_GUNLUK_AKCE);
 });

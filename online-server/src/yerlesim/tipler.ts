@@ -137,8 +137,10 @@ export interface Karakter {
   ky: 0 | 1;
   /** Eylem sayacı (zar tohumu). */
   en: number;
-  /** Son istekNo yanıtları (tekrar güvenliği). */
-  ist: [string, unknown][];
+  /** Son istekNo yanıtları (tekrar güvenliği); üçüncü öğe yazım anı (eski kayıtta yok). Bkz. istek-defteri.ts. */
+  ist: [string, unknown, number?][];
+  /** Yanıtı atılmış ama tekrarsızlık penceresindeki istekNo'lar: [istekNo, an] (eski kayıtta yok). */
+  isk?: [string, number][];
   /** Meslek ve beceri ağacı (ana tasarım §5; eski kayıtta yok). */
   ms?: MeslekKaydi;
   /** Envanter: mal → adet. */

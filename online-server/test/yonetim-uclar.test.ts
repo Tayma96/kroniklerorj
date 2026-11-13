@@ -7,6 +7,7 @@ import type { Env } from "../src/tipler.ts";
 import { yonetimCagir } from "../src/ic.ts";
 import { kumeAnahtarlari, kumeKesisir } from "../src/siyaset/makam.ts";
 import { PANEL_PARCALARI } from "../src/yonetim/panel.ts";
+import { TELAFI_GUNLUK_AKCE } from "../src/yonetim/y2.ts";
 import { googleYuku, ISTEMCI, jwtImzala, rsaAnahtari, sahteAdAlani, sahteJwks, type TestAnahtari } from "./yardimci.ts";
 
 const KURUCU = "berkay@ornek.com";
@@ -535,6 +536,36 @@ test("Y3 telafi: akçe olayı tekrar güvenli, kendi hesap kümesine kapalı ve 
     assert.equal(liste.govde.telafiler.length, 2);
     assert.ok(liste.govde.telafiler.some((x: { hedef: string; hedefAd: string; tur: string }) => x.hedef === mehmet.hesap && x.hedefAd === "Mehmet" && x.tur === "akce"));
     assert.ok(liste.govde.telafiler.some((x: { hedef: string; tur: string }) => x.hedef === mehmet.hesap && x.tur === "esya"));
+  } finally {
+    globalThis.fetch = eskiFetch;
+  }
+});
+
+test("Y3 telafi: kurucu başına günlük akçe tavanı; aşımda telafi_gunluk_siniri, eşya telafisi sayılmaz", async () => {
+  try {
+    const { cagir, oyuncu, yonetici } = await kur();
+    await oyuncu(KURUCU_SUB, "Ayşe");
+    const mehmet = await oyuncu("220000000000000000002", "Mehmet", "develi");
+    const yb = (await yonetici(KURUCU_SUB, KURUCU)).govde.oturum as string;
+    const akce = (tutar: number) => ({ hedef: mehmet.hesap, tur: "akce", tutar, gerekce: "Hatalı işlem düzeltmesi", istekNo: no() });
+    let toplam = 0;
+    while (toplam + 10000 <= TELAFI_GUNLUK_AKCE) {
+      const r = await cagir("POST", "/yonetim/telafi", { oturum: yb, govde: akce(10000) });
+      assert.equal(r.durum, 200);
+      toplam += 10000;
+    }
+    const kalan = TELAFI_GUNLUK_AKCE - toplam;
+    const asim = await cagir("POST", "/yonetim/telafi", { oturum: yb, govde: akce(kalan + 1) });
+    assert.deepEqual([asim.durum, asim.govde], [429, { hata: "telafi_gunluk_siniri" }]);
+    const esya = await cagir("POST", "/yonetim/telafi", {
+      oturum: yb,
+      govde: { hedef: mehmet.hesap, tur: "esya", mal: "nal", adet: 1, gerekce: "Eksik eşya telafisi", istekNo: no() },
+    });
+    assert.equal(esya.durum, 200, "eşya telafisi akçe tavanına sayılmaz");
+    if (kalan > 0) assert.equal((await cagir("POST", "/yonetim/telafi", { oturum: yb, govde: akce(kalan) })).durum, 200);
+    const liste = await cagir("GET", "/yonetim/telafiler", { oturum: yb });
+    const akceToplami = (liste.govde.telafiler as { tur: string; tutar?: number }[]).reduce((t, x) => t + (x.tur === "akce" ? x.tutar ?? 0 : 0), 0);
+    assert.equal(akceToplami, TELAFI_GUNLUK_AKCE);
   } finally {
     globalThis.fetch = eskiFetch;
   }

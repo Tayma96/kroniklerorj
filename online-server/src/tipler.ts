@@ -70,6 +70,8 @@ export const HATA_DURUMU = {
   google_gecersiz: 401,
   google_erisilemiyor: 503,
   hiz_siniri: 429,
+  /** Yönetim: kurucunun bugünkü akçe telafisi tavanı (TELAFI_GUNLUK_AKCE) doldu. */
+  telafi_gunluk_siniri: 429,
   profil_yok: 404,
   profil_var: 409,
   ad_uzunluk: 400,
@@ -136,6 +138,8 @@ export const HATA_DURUMU = {
   hediye_dongu: 409,
   aralik_dolu: 409,
   istek_yok: 404,
+  /** istekNo tekrarsızlık penceresinde (24 sa) zaten işlendi; yanıtı artık saklı değil. */
+  istek_tekrar: 409,
   soylenti_yok: 404,
   duzen_gecersiz: 400,
   oncelik_bekle: 409,

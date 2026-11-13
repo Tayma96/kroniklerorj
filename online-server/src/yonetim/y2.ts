@@ -8,12 +8,23 @@ import { kumeAnahtarlari, kumeKesisir } from "../siyaset/makam.ts";
 import { basarili, hata, type Sonuc } from "../tipler.ts";
 import { govdeOzeti, hane, kayitHazirla, reddet, tekrar, yaz, yetkiIste, type Ek, type Oturum } from "./islem.ts";
 import { gerekceCoz, hesapIdCoz } from "./yaptirim.ts";
+import { trGunu, type GunlukSayac } from "./sikayet.ts";
 
 /** [PARAMETRE] Telafi geçmişi sayfa boyu. */
 export const TELAFI_SAYFASI = 50;
 const TELAFI = "telafi:"; // + hedef DO'ya gönderilen kalıcı olay kimliği
 const SIRA = "telafiNo:"; // + 12 hane → olay kimliği
 const SAYAC = "sayac:telafi";
+/** [PARAMETRE] Kurucu başına bir TR gününde verilebilecek toplam akçe telafisi (eşya sayılmaz). */
+export const TELAFI_GUNLUK_AKCE = 50_000;
+const GUNLUK = "telafiGunluk:"; // + yönetici sub → {gun, n: toplam akçe}
+
+/** Saf: tutar bugünkü toplama eklenebiliyorsa yeni sayaç; değilse undefined. */
+export function telafiGunlukEkle(onceki: GunlukSayac | undefined, simdi: number, tutar: number, tavan = TELAFI_GUNLUK_AKCE): GunlukSayac | undefined {
+  const gun = trGunu(simdi);
+  const n = onceki && onceki.gun === gun ? onceki.n : 0;
+  return n + tutar <= tavan ? { gun, n: n + tutar } : undefined;
+}
 
 export interface TelafiKaydi {
   no: number;
@@ -99,13 +110,30 @@ export async function telafiUygula(o: Oturum, govde: unknown): Promise<Sonuc<unk
     istekNo: olayId,
     ...(tutar !== undefined ? { tutar } : { mal: mal!, adet: adet! }),
   };
+  // Günlük akçe tavanı: pay, dış çağrıdan (await) ÖNCE ayrılır ki eşzamanlı istekler tavanı aşamasın;
+  // uygulama başarısızsa pay geri bırakılır.
+  const gunlukAnahtar = GUNLUK + o.y.sub;
+  if (tutar !== undefined) {
+    const yeni = telafiGunlukEkle(await o.b.depo.al<GunlukSayac>(gunlukAnahtar), o.b.simdi, tutar);
+    if (!yeni) return reddet(o, "telafi", "telafi_gunluk_siniri", ek);
+    await o.b.depo.koy({ [gunlukAnahtar]: yeni });
+  }
+  const payiBirak = async (): Promise<void> => {
+    if (tutar === undefined) return;
+    const d = await o.b.depo.al<GunlukSayac>(gunlukAnahtar);
+    if (d && d.gun === trGunu(o.b.simdi)) await o.b.depo.koy({ [gunlukAnahtar]: { gun: d.gun, n: Math.max(0, d.n - tutar) } });
+  };
   let uygulama: Sonuc<unknown>;
   try {
     uygulama = await telafiYaz(hedefProfil.deger.yerlesim, hedef, hedefGovde);
   } catch {
+    await payiBirak();
     return reddet(o, "telafi", "sunucu_hatasi", ek);
   }
-  if (!uygulama.ok) return reddet(o, "telafi", uygulama.hata, ek);
+  if (!uygulama.ok) {
+    await payiBirak();
+    return reddet(o, "telafi", uygulama.hata, ek);
+  }
 
   const sayac = ((await o.b.depo.al<number>(SAYAC)) ?? 0) + 1;
   const kayit: TelafiKaydi = {

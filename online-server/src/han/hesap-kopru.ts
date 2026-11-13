@@ -111,8 +111,24 @@ export async function masaBileti(b: HanHesapBaglami, hamNo: unknown): Promise<So
   return basarili({ masa: ad, no, plaka: { hesap: b.hesapId, ad: profil.deger.ad, ...(cerceve ? { cerceve } : {}) }, yt, eg });
 }
 
+// Hesap başına han yazma sırası: eylem/ikram, sayaç ve istekNo kaydını başka DO'ya await'ten önce okuyup sonra
+// yazar. DO aradaki await'te başka isteği içeri aldığından bu bölümler hesap (depo) başına sıraya konur; aksi
+// hâlde eşzamanlı isteklerle günlük tavan aşılır ve aynı istekNo iki kez ödenir/anons edilir.
+const hanSirasi = new WeakMap<Depo, Promise<unknown>>();
+
+function sirayla<T>(depo: Depo, is: () => Promise<T>): Promise<T> {
+  const onceki = hanSirasi.get(depo) ?? Promise.resolve();
+  const sonraki = onceki.then(is, is);
+  hanSirasi.set(depo, sonraki.catch(() => undefined));
+  return sonraki;
+}
+
 /** POST /v1/han/eylem: istekNo ile tekrar güvenli; günlük tavan yalnız başarılı eylemi sayar. */
-export async function hanEylemi(b: HanHesapBaglami, govde: unknown): Promise<Sonuc<{ olay: MasaOlayi }>> {
+export function hanEylemi(b: HanHesapBaglami, govde: unknown): Promise<Sonuc<{ olay: MasaOlayi }>> {
+  return sirayla(b.depo, () => hanEylemiSirada(b, govde));
+}
+
+async function hanEylemiSirada(b: HanHesapBaglami, govde: unknown): Promise<Sonuc<{ olay: MasaOlayi }>> {
   const girdi = eylemGirdisiCoz(govde);
   if (!girdi.ok) return girdi;
   const anahtar = EYLEM_ISTEK + girdi.deger.istekNo;
@@ -141,7 +157,11 @@ export interface IkramSonucu {
  * POST /v1/han/ikram: (1) masa kontrolü (veren oturuyor, alan masada, engel yok), (2) ödeme YerlesimDO'da,
  * (3) masaya anons. Fiyat yalnız sunucu menüsünden. istekNo ile tekrar güvenli (ödeme de istekNo'yu taşır).
  */
-export async function hanIkrami(b: HanHesapBaglami, govde: unknown): Promise<Sonuc<IkramSonucu>> {
+export function hanIkrami(b: HanHesapBaglami, govde: unknown): Promise<Sonuc<IkramSonucu>> {
+  return sirayla(b.depo, () => hanIkramiSirada(b, govde));
+}
+
+async function hanIkramiSirada(b: HanHesapBaglami, govde: unknown): Promise<Sonuc<IkramSonucu>> {
   const girdi = ikramGirdisiCoz(govde);
   if (!girdi.ok) return girdi;
   const { hedef, ikram, istekNo } = girdi.deger;
