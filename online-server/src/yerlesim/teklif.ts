@@ -15,7 +15,7 @@ import { varsayilanSonuc } from "./duzen.ts";
 import { engelliMi } from "./engel.ts";
 import { AZALAN_PENCERE, getiriCarpani } from "./eylem.ts";
 import { karakterYasi, namEkle, takatHarca } from "./karakter.ts";
-import { aracArtisi, hizmetAcik } from "./beceri-etki.ts";
+import { aracArtisi, hakAcik, hizmetAcik } from "./beceri-etki.ts";
 import { hizmetEkle, meslekKaydi } from "./meslek.ts";
 import { aracAsindir } from "./tarif.ts";
 import { gostergeDegistir, toplulukAl } from "./topluluk-kayit.ts";
@@ -256,6 +256,8 @@ export function teklifOlustur(k: Kasaba, gon: Karakter, alici: Karakter, govde: 
     if (!npc) return hata("kisi_yok");
   }
   if (t_ === "is" && s.it === "mektup") {
+    // Ulak siparişi veren de Kâtip ağacındaki üçüncü seviye hakkı öğrenmiş olmalıdır.
+    if (!hakAcik(gon, "ulakSiparisi")) return hata("dugum_kapali");
     const hedef = s.he ? k.kar.get(s.he) : undefined;
     if (!hedef || hedef.o === gon.o || hedef.o === alici.o) return hata("kisi_yok");
     if (engelliMi(k.tp, gon.o, hedef.o) || engelliMi(k.tp, alici.o, hedef.o)) return hata("engelli");
