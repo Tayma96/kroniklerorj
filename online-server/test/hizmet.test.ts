@@ -312,6 +312,7 @@ function hanciKarakter(hanciSeviye: number, sazSeviye: number): Karakter {
 test("E4 sinerji kapısı: saz gecesi hem hancı düğümünü hem ozan saz ustalığını ister", () => {
   const eksikOzan = hanciKarakter(3, 0);
   const saz = hizmetTarifiBul("sazGecesi")!;
+  assert.deepEqual(saz.acars, ["ortakSahne", "sazGecesi"], "iki meslek ağacındaki karşılıklı tanımlar birlikte aranır");
   assert.equal(hizmetYetkiliMi(eksikOzan, saz), false);
   const kapali = hizmetHazirla(ekonomi(), eksikOzan, "sazGecesi", 1, 12);
   assert.deepEqual(kapali, { ok: false, hata: "dugum_kapali" });
