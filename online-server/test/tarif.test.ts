@@ -41,7 +41,7 @@ test("kömür: girdi düşer, çıktı eklenir, hizmet ve kondisyon kaybı", () 
   c.ev = { odun: 5 };
   const r = tarifYap(c, "komur", k.ay);
   assert.ok(r.ok, JSON.stringify(r));
-  assert.deepEqual(c.ev, { odun: 5 - TARIFLER.komur.girdi.odun, komur: 1 });
+  assert.deepEqual(c.ev, { odun: 5 - TARIFLER.komur.girdi.odun, komur: TARIFLER.komur.cikti[1] });
   assert.equal(r.deger.hizmet, TARIFLER.komur.hizmet);
   assert.equal(meslekKaydi(c).s.oduncu?.hz, TARIFLER.komur.hizmet);
   assert.equal(c.tk, 18 - TARIFLER.komur.takat);

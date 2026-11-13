@@ -343,7 +343,7 @@ test("ekonomi simülasyonu: 10 oyuncu, 24 ay — toplam akçe değişmezi ve paz
 // (3) Meslek gelirleri ±%40: AÇIK (denge işi). Ölçüm çalışır ve yazdırılır ama henüz ölçütü karşılamıyor: tek
 // oyunculu işleyen meslek kıtlık primi + kasaba stok kanalıyla öne geçiyor (demirci ~45), ham üretici takatle sınırlı
 // (oduncu ~17). Ayar `denge-denetcisi`ne: nal/alet (dikey dilim) ve stok kanalı birlikte ele alınmalı.
-test("ekonomi simülasyonu: meslek gelirleri birbirinin ±%40'ı içinde", { skip: "denge ayarı bekliyor (rapor: oran ~2,6)" }, () => {
+test("ekonomi simülasyonu: meslek gelirleri birbirinin ±%40'ı içinde", () => {
   const d = Object.values(ekonomiSim(false).meslekOrt);
   assert.ok(Math.max(...d) <= Math.min(...d) * (1 + EKONOMI_SIM_MESLEK_FARKI), d.map((x) => x.toFixed(1)).join(","));
 });

@@ -1,6 +1,6 @@
 // Çevrimiçi mallar ve NPC taban fiyatları (ana tasarım §5.4–5.5). Fiyatlar akçedir. [PARAMETRE]
 // `meslek`: malı asıl üreten meslek (lonca doluluğu ve kıtlık primi buna göre hesaplanır).
-// Zincirde her tarif az da olsa değer katar (tarifler.ts; denge denetimi 9 Kasım): 1 odun (1) → kereste/kömür (3);
+// Zincirde her tarif az da olsa değer katar (tarifler.ts; denge denetimi 9 Kasım): 1 odun (1) → kereste (3) ya da 2 kömür (6);
 // cevher + kömür (6) → 2 nal (16); 2 cevher + kömür + kereste (12) → alet (24). Alet asıl değerini hasatta
 // (+2 tahil × 4 kullanım) ve "basit onarım"la uzayan ömründe verir. Fiyat kuralı: MESLEK_AGACLARI §3.1.
 

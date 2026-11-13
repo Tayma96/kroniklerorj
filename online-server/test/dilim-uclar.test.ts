@@ -6,6 +6,7 @@ import isleyici, { DunyaDO, HesapDO, YerlesimDO } from "../src/index.ts";
 import type { Env } from "../src/tipler.ts";
 import type { Siparis } from "../src/yerlesim/siparis.ts";
 import { oyunAyi } from "../src/saat.ts";
+import { TARIFLER } from "../src/icerik/tarifler.ts";
 import { googleYuku, ISTEMCI, jwtImzala, rsaAnahtari, sahteAdAlani, sahteJwks } from "./yardimci.ts";
 
 type Nesne = Record<string, any>;
@@ -116,7 +117,8 @@ test("dikey dilim uçları: Hal, tarif, satış, sipariş teslimi ve teşekkür 
     await tamam("/v1/tarif", { tarif: "komur" });
     await tamam("/v1/tarif", { tarif: "nal" });
     const nal = await tamam("/v1/tarif", { tarif: "nal" });
-    assert.deepEqual(nal.envanter, { cevher: 1, nal: 4, odun: 2 });
+    // İki kömür tarifinin çıktısından iki nal tarifi birer kömür düşer.
+    assert.deepEqual(nal.envanter, { cevher: 1, komur: 2 * TARIFLER.komur.cikti[1] - 2, nal: 4, odun: 2 });
     assert.ok(nal.hal.kondisyon.deger < 100);
     assert.ok(nal.hal.nedenler.some((x: Nesne) => x.neden === "hal.neden.tarif"));
     assert.equal(nal.takat, takat0 - 2 - 1 - 1 - 1 - 1 - 1);

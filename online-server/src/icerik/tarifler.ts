@@ -22,7 +22,7 @@ export interface Tarif {
 
 export const TARIFLER = {
   kereste: { id: "kereste", meslek: "oduncu", girdi: { odun: 1 }, cikti: ["kereste", 1], takat: 1, hizmet: 2 },
-  komur: { id: "komur", meslek: "oduncu", girdi: { odun: 1 }, cikti: ["komur", 1], takat: 1, hizmet: 2 },
+  komur: { id: "komur", meslek: "oduncu", girdi: { odun: 1 }, cikti: ["komur", 2], takat: 1, hizmet: 2 },
   nal: { id: "nal", meslek: "demirci", girdi: { cevher: 1, komur: 1 }, cikti: ["nal", 2], takat: 1, hizmet: 2 },
   alet: {
     id: "alet", meslek: "demirci", girdi: { cevher: 2, komur: 1, kereste: 1 }, cikti: ["alet", 1], takat: 2,
@@ -43,7 +43,7 @@ export const TARIFLER = {
   baklagil: { id: "baklagil", meslek: "ciftci", girdi: {}, cikti: ["bakla", 4], takat: 2, hizmet: 3 },
   zahire: { id: "zahire", meslek: "ciftci", girdi: { tahil: 4, bez: 1 }, cikti: ["zahire", 1], takat: 1, hizmet: 2 },
   // Oduncu
-  kesmeTas: { id: "kesmeTas", meslek: "oduncu", girdi: { tas: 3 }, cikti: ["kesmeTas", 1], takat: 1, hizmet: 2 },
+  kesmeTas: { id: "kesmeTas", meslek: "oduncu", girdi: { tas: 2 }, cikti: ["kesmeTas", 1], takat: 1, hizmet: 2 },
   blok: {
     id: "blok", meslek: "oduncu", girdi: { kesmeTas: 2 }, cikti: ["blok", 1], takat: 2, hizmet: 3,
     arac: { mal: "alet", adet: 1, zorunlu: true },
