@@ -72,12 +72,17 @@ export function hizmetAcik(k: Karakter, hizmet: string): boolean {
 export function hakAcik(k: Karakter, hak: string): boolean {
   const acik = [...acikEtkiler(k)].some((e) => e.tur === "hak" && e.hak === hak);
   // Ahşap köprü projesi, marangozun köprücülük hakkına ek olarak demircinin dişli/metal ustalığını ister.
-  return acik && (hak !== "ahsapKopru" || sinerjiAcik(k, "degirmenKopruDemiri"));
+  return acik && (hak !== "ahsapKopru" || sinerjilerAcik(k, ["degirmenKopruDemiri", "kopruDemiri"]));
 }
 
 /** Çapraz meslek sinerjisi: açan düğüm tek başına yetmez, tanımlı öteki düğüm/seviye de öğrenilmiş olmalıdır. */
 export function sinerjiAcik(k: Karakter, acar: string): boolean {
   return [...acikEtkiler(k)].some((e) => e.tur === "sinerji" && e.acar === acar && dugumSeviyesi(k, e.dugum) >= e.seviye);
+}
+
+/** Bir eylem için tanımlanmış bütün çapraz meslek sinerjileri birlikte açık olmalıdır. */
+export function sinerjilerAcik(k: Karakter, acarlar: readonly string[]): boolean {
+  return acarlar.every((acar) => sinerjiAcik(k, acar));
 }
 
 /** Tarif/iş kimliği ya da tarif gruplarında, belirtilen girdiye uygulanan tasarruf yüzdesi. */
