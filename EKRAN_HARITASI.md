@@ -18,7 +18,6 @@
 | `mobile/app/oyun/sehir.tsx` — `/oyun/sehir` | Bulunulan şehrin durumunu ve mekân girişlerini gösterir. | Menü kahraman alanı > Şehre Çık; geri ile önceki ekran. |
 | `mobile/app/oyun/harita.tsx` — `/oyun/harita` | Beylikleri ve yerleşimleri haritada gezdirir. | Menü > Harita; Şehir > Diyarı Gez. |
 | `mobile/app/oyun/diyar/[name].tsx` — `/oyun/diyar/[name]` | Seçilen yerleşimin yönetim, vergi ve yolculuk ayrıntılarını gösterir. | Harita üzerinde yerleşim seçimi. |
-| `mobile/app/oyun/sehir.tsx` — `/oyun/sehir` | Şehir görünümünü, mekânları ve bölgesel bilgileri birleştirir. | Menü > Şehre Çık. |
 
 ### Geçim, eğitim ve güç
 
