@@ -368,6 +368,9 @@ test("ticaretSenedi sinerjisi tüccar toptan alım ve kâtip sözleşme bilgisi 
 test("arbalet tarifi demirci mekanizma ustalığı ve marangoz araba yapımı birlikteyken açılır", () => {
   const k = testKasabasi();
   const c = oyuncuEkle(k, 121, k.ay - 16 * 12);
+  c.tk = 18;
+  c.ta = k.ay;
+  meslekSec(c, "demirci", k.ay);
   seviyeVer(c, "demirci.mekanizmaUstaligi", 2);
   assert.equal(tarifAcik(c, "arbalet"), false, "demirci tek başına arbalet açamaz");
   seviyeVer(c, "marangoz.arabaYapimi", 1);
@@ -383,6 +386,9 @@ test("arbalet tarifi demirci mekanizma ustalığı ve marangoz araba yapımı bi
 test("ticaretSozlesmesi tarifi kâtip sözleşme ve tüccar toptan alım birlikteyken açılır", () => {
   const k = testKasabasi();
   const c = oyuncuEkle(k, 122, k.ay - 16 * 12);
+  c.tk = 18;
+  c.ta = k.ay;
+  meslekSec(c, "katip", k.ay);
   seviyeVer(c, "katip.vasiyetSozlesme", 2);
   assert.equal(tarifAcik(c, "sozlesme"), false, "kâtip tek başına ticaret sözleşmesi hazırlayamaz");
   seviyeVer(c, "tuccar.toptanAlim", 1);
