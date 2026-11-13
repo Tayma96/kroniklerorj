@@ -35,7 +35,9 @@ jobs:
         with:
           node-version: "22"
           cache: npm
-          cache-dependency-path: mobile/package-lock.json
+          cache-dependency-path: |
+            mobile/package-lock.json
+            online-server/package-lock.json
       - name: Install TypeScript toolchain
         working-directory: mobile
         run: npm ci --no-audit --no-fund
@@ -51,6 +53,9 @@ jobs:
       - name: Validate language isolation
         working-directory: mobile
         run: node scripts/_smoke/dil-karisma.cjs
+      - name: Install pinned Wrangler
+        working-directory: online-server
+        run: npm ci --no-audit --no-fund
       - name: Online server tests
         working-directory: online-server
         run: npm test
@@ -63,5 +68,5 @@ jobs:
       - name: Validate production and isolated test Worker configs
         working-directory: online-server
         run: |
-          npx --yes wrangler@4 deploy --dry-run --config wrangler.toml
-          npx --yes wrangler@4 deploy --dry-run --config wrangler.test.toml
+          ./node_modules/.bin/wrangler deploy --dry-run --config wrangler.toml
+          ./node_modules/.bin/wrangler deploy --dry-run --config wrangler.test.toml

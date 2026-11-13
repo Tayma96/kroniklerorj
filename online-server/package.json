@@ -7,6 +7,9 @@
     "typecheck": "../mobile/node_modules/.bin/tsc --noEmit -p .",
     "test:load": "node scripts/yuk-test.mjs",
     "test": "node --test \"test/*.test.ts\"",
-    "deploy": "npx wrangler deploy"
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "4.156.0"
   }
 }
