@@ -19,7 +19,7 @@ Durum: kısmi uygulama. `tasarruf` tüketicisi, ortak-durum/han tüketicileri, E
 14 beceri ağacı dosyasının tamamı tarandı. Şu an mevcut sistem tüketicisi bulunmayan etkiler:
 - `hizmet`: 52 kullanımın 18 tanesi gerçek tüketiciye bağlandı (`ikram`, `yatak`, `oda`, `nobet`, `talim`, `vergiSayimi`, `meclisKaydi`, `turku`, `yaraBak`, `kirikSar`, `lohusa`, `teselli`, `sazGecesi`, `barisSofrasi`, `ziyafet`, `araBul`, `muhafizlik`, `mektup`); 34 kullanım kaldı. E4.3-A/B/C tamamlandı; E4.3-D'nin ilk dilimi sunucu/mobil/6 dilde çalışır.
 - `hak`: 203 kullanım — makam, lonca, ticaret, garnizon, sosyal yardım ve toplumsal ayrıcalıklar için sunucu tarafı yetki/eylem matrisi gerekir.
-- `sinerji`: 21 kullanım — 17 tüketici bağlı: `ortakSahne` (saz gecesi), `barisCorbasi` (barış sofrası), `seckinOda` (has oda), `barisSansi` (NPC arabuluculuğu +10), `yaylaCadiri` (çadır kalitesi), `pulZirhAstari` (pul zırh kalitesi), `ozelPastirma` (pastırma kalitesi), `kasabaDegirmeni` (un kalitesi), `hanKirisi` (kiriş kalitesi), `degirmenKopruDemiri` (ahşap köprü hakkı), `kagniHarmani` (kağnı kalitesi), `baklaYemegi` (ziyafet), `kervanArabasi` (araba kalitesi), `ulakCizmesi` (çizme kalitesi), `ticaretSenedi` (senet kalitesi), `arbalet` (arbalet tarifi) ve `ticaretSozlesmesi` (ticaret sözleşmesi tarifi); 4 etki kaldı.
+- `sinerji`: 21 kullanım — 20 etki bildirimi gerçek tüketiciye bağlandı. `kopruDemiri` artık `degirmenKopruDemiri` ile birlikte ahşap köprü yetkisinde; `sazGecesi` de `ortakSahne` ile birlikte hizmet pazarında doğrulanır. `uzakAnlasma` tek açık etkidir; doğrulanmış uzak şehir/rota altyapısı bulunmadan sahte tüketici eklenmeyecek.
 - `tasarruf`: 1 kullanım vardı; bu dalda bağlandı.
 - `hakAcik(kar, hak)` ve `sinerjiAcik(kar, acar)` ortak sunucu çözümleyicileri eklendi. `tarifAcik` artık arbalet ve ticaret sözleşmesi tariflerinde ikinci meslek koşulunu da sunucuda doğrular. 203 hak ve 4 sinerji etkisi açık kalır.
 
@@ -27,7 +27,7 @@ Durum: kısmi uygulama. `tasarruf` tüketicisi, ortak-durum/han tüketicileri, E
 
 1. `hak` için tek bir yetki kayıt/çözümleyici kur; istemci düğüm seviyesini yetki kanıtı saymasın. Her eylem sunucuda `hakAcik` üzerinden doğrulansın.
 2. `hizmet` için kalan iki taraflı iş akışlarını tamamla; ödeme kaynağı, teslim etkisi, iptal ve itibar akışını doğrula. E4.3-A/B/C tamamlandı.
-3. `sinerji` için ortak çözümleyici ve kalan 15 `acar` kimliğinin gerçek tüketicilerini ekle; bir düğümün varlığı tek başına açılma sağlamasın, iki meslekteki seviye koşulu aranmalı.
+3. `sinerji` için ortak çözümleyici kullan; uzak şehir/rota altyapısı tamamlanana kadar `uzakAnlasma` açık kalsın. İki yönlü tanımlanan sinerjilerde her iki kayıt da sunucuda doğrulansın.
 4. Her bağ için gizli/öğrenilmiş seviye, hesap/hane tekilliği, tekrar güvenliği ve çevrimdışı davranış testleri yaz.
 
 Bu üç sistem, farklı oyun döngülerini etkilediği için tek bir genel bonus yüzdesine indirgenmemelidir.
@@ -91,3 +91,10 @@ Bu üç sistem, farklı oyun döngülerini etkilediği için tek bir genel bonus
 - `ticaretSozlesmesi`: Kâtip `vasiyetSozlesme` ikinci seviye ve Tüccar `toptanAlim` birinci seviye birlikte olmalıdır. Yeni `sozlesme` malı/tarifi eklendi; tarif tek meslekle açılamaz.
 - İki tarif için de eksik sinerji, birlikte öğrenme, gerçek üretim ve envanter düşümü regresyon testleri eklendi.
 - Güncel envanter sayımı: 17/21 sinerji tüketicisi bağlı, 4 kaldı. `uzakAnlasma` gibi henüz gerçek uzak şehir/rota akışı bulunmayan etkiler sırf görünür olsun diye sahte tüketiciye bağlanmadı. Bu değişikliklerin CI doğrulaması henüz alınmadı.
+
+
+### 13 Kasım — karşılıklı köprü ve saz gecesi sinerji kayıtları
+- Ahşap köprü yetkisi, marangoz ağacındaki `kopruDemiri` ve demirci ağacındaki `degirmenKopruDemiri` kayıtlarının ikisini de doğrular; iki kayıt aynı çapraz meslek koşulunu karşılıklı olarak tarif eder.
+- Saz gecesi hizmeti, `ortakSahne` ve Ozan ağacındaki karşılıklı `sazGecesi` kayıtlarını birlikte ister. Hizmet kataloğu artık birden fazla sinerji kapısını destekler.
+- Testler her iki karşılıklı kaydın da tek başına değil, iki meslek düğümü birlikte öğrenildiğinde açıldığını doğrular.
+- E4 sinerji envanteri: 20/21 etki bildirimi bağlı; yalnız `uzakAnlasma` gerçek uzak şehir/rota sistemi bekliyor.
