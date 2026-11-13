@@ -272,7 +272,7 @@ function OyuncuEkran() {
               style={({ pressed }) => ({ minHeight: 52, flexDirection: yon(rtl), alignItems: "center", gap: 10, padding: 8, borderRadius: 8, borderWidth: secili ? 2 : 1, borderColor: secili ? C.goldBright : "rgba(201,162,78,0.35)", backgroundColor: pressed || secili ? "rgba(201,162,78,0.12)" : "rgba(14,10,6,0.55)" })}>
               <KisiYuzu id={k.id} ad={k.ad} boyut={36} oyuncu />
               <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 15, color: C.parchment, textAlign: hiza(rtl) }}>{k.ad}</Text>
-              {secili ? <GameIcon name="check-circle" size={18} color={C.goldBright} /> : null}
+              {secili ? <GameIcon name="medal" size={18} color={C.goldBright} /> : null}
             </Pressable>;
           }) : <Text style={{ fontFamily: F.serifItalic, fontSize: 14, lineHeight: 19, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{t("onl.tp.arb.arabulucuYok")}</Text>}
           {hata ? <Bant metin={t(hataAnahtari(hata))} rtl={rtl} /> : null}
