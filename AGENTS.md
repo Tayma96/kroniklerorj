@@ -45,3 +45,35 @@ okuma, çıktı ve testlerle kullanıcı limitini tüketmemektir.
 - Yayın/APK: `mobile/YAYIN.md` (yalnız kullanıcı yayın istediğinde)
 
 Bu kurallar kalite denetimini atlatmaz; yalnız ilgisiz bağlamı ve tekrarlı işi önler.
+
+## Model işbölümü
+
+Bu bir tercihtir, katı kural değil. Ajan çağrılamıyor, model uygun değil ya da iş çok küçükse en
+mantıklısı yapılır ve nedeni tek cümleyle söylenir. Rol modele değil göreve bağlıdır; model
+değişse (limit, fallback) işbölümü geçerlidir.
+
+- **Yönetici** (oturumdaki en güçlü model; Fable, limit dolarsa Opus): planlama, görev bölme,
+  tasarım kararları (mekanik, denge, hikâye yönü, oyuncuya hissettirilecek şey), gözden geçirme.
+  Büyük/çok dosyalı kodu `coder`a devreder; tek dosyalık küçük düzeltmeyi kendisi yapar.
+- **`coder`** (opus): kod (motor, ekranlar, Diyar sunucusu) ve yaratıcı içerik (hikâye yayları, sahne metinleri).
+  Sunucu ve güvenlik işlerinde mümkünse `coder`; `tester`a bırakılmaz.
+- **`tester`** (sonnet): smoke, i18n tamlığı, çeviri, tsc, rutin düzeltme.
+- Ajan model alanını `CLAUDE_CODE_SUBAGENT_MODEL` ezer; ayarlıysa işbölümü bozulur.
+
+Akış:
+1. Yönetici `coder`a kısa brief verir: amaç, kısıtlar, ilgili TASARIM_PUSULASI noktaları, bitiş ölçütü.
+2. `coder` bitirince `tester` koşar: `npx tsc --noEmit`, `i18n-icon-check`, `dil-karisma`, `olu-karar`,
+   `run-parallel` (300 hayat). Başarısızsa yönetici incelemeden `coder`a geri gider.
+3. Yönetici yalnız kontrolden geçen işin diff'ini okur: brief'e uyum, TASARIM_PUSULASI süzgeci
+   (zamanlayıcı yok, kayıp cezası yok, parayla atlatma yok, farm yok), sistem tutarlılığı,
+   oyuncu deneyimi, uç durumlar.
+4. Sonuç: kabul; kısa net düzeltme isteğiyle `coder`a geri; ya da küçükse yönetici düzeltir.
+   En fazla 2 düzeltme turu, sonra sorun kullanıcıya özetlenir.
+5. Kritik işte (yeni ana mekanik, denge, ana destan sahneleri) `coder`dan iki farklı yaklaşım
+   istenir; yönetici seçer veya birleştirir. Rutin işte tek yaklaşım.
+
+Çok oyunculu (Diyar): istemci eylemleri sunucuda doğrulanır (sunucu yetkili). `server/test/`
+canlı sunucuya bağlanır; canlıda koşturma, önce staging öner.
+
+Geri alınması zor işlerden (silme, canlı sunucu, yayın) önce kullanıcıya sorulur; diğerlerinde sorulmaz.
+Commit Türkçe, tek satır, dal `apk`. Oturum sonunda kalıcı kararlar `OTURUM_HAFIZASI.md`ye kısa yazılır.
