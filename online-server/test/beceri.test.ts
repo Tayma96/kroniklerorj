@@ -343,7 +343,7 @@ test("sinerji çözümleyicisi iki meslekteki gerçek düğüm seviyesini birlik
 test("ahsapKopru hakkı marangoz köprücülük ve demirci gelişmiş aletler birlikteyken açılır", () => {
   const k = testKasabasi();
   const c = kisi(k);
-  seviyeVer(c, "marangoz.koprucu", 1);
+  seviyeVer(c, "marangoz.koprucu", 3);
   assert.equal(hakAcik(c, "ahsapKopru"), false, "köprücülük hakkı tek başına yetmez");
   seviyeVer(c, "demirci.gelismisAletler", 1);
   assert.equal(hakAcik(c, "ahsapKopru"), false, "demirci ikinci seviye gerekir");
