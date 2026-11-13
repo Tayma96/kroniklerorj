@@ -16,7 +16,7 @@
 - Para, itibar veya XP eylemlerinde tur kilidi, tek sefer izi ya da azalan getiri bulunmalı.
   Farm ve P2W yok.
 - Yeni kayıt alanları opsiyonel ve eklemeli olmalı. `heirPreview` ile `continueAsHeir` aynı
-  sonucu göstermeli. `mobile/lib/mp/protocol.ts` ile `server/src/protocol.ts` bayt eşliğini koru.
+  sonucu göstermeli.
 - Kronikte yeni olayları dizi uzunluğuyla değil `e.q` / `s.hseq` sırasıyla tanı.
 
 ## Çalışma ve doğrulama
@@ -61,7 +61,7 @@ yerine geçmez.
 - Olaylar ve metinler: `mobile/lib/events.ts`, `mobile/lib/i18n.tsx`
 - Nüfus/NPC: `mobile/lib/nufus.ts`
 - Ekranlar: `mobile/app/`
-- Çok oyunculu protokol: `mobile/lib/mp/protocol.ts`, `server/src/protocol.ts`
+- Çok oyunculu (çevrimiçi): `mobile/app/online/`, `mobile/lib/online/`, sunucu `online-server/`
 
 Tasarım kararlarını kısa `TASARIM_PUSULASI.md` süzgecinden geçir. Eski gerekçeleri aramak
 yerine güncel kısa özetleri esas al; arşiv okumak için kullanıcıdan açık izin iste.

@@ -8,8 +8,8 @@ evlenir, lonca basamaklarını çıkar, kan davasına tutuşur ya da taht kurars
 yeminlerin, düşmanlıkların ve yarım kalan destanın vârisine geçer.
 
 **Ürün bugün:** `mobile/` altındaki Expo/React Native Android uygulaması. Tek oyunculu mod **tamamen çevrimdışı**,
-reklamsız ve satın alımsızdır. İsteğe bağlı çok oyunculu "Diyar" modu (BETA) `server/` altındaki Cloudflare
-Worker'da koşar.
+reklamsız ve satın alımsızdır. İsteğe bağlı çok oyunculu (çevrimiçi) mod geliştirme aşamasındadır; sunucusu
+`online-server/` altındaki Cloudflare Worker'dır ve henüz yayında değildir.
 
 *English:* Kronikler is a fully offline dynasty life-sim / narrative RPG set in 1247 Anatolia (Android, Expo/React
 Native, 6 languages). Live a life month by month, make one meaningful decision at a time, die, and continue as your
@@ -37,8 +37,8 @@ heir. No ads, no purchases, no timers.
 | `mobile/` | Expo SDK 56, React Native 0.85, React 19, expo-router, Reanimated 4, Skia, react-native-svg, TypeScript 6 |
 | Motor | `mobile/lib/game.ts` — saf TypeScript, her eylem `clone(prev) → mutasyon → return`; headless test edilebilir |
 | i18n | `mobile/lib/i18n.tsx` (~8.200 anahtar × 6 dil) |
-| `server/` | Cloudflare Worker + Durable Objects (`RealmDO`, `DirectoryDO`), wrangler 3 |
-| CI | GitHub Actions: APK (hesapsız yerel derleme), AAB (Play), EAS, MP sunucu dağıtımı |
+| `online-server/` | Cloudflare Worker + SQLite Durable Objects (çevrimiçi mod; yayında değil) |
+| CI | GitHub Actions: APK (hesapsız yerel derleme), AAB (Play), EAS, çevrimiçi sunucu CI ve elle dağıtım |
 
 ## Çalıştırma
 
@@ -64,7 +64,7 @@ node scripts/_smoke/diyalog.cjs                   # sohbet katmanları, 6 dil ×
 node scripts/_smoke/ekonomi.cjs 80                # pasif/etkin/usta oyuncunun 20/40/60 yaş kesesi (denge ölçümü)
 ```
 
-Sunucu: `cd server && npm ci && npx tsc --noEmit`. (`server/test/` canlı sunucuya bağlanır; bilerek koşulur.)
+Sunucu: `cd online-server && node --test "test/*.test.ts" && npm run typecheck` (yerelde koşar, ağa çıkmaz).
 Kurallar ve tam doğrulama hattı: [`mobile/AGENTS.md`](mobile/AGENTS.md).
 
 ## Derleme ve dağıtım
@@ -80,13 +80,13 @@ Kurallar ve tam doğrulama hattı: [`mobile/AGENTS.md`](mobile/AGENTS.md).
 
 ```
 mobile/                 Android uygulaması (aktif ürün)
-  app/                  ekranlar (expo-router): oyun/*, cok-oyunculu/*, yeni-oyun
-  lib/                  motor (game.ts), i18n, diyalog, nüfus, olaylar, yaylar, tema, ikonlar, MP istemcisi
+  app/                  ekranlar (expo-router): oyun/* (tek oyunculu), online/* (çevrimiçi), yeni-oyun
+  lib/                  motor (game.ts), i18n, diyalog, nüfus, olaylar, yaylar, tema, ikonlar, çevrimiçi istemci (lib/online)
   scripts/_smoke/       headless denetimler (smoke, i18n, dil karışması, ölü karar, göç, ekonomi, diyalog…)
   store/                mağaza görselleri ve gizlilik metni
   AGENTS.md YAYIN.md MAGAZA.md BASIN-KITI.md CEVIRI_DURUMU.md NUFUS.md SURUM-NOTLARI.md
-server/                 çok oyunculu Diyar sunucusu (Cloudflare Worker)
-docs/                   araştırma notları, MULTIPLAYER.md, SUNUCU-KURULUM.md
+online-server/          çevrimiçi mod sunucusu (Cloudflare Worker)
+docs/                   araştırma notları, çevrimiçi tasarım ve devir (docs/online/)
 docs/arsiv/             eskimiş Haziran belgeleri (tarih kaydı)
 legacy/                 arşivlenmiş web dönemi (FastAPI backend, React frontend) — ürünün parçası değil
 KRONIKLER GDD v8 SAHNE.md   sunum/his için aktif otorite

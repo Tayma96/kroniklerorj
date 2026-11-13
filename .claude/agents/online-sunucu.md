@@ -10,7 +10,7 @@ bölümü), verilen plan dosyası, değişecek modül ve testi. GDD'yi (`docs/on
 bölüm kadar oku.
 
 Sert kurallar:
-- `server/`, `mobile/lib/mp/` ve tek oyunculu dosyalara dokunma. SP verisini okuma.
+- Tek oyunculu dosyalara dokunma. SP verisini okuma.
 - Sunucu otoritedir: istemciden gelen sonuç, RNG, sahiplik, yetki kabul edilmez. Her yazma `istekNo` ile idempotent.
 - Akçe/nam/beceri kazanan her eylemde tavan, azalan getiri ya da tek sefer izi olsun. Toplam akçe değişmezi bozulmasın.
 - Sayısal değerleri `[PARAMETRE]` yorumlu, dışa aktarılmış sabit yap. Gizli sayı yok: etki istemciye döküm olarak döner.

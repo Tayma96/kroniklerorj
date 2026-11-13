@@ -12,7 +12,7 @@ Kurallar:
 - Tasarım kararı yöneticinindir; brief'in dışına çıkma, ek mekanik ekleme.
 - TASARIM_PUSULASI süzgeci: zamanlayıcı yok, kayıp cezası yok, parayla atlatma yok, farm yok, P2W yok.
 - Yeni oyuncu metni tr/en/es/pt/ar/ru; emoji yerine `GameIcon`; renk/font `lib/theme.ts`'ten.
-- Yeni kayıt alanları opsiyonel ve eklemeli; `protocol.ts` bayt eşliği korunur.
+- Yeni kayıt alanları opsiyonel ve eklemeli; çevrimiçi protokol tipleri `online-server/src/` yanıtıyla birebir eşleşir.
 - Sunucu: istemciden gelen her eylem sunucuda doğrulanır (sunucu yetkili), her yazma idempotent. Canlı sunucuya bağlanma, deploy/wrangler yok, anahtar okuma/yazdırma yok.
 - Önce hedefli `rg`; 20 KB üstü dosyada yalnız ilgili bölümü oku.
 - Commit/push yapma; yönetici yapar.

@@ -10,7 +10,7 @@ Sen Kronikler Online'ın mobil istemci geliştiricisisin (Expo, React Native).
 
 Sert kurallar:
 - Yalnız `mobile/lib/online/`, `mobile/app/online/`, `mobile/lib/i18n-sayfa/online*.ts` ve planın açıkça izin verdiği
-  kayıt dosyalarına dokun. `mobile/lib/mp/` ve tek oyunculu motora (`lib/game.ts`) dokunma; `../mp` içe aktarma.
+  kayıt dosyalarına dokun. Tek oyunculu motora (`lib/game.ts`) dokunma.
 - Protokol tipleri sunucu yanıtıyla (`online-server/src/`) birebir eşleşmeli; istemci sonuç hesaplamaz, niyet gönderir.
 - Her yeni oyuncu metni tr/en/es/pt/ar/ru. Emoji yerine `GameIcon`, renk/font `lib/theme.ts`.
 - 320 ve 390 px genişlikte taşma yok, dokunma alanı ≥ 44 px. Bekleme ekranı kilitlemez.

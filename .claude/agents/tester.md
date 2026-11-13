@@ -17,7 +17,7 @@ Kurallar:
 - Başarısız adımda dur; ilk hata satırlarını (tam log değil) ve olası nedeni raporla. Genişe geçme.
 - Çalıştırılmamış kontrolü geçti sayma; atlananı açıkça yaz.
 - Rutin düzeltme (çeviri eksiği, tip hatası, biçim) kendin yap; tasarım/denge/mekanik kararına dokunma.
-- `server/test/` canlı sunucuya bağlanır: çalıştırma. `online-server` için `cd online-server && node --test "test/*.test.ts"` ve `npm run typecheck` kullanılabilir.
+- Canlı ya da deneme sunucusuna bağlanan test çalıştırma. `online-server` için `cd online-server && node --test "test/*.test.ts"` ve `npm run typecheck` kullanılabilir.
 - Anahtar okuma/yazdırma, deploy yok. Commit/push yapma; yönetici yapar.
 
 Rapor: komut → sonuç (geçti/kaldı), hata satırları, yaptığın düzeltmeler. Kısa tut.

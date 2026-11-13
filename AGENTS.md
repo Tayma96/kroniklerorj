@@ -72,8 +72,9 @@ Akış:
 5. Kritik işte (yeni ana mekanik, denge, ana destan sahneleri) `coder`dan iki farklı yaklaşım
    istenir; yönetici seçer veya birleştirir. Rutin işte tek yaklaşım.
 
-Çok oyunculu (Diyar): istemci eylemleri sunucuda doğrulanır (sunucu yetkili). `server/test/`
-canlı sunucuya bağlanır; canlıda koşturma, önce staging öner.
+Çok oyunculu (çevrimiçi, `online-server/` + `mobile/app/online/`): istemci eylemleri sunucuda doğrulanır
+(sunucu yetkili). Testler yerelde koşar; canlıya karşı test koşturma, önce deneme (staging) Worker'ı kullan.
+Eski Diyar MP (`server/`, `mobile/lib/mp/`, `app/cok-oyunculu/`) 13 Kasım'da kaldırıldı.
 
 Geri alınması zor işlerden (silme, canlı sunucu, yayın) önce kullanıcıya sorulur; diğerlerinde sorulmaz.
 Commit Türkçe, tek satır, dal `apk`. Oturum sonunda kalıcı kararlar `OTURUM_HAFIZASI.md`ye kısa yazılır.
