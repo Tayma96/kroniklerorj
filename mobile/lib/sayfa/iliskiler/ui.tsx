@@ -239,30 +239,3 @@ export function CopcatanSatiri({ onPress }: { onPress: () => void }) {
     <Text style={{ fontFamily: F.display, fontSize: 22, color: "#F6D6DC" }}>{rtl ? "‹" : "›"}</Text>
   </Pressable>;
 }
-
-// Diyar hanedanları: çok oyunculuda aynı diyardaki gerçek oyuncular.
-type MpOyuncu = { id: string; name: string; age: number; gender: "erkek" | "kadın"; profession: string; crowned?: boolean; online?: boolean; dead?: boolean };
-export function DiyarOyunculari({ players, guestId }: { players: MpOyuncu[]; guestId?: string | null }) {
-  const { t, lang, rtl } = useI18n();
-  const cevrimici = players.filter((x) => x.online && !x.dead).length;
-  return <View style={{ marginBottom: 14, borderWidth: 1, borderColor: C.borderHi, borderRadius: 8, overflow: "hidden", backgroundColor: "rgba(24,18,11,0.9)" }}>
-    <View style={{ flexDirection: rtl ? "row-reverse" : "row", alignItems: "center", gap: 10, paddingHorizontal: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.border, backgroundColor: "rgba(201,168,76,0.08)" }}>
-      <GameIcon name="hanedan" size={18} color={C.gold} />
-      <Text accessibilityRole="header" style={{ flex: 1, fontFamily: F.display, fontSize: 16, color: C.gold, textAlign: rtl ? "right" : "left" }}>{t("mp.players")}</Text>
-      <Sayac n={cevrimici} tone={C.sage} />
-    </View>
-    <View style={{ paddingHorizontal: 12, paddingVertical: 6 }}>
-      {players.map((pl) => <View key={pl.id} accessible accessibilityLabel={`${pl.name}, ${professionNameL(pl.profession, lang, pl.gender === "kadın")} · ${pl.age}`} style={{ flexDirection: rtl ? "row-reverse" : "row", alignItems: "center", gap: 10, minHeight: 52, paddingVertical: 5 }}>
-        <Portre age={Math.max(7, pl.age)} gender={pl.gender} size={40} ring={false} seed={pl.id} />
-        <View style={{ flex: 1, minWidth: 0 }}>
-          <View style={{ flexDirection: rtl ? "row-reverse" : "row", alignItems: "center", gap: 6 }}>
-            <Text numberOfLines={1} style={{ flexShrink: 1, fontFamily: F.serif, fontSize: 16, color: pl.id === guestId ? C.gold : C.parchment }}>{pl.name}{pl.id === guestId ? ` ${t("mp.you")}` : ""}</Text>
-            {pl.crowned ? <GameIcon name="crown" size={14} color={C.goldBright} /> : null}
-          </View>
-          <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: 14, color: C.parchmentMuted, textAlign: rtl ? "right" : "left" }}>{professionNameL(pl.profession, lang, pl.gender === "kadın")} · {pl.age}</Text>
-        </View>
-        <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: pl.online ? C.sage : C.parchmentDim }} />
-      </View>)}
-    </View>
-  </View>;
-}

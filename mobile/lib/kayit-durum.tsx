@@ -8,10 +8,10 @@ import { C, F } from "./theme";
 
 export function KayitDurum() {
   const status = useSyncExternalStore(oyunKaydi.subscribe, oyunKaydi.status, oyunKaydi.status);
-  const { switchingSave, retryPersist, mpMode, state } = useGame();
+  const { switchingSave, retryPersist, state } = useGame();
   const { t, lang } = useI18n();
   const insets = useSafeAreaInsets();
-  if (mpMode || (!switchingSave && status !== "error")) return null;
+  if (!switchingSave && status !== "error") return null;
   return (
     <View accessibilityRole={switchingSave ? "text" : "alert"} accessibilityLiveRegion="polite" style={{ paddingTop: insets.top + 8, paddingBottom: 8, paddingHorizontal: 14, backgroundColor: C.card, borderBottomWidth: 1, borderColor: C.borderHi, flexDirection: lang === "ar" ? "row-reverse" : "row", alignItems: "center", gap: 10 }}>
       <GameIcon name="scroll" size={18} color={switchingSave ? C.gold : C.blood} />

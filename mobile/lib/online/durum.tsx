@@ -4,7 +4,7 @@
 // Dikey dilim: meslek, beceri, envanter, Hal ve tarifler GET /v1/yerlesim `ben`den okunur (eski sunucuda yerel kopya);
 // tarif, NPC'ye satış ve sipariş teslimi istekNo'lu niyettir; sonuçlar (Hal dahil) sunucudan gelir.
 // Sağlayıcı app/online/_layout.tsx'te durur; bütün /online ekranları aynı durumu paylaşır.
-// Tek oyunculu motor, kayıt ya da eski MP katmanı içe aktarılmaz.
+// Tek oyunculu motor ya da kayıt içe aktarılmaz.
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { ONLINE_SUNUCU_URL, ONLINE_TEST_GIRIS, sunucuAdresi } from "./ayar";
 import { adDuzenle } from "./ad";

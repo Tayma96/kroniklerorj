@@ -24,7 +24,7 @@ export default function Menu() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { width } = useWindowDimensions();
-  const { state, resetGame, mpMode } = useGame();
+  const { state, resetGame } = useGame();
   const { t, lang, rtl } = useI18n();
   const reduced = useSadeMod();
   const narrow = width < 360;
@@ -86,7 +86,7 @@ export default function Menu() {
             {/* MP'de "Yeni Hayat" gizli: resetGame no-op ama navigasyon yeni-oyun ekranına düşürüp SP kaydını ezdirebilirdi. */}
             <View style={{ gap: 10 }}>
               <FooterButton icon="ayarlar" label={t("scr.ayarlar")} onPress={() => go("/oyun/ayarlar")} reduced={reduced} rtl={rtl} />
-              {!mpMode && <FooterButton icon="leaf" label={t("settings.newLife")} danger onPress={confirmReset} reduced={reduced} rtl={rtl} />}
+              <FooterButton icon="leaf" label={t("settings.newLife")} danger onPress={confirmReset} reduced={reduced} rtl={rtl} />
             </View>
           </View>
         </View>

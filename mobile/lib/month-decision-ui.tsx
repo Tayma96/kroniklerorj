@@ -14,8 +14,8 @@ const ETKI_LABEL: Record<string, string> = { money: "char.money", reputation: "s
 
 // Ayın kararı: mockup'taki gibi metnin sağında soluklaşan sahne, altta iki büyük seçenek.
 export function MonthDecisionCard({ bare = false }: { bare?: boolean } = {}) {
-  const { state, apply, mpMode } = useGame(), { t, tg, lang } = useI18n(), { width } = useWindowDimensions();
-  if (!state || mpMode || state.player.dead) return null;
+  const { state, apply } = useGame(), { t, tg, lang } = useI18n(), { width } = useWindowDimensions();
+  if (!state || state.player.dead) return null;
   const m = pendingMonthScene(state), d = m?.dilemma;
   const text = (key: string, fallback: string) => { const value = tg(key, state.player.gender === "kadın"); return value === key ? fallback : value; };
   if (!d || !m) {

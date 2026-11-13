@@ -9,11 +9,9 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { useMp } from "../../lib/mp/store";
-import { realmYearMonth } from "../../lib/mp/world";
-import { applyDilemma, rakipYarisi, tezgahKart, tezgahHuner, tezgahHunerStat, tezgahSans, tezgahBasari, resolveTezgah, TEZGAH_HUNER, achievementsOf, GameEvent, resolveOpportunity, resolveMicro, resolveSaga, resolveBloodline, BL_CHOICES, BL_COST, SAGA_CHOICES, SAGA_COST, resolveDivan, inJail, jailBribeCost, bribeJailer, Opportunity, eulogy, playerWar, beylikName, kariyerXp, kisiProfil, gorus, gorusSebebi, echoWorkBlock, npcTeklifYanit, donumAni, pencereAni, izBaslik, acikHesaplar, ayNotu, onemliMi, kapiMetni, hakemIpucu, araciSansi, hayatOzeti, kisiOf, knParam } from "../../lib/game";
-import { pendingMonthScene, chooseMonthDilemma, progressMonthOpportunity, resolveMonthOpportunity } from "../../lib/month-scene";
-import { ayinSahnesi, Dilemma, Choice } from "../../lib/events";
+import { rakipYarisi, tezgahKart, tezgahHuner, tezgahHunerStat, tezgahSans, tezgahBasari, resolveTezgah, TEZGAH_HUNER, achievementsOf, GameEvent, resolveMicro, resolveSaga, resolveBloodline, BL_CHOICES, BL_COST, SAGA_CHOICES, SAGA_COST, resolveDivan, inJail, jailBribeCost, bribeJailer, eulogy, playerWar, beylikName, kariyerXp, kisiProfil, gorus, gorusSebebi, echoWorkBlock, npcTeklifYanit, donumAni, pencereAni, izBaslik, acikHesaplar, ayNotu, onemliMi, kapiMetni, hakemIpucu, araciSansi, hayatOzeti, kisiOf, knParam } from "../../lib/game";
+import { pendingMonthScene, progressMonthOpportunity, resolveMonthOpportunity } from "../../lib/month-scene";
+import { Dilemma, Choice } from "../../lib/events";
 import { SinavKartiModal, SinavKartiVeri } from "../../lib/kart3d";
 import { rakipKartVerisi } from "../../lib/rakip-ui";
 import { HesapModal } from "../../lib/hesap-ui";
@@ -87,8 +85,7 @@ const DASH_EVENTS = 3;
 export default function Dashboard() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { state, doEat, resetGame, apply, mpMode } = useGame();
-  const { snapshot: mpSnapshot } = useMp();
+  const { state, doEat, resetGame, apply } = useGame();
   const { t, lang } = useI18n();
   const sade = useSadeMod();
   const [milestone, setMilestone] = useState<GameEvent | null>(null);
@@ -96,11 +93,8 @@ export default function Dashboard() {
   const [viewH, setViewH] = useState(0); // kaydırma alanı yüksekliği: madalyonlar ekranın altına otursun
   const [freshMark, setFreshMark] = useState<null | { from: number; n: number }>(null); // "bu ay" özeti: son ilerlemede düşen olay sayısı + olay sırası eşiği (q > from)
   const [yearReport, setYearReport] = useState<GameEvent | null>(null); // yıl dönümü karnesi (yaş günü ritüeli)
-  const [mpDilemma, setDilemma] = useState<Dilemma | null>(null);
-  const [mpOpp, setOpp] = useState<Opportunity | null>(null);
   const savedMonth = state ? pendingMonthScene(state) : undefined;
-  const dilemma = mpMode ? mpDilemma : savedMonth?.dilemma || null;
-  const opp = mpMode ? mpOpp : savedMonth?.opp || null;
+  const opp = savedMonth?.opp || null;
   // Lonca bayrağı yarışı vakti gelince kart bir kez kendiliğinden açılır ("şimdi değil" denebilir; meslek ekranından da girilir).
   const [yarisK, setYarisK] = useState<SinavKartiVeri | null>(null);
   const yarisAcilan = useRef<number | null>(null);
@@ -127,7 +121,7 @@ export default function Dashboard() {
   const fark = useAyFarki(state);
 
   // Sofra paneli: yemekten sonra açlık geçtiyse içi boş kalmasın, kendiliğinden kapansın.
-  const sofraGerek = !!state && !state.player.dead && !mpMode && state.player.age >= 13 && state.player.hunger < 40;
+  const sofraGerek = !!state && !state.player.dead && state.player.age >= 13 && state.player.hunger < 40;
   useEffect(() => { if (sheet === "sofra" && !sofraGerek) setSheet(null); }, [sheet, sofraGerek]);
 
   // Son gelişmeler: yalnız önemli olaylar, en yeniden; her çizimde bütün geçmiş yeniden süzülmesin diye ezberlenir.
@@ -178,35 +172,12 @@ export default function Dashboard() {
   }, [state?.player.rakip?.yaris]);
   const playedMonth = useRef(savedMonth?.id);
   useEffect(() => {
-    if (!mpMode && savedMonth && playedMonth.current !== savedMonth.id) {
+    if (savedMonth && playedMonth.current !== savedMonth.id) {
       playedMonth.current = savedMonth.id;
       if (savedMonth.dilemma) { if (savedMonth.kind === "senlik") playChime(); else playSaz(); }
     }
-  }, [savedMonth?.id, mpMode]);
-  const lastRolledTurn = useRef<number>(state?.turn ?? 0);
-  const rollSeq = useRef<number>(state?.hseq ?? 0); // son kart zarından bu yana düşen olaylar: bu ay büyük bir an yaşandıysa kart çıkmaz
-  const onChoose = (c: Choice, i: number) => { if (!mpMode) { if (savedMonth) { hap("selection"); apply(s => chooseMonthDilemma(s, savedMonth.id, i)); } return; } hap("selection"); let res = c.result; const sk = dilemma ? dilemma.id + ":" + i : undefined; const isFest = !!dilemma && dilemma.id.startsWith("fest_"); const rk = dilemma ? c.rk || "dil." + dilemma.id + ".r" + i : undefined; if (rk) { const v = t(rk); res = v === rk ? c.result : v; } apply((s) => applyDilemma(s, c.gercek || c.delta, res, sk, isFest, rk)); setDilemma(null); };
-  const onResolveOpp = (success: boolean) => { if (!mpMode) { if (savedMonth) apply(s => resolveMonthOpportunity(s, savedMonth.id)); return; } if (!opp) return; hap("advance"); apply((s) => resolveOpportunity(s, opp, success)); setOpp(null); };
-
-  useEffect(() => {
-    if (!state || !mpMode) return;
-    if (state.turn > lastRolledTurn.current) {
-      lastRolledTurn.current = state.turn;
-      // Ayda tek büyük karar (TASARIM_PUSULASI ilke 2): bu ay bir insanın teklifi ya da hesap anı varsa kart açılmaz;
-      // kişisel bir dönüm noktası yaşandıysa rastgele ikilem/fırsat da açılmaz (o ayın sahnesi zaten var). Şenlik yılda tek
-      // aydır; yalnız aynı ay gerçek bir karar bekliyorsa o yıl kaçar.
-      const rs = rollSeq.current; rollSeq.current = state.hseq ?? 0;
-      // Ayın sahnesini motor seçer (Yönetmen 2.0: evre eğrisi, açık ipler, son 12 ayın türleri, nöbetçi); arayüz yalnız gösterir.
-      if (!dilemma && !opp) {
-        const sahne = ayinSahnesi(state, rs);
-        if (sahne.s !== state) { const once = state; apply((cur) => (cur === once ? sahne.s : cur)); } // sahne izi / kapıdaki insan kayda geçer
-        if (sahne.dilemma) { setDilemma(sahne.dilemma); if (sahne.tur === "senlik") playChime(); else playSaz(); }
-        else if (sahne.opp) setOpp(sahne.opp);
-      }
-    } else if (state.turn < lastRolledTurn.current) {
-      lastRolledTurn.current = state.turn;
-    }
-  }, [state?.turn]);
+  }, [savedMonth?.id]);
+  const onResolveOpp = (success: boolean) => { if (savedMonth) apply(s => resolveMonthOpportunity(s, savedMonth.id)); };
 
   useEffect(() => {
     if (!state) return;
@@ -251,7 +222,7 @@ export default function Dashboard() {
 
   // Ana ekran gündemi: her düğme yalnız gerçekten bekleyen bir şey varsa görünür.
   const uyariN = p.dead ? 0 : realmNoticeCount(state) + (inJail(p) ? 1 : 0) + (state.crownCampaign ? 1 : 0) + (playerWar(state) || (state.wars || []).some((w) => w.prize) ? 1 : 0);
-  const hungry = !mpMode && p.age >= 13 && p.hunger < 40;
+  const hungry = p.age >= 13 && p.hunger < 40;
   const starving = hungry && p.hunger < 20;
   const canEmek = p.age >= 13 && p.profession !== "işsiz";
   const gundemN = p.dead ? 0 : [echoDeferred && state.npcTeklif, aileHaberi(state), soylentiLead(state), acikHesaplar(state).length, state.micro, state.bloodline?.scene && !state.saga?.scene, state.saga?.scene, p.crowned && state.divan, state.caravan?.route, state.story?.active].filter(Boolean).length;
@@ -285,10 +256,8 @@ export default function Dashboard() {
             ...(milestone.etki.reputation ? [{ icon: "karakter", text: `${milestone.etki.reputation > 0 ? "+" : "−"}${Math.abs(milestone.etki.reputation)} ${t("soc.reputation.l")}`, color: C.sage }] : []),
             ...(milestone.etki.health ? [{ icon: "saglik", text: `${milestone.etki.health > 0 ? "+" : "−"}${Math.abs(milestone.etki.health)} ${t("char.health")}`, color: C.blood }] : []),
           ] : undefined} />
-      ) : mpMode && dilemma ? (
-        <DilemmaModal dilemma={dilemma} onChoose={onChoose} female={p.gender === "kadın"} />
       ) : opp ? (
-        <OpportunityModal opp={opp} statVal={opp ? state.player.stats[opp.stat] : 5} onResolve={onResolveOpp} progress={mpMode ? undefined : savedMonth} onProgress={mpMode || !savedMonth ? undefined : (stage, success) => apply(s => progressMonthOpportunity(s, savedMonth.id, stage, success))} onPass={() => { hap("tap"); if (mpMode) setOpp(null); else if (savedMonth) apply(s => resolveMonthOpportunity(s, savedMonth.id, true)); }} />
+        <OpportunityModal opp={opp} statVal={opp ? state.player.stats[opp.stat] : 5} onResolve={onResolveOpp} progress={savedMonth} onProgress={!savedMonth ? undefined : (stage, success) => apply(s => progressMonthOpportunity(s, savedMonth.id, stage, success))} onPass={() => { hap("tap"); if (savedMonth) apply(s => resolveMonthOpportunity(s, savedMonth.id, true)); }} />
       ) : tzDilemma ? (
         <DilemmaModal dilemma={tzDilemma} onChoose={onTezgah} female={p.gender === "kadın"} />
       ) : state.hesap && !p.dead && !yearReport ? ( // yıl karnesi kapanınca hesap anı gelir (iki pencere üst üste açılmaz)
@@ -406,7 +375,7 @@ export default function Dashboard() {
             professionLine={profLine} lines={eul.lines.map((l) => renderEvt(l.k, "", l.p, lang, t, p.gender === "kadın"))} ozet={{ baslik: t("eul.anlar").replace(/:\s*$/, ""), anlar: hayatAnlari, insanlar: hayatInsanlari }} close={t("dynnote." + eul.close)} hasHeir={varisAdaylari(state).length > 0}
             onReel={() => { setShowEulogy(false); router.push("/oyun/tarih?cine=1"); }}
             onChronicle={() => { setShowEulogy(false); router.push("/oyun/roman"); }}
-            onContinue={() => { setShowEulogy(false); if (varisAdaylari(state).length > 0) router.push("/oyun/nesil"); else if (mpMode) { resetGame(); router.replace("/yeni-oyun"); } else router.push("/oyun/ocak"); }} />
+            onContinue={() => { setShowEulogy(false); if (varisAdaylari(state).length > 0) router.push("/oyun/nesil"); else router.push("/oyun/ocak"); }} />
         );
       })()}
 
@@ -435,7 +404,7 @@ export default function Dashboard() {
               <Text style={{ fontFamily: F.display, fontSize: 13, color: C.inkOnGold, letterSpacing: 1, textAlign: "center" }}>{t("dash.continueHeir")} ({heirs} {t("dash.heirs")})</Text>
             </GameButton>
           )}
-          {heirs === 0 && !mpMode && (
+          {heirs === 0 && (
             <GameButton accessibilityLabel={t("dash.kulOcak")} icon="hanedan" rtl={rtl} onPress={() => router.push("/oyun/ocak")}>
               <Text style={{ fontFamily: F.display, fontSize: 13, color: C.inkOnGold, letterSpacing: 1, textAlign: "center" }}>{t("dash.kulOcak")}</Text>
             </GameButton>
@@ -449,23 +418,6 @@ export default function Dashboard() {
             </GameButton>
           </View>
         </View>
-        );
-      })()}
-      {/* Diyar presence (çok oyuncu): paylaşımlı diyarda olduğunu her an hisset — saat, taht, kaç kişi ayakta (İlişkiler'e köprü) */}
-      {mpMode && mpSnapshot && (() => {
-        const ym = realmYearMonth(mpSnapshot.turn);
-        const live = mpSnapshot.players.filter((x) => x.online && !x.dead).length;
-        return (
-          <Pressable onPress={() => { hap("tap"); playTap(); router.push("/cok-oyunculu/oyun"); }} style={{ marginBottom: 10, padding: 11, borderRadius: 5, borderWidth: 1, borderColor: "rgba(201,168,76,0.45)", backgroundColor: "rgba(22,16,10,0.82)" }}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 7 }}>
-              <GameIcon name="crown" size={13} color={C.gold} />
-              <Text style={{ flex: 1, fontFamily: F.display, fontSize: 13, letterSpacing: 1.5, color: C.gold, textTransform: "uppercase" }}>{t("mp.realm")}</Text>
-              <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 0.5, color: C.parchmentMuted }}>{t("mp.year")} {ym.year} · {t("mp.month")} {ym.month}</Text>
-            </View>
-            <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentDim, marginTop: 4 }}>
-              {mpSnapshot.throne.holderName ? applyParams(t("mp.throneHolder"), [mpSnapshot.throne.holderName]) : t("mp.throneEmpty")} · {applyParams(t("mp.pulse.here"), [live])}
-            </Text>
-          </Pressable>
         );
       })()}
       {/* İlk açılış: metin duvarı yerine tek cümlelik, akışı kesmeyen şerit — oyuncu hemen ilk kararını verir (TASARIM_PUSULASI 2.5) */}
@@ -547,7 +499,7 @@ export default function Dashboard() {
       </GameSheet>
       <GameSheet visible={sheet === "sofra"} onClose={() => setSheet(null)} title={t("dash.eatTitle")} icon="ye" scene={SAHNE_GORSEL.ev_yoksul}>
       {/* Sofra: 13 yaşından sonra açlık her ay düşer; yemeğin bedeli ve sonucu ana akışta görünür (eskiden yalnız pazar+envanterden yenebiliyordu) */}
-      {!p.dead && !mpMode && p.age >= 13 && p.hunger < 40 && (() => {
+      {!p.dead && p.age >= 13 && p.hunger < 40 && (() => {
         const foodId = Object.keys(p.inventory).find((id) => p.inventory[id] > 0 && ITEMS[id]?.feed);
         const can = !!foodId || p.money >= 2;
         const starving = p.hunger < 20;

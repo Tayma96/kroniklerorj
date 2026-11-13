@@ -1,8 +1,8 @@
-// Kronikler Online istemci ayarları. Eski MP katmanından (lib/mp) hiçbir şey içe aktarılmaz.
+// Kronikler Online istemci ayarları.
 
 /**
  * Yeni çevrimiçi akışın (/online) geliştirici kapısı. Kapalıyken /online rotaları "Yakında" gösterir; açıkken
- * geliştirici oturumu sahte veriyle sunucusuz denenebilir. (Eski MP'nin ONLINE_ACIK bayrağı lib/mp/config'te kalır.)
+ * geliştirici oturumu sahte veriyle sunucusuz denenebilir. Ana menüdeki "beta"/"yakında" etiketi de bu kapıya bakar.
  */
 export const ONLINE_GELISTIRME = process.env.EXPO_PUBLIC_ONLINE_GELISTIRME === "1";
 

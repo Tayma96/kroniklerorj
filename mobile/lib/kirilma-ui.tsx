@@ -39,8 +39,8 @@ function sahneIcerik(s: GameState, tip: KirSahne, kisi: string | undefined, r: (
 }
 
 export function MkKirilma() {
-  const { state, apply, mpMode } = useGame(), { t, lang } = useI18n();
-  if (!state || mpMode || state.player.dead) return null;
+  const { state, apply } = useGame(), { t, lang } = useI18n();
+  if (!state || state.player.dead) return null;
   const rtl = lang === "ar", align = rtl ? "right" as const : "left" as const, female = state.player.gender === "kadın";
   const r = (k: string, p?: EvtParam[]) => renderEvt(k, "", p, lang, t, female);
   const m = pendingMonthScene(state);
@@ -75,8 +75,8 @@ export function MkKirilma() {
 
 // Hayatın hâli: süren kırılmalar tek satırda (kervan yolda, kâtiplik, kaçaklık, tüccar). Yoksa hiç görünmez.
 export function MkHal() {
-  const { state, mpMode } = useGame(), { t, lang } = useI18n();
-  if (!state || mpMode || state.player.dead) return null;
+  const { state } = useGame(), { t, lang } = useI18n();
+  if (!state || state.player.dead) return null;
   const hal = halOf(state); if (!hal.length) return null;
   const rtl = lang === "ar", female = state.player.gender === "kadın";
   const r = (k: string, p?: EvtParam[]) => renderEvt(k, "", p, lang, t, female);

@@ -66,7 +66,6 @@ function walk(dir, exts, out = []) {
 const srcFiles = [...walk(path.join(ROOT, "lib"), [".ts", ".tsx"]), ...walk(path.join(ROOT, "app"), [".ts", ".tsx"])];
 const usedKeys = new Map(); // key -> ilk kullanım yeri
 for (const f of srcFiles) {
-  if (f.includes("mp/protocol.ts")) continue; // intent 'kind' literalleri i18n anahtarı değil
   const txt = fs.readFileSync(f, "utf8");
   const rel = path.relative(ROOT, f);
   // NOT: `"önek." + değişken` dinamik anahtarları elemek için kapanış tırnağından sonra + gelmemeli

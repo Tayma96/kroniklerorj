@@ -1,5 +1,5 @@
 // Çevrimiçi Faz 1 ekranlarının kapısı. Uygulamada /online rotaları yalnız ONLINE_GELISTIRME açıkken çalışır;
-// kapalıyken "Yakında" ekranı görünür (ONLINE_ACIK ve Yakında ekranı değişmez).
+// kapalıyken "Yakında" ekranı görünür.
 //
 // Tasarım önizlemesi istisnası: scripts/design-preview.cjs ekranları react-native-web ile tarayıcıda çizer ve
 // çizimden önce window.__GAME / window.__PATH koyar. onizlemeMi() yalnız Platform.OS === "web" iken ve bu iki

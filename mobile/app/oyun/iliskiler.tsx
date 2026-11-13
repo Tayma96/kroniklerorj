@@ -5,13 +5,12 @@ import { View, Text, ScrollView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { useMp } from "../../lib/mp/store";
 import { useI18n, applyParams } from "../../lib/i18n";
 import { professionNameL, placeName } from "../../lib/locale-data";
 import { PageHeader, ScreenFresk } from "../../lib/ui";
 import { C, F } from "../../lib/theme";
 import { iliskiModeli, rolTonu, bantOf, GRUPLAR, type Grup, type Kisi } from "../../lib/sayfa/iliskiler/model";
-import { FiltreCipleri, BolumPaneli, KisiKarti, KartIzgarasi, KisiSatiri, IliskiOlcer, IliskiOlcumu, BagCubugu, BosDurum, TumunuGor, CopcatanSatiri, DiyarOyunculari, useBantEtiketi, useGrupMetni, puanYazi, type Filtre, type KartVerisi } from "../../lib/sayfa/iliskiler/ui";
+import { FiltreCipleri, BolumPaneli, KisiKarti, KartIzgarasi, KisiSatiri, IliskiOlcer, IliskiOlcumu, BagCubugu, BosDurum, TumunuGor, CopcatanSatiri, useBantEtiketi, useGrupMetni, puanYazi, type Filtre, type KartVerisi } from "../../lib/sayfa/iliskiler/ui";
 
 const KISA = 6; // "Hepsi" görünümünde grup başına gösterilen kişi; fazlası grubun çipinde açılır
 const puanTonu = (v: number) => (v >= 20 ? C.sage : v <= -20 ? C.blood : C.parchmentDim);
@@ -19,8 +18,7 @@ const puanTonu = (v: number) => (v >= 20 ? C.sage : v <= -20 ? C.blood : C.parch
 export default function Iliskiler() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { state, mpMode } = useGame();
-  const { snapshot, guestId } = useMp();
+  const { state } = useGame();
   const { lang, t } = useI18n();
   const bant = useBantEtiketi(); const metin = useGrupMetni();
   const [filtre, setFiltre] = useState<Filtre>("hepsi");
@@ -80,14 +78,11 @@ export default function Iliskiler() {
     </BolumPaneli>;
   };
 
-  const oyuncular = mpMode && snapshot && snapshot.players.length > 0 ? snapshot.players : null;
   return (
     <ScreenFresk style={{ paddingTop: insets.top }}>
       <ScrollView ref={scroll} contentContainerStyle={{ paddingHorizontal: 14, paddingTop: 14, paddingBottom: insets.bottom + 90 }}>
         <PageHeader kicker={placeName(p.location_name, lang)} title={t("rel.headTitle")} sub={applyParams(t("rel.subSome"), [model.toplam])} />
         {model.toplam > 0 && <FiltreCipleri secili={filtre} sayi={model.sayi} toplam={model.toplam} onSec={sec} />}
-        {/* Diyar hanedanları: aynı diyarda yaşayan gerçek oyuncular (çok oyunculu) */}
-        {oyuncular && filtre === "hepsi" && <DiyarOyunculari players={oyuncular} guestId={guestId} />}
         {model.toplam === 0 ? (
           <View style={{ marginBottom: 14, padding: 14, borderWidth: 1, borderColor: C.borderHi, borderRadius: 8, backgroundColor: "rgba(24,18,11,0.9)" }}>
             <Text accessibilityRole="header" style={{ fontFamily: F.display, fontSize: 17, lineHeight: 23, color: C.gold, textAlign: "center" }}>{t("rel.noneTitle")}</Text>

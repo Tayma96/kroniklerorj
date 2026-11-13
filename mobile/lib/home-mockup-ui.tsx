@@ -107,8 +107,8 @@ const ETKI_LABEL: Record<string, string> = { money: "char.money", reputation: "s
 
 // Bu Ayın Kararı: metin solda, sahne sağda soluklaşır; altta iki seçenek kutusu (dar ekranda alt alta).
 export function MkDecision() {
-  const { state, apply, mpMode } = useGame(), { t, tg, lang } = useI18n(), { width } = useWindowDimensions();
-  if (!state || mpMode || state.player.dead) return null;
+  const { state, apply } = useGame(), { t, tg, lang } = useI18n(), { width } = useWindowDimensions();
+  if (!state || state.player.dead) return null;
   const rtl = lang === "ar";
   const m = pendingMonthScene(state), d = m?.dilemma;
   const text = (key: string, fallback: string) => { const v = tg(key, state.player.gender === "kadın"); return v === key ? fallback : v; };

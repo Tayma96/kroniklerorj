@@ -6,8 +6,6 @@ import { NavigationBar } from "expo-navigation-bar";
 import { View, ActivityIndicator, Text, Pressable } from "react-native";
 import { useEffect, useState } from "react";
 import { GameProvider } from "../lib/store";
-import { MpProvider } from "../lib/mp/store";
-import { RealmSession } from "../lib/mp/RealmSession";
 import { LanguageProvider } from "../lib/i18n";
 import { LoadingScreen } from "../lib/fx";
 import { initializeAudio } from "../lib/sound";
@@ -52,18 +50,14 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <LanguageProvider>
         <GameProvider>
-          <MpProvider>
-            <StatusBar style="light" />
-            {/* Diyar oturumu koordinatörü: MP tick'inde yerel hayatı ilerletir (UI çizmez). */}
-            <RealmSession />
-            <SesYonetmen />
-            {/* Android sistem gezinme çubuğunu gizle (tam ekran / immersive); yukarı kaydırınca geçici görünür */}
-            <NavigationBar hidden />
-            <View style={{ flex: 1 }}>
-              <KayitDurum />
-              <KayitGecisi><Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: C.bg }, animation: "slide_from_right" }} /></KayitGecisi>
-            </View>
-          </MpProvider>
+          <StatusBar style="light" />
+          <SesYonetmen />
+          {/* Android sistem gezinme çubuğunu gizle (tam ekran / immersive); yukarı kaydırınca geçici görünür */}
+          <NavigationBar hidden />
+          <View style={{ flex: 1 }}>
+            <KayitDurum />
+            <KayitGecisi><Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: C.bg }, animation: "slide_from_right" }} /></KayitGecisi>
+          </View>
         </GameProvider>
       </LanguageProvider>
     </SafeAreaProvider>

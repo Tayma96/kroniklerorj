@@ -1,7 +1,7 @@
 import { Tabs, useRouter, usePathname } from "expo-router";
 import { View, Pressable, Text, StyleSheet, useWindowDimensions } from "react-native";
 import Svg, { Defs, RadialGradient, Stop, Rect, Polygon, Circle } from "react-native-svg";
-import { useEffect, useState, type ComponentProps } from "react";
+import { useEffect, type ComponentProps } from "react";
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming, Easing, cancelAnimation } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -9,14 +9,10 @@ import { C, F } from "../../lib/theme";
 import { GameIcon } from "../../lib/icons";
 import { useI18n } from "../../lib/i18n";
 import { useGame } from "../../lib/store";
-import { useMp } from "../../lib/mp/store";
-import { mePublic } from "../../lib/mp/world";
-import { CountdownSecs } from "../../lib/mp/countdown";
 import { pendingMonthScene, advanceWithMonthScene } from "../../lib/month-scene";
 import { oturumEkran } from "../../lib/oturum";
 import { canWork } from "../../lib/game";
 
-const pf = (s: string, ...a: (string | number)[]) => a.reduce<string>((acc, v, i) => acc.replace("%" + (i + 1), String(v)), s);
 import { StatDeltaOverlay } from "../../lib/feel";
 import { AnlarKatmani } from "../../lib/anlar";
 import { Ambiance } from "../../lib/fx";
@@ -103,13 +99,11 @@ function CompassStar({ size }: { size: number }) {
 
 // Nav ortasında yükseltilmiş yuvarlak "Ayı İlerle" düğmesi (Karakter ↔ İlişkiler arası).
 function AdvanceFab({ bottom }: { bottom: number }) {
-  const { state, doAdvance, mpMode, apply } = useGame();
+  const { state, doAdvance, apply } = useGame();
   const router = useRouter();
-  const { snapshot, guestId, setReady, syncPlayer } = useMp();
   const { t } = useI18n();
   const reduced = useSadeMod();
   const narrow = useWindowDimensions().width < 360;
-  const [readyOpt, setReadyOpt] = useState<boolean | null>(null);
   const pulse = useSharedValue(1);
   useEffect(() => {
     pulse.value = 1;
@@ -121,39 +115,6 @@ function AdvanceFab({ bottom }: { bottom: number }) {
     return () => cancelAnimation(pulse);
   }, [reduced]);
   const style = useAnimatedStyle(() => ({ transform: [{ scale: pulse.value }] }));
-  // ── ÇOK OYUNCU: "Ayı İlerlet" tek başına değil çoğunluk-hazır oyu; sunucu tick'i herkesi birlikte ilerletir ──
-  if (mpMode) {
-    if (!state || !snapshot) return null;
-    const players = snapshot.players;
-    const liveCount = players.filter((x) => x.online && !x.dead).length;
-    const readyCount = players.filter((x) => x.online && !x.dead && x.ready).length;
-    const meReady = !!players.find((x) => x.id === guestId)?.ready;
-    const ready = readyOpt !== null ? readyOpt : meReady;
-    const ticking = snapshot.phase === "ticking";
-    const dead = state.player.dead;
-    const doReady = () => {
-      if (dead) return; hap("advance"); playAdvance();
-      const v = !ready; setReadyOpt(v); setReady(v);
-      if (guestId) syncPlayer(mePublic(guestId, state, v));
-    };
-    return (
-      <View pointerEvents="box-none" style={{ position: "absolute", left: 0, right: 0, bottom: bottom + 16, alignItems: "center" }}>
-        <Pressable disabled={dead} accessibilityRole="button" accessibilityLabel={t("mp.ready")} onPress={doReady} style={{
-          minWidth: 100, paddingVertical: 13, paddingHorizontal: 22, borderRadius: 26, alignItems: "center",
-          borderWidth: 3, borderColor: "rgba(13,10,6,0.98)",
-          backgroundColor: ready ? "rgba(127,166,106,0.92)" : C.gold, opacity: dead ? 0.4 : 1,
-          shadowColor: "#000", shadowOpacity: 0.45, shadowRadius: 7, shadowOffset: { width: 0, height: 3 }, elevation: 9,
-        }}>
-          <Text style={{ fontFamily: F.display, fontSize: 12.5, letterSpacing: 1, color: ready ? "#0d0a06" : C.inkOnGold }}>
-            {ticking ? t("mp.ticking") : ready ? `✓ ${readyCount}/${liveCount}` : `${t("mp.ready")} ${readyCount}/${liveCount}`}
-          </Text>
-        </Pressable>
-        {!ticking && !!snapshot.tickDeadline && (
-          <CountdownSecs deadline={snapshot.tickDeadline} fmt={(sc) => pf(t("mp.tickIn"), sc)} style={{ fontFamily: F.display, fontSize: 8, letterSpacing: 1, color: C.goldDim, marginTop: 3 }} />
-        )}
-      </View>
-    );
-  }
   if (!state || state.player.dead) return null;
   const waiting = !!pendingMonthScene(state);
   return (
@@ -238,13 +199,11 @@ function GlobalBackdrop({ bottom }: { bottom: number }) {
 export default function OyunLayout() {
   const { t } = useI18n();
   const insets = useSafeAreaInsets();
-  const { mpMode, exitMp, state } = useGame();
-  const { leave } = useMp();
-  const router = useRouter();
+  const { state } = useGame();
   const yol = usePathname();
   const { width } = useWindowDimensions();
   // Bu ay emek henüz verilmediyse Karakter sekmesinde rozet (çalışma ana sayfadan Karakter ekranına taşındı)
-  const workDue = !mpMode && !!state && !state.player.dead && state.player.age >= 13 && state.player.profession !== "işsiz" && canWork(state) && !!state.player.duzen?.kapali; // düzen açıkken ay geçişi çalışır, rozet gereksiz
+  const workDue = !!state && !state.player.dead && state.player.age >= 13 && state.player.profession !== "işsiz" && canWork(state) && !!state.player.duzen?.kapali; // düzen açıkken ay geçişi çalışır, rozet gereksiz
   useEffect(() => { const ad = yol.replace(/^\/oyun\/?/, "").split("/")[0] || "index"; oturumEkran(ad); }, [yol]); // cihazda kalan oturum kaydı
   return (
     <View style={{ flex: 1 }}>
@@ -289,17 +248,10 @@ export default function OyunLayout() {
         <Tabs.Screen name="mahalle" options={{ href: null }} />
       </Tabs>
       <GlobalBackdrop bottom={70 + insets.bottom} />
-      {(mpMode || (state && !state.player.dead)) && <NavOrnament bottom={80 + insets.bottom} />}
+      {(state && !state.player.dead) && <NavOrnament bottom={80 + insets.bottom} />}
       <AdvanceFab bottom={insets.bottom} />
       <StatDeltaOverlay />
-      {!mpMode && <AnlarKatmani />}
-      {/* MP'deyken kişisel ekranlar SP kabuğunda açılır — oyuncu diyardan koptuğunu sanmasın: dönüş şeridi hep üstte (test bulgusu) */}
-      {mpMode && (
-        <Pressable onPress={() => { hap("tap"); leave(); exitMp(); router.replace("/cok-oyunculu"); }} style={{ position: "absolute", top: insets.top + 4, alignSelf: "center", flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: 5, paddingHorizontal: 13, borderRadius: 14, borderWidth: 1, borderColor: "rgba(111,160,192,0.65)", backgroundColor: "rgba(8,14,20,0.92)" }}>
-          <GameIcon name="banner" size={11} color={C.frost} />
-          <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 1.2, color: C.frost }}>{t("mp.leaveRealm").toUpperCase()}</Text>
-        </Pressable>
-      )}
+      <AnlarKatmani />
     </View>
   );
 }

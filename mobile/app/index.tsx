@@ -20,7 +20,7 @@ import { DilSecimi } from "../lib/dil-secimi";
 import { townSeasonImage } from "../lib/assets";
 import { currentCalendar } from "../lib/calendar";
 import { useSadeMod } from "../lib/use-sade-mod";
-import { ONLINE_ACIK } from "../lib/mp/config";
+import { onlineEkranAcik } from "../lib/online/kapi";
 import { MK, Ornament } from "../lib/home-mockup-ui";
 import { C, F, T, L } from "../lib/theme";
 
@@ -158,7 +158,7 @@ export default function MainMenu() {
   const items: { key: string; icon: string; label: string; sub?: string; primary?: boolean; tag?: string; go: () => void }[] = [];
   if (state) items.push({ key: "devam", icon: "book", label: t("menu.continue"), sub: applyParams(t("gir.devamAlt"), [state.player.name, state.player.age]), primary: true, go: () => router.push("/oyun") });
   items.push({ key: "yeni", icon: "flame", label: t("menu.newGame"), sub: t("gir.yeniAlt"), primary: !hasSave, go: () => router.push("/yeni-oyun") });
-  items.push({ key: "cok", icon: "banner", label: t("menu.multi"), sub: t("menu.multiHint"), tag: t(ONLINE_ACIK ? "gir.beta" : "gir.yakinda"), go: () => router.push("/online") });
+  items.push({ key: "cok", icon: "banner", label: t("menu.multi"), sub: t("menu.multiHint"), tag: t(onlineEkranAcik() ? "gir.beta" : "gir.yakinda"), go: () => router.push("/online") });
 
   return (
     <View style={{ flex: 1, backgroundColor: C.bg, overflow: "hidden" }}>
