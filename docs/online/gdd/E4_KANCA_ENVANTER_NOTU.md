@@ -19,9 +19,9 @@ Durum: kısmi uygulama. `tasarruf` tüketicisi, ortak-durum/han tüketicileri, E
 14 beceri ağacı dosyasının tamamı tarandı. Şu an mevcut sistem tüketicisi bulunmayan etkiler:
 - `hizmet`: 52 kullanımın 18 tanesi gerçek tüketiciye bağlandı (`ikram`, `yatak`, `oda`, `nobet`, `talim`, `vergiSayimi`, `meclisKaydi`, `turku`, `yaraBak`, `kirikSar`, `lohusa`, `teselli`, `sazGecesi`, `barisSofrasi`, `ziyafet`, `araBul`, `muhafizlik`, `mektup`); 34 kullanım kaldı. E4.3-A/B/C tamamlandı; E4.3-D'nin ilk dilimi sunucu/mobil/6 dilde çalışır.
 - `hak`: 203 kullanım — makam, lonca, ticaret, garnizon, sosyal yardım ve toplumsal ayrıcalıklar için sunucu tarafı yetki/eylem matrisi gerekir.
-- `sinerji`: 21 kullanım — `ortakSahne` (`sazGecesi`), `barisCorbasi` (`barisSofrasi`), `seckinOda` (has oda), `barisSansi` (NPC arabuluculuğunda +10), `yaylaCadiri` (çadır kalitesi), `pulZirhAstari` (pul zırh kalitesi), `ozelPastirma` (pastırma kalitesi), `kasabaDegirmeni` (un kalitesi), `hanKirisi` (kiriş kalitesi), `kopruDemiri` (ahşap köprü hakkı), `kagniHarmani` (kağnı kalitesi), `baklaYemegi` (ziyafet hizmeti), `kervanArabasi` (araba kalitesi), `ulakCizmesi` (çizme kalitesi) ve `ticaretSenedi` (senet kalitesi) gerçek tüketiciye bağlı; 6 kullanım kaldı.
+- `sinerji`: 21 kullanım — 17 tüketici bağlı: `ortakSahne` (saz gecesi), `barisCorbasi` (barış sofrası), `seckinOda` (has oda), `barisSansi` (NPC arabuluculuğu +10), `yaylaCadiri` (çadır kalitesi), `pulZirhAstari` (pul zırh kalitesi), `ozelPastirma` (pastırma kalitesi), `kasabaDegirmeni` (un kalitesi), `hanKirisi` (kiriş kalitesi), `degirmenKopruDemiri` (ahşap köprü hakkı), `kagniHarmani` (kağnı kalitesi), `baklaYemegi` (ziyafet), `kervanArabasi` (araba kalitesi), `ulakCizmesi` (çizme kalitesi), `ticaretSenedi` (senet kalitesi), `arbalet` (arbalet tarifi) ve `ticaretSozlesmesi` (ticaret sözleşmesi tarifi); 4 etki kaldı.
 - `tasarruf`: 1 kullanım vardı; bu dalda bağlandı.
-- `hakAcik(kar, hak)` ve `sinerjiAcik(kar, acar)` ortak sunucu çözümleyicileri eklendi. Sinerji çözümleyicisi hem açan becerinin etkisini hem de diğer meslekteki gerçek düğüm/seviyeyi doğrular. Bunlar altyapıdır; henüz 203 hak ve 9 sinerji tüketicisi açık kalır.
+- `hakAcik(kar, hak)` ve `sinerjiAcik(kar, acar)` ortak sunucu çözümleyicileri eklendi. `tarifAcik` artık arbalet ve ticaret sözleşmesi tariflerinde ikinci meslek koşulunu da sunucuda doğrular. 203 hak ve 4 sinerji etkisi açık kalır.
 
 ## Uygulama sırası
 
@@ -84,3 +84,10 @@ Bu üç sistem, farklı oyun döngülerini etkilediği için tek bir genel bonus
 - `ticaretSenedi`: Tüccar `toptanAlim` + Kâtip `vasiyetSozlesme` ikinci seviye birlikteyse yalnız `senet` tarifinin kalite becerisine +10 eklenir; kâtibin kendi kalite katkısı korunur.
 - Her üç testte de iki düğümün aynı karakterde bulunması, eksik/tek düğüm durumları ve bonusun hedef tarif dışına taşmaması doğrulanır.
 - Güncel sinerji sayımı: 15/21 tüketici bağlı, 6 kaldı. CI bu değişiklik için henüz çalıştırılmadı.
+
+
+### 13 Kasım — arbalet ve ticaret sözleşmesi sinerjileri
+- `arbalet`: Demirci `mekanizmaUstaligi` ikinci seviye ve Marangoz `arabaYapimi` birinci seviye aynı karakterde olmalıdır. Yeni arbalet malı/tarifi eklendi; `tarifAcik` ikinci meslek koşulunu sunucuda zorunlu kılar.
+- `ticaretSozlesmesi`: Kâtip `vasiyetSozlesme` ikinci seviye ve Tüccar `toptanAlim` birinci seviye birlikte olmalıdır. Yeni `sozlesme` malı/tarifi eklendi; tarif tek meslekle açılamaz.
+- İki tarif için de eksik sinerji, birlikte öğrenme, gerçek üretim ve envanter düşümü regresyon testleri eklendi.
+- Güncel envanter sayımı: 17/21 sinerji tüketicisi bağlı, 4 kaldı. `uzakAnlasma` gibi henüz gerçek uzak şehir/rota akışı bulunmayan etkiler sırf görünür olsun diye sahte tüketiciye bağlanmadı. Bu değişikliklerin CI doğrulaması henüz alınmadı.
