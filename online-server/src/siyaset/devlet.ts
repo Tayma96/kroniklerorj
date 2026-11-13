@@ -3,6 +3,20 @@ import type { HataKodu } from "../tipler.ts";
 import { BEYLIKLER } from "../dunya-veri.ts";
 import type { BagimsizDevlet, BolgeDurumu, SiyasiKimlik } from "./tipler.ts";
 
+/** Aynı kaynaktan gelen eski outbox isteği, daha yeni yanıtlanmış isteğin kaydını ezemez. */
+function oncekiIstekMi(oncekiId: string, oncekiAy: number, yeniId: string, yeniAy: number, kaynak: string, tur: "taninma" | "ittifak"): boolean {
+  const ayir = (id: string): { sira: number; ay: number } | undefined => {
+    const p = id.split(":");
+    const dogruUzunluk = tur === "ittifak" ? p.length === 4 && p[3] === "ittifak" : p.length === 3;
+    if (!dogruUzunluk || p[0] !== kaynak || !/^\\d+$/.test(p[1] ?? "") || !/^\\d+$/.test(p[2] ?? "")) return undefined;
+    return { sira: Number(p[1]), ay: Number(p[2]) };
+  };
+  const once = ayir(oncekiId);
+  const yeni = ayir(yeniId);
+  if (once && yeni) return yeni.sira <= once.sira;
+  return yeniAy < oncekiAy;
+}
+
 function beyMi(d: BolgeDurumu, kimlik: SiyasiKimlik): boolean {
   return !!d.devlet && d.devlet.beyKisi === kimlik.kisi && d.devlet.beyHesap === kimlik.hesap;
 }
@@ -178,6 +192,7 @@ export function taninmaIstekAl(
   const gelen = (d.devlet.taninmaGelen ??= {});
   const onceki = gelen[b.id];
   if (onceki?.istekId === istekId) return null;
+  if (onceki?.yanitlandi && oncekiIstekMi(onceki.istekId, onceki.ay, istekId, ay as number, b.id, "taninma")) return null;
   if (onceki && !onceki.yanitlandi) return "devlet_talep_var";
   gelen[b.id] = { istekId, ay: ay as number, ad: b.ad, yanitlandi: false };
   return null;
@@ -212,6 +227,7 @@ export function ittifakIstekAl(
   const gelen = d.devlet?.ittifakGelen ?? {};
   const onceki = gelen[b.id];
   if (onceki?.istekId === istekId) return null;
+  if (onceki?.yanitlandi && oncekiIstekMi(onceki.istekId, onceki.ay, istekId, ay as number, b.id, "ittifak")) return null;
   if (!d.devlet || d.devlet.ittifaklar?.[b.id]?.durum === "aktif" || d.devlet.ittifaklar?.[b.id]?.durum === "kabulBekliyor" || (onceki && !onceki.yanitlandi)) {
     const yinelenen = (d.diplomasiGiden ?? []).some((x) => x.tur === "ittifakYanit" && x.hedef === b.id && x.istekId === istekId);
     if (!yinelenen) (d.diplomasiGiden ??= []).push({ tur: "ittifakYanit", hedef: b.id, istekId, karar: "ret", ay: d.ay, ad: kendiAd });
