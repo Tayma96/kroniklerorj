@@ -380,6 +380,11 @@ test("P5 çatışma sonucu bağımsız devlet kurar; P6 yönetim kararları ve g
   assert.equal(d.devlet?.taninmaSonuc, "kabul");
   assert.equal(taninmaYanitAl(d, "aksehir", istek.istekId, "kabul", hedef.ay, hedefAd), null, "yanıt tekrar güvenli");
   assert.equal(taninmaYanitAl(d, "aksehir", istek.istekId, "ret", hedef.ay, hedefAd), "hedef_uygun_degil", "aynı istek kimliğiyle çelişkili karar reddedilir");
+  const yeniTaninma = `demirhan:999999:${hedef.ay}`;
+  assert.equal(taninmaIstekAl(hedef, "demirhan", yeniTaninma, hedef.ay, kaynakAd), null);
+  assert.equal(devletYonet(hedef, aksehirBey, { tur: "taninmaYanit", kaynakBolge: "demirhan", istekId: yeniTaninma, karar: "ret" }), null);
+  assert.equal(taninmaIstekAl(hedef, "demirhan", istek.istekId, d.ay, kaynakAd), null, "gecikmiş eski istek yeni yanıtlanmış kaydı ezemez");
+  assert.equal(hedef.devlet.taninmaGelen?.demirhan?.istekId, yeniTaninma);
   assert.equal(taninmaYanitAl(d, "aksehir", "sahte-istek", "ret", hedef.ay, hedefAd), "hedef_uygun_degil");
   assert.deepEqual(bolgeGorunumu(d, SIMDI, bey).bolge.devlet?.taninmaTalep?.cevap, {
     kaynak: "aksehir", karar: "kabul", ay: hedef.ay, ad: hedefAd, istekId: istek.istekId,
@@ -457,6 +462,11 @@ test("P6 ittifak: iki taraflı istek, kabul teyidi, ret ve süre aşımı idempo
   assert.equal(devletYonet(retHedef, retHedefBey, { tur: "ittifakYanit", kaynakBolge: "demirhan", istekId: retIstek.istekId, karar: "ret" }), null);
   assert.equal(ittifakYanitAl(retKaynak, "yenisehir", retIstek.istekId, "ret", 0, ad("yenisehir")), null);
   assert.equal(retKaynak.devlet?.ittifaklar?.yenisehir?.durum, "ret", JSON.stringify({ talep: retKaynak.devlet?.ittifakTalep, yanitlar: retKaynak.devlet?.ittifakYanits, ittifaklar: retKaynak.devlet?.ittifaklar }));
+  const yeniIstek = "demirhan:999999:0:ittifak";
+  assert.equal(ittifakIstekAl(retHedef, "demirhan", yeniIstek, 0, ad("demirhan")), null);
+  assert.equal(devletYonet(retHedef, retHedefBey, { tur: "ittifakYanit", kaynakBolge: "demirhan", istekId: yeniIstek, karar: "ret" }), null);
+  assert.equal(ittifakIstekAl(retHedef, "demirhan", retIstek.istekId, 0, ad("demirhan")), null, "gecikmiş eski ittifak isteği yeni yanıtı ezemez");
+  assert.equal(retHedef.devlet?.ittifakGelen?.demirhan?.istekId, yeniIstek);
   assert.equal(retKaynak.diplomasiGiden?.some((x) => x.tur === "ittifakOnay"), false);
 
   const sureKaynak = devletKur("demirhan", kimlik("sure-kaynak", { yerlesim: "demirhan", bolge: "demirhan" }));
