@@ -9,6 +9,7 @@ import {
   TEKLIF_TURLERI, TOPLUM_SINIR,
   type BagDurumu, type DuzenGorunumu, type GelenCevap, type GelenYaniti, type OyuncuEylemi, type OyuncuMeslekSatiri, type OyuncuProfili,
   type SoylentiGorunumu, type TeklifGorunumu, type TeklifSartlari, type TeklifTuru, type TeveccuhGorunumu, type VitrinArmagani,
+  type ToplulukDurumu, type ZaviyeIstegi, type ZaviyeGorunumu,
 } from "./toplum-veri";
 
 interface SOyuncu { o: string; ad: string; k: Cinsiyet; yas: number; meslekler: OyuncuMeslekSatiri[]; tv: number; vitrin: VitrinArmagani[]; nam: number[] }
@@ -150,6 +151,7 @@ export function sahteToplumKur(kasabaAl: () => SahteKasaba | null, meslekAl: () 
       giden: teklifler.filter((x) => x.durum === "acik" && x.gonderen.id === b).map(g),
       suren: teklifler.filter((x) => x.durum === "surer").map(g),
       kapanan: teklifler.filter((x) => x.durum !== "acik" && x.durum !== "surer").slice(-20).reverse().map(g),
+      arabuluculuk: [],
       dostluk: {
         gelen: Object.entries(bag).filter(([, v]) => v === "istekGeldi").map(([o]) => ({ ...kisi(o), ay: ay() - 1 })),
         giden: Object.entries(bag).filter(([, v]) => v === "istekGonderildi").map(([o]) => ({ ...kisi(o), ay: ay() })),
@@ -174,9 +176,93 @@ export function sahteToplumKur(kasabaAl: () => SahteKasaba | null, meslekAl: () 
     if (d !== "bitti") x.emanet = 0;
   };
 
+  let secim = { el: "orta", cesaret: "orta", gurur: "orta" };
+  let dertPuan = 28;
+  let senlikSayi = 1;
+  let hamiGelen = true;
+  let hamiGiden = false;
+  let hamiSuren = false;
+  let zaviyeBen: ZaviyeGorunumu | null = null;
+  const zaviyeDavetler: { id: string; ad: string; uyeSayisi: number }[] = [];
+  let zaviyeKasabada: { id: string; ad: string; arma: { sekil: string; renk: string }; uyeSayisi: number; durum: string; ahiBasi: string | null }[] = [];
+
+  const pano = (): ToplulukDurumu => ({
+    mesrep: { secildi: Object.values(secim).some((x) => x !== "orta"), secimAcik: true,
+      eksenler: (["el", "cesaret", "gurur"] as const).map((eksen) => ({
+        eksen, secili: secim[eksen], uclar: [{ uc: "comert", etkiler: [] }, { uc: "hesapli", etkiler: [] }, { uc: "temkinli", etkiler: [] }, { uc: "gozupek", etkiler: [] }, { uc: "mutevazi", etkiler: [] }, { uc: "gururlu", etkiler: [] }],
+      })) },
+    hami: { hamiOlabilir: true, yeniGelen: false, suren: hamiSuren ? [{ hami: { id: "o1", ad: "Ayşe", meslek: "demirci" }, cirak: { id: benId(), ad: benAd().ad, meslek: null }, gonderen: "o1", rolum: "cirak", durum: "surer", acilis: ay(), asamalar: [] }] : [], gelen: hamiGelen ? [{ hami: { id: "o1", ad: "Ayşe", meslek: "demirci" }, cirak: { id: benId(), ad: benAd().ad, meslek: null }, gonderen: "o1", rolum: "cirak", durum: "acik", acilis: ay(), asamalar: [] }] : [], giden: hamiGiden ? [{ hami: { id: benId(), ad: benAd().ad, meslek: null }, cirak: { id: "o2", ad: "Kerem", meslek: "marangoz" }, gonderen: benId(), rolum: "hami", durum: "acik", acilis: ay(), asamalar: [] }] : [], biten: [], buAyHamiNami: 0 },
+    ortakDert: { acik: [{ id: "d1", tur: "haydut", durum: "acik", acilis: ay() - 1, bitis: ay() + 3, esik: 60, puan: dertPuan, halk: 8, defter: [], benim: { sayi: 0, kalan: 3, puan: 0 } }], son: [], uygunKatkilarim: ["elEmegi", "nobet", "moral"], kurallar: {} },
+    senlik: { simdiki: { id: "nevruz-1252", tur: "nevruz", durum: "acik", acilis: ay() - 1, bitis: ay() + 2, levha: [], benim: { sayi: senlikSayi, kalan: 3 - senlikSayi } }, sonKapanan: null, kurallar: {} },
+    mudavim: { rozet: "mudavim", ziyaret: 4, sonraki: { rozet: "hanDemirbasi", gereken: 6 }, indirim: { deger: 2, tavan: 5 } },
+    zaviye: { benim: zaviyeBen, davetler: [...zaviyeDavetler], kasabada: [...zaviyeKasabada], ahiSarti: { teveccuhKademe: 2, benimKademem: 1, adayim: false } },
+    gostergeler: { arz: 56, moral: 61, asayis: 48, denge: 50, taban: 0, tavan: 100 },
+  });
   return {
+    async toplulukOku() { await bekle(); return basarili(pano()); },
+    async hami(i) {
+      await bekle();
+      if (i.islem === "kabul") { hamiGelen = false; hamiSuren = true; }
+      else if (i.islem === "ret") hamiGelen = false;
+      else if (i.islem === "birak") hamiSuren = false;
+      else hamiGiden = true;
+      return basarili({ islem: i.islem });
+    },
+    async mesrep(i) { await bekle(); secim = { el: i.el, cesaret: i.cesaret, gurur: i.gurur }; return basarili({ mesrep: pano().mesrep }); },
+    async ortakDert(i) { await bekle(); dertPuan += i.katki === "elEmegi" ? 4 : 8; return basarili({ puan: dertPuan }); },
+    async senlik(i) { await bekle(); senlikSayi = Math.min(3, senlikSayi + 1); return basarili({ sayi: senlikSayi }); },
+    async zaviye(i: ZaviyeIstegi) {
+      await bekle();
+      const kisi = (id: string) => oyuncular.find((x) => x.o === id);
+      if (i.islem === "kur") {
+        if (zaviyeBen) return basarisiz("gecersiz_istek");
+        const ad = (i.ad ?? "").trim();
+        if (ad.length < 3) return basarisiz("gecersiz_istek");
+        const kurucu = benAd();
+        zaviyeBen = {
+          id: "z1", ad, arma: { sekil: i.sekil ?? "kalkan", renk: i.renk ?? "al" }, durum: "kuruluyor",
+          kurulus: ay(), uyeSayisi: 1, sinir: { enAz: 5, enCok: 30 }, ahiBasi: null,
+          yonetici: { id: benId(), ad: kurucu.ad, vekil: true },
+          uyeler: [{ id: benId(), ad: kurucu.ad, meslek: null, katilis: ay(), rol: "kurucu" }],
+          kasa: 0, kasaDefteri: [], davetler: [], oyum: null, oyEsigi: 3, ustaCirak: [], rolum: "yonetici",
+        };
+        zaviyeKasabada = [{ id: "z1", ad, arma: zaviyeBen.arma, uyeSayisi: 1, durum: "kuruluyor", ahiBasi: null }];
+      } else if (i.islem === "ayril") {
+        zaviyeBen = null; zaviyeKasabada = [];
+      } else if (i.islem === "davet" && zaviyeBen && i.hedef) {
+        const p = kisi(i.hedef);
+        if (!p) return basarisiz("kisi_yok");
+        if (!zaviyeBen.davetler?.some((x) => x.id === i.hedef)) zaviyeBen.davetler = [...(zaviyeBen.davetler ?? []), { id: i.hedef, ad: p.ad, ay: ay() }];
+      } else if (i.islem === "cikar" && zaviyeBen && i.hedef) {
+        zaviyeBen.uyeler = zaviyeBen.uyeler.filter((x) => x.id !== i.hedef);
+        zaviyeBen.uyeSayisi = zaviyeBen.uyeler.length;
+      } else if (i.islem === "yatir" && zaviyeBen) {
+        const tutar = Math.max(0, Math.floor(i.tutar ?? 0));
+        zaviyeBen.kasa = (zaviyeBen.kasa ?? 0) + tutar;
+        zaviyeBen.kasaDefteri = [...(zaviyeBen.kasaDefteri ?? []), { ay: ay(), kim: benId(), alan: null, tutar }];
+      } else if (i.islem === "ver" && zaviyeBen) {
+        const tutar = Math.max(0, Math.floor(i.tutar ?? 0));
+        zaviyeBen.kasa = Math.max(0, (zaviyeBen.kasa ?? 0) - tutar);
+        zaviyeBen.kasaDefteri = [...(zaviyeBen.kasaDefteri ?? []), { ay: ay(), kim: benId(), alan: i.hedef ?? null, tutar: -tutar }];
+      } else if (i.islem === "arma" && zaviyeBen) {
+        zaviyeBen.arma = { sekil: i.sekil ?? zaviyeBen.arma.sekil, renk: i.renk ?? zaviyeBen.arma.renk };
+      } else if (i.islem === "oy" && zaviyeBen && i.hedef) {
+        zaviyeBen.oyum = i.hedef;
+      } else if (i.islem === "katil" || i.islem === "reddet") {
+        const d = zaviyeDavetler.findIndex((x) => x.id === i.zaviye);
+        if (d >= 0) zaviyeDavetler.splice(d, 1);
+      }
+      if (zaviyeBen) {
+        zaviyeBen.uyeSayisi = zaviyeBen.uyeler.length;
+        zaviyeBen.durum = zaviyeBen.uyeSayisi >= 5 ? "acik" : "kuruluyor";
+        zaviyeKasabada = [{ id: zaviyeBen.id, ad: zaviyeBen.ad, arma: zaviyeBen.arma, uyeSayisi: zaviyeBen.uyeSayisi, durum: zaviyeBen.durum, ahiBasi: zaviyeBen.ahiBasi?.ad ?? null }];
+      }
+      return basarili({ zaviye: zaviyeBen });
+    },
+
     async oyuncu(id, dil) { await bekle(); return profil(id, dil); },
     async gelen(dil) { await bekle(); return eko() ? basarili(gelen(dil)) : basarisiz("profil_yok"); },
+    async arabuluculuk() { await bekle(); return basarili({ dosya: {} }); },
     async dostluk(i) {
       await bekle();
       const o = oyuncular.find((x) => x.o === i.hedef);

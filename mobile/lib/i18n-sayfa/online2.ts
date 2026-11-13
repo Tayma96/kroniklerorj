@@ -7,6 +7,10 @@ export const rows: Record<string, string[]> = {
   "onl.nav.tanidiklar": ["Tanıdıklar", "People", "Conocidos", "Conhecidos", "المعارف", "Знакомые"],
   "onl.nav.karakter": ["Karakter", "Character", "Personaje", "Personagem", "الشخصية", "Персонаж"],
   "onl.kapat": ["Kapat", "Close", "Cerrar", "Fechar", "إغلاق", "Закрыть"],
+  // --- P5 darbe müzakeresi ve ateşkes kayıtları
+  "onl.kayit.darbeBarisTeklif": ["Çatışmada statüko ateşkesi önerildi.", "A status quo ceasefire was proposed in the conflict.", "Se propuso un alto el fuego de statu quo en el conflicto.", "Foi proposto um cessar-fogo de manutenção do estado atual.", "اقتُرحت هدنة تُبقي الوضع على ما هو عليه.", "В конфликте предложено перемирие на прежних условиях."],
+  "onl.kayit.darbeBarisKabul": ["Karşı taraf ateşkesi kabul etti; çatışma durdu.", "The opposing side accepted the ceasefire; the conflict has stopped.", "La parte contraria aceptó la tregua; el conflicto se detuvo.", "A parte contrária aceitou a trégua; o conflito foi interrompido.", "قبل الطرف المقابل الهدنة؛ وتوقّف النزاع.", "Противная сторона приняла перемирие; конфликт остановлен."],
+  "onl.kayit.darbeBarisRet": ["Karşı taraf ateşkesi reddetti; çatışma sürecek.", "The opposing side rejected the ceasefire; the conflict will continue.", "La parte contraria rechazó la tregua; el conflicto continuará.", "A parte contrária recusou a trégua; o conflito continuará.", "رفض الطرف المقابل الهدنة؛ وسيستمر النزاع.", "Противная сторона отвергла перемирие; конфликт продолжится."],
 
   // --- mekânlar
   "onl.mekan.carsi": ["Çarşı", "Bazaar", "Bazar", "Bazar", "السوق", "Базар"],
@@ -617,6 +621,7 @@ export const rows: Record<string, string[]> = {
   "onl.sans.ozellik": ["Özelliğin: %1", "Your attribute: %1", "Tu atributo: %1", "O teu atributo: %1", "صفتك: %1", "Твоё свойство: %1"],
   "onl.sans.beceri": ["Becerin: %1", "Your skill: %1", "Tu habilidad: %1", "A tua perícia: %1", "مهارتك: %1", "Твой навык: %1"],
   "onl.sans.tekrar": ["Önceki retler (%1)", "Earlier refusals (%1)", "Rechazos anteriores (%1)", "Recusas anteriores (%1)", "رفضٌ سابق (%1)", "Прежние отказы (%1)"],
+  "onl.sans.barisSansi": ["Barış ilahisi sinerjisi: +%1 şans", "Hymn of peace synergy: +%1 chance", "Sinergia del himno de paz: +%1 de probabilidad", "Sinergia do hino da paz: +%1 de hipótese", "تآزر أنشودة السلام: +%1 فرصة", "Синергия гимна мира: +%1 к шансу"],
   "onl.sans.sinir": ["Sınır (5–95)", "Limit (5–95)", "Límite (5–95)", "Limite (5–95)", "الحدّ (5–95)", "Предел (5–95)"],
 
   // --- hatalar (Faz 2)

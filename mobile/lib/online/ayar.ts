@@ -4,13 +4,16 @@
  * Yeni çevrimiçi akışın (/online) geliştirici kapısı. Kapalıyken /online rotaları "Yakında" gösterir; açıkken
  * geliştirici oturumu sahte veriyle sunucusuz denenebilir. (Eski MP'nin ONLINE_ACIK bayrağı lib/mp/config'te kalır.)
  */
-export const ONLINE_GELISTIRME = false;
+export const ONLINE_GELISTIRME = process.env.EXPO_PUBLIC_ONLINE_GELISTIRME === "1";
+
+/** Davet kodlu Google'sız test girişi; yalnız test APK derlemesinde açılır. */
+export const ONLINE_TEST_GIRIS = process.env.EXPO_PUBLIC_ONLINE_TEST_GIRIS === "1";
 
 /**
  * online-server Worker adresi (örn. "https://kronikler-online.<hesap>.workers.dev"). Berkay ilk dağıtımdan sonra
  * doldurur. Boşken istemci hiçbir isteği göndermez, "sunucu_yok" hatası döner; arayüz dostça bir not gösterir.
  */
-export const ONLINE_SUNUCU_URL = "";
+export const ONLINE_SUNUCU_URL = process.env.EXPO_PUBLIC_ONLINE_SUNUCU_URL ?? "";
 
 /** Tek bir HTTP isteğinin zaman aşımı. */
 export const ZAMAN_ASIMI_MS = 10_000;

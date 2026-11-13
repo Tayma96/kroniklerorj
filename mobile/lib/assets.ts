@@ -48,10 +48,10 @@ export function townSeasonImage(season: string): any { return TOWN_SEASON[season
 
 // Şehir mekânı kartlarının her biri kendi sahnesini kullanır (aynı panoramanın kırpıntısı değil).
 const VENUE: Record<string, any> = {
-  pazar: require("../assets/hero/orta_yaz.jpg"),
-  mahalle: require("../assets/arka/cami_avlu.jpg"),
-  mulkler: require("../assets/mulk/ev.jpg"),
-  hanedan: require("../assets/arka/ev_varlikli.jpg"),
+  pazar: require("../assets/tasarim/v4/venue-pazar.jpg"),
+  mahalle: require("../assets/tasarim/v4/venue-mahalle.jpg"),
+  mulkler: require("../assets/tasarim/v4/venue-mulkler.jpg"),
+  hanedan: require("../assets/tasarim/v4/venue-hanedan.jpg"),
   atolye: require("../assets/arka/atolye_demirci.jpg"),
   mektep: require("../assets/arka/medrese.jpg"),
   orgutler: require("../assets/arka/ahi_tekke.jpg"),

@@ -23,16 +23,100 @@ import type { Ismarlama } from "./ismarlama.ts";
 import type { LevhaKaydi } from "./levha.ts";
 import type { Dokum, Karakter, Kasaba, OlayTaslagi } from "./tipler.ts";
 
-/** Yerleşimin ekonomi kaydı (depo anahtarı "ek"): sonraki kimlik, ilanlar, ısmarlamalar, Ustalar Levhası. */
+/** Hazırlanmış hizmet stoğu (E4.3): süreli, sahibine bağlı ve ilan açılana dek kullanılamaz. */
+export interface HizmetStogu {
+  i: number;
+  o: string;
+  oa: string;
+  /** Hizmet kataloğu kimliği. */
+  h: string;
+  n: number;
+  /** İlk hazırlanan adet; stok ilan edilip azalsa da aylık kota hesabı için korunur. */
+  n0?: number;
+  ac: number;
+  sa: number;
+}
+
+/** Hizmet teslim/ödül defteri; hesap kimliği yerine yerel oyuncu kimliği tutulur. */
+export interface HizmetTeslimKaydi {
+  i: number;
+  o: string;
+  h: string;
+  alici: string;
+  aliciHane: number;
+  ay: number;
+  adet: number;
+  odul: number;
+  tutar: number;
+}
+
+/** Gerçek NPC doğum/ölüm olaylarından açılan, hazineden ödülü rezerve edilmiş tek teslimlik talep. */
+export interface HizmetNpcTalebi {
+  i: number;
+  olay: string;
+  h: string;
+  hedef: string;
+  hane: number;
+  ac: number;
+  sa: number;
+  odul: number;
+  d: "acik" | "tamam" | "dustu";
+  teslim?: { o: string; ad: string; ay: number };
+}
+
+/** Aylık, kasaba hazinesinden önceden ayrılmış koltuklu hizmet görevi. */
+export type HizmetGorevTuru = "nobet" | "vergiSayimi" | "meclisKaydi" | "talim";
+export interface HizmetKasabaGorevi {
+  i: number;
+  tur: HizmetGorevTuru;
+  ac: number;
+  sa: number;
+  odul: number;
+  d: "acik" | "tamam" | "dustu";
+  teslim?: { o: string; ad: string; hesap: string; hane: number; ay: number };
+}
+
+export type HizmetIlanDurumu = "acik" | "bitti" | "geri" | "dustu";
+export interface HizmetIlan {
+  i: number;
+  o: string;
+  oa: string;
+  h: string;
+  /** Stoğun kaynak kaydı; iptalde yalnız süresi geçmediyse geri verilir. */
+  s: number;
+  n: number;
+  n0: number;
+  f: number;
+  ac: number;
+  sa: number;
+  d: HizmetIlanDurumu;
+  /** Son işlemler: [ay, alıcı yerel kimliği, adet, tutar]. */
+  is?: [ay: number, alici: string, adet: number, tutar: number][];
+}
+
+/** Yerleşimin ekonomi kaydı (depo anahtarı "ek"): sonraki kimlik, ilanlar, ısmarlamalar, levha ve hizmet pazarı. */
 export interface EkonomiKaydi {
   n: number;
   il: Ilan[];
   is: Ismarlama[];
   lv: LevhaKaydi[];
+  hs?: HizmetStogu[];
+  hi?: HizmetIlan[];
+  ht?: HizmetTeslimKaydi[];
+  /** Doğum ve ölüm olaylarından açılan NPC hizmet talepleri. */
+  hn?: HizmetNpcTalebi[];
+  /** Kasaba görevleri ve son üretim ayı; eski ekonomi kayıtlarıyla uyumlu. */
+  hg?: HizmetKasabaGorevi[];
+  hga?: number;
 }
 
 export function ekonomiAl(k: Kasaba): EkonomiKaydi {
-  k.ek ??= { n: 1, il: [], is: [], lv: [] };
+  k.ek ??= { n: 1, il: [], is: [], lv: [], hs: [], hi: [], ht: [] };
+  k.ek.hs ??= [];
+  k.ek.hi ??= [];
+  k.ek.ht ??= [];
+  k.ek.hn ??= [];
+  k.ek.hg ??= [];
   return k.ek;
 }
 

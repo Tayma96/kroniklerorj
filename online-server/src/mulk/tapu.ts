@@ -4,7 +4,9 @@
 // Cüzdan (karakterin akçesi) ve tapu aynı DO'da olduğu için edinim ve devir ödemesi tek yazımda atomiktir.
 
 import { karakterYasi } from "../yerlesim/karakter.ts";
-import { kiraTut } from "../yerlesim/barinma.ts";
+import { hizmetAcik } from "../yerlesim/beceri-etki.ts";
+import { kiraTut, oyuncuHanOdaAcik } from "../yerlesim/barinma.ts";
+import { odaCoz } from "../yerlesim/oda.ts";
 import { ayniKume } from "../yerlesim/teveccuh.ts";
 import { olduMu } from "../yerlesim/hanedan.ts";
 import { npcAdi } from "../yerlesim/ortak.ts";
@@ -67,6 +69,10 @@ export interface MulkDefteri {
   od: Record<string, [string, number][]>;
   /** Denetim: edinim bedeli olarak dünyadan çıkan akçe. */
   batak: number;
+  /** Bölge DO'suna aktarılmayı bekleyen oyuncu işletmesi vergileri (kalıcı outbox). */
+  vergiGiden?: { anahtar: string; tutar: number; yerlesim: string }[];
+  /** İşletme bazında kuruş altı vergi birikimi (yüzde payı; 0–99). */
+  vergiKesir?: Record<string, number>;
 }
 
 /** [PARAMETRE] Karşılıklı işlem izleme penceresi için tutulan en çok ödeme çifti. */
@@ -205,45 +211,69 @@ export function oyuncuHani(k: Kasaba): OyuncuHani | undefined {
   return { isletme: id, sahip: t.s, fc: y?.fc ?? 100, seviye: y?.seviye ?? 0, kapasite: y && y.durum === "acik" && y.kapi ? y.kapasite : 0 };
 }
 
+function vergiAyir(md: MulkDefteri, isletme: string, tutar: number, oran: number): { vergi: number; net: number; kalan: number } {
+  const eski = md.vergiKesir?.[isletme] ?? 0;
+  const toplam = eski + tutar * oran;
+  const vergi = Math.floor(toplam / 100);
+  return { vergi, net: tutar - vergi, kalan: toplam % 100 };
+}
+
 function bosOda(md: MulkDefteri, isletme: string, kapasite: number, an: number): number {
   const l = (md.od[isletme] ?? []).filter(([, s]) => s > an);
   md.od[isletme] = l;
   return kapasite - l.length;
 }
 
-/** Kira: yerleşimin hanı oyuncununsa kira kasaya gider (çıkış kutusu), değilse Faz 14 NPC hancı (batak). */
-export function mulkluKira(k: Kasaba, kar: Karakter, govde: unknown, an: number): Sonuc<Record<string, unknown>> {
+/** Kira: oyuncu hanında gelir vergisi net kasaya gider; NPC hancı ödemesi dünyadan çıkar. */
+export function mulkluKira(k: Kasaba, kar: Karakter, govde: unknown, an: number, vergiOrani = 0): Sonuc<Record<string, unknown>> {
   const oh = oyuncuHani(k);
   if (!oh) return kiraTut(k, kar, govde, an);
   const md = mulkDefteri(k);
   if (oh.sahip === kar.o) return hata("kendine");
+  const sahip = k.kar.get(oh.sahip);
+  const oda = nesneMi(govde) ? odaCoz(govde.oda) : undefined;
+  if (!oda) return hata("oda_gecersiz");
+  if (!sahip || !oyuncuHanOdaAcik(sahip, oda)) return hata("dugum_kapali");
   if (md.cik.k.length >= CIKIS_EN_COK) return hata("transfer_bekliyor");
   const istekNo = nesneMi(govde) ? String(govde.istekNo) : "";
   const r = kiraTut(k, kar, govde, an, { isletme: oh.isletme, fc: oh.fc, seviye: oh.seviye, bos: bosOda(md, oh.isletme, oh.kapasite, an) });
   if (!r.ok) return r;
   const kira = r.deger.kira as { kasaya: number; bitis: number };
-  const c = kasayaCikis(k, kar, oh.isletme, kira.kasaya, "kira", an, `y:${k.y}:${kar.o}:kira:${istekNo}`, false);
+  const oran = Number.isInteger(vergiOrani) && vergiOrani >= 0 && vergiOrani <= 4 ? vergiOrani : 0;
+  const vergiPay = vergiAyir(md, oh.isletme, kira.kasaya, oran);
+  const { vergi, net } = vergiPay;
+  const c = kasayaCikis(k, kar, oh.isletme, net, "kira", an, `y:${k.y}:${kar.o}:kira:${istekNo}`, false);
   if (!c.ok) return c;
+  (md.vergiKesir ??= {})[oh.isletme] = vergiPay.kalan;
+  if (vergi > 0) (md.vergiGiden ??= []).push({ anahtar: `y:${k.y}:${kar.o}:kira:${istekNo}:vergi`, tutar: vergi, yerlesim: k.y });
   const l = md.od[oh.isletme]!.filter(([o]) => o !== kar.o);
   l.push([kar.o, kira.bitis]);
   md.od[oh.isletme] = l;
-  return basarili({ ...r.deger, transfer: { islem: c.deger.islem } });
+  return basarili({ ...r.deger, kira: { ...kira, kasaya: net }, vergi: { oran, tutar: vergi }, transfer: { islem: c.deger.islem } });
 }
 
-/** İkram ödemesi: oyuncu hanında akçe kasaya (çarpanlı menü), NPC handa dünyadan çıkar (Faz 10 kuralı). */
-export function mulkluIkram(k: Kasaba, kar: Karakter, ikram: IkramId, an: number, istekNo: string): Sonuc<{ fiyat: number; batak: number; kasaya: number; islem?: string }> {
+/** İkram ödemesi: oyuncu hanında gelir vergisi sonrası net kasaya, NPC handa dünyadan çıkar. */
+export function mulkluIkram(k: Kasaba, kar: Karakter, ikram: IkramId, an: number, istekNo: string, vergiOrani = 0): Sonuc<{ fiyat: number; batak: number; kasaya: number; vergi: number; islem?: string }> {
   const oh = oyuncuHani(k);
   const taban = IKRAM_MENUSU[ikram].fiyat;
   if (!oh) {
-    if (kar.pa < taban) return hata("para_yok");
-    kar.pa -= taban;
-    return basarili({ fiyat: taban, batak: taban, kasaya: 0 });
+    // Hancı "ikram" hizmeti yalnız NPC menüsünde %10 meslek indirimi sağlar; oyuncu hanının fiyatını sahibi belirler.
+    const fiyat = hizmetAcik(kar, "ikram") ? Math.max(1, Math.round(taban * 0.9)) : taban;
+    if (kar.pa < fiyat) return hata("para_yok");
+    kar.pa -= fiyat;
+    return basarili({ fiyat, batak: fiyat, kasaya: 0, vergi: 0 });
   }
   if (oh.kapasite === 0) return hata("han_kapali");
   const fiyat = Math.max(1, Math.ceil((taban * oh.fc) / 100 - 1e-9));
-  const c = kasayaCikis(k, kar, oh.isletme, fiyat, "ikram", an, `y:${k.y}:${kar.o}:ikram:${istekNo}`, true);
+  const oran = Number.isInteger(vergiOrani) && vergiOrani >= 0 && vergiOrani <= 4 ? vergiOrani : 0;
+  const md = mulkDefteri(k);
+  const vergiPay = vergiAyir(md, oh.isletme, fiyat, oran);
+  const { vergi, net } = vergiPay;
+  const c = kasayaCikis(k, kar, oh.isletme, net, "ikram", an, `y:${k.y}:${kar.o}:ikram:${istekNo}`, true);
   if (!c.ok) return c;
-  return basarili({ fiyat, batak: 0, kasaya: fiyat, islem: c.deger.islem });
+  (md.vergiKesir ??= {})[oh.isletme] = vergiPay.kalan;
+  if (vergi > 0) (md.vergiGiden ??= []).push({ anahtar: `y:${k.y}:${kar.o}:ikram:${istekNo}:vergi`, tutar: vergi, yerlesim: k.y });
+  return basarili({ fiyat, batak: 0, kasaya: net, vergi, islem: c.deger.islem });
 }
 
 // ── Gelen kayıtlar (IsletmeDO çıkış kutusundan) ──

@@ -75,7 +75,7 @@ export function kayitlar(soketler: readonly MasaSoketi[]): Kayit[] {
 }
 
 function plaka(ek: SoketEki): Plaka {
-  return { hesap: ek.h, ad: ek.a };
+  return { hesap: ek.h, ad: ek.a, ...(ek.cf ? { cerceve: ek.cf } : {}) };
 }
 
 /** Oturanlar koltuk sırasıyla. */
@@ -223,7 +223,7 @@ export function baglanmaEngeli(
 export function baglan(b: MasaBaglami, yeni: MasaSoketi, bilet: MasaBileti): void {
   const tum = kayitlar(b.soketler).filter((r) => r.soket !== yeni);
   const eski = tum.filter((r) => r.ek.h === bilet.plaka.hesap);
-  const ek: SoketEki = { m: bilet.masa, no: bilet.no, h: bilet.plaka.hesap, a: bilet.plaka.ad, k: null, o: null, s: null, sus: [], yt: bilet.yt };
+  const ek: SoketEki = { m: bilet.masa, no: bilet.no, h: bilet.plaka.hesap, a: bilet.plaka.ad, ...(bilet.plaka.cerceve ? { cf: bilet.plaka.cerceve } : {}), k: null, o: null, s: null, sus: [], yt: bilet.yt };
   const once = eski[0];
   if (once) {
     ek.k = once.ek.k;

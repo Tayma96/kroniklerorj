@@ -9,6 +9,8 @@ import type { Karakter } from "./tipler.ts";
 
 /** [PARAMETRE] Araçlı çıktı yüzdesi tavanı (birden çok düğümün yüzdesi toplanır, bu kadarla kırpılır). */
 export const VERIM_YUZDE_TAVAN = 50;
+/** [PARAMETRE] Girdi tasarrufu etkilerinin toplam üst sınırı. */
+export const TASARRUF_YUZDE_TAVAN = 50;
 
 /** Karakterin öğrendiği bütün seviyelerin etkileri (her meslekte). */
 export function* acikEtkiler(k: Karakter): Generator<Etki> {
@@ -28,7 +30,13 @@ export function kilitAcik(k: Karakter, kilit: OnKosul | undefined): boolean {
 }
 
 /** Tarifi açan düğüm seviyesi öğrenilmiş mi (kilidi olmayan tarif yoktur; testle denetlenir). */
-export const tarifAcik = (k: Karakter, id: string): boolean => Object.hasOwn(TARIF_KILIDI, id) && kilitAcik(k, TARIF_KILIDI[id]);
+export const tarifAcik = (k: Karakter, id: string): boolean => {
+  if (!Object.hasOwn(TARIF_KILIDI, id) || !kilitAcik(k, TARIF_KILIDI[id])) return false;
+  // Çapraz meslek tarifleri, açan düğümün yanında sinerjinin ikinci meslek koşulunu da ister.
+  if (id === "arbalet") return sinerjiAcik(k, "arbalet");
+  if (id === "sozlesme") return sinerjiAcik(k, "ticaretSozlesmesi");
+  return true;
+};
 /** Usta işi açık mı (kilidi olmayan temel iş herkese açıktır). */
 export const isAcik = (k: Karakter, id: string): boolean => kilitAcik(k, IS_KILIDI[id]);
 
@@ -53,6 +61,37 @@ export function aracArtisi(k: Karakter, hedef: string): { mal: string; arti: num
     if (e.mal === sonuc.mal) sonuc.arti += e.arti;
   }
   return sonuc;
+}
+
+/** Öğrenilmiş mesleki hizmet yetkisi; tüketen sistem kendi eyleminde sunucu tarafında doğrular. */
+export function hizmetAcik(k: Karakter, hizmet: string): boolean {
+  return [...acikEtkiler(k)].some((e) => e.tur === "hizmet" && e.hizmet === hizmet);
+}
+
+/** Öğrenilmiş toplumsal hak; her yazma ucu kendi eyleminde bu çözümleyiciyi sunucuda çağırmalıdır. */
+export function hakAcik(k: Karakter, hak: string): boolean {
+  const acik = [...acikEtkiler(k)].some((e) => e.tur === "hak" && e.hak === hak);
+  // Ahşap köprü projesi, marangozun köprücülük hakkına ek olarak demircinin dişli/metal ustalığını ister.
+  return acik && (hak !== "ahsapKopru" || sinerjilerAcik(k, ["degirmenKopruDemiri", "kopruDemiri"]));
+}
+
+/** Çapraz meslek sinerjisi: açan düğüm tek başına yetmez, tanımlı öteki düğüm/seviye de öğrenilmiş olmalıdır. */
+export function sinerjiAcik(k: Karakter, acar: string): boolean {
+  return [...acikEtkiler(k)].some((e) => e.tur === "sinerji" && e.acar === acar && dugumSeviyesi(k, e.dugum) >= e.seviye);
+}
+
+/** Bir eylem için tanımlanmış bütün çapraz meslek sinerjileri birlikte açık olmalıdır. */
+export function sinerjilerAcik(k: Karakter, acarlar: readonly string[]): boolean {
+  return acarlar.every((acar) => sinerjiAcik(k, acar));
+}
+
+/** Tarif/iş kimliği ya da tarif gruplarında, belirtilen girdiye uygulanan tasarruf yüzdesi. */
+export function tasarrufOrani(k: Karakter, hedefler: readonly string[], mal: string): number {
+  let yuzde = 0;
+  for (const e of acikEtkiler(k)) {
+    if (e.tur === "tasarruf" && e.mal === mal && hedefler.includes(e.hedef)) yuzde += e.yuzde;
+  }
+  return Math.min(TASARRUF_YUZDE_TAVAN, yuzde);
 }
 
 /** Aracın ömür artışı (kullanım). */

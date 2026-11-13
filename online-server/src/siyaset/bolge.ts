@@ -6,6 +6,8 @@ import { BEYLIKLER } from "../dunya-veri.ts";
 import { basarili, hata, type HataKodu, type Sonuc } from "../tipler.ts";
 import { mesruiyetGorunumu, bolgeMesruiyeti } from "./mesruiyet.ts";
 import { mogolEtkisi } from "./mogol.ts";
+import { darbeAyi, darbeBarisTeklifEt, darbeBarisYanit, darbeDestekle, darbeEsigi, darbeGorunumu, darbeHazirla, darbeIlanEt, darbeSadakatYatir, darbeSavunmaYaz, darbeVazgec } from "./darbe.ts";
+import { devletAyi, devletGorunumu, devletYemin, devletYonet } from "./devlet.ts";
 import {
   adayUygunMu,
   adayYap,
@@ -34,6 +36,7 @@ import {
   AZIL,
   BASLANGIC,
   BAYINDIRLIK,
+  DARBE,
   ESNAF,
   GOSTERGE,
   HARAC,
@@ -139,7 +142,7 @@ function npcNufusu(id: string): number {
 
 /** Aylık NPC halk vergisi (dökümüyle): nüfus × taban × oran çarpanı × pazar × arz × meşruiyet. */
 export function vergiDokumu(d: BolgeDurumu) {
-  const oran = ayarOku(vali(d), "vergiOrani", VERGI.baslangic);
+  const oran = d.devlet?.vergiOrani ?? ayarOku(vali(d), "vergiOrani", VERGI.baslangic);
   const pazar = PAZAR.ek[ayarOku(turKoltugu(d, "sehirBeyi"), "pazarVergisi")] ?? 0;
   const arz = 0.5 + d.g.arz / 100;
   const mesr = d.mesruiyet.kademe === "zayif" ? MESRUIYET.zayifVergi : 1;
@@ -152,7 +155,7 @@ function mesruiyetHesapla(d: BolgeDurumu): void {
   const v = vali(d);
   d.haksiz = d.haksiz.filter((a) => a > d.ay - MESRUIYET.pencere);
   d.mesruiyet = bolgeMesruiyeti({
-    vergiOrani: ayarOku(v, "vergiOrani", VERGI.baslangic),
+    vergiOrani: d.devlet?.vergiOrani ?? ayarOku(v, "vergiOrani", VERGI.baslangic),
     gostergeOrt: (d.g.arz + d.g.moral + d.g.guvenlik) / 3,
     haksizAzil: d.haksiz.length,
     onayliVali: !v.s.npc && !v.gecici,
@@ -222,7 +225,8 @@ export function bolgeAyi(d: BolgeDurumu, ay: number, simdi: number, ozet?: Sulta
   d.sonGelir = vergi.tutar;
   akceGir(d, vergi.tutar, "vergi", ay, "halk");
   // 4. Haraç → Sultan hazinesi (yolda; Sultanlık onaylayınca gönderilene geçer). Gecikme kademelidir.
-  const beklenen = Math.round(vergi.tutar * HARAC.pay * (1 - haracIndirimi(d)));
+  const bagimsiz = !!d.devlet && d.devlet.sultan !== "sultanligaDondu";
+  const beklenen = bagimsiz ? 0 : Math.round(vergi.tutar * HARAC.pay * (1 - haracIndirimi(d)));
   const odenen = Math.min(beklenen, d.kasa);
   let harac: AyCiktisi["harac"] = null;
   if (odenen > 0) {
@@ -231,6 +235,11 @@ export function bolgeAyi(d: BolgeDurumu, ay: number, simdi: number, ozet?: Sulta
     d.yolda[anahtar] = (d.yolda[anahtar] ?? 0) + odenen;
     kayitEkle(d, ay, "harac", v.id, { k: "kayit.harac", p: { tutar: odenen, beklenen } }, { akce: -odenen, kasa: d.kasa, koltuk: v.id });
     harac = { anahtar, tutar: d.yolda[anahtar]! };
+  }
+  // Bağımsız devlet Sultan'a haraç ödemez; Moğol tercihi "haraç" ise pay doğrudan dünyadan çıkar.
+  if (bagimsiz && d.devlet?.mogol === "harac") {
+    const mogolHaraci = Math.min(Math.round(vergi.tutar * HARAC.pay), d.kasa);
+    if (mogolHaraci > 0) akceCik(d, mogolHaraci, "mogolHaraci", ay, "mogol");
   }
   d.gecikme = odenen < beklenen ? d.gecikme + 1 : 0;
   if (d.gecikme > 0) kayitEkle(d, ay, "haracGecikme", v.id, { k: "kayit.haracGecikme", p: { kademe: HARAC.kademeler[Math.min(3, d.gecikme)] ?? "yaptirim", ay: d.gecikme } });
@@ -242,6 +251,17 @@ export function bolgeAyi(d: BolgeDurumu, ay: number, simdi: number, ozet?: Sulta
     kayitEkle(d, ay, "ozerklikKarari", "divan", { k: "kayit.ozerklikKarari", p: { karar: karar.karar!.tur, skor: karar.karar!.skor } });
   }
   const bitis = ozerklikAyi(d, ay, tutum);
+  const darbeOnce = d.darbe?.durum;
+  darbeAyi(d, ay);
+  if (darbeOnce === "catışma" && (d.darbe?.durum === "bastirildi" || d.darbe?.durum === "mogol")) {
+    const valiKoltugu = koltukBul(d, `vali:${d.id}`);
+    if (valiKoltugu && valiKoltugu.s.kisi === d.darbe.baslatanKisi) {
+      bosalt(d, valiKoltugu, ay, d.darbe.durum === "mogol" ? "mogolMud" : "darbeBastirildi");
+    }
+    kayitEkle(d, ay, "darbeSonuc", "kurum", { k: "kayit.darbeSonuc", p: { sonuc: d.darbe.durum } });
+  } else if (darbeOnce === "catışma" && d.darbe?.sonuc) {
+    kayitEkle(d, ay, "darbeSonuc", "kurum", { k: "kayit.darbeSonuc", p: { sonuc: d.darbe.sonuc.tur, saldiran: d.darbe.sonuc.saldiran, savunan: d.darbe.sonuc.savunan } });
+  }
   if (bitis) kayitEkle(d, ay, "ozerklikBitti", "divan", { k: "kayit.ozerklikBitti", p: { neden: bitis } });
   // 6. NPC Sultan: haraçta yaptırım kademesindeki oyuncu valiyi doğrulanmış gerekçeyle azleder (itiraz yolu açık).
   if (!v.s.npc && d.gecikme >= HARAC.azilGecikme) azlet(d, v, "harac", "sultan", ay, true);
@@ -249,6 +269,8 @@ export function bolgeAyi(d: BolgeDurumu, ay: number, simdi: number, ozet?: Sulta
   itirazlariCoz(d, ay);
   for (const k of d.koltuklar) koltukAyi(d, k, ay, simdi);
   mesruiyetHesapla(d);
+  const devletKarari = devletAyi(d, ay);
+  if (devletKarari) kayitEkle(d, ay, "devletDiplomasi", "divan", { k: "kayit.devletDiplomasi", p: { sonuc: devletKarari } });
   const dt = turKoltugu(d, "divanTemsilcisi")!;
   const rapor: BolgeRaporu = {
     ay,
@@ -562,6 +584,88 @@ export function bolgeEylem(d: BolgeDurumu, kimlik: SiyasiKimlik, g: Govde, simdi
       kayitEkle(d, ay, "ozerklikCevap", kimlik.kisi, { k: "kayit.ozerklikCevap", p: { kabul: g.kabul } });
       return basarili({ islem: "ozerklikCevap", dokum: d.ozerklik });
     }
+    case "darbeHazirla": {
+      const r = oyuncuKoltugu(d, `vali:${d.id}`, kimlik, simdi);
+      if (!r.ok || r.deger.neden !== "sahip") return hata("yetki_yok");
+      const h = darbeHazirla(d, kimlik, ay);
+      if (h) return hata(h);
+      kayitEkle(d, ay, "darbeHazirlik", kimlik.kisi, { k: "kayit.darbeHazirlik" });
+      return basarili({ islem: "darbeHazirla", dokum: darbeGorunumu(d, kimlik) });
+    }
+    case "darbeDestek": {
+      const r = oyuncuKoltugu(d, g.makam, kimlik, simdi);
+      if (!r.ok || r.deger.neden !== "sahip") return hata("yetki_yok");
+      if (r.deger.k.tur !== "sehirBeyi" && r.deger.k.tur !== "ahiBasi") return hata("yetki_yok");
+      const h = darbeDestekle(d, kimlik, r.deger.k.id, r.deger.k.tur, ay);
+      if (h) return hata(h);
+      kayitEkle(d, ay, "darbeDestek", kimlik.kisi, { k: "kayit.darbeDestek", p: { rol: r.deger.k.tur } }, { koltuk: r.deger.k.id });
+      return basarili({ islem: "darbeDestek", dokum: darbeGorunumu(d, kimlik) });
+    }
+    case "darbeSavunma": {
+      const r = oyuncuKoltugu(d, g.makam, kimlik, simdi);
+      if (!r.ok || r.deger.neden !== "sahip") return hata("yetki_yok");
+      if (r.deger.k.tur !== "sehirBeyi" && r.deger.k.tur !== "ahiBasi") return hata("yetki_yok");
+      const h = darbeSavunmaYaz(d, kimlik, r.deger.k.id, r.deger.k.tur, ay);
+      if (h) return hata(h);
+      kayitEkle(d, ay, "darbeSavunma", kimlik.kisi, { k: "kayit.darbeSavunma", p: { rol: r.deger.k.tur } }, { koltuk: r.deger.k.id });
+      return basarili({ islem: "darbeSavunma", dokum: darbeGorunumu(d, kimlik) });
+    }
+    case "darbeBarisTeklif": {
+      const h = darbeBarisTeklifEt(d, kimlik, g.istekId, ay);
+      if (h) return hata(h);
+      kayitEkle(d, ay, "darbeBarisTeklif", kimlik.kisi, { k: "kayit.darbeBarisTeklif" });
+      return basarili({ islem: "darbeBarisTeklif", dokum: darbeGorunumu(d, kimlik) });
+    }
+    case "darbeBarisYanit": {
+      const h = darbeBarisYanit(d, kimlik, g.istekId, g.karar, ay);
+      if (h) return hata(h);
+      const kabul = g.karar === "kabul";
+      kayitEkle(d, ay, kabul ? "darbeBarisKabul" : "darbeBarisRet", kimlik.kisi, {
+        k: kabul ? "kayit.darbeBarisKabul" : "kayit.darbeBarisRet",
+      });
+      return basarili({ islem: "darbeBarisYanit", dokum: darbeGorunumu(d, kimlik) });
+    }
+    case "darbeSadakat": {
+      const r = oyuncuKoltugu(d, `vali:${d.id}`, kimlik, simdi);
+      if (!r.ok || r.deger.neden !== "sahip") return hata("yetki_yok");
+      const tutar = tamsayi(g.tutar, DARBE.yatirimEnAz, DARBE.yatirimEnCok);
+      if (tutar === null) return hata("deger_sinir_disi");
+      const harcanan = darbeSadakatYatir(d, tutar, ay);
+      if (typeof harcanan === "string") return hata(harcanan);
+      akceCik(d, harcanan, "darbeIkmal", ay, kimlik.kisi, r.deger.k.id);
+      kayitEkle(d, ay, "darbeSadakat", kimlik.kisi, { k: "kayit.darbeSadakat", p: { tutar: harcanan } }, { koltuk: r.deger.k.id });
+      return basarili({ islem: "darbeSadakat", dokum: { darbe: darbeGorunumu(d, kimlik), harcanan } });
+    }
+    case "darbeIlan": {
+      const r = oyuncuKoltugu(d, `vali:${d.id}`, kimlik, simdi);
+      if (!r.ok || r.deger.neden !== "sahip") return hata("yetki_yok");
+      if (g.mod !== "acik" && g.mod !== "baskin") return hata("gecersiz_istek");
+      const esik = darbeEsigi(d);
+      const h = darbeIlanEt(d, g.mod, ay);
+      if (h) return hata(h);
+      kayitEkle(d, ay, "darbeIlan", kimlik.kisi, { k: "kayit.darbeIlan", p: { mod: g.mod, cozumAy: d.darbe?.cozumAy ?? ay } });
+      return basarili({ islem: "darbeIlan", dokum: { esik: esik.dokum, darbe: darbeGorunumu(d, kimlik) } });
+    }
+    case "darbeVazgec": {
+      const r = oyuncuKoltugu(d, `vali:${d.id}`, kimlik, simdi);
+      if (!r.ok || r.deger.neden !== "sahip") return hata("yetki_yok");
+      const h = darbeVazgec(d, kimlik.kisi, ay);
+      if (h) return hata(h);
+      kayitEkle(d, ay, "darbeIptal", kimlik.kisi, { k: "kayit.darbeIptal" });
+      return basarili({ islem: "darbeVazgec", dokum: darbeGorunumu(d, kimlik) });
+    }
+    case "devletYonet": {
+      const h = devletYonet(d, kimlik, g);
+      if (h) return hata(h);
+      kayitEkle(d, ay, "devletKarari", kimlik.kisi, { k: "kayit.devletKarari", p: { tur: String(g.tur) } });
+      return basarili({ islem: "devletYonet", dokum: devletGorunumu(d.devlet) });
+    }
+    case "devletYemin": {
+      const h = devletYemin(d, kimlik, g.deger);
+      if (h) return hata(h);
+      kayitEkle(d, ay, "devletYemin", kimlik.kisi, { k: "kayit.devletYemin", p: { deger: g.deger as string } });
+      return basarili({ islem: "devletYemin", dokum: devletGorunumu(d.devlet) });
+    }
     case "ozerklikBirak": {
       const r = oyuncuKoltugu(d, vali(d).id, kimlik, simdi);
       if (!r.ok || r.deger.neden !== "sahip") return hata("yetki_yok");
@@ -644,6 +748,8 @@ export function bolgeGorunumu(d: BolgeDurumu, simdi: number, kimlik?: SiyasiKiml
       harac: { pay: HARAC.pay, indirim: haracIndirimi(d), gecikme: d.gecikme, kademe: HARAC.kademeler[Math.min(3, d.gecikme)] },
       alarm: ALARM.seviyeler[ayarOku(vali(d), "alarm")],
       ozerklik: d.ozerklik ?? null,
+      devlet: devletGorunumu(d.devlet),
+      darbe: darbeGorunumu(d, kimlik),
     },
     makamlar: d.koltuklar.map((k) => koltukGorunumu(d, k, simdi, benim)),
     aziller: d.aziller.slice(-5).map((a) => ({ n: a.n, ay: a.ay, makam: a.koltuk, ad: a.eski.ad, gerekce: a.gerekce, dogrulandi: a.dogrulandi, itiraz: a.itiraz, hakem: a.hakem ?? null, itirazSon: a.ay + AZIL.itirazAy })),

@@ -88,6 +88,8 @@ export const SUNUCU_HATALARI = [
   // Beceri ağacı v2 (online-server yerlesim/beceri.ts)
   "meslek_degisim_dolu", "dugum_gecersiz", "dugum_gizli", "seviye_tavan", "on_kosul_eksik", "ogrenme_suruyor", "ogrenme_yok",
   "kaynak_gecersiz", "hizlandirma_kapali", "hizlandirma_yok", "yeniden_bos",
+  // P5 siyaset: darbe çatışması ve iki taraflı ateşkes.
+  "darbe_kapali", "devlet_talep_var", "taraf_degil", "deger_sinir_disi", "stok_yok", "arac_yok", "ayni_kume",
 ] as const;
 export type HataKodu = (typeof SUNUCU_HATALARI)[number] | ToplumHataKodu;
 
@@ -392,7 +394,7 @@ export type MeslekId = (typeof MESLEK_IDLERI)[number];
 export const KADEMELER = ["cirak", "kalfa", "usta", "pir"] as const;
 export type Kademe = 0 | 1 | 2 | 3;
 export const MAL_IDLERI = [
-  "odun", "sertOdun", "tas", "ot", "yun", "su", "kereste", "cevher", "komur", "tahil", "deri", "alet", "nal", "sifaliOt", "inceYun",
+  "odun", "sertOdun", "tas", "ot", "yun", "su", "kereste", "cevher", "komur", "tahil", "deri", "alet", "nal", "sifaliOt", "inceYun", "kagit", "murekkep", "senet",
 ] as const;
 export type MalId = (typeof MAL_IDLERI)[number];
 export const IS_IDLERI = ["odun", "tas", "ot", "yun", "su"] as const;

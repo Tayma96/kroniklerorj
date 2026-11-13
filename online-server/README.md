@@ -20,6 +20,26 @@ başına) ve `src/dunya-do.ts` (`DunyaDO`, tek örnek) bunları depolamaya bağl
 Faz 2: kurallar `src/yerlesim/*.ts` (saf), içerik `src/icerik/*.ts` (tek oyunculudan kopya veri), sarmalayıcı
 `src/yerlesim-do.ts` (`YerlesimDO`, yerleşim başına bir örnek).
 
+## Ayrılmış test Worker'ı ve davet kodlu giriş
+
+- `wrangler.test.toml`, üretimden ayrı `kronikler-online-test` Worker adını ve ayrı Durable Object ad alanını kullanır. Test verisi üretim Worker'ıyla paylaşılmaz.
+- Test Worker'ında `TEST_GIRIS_ACIK=1` ayarı etkin, üretim `wrangler.toml` içinde `TEST_GIRIS_ACIK=0` sabittir. Test giriş kodu kaynak koda veya APK'ya konmaz.
+- Test Worker'ına ayrı sırlar yüklenmelidir:
+  `npx wrangler secret put OTURUM_ANAHTARI --config wrangler.test.toml`
+  `npx wrangler secret put TEST_GIRIS_KODU --config wrangler.test.toml`
+- `TEST_GIRIS_KODU` en az 32 karakterlik rastgele bir sır olmalıdır. Test APK'sındaki davet alanına aynı kod girilir. İstemci ilk girişte rastgele bir cihaz kimliği üretir ve yerel depoda saklar; aynı cihaz aynı test hesabına döner.
+- Test giriş uç noktası `POST /v1/test-giris {kod, cihazId}` yalnız `TEST_GIRIS_ACIK=1` ve geçerli sır varken çalışır; aksi hâlde 404 döner. Google `sub` kimlik alanından ayrı `test:` ad alanı kullanılır.
+- Test Worker dağıtımı: GitHub Actions → **Deploy Online Server** → `hedef=test`. Üretim dağıtımı ayrı ve açıkça `hedef=production) seçilerek yapılır. Her iki hedef için `CLOUDFLARE_API_TOKEN` Actions secret gerekir.
+- Test APK: **APK (yerel derleme - hesapsız)** workflow'unda `kanal=test), `online_test_giris=true), `online_sunucu_url=https://kronikler-online-test.<hesap>.workers.dev` seçilir. `latest` kanalında test girişi ve çevrimiçi test bayrakları daima kapalıdır.
+- Test kodunu yalnız test ekibiyle paylaş; test Worker'ını üretim oyuncu verisi veya gerçek mağaza alımları için kullanma.
+
+## Faz 9 — kontrollü test Worker yük denemesi
+
+- `npm run test:load` yalnız `TEST_WORKER_URL` ve `TEST_GIRIS_KODU` ortam değişkenleriyle çalışır. URL koruması yalnız HTTPS `kronikler-online-test.<hesap>.workers.dev` hostunu kabul eder; diğer hostlara (özellikle üretime) yük göndermeyi reddeder.
+- Varsayılan koşu 120 istek / 20 eşzamanlı bağlantıdır. Yarısı `/v1/dunya`, yarısı imzalı test oturumuyla `/v1/profil` okur; p50/p95, hata sayısı ve toplam süreyi raporlar. Hata oranı sıfırdan büyükse veya p95 2500 ms'yi aşarsa başarısız olur.
+- GitHub Actions → **Online test Worker load gate** manuel workflow'u aynı betiği çalıştırır. Repository Actions secrets olarak `TEST_WORKER_URL` ve `TEST_GIRIS_KODU` tanımlanmalı. İstek/eşzamanlılık girdileri sırasıyla 10–500 ve 1–50 ile sınırlıdır.
+- Bu smoke yük kapısıdır; gerçek üretim kapasitesi veya kapsamlı saldırı güvenlik denetimi yerine geçmez. Yalnız ayrı test verisi üzerinde çalıştırılmalıdır.
+
 ## Uçlar
 
 Hepsi JSON. Hata gövdesi `{"hata": "<kod>"}`; kodlar ve HTTP durumları `src/tipler.ts` → `HATA_DURUMU`.

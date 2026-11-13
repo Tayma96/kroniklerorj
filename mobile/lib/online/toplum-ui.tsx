@@ -1,7 +1,7 @@
 // Faz 3a ortak parçalar: teklif kartı (şartlar, emanet, son ay, "cevapsız kalırsa"), teklif formu (tür, şartlar,
 // ön izleme), olağan düzen kartı, gelen kutusu kısayolu, sayaç ve seçim çipleri. Metinler i18n-sayfa/online-toplum.ts.
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { View, Text, useWindowDimensions } from "react-native";
+import { View, Text, TextInput, useWindowDimensions } from "react-native";
 import { useRouter } from "expo-router";
 import { useI18n, applyParams } from "../i18n";
 import { C, F } from "../theme";
@@ -17,13 +17,13 @@ import { KADEMELER, MAL_IDLERI, type MalId, type MeslekId, type OnlineHata } fro
 import { useToplum, type Toplum } from "./toplum-durum";
 import {
   OYUNCU_TEKLIF_TURLERI, TEKLIF_TURLERI, TOPLUM_SINIR,
-  type GelenCevap, type OyuncuProfili, type OyuncuTeklifTuru, type TeklifCevabi, type TeklifGorunumu, type TeklifSartGirdisi, type TeklifTuru,
+  type GelenCevap, type OyuncuProfili, type OyuncuTeklifTuru, type TeklifCevabi, type TeklifGorunumu, type TeklifSartGirdisi, type TeklifTuru, type OyuncuArabuluculukGorunumu,
 } from "./toplum-veri";
 
 type Ceviri = (k: string) => string;
 
 export const TUR_IKONU: Record<TeklifTuru, string> = {
-  cirak: "graduate-cap", ortak: "scales", borc: "coins", hediye: "gems", gorucu: "ring", npcIs: "saw", npcBorc: "coins", npcDunur: "ring",
+  cirak: "graduate-cap", ortak: "scales", borc: "coins", hediye: "gems", gorucu: "ring", is: "scroll", npcIs: "saw", npcBorc: "coins", npcDunur: "ring",
 };
 export const kademeAdi = (t: Ceviri, kd: number | null | undefined) => t("onl.kd." + KADEMELER[Math.max(0, Math.min(3, kd ?? 0))]);
 export const malAdi = (t: Ceviri, m: string) => t("onl.mal." + m);
@@ -57,17 +57,32 @@ export function sartYaz(t: Ceviri, x: TeklifGorunumu, ay: number): string[] {
       break;
     }
     case "ortak": satir.push(applyParams(t("onl.tp.s.ortak"), [s.pay ?? 0, s.sure ?? 0])); break;
-    case "borc": satir.push(applyParams(t("onl.tp.s.borc"), [s.tutar ?? 0, s.faiz ?? 0, s.vade ?? 0, ad(x.borclu)])); break;
+    case "borc":
+      satir.push(applyParams(t("onl.tp.s.borc"), [s.tutar ?? 0, s.faiz ?? 0, s.vade ?? 0, ad(x.borclu)]));
+      if (s.senetli) satir.push(t("onl.tp.s.senetli"));
+      break;
     case "hediye": satir.push(applyParams(t("onl.tp.s.hediye"), [armaganYaz(t, s)])); break;
     case "gorucu": satir.push(t("onl.tp.s.gorucu")); break;
+    case "is":
+      satir.push(applyParams(t("onl.tp.s.is"), [t("onl.tp.is." + (s.is ?? "mektup")), s.tutar ?? 0, s.is === "muhafiz" ? 2 : 1]));
+      if (s.is === "mektup" && s.hedef) satir.push(applyParams(t("onl.tp.s.mektupHedef"), [s.hedef.ad]), s.mesaj ?? "");
+      if (s.is === "arabuluculuk") {
+        if (s.arabuluculukNpc) satir.push(applyParams(t("onl.tp.s.arabuluculukNpc"), [s.arabuluculukNpc.ad]));
+        if (s.arabuluculukBedel) satir.push(t("onl.tp.arabuluculukBedel." + s.arabuluculukBedel));
+        if (s.arabuluculukMiktar) satir.push(applyParams(t("onl.tp.s.arabuluculukTazminat"), [s.arabuluculukMiktar]));
+      }
+      break;
     case "npcIs": satir.push(applyParams(t("onl.tp.s.npcIs"), [s.tutar ?? 0, TOPLUM_SINIR.npcIsTakat])); break;
     case "npcBorc": satir.push(applyParams(t("onl.tp.s.npcBorc"), [s.tutar ?? 0, s.vade ?? 0])); break;
     case "npcDunur": satir.push(applyParams(t("onl.tp.s.npcDunur"), [s.aday?.ad ?? "?"])); break;
   }
   if (x.durum === "surer") {
-    if (x.kalan != null) satir.push(applyParams(t("onl.tp.s.kalan"), [x.kalan, x.vadeAyi != null ? ayFarki(t, x.vadeAyi, ay) : "?"]));
+    if (x.tur === "is") satir.push(applyParams(t("onl.tp.s.isSon"), [ayFarki(t, x.sonAy, ay)]));
     if (x.bitisAyi !== undefined) satir.push(applyParams(t("onl.tp.s.bitis"), [ayFarki(t, x.bitisAyi, ay)]));
   }
+  // Senet kapanmış olsa da kalan bakiye (0 dahil) ve vade kaydı görünür kalır.
+  if (x.tur === "borc" && x.kalan != null) satir.push(applyParams(t("onl.tp.s.kalan"), [x.kalan, x.vadeAyi != null ? ayFarki(t, x.vadeAyi, ay) : "?"]));
+  if (x.tur === "borc" && x.odemeler?.length) satir.push(applyParams(t("onl.tp.s.odemeKaydi"), [x.odemeler.map(([odemeAyi, tutar]) => `${odemeAyi} (${ayFarki(t, odemeAyi, ay)}): ${tutar}`).join(" · ")]));
   return satir;
 }
 
@@ -85,7 +100,8 @@ export function TeklifKarti({ x, ay, benId, toplum, onKisi }: { x: TeklifGorunum
   const cevaplar: TeklifCevabi[] = [];
   if (acik && x.yon === "gelen") cevaplar.push("kabul", "ret");
   if (acik && x.yon === "giden") cevaplar.push("geri");
-  if (x.durum === "surer" && (x.tur === "ortak" || x.tur === "cirak")) cevaplar.push("bitir");
+  if (x.durum === "surer" && (x.tur === "ortak" || x.tur === "cirak" || x.tur === "is")) cevaplar.push("bitir");
+  if (x.durum === "surer" && x.tur === "is" && x.yon === "gelen") cevaplar.push("teslim");
   const odeyebilir = x.durum === "surer" && x.tur === "borc" && x.borclu === benId && (x.kalan ?? 0) > 0;
   const cevapla = async (c: TeklifCevabi) => {
     setHata(null);
@@ -125,7 +141,7 @@ export function TeklifKarti({ x, ay, benId, toplum, onKisi }: { x: TeklifGorunum
     </View> : null}
     {cevaplar.length ? <View style={{ flexDirection: yon(rtl), gap: 8 }}>
       {cevaplar.map((c) => <View key={c} style={{ flex: 1 }}>
-        {c === "kabul" ? <AltinDugme etiket={t("onl.tp.c.kabul")} icon="star" rtl={rtl} bekliyor={bekliyor(c)} onPress={() => { void cevapla(c); }} />
+        {c === "kabul" || c === "teslim" ? <AltinDugme etiket={t("onl.tp.c." + c)} icon={c === "kabul" ? "star" : "check-circle"} rtl={rtl} bekliyor={bekliyor(c)} onPress={() => { void cevapla(c); }} />
           : <CizgiDugme etiket={t("onl.tp.c." + c)} rtl={rtl} kucuk kapali={bekliyor(c)} onPress={() => { void cevapla(c); }} />}
       </View>)}
     </View> : null}
@@ -212,24 +228,40 @@ export function TeklifFormu({ p, baslangic, onBitti }: { p: OyuncuProfili; basla
   const [tutar, setTutar] = useState(10);
   const [vade, setVade] = useState(6);
   const [faiz, setFaiz] = useState(0);
+  const [senetli, setSenetli] = useState(false);
   const [akce, setAkce] = useState(0);
   const malVar = MAL_IDLERI.filter((m) => (o.envanter?.[m] ?? 0) > 0);
   const [mal, setMal] = useState<MalId | null>(null);
   const [adet, setAdet] = useState(1);
+  const [isTuru, setIsTuru] = useState<"arabuluculuk" | "muhafiz" | "mektup">("mektup");
+  const [isUcret, setIsUcret] = useState(() => Math.max(1, Math.min(8, para)));
+  const [mektupHedef, setMektupHedef] = useState("");
+  const [mektupMetni, setMektupMetni] = useState("");
+  const npcAdaylari = useMemo(() => {
+    const adlar = new Map<string, string>();
+    for (const yer of o.yerlesim?.harita ?? []) for (const kisi of yer.kisiler) if (/^n[1-9][0-9]{0,8}$/.test(kisi.id)) adlar.set(kisi.id, kisi.ad);
+    return [...adlar].map(([id, ad]) => ({ id, ad }));
+  }, [o.yerlesim?.harita]);
+  const [arabuluculukNpc, setArabuluculukNpc] = useState("");
+  const [arabuluculukBedel, setArabuluculukBedel] = useState<NonNullable<TeklifSartGirdisi["arabuluculukBedel"]>>("ozur");
+  const [arabuluculukMiktar, setArabuluculukMiktar] = useState(5);
   const [hata, setHata] = useState<OnlineHata | null>(null);
   const [bitti, setBitti] = useState(false);
   useEffect(() => { setMeslek(cirakAday[0] ?? null); }, [ustaBen]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (!npcAdaylari.some((x) => x.id === arabuluculukNpc)) setArabuluculukNpc(npcAdaylari[0]?.id ?? ""); }, [npcAdaylari, arabuluculukNpc]);
   useEffect(() => { if (!o.meslekDurumu && !o.yerlesim) void o.yerlesimYukle(true); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (!toplum.gelen) void toplum.gelenYukle(); }, [toplum.gelen, toplum.gelenYukle]);
 
   const malDeger = mal ? Math.max(1, MALLAR[mal]?.taban ?? 1) * adet : 0;
   const hediyeDeger = akce + malDeger;
   const sart: TeklifSartGirdisi =
     tur === "cirak" ? { ...(meslek ? { meslek } : {}), ustaBen }
     : tur === "ortak" ? { pay, sure }
-    : tur === "borc" ? { yon: borcYon, tutar, vade, faiz }
+    : tur === "borc" ? { yon: borcYon, tutar, vade, faiz, ...(senetli ? { senetli: true } : {}) }
     : tur === "hediye" ? { ...(akce ? { tutar: akce } : {}), ...(mal ? { mal, adet } : {}) }
+    : tur === "is" ? { is: isTuru, tutar: isUcret, ...(isTuru === "mektup" ? { mektupHedef, mektupMetni } : {}), ...(isTuru === "arabuluculuk" ? { arabuluculukNpc, arabuluculukBedel, ...(arabuluculukBedel === "tazminat" ? { arabuluculukMiktar } : {}) } : {}) }
     : {};
-  const gecerli = !kapi(tur) && (tur !== "cirak" || !!meslek) && (tur !== "hediye" || (hediyeDeger >= 1 && hediyeDeger <= TOPLUM_SINIR.hediyeEnCok));
+  const gecerli = !kapi(tur) && (tur !== "borc" || !senetli || borcYon !== "ver" || (o.envanter?.senet ?? 0) > 0) && (tur !== "cirak" || !!meslek) && (tur !== "hediye" || (hediyeDeger >= 1 && hediyeDeger <= TOPLUM_SINIR.hediyeEnCok)) && (tur !== "is" || (isUcret >= 1 && isUcret <= Math.min(TOPLUM_SINIR.isEnCok, para) && (isTuru !== "mektup" || (new RegExp("^o[1-9][0-9]{0,8}$").test(mektupHedef.trim()) && mektupMetni.trim().length >= 1 && mektupMetni.trim().length <= 240)) && (isTuru !== "arabuluculuk" || (!!arabuluculukNpc && npcAdaylari.some((x) => x.id === arabuluculukNpc) && isUcret + (arabuluculukBedel === "tazminat" ? arabuluculukMiktar : 0) <= para))));
   const anahtar = `teklif:${p.id}:${tur}:${JSON.stringify(sart)}`;
   const gonder = async () => {
     setHata(null);
@@ -246,11 +278,19 @@ export function TeklifFormu({ p, baslangic, onBitti }: { p: OyuncuProfili; basla
   // Ön izleme: gönderince ne kilitlenir, ne kadar süre beklenir, cevapsız kalırsa ne olur.
   const onizleme: string[] = [];
   if (tur === "borc" && borcYon === "ver") onizleme.push(applyParams(t("onl.tp.f.emanetBorc"), [tutar]));
-  if (tur === "borc") onizleme.push(applyParams(t("onl.tp.f.geriOdeme"), [Math.round((tutar * (100 + faiz)) / 100), vade]));
+  if (tur === "borc") {
+    onizleme.push(applyParams(t("onl.tp.f.geriOdeme"), [Math.round((tutar * (100 + faiz)) / 100), vade]));
+    if (senetli) onizleme.push(t("onl.tp.f.senetOnizleme"));
+  }
   if (tur === "hediye") onizleme.push(applyParams(t("onl.tp.f.emanetHediye"), [armaganYaz(t, { akce, ...(mal ? { mal, adet } : {}) }) || "—", TOPLUM_SINIR.hediyeTakat]));
   if (tur === "ortak") onizleme.push(t("onl.tp.f.ortakNot"));
   if (tur === "cirak") onizleme.push(t("onl.tp.f.cirakNot"));
   if (tur === "gorucu") onizleme.push(t("onl.tp.s.gorucu"));
+  if (tur === "is") {
+    if (isTuru === "arabuluculuk") onizleme.push(applyParams(t("onl.tp.f.arabuluculukEmanet"), [isUcret, arabuluculukBedel === "tazminat" ? arabuluculukMiktar : 0]));
+    else onizleme.push(applyParams(t("onl.tp.f.isEmanet"), [isUcret]));
+    onizleme.push(applyParams(t("onl.tp.f.isSure"), [isTuru === "muhafiz" ? 2 : 1]));
+  }
   onizleme.push(t("onl.tp.f.sure"), t("onl.tp.f.cevapsiz"));
 
   return <View style={{ gap: 14 }}>
@@ -274,7 +314,36 @@ export function TeklifFormu({ p, baslangic, onBitti }: { p: OyuncuProfili; basla
       <Sayac etiket={t("onl.tp.f.tutar")} deger={tutar} en={1} cok={TOPLUM_SINIR.borcEnCok} onDegis={setTutar} birim={t("onl.tp.akceBirim")} />
       <Sayac etiket={t("onl.tp.f.faiz")} deger={faiz} en={0} cok={TOPLUM_SINIR.borcFaiz} onDegis={setFaiz} birim="%" />
       <Sayac etiket={t("onl.tp.f.vade")} deger={vade} en={1} cok={TOPLUM_SINIR.borcVade} onDegis={setVade} birim={t("onl.tp.ayBirim")} />
+      <Secenekler secenekler={["yok", "senet"] as const} secili={senetli ? "senet" : "yok"} onSec={(x) => setSenetli(x === "senet")} etiket={(x) => t("onl.tp.f.senet." + x)} ikon={(x) => x === "senet" ? "scroll" : "minus"} />
+      {senetli && borcYon === "ver" && (o.envanter?.senet ?? 0) < 1 ? <Bant tur="bilgi" metin={t("onl.tp.f.senetEksikBen")} rtl={rtl} /> : null}
+      {senetli && borcYon === "iste" ? <Text style={{ fontFamily: F.serifItalic, fontSize: 12.5, lineHeight: 18, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{t("onl.tp.f.senetEksikKarsi")}</Text> : null}
       {borcYon === "ver" && tutar > para ? <Bant tur="bilgi" metin={applyParams(t("onl.tp.f.paraAz"), [para])} rtl={rtl} /> : null}
+    </Alan> : null}
+    {tur === "is" ? <Alan baslik={t("onl.tp.f.sartlar")}>
+      <Secenekler secenekler={["arabuluculuk", "muhafiz", "mektup"] as const} secili={isTuru} onSec={setIsTuru} etiket={(x) => t("onl.tp.is." + x)} ikon={(x) => x === "muhafiz" ? "shield" : x === "arabuluculuk" ? "scale" : "mail"} />
+      <Text style={{ fontFamily: F.serifItalic, fontSize: 14.5, lineHeight: 20, color: C.parchmentDim, textAlign: hiza(rtl) }}>{t("onl.tp.is.d." + isTuru)}</Text>
+      <Sayac etiket={t("onl.tp.f.isUcret")} deger={isUcret} en={1} cok={Math.max(1, Math.min(TOPLUM_SINIR.isEnCok, para))} onDegis={setIsUcret} birim={t("onl.tp.akceBirim")} />
+      {isUcret > para ? <Bant tur="bilgi" metin={applyParams(t("onl.tp.f.paraAz"), [para])} rtl={rtl} /> : null}
+      {isTuru === "arabuluculuk" ? <>
+        <Text style={{ fontFamily: F.display, fontSize: 11.5, color: C.goldBright, textAlign: hiza(rtl) }}>{t("onl.tp.f.arabuluculukNpc")}</Text>
+        {npcAdaylari.length ? <Secenekler secenekler={npcAdaylari.map((x) => x.id)} secili={arabuluculukNpc} onSec={setArabuluculukNpc} etiket={(id) => npcAdaylari.find((x) => x.id === id)?.ad ?? id} ikon={() => "user"} />
+          : <BosKart icon="users" metin={t("onl.tp.f.arabuluculukNpcYok")} rtl={rtl} />}
+        <Text style={{ fontFamily: F.display, fontSize: 11.5, color: C.goldBright, textAlign: hiza(rtl) }}>{t("onl.tp.f.arabuluculukBedel")}</Text>
+        <Secenekler secenekler={["ozur", "helallik", "ortakIs", "tazminat"] as const} secili={arabuluculukBedel} onSec={setArabuluculukBedel} etiket={(x) => t("onl.tp.arabuluculukBedel." + x)} />
+        {arabuluculukBedel === "tazminat" ? <Sayac etiket={t("onl.tp.f.arabuluculukTazminat")} deger={arabuluculukMiktar} en={1} cok={15} onDegis={setArabuluculukMiktar} birim={t("onl.tp.akceBirim")} /> : null}
+        <Text style={{ fontFamily: F.serifItalic, fontSize: 13.5, lineHeight: 18, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{t("onl.tp.f.arabuluculukNot")}</Text>
+      </> : null}
+      {isTuru === "mektup" ? <>
+        <Text style={{ fontFamily: F.display, fontSize: 11.5, color: C.goldBright, textAlign: hiza(rtl) }}>{t("onl.tp.f.mektupHedef")}</Text>
+        <Text style={{ fontFamily: F.serifItalic, fontSize: 12.5, lineHeight: 18, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{t("onl.tp.f.mektupDostlar")}</Text>
+        {(toplum.gelen?.dostluk.dostlar.length ?? 0) > 0 ? <Secenekler secenekler={toplum.gelen!.dostluk.dostlar.map((x) => x.id)} secili={mektupHedef} onSec={setMektupHedef} etiket={(id) => toplum.gelen!.dostluk.dostlar.find((x) => x.id === id)?.ad ?? id} /> : null}
+        <TextInput value={mektupHedef} onChangeText={setMektupHedef} placeholder={t("onl.tp.f.mektupHedefOrnek")} placeholderTextColor={C.parchmentMuted}
+          autoCapitalize="none" autoCorrect={false} maxLength={10} style={{ minHeight: 44, borderWidth: 1, borderColor: ONL.frameHi, borderRadius: 8, paddingHorizontal: 11, color: C.parchment, backgroundColor: "rgba(14,10,6,0.7)", fontFamily: F.serif, textAlign: hiza(rtl) }} />
+        <Text style={{ fontFamily: F.display, fontSize: 11.5, color: C.goldBright, textAlign: hiza(rtl) }}>{t("onl.tp.f.mektupMetni")}</Text>
+        <TextInput value={mektupMetni} onChangeText={setMektupMetni} placeholder={t("onl.tp.f.mektupMetniOrnek")} placeholderTextColor={C.parchmentMuted}
+          multiline maxLength={240} textAlignVertical="top" style={{ minHeight: 92, borderWidth: 1, borderColor: ONL.frameHi, borderRadius: 8, padding: 11, color: C.parchment, backgroundColor: "rgba(14,10,6,0.7)", fontFamily: F.serif, textAlign: hiza(rtl) }} />
+        <Text style={{ fontFamily: F.serif, fontSize: 12, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{applyParams(t("onl.tp.f.mektupSayac"), [mektupMetni.trim().length])}</Text>
+      </> : null}
     </Alan> : null}
     {tur === "hediye" ? <Alan baslik={t("onl.tp.f.sartlar")}>
       <Sayac etiket={t("onl.tp.f.akce")} deger={akce} en={0} cok={Math.min(TOPLUM_SINIR.hediyeEnCok, para)} onDegis={setAkce} birim={t("onl.tp.akceBirim")} />
@@ -319,7 +388,7 @@ export function OlaganDuzenKarti() {
     const s = await toplum.duzenKaydet({ gelen, borcCevap: taslak.borcCevap, borcEnCok: taslak.borcEnCok });
     if (s.ok) { hap("success"); setKayit(true); } else hap("error");
   };
-  const kendiliginden = d?.sinir.kendiligindenKabulYok ?? ["gorucu", "npcDunur"];
+  const kendiliginden = d?.sinir.kendiligindenKabulYok ?? ["gorucu", "npcDunur", "is"];
   const hata = toplum.hataOf("duzenOku");
   const kayitHata = toplum.hata?.islem.startsWith("duzen:") ? toplum.hata.kod : null;
   return <Cerceve ic={{ padding: 12, gap: 10 }}>
@@ -394,4 +463,58 @@ export function KarakterToplumBolumu({ benId }: { benId: string }) {
     <GelenKutusuKarti ust={0} />
     <OlaganDuzenKarti />
   </View>;
+}
+
+
+/** Oyuncu–oyuncu arabuluculuk dosyası: üçlü davet, arabulucu taslağı ve iki tarafın sürüm imzası. */
+export function ArabuluculukKarti({ x, toplum }: { x: OyuncuArabuluculukGorunumu; toplum: Toplum }) {
+  const { t, rtl } = useI18n();
+  const [sTutari, setSTutari] = useState(x.uzlasma?.s ?? 0);
+  const [kTutari, setKTutari] = useState(x.uzlasma?.k ?? 0);
+  const [not, setNot] = useState(x.uzlasma?.not ?? "");
+  const [hata, setHata] = useState<OnlineHata | null>(null);
+  const [tamam, setTamam] = useState(false);
+  useEffect(() => { setSTutari(x.uzlasma?.s ?? 0); setKTutari(x.uzlasma?.k ?? 0); setNot(x.uzlasma?.not ?? ""); }, [x.surum, x.uzlasma?.s, x.uzlasma?.k, x.uzlasma?.not]);
+  const gonder = async (islem: "cevap" | "geri" | "taslak" | "imza" | "uygula", ek: Record<string, unknown> = {}) => {
+    setHata(null); setTamam(false);
+    const sonuc = await toplum.arabuluculuk({ islem, dosya: x.id, ...ek } as Parameters<Toplum["arabuluculuk"]>[0]);
+    if (sonuc.ok) { hap("success"); setTamam(true); }
+    else { hap("error"); setHata(sonuc.hata); }
+  };
+  const imzali = x.rol === "sikayetci" ? x.imza.s === x.surum : x.rol === "karsi" ? x.imza.k === x.surum : false;
+  const taraf = x.rol !== "arabulucu";
+  return <Cerceve ic={{ padding: 12, gap: 8 }}>
+    <View style={{ flexDirection: yon(rtl), alignItems: "center", gap: 8 }}>
+      <Madalyon icon="scales" size={38} aktif={x.durum === "davet" || x.durum === "imzaBekliyor" || x.durum === "emanette"} />
+      <View style={{ flex: 1, gap: 2 }}>
+        <Text style={{ fontFamily: F.display, fontSize: 14, color: C.parchment, textAlign: hiza(rtl) }}>{t("onl.tp.arb.baslik")} · #{x.id}</Text>
+        <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{t("onl.tp.arb.d." + x.durum)} · {t("onl.tp.arb.rol." + x.rol)}</Text>
+      </View>
+    </View>
+    {[x.sikayetci, x.karsi, x.arabulucu].map((kisi, i) => <Text key={kisi.id} style={{ fontFamily: F.serif, fontSize: 14, color: C.parchmentDim, textAlign: hiza(rtl) }}>{[t("onl.tp.arb.sikayetci"), t("onl.tp.arb.karsi"), t("onl.tp.arb.arabulucu")][i]}: {kisi.ad}</Text>)}
+    <Text style={{ fontFamily: F.serifItalic, fontSize: 12.5, lineHeight: 17, color: C.parchmentMuted }}>{t("onl.tp.arb.emanetNot")}</Text>
+    {x.husumetCozuldu ? <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.sage, textAlign: hiza(rtl) }}>{t("onl.tp.arb.husumetCozuldu")}</Text> : null}
+    {x.uzlasma ? <View style={{ gap: 3 }}>
+      <Text style={{ fontFamily: F.display, fontSize: 12, color: C.gold }}>{t("onl.tp.arb.uzlasma")} · v{x.surum}</Text>
+      <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchmentDim, textAlign: hiza(rtl) }}>{t("onl.tp.arb.sOder")}: {x.uzlasma.s} · {t("onl.tp.arb.kOder")}: {x.uzlasma.k}</Text>
+      {x.uzlasma.not ? <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.parchmentMuted }}>{x.uzlasma.not}</Text> : null}
+      {x.sonAy !== undefined ? <Text style={{ fontFamily: F.serif, fontSize: 12.5, color: C.gold }}>{t("onl.tp.arb.sonAy")}: {x.sonAy}</Text> : null}
+      <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchmentMuted }}>{t("onl.tp.arb.imzaDurum")}: {x.imza.s === x.surum ? "✓" : "—"} / {x.imza.k === x.surum ? "✓" : "—"}</Text>
+    </View> : null}
+    {x.durum === "davet" ? <View style={{ flexDirection: yon(rtl), gap: 8 }}>
+      <View style={{ flex: 1 }}><AltinDugme etiket={t("onl.tp.c.kabul")} rtl={rtl} bekliyor={toplum.bekliyor("arabuluculuk:" + x.id + ":cevap")} onPress={() => { void gonder("cevap", { cevap: "kabul" }); }} /></View>
+      <View style={{ flex: 1 }}><CizgiDugme etiket={t("onl.tp.c.ret")} rtl={rtl} kucuk onPress={() => { void gonder("cevap", { cevap: "ret" }); }} /></View>
+      <View style={{ flex: 1 }}><CizgiDugme etiket={t("onl.tp.c.geri")} rtl={rtl} kucuk onPress={() => { void gonder("geri"); }} /></View>
+    </View> : null}
+    {(x.durum === "taslak" || x.durum === "imzaBekliyor") && x.rol === "arabulucu" ? <View style={{ gap: 8 }}>
+      <Sayac etiket={t("onl.tp.arb.sOder")} deger={sTutari} en={0} cok={100000} onDegis={setSTutari} birim={t("onl.tp.akceBirim")} />
+      <Sayac etiket={t("onl.tp.arb.kOder")} deger={kTutari} en={0} cok={100000} onDegis={setKTutari} birim={t("onl.tp.akceBirim")} />
+      <TextInput value={not} onChangeText={setNot} maxLength={240} placeholder={t("onl.tp.arb.not")} placeholderTextColor={C.parchmentMuted} style={{ minHeight: 42, borderWidth: 1, borderColor: "rgba(201,162,78,0.35)", borderRadius: 8, padding: 10, color: C.parchment, fontFamily: F.serif, textAlign: hiza(rtl) }} />
+      <CizgiDugme etiket={t("onl.tp.arb.taslakKaydet")} icon="scroll" rtl={rtl} kucuk onPress={() => { void gonder("taslak", { sTutari, kTutari, not }); }} />
+    </View> : null}
+    {x.durum === "imzaBekliyor" && taraf && !imzali ? <AltinDugme etiket={t("onl.tp.arb.imzala") + " · v" + x.surum} icon="check-circle" rtl={rtl} bekliyor={toplum.bekliyor("arabuluculuk:" + x.id + ":imza")} onPress={() => { void gonder("imza", { surum: x.surum }); }} /> : null}
+    {x.durum === "emanette" && taraf ? <AltinDugme etiket={t("onl.tp.arb.emanetiUygula")} icon="check-circle" rtl={rtl} bekliyor={toplum.bekliyor("arabuluculuk:" + x.id + ":uygula")} onPress={() => { void gonder("uygula"); }} /> : null}
+    {hata ? <Bant metin={t(hataAnahtari(hata))} rtl={rtl} /> : null}
+    {tamam ? <Bant tur="bilgi" metin={t("onl.tp.arb.islendi")} rtl={rtl} /> : null}
+  </Cerceve>;
 }

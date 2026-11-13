@@ -13,7 +13,9 @@ export const TOPLUM_HATALARI = [
 ] as const;
 export type ToplumHataKodu = (typeof TOPLUM_HATALARI)[number];
 
-export const OYUNCU_TEKLIF_TURLERI = ["cirak", "ortak", "borc", "hediye", "gorucu"] as const;
+export const OYUNCU_TEKLIF_TURLERI = ["cirak", "ortak", "borc", "hediye", "gorucu", "is"] as const;
+export const IKI_TARAF_ISLERI = ["arabuluculuk", "muhafiz", "mektup"] as const;
+export type IkiTarafIsi = (typeof IKI_TARAF_ISLERI)[number];
 export const NPC_TEKLIF_TURLERI = ["npcIs", "npcBorc", "npcDunur"] as const;
 export type OyuncuTeklifTuru = (typeof OYUNCU_TEKLIF_TURLERI)[number];
 export type NpcTeklifTuru = (typeof NPC_TEKLIF_TURLERI)[number];
@@ -21,7 +23,7 @@ export type TeklifTuru = OyuncuTeklifTuru | NpcTeklifTuru;
 export const TEKLIF_TURLERI: readonly TeklifTuru[] = [...OYUNCU_TEKLIF_TURLERI, ...NPC_TEKLIF_TURLERI];
 export type TeklifDurumu = "acik" | "surer" | "bitti" | "ret" | "dustu" | "geri" | "iptal";
 export type VarsayilanSonuc = "kabul" | "ret" | "dustu";
-export type TeklifCevabi = "kabul" | "ret" | "geri" | "bitir" | "ode";
+export type TeklifCevabi = "kabul" | "ret" | "geri" | "bitir" | "ode" | "teslim";
 export type BagDurumu = "dost" | "istekGonderildi" | "istekGeldi" | null;
 export type GelenCevap = "bekle" | "kabul" | "ret";
 export const GELEN_CEVAPLARI: readonly GelenCevap[] = ["bekle", "kabul", "ret"];
@@ -31,7 +33,7 @@ export const TOPLUM_SINIR = {
   teklifYasi: 13, gorucuYasi: 16, teklifSureAy: 2, npcTeklifSureAy: 3,
   ortakPay: 25, ortakSure: 12, borcEnCok: 50, borcFaiz: 20, borcVade: 12, borcToplam: 60,
   hediyeEnCok: 40, hediyeAylik: 60, hediyeTakat: 1, yalanlamaTakat: 1, vitrinEnCok: 6, duzenBorcEnCok: 20,
-  npcIsTakat: 2,
+  npcIsTakat: 2, isEnCok: 20,
 } as const;
 
 /** teklifGorunumu.sartlar (uzun adlar). */
@@ -41,6 +43,7 @@ export interface TeklifSartlari {
   tutar?: number;
   faiz?: number;
   vade?: number;
+  senetli?: boolean;
   yon?: "ver" | "iste";
   pay?: number;
   sure?: number;
@@ -48,6 +51,12 @@ export interface TeklifSartlari {
   adet?: number;
   yapan?: KisiAdi;
   aday?: KisiAdi;
+  is?: IkiTarafIsi;
+  arabuluculukNpc?: KisiAdi;
+  arabuluculukBedel?: "ozur" | "tazminat" | "helallik" | "ortakIs";
+  arabuluculukMiktar?: number;
+  hedef?: KisiAdi;
+  mesaj?: string;
 }
 export interface TeklifGorunumu {
   id: string;
@@ -69,6 +78,8 @@ export interface TeklifGorunumu {
   alacakli?: string;
   kalan?: number | null;
   vadeAyi?: number | null;
+  /** Senet ödeme dökümü: [ödeme ayı, tahsil edilen akçe]. */
+  odemeler?: [number, number][];
   bitisAyi?: number;
 }
 
@@ -121,12 +132,22 @@ export interface SoylentiGorunumu {
 }
 export type AyliKisi = KisiAdi & { ay: number };
 /** GET /v1/gelen */
+export interface OyuncuArabuluculukGorunumu {
+  id: string; durum: string; rol: "sikayetci" | "karsi" | "arabulucu";
+  sikayetci: KisiAdi; karsi: KisiAdi; arabulucu: KisiAdi;
+  riza: { s?: number; k?: number; ar?: number };
+  uzlasma?: { s: number; k: number; not?: string };
+  surum: number; imza: { s?: number; k?: number };
+  acilisAyi: number; sonCevapAyi: number; sonAy?: number; kapanisAyi?: number;
+  husumetCozuldu?: boolean;
+}
 export interface GelenYaniti {
   ay: number;
   gelen: TeklifGorunumu[];
   giden: TeklifGorunumu[];
   suren: TeklifGorunumu[];
   kapanan: TeklifGorunumu[];
+  arabuluculuk?: OyuncuArabuluculukGorunumu[];
   dostluk: { gelen: AyliKisi[]; giden: AyliKisi[]; dostlar: AyliKisi[] };
   husumetler: (AyliKisi & { yon: "ilanEttim" | "ilanEdildi" })[];
   soylentiler: SoylentiGorunumu[];
@@ -154,8 +175,15 @@ export interface TeklifSartGirdisi {
   tutar?: number;
   vade?: number;
   faiz?: number;
+  senetli?: boolean;
   mal?: MalId;
   adet?: number;
+  is?: IkiTarafIsi;
+  arabuluculukNpc?: string;
+  arabuluculukBedel?: "ozur" | "tazminat" | "helallik" | "ortakIs";
+  arabuluculukMiktar?: number;
+  mektupHedef?: string;
+  mektupMetni?: string;
 }
 export interface TeklifIstegi extends TeklifSartGirdisi { tur: OyuncuTeklifTuru; hedef: string; istekNo: string; dil?: Dil }
 export interface TeklifCevapIstegi { teklif: string; cevap: TeklifCevabi; tutar?: number; istekNo: string; dil?: Dil }
@@ -201,7 +229,11 @@ const teklifListesi = (v: unknown) => dizi(v) && v.every(teklifMi);
 export function gelenMi(v: unknown): v is GelenYaniti {
   if (!nesne(v) || !sayi(v.ay)) return false;
   const d = v.dostluk;
-  return teklifListesi(v.gelen) && teklifListesi(v.giden) && teklifListesi(v.suren) && teklifListesi(v.kapanan)
+  const arabuluculuk = dizi(v.arabuluculuk) && v.arabuluculuk.every((x) => nesne(x) && metin(x.id) && metin(x.durum)
+    && (x.rol === "sikayetci" || x.rol === "karsi" || x.rol === "arabulucu") && kisiMi(x.sikayetci) && kisiMi(x.karsi) && kisiMi(x.arabulucu)
+    && nesne(x.riza) && sayi(x.surum) && nesne(x.imza) && sayi(x.acilisAyi) && sayi(x.sonCevapAyi) && (x.sonAy === undefined || sayi(x.sonAy))
+    && (x.uzlasma === undefined || (nesne(x.uzlasma) && sayi(x.uzlasma.s) && sayi(x.uzlasma.k))));
+  return teklifListesi(v.gelen) && teklifListesi(v.giden) && teklifListesi(v.suren) && teklifListesi(v.kapanan) && (v.arabuluculuk === undefined || arabuluculuk)
     && nesne(d) && ayliListe(d.gelen) && ayliListe(d.giden) && ayliListe(d.dostlar) && ayliListe(v.husumetler)
     && dizi(v.soylentiler) && v.soylentiler.every((s) => nesne(s) && metin(s.id) && metin(s.tur) && sayi(s.bilen) && mantik(s.yalanlandi))
     && dizi(v.engellenenler) && v.engellenenler.every(kisiMi);
@@ -220,3 +252,67 @@ export const sikayetYanitiMi = (v: unknown): v is SikayetYaniti => nesne(v) && s
 export const oyuncuKimligiMi = (id: string | null | undefined): id is string => !!id && /^o[1-9][0-9]{0,8}$/.test(id);
 /** Kişi satırının gideceği sayfa: oyuncu profili ya da NPC kişi ekranı. */
 export const kisiYolu = (id: string) => (oyuncuKimligiMi(id) ? `/online/oyuncu/${id}` : `/online/kisi/${id}`);
+
+
+// E5–E7 topluluk panosu: meşrep, ortak dert, şenlik, hami, müdavim ve zaviye.
+export interface ToplulukDert {
+  id: string; tur: string; durum: string; acilis: number; bitis: number; esik: number; puan: number; halk: number;
+  defter: { id: string; ad: string; katkilar: string[] }[];
+  benim?: { sayi: number; kalan: number; puan: number };
+}
+export interface ToplulukSenlik {
+  id: string; tur: string; durum: "ilan" | "acik"; acilis: number; bitis: number;
+  levha: { id: string; ad: string; katkilar: string[] }[]; benim: { sayi: number; kalan: number };
+}
+export interface HamiBagGorunumu { hami: KisiAdi & { meslek: string | null }; cirak: KisiAdi & { meslek: string | null }; gonderen: string; rolum: "hami" | "cirak" | null; durum: string; acilis: number; asamalar: { asama: string; durum: string; nam: number }[] }
+export interface HamiIstegi { islem: "teklif" | "iste" | "kabul" | "ret" | "birak"; hedef: string; istekNo: string }
+export interface ZaviyeUyeGorunumu { id: string; ad: string; meslek: string | null; katilis: number; rol: string; oy?: number }
+export interface ZaviyeGorunumu {
+  id: string; ad: string; arma: { sekil: string; renk: string }; durum: "kuruluyor" | "acik";
+  kurulus: number; uyeSayisi: number; sinir: { enAz: number; enCok: number };
+  ahiBasi: { id: string; ad: string } | null; yonetici: { id: string; ad: string; vekil: boolean } | null;
+  uyeler: ZaviyeUyeGorunumu[]; kasa?: number;
+  kasaDefteri?: { ay: number; kim: string; alan: string | null; tutar: number }[];
+  davetler?: { id: string; ad: string; ay: number }[]; oyum?: string | null; oyEsigi?: number;
+  ustaCirak?: { usta: string; cirak: string; meslek: string | null }[]; rolum?: "yonetici" | "uye";
+}
+export interface ZaviyeIstegi {
+  islem: "kur" | "davet" | "katil" | "reddet" | "ayril" | "cikar" | "yatir" | "ver" | "arma" | "oy";
+  istekNo: string; hedef?: string; zaviye?: string; ad?: string; tutar?: number; sekil?: string; renk?: string;
+}
+export interface ToplulukDurumu {
+  mesrep: { secildi: boolean; secimAcik: boolean; kapali?: string; eksenler: { eksen: string; secili: string; uclar: { uc: string; etkiler: { k: string; tur: string; p: Record<string, number> }[] }[] }[] };
+  hami: { hamiOlabilir: boolean; yeniGelen: boolean; suren: HamiBagGorunumu[]; gelen: HamiBagGorunumu[]; giden: HamiBagGorunumu[]; biten: HamiBagGorunumu[]; buAyHamiNami: number };
+  ortakDert: { acik: ToplulukDert[]; son: ToplulukDert[]; uygunKatkilarim: string[]; kurallar: Record<string, unknown> };
+  senlik: { simdiki: ToplulukSenlik | null; sonKapanan: unknown; kurallar: Record<string, unknown> };
+  mudavim: { rozet: string | null; ziyaret: number; sonraki: { rozet: string; gereken: number } | null; indirim?: { deger: number; tavan: number } };
+  zaviye: { benim: ZaviyeGorunumu | null; davetler: { id: string; ad: string; uyeSayisi: number }[]; kasabada: { id: string; ad: string; arma: { sekil: string; renk: string }; uyeSayisi: number; durum: string; ahiBasi: string | null }[]; ahiSarti: { teveccuhKademe: number; benimKademem: number; adayim: boolean } };
+  gostergeler: { arz: number; moral: number; asayis: number; denge: number; taban: number; tavan: number };
+}
+export interface MesrepIstegi { el: "comert" | "hesapli" | "orta"; cesaret: "temkinli" | "gozupek" | "orta"; gurur: "mutevazi" | "gururlu" | "orta"; istekNo: string }
+export interface OrtakDertIstegi { dert: string; katki: string; mal?: MalId; adet?: number; istekNo: string }
+export interface SenlikIstegi { katki: "yemek" | "sus" | "hayir"; mal?: MalId; adet?: number; tutar?: number; istekNo: string }
+const genelYanitiMi = (v: unknown): v is Record<string, unknown> => nesne(v);
+function zaviyeGorunumuMi(v: unknown): v is ZaviyeGorunumu {
+  if (!nesne(v) || !metin(v.id) || !metin(v.ad) || !nesne(v.arma) || !metin(v.arma.sekil) || !metin(v.arma.renk)
+    || !metin(v.durum) || !sayi(v.kurulus) || !sayi(v.uyeSayisi) || !nesne(v.sinir) || !sayi(v.sinir.enAz) || !sayi(v.sinir.enCok)
+    || !(v.ahiBasi === null || (nesne(v.ahiBasi) && metin(v.ahiBasi.id) && metin(v.ahiBasi.ad)))
+    || !(v.yonetici === null || (nesne(v.yonetici) && metin(v.yonetici.id) && metin(v.yonetici.ad) && mantik(v.yonetici.vekil)))
+    || !dizi(v.uyeler) || !v.uyeler.every((u) => nesne(u) && metin(u.id) && metin(u.ad) && (u.meslek === null || metin(u.meslek)) && sayi(u.katilis) && metin(u.rol))) return false;
+  if (v.kasa !== undefined && !sayi(v.kasa)) return false;
+  if (v.kasaDefteri !== undefined && (!dizi(v.kasaDefteri) || !v.kasaDefteri.every((h) => nesne(h) && sayi(h.ay) && metin(h.kim) && (h.alan === null || metin(h.alan)) && sayi(h.tutar)))) return false;
+  if (v.davetler !== undefined && (!dizi(v.davetler) || !v.davetler.every((d) => nesne(d) && metin(d.id) && metin(d.ad) && sayi(d.ay)))) return false;
+  return true;
+}
+export function toplulukDurumuMi(v: unknown): v is ToplulukDurumu {
+  if (!nesne(v) || !nesne(v.mesrep) || !dizi(v.mesrep.eksenler) || !mantik(v.mesrep.secildi) || !mantik(v.mesrep.secimAcik)) return false;
+  if (!nesne(v.ortakDert) || !dizi(v.ortakDert.acik) || !dizi(v.ortakDert.son) || !dizi(v.ortakDert.uygunKatkilarim)) return false;
+  if (!nesne(v.senlik) || !(v.senlik.simdiki === null || nesne(v.senlik.simdiki))) return false;
+  if (!nesne(v.hami) || !mantik(v.hami.hamiOlabilir) || !mantik(v.hami.yeniGelen) || !sayi(v.hami.buAyHamiNami) || !dizi(v.hami.suren) || !dizi(v.hami.gelen) || !dizi(v.hami.giden) || !dizi(v.hami.biten)) return false;
+  if (!nesne(v.mudavim) || !sayi(v.mudavim.ziyaret) || !(v.mudavim.rozet === null || metin(v.mudavim.rozet))) return false;
+  if (!nesne(v.zaviye) || !(v.zaviye.ben === null || zaviyeGorunumuMi(v.zaviye.ben))
+    || !dizi(v.zaviye.davetler) || !v.zaviye.davetler.every((d) => nesne(d) && metin(d.id) && metin(d.ad) && sayi(d.uyeSayisi))
+    || !dizi(v.zaviye.kasabada) || !v.zaviye.kasabada.every((z) => nesne(z) && metin(z.id) && metin(z.ad) && sayi(z.uyeSayisi) && metin(z.durum))
+    || !nesne(v.zaviye.ahiSarti) || !sayi(v.zaviye.ahiSarti.teveccuhKademe) || !sayi(v.zaviye.ahiSarti.benimKademem) || !mantik(v.zaviye.ahiSarti.adayim)) return false;
+  return nesne(v.gostergeler) && sayi(v.gostergeler.arz) && sayi(v.gostergeler.moral) && sayi(v.gostergeler.asayis);
+}

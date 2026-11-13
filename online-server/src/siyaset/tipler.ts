@@ -174,6 +174,99 @@ export interface MogolGorunumu {
   talep: number;
 }
 
+export type DarbeAsamasi = "hazirlik" | "ilan" | "catışma" | "ateskes" | "bastirildi" | "pat" | "basarili" | "mogol" | "iptal";
+export type DarbeTarafi = "saldiran" | "savunan";
+export interface DarbeBarisTeklifi {
+  taraf: DarbeTarafi;
+  kisi: string;
+  hesap: string;
+  istekId: string;
+  ay: number;
+  durum: "bekliyor" | "kabul" | "ret";
+  yanitlayan?: string;
+  yanitAy?: number;
+}
+export type DarbeDestekRolu = "sehirBeyi" | "ahiBasi";
+export interface DarbeDestegi {
+  kisi: string;
+  hesap: string;
+  ad: string;
+  koltuk: string;
+  rol: DarbeDestekRolu;
+  kume: string[];
+  ay: number;
+}
+export interface DarbeIzi {
+  ay: number;
+  tur: "hazirlik" | "destek" | "savunma" | "ikmal" | "ilan" | "baskin";
+  guvenilirlik: number;
+  gorunurluk: "vali" | "ileriGelen" | "bolge";
+}
+export interface DarbePlani {
+  v: 1;
+  id: string;
+  durum: DarbeAsamasi;
+  baslatanKisi: string;
+  baslatanHesap: string;
+  /** Başlatanın hesap/hane kümesi; eski kayıtlar için isteğe bağlı. */
+  baslatanKume?: string[];
+  acilisAy: number;
+  sogumaSonAy: number;
+  destekler: DarbeDestegi[];
+  /** İlan sonrası şehir beyi/ahi başının verdiği açık savunma ön emirleri. */
+  savunma?: DarbeDestegi[];
+  /** Çatışma çözülmeden önce iki tarafın açık onayıyla sonuçlanabilen statüko ateşkesi. */
+  barisTeklifi?: DarbeBarisTeklifi;
+  garnizonSadakati: number;
+  yatirilan: number;
+  mod?: "acik" | "baskin";
+  ilanAy?: number;
+  cozumAy?: number;
+  sonuc?: { tur: "bastirildi" | "pat" | "basarili" | "mogol"; saldiran: number; savunan: number; ay: number };
+  izler: DarbeIzi[];
+}
+
+export type MogolBaglantisi = "harac" | "diren";
+export type SultanBaglantisi = "bagimsiz" | "barisTalebi" | "sultanligaDondu";
+export interface BagimsizDevlet {
+  v: 1;
+  ad: string;
+  kurulusAy: number;
+  beyKisi: string;
+  beyHesap: string;
+  beyAd: string;
+  vergiOrani: number;
+  divan: { kisi: string; hesap: string; ad: string; rol: "divan" }[];
+  mogol: MogolBaglantisi;
+  sultan: SultanBaglantisi;
+  sultanTalepAy?: number;
+  sultanSonuc?: "kabul" | "ret";
+  taninma: "taninmadi" | "talepEdildi" | "tanindi";
+  taninmaTalepAy?: number;
+  taninmaHedef?: string;
+  taninmaIstekId?: string;
+  taninmaSonuc?: "kabul" | "ret";
+  taninmaCevap?: { kaynak: string; karar: "kabul" | "ret"; ay: number; ad: string; istekId: string };
+  /** Başka beyliklerden gelen tanınma talepleri; istek kimliğiyle tekrar güvenli. */
+  taninmaGelen?: Record<string, { istekId: string; ay: number; ad: string; yanitlandi: boolean }>;
+  /** Başka beyliklerin tanınma taleplerine verilen yanıtlar. */
+  taninmaYanits?: Record<string, { karar: "kabul" | "ret"; ay: number; ad: string; istekId: string }>;
+  /** İttifaklar: kaynak onayı gelene kadar hedefte kabulBekliyor tutulur. */
+  ittifaklar?: Record<string, { durum: "kabulBekliyor" | "aktif" | "ret" | "suresiDoldu" | "bozuldu"; baslangicAy: number; sonAy: number; ad: string; istekId: string }>;
+  ittifakTalep?: { hedef: string; istekId: string; ay: number };
+  ittifakGelen?: Record<string, { istekId: string; ay: number; ad: string; yanitlandi: boolean }>;
+  ittifakYanits?: Record<string, { karar: "kabul" | "ret"; ay: number; ad: string; istekId: string }>;
+  yeminler: Record<string, "bagli" | "tarafsiz">;
+}
+
+export type DiplomasiGiden =
+  | { tur: "taninmaIstek"; hedef: string; istekId: string; ay: number; ad: string }
+  | { tur: "taninmaYanit"; hedef: string; istekId: string; karar: "kabul" | "ret"; ay: number; ad: string }
+  | { tur: "ittifakIstek"; hedef: string; istekId: string; ay: number; ad: string }
+  | { tur: "ittifakYanit"; hedef: string; istekId: string; karar: "kabul" | "ret"; ay: number; ad: string }
+  | { tur: "ittifakOnay"; hedef: string; istekId: string; ay: number; ad: string }
+  | { tur: "ittifakBoz"; hedef: string; istekId: string; ay: number; ad: string };
+
 export interface BolgeDurumu {
   v: 1;
   id: string;
@@ -187,6 +280,8 @@ export interface BolgeDurumu {
   gonderilen: number;
   /** Sultanlığa yolda olan haraç (outbox; anahtar → tutar). */
   yolda: Record<string, number>;
+  /** Bölgeler arası tanınma isteği/yanıtı outbox; alıcı teyit etmeden silinmez. */
+  diplomasiGiden?: DiplomasiGiden[];
   /** Ardışık haraç gecikmesi (ay). */
   gecikme: number;
   sonGelir: number;
@@ -199,6 +294,10 @@ export interface BolgeDurumu {
   sultanHaksiz: number;
   aziller: AzilKaydi[];
   ozerklik?: Ozerklik;
+  /** P5 darbe planı; gizli hazırlık izleri genel bölge görünümüne sızdırılmaz. */
+  darbe?: DarbePlani;
+  /** P6: darbe başarıya ulaşırsa kurulan, oyuncu bağlılığı gönüllü olan siyasi yapı. */
+  devlet?: BagimsizDevlet;
   /** Son çekilen Sultanlık özeti (GET'ler Sultanlığa gitmez: sıcak global nesne yok). */
   sultanlik?: SultanlikOzeti;
   mesruiyet: Mesruiyet;
@@ -251,7 +350,14 @@ export type BolgeIleti =
   | { islem: "yaz"; bolge: string; hesapId: string; kimlik: SiyasiKimlik; govde: unknown }
   | { islem: "yoklama"; bolge: string; hesapId: string }
   /** Faz 6 kancası: oyuncu/mülk vergisi vali kasasına (anahtar ile tekrar güvenli; akçe çağıranda düşülmüş olmalı). */
-  | { islem: "vergiYatir"; bolge: string; anahtar: string; tutar: number; yerlesim: string };
+  | { islem: "vergiYatir"; bolge: string; anahtar: string; tutar: number; yerlesim: string }
+  /** Yalnız DO'lar arası iç iletiler; Worker'ın oyuncu API yönlendiricisinden sunulmaz. */
+  | { islem: "taninmaIstekAl"; bolge: string; kaynak: string; istekId: string; ay: number; ad: string }
+  | { islem: "taninmaYanitAl"; bolge: string; kaynak: string; istekId: string; karar: "kabul" | "ret"; ay: number; ad: string }
+  | { islem: "ittifakIstekAl"; bolge: string; kaynak: string; istekId: string; ay: number; ad: string }
+  | { islem: "ittifakYanitAl"; bolge: string; kaynak: string; istekId: string; karar: "kabul" | "ret"; ay: number; ad: string }
+  | { islem: "ittifakOnayAl"; bolge: string; kaynak: string; istekId: string; ay: number; ad: string }
+  | { islem: "ittifakBozAl"; bolge: string; kaynak: string; istekId: string; ay: number; ad: string };
 
 /** BolgeDO → SultanlikDO. */
 export type SultanlikIleti =

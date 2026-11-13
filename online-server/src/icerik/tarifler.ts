@@ -102,6 +102,11 @@ export const TARIFLER = {
   cizme: { id: "cizme", meslek: "dokumaci", girdi: { deri: 2 }, cikti: ["cizme", 1], takat: 1, hizmet: 2, grup: ["deri"] },
   cadir: { id: "cadir", meslek: "dokumaci", girdi: { kece: 2, kereste: 1, bez: 1 }, cikti: ["cadir", 1], takat: 2, hizmet: 3 },
   astar: { id: "astar", meslek: "dokumaci", girdi: { kumas: 1, deri: 1 }, cikti: ["astar", 1], takat: 2, hizmet: 3 },
+  // Kâtip: mürekkep ve senet (MESLEK_AGACLARI §2.10).
+  murekkep: { id: "murekkep", meslek: "katip", girdi: { komur: 1, ot: 1 }, cikti: ["murekkep", 2], takat: 1, hizmet: 2 },
+  senet: { id: "senet", meslek: "katip", girdi: { kagit: 1, murekkep: 1 }, cikti: ["senet", 1], takat: 1, hizmet: 2 },
+  sozlesme: { id: "sozlesme", meslek: "katip", girdi: { kagit: 1, murekkep: 1 }, cikti: ["sozlesme", 1], takat: 2, hizmet: 3 },
+  arbalet: { id: "arbalet", meslek: "demirci", girdi: { kereste: 2, civi: 3, deri: 1 }, cikti: ["arbalet", 1], takat: 3, hizmet: 4 },
   // Aşçı
   ekmek: { id: "ekmek", meslek: "asci", girdi: { tahil: 2, odun: 1 }, cikti: ["ekmek", 3], takat: 1, hizmet: 2, grup: ["sofra"] },
   corba: { id: "corba", meslek: "asci", girdi: { tahil: 1, su: 1 }, cikti: ["corba", 2], takat: 1, hizmet: 2, grup: ["sofra"] },

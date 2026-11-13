@@ -39,14 +39,22 @@ function LoncaRozeti({ satir, t }: { satir?: LoncaSatiri; t: Ceviri }) {
   return <Rozet icon="family" metin={applyParams(t("onl.lo.oyuncuN"), [satir.oyuncu])} renk={satir.durum === "dolu" ? C.sage : C.gold} />;
 }
 
+const AILE_RENK: Record<MeslekTanimi["aile"], string> = { toprak: C.sage, zanaat: C.emberSoft, hizmet: C.azure, ticaret: C.goldBright, toplum: C.roseDim };
+
 function MeslekKarti({ m, satir, tur, rtl, t, lang, onSec }: { m: MeslekTanimi; satir?: LoncaSatiri; tur: string; rtl: boolean; t: Ceviri; lang: string; onSec: () => void }) {
   const bos = satir?.durum === "bos";
   const ad = meslekAdi(t, m.id);
+  const vurgu = bos ? C.ember : AILE_RENK[m.aile];
   return <Pressable accessibilityLabel={`${ad}. ${t("onl.aile." + m.aile)}. ${t("onl.mes." + m.id + ".d")}`} onPress={() => { hap("tap"); onSec(); }}
     style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.985 : 1 }] })}>
     <Cerceve aktif={bos} ic={{ padding: 12, gap: 8 }}>
+      {/* Meslek ailesi rengi ve silik alet mührü: kartlar ayrışır, metin önceliğini korur. */}
+      <View pointerEvents="none" style={{ position: "absolute", top: 0, bottom: 0, [rtl ? "right" : "left"]: 0, width: 3, backgroundColor: vurgu, opacity: 0.9 }} />
+      <View pointerEvents="none" accessibilityElementsHidden style={{ position: "absolute", [rtl ? "left" : "right"]: 4, bottom: -14, opacity: 0.065, transform: [{ rotate: "-12deg" }] }}>
+        <GameIcon name={MESLEK_IKON[m.id]} size={92} color={vurgu} />
+      </View>
       <View style={{ flexDirection: yon(rtl), alignItems: "center", gap: 10 }}>
-        <Madalyon icon={MESLEK_IKON[m.id]} size={44} aktif={bos} />
+        <Madalyon icon={MESLEK_IKON[m.id]} size={44} aktif={bos} renk={vurgu} />
         <View style={{ flex: 1, gap: 4 }}>
           <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ fontFamily: F.display, fontSize: 16, color: C.parchment, textAlign: hiza(rtl) }}>{ad}</Text>
           <View style={{ flexDirection: yon(rtl), flexWrap: "wrap", gap: 6 }}>

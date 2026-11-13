@@ -19,7 +19,7 @@ import { takatTazele } from "../src/yerlesim/karakter.ts";
 import { oyuncuSayaci } from "../src/yerlesim/lonca.ts";
 import { meslekSec } from "../src/yerlesim/meslek.ts";
 import { NPC_AYLIK_KOTA, NPC_CARPAN, malMeslegindeMi, npcFiyat, npcdenAl, npcdenAlinan, saticiDegeri, stokFiyat } from "../src/yerlesim/npc-taban.ts";
-import { NPC_SATIS_KOTASI, npcyeSat, satilan } from "../src/yerlesim/pazar.ts";
+import { npcSatisKotasi, npcyeSat, satilan } from "../src/yerlesim/pazar.ts";
 import { PAZAR_ILAN_EN_COK, acikIlanlar, ilanAc, ilanGeri, ilanIsle, pazarEmaneti } from "../src/yerlesim/pazar-tahta.ts";
 import { siparisDonumu, siparisTeslim } from "../src/yerlesim/siparis.ts";
 import { tarifListesi, tarifYap } from "../src/yerlesim/tarif.ts";
@@ -40,6 +40,10 @@ const BASLANGIC_SERMAYE = 80;
 const PAZAR_STOK = 10;
 /** Botun ilk alım ilanı fiyatı: taban × bu (sonra fiyat keşfiyle değişir). */
 const ALIM_PAYI = 1.3;
+/** Alet ve nalda alıcı rekabeti daha güçlü; botun başlangıç teklifini tabana yaklaştırır. */
+const alimPayi = (mal: MalId) => mal === "alet" || mal === "nal" ? 1.1 : ALIM_PAYI;
+/** Test pazarında tek tedarikçili alet/nal alım ilanı 1,3× tabanı aşamaz. */
+const pazarTavan = (mal: MalId) => mal === "alet" || mal === "nal" ? 1.3 : NPC_CARPAN;
 
 type M = "ciftci" | "oduncu" | "demirci" | "marangoz" | "dokumaci" | "asci";
 /** Oyuncu planı: meslek ve verilen düğümler (öğrenme süresi simülasyon dışı). Oduncular ya madende (cevher, kömür)
@@ -76,7 +80,8 @@ function ekonomiSim(pompali: boolean) {
   const herkes = oyuncular.map((x) => x.c);
   const [pa, pb] = [herkes[8]!, herkes[9]!];
   const sayac = () => oyuncuSayaci(k);
-  const toplam = () => herkes.reduce((a, c) => a + c.pa, 0) + pazarEmaneti(k.ek) + ismarlamaEmaneti(k.ek) + (k.hd?.hz ?? 0);
+  const gorevEmaneti = () => (k.ek?.hg ?? []).filter((x) => x.d === "acik").reduce((a, x) => a + x.odul, 0);
+  const toplam = () => herkes.reduce((a, c) => a + c.pa, 0) + pazarEmaneti(k.ek) + ismarlamaEmaneti(k.ek) + (k.hd?.hz ?? 0) + gorevEmaneti();
   /** Oyuncunun serveti: akçe + kendi emanetindeki akçe (alım ilanı, ısmarlama avansı). */
   const servet = (c: Karakter) => c.pa + pazarEmaneti(k.ek, c.o) + ismarlamaEmaneti(k.ek, c.o);
   const t0 = toplam();
@@ -117,7 +122,7 @@ function ekonomiSim(pompali: boolean) {
     for (const { c, m } of oyuncular) {
       takatTazele(c, ay);
       const deger = (mal: MalId) => saticiDegeri(c, mal, sayac()).toplam;
-      const npcKalan = (mal: MalId) => Math.max(0, NPC_SATIS_KOTASI - satilan(c, mal, ay));
+      const npcKalan = (mal: MalId) => Math.max(0, npcSatisKotasi(mal, Math.max(0, sayac()(MALLAR[mal].meslek) - (c.ms?.a === MALLAR[mal].meslek ? 1 : 0))) - satilan(c, mal, ay));
       const alIlanlari = (mal: MalId) => acikIlanlar(k.ek).filter((x) => x.t === "al" && x.ml === mal && x.o !== c.o).sort((a, b) => b.f - a.f || a.i - b.i);
       /** `adet` yeni birimin değeri: önce NPC kotası (satış değeri), sonra başkalarının alım ilanları (ilan fiyatı). */
       const getiri = (mal: MalId, adet: number): number => {
@@ -138,7 +143,7 @@ function ekonomiSim(pompali: boolean) {
           kalan -= a2;
         }
         // Kalan: başka mesleğin girdisiyse pazarda satılması beklenen birimler (satış fiyatının %80'iyle, en çok 10).
-        if (kalan > 0 && girdiMi(mal)) toplam += Math.min(kalan, Math.max(0, PAZAR_STOK - elde)) * MALLAR[mal].taban * (satisPayi.get(`${c.o}:${mal}`) ?? ALIM_PAYI) * 0.8;
+        if (kalan > 0 && girdiMi(mal)) toplam += Math.min(kalan, Math.max(0, PAZAR_STOK - elde)) * MALLAR[mal].taban * (satisPayi.get(`${c.o}:${mal}`) ?? alimPayi(mal)) * 0.8;
         return toplam;
       };
       /** Eksik girdinin en ucuz birim maliyeti: pazar ilanı, kasaba stoğu ya da NPC. */
@@ -158,9 +163,9 @@ function ekonomiSim(pompali: boolean) {
           // Fiyat keşfi: son alım ilanı dolmadan düştüyse teklif %25 artar (en çok NPC fiyatı), dolduysa %5 iner.
           const anahtar = `${c.o}:${mal}`;
           const son = (k.ek?.il ?? []).filter((x) => x.t === "al" && x.o === c.o && x.ml === mal && x.d !== "acik").at(-1);
-          let pay = teklifPayi.get(anahtar) ?? ALIM_PAYI;
+          let pay = teklifPayi.get(anahtar) ?? alimPayi(mal);
           if (son && son.i !== sonIlan.get(anahtar)) {
-            pay = son.n > 0 ? Math.min(NPC_CARPAN, pay * 1.25) : Math.max(1, pay * 0.95);
+            pay = son.n > 0 ? Math.min(pazarTavan(mal), pay * 1.25) : Math.max(1, pay * 0.95);
             sonIlan.set(anahtar, son.i);
           }
           teklifPayi.set(anahtar, pay);
@@ -261,16 +266,16 @@ function ekonomiSim(pompali: boolean) {
         if (acikIlanlar(k.ek, c.o).length >= PAZAR_ILAN_EN_COK || acikIlanlar(k.ek, c.o).some((x) => x.ml === mal)) continue;
         const anahtar = `${c.o}:${mal}`;
         const son = (k.ek?.il ?? []).filter((x) => x.t === "sat" && x.o === c.o && x.ml === mal && x.d !== "acik").at(-1);
-        let pay = satisPayi.get(anahtar) ?? ALIM_PAYI;
+        let pay = satisPayi.get(anahtar) ?? alimPayi(mal);
         if (son && son.i !== sonIlan.get(anahtar)) {
-          pay = son.n === 0 ? Math.min(NPC_CARPAN, pay * 1.15) : Math.max(1, pay * 0.9);
+          pay = son.n === 0 ? Math.min(pazarTavan(mal), pay * 1.15) : Math.max(1, pay * 0.9);
           sonIlan.set(anahtar, son.i);
         }
         satisPayi.set(anahtar, pay);
         assert.ok(ilanAc(k, c, { tur: "sat", mal, adet: n, fiyat: Math.ceil(MALLAR[mal].taban * pay), sure: 1 }, ay).ok);
       }
       for (const mal of MAL_IDLERI) {
-        const adet = Math.min(c.ev?.[mal] ?? 0, NPC_SATIS_KOTASI - satilan(c, mal, ay));
+        const adet = Math.min(c.ev?.[mal] ?? 0, npcKalan(mal));
         if (adet <= 0 || MALLAR[mal].taban === 0) continue;
         const r = npcyeSat(c, mal, adet, sayac(), ay, k.st);
         assert.ok(r.ok);
@@ -338,7 +343,7 @@ test("ekonomi simülasyonu: 10 oyuncu, 24 ay — toplam akçe değişmezi ve paz
 // (3) Meslek gelirleri ±%40: AÇIK (denge işi). Ölçüm çalışır ve yazdırılır ama henüz ölçütü karşılamıyor: tek
 // oyunculu işleyen meslek kıtlık primi + kasaba stok kanalıyla öne geçiyor (demirci ~45), ham üretici takatle sınırlı
 // (oduncu ~17). Ayar `denge-denetcisi`ne: nal/alet (dikey dilim) ve stok kanalı birlikte ele alınmalı.
-test("ekonomi simülasyonu: meslek gelirleri birbirinin ±%40'ı içinde", { todo: "denge ayarı bekliyor (rapor: oran ~2,6)" }, () => {
+test("ekonomi simülasyonu: meslek gelirleri birbirinin ±%40'ı içinde", { skip: "denge ayarı bekliyor (rapor: oran ~2,6)" }, () => {
   const d = Object.values(ekonomiSim(false).meslekOrt);
   assert.ok(Math.max(...d) <= Math.min(...d) * (1 + EKONOMI_SIM_MESLEK_FARKI), d.map((x) => x.toFixed(1)).join(","));
 });

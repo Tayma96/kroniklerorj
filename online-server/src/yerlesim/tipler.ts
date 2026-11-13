@@ -281,6 +281,17 @@ export interface Dokum {
 }
 
 /** Bellekteki yerleşim durumu. */
+/** Yönetim Y2'den oyun modüllerine aktarılan, yalnız izinli çalışma anı parametreleri. */
+export interface CalismaParametreleri {
+  NPC_AYLIK_KOTA?: number;
+  NPC_CARPAN?: number;
+  KITLIK_PRIM?: number;
+  STOK_CARPAN?: number;
+  SIPARIS_ODUL_CARPANI?: number;
+  TEMEL_CIKTI?: number;
+  AZALAN_PENCERE_IS?: number;
+}
+
 export interface Kasaba {
   y: string;
   tur: YerlesimTuru;
@@ -288,6 +299,8 @@ export interface Kasaba {
   hedef: number;
   /** Son işlenen ay. */
   ay: number;
+  /** YonetimDO çalışma anı ayarları; kalıcı kasaba kaydına yazılmaz. */
+  pr?: CalismaParametreleri;
   npc: Npc[];
   dizin: Map<number, Npc>;
   /** Sonraki NPC kimliği ve hane numarası. */

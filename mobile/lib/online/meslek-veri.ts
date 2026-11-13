@@ -70,6 +70,7 @@ export const MALLAR: Record<MalId, { taban: number; meslek: MeslekId }> = {
   kereste: { taban: 3, meslek: "oduncu" }, cevher: { taban: 3, meslek: "oduncu" }, komur: { taban: 3, meslek: "oduncu" },
   tahil: { taban: 2, meslek: "ciftci" }, deri: { taban: 3, meslek: "dokumaci" }, alet: { taban: 14, meslek: "demirci" },
   nal: { taban: 4, meslek: "demirci" }, sifaliOt: { taban: 3, meslek: "sifaci" }, inceYun: { taban: 4, meslek: "ciftci" },
+  kagit: { taban: 6, meslek: "tuccar" }, murekkep: { taban: 0, meslek: "katip" }, senet: { taban: 0, meslek: "katip" },
 };
 /** NPC'nin satabildiği mallar (su hariç). */
 export const NPC_MALLARI: readonly MalId[] = MAL_IDLERI.filter((m) => MALLAR[m].taban > 0);
@@ -96,6 +97,7 @@ export const AILE_IKON: Record<Aile, string> = { toprak: "leaf", zanaat: "anvil"
 export const MAL_IKON: Record<MalId, string> = {
   odun: "saw", sertOdun: "saw", tas: "castle", ot: "leaf", yun: "wool", su: "bucket", kereste: "saw", cevher: "gems", komur: "flame",
   tahil: "wheat", deri: "backpack", alet: "anvil", nal: "anvil", sifaliOt: "herbs", inceYun: "sheep",
+  kagit: "scroll", murekkep: "droplet", senet: "scroll-text",
 };
 export const IS_IKON: Record<IsId, string> = { odun: "saw", tas: "castle", ot: "herbs", yun: "sheep", su: "bucket" };
 export const TUR_IKON: Record<DugumTuru, string> = { tarif: "scroll-open", kalite: "star", toplu: "coins", ozel: "medal", hak: "crown" };
@@ -156,6 +158,8 @@ export const TARIF_IKON: Record<string, string> = { kereste: "saw", komur: "flam
 /** [PARAMETRE] Aletin kullanım ömrü; NPC'nin oyuncudan aylık alım kotası (mal başına); kıtlık primi oranı. */
 export const ALET_OMRU = 4;
 export const NPC_SATIS_KOTASI = 6;
+/** Kasaba talebi: yüksek değerli demirci mallarında daha dar aylık alım. */
+export const npcSatisKotasi = (mal: MalId, digerMeslektas = 0) => (mal === "alet" || mal === "nal") && digerMeslektas <= 0 ? 2 : NPC_SATIS_KOTASI;
 export const KITLIK_PRIM = 0.5;
 /** Satılabilen mallar (su ticarete girmez). */
 export const satilirMi = (mal: MalId) => MALLAR[mal].taban > 0;

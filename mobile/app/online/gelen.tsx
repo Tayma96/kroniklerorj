@@ -18,12 +18,12 @@ import { Baslik2, BosKart, KisiYuzu, OnlineSayfa, Rozet, SatirOku, TakatHapi, Ye
 import { hataAnahtari } from "../../lib/online/hata";
 import type { KisiAdi, OnlineHata } from "../../lib/online/protokol";
 import { useToplum } from "../../lib/online/toplum-durum";
-import { OlaganDuzenKarti, TeklifKarti, ayFarki } from "../../lib/online/toplum-ui";
+import { OlaganDuzenKarti, TeklifKarti, ArabuluculukKarti, ayFarki } from "../../lib/online/toplum-ui";
 import { TOPLUM_SINIR, kisiYolu, type SoylentiGorunumu } from "../../lib/online/toplum-veri";
 
-type Sekme = "gelen" | "giden" | "suren" | "soylenti" | "gecmis";
-const SEKMELER: readonly Sekme[] = ["gelen", "giden", "suren", "soylenti", "gecmis"];
-const SEKME_IKON: Record<Sekme, string> = { gelen: "scroll", giden: "walk", suren: "hourglass", soylenti: "speaker", gecmis: "book" };
+type Sekme = "gelen" | "giden" | "suren" | "arabuluculuk" | "soylenti" | "gecmis";
+const SEKMELER: readonly Sekme[] = ["gelen", "giden", "suren", "arabuluculuk", "soylenti", "gecmis"];
+const SEKME_IKON: Record<Sekme, string> = { gelen: "scroll", giden: "walk", suren: "hourglass", arabuluculuk: "scales", soylenti: "speaker", gecmis: "book" };
 
 function KisiSatiri({ k, alt, rtl, onPress, sag }: { k: KisiAdi; alt: string; rtl: boolean; onPress: () => void; sag?: ReactNode }) {
   return <View style={{ gap: 6, paddingHorizontal: 12, paddingVertical: 8 }}>
@@ -72,6 +72,7 @@ function GelenEkran() {
     gelen: (g?.gelen.length ?? 0) + (g?.dostluk.gelen.length ?? 0),
     giden: (g?.giden.length ?? 0) + (g?.dostluk.giden.length ?? 0),
     suren: g?.suren.length ?? 0,
+    arabuluculuk: g?.arabuluculuk?.length ?? 0,
     soylenti: g?.soylentiler.filter((s) => s.yayiliyor && !s.yalanlandi).length ?? 0,
     gecmis: g?.kapanan.length ?? 0,
   };
@@ -127,6 +128,11 @@ function GelenEkran() {
             </View>)}
           </Cerceve>
         </> : null}
+      </>;
+      case "arabuluculuk": return <>
+        <Baslik2 metin={t("onl.tp.arb.baslik")} rtl={rtl} ust={14} />
+        {(g.arabuluculuk?.length ?? 0) ? <View style={{ gap: 10 }}>{(g.arabuluculuk ?? []).map((x) => <ArabuluculukKarti key={x.id} x={x} toplum={toplum} />)}</View>
+          : <BosKart icon="scales" metin={t("onl.tp.gk.surenBos")} rtl={rtl} />}
       </>;
       case "soylenti": return <>
         <Text style={{ marginTop: 14, fontFamily: F.serifItalic, fontSize: 14.5, lineHeight: 20, color: C.parchmentDim, textAlign: hiza(rtl) }}>{t("onl.tp.sy.not")}</Text>

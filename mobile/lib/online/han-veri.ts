@@ -22,7 +22,7 @@ export type SikayetNedeni = (typeof SIKAYET_NEDENLERI)[number];
 export type HanTuru = "han" | "kucukHan" | "menzil";
 export type MasaTuru = "acik" | "ozel" | "meclis" | "tuccar";
 export interface MasaAyari { tur: MasaTuru; acik: boolean; sesli: boolean; kavgaYasak: boolean }
-/** İsim plakası. `cerceve` Debdebe çerçevesinin yeridir (Faz 15; sunucu henüz göndermez, oyun mantığı okumaz). */
+/** İsim plakası. `cerceve` sunucunun sahiplikten eklediği Debdebe süsüdür; oyun mantığı okumaz. */
 export interface Plaka { hesap: string; ad: string; cerceve?: string }
 export interface MasaGorunumu {
   no: number;

@@ -5,6 +5,7 @@ import assert from "node:assert/strict";
 import isleyici, { DunyaDO, HesapDO, YerlesimDO } from "../src/index.ts";
 import type { Env } from "../src/tipler.ts";
 import type { Siparis } from "../src/yerlesim/siparis.ts";
+import { oyunAyi } from "../src/saat.ts";
 import { googleYuku, ISTEMCI, jwtImzala, rsaAnahtari, sahteAdAlani, sahteJwks } from "./yardimci.ts";
 
 type Nesne = Record<string, any>;
@@ -124,8 +125,23 @@ test("dikey dilim uçları: Hal, tarif, satış, sipariş teslimi ve teşekkür 
     const liste = (await cagir("GET", "/v1/siparisler", { oturum })).govde.siparisler as Nesne[];
     assert.ok(liste.length > 0, "kıt mesleklere sipariş açıldı");
     assert.equal((await cagir("POST", "/v1/siparisler", { oturum })).durum, 405);
-    const sip = liste.find((s) => s.durum === "acik" && s.mal === "nal");
-    assert.ok(sip, `açık nal siparişi: ${JSON.stringify(liste.map((s) => [s.mal, s.durum, s.adet]))}`);
+    let sip: Nesne | undefined = liste.find((s) => s.durum === "acik" && s.mal === "nal");
+    if (!sip) {
+      // Aylık rastgele sipariş seçimi belirli bir malı garanti etmez; teslim dikey dilimini sabit bir test siparişiyle sürdür.
+      const aday = liste.find((s) => s.isteyen?.ad);
+      assert.ok(aday, "siparişlerde yaşayan bir NPC isteyen bulunur");
+      const sp = (depolama.veri.get("sp") as Siparis[] | undefined) ?? [];
+      const npc = sp.find((s) => s.id === aday.id)!.npc;
+      const ay = oyunAyi(saat);
+      sp.push({ id: "s_test_nal_" + ay, mal: "nal", adet: 2, odul: 50, hizmet: 3, npc, acilis: ay, son: ay + 4, durum: "acik" });
+      depolama.veri.set("sp", sp);
+      for (const [ad, kayit] of yerlesimler.ornekler) {
+        kayit.ornek = new YerlesimDO({ id: { toString: () => ad }, storage: kayit.depolama } as never, env, () => saat);
+      }
+      const yenilenen = (await cagir("GET", "/v1/siparisler", { oturum })).govde.siparisler as Nesne[];
+      sip = yenilenen.find((s) => s.durum === "acik" && s.mal === "nal");
+    }
+    assert.ok(sip, "teslim testi için açık nal siparişi bulunur");
     assert.ok(sip.isteyen?.ad, "isteyen NPC adı görünür");
 
     // Elde yetecek nal yoksa önce yap (adet ≤ 4).
@@ -138,7 +154,7 @@ test("dikey dilim uçları: Hal, tarif, satış, sipariş teslimi ve teşekkür 
     // GET önizlemeleri: temel işin sonraki verimi, kalan NPC alım kotası.
     const cv = b0.temelIsler.find((x: Nesne) => x.is === "cevher");
     assert.deepEqual([cv.adet, cv.sonraki, cv.acik], [0, 0, true], "pencerede 2 kez yapıldı: verim yok");
-    assert.equal(b0.npcKota.sat.nal, 6);
+    assert.equal(b0.npcKota.sat.nal, 2, "tek demirci varsa nal alım talebi sınırlıdır");
     assert.equal(b0.npcKota.al.odun, 2);
     const teslimIstek = { siparis: sip.id, istekNo: "teslim-0001" };
     const t1 = await cagir("POST", "/v1/siparis/teslim", { oturum, govde: teslimIstek });
@@ -176,7 +192,7 @@ test("dikey dilim uçları: Hal, tarif, satış, sipariş teslimi ve teşekkür 
     const s1 = await tamam("/v1/sat", { mal: "cevher", adet: 1 });
     assert.equal(s1.tutar, s1.birim.toplam);
     assert.equal(s1.para, t1.govde.para + s1.tutar);
-    assert.deepEqual(s1.kota, { satilan: 1, tavan: 6, kalan: 5 });
+    assert.deepEqual(s1.kota, { satilan: 1, tavan: 8, kalan: 7 }, "oduncu cevherinde genişletilmiş kota");
     assert.deepEqual((await yaz("/v1/sat", { mal: "nal", adet: 1.5 })).govde, { hata: "mal_gecersiz" });
     assert.deepEqual((await yaz("/v1/sat", { mal: "su", adet: 1 })).govde, { hata: "mal_gecersiz" });
     assert.deepEqual((await yaz("/v1/sat", { mal: "cevher", adet: 1 })).govde, { hata: "mal_yok" });

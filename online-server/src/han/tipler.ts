@@ -21,10 +21,11 @@ export interface MasaAyari {
   kavgaYasak: boolean;
 }
 
-/** İsim plakası: yalnız kimlik ve görünen ad. Debdebe çerçevesi Faz 15'te eklenecek (oyun mantığı okumaz). */
+/** İsim plakası: kimlik, görünen ad ve isteğe bağlı Debdebe çerçevesi (oyun mantığı okumaz). */
 export interface Plaka {
   hesap: string;
   ad: string;
+  cerceve?: string;
 }
 
 export interface MasaGorunumu {
@@ -134,6 +135,8 @@ export interface SoketEki {
   no: number;
   h: string;
   a: string;
+  /** Debdebe plaka çerçevesi (kozmetik ürün kimliği; oyun mantığı okumaz). */
+  cf?: string;
   /** Koltuk dizini ya da null (ayakta). */
   k: number | null;
   /** Oturma anı (masa başı için). */

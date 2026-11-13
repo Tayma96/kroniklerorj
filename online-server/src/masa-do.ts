@@ -63,7 +63,7 @@ function biletCoz(ham: string | null): MasaBileti | undefined {
   try {
     const b = JSON.parse(decodeURIComponent(ham)) as MasaBileti;
     if (typeof b?.masa === "string" && typeof b.no === "number" && typeof b.plaka?.hesap === "string" && typeof b.plaka.ad === "string") {
-      return { masa: b.masa, no: b.no, plaka: { hesap: b.plaka.hesap, ad: b.plaka.ad }, yt: b.yt ?? {}, eg: engelListesiCoz(b.eg) };
+      return { masa: b.masa, no: b.no, plaka: { hesap: b.plaka.hesap, ad: b.plaka.ad, ...(typeof b.plaka.cerceve === "string" && b.plaka.cerceve.length <= 40 ? { cerceve: b.plaka.cerceve } : {}) }, yt: b.yt ?? {}, eg: engelListesiCoz(b.eg) };
     }
   } catch {
     // aşağıda

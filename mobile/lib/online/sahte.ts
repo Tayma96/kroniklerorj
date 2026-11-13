@@ -117,6 +117,7 @@ export function sahteIstemci(gecikmeMs = 450, baslangic: Profil | null = null, a
   const meslek = (): SahteMeslek | null => (yerlesim() ? meslekler : null);
   return {
     async giris() { await bekle(); return basarili({ oturum: "gelistirici", profilVar: profil !== null }); },
+    async testGiris() { await bekle(); return basarisiz("gecersiz_istek"); },
     async dunya() { await bekle(); return basarili(sahteDunya()); },
     async profil() { await bekle(); return profil ? basarili(profil) : basarisiz("profil_yok"); },
     async profilOlustur(istek) {

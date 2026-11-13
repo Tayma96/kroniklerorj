@@ -22,7 +22,7 @@ import { hataAnahtari } from "../../../lib/online/hata";
 import { NAMLAR, type OnlineHata } from "../../../lib/online/protokol";
 import { useToplum, type Toplum } from "../../../lib/online/toplum-durum";
 import { GelenKutusuKarti, Secenekler, TeklifFormu, armaganYaz, ayFarki, kademeAdi, kapiMetni } from "../../../lib/online/toplum-ui";
-import { SIKAYET_NEDENLERI, TOPLUM_SINIR, kisiYolu, type OyuncuProfili, type OyuncuTeklifTuru, type SikayetNedeni, type VitrinArmagani } from "../../../lib/online/toplum-veri";
+import { SIKAYET_NEDENLERI, TOPLUM_SINIR, kisiYolu, oyuncuKimligiMi, type OyuncuProfili, type OyuncuTeklifTuru, type SikayetNedeni, type VitrinArmagani } from "../../../lib/online/toplum-veri";
 
 type Ceviri = (k: string) => string;
 type Onay = { tur: "husumet" | "engelle" | "dostlukBitir"; islem: string };
@@ -195,6 +195,8 @@ function OyuncuEkran() {
   const [onay, setOnay] = useState<Onay | null>(null);
   const [sikayet, setSikayet] = useState(false);
   const [vitrin, setVitrin] = useState(false);
+  const [arabulucuAcik, setArabulucuAcik] = useState(false);
+  const [arabulucuId, setArabulucuId] = useState<string | null>(null);
   const [hata, setHata] = useState<OnlineHata | null>(null);
 
   useEffect(() => { if (id && y) void toplum.oyuncuYukle(id); }, [id, !!y]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -234,6 +236,17 @@ function OyuncuEkran() {
   const teklifKapi = teklifKapali ? kapiMetni(t, "teklif.cirak", eylem("teklif.cirak")?.engel) : null;
   const ana = p.meslek.ana;
   const yan = p.meslek.yan;
+  const arabulucuAdaylari = p.ortakTanidiklar.filter((k) => oyuncuKimligiMi(k.id) && k.id !== y.ben.id && k.id !== p.id);
+  const arabuluculukBaslat = async () => {
+    if (!arabulucuId) return;
+    setHata(null);
+    const r = await toplum.arabuluculuk({ islem: "ac", hedef: p.id, arabulucu: arabulucuId });
+    if (!r.ok) { hap("error"); setHata(r.hata ?? "sunucu_hatasi"); return; }
+    hap("success");
+    setArabulucuAcik(false);
+    setArabulucuId(null);
+    await toplum.gelenYukle();
+  };
 
   // Durum rozetleri: dostluk, husumet, engel.
   const durumlar: { metin: string; renk: string; icon: string }[] = [];
@@ -248,6 +261,24 @@ function OyuncuEkran() {
     alt={<>
       <AltPanel acik={!!form} onKapat={() => setForm(null)} etiket={t("onl.tp.f.panel")} rtl={rtl} t={t}>
         {form ? <TeklifFormu p={p} baslangic={form} onBitti={() => setForm(null)} /> : null}
+      </AltPanel>
+      <AltPanel acik={arabulucuAcik} onKapat={() => { setArabulucuAcik(false); setArabulucuId(null); setHata(null); }} etiket={t("onl.tp.arb.baslat")} rtl={rtl} t={t}>
+        <View style={{ gap: 10 }}>
+          <Text style={{ fontFamily: F.serif, fontSize: 14.5, lineHeight: 20, color: C.parchmentDim, textAlign: hiza(rtl) }}>{t("onl.tp.arb.arabulucuNot")}</Text>
+          {arabulucuAdaylari.length ? arabulucuAdaylari.map((k) => {
+            const secili = arabulucuId === k.id;
+            return <Pressable key={k.id} accessibilityRole="radio" accessibilityState={{ selected: secili }} accessibilityLabel={k.ad}
+              onPress={() => { hap("selection"); setArabulucuId(k.id); }}
+              style={({ pressed }) => ({ minHeight: 52, flexDirection: yon(rtl), alignItems: "center", gap: 10, padding: 8, borderRadius: 8, borderWidth: secili ? 2 : 1, borderColor: secili ? C.goldBright : "rgba(201,162,78,0.35)", backgroundColor: pressed || secili ? "rgba(201,162,78,0.12)" : "rgba(14,10,6,0.55)" })}>
+              <KisiYuzu id={k.id} ad={k.ad} boyut={36} oyuncu />
+              <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 15, color: C.parchment, textAlign: hiza(rtl) }}>{k.ad}</Text>
+              {secili ? <GameIcon name="check-circle" size={18} color={C.goldBright} /> : null}
+            </Pressable>;
+          }) : <Text style={{ fontFamily: F.serifItalic, fontSize: 14, lineHeight: 19, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{t("onl.tp.arb.arabulucuYok")}</Text>}
+          {hata ? <Bant metin={t(hataAnahtari(hata))} rtl={rtl} /> : null}
+          <AltinDugme etiket={t("onl.tp.arb.davetGonder")} icon="scales" rtl={rtl} kapali={!arabulucuId || !arabulucuAdaylari.some((k) => k.id === arabulucuId)}
+            bekliyor={toplum.bekliyor("arabuluculuk:yeni:ac")} onPress={() => { void arabuluculukBaslat(); }} />
+        </View>
       </AltPanel>
       <AltPanel acik={!!onay} onKapat={() => { setOnay(null); setHata(null); }} etiket={onay ? t(`onl.tp.onay.${onay.tur}.${onay.islem}`) : ""} rtl={rtl} t={t}>
         {onay ? <View style={{ gap: 12 }}>
@@ -321,6 +352,7 @@ function OyuncuEkran() {
           <EylemDugmesi icon="gems" baslik={t("onl.tp.armaganVer")} alt={hediyeKapi ?? applyParams(t("onl.tp.armaganVerAlt"), [TOPLUM_SINIR.hediyeEnCok])} kapali={!!hediyeKapi} rtl={rtl} onPress={() => setForm("hediye")} />
         </> : null}
         {husumet && !p.engelledim ? <EylemDugmesi icon="crossed-swords" tehlike={husumet.islem !== "kaldir"} baslik={t(husumet.islem === "kaldir" ? "onl.tp.husumet.kaldir" : "onl.tp.husumet.ilan")} alt={t(husumet.islem === "kaldir" ? "onl.tp.husumet.kaldirAlt" : "onl.tp.husumet.ilanAlt")} rtl={rtl} onPress={() => setOnay({ tur: "husumet", islem: husumet.islem ?? "ilan" })} /> : null}
+        {(p.husumet.benIlanEttim || p.husumet.oIlanEtti) && !p.engelledim ? <EylemDugmesi icon="scales" baslik={t("onl.tp.arb.baslat")} alt={t("onl.tp.arb.baslatAlt")} rtl={rtl} onPress={() => { setHata(null); setArabulucuAcik(true); }} /> : null}
         {engel ? <EylemDugmesi icon="shield" tehlike={engel.islem !== "kaldir"} baslik={t(engel.islem === "kaldir" ? "onl.tp.engel.kaldir" : "onl.tp.engel.engelle")} alt={t(engel.islem === "kaldir" ? "onl.tp.engel.kaldirAlt" : "onl.tp.engel.engelleAlt")} rtl={rtl} onPress={() => setOnay({ tur: "engelle", islem: engel.islem ?? "engelle" })} /> : null}
         {eylem("sikayet") ? <EylemDugmesi icon="scales" tehlike baslik={t("onl.tp.sk.panel")} alt={t("onl.tp.sk.kisa")} rtl={rtl} onPress={() => setSikayet(true)} /> : null}
       </View>

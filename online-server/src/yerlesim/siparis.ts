@@ -17,7 +17,7 @@ import { hizmetEkle } from "./meslek.ts";
 import { envanterEkle, malMeslegindeMi, satisDegeri } from "./npc-taban.ts";
 import { npcAdi, npcKimlik, npcRef, oyuncuRef, yas } from "./ortak.ts";
 import { agirlikliSec, aralik, dizinSec, tohumlu } from "./rastgele.ts";
-import type { Dokum, IliskiHaritasi, Karakter, Kasaba, Npc, OlayTaslagi } from "./tipler.ts";
+import type { CalismaParametreleri, Dokum, IliskiHaritasi, Karakter, Kasaba, Npc, OlayTaslagi } from "./tipler.ts";
 
 export interface Siparis {
   /** "s<ay>_<sıra>". */
@@ -82,7 +82,7 @@ function npcOnlineMeslegi(n: Npc): MeslekId | null {
 }
 
 /** Ay dönümü: süresi dolanlar düşer, eskiler temizlenir, kıt meslekler için yeni sipariş açılır. */
-export function siparisDonumu(kasaba: Kasaba, ay: number): OlayTaslagi[] {
+export function siparisDonumu(kasaba: Kasaba, ay: number, p?: CalismaParametreleri): OlayTaslagi[] {
   const olaylar: OlayTaslagi[] = [];
   const sp = (kasaba.sp ??= []);
   for (const s of sp) {
@@ -120,8 +120,9 @@ export function siparisDonumu(kasaba: Kasaba, ay: number): OlayTaslagi[] {
     if (!a) break;
     const isteyen = a.musteri[dizinSec(a.musteri.length, r)]!;
     const adet = aralik(r, a.alt, a.ust);
-    const birim = satisDegeri(a.mal, oyuncu(a.meslek));
-    const odul = Math.ceil(adet * birim.toplam * SIPARIS_ODUL_CARPANI);
+    const birim = satisDegeri(a.mal, oyuncu(a.meslek), p);
+    const odulCarpani = p?.SIPARIS_ODUL_CARPANI ?? SIPARIS_ODUL_CARPANI;
+    const odul = Math.ceil(adet * birim.toplam * odulCarpani);
     const dk = birim.kalemler.map((x) => ({ k: x.k, d: x.d * adet }));
     dk.push({ k: "siparis_carpani", d: odul - adet * birim.toplam });
     const s: Siparis = {

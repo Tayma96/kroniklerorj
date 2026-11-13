@@ -4,14 +4,18 @@
 
 import { doDepo, type Depo } from "./depo.ts";
 import { hamiUc, mesrepUc, mudavimUc, ortakDertUc, senlikUc, toplulukOku, zaviyeUc } from "./yerlesim/topluluk-uclar.ts";
-import { defterOku, ismarlaUc, ismarlamaCevapUc, ismarlamaOku, levhaOku, pazarGeri, pazarIlan, pazarIslem, pazarOku } from "./yerlesim/ekonomi-uclar.ts";
+import { defterOku, hizmetGeriUc, hizmetHazirlaUc, hizmetIlanUc, hizmetIslemUc, hizmetOku, hizmetTalepTeslimUc, hizmetGorevTeslimUc, ismarlaUc, ismarlamaCevapUc, ismarlamaOku, levhaOku, pazarGeri, pazarIlan, pazarIslem, pazarOku } from "./yerlesim/ekonomi-uclar.ts";
 import { armaganGeri, armaganTeveccuh } from "./yerlesim/armagan-uclar.ts";
-import { iletiOku, isletmeCagir, jsonYanit } from "./ic.ts";
-import { hata, type Env, type Sonuc, type YerlesimIleti } from "./tipler.ts";
+import { iletiOku, isletmeCagir, jsonYanit, yonetimCagir } from "./ic.ts";
+import { bolgeCagir } from "./siyaset/ic.ts";
+import { BEYLIKLER } from "./dunya-veri.ts";
+import { basarili, hata, type Env, type Sonuc, type YerlesimIleti } from "./tipler.ts";
+import type { CalismaParametreleri } from "./yerlesim/tipler.ts";
 import { sonrakiAlarm, YerlesimMotoru } from "./yerlesim/motor.ts";
 import { mulkIsle, teslimAl, uzlastir, type IsletmeCagir } from "./mulk/yerlesim-mulk.ts";
 
 export class YerlesimDO {
+  readonly #env: Env;
   readonly #depolama: DurableObjectStorage;
   readonly #depo: Depo;
   readonly #saat: () => number;
@@ -22,6 +26,7 @@ export class YerlesimDO {
   #alarmVar = false;
 
   constructor(ctx: DurableObjectState, env: Env, saat: () => number = Date.now) {
+    this.#env = env;
     this.#isletme = (i) => (env.ISLETME ? isletmeCagir(env, i) : Promise.resolve({ ok: false, hata: "isletme_yok" }));
     this.#depolama = ctx.storage;
     this.#depo = doDepo(ctx.storage);
@@ -34,6 +39,17 @@ export class YerlesimDO {
     return this.#motor;
   }
 
+  async #parametreleriYukle(motor: YerlesimMotoru): Promise<void> {
+    motor.parametreleriGuncelle({});
+    try {
+      const parametreler = await yonetimCagir(this.#env, { islem: "parametrelerCalisma" });
+      if (parametreler.ok && typeof parametreler.deger === "object" && parametreler.deger !== null) {
+        motor.parametreleriGuncelle(parametreler.deger as CalismaParametreleri);
+      }
+    } catch {
+      // Yönetim DO erişilemezse oyun güvenli varsayılan parametrelerle çalışmaya devam eder.
+    }
+  }
   async #alarmKur(simdi: number, kalan: number): Promise<void> {
     if (this.#alarmVar && kalan === 0) return;
     if (kalan > 0 || (await this.#depolama.getAlarm()) === null) await this.#depolama.setAlarm(sonrakiAlarm(simdi, kalan));
@@ -47,6 +63,7 @@ export class YerlesimDO {
       const simdi = this.#saat();
       const sonuc = await this.#isle(ileti, simdi);
       await this.#mulkUzlastir(simdi, ileti.islem === "hanIkram" || ileti.islem === "barinmaKira");
+      await this.#vergiUzlastir(simdi);
       return jsonYanit(sonuc);
     } catch (e) {
       this.#motor = undefined;
@@ -54,11 +71,66 @@ export class YerlesimDO {
     }
   }
 
+  /** Bölgenin güncel vergi oranı; siyaset DO erişilemiyorsa işlem ek vergi kesmeden devam eder. */
+  async #vergiOrani(yerlesim: string): Promise<number> {
+    const bolge = BEYLIKLER.find((x) => x.yerlesimler.some((y) => y.id === yerlesim));
+    if (!bolge || !this.#env.BOLGE) return 0;
+    try {
+      const r = await bolgeCagir<{ bolge?: { vergi?: { oran?: number } } }>(this.#env, {
+        islem: "gorunum", bolge: bolge.id, hesapId: `yerlesim:${yerlesim}`,
+      });
+      const oran = r.ok ? r.deger.bolge?.vergi?.oran : undefined;
+      return Number.isInteger(oran) && typeof oran === "number" && oran >= 0 && oran <= 4 ? oran : 0;
+    } catch {
+      return 0;
+    }
+  }
+
+  /** Mülk gelirinden ayrılan vergiyi bölge DO'suna idempotent anahtarla teslim eder. */
+  async #vergiUzlastir(simdi: number): Promise<void> {
+    const motor = this.#motor;
+    const md = motor?.kasaba.mk;
+    if (!motor || !md?.vergiGiden?.length || !this.#env.BOLGE) return;
+    for (const x of [...md.vergiGiden]) {
+      const bolge = BEYLIKLER.find((b) => b.yerlesimler.some((y) => y.id === x.yerlesim));
+      if (!bolge) break;
+      let r: Sonuc<unknown>;
+      try {
+        r = await bolgeCagir(this.#env, {
+          islem: "vergiYatir", bolge: bolge.id, anahtar: x.anahtar, tutar: x.tutar, yerlesim: x.yerlesim,
+        });
+      } catch {
+        break;
+      }
+      if (!r.ok) break;
+      await motor.mulkIslem([], () => {
+        const i = md.vergiGiden?.findIndex((y) => y.anahtar === x.anahtar) ?? -1;
+        if (i >= 0) md.vergiGiden!.splice(i, 1);
+      });
+    }
+    if (md.vergiGiden?.length) {
+      const yeniden = simdi + 60_000;
+      const mevcut = await this.#depolama.getAlarm();
+      if (mevcut === null || mevcut > yeniden) await this.#depolama.setAlarm(yeniden);
+    }
+  }
+
   async #isle(ileti: YerlesimIleti, simdi: number): Promise<Sonuc<unknown>> {
+    if (ileti.islem === "ekonomiSagligi" && !(await this.#depo.al("m"))) {
+      return basarili({ yerlesim: ileti.yerlesim, oyuncuSayisi: 0, npcSayisi: 0, toplamAkce: 0, ortalamaAkce: 0, medyanAkce: 0, enDusukAkce: 0, enYuksekAkce: 0, son12Ay: { gelir: 0, gider: 0, net: 0 }, kasabaStokAdet: 0, acikSiparis: 0 });
+    }
     const motor = await this.#ac(ileti.yerlesim, simdi);
     if (!motor) return hata("yerlesim_gecersiz");
+    if (ileti.islem === "ekonomiSagligi") return motor.ekonomiSagligi();
+    // YonetimDO → YerlesimDO iç çağrıları geri döngü oluşturmamak için parametre/ay dönümü çağırmaz.
+    if (ileti.islem === "siyasetKimlik") return motor.siyasetKimlik(ileti.hesapId);
+    if (ileti.islem === "yonetimTelafi") return motor.yonetimTelafi(ileti.hesapId, ileti.govde);
+    await this.#parametreleriYukle(motor);
     const { kalan } = await motor.yetistir(simdi);
     await this.#alarmKur(simdi, kalan);
+    const vergiOrani = ileti.islem === "hanIkram" || ileti.islem === "barinmaKira"
+      ? await this.#vergiOrani(ileti.yerlesim)
+      : 0;
     switch (ileti.islem) {
       case "sakinEkle":
         return motor.sakinEkle(ileti.sakin);
@@ -110,6 +182,8 @@ export class YerlesimDO {
         return motor.teklif(ileti.hesapId, ileti.govde);
       case "teklifCevap":
         return motor.teklifCevap(ileti.hesapId, ileti.govde);
+      case "oyuncuArabuluculuk":
+        return motor.oyuncuArabuluculuk(ileti.hesapId, ileti.govde);
       case "husumet":
         return motor.husumet(ileti.hesapId, ileti.govde);
       case "engelle":
@@ -125,7 +199,7 @@ export class YerlesimDO {
       case "ucgenOku":
         return motor.ucgenOku(ileti.hesapId, ileti.npc, ileti.hedef, ileti.dil);
       case "hanIkram":
-        return motor.hanIkram(ileti.hesapId, ileti.govde);
+        return motor.hanIkram(ileti.hesapId, ileti.govde, vergiOrani);
       // Debdebe armağanı (HesapDO'dan; tutar değer olarak gelir, cosmetic okunmaz)
       case "armaganTeveccuh":
         return armaganTeveccuh(motor, ileti.hesapId, ileti.govde);
@@ -135,8 +209,6 @@ export class YerlesimDO {
         return motor.sakinHesabi(ileti.hesapId, ileti.hedef);
       case "engeller":
         return motor.engeller(ileti.hesapId);
-      case "siyasetKimlik":
-        return motor.siyasetKimlik(ileti.hesapId);
       // Hanedan (Faz 7)
       case "hanedan":
         return motor.hanedan(ileti.hesapId, ileti.dil);
@@ -165,7 +237,21 @@ export class YerlesimDO {
         return zaviyeUc(motor, ileti.hesapId, ileti.govde);
       case "mudavimZiyaret":
         return mudavimUc(motor, ileti.hesapId);
-      // Ekonomi (Faz 6): src/yerlesim/ekonomi-uclar.ts
+      // Ekonomi (Faz 6) ve hizmet pazarı (E4.3): src/yerlesim/ekonomi-uclar.ts
+      case "hizmet":
+        return hizmetOku(motor, ileti.hesapId);
+      case "hizmetHazirla":
+        return hizmetHazirlaUc(motor, ileti.hesapId, ileti.govde);
+      case "hizmetIlan":
+        return hizmetIlanUc(motor, ileti.hesapId, ileti.govde);
+      case "hizmetIslem":
+        return hizmetIslemUc(motor, ileti.hesapId, ileti.govde);
+      case "hizmetGeri":
+        return hizmetGeriUc(motor, ileti.hesapId, ileti.govde);
+      case "hizmetTalepTeslim":
+        return hizmetTalepTeslimUc(motor, ileti.hesapId, ileti.govde);
+      case "hizmetGorev":
+        return hizmetGorevTeslimUc(motor, ileti.hesapId, ileti.govde);
       case "pazar":
         return pazarOku(motor, ileti.hesapId, ileti.mal);
       case "pazarIlan":
@@ -191,7 +277,7 @@ export class YerlesimDO {
       case "barinmaKira":
       case "barinmaTesis":
       case "barinmaOtomatik":
-        return motor.barinmaIslem(ileti.islem, ileti.hesapId, ileti.govde, simdi);
+        return motor.barinmaIslem(ileti.islem, ileti.hesapId, ileti.govde, simdi, vergiOrani);
       // Mülk (Faz 12–13): istemci uçları ve IsletmeDO'dan gelen kasa → cüzdan kayıtları.
       case "mulk":
         return mulkIsle(motor, ileti, simdi, this.#isletme);
@@ -218,10 +304,12 @@ export class YerlesimDO {
     try {
       const motor = await this.#ac(undefined, simdi);
       if (!motor) return;
+      await this.#parametreleriYukle(motor);
       const { kalan } = await motor.yetistir(simdi);
       await this.#depolama.setAlarm(sonrakiAlarm(simdi, kalan));
       this.#alarmVar = true;
       await this.#mulkUzlastir(simdi, false);
+      await this.#vergiUzlastir(simdi);
     } catch (e) {
       this.#motor = undefined;
       throw e;

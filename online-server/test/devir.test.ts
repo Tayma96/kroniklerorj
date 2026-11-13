@@ -5,6 +5,7 @@ import { ATA_NAMI_ORANI, KUSME_YUKU, NAM_DEVIR_ORANI, devirHesapla, devirUygula,
 import { iliskiAl } from "../src/yerlesim/eylem.ts";
 import { olduMu } from "../src/yerlesim/hanedan.ts";
 import { meslekSec } from "../src/yerlesim/meslek.ts";
+import { teklifCevap } from "../src/yerlesim/teklif.ts";
 import { npcKimlik } from "../src/yerlesim/ortak.ts";
 import type { Karakter, Kasaba } from "../src/yerlesim/tipler.ts";
 import { vasiyetDogrula } from "../src/yerlesim/vasiyet.ts";
@@ -166,8 +167,8 @@ test("devir: aile adı küçük başlangıç teveccühü verir (veren listesi ge
   ortak.e = 9002;
   teveccuhEkle(kar, alacakli, "armagan", k.ay, 60);
   const tp = toplumAl(k);
-  const borcVar = { i: 1, t: "borc" as const, g: "o2", a: "o1", s: { tu: 20, fz: 0, va: 6, yn: "ver" as const }, e: 0, ac: k.ay, sa: k.ay, v: "ret" as const, d: "surer" as const, kl: 20, vd: k.ay + 6 };
-  const borcAlacak = { i: 2, t: "borc" as const, g: "o1", a: "o3", s: { tu: 10, fz: 0, va: 6, yn: "ver" as const }, e: 0, ac: k.ay, sa: k.ay, v: "ret" as const, d: "surer" as const, kl: 10, vd: k.ay + 6 };
+  const borcVar = { i: 1, t: "borc" as const, g: "o2", a: "o1", s: { tu: 20, fz: 0, va: 6, yn: "ver" as const }, e: 0, ac: k.ay, sa: k.ay, v: "ret" as const, d: "surer" as const, kl: 20, vd: k.ay + 6, bo: [[k.ay - 1, 4] as [number, number]], od: 1 as const };
+  const borcAlacak = { i: 2, t: "borc" as const, g: "o1", a: "o3", s: { tu: 10, fz: 0, va: 6, yn: "ver" as const }, e: 0, ac: k.ay, sa: k.ay, v: "ret" as const, d: "surer" as const, kl: 10, vd: k.ay + 6, bo: [[k.ay - 2, 2] as [number, number]] };
   const acikHediye = { i: 3, t: "hediye" as const, g: "o1", a: "o3", s: { tu: 7 }, e: 7, ac: k.ay, sa: k.ay + 1, v: "ret" as const, d: "acik" as const };
   const cirak: import("../src/yerlesim/toplum.ts").Teklif = { i: 4, t: "cirak" as const, g: "o1", a: "o3", s: { m: "demirci" as const, us: "o1" }, e: 0, ac: k.ay, sa: k.ay, v: "ret" as const, d: "surer" as const };
   tp.tk.push(borcVar, borcAlacak, acikHediye, cirak);
@@ -184,8 +185,17 @@ test("devir: aile adı küçük başlangıç teveccühü verir (veren listesi ge
   const v = r.deger.kar;
   assert.equal(v.tv?.p, beklenen, "aile adı");
   assert.deepEqual(v.tv?.v, [], "hediye verenleri geçmez");
-  assert.deepEqual([borcVar.a, borcVar.d, borcVar.kl], [v.o, "surer", 20], "borç vârise geçer");
-  assert.deepEqual([borcAlacak.g, borcAlacak.d], [v.o, "surer"], "alacak vârise geçer");
+  assert.deepEqual([borcVar.a, borcVar.d, borcVar.kl, borcVar.bo, borcVar.od], [v.o, "surer", 20, [[k.ay - 1, 4]], 1], "borçlu vârise geçer; kalan tutar ve eski tahsilat/gecikme kaydı korunur");
+  assert.deepEqual([borcAlacak.g, borcAlacak.d, borcAlacak.kl, borcAlacak.bo], [v.o, "surer", 10, [[k.ay - 2, 2]]], "alacak vârise geçer; alacak dökümü korunur");
+  const borcluOdemesi = teklifCevap(k, v, "t1", "ode", { tutar: 5 }, k.ay);
+  assert.ok(borcluOdemesi.ok, "borçlu olan vâris devraldığı senede ödeme yapabilir");
+  assert.equal(borcVar.kl, 15);
+  assert.deepEqual(borcVar.bo, [[k.ay - 1, 4], [k.ay, 5]]);
+  const digerBorclu = k.kar.get("o3")!;
+  const alacakliTahsilati = teklifCevap(k, digerBorclu, "t2", "ode", { tutar: 3 }, k.ay);
+  assert.ok(alacakliTahsilati.ok, "alacaklı olan vâris devraldığı senedi tahsil edebilir");
+  assert.equal(borcAlacak.kl, 7);
+  assert.deepEqual(borcAlacak.bo, [[k.ay - 2, 2], [k.ay, 3]]);
   assert.equal(acikHediye.g, v.o, "açık armağan teklifi (emanetiyle) vârisin");
   assert.deepEqual([cirak.d, cirak.sn], ["bitti", "oldu"], "çıraklık kişiye bağlıdır, kapanır");
   assert.deepEqual(tp.eg.o2, [v.o], "engel vârise de geçerli");

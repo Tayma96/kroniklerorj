@@ -24,6 +24,7 @@ import {
 import { EylemSonucu } from "../../lib/online/eylem-ui";
 import { YasamHanGirisi } from "../../lib/online/yasam-han-giris";
 import { BarinmaKarti } from "../../lib/online/barinma-ui";
+import { EkonomiGirisi, NabizKarti } from "../../lib/online/ekonomi-ui";
 import { SISTEM_IKON, isaretli, olayIkonu, ozetYaz, ruhAnahtari } from "../../lib/online/metin";
 import { hataAnahtari } from "../../lib/online/hata";
 import type { EylemYaniti, Isaret, Olay, OgrenmeGunu, YerlesimDurumu } from "../../lib/online/protokol";
@@ -186,6 +187,9 @@ function YasamEkran() {
 
     {/* Barınma (Faz 14); 24 saati aşan yoklukta dönüş ekranını açar */}
     <BarinmaKarti />
+    <NabizKarti />
+    <EkonomiGirisi />
+    <CizgiDugme etiket={t("onl.db.baslik")} icon="sparkles" rtl={rtl} kucuk onPress={() => router.push("/online/debdebe")} />
 
     {/* Öğrenme dönemi */}
     {og.suruyor ? <Animated.View entering={giris(200)} style={{ marginTop: 12 }}>
@@ -323,6 +327,13 @@ function YasamEkran() {
       </Pressable>;
     })()}
     <YasamHanGirisi ben={ben} />
+    <CizgiDugme etiket={t("onl.topluluk.baslik")} icon="users" rtl={rtl} kucuk onPress={() => router.push("/online/topluluk")} />
+    <CizgiDugme etiket={t("onl.hizmet.kisa")} icon="briefcase" rtl={rtl} kucuk onPress={() => router.push("/online/hizmet")} />
+    <CizgiDugme etiket={t("onl.siyaset.baslik")} icon="castle" rtl={rtl} kucuk onPress={() => router.push("/online/siyaset")} />
+    <CizgiDugme etiket={t("onl.eko.pazar")} icon="shopping-basket" rtl={rtl} kucuk onPress={() => router.push("/online/pazar")} />
+    <CizgiDugme etiket={t("onl.eko.mulk")} icon="house" rtl={rtl} kucuk onPress={() => router.push("/online/mulk")} />
+    <CizgiDugme etiket={t("onl.lv.baslik")} icon="award" rtl={rtl} kucuk onPress={() => router.push("/online/levha")} />
+    <CizgiDugme etiket={t("onl.df.baslik")} icon="scroll-open" rtl={rtl} kucuk onPress={() => router.push("/online/defter")} />
 
     {/* Gelen kutusu: cevap bekleyen teklif ve dostluk istekleri (Faz 3a) */}
     <GelenKutusuKarti />

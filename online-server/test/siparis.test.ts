@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { MALLAR, type MalId } from "../src/icerik/mallar.ts";
 import { meslekSec } from "../src/yerlesim/meslek.ts";
-import { npcFiyat } from "../src/yerlesim/npc-taban.ts";
+import { npcFiyat, satisDegeri } from "../src/yerlesim/npc-taban.ts";
 import {
   SIPARIS_AGIRLIK,
   SIPARIS_EN_COK,
@@ -140,4 +140,16 @@ test("süresi geçmiş ama dönümü işlenmemiş sipariş teslim alınmaz", () 
   const a = oyuncuEkle(k, 1, k.ay - 16 * 12);
   a.ev = { [s.mal]: s.adet };
   assert.deepEqual(siparisTeslim(k, a, k.ili.get(a.o)!, s.id, s.son), { ok: false, hata: "siparis_kapandi" });
+});
+
+
+test("Y2 runtime sipariş ödül çarpanı ve kıtlık primi sipariş üretiminde kullanılır", () => {
+  const k = testKasabasi("develi", 0);
+  const p = { SIPARIS_ODUL_CARPANI: 2, KITLIK_PRIM: 0.75 };
+  siparisDonumu(k, 1, p);
+  assert.ok(k.sp!.length > 0);
+  for (const s of k.sp!) {
+    const birim = satisDegeri(s.mal, 0, p);
+    assert.equal(s.odul, Math.ceil(s.adet * birim.toplam * 2));
+  }
 });

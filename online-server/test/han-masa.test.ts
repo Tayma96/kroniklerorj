@@ -263,3 +263,14 @@ test("bozuk çerçeve ve bilinmeyen komut hata döner; ikili çerçeve kabul edi
   await iletiIsle(m.baglam(), a, "x".repeat(5000));
   assert.equal(a.son("hata")?.hata, "govde_buyuk");
 });
+
+
+test("Debdebe plaka çerçevesi hoş geldin ve masa görünümünde taşınır", async () => {
+  const m = sahteMasa();
+  const s = sahteSoket();
+  baglan(m.baglam(), s, bilet("ali", "Ali", {}, "cerceve_oymali"));
+  m.soketler.push(s);
+  assert.deepEqual(s.son("hosgeldin")?.ben, { hesap: "ali", ad: "Ali", cerceve: "cerceve_oymali" });
+  await yolla(m, s, { t: "otur" });
+  assert.deepEqual(s.son("durum")?.masa.koltuklar[0], { hesap: "ali", ad: "Ali", cerceve: "cerceve_oymali" });
+});

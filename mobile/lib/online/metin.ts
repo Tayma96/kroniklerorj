@@ -47,6 +47,10 @@ const PARAM: Record<string, string[]> = {
   "olay.siparis.dustuKimsesiz": ["adet", "mal"],
   "olay.siparis.teslim": ["kim", "adet", "mal", "isteyen"],
   "olay.siparis.teslimKimsesiz": ["kim", "adet", "mal"],
+  "olay.hizmetTalep": ["kisi", "hizmet", "odul"],
+  "olay.hizmetTalepTeslim": ["oyuncu", "hizmet", "kisi", "odul"],
+  "olay.yonetim.telafiAkce": ["tutar", "gerekce"],
+  "olay.yonetim.telafiEsya": ["adet", "mal", "gerekce"],
   "hal.can.saglam": ["toparlama", "esik", "taban"],
   "hal.can.yarali": ["kondisyonToparlama", "toparlama", "esik"],
   "hal.kondisyon.iyi": ["takatAylik", "isBasina"],
@@ -86,6 +90,7 @@ function degerYaz(ad: string, v: unknown, t: Ceviri, lang: Lang, k = ""): string
     case "nam": return t("onl.nam." + v);
     case "huy": return traitL(v, lang);
     case "mal": return t("onl.mal." + v);
+    case "hizmet": return t("onl.hizmet.ad." + v);
     case "tur": return t("onl.tp.tur." + v);
     default: return v;
   }
@@ -143,6 +148,8 @@ export function olayIkonu(o: Pick<Olay, "ozet" | "tur">): string {
     "olay.kulYemini": "flame", "olay.ogrenme.gun": "graduate-cap", "olay.hamle.corba": "bread", "olay.hamle.laf": "speaker",
     "olay.yeniSakin": "house", "olay.ciraklik": "anvil", "olay.karar": "compass",
     "olay.siparis.acildi": "scroll-open", "olay.siparis.dustu": "hourglass", "olay.siparis.teslim": "medal",
+    "olay.hizmetTalep": "scroll-open", "olay.hizmetTalepTeslim": "medal",
+    "olay.yonetim.telafiAkce": "gift", "olay.yonetim.telafiEsya": "gift",
   };
   return tablo[k] ?? "scroll-open";
 }

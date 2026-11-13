@@ -2,7 +2,7 @@
 // kodlarının i18n anahtarları (hata.ts ANAHTAR'a katılır). Metinler i18n-sayfa/online-toplum.ts'te (6 dil).
 import type { OnlineHata } from "./protokol";
 
-const TURLER = ["cirak", "ortak", "borc", "hediye", "gorucu", "npcIs", "npcBorc", "npcDunur"];
+const TURLER = ["cirak", "ortak", "borc", "hediye", "gorucu", "is", "npcIs", "npcBorc", "npcDunur"];
 const herTur = (on: string, p: string[]) => Object.fromEntries(TURLER.map((t) => [`${on}.${t}`, p]));
 
 /** Sunucu {k, p} → şablon %1, %2 … sırası (teklif.ts, iliski.ts, npc-teklif.ts, teveccuh.ts). */
@@ -13,6 +13,10 @@ export const TOPLUM_PARAM: Record<string, string[]> = {
   ...herTur("olay.teklif.dustu", []),
   "olay.teklif.bitti.cirak": ["kisi"],
   "olay.teklif.bitti.ortak": ["kisi"],
+  "olay.teklif.bitti.is": ["kisi"],
+  "olay.teklif.teslim.is": ["kisi", "tutar"],
+  "olay.teklif.mektupUlasti": ["kisi", "mesaj"],
+  "olay.teklif.mektupTeslim": ["kisi"],
   "olay.teklif.duzen": ["tur"],
   "olay.borc.odendi": ["kisi", "tutar"],
   "olay.borc.taksit": ["kisi", "tutar", "kalan"],
@@ -43,6 +47,7 @@ export const TOPLUM_HATA_ANAHTARI: Partial<Record<OnlineHata, string>> = {
   teklif_kapandi: "onl.h.teklifKapandi",
   teklif_siniri: "onl.h.teklifSiniri",
   taraf_degil: "onl.h.tarafDegil",
+  ayni_kume: "onl.h.ayniKume",
   kendine: "onl.h.kendine",
   engelli: "onl.h.engelli",
   tavan_doldu: "onl.h.tavanDoldu",

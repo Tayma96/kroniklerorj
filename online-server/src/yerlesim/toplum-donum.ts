@@ -6,10 +6,13 @@ import { iliskiDonumu } from "./iliski.ts";
 import { npcTeklifUret } from "./npc-teklif.ts";
 import { soylentiYay } from "./soylenti.ts";
 import { teklifDonumu } from "./teklif.ts";
+import { oyuncuArabuluculukDonumu } from "./arabuluculuk-oyuncu.ts";
 import type { Kasaba, OlayTaslagi } from "./tipler.ts";
 
 export function toplumDonumu(k: Kasaba, ay: number): OlayTaslagi[] {
   const olaylar = teklifDonumu(k, ay);
+  // Oyuncu arabuluculuğunda cevapsız kalan davetler sessizce ve cezasız kapanır.
+  oyuncuArabuluculukDonumu(k, ay);
   iliskiDonumu(k, ay);
   soylentiYay(k, ay);
   olaylar.push(...npcTeklifUret(k, ay));

@@ -5,7 +5,7 @@
 
 import { doDepo, type Depo } from "./depo.ts";
 import { dunyaCagir, hesapCagir, iletiOku, jsonYanit, yerlesimCagir, yonetimCagir } from "./ic.ts";
-import { girisKaydet, hesapKaydi, hizKontrol, profilGetir, profilOlustur, sakinKaydi, yerlesimeIlet, type HizDurumu, type YerlesimIstegi } from "./mantik.ts";
+import { girisKaydet, hesapKaydi, hizKontrol, profilGetir, profilOlustur, sakinKaydi, yerlesimeIlet, HIZ_SINIRI, type HizDurumu, type YerlesimIstegi } from "./mantik.ts";
 import { basarili, hata, type Env, type HesapIleti, type HesapYaptirimi, type Profil, type Sonuc, type YerlesimIleti } from "./tipler.ts";
 import type { MasaIleti } from "./han/tipler.ts";
 import { uzaklastirmaBilgisi, yaptirimEngeli } from "./yonetim/yaptirim.ts";
@@ -47,7 +47,17 @@ export class HesapDO {
     if (ileti.islem === "debdebeRozetSil") return jsonYanit(await debdebe.rozetKaldir(this.#depo, ileti.id));
     if (ileti.islem === "debdebeGorunum") return jsonYanit(await debdebe.gorunumVer(this.#depo, simdi));
     if (ileti.islem === "debdebeIade") return jsonYanit(await debdebe.iadeIsle(this.#debdebe(ileti.hesapId, simdi), ileti.islemKimligi));
-    const hiz = hizKontrol(this.#hiz, simdi);
+    let sinir = HIZ_SINIRI;
+    try {
+      const calisma = await yonetimCagir(this.#env, { islem: "parametrelerCalisma" });
+      if (calisma.ok && typeof calisma.deger === "object" && calisma.deger !== null) {
+        const etkinSinir = (calisma.deger as Record<string, unknown>).HIZ_SINIRI;
+        if (typeof etkinSinir === "number") sinir = etkinSinir;
+      }
+    } catch {
+      // Yönetim DO erişilemezse hesap varsayılan hız sınırını kullanır.
+    }
+    const hiz = hizKontrol(this.#hiz, simdi, sinir);
     this.#hiz = hiz.durum;
     if (!hiz.izin) return jsonYanit(hata("hiz_siniri"));
     const yaptirim = await this.#yaptirimDurumu();
@@ -177,6 +187,7 @@ export class HesapDO {
       case "dostluk":
       case "teklif":
       case "teklifCevap":
+      case "oyuncuArabuluculuk":
       case "husumet":
       case "duzen":
       case "yalanla":
@@ -269,6 +280,12 @@ export class HesapDO {
       case "pazarIlan":
       case "pazarIslem":
       case "pazarGeri":
+      case "hizmetHazirla":
+      case "hizmetIlan":
+      case "hizmetIslem":
+      case "hizmetGeri":
+      case "hizmetTalepTeslim":
+      case "hizmet":
       case "ismarla":
       case "ismarlamaCevap":
       case "pazar":
@@ -299,6 +316,7 @@ export class HesapDO {
       masaCagir: (ad, i) => masaCagir(env, ad, i),
       ikramOde: ikramOdeyici(env),
       engelSor: (yerlesim) => yerlesimCagir(env, { islem: "engeller", yerlesim, hesapId }),
+      plakaCerçevesi: () => debdebe.plakaCerçevesi(this.#depo, simdi),
     };
   }
 

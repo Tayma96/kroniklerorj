@@ -27,6 +27,7 @@
 //   POST /v1/dostluk {hedef, islem: iste|kabul|ret|bitir, istekNo} → {hedef, bag}
 //   POST /v1/teklif {tur, hedef, ...şartlar, istekNo} → {teklif}
 //   POST /v1/teklif/:id/cevap {cevap: kabul|ret|geri|bitir|ode, tutar?, istekNo} → {teklif}
+//   POST /v1/arabuluculuk {islem: ac|cevap|geri|taslak|imza|uygula, hedef?, arabulucu?, dosya?, cevap?, sTutari?, kTutari?, not?, surum?, istekNo} → {dosya}
 //   GET  /v1/gelen?dil=                  → gelen/giden/süren/kapanan teklifler, dostluk, husumet, söylenti, engel
 //   POST /v1/husumet {hedef, islem: ilan|kaldir, istekNo} → {hedef, husumet}
 //   POST /v1/engelle {hedef, islem: engelle|kaldir, istekNo} → {engellenenler}
@@ -48,6 +49,7 @@
 //   GET  /v1/ismarlama?dil=              → gelen/giden ısmarlamalar, ustalık sicili
 //   POST /v1/ismarlama {hedef, mal, adet, kalite?, sure, ucret, istekNo} → {ismarlama} (ücret emanete)
 //   POST /v1/ismarlama/cevap {ismarlama, cevap: kabul|ret|geri|teslim, kalite?, istekNo} → {ismarlama, teslim?}
+//   POST /v1/hizmet/talep-teslim {talep, istekNo} → ödüllü NPC doğum/yas hizmet talebini tamamlar
 //   GET  /v1/levha?mal=                  → Ustalar Levhası (üstün/şaheser ürünler: kim, ne, ay)
 //   GET  /v1/defter?ay=                  → gelir-gider dökümü (son N ay), emanetteki akçe
 //   POST /v1/sikayet {hedef, neden, aciklama?, istekNo} → {id, durum, kalan}
@@ -99,7 +101,7 @@
 
 import { GoogleDogrulayici, GoogleHatasi, istemciKimlikleri } from "./google.ts";
 import { dunyaCagir, hesapCagir, hesapKimligi, jsonYanit, yonetimCagir } from "./ic.ts";
-import { oturumDogrula, oturumOlustur } from "./oturum.ts";
+import { oturumDogrula, oturumOlustur, sabitSurecliEsit } from "./oturum.ts";
 import {
   basarili,
   hata,
@@ -207,6 +209,35 @@ async function hesaba(
   const hazir = await ileti(yetki.deger);
   if (!hazir.ok) return basarisizYanit(hazir);
   return sonucYaniti(await hesapCagir(env, yetki.deger, hazir.deger));
+}
+
+export async function testGiris(istek: Request, env: Env): Promise<Response> {
+  // Kapalıysa uç dışarıdan görünmez. Açık tutulacaksa bu Worker yalnız test ortamı olmalıdır.
+  const gizliKod = env.TEST_GIRIS_KODU;
+  if (env.TEST_GIRIS_ACIK !== "1" || typeof gizliKod !== "string" || gizliKod.length < 32) {
+    return hataYaniti("bulunamadi");
+  }
+  const govde = await govdeOku(istek);
+  if (!govde.ok) return hataYaniti(govde.hata);
+  const kod = govde.deger.kod;
+  const cihazId = govde.deger.cihazId;
+  if (typeof kod !== "string" || kod.length !== gizliKod.length || typeof cihazId !== "string"
+    || !/^test-[A-Za-z0-9_-]{16,64}$/.test(cihazId)) return hataYaniti("gecersiz_istek");
+  const kodBayt = new TextEncoder().encode(kod);
+  const gizliBayt = new TextEncoder().encode(gizliKod);
+  if (!sabitSurecliEsit(kodBayt, gizliBayt)) return hataYaniti("gecersiz_istek");
+  const anahtar = oturumAnahtari(env);
+  if (!anahtar) return hataYaniti("yapilandirma_eksik");
+
+  // Cihaz kimliği yerel depoda üretilir; "test:" ad alanı Google sub'larıyla çakışmaz.
+  const sub = `test:${cihazId}`;
+  const hesapId = hesapKimligi(env, sub);
+  const kayit = await hesapCagir<{ profilVar: boolean; uzaklastirma?: { bitis: number | null } }>(env, hesapId, {
+    islem: "giris", hesapId, sub,
+  });
+  if (!kayit.ok) return basarisizYanit(kayit);
+  const oturum = await oturumOlustur(hesapId, anahtar, Date.now());
+  return jsonYanit({ oturum, profilVar: kayit.deger.profilVar, ...(kayit.deger.uzaklastirma ? { uzaklastirma: kayit.deger.uzaklastirma } : {}) });
 }
 
 async function giris(istek: Request, env: Env): Promise<Response> {
@@ -349,6 +380,8 @@ async function yonlendir(istek: Request, env: Env): Promise<Response> {
   const yontem = istek.method;
   const dil = url.searchParams.get("dil");
   switch (yol) {
+    case "/v1/test-giris":
+      return yontem === "POST" ? testGiris(istek, env) : hataYaniti("yontem_yok");
     case "/v1/giris":
       return yontem === "POST" ? giris(istek, env) : hataYaniti("yontem_yok");
     case "/v1/dunya":
@@ -433,7 +466,21 @@ async function yonlendir(istek: Request, env: Env): Promise<Response> {
       return yontem === "POST" ? toplulukGovdeli(istek, env, "senlik") : hataYaniti("yontem_yok");
     case "/v1/zaviye":
       return yontem === "POST" ? toplulukGovdeli(istek, env, "zaviye") : hataYaniti("yontem_yok");
-    // Ekonomi (Faz 6): src/yerlesim/ekonomi-uclar.ts
+    // Ekonomi (Faz 6) ve hizmet pazarı (E4.3): src/yerlesim/ekonomi-uclar.ts
+    case "/v1/hizmet":
+      return yontem === "GET" ? hesaba(istek, env, (hesapId) => basarili({ islem: "hizmet", hesapId, dil })) : hataYaniti("yontem_yok");
+    case "/v1/hizmet/hazirla":
+      return yontem === "POST" ? ekonomiGovdeli(istek, env, "hizmetHazirla") : hataYaniti("yontem_yok");
+    case "/v1/hizmet/ilan":
+      return yontem === "POST" ? ekonomiGovdeli(istek, env, "hizmetIlan") : hataYaniti("yontem_yok");
+    case "/v1/hizmet/satin-al":
+      return yontem === "POST" ? ekonomiGovdeli(istek, env, "hizmetIslem") : hataYaniti("yontem_yok");
+    case "/v1/hizmet/geri":
+      return yontem === "POST" ? ekonomiGovdeli(istek, env, "hizmetGeri") : hataYaniti("yontem_yok");
+    case "/v1/hizmet/talep-teslim":
+      return yontem === "POST" ? ekonomiGovdeli(istek, env, "hizmetTalepTeslim") : hataYaniti("yontem_yok");
+    case "/v1/hizmet/gorev":
+      return yontem === "POST" ? ekonomiGovdeli(istek, env, "hizmetGorev") : hataYaniti("yontem_yok");
     case "/v1/pazar":
       return yontem === "GET"
         ? hesaba(istek, env, (hesapId) => basarili({ islem: "pazar", hesapId, mal: url.searchParams.get("mal"), dil }))
@@ -478,6 +525,8 @@ async function yonlendir(istek: Request, env: Env): Promise<Response> {
       return yontem === "POST" ? govdeli(istek, env, "dostluk") : hataYaniti("yontem_yok");
     case "/v1/teklif":
       return yontem === "POST" ? govdeli(istek, env, "teklif") : hataYaniti("yontem_yok");
+    case "/v1/arabuluculuk":
+      return yontem === "POST" ? govdeli(istek, env, "oyuncuArabuluculuk") : hataYaniti("yontem_yok");
     case "/v1/husumet":
       return yontem === "POST" ? govdeli(istek, env, "husumet") : hataYaniti("yontem_yok");
     case "/v1/engelle":

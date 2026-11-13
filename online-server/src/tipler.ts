@@ -131,6 +131,7 @@ export const HATA_DURUMU = {
   taraf_degil: 403,
   kendine: 409,
   engelli: 403,
+  arabulucu_tarafsiz_degil: 409,
   tavan_doldu: 409,
   hediye_dongu: 409,
   aralik_dolu: 409,
@@ -304,6 +305,14 @@ export const HATA_DURUMU = {
   itiraz_yok: 404,
   itiraz_kapali: 409,
   ozerklik_var: 409,
+  darbe_var: 409,
+  darbe_yok: 409,
+  darbe_esik_eksik: 409,
+  darbe_kapali: 409,
+  darbe_soguma: 409,
+  devlet_yok: 404,
+  devlet_kapali: 409,
+  devlet_talep_var: 409,
   ozerklik_yok: 409,
   soguma: 409,
   yapilandirma_eksik: 500,
@@ -334,6 +343,10 @@ export interface Env {
   GOOGLE_CLIENT_ID?: string;
   /** Worker sırrı; en az 32 karakter. */
   OTURUM_ANAHTARI?: string;
+  /** Davet kodlu anonim test girişi; yalnız ayrılmış test Worker'ında "1" yapılır. */
+  TEST_GIRIS_ACIK?: string;
+  /** Yalnız test Worker'ında kullanılan en az 32 karakterlik davet sırrı. */
+  TEST_GIRIS_KODU?: string;
   /** Han masası: masa başına bir MasaDO (idFromName("masa:<yerlesim>:<han>:<no>")); para tutmaz. */
   MASA: DurableObjectNamespace;
   /** Tek örnek YonetimDO (idFromName("yonetim")): roller, işlem kaydı, parametreler, şikayet, yaptırım. */
@@ -432,6 +445,9 @@ export interface YoneticiKimligi {
 
 export const YONETIM_UCLARI = {
   ben: "GET",
+  ekonomi: "GET",
+  telafiler: "GET",
+  telafi: "POST",
   oyuncu: "GET",
   yaptirim: "POST",
   "yaptirim-kaldir": "POST",
@@ -449,6 +465,7 @@ export const YONETIM_UCLARI = {
 export type YonetimUcu = keyof typeof YONETIM_UCLARI;
 
 export type YonetimIleti =
+  | { islem: "parametrelerCalisma" }
   | { islem: "giris"; yonetici: YoneticiKimligi }
   | { islem: "yonet"; yonetici: YoneticiKimligi; uc: YonetimUcu; govde?: unknown; sorgu?: Record<string, string | null> }
   /** HesapDO → YonetimDO: oyuncu şikayeti. */
@@ -482,6 +499,7 @@ export const GOVDELI_ISLEMLER = [
   "dostluk",
   "teklif",
   "teklifCevap",
+  "oyuncuArabuluculuk",
   "husumet",
   "engelle",
   "duzen",
@@ -512,12 +530,13 @@ export type ToplulukIletisi = { islem: ToplulukIslem; hesapId: string; govde: un
 
 /** Ekonomi (Faz 6) gövdeli işlemleri: POST /v1/pazar/ilan, /v1/pazar/islem, /v1/pazar/geri, /v1/ismarlama,
  * /v1/ismarlama/cevap. */
-export const EKONOMI_ISLEMLERI = ["pazarIlan", "pazarIslem", "pazarGeri", "ismarla", "ismarlamaCevap"] as const;
+export const EKONOMI_ISLEMLERI = ["pazarIlan", "pazarIslem", "pazarGeri", "ismarla", "ismarlamaCevap", "hizmetHazirla", "hizmetIlan", "hizmetIslem", "hizmetGeri", "hizmetTalepTeslim", "hizmetGorev"] as const;
 export type EkonomiIslem = (typeof EKONOMI_ISLEMLERI)[number];
 /** Ekonomi iletileri (HesapDO aynen YerlesimDO'ya iletir; `yerlesim` eklenir). */
 export type EkonomiIletisi =
   | { islem: EkonomiIslem; hesapId: string; govde: unknown }
   | { islem: "pazar"; hesapId: string; mal?: string | null; dil?: string | null }
+  | { islem: "hizmet"; hesapId: string; dil?: string | null }
   | { islem: "ismarlamalar"; hesapId: string; dil?: string | null }
   | { islem: "levha"; hesapId: string; mal?: string | null }
   | { islem: "defter"; hesapId: string; ay?: string | null };
@@ -539,6 +558,8 @@ export interface SakinKaydi {
 
 /** HesapDO → YerlesimDO. `yerlesim` profildeki işaretçidir (DO adını bilmez). */
 export type YerlesimIleti =
+  | { islem: "ekonomiSagligi"; yerlesim: string }
+  | { islem: "yonetimTelafi"; yerlesim: string; hesapId: string; govde: unknown }
   | { islem: "sakinEkle"; yerlesim: string; sakin: SakinKaydi }
   | { islem: "durum"; yerlesim: string; hesapId: string; dil?: string | null }
   | { islem: "olaylar"; yerlesim: string; hesapId: string; imlec?: string | null; dil?: string | null }

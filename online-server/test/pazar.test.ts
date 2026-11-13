@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { MALLAR } from "../src/icerik/mallar.ts";
 import { satisDegeri } from "../src/yerlesim/npc-taban.ts";
-import { NPC_SATIS_KOTASI, npcyeSat } from "../src/yerlesim/pazar.ts";
+import { NPC_SATIS_KOTASI, npcSatisKotasi, npcyeSat } from "../src/yerlesim/pazar.ts";
 import { oyuncuEkle, testKasabasi } from "./kasaba-yardimci.ts";
 
 const hicKimse = () => 0;
@@ -13,13 +13,14 @@ test("NPC'ye satış: akçe birim × adet kadar artar, envanter düşer, fiyat d
   const c = oyuncuEkle(k);
   c.ev = { nal: 4 };
   const pa = c.pa;
+  const digerMeslektas = Math.max(0, 3 - (c.ms?.a === "demirci" ? 1 : 0));
   const r = npcyeSat(c, "nal", 3, herkes, k.ay);
   assert.ok(r.ok, JSON.stringify(r));
-  assert.deepEqual(r.deger.birim, satisDegeri("nal", 3));
+  assert.deepEqual(r.deger.birim, satisDegeri("nal", digerMeslektas));
   assert.equal(r.deger.tutar, MALLAR.nal.taban * 3);
   assert.equal(c.pa - pa, r.deger.tutar, "akçe yalnız satış tutarı kadar değişir");
   assert.deepEqual(c.ev, { nal: 1 });
-  assert.deepEqual(r.deger.kota, { satilan: 3, tavan: NPC_SATIS_KOTASI, kalan: NPC_SATIS_KOTASI - 3 });
+  assert.deepEqual(r.deger.kota, { satilan: 3, tavan: npcSatisKotasi("nal", digerMeslektas), kalan: npcSatisKotasi("nal", digerMeslektas) - 3 });
 });
 
 test("kıtlık primi: malın mesleğinde oyuncu yoksa birim fiyata prim eklenir", () => {
@@ -36,13 +37,27 @@ test("kota ay içinde dolar, ay değişince sıfırlanır", () => {
   const k = testKasabasi();
   const c = oyuncuEkle(k);
   c.ev = { odun: 50 };
-  assert.ok(npcyeSat(c, "odun", NPC_SATIS_KOTASI, herkes, k.ay).ok);
+  const kota = npcSatisKotasi("odun");
+  assert.ok(npcyeSat(c, "odun", kota, herkes, k.ay).ok);
   const pa = c.pa;
   assert.deepEqual(npcyeSat(c, "odun", 1, herkes, k.ay), { ok: false, hata: "kota_doldu" });
   assert.equal(c.pa, pa);
-  assert.equal(c.ev.odun, 50 - NPC_SATIS_KOTASI);
+  assert.equal(c.ev.odun, 50 - kota);
   assert.deepEqual(npcyeSat(c, "tas", 1, herkes, k.ay), { ok: false, hata: "mal_yok" }, "envanterde yok");
   assert.ok(npcyeSat(c, "odun", 2, herkes, k.ay + 1).ok, "yeni ay, yeni kota");
+});
+
+test("yüksek değerli demirci mallarında kasaba talebi ayrı ve daha düşüktür", () => {
+  const k = testKasabasi();
+  const c = oyuncuEkle(k);
+  c.ev = { alet: 5, odun: 10 };
+  assert.equal(npcSatisKotasi("alet"), 1, "tek demircide yüksek fiyatlı alet birimi sınırlıdır");
+  assert.equal(npcSatisKotasi("nal"), 2, "nal kotası ayrı kalır");
+  assert.equal(npcSatisKotasi("alet", 1), NPC_SATIS_KOTASI, "başka demirci varsa kasaba talebi genişler");
+  assert.ok(npcyeSat(c, "alet", 1, hicKimse, k.ay).ok);
+  assert.deepEqual(npcyeSat(c, "alet", 1, hicKimse, k.ay), { ok: false, hata: "kota_doldu" });
+  assert.equal(npcSatisKotasi("odun"), 8, "oduncu ham ve yarı mamul arzı için daha geniş kota");
+  assert.ok(npcyeSat(c, "odun", 8, herkes, k.ay).ok);
 });
 
 test("geçersiz: su satılmaz, negatif/kesirli/sıfır adet, bilinmeyen mal, envanter yetmez", () => {
@@ -113,14 +128,14 @@ test("kıtlık kotası: prim ayda mal başına yalnız KITLIK_KOTASI birime; dö
   const { KITLIK_PRIM } = await import("../src/yerlesim/npc-taban.ts");
   const k = testKasabasi();
   const c = oyuncuEkle(k);
-  c.ev = { nal: 6 };
-  const prim = Math.ceil(MALLAR.nal.taban * KITLIK_PRIM);
-  const r = npcyeSat(c, "nal", 4, hicKimse, k.ay);
+  c.ev = { odun: 6 };
+  const prim = Math.ceil(MALLAR.odun.taban * KITLIK_PRIM);
+  const r = npcyeSat(c, "odun", 4, hicKimse, k.ay);
   assert.ok(r.ok);
-  assert.equal(r.deger.tutar, 4 * MALLAR.nal.taban + KITLIK_KOTASI * prim);
+  assert.equal(r.deger.tutar, 4 * MALLAR.odun.taban + KITLIK_KOTASI * prim);
   assert.equal(r.deger.dokum.kalemler.reduce((t, x) => t + x.d, 0), r.deger.tutar);
   assert.equal(r.deger.kitlikKalan, 0);
-  const r2 = npcyeSat(c, "nal", 1, hicKimse, k.ay);
+  const r2 = npcyeSat(c, "odun", 1, hicKimse, k.ay);
   assert.ok(r2.ok);
-  assert.deepEqual(r2.deger.birim, { toplam: MALLAR.nal.taban, kalemler: [{ k: "taban", d: MALLAR.nal.taban }] }, "kota dolunca primsiz");
+  assert.deepEqual(r2.deger.birim, { toplam: MALLAR.odun.taban, kalemler: [{ k: "taban", d: MALLAR.odun.taban }] }, "kota dolunca primsiz");
 });

@@ -64,6 +64,7 @@ test("mülk uçları: edinim, transfer protokolü, oyuncu hanı kirası, persone
     const ay = oyunAyi(saat);
     const kar1 = kayit.depolama.veri.get("o:o1") as Nesne;
     Object.assign(kar1, { pa: 1000, nm: [30, 30, 0, 0], d: ay - 12 * 20 });
+    kar1.ms = { a: "hanci", y: "", at: ay, s: { hanci: { kd: 0, hz: 0, cy: 0, sv: { "hanci.yatakAhir": 1 } } } };
     kayit.depolama.veri.set("o:o1", kar1);
     yerlesimler.ornekler.set(yId.toString(), { ornek: new YerlesimDO({ id: yId, storage: kayit.depolama } as DurableObjectState, env, () => saat), depolama: kayit.depolama });
 

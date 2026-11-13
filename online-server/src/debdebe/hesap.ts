@@ -20,6 +20,7 @@ import {
   COSMETIC,
   gorunenler,
   herkeseGorunum,
+  plakaSusu as kozmetikPlakaSusu,
   iadeUygula,
   istekBul,
   istekYaz,
@@ -356,6 +357,11 @@ export async function rozetKaldir(depo: Depo, id: unknown): Promise<Sonuc<unknow
   const silindi = rozetSil(c, id);
   if (silindi) await kaydet(depo, c);
   return basarili({ silindi });
+}
+
+/** Masa isim plakasında kullanılacak kozmetik çerçeve; yalnız sunucunun okuduğu sahiplikten gelir. */
+export async function plakaCerçevesi(depo: Depo, simdi: number): Promise<string | undefined> {
+  return kozmetikPlakaSusu(await oku(depo), simdi)?.cerceve;
 }
 
 export async function gorunumVer(depo: Depo, simdi: number): Promise<Sonuc<unknown>> {

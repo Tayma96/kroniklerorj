@@ -19,7 +19,7 @@ import { AltPanel, Baslik2, BosKart, Degisim, Hap, OnlineSayfa, Rozet, SayfaBasi
 import { hataAnahtari } from "../../lib/online/hata";
 import { isaretli, kalemYaz } from "../../lib/online/metin";
 import {
-  IS_IKON, ISLER, MALLAR, MAL_IKON, NPC_AYLIK_KOTA, NPC_MALLARI, NPC_SATIS_KOTASI, TEMEL_ISLER, TEMEL_IS_YASI, TEMEL_TAKAT, kitlikPrimi, npcEtiketFiyati, satilirMi,
+  IS_IKON, ISLER, MALLAR, MAL_IKON, NPC_AYLIK_KOTA, NPC_MALLARI, npcSatisKotasi, TEMEL_ISLER, TEMEL_IS_YASI, TEMEL_TAKAT, kitlikPrimi, npcEtiketFiyati, satilirMi,
 } from "../../lib/online/meslek-veri";
 import { MAL_IDLERI, type Dokum, type IsId, type MalId, type OnlineHata, type SatYaniti, type TabanAlYaniti, type TemelIsYaniti } from "../../lib/online/protokol";
 import type { Lang } from "../../lib/locale-data";
@@ -51,8 +51,8 @@ function isHatasi(h: OnlineHata, t: Ceviri): string {
   return t(hataAnahtari(h));
 }
 /** Satış hatası: kota satış kotasıyla, mal_yok ambarla anlatılır. */
-function satHatasi(h: OnlineHata, t: Ceviri): string {
-  if (h === "kota_doldu") return applyParams(t("onl.sat.h.kota"), [NPC_SATIS_KOTASI]);
+function satHatasi(h: OnlineHata, t: Ceviri, tavan: number): string {
+  if (h === "kota_doldu") return applyParams(t("onl.sat.h.kota"), [tavan]);
   if (h === "mal_yok") return t("onl.h.malYok");
   return t(hataAnahtari(h));
 }
@@ -65,6 +65,8 @@ function IslerEkran() {
   const dar = useWindowDimensions().width < 360;
   const o = useYerlesimEkrani();
   const y = o.yerlesim;
+  const digerMeslekSayisi = (meslek: string) => Math.max(0, (o.lonca?.find((x) => x.meslek === meslek)?.oyuncu ?? 0) - (y?.ben.meslek?.a === meslek ? 1 : 0));
+  const satisTavan = (m: MalId) => npcSatisKotasi(m, digerMeslekSayisi(MALLAR[m].meslek));
   const [sonuc, setSonuc] = useState<Sonuc>(null);
   const [isHata, setIsHata] = useState<{ is: IsId; metin: string } | null>(null);
   const [alim, setAlim] = useState<{ mal: MalId; adet: number } | null>(null);
@@ -96,10 +98,10 @@ function IslerEkran() {
     if (!satim) return;
     setSatimHata(null);
     const s = await o.sat(satim.mal, satim.adet);
-    if (s.ok) { hap("success"); setSatim(null); setSonuc({ tur: "sat", y: s.deger }); } else { hap("error"); setSatimHata(satHatasi(s.hata, t)); }
+    if (s.ok) { hap("success"); setSatim(null); setSonuc({ tur: "sat", y: s.deger }); } else { hap("error"); setSatimHata(satHatasi(s.hata, t, satisTavan(satim.mal))); }
   };
   const kitlikVar = (m: MalId) => o.lonca?.find((x) => x.meslek === MALLAR[m].meslek)?.oyuncu === 0;
-  const satisKalan = (m: MalId) => o.satisKotasi(m)?.kalan ?? NPC_SATIS_KOTASI;
+  const satisKalan = (m: MalId) => o.satisKotasi(m)?.kalan ?? satisTavan(m);
   const satimEnCok = satim ? Math.max(0, Math.min(ev?.[satim.mal] ?? 0, satisKalan(satim.mal))) : 0;
 
   const paneller = <>
@@ -181,9 +183,9 @@ function IslerEkran() {
           })}
         </View> : null}
         <Text style={{ fontFamily: F.serif, fontSize: 14, lineHeight: 19, color: C.parchmentMuted, textAlign: "center" }}>
-          {o.satisKotasi(satim.mal) ? applyParams(t("onl.sat.kalan"), [satisKalan(satim.mal), NPC_SATIS_KOTASI]) : applyParams(t("onl.sat.kotaNot"), [NPC_SATIS_KOTASI])}
+          {o.satisKotasi(satim.mal) ? applyParams(t("onl.sat.kalan"), [satisKalan(satim.mal), satisTavan(satim.mal)]) : applyParams(t("onl.sat.kotaNot"), [npcSatisKotasi(satim.mal)])}
         </Text>
-        {satimHata ? <Bant metin={satimHata} rtl={rtl} /> : satisKalan(satim.mal) <= 0 ? <Bant tur="bilgi" metin={applyParams(t("onl.sat.h.kota"), [NPC_SATIS_KOTASI])} rtl={rtl} /> : null}
+        {satimHata ? <Bant metin={satimHata} rtl={rtl} /> : satisKalan(satim.mal) <= 0 ? <Bant tur="bilgi" metin={applyParams(t("onl.sat.h.kota"), [npcSatisKotasi(satim.mal)])} rtl={rtl} /> : null}
         <AltinDugme etiket={applyParams(t("onl.sat.dugme"), [Math.min(satim.adet, Math.max(1, satimEnCok))])} icon="coins" rtl={rtl} kapali={satimEnCok <= 0} bekliyor={o.islem === "sat"} onPress={() => { void sat(); }} />
       </> : null}
     </AltPanel>
@@ -265,7 +267,7 @@ function IslerEkran() {
     <Baslik2 metin={t("onl.is.ambar")} rtl={rtl} sag={<Text style={{ fontFamily: F.display, fontSize: 12, color: C.gold }}>{ambar.reduce((a, m) => a + (ev?.[m] ?? 0), 0)}</Text>} />
     {ev === null ? <BosKart icon="backpack" metin={t("onl.is.ambarBilinmiyor")} rtl={rtl} />
       : ambar.length ? <>
-        <Text style={{ marginBottom: 10, fontFamily: F.serif, fontSize: 14.5, lineHeight: 20, color: C.parchmentDim, textAlign: hiza(rtl) }}>{applyParams(t("onl.sat.alt"), [NPC_SATIS_KOTASI])}</Text>
+        <Text style={{ marginBottom: 10, fontFamily: F.serif, fontSize: 14.5, lineHeight: 20, color: C.parchmentDim, textAlign: hiza(rtl) }}>{t("onl.sat.alt")}</Text>
         <Cerceve ic={{ paddingHorizontal: 12, paddingVertical: 4 }}>
         {ambar.map((m, i) => <View key={m}
           style={{ flexDirection: yon(rtl), alignItems: "center", gap: 10, minHeight: 52, paddingVertical: 4, borderTopWidth: i ? 1 : 0, borderColor: "rgba(201,162,78,0.12)" }}>

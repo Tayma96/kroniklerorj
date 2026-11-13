@@ -6,9 +6,9 @@
 // Sağlayıcı app/online/_layout.tsx'te durur; bütün /online ekranları aynı durumu paylaşır.
 // Tek oyunculu motor, kayıt ya da eski MP katmanı içe aktarılmaz.
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { ONLINE_SUNUCU_URL, sunucuAdresi } from "./ayar";
+import { ONLINE_SUNUCU_URL, ONLINE_TEST_GIRIS, sunucuAdresi } from "./ayar";
 import { adDuzenle } from "./ad";
-import { imlecOku, imlecYaz, istekNoUret, meslekOku, meslekYaz, oturumOku, oturumSil, oturumYaz, taslakOku, taslakSil, taslakYaz, type Taslak } from "./depo";
+import { imlecOku, imlecYaz, istekNoUret, meslekOku, meslekYaz, oturumOku, oturumSil, oturumYaz, taslakOku, taslakSil, taslakYaz, testCihazKimligi, type Taslak } from "./depo";
 import { useI18n } from "../i18n";
 import { oturumHatasiMi } from "./hata";
 import { httpIstemci, type OnlineIstemci } from "./istemci";
@@ -87,6 +87,8 @@ export interface OnlineDurum {
   geriYukle(): Promise<void>;
   /** Faz 1d: Google kimlik belirteciyle giriş. */
   googleGiris(idToken: string): Promise<Sonuc<GirisYaniti>>;
+  /** Yalnız test APK'sında açık; davet kodu + kalıcı cihaz kimliğiyle Google'sız giriş. */
+  testGiris(kod: string): Promise<Sonuc<GirisYaniti>>;
   gelistiriciGiris(): void;
   cikis(): Promise<void>;
   taslakGuncelle(p: Partial<Pick<Taslak, "ad" | "cinsiyet" | "yerlesim">>): void;
@@ -382,6 +384,21 @@ export function OnlineDurumSaglayici({ children, tohum }: { children: ReactNode;
     hata,
 
     geriYukle,
+    testGiris: (kod) =>
+      calistir("giris", async () => {
+        if (!ONLINE_TEST_GIRIS) return basarisiz("gecersiz_istek");
+        const cihazId = await testCihazKimligi();
+        const g = await http.testGiris(kod.trim(), cihazId);
+        if (!g.ok) return g;
+        belirtec.current = g.deger.oturum;
+        await oturumYaz(g.deger.oturum);
+        setOturum({ tur: "sunucu" });
+        if (g.deger.profilVar) {
+          const p = await http.profil();
+          if (p.ok) setProfil(p.deger);
+        }
+        return g;
+      }, true),
     googleGiris: (idToken) =>
       calistir("giris", async () => {
         const g = await http.giris(idToken);

@@ -36,8 +36,8 @@ export function sahteSoket(): SahteSoket {
   return s;
 }
 
-export function bilet(hesap: string, ad = hesap, yt: HesapYaptirimi = {}): MasaBileti {
-  return { masa: MASA, no: 1, plaka: { hesap, ad }, yt };
+export function bilet(hesap: string, ad = hesap, yt: HesapYaptirimi = {}, cerceve?: string): MasaBileti {
+  return { masa: MASA, no: 1, plaka: { hesap, ad, ...(cerceve ? { cerceve } : {}) }, yt };
 }
 
 /** Bellekte masa: soket listesi + değiştirilebilir saat; her çağrıda taze bağlam üretir. */

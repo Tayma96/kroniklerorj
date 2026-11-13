@@ -4,8 +4,11 @@
 // ve defter.ts'dedir; burada yalnız yükleme, defter kalemleri ve görünüm vardır.
 
 import { MALLAR, malBul, type MalId } from "../icerik/mallar.ts";
+import { HIZMET_TARIFLERI } from "./hizmet-tarif.ts";
 import { basarili, hata, type Sonuc } from "../tipler.ts";
 import { DEFTER_AY, defterGorunumu } from "./defter.ts";
+import { hizmetHazirla, hizmetIlanAc, hizmetIlanBul, hizmetIlanGeri, hizmetIlanGorunumu, hizmetIlanIsle, hizmetIlanlar, hizmetNpcTalepleri, hizmetNpcTalepTeslim, hizmetStoguGecerli, hizmetStoguGorunumu, hizmetYetkiliMi } from "./hizmet-pazari.ts";
+import { hizmetGorevleri, hizmetGorevTeslim } from "./hizmet-gorev.ts";
 import {
   ISMARLAMA_ADET_EN_COK,
   ISMARLAMA_MUSTERI_EN_COK,
@@ -31,6 +34,7 @@ import {
   PAZAR_KUME_CARPANI,
   PAZAR_SURE_EN_COK,
   acikIlanlar,
+  ekonomiAl,
   ilanAc,
   ilanBul,
   ilanGeri,
@@ -45,6 +49,116 @@ function nesneMi(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
 }
 const aylik = (s: [number, number] | undefined, ay: number) => (s && s[0] === ay ? s[1] : 0);
+
+/** GET /v1/hizmet: öğrenilmiş hizmet kataloğu ve oyuncunun süresi geçmemiş hazır stoğu. */
+export function hizmetOku(m: YerlesimMotoru, hesapId: string): Promise<Sonuc<unknown>> {
+  return m.ekonomiOku(hesapId, (kar, ay) => {
+    const katalog = HIZMET_TARIFLERI.map((tarif) => ({
+      id: tarif.id,
+      meslek: tarif.meslek,
+      dugum: tarif.dugum,
+      seviye: tarif.seviye,
+      girdi: tarif.girdi,
+      takat: tarif.takat,
+      aylikTavan: tarif.aylikTavan,
+      hedef: tarif.hedef,
+      etki: tarif.etki,
+      hazir: tarif.hazir,
+      fiyatTaban: tarif.fiyatTaban,
+      npcOdul: tarif.npcOdul ?? null,
+      acik: hizmetYetkiliMi(kar, tarif),
+    }));
+    const ek = m.kasaba.ek;
+    const stok = (ek?.hs ?? [])
+      .filter((x) => x.o === kar.o && hizmetStoguGecerli(x, ay))
+      .map((x) => hizmetStoguGorunumu(x, ay));
+    const ilanlar = hizmetIlanlar(ek, ay).map((x) => hizmetIlanGorunumu(x, kar.o, ay));
+    const benimIlanlar = hizmetIlanlar(ek, ay).filter((x) => x.o === kar.o).map((x) => hizmetIlanGorunumu(x, kar.o, ay));
+    return basarili({ katalog, stok, ilanlar, benimIlanlar, npcTalepleri: hizmetNpcTalepleri(ek, ay), gorevler: hizmetGorevleri(ek, ay), kurallar: { tekHazirlamaEnCok: 5, hizmetStokEnCok: 20, acikIlanEnCok: 5, alimAdetEnCok: 5 } });
+  });
+}
+
+/** POST /v1/hizmet/hazirla {hizmet, adet, istekNo}: mal ve takat harcayıp süreli hizmet stoğu üretir. */
+export function hizmetHazirlaUc(m: YerlesimMotoru, hesapId: string, govde: unknown): Promise<Sonuc<unknown>> {
+  if (!nesneMi(govde)) return Promise.resolve(hata("gecersiz_istek"));
+  return m.ekonomiYaz(hesapId, govde, "hizmetHazirla", [], (kar, ay) => {
+    const r = hizmetHazirla(ekonomiAl(m.kasaba), kar, govde.hizmet, govde.adet, ay);
+    if (!r.ok) return r;
+    return basarili({ hazirlama: r.deger, stok: hizmetStoguGorunumu(r.deger.stok, ay) });
+  });
+}
+
+/** POST /v1/hizmet/ilan {stok, adet, fiyat, istekNo}: hazır stoğu pazara ayırır. */
+export function hizmetIlanUc(m: YerlesimMotoru, hesapId: string, govde: unknown): Promise<Sonuc<unknown>> {
+  if (!nesneMi(govde)) return Promise.resolve(hata("gecersiz_istek"));
+  return m.ekonomiYaz(hesapId, govde, "hizmetIlan", [], (kar, ay) => {
+    const r = hizmetIlanAc(ekonomiAl(m.kasaba), kar, govde.stok, govde.adet, govde.fiyat, ay);
+    if (!r.ok) return r;
+    return basarili({ ilan: hizmetIlanGorunumu(r.deger, kar.o, ay) });
+  });
+}
+
+/** POST /v1/hizmet/geri {ilan, istekNo}: açık ilanı kapatır ve bozulmamış stoğu iade eder. */
+export function hizmetGeriUc(m: YerlesimMotoru, hesapId: string, govde: unknown): Promise<Sonuc<unknown>> {
+  if (!nesneMi(govde)) return Promise.resolve(hata("gecersiz_istek"));
+  return m.ekonomiYaz(hesapId, govde, "hizmetGeri", [], (kar, ay) => {
+    const r = hizmetIlanGeri(ekonomiAl(m.kasaba), kar, govde.ilan, ay);
+    if (!r.ok) return r;
+    return basarili({ ilan: hizmetIlanGorunumu(r.deger.ilan, kar.o, ay), iade: r.deger.iade });
+  });
+}
+
+/** POST /v1/hizmet/satin-al {ilan, adet, istekNo}: satıcı çevrimdışı olsa da aynı ekonomi yazımında yüklenir. */
+export async function hizmetIslemUc(m: YerlesimMotoru, hesapId: string, govde: unknown): Promise<Sonuc<unknown>> {
+  if (!nesneMi(govde)) return hata("gecersiz_istek");
+  const ilan = hizmetIlanBul(m.kasaba.ek, govde.ilan);
+  return m.ekonomiYaz(hesapId, govde, "hizmetSatis", ilan ? [ilan.o] : [], (alici, ay, ek) => {
+    const satici = ilan ? m.kasaba.kar.get(ilan.o) : undefined;
+    const r = hizmetIlanIsle(ekonomiAl(m.kasaba), alici, satici, govde.ilan, govde.adet, ay);
+    if (!r.ok) return r;
+    if (satici) ek.digerleri.push(satici.o);
+    return basarili({
+      islem: {
+        ilan: hizmetIlanGorunumu(r.deger.ilan, alici.o, ay),
+        adet: r.deger.adet,
+        tutar: r.deger.tutar,
+        etki: r.deger.etki,
+        hizmetPuani: r.deger.hizmetPuani,
+        odul: r.deger.odul,
+      },
+    });
+  });
+}
+
+/** POST /v1/hizmet/talep-teslim {talep, istekNo}: hazine ödüllü NPC hizmet talebini tek kez tamamlar. */
+export function hizmetTalepTeslimUc(m: YerlesimMotoru, hesapId: string, govde: unknown): Promise<Sonuc<unknown>> {
+  if (!nesneMi(govde)) return Promise.resolve(hata("gecersiz_istek"));
+  return m.ekonomiYaz(hesapId, govde, "hizmetNpcTalep", [], (kar, ay, ek) => {
+    const r = hizmetNpcTalepTeslim(ekonomiAl(m.kasaba), m.kasaba, kar, govde.talep, ay);
+    if (!r.ok) return r;
+    ek.olaylar.push(r.deger.olay);
+    (ek.defter ??= []).push([kar.o, "hizmetNpc", r.deger.odul]);
+    return basarili({ talep: r.deger.talep, odul: r.deger.odul });
+  });
+}
+
+/** POST /v1/hizmet/gorev {gorev, istekNo}: koltuklu kasaba görevini tek kez tamamlar. */
+export function hizmetGorevTeslimUc(m: YerlesimMotoru, hesapId: string, govde: unknown): Promise<Sonuc<unknown>> {
+  if (!nesneMi(govde)) return Promise.resolve(hata("gecersiz_istek"));
+  return m.ekonomiYaz(hesapId, govde, "hizmetGorev", [], (kar, ay, ek) => {
+    const r = hizmetGorevTeslim(m.kasaba, kar, govde.gorev, ay);
+    if (!r.ok) return r;
+    ek.topluluk = true;
+    ek.olaylar.push(r.deger.olay);
+    (ek.defter ??= []).push([kar.o, "hizmetGorev", r.deger.odul]);
+    return basarili({
+      gorev: { id: "kg" + r.deger.gorev.i, tur: r.deger.gorev.tur, durum: r.deger.gorev.d },
+      odul: r.deger.odul,
+      hizmetPuani: r.deger.hizmetPuani,
+      arac: r.deger.arac ?? null,
+    });
+  });
+}
 
 /** Pazar kuralları (ekranda açıkça yazılır; gizli sayı yok). */
 export const PAZAR_KURALLARI = {
@@ -74,7 +188,7 @@ export function pazarOku(m: YerlesimMotoru, hesapId: string, malHam: unknown): P
     const acik = acikIlanlar(k.ek).filter((x) => !mal || x.ml === mal);
     const ozet = new Map<MalId, { mal: MalId; npcTaban: number; npcdenAlis: number; enUcuzSatis: number | null; enYuksekAlim: number | null }>();
     for (const x of acik) {
-      const o = ozet.get(x.ml) ?? { mal: x.ml, npcTaban: MALLAR[x.ml].taban, npcdenAlis: npcFiyat(x.ml).toplam, enUcuzSatis: null, enYuksekAlim: null };
+      const o = ozet.get(x.ml) ?? { mal: x.ml, npcTaban: MALLAR[x.ml].taban, npcdenAlis: npcFiyat(x.ml, m.kasaba.pr).toplam, enUcuzSatis: null, enYuksekAlim: null };
       if (x.t === "sat") o.enUcuzSatis = o.enUcuzSatis === null ? x.f : Math.min(o.enUcuzSatis, x.f);
       else o.enYuksekAlim = o.enYuksekAlim === null ? x.f : Math.max(o.enYuksekAlim, x.f);
       ozet.set(x.ml, o);

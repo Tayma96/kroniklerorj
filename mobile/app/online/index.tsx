@@ -1,6 +1,7 @@
 // Çevrimiçi giriş: sahne, vaat, Google düğmesi (Faz 1d'de bağlanır; şimdilik kapalı) ve yalnız geliştirici
 // kapısı açıkken görünen, sahte veriyle ilerleyen geliştirici oturumu.
-import { View, Text, ScrollView, ActivityIndicator, useWindowDimensions } from "react-native";
+import { useState } from "react";
+import { View, Text, TextInput, ScrollView, ActivityIndicator, useWindowDimensions } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated from "react-native-reanimated";
@@ -12,6 +13,7 @@ import { hap } from "../../lib/haptics";
 import { OnlineYakinda } from "../../lib/online-yakinda";
 import { OnlineKapisi, useOnline } from "../../lib/online/durum";
 import { onlineEkranAcik } from "../../lib/online/kapi";
+import { ONLINE_TEST_GIRIS } from "../../lib/online/ayar";
 import { genelHataMi, hataAnahtari } from "../../lib/online/hata";
 import { AltinDugme, Bant, Cerceve, CizgiDugme, GeriDugme, giris, geriGit, Madalyon, Ornament, ONL, Sahne, hiza, yon } from "../../lib/online/ui";
 
@@ -28,7 +30,17 @@ function GirisEkran() {
   const ins = useSafeAreaInsets();
   const { width: W, height: H } = useWindowDimensions();
   const o = useOnline();
+  const [testKod, setTestKod] = useState("");
+  const [testHata, setTestHata] = useState<string | null>(null);
+  const [testBekliyor, setTestBekliyor] = useState(false);
   const dar = W < 360;
+  const testGiris = async () => {
+    setTestBekliyor(true); setTestHata(null);
+    const r = await o.testGiris(testKod);
+    setTestBekliyor(false);
+    if (!r.ok) { setTestHata(t(hataAnahtari(r.hata))); return; }
+    hap("success"); router.replace(r.deger.profilVar ? "/online/varis" : "/online/profil");
+  };
   const devam = () => router.push(o.profil ? "/online/varis" : "/online/profil");
   const gelistirici = () => { o.gelistiriciGiris(); router.push("/online/profil"); };
 
@@ -97,6 +109,15 @@ function GirisEkran() {
             </View>
           </>
         )}
+        {ONLINE_TEST_GIRIS && !o.oturum ? <View style={{ marginTop: 8, borderRadius: 10, borderWidth: 1, borderStyle: "dashed", borderColor: "rgba(201,162,78,0.5)", backgroundColor: "rgba(14,10,6,0.78)", padding: 13, gap: 9 }}>
+          <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: rtl ? 0 : 1, color: C.goldBright, textAlign: hiza(rtl) }}>{t("onl.g.testGiris")}</Text>
+          <Text style={{ fontFamily: F.serif, fontSize: 13.5, lineHeight: 18, color: C.parchmentDim, textAlign: hiza(rtl) }}>{t("onl.g.testNot")}</Text>
+          <TextInput value={testKod} onChangeText={setTestKod} autoCapitalize="characters" autoCorrect={false} secureTextEntry maxLength={128}
+            placeholder={t("onl.g.testKod")} placeholderTextColor={C.parchmentMuted}
+            style={{ minHeight: 48, borderWidth: 1, borderColor: "rgba(201,162,78,0.45)", borderRadius: 8, paddingHorizontal: 12, color: C.parchment, fontFamily: F.display, textAlign: hiza(rtl) }} />
+          {testHata ? <Bant metin={testHata} rtl={rtl} /> : null}
+          <AltinDugme etiket={t("onl.g.testGiris")} icon="key-round" rtl={rtl} bekliyor={testBekliyor} kapali={testBekliyor || testKod.trim().length < 24} onPress={() => void testGiris()} />
+        </View> : null}
         {genelHataMi(o.hata) ? <Bant metin={t(hataAnahtari(o.hata))} rtl={rtl} eylem={t("onl.yenidenDene")} onEylem={() => { void o.geriYukle(); }} /> : null}
       </Animated.View>
 

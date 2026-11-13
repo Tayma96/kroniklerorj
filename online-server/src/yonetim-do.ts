@@ -3,9 +3,12 @@
 // İnce sarmalayıcıdır; kurallar src/yonetim/islem.ts'dedir.
 
 import { doDepo, type Depo } from "./depo.ts";
-import { dunyaCagir, hesapCagir, iletiOku, jsonYanit } from "./ic.ts";
+import { dunyaCagir, hesapCagir, iletiOku, jsonYanit, yerlesimCagir } from "./ic.ts";
+import { YERLESIMLER } from "./dunya-veri.ts";
+import type { SiyasiKimlik } from "./siyaset/tipler.ts";
 import { HIZ_PENCERESI_MS, hizKontrol, type HizDurumu } from "./mantik.ts";
-import { hata, type Env, type Profil, type YonetimIleti } from "./tipler.ts";
+import { basarili, hata, type Env, type Profil, type YonetimIleti } from "./tipler.ts";
+import { etkinDeger, PARAMETRELER, type ParametreAdi, type ParametreKaydi } from "./yonetim/parametre.ts";
 import { yonetimIsle, type YonetimBaglami } from "./yonetim/islem.ts";
 import { kurucuListesi } from "./yonetim/yetki.ts";
 import { masaAtmaKaydet } from "./han/y1-kayit.ts";
@@ -54,6 +57,12 @@ export class YonetimDO {
     const ileti = await iletiOku<YonetimIleti>(istek);
     if (!ileti) return jsonYanit(hata("gecersiz_istek"));
     const simdi = Date.now();
+    if (ileti.islem === "parametrelerCalisma") {
+      const adlar = Object.keys(PARAMETRELER) as ParametreAdi[];
+      const kayitlar = await this.#depo.alCok<ParametreKaydi>(adlar.map((ad) => `param:${ad}`));
+      const degerler = Object.fromEntries(adlar.map((ad) => [ad, etkinDeger(PARAMETRELER[ad], kayitlar.get(`param:${ad}`))]));
+      return jsonYanit(basarili(degerler));
+    }
     if (ileti.islem === "masaAtma") return jsonYanit(await masaAtmaKaydet(this.#depo, ileti));
     if (ileti.islem === "giris" || ileti.islem === "yonet") {
       if (!hizTablosuSay(this.#hiz, ileti.yonetici.eposta, simdi)) return jsonYanit(hata("hiz_siniri"));
@@ -64,6 +73,43 @@ export class YonetimDO {
       simdi,
       kurucular: kurucuListesi(env.YONETICI_EPOSTALAR),
       oyuncuBul: (sorgu) => dunyaCagir<Profil>(env, { islem: "oyuncuBul", ...sorgu }),
+      siyasiKimlikOku: (hesapId, yerlesim) => yerlesimCagir<SiyasiKimlik>(env, { islem: "siyasetKimlik", yerlesim, hesapId }),
+      telafiYaz: (yerlesim, hedef, govde) => yerlesimCagir(env, { islem: "yonetimTelafi", yerlesim, hesapId: hedef, govde }),
+      ekonomiOku: async () => {
+        type Satir = { yerlesim: string; oyuncuSayisi: number; npcSayisi: number; toplamAkce: number; bakiyeler: number[]; ortalamaAkce: number; medyanAkce: number; enDusukAkce: number; enYuksekAkce: number; son12Ay: { gelir: number; gider: number; net: number }; kasabaStokAdet: number; acikSiparis: number };
+        const sonuclar = await Promise.all(YERLESIMLER.map(async (y) => {
+          try { return await yerlesimCagir<Satir>(env, { islem: "ekonomiSagligi", yerlesim: y.id }); }
+          catch { return null; }
+        }));
+        const satirlar = sonuclar.flatMap((r, i) => r?.ok ? [{ ...r.deger, ad: YERLESIMLER[i]!.ad, beylik: YERLESIMLER[i]!.beylik }] : []);
+        const topla = (alan: "oyuncuSayisi" | "npcSayisi" | "toplamAkce" | "kasabaStokAdet" | "acikSiparis") => satirlar.reduce((s, r) => s + r[alan], 0);
+        const gelir = satirlar.reduce((s, r) => s + r.son12Ay.gelir, 0);
+        const gider = satirlar.reduce((s, r) => s + r.son12Ay.gider, 0);
+        const oyuncuSayisi = topla("oyuncuSayisi");
+        const toplamAkce = topla("toplamAkce");
+        const bakiyeler = satirlar.flatMap((r) => r.bakiyeler).sort((a, b) => a - b);
+        const orta = Math.floor(bakiyeler.length / 2);
+        const medyanAkce = bakiyeler.length === 0 ? 0 : bakiyeler.length % 2
+          ? bakiyeler[orta]!
+          : Math.round((bakiyeler[orta - 1]! + bakiyeler[orta]!) / 2);
+        const yerlesimler = satirlar.map((r) => ({
+          yerlesim: r.yerlesim, ad: r.ad, beylik: r.beylik, oyuncuSayisi: r.oyuncuSayisi, npcSayisi: r.npcSayisi,
+          toplamAkce: r.toplamAkce, ortalamaAkce: r.ortalamaAkce, medyanAkce: r.medyanAkce,
+          enDusukAkce: r.enDusukAkce, enYuksekAkce: r.enYuksekAkce, son12Ay: r.son12Ay,
+          kasabaStokAdet: r.kasabaStokAdet, acikSiparis: r.acikSiparis,
+        }));
+        return basarili({
+          yerlesimler: yerlesimler.sort((a, b) => a.ad.localeCompare(b.ad, "tr")),
+          eksikYerlesim: YERLESIMLER.length - satirlar.length,
+          toplam: {
+            oyuncuSayisi, npcSayisi: topla("npcSayisi"), toplamAkce,
+            ortalamaAkce: oyuncuSayisi ? Math.round(toplamAkce / oyuncuSayisi) : 0,
+            medyanAkce, enDusukAkce: bakiyeler[0] ?? 0, enYuksekAkce: bakiyeler.at(-1) ?? 0,
+            kasabaStokAdet: topla("kasabaStokAdet"), acikSiparis: topla("acikSiparis"),
+            son12Ay: { gelir, gider, net: gelir - gider },
+          },
+        });
+      },
       hesabaYaz: (hedef, durum) => hesapCagir(env, hedef, { islem: "yaptirimYaz", hesapId: hedef, durum }),
       hesabaIlet: (hedef, ileti) => hesapCagir(env, hedef, ileti),
       yetkisizGirisIzni: () => {

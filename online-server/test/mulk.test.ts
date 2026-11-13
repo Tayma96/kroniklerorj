@@ -3,6 +3,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { AY_MS, DUNYA_BASLANGICI_MS } from "../src/saat.ts";
+import { meslekSec } from "../src/yerlesim/meslek.ts";
+import { barinmaGorunumu, oyuncuHanOdaAcik } from "../src/yerlesim/barinma.ts";
 import { bosDefter, bosKutu, cikisAc, cikisKapat, denemeErtele, girisUygula, transferDurumu, type CikisKaydi } from "../src/mulk/transfer.ts";
 import { isletmeIsle, type IsletmeIleti, type TapuOzeti } from "../src/mulk/islem.ts";
 import { ayIlerlet, kapasite, yetkiDurumu, type Baglam, type Isletme } from "../src/mulk/isletme.ts";
@@ -166,6 +168,7 @@ test("kasa ↔ cüzdan: yarım işlem ve çift gönderim toplam akçeyi değişt
 test("yetki matrisi: roller, tek tek yetki, vekâlet, NPC çalışan", () => {
   const { k, a, b } = hazir();
   const br = kopru(k);
+  a.ms = { a: "", y: "", s: {} };
   edin(k, a, { tur: "han" }, AN, "e-0000001");
   br.yerlesimdenTeslim();
   br.is.kasa = 500;
@@ -274,6 +277,7 @@ test("kapasite parayla artmaz; iflas mülkü beyliğe döndürür, karakteri sil
 
 test("oyuncu hanı: kira ve ikram kasaya, çarpanlı fiyat; aynı hane ve karşılıklı işlem izlenir", () => {
   const { k, a, b } = hazir();
+  a.ms = { a: "", y: "", s: {} };
   const br = kopru(k);
   edin(k, a, { tur: "han" }, AN, "e-0000001");
   br.yerlesimdenTeslim();
@@ -281,11 +285,34 @@ test("oyuncu hanı: kira ve ikram kasaya, çarpanlı fiyat; aynı hane ve karş�
   br.komut(a, "fiyat", { carpan: 150 }, "f-0000001");
   br.isletmedenTeslim(br.is.cik.k);
   const pa = b.pa;
+  assert.deepEqual(barinmaGorunumu(k, b, AN, { isletme: "develi.han.1", fc: 150, seviye: 0, kapasite: 3, sahip: a }).odalar, [], "becerisiz hancı odaları kataloğa çıkaramaz");
+  assert.deepEqual(mulkluKira(k, b, { oda: "yatak", sure: 1, istekNo: "k-beceri-kilitli" }, AN), { ok: false, hata: "dugum_kapali" }, "oyuncu hanında yatak becerisi olmadan oda açılamaz");
+
+  assert.ok(meslekSec(a, "hanci", AY).ok);
+  a.ms!.s.hanci!.sv = { "hanci.yatakAhir": 1 };
+  assert.equal(oyuncuHanOdaAcik(a, "yatak"), true);
+  assert.equal(oyuncuHanOdaAcik(a, "oda"), false, "temiz oda ayrı beceri ister");
+  assert.equal(oyuncuHanOdaAcik(a, "hasOda"), false, "has oda için temiz oda ustalığı ve marangoz sinerjisi gerekir");
+  const gorunumYatak = barinmaGorunumu(k, b, AN, { isletme: "develi.han.1", fc: 150, seviye: 0, kapasite: 3, sahip: a });
+  assert.deepEqual(gorunumYatak.odalar.map((o) => o.oda), ["yatak"], "katalog yalnız öğrenilmiş yatak hizmetini gösterir");
+
   const kira = mulkluKira(k, b, { oda: "yatak", sure: 1, istekNo: "k-0000001" }, AN);
   assert.ok(kira.ok, JSON.stringify(kira));
   const kv = kira.deger.kira as { fiyat: number; batak: number; kasaya: number };
   assert.deepEqual([kv.fiyat, kv.batak, kv.kasaya], [3, 0, 3]);
   assert.equal(b.pa, pa - 3);
+
+  a.ms!.s.hanci!.sv = { "hanci.yatakAhir": 1, "hanci.temizOda": 1 };
+  assert.equal(oyuncuHanOdaAcik(a, "oda"), true, "temiz oda düğümü oda türünü açar");
+  assert.equal(oyuncuHanOdaAcik(a, "hasOda"), false, "has oda için üçüncü seviye ve marangoz sinerjisi gerekir");
+  const gorunumOda = barinmaGorunumu(k, b, AN, { isletme: "develi.han.1", fc: 150, seviye: 0, kapasite: 3, sahip: a });
+  assert.deepEqual(gorunumOda.odalar.map((o) => o.oda), ["yatak", "oda"]);
+
+  assert.ok(meslekSec(a, "marangoz", AY + 12).ok);
+  a.ms!.s.marangoz!.sv = { "marangoz.kundekari": 1 };
+  a.ms!.s.hanci!.sv = { "hanci.yatakAhir": 1, "hanci.temizOda": 3 };
+  assert.equal(oyuncuHanOdaAcik(a, "hasOda"), true, "has oda iki mesleğin gerçek sinerjisiyle açılır");
+
   const ik = mulkluIkram(k, b, "serbet", AN, "i-0000001");
   assert.ok(ik.ok);
   assert.deepEqual([ik.deger.fiyat, ik.deger.batak, ik.deger.kasaya], [5, 0, 5]);
@@ -301,4 +328,31 @@ test("oyuncu hanı: kira ve ikram kasaya, çarpanlı fiyat; aynı hane ve karş�
   assert.equal(br.is.iz.b, 1);
   assert.equal(br.is.iz.m.at(-1)![2], "kume");
   assert.deepEqual(mulkluKira(k, a, { oda: "yatak", sure: 1, istekNo: "k-0000002" }, AN), { ok: false, hata: "kendine" });
+});
+
+test("oyuncu hanı geliri bölge vergisini kesir biriktirerek outbox'a ayırır", () => {
+  const { k, a, b } = hazir();
+  const br = kopru(k);
+  a.ms = { a: "hanci", y: "", at: AY, s: { hanci: { kd: 0, hz: 0, cy: 0, sv: { "hanci.yatakAhir": 1 } } } };
+  b.pa = 1000;
+  edin(k, a, { tur: "han" }, AN, "e-vergi-0001");
+  br.yerlesimdenTeslim();
+  br.komut(a, "fiyat", { carpan: 100 }, "f-vergi-0001");
+  br.isletmedenTeslim(br.is.cik.k);
+
+  for (let i = 1; i <= 25; i++) {
+    const r = mulkluIkram(k, b, "ekmek", AN, `ikram-vergi-${String(i).padStart(4, "0")}`, 4);
+    assert.equal(r.ok, true, JSON.stringify(r));
+  }
+  const md = mulkDefteri(k);
+  assert.equal(md.vergiGiden?.reduce((t, x) => t + x.tutar, 0), 2, "50 akçe ciroda %4 toplam 2 akçe vergi");
+  assert.equal(md.vergiKesir?.["develi.han.1"], 0, "yüzde payı bir tam akçeye dönüşünce sıfırlanır");
+  assert.equal(md.cik.k.reduce((t, x) => t + x.a, 0), 48, "işletme kasasına vergi sonrası net 48 akçe çıkar");
+  br.yerlesimdenTeslim();
+  assert.equal(br.is.kasa, 48);
+
+  const kira = mulkluKira(k, b, { oda: "yatak", sure: 1, istekNo: "kira-vergi-0001" }, AN, 4);
+  if (!kira.ok) throw new Error(JSON.stringify(kira));
+  assert.equal((kira.deger.vergi as { tutar: number }).tutar, 0, "küçük tek işlemde vergi kesri birikir, erken yuvarlanmaz");
+  assert.equal(mulkDefteri(k).vergiKesir?.["develi.han.1"], 8);
 });

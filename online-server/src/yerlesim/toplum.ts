@@ -5,7 +5,9 @@
 import type { MeslekId } from "../icerik/meslekler.ts";
 import type { Kasaba } from "./tipler.ts";
 
-export const OYUNCU_TEKLIF_TURLERI = ["cirak", "ortak", "borc", "hediye", "gorucu"] as const;
+export const OYUNCU_TEKLIF_TURLERI = ["cirak", "ortak", "borc", "hediye", "gorucu", "is"] as const;
+export const IKI_TARAF_ISLERI = ["arabuluculuk", "muhafiz", "mektup"] as const;
+export type IkiTarafIsi = (typeof IKI_TARAF_ISLERI)[number];
 export const NPC_TEKLIF_TURLERI = ["npcIs", "npcBorc", "npcDunur"] as const;
 export type OyuncuTeklifTuru = (typeof OYUNCU_TEKLIF_TURLERI)[number];
 export type NpcTeklifTuru = (typeof NPC_TEKLIF_TURLERI)[number];
@@ -21,11 +23,15 @@ export interface Sartlar {
   m?: MeslekId;
   /** Usta oyuncu (çıraklık). */
   us?: string;
-  /** Tutar (borç, hediye, NPC işi ücreti, NPC borcu). */
+  /** Tutar (borç, hediye, NPC işi, iki taraflı iş ücreti, NPC borcu). */
   tu?: number;
   /** Faiz yüzdesi ve vade (ay sayısı) — borç. */
   fz?: number;
   va?: number;
+  /** Fiziksel kâtip senedi borca eklenmiştir. */
+  sn?: 1;
+  /** Teklif kabulüne kadar göndericinin senedi emanette tutulur. */
+  se?: 1;
   /** Borç yönü: ver = gönderen borç verir, iste = gönderen borç ister. */
   yn?: "ver" | "iste";
   /** Gelir payı yüzdesi ve süre (ay) — ortaklık. */
@@ -33,6 +39,16 @@ export interface Sartlar {
   sr?: number;
   /** Görücü/dünürcü: aday NPC (yalnız kayıt). */
   dn?: number;
+  /** İki taraflı oyuncu işi: arabuluculuk, muhafızlık veya mektup taşıma. */
+  it?: IkiTarafIsi;
+  /** Mektup işinin üçüncü alıcısı ve özel mesajı (yalnız iş sözleşmesinde). */
+  he?: string;
+  ms?: string;
+  /** Ücretli arabuluculuk işi: NPC hedefi, uzlaşma bedeli, tazminat tutarı ve kabulde açılan talep kimliği. */
+  an?: number;
+  ab?: import("./bilgi.ts").AraciBedeli;
+  am?: number;
+  ta?: number;
   /** Armağan (envanterden, Berkay §6.1): mal, adet ve biliniyorsa malı üreten oyuncu. */
   ml?: string;
   mn?: number;
@@ -46,8 +62,8 @@ export interface Teklif {
   g: string;
   a: string;
   s: Sartlar;
-  /** Emanet: gönderenden kilitlenen akçe; ret, düşme, geri çekme ya da iptalde iade edilir. Armağan malı da
-   * (s.ml × s.mn) gönderenin envanterinden emanete alınır ve aynı yolla iade edilir. */
+  /** Emanet: gönderenden kilitlenen akçe; iş sözleşmesinde teslimde çalışana ödenir; ret, düşme, geri çekme ya da iptalde iade edilir. Armağan malı da
+   * (s.ml × s.mn) gönderenin envanterinden emanete alınır ve aynı yolla iade edilir. İş ücreti teslimde çalışana aktarılır. */
   e: number;
   /** Açılış ayı ve son cevap ayı (bu ay dahil; sonraki dönümde varsayılan uygulanır). */
   ac: number;
@@ -62,6 +78,8 @@ export interface Teklif {
   kl?: number;
   vd?: number;
   od?: 1;
+  /** Senet eki: [ödeme ayı, tahsil edilen akçe]; eski kayıtlarda yoktur. */
+  bo?: [ay: number, tutar: number][];
   /** Ortaklık/çıraklık bitiş ayı; ortaklık aylık aktarım sayacı [ay, akçe]. */
   bt?: number;
   pa?: [ay: number, akce: number];
@@ -116,6 +134,40 @@ export interface Soylenti {
   y?: 1;
 }
 
+/** Oyuncu–oyuncu arabuluculuk dosyası. NPC arabuluculuk taleplerinden ayrı tutulur. */
+export type OyuncuArabuluculukDurumu =
+  | "davet" | "taslak" | "imzaBekliyor" | "emanette"
+  | "tamam" | "onaylandi" | "ret" | "geri" | "dustu" | "iptal";
+
+export interface OyuncuArabuluculuk {
+  /** Toplum.tn ile ortak, tekrar etmeyen kayıt kimliği. */
+  i: number;
+  /** Şikâyetçi, karşı taraf ve tarafsız arabulucu oyuncu kimlikleri. */
+  s: string;
+  k: string;
+  ar: string;
+  d: OyuncuArabuluculukDurumu;
+  /** Üç tarafın ayrı katılım rızası; sessizlik hiçbir zaman kabul değildir. */
+  rs: { s?: number; k?: number; ar?: number };
+  /** Uzlaşma taslağı sürümü ve iki tarafın imzaladığı sürüm. */
+  sv: number;
+  im: { s?: number; k?: number };
+  /** Uzlaşma teklifi: s, şikâyetçinin karsi tarafa; k, karşı tarafın şikâyetçiye ödeyeceği akçe. */
+  uz?: { s: number; k: number; not?: string };
+  /** Ödeme tutarları ve para emanetine alındığı bilgisi. */
+  od?: { s: number; k: number; emanet?: 1; uygulandi?: 1; iade?: 1 };
+  /** İmzalı uzlaşmanın son uygulama ayı; aşılırsa iki tarafa da emanet iade edilir. */
+  sonAy?: number;
+  /** Açılış, cevap ve kapanış ayları. */
+  ac: number;
+  sa: number;
+  kp?: number;
+  /** Özel müzakere metni halka açık olaylara kopyalanmaz. */
+  not?: string;
+  /** İmzalı uzlaşma uygulandığında iki taraf arasındaki açık husumet kaldırıldı. */
+  hs?: 1;
+}
+
 export interface Toplum {
   /** Sonraki teklif ve söylenti kimliği. */
   tn: number;
@@ -128,12 +180,19 @@ export interface Toplum {
   sy: Soylenti[];
   /** Reddedilen dostluk istekleri (sıralı çift, isteyen, ay): aynı kişiye hemen yeniden istek atılamaz. */
   rd?: { a: string; b: string; g: string; ay: number }[];
+  /** Oyuncu–oyuncu arabuluculuk dosyaları; eski kayıtlarda yoktur ve ilk yazımda oluşturulur. */
+  oa?: OyuncuArabuluculuk[];
 }
 
 /** Kasabanın toplum kaydı; yoksa kurar (yazım gerektiği yerde çağrılır). */
 export function toplumAl(k: Kasaba): Toplum {
   k.tp ??= { tn: 1, sn: 1, tk: [], ob: [], hu: [], eg: {}, sy: [] };
   return k.tp;
+}
+
+/** Eski toplum kayıtları için geriye uyumlu, tembel arabuluculuk defteri. */
+export function oyuncuArabuluculukAl(t: Toplum): OyuncuArabuluculuk[] {
+  return (t.oa ??= []);
 }
 
 export const teklifKimlik = (i: number): string => `t${i}`;

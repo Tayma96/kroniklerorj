@@ -4,6 +4,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import isleyici, { DunyaDO, HesapDO, YerlesimDO, YonetimDO } from "../src/index.ts";
 import type { Env } from "../src/tipler.ts";
+import { yonetimCagir } from "../src/ic.ts";
+import { kumeAnahtarlari, kumeKesisir } from "../src/siyaset/makam.ts";
 import { PANEL_PARCALARI } from "../src/yonetim/panel.ts";
 import { googleYuku, ISTEMCI, jwtImzala, rsaAnahtari, sahteAdAlani, sahteJwks, type TestAnahtari } from "./yardimci.ts";
 
@@ -241,6 +243,9 @@ test("roller ve yetki: moderatör kalıcı/parametre/rol yapamaz (kayda girer), 
     const mb = mg.govde.oturum as string;
     const ben = await cagir("GET", "/yonetim/ben", { oturum: mb });
     assert.ok(!(ben.govde.yetkiler as string[]).includes("parametreDegistir"));
+    assert.ok(!(ben.govde.yetkiler as string[]).includes("ekonomi"), "ekonomi sağlığı yalnız kurucuya açık");
+    assert.ok(!(ben.govde.yetkiler as string[]).includes("telafi"), "telafi yalnız kurucuya açık");
+    assert.ok(!(ben.govde.yetkiler as string[]).includes("telafiler"), "telafi geçmişi yalnız kurucuya açık");
 
     const gecici = await cagir("POST", "/yonetim/yaptirim", {
       oturum: mb, govde: { hedef: mehmet.hesap, tur: "susturma", gun: 2, gerekce: "sohbette ısrarlı spam", istekNo: no() },
@@ -382,11 +387,13 @@ test("şikayet ve kendine fayda yasağı: kendini şikayet, sınır, susturma, k
 
 test("parametreler: sürümlü değiştir, sınır, geri al ve duyurular (son 5, yazan gizli)", async () => {
   try {
-    const { cagir, oyuncu, yonetici } = await kur();
+    const { env: kurucuEnv, cagir, oyuncu, yonetici } = await kur();
     const mehmet = await oyuncu("220000000000000000002", "Mehmet");
     const yb = (await yonetici(KURUCU_SUB, KURUCU)).govde.oturum as string;
 
     const liste = await cagir("GET", "/yonetim/parametreler", { oturum: yb });
+    const ilkCalisma = await yonetimCagir<Record<string, number>>(kurucuEnv, { islem: "parametrelerCalisma" });
+    assert.equal(ilkCalisma.ok && ilkCalisma.deger.NPC_CARPAN, 2.5);
     const adlar = (liste.govde.parametreler as { ad: string }[]).map((p) => p.ad);
     assert.deepEqual(adlar, [
       "NPC_AYLIK_KOTA", "NPC_CARPAN", "KITLIK_PRIM", "SIPARIS_ODUL_CARPANI", "STOK_CARPAN", "TEMEL_CIKTI", "AZALAN_PENCERE_IS", "HIZ_SINIRI", "SIKAYET_GUNLUK", "GECICI_UZAKLASTIRMA_EN_COK_GUN",
@@ -396,6 +403,8 @@ test("parametreler: sürümlü değiştir, sınır, geri al ve duyurular (son 5,
     assert.equal((await yaz("BILINMEYEN", 1)).govde.hata, "parametre_gecersiz");
     assert.equal((await yaz("NPC_CARPAN", 99)).govde.hata, "deger_sinir_disi");
     assert.equal((await yaz("NPC_CARPAN", 3)).govde.deger, 3);
+    const yeniCalisma = await yonetimCagir<Record<string, number>>(kurucuEnv, { islem: "parametrelerCalisma" });
+    assert.equal(yeniCalisma.ok && yeniCalisma.deger.NPC_CARPAN, 3, "YonetimDO oyun modülüne etkin sürümü verir");
     const ikinci = await yaz("NPC_CARPAN", 3.5);
     assert.deepEqual([ikinci.govde.deger, ikinci.govde.surum, ikinci.govde.varsayilan], [3.5, 2, 2.5]);
     const geri = (gerekce = "yanlış ayar geri alındı") =>
@@ -452,7 +461,7 @@ test("panel: Türkçe HTML, sıkı CSP (özetli satır içi betik/stil), çerçe
   assert.ok(!/https?:\/\//.test(html), "dış kaynak yok");
   assert.ok(!/\son[a-z]+=/i.test(html), "satır içi olay işleyicisi yok");
   assert.ok(!html.includes("innerHTML"));
-  for (const bolum of ["Giriş", "Oyuncu ara", "Şikayet kuyruğu", "Parametreler", "Duyuru", "İşlem kaydı"]) assert.ok(html.includes(bolum), bolum);
+  for (const bolum of ["Giriş", "Oyuncu ara", "Şikayet kuyruğu", "Ekonomi sağlığı", "Oyuncu telafisi", "Parametreler", "Duyuru", "İşlem kaydı"]) assert.ok(html.includes(bolum), bolum);
   const ozet = async (m: string) => {
     const b = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(m)));
     return `'sha256-${btoa(String.fromCharCode(...b))}'`;
@@ -461,4 +470,79 @@ test("panel: Türkçe HTML, sıkı CSP (özetli satır içi betik/stil), çerçe
   assert.ok(csp.includes(`style-src ${await ozet(PANEL_PARCALARI.STIL)}`));
   assert.ok(html.includes(`<script>${PANEL_PARCALARI.BETIK}</script>`));
   assert.equal((await cagir("POST", "/yonetim")).durum, 405);
+});
+
+
+test("Y2 ekonomi sağlığı: kurucu yerleşim toplamlarını görür, oyuncu kimlikleri açığa çıkmaz", async () => {
+  try {
+    const { cagir, oyuncu, yonetici } = await kur();
+    const mehmet = await oyuncu("220000000000000000002", "Mehmet", "kizilca");
+    const yb = (await yonetici(KURUCU_SUB, KURUCU)).govde.oturum as string;
+    const rapor = await cagir("GET", "/yonetim/ekonomi", { oturum: yb });
+    assert.equal(rapor.durum, 200);
+    assert.ok(rapor.govde.toplam.oyuncuSayisi >= 1);
+    assert.ok(rapor.govde.yerlesimler.some((x: { yerlesim: string }) => x.yerlesim === "kizilca"));
+    assert.equal(rapor.govde.eksikYerlesim, 0);
+    assert.ok(!JSON.stringify(rapor.govde).includes(mehmet.hesap), "raporda hesap kimliği yok");
+    assert.ok(rapor.govde.yerlesimler.every((x: Record<string, unknown>) => !("oyuncular" in x) && !("hesaplar" in x)));
+  } finally {
+    globalThis.fetch = eskiFetch;
+  }
+});
+
+
+test("Y3 telafi: akçe olayı tekrar güvenli, kendi hesap kümesine kapalı ve yönetim defterine yazılır", async () => {
+  try {
+    const { cagir, oyuncu, yonetici } = await kur();
+    const ayse = await oyuncu(KURUCU_SUB, "Ayşe");
+    const mehmet = await oyuncu("220000000000000000002", "Mehmet", "develi");
+    const ali = await oyuncu("220000000000000000003", "Ali", "develi");
+    const yb = (await yonetici(KURUCU_SUB, KURUCU)).govde.oturum as string;
+
+    const kendine = await cagir("POST", "/yonetim/telafi", {
+      oturum: yb,
+      govde: { hedef: ayse.hesap, tur: "akce", tutar: 500, gerekce: "Hatalı işlem düzeltmesi", istekNo: no() },
+    });
+    assert.deepEqual([kendine.durum, kendine.govde], [403, { hata: "kendi_hedef" }]);
+
+    const govde = { hedef: mehmet.hesap, tur: "akce", tutar: 500, gerekce: "Hatalı işlem düzeltmesi", istekNo: no() };
+    const ilk = await cagir("POST", "/yonetim/telafi", { oturum: yb, govde });
+    assert.equal(ilk.durum, 200);
+    assert.equal(ilk.govde.telafi.hedef, mehmet.hesap);
+    assert.equal(ilk.govde.telafi.tutar, 500);
+    assert.ok(ilk.govde.uygulama.olay, "hedef oyuncuya özel kronik olayı oluşturulur");
+    const aliOlaylari = await cagir("GET", "/v1/olaylar", { oturum: ali.oturum });
+    assert.ok(!JSON.stringify(aliOlaylari.govde).includes("olay.yonetim.telafiAkce"), "telafi olayı aynı yerleşimdeki diğer oyuncuya görünmez");
+
+    const tekrar = await cagir("POST", "/yonetim/telafi", { oturum: yb, govde });
+    assert.deepEqual(tekrar.govde, ilk.govde, "aynı istekNo ikinci kez para üretmez");
+
+    const durum = await cagir("GET", "/v1/yerlesim", { oturum: mehmet.oturum });
+    assert.equal(durum.durum, 200);
+    assert.equal(durum.govde.ben.para, ilk.govde.uygulama.para);
+
+    const esya = await cagir("POST", "/yonetim/telafi", {
+      oturum: yb,
+      govde: { hedef: mehmet.hesap, tur: "esya", mal: "nal", adet: 2, gerekce: "Eksik eşya telafisi", istekNo: no() },
+    });
+    assert.equal(esya.durum, 200);
+    assert.ok(esya.govde.uygulama.envanter.nal >= 2);
+    const durum2 = await cagir("GET", "/v1/yerlesim", { oturum: mehmet.oturum });
+    assert.ok(durum2.govde.ben.envanter.nal >= 2);
+
+    const liste = await cagir("GET", "/yonetim/telafiler", { oturum: yb });
+    assert.equal(liste.durum, 200);
+    assert.equal(liste.govde.telafiler.length, 2);
+    assert.ok(liste.govde.telafiler.some((x: { hedef: string; hedefAd: string; tur: string }) => x.hedef === mehmet.hesap && x.hedefAd === "Mehmet" && x.tur === "akce"));
+    assert.ok(liste.govde.telafiler.some((x: { hedef: string; tur: string }) => x.hedef === mehmet.hesap && x.tur === "esya"));
+  } finally {
+    globalThis.fetch = eskiFetch;
+  }
+});
+
+
+test("Y3 telafi küme denetimi aynı hanedeki farklı hesapları da yakalar", () => {
+  const yonetici = { hesap: "hesap-a", yerlesim: "kizilca", e: 7 };
+  const altHesap = { hesap: "hesap-b", yerlesim: "kizilca", e: 7 };
+  assert.equal(kumeKesisir(kumeAnahtarlari(yonetici), kumeAnahtarlari(altHesap)), true);
 });

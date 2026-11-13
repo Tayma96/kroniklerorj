@@ -89,6 +89,8 @@ async function yukle() {
   for (const s of document.querySelectorAll("section[data-yetki]")) s.hidden = !yetkiler.includes(s.dataset.yetki);
   if (yetkiler.includes("sikayetGor")) await sikayetYukle();
   if (yetkiler.includes("parametreGor")) await parametreYukle();
+  if (yetkiler.includes("ekonomi")) await ekonomiYukle();
+  if (yetkiler.includes("telafiler")) await telafiYukle();
   if (yetkiler.includes("kayitGor")) { kayitImleci = ""; $("#kayitListe").textContent = ""; await kayitYukle(); }
 }
 
@@ -167,7 +169,7 @@ async function parametreYukle() {
     for (const s of p.gecmis) gecmis.append(el("div", { class: "kucuk", metin: "s" + s.surum + " " + s.islem + ": " + s.onceki + " → " + s.deger + " · " + s.kim + " · " + zaman(s.zaman) + " · " + s.gerekce }));
     k.append(el("div", { class: "kart" },
       el("strong", { metin: p.ad }), " = " + p.deger + (p.deger !== p.varsayilan ? " (varsayılan " + p.varsayilan + ")" : " (varsayılan)"),
-      el("div", { class: "kucuk", metin: p.aciklama + " · sınır " + p.alt + "–" + p.ust + (p.tam ? " (tam sayı)" : "") + " · " + p.kaynak + " · " + (p.uygulama === "Y1" ? "çalışma anında okunur" : "Y2: yalnız saklanır, oyun henüz okumaz") }),
+      el("div", { class: "kucuk", metin: p.aciklama + " · sınır " + p.alt + "–" + p.ust + (p.tam ? " (tam sayı)" : "") + " · " + p.kaynak + " · " + (p.uygulama === "Y1" ? "yönetim modülünde çalışma anında okunur" : "YerleşimDO/HesapDO her istekte çalışma anında okur") }),
       el("div", { class: "satir" }, yeni, g),
       el("button", { metin: "Kaydet", tik: (e) => dugme(e.target, "#parametreHata", async () => { await api("POST", "parametre", { ad: p.ad, deger: Number(yeni.value), gerekce: g.value, istekNo: istekNo() }); await parametreYukle(); }) }),
       el("button", { class: "ikincil", metin: "Geri al", tik: (e) => dugme(e.target, "#parametreHata", async () => { await api("POST", "parametre-geri", { ad: p.ad, gerekce: g.value, istekNo: istekNo() }); await parametreYukle(); }) }),
@@ -175,6 +177,40 @@ async function parametreYukle() {
   }
 }
 
+async function ekonomiYukle() {
+  const v = await api("GET", "ekonomi");
+  const fmt = (n) => Number(n || 0).toLocaleString("tr-TR");
+  const t = $("#ekonomiToplam"); t.textContent = "";
+  const o = v.toplam;
+  t.append(el("div", { class: "satir" },
+    el("div", { class: "kart" }, el("strong", { metin: fmt(o.oyuncuSayisi) }), el("div", { class: "kucuk", metin: "Oyuncu" })),
+    el("div", { class: "kart" }, el("strong", { metin: fmt(o.toplamAkce) }), el("div", { class: "kucuk", metin: "Oyuncu cüzdanlarındaki akçe" })),
+    el("div", { class: "kart" }, el("strong", { metin: fmt(o.acikSiparis) }), el("div", { class: "kucuk", metin: "Açık lonca siparişi" })),
+    el("div", { class: "kart" }, el("strong", { metin: fmt(o.kasabaStokAdet) }), el("div", { class: "kucuk", metin: "Kasaba stok adedi" }))));
+  t.append(el("div", { class: "kucuk", metin: "Cüzdan medyanı " + fmt(o.medyanAkce) + " · ortalama " + fmt(o.ortalamaAkce) + " · aralık " + fmt(o.enDusukAkce) + "–" + fmt(o.enYuksekAkce) + " akçe" }));
+  t.append(el("div", { class: "kucuk", metin: "Son 12 ay: gelir +" + fmt(o.son12Ay.gelir) + " · gider -" + fmt(o.son12Ay.gider) + " · net " + fmt(o.son12Ay.net) + " akçe · NPC nüfusu " + fmt(o.npcSayisi) }));
+  const k = $("#ekonomiListe"); k.textContent = "";
+  for (const y of v.yerlesimler) {
+    k.append(el("div", { class: "kart" },
+      el("strong", { metin: y.ad }), " · " + y.beylik,
+      el("div", { class: "kucuk", metin: "Oyuncu " + fmt(y.oyuncuSayisi) + " · NPC " + fmt(y.npcSayisi) + " · cüzdan toplamı " + fmt(y.toplamAkce) + " akçe" }),
+      el("div", { class: "kucuk", metin: "Medyan " + fmt(y.medyanAkce) + " · ortalama " + fmt(y.ortalamaAkce) + " · aralık " + fmt(y.enDusukAkce) + "–" + fmt(y.enYuksekAkce) }),
+      el("div", { class: "kucuk", metin: "12 ay gelir +" + fmt(y.son12Ay.gelir) + " · gider -" + fmt(y.son12Ay.gider) + " · net " + fmt(y.son12Ay.net) + " · açık sipariş " + fmt(y.acikSiparis) + " · stok " + fmt(y.kasabaStokAdet) })));
+  }
+  $("#ekonomiEksik").textContent = v.eksikYerlesim ? "Ulaşılamayan yerleşim: " + fmt(v.eksikYerlesim) : "Tüm yerleşimler güncel.";
+}
+async function telafiYukle() {
+  const v = await api("GET", "telafiler");
+  const k = $("#telafiListe"); k.textContent = "";
+  for (const x of v.telafiler) {
+    const odul = x.tur === "akce" ? fmtAkce(x.tutar) : String(x.adet) + " × " + x.mal;
+    k.append(el("div", { class: "kart" },
+      el("strong", { metin: odul + " · " + (x.hedefAd || x.hedef) }),
+      el("div", { class: "kucuk", metin: x.yerlesim + " · " + new Date(x.zaman).toLocaleString("tr-TR") + " · " + x.kim }),
+      el("div", { class: "kucuk", metin: x.gerekce })));
+  }
+}
+function fmtAkce(n) { return Number(n || 0).toLocaleString("tr-TR") + " akçe"; }
 async function kayitYukle() {
   const v = await api("GET", "kayit" + (kayitImleci ? "?imlec=" + kayitImleci : ""));
   const k = $("#kayitListe");
@@ -197,6 +233,17 @@ $("#araDugme").addEventListener("click", (e) => dugme(e.target, "#oyuncuHata", (
 $("#yUygula").addEventListener("click", (e) => dugme(e.target, "#oyuncuHata", yaptirimUygula));
 $("#yKaldir").addEventListener("click", (e) => dugme(e.target, "#oyuncuHata", yaptirimKaldir));
 $("#sYenile").addEventListener("click", (e) => dugme(e.target, "#sikayetHata", sikayetYukle));
+$("#eYenile").addEventListener("click", (e) => dugme(e.target, "#ekonomiHata", ekonomiYukle));
+$("#tYenile").addEventListener("click", (e) => dugme(e.target, "#telafiHata", telafiYukle));
+$("#tTur").addEventListener("change", () => { const akce = $("#tTur").value === "akce"; $("#tAkceAlan").hidden = !akce; $("#tEsyaAlan").hidden = akce; });
+$("#tGonder").addEventListener("click", (e) => dugme(e.target, "#telafiHata", async () => {
+  const tur = $("#tTur").value;
+  const govde = { hedef: $("#tHedef").value.trim(), tur, gerekce: $("#tGerekce").value, istekNo: istekNo() };
+  if (tur === "akce") govde.tutar = Number($("#tTutar").value);
+  else { govde.mal = $("#tMal").value.trim(); govde.adet = Number($("#tAdet").value); }
+  await api("POST", "telafi", govde);
+  await telafiYukle();
+}));
 $("#dGonder").addEventListener("click", (e) => dugme(e.target, "#duyuruHata", async () => {
   await api("POST", "duyuru", { metin: $("#dMetin").value, gerekce: $("#dGerekce").value, istekNo: istekNo() });
   $("#dMetin").value = ""; $("#dGerekce").value = ""; $("#duyuruHata").textContent = "Duyuru kaydedildi.";
@@ -220,6 +267,19 @@ const GOVDE = `<header><h1>Kronikler Online · Yönetim</h1><div><span id="benBi
 
 <section data-yetki="ben" hidden><h2>Ben</h2><div id="benYetki" class="kucuk"></div></section>
 
+<section data-yetki="telafi" hidden><h2>Oyuncu telafisi</h2>
+<p class="kucuk">Yalnız Kurucu. Hedefin kendi hesabın veya aynı hane kümen olması reddedilir. Her işlem gerekçe ve tekrar güvenli istek numarasıyla kaydedilir.</p>
+<label>Hedef hesap kimliği <input id="tHedef" autocomplete="off"></label>
+<label>Telafi türü <select id="tTur"><option value="akce">Akçe</option><option value="esya">Eşya</option></select></label>
+<div id="tAkceAlan"><label>Akçe (1–10.000) <input id="tTutar" type="number" min="1" max="10000" value="100"></label></div>
+<div id="tEsyaAlan" hidden><label>Mal kimliği <input id="tMal" autocomplete="off"></label><label>Adet (1–50) <input id="tAdet" type="number" min="1" max="50" value="1"></label></div>
+<label>Gerekçe (10–240 karakter) <textarea id="tGerekce" rows="3"></textarea></label>
+<button id="tGonder">Telafiyi uygula</button><button class="ikincil" id="tYenile">Geçmişi yenile</button><div class="hata" id="telafiHata"></div><div id="telafiListe"></div></section>
+
+<section data-yetki="ekonomi" hidden><h2>Ekonomi sağlığı</h2>
+<p class="kucuk">Yerleşim bazında kimliksiz toplulaştırılmış cüzdan bakiyesi, 12 aylık gelir-gider, stok ve açık sipariş özeti.</p>
+<button class="ikincil" id="eYenile">Yenile</button><div class="hata" id="ekonomiHata"></div><div id="ekonomiToplam"></div><div id="ekonomiEksik" class="kucuk"></div><div id="ekonomiListe"></div></section>
+
 <section data-yetki="oyuncuGor" hidden><h2>Oyuncu ara ve yaptırım</h2>
 <div class="satir"><select id="araTur"><option value="ad">Ada göre</option><option value="hesap">Hesap kimliğine göre</option></select>
 <input id="ara" placeholder="Ad ya da hesap kimliği"></div>
@@ -239,7 +299,7 @@ const GOVDE = `<header><h1>Kronikler Online · Yönetim</h1><div><span id="benBi
 <button class="ikincil" id="sYenile">Yenile</button><div class="hata" id="sikayetHata"></div><div id="sikayetListe"></div></section>
 
 <section data-yetki="parametreGor" hidden><h2>Parametreler</h2>
-<p class="kucuk">Y1: değerler saklanır ve sürümlenir. "Y2" işaretliler oyun modüllerince henüz okunmaz.</p>
+<p class="kucuk">Değerler sürümlenir; Y2 ekonomi ve hız parametreleri YerleşimDO/HesapDO tarafından çalışma anında okunur.</p>
 <div class="hata" id="parametreHata"></div><div id="parametreListe"></div></section>
 
 <section data-yetki="duyuru" hidden><h2>Duyuru</h2>
