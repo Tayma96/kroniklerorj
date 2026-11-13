@@ -317,10 +317,10 @@ test("E4 sinerji kapısı: saz gecesi hem hancı düğümünü hem ozan saz usta
   const kapali = hizmetHazirla(ekonomi(), eksikOzan, "sazGecesi", 1, 12);
   assert.deepEqual(kapali, { ok: false, hata: "dugum_kapali" });
 
-  const eksikHanci = hanciKarakter(1, 1);
-  assert.equal(hizmetYetkiliMi(eksikHanci, saz), false, "hancı sinerji seviyesine ulaşmamış");
+  const eksikHanci = hanciKarakter(2, 3);
+  assert.equal(hizmetYetkiliMi(eksikHanci, saz), false, "hancı sinerji üçüncü seviyede açılır");
 
-  const birlikte = hanciKarakter(3, 1);
+  const birlikte = hanciKarakter(3, 3);
   assert.equal(hizmetYetkiliMi(birlikte, saz), true);
   const ek = ekonomi();
   const hazir = hizmetHazirla(ek, birlikte, "sazGecesi", 1, 12);
