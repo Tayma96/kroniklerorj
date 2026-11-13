@@ -1,4 +1,6 @@
-// Sunucu oturum belirteci: "base64url(yük).base64url(HMAC-SHA256)". Yük {h: hesapId, s: son geçerlilik ms}.
+// Sunucu oturum belirteci: "base64url(yük).base64url(HMAC-SHA256)". Yük {h: hesapId, s: son geçerlilik ms,
+// v?: oturum sürümü}. `v` yoksa sürüm 0'dır (eski belirteçler geçerli kalır); HesapDO hesabın güncel sürümüyle
+// karşılaştırır, "bütün oturumları kapat" sürümü artırır.
 // Anahtar Worker sırrı OTURUM_ANAHTARI'dır; koda ya da depoya yazılmaz.
 
 import { b64urlCoz, b64urlJson, b64urlKodla, jsonB64url, utf8 } from "./b64.ts";
@@ -8,7 +10,7 @@ const HMAC = { name: "HMAC", hash: "SHA-256" };
 const BICIM = /^[A-Za-z0-9_-]{1,2048}\.[A-Za-z0-9_-]{43}$/;
 
 export type OturumHatasi = "oturum_gecersiz" | "oturum_suresi_doldu";
-export type OturumSonucu = { ok: true; hesapId: string; son: number } | { ok: false; hata: OturumHatasi };
+export type OturumSonucu = { ok: true; hesapId: string; son: number; surum: number } | { ok: false; hata: OturumHatasi };
 
 // Çözülmüş anahtarlar önbellekte tutulur (bekleyen söz istekler arasında paylaşılmaz). Oyuncu ve yönetici
 // oturumu ayrı anahtarlar kullanır; ikisi birlikte sığar.
@@ -41,8 +43,9 @@ export async function oturumOlustur(
   gizli: string,
   simdi: number,
   sure: number = OTURUM_SURESI_MS,
+  surum = 0,
 ): Promise<string> {
-  const yuk = jsonB64url({ h: hesapId, s: simdi + sure });
+  const yuk = jsonB64url(surum > 0 ? { h: hesapId, s: simdi + sure, v: surum } : { h: hesapId, s: simdi + sure });
   return `${yuk}.${b64urlKodla(await imzala(yuk, gizli))}`;
 }
 
@@ -65,8 +68,9 @@ export async function oturumDogrula(belirtec: string, gizli: string, simdi: numb
     return gecersiz;
   }
   if (typeof yuk !== "object" || yuk === null) return gecersiz;
-  const { h, s } = yuk as Record<string, unknown>;
+  const { h, s, v } = yuk as Record<string, unknown>;
   if (typeof h !== "string" || h.length === 0 || typeof s !== "number" || !Number.isFinite(s)) return gecersiz;
+  if (v !== undefined && (typeof v !== "number" || !Number.isSafeInteger(v) || v < 0)) return gecersiz;
   if (s <= simdi) return { ok: false, hata: "oturum_suresi_doldu" };
-  return { ok: true, hesapId: h, son: s };
+  return { ok: true, hesapId: h, son: s, surum: v ?? 0 };
 }

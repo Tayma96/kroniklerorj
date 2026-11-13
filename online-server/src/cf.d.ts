@@ -2,7 +2,24 @@
 // elle yazılmış tip tanımları. @cloudflare/workers-types bilerek kurulmaz; yeni bir API gerekirse buraya eklenir.
 
 type BufferSource = ArrayBuffer | ArrayBufferView;
-type BodyInit = string | ArrayBuffer | ArrayBufferView;
+type BodyInit = string | ArrayBuffer | ArrayBufferView | ReadableStream<Uint8Array>;
+
+type ReadableStreamReadResult<R> = { done: false; value: R } | { done: true; value?: undefined };
+interface ReadableStreamDefaultReader<R> {
+  read(): Promise<ReadableStreamReadResult<R>>;
+  cancel(reason?: unknown): Promise<void>;
+}
+interface ReadableStreamDefaultController<R> {
+  enqueue(chunk: R): void;
+  close(): void;
+}
+interface ReadableStream<R = Uint8Array> {
+  getReader(): ReadableStreamDefaultReader<R>;
+}
+declare var ReadableStream: {
+  prototype: ReadableStream;
+  new <R = Uint8Array>(kaynak?: { pull?(c: ReadableStreamDefaultController<R>): void | Promise<void> }): ReadableStream<R>;
+};
 type HeadersInit = Headers | Record<string, string> | [string, string][];
 
 interface Headers {
@@ -16,11 +33,14 @@ interface RequestInit {
   method?: string;
   headers?: HeadersInit;
   body?: BodyInit | null;
+  /** Node: akış gövdeli istekte zorunlu. */
+  duplex?: "half";
 }
 interface Request {
   readonly method: string;
   readonly url: string;
   readonly headers: Headers;
+  readonly body: ReadableStream<Uint8Array> | null;
   text(): Promise<string>;
   json(): Promise<unknown>;
 }

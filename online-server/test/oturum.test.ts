@@ -9,7 +9,7 @@ const SIMDI = Date.UTC(2026, 10, 5, 10, 0, 0);
 test("imzala ve doğrula; süre 30 gün", async () => {
   const b = await oturumOlustur("hesap-1", GIZLI, SIMDI);
   const s = await oturumDogrula(b, GIZLI, SIMDI + 1000);
-  assert.deepEqual(s, { ok: true, hesapId: "hesap-1", son: SIMDI + OTURUM_SURESI_MS });
+  assert.deepEqual(s, { ok: true, hesapId: "hesap-1", son: SIMDI + OTURUM_SURESI_MS, surum: 0 });
   assert.equal(OTURUM_SURESI_MS, 30 * 24 * 60 * 60 * 1000);
 });
 

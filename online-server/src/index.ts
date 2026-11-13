@@ -3,6 +3,7 @@
 //   GET  /v1/dunya                       → saat + beylikler/yerleşimler (doluluk)
 //   GET  /v1/profil                      → profil                     (oturum gerekir)
 //   POST /v1/profil {ad, cinsiyet, yerlesim, davet?, istekNo} → profil (oturum gerekir)
+//   POST /v1/oturumlar/kapat             → {kapatildi: true}; hesabın bütün belirteçleri (bu dahil) düşer
 //   POST /v1/davet                       → {kod}                      (oturum gerekir)
 //   GET  /v1/davet/:kod                  → {kod, yerlesim, beylik, davetEden} (oturum gerekir)
 //   GET  /v1/yerlesim?dil=               → saat, yerleşim, karakterim, harita, Dönüş Kartı, imleç (Faz 2)
@@ -175,10 +176,35 @@ function oturumAnahtari(env: Env): string | undefined {
   return a && a.length >= OTURUM_ANAHTARI_EN_KISA ? a : undefined;
 }
 
+/** Gövdeyi akış olarak okur; AZAMI_GOVDE baytı aşınca okumayı keser (undefined). Content-Length'e güvenmez. */
+async function sinirliMetin(istek: Request): Promise<string | undefined> {
+  if (!istek.body) return "";
+  const okuyucu = istek.body.getReader();
+  const parcalar: Uint8Array[] = [];
+  let toplam = 0;
+  for (;;) {
+    const { done, value } = await okuyucu.read();
+    if (done) break;
+    toplam += value.byteLength;
+    if (toplam > AZAMI_GOVDE) {
+      await okuyucu.cancel().catch(() => undefined);
+      return undefined;
+    }
+    parcalar.push(value);
+  }
+  const birlesik = new Uint8Array(toplam);
+  let i = 0;
+  for (const p of parcalar) {
+    birlesik.set(p, i);
+    i += p.byteLength;
+  }
+  return new TextDecoder().decode(birlesik);
+}
+
 async function govdeOku(istek: Request): Promise<Sonuc<Record<string, unknown>>> {
   if (Number(istek.headers.get("content-length") ?? 0) > AZAMI_GOVDE) return hata("govde_buyuk");
-  const metin = await istek.text();
-  if (metin.length > AZAMI_GOVDE) return hata("govde_buyuk");
+  const metin = await sinirliMetin(istek);
+  if (metin === undefined) return hata("govde_buyuk");
   try {
     const v: unknown = JSON.parse(metin);
     if (typeof v === "object" && v !== null && !Array.isArray(v)) return basarili(v as Record<string, unknown>);
@@ -188,14 +214,14 @@ async function govdeOku(istek: Request): Promise<Sonuc<Record<string, unknown>>>
   return hata("gecersiz_istek");
 }
 
-/** Bearer oturumunu doğrular; hesap kimliğini döndürür. */
-async function yetkilendir(istek: Request, env: Env): Promise<Sonuc<string>> {
+/** Bearer oturumunu doğrular; hesap kimliğini ve belirteçteki oturum sürümünü döndürür (sürüm HesapDO'da denetlenir). */
+async function yetkilendir(istek: Request, env: Env): Promise<Sonuc<string> & { surum?: number }> {
   const anahtar = oturumAnahtari(env);
   if (!anahtar) return hata("yapilandirma_eksik");
   const m = /^Bearer\s+(\S+)$/i.exec(istek.headers.get("authorization") ?? "");
   if (!m?.[1]) return hata("oturum_yok");
   const sonuc = await oturumDogrula(m[1], anahtar, Date.now());
-  return sonuc.ok ? basarili(sonuc.hesapId) : hata(sonuc.hata);
+  return sonuc.ok ? { ...basarili(sonuc.hesapId), surum: sonuc.surum } : hata(sonuc.hata);
 }
 
 /** Oturumu doğrular, iletiyi oyuncunun HesapDO'suna iletir. */
@@ -208,7 +234,7 @@ async function hesaba(
   if (!yetki.ok) return hataYaniti(yetki.hata);
   const hazir = await ileti(yetki.deger);
   if (!hazir.ok) return basarisizYanit(hazir);
-  return sonucYaniti(await hesapCagir(env, yetki.deger, hazir.deger));
+  return sonucYaniti(await hesapCagir(env, yetki.deger, { ...hazir.deger, oturumSurumu: yetki.surum ?? 0 }));
 }
 
 export async function testGiris(istek: Request, env: Env): Promise<Response> {
@@ -232,11 +258,11 @@ export async function testGiris(istek: Request, env: Env): Promise<Response> {
   // Cihaz kimliği yerel depoda üretilir; "test:" ad alanı Google sub'larıyla çakışmaz.
   const sub = `test:${cihazId}`;
   const hesapId = hesapKimligi(env, sub);
-  const kayit = await hesapCagir<{ profilVar: boolean; uzaklastirma?: { bitis: number | null } }>(env, hesapId, {
+  const kayit = await hesapCagir<{ profilVar: boolean; uzaklastirma?: { bitis: number | null }; oturumSurumu?: number }>(env, hesapId, {
     islem: "giris", hesapId, sub,
   });
   if (!kayit.ok) return basarisizYanit(kayit);
-  const oturum = await oturumOlustur(hesapId, anahtar, Date.now());
+  const oturum = await oturumOlustur(hesapId, anahtar, Date.now(), undefined, kayit.deger.oturumSurumu ?? 0);
   return jsonYanit({ oturum, profilVar: kayit.deger.profilVar, ...(kayit.deger.uzaklastirma ? { uzaklastirma: kayit.deger.uzaklastirma } : {}) });
 }
 
@@ -262,13 +288,13 @@ async function giris(istek: Request, env: Env): Promise<Response> {
   }
 
   const hesapId = hesapKimligi(env, kimlik.sub);
-  const kayit = await hesapCagir<{ profilVar: boolean; uzaklastirma?: { bitis: number | null } }>(env, hesapId, {
+  const kayit = await hesapCagir<{ profilVar: boolean; uzaklastirma?: { bitis: number | null }; oturumSurumu?: number }>(env, hesapId, {
     islem: "giris",
     hesapId,
     sub: kimlik.sub,
   });
   if (!kayit.ok) return basarisizYanit(kayit);
-  const oturum = await oturumOlustur(hesapId, anahtar, Date.now());
+  const oturum = await oturumOlustur(hesapId, anahtar, Date.now(), undefined, kayit.deger.oturumSurumu ?? 0);
   const { profilVar, uzaklastirma } = kayit.deger;
   return jsonYanit({
     oturum,
@@ -337,7 +363,7 @@ async function masaBaglan(istek: Request, env: Env, no: string): Promise<Respons
   if ((istek.headers.get("upgrade") ?? "").toLowerCase() !== "websocket") return hataYaniti("yukseltme_gerekli");
   const yetki = await yetkilendir(istek, env);
   if (!yetki.ok) return hataYaniti(yetki.hata);
-  const bilet = await hesapCagir<MasaBileti>(env, yetki.deger, { islem: "masaBilet", hesapId: yetki.deger, masa: no.slice(0, 8) });
+  const bilet = await hesapCagir<MasaBileti>(env, yetki.deger, { islem: "masaBilet", hesapId: yetki.deger, masa: no.slice(0, 8), oturumSurumu: yetki.surum ?? 0 });
   if (!bilet.ok) return basarisizYanit(bilet);
   return masayaYukselt(env, bilet.deger);
 }
@@ -395,6 +421,10 @@ async function yonlendir(istek: Request, env: Env): Promise<Response> {
         });
       }
       return hataYaniti("yontem_yok");
+    case "/v1/oturumlar/kapat":
+      return yontem === "POST"
+        ? hesaba(istek, env, (hesapId) => basarili({ islem: "oturumlariKapat", hesapId }))
+        : hataYaniti("yontem_yok");
     case "/v1/davet":
       return yontem === "POST"
         ? hesaba(istek, env, (hesapId) => basarili({ islem: "davetOlustur", hesapId }))

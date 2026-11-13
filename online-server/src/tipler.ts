@@ -383,7 +383,7 @@ export interface KayitIstegi {
 }
 
 // --- Worker → DO iç iletileri (dışarıya açık değildir) ---
-export type HesapIleti =
+export type HesapIleti = (
   | { islem: "giris"; hesapId: string; sub: string }
   | { islem: "profil"; hesapId: string }
   | { islem: "profilOlustur"; hesapId: string; govde: unknown }
@@ -427,7 +427,13 @@ export type HesapIleti =
   | { islem: "siyaset"; hesapId: string; bolge?: string | null; kayitSayfa?: string | null }
   | { islem: "siyasetYaz"; hesapId: string; govde: unknown }
   /** YonetimDO → HesapDO: hesabın etkin yaptırım özeti (tamamı yazılır; tekrar güvenli). */
-  | { islem: "yaptirimYaz"; hesapId: string; durum: HesapYaptirimi };
+  | { islem: "yaptirimYaz"; hesapId: string; durum: HesapYaptirimi }
+  /** POST /v1/oturumlar/kapat: hesabın oturum sürümünü artırır (bütün belirteçler düşer). */
+  | { islem: "oturumlariKapat"; hesapId: string }
+) & {
+  /** Worker → HesapDO: oyuncu belirtecindeki oturum sürümü (sürümsüz belirteç 0). İç iletilerde yoktur. */
+  oturumSurumu?: number;
+};
 
 /** Hesabın etkin yaptırımları; alan yoksa o yaptırım yoktur. `bitis: null` = kalıcı. */
 export interface HesapYaptirimi {

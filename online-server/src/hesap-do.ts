@@ -18,6 +18,9 @@ import { SEZON_KAYNAK_PUANI } from "./debdebe/sezon.ts";
 import { siyasetOku, siyasetYaz, siyasetYoklama } from "./siyaset/hesap-kopru.ts";
 
 const YAPTIRIM = "yaptirim";
+const OTURUM_SURUMU = "oturumSurumu";
+/** [PARAMETRE] Yönetim parametrelerinin (hız sınırı) HesapDO belleğinde tutulduğu süre. */
+export const PARAMETRE_ONBELLEK_MS = 60_000;
 
 export class HesapDO {
   readonly #depo: Depo;
@@ -26,6 +29,10 @@ export class HesapDO {
   #hiz: HizDurumu | undefined;
   /** Yaptırım özeti önbelleği: bu örnek tek yazandır, bu yüzden tutarlıdır. null = yok. */
   #yaptirim: HesapYaptirimi | null | undefined;
+  /** Etkin hız sınırı önbelleği (YonetimDO'dan; erişilemezse varsayılan). Bellekte, kısa süreli. */
+  #parametre: { sinir: number; son: number } | undefined;
+  /** Oturum sürümü önbelleği: bu örnek tek yazandır. */
+  #oturumSurumu: number | undefined;
 
   readonly #dogrulayici: MakbuzDogrulayici;
 
@@ -47,26 +54,24 @@ export class HesapDO {
     if (ileti.islem === "debdebeRozetSil") return jsonYanit(await debdebe.rozetKaldir(this.#depo, ileti.id));
     if (ileti.islem === "debdebeGorunum") return jsonYanit(await debdebe.gorunumVer(this.#depo, simdi));
     if (ileti.islem === "debdebeIade") return jsonYanit(await debdebe.iadeIsle(this.#debdebe(ileti.hesapId, simdi), ileti.islemKimligi));
-    let sinir = HIZ_SINIRI;
-    try {
-      const calisma = await yonetimCagir(this.#env, { islem: "parametrelerCalisma" });
-      if (calisma.ok && typeof calisma.deger === "object" && calisma.deger !== null) {
-        const etkinSinir = (calisma.deger as Record<string, unknown>).HIZ_SINIRI;
-        if (typeof etkinSinir === "number") sinir = etkinSinir;
-      }
-    } catch {
-      // Yönetim DO erişilemezse hesap varsayılan hız sınırını kullanır.
-    }
-    const hiz = hizKontrol(this.#hiz, simdi, sinir);
+    // Hız sınırı, YonetimDO'ya gitmeden önce bellekteki son bilinen sınırla uygulanır (reddedilen istek
+    // tek YonetimDO'ya yük bindirmez). Önbellek eskiyse yalnız geçen istek parametreyi tazeler.
+    const hiz = hizKontrol(this.#hiz, simdi, this.#parametre?.sinir ?? HIZ_SINIRI);
     this.#hiz = hiz.durum;
     if (!hiz.izin) return jsonYanit(hata("hiz_siniri"));
+    if (!this.#parametre || this.#parametre.son <= simdi) await this.#parametreTazele(simdi);
+    if (typeof ileti.oturumSurumu === "number" && ileti.oturumSurumu !== (await this.#oturumSurumuOku())) {
+      return jsonYanit(hata("oturum_gecersiz"));
+    }
+    if (ileti.islem === "oturumlariKapat") return jsonYanit(await this.#oturumlariKapat());
     const yaptirim = await this.#yaptirimDurumu();
     const engel = yaptirimEngeli(yaptirim, ileti.islem, simdi);
     if (engel) return jsonYanit(engel);
     if (ileti.islem === "giris") {
       const g = await girisKaydet(this.#depo, ileti.hesapId, ileti.sub, simdi);
       const uzak = uzaklastirmaBilgisi(yaptirim, simdi);
-      return jsonYanit(basarili(uzak ? { ...g, uzaklastirma: uzak } : g));
+      const surum = await this.#oturumSurumuOku();
+      return jsonYanit(basarili({ ...g, ...(uzak ? { uzaklastirma: uzak } : {}), ...(surum > 0 ? { oturumSurumu: surum } : {}) }));
     }
     const sonuc = await this.#isle(ileti, simdi);
     // Sezon Defteri: başarılı oyun yazması oynayarak ilerletir (günlük tavan, istekNo izi; yalnız kozmetik ödül).
@@ -97,6 +102,37 @@ export class HesapDO {
       levhaGetir: (beylik) => dunyaCagir(env, { islem: "levhaOku", beylik }),
       ...(env.MASA ? { masaCagir: (ad: string, i: MasaIleti) => masaCagir(env, ad, i) } : {}),
     };
+  }
+
+  async #parametreTazele(simdi: number): Promise<void> {
+    let sinir = HIZ_SINIRI;
+    try {
+      const calisma = await yonetimCagir(this.#env, { islem: "parametrelerCalisma" });
+      if (calisma.ok && typeof calisma.deger === "object" && calisma.deger !== null) {
+        const etkinSinir = (calisma.deger as Record<string, unknown>).HIZ_SINIRI;
+        if (typeof etkinSinir === "number") sinir = etkinSinir;
+      }
+    } catch {
+      // Yönetim DO erişilemezse hesap varsayılan hız sınırını kullanır (aynı süre önbelleklenir).
+    }
+    this.#parametre = { sinir, son: simdi + PARAMETRE_ONBELLEK_MS };
+  }
+
+  async #oturumSurumuOku(): Promise<number> {
+    if (this.#oturumSurumu === undefined) {
+      const d = await this.#depo.al<number>(OTURUM_SURUMU);
+      this.#oturumSurumu = typeof d === "number" && Number.isSafeInteger(d) && d >= 0 ? d : 0;
+    }
+    return this.#oturumSurumu;
+  }
+
+  /** Bütün oturumları kapatır: sürüm artar, eski sürümü taşıyan her belirteç reddedilir (çağıranınki dahil). */
+  async #oturumlariKapat(): Promise<Sonuc<{ kapatildi: true }>> {
+    if (!(await hesapKaydi(this.#depo))) return hata("hesap_yok");
+    const yeni = (await this.#oturumSurumuOku()) + 1;
+    await this.#depo.koy({ [OTURUM_SURUMU]: yeni });
+    this.#oturumSurumu = yeni;
+    return basarili({ kapatildi: true });
   }
 
   async #yaptirimDurumu(): Promise<HesapYaptirimi | undefined> {
