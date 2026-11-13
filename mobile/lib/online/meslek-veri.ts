@@ -147,8 +147,8 @@ export function beceriPuaniYerel(i: MeslekIlerleme, kademeHizmet: readonly numbe
 export interface TarifTanimi { id: string; meslek: MeslekId; dugum: string; girdi: Partial<Record<MalId, number>>; cikti: [MalId, number]; takat: number; hizmet: number; arac?: { mal: MalId; adet: number } }
 /** [PARAMETRE] Dikey dilim tarifleri (çiftçi–oduncu–demirci zinciri). Adları istemcide onl.tarif.<id>. */
 export const TARIFLER: readonly TarifTanimi[] = [
-  { id: "kereste", meslek: "oduncu", dugum: "oduncu.orman.0", girdi: { odun: 2 }, cikti: ["kereste", 1], takat: 1, hizmet: 2 },
-  { id: "komur", meslek: "oduncu", dugum: "oduncu.maden.0", girdi: { odun: 2 }, cikti: ["komur", 1], takat: 1, hizmet: 2 },
+  { id: "kereste", meslek: "oduncu", dugum: "oduncu.orman.0", girdi: { odun: 1 }, cikti: ["kereste", 1], takat: 1, hizmet: 2 },
+  { id: "komur", meslek: "oduncu", dugum: "oduncu.maden.0", girdi: { odun: 1 }, cikti: ["komur", 2], takat: 1, hizmet: 2 },
   { id: "nal", meslek: "demirci", dugum: "demirci.alet.0", girdi: { cevher: 1, komur: 1 }, cikti: ["nal", 2], takat: 1, hizmet: 2 },
   { id: "alet", meslek: "demirci", dugum: "demirci.alet.1", girdi: { cevher: 2, komur: 1, kereste: 1 }, cikti: ["alet", 1], takat: 2, hizmet: 3 },
   { id: "hasat", meslek: "ciftci", dugum: "ciftci.ekin.0", girdi: {}, cikti: ["tahil", 3], takat: 2, hizmet: 2, arac: { mal: "alet", adet: 5 } },
