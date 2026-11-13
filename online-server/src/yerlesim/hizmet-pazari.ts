@@ -1,6 +1,6 @@
 // E4.3: öğrenilmiş hizmeti süreli stoğa hazırlar; ilan, satın alma, teslim ve bozulma akışını yönetir.
 import type { MalId } from "../icerik/mallar.ts";
-import { hizmetAcik, sinerjiAcik } from "./beceri-etki.ts";
+import { hizmetAcik, sinerjilerAcik } from "./beceri-etki.ts";
 import { envanterEkle } from "./npc-taban.ts";
 import { halDegistir, type Hal } from "./hal.ts";
 import { hizmetEkle } from "./meslek.ts";
@@ -19,7 +19,8 @@ export const HIZMET_STOK_EN_COK = 20;
 
 /** Hizmet düğümü ve varsa tarifte tanımlı çapraz meslek sinerjisi birlikte aranır. */
 export function hizmetYetkiliMi(kar: Karakter, tarif: HizmetTarifi): boolean {
-  return hizmetAcik(kar, tarif.id) && (!tarif.acar || sinerjiAcik(kar, tarif.acar));
+  const acarlar = [...(tarif.acar ? [tarif.acar] : []), ...(tarif.acars ?? [])];
+  return hizmetAcik(kar, tarif.id) && sinerjilerAcik(kar, acarlar);
 }
 
 export interface HizmetHazirlamaSonucu {
