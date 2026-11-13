@@ -90,7 +90,7 @@ Bu üç sistem, farklı oyun döngülerini etkilediği için tek bir genel bonus
 - `arbalet`: Demirci `mekanizmaUstaligi` ikinci seviye ve Marangoz `arabaYapimi` birinci seviye aynı karakterde olmalıdır. Yeni arbalet malı/tarifi eklendi; `tarifAcik` ikinci meslek koşulunu sunucuda zorunlu kılar.
 - `ticaretSozlesmesi`: Kâtip `vasiyetSozlesme` ikinci seviye ve Tüccar `toptanAlim` birinci seviye birlikte olmalıdır. Yeni `sozlesme` malı/tarifi eklendi; tarif tek meslekle açılamaz.
 - İki tarif için de eksik sinerji, birlikte öğrenme, gerçek üretim ve envanter düşümü regresyon testleri eklendi.
-- Güncel envanter sayımı: 17/21 sinerji tüketicisi bağlı, 4 kaldı. `uzakAnlasma` gibi henüz gerçek uzak şehir/rota akışı bulunmayan etkiler sırf görünür olsun diye sahte tüketiciye bağlanmadı. Bu değişikliklerin CI doğrulaması henüz alınmadı.
+- Önceki 17/21 sayımı, karşılıklı `kopruDemiri` ve `sazGecesi` kayıtları tüketiciye bağlanmadan önceki durumdu. Güncel sayım 20/21 etki bildirimi; yalnız `uzakAnlasma` gerçek uzak şehir/rota altyapısı bekliyor. Son kod paketi için CI henüz alınmadı.
 
 
 ### 13 Kasım — karşılıklı köprü ve saz gecesi sinerji kayıtları
