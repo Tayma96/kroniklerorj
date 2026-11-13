@@ -396,11 +396,25 @@ function isBecerisi(kar: Karakter, meslek: "arabulucu" | "asker" | "katip", dugu
   kar.ta = 200;
 }
 
+function ulakSiparisiAc(kar: Karakter): void {
+  isBecerisi(kar, "katip", "katip.koyMektubu", 3);
+}
+
+test("ulak siparişi: gönderen Kâtip köy mektubu üçüncü seviye hakkına sahip olmalı", () => {
+  const { k, a, b } = kur();
+  const hedef = oyuncuEkle(k, 3, k.ay - 13 * 12 - 2);
+  const govde = { tur: "is", is: "mektup", tutar: 5, mektupHedef: hedef.o, mektupMetni: "Selam." };
+  assert.deepEqual(teklifOlustur(k, a, b, govde, k.ay), { ok: false, hata: "dugum_kapali" });
+  ulakSiparisiAc(a);
+  assert.equal(teklifOlustur(k, a, b, govde, k.ay).ok, true);
+});
+
 test("iki taraflı mektup işi: emanet, açık rıza, beceri kapısı, teslim ve tek ödeme", () => {
   const { k, a, b } = kur();
   a.h = "is-veren"; b.h = "is-yapan"; a.e = 101; b.e = 202;
   const hedef = oyuncuEkle(k, 3, k.ay - 13 * 12 - 2); hedef.e = 303;
   const ilkPara = a.pa;
+  ulakSiparisiAc(a);
   const teklif = teklifOlustur(k, a, b, { tur: "is", is: "mektup", tutar: 12, mektupHedef: hedef.o, mektupMetni: "Akşam hanın avlusunda buluşalım." }, k.ay);
   assert.ok(teklif.ok);
   if (!teklif.ok) return;
@@ -455,6 +469,7 @@ test("iki taraflı işler: aynı hesap/hane engeli, ret, iptal ve süre aşımı
   const d = oyuncuEkle(k, 4, k.ay - 13 * 12 - 2); d.e = 708;
   const e = oyuncuEkle(k, 5, k.ay - 13 * 12 - 2); e.e = 709;
   const ilkPara = a.pa;
+  ulakSiparisiAc(a);
   const sart = (hedef: Karakter) => ({ tur: "is" as const, is: "mektup" as const, tutar: 5, mektupHedef: hedef.o, mektupMetni: "Mühürlü not." });
   const ayniHesap = teklifOlustur(k, a, { ...b, h: a.h }, sart(c), k.ay);
   assert.deepEqual(ayniHesap, { ok: false, hata: "ayni_kume" });
@@ -519,6 +534,7 @@ test("E4.3-D mektup işi: kâtip mektubu üçüncü oyuncuya özel ulaştırır;
   hedef.h = "mektup-hedef-316"; hedef.e = 400;
   b.pa = 0;
   const mesaj = "Yarın güneş doğarken hanın önünde buluşalım.";
+  ulakSiparisiAc(a);
   const r = teklifOlustur(k, a, b, {
     tur: "is", is: "mektup", tutar: 5, mektupHedef: hedef.o, mektupMetni: mesaj,
   }, k.ay);
@@ -548,6 +564,7 @@ test("E4.3-D iş sözleşmesi: aynı hane reddedilir, iki taraflı iptal emaneti
   const hedef = oyuncuEkle(k, 4, k.ay - 13 * 12 - 2);
   hedef.h = "mektup-hedef-317"; hedef.e = 400;
   const sart = { tur: "is" as const, is: "mektup" as const, tutar: 4, mektupHedef: hedef.o, mektupMetni: "Mühürlü not." };
+  ulakSiparisiAc(a);
   hizmetci.e = a.e;
   assert.deepEqual(teklifOlustur(k, a, hizmetci, sart, k.ay), { ok: false, hata: "ayni_kume" });
   hizmetci.e = 300;
@@ -569,6 +586,7 @@ test("E4.3-D mektup: aynı ay aynı hedefe ikinci teklif ve engelli hedef teslim
   const hedef = oyuncuEkle(k, 4, k.ay - 13 * 12 - 2);
   hedef.e = 400;
   const girdi = { tur: "is" as const, is: "mektup" as const, tutar: 3, mektupHedef: hedef.o, mektupMetni: "Selam." };
+  ulakSiparisiAc(a);
   const r = teklifOlustur(k, a, b, girdi, k.ay);
   assert.ok(r.ok);
   assert.deepEqual(teklifOlustur(k, a, b, girdi, k.ay), { ok: false, hata: "teklif_siniri" });
@@ -586,17 +604,20 @@ test("iki taraflı işler: oyuncunun aynı anda taşıyabileceği sözleşme say
   const d = oyuncuEkle(k, 4, k.ay - 13 * 12 - 2);
   a.h = "aktif-a"; b.h = "aktif-b"; c.h = "aktif-c"; d.h = "aktif-d";
   a.e = 801; b.e = 802; c.e = 803; d.e = 804;
+  ulakSiparisiAc(a);
   const ab = teklifOlustur(k, a, b, { tur: "is", is: "mektup", tutar: 5, mektupHedef: c.o, mektupMetni: "Birinci mektup." }, k.ay);
   assert.ok(ab.ok);
   if (!ab.ok) return;
   isBecerisi(b, "katip", "katip.koyMektubu");
   assert.ok(teklifCevap(k, b, `t${ab.deger.teklif.i}`, "kabul", {}, k.ay).ok);
 
+  ulakSiparisiAc(c);
   const ca = teklifOlustur(k, c, a, { tur: "is", is: "mektup", tutar: 5, mektupHedef: d.o, mektupMetni: "İkinci mektup." }, k.ay);
   assert.ok(ca.ok);
   isBecerisi(a, "katip", "katip.koyMektubu");
   assert.ok(teklifCevap(k, a, `t${ca.deger.teklif.i}`, "kabul", {}, k.ay).ok);
 
+  ulakSiparisiAc(d);
   const da = teklifOlustur(k, d, a, { tur: "is", is: "mektup", tutar: 5, mektupHedef: b.o, mektupMetni: "Üçüncü mektup." }, k.ay);
   assert.deepEqual(da, { ok: false, hata: "teklif_siniri" });
 });
@@ -610,16 +631,19 @@ test("E4.3-D: bekleyen iş teklifi sonradan kabul edilse bile gönderenin aktif 
   for (const [x, h, ev] of [[a, "yarisan-a", 901], [b, "yarisan-b", 902], [c, "yarisan-c", 903], [d, "yarisan-d", 904], [e, "yarisan-e", 905]] as const) {
     x.h = h; x.e = ev;
   }
+  ulakSiparisiAc(b);
   const ilk = teklifOlustur(k, b, a, { tur: "is", is: "mektup", tutar: 3, mektupHedef: e.o, mektupMetni: "İlk iş." }, k.ay);
   assert.ok(ilk.ok);
   if (!ilk.ok) return;
   isBecerisi(a, "katip", "katip.koyMektubu");
   assert.ok(teklifCevap(k, a, `t${ilk.deger.teklif.i}`, "kabul", {}, k.ay).ok);
 
+  ulakSiparisiAc(a);
   const bekleyen = teklifOlustur(k, a, c, { tur: "is", is: "mektup", tutar: 4, mektupHedef: d.o, mektupMetni: "Bekleyen iş." }, k.ay);
   assert.ok(bekleyen.ok);
   if (!bekleyen.ok) return;
 
+  ulakSiparisiAc(d);
   const ikinci = teklifOlustur(k, d, a, { tur: "is", is: "mektup", tutar: 5, mektupHedef: e.o, mektupMetni: "İkinci iş." }, k.ay);
   assert.ok(ikinci.ok);
   isBecerisi(a, "katip", "katip.koyMektubu");
