@@ -21,7 +21,7 @@ Durum: kısmi uygulama. `tasarruf` tüketicisi, ortak-durum/han tüketicileri, E
 - `hak`: 203 kullanım — makam, lonca, ticaret, garnizon, sosyal yardım ve toplumsal ayrıcalıklar için sunucu tarafı yetki/eylem matrisi gerekir.
 - `sinerji`: 21 kullanım — 20 etki bildirimi gerçek tüketiciye bağlandı. `kopruDemiri` artık `degirmenKopruDemiri` ile birlikte ahşap köprü yetkisinde; `sazGecesi` de `ortakSahne` ile birlikte hizmet pazarında doğrulanır. `uzakAnlasma` tek açık etkidir; doğrulanmış uzak şehir/rota altyapısı bulunmadan sahte tüketici eklenmeyecek.
 - `tasarruf`: 1 kullanım vardı; bu dalda bağlandı.
-- `hakAcik(kar, hak)` ve `sinerjiAcik(kar, acar)` ortak sunucu çözümleyicileri eklendi. `tarifAcik` artık arbalet ve ticaret sözleşmesi tariflerinde ikinci meslek koşulunu da sunucuda doğrular. 203 hak ve 4 sinerji etkisi açık kalır.
+- `hakAcik(kar, hak)`, `sinerjiAcik(kar, acar)` ve `sinerjilerAcik(kar, acarlar)` ortak sunucu çözümleyicileri eklendi. `tarifAcik` arbalet ve ticaret sözleşmesi tariflerinde ikinci meslek koşulunu; ahşap köprü hakkı ve saz gecesi hizmeti ise iki karşılıklı sinerji kaydını birlikte doğrular. 203 hak tüketicisi ve yalnız `uzakAnlasma` sinerjisi açık kalır.
 
 ## Uygulama sırası
 
