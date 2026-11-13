@@ -30,7 +30,13 @@ export function kilitAcik(k: Karakter, kilit: OnKosul | undefined): boolean {
 }
 
 /** Tarifi açan düğüm seviyesi öğrenilmiş mi (kilidi olmayan tarif yoktur; testle denetlenir). */
-export const tarifAcik = (k: Karakter, id: string): boolean => Object.hasOwn(TARIF_KILIDI, id) && kilitAcik(k, TARIF_KILIDI[id]);
+export const tarifAcik = (k: Karakter, id: string): boolean => {
+  if (!Object.hasOwn(TARIF_KILIDI, id) || !kilitAcik(k, TARIF_KILIDI[id])) return false;
+  // Çapraz meslek tarifleri, açan düğümün yanında sinerjinin ikinci meslek koşulunu da ister.
+  if (id === "arbalet") return sinerjiAcik(k, "arbalet");
+  if (id === "sozlesme") return sinerjiAcik(k, "ticaretSozlesmesi");
+  return true;
+};
 /** Usta işi açık mı (kilidi olmayan temel iş herkese açıktır). */
 export const isAcik = (k: Karakter, id: string): boolean => kilitAcik(k, IS_KILIDI[id]);
 
