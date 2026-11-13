@@ -26,6 +26,8 @@ export const MAL_IDLERI = [
   "kagit",
   "murekkep",
   "senet",
+  "sozlesme",
+  "arbalet",
   // Faz 6 ekonomi: meslek kataloğu (MESLEK_AGACLARI §3.2) — çiftçi, oduncu, demirci, marangoz, dokumacı, aşçı
   "bugday",
   "bakla",
@@ -95,6 +97,8 @@ export const MALLAR: Record<MalId, { taban: number; meslek: MeslekId; omur?: num
   kagit: { taban: 6, meslek: "tuccar" },
   murekkep: { taban: 0, meslek: "katip" },
   senet: { taban: 0, meslek: "katip" },
+  sozlesme: { taban: 0, meslek: "katip" },
+  arbalet: { taban: 75, meslek: "demirci" },
   bugday: { taban: 3, meslek: "ciftci" },
   bakla: { taban: 3, meslek: "ciftci" },
   post: { taban: 2, meslek: "ciftci" },
