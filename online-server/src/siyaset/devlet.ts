@@ -8,7 +8,7 @@ function oncekiIstekMi(oncekiId: string, oncekiAy: number, yeniId: string, yeniA
   const ayir = (id: string): { sira: number; ay: number } | undefined => {
     const p = id.split(":");
     const dogruUzunluk = tur === "ittifak" ? p.length === 4 && p[3] === "ittifak" : p.length === 3;
-    if (!dogruUzunluk || p[0] !== kaynak || !/^\\d+$/.test(p[1] ?? "") || !/^\\d+$/.test(p[2] ?? "")) return undefined;
+    if (!dogruUzunluk || p[0] !== kaynak || !/^\d+$/.test(p[1] ?? "") || !/^\d+$/.test(p[2] ?? "")) return undefined;
     return { sira: Number(p[1]), ay: Number(p[2]) };
   };
   const once = ayir(oncekiId);
