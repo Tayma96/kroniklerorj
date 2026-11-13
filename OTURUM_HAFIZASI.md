@@ -1,29 +1,31 @@
-# Kronikler — güncel çalışma özeti (3 Kasım 2026)
+# Kronikler — güncel çalışma özeti (13 Kasım 2026)
 
 ## Yetki ve kalıcı kurallar
-- Repo Tayma96/kroniklerorj; yalnız `apk`. Türkçe, tek satırlı commit; kullanıcı commit/push işine açıkça izin verdi. Diğer sohbetteki bota mesaj gönderme yetkisi yok.
-- Berkay'a asla ek ücret çıkarma. Görsel/video yalnız ücretsiz araçlarla. Ses: ElevenLabs Starter kotası içinde, `docs/SES_PLANI.md` kurallarıyla (ölçülü, kayıtlı, onay kapılı). Anahtarları okuma/yazdırma. APK, PR ve dağıtım istenmedikçe yapma.
-- 3 Kasım: Berkay yarım yeni sistemlerden rahatsız; Superpowers zorunlu: önce konuşma ve tasarım belgesi, onaydan sonra kod.
-- Yeni oyuncu metni tr/en/es/pt/ar/ru. Eski kayıt, çevrimdışı akış, MP protokol eşleşmesi korunmalı; yeni alanlar opsiyonel.
-- Görsel dil canlı ve profesyonel; her NPC'ye yaş/meslek/ruh hâline göre özgün portre.
+- Repo Tayma96/kroniklerorj; ana dal `apk`. Türkçe, tek satırlı commit, ek satır yok. Berkay 13 Kasım'da tam yetki verdi (birleştirme, silme, `apk`'ye push dahil).
+- Tek sert kural: **her şey ücretsiz**. Ek ücret çıkarabilecek her adım (Cloudflare, mağaza, ses) önce kontrol edilir. Anahtarları okuma/yazdırma.
+- Yeni oyuncu metni tr/en/es/pt/ar/ru. Eski kayıt ve çevrimdışı akış korunur; yeni kayıt alanları opsiyonel.
+- Model işbölümü `AGENTS.md`'de (yönetici karar ve inceleme, `coder` opus, `tester` sonnet); esnek, verime göre.
 
-## Kalıcı tasarım kararları
-- Tek oyunculu önce, çevrimiçi sonra. Ana sayfa = mockup ekran 1 (`lib/home-mockup-ui.tsx`, süs `lib/mk-sus.tsx`).
-- Alt menü: Ana Sayfa · Karakter · [Ayı İlerlet] · İlişkiler · Menü. Emek Karakter ekranında, çalışılmamış ayda rozet.
+## Ürün yapısı (13 Kasım kararı)
+- İki seçenek: **Tek Oyunculu** (`mobile/app/oyun/`, çevrimdışı) ve **Çok Oyunculu** (`mobile/app/online/`, sunucu `online-server/`). Kayıtlar ayrı.
+- Eski Diyar MP tamamen söküldü (`cok-oyunculu/`, `lib/mp/`, `server/`, dağıtım iş akışı, `mpMode`, `mp.*` metinleri). Motorda `mpRealm` ve diyar fonksiyonları test betikleri kullandığı için duruyor.
+- Girişteki "Çok Oyuncu" düğmesi `/online`'a gider; kapı kapalı (`EXPO_PUBLIC_ONLINE_GELISTIRME`), "Yakında" gösterir.
+- Ekran envanteri ve sade yapı önerisi: `EKRAN_HARITASI.md` (70 ekran).
 
-## Önceki turlar (özet)
-- 1–3 Kasım `apk`'de: sekme çubuğu, yeni oyun, ana sayfa, dil ekranı, ses paketi, 56 sn giriş videosu, hissiyat 1–4.
-- Radikal sonuçlar spec `docs/superpowers/specs/2026-11-03-radikal-sonuclar-design.md`; aşama 0–3 bitti, sıradaki aşama 4 (göç, suç, lekeli).
-- Dövüş 3D: `scripts/blender/` k09–k12, `docs/SAVAS_HAREKET_HARITASI.md`; ham FBX depoda yok.
+## Çevrimiçi durum
+- ChatGPT'nin `feature/online-p5-darbe-zinciri` dalı incelenip `apk`'ye birleştirildi: P5–P6 darbe/bağımsız devlet, Y2–Y3 yönetim, ekonomi/mülk/siyaset/topluluk/Debdebe ekranları, test girişi (varsayılan kapalı), elle tetiklenen dağıtım iş akışı.
+- Sunucu: 466 test, 465 geçti, 1 atlandı. Yapılandırmada ücretli bağlama yok (yalnız SQLite Durable Object).
+- Birleştirmede bulunan eksik: Mülk ve İşletme ekranlarının 178 metni hiç yazılmamıştı; 6 dilde eklendi (`i18n-sayfa/online5.ts`).
+- Ayrıntılı devir: `docs/online/DEVIR_2026-11-12.md` (54 KB; yalnız ilgili bölümü oku).
+- Sunucu hiç dağıtılmadı; hiçbir çevrimiçi ekran gerçek sunucuyla denenmedi.
 
-## Çevrimiçi (10 Kasım durumu)
-- Esas: `docs/superpowers/specs/2026-11-08-cevrimici-ana-tasarim-design.md` (§6.1 hediye, §6.2 teveccüh tutarla, §6.3 aile evi, §8 sıra) + `2026-11-09-beceri-agaci-v2-design.md`. GDD'ler yön gösterici.
-- `apk`de sunucu (334 test): meslek + 14 RPG ağacı, dikey dilim, Y1 yönetici, Faz 3–6, han masası, hanedan, Faz 12–13 mülk/işletme/çalışan, Faz 14 barınma, E5–E7 topluluk, Faz 7 + Ek B P1–P4 siyaset, Debdebe (ödeme kapalı, `DEBDEBE_ACIK`). İstemci: profil, gelen, han, hanedan, ağaçlar, üçgen, barınma; ekonomi/mülk ekranları son ajanda.
-- Kalan: Faz 8 + P5–P6 darbe/bağımsızlık; Ayan/sezon tamamlama, Y2 ekonomi sağlığı + parametre okuma, Y3 telafi; E4 11 meslekte `kanca` etkileri; siyaset/topluluk/Debdebe/Meşrep ekranları; meslek gelir dengesi (sim todo, oran ~2,6); Faz 9 yayın kapısı; sonra test sürümü (test girişi + çevrimiçi APK; Berkay sunucuyu `wrangler deploy` eder).
-- Devir notu: `docs/online/DEVIR_2026-11-10.md` (yeni hesap buradan devam eder).
+## Sıradaki işler
+1. Deneme (staging) sunucusu: Cloudflare ücretsiz plan sınırlarını doğrula, sonra `deploy-online-server.yml` ile test Worker'ı. İlk dilim: giriş → profil → yerleşim → yaşam → meslek → işler.
+2. Çevrimiçi kodun güvenlik ve denge incelemesi (`security-reviewer`, `denge-denetcisi`) dağıtımdan önce.
+3. Tek oyunculu sadeleştirme (`EKRAN_HARITASI.md` §7): Divan'ı bağla, iki "Kronik" adını ayır, Menü ile Şehir'i birleştir, Açık İşler'i kaldır.
+4. Çevrimiçi Yaşam ekranının gezinmesini topla (20'ye yakın çıkış).
+5. E4 kalan beceri etkileri (34 hizmet, 203 hak); meslek gelir dengesi.
 
-## Açık işler
-- `docs/DEVIR.md` (1 Kasım devri). ElevenLabs Berkay'ın aboneliğiyle onaylı (`.mcp.json`).
-- Alt ajan sayısını Berkay belirler (3 Kasım: 3 rol ajanı istedi). Ses planı `docs/SES_PLANI.md`.
-- Ün kazancı tek yerden (`unEkle`, kademe oranları); mülk her alımda %15 pahalı. Math.random göçü sürüyor.
-- 3D'de bakış, ayak teması, cilt dokusu.
+## Berkay'ın yapacakları
+- Cloudflare panelinden eski `kronikler-mp` Worker'ını sil (boşta ücret çıkarmaz, yalnız temizlik).
+- Deneme sunucusu için GitHub'a `CLOUDFLARE_API_TOKEN` sırrı ve Worker sırları (`OTURUM_ANAHTARI`, `TEST_GIRIS_KODU`).

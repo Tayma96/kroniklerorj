@@ -1,21 +1,20 @@
 # EKRAN HARİTASI
 
-> 13 Kasım 2026. Kaynak: `mobile/app/` altındaki 65 ekran dosyası ve koddaki bütün `router.push/replace/back`
-> çağrıları ile `lib/` içindeki rota metinleri. Kod değişmedi; bu yalnız envanterdir.
-> "Doğrulanmadı" yazan yerler koddan kesin okunamayan noktalardır.
+> 13 Kasım 2026 (eski Diyar çok oyunculu söküldükten ve çevrimiçi dal birleştirildikten sonraki durum).
+> Kaynak: `mobile/app/` altındaki 70 ekran dosyası ve koddaki bütün `router.push/replace/back` çağrıları ile
+> `lib/` içindeki rota metinleri. "Doğrulanmadı" yazan yerler koddan kesin okunamayan noktalardır.
 
-## 0. Büyük resim (karışıklığın kaynağı)
+## 0. Büyük resim
 
-Uygulamada iki değil **üç** ayrı alan var:
+Uygulamada iki alan var; eski üçüncü alan (`cok-oyunculu/`, `lib/mp/`, `server/`) 13 Kasım'da kaldırıldı.
 
 | Alan | Klasör | Ekran | Durum |
 |---|---|---|---|
-| Tek oyunculu | `app/oyun/` | 35 | Çalışıyor, oyunun kendisi. |
-| Eski çok oyunculu ("Diyar") | `app/cok-oyunculu/` | 5 | Kapalı (`ONLINE_ACIK = false`). Girişteki "Çok Oyuncu" düğmesi buraya gelir ve "Yakında" gösterir. Açıkken tek oyunculu ekranları `mpMode` ile yeniden kullanır. |
-| Yeni çevrimiçi | `app/online/` | 22 | Kapalı (`ONLINE_GELISTIRME = false`). **Uygulamanın hiçbir yerinden `/online`'a giden düğme yok.** |
+| Tek oyunculu | `app/oyun/` | 35 | Çalışıyor, internet gerekmez. |
+| Çok oyunculu (çevrimiçi) | `app/online/` | 32 | Kapalı (`ONLINE_GELISTIRME = false`); girişteki "Çok Oyuncu" düğmesi buraya gelir ve "Yakında" gösterir. Sunucu (`online-server/`) yazılı ama yayında değil. |
 | Kök | `app/` | 3 | Giriş, yeni oyun, sinematik. |
 
-Yani oyuncu bugün yalnız tek oyunculuyu görür. 27 çok oyunculu ekran yazılmış ama oyuncuya kapalı.
+İki oyun birbirinden bağımsızdır: ayrı kayıt, ayrı karakter.
 
 ## 1. Ekran envanteri
 
@@ -73,21 +72,11 @@ Yani oyuncu bugün yalnız tek oyunculuyu görür. 27 çok oyunculu ekran yazıl
 | `/oyun/emek` | "Emeği Geçenler": lisans ve atıflar. | Yalnız Ayarlar. |
 | `/oyun/divan` | Günün davası; hüküm ver, lakap kazan, paylaş. | **Hiçbir yerden.** |
 
-### Eski çok oyunculu (`cok-oyunculu/`)
+### Çok oyunculu (`online/`)
 
 | Ekran | Ne işe yarar | Nereden gelinir |
 |---|---|---|
-| `/cok-oyunculu` | Lobi: diyar listesi, ad. Kapalıyken "Yakında". | Giriş; tek oyunculu düzeninden yönlendirme. |
-| `/cok-oyunculu/diyar` | Diyar bekleme odası ve sohbet; başlayınca `/oyun`'a geçer. | Lobi. |
-| `/cok-oyunculu/oyun` | Diyar panosu: oyuncular, sohbet, tek oyunculu 9 ekrana kısayol. | `/oyun` ana sayfası (yalnız `mpMode`). |
-| `/cok-oyunculu/harita` | Diyar haritası. | Diyar panosu. |
-| `/cok-oyunculu/diplomasi` | Oyuncular arası diplomasi. | Diyar panosu. |
-
-### Yeni çevrimiçi (`online/`)
-
-| Ekran | Ne işe yarar | Nereden gelinir |
-|---|---|---|
-| `/online` | Giriş: Google düğmesi (kapalı), geliştirici oturumu. | **Dışarıdan hiçbir yerden.** İçeride çoğu ekranın "girişe dön"ü. |
+| `/online` | Giriş: Google düğmesi (kapalı), geliştirici oturumu. | Girişteki "Çok Oyuncu" düğmesi; içeride çoğu ekranın "girişe dön"ü. |
 | `/online/profil` | Dünyada tek ad ve cinsiyet. | Giriş, Davet, Yerleşim. |
 | `/online/yerlesim` | 7 beylikten yerleşim seçimi. | Profil. |
 | `/online/davet` | Davet koduyla yerleşime katılma. | Yerleşim. |
@@ -109,6 +98,16 @@ Yani oyuncu bugün yalnız tek oyunculuyu görür. 27 çok oyunculu ekran yazıl
 | `/online/hanedan` | Soy ağacı, vasiyet, devir. | Yaşamdaki han/hanedan girişi. |
 | `/online/kronik` | Yerleşim kroniği. | Yalnız Hanedan. |
 | `/online/donus` | 24 saatten uzun yokluktan dönüş ekranı. | Barınma bileşeni. |
+| `/online/pazar` | Pazar tahtası: oyuncudan oyuncuya alım satım. | Yaşam, ekonomi bileşeni. |
+| `/online/ismarlama` | Ismarlama sipariş verme ve alma. | Pazar, ekonomi bileşeni. |
+| `/online/levha` | Ustalar Levhası. | Yaşam, Debdebe, ekonomi bileşeni. |
+| `/online/defter` | Ekonomi defteri: gelir gider kayıtları. | Yaşam, Pazar, Ismarlama. |
+| `/online/mulk` | Mülklerim: han, dükkân, atölye edinme. | Yaşam, ekonomi bileşeni, İşletme. |
+| `/online/isletme/[id]` | İşletme paneli: kasa, personel, vekâlet, tezyin. | Mülklerim. |
+| `/online/siyaset` | Bölge siyaseti: makam, darbe, ittifak, bağımsızlık. | Yaşam. |
+| `/online/topluluk` | Topluluk ve Meşrep, şenlik, zaviye. | Yaşam. |
+| `/online/debdebe` | Debdebe: süs kataloğu ve ücretsiz "Dene" önizlemesi (ödeme kapalı). | Yaşam. |
+| `/online/hizmet` | Meslek hizmetleri. | Doğrulanmadı. |
 
 ## 2. Tekrar edenler
 
@@ -125,29 +124,24 @@ Yani oyuncu bugün yalnız tek oyunculuyu görür. 27 çok oyunculu ekran yazıl
 | Meslek | `/oyun/meslek` + `beceriler`, `/online/meslek` + `beceri-agaci` | İki ayrı meslek ve beceri sistemi. |
 | Hanedan | `/oyun/hanedan`, `/online/hanedan` | Aynı kavram, ayrı ekran. |
 | Kişi sayfası | `/oyun/npc/[id]`, `/online/kisi/[id]`, `/online/oyuncu/[id]` | Üç profil ekranı. |
-| Harita | `/oyun/harita`, `/cok-oyunculu/harita`, `/online/yerlesim` | Üç harita/yerleşim ekranı. |
-| Diplomasi | `/oyun/diplomasi`, `/cok-oyunculu/diplomasi` | İki ayrı ekran. |
-| Çok oyunculu | `cok-oyunculu/*` ve `online/*` | Aynı vaadin iki nesli; eskisi tek oyunculu ekranları ödünç alır, yenisi hepsini baştan yazar. |
+| Pazar ve mülk | `/oyun/pazar` + `mulkler`, `/online/pazar` + `mulk` | Aynı kavram, iki ayrı sistem (tek oyunculu ve çevrimiçi bilerek ayrı). |
 
 ## 3. Sorunlu ekranlar
 
 **Ulaşılamayan**
 - `/oyun/divan`: koda bağlı tek bir düğme yok. Çalışan, bitmiş bir ekran ama oyuncu göremez.
-- `/online` ve altındaki 22 ekranın tamamı: dışarıdan giriş yok, ayrıca kapı kapalı.
-- `/cok-oyunculu/diyar`, `oyun`, `harita`, `diplomasi`: lobi "Yakında" gösterdiği için ulaşılamaz.
+- `/online` altındaki 32 ekran: giriş düğmesi bağlı ama kapı kapalı, hepsi "Yakında" gösterir. Sunucu açılmadan gerçek veriyle denenemez.
 
 **Tek kapılı (bulması zor)**
 - `kronik`, `basarimlar`, `gorevler`: yalnız Menü. `copcatan`: yalnız İlişkiler. `sss`, `emek`, `sinematik`: yalnız Ayarlar.
 - `ayarlar`: alt çubukta yok; ana sayfa, Karakter ya da Menü'deki küçük düğmeden.
 - `ocak`: yalnız vârissiz ölümde; bu doğru, sorun değil.
+- Çevrimiçinde hemen her şey Yaşam ekranından açılır (20'ye yakın çıkış); Yaşam kalabalıklaşıyor.
 
 **Çıkmaz sokak**
 - Gerçek çıkmaz yok; her ekranda geri var.
 - Çevrimiçi ekranlarda "geri" çoğu yerde `/online` girişine `replace` eder (oturum/yerleşim yoksa). Oturum varken geri davranışı doğrulanmadı.
 - Çocuklukta Menü'nün kapalı kartları (atölye, meslek, örgütler, mevki, gölge, mülk) oyuncuya yarım oyun hissi verebilir; kartın gizli mi kilitli mi göründüğü doğrulanmadı.
-
-**Tutarsızlık**
-- Girişte "Çok Oyuncu" eski lobiye gider; yeni çevrimiçine giden yol yok. İkisi de açılırsa oyuncu iki ayrı çok oyunculu görür.
 
 ## 4. Yeni oyuncunun yolu
 
@@ -160,47 +154,44 @@ flowchart TD
   E --> F["Karakter: Emek / Uğraş"]
   F --> G["Ayı İlerlet (alt çubuk ortası)"]
   G --> H["/oyun: ay özeti, yeni olay"]
-  H -->|"çok oyunculu için çıkış yok; uygulamayı baştan aç"| B
-  B -->|"Çok Oyuncu"| I["/cok-oyunculu"]
-  I --> J["'Yakında' ekranı (kapalı)"]
-  K["/online (yeni çevrimiçi)"] -.->|"hiçbir düğme bağlı değil"| J
+  H -->|"girişe dön"| B
+  B -->|"Çok Oyuncu"| I["/online"]
+  I -->|"bugün"| J["'Yakında' ekranı (kapı kapalı)"]
+  I -.->|"sunucu açılınca"| K["profil → yerleşim → varış → yaşam"]
 ```
 
-Bugünkü gerçek: yeni oyuncu çok oyunculuya **ulaşamaz**. Oyun içinden girişe dönen açık bir düğme de bulunamadı (doğrulanmadı; Android geri tuşu çalışır).
+Bugün yeni oyuncu çok oyunculuda yalnız "Yakında" görür. Oyun içinden girişe dönen açık bir düğme bulunamadı (doğrulanmadı; Android geri tuşu çalışır).
 
 ## 5. Tek oyunculuda olup çok oyunculuda olmayanlar
 
-"Eski MP" tek oyunculu ekranı ödünç alıyorsa "ödünç" yazar.
-
-| Özellik | Tek oyunculu | Eski MP (Diyar) | Yeni çevrimiçi |
-|---|---|---|---|
-| Ay ilerletme | Var (düğme) | Var (hazır oyu, sayaçlı tur) | Yok; dünya saati sunucuda |
-| Aylık olay ve ikilem | Var | Var | Yok (gerilimler, dönüş kartı var) |
-| Karakter | Var | Ödünç | Var (ayrı) |
-| İlişkiler / kişi sayfası | Var | Ödünç | Var (tanıdıklar, kişi) |
-| Mahalle | Var | Yok | Var |
-| Meslek | Var | Ödünç | Var (14 meslek, ayrı sistem) |
-| Beceri ağacı | Var | Ödünç | Var (v2) |
-| Mektep | Var | Ödünç | Yok (öğrenme dönemi şeridi var) |
-| Pazar | Var | Ödünç | Yok (işler, ambar, sipariş var) |
-| Atölye | Var | Yok | Yok |
-| Mülkler | Var | Ödünç | Ekranı yok (sunucuda var) |
-| Örgütler | Var | Ödünç | Lonca tablosu |
-| Çatışma / savaş | Var | Ödünç | Yok |
-| Gölge İşleri (suç) | Var | Yok | Yok |
-| Mevki & İtibar | Var | Yok | Nam, karakterin içinde |
-| Hanedan | Var | Yok | Var |
-| Nesil & vâris | Var | Yok (ölünce yeni oyun) | Hanedan içinde devir |
-| Küllerden Yeni Ocak | Var | Yok | Yok |
-| Çöpçatan / evlilik | Var | Yok | Ekranı yok |
-| Harita / yerleşim detayı | Var | Var (ayrı) | Yalnız yerleşim seçimi |
-| Diplomasi | Var | Var (ayrı) | Ekranı yok (sunucuda siyaset var) |
-| Haberler | Var | Yok | Yerleşim defteri, kronik |
-| Hayat kaydı (günlük, roman, hikâyeler) | Var | Yok | Yalnız yerleşim kroniği |
-| Başarımlar, Divan | Var | Yok | Yok |
-| Ayarlar, SSS | Var | Yok | Yok |
-| Sohbet | Yok | Var | Var (han masası) |
-| Gelen kutusu, davet, oyuncu profili | Yok | Yok | Var |
+| Özellik | Tek oyunculu | Çok oyunculu (çevrimiçi) |
+|---|---|---|
+| Ay ilerletme | Var (düğme) | Yok; dünya saati sunucuda |
+| Aylık olay ve ikilem | Var | Yok (gerilimler, dönüş kartı var) |
+| Karakter | Var | Var (ayrı) |
+| İlişkiler / kişi sayfası | Var | Var (tanıdıklar, kişi, oyuncu profili) |
+| Mahalle | Var | Var |
+| Meslek ve beceri ağacı | Var | Var (14 meslek, ayrı sistem) |
+| Mektep | Var | Yok (öğrenme dönemi şeridi var) |
+| Pazar | Var | Var (oyuncudan oyuncuya, ısmarlama) |
+| Atölye | Var | Yok (işler ve tarifler var) |
+| Mülkler | Var | Var (mülk, işletme paneli) |
+| Örgütler | Var | Lonca tablosu, topluluk |
+| Çatışma / savaş | Var | Yok (siyasette darbe var; düello, kan davası yok) |
+| Gölge İşleri (suç) | Var | Yok |
+| Mevki & İtibar | Var | Nam karakterin içinde; makam siyasette |
+| Hanedan, vâris | Var | Var (vasiyet, devir) |
+| Küllerden Yeni Ocak | Var | Yok |
+| Çöpçatan / evlilik | Var | Ekranı yok |
+| Harita / yerleşim detayı | Var | Yalnız yerleşim seçimi |
+| Diplomasi | Var | Siyaset içinde (ittifak, tanınma) |
+| Haberler | Var | Yerleşim defteri, kronik |
+| Hayat kaydı (günlük, roman, hikâyeler) | Var | Yalnız yerleşim kroniği |
+| Başarımlar, Divan | Var | Yok |
+| Ayarlar, SSS | Var | Yok |
+| Sohbet (yazılı, sesli) | Yok | Var (han masası) |
+| Gelen kutusu, davet, oyuncu profili | Yok | Var |
+| Debdebe (süs) | Yok | Var (ödeme kapalı) |
 
 ## 6. Ek şemalar
 
@@ -210,7 +201,7 @@ Bugünkü gerçek: yeni oyuncu çok oyunculuya **ulaşamaz**. Oyun içinden giri
 flowchart LR
   G["/ Giriş"] --> YO["yeni-oyun"] --> ANA["oyun (Ana)"]
   G --> ANA
-  G --> MPL["cok-oyunculu (kapalı)"]
+  G --> ONL["online (kapı kapalı)"]
 
   subgraph ALT["Alt çubuk"]
     ANA; KAR["karakter"]; ILI["iliskiler"]; MENU["menu"]
@@ -244,15 +235,11 @@ flowchart LR
   AYAR --> sss; AYAR --> emek; AYAR --> sinematik; AYAR --> YO; sinematik --> ANA
   divan["divan (bağlantısız)"]
 
-  MPL --> MPD["cok-oyunculu/diyar"] --> ANA
-  ANA -->|"mpMode"| MPO["cok-oyunculu/oyun"]
-  MPO --> MPH["cok-oyunculu/harita"]; MPO --> MPDP["cok-oyunculu/diplomasi"]
-  MPO -->|"9 kısayol"| KAR
 ```
 
 ```mermaid
 flowchart LR
-  X["(dışarıdan giriş yok)"] -.-> OG["online (giriş)"]
+  X["Giriş: Çok Oyuncu düğmesi"] --> OG["online (giriş)"]
   OG --> OP["profil"] --> OY["yerlesim"] --> OV["varis"] --> YS["yasam"]
   OY --> OD["davet"] --> OV
   OG -->|"profil varsa"| OV
@@ -270,6 +257,9 @@ flowchart LR
   HAN --> MASA["han/masa"]; HND --> KRO["kronik"]
   OM --> KI; OT --> KI; OK --> KI; KI --> KI; KI --> OYU["oyuncu/id"]; OYU --> BA
   GEL["gelen"] --> KI
+  YS --> PZ["pazar"]; YS --> MLK["mulk"]; YS --> LVH["levha"]; YS --> DFT["defter"]
+  YS --> SYS["siyaset"]; YS --> TPL["topluluk"]; YS --> DBD["debdebe"]
+  PZ --> ISM["ismarlama"]; PZ --> DFT; ISM --> DFT; MLK --> ISL["isletme/id"]; DBD --> LVH
 ```
 
 ### (b) Bir hayat döngüsü (tek oyunculu)
@@ -289,7 +279,7 @@ flowchart TD
   C2 --> M
 ```
 
-Çevrimiçi karşılığı: profil → yerleşim → varış (12 yaş) → yaşam → meslek → hanedan (vasiyet, devir). Evlilik ve ölümün ayrı ekranı yok.
+Çevrimiçi karşılığı: profil → yerleşim → varış (12 yaş) → yaşam → meslek → mülk/işletme → siyaset → hanedan (vasiyet, devir). Evlilik ve ölümün ayrı ekranı yok.
 
 ### (c) En derin yollar
 
@@ -318,8 +308,8 @@ Beş ana bölüm; alt çubuk bunları taşır, ortada Ayı İlerlet kalır.
 | 5. Defter | `tarih`, `roman`, `hikayeler`, `kronik`, `basarimlar`, `divan`, `ayarlar`, `sss` | `tarih` "Günlük", `kronik` "Hanedan Defteri" adını alır; `roman` Günlük'ün sekmesi olur. `divan` buraya bağlanır. |
 
 Çok oyunculu için:
-- Tek giriş: girişteki "Çok Oyuncu" düğmesi yeni `/online`'a bağlanır.
-- `cok-oyunculu/*` (5 ekran) kalkar; yeni çevrimiçi hazır olana dek düğme "Yakında" kalır.
-- Çevrimiçi de aynı beş bölümü kullanır (Yaşam, Karakter+Meslek, Tanıdıklar+Mahalle+Hanedan, Yerleşim+İşler+Lonca+Han, Kronik+Gelen), böylece oyuncu iki ayrı oyun öğrenmez.
+- Tek giriş kuruldu: girişteki "Çok Oyuncu" düğmesi `/online`'a bağlı; eski `cok-oyunculu/*` kaldırıldı.
+- Yaşam ekranı 20'ye yakın çıkış taşıyor; aynı beş bölüme ayrılmalı (Yaşam, Karakter+Meslek, Tanıdıklar+Mahalle+Hanedan,
+  Yerleşim: İşler+Lonca+Pazar+Mülk+Han+Siyaset, Defter: Kronik+Gelen+Ekonomi defteri), böylece oyuncu iki ayrı oyun öğrenmez.
 
-Sonuç: tek oyunculuda 35 ekrandan `gorevler`, `sosyal`, `menu` ve `roman` ayrı ekran olmaktan çıkar (31); çok oyunculuda 27 ekrandan 5'i kalkar (22).
+Sonuç: tek oyunculuda 35 ekrandan `gorevler`, `sosyal`, `menu` ve `roman` ayrı ekran olmaktan çıkar (31); çevrimiçi 32 ekran kalır, yalnız gezinmesi toplanır.
