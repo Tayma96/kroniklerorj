@@ -12,7 +12,8 @@
 //      - kabul (sözleşme/ittifak onayı): iki tarafa tanıdık izi (boşsa "tanidik"; dost/düşman ezilmez) ve iki yönlü
 //        olumlu söylenti.
 //      - ihbar: hedef hakkında olumsuz söylenti (hedef mevcut /v1/yalanla ile yalanlar); ihbar edene kazanç yok.
-//      - meydanOku, sözleşme/ittifak teklifi: yalnız tanıklık (düello ayrı tasarlanacak).
+//      - meydanOku, sözleşme/ittifak teklifi: yalnız tanıklık.
+//      - kabul (meydan okuma onayı, H6): düello (src/yerlesim/duello.ts). Kapı tutmazsa "düello gerçekleşmedi" tanıklığı.
 
 import { basarili, hata, type Sonuc } from "../tipler.ts";
 import { namEkle } from "./karakter.ts";
@@ -21,6 +22,7 @@ import { olduMu } from "./hanedan.ts";
 import { oyuncuRef } from "./ortak.ts";
 import { haneTaniklari, mekanTaniklari, soylentiEkle } from "./soylenti.ts";
 import { ayniKume } from "./teveccuh.ts";
+import { DUELLO_NAM, DUELLO_TAKAT, duelloCoz, duelloKapisi, mevsimNo, type DuelloDokumu, type DuelloKapisi } from "./duello.ts";
 import { ciftSirala, toplumAl, type SoylentiTuru, type Toplum } from "./toplum.ts";
 import type { Karakter, Kasaba, OlayTaslagi } from "./tipler.ts";
 
@@ -40,6 +42,8 @@ export const HAN_TANIKLIK_ONEM = 3;
 export interface HanDefteri {
   k: string[];
   iz: Record<string, number>;
+  /** H6 düello farm izi: sıralı çift → nam ürettiği mevsim numarası (mevsim geçince budanır). */
+  dz?: Record<string, number>;
 }
 
 export interface HanOlayGirdisi {
@@ -50,7 +54,7 @@ export interface HanOlayGirdisi {
   kim: string;
   hedef?: string;
   katilim: string[];
-  teklifTur?: "sozlesme" | "ittifak";
+  teklifTur?: "sozlesme" | "ittifak" | "meydanOku";
 }
 
 function nesneMi(v: unknown): v is Record<string, unknown> {
@@ -71,7 +75,7 @@ export function hanOlayiCoz(govde: unknown, hesapId: string, yerlesim: string): 
   if (o.hedef !== undefined && !kimlikMi(o.hedef)) return hata("gecersiz_istek");
   if (!Array.isArray(o.katilim) || o.katilim.length > HAN_KATILIM_EN_COK || !o.katilim.every(kimlikMi)) return hata("gecersiz_istek");
   const masaNo = Number(o.masa.slice(o.masa.lastIndexOf(":") + 1));
-  const teklifTur = o.teklifTur === "sozlesme" || o.teklifTur === "ittifak" ? o.teklifTur : undefined;
+  const teklifTur = o.teklifTur === "sozlesme" || o.teklifTur === "ittifak" || o.teklifTur === "meydanOku" ? o.teklifTur : undefined;
   if (o.tur === "kabul" && !teklifTur) return hata("gecersiz_istek");
   return basarili({
     anahtar: govde.anahtar,
@@ -105,7 +109,9 @@ export interface HanEtkisi {
   soylenti: SoylentiTuru[];
   iz?: true;
   /** Etki üretilmedi; neden (görünür döküm). */
-  engel?: "ayni_kume" | "muhur_yok" | "tanik_yok" | "ayda_bir" | "hedef_yok";
+  engel?: "ayni_kume" | "muhur_yok" | "tanik_yok" | "ayda_bir" | "hedef_yok" | "mevsimde_bir";
+  /** H6 düello: kapı (gerçekleşmedi) ya da sonuç ve döküm. */
+  duello?: { kapi: DuelloKapisi } | { kazanan: string; kisi: DuelloDokumu; hedef: DuelloDokumu; nam: number };
 }
 
 function tanidikIzi(kar: Karakter, diger: string): boolean {
@@ -138,6 +144,7 @@ export function hanOlayiUygula(
   const degisen = new Set<string>();
   // Hedef zorunlu türlerde hedef bu yerleşimin sakini değilse (ör. başka yerleşimden ihbar) olay ve etki yoktur.
   if (g.tur !== "yemin" && !hedef) return basarili({ olaylar, degisen: [], etki: { ...etki, engel: "hedef_yok" } });
+  if (g.tur === "kabul" && g.teklifTur === "meydanOku" && hedef) return duelloUygula(k, g, kim, hedef, kisiler, defter, ay);
 
   // 1. Tanıklık: katılım listesindeki her sakine yalnız kendisinin gördüğü olay.
   const muhur = kim.ky === 2 ? 1 : 0;
@@ -212,4 +219,64 @@ export function hanTanidikKimlikleri(k: Kasaba, o: string, e: number): string[] 
   }
   if (e !== 0) for (const s of k.sakin) if (s.e === e && s.o !== o) sonuc.add(s.o);
   return [...sonuc];
+}
+
+/**
+ * H6 düello: kabul olayında `kim` meydan okunan (kabul eden), `hedef` meydan okuyandır. Olayda `kisi` meydan okuyan,
+ * `hedef` meydan okunan olarak yazılır. İki taraf her durumda tanık listesine eklenir (döküm iki tarafa da düşer).
+ */
+function duelloUygula(
+  k: Kasaba,
+  g: HanOlayGirdisi,
+  savunan: Karakter,
+  okuyan: Karakter,
+  kisiler: ReadonlyMap<string, Karakter>,
+  defter: HanDefteri,
+  ay: number,
+): Sonuc<{ olaylar: OlayTaslagi[]; degisen: string[]; etki: HanEtkisi }> {
+  const tanilar = new Map<string, Karakter>();
+  for (const h of g.katilim) {
+    const x = kisiler.get(h);
+    if (x && !olduMu(x)) tanilar.set(x.o, x);
+  }
+  for (const x of [okuyan, savunan]) tanilar.set(x.o, x);
+  const taban = { kisi: oyuncuRef(okuyan), hedef: oyuncuRef(savunan), masa: g.masaNo };
+  const tanikla = (anahtar: string, p: Record<string, string | number | ReturnType<typeof oyuncuRef>>) =>
+    [...tanilar.values()].map((tk): OlayTaslagi => ({ t: "han", w: okuyan.o, h: savunan.o, g: tk.o, n: HAN_TANIKLIK_ONEM + 1, k: anahtar, p }));
+  const sakin = (x: Karakter) => k.sakin.find((s) => s.o === x.o) ?? { d: x.d };
+  const kapi = duelloKapisi(okuyan, savunan, sakin(okuyan), sakin(savunan), ay);
+  if (kapi) {
+    const olaylar = tanikla("olay.han.duelloOlmadi", { ...taban, neden: kapi });
+    return basarili({ olaylar, degisen: [], etki: { tanik: tanilar.size, soylenti: [], duello: { kapi } } });
+  }
+  const sonuc = duelloCoz(okuyan, savunan, ay, g.anahtar);
+  const kazanan = sonuc.kazanan === "kisi" ? okuyan : savunan;
+  const kaybeden = kazanan === okuyan ? savunan : okuyan;
+  okuyan.tk -= DUELLO_TAKAT;
+  savunan.tk -= DUELLO_TAKAT;
+  const etki: HanEtkisi = { tanik: tanilar.size, soylenti: [] };
+  // Farm süzgeci: aynı sıralı çift mevsimde bir kez nam (ve söylenti) üretir; sonrakiler yalnız kayıt.
+  const mevsim = mevsimNo(ay);
+  const dz = (defter.dz ??= {});
+  for (const [iz, m] of Object.entries(dz)) if (m < mevsim) delete dz[iz];
+  const [a, b] = ciftSirala(okuyan.o, savunan.o);
+  const iz = `${a}:${b}`;
+  let nam = 0;
+  if (dz[iz] === mevsim) etki.engel = "mevsimde_bir";
+  else {
+    dz[iz] = mevsim;
+    nam = namEkle(kazanan, ay, "mertlik", DUELLO_NAM);
+    etki.nam = { mertlik: nam };
+    const tohum = `han:${g.anahtar}`;
+    const handaki = mekanTaniklari(k, "han", [], ay, tohum);
+    const npcTanik = handaki.length ? handaki : haneTaniklari(k, [...new Set([...tanilar.values()].map((x) => x.e).filter((e) => e !== 0))], ay, tohum);
+    if (soylentiEkle(k, "hanDuello", kazanan.o, kaybeden.o, npcTanik, ay)) etki.soylenti.push("hanDuello");
+  }
+  etki.duello = { kazanan: kazanan.o, kisi: sonuc.kisi, hedef: sonuc.hedef, nam };
+  const dokumP: Record<string, number> = {};
+  for (const [taraf, d] of [["kisi", sonuc.kisi], ["hedef", sonuc.hedef]] as const) {
+    for (const [kalem, deger] of Object.entries(d)) dokumP[taraf + kalem[0]!.toUpperCase() + kalem.slice(1)] = deger;
+  }
+  const olaylar = tanikla("olay.han.duello", { ...taban, kazanan: oyuncuRef(kazanan), nam, ...dokumP });
+  return basarili({ olaylar, degisen: [okuyan.o, savunan.o], etki });
 }

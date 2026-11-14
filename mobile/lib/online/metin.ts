@@ -62,6 +62,8 @@ const PARAM: Record<string, string[]> = {
   "olay.han.meydanOku": ["kisi", "hedef", "masa"],
   "olay.han.kabul.sozlesme": ["kisi", "hedef", "masa"],
   "olay.han.kabul.ittifak": ["kisi", "hedef", "masa"],
+  "olay.han.duello": ["kisi", "hedef", "masa", "kazanan", "kisiToplam", "hedefToplam", "nam"],
+  "olay.han.duelloOlmadi": ["kisi", "hedef", "masa", "neden"],
   "olay.darbe.ganimetKayip": ["tutar", "yuzde"],
   "olay.darbe.ganimetPay": ["tutar"],
   "hal.can.saglam": ["toparlama", "esik", "taban"],
@@ -105,6 +107,7 @@ function degerYaz(ad: string, v: unknown, t: Ceviri, lang: Lang, k = ""): string
     case "mal": return t("onl.mal." + v);
     case "hizmet": return t("onl.hizmet.ad." + v);
     case "tur": return t("onl.tp.tur." + v);
+    case "neden": return k === "olay.han.duelloOlmadi" ? t("onl.han.duelloNeden." + v) : v;
     default: return v;
   }
 }
@@ -162,6 +165,7 @@ export function olayIkonu(o: Pick<Olay, "ozet" | "tur">): string {
     "olay.yeniSakin": "house", "olay.ciraklik": "anvil", "olay.karar": "compass", "olay.kulYemini.kabul": "flame",
     "olay.han.yemin": "flame", "olay.han.yeminKisiye": "flame", "olay.han.sozlesme": "scroll", "olay.han.ittifak": "handshake",
     "olay.han.ihbar": "speaker", "olay.han.meydanOku": "crossed-swords", "olay.han.kabul.sozlesme": "scroll", "olay.han.kabul.ittifak": "handshake",
+    "olay.han.duello": "crossed-swords", "olay.han.duelloOlmadi": "crossed-swords",
     "olay.siparis.acildi": "scroll-open", "olay.siparis.dustu": "hourglass", "olay.siparis.teslim": "medal",
     "olay.hizmetTalep": "scroll-open", "olay.hizmetTalepTeslim": "medal",
     "olay.yonetim.telafiAkce": "gift", "olay.yonetim.telafiEsya": "gift",

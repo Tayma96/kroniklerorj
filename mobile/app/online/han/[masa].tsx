@@ -185,14 +185,15 @@ function MasaEkran() {
   };
 
   const olayMetni = (x: MasaOlayi) => {
-    const k = x.tur === "kabul" ? "onl.han.olay.kabul" : x.tur === "atma" ? "onl.han.olay.atma" : x.hedef ? `onl.han.olay.${x.tur}` : `onl.han.olay.${x.tur}Yalniz`;
+    const k = x.tur === "kabul" ? (x.teklifTur === "meydanOku" ? "onl.han.olay.kabulDuello" : "onl.han.olay.kabul") : x.tur === "atma" ? "onl.han.olay.atma" : x.hedef ? `onl.han.olay.${x.tur}` : `onl.han.olay.${x.tur}Yalniz`;
     return applyParams(t(k), [adBul(x.kim), x.hedef ? adBul(x.hedef) : "", x.katilim.length]);
   };
   const akisCiz = (a: AkisOgesi) => {
     if (a.tur === "anons") return <AnonsSeridi anons={a.anons} ad={adBul} rtl={rtl} t={t} />;
     if (a.tur === "olay") {
       const x = a.olay;
-      const kabulBekliyor = (x.tur === "sozlesme" || x.tur === "ittifak") && x.durum === "teklif" && d.kabuller[x.no] === undefined;
+      const teklifTuru = x.tur === "sozlesme" || x.tur === "ittifak" || x.tur === "meydanOku";
+      const kabulBekliyor = teklifTuru && x.durum === "teklif" && d.kabuller[x.no] === undefined;
       const bana = kabulBekliyor && x.hedef === ben;
       return <View accessible={!bana} style={{ borderRadius: 9, borderWidth: 1, borderColor: "rgba(201,162,78,0.55)", backgroundColor: "rgba(36,26,14,0.92)", padding: 10, gap: 6 }}>
         <View style={{ flexDirection: yon(rtl), gap: 8, alignItems: "center" }}>
@@ -202,9 +203,10 @@ function MasaEkran() {
         {x.sart ? <Text style={{ fontFamily: F.serifItalic, fontSize: 14, lineHeight: 19, color: C.parchmentDim, textAlign: hiza(rtl) }}>{`“${x.sart}”`}</Text> : null}
         <View style={{ flexDirection: yon(rtl), flexWrap: "wrap", gap: 6, alignItems: "center" }}>
           <Rozet icon="scroll-open" metin={applyParams(t("onl.han.kayitta"), [x.katilim.length])} />
-          {kabulBekliyor ? <Rozet metin={t("onl.han.teklifBekliyor")} renk={C.ember} /> : (x.tur === "sozlesme" || x.tur === "ittifak") && d.kabuller[x.no] !== undefined ? <Rozet metin={t("onl.han.kabulEdildi")} renk={C.sage} dolu /> : null}
+          {kabulBekliyor ? <Rozet metin={t("onl.han.teklifBekliyor")} renk={C.ember} /> : teklifTuru && d.kabuller[x.no] !== undefined ? <Rozet metin={t("onl.han.kabulEdildi")} renk={C.sage} dolu /> : null}
         </View>
-        {bana ? <CizgiDugme etiket={t("onl.han.kabulEt")} icon="ring" rtl={rtl} kucuk kapali={bekliyor || !oturuyor} onPress={() => { istekNo.current = istekNoUret(); void eylemGonder("kabul", undefined, x.no); }} /> : null}
+        {bana && x.tur === "meydanOku" ? <Text style={{ fontFamily: F.serifItalic, fontSize: 13, lineHeight: 18, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{t("onl.han.duelloNot")}</Text> : null}
+        {bana ? <CizgiDugme etiket={t(x.tur === "meydanOku" ? "onl.han.duelloKabul" : "onl.han.kabulEt")} icon={x.tur === "meydanOku" ? "crossed-swords" : "ring"} rtl={rtl} kucuk kapali={bekliyor || !oturuyor} onPress={() => { istekNo.current = istekNoUret(); void eylemGonder("kabul", undefined, x.no); }} /> : null}
       </View>;
     }
     const benim = a.hesap === ben;

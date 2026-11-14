@@ -13,7 +13,7 @@ paneli Y1–Y3 · şikâyet/engelleme · ilk oturum ekranları · beceri ağacı
 |---|---|
 | Handa sesli sohbet | Kod tam. API biçimi Cloudflare kitaplığıyla doğrulandı (14 Kasım), ses ayrı hız kovasında. Kalan: Berkay'ın Realtime uygulaması + gerçek cihaz denemesi. |
 | Oda özellikleri (liste/keşif, seviye, mini oyun, söz isteme) | Söz isteme, keşif sırası (tanıdık masası önce), masa ayarı (kavga yasak, kilit, ses), sohbet filtresi, müdavim rozeti ve eylem etkileri var (14 Kasım). Ozan sahnesi/atışması (H8) ve masa türleri (H9) açık. |
-| Düello, suikast, kan davası | Yok → §4 tasarım. |
+| Düello, suikast, kan davası | Düello var (14 Kasım, §4.1: rızalı, sunucu çözer, kaybeden bir şey kaybetmez, mevsimde bir nam). Suikast ve kan davası ilk sürümde yok (§4.2). |
 | Darbe ve bağımsız devlet, diplomasi | P5–P6 var. Akçe ganimeti bağlandı (14 Kasım). Mülk devri ve ittifak dışı anlaşmalar açık. |
 | Kül Yemini mührü | Bağlandı (14 Kasım): 13 yaşında emanet, karakter sayfasından kabul; yemin etkisi H5 ile gelir. |
 | E4 meslek etkileri | Kısmi (`gdd/E4_KANCA_ENVANTER_NOTU.md`). |
@@ -25,7 +25,6 @@ paneli Y1–Y3 · şikâyet/engelleme · ilk oturum ekranları · beceri ağacı
 ### Han (GDD §16, araştırma §5–6)
 | # | Eksik | Boyut |
 |---|---|---|
-| H6 | Meydan okuma sonucu (düello, §4). | orta |
 | H7 | Akçeyle ziyafet (nam olayı) ile Debdebe ziyafet afişi (yalnız görüntü) ayrımı. | orta |
 | H8 | Ozan sahnesi (tek anlatıcı, dinleyici söz ister) ve ozan atışması (masadakilerin ücretsiz oyu, ödül yalnız anılma). | orta |
 | H9 | Masa türleri özel/meclis/tüccar; lonca ve zaviye masası; hancı/kâhya moderasyon yetkisi (mülk yetki matrisinden). | orta |

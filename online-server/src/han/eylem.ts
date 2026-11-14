@@ -26,8 +26,8 @@ export const EYLEM_KURALLARI: Readonly<Record<Exclude<HanEylemi, "kabul">, { hed
   meydanOku: { hedef: "zorunlu", oturan: true, sart: false },
 };
 
-/** Karşı tarafın onayını bekleyen eylemler. */
-const ONAYLI = new Set<string>(["sozlesme", "ittifak"]);
+/** Karşı tarafın onayını bekleyen eylemler (H6: meydan okuma da teklif olur; kabulü düellodur). */
+const ONAYLI = new Set<string>(["sozlesme", "ittifak", "meydanOku"]);
 
 // Depo anahtarları (MasaDO)
 export const OLAY_SAYAC = "olay#";
@@ -37,6 +37,11 @@ export const ATMA = "atma:"; // + hesap → dönüş yasağının bitişi (ms)
 
 export function olayAnahtari(no: number): string {
   return OLAY + String(no).padStart(8, "0");
+}
+
+/** H6: meydan okuma teklifinde iki tarafın oturma anları (teklif, ikisi de o oturuşta oturuyorken kabul edilebilir). */
+export function oturusAnahtari(no: number): string {
+  return olayAnahtari(no) + ":oturus";
 }
 
 function nesneMi(v: unknown): v is Record<string, unknown> {
@@ -75,7 +80,8 @@ export function eylemGirdisiCoz(govde: unknown): Sonuc<EylemGirdisi> {
 
 export interface EylemBaglami {
   masa: string;
-  oturanlar: readonly { hesap: string; koltuk: number }[];
+  /** `o`: oturma anı (H6 meydan okuma teklifinin geçerliliği). */
+  oturanlar: readonly { hesap: string; koltuk: number; o?: number | null }[];
   /** Eylemi yapanın bağlantısındaki susturma bilgisi. */
   susturma?: { bitis: number | null };
   ayar: MasaAyari;
@@ -116,7 +122,14 @@ export async function eylemUygula(
     const teklif = await depo.al<MasaOlayi>(olayAnahtari(girdi.olay));
     if (!teklif || !ONAYLI.has(teklif.tur) || teklif.hedef !== kim) return hata("olay_yok");
     if (teklif.durum !== "teklif") return hata("karar_verildi");
-    const teklifTur = teklif.tur as "sozlesme" | "ittifak";
+    const teklifTur = teklif.tur as "sozlesme" | "ittifak" | "meydanOku";
+    if (teklifTur === "meydanOku") {
+      if (b.ayar.kavgaYasak) return hata("kavga_yasak");
+      // Teklif, iki taraf da teklif anındaki oturuşunda oturuyorken geçerlidir; kalkan ya da masadan çıkanla düşer.
+      const oturus = await depo.al<[number | null, number | null]>(oturusAnahtari(teklif.no));
+      const anlik = (h: string) => b.oturanlar.find((x) => x.hesap === h)?.o ?? null;
+      if (!oturus || oturus[0] === null || anlik(teklif.kim) !== oturus[0] || anlik(kim) !== oturus[1]) return hata("teklif_dustu");
+    }
     olay = { no, masa: b.masa, tur: "kabul", kim, hedef: teklif.kim, olay: teklif.no, teklifTur, zaman: b.simdi, katilim };
     yaz[olayAnahtari(teklif.no)] = { ...teklif, durum: "kabul", kabulOlay: no } satisfies MasaOlayi;
   } else {
@@ -141,6 +154,10 @@ export async function eylemUygula(
       katilim,
       ...(ONAYLI.has(girdi.tur) ? { durum: "teklif" as const } : {}),
     };
+    if (girdi.tur === "meydanOku" && hedef) {
+      const anlik = (h: string) => b.oturanlar.find((x) => x.hesap === h)?.o ?? null;
+      yaz[oturusAnahtari(no)] = [anlik(kim), anlik(hedef)];
+    }
   }
   yaz[olayAnahtari(no)] = olay;
   await depo.koy(yaz);

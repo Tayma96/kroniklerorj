@@ -84,10 +84,10 @@ function plaka(ek: SoketEki): Plaka {
 }
 
 /** Oturanlar koltuk sırasıyla. */
-export function oturanlar(tum: readonly Kayit[]): { hesap: string; koltuk: number }[] {
+export function oturanlar(tum: readonly Kayit[]): { hesap: string; koltuk: number; o: number | null }[] {
   return tum
     .filter((r) => r.ek.k !== null)
-    .map((r) => ({ hesap: r.ek.h, koltuk: r.ek.k as number }))
+    .map((r) => ({ hesap: r.ek.h, koltuk: r.ek.k as number, o: r.ek.o }))
     .sort((a, b) => a.koltuk - b.koltuk);
 }
 

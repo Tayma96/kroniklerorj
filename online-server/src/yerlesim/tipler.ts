@@ -83,6 +83,8 @@ export interface Sakin {
   tv?: number;
   /** Müdavim rozeti kademesi (E7; profil ve plaka karakteri yüklemeden okur). */
   md?: number;
+  /** H6: yerleşime giriş ayı (düello kapısı; eski kayıtta yok → doğum ayı + başlangıç yaşı). */
+  gi?: number;
 }
 
 export type Isaret = "tanidik" | "dost" | "dusman";

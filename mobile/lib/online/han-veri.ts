@@ -50,7 +50,7 @@ export interface MasaOlayi {
   durum?: "teklif" | "kabul";
   kabulOlay?: number;
   /** Kabul olayında onaylanan teklifin türü. */
-  teklifTur?: "sozlesme" | "ittifak";
+  teklifTur?: "sozlesme" | "ittifak" | "meydanOku";
 }
 export type AnonsTuru = "ikram" | "armagan" | "debdebe";
 export interface MasaAnonsu { tur: AnonsTuru; kim: string; hedef: string; oge: string; zaman: number }

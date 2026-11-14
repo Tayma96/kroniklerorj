@@ -170,6 +170,8 @@ export const HATA_DURUMU = {
   metin_gecersiz: 400,
   hedef_masada_degil: 409,
   kavga_yasak: 409,
+  /** H6: meydan okuma teklifi düştü (taraflardan biri kalktı ya da masadan çıktı). */
+  teklif_dustu: 409,
   olay_yok: 404,
   atildi: 403,
   eylem_siniri: 429,

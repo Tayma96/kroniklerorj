@@ -72,12 +72,12 @@ export interface MasaOlayi {
   zaman: number;
   /** Olay anında koltukta oturanlar, koltuk sırasıyla. */
   katilim: string[];
-  /** Sözleşme/ittifak: karşı tarafın onayı bekleniyor mu. */
+  /** Sözleşme/ittifak/meydan okuma (H6): karşı tarafın onayı bekleniyor mu. */
   durum?: "teklif" | "kabul";
   /** Onaylandıysa onay olayının numarası. */
   kabulOlay?: number;
   /** `kabul`: onaylanan teklifin türü (yerleşimdeki etki için). */
-  teklifTur?: "sozlesme" | "ittifak";
+  teklifTur?: "sozlesme" | "ittifak" | "meydanOku";
 }
 
 /** Worker → MasaDO yükseltme bileti (iç başlıkta taşınır; istemci bunu göremez ve yazamaz). */

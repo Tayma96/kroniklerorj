@@ -592,7 +592,7 @@ export class YerlesimMotoru {
     }
     const o = oyuncuNoAl(k);
     const ocak = ocakSec(k, kayit.hesapId);
-    const sakin: Sakin = { o, h: kayit.hesapId, ad: kayit.ad, k: kayit.cinsiyet === "kadın" ? 1 : 0, d: kayit.dogumAyi, e: ocak.e, mk: "", ma: -1e9 };
+    const sakin: Sakin = { o, h: kayit.hesapId, ad: kayit.ad, k: kayit.cinsiyet === "kadın" ? 1 : 0, d: kayit.dogumAyi, e: ocak.e, mk: "", ma: -1e9, gi: k.ay };
     const kar = karakterOlustur(sakin, ocak, k.ay);
     kar.im = Math.max(0, this.#meta.sq - OLAY_SAYFA);
     k.sakin.push(sakin);

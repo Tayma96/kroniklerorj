@@ -119,7 +119,7 @@ export interface Husumet {
 }
 
 /** `han*`: han masası olaylarından (H5; src/yerlesim/han-olay.ts). */
-export const SOYLENTI_TURLERI = ["hediye", "yardim", "hediyeOyuncu", "husumet", "borcOdenmedi", "kalfaYetistirdi", "hanYemin", "hanAnlasma", "hanIhbar"] as const;
+export const SOYLENTI_TURLERI = ["hediye", "yardim", "hediyeOyuncu", "husumet", "borcOdenmedi", "kalfaYetistirdi", "hanYemin", "hanAnlasma", "hanIhbar", "hanDuello"] as const;
 export type SoylentiTuru = (typeof SOYLENTI_TURLERI)[number];
 
 export interface Soylenti {
