@@ -200,6 +200,10 @@ export interface Karakter {
   mr?: MesrepKaydi;
   md?: MudavimKaydi;
   hk?: [ay: number, nam: number];
+  /** Göç (D1): eski yerleşimde mühür/kapanış izi; son göç ayı (soğuma; karakterle taşınır); geliş işlem kimliği. */
+  gc?: import("./goc.ts").GocIzi;
+  gg?: number;
+  gk?: string;
 }
 
 /** Süren öğrenme ya da yeniden düzenleme beklemesi (gerçek zaman, ms; bitince tembel tamamlanır). */

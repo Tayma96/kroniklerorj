@@ -16,6 +16,10 @@ import * as debdebe from "./debdebe/hesap.ts";
 import { yapilandirilmamisDogrulayici, type MakbuzDogrulayici } from "./debdebe/makbuz.ts";
 import { SEZON_KAYNAK_PUANI } from "./debdebe/sezon.ts";
 import { siyasetOku, siyasetYaz, siyasetYoklama } from "./siyaset/hesap-kopru.ts";
+import { GOC_IS, gocBaslat, gocOnizle, gocSiyasetKapilari, gocSurdur, type GocBaglami } from "./goc-hesap.ts";
+
+/** Göç işi beklerken de çalışan uçlar (yerleşime gitmeyen ya da işi kendisi sürdürenler). */
+const GOC_SIRASINDA_SERBEST: ReadonlySet<string> = new Set(["giris", "profil", "profilOlustur", "duyurular", "davetOlustur", "davetCoz", "goc", "gocOnizle"]);
 
 const YAPTIRIM = "yaptirim";
 const OTURUM_SURUMU = "oturumSurumu";
@@ -162,7 +166,16 @@ export class HesapDO {
   }
 
   async #isle(ileti: HesapIleti, simdi: number): Promise<Sonuc<unknown>> {
+    // Göç (D1): yarım kalmış iş önce sürdürülür; hâlâ bekliyorsa yerleşime giden uçlar `goc_suruyor` döner.
+    if (!GOC_SIRASINDA_SERBEST.has(ileti.islem) && (await this.#depo.al(GOC_IS))) {
+      const r = await gocSurdur(this.#goc(ileti.hesapId, simdi));
+      if (r.durum === "bekliyor") return hata("goc_suruyor");
+    }
     switch (ileti.islem) {
+      case "goc":
+        return gocBaslat(this.#goc(ileti.hesapId, simdi), ileti.govde);
+      case "gocOnizle":
+        return gocOnizle(this.#goc(ileti.hesapId, simdi), ileti.hedef);
       case "giris":
         return basarili(await girisKaydet(this.#depo, ileti.hesapId, ileti.sub, simdi));
       case "sikayet":
@@ -348,6 +361,26 @@ export class HesapDO {
       default:
         return hata("gecersiz_istek");
     }
+  }
+
+  #goc(hesapId: string, simdi: number): GocBaglami {
+    const env = this.#env;
+    return {
+      depo: this.#depo,
+      hesapId,
+      simdi,
+      yerlesim: (i) => yerlesimCagir(env, i),
+      dunya: (i) => dunyaCagir(env, i),
+      // Siyaset bağlı değilse (BolgeDO yok) makam ve darbe kapıları geçti sayılır.
+      ...(env.BOLGE
+        ? {
+            siyaset: async () => {
+              const r = await siyasetOku(this.#depo, env, hesapId, null, null, simdi, (i) => yerlesimCagir(env, i));
+              return r.ok ? basarili(gocSiyasetKapilari(r.deger)) : r;
+            },
+          }
+        : {}),
+    };
   }
 
   async #han(hesapId: string, simdi: number): Promise<HanHesapBaglami> {

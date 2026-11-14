@@ -326,6 +326,19 @@ export const HATA_DURUMU = {
   devlet_talep_var: 409,
   ozerklik_yok: 409,
   soguma: 409,
+  // Göç (D1, ONLINE_DURUM §4.5)
+  goc_ayni_yer: 400,
+  goc_yas: 403,
+  goc_soguma: 409,
+  goc_aile: 409,
+  goc_mulk: 409,
+  goc_makam: 409,
+  goc_darbe: 409,
+  goc_borc: 409,
+  goc_sozlesme: 409,
+  goc_acik_is: 409,
+  goc_suruyor: 409,
+  goc_hedef_kayitli: 409,
   yapilandirma_eksik: 500,
   sunucu_hatasi: 500,
 } as const satisfies Record<string, number>;
@@ -442,6 +455,9 @@ export type HesapIleti = (
   | { islem: "yaptirimYaz"; hesapId: string; durum: HesapYaptirimi }
   /** POST /v1/oturumlar/kapat: hesabın oturum sürümünü artırır (bütün belirteçler düşer). */
   | { islem: "oturumlariKapat"; hesapId: string }
+  /** Göç (D1): POST /v1/goc {hedef, istekNo} ve önizleme GET /v1/goc?hedef= (src/goc-hesap.ts). */
+  | { islem: "goc"; hesapId: string; govde: unknown }
+  | { islem: "gocOnizle"; hesapId: string; hedef: string | null }
 ) & {
   /** Worker → HesapDO: oyuncu belirtecindeki oturum sürümü (sürümsüz belirteç 0). İç iletilerde yoktur. */
   oturumSurumu?: number;
@@ -613,6 +629,9 @@ export type YerlesimIleti =
   | (ToplulukIletisi & { yerlesim: string })
   /** HesapDO → YerlesimDO (masa bileti sonrası): müdavim han ziyareti; istemci doğrudan ulaşamaz. */
   | { islem: "mudavimZiyaret"; yerlesim: string; hesapId: string }
+  /** Göç (D1; HesapDO yürütür, istemci ulaşamaz): önizleme; (1) çıkış, (2) giriş, (3) tamam; (2) kalıcı reddinde iptal. */
+  | { islem: "gocOnizle"; yerlesim: string; hesapId: string; hedef: string }
+  | { islem: "gocCikis" | "gocGiris" | "gocTamam" | "gocIptal"; yerlesim: string; hesapId: string; govde: unknown }
   | (BarinmaIletisi & { yerlesim: string });
 
 export type DunyaIleti =
@@ -624,4 +643,6 @@ export type DunyaIleti =
   | { islem: "oyuncuBul"; ad?: string; hesap?: string }
   /** Cömertler Levhası (src/debdebe/levha.ts). */
   | { islem: "levhaYaz"; yazim: { beylik: string; hesap: string; ad: string; puan: number; seviye: string | null; gorunur: boolean } }
-  | { islem: "levhaOku"; beylik: string };
+  | { islem: "levhaOku"; beylik: string }
+  /** Göç (D1): HesapDO → DunyaDO; kayıtlı yerleşimi taşır, nüfus sayaçlarını günceller (hedef doluysa yerlesim_dolu). `geri`: iptalde eski yere dönüş (kapasiteye bakılmaz). */
+  | { islem: "gocKayit"; hesapId: string; kaynak: string; hedef: string; geri?: boolean };

@@ -4,7 +4,7 @@
 
 import { doDepo, type Depo } from "./depo.ts";
 import { iletiOku, jsonYanit } from "./ic.ts";
-import { davetCoz, davetOlustur, dunyaOzeti, kayitOl, oyuncuBul } from "./mantik.ts";
+import { davetCoz, davetOlustur, dunyaOzeti, gocKayit, kayitOl, oyuncuBul } from "./mantik.ts";
 import { basarili, hata, type DunyaIleti, type Env, type Sonuc } from "./tipler.ts";
 import { levhaOku, levhaYaz, type LevhaYazimi } from "./debdebe/levha.ts";
 
@@ -39,6 +39,9 @@ export class DunyaDO {
         return levhaYaz(this.#depo, ileti.yazim as LevhaYazimi, simdi);
       case "levhaOku":
         return levhaOku(this.#depo, ileti.beylik, simdi);
+      // Göç (D1): src/goc-hesap.ts
+      case "gocKayit":
+        return gocKayit(this.#depo, ileti.hesapId, ileti.kaynak, ileti.hedef, ileti.geri === true);
       default:
         return hata("gecersiz_istek");
     }

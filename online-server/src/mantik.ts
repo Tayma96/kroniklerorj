@@ -38,6 +38,8 @@ const ISTEK_NO_DESENI = /^[A-Za-z0-9_-]{8,64}$/;
 // Depo anahtarları
 const HESAP = "hesap";
 const PROFIL = "profil";
+/** Profil depo anahtarı (göç işi profili kuyrukla aynı yazımda günceller: src/goc-hesap.ts). */
+export const PROFIL_ANAHTARI = PROFIL;
 const ISTEK = "istek:"; // + istekNo → Sonuc<Profil>
 const KAYIT = "kayit:"; // + hesapId → Profil (dünyadaki asıl kayıt)
 const AD = "ad:"; // + ad anahtarı → hesapId
@@ -255,6 +257,26 @@ export async function kayitOl(depo: Depo, istek: KayitIstegi, simdi: number): Pr
     [NUFUS + yerlesim.id]: nufus + 1,
   });
   return basarili(profil);
+}
+
+/**
+ * Göç (D1): dünya kaydındaki yerleşimi `kaynak`tan `hedef`e taşır, nüfus sayaçlarını günceller. Tekrar güvenlidir
+ * (kayıt zaten hedefteyse aynısını döner). Hedef doluysa `yerlesim_dolu` (kalıcı ret). `geri` iptaldeki dönüştür:
+ * kişi eski yerine döndüğü için kapasiteye bakılmaz.
+ */
+export async function gocKayit(depo: Depo, hesapId: string, kaynak: string, hedef: string, geri = false): Promise<Sonuc<Profil>> {
+  const p = await depo.al<Profil>(KAYIT + hesapId);
+  if (!p) return hata("profil_yok");
+  if (p.yerlesim === hedef) return basarili(p);
+  if (p.yerlesim !== kaynak) return hata("gecersiz_istek");
+  const y = yerlesimBul(hedef);
+  if (!y) return hata("yerlesim_gecersiz");
+  const nufusHedef = (await depo.al<number>(NUFUS + hedef)) ?? 0;
+  if (!geri && nufusHedef >= y.evKapasite) return hata("yerlesim_dolu");
+  const nufusKaynak = (await depo.al<number>(NUFUS + kaynak)) ?? 0;
+  const yeni: Profil = { ...p, yerlesim: y.id, beylik: y.beylik };
+  await depo.koy({ [KAYIT + hesapId]: yeni, [NUFUS + kaynak]: Math.max(0, nufusKaynak - 1), [NUFUS + hedef]: nufusHedef + 1 });
+  return basarili(yeni);
 }
 
 /** Oyuncunun davet kodu; varsa aynısını döndürür. Kod davet edenin (güncel) yerleşimine götürür. */

@@ -32,6 +32,7 @@ export const DEFTER_KALEMLERI = [
   "donum",
   "topluluk",
   "darbe",
+  "goc",
   "diger",
 ] as const;
 export type DefterKalemi = (typeof DEFTER_KALEMLERI)[number];

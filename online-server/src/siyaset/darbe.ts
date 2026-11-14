@@ -282,6 +282,8 @@ export function darbeGorunumu(d: BolgeDurumu, kimlik?: SiyasiKimlik) {
       benimTaraf: p.baslatanKisi === kimlik.kisi ? "saldiran" : (p.savunma ?? []).some((x) => x.hesap === kimlik.hesap) ? "savunan" : null,
       benimDestek: p.destekler.some((x) => x.hesap === kimlik.hesap || kumeKesisir(x.kume, kumeAnahtarlari(kimlik))),
       benimTalimat: p.talimat?.[kimlik.kisi] ?? null,
+      // Bu hesabın işlenmemiş ganimet adımı var mı (göç kapısı: kesintiden göçle kaçılmasın).
+      benimGanimet: (d.ganimetGiden ?? []).some((is) => [...is.kaybedenler, ...is.kazananlar].some((x) => x.hesap === kimlik.hesap && !x.bitti)),
     } : {}),
     ...(katilimci ? { esik, destekler: p.destekler.length, savunma: (p.savunma ?? []).length, garnizonSadakati: p.garnizonSadakati, yatirilan: p.yatirilan, izler: p.izler } : {}),
   };

@@ -108,6 +108,23 @@ import { toplulukDonumu } from "./topluluk.ts";
 import type { ToplulukKaydi } from "./topluluk-kayit.ts";
 import { istekBul, istekYaz } from "./istek-defteri.ts";
 import { ucgenDonumu, ucgenGorunumu, ucgenIslem, ucgenOkumaYuklenecek, ucgenYuklenecek } from "./ucgen.ts";
+import { kronikEkle } from "./kronik.ts";
+import {
+  GOC_MISAFIRHANE_SAAT,
+  GOC_SOGUMA_AY,
+  GOC_YAS_EN_AZ,
+  GOC_YOL_BEDELI,
+  gocDokumu,
+  gocHedefi,
+  gocIslemiMi,
+  gocKarakteri,
+  ilkEngel,
+  paketCikar,
+  paketGecerli,
+  paketGeriYaz,
+  yerelKapilar,
+} from "./goc.ts";
+import { ILK_KORUMA_MS, barinmaKaydi, ocakVar } from "./barinma.ts";
 
 // Faz 3 kayıtları (borç, teklif, engel, husumet) devirde vârise bağlanır.
 kimlikTasiyiciEkle(toplumKimligiTasi);
@@ -611,6 +628,8 @@ export class YerlesimMotoru {
     const kar = this.kasaba.kar.get(s.o);
     const ili = this.kasaba.ili.get(s.o);
     if (!kar || !ili) return hata("sakin_yok");
+    // Göç (D1): (1) adımında mühürlenen karakter, iş tamamlanana ya da iptal edilene dek eylem kabul etmez.
+    if (kar.gc?.d === "muhur") return hata("goc_suruyor");
     takatTazele(kar, this.kasaba.ay);
     return basarili({ s, kar, ili });
   }
@@ -1732,6 +1751,132 @@ export class YerlesimMotoru {
   }
 
   /** GET /v1/barinma ve GET /v1/donus (Faz 14; barınma şimdiye getirilir ve yazılır). */
+  // ── Göç (D1; src/yerlesim/goc.ts). HesapDO yürütür; her adım işlem kimliğiyle tekrar güvenlidir. ──
+
+  /** Önizleme: yerel kapılar, akçe ve envanter dökümü, soğuma, varıştaki misafirhane hakkı (yazmaz). */
+  async gocOnizle(hesapId: string, hedefHam: unknown): Promise<Sonuc<unknown>> {
+    const r = await this.#oyuncu(hesapId);
+    if (!r.ok) return r;
+    const { kar } = r.deger;
+    const k = this.kasaba;
+    const h = gocHedefi(k.y, hedefHam, (id) => yerlesimBul(id) !== undefined);
+    if (!h.ok) return hata(h.hata);
+    const ay = k.ay;
+    const br = kar.br;
+    const ilk = br?.iy === h.hedef;
+    return basarili({
+      kaynak: k.y,
+      hedef: h.hedef,
+      ay,
+      kapilar: yerelKapilar(k, kar, ay),
+      yas: { yas: yas(kar.d, ay), enAz: GOC_YAS_EN_AZ },
+      soguma: { sonGoc: kar.gg ?? null, acilisAyi: kar.gg === undefined ? null : kar.gg + GOC_SOGUMA_AY, sure: GOC_SOGUMA_AY },
+      ...gocDokumu(kar),
+      misafirhane: { saat: ilk ? ILK_KORUMA_MS / 3_600_000 : GOC_MISAFIRHANE_SAAT, kullanildi: br?.mh[h.hedef] !== undefined },
+    });
+  }
+
+  /** (1) Kapılar, mühür, paket. Aynı işlem aynı paketi döner; başka işlem sürerken `goc_suruyor`. */
+  async gocCikis(hesapId: string, govde: unknown): Promise<Sonuc<unknown>> {
+    if (!nesneMi(govde) || !gocIslemiMi(govde.islem)) return hata("gecersiz_istek");
+    const k = this.kasaba;
+    const s = k.sakin.find((x) => x.h === hesapId);
+    if (!s) return hata("sakin_yok");
+    await this.#yukle([s.o]);
+    const kar = k.kar.get(s.o);
+    if (!kar) return hata("sakin_yok");
+    if (kar.gc) return kar.gc.i === govde.islem ? basarili({ paket: kar.gc.p }) : hata("goc_suruyor");
+    const h = gocHedefi(k.y, govde.hedef, (id) => yerlesimBul(id) !== undefined);
+    if (!h.ok) return hata(h.hata);
+    const ay = k.ay;
+    const engel = ilkEngel(yerelKapilar(k, kar, ay));
+    if (engel) return hata(engel);
+    // Barınma kaydı yoksa burada kurulur: ilk yerleşim (48 saatlik hak) bu şehirdir, hedef değil.
+    barinmaKaydi(kar, k.y, this.#simdi, ocakVar(k, kar));
+    // Yol bedeli paketten önce deftere girer: defter karakterle taşınır.
+    defterYaz(kar, ay, "goc", -GOC_YOL_BEDELI);
+    const paket = paketCikar(kar, k, h.hedef, govde.islem, ay);
+    this.#kirli.add(KAR + kar.o);
+    await this.kaydet();
+    return basarili({ paket });
+  }
+
+  /** (2) Yeni yerleşimde sakin: paketle yeni yerel kimlik. Aynı işlem ikinci karakter açmaz. */
+  async gocGiris(hesapId: string, govde: unknown): Promise<Sonuc<{ id: string }>> {
+    if (!nesneMi(govde) || !gocIslemiMi(govde.islem)) return hata("gecersiz_istek");
+    const k = this.kasaba;
+    const mevcut = k.sakin.find((x) => x.h === hesapId);
+    if (mevcut) {
+      await this.#yukle([mevcut.o]);
+      return k.kar.get(mevcut.o)?.gk === govde.islem ? basarili({ id: mevcut.o }) : hata("goc_hedef_kayitli");
+    }
+    const p = govde.paket;
+    if (!paketGecerli(p, hesapId, k.y, govde.islem)) return hata("gecersiz_istek");
+    const ay = k.ay;
+    const o = oyuncuNoAl(k);
+    const kar = gocKarakteri(p, o, ay, Math.max(0, this.#meta.sq - OLAY_SAYFA));
+    const tv = teveccuhKademesi(kar, ay);
+    const sakin: Sakin = {
+      o, h: hesapId, ad: kar.ad, k: kar.k, d: kar.d, e: 0, mk: "", ma: -1e9, gi: ay,
+      ...(kar.ms?.a ? { ms: kar.ms.a } : {}),
+      ...(tv ? { tv } : {}),
+    };
+    k.sakin.push(sakin);
+    k.kar.set(o, kar);
+    k.ili.set(o, {});
+    this.#kirli.add(SAKIN).add(KAR + o).add(ILI + o);
+    const yer = yerlesimBul(p.kaynak);
+    const param = { kisi: oyuncuRef(sakin), kaynak: p.kaynak, kaynakAd: yer?.ad ?? p.kaynak };
+    await this.#olayEkle({ t: "goc", w: o, h: "", g: "", n: 4, k: "olay.goc.geldi", p: param }, ay);
+    kronikEkle(k, { a: ay, t: "goc", k: "kronik.goc.geldi", p: param });
+    await this.kaydet();
+    return basarili({ id: o });
+  }
+
+  /** (3) Eski yerleşimde kapanış: sakin dizininden çıkar (karakter ve emanet arşivde kalır); herkese açık olay ve kronik. */
+  async gocTamam(hesapId: string, govde: unknown): Promise<Sonuc<{ tamam: true }>> {
+    if (!nesneMi(govde) || !gocIslemiMi(govde.islem)) return hata("gecersiz_istek");
+    const k = this.kasaba;
+    const i = k.sakin.findIndex((x) => x.h === hesapId);
+    if (i < 0) return basarili({ tamam: true });
+    const s = k.sakin[i]!;
+    await this.#yukle([s.o]);
+    const kar = k.kar.get(s.o);
+    const gc = kar?.gc;
+    if (!kar || !gc || gc.i !== govde.islem || gc.d !== "muhur") return hata("gecersiz_istek");
+    const ay = k.ay;
+    gc.d = "kapandi";
+    k.sakin.splice(i, 1);
+    const yer = yerlesimBul(gc.h);
+    const param = { kisi: oyuncuRef(kar), hedef: gc.h, hedefAd: yer?.ad ?? gc.h };
+    await this.#olayEkle({ t: "goc", w: kar.o, h: "", g: "", n: 4, k: "olay.goc.gitti", p: param }, ay);
+    kronikEkle(k, { a: ay, t: "goc", k: "kronik.goc.gitti", p: param });
+    this.#kirli.add(SAKIN).add(KAR + kar.o).add(ILI + kar.o);
+    await this.kaydet();
+    // Arşivdeki karakter bellekten düşer: dönüm ve uzlaştırma onu artık işlemez.
+    k.kar.delete(kar.o);
+    k.ili.delete(kar.o);
+    return basarili({ tamam: true });
+  }
+
+  /** (2) kalıcı reddedildiyse: mühür açılır, paket (yol bedeli dahil) aynen geri yazılır. Tekrar güvenli. */
+  async gocIptal(hesapId: string, govde: unknown): Promise<Sonuc<{ iptal: true; geri: number }>> {
+    if (!nesneMi(govde) || !gocIslemiMi(govde.islem)) return hata("gecersiz_istek");
+    const k = this.kasaba;
+    const s = k.sakin.find((x) => x.h === hesapId);
+    if (!s) return hata("sakin_yok");
+    await this.#yukle([s.o]);
+    const kar = k.kar.get(s.o);
+    if (!kar) return hata("sakin_yok");
+    if (!kar.gc) return basarili({ iptal: true, geri: 0 });
+    if (kar.gc.i !== govde.islem || kar.gc.d !== "muhur") return hata("gecersiz_istek");
+    const geri = paketGeriYaz(kar);
+    defterYaz(kar, k.ay, "goc", GOC_YOL_BEDELI);
+    this.#kirli.add(KAR + kar.o);
+    await this.kaydet();
+    return basarili({ iptal: true, geri });
+  }
+
   async barinmaOku(islem: "barinma" | "donus", hesapId: string, simdi: number): Promise<Sonuc<unknown>> {
     const r = await this.#oyuncu(hesapId);
     if (!r.ok) return r;

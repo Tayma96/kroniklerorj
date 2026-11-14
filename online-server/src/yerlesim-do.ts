@@ -288,6 +288,17 @@ export class YerlesimDO {
       // Mülk (Faz 12–13): istemci uçları ve IsletmeDO'dan gelen kasa → cüzdan kayıtları.
       case "mulk":
         return mulkIsle(motor, ileti, simdi, this.#isletme);
+      // Göç (D1): HesapDO'dan; src/yerlesim/goc.ts
+      case "gocOnizle":
+        return motor.gocOnizle(ileti.hesapId, ileti.hedef);
+      case "gocCikis":
+        return motor.gocCikis(ileti.hesapId, ileti.govde);
+      case "gocGiris":
+        return motor.gocGiris(ileti.hesapId, ileti.govde);
+      case "gocTamam":
+        return motor.gocTamam(ileti.hesapId, ileti.govde);
+      case "gocIptal":
+        return motor.gocIptal(ileti.hesapId, ileti.govde);
       case "mulkGiris":
         return { ok: true, deger: { sonuclar: await teslimAl(motor, ileti.kayitlar, simdi) } };
       default:

@@ -291,7 +291,8 @@ export function girisIsle(k: Kasaba, x: CikisKaydi, an: number): { durum: CevapD
     if (x.t === "cuzdana") {
       const kar = typeof x.y.o === "string" ? k.kar.get(x.y.o) : undefined;
       const tutar = x.y.tutar;
-      if (!kar || olduMu(kar)) return { durum: "red", neden: "kisi_yok" };
+      // Göçle kapanan (ya da mühürlü) karakterin cüzdanına yazılmaz: akçe arşivdeki kayda düşmez.
+      if (!kar || olduMu(kar) || kar.gc) return { durum: "red", neden: "kisi_yok" };
       if (!Number.isInteger(tutar) || (tutar as number) <= 0 || tutar !== x.a) return { durum: "red", neden: "tutar_gecersiz" };
       kar.pa += tutar as number;
       return { durum: "kabul" };

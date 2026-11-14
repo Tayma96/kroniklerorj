@@ -250,3 +250,17 @@ test("ganimet uçtan uca: kayıp kazanan kuyruğu tıkamaz, payı vali kasasına
   assert.deepEqual(await bozuk(null, "ganimetKes"), { ok: false, hata: "gecersiz_istek" });
   assert.equal(w.para(savunan.o), 600);
 });
+
+test("ganimet kuyruğu: işlenmemiş ganimet adımı olan hesap göç edemez (kesintiden kaçış yok)", async () => {
+  const { gocSiyasetKapilari } = await import("../src/goc-hesap.ts");
+  const d = bolgeKur("demirhan", 5);
+  d.darbe = plan("basarili");
+  ganimetIsiAc(d, 6);
+  const kimlik = (kisi: string, hesap: string) => ({ kisi, hesap, ad: kisi, yerlesim: "develi", bolge: "demirhan", yas: 30, e: 0, olu: false, nam: 0, teveccuh: 0, haklar: [] });
+  const gorunum = (k: ReturnType<typeof kimlik>) => ({ bolge: { darbe: darbeGorunumu(d, k) } });
+  assert.equal(gocSiyasetKapilari(gorunum(kimlik("develi/o3", "h-savunan"))).darbe, true, "kaybeden bekler");
+  assert.equal(gocSiyasetKapilari(gorunum(kimlik("develi/o1", "h-lider"))).darbe, true, "kazanan da payını almadan gitmez");
+  assert.equal(gocSiyasetKapilari(gorunum(kimlik("develi/o9", "h-yabanci"))).darbe, false);
+  for (const x of [...d.ganimetGiden![0]!.kaybedenler, ...d.ganimetGiden![0]!.kazananlar]) x.bitti = true;
+  assert.equal(gocSiyasetKapilari(gorunum(kimlik("develi/o3", "h-savunan"))).darbe, false, "iş bitince kapı açılır");
+});
