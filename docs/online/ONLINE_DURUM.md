@@ -105,6 +105,24 @@ kazanan çoğu zaman başka yerleşimdedir; mülk kaybı emekle uzun sürede tel
   mühürler ve göç paketini verir, (2) yeni YerlesimDO paketle sakin kaydeder, (3) eski YerlesimDO kaydı kapatır. Adım
   arası kesintide HesapDO kalıcı kuyruğu yeniden dener; akçe ve mal iki yerde birden var olmaz.
 
+### 4.7 Kervan (D2, ilk sürüm)
+Dayanak: `MESLEK_AGACLARI.md` tüccar ağacı `tuccar.kervan.0–1`, `tuccar.yol.0`; Ek A §1.3 tedarik zinciri.
+- **Kim:** `tuccar.kervan.0` düğümü olan tüccar (sunucuda `hakAcik`/düğüm denetimi). Bedel: 2 nal + 1 koşum + 2 takat.
+- **Ne:** en çok 12 malı aynı beylikteki başka yerleşime ya da komşu beyliğin yerleşimine yollar. Tüccar evinde kalır; mal
+  yolda 1 oyun ayı (12 gerçek saat) gider. Bu bir bekleme değil yolculuktur: bekleme parayla kısaltılmaz, beklerken başka
+  iş yapılır, gecikme ceza getirmez.
+- **Varış:** mal hedefin NPC alıcısına hedefin fiyatıyla (hedefteki kıtlık primi dahil) ve tüccarın o yerleşimdeki aylık
+  varış kotasıyla satılır. Satılmayan mal hedefte emanete kalır; geri dönüş kervanıyla ya da göç emaneti gibi çekilir.
+  Hasılat tüccara döner. Akçe yoktan doğmaz: NPC alıcının parası mevcut NPC alım bütçesinden gelir.
+- **Farm süzgeci:** tüccar başına ayda en çok 2 kervan; aynı mal aynı hedefe ayda bir; varış kotası; kendi yerleşimine
+  kervan yok. Fiyat farkı kıtlıktan gelir, kıtlık satışla kapanır (kendi kendini dengeler).
+- **Toplu yük (`tuccar.kervan.1`):** arabayla 30 mal; başkasının malını navlunla taşıma ikinci dilimdir.
+- **Fiyat haberi (`tuccar.yol.0`):** 1 takatle komşu 3 yerleşimin lonca tablosu ve en pahalı 3 malı (1 ay geçerli).
+- **Haydut ve muhafız:** ikinci dilim (asayiş ortak derdi ve asker hizmeti ile birlikte).
+- **Teknik:** kaynak YerlesimDO malı kervan kaydına alır (envanterden düşer); varış ayında hedef YerlesimDO satışı yapar;
+  hasılat kaynak YerlesimDO'ya kalıcı çıkış kutusuyla döner (işletme transferi deseni). Her adım işlem kimliğiyle tekrar
+  güvenli; mal ve akçe iki yerde birden var olmaz.
+
 ### 4.6 Han eylem etkileri (H5)
 Yemin → mertlik (mühürlü, çift başına ayda bir). Sözleşme ve ittifak kabulü → iki taraf arasında küçük olumlu iz.
 İhbar → hedef hakkında yalanlanabilir söylenti; ihbar edene kazanç yok. Hepsinde masadakiler tanık, diğerleri duyum.
