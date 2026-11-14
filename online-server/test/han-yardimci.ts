@@ -1,7 +1,7 @@
 // Han testi yardımcıları: çekirdek için sahte MasaSoketi, DO için sahte hibernation WebSocket'i ve bağlamı.
 
 import type { MasaBaglami, MasaSoketi } from "../src/han/masa.ts";
-import type { MasaBileti, MasaOlayi, SoketEki, SunucuIletisi } from "../src/han/tipler.ts";
+import type { MasaAyari, MasaBileti, MasaOlayi, SoketEki, SunucuIletisi } from "../src/han/tipler.ts";
 import type { HesapYaptirimi, Sonuc } from "../src/tipler.ts";
 import type { MasaAraclari, WebSocketDurumu } from "../src/masa-do.ts";
 import { basarili } from "../src/tipler.ts";
@@ -46,8 +46,17 @@ export function sahteMasa(ek: Partial<Pick<MasaBaglami, "engelliMi" | "rapor">> 
   const atmalar: { kim: string; hedef: string; katilim: string[] }[] = [];
   const raporlar: { kim: string; govde: Record<string, unknown> }[] = [];
   let simdi = 1_800_000_000_000;
+  let ayar: MasaAyari = { tur: "acik", acik: true, sesli: false, kavgaYasak: false, kilitli: false };
+  const ayarYazimlari: MasaAyari[] = [];
   const m = {
     soketler,
+    ayarYazimlari,
+    get ayar() {
+      return ayar;
+    },
+    set ayar(a: MasaAyari) {
+      ayar = a;
+    },
     atmalar,
     raporlar,
     ileri(ms: number) {
@@ -61,7 +70,11 @@ export function sahteMasa(ek: Partial<Pick<MasaBaglami, "engelliMi" | "rapor">> 
         masa: MASA,
         no: 1,
         soketler: soketler.filter((s) => !s.kapanis),
-        ayar: { tur: "acik", acik: true, sesli: false, kavgaYasak: false },
+        ayar: { ...ayar },
+        ayarYaz: (a) => {
+          ayar = { ...a };
+          ayarYazimlari.push({ ...a });
+        },
         simdi,
         engelliMi: ek.engelliMi ?? (async () => false),
         rapor:

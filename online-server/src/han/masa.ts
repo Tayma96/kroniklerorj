@@ -14,20 +14,23 @@ import {
   ILETI_PENCERESI_MS,
   ILETI_SINIRI,
   iletiMetniCoz,
+  iletiSiniri,
   KAPANIS,
   KOLTUK_SAYISI,
   KOMUT_SINIRI,
   pencereSay,
   SESSIZ_EN_COK,
   surer,
+  VARSAYILAN_AYAR,
 } from "./kurallar.ts";
+import { MASA_BASI_AYARLARI } from "./tipler.ts";
 import type {
   IstemciIletisi,
   MasaAyari,
   MasaBileti,
   MasaGorunumu,
+  MasaIcOzeti,
   MasaOlayi,
-  MasaOzeti,
   Plaka,
   SesDurumu,
   SoketEki,
@@ -48,6 +51,8 @@ export interface MasaBaglami {
   /** Bu anda bağlı soketler. */
   soketler: readonly MasaSoketi[];
   ayar: MasaAyari;
+  /** H2: masa ayarını kalıcı yazar (DO bellekte hemen günceller, depoya yazımı işlem sonunda bekler). */
+  ayarYaz(ayar: MasaAyari): void;
   simdi: number;
   engelliMi: EngelSorgusu;
   /** Y1 şikâyet kuyruğuna (HesapDO "sikayet" yolu, /v1/sikayet ile aynı kurallar). */
@@ -75,7 +80,7 @@ export function kayitlar(soketler: readonly MasaSoketi[]): Kayit[] {
 }
 
 function plaka(ek: SoketEki): Plaka {
-  return { hesap: ek.h, ad: ek.a, ...(ek.cf ? { cerceve: ek.cf } : {}) };
+  return { hesap: ek.h, ad: ek.a, ...(ek.cf ? { cerceve: ek.cf } : {}), ...(ek.md ? { mudavim: true as const } : {}) };
 }
 
 /** Oturanlar koltuk sırasıyla. */
@@ -115,9 +120,11 @@ export function gorunum(no: number, tum: readonly Kayit[], ayar: MasaAyari): Mas
   };
 }
 
-export function ozet(no: number, tum: readonly Kayit[], ayar: MasaAyari): MasaOzeti {
-  const oturan = tum.filter((r) => r.ek.k !== null).length;
-  return { no, oturan, ayakta: tum.length - oturan, sira: siradakiler(tum).length, ayar: { ...ayar } };
+/** İç özet: `oturanlar` yalnız HesapDO'nun tanıdık sayımı içindir (istemciye yalnız sayı gider). */
+export function ozet(no: number, tum: readonly Kayit[], ayar: MasaAyari): MasaIcOzeti {
+  const oturanHesaplar = oturanlar(tum).map((o) => o.hesap);
+  const oturan = oturanHesaplar.length;
+  return { no, oturan, ayakta: tum.length - oturan, sira: siradakiler(tum).length, ayar: { ...ayar }, oturanlar: oturanHesaplar };
 }
 
 function yayinla(tum: readonly Kayit[], ileti: SunucuIletisi): void {
@@ -173,9 +180,9 @@ function hataGonder(soket: MasaSoketi, kod: HataKodu, istek?: string, bitis?: nu
   soket.gonder({ t: "hata", hata: kod, ...(istek ? { istek } : {}), ...(bitis !== undefined ? { bitis } : {}) });
 }
 
-/** Boşalan koltuğa sıranın başındakini oturtur. */
-function siradanOturt(kalan: readonly Kayit[], koltuk: number, simdi: number): void {
-  if (kalan.some((r) => r.ek.k === koltuk)) return;
+/** Boşalan koltuğa sıranın başındakini oturtur (kilitli masada sıra ilerlemez). */
+function siradanOturt(b: Pick<MasaBaglami, "ayar">, kalan: readonly Kayit[], koltuk: number, simdi: number): void {
+  if (b.ayar.kilitli || kalan.some((r) => r.ek.k === koltuk)) return;
   const bas = siradakiler(kalan)[0];
   if (!bas) return;
   bas.ek.k = koltuk;
@@ -197,10 +204,30 @@ function cikar(b: MasaBaglami, cikanlar: readonly Kayit[], kalan: readonly Kayit
     r.ek.s = null;
     r.soket.ekYaz(r.ek);
     r.soket.kapat(kod, neden);
-    if (koltuk !== null) siradanOturt(kalan, koltuk, b.simdi);
+    if (koltuk !== null) siradanOturt(b, kalan, koltuk, b.simdi);
   }
+  if (ayarSifirla(b, kalan)) ses = true;
   durumYayinla(b, kalan);
   if (ses) sesYayinla(b, kalan);
+}
+
+/** Kilit açıkken bütün boş koltuklara sıradakileri oturtur. */
+function bosKoltuklariDoldur(b: Pick<MasaBaglami, "ayar" | "simdi">, tum: readonly Kayit[]): void {
+  for (let i = 0; i < KOLTUK_SAYISI; i++) siradanOturt(b, tum, i, b.simdi);
+}
+
+/**
+ * H2: son oturan da kalktıysa masa başı ayarları (kavga yasağı, kilit, sessizlik) varsayılana döner (boş masa kilitli
+ * ya da sessiz kalamaz); hancının alanları (tür, açık) korunur. Ses durumu değiştiyse true.
+ */
+function ayarSifirla(b: Pick<MasaBaglami, "ayar" | "ayarYaz" | "simdi">, kalan: readonly Kayit[]): boolean {
+  if (oturanlar(kalan).length > 0) return false;
+  if (MASA_BASI_AYARLARI.every((a) => b.ayar[a] === VARSAYILAN_AYAR[a])) return false;
+  const sesDegisti = b.ayar.sesli !== VARSAYILAN_AYAR.sesli;
+  b.ayar = { ...b.ayar, kavgaYasak: VARSAYILAN_AYAR.kavgaYasak, kilitli: VARSAYILAN_AYAR.kilitli, sesli: VARSAYILAN_AYAR.sesli };
+  b.ayarYaz(b.ayar);
+  bosKoltuklariDoldur(b, kalan);
+  return sesDegisti;
 }
 
 // ---------------------------------------------------------------- bağlantı
@@ -223,7 +250,7 @@ export function baglanmaEngeli(
 export function baglan(b: MasaBaglami, yeni: MasaSoketi, bilet: MasaBileti): void {
   const tum = kayitlar(b.soketler).filter((r) => r.soket !== yeni);
   const eski = tum.filter((r) => r.ek.h === bilet.plaka.hesap);
-  const ek: SoketEki = { m: bilet.masa, no: bilet.no, h: bilet.plaka.hesap, a: bilet.plaka.ad, ...(bilet.plaka.cerceve ? { cf: bilet.plaka.cerceve } : {}), k: null, o: null, s: null, sus: [], yt: bilet.yt };
+  const ek: SoketEki = { m: bilet.masa, no: bilet.no, h: bilet.plaka.hesap, a: bilet.plaka.ad, ...(bilet.plaka.cerceve ? { cf: bilet.plaka.cerceve } : {}), ...(bilet.plaka.mudavim ? { md: 1 as const } : {}), ...(bilet.ho !== undefined ? { ho: bilet.ho } : {}), k: null, o: null, s: null, sus: [], yt: bilet.yt };
   const once = eski[0];
   if (once) {
     ek.k = once.ek.k;
@@ -349,6 +376,8 @@ async function komutIsle(
       return sozIste(b, kaynak, ek, ileti.t === "sozIste");
     case "sozVer":
       return sozVer(b, kaynak, ek, ileti.hedef, ileti.kabul !== false);
+    case "ayar":
+      return ayarDegistir(b, kaynak, ek, ileti);
     default:
       return hata("gecersiz_istek");
   }
@@ -356,6 +385,8 @@ async function komutIsle(
 
 function otur(b: MasaBaglami, kaynak: MasaSoketi, ek: SoketEki, koltuk: unknown): Basarisiz | undefined {
   if (ek.k !== null) return hata("zaten_oturuyor");
+  // H2: kilitli masada yeni kimse oturamaz ve sıraya giremez (ayakta dinleme sürer).
+  if (b.ayar.kilitli) return hata("masa_kilitli");
   const tum = tumu(b, kaynak, ek);
   const dolu = new Set(oturanlar(tum).map((o) => o.koltuk));
   let secilen: number | undefined;
@@ -400,6 +431,7 @@ function kalk(b: MasaBaglami, kaynak: MasaSoketi, ek: SoketEki): Basarisiz | und
     kaynak.ekYaz(ek);
     if (ses) sesYayinla(b, tum);
     siradanOturt(
+      b,
       tum.filter((r) => r.soket !== kaynak),
       koltuk,
       b.simdi,
@@ -410,14 +442,16 @@ function kalk(b: MasaBaglami, kaynak: MasaSoketi, ek: SoketEki): Basarisiz | und
   } else {
     return hata("oturmuyor");
   }
+  const ses = ayarSifirla(b, tum);
   durumYayinla(b, tum);
+  if (ses) sesYayinla(b, tum);
   return undefined;
 }
 
 async function yaz(b: MasaBaglami, kaynak: MasaSoketi, ek: SoketEki, ham: unknown): Promise<Basarisiz | undefined> {
   if (ek.k === null) return hata("oturmuyor");
   if (surer(ek.yt.susturma, b.simdi)) return { ok: false, hata: "susturuldu", bitis: ek.yt.susturma.bitis };
-  const metin = iletiMetniCoz(ham);
+  const metin = iletiMetniCoz(ham, iletiSiniri(ek.ho, b.simdi));
   if (!metin.ok) return metin;
   const hiz = pencereSay(ek.hz, b.simdi, ILETI_SINIRI, ILETI_PENCERESI_MS);
   ek.hz = hiz.durum;
@@ -573,5 +607,38 @@ function sozVer(b: MasaBaglami, kaynak: MasaSoketi, ek: SoketEki, ham: unknown, 
   kayit.soket.ekYaz(kayit.ek);
   if (kabul) durumYayinla(b, tum);
   sesYayinla(b, tum);
+  return undefined;
+}
+
+// ---------------------------------------------------------------- masa ayarı (H2)
+
+/**
+ * Masa başı ayarı: kavga yasağı, kilit, sessiz masa. Başkası `yetki_yok` alır. Sessiz yapılınca açık yayınlar SFU'da
+ * kapanır; kilit açılınca boş koltuklara sıradakiler oturur. Değişiklik herkese `durum` (ses değiştiyse `sesDurum`)
+ * olarak yayınlanır. Genel komut hız sınırı `iletiIsle`'de uygulanmıştır.
+ */
+function ayarDegistir(b: MasaBaglami, kaynak: MasaSoketi, ek: SoketEki, ileti: Record<string, unknown>): Basarisiz | undefined {
+  const tum = tumu(b, kaynak, ek);
+  if (masaBasi(tum) !== ek.h) return hata("yetki_yok");
+  const degisen: Partial<Pick<MasaAyari, (typeof MASA_BASI_AYARLARI)[number]>> = {};
+  for (const a of MASA_BASI_AYARLARI) {
+    const v = ileti[a];
+    if (v === undefined) continue;
+    if (typeof v !== "boolean") return hata("gecersiz_istek");
+    degisen[a] = v;
+  }
+  if (Object.keys(degisen).length === 0) return hata("gecersiz_istek");
+  const eski = b.ayar;
+  const yeni: MasaAyari = { ...eski, ...degisen };
+  if (MASA_BASI_AYARLARI.every((a) => eski[a] === yeni[a])) return undefined;
+  b.ayar = yeni;
+  b.ayarYaz(yeni);
+  const sesDegisti = eski.sesli !== yeni.sesli;
+  if (!yeni.sesli) {
+    for (const r of tum) if (yayiniKes(b, r.ek)) r.soket.ekYaz(r.ek);
+  }
+  if (eski.kilitli && !yeni.kilitli) bosKoltuklariDoldur(b, tum);
+  durumYayinla(b, tum);
+  if (sesDegisti) sesYayinla(b, tum);
   return undefined;
 }

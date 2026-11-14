@@ -178,10 +178,11 @@ export class HesapDO {
           if (typeof g === "object" && g !== null && !Array.isArray(g) && typeof (g as { hedef?: unknown }).hedef === "string" && /^o[1-9][0-9]{0,8}$/.test((g as { hedef: string }).hedef)) {
             const r = await this.#yerlesime({ islem: "sakinHesabi", hesapId: ileti.hesapId, hedef: (g as { hedef: string }).hedef });
             if (!r.ok) return r;
-            return yonetimCagir(this.#env, { islem: "sikayetEkle", sikayetci: ileti.hesapId, govde: { ...g, hedef: (r.deger as { hesap: string }).hesap } });
+            return yonetimCagir(this.#env, { islem: "sikayetEkle", sikayetci: ileti.hesapId, govde: { ...g, hedef: (r.deger as { hesap: string }).hesap }, ...(ileti.masa ? { masa: ileti.masa } : {}) });
           }
         }
-        return yonetimCagir(this.#env, { islem: "sikayetEkle", sikayetci: ileti.hesapId, govde: ileti.govde });
+        // H4: masadan gelen şikâyette masa kimliği (yalnız MasaDO koyar; istemci yolu bu alanı taşımaz).
+        return yonetimCagir(this.#env, { islem: "sikayetEkle", sikayetci: ileti.hesapId, govde: ileti.govde, ...(ileti.masa ? { masa: ileti.masa } : {}) });
       case "duyurular":
         return yonetimCagir(this.#env, { islem: "duyurular" });
       case "profil":
@@ -359,6 +360,9 @@ export class HesapDO {
       masaCagir: (ad, i) => masaCagir(env, ad, i),
       ikramOde: ikramOdeyici(env),
       engelSor: (yerlesim) => yerlesimCagir(env, { islem: "engeller", yerlesim, hesapId }),
+      tanidikSor: (yerlesim) => yerlesimCagir(env, { islem: "hanTanidiklar", yerlesim, hesapId }),
+      hesapOlusturma: async () => (await hesapKaydi(this.#depo))?.olusturma,
+      hanOlayiGonder: (yerlesim, govde) => yerlesimCagir(env, { islem: "hanOlayi", yerlesim, hesapId, govde }),
       plakaCerçevesi: () => debdebe.plakaCerçevesi(this.#depo, simdi),
     };
   }

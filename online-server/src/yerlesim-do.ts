@@ -212,6 +212,10 @@ export class YerlesimDO {
         return motor.sakinHesabi(ileti.hesapId, ileti.hedef);
       case "engeller":
         return motor.engeller(ileti.hesapId);
+      case "hanTanidiklar":
+        return motor.hanTanidiklar(ileti.hesapId);
+      case "hanOlayi":
+        return motor.hanOlayi(ileti.hesapId, ileti.govde);
       // Hanedan (Faz 7)
       case "hanedan":
         return motor.hanedan(ileti.hesapId, ileti.dil);

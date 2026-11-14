@@ -19,13 +19,21 @@ export interface MasaAyari {
   acik: boolean;
   sesli: boolean;
   kavgaYasak: boolean;
+  /** H2: masa başı kilitledi: yeni kimse oturamaz ve sıraya giremez; ayakta dinleme ve oturanlar sürer.
+   *  Son oturan kalkınca ayar varsayılana döner. Eski kayıtta yok → false. */
+  kilitli: boolean;
 }
+
+/** H2: masa başının WebSocket'ten değiştirebildiği ayar alanları. */
+export const MASA_BASI_AYARLARI = ["kavgaYasak", "kilitli", "sesli"] as const;
 
 /** İsim plakası: kimlik, görünen ad ve isteğe bağlı Debdebe çerçevesi (oyun mantığı okumaz). */
 export interface Plaka {
   hesap: string;
   ad: string;
   cerceve?: string;
+  /** H4: bu yerleşimin hanının müdavimi (rozet; oyun mantığı okumaz, yalnız plakada görünür). */
+  mudavim?: true;
 }
 
 export interface MasaGorunumu {
@@ -68,6 +76,8 @@ export interface MasaOlayi {
   durum?: "teklif" | "kabul";
   /** Onaylandıysa onay olayının numarası. */
   kabulOlay?: number;
+  /** `kabul`: onaylanan teklifin türü (yerleşimdeki etki için). */
+  teklifTur?: "sozlesme" | "ittifak";
 }
 
 /** Worker → MasaDO yükseltme bileti (iç başlıkta taşınır; istemci bunu göremez ve yazamaz). */
@@ -78,6 +88,8 @@ export interface MasaBileti {
   yt: HesapYaptirimi;
   /** İki yönlü engel listesi (hesap kimlikleri; YerlesimDO'dan, bilet alınırken). Eski bilette yok. */
   eg?: string[];
+  /** H3: hesabın oluşturulma anı (ms; HesapDO'dan). Yeni hesabın kısa ileti sınırı için. Eski bilette yok. */
+  ho?: number;
 }
 
 /** İstemci → sunucu (WebSocket metin çerçevesi, JSON). */
@@ -96,7 +108,9 @@ export type IstemciIletisi =
   | { t: "sesAc"; hedef: string }
   | { t: "sozIste" }
   | { t: "sozGeri" }
-  | { t: "sozVer"; hedef: string; kabul?: boolean };
+  | { t: "sozVer"; hedef: string; kabul?: boolean }
+  // H2: masa başı ayarı (en az bir alan)
+  | { t: "ayar"; kavgaYasak?: boolean; kilitli?: boolean; sesli?: boolean };
 
 /**
  * Masanın ses durumu (Faz 16). Yalnız kimlikler ve iz adları; ses verisi ve kayıt yoktur.
@@ -137,6 +151,10 @@ export interface SoketEki {
   a: string;
   /** Debdebe plaka çerçevesi (kozmetik ürün kimliği; oyun mantığı okumaz). */
   cf?: string;
+  /** Müdavim rozeti (plaka; oyun mantığı okumaz). */
+  md?: 1;
+  /** Hesabın oluşturulma anı (yeni hesap ileti sınırı). */
+  ho?: number;
   /** Koltuk dizini ya da null (ayakta). */
   k: number | null;
   /** Oturma anı (masa başı için). */
@@ -203,11 +221,16 @@ export interface EylemGirdisi {
 
 export interface MasaOzeti {
   no: number;
+  /** H1: isteyenin dostu ya da hanesinden olup bu masada OTURAN kişi sayısı (kimlik gönderilmez). */
+  tanidik: number;
   oturan: number;
   ayakta: number;
   sira: number;
   ayar: MasaAyari;
 }
+
+/** MasaDO → HesapDO iç özeti: oturan hesaplar yalnız tanıdık sayımı içindir, istemciye gönderilmez. */
+export type MasaIcOzeti = Omit<MasaOzeti, "tanidik"> & { oturanlar: string[] };
 
 export interface HanOzeti {
   yerlesim: { id: string; ad: string };

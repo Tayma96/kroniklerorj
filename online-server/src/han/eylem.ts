@@ -2,17 +2,17 @@
 // Sunucu doğrular, olay üretir ve o anda koltukta oturanları olayın katılım listesine yazar. Sohbet içeriği yazılmaz.
 // Masa para tutmaz: olayda ve masa deposunda akçe alanı yoktur.
 //
-// Sonraki faz kancaları (bu fazda oyun etkisi YOK):
-//  - Faz 4 (söylenti/bilgi, GDD §6): olay YerlesimDO'ya iletilecek; katılım listesindekiler olayı "bizzat bilir",
-//    diğerleri söylentiyle öğrenir. Bağlanacak nokta: MasaDO#eylem sonunda `olay` (yeni ise).
-//  - Faz 12/13 (nam, şeref, kavga çözümü, dava, sözleşmenin yürürlüğü): `meydanOku`, `ihbar`, `kabul` olayları.
-//    Kazanç gelince günlük tavan HAN_EYLEM_GUNLUK ve çift başına tek sefer izi uygulanır.
+// Oyun etkisi (H5): olay yazıldıktan sonra HesapDO olayı YerlesimDO'ya `hanOlayi` iletisiyle (anahtar: masa adı + olay
+// no, tekrar güvenli; teslim edilemezse HesapDO kuyruğunda bekler) gönderir. Kurallar src/yerlesim/han-olay.ts'dedir:
+// katılım listesine tanıklık olayı, han NPC'lerine söylenti tohumu, yemin/kabul/ihbar için küçük ve tavanlı etkiler.
+// Kalan kancalar: düello (`meydanOku` sonucu), sözleşmenin yürürlüğü ve dava (Faz 12/13).
 
 import type { Depo } from "../depo.ts";
 import { istekNoCoz } from "../mantik.ts";
 import { basarili, hata, type Sonuc } from "../tipler.ts";
 import { hesapIdCoz } from "../yonetim/yaptirim.ts";
 import type { EngelSorgusu } from "./engel-kopru.ts";
+import { sohbetMaskele } from "./filtre.ts";
 import { ATMA_SURE_MS, HAN_MASA_EN_COK, masaNoCoz, SART_EN_UZUN, surer, tekSatir } from "./kurallar.ts";
 import { HAN_EYLEMLERI, type EylemGirdisi, type HanEylemi, type MasaAyari, type MasaOlayi } from "./tipler.ts";
 
@@ -67,7 +67,8 @@ export function eylemGirdisiCoz(govde: unknown): Sonuc<EylemGirdisi> {
     const sart = tekSatir(govde.sart);
     const n = [...sart].length;
     if (n > SART_EN_UZUN) return hata("metin_gecersiz");
-    if (n > 0) girdi.sart = sart;
+    // H3: şart metnindeki küfür sözcükleri maskelenir (eylem reddedilmez).
+    if (n > 0) girdi.sart = sohbetMaskele(sart);
   }
   return basarili(girdi);
 }
@@ -115,7 +116,8 @@ export async function eylemUygula(
     const teklif = await depo.al<MasaOlayi>(olayAnahtari(girdi.olay));
     if (!teklif || !ONAYLI.has(teklif.tur) || teklif.hedef !== kim) return hata("olay_yok");
     if (teklif.durum !== "teklif") return hata("karar_verildi");
-    olay = { no, masa: b.masa, tur: "kabul", kim, hedef: teklif.kim, olay: teklif.no, zaman: b.simdi, katilim };
+    const teklifTur = teklif.tur as "sozlesme" | "ittifak";
+    olay = { no, masa: b.masa, tur: "kabul", kim, hedef: teklif.kim, olay: teklif.no, teklifTur, zaman: b.simdi, katilim };
     yaz[olayAnahtari(teklif.no)] = { ...teklif, durum: "kabul", kabulOlay: no } satisfies MasaOlayi;
   } else {
     const kural = EYLEM_KURALLARI[girdi.tur];

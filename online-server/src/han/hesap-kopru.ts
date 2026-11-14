@@ -10,8 +10,8 @@ import { dilCoz } from "../yerlesim/ortak.ts";
 import { gunlukSay, type GunlukSayac } from "../yonetim/sikayet.ts";
 import { eylemGirdisiCoz } from "./eylem.ts";
 import { IKRAM_GUNLUK, IKRAM_MENUSU, ikramGirdisiCoz } from "./ikram.ts";
-import { HAN_DUZENI, HAN_EYLEM_GUNLUK, HAN_TURU_ADLARI, KOLTUK_SAYISI, masaAdi, masaNoCoz, masaSayisi } from "./kurallar.ts";
-import type { HanOzeti, HanTuru, MasaAnonsu, SesAlt, MasaBileti, MasaIleti, MasaOlayi, MasaOzeti } from "./tipler.ts";
+import { HAN_DUZENI, HAN_EYLEM_GUNLUK, HAN_TURU_ADLARI, KOLTUK_SAYISI, masaAdi, masaNoCoz, masaSayisi, masaSirala } from "./kurallar.ts";
+import type { HanOzeti, HanTuru, MasaAnonsu, SesAlt, MasaBileti, MasaIcOzeti, MasaIleti, MasaOlayi, MasaOzeti } from "./tipler.ts";
 import type { IkramOdeyici } from "./yerlesim-kopru.ts";
 
 // HesapDO depo anahtarları (yalnız "han:" önekli; başka anahtara dokunulmaz)
@@ -20,6 +20,10 @@ export const EYLEM_SAYAC = "han:eylemSayac";
 export const IKRAM_SAYAC = "han:ikramSayac";
 export const EYLEM_ISTEK = "han:eylem:"; // + istekNo → Sonuc
 export const IKRAM_ISTEK = "han:ikram:"; // + istekNo → Sonuc
+/** H5: yerleşime henüz teslim edilemeyen masa olayları (giden kutusu; sonraki eylemde yeniden denenir). */
+export const OLAY_KUYRUK = "han:olayKuyruk";
+/** [PARAMETRE] Giden kutusunda en çok bekleyen olay (dolarsa en eskisi düşer; etki kaybolur, eylem bozulmaz). */
+export const OLAY_KUYRUK_EN_COK = 20;
 
 export type MasaCagir = (ad: string, ileti: MasaIleti) => Promise<Sonuc<unknown>>;
 
@@ -34,10 +38,29 @@ export interface HanHesapBaglami {
   engelSor?: EngelListeleyici;
   /** Debdebe çerçevesi (oyun etkisi yok); yoksa sade plaka. */
   plakaCerçevesi?: () => Promise<string | undefined>;
+  /** H1: yerleşimdeki dostlar ve hane üyeleri (hesap kimlikleri; tek iç çağrı). Yoksa tanıdık sayısı 0. */
+  tanidikSor?: TanidikListeleyici;
+  /** H3: hesabın oluşturulma anı (HesapDO kaydından; istemci veremez). */
+  hesapOlusturma?: () => Promise<number | undefined>;
+  /** H5: masa olayını yerleşime iletir (tekrar güvenli; anahtar masa adı + olay no). Yoksa etki yok. */
+  hanOlayiGonder?: HanOlayiGonderici;
 }
 
-/** HesapDO → YerlesimDO "engeller" çağrısı. */
-export type EngelListeleyici = (yerlesim: string) => Promise<Sonuc<{ engeller: string[] }>>;
+/** HesapDO → YerlesimDO "engeller" çağrısı (H4: müdavim rozeti de döner). */
+export type EngelListeleyici = (yerlesim: string) => Promise<Sonuc<{ engeller: string[]; mudavim?: boolean }>>;
+/** HesapDO → YerlesimDO "hanTanidiklar" çağrısı. */
+export type TanidikListeleyici = (yerlesim: string) => Promise<Sonuc<{ hesaplar: string[] }>>;
+
+/** HesapDO → YerlesimDO "hanOlayi" iletisinin gövdesi. */
+export interface HanOlayiGovdesi {
+  /** Tekrar anahtarı: masa adı + "#" + olay no. */
+  anahtar: string;
+  olay: MasaOlayi;
+}
+export interface HanOlayiBekleyen extends HanOlayiGovdesi {
+  yerlesim: string;
+}
+export type HanOlayiGonderici = (yerlesim: string, govde: HanOlayiGovdesi) => Promise<Sonuc<unknown>>;
 
 interface HanYeri {
   yerlesim: string;
@@ -60,19 +83,36 @@ export async function hanListesi(b: HanHesapBaglami, dil: unknown): Promise<Sonu
   if (!yer.ok) return yer;
   const { yerlesim, tur } = yer.deger;
   const nolar = Array.from({ length: yer.deger.masa }, (_, i) => i + 1);
-  const ozetler = await Promise.all(nolar.map((no) => b.masaCagir(masaAdi(yerlesim, tur, no), { islem: "ozet", masa: masaAdi(yerlesim, tur, no), no })));
+  const [ozetler, tanidiklar] = await Promise.all([
+    Promise.all(nolar.map((no) => b.masaCagir(masaAdi(yerlesim, tur, no), { islem: "ozet", masa: masaAdi(yerlesim, tur, no), no }))),
+    tanidikKumesi(b, yerlesim),
+  ]);
   const masalar: MasaOzeti[] = [];
   for (const o of ozetler) {
     if (!o.ok) return o;
-    masalar.push(o.deger as MasaOzeti);
+    // Oturan kimlikleri yalnız sayıma girer; istemciye giden özette yoktur.
+    const { oturanlar, ...ozet } = o.deger as MasaIcOzeti;
+    const tanidik = (oturanlar ?? []).filter((h) => h !== b.hesapId && tanidiklar.has(h)).length;
+    masalar.push({ ...ozet, tanidik });
   }
   return basarili({
     yerlesim: { id: yerlesim, ad: yer.deger.yerlesimAdi },
     han: { tur, ad: HAN_TURU_ADLARI[tur][dilCoz(dil)] },
     koltuk: KOLTUK_SAYISI,
-    masalar,
+    masalar: masaSirala(masalar),
     menu: Object.entries(IKRAM_MENUSU).map(([id, m]) => ({ id, fiyat: m.fiyat })),
   });
+}
+
+/** Dost ve hane üyeleri (en iyi çaba: yerleşim yanıt vermezse boş; han listesi bozulmaz). */
+async function tanidikKumesi(b: HanHesapBaglami, yerlesim: string): Promise<Set<string>> {
+  if (!b.tanidikSor) return new Set();
+  try {
+    const r = await b.tanidikSor(yerlesim);
+    return new Set(r.ok && Array.isArray(r.deger.hesaplar) ? r.deger.hesaplar : []);
+  } catch {
+    return new Set();
+  }
 }
 
 /**
@@ -96,11 +136,15 @@ export async function masaBileti(b: HanHesapBaglami, hamNo: unknown): Promise<So
     }
   }
   let eg: string[] = [];
+  let mudavim = false;
   if (b.engelSor) {
     const r = await b.engelSor(yer.deger.yerlesim);
     if (!r.ok) return r;
     eg = r.deger.engeller;
+    mudavim = r.deger.mudavim === true;
   }
+  let ho: number | undefined;
+  try { ho = await b.hesapOlusturma?.(); } catch { /* bilinmezse yeni hesap sınırı uygulanmaz */ }
   if (onceki !== ad) await b.depo.koy({ [SON_MASA]: ad });
   let cerceve: string | undefined;
   try { cerceve = await b.plakaCerçevesi?.(); } catch { /* kozmetik hatası han bağlantısını engellemez */ }
@@ -108,7 +152,8 @@ export async function masaBileti(b: HanHesapBaglami, hamNo: unknown): Promise<So
     ...(b.yaptirim?.uzaklastirma ? { uzaklastirma: b.yaptirim.uzaklastirma } : {}),
     ...(b.yaptirim?.susturma ? { susturma: b.yaptirim.susturma } : {}),
   };
-  return basarili({ masa: ad, no, plaka: { hesap: b.hesapId, ad: profil.deger.ad, ...(cerceve ? { cerceve } : {}) }, yt, eg });
+  const plaka = { hesap: b.hesapId, ad: profil.deger.ad, ...(cerceve ? { cerceve } : {}), ...(mudavim ? { mudavim: true as const } : {}) };
+  return basarili({ masa: ad, no, plaka, yt, eg, ...(typeof ho === "number" ? { ho } : {}) });
 }
 
 // Hesap başına han yazma sırası: eylem/ikram, sayaç ve istekNo kaydını başka DO'ya await'ten önce okuyup sonra
@@ -133,7 +178,10 @@ async function hanEylemiSirada(b: HanHesapBaglami, govde: unknown): Promise<Sonu
   if (!girdi.ok) return girdi;
   const anahtar = EYLEM_ISTEK + girdi.deger.istekNo;
   const kayitli = await b.depo.al<Sonuc<{ olay: MasaOlayi }>>(anahtar);
-  if (kayitli) return kayitli;
+  if (kayitli) {
+    await olayKuyruguBosalt(b);
+    return kayitli;
+  }
   const yer = await hanYeri(b.depo);
   if (!yer.ok) return yer;
   if (masaNoCoz(girdi.deger.masa, yer.deger.masa) === undefined) return hata("masa_gecersiz");
@@ -141,8 +189,44 @@ async function hanEylemiSirada(b: HanHesapBaglami, govde: unknown): Promise<Sonu
   if (!sayac.izin) return hata("eylem_siniri");
   const ad = masaAdi(yer.deger.yerlesim, yer.deger.tur, girdi.deger.masa);
   const sonuc = (await b.masaCagir(ad, { islem: "eylem", masa: ad, hesap: b.hesapId, girdi: girdi.deger })) as Sonuc<{ olay: MasaOlayi }>;
-  if (sonuc.ok) await b.depo.koy({ [anahtar]: sonuc, [EYLEM_SAYAC]: sayac.durum });
+  if (!sonuc.ok) return sonuc;
+  const yaz: Record<string, unknown> = { [anahtar]: sonuc, [EYLEM_SAYAC]: sayac.durum };
+  if (b.hanOlayiGonder) {
+    // H5: olay önce giden kutusuna yazılır (eylem kaydıyla birlikte), sonra teslim denenir; teslim edilemezse
+    // sonraki eylemde yeniden denenir. Yerleşim anahtarla tekrar güvenlidir: ikinci teslim ikinci etki üretmez.
+    const kuyruk = (await b.depo.al<HanOlayiBekleyen[]>(OLAY_KUYRUK)) ?? [];
+    const olay = sonuc.deger.olay;
+    const ogeAnahtari = `${olay.masa}#${olay.no}`;
+    if (!kuyruk.some((k) => k.anahtar === ogeAnahtari)) kuyruk.push({ yerlesim: yer.deger.yerlesim, anahtar: ogeAnahtari, olay });
+    yaz[OLAY_KUYRUK] = kuyruk.slice(-OLAY_KUYRUK_EN_COK);
+  }
+  await b.depo.koy(yaz);
+  await olayKuyruguBosalt(b);
   return sonuc;
+}
+
+/**
+ * H5 giden kutusu: bekleyen olayları sırayla yerleşime teslim eder. Ağ hatası (istisna) kuyruğu korur ve durur;
+ * yerleşimin mantıksal reddi (`ok: false`) yeniden denemeyle düzelmeyeceği için öğeyi düşürür. Eylemi asla bozmaz.
+ */
+export async function olayKuyruguBosalt(b: Pick<HanHesapBaglami, "depo" | "hanOlayiGonder">): Promise<void> {
+  if (!b.hanOlayiGonder) return;
+  const kuyruk = (await b.depo.al<HanOlayiBekleyen[]>(OLAY_KUYRUK)) ?? [];
+  if (kuyruk.length === 0) return;
+  const teslim = new Set<string>();
+  for (const k of kuyruk) {
+    try {
+      await b.hanOlayiGonder(k.yerlesim, { anahtar: k.anahtar, olay: k.olay });
+      teslim.add(k.anahtar);
+    } catch {
+      break;
+    }
+  }
+  if (teslim.size === 0) return;
+  // Teslim sırasında yeni öğe eklenmiş olabilir: güncel kuyruk yeniden okunur.
+  const kalan = ((await b.depo.al<HanOlayiBekleyen[]>(OLAY_KUYRUK)) ?? []).filter((k) => !teslim.has(k.anahtar));
+  if (kalan.length) await b.depo.koy({ [OLAY_KUYRUK]: kalan });
+  else await b.depo.sil([OLAY_KUYRUK]);
 }
 
 export interface IkramSonucu {

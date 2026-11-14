@@ -15,6 +15,8 @@ export const MUDAVIM_ESIKLERI: readonly number[] = [6, 15, 30];
 export const MUDAVIM_ROZETLERI = ["tanidik", "mudavim", "demirbas"] as const;
 /** [PARAMETRE] Ozan + teveccüh: eşik indirimi tavanı; eşik en az 1. */
 export const MUDAVIM_OZAN_INDIRIM_TAVAN = 3;
+/** [PARAMETRE] H4: han plakasında müdavim rozeti için en az rozet kademesi (2 = "mudavim"). */
+export const MUDAVIM_PLAKA_KADEME = 2;
 
 /** Karakterdeki müdavim kaydı: ziyaret günleri (gün numarası, artan) ve kazanılmış en yüksek rozet (0 = yok). */
 export interface MudavimKaydi {

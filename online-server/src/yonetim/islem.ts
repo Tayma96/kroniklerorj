@@ -47,6 +47,7 @@ import {
   ACIK_KUYRUK_EN_COK,
   bildirimBirlestir,
   gunlukSay,
+  masaKimligiCoz,
   sikayetGirdisiCoz,
   SIKAYETCI_ACIK_EN_COK,
   SIKAYET_DURUMLARI,
@@ -485,7 +486,8 @@ async function sikayetKarar(o: Oturum, govde: unknown): Promise<Sonuc<unknown>> 
  * farklı şikayetçiler birleşir (sayaç), aynı şikayetçi ikinci kez sayılmaz. Şikayetçi başına açık şikayet sınırı ve
  * günlük sınır vardır; kuyruk doluysa yalnız YENİ hedef reddedilir.
  */
-export async function sikayetEkle(b: YonetimBaglami, sikayetci: string, govde: unknown): Promise<Sonuc<unknown>> {
+export async function sikayetEkle(b: YonetimBaglami, sikayetci: string, govde: unknown, masaHam?: unknown): Promise<Sonuc<unknown>> {
+  const masa = masaKimligiCoz(masaHam);
   const g = sikayetGirdisiCoz(govde);
   if (!g.ok) return g;
   const { hedef, neden, aciklama, istekNo } = g.deger;
@@ -524,7 +526,7 @@ export async function sikayetEkle(b: YonetimBaglami, sikayetci: string, govde: u
   if (!sayac.izin) return hata("sikayet_siniri");
   if (benimAcik.length >= SIKAYETCI_ACIK_EN_COK) return hata("sikayet_siniri");
 
-  const bildirim = { sikayetci, neden, zaman: b.simdi, ...(aciklama ? { aciklama } : {}) };
+  const bildirim = { sikayetci, neden, zaman: b.simdi, ...(aciklama ? { aciklama } : {}), ...(masa ? { masa } : {}) };
   let id: number;
   const degisiklik: Record<string, unknown> = {};
   if (mevcut) {
@@ -749,7 +751,7 @@ export async function yonetimIsle(b: YonetimBaglami, ileti: YonetimIleti): Promi
     case "yonet":
       return yonet(b, ileti.yonetici, ileti.uc, ileti.govde, ileti.sorgu ?? {});
     case "sikayetEkle":
-      return sikayetEkle(b, ileti.sikayetci, ileti.govde);
+      return sikayetEkle(b, ileti.sikayetci, ileti.govde, ileti.masa);
     case "duyurular":
       return duyurular(b);
     case "debdebeKayit":

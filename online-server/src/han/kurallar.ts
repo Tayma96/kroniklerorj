@@ -5,7 +5,8 @@ import type { YerlesimTuru } from "../dunya-veri.ts";
 import type { Dil } from "../icerik/adlar.ts";
 import { basarili, hata, type Sonuc } from "../tipler.ts";
 import { metinTemizle } from "../yonetim/yaptirim.ts";
-import type { HanTuru, MasaAyari } from "./tipler.ts";
+import { sohbetMaskele } from "./filtre.ts";
+import type { HanTuru, MasaAyari, MasaOzeti } from "./tipler.ts";
 
 /** [PARAMETRE] Masa başına koltuk sayısı (GDD §16: 4–8). */
 export const KOLTUK_SAYISI = 6;
@@ -36,6 +37,9 @@ export const HAN_EYLEM_GUNLUK = 20;
 export const SART_EN_UZUN = 240;
 /** [PARAMETRE] Bir bağlantıdaki yerel sessize alma listesi sınırı. */
 export const SESSIZ_EN_COK = 50;
+/** [PARAMETRE] H3 yeni hesap koruması: hesap bu süreden gençse sohbet iletisi en çok YENI_HESAP_ILETI harf. */
+export const YENI_HESAP_MS = 24 * 60 * 60 * 1000;
+export const YENI_HESAP_ILETI = 120;
 
 /** WebSocket kapanış kodları. */
 export const KAPANIS = {
@@ -46,7 +50,7 @@ export const KAPANIS = {
 } as const;
 
 /** Yeni masanın varsayılan ayarı (hancı Faz 13'te değiştirecek). Ses varsayılan açık (Faz 16; Realtime yoksa kapalı). */
-export const VARSAYILAN_AYAR: Readonly<MasaAyari> = { tur: "acik", acik: true, sesli: true, kavgaYasak: false };
+export const VARSAYILAN_AYAR: Readonly<MasaAyari> = { tur: "acik", acik: true, sesli: true, kavgaYasak: false, kilitli: false };
 
 /** Mekân türünün 6 dilde adı (yerleşim adı istemcide eklenir). */
 export const HAN_TURU_ADLARI: Readonly<Record<HanTuru, Readonly<Record<Dil, string>>>> = {
@@ -75,12 +79,32 @@ export function tekSatir(ham: string): string {
   return metinTemizle(ham.replace(/[\r\n]+/g, " ")).replace(/\s{2,}/g, " ");
 }
 
-/** Sohbet iletisi: temizlenmiş, 1..ILETI_EN_UZUN harf. */
-export function iletiMetniCoz(ham: unknown): Sonuc<string> {
+/** Hesabın yeni hesap korumasındaki en çok ileti uzunluğu (oluşturma anı bilinmiyorsa tam sınır). */
+export function iletiSiniri(olusturma: number | undefined, simdi: number): number {
+  return olusturma !== undefined && simdi - olusturma < YENI_HESAP_MS ? YENI_HESAP_ILETI : ILETI_EN_UZUN;
+}
+
+/** Sohbet iletisi: temizlenmiş, 1..enCok harf (uzunluk maskeden önce sayılır); küfür sözcükleri maskelenir (H3). */
+export function iletiMetniCoz(ham: unknown, enCok = ILETI_EN_UZUN): Sonuc<string> {
   if (typeof ham !== "string" || ham.length > CERCEVE_EN_BUYUK) return hata("metin_gecersiz");
   const m = tekSatir(ham);
   const uzunluk = [...m].length;
-  return uzunluk >= 1 && uzunluk <= ILETI_EN_UZUN ? basarili(m) : hata("metin_gecersiz");
+  return uzunluk >= 1 && uzunluk <= enCok ? basarili(sohbetMaskele(m)) : hata("metin_gecersiz");
+}
+
+/** H1 keşif sırası kümesi: 0 tanıdık oturan, 1 oturanı var ve boş koltuk var, 2 boş masa, 3 dolu masa. */
+function kesifKumesi(o: MasaOzeti): number {
+  if (o.tanidik > 0) return 0;
+  if (o.oturan === 0) return 2;
+  return o.oturan < KOLTUK_SAYISI ? 1 : 3;
+}
+
+/**
+ * H1 keşif sırası (saf): tanıdığı oturan masa (çoktan aza) → oturanı olup yeri olan → boş → dolu; eşitlikte masa
+ * numarası. Sırada para/Debdebe yoktur: yalnız doluluk ve tanıdık sayısı.
+ */
+export function masaSirala(masalar: readonly MasaOzeti[]): MasaOzeti[] {
+  return [...masalar].sort((a, b) => kesifKumesi(a) - kesifKumesi(b) || b.tanidik - a.tanidik || a.no - b.no);
 }
 
 export interface Pencere {

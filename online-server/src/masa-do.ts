@@ -63,7 +63,14 @@ function biletCoz(ham: string | null): MasaBileti | undefined {
   try {
     const b = JSON.parse(decodeURIComponent(ham)) as MasaBileti;
     if (typeof b?.masa === "string" && typeof b.no === "number" && typeof b.plaka?.hesap === "string" && typeof b.plaka.ad === "string") {
-      return { masa: b.masa, no: b.no, plaka: { hesap: b.plaka.hesap, ad: b.plaka.ad, ...(typeof b.plaka.cerceve === "string" && b.plaka.cerceve.length <= 40 ? { cerceve: b.plaka.cerceve } : {}) }, yt: b.yt ?? {}, eg: engelListesiCoz(b.eg) };
+      const plaka = {
+        hesap: b.plaka.hesap,
+        ad: b.plaka.ad,
+        ...(typeof b.plaka.cerceve === "string" && b.plaka.cerceve.length <= 40 ? { cerceve: b.plaka.cerceve } : {}),
+        ...(b.plaka.mudavim === true ? { mudavim: true as const } : {}),
+      };
+      const ho = typeof b.ho === "number" && Number.isFinite(b.ho) ? { ho: b.ho } : {};
+      return { masa: b.masa, no: b.no, plaka, yt: b.yt ?? {}, eg: engelListesiCoz(b.eg), ...ho };
     }
   } catch {
     // aşağıda
@@ -169,6 +176,13 @@ export class MasaDO {
     return this.#ayar;
   }
 
+  /** H2: ayar bellekte hemen değişir; depo yazımı işlem sonunda beklenir. Varsayılana dönen ayar silinir. */
+  #ayarYaz(ayar: MasaAyari): void {
+    this.#ayar = { ...ayar };
+    const varsayilan = (Object.keys(VARSAYILAN_AYAR) as (keyof MasaAyari)[]).every((a) => ayar[a] === VARSAYILAN_AYAR[a]);
+    this.#bekleyen.push(varsayilan ? this.#depo.sil([AYAR]) : this.#depo.koy({ [AYAR]: { ...ayar } }));
+  }
+
   async #baglam(masa: string, haric?: WebSocket): Promise<MasaBaglami> {
     const env = this.#env;
     const depo = this.#depo;
@@ -181,6 +195,7 @@ export class MasaDO {
         .filter((w) => w !== haric)
         .map((w) => this.#sar(w)),
       ayar: await this.#ayarAl(),
+      ayarYaz: (a) => this.#ayarYaz(a),
       simdi,
       engelliMi: this.#engelliMi,
       sesYapilandi: realtimeAyari(env) !== undefined,
@@ -188,7 +203,7 @@ export class MasaDO {
         const rt = this.#realtime();
         if (rt) this.#bekleyen.push(rt.izKapat(oturum, [mid]).catch(() => undefined));
       },
-      rapor: (kim, govde) => hesapCagir(env, kim, { islem: "sikayet", hesapId: kim, govde }),
+      rapor: (kim, govde) => hesapCagir(env, kim, { islem: "sikayet", hesapId: kim, govde, masa: { ad: masa, no: masaNo(masa) } }),
       atma: async (kim, hedef, katilim) => {
         const olay = await atmaUygula(depo, masa, kim, hedef, katilim, simdi);
         try {

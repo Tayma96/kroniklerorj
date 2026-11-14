@@ -76,6 +76,8 @@ import {
 import { teveccuhEkle, teveccuhGorunumu, teveccuhKademesi, teveccuhEtkisi, TEVECCUH_ETKI } from "./teveccuh.ts";
 import { IKRAM_MENUSU, type IkramId } from "../han/ikram.ts";
 import { toplumDonumu } from "./toplum-donum.ts";
+import { hanOlayiCoz, hanOlayiIslendiMi, hanOlayiUygula, hanTanidikKimlikleri } from "./han-olay.ts";
+import { MUDAVIM_PLAKA_KADEME } from "./mudavim.ts";
 import { oyuncuArabuluculukAc, oyuncuArabuluculukCevap, oyuncuArabuluculukGeriAl, oyuncuArabuluculukTaslak, oyuncuArabuluculukImzala, oyuncuArabuluculukUygula } from "./arabuluculuk-oyuncu.ts";
 import { OYUNCU_TEKLIF_TURLERI, oyuncuArabuluculukAl, toplumAl, type OyuncuArabuluculuk, type Toplum } from "./toplum.ts";
 import { MALLAR, MAL_IDLERI, malBul } from "../icerik/mallar.ts";
@@ -1492,7 +1494,7 @@ export class YerlesimMotoru {
     });
   }
 
-  async engeller(hesapId: string): Promise<Sonuc<{ engeller: string[] }>> {
+  async engeller(hesapId: string): Promise<Sonuc<{ engeller: string[]; mudavim: boolean }>> {
     const s = this.kasaba.sakin.find((x) => x.h === hesapId);
     if (!s) return hata("sakin_yok");
     const eg = this.kasaba.tp?.eg ?? {};
@@ -1500,7 +1502,42 @@ export class YerlesimMotoru {
     for (const [kim, liste] of Object.entries(eg)) if (liste.includes(s.o)) yerel.add(kim);
     const hesaplar = new Set<string>();
     for (const x of this.kasaba.sakin) if (x.h !== hesapId && yerel.has(x.o)) hesaplar.add(x.h);
-    return basarili({ engeller: [...hesaplar].sort() });
+    // H4: plaka rozeti (sakin dizinindeki müdavim kademesi; oyun mantığı okumaz).
+    return basarili({ engeller: [...hesaplar].sort(), mudavim: (s.md ?? 0) >= MUDAVIM_PLAKA_KADEME });
+  }
+
+  /** H1 (han keşif sırası): oyuncunun dostları ve hane üyeleri, hesap kimliği olarak (yalnız HesapDO sayar). */
+  async hanTanidiklar(hesapId: string): Promise<Sonuc<{ hesaplar: string[] }>> {
+    const s = this.kasaba.sakin.find((x) => x.h === hesapId);
+    if (!s) return hata("sakin_yok");
+    const yerel = new Set(hanTanidikKimlikleri(this.kasaba, s.o, s.e));
+    return basarili({ hesaplar: this.kasaba.sakin.filter((x) => x.h !== hesapId && yerel.has(x.o)).map((x) => x.h).sort() });
+  }
+
+  /**
+   * H5: han masası olayı (HesapDO'dan; govde {anahtar, olay}). Anahtar toplum defterinde tutulur: yeniden teslim
+   * ikinci etki üretmez. Kurallar src/yerlesim/han-olay.ts.
+   */
+  async hanOlayi(hesapId: string, govde: unknown): Promise<Sonuc<unknown>> {
+    const k = this.kasaba;
+    const g = hanOlayiCoz(govde, hesapId, k.y);
+    if (!g.ok) return g;
+    if (hanOlayiIslendiMi(k, g.deger.anahtar)) return basarili({ tekrar: true });
+    const hesaplar = new Set([g.deger.kim, ...(g.deger.hedef ? [g.deger.hedef] : []), ...g.deger.katilim]);
+    const sakinler = k.sakin.filter((x) => hesaplar.has(x.h));
+    await this.#yukle(sakinler.map((x) => x.o));
+    const kisiler = new Map<string, Karakter>();
+    for (const x of sakinler) {
+      const kar = k.kar.get(x.o);
+      if (kar) kisiler.set(x.h, kar);
+    }
+    const r = hanOlayiUygula(k, g.deger, kisiler, k.ay);
+    if (!r.ok) return r;
+    for (const t of r.deger.olaylar) await this.#olayEkle(t, k.ay);
+    for (const o of r.deger.degisen) this.#kirli.add(KAR + o);
+    this.#kirli.add(TOPLUM);
+    await this.kaydet();
+    return basarili({ tekrar: false, etki: r.deger.etki });
   }
 
   /**

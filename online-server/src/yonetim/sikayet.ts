@@ -23,11 +23,27 @@ const TR_FARK_MS = 3 * 60 * 60 * 1000;
 export type SikayetDurumu = "acik" | "reddedildi" | "yaptirim";
 export const SIKAYET_DURUMLARI = ["acik", "reddedildi", "yaptirim"] as const;
 
+/** H4: han masasından yapılan şikâyetin masa kimliği (MasaDO adı ve masa numarası; yalnız sunucu yazar). */
+export interface MasaKimligi {
+  ad: string;
+  no: number;
+}
+
 export interface Bildirim {
   sikayetci: string;
   neden: SikayetNedeni;
   aciklama?: string;
   zaman: number;
+  masa?: MasaKimligi;
+}
+
+/** İç iletiden gelen masa kimliğini doğrular (bozuksa yok sayılır; şikâyet yine kaydedilir). */
+export function masaKimligiCoz(ham: unknown): MasaKimligi | undefined {
+  if (typeof ham !== "object" || ham === null) return undefined;
+  const { ad, no } = ham as Record<string, unknown>;
+  if (typeof ad !== "string" || !ad.startsWith("masa:") || ad.length > 128) return undefined;
+  if (typeof no !== "number" || !Number.isInteger(no) || no < 1 || no > 99) return undefined;
+  return { ad, no };
 }
 
 /**
@@ -41,6 +57,8 @@ export interface Sikayet {
   neden: SikayetNedeni;
   aciklama?: string;
   zaman: number;
+  /** İlk bildirimin masa kimliği (masadan geldiyse). */
+  masa?: MasaKimligi;
   durum: SikayetDurumu;
   /** Birleşen farklı şikayetçi sayısı (ilk dahil). */
   sayi: number;

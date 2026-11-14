@@ -179,6 +179,8 @@ export const HATA_DURUMU = {
   ses_kapali: 503,
   ses_hatasi: 502,
   masa_sessiz: 409,
+  // H2 masa ayarı
+  masa_kilitli: 409,
   masada_degil: 409,
   ses_oturumu_yok: 409,
   sesi_kesildi: 403,
@@ -411,7 +413,8 @@ export type HesapIleti = (
   | EkonomiIletisi
   | ToplulukIletisi
   | BarinmaIletisi
-  | { islem: "sikayet"; hesapId: string; govde: unknown }
+  /** `masa`: yalnız MasaDO'nun `rapor` yolu koyar (H4); istemci yolu taşımaz. */
+  | { islem: "sikayet"; hesapId: string; govde: unknown; masa?: { ad: string; no: number } }
   | { islem: "duyurular"; hesapId: string }
   // Han masası (Faz 10): src/han/hesap-kopru.ts
   | { islem: "han"; hesapId: string; dil?: string | null }
@@ -482,7 +485,7 @@ export type YonetimIleti =
   | { islem: "giris"; yonetici: YoneticiKimligi }
   | { islem: "yonet"; yonetici: YoneticiKimligi; uc: YonetimUcu; govde?: unknown; sorgu?: Record<string, string | null> }
   /** HesapDO → YonetimDO: oyuncu şikayeti. */
-  | { islem: "sikayetEkle"; sikayetci: string; govde: unknown }
+  | { islem: "sikayetEkle"; sikayetci: string; govde: unknown; masa?: { ad: string; no: number } }
   | { islem: "duyurular" }
   /** MasaDO → YonetimDO: masa başının çıkarması (yalnız eklenen kayıt; src/han/y1-kayit.ts). */
   | { islem: "masaAtma"; masa: string; kim: string; hedef: string; olay: number; zaman: number }
@@ -589,6 +592,10 @@ export type YerlesimIleti =
   | { islem: "ucgenOku"; yerlesim: string; hesapId: string; npc?: string | null; hedef?: string | null; dil?: string | null }
   /** Han masası bileti için: oyuncunun iki yönlü engel listesi (hesap kimlikleri). */
   | { islem: "engeller"; yerlesim: string; hesapId: string }
+  /** H1: han keşif sırası için oyuncunun dostları ve hane üyeleri (hesap kimlikleri). */
+  | { islem: "hanTanidiklar"; yerlesim: string; hesapId: string }
+  /** H5: HesapDO → YerlesimDO masa olayı (tekrar güvenli; govde {anahtar, olay}); istemci ulaşamaz. */
+  | { islem: "hanOlayi"; yerlesim: string; hesapId: string; govde: unknown }
   | (MulkIletisiH & { yerlesim: string })
   /** IsletmeDO → YerlesimDO: işletmenin çıkış kutusu (kasa → cüzdan, yansı, iflas); işlem kimliğiyle bir kez uygulanır. */
   | { islem: "mulkGiris"; yerlesim: string; hesapId: string; kayitlar: CikisKaydi[] }

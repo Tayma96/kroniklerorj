@@ -20,6 +20,17 @@ export const SOYLENTI_YUK: Readonly<Record<SoylentiTuru, number>> = {
   husumet: -3,
   borcOdenmedi: -6,
   kalfaYetistirdi: 5,
+  // H5 han masası: yemin ve anlaşma küçük olumlu, ihbar olumsuz (hedef yalanlayabilir).
+  hanYemin: 1,
+  hanAnlasma: 1,
+  hanIhbar: -3,
+};
+
+/** Han söylentilerinin istemci metin anahtarı (`soylenti.han.*`); öteki türler `tur` ile çevrilir. */
+export const HAN_SOYLENTI_ANAHTARI: Readonly<Partial<Record<SoylentiTuru, string>>> = {
+  hanYemin: "soylenti.han.yemin",
+  hanAnlasma: "soylenti.han.anlasma",
+  hanIhbar: "soylenti.han.ihbar",
 };
 /** [PARAMETRE] Tanık modeli ve yayılım. */
 export const TANIK_EN_COK = 3;
@@ -153,6 +164,7 @@ export function soylentiGorunumu(k: Kasaba, kar: Karakter, dil: Dil) {
     sonuc.push({
       id: `s${s.i}`,
       tur: s.t,
+      ...(HAN_SOYLENTI_ANAHTARI[s.t] ? { k: HAN_SOYLENTI_ANAHTARI[s.t] } : {}),
       hedef: s.h ? { id: s.h, ad: hn ? npcAdi(hn, dil) : (kisiAdi(k, s.h, dil) ?? null) } : null,
       ay: s.a,
       bilen: g.length,

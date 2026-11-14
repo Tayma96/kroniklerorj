@@ -118,7 +118,8 @@ export interface Husumet {
   ka?: number;
 }
 
-export const SOYLENTI_TURLERI = ["hediye", "yardim", "hediyeOyuncu", "husumet", "borcOdenmedi", "kalfaYetistirdi"] as const;
+/** `han*`: han masası olaylarından (H5; src/yerlesim/han-olay.ts). */
+export const SOYLENTI_TURLERI = ["hediye", "yardim", "hediyeOyuncu", "husumet", "borcOdenmedi", "kalfaYetistirdi", "hanYemin", "hanAnlasma", "hanIhbar"] as const;
 export type SoylentiTuru = (typeof SOYLENTI_TURLERI)[number];
 
 export interface Soylenti {
@@ -182,6 +183,8 @@ export interface Toplum {
   rd?: { a: string; b: string; g: string; ay: number }[];
   /** Oyuncu–oyuncu arabuluculuk dosyaları; eski kayıtlarda yoktur ve ilk yazımda oluşturulur. */
   oa?: OyuncuArabuluculuk[];
+  /** Han masası olay defteri (H5): işlenmiş anahtarlar ve çift başına ayda bir izleri; eski kayıtta yok. */
+  hn?: import("./han-olay.ts").HanDefteri;
 }
 
 /** Kasabanın toplum kaydı; yoksa kurar (yazım gerektiği yerde çağrılır). */
