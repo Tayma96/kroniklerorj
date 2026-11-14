@@ -129,7 +129,8 @@ export async function eylemUygula(
     // teklifleri geriye uyum için kabul edilebilir; meydan okumada kayıt zorunludur.
     const oturus = await depo.al<[number | null, number | null]>(oturusAnahtari(teklif.no));
     const anlik = (h: string) => b.oturanlar.find((x) => x.hesap === h)?.o ?? null;
-    if (oturus ? oturus[0] === null || anlik(teklif.kim) !== oturus[0] || anlik(kim) !== oturus[1] : teklifTur === "meydanOku") return hata("teklif_dustu");
+    const bilinen = !!oturus && oturus[0] !== null && oturus[1] !== null;
+    if (bilinen ? anlik(teklif.kim) !== oturus![0] || anlik(kim) !== oturus![1] : teklifTur === "meydanOku") return hata("teklif_dustu");
     olay = { no, masa: b.masa, tur: "kabul", kim, hedef: teklif.kim, olay: teklif.no, teklifTur, zaman: b.simdi, katilim };
     yaz[olayAnahtari(teklif.no)] = { ...teklif, durum: "kabul", kabulOlay: no } satisfies MasaOlayi;
   } else {
