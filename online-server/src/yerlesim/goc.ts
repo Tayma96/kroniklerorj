@@ -18,6 +18,7 @@ import { yas } from "./ortak.ts";
 import { borcTaraflari } from "./teklif.ts";
 import type { Karakter, Kasaba } from "./tipler.ts";
 import { sahipMulkleri } from "../mulk/tapu.ts";
+import { sandikAdedi } from "./oda-getiri.ts";
 
 /** [PARAMETRE] Göç edebilmek için en az yaş (yıl). */
 export const GOC_YAS_EN_AZ = 16;
@@ -106,7 +107,9 @@ export function yerelKapilar(k: Kasaba, kar: Karakter, ay: number): Record<Yerel
     || (ek?.is ?? []).some((x) => (x.m === o || x.u === o) && (x.d === "acik" || x.d === "surer" || x.d === "gecikti"))
     || (ek?.hi ?? []).some((x) => x.o === o && x.d === "acik")
     // Kervan (D2): yoldaki kervanın hasılatı ve dönen malı bu yerleşimdeki karaktere yazılır.
-    || (k.kv?.c.k ?? []).some((x) => x.t === "kervan" && (x.y as { o?: unknown }).o === o);
+    || (k.kv?.c.k ?? []).some((x) => x.t === "kervan" && (x.y as { o?: unknown }).o === o)
+    // H12: oda sandığında ya da han emanetinde mal (barınma kaydı göçte taşınır; mal önce alınmalı, çoğalmasın).
+    || sandikAdedi(kar.br?.sd) > 0;
   const md = k.mk;
   const mulk = !!md && (sahipMulkleri(md, o).length > 0
     || md.cik.k.some((x) => x.y.o === o || (x.y.sahip as { o?: string } | undefined)?.o === o)

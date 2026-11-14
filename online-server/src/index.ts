@@ -70,6 +70,9 @@
 //   POST /v1/barinma/kira {oda, sure: 1|3|12, istekNo} → {kira, barinma, para}  (NPC hancı: akçe dünyadan çıkar)
 //   POST /v1/barinma/tesis {istekNo}     → {tesis, barinma}  (imaret/zaviye, D-23 önerisi)
 //   POST /v1/barinma/otomatik {mod: kapali|oda|tesis|uyar, istekNo} → {otomatik, barinma}
+//   POST /v1/barinma/sandik {islem: koy|al, mal, adet, kalite?, istekNo} → {sandikIslem, sandik, envanter}  (H12)
+//   POST /v1/barinma/emanet {istekNo}    → {emanet: {alinan}, sandik, envanter}  (han emaneti / sandık boşaltma)
+//   POST /v1/barinma/gorusme {islem: davet|kabul|bitir|soz, hedef?, sart?, istekNo} → {gorusme, soz?}  (özel oda)
 //   GET  /v1/donus?dil=                  → dönüş ekranı (yokluk, barınma, Hal, olanlar, tek dokunuş seçenekleri)
 //   GET  /v1/debdebe                     → {acik, katalog, fiyatKademeleri, seviyeler, ben, sezon, armagan, paraliKutu:false} (Faz 11/15)
 //   GET  /v1/debdebe/dene?urun=&dil=     → {urun, tur, gercekOyuncuYok, sahneler: [hanMasasi|sehirKapisi|profilKarti]}
@@ -563,6 +566,12 @@ async function yonlendir(istek: Request, env: Env): Promise<Response> {
       return yontem === "POST" ? govdeli(istek, env, "barinmaTesis") : hataYaniti("yontem_yok");
     case "/v1/barinma/otomatik":
       return yontem === "POST" ? govdeli(istek, env, "barinmaOtomatik") : hataYaniti("yontem_yok");
+    case "/v1/barinma/sandik":
+      return yontem === "POST" ? govdeli(istek, env, "barinmaSandik") : hataYaniti("yontem_yok");
+    case "/v1/barinma/emanet":
+      return yontem === "POST" ? govdeli(istek, env, "barinmaEmanet") : hataYaniti("yontem_yok");
+    case "/v1/barinma/gorusme":
+      return yontem === "POST" ? govdeli(istek, env, "barinmaGorusme") : hataYaniti("yontem_yok");
     case "/v1/sikayet":
       if (yontem !== "POST") return hataYaniti("yontem_yok");
       return hesaba(istek, env, async (hesapId) => {

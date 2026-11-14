@@ -35,6 +35,8 @@ export interface SiyasiKimlik {
   teveccuh: number;
   /** Makamla ilgili hak düğümleri (beceri ağacı v2: kasabaMakami, bolgeMakami). */
   haklar: string[];
+  /** H12: adres veren geçerli kira (ikamet). Veri hazır; henüz hiçbir kapı bağlı değil (eski yanıtta yok). */
+  ikamet?: boolean;
 }
 
 /** Makamı tutan kişi; NPC ise kurumun tutucusudur (boş makam toplumu kilitlemez). */

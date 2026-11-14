@@ -374,6 +374,9 @@ export class HesapDO {
       case "barinmaKira":
       case "barinmaTesis":
       case "barinmaOtomatik":
+      case "barinmaSandik":
+      case "barinmaEmanet":
+      case "barinmaGorusme":
       // Mülk ve işletme (Faz 12–13): ileti aynen yerleşime gider (bağlam ve işletme çağrısı orada).
       case "mulk":
       // Kervan (D2): ileti aynen yerleşime gider (hedef DO çağrısı kaynak yerleşimde).

@@ -181,8 +181,11 @@ export function devirHesapla(kasaba: Kasaba, oluO: string, varisHam: unknown, ay
   if (vergi > 0) kalemler.push({ tur: "vergi", akce: vergi });
   const em = varis.id === UZAK ? 0 : (kasaba.hd?.em[varis.id.slice(1)] ?? 0);
   if (em > 0) kalemler.push({ tur: "emanet", akce: em });
-  if (olu.ev && Object.keys(olu.ev).length) {
-    kalemler.push({ tur: "envanter", mallar: Object.fromEntries(Object.entries(olu.ev).sort(([a], [b]) => (a < b ? -1 : 1))) });
+  // H12: oda sandığı ve han emaneti de vârise geçer (GDD §18 "sandık ölümde mirasçıya geçer").
+  const mallar: Record<string, number> = { ...(olu.ev ?? {}) };
+  for (const [m, n] of Object.entries(olu.br?.sd?.ev ?? {})) if (n > 0) mallar[m] = (mallar[m] ?? 0) + n;
+  if (Object.keys(mallar).length) {
+    kalemler.push({ tur: "envanter", mallar: Object.fromEntries(Object.entries(mallar).sort(([a], [b]) => (a < b ? -1 : 1))) });
   }
   const isletmeler = Object.entries(kasaba.mk?.t ?? {}).filter(([, t]) => t.s === oluO).map(([id]) => id).sort();
   if (isletmeler.length) {
@@ -337,6 +340,7 @@ export function devirUygula(kasaba: Kasaba, plan: DevirPlani, ay: number): Sonuc
       case "envanter":
         kar.ev = { ...k.mallar };
         delete olu.ev;
+        if (olu.br) delete olu.br.sd;
         break;
       case "nam":
         kar.nm = k.nam.slice(0, NAMLAR.length);

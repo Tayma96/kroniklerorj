@@ -297,6 +297,9 @@ export class YerlesimDO {
       case "barinmaKira":
       case "barinmaTesis":
       case "barinmaOtomatik":
+      case "barinmaSandik":
+      case "barinmaEmanet":
+      case "barinmaGorusme":
         return motor.barinmaIslem(ileti.islem, ileti.hesapId, ileti.govde, simdi, vergiOrani);
       // Mülk (Faz 12–13): istemci uçları ve IsletmeDO'dan gelen kasa → cüzdan kayıtları.
       case "mulk":

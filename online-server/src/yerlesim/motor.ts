@@ -12,7 +12,7 @@ import type { Dil } from "../icerik/adlar.ts";
 import { HAYALLER, HUYLAR, TUHAFLIKLAR } from "../icerik/kisilik.ts";
 import { istekNoCoz } from "../mantik.ts";
 import { oyunAyi, sonrakiDonum, takvim } from "../saat.ts";
-import { basarili, hata, type SakinKaydi, type Sonuc } from "../tipler.ts";
+import { basarili, hata, type BarinmaIslem, type SakinKaydi, type Sonuc } from "../tipler.ts";
 import { harita, npcMekani } from "./cizelge.ts";
 import { arkaPlanGorunumu, type ArkaPlan } from "./arka-plan.ts";
 import { ayDonumu } from "./donum.ts";
@@ -47,6 +47,7 @@ import { agacGorunumu, beceriHizlandir, beceriIptal, beceriOgren, beceriOzeti, b
 import { acikEtkiler, basariSay } from "./beceri-etki.ts";
 import { aylikTakat, halGorunumu } from "./hal.ts";
 import { barinmaDonumu, barinmaGorunumu, otomatikAyarla, tesisKonakla } from "./barinma.ts";
+import { emanetAl, gorusmeIslem, ikametVar, sandikIslem } from "./oda-getiri.ts";
 import { donusHazirla, donusOku } from "./donus-ekrani.ts";
 import { NPC_AYLIK_KOTA, envanterEkle, npcdenAl, npcdenAlinan, stokGorunumu, type KasabaStogu } from "./npc-taban.ts";
 import { kalanSatisKotasi, NPC_SATIS_KOTASI, npcyeSat } from "./pazar.ts";
@@ -1522,6 +1523,8 @@ export class YerlesimMotoru {
       nam: kar.nm.reduce((t, x) => t + x, 0),
       teveccuh: teveccuhKademesi(kar, k.ay),
       haklar: [...haklar].sort(),
+      // H12: adres veren geçerli kira. Veri hazır; henüz hiçbir kapı (makam adaylığı) buna bağlı değil.
+      ikamet: ikametVar(kar, k.y, this.#simdi),
     });
   }
 
@@ -2076,8 +2079,11 @@ export class YerlesimMotoru {
     return basarili(deger);
   }
 
-  /** POST /v1/barinma/kira | tesis | otomatik (istekNo ile tekrar güvenli; kira NPC hancıya, akçe dünyadan çıkar). */
-  async barinmaIslem(islem: "barinmaKira" | "barinmaTesis" | "barinmaOtomatik", hesapId: string, govde: unknown, simdi: number, vergiOrani = 0): Promise<Sonuc<unknown>> {
+  /**
+   * POST /v1/barinma/kira | tesis | otomatik (istekNo ile tekrar güvenli; kira NPC hancıya, akçe dünyadan çıkar);
+   * H12 sandik | emanet | gorusme (oda-getiri.ts; akçe/nam etkisi yok).
+   */
+  async barinmaIslem(islem: BarinmaIslem, hesapId: string, govde: unknown, simdi: number, vergiOrani = 0): Promise<Sonuc<unknown>> {
     const k = this.kasaba;
     if (islem === "barinmaKira") {
       const oh = oyuncuHani(k);
@@ -2085,6 +2091,17 @@ export class YerlesimMotoru {
         await this.#yukle([oh.sahip]);
         this.#kirli.add(KAR + oh.sahip);
       }
+    }
+    if (islem === "barinmaSandik") return this.#tekrarGuvenli(hesapId, govde, (kar) => sandikIslem(kar, k.y, govde, simdi));
+    if (islem === "barinmaEmanet") return this.#tekrarGuvenli(hesapId, govde, (kar) => emanetAl(kar, k.y, simdi));
+    if (islem === "barinmaGorusme") {
+      return this.#tekrarGuvenli(hesapId, govde, (kar, _s, _ay, ek) => {
+        const r = gorusmeIslem(k, kar, govde, simdi);
+        if (!r.ok) return r;
+        ek.toplum = true;
+        ek.olaylar.push(...r.deger.olaylar);
+        return basarili(r.deger.yanit);
+      });
     }
     return this.#tekrarGuvenli(hesapId, govde, (kar) =>
       islem === "barinmaKira" ? (this.#kirli.add(MULK), mulkluKira(k, kar, govde, simdi, vergiOrani)) : islem === "barinmaTesis" ? tesisKonakla(k, kar, simdi) : otomatikAyarla(k, kar, govde, simdi),

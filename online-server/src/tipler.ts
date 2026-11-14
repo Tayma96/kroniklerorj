@@ -232,6 +232,14 @@ export const HATA_DURUMU = {
   tesis_sart: 409,
   tesis_dolu: 409,
   mod_gecersiz: 400,
+  // Odanın getirdikleri (H12): src/yerlesim/oda-getiri.ts
+  sandik_yok: 409,
+  sandik_dolu: 409,
+  ozel_oda_yok: 409,
+  gorusme_yok: 409,
+  gorusme_dolu: 409,
+  gorusme_siniri: 429,
+  sart_gecersiz: 400,
   // Üçgen (Faz 4)
   ucgen_gecersiz: 400,
   soz_yok: 404,
@@ -595,8 +603,8 @@ export type EkonomiIletisi =
   | { islem: "ismarlamalar"; hesapId: string; dil?: string | null }
   | { islem: "levha"; hesapId: string; mal?: string | null }
   | { islem: "defter"; hesapId: string; ay?: string | null };
-/** Barınma (Faz 14) gövdeli işlemleri: POST /v1/barinma/kira, /v1/barinma/tesis, /v1/barinma/otomatik. */
-export const BARINMA_ISLEMLERI = ["barinmaKira", "barinmaTesis", "barinmaOtomatik"] as const;
+/** Barınma (Faz 14) gövdeli işlemleri: POST /v1/barinma/kira, tesis, otomatik; H12 sandik, emanet, gorusme. */
+export const BARINMA_ISLEMLERI = ["barinmaKira", "barinmaTesis", "barinmaOtomatik", "barinmaSandik", "barinmaEmanet", "barinmaGorusme"] as const;
 export type BarinmaIslem = (typeof BARINMA_ISLEMLERI)[number];
 /** Barınma iletileri (HesapDO aynen YerlesimDO'ya iletir; `yerlesim` eklenir). */
 export type BarinmaIletisi =

@@ -39,6 +39,7 @@ import {
   type OyuncuHaniKatalogu,
 } from "./oda.ts";
 import type { Karakter, Kasaba, OlayTaslagi } from "./tipler.ts";
+import { gorusmeGorunumu, ikametVar, sandikGorunumu, type Sandik } from "./oda-getiri.ts";
 
 const SAAT_MS = 60 * 60 * 1000;
 
@@ -116,6 +117,8 @@ export interface BarinmaKaydi {
   gl: BarinmaGunlugu[];
   /** Hamisinin evinde misafirlik (E6, §18 misafir daveti): [yerleşim, başlangıç, bitiş) ms, hami. */
   hm?: [yerlesim: string, b: number, s: number, hami: string];
+  /** H12 sandık / han emaneti: sandıklı odada sandıkta, kira bitince aynı kayıt han emanetidir (oda-getiri.ts). */
+  sd?: Sandik;
 }
 
 export interface Konaklama {
@@ -540,6 +543,10 @@ export function barinmaGorunumu(
       sureMs: TESIS_SURE_MS,
     },
     otomatik: { mod: OTOMATIK_MODLAR[br.om], modlar: OTOMATIK_MODLAR },
+    /** H12: adres veren geçerli kira (veri hazır; henüz hiçbir kapı bağlı değil). */
+    ikamet: ikametVar(kar, y, simdi),
+    sandik: sandikGorunumu(kar, y, simdi),
+    gorusme: gorusmeGorunumu(kasaba, kar, simdi),
     uyku: uyuyor(kar, br, simdi),
     mola: br.dm > simdi ? br.dm : null,
     sozlesmeler: br.od.filter((s) => s.y === y).map((s) => ({ oda: s.o, han: s.h, baslangic: s.b, bitis: s.s, odenen: s.t, etkin: s.b <= simdi && simdi < s.s })),

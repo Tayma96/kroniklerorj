@@ -13,8 +13,8 @@ import { HAN_ODA_SEVIYESI } from "../mulk/kurallar.ts";
 
 /**
  * [PARAMETRE] Oda kademeleri: aylık kira (akçe) ve odanın getirdikleri. `kondisyon`: konaklanan her ay dönümünde
- * olağan toparlamaya eklenen kondisyon; `sandik`: eşya yeri (adet; sandık işleyişi sonraki fazda); `ozel`: özel
- * görüşme (yalnız davetliler katılım listesine yazılır; han masasıyla bağlanacak); `adres`: mektup/ilan/ikamet adresi.
+ * olağan toparlamaya eklenen kondisyon; `sandik`: eşya yeri (adet); `ozel`: özel görüşme (yalnız davetliler katılım
+ * listesine yazılır); `adres`: ikamet adresi. Getirilerin işleyişi oda-getiri.ts'dedir (H12).
  * Başlangıç parası 5, çırağın aylık emeği ~12 akçedir: yatak herkesin harcı, has oda bir statü harcamasıdır.
  */
 export const ODALAR = {

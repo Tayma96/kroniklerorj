@@ -40,13 +40,16 @@ export const KALITE_DEGER_CARPANI: readonly number[] = [1, 1.25, 1.6, 2.5];
 /** [PARAMETRE] Mal başına tutulan en çok izli parti (fazlası en düşük kaliteden izsiz sadeye döner). */
 export const KALITE_PARTI_EN_COK = 8;
 
+/** Adet ve izli partileri taşıyan her şey (karakter envanteri ya da oda sandığı, H12). */
+export type Envanterli = Pick<Karakter, "ev" | "kq">;
+
 export const kaliteMi = (v: unknown): v is Kalite => v === 0 || v === 1 || v === 2 || v === 3;
 
-function partiler(k: Karakter, mal: string): KaliteParti[] {
+function partiler(k: Envanterli, mal: string): KaliteParti[] {
   return k.kq?.[mal] ?? [];
 }
 
-function yaz(k: Karakter, mal: string, liste: KaliteParti[]): void {
+function yaz(k: Envanterli, mal: string, liste: KaliteParti[]): void {
   const temiz = liste.filter((p) => p[1] > 0 && (p[0] > 0 || p[2] !== undefined));
   temiz.sort((a, b) => b[0] - a[0] || ((a[2] ?? "") < (b[2] ?? "") ? -1 : 1));
   while (temiz.length > KALITE_PARTI_EN_COK) temiz.pop();
@@ -72,7 +75,7 @@ export function kaliteKirp(k: Karakter, mal: string): void {
 }
 
 /** Bu kalitede elde kaç adet var (sade: izsiz + izli sade). */
-export function kaliteAdedi(k: Karakter, mal: string, q: Kalite): number {
+export function kaliteAdedi(k: Envanterli, mal: string, q: Kalite): number {
   const liste = partiler(k, mal);
   const izli = liste.filter((p) => p[0] === q).reduce((a, p) => a + p[1], 0);
   if (q > 0) return izli;
@@ -93,7 +96,7 @@ export function enIyiKalite(k: Karakter, mal: string): Kalite {
 }
 
 /** Belirli kalitede `adet` malı çıkarır (sadede önce izsiz); yetmezse hiçbir şey değişmez, null döner. */
-export function kaliteliCikar(k: Karakter, mal: MalId, adet: number, q: Kalite): KaliteParti[] | null {
+export function kaliteliCikar(k: Envanterli, mal: MalId, adet: number, q: Kalite): KaliteParti[] | null {
   if (!(adet > 0) || kaliteAdedi(k, mal, q) < adet) return null;
   const liste = partiler(k, mal).map((p) => [...p] as KaliteParti);
   const cikan: KaliteParti[] = [];
@@ -121,7 +124,7 @@ export function kaliteliCikar(k: Karakter, mal: MalId, adet: number, q: Kalite):
 }
 
 /** Partileri envantere ekler (aynı kalite ve yapan birleşir). */
-export function kaliteliEkle(k: Karakter, mal: MalId, gelen: readonly KaliteParti[]): void {
+export function kaliteliEkle(k: Envanterli, mal: MalId, gelen: readonly KaliteParti[]): void {
   const toplam = gelen.reduce((a, p) => a + Math.max(0, p[1]), 0);
   if (toplam <= 0) return;
   const ev = (k.ev ??= {});

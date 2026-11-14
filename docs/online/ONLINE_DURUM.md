@@ -36,7 +36,7 @@ ileti yayını, masa başı yetkisi). Durable Object'ler arası çağrılar ger�
 | H9 | Meclis ve tüccar masa türleri; lonca ve zaviye masası; hancı/kâhya moderasyon yetkisi. Özel masa (davetli) var (14 Kasım). | orta |
 | H10 | Handa NPC'ler (hancı, ozan, haberci). İlan panosu var (14 Kasım). | orta |
 | H11 | Debdebe giriş anonsu. Sohbet balonu ve masa süsü var (14 Kasım). | küçük |
-| H12 | Oda getirileri: özel görüşme, sandık, ikamet şartı (bayraklar var, kullanan yok). | büyük |
+| H12 | Oda getirileri sunucuda var (14 Kasım): sandık ve han emaneti, ikamet verisi, özel görüşme. Açık: istemci ekranı; ikamete bağlı kapı. | küçük |
 
 ### Dünya
 | # | Eksik | Boyut |

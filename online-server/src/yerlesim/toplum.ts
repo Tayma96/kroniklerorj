@@ -191,6 +191,8 @@ export interface Toplum {
   ga?: Record<string, string[]>;
   /** Emanet çekişinde bekleyen kayıtlar (işlem kimliği → kayıt; (3) adımında silinir). */
   ec?: Record<string, import("./goc-emanet.ts").EmanetBekleyen>;
+  /** H12 özel görüşmeler (oda-getiri.ts; süresi bitenler ilk yazımda budanır; eski kayıtta yok). */
+  og?: import("./oda-getiri.ts").OzelGorusme[];
 }
 
 /** Kasabanın toplum kaydı; yoksa kurar (yazım gerektiği yerde çağrılır). */
