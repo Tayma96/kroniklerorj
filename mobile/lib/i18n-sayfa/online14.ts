@@ -1,4 +1,4 @@
-// Çevrimiçi siyaset: darbe ganimeti (taraf tutmanın açık bedeli, kayıp/pay olayları, bölge kaydı). [tr, en, es, pt, ar, ru]
+// Çevrimiçi siyaset: darbe ganimeti (taraf tutmanın açık bedeli, kayıp/pay olayları, bölge kaydı) ve ateşkes ön talimatı. [tr, en, es, pt, ar, ru]
 export const rows: Record<string, string[]> = {
   "onl.siyaset.ganimetBedel": [
     "Taraf tutmanın bedeli: kaybeden taraf, akçesinin en çok yüzde %1'ini kazananlara bırakır. Eve ve mülke dokunulmaz; taraf tutmayan hiçbir şey kaybetmez. Aynı kişi %2 ay içinde ikinci kez kesilmez.",
@@ -40,4 +40,19 @@ export const rows: Record<string, string[]> = {
     "انتصر الطرف الذي انحزت إليه في الانقلاب. نصيبك من الغنيمة %1 أقجة.",
     "Сторона, которую ты поддержал, победила в перевороте. Твоя доля добычи: %1 акче.",
   ],
+  "onl.siyaset.talimatAlt": [
+    "Ön talimat: sen yokken karşı taraf ateşkes önerirse ne denilsin? Talimat vermezsen teklif seni bekler; sessizliğin kabul sayılmaz.",
+    "Standing order: if the other side offers a truce while you are away, what should be answered? Without an order the offer waits for you; your silence is never taken as consent.",
+    "Orden previa: si el otro bando propone una tregua mientras no estás, ¿qué se responde? Sin orden, la oferta te espera; tu silencio nunca cuenta como aceptación.",
+    "Ordem prévia: se o outro lado propuser uma trégua enquanto estás ausente, o que se responde? Sem ordem, a oferta espera por ti; o teu silêncio nunca conta como aceitação.",
+    "أمر مسبق: إن عرض الطرف الآخر هدنة وأنت غائب، فبماذا يُجاب؟ دون أمر ينتظرك العرض، ولا يُعدّ صمتك قبولًا أبدًا.",
+    "Предварительный приказ: если другая сторона предложит перемирие в твоё отсутствие, что ответить? Без приказа предложение ждёт тебя; молчание никогда не считается согласием.",
+  ],
+  "onl.siyaset.talimat.kabul": ["Talimatın: ateşkesi kabul et.", "Your order: accept the truce.", "Tu orden: aceptar la tregua.", "A tua ordem: aceitar a trégua.", "أمرك: اقبل الهدنة.", "Твой приказ: принять перемирие."],
+  "onl.siyaset.talimat.ret": ["Talimatın: ateşkesi reddet.", "Your order: reject the truce.", "Tu orden: rechazar la tregua.", "A tua ordem: recusar a trégua.", "أمرك: ارفض الهدنة.", "Твой приказ: отклонить перемирие."],
+  "onl.siyaset.talimat.yok": ["Talimat yok: teklif gelirse seni bekler.", "No order: an offer will wait for you.", "Sin orden: la oferta te esperará.", "Sem ordem: a oferta esperará por ti.", "لا أمر: سينتظرك العرض.", "Приказа нет: предложение будет ждать тебя."],
+  "onl.siyaset.talimatSec.kabul": ["Kabul talimatı ver", "Order: accept", "Orden: aceptar", "Ordem: aceitar", "أمر: اقبل", "Приказ: принять"],
+  "onl.siyaset.talimatSec.ret": ["Ret talimatı ver", "Order: reject", "Orden: rechazar", "Ordem: recusar", "أمر: ارفض", "Приказ: отклонить"],
+  "onl.siyaset.talimatSec.yok": ["Talimatı kaldır", "Clear order", "Quitar la orden", "Retirar a ordem", "ألغِ الأمر", "Отменить приказ"],
+  "onl.siyaset.talimatKaydedildi": ["Ön talimat kaydedildi.", "Standing order saved.", "Orden previa guardada.", "Ordem prévia guardada.", "حُفظ الأمر المسبق.", "Предварительный приказ сохранён."],
 };

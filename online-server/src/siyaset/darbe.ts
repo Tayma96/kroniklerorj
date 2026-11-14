@@ -74,6 +74,53 @@ export function darbeBarisTeklifEt(d: BolgeDurumu, kimlik: SiyasiKimlik, istekId
   if (p.barisTeklifi?.durum === "bekliyor") return "devlet_talep_var";
   if (p.barisTeklifi?.istekId === istekId) return "devlet_talep_var";
   p.barisTeklifi = { taraf, kisi: kimlik.kisi, hesap: kimlik.hesap, istekId, ay, durum: "bekliyor" };
+  talimatUygula(d, ay);
+  return null;
+}
+
+/** Bir tarafın ateşkes teklifine yanıt vermeye yetkili kişileri (kişi sırasıyla). */
+function ateskesYetkilileri(p: NonNullable<BolgeDurumu["darbe"]>, taraf: DarbeTarafi): { kisi: string; hesap: string }[] {
+  const liste = taraf === "saldiran" ? [{ kisi: p.baslatanKisi, hesap: p.baslatanHesap }] : (p.savunma ?? []).map((x) => ({ kisi: x.kisi, hesap: x.hesap }));
+  return [...liste].sort((a, b) => (a.kisi < b.kisi ? -1 : a.kisi > b.kisi ? 1 : 0));
+}
+
+/**
+ * Bekleyen teklife ön talimatı uygular: karşı tarafta "kabul" talimatı veren biri varsa ateşkes olur; yetkililerin
+ * hepsi "ret" dediyse teklif reddedilir. Talimatı olmayan tek yetkili bile varsa teklif bekler (sessizlik kabul değildir).
+ */
+function talimatUygula(d: BolgeDurumu, ay: number): void {
+  const p = d.darbe;
+  const teklif = p?.barisTeklifi;
+  if (!p || !teklif || teklif.durum !== "bekliyor" || !p.talimat) return;
+  const yetkililer = ateskesYetkilileri(p, teklif.taraf === "saldiran" ? "savunan" : "saldiran");
+  if (yetkililer.length === 0) return;
+  const kabulEden = yetkililer.find((x) => p.talimat![x.kisi] === "kabul");
+  if (kabulEden) {
+    Object.assign(teklif, { durum: "kabul", yanitlayan: kabulEden.kisi, yanitAy: ay, talimatla: true });
+    p.durum = "ateskes";
+    p.sogumaSonAy = ay + DARBE.sogumaAy;
+  } else if (yetkililer.every((x) => p.talimat![x.kisi] === "ret")) {
+    Object.assign(teklif, { durum: "ret", yanitlayan: yetkililer[0]!.kisi, yanitAy: ay, talimatla: true });
+  }
+}
+
+/**
+ * Ateşkes ön talimatı (GDD §10 N-10 "çevrimdışı karar"): yalnız ateşkese yanıt yetkisi olan (saldıran lideri ya da
+ * savunma emri vermiş makam sahibi) yazar. "yok" talimatı siler. Bekleyen karşı teklif varsa hemen uygulanır.
+ */
+export function darbeTalimatYaz(d: BolgeDurumu, kimlik: SiyasiKimlik, tercih: unknown, ay: number): HataKodu | null {
+  const p = d.darbe;
+  if (!p || (p.durum !== "hazirlik" && p.durum !== "ilan" && p.durum !== "catışma") || (p.cozumAy !== undefined && p.durum !== "hazirlik" && ay >= p.cozumAy))
+    return "darbe_kapali";
+  if (tercih !== "kabul" && tercih !== "ret" && tercih !== "yok") return "deger_sinir_disi";
+  const yetkili = (p.baslatanKisi === kimlik.kisi && p.baslatanHesap === kimlik.hesap) ||
+    (p.savunma ?? []).some((x) => x.kisi === kimlik.kisi && x.hesap === kimlik.hesap);
+  if (!yetkili) return "taraf_degil";
+  const t = (p.talimat ??= {});
+  if (tercih === "yok") delete t[kimlik.kisi];
+  else t[kimlik.kisi] = tercih;
+  if (Object.keys(t).length === 0) delete p.talimat;
+  talimatUygula(d, ay);
   return null;
 }
 
@@ -234,6 +281,7 @@ export function darbeGorunumu(d: BolgeDurumu, kimlik?: SiyasiKimlik) {
     ...(kimlik ? {
       benimTaraf: p.baslatanKisi === kimlik.kisi ? "saldiran" : (p.savunma ?? []).some((x) => x.hesap === kimlik.hesap) ? "savunan" : null,
       benimDestek: p.destekler.some((x) => x.hesap === kimlik.hesap || kumeKesisir(x.kume, kumeAnahtarlari(kimlik))),
+      benimTalimat: p.talimat?.[kimlik.kisi] ?? null,
     } : {}),
     ...(katilimci ? { esik, destekler: p.destekler.length, savunma: (p.savunma ?? []).length, garnizonSadakati: p.garnizonSadakati, yatirilan: p.yatirilan, izler: p.izler } : {}),
   };

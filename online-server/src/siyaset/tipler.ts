@@ -185,7 +185,11 @@ export interface DarbeBarisTeklifi {
   durum: "bekliyor" | "kabul" | "ret";
   yanitlayan?: string;
   yanitAy?: number;
+  /** Yanıt, yetkilinin önceden verdiği ateşkes ön talimatıyla (çevrimdışıyken) yazıldı. */
+  talimatla?: true;
 }
+/** Ateşkes ön talimatı (GDD §10 N-10): yetkili taraf yokken gelen teklife verilecek yanıt. */
+export type AteskesTalimati = "kabul" | "ret";
 export type DarbeDestekRolu = "sehirBeyi" | "ahiBasi";
 export interface DarbeDestegi {
   kisi: string;
@@ -217,6 +221,8 @@ export interface DarbePlani {
   savunma?: DarbeDestegi[];
   /** Çatışma çözülmeden önce iki tarafın açık onayıyla sonuçlanabilen statüko ateşkesi. */
   barisTeklifi?: DarbeBarisTeklifi;
+  /** Ateşkes ön talimatları (kişi → tercih). Yalnız yanıt yetkisi olanlar yazar; talimat yoksa teklif sahibini bekler. */
+  talimat?: Record<string, AteskesTalimati>;
   garnizonSadakati: number;
   yatirilan: number;
   mod?: "acik" | "baskin";

@@ -6,7 +6,7 @@ import { BEYLIKLER } from "../dunya-veri.ts";
 import { basarili, hata, type HataKodu, type Sonuc } from "../tipler.ts";
 import { mesruiyetGorunumu, bolgeMesruiyeti } from "./mesruiyet.ts";
 import { mogolEtkisi } from "./mogol.ts";
-import { darbeAyi, darbeBarisTeklifEt, darbeBarisYanit, darbeDestekle, darbeEsigi, darbeGorunumu, darbeHazirla, darbeIlanEt, darbeSadakatYatir, darbeSavunmaYaz, darbeVazgec } from "./darbe.ts";
+import { darbeAyi, darbeBarisTeklifEt, darbeBarisYanit, darbeDestekle, darbeEsigi, darbeGorunumu, darbeHazirla, darbeIlanEt, darbeSadakatYatir, darbeSavunmaYaz, darbeTalimatYaz, darbeVazgec } from "./darbe.ts";
 import { ganimetIsiAc } from "./ganimet.ts";
 import { devletAyi, devletGorunumu, devletYemin, devletYonet } from "./devlet.ts";
 import {
@@ -617,7 +617,14 @@ export function bolgeEylem(d: BolgeDurumu, kimlik: SiyasiKimlik, g: Govde, simdi
       const h = darbeBarisTeklifEt(d, kimlik, g.istekId, ay);
       if (h) return hata(h);
       kayitEkle(d, ay, "darbeBarisTeklif", kimlik.kisi, { k: "kayit.darbeBarisTeklif" });
+      talimatKaydi(d, ay);
       return basarili({ islem: "darbeBarisTeklif", dokum: darbeGorunumu(d, kimlik) });
+    }
+    case "darbeTalimat": {
+      const h = darbeTalimatYaz(d, kimlik, g.tercih, ay);
+      if (h) return hata(h);
+      talimatKaydi(d, ay);
+      return basarili({ islem: "darbeTalimat", dokum: darbeGorunumu(d, kimlik) });
     }
     case "darbeBarisYanit": {
       const h = darbeBarisYanit(d, kimlik, g.istekId, g.karar, ay);
@@ -683,6 +690,15 @@ export function bolgeEylem(d: BolgeDurumu, kimlik: SiyasiKimlik, g: Govde, simdi
 }
 
 /** Faz 6 kancası: oyuncu/mülk vergisi vali kasasına (çağıran akçeyi düşmüş olmalı; anahtar tekrar güvenliği DO'da). */
+/** Ön talimatla yanıtlanan ateşkes teklifini bölge kaydına bir kez yazar (yanıtlayan: talimatı veren). */
+function talimatKaydi(d: BolgeDurumu, ay: number): void {
+  const t = d.darbe?.barisTeklifi;
+  if (!t || !t.talimatla || t.durum === "bekliyor" || t.yanitAy !== ay) return;
+  const tur = t.durum === "kabul" ? "darbeBarisKabul" : "darbeBarisRet";
+  if (d.kayit.some((s) => s.tur === tur && s.m.p?.istek === t.istekId)) return;
+  kayitEkle(d, ay, tur, t.yanitlayan ?? "kurum", { k: `kayit.${tur}`, p: { istek: t.istekId, talimat: 1 } });
+}
+
 export function vergiYatir(d: BolgeDurumu, tutar: number, yerlesim: string): HataKodu | null {
   if (!Number.isInteger(tutar) || tutar <= 0 || tutar > 1_000_000) return "deger_sinir_disi";
   if (!BEYLIKLER.find((b) => b.id === d.id)?.yerlesimler.some((y) => y.id === yerlesim)) return "yerlesim_gecersiz";

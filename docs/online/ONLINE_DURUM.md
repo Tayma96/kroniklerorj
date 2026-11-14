@@ -52,7 +52,6 @@ paneli Y1–Y3 · şikâyet/engelleme · ilk oturum ekranları · beceri ağacı
 | # | Eksik | Boyut |
 |---|---|---|
 | S1 | Darbede mülk kaybı (tavan: 1 mülk, barınak ve aile evi hariç; saf hesap hazır, devir köprüsü yok). | orta |
-| S2 | Ön talimatın savaş/ateşkes/barış tercihini kapsaması (bugün yalnız bayındırlık). | orta |
 | S3 | P6 ek anlaşma türleri: saldırmazlık, ticaret, ortak savunma. | orta |
 | S4 | Beylikler arası ilanlı savaş kuyruğu (N-7/N-11). | büyük |
 | S5 | 14 meslek gelir dengesi (sim 6 mesleği ölçüyor). | orta |

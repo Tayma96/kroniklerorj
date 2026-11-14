@@ -65,6 +65,8 @@ function SiyasetEkran() {
   const yanitlayabilir = pencereAcik && baris?.durum === "bekliyor" && !!taraf && taraf !== baris.taraf;
   const savunmaMakam = durum?.makamlar.find((m) => (m.tur === "sehirBeyi" || m.tur === "ahiBasi") && durum.benim?.makamlar.includes(m.id));
   const savunmaVerebilir = pencereAcik && !!savunmaMakam && !taraf && !darbe?.benimDestek;
+  const talimat = (darbe?.benimTalimat ?? null) as "kabul" | "ret" | null;
+  const talimatVerebilir = pencereAcik && !!taraf;
   const gosterge = bolge?.gostergeler ?? {};
   const devlet = bolge?.devlet as Record<string, any> | null | undefined;
   const devletBeyi = !!devlet && devlet.bey?.kisi === durum?.benim?.kisi;
@@ -154,6 +156,15 @@ function SiyasetEkran() {
           <CizgiDugme etiket={t("onl.siyaset.barisRet")} icon="x" rtl={rtl} kucuk kapali={yukleniyor}
             onPress={() => void islem({ islem: "darbeBarisYanit", istekId: baris.istekId, karar: "ret" }, t("onl.siyaset.barisReddedildi"))} />
         </> : null}
+        {talimatVerebilir ? <View style={{ gap: 6, paddingTop: 4, borderTopWidth: 1, borderColor: C.border }}>
+          <Text style={{ fontFamily: F.serif, fontSize: 12, lineHeight: 18, color: C.parchmentDim, textAlign: hiza(rtl) }}>{t("onl.siyaset.talimatAlt")}</Text>
+          <Text style={{ fontFamily: F.display, fontSize: 12, color: C.goldDim, textAlign: hiza(rtl) }}>{t("onl.siyaset.talimat." + (talimat ?? "yok"))}</Text>
+          <View style={{ flexDirection: yon(rtl), flexWrap: "wrap", gap: 8 }}>
+            {(["kabul", "ret", "yok"] as const).filter((x) => x !== (talimat ?? "yok")).map((x) =>
+              <CizgiDugme key={x} etiket={t("onl.siyaset.talimatSec." + x)} icon={x === "kabul" ? "handshake" : x === "ret" ? "shield" : "x"} rtl={rtl} kucuk kapali={yukleniyor}
+                onPress={() => void islem({ islem: "darbeTalimat", tercih: x }, t("onl.siyaset.talimatKaydedildi"))} />)}
+          </View>
+        </View> : null}
         {!teklifVerebilir && !yanitlayabilir && baris?.durum !== "bekliyor" ? <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchmentDim, textAlign: hiza(rtl) }}>{t("onl.siyaset.barisYok")}</Text> : null}
       </Cerceve> : <Cerceve ic={{ padding: 12, gap: 4 }}>
         <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchmentDim, textAlign: hiza(rtl) }}>{t("onl.siyaset.darbeYok")}</Text>
