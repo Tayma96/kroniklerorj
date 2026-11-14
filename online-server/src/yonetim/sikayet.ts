@@ -29,12 +29,26 @@ export interface MasaKimligi {
   no: number;
 }
 
+/** H10: han panosundaki ilan şikâyetinde ilan kimliği ve şikâyet anındaki metni (yalnız sunucu yazar). */
+export interface IlanKimligi {
+  id: string;
+  metin: string;
+}
+
 export interface Bildirim {
   sikayetci: string;
   neden: SikayetNedeni;
   aciklama?: string;
   zaman: number;
   masa?: MasaKimligi;
+  ilan?: IlanKimligi;
+}
+
+export function ilanKimligiCoz(ham: unknown): IlanKimligi | undefined {
+  if (typeof ham !== "object" || ham === null) return undefined;
+  const { id, metin } = ham as Record<string, unknown>;
+  if (typeof id !== "string" || !/^p[1-9][0-9]{0,8}$/.test(id) || typeof metin !== "string") return undefined;
+  return { id, metin: [...metin].slice(0, 400).join("") };
 }
 
 /** İç iletiden gelen masa kimliğini doğrular (bozuksa yok sayılır; şikâyet yine kaydedilir). */
@@ -59,6 +73,8 @@ export interface Sikayet {
   zaman: number;
   /** İlk bildirimin masa kimliği (masadan geldiyse). */
   masa?: MasaKimligi;
+  /** İlk bildirimin ilan kimliği (panodan geldiyse). */
+  ilan?: IlanKimligi;
   durum: SikayetDurumu;
   /** Birleşen farklı şikayetçi sayısı (ilk dahil). */
   sayi: number;

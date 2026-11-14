@@ -9,7 +9,7 @@ import { girisKaydet, hesapKaydi, hizKontrol, profilGetir, profilOlustur, sakinK
 import { basarili, hata, type Env, type HesapIleti, type HesapYaptirimi, type Profil, type Sonuc, type YerlesimIleti } from "./tipler.ts";
 import type { MasaIleti } from "./han/tipler.ts";
 import { uzaklastirmaBilgisi, yaptirimEngeli } from "./yonetim/yaptirim.ts";
-import { engeliMasayaBildir, hanEylemi, hanIkrami, hanZiyafeti, hanListesi, hanSesi, masaBileti, yaptirimiMasayaBildir, type HanHesapBaglami } from "./han/hesap-kopru.ts";
+import { engeliMasayaBildir, hanEylemi, hanIkrami, hanPanoYaz, hanZiyafeti, hanListesi, hanSesi, masaBileti, yaptirimiMasayaBildir, type HanHesapBaglami } from "./han/hesap-kopru.ts";
 import { masaCagir } from "./han/ic.ts";
 import { ikramOdeyici } from "./han/yerlesim-kopru.ts";
 import * as debdebe from "./debdebe/hesap.ts";
@@ -188,6 +188,13 @@ export class HesapDO {
           // Profil yalnız yerel oyuncu kimliği (`o12`) verir: şikayet edenin yerleşiminde hesap kimliğine çözülür.
           // Hesap kimliği biçimi (eski) olduğu gibi geçer.
           const g = ileti.govde;
+          // H10: ilan şikâyeti {ilan: "p12", neden, aciklama?, istekNo}: hedef ilanın sahibidir, ilan metni kayda girer.
+          if (typeof g === "object" && g !== null && !Array.isArray(g) && typeof (g as { ilan?: unknown }).ilan === "string") {
+            const r = await this.#yerlesime({ islem: "hanPanoIlan", hesapId: ileti.hesapId, ilan: (g as { ilan: string }).ilan });
+            if (!r.ok) return r;
+            const ilan = r.deger as { hesap: string; id: string; metin: string };
+            return yonetimCagir(this.#env, { islem: "sikayetEkle", sikayetci: ileti.hesapId, govde: { ...g, hedef: ilan.hesap }, ilan: { id: ilan.id, metin: ilan.metin } });
+          }
           if (typeof g === "object" && g !== null && !Array.isArray(g) && typeof (g as { hedef?: unknown }).hedef === "string" && /^o[1-9][0-9]{0,8}$/.test((g as { hedef: string }).hedef)) {
             const r = await this.#yerlesime({ islem: "sakinHesabi", hesapId: ileti.hesapId, hedef: (g as { hedef: string }).hedef });
             if (!r.ok) return r;
@@ -284,6 +291,12 @@ export class HesapDO {
       }
       case "hanEylem":
         return hanEylemi(await this.#han(ileti.hesapId, simdi), ileti.govde);
+      case "hanPano":
+        return this.#yerlesime({ islem: "hanPano", hesapId: ileti.hesapId, alt: "oku" });
+      case "hanPanoYaz":
+        return hanPanoYaz({ depo: this.#depo, simdi }, ileti.govde, (govde) => this.#yerlesime({ islem: "hanPano", hesapId: ileti.hesapId, alt: "yaz", govde }));
+      case "hanPanoSil":
+        return this.#yerlesime({ islem: "hanPano", hesapId: ileti.hesapId, alt: "sil", govde: ileti.govde });
       case "hanZiyafet":
         return hanZiyafeti(await this.#han(ileti.hesapId, simdi), ileti.govde);
       case "hanSes":

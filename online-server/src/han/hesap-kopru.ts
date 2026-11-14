@@ -11,6 +11,7 @@ import { gunlukSay, type GunlukSayac } from "../yonetim/sikayet.ts";
 import { eylemGirdisiCoz } from "./eylem.ts";
 import { IKRAM_GUNLUK, IKRAM_MENUSU, ikramGirdisiCoz } from "./ikram.ts";
 import { ZIYAFET_GUNLUK, ziyafetGirdisiCoz } from "./ziyafet.ts";
+import { PANO_GUNLUK, panoGirdisiCoz } from "./pano.ts";
 import { HAN_DUZENI, HAN_EYLEM_GUNLUK, HAN_TURU_ADLARI, KOLTUK_SAYISI, masaAdi, masaNoCoz, masaSayisi, masaSirala } from "./kurallar.ts";
 import type { HanOzeti, HanTuru, MasaAnonsu, SesAlt, MasaBileti, MasaIcOzeti, MasaIleti, MasaOlayi, MasaOzeti } from "./tipler.ts";
 import type { IkramOdeyici } from "./yerlesim-kopru.ts";
@@ -22,6 +23,8 @@ export const IKRAM_SAYAC = "han:ikramSayac";
 export const EYLEM_ISTEK = "han:eylem:"; // + istekNo → Sonuc
 export const IKRAM_ISTEK = "han:ikram:"; // + istekNo → Sonuc
 export const ZIYAFET_SAYAC = "han:ziyafetSayac";
+export const PANO_SAYAC = "han:panoSayac";
+export const PANO_ISTEK = "han:pano:"; // + istekNo → Sonuc
 export const ZIYAFET_ISTEK = "han:ziyafet:"; // + istekNo → Sonuc
 /** H5: yerleşime henüz teslim edilemeyen masa olayları (giden kutusu; sonraki eylemde yeniden denenir). */
 export const OLAY_KUYRUK = "han:olayKuyruk";
@@ -326,6 +329,25 @@ async function hanZiyafetiSirada(b: HanHesapBaglami, govde: unknown): Promise<So
   const sonuc = basarili({ bedel: odeme.deger.bedel, para: odeme.deger.para, nam: odeme.deger.nam, anons });
   await b.depo.koy({ [anahtar]: sonuc, [ZIYAFET_SAYAC]: sayac.durum });
   return sonuc;
+}
+
+/**
+ * POST /v1/han/pano (H10): günlük ilan sınırı hesap başına burada (silip yeniden asmak sınırı aşmaz); yazma
+ * YerlesimDO'da istekNo ile tekrar güvenlidir. `yaz`: yerleşime iletir.
+ */
+export function hanPanoYaz(b: Pick<HanHesapBaglami, "depo" | "simdi">, govde: unknown, yaz: (govde: unknown) => Promise<Sonuc<unknown>>): Promise<Sonuc<unknown>> {
+  return sirayla(b.depo, async () => {
+    const g = panoGirdisiCoz(govde);
+    if (!g.ok) return g;
+    const anahtar = PANO_ISTEK + g.deger.istekNo;
+    const kayitli = await b.depo.al<Sonuc<unknown>>(anahtar);
+    if (kayitli) return kayitli;
+    const sayac = gunlukSay(await b.depo.al<GunlukSayac>(PANO_SAYAC), b.simdi, PANO_GUNLUK);
+    if (!sayac.izin) return hata("eylem_siniri");
+    const r = await yaz(govde);
+    if (r.ok) await b.depo.koy({ [anahtar]: r, [PANO_SAYAC]: sayac.durum });
+    return r;
+  });
 }
 
 /**

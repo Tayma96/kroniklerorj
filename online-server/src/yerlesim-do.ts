@@ -203,6 +203,10 @@ export class YerlesimDO {
         return motor.ucgenOku(ileti.hesapId, ileti.npc, ileti.hedef, ileti.dil);
       case "hanIkram":
         return motor.hanIkram(ileti.hesapId, ileti.govde, vergiOrani);
+      case "hanPano":
+        return motor.hanPano(ileti.hesapId, ileti.alt, ileti.govde);
+      case "hanPanoIlan":
+        return motor.hanPanoIlan(ileti.hesapId, ileti.ilan);
       case "hanZiyafet":
         return motor.hanZiyafet(ileti.hesapId, ileti.govde, vergiOrani);
       // Debdebe armağanı (HesapDO'dan; tutar değer olarak gelir, cosmetic okunmaz)

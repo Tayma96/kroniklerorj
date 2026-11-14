@@ -185,6 +185,8 @@ export interface Toplum {
   oa?: OyuncuArabuluculuk[];
   /** Han masası olay defteri (H5): işlenmiş anahtarlar ve çift başına ayda bir izleri; eski kayıtta yok. */
   hn?: import("./han-olay.ts").HanDefteri;
+  /** H10 han ilan panosu (eski kayıtta yok). */
+  pn?: import("../han/pano.ts").PanoKaydi;
 }
 
 /** Kasabanın toplum kaydı; yoksa kurar (yazım gerektiği yerde çağrılır). */

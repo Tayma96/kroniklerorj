@@ -179,7 +179,7 @@ export class MasaDO {
   /** H2: ayar bellekte hemen değişir; depo yazımı işlem sonunda beklenir. Varsayılana dönen ayar silinir. */
   #ayarYaz(ayar: MasaAyari): void {
     this.#ayar = { ...ayar };
-    const varsayilan = (Object.keys(VARSAYILAN_AYAR) as (keyof MasaAyari)[]).every((a) => ayar[a] === VARSAYILAN_AYAR[a]);
+    const varsayilan = !ayar.davet?.length && (Object.keys(VARSAYILAN_AYAR) as (keyof MasaAyari)[]).every((a) => ayar[a] === VARSAYILAN_AYAR[a]);
     this.#bekleyen.push(varsayilan ? this.#depo.sil([AYAR]) : this.#depo.koy({ [AYAR]: { ...ayar } }));
   }
 

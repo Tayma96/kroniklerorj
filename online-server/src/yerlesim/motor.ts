@@ -78,6 +78,7 @@ import { IKRAM_MENUSU, type IkramId } from "../han/ikram.ts";
 import { toplumDonumu } from "./toplum-donum.ts";
 import { hanOlayiCoz, hanOlayiIslendiMi, hanOlayiUygula, hanTanidikKimlikleri, ziyafetEtkisi, ziyafetKonukSayisi } from "./han-olay.ts";
 import { ZIYAFET_EN_AZ_KONUK, ziyafetBedeli } from "../han/ziyafet.ts";
+import { ilanCoz, ilanEkle, ilanKimlik, ilanSil, panoBuda, panoGirdisiCoz, panoGorunumu } from "../han/pano.ts";
 import { MUDAVIM_PLAKA_KADEME } from "./mudavim.ts";
 import { oyuncuArabuluculukAc, oyuncuArabuluculukCevap, oyuncuArabuluculukGeriAl, oyuncuArabuluculukTaslak, oyuncuArabuluculukImzala, oyuncuArabuluculukUygula } from "./arabuluculuk-oyuncu.ts";
 import { OYUNCU_TEKLIF_TURLERI, oyuncuArabuluculukAl, toplumAl, type OyuncuArabuluculuk, type Toplum } from "./toplum.ts";
@@ -1617,6 +1618,43 @@ export class YerlesimMotoru {
         ...(etki.engel ? { engel: etki.engel } : {}),
       });
     }, "ziyafet");
+  }
+
+  /** H10 han ilan panosu: oku (yazmaz), yaz ve sil (istekNo ile tekrar güvenli; günlük sınır HesapDO'da). */
+  async hanPano(hesapId: string, alt: "oku" | "yaz" | "sil", govde: unknown): Promise<Sonuc<unknown>> {
+    const k = this.kasaba;
+    if (alt === "oku") {
+      const r = await this.#oyuncu(hesapId);
+      if (!r.ok) return r;
+      return basarili({ ilanlar: panoGorunumu(k.tp?.pn, r.deger.kar.o, this.#simdi) });
+    }
+    return this.#tekrarGuvenli(hesapId, govde, (kar, _s, _ay, ek) => {
+      const pn = (toplumAl(k).pn ??= { n: 0, l: [] });
+      panoBuda(pn, this.#simdi);
+      let yanit: Record<string, unknown>;
+      if (alt === "yaz") {
+        const g = panoGirdisiCoz(govde);
+        if (!g.ok) return g;
+        yanit = { ilan: ilanKimlik(ilanEkle(pn, { o: kar.o, ad: kar.ad, t: g.deger.tur, m: g.deger.metin }, this.#simdi).i) };
+      } else {
+        const r = ilanSil(pn, kar.o, nesneMi(govde) ? govde.ilan : undefined);
+        if (!r.ok) return r;
+        yanit = r.deger;
+      }
+      ek.toplum = true;
+      return basarili({ ...yanit, ilanlar: panoGorunumu(pn, kar.o, this.#simdi) });
+    }, "pano");
+  }
+
+  /** H10 şikâyet: ilanın sahibinin hesap kimliği ve metni (yalnız bu yerleşimin sakini sorar). */
+  async hanPanoIlan(hesapId: string, ilanHam: unknown): Promise<Sonuc<{ hesap: string; id: string; metin: string }>> {
+    const k = this.kasaba;
+    if (!k.sakin.some((x) => x.h === hesapId)) return hata("sakin_yok");
+    const id = ilanCoz(ilanHam);
+    const ilan = id === undefined ? undefined : panoGorunumu(k.tp?.pn, "", this.#simdi).find((x) => x.id === ilanKimlik(id));
+    const sahip = ilan ? k.sakin.find((x) => x.o === ilan.kisi.id) : undefined;
+    if (!ilan || !sahip) return hata("ilan_yok");
+    return basarili({ hesap: sahip.h, id: ilan.id, metin: ilan.metin });
   }
 
   /** GET /v1/duzen: olağan düzen ayarları. */

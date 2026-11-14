@@ -135,7 +135,8 @@ const MUAF = new Set(["giris", "yaptirimYaz"]);
 export function yaptirimEngeli(durum: HesapYaptirimi | undefined, islem: string, simdi: number): Basarisiz | undefined {
   if (!durum || MUAF.has(islem)) return undefined;
   if (surer(durum.uzaklastirma, simdi)) return { ok: false, hata: "uzaklastirildi", bitis: durum.uzaklastirma.bitis };
-  if (islem === "sikayet" && surer(durum.susturma, simdi)) {
+  // Susturulan şikâyet edemez ve han panosuna ilan asamaz (H10).
+  if ((islem === "sikayet" || islem === "hanPanoYaz") && surer(durum.susturma, simdi)) {
     return { ok: false, hata: "susturuldu", bitis: durum.susturma.bitis };
   }
   return undefined;

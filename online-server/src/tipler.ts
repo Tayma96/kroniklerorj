@@ -439,6 +439,9 @@ export type HesapIleti = (
   | { islem: "han"; hesapId: string; dil?: string | null }
   | { islem: "masaBilet"; hesapId: string; masa: string }
   | { islem: "hanEylem" | "hanIkram" | "hanZiyafet"; hesapId: string; govde: unknown }
+  // H10 han ilan panosu
+  | { islem: "hanPano"; hesapId: string }
+  | { islem: "hanPanoYaz" | "hanPanoSil"; hesapId: string; govde: unknown }
   | { islem: "hanSes"; hesapId: string; masa: string; alt: SesAlt; govde: unknown }
   // Debdebe (src/debdebe/hesap.ts)
   | { islem: "debdebe" | "debdebeLevha" | "debdebeSezon"; hesapId: string }
@@ -507,7 +510,7 @@ export type YonetimIleti =
   | { islem: "giris"; yonetici: YoneticiKimligi }
   | { islem: "yonet"; yonetici: YoneticiKimligi; uc: YonetimUcu; govde?: unknown; sorgu?: Record<string, string | null> }
   /** HesapDO → YonetimDO: oyuncu şikayeti. */
-  | { islem: "sikayetEkle"; sikayetci: string; govde: unknown; masa?: { ad: string; no: number } }
+  | { islem: "sikayetEkle"; sikayetci: string; govde: unknown; masa?: { ad: string; no: number }; ilan?: { id: string; metin: string } }
   | { islem: "duyurular" }
   /** MasaDO → YonetimDO: masa başının çıkarması (yalnız eklenen kayıt; src/han/y1-kayit.ts). */
   | { islem: "masaAtma"; masa: string; kim: string; hedef: string; olay: number; zaman: number }
@@ -618,6 +621,10 @@ export type YerlesimIleti =
   | { islem: "hanTanidiklar"; yerlesim: string; hesapId: string }
   /** H7: HesapDO → YerlesimDO ziyafet ödemesi ve etkisi (masa kontrolünden sonra; istekNo ile tekrar güvenli). */
   | { islem: "hanZiyafet"; yerlesim: string; hesapId: string; govde: unknown }
+  /** H10: ilan panosu (oku/yaz/sil; yazma ve silme istekNo ile tekrar güvenli). */
+  | { islem: "hanPano"; yerlesim: string; hesapId: string; alt: "oku" | "yaz" | "sil"; govde?: unknown }
+  /** H10 şikâyet: ilan kimliği → sahibinin hesap kimliği ve metni (yalnız sakin sorar). */
+  | { islem: "hanPanoIlan"; yerlesim: string; hesapId: string; ilan: string }
   /** H5: HesapDO → YerlesimDO masa olayı (tekrar güvenli; govde {anahtar, olay}); istemci ulaşamaz. */
   | { islem: "hanOlayi"; yerlesim: string; hesapId: string; govde: unknown }
   | (MulkIletisiH & { yerlesim: string })
