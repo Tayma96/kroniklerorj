@@ -35,7 +35,7 @@ paneli Y1–Y3 · şikâyet/engelleme · ilk oturum ekranları · beceri ağacı
 ### Dünya
 | # | Eksik | Boyut |
 |---|---|---|
-| D1 | Seyahat/göç: başka şehre gitme uçları yok; "başka şehirde 12 saat" koruması bu yüzden hiç tetiklenmiyor. | büyük |
+| D1 | Göç var (14 Kasım, §4.5). Açık: emanete kalan malı geri alma ucu; göç sırasında han masasına haber; müdavim rozetinin yeni yerde hesaplanması. | küçük |
 | D2 | Kervan ve şehirler arası ticaret; menzil han; yeni işletme türleri (hamam, kervansaray, imaret, bedesten). | büyük |
 | D3 | Ölümde makamın devri (A-04a onay bekliyor). Mülk vârise geçiyor (14 Kasım); oyuncu borcu teklif taşıyıcısıyla geçiyor. | orta |
 | D4 | Sahipsiz mülk: uzun yoklukta vekile devir ya da kamu açık artırması. | orta |

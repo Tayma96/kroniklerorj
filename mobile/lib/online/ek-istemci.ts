@@ -13,7 +13,8 @@ import { EKO_MULK_HATALARI } from "./eko-hata";
 export const EK_HATALAR = [
   "engelli", "kendi_hedef", "kendini_sikayet", "uzaklastirildi", "susturuldu", "yetki_yok", "sikayet_gecersiz", "sikayet_siniri",
   "masa_gecersiz", "masa_kapali", "masa_kalabalik", "koltuk_dolu", "zaten_oturuyor", "oturmuyor", "metin_gecersiz",
-  "hedef_masada_degil", "kavga_yasak", "masa_kilitli", "teklif_dustu", "olay_yok", "atildi", "eylem_siniri", "ikram_gecersiz", "ikram_kapali", "yukseltme_gerekli",
+  "hedef_masada_degil", "kavga_yasak", "masa_kilitli", "teklif_dustu",
+  "goc_ayni_yer", "goc_yas", "goc_soguma", "goc_aile", "goc_mulk", "goc_makam", "goc_darbe", "goc_borc", "goc_sozlesme", "goc_acik_is", "goc_suruyor", "goc_hedef_kayitli", "olay_yok", "atildi", "eylem_siniri", "ikram_gecersiz", "ikram_kapali", "yukseltme_gerekli",
   "ses_kapali", "ses_hatasi", "masa_sessiz", "masada_degil", "ses_oturumu_yok", "sesi_kesildi", "soz_istegi_yok",
   "stok_yok", "ilan_gecersiz", "ilan_kapandi", "ilan_siniri",
   "olu", "evli", "akraba_evlilik", "gorus_yetersiz", "vasiyet_gecersiz", "varis_gecersiz", "devir_yok", "devir_degisti",

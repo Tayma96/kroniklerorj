@@ -106,6 +106,8 @@ export interface OnlineDurum {
   profilOlustur(secim: { yerlesim: string } | { davet: string }): Promise<Sonuc<Profil>>;
   hataTemizle(): void;
   yerlesimYukle(sessiz?: boolean): Promise<Sonuc<YerlesimDurumu>>;
+  /** Göç tamamlandı: yeni profil yazılır, eski yerleşimin bütün önbelleği ve olay imleci sıfırlanır, yeni yerleşim yüklenir. */
+  gocTamamlandi(p: Profil): Promise<void>;
   olaylarYukle(devam?: boolean): Promise<Sonuc<OlaylarYaniti>>;
   kisiYukle(id: string): Promise<Sonuc<Kisi>>;
   /** Aynı eylem ağ hatasından sonra yeniden denenirse aynı istekNo gider (sunucu iki kez işlemez). */
@@ -482,6 +484,13 @@ export function OnlineDurumSaglayici({ children, tohum }: { children: ReactNode;
         return s;
       }, true),
     taslakGuncelle: (p) => setTaslak((t) => ({ ...t, ...p })),
+    gocTamamlandi: async (p) => {
+      yerlesimiBirak();
+      setProfil(p);
+      if (!tohum && oturum?.tur === "sunucu") await imlecYaz(p.hesapId, 0);
+      okunanImlec.current = 0;
+      await yerlesimAl();
+    },
     dunyaYukle: () =>
       calistir("dunya", async () => {
         const d = await istemci().dunya();

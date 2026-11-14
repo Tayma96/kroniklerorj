@@ -161,7 +161,7 @@ function SiyasetEkran() {
           <Text style={{ fontFamily: F.display, fontSize: 12, color: C.goldDim, textAlign: hiza(rtl) }}>{t("onl.siyaset.talimat." + (talimat ?? "yok"))}</Text>
           <View style={{ flexDirection: yon(rtl), flexWrap: "wrap", gap: 8 }}>
             {(["kabul", "ret", "yok"] as const).filter((x) => x !== (talimat ?? "yok")).map((x) =>
-              <CizgiDugme key={x} etiket={t("onl.siyaset.talimatSec." + x)} icon={x === "kabul" ? "handshake" : x === "ret" ? "shield" : "x"} rtl={rtl} kucuk kapali={yukleniyor}
+              <CizgiDugme key={x} etiket={t("onl.siyaset.talimatSec." + x)} icon={x === "kabul" ? "ring" : x === "ret" ? "shield" : "scroll"} rtl={rtl} kucuk kapali={yukleniyor}
                 onPress={() => void islem({ islem: "darbeTalimat", tercih: x }, t("onl.siyaset.talimatKaydedildi"))} />)}
           </View>
         </View> : null}

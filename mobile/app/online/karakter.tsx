@@ -269,6 +269,9 @@ function KarakterEkran() {
     </Cerceve> : null}
     {ben.muhurlu ? <View style={{ marginTop: 12, flexDirection: yon(rtl) }}><Rozet icon="flame" metin={t("onl.ka.muhurlu")} renk={C.goldBright} /></View> : null}
 
+    {/* Göç: yerleşimi kalıcı değiştirme (önizleme ve onay ayrı ekranda) */}
+    <View style={{ marginTop: 14 }}><CizgiDugme etiket={t("onl.goc.baslik")} icon="camel" rtl={rtl} kucuk onPress={() => router.push("/online/goc")} /></View>
+
     {/* Hesap: bütün cihazlardaki oturumları kapatma */}
     <Baslik2 metin={t("onl.hs.baslik")} rtl={rtl} />
     <Cerceve ic={{ padding: 14, gap: 12 }}>

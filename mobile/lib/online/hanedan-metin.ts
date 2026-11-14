@@ -10,6 +10,8 @@ export const HANEDAN_PARAM: Readonly<Record<string, string[]>> = {
   "olay.yaslilik.basladi": ["takat"],
   "olay.yaslilik.beden": ["guc", "dayaniklilik"],
   "kronik.olum": ["kisi", "yas", "nesil"],
+  "kronik.goc.geldi": ["kisi", "kaynakAd"],
+  "kronik.goc.gitti": ["kisi", "hedefAd"],
   "kronik.devir": ["olu", "varis", "nesil"],
   "kronik.evlilik": ["a", "b"],
   "kronik.dogum": ["anne", "baba", "cocuk"],
