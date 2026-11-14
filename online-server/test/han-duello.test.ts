@@ -75,6 +75,21 @@ test("H6 masa: taraflardan biri kalkıp yeniden oturursa teklif düşer; kabul a
   assert.equal(gitti.ok ? "" : gitti.hata, "teklif_dustu", "meydan okuyan masadan gittiyse düşer");
 });
 
+test("teklif düşme kuralı sözleşme ve ittifakta da geçerli; oturuş kaydı olmayan eski teklif kabul edilebilir", async () => {
+  for (const tur of ["sozlesme", "ittifak"] as const) {
+    const depo = bellekDepo();
+    const t = await eylemUygula(depo, "ali", girdi({ tur, hedef: "veli", ...(tur === "sozlesme" ? { sart: "on akçeye bir çuval un" } : {}) }), baglam());
+    assert.ok(t.ok, JSON.stringify(t));
+    assert.deepEqual(await depo.al(oturusAnahtari(t.deger.olay.no)), [100, 200]);
+    const yeniden = baglam({ oturanlar: [{ hesap: "ali", koltuk: 2, o: 300 }, { hesap: "veli", koltuk: 1, o: 200 }] });
+    const dustu = await eylemUygula(depo, "veli", girdi({ tur: "kabul", olay: t.deger.olay.no }), yeniden);
+    assert.equal(dustu.ok ? "" : dustu.hata, "teklif_dustu", tur);
+    await depo.sil([oturusAnahtari(t.deger.olay.no)]);
+    const eski = await eylemUygula(depo, "veli", girdi({ tur: "kabul", olay: t.deger.olay.no }), yeniden);
+    assert.ok(eski.ok, "eski kayıtlı teklif geriye uyumla kabul edilir");
+  }
+});
+
 // ---------------------------------------------------------------- yerleşim tarafı
 
 function kur(yasA = 20, yasB = 25) {

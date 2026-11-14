@@ -20,7 +20,7 @@
 ## Sıradaki işler
 1. Göç (D1): sunucu ajanda, sonra istemci ekranı (`ONLINE_DURUM.md` §4.5).
 2. Han: H7 akçeyle ziyafet, H8 ozan sahnesi, H9 masa türleri, H10 NPC/pano, H11 Debdebe süsleri, H12 oda getirileri.
-3. D2 kervan; E4 203 hak kancası; 14 meslek denge; sözleşme/ittifak teklifinin düşme kuralı.
+3. D2 kervan; E4 203 hak kancası; 14 meslek denge.
 4. Deneme sunucusu açılınca ilk dilim: giriş → profil → yerleşim → yaşam → meslek → işler.
 
 ## Berkay'da
