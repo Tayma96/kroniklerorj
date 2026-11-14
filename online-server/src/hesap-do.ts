@@ -413,6 +413,7 @@ export class HesapDO {
       ziyafetOde: (yerlesim, govde) => yerlesimCagir(env, { islem: "hanZiyafet", yerlesim, hesapId, govde }),
       hanOlayiGonder: (yerlesim, govde) => yerlesimCagir(env, { islem: "hanOlayi", yerlesim, hesapId, govde }),
       plakaCerçevesi: () => debdebe.plakaCerçevesi(this.#depo, simdi),
+      plakaSusleri: () => debdebe.plakaSusleri(this.#depo, simdi),
     };
   }
 

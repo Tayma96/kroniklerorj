@@ -37,6 +37,9 @@ export interface Plaka {
   hesap: string;
   ad: string;
   cerceve?: string;
+  /** H11 Debdebe: sohbet balonu ve oturduğu yerin masa süsü (kozmetik ürün kimliği; oyun mantığı okumaz). */
+  balon?: string;
+  masaSusu?: string;
   /** H4: bu yerleşimin hanının müdavimi (rozet; oyun mantığı okumaz, yalnız plakada görünür). */
   mudavim?: true;
 }
@@ -142,7 +145,7 @@ export type SunucuIletisi =
   | { t: "hosgeldin"; ben: Plaka; susturma: { bitis: number | null } | null; masa: MasaGorunumu; ses?: SesDurumu }
   | { t: "sesDurum"; ses: SesDurumu }
   | { t: "durum"; masa: MasaGorunumu }
-  | { t: "ileti"; hesap: string; ad: string; koltuk: number; metin: string; zaman: number }
+  | { t: "ileti"; hesap: string; ad: string; koltuk: number; metin: string; zaman: number; balon?: string }
   | { t: "olay"; olay: MasaOlayi }
   | { t: "anons"; anons: MasaAnonsu }
   | { t: "sessiz"; liste: string[] }
@@ -160,6 +163,9 @@ export interface SoketEki {
   cf?: string;
   /** Müdavim rozeti (plaka; oyun mantığı okumaz). */
   md?: 1;
+  /** H11 Debdebe sohbet balonu ve masa süsü (kozmetik; oyun mantığı okumaz). */
+  bl?: string;
+  su?: string;
   /** Hesabın oluşturulma anı (yeni hesap ileti sınırı). */
   ho?: number;
   /** Koltuk dizini ya da null (ayakta). */

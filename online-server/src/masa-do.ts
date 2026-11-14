@@ -67,6 +67,8 @@ function biletCoz(ham: string | null): MasaBileti | undefined {
         hesap: b.plaka.hesap,
         ad: b.plaka.ad,
         ...(typeof b.plaka.cerceve === "string" && b.plaka.cerceve.length <= 40 ? { cerceve: b.plaka.cerceve } : {}),
+        ...(typeof b.plaka.balon === "string" && b.plaka.balon.length <= 40 ? { balon: b.plaka.balon } : {}),
+        ...(typeof b.plaka.masaSusu === "string" && b.plaka.masaSusu.length <= 40 ? { masaSusu: b.plaka.masaSusu } : {}),
         ...(b.plaka.mudavim === true ? { mudavim: true as const } : {}),
       };
       const ho = typeof b.ho === "number" && Number.isFinite(b.ho) ? { ho: b.ho } : {};

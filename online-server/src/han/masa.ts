@@ -81,7 +81,7 @@ export function kayitlar(soketler: readonly MasaSoketi[]): Kayit[] {
 }
 
 function plaka(ek: SoketEki): Plaka {
-  return { hesap: ek.h, ad: ek.a, ...(ek.cf ? { cerceve: ek.cf } : {}), ...(ek.md ? { mudavim: true as const } : {}) };
+  return { hesap: ek.h, ad: ek.a, ...(ek.cf ? { cerceve: ek.cf } : {}), ...(ek.bl ? { balon: ek.bl } : {}), ...(ek.su ? { masaSusu: ek.su } : {}), ...(ek.md ? { mudavim: true as const } : {}) };
 }
 
 /** Oturanlar koltuk sırasıyla. */
@@ -267,7 +267,7 @@ export function baglanmaEngeli(
 export function baglan(b: MasaBaglami, yeni: MasaSoketi, bilet: MasaBileti): void {
   const tum = kayitlar(b.soketler).filter((r) => r.soket !== yeni);
   const eski = tum.filter((r) => r.ek.h === bilet.plaka.hesap);
-  const ek: SoketEki = { m: bilet.masa, no: bilet.no, h: bilet.plaka.hesap, a: bilet.plaka.ad, ...(bilet.plaka.cerceve ? { cf: bilet.plaka.cerceve } : {}), ...(bilet.plaka.mudavim ? { md: 1 as const } : {}), ...(bilet.ho !== undefined ? { ho: bilet.ho } : {}), k: null, o: null, s: null, sus: [], yt: bilet.yt };
+  const ek: SoketEki = { m: bilet.masa, no: bilet.no, h: bilet.plaka.hesap, a: bilet.plaka.ad, ...(bilet.plaka.cerceve ? { cf: bilet.plaka.cerceve } : {}), ...(bilet.plaka.balon ? { bl: bilet.plaka.balon } : {}), ...(bilet.plaka.masaSusu ? { su: bilet.plaka.masaSusu } : {}), ...(bilet.plaka.mudavim ? { md: 1 as const } : {}), ...(bilet.ho !== undefined ? { ho: bilet.ho } : {}), k: null, o: null, s: null, sus: [], yt: bilet.yt };
   const once = eski[0];
   if (once) {
     ek.k = once.ek.k;
@@ -477,7 +477,7 @@ async function yaz(b: MasaBaglami, kaynak: MasaSoketi, ek: SoketEki, ham: unknow
   ek.hz = hiz.durum;
   kaynak.ekYaz(ek);
   if (!hiz.izin) return hata("hiz_siniri");
-  const mesaj: SunucuIletisi = { t: "ileti", hesap: ek.h, ad: ek.a, koltuk: ek.k, metin: metin.deger, zaman: b.simdi };
+  const mesaj: SunucuIletisi = { t: "ileti", hesap: ek.h, ad: ek.a, koltuk: ek.k, metin: metin.deger, zaman: b.simdi, ...(ek.bl ? { balon: ek.bl } : {}) };
   for (const r of tumu(b, kaynak, ek)) {
     if (r.ek.h !== ek.h) {
       if (r.ek.sus.includes(ek.h)) continue;

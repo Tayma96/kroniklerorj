@@ -44,6 +44,8 @@ export interface HanHesapBaglami {
   engelSor?: EngelListeleyici;
   /** Debdebe çerçevesi (oyun etkisi yok); yoksa sade plaka. */
   plakaCerçevesi?: () => Promise<string | undefined>;
+  /** H11: Debdebe masa yüzeyleri (çerçeve, balon, masa süsü); verilirse çerçeve de buradan gelir. */
+  plakaSusleri?: () => Promise<{ cerceve?: string; balon?: string; masaSusu?: string }>;
   /** H1: yerleşimdeki dostlar ve hane üyeleri (hesap kimlikleri; tek iç çağrı). Yoksa tanıdık sayısı 0. */
   tanidikSor?: TanidikListeleyici;
   /** H3: hesabın oluşturulma anı (HesapDO kaydından; istemci veremez). */
@@ -155,13 +157,23 @@ export async function masaBileti(b: HanHesapBaglami, hamNo: unknown): Promise<So
   let ho: number | undefined;
   try { ho = await b.hesapOlusturma?.(); } catch { /* bilinmezse yeni hesap sınırı uygulanmaz */ }
   if (onceki !== ad) await b.depo.koy({ [SON_MASA]: ad });
-  let cerceve: string | undefined;
-  try { cerceve = await b.plakaCerçevesi?.(); } catch { /* kozmetik hatası han bağlantısını engellemez */ }
+  let susler: { cerceve?: string; balon?: string; masaSusu?: string } = {};
+  try {
+    susler = b.plakaSusleri ? await b.plakaSusleri() : { cerceve: await b.plakaCerçevesi?.() };
+  } catch { /* kozmetik hatası han bağlantısını engellemez */ }
+  const cerceve = susler.cerceve;
   const yt: HesapYaptirimi = {
     ...(b.yaptirim?.uzaklastirma ? { uzaklastirma: b.yaptirim.uzaklastirma } : {}),
     ...(b.yaptirim?.susturma ? { susturma: b.yaptirim.susturma } : {}),
   };
-  const plaka = { hesap: b.hesapId, ad: profil.deger.ad, ...(cerceve ? { cerceve } : {}), ...(mudavim ? { mudavim: true as const } : {}) };
+  const plaka = {
+    hesap: b.hesapId,
+    ad: profil.deger.ad,
+    ...(cerceve ? { cerceve } : {}),
+    ...(susler.balon ? { balon: susler.balon } : {}),
+    ...(susler.masaSusu ? { masaSusu: susler.masaSusu } : {}),
+    ...(mudavim ? { mudavim: true as const } : {}),
+  };
   return basarili({ masa: ad, no, plaka, yt, eg, ...(typeof ho === "number" ? { ho } : {}) });
 }
 

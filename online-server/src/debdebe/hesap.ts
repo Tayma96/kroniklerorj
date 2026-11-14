@@ -364,6 +364,12 @@ export async function plakaCerçevesi(depo: Depo, simdi: number): Promise<string
   return kozmetikPlakaSusu(await oku(depo), simdi)?.cerceve;
 }
 
+/** H11: masadaki Debdebe yüzeyleri (çerçeve, sohbet balonu, masa süsü); yalnız sahiplikten, yalnız görünüş. */
+export async function plakaSusleri(depo: Depo, simdi: number): Promise<{ cerceve?: string; balon?: string; masaSusu?: string }> {
+  const s = kozmetikPlakaSusu(await oku(depo), simdi);
+  return { ...(s?.cerceve ? { cerceve: s.cerceve } : {}), ...(s?.balon ? { balon: s.balon } : {}), ...(s?.masaSusu ? { masaSusu: s.masaSusu } : {}) };
+}
+
 export async function gorunumVer(depo: Depo, simdi: number): Promise<Sonuc<unknown>> {
   return basarili(herkeseGorunum(await depo.al<Cosmetic>(COSMETIC), simdi));
 }
