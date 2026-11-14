@@ -187,6 +187,10 @@ export interface Toplum {
   hn?: import("./han-olay.ts").HanDefteri;
   /** H10 han ilan panosu (eski kayıtta yok). */
   pn?: import("../han/pano.ts").PanoKaydi;
+  /** Göç arşivi dizini: hesap → bu yerleşimden göç etmiş arşiv karakterleri (yerel kimlik; emanet geri alma). */
+  ga?: Record<string, string[]>;
+  /** Emanet çekişinde bekleyen kayıtlar (işlem kimliği → kayıt; (3) adımında silinir). */
+  ec?: Record<string, import("./goc-emanet.ts").EmanetBekleyen>;
 }
 
 /** Kasabanın toplum kaydı; yoksa kurar (yazım gerektiği yerde çağrılır). */

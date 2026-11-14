@@ -342,6 +342,8 @@ export const HATA_DURUMU = {
   goc_sozlesme: 409,
   goc_acik_is: 409,
   goc_suruyor: 409,
+  /** Eski yerleşimde geri alınacak emanet yok. */
+  emanet_yok: 404,
   goc_hedef_kayitli: 409,
   yapilandirma_eksik: 500,
   sunucu_hatasi: 500,
@@ -465,6 +467,8 @@ export type HesapIleti = (
   /** Göç (D1): POST /v1/goc {hedef, istekNo} ve önizleme GET /v1/goc?hedef= (src/goc-hesap.ts). */
   | { islem: "goc"; hesapId: string; govde: unknown }
   | { islem: "gocOnizle"; hesapId: string; hedef: string | null }
+  | { islem: "gocEmanetOnizle"; hesapId: string }
+  | { islem: "gocEmanet"; hesapId: string; govde: unknown }
 ) & {
   /** Worker → HesapDO: oyuncu belirtecindeki oturum sürümü (sürümsüz belirteç 0). İç iletilerde yoktur. */
   oturumSurumu?: number;
@@ -645,6 +649,9 @@ export type YerlesimIleti =
   /** Göç (D1; HesapDO yürütür, istemci ulaşamaz): önizleme; (1) çıkış, (2) giriş, (3) tamam; (2) kalıcı reddinde iptal. */
   | { islem: "gocOnizle"; yerlesim: string; hesapId: string; hedef: string }
   | { islem: "gocCikis" | "gocGiris" | "gocTamam" | "gocIptal"; yerlesim: string; hesapId: string; govde: unknown }
+  /** Göç emaneti geri alma (HesapDO yürütür; işlem kimliğiyle tekrar güvenli; istemci ulaşamaz). */
+  | { islem: "emanetOnizle"; yerlesim: string; hesapId: string }
+  | { islem: "emanetCikis" | "emanetGiris" | "emanetTamam" | "emanetIptal"; yerlesim: string; hesapId: string; govde: unknown }
   | (BarinmaIletisi & { yerlesim: string });
 
 export type DunyaIleti =

@@ -111,6 +111,7 @@ import type { ToplulukKaydi } from "./topluluk-kayit.ts";
 import { istekBul, istekYaz } from "./istek-defteri.ts";
 import { ucgenDonumu, ucgenGorunumu, ucgenIslem, ucgenOkumaYuklenecek, ucgenYuklenecek } from "./ucgen.ts";
 import { kronikEkle } from "./kronik.ts";
+import { EMANET_ARSIV_EN_COK, EMANET_BEDELI, emanetCikar, emanetDokumu, emanetEkle, emanetGeriYaz, emanetIslemiMi, emanetPaketiGecerli } from "./goc-emanet.ts";
 import {
   GOC_MISAFIRHANE_SAAT,
   GOC_SOGUMA_AY,
@@ -1917,6 +1918,10 @@ export class YerlesimMotoru {
     const ay = k.ay;
     gc.d = "kapandi";
     k.sakin.splice(i, 1);
+    // Emanet geri alma için arşiv dizini (hesap → arşiv karakterleri).
+    const ga = (toplumAl(k).ga ??= {});
+    ga[hesapId] = [...(ga[hesapId] ?? []).filter((x) => x !== kar.o), kar.o].slice(-EMANET_ARSIV_EN_COK);
+    this.#kirli.add(TOPLUM);
     const yer = yerlesimBul(gc.h);
     const param = { kisi: oyuncuRef(kar), hedef: gc.h, hedefAd: yer?.ad ?? gc.h };
     await this.#olayEkle({ t: "goc", w: kar.o, h: "", g: "", n: 4, k: "olay.goc.gitti", p: param }, ay);
@@ -1927,6 +1932,105 @@ export class YerlesimMotoru {
     k.kar.delete(kar.o);
     k.ili.delete(kar.o);
     return basarili({ tamam: true });
+  }
+
+  // ── Göç emaneti geri alma (src/yerlesim/goc-emanet.ts). Eski yerleşim: arşiv; yeni yerleşim: giriş. ──
+
+  /** Hesabın bu yerleşimdeki arşiv karakterleri (göçle kapanmış); çağıran işi bitince `#arsivBirak` çağırır. */
+  async #arsivler(hesapId: string): Promise<Karakter[]> {
+    const k = this.kasaba;
+    const liste = (k.tp?.ga?.[hesapId] ?? []).filter((o) => !k.sakin.some((s) => s.o === o));
+    await this.#yukle(liste);
+    return liste.map((o) => k.kar.get(o)).filter((x): x is Karakter => x !== undefined && x.h === hesapId && x.gc?.d === "kapandi");
+  }
+
+  /** Arşiv karakterleri bellekten düşer (dönüm ve uzlaştırma onları işlemez). */
+  #arsivBirak(arsivler: readonly Karakter[]): void {
+    for (const a of arsivler) {
+      this.kasaba.kar.delete(a.o);
+      this.kasaba.ili.delete(a.o);
+    }
+  }
+
+  /** Eski yerleşim: emanet önizlemesi (yazmaz). */
+  async emanetOnizle(hesapId: string): Promise<Sonuc<unknown>> {
+    const arsivler = await this.#arsivler(hesapId);
+    const d = emanetDokumu(arsivler);
+    this.#arsivBirak(arsivler);
+    return basarili({ kaynak: this.kasaba.y, ...d });
+  }
+
+  /** Eski yerleşim (1): mallar arşivden düşülür, bekleyen kayıt yazılır. Aynı işlem aynı paketi döner. */
+  async emanetCikis(hesapId: string, govde: unknown): Promise<Sonuc<unknown>> {
+    if (!nesneMi(govde) || !emanetIslemiMi(govde.islem)) return hata("gecersiz_istek");
+    const k = this.kasaba;
+    const ec = k.tp?.ec ?? {};
+    const onceki = ec[govde.islem];
+    if (onceki) return onceki.h === hesapId ? basarili({ paket: onceki.p }) : hata("gecersiz_istek");
+    if (Object.values(ec).some((x) => x.h === hesapId)) return hata("goc_suruyor");
+    const arsivler = await this.#arsivler(hesapId);
+    const b = emanetCikar(arsivler, hesapId, k.y, govde.islem);
+    if (!b) {
+      this.#arsivBirak(arsivler);
+      return hata("emanet_yok");
+    }
+    (toplumAl(k).ec ??= {})[govde.islem] = b;
+    for (const a of arsivler) this.#kirli.add(KAR + a.o);
+    this.#kirli.add(TOPLUM);
+    await this.kaydet();
+    this.#arsivBirak(arsivler);
+    return basarili({ paket: b.p });
+  }
+
+  /** Eski yerleşim (3): bekleyen kayıt silinir (tekrar güvenli). */
+  async emanetTamam(hesapId: string, govde: unknown): Promise<Sonuc<unknown>> {
+    if (!nesneMi(govde) || !emanetIslemiMi(govde.islem)) return hata("gecersiz_istek");
+    const ec = this.kasaba.tp?.ec;
+    if (ec?.[govde.islem]?.h === hesapId) {
+      delete ec[govde.islem];
+      this.#kirli.add(TOPLUM);
+      await this.kaydet();
+    }
+    return basarili({ tamam: true });
+  }
+
+  /** Eski yerleşim: (2) kalıcı reddedildiyse mallar kendi arşivlerine geri yazılır (tekrar güvenli). */
+  async emanetIptal(hesapId: string, govde: unknown): Promise<Sonuc<unknown>> {
+    if (!nesneMi(govde) || !emanetIslemiMi(govde.islem)) return hata("gecersiz_istek");
+    const ec = this.kasaba.tp?.ec;
+    const b = ec?.[govde.islem];
+    if (!b || b.h !== hesapId) return basarili({ iptal: true });
+    const arsivler = await this.#arsivler(hesapId);
+    emanetGeriYaz(new Map(arsivler.map((a) => [a.o, a])), b);
+    delete ec![govde.islem];
+    for (const a of arsivler) this.#kirli.add(KAR + a.o);
+    this.#kirli.add(TOPLUM);
+    await this.kaydet();
+    this.#arsivBirak(arsivler);
+    return basarili({ iptal: true });
+  }
+
+  /** Yeni yerleşim (2): taşıma bedeli dünyadan çıkar, mallar eklenir. İşlem kimliği istek defterinde: bir kez. */
+  async emanetGiris(hesapId: string, govde: unknown): Promise<Sonuc<unknown>> {
+    if (!nesneMi(govde) || !emanetIslemiMi(govde.islem)) return hata("gecersiz_istek");
+    const r = await this.#oyuncu(hesapId);
+    if (!r.ok) return r;
+    const { kar } = r.deger;
+    const onceki = istekBul(kar, govde.islem);
+    if (onceki) return basarili(onceki.tur === "yanit" ? onceki.yanit : { tekrar: true });
+    if (olduMu(kar)) return hata("olu");
+    if (kar.gc) return hata("goc_suruyor");
+    const p = govde.paket;
+    if (!emanetPaketiGecerli(p, hesapId, govde.islem)) return hata("gecersiz_istek");
+    if (kar.pa < EMANET_BEDELI) return hata("para_yok");
+    kar.pa -= EMANET_BEDELI;
+    defterYaz(kar, this.kasaba.ay, "goc", -EMANET_BEDELI);
+    emanetEkle(kar, p);
+    const yanit = { bedel: EMANET_BEDELI, tasinan: p.ev, para: kar.pa, envanter: kar.ev ?? {} };
+    istekYaz(kar, govde.islem, yanit, this.#simdi);
+    this.#kirli.add(KAR + kar.o);
+    await this.kaydet();
+    return basarili(yanit);
   }
 
   /** (2) kalıcı reddedildiyse: mühür açılır, paket (yol bedeli dahil) aynen geri yazılır. Tekrar güvenli. */

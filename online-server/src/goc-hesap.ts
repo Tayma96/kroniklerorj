@@ -12,6 +12,11 @@ import { GOC_KAPI_SIRASI, gocHedefi, ilkEngel, type GocKapisi, type GocPaketi } 
 
 export const GOC_IS = "goc:is";
 export const GOC_ISTEK = "goc:istek:"; // + istekNo → Sonuc (bitmiş işin sonucu)
+/** Son göçün kaynağı (emanet geri alma eski yerleşimi bununla bulur). */
+export const GOC_SON = "goc:son";
+/** Emanet çekişi işi (kalıcı kuyruk) ve bitmiş çekişlerin sonucu. */
+export const EMANET_IS = "goc:emanetIs";
+export const EMANET_ISTEK = "goc:emanetIstek:"; // + istekNo → Sonuc
 /** [PARAMETRE] Bir istekte kuyrukta en çok ilerlenen adım (döngü koruması). */
 export const GOC_ADIM_EN_COK = 8;
 /** Açık sayılan darbe aşamaları (taraf olan göç edemez). */
@@ -215,7 +220,7 @@ export async function gocSurdur(b: GocBaglami): Promise<SurdurSonucu> {
           },
           ...(profil.ok ? { profil: profil.deger } : {}),
         });
-        await b.depo.koy({ [GOC_ISTEK + is.istekNo]: sonuc });
+        await b.depo.koy({ [GOC_ISTEK + is.istekNo]: sonuc, [GOC_SON]: is.eski });
         await b.depo.sil([GOC_IS]);
         return { durum: "bitti", sonuc };
       }
@@ -237,6 +242,102 @@ export async function gocSurdur(b: GocBaglami): Promise<SurdurSonucu> {
         await b.depo.sil([GOC_IS]);
         return { durum: "bitti", sonuc };
       }
+    }
+  }
+  return { durum: "bekliyor" };
+}
+
+// ---------------------------------------------------------------- emanet geri alma
+
+export interface EmanetIsi {
+  islem: string;
+  istekNo: string;
+  eski: string;
+  yeni: string;
+  adim: "cikis" | "giris" | "tamam" | "iptal";
+  paket?: unknown;
+  neden?: HataKodu;
+}
+
+async function emanetYeri(b: GocBaglami): Promise<Sonuc<{ eski: string; yeni: string }>> {
+  const profil = await profilGetir(b.depo);
+  if (!profil.ok) return profil;
+  const eski = await b.depo.al<string>(GOC_SON);
+  if (!eski || eski === profil.deger.yerlesim) return hata("emanet_yok");
+  return basarili({ eski, yeni: profil.deger.yerlesim });
+}
+
+/** GET /v1/goc/emanet: eski yerleşimdeki emanet, bu çekişte taşınacak ve kalacak, bedel. Yazmaz. */
+export async function emanetOnizle(b: GocBaglami): Promise<Sonuc<unknown>> {
+  const yer = await emanetYeri(b);
+  if (!yer.ok) return yer;
+  return b.yerlesim({ islem: "emanetOnizle", yerlesim: yer.deger.eski, hesapId: b.hesapId });
+}
+
+/**
+ * POST /v1/goc/emanet {istekNo}: emanetin en çok GOC_TASIMA_EN_COK adedi taşıma bedeliyle yeni karaktere çekilir.
+ * İş kalıcı kuyrukta (`goc:emanetIs`); geçici hatada `goc_suruyor` döner, sonraki emanet isteği sürdürür.
+ */
+export async function emanetCek(b: GocBaglami, govde: unknown): Promise<Sonuc<unknown>> {
+  const no = istekNoCoz(govde);
+  if (!no.ok) return no;
+  const onceki = await b.depo.al<Sonuc<unknown>>(EMANET_ISTEK + no.deger);
+  if (onceki) return onceki;
+  const bekleyen = await b.depo.al<EmanetIsi>(EMANET_IS);
+  if (bekleyen) {
+    const r = await emanetSurdur(b);
+    if (bekleyen.istekNo === no.deger) return r.durum === "bitti" ? r.sonuc : hata("goc_suruyor");
+    if (r.durum === "bekliyor") return hata("goc_suruyor");
+  }
+  const yer = await emanetYeri(b);
+  if (!yer.ok) return yer;
+  const is: EmanetIsi = { islem: `emanet:${no.deger}`, istekNo: no.deger, eski: yer.deger.eski, yeni: yer.deger.yeni, adim: "cikis" };
+  await b.depo.koy({ [EMANET_IS]: is });
+  const r = await emanetSurdur(b);
+  return r.durum === "bitti" ? r.sonuc : hata("goc_suruyor");
+}
+
+export async function emanetSurdur(b: GocBaglami): Promise<SurdurSonucu> {
+  for (let tur = 0; tur < GOC_ADIM_EN_COK; tur++) {
+    const is = await b.depo.al<EmanetIsi>(EMANET_IS);
+    if (!is) return { durum: "yok" };
+    const govde = { islem: is.islem };
+    const bitir = async (sonuc: Sonuc<unknown>): Promise<SurdurSonucu> => {
+      await b.depo.koy({ [EMANET_ISTEK + is.istekNo]: sonuc });
+      await b.depo.sil([EMANET_IS]);
+      return { durum: "bitti", sonuc };
+    };
+    if (is.adim === "cikis") {
+      const r = await dene(() => b.yerlesim({ islem: "emanetCikis", yerlesim: is.eski, hesapId: b.hesapId, govde }));
+      if (r === GECICI) return { durum: "bekliyor" };
+      if (!r.ok) {
+        // Kalıcı ret (ör. emanet yok): hiçbir şey taşınmadı; sonuç önbelleğe girmez (yeniden denenebilir).
+        await b.depo.sil([EMANET_IS]);
+        return { durum: "bitti", sonuc: r };
+      }
+      is.paket = (r.deger as { paket: unknown }).paket;
+      is.adim = "giris";
+      await b.depo.koy({ [EMANET_IS]: is });
+    } else if (is.adim === "giris") {
+      const r = await dene(() => b.yerlesim({ islem: "emanetGiris", yerlesim: is.yeni, hesapId: b.hesapId, govde: { ...govde, paket: is.paket } }));
+      if (r === GECICI) return { durum: "bekliyor" };
+      if (!r.ok) {
+        is.adim = "iptal";
+        is.neden = r.hata;
+      } else {
+        is.adim = "tamam";
+        is.paket = { sonuc: r.deger, paket: is.paket };
+      }
+      await b.depo.koy({ [EMANET_IS]: is });
+    } else if (is.adim === "tamam") {
+      const r = await dene(() => b.yerlesim({ islem: "emanetTamam", yerlesim: is.eski, hesapId: b.hesapId, govde }));
+      if (r === GECICI) return { durum: "bekliyor" };
+      const { sonuc } = is.paket as { sonuc: Record<string, unknown> };
+      return bitir(basarili({ emanet: { kaynak: is.eski, ...sonuc } }));
+    } else {
+      const r = await dene(() => b.yerlesim({ islem: "emanetIptal", yerlesim: is.eski, hesapId: b.hesapId, govde }));
+      if (r === GECICI) return { durum: "bekliyor" };
+      return bitir(hata(is.neden ?? "sunucu_hatasi"));
     }
   }
   return { durum: "bekliyor" };

@@ -16,7 +16,7 @@ import * as debdebe from "./debdebe/hesap.ts";
 import { yapilandirilmamisDogrulayici, type MakbuzDogrulayici } from "./debdebe/makbuz.ts";
 import { SEZON_KAYNAK_PUANI } from "./debdebe/sezon.ts";
 import { siyasetOku, siyasetYaz, siyasetYoklama } from "./siyaset/hesap-kopru.ts";
-import { GOC_IS, gocBaslat, gocOnizle, gocSiyasetKapilari, gocSurdur, type GocBaglami } from "./goc-hesap.ts";
+import { emanetCek, emanetOnizle, GOC_IS, gocBaslat, gocOnizle, gocSiyasetKapilari, gocSurdur, type GocBaglami } from "./goc-hesap.ts";
 
 /** Göç işi beklerken de çalışan uçlar (yerleşime gitmeyen ya da işi kendisi sürdürenler). */
 const GOC_SIRASINDA_SERBEST: ReadonlySet<string> = new Set(["giris", "profil", "profilOlustur", "duyurular", "davetOlustur", "davetCoz", "goc", "gocOnizle"]);
@@ -176,6 +176,10 @@ export class HesapDO {
         return gocBaslat(this.#goc(ileti.hesapId, simdi), ileti.govde);
       case "gocOnizle":
         return gocOnizle(this.#goc(ileti.hesapId, simdi), ileti.hedef);
+      case "gocEmanetOnizle":
+        return emanetOnizle(this.#goc(ileti.hesapId, simdi));
+      case "gocEmanet":
+        return emanetCek(this.#goc(ileti.hesapId, simdi), ileti.govde);
       case "giris":
         return basarili(await girisKaydet(this.#depo, ileti.hesapId, ileti.sub, simdi));
       case "sikayet":

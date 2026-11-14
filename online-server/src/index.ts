@@ -90,6 +90,8 @@
 //   POST /v1/siyaset {islem: aday|adayCekil|oy|onay|yetki|itiraz|ozerklikCevap|ozerklikBirak, makam?, ..., istekNo} → {sonuc, gorunum}
 //   GET  /v1/goc?hedef=                  → göç önizlemesi: kapılar (sırasıyla), uygun/engel, akçe ve envanter dökümü, soğuma, misafirhane, taşınan/kalan (D1)
 //   POST /v1/goc {hedef, istekNo}        → {goc: {kaynak, hedef, id, yolBedeli, akce, tasinan, emanet}, profil}; yarıda kalırsa 409 goc_suruyor (sonraki istek sürdürür)
+//   GET  /v1/goc/emanet → eski yerleşimdeki emanet önizlemesi {kaynak, emanet, tasinacak, kalacak, sinir, bedel}
+//   POST /v1/goc/emanet {istekNo} → {emanet: {kaynak, bedel, tasinan, para, envanter}}; yarıda kalırsa 409 goc_suruyor
 // Uzaklaştırılmış hesapta giriş dışındaki /v1/* uçları 403 {hata: "uzaklastirildi", bitis} döner.
 //
 // Yönetim (ana tasarım §7; oyuncu oturumundan ayrı yönetici belirteci, src/yonetim/kimlik.ts):
@@ -600,6 +602,13 @@ async function yonlendir(istek: Request, env: Env): Promise<Response> {
       return hesaba(istek, env, async (hesapId) => {
         const govde = await govdeOku(istek);
         return govde.ok ? basarili({ islem: "goc", hesapId, govde: govde.deger }) : govde;
+      });
+    case "/v1/goc/emanet":
+      if (yontem === "GET") return hesaba(istek, env, (hesapId) => basarili({ islem: "gocEmanetOnizle", hesapId }));
+      if (yontem !== "POST") return hataYaniti("yontem_yok");
+      return hesaba(istek, env, async (hesapId) => {
+        const govde = await govdeOku(istek);
+        return govde.ok ? basarili({ islem: "gocEmanet", hesapId, govde: govde.deger }) : govde;
       });
     case "/v1/han":
       return yontem === "GET" ? hesaba(istek, env, (hesapId) => basarili({ islem: "han", hesapId, dil })) : hataYaniti("yontem_yok");

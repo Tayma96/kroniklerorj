@@ -305,6 +305,16 @@ export class YerlesimDO {
         return motor.gocTamam(ileti.hesapId, ileti.govde);
       case "gocIptal":
         return motor.gocIptal(ileti.hesapId, ileti.govde);
+      case "emanetOnizle":
+        return motor.emanetOnizle(ileti.hesapId);
+      case "emanetCikis":
+        return motor.emanetCikis(ileti.hesapId, ileti.govde);
+      case "emanetGiris":
+        return motor.emanetGiris(ileti.hesapId, ileti.govde);
+      case "emanetTamam":
+        return motor.emanetTamam(ileti.hesapId, ileti.govde);
+      case "emanetIptal":
+        return motor.emanetIptal(ileti.hesapId, ileti.govde);
       case "mulkGiris":
         return { ok: true, deger: { sonuclar: await teslimAl(motor, ileti.kayitlar, simdi) } };
       default:
