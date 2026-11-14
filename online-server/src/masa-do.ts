@@ -273,6 +273,13 @@ export class MasaDO {
         if (await b.engelliMi(ileti.hedef, ileti.hesap)) return hata("engelli");
         return basarili({});
       }
+      case "ziyafetKontrol": {
+        const tum = kayitlar(b.soketler);
+        const veren = tum.find((r) => r.ek.h === ileti.hesap);
+        if (!veren || veren.ek.k === null) return hata("oturmuyor");
+        if (surer(veren.ek.yt.susturma, b.simdi)) return { ok: false, hata: "susturuldu", bitis: veren.ek.yt.susturma.bitis };
+        return basarili({ oturanlar: oturanlar(tum).map((o) => o.hesap) });
+      }
       case "engel":
         await this.#engelYaz(ileti.hesap, engelListesiCoz(ileti.liste));
         return basarili({});

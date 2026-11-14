@@ -76,7 +76,8 @@ import {
 import { teveccuhEkle, teveccuhGorunumu, teveccuhKademesi, teveccuhEtkisi, TEVECCUH_ETKI } from "./teveccuh.ts";
 import { IKRAM_MENUSU, type IkramId } from "../han/ikram.ts";
 import { toplumDonumu } from "./toplum-donum.ts";
-import { hanOlayiCoz, hanOlayiIslendiMi, hanOlayiUygula, hanTanidikKimlikleri } from "./han-olay.ts";
+import { hanOlayiCoz, hanOlayiIslendiMi, hanOlayiUygula, hanTanidikKimlikleri, ziyafetEtkisi, ziyafetKonukSayisi } from "./han-olay.ts";
+import { ZIYAFET_EN_AZ_KONUK, ziyafetBedeli } from "../han/ziyafet.ts";
 import { MUDAVIM_PLAKA_KADEME } from "./mudavim.ts";
 import { oyuncuArabuluculukAc, oyuncuArabuluculukCevap, oyuncuArabuluculukGeriAl, oyuncuArabuluculukTaslak, oyuncuArabuluculukImzala, oyuncuArabuluculukUygula } from "./arabuluculuk-oyuncu.ts";
 import { OYUNCU_TEKLIF_TURLERI, oyuncuArabuluculukAl, toplumAl, type OyuncuArabuluculuk, type Toplum } from "./toplum.ts";
@@ -100,7 +101,7 @@ import { levhaYaz } from "./levha.ts";
 import type { EkonomiKaydi } from "./pazar-tahta.ts";
 import type { UcgenDefteri } from "./bilgi.ts";
 import { eksenler } from "./hafiza.ts";
-import { mulkluIkram, mulkluKira, oyuncuHani } from "../mulk/tapu.ts";
+import { mulkluHanOdemesi, mulkluIkram, mulkluKira, oyuncuHani } from "../mulk/tapu.ts";
 import type { MulkDefteri } from "../mulk/tapu.ts";
 // Ölümde mülk devri: tapuyu vârise taşıyan kimlik taşıyıcısını kaydeder.
 import "../mulk/miras.ts";
@@ -1585,6 +1586,37 @@ export class YerlesimMotoru {
       ek.digerleri.push(alan.o);
       return basarili({ ikram, fiyat: odeme.deger.fiyat, batak: odeme.deger.batak, ...(odeme.deger.kasaya ? { kasaya: odeme.deger.kasaya, transfer: { islem: odeme.deger.islem } } : {}), teveccuh });
     }, "ikram");
+  }
+
+  /**
+   * H7 han ziyafeti (HesapDO masa kontrolünden sonra; govde {masa, masaNo, oturanlar: hesap kimlikleri, istekNo}).
+   * Konuk şartı tutmazsa ödeme yok. Bedel sunucuda (oturan sayısıyla, tavanlı); ödeme ikramla aynı yoldan
+   * (mulkluHanOdemesi). istekNo ile tekrar güvenli.
+   */
+  async hanZiyafet(hesapId: string, govde: unknown, vergiOrani = 0): Promise<Sonuc<unknown>> {
+    if (!nesneMi(govde)) return hata("gecersiz_istek");
+    const k = this.kasaba;
+    const oturanlar = Array.isArray(govde.oturanlar) ? govde.oturanlar.filter((h): h is string => typeof h === "string").slice(0, 8) : [];
+    const masaNo = typeof govde.masaNo === "number" && Number.isInteger(govde.masaNo) ? govde.masaNo : 0;
+    const sakinler = k.sakin.filter((x) => oturanlar.includes(x.h));
+    await this.#yukle(sakinler.map((x) => x.o));
+    return this.#tekrarGuvenli(hesapId, govde, (kar, _s, ay, ek) => {
+      const konuklar = sakinler.map((x) => k.kar.get(x.o)).filter((x): x is Karakter => x !== undefined && x.o !== kar.o && !olduMu(x));
+      if (ziyafetKonukSayisi(kar, konuklar) < ZIYAFET_EN_AZ_KONUK) return hata("ziyafet_konuk_az");
+      this.#kirli.add(MULK);
+      const odeme = mulkluHanOdemesi(k, kar, ziyafetBedeli(konuklar.length), this.#simdi, `y:${k.y}:${kar.o}:ziyafet:${String(govde.istekNo)}`, vergiOrani);
+      if (!odeme.ok) return odeme;
+      const etki = ziyafetEtkisi(k, kar, konuklar, masaNo, odeme.deger.fiyat, ay);
+      ek.olaylar.push(...etki.olaylar);
+      ek.toplum = true;
+      return basarili({
+        bedel: odeme.deger.fiyat,
+        batak: odeme.deger.batak,
+        ...(odeme.deger.kasaya ? { kasaya: odeme.deger.kasaya, transfer: { islem: odeme.deger.islem } } : {}),
+        nam: etki.nam,
+        ...(etki.engel ? { engel: etki.engel } : {}),
+      });
+    }, "ziyafet");
   }
 
   /** GET /v1/duzen: olağan düzen ayarları. */

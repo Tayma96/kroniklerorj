@@ -40,6 +40,8 @@ export const SESSIZ_EN_COK = 50;
 /** [PARAMETRE] H3 yeni hesap koruması: hesap bu süreden gençse sohbet iletisi en çok YENI_HESAP_ILETI harf. */
 export const YENI_HESAP_MS = 24 * 60 * 60 * 1000;
 export const YENI_HESAP_ILETI = 120;
+/** [PARAMETRE] H9 özel masada en çok davetli. */
+export const DAVET_EN_COK = 12;
 
 /** WebSocket kapanış kodları. */
 export const KAPANIS = {

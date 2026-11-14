@@ -64,7 +64,7 @@ export class YerlesimDO {
       const sonuc = await this.#isle(ileti, simdi);
       // BolgeDO'dan gelen ganimet adımı bölgeye geri çağrı yapmaz (DO → DO döngüsel bekleme olmaz).
       if (ileti.islem === "ganimetKes" || ileti.islem === "ganimetPay") return jsonYanit(sonuc);
-      await this.#mulkUzlastir(simdi, ileti.islem === "hanIkram" || ileti.islem === "barinmaKira");
+      await this.#mulkUzlastir(simdi, ileti.islem === "hanIkram" || ileti.islem === "hanZiyafet" || ileti.islem === "barinmaKira");
       await this.#vergiUzlastir(simdi);
       return jsonYanit(sonuc);
     } catch (e) {
@@ -131,7 +131,7 @@ export class YerlesimDO {
     await this.#parametreleriYukle(motor);
     const { kalan } = await motor.yetistir(simdi);
     await this.#alarmKur(simdi, kalan);
-    const vergiOrani = ileti.islem === "hanIkram" || ileti.islem === "barinmaKira"
+    const vergiOrani = ileti.islem === "hanIkram" || ileti.islem === "hanZiyafet" || ileti.islem === "barinmaKira"
       ? await this.#vergiOrani(ileti.yerlesim)
       : 0;
     switch (ileti.islem) {
@@ -203,6 +203,8 @@ export class YerlesimDO {
         return motor.ucgenOku(ileti.hesapId, ileti.npc, ileti.hedef, ileti.dil);
       case "hanIkram":
         return motor.hanIkram(ileti.hesapId, ileti.govde, vergiOrani);
+      case "hanZiyafet":
+        return motor.hanZiyafet(ileti.hesapId, ileti.govde, vergiOrani);
       // Debdebe armağanı (HesapDO'dan; tutar değer olarak gelir, cosmetic okunmaz)
       case "armaganTeveccuh":
         return armaganTeveccuh(motor, ileti.hesapId, ileti.govde);

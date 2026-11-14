@@ -176,6 +176,8 @@ export const HATA_DURUMU = {
   atildi: 403,
   eylem_siniri: 429,
   ikram_gecersiz: 400,
+  /** H7: masada ziyafet veren dışında hesap kümesi dışından yeterli oturan yok. */
+  ziyafet_konuk_az: 409,
   yukseltme_gerekli: 426,
   // Faz 16 sesli sohbet
   ses_kapali: 503,
@@ -183,6 +185,8 @@ export const HATA_DURUMU = {
   masa_sessiz: 409,
   // H2 masa ayarı
   masa_kilitli: 409,
+  /** H9: özel masada oturmak için masa başının daveti gerekir. */
+  davet_gerekli: 403,
   masada_degil: 409,
   ses_oturumu_yok: 409,
   sesi_kesildi: 403,
@@ -434,7 +438,7 @@ export type HesapIleti = (
   // Han masası (Faz 10): src/han/hesap-kopru.ts
   | { islem: "han"; hesapId: string; dil?: string | null }
   | { islem: "masaBilet"; hesapId: string; masa: string }
-  | { islem: "hanEylem" | "hanIkram"; hesapId: string; govde: unknown }
+  | { islem: "hanEylem" | "hanIkram" | "hanZiyafet"; hesapId: string; govde: unknown }
   | { islem: "hanSes"; hesapId: string; masa: string; alt: SesAlt; govde: unknown }
   // Debdebe (src/debdebe/hesap.ts)
   | { islem: "debdebe" | "debdebeLevha" | "debdebeSezon"; hesapId: string }
@@ -612,6 +616,8 @@ export type YerlesimIleti =
   | { islem: "engeller"; yerlesim: string; hesapId: string }
   /** H1: han keşif sırası için oyuncunun dostları ve hane üyeleri (hesap kimlikleri). */
   | { islem: "hanTanidiklar"; yerlesim: string; hesapId: string }
+  /** H7: HesapDO → YerlesimDO ziyafet ödemesi ve etkisi (masa kontrolünden sonra; istekNo ile tekrar güvenli). */
+  | { islem: "hanZiyafet"; yerlesim: string; hesapId: string; govde: unknown }
   /** H5: HesapDO → YerlesimDO masa olayı (tekrar güvenli; govde {anahtar, olay}); istemci ulaşamaz. */
   | { islem: "hanOlayi"; yerlesim: string; hesapId: string; govde: unknown }
   | (MulkIletisiH & { yerlesim: string })

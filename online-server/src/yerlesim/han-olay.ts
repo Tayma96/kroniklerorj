@@ -22,6 +22,7 @@ import { olduMu } from "./hanedan.ts";
 import { oyuncuRef } from "./ortak.ts";
 import { haneTaniklari, mekanTaniklari, soylentiEkle } from "./soylenti.ts";
 import { ayniKume } from "./teveccuh.ts";
+import { ZIYAFET_NAM } from "../han/ziyafet.ts";
 import { DUELLO_NAM, DUELLO_TAKAT, duelloCoz, duelloKapisi, mevsimNo, type DuelloDokumu, type DuelloKapisi } from "./duello.ts";
 import { ciftSirala, toplumAl, type SoylentiTuru, type Toplum } from "./toplum.ts";
 import type { Karakter, Kasaba, OlayTaslagi } from "./tipler.ts";
@@ -44,6 +45,8 @@ export interface HanDefteri {
   iz: Record<string, number>;
   /** H6 düello farm izi: sıralı çift → nam ürettiği mevsim numarası (mevsim geçince budanır). */
   dz?: Record<string, number>;
+  /** H7 ziyafet namı izi: oyuncu (yerel kimlik) → nam ürettiği mevsim. */
+  zf?: Record<string, number>;
 }
 
 export interface HanOlayGirdisi {
@@ -279,4 +282,44 @@ function duelloUygula(
   }
   const olaylar = tanikla("olay.han.duello", { ...taban, kazanan: oyuncuRef(kazanan), nam, ...dokumP });
   return basarili({ olaylar, degisen: [okuyan.o, savunan.o], etki });
+}
+
+// ---------------------------------------------------------------- H7 ziyafet
+
+/**
+ * Ziyafet konuk şartı: veren dışında, hesap kümesi dışından en az ZIYAFET_EN_AZ_KONUK canlı oturan. `konuklar`:
+ * verenin dışındaki oturan sakinler. Şart tutmazsa ödeme yapılmaz.
+ */
+export function ziyafetKonukSayisi(veren: Karakter, konuklar: readonly Karakter[]): number {
+  return konuklar.filter((x) => x.o !== veren.o && !olduMu(x) && !ayniKume(veren, x)).length;
+}
+
+/**
+ * Ödeme yapıldıktan sonra: cömertlik namı (oyuncu başına mevsimde bir, aylık tavan içinde) ve oturan her sakine
+ * tanıklık olayı (`olay.han.ziyafet`). Toplum kaydının han defterine mevsim izi yazılır.
+ */
+export function ziyafetEtkisi(
+  k: Kasaba,
+  veren: Karakter,
+  oturanlar: readonly Karakter[],
+  masaNo: number,
+  bedel: number,
+  ay: number,
+): { nam: number; olaylar: OlayTaslagi[]; engel?: "mevsimde_bir" } {
+  const defter = hanDefteri(toplumAl(k));
+  const zf = (defter.zf ??= {});
+  const mevsim = mevsimNo(ay);
+  for (const [o, m] of Object.entries(zf)) if (m < mevsim) delete zf[o];
+  let nam = 0;
+  let engel: "mevsimde_bir" | undefined;
+  if (zf[veren.o] === mevsim) engel = "mevsimde_bir";
+  else {
+    zf[veren.o] = mevsim;
+    nam = namEkle(veren, ay, "comertlik", ZIYAFET_NAM);
+  }
+  const tanilar = new Map<string, Karakter>([[veren.o, veren]]);
+  for (const x of oturanlar) if (!olduMu(x)) tanilar.set(x.o, x);
+  const p = { kisi: oyuncuRef(veren), masa: masaNo, konuk: tanilar.size - 1, bedel };
+  const olaylar = [...tanilar.values()].map((tk): OlayTaslagi => ({ t: "han", w: veren.o, h: "", g: tk.o, n: HAN_TANIKLIK_ONEM, k: "olay.han.ziyafet", p }));
+  return { nam, olaylar, ...(engel ? { engel } : {}) };
 }

@@ -64,6 +64,7 @@
 //   POST /v1/han/masa/:no/ses/anlas {sdp}          → {}  (çekilen izler için istemci answer'ı)
 //   POST /v1/han/masa/:no/ses/kapat {mids?, sdp?, tum?} → {sdp}  (ses kaydedilmez; uygulama anahtarı istemciye gitmez)
 //   POST /v1/han/ikram {masa, hedef, ikram, istekNo} → {ikram, fiyat, para, anons}  (ödeme YerlesimDO'da, teveccüh yazılır)
+//   POST /v1/han/ziyafet {masa, istekNo} → {bedel, para, nam, anons}  (H7; bütün masaya; src/han/ziyafet.ts)
 //   GET  /v1/barinma?dil=                → barınma: durum, konaklama, zincir (eşik/etki), misafirhane, odalar, tesis (Faz 14)
 //   POST /v1/barinma/kira {oda, sure: 1|3|12, istekNo} → {kira, barinma, para}  (NPC hancı: akçe dünyadan çıkar)
 //   POST /v1/barinma/tesis {istekNo}     → {tesis, barinma}  (imaret/zaviye, D-23 önerisi)
@@ -371,7 +372,7 @@ async function masaBaglan(istek: Request, env: Env, no: string): Promise<Respons
 }
 
 /** Gövdeli han POST iletisi. */
-function hanGovdeli(istek: Request, env: Env, islem: "hanEylem" | "hanIkram"): Promise<Response> {
+function hanGovdeli(istek: Request, env: Env, islem: "hanEylem" | "hanIkram" | "hanZiyafet"): Promise<Response> {
   return hesaba(istek, env, async (hesapId) => {
     const govde = await govdeOku(istek);
     return govde.ok ? basarili({ islem, hesapId, govde: govde.deger }) : govde;
@@ -605,6 +606,8 @@ async function yonlendir(istek: Request, env: Env): Promise<Response> {
       return yontem === "POST" ? hanGovdeli(istek, env, "hanEylem") : hataYaniti("yontem_yok");
     case "/v1/han/ikram":
       return yontem === "POST" ? hanGovdeli(istek, env, "hanIkram") : hataYaniti("yontem_yok");
+    case "/v1/han/ziyafet":
+      return yontem === "POST" ? hanGovdeli(istek, env, "hanZiyafet") : hataYaniti("yontem_yok");
     case "/v1/debdebe":
     case "/v1/debdebe/levha":
     case "/v1/debdebe/sezon": {

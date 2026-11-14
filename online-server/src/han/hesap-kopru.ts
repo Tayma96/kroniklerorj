@@ -10,6 +10,7 @@ import { dilCoz } from "../yerlesim/ortak.ts";
 import { gunlukSay, type GunlukSayac } from "../yonetim/sikayet.ts";
 import { eylemGirdisiCoz } from "./eylem.ts";
 import { IKRAM_GUNLUK, IKRAM_MENUSU, ikramGirdisiCoz } from "./ikram.ts";
+import { ZIYAFET_GUNLUK, ziyafetGirdisiCoz } from "./ziyafet.ts";
 import { HAN_DUZENI, HAN_EYLEM_GUNLUK, HAN_TURU_ADLARI, KOLTUK_SAYISI, masaAdi, masaNoCoz, masaSayisi, masaSirala } from "./kurallar.ts";
 import type { HanOzeti, HanTuru, MasaAnonsu, SesAlt, MasaBileti, MasaIcOzeti, MasaIleti, MasaOlayi, MasaOzeti } from "./tipler.ts";
 import type { IkramOdeyici } from "./yerlesim-kopru.ts";
@@ -20,6 +21,8 @@ export const EYLEM_SAYAC = "han:eylemSayac";
 export const IKRAM_SAYAC = "han:ikramSayac";
 export const EYLEM_ISTEK = "han:eylem:"; // + istekNo → Sonuc
 export const IKRAM_ISTEK = "han:ikram:"; // + istekNo → Sonuc
+export const ZIYAFET_SAYAC = "han:ziyafetSayac";
+export const ZIYAFET_ISTEK = "han:ziyafet:"; // + istekNo → Sonuc
 /** H5: yerleşime henüz teslim edilemeyen masa olayları (giden kutusu; sonraki eylemde yeniden denenir). */
 export const OLAY_KUYRUK = "han:olayKuyruk";
 /** [PARAMETRE] Giden kutusunda en çok bekleyen olay (dolarsa en eskisi düşer; etki kaybolur, eylem bozulmaz). */
@@ -42,6 +45,8 @@ export interface HanHesapBaglami {
   tanidikSor?: TanidikListeleyici;
   /** H3: hesabın oluşturulma anı (HesapDO kaydından; istemci veremez). */
   hesapOlusturma?: () => Promise<number | undefined>;
+  /** H7: ziyafet ödemesi ve etkisi (YerlesimDO `hanZiyafet`). Yoksa ziyafet `gecersiz_istek`. */
+  ziyafetOde?: ZiyafetOdeyici;
   /** H5: masa olayını yerleşime iletir (tekrar güvenli; anahtar masa adı + olay no). Yoksa etki yok. */
   hanOlayiGonder?: HanOlayiGonderici;
 }
@@ -60,6 +65,7 @@ export interface HanOlayiGovdesi {
 export interface HanOlayiBekleyen extends HanOlayiGovdesi {
   yerlesim: string;
 }
+export type ZiyafetOdeyici = (yerlesim: string, govde: { masa: string; masaNo: number; oturanlar: string[]; istekNo: string }) => Promise<Sonuc<{ bedel: number; para: number; nam: number }>>;
 export type HanOlayiGonderici = (yerlesim: string, govde: HanOlayiGovdesi) => Promise<Sonuc<unknown>>;
 
 interface HanYeri {
@@ -273,6 +279,52 @@ async function hanIkramiSirada(b: HanHesapBaglami, govde: unknown): Promise<Sonu
   }
   const sonuc = basarili({ ikram, fiyat: odeme.deger.fiyat ?? fiyat, para: odeme.deger.para, anons });
   await b.depo.koy({ [anahtar]: sonuc, [IKRAM_SAYAC]: sayac.durum });
+  return sonuc;
+}
+
+export interface ZiyafetSonucu {
+  bedel: number;
+  /** Verenin ödemeden sonraki parası (YerlesimDO'dan). */
+  para: number;
+  /** Yazılan cömertlik namı (mevsimde bir; aylık tavanlı; 0 olabilir). */
+  nam: number;
+  anons: MasaAnonsu;
+}
+
+/**
+ * POST /v1/han/ziyafet (H7): (1) masa kontrolü (veren oturuyor, susturulmamış; oturanlar), (2) ödeme ve etki
+ * YerlesimDO'da (konuk şartı, bedel, nam, tanıklık), (3) masaya anons. istekNo ile tekrar güvenli.
+ */
+export function hanZiyafeti(b: HanHesapBaglami, govde: unknown): Promise<Sonuc<ZiyafetSonucu>> {
+  return sirayla(b.depo, () => hanZiyafetiSirada(b, govde));
+}
+
+async function hanZiyafetiSirada(b: HanHesapBaglami, govde: unknown): Promise<Sonuc<ZiyafetSonucu>> {
+  const girdi = ziyafetGirdisiCoz(govde);
+  if (!girdi.ok) return girdi;
+  if (!b.ziyafetOde) return hata("gecersiz_istek");
+  const anahtar = ZIYAFET_ISTEK + girdi.deger.istekNo;
+  const kayitli = await b.depo.al<Sonuc<ZiyafetSonucu>>(anahtar);
+  if (kayitli) return kayitli;
+  const yer = await hanYeri(b.depo);
+  if (!yer.ok) return yer;
+  if (masaNoCoz(girdi.deger.masa, yer.deger.masa) === undefined) return hata("masa_gecersiz");
+  const sayac = gunlukSay(await b.depo.al<GunlukSayac>(ZIYAFET_SAYAC), b.simdi, ZIYAFET_GUNLUK);
+  if (!sayac.izin) return hata("eylem_siniri");
+  const ad = masaAdi(yer.deger.yerlesim, yer.deger.tur, girdi.deger.masa);
+  const kontrol = await b.masaCagir(ad, { islem: "ziyafetKontrol", masa: ad, hesap: b.hesapId });
+  if (!kontrol.ok) return kontrol;
+  const oturanlar = (kontrol.deger as { oturanlar?: string[] }).oturanlar ?? [];
+  const odeme = await b.ziyafetOde(yer.deger.yerlesim, { masa: ad, masaNo: girdi.deger.masa, oturanlar, istekNo: girdi.deger.istekNo });
+  if (!odeme.ok) return odeme;
+  const anons: MasaAnonsu = { tur: "ziyafet", kim: b.hesapId, oge: "ziyafet", zaman: b.simdi };
+  try {
+    await b.masaCagir(ad, { islem: "anons", masa: ad, anons });
+  } catch {
+    // anons en iyi çabadır: ödeme yapıldı, sonuç yine kaydedilir
+  }
+  const sonuc = basarili({ bedel: odeme.deger.bedel, para: odeme.deger.para, nam: odeme.deger.nam, anons });
+  await b.depo.koy({ [anahtar]: sonuc, [ZIYAFET_SAYAC]: sayac.durum });
   return sonuc;
 }
 

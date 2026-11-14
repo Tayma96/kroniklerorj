@@ -9,7 +9,7 @@ import { girisKaydet, hesapKaydi, hizKontrol, profilGetir, profilOlustur, sakinK
 import { basarili, hata, type Env, type HesapIleti, type HesapYaptirimi, type Profil, type Sonuc, type YerlesimIleti } from "./tipler.ts";
 import type { MasaIleti } from "./han/tipler.ts";
 import { uzaklastirmaBilgisi, yaptirimEngeli } from "./yonetim/yaptirim.ts";
-import { engeliMasayaBildir, hanEylemi, hanIkrami, hanListesi, hanSesi, masaBileti, yaptirimiMasayaBildir, type HanHesapBaglami } from "./han/hesap-kopru.ts";
+import { engeliMasayaBildir, hanEylemi, hanIkrami, hanZiyafeti, hanListesi, hanSesi, masaBileti, yaptirimiMasayaBildir, type HanHesapBaglami } from "./han/hesap-kopru.ts";
 import { masaCagir } from "./han/ic.ts";
 import { ikramOdeyici } from "./han/yerlesim-kopru.ts";
 import * as debdebe from "./debdebe/hesap.ts";
@@ -284,6 +284,8 @@ export class HesapDO {
       }
       case "hanEylem":
         return hanEylemi(await this.#han(ileti.hesapId, simdi), ileti.govde);
+      case "hanZiyafet":
+        return hanZiyafeti(await this.#han(ileti.hesapId, simdi), ileti.govde);
       case "hanSes":
         return hanSesi(await this.#han(ileti.hesapId, simdi), ileti.masa, ileti.alt, ileti.govde);
       case "hanIkram": {
@@ -395,6 +397,7 @@ export class HesapDO {
       engelSor: (yerlesim) => yerlesimCagir(env, { islem: "engeller", yerlesim, hesapId }),
       tanidikSor: (yerlesim) => yerlesimCagir(env, { islem: "hanTanidiklar", yerlesim, hesapId }),
       hesapOlusturma: async () => (await hesapKaydi(this.#depo))?.olusturma,
+      ziyafetOde: (yerlesim, govde) => yerlesimCagir(env, { islem: "hanZiyafet", yerlesim, hesapId, govde }),
       hanOlayiGonder: (yerlesim, govde) => yerlesimCagir(env, { islem: "hanOlayi", yerlesim, hesapId, govde }),
       plakaCerçevesi: () => debdebe.plakaCerçevesi(this.#depo, simdi),
     };

@@ -5,7 +5,8 @@ import type { HataKodu, HesapYaptirimi } from "../tipler.ts";
 
 /** Yerleşim türüne göre mekân: şehirde han, kasabada küçük han, köyde menzil (GDD §16 Yapı). */
 export type HanTuru = "han" | "kucukHan" | "menzil";
-/** Masa türleri (GDD §16). Bu fazda yalnız "acik" kullanılır; özel/meclis/tüccar sonraki fazların kancasıdır. */
+/** Masa türleri (GDD §16). H9: masa başı "acik"/"ozel" arasında seçer (özel: yalnız davetli oturur); meclis/tüccar
+ *  bu sürümde yalnız gösterimdir (kimse seçemez). */
 export type MasaTuru = "acik" | "ozel" | "meclis" | "tuccar";
 
 /**
@@ -22,8 +23,12 @@ export interface MasaAyari {
   /** H2: masa başı kilitledi: yeni kimse oturamaz ve sıraya giremez; ayakta dinleme ve oturanlar sürer.
    *  Son oturan kalkınca ayar varsayılana döner. Eski kayıtta yok → false. */
   kilitli: boolean;
+  /** H9 özel masanın davetlileri (hesap kimlikleri; masa başı yazar, masa boşalınca silinir). Eski kayıtta yok. */
+  davet?: string[];
 }
 
+/** H9: masa başının seçebildiği türler. */
+export const MASA_BASI_TURLERI = ["acik", "ozel"] as const;
 /** H2: masa başının WebSocket'ten değiştirebildiği ayar alanları. */
 export const MASA_BASI_AYARLARI = ["kavgaYasak", "kilitli", "sesli"] as const;
 
@@ -110,7 +115,9 @@ export type IstemciIletisi =
   | { t: "sozGeri" }
   | { t: "sozVer"; hedef: string; kabul?: boolean }
   // H2: masa başı ayarı (en az bir alan)
-  | { t: "ayar"; kavgaYasak?: boolean; kilitli?: boolean; sesli?: boolean };
+  | { t: "ayar"; kavgaYasak?: boolean; kilitli?: boolean; sesli?: boolean; tur?: "acik" | "ozel" }
+  // H9: masa başı özel masaya davet eder (ya da `kaldir: true` ile daveti geri alır)
+  | { t: "davet"; hedef: string; kaldir?: boolean };
 
 /**
  * Masanın ses durumu (Faz 16). Yalnız kimlikler ve iz adları; ses verisi ve kayıt yoktur.
@@ -193,6 +200,8 @@ export type MasaIleti =
   | { islem: "anons"; masa: string; anons: MasaAnonsu }
   /** Oyuncu masadayken engel listesi değişti (HesapDO bildirir; iki yönlü liste). */
   | { islem: "engel"; masa: string; hesap: string; liste: string[] }
+  /** H7 ziyafet öncesi: veren oturuyor ve susturulmamış mı; oturanlar (hesap kimlikleri) döner. */
+  | { islem: "ziyafetKontrol"; masa: string; hesap: string }
   /** Faz 16 ses: MasaDO yetki kapısıdır (oturuyor mu, susturuldu mu, sesi kesildi mi), Realtime'a vekildir. */
   | { islem: "ses"; masa: string; hesap: string; alt: SesAlt; govde: unknown };
 
@@ -200,11 +209,12 @@ export type MasaIleti =
  * Masaya anons türleri (hediye ailesi). Bu fazda yalnız `ikram` (NPC hancı menüsünden akçeyle) çalışır;
  * `armagan` (envanterden) ve `debdebe` (Faz 15) aynı biçimi kullanacak. Anons saklanmaz, katılım listesi yazılmaz.
  */
-export type AnonsTuru = "ikram" | "armagan" | "debdebe";
+export type AnonsTuru = "ikram" | "armagan" | "debdebe" | "ziyafet";
 export interface MasaAnonsu {
   tur: AnonsTuru;
   kim: string;
-  hedef: string;
+  /** Alan kişi; `ziyafet` bütün masaya olduğundan hedefsizdir. */
+  hedef?: string;
   /** İkram/armağan/Debdebe öğesinin kimliği (ör. "serbet"). */
   oge: string;
   zaman: number;
