@@ -51,7 +51,6 @@ paneli Y1–Y3 · şikâyet/engelleme · ilk oturum ekranları · beceri ağacı
 ### Siyaset
 | # | Eksik | Boyut |
 |---|---|---|
-| S1 | Darbede mülk kaybı (tavan: 1 mülk, barınak ve aile evi hariç; saf hesap hazır, devir köprüsü yok). | orta |
 | S3 | P6 ek anlaşma türleri: saldırmazlık, ticaret, ortak savunma. | orta |
 | S4 | Beylikler arası ilanlı savaş kuyruğu (N-7/N-11). | büyük |
 | S5 | 14 meslek gelir dengesi (sim 6 mesleği ölçüyor). | orta |
@@ -93,7 +92,12 @@ ve arabuluculuk (E4.3-D) bunun barışçıl alt basamağıdır.
 - Tek oyunculudaki nesiller aşan destan çevrimiçine taşınmaz (çevrimiçi, tek oyunculuyla içerik paylaşmaz; A-14/D-11
   onay bekliyor). Çevrimiçi destan ayrı bir içerik işi olarak Berkay'ın kararına kalır.
 
-### 4.4 Han eylem etkileri (H5)
+### 4.4 Darbe ganimeti yalnız akçe
+Kaybeden taraftan akçesinin en çok %25'i alınır ve kazananlara bölünür; mülk alınmaz. Neden: tapu yerleşime bağlıdır ve
+kazanan çoğu zaman başka yerleşimdedir; mülk kaybı emekle uzun sürede telafi edilir (pusula 8); GDD N-5'teki "en çok
+1 mülk" bir üst sınırdır, zorunluluk değildir. `siyaset/ganimet.ts` saf mülk hesabı ileride açılırsa diye duruyor.
+
+### 4.5 Han eylem etkileri (H5)
 Yemin → mertlik (mühürlü, çift başına ayda bir). Sözleşme ve ittifak kabulü → iki taraf arasında küçük olumlu iz.
 İhbar → hedef hakkında yalanlanabilir söylenti; ihbar edene kazanç yok. Hepsinde masadakiler tanık, diğerleri duyum.
 
