@@ -334,6 +334,7 @@ function YasamEkran() {
     <CizgiDugme etiket={t("onl.eko.mulk")} icon="house" rtl={rtl} kucuk onPress={() => router.push("/online/mulk")} />
     <CizgiDugme etiket={t("onl.lv.baslik")} icon="award" rtl={rtl} kucuk onPress={() => router.push("/online/levha")} />
     <CizgiDugme etiket={t("onl.df.baslik")} icon="scroll-open" rtl={rtl} kucuk onPress={() => router.push("/online/defter")} />
+    <CizgiDugme etiket={t("onl.kv.baslik")} icon="camel" rtl={rtl} kucuk onPress={() => router.push("/online/kervan")} />
 
     {/* Gelen kutusu: cevap bekleyen teklif ve dostluk istekleri (Faz 3a) */}
     <GelenKutusuKarti />

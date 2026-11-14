@@ -35,7 +35,7 @@ paneli Y1–Y3 · şikâyet/engelleme · ilk oturum ekranları · beceri ağacı
 | # | Eksik | Boyut |
 |---|---|---|
 | D1 | Göç ve emanet çekme var (14 Kasım). Açık: göç sırasında han masasına haber; müdavim rozetinin yeni yerde hesaplanması; yalnız son göçün emaneti çekilebilir. | küçük |
-| D2 | Kervan sunucusu var (14 Kasım, §4.7). Açık: istemci ekranı; navlun, haydut ve muhafız ikinci dilim. | orta |
+| D2 | Kervan sunucu ve istemcisi var (14 Kasım, §4.7). Açık: navlun, haydut ve muhafız ikinci dilim. | orta |
 | D3 | Ölümde makamın devri (A-04a onay bekliyor). Mülk vârise geçiyor (14 Kasım); oyuncu borcu teklif taşıyıcısıyla geçiyor. | orta |
 | D4 | Sahipsiz mülk: uzun yoklukta vekile devir ya da kamu açık artırması. | orta |
 | D5 | Öğrenme döneminde meslek tadım turu (Ek A §2.4; kod genel sistem turu yapıyor, D-33 açık). | orta |
