@@ -133,8 +133,8 @@ export interface Karakter {
   sy: Record<string, number>;
   /** İlk gerçek karar ("" = verilmedi). */
   kr: string;
-  /** 13 yaşına girdi; Kül Yemini mührü bekliyor (Faz 4'e bağlanır). */
-  ky: 0 | 1;
+  /** Kül Yemini mührü: 0 yok (13 yaş altı), 1 emanet edildi ve kabul bekliyor, 2 kabul edildi (han yeminleri mühürlü). */
+  ky: 0 | 1 | 2;
   /** Eylem sayacı (zar tohumu). */
   en: number;
   /** Son istekNo yanıtları (tekrar güvenliği); üçüncü öğe yazım anı (eski kayıtta yok). Bkz. istek-defteri.ts. */

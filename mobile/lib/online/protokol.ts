@@ -82,7 +82,7 @@ export const SUNUCU_HATALARI = [
   "ad_uzunluk", "ad_karakter", "ad_yasak", "ad_alinmis", "cinsiyet_gecersiz", "yerlesim_gecersiz",
   "yerlesim_dolu", "davet_gecersiz", "davet_yok", "istekno_gecersiz", "sakin_yok", "kisi_yok", "eylem_gecersiz",
   "isaret_gecersiz", "imlec_gecersiz", "yas_kapisi", "ogrenme_kapali", "hedef_uygun_degil", "takat_yok", "para_yok",
-  "zaten_cirak", "karar_verildi", "puan_yok", "meslek_gecersiz", "meslek_yok", "kademe_kapali", "dal_kapali", "dugum_kapali",
+  "zaten_cirak", "karar_verildi", "puan_yok", "muhur_yok", "muhur_alindi", "meslek_gecersiz", "meslek_yok", "kademe_kapali", "dal_kapali", "dugum_kapali",
   "geri_alma_dolu", "mal_gecersiz", "kota_doldu", "verim_yok", "tarif_gecersiz", "girdi_yok", "mal_yok", "siparis_yok", "siparis_kapandi",
   "yapilandirma_eksik", "sunucu_hatasi",
   // Beceri ağacı v2 (online-server yerlesim/beceri.ts)
@@ -181,7 +181,7 @@ export type Isaret = "tanidik" | "dost" | "dusman";
 export const ISARETLER: readonly Isaret[] = ["tanidik", "dost", "dusman"];
 export const NPC_EYLEMLERI = ["sohbet", "yardim", "hediye", "ayakIsi", "cirak"] as const;
 export type NpcEylemi = (typeof NPC_EYLEMLERI)[number];
-export type EylemTuru = NpcEylemi | "mektep" | "puan" | "karar";
+export type EylemTuru = NpcEylemi | "mektep" | "puan" | "karar" | "muhur";
 export const OZELLIKLER = ["guc", "ceviklik", "dayaniklilik", "zeka", "karizma", "sezgi"] as const;
 export const BECERILER = ["dovus", "soz", "ticaret", "zanaat", "ilim", "gizlilik"] as const;
 export const NAMLAR = ["comertlik", "dindarlik", "mertlik", "caliskanlik"] as const;
@@ -243,7 +243,10 @@ export interface Ben {
   usta: { id: string; ad: string; meslek: string } | null;
   mekan: string | null;
   karar: string | null;
+  /** Kül Yemini mührü emanet edildi, kabul bekliyor. */
   kulYemini: boolean;
+  /** Mühür kabul edildi (eski sunucuda alan yok). */
+  muhurlu?: boolean;
   tanidiklar: Tanidik[];
   ogrenme: OgrenmeDurumu;
   /**

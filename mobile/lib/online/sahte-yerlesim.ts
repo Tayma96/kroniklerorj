@@ -437,7 +437,7 @@ export function sahteKasabaKur(profil: Profil, yerlesim: YerlesimOzeti, beylik: 
         takat: { kalan: kar.tk, tavan: TAKAT_TAVAN, aylik: TAKAT_AYLIK }, para: kar.pa,
         hane: npc.filter((n) => n.e === baba.e).map((n) => ({ id: nid(n), ad: npcAdi(n, dil), rol: akrabalik(n) ?? "hane" })),
         usta: usta ? { id: nid(usta), ad: npcAdi(usta, dil), meslek: meslekGorunumu(usta) } : null,
-        mekan: kar.mk, karar: kar.kr || null, kulYemini: false, tanidiklar: tanidiklar(dil), ogrenme: ogrenme(),
+        mekan: kar.mk, karar: kar.kr || null, kulYemini: false, muhurlu: false, tanidiklar: tanidiklar(dil), ogrenme: ogrenme(),
       };
       const oneriler = [sifaci, kibirli]
         .filter((n) => !kar.tn[nid(n)])

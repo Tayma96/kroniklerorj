@@ -32,6 +32,8 @@ const PARAM: Record<string, string[]> = {
   "olay.ciraklik": ["kisi", "usta", "meslek"],
   "olay.karar": ["kisi", "secim"],
   "sonuc.puan": ["ozellik"],
+  "sonuc.muhur": [],
+  "olay.kulYemini.kabul": ["kisi"],
   "sonuc.karar": ["secim"],
   "gorus.huyNam": ["huy", "nam"],
   "gorus.kibir": ["huy"],
@@ -148,7 +150,7 @@ export function olayIkonu(o: Pick<Olay, "ozet" | "tur">): string {
     "olay.olum": "tombstone", "olay.ustaOldu": "tombstone", "olay.yakinOldu": "tombstone", "olay.gundem": "scroll",
     "olay.isBuldu": "anvil", "olay.evlilik": "ring", "olay.dostluk": "family", "olay.dogum": "baby", "olay.goc": "camel",
     "olay.kulYemini": "flame", "olay.ogrenme.gun": "graduate-cap", "olay.hamle.corba": "bread", "olay.hamle.laf": "speaker",
-    "olay.yeniSakin": "house", "olay.ciraklik": "anvil", "olay.karar": "compass",
+    "olay.yeniSakin": "house", "olay.ciraklik": "anvil", "olay.karar": "compass", "olay.kulYemini.kabul": "flame",
     "olay.siparis.acildi": "scroll-open", "olay.siparis.dustu": "hourglass", "olay.siparis.teslim": "medal",
     "olay.hizmetTalep": "scroll-open", "olay.hizmetTalepTeslim": "medal",
     "olay.yonetim.telafiAkce": "gift", "olay.yonetim.telafiEsya": "gift",
@@ -157,7 +159,7 @@ export function olayIkonu(o: Pick<Olay, "ozet" | "tur">): string {
   return tablo[k] ?? "scroll-open";
 }
 const EYLEM_IKON: Record<string, string> = {
-  sohbet: "amphora", yardim: "bucket", hediye: "gems", ayakIsi: "walk", cirak: "anvil", cirakRed: "anvil", mektep: "graduate-cap", puan: "star", karar: "compass",
+  sohbet: "amphora", yardim: "bucket", hediye: "gems", ayakIsi: "walk", cirak: "anvil", cirakRed: "anvil", mektep: "graduate-cap", puan: "star", karar: "compass", muhur: "flame",
 };
 export const eylemIkonu = (tur: string) => EYLEM_IKON[tur] ?? "scroll";
 export const MEKAN_IKON: Record<string, string> = {

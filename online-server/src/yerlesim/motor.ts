@@ -672,6 +672,7 @@ export class YerlesimMotoru {
       mekan: kar.ma === ay ? kar.mk : null,
       karar: kar.kr || null,
       kulYemini: kar.ky === 1,
+      muhurlu: kar.ky === 2,
       hanedan: hanedanOzeti(kar, ay),
       tanidiklar: this.#tanidiklar(kar, ili, dil),
       ogrenme: ogrenmeDurumu(kar, ay),

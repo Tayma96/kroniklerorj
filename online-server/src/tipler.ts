@@ -97,6 +97,9 @@ export const HATA_DURUMU = {
   zaten_cirak: 409,
   karar_verildi: 409,
   puan_yok: 409,
+  /** Kül Yemini mührü: henüz emanet edilmedi / zaten kabul edildi. */
+  muhur_yok: 409,
+  muhur_alindi: 409,
   meslek_gecersiz: 400,
   meslek_yok: 409,
   kademe_kapali: 409,

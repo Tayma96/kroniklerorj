@@ -32,6 +32,8 @@ const ANAHTAR: Partial<Record<OnlineHata, string>> = {
   zaten_cirak: "onl.h.zatenCirak",
   karar_verildi: "onl.h.kararVerildi",
   puan_yok: "onl.h.puanYok",
+  muhur_yok: "onl.h.muhurYok",
+  muhur_alindi: "onl.h.muhurAlindi",
   isaret_gecersiz: "onl.h.isaretGecersiz",
   meslek_gecersiz: "onl.h.meslekGecersiz",
   meslek_yok: "onl.h.meslekYok",

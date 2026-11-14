@@ -30,7 +30,7 @@ import type { Zar } from "./rastgele.ts";
 import { mesrepNam, mesrepSans } from "./mesrep.ts";
 import type { Dokum, Iliski, IliskiHaritasi, Kalem, Karakter, Kasaba, Npc, OlayTaslagi } from "./tipler.ts";
 
-export const EYLEM_TURLERI = ["sohbet", "yardim", "hediye", "ayakIsi", "cirak", "mektep", "puan", "karar"] as const;
+export const EYLEM_TURLERI = ["sohbet", "yardim", "hediye", "ayakIsi", "cirak", "mektep", "puan", "karar", "muhur"] as const;
 export type EylemTuru = (typeof EYLEM_TURLERI)[number];
 export const NPC_EYLEMLERI = ["sohbet", "yardim", "hediye", "ayakIsi", "cirak"] as const satisfies readonly EylemTuru[];
 export const KARARLAR = { zanaat: "zanaat", ilim: "ilim", ticaret: "ticaret", yol: "dovus" } as const satisfies Record<
@@ -87,6 +87,8 @@ export const EYLEMLER: Readonly<Record<EylemTuru, Tanim>> = {
   mektep: { takat: 1, yas: 12, npc: false, temel: 100, kazanc: 0, beceri: ["ilim", 3], nam: ["dindarlik", 1] },
   puan: { takat: 0, yas: 12, npc: false, temel: 100, kazanc: 0 },
   karar: { takat: 0, yas: 12, npc: false, temel: 100, kazanc: 0 },
+  /** Kül Yemini mührünü kabul (13 yaşında emanet edilir; bedelsiz, süresiz, geri çevirmek ceza getirmez). */
+  muhur: { takat: 0, yas: 13, npc: false, temel: 100, kazanc: 0 },
 };
 
 /** Huyun eyleme göre şans etkisi (yüzde puanı). */
@@ -156,6 +158,7 @@ export function eylemKapisi(kasaba: Kasaba, tur: EylemTuru, kar: Karakter, npc: 
   if (t.bedel && kar.pa < t.bedel) return "para_yok";
   if (tur === "karar" && kar.kr) return "karar_verildi";
   if (tur === "puan" && kar.op <= 0) return "puan_yok";
+  if (tur === "muhur" && kar.ky !== 1) return kar.ky === 2 ? "muhur_alindi" : "muhur_yok";
   if (tur === "ayakIsi" && ayakIsiSayisi(kar, ay) >= AYAK_ISI_AYLIK) return "kota_doldu";
   takatTazele(kar, ay);
   if (kar.tk < t.takat) return "takat_yok";
@@ -318,6 +321,14 @@ export function eylemYap(
     kar.oz[i] = (kar.oz[i] ?? 0) + 1;
     degisim.ozellik = { [o]: 1 };
     return sonucYap({ basari: true, sonuc: { k: "sonuc.puan", p: { ozellik: o } } });
+  }
+  if (girdi.tur === "muhur") {
+    kar.ky = 2;
+    sayacArtir(kar, "muhur");
+    return sonucYap(
+      { basari: true, sonuc: { k: "sonuc.muhur", p: {} } },
+      { t: "eylem", w: kar.o, h: "", g: "", n: 6, k: "olay.kulYemini.kabul", p: { kisi: oyuncuRef(kar) } },
+    );
   }
   if (girdi.tur === "karar") {
     const secim = girdi.secim as keyof typeof KARARLAR;

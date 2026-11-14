@@ -15,7 +15,7 @@ paneli Y1–Y3 · şikâyet/engelleme · ilk oturum ekranları · beceri ağacı
 | Oda özellikleri (liste/keşif, seviye, mini oyun, söz isteme) | Söz isteme var. Keşif sırası, masa ayarı, ozan sahnesi/atışması yok → §3 Han. |
 | Düello, suikast, kan davası | Yok → §4 tasarım. |
 | Darbe ve bağımsız devlet, diplomasi | P5–P6 var. Akçe ganimeti bağlandı (14 Kasım). Mülk devri ve ittifak dışı anlaşmalar açık. |
-| Kül Yemini mührü | Kanca var, mühür yok → §4. |
+| Kül Yemini mührü | Bağlandı (14 Kasım): 13 yaşında emanet, karakter sayfasından kabul; yemin etkisi H5 ile gelir. |
 | E4 meslek etkileri | Kısmi (`gdd/E4_KANCA_ENVANTER_NOTU.md`). |
 | Mahkeme ve tanıklık (D-28) | Bilerek ertelendi. |
 | Google girişi | `GOOGLE_CLIENT_ID` bekliyor. Belirteç güvenli depoya taşındı (14 Kasım). |

@@ -38,6 +38,8 @@ function KarakterEkran() {
   const [hata, setHata] = useState<string | null>(null);
   const [kapatSor, setKapatSor] = useState(false);
   const [kapatHata, setKapatHata] = useState<string | null>(null);
+  const [muhurHata, setMuhurHata] = useState<string | null>(null);
+  const [muhurBekliyor, setMuhurBekliyor] = useState(false);
   if (!y) return <YerlesimBekle sekme="karakter" rtl={rtl} t={t} onGiris={() => router.replace("/online")} />;
 
   const ben = y.ben;
@@ -51,6 +53,14 @@ function KarakterEkran() {
     const s = await o.eylemYap(secim.tur === "puan" ? { tur: "puan", ozellik: secim.ozellik } : { tur: "karar", secim: secim.secim });
     // istek_tekrar: seçim daha önce işlenmiş; hata değil, panel kapanır ve durum sunucudan tazelenir.
     if (s.ok) { hap("success"); setSecim(null); setSonuc(s.deger); } else if (istekTekrarMi(s.hata)) setSecim(null); else { hap("error"); setHata(t(hataAnahtari(s.hata))); }
+  };
+
+  // Kül Yemini mührü: bedelsiz, süresiz; kabul edilmezse hiçbir şey kaybedilmez.
+  const muhurKabul = async () => {
+    setMuhurHata(null); setMuhurBekliyor(true);
+    const s = await o.eylemYap({ tur: "muhur" });
+    setMuhurBekliyor(false);
+    if (s.ok) { hap("success"); setSonuc(s.deger); } else if (!istekTekrarMi(s.hata)) { hap("error"); setMuhurHata(t(hataAnahtari(s.hata))); }
   };
 
   // Bütün oturumları kapat: başarıda durum katmanı yerel oturumu siler ve /online girişine döner (oturumKapandi).
@@ -251,7 +261,13 @@ function KarakterEkran() {
         </Pressable>)}
       </Cerceve>
     </> : null}
-    {ben.kulYemini ? <View style={{ marginTop: 12, flexDirection: yon(rtl) }}><Rozet icon="flame" metin={t("onl.ka.kulYemini")} renk={C.emberSoft} /></View> : null}
+    {ben.kulYemini ? <Cerceve ic={{ padding: 14, gap: 10, marginTop: 12 }}>
+      <View style={{ flexDirection: yon(rtl) }}><Rozet icon="flame" metin={t("onl.ka.kulYemini")} renk={C.emberSoft} /></View>
+      <Text style={{ fontFamily: F.serif, fontSize: 13.5, lineHeight: 20, color: C.parchmentDim, textAlign: hiza(rtl) }}>{t("onl.ka.muhurAlt")}</Text>
+      {muhurHata ? <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.ember, textAlign: hiza(rtl) }}>{muhurHata}</Text> : null}
+      <CizgiDugme etiket={t("onl.ka.muhurKabul")} icon="flame" rtl={rtl} kapali={muhurBekliyor} onPress={() => void muhurKabul()} />
+    </Cerceve> : null}
+    {ben.muhurlu ? <View style={{ marginTop: 12, flexDirection: yon(rtl) }}><Rozet icon="flame" metin={t("onl.ka.muhurlu")} renk={C.goldBright} /></View> : null}
 
     {/* Hesap: bütün cihazlardaki oturumları kapatma */}
     <Baslik2 metin={t("onl.hs.baslik")} rtl={rtl} />

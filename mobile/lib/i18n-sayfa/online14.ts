@@ -1,4 +1,4 @@
-// Çevrimiçi siyaset: darbe ganimeti (taraf tutmanın açık bedeli, kayıp/pay olayları, bölge kaydı) ve ateşkes ön talimatı. [tr, en, es, pt, ar, ru]
+// Çevrimiçi siyaset: darbe ganimeti (taraf tutmanın açık bedeli, kayıp/pay olayları, bölge kaydı) ateşkes ön talimatı ve Kül Yemini mührü. [tr, en, es, pt, ar, ru]
 export const rows: Record<string, string[]> = {
   "onl.siyaset.ganimetBedel": [
     "Taraf tutmanın bedeli: kaybeden taraf, akçesinin en çok yüzde %1'ini kazananlara bırakır. Eve ve mülke dokunulmaz; taraf tutmayan hiçbir şey kaybetmez. Aynı kişi %2 ay içinde ikinci kez kesilmez.",
@@ -55,4 +55,18 @@ export const rows: Record<string, string[]> = {
   "onl.siyaset.talimatSec.ret": ["Ret talimatı ver", "Order: reject", "Orden: rechazar", "Ordem: recusar", "أمر: ارفض", "Приказ: отклонить"],
   "onl.siyaset.talimatSec.yok": ["Talimatı kaldır", "Clear order", "Quitar la orden", "Retirar a ordem", "ألغِ الأمر", "Отменить приказ"],
   "onl.siyaset.talimatKaydedildi": ["Ön talimat kaydedildi.", "Standing order saved.", "Orden previa guardada.", "Ordem prévia guardada.", "حُفظ الأمر المسبق.", "Предварительный приказ сохранён."],
+  "onl.ka.muhurAlt": [
+    "Yerleşimin en yaşlısı sana kül rengi bir mühür emanet etti. Kabul edersen han masasında ettiğin yeminler mühürlü sayılır ve sözünün ağırlığı artar. Acelesi yok; mühür seni bekler, kabul etmemek bir şey kaybettirmez.",
+    "The eldest of the settlement entrusted you with an ash-grey seal. If you accept, the oaths you swear at the inn table count as sealed and your word carries more weight. There is no hurry; the seal waits for you, and declining costs you nothing.",
+    "El más anciano del asentamiento te confió un sello color ceniza. Si lo aceptas, los juramentos que hagas en la mesa de la posada contarán como sellados y tu palabra pesará más. No hay prisa; el sello te espera y rechazarlo no te cuesta nada.",
+    "O mais velho do povoado confiou-te um selo cor de cinza. Se o aceitares, os juramentos que fizeres na mesa da estalagem contam como selados e a tua palavra pesa mais. Não há pressa; o selo espera por ti e recusá-lo não te custa nada.",
+    "ائتمنك أكبر أهل المستوطنة سنًّا على ختم بلون الرماد. إن قبلته عُدّت أيمانك على مائدة الخان مختومة وزاد وزن كلمتك. لا عجلة؛ الختم ينتظرك، ورفضه لا يكلّفك شيئًا.",
+    "Старейший в поселении доверил тебе печать цвета пепла. Если примешь её, клятвы за столом в постоялом дворе будут считаться скреплёнными, и твоё слово станет весомее. Спешить некуда: печать ждёт тебя, а отказ ничего не стоит.",
+  ],
+  "onl.ka.muhurKabul": ["Mührü kabul et", "Accept the seal", "Aceptar el sello", "Aceitar o selo", "اقبل الختم", "Принять печать"],
+  "onl.ka.muhurlu": ["Kül Yemini mührü sende: yeminlerin mühürlü", "You bear the Ash Oath seal: your oaths are sealed", "Llevas el sello del Juramento de Ceniza: tus juramentos están sellados", "Trazes o selo do Juramento de Cinza: os teus juramentos estão selados", "تحمل ختم يمين الرماد: أيمانك مختومة", "Ты носишь печать Клятвы пепла: твои клятвы скреплены"],
+  "onl.sonuc.muhur": ["Kül Yemini mührünü kabul ettin. Bundan sonra yeminin mühürlüdür.", "You accepted the Ash Oath seal. From now on your oath is sealed.", "Aceptaste el sello del Juramento de Ceniza. Desde ahora tu juramento está sellado.", "Aceitaste o selo do Juramento de Cinza. A partir de agora o teu juramento está selado.", "قبلت ختم يمين الرماد. من الآن يمينك مختوم.", "Ты принял печать Клятвы пепла. Отныне твоя клятва скреплена."],
+  "onl.olay.kulYemini.kabul": ["%1 Kül Yemini mührünü kabul etti.", "%1 accepted the Ash Oath seal.", "%1 aceptó el sello del Juramento de Ceniza.", "%1 aceitou o selo do Juramento de Cinza.", "قبل %1 ختم يمين الرماد.", "%1 принял(а) печать Клятвы пепла."],
+  "onl.h.muhurYok": ["Kül Yemini mührü henüz sana emanet edilmedi.", "The Ash Oath seal has not been entrusted to you yet.", "Aún no se te ha confiado el sello del Juramento de Ceniza.", "O selo do Juramento de Cinza ainda não te foi confiado.", "لم يُؤتمن عليك ختم يمين الرماد بعد.", "Печать Клятвы пепла тебе ещё не доверена."],
+  "onl.h.muhurAlindi": ["Kül Yemini mührünü zaten kabul ettin.", "You have already accepted the Ash Oath seal.", "Ya aceptaste el sello del Juramento de Ceniza.", "Já aceitaste o selo do Juramento de Cinza.", "لقد قبلت ختم يمين الرماد من قبل.", "Ты уже принял печать Клятвы пепла."],
 };
