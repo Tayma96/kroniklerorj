@@ -345,6 +345,14 @@ export const HATA_DURUMU = {
   /** Eski yerleşimde geri alınacak emanet yok. */
   emanet_yok: 404,
   goc_hedef_kayitli: 409,
+  // Kervan (D2): src/yerlesim/kervan.ts
+  kervan_ayni_yer: 400,
+  kervan_yuk_gecersiz: 400,
+  kervan_yuk_siniri: 409,
+  kervan_bedel_yok: 409,
+  kervan_aylik_siniri: 409,
+  kervan_mal_hedef: 409,
+  kervan_ulasilamadi: 503,
   yapilandirma_eksik: 500,
   sunucu_hatasi: 500,
 } as const satisfies Record<string, number>;
@@ -469,6 +477,8 @@ export type HesapIleti = (
   | { islem: "gocOnizle"; hesapId: string; hedef: string | null }
   | { islem: "gocEmanetOnizle"; hesapId: string }
   | { islem: "gocEmanet"; hesapId: string; govde: unknown }
+  /** Kervan (D2): önizleme GET /v1/kervan?hedef=&mallar=, POST /v1/kervan, POST /v1/kervan/haber (src/yerlesim/kervan-uclar.ts). */
+  | KervanIstemciIletisi
 ) & {
   /** Worker → HesapDO: oyuncu belirtecindeki oturum sürümü (sürümsüz belirteç 0). İç iletilerde yoktur. */
   oturumSurumu?: number;
@@ -602,6 +612,11 @@ export interface SakinKaydi {
 }
 
 /** HesapDO → YerlesimDO. `yerlesim` profildeki işaretçidir (DO adını bilmez). */
+/** Kervan istemci iletileri (HesapDO aynen YerlesimDO'ya iletir; `yerlesim` eklenir). */
+export type KervanIstemciIletisi =
+  | { islem: "kervan"; hesapId: string; hedef: string | null; mallar: string | null }
+  | { islem: "kervanGonder" | "kervanHaber"; hesapId: string; govde: unknown };
+
 export type YerlesimIleti =
   | { islem: "ekonomiSagligi"; yerlesim: string }
   | { islem: "yonetimTelafi"; yerlesim: string; hesapId: string; govde: unknown }
@@ -652,6 +667,10 @@ export type YerlesimIleti =
   /** Göç emaneti geri alma (HesapDO yürütür; işlem kimliğiyle tekrar güvenli; istemci ulaşamaz). */
   | { islem: "emanetOnizle"; yerlesim: string; hesapId: string }
   | { islem: "emanetCikis" | "emanetGiris" | "emanetTamam" | "emanetIptal"; yerlesim: string; hesapId: string; govde: unknown }
+  | (KervanIstemciIletisi & { yerlesim: string })
+  /** Kervan (D2; YerlesimDO → YerlesimDO, istemci ulaşamaz): varış (işlem kimliğiyle bir kez) ve salt okuma fiyat özeti. */
+  | { islem: "kervanVaris"; yerlesim: string; islemNo: string; kaynak: string; yuk: unknown }
+  | { islem: "fiyatOzeti"; yerlesim: string; hesap?: string; yuk?: unknown; va?: number }
   | (BarinmaIletisi & { yerlesim: string });
 
 export type DunyaIleti =

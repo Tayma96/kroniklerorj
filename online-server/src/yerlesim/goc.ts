@@ -104,7 +104,9 @@ export function yerelKapilar(k: Kasaba, kar: Karakter, ay: number): Record<Yerel
   const ek = k.ek;
   const acikIs = (ek?.il ?? []).some((x) => x.o === o && x.d === "acik")
     || (ek?.is ?? []).some((x) => (x.m === o || x.u === o) && (x.d === "acik" || x.d === "surer" || x.d === "gecikti"))
-    || (ek?.hi ?? []).some((x) => x.o === o && x.d === "acik");
+    || (ek?.hi ?? []).some((x) => x.o === o && x.d === "acik")
+    // Kervan (D2): yoldaki kervanın hasılatı ve dönen malı bu yerleşimdeki karaktere yazılır.
+    || (k.kv?.c.k ?? []).some((x) => x.t === "kervan" && (x.y as { o?: unknown }).o === o);
   const md = k.mk;
   const mulk = !!md && (sahipMulkleri(md, o).length > 0
     || md.cik.k.some((x) => x.y.o === o || (x.y.sahip as { o?: string } | undefined)?.o === o)

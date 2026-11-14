@@ -21,6 +21,7 @@ import type { ArkaPlan } from "./arka-plan.ts";
 import type { MesrepKaydi } from "./mesrep.ts";
 import type { MudavimKaydi } from "./mudavim.ts";
 import type { ToplulukKaydi } from "./topluluk-kayit.ts";
+import type { KervanDefteri } from "./kervan.ts";
 
 /** NPC'ler arası bağ: [diğer NPC, tür (1 dost, 2 rakip), puan (−100..100), kuruluş ayı]. */
 export type Bag = [diger: number, tur: 1 | 2, puan: number, kurulus: number];
@@ -341,4 +342,6 @@ export interface Kasaba {
   ap?: ArkaPlan;
   /** Topluluk: hami bağları, ortak dertler, şenlik, zaviyeler, bölge göstergeleri (E6–E7; depo anahtarı "tl"). */
   tl?: ToplulukKaydi;
+  /** Kervan defteri: yoldaki kervanlar, aylık sayaçlar, varış giriş defteri ve kotası, fiyat haberi (D2; depo anahtarı "kv"). */
+  kv?: KervanDefteri;
 }

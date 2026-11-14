@@ -108,6 +108,7 @@ import type { MulkDefteri } from "../mulk/tapu.ts";
 import "../mulk/miras.ts";
 import { toplulukDonumu } from "./topluluk.ts";
 import type { ToplulukKaydi } from "./topluluk-kayit.ts";
+import type { KervanDefteri } from "./kervan.ts";
 import { istekBul, istekYaz } from "./istek-defteri.ts";
 import { ucgenDonumu, ucgenGorunumu, ucgenIslem, ucgenOkumaYuklenecek, ucgenYuklenecek } from "./ucgen.ts";
 import { kronikEkle } from "./kronik.ts";
@@ -146,6 +147,8 @@ const EKONOMI = "ek";
 const TOPLULUK = "tl";
 const UCGEN = "ug";
 const MULK = "mk";
+/** Kervan (D2): yoldaki kervanlar, varış defteri ve kotası, fiyat haberi. */
+const KERVAN = "kv";
 /** [PARAMETRE] Gelen kutusunda gösterilen son kapanan teklif sayısı; söylenti yalanlamanın takat bedeli. */
 export const GELEN_KAPALI_EN_COK = 20;
 export const YALANLAMA_TAKAT = 1;
@@ -239,6 +242,8 @@ export interface TekrarEki {
   defter?: [o: string, kalem: string, tutar: number][];
   /** E6–E7: topluluk kaydı değişti. */
   topluluk?: boolean;
+  /** D2: kervan defteri değişti. */
+  kervan?: boolean;
 }
 
 export class YerlesimMotoru {
@@ -298,6 +303,7 @@ export class YerlesimMotoru {
     const ug = await depo.al<UcgenDefteri>(UCGEN);
     const mk = await depo.al<MulkDefteri>(MULK);
     const tl = await depo.al<ToplulukKaydi>(TOPLULUK);
+    const kv = await depo.al<KervanDefteri>(KERVAN);
     const kasaba: Kasaba = {
       y: meta.y,
       tur: y.tur,
@@ -316,6 +322,7 @@ export class YerlesimMotoru {
       ...(ug ? { ug } : {}),
       ...(mk ? { mk } : {}),
       ...(tl ? { tl } : {}),
+      ...(kv ? { kv } : {}),
       no: meta.no,
       ...(meta.hd ? { hd: meta.hd } : {}),
       ...(meta.st ? { st: meta.st } : {}),
@@ -350,6 +357,7 @@ export class YerlesimMotoru {
       else if (a === UCGEN) kayit[a] = k.ug;
       else if (a === MULK) kayit[a] = k.mk;
       else if (a === TOPLULUK) kayit[a] = k.tl;
+      else if (a === KERVAN) kayit[a] = k.kv;
       else if (a.startsWith(KAR)) kayit[a] = k.kar.get(a.slice(KAR.length));
       else if (a.startsWith(ILI)) kayit[a] = k.ili.get(a.slice(ILI.length));
       else if (a.startsWith(SAYFA)) kayit[a] = this.#sayfalar.get(Number(a.slice(SAYFA.length)));
@@ -937,6 +945,7 @@ export class YerlesimMotoru {
     if (ek.siparis) this.#kirli.add(SIPARIS);
     if (ek.ekonomi) this.#kirli.add(EKONOMI);
     if (ek.topluluk) this.#kirli.add(TOPLULUK);
+    if (ek.kervan) this.#kirli.add(KERVAN);
     await this.kaydet();
     return basarili(yanit);
   }
@@ -2108,6 +2117,46 @@ export class YerlesimMotoru {
     for (const o of yukle) if (this.kasaba.kar.has(o)) this.#kirli.add(KAR + o);
     await this.kaydet();
     return r;
+  }
+
+  // ── Kervan (D2): src/yerlesim/kervan-uclar.ts kullanır; kervan defteri karakterle aynı yazımda kaydolur. ──
+
+  /** istekNo'lu kervan adımı (kalkış, fiyat haberi): defter "kervan" kalemi, `simdi` gerçek zaman (ms). */
+  async kervanYaz(
+    hesapId: string,
+    govde: unknown,
+    isle: (kar: Karakter, ay: number, simdi: number) => Sonuc<Record<string, unknown>>,
+  ): Promise<Sonuc<unknown>> {
+    return this.#tekrarGuvenli(
+      hesapId,
+      govde,
+      (kar, _s, ay, ek) => {
+        const r = isle(kar, ay, this.#simdi);
+        if (r.ok) ek.kervan = true;
+        return r;
+      },
+      "kervan",
+    );
+  }
+
+  /**
+   * İstekNo'suz iç kervan adımı (varış kaydı, dönüş kapanışı): `yukle` karakterlerini yükler, uygular, olayları ve
+   * kervan defterini yazar. Sakin olmayan (arşiv) karakterler yazımdan sonra bellekten düşer.
+   */
+  async kervanIslem<T>(yukle: string[], isle: () => { sonuc: T; olaylar: OlayTaslagi[] }): Promise<T> {
+    const k = this.kasaba;
+    if (yukle.length) await this.#yukle(yukle);
+    const r = isle();
+    for (const t of r.olaylar) await this.#olayEkle(t, k.ay);
+    this.#kirli.add(KERVAN);
+    for (const o of yukle) if (k.kar.has(o)) this.#kirli.add(KAR + o);
+    await this.kaydet();
+    for (const o of yukle) {
+      if (k.sakin.some((s) => s.o === o)) continue;
+      k.kar.delete(o);
+      k.ili.delete(o);
+    }
+    return r.sonuc;
   }
 
   /** GET /v1/kronik?imlec=: imleçten sonraki kronik satırları (budanmaz; 49. sayfadan sonra da okunur). */
