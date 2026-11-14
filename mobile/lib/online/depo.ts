@@ -13,6 +13,7 @@ const SINEMATIK = ONEK + "sinematik";
 const IMLEC = ONEK + "imlec";
 const MESLEK = ONEK + "meslek";
 const TEST_CIHAZ = ONEK + "testCihaz";
+const HATIRLATMA = ONEK + "hatirlatma";
 
 // Sunucunun oturum biçimi: base64url(yük).base64url(HMAC-SHA256).
 const OTURUM_BICIMI = /^[A-Za-z0-9_-]{1,2048}\.[A-Za-z0-9_-]{43}$/;
@@ -171,3 +172,9 @@ export function istekNoUret(): string {
   for (const b of bayt) s += a[b % a.length];
   return s;
 }
+
+/** İsteğe bağlı barınma hatırlatması (varsayılan kapalı; hatirlatma.ts). */
+export async function hatirlatmaOku(): Promise<boolean> {
+  return (await oku(HATIRLATMA)) === "1";
+}
+export const hatirlatmaYaz = (acik: boolean) => (acik ? yaz(HATIRLATMA, "1") : sil(HATIRLATMA));

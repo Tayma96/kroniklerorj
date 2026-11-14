@@ -12,7 +12,8 @@ import { hap } from "../haptics";
 import { DesignPressable as Pressable } from "../design-pressable";
 import { useOnline } from "./durum";
 import { isaretli } from "./metin";
-import { istekNoUret } from "./depo";
+import { hatirlatmaOku, hatirlatmaYaz, istekNoUret } from "./depo";
+import { barinmaHatirlat, hatirlatmaIzni, hatirlatmaSil, hatirlatmaVarMi } from "./hatirlatma";
 import { ekHataAnahtari, type EkHata } from "./ek-istemci";
 import { Bant, Cerceve, CizgiDugme, Madalyon, giris, hiza, yon } from "./ui";
 import { AltPanel, Baslik2, Rozet } from "./yasam-ui";
@@ -183,6 +184,18 @@ export function BarinmaKarti() {
     return () => { iptal = true; };
   }, [ist, lang]);
   useEffect(() => { const id = setInterval(() => setSimdiYerel(Date.now()), 30_000); return () => clearInterval(id); }, []);
+  const [hatirlat, setHatirlat] = useState(false);
+  useEffect(() => { void hatirlatmaOku().then(setHatirlat); }, []);
+  useEffect(() => {
+    void barinmaHatirlat(g, fark, (tur) => ({ baslik: t("onl.br.hatirlatBaslik"), govde: t(tur === "konak" ? "onl.br.hatirlatKonak" : "onl.br.hatirlatZincir") }));
+  }, [g, fark, hatirlat, lang]); // eslint-disable-line react-hooks/exhaustive-deps
+  const hatirlatDegistir = async () => {
+    hap("tap");
+    if (hatirlat) { await hatirlatmaYaz(false); await hatirlatmaSil(); setHatirlat(false); return; }
+    if (!(await hatirlatmaIzni())) { setNot(t("onl.br.hatirlatIzinYok")); return; }
+    await hatirlatmaYaz(true);
+    setHatirlat(true);
+  };
 
   if (!g || !g.acik) return null;
   const simdi = simdiYerel + fark;
@@ -229,6 +242,12 @@ export function BarinmaKarti() {
           <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 14.5, color: C.parchmentDim, textAlign: hiza(rtl) }}>{applyParams(t("onl.br.otomatikSatir"), [t("onl.br.mod." + g.otomatik.mod)])}</Text>
           <Text style={{ fontFamily: F.display, fontSize: 11.5, color: C.goldDim, textDecorationLine: "underline" }}>{t("onl.br.degistir")}</Text>
         </Pressable>
+        {hatirlatmaVarMi() ? <Pressable accessibilityRole="switch" accessibilityState={{ checked: hatirlat }} accessibilityLabel={t("onl.br.hatirlat")} onPress={() => { void hatirlatDegistir(); }}
+          style={{ flexDirection: yon(rtl), alignItems: "center", gap: 8, minHeight: 44 }}>
+          <GameIcon name="hourglass" size={15} color={hatirlat ? C.goldBright : C.goldDim} />
+          <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 14.5, color: C.parchmentDim, textAlign: hiza(rtl) }}>{t("onl.br.hatirlat")}</Text>
+          <Text style={{ fontFamily: F.display, fontSize: 11.5, color: hatirlat ? C.goldBright : C.goldDim }}>{t(hatirlat ? "onl.br.hatirlatAcik" : "onl.br.hatirlatKapali")}</Text>
+        </Pressable> : null}
         {not ? <Bant tur="bilgi" metin={not} rtl={rtl} /> : null}
         {hata ? <Bant metin={t(ekHataAnahtari(hata))} rtl={rtl} /> : null}
       </Cerceve>

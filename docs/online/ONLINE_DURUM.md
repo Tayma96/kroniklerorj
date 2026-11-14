@@ -46,7 +46,7 @@ paneli Y1–Y3 · şikâyet/engelleme · ilk oturum ekranları · beceri ağacı
 | D3 | Ölümde makamın devri (A-04a onay bekliyor). Mülk vârise geçiyor (14 Kasım); oyuncu borcu teklif taşıyıcısıyla geçiyor. | orta |
 | D4 | Sahipsiz mülk: uzun yoklukta vekile devir ya da kamu açık artırması. | orta |
 | D5 | Öğrenme döneminde meslek tadım turu (Ek A §2.4; kod genel sistem turu yapıyor, D-33 açık). | orta |
-| D6 | Opt-in push bildirimi (barınma uyarısı, dönüm). | orta |
+| D6 | Sunucudan push (dönüm, teklif). Barınma için cihazda yerel, isteğe bağlı hatırlatma var (14 Kasım); push için FCM kurulumu Berkay'da. | orta |
 
 ### Siyaset
 | # | Eksik | Boyut |
