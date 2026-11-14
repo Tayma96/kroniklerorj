@@ -156,6 +156,7 @@ function HanedanEkran() {
       case "vergi": return { icon: "scales", metin: applyParams(t("onl.hd.k.vergi"), [k.akce]) };
       case "emanet": return { icon: "coins", metin: applyParams(t("onl.hd.k.emanet"), [k.akce]) };
       case "envanter": return { icon: "backpack", metin: applyParams(t("onl.hd.k.envanter"), [Object.values(k.mallar).reduce((s, n) => s + n, 0)]) };
+      case "mulk": return { icon: "house", metin: applyParams(t("onl.hd.k.mulk"), [k.isletmeler.length]) };
       case "nam": return { icon: "medal", metin: applyParams(t("onl.hd.k.nam"), [NAM_SIRASI.map((n, i) => `${t("onl.nam." + n)} ${k.nam[i] ?? 0}`).join(", ")]) };
       case "aileMeslegi": return { icon: "anvil", metin: applyParams(t("onl.hd.k.aileMeslegi"), [meslekYaz(k.meslek, lang as Lang), k.carpan]) };
       default: return null;

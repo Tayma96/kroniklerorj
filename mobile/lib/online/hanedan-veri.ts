@@ -49,6 +49,8 @@ export type DevirKalemi =
   | { tur: "vergi"; akce: number }
   | { tur: "emanet"; akce: number }
   | { tur: "envanter"; mallar: Record<string, number> }
+  /** Ölünün işletmeleri bölünmeden vârise geçer (sunucu mulk/miras.ts). */
+  | { tur: "mulk"; isletmeler: string[] }
   | { tur: "nam"; nam: number[] }
   | { tur: "aileMeslegi"; meslek: string; carpan: number }
   | { tur: "ata"; npc: number; yuk: number }

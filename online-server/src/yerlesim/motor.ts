@@ -100,6 +100,8 @@ import type { UcgenDefteri } from "./bilgi.ts";
 import { eksenler } from "./hafiza.ts";
 import { mulkluIkram, mulkluKira, oyuncuHani } from "../mulk/tapu.ts";
 import type { MulkDefteri } from "../mulk/tapu.ts";
+// Ölümde mülk devri: tapuyu vârise taşıyan kimlik taşıyıcısını kaydeder.
+import "../mulk/miras.ts";
 import { toplulukDonumu } from "./topluluk.ts";
 import type { ToplulukKaydi } from "./topluluk-kayit.ts";
 import { istekBul, istekYaz } from "./istek-defteri.ts";

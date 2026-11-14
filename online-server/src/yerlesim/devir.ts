@@ -30,6 +30,7 @@ import { dizinSec, karma, tohumlu } from "./rastgele.ts";
 import type { Karakter, Kasaba, KisiRef, OlayTaslagi } from "./tipler.ts";
 import { teveccuhPuani } from "./teveccuh.ts";
 import { VAKIF } from "./vasiyet.ts";
+import { CIKIS_EN_COK } from "../mulk/transfer.ts";
 
 /** [PARAMETRE] Veraset vergisi (yüzde, aşağı yuvarlanır; kasaba hazinesine). */
 export const VERGI_ORANI = 10;
@@ -55,6 +56,8 @@ export type DevirKalemi =
   /** Vârisin NPC'yken emanette duran payı kendi kesesine geçer. */
   | { tur: "emanet"; akce: number }
   | { tur: "envanter"; mallar: Record<string, number> }
+  /** Ölünün işletmeleri (tapu) bölünmeden vârise geçer; borç ve sözleşmeler işletmeyle gider (mulk/miras.ts). */
+  | { tur: "mulk"; isletmeler: string[] }
   | { tur: "nam"; nam: number[] }
   | { tur: "aileMeslegi"; meslek: MeslekId; carpan: number }
   /** Aile adı: vârisin başlangıç teveccühü (ölenin teveccühünden küçük pay; veren listesi boş). */
@@ -65,7 +68,7 @@ export type DevirKalemi =
   | { tur: "husumet"; kim: string }
   /** Ölüye konmuş diğer işaretler düşer. */
   | { tur: "isaretSil"; kim: string };
-// Faz 3 (borç, açık husumet, teklif), Faz 5 (mülk) ve Faz 6 (kan davası) kalemleri bu birliğe eklenir;
+// Faz 3 (borç, açık husumet, teklif) ve Faz 6 (kan davası) kalemleri bu birliğe eklenir;
 // kayıtlarını yeni kimliğe taşımak için kimlikTasiyiciEkle() kullanılır.
 
 export interface VarisBilgisi {
@@ -180,6 +183,12 @@ export function devirHesapla(kasaba: Kasaba, oluO: string, varisHam: unknown, ay
   if (em > 0) kalemler.push({ tur: "emanet", akce: em });
   if (olu.ev && Object.keys(olu.ev).length) {
     kalemler.push({ tur: "envanter", mallar: Object.fromEntries(Object.entries(olu.ev).sort(([a], [b]) => (a < b ? -1 : 1))) });
+  }
+  const isletmeler = Object.entries(kasaba.mk?.t ?? {}).filter(([, t]) => t.s === oluO).map(([id]) => id).sort();
+  if (isletmeler.length) {
+    // Her işletmeye sahip değişimi çıkış kutusundan gider; kutuda yer yoksa devir sonra yeniden denenir.
+    if ((kasaba.mk?.cik.k.length ?? 0) + isletmeler.length > CIKIS_EN_COK) return hata("transfer_bekliyor");
+    kalemler.push({ tur: "mulk", isletmeler });
   }
   const nam = olu.nm.map((x) => Math.floor(x * NAM_DEVIR_ORANI));
   if (nam.some((x) => x > 0)) kalemler.push({ tur: "nam", nam });
@@ -354,6 +363,9 @@ export function devirUygula(kasaba: Kasaba, plan: DevirPlani, ay: number): Sonuc
       }
       case "isaretSil":
         delete kasaba.kar.get(k.kim)?.tn[plan.olu];
+        break;
+      case "mulk":
+        // Tapular kimlik taşıyıcısıyla (mulk/miras.ts) yeni kimliğe geçer.
         break;
     }
   }

@@ -43,7 +43,7 @@ paneli Y1–Y3 · şikâyet/engelleme · ilk oturum ekranları · beceri ağacı
 |---|---|---|
 | D1 | Seyahat/göç: başka şehre gitme uçları yok; "başka şehirde 12 saat" koruması bu yüzden hiç tetiklenmiyor. | büyük |
 | D2 | Kervan ve şehirler arası ticaret; menzil han; yeni işletme türleri (hamam, kervansaray, imaret, bedesten). | büyük |
-| D3 | Ölümde mülk, makam ve borcun vârise geçmesi (devir bugün akçe, envanter, nam taşıyor). | büyük |
+| D3 | Ölümde makamın devri (A-04a onay bekliyor). Mülk vârise geçiyor (14 Kasım); oyuncu borcu teklif taşıyıcısıyla geçiyor. | orta |
 | D4 | Sahipsiz mülk: uzun yoklukta vekile devir ya da kamu açık artırması. | orta |
 | D5 | Öğrenme döneminde meslek tadım turu (Ek A §2.4; kod genel sistem turu yapıyor, D-33 açık). | orta |
 | D6 | Opt-in push bildirimi (barınma uyarısı, dönüm). | orta |
