@@ -1,7 +1,8 @@
 // Çevrimiçi yerel depo: AsyncStorage üzerinde küçük bir soyutlama; bütün anahtarlar "kronikler_online_" ile başlar
 // ve tek oyunculu kayıtla hiçbir anahtarı paylaşmaz.
-// NOT (Faz 1d): oturum belirteci, yerel modüller (Google girişi) eklenirken güvenli depoya (expo-secure-store)
-// taşınacak; bu dosyanın dışa açtığı işlevler aynı kalır.
+// Oturum belirteci cihazın güvenli deposunda (Android Keystore / iOS Keychain; expo-secure-store) tutulur. Güvenli depo
+// yoksa (web önizleme, modülü içermeyen eski derleme) AsyncStorage'a düşer. Eski sürümün AsyncStorage'daki belirteci
+// ilk okumada güvenli depoya taşınır ve eski yerinden silinir.
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { Cinsiyet } from "./protokol";
 
@@ -27,12 +28,55 @@ async function sil(anahtar: string): Promise<void> {
   try { await AsyncStorage.removeItem(anahtar); } catch {}
 }
 
-export async function oturumOku(): Promise<string | null> {
-  const v = await oku(OTURUM);
-  return v && OTURUM_BICIMI.test(v) ? v : null;
+type GizliDepo = typeof import("expo-secure-store");
+let gizliModul: GizliDepo | null | undefined;
+let gizliVar: Promise<boolean> | undefined;
+/** Güvenli depo modülü; yerel modül derlemede yoksa null (içe aktarma hatası uygulamayı düşürmez). */
+function gizli(): GizliDepo | null {
+  if (gizliModul === undefined) {
+    try { gizliModul = require("expo-secure-store") as GizliDepo; } catch { gizliModul = null; }
+  }
+  return gizliModul;
 }
-export const oturumYaz = (belirtec: string) => yaz(OTURUM, belirtec);
-export const oturumSil = () => sil(OTURUM);
+function gizliKullanilir(): Promise<boolean> {
+  return (gizliVar ??= (async () => {
+    try { return (await gizli()?.isAvailableAsync()) === true; } catch { return false; }
+  })());
+}
+
+export async function oturumOku(): Promise<string | null> {
+  const g = (await gizliKullanilir()) ? gizli() : null;
+  if (g) {
+    try {
+      const v = await g.getItemAsync(OTURUM);
+      if (v && OTURUM_BICIMI.test(v)) return v;
+    } catch { /* anahtar deposu okunamadı: eski depoya bakılır, yoksa yeniden giriş istenir */ }
+  }
+  const eski = await oku(OTURUM);
+  if (!eski || !OTURUM_BICIMI.test(eski)) return null;
+  if (g) {
+    try {
+      await g.setItemAsync(OTURUM, eski);
+      await sil(OTURUM);
+    } catch { /* taşınamadı: belirteç eski yerinde kalır, sonraki açılışta yeniden denenir */ }
+  }
+  return eski;
+}
+export async function oturumYaz(belirtec: string): Promise<void> {
+  const g = (await gizliKullanilir()) ? gizli() : null;
+  if (g) {
+    try {
+      await g.setItemAsync(OTURUM, belirtec);
+      await sil(OTURUM);
+      return;
+    } catch { /* güvenli depoya yazılamadı: oturum kaybolmasın diye eski depoya yazılır */ }
+  }
+  await yaz(OTURUM, belirtec);
+}
+export async function oturumSil(): Promise<void> {
+  try { await gizli()?.deleteItemAsync(OTURUM); } catch {}
+  await sil(OTURUM);
+}
 
 /** Henüz sunucuya kaydedilmemiş profil taslağı; istekNo yeniden denemelerde aynı kalır. */
 export interface Taslak {

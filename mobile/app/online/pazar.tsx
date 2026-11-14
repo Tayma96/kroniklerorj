@@ -18,6 +18,7 @@ import { AltinDugme, Bant, Cerceve, CizgiDugme, GeriDugme, Madalyon, geriGit, gi
 import { AltPanel, Baslik2, BosKart, Degisim, Hap, OnlineSayfa, Rozet, SayfaBasi, YerlesimBekle, Yukleniyor, sahneGorseli } from "../../lib/online/yasam-ui";
 import { Sayac, Secenekler } from "../../lib/online/toplum-ui";
 import { ekHataAnahtari, type EkHata } from "../../lib/online/ek-istemci";
+import { istekTekrarMi } from "../../lib/online/hata";
 import { istekNoUret } from "../../lib/online/depo";
 import { MALLAR, NPC_MALLARI } from "../../lib/online/meslek-veri";
 import { KaliteRozeti, KarsilastirmaDokumu, kaliteAdi, malAdi, malIkonu } from "../../lib/online/ekonomi-ui";
@@ -99,19 +100,26 @@ function PazarEkran() {
     setBekliyor(true); setHata(null);
     const r = await ist.islem({ ilan: secili.id, adet, istekNo: istekNoUret() });
     setBekliyor(false);
-    if (r.ok) { hap("success"); setSecili(null); setSonuc(r.deger.islem); void sonra(); } else { hap("error"); setHata(t(ekHataAnahtari(r.hata))); }
+    if (r.ok) { hap("success"); setSecili(null); setSonuc(r.deger.islem); void sonra(); }
+    // istek_tekrar: işlem daha önce yapılmış; hata değil, tahta sunucudan tazelenir.
+    else if (istekTekrarMi(r.hata)) { setSecili(null); void sonra(); }
+    else { hap("error"); setHata(t(ekHataAnahtari(r.hata))); }
   };
   const ilanVer = async () => {
     if (!f.mal) return;
     setBekliyor(true); setHata(null);
     const r = await ist.ilan({ tur: f.tur, mal: f.mal, adet: f.adet, fiyat: f.fiyat, sure: f.sure, kalite: f.kalite, istekNo: istekNoUret() });
     setBekliyor(false);
-    if (r.ok) { hap("success"); setForm(false); void sonra(); } else { hap("error"); setHata(t(ekHataAnahtari(r.hata))); }
+    if (r.ok) { hap("success"); setForm(false); void sonra(); }
+    else if (istekTekrarMi(r.hata)) { setForm(false); void sonra(); }
+    else { hap("error"); setHata(t(ekHataAnahtari(r.hata))); }
   };
   const geri = async (id: string) => {
     setHata(null);
     const r = await ist.geri({ ilan: id, istekNo: istekNoUret() });
-    if (r.ok) { hap("success"); void sonra(); } else { hap("error"); setHata(t(ekHataAnahtari(r.hata))); }
+    if (r.ok) { hap("success"); void sonra(); }
+    else if (istekTekrarMi(r.hata)) void sonra();
+    else { hap("error"); setHata(t(ekHataAnahtari(r.hata))); }
   };
 
   const ev = o.envanter ?? y.ben.envanter ?? {};

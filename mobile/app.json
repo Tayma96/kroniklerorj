@@ -59,6 +59,7 @@
           "microphonePermission": "Kronikler uses the microphone only for voice chat at inn tables; audio is never recorded."
         }
       ],
+      "expo-secure-store",
       "./plugins/withoutRecordAudio",
       "expo-video"
     ],

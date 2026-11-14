@@ -18,6 +18,7 @@ import { istekNoUret } from "../../../lib/online/depo";
 import { AltinDugme, Bant, Cerceve, CizgiDugme, GeriDugme, ONL, geriGit, hiza, yon } from "../../../lib/online/ui";
 import { AltPanel, Baslik2, Rozet, SayfaBasi, Yukleniyor } from "../../../lib/online/yasam-ui";
 import { ekHataAnahtari } from "../../../lib/online/ek-istemci";
+import { istekTekrarMi } from "../../../lib/online/hata";
 import {
   HAN_EYLEMLERI, IKRAMLAR, KAPANIS, ILETI_EN_UZUN, KOLTUK_SAYISI, SART_EN_UZUN, SIKAYET_NEDENLERI, harfSayisi, tekSatir, useHanIstemci,
   type HanEylemi, type IkramId, type MasaOlayi, type MenuSatiri, type Plaka, type SikayetNedeni,
@@ -156,6 +157,8 @@ function MasaEkran() {
     const s = await istemci.eylem({ masa: no, tur, istekNo: istekNo.current, ...(h ? { hedef: h } : {}), ...(olayNo !== undefined ? { olay: olayNo } : {}), ...(EYLEM_FORM[tur as SecimEylemi]?.sart && tekSatir(sart) ? { sart: tekSatir(sart) } : {}) });
     setBekliyor(false);
     if (s.ok) { setPanel(null); setSart(""); setBilgi(t("onl.han.eylemYazildi")); istekNo.current = istekNoUret(); }
+    // istek_tekrar: eylem daha önce işlenmiş; hata değil, panel kapanır ve yeni istekNo alınır.
+    else if (istekTekrarMi(s.hata)) { setPanel(null); setSart(""); setBilgi(t("onl.h.istekTekrar")); istekNo.current = istekNoUret(); }
     else m.hataGoster(s.hata, s.bitis);
   };
   const ikramGonder = async () => {
@@ -167,6 +170,11 @@ function MasaEkran() {
       setPanel(null);
       setMenu((x) => (x?.some((y) => y.id === ikram) ? x : [...(x ?? []), { id: ikram, fiyat: s.deger.fiyat }]));
       setBilgi(applyParams(t("onl.han.ikramGitti"), [t("onl.han.ikram." + ikram), adBul(hedef), s.deger.fiyat, s.deger.para]));
+      istekNo.current = istekNoUret();
+      void o.yerlesimYukle(true);
+    } else if (istekTekrarMi(s.hata)) {
+      setPanel(null);
+      setBilgi(t("onl.h.istekTekrar"));
       istekNo.current = istekNoUret();
       void o.yerlesimYukle(true);
     } else m.hataGoster(s.hata, s.bitis);

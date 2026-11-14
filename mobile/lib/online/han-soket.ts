@@ -130,16 +130,20 @@ export function useMasa(no: number | undefined) {
     }
     soket.current = s;
     gonderD({ t: "bag", bag: deneme.current ? "yeniden" : "baglaniyor", deneme: deneme.current });
+    let karsilandi = false;
     s.dinle({
       acildi: () => { /* hosgeldin gelince "acik" olur */ },
       ileti: (v) => {
         if (soket.current !== s) return;
-        if (v.t === "hosgeldin") deneme.current = 0;
+        if (v.t === "hosgeldin") { deneme.current = 0; karsilandi = true; }
         gonderD({ t: "sunucu", v, id: yeniId() });
       },
       kapandi: (kod) => {
         if (soket.current !== s || !canli.current) return;
         soket.current = null;
+        // El sıkışmada reddedilen belirteç sokette görünmez (kod 1006). İlk başarısız bağlantıda yetkili bir GET
+        // atılır: oturum geçersizse 401, merkezi oturum dinleyicisiyle (oturum-olay.ts) oyuncuyu girişe döndürür.
+        if (!karsilandi && deneme.current === 0) void istemci.han("tr").catch(() => undefined);
         if (SON_KODLAR.has(kod) || deneme.current >= BEKLEMELER.length) {
           gonderD({ t: "bag", bag: "kapandi", kapanis: kod });
           return;

@@ -16,6 +16,7 @@ import { istekNoUret } from "../../lib/online/depo";
 import { AltinDugme, Bant, Cerceve, CizgiDugme, GeriDugme, ONL, geriGit, hiza, yon } from "../../lib/online/ui";
 import { AltPanel, Baslik2, BosKart, GorusOlcegi, KisiYuzu, OnlineSayfa, Rozet, SayfaBasi, YerlesimBekle, Yukleniyor, useYerlesimEkrani } from "../../lib/online/yasam-ui";
 import { ayTakvimi, ekHataAnahtari, type EkHata } from "../../lib/online/ek-istemci";
+import { istekTekrarMi } from "../../lib/online/hata";
 import { meslekYaz, ozetYaz } from "../../lib/online/metin";
 import {
   UZAK, VAKIF, VASIYET_PAY_EN_COK, useHanedanIstemci,
@@ -102,6 +103,12 @@ function HanedanEkran() {
       setBilgi(applyParams(t("onl.hd.devirTamam"), [s.deger.plan.varis.ad, s.deger.hanedan.nesil]));
       void o.yerlesimYukle();
       void yukle();
+    } else if (istekTekrarMi(s.hata)) {
+      // Devir daha önce işlenmiş: hata değil, güncel hanedan sunucudan yüklenir.
+      setPanel(null);
+      setBilgi(t("onl.h.istekTekrar"));
+      void o.yerlesimYukle();
+      void yukle();
     } else if (s.hata === "devir_degisti") {
       setOnizHata(s.hata);
       void onizle(secilenVaris);
@@ -130,6 +137,7 @@ function HanedanEkran() {
     const s = await istemci.vasiyet({ vasiyet, istekNo: istekNo.current, dil });
     setBekliyor(false);
     if (s.ok) { setPanel(null); setBilgi(t(sil ? "onl.hd.vasiyetSilindi" : "onl.hd.vasiyetYazildi")); void yukle(); }
+    else if (istekTekrarMi(s.hata)) { setPanel(null); setBilgi(t("onl.h.istekTekrar")); void yukle(); }
     else setIslemHata(s.hata);
   };
   const evlen = async () => {
@@ -138,6 +146,7 @@ function HanedanEkran() {
     const s = await istemci.evlilik({ hedef: esAdayi, istekNo: istekNo.current, dil });
     setBekliyor(false);
     if (s.ok) { setPanel(null); setBilgi(applyParams(t("onl.hd.evlendin"), [s.deger.es.ad, s.deger.bedel])); void o.yerlesimYukle(true); void yukle(); }
+    else if (istekTekrarMi(s.hata)) { setPanel(null); setBilgi(t("onl.h.istekTekrar")); void o.yerlesimYukle(true); void yukle(); }
     else setIslemHata(s.hata);
   };
 
