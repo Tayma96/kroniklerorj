@@ -1,5 +1,7 @@
 # Çevrimiçi Faz 1–3 durum denetimi (3 Kasım 2026)
 
+> Geçersiz: güncel durum `docs/online/ONLINE_DURUM.md` dosyasındadır. Bu not yalnız tarihçe için duruyor.
+
 Kaynak planlar: `docs/online/FAZ1_PLAN.md`, `FAZ2_PLAN.md`, `FAZ3_PLAN.md`. Kanıtlar `rg` ve `git` ile koddan
 alındı. Planlarda geçen sunucu klasörü `online-server/`dır. Eski çok oyunculu sunucu `server/` ile
 `mobile/lib/mp/` bu fazların parçası değildir ve bunlara dokunulmaz.
