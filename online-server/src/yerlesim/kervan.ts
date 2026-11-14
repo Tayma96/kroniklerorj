@@ -334,13 +334,15 @@ export function varisSonucuGecerli(v: unknown, yuk: KervanYuku): v is VarisSonuc
   if (x.durum !== "kabul" && x.durum !== "red") return false;
   if (!Number.isInteger(x.hasilat) || (x.hasilat ?? -1) < 0) return false;
   if (typeof x.satilan !== "object" || x.satilan === null || typeof x.kalan !== "object" || x.kalan === null) return false;
+  // Kalıcı ret: hasılat yok; bütün yük kaynakta geri yazılır (varisUygula).
+  if (x.durum === "red") return x.hasilat === 0;
   // Satılan + kalan = yük (mal kaybolmaz, çoğalmaz).
   for (const m of new Set([...Object.keys(yuk.ev), ...Object.keys(x.satilan), ...Object.keys(x.kalan)])) {
     const a = (x.satilan as Yuk)[m as MalId] ?? 0;
     const b = (x.kalan as Yuk)[m as MalId] ?? 0;
     if (!Number.isInteger(a) || !Number.isInteger(b) || a < 0 || b < 0 || a + b !== (yuk.ev[m as MalId] ?? 0)) return false;
   }
-  return x.durum === "kabul" || x.hasilat === 0;
+  return true;
 }
 
 /**

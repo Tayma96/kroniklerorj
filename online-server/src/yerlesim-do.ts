@@ -6,7 +6,8 @@ import { doDepo, type Depo } from "./depo.ts";
 import { hamiUc, mesrepUc, mudavimUc, ortakDertUc, senlikUc, toplulukOku, zaviyeUc } from "./yerlesim/topluluk-uclar.ts";
 import { defterOku, hizmetGeriUc, hizmetHazirlaUc, hizmetIlanUc, hizmetIslemUc, hizmetOku, hizmetTalepTeslimUc, hizmetGorevTeslimUc, ismarlaUc, ismarlamaCevapUc, ismarlamaOku, levhaOku, pazarGeri, pazarIlan, pazarIslem, pazarOku } from "./yerlesim/ekonomi-uclar.ts";
 import { armaganGeri, armaganTeveccuh } from "./yerlesim/armagan-uclar.ts";
-import { iletiOku, isletmeCagir, jsonYanit, yonetimCagir } from "./ic.ts";
+import { iletiOku, isletmeCagir, jsonYanit, yerlesimCagir, yonetimCagir } from "./ic.ts";
+import { fiyatOzetiUc, kervanGonder, kervanHaber, kervanOnizle, kervanUzlastir, kervanVarisUc, type KervanCagir } from "./yerlesim/kervan-uclar.ts";
 import { bolgeCagir } from "./siyaset/ic.ts";
 import { BEYLIKLER } from "./dunya-veri.ts";
 import { basarili, hata, type Env, type Sonuc, type YerlesimIleti } from "./tipler.ts";
@@ -21,6 +22,8 @@ export class YerlesimDO {
   readonly #saat: () => number;
   /** Mülk (Faz 12): IsletmeDO çağrısı (bağlı değilse işletme uçları `isletme_yok`). */
   readonly #isletme: IsletmeCagir;
+  /** Kervan (D2): başka YerlesimDO'ya iç çağrı (varış, fiyat özeti). */
+  readonly #kervan: KervanCagir;
   /** Bellekteki kasaba; hata olursa atılır ve bir sonraki istekte depodan yeniden yüklenir. */
   #motor: YerlesimMotoru | undefined;
   #alarmVar = false;
@@ -28,6 +31,7 @@ export class YerlesimDO {
   constructor(ctx: DurableObjectState, env: Env, saat: () => number = Date.now) {
     this.#env = env;
     this.#isletme = (i) => (env.ISLETME ? isletmeCagir(env, i) : Promise.resolve({ ok: false, hata: "isletme_yok" }));
+    this.#kervan = (i) => yerlesimCagir(env, i);
     this.#depolama = ctx.storage;
     this.#depo = doDepo(ctx.storage);
     this.#saat = saat;
@@ -64,6 +68,9 @@ export class YerlesimDO {
       const sonuc = await this.#isle(ileti, simdi);
       // BolgeDO'dan gelen ganimet adımı bölgeye geri çağrı yapmaz (DO → DO döngüsel bekleme olmaz).
       if (ileti.islem === "ganimetKes" || ileti.islem === "ganimetPay") return jsonYanit(sonuc);
+      // Kervan iç iletileri (başka YerlesimDO'dan) geri çağrı yapmaz: kaynak hedefi beklerken döngü olmaz.
+      if (ileti.islem === "kervanVaris" || ileti.islem === "fiyatOzeti") return jsonYanit(sonuc);
+      await this.#kervanUzlastir(simdi, false);
       await this.#mulkUzlastir(simdi, ileti.islem === "hanIkram" || ileti.islem === "hanZiyafet" || ileti.islem === "barinmaKira");
       await this.#vergiUzlastir(simdi);
       return jsonYanit(sonuc);
@@ -315,6 +322,17 @@ export class YerlesimDO {
         return motor.emanetTamam(ileti.hesapId, ileti.govde);
       case "emanetIptal":
         return motor.emanetIptal(ileti.hesapId, ileti.govde);
+      // Kervan (D2): src/yerlesim/kervan-uclar.ts
+      case "kervan":
+        return kervanOnizle(motor, ileti.hesapId, ileti.hedef, ileti.mallar, this.#kervan);
+      case "kervanGonder":
+        return kervanGonder(motor, ileti.hesapId, ileti.govde);
+      case "kervanHaber":
+        return kervanHaber(motor, ileti.hesapId, ileti.govde, this.#kervan);
+      case "kervanVaris":
+        return kervanVarisUc(motor, ileti.islemNo, ileti.kaynak, ileti.yuk, simdi);
+      case "fiyatOzeti":
+        return fiyatOzetiUc(motor, ileti.hesap, ileti.yuk, ileti.va);
       case "mulkGiris":
         return { ok: true, deger: { sonuclar: await teslimAl(motor, ileti.kayitlar, simdi) } };
       default:
@@ -332,6 +350,16 @@ export class YerlesimDO {
     if (mevcut === null || mevcut > sonraki) await this.#depolama.setAlarm(Math.max(sonraki, simdi + 1));
   }
 
+  /** Varış ayı gelen kervanları teslim eder; bekleyen yeniden deneme varsa alarmı o ana çeker. */
+  async #kervanUzlastir(simdi: number, hepsi: boolean): Promise<void> {
+    const motor = this.#motor;
+    if (!motor?.kasaba.kv?.c.k.length) return;
+    const sonraki = await kervanUzlastir(motor, simdi, this.#kervan, hepsi);
+    if (sonraki === null) return;
+    const mevcut = await this.#depolama.getAlarm();
+    if (mevcut === null || mevcut > sonraki) await this.#depolama.setAlarm(Math.max(sonraki, simdi + 1));
+  }
+
   /** Ay dönümü alarmı: kaçanları yetiştirir; kaldıysa 1 sn sonra, yoksa bir sonraki dönümde yeniden kurar. */
   async alarm(): Promise<void> {
     const simdi = this.#saat();
@@ -342,6 +370,7 @@ export class YerlesimDO {
       const { kalan } = await motor.yetistir(simdi);
       await this.#depolama.setAlarm(sonrakiAlarm(simdi, kalan));
       this.#alarmVar = true;
+      await this.#kervanUzlastir(simdi, false);
       await this.#mulkUzlastir(simdi, false);
       await this.#vergiUzlastir(simdi);
     } catch (e) {

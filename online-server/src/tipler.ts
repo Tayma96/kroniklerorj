@@ -611,12 +611,12 @@ export interface SakinKaydi {
   dogumAyi: number;
 }
 
-/** HesapDO → YerlesimDO. `yerlesim` profildeki işaretçidir (DO adını bilmez). */
 /** Kervan istemci iletileri (HesapDO aynen YerlesimDO'ya iletir; `yerlesim` eklenir). */
 export type KervanIstemciIletisi =
   | { islem: "kervan"; hesapId: string; hedef: string | null; mallar: string | null }
   | { islem: "kervanGonder" | "kervanHaber"; hesapId: string; govde: unknown };
 
+/** HesapDO → YerlesimDO. `yerlesim` profildeki işaretçidir (DO adını bilmez). */
 export type YerlesimIleti =
   | { islem: "ekonomiSagligi"; yerlesim: string }
   | { islem: "yonetimTelafi"; yerlesim: string; hesapId: string; govde: unknown }

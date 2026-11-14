@@ -92,6 +92,10 @@
 //   POST /v1/goc {hedef, istekNo}        → {goc: {kaynak, hedef, id, yolBedeli, akce, tasinan, emanet}, profil}; yarıda kalırsa 409 goc_suruyor (sonraki istek sürdürür)
 //   GET  /v1/goc/emanet → eski yerleşimdeki emanet önizlemesi {kaynak, emanet, tasinacak, kalacak, sinir, bedel}
 //   POST /v1/goc/emanet {istekNo} → {emanet: {kaynak, bedel, tasinan, para, envanter}}; yarıda kalırsa 409 goc_suruyor
+//   GET  /v1/kervan?hedef=&mallar=mal:adet,… → kapılar, engel, bedel, yük tavanı, aylık sayaç, hedefte tahmin (satış
+//        dökümü + varış kotası), varış ayı, yoldakiler, geçerli fiyat haberi; hedefsiz: yalnız yoldakiler + haber
+//   POST /v1/kervan {hedef, mallar: {mal: adet}, istekNo} → {kervan: {id, hedef, mallar, kalkisAyi, varisAyi}, bedel, aylik}
+//   POST /v1/kervan/haber {istekNo}      → {haber: {ay, gecerli, yerlesimler: [{yerlesim, lonca, pahali}]}, yeni, bedel}
 // Uzaklaştırılmış hesapta giriş dışındaki /v1/* uçları 403 {hata: "uzaklastirildi", bitis} döner.
 //
 // Yönetim (ana tasarım §7; oyuncu oturumundan ayrı yönetici belirteci, src/yonetim/kimlik.ts):
@@ -390,6 +394,14 @@ function govdeli(istek: Request, env: Env, islem: GovdeliIslem | HanedanIslem | 
   });
 }
 
+/** Gövdeli kervan POST iletisi (D2). */
+function kervanGovdeli(istek: Request, env: Env, islem: "kervanGonder" | "kervanHaber"): Promise<Response> {
+  return hesaba(istek, env, async (hesapId) => {
+    const govde = await govdeOku(istek);
+    return govde.ok ? basarili({ islem, hesapId, govde: govde.deger }) : govde;
+  });
+}
+
 /** Gövdeli topluluk POST iletisi (E5–E7). */
 function toplulukGovdeli(istek: Request, env: Env, islem: ToplulukIslem): Promise<Response> {
   return hesaba(istek, env, async (hesapId) => {
@@ -610,6 +622,16 @@ async function yonlendir(istek: Request, env: Env): Promise<Response> {
         const govde = await govdeOku(istek);
         return govde.ok ? basarili({ islem: "gocEmanet", hesapId, govde: govde.deger }) : govde;
       });
+    // Kervan (D2): src/yerlesim/kervan-uclar.ts
+    case "/v1/kervan":
+      if (yontem === "GET") {
+        return hesaba(istek, env, (hesapId) => basarili({
+          islem: "kervan", hesapId, hedef: url.searchParams.get("hedef")?.slice(0, 32) ?? null, mallar: url.searchParams.get("mallar")?.slice(0, 512) ?? null,
+        }));
+      }
+      return yontem === "POST" ? kervanGovdeli(istek, env, "kervanGonder") : hataYaniti("yontem_yok");
+    case "/v1/kervan/haber":
+      return yontem === "POST" ? kervanGovdeli(istek, env, "kervanHaber") : hataYaniti("yontem_yok");
     case "/v1/han":
       return yontem === "GET" ? hesaba(istek, env, (hesapId) => basarili({ islem: "han", hesapId, dil })) : hataYaniti("yontem_yok");
     case "/v1/han/eylem":

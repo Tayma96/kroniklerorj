@@ -376,6 +376,10 @@ export class HesapDO {
       case "barinmaOtomatik":
       // Mülk ve işletme (Faz 12–13): ileti aynen yerleşime gider (bağlam ve işletme çağrısı orada).
       case "mulk":
+      // Kervan (D2): ileti aynen yerleşime gider (hedef DO çağrısı kaynak yerleşimde).
+      case "kervan":
+      case "kervanGonder":
+      case "kervanHaber":
         return this.#yerlesime(ileti);
       default:
         return hata("gecersiz_istek");

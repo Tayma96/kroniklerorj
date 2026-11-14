@@ -175,6 +175,7 @@ test("dönüş: kabulde hasılat + kalan, redde bütün yük; mal ve akçe korun
   assert.equal(varisSonucuGecerli(sonuc, y), true);
   assert.equal(varisSonucuGecerli({ ...sonuc, kalan: { kereste: 9 } }, y), false, "mal çoğalamaz");
   assert.equal(varisSonucuGecerli({ ...sonuc, durum: "red" }, y), false, "redde hasılat olamaz");
+  assert.equal(varisSonucuGecerli({ durum: "red", an: 1, hasilat: 0, satilan: {}, kalan: {}, satirlar: [] }, y), true, "ret yüksüz döner");
   const u = varisUygula(kar, y, sonuc);
   assert.equal(kar.pa, once.pa + sonuc.hasilat);
   assert.equal(kar.ev!.kereste! + sonuc.satilan.kereste!, once.kereste, "satılan + envanter = önceki");
