@@ -8,6 +8,13 @@ Zaman ve Dönüş Kartı · barınma zinciri · han metin masası ve ses sunucus
 evlilik/hanedan/vasiyet/devir (akçe, envanter, nam) · lonca/zaviye/hami/meşrep/şenlik · siyaset P1–P6 · yönetici
 paneli Y1–Y3 · şikâyet/engelleme · ilk oturum ekranları · beceri ağacı.
 
+## 1b. Canlı test sunucusu (14 Kasım)
+`https://kronikler-online-test.berkaycinkilic.workers.dev` (Cloudflare ücretsiz plan, ayrı test Worker'ı; `OTURUM_ANAHTARI`
+ve `TEST_GIRIS_KODU` tanımlı). Canlı uçtan uca deneme geçti: test girişi, profil (ad kuralı), yerleşim, olaylar, sohbet
+eylemi, kişi, gelen, kronik, lonca, barınma, han özeti, ilan panosu, göç/kervan önizlemesi (doğru kapılarla), siyaset,
+hanedan, topluluk, Debdebe, pazar, mülk, bütün oturumları kapatma; iki oyunculu han masası (WebSocket bağlantı, oturma,
+ileti yayını, masa başı yetkisi). Durable Object'ler arası çağrılar gerçek ortamda çalışıyor. Cihazda deneme test APK'sı ile.
+
 ## 2. 10 Kasım "atlanmasın" listesinin durumu
 | Madde | Durum |
 |---|---|
