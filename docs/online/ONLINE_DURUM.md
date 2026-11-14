@@ -35,7 +35,7 @@ paneli Y1–Y3 · şikâyet/engelleme · ilk oturum ekranları · beceri ağacı
 | # | Eksik | Boyut |
 |---|---|---|
 | D1 | Göç ve emanet çekme var (14 Kasım). Açık: göç sırasında han masasına haber; müdavim rozetinin yeni yerde hesaplanması; yalnız son göçün emaneti çekilebilir. | küçük |
-| D2 | Kervan ve şehirler arası ticaret; menzil han; yeni işletme türleri (hamam, kervansaray, imaret, bedesten). | büyük |
+| D2 | Kervan sunucusu var (14 Kasım, §4.7). Açık: istemci ekranı; navlun, haydut ve muhafız ikinci dilim. | orta |
 | D3 | Ölümde makamın devri (A-04a onay bekliyor). Mülk vârise geçiyor (14 Kasım); oyuncu borcu teklif taşıyıcısıyla geçiyor. | orta |
 | D4 | Sahipsiz mülk: uzun yoklukta vekile devir ya da kamu açık artırması. | orta |
 | D5 | Öğrenme döneminde meslek tadım turu (Ek A §2.4; kod genel sistem turu yapıyor, D-33 açık). | orta |
@@ -111,8 +111,9 @@ Dayanak: `MESLEK_AGACLARI.md` tüccar ağacı `tuccar.kervan.0–1`, `tuccar.yol
   yolda 1 oyun ayı (12 gerçek saat) gider. Bu bir bekleme değil yolculuktur: bekleme parayla kısaltılmaz, beklerken başka
   iş yapılır, gecikme ceza getirmez.
 - **Varış:** mal hedefin NPC alıcısına hedefin fiyatıyla (hedefteki kıtlık primi dahil) ve tüccarın o yerleşimdeki aylık
-  varış kotasıyla satılır. Satılmayan mal hedefte emanete kalır; geri dönüş kervanıyla ya da göç emaneti gibi çekilir.
-  Hasılat tüccara döner. Akçe yoktan doğmaz: NPC alıcının parası mevcut NPC alım bütçesinden gelir.
+  varış kotasıyla satılır. Satılmayan mal tüccarın envanterine geri döner (14 Kasım kararı: yolda ya da hedefte mal
+  takılı kalmaz). Hasılat tüccara döner. Akçe yoktan doğmaz: satış mevcut `npcyeSat` kuralıyla yapılır.
+- **Durum (14 Kasım):** sunucu bitti (583 test); istemci ekranı sırada. Haydut/muhafız ve navlun ikinci dilim.
 - **Farm süzgeci:** tüccar başına ayda en çok 2 kervan; aynı mal aynı hedefe ayda bir; varış kotası; kendi yerleşimine
   kervan yok. Fiyat farkı kıtlıktan gelir, kıtlık satışla kapanır (kendi kendini dengeler).
 - **Toplu yük (`tuccar.kervan.1`):** arabayla 30 mal; başkasının malını navlunla taşıma ikinci dilimdir.
