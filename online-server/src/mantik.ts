@@ -23,6 +23,12 @@ export const BASLANGIC_YASI = 12;
 /** [PARAMETRE] Hesap başına dakikadaki istek sınırı. */
 export const HIZ_SINIRI = 30;
 export const HIZ_PENCERESI_MS = 60_000;
+/**
+ * [PARAMETRE] Sesli sohbet sinyalleşmesinin (oturum/yayın/dinle/anlaş/kapat) ayrı dakikalık kovası. Kalabalık masada
+ * konuşanlar değiştikçe istemci arka arkaya dinle + anlaş çağırır; bu trafik ekranların okuma/yazma kovasını yemez,
+ * ekranlar da sesi kesmez.
+ */
+export const SES_HIZ_SINIRI = 60;
 /** Karışmayan harfler: 0/O, 1/I/L yok. */
 export const DAVET_ALFABESI = "23456789ABCDEFGHJKMNPQRSTUVWXYZ";
 export const DAVET_UZUNLUGU = 6;

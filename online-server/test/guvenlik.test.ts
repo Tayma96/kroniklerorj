@@ -2,7 +2,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import isleyici, { DunyaDO, HesapDO, YerlesimDO } from "../src/index.ts";
-import { HIZ_SINIRI } from "../src/mantik.ts";
+import { HIZ_SINIRI, SES_HIZ_SINIRI } from "../src/mantik.ts";
 import { oturumOlustur, oturumDogrula } from "../src/oturum.ts";
 import type { Env } from "../src/tipler.ts";
 import { TELAFI_GUNLUK_AKCE, telafiGunlukEkle } from "../src/yonetim/y2.ts";
@@ -74,6 +74,22 @@ test("yönetim erişilemezse varsayılan hız sınırı kullanılır", async () 
   let gecen = 0;
   for (let i = 0; i < HIZ_SINIRI + 5; i++) if ((await profilIste(h)).hata !== "hiz_siniri") gecen++;
   assert.equal(gecen, HIZ_SINIRI);
+});
+
+test("sesli sohbet sinyalleşmesi ayrı hız kovasındadır: ekranları kesmez, ekranlar sesi kesmez", async () => {
+  const y = sahteYonetim(() => new Error("erisilemez"));
+  const h = hesapDO(y.ad);
+  const sesIste = async () => {
+    const r = await h.fetch(new Request("https://hesap/", { method: "POST", body: JSON.stringify({ islem: "hanSes", hesapId: "h1", masa: "1", alt: "dinle", govde: {} }) }));
+    return (await r.json()) as { ok: boolean; hata?: string };
+  };
+  let sesGecen = 0;
+  for (let i = 0; i < SES_HIZ_SINIRI + 5; i++) if ((await sesIste()).hata !== "hiz_siniri") sesGecen++;
+  assert.equal(sesGecen, SES_HIZ_SINIRI, "ses kovası kendi sınırında dolar");
+  let gecen = 0;
+  for (let i = 0; i < HIZ_SINIRI + 5; i++) if ((await profilIste(h)).hata !== "hiz_siniri") gecen++;
+  assert.equal(gecen, HIZ_SINIRI, "ses trafiği genel kovayı tüketmedi");
+  assert.equal((await sesIste()).hata, "hiz_siniri", "genel kova ses kovasını sıfırlamaz");
 });
 
 test("Content-Length olmayan büyük gövde akış olarak okunur ve sınırda kesilir", async () => {

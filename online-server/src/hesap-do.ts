@@ -5,7 +5,7 @@
 
 import { doDepo, type Depo } from "./depo.ts";
 import { dunyaCagir, hesapCagir, iletiOku, jsonYanit, yerlesimCagir, yonetimCagir } from "./ic.ts";
-import { girisKaydet, hesapKaydi, hizKontrol, profilGetir, profilOlustur, sakinKaydi, yerlesimeIlet, HIZ_SINIRI, type HizDurumu, type YerlesimIstegi } from "./mantik.ts";
+import { girisKaydet, hesapKaydi, hizKontrol, profilGetir, profilOlustur, sakinKaydi, yerlesimeIlet, HIZ_SINIRI, SES_HIZ_SINIRI, type HizDurumu, type YerlesimIstegi } from "./mantik.ts";
 import { basarili, hata, type Env, type HesapIleti, type HesapYaptirimi, type Profil, type Sonuc, type YerlesimIleti } from "./tipler.ts";
 import type { MasaIleti } from "./han/tipler.ts";
 import { uzaklastirmaBilgisi, yaptirimEngeli } from "./yonetim/yaptirim.ts";
@@ -27,6 +27,7 @@ export class HesapDO {
   readonly #env: Env;
   /** Bellekte tutulur: örnek uykuya geçince sıfırlanması zararsızdır, depolamaya yazım harcamaz. */
   #hiz: HizDurumu | undefined;
+  #sesHiz: HizDurumu | undefined;
   /** Yaptırım özeti önbelleği: bu örnek tek yazandır, bu yüzden tutarlıdır. null = yok. */
   #yaptirim: HesapYaptirimi | null | undefined;
   /** Etkin hız sınırı önbelleği (YonetimDO'dan; erişilemezse varsayılan). Bellekte, kısa süreli. */
@@ -56,9 +57,15 @@ export class HesapDO {
     if (ileti.islem === "debdebeIade") return jsonYanit(await debdebe.iadeIsle(this.#debdebe(ileti.hesapId, simdi), ileti.islemKimligi));
     // Hız sınırı, YonetimDO'ya gitmeden önce bellekteki son bilinen sınırla uygulanır (reddedilen istek
     // tek YonetimDO'ya yük bindirmez). Önbellek eskiyse yalnız geçen istek parametreyi tazeler.
-    const hiz = hizKontrol(this.#hiz, simdi, this.#parametre?.sinir ?? HIZ_SINIRI);
-    this.#hiz = hiz.durum;
-    if (!hiz.izin) return jsonYanit(hata("hiz_siniri"));
+    if (ileti.islem === "hanSes") {
+      const ses = hizKontrol(this.#sesHiz, simdi, SES_HIZ_SINIRI);
+      this.#sesHiz = ses.durum;
+      if (!ses.izin) return jsonYanit(hata("hiz_siniri"));
+    } else {
+      const hiz = hizKontrol(this.#hiz, simdi, this.#parametre?.sinir ?? HIZ_SINIRI);
+      this.#hiz = hiz.durum;
+      if (!hiz.izin) return jsonYanit(hata("hiz_siniri"));
+    }
     if (!this.#parametre || this.#parametre.son <= simdi) await this.#parametreTazele(simdi);
     if (typeof ileti.oturumSurumu === "number" && ileti.oturumSurumu !== (await this.#oturumSurumuOku())) {
       return jsonYanit(hata("oturum_gecersiz"));
