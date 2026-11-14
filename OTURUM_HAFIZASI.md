@@ -1,31 +1,32 @@
-# Kronikler — güncel çalışma özeti (13 Kasım 2026)
+# Kronikler — güncel çalışma özeti (14 Kasım 2026)
 
-## Yetki ve kalıcı kurallar
-- Repo Tayma96/kroniklerorj; ana dal `apk`. Türkçe, tek satırlı commit, ek satır yok. Berkay 13 Kasım'da tam yetki verdi (birleştirme, silme, `apk`'ye push dahil).
-- Tek sert kural: **her şey ücretsiz**. Ek ücret çıkarabilecek her adım (Cloudflare, mağaza, ses) önce kontrol edilir. Anahtarları okuma/yazdırma.
-- Yeni oyuncu metni tr/en/es/pt/ar/ru. Eski kayıt ve çevrimdışı akış korunur; yeni kayıt alanları opsiyonel.
-- Model işbölümü `AGENTS.md`'de (yönetici karar ve inceleme, `coder` opus, `tester` sonnet); esnek, verime göre.
+## Kurallar
+- Repo Tayma96/kroniklerorj, ana dal `apk`. Türkçe tek satır commit, ek satır yok. Berkay tam yetki verdi (birleştirme, silme, `apk`'ye push).
+- Tek sert kural: **her şey ücretsiz**. Ücret çıkarabilecek adım önce kontrol edilir. Anahtar okuma/yazdırma yok.
+- Yeni oyuncu metni 6 dilde. Eski kayıt ve çevrimdışı akış korunur. İşbölümü `AGENTS.md`'de (esnek).
+- Kota: opus ajanları 5 saatlik sınırı iki kez doldurdu; ajanları birer birer çalıştır.
 
-## Ürün yapısı (13 Kasım kararı)
-- İki seçenek: **Tek Oyunculu** (`mobile/app/oyun/`, çevrimdışı) ve **Çok Oyunculu** (`mobile/app/online/`, sunucu `online-server/`). Kayıtlar ayrı.
-- Eski Diyar MP tamamen söküldü (`cok-oyunculu/`, `lib/mp/`, `server/`, dağıtım iş akışı, `mpMode`, `mp.*` metinleri). Motorda `mpRealm` ve diyar fonksiyonları test betikleri kullandığı için duruyor.
-- Girişteki "Çok Oyuncu" düğmesi `/online`'a gider; kapı kapalı (`EXPO_PUBLIC_ONLINE_GELISTIRME`), "Yakında" gösterir.
-- Ekran envanteri ve sade yapı önerisi: `EKRAN_HARITASI.md` (70 ekran).
+## Ürün yapısı
+- İki seçenek: Tek Oyunculu (`mobile/app/oyun/`, çevrimdışı) ve Çok Oyunculu (`mobile/app/online/`, sunucu `online-server/`). Kayıtlar ayrı.
+- Eski Diyar MP söküldü (`cok-oyunculu/`, `lib/mp/`, `server/`). Motordaki `mpRealm`/diyar fonksiyonlarını test betikleri kullanıyor, duruyor.
+- Giriş "Çok Oyuncu" → `/online`; kapı kapalı, "Yakında". Envanter: `EKRAN_HARITASI.md` (70 ekran).
 
 ## Çevrimiçi durum
-- ChatGPT'nin `feature/online-p5-darbe-zinciri` dalı incelenip `apk`'ye birleştirildi: P5–P6 darbe/bağımsız devlet, Y2–Y3 yönetim, ekonomi/mülk/siyaset/topluluk/Debdebe ekranları, test girişi (varsayılan kapalı), elle tetiklenen dağıtım iş akışı.
-- Sunucu: 466 test, 465 geçti, 1 atlandı. Yapılandırmada ücretli bağlama yok (yalnız SQLite Durable Object).
-- Birleştirmede bulunan eksik: Mülk ve İşletme ekranlarının 178 metni hiç yazılmamıştı; 6 dilde eklendi (`i18n-sayfa/online5.ts`).
-- Ayrıntılı devir: `docs/online/DEVIR_2026-11-12.md` (54 KB; yalnız ilgili bölümü oku).
-- Sunucu hiç dağıtılmadı; hiçbir çevrimiçi ekran gerçek sunucuyla denenmedi.
+- ChatGPT'nin `feature/online-p5-darbe-zinciri` dalı `apk`'de (P5–P6, Y2–Y3, ekonomi/mülk/siyaset/topluluk/Debdebe ekranları, test girişi). Eksik 178 metin eklendi (`online5.ts`).
+- Sunucu 489 test, hepsi geçiyor; ücretli bağlama yok.
+- Güvenlik: kritik/yüksek bulgu yok; 9 orta/düşük bulgu kapandı (sabit Wrangler, üretim yalnız `apk`'den, hız sınırı, han yarışı, 24 saatlik `istekNo`, oturum sürümü + `/v1/oturumlar/kapat`, telafi tavanı); istemci karşılığı `online13.ts`.
+- Gelir dengesi oranı 2,22 → 1,19; sim yalnız 6 mesleği ölçüyor, kırılgan.
+- Darbe ganimeti yalnız saf hesap (`siyaset/ganimet.ts`); oyuncu parasına bağlı değil.
+- Sunucu hiç dağıtılmadı. Kurulum: `docs/online/DENEME_SUNUCUSU.md`.
 
 ## Sıradaki işler
-1. Deneme (staging) sunucusu: Cloudflare ücretsiz plan sınırlarını doğrula, sonra `deploy-online-server.yml` ile test Worker'ı. İlk dilim: giriş → profil → yerleşim → yaşam → meslek → işler.
-2. Çevrimiçi kodun güvenlik ve denge incelemesi (`security-reviewer`, `denge-denetcisi`) dağıtımdan önce.
-3. Tek oyunculu sadeleştirme (`EKRAN_HARITASI.md` §7): Divan'ı bağla, iki "Kronik" adını ayır, Menü ile Şehir'i birleştir, Açık İşler'i kaldır.
-4. Çevrimiçi Yaşam ekranının gezinmesini topla (20'ye yakın çıkış).
-5. E4 kalan beceri etkileri (34 hizmet, 203 hak); meslek gelir dengesi.
+1. Deneme sunucusu açılınca ilk dilim: giriş → profil → yerleşim → yaşam → meslek → işler.
+2. Ganimeti bağla: BolgeDO → YerlesimDO kalıcı kuyruk (diplomasi outbox deseni).
+3. E4 kalan etkiler (34 hizmet, 203 hak, 4 sinerji): `docs/online/gdd/E4_KANCA_ENVANTER_NOTU.md`.
+4. 14 meslek denge denetimi; siyaset/vasiyet/devir yetki incelemesi.
+5. Önce tasarım önerisi isteyenler: Kül Yemini mührü, düello/suikast/kan davası, han odası özellikleri, ek anlaşma türleri.
+6. Tek oyunculu sadeleştirme (`EKRAN_HARITASI.md` §7); çevrimiçi Yaşam gezinmesi.
+7. Küçükler: han/hanedan/pazar'da `istek_tekrar` sessiz değil; `han-soket.ts` belirteç reddi; belirteç `expo-secure-store`'a.
 
-## Berkay'ın yapacakları
-- Cloudflare panelinden eski `kronikler-mp` Worker'ını sil (boşta ücret çıkarmaz, yalnız temizlik).
-- Deneme sunucusu için GitHub'a `CLOUDFLARE_API_TOKEN` sırrı ve Worker sırları (`OTURUM_ANAHTARI`, `TEST_GIRIS_KODU`).
+## Berkay'da
+- `DENEME_SUNUCUSU.md` adımları; eski `kronikler-mp` Worker'ını silmek; `GOOGLE_CLIENT_ID`; mağaza ayarları.
