@@ -104,7 +104,9 @@ export class Realtime {
       return hata("ses_hatasi");
     }
     if (!y.ok || typeof v !== "object" || v === null || v.errorCode) return hata("ses_hatasi");
-    if (v.tracks?.some((t) => t.errorCode)) return hata("ses_hatasi");
+    // Cloudflare Realtime belgesi: iz başına sonuç ayrı denetlenir ve kısmen başarılı istekte başarılı izler korunur.
+    // Hatalı izler burada ayıklanır; çağıran kendi izinin sonuçta olup olmadığına bakar.
+    if (v.tracks) v.tracks = v.tracks.filter((t) => !t.errorCode);
     return basarili(v);
   }
 
@@ -137,7 +139,10 @@ export class Realtime {
       sessionDescription: teklif,
       tracks: [{ location: "local", mid, trackName: iz }],
     });
-    return r.ok ? basarili(this.#izSonucu(r.deger)) : r;
+    if (!r.ok) return r;
+    const s = this.#izSonucu(r.deger);
+    // Tek iz yayınlanır: SFU onu kabul etmediyse (iz başına hata) yayın yoktur.
+    return s.izler.some((x) => x.iz === iz) && s.sdp ? basarili(s) : hata("ses_hatasi");
   }
 
   /** Başka oturumların izlerini çeker: SFU offer döner, istemci answer'ı `yenidenAnlas` ile yollar. */
