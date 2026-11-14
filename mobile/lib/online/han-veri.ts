@@ -22,10 +22,10 @@ export type SikayetNedeni = (typeof SIKAYET_NEDENLERI)[number];
 export type HanTuru = "han" | "kucukHan" | "menzil";
 export type MasaTuru = "acik" | "ozel" | "meclis" | "tuccar";
 /** `kilitli`: masa başı yeni oturan ve sıraya gireni kabul etmiyor (ayakta dinleme sürer; eski sunucuda yok). */
-export interface MasaAyari { tur: MasaTuru; acik: boolean; sesli: boolean; kavgaYasak: boolean; kilitli?: boolean }
+export interface MasaAyari { tur: MasaTuru; acik: boolean; sesli: boolean; kavgaYasak: boolean; kilitli?: boolean; davet?: string[] }
 /** İsim plakası. `cerceve` sunucunun sahiplikten eklediği Debdebe süsüdür; oyun mantığı okumaz. */
 /** `mudavim`: bu yerleşimin müdavim rozeti (yalnız plakada görünür). */
-export interface Plaka { hesap: string; ad: string; cerceve?: string; mudavim?: true }
+export interface Plaka { hesap: string; ad: string; cerceve?: string; mudavim?: true; balon?: string; masaSusu?: string }
 export interface MasaGorunumu {
   no: number;
   koltuklar: (Plaka | null)[];
@@ -52,8 +52,9 @@ export interface MasaOlayi {
   /** Kabul olayında onaylanan teklifin türü. */
   teklifTur?: "sozlesme" | "ittifak" | "meydanOku";
 }
-export type AnonsTuru = "ikram" | "armagan" | "debdebe";
-export interface MasaAnonsu { tur: AnonsTuru; kim: string; hedef: string; oge: string; zaman: number }
+export type AnonsTuru = "ikram" | "armagan" | "debdebe" | "ziyafet";
+/** Ziyafet anonsu hedefsizdir (bütün masaya). */
+export interface MasaAnonsu { tur: AnonsTuru; kim: string; hedef?: string; oge: string; zaman: number }
 
 /** İstemci → sunucu (WebSocket metin çerçevesi). */
 export type IstemciIletisi =
@@ -73,7 +74,9 @@ export type IstemciIletisi =
   | { t: "sozGeri" }
   | { t: "sozVer"; hedef: string; kabul?: boolean }
   /** Masa başının masa ayarı (yalnız masa başı; sunucu doğrular). */
-  | { t: "ayar"; kavgaYasak?: boolean; kilitli?: boolean; sesli?: boolean };
+  | { t: "ayar"; kavgaYasak?: boolean; kilitli?: boolean; sesli?: boolean; tur?: "acik" | "ozel" }
+  /** Özel masaya davet (yalnız masa başı); `kaldir` daveti geri alır. */
+  | { t: "davet"; hedef: string; kaldir?: true };
 
 /** Masanın ses durumu (sunucu SesDurumu). Yalnız kimlikler; ses kaydedilmez. */
 export interface SesDurumu {
@@ -93,7 +96,7 @@ export type SunucuIletisi =
   | { t: "hosgeldin"; ben: Plaka; susturma: { bitis: number | null } | null; masa: MasaGorunumu; ses?: SesDurumu }
   | { t: "sesDurum"; ses: SesDurumu }
   | { t: "durum"; masa: MasaGorunumu }
-  | { t: "ileti"; hesap: string; ad: string; koltuk: number; metin: string; zaman: number }
+  | { t: "ileti"; hesap: string; ad: string; koltuk: number; metin: string; zaman: number; balon?: string }
   | { t: "olay"; olay: MasaOlayi }
   | { t: "anons"; anons: MasaAnonsu }
   | { t: "sessiz"; liste: string[] }
@@ -183,9 +186,26 @@ export interface HanIstemci {
   soket(no: number): HamSoket | undefined;
   /** Faz 16 ses uçları (POST /v1/han/masa/:no/ses/<alt>); sunucu Realtime'a vekildir. */
   ses(no: number, alt: SesAlt, govde: Record<string, unknown>): Promise<EkSonuc<Record<string, unknown>>>;
+  /** H7: masaya akçeyle ziyafet (cömertlik namı; bedel sunucuda). */
+  ziyafet(g: { masa: number; istekNo: string }): Promise<EkSonuc<ZiyafetSonucu>>;
+  /** H10: han ilan panosu. */
+  pano(): Promise<EkSonuc<{ ilanlar: PanoIlani[] }>>;
+  panoAs(g: { metin: string; tur: PanoTuru; istekNo: string }): Promise<EkSonuc<{ ilanlar: PanoIlani[] }>>;
+  panoSil(g: { ilan: string; istekNo: string }): Promise<EkSonuc<{ ilanlar: PanoIlani[] }>>;
+  ilanSikayet(g: { ilan: string; neden: SikayetNedeni; aciklama?: string; istekNo: string }): Promise<EkSonuc<Record<string, unknown>>>;
   /** Önizleme/geliştirici hanı: ses yerel modül olmadan taklit edilir. */
   sahte?: boolean;
 }
+
+export const PANO_TURLERI = ["etkinlik", "is", "ozan"] as const;
+export type PanoTuru = (typeof PANO_TURLERI)[number];
+export interface PanoIlani { id: string; tur: PanoTuru; metin: string; kisi: { id: string; ad: string }; zaman: number; bitis: number; benim: boolean }
+export interface ZiyafetSonucu { bedel: number; para: number; nam: number }
+/** [sunucu han/pano.ts ile aynı] İlan metni sınırı. */
+export const PANO_METIN_EN_UZUN = 200;
+const ilanMi = (v: unknown): v is PanoIlani => nesneMi(v) && metinMi(v.id) && metinMi(v.metin) && metinMi(v.tur) && nesneMi(v.kisi) && sayiMi(v.zaman);
+const ilanlarMi = (v: unknown): v is { ilanlar: PanoIlani[] } => nesneMi(v) && Array.isArray(v.ilanlar) && v.ilanlar.every(ilanMi);
+const ziyafetMi = (v: unknown): v is ZiyafetSonucu => nesneMi(v) && sayiMi(v.bedel) && sayiMi(v.para) && sayiMi(v.nam);
 
 export function httpHanIstemci(soketAc: (no: number) => HamSoket | undefined): HanIstemci {
   return {
@@ -196,6 +216,11 @@ export function httpHanIstemci(soketAc: (no: number) => HamSoket | undefined): H
     soket: soketAc,
     // Ses çağrıları tekrar edilmez: her biri SFU durumunu değiştirir (yanıtı kaybolan istek yeniden kurulur).
     ses: (no, alt, govde) => ekCagir({ yontem: "POST", yol: `/v1/han/masa/${no}/ses/${alt}`, govde, tekrar: false }, nesneMi),
+    ziyafet: (g) => ekCagir({ yontem: "POST", yol: "/v1/han/ziyafet", govde: g, tekrar: true }, ziyafetMi),
+    pano: () => ekCagir({ yontem: "GET", yol: "/v1/han/pano", tekrar: true }, ilanlarMi),
+    panoAs: (g) => ekCagir({ yontem: "POST", yol: "/v1/han/pano", govde: g, tekrar: true }, ilanlarMi),
+    panoSil: (g) => ekCagir({ yontem: "POST", yol: "/v1/han/pano/sil", govde: g, tekrar: true }, ilanlarMi),
+    ilanSikayet: (g) => ekCagir({ yontem: "POST", yol: "/v1/sikayet", govde: g, tekrar: true }, nesneMi),
   };
 }
 

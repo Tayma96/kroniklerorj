@@ -15,6 +15,7 @@ import { onlineEkranAcik } from "../../lib/online/kapi";
 import { Bant, Cerceve, CizgiDugme, GeriDugme, Madalyon, geriGit, giris, hiza, yon } from "../../lib/online/ui";
 import { Baslik2, Rozet, SatirOku, SayfaBasi, Yukleniyor } from "../../lib/online/yasam-ui";
 import { ekHataAnahtari, type EkHata } from "../../lib/online/ek-istemci";
+import { HanPanosu } from "../../lib/online/han-pano";
 import { useHanIstemci, IKRAMLAR, type HanOzeti, type MasaOzeti } from "../../lib/online/han-veri";
 import { HanSayfa, IKRAM_IKON, Not } from "../../lib/online/han-ui";
 import type { Dil } from "../../lib/online/protokol";
@@ -83,6 +84,8 @@ function HanEkran() {
         {han.masalar.map((m, i) => <MasaKarti key={m.no} m={m} koltuk={han.koltuk} rtl={rtl} t={t} sira={i} onAc={() => router.push(`/online/han/${m.no}`)} />)}
       </View>}
     {han ? <View style={{ marginTop: 10 }}><CizgiDugme etiket={t("onl.han.yenile")} icon="hourglass" rtl={rtl} kucuk kapali={yukleniyor} onPress={() => { void yukle(); }} /></View> : null}
+
+    {o.profil ? <HanPanosu istemci={istemci} /> : null}
 
     <Baslik2 metin={t("onl.han.menu")} rtl={rtl} />
     <Cerceve ic={{ padding: 12, gap: 10 }}>

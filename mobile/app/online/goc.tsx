@@ -16,7 +16,7 @@ import { istekNoUret } from "../../lib/online/depo";
 import { ekHataAnahtari, type EkHata } from "../../lib/online/ek-istemci";
 import { istekTekrarMi } from "../../lib/online/hata";
 import { malAdi } from "../../lib/online/ekonomi-ui";
-import { useGocIstemci, type GocOnizleme } from "../../lib/online/goc-veri";
+import { useGocIstemci, type EmanetOnizleme, type GocOnizleme } from "../../lib/online/goc-veri";
 import { AltinDugme, Bant, Cerceve, CizgiDugme, GeriDugme, ONL, geriGit, hiza, yon } from "../../lib/online/ui";
 import { Baslik2, OnlineSayfa, Rozet, SayfaBasi, Yukleniyor, YerlesimBekle, sahneGorseli } from "../../lib/online/yasam-ui";
 
@@ -35,6 +35,18 @@ function GocEkran() {
   const istekNo = useRef(istekNoUret());
 
   useEffect(() => { if (!o.dunya) void o.dunyaYukle(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  // Son göçün kaynağında kalan emanet (yoksa kart görünmez).
+  const [emanet, setEmanet] = useState<EmanetOnizleme | null>(null);
+  const [emanetNot, setEmanetNot] = useState<string | null>(null);
+  const emanetYukle = () => { void ist.emanet().then((r) => setEmanet(r.ok && r.deger.tasinacakAdet + r.deger.kalacakAdet > 0 ? r.deger : null)); };
+  useEffect(emanetYukle, [ist]); // eslint-disable-line react-hooks/exhaustive-deps
+  const emanetCek = async () => {
+    setBekliyor(true); setEmanetNot(null);
+    const r = await ist.emanetCek({ istekNo: istekNoUret() });
+    setBekliyor(false);
+    if (r.ok) { hap("success"); setEmanetNot(t("onl.goc.emanetGeldi")); await o.yerlesimYukle(true); emanetYukle(); }
+    else { hap("error"); setEmanetNot(t(ekHataAnahtari(r.hata))); }
+  };
   useEffect(() => {
     if (!hedef) return;
     let iptal = false;
@@ -73,6 +85,17 @@ function GocEkran() {
   return <OnlineSayfa gorsel={sahneGorseli(y.yerlesim.tur, y.saat.mevsim)} oran={0.3} rtl={rtl} t={t}>
     <GeriDugme rtl={rtl} etiket={t("onl.geri")} onPress={() => geriGit(router, "/online/karakter")} />
     <SayfaBasi ust={t("onl.goc.ust")} baslik={t("onl.goc.baslik")} alt={applyParams(t("onl.goc.alt"), [yerAdi(kaynak)])} rtl={rtl} />
+
+    {emanet ? <>
+      <Baslik2 metin={t("onl.goc.emanetBaslik")} rtl={rtl} />
+      <Cerceve ic={{ padding: 12, gap: 8 }}>
+        {satir("scroll", applyParams(t("onl.goc.emanetVar"), [yerAdi(emanet.kaynak), mallar(emanet.emanet)]))}
+        {satir("camel", applyParams(t("onl.goc.emanetCekis"), [emanet.tasinacakAdet, emanet.sinir, emanet.bedel]))}
+        {emanet.kalacakAdet > 0 ? satir("hourglass", applyParams(t("onl.goc.emanetKalan"), [emanet.kalacakAdet])) : null}
+        {emanetNot ? <Bant tur="bilgi" metin={emanetNot} rtl={rtl} /> : null}
+        <CizgiDugme etiket={t("onl.goc.emanetCek")} icon="camel" rtl={rtl} kucuk kapali={bekliyor || emanet.tasinacakAdet === 0} onPress={() => { void emanetCek(); }} />
+      </Cerceve>
+    </> : null}
 
     <Baslik2 metin={t("onl.goc.hedefSec")} rtl={rtl} />
     {!o.dunya ? <Yukleniyor metin={t("onl.goc.yukleniyor")} /> : <View style={{ gap: 10 }}>

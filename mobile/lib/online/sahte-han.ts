@@ -4,6 +4,7 @@
 // Faz 16 ses de taklit edilir (yerel WebRTC modülü olmadan): yayın/konuşan/ses kesme/söz isteme durumları gelir, ses yoktur.
 import { ekBasarili, ekBasarisiz, type EkSonuc } from "./ek-istemci";
 import type {
+  PanoIlani,
   HamSoket, HanEylemGirdisi, HanOzeti, IkramGirdisi, IkramId, IkramSonucu, IstemciIletisi, MasaAnonsu, MasaAyari,
   MasaGorunumu, MasaOlayi, MenuSatiri, Plaka, SesDurumu, SunucuIletisi, HanIstemci,
 } from "./han-veri";
@@ -255,6 +256,7 @@ const EYLEM_KURALI: Record<string, { hedef: boolean; oturan: boolean; sart: bool
 };
 const gecikme = <T,>(v: T, ms = 220) => new Promise<T>((r) => setTimeout(() => r(v), ms));
 
+const SAHTE_PANO: PanoIlani[] = [];
 export function sahteHanIstemci(hesap: string, ad: string): HanIstemci {
   const ben: Plaka = { hesap, ad };
   return {
@@ -333,6 +335,20 @@ export function sahteHanIstemci(hesap: string, ad: string): HanIstemci {
     },
     soket: (no) => (no >= 1 && no <= dunyaAl().masalar.length ? new SahteSoket(no, ben) : undefined),
     sahte: true,
+    // Önizleme: ziyafet ödemesi yalnız gerçek sunucuda; pano bu cihazın belleğinde.
+    ziyafet: () => gecikme(ekBasarisiz("sunucu_yok")),
+    pano: () => gecikme(ekBasarili({ ilanlar: [...SAHTE_PANO] })),
+    panoAs: (g) => {
+      SAHTE_PANO.unshift({ id: "p" + (SAHTE_PANO.length + 1), tur: g.tur, metin: g.metin, kisi: { id: hesap, ad }, zaman: Date.now(), bitis: Date.now() + 7 * 864e5, benim: true });
+      return gecikme(ekBasarili({ ilanlar: [...SAHTE_PANO] }));
+    },
+    panoSil: (g) => {
+      const i = SAHTE_PANO.findIndex((x) => x.id === g.ilan && x.benim);
+      if (i < 0) return gecikme(ekBasarisiz("ilan_yok"));
+      SAHTE_PANO.splice(i, 1);
+      return gecikme(ekBasarili({ ilanlar: [...SAHTE_PANO] }));
+    },
+    ilanSikayet: () => gecikme(ekBasarili({ durum: "acik" })),
     ses: (no, alt) => {
       const s = dunyaAl().soket;
       if (!s || s.no !== no) return gecikme(ekBasarisiz("masada_degil"));

@@ -36,9 +36,18 @@ const onizlemeMi = (v: unknown): v is GocOnizleme =>
   && nesneMi(v.misafirhane) && Array.isArray(v.tasinanlar) && Array.isArray(v.kalanlar);
 const sonucMu = (v: unknown): v is GocSonucu => nesneMi(v) && nesneMi(v.goc) && metinMi(v.goc.hedef) && profilMi(v.profil);
 
+/** GET /v1/goc/emanet: son göçün kaynağında kalan mallar ve bu çekişte taşınacak kısmı. */
+export interface EmanetOnizleme {
+  kaynak: string; emanet: Record<string, number>; tasinacak: Record<string, number>; kalacak: Record<string, number>;
+  tasinacakAdet: number; kalacakAdet: number; sinir: number; bedel: number;
+}
+const emanetMi = (v: unknown): v is EmanetOnizleme => nesneMi(v) && metinMi(v.kaynak) && nesneMi(v.tasinacak) && sayiMi(v.tasinacakAdet) && sayiMi(v.bedel);
+
 export interface GocIstemci {
   onizle(hedef: string): Promise<EkSonuc<GocOnizleme>>;
   goc(g: { hedef: string; istekNo: string }): Promise<EkSonuc<GocSonucu>>;
+  emanet(): Promise<EkSonuc<EmanetOnizleme>>;
+  emanetCek(g: { istekNo: string }): Promise<EkSonuc<Record<string, unknown>>>;
   sahte?: boolean;
 }
 
@@ -46,6 +55,8 @@ const httpGoc: GocIstemci = {
   onizle: (hedef) => ekCagir({ yontem: "GET", yol: `/v1/goc?hedef=${encodeURIComponent(hedef)}`, tekrar: true }, onizlemeMi),
   // istekNo ile tekrar güvenli: yanıt kaybolsa da aynı göç ikinci kez yapılmaz.
   goc: (g) => ekCagir({ yontem: "POST", yol: "/v1/goc", govde: g, tekrar: true }, sonucMu),
+  emanet: () => ekCagir({ yontem: "GET", yol: "/v1/goc/emanet", tekrar: true }, emanetMi),
+  emanetCek: (g) => ekCagir({ yontem: "POST", yol: "/v1/goc/emanet", govde: g, tekrar: true }, nesneMi),
 };
 
 /** Önizleme modu: göç yalnız gerçek sunucuda yapılır; önizleme kapıları gösterir. */
@@ -60,6 +71,8 @@ function sahteGoc(para: number, kaynak: string): GocIstemci {
       doluluk: { nufus: 1, evKapasite: 40 }, tasinanlar: ["akce", "envanter", "beceri", "nam", "meslek"], kalanlar: ["npcGorusleri", "tanidiklar", "hane"],
     }),
     goc: async () => ekBasarisiz("sunucu_yok"),
+    emanet: async () => ekBasarisiz("emanet_yok"),
+    emanetCek: async () => ekBasarisiz("sunucu_yok"),
   };
 }
 

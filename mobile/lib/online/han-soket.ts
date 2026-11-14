@@ -19,7 +19,7 @@ const SON_KODLAR: ReadonlySet<number> = new Set(Object.values(KAPANIS));
 
 export type BagDurumu = "baglaniyor" | "acik" | "yeniden" | "kapandi";
 export type AkisOgesi =
-  | { tur: "ileti"; id: string; hesap: string; ad: string; koltuk: number; metin: string; zaman: number }
+  | { tur: "ileti"; id: string; hesap: string; ad: string; koltuk: number; metin: string; zaman: number; balon?: string }
   | { tur: "olay"; id: string; olay: MasaOlayi }
   | { tur: "anons"; id: string; anons: MasaAnonsu };
 
@@ -70,7 +70,7 @@ function indirge(d: MasaDurumu, e: Eylem): MasaDurumu {
         case "durum": return { ...d, masa: v.masa };
         case "ileti":
           if (d.sessiz.includes(v.hesap)) return d;
-          return { ...d, akis: ekle(d.akis, { tur: "ileti", id: e.id, hesap: v.hesap, ad: v.ad, koltuk: v.koltuk, metin: v.metin, zaman: v.zaman }) };
+          return { ...d, akis: ekle(d.akis, { tur: "ileti", id: e.id, hesap: v.hesap, ad: v.ad, koltuk: v.koltuk, metin: v.metin, zaman: v.zaman, ...(v.balon ? { balon: v.balon } : {}) }) };
         case "olay": {
           const kabuller = v.olay.tur === "kabul" && v.olay.olay !== undefined ? { ...d.kabuller, [v.olay.olay]: v.olay.no } : d.kabuller;
           return { ...d, kabuller, akis: ekle(d.akis, { tur: "olay", id: e.id, olay: v.olay }) };
@@ -186,7 +186,8 @@ export function useMasa(no: number | undefined) {
     sesAc: (hedef: string) => gonder({ t: "sesAc", hedef }),
     sozIste: () => gonder({ t: "sozIste" }),
     sozGeri: () => gonder({ t: "sozGeri" }),
-    ayar: (a: { kavgaYasak?: boolean; kilitli?: boolean; sesli?: boolean }) => gonder({ t: "ayar", ...a }),
+    ayar: (a: { kavgaYasak?: boolean; kilitli?: boolean; sesli?: boolean; tur?: "acik" | "ozel" }) => gonder({ t: "ayar", ...a }),
+    davet: (hedef: string, kaldir = false) => gonder(kaldir ? { t: "davet", hedef, kaldir: true } : { t: "davet", hedef }),
     sozVer: (hedef: string, kabul = true) => gonder(kabul ? { t: "sozVer", hedef } : { t: "sozVer", hedef, kabul: false }),
     rapor: (hedef: string, neden: SikayetNedeni, aciklama?: string) =>
       gonder({ t: "rapor", hedef, neden, ...(aciklama?.trim() ? { aciklama: aciklama.trim() } : {}), istekNo: istekNoUret() }),

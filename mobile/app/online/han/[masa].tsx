@@ -179,6 +179,19 @@ function MasaEkran() {
       void o.yerlesimYukle(true);
     } else m.hataGoster(s.hata, s.bitis);
   };
+  const ziyafetIstekNo = useRef(istekNoUret());
+  const ziyafetVer = async () => {
+    setBekliyor(true);
+    const s = await istemci.ziyafet({ masa: no, istekNo: ziyafetIstekNo.current });
+    setBekliyor(false);
+    if (s.ok) {
+      hap("success");
+      setBilgi(applyParams(t(s.deger.nam > 0 ? "onl.han.ziyafetVerildiNam" : "onl.han.ziyafetVerildi"), [s.deger.bedel, s.deger.para, s.deger.nam]));
+      ziyafetIstekNo.current = istekNoUret();
+      void o.yerlesimYukle(true);
+    } else if (istekTekrarMi(s.hata)) { setBilgi(t("onl.h.istekTekrar")); ziyafetIstekNo.current = istekNoUret(); }
+    else m.hataGoster(s.hata, s.bitis);
+  };
   const raporGonder = () => {
     if (!hedef) return;
     if (m.rapor(hedef, neden, aciklama)) { setPanel(null); setAciklama(""); }
@@ -210,7 +223,7 @@ function MasaEkran() {
       </View>;
     }
     const benim = a.hesap === ben;
-    return <View accessible accessibilityLabel={`${a.ad}: ${a.metin}`} style={{ alignSelf: benim ? (rtl ? "flex-start" : "flex-end") : rtl ? "flex-end" : "flex-start", maxWidth: "88%", borderRadius: 10, borderWidth: 1, borderColor: benim ? "rgba(243,210,122,0.6)" : "rgba(201,162,78,0.3)", backgroundColor: benim ? "rgba(70,50,22,0.92)" : "rgba(20,14,8,0.88)", paddingHorizontal: 10, paddingVertical: 7, gap: 2 }}>
+    return <View accessible accessibilityLabel={`${a.ad}: ${a.metin}`} style={{ alignSelf: benim ? (rtl ? "flex-start" : "flex-end") : rtl ? "flex-end" : "flex-start", maxWidth: "88%", borderRadius: 10, borderColor: a.balon ? "#F3D27A" : benim ? "rgba(243,210,122,0.6)" : "rgba(201,162,78,0.3)", borderWidth: a.balon ? 1.5 : 1, backgroundColor: a.balon ? "rgba(88,30,40,0.92)" : benim ? "rgba(70,50,22,0.92)" : "rgba(20,14,8,0.88)", paddingHorizontal: 10, paddingVertical: 7, gap: 2 }}>
       <View style={{ flexDirection: yon(rtl), gap: 8, alignItems: "baseline" }}>
         <Text numberOfLines={1} style={{ flexShrink: 1, fontFamily: F.display, fontSize: 11.5, color: benim ? C.goldBright : C.gold }}>{benim ? t("onl.han.sen") : a.ad}</Text>
         <Text style={{ fontFamily: F.serif, fontSize: 11.5, color: C.parchmentMuted }}>{zamanYaz(a.zaman, lang)}</Text>
@@ -301,8 +314,16 @@ function MasaEkran() {
             <Text style={{ fontFamily: F.display, fontSize: 11.5, color: deger ? C.goldBright : C.goldDim }}>{t(deger ? "onl.br.hatirlatAcik" : "onl.br.hatirlatKapali")}</Text>
           </Pressable>;
         })}
+        <Pressable accessibilityRole="switch" accessibilityState={{ checked: masa?.ayar.tur === "ozel", disabled: !acik }} accessibilityLabel={t("onl.han.ayar.ozel")} disabled={!acik}
+          onPress={() => { hap("tap"); m.ayar({ tur: masa?.ayar.tur === "ozel" ? "acik" : "ozel" }); }}
+          style={{ flexDirection: yon(rtl), alignItems: "center", gap: 8, minHeight: 44, paddingHorizontal: 10, borderRadius: 8, borderWidth: 1, borderColor: masa?.ayar.tur === "ozel" ? C.goldBright : ONL.frame }}>
+          <GameIcon name="ring" size={15} color={masa?.ayar.tur === "ozel" ? C.goldBright : C.gold} />
+          <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 14.5, color: C.parchmentDim, textAlign: hiza(rtl) }}>{t("onl.han.ayar.ozel")}</Text>
+          <Text style={{ fontFamily: F.display, fontSize: 11.5, color: masa?.ayar.tur === "ozel" ? C.goldBright : C.goldDim }}>{t(masa?.ayar.tur === "ozel" ? "onl.br.hatirlatAcik" : "onl.br.hatirlatKapali")}</Text>
+        </Pressable>
         <Text style={{ fontFamily: F.serifItalic, fontSize: 13, lineHeight: 18, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{t("onl.han.ayarNot")}</Text>
-      </View> : masa?.ayar.kilitli ? <Not metin={t("onl.han.kilitliNot")} rtl={rtl} icon="shield" /> : null}
+      </View> : masa?.ayar.kilitli ? <Not metin={t("onl.han.kilitliNot")} rtl={rtl} icon="shield" />
+        : masa?.ayar.tur === "ozel" ? <Not metin={t(ben && masa.ayar.davet?.includes(ben) ? "onl.han.ozelDavetli" : "onl.han.ozelNot")} rtl={rtl} icon="ring" /> : null}
 
       {basBen && d.ses?.soz.length ? <>
         <Baslik2 metin={applyParams(t("onl.ses.sozBaslik"), [d.ses.soz.length])} rtl={rtl} />
@@ -335,6 +356,8 @@ function MasaEkran() {
         <View style={{ flex: 1 }}><CizgiDugme etiket={t("onl.han.eylemYap")} icon="scales" rtl={rtl} kucuk kapali={!acik || !oturuyor} onPress={() => panelAc("eylem", digerOturanlar[0]?.hesap ?? null)} /></View>
         <View style={{ flex: 1 }}><CizgiDugme etiket={t("onl.han.ikramEt")} icon="amphora" rtl={rtl} kucuk kapali={!acik || !oturuyor || !tumPlakalar.some((p) => p.hesap !== ben)} onPress={() => panelAc("ikram", digerOturanlar[0]?.hesap ?? null)} /></View>
       </View>
+      <View style={{ marginTop: 8 }}><CizgiDugme etiket={t("onl.han.ziyafetVer")} icon="bread" rtl={rtl} kucuk kapali={!acik || !oturuyor || bekliyor || digerOturanlar.length < 2} onPress={() => { void ziyafetVer(); }} /></View>
+      {oturuyor ? <Text style={{ marginTop: 4, fontFamily: F.serifItalic, fontSize: 12.5, lineHeight: 17, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{t("onl.han.ziyafetNot")}</Text> : null}
       {!oturuyor ? <Text style={{ marginTop: 6, fontFamily: F.serifItalic, fontSize: 13, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{t("onl.han.oturunca")}</Text> : null}
 
       {/* sohbet */}
@@ -371,6 +394,9 @@ function MasaEkran() {
             : <CizgiDugme etiket={t("onl.ses.sesiniKes")} icon="speaker" rtl={rtl} onPress={() => { m.sesKapat(kisi.hesap); setKisi(null); }} />) : null}
           <CizgiDugme etiket={t("onl.han.sikayet")} icon="shield" rtl={rtl} onPress={() => panelAc("rapor", kisi.hesap)} />
           {basBen && masa?.sira.some((p) => p.hesap === kisi.hesap) ? <CizgiDugme etiket={t("onl.han.oneAl")} icon="hourglass" rtl={rtl} onPress={() => { m.oneAl(kisi.hesap); setKisi(null); }} /> : null}
+          {basBen && masa?.ayar.tur === "ozel" ? (masa.ayar.davet?.includes(kisi.hesap)
+            ? <CizgiDugme etiket={t("onl.han.davetKaldir")} icon="ring" rtl={rtl} onPress={() => { m.davet(kisi.hesap, true); setKisi(null); }} />
+            : <CizgiDugme etiket={t("onl.han.davetEt")} icon="ring" rtl={rtl} onPress={() => { m.davet(kisi.hesap); setKisi(null); }} />) : null}
           {basBen ? <CizgiDugme etiket={t("onl.han.masadanCikar")} icon="walk" rtl={rtl} onPress={() => { m.at(kisi.hesap); setKisi(null); }} /> : null}
           {basBen ? <Text style={{ fontFamily: F.serifItalic, fontSize: 13, lineHeight: 18, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{t("onl.han.atNot")}</Text> : null}
         </>}

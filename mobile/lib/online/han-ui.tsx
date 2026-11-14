@@ -100,6 +100,7 @@ const ANONS_SUS: Record<AnonsTuru, { icon: string; renk: string; zemin: [string,
   ikram: { icon: "amphora", renk: C.goldBright, zemin: ["rgba(92,56,18,0.96)", "rgba(40,24,8,0.96)"], etiket: "onl.han.anons.tur.ikram" },
   armagan: { icon: "gems", renk: C.sage, zemin: ["rgba(34,58,36,0.96)", "rgba(16,28,18,0.96)"], etiket: "onl.han.anons.tur.armagan" },
   debdebe: { icon: "party", renk: "#F3D27A", zemin: ["rgba(96,24,32,0.96)", "rgba(44,10,16,0.96)"], etiket: "onl.han.anons.tur.debdebe" },
+  ziyafet: { icon: "bread", renk: C.goldBright, zemin: ["rgba(88,48,14,0.96)", "rgba(36,20,6,0.96)"], etiket: "onl.han.anons.tur.ziyafet" },
 };
 
 /** Anons öğesinin adı: ikram menüsü, bilinen armağan/Debdebe öğesi ya da genel ad. */
@@ -112,7 +113,7 @@ export function ogeAdi(a: MasaAnonsu, t: Ceviri): string {
 /** Anons şeridi (sohbet akışında ve masanın üstünde): türüne göre süs, Debdebe'de "yalnız görünüş" notu. */
 export function AnonsSeridi({ anons, ad, rtl, t, buyuk = false }: { anons: MasaAnonsu; ad: (hesap: string) => string; rtl: boolean; t: Ceviri; buyuk?: boolean }) {
   const s = ANONS_SUS[anons.tur];
-  const metin = applyParams(t("onl.han.anons." + anons.tur), [ad(anons.kim), ad(anons.hedef), ogeAdi(anons, t)]);
+  const metin = applyParams(t("onl.han.anons." + anons.tur), [ad(anons.kim), anons.hedef ? ad(anons.hedef) : "", ogeAdi(anons, t)]);
   return <View accessible accessibilityRole="text" accessibilityLabel={`${t(s.etiket)}. ${metin}`}
     style={[{ borderRadius: 10, borderWidth: anons.tur === "debdebe" ? 2 : 1, borderColor: s.renk, overflow: "hidden" }, buyuk ? { shadowColor: s.renk, shadowOpacity: 0.55, shadowRadius: 12, shadowOffset: { width: 0, height: 0 } } : null]}>
     <LinearGradient pointerEvents="none" colors={s.zemin} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
