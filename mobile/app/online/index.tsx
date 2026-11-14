@@ -75,6 +75,7 @@ function GirisEkran() {
       </Animated.View>
 
       <Animated.View entering={giris(440)} style={{ gap: 10 }}>
+        {o.hazir && !o.oturum && o.oturumNotu ? <Bant tur="bilgi" rtl={rtl} metin={t(o.oturumNotu === "kapatildi" ? "onl.hs.notKapatildi" : "onl.hs.notGecersiz")} /> : null}
         {!o.hazir ? (
           <View style={{ minHeight: 54, alignItems: "center", justifyContent: "center" }} accessibilityLabel={t("onl.yukleniyor")}>
             <ActivityIndicator color={C.goldBright} />

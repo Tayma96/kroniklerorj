@@ -12,7 +12,7 @@ import { hap } from "../../lib/haptics";
 import { OnlineYakinda } from "../../lib/online-yakinda";
 import { OnlineKapisi } from "../../lib/online/durum";
 import { onlineEkranAcik } from "../../lib/online/kapi";
-import { AltinDugme, Bant, Cerceve, Check, GLOW, Madalyon, ONL, giris, hiza, yon } from "../../lib/online/ui";
+import { AltinDugme, Bant, Cerceve, Check, CizgiDugme, GLOW, Madalyon, ONL, giris, hiza, yon } from "../../lib/online/ui";
 import { KarakterToplumBolumu } from "../../lib/online/toplum-ui";
 import {
   AltPanel, Baslik2, Hap, KisiYuzu, OnlineSayfa, Rozet, SatirOku, SayfaBasi, TakatGostergesi, YerlesimBekle, gunDurumu, odulYaz, sahneGorseli,
@@ -22,7 +22,7 @@ import { EylemSonucu } from "../../lib/online/eylem-ui";
 import { HalKarti } from "../../lib/online/hal-ui";
 import type { Lang } from "../../lib/locale-data";
 import { BECERI_IKON, KARAR_IKON, NAM_IKON, OZELLIK_IKON, SISTEM_IKON, meslekYaz, ozetYaz } from "../../lib/online/metin";
-import { hataAnahtari } from "../../lib/online/hata";
+import { hataAnahtari, istekTekrarMi } from "../../lib/online/hata";
 import { ACILIS_GUNU, BECERILER, KARARLAR, NAMLAR, OZELLIK_EN_COK, OZELLIKLER, type EylemYaniti, type Karar, type Ozellik } from "../../lib/online/protokol";
 
 type Secim = { tur: "puan"; ozellik: Ozellik } | { tur: "karar"; secim: Karar };
@@ -36,6 +36,8 @@ function KarakterEkran() {
   const [secim, setSecim] = useState<Secim | null>(null);
   const [sonuc, setSonuc] = useState<EylemYaniti | null>(null);
   const [hata, setHata] = useState<string | null>(null);
+  const [kapatSor, setKapatSor] = useState(false);
+  const [kapatHata, setKapatHata] = useState<string | null>(null);
   if (!y) return <YerlesimBekle sekme="karakter" rtl={rtl} t={t} onGiris={() => router.replace("/online")} />;
 
   const ben = y.ben;
@@ -47,7 +49,15 @@ function KarakterEkran() {
     if (!secim) return;
     setHata(null);
     const s = await o.eylemYap(secim.tur === "puan" ? { tur: "puan", ozellik: secim.ozellik } : { tur: "karar", secim: secim.secim });
-    if (s.ok) { hap("success"); setSecim(null); setSonuc(s.deger); } else { hap("error"); setHata(t(hataAnahtari(s.hata))); }
+    // istek_tekrar: seçim daha önce işlenmiş; hata değil, panel kapanır ve durum sunucudan tazelenir.
+    if (s.ok) { hap("success"); setSecim(null); setSonuc(s.deger); } else if (istekTekrarMi(s.hata)) setSecim(null); else { hap("error"); setHata(t(hataAnahtari(s.hata))); }
+  };
+
+  // Bütün oturumları kapat: başarıda durum katmanı yerel oturumu siler ve /online girişine döner (oturumKapandi).
+  const oturumlariKapat = async () => {
+    setKapatHata(null);
+    const s = await o.tumOturumlariKapat();
+    if (s.ok) { hap("success"); setKapatSor(false); } else { hap("error"); setKapatHata(t(hataAnahtari(s.hata))); }
   };
 
   return <OnlineSayfa gorsel={sahneGorseli(y.yerlesim.tur, y.saat.mevsim)} oran={0.32} sekme="karakter" rtl={rtl} t={t}
@@ -67,6 +77,17 @@ function KarakterEkran() {
           {hata ? <Bant metin={hata} rtl={rtl} /> : null}
           <AltinDugme etiket={t(secim.tur === "puan" ? "onl.ka.puanVer" : "onl.ka.kararVer")} icon={secim.tur === "puan" ? "star" : "compass"} rtl={rtl} bekliyor={o.islem === "eylem"} onPress={() => { void onayla(); }} />
         </> : null}
+      </AltPanel>
+      <AltPanel acik={kapatSor} onKapat={() => { setKapatSor(false); setKapatHata(null); }} etiket={t("onl.hs.kapatBaslik")} rtl={rtl} t={t}>
+        <View style={{ alignItems: "center", gap: 10, paddingTop: 6 }}>
+          <Madalyon icon="shield" size={64} aktif />
+          <Text accessibilityRole="header" style={{ fontFamily: F.display, fontSize: 21, color: C.parchment, textAlign: "center" }}>{t("onl.hs.kapatBaslik")}</Text>
+          <Text style={{ fontFamily: F.serif, fontSize: 16, lineHeight: 22, color: C.parchmentDim, textAlign: "center" }}>{t("onl.hs.kapatSor")}</Text>
+          <Text style={{ fontFamily: F.serifItalic, fontSize: 14.5, lineHeight: 20, color: C.emberSoft, textAlign: "center" }}>{t("onl.hs.kapatGeriAlinmaz")}</Text>
+        </View>
+        {kapatHata ? <Bant metin={kapatHata} rtl={rtl} /> : null}
+        <AltinDugme etiket={t("onl.hs.kapatOnay")} icon="shield" rtl={rtl} bekliyor={o.islem === "oturumKapat"} onPress={() => { void oturumlariKapat(); }} />
+        <CizgiDugme etiket={t("onl.hs.vazgec")} rtl={rtl} kucuk onPress={() => { setKapatSor(false); setKapatHata(null); }} />
       </AltPanel>
       <AltPanel acik={!!sonuc} onKapat={() => setSonuc(null)} etiket={t("onl.ey.sonuc")} rtl={rtl} t={t}>
         {sonuc ? <EylemSonucu y={sonuc} rtl={rtl} t={t} lang={lang} onTamam={() => setSonuc(null)} /> : null}
@@ -231,6 +252,13 @@ function KarakterEkran() {
       </Cerceve>
     </> : null}
     {ben.kulYemini ? <View style={{ marginTop: 12, flexDirection: yon(rtl) }}><Rozet icon="flame" metin={t("onl.ka.kulYemini")} renk={C.emberSoft} /></View> : null}
+
+    {/* Hesap: bütün cihazlardaki oturumları kapatma */}
+    <Baslik2 metin={t("onl.hs.baslik")} rtl={rtl} />
+    <Cerceve ic={{ padding: 14, gap: 12 }}>
+      <Text style={{ fontFamily: F.serif, fontSize: 14.5, lineHeight: 20, color: C.parchmentDim, textAlign: hiza(rtl) }}>{t("onl.hs.kapatMetin")}</Text>
+      <CizgiDugme etiket={t("onl.hs.kapatDugme")} icon="shield" rtl={rtl} kucuk onPress={() => { setKapatHata(null); setKapatSor(true); }} />
+    </Cerceve>
   </OnlineSayfa>;
 }
 

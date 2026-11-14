@@ -3,6 +3,7 @@
 // Sunucunun bu fazlarda eklediği hata kodları burada tanınır; protokol.ts'teki ortak listeye eklenmez.
 import { DENEME_SAYISI, sunucuAdresi, ZAMAN_ASIMI_MS } from "./ayar";
 import { oturumOku } from "./depo";
+import { yanitOlayi } from "./oturum-olay";
 import { hataAnahtari } from "./hata";
 import { hataKoduMu, type OnlineHata } from "./protokol";
 import { UCGEN_BARINMA_HATALARI } from "./ucgen-barinma-metin";
@@ -81,7 +82,9 @@ export async function ekCagir<T>(istek: EkIstek, bicim: (v: unknown) => v is T):
       else {
         const g = typeof veri === "object" && veri !== null ? (veri as { hata?: unknown; bitis?: unknown }) : {};
         const bitis = typeof g.bitis === "number" || g.bitis === null ? g.bitis : undefined;
-        son = ekBasarisiz(bilinenHata(g.hata) ? g.hata : durumdanHata(yanit.status), bitis);
+        const kod = bilinenHata(g.hata) ? g.hata : durumdanHata(yanit.status);
+        yanitOlayi(kod, yanit.status, !!belirtec);
+        son = ekBasarisiz(kod, bitis);
       }
     } catch {
       son = ekBasarisiz(iptal.signal.aborted ? "zaman_asimi" : "ag_yok");

@@ -26,7 +26,7 @@ import { YasamHanGirisi } from "../../lib/online/yasam-han-giris";
 import { BarinmaKarti } from "../../lib/online/barinma-ui";
 import { EkonomiGirisi, NabizKarti } from "../../lib/online/ekonomi-ui";
 import { SISTEM_IKON, isaretli, olayIkonu, ozetYaz, ruhAnahtari } from "../../lib/online/metin";
-import { hataAnahtari } from "../../lib/online/hata";
+import { hataAnahtari, istekTekrarMi } from "../../lib/online/hata";
 import type { EylemYaniti, Isaret, Olay, OgrenmeGunu, YerlesimDurumu } from "../../lib/online/protokol";
 
 type Ceviri = (k: string) => string;
@@ -137,7 +137,7 @@ function YasamEkran() {
   const mektep = async () => {
     setEylemHata(null);
     const s = await o.eylemYap({ tur: "mektep" });
-    if (s.ok) { hap("success"); setSonuc(s.deger); } else { hap("error"); setEylemHata(t(hataAnahtari(s.hata))); }
+    if (s.ok) { hap("success"); setSonuc(s.deger); } else if (!istekTekrarMi(s.hata)) { hap("error"); setEylemHata(t(hataAnahtari(s.hata))); }
   };
   const hedefeGit = (g: OgrenmeGunu) => {
     if (g.sistem === "mektep") return void mektep();

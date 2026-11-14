@@ -220,5 +220,7 @@ export function sahteIstemci(gecikmeMs = 450, baslangic: Profil | null = null, a
       const m = meslek();
       return m ? m.siparisTeslim(istek) : basarisiz("profil_yok");
     },
+    // Sunucuda hesabın oturum sürümü artar; sahtede tutulan belirteç yok, yalnız yanıt biçimi aynıdır.
+    async oturumlariKapat() { await bekle(); return basarili({ kapatildi: true as const }); },
   };
 }

@@ -51,6 +51,7 @@ const ANAHTAR: Partial<Record<OnlineHata, string>> = {
   darbe_kapali: "onl.h.darbeKapali",
   devlet_talep_var: "onl.h.devletTalepVar",
   taraf_degil: "onl.h.tarafDegil",
+  istek_tekrar: "onl.h.istekTekrar",
   eylem_gecersiz: "onl.h.genel",
   imlec_gecersiz: "onl.h.genel",
 };
@@ -61,6 +62,8 @@ export function hataAnahtari(kod: OnlineHata): string {
 
 export const oturumHatasiMi = (kod: OnlineHata | null | undefined) =>
   kod === "oturum_yok" || kod === "oturum_gecersiz" || kod === "oturum_suresi_doldu";
+/** istek_tekrar (HTTP 409): bu istekNo zaten işlendi; hata değil, "işlem yapılmış" demektir. */
+export const istekTekrarMi = (kod: OnlineHata | string | null | undefined) => kod === "istek_tekrar";
 export const adHatasiMi = (kod: OnlineHata | null | undefined) =>
   kod === "ad_uzunluk" || kod === "ad_karakter" || kod === "ad_yasak" || kod === "ad_alinmis";
 /** Giriş ekranında gösterilecek genel hatalar (ağ, sunucu, oturum); form hataları kendi ekranında kalır. */

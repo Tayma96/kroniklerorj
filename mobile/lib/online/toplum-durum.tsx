@@ -6,6 +6,7 @@ import { useCallback, useEffect, useSyncExternalStore } from "react";
 import { useI18n } from "../i18n";
 import { useOnline } from "./durum";
 import { istekNoUret } from "./depo";
+import { istekTekrarMi } from "./hata";
 import type { Dil, KisiAdi, OnlineHata, Sonuc } from "./protokol";
 import type {
   BagDurumu, DostlukIslemi, DuzenGorunumu, DuzenIstegi, GelenYaniti, OyuncuProfili, SikayetNedeni, SikayetYaniti, SoylentiGorunumu,
@@ -49,7 +50,8 @@ export function useToplum() {
     yay({ islem, hata: hal.hata?.islem === islem ? null : hal.hata });
     const s = await is(no);
     if (yazma && (s.ok || !gecici(s.hata))) bekleyen.delete(islem);
-    yay({ islem: hal.islem === islem ? null : hal.islem, hata: s.ok ? (hal.hata?.islem === islem ? null : hal.hata) : { islem, kod: s.hata } });
+    // istek_tekrar hata değildir (işlem zaten yapılmış); veri durum.tsx'teki tekrar dinleyicisiyle sunucudan tazelenir.
+    yay({ islem: hal.islem === islem ? null : hal.islem, hata: s.ok || istekTekrarMi(s.hata) ? (hal.hata?.islem === islem ? null : hal.hata) : { islem, kod: s.hata } });
     return s;
   }, []);
 

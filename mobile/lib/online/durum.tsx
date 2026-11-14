@@ -10,7 +10,9 @@ import { ONLINE_SUNUCU_URL, ONLINE_TEST_GIRIS, sunucuAdresi } from "./ayar";
 import { adDuzenle } from "./ad";
 import { imlecOku, imlecYaz, istekNoUret, meslekOku, meslekYaz, oturumOku, oturumSil, oturumYaz, taslakOku, taslakSil, taslakYaz, testCihazKimligi, type Taslak } from "./depo";
 import { useI18n } from "../i18n";
-import { oturumHatasiMi } from "./hata";
+import { router } from "expo-router";
+import { istekTekrarMi, oturumHatasiMi } from "./hata";
+import { istekTekrarDinle, oturumDustuDinle } from "./oturum-olay";
 import { httpIstemci, type OnlineIstemci } from "./istemci";
 import type { BeceriIstemci } from "./beceri-agaci/beceri-veri";
 import type { ToplumIstemci } from "./toplum-istemci";
@@ -33,7 +35,9 @@ export interface OnlineOturum {
   adOnerisi?: string;
 }
 export type Islem = "geriYukle" | "giris" | "dunya" | "profil" | "davet" | "yerlesim" | "olaylar" | "kisi" | "eylem" | "tanidik"
-  | "meslek" | "temelIs" | "tabanAl" | "lonca" | "tarif" | "sat" | "siparisler" | "siparis";
+  | "meslek" | "temelIs" | "tabanAl" | "lonca" | "tarif" | "sat" | "siparisler" | "siparis" | "oturumKapat";
+/** Girişte gösterilen bilgi notu: oturum sunucuda düştü ya da oyuncu bütün oturumlarını kapattı. */
+export type OturumNotu = "gecersiz" | "kapatildi";
 /** POST /v1/meslek gövdesi (istekNo durum katmanında eklenir). */
 export interface MeslekGirdisi { islem: MeslekIslemi; meslek: MeslekId; dal?: string; dugum?: string }
 /** Bilinen meslek durumu: kayıt, kademe hizmet eşikleri ve mesleğe özel tecrübe/beceri puanı (sunucudan gelen son değer). */
@@ -91,6 +95,10 @@ export interface OnlineDurum {
   testGiris(kod: string): Promise<Sonuc<GirisYaniti>>;
   gelistiriciGiris(): void;
   cikis(): Promise<void>;
+  /** Oturum neden kapandı (girişte bilgi notu); yeni girişte silinir. */
+  oturumNotu: OturumNotu | null;
+  /** POST /v1/oturumlar/kapat: bütün cihazlardaki oturumlar düşer; yerel oturum silinir, girişe dönülür. */
+  tumOturumlariKapat(): Promise<Sonuc<{ kapatildi: true }>>;
   taslakGuncelle(p: Partial<Pick<Taslak, "ad" | "cinsiyet" | "yerlesim">>): void;
   dunyaYukle(): Promise<Sonuc<DunyaOzeti>>;
   davetCoz(kod: string): Promise<Sonuc<DavetBilgisi>>;
@@ -145,6 +153,7 @@ export function OnlineDurumSaglayici({ children, tohum }: { children: ReactNode;
   const [islem, setIslem] = useState<Islem | null>(null);
   const [hata, setHata] = useState<OnlineHata | null>(null);
   const [hataIslem, setHataIslem] = useState<Islem | null>(null);
+  const [oturumNotu, setOturumNotu] = useState<OturumNotu | null>(null);
   const [yerlesim, setYerlesim] = useState<YerlesimDurumu | null>(null);
   const [yerlesimAlindi, setYerlesimAlindi] = useState(() => Date.now());
   const [kisiler, setKisiler] = useState<Record<string, Kisi>>({});
@@ -196,6 +205,25 @@ export function OnlineDurumSaglayici({ children, tohum }: { children: ReactNode;
     yerlesimiBirak();
     await oturumSil();
   }, []);
+  /**
+   * Oturum kapandı (sunucu belirteci reddetti ya da oyuncu bütün oturumlarını kapattı): yerel oturum silinir, girişte
+   * suçlamayan bir not görünür ve /online girişine dönülür. Tek yol: 401 kodları, geri yükleme ve "hepsini kapat" buraya gelir.
+   */
+  const oturumKapandi = useCallback(async (not: OturumNotu) => {
+    sahte.current = null;
+    setDavet(null);
+    setHata(null);
+    setHataIslem(null);
+    setOturumNotu(not);
+    await oturumuDusur();
+    try { router.replace("/online"); } catch { /* gezinme henüz hazır değil: giriş ekranı zaten açılır */ }
+  }, [oturumuDusur]);
+  // HTTP katmanındaki her yetkili çağrı (ek uçlar dahil) 401 oturum kodunda bu yola düşer.
+  const oturumTur = useRef(oturum?.tur);
+  oturumTur.current = oturum?.tur;
+  useEffect(() => oturumDustuDinle(() => {
+    if (oturumTur.current === "sunucu" && belirtec.current) void oturumKapandi("gecersiz");
+  }), [oturumKapandi]);
 
   /**
    * Bir işlemi çalıştırır, hata durumunu tutar; oturum hatasında oturumu düşürür. `kilit` yalnız yazan işlemlerde
@@ -212,9 +240,13 @@ export function OnlineDurumSaglayici({ children, tohum }: { children: ReactNode;
     try {
       const sonuc = await is();
       if (!sonuc.ok) {
-        setHata(sonuc.hata);
-        setHataIslem(ad);
-        if (oturumHatasiMi(sonuc.hata) && oturum?.tur === "sunucu") await oturumuDusur();
+        // istek_tekrar hata değildir: işlem daha önce yapılmış, veri sunucudan yeniden yüklenir (aşağıdaki dinleyici).
+        // Belirteç boşsa HTTP katmanı oturumu zaten kapatmıştır (oturum-olay.ts); ikinci kez kapatılmaz.
+        if (oturumHatasiMi(sonuc.hata) && oturum?.tur === "sunucu") { if (belirtec.current) await oturumKapandi("gecersiz"); }
+        else if (!istekTekrarMi(sonuc.hata)) {
+          setHata(sonuc.hata);
+          setHataIslem(ad);
+        }
       }
       return sonuc;
     } finally {
@@ -235,13 +267,13 @@ export function OnlineDurumSaglayici({ children, tohum }: { children: ReactNode;
       setOturum({ tur: "sunucu" });
       const p = await http.profil();
       if (p.ok) setProfil(p.deger);
-      else if (oturumHatasiMi(p.hata)) await oturumuDusur();
+      else if (oturumHatasiMi(p.hata)) await oturumKapandi("gecersiz");
       else if (p.hata !== "profil_yok") setHata(p.hata);
     } finally {
       setIslem(null);
       setHazir(true);
     }
-  }, [http, oturumuDusur, tohum]);
+  }, [http, oturumKapandi, tohum]);
 
   useEffect(() => { void geriYukle(); }, [geriYukle]);
 
@@ -356,6 +388,17 @@ export function OnlineDurumSaglayici({ children, tohum }: { children: ReactNode;
     return sonuc.ok ? sonuc : basarisiz(sonuc.hata);
   };
 
+  // istek_tekrar: işlem sunucuda zaten yapılmış. Bekleyen istekNo kuyruktan düşmüştür (geçici hata değil); yerel durum
+  // tahminle değiştirilmez, yüklü olan veriler sunucudan yeniden çekilir.
+  const tekrarTazele = useRef<() => void>(() => {});
+  tekrarTazele.current = () => {
+    if (!oturum) return;
+    if (yerlesim) void yerlesimAl();
+    if (siparisler) void siparisAl();
+    if (lonca) void loncaAl();
+  };
+  useEffect(() => istekTekrarDinle(() => tekrarTazele.current()), []);
+
   // Dil değişince NPC adları o dilde yeniden gelir.
   const ilkDil = useRef(dil);
   useEffect(() => {
@@ -392,6 +435,7 @@ export function OnlineDurumSaglayici({ children, tohum }: { children: ReactNode;
         if (!g.ok) return g;
         belirtec.current = g.deger.oturum;
         await oturumYaz(g.deger.oturum);
+        setOturumNotu(null);
         setOturum({ tur: "sunucu" });
         if (g.deger.profilVar) {
           const p = await http.profil();
@@ -405,6 +449,7 @@ export function OnlineDurumSaglayici({ children, tohum }: { children: ReactNode;
         if (!g.ok) return g;
         belirtec.current = g.deger.oturum;
         await oturumYaz(g.deger.oturum);
+        setOturumNotu(null);
         setOturum({ tur: "sunucu", ...(g.deger.adOnerisi ? { adOnerisi: g.deger.adOnerisi } : {}) });
         if (g.deger.profilVar) {
           const p = await http.profil();
@@ -419,14 +464,23 @@ export function OnlineDurumSaglayici({ children, tohum }: { children: ReactNode;
       setProfil(null);
       setDavet(null);
       setHata(null);
+      setOturumNotu(null);
       setOturum({ tur: "gelistirici" });
     },
     cikis: async () => {
       sahte.current = null;
       setDavet(null);
       setHata(null);
+      setOturumNotu(null);
       await oturumuDusur();
     },
+    oturumNotu,
+    tumOturumlariKapat: () =>
+      calistir("oturumKapat", async () => {
+        const s = await istemci().oturumlariKapat();
+        if (s.ok) await oturumKapandi("kapatildi");
+        return s;
+      }, true),
     taslakGuncelle: (p) => setTaslak((t) => ({ ...t, ...p })),
     dunyaYukle: () =>
       calistir("dunya", async () => {

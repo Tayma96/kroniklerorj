@@ -90,6 +90,8 @@ export const SUNUCU_HATALARI = [
   "kaynak_gecersiz", "hizlandirma_kapali", "hizlandirma_yok", "yeniden_bos",
   // P5 siyaset: darbe çatışması ve iki taraflı ateşkes.
   "darbe_kapali", "devlet_talep_var", "taraf_degil", "deger_sinir_disi", "stok_yok", "arac_yok", "ayni_kume",
+  // istekNo tekrarsızlık penceresi (online-server yerlesim/istek-defteri.ts): işlem zaten yapıldı, yanıtı saklı değil.
+  "istek_tekrar",
 ] as const;
 export type HataKodu = (typeof SUNUCU_HATALARI)[number] | ToplumHataKodu;
 
@@ -143,6 +145,11 @@ export function profilMi(v: unknown): v is Profil {
 export function davetBilgisiMi(v: unknown): v is DavetBilgisi {
   return nesne(v) && metin(v.kod) && metin(v.yerlesim) && metin(v.beylik) && metin(v.davetEden);
 }
+/** POST /v1/oturumlar/kapat yanıtı (online-server index.ts). */
+export function oturumlarKapatYanitiMi(v: unknown): v is { kapatildi: true } {
+  return typeof v === "object" && v !== null && (v as { kapatildi?: unknown }).kapatildi === true;
+}
+
 export function davetKoduYanitiMi(v: unknown): v is { kod: string } {
   return nesne(v) && metin(v.kod);
 }

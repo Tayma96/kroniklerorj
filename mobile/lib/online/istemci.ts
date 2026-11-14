@@ -4,9 +4,10 @@
 // ikinci kez konunca durum değişmez). Meslek, temel iş, taban alımı, tarif, satış ve sipariş teslimi de istekNo'lu ve
 // tekrar güvenlidir (sunucu motor.ts #tekrarGuvenli). Giriş ve davet oluşturma denenmez.
 import { DENEME_SAYISI, sunucuAdresi, ZAMAN_ASIMI_MS } from "./ayar";
+import { yanitOlayi } from "./oturum-olay";
 import {
   basarili, basarisiz, davetBilgisiMi, davetKoduYanitiMi, dunyaMi, eylemYanitiMi, girisYanitiMi, hataKoduMu, kisiYanitiMi,
-  loncaYanitiMi, meslekYanitiMi, satYanitiMi, siparislerYanitiMi, siparisTeslimYanitiMi, tarifYanitiMi,
+  loncaYanitiMi, meslekYanitiMi, oturumlarKapatYanitiMi, satYanitiMi, siparislerYanitiMi, siparisTeslimYanitiMi, tarifYanitiMi,
   type SatIstegi, type SatYaniti, type SiparislerYaniti, type SiparisTeslimIstegi, type SiparisTeslimYaniti, type TarifIstegi, type TarifYaniti, olaylarYanitiMi, profilMi, tabanAlYanitiMi, tanidikYanitiMi, temelIsYanitiMi, yerlesimDurumuMi,
   type LoncaYaniti, type MeslekIstegi, type MeslekYaniti, type TabanAlIstegi, type TabanAlYaniti, type TemelIsIstegi, type TemelIsYaniti,
   type DavetBilgisi, type Dil, type DunyaOzeti, type EylemIstegi, type EylemYaniti, type GirisYaniti, type HataKodu, type Kisi,
@@ -44,6 +45,8 @@ export interface OnlineIstemci {
   sat(istek: SatIstegi): Promise<Sonuc<SatYaniti>>;
   siparisler(dil: Dil): Promise<Sonuc<SiparislerYaniti>>;
   siparisTeslim(istek: SiparisTeslimIstegi): Promise<Sonuc<SiparisTeslimYaniti>>;
+  /** POST /v1/oturumlar/kapat: hesabın bütün belirteçleri (bu dahil) düşer; yeni belirteç dönmez. */
+  oturumlariKapat(): Promise<Sonuc<{ kapatildi: true }>>;
 }
 
 export interface HttpAyari {
@@ -83,9 +86,10 @@ export function httpIstemci(ayar: HttpAyari): OnlineIstemci {
   async function birKez(taban: string, istek: Istek): Promise<[Sonuc<unknown>, number]> {
     const basliklar: Record<string, string> = { accept: "application/json" };
     if (istek.govde !== undefined) basliklar["content-type"] = "application/json";
+    let belirtecGitti = false;
     if (istek.yetki) {
       const belirtec = ayar.oturum();
-      if (belirtec) basliklar.authorization = `Bearer ${belirtec}`;
+      if (belirtec) { basliklar.authorization = `Bearer ${belirtec}`; belirtecGitti = true; }
     }
     const iptal = new AbortController();
     const zamanlayici = setTimeout(() => iptal.abort(), zamanAsimi);
@@ -110,7 +114,9 @@ export function httpIstemci(ayar: HttpAyari): OnlineIstemci {
     }
     if (yanit.ok) return [veri === undefined ? basarisiz("gecersiz_yanit") : basarili(veri), yanit.status];
     const kod = typeof veri === "object" && veri !== null ? (veri as { hata?: unknown }).hata : undefined;
-    return [basarisiz(hataKoduMu(kod) ? kod : durumdanHata(yanit.status)), yanit.status];
+    const hata = hataKoduMu(kod) ? kod : durumdanHata(yanit.status);
+    yanitOlayi(hata, yanit.status, belirtecGitti);
+    return [basarisiz(hata), yanit.status];
   }
 
   async function cagir<T>(istek: Istek, bicim: (v: unknown) => v is T): Promise<Sonuc<T>> {
@@ -153,5 +159,7 @@ export function httpIstemci(ayar: HttpAyari): OnlineIstemci {
     sat: (istek) => cagir({ yontem: "POST", yol: "/v1/sat", govde: istek, yetki: true, tekrar: true }, satYanitiMi),
     siparisler: (dil) => cagir({ yontem: "GET", yol: `/v1/siparisler?dil=${dil}`, yetki: true, tekrar: true }, siparislerYanitiMi),
     siparisTeslim: (istek) => cagir({ yontem: "POST", yol: "/v1/siparis/teslim", govde: istek, yetki: true, tekrar: true }, siparisTeslimYanitiMi),
+    // Denenmez: ilk istek işlendiyse belirteç düşmüştür, ikincisi oturum_gecersiz alır.
+    oturumlariKapat: () => cagir({ yontem: "POST", yol: "/v1/oturumlar/kapat", yetki: true, tekrar: false }, oturumlarKapatYanitiMi),
   };
 }

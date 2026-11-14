@@ -21,7 +21,7 @@ import {
 } from "../../lib/online/yasam-ui";
 import { EylemSonucu } from "../../lib/online/eylem-ui";
 import { MEKAN_IKON } from "../../lib/online/metin";
-import { hataAnahtari } from "../../lib/online/hata";
+import { hataAnahtari, istekTekrarMi } from "../../lib/online/hata";
 import type { EylemYaniti, HaritaKisisi, HaritaMekani } from "../../lib/online/protokol";
 
 type Ignelik = HaritaIgnesi["m"];
@@ -80,7 +80,7 @@ function MahalleEkran() {
   const derseOtur = async () => {
     setEylemHata(null);
     const s = await o.eylemYap({ tur: "mektep" });
-    if (s.ok) { hap("success"); setSonuc(s.deger); } else { hap("error"); setEylemHata(t(hataAnahtari(s.hata))); }
+    if (s.ok) { hap("success"); setSonuc(s.deger); } else if (!istekTekrarMi(s.hata)) { hap("error"); setEylemHata(t(hataAnahtari(s.hata))); }
   };
 
   return <OnlineSayfa gorsel={sahneGorseli(y.yerlesim.tur, y.saat.mevsim)} oran={0.3} sekme="mahalle" rtl={rtl} t={t} rozet={{ karakter: ben.ozellikPuani > 0 }}
