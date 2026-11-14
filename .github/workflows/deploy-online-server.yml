@@ -60,10 +60,23 @@ jobs:
         working-directory: online-server
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-        run: ./node_modules/.bin/wrangler deploy --config wrangler.test.toml
+        run: ./node_modules/.bin/wrangler deploy --config wrangler.test.toml | tee "$RUNNER_TEMP/dagitim.txt"
       - name: Deploy production Worker
         if: inputs.hedef == 'production' && github.ref == 'refs/heads/apk'
         working-directory: online-server
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-        run: ./node_modules/.bin/wrangler deploy
+        run: ./node_modules/.bin/wrangler deploy | tee "$RUNNER_TEMP/dagitim.txt"
+      # Dağıtımdan sonra canlı adres yoklanır: herkese açık /v1/dunya 200 ve beylik listesi dönmeli.
+      # Gizli değer ya da oyuncu verisi kullanılmaz; yalnız okuma.
+      - name: Canlı sağlık kontrolü
+        run: |
+          adres=$(grep -oE 'https://[a-z0-9.-]+\.workers\.dev' "$RUNNER_TEMP/dagitim.txt" | head -n1)
+          if [ -z "$adres" ]; then echo "::error::Dağıtım çıktısında workers.dev adresi bulunamadı."; exit 1; fi
+          echo "Adres: $adres"
+          for i in 1 2 3 4 5 6; do
+            if curl -fsS -m 15 "$adres/v1/dunya" | grep -q '"beylikler"'; then echo "Sunucu yanıt veriyor."; exit 0; fi
+            sleep 5
+          done
+          echo "::error::$adres/v1/dunya yanıt vermedi."
+          exit 1
