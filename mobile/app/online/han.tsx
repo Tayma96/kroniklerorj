@@ -23,7 +23,7 @@ function MasaKarti({ m, koltuk, rtl, t, sira, onAc }: { m: MasaOzeti; koltuk: nu
   const dolu = m.oturan >= koltuk;
   const kapali = !m.ayar.acik;
   const durum = kapali ? t("onl.han.masaKapali") : dolu ? t("onl.han.masaDolu") : m.oturan ? t("onl.han.masaYerVar") : t("onl.han.masaBos");
-  const alt = [applyParams(t("onl.han.oturan"), [m.oturan, koltuk]), applyParams(t("onl.han.ayakta"), [m.ayakta]), ...(m.sira ? [applyParams(t("onl.han.sirada"), [m.sira])] : [])].join(" · ");
+  const alt = [...(m.tanidik ? [applyParams(t("onl.han.tanidikVar"), [m.tanidik])] : []), applyParams(t("onl.han.oturan"), [m.oturan, koltuk]), applyParams(t("onl.han.ayakta"), [m.ayakta]), ...(m.sira ? [applyParams(t("onl.han.sirada"), [m.sira])] : [])].join(" · ");
   return <Animated.View entering={giris(Math.min(sira, 8) * 40)}>
     <Pressable accessibilityRole="button" accessibilityLabel={`${applyParams(t("onl.han.masaNo"), [m.no])}. ${durum}. ${alt}`} accessibilityState={{ disabled: kapali }} disabled={kapali}
       onPress={() => { hap("tap"); onAc(); }} style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.985 : 1 }], opacity: kapali ? 0.55 : 1 })}>
@@ -33,6 +33,8 @@ function MasaKarti({ m, koltuk, rtl, t, sira, onAc }: { m: MasaOzeti; koltuk: nu
           <View style={{ flexDirection: yon(rtl), alignItems: "center", gap: 8, flexWrap: "wrap" }}>
             <Text style={{ fontFamily: F.display, fontSize: 15, color: C.parchment }}>{applyParams(t("onl.han.masaNo"), [m.no])}</Text>
             <Rozet metin={durum} renk={kapali ? C.parchmentMuted : dolu ? C.ember : m.oturan ? C.goldBright : C.sage} dolu={dolu && !kapali} />
+            {m.tanidik ? <Rozet icon="family" metin={applyParams(t("onl.han.tanidikVar"), [m.tanidik])} renk={C.sage} /> : null}
+            {m.ayar.kilitli ? <Rozet icon="shield" metin={t("onl.han.kilitli")} renk={C.parchmentMuted} /> : null}
           </View>
           <View accessible={false} style={{ flexDirection: yon(rtl), gap: 5 }}>
             {Array.from({ length: koltuk }, (_, i) => <View key={i} style={{ width: 12, height: 12, borderRadius: 6, borderWidth: 1, borderColor: C.gold, backgroundColor: i < m.oturan ? C.goldBright : "transparent" }} />)}

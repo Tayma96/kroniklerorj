@@ -287,6 +287,21 @@ function MasaEkran() {
         {ses.hata ? <Bant metin={t(ses.hata === "izin" ? "onl.ses.izinYok" : ekHataAnahtari(ses.hata))} rtl={rtl} eylem={t("onl.kapat")} onEylem={ses.hataTemizle} /> : null}
       </View>
 
+      {basBen ? <View style={{ gap: 6 }}>
+        <Baslik2 metin={t("onl.han.ayarBaslik")} rtl={rtl} />
+        {([["kavgaYasak", "crossed-swords"], ["kilitli", "shield"], ["sesli", "speaker"]] as const).map(([alan, ikon]) => {
+          const deger = !!masa?.ayar[alan];
+          return <Pressable key={alan} accessibilityRole="switch" accessibilityState={{ checked: deger, disabled: !acik }} accessibilityLabel={t("onl.han.ayar." + alan)} disabled={!acik}
+            onPress={() => { hap("tap"); m.ayar({ [alan]: !deger }); }}
+            style={{ flexDirection: yon(rtl), alignItems: "center", gap: 8, minHeight: 44, paddingHorizontal: 10, borderRadius: 8, borderWidth: 1, borderColor: deger ? C.goldBright : ONL.frame }}>
+            <GameIcon name={ikon} size={15} color={deger ? C.goldBright : C.gold} />
+            <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 14.5, color: C.parchmentDim, textAlign: hiza(rtl) }}>{t("onl.han.ayar." + alan)}</Text>
+            <Text style={{ fontFamily: F.display, fontSize: 11.5, color: deger ? C.goldBright : C.goldDim }}>{t(deger ? "onl.br.hatirlatAcik" : "onl.br.hatirlatKapali")}</Text>
+          </Pressable>;
+        })}
+        <Text style={{ fontFamily: F.serifItalic, fontSize: 13, lineHeight: 18, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{t("onl.han.ayarNot")}</Text>
+      </View> : masa?.ayar.kilitli ? <Not metin={t("onl.han.kilitliNot")} rtl={rtl} icon="shield" /> : null}
+
       {basBen && d.ses?.soz.length ? <>
         <Baslik2 metin={applyParams(t("onl.ses.sozBaslik"), [d.ses.soz.length])} rtl={rtl} />
         <View style={{ gap: 6 }}>
@@ -377,6 +392,8 @@ function MasaEkran() {
       </View>
       <Text style={{ fontFamily: F.serif, fontSize: 14.5, lineHeight: 20, color: C.parchmentDim, textAlign: hiza(rtl) }}>{t("onl.han.eylemAcik." + eylemTur)}</Text>
       {masa?.ayar.kavgaYasak ? <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.ember, textAlign: hiza(rtl) }}>{t("onl.han.kavgaYasakNot")}</Text> : null}
+      {eylemTur === "yemin" ? <Text style={{ fontFamily: F.serifItalic, fontSize: 13, lineHeight: 18, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{t(o.yerlesim?.ben.muhurlu ? "onl.han.yeminMuhurlu" : "onl.han.yeminMuhursuz")}</Text> : null}
+      <Text style={{ fontFamily: F.serifItalic, fontSize: 13, lineHeight: 18, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{t("onl.han.taniklikNot")}</Text>
       <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: rtl ? 0 : 1, color: C.gold, textAlign: hiza(rtl) }}>{t(EYLEM_FORM[eylemTur].hedef === "zorunlu" ? "onl.han.hedefSec" : "onl.han.hedefSecimli")}</Text>
       <View style={{ gap: 6 }}>
         {EYLEM_FORM[eylemTur].hedef === "secimli" ? <SecimSatiri metin={t("onl.han.hedefYok")} secili={hedef === null} rtl={rtl} onPress={() => setHedef(null)} /> : null}

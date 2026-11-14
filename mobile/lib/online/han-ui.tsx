@@ -85,8 +85,9 @@ export function IsimPlakasi({ plaka, ben, bas, sessiz, genislik, rtl, ses }: { p
       <KisiYuzu id={plaka.hesap} ad={plaka.ad} boyut={28} oyuncu={!ben} ben={ben} />
       <Text numberOfLines={2} style={{ fontFamily: F.display, fontSize: genislik < 96 ? 10.5 : 11.5, lineHeight: 13, color: sessiz ? C.parchmentMuted : C.parchment, textAlign: "center" }}>{plaka.ad}</Text>
     </View>
-    {bas || sessiz ? <View pointerEvents="none" style={[{ position: "absolute", top: 3, flexDirection: "row", gap: 2 }, rtl ? { left: 4 } : { right: 4 }]}>
+    {bas || sessiz || plaka.mudavim ? <View pointerEvents="none" style={[{ position: "absolute", top: 3, flexDirection: "row", gap: 2 }, rtl ? { left: 4 } : { right: 4 }]}>
       {bas ? <GameIcon name="crown" size={12} color={C.goldBright} /> : null}
+      {plaka.mudavim ? <GameIcon name="amphora" size={12} color={C.sage} /> : null}
       {sessiz ? <GameIcon name="speaker" size={12} color={C.parchmentMuted} /> : null}
     </View> : null}
     {ses ? <View pointerEvents="none" style={[{ position: "absolute", top: 3, flexDirection: "row", alignItems: "center", gap: 2 }, rtl ? { right: 4 } : { left: 4 }]}>

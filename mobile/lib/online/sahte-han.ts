@@ -24,7 +24,7 @@ const SOZLER = [
   "Kadı efendi çarşı kavgasını yarın dinleyecekmiş.", "Ahi babanın çırağı usta oldu, hayırlı olsun.",
 ];
 
-interface SahteMasa { koltuklar: (Plaka | null)[]; oturma: number[]; sira: Plaka[]; ayakta: number; atilan: Set<string> }
+interface SahteMasa { koltuklar: (Plaka | null)[]; oturma: number[]; sira: Plaka[]; ayakta: number; atilan: Set<string>; ayar?: Partial<MasaAyari> }
 interface Dunya { masalar: SahteMasa[]; olayNo: number; olaylar: Map<number, MasaOlayi>; para: number; istek: Map<string, unknown>; soket: SahteSoket | null }
 
 function masaKur(oturan: number[], ayakta: number, sira: number[] = []): SahteMasa {
@@ -55,7 +55,7 @@ function masaBasi(m: SahteMasa): string | null {
 }
 function gorunum(no: number, m: SahteMasa, ben: Plaka, bagli: boolean): MasaGorunumu {
   const benOturuyor = m.koltuklar.some((p) => p?.hesap === ben.hesap);
-  return { no, koltuklar: [...m.koltuklar], masaBasi: masaBasi(m), sira: [...m.sira], ayakta: m.ayakta + (bagli && !benOturuyor ? 1 : 0), ayar: AYAR };
+  return { no, koltuklar: [...m.koltuklar], masaBasi: masaBasi(m), sira: [...m.sira], ayakta: m.ayakta + (bagli && !benOturuyor ? 1 : 0), ayar: { ...AYAR, ...m.ayar } };
 }
 
 class SahteSoket implements HamSoket {
@@ -238,6 +238,12 @@ class SahteSoket implements HamSoket {
       case "sozVer":
         if (!masaninBasi) return this.hata("yetki_yok");
         return this.hata("soz_istegi_yok");
+      case "ayar": {
+        if (!masaninBasi) return this.hata("yetki_yok");
+        const { kavgaYasak, kilitli, sesli } = ileti;
+        this.masa().ayar = { ...this.masa().ayar, ...(kavgaYasak !== undefined ? { kavgaYasak } : {}), ...(kilitli !== undefined ? { kilitli } : {}), ...(sesli !== undefined ? { sesli } : {}) };
+        return this.durum();
+      }
     }
   }
 }

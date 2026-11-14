@@ -186,6 +186,7 @@ export function useMasa(no: number | undefined) {
     sesAc: (hedef: string) => gonder({ t: "sesAc", hedef }),
     sozIste: () => gonder({ t: "sozIste" }),
     sozGeri: () => gonder({ t: "sozGeri" }),
+    ayar: (a: { kavgaYasak?: boolean; kilitli?: boolean; sesli?: boolean }) => gonder({ t: "ayar", ...a }),
     sozVer: (hedef: string, kabul = true) => gonder(kabul ? { t: "sozVer", hedef } : { t: "sozVer", hedef, kabul: false }),
     rapor: (hedef: string, neden: SikayetNedeni, aciklama?: string) =>
       gonder({ t: "rapor", hedef, neden, ...(aciklama?.trim() ? { aciklama: aciklama.trim() } : {}), istekNo: istekNoUret() }),

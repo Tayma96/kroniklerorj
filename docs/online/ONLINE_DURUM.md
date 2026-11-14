@@ -12,7 +12,7 @@ paneli Y1–Y3 · şikâyet/engelleme · ilk oturum ekranları · beceri ağacı
 | Madde | Durum |
 |---|---|
 | Handa sesli sohbet | Kod tam. API biçimi Cloudflare kitaplığıyla doğrulandı (14 Kasım), ses ayrı hız kovasında. Kalan: Berkay'ın Realtime uygulaması + gerçek cihaz denemesi. |
-| Oda özellikleri (liste/keşif, seviye, mini oyun, söz isteme) | Söz isteme var. Keşif sırası, masa ayarı, ozan sahnesi/atışması yok → §3 Han. |
+| Oda özellikleri (liste/keşif, seviye, mini oyun, söz isteme) | Söz isteme, keşif sırası (tanıdık masası önce), masa ayarı (kavga yasak, kilit, ses), sohbet filtresi, müdavim rozeti ve eylem etkileri var (14 Kasım). Ozan sahnesi/atışması (H8) ve masa türleri (H9) açık. |
 | Düello, suikast, kan davası | Yok → §4 tasarım. |
 | Darbe ve bağımsız devlet, diplomasi | P5–P6 var. Akçe ganimeti bağlandı (14 Kasım). Mülk devri ve ittifak dışı anlaşmalar açık. |
 | Kül Yemini mührü | Bağlandı (14 Kasım): 13 yaşında emanet, karakter sayfasından kabul; yemin etkisi H5 ile gelir. |
@@ -25,11 +25,6 @@ paneli Y1–Y3 · şikâyet/engelleme · ilk oturum ekranları · beceri ağacı
 ### Han (GDD §16, araştırma §5–6)
 | # | Eksik | Boyut |
 |---|---|---|
-| H1 | Keşif sırası: tanıdığın oturduğu masa → yeri olan → boş. Harcama sırayı etkilemez. | küçük |
-| H2 | Masa ayarı: masa başı "kavga yasak", masa kilidi ve sessiz masa seçer (bugün ayarı yazan yok). | küçük |
-| H3 | Sohbet küfür filtresi (6 dil) ve yeni hesaba ilk saatlerde kısa ileti sınırı. | orta |
-| H4 | Şikâyet kaydına masa kimliği. Müdavim rozeti plakada. | küçük |
-| H5 | Butonlu eylemlerin oyun etkisi: yemin, sözleşme, ittifak, ihbar bugün yalnız masa kaydı. Katılım listesi yerleşim olayına ve söylentiye girmeli ("orada olan bilir, diğerleri sonradan duyar"). | büyük |
 | H6 | Meydan okuma sonucu (düello, §4). | orta |
 | H7 | Akçeyle ziyafet (nam olayı) ile Debdebe ziyafet afişi (yalnız görüntü) ayrımı. | orta |
 | H8 | Ozan sahnesi (tek anlatıcı, dinleyici söz ister) ve ozan atışması (masadakilerin ücretsiz oyu, ödül yalnız anılma). | orta |

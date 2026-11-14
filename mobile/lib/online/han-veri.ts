@@ -21,9 +21,11 @@ export type SikayetNedeni = (typeof SIKAYET_NEDENLERI)[number];
 
 export type HanTuru = "han" | "kucukHan" | "menzil";
 export type MasaTuru = "acik" | "ozel" | "meclis" | "tuccar";
-export interface MasaAyari { tur: MasaTuru; acik: boolean; sesli: boolean; kavgaYasak: boolean }
+/** `kilitli`: masa başı yeni oturan ve sıraya gireni kabul etmiyor (ayakta dinleme sürer; eski sunucuda yok). */
+export interface MasaAyari { tur: MasaTuru; acik: boolean; sesli: boolean; kavgaYasak: boolean; kilitli?: boolean }
 /** İsim plakası. `cerceve` sunucunun sahiplikten eklediği Debdebe süsüdür; oyun mantığı okumaz. */
-export interface Plaka { hesap: string; ad: string; cerceve?: string }
+/** `mudavim`: bu yerleşimin müdavim rozeti (yalnız plakada görünür). */
+export interface Plaka { hesap: string; ad: string; cerceve?: string; mudavim?: true }
 export interface MasaGorunumu {
   no: number;
   koltuklar: (Plaka | null)[];
@@ -47,6 +49,8 @@ export interface MasaOlayi {
   katilim: string[];
   durum?: "teklif" | "kabul";
   kabulOlay?: number;
+  /** Kabul olayında onaylanan teklifin türü. */
+  teklifTur?: "sozlesme" | "ittifak";
 }
 export type AnonsTuru = "ikram" | "armagan" | "debdebe";
 export interface MasaAnonsu { tur: AnonsTuru; kim: string; hedef: string; oge: string; zaman: number }
@@ -67,7 +71,9 @@ export type IstemciIletisi =
   | { t: "sesAc"; hedef: string }
   | { t: "sozIste" }
   | { t: "sozGeri" }
-  | { t: "sozVer"; hedef: string; kabul?: boolean };
+  | { t: "sozVer"; hedef: string; kabul?: boolean }
+  /** Masa başının masa ayarı (yalnız masa başı; sunucu doğrular). */
+  | { t: "ayar"; kavgaYasak?: boolean; kilitli?: boolean; sesli?: boolean };
 
 /** Masanın ses durumu (sunucu SesDurumu). Yalnız kimlikler; ses kaydedilmez. */
 export interface SesDurumu {
@@ -94,7 +100,8 @@ export type SunucuIletisi =
   | { t: "rapor"; sonuc: unknown }
   | { t: "hata"; hata: string; istek?: string; bitis?: number | null };
 
-export interface MasaOzeti { no: number; oturan: number; ayakta: number; sira: number; ayar: MasaAyari }
+/** `tanidik`: o masada oturan dost/hane üyesi sayısı (kimlik gelmez). Liste sunucuda bu sayıya göre sıralı. */
+export interface MasaOzeti { no: number; oturan: number; ayakta: number; sira: number; ayar: MasaAyari; tanidik?: number }
 export const IKRAMLAR = ["ekmek", "serbet", "yemek", "gulSuyu"] as const;
 export type IkramId = (typeof IKRAMLAR)[number];
 export interface MenuSatiri { id: IkramId; fiyat: number }
