@@ -4,29 +4,25 @@
 - Repo Tayma96/kroniklerorj, ana dal `apk`. Türkçe tek satır commit, ek satır yok. Berkay tam yetki verdi (birleştirme, silme, `apk`'ye push).
 - Tek sert kural: **her şey ücretsiz**. Ücret çıkarabilecek adım önce kontrol edilir. Anahtar okuma/yazdırma yok.
 - Yeni oyuncu metni 6 dilde. Eski kayıt ve çevrimdışı akış korunur. İşbölümü `AGENTS.md`'de (esnek).
-- Kota: opus ajanları 5 saatlik sınırı iki kez doldurdu; ajanları birer birer çalıştır.
+- Kota: ajanlar 5 saatlik sınırı doldurabiliyor; birer birer çalıştır, kesilirse SendMessage ile sürdür.
+- Bulut oturumunda developers.cloudflare.com kapalı; Cloudflare API biçimi npm `partytracks` kitaplığından okunur.
 
 ## Ürün yapısı
-- İki seçenek: Tek Oyunculu (`mobile/app/oyun/`, çevrimdışı) ve Çok Oyunculu (`mobile/app/online/`, sunucu `online-server/`). Kayıtlar ayrı.
-- Eski Diyar MP söküldü (`cok-oyunculu/`, `lib/mp/`, `server/`). Motordaki `mpRealm`/diyar fonksiyonlarını test betikleri kullanıyor, duruyor.
-- Giriş "Çok Oyuncu" → `/online`; kapı kapalı, "Yakında". Envanter: `EKRAN_HARITASI.md` (70 ekran).
+- Tek Oyunculu (`mobile/app/oyun/`) ve Çok Oyunculu (`mobile/app/online/`, sunucu `online-server/`). Kayıtlar ayrı.
+- Eski Diyar MP söküldü. Giriş "Çok Oyuncu" → `/online`; kapı kapalı, "Yakında".
 
 ## Çevrimiçi durum
-- ChatGPT'nin `feature/online-p5-darbe-zinciri` dalı `apk`'de (P5–P6, Y2–Y3, ekonomi/mülk/siyaset/topluluk/Debdebe ekranları, test girişi). Eksik 178 metin eklendi (`online5.ts`).
-- Sunucu 489 test, hepsi geçiyor; ücretli bağlama yok.
-- Güvenlik: kritik/yüksek bulgu yok; 9 orta/düşük bulgu kapandı (sabit Wrangler, üretim yalnız `apk`'den, hız sınırı, han yarışı, 24 saatlik `istekNo`, oturum sürümü + `/v1/oturumlar/kapat`, telafi tavanı); istemci karşılığı `online13.ts`.
-- Gelir dengesi oranı 2,22 → 1,19; sim yalnız 6 mesleği ölçüyor, kırılgan.
-- Darbe ganimeti yalnız saf hesap (`siyaset/ganimet.ts`); oyuncu parasına bağlı değil.
-- Sunucu hiç dağıtılmadı. Kurulum: `docs/online/DENEME_SUNUCUSU.md`.
+- **Tek güncel durum belgesi: `docs/online/ONLINE_DURUM.md`** (sağlam alanlar, açık işler H/D/S/G, ilk sürüm tasarım kararları, Berkay'a kalan gerilimler). `FAZ_DURUM.md` geçersiz.
+- 14 Kasım: darbe akçe ganimeti kalıcı kuyrukla bağlandı; ateşkes ön talimatı; Kül Yemini mührü (ky=2); han sesi ayrı hız kovası, Realtime biçimi doğrulandı; belirteç `expo-secure-store`'da; han soketi oturum reddinde girişe döner.
+- Sunucu 502 test, hepsi geçiyor. Sunucu hiç dağıtılmadı (`docs/online/DENEME_SUNUCUSU.md`).
+- Tasarım kararı: düello rızalı, sonucu yalnız nam (§4.1); suikast ve kan davası ilk sürümde yok (GDD §11).
 
 ## Sıradaki işler
-1. Deneme sunucusu açılınca ilk dilim: giriş → profil → yerleşim → yaşam → meslek → işler.
-2. Ganimeti bağla: BolgeDO → YerlesimDO kalıcı kuyruk (diplomasi outbox deseni).
-3. E4 kalan etkiler (34 hizmet, 203 hak, 4 sinerji): `docs/online/gdd/E4_KANCA_ENVANTER_NOTU.md`.
-4. 14 meslek denge denetimi; siyaset/vasiyet/devir yetki incelemesi.
-5. Önce tasarım önerisi isteyenler: Kül Yemini mührü, düello/suikast/kan davası, han odası özellikleri, ek anlaşma türleri.
-6. Tek oyunculu sadeleştirme (`EKRAN_HARITASI.md` §7); çevrimiçi Yaşam gezinmesi.
-7. Küçükler: han/hanedan/pazar'da `istek_tekrar` sessiz değil; `han-soket.ts` belirteç reddi; belirteç `expo-secure-store`'a.
+1. Han H1–H5 (keşif sırası, masa ayarı, sohbet filtresi, şikâyette masa, eylem etkileri) → istemci ekranları → H6 düello.
+2. D3 ölümde mülk/makam/borç devri; S1 darbede mülk kaybı.
+3. D1 seyahat/göç, D2 kervan; H8 ozan sahnesi; E4 kalan etkiler; 14 meslek denge.
+4. Deneme sunucusu açılınca ilk dilim: giriş → profil → yerleşim → yaşam → meslek → işler.
 
 ## Berkay'da
-- `DENEME_SUNUCUSU.md` adımları; eski `kronikler-mp` Worker'ını silmek; `GOOGLE_CLIENT_ID`; mağaza ayarları.
+- `DENEME_SUNUCUSU.md` adımları; Realtime uygulaması (`REALTIME_APP_ID/TOKEN`); `GOOGLE_CLIENT_ID`; mağaza ayarları.
+- Karar bekleyen: gerçek parayla beceri süre kısaltma satışı ve Debdebe armağanının teveccühe girmesi (`ONLINE_DURUM.md` §5).
