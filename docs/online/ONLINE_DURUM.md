@@ -97,7 +97,21 @@ Kaybeden taraftan akçesinin en çok %25'i alınır ve kazananlara bölünür; m
 kazanan çoğu zaman başka yerleşimdedir; mülk kaybı emekle uzun sürede telafi edilir (pusula 8); GDD N-5'teki "en çok
 1 mülk" bir üst sınırdır, zorunluluk değildir. `siyaset/ganimet.ts` saf mülk hesabı ileride açılırsa diye duruyor.
 
-### 4.5 Han eylem etkileri (H5)
+### 4.5 Göç (D1, ilk sürüm)
+- **Ne:** karakterin yerleşimini kalıcı değiştirmesi (GDD §5 "yollar", D-16 "diğer şehirler"). Ziyaret/yolculuk ve
+  kervan ayrı iştir (D2).
+- **Kapılar:** 16 yaş ve üstü, ölü değil; kendi işletmesi yok (önce devreder); makamı yok (önce çekilir); açık darbe
+  tarafı değil; açık borç senedi yok. Göçten sonra 12 oyun ayı (6 gün) yeniden göç yok.
+- **Giden:** akçe (yol bedeli küçük ve sabit, dünyadan çıkar), envanter (taşıma sınırı üstü yerleşimde emanete kalır),
+  özellik, beceri, meslek ve beceri ağacı, nam, teveccüh, Kül Yemini, Debdebe (hesapta). **Kalan:** yerleşimin NPC
+  görüşleri ve tanıdıklar (yeni yerde sıfırdan; eski yerde "göç etti" anısı), hane NPC'leri (akrabalık kaydı korunur).
+- **Varış:** hedef şehirde misafirhane hakkı 12 saat, şehir başına bir kez (`barinma.ts` hazır). Yerleşimin kroniğine
+  "X göç etti" / "X geldi" satırları.
+- **Teknik:** HesapDO yürütür, üç adım ve her biri `istekNo` ile tekrar güvenli: (1) eski YerlesimDO karakteri
+  mühürler ve göç paketini verir, (2) yeni YerlesimDO paketle sakin kaydeder, (3) eski YerlesimDO kaydı kapatır. Adım
+  arası kesintide HesapDO kalıcı kuyruğu yeniden dener; akçe ve mal iki yerde birden var olmaz.
+
+### 4.6 Han eylem etkileri (H5)
 Yemin → mertlik (mühürlü, çift başına ayda bir). Sözleşme ve ittifak kabulü → iki taraf arasında küçük olumlu iz.
 İhbar → hedef hakkında yalanlanabilir söylenti; ihbar edene kazanç yok. Hepsinde masadakiler tanık, diğerleri duyum.
 
