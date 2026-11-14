@@ -145,6 +145,8 @@ export interface Karakter {
   ms?: MeslekKaydi;
   /** Envanter: mal → adet. */
   ev?: Record<string, number>;
+  /** Darbe ganimeti izi: `s` son kayıp [darbe, ay] (pencere koruması); `d` işlenen [istekNo, tutar] (kalıcı tekrar güvenliği). */
+  gn?: { s?: [string, number]; d: [string, number][] };
   /** Temel iş azalan getiri: iş → yapıldığı aylar. */
   tz?: Record<string, number[]>;
   /** NPC taban alım kotası: [ay, mal → adet]. */

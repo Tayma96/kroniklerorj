@@ -89,6 +89,7 @@ import { vasiyetDogrula } from "./vasiyet.ts";
 import { GUNDEM_ADI, type CalismaParametreleri, type Isaret, type IliskiHaritasi, type Karakter, type Kasaba, type Npc, type Olay, type OlayParam, type OlayTaslagi, type Sakin } from "./tipler.ts";
 import { kasabaKur } from "./uret.ts";
 import { defterGorunumu, defterYaz } from "./defter.ts";
+import { GANIMET_AKCE_YUZDE, GANIMET_IZ_EN_COK, GANIMET_PAY_EN_COK, ganimetKesinti } from "../siyaset/ganimet.ts";
 import { ekonomiDonumu } from "./ekonomi-donum.ts";
 import { hizmetNpcTalebiAc } from "./hizmet-pazari.ts";
 import { ismarlamaSicili } from "./ismarlama.ts";
@@ -522,6 +523,53 @@ export class YerlesimMotoru {
       ek.olay = { t: "yonetimTelafi", w: "kurum", h: kar.o, g: kar.o, n: 5, k: govde.tur === "akce" ? "olay.yonetim.telafiAkce" : "olay.yonetim.telafiEsya", p: olayParam };
       return basarili(yanit);
     });
+  }
+
+  /**
+   * Darbe ganimeti (BolgeDO → YerlesimDO; istemci ulaşamaz). "ganimetKes" kaybedenin akçesinden tavan kadar keser,
+   * "ganimetPay" kazananın payını yazar. `istekNo` karakterde kalıcı saklanır: aynı adım yeniden gelirse akçe
+   * değişmez, ilk tutar döner. Kesinti tutarını sunucu canlı akçeden hesaplar; çağıran tutar veremez.
+   */
+  async ganimet(islem: "ganimetKes" | "ganimetPay", hesapId: string, govde: unknown): Promise<Sonuc<{ tutar: number }>> {
+    if (!nesneMi(govde)) return hata("gecersiz_istek");
+    const { istekNo, darbeId, ay } = govde;
+    if (typeof istekNo !== "string" || istekNo.length < 8 || istekNo.length > 200 || !istekNo.startsWith("darbe:")) return hata("gecersiz_istek");
+    if (typeof darbeId !== "string" || darbeId.length === 0 || darbeId.length > 100) return hata("gecersiz_istek");
+    if (typeof ay !== "number" || !Number.isInteger(ay)) return hata("gecersiz_istek");
+    const r = await this.#oyuncu(hesapId);
+    if (!r.ok) return r;
+    const { kar } = r.deger;
+    const gn = (kar.gn ??= { d: [] });
+    const onceki = gn.d.find((x) => x[0] === istekNo);
+    if (onceki) return basarili({ tutar: onceki[1] });
+    let tutar: number;
+    if (islem === "ganimetKes") {
+      // Ölünün terekesi kesilmez; kayıt da düşülmez (yeniden gelirse yine sıfır döner).
+      if (olduMu(kar)) return basarili({ tutar: 0 });
+      const kes = ganimetKesinti(kar.pa, gn.s ? { darbeId: gn.s[0], ay: gn.s[1] } : undefined, darbeId, ay);
+      tutar = kes.tutar;
+      if (kes.neden === "uygulandi") gn.s = [darbeId, ay];
+      kar.pa -= tutar;
+    } else {
+      if (olduMu(kar)) return hata("olu");
+      if (typeof govde.tutar !== "number" || !Number.isInteger(govde.tutar) || govde.tutar < 1 || govde.tutar > GANIMET_PAY_EN_COK) return hata("deger_sinir_disi");
+      tutar = govde.tutar;
+      kar.pa += tutar;
+    }
+    const k = this.kasaba;
+    defterYaz(kar, k.ay, "darbe", islem === "ganimetKes" ? -tutar : tutar);
+    gn.d.push([istekNo, tutar]);
+    if (gn.d.length > GANIMET_IZ_EN_COK) gn.d.splice(0, gn.d.length - GANIMET_IZ_EN_COK);
+    if (tutar > 0) {
+      await this.#olayEkle({
+        t: "darbeGanimet", w: "kurum", h: kar.o, g: kar.o, n: 6,
+        k: islem === "ganimetKes" ? "olay.darbe.ganimetKayip" : "olay.darbe.ganimetPay",
+        p: islem === "ganimetKes" ? { tutar, yuzde: GANIMET_AKCE_YUZDE } : { tutar },
+      }, k.ay);
+    }
+    this.#kirli.add(KAR + kar.o);
+    await this.kaydet();
+    return basarili({ tutar });
   }
 
   /** Sakin kaydı (tekrar güvenli): ocak seçilir, karakter kurulur, yerleşime "yeni gelen" olayı düşer. */

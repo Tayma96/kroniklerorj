@@ -226,6 +226,24 @@ export interface DarbePlani {
   izler: DarbeIzi[];
 }
 
+/** Ganimet işinin bir tarafı: `bitti` yerleşim yanıtı işlendi demektir; `tutar` kesilen ya da ödenecek akçedir. */
+export interface GanimetHedefi {
+  kisi: string;
+  hesap: string;
+  tutar?: number;
+  bitti?: true;
+  /** Yerleşim kalıcı ret verdi: kaybedende kesilmedi, kazananda pay vali kasasına yazıldı. */
+  ulasilamadi?: true;
+}
+/** Bir darbenin ganimet işi: önce bütün kaybedenler kesilir ("kes"), sonra toplam kazananlara bölünür ("dagit"). */
+export interface GanimetIsi {
+  darbeId: string;
+  ay: number;
+  asama: "kes" | "dagit";
+  kaybedenler: GanimetHedefi[];
+  kazananlar: GanimetHedefi[];
+}
+
 export type MogolBaglantisi = "harac" | "diren";
 export type SultanBaglantisi = "bagimsiz" | "barisTalebi" | "sultanligaDondu";
 export interface BagimsizDevlet {
@@ -282,6 +300,8 @@ export interface BolgeDurumu {
   yolda: Record<string, number>;
   /** Bölgeler arası tanınma isteği/yanıtı outbox; alıcı teyit etmeden silinmez. */
   diplomasiGiden?: DiplomasiGiden[];
+  /** Darbe ganimeti kuyruğu (BolgeDO → YerlesimDO; sırayla, iş bitmeden silinmez). Bkz. ganimet-kuyruk.ts. */
+  ganimetGiden?: GanimetIsi[];
   /** Ardışık haraç gecikmesi (ay). */
   gecikme: number;
   sonGelir: number;

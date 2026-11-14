@@ -62,6 +62,8 @@ export class YerlesimDO {
     try {
       const simdi = this.#saat();
       const sonuc = await this.#isle(ileti, simdi);
+      // BolgeDO'dan gelen ganimet adımı bölgeye geri çağrı yapmaz (DO → DO döngüsel bekleme olmaz).
+      if (ileti.islem === "ganimetKes" || ileti.islem === "ganimetPay") return jsonYanit(sonuc);
       await this.#mulkUzlastir(simdi, ileti.islem === "hanIkram" || ileti.islem === "barinmaKira");
       await this.#vergiUzlastir(simdi);
       return jsonYanit(sonuc);
@@ -125,6 +127,7 @@ export class YerlesimDO {
     // YonetimDO → YerlesimDO iç çağrıları geri döngü oluşturmamak için parametre/ay dönümü çağırmaz.
     if (ileti.islem === "siyasetKimlik") return motor.siyasetKimlik(ileti.hesapId);
     if (ileti.islem === "yonetimTelafi") return motor.yonetimTelafi(ileti.hesapId, ileti.govde);
+    if (ileti.islem === "ganimetKes" || ileti.islem === "ganimetPay") return motor.ganimet(ileti.islem, ileti.hesapId, ileti.govde);
     await this.#parametreleriYukle(motor);
     const { kalan } = await motor.yetistir(simdi);
     await this.#alarmKur(simdi, kalan);

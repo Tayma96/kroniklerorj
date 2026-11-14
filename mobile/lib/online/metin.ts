@@ -51,6 +51,8 @@ const PARAM: Record<string, string[]> = {
   "olay.hizmetTalepTeslim": ["oyuncu", "hizmet", "kisi", "odul"],
   "olay.yonetim.telafiAkce": ["tutar", "gerekce"],
   "olay.yonetim.telafiEsya": ["adet", "mal", "gerekce"],
+  "olay.darbe.ganimetKayip": ["tutar", "yuzde"],
+  "olay.darbe.ganimetPay": ["tutar"],
   "hal.can.saglam": ["toparlama", "esik", "taban"],
   "hal.can.yarali": ["kondisyonToparlama", "toparlama", "esik"],
   "hal.kondisyon.iyi": ["takatAylik", "isBasina"],
@@ -150,6 +152,7 @@ export function olayIkonu(o: Pick<Olay, "ozet" | "tur">): string {
     "olay.siparis.acildi": "scroll-open", "olay.siparis.dustu": "hourglass", "olay.siparis.teslim": "medal",
     "olay.hizmetTalep": "scroll-open", "olay.hizmetTalepTeslim": "medal",
     "olay.yonetim.telafiAkce": "gift", "olay.yonetim.telafiEsya": "gift",
+    "olay.darbe.ganimetKayip": "scales", "olay.darbe.ganimetPay": "scales",
   };
   return tablo[k] ?? "scroll-open";
 }

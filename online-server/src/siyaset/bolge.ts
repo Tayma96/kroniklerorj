@@ -7,6 +7,7 @@ import { basarili, hata, type HataKodu, type Sonuc } from "../tipler.ts";
 import { mesruiyetGorunumu, bolgeMesruiyeti } from "./mesruiyet.ts";
 import { mogolEtkisi } from "./mogol.ts";
 import { darbeAyi, darbeBarisTeklifEt, darbeBarisYanit, darbeDestekle, darbeEsigi, darbeGorunumu, darbeHazirla, darbeIlanEt, darbeSadakatYatir, darbeSavunmaYaz, darbeVazgec } from "./darbe.ts";
+import { ganimetIsiAc } from "./ganimet.ts";
 import { devletAyi, devletGorunumu, devletYemin, devletYonet } from "./devlet.ts";
 import {
   adayUygunMu,
@@ -262,6 +263,8 @@ export function bolgeAyi(d: BolgeDurumu, ay: number, simdi: number, ozet?: Sulta
   } else if (darbeOnce === "catışma" && d.darbe?.sonuc) {
     kayitEkle(d, ay, "darbeSonuc", "kurum", { k: "kayit.darbeSonuc", p: { sonuc: d.darbe.sonuc.tur, saldiran: d.darbe.sonuc.saldiran, savunan: d.darbe.sonuc.savunan } });
   }
+  // Sonuçlanan darbenin ganimeti kalıcı kuyruğa girer; akçeyi BolgeDO yerleşimlerden keser ve dağıtır.
+  if (darbeOnce === "catışma") ganimetIsiAc(d, ay);
   if (bitis) kayitEkle(d, ay, "ozerklikBitti", "divan", { k: "kayit.ozerklikBitti", p: { neden: bitis } });
   // 6. NPC Sultan: haraçta yaptırım kademesindeki oyuncu valiyi doğrulanmış gerekçeyle azleder (itiraz yolu açık).
   if (!v.s.npc && d.gecikme >= HARAC.azilGecikme) azlet(d, v, "harac", "sultan", ay, true);

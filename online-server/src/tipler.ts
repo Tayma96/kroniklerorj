@@ -591,6 +591,8 @@ export type YerlesimIleti =
   | { islem: "mulkGiris"; yerlesim: string; hesapId: string; kayitlar: CikisKaydi[] }
   /** Siyaset (Faz 7/P1): HesapDO → YerlesimDO, doğrulanmış siyasi kimlik (src/siyaset/hesap-kopru.ts). */
   | { islem: "siyasetKimlik"; yerlesim: string; hesapId: string }
+  /** Darbe ganimeti (BolgeDO → YerlesimDO; istemci ulaşamaz): kaybedenin akçe kesintisi ve kazananın payı. */
+  | { islem: "ganimetKes" | "ganimetPay"; yerlesim: string; hesapId: string; govde: unknown }
   | (HanedanIletisi & { yerlesim: string })
   | (EkonomiIletisi & { yerlesim: string })
   | (BarinmaIletisi & { yerlesim: string })

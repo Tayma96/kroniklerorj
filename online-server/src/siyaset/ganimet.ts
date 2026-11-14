@@ -4,7 +4,7 @@
 // (yoktan akçe doğmaz, akçe yakılmaz); aynı oyuncu aynı darbede ya da soğuma penceresinde ikinci kez kesilmez.
 
 import { DARBE } from "./sabitler.ts";
-import type { DarbePlani } from "./tipler.ts";
+import type { BolgeDurumu, DarbePlani, GanimetIsi } from "./tipler.ts";
 
 /** [PARAMETRE] Kaybeden taraftaki tek oyuncunun likit akçesinden alınabilecek en çok yüzde. */
 export const GANIMET_AKCE_YUZDE = 25;
@@ -12,6 +12,10 @@ export const GANIMET_AKCE_YUZDE = 25;
 export const GANIMET_MULK_EN_COK = 1;
 /** [PARAMETRE] Aynı oyuncunun yeniden kesilemeyeceği kayan pencere (ay); mevcut darbe soğumasıyla aynıdır. */
 export const GANIMET_PENCERE_AY = DARBE.sogumaAy;
+/** [PARAMETRE] Karakterde saklanan işlenmiş ganimet adımı sayısı (kalıcı tekrar güvenliği; darbe başına bir kayıt). */
+export const GANIMET_IZ_EN_COK = 8;
+/** [PARAMETRE] Tek ganimet payının üst sınırı (bozuk iç ileti korkuluğu; gerçek paylar çok altındadır). */
+export const GANIMET_PAY_EN_COK = 100_000_000;
 
 export interface GanimetMulku {
   id: string;
@@ -103,6 +107,56 @@ export function darbeTaraflari(p: DarbePlani): { kaybeden: { kisi: string; hesap
   return { kaybeden: [], kazanan: [] };
 }
 
+/**
+ * Tek kaybedenin akçe kesintisi (tavan + tekrar/pencere koruması). YerlesimDO canlı akçeyle aynı fonksiyonu çağırır;
+ * `ganimetHesapla` da bunu kullanır: tek formül, iki yer.
+ */
+export function ganimetKesinti(
+  akce: number,
+  onceki: { darbeId: string; ay: number } | undefined,
+  darbeId: string,
+  ay: number,
+): { neden: "uygulandi" | "tekrar" | "pencere"; tutar: number; once: number; tavan: number } {
+  const once = Math.max(0, Math.floor(Number.isFinite(akce) ? akce : 0));
+  const tavan = Math.floor((once * GANIMET_AKCE_YUZDE) / 100);
+  if (onceki?.darbeId === darbeId) return { neden: "tekrar", tutar: 0, once, tavan };
+  if (onceki && ay < onceki.ay + GANIMET_PENCERE_AY) return { neden: "pencere", tutar: 0, once, tavan };
+  return { neden: "uygulandi", tutar: tavan, once, tavan };
+}
+
+/** Toplamı `n` kazanana böler; artan akçe sıralı ilk kazananlara birer birer gider (toplam tam korunur). */
+export function ganimetPaylari(toplam: number, n: number): number[] {
+  const t = Math.max(0, Math.floor(Number.isFinite(toplam) ? toplam : 0));
+  return Array.from({ length: Math.max(0, n) }, (_, i) => Math.floor(t / n) + (i < t % n ? 1 : 0));
+}
+
+/**
+ * Darbe sonuçlanınca ganimet işini bölgenin kalıcı kuyruğuna koyar (BolgeDO teslim eder; bkz. ganimet-kuyruk.ts).
+ * Kaybeden ya da kazanan yoksa iş açılmaz. Aynı hesap bir tarafta bir kez sayılır, iki tarafta olan hesap kesilmez.
+ */
+export function ganimetIsiAc(d: BolgeDurumu, ay: number): boolean {
+  const p = d.darbe;
+  if (!p || (d.ganimetGiden ?? []).some((x) => x.darbeId === p.id)) return false;
+  const taraf = darbeTaraflari(p);
+  const hesapTekil = (xs: { kisi: string; hesap: string }[]) => {
+    const gorulen = new Set<string>();
+    return sirala(xs).filter((x) => (gorulen.has(x.hesap) ? false : (gorulen.add(x.hesap), true)));
+  };
+  const kazananlar = hesapTekil(taraf.kazanan);
+  const kazananHesap = new Set(kazananlar.map((x) => x.hesap));
+  const kaybedenler = hesapTekil(taraf.kaybeden).filter((x) => !kazananHesap.has(x.hesap));
+  if (kaybedenler.length === 0 || kazananlar.length === 0) return false;
+  const is: GanimetIsi = {
+    darbeId: p.id,
+    ay,
+    asama: "kes",
+    kaybedenler: kaybedenler.map((x) => ({ kisi: x.kisi, hesap: x.hesap })),
+    kazananlar: kazananlar.map((x) => ({ kisi: x.kisi, hesap: x.hesap })),
+  };
+  (d.ganimetGiden ??= []).push(is);
+  return true;
+}
+
 export function ganimetHesapla(g: GanimetGirdisi): GanimetDokumu {
   const kazananHesap = new Set(g.kazananlar.map((x) => x.hesap));
   const kazananlar = sirala(tekil(g.kazananlar));
@@ -112,14 +166,13 @@ export function ganimetHesapla(g: GanimetGirdisi): GanimetDokumu {
   const alinanMulk = new Map<string, string[]>(kazananlar.map((x) => [x.kisi, []]));
 
   const kayip: GanimetKalemi[] = kaybedenler.map((k) => {
-    const akceOnce = Math.max(0, Math.floor(Number.isFinite(k.akce) ? k.akce : 0));
-    const akceTavani = Math.floor((akceOnce * GANIMET_AKCE_YUZDE) / 100);
+    const kes = ganimetKesinti(k.akce, k.oncekiKayip, g.darbeId, g.ay);
+    const akceOnce = kes.once;
+    const akceTavani = kes.tavan;
     const korunan = k.mulkler.filter((m) => m.barinak || m.aileEvi).map((m) => m.id).sort();
     const temel = { kisi: k.kisi, hesap: k.hesap, istekNo: ganimetIstekNo(g.darbeId, "kayip", k.kisi), akceOnce, akceTavani, korunan };
-    let neden: GanimetNedeni = "uygulandi";
-    if (k.oncekiKayip?.darbeId === g.darbeId) neden = "tekrar";
-    else if (k.oncekiKayip && g.ay < k.oncekiKayip.ay + GANIMET_PENCERE_AY) neden = "pencere";
-    else if (kazananlar.length === 0) neden = "kazananYok";
+    let neden: GanimetNedeni = kes.neden;
+    if (neden === "uygulandi" && kazananlar.length === 0) neden = "kazananYok";
     if (neden !== "uygulandi") return { ...temel, neden, akceKaybi: 0, mulk: null };
 
     let mulk: GanimetKalemi["mulk"] = null;
@@ -141,12 +194,12 @@ export function ganimetHesapla(g: GanimetGirdisi): GanimetDokumu {
   });
 
   const toplamKayip = kayip.reduce((t, x) => t + x.akceKaybi, 0);
-  const n = kazananlar.length;
+  const paylar = ganimetPaylari(toplamKayip, kazananlar.length);
   const pay: GanimetPayi[] = kazananlar.map((z, i) => ({
     kisi: z.kisi,
     hesap: z.hesap,
     istekNo: ganimetIstekNo(g.darbeId, "pay", z.kisi),
-    akce: n === 0 ? 0 : Math.floor(toplamKayip / n) + (i < toplamKayip % n ? 1 : 0),
+    akce: paylar[i] ?? 0,
     mulkler: alinanMulk.get(z.kisi) ?? [],
   }));
   const toplamPay = pay.reduce((t, x) => t + x.akce, 0);

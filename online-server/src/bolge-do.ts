@@ -4,12 +4,13 @@
 // İnce sarmalayıcıdır; kurallar src/siyaset/'tedir.
 
 import { doDepo, type Depo } from "./depo.ts";
-import { iletiOku, jsonYanit } from "./ic.ts";
+import { iletiOku, jsonYanit, yerlesimCagir } from "./ic.ts";
 import { istekNoCoz } from "./mantik.ts";
 import { oyunAyi, sonrakiDonum } from "./saat.ts";
 import { bolgeAyi, bolgeEylem, bolgeGorunumu, bolgeKur, bolgeVar, haracOnayla, vergiYatir } from "./siyaset/bolge.ts";
 import { ittifakBozAl, ittifakIstekAl, ittifakOnayAl, ittifakYanitAl, ittifakOnaylandi, taninmaIstekAl, taninmaYanitAl } from "./siyaset/devlet.ts";
 import { diplomasiReddedildi } from "./siyaset/diplomasi-red.ts";
+import { ganimetKesildi, ganimetOdendi, ganimetSiradaki, ganimetUlasilamadi } from "./siyaset/ganimet-kuyruk.ts";
 import { bolgeCagir, sultanlikCagir } from "./siyaset/ic.ts";
 import { kimlikGor } from "./siyaset/makam.ts";
 import { KAYIT } from "./siyaset/sabitler.ts";
@@ -22,6 +23,10 @@ const SAYFA = "kayit:";
 const VERGI = "vy:";
 /** [PARAMETRE] Bir istekte yetiştirilecek en çok ay (uzun kesintide kalanı sonraki isteğe/alarma kalır). */
 export const BOLGE_AZAMI_YETISTIRME = 24;
+/** [PARAMETRE] Bir çağrıda atılacak en çok ganimet adımı (yerleşim çağrısı); kalanı yeniden deneme alarmına kalır. */
+export const GANIMET_ADIM_EN_COK = 40;
+/** [PARAMETRE] Teslim edilemeyen ganimet adımının yeniden deneme aralığı. */
+export const GANIMET_YENIDEN_MS = 60_000;
 
 export class BolgeDO {
   readonly #depo: Depo;
@@ -56,6 +61,7 @@ export class BolgeDO {
       if (d) {
         await this.#yetistir(d, this.#saat());
         await this.#gonderDiplomasi(d);
+        await this.#gonderGanimet(d, this.#saat());
       }
     });
   }
@@ -196,6 +202,47 @@ export class BolgeDO {
     if (degisti) await this.#kaydet(d, d.kn);
   }
 
+  /**
+   * Darbe ganimeti kuyruğu: kaybedenlerin akçesi yerleşimlerinde kesilir, toplam kazananlara dağıtılır. Her adım
+   * `istekNo` ile yerleşimde kalıcı tekrar güvenlidir ve yanıtı işlenince hemen yazılır. Geçici hata (5xx, istisna)
+   * adımı kuyrukta bırakır ve alarm yeniden dener; kalıcı ret kuyruğu tıkamaz (kazananın payı vali kasasına girer).
+   */
+  async #gonderGanimet(d: BolgeDurumu, simdi: number): Promise<void> {
+    if (!d.ganimetGiden?.length || !this.#env.YERLESIM) return;
+    for (let i = 0; i < GANIMET_ADIM_EN_COK; i++) {
+      const kn = d.kn;
+      const { adim, degisti } = ganimetSiradaki(d);
+      if (!adim) {
+        if (degisti) await this.#kaydet(d, kn);
+        return;
+      }
+      let r: Sonuc<{ tutar: number }>;
+      try {
+        r = await yerlesimCagir<{ tutar: number }>(this.#env, {
+          islem: adim.tur === "kes" ? "ganimetKes" : "ganimetPay",
+          yerlesim: adim.yerlesim,
+          hesapId: adim.hedef.hesap,
+          govde: { istekNo: adim.istekNo, darbeId: adim.is.darbeId, ay: adim.is.ay, tutar: adim.hedef.tutar ?? 0 },
+        });
+      } catch {
+        if (degisti) await this.#kaydet(d, kn);
+        break;
+      }
+      if (!r.ok && HATA_DURUMU[r.hata] >= 500) {
+        if (degisti) await this.#kaydet(d, kn);
+        break;
+      }
+      if (!r.ok) ganimetUlasilamadi(d, adim);
+      else if (adim.tur === "kes") ganimetKesildi(adim, r.deger.tutar);
+      else ganimetOdendi(adim);
+      await this.#kaydet(d, kn);
+    }
+    if (!d.ganimetGiden?.length) return;
+    const yeniden = simdi + GANIMET_YENIDEN_MS;
+    const mevcut = await this.#ctx.storage.getAlarm();
+    if (mevcut === null || mevcut > yeniden) await this.#ctx.storage.setAlarm(yeniden);
+  }
+
   async #isle(ileti: BolgeIleti, simdi: number): Promise<Sonuc<unknown>> {
     const d = await this.#ac(ileti.bolge, simdi);
     if (!d) return hata("bolge_gecersiz");
@@ -245,6 +292,8 @@ export class BolgeDO {
           kimlikGor(d, ileti.kimlik, simdi);
           await this.#kaydet(d, kn);
         }
+        // Yalnız oyuncu isteğinde (HesapDO): yerleşimden gelen kimliksiz görünüm çağrısında yerleşime geri dönülmez.
+        if (ileti.kimlik) await this.#gonderGanimet(d, simdi);
         const g = bolgeGorunumu(d, simdi, ileti.kimlik);
         const p = ileti.kayitSayfa;
         if (typeof p === "number" && Number.isInteger(p) && p >= 0) {
@@ -272,6 +321,7 @@ export class BolgeDO {
         if (defter.length > KAYIT.istekEnCok) defter.splice(0, defter.length - KAYIT.istekEnCok);
         await this.#kaydet(d, kn, { [anahtar]: defter });
         await this.#gonderDiplomasi(d);
+        await this.#gonderGanimet(d, simdi);
         return basarili(yanit);
       }
       case "yoklama": {

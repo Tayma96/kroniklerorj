@@ -136,6 +136,9 @@ function SiyasetEkran() {
         {baris ? <Text style={{ fontFamily: F.serif, fontSize: 13, lineHeight: 19, color: C.parchmentDim, textAlign: hiza(rtl) }}>
           {applyParams(t("onl.siyaset.barisDurum"), [t("onl.siyaset.taraf." + baris.taraf), t("onl.siyaset.baris." + baris.durum)])}
         </Text> : null}
+        {darbe.ganimet && (pencereAcik || darbe.durum === "hazirlik") ? <Text style={{ fontFamily: F.serif, fontSize: 12, lineHeight: 18, color: C.goldDim, textAlign: hiza(rtl) }}>
+          {applyParams(t("onl.siyaset.ganimetBedel"), [String(darbe.ganimet.akceYuzde), String(darbe.ganimet.pencereAy)])}
+        </Text> : null}
         {savunmaVerebilir ? <>
           <Text style={{ fontFamily: F.serif, fontSize: 13, lineHeight: 19, color: C.parchmentDim, textAlign: hiza(rtl) }}>{applyParams(t("onl.siyaset.savunmaAlt"), [t("onl.siyaset.makam." + savunmaMakam.tur)])}</Text>
           <CizgiDugme etiket={t("onl.siyaset.savunmaEmri")} icon="shield-check" rtl={rtl} kapali={yukleniyor}
@@ -201,7 +204,7 @@ function SiyasetEkran() {
     <Baslik2 metin={t("onl.siyaset.kayitlar")} rtl={rtl} />
     {durum?.kayit.slice(-8).reverse().map((x, i) => {
       const k = typeof x.m?.k === "string" ? "onl." + x.m.k : "";
-      const metin = k ? t(k) : "";
+      const metin = k ? applyParams(t(k), [String(x.m?.p?.tutar ?? "")]) : "";
       return <View key={x.n ?? i} style={{ flexDirection: yon(rtl), alignItems: "center", gap: 8, paddingVertical: 7, borderBottomWidth: 1, borderColor: C.border }}>
         <Text style={{ fontFamily: F.display, fontSize: 11, color: C.goldDim }}>{x.ay ?? ""}</Text>
         <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 13, color: C.parchmentDim, textAlign: hiza(rtl) }}>{metin && metin !== k ? metin : (x.kim ?? x.tur ?? "")}</Text>

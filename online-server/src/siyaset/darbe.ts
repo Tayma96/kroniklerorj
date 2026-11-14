@@ -2,6 +2,7 @@
 // Gizli hazırlık izleri yalnız plan katılımcılarına görünür; ilan sonrası bölgeye yayınlanır.
 
 import { DARBE } from "./sabitler.ts";
+import { GANIMET_AKCE_YUZDE, GANIMET_PENCERE_AY } from "./ganimet.ts";
 import type { DarbeDestekRolu, BolgeDurumu, SiyasiKimlik, DarbeTarafi } from "./tipler.ts";
 import { kumeAnahtarlari, kumeKesisir } from "./makam.ts";
 import type { HataKodu } from "../tipler.ts";
@@ -228,6 +229,8 @@ export function darbeGorunumu(d: BolgeDurumu, kimlik?: SiyasiKimlik) {
     id: p.id, durum: p.durum, mod: p.mod ?? null,
     ilanAy: p.ilanAy ?? null, cozumAy: p.cozumAy ?? null, sonuc: p.sonuc ?? null,
     barisTeklifi: p.barisTeklifi ?? null,
+    // Taraf tutmanın bedeli açık sayıdır: kaybeden tarafın akçesinden en çok bu yüzde alınır (ev/mülk alınmaz).
+    ganimet: { akceYuzde: GANIMET_AKCE_YUZDE, pencereAy: GANIMET_PENCERE_AY },
     ...(kimlik ? {
       benimTaraf: p.baslatanKisi === kimlik.kisi ? "saldiran" : (p.savunma ?? []).some((x) => x.hesap === kimlik.hesap) ? "savunan" : null,
       benimDestek: p.destekler.some((x) => x.hesap === kimlik.hesap || kumeKesisir(x.kume, kumeAnahtarlari(kimlik))),
