@@ -25,17 +25,16 @@ paneli Y1–Y3 · şikâyet/engelleme · ilk oturum ekranları · beceri ağacı
 ### Han (GDD §16, araştırma §5–6)
 | # | Eksik | Boyut |
 |---|---|---|
-| H7 | Akçeyle ziyafet (nam olayı) ile Debdebe ziyafet afişi (yalnız görüntü) ayrımı. | orta |
 | H8 | Ozan sahnesi (tek anlatıcı, dinleyici söz ister) ve ozan atışması (masadakilerin ücretsiz oyu, ödül yalnız anılma). | orta |
-| H9 | Masa türleri özel/meclis/tüccar; lonca ve zaviye masası; hancı/kâhya moderasyon yetkisi (mülk yetki matrisinden). | orta |
-| H10 | Handa NPC'ler (hancı, ozan, haberci) ve ilan panosu. | orta |
-| H11 | Debdebe yüzeyleri handa: sohbet balonu, masa süsü, giriş anonsu. | orta |
+| H9 | Meclis ve tüccar masa türleri; lonca ve zaviye masası; hancı/kâhya moderasyon yetkisi. Özel masa (davetli) var (14 Kasım). | orta |
+| H10 | Handa NPC'ler (hancı, ozan, haberci). İlan panosu var (14 Kasım). | orta |
+| H11 | Debdebe giriş anonsu. Sohbet balonu ve masa süsü var (14 Kasım). | küçük |
 | H12 | Oda getirileri: özel görüşme, sandık, ikamet şartı (bayraklar var, kullanan yok). | büyük |
 
 ### Dünya
 | # | Eksik | Boyut |
 |---|---|---|
-| D1 | Göç var (14 Kasım, §4.5). Açık: emanete kalan malı geri alma ucu; göç sırasında han masasına haber; müdavim rozetinin yeni yerde hesaplanması. | küçük |
+| D1 | Göç ve emanet çekme var (14 Kasım). Açık: göç sırasında han masasına haber; müdavim rozetinin yeni yerde hesaplanması; yalnız son göçün emaneti çekilebilir. | küçük |
 | D2 | Kervan ve şehirler arası ticaret; menzil han; yeni işletme türleri (hamam, kervansaray, imaret, bedesten). | büyük |
 | D3 | Ölümde makamın devri (A-04a onay bekliyor). Mülk vârise geçiyor (14 Kasım); oyuncu borcu teklif taşıyıcısıyla geçiyor. | orta |
 | D4 | Sahipsiz mülk: uzun yoklukta vekile devir ya da kamu açık artırması. | orta |
