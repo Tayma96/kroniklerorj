@@ -15,7 +15,7 @@ const MENU: MenuSatiri[] = [{ id: "ekmek", fiyat: 2 }, { id: "serbet", fiyat: 3 
 const HAN_ADI: Record<Dil, string> = { tr: "Küçük Han", en: "Small Inn", es: "Posada pequeña", pt: "Pequena estalagem", ar: "خان صغير", ru: "Малый постоялый двор" };
 const AYAR: MasaAyari = { tur: "acik", acik: true, sesli: true, kavgaYasak: false };
 const KISILER: Plaka[] = [
-  { hesap: "oy-kerim", ad: "Kerim Usta" }, { hesap: "oy-ayse", ad: "Ayşe Hatun" }, { hesap: "oy-osman", ad: "Osman Kalfa" },
+  { hesap: "oy-kerim", ad: "Kerim Usta", mudavim: true }, { hesap: "oy-ayse", ad: "Ayşe Hatun", ozan: true }, { hesap: "oy-osman", ad: "Osman Kalfa" },
   { hesap: "oy-zeynep", ad: "Zeynep" }, { hesap: "oy-mehmet", ad: "Mehmet Çelebi", cerceve: "yaldiz" }, { hesap: "oy-hatice", ad: "Hatice Kadın" },
   { hesap: "oy-yakup", ad: "Yakup" }, { hesap: "oy-selim", ad: "Selim Ağa" },
 ];

@@ -236,7 +236,7 @@ export const rows: Record<string, string[]> = {
   "onl.db.yuva.binek": v("Binek süsü", "Mount decoration", "Adorno de montura", "Enfeite de montaria", "زينة الدابة", "Украшение скакуна"),
   "onl.db.sahipOl": v("Sende", "Owned", "En propiedad", "Em posse", "تملكه", "Есть"),
   "onl.db.stok": v("Stok: {0}", "Stock: {0}", "Existencias: {0}", "Estoque: {0}", "المخزون: {0}", "Запас: {0}"),
-  "onl.db.fiyatReferans": v("Referans: 0 · yaklaşık ₺{1}; kesin fiyatı mağaza belirler.", "Reference: ${0} · approx. ₺{1}; the store sets the final price.", "Referencia: ${0} · aprox. ₺{1}; la tienda fija el precio final.", "Referência: ${0} · aprox. ₺{1}; a loja define o preço final.", "السعر المرجعي: ${0} · نحو ₺{1}؛ والمتجر يحدد السعر النهائي.", "Ориентир: ${0} · около ₺{1}; окончательную цену задаёт магазин."),
+  "onl.db.fiyatReferans": v("Referans: $%1 · yaklaşık ₺%2; kesin fiyatı mağaza belirler.", "Reference: $%1 · approx. ₺%2; the store sets the final price.", "Referencia: $%1 · aprox. ₺%2; la tienda fija el precio final.", "Referência: $%1 · aprox. ₺%2; a loja define o preço final.", "السعر المرجعي: $%1 · نحو ₺%2؛ والمتجر يحدد السعر النهائي.", "Ориентир: $%1 · около ₺%2; окончательную цену задаёт магазин."),
   "onl.db.teveccuh": v("Alan kişiye {0} teveccüh", "{0} favor to the recipient", "{0} de favor para quien lo recibe", "{0} de estima para quem recebe", "{0} من التقدير للمتلقي", "{0} расположения получателю"),
   "onl.db.dene": v("Ücretsiz dene", "Try for free", "Probar gratis", "Experimentar grátis", "جرّب مجانًا", "Бесплатно примерить"),
   "onl.db.kusan": v("Kuşan", "Equip", "Equipar", "Equipar", "ارتدِ", "Надеть"),

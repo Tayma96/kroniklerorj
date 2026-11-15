@@ -24,8 +24,8 @@ export type MasaTuru = "acik" | "ozel" | "meclis" | "tuccar";
 /** `kilitli`: masa başı yeni oturan ve sıraya gireni kabul etmiyor (ayakta dinleme sürer; eski sunucuda yok). */
 export interface MasaAyari { tur: MasaTuru; acik: boolean; sesli: boolean; kavgaYasak: boolean; kilitli?: boolean; davet?: string[] }
 /** İsim plakası. `cerceve` sunucunun sahiplikten eklediği Debdebe süsüdür; oyun mantığı okumaz. */
-/** `mudavim`: bu yerleşimin müdavim rozeti (yalnız plakada görünür). */
-export interface Plaka { hesap: string; ad: string; cerceve?: string; mudavim?: true; balon?: string; masaSusu?: string }
+/** `mudavim`: bu yerleşimin müdavim rozeti; `ozan`: ana mesleği ozan (H8). İkisi de yalnız görünür işarettir. */
+export interface Plaka { hesap: string; ad: string; cerceve?: string; mudavim?: true; ozan?: true; balon?: string; masaSusu?: string }
 export interface MasaGorunumu {
   no: number;
   koltuklar: (Plaka | null)[];
@@ -130,7 +130,8 @@ export const masaGorunumuMu = (v: unknown): v is MasaGorunumu =>
 export const masaOlayiMi = (v: unknown): v is MasaOlayi =>
   nesneMi(v) && sayiMi(v.no) && metinMi(v.tur) && metinMi(v.kim) && sayiMi(v.zaman) && Array.isArray(v.katilim);
 export const anonsMu = (v: unknown): v is MasaAnonsu =>
-  nesneMi(v) && (v.tur === "ikram" || v.tur === "armagan" || v.tur === "debdebe") && metinMi(v.kim) && metinMi(v.hedef) && metinMi(v.oge);
+  nesneMi(v) && metinMi(v.kim) && metinMi(v.oge)
+  && ((v.tur === "ikram" || v.tur === "armagan" || v.tur === "debdebe") ? metinMi(v.hedef) : v.tur === "ziyafet" && (v.hedef === undefined || metinMi(v.hedef)));
 const masaOzetiMi = (v: unknown): v is MasaOzeti => nesneMi(v) && sayiMi(v.no) && sayiMi(v.oturan) && sayiMi(v.ayakta) && sayiMi(v.sira) && ayarMi(v.ayar);
 const hanOzetiMi = (v: unknown): v is HanOzeti =>
   nesneMi(v) && nesneMi(v.yerlesim) && metinMi(v.yerlesim.ad) && nesneMi(v.han) && metinMi(v.han.ad) && metinMi(v.han.tur)

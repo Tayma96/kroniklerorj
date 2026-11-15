@@ -1,15 +1,16 @@
-// Han masası (Faz 10): koltuklar yuvarlak masanın çevresinde isim plakalarıyla, ayaktakiler ve sıra, sohbet akışı
-// (240 harf; saklanmaz), otur/kalk, sessize al, şikâyet, masa başına at/öne al, butonlu eylemler (yemin, sözleşme,
-// ittifak, ihbar, meydan okuma; masadakiler kayda geçer), ikram menüsü ve anonslar. Bağlantı han-soket.ts'te.
+// Han masası (Faz 10): üstte han sofrası ve çevresinde koltuklar (portre, ad, işaretler), altında ayaktakiler ve sohbet
+// akışı (240 harf; saklanmaz). Bir koltuğa dokununca kişi kartı açılır: profil, armağan (ikram + Debdebe), butonlu eylemler
+// (yemin, sözleşme, ittifak, ihbar, meydan okuma; masadakiler kayda geçer), sessize al, şikâyet ve masa başının
+// moderasyonu. Kendi koltuğunda: kalk, ses, yemin. Bağlantı han-soket.ts'te; sonuçları sunucu verir.
 import { useEffect, useMemo, useRef, useState } from "react";
-import { View, Text, TextInput, ScrollView, KeyboardAvoidingView, Platform, StyleSheet, useWindowDimensions } from "react-native";
+import { View, Text, TextInput, ScrollView, KeyboardAvoidingView, Platform } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { LinearGradient } from "expo-linear-gradient";
 import { useI18n, applyParams } from "../../../lib/i18n";
 import { C, F } from "../../../lib/theme";
 import { GameIcon } from "../../../lib/icons";
 import { hap } from "../../../lib/haptics";
+import { isReduceMotion } from "../../../lib/perf";
 import { DesignPressable as Pressable } from "../../../lib/design-pressable";
 import { OnlineYakinda } from "../../../lib/online-yakinda";
 import { OnlineKapisi, useOnline } from "../../../lib/online/durum";
@@ -20,75 +21,31 @@ import { AltPanel, Baslik2, Rozet, SayfaBasi, Yukleniyor } from "../../../lib/on
 import { ekHataAnahtari } from "../../../lib/online/ek-istemci";
 import { istekTekrarMi } from "../../../lib/online/hata";
 import {
-  HAN_EYLEMLERI, IKRAMLAR, KAPANIS, ILETI_EN_UZUN, KOLTUK_SAYISI, SART_EN_UZUN, SIKAYET_NEDENLERI, harfSayisi, tekSatir, useHanIstemci,
-  type HanEylemi, type IkramId, type MasaOlayi, type MenuSatiri, type Plaka, type SikayetNedeni,
+  KAPANIS, ILETI_EN_UZUN, SART_EN_UZUN, SIKAYET_NEDENLERI, harfSayisi, tekSatir, useHanIstemci,
+  type HanEylemi, type MasaOlayi, type MenuSatiri, type Plaka, type SikayetNedeni,
 } from "../../../lib/online/han-veri";
 import { kapanisAnahtari, useMasa, type AkisOgesi } from "../../../lib/online/han-soket";
-import { AnonsSeridi, EYLEM_IKON, HanSayfa, IKRAM_IKON, IsimPlakasi, Not, type PlakaSesi } from "../../../lib/online/han-ui";
+import { AnonsSeridi, EYLEM_IKON, HanSayfa, Not, type PlakaSesi } from "../../../lib/online/han-ui";
+import { KoltukDuzeni, KoltukPortresi, isaretler, type Kutlama } from "../../../lib/online/han-koltuk-ui";
+import { ArmaganCekmecesi, type ArmaganSonucu } from "../../../lib/online/han-armagan";
+import { oyuncuKimligiMi } from "../../../lib/online/toplum-veri";
 import { useSes } from "../../../lib/online/ses";
 import type { Dil } from "../../../lib/online/protokol";
 
-type Ceviri = (k: string) => string;
 type SecimEylemi = Exclude<HanEylemi, "kabul">;
-const SECIM_EYLEMLERI = HAN_EYLEMLERI.filter((e): e is SecimEylemi => e !== "kabul");
 /** Sunucu kurallarının görünür kopyası (yalnız formu kurmak için; doğrulama sunucuda). */
 const EYLEM_FORM: Record<SecimEylemi, { hedef: "zorunlu" | "secimli"; sart: boolean }> = {
   yemin: { hedef: "secimli", sart: true }, sozlesme: { hedef: "zorunlu", sart: true }, ittifak: { hedef: "zorunlu", sart: false },
   ihbar: { hedef: "zorunlu", sart: false }, meydanOku: { hedef: "zorunlu", sart: false },
 };
+/** Kişi kartındaki eylemler: oturana hepsi; sıradakine (ayakta) yalnız ihbar (sunucu ihbarı masadaki herkese açar). */
+const OTURANA: SecimEylemi[] = ["sozlesme", "ittifak", "meydanOku", "yemin", "ihbar"];
 const BESTE_HAN = 64; // yazı kutusu yüksekliği
+const KUTLAMA_MS = 700; // giriş 260 + bekleme 700 + çıkış 260 ≈ 1,2 sn
 
 function masaNo(param: unknown): number {
   const n = Number(Array.isArray(param) ? param[0] : param);
   return Number.isInteger(n) && n >= 1 && n <= 8 ? n : 1;
-}
-
-/** Yuvarlak masa ve çevresindeki koltuklar (koltuk sayısına göre elips üstünde eşit aralık). */
-function MasaCizimi({ koltuklar, ben, bas, sessiz, rtl, t, onKoltuk, no, ayakta, sesi }: {
-  koltuklar: (Plaka | null)[]; ben: string | null; bas: string | null; sessiz: string[]; rtl: boolean; t: Ceviri; no: number; ayakta: number;
-  onKoltuk: (i: number, p: Plaka | null) => void;
-  /** Faz 16: plakanın ses durumu (konuşuyor, mikrofon açık, sesi kesik). */
-  sesi: (hesap: string) => PlakaSesi | undefined;
-}) {
-  const { width } = useWindowDimensions();
-  const W = Math.min(width - 32, 460);
-  const plakaW = Math.max(78, Math.min(112, Math.round(W * 0.3)));
-  const H = 330;
-  const rx = W / 2 - plakaW / 2;
-  const ry = H / 2 - 36;
-  const n = koltuklar.length || KOLTUK_SAYISI;
-  const benOturuyor = !!ben && koltuklar.some((p) => p?.hesap === ben);
-  return <View style={{ width: W, height: H, alignSelf: "center" }}>
-    {/* masa */}
-    <View pointerEvents="none" style={{ position: "absolute", left: W / 2 - W * 0.2, top: H / 2 - 50, width: W * 0.4, height: 100, borderRadius: 999, borderWidth: 2, borderColor: "#6B4F2A", overflow: "hidden", shadowColor: "#FFAA44", shadowOpacity: 0.35, shadowRadius: 22, shadowOffset: { width: 0, height: 0 } }}>
-      <LinearGradient colors={["#6A4524", "#3E2714", "#2A190C"]} style={StyleSheet.absoluteFill} />
-      <View style={{ position: "absolute", top: 6, left: 6, right: 6, bottom: 6, borderRadius: 999, borderWidth: 1, borderColor: "rgba(232,196,106,0.25)" }} />
-      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 2 }}>
-        <GameIcon name="flame" size={18} color={C.emberSoft} />
-        <Text style={{ fontFamily: F.display, fontSize: 12, color: C.goldBright }}>{applyParams(t("onl.han.masaNo"), [no])}</Text>
-        <Text style={{ fontFamily: F.serif, fontSize: 12, color: C.parchmentDim }}>{applyParams(t("onl.han.ayakta"), [ayakta])}</Text>
-      </View>
-    </View>
-    {Array.from({ length: n }, (_, i) => {
-      const a = -Math.PI / 2 + (2 * Math.PI * i) / n;
-      const x = (rtl ? -1 : 1) * Math.cos(a) * rx;
-      const y = Math.sin(a) * ry;
-      const p = koltuklar[i] ?? null;
-      const left = W / 2 + x - plakaW / 2;
-      const top = H / 2 + y - 35;
-      const benim = !!p && p.hesap === ben;
-      const ps = p ? sesi(p.hesap) : undefined;
-      const etiket = p ? `${applyParams(t("onl.han.koltuk"), [i + 1])}: ${p.ad}${p.hesap === bas ? ", " + t("onl.han.masaBasi") : ""}${ps ? ", " + t("onl.ses.plaka." + ps) : ""}` : `${applyParams(t("onl.han.koltuk"), [i + 1])}: ${t(benOturuyor ? "onl.han.bosKoltuk" : "onl.han.oturErisim")}`;
-      return <Pressable key={i} accessibilityRole="button" accessibilityLabel={etiket} onPress={() => { hap("tap"); onKoltuk(i, p); }}
-        style={({ pressed }) => ({ position: "absolute", left, top, width: plakaW, minHeight: 70, transform: [{ scale: pressed ? 0.96 : 1 }] })}>
-        {p ? <IsimPlakasi plaka={p} ben={benim} bas={p.hesap === bas} sessiz={sessiz.includes(p.hesap)} genislik={plakaW} rtl={rtl} ses={ps} />
-          : <View style={{ width: plakaW, minHeight: 70, borderRadius: 9, borderWidth: 1, borderStyle: "dashed", borderColor: "rgba(201,162,78,0.55)", backgroundColor: "rgba(14,10,6,0.55)", alignItems: "center", justifyContent: "center", gap: 2, paddingHorizontal: 4 }}>
-            <GameIcon name="house" size={14} color={C.goldDim} />
-            <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ fontFamily: F.display, fontSize: 11, color: benOturuyor ? C.parchmentMuted : C.goldBright }}>{t(benOturuyor ? "onl.han.bosKoltuk" : "onl.han.otur")}</Text>
-          </View>}
-      </Pressable>;
-    })}
-  </View>;
 }
 
 function zamanYaz(ms: number, lang: string) {
@@ -107,16 +64,16 @@ function MasaEkran() {
   const d = m.durum;
   const [metin, setMetin] = useState("");
   const [kisi, setKisi] = useState<Plaka | null>(null);
-  const [panel, setPanel] = useState<null | "eylem" | "ikram" | "rapor">(null);
+  const [panel, setPanel] = useState<null | "eylem" | "armagan" | "rapor">(null);
   const [hedef, setHedef] = useState<string | null>(null);
   const [eylemTur, setEylemTur] = useState<SecimEylemi>("yemin");
   const [sart, setSart] = useState("");
-  const [ikram, setIkram] = useState<IkramId>("serbet");
   const [neden, setNeden] = useState<SikayetNedeni>("kufur");
   const [aciklama, setAciklama] = useState("");
   const [bekliyor, setBekliyor] = useState(false);
   const [bilgi, setBilgi] = useState<string | null>(null);
   const [menu, setMenu] = useState<MenuSatiri[] | null>(null);
+  const [kutlama, setKutlama] = useState<Kutlama | null>(null);
   const istekNo = useRef<string>(istekNoUret());
   const akisKutu = useRef<ScrollView>(null);
 
@@ -129,6 +86,7 @@ function MasaEkran() {
   const ilkRapor = useRef(d.raporlandi);
   useEffect(() => { if (d.raporlandi > ilkRapor.current) { setBilgi(t("onl.han.raporAlindi")); ilkRapor.current = d.raporlandi; } }, [d.raporlandi, t]);
   useEffect(() => { const z = setTimeout(() => akisKutu.current?.scrollToEnd({ animated: true }), 60); return () => clearTimeout(z); }, [d.akis.length]);
+  useEffect(() => { if (!kutlama) return; const z = setTimeout(() => setKutlama(null), KUTLAMA_MS); return () => clearTimeout(z); }, [kutlama]);
 
   const masa = d.masa;
   const ben = d.ben?.hesap ?? null;
@@ -143,10 +101,12 @@ function MasaEkran() {
   const acik = d.bag === "acik" && !!masa;
   const ses = useSes({ no, istemci, ses: d.ses, ben, oturuyor, bagli: acik, sessiz: d.sessiz, gonder: m.gonderHam });
   const sesi = (h: string): PlakaSesi | undefined => (ses.kesik(h) ? "kesik" : ses.konusuyor(h) ? "konusuyor" : ses.mikAcik(h) ? "acik" : undefined);
+  const isaretBul = (p: Plaka) => isaretler(p, { bas: masa?.masaBasi ?? null, sessiz: d.sessiz, sesi, soz: ses.sozIstedi });
   const benKesik = !!ben && ses.kesik(ben);
   const sozIstedim = !!ben && ses.sozIstedi(ben);
 
-  const panelAc = (p: "eylem" | "ikram" | "rapor", h: string | null) => { istekNo.current = istekNoUret(); setHedef(h); setKisi(null); setPanel(p); setBilgi(null); };
+  const panelAc = (p: "eylem" | "armagan" | "rapor", h: string | null) => { istekNo.current = istekNoUret(); setHedef(h); setKisi(null); setPanel(p); setBilgi(null); };
+  const eylemAc = (tur: SecimEylemi, h: string | null) => { setEylemTur(tur); setSart(""); panelAc("eylem", h); };
   const gonder = () => {
     const m2 = tekSatir(metin);
     if (!m2 || harfSayisi(m2) > ILETI_EN_UZUN) return;
@@ -161,23 +121,15 @@ function MasaEkran() {
     else if (istekTekrarMi(s.hata)) { setPanel(null); setSart(""); setBilgi(t("onl.h.istekTekrar")); istekNo.current = istekNoUret(); }
     else m.hataGoster(s.hata, s.bitis);
   };
-  const ikramGonder = async () => {
-    if (!hedef) return;
-    setBekliyor(true);
-    const s = await istemci.ikram({ masa: no, hedef, ikram, istekNo: istekNo.current });
-    setBekliyor(false);
-    if (s.ok) {
-      setPanel(null);
-      setMenu((x) => (x?.some((y) => y.id === ikram) ? x : [...(x ?? []), { id: ikram, fiyat: s.deger.fiyat }]));
-      setBilgi(applyParams(t("onl.han.ikramGitti"), [t("onl.han.ikram." + ikram), adBul(hedef), s.deger.fiyat, s.deger.para]));
-      istekNo.current = istekNoUret();
-      void o.yerlesimYukle(true);
-    } else if (istekTekrarMi(s.hata)) {
-      setPanel(null);
-      setBilgi(t("onl.h.istekTekrar"));
-      istekNo.current = istekNoUret();
-      void o.yerlesimYukle(true);
-    } else m.hataGoster(s.hata, s.bitis);
+  const armaganSonucu = (s: ArmaganSonucu) => {
+    setPanel(null);
+    setBilgi(s.bilgi);
+    if (s.kutlama) {
+      hap("success");
+      // Hareket azaltıldıysa yalnız sunucunun yayınladığı anons satırı sohbette görünür.
+      if (!isReduceMotion() && hedef) setKutlama({ id: istekNoUret(), icon: s.kutlama.icon, metin: applyParams(t("onl.han.kutlama"), [s.kutlama.oge, adBul(hedef)]) });
+    }
+    void o.yerlesimYukle(true);
   };
   const ziyafetIstekNo = useRef(istekNoUret());
   const ziyafetVer = async () => {
@@ -251,6 +203,13 @@ function MasaEkran() {
   </KeyboardAvoidingView>;
 
   const suresiz = d.susturma?.bitis === null;
+  const notStil = { fontFamily: F.serifItalic, fontSize: 13, lineHeight: 18, color: C.parchmentMuted, textAlign: hiza(rtl) } as const;
+  const kisiBen = !!kisi && kisi.hesap === ben;
+  const kisiOturuyor = !!kisi && !!masa?.koltuklar.some((p) => p?.hesap === kisi.hesap);
+  const kisiSira = kisi && masa ? masa.sira.findIndex((p) => p.hesap === kisi.hesap) : -1;
+  const kisiIsaret = kisi ? isaretBul(kisi) : null;
+  const masaAlt = masa ? (masa.ayar.kavgaYasak ? t("onl.han.isaret.kavgaYasak") : masa.ayar.tur === "ozel" ? t("onl.han.isaret.ozelMasa") : undefined) : undefined;
+
   return <HanSayfa alt={yaziKutusu} altYukseklik={BESTE_HAN + 30}>
     <View style={{ flexDirection: yon(rtl), alignItems: "center", gap: 6 }}>
       <GeriDugme rtl={rtl} etiket={t("onl.han.hanaDon")} onPress={() => geriGit(router, "/online/han")} />
@@ -273,34 +232,72 @@ function MasaEkran() {
     </View>
 
     {!masa ? (d.bag === "kapandi" ? null : <Yukleniyor metin={t("onl.han.baglaniyor")} />) : <>
+      {/* koltuklar ve sofra */}
       <View style={{ marginTop: 12 }}>
-        <MasaCizimi koltuklar={masa.koltuklar} ben={ben} bas={masa.masaBasi} sessiz={d.sessiz} rtl={rtl} t={t} no={no} ayakta={masa.ayakta} sesi={sesi}
+        <KoltukDuzeni koltuklar={masa.koltuklar} ben={ben} isaretBul={isaretBul} rtl={rtl} t={t} no={no} ayakta={masa.ayakta} alt={masaAlt} kutlama={kutlama}
           onKoltuk={(i, p) => {
             if (!p) { if (!oturuyor) m.otur(i); return; }
             setKisi(p);
           }} />
       </View>
 
-      {/* otur / kalk / sıra */}
-      <View style={{ marginTop: 6, gap: 8 }}>
-        {oturuyor ? <CizgiDugme etiket={t("onl.han.kalk")} icon="walk" rtl={rtl} kucuk kapali={!acik} onPress={() => m.kalk()} />
-          : siradaYer >= 0 ? <CizgiDugme etiket={applyParams(t("onl.han.siradanCik"), [siradaYer + 1])} icon="walk" rtl={rtl} kucuk kapali={!acik} onPress={() => m.kalk()} />
-          : <AltinDugme etiket={t(bosVar ? "onl.han.bosaOtur" : "onl.han.siraGir")} icon={bosVar ? "house" : "hourglass"} rtl={rtl} kapali={!acik} onPress={() => m.otur()} />}
+      {/* ayaktakinin denetimi: otur / sıra / söz iste; oturan kendi koltuğundan kalkar, sesini açar */}
+      <View style={{ marginTop: 10, gap: 8 }}>
+        {oturuyor ? <Text style={notStil}>{t("onl.han.koltugunaDokun")}</Text>
+          : <View style={{ flexDirection: yon(rtl), gap: 8 }}>
+            <View style={{ flex: 1 }}>
+              {siradaYer >= 0 ? <CizgiDugme etiket={applyParams(t("onl.han.siradanCik"), [siradaYer + 1])} icon="walk" rtl={rtl} kucuk kapali={!acik} onPress={() => m.kalk()} />
+                : <AltinDugme etiket={t(bosVar ? "onl.han.bosaOtur" : "onl.han.siraGir")} icon={bosVar ? "house" : "hourglass"} rtl={rtl} kapali={!acik} onPress={() => m.otur()} />}
+            </View>
+            {ses.gorunur ? <View style={{ flex: 1 }}><CizgiDugme etiket={t(sozIstedim ? "onl.ses.sozGeri" : "onl.ses.sozIste")} icon="star" rtl={rtl} kucuk kapali={!acik} onPress={() => (sozIstedim ? m.sozGeri() : m.sozIste())} /></View> : null}
+          </View>}
         {susturuldu ? <Not metin={suresiz ? t("onl.han.susturulduSuresiz") : applyParams(t("onl.han.susturulduBitis"), [new Date(d.susturma!.bitis!).toLocaleString(lang)])} rtl={rtl} icon="speaker" /> : null}
-      </View>
-
-      {/* sesli sohbet (Faz 16): oturan mikrofon açar, ayaktaki dinler ve söz ister */}
-      <View style={{ marginTop: 8, gap: 8 }}>
-        {ses.gorunur ? (oturuyor
-          ? <AltinDugme etiket={t(ses.mik ? "onl.ses.mikKapat" : "onl.ses.mikAc")} icon="speaker" rtl={rtl} bekliyor={ses.bekliyor} kapali={!acik || benKesik || susturuldu} onPress={ses.mikDegistir}
-              erisim={t(ses.mik ? "onl.ses.mikKapatErisim" : "onl.ses.mikAcErisim")} />
-          : <CizgiDugme etiket={t(sozIstedim ? "onl.ses.sozGeri" : "onl.ses.sozIste")} icon="star" rtl={rtl} kucuk kapali={!acik} onPress={() => (sozIstedim ? m.sozGeri() : m.sozIste())} />) : null}
         {ses.gorunur && oturuyor && benKesik ? <Not metin={t("onl.ses.kesildin")} rtl={rtl} icon="speaker" /> : null}
         {ses.gorunur && !oturuyor ? <Not metin={t(sozIstedim ? "onl.ses.sozBekliyor" : "onl.ses.dinliyorsun")} rtl={rtl} icon="speaker" /> : null}
         {ses.gorunur && ses.mik ? <Not metin={t("onl.ses.kayitYok")} rtl={rtl} icon="speaker" /> : null}
         {ses.neden ? <Not metin={t(ses.neden)} rtl={rtl} icon="speaker" /> : null}
         {ses.hata ? <Bant metin={t(ses.hata === "izin" ? "onl.ses.izinYok" : ekHataAnahtari(ses.hata))} rtl={rtl} eylem={t("onl.kapat")} onEylem={ses.hataTemizle} /> : null}
+        {/* ziyafet bütün masaya: tek yeri burası */}
+        {oturuyor ? <>
+          <CizgiDugme etiket={t("onl.han.ziyafetVer")} icon="bread" rtl={rtl} kucuk kapali={!acik || bekliyor || digerOturanlar.length < 2} onPress={() => { void ziyafetVer(); }} />
+          <Text style={[notStil, { fontSize: 12.5, lineHeight: 17 }]}>{t("onl.han.ziyafetNot")}</Text>
+        </> : <Text style={notStil}>{t("onl.han.oturunca")}</Text>}
       </View>
+
+      {basBen && d.ses?.soz.length ? <>
+        <Baslik2 metin={applyParams(t("onl.ses.sozBaslik"), [d.ses.soz.length])} rtl={rtl} />
+        <View style={{ gap: 6 }}>
+          {d.ses.soz.map((p) => <View key={p.hesap} style={{ flexDirection: yon(rtl), alignItems: "center", gap: 8, minHeight: 44, paddingHorizontal: 10, borderRadius: 8, backgroundColor: "rgba(14,10,6,0.7)", borderWidth: 1, borderColor: "rgba(201,162,78,0.25)" }}>
+            <GameIcon name="star" size={14} color={C.goldBright} />
+            <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.serif, fontSize: 15, color: C.parchment, textAlign: hiza(rtl) }}>{p.ad}</Text>
+            <CizgiDugme etiket={t("onl.ses.sozVer")} icon="house" rtl={rtl} kucuk kapali={!acik || !bosVar} onPress={() => m.sozVer(p.hesap)} />
+            <CizgiDugme etiket={t("onl.ses.reddet")} rtl={rtl} kucuk kapali={!acik} onPress={() => m.sozVer(p.hesap, false)} />
+          </View>)}
+          {!bosVar ? <Text style={notStil}>{t("onl.ses.sozDolu")}</Text> : null}
+        </View>
+      </> : null}
+
+      {/* sohbet */}
+      <Baslik2 metin={t("onl.han.sohbet")} rtl={rtl} />
+      <Cerceve ic={{ padding: 0 }}>
+        <ScrollView ref={akisKutu} nestedScrollEnabled style={{ maxHeight: 340 }} contentContainerStyle={{ padding: 10, gap: 8 }}>
+          {d.akis.length ? d.akis.map((a) => <View key={a.id}>{akisCiz(a)}</View>)
+            : <Text style={{ fontFamily: F.serifItalic, fontSize: 14.5, lineHeight: 20, color: C.parchmentDim, textAlign: "center", paddingVertical: 18 }}>{t("onl.han.sessizMasa")}</Text>}
+        </ScrollView>
+      </Cerceve>
+
+      {masa.sira.length ? <>
+        <Baslik2 metin={applyParams(t("onl.han.siraBaslik"), [masa.sira.length])} rtl={rtl} />
+        <View style={{ gap: 6 }}>
+          {masa.sira.map((p, i) => <Pressable key={p.hesap} accessibilityRole="button" accessibilityLabel={`${i + 1}. ${p.ad}${ses.sozIstedi(p.hesap) ? ", " + t("onl.han.isaret.soz") : ""}`} onPress={() => { hap("tap"); if (p.hesap !== ben) setKisi(p); }}
+            style={{ flexDirection: yon(rtl), alignItems: "center", gap: 10, minHeight: 44, paddingHorizontal: 10, borderRadius: 8, backgroundColor: "rgba(14,10,6,0.7)", borderWidth: 1, borderColor: "rgba(201,162,78,0.25)" }}>
+            <Text style={{ width: 22, fontFamily: F.display, fontSize: 13, color: C.gold, textAlign: "center" }}>{i + 1}</Text>
+            <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.serif, fontSize: 15, color: p.hesap === ben ? C.goldBright : C.parchment, textAlign: hiza(rtl) }}>{p.hesap === ben ? t("onl.han.sen") : p.ad}</Text>
+            {ses.sozIstedi(p.hesap) ? <GameIcon name="star" size={14} color={C.goldBright} /> : null}
+          </Pressable>)}
+          <Text style={notStil}>{t("onl.han.siraNot")}</Text>
+        </View>
+      </> : null}
 
       {basBen ? <View style={{ gap: 6 }}>
         <Baslik2 metin={t("onl.han.ayarBaslik")} rtl={rtl} />
@@ -321,113 +318,99 @@ function MasaEkran() {
           <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 14.5, color: C.parchmentDim, textAlign: hiza(rtl) }}>{t("onl.han.ayar.ozel")}</Text>
           <Text style={{ fontFamily: F.display, fontSize: 11.5, color: masa?.ayar.tur === "ozel" ? C.goldBright : C.goldDim }}>{t(masa?.ayar.tur === "ozel" ? "onl.br.hatirlatAcik" : "onl.br.hatirlatKapali")}</Text>
         </Pressable>
-        <Text style={{ fontFamily: F.serifItalic, fontSize: 13, lineHeight: 18, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{t("onl.han.ayarNot")}</Text>
-      </View> : masa?.ayar.kilitli ? <Not metin={t("onl.han.kilitliNot")} rtl={rtl} icon="shield" />
-        : masa?.ayar.tur === "ozel" ? <Not metin={t(ben && masa.ayar.davet?.includes(ben) ? "onl.han.ozelDavetli" : "onl.han.ozelNot")} rtl={rtl} icon="ring" /> : null}
+        <Text style={notStil}>{t("onl.han.ayarNot")}</Text>
+      </View> : masa?.ayar.kilitli ? <View style={{ marginTop: 10 }}><Not metin={t("onl.han.kilitliNot")} rtl={rtl} icon="shield" /></View>
+        : masa?.ayar.tur === "ozel" ? <View style={{ marginTop: 10 }}><Not metin={t(ben && masa.ayar.davet?.includes(ben) ? "onl.han.ozelDavetli" : "onl.han.ozelNot")} rtl={rtl} icon="ring" /></View> : null}
 
-      {basBen && d.ses?.soz.length ? <>
-        <Baslik2 metin={applyParams(t("onl.ses.sozBaslik"), [d.ses.soz.length])} rtl={rtl} />
-        <View style={{ gap: 6 }}>
-          {d.ses.soz.map((p) => <View key={p.hesap} style={{ flexDirection: yon(rtl), alignItems: "center", gap: 8, minHeight: 44, paddingHorizontal: 10, borderRadius: 8, backgroundColor: "rgba(14,10,6,0.7)", borderWidth: 1, borderColor: "rgba(201,162,78,0.25)" }}>
-            <GameIcon name="star" size={14} color={C.goldBright} />
-            <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.serif, fontSize: 15, color: C.parchment, textAlign: hiza(rtl) }}>{p.ad}</Text>
-            <CizgiDugme etiket={t("onl.ses.sozVer")} icon="house" rtl={rtl} kucuk kapali={!acik || !bosVar} onPress={() => m.sozVer(p.hesap)} />
-            <CizgiDugme etiket={t("onl.ses.reddet")} rtl={rtl} kucuk kapali={!acik} onPress={() => m.sozVer(p.hesap, false)} />
-          </View>)}
-          {!bosVar ? <Text style={{ fontFamily: F.serifItalic, fontSize: 13, lineHeight: 18, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{t("onl.ses.sozDolu")}</Text> : null}
-        </View>
-      </> : null}
-
-      {masa.sira.length ? <>
-        <Baslik2 metin={applyParams(t("onl.han.siraBaslik"), [masa.sira.length])} rtl={rtl} />
-        <View style={{ gap: 6 }}>
-          {masa.sira.map((p, i) => <Pressable key={p.hesap} accessibilityRole="button" accessibilityLabel={`${i + 1}. ${p.ad}`} onPress={() => { hap("tap"); if (p.hesap !== ben) setKisi(p); }}
-            style={{ flexDirection: yon(rtl), alignItems: "center", gap: 10, minHeight: 44, paddingHorizontal: 10, borderRadius: 8, backgroundColor: "rgba(14,10,6,0.7)", borderWidth: 1, borderColor: "rgba(201,162,78,0.25)" }}>
-            <Text style={{ width: 22, fontFamily: F.display, fontSize: 13, color: C.gold, textAlign: "center" }}>{i + 1}</Text>
-            <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.serif, fontSize: 15, color: p.hesap === ben ? C.goldBright : C.parchment, textAlign: hiza(rtl) }}>{p.hesap === ben ? t("onl.han.sen") : p.ad}</Text>
-          </Pressable>)}
-          <Text style={{ fontFamily: F.serifItalic, fontSize: 13, lineHeight: 18, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{t("onl.han.siraNot")}</Text>
-        </View>
-      </> : null}
-
-      {/* eylemler ve ikram */}
-      <Baslik2 metin={t("onl.han.eylemler")} rtl={rtl} />
-      <View style={{ flexDirection: yon(rtl), gap: 8 }}>
-        <View style={{ flex: 1 }}><CizgiDugme etiket={t("onl.han.eylemYap")} icon="scales" rtl={rtl} kucuk kapali={!acik || !oturuyor} onPress={() => panelAc("eylem", digerOturanlar[0]?.hesap ?? null)} /></View>
-        <View style={{ flex: 1 }}><CizgiDugme etiket={t("onl.han.ikramEt")} icon="amphora" rtl={rtl} kucuk kapali={!acik || !oturuyor || !tumPlakalar.some((p) => p.hesap !== ben)} onPress={() => panelAc("ikram", digerOturanlar[0]?.hesap ?? null)} /></View>
-      </View>
-      <View style={{ marginTop: 8 }}><CizgiDugme etiket={t("onl.han.ziyafetVer")} icon="bread" rtl={rtl} kucuk kapali={!acik || !oturuyor || bekliyor || digerOturanlar.length < 2} onPress={() => { void ziyafetVer(); }} /></View>
-      {oturuyor ? <Text style={{ marginTop: 4, fontFamily: F.serifItalic, fontSize: 12.5, lineHeight: 17, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{t("onl.han.ziyafetNot")}</Text> : null}
-      {!oturuyor ? <Text style={{ marginTop: 6, fontFamily: F.serifItalic, fontSize: 13, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{t("onl.han.oturunca")}</Text> : null}
-
-      {/* sohbet */}
-      <Baslik2 metin={t("onl.han.sohbet")} rtl={rtl} />
-      <Cerceve ic={{ padding: 0 }}>
-        <ScrollView ref={akisKutu} nestedScrollEnabled style={{ maxHeight: 340 }} contentContainerStyle={{ padding: 10, gap: 8 }}>
-          {d.akis.length ? d.akis.map((a) => <View key={a.id}>{akisCiz(a)}</View>)
-            : <Text style={{ fontFamily: F.serifItalic, fontSize: 14.5, lineHeight: 20, color: C.parchmentDim, textAlign: "center", paddingVertical: 18 }}>{t("onl.han.sessizMasa")}</Text>}
-        </ScrollView>
-      </Cerceve>
       <View style={{ marginTop: 10, gap: 8 }}>
         <Not metin={t("onl.han.notSohbet")} rtl={rtl} icon="speaker" />
         <Not metin={t("onl.han.notKayit")} rtl={rtl} icon="scroll-open" />
       </View>
     </>}
 
-    {/* kişi paneli */}
-    <AltPanel acik={!!kisi} onKapat={() => setKisi(null)} etiket={kisi?.ad ?? ""} rtl={rtl} t={t}>
-      {kisi ? <>
-        <View style={{ flexDirection: yon(rtl), alignItems: "center", gap: 10, paddingEnd: 36 }}>
-          <IsimPlakasi plaka={kisi} bas={kisi.hesap === masa?.masaBasi} ben={kisi.hesap === ben} sessiz={d.sessiz.includes(kisi.hesap)} genislik={180} rtl={rtl} ses={sesi(kisi.hesap)} />
-          {kisi.hesap === masa?.masaBasi ? <Rozet icon="crown" metin={t("onl.han.masaBasi")} renk={C.goldBright} /> : null}
+    {/* kişi kartı */}
+    <AltPanel acik={!!kisi} onKapat={() => setKisi(null)} etiket={kisi ? (kisiBen ? t("onl.han.kendiKoltugun") : kisi.ad) : ""} rtl={rtl} t={t}>
+      {kisi && kisiIsaret ? <>
+        <View style={{ flexDirection: yon(rtl), alignItems: "center", gap: 14, paddingEnd: 36, paddingTop: 6 }}>
+          <KoltukPortresi p={kisi} boyut={64} ben={kisiBen} i={kisiIsaret} />
+          <View style={{ flex: 1, gap: 6 }}>
+            <Text accessibilityRole="header" numberOfLines={2} style={{ fontFamily: F.display, fontSize: 17, color: kisiBen ? C.goldBright : C.parchment, textAlign: hiza(rtl) }}>{kisiBen ? `${kisi.ad} · ${t("onl.han.sen")}` : kisi.ad}</Text>
+            <View style={{ flexDirection: yon(rtl), flexWrap: "wrap", gap: 6 }}>
+              {kisiIsaret.bas ? <Rozet icon="crown" metin={t("onl.han.masaBasi")} renk={C.goldBright} /> : null}
+              {kisiIsaret.ozan ? <Rozet icon="lyre" metin={t("onl.han.isaret.ozan")} renk={C.goldBright} /> : null}
+              {kisiIsaret.mudavim ? <Rozet icon="amphora" metin={t("onl.han.isaret.mudavim")} renk={C.sage} /> : null}
+              {kisi.cerceve ? <Rozet icon="gems" metin={t("onl.han.isaret.cerceve")} renk="#F3D27A" /> : null}
+              {kisiSira >= 0 ? <Rozet icon="hourglass" metin={applyParams(t("onl.han.isaret.sirada"), [kisiSira + 1])} /> : null}
+              {kisiIsaret.soz ? <Rozet icon="star" metin={t("onl.han.isaret.soz")} renk={C.goldBright} /> : null}
+              {kisiIsaret.sessiz ? <Rozet icon="speaker" metin={t("onl.han.isaret.sessiz")} renk={C.parchmentMuted} /> : null}
+              {kisiIsaret.ses ? <Rozet icon="speaker" metin={t("onl.ses.plaka." + kisiIsaret.ses)} renk={kisiIsaret.ses === "kesik" ? C.ember : C.sage} /> : null}
+            </View>
+          </View>
         </View>
-        {kisi.hesap === ben ? <CizgiDugme etiket={t("onl.han.kalk")} icon="walk" rtl={rtl} onPress={() => { m.kalk(); setKisi(null); }} /> : <>
-          <CizgiDugme etiket={t("onl.han.ikramEt")} icon="amphora" rtl={rtl} kapali={!oturuyor} onPress={() => panelAc("ikram", kisi.hesap)} />
-          <CizgiDugme etiket={t("onl.han.eylemYap")} icon="scales" rtl={rtl} kapali={!oturuyor} onPress={() => panelAc("eylem", kisi.hesap)} />
+
+        {kisiBen ? <>
+          {/* kendi koltuğun: kalk, ses, yemin, profil */}
+          {ses.gorunur && kisiOturuyor ? <AltinDugme etiket={t(ses.mik ? "onl.ses.mikKapat" : "onl.ses.mikAc")} icon="speaker" rtl={rtl} bekliyor={ses.bekliyor} kapali={!acik || benKesik || susturuldu} onPress={ses.mikDegistir}
+            erisim={t(ses.mik ? "onl.ses.mikKapatErisim" : "onl.ses.mikAcErisim")} /> : null}
+          {ses.gorunur && benKesik ? <Text style={notStil}>{t("onl.ses.kesildin")}</Text> : null}
+          <CizgiDugme etiket={t("onl.han.eylem.yemin")} icon={EYLEM_IKON.yemin} rtl={rtl} kapali={!acik || !kisiOturuyor} onPress={() => eylemAc("yemin", null)} />
+          <CizgiDugme etiket={t("onl.han.profilim")} icon="hood" rtl={rtl} onPress={() => { setKisi(null); router.push("/online/oyuncu/ben"); }} />
+          <CizgiDugme etiket={t("onl.han.kalk")} icon="walk" rtl={rtl} kapali={!acik} onPress={() => { m.kalk(); setKisi(null); }} />
+        </> : <>
+          <View style={{ flexDirection: yon(rtl), gap: 8 }}>
+            <View style={{ flex: 1 }}><CizgiDugme etiket={t("onl.han.profileGit")} icon="hood" rtl={rtl} kapali={!oyuncuKimligiMi(kisi.hesap)} onPress={() => { const id = kisi.hesap; setKisi(null); router.push(`/online/oyuncu/${id}`); }} /></View>
+            <View style={{ flex: 1 }}><AltinDugme etiket={t("onl.han.armaganGonder")} icon="gems" rtl={rtl} kapali={!acik || !oturuyor} onPress={() => panelAc("armagan", kisi.hesap)} /></View>
+          </View>
+          {!oyuncuKimligiMi(kisi.hesap) ? <Text style={notStil}>{t("onl.han.profilYok")}</Text> : null}
+          {!oturuyor ? <Text style={notStil}>{t("onl.han.oturunca")}</Text> : null}
+
+          <Baslik2 metin={t("onl.han.kisiEylemleri")} rtl={rtl} ust={4} />
+          <View style={{ flexDirection: yon(rtl), flexWrap: "wrap", gap: 8 }}>
+            {(kisiOturuyor ? OTURANA : (["ihbar"] as SecimEylemi[])).map((e) => {
+              const yasak = e === "meydanOku" && !!masa?.ayar.kavgaYasak;
+              return <View key={e} style={{ width: "48%", flexGrow: 1 }}>
+                <CizgiDugme etiket={t("onl.han.eylem." + e)} icon={EYLEM_IKON[e]} rtl={rtl} kucuk kapali={!acik || !oturuyor || yasak} onPress={() => eylemAc(e, kisi.hesap)} />
+              </View>;
+            })}
+          </View>
+          {masa?.ayar.kavgaYasak && kisiOturuyor ? <Text style={[notStil, { color: C.ember }]}>{t("onl.han.kavgaYasakNot")}</Text> : null}
+
           {d.sessiz.includes(kisi.hesap)
             ? <CizgiDugme etiket={t("onl.han.sesiAc")} icon="speaker" rtl={rtl} onPress={() => { m.susturKaldir(kisi.hesap); setKisi(null); }} />
             : <CizgiDugme etiket={t("onl.han.sessizeAl")} icon="speaker" rtl={rtl} onPress={() => { m.sustur(kisi.hesap); setKisi(null); }} />}
-          <Text style={{ fontFamily: F.serifItalic, fontSize: 13, lineHeight: 18, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{t("onl.han.sessizNot")}</Text>
-          {ses.gorunur ? <Text style={{ fontFamily: F.serifItalic, fontSize: 13, lineHeight: 18, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{t("onl.ses.yerelNot")}</Text> : null}
-          {basBen && ses.gorunur ? (ses.kesik(kisi.hesap)
-            ? <CizgiDugme etiket={t("onl.ses.sesiniAc")} icon="speaker" rtl={rtl} onPress={() => { m.sesAc(kisi.hesap); setKisi(null); }} />
-            : <CizgiDugme etiket={t("onl.ses.sesiniKes")} icon="speaker" rtl={rtl} onPress={() => { m.sesKapat(kisi.hesap); setKisi(null); }} />) : null}
+          <Text style={notStil}>{t("onl.han.sessizNot")}</Text>
+          {ses.gorunur ? <Text style={notStil}>{t("onl.ses.yerelNot")}</Text> : null}
+
+          {basBen ? <>
+            <Baslik2 metin={t("onl.han.moderasyon")} rtl={rtl} ust={4} />
+            {ses.gorunur ? (ses.kesik(kisi.hesap)
+              ? <CizgiDugme etiket={t("onl.ses.sesiniAc")} icon="speaker" rtl={rtl} onPress={() => { m.sesAc(kisi.hesap); setKisi(null); }} />
+              : <CizgiDugme etiket={t("onl.ses.sesiniKes")} icon="speaker" rtl={rtl} onPress={() => { m.sesKapat(kisi.hesap); setKisi(null); }} />) : null}
+            {kisiSira >= 0 ? <CizgiDugme etiket={t("onl.han.oneAl")} icon="hourglass" rtl={rtl} onPress={() => { m.oneAl(kisi.hesap); setKisi(null); }} /> : null}
+            {masa?.ayar.tur === "ozel" ? (masa.ayar.davet?.includes(kisi.hesap)
+              ? <CizgiDugme etiket={t("onl.han.davetKaldir")} icon="ring" rtl={rtl} onPress={() => { m.davet(kisi.hesap, true); setKisi(null); }} />
+              : <CizgiDugme etiket={t("onl.han.davetEt")} icon="ring" rtl={rtl} onPress={() => { m.davet(kisi.hesap); setKisi(null); }} />) : null}
+            <CizgiDugme etiket={t("onl.han.masadanCikar")} icon="walk" rtl={rtl} onPress={() => { m.at(kisi.hesap); setKisi(null); }} />
+            <Text style={notStil}>{t("onl.han.atNot")}</Text>
+          </> : null}
+
           <CizgiDugme etiket={t("onl.han.sikayet")} icon="shield" rtl={rtl} onPress={() => panelAc("rapor", kisi.hesap)} />
-          {basBen && masa?.sira.some((p) => p.hesap === kisi.hesap) ? <CizgiDugme etiket={t("onl.han.oneAl")} icon="hourglass" rtl={rtl} onPress={() => { m.oneAl(kisi.hesap); setKisi(null); }} /> : null}
-          {basBen && masa?.ayar.tur === "ozel" ? (masa.ayar.davet?.includes(kisi.hesap)
-            ? <CizgiDugme etiket={t("onl.han.davetKaldir")} icon="ring" rtl={rtl} onPress={() => { m.davet(kisi.hesap, true); setKisi(null); }} />
-            : <CizgiDugme etiket={t("onl.han.davetEt")} icon="ring" rtl={rtl} onPress={() => { m.davet(kisi.hesap); setKisi(null); }} />) : null}
-          {basBen ? <CizgiDugme etiket={t("onl.han.masadanCikar")} icon="walk" rtl={rtl} onPress={() => { m.at(kisi.hesap); setKisi(null); }} /> : null}
-          {basBen ? <Text style={{ fontFamily: F.serifItalic, fontSize: 13, lineHeight: 18, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{t("onl.han.atNot")}</Text> : null}
         </>}
       </> : null}
     </AltPanel>
 
-    {/* eylem paneli */}
-    <AltPanel acik={panel === "eylem"} onKapat={() => setPanel(null)} etiket={t("onl.han.eylemYap")} rtl={rtl} t={t}>
-      <Text accessibilityRole="header" style={{ fontFamily: F.display, fontSize: 17, color: C.parchment, textAlign: hiza(rtl), paddingEnd: 36 }}>{t("onl.han.eylemYap")}</Text>
-      <View style={{ flexDirection: yon(rtl), flexWrap: "wrap", gap: 8 }}>
-        {SECIM_EYLEMLERI.map((e) => {
-          const yasak = e === "meydanOku" && !!masa?.ayar.kavgaYasak;
-          const secili = eylemTur === e;
-          return <Pressable key={e} accessibilityRole="radio" accessibilityState={{ selected: secili, disabled: yasak }} accessibilityLabel={t("onl.han.eylem." + e)} disabled={yasak}
-            onPress={() => { hap("tap"); setEylemTur(e); }}
-            style={{ flexDirection: yon(rtl), alignItems: "center", gap: 6, minHeight: 44, paddingHorizontal: 12, borderRadius: 22, borderWidth: 1.5, borderColor: secili ? C.goldBright : ONL.frame, backgroundColor: secili ? "rgba(201,162,78,0.25)" : "rgba(14,10,6,0.6)", opacity: yasak ? 0.45 : 1 }}>
-            <GameIcon name={EYLEM_IKON[e]!} size={15} color={secili ? C.goldBright : C.gold} />
-            <Text style={{ fontFamily: F.display, fontSize: 12.5, color: C.parchment }}>{t("onl.han.eylem." + e)}</Text>
-          </Pressable>;
-        })}
+    {/* eylem paneli: tür ve hedef kişi kartından gelir */}
+    <AltPanel acik={panel === "eylem"} onKapat={() => setPanel(null)} etiket={t("onl.han.eylem." + eylemTur)} rtl={rtl} t={t}>
+      <View style={{ flexDirection: yon(rtl), alignItems: "center", gap: 10, paddingEnd: 36 }}>
+        <GameIcon name={EYLEM_IKON[eylemTur] ?? "scroll"} size={20} color={C.goldBright} />
+        <Text accessibilityRole="header" numberOfLines={2} style={{ flex: 1, fontFamily: F.display, fontSize: 17, color: C.parchment, textAlign: hiza(rtl) }}>
+          {hedef ? applyParams(t("onl.han.eylemBaslik"), [t("onl.han.eylem." + eylemTur), adBul(hedef)]) : t("onl.han.eylem." + eylemTur)}
+        </Text>
       </View>
       <Text style={{ fontFamily: F.serif, fontSize: 14.5, lineHeight: 20, color: C.parchmentDim, textAlign: hiza(rtl) }}>{t("onl.han.eylemAcik." + eylemTur)}</Text>
-      {masa?.ayar.kavgaYasak ? <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.ember, textAlign: hiza(rtl) }}>{t("onl.han.kavgaYasakNot")}</Text> : null}
-      {eylemTur === "yemin" ? <Text style={{ fontFamily: F.serifItalic, fontSize: 13, lineHeight: 18, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{t(o.yerlesim?.ben.muhurlu ? "onl.han.yeminMuhurlu" : "onl.han.yeminMuhursuz")}</Text> : null}
-      <Text style={{ fontFamily: F.serifItalic, fontSize: 13, lineHeight: 18, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{t("onl.han.taniklikNot")}</Text>
-      <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: rtl ? 0 : 1, color: C.gold, textAlign: hiza(rtl) }}>{t(EYLEM_FORM[eylemTur].hedef === "zorunlu" ? "onl.han.hedefSec" : "onl.han.hedefSecimli")}</Text>
-      <View style={{ gap: 6 }}>
-        {EYLEM_FORM[eylemTur].hedef === "secimli" ? <SecimSatiri metin={t("onl.han.hedefYok")} secili={hedef === null} rtl={rtl} onPress={() => setHedef(null)} /> : null}
-        {(eylemTur === "ihbar" ? tumPlakalar.filter((p) => p.hesap !== ben) : digerOturanlar).map((p) => <SecimSatiri key={p.hesap} metin={p.ad} secili={hedef === p.hesap} rtl={rtl} onPress={() => setHedef(p.hesap)} />)}
-        {!digerOturanlar.length && eylemTur !== "yemin" ? <Text style={{ fontFamily: F.serifItalic, fontSize: 13.5, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{t("onl.han.kimseYok")}</Text> : null}
-      </View>
+      {eylemTur === "meydanOku" && masa?.ayar.kavgaYasak ? <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.ember, textAlign: hiza(rtl) }}>{t("onl.han.kavgaYasakNot")}</Text> : null}
+      {eylemTur === "yemin" ? <Text style={notStil}>{t(o.yerlesim?.ben.muhurlu ? "onl.han.yeminMuhurlu" : "onl.han.yeminMuhursuz")}</Text> : null}
+      <Text style={notStil}>{t("onl.han.taniklikNot")}</Text>
       {EYLEM_FORM[eylemTur].sart ? <View style={{ gap: 4 }}>
         <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: rtl ? 0 : 1, color: C.gold, textAlign: hiza(rtl) }}>{t("onl.han.sart")}</Text>
         <TextInput value={sart} onChangeText={(v) => setSart(v.replace(/[\r\n]+/g, " "))} multiline maxLength={SART_EN_UZUN * 2} accessibilityLabel={t("onl.han.sart")} placeholder={t("onl.han.sartIpucu." + eylemTur)} placeholderTextColor={C.parchmentMuted}
@@ -436,37 +419,14 @@ function MasaEkran() {
       </View> : null}
       <Not metin={applyParams(t("onl.han.kayitNotu"), [masa?.koltuklar.filter(Boolean).length ?? 0])} rtl={rtl} icon="scroll-open" />
       <AltinDugme etiket={t("onl.han.eylem." + eylemTur)} icon={EYLEM_IKON[eylemTur]} rtl={rtl} bekliyor={bekliyor}
-        kapali={(EYLEM_FORM[eylemTur].hedef === "zorunlu" && !hedef) || (EYLEM_FORM[eylemTur].sart && (!tekSatir(sart) || harfSayisi(tekSatir(sart)) > SART_EN_UZUN))}
+        kapali={!oturuyor || (EYLEM_FORM[eylemTur].hedef === "zorunlu" && !hedef) || (eylemTur === "meydanOku" && !!masa?.ayar.kavgaYasak) || (EYLEM_FORM[eylemTur].sart && (!tekSatir(sart) || harfSayisi(tekSatir(sart)) > SART_EN_UZUN))}
         onPress={() => { void eylemGonder(eylemTur, hedef ?? undefined); }} />
     </AltPanel>
 
-    {/* ikram paneli */}
-    <AltPanel acik={panel === "ikram"} onKapat={() => setPanel(null)} etiket={t("onl.han.ikramEt")} rtl={rtl} t={t}>
-      <Text accessibilityRole="header" style={{ fontFamily: F.display, fontSize: 17, color: C.parchment, textAlign: hiza(rtl), paddingEnd: 36 }}>{t("onl.han.ikramBaslik")}</Text>
-      <Text style={{ fontFamily: F.serif, fontSize: 14.5, lineHeight: 20, color: C.parchmentDim, textAlign: hiza(rtl) }}>{t("onl.han.menuNot")}</Text>
-      <View style={{ gap: 6 }}>
-        {IKRAMLAR.map((id) => {
-          const fiyat = menu?.find((x) => x.id === id)?.fiyat;
-          const secili = ikram === id;
-          return <Pressable key={id} accessibilityRole="radio" accessibilityState={{ selected: secili }} accessibilityLabel={`${t("onl.han.ikram." + id)}${fiyat !== undefined ? ", " + applyParams(t("onl.han.akce"), [fiyat]) : ""}`}
-            onPress={() => { hap("tap"); setIkram(id); }}
-            style={{ flexDirection: yon(rtl), alignItems: "center", gap: 10, minHeight: 50, paddingHorizontal: 12, borderRadius: 9, borderWidth: 1.5, borderColor: secili ? C.goldBright : "rgba(168,130,63,0.5)", backgroundColor: secili ? "rgba(90,64,24,0.55)" : "rgba(14,10,6,0.6)" }}>
-            <GameIcon name={IKRAM_IKON[id]} size={20} color={secili ? C.goldBright : C.gold} />
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontFamily: F.display, fontSize: 13.5, color: C.parchment, textAlign: hiza(rtl) }}>{t("onl.han.ikram." + id)}</Text>
-              <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchmentDim, textAlign: hiza(rtl) }}>{t("onl.han.ikramAcik." + id)}</Text>
-            </View>
-            <Text style={{ fontFamily: F.display, fontSize: 13, color: C.goldBright }}>{fiyat !== undefined ? applyParams(t("onl.han.akce"), [fiyat]) : t("onl.han.fiyatHancida")}</Text>
-          </Pressable>;
-        })}
-      </View>
-      <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: rtl ? 0 : 1, color: C.gold, textAlign: hiza(rtl) }}>{t("onl.han.kimeIkram")}</Text>
-      <View style={{ gap: 6 }}>
-        {tumPlakalar.filter((p) => p.hesap !== ben).map((p) => <SecimSatiri key={p.hesap} metin={p.ad} secili={hedef === p.hesap} rtl={rtl} onPress={() => setHedef(p.hesap)} />)}
-      </View>
-      <Not metin={t("onl.han.ikramEtki")} rtl={rtl} icon="amphora" />
-      <AltinDugme etiket={hedef ? applyParams(t("onl.han.ikramGonder"), [t("onl.han.ikram." + ikram), adBul(hedef)]) : t("onl.han.hedefSec")} icon={IKRAM_IKON[ikram]} rtl={rtl} bekliyor={bekliyor} kapali={!hedef || !oturuyor} onPress={() => { void ikramGonder(); }} />
-    </AltPanel>
+    {/* armağan çekmecesi: ikram (akçe) ve Debdebe */}
+    <ArmaganCekmecesi acik={panel === "armagan"} onKapat={() => setPanel(null)} hedef={hedef ? { hesap: hedef, ad: adBul(hedef) } : null} masa={no} istemci={istemci}
+      menu={menu} onMenu={(s) => setMenu((x) => (x?.some((y) => y.id === s.id) ? x : [...(x ?? []), s]))} para={o.yerlesim?.ben.para} oturuyor={oturuyor} rtl={rtl} t={t}
+      onSonuc={armaganSonucu} />
 
     {/* şikâyet paneli */}
     <AltPanel acik={panel === "rapor"} onKapat={() => setPanel(null)} etiket={t("onl.han.sikayet")} rtl={rtl} t={t}>

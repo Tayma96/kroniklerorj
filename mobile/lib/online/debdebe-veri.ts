@@ -32,12 +32,16 @@ export interface DenePaketi {
   sahneler: { sahne: "hanMasasi" | "sehirKapisi" | "profilKarti"; ben: { ad: string; kusanilan: Record<string, string> }; figuranlar: { id: string; figuran: true; ad: string; kadin: boolean }[]; armagan?: unknown; anons?: unknown }[];
   aciklama?: { k: string; p: Record<string, unknown> };
 }
+/** POST /v1/debdebe/armagan yanıtı (sunucu debdebe/hesap.ts armaganVer). Armağan stoktan verilir; ödeme burada yok. */
+export interface DebdebeArmaganSonucu { urun: string; hedef: string; teveccuh: number; stok: number; gunluk: { tavan: number; kalan: number }; anons?: unknown }
 export interface DebdebeIstemci {
   oku(): Promise<EkSonuc<DebdebeGorunumu>>;
   dene(urun: string): Promise<EkSonuc<DenePaketi>>;
   kusan(g: { yuva: string; urun: string; sira?: number; istekNo: string }): Promise<EkSonuc<{ kusanilan: Record<string, string[]> }>>;
   sezon(): Promise<EkSonuc<DebdebeGorunumu["sezon"]>>;
   levhaGorunur(gorunur: boolean): Promise<EkSonuc<{ levhaGorunur: boolean }>>;
+  /** Stoktaki bir Debdebe armağanını verir; `masa` verilirse masada anons yayınlanır (sunucu masada olmayı doğrular). */
+  armagan(g: { urun: string; hedef: string; masa?: number; istekNo: string }): Promise<EkSonuc<DebdebeArmaganSonucu>>;
 }
 const nesneMi = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
 const katalogMi = (v: unknown): v is DebdebeUrun => nesneMi(v) && typeof v.id === "string" && typeof v.tur === "string" && typeof v.satilik === "boolean";
@@ -60,12 +64,15 @@ const deneMi = (v: unknown): v is DenePaketi => nesneMi(v) && typeof v.urun === 
     && nesneMi(x.ben) && typeof x.ben.ad === "string" && nesneMi(x.ben.kusanilan)
     && Array.isArray(x.figuranlar) && x.figuranlar.every((f) => nesneMi(f) && typeof f.id === "string" && typeof f.ad === "string" && f.figuran === true && typeof f.kadin === "boolean"));
 const sezonMi = (v: unknown): v is DebdebeGorunumu["sezon"] => nesneMi(v) && typeof v.seviye === "number" && Array.isArray(v.oduller);
+const armaganMi = (v: unknown): v is DebdebeArmaganSonucu => nesneMi(v) && typeof v.urun === "string" && typeof v.hedef === "string"
+  && typeof v.stok === "number" && nesneMi(v.gunluk) && typeof v.gunluk.kalan === "number";
 const post = <T,>(yol: string, govde: unknown, bicim: (v: unknown) => v is T) => ekCagir({ yontem: "POST", yol, govde, tekrar: true }, bicim);
 const httpDebdebe: DebdebeIstemci = {
   oku: () => ekCagir({ yontem: "GET", yol: "/v1/debdebe", tekrar: true }, gorunumMi),
   dene: (urun) => ekCagir({ yontem: "GET", yol: "/v1/debdebe/dene?urun=" + encodeURIComponent(urun), tekrar: true }, deneMi),
   kusan: (g) => post("/v1/debdebe/kusan", g, (v): v is { kusanilan: Record<string, string[]> } => nesneMi(v) && nesneMi(v.kusanilan)),
   sezon: () => ekCagir({ yontem: "GET", yol: "/v1/debdebe/sezon", tekrar: true }, sezonMi),
+  armagan: (g) => post("/v1/debdebe/armagan", g, armaganMi),
   levhaGorunur: (gorunur) => post("/v1/debdebe/levha-gorunur", { gorunur, istekNo: istekNoUret() }, (v): v is { levhaGorunur: boolean } => nesneMi(v) && typeof v.levhaGorunur === "boolean"),
 };
 export function useDebdebeIstemci(): DebdebeIstemci {

@@ -19,6 +19,7 @@ export const EK_HATALAR = [
   "kervan_ayni_yer", "kervan_yuk_gecersiz", "kervan_yuk_siniri", "kervan_bedel_yok", "kervan_aylik_siniri", "kervan_mal_hedef", "kervan_ulasilamadi", "olay_yok", "atildi", "eylem_siniri", "ikram_gecersiz", "ikram_kapali", "yukseltme_gerekli",
   "ses_kapali", "ses_hatasi", "masa_sessiz", "masada_degil", "ses_oturumu_yok", "sesi_kesildi", "soz_istegi_yok",
   "stok_yok", "ilan_gecersiz", "ilan_kapandi", "ilan_siniri",
+  "debdebe_kapali", "armagan_siniri", "urun_gecersiz",
   "olu", "evli", "akraba_evlilik", "gorus_yetersiz", "vasiyet_gecersiz", "varis_gecersiz", "devir_yok", "devir_degisti",
   ...UCGEN_BARINMA_HATALARI, ...EKO_MULK_HATALARI,
 ] as const;
