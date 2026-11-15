@@ -19,7 +19,7 @@ ileti yayını, masa başı yetkisi). Durable Object'ler arası çağrılar ger�
 | Madde | Durum |
 |---|---|
 | Handa sesli sohbet | Kod tam. API biçimi resmî Cloudflare belgesi ve kitaplığıyla doğrulandı, kısmi başarı kuralı uygulandı (14 Kasım); ses ayrı hız kovasında. Kalan: Berkay'ın Realtime uygulaması + gerçek cihaz denemesi. |
-| Oda özellikleri (liste/keşif, seviye, mini oyun, söz isteme) | Söz isteme, keşif sırası (tanıdık masası önce), masa ayarı (kavga yasak, kilit, ses), sohbet filtresi, müdavim rozeti ve eylem etkileri var (14 Kasım). Ozan sahnesi/atışması (H8) ve masa türleri (H9) açık. |
+| Oda özellikleri (liste/keşif, seviye, mini oyun, söz isteme) | Söz isteme, keşif sırası (tanıdık masası önce), masa ayarı (kavga yasak, kilit, ses), sohbet filtresi, müdavim rozeti ve eylem etkileri var (14 Kasım). Ozan sahnesi/atışması (H8) sunucuda var, istemci açık; masa türleri (H9) açık. |
 | Düello, suikast, kan davası | Düello var (14 Kasım, §4.1: rızalı, sunucu çözer, kaybeden bir şey kaybetmez, mevsimde bir nam). Suikast ve kan davası ilk sürümde yok (§4.2). |
 | Darbe ve bağımsız devlet, diplomasi | P5–P6 var. Akçe ganimeti bağlandı (14 Kasım). Mülk devri ve ittifak dışı anlaşmalar açık. |
 | Kül Yemini mührü | Bağlandı (14 Kasım): 13 yaşında emanet, karakter sayfasından kabul; yemin etkisi H5 ile gelir. |
@@ -32,7 +32,7 @@ ileti yayını, masa başı yetkisi). Durable Object'ler arası çağrılar ger�
 ### Han (GDD §16, araştırma §5–6)
 | # | Eksik | Boyut |
 |---|---|---|
-| H8 | Ozan sahnesi (tek anlatıcı, dinleyici söz ister) ve ozan atışması (masadakilerin ücretsiz oyu, ödül yalnız anılma). | orta |
+| H8 | Ozan sahnesi ve ozan atışması: **sunucu var (15 Kasım, §4.8), istemci açık** (sahne/atışma paneli, kıta ve oy düğmeleri, `olay.han.atisma*`/`soylenti.han.atisma` metinleri 6 dilde). | orta |
 | H9 | Meclis ve tüccar masa türleri; lonca ve zaviye masası; hancı/kâhya moderasyon yetkisi. Özel masa (davetli) var (14 Kasım). | orta |
 | H10 | Handa NPC'ler (hancı, ozan, haberci). İlan panosu var (14 Kasım). | orta |
 | H11 | Debdebe giriş anonsu. Sohbet balonu ve masa süsü var (14 Kasım). | küçük |
@@ -133,6 +133,17 @@ Dayanak: `MESLEK_AGACLARI.md` tüccar ağacı `tuccar.kervan.0–1`, `tuccar.yol
 ### 4.6 Han eylem etkileri (H5)
 Yemin → mertlik (mühürlü, çift başına ayda bir). Sözleşme ve ittifak kabulü → iki taraf arasında küçük olumlu iz.
 İhbar → hedef hakkında yalanlanabilir söylenti; ihbar edene kazanç yok. Hepsinde masadakiler tanık, diğerleri duyum.
+
+### 4.8 Ozan sahnesi ve atışma (H8)
+- **Sahne:** oturan biri açar, anlatıcı olur; açıkken yalnız anlatıcı ve onun ya da masa başının söz verdiği oturanlar
+  yazar (`sozIste`/`sozVer` oturanlara da işler). Anlatıcı ya da masa başı kapatır; anlatıcı kalkınca/çıkınca biter.
+  Masa başı `sahneYasak` ayarıyla sahneyi kapatabilir. Ozan meslekliye plakada yalnız görünür "ozan" işareti.
+- **Atışma:** rızalı teklif (eylem `atisma`, düello kalıbı; taraf kalkınca teklif düşer). Kabulde sırayla a, b… her biri
+  3 kıta (`ATISMA_KITA`); bu sırada kimse serbest yazamaz, söz isteyemez. Sonra oylama: o anda oturan, taraf olmayan
+  herkesin bir değişmez oyu. Herkes oyunca ya da taraf/masa başı kapatınca biter; zamanlayıcı yok. Oy yoksa hükümsüz,
+  eşitlikte berabere. Taraf kalkarsa ya da kıta aşamasında kapatılırsa iptal.
+- **Ödül yalnız anılma:** masa olayı (`atismaSonuc`) + yerleşimde tanıklık ve kazanan hakkında söylenti (bakış etkisi 0).
+  Akçe, nam, XP, teveccüh yok; kaybeden bir şey kaybetmez. Sahne ve atışma aynı masada aynı anda olmaz.
 
 ## 5. Berkay'ın kararına bağlı gerilimler (koda dokunulmadı)
 - **Süre kısaltma satışı:** Debdebe kataloğunda gerçek parayla beceri süresi kısaltma var (`kisaltma_*`, karakter başına

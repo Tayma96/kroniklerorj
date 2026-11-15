@@ -14,6 +14,8 @@
 //      - ihbar: hedef hakkında olumsuz söylenti (hedef mevcut /v1/yalanla ile yalanlar); ihbar edene kazanç yok.
 //      - meydanOku, sözleşme/ittifak teklifi: yalnız tanıklık.
 //      - kabul (meydan okuma onayı, H6): düello (src/yerlesim/duello.ts). Kapı tutmazsa "düello gerçekleşmedi" tanıklığı.
+//      - atisma teklifi ve kabulü (H8): yalnız tanıklık. atismaSonuc (MasaDO yazar): yalnız anılma — tanıklık ve
+//        kazanan(lar) hakkında söylenti (bakış etkisi 0). Akçe, nam, XP, teveccüh yok; kaybeden bir şey kaybetmez.
 
 import { basarili, hata, type Sonuc } from "../tipler.ts";
 import { namEkle } from "./karakter.ts";
@@ -27,7 +29,7 @@ import { DUELLO_NAM, DUELLO_TAKAT, duelloCoz, duelloKapisi, mevsimNo, type Duell
 import { ciftSirala, toplumAl, type SoylentiTuru, type Toplum } from "./toplum.ts";
 import type { Karakter, Kasaba, OlayTaslagi } from "./tipler.ts";
 
-export const HAN_OLAY_TURLERI = ["yemin", "sozlesme", "ittifak", "ihbar", "meydanOku", "kabul"] as const;
+export const HAN_OLAY_TURLERI = ["yemin", "sozlesme", "ittifak", "ihbar", "meydanOku", "atisma", "kabul", "atismaSonuc"] as const;
 export type HanOlayTuru = (typeof HAN_OLAY_TURLERI)[number];
 
 /** [PARAMETRE] Yemin edenin mertlik kazancı (aylık nam tavanı ayrıca uygulanır; çift başına ayda bir). */
@@ -57,7 +59,10 @@ export interface HanOlayGirdisi {
   kim: string;
   hedef?: string;
   katilim: string[];
-  teklifTur?: "sozlesme" | "ittifak" | "meydanOku";
+  teklifTur?: "sozlesme" | "ittifak" | "meydanOku" | "atisma";
+  /** H8 atismaSonuc: kazandı (kim kazanan) ya da berabere (ikisi de anılır); oylar [teklif eden, kabul eden]. */
+  sonuc?: "kazandi" | "berabere";
+  oy?: [number, number];
 }
 
 function nesneMi(v: unknown): v is Record<string, unknown> {
@@ -78,8 +83,13 @@ export function hanOlayiCoz(govde: unknown, hesapId: string, yerlesim: string): 
   if (o.hedef !== undefined && !kimlikMi(o.hedef)) return hata("gecersiz_istek");
   if (!Array.isArray(o.katilim) || o.katilim.length > HAN_KATILIM_EN_COK || !o.katilim.every(kimlikMi)) return hata("gecersiz_istek");
   const masaNo = Number(o.masa.slice(o.masa.lastIndexOf(":") + 1));
-  const teklifTur = o.teklifTur === "sozlesme" || o.teklifTur === "ittifak" || o.teklifTur === "meydanOku" ? o.teklifTur : undefined;
+  const teklifTur =
+    o.teklifTur === "sozlesme" || o.teklifTur === "ittifak" || o.teklifTur === "meydanOku" || o.teklifTur === "atisma" ? o.teklifTur : undefined;
   if (o.tur === "kabul" && !teklifTur) return hata("gecersiz_istek");
+  const sonuc = o.sonuc === "kazandi" || o.sonuc === "berabere" ? o.sonuc : undefined;
+  if (o.tur === "atismaSonuc" && (!sonuc || typeof o.hedef !== "string")) return hata("gecersiz_istek");
+  const oySayi = (v: unknown): v is number => typeof v === "number" && Number.isInteger(v) && v >= 0 && v <= HAN_KATILIM_EN_COK;
+  const oy = Array.isArray(o.oy) && o.oy.length === 2 && oySayi(o.oy[0]) && oySayi(o.oy[1]) ? ([o.oy[0], o.oy[1]] as [number, number]) : undefined;
   return basarili({
     anahtar: govde.anahtar,
     masaNo: Number.isInteger(masaNo) ? masaNo : 0,
@@ -88,6 +98,7 @@ export function hanOlayiCoz(govde: unknown, hesapId: string, yerlesim: string): 
     ...(o.hedef ? { hedef: o.hedef } : {}),
     katilim: [...new Set(o.katilim as string[])],
     ...(teklifTur ? { teklifTur } : {}),
+    ...(o.tur === "atismaSonuc" && sonuc ? { sonuc, oy: oy ?? [0, 0] } : {}),
   });
 }
 
@@ -148,6 +159,7 @@ export function hanOlayiUygula(
   // Hedef zorunlu türlerde hedef bu yerleşimin sakini değilse (ör. başka yerleşimden ihbar) olay ve etki yoktur.
   if (g.tur !== "yemin" && !hedef) return basarili({ olaylar, degisen: [], etki: { ...etki, engel: "hedef_yok" } });
   if (g.tur === "kabul" && g.teklifTur === "meydanOku" && hedef) return duelloUygula(k, g, kim, hedef, kisiler, defter, ay);
+  if (g.tur === "atismaSonuc" && hedef) return atismaAnil(k, g, kim, hedef, kisiler, defter, ay);
 
   // 1. Tanıklık: katılım listesindeki her sakine yalnız kendisinin gördüğü olay.
   const muhur = kim.ky === 2 ? 1 : 0;
@@ -166,7 +178,9 @@ export function hanOlayiUygula(
 
   // Farm süzgeci: aynı hane/hesap kümesi arası eylem etki üretmez.
   if (hedef && ayniKume(kim, hedef)) return basarili({ olaylar, degisen: [], etki: { ...etki, engel: "ayni_kume" } });
-  if (g.tur === "meydanOku" || g.tur === "sozlesme" || g.tur === "ittifak") return basarili({ olaylar, degisen: [], etki });
+  if (g.tur === "meydanOku" || g.tur === "sozlesme" || g.tur === "ittifak" || g.tur === "atisma") return basarili({ olaylar, degisen: [], etki });
+  // H8: atışma kabulü yalnız tanıklıktır (sonuç ayrı olayla anılır).
+  if (g.tur === "kabul" && g.teklifTur === "atisma") return basarili({ olaylar, degisen: [], etki });
 
   // 2. Duyum tanıkları: handaki NPC'ler; yoksa masadakilerin hane NPC'leri.
   const tohum = `han:${g.anahtar}`;
@@ -282,6 +296,49 @@ function duelloUygula(
   }
   const olaylar = tanikla("olay.han.duello", { ...taban, kazanan: oyuncuRef(kazanan), nam, ...dokumP });
   return basarili({ olaylar, degisen: [okuyan.o, savunan.o], etki });
+}
+
+// ---------------------------------------------------------------- H8 atışma anılması
+
+/**
+ * Atışma sonucu: masada oturanlara ve iki tarafa tanıklık (`olay.han.atismaKazandi|atismaBerabere`, oylar dökümde);
+ * kazanan (berabere: ikisi) hakkında `hanAtisma` söylentisi. Söylentinin bakışa etkisi 0'dır (SOYLENTI_YUK) ve
+ * hiçbir sayısal değer değişmez: `degisen` her zaman boştur. Aynı sıralı çift ayda bir söylenti üretir; sonrakiler
+ * yalnız tanıklık. Aynı hane/hesap kümesi arası atışma söylenti üretmez.
+ */
+function atismaAnil(
+  k: Kasaba,
+  g: HanOlayGirdisi,
+  kim: Karakter,
+  hedef: Karakter,
+  kisiler: ReadonlyMap<string, Karakter>,
+  defter: HanDefteri,
+  ay: number,
+): Sonuc<{ olaylar: OlayTaslagi[]; degisen: string[]; etki: HanEtkisi }> {
+  const tanilar = new Map<string, Karakter>();
+  for (const h of g.katilim) {
+    const x = kisiler.get(h);
+    if (x && !olduMu(x)) tanilar.set(x.o, x);
+  }
+  for (const x of [kim, hedef]) if (!olduMu(x)) tanilar.set(x.o, x);
+  const berabere = g.sonuc === "berabere";
+  const oy = g.oy ?? [0, 0];
+  const p = { kisi: oyuncuRef(kim), hedef: oyuncuRef(hedef), masa: g.masaNo, oyA: oy[0], oyB: oy[1] };
+  const anahtar = berabere ? "olay.han.atismaBerabere" : "olay.han.atismaKazandi";
+  const olaylar = [...tanilar.values()].map((tk): OlayTaslagi => ({ t: "han", w: kim.o, h: hedef.o, g: tk.o, n: HAN_TANIKLIK_ONEM, k: anahtar, p }));
+  const etki: HanEtkisi = { tanik: tanilar.size, soylenti: [] };
+  if (ayniKume(kim, hedef)) return basarili({ olaylar, degisen: [], etki: { ...etki, engel: "ayni_kume" } });
+  const [a, b] = ciftSirala(kim.o, hedef.o);
+  const iz = `atisma:${a}:${b}`;
+  if (defter.iz[iz] === ay) return basarili({ olaylar, degisen: [], etki: { ...etki, engel: "ayda_bir" } });
+  defter.iz[iz] = ay;
+  const tohum = `han:${g.anahtar}`;
+  const handaki = mekanTaniklari(k, "han", [], ay, tohum);
+  const npcTanik = handaki.length ? handaki : haneTaniklari(k, [...new Set([...tanilar.values()].map((x) => x.e).filter((e) => e !== 0))], ay, tohum);
+  for (const [konu, muhatap] of berabere ? [[kim, hedef], [hedef, kim]] : [[kim, hedef]]) {
+    if (soylentiEkle(k, "hanAtisma", konu!.o, muhatap!.o, npcTanik, ay)) etki.soylenti.push("hanAtisma");
+  }
+  return basarili({ olaylar, degisen: [], etki });
 }
 
 // ---------------------------------------------------------------- H7 ziyafet

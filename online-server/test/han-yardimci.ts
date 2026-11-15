@@ -1,7 +1,8 @@
 // Han testi yardımcıları: çekirdek için sahte MasaSoketi, DO için sahte hibernation WebSocket'i ve bağlamı.
 
 import type { MasaBaglami, MasaSoketi } from "../src/han/masa.ts";
-import type { MasaAyari, MasaBileti, MasaOlayi, SoketEki, SunucuIletisi } from "../src/han/tipler.ts";
+import type { Etkinlik } from "../src/han/sahne.ts";
+import type { AtismaSonucu, MasaAyari, MasaBileti, MasaOlayi, SoketEki, SunucuIletisi } from "../src/han/tipler.ts";
 import type { HesapYaptirimi, Sonuc } from "../src/tipler.ts";
 import type { MasaAraclari, WebSocketDurumu } from "../src/masa-do.ts";
 import { basarili } from "../src/tipler.ts";
@@ -48,9 +49,19 @@ export function sahteMasa(ek: Partial<Pick<MasaBaglami, "engelliMi" | "rapor">> 
   let simdi = 1_800_000_000_000;
   let ayar: MasaAyari = { tur: "acik", acik: true, sesli: false, kavgaYasak: false, kilitli: false };
   const ayarYazimlari: MasaAyari[] = [];
+  let etkinlik: Etkinlik | undefined;
+  /** H8: anılan atışma sonuçları (DO'da masa olayı + yerleşim kuyruğu olur). */
+  const anilanlar: { sonuc: AtismaSonucu; katilim: string[] }[] = [];
   const m = {
     soketler,
     ayarYazimlari,
+    anilanlar,
+    get etkinlik() {
+      return etkinlik;
+    },
+    set etkinlik(e: Etkinlik | undefined) {
+      etkinlik = e;
+    },
     get ayar() {
       return ayar;
     },
@@ -76,6 +87,13 @@ export function sahteMasa(ek: Partial<Pick<MasaBaglami, "engelliMi" | "rapor">> 
           ayarYazimlari.push({ ...a });
         },
         simdi,
+        ...(etkinlik ? { etkinlik: structuredClone(etkinlik) } : {}),
+        etkinlikYaz: (e) => {
+          etkinlik = e ? structuredClone(e) : undefined;
+        },
+        anil: (sonuc, katilim) => {
+          anilanlar.push({ sonuc: structuredClone(sonuc), katilim: [...katilim] });
+        },
         engelliMi: ek.engelliMi ?? (async () => false),
         rapor:
           ek.rapor ??

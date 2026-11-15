@@ -14,7 +14,7 @@ import { hesapIdCoz } from "../yonetim/yaptirim.ts";
 import type { EngelSorgusu } from "./engel-kopru.ts";
 import { sohbetMaskele } from "./filtre.ts";
 import { ATMA_SURE_MS, HAN_MASA_EN_COK, masaNoCoz, SART_EN_UZUN, surer, tekSatir } from "./kurallar.ts";
-import { HAN_EYLEMLERI, type EylemGirdisi, type HanEylemi, type MasaAyari, type MasaOlayi } from "./tipler.ts";
+import { HAN_EYLEMLERI, type AtismaSonucu, type EylemGirdisi, type HanEylemi, type MasaAyari, type MasaOlayi, type TeklifTuru } from "./tipler.ts";
 
 /** Hedef zorunlu mu, hedef koltukta olmalı mı, şart metni zorunlu mu. */
 export const EYLEM_KURALLARI: Readonly<Record<Exclude<HanEylemi, "kabul">, { hedef: "zorunlu" | "secimli"; oturan: boolean; sart: boolean }>> = {
@@ -24,10 +24,12 @@ export const EYLEM_KURALLARI: Readonly<Record<Exclude<HanEylemi, "kabul">, { hed
   // İhbar edilen çoğu zaman masada değildir; kimliğin varlığı söylenti fazında doğrulanacak.
   ihbar: { hedef: "zorunlu", oturan: false, sart: false },
   meydanOku: { hedef: "zorunlu", oturan: true, sart: false },
+  // H8 ozan atışması teklifi: kabulü atışmayı başlatır (src/han/sahne.ts).
+  atisma: { hedef: "zorunlu", oturan: true, sart: false },
 };
 
-/** Karşı tarafın onayını bekleyen eylemler (H6: meydan okuma da teklif olur; kabulü düellodur). */
-const ONAYLI = new Set<string>(["sozlesme", "ittifak", "meydanOku"]);
+/** Karşı tarafın onayını bekleyen eylemler (H6: meydan okuma da teklif olur; kabulü düellodur; H8 atışma). */
+const ONAYLI = new Set<string>(["sozlesme", "ittifak", "meydanOku", "atisma"]);
 
 // Depo anahtarları (MasaDO)
 export const OLAY_SAYAC = "olay#";
@@ -87,6 +89,8 @@ export interface EylemBaglami {
   ayar: MasaAyari;
   simdi: number;
   engelliMi: EngelSorgusu;
+  /** H8: masada sahne ya da atışma sürüyor (atışma teklifi ve kabulü reddedilir). */
+  mesgul?: boolean;
 }
 
 async function sonrakiNo(depo: Depo): Promise<number> {
@@ -122,8 +126,9 @@ export async function eylemUygula(
     const teklif = await depo.al<MasaOlayi>(olayAnahtari(girdi.olay));
     if (!teklif || !ONAYLI.has(teklif.tur) || teklif.hedef !== kim) return hata("olay_yok");
     if (teklif.durum !== "teklif") return hata("karar_verildi");
-    const teklifTur = teklif.tur as "sozlesme" | "ittifak" | "meydanOku";
+    const teklifTur = teklif.tur as TeklifTuru;
     if (teklifTur === "meydanOku" && b.ayar.kavgaYasak) return hata("kavga_yasak");
+    if (teklifTur === "atisma" && b.mesgul) return hata("masa_mesgul");
     // Her teklif (sözleşme, ittifak, meydan okuma), iki taraf da teklif anındaki oturuşunda oturuyorken geçerlidir;
     // kalkan ya da masadan çıkanla düşer (masa dağılınca teklif kalmaz). Oturuş kaydı olmayan eski sözleşme/ittifak
     // teklifleri geriye uyum için kabul edilebilir; meydan okumada kayıt zorunludur.
@@ -143,6 +148,7 @@ export async function eylemUygula(
       if (await b.engelliMi(hedef, kim)) return hata("engelli");
     }
     if (girdi.tur === "meydanOku" && b.ayar.kavgaYasak) return hata("kavga_yasak");
+    if (girdi.tur === "atisma" && b.mesgul) return hata("masa_mesgul");
     if (kural.sart && !girdi.sart) return hata("metin_gecersiz");
     olay = {
       no,
@@ -177,5 +183,28 @@ export async function atmaUygula(
   const no = await sonrakiNo(depo);
   const olay: MasaOlayi = { no, masa, tur: "atma", kim, hedef, zaman: simdi, katilim };
   await depo.koy({ [OLAY_SAYAC]: no, [olayAnahtari(no)]: olay, [ATMA + hedef]: simdi + ATMA_SURE_MS });
+  return olay;
+}
+
+/**
+ * H8 atışma sonucu olayı (kazandı/berabere/hükümsüz): `kim` kazanan (berabere ve hükümsüzde teklif eden), `hedef`
+ * öteki taraf, `olay` atışma teklifinin numarası. Ödül alanı yoktur: yalnız kayıt ve anılma.
+ */
+export async function atismaSonucuYaz(depo: Depo, masa: string, s: AtismaSonucu, katilim: string[], simdi: number): Promise<MasaOlayi> {
+  const no = await sonrakiNo(depo);
+  const kim = s.sonuc === "kazandi" ? s.kazanan[0]! : s.a;
+  const olay: MasaOlayi = {
+    no,
+    masa,
+    tur: "atismaSonuc",
+    kim,
+    hedef: kim === s.a ? s.b : s.a,
+    olay: s.olay,
+    sonuc: s.sonuc,
+    oy: [s.oy[0], s.oy[1]],
+    zaman: simdi,
+    katilim: [...new Set([...katilim, s.a, s.b])],
+  };
+  await depo.koy({ [OLAY_SAYAC]: no, [olayAnahtari(no)]: olay });
   return olay;
 }

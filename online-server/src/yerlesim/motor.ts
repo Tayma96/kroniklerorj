@@ -1528,7 +1528,7 @@ export class YerlesimMotoru {
     });
   }
 
-  async engeller(hesapId: string): Promise<Sonuc<{ engeller: string[]; mudavim: boolean }>> {
+  async engeller(hesapId: string): Promise<Sonuc<{ engeller: string[]; mudavim: boolean; ozan: boolean }>> {
     const s = this.kasaba.sakin.find((x) => x.h === hesapId);
     if (!s) return hata("sakin_yok");
     const eg = this.kasaba.tp?.eg ?? {};
@@ -1537,7 +1537,8 @@ export class YerlesimMotoru {
     const hesaplar = new Set<string>();
     for (const x of this.kasaba.sakin) if (x.h !== hesapId && yerel.has(x.o)) hesaplar.add(x.h);
     // H4: plaka rozeti (sakin dizinindeki müdavim kademesi; oyun mantığı okumaz).
-    return basarili({ engeller: [...hesaplar].sort(), mudavim: (s.md ?? 0) >= MUDAVIM_PLAKA_KADEME });
+    // H8: ozan işareti (ana meslek ozan; yalnız görünür, güç vermez).
+    return basarili({ engeller: [...hesaplar].sort(), mudavim: (s.md ?? 0) >= MUDAVIM_PLAKA_KADEME, ozan: s.ms === "ozan" });
   }
 
   /** H1 (han keşif sırası): oyuncunun dostları ve hane üyeleri, hesap kimliği olarak (yalnız HesapDO sayar). */

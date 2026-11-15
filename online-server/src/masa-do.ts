@@ -7,15 +7,17 @@
 
 import { doDepo, type Depo } from "./depo.ts";
 import { ENGEL_ANAHTARI, engelListesiCoz, engelSorgusuKur, type EngelSorgusu } from "./han/engel-kopru.ts";
-import { ATMA, atmaUygula, eylemUygula } from "./han/eylem.ts";
+import { ATMA, atismaSonucuYaz, atmaUygula, eylemUygula } from "./han/eylem.ts";
 import { BILET_BASLIGI } from "./han/ic.ts";
 import { KAPANIS, surer, VARSAYILAN_AYAR } from "./han/kurallar.ts";
 import {
+  atismaBaslatYayinla,
   ayril,
   baglan,
   baglanmaEngeli,
   hesabiCikar,
   iletiIsle,
+  etkinlikDenetleYayinla,
   kayitlar,
   oturanlar,
   ozet,
@@ -23,10 +25,11 @@ import {
   type MasaBaglami,
   type MasaSoketi,
 } from "./han/masa.ts";
-import type { MasaAyari, MasaBileti, MasaIleti, SoketEki, SunucuIletisi } from "./han/tipler.ts";
+import { etkinlikCoz, type Etkinlik } from "./han/sahne.ts";
+import type { AtismaSonucu, MasaAyari, MasaBileti, MasaIleti, MasaOlayi, SoketEki, SunucuIletisi } from "./han/tipler.ts";
 import { Realtime, realtimeAyari, type Getir } from "./han/realtime.ts";
 import { sesIsle } from "./han/ses.ts";
-import { hesapCagir, iletiOku, jsonYanit, yonetimCagir } from "./ic.ts";
+import { hesapCagir, iletiOku, jsonYanit, yerlesimCagir, yonetimCagir } from "./ic.ts";
 import { basarili, hata, HATA_DURUMU, type Env, type Sonuc } from "./tipler.ts";
 
 /** Hibernation API'li DO durumu. */
@@ -52,6 +55,22 @@ const VARSAYILAN_ARACLAR: MasaAraclari = {
 };
 
 const AYAR = "ayar";
+/** H8 sahne/atışma durumu (kıta metni yok) ve yerleşime teslim bekleyen anılma olayları. */
+const ETKINLIK = "etkinlik";
+const ANMA_KUYRUK = "anma:kuyruk";
+/** [PARAMETRE] Teslim bekleyen anılma olaylarının en çok sayısı (eskiler düşer). */
+export const ANMA_KUYRUK_EN_COK = 20;
+
+interface AnmaBekleyen {
+  yerlesim: string;
+  anahtar: string;
+  olay: MasaOlayi;
+}
+
+/** "masa:<yerlesim>:<han>:<no>" → yerleşim kimliği. */
+function yerlesimAdi(masa: string): string {
+  return masa.split(":")[1] ?? "";
+}
 
 function masaNo(ad: string): number {
   const n = Number(ad.slice(ad.lastIndexOf(":") + 1));
@@ -70,6 +89,7 @@ function biletCoz(ham: string | null): MasaBileti | undefined {
         ...(typeof b.plaka.balon === "string" && b.plaka.balon.length <= 40 ? { balon: b.plaka.balon } : {}),
         ...(typeof b.plaka.masaSusu === "string" && b.plaka.masaSusu.length <= 40 ? { masaSusu: b.plaka.masaSusu } : {}),
         ...(b.plaka.mudavim === true ? { mudavim: true as const } : {}),
+        ...(b.plaka.ozan === true ? { ozan: true as const } : {}),
       };
       const ho = typeof b.ho === "number" && Number.isFinite(b.ho) ? { ho: b.ho } : {};
       return { masa: b.masa, no: b.no, plaka, yt: b.yt ?? {}, eg: engelListesiCoz(b.eg), ...ho };
@@ -87,6 +107,10 @@ export class MasaDO {
   readonly #araclar: MasaAraclari;
   readonly #sarmal = new WeakMap<WebSocket, MasaSoketi>();
   #ayar: MasaAyari | undefined;
+  /** H8: null = yüklenmedi. */
+  #etkinlik: Etkinlik | undefined | null = null;
+  /** H8: anılma kuyruğunda öğe var mı (null = bilinmiyor; boşken her iletide depo okunmaz). */
+  #anmaVar: boolean | null = null;
   /** İşlem sırasında sıraya alınan SFU iz kapatmaları; işlem sonunda beklenir. */
   readonly #bekleyen: Promise<unknown>[] = [];
   /** Hesap başına iki yönlü engel listesi önbelleği (asıl kayıt depoda `eg:<hesap>`). */
@@ -109,6 +133,7 @@ export class MasaDO {
     if (!ileti || typeof ileti.masa !== "string") return jsonYanit(hata("gecersiz_istek"));
     const sonuc = await this.#isle(ileti);
     await this.#bosalt();
+    await this.#anmaBosalt();
     return jsonYanit(sonuc);
   }
 
@@ -117,6 +142,7 @@ export class MasaDO {
     if (!ek) return;
     await iletiIsle(await this.#baglam(ek.m), this.#sar(ws), mesaj);
     await this.#bosalt();
+    await this.#anmaBosalt();
   }
 
   #realtime(): Realtime | undefined {
@@ -140,6 +166,7 @@ export class MasaDO {
     const ek = this.#sar(ws).ek();
     if (ek) ayril(await this.#baglam(ek.m, ws), this.#sar(ws));
     await this.#bosalt();
+    await this.#anmaBosalt();
     try {
       ws.close(1000, "ayrildi");
     } catch {
@@ -181,14 +208,65 @@ export class MasaDO {
   /** H2: ayar bellekte hemen değişir; depo yazımı işlem sonunda beklenir. Varsayılana dönen ayar silinir. */
   #ayarYaz(ayar: MasaAyari): void {
     this.#ayar = { ...ayar };
-    const varsayilan = !ayar.davet?.length && (Object.keys(VARSAYILAN_AYAR) as (keyof MasaAyari)[]).every((a) => ayar[a] === VARSAYILAN_AYAR[a]);
+    const varsayilan = !ayar.davet?.length && !ayar.sahneYasak && (Object.keys(VARSAYILAN_AYAR) as (keyof MasaAyari)[]).every((a) => ayar[a] === VARSAYILAN_AYAR[a]);
     this.#bekleyen.push(varsayilan ? this.#depo.sil([AYAR]) : this.#depo.koy({ [AYAR]: { ...ayar } }));
+  }
+
+  async #etkinlikAl(): Promise<Etkinlik | undefined> {
+    if (this.#etkinlik === null) this.#etkinlik = etkinlikCoz(await this.#depo.al<unknown>(ETKINLIK));
+    return this.#etkinlik;
+  }
+
+  #etkinlikYaz(e: Etkinlik | undefined): void {
+    this.#etkinlik = e;
+    this.#bekleyen.push(e ? this.#depo.koy({ [ETKINLIK]: e }) : this.#depo.sil([ETKINLIK]));
+  }
+
+  /** H8: atışma sonucu masa olayı olur (herkese yayınlanır); kazanan varsa yerleşime anılma için kuyruğa girer. */
+  async #anil(masa: string, sonuc: AtismaSonucu, katilim: string[], simdi: number): Promise<void> {
+    const olay = await atismaSonucuYaz(this.#depo, masa, sonuc, katilim, simdi);
+    for (const w of this.#ctx.getWebSockets()) {
+      const s = this.#sar(w);
+      const ek = s.ek();
+      if (ek && !ek.x) s.gonder({ t: "olay", olay });
+    }
+    if (sonuc.sonuc !== "kazandi" && sonuc.sonuc !== "berabere") return;
+    const kuyruk = (await this.#depo.al<AnmaBekleyen[]>(ANMA_KUYRUK)) ?? [];
+    kuyruk.push({ yerlesim: yerlesimAdi(masa), anahtar: `${olay.masa}#${olay.no}`, olay });
+    await this.#depo.koy({ [ANMA_KUYRUK]: kuyruk.slice(-ANMA_KUYRUK_EN_COK) });
+    this.#anmaVar = true;
+  }
+
+  /**
+   * Anılma kuyruğunu yerleşime teslim eder (HesapDO giden kutusu deseni): ağ hatası kuyruğu korur ve durur, mantıksal
+   * ret öğeyi düşürür. Yerleşim anahtarla tekrar güvenlidir: ikinci teslim ikinci etki üretmez.
+   */
+  async #anmaBosalt(): Promise<void> {
+    if (this.#anmaVar === false) return;
+    const kuyruk = (await this.#depo.al<AnmaBekleyen[]>(ANMA_KUYRUK)) ?? [];
+    this.#anmaVar = kuyruk.length > 0;
+    if (kuyruk.length === 0) return;
+    const teslim = new Set<string>();
+    for (const k of kuyruk) {
+      try {
+        await yerlesimCagir(this.#env, { islem: "hanOlayi", yerlesim: k.yerlesim, hesapId: k.olay.kim, govde: { anahtar: k.anahtar, olay: k.olay } });
+        teslim.add(k.anahtar);
+      } catch {
+        break;
+      }
+    }
+    if (teslim.size === 0) return;
+    const kalan = ((await this.#depo.al<AnmaBekleyen[]>(ANMA_KUYRUK)) ?? []).filter((k) => !teslim.has(k.anahtar));
+    if (kalan.length) await this.#depo.koy({ [ANMA_KUYRUK]: kalan });
+    else await this.#depo.sil([ANMA_KUYRUK]);
+    this.#anmaVar = kalan.length > 0;
   }
 
   async #baglam(masa: string, haric?: WebSocket): Promise<MasaBaglami> {
     const env = this.#env;
     const depo = this.#depo;
     const simdi = Date.now();
+    const etkinlik = await this.#etkinlikAl();
     return {
       masa,
       no: masaNo(masa),
@@ -200,6 +278,11 @@ export class MasaDO {
       ayarYaz: (a) => this.#ayarYaz(a),
       simdi,
       engelliMi: this.#engelliMi,
+      ...(etkinlik ? { etkinlik } : {}),
+      etkinlikYaz: (e) => this.#etkinlikYaz(e),
+      anil: (sonuc, katilim) => {
+        this.#bekleyen.push(this.#anil(masa, sonuc, katilim, simdi).catch(() => undefined));
+      },
       sesYapilandi: realtimeAyari(env) !== undefined,
       sesKapat: (oturum, mid) => {
         const rt = this.#realtime();
@@ -247,6 +330,7 @@ export class MasaDO {
       case "ozet":
         return basarili(ozet(ileti.no, kayitlar(b.soketler), b.ayar));
       case "eylem": {
+        etkinlikDenetleYayinla(b, kayitlar(b.soketler));
         const tum = kayitlar(b.soketler);
         const yapan = tum.find((r) => r.ek.h === ileti.hesap);
         const sonuc = await eylemUygula(this.#depo, ileti.hesap, ileti.girdi, {
@@ -256,9 +340,12 @@ export class MasaDO {
           ayar: b.ayar,
           simdi: b.simdi,
           engelliMi: b.engelliMi,
+          mesgul: b.etkinlik !== undefined,
         });
         if (!sonuc.ok) return sonuc;
         if (sonuc.deger.yeni) for (const r of kayitlar(b.soketler)) r.soket.gonder({ t: "olay", olay: sonuc.deger.olay });
+        // H8: atışma kabulü atışmayı başlatır (tekrar istekte yeni: false → yeniden başlamaz).
+        if (sonuc.deger.yeni) atismaBaslatYayinla(b, sonuc.deger.olay);
         return basarili({ olay: sonuc.deger.olay });
       }
       case "cikar":

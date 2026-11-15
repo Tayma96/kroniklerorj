@@ -57,7 +57,7 @@ export interface HanHesapBaglami {
 }
 
 /** HesapDO → YerlesimDO "engeller" çağrısı (H4: müdavim rozeti de döner). */
-export type EngelListeleyici = (yerlesim: string) => Promise<Sonuc<{ engeller: string[]; mudavim?: boolean }>>;
+export type EngelListeleyici = (yerlesim: string) => Promise<Sonuc<{ engeller: string[]; mudavim?: boolean; ozan?: boolean }>>;
 /** HesapDO → YerlesimDO "hanTanidiklar" çağrısı. */
 export type TanidikListeleyici = (yerlesim: string) => Promise<Sonuc<{ hesaplar: string[] }>>;
 
@@ -148,11 +148,13 @@ export async function masaBileti(b: HanHesapBaglami, hamNo: unknown): Promise<So
   }
   let eg: string[] = [];
   let mudavim = false;
+  let ozan = false;
   if (b.engelSor) {
     const r = await b.engelSor(yer.deger.yerlesim);
     if (!r.ok) return r;
     eg = r.deger.engeller;
     mudavim = r.deger.mudavim === true;
+    ozan = r.deger.ozan === true;
   }
   let ho: number | undefined;
   try { ho = await b.hesapOlusturma?.(); } catch { /* bilinmezse yeni hesap sınırı uygulanmaz */ }
@@ -173,6 +175,7 @@ export async function masaBileti(b: HanHesapBaglami, hamNo: unknown): Promise<So
     ...(susler.balon ? { balon: susler.balon } : {}),
     ...(susler.masaSusu ? { masaSusu: susler.masaSusu } : {}),
     ...(mudavim ? { mudavim: true as const } : {}),
+    ...(ozan ? { ozan: true as const } : {}),
   };
   return basarili({ masa: ad, no, plaka, yt, eg, ...(typeof ho === "number" ? { ho } : {}) });
 }

@@ -25,6 +25,9 @@ export interface MasaAyari {
   kilitli: boolean;
   /** H9 özel masanın davetlileri (hesap kimlikleri; masa başı yazar, masa boşalınca silinir). Eski kayıtta yok. */
   davet?: string[];
+  /** H8: masa başı ozan sahnesini yasakladı (yalnız true iken yazılır; yok → sahne açılabilir). Son oturan kalkınca
+   *  silinir. Atışmayı etkilemez. */
+  sahneYasak?: boolean;
 }
 
 /** H9: masa başının seçebildiği türler. */
@@ -42,6 +45,8 @@ export interface Plaka {
   masaSusu?: string;
   /** H4: bu yerleşimin hanının müdavimi (rozet; oyun mantığı okumaz, yalnız plakada görünür). */
   mudavim?: true;
+  /** H8: ana mesleği ozan (yalnız görünür işaret; hiçbir yetki ya da güç vermez). */
+  ozan?: true;
 }
 
 export interface MasaGorunumu {
@@ -58,10 +63,12 @@ export interface MasaGorunumu {
 }
 
 /** Butonlu eylemler (GDD §16 "Konuşma oyun durumunu bağlamaz"); `kabul` sözleşme/ittifak teklifine onaydır. */
-export const HAN_EYLEMLERI = ["yemin", "sozlesme", "ittifak", "ihbar", "meydanOku", "kabul"] as const;
+export const HAN_EYLEMLERI = ["yemin", "sozlesme", "ittifak", "ihbar", "meydanOku", "atisma", "kabul"] as const;
 export type HanEylemi = (typeof HAN_EYLEMLERI)[number];
-/** Olay türleri: butonlu eylemler + masa başının çıkarması. */
-export type MasaOlayTuru = HanEylemi | "atma";
+/** Olay türleri: butonlu eylemler + masa başının çıkarması + H8 atışma sonucu (sunucu yazar; istemci gönderemez). */
+export type MasaOlayTuru = HanEylemi | "atma" | "atismaSonuc";
+/** Karşı tarafın onayını bekleyen teklif türleri. */
+export type TeklifTuru = "sozlesme" | "ittifak" | "meydanOku" | "atisma";
 
 /**
  * Masa olayı: eylemin kendisi (kim, kime, neyi) ve o anda oturanların katılım listesi (yalnız kimlikler).
@@ -85,7 +92,11 @@ export interface MasaOlayi {
   /** Onaylandıysa onay olayının numarası. */
   kabulOlay?: number;
   /** `kabul`: onaylanan teklifin türü (yerleşimdeki etki için). */
-  teklifTur?: "sozlesme" | "ittifak" | "meydanOku";
+  teklifTur?: TeklifTuru;
+  /** H8 `atismaSonuc`: sonuç ve oylar [teklif edenin (a), kabul edenin (b)]. `kim` kazanan (berabere/hükümsüzde a),
+   *  `hedef` öteki taraf, `olay` atışma teklifinin numarası. */
+  sonuc?: AtismaSonucTuru;
+  oy?: [number, number];
 }
 
 /** Worker → MasaDO yükseltme bileti (iç başlıkta taşınır; istemci bunu göremez ve yazamaz). */
@@ -118,9 +129,59 @@ export type IstemciIletisi =
   | { t: "sozGeri" }
   | { t: "sozVer"; hedef: string; kabul?: boolean }
   // H2: masa başı ayarı (en az bir alan)
-  | { t: "ayar"; kavgaYasak?: boolean; kilitli?: boolean; sesli?: boolean; tur?: "acik" | "ozel" }
+  | { t: "ayar"; kavgaYasak?: boolean; kilitli?: boolean; sesli?: boolean; tur?: "acik" | "ozel"; sahneYasak?: boolean }
   // H9: masa başı özel masaya davet eder (ya da `kaldir: true` ile daveti geri alır)
-  | { t: "davet"; hedef: string; kaldir?: boolean };
+  | { t: "davet"; hedef: string; kaldir?: boolean }
+  // H8 ozan sahnesi: oturan biri açar (anlatıcı olur); anlatıcı ya da masa başı kapatır. Sahnede söz `sozIste`/
+  // `sozGeri`/`sozVer` ile (oturanlar için) yürür.
+  | { t: "sahneAc" }
+  | { t: "sahneKapat" }
+  // H8 ozan atışması (teklif/kabul `/v1/han/eylem` ile, tur "atisma"): sırası gelen taraf kıtasını yazar; oylamada
+  // oy hakkı olan bir kez oy verir; taraf ya da masa başı kapatır (kıta aşamasında iptal, oylamada sonuçlandırır).
+  | { t: "kita"; metin: string }
+  | { t: "oy"; hedef: string }
+  | { t: "atismaKapat" };
+
+/** H8 sahne görünümü (herkese aynı). */
+export interface SahneGorunumu {
+  anlatici: string;
+  /** Anlatıcının söz verdiği oturanlar (yazabilirler). */
+  soz: string[];
+  /** Söz isteyen oturanlar, istek sırasıyla. */
+  istek: string[];
+  acilis: number;
+}
+
+export type AtismaSonucTuru = "kazandi" | "berabere" | "hukumsuz" | "iptal";
+
+/** H8 atışma görünümü. Oyların dağılımı oylama bitene kadar gösterilmez; kimin oy verdiği görünür. */
+export interface AtismaGorunumu {
+  /** Atışma teklifinin olay numarası. */
+  olay: number;
+  /** a: teklif eden (ilk kıta onun), b: kabul eden. */
+  a: string;
+  b: string;
+  /** Yazılmış kıta sayısı ve toplam (2 × ATISMA_KITA). */
+  kita: number;
+  toplam: number;
+  /** Kıta sırası kimde (oylamada null). */
+  sira: string | null;
+  asama: "kita" | "oylama";
+  /** Oylamada oy hakkı olanlar ve oy verenler (oylama açılmadıysa boş). */
+  hak: string[];
+  oyVeren: string[];
+}
+
+/** H8 atışmanın bitişi (herkese yayınlanır). `kazanan`: kazandıda bir, berabere ikisi, hükümsüz/iptalde boş. */
+export interface AtismaSonucu {
+  olay: number;
+  a: string;
+  b: string;
+  sonuc: AtismaSonucTuru;
+  kazanan: string[];
+  /** [a'nın oyu, b'nin oyu]. */
+  oy: [number, number];
+}
 
 /**
  * Masanın ses durumu (Faz 16). Yalnız kimlikler ve iz adları; ses verisi ve kayıt yoktur.
@@ -142,7 +203,13 @@ export interface SesDurumu {
 
 /** Sunucu → istemci. */
 export type SunucuIletisi =
-  | { t: "hosgeldin"; ben: Plaka; susturma: { bitis: number | null } | null; masa: MasaGorunumu; ses?: SesDurumu }
+  | { t: "hosgeldin"; ben: Plaka; susturma: { bitis: number | null } | null; masa: MasaGorunumu; ses?: SesDurumu; sahne?: SahneGorunumu; atisma?: AtismaGorunumu }
+  /** H8: sahne açıldı/değişti (null: kapandı). */
+  | { t: "sahne"; sahne: SahneGorunumu | null }
+  /** H8: atışma başladı/ilerledi (null: bitti; `son` bitişin sonucu). */
+  | { t: "atisma"; atisma: AtismaGorunumu | null; son?: AtismaSonucu }
+  /** H8: atışma kıtası (sohbet gibi saklanmaz; `sira` 1..toplam). */
+  | { t: "kita"; hesap: string; ad: string; koltuk: number; metin: string; sira: number; zaman: number; balon?: string }
   | { t: "sesDurum"; ses: SesDurumu }
   | { t: "durum"; masa: MasaGorunumu }
   | { t: "ileti"; hesap: string; ad: string; koltuk: number; metin: string; zaman: number; balon?: string }
@@ -163,6 +230,8 @@ export interface SoketEki {
   cf?: string;
   /** Müdavim rozeti (plaka; oyun mantığı okumaz). */
   md?: 1;
+  /** H8 ozan işareti (plaka; oyun mantığı okumaz). */
+  oz?: 1;
   /** H11 Debdebe sohbet balonu ve masa süsü (kozmetik; oyun mantığı okumaz). */
   bl?: string;
   su?: string;

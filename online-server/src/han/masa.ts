@@ -24,8 +24,29 @@ import {
   surer,
   VARSAYILAN_AYAR,
 } from "./kurallar.ts";
+import {
+  atismaBaslat,
+  atismaGorunumu,
+  atismaKapat,
+  etkinlikDenetle,
+  kitaKaydet,
+  kitaMetniCoz,
+  KITA_EN_UZUN,
+  oylamaTamam,
+  atismaSonucu,
+  oyVer,
+  sahneAc,
+  sahneGorunumu,
+  sahneKapatabilir,
+  sahneSozIste,
+  sahneSozVer,
+  sahneYazabilir,
+  type Etkinlik,
+  type Oturan,
+} from "./sahne.ts";
 import { MASA_BASI_AYARLARI, MASA_BASI_TURLERI } from "./tipler.ts";
 import type {
+  AtismaSonucu,
   IstemciIletisi,
   MasaAyari,
   MasaBileti,
@@ -64,6 +85,12 @@ export interface MasaBaglami {
   sesYapilandi?: boolean;
   /** Faz 16: yayın izini SFU'da zorla kapatır (en iyi çaba; DO işlem sonunda bekler). */
   sesKapat?(oturum: string, mid: string): void;
+  /** H8: masadaki sahne ya da atışma (DO depodan yükler; yoksa undefined). */
+  etkinlik?: Etkinlik;
+  /** H8: etkinliği kalıcı yazar (undefined: siler). DO bellekte hemen günceller, depoya işlem sonunda yazar. */
+  etkinlikYaz?(e: Etkinlik | undefined): void;
+  /** H8: atışma sonuçlandı (kazandı/berabere/hükümsüz): masa olayı yazılır, kazanan(lar) yerleşimde anılır. */
+  anil?(sonuc: AtismaSonucu, katilim: string[]): void;
 }
 
 export interface Kayit {
@@ -81,7 +108,7 @@ export function kayitlar(soketler: readonly MasaSoketi[]): Kayit[] {
 }
 
 function plaka(ek: SoketEki): Plaka {
-  return { hesap: ek.h, ad: ek.a, ...(ek.cf ? { cerceve: ek.cf } : {}), ...(ek.bl ? { balon: ek.bl } : {}), ...(ek.su ? { masaSusu: ek.su } : {}), ...(ek.md ? { mudavim: true as const } : {}) };
+  return { hesap: ek.h, ad: ek.a, ...(ek.cf ? { cerceve: ek.cf } : {}), ...(ek.bl ? { balon: ek.bl } : {}), ...(ek.su ? { masaSusu: ek.su } : {}), ...(ek.md ? { mudavim: true as const } : {}), ...(ek.oz ? { ozan: true as const } : {}) };
 }
 
 /** Oturanlar koltuk sırasıyla. */
@@ -134,6 +161,40 @@ function yayinla(tum: readonly Kayit[], ileti: SunucuIletisi): void {
 
 function durumYayinla(b: MasaBaglami, tum: readonly Kayit[]): void {
   yayinla(tum, { t: "durum", masa: gorunum(b.no, tum, b.ayar) });
+}
+
+// ---------------------------------------------------------------- H8 sahne ve atışma
+
+function oturanListesi(tum: readonly Kayit[]): Oturan[] {
+  return oturanlar(tum).map((x) => ({ hesap: x.hesap, o: x.o }));
+}
+
+/** Etkinliği değiştirir, kalıcı yazar ve yayınlar; atışma bittiyse sonucu yayınlar ve (iptal değilse) anar. */
+function etkinlikGuncelle(b: MasaBaglami, tum: readonly Kayit[], yeni: Etkinlik | undefined, son?: AtismaSonucu): void {
+  const eski = b.etkinlik;
+  b.etkinlik = yeni;
+  b.etkinlikYaz?.(yeni);
+  const tur = yeni?.tur ?? eski?.tur;
+  if (tur === "sahne") yayinla(tum, { t: "sahne", sahne: yeni?.tur === "sahne" ? sahneGorunumu(yeni) : null });
+  else if (tur === "atisma") yayinla(tum, { t: "atisma", atisma: yeni?.tur === "atisma" ? atismaGorunumu(yeni) : null, ...(son ? { son } : {}) });
+  if (son && son.sonuc !== "iptal") b.anil?.(son, oturanlar(tum).map((o) => o.hesap));
+}
+
+/** Oturma düzeni değişince ya da DO uyanınca: geçersiz kalan sahne/atışma düşer (yarım kilit kalmaz). */
+export function etkinlikDenetleYayinla(b: MasaBaglami, tum: readonly Kayit[]): void {
+  if (!b.etkinlik) return;
+  const r = etkinlikDenetle(b.etkinlik, oturanListesi(tum));
+  if (r.degisti) etkinlikGuncelle(b, tum, r.durum, r.sonuc);
+}
+
+/** Atışma teklifi kabul edildi (eylem "kabul", teklifTur "atisma"): a teklif eden, b kabul eden; ilk kıta a'nın. */
+export function atismaBaslatYayinla(b: MasaBaglami, kabul: MasaOlayi): boolean {
+  if (kabul.tur !== "kabul" || kabul.teklifTur !== "atisma" || !kabul.hedef || kabul.olay === undefined) return false;
+  const tum = kayitlar(b.soketler);
+  etkinlikDenetleYayinla(b, tum);
+  if (b.etkinlik) return false;
+  etkinlikGuncelle(b, tum, atismaBaslat(kabul.olay, kabul.hedef, kabul.kim, oturanListesi(tum)));
+  return true;
 }
 
 // ---------------------------------------------------------------- ses (Faz 16)
@@ -211,6 +272,7 @@ function cikar(b: MasaBaglami, cikanlar: readonly Kayit[], kalan: readonly Kayit
   if (ayarSifirla(b, kalan)) ses = true;
   durumYayinla(b, kalan);
   if (ses) sesYayinla(b, kalan);
+  etkinlikDenetleYayinla(b, kalan);
 }
 
 /** H9: kilitli masada kimse, özel masada yalnız davetli yeni oturabilir. */
@@ -231,10 +293,10 @@ function bosKoltuklariDoldur(b: Pick<MasaBaglami, "ayar" | "simdi">, tum: readon
 function ayarSifirla(b: Pick<MasaBaglami, "ayar" | "ayarYaz" | "simdi">, kalan: readonly Kayit[]): boolean {
   if (oturanlar(kalan).length > 0) return false;
   const ozel = b.ayar.tur === "ozel" || (b.ayar.davet?.length ?? 0) > 0;
-  if (!ozel && MASA_BASI_AYARLARI.every((a) => b.ayar[a] === VARSAYILAN_AYAR[a])) return false;
+  if (!ozel && !b.ayar.sahneYasak && MASA_BASI_AYARLARI.every((a) => b.ayar[a] === VARSAYILAN_AYAR[a])) return false;
   const sesDegisti = b.ayar.sesli !== VARSAYILAN_AYAR.sesli;
-  // H9: özel masa açığa döner, davetler silinir (meclis/tüccar türüne masa başı dokunamaz, korunur).
-  const { davet: _davet, ...kalanAyar } = b.ayar;
+  // H9: özel masa açığa döner, davetler silinir (meclis/tüccar türüne masa başı dokunamaz, korunur). H8 sahne yasağı da.
+  const { davet: _davet, sahneYasak: _sahne, ...kalanAyar } = b.ayar;
   b.ayar = {
     ...kalanAyar,
     ...(b.ayar.tur === "ozel" ? { tur: "acik" as const } : {}),
@@ -277,6 +339,7 @@ export function baglan(b: MasaBaglami, yeni: MasaSoketi, bilet: MasaBileti): voi
     if (once.ek.sm) ek.sm = 1;
     if (once.ek.si !== undefined) ek.si = once.ek.si;
   }
+  if (bilet.plaka.ozan) ek.oz = 1;
   let sesDegisti = false;
   for (const r of eski) {
     // Eski bağlantının yayını yeni bağlantıya geçmez (yeni WebRTC bağlantısı kurulur): SFU'da kapatılır.
@@ -291,7 +354,16 @@ export function baglan(b: MasaBaglami, yeni: MasaSoketi, bilet: MasaBileti): voi
   const hepsi = [...digerleri, { soket: yeni, ek }];
   const sus = surer(ek.yt.susturma, b.simdi) ? { bitis: ek.yt.susturma.bitis } : null;
   const masa = gorunum(b.no, hepsi, b.ayar);
-  yeni.gonder({ t: "hosgeldin", ben: plaka(ek), susturma: sus, masa, ses: sesDurumu(b, hepsi) });
+  const e = b.etkinlik;
+  yeni.gonder({
+    t: "hosgeldin",
+    ben: plaka(ek),
+    susturma: sus,
+    masa,
+    ses: sesDurumu(b, hepsi),
+    ...(e?.tur === "sahne" ? { sahne: sahneGorunumu(e) } : {}),
+    ...(e?.tur === "atisma" ? { atisma: atismaGorunumu(e) } : {}),
+  });
   yayinla(digerleri, { t: "durum", masa });
   if (sesDegisti) sesYayinla(b, digerleri);
 }
@@ -367,6 +439,8 @@ async function komutIsle(
   ek: SoketEki,
   ileti: IstemciIletisi & Record<string, unknown>,
 ): Promise<Basarisiz | undefined> {
+  // H8: DO uyanışından sonra ya da kapanış olayı kaçtıysa geçersiz sahne/atışma burada düşer.
+  if (b.etkinlik) etkinlikDenetleYayinla(b, tumu(b, kaynak, ek));
   switch (ileti.t) {
     case "otur":
       return otur(b, kaynak, ek, ileti.koltuk);
@@ -397,6 +471,16 @@ async function komutIsle(
       return ayarDegistir(b, kaynak, ek, ileti);
     case "davet":
       return davetEt(b, kaynak, ek, ileti.hedef, ileti.kaldir === true);
+    case "sahneAc":
+      return sahneyiAc(b, kaynak, ek);
+    case "sahneKapat":
+      return sahneyiKapat(b, kaynak, ek);
+    case "kita":
+      return kita(b, kaynak, ek, ileti.metin);
+    case "oy":
+      return oy(b, kaynak, ek, ileti.hedef);
+    case "atismaKapat":
+      return atismayiKapat(b, kaynak, ek);
     default:
       return hata("gecersiz_istek");
   }
@@ -465,12 +549,17 @@ function kalk(b: MasaBaglami, kaynak: MasaSoketi, ek: SoketEki): Basarisiz | und
   const ses = ayarSifirla(b, tum);
   durumYayinla(b, tum);
   if (ses) sesYayinla(b, tum);
+  etkinlikDenetleYayinla(b, tum);
   return undefined;
 }
 
 async function yaz(b: MasaBaglami, kaynak: MasaSoketi, ek: SoketEki, ham: unknown): Promise<Basarisiz | undefined> {
   if (ek.k === null) return hata("oturmuyor");
   if (surer(ek.yt.susturma, b.simdi)) return { ok: false, hata: "susturuldu", bitis: ek.yt.susturma.bitis };
+  // H8: atışmanın kıta aşamasında kimse serbest yazamaz; sahnede yalnız anlatıcı ve söz verilenler yazar.
+  const e = b.etkinlik;
+  if (e?.tur === "atisma" && !e.oylama) return hata("atisma_suruyor");
+  if (e?.tur === "sahne" && !sahneYazabilir(e, ek.h)) return hata("soz_verilmedi");
   const metin = iletiMetniCoz(ham, iletiSiniri(ek.ho, b.simdi));
   if (!metin.ok) return metin;
   const hiz = pencereSay(ek.hz, b.simdi, ILETI_SINIRI, ILETI_PENCERESI_MS);
@@ -593,6 +682,15 @@ function sesKes(b: MasaBaglami, kaynak: MasaSoketi, ek: SoketEki, ham: unknown, 
 
 /** Ayaktaki dinleyen söz ister (ya da isteğini geri alır); masa başı `sozVer` ile koltuğa alır. */
 function sozIste(b: MasaBaglami, kaynak: MasaSoketi, ek: SoketEki, iste: boolean): Basarisiz | undefined {
+  const e = b.etkinlik;
+  // H8: atışma kısadır; sürerken kimse söz isteyemez. Sahnede oturanlar anlatıcıdan yazma sözü ister.
+  if (e?.tur === "atisma" && iste) return hata("atisma_suruyor");
+  if (e?.tur === "sahne" && ek.k !== null) {
+    const r = sahneSozIste(e, ek.h, iste);
+    if (!r.ok) return r;
+    if (r.deger.degisti) etkinlikGuncelle(b, tumu(b, kaynak, ek), r.deger.durum);
+    return undefined;
+  }
   if (iste) {
     if (ek.k !== null) return hata("zaten_oturuyor");
     if (ek.si !== undefined) return undefined;
@@ -609,8 +707,16 @@ function sozIste(b: MasaBaglami, kaynak: MasaSoketi, ek: SoketEki, iste: boolean
 /** Masa başı söz isteğini kabul eder (boş koltuğa oturtur) ya da reddeder. */
 function sozVer(b: MasaBaglami, kaynak: MasaSoketi, ek: SoketEki, ham: unknown, kabul: boolean): Basarisiz | undefined {
   const tum = tumu(b, kaynak, ek);
-  if (masaBasi(tum) !== ek.h) return hata("yetki_yok");
   const hedef = hesapIdCoz(ham);
+  const e = b.etkinlik;
+  // H8: sahnede oturan birine yazma sözünü anlatıcı ya da masa başı verir/geri alır.
+  if (e?.tur === "sahne" && hedef && tum.some((r) => r.ek.h === hedef && r.ek.k !== null)) {
+    const r = sahneSozVer(e, ek.h, masaBasi(tum), hedef, kabul, oturanListesi(tum));
+    if (!r.ok) return r;
+    etkinlikGuncelle(b, tum, r.deger);
+    return undefined;
+  }
+  if (masaBasi(tum) !== ek.h) return hata("yetki_yok");
   const kayit = tum.find((r) => r.ek.h === hedef);
   if (!kayit) return hata("hedef_masada_degil");
   if (kayit.ek.si === undefined || kayit.ek.k !== null) return hata("soz_istegi_yok");
@@ -653,10 +759,17 @@ function ayarDegistir(b: MasaBaglami, kaynak: MasaSoketi, ek: SoketEki, ileti: R
     if (typeof ileti.tur !== "string" || !(MASA_BASI_TURLERI as readonly string[]).includes(ileti.tur)) return hata("gecersiz_istek");
     tur = ileti.tur as MasaAyari["tur"];
   }
-  if (Object.keys(degisen).length === 0 && tur === undefined) return hata("gecersiz_istek");
+  let sahneYasak: boolean | undefined;
+  if (ileti.sahneYasak !== undefined) {
+    if (typeof ileti.sahneYasak !== "boolean") return hata("gecersiz_istek");
+    sahneYasak = ileti.sahneYasak;
+  }
+  if (Object.keys(degisen).length === 0 && tur === undefined && sahneYasak === undefined) return hata("gecersiz_istek");
   const eski = b.ayar;
-  const yeni: MasaAyari = { ...eski, ...degisen, ...(tur ? { tur } : {}) };
-  if (MASA_BASI_AYARLARI.every((a) => eski[a] === yeni[a]) && eski.tur === yeni.tur) return undefined;
+  const { sahneYasak: _sy, ...esas } = eski;
+  const yasak = sahneYasak ?? eski.sahneYasak === true;
+  const yeni: MasaAyari = { ...esas, ...degisen, ...(tur ? { tur } : {}), ...(yasak ? { sahneYasak: true } : {}) };
+  if (MASA_BASI_AYARLARI.every((a) => eski[a] === yeni[a]) && eski.tur === yeni.tur && Boolean(eski.sahneYasak) === yasak) return undefined;
   b.ayar = yeni;
   b.ayarYaz(yeni);
   const sesDegisti = eski.sesli !== yeni.sesli;
@@ -666,6 +779,8 @@ function ayarDegistir(b: MasaBaglami, kaynak: MasaSoketi, ek: SoketEki, ileti: R
   if ((eski.kilitli && !yeni.kilitli) || (eski.tur === "ozel" && yeni.tur !== "ozel")) bosKoltuklariDoldur(b, tum);
   durumYayinla(b, tum);
   if (sesDegisti) sesYayinla(b, tum);
+  // H8: sahne yasaklanınca açık sahne kapanır (atışmaya dokunmaz).
+  if (yasak && b.etkinlik?.tur === "sahne") etkinlikGuncelle(b, tum, undefined);
   return undefined;
 }
 
@@ -689,5 +804,75 @@ function davetEt(b: MasaBaglami, kaynak: MasaSoketi, ek: SoketEki, ham: unknown,
   b.ayarYaz(b.ayar);
   if (!kaldir) bosKoltuklariDoldur(b, tum);
   durumYayinla(b, tum);
+  return undefined;
+}
+
+// ---------------------------------------------------------------- H8 komutları
+
+function sahneyiAc(b: MasaBaglami, kaynak: MasaSoketi, ek: SoketEki): Basarisiz | undefined {
+  if (surer(ek.yt.susturma, b.simdi)) return { ok: false, hata: "susturuldu", bitis: ek.yt.susturma.bitis };
+  const tum = tumu(b, kaynak, ek);
+  const r = sahneAc(b.etkinlik, ek.h, oturanListesi(tum), b.ayar, b.simdi);
+  if (!r.ok) return r;
+  etkinlikGuncelle(b, tum, r.deger);
+  return undefined;
+}
+
+function sahneyiKapat(b: MasaBaglami, kaynak: MasaSoketi, ek: SoketEki): Basarisiz | undefined {
+  const tum = tumu(b, kaynak, ek);
+  const r = sahneKapatabilir(b.etkinlik, ek.h, masaBasi(tum));
+  if (!r.ok) return r;
+  etkinlikGuncelle(b, tum, undefined);
+  return undefined;
+}
+
+/** Sırası gelen tarafın kıtası: herkese (yerel sessize alma ve engel süzgeciyle) yayınlanır, saklanmaz. */
+async function kita(b: MasaBaglami, kaynak: MasaSoketi, ek: SoketEki, ham: unknown): Promise<Basarisiz | undefined> {
+  const e = b.etkinlik;
+  if (e?.tur !== "atisma") return hata("atisma_yok");
+  if (ek.k === null) return hata("oturmuyor");
+  if (surer(ek.yt.susturma, b.simdi)) return { ok: false, hata: "susturuldu", bitis: ek.yt.susturma.bitis };
+  const tum = tumu(b, kaynak, ek);
+  const r = kitaKaydet(e, ek.h, oturanListesi(tum));
+  if (!r.ok) return r;
+  const metin = kitaMetniCoz(ham, Math.min(KITA_EN_UZUN, iletiSiniri(ek.ho, b.simdi) * 2));
+  if (!metin.ok) return metin;
+  const hiz = pencereSay(ek.hz, b.simdi, ILETI_SINIRI, ILETI_PENCERESI_MS);
+  ek.hz = hiz.durum;
+  kaynak.ekYaz(ek);
+  if (!hiz.izin) return hata("hiz_siniri");
+  // Alıcılar önce süzülür (engel sorgusu beklenir); durum değişikliği ve gönderim sonra, beklemesiz yapılır.
+  const alicilar: Kayit[] = [];
+  for (const x of tum) {
+    if (x.ek.h !== ek.h) {
+      if (x.ek.sus.includes(ek.h)) continue;
+      if ((await b.engelliMi(x.ek.h, ek.h)) || (await b.engelliMi(ek.h, x.ek.h))) continue;
+    }
+    alicilar.push(x);
+  }
+  const d = r.deger.durum;
+  const mesaj: SunucuIletisi = { t: "kita", hesap: ek.h, ad: ek.a, koltuk: ek.k, metin: metin.deger, sira: r.deger.sira, zaman: b.simdi, ...(ek.bl ? { balon: ek.bl } : {}) };
+  for (const x of alicilar) x.soket.gonder(mesaj);
+  if (oylamaTamam(d)) etkinlikGuncelle(b, tum, undefined, atismaSonucu(d));
+  else etkinlikGuncelle(b, tum, d);
+  return undefined;
+}
+
+function oy(b: MasaBaglami, kaynak: MasaSoketi, ek: SoketEki, hedef: unknown): Basarisiz | undefined {
+  const e = b.etkinlik;
+  if (e?.tur !== "atisma") return hata("atisma_yok");
+  const r = oyVer(e, ek.h, hedef);
+  if (!r.ok) return r;
+  const tum = tumu(b, kaynak, ek);
+  if (oylamaTamam(r.deger)) etkinlikGuncelle(b, tum, undefined, atismaSonucu(r.deger));
+  else etkinlikGuncelle(b, tum, r.deger);
+  return undefined;
+}
+
+function atismayiKapat(b: MasaBaglami, kaynak: MasaSoketi, ek: SoketEki): Basarisiz | undefined {
+  const tum = tumu(b, kaynak, ek);
+  const r = atismaKapat(b.etkinlik, ek.h, masaBasi(tum));
+  if (!r.ok) return r;
+  etkinlikGuncelle(b, tum, undefined, r.deger);
   return undefined;
 }

@@ -26,6 +26,8 @@ export const SOYLENTI_YUK: Readonly<Record<SoylentiTuru, number>> = {
   hanIhbar: -3,
   // H6 düello: konusu kazanan (olumlu); kaybedene söylenti yazılmaz.
   hanDuello: 2,
+  // H8 ozan atışması: yalnız anılma (konusu kazanan); bakışa etkisi bilerek 0 (sayısal kazanç yok, farm yüzeyi yok).
+  hanAtisma: 0,
 };
 
 /** Han söylentilerinin istemci metin anahtarı (`soylenti.han.*`); öteki türler `tur` ile çevrilir. */
@@ -34,6 +36,7 @@ export const HAN_SOYLENTI_ANAHTARI: Readonly<Partial<Record<SoylentiTuru, string
   hanAnlasma: "soylenti.han.anlasma",
   hanIhbar: "soylenti.han.ihbar",
   hanDuello: "soylenti.han.duello",
+  hanAtisma: "soylenti.han.atisma",
 };
 /** [PARAMETRE] Tanık modeli ve yayılım. */
 export const TANIK_EN_COK = 3;
