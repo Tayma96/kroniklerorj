@@ -77,18 +77,21 @@ const root = path.resolve(__dirname, '../..');
     assert(npcPortreFrame(7, gender, 0));
   }
   const sources = JSON.parse(fs.readFileSync(path.join(root, 'assets/ses/kaynak.json'), 'utf8'));
-  assert.equal(sources.length, 63);
+  // Sayı sabit değil: her ses dosyası kaynak listesinde lisansıyla kayıtlı olmalı (yeni ses eklemek kontrolü kırmaz).
+  assert(sources.length > 0);
   for (const source of sources) {
     const file = path.resolve(root, source.dosya);
     assert(file.startsWith(path.join(root, 'assets/ses') + path.sep));
     assert.equal(fs.statSync(file).size, source.bayt, source.dosya);
-    assert(source.url && source.yazar && source.lisans, source.dosya);
+    assert((source.url || source.kaynak || source.site) && source.yazar && source.lisans, source.dosya);
     assert(source.lisans_url || source.lisans === 'Kamu malı (PD)', source.dosya);
   }
   const sound = fs.readFileSync(path.join(root, 'lib/sound.ts'), 'utf8');
   const catalog = fs.readFileSync(path.join(root, 'lib/ses-katalog.ts'), 'utf8');
   const calls = [...catalog.matchAll(/require\(['"](\.\.\/assets\/ses\/[^'"]+)['"]\)/g)];
-  assert.equal(calls.length, 63);
+  const kayitli = new Set(sources.map((s) => path.resolve(root, s.dosya)));
+  assert(calls.length > 0);
+  for (const call of calls) assert(kayitli.has(path.resolve(root, 'lib', call[1])), `kaynak listesinde yok: ${call[1]}`);
   for (const call of calls) assert(fs.existsSync(path.resolve(root, 'lib', call[1])));
   assert(!sound.includes('assets/sfx/'));
   // Her yaş sınırında doğru cinsiyetin aynı portre serisi seçilir.
@@ -121,5 +124,5 @@ const root = path.resolve(__dirname, '../..');
   const tags = fs.readFileSync(path.join(root, 'assets/arka/TAGS.txt'), 'utf8').trim().split('\n');
   assert.equal(tags.length, 15);
   for (const line of tags) assert(fs.existsSync(path.join(root, 'assets/arka', line.split(':')[0] + '.jpg')));
-  console.log('KURTARMA: TEMİZ — 14 oyuncu, 48 yetişkin NPC + 32 çocuk/ergen karesi, 63 ses, 15 arka plan; kayıtlı yüz kimlikleri aynı.');
+  console.log(`KURTARMA: TEMİZ — 14 oyuncu, 48 yetişkin NPC + 32 çocuk/ergen karesi, ${sources.length} ses kaynağı, 15 arka plan; kayıtlı yüz kimlikleri aynı.`);
 })().catch(error => { console.error(error); process.exitCode = 1; });

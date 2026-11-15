@@ -46,7 +46,17 @@ export interface BarinmaGorunumu {
   sozlesmeler: { oda: OdaId; han: string; baslangic: number; bitis: number; odenen: number; etkin: boolean }[];
   gunluk: BarinmaSatiri[];
   para: number;
+  /** H12 oda getirileri (eski sunucuda yok). */
+  ikamet?: boolean;
+  sandik?: SandikGorunumu;
+  gorusme?: GorusmeGorunumu;
 }
+export interface SandikGorunumu { durum: "sandik" | "emanet" | "yok"; acik: boolean; kapasite: number; adet: number; mallar: Record<string, number> }
+export interface GorusmeOzeti {
+  ev: { i: string; ad: string }; benim: boolean; davetliler: { kisi: { i: string; ad: string } | string; kabul: boolean }[];
+  baslangic: number; bitis: number; soz: number; sozEnCok: number;
+}
+export interface GorusmeGorunumu { acabilir: boolean; davetliEnCok: number; sartlar: string[]; benim: GorusmeOzeti | null; davetler: GorusmeOzeti[] }
 export interface TekDokunus {
   tur: "oda" | "tesis" | "uzat" | "otomatik";
   anahtar: string;
@@ -103,12 +113,19 @@ export interface BarinmaIstemci {
   otomatik(g: { mod: OtomatikMod; istekNo: string }): Promise<EkSonuc<OtomatikYaniti>>;
   donus(dil: Dil): Promise<EkSonuc<{ donusEkrani: DonusEkrani }>>;
   tekDokunus(s: TekDokunus, istekNo: string): Promise<EkSonuc<BarinmaYaniti>>;
+  /** H12: sandık, han emaneti ve özel görüşme. */
+  sandik(g: { islem: "koy" | "al"; mal: string; adet: number; istekNo: string }): Promise<EkSonuc<Record<string, unknown>>>;
+  emanet(g: { istekNo: string }): Promise<EkSonuc<Record<string, unknown>>>;
+  gorusme(g: { islem: "davet" | "kabul" | "bitir" | "soz"; hedef?: string; sart?: string; istekNo: string }): Promise<EkSonuc<Record<string, unknown>>>;
 }
 
 const httpBarinma: BarinmaIstemci = {
   barinma: (dil) => ekCagir({ yontem: "GET", yol: `/v1/barinma?dil=${dil}`, tekrar: true }, sarili("barinma", barinmaMi)),
   kira: (g) => ekCagir({ yontem: "POST", yol: "/v1/barinma/kira", govde: g, tekrar: true }, (v): v is KiraYaniti => barinmaliMi(v) && nesneMi(v.kira)),
   tesis: (g) => ekCagir({ yontem: "POST", yol: "/v1/barinma/tesis", govde: g, tekrar: true }, (v): v is TesisYaniti => barinmaliMi(v) && nesneMi(v.tesis)),
+  sandik: (g) => ekCagir({ yontem: "POST", yol: "/v1/barinma/sandik", govde: g, tekrar: true }, nesneMi),
+  emanet: (g) => ekCagir({ yontem: "POST", yol: "/v1/barinma/emanet", govde: g, tekrar: true }, nesneMi),
+  gorusme: (g) => ekCagir({ yontem: "POST", yol: "/v1/barinma/gorusme", govde: g, tekrar: true }, nesneMi),
   otomatik: (g) => ekCagir({ yontem: "POST", yol: "/v1/barinma/otomatik", govde: g, tekrar: true }, (v): v is OtomatikYaniti => barinmaliMi(v) && metinMi(v.otomatik)),
   donus: (dil) => ekCagir({ yontem: "GET", yol: `/v1/donus?dil=${dil}`, tekrar: true }, sarili("donusEkrani", donusMi)),
   tekDokunus: (s, istekNo) =>

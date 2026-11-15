@@ -15,6 +15,7 @@ export const EK_HATALAR = [
   "masa_gecersiz", "masa_kapali", "masa_kalabalik", "koltuk_dolu", "zaten_oturuyor", "oturmuyor", "metin_gecersiz",
   "hedef_masada_degil", "kavga_yasak", "masa_kilitli", "teklif_dustu",
   "goc_ayni_yer", "goc_yas", "goc_soguma", "goc_aile", "goc_mulk", "goc_makam", "goc_darbe", "goc_borc", "goc_sozlesme", "goc_acik_is", "goc_suruyor", "goc_hedef_kayitli", "emanet_yok", "ziyafet_konuk_az", "davet_gerekli", "tavan_doldu",
+  "sandik_yok", "sandik_dolu", "ozel_oda_yok", "gorusme_yok", "gorusme_dolu", "gorusme_siniri", "sart_gecersiz",
   "kervan_ayni_yer", "kervan_yuk_gecersiz", "kervan_yuk_siniri", "kervan_bedel_yok", "kervan_aylik_siniri", "kervan_mal_hedef", "kervan_ulasilamadi", "olay_yok", "atildi", "eylem_siniri", "ikram_gecersiz", "ikram_kapali", "yukseltme_gerekli",
   "ses_kapali", "ses_hatasi", "masa_sessiz", "masada_degil", "ses_oturumu_yok", "sesi_kesildi", "soz_istegi_yok",
   "stok_yok", "ilan_gecersiz", "ilan_kapandi", "ilan_siniri",

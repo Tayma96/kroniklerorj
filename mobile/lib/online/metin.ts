@@ -65,6 +65,11 @@ const PARAM: Record<string, string[]> = {
   "olay.han.duello": ["kisi", "hedef", "masa", "kazanan", "kisiToplam", "hedefToplam", "nam"],
   "olay.han.duelloOlmadi": ["kisi", "hedef", "masa", "neden"],
   "olay.han.ziyafet": ["kisi", "masa", "konuk", "bedel"],
+  "olay.oda.davet": ["ev"],
+  "olay.oda.katildi": ["kim"],
+  "olay.oda.ayrildi": ["kim"],
+  "olay.oda.bitti": ["ev"],
+  "olay.oda.gorusme": ["kim", "ev", "sart"],
   "olay.kervan.vardi": ["hedefAd", "hasilat", "satilan", "kalan"],
   "olay.kervan.dondu": ["hedefAd", "kalan"],
   "olay.goc.geldi": ["kisi", "kaynakAd"],
@@ -113,6 +118,7 @@ function degerYaz(ad: string, v: unknown, t: Ceviri, lang: Lang, k = ""): string
     case "hizmet": return t("onl.hizmet.ad." + v);
     case "tur": return t("onl.tp.tur." + v);
     case "neden": return k === "olay.han.duelloOlmadi" ? t("onl.han.duelloNeden." + v) : v;
+    case "sart": return k === "olay.oda.gorusme" ? t("onl.oda.sart." + v) : v;
     default: return v;
   }
 }
@@ -170,7 +176,7 @@ export function olayIkonu(o: Pick<Olay, "ozet" | "tur">): string {
     "olay.yeniSakin": "house", "olay.ciraklik": "anvil", "olay.karar": "compass", "olay.kulYemini.kabul": "flame",
     "olay.han.yemin": "flame", "olay.han.yeminKisiye": "flame", "olay.han.sozlesme": "scroll", "olay.han.ittifak": "ring",
     "olay.han.ihbar": "speaker", "olay.han.meydanOku": "crossed-swords", "olay.han.kabul.sozlesme": "scroll", "olay.han.kabul.ittifak": "ring",
-    "olay.han.duello": "crossed-swords", "olay.han.ziyafet": "bread", "olay.goc.geldi": "camel", "olay.kervan.vardi": "camel", "olay.kervan.dondu": "camel", "olay.goc.gitti": "camel", "olay.han.duelloOlmadi": "crossed-swords",
+    "olay.han.duello": "crossed-swords", "olay.han.ziyafet": "bread", "olay.goc.geldi": "camel", "olay.kervan.vardi": "camel", "olay.oda.davet": "ring", "olay.oda.katildi": "ring", "olay.oda.ayrildi": "ring", "olay.oda.bitti": "ring", "olay.oda.gorusme": "scroll", "olay.kervan.dondu": "camel", "olay.goc.gitti": "camel", "olay.han.duelloOlmadi": "crossed-swords",
     "olay.siparis.acildi": "scroll-open", "olay.siparis.dustu": "hourglass", "olay.siparis.teslim": "medal",
     "olay.hizmetTalep": "scroll-open", "olay.hizmetTalepTeslim": "medal",
     "olay.yonetim.telafiAkce": "gift", "olay.yonetim.telafiEsya": "gift",

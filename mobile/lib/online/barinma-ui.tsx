@@ -14,6 +14,7 @@ import { useOnline } from "./durum";
 import { isaretli } from "./metin";
 import { hatirlatmaOku, hatirlatmaYaz, istekNoUret } from "./depo";
 import { barinmaHatirlat, hatirlatmaIzni, hatirlatmaSil, hatirlatmaVarMi } from "./hatirlatma";
+import { OdaKarti } from "./oda-ui";
 import { ekHataAnahtari, type EkHata } from "./ek-istemci";
 import { Bant, Cerceve, CizgiDugme, Madalyon, giris, hiza, yon } from "./ui";
 import { AltPanel, Baslik2, Rozet } from "./yasam-ui";
@@ -252,6 +253,7 @@ export function BarinmaKarti() {
         {hata ? <Bant metin={t(ekHataAnahtari(hata))} rtl={rtl} /> : null}
       </Cerceve>
     </Animated.View>
+    <OdaKarti g={g} onYenile={() => { void ist.barinma(lang).then((r) => { if (r.ok) { setG(r.deger.barinma); setAlindi(Date.now()); } }); }} />
     <AltPanel acik={panel} onKapat={() => setPanel(false)} etiket={t("onl.br.kiraBaslik")} rtl={rtl} t={t}>
       {panel ? <BarinmaPaneli g={g} simdi={simdi} rtl={rtl} t={t} onYeni={yeni} /> : null}
     </AltPanel>

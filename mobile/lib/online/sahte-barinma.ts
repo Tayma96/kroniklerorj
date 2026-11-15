@@ -124,6 +124,10 @@ export function sahteBarinmaIstemci(baslangicPara: number, tur: YerlesimTuru): B
       };
       return ekBasarili({ donusEkrani: d });
     },
+    // H12 oda getirileri yalnız gerçek sunucuda.
+    async sandik() { return ekBasarisiz("sunucu_yok"); },
+    async emanet() { return ekBasarisiz("sunucu_yok"); },
+    async gorusme() { return ekBasarisiz("sunucu_yok"); },
     async tekDokunus(sec) {
       await bekle();
       const gv = sec.istek.govde;
