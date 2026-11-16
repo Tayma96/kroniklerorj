@@ -12,7 +12,7 @@ import { ciktiAdedi, girdiGorunumu, tarifYap } from "../yerlesim/tarif.ts";
 import type { OlayTaslagi } from "../yerlesim/tipler.ts";
 import { atolyeKalemleri, emekTavani, etkinSeviye, genislet, genisletmeGorunumu, tezgahSayisi, zanaatOner, zanaatSec } from "./atolye.ts";
 import { emirAc, emirIptal } from "./uretim-emri.ts";
-import { topluGorunumu, topluTeslim } from "./toplu-siparis.ts";
+import { topluGeriAl, topluGorunumu, topluTeslim } from "./toplu-siparis.ts";
 import { kaliteliEkle, type Kalite } from "../yerlesim/kalite.ts";
 import { akceIade, iadeTeslim, malIade } from "./iade.ts";
 import type { Karakter, Kasaba } from "../yerlesim/tipler.ts";
@@ -633,13 +633,17 @@ export function topluUc(k: Kasaba, kar: Karakter, isletme: string, govde: unknow
   const iz = izinler(md, isletme, kar.o);
   if (!iz.toplu) return hata("yetki_yok");
   if (!md.tsp) return hata("siparis_yok");
-  if (md.cik.k.length >= CIKIS_EN_COK + TEZGAH_KAYIT_PAYI) return hata("transfer_bekliyor");
   const ad = md.t[isletme]!.y?.ad ?? "";
   const r = topluTeslim(md.tsp, nesneMi(govde) ? govde.siparis : undefined, isletme, ad, t, k.ay);
   if (!r.ok) return r;
   const s = r.deger.siparis;
   // Ret telafisi için (tapu.ts telafi): düşen partiler, önceki "son alan" ve teslim eden kayıtta taşınır.
-  cikisAc(md.cik, { i: `y:${k.y}:toplu:${s.id}`, t: "tezgah", h: isletme, a: s.odul, y: { isletme, aylar: [[k.ay, s.odul, 0]], neden: "toplu", siparis: s.id, ...(t.za ? { za: t.za } : {}), parti: r.deger.parti, saOnce: r.deger.saOnce ?? null, o: kar.o } }, an, CIKIS_EN_COK + TEZGAH_KAYIT_PAYI);
+  const y = { isletme, aylar: [[k.ay, s.odul, 0]], neden: "toplu", siparis: s.id, ...(t.za ? { za: t.za } : {}), parti: r.deger.parti, saOnce: r.deger.saOnce ?? null, o: kar.o };
+  // Çıkış kutusu doluysa teslim aynı yazımda geri alınır (mal partileriyle depoya, sipariş açık): akçe yazılmaz.
+  if (!cikisAc(md.cik, { i: `y:${k.y}:toplu:${s.id}`, t: "tezgah", h: isletme, a: s.odul, y }, an, CIKIS_EN_COK + TEZGAH_KAYIT_PAYI)) {
+    topluGeriAl(md.tsp, y, isletme, t);
+    return hata("transfer_bekliyor");
+  }
   md.kaynak = (md.kaynak ?? 0) + s.odul;
   t.ua = k.ay;
   if (iz.yonetici) etkinlik(k, t);

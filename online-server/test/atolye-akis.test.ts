@@ -10,11 +10,11 @@ import { ilerleme, meslekSec } from "../src/yerlesim/meslek.ts";
 import { isletmeIsle, type IsletmeIleti } from "../src/mulk/islem.ts";
 import { ayarYuku, isletmeKur, kalite, type Isletme } from "../src/mulk/isletme.ts";
 import { edin, girisIsle, mulkDefteri, telafi } from "../src/mulk/tapu.ts";
-import { cikisKapat, type CikisKaydi } from "../src/mulk/transfer.ts";
+import { CIKIS_EN_COK, cikisKapat, type CikisKaydi } from "../src/mulk/transfer.ts";
 import { bosTezgah, depoAdedi } from "../src/mulk/depo.ts";
 import { tezgahDonumu, tezgahKayitlariAc } from "../src/mulk/tezgah-donum.ts";
 import { atolyeListesi, atolyedeUret, depoTasi, devral, dukkanListesi, emirUc, genisletUc, mesai, tezgahGorunumu, topluUc, zanaatUc } from "../src/mulk/tezgah-uclar.ts";
-import { DEVRALMA_KEPENK_AY, NPC_ATOLYE_MAAS_EN_AZ, NPC_EMEK_AY, ZANAAT_DEGISIM_BEDELI } from "../src/mulk/tezgah-kurallar.ts";
+import { DEVRALMA_KEPENK_AY, NPC_ATOLYE_MAAS_EN_AZ, NPC_EMEK_AY, NPC_EMEK_KALITE_CEZA, TEZGAH_KAYIT_PAYI, ZANAAT_DEGISIM_BEDELI } from "../src/mulk/tezgah-kurallar.ts";
 import { MULK_YUVA } from "../src/mulk/kurallar.ts";
 import type { Karakter, Kasaba } from "../src/yerlesim/tipler.ts";
 import type { MalId } from "../src/icerik/mallar.ts";
@@ -405,4 +405,43 @@ test("B: eski toplu kaydı (parti alanı yok) reddedilirse sipariş açılır, m
   assert.equal(tz(k).ev?.[s.mal as MalId], s.adet);
   assert.equal(tz(k).kq?.[s.mal as MalId], undefined, "sade");
   assert.equal(md.tsp!.l.find((y) => y.id === s.id)!.durum, "acik");
+});
+
+test("D: çıkış kutusu doluysa toplu teslim geri alınır (mal partileriyle, sipariş açık, akçe yazılmaz)", () => {
+  const { k, a } = hazir();
+  const md = mulkDefteri(k);
+  assert.ok(zanaatUc(k, a, ID, { meslek: "oduncu" }).ok);
+  tezgahDonumu(k, AY + 1);
+  k.ay = AY + 1;
+  const s = atolyeListesi(k, a).topluSiparis[0]!;
+  const mal = s.mal as MalId;
+  kaliteliEkle(tz(k), mal, [[3, 1, a.o, ID], [0, s.adet]]);
+  md.tsp!.sa = "develi.atolye.2";
+  const once = JSON.stringify([tz(k).ev, tz(k).kq, md.tsp, md.kaynak ?? 0, tz(k).ua ?? null]);
+  const dolu = Array.from({ length: CIKIS_EN_COK + TEZGAH_KAYIT_PAYI }, (_, i) => ({ i: `z:${i}`, t: "ayar", h: "x", a: 0, y: {}, b: AN, d: 0, s: AN })) as CikisKaydi[];
+  md.cik.k = dolu;
+  assert.deepEqual(topluUc(k, a, ID, { siparis: s.id }, AN), { ok: false, hata: "transfer_bekliyor" });
+  assert.equal(JSON.stringify([tz(k).ev, tz(k).kq, md.tsp, md.kaynak ?? 0, tz(k).ua ?? null]), once);
+  md.cik.k = [];
+  assert.ok(topluUc(k, a, ID, { siparis: s.id }, AN).ok);
+});
+
+test("D: gün sonu emir dökümünde kalite kalemleri (usta, seviye bonusu, NPC cezası) görünür", () => {
+  const { k, a, br } = hazir();
+  assert.ok(zanaatUc(k, a, ID, { meslek: "oduncu" }).ok);
+  yansit(k, ID, { seviye: 2, ne: 1, nt: 1 });
+  assert.ok(mesai(k, a, ID, { emek: 1 }).ok);
+  assert.ok(emirUc(k, a, ID, { islem: "ac", tarif: "kereste", kez: 3 }).ok);
+  kaliteliEkle(a, "odun", [[0, 3]]);
+  assert.ok(depoTasi(k, a, ID, { yon: "koy", mal: "odun", adet: 3 }).ok);
+  tezgahDonumu(k, AY + 1);
+  const e = (tz(k).gs as { emirler: { buAy: number; kalite: number[]; kaliteDokum: { kalemler: { k: string; enAz: number; enCok: number }[]; toplam: { enAz: number; enCok: number } } }[] }).emirler[0]!;
+  assert.equal(e.buAy, 3, "1 oyuncu + 2 NPC emeği");
+  const kalem = (x: string) => e.kaliteDokum.kalemler.find((y) => y.k === x);
+  assert.deepEqual(kalem("kalite.atolye"), { k: "kalite.atolye", enAz: 10, enCok: 10 }, "seviye 2 × 5");
+  assert.deepEqual(kalem("kalite.npcEmegi"), { k: "kalite.npcEmegi", enAz: -NPC_EMEK_KALITE_CEZA, enCok: 0 }, "oyuncu emekli yapımda ceza yok");
+  assert.ok(kalem("kalite.kademe") && kalem("kalite.zanaat") && kalem("kalite.zar"));
+  assert.ok(e.kaliteDokum.toplam.enAz <= e.kaliteDokum.toplam.enCok);
+  assert.deepEqual(e.kalite.reduce((x, y) => x + y, 0), 3, "eski alan duruyor");
+  void br;
 });

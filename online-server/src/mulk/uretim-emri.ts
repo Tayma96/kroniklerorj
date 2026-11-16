@@ -51,6 +51,31 @@ export interface EmirDokumu {
   usta: { id: string; ad: string } | null;
   emek: { oyuncu: number; npc: number };
   neden: BeklemeNedeni | null;
+  /**
+   * Bu ayki yapımların kalite kalemleri (usta kademesi, zanaat, beceri, araç, zar, atölye seviye bonusu, NPC emeği
+   * cezası): kalem başına bu aydaki en az/en çok puan ve toplam puan aralığı. Yapım yoksa null.
+   */
+  kaliteDokum: { kalemler: { k: string; enAz: number; enCok: number }[]; toplam: { enAz: number; enCok: number } } | null;
+}
+
+function kaliteDokumEkle(d: EmirDokumu, dokum: { toplam: number; kalemler: readonly { k: string; d: number }[] }): void {
+  const kd = (d.kaliteDokum ??= { kalemler: [], toplam: { enAz: dokum.toplam, enCok: dokum.toplam } });
+  kd.toplam.enAz = Math.min(kd.toplam.enAz, dokum.toplam);
+  kd.toplam.enCok = Math.max(kd.toplam.enCok, dokum.toplam);
+  // Bir yapımda olmayan kalem (araçsız yapım, NPC emeksiz yapım) o yapımda 0 sayılır.
+  const ilk = kd.kalemler.length === 0 && d.buAy === 0;
+  for (const x of dokum.kalemler) {
+    const v = kd.kalemler.find((y) => y.k === x.k);
+    if (v) {
+      v.enAz = Math.min(v.enAz, x.d);
+      v.enCok = Math.max(v.enCok, x.d);
+    } else kd.kalemler.push({ k: x.k, enAz: ilk ? x.d : Math.min(0, x.d), enCok: ilk ? x.d : Math.max(0, x.d) });
+  }
+  for (const v of kd.kalemler) {
+    if (dokum.kalemler.some((x) => x.k === v.k)) continue;
+    v.enAz = Math.min(v.enAz, 0);
+    v.enCok = Math.max(v.enCok, 0);
+  }
 }
 
 export interface UretimSonucu {
@@ -114,7 +139,7 @@ export function emirleriIsle(g: UretimGirdisi): UretimSonucu {
   let emekBitti = false;
   for (const e of [...(t.ue ?? [])].sort((a, b) => a.n - b.n)) {
     const tr = tarifBul(e.tr);
-    const d: EmirDokumu = { emir: e.n, tarif: e.tr, kez: e.k, yapilan: e.y, buAy: 0, cikti: { mal: (tr?.cikti[0] ?? "odun") as MalId, adet: 0 }, kalite: [0, 0, 0, 0], usta: null, emek: { oyuncu: 0, npc: 0 }, neden: null };
+    const d: EmirDokumu = { emir: e.n, tarif: e.tr, kez: e.k, yapilan: e.y, buAy: 0, cikti: { mal: (tr?.cikti[0] ?? "odun") as MalId, adet: 0 }, kalite: [0, 0, 0, 0], usta: null, emek: { oyuncu: 0, npc: 0 }, neden: null, kaliteDokum: null };
     sonuc.emirler.push(d);
     if (!tr || tr.meslek !== t.za) {
       d.neden = "tarif_yok";
@@ -148,7 +173,9 @@ export function emirleriIsle(g: UretimGirdisi): UretimSonucu {
       const aracKalite = aracVar ? enIyiKalite(t as unknown as Karakter, tr.arac!.mal) : null;
       const adet = aracVar ? tr.arac!.adet : tr.cikti[1];
       const zar = tohumlu("atolye", g.isletme, tr.id, ay, e.n, e.y);
-      const q = urunKalitesi(usta, tr, kaliteBecerisi(usta, tr), aracKalite, zar, atolyeKalemleri(g.seviye, n / tr.takat)).kademe;
+      const ks = urunKalitesi(usta, tr, kaliteBecerisi(usta, tr), aracKalite, zar, atolyeKalemleri(g.seviye, n / tr.takat));
+      const q = ks.kademe;
+      kaliteDokumEkle(d, ks.dokum);
       if (aracVar) depoAletAsindir(t, tr.arac!.mal);
       kaliteliEkle(t, tr.cikti[0], [[q, adet, usta.o, g.isletme]]);
       for (const [m, y] of Object.entries(tr.yan ?? {})) if ((y ?? 0) > 0) kaliteliEkle(t, m as MalId, [[0, y!, usta.o, g.isletme]]);
