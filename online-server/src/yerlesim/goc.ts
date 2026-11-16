@@ -13,7 +13,7 @@ import { MALLAR, type MalId } from "../icerik/mallar.ts";
 import type { HataKodu } from "../tipler.ts";
 import { olduMu } from "./hanedan.ts";
 import type { HanedanKaydi } from "./hanedan.ts";
-import type { KaliteParti } from "./kalite.ts";
+import { partiParca, type KaliteParti } from "./kalite.ts";
 import { yas } from "./ortak.ts";
 import { borcTaraflari } from "./teklif.ts";
 import type { Karakter, Kasaba } from "./tipler.ts";
@@ -166,8 +166,8 @@ export function partiBol(liste: readonly KaliteParti[], n: number): [KaliteParti
   for (const p of liste) {
     const al = Math.min(kalan, p[1]);
     kalan -= al;
-    if (al > 0) ilk.push(p[2] === undefined ? [p[0], al] : [p[0], al, p[2]]);
-    if (p[1] - al > 0) son.push(p[2] === undefined ? [p[0], p[1] - al] : [p[0], p[1] - al, p[2]]);
+    if (al > 0) ilk.push(partiParca(p, al));
+    if (p[1] - al > 0) son.push(partiParca(p, p[1] - al));
   }
   return [ilk, son];
 }

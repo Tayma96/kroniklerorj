@@ -18,8 +18,16 @@ export const KALITE_ADLARI = ["sade", "iyi", "ustun", "saheser"] as const;
 export type KaliteAdi = (typeof KALITE_ADLARI)[number];
 /** 0 sade, 1 iyi, 2 üstün, 3 şaheser. */
 export type Kalite = 0 | 1 | 2 | 3;
-/** Parti: [kalite, adet, yapan (yerel oyuncu kimliği; bilinmiyorsa yok)]. */
-export type KaliteParti = [kalite: Kalite, adet: number, yapan?: string];
+/**
+ * Parti: [kalite, adet, yapan (yerel oyuncu kimliği; bilinmiyorsa yok), atölye damgası (işletme kimliği; tezgâh
+ * Dilim 2: atölyede üretilen mal)]. Damga yapan izinin yanında taşınır; damgasız partiyle birleşmez.
+ */
+export type KaliteParti = [kalite: Kalite, adet: number, yapan?: string, damga?: string];
+
+/** Partinin `adet` kadarlık kopyası (yapan ve damga korunur). */
+export function partiParca(p: KaliteParti, adet: number): KaliteParti {
+  return p[3] !== undefined ? [p[0], adet, p[2], p[3]] : p[2] === undefined ? [p[0], adet] : [p[0], adet, p[2]];
+}
 
 /** [PARAMETRE] Kalite kademesinin eşikleri (puan; sade, iyi, üstün, şaheser). */
 export const KALITE_ESIK: readonly number[] = [0, 30, 55, 85];
@@ -50,8 +58,8 @@ function partiler(k: Envanterli, mal: string): KaliteParti[] {
 }
 
 function yaz(k: Envanterli, mal: string, liste: KaliteParti[]): void {
-  const temiz = liste.filter((p) => p[1] > 0 && (p[0] > 0 || p[2] !== undefined));
-  temiz.sort((a, b) => b[0] - a[0] || ((a[2] ?? "") < (b[2] ?? "") ? -1 : 1));
+  const temiz = liste.filter((p) => p[1] > 0 && (p[0] > 0 || p[2] !== undefined || p[3] !== undefined));
+  temiz.sort((a, b) => b[0] - a[0] || ((a[2] ?? "") < (b[2] ?? "") ? -1 : (a[2] ?? "") > (b[2] ?? "") ? 1 : (a[3] ?? "") < (b[3] ?? "") ? -1 : 1));
   while (temiz.length > KALITE_PARTI_EN_COK) temiz.pop();
   if (temiz.length === 0) {
     if (k.kq) delete k.kq[mal];
@@ -113,7 +121,7 @@ export function kaliteliCikar(k: Envanterli, mal: MalId, adet: number, q: Kalite
     const d = Math.min(kalan, p[1]);
     p[1] -= d;
     kalan -= d;
-    cikan.push(p[2] === undefined ? [q, d] : [q, d, p[2]]);
+    cikan.push(partiParca(p, d));
   }
   const ev = (k.ev ??= {});
   const yeni = (ev[mal] ?? 0) - adet;
@@ -130,11 +138,12 @@ export function kaliteliEkle(k: Envanterli, mal: MalId, gelen: readonly KalitePa
   const ev = (k.ev ??= {});
   ev[mal] = (ev[mal] ?? 0) + toplam;
   const liste = partiler(k, mal).map((p) => [...p] as KaliteParti);
-  for (const [q, n, yp] of gelen) {
-    if (n <= 0 || (q === 0 && yp === undefined)) continue;
-    const ayni = liste.find((p) => p[0] === q && p[2] === yp);
+  for (const g of gelen) {
+    const [q, n, yp, dm] = g;
+    if (n <= 0 || (q === 0 && yp === undefined && dm === undefined)) continue;
+    const ayni = liste.find((p) => p[0] === q && p[2] === yp && p[3] === dm);
     if (ayni) ayni[1] += n;
-    else liste.push(yp === undefined ? [q, n] : [q, n, yp]);
+    else liste.push(partiParca(g, n));
   }
   yaz(k, mal, liste);
 }
@@ -169,7 +178,7 @@ export function kademeBul(puan: number): Kalite {
  * Ürün kalitesi: döküm (kademe, zanaat, beceri, araç, zar) → kademe. `beceri`: tarifin kalite düğümü yüzdeleri
  * (tarif.ts `kaliteBecerisi`), `aracKalite`: kullanılan aracın kalitesi (araçsızsa null).
  */
-export function urunKalitesi(k: Karakter, t: Tarif, beceri: number, aracKalite: Kalite | null, zar: Zar): KaliteSonucu {
+export function urunKalitesi(k: Karakter, t: Tarif, beceri: number, aracKalite: Kalite | null, zar: Zar, ek: readonly { k: string; d: number }[] = []): KaliteSonucu {
   const kd = k.ms?.s[t.meslek]?.kd ?? 0;
   const kalemler = [
     { k: "kalite.kademe", d: KALITE_KADEME_PUANI[kd] ?? 0 },
@@ -178,7 +187,9 @@ export function urunKalitesi(k: Karakter, t: Tarif, beceri: number, aracKalite: 
   ];
   if (aracKalite !== null) kalemler.push({ k: "kalite.arac", d: ALET_KALITE_PUANI[aracKalite] ?? 0 });
   kalemler.push({ k: "kalite.zar", d: Math.floor(zar() * KALITE_ZAR) });
-  const toplam = kalemler.reduce((a, x) => a + x.d, 0);
+  // Ek kalemler (tezgâh Dilim 2: atölye seviye bonusu, NPC emeği cezası); toplam 0'ın altına inmez.
+  for (const x of ek) kalemler.push({ k: x.k, d: x.d });
+  const toplam = Math.max(0, kalemler.reduce((a, x) => a + x.d, 0));
   const kademe = kademeBul(toplam);
   return { kademe, ad: KALITE_ADLARI[kademe], dokum: { toplam, kalemler }, sonrakiEsik: KALITE_ESIK[kademe + 1] ?? null };
 }
@@ -188,7 +199,7 @@ export function kaliteGorunumu(k: Karakter) {
   return Object.fromEntries(
     Object.entries(k.kq ?? {}).map(([mal, liste]) => [
       mal,
-      liste.map(([q, adet, yapan]) => ({ kalite: KALITE_ADLARI[q], kademe: q, adet, yapan: yapan ?? null })),
+      liste.map(([q, adet, yapan, damga]) => ({ kalite: KALITE_ADLARI[q], kademe: q, adet, yapan: yapan ?? null, ...(damga ? { atolye: damga } : {}) })),
     ]),
   );
 }

@@ -4,7 +4,7 @@
 // envanteriyle aynıdır (`ev` adet, `kq` izli partiler) ve kalite.ts yardımcılarıyla taşınır (yapan izi korunur).
 
 import type { MalId } from "../icerik/mallar.ts";
-import { kaliteliCikar, kaliteliEkle, kaliteAdedi, type Envanterli, type Kalite, type KaliteParti } from "../yerlesim/kalite.ts";
+import { kaliteliCikar, kaliteliEkle, kaliteAdedi, partiParca, type Envanterli, type Kalite, type KaliteParti } from "../yerlesim/kalite.ts";
 import { basarili, hata, type Sonuc } from "../tipler.ts";
 import { DEPO_KAPASITE, DEPO_TASIMA_EN_COK, rafMaliMi } from "./tezgah-kurallar.ts";
 
@@ -54,11 +54,12 @@ export function partiToplam(p: readonly KaliteParti[]): number {
 
 /** Partileri (aynı kalite) yapan izine göre birleştirir. */
 export function partiBirlestir(liste: KaliteParti[], gelen: readonly KaliteParti[]): void {
-  for (const [q, n, yp] of gelen) {
+  for (const g of gelen) {
+    const [q, n, yp, dm] = g;
     if (n <= 0) continue;
-    const ayni = liste.find((p) => p[0] === q && p[2] === yp);
+    const ayni = liste.find((p) => p[0] === q && p[2] === yp && p[3] === dm);
     if (ayni) ayni[1] += n;
-    else liste.push(yp === undefined ? [q, n] : [q, n, yp]);
+    else liste.push(partiParca(g, n));
   }
 }
 
@@ -72,7 +73,7 @@ export function partiCikar(liste: KaliteParti[], adet: number): KaliteParti[] | 
     const d = Math.min(kalan, p[1]);
     p[1] -= d;
     kalan -= d;
-    cikan.push(p[2] === undefined ? [p[0], d] : [p[0], d, p[2]]);
+    cikan.push(partiParca(p, d));
   }
   for (let i = liste.length - 1; i >= 0; i--) if (liste[i]![1] <= 0) liste.splice(i, 1);
   return cikan;

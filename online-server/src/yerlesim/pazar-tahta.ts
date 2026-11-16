@@ -322,7 +322,7 @@ function partiAyir(p: KaliteParti[], adet: number): KaliteParti[] {
     const d = Math.min(kalan, x[1]);
     x[1] -= d;
     kalan -= d;
-    cikan.push(x[2] === undefined ? [x[0], d] : [x[0], d, x[2]]);
+    cikan.push(partiParca(x, d));
   }
   for (let i = p.length - 1; i >= 0; i--) if (p[i]![1] <= 0) p.splice(i, 1);
   return cikan;
