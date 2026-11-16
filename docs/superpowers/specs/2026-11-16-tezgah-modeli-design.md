@@ -58,7 +58,7 @@ akçe basan bir döngü; oyuncunun "neden az sattım" sorusuna ekranda yanıt bu
 - Her yerleşimde, malı olan her üretici meslek (oduncu, çiftçi, demirci, marangoz, dokumacı, aşçı, şifacı, tüccar)
   için aylık NPC bütçesi `B`: köy 12, kasaba 30, şehir 70 akçe [PARAMETRE]. O meslekte yerleşimde hiç oyuncu yoksa ×1,5
   (bugünkü kıtlık sinyali). Bütçe o ay rafta bulunan o meslek malları arasında eşit bölünür: `b_mal`.
-- NPC, birim fiyatı `1,6 × taban × kalite çarpanı`nı aşan satırı almaz (NPC tavanı).
+- NPC, birim fiyatı `1,5 × taban × kalite çarpanı`nı aşan satırı almaz (NPC tavanı; 1,6 iken stoktan alıp rafta satmak kâr bırakıyordu). Dükkânın aylık NPC hasılatı seviye tavanıyla sınırlıdır: [30,60,100,160,240] akçe.
 - Satırın **çekiciliği** `a = F × Q × R × H`:
   - `F` fiyat: `clamp(taban×kç / fiyat, 0,6 … 1,6)²` — ucuz olan çeker.
   - `Q` kalite: [1 · 1,1 · 1,25 · 1,5].
@@ -75,7 +75,7 @@ akçe basan bir döngü; oyuncunun "neden az sattım" sorusuna ekranda yanıt bu
 - İtibar aylık değişimi bugünkü formülle; "müşteri sayısı" girdisi artık gerçek satış yapılan satır sayısı (en çok 4).
 
 ### 5.3 Han yolcu havuzu
-- Hanların pasif NPC geliri de paylaşılır: yerleşimin aylık **yolcu bütçesi** `Y` — kasaba 30, şehir 80 akçe; köyde
+- Hanların pasif NPC geliri de paylaşılır: yerleşimin aylık **yolcu bütçesi** `Y` — kasaba 30, şehir 80 akçe (köy 12);  köyde
   yalnız NPC hanı. Açık hanlar (1. han NPC'deyken o da, sabit çekicilikle) `a = (100/fc)^1,5 × (1+kalite%) × R × H`
   ile paylaşır; han başına bugünkü seviye tavanı sürer (şehirde ×1,5). Böylece çoklu han akçe basmaz ve fiyat
   çarpanı NPC tarafında da gerçek karar olur.
@@ -87,7 +87,10 @@ akçe basan bir döngü; oyuncunun "neden az sattım" sorusuna ekranda yanıt bu
 4. İki hesap arası alışveriş döngüsü gelir/itibar/seviye üretmez (bant + küme kuralı).
 5. Toplam akçe girişi (NPC→oyuncu) yerleşim başına bugünkü pasif gelir toplamının 3 katını aşmaz.
 Sunucu ajanı, pay formülünün iki biçimini (yukarıdaki bütçe payı ve adet-talebi payı) aynı sim testinde karşılaştırıp
-sayıları raporlar; yönetici seçer. Parametreler tek dosyada.
+sayıları raporlar; yönetici seçer. Parametreler tek dosyada (`mulk/tezgah-kurallar.ts`).
+**Karar (16 Kasım, sim sonucu):** bütçe payı (a) seçildi — fiyat kararı gerçek ödünleşim, baskın strateji yok (en iyi
+strateji sayımı: taban 6, pahalı 4, ucuzcu 0), harcama kendiliğinden ΣB altında. Ölçülen: şehirde en iyi 5. seviye
+dükkân kârı 77 akçe/ay; 1. seviye dolu çarşıda bakımını çıkarıyor; NPC→oyuncu girişi şehir 608, kasaba 232, köy 87.
 
 ### 5.5 Ekran (istemci)
 - **Dükkânım:** raf ızgarası (mal ikonu, kalite rozeti, adet, fiyat), depo çekmecesi, fiyat ayarı (adil bant ve NPC
