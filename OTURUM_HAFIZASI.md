@@ -12,7 +12,7 @@
 
 ## Çevrimiçi durum (17 Kasım)
 - Belgeler: `docs/online/ONLINE_DURUM.md`; tasarım `docs/superpowers/specs/2026-11-16-tezgah-modeli-design.md`; **protokol ve ekran brief'i** `…-tezgah-istemci-brief.md` (Dilim 1 + Dilim 2 atölye).
-- Sunucu 668 test, hepsi geçiyor (`kervan-akis` ara sıra düşer: duvar saati). Test Worker'ı `05d2e17`de (ses açık); sonraki commit'ler dağıtılmadı. Dağıtım: GitHub `deploy-online-server.yml`, hedef `test`.
+- Sunucu 668 test, hepsi geçiyor. Test Worker'ı `05d2e17`de (ses açık); sonrası dağıtılmadı. Dağıtım: GitHub `deploy-online-server.yml`, hedef `test`.
 - Bitti: sahne/atışma; han masası; çoklu han; 5 sekme + rehber; tezgâh Dilim 1 (sunucu, denge düzeltmeleri, dükkân ekranları + inceleme düzeltmeleri); **Dilim 2 atölye sunucusu** (zanaat, atölyede üretim, emek havuzu, üretim emri, toplu sipariş, genişletme).
 - Ekranlar cihazda görülmedi.
 
