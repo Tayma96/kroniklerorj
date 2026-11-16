@@ -12,14 +12,13 @@
 
 ## Çevrimiçi durum (17 Kasım)
 - Belgeler: `docs/online/ONLINE_DURUM.md`; tasarım `docs/superpowers/specs/2026-11-16-tezgah-modeli-design.md`; **protokol ve ekran brief'i** `…-tezgah-istemci-brief.md` (Dilim 1 + Dilim 2 atölye).
-- Sunucu 675 test, hepsi geçiyor. Test Worker'ı `377b8a3`te (etkinlikler dahil, ses açık). Dağıtım: GitHub `deploy-online-server.yml`, hedef `test`.
-- Bitti: sahne/atışma; han masası; çoklu han; 5 sekme + rehber; tezgâh Dilim 1 (sunucu, denge düzeltmeleri, dükkân ekranları + inceleme düzeltmeleri); **Dilim 2 atölye sunucusu** (zanaat, atölyede üretim, emek havuzu, üretim emri, toplu sipariş, genişletme).
+- Sunucu 683 test, hepsi geçiyor. Test Worker'ı `377b8a3`te (etkinlikler dahil, ses açık; atölye denge düzeltmeleri henüz dağıtılmadı). Dağıtım: GitHub `deploy-online-server.yml`, hedef `test`.
+- Bitti: sahne/atışma; han masası; çoklu han; 5 sekme + rehber; tezgâh Dilim 1 (sunucu, denge düzeltmeleri, dükkân ekranları + inceleme düzeltmeleri); **Dilim 2 atölye sunucusu** (zanaat, üretim, emek havuzu, emir, toplu sipariş, genişletme) + **denge denetimi ve düzeltmeleri** (`206493b`; tasarım §6.1, `ONLINE_DURUM.md` §4.10).
 - Canlı etkinlikler (yönetici): 18 etkinlik, panel Etkinlikler sekmesi (başlat/durdur, süre sayacı, dünya/beylik/tür/tek yerleşim, oyuncu sayıları), Yaşam bandı; `docs/online/ETKINLIKLER.md`.
 - Ekranlar cihazda görülmedi.
 
 ## Sıradaki işler (bu sırayla)
-1. **Sürüyor (17 Kasım gece):** Dilim 2 denge denetimi yapıldı; düzeltmeler `online-sunucu` ajanında, ara commit'ler `claude/sharp-clarke-uhhvnl` dalında (apk'ye yönetici alır). Bulgular: A) maaşı ödenmeyen NPC emeği bedava (iseAl emanet şartı + emek maaşı karşılanan NPC'yle sınırlı); B) iflas atölyesinde yazma uçları reddetmeli, reddedilen toplu teslimde mal/sipariş geri gelmeli; C) sim kilidi: edilgen atölye net ≤ 35 akçe/ay; D) `cikisAc` sonucu denetimi, emir dökümünde kalite kalemleri. Bitince: testler, diff incelemesi, apk'ye al, tasarım §6 + `ONLINE_DURUM.md` güncelle. Dal apk'den ilerideyse ve inceleme notu yoksa önce `npm test` + diff oku.
-2. Atölye ekranı (brief sonundaki madde) → çeviri → `react-reviewer` → düzeltme.
+1. Atölye ekranı (brief sonundaki madde + "Denetim sonrası protokol ekleri") → çeviri → `react-reviewer` → düzeltme.
 3. Dilim 3: meslek kancaları ilk parti ≈70 (tasarım §7) + "boşta kanca listesi yalnız kısalır" testi.
 4. Oyuncu numarası (8 hane, rastgele, hesaba bağlı), arama, oyuncu sayfası.
 5. Han masa oyunları çatısı + iki oyun; canlı masalar vitrini.

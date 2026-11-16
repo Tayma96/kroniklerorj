@@ -120,7 +120,7 @@ dükkân kârı 77 akçe/ay; 1. seviye dolu çarşıda bakımını çıkarıyor;
 - **Genişletme malzeme ister:** raf/tezgâh/depo artışı (seviye atlayınca) kereste, çivi, doğrama gibi mallarla
   tamamlanır → oduncu, demirci, marangoz için kalıcı talep.
 
-### 6.1 Dilim 2 uygulama kararları (yönetici, 16 Kasım; henüz kod yok)
+### 6.1 Dilim 2 uygulama kararları (yönetici, 16 Kasım; sunucu kodu 17 Kasım'da bitti, denetimden geçti)
 - Zanaat: tarifi olan meslekler (oduncu, çiftçi, demirci, marangoz, dokumacı, aşçı, kâtip). Kuruluşta sahibin ana/yan
   mesleği uygunsa atanır; ilk değişiklik ücretsiz, sonrası akçe ve açık emir yokken.
 - Emirle üretimin kalitesi: emrin ustası (tarifi yapabilen en yüksek kademeli sahip/çalışan) + seviye bonusu; NPC emeği
@@ -133,6 +133,17 @@ dükkân kârı 77 akçe/ay; 1. seviye dolu çarşıda bakımını çıkarıyor;
   korunumu; bonus adet artırmaz; toplu sipariş girişi ≤ 84/ay; alt istek ≤ 12; takat → emek 1:1.
 - Dilim 1 küçük ekleri: `olay.tezgah.devralmaKasasi`ya `ad`; `depoDefteri` satırına `kimAd`; `GET /v1/dukkanlar`a
   `bedel:{dukkan,atolye}`.
+- **Denetim sonrası kesinleşenler (17 Kasım):**
+  - Zanaat, tarifi olan 7 meslekten herhangi biri olabilir (sahibin mesleği şart değil); ilk değişim ücretsiz, sonrası 30 akçe.
+  - Emek havuzu tezgâh × 6, tek mesai ≤ 18; NPC emeği 2/ay (birikmez), kalite cezası 30, NPC atölye maaşı ≥ 38.
+  - **NPC emeği yalnız maaşı emanetten karşılanan NPC'den gelir**; atölyede NPC işe alımı `emanet ≥ maaş yükü + yeni maaş`
+    ister (`emanet_yetersiz`). Dökümde sözleşmeli, emek veren ve maaşsız NPC sayısı nedeniyle görünür.
+  - İflas eden atölyede zanaat, üretim, mesai, emir, toplu teslim ve genişletme `isletme_kapali` ile reddedilir.
+  - Reddedilen toplu teslimde mal partileriyle (kalitesiyle) depoya, sipariş açık duruma, "son alan" eski değerine döner.
+  - Edilgen atölye (yalnız NPC emeği + emir + raf): şehir + kıtlıkta en iyi durumda net ≤ 35 akçe/ay (girdi 1,5× alınırsa
+    31, kıtlık yoksa 10; bakım düşülmeden). Bağlayan sınır meslek bütçesi; sim testinde kilitli.
+  - Emir dökümünde emir başına kalite kalemleri (usta kademesi, beceri, araç, zar, seviye bonusu, NPC cezası) aralıkla verilir.
+  - Yapılmadı: ısmarlamanın atölyeye verilmesi; alt istek bütçesi için ayrı atölye testi.
 - Sunucu ajanı uzun işte her adımda ara kaydı oturum dalına push eder (konteyner yenilenince commit'siz iş kayboluyor).
 
 ## 7. Dilim 3 — Meslek ve beceri kancaları

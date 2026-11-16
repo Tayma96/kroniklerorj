@@ -160,6 +160,23 @@ Yemin → mertlik (mühürlü, çift başına ayda bir). Sözleşme ve ittifak k
 - **Alt istek bütçesi:** GET /v1/han yalnız seçili hanın masalarını canlı sorar; diğer kartların masa özeti yerleşimin
   doluluk kaydından (MasaDO değişince mutlak değer bildirir). Testle kilitli: ≤ 12 alt istek.
 
+### 4.10 Tezgâh modeli: dükkân ve atölye (16–17 Kasım)
+Tasarım `docs/superpowers/specs/2026-11-16-tezgah-modeli-design.md`, protokol `…-tezgah-istemci-brief.md`.
+- **Dilim 1 (dükkân, han yolcu havuzu):** sunucu ve ekranlar bitti; denge denetimi düzeltmeleri işlendi.
+- **Dilim 2 (atölye) sunucusu bitti, denge denetiminden geçti (17 Kasım):** zanaat, atölyede üretim, emek havuzu, üretim
+  emri, toplu sipariş, genişletme. Denetimde kapatılanlar: maaşı emanetten karşılanmayan NPC emek vermez ve NPC işe alımı
+  emanet ister; iflas eden atölyede yazma uçları reddeder; reddedilen toplu teslimde mal ve sipariş geri gelir; edilgen
+  atölyenin aylık net kazancı 35 akçeyle sim testinde kilitli (bağlayan sınır meslek bütçesi).
+- **Atölye ekranı yok** (sıradaki iş). Dilim 3 (meslek kancaları) ve Dilim 4 (eşya kademeleri) tasarımda.
+- Bilinen küçük açıklar: işletme yansısı geç gelirse maaşı biten NPC bir ay daha emek verebilir; deposu iade edilmiş
+  iflas atölyesinde reddedilen toplu teslimin malı teslim edene döner (karakter yüklü değilse dönmez); reddedilen teslim
+  o ayı "üretimli" saymaya devam eder.
+
+### 4.11 Canlı etkinlikler (16 Kasım)
+Yönetici panelinden başlatılıp durdurulan 18 etkinlik; kapsam dünya, beylik, yerleşim türü ya da tek yerleşim.
+Plan ve kurallar: `docs/online/ETKINLIKLER.md`. Yönetici girişi için `YONETIM_GOOGLE_CLIENT_ID` ve `YONETICI_EPOSTALAR`
+henüz tanımlı değil (Berkay ile birlikte).
+
 ## 5. Berkay'ın kararına bağlı gerilimler (koda dokunulmadı)
 - **Süre kısaltma satışı:** Debdebe kataloğunda gerçek parayla beceri süresi kısaltma var (`kisaltma_*`, karakter başına
   en çok 3). 9 Kasım beceri ağacı spec'i bunu istiyor; GDD D-14/D-15 ve "parayla atlatma yok" süzgeci yasaklıyor.
