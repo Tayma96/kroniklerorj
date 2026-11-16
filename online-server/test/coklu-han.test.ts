@@ -240,3 +240,18 @@ test("4.9 şehir hanı daha büyük ve pahalı: kapasite ve bakım yerleşim tü
   const bakimSatiri = sehir.df.flatMap((d) => Object.entries(d)).find(([k]) => k === "bakim");
   assert.ok(sehir.batak >= HAN_BAKIM.sehir, `bakım düşüldü (${JSON.stringify(bakimSatiri ?? null)})`);
 });
+
+test("4.9 masa doluluk kaydı: mutlak değer, eski z yok sayılır, boşalan masa silinir, masa adı çözümü", async () => {
+  const { dolulukUygula, hanMasaOzeti, masaAdiCoz } = await import("../src/han/doluluk.ts");
+  assert.deepEqual(masaAdiCoz("masa:demirhan:han:3"), { yerlesim: "demirhan", han: 1, no: 3 });
+  assert.deepEqual(masaAdiCoz("masa:develi:kucukHan2:4"), { yerlesim: "develi", han: 2, no: 4 });
+  assert.equal(masaAdiCoz("masa:x"), undefined);
+  const kayit = {};
+  assert.equal(dolulukUygula(kayit, [{ han: 2, masa: 1, oturan: 3, acik: true, z: 10 }, { han: 2, masa: 2, oturan: 0, acik: false, z: 10 }]), true);
+  assert.deepEqual(hanMasaOzeti(kayit, 2, 8), { sayi: 8, acik: 7, oturan: 3 });
+  assert.equal(dolulukUygula(kayit, [{ han: 2, masa: 1, oturan: 3, acik: true, z: 10 }]), false, "tekrar zararsız");
+  assert.equal(dolulukUygula(kayit, [{ han: 2, masa: 1, oturan: 1, acik: true, z: 5 }]), false, "eski z yok sayılır");
+  dolulukUygula(kayit, [{ han: 2, masa: 1, oturan: 0, acik: true, z: 20 }, { han: 2, masa: 2, oturan: 0, acik: true, z: 20 }, { bozuk: 1 }]);
+  assert.deepEqual(kayit, {}, "boşalan masa kaydı silinir");
+  assert.deepEqual(hanMasaOzeti(kayit, 1, 8), { sayi: 8, acik: 8, oturan: 0 });
+});

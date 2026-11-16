@@ -15,6 +15,8 @@ import type { CalismaParametreleri } from "./yerlesim/tipler.ts";
 import { sonrakiAlarm, YerlesimMotoru } from "./yerlesim/motor.ts";
 import { mulkIsle, teslimAl, uzlastir, type IsletmeCagir } from "./mulk/yerlesim-mulk.ts";
 import { hanNoCoz } from "./mulk/tapu.ts";
+import { DOLULUK, dolulukUygula, type DolulukKaydi } from "./han/doluluk.ts";
+import { yerlesimBul } from "./dunya-veri.ts";
 
 export class YerlesimDO {
   readonly #env: Env;
@@ -64,6 +66,8 @@ export class YerlesimDO {
   async fetch(istek: Request): Promise<Response> {
     const ileti = await iletiOku<YerlesimIleti>(istek);
     if (!ileti || typeof ileti.yerlesim !== "string") return jsonYanit(hata("gecersiz_istek"));
+    // 4.9 masa doluluğu: hafif yol (motor açılmaz, ay yetiştirilmez, başka DO'ya çağrı yok); tek küçük depo kaydı.
+    if (ileti.islem === "masaDoluluk") return jsonYanit(await this.#dolulukYaz(ileti.yerlesim, ileti.govde));
     try {
       const simdi = this.#saat();
       const sonuc = await this.#isle(ileti, simdi);
@@ -79,6 +83,17 @@ export class YerlesimDO {
       this.#motor = undefined;
       throw e;
     }
+  }
+
+  async #dolulukYaz(yerlesim: string, govde: unknown): Promise<Sonuc<unknown>> {
+    if (!yerlesimBul(yerlesim)) return hata("yerlesim_gecersiz");
+    const kayit = (await this.#depo.al<DolulukKaydi>(DOLULUK)) ?? {};
+    const hamlar = typeof govde === "object" && govde !== null ? (govde as { kayitlar?: unknown }).kayitlar : undefined;
+    if (dolulukUygula(kayit, hamlar)) {
+      if (Object.keys(kayit).length) await this.#depo.koy({ [DOLULUK]: kayit });
+      else await this.#depo.sil([DOLULUK]);
+    }
+    return basarili({});
   }
 
   /** Bölgenin güncel vergi oranı; siyaset DO erişilemiyorsa işlem ek vergi kesmeden devam eder. */
@@ -231,7 +246,7 @@ export class YerlesimDO {
         return motor.engeller(ileti.hesapId, han);
       }
       case "hanlar":
-        return motor.hanlar(ileti.hesapId);
+        return motor.hanlar(ileti.hesapId, await this.#depo.al<DolulukKaydi>(DOLULUK));
       case "hanTanidiklar":
         return motor.hanTanidiklar(ileti.hesapId);
       case "hanOlayi":

@@ -106,6 +106,8 @@ import { eksenler } from "./hafiza.ts";
 import { hanNoCoz, hanNolari, hanVar, mulkluHanOdemesi, mulkluIkram, mulkluKira, oyuncuHani } from "../mulk/tapu.ts";
 import { isletmeKimligi } from "../mulk/kurallar.ts";
 import type { HanKarti } from "../han/tipler.ts";
+import { hanMasaOzeti, type DolulukKaydi } from "../han/doluluk.ts";
+import { masaSayisi } from "../han/kurallar.ts";
 import type { MulkDefteri } from "../mulk/tapu.ts";
 // Ölümde mülk devri: tapuyu vârise taşıyan kimlik taşıyıcısını kaydeder.
 import "../mulk/miras.ts";
@@ -1554,7 +1556,7 @@ export class YerlesimMotoru {
    * adı, seviye, fiyat çarpanı, oda doluluk/kapasite (NPC hanında sınırsız: null) ve isteyenin müdavim rozeti.
    * Salt okuma; masa doluluğunu HesapDO ekler.
    */
-  async hanlar(hesapId: string): Promise<Sonuc<{ hanlar: HanKarti[] }>> {
+  async hanlar(hesapId: string, doluluk?: DolulukKaydi): Promise<Sonuc<{ hanlar: HanKarti[] }>> {
     const k = this.kasaba;
     const s = k.sakin.find((x) => x.h === hesapId);
     if (!s) return hata("sakin_yok");
@@ -1566,11 +1568,13 @@ export class YerlesimMotoru {
         const t = md?.t[isletme];
         const rozet = no === 1 ? (s.md ?? 0) : (s.mdh?.[String(no)] ?? 0);
         const mudavim = rozet > 0 ? MUDAVIM_ROZETLERI[rozet - 1]! : null;
-        if (!t) return { no, isletme, sahip: "npc", ad: "", seviye: 0, fc: 100, acik: true, oda: null, mudavim };
+        // Masa özeti doluluk kaydından (masalara canlı çağrı yok; alt istek bütçesi).
+        const masa = hanMasaOzeti(doluluk, no, masaSayisi(k.tur));
+        if (!t) return { no, isletme, sahip: "npc", ad: "", seviye: 0, fc: 100, acik: true, oda: null, mudavim, masa };
         const oh = oyuncuHani(k, no)!;
         const dolu = (md?.od[isletme] ?? []).filter(([, b]) => b > an).length;
         const sk = k.sakin.find((x) => x.o === t.s);
-        return { no, isletme, sahip: "oyuncu", sahipKisi: { id: t.s, ad: sk?.ad ?? "" }, ad: t.y?.ad ?? "", seviye: oh.seviye, fc: oh.fc, acik: oh.kapasite > 0, oda: { dolu: Math.min(dolu, oh.kapasite), kapasite: oh.kapasite }, mudavim };
+        return { no, isletme, sahip: "oyuncu", sahipKisi: { id: t.s, ad: sk?.ad ?? "" }, ad: t.y?.ad ?? "", seviye: oh.seviye, fc: oh.fc, acik: oh.kapasite > 0, oda: { dolu: Math.min(dolu, oh.kapasite), kapasite: oh.kapasite }, mudavim, masa };
       }),
     });
   }

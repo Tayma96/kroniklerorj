@@ -93,6 +93,9 @@ test("4.9 uçtan uca: şehirde 2. han edinilir, listede görünür, masası ayr�
     const cSoket = araclar.sunucular.at(-1)!;
     await masaDO.webSocketMessage(cSoket, JSON.stringify({ t: "otur" }));
 
+    // Doluluk kaydı: 1. han seçiliyken 2. hanın masa özeti MasaDO bildiriminden gelir (canlı çağrı yok).
+    const kartH2 = (await cagir("GET", "/v1/han", { oturum: A })).govde.hanlar.find((h: Nesne) => h.no === 2);
+    assert.deepEqual(kartH2.masa, { sayi: 8, acik: 8, oturan: 2 });
     const hesapB = (await cagir("GET", "/v1/profil", { oturum: B })).govde.hesapId as string;
     const ik = await cagir("POST", "/v1/han/ikram", { oturum: C, govde: { masa: 1, han: 2, hedef: hesapB, ikram: "yemek", istekNo: no() } });
     assert.equal(ik.durum, 200, JSON.stringify(ik.govde));

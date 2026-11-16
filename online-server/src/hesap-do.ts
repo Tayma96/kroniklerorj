@@ -421,6 +421,7 @@ export class HesapDO {
       ikramOde: ikramOdeyici(env),
       engelSor: (yerlesim, han) => yerlesimCagir(env, { islem: "engeller", yerlesim, hesapId, ...(han && han !== 1 ? { han } : {}) }),
       hanlarSor: (yerlesim) => yerlesimCagir(env, { islem: "hanlar", yerlesim, hesapId }),
+      dolulukYaz: (yerlesim, kayitlar) => yerlesimCagir(env, { islem: "masaDoluluk", yerlesim, hesapId, govde: { kayitlar } }),
       tanidikSor: (yerlesim) => yerlesimCagir(env, { islem: "hanTanidiklar", yerlesim, hesapId }),
       hesapOlusturma: async () => (await hesapKaydi(this.#depo))?.olusturma,
       ziyafetOde: (yerlesim, govde) => yerlesimCagir(env, { islem: "hanZiyafet", yerlesim, hesapId, govde }),

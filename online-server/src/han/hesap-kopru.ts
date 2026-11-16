@@ -15,6 +15,7 @@ import { PANO_GUNLUK, panoGirdisiCoz } from "./pano.ts";
 import { HAN_DUZENI, HAN_EYLEM_GUNLUK, HAN_TURU_ADLARI, KOLTUK_SAYISI, hanMasaAdi, masaNoCoz, masaSayisi, masaSirala } from "./kurallar.ts";
 import { hanNoCoz } from "../mulk/tapu.ts";
 import { isletmeKimligi } from "../mulk/kurallar.ts";
+import type { DolulukBildirimi } from "./doluluk.ts";
 import type { HanKarti, HanOzeti, HanTuru, MasaAnonsu, SesAlt, MasaBileti, MasaIcOzeti, MasaIleti, MasaOlayi, MasaOzeti } from "./tipler.ts";
 import type { IkramOdeyici } from "./yerlesim-kopru.ts";
 
@@ -58,6 +59,8 @@ export interface HanHesapBaglami {
   hanOlayiGonder?: HanOlayiGonderici;
   /** 4.9: yerleşimin açık hanları (YerlesimDO `hanlar`). Yoksa yalnız 1. han vardır (2.+ han `han_yok`). */
   hanlarSor?: HanListeleyici;
+  /** 4.9: seçili hanın canlı okunan masa doluluğunu yerleşim kaydına yazar (en iyi çaba; tek çağrı). */
+  dolulukYaz?: (yerlesim: string, kayitlar: DolulukBildirimi[]) => Promise<Sonuc<unknown>>;
 }
 
 /** HesapDO → YerlesimDO "engeller" çağrısı (H4: müdavim rozeti de döner; 4.9: rozet seçili hanın). */
@@ -133,30 +136,34 @@ export async function hanListesi(b: HanHesapBaglami, dil: unknown, hamHan?: unkn
   const { yerlesim, tur, han } = yer.deger;
   const nolar = Array.from({ length: yer.deger.masa }, (_, i) => i + 1);
   const kartlar = yer.deger.kartlar ?? [{ no: 1, isletme: isletmeKimligi(yerlesim, "han", 1), sahip: "npc", ad: "", seviye: 0, fc: 100, acik: true, oda: null, mudavim: null } satisfies HanKarti];
-  // Masa özetleri: her açık hanın her masası (seçili hanınkiler ayrıntılı listeye de girer).
-  const ozetSor = (h: number) => Promise.all(nolar.map((no) => { const ad = hanMasaAdi(yerlesim, tur, h, no); return b.masaCagir(ad, { islem: "ozet", masa: ad, no }); }));
-  const [hanOzetleri, tanidiklar] = await Promise.all([
-    Promise.all(kartlar.map((k) => ozetSor(k.no))),
+  // Alt istek bütçesi: yalnız SEÇİLİ hanın masaları canlı sorulur (en çok 8); diğer hanların masa özeti yerleşimin
+  // doluluk kaydından gelir (MasaDO bildirir). Canlı okunan değer kayda geri yazılır (bildirim kaybını düzeltir).
+  const [ozetler, tanidiklar] = await Promise.all([
+    Promise.all(nolar.map((no) => { const ad = hanMasaAdi(yerlesim, tur, han, no); return b.masaCagir(ad, { islem: "ozet", masa: ad, no }); })),
     tanidikKumesi(b, yerlesim),
   ]);
   const masalar: MasaOzeti[] = [];
-  const hanlar: HanKarti[] = [];
-  for (let i = 0; i < kartlar.length; i++) {
-    const kart = kartlar[i]!;
-    let acik = 0;
-    let oturan = 0;
-    for (const o of hanOzetleri[i]!) {
-      if (!o.ok) return o;
-      // Oturan kimlikleri yalnız sayıma girer; istemciye giden özette yoktur.
-      const { oturanlar, ...ozet } = o.deger as MasaIcOzeti;
-      oturan += ozet.oturan;
-      if (ozet.ayar?.acik !== false) acik++;
-      if (kart.no === han) {
-        const tanidik = (oturanlar ?? []).filter((h) => h !== b.hesapId && tanidiklar.has(h)).length;
-        masalar.push({ ...ozet, tanidik });
-      }
+  const canli: DolulukBildirimi[] = [];
+  let acik = 0;
+  let oturan = 0;
+  for (const o of ozetler) {
+    if (!o.ok) return o;
+    // Oturan kimlikleri yalnız sayıma girer; istemciye giden özette yoktur.
+    const { oturanlar, ...ozet } = o.deger as MasaIcOzeti;
+    oturan += ozet.oturan;
+    const masaAcik = ozet.ayar?.acik !== false;
+    if (masaAcik) acik++;
+    canli.push({ han, masa: ozet.no, oturan: ozet.oturan, acik: masaAcik, z: b.simdi });
+    const tanidik = (oturanlar ?? []).filter((h) => h !== b.hesapId && tanidiklar.has(h)).length;
+    masalar.push({ ...ozet, tanidik });
+  }
+  const hanlar: HanKarti[] = kartlar.map((k) => (k.no === han ? { ...k, masa: { sayi: nolar.length, acik, oturan } } : { ...k, masa: k.masa ?? { sayi: nolar.length, acik: nolar.length, oturan: 0 } }));
+  if (b.dolulukYaz) {
+    try {
+      await b.dolulukYaz(yerlesim, canli);
+    } catch {
+      // en iyi çaba: liste bozulmaz
     }
-    hanlar.push({ ...kart, masa: { sayi: nolar.length, acik, oturan } });
   }
   return basarili({
     yerlesim: { id: yerlesim, ad: yer.deger.yerlesimAdi },

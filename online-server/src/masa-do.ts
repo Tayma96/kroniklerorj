@@ -29,6 +29,7 @@ import { etkinlikCoz, type Etkinlik } from "./han/sahne.ts";
 import type { AtismaSonucu, MasaAyari, MasaBileti, MasaIleti, MasaOlayi, SoketEki, SunucuIletisi } from "./han/tipler.ts";
 import { Realtime, realtimeAyari, type Getir } from "./han/realtime.ts";
 import { sesIsle } from "./han/ses.ts";
+import { masaAdiCoz } from "./han/doluluk.ts";
 import { hesapCagir, iletiOku, jsonYanit, yerlesimCagir, yonetimCagir } from "./ic.ts";
 import { basarili, hata, HATA_DURUMU, type Env, type Sonuc } from "./tipler.ts";
 
@@ -58,6 +59,8 @@ const AYAR = "ayar";
 /** H8 sahne/atışma durumu (kıta metni yok) ve yerleşime teslim bekleyen anılma olayları. */
 const ETKINLIK = "etkinlik";
 const ANMA_KUYRUK = "anma:kuyruk";
+/** 4.9: yerleşime son bildirilen doluluk [oturan, açık 1/0] (yalnız değişince yeniden bildirilir). */
+const DOLULUK_SON = "doluluk:son";
 /** [PARAMETRE] Teslim bekleyen anılma olaylarının en çok sayısı (eskiler düşer). */
 export const ANMA_KUYRUK_EN_COK = 20;
 
@@ -113,6 +116,8 @@ export class MasaDO {
   #etkinlik: Etkinlik | undefined | null = null;
   /** H8: anılma kuyruğunda öğe var mı (null = bilinmiyor; boşken her iletide depo okunmaz). */
   #anmaVar: boolean | null = null;
+  /** 4.9: yerleşime son bildirilen doluluk (null = depodan yüklenmedi). */
+  #sonDoluluk: [number, 0 | 1] | undefined | null = null;
   /** İşlem sırasında sıraya alınan SFU iz kapatmaları; işlem sonunda beklenir. */
   readonly #bekleyen: Promise<unknown>[] = [];
   /** Hesap başına iki yönlü engel listesi önbelleği (asıl kayıt depoda `eg:<hesap>`). */
@@ -136,6 +141,7 @@ export class MasaDO {
     const sonuc = await this.#isle(ileti);
     await this.#bosalt();
     await this.#anmaBosalt();
+    await this.#dolulukBildir(ileti.masa);
     return jsonYanit(sonuc);
   }
 
@@ -145,6 +151,7 @@ export class MasaDO {
     await iletiIsle(await this.#baglam(ek.m), this.#sar(ws), mesaj);
     await this.#bosalt();
     await this.#anmaBosalt();
+    await this.#dolulukBildir(ek.m);
   }
 
   #realtime(): Realtime | undefined {
@@ -169,10 +176,39 @@ export class MasaDO {
     if (ek) ayril(await this.#baglam(ek.m, ws), this.#sar(ws));
     await this.#bosalt();
     await this.#anmaBosalt();
+    if (ek) await this.#dolulukBildir(ek.m, ws);
     try {
       ws.close(1000, "ayrildi");
     } catch {
       // zaten kapalı
+    }
+  }
+
+  /**
+   * 4.9: oturan sayısı ya da açık/kapalı durum değiştiyse yerleşime mutlak değeri bildirir (istek başına en çok bir
+   * kez; değişmediyse çağrı yok). Başarısızlık masayı bozmaz: son bildirilen güncellenmez, sonraki değişimde ya da
+   * seçili hanın canlı okumasında düzelir.
+   */
+  async #dolulukBildir(masa: string, haric?: WebSocket): Promise<void> {
+    const c = masaAdiCoz(masa);
+    if (!c) return;
+    try {
+      const soketler = this.#ctx.getWebSockets().filter((w) => w !== haric).map((w) => this.#sar(w));
+      const oturan = oturanlar(kayitlar(soketler)).length;
+      const acik: 0 | 1 = (await this.#ayarAl()).acik === false ? 0 : 1;
+      if (this.#sonDoluluk === null) this.#sonDoluluk = (await this.#depo.al<[number, 0 | 1]>(DOLULUK_SON)) ?? [0, 1];
+      const son = this.#sonDoluluk;
+      if (son && son[0] === oturan && son[1] === acik) return;
+      const r = await yerlesimCagir(this.#env, {
+        islem: "masaDoluluk", yerlesim: c.yerlesim, hesapId: "",
+        govde: { kayitlar: [{ han: c.han, masa: c.no, oturan, acik: acik === 1, z: Date.now() }] },
+      });
+      if (!r.ok) return;
+      this.#sonDoluluk = [oturan, acik];
+      if (oturan === 0 && acik === 1) await this.#depo.sil([DOLULUK_SON]);
+      else await this.#depo.koy({ [DOLULUK_SON]: [oturan, acik] });
+    } catch {
+      // en iyi çaba: yerleşim yanıt vermezse kayıt sonraki değişimde ya da canlı okumada düzelir
     }
   }
 
@@ -317,6 +353,7 @@ export class MasaDO {
     this.#ctx.acceptWebSocket(sunucu);
     baglan(b, this.#sar(sunucu), bilet);
     await this.#bosalt();
+    await this.#dolulukBildir(bilet.masa);
     return this.#araclar.yukselt(istemci);
   }
 

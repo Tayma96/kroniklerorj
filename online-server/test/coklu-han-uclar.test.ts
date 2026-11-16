@@ -102,13 +102,15 @@ test("4.9 han listesi: açık hanların kartları, seçili hanın masaları; mas
   assert.equal(l.deger.han.no, 1, "han verilmezse 1. han");
   assert.deepEqual(l.deger.hanlar.map((h) => [h.no, h.sahip]), [[1, "npc"], [2, "oyuncu"], [3, "oyuncu"]]);
   const m = masaSayisi("sehir");
-  assert.deepEqual(l.deger.hanlar[1]!.masa, { sayi: m, acik: m, oturan: m });
+  assert.deepEqual(l.deger.hanlar[0]!.masa, { sayi: m, acik: m, oturan: m }, "seçili han canlı");
+  assert.deepEqual(l.deger.hanlar[1]!.masa, { sayi: m, acik: m, oturan: 0 }, "diğer han kayıttan (kayıt yoksa boş)");
   assert.equal(l.deger.masalar.length, m);
   const l2 = await hanListesi(b, "tr", "2");
   assert.ok(l2.ok);
   assert.deepEqual([l2.deger.han.no, l2.deger.han.isletme], [2, "demirhan.han.2"]);
   assert.deepEqual(await hanListesi(b, "tr", "4"), { ok: false, hata: "han_yok" });
-  assert.ok(masalar.includes("ozet@masa:demirhan:han3:8"));
+  assert.ok(masalar.includes("ozet@masa:demirhan:han2:8"));
+  assert.ok(!masalar.some((x) => x.startsWith("ozet@masa:demirhan:han3:")), "seçili olmayan hanın masası canlı sorulmaz");
 
   const eski = await masaBileti(b, "1");
   assert.ok(eski.ok);
@@ -129,4 +131,28 @@ test("4.9 köy: yalnız 1. (NPC) han; liste yerleşim yanıt vermese de çalış
   assert.deepEqual(l.deger.hanlar.map((h) => h.no), [1]);
   assert.equal(l.deger.masalar.length, masaSayisi("koy"));
   assert.deepEqual(await hanListesi(b, "tr", "2"), { ok: false, hata: "han_yok" });
+});
+
+test("4.9 GET /v1/han alt istek bütçesi: her yerleşim türünde ≤ 12 (şehirde 5 han açıkken); canlı değer kayda yazılır", async () => {
+  const SINIR = 12;
+  for (const [yerlesim, sayi] of [["demirhan", 5], ["develi", 2], ["kizilca", 1]] as const) {
+    const kartlar = Array.from({ length: sayi }, (_, i) => ({ ...kart(i + 1, i === 0 ? "npc" : "oyuncu"), masa: { sayi: 8, acik: 7, oturan: 3 } }));
+    for (const secili of [undefined, String(sayi)]) {
+      const { b } = await baglam(yerlesim, kartlar);
+      let altIstek = 0;
+      const yazilan: unknown[] = [];
+      const say = <A extends unknown[], R>(f: (...a: A) => Promise<R>) => (...a: A) => (altIstek++, f(...a));
+      b.masaCagir = say(b.masaCagir);
+      b.hanlarSor = say(b.hanlarSor!);
+      b.tanidikSor = say(async () => basarili({ hesaplar: [] as string[] }));
+      b.dolulukYaz = say(async (_y: string, k: unknown[]) => (yazilan.push(...k), basarili({})));
+      const l = await hanListesi(b, "tr", secili);
+      assert.ok(l.ok, JSON.stringify(l));
+      assert.ok(altIstek <= SINIR, `${yerlesim} han=${secili ?? 1}: ${altIstek} alt istek`);
+      assert.equal(l.deger.hanlar.length, sayi);
+      assert.equal(yazilan.length, masaSayisi(yerlesim === "demirhan" ? "sehir" : yerlesim === "develi" ? "kasaba" : "koy"));
+      const digeri = l.deger.hanlar.find((h) => h.no !== l.deger.han.no);
+      if (digeri) assert.deepEqual(digeri.masa, { sayi: 8, acik: 7, oturan: 3 }, "diğer hanlar kayıttan");
+    }
+  }
 });

@@ -660,8 +660,10 @@ export type YerlesimIleti =
   | { islem: "ucgenOku"; yerlesim: string; hesapId: string; npc?: string | null; hedef?: string | null; dil?: string | null }
   /** Han masası bileti için: oyuncunun iki yönlü engel listesi (hesap kimlikleri). */
   | { islem: "engeller"; yerlesim: string; hesapId: string; han?: unknown }
-  /** 4.9: yerleşimin açık hanları (kart: sahip, seviye, fc, oda doluluğu, müdavim rozetim). */
+  /** 4.9: yerleşimin açık hanları (kart: sahip, seviye, fc, oda doluluğu, müdavim rozetim, masa özeti kayıttan). */
   | { islem: "hanlar"; yerlesim: string; hesapId: string }
+  /** 4.9: MasaDO/HesapDO → YerlesimDO masa doluluk bildirimi (mutlak değer; govde {kayitlar}); istemci ulaşamaz. */
+  | { islem: "masaDoluluk"; yerlesim: string; hesapId: string; govde: unknown }
   /** H1: han keşif sırası için oyuncunun dostları ve hane üyeleri (hesap kimlikleri). */
   | { islem: "hanTanidiklar"; yerlesim: string; hesapId: string }
   /** H7: HesapDO → YerlesimDO ziyafet ödemesi ve etkisi (masa kontrolünden sonra; istekNo ile tekrar güvenli). */

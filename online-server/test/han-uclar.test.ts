@@ -144,7 +144,8 @@ test("han listesi, yükseltme, otur, sohbet (saklanmaz), eylem (katılım, tekra
 
   // Masa deposunda yalnız olay, sayaç ve istek kaydı var; sohbet ve para yok.
   const masaAnahtarlari = [...masaOrnegi("masa:kizilca:menzil:1").depolama.veri.keys()].sort();
-  assert.ok(masaAnahtarlari.every((k) => /^(olay#|olay:\d{8}|istek:|eg:)/.test(k)), masaAnahtarlari.join(","));
+  // 4.9: "doluluk:son" yalnız oturan sayısı ve açık bayrağıdır (sohbet metni değil).
+  assert.ok(masaAnahtarlari.every((k) => /^(olay#|olay:\d{8}|istek:|eg:|doluluk:son$)/.test(k)), masaAnahtarlari.join(","));
   void env;
 });
 

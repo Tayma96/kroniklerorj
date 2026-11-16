@@ -157,6 +157,8 @@ Yemin → mertlik (mühürlü, çift başına ayda bir). Sözleşme ve ittifak k
 - **Han başına:** müdavimlik, pano, masa ayarı, keşif sırası. Söylenti/tanıklık yerleşim düzeyinde.
 - **Kapanış:** 1. han iflasta NPC'ye döner, diğeri kapanır; peşin kira bitişe dek geçerli, sandık/emanet yerleşimde.
 - **Protokol:** `?han=N` (GET /v1/han, /v1/han/pano, /v1/barinma, masa baglan/ses) ya da gövdede `han`; yoksa 1. han.
+- **Alt istek bütçesi:** GET /v1/han yalnız seçili hanın masalarını canlı sorar; diğer kartların masa özeti yerleşimin
+  doluluk kaydından (MasaDO değişince mutlak değer bildirir). Testle kilitli: ≤ 12 alt istek.
 
 ## 5. Berkay'ın kararına bağlı gerilimler (koda dokunulmadı)
 - **Süre kısaltma satışı:** Debdebe kataloğunda gerçek parayla beceri süresi kısaltma var (`kisaltma_*`, karakter başına
@@ -168,3 +170,5 @@ Yemin → mertlik (mühürlü, çift başına ayda bir). Sözleşme ve ittifak k
 - **Açık kararların koddaki öneri değerleri:** D-17 edinim eşiği, D-21 yoksunluk değerleri, D-22 uyku, D-23 imaret
   konaklaması koda "öneri" etiketiyle girdi.
 - **Yaş:** handa ve seste yaş sınırı yok (Berkay). Mağaza yaş derecelendirmesi yayın öncesi doğrulanmalı (D-24).
+- **Çoklu handa NPC gelir havuzu paylaşımı:** her oyuncu hanı NPC gelirini ayrı alıyor (şehirde 5 katına çıkabilir);
+  tezgâh modeli tasarımında çözülecek.
