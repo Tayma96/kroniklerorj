@@ -20,6 +20,12 @@ import { yerlesimBul } from "./dunya-veri.ts";
 
 /** [PARAMETRE] Bir istekte bölgeye teslim edilen en çok vergi kaydı (DO alt istek bütçesi ≤ 12). */
 export const VERGI_TUR_EN_COK = 2;
+/**
+ * [PARAMETRE] İstek (ya da alarm) başına alt istek bütçesi: yönetim parametresi, vergi oranı, asıl işlem ve ardından
+ * kervan, mülk (tezgâh) ve vergi uzlaştırmaları aynı sayaçtan harcar. Bütçe biterse kalan uzlaştırma işi bekler
+ * (kayıtlar çıkış kutusunda kalır; alarm bir sonraki turda sürdürür): hiçbir kayıt kaybolmaz ya da iki kez uygulanmaz.
+ */
+export const ALT_ISTEK_EN_COK = 12;
 
 export class YerlesimDO {
   readonly #env: Env;
@@ -33,14 +39,28 @@ export class YerlesimDO {
   /** Bellekteki kasaba; hata olursa atılır ve bir sonraki istekte depodan yeniden yüklenir. */
   #motor: YerlesimMotoru | undefined;
   #alarmVar = false;
+  /** Bu istekte kalan alt istek bütçesi (fetch/alarm başında yenilenir). */
+  #kalan = ALT_ISTEK_EN_COK;
+  /** Denetim (testler): bu istekte harcanan alt istek. */
+  harcanan = 0;
 
   constructor(ctx: DurableObjectState, env: Env, saat: () => number = Date.now) {
     this.#env = env;
-    this.#isletme = (i) => (env.ISLETME ? isletmeCagir(env, i) : Promise.resolve({ ok: false, hata: "isletme_yok" }));
-    this.#kervan = (i) => yerlesimCagir(env, i);
+    this.#isletme = (i) => (env.ISLETME ? (this.#harca(), isletmeCagir(env, i)) : Promise.resolve({ ok: false, hata: "isletme_yok" }));
+    this.#kervan = (i) => (this.#harca(), yerlesimCagir(env, i));
     this.#depolama = ctx.storage;
     this.#depo = doDepo(ctx.storage);
     this.#saat = saat;
+  }
+
+  #harca(): void {
+    this.#kalan--;
+    this.harcanan++;
+  }
+
+  #butceYenile(): void {
+    this.#kalan = ALT_ISTEK_EN_COK;
+    this.harcanan = 0;
   }
 
   async #ac(yerlesimId: string | undefined, simdi: number): Promise<YerlesimMotoru | undefined> {
@@ -52,6 +72,7 @@ export class YerlesimDO {
   async #parametreleriYukle(motor: YerlesimMotoru): Promise<void> {
     motor.parametreleriGuncelle({});
     try {
+      this.#harca();
       const parametreler = await yonetimCagir(this.#env, { islem: "parametrelerCalisma" });
       if (parametreler.ok && typeof parametreler.deger === "object" && parametreler.deger !== null) {
         motor.parametreleriGuncelle(parametreler.deger as CalismaParametreleri);
@@ -71,6 +92,7 @@ export class YerlesimDO {
     if (!ileti || typeof ileti.yerlesim !== "string") return jsonYanit(hata("gecersiz_istek"));
     // 4.9 masa doluluğu: hafif yol (motor açılmaz, ay yetiştirilmez, başka DO'ya çağrı yok); tek küçük depo kaydı.
     if (ileti.islem === "masaDoluluk") return jsonYanit(await this.#dolulukYaz(ileti.yerlesim, ileti.govde));
+    this.#butceYenile();
     try {
       const simdi = this.#saat();
       const sonuc = await this.#isle(ileti, simdi);
@@ -104,6 +126,7 @@ export class YerlesimDO {
     const bolge = BEYLIKLER.find((x) => x.yerlesimler.some((y) => y.id === yerlesim));
     if (!bolge || !this.#env.BOLGE) return 0;
     try {
+      this.#harca();
       const r = await bolgeCagir<{ bolge?: { vergi?: { oran?: number } } }>(this.#env, {
         islem: "gorunum", bolge: bolge.id, hesapId: `yerlesim:${yerlesim}`,
       });
@@ -121,10 +144,12 @@ export class YerlesimDO {
     if (!motor || !md?.vergiGiden?.length || !this.#env.BOLGE) return;
     // Alt istek bütçesi: turda en çok VERGI_TUR_EN_COK teslim; kalanı bir dakika sonra alarm.
     for (const x of md.vergiGiden.slice(0, VERGI_TUR_EN_COK)) {
+      if (this.#kalan <= 0) break;
       const bolge = BEYLIKLER.find((b) => b.yerlesimler.some((y) => y.id === x.yerlesim));
       if (!bolge) break;
       let r: Sonuc<unknown>;
       try {
+        this.#harca();
         r = await bolgeCagir(this.#env, {
           islem: "vergiYatir", bolge: bolge.id, anahtar: x.anahtar, tutar: x.tutar, yerlesim: x.yerlesim,
         });
@@ -333,7 +358,7 @@ export class YerlesimDO {
         return motor.barinmaIslem(ileti.islem, ileti.hesapId, ileti.govde, simdi, vergiOrani);
       // Mülk (Faz 12–13): istemci uçları ve IsletmeDO'dan gelen kasa → cüzdan kayıtları.
       case "mulk":
-        return mulkIsle(motor, ileti, simdi, this.#isletme, VERGI_ALT.includes(ileti.alt) ? vergiOrani : undefined);
+        return mulkIsle(motor, ileti, simdi, this.#isletme, VERGI_ALT.includes(ileti.alt) ? vergiOrani : undefined, () => this.#kalan);
       // Göç (D1): HesapDO'dan; src/yerlesim/goc.ts
       case "gocOnizle":
         return motor.gocOnizle(ileti.hesapId, ileti.hedef);
@@ -377,7 +402,7 @@ export class YerlesimDO {
   async #mulkUzlastir(simdi: number, hepsi: boolean): Promise<void> {
     const motor = this.#motor;
     if (!motor?.kasaba.mk?.cik.k.length) return;
-    const sonraki = await uzlastir(motor, simdi, this.#isletme, hepsi);
+    const sonraki = await uzlastir(motor, simdi, this.#isletme, hepsi, () => this.#kalan);
     if (sonraki === null) return;
     const mevcut = await this.#depolama.getAlarm();
     if (mevcut === null || mevcut > sonraki) await this.#depolama.setAlarm(Math.max(sonraki, simdi + 1));
@@ -387,7 +412,10 @@ export class YerlesimDO {
   async #kervanUzlastir(simdi: number, hepsi: boolean): Promise<void> {
     const motor = this.#motor;
     if (!motor?.kasaba.kv?.c.k.length) return;
-    const sonraki = await kervanUzlastir(motor, simdi, this.#kervan, hepsi);
+    // Kervan kalan bütçenin yarısını alır: mülk ve vergi uzlaştırması aç kalmaz.
+    const bas = this.#kalan;
+    const tavan = Math.floor(bas / 2);
+    const sonraki = await kervanUzlastir(motor, simdi, this.#kervan, hepsi, () => tavan - (bas - this.#kalan));
     if (sonraki === null) return;
     const mevcut = await this.#depolama.getAlarm();
     if (mevcut === null || mevcut > sonraki) await this.#depolama.setAlarm(Math.max(sonraki, simdi + 1));
@@ -396,6 +424,7 @@ export class YerlesimDO {
   /** Ay dönümü alarmı: kaçanları yetiştirir; kaldıysa 1 sn sonra, yoksa bir sonraki dönümde yeniden kurar. */
   async alarm(): Promise<void> {
     const simdi = this.#saat();
+    this.#butceYenile();
     try {
       const motor = await this.#ac(undefined, simdi);
       if (!motor) return;

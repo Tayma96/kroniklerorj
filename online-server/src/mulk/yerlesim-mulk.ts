@@ -27,7 +27,7 @@ import {
 } from "./tapu.ts";
 import { UZLASTIRMA_ISLETME_EN_COK, cikisKapat, denemeErtele, denenecekler, sonrakiDeneme, transferDurumu, type CevapDurumu, type CikisKaydi } from "./transfer.ts";
 import { depoTasi, devral, devralBekliyor, dukkanListesi, fiyatOnizle, rafIslem, satinAl, tezgahGorunumu } from "./tezgah-uclar.ts";
-import { tezgahKayitlariAc } from "./tezgah-donum.ts";
+import { tezgahKayitlariAc, yolcuKarti } from "./tezgah-donum.ts";
 
 export interface MulkMotoru {
   readonly kasaba: Kasaba;
@@ -84,7 +84,7 @@ async function yanitTeslimi(motor: MulkMotoru, isletme: string, y: IsletmeYaniti
 let uzlastiriyor = new WeakSet<Kasaba>();
 
 /** Yerleşimin çıkış kutusunu teslim eder. `hepsi`: bekleme süresine bakmadan (istek sonrası). Sonraki deneme anını döner. */
-export async function uzlastir(motor: MulkMotoru, an: number, cagir: IsletmeCagir, hepsi = false): Promise<number | null> {
+export async function uzlastir(motor: MulkMotoru, an: number, cagir: IsletmeCagir, hepsi = false, kota: () => number = () => Infinity): Promise<number | null> {
   const k = motor.kasaba;
   const md = k.mk;
   if (md?.tzb) await motor.mulkIslem([], () => tezgahKayitlariAc(k, an));
@@ -96,6 +96,8 @@ export async function uzlastir(motor: MulkMotoru, an: number, cagir: IsletmeCagi
     for (const x of denenecekler(md.cik, an, hepsi)) gruplar.set(x.h, [...(gruplar.get(x.h) ?? []), x]);
     // Alt istek bütçesi: turda en çok UZLASTIRMA_ISLETME_EN_COK işletme (teslim + onay); kalanı alarm sürdürür.
     for (const [isletme, kayitlar] of [...gruplar].slice(0, UZLASTIRMA_ISLETME_EN_COK)) {
+      // Her işletme teslim + onay = 2 alt istek; bütçe yetmezse kalanlar bekler (sonraki tur/alarm).
+      if (kota() < 2) break;
       let r: Sonuc<IsletmeYaniti> | undefined;
       try {
         r = await cagir({ islem: "teslim", isletme, kayitlar });
@@ -145,7 +147,7 @@ function durumEkle(k: Kasaba, r: Sonuc<unknown>): Sonuc<unknown> {
 }
 
 /** Mülk uçlarının tek girişi. `an`: dünya saati (ms). */
-export async function mulkIsle(motor: MulkMotoru, ileti: MulkIletisi, an: number, cagir: IsletmeCagir, vergiOrani?: number): Promise<Sonuc<unknown>> {
+export async function mulkIsle(motor: MulkMotoru, ileti: MulkIletisi, an: number, cagir: IsletmeCagir, vergiOrani?: number, kota: () => number = () => Infinity): Promise<Sonuc<unknown>> {
   const k = motor.kasaba;
   const { hesapId, alt } = ileti;
   const govde = ileti.govde;
@@ -162,7 +164,7 @@ export async function mulkIsle(motor: MulkMotoru, ileti: MulkIletisi, an: number
     const no = istekNoCoz(govde);
     if (!no.ok) return no;
     const r = await motor.mulkAdimi(hesapId, govde, [], (kar) => edin(k, kar, govde, an, no.deger));
-    await uzlastir(motor, an, cagir, true);
+    await uzlastir(motor, an, cagir, true, kota);
     return durumEkle(k, r);
   }
   const c = isletmeCoz(ileti.isletme);
@@ -186,7 +188,7 @@ export async function mulkIsle(motor: MulkMotoru, ileti: MulkIletisi, an: number
             ? satinAl(k, kar, isletme, govde, an, no.deger, vergiOrani ?? k.mk?.vo ?? 0)
             : devral(k, kar, isletme, an, no.deger),
     );
-    await uzlastir(motor, an, cagir, true);
+    await uzlastir(motor, an, cagir, true, kota);
     return r;
   }
   if (devralBekliyor(k.mk, isletme)) return hata("transfer_bekliyor");
@@ -207,7 +209,7 @@ export async function mulkIsle(motor: MulkMotoru, ileti: MulkIletisi, an: number
       if (typeof govde.surum !== "string" || govde.surum !== surum) return hata("devir_degisti");
       r = await motor.mulkAdimi(hesapId, govde, [tapu.sahip.o], (kar) => devirKabul(k, kar, isletme, an, no.deger));
     } else r = await motor.mulkAdimi(hesapId, govde, [], (kar) => devirTeklif(k, kar, isletme, govde));
-    await uzlastir(motor, an, cagir, true);
+    await uzlastir(motor, an, cagir, true, kota);
     return durumEkle(k, r);
   }
   // İşletmeye giden okuma ve komutlar: bağlam ve tapu özeti yerleşimden.
@@ -217,7 +219,8 @@ export async function mulkIsle(motor: MulkMotoru, ileti: MulkIletisi, an: number
   const tapu = tapuOzeti(k, isletme);
   if (!tapu) return hata("isletme_yok");
   const baglam = baglamYap(k, kar, teveccuhKademesi(kar, k.ay));
-  await uzlastir(motor, an, cagir, true);
+  // Asıl komut/okuma ve onayı için 2 alt istek ayrılır.
+  await uzlastir(motor, an, cagir, true, () => kota() - 2);
   if (alt === "panel" || alt === "devirOnizle") {
     let r: Sonuc<IsletmeYaniti>;
     try {
@@ -227,6 +230,9 @@ export async function mulkIsle(motor: MulkMotoru, ileti: MulkIletisi, an: number
     }
     if (!r.ok) return r;
     await yanitTeslimi(motor, isletme, r.deger, an, cagir);
+    // Han paneli: yolcu payı dökümü yerleşimde (yalnız sahip/çalışan; alt istek yok).
+    const yolcu = alt === "panel" && c.tur === "han" ? yolcuKarti(k, isletme, kar.o) : undefined;
+    if (yolcu && nesneMi(r.deger.deger) && nesneMi(r.deger.deger.isletme)) return basarili({ ...r.deger.deger, isletme: { ...r.deger.deger.isletme, yolcu } });
     return basarili(r.deger.deger);
   }
   const no = istekNoCoz(govde);

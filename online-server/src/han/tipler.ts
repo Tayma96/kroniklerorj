@@ -346,6 +346,16 @@ export interface HanKarti {
   /** İsteyenin bu handaki müdavim rozeti (yoksa null). */
   mudavim: string | null;
   masa?: { sayi: number; acik: number; oturan: number };
+  /** Tezgâh modeli: son ay dönümündeki yolcu payı dökümü (yalnız hanın sahibi ve oyuncu çalışanı görür). */
+  yolcu?: YolcuKarti;
+}
+
+export interface YolcuKarti {
+  ay: number;
+  payYuzde: number;
+  tutar: number;
+  tavan: number;
+  carpan: { F: number; K: number; R: number; H: number };
 }
 
 export interface HanOzeti {

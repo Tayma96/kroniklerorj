@@ -11,7 +11,7 @@ import { ayniKume } from "../yerlesim/teveccuh.ts";
 import { olduMu } from "../yerlesim/hanedan.ts";
 import { npcAdi } from "../yerlesim/ortak.ts";
 import { IKRAM_MENUSU, type IkramId } from "../han/ikram.ts";
-import type { Karakter, Kasaba, Sakin } from "../yerlesim/tipler.ts";
+import type { Karakter, Kasaba, OlayTaslagi, Sakin } from "../yerlesim/tipler.ts";
 import type { Kademe, MeslekId } from "../icerik/meslekler.ts";
 import { basarili, hata, type HataKodu, type Sonuc } from "../tipler.ts";
 import {
@@ -33,7 +33,7 @@ import {
 } from "./kurallar.ts";
 import type { AyarYuku, Baglam, GirisNedeni, Kisi } from "./isletme.ts";
 import { tezgahBosalt, type Tezgah } from "./depo.ts";
-import type { Envanterli } from "../yerlesim/kalite.ts";
+import { akceIade, malIade, type IadeKaydi } from "./iade.ts";
 import {
   CIKIS_EN_COK,
   bekleyenToplam,
@@ -91,7 +91,9 @@ export interface MulkDefteri {
   tzo?: unknown;
   hy?: unknown;
   /** Sahibi o an yüklenemeyen iade malları (iflas/devralma): yerel kimlik → envanter; sahibin ilk tezgâh adımında teslim. */
-  ia?: Record<string, Envanterli>;
+  ia?: Record<string, IadeKaydi>;
+  /** Mülk olayları kuyruğu (devralma bildirimleri): motor bir sonraki yazımda olay akışına boşaltır. */
+  ob?: OlayTaslagi[];
 }
 
 /** [PARAMETRE] Karşılıklı işlem izleme penceresi için tutulan en çok ödeme çifti. */
@@ -373,8 +375,7 @@ export function tezgahIade(k: Kasaba, isletme: string, o: string): void {
   const md = mulkDefteri(k);
   const tz = md.tz?.[isletme];
   if (!tz) return;
-  const kar = k.kar.get(o);
-  tezgahBosalt(tz, kar ?? ((md.ia ??= {})[o] ??= {}));
+  malIade(k, o, (h) => tezgahBosalt(tz, h));
   delete md.tz![isletme];
 }
 
@@ -387,10 +388,17 @@ export function girisIsle(k: Kasaba, x: CikisKaydi, an: number): { durum: CevapD
     if (x.t === "cuzdana") {
       const kar = typeof x.y.o === "string" ? k.kar.get(x.y.o) : undefined;
       const tutar = x.y.tutar;
+      if (!Number.isInteger(tutar) || (tutar as number) <= 0 || tutar !== x.a) return { durum: "red", neden: "tutar_gecersiz" };
+      // Devralma ve iflas iadesi yanmaz: sahibe yazılamıyorsa iade bekleyenine (vâris / hazine yolu, iade.ts).
+      if ((x.y.neden === "devral" || x.y.neden === "iflas") && typeof x.y.o === "string" && (!kar || olduMu(kar) || kar.gc)) {
+        akceIade(k, x.y.o, tutar as number);
+        if (x.y.neden === "devral") (md.ob ??= []).push(devralmaKasaOlayi(x.y.o, isletme, tutar as number));
+        return { durum: "kabul" };
+      }
       // Göçle kapanan (ya da mühürlü) karakterin cüzdanına yazılmaz: akçe arşivdeki kayda düşmez.
       if (!kar || olduMu(kar) || kar.gc) return { durum: "red", neden: "kisi_yok" };
-      if (!Number.isInteger(tutar) || (tutar as number) <= 0 || tutar !== x.a) return { durum: "red", neden: "tutar_gecersiz" };
       kar.pa += tutar as number;
+      if (x.y.neden === "devral") (md.ob ??= []).push(devralmaKasaOlayi(kar.o, isletme, tutar as number));
       return { durum: "kabul" };
     }
     const tapu = md.t[isletme];
@@ -559,3 +567,8 @@ export function yerlesimUcustaki(k: Kasaba): number {
 }
 
 export type MulkHata = HataKodu;
+
+/** Devralınan işletmenin kasa + emaneti eski sahibe ulaştı (bilgi). */
+export function devralmaKasaOlayi(o: string, isletme: string, tutar: number): OlayTaslagi {
+  return { t: "tezgah", w: o, h: "", g: o, n: 3, k: "olay.tezgah.devralmaKasasi", p: { isletme, tutar } };
+}

@@ -9,11 +9,12 @@
 import { MALLAR, type MalId } from "../icerik/mallar.ts";
 import type { MeslekId } from "../icerik/meslekler.ts";
 import { olduMu } from "../yerlesim/hanedan.ts";
-import type { Kasaba } from "../yerlesim/tipler.ts";
+import type { Kasaba, OlayTaslagi } from "../yerlesim/tipler.ts";
+import { iadeCoz } from "./iade.ts";
 import { partiToplam, type Tezgah } from "./depo.ts";
 import { talepCoz, yolcuCoz, type Dukkan, type TalepSatiri, type YolcuHani } from "./hane-butcesi.ts";
 import { ITIBAR_BASLANGIC, NPC_HAN_NO, isletmeCoz, isletmeKimligi } from "./kurallar.ts";
-import { raftanSat } from "./raf.ts";
+import { rafBos, raftanSat } from "./raf.ts";
 import { hanNolari, mulkDefteri, vergiAyir } from "./tapu.ts";
 import { CIKIS_EN_COK, cikisAc } from "./transfer.ts";
 import { DUKKAN_NPC_TAVAN, PAY_YONTEMI, TEZGAH_KAYIT_PAYI } from "./tezgah-kurallar.ts";
@@ -47,9 +48,11 @@ function girdiEkle(k: Kasaba, isletme: string, ay: number, net: number, satir: n
 }
 
 /** Tek ay dönümü: dükkân rafları NPC'ye satar (kepenk sayımı), hanlar yolcu payını alır. */
-export function tezgahDonumu(k: Kasaba, ay: number): void {
+export function tezgahDonumu(k: Kasaba, ay: number): OlayTaslagi[] {
   const md = k.mk;
-  if (!md) return;
+  if (!md) return [];
+  const olaylar: OlayTaslagi[] = [];
+  iadeCoz(k, ay);
   const tz = (md.tz ??= {});
   const satirlar: TalepSatiri[] = [];
   const dukkanlar = new Map<string, Dukkan>();
@@ -98,6 +101,15 @@ export function tezgahDonumu(k: Kasaba, ay: number): void {
     md.kaynak = (md.kaynak ?? 0) + hasilat;
     const satir = benim.filter((x) => x.adet > 0).length;
     girdiEkle(k, id, ay, v.net, satir);
+    // Bilgi veren olaylar (ayda bir; dönüm her ay bir kez işlenir): satış yapan dükkânın gün sonu, raf boşaldıysa kepenk.
+    const sahip = md.t[id]!.s;
+    const ad = md.t[id]!.y?.ad ?? "";
+    const adet = benim.reduce((a, x) => a + x.adet, 0);
+    if (adet > 0) {
+      const enCok = [...benim].sort((a, b) => b.adet - a.adet || b.hasilat - a.hasilat)[0]!;
+      olaylar.push({ t: "tezgah", w: sahip, h: "", g: sahip, n: 2, k: "olay.tezgah.gunSonu", p: { isletme: id, ad, adet, hasilat, mal: enCok.mal } });
+    }
+    if (rafBos(t)) olaylar.push({ t: "tezgah", w: sahip, h: "", g: sahip, n: 2, k: "olay.tezgah.kepenkIndi", p: { isletme: id, ad } });
     const seviye = md.t[id]!.y?.seviye ?? 0;
     t.gs = {
       ay,
@@ -125,11 +137,13 @@ export function tezgahDonumu(k: Kasaba, ay: number): void {
   }
   if (vergiToplam > 0) (md.vergiGiden ??= []).push({ anahtar: `y:${k.y}:tz:vergi:${ay}`, tutar: vergiToplam, yerlesim: k.y });
   md.tzo = { ay, yontem: r.yontem, butce: r.butce, harcanan: r.harcanan, meslekler: r.meslekler };
-  hanDonumu(k, ay);
+  olaylar.push(...hanDonumu(k, ay));
+  return olaylar;
 }
 
 /** Han yolcu havuzu: açık hanlar (NPC hanı sabit çekicilikle) Y'yi paylaşır; NPC hanının payı yanar. */
-function hanDonumu(k: Kasaba, ay: number): void {
+function hanDonumu(k: Kasaba, ay: number): OlayTaslagi[] {
+  const olaylar: OlayTaslagi[] = [];
   const md = mulkDefteri(k);
   const hanlar: YolcuHani[] = [];
   for (const no of hanNolari(k)) {
@@ -148,8 +162,11 @@ function hanDonumu(k: Kasaba, ay: number): void {
     if (h.isletme === null || h.tutar <= 0) continue;
     md.kaynak = (md.kaynak ?? 0) + h.tutar;
     girdiEkle(k, h.isletme, ay, h.tutar, 0);
+    const t = md.t[h.isletme]!;
+    olaylar.push({ t: "han", w: t.s, h: "", g: t.s, n: 2, k: "olay.han.yolcuPayi", p: { isletme: h.isletme, ad: t.y?.ad ?? "", tutar: h.tutar, payYuzde: Math.round(h.pay * 1000) / 10 } });
   }
   md.hy = { ay, ...r };
+  return olaylar;
 }
 
 /** Toplanan ay girdilerini işletme başına tek "tezgah" kaydıyla çıkış kutusuna yazar (yer yoksa bekler). */
@@ -175,4 +192,15 @@ export function tezgahKayitlariAc(k: Kasaba, an: number): number {
 /** Mal kataloğu kısayolu (görünüm). */
 export function malMeslegi(m: MalId): MeslekId {
   return MALLAR[m].meslek;
+}
+
+/** Hanın son yolcu payı dökümü (yalnız sahibi ve oyuncu çalışanı için; rakip görmez). */
+export function yolcuKarti(k: Kasaba, isletme: string, o: string): { ay: number; payYuzde: number; tutar: number; tavan: number; carpan: { F: number; K: number; R: number; H: number } } | undefined {
+  const md = k.mk;
+  const t = md?.t[isletme];
+  if (!t || (t.s !== o && !t.y?.py?.some(([x]) => x === o))) return undefined;
+  const hy = md!.hy as { ay: number; hanlar: { isletme: string | null; pay: number; tutar: number; tavan: number; carpan: { F: number; K: number; R: number; H: number } }[] } | undefined;
+  const h = hy?.hanlar.find((x) => x.isletme === isletme);
+  if (!hy || !h) return undefined;
+  return { ay: hy.ay, payYuzde: Math.round(h.pay * 1000) / 10, tutar: h.tutar, tavan: h.tavan, carpan: h.carpan };
 }

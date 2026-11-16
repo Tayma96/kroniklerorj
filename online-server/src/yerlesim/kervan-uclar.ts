@@ -251,7 +251,7 @@ async function kapat(motor: KervanMotoru, d: KervanDefteri, i: string, s: VarisS
  * Varış ayı gelen kervanları hedefe teslim eder. `hepsi`: yeniden deneme beklemesine bakmadan (istek sonrası).
  * Bekleyen yeniden deneme varsa en yakın anı döner (YerlesimDO alarmı); varış ayını ay dönümü alarmı zaten yakalar.
  */
-export async function kervanUzlastir(motor: KervanMotoru, an: number, cagir: KervanCagir, hepsi = false): Promise<number | null> {
+export async function kervanUzlastir(motor: KervanMotoru, an: number, cagir: KervanCagir, hepsi = false, kota: () => number = () => Infinity): Promise<number | null> {
   const k = motor.kasaba;
   const d = k.kv;
   if (!d || d.c.k.length === 0) return null;
@@ -260,6 +260,8 @@ export async function kervanUzlastir(motor: KervanMotoru, an: number, cagir: Ker
   uzlastiriyor.add(k);
   try {
     for (const x of varmis().filter((x) => hepsi || x.s <= an).slice(0, 8)) {
+      // Alt istek bütçesi bittiyse kalan kervanlar bekler (alarm sürdürür; kayıt kaybolmaz).
+      if (kota() <= 0) break;
       const y = x.y as unknown as KervanYuku;
       let r: Sonuc<unknown> | undefined;
       try {

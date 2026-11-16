@@ -11,7 +11,7 @@ import { MULK_YUVA } from "../src/mulk/kurallar.ts";
 import { edin, girisIsle, mulkDefteri, telafi } from "../src/mulk/tapu.ts";
 import { cikisKapat, type CikisKaydi } from "../src/mulk/transfer.ts";
 import { depoAdedi, partiToplam } from "../src/mulk/depo.ts";
-import { tezgahDonumu, tezgahKayitlariAc } from "../src/mulk/tezgah-donum.ts";
+import { tezgahDonumu, tezgahKayitlariAc, yolcuKarti } from "../src/mulk/tezgah-donum.ts";
 import { depoTasi, devral, dukkanListesi, fiyatOnizle, rafIslem, satinAl, tezgahGorunumu } from "../src/mulk/tezgah-uclar.ts";
 import { yolcuCoz } from "../src/mulk/hane-butcesi.ts";
 import { DEVRALMA_KEPENK_AY, HANE_BUTCESI, KITLIK_BUTCE_CARPANI, URETICI_MESLEKLER, YOLCU_BUTCESI } from "../src/mulk/tezgah-kurallar.ts";
@@ -371,4 +371,72 @@ test("§5.4 (4): iki hesap arası karşılıklı alışveriş döngüsü bayrakl
   const kasaya = mulkDefteri(k).cik.k.filter((x) => x.t === "kasaya").reduce((t, x) => t + x.a, 0);
   assert.ok(kasaya < 36 + 36, "vergi kesildi: döngü akçe basmaz");
   assert.equal(a.pa + b.pa + kasaya, once - mulkDefteri(k).vergiGiden!.reduce((t, x) => t + x.tutar, 0));
+});
+
+test("iade bekleyen: devralmada ölmüş sahibin bedeli, malı ve kasası yanmaz; vârise geçer; yerleşimde yoksa hazineye", () => {
+  const { k, a } = hazir();
+  const md = mulkDefteri(k);
+  assert.ok(depoTasi(k, a, ID, { yon: "koy", mal: "civi", adet: 4 }).ok);
+  for (let i = 2; i <= MULK_YUVA.kasaba.dukkan; i++) assert.ok(edin(k, yetiskin(k, 10 + i), { tur: "dukkan" }, AN, `e-00000${10 + i}`).ok);
+  md.cik.k = [];
+  md.tz![ID]!.kk = DEVRALMA_KEPENK_AY;
+  // Sahip öldü (devir henüz yapılmadı): devralma yapılabilir, iadeler ölünün kimliğiyle bekler.
+  a.hd = { ...(a.hd ?? {}), ol: AY } as never;
+  const paA = a.pa;
+  const d = yetiskin(k, 9);
+  const r = devral(k, d, ID, AN, "d-0000009");
+  assert.ok(r.ok, JSON.stringify(r));
+  assert.equal(a.pa, paA, "ölünün cüzdanına yazılmaz");
+  assert.equal(md.ia?.o1?.pa, 120, "bedel bekliyor");
+  assert.equal(md.ia?.o1?.ev?.civi, 4, "mal bekliyor");
+  assert.ok(md.ob?.some((o) => o.k === "olay.tezgah.devralindi" && o.g === "o1"));
+  // İşletmeden gelen kasa iadesi de reddedilmez, bekleyene yazılır.
+  const g = girisIsle(k, { i: "dv-kasa-1", t: "cuzdana", h: "develi", a: 45, y: { isletme: ID, o: "o1", h: a.h, tutar: 45, neden: "devral" }, b: 0, d: 0, s: 0 }, AN);
+  assert.equal(g.durum, "kabul");
+  assert.equal(md.ia?.o1?.pa, 165);
+  // Devir: vâris belli → ay dönümünde vârise teslim (mal + akçe), kayıt silinir.
+  const varis = yetiskin(k, 30);
+  (a.hd as { dv?: string }).dv = varis.o;
+  const paV = varis.pa;
+  tezgahDonumu(k, AY + 1);
+  assert.equal(varis.pa, paV + 165);
+  assert.equal(varis.ev?.civi, 4);
+  assert.equal(md.ia, undefined);
+  // Yerleşimde kaydı olmayan (göçle ayrılmış) sahibin bekleyeni hazineye gider, yakılmaz.
+  (md.ia ??= {}).o77 = { pa: 30, ev: { civi: 2 } };
+  const vergi0 = (md.vergiGiden ?? []).reduce((t, x) => t + x.tutar, 0);
+  tezgahDonumu(k, AY + 2);
+  assert.equal((md.vergiGiden ?? []).reduce((t, x) => t + x.tutar, 0), vergi0 + 30, "akçe hazineye");
+  assert.ok(md.vergiGiden!.some((x) => x.anahtar === `y:develi:iade:o77:${AY + 2}`));
+  assert.equal(k.st?.civi !== undefined, true, "mal kasaba stoğuna");
+  assert.equal(md.ia, undefined);
+});
+
+test("ay dönümü olayları (ayda bir, yalnız sahibe) ve han yolcu kartı (yalnız sahip/çalışan görür)", () => {
+  const { k, a } = hazir();
+  assert.ok(depoTasi(k, a, ID, { yon: "koy", mal: "ekmek", adet: 3 }).ok);
+  assert.ok(rafIslem(k, a, ID, { islem: "koy", mal: "ekmek", adet: 3, fiyat: 4 }).ok);
+  const olaylar = tezgahDonumu(k, AY + 1);
+  const gs = olaylar.find((o) => o.k === "olay.tezgah.gunSonu")!;
+  assert.deepEqual([gs.g, gs.p.isletme, gs.p.adet, gs.p.hasilat, gs.p.mal], ["o1", ID, 3, 12, "ekmek"]);
+  assert.ok(olaylar.some((o) => o.k === "olay.tezgah.kepenkIndi" && o.g === "o1"), "raf boşaldı → kepenk olayı");
+  assert.equal(tezgahDonumu(k, AY + 2).filter((o) => o.k.startsWith("olay.tezgah")).length, 0, "kepenkli ayda yeni olay yok");
+  // Han: yolcu payı olayı ve kartı.
+  const s = testKasabasi("demirhan", AY);
+  const sahip = yetiskin(s, 2);
+  const yabanci = yetiskin(s, 3);
+  const calisan = yetiskin(s, 4);
+  assert.ok(meslekSec(sahip, "hanci", AY).ok);
+  assert.ok(edin(s, sahip, { tur: "han", no: 2 }, AN, "h-0000002").ok);
+  mulkDefteri(s).cik.k = [];
+  yansit(s, "demirhan.han.2", { py: [["o4", ["musteri"]]] });
+  const ho = tezgahDonumu(s, AY + 1).filter((o) => o.k === "olay.han.yolcuPayi");
+  assert.equal(ho.length, 1);
+  assert.equal(ho[0]!.g, "o2");
+  const kart = yolcuKarti(s, "demirhan.han.2", sahip.o)!;
+  assert.equal(kart.ay, AY + 1);
+  assert.equal(kart.tutar, ho[0]!.p.tutar);
+  assert.deepEqual(Object.keys(kart.carpan), ["F", "K", "R", "H"]);
+  assert.deepEqual(yolcuKarti(s, "demirhan.han.2", calisan.o), kart, "çalışan görür");
+  assert.equal(yolcuKarti(s, "demirhan.han.2", yabanci.o), undefined, "rakip görmez");
 });

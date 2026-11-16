@@ -4,7 +4,7 @@
 
 import { MALLAR, malBul } from "../icerik/mallar.ts";
 import { kaliteliEkle, type Kalite } from "../yerlesim/kalite.ts";
-import { olduMu } from "../yerlesim/hanedan.ts";
+import { akceIade, iadeTeslim, malIade } from "./iade.ts";
 import type { Karakter, Kasaba } from "../yerlesim/tipler.ts";
 import { basarili, hata, type Sonuc } from "../tipler.ts";
 import { bosTezgah, depoAdedi, depoGorunumu, depoKapasitesi, depodanAl, depoyaKoy, tasimaCoz, tezgahBosalt, type Tezgah } from "./depo.ts";
@@ -55,15 +55,6 @@ function izinler(md: MulkDefteri, isletme: string, o: string) {
     raf: sahip || y.includes(TEZGAH_YETKI.raf),
     fiyat: sahip || y.includes(TEZGAH_YETKI.fiyat),
   };
-}
-
-/** İade bekleyen malları (iflas/devralma anında sahibi yüklenemediyse) envantere teslim eder. */
-function iadeTeslim(md: MulkDefteri, kar: Karakter): void {
-  const ia = md.ia?.[kar.o];
-  if (!ia) return;
-  tezgahBosalt({ r: [], n: 0, kk: 0, ...ia }, kar);
-  delete md.ia![kar.o];
-  if (Object.keys(md.ia!).length === 0) delete md.ia;
 }
 
 function devralinabilir(k: Kasaba, md: MulkDefteri, isletme: string): boolean {
@@ -200,7 +191,7 @@ export function depoTasi(k: Kasaba, kar: Karakter, isletme: string, govde: unkno
   const h = hedef(k, isletme);
   if (!h.ok) return h;
   const { md, tur, t, seviye } = h.deger;
-  iadeTeslim(md, kar);
+  iadeTeslim(k, kar);
   if (!nesneMi(govde)) return hata("gecersiz_istek");
   const iz = izinler(md, isletme, kar.o);
   const g = tasimaCoz(govde, malBul);
@@ -224,7 +215,7 @@ export function rafIslem(k: Kasaba, kar: Karakter, isletme: string, govde: unkno
   const { md, tur, t, seviye } = h.deger;
   if (tur !== "dukkan") return hata("tezgah_yok");
   if (vergiOrani !== undefined) md.vo = vergiOrani;
-  iadeTeslim(md, kar);
+  iadeTeslim(k, kar);
   if (!nesneMi(govde)) return hata("gecersiz_istek");
   const iz = izinler(md, isletme, kar.o);
   const islem = govde.islem;
@@ -314,28 +305,30 @@ export function devral(k: Kasaba, kar: Karakter, isletme: string, an: number, is
   if (tapu.s === kar.o) return hata("kendine");
   if (!devralinabilir(k, md, isletme)) return hata("devralma_kosulu");
   if (sahipMulkleri(md, kar.o).length >= KISI_MULK_EN_COK) return hata("mulk_siniri");
+  // Eski sahip ölmüş olabilir: iadeler vârise/bekleyene gider (iade.ts); bağlam için son bilinen ad.
   const eski = k.kar.get(tapu.s);
-  if (!eski || olduMu(eski)) return hata("kisi_yok");
   const sart = edinimSarti(k, kar, c.tur);
   if (sart.eksik.includes("yas")) return hata("yas_kapisi");
   if (sart.eksik.includes("namYaDaLonca")) return hata("edinim_sarti");
   if (sart.eksik.includes("akce")) return hata("para_yok");
   const ts = ++md.ts;
-  const eskiKisi: Kisi = { h: eski.h, o: eski.o, ad: eski.ad };
+  const eskiKisi: Kisi = { h: tapu.h, o: tapu.s, ad: eski?.ad ?? sahipAdi(k, tapu.s) };
   if (!cikisAc(md.cik, { i: `y:${k.y}:${kar.o}:devral:${istekNo}`, t: "devral", h: isletme, a: 0, y: { isletme, ts, sahip: { h: kar.h, o: kar.o, ad: kar.ad }, eski: eskiKisi } }, an, CIKIS_EN_COK + TEZGAH_KAYIT_PAYI)) {
     md.ts--;
     return hata("transfer_bekliyor");
   }
   kar.pa -= sart.fiyat;
   md.batak += sart.fiyat;
-  eski.pa += tapu.f;
+  akceIade(k, tapu.s, tapu.f);
   md.batak -= tapu.f;
   const tz = md.tz?.[isletme];
-  const iade = tz ? tezgahBosalt(tz, eski) : 0;
+  let iade = 0;
+  if (tz) malIade(k, tapu.s, (h) => (iade = tezgahBosalt(tz, h)));
+  (md.ob ??= []).push({ t: "tezgah", w: tapu.s, h: kar.o, g: tapu.s, n: 5, k: "olay.tezgah.devralindi", p: { isletme, ad: tapu.y?.ad ?? "", bedel: tapu.f, mal: iade, kepenkAy: tz?.kk ?? 0 } });
   (md.tz ??= {})[isletme] = bosTezgah();
   md.t[isletme] = { s: kar.o, h: kar.h, ts, a: k.ay, f: sart.fiyat };
   delete md.od[isletme];
-  return basarili({ devralma: { isletme, fiyat: sart.fiyat, eskiSahip: eski.o, iade: { bedel: tapu.f, mal: iade, kasa: "isletmeden" }, ts } });
+  return basarili({ devralma: { isletme, fiyat: sart.fiyat, eskiSahip: tapu.s, iade: { bedel: tapu.f, mal: iade, kasa: "isletmeden" }, ts } });
 }
 
 /** Devralma kaydı teslim edilmeden işletmeye komut gitmez (eski kasa yeni sahibe geçmesin). */

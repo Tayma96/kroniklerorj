@@ -15,7 +15,7 @@ import { oyunAyi, sonrakiDonum, takvim } from "../saat.ts";
 import { basarili, hata, type BarinmaIslem, type SakinKaydi, type Sonuc } from "../tipler.ts";
 import { harita, npcMekani } from "./cizelge.ts";
 import { arkaPlanGorunumu, type ArkaPlan } from "./arka-plan.ts";
-import { tezgahDonumu, tezgahKayitlariAc } from "../mulk/tezgah-donum.ts";
+import { tezgahDonumu, tezgahKayitlariAc, yolcuKarti } from "../mulk/tezgah-donum.ts";
 import { ayDonumu } from "./donum.ts";
 import { donusKartiSec, gorebilir } from "./donus.ts";
 import {
@@ -486,11 +486,12 @@ export class YerlesimMotoru {
       for (const t of ucgenDonumu(k, ay)) await this.#olayEkle(t, ay);
       for (const t of toplulukDonumu(k, ay)) await this.#olayEkle(t, ay);
       // Tezgâh modeli: dükkân raflarının NPC satışı (hane bütçesi) ve han yolcu payı.
-      tezgahDonumu(k, ay);
+      for (const t of tezgahDonumu(k, ay)) await this.#olayEkle(t, ay);
       islenen++;
     }
     if (k.mk) {
       tezgahKayitlariAc(k, simdi);
+      await this.#mulkOlaylari();
       this.#kirli.add(MULK);
     }
     this.#kirli.add(NPC).add(SIPARIS).add(SAKIN);
@@ -1581,7 +1582,8 @@ export class YerlesimMotoru {
         const oh = oyuncuHani(k, no)!;
         const dolu = (md?.od[isletme] ?? []).filter(([, b]) => b > an).length;
         const sk = k.sakin.find((x) => x.o === t.s);
-        return { no, isletme, sahip: "oyuncu", sahipKisi: { id: t.s, ad: sk?.ad ?? "" }, ad: t.y?.ad ?? "", seviye: oh.seviye, fc: oh.fc, acik: oh.kapasite > 0, oda: { dolu: Math.min(dolu, oh.kapasite), kapasite: oh.kapasite }, mudavim, masa };
+        const yolcu = yolcuKarti(k, isletme, s.o);
+        return { no, isletme, sahip: "oyuncu", sahipKisi: { id: t.s, ad: sk?.ad ?? "" }, ad: t.y?.ad ?? "", seviye: oh.seviye, fc: oh.fc, acik: oh.kapasite > 0, oda: { dolu: Math.min(dolu, oh.kapasite), kapasite: oh.kapasite }, mudavim, masa, ...(yolcu ? { yolcu } : {}) };
       }),
     });
   }
@@ -2186,14 +2188,25 @@ export class YerlesimMotoru {
     return this.#tekrarGuvenli(hesapId, govde, (kar, _s, _ay, ek) => {
       const r = isle(kar);
       if (r.ok) for (const o of yukle) if (o !== kar.o) ek.digerleri.push(o);
+      // Mülk olay kuyruğu (devralma bildirimi) yanıtla aynı yazımda olay akışına.
+      if (r.ok && this.kasaba.mk?.ob?.length) ek.olaylar.push(...this.kasaba.mk.ob.splice(0));
       return r;
     });
+  }
+
+  /** Mülk olay kuyruğunu (mk.ob) olay akışına boşaltır. */
+  async #mulkOlaylari(): Promise<void> {
+    const ob = this.kasaba.mk?.ob;
+    if (!ob?.length) return;
+    for (const t of ob.splice(0)) await this.#olayEkle(t, this.kasaba.ay);
+    delete this.kasaba.mk!.ob;
   }
 
   /** İstekNo'suz iç adım (gelen transfer, uzlaştırma kapanışı, telafi): yükler, uygular, kaydeder. */
   async mulkIslem<T>(yukle: string[], isle: () => T): Promise<T> {
     if (yukle.length) await this.#yukle(yukle);
     const r = isle();
+    await this.#mulkOlaylari();
     this.#kirli.add(MULK);
     for (const o of yukle) if (this.kasaba.kar.has(o)) this.#kirli.add(KAR + o);
     await this.kaydet();
