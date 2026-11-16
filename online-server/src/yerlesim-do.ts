@@ -13,10 +13,13 @@ import { BEYLIKLER } from "./dunya-veri.ts";
 import { basarili, hata, type Env, type Sonuc, type YerlesimIleti } from "./tipler.ts";
 import type { CalismaParametreleri } from "./yerlesim/tipler.ts";
 import { sonrakiAlarm, YerlesimMotoru } from "./yerlesim/motor.ts";
-import { mulkIsle, teslimAl, uzlastir, type IsletmeCagir } from "./mulk/yerlesim-mulk.ts";
+import { VERGI_ALT, mulkIsle, teslimAl, uzlastir, type IsletmeCagir } from "./mulk/yerlesim-mulk.ts";
 import { hanNoCoz } from "./mulk/tapu.ts";
 import { DOLULUK, dolulukUygula, type DolulukKaydi } from "./han/doluluk.ts";
 import { yerlesimBul } from "./dunya-veri.ts";
+
+/** [PARAMETRE] Bir istekte bölgeye teslim edilen en çok vergi kaydı (DO alt istek bütçesi ≤ 12). */
+export const VERGI_TUR_EN_COK = 2;
 
 export class YerlesimDO {
   readonly #env: Env;
@@ -116,7 +119,8 @@ export class YerlesimDO {
     const motor = this.#motor;
     const md = motor?.kasaba.mk;
     if (!motor || !md?.vergiGiden?.length || !this.#env.BOLGE) return;
-    for (const x of [...md.vergiGiden]) {
+    // Alt istek bütçesi: turda en çok VERGI_TUR_EN_COK teslim; kalanı bir dakika sonra alarm.
+    for (const x of md.vergiGiden.slice(0, VERGI_TUR_EN_COK)) {
       const bolge = BEYLIKLER.find((b) => b.yerlesimler.some((y) => y.id === x.yerlesim));
       if (!bolge) break;
       let r: Sonuc<unknown>;
@@ -154,7 +158,8 @@ export class YerlesimDO {
     await this.#parametreleriYukle(motor);
     const { kalan } = await motor.yetistir(simdi);
     await this.#alarmKur(simdi, kalan);
-    const vergiOrani = ileti.islem === "hanIkram" || ileti.islem === "hanZiyafet" || ileti.islem === "barinmaKira"
+    const vergiOrani = ileti.islem === "hanIkram" || ileti.islem === "hanZiyafet" || ileti.islem === "barinmaKira" ||
+      (ileti.islem === "mulk" && VERGI_ALT.includes(ileti.alt))
       ? await this.#vergiOrani(ileti.yerlesim)
       : 0;
     switch (ileti.islem) {
@@ -328,7 +333,7 @@ export class YerlesimDO {
         return motor.barinmaIslem(ileti.islem, ileti.hesapId, ileti.govde, simdi, vergiOrani);
       // Mülk (Faz 12–13): istemci uçları ve IsletmeDO'dan gelen kasa → cüzdan kayıtları.
       case "mulk":
-        return mulkIsle(motor, ileti, simdi, this.#isletme);
+        return mulkIsle(motor, ileti, simdi, this.#isletme, VERGI_ALT.includes(ileti.alt) ? vergiOrani : undefined);
       // Göç (D1): HesapDO'dan; src/yerlesim/goc.ts
       case "gocOnizle":
         return motor.gocOnizle(ileti.hesapId, ileti.hedef);

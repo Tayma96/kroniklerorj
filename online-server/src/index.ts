@@ -110,7 +110,12 @@
 //   GET  /v1/isletme/:id                 → panel (konuma ve yetkiye göre; dışarıdan vitrin)
 //   GET  /v1/isletme/:id/devir           → devir önizlemesi: kasa, emanet, borç, sözleşmeler, sicil, sürüm
 //   POST /v1/isletme/:id/<islem> {..., istekNo}: yatir {tutar} | cek {tutar} | emanet {yon, tutar} | ad {ad} |
-//        tezyin {grup, secim} | fiyat {carpan} | kapi {acik} | personel {islem, ...} | devir {islem: teklif|geri|kabul}
+//        tezyin {grup, secim} | fiyat {carpan} | kapi {acik} (yalnız han) | personel {islem, ...} | devir {islem: teklif|geri|kabul}
+//        Tezgâh (Dilim 1): depo {yon: koy|al, mal, kalite?, adet} | raf {islem: koy|al|fiyat, ...} |
+//        satinal {satir, adet, fiyat?} | devral {}
+//   GET  /v1/dukkanlar                   → yerleşimdeki dükkânlar (raf özeti, kepenk, devralma), yuva doluluğu
+//   GET  /v1/isletme/:id/tezgah          → raf (herkese); depo, gün sonu dökümü, izinler (yetkiliye)
+//   GET  /v1/isletme/:id/onizle?mal&kalite&fiyat&adet → tahmini NPC payı ve adet (salt okuma)
 //   GET|POST /yonetim/<uc>               → YONETIM_UCLARI (src/tipler.ts); kurallar src/yonetim/islem.ts
 // Hata gövdesi {hata: kod}; metin istemcide çevrilir. Hız sınırı hesap başına HesapDO'da.
 
@@ -167,7 +172,7 @@ const DEBDEBE_YAZMA: Readonly<Record<string, DebdebeIslem>> = {
   "/v1/debdebe/levha-gorunur": "debdebeLevhaGorunur",
 };
 const ISLETME_YOLU = /^\/v1\/isletme\/([^/]{1,64})(?:\/([a-z]{1,16}))?$/;
-const ISLETME_POST = new Set(["yatir", "cek", "emanet", "ad", "tezyin", "fiyat", "kapi", "personel", "devir"]);
+const ISLETME_POST = new Set(["yatir", "cek", "emanet", "ad", "tezyin", "fiyat", "kapi", "personel", "devir", "depo", "raf", "satinal", "devral"]);
 
 /** Örnek yaşadıkça JWKS önbelleğini tutar. `fetch` çağrı anında çözülür (testte değiştirilebilir). */
 const google = new GoogleDogrulayici({ fetch: (url) => fetch(url) });
@@ -673,6 +678,8 @@ async function yonlendir(istek: Request, env: Env): Promise<Response> {
         : hataYaniti("yontem_yok");
     case "/v1/mulk":
       return yontem === "GET" ? hesaba(istek, env, (hesapId) => basarili({ islem: "mulk", hesapId, alt: "liste", dil })) : hataYaniti("yontem_yok");
+    case "/v1/dukkanlar":
+      return yontem === "GET" ? hesaba(istek, env, (hesapId) => basarili({ islem: "mulk", hesapId, alt: "dukkanlar", dil })) : hataYaniti("yontem_yok");
     case "/v1/mulk/edin":
       if (yontem !== "POST") return hataYaniti("yontem_yok");
       return hesaba(istek, env, async (hesapId) => {
@@ -710,6 +717,13 @@ async function yonlendir(istek: Request, env: Env): Promise<Response> {
     if (alt === undefined || alt === "devir") {
       if (yontem === "GET") return hesaba(istek, env, (hesapId) => basarili({ islem: "mulk", hesapId, alt: alt ? "devirOnizle" : "panel", isletme, dil }));
       if (alt === undefined) return hataYaniti("yontem_yok");
+    }
+    // Tezgâh (Dilim 1): raf/depo görünümü ve fiyat önizlemesi (salt okuma; sorgu → gövde).
+    if (alt === "tezgah" || alt === "onizle") {
+      if (yontem !== "GET") return hataYaniti("yontem_yok");
+      const p = url.searchParams;
+      const govde = alt === "onizle" ? { mal: p.get("mal")?.slice(0, 24), kalite: Number(p.get("kalite") ?? 0), fiyat: Number(p.get("fiyat")), ...(p.get("adet") ? { adet: Number(p.get("adet")) } : {}) } : undefined;
+      return hesaba(istek, env, (hesapId) => basarili({ islem: "mulk", hesapId, alt, isletme, dil, ...(govde ? { govde } : {}) }));
     }
     if (!ISLETME_POST.has(alt!)) return hataYaniti("bulunamadi");
     if (yontem !== "POST") return hataYaniti("yontem_yok");

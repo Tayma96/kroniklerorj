@@ -15,6 +15,7 @@ import { oyunAyi, sonrakiDonum, takvim } from "../saat.ts";
 import { basarili, hata, type BarinmaIslem, type SakinKaydi, type Sonuc } from "../tipler.ts";
 import { harita, npcMekani } from "./cizelge.ts";
 import { arkaPlanGorunumu, type ArkaPlan } from "./arka-plan.ts";
+import { tezgahDonumu, tezgahKayitlariAc } from "../mulk/tezgah-donum.ts";
 import { ayDonumu } from "./donum.ts";
 import { donusKartiSec, gorebilir } from "./donus.ts";
 import {
@@ -484,7 +485,13 @@ export class YerlesimMotoru {
       for (const t of barinmaDonumu(k, ay)) await this.#olayEkle(t, ay);
       for (const t of ucgenDonumu(k, ay)) await this.#olayEkle(t, ay);
       for (const t of toplulukDonumu(k, ay)) await this.#olayEkle(t, ay);
+      // Tezgâh modeli: dükkân raflarının NPC satışı (hane bütçesi) ve han yolcu payı.
+      tezgahDonumu(k, ay);
       islenen++;
+    }
+    if (k.mk) {
+      tezgahKayitlariAc(k, simdi);
+      this.#kirli.add(MULK);
     }
     this.#kirli.add(NPC).add(SIPARIS).add(SAKIN);
     if (k.tp) this.#kirli.add(TOPLUM);

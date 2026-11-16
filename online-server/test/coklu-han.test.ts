@@ -5,7 +5,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { AY_MS, DUNYA_BASLANGICI_MS } from "../src/saat.ts";
 import { meslekSec } from "../src/yerlesim/meslek.ts";
-import { kapsama } from "../src/yerlesim/barinma.ts";
+import { barinmaGorunumu, kapsama } from "../src/yerlesim/barinma.ts";
 import { mudavimKaydi, mudavimZiyaret, GUN_MS } from "../src/yerlesim/mudavim.ts";
 import { ilanEkle, panoGorunumu, PANO_EN_COK, type PanoKaydi } from "../src/han/pano.ts";
 import { hanMasaAdi, masaAdi } from "../src/han/kurallar.ts";
@@ -78,6 +78,7 @@ test("4.9 köyde han edinilemez; NPC hanında oda kirası ve ikram bugünkü gib
   assert.equal(a.pa, 500, "red akçe almaz");
   const kira = mulkluKira(k, a, { oda: "yatak", sure: 1, istekNo: "k-koy-0001" }, AN);
   assert.ok(kira.ok, JSON.stringify(kira));
+  assert.equal((kira.deger.barinma as { hanNo: number }).hanNo, 1, "NPC hanı kirasında hanNo");
   assert.equal(kapsama(a.br!, "kizilca", false, AN + 1)?.tur, "oda", "köyde barınma kaybolmaz");
   const ik = mulkluIkram(k, a, "ekmek", AN, "i-koy-0001");
   assert.ok(ik.ok);
@@ -147,13 +148,18 @@ test("4.9 kira: seçilen hanın kasasına; kişi başı tek oda; kendi hanına k
   hanciYap(b);
   assert.ok(edin(k, a, { tur: "han", no: 2 }, AN, "e-kira-0001").ok);
   assert.ok(edin(k, b, { tur: "han", no: 4 }, AN, "e-kira-0002").ok);
-  yansit(k, "demirhan.han.2");
+  yansit(k, "demirhan.han.2", { fc: 150 });
   yansit(k, "demirhan.han.4");
   const md = mulkDefteri(k);
   md.cik.k = [];
+  assert.ok(JSON.stringify(barinmaGorunumu(k, m, AN, { ...oyuncuHani(k, 2)!, sahip: a }).odalar) !== JSON.stringify(barinmaGorunumu(k, m, AN).odalar), "çarpanlı katalog NPC'ninkinden ayrı");
   const kira = mulkluKira(k, m, { oda: "yatak", sure: 1, han: 2, istekNo: "k-kira-0001" }, AN);
   assert.ok(kira.ok, JSON.stringify(kira));
   assert.equal(md.cik.k[0]!.h, "demirhan.han.2");
+  // Yanıttaki barınma görünümü kiralanan hanın numarası ve kataloğuyla (GET /v1/barinma?han=2 biçimi).
+  const br = kira.deger.barinma as { hanNo: number; odalar: unknown[] };
+  assert.equal(br.hanNo, 2);
+  assert.deepEqual(br.odalar, barinmaGorunumu(k, m, AN, { ...oyuncuHani(k, 2)!, sahip: a }).odalar, "kiralanan hanın kataloğu");
   assert.deepEqual(md.od["demirhan.han.2"]!.map(([o]) => o), ["o3"]);
   assert.equal(md.od["demirhan.han.4"], undefined, "doluluk han başına");
   assert.deepEqual(mulkluKira(k, m, { oda: "yatak", sure: 1, han: 4, istekNo: "k-kira-0002" }, AN), { ok: false, hata: "oda_var" }, "aynı anda tek oda (kişi başı)");

@@ -4,8 +4,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { bellekDepo } from "../src/depo.ts";
-import { hanEylemi, hanIkrami, hanListesi, hanPanoYaz, hanZiyafeti, masaBileti, type HanHesapBaglami } from "../src/han/hesap-kopru.ts";
-import { IKRAM_GUNLUK } from "../src/han/ikram.ts";
+import { hanEylemi, hanIkrami, hanListesi, hanPanoYaz, hanZiyafeti, masaBileti, menuFiyatlari, type HanHesapBaglami } from "../src/han/hesap-kopru.ts";
+import { IKRAM_GUNLUK, IKRAM_MENUSU } from "../src/han/ikram.ts";
 import { ZIYAFET_GUNLUK } from "../src/han/ziyafet.ts";
 import { PANO_GUNLUK } from "../src/han/pano.ts";
 import { HAN_EYLEM_GUNLUK, masaSayisi } from "../src/han/kurallar.ts";
@@ -107,6 +107,13 @@ test("4.9 han listesi: açık hanların kartları, seçili hanın masaları; mas
   assert.equal(l.deger.masalar.length, m);
   const l2 = await hanListesi(b, "tr", "2");
   assert.ok(l2.ok);
+  assert.deepEqual(l.deger.menu, menuFiyatlari(undefined), "NPC hanında taban menü");
+  assert.ok(l.deger.menu.every((x) => x.fiyat === IKRAM_MENUSU[x.id as keyof typeof IKRAM_MENUSU].fiyat));
+  // Oyuncu hanında menü fiyat çarpanıyla (ödeme formülü ⌈taban × fc / 100⌉, en az 1).
+  const pahali = menuFiyatlari({ sahip: "oyuncu", fc: 150 });
+  for (const x of pahali) assert.equal(x.fiyat, Math.max(1, Math.ceil((IKRAM_MENUSU[x.id as keyof typeof IKRAM_MENUSU].fiyat * 150) / 100)));
+  assert.ok(menuFiyatlari({ sahip: "oyuncu", fc: 50 }).every((x) => x.fiyat >= 1));
+  assert.deepEqual(l2.deger.menu, menuFiyatlari(l2.deger.hanlar.find((h) => h.no === 2)), "seçili oyuncu hanının menüsü");
   assert.deepEqual([l2.deger.han.no, l2.deger.han.isletme], [2, "demirhan.han.2"]);
   assert.deepEqual(await hanListesi(b, "tr", "4"), { ok: false, hata: "han_yok" });
   assert.ok(masalar.includes("ozet@masa:demirhan:han2:8"));

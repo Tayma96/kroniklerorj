@@ -8,7 +8,6 @@ import { basarili, hata, type Sonuc } from "../tipler.ts";
 import { adDuzenle, trKucuk } from "../ad.ts";
 import { adDogrula } from "../ad.ts";
 import { trGunu } from "../yonetim/sikayet.ts";
-import { teveccuhEtkisi } from "../yerlesim/teveccuh.ts";
 import { yerlesimBul } from "../dunya-veri.ts";
 import {
   AD_UCRETSIZ_DEGISIM,
@@ -37,7 +36,6 @@ import {
   MAAS_EN_AZ,
   MAAS_EN_COK,
   NPC_CALISAN_KADEMESI,
-  NPC_GELIR_TABAN,
   NPC_GELIR_TAVAN,
   ONERI_EN_COK,
   PERSONEL_EN_COK,
@@ -179,6 +177,9 @@ export interface Isletme {
   /** Bu fazdaki dünyaya giren (NPC müşteri) ve dünyadan çıkan (bakım, tezyin, NPC maaşı) toplamları: denetim. */
   kaynak: number;
   batak: number;
+  /** Tezgâh modeli (dükkân, atölye): faaliyet ayı sayacı (kepenkli ay sayılmaz) ve göç işareti. */
+  fa?: number;
+  tg?: 1;
 }
 
 /** [PARAMETRE] Komut tekrar kaydı. */
@@ -227,10 +228,23 @@ export function isletmeKur(id: string, yerlesim: string, tur: MulkTuru, no: numb
     as: 0,
     kaynak: 0,
     batak: 0,
+    ...(tur !== "han" ? { fa: 0, tg: 1 as const } : {}),
   };
 }
 
-function defterYaz(is: Isletme, ay: number, kalem: string, tutar: number, ayrinti?: string): void {
+/**
+ * Tezgâh modeli eski kayıt göçü (dükkân, atölye): pasif NPC geliri kalktı; depo boş, kepenk kapalı başlar, mevcut
+ * bakım borcu silinir. Faaliyet ayı bugüne dek geçen süreyle başlar (seviye düşmez).
+ */
+export function tezgahGocu(is: Isletme): void {
+  if (is.tur === "han" || is.tg) return;
+  is.borc = 0;
+  is.borcAy = 0;
+  is.fa = Math.min(SEVIYE_FAALIYET_TAVAN, Math.max(0, is.ay - is.bas));
+  is.tg = 1;
+}
+
+export function defterYaz(is: Isletme, ay: number, kalem: string, tutar: number, ayrinti?: string): void {
   is.df.push(ayrinti === undefined ? [ay, kalem, tutar] : [ay, kalem, tutar, ayrinti]);
   if (is.df.length > DEFTER_EN_COK) is.df.splice(0, is.df.length - DEFTER_EN_COK);
 }
@@ -254,7 +268,7 @@ export function maasYuku(is: Isletme): number {
 // ── Seviye, kapasite, kalite ──
 
 export function seviyePuani(is: Isletme): { puan: number; dokum: { itibar: number; faaliyet: number; gelir: number } } {
-  const faaliyet = Math.min(SEVIYE_FAALIYET_TAVAN, Math.max(0, is.ay - is.bas));
+  const faaliyet = Math.min(SEVIYE_FAALIYET_TAVAN, Math.max(0, is.fa ?? is.ay - is.bas));
   const gelir = Math.min(SEVIYE_GELIR_TAVAN, Math.floor(is.gelir / SEVIYE_GELIR_BOLEN));
   const itibar = Math.round(is.it);
   return { puan: itibar + faaliyet + gelir, dokum: { itibar, faaliyet, gelir } };
@@ -288,16 +302,16 @@ export function kalite(is: Isletme): { toplam: number; dokum: { rol: Rol; kademe
   return { toplam: dokum.reduce((t, d) => t + d.kademe, 0), dokum };
 }
 
-/** NPC müşteri geliri önizlemesi (döküm; gizli sayı yok). */
-export function npcGeliri(is: Isletme): { tutar: number; taban: number; itibarYuzde: number; kaliteYuzde: number; teveccuhYuzde: number; tavan: number } {
-  const taban = NPC_GELIR_TABAN[is.tur];
+/**
+ * NPC müşteri gelirinin kaynağı (tezgâh modeli): pasif gelir kalktı. Han payını yerleşimin yolcu havuzundan alır
+ * (çekicilik dökümü `hanlar` kartında), dükkân raftan satar (gün sonu dökümü), atölye Dilim 2'ye kadar satmaz.
+ * Burada yalnız han başına seviye tavanı ve çekicilik girdileri gösterilir (teveccüh çekiciliğe girmez).
+ */
+export function npcGeliri(is: Isletme): { kaynak: "yolcuHavuzu" | "raf" | "yok"; itibarYuzde: number; kaliteYuzde: number; tavan: number | null } {
   const itibarYuzde = Math.round(is.it);
   const kaliteYuzde = kalite(is).toplam * KALITE_GELIR_YUZDE;
-  const teveccuhYuzde = teveccuhEtkisi(is.stv, "musteri");
-  const tavan = NPC_GELIR_TAVAN[seviye(is)]!;
-  const ham = Math.floor(taban * (1 + itibarYuzde / 100) * (1 + kaliteYuzde / 100) * (1 + teveccuhYuzde / 100));
-  const tutar = is.durum === "acik" && is.kapi ? Math.min(tavan, ham) : 0;
-  return { tutar, taban, itibarYuzde, kaliteYuzde, teveccuhYuzde, tavan };
+  const kaynak = is.tur === "han" ? "yolcuHavuzu" : is.tur === "dukkan" ? "raf" : "yok";
+  return { kaynak, itibarYuzde, kaliteYuzde, tavan: is.tur === "han" ? NPC_GELIR_TAVAN[seviye(is)]! : null };
 }
 
 function tezyinItibari(is: Isletme): number {
@@ -378,7 +392,7 @@ export function isletmeAdiCoz(ham: unknown): Sonuc<string> {
 
 // ── Kasa girişi (cüzdandan; transfer hedefi) ──
 
-export type GirisNedeni = "yatir" | "kira" | "ikram";
+export type GirisNedeni = "yatir" | "kira" | "ikram" | "satis";
 
 export interface KasaGirisi {
   tutar: number;
@@ -427,7 +441,7 @@ export function izle(is: Isletme, g: Pick<KasaGirisi, "o" | "tutar" | "kume" | "
 // ── Kasa → cüzdan (transfer kaynağı) ──
 
 /** Çıkış kaydı açar; kutu doluysa `transfer_bekliyor`. Bakiyeden düşmek çağıranın işidir (aynı yazımda). */
-function cuzdanaGonder(is: Isletme, i: string, alici: Kisi, tutar: number, neden: string, an: number): boolean {
+export function cuzdanaGonder(is: Isletme, i: string, alici: Kisi, tutar: number, neden: string, an: number): boolean {
   return cikisAc(is.cik, { i, t: "cuzdana", h: is.yerlesim, a: tutar, y: { isletme: is.id, o: alici.o, h: alici.h, tutar, neden } }, an);
 }
 
@@ -536,6 +550,8 @@ export function fiyatAyarla(is: Isletme, b: Baglam, govde: unknown, ay: number):
 /** POST .../kapi {acik}: müşteri yetkisi; müşteri kabulü (kapalıyken oda ve ikram satılmaz, NPC geliri yok). */
 export function kapiAyarla(is: Isletme, b: Baglam, govde: unknown, ay: number): Sonuc<Record<string, unknown>> {
   if (is.durum !== "acik") return hata("isletme_kapali");
+  // Tezgâh modeli: dükkân ve atölyede kapı yoktur; kepenk raf boşken ay dönümünde kendiliğinden iner.
+  if (is.tur !== "han") return hata("kepenk_kendiliginden");
   if (!yetkiVar(yetkiDurumu(is, b.o, ay), "musteri")) return hata("yetki_yok");
   if (!nesneMi(govde) || typeof govde.acik !== "boolean") return hata("gecersiz_istek");
   is.kapi = govde.acik;
@@ -735,26 +751,26 @@ export function sozlesmeGorunumu(s: Sozlesme) {
 
 // ── Ay dönümü ──
 
-/** Tek ay: NPC müşteri geliri, bakım (ödenemeyen borç), maaş (emanetten; ödenmezse işveren sözleşmeyi bozmuş sayılır), itibar. */
+/**
+ * Tek ay: bakım (ödenemeyen borç), maaş (emanetten; ödenmezse işveren sözleşmeyi bozmuş sayılır), itibar. Pasif NPC
+ * geliri yoktur (tezgâh modeli): han yolcu payını, dükkân raf hasılatını yerleşimin ay dönümü kaydıyla alır
+ * (tezgah-isletme.ts). Dükkânın bakım, faaliyet, itibar ve iflası o kayıtla işler (kepenkli ayda kayıt gelmez);
+ * atölye Dilim 2'ye kadar kepenkli durur (bakım yazılmaz, iflas etmez). Maaş her türde burada.
+ */
 function birAy(is: Isletme, ay: number, an: number): void {
   if (is.durum !== "acik") return;
+  const tezgah = is.tur !== "han";
   // Önceki ayın (bitirilen) müşteri sayımı itibara.
   const musteri = is.iz.ay === ay - 1 ? Math.min(ITIBAR_MUSTERI_TAVAN, is.iz.s.length * ITIBAR_MUSTERI) : 0;
-  const g = npcGeliri(is);
-  if (g.tutar > 0) {
-    is.kasa += g.tutar;
-    is.kaynak += g.tutar;
-    is.gelir += g.tutar;
-    defterYaz(is, ay, "npcMusteri", g.tutar);
+  if (!tezgah) {
+    const gider = bakim(is) + is.borc;
+    const odenen = Math.min(is.kasa, gider);
+    is.kasa -= odenen;
+    is.batak += odenen;
+    is.borc = gider - odenen;
+    if (odenen > 0) defterYaz(is, ay, "bakim", -odenen);
+    is.borcAy = is.borc > 0 ? is.borcAy + 1 : 0;
   }
-  // Bakım ve borç.
-  const gider = bakim(is) + is.borc;
-  const odenen = Math.min(is.kasa, gider);
-  is.kasa -= odenen;
-  is.batak += odenen;
-  is.borc = gider - odenen;
-  if (odenen > 0) defterYaz(is, ay, "bakim", -odenen);
-  is.borcAy = is.borc > 0 ? is.borcAy + 1 : 0;
   // Maaş (emanet kasasından). Ödenemeyen sözleşme işverence bozulmuş sayılır.
   let bozulan = 0;
   for (const s of etkinler(is)) {
@@ -778,12 +794,13 @@ function birAy(is: Isletme, ay: number, an: number): void {
       s.y = s.y.filter((y) => y !== "vekalet");
     }
   }
-  const k = kalite(is).toplam;
-  const fark = k * ITIBAR_KALITE + musteri - (is.borc > 0 ? ITIBAR_BORC : 0) - bozulan * ITIBAR_MAAS_BOZMA;
+  const fark = tezgah
+    ? -bozulan * ITIBAR_MAAS_BOZMA
+    : kalite(is).toplam * ITIBAR_KALITE + musteri - (is.borc > 0 ? ITIBAR_BORC : 0) - bozulan * ITIBAR_MAAS_BOZMA;
   is.it = Math.max(0, Math.min(ITIBAR_EN_COK, is.it + fark));
   teklifTemizle(is, ay);
   sozlesmeArsivKirp(is);
-  if (is.borcAy >= IFLAS_BORC_AY) iflasEt(is, ay, an);
+  if (!tezgah && is.borcAy >= IFLAS_BORC_AY) iflasEt(is, ay, an);
 }
 
 function sozlesmeBoz(is: Isletme, s: Sozlesme, ay: number): void {
@@ -819,6 +836,7 @@ export function iflasEt(is: Isletme, ay: number, an: number): void {
 
 /** Kaçan ayları sırayla işler (çağrı başına sınırlı). */
 export function ayIlerlet(is: Isletme, hedefAy: number, an: number): number {
+  tezgahGocu(is);
   let n = 0;
   while (is.ay < hedefAy && n < AY_YETISTIR_EN_COK) {
     is.ay++;
@@ -863,6 +881,10 @@ export function ayarYuku(is: Isletme) {
     kapasite: kapasite(is),
     fc: is.fc,
     kapi: is.kapi,
+    /** Tezgâh modeli: itibar (R çarpanı), kalite toplamı (han K çarpanı), oyuncu çalışanların yetkileri (depo/raf). */
+    it: Math.round(is.it),
+    kq: kalite(is).toplam,
+    py: etkinler(is).flatMap((s) => (s.k.t === "oyuncu" ? [[s.k.o, yetkiDurumu(is, s.k.o, is.ay).yetkiler] as [string, Yetki[]]] : [])),
     po: etkinler(is).flatMap((s) => (s.k.t === "oyuncu" ? [s.k.o] : [])),
     pn: etkinler(is).flatMap((s) => (s.k.t === "npc" ? [s.k.n] : [])),
     to: is.tk.map((t) => t.hedef.o),

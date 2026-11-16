@@ -357,14 +357,17 @@ export function baglan(b: MasaBaglami, yeni: MasaSoketi, bilet: MasaBileti): voi
   const sus = surer(ek.yt.susturma, b.simdi) ? { bitis: ek.yt.susturma.bitis } : null;
   const masa = gorunum(b.no, hepsi, b.ayar);
   const e = b.etkinlik;
+  // Yeni hesabın (24 sa) atışma kıtası sınırı istemciye gider (yalnız tam sınırdan kısaysa).
+  const kitaEnCok = Math.min(KITA_EN_UZUN, iletiSiniri(ek.ho, b.simdi) * 2);
   yeni.gonder({
     t: "hosgeldin",
     ben: plaka(ek),
     susturma: sus,
     masa,
     ses: sesDurumu(b, hepsi),
+    ...(kitaEnCok < KITA_EN_UZUN ? { kitaEnCok } : {}),
     ...(e?.tur === "sahne" ? { sahne: sahneGorunumu(e) } : {}),
-    ...(e?.tur === "atisma" ? { atisma: atismaGorunumu(e) } : {}),
+    ...(e?.tur === "atisma" ? { atisma: { ...atismaGorunumu(e), ...(kitaEnCok < KITA_EN_UZUN ? { kitaEnCok } : {}) } } : {}),
   });
   yayinla(digerleri, { t: "durum", masa });
   if (sesDegisti) sesYayinla(b, digerleri);

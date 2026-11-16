@@ -174,6 +174,8 @@ export interface AtismaGorunumu {
   /** Oylamada oy hakkı olanlar ve oy verenler (oylama açılmadıysa boş). */
   hak: string[];
   oyVeren: string[];
+  /** Yalnız hoş geldin iletisinde, yeni hesaba (24 sa): kıta harf sınırı (yoksa KITA_EN_UZUN). */
+  kitaEnCok?: number;
 }
 
 /** H8 atışmanın bitişi (herkese yayınlanır). `kazanan`: kazandıda bir, berabere ikisi, hükümsüz/iptalde boş. */
@@ -207,7 +209,7 @@ export interface SesDurumu {
 
 /** Sunucu → istemci. */
 export type SunucuIletisi =
-  | { t: "hosgeldin"; ben: Plaka; susturma: { bitis: number | null } | null; masa: MasaGorunumu; ses?: SesDurumu; sahne?: SahneGorunumu; atisma?: AtismaGorunumu }
+  | { t: "hosgeldin"; ben: Plaka; susturma: { bitis: number | null } | null; masa: MasaGorunumu; ses?: SesDurumu; sahne?: SahneGorunumu; atisma?: AtismaGorunumu; /** Yeni hesapta (24 sa) atışma kıtası harf sınırı; yoksa KITA_EN_UZUN. */ kitaEnCok?: number }
   /** H8: sahne açıldı/değişti (null: kapandı). */
   | { t: "sahne"; sahne: SahneGorunumu | null }
   /** H8: atışma başladı/ilerledi (null: bitti; `son` bitişin sonucu). */

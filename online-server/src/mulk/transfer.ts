@@ -23,6 +23,8 @@ export const DENEME_TABAN_MS = 30 * 1000;
 export const DENEME_TAVAN_MS = 60 * 60 * 1000;
 /** [PARAMETRE] Bir uzlaştırma turunda teslim edilen en çok kayıt. */
 export const UZLASTIRMA_TUR_EN_COK = 8;
+/** [PARAMETRE] Yerleşimin bir uzlaştırma turunda çağırdığı en çok işletme (teslim + onay = 2 alt istek; bütçe ≤ 12). */
+export const UZLASTIRMA_ISLETME_EN_COK = 4;
 
 export type CevapDurumu = "kabul" | "red";
 export type KapanisDurumu = "kesin" | "iade";
@@ -63,10 +65,11 @@ export function bosDefter(): GirisDefteri {
   return { g: {} };
 }
 
-/** Çıkış kaydı açar (bakiyeden düşmek çağıranın aynı yazımdaki işidir). Kutu doluysa false. */
-export function cikisAc(kutu: CikisKutusu, kayit: Omit<CikisKaydi, "b" | "d" | "s">, an: number): boolean {
+/** Çıkış kaydı açar (bakiyeden düşmek çağıranın aynı yazımdaki işidir). Kutu doluysa false. `sinir`: sistem kayıtları
+ * (ay dönümü hasılatı, devralma iadesi) için ayrılmış ek yer. */
+export function cikisAc(kutu: CikisKutusu, kayit: Omit<CikisKaydi, "b" | "d" | "s">, an: number, sinir = CIKIS_EN_COK): boolean {
   if (kutu.k.some((x) => x.i === kayit.i)) return true;
-  if (kutu.k.length >= CIKIS_EN_COK) return false;
+  if (kutu.k.length >= sinir) return false;
   kutu.k.push({ ...kayit, b: an, d: 0, s: an });
   return true;
 }

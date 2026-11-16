@@ -175,6 +175,24 @@ test("mülk uçları: edinim, transfer protokolü, oyuncu hanı kirası, persone
     const dv = await cagir("GET", `${ID}/devir`, { oturum: B });
     assert.equal(dv.durum, 200);
     assert.equal(dv.govde.sozlesmeler.length, 1);
+    // Tezgâh (Dilim 1) uçları: dükkân listesi, tezgâh görünümü, önizleme, raf/satın alma hata yolları.
+    const ed = await cagir("POST", "/v1/mulk/edin", { oturum: A, govde: { tur: "dukkan", istekNo: "edin-dk-001" } });
+    assert.equal(ed.durum, 200, JSON.stringify(ed.govde));
+    const dl = await cagir("GET", "/v1/dukkanlar", { oturum: B });
+    assert.equal(dl.durum, 200, JSON.stringify(dl.govde));
+    assert.deepEqual(dl.govde.dukkanlar.map((d: Nesne) => [d.isletme, d.kepenk, d.devralinabilir]), [["develi.dukkan.1", true, false]]);
+    assert.deepEqual(dl.govde.yuva.dukkan, { toplam: 6, dolu: 1 });
+    const DK = "/v1/isletme/develi.dukkan.1";
+    const tg = await cagir("GET", `${DK}/tezgah`, { oturum: A });
+    assert.equal(tg.durum, 200, JSON.stringify(tg.govde));
+    assert.deepEqual([tg.govde.kepenk, tg.govde.raf, tg.govde.depoKapasite, tg.govde.rafSiniri], [true, [], 40, { satir: 3, adet: 24 }]);
+    const on = await cagir("GET", `${DK}/onizle?mal=ekmek&kalite=0&fiyat=5`, { oturum: A });
+    assert.equal(on.durum, 200, JSON.stringify(on.govde));
+    assert.equal(on.govde.onizleme.payYuzde, 100);
+    assert.deepEqual((await cagir("POST", `${DK}/raf`, { oturum: A, govde: { islem: "koy", mal: "ekmek", adet: 1, fiyat: 5, istekNo: "raf-0000001" } })).govde, { hata: "mal_yok" });
+    assert.deepEqual((await cagir("POST", `${DK}/satinal`, { oturum: B, govde: { satir: 1, adet: 1, istekNo: "al-00000001" } })).govde, { hata: "satir_yok" });
+    assert.deepEqual((await cagir("GET", `${ID}/tezgah`, { oturum: A })).govde, { hata: "tezgah_yok" });
+    assert.deepEqual((await cagir("POST", `${DK}/kapi`, { oturum: A, govde: { acik: false, istekNo: "kapi-dk-001" } })).govde, { hata: "kepenk_kendiliginden" });
     assert.equal(toplam(), T0 , "toplam akçe (kaynak ve batak kalemleriyle) değişmedi");
   } finally {
     globalThis.fetch = eskiFetch;

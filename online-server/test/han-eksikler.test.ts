@@ -224,6 +224,9 @@ test("H3 sohbet ve şart metni maskelenir; yeni hesap (24 sa) iletisi en çok 12
   assert.equal(yeni.son("ileti")?.metin.length, YENI_HESAP_ILETI + 1, "eski hesap tam sınır");
   await yolla(m, eski, { t: "yaz", metin: "kahpe" });
   assert.equal(yeni.son("ileti")?.metin, MASKE);
+  // Atışma kıtası sınırı yeni hesaba hoş geldinde bildirilir (2 × ileti sınırı); eski hesapta alan yok.
+  assert.equal(yeni.son("hosgeldin")?.kitaEnCok, YENI_HESAP_ILETI * 2);
+  assert.equal(eski.son("hosgeldin")?.kitaEnCok, undefined);
 });
 
 // ---------------------------------------------------------------- H3/H4 bilet

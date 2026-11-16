@@ -10,13 +10,14 @@ export type MulkTuru = (typeof MULK_TURLERI)[number];
 
 /**
  * [PARAMETRE] Yerleşim başına oyuncunun edinebileceği mülk yuvası (4.9 Çoklu han; Berkay: şehirde 5, kasabada 2 han,
- * köyde oyuncu hanı yok). Han 1. yuvası yerleşimin bugünkü hanıdır (sahipsizken NPC işletir); 2. ve sonraki yuvalar
+ * köyde oyuncu hanı yok). Tezgâh modeli (§4): dükkân/atölye şehir 12/9, kasaba 6/4, köy 2/2 — NPC talebi
+ * paylaşıldığı için yuva sayısı akçe basmaz. Han 1. yuvası yerleşimin bugünkü hanıdır (sahipsizken NPC işletir); 2. ve sonraki yuvalar
  * boş arsadır, edinilince han olur. Köyde yalnız NPC hanı vardır (bkz. hanYuvaSayisi).
  */
 export const MULK_YUVA: Readonly<Record<YerlesimTuru, Readonly<Record<MulkTuru, number>>>> = {
-  sehir: { han: 5, dukkan: 4, atolye: 3 },
-  kasaba: { han: 2, dukkan: 2, atolye: 2 },
-  koy: { han: 0, dukkan: 1, atolye: 1 },
+  sehir: { han: 5, dukkan: 12, atolye: 9 },
+  kasaba: { han: 2, dukkan: 6, atolye: 4 },
+  koy: { han: 0, dukkan: 2, atolye: 2 },
 };
 
 /** NPC'nin işlettiği (sahipsizken) ve her yerleşimde var olan han yuvası. Kimliği ve masa adları değişmez. */
@@ -60,10 +61,9 @@ export function bakimGideri(tur: MulkTuru, yerlesimTuru: YerlesimTuru | undefine
 export const IFLAS_BORC_AY = 3;
 
 /**
- * [PARAMETRE] NPC müşteri geliri (aylık; dünyaya giren akçe). Tavanlı: seviye tavanını aşamaz. Formül (döküm):
- * taban × (1 + itibar/100) × (1 + kalite%/100) × (1 + sahibin teveccüh müşteri etkisi%/100), aşağı yuvarlanır.
+ * [PARAMETRE] Han başına aylık NPC (yolcu) geliri seviye tavanı. Pasif NPC geliri kalktı (tezgâh modeli): han payını
+ * yerleşimin yolcu havuzundan çekicilikle alır, tavanı bu tablo × yerleşim çarpanı (src/mulk/tezgah-kurallar.ts).
  */
-export const NPC_GELIR_TABAN: Readonly<Record<MulkTuru, number>> = { han: 6, dukkan: 4, atolye: 5 };
 export const NPC_GELIR_TAVAN: readonly number[] = [10, 16, 24, 34, 46];
 
 /** Seviyeler (GDD §17): yükselme yalnız paraya bağlı değil (itibar + faaliyet süresi + gelir). */

@@ -25,7 +25,9 @@ import {
   telafiGerekenler,
   yatir,
 } from "./tapu.ts";
-import { cikisKapat, denemeErtele, denenecekler, sonrakiDeneme, transferDurumu, type CevapDurumu, type CikisKaydi } from "./transfer.ts";
+import { UZLASTIRMA_ISLETME_EN_COK, cikisKapat, denemeErtele, denenecekler, sonrakiDeneme, transferDurumu, type CevapDurumu, type CikisKaydi } from "./transfer.ts";
+import { depoTasi, devral, devralBekliyor, dukkanListesi, fiyatOnizle, rafIslem, satinAl, tezgahGorunumu } from "./tezgah-uclar.ts";
+import { tezgahKayitlariAc } from "./tezgah-donum.ts";
 
 export interface MulkMotoru {
   readonly kasaba: Kasaba;
@@ -36,8 +38,14 @@ export interface MulkMotoru {
 
 export type IsletmeCagir = (ileti: IsletmeIleti) => Promise<Sonuc<IsletmeYaniti>>;
 
+/** Tezgâh (Dilim 1) okuma ve yazma alt işlemleri (yerleşimde; işletme DO'suna gitmez). */
+export const TEZGAH_OKU = ["dukkanlar", "tezgah", "onizle"] as const;
+export const TEZGAH_YAZ = ["depo", "raf", "satinal", "devral"] as const;
+/** Bölge vergi oranını tazeleyen alt işlemler (raf satışı vergisi). */
+export const VERGI_ALT: readonly string[] = ["satinal", "raf"];
+
 /** İstemci uçlarının alt işlemleri (HesapDO → YerlesimDO "mulk"). */
-export const MULK_ALT = ["liste", "edin", "panel", "devirOnizle", "yatir", "devir", ...KOMUTLAR] as const;
+export const MULK_ALT = ["liste", "edin", "panel", "devirOnizle", "yatir", "devir", ...KOMUTLAR, ...TEZGAH_OKU, ...TEZGAH_YAZ] as const;
 export type MulkAlt = (typeof MULK_ALT)[number];
 
 export interface MulkIletisi {
@@ -54,7 +62,7 @@ function nesneMi(v: unknown): v is Record<string, unknown> {
 /** Gelen kayıtları (IsletmeDO çıkış kutusu) bir kez uygular; [işlem, sonuç, neden] döner. */
 export function teslimAl(motor: MulkMotoru, kayitlar: CikisKaydi[], an: number): Promise<[string, CevapDurumu, string?][]> {
   const temiz = Array.isArray(kayitlar) ? kayitlar.filter((x) => nesneMi(x) && typeof x.i === "string" && nesneMi(x.y)) : [];
-  return motor.mulkIslem(karGerekenler(temiz), () =>
+  return motor.mulkIslem(karGerekenler(temiz, motor.kasaba.mk), () =>
     temiz.map((x) => {
       const r = girisIsle(motor.kasaba, x, an);
       return r.neden ? ([x.i, r.durum, r.neden] as [string, CevapDurumu, string]) : ([x.i, r.durum] as [string, CevapDurumu]);
@@ -79,13 +87,15 @@ let uzlastiriyor = new WeakSet<Kasaba>();
 export async function uzlastir(motor: MulkMotoru, an: number, cagir: IsletmeCagir, hepsi = false): Promise<number | null> {
   const k = motor.kasaba;
   const md = k.mk;
+  if (md?.tzb) await motor.mulkIslem([], () => tezgahKayitlariAc(k, an));
   if (!md || md.cik.k.length === 0) return null;
   if (uzlastiriyor.has(k)) return sonrakiDeneme(md.cik);
   uzlastiriyor.add(k);
   try {
     const gruplar = new Map<string, CikisKaydi[]>();
     for (const x of denenecekler(md.cik, an, hepsi)) gruplar.set(x.h, [...(gruplar.get(x.h) ?? []), x]);
-    for (const [isletme, kayitlar] of gruplar) {
+    // Alt istek bütçesi: turda en çok UZLASTIRMA_ISLETME_EN_COK işletme (teslim + onay); kalanı alarm sürdürür.
+    for (const [isletme, kayitlar] of [...gruplar].slice(0, UZLASTIRMA_ISLETME_EN_COK)) {
       let r: Sonuc<IsletmeYaniti> | undefined;
       try {
         r = await cagir({ islem: "teslim", isletme, kayitlar });
@@ -135,10 +145,14 @@ function durumEkle(k: Kasaba, r: Sonuc<unknown>): Sonuc<unknown> {
 }
 
 /** Mülk uçlarının tek girişi. `an`: dünya saati (ms). */
-export async function mulkIsle(motor: MulkMotoru, ileti: MulkIletisi, an: number, cagir: IsletmeCagir): Promise<Sonuc<unknown>> {
+export async function mulkIsle(motor: MulkMotoru, ileti: MulkIletisi, an: number, cagir: IsletmeCagir, vergiOrani?: number): Promise<Sonuc<unknown>> {
   const k = motor.kasaba;
   const { hesapId, alt } = ileti;
   const govde = ileti.govde;
+  if (alt === "dukkanlar") {
+    const r = await motor.mulkOyuncu(hesapId);
+    return r.ok ? basarili(dukkanListesi(k, r.deger.kar)) : r;
+  }
   if (alt === "liste") {
     const r = await motor.mulkOyuncu(hesapId);
     if (!r.ok) return r;
@@ -154,6 +168,28 @@ export async function mulkIsle(motor: MulkMotoru, ileti: MulkIletisi, an: number
   const c = isletmeCoz(ileti.isletme);
   if (!c || c.yerlesim !== k.y) return hata("isletme_yok");
   const isletme = c.id;
+  if (alt === "tezgah" || alt === "onizle") {
+    const r = await motor.mulkOyuncu(hesapId);
+    if (!r.ok) return r;
+    return alt === "tezgah" ? tezgahGorunumu(k, r.deger.kar, isletme) : fiyatOnizle(k, r.deger.kar, isletme, govde);
+  }
+  if ((TEZGAH_YAZ as readonly string[]).includes(alt)) {
+    const no = istekNoCoz(govde);
+    if (!no.ok) return no;
+    const eski = alt === "devral" ? k.mk?.t[isletme]?.s : undefined;
+    const r = await motor.mulkAdimi(hesapId, govde, eski ? [eski] : [], (kar) =>
+      alt === "depo"
+        ? depoTasi(k, kar, isletme, govde)
+        : alt === "raf"
+          ? rafIslem(k, kar, isletme, govde, vergiOrani)
+          : alt === "satinal"
+            ? satinAl(k, kar, isletme, govde, an, no.deger, vergiOrani ?? k.mk?.vo ?? 0)
+            : devral(k, kar, isletme, an, no.deger),
+    );
+    await uzlastir(motor, an, cagir, true);
+    return r;
+  }
+  if (devralBekliyor(k.mk, isletme)) return hata("transfer_bekliyor");
   if (alt === "yatir" || alt === "devir") {
     const no = istekNoCoz(govde);
     if (!no.ok) return no;

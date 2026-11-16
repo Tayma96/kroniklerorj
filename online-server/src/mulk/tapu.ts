@@ -5,7 +5,7 @@
 
 import { karakterYasi } from "../yerlesim/karakter.ts";
 import { hizmetAcik } from "../yerlesim/beceri-etki.ts";
-import { kiraTut, oyuncuHanOdaAcik } from "../yerlesim/barinma.ts";
+import { barinmaGorunumu, kiraTut, oyuncuHanOdaAcik } from "../yerlesim/barinma.ts";
 import { odaCoz } from "../yerlesim/oda.ts";
 import { ayniKume } from "../yerlesim/teveccuh.ts";
 import { olduMu } from "../yerlesim/hanedan.ts";
@@ -32,6 +32,8 @@ import {
   type MulkTuru,
 } from "./kurallar.ts";
 import type { AyarYuku, Baglam, GirisNedeni, Kisi } from "./isletme.ts";
+import { tezgahBosalt, type Tezgah } from "./depo.ts";
+import type { Envanterli } from "../yerlesim/kalite.ts";
 import {
   CIKIS_EN_COK,
   bekleyenToplam,
@@ -77,6 +79,19 @@ export interface MulkDefteri {
   vergiGiden?: { anahtar: string; tutar: number; yerlesim: string }[];
   /** İşletme bazında kuruş altı vergi birikimi (yüzde payı; 0–99). */
   vergiKesir?: Record<string, number>;
+  /** Tezgâh (Dilim 1): işletme → depo + raf (dükkân ve atölye). Karakter envanteriyle aynı DO'da (tek yazım). */
+  tz?: Record<string, Tezgah>;
+  /** Ay dönümünde toplanan, henüz çıkış kutusuna yazılmamış işletme ay girdileri: işletme → [ay, net akçe, satış yapan satır]. */
+  tzb?: Record<string, [ay: number, net: number, satir: number][]>;
+  /** Son bilinen bölge vergi oranı (NPC raf satışında kullanılır; oyuncu satın alması ve raf işlemi tazeler). */
+  vo?: number;
+  /** Denetim: NPC'den işletme kasalarına (raf satışı, yolcu payı) ve vergiye giren akçe. */
+  kaynak?: number;
+  /** Son ay dönümünün hane bütçesi özeti ve han yolcu dökümü (görünüm). */
+  tzo?: unknown;
+  hy?: unknown;
+  /** Sahibi o an yüklenemeyen iade malları (iflas/devralma): yerel kimlik → envanter; sahibin ilk tezgâh adımında teslim. */
+  ia?: Record<string, Envanterli>;
 }
 
 /** [PARAMETRE] Karşılıklı işlem izleme penceresi için tutulan en çok ödeme çifti. */
@@ -123,7 +138,7 @@ export function edinimSarti(k: Kasaba, kar: Karakter, tur: MulkTuru) {
   return { fiyat, akce: kar.pa, nam, namEsigi: EDINIM_NAM_ESIGI, loncaKademe: lonca, loncaEsigi: EDINIM_LONCA_KADEME, yas, yasEsigi: EDINIM_YASI, uygun: eksik.length === 0, eksik };
 }
 
-function bosYuva(k: Kasaba, md: MulkDefteri, tur: MulkTuru): number | undefined {
+export function bosYuva(k: Kasaba, md: MulkDefteri, tur: MulkTuru): number | undefined {
   for (let no = 1; no <= MULK_YUVA[k.tur][tur]; no++) if (!md.t[isletmeKimligi(k.y, tur, no)]) return no;
   return undefined;
 }
@@ -182,7 +197,7 @@ function karsilikliMi(md: MulkDefteri, ay: number, oden: string, sahip: string):
  * Cüzdandan kasaya çıkış (bakiye çağıranca düşülmüş olmalı ya da `dus`). Aynı hesap kümesi ve karşılıklı işlem
  * bayrakları burada (sakin dizininden) hesaplanır: IsletmeDO'nun çoklu hesap izleme kancası bunları yazar.
  */
-export function kasayaCikis(k: Kasaba, kar: Karakter, isletme: string, tutar: number, neden: GirisNedeni, an: number, islem: string, dus: boolean): Sonuc<{ islem: string; kume: boolean; karsilikli: boolean }> {
+export function kasayaCikis(k: Kasaba, kar: Karakter, isletme: string, tutar: number, neden: GirisNedeni, an: number, islem: string, dus: boolean, ek: Record<string, unknown> = {}): Sonuc<{ islem: string; kume: boolean; karsilikli: boolean }> {
   const md = mulkDefteri(k);
   const tapu = md.t[isletme];
   if (!tapu) return hata("isletme_yok");
@@ -191,7 +206,7 @@ export function kasayaCikis(k: Kasaba, kar: Karakter, isletme: string, tutar: nu
   const sahip = sakin(k, tapu.s);
   const kume = neden !== "yatir" && !!ben && !!sahip && ayniKume(ben, sahip);
   const karsilikli = neden !== "yatir" && karsilikliMi(md, k.ay, kar.o, tapu.s);
-  if (!cikisAc(md.cik, { i: islem, t: "kasaya", h: isletme, a: tutar, y: { isletme, o: kar.o, tutar, neden, kume, karsilikli } }, an)) return hata("transfer_bekliyor");
+  if (!cikisAc(md.cik, { i: islem, t: "kasaya", h: isletme, a: tutar, y: { ...ek, isletme, o: kar.o, tutar, neden, kume, karsilikli } }, an)) return hata("transfer_bekliyor");
   if (dus) kar.pa -= tutar;
   if (neden !== "yatir") {
     if (md.mh[0] !== k.ay) md.mh = [k.ay, []];
@@ -260,7 +275,7 @@ export function oyuncuHani(k: Kasaba, han = NPC_HAN_NO): OyuncuHani | undefined 
   return { isletme: id, sahip: t.s, fc: y?.fc ?? 100, seviye: y?.seviye ?? 0, kapasite: y && y.durum === "acik" && y.kapi ? y.kapasite : 0 };
 }
 
-function vergiAyir(md: MulkDefteri, isletme: string, tutar: number, oran: number): { vergi: number; net: number; kalan: number } {
+export function vergiAyir(md: MulkDefteri, isletme: string, tutar: number, oran: number): { vergi: number; net: number; kalan: number } {
   const eski = md.vergiKesir?.[isletme] ?? 0;
   const toplam = eski + tutar * oran;
   const vergi = Math.floor(toplam / 100);
@@ -279,7 +294,11 @@ export function mulkluKira(k: Kasaba, kar: Karakter, govde: unknown, an: number,
   if (han === undefined) return hata("han_gecersiz");
   if (!hanVar(k, han)) return hata("han_yok");
   const oh = oyuncuHani(k, han);
-  if (!oh) return kiraTut(k, kar, govde, an);
+  if (!oh) {
+    // Yanıttaki barınma görünümü GET /v1/barinma?han=N ile aynı biçim (kiralanan hanın numarası ve kataloğu).
+    const r = kiraTut(k, kar, govde, an);
+    return r.ok ? basarili({ ...r.deger, barinma: { ...barinmaGorunumu(k, kar, an), hanNo: han } }) : r;
+  }
   const md = mulkDefteri(k);
   if (oh.sahip === kar.o) return hata("kendine");
   const sahip = k.kar.get(oh.sahip);
@@ -301,7 +320,8 @@ export function mulkluKira(k: Kasaba, kar: Karakter, govde: unknown, an: number,
   const l = md.od[oh.isletme]!.filter(([o]) => o !== kar.o);
   l.push([kar.o, kira.bitis]);
   md.od[oh.isletme] = l;
-  return basarili({ ...r.deger, kira: { ...kira, kasaya: net }, vergi: { oran, tutar: vergi }, transfer: { islem: c.deger.islem } });
+  const gorunum = { ...barinmaGorunumu(k, kar, an, { ...oh, sahip }), hanNo: han };
+  return basarili({ ...r.deger, barinma: gorunum, kira: { ...kira, kasaya: net }, vergi: { oran, tutar: vergi }, transfer: { islem: c.deger.islem } });
 }
 
 /** İkram ödemesi: oyuncu hanında gelir vergisi sonrası net kasaya, NPC handa dünyadan çıkar. */
@@ -339,8 +359,23 @@ export function mulkluHanOdemesi(k: Kasaba, kar: Karakter, taban: number, an: nu
 
 // ── Gelen kayıtlar (IsletmeDO çıkış kutusundan) ──
 
-export function karGerekenler(kayitlar: CikisKaydi[]): string[] {
-  return kayitlar.flatMap((x) => (x.t === "cuzdana" && typeof x.y.o === "string" ? [x.y.o] : []));
+export function karGerekenler(kayitlar: CikisKaydi[], md?: MulkDefteri): string[] {
+  return kayitlar.flatMap((x) => {
+    if (x.t === "cuzdana" && typeof x.y.o === "string") return [x.y.o];
+    // İflas: depo ve raf eski sahibin envanterine döner.
+    const t = x.t === "iflas" && typeof x.y.isletme === "string" ? md?.t[x.y.isletme] : undefined;
+    return t ? [t.s] : [];
+  });
+}
+
+/** Depo + rafı sahibin envanterine boşaltır; sahip yüklenemiyorsa iade bekleyenine yazar (kayıp yok). */
+export function tezgahIade(k: Kasaba, isletme: string, o: string): void {
+  const md = mulkDefteri(k);
+  const tz = md.tz?.[isletme];
+  if (!tz) return;
+  const kar = k.kar.get(o);
+  tezgahBosalt(tz, kar ?? ((md.ia ??= {})[o] ??= {}));
+  delete md.tz![isletme];
 }
 
 /** Tek gelen kaydı işlem kimliğiyle bir kez uygular: cüzdana akçe, işletme yansısı, iflas (tapu boşalır). */
@@ -366,6 +401,7 @@ export function girisIsle(k: Kasaba, x: CikisKaydi, an: number): { durum: CevapD
     }
     if (x.t === "iflas") {
       if (tapu && tapu.ts === x.y.ts) {
+        tezgahIade(k, isletme, tapu.s);
         delete md.t[isletme];
         delete md.od[isletme];
       }
@@ -379,8 +415,15 @@ export function girisIsle(k: Kasaba, x: CikisKaydi, an: number): { durum: CevapD
 export function telafi(k: Kasaba, x: CikisKaydi): void {
   const md = mulkDefteri(k);
   if (x.t === "kasaya") {
-    const kar = typeof x.y.o === "string" ? k.kar.get(x.y.o) : undefined;
+    // Raf satışında mal alıcıya verildi: akçe malın sahibine (satıcıya) döner; yoksa ödeyene.
+    const satici = x.y.neden === "satis" && typeof x.y.satici === "string" ? k.kar.get(x.y.satici) : undefined;
+    const kar = satici ?? (typeof x.y.o === "string" ? k.kar.get(x.y.o) : undefined);
     if (kar) kar.pa += x.a;
+  } else if (x.t === "tezgah") {
+    // NPC parası işletmeye hiç girmedi: denetim kaydından düşer (akçe basılmadı).
+    md.kaynak = (md.kaynak ?? 0) - x.a;
+  } else if (x.t === "devral") {
+    // İşletme yeni sahibi kuramadı (beklenmez): kayıt yalnız tapu sürümünü taşır, para taşımaz.
   } else if (x.t === "kur") {
     const isletme = String(x.y.isletme);
     const tapu = md.t[isletme];
@@ -395,7 +438,7 @@ export function telafi(k: Kasaba, x: CikisKaydi): void {
 }
 
 export function telafiGerekenler(x: CikisKaydi): string[] {
-  if (x.t === "kasaya" && typeof x.y.o === "string") return [x.y.o];
+  if (x.t === "kasaya" && typeof x.y.o === "string") return typeof x.y.satici === "string" ? [x.y.o, x.y.satici] : [x.y.o];
   if (x.t === "kur") return [String((x.y.sahip as Kisi | undefined)?.o ?? "")].filter(Boolean);
   return [];
 }

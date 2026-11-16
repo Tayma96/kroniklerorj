@@ -29,6 +29,7 @@ import {
 } from "./isletme.ts";
 import { KALITE_ROLLERI, ROL_MESLEGI, type MulkTuru } from "./kurallar.ts";
 import { UZLASTIRMA_TUR_EN_COK, cikisKapat, girisUygula, type CevapDurumu, type CikisKaydi } from "./transfer.ts";
+import { devralUygula, tezgahKaydiUygula } from "./tezgah-isletme.ts";
 
 export interface TapuOzeti {
   isletme: string;
@@ -90,6 +91,8 @@ export function isletmeTelafi(is: Isletme, x: CikisKaydi): void {
   if (x.t !== "cuzdana") return;
   const neden = x.y.neden;
   if (neden === "maas" || neden === "tazminat") is.emanet += x.a;
+  // Devralma iadesi eski sahibe ulaşamadıysa (kişi yok) yeni sahibe kalmaz: dünyadan çıkar.
+  else if (neden === "devral") is.batak += x.a;
   else is.kasa += x.a;
 }
 
@@ -115,6 +118,23 @@ export function isletmeIsle(onceki: Isletme | undefined, ileti: IsletmeIleti, an
           is = tapuUygula(is, { isletme: ileti.isletme, yerlesim: ileti.isletme.split(".")[0]!, tur: (x.y.tur as MulkTuru) ?? is?.tur ?? "han", no: Number(x.y.no ?? is?.no ?? 1), ts: t.ts, sahip: t.sahip }, ay);
           girisUygula(is.gir, x.i, an, () => ({ durum: "kabul" }));
           sonuclar.push([x.i, "kabul"]);
+        } else if (x.t === "devral") {
+          const yeni = devralUygula(is, x, ay, an);
+          if (!yeni) {
+            sonuclar.push([x.i, "red", "gecersiz_istek"]);
+            continue;
+          }
+          is = yeni;
+          girisUygula(is.gir, x.i, an, () => ({ durum: "kabul" }));
+          sonuclar.push([x.i, "kabul"]);
+        } else if (x.t === "tezgah") {
+          if (!is) {
+            sonuclar.push([x.i, "red", "isletme_yok"]);
+            continue;
+          }
+          const hedef = is;
+          const r = girisUygula(hedef.gir, x.i, an, () => tezgahKaydiUygula(hedef, x, an));
+          sonuclar.push(r.neden ? [x.i, r.durum, r.neden] : [x.i, r.durum]);
         } else if (x.t === "kasaya") {
           if (!is) {
             sonuclar.push([x.i, "red", "isletme_yok"]);

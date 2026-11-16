@@ -170,5 +170,3 @@ Yemin → mertlik (mühürlü, çift başına ayda bir). Sözleşme ve ittifak k
 - **Açık kararların koddaki öneri değerleri:** D-17 edinim eşiği, D-21 yoksunluk değerleri, D-22 uyku, D-23 imaret
   konaklaması koda "öneri" etiketiyle girdi.
 - **Yaş:** handa ve seste yaş sınırı yok (Berkay). Mağaza yaş derecelendirmesi yayın öncesi doğrulanmalı (D-24).
-- **Çoklu handa NPC gelir havuzu paylaşımı:** her oyuncu hanı NPC gelirini ayrı alıyor (şehirde 5 katına çıkabilir);
-  tezgâh modeli tasarımında çözülecek.

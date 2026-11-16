@@ -26,6 +26,8 @@ import type { Karakter } from "../src/yerlesim/tipler.ts";
 import { bilet, MASA, sahteMasa, sahteSoket, type SahteSoket } from "./han-yardimci.ts";
 import { oyuncuEkle, testKasabasi } from "./kasaba-yardimci.ts";
 
+import { YENI_HESAP_ILETI } from "../src/han/kurallar.ts";
+
 type Masa = ReturnType<typeof sahteMasa>;
 function gir(m: Masa, hesap: string, ozan = false): SahteSoket {
   const s = sahteSoket();
@@ -283,6 +285,13 @@ test("H8 atışma: kabulde başlar (ilk kıta teklif edenin); sıra zorlanır; d
   const dn = d[0]!;
   assert.deepEqual(dn.son("atisma")?.atisma, { olay: 1, a: "ali", b: "veli", kita: 0, toplam: 2 * ATISMA_KITA, sira: "ali", asama: "kita", hak: [], oyVeren: [] });
   assert.equal(atismaBaslatYayinla(m.baglam(), kabulOlayi(3)), false, "ikinci atışma başlamaz");
+  // Atışma sürerken giren yeni hesap (24 sa): kıta sınırı hoş geldinde hem üstte hem atışma görünümünde.
+  const genc = sahteSoket();
+  baglan(m.baglam(), genc, { ...bilet("genc", "GENC"), ho: m.simdi - 60_000 });
+  m.soketler.push(genc);
+  assert.equal(genc.son("hosgeldin")?.kitaEnCok, YENI_HESAP_ILETI * 2);
+  assert.equal(genc.son("hosgeldin")?.atisma?.kitaEnCok, YENI_HESAP_ILETI * 2);
+  assert.equal(dn.son("hosgeldin")?.atisma?.kitaEnCok, undefined, "eski hesapta alan yok");
   await yolla(m, v, { t: "kita", metin: "önce ben" });
   assert.equal(hataKodu(v), "sira_degil");
   await yolla(m, dn, { t: "kita", metin: "ben de" });

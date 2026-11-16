@@ -170,9 +170,18 @@ export async function hanListesi(b: HanHesapBaglami, dil: unknown, hamHan?: unkn
     han: { tur, ad: HAN_TURU_ADLARI[tur][dilCoz(dil)], no: han, isletme: isletmeKimligi(yerlesim, "han", han) },
     koltuk: KOLTUK_SAYISI,
     masalar: masaSirala(masalar),
-    menu: Object.entries(IKRAM_MENUSU).map(([id, m]) => ({ id, fiyat: m.fiyat })),
+    menu: menuFiyatlari(kartlar.find((k) => k.no === han)),
     hanlar,
   });
+}
+
+/**
+ * Seçili hanın menüsü: oyuncu hanında fiyat çarpanıyla, gerçek ödeme formülüyle (`mulkluHanOdemesi`:
+ * ⌈taban × fc / 100⌉, en az 1); NPC hanında taban (istemci formül uygulamaz).
+ */
+export function menuFiyatlari(kart: Pick<HanKarti, "sahip" | "fc"> | undefined): { id: string; fiyat: number }[] {
+  const fc = kart?.sahip === "oyuncu" ? kart.fc : 100;
+  return Object.entries(IKRAM_MENUSU).map(([id, m]) => ({ id, fiyat: fc === 100 ? m.fiyat : Math.max(1, Math.ceil((m.fiyat * fc) / 100 - 1e-9)) }));
 }
 
 /** Dost ve hane üyeleri (en iyi çaba: yerleşim yanıt vermezse boş; han listesi bozulmaz). */
