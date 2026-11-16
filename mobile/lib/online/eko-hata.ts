@@ -1,5 +1,6 @@
 // Faz 6 ekonomi ve Faz 12–13 mülk/işletme hata kodları (online-server/src/tipler.ts HATA_DURUMU "Ekonomi" ve
-// "Mülkiyet ve işletme" bölümleri). ek-istemci.ts EK_HATALAR'a katılır; metinler i18n-sayfa/online10.ts "onl.hh.<kod>".
+// "Mülkiyet ve işletme" bölümleri). ek-istemci.ts EK_HATALAR'a katılır; metinler i18n-sayfa/online10.ts "onl.hh.<kod>"
+// (tezgâh kodları online16.ts).
 // Yaprak dosyadır: hiçbir online modülünü içe aktarmaz.
 export const EKO_MULK_HATALARI = [
   "ilan_gecersiz", "ilan_yok", "ilan_kapandi", "ilan_siniri", "pompa_siniri", "ayni_kume",
@@ -8,4 +9,7 @@ export const EKO_MULK_HATALARI = [
   "tezyin_gecersiz", "tezyin_var", "tezyin_siniri", "tutar_gecersiz", "kasa_yetersiz", "cekim_tavani", "emanet_yetersiz",
   "transfer_bekliyor", "carpan_gecersiz", "rol_gecersiz", "yetki_gecersiz", "maas_gecersiz", "maas_kesinti", "personel_dolu",
   "zaten_calisan", "teklif_var", "vekil_var", "sozlesme_yok", "han_dolu",
+  // Tezgâh modeli Dilim 1 (depo, raf, raftan satın alma, devralma)
+  "tezgah_yok", "kepenk_kendiliginden", "depo_dolu", "raf_dolu", "raf_satir_dolu", "satir_yok", "fiyat_bant_disi", "fiyat_degisti",
+  "devralma_kosulu", "kalite_gecersiz", "adet_gecersiz", "fiyat_gecersiz", "kendine",
 ] as const;

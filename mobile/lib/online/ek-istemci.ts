@@ -28,7 +28,8 @@ export const EK_HATALAR = [
 ] as const;
 export type EkHataKodu = (typeof EK_HATALAR)[number];
 export type EkHata = OnlineHata | EkHataKodu;
-export type EkSonuc<T> = { ok: true; deger: T } | { ok: false; hata: EkHata; bitis?: number | null };
+/** `ham`: sunucunun istemcinin henüz tanımadığı hata kodu (hata "gecersiz_istek"e düşer; ekran kendi metnini arayabilir). */
+export type EkSonuc<T> = { ok: true; deger: T } | { ok: false; hata: EkHata; bitis?: number | null; ham?: string };
 
 export const ekBasarili = <T,>(deger: T): EkSonuc<T> => ({ ok: true, deger });
 export const ekBasarisiz = <T = never,>(hata: EkHata, bitis?: number | null): EkSonuc<T> => (bitis !== undefined ? { ok: false, hata, bitis } : { ok: false, hata });
@@ -91,7 +92,8 @@ export async function ekCagir<T>(istek: EkIstek, bicim: (v: unknown) => v is T):
         const bitis = typeof g.bitis === "number" || g.bitis === null ? g.bitis : undefined;
         const kod = bilinenHata(g.hata) ? g.hata : durumdanHata(yanit.status);
         yanitOlayi(kod, yanit.status, !!belirtec);
-        son = ekBasarisiz(kod, bitis);
+        const ham = !bilinenHata(g.hata) && typeof g.hata === "string" && /^[a-z_]{2,40}$/.test(g.hata) ? g.hata : undefined;
+        son = ham ? { ok: false, hata: kod, ...(bitis !== undefined ? { bitis } : {}), ham } : ekBasarisiz(kod, bitis);
       }
     } catch {
       son = ekBasarisiz(iptal.signal.aborted ? "zaman_asimi" : "ag_yok");

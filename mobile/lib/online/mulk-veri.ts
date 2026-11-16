@@ -6,6 +6,7 @@ import { useMemo } from "react";
 import { useOnline } from "./durum";
 import { ekCagir, metinMi, nesneMi, sayiMi, type EkSonuc } from "./ek-istemci";
 import { sahteMulkIstemci } from "./sahte-mulk";
+import type { YolcuKarti } from "./tezgah-veri";
 
 export const MULK_TURLERI = ["han", "dukkan", "atolye"] as const;
 export type MulkTuru = (typeof MULK_TURLERI)[number];
@@ -53,7 +54,10 @@ export interface IsletmePaneli {
   kapasite: number; tezyin: Partial<Record<TezyinGrubu, string>>; fiyatCarpani: number; kapi: boolean;
   kasa?: number; emanet?: number; borc?: number; borcAy?: number; defter?: [number, string, number, string?][];
   maasYuku?: number; kalite?: { toplam: number; dokum: { rol: Rol; kademe: number; kaynak: "personel" | "sahip" }[] };
-  npcGeliri?: { tutar: number; taban: number; itibarYuzde: number; kaliteYuzde: number; teveccuhYuzde: number; tavan: number };
+  /** Tezgâh modeli: pasif gelir kalktı; han payını yolcu havuzundan alır (`kaynak`), dükkân raftan satar. Eski sunucu taban/tutar/teveccüh gönderir. */
+  npcGeliri?: { kaynak?: "yolcuHavuzu" | "raf" | "yok"; itibarYuzde: number; kaliteYuzde: number; tavan: number | null; tutar?: number; taban?: number; teveccuhYuzde?: number };
+  /** Han: son ay dönümünün yolcu payı (yalnız sahip/çalışan). */
+  yolcu?: YolcuKarti;
   bakim?: number; personel?: SozlesmeGorunumu[];
   teklifler?: { n: number; hedef: { o: string; ad: string }; r: Rol; m: number; ay: number }[];
   oneriler?: { n: number; oneren: string; hedef: { o?: string; n?: string; ad: string }; r: Rol; m: number; ay: number }[];

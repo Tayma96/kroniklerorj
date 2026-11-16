@@ -2,7 +2,9 @@
 // Konuma ve yetkiye göre: kasa (yatır/çek, emanet, muhasebe), ayarlar (ad, tezyin, fiyat çarpanı, kapı), personel
 // (sözleşme, yetki, maaş, işe alım, çıkarma, istifa) ve devir (önizleme, teklif, kabul). Dışarıdan bakan yalnız vitrini
 // görür. Kasa, gelir dökümü, kalite ve devir sürümü sunucudan gelir; her yazmadan sonra panel yeniden okunur.
-import { useCallback, useEffect, useState } from "react";
+// Tezgâh modeli (dükkân, atölye): GET .../tezgah ile dükkân sahnesi, kepenk, raf ızgarası (sahibe "Dükkânım", müşteriye
+// "Dükkâna gir"), depo çekmecesi ve gün sonu; elle kapı ayarı ve fiyat çarpanı burada yoktur. Han: yolcu payı dökümü.
+import { useCallback, useEffect, useRef, useState } from "react";
 import { View, Text, TextInput } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useI18n, applyParams } from "../../../lib/i18n";
@@ -19,9 +21,15 @@ import { Sayac, Secenekler } from "../../../lib/online/toplum-ui";
 import { ekHataAnahtari, type EkHata } from "../../../lib/online/ek-istemci";
 import { istekNoUret } from "../../../lib/online/depo";
 import {
-  MULK_IKON, ROLLER, SINIR, TEZYIN, TEZYIN_GRUPLARI, YETKILER, useMulkIstemci,
+  MULK_IKON, ROLLER, SINIR, TEZYIN, TEZYIN_GRUPLARI, YETKILER, isletmeParca, useMulkIstemci,
   type DevirOnizleme, type IsletmeKomutu, type PanelYaniti, type Rol, type SozlesmeGorunumu, type TezyinGrubu, type Yetki,
 } from "../../../lib/online/mulk-veri";
+import { dukkanlariHatirla, hatirlananDukkanlar, tezgahHataMetni, tezgahHatirla, useTezgahIstemci, type TezgahGorunumu } from "../../../lib/online/tezgah-veri";
+import {
+  DepoCekmecesi, DepoOzeti, DevralCekmecesi, DukkanBasligi, GunSonuKarti, KepenkSatiri, RafCekmecesi, RafIzgarasi, SatinAlCekmecesi, TezgahIskeleti, YolcuPayiDokumu,
+} from "../../../lib/online/tezgah-ui";
+import { hatirlananMulkListesi } from "../../../lib/online/simdi-rehber";
+import { kisiYolu } from "../../../lib/online/toplum-veri";
 
 type Ceviri = (k: string) => string;
 type Bolum = "kasa" | "ayar" | "personel" | "devir";
@@ -107,6 +115,34 @@ function IsletmeEkran() {
   const [carpan, setCarpan] = useState<number | null>(null);
   const [isAl, setIsAl] = useState<{ hedef: string | null; rol: Rol; maas: number }>({ hedef: null, rol: "garson", maas: 5 });
   const [devirF, setDevirF] = useState<{ alici: string | null; fiyat: number }>({ alici: null, fiyat: 100 });
+  // Tezgâh (dükkân, atölye)
+  const tzi = useTezgahIstemci();
+  const hesap = o.profil?.hesapId ?? "";
+  const tezgahli = isletmeParca(id)?.tur === "dukkan" || isletmeParca(id)?.tur === "atolye";
+  const [tz, setTz] = useState<TezgahGorunumu | null>(null);
+  const [tzHata, setTzHata] = useState<string | null>(null);
+  const [devralmaAy, setDevralmaAy] = useState<number | null>(() => hatirlananDukkanlar(hesap)?.devralmaKepenkAy ?? null);
+  const [edinimFiyat, setEdinimFiyat] = useState<number | null>(() => hatirlananMulkListesi(hesap)?.edinimSarti.dukkan?.fiyat ?? null);
+  // Çekmeceler: her açılış yeni `oturum` (eski isteğin sonucu yeni çekmeceye yazılmaz).
+  const acilis = useRef(0);
+  const [cek, setCek] = useState<{ tur: "raf" | "al" | "depo" | "devral"; satir: number | null; oturum: number } | null>(null);
+  const ac = (tur: "raf" | "al" | "depo" | "devral", satir: number | null = null) => setCek({ tur, satir, oturum: ++acilis.current });
+  const kapat = () => setCek(null);
+
+  const tezgahYukle = useCallback(async () => {
+    if (!tezgahli) return;
+    const r = await tzi.tezgah(id);
+    if (r.ok) { setTz(r.deger); setTzHata(null); tezgahHatirla(hesap, r.deger); } else setTzHata(tezgahHataMetni(t, r));
+  }, [tzi, id, tezgahli, hesap]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { void tezgahYukle(); }, [tezgahYukle]);
+  // Devralma eşiği (ay) yalnız çarşı listesinde gelir: bilinmiyorsa bir kez sessizce alınır.
+  useEffect(() => {
+    if (!tezgahli || devralmaAy !== null) return;
+    let iptal = false;
+    void tzi.dukkanlar().then((r) => { if (!iptal && r.ok) { setDevralmaAy(r.deger.devralmaKepenkAy); dukkanlariHatirla(hesap, r.deger); } });
+    return () => { iptal = true; };
+  }, [tezgahli]); // eslint-disable-line react-hooks/exhaustive-deps
+  const tezgahTazele = async () => { await tezgahYukle(); if (!sahte) void o.yerlesimYukle(true); };
 
   const yukle = useCallback(async () => {
     if (!id) { setYukHata("isletme_yok"); return; }
@@ -165,15 +201,17 @@ function IsletmeEkran() {
       <Satir etiket={t("onl.isl.maasYuku")} deger={ak(is.maasYuku ?? 0)} rtl={rtl} />
       <Satir etiket={t("onl.isl.bakim")} deger={ak(is.bakim ?? 0)} rtl={rtl} />
     </Cerceve> : <BosKart icon="coins" metin={t("onl.isl.kasaGizli")} rtl={rtl} />}
-    {is.npcGeliri ? <Cerceve ic={{ padding: 12, gap: 4 }}>
+    {is.tur === "han" && is.npcGeliri ? <Cerceve ic={{ padding: 12, gap: 4 }}>
       <Text style={{ fontFamily: F.display, fontSize: 11.5, letterSpacing: rtl ? 0 : 1.2, color: C.goldBright, textAlign: hiza(rtl) }}>{t("onl.isl.npcGeliri")}</Text>
-      <Satir etiket={t("onl.isl.g.taban")} deger={ak(is.npcGeliri.taban)} rtl={rtl} />
+      {is.npcGeliri.taban !== undefined ? <Satir etiket={t("onl.isl.g.taban")} deger={ak(is.npcGeliri.taban)} rtl={rtl} /> : null}
       <Satir etiket={t("onl.isl.g.itibar")} deger={`+%${is.npcGeliri.itibarYuzde}`} rtl={rtl} />
       <Satir etiket={t("onl.isl.g.kalite")} deger={`+%${is.npcGeliri.kaliteYuzde}`} rtl={rtl} />
-      <Satir etiket={t("onl.isl.g.teveccuh")} deger={`${is.npcGeliri.teveccuhYuzde >= 0 ? "+" : ""}%${is.npcGeliri.teveccuhYuzde}`} rtl={rtl} />
-      <Satir etiket={t("onl.isl.g.tavan")} deger={ak(is.npcGeliri.tavan)} rtl={rtl} />
-      <Satir etiket={t("onl.isl.g.aylik")} deger={ak(is.npcGeliri.tutar)} renk={C.sage} rtl={rtl} />
+      {is.npcGeliri.teveccuhYuzde !== undefined ? <Satir etiket={t("onl.isl.g.teveccuh")} deger={`${is.npcGeliri.teveccuhYuzde >= 0 ? "+" : ""}%${is.npcGeliri.teveccuhYuzde}`} rtl={rtl} /> : null}
+      {is.npcGeliri.tavan !== null ? <Satir etiket={t("onl.isl.g.tavan")} deger={ak(is.npcGeliri.tavan)} rtl={rtl} /> : null}
+      {is.npcGeliri.tutar !== undefined ? <Satir etiket={t("onl.isl.g.aylik")} deger={ak(is.npcGeliri.tutar)} renk={C.sage} rtl={rtl} /> : null}
+      {is.npcGeliri.kaynak === "yolcuHavuzu" ? <Not metin={t("onl.tz.yp.havuzNot")} rtl={rtl} /> : null}
     </Cerceve> : null}
+    {is.tur === "han" && is.yolcu ? <YolcuPayiDokumu y={is.yolcu} t={t} rtl={rtl} /> : null}
     {sahip || yetki("kasa") || yonetici ? <Cerceve ic={{ padding: 12, gap: 10 }}>
       <Sayac etiket={t("onl.isl.tutar")} deger={tutar} en={1} cok={SINIR.transferEnCok} adim={5} onDegis={setTutar} />
       <View style={{ flexDirection: yon(rtl), flexWrap: "wrap", gap: 8 }}>
@@ -217,15 +255,16 @@ function IsletmeEkran() {
       })}
       <Not metin={applyParams(t("onl.isl.tezyinNot"), [is.tezyinKalan ?? 0])} rtl={rtl} />
     </Cerceve> : null}
-    {yetki("fiyat") ? <Cerceve ic={{ padding: 12, gap: 8 }}>
+    {yetki("fiyat") && is.tur === "han" ? <Cerceve ic={{ padding: 12, gap: 8 }}>
       <Sayac etiket={t("onl.isl.fiyatCarpani")} deger={carpan ?? is.fiyatCarpani} en={SINIR.fiyatEnAz} cok={SINIR.fiyatEnCok} adim={5} birim="%" onDegis={setCarpan} />
       <CizgiDugme etiket={t("onl.isl.fiyatKaydet")} icon="scales" rtl={rtl} kucuk kapali={bekliyor || carpan === is.fiyatCarpani} onPress={() => { void komut("fiyat", { carpan }); }} />
     </Cerceve> : null}
-    {yetki("musteri") ? <Cerceve ic={{ padding: 12, gap: 8 }}>
+    {yetki("musteri") && is.tur === "han" ? <Cerceve ic={{ padding: 12, gap: 8 }}>
       <Not metin={t(is.kapi ? "onl.isl.kapiAcikNot" : "onl.isl.kapiKapaliNot")} rtl={rtl} />
       <CizgiDugme etiket={t(is.kapi ? "onl.isl.kapiKapat" : "onl.isl.kapiAc")} icon={is.kapi ? "shield" : "flame"} rtl={rtl} kucuk kapali={bekliyor} onPress={() => { void komut("kapi", { acik: !is.kapi }); }} />
     </Cerceve> : null}
-    {!yonetici && !yetki("fiyat") && !yetki("musteri") ? <BosKart icon="shield" metin={t("onl.isl.yetkiYok")} rtl={rtl} /> : null}
+    {is.tur !== "han" ? <Not metin={t("onl.tz.ayarNot")} rtl={rtl} /> : null}
+    {!yonetici && !(is.tur === "han" && (yetki("fiyat") || yetki("musteri"))) ? <BosKart icon="shield" metin={t("onl.isl.yetkiYok")} rtl={rtl} /> : null}
   </View> : null;
 
   const personel = is && konum ? <View style={{ gap: 10 }}>
@@ -264,18 +303,64 @@ function IsletmeEkran() {
     </Cerceve>
   </View> : null;
 
+  // ---- tezgâh (dükkân/atölye): sahibe Dükkânım, müşteriye Dükkâna gir
+  const yetkili = !!tz && tz.depo !== undefined;
+  const musteri = !!tz && !konum && !yetkili;
+  const cekSatir = cek?.satir ?? null;
+  const tezgahBolumu = tz ? <View style={{ gap: 10 }}>
+    <DukkanBasligi g={tz} rtl={rtl} t={t} konum={konum} />
+    <KepenkSatiri g={tz} rtl={rtl} t={t} musteri={musteri} devralmaAy={devralmaAy} />
+    {musteri && tz.sahip.id ? <Pressable accessibilityRole="link" accessibilityLabel={applyParams(t("onl.tz.sahipSayfasi"), [tz.sahip.ad || t("onl.hs.sahipBilinmez")])}
+      onPress={() => { hap("tap"); router.push(kisiYolu(tz.sahip.id)); }}
+      style={({ pressed }) => ({ minHeight: 44, flexDirection: yon(rtl), alignItems: "center", gap: 8, opacity: pressed ? 0.7 : 1 })}>
+      <GameIcon name="crown" size={14} color={C.gold} />
+      <Text numberOfLines={1} style={{ flexShrink: 1, fontFamily: F.serif, fontSize: 14.5, color: C.goldBright, textDecorationLine: "underline", textAlign: hiza(rtl) }}>{applyParams(t("onl.tz.sahipSayfasi"), [tz.sahip.ad || t("onl.hs.sahipBilinmez")])}</Text>
+    </Pressable> : null}
+    {tz.tur === "dukkan" ? <>
+      <Baslik2 metin={t("onl.tz.raf")} rtl={rtl} ust={10} sag={!musteri ? <Text style={{ fontFamily: F.display, fontSize: 12, color: C.parchmentDim }}>{applyParams(t("onl.tz.rafSatir"), [tz.raf.length, tz.rafSiniri.satir])}</Text> : undefined} />
+      <RafIzgarasi g={tz} t={t} rtl={rtl} musteri={musteri} onSatir={(n) => ac(musteri ? "al" : "raf", n)} onBos={tz.izin.raf ? () => ac("raf", null) : undefined} />
+    </> : null}
+    {musteri && tz.devralinabilir ? <Cerceve ic={{ padding: 12, gap: 8 }}>
+      <Not metin={devralmaAy ? applyParams(t("onl.tz.dv.kosul"), [devralmaAy]) : t("onl.tz.dv.kosulGenel")} rtl={rtl} />
+      <CizgiDugme etiket={t("onl.tz.dv.incele")} icon="crown" rtl={rtl} kucuk onPress={() => {
+        ac("devral");
+        if (edinimFiyat === null) void ist.liste().then((r) => { if (r.ok) setEdinimFiyat(r.deger.edinimSarti.dukkan?.fiyat ?? null); });
+      }} />
+    </Cerceve> : null}
+    {yetkili ? <>
+      <Baslik2 metin={t("onl.tz.depo")} rtl={rtl} ust={10} />
+      {tz.tur === "atolye" ? <Not metin={t("onl.tz.uretimYakinda")} rtl={rtl} /> : null}
+      <DepoOzeti g={tz} t={t} rtl={rtl} onAc={() => ac("depo")} />
+      {tz.tur === "dukkan" ? <>
+        <Baslik2 metin={t("onl.tz.gunSonu")} rtl={rtl} ust={10} />
+        <GunSonuKarti gs={tz.gunSonu} ozet={tz.ozet} t={t} rtl={rtl} />
+      </> : null}
+    </> : null}
+  </View> : null;
+  const tezgahCekmeceleri = tz ? <>
+    <RafCekmecesi acik={cek?.tur === "raf"} oturum={cek?.oturum ?? 0} g={tz} satirNo={cekSatir} ist={tzi} onKapat={kapat} onYenile={tezgahTazele}
+      onSatir={(n) => setCek((c) => (c && c.tur === "raf" ? { ...c, satir: n } : c))} onDepo={() => ac("depo")} rtl={rtl} t={t} />
+    <SatinAlCekmecesi acik={cek?.tur === "al"} oturum={cek?.oturum ?? 0} g={tz} satirNo={cekSatir} ist={tzi} para={y.ben.para} onKapat={kapat} onYenile={tezgahTazele} rtl={rtl} t={t} />
+    {yetkili ? <DepoCekmecesi acik={cek?.tur === "depo"} oturum={cek?.oturum ?? 0} g={tz} ist={tzi} onKapat={kapat} onYenile={tezgahTazele} rtl={rtl} t={t} /> : null}
+    <DevralCekmecesi acik={cek?.tur === "devral"} oturum={cek?.oturum ?? 0} isletme={tz.isletme} ad={tz.ad} kepenkAy={tz.kepenkAy} devralmaAy={devralmaAy} edinimFiyat={edinimFiyat} ist={tzi}
+      onKapat={kapat} rtl={rtl} t={t}
+      onBitti={async (bedel) => { kapat(); setBilgi(bedel ? applyParams(t("onl.tz.dv.tamam"), [bedel]) : t("onl.tz.dv.tamamKisa")); await Promise.all([yukle(), tezgahYukle()]); if (!sahte) void o.yerlesimYukle(true); }} />
+  </> : null;
+
   return <OnlineSayfa gorsel={sahneGorseli(y.yerlesim.tur, y.saat.mevsim)} oran={0.3} rtl={rtl} t={t}>
     <View style={{ flexDirection: yon(rtl), alignItems: "center", gap: 6 }}>
-      <GeriDugme rtl={rtl} etiket={t("onl.geri")} onPress={() => geriGit(router, "/online/mulk")} />
+      <GeriDugme rtl={rtl} etiket={t("onl.geri")} onPress={() => geriGit(router, tezgahli && !konum ? "/online/carsi" : "/online/mulk")} />
       <View style={{ flex: 1 }} />
       <Hap icon="coins" metin={String(y.ben.para)} erisim={applyParams(t("onl.ya.paraErisim"), [y.ben.para])} />
     </View>
     <View style={{ marginTop: 8, marginBottom: 12 }}>
-      <SayfaBasi ust={y.yerlesim.ad} baslik={t("onl.isl.baslik")} alt={t(konum ? "onl.isl.alt" : "onl.isl.altVitrin")} rtl={rtl} />
+      <SayfaBasi ust={y.yerlesim.ad} baslik={t(tezgahli ? (konum ? (isletmeParca(id)?.tur === "atolye" ? "onl.tz.baslikAtolye" : "onl.tz.baslikSahip") : "onl.tz.baslikMusteri") : "onl.isl.baslik")}
+        alt={t(tezgahli ? (konum ? "onl.tz.altSahip" : "onl.tz.altMusteri") : konum ? "onl.isl.alt" : "onl.isl.altVitrin")} rtl={rtl} />
     </View>
-    {yukHata && !p ? <Bant metin={t(ekHataAnahtari(yukHata))} rtl={rtl} eylem={t("onl.yenidenDene")} onEylem={() => { void yukle(); }} />
-      : !p ? <Yukleniyor metin={t("onl.isl.yukleniyor")} /> : <>
-        {ust}
+    {yukHata && !p && (!tezgahli || (!tz && tzHata)) ? <Bant metin={t(ekHataAnahtari(yukHata))} rtl={rtl} eylem={t("onl.yenidenDene")} onEylem={() => { void yukle(); void tezgahYukle(); }} />
+      : tezgahli && !tz && tzHata ? <Bant metin={tzHata} rtl={rtl} eylem={t("onl.yenidenDene")} onEylem={() => { void tezgahYukle(); }} />
+      : !p || (tezgahli && !tz) ? (tezgahli ? <TezgahIskeleti etiket={t("onl.isl.yukleniyor")} rtl={rtl} /> : <Yukleniyor metin={t("onl.isl.yukleniyor")} />) : <>
+        {tezgahli ? tezgahBolumu : ust}
         {bilgi ? <View style={{ marginTop: 10 }}><Bant metin={bilgi} rtl={rtl} tur="bilgi" /></View> : null}
         {hata ? <View style={{ marginTop: 10 }}><Bant metin={hata} rtl={rtl} /></View> : null}
         {!konum ? <View style={{ marginTop: 12, gap: 10 }}>
@@ -291,9 +376,10 @@ function IsletmeEkran() {
             <DevirKarti d={dv} t={t} rtl={rtl} />
             <AltinDugme etiket={t("onl.isl.devirKabul")} icon="crown" rtl={rtl} bekliyor={bekliyor} onPress={() => { void komut("devir", { islem: "kabul", surum: dv.surum }, t("onl.isl.devirAlindi")); }} />
           </> : null}
-          {!prm.teklif && !prm.devir ? <BosKart icon="house" metin={t("onl.isl.vitrinNot")} rtl={rtl} /> : null}
+          {!prm.teklif && !prm.devir && !tezgahli ? <BosKart icon="house" metin={t("onl.isl.vitrinNot")} rtl={rtl} /> : null}
         </View> : <>
-          <View accessibilityRole="tablist" style={{ flexDirection: yon(rtl), gap: 6, marginTop: 14, marginBottom: 12 }}>
+          {tezgahli ? <Baslik2 metin={t("onl.tz.yonetim")} rtl={rtl} ust={18} /> : null}
+          <View accessibilityRole="tablist" style={{ flexDirection: yon(rtl), gap: 6, marginTop: tezgahli ? 0 : 14, marginBottom: 12 }}>
             {bolumler.map((b) => <Pressable key={b} accessibilityRole="tab" accessibilityState={{ selected: bolum === b }} accessibilityLabel={t("onl.isl.b." + b)} onPress={() => { hap("selection"); setBolum(b); setHata(null); setBilgi(null); }}
               style={{ flex: 1, minHeight: 44, borderRadius: 8, borderWidth: bolum === b ? 1.5 : 1, borderColor: bolum === b ? C.goldBright : "rgba(201,162,78,0.35)", backgroundColor: bolum === b ? "rgba(201,162,78,0.2)" : "rgba(14,10,6,0.7)", alignItems: "center", justifyContent: "center", paddingHorizontal: 4 }}>
               <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={{ fontFamily: F.display, fontSize: 12.5, color: bolum === b ? C.parchment : C.parchmentDim }}>{t("onl.isl.b." + b)}</Text>
@@ -303,8 +389,9 @@ function IsletmeEkran() {
         </>}
         <View style={{ marginTop: 18, flexDirection: yon(rtl), alignItems: "center", gap: 8 }}>
           <GameIcon name="scroll" size={14} color={C.parchmentMuted} />
-          <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 13, lineHeight: 18, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{t("onl.isl.kural")}</Text>
+          <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 13, lineHeight: 18, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{t(tezgahli ? "onl.tz.kural" : "onl.isl.kural")}</Text>
         </View>
+        {tezgahCekmeceleri}
       </>}
   </OnlineSayfa>;
 }
