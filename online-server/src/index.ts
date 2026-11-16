@@ -113,7 +113,10 @@
 //        tezyin {grup, secim} | fiyat {carpan} | kapi {acik} (yalnız han) | personel {islem, ...} | devir {islem: teklif|geri|kabul}
 //        Tezgâh (Dilim 1): depo {yon: koy|al, mal, kalite?, adet} | raf {islem: koy|al|fiyat, ...} |
 //        satinal {satir, adet, fiyat?} | devral {}
-//   GET  /v1/dukkanlar                   → yerleşimdeki dükkânlar (raf özeti, kepenk, devralma), yuva doluluğu
+//        Atölye (Dilim 2): zanaat {meslek} | uret {tarif} | mesai {emek} | emir {islem: ac, tarif, kez | iptal, emir} |
+//        toplu {siparis} | genislet {} (dükkân da)
+//   GET  /v1/dukkanlar                   → yerleşimdeki dükkânlar (raf özeti, kepenk, devralma), yuva doluluğu, edinim bedeli
+//   GET  /v1/atolyeler                   → yerleşimdeki atölyeler (zanaat, kepenk, devralma) ve toplu siparişler
 //   GET  /v1/isletme/:id/tezgah          → raf (herkese); depo, gün sonu dökümü, izinler (yetkiliye)
 //   GET  /v1/isletme/:id/onizle?mal&kalite&fiyat&adet → tahmini NPC payı ve adet (salt okuma)
 //   GET|POST /yonetim/<uc>               → YONETIM_UCLARI (src/tipler.ts); kurallar src/yonetim/islem.ts
@@ -172,7 +175,7 @@ const DEBDEBE_YAZMA: Readonly<Record<string, DebdebeIslem>> = {
   "/v1/debdebe/levha-gorunur": "debdebeLevhaGorunur",
 };
 const ISLETME_YOLU = /^\/v1\/isletme\/([^/]{1,64})(?:\/([a-z]{1,16}))?$/;
-const ISLETME_POST = new Set(["yatir", "cek", "emanet", "ad", "tezyin", "fiyat", "kapi", "personel", "devir", "depo", "raf", "satinal", "devral"]);
+const ISLETME_POST = new Set(["yatir", "cek", "emanet", "ad", "tezyin", "fiyat", "kapi", "personel", "devir", "depo", "raf", "satinal", "devral", "zanaat", "uret", "mesai", "emir", "toplu", "genislet"]);
 
 /** Örnek yaşadıkça JWKS önbelleğini tutar. `fetch` çağrı anında çözülür (testte değiştirilebilir). */
 const google = new GoogleDogrulayici({ fetch: (url) => fetch(url) });
@@ -680,6 +683,8 @@ async function yonlendir(istek: Request, env: Env): Promise<Response> {
       return yontem === "GET" ? hesaba(istek, env, (hesapId) => basarili({ islem: "mulk", hesapId, alt: "liste", dil })) : hataYaniti("yontem_yok");
     case "/v1/dukkanlar":
       return yontem === "GET" ? hesaba(istek, env, (hesapId) => basarili({ islem: "mulk", hesapId, alt: "dukkanlar", dil })) : hataYaniti("yontem_yok");
+    case "/v1/atolyeler":
+      return yontem === "GET" ? hesaba(istek, env, (hesapId) => basarili({ islem: "mulk", hesapId, alt: "atolyeler", dil })) : hataYaniti("yontem_yok");
     case "/v1/mulk/edin":
       if (yontem !== "POST") return hataYaniti("yontem_yok");
       return hesaba(istek, env, async (hesapId) => {

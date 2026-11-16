@@ -8,6 +8,7 @@ import type { Isletme, Kisi } from "./isletme.ts";
 import { bakim, defterYaz, etkinler, iflasEt, isletmeKur, kalite, maasOde } from "./isletme.ts";
 import { IFLAS_BORC_AY, ITIBAR_BORC, ITIBAR_EN_COK, ITIBAR_KALITE, ITIBAR_MAAS_BOZMA, ITIBAR_MUSTERI, ITIBAR_MUSTERI_TAVAN, isletmeCoz } from "./kurallar.ts";
 import { cikisAc, type CevapDurumu, type CikisKaydi } from "./transfer.ts";
+import { zanaatMi } from "./atolye.ts";
 
 type AyGirdisi = [ay: number, net: number, satir: number];
 
@@ -23,7 +24,7 @@ function girdileriCoz(x: CikisKaydi): AyGirdisi[] | undefined {
   return g.sort((a, b) => a[0] - b[0]);
 }
 
-/** Dükkânın açık (kepenksiz) bir ayı: bakım + borç, faaliyet ayı, itibar (satış yapan satır + sayılan müşteri), iflas. */
+/** Dükkânın (ve üretimli atölye ayının) açık (kepenksiz) bir ayı: bakım + borç, faaliyet ayı, itibar (satış yapan satır + sayılan müşteri), iflas. */
 function dukkanAyi(is: Isletme, ay: number, satir: number, an: number): void {
   if (is.durum !== "acik") return;
   const gider = bakim(is) + is.borc;
@@ -51,13 +52,18 @@ export function tezgahKaydiUygula(is: Isletme, x: CikisKaydi, an: number): { dur
   if (!g) return { durum: "red", neden: "gecersiz_istek" };
   // Önce gelirler (kasa ve seviye puanına sayılan gelir), sonra ay ay muhasebe: iflas bile olsa akçe kasada kalmaz,
   // iflasta kasa sahibin cüzdanına gider.
+  if (is.tur === "atolye" && zanaatMi(x.y.za)) is.za = x.y.za;
+  const kalem = is.tur === "han" ? "yolcu" : x.y.neden === "toplu" ? "toplu" : "npcSatis";
   for (const [ay, net] of g) {
     if (net <= 0) continue;
     is.kasa += net;
     is.gelir += net;
-    defterYaz(is, ay, is.tur === "han" ? "yolcu" : "npcSatis", net);
+    defterYaz(is, ay, kalem, net);
   }
   if (is.tur === "dukkan") for (const [ay, , satir] of g) dukkanAyi(is, ay, satir, an);
+  // Atölye (Dilim 2): üretimli ay girdisi (satir > 0) bakım, maaş, faaliyet, itibar işletir; toplu sipariş ödülü
+  // (satir 0) yalnız gelirdir. Üretimsiz ay girdi doğurmaz: kepenkli.
+  if (is.tur === "atolye") for (const [ay, , satir] of g) if (satir > 0) dukkanAyi(is, ay, satir, an);
   return { durum: "kabul" };
 }
 
@@ -87,7 +93,7 @@ export function devralUygula(is: Isletme | undefined, x: CikisKaydi, ay: number,
     }
     const kalan = is.kasa + is.emanet;
     // Zorunlu sistem kaydı: kutu sınırı uygulanmaz (eski sahibin akçesi yeni sahibe kalamaz).
-    if (kalan > 0) cikisAc(yeni.cik, { i: `${is.id}:devral:${ts}`, t: "cuzdana", h: is.yerlesim, a: kalan, y: { isletme: is.id, o: eski.o, h: eski.h, tutar: kalan, neden: "devral" } }, an, Infinity);
+    if (kalan > 0) cikisAc(yeni.cik, { i: `${is.id}:devral:${ts}`, t: "cuzdana", h: is.yerlesim, a: kalan, y: { isletme: is.id, o: eski.o, h: eski.h, tutar: kalan, neden: "devral", ad: is.ad } }, an, Infinity);
     defterYaz(yeni, ay, "devral", 0, `${eski.o}:${kalan}`);
   } else yeni.kasa = is.kasa;
   return yeni;

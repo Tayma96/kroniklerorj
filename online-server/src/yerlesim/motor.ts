@@ -2182,11 +2182,11 @@ export class YerlesimMotoru {
   }
 
   /** istekNo'lu yerel adım (cüzdan, tapu, çıkış kutusu). `yukle`: etkilenen diğer karakterler. */
-  async mulkAdimi(hesapId: string, govde: unknown, yukle: string[], isle: (kar: Karakter) => Sonuc<Record<string, unknown>>): Promise<Sonuc<unknown>> {
+  async mulkAdimi(hesapId: string, govde: unknown, yukle: string[], isle: (kar: Karakter, ek: { olaylar: OlayTaslagi[]; ekonomi?: boolean }) => Sonuc<Record<string, unknown>>): Promise<Sonuc<unknown>> {
     if (yukle.length) await this.#yukle(yukle);
     this.#kirli.add(MULK);
     return this.#tekrarGuvenli(hesapId, govde, (kar, _s, _ay, ek) => {
-      const r = isle(kar);
+      const r = isle(kar, ek);
       if (r.ok) for (const o of yukle) if (o !== kar.o) ek.digerleri.push(o);
       // Mülk olay kuyruğu (devralma bildirimi) yanıtla aynı yazımda olay akışına.
       if (r.ok && this.kasaba.mk?.ob?.length) ek.olaylar.push(...this.kasaba.mk.ob.splice(0));

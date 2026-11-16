@@ -17,7 +17,13 @@ import { ITIBAR_BASLANGIC, NPC_HAN_NO, isletmeCoz, isletmeKimligi } from "./kura
 import { rafBos, raftanSat } from "./raf.ts";
 import { hanNolari, mulkDefteri, vergiAyir } from "./tapu.ts";
 import { CIKIS_EN_COK, cikisAc } from "./transfer.ts";
-import { DUKKAN_NPC_TAVAN, PAY_YONTEMI, TEZGAH_KAYIT_PAYI } from "./tezgah-kurallar.ts";
+import { DUKKAN_NPC_TAVAN, NPC_EMEK_AY, PAY_YONTEMI, TEZGAH_KAYIT_PAYI, URETIM_DOKUM_EN_COK } from "./tezgah-kurallar.ts";
+import { depoKapasitesi } from "./depo.ts";
+import { etkinSeviye } from "./atolye.ts";
+import { emirleriIsle } from "./uretim-emri.ts";
+import { topluDonumu } from "./toplu-siparis.ts";
+import { atolyeAdaylari, zanaatHazirla } from "./tezgah-uclar.ts";
+import { levhaYaz } from "../yerlesim/levha.ts";
 
 /**
  * Yerleşimde o meslekte (ana meslek) yaşayan oyuncu sayısı (kıtlık sinyali). Pazardaki kural gibi (npc-taban.ts
@@ -79,6 +85,7 @@ export function tezgahDonumu(k: Kasaba, ay: number): OlayTaslagi[] {
     if (!c || c.tur !== "dukkan" || c.yerlesim !== k.y || tapu.y?.durum === "iflas") continue;
     // Tezgâh kaydı yoksa kurulur: devralma sayacı her dükkânda ilerler.
     const t = (tz[id] ??= bosTezgah());
+    t.gk ??= tapu.y?.seviye ?? 0;
     tumu.push(id);
     if (!t.r.some((s) => partiToplam(s.p) > 0) || !yerVar(k, id)) continue;
     const seviye = tapu.y?.seviye ?? 0;
@@ -151,7 +158,57 @@ export function tezgahDonumu(k: Kasaba, ay: number): OlayTaslagi[] {
   }
   if (vergiToplam > 0) (md.vergiGiden ??= []).push({ anahtar: `y:${k.y}:tz:vergi:${ay}`, tutar: vergiToplam, yerlesim: k.y });
   md.tzo = { ay, yontem: r.yontem, butce: r.butce, harcanan: r.harcanan, meslekler: r.meslekler };
+  olaylar.push(...atolyeDonumu(k, ay));
   olaylar.push(...hanDonumu(k, ay));
+  return olaylar;
+}
+
+/**
+ * Atölye ay dönümü (Dilim 2): üretim emirleri havuzdaki emek ve o ayın NPC emeğiyle işlenir (alt istek yok; ustalar
+ * dönümde yüklü). Biten ayda anlık üretim ya da toplu sipariş teslimi olduysa ya da emir işlendiyse ay üretimlidir:
+ * işletmeye "tezgah" girdisi (satir 1) gider, bakım/maaş/itibar işler; değilse kepenkli. Sonra toplu sipariş dönümü.
+ */
+function atolyeDonumu(k: Kasaba, ay: number): OlayTaslagi[] {
+  const olaylar: OlayTaslagi[] = [];
+  const md = mulkDefteri(k);
+  const tz = (md.tz ??= {});
+  const zanaatlar: MeslekId[] = [];
+  for (const [id, tapu] of Object.entries(md.t)) {
+    const c = isletmeCoz(id);
+    if (!c || c.tur !== "atolye" || c.yerlesim !== k.y || tapu.y?.durum === "iflas") continue;
+    const t = (tz[id] ??= bosTezgah());
+    const seviye = tapu.y?.seviye ?? 0;
+    t.gk ??= seviye;
+    zanaatHazirla(k, md, id, t);
+    if (t.za) zanaatlar.push(t.za);
+    const ad = tapu.y?.ad ?? "";
+    const u = emirleriIsle({
+      t,
+      isletme: id,
+      seviye,
+      kapasite: depoKapasitesi("atolye", etkinSeviye(t, seviye)),
+      npcEmek: NPC_EMEK_AY * (tapu.y?.ne ?? 0),
+      adaylar: atolyeAdaylari(k, md, id),
+      ay,
+    });
+    for (const l of u.levha) {
+      const lv = levhaYaz(k, l.usta, l.tarif, l.mal, l.q, ay, [id, ad]);
+      if (lv) olaylar.push(lv.olay);
+    }
+    const uretimli = t.ua === ay - 1 || u.yapim > 0;
+    t.kk = uretimli || t.se === ay - 1 ? 0 : t.kk + 1;
+    const dokum = { ay, kepenk: !uretimli, anlik: t.ua === ay - 1, yapim: u.yapim, emek: u.emek, emirler: u.emirler.slice(0, URETIM_DOKUM_EN_COK) };
+    t.gs = dokum;
+    if (uretimli && yerVar(k, id)) girdiEkle(k, id, ay, 0, 1);
+    if (u.yapim > 0) {
+      const enCok = [...u.emirler].sort((a, b) => b.cikti.adet - a.cikti.adet)[0]!;
+      olaylar.push({ t: "tezgah", w: tapu.s, h: "", g: tapu.s, n: 2, k: "olay.tezgah.uretim", p: { isletme: id, ad, yapim: u.yapim, mal: enCok.cikti.mal, adet: enCok.cikti.adet } });
+    }
+  }
+  const tsp = (md.tsp ??= { l: [] });
+  const r = topluDonumu(tsp, k.y, ay, zanaatlar);
+  if (r.acilan) olaylar.push({ t: "tezgah", w: "", h: "", g: "", n: 3, k: "olay.tezgah.topluSiparis", p: { siparis: r.acilan.id, meslek: r.acilan.meslek, mal: r.acilan.mal, adet: r.acilan.adet, odul: r.acilan.odul } });
+  if (!tsp.l.length && tsp.sm === undefined) delete md.tsp;
   return olaylar;
 }
 

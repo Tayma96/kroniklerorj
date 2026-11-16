@@ -33,7 +33,8 @@ import {
 } from "./kurallar.ts";
 import type { AyarYuku, Baglam, GirisNedeni, Kisi } from "./isletme.ts";
 import { tezgahBosalt, type Tezgah } from "./depo.ts";
-import { KARSILIKLI_PENCERE_AY } from "./tezgah-kurallar.ts";
+import { KARSILIKLI_PENCERE_AY, ZANAAT_MESLEKLERI } from "./tezgah-kurallar.ts";
+import type { TopluDefter } from "./toplu-siparis.ts";
 import { akceIade, malIade, type IadeKaydi } from "./iade.ts";
 import {
   CIKIS_EN_COK,
@@ -116,6 +117,8 @@ export interface MulkDefteri {
   ia?: Record<string, IadeKaydi>;
   /** Mülk olayları kuyruğu (devralma bildirimleri): motor bir sonraki yazımda olay akışına boşaltır. */
   ob?: OlayTaslagi[];
+  /** Toplu sipariş defteri (Dilim 2: atölye). */
+  tsp?: TopluDefter;
 }
 
 /** [PARAMETRE] Karşılıklı işlem izleme penceresi için tutulan en çok ödeme çifti. */
@@ -134,11 +137,11 @@ function sakin(k: Kasaba, o: string): Sakin | undefined {
   return k.sakin.find((x) => x.o === o);
 }
 
-/** Karakterin meslek kademeleri (kalite bağı için yalnız rol meslekleri). */
+/** Karakterin meslek kademeleri (kalite bağı: rol meslekleri ve atölye zanaatları). */
 export function meslekKademeleri(kar: Karakter): Partial<Record<MeslekId, Kademe>> {
   const mk: Partial<Record<MeslekId, Kademe>> = {};
   const s = kar.ms?.s ?? {};
-  for (const m of Object.values(ROL_MESLEGI)) if (m && s[m]) mk[m] = s[m]!.kd;
+  for (const m of new Set([...Object.values(ROL_MESLEGI), ...ZANAAT_MESLEKLERI])) if (m && s[m]) mk[m] = s[m]!.kd;
   return mk;
 }
 
@@ -422,19 +425,24 @@ export function girisIsle(k: Kasaba, x: CikisKaydi, an: number): { durum: CevapD
       // Devralma ve iflas iadesi yanmaz: sahibe yazılamıyorsa iade bekleyenine (vâris / hazine yolu, iade.ts).
       if ((x.y.neden === "devral" || x.y.neden === "iflas") && typeof x.y.o === "string" && (!kar || olduMu(kar) || kar.gc)) {
         akceIade(k, x.y.o, tutar as number);
-        if (x.y.neden === "devral") (md.ob ??= []).push(devralmaKasaOlayi(x.y.o, isletme, tutar as number));
+        if (x.y.neden === "devral") (md.ob ??= []).push(devralmaKasaOlayi(x.y.o, isletme, tutar as number, x.y.ad));
         return { durum: "kabul" };
       }
       // Göçle kapanan (ya da mühürlü) karakterin cüzdanına yazılmaz: akçe arşivdeki kayda düşmez.
       if (!kar || olduMu(kar) || kar.gc) return { durum: "red", neden: "kisi_yok" };
       kar.pa += tutar as number;
-      if (x.y.neden === "devral") (md.ob ??= []).push(devralmaKasaOlayi(kar.o, isletme, tutar as number));
+      if (x.y.neden === "devral") (md.ob ??= []).push(devralmaKasaOlayi(kar.o, isletme, tutar as number, x.y.ad));
       return { durum: "kabul" };
     }
     const tapu = md.t[isletme];
     if (x.t === "ayar") {
       const y = x.y as AyarYuku & { as: number };
-      if (tapu && y.ts === tapu.ts && (tapu.y?.as ?? 0) < y.as) tapu.y = y;
+      if (tapu && y.ts === tapu.ts && (tapu.y?.as ?? 0) < y.as) {
+        // Genişletme (Dilim 2): eski kayıtta kapasite bugünkü seviyede verilmiş sayılır; sonraki seviye malzemeyle açılır.
+        const tz = md.tz?.[isletme];
+        if (tz && tz.gk === undefined) tz.gk = tapu.y?.seviye ?? 0;
+        tapu.y = y;
+      }
       return { durum: "kabul" };
     }
     if (x.t === "iflas") {
@@ -601,6 +609,6 @@ export function yerlesimUcustaki(k: Kasaba): number {
 export type MulkHata = HataKodu;
 
 /** Devralınan işletmenin kasa + emaneti eski sahibe ulaştı (bilgi). */
-export function devralmaKasaOlayi(o: string, isletme: string, tutar: number): OlayTaslagi {
-  return { t: "tezgah", w: o, h: "", g: o, n: 3, k: "olay.tezgah.devralmaKasasi", p: { isletme, tutar } };
+export function devralmaKasaOlayi(o: string, isletme: string, tutar: number, ad?: unknown): OlayTaslagi {
+  return { t: "tezgah", w: o, h: "", g: o, n: 3, k: "olay.tezgah.devralmaKasasi", p: { isletme, tutar, ad: typeof ad === "string" ? ad : "" } };
 }

@@ -6,7 +6,7 @@
 import { istekNoCoz } from "../mantik.ts";
 import { basarili, hata, type Sonuc } from "../tipler.ts";
 import { teveccuhKademesi } from "../yerlesim/teveccuh.ts";
-import type { Karakter, Kasaba } from "../yerlesim/tipler.ts";
+import type { Karakter, Kasaba, OlayTaslagi } from "../yerlesim/tipler.ts";
 import type { IsletmeIleti, IsletmeYaniti, Komut, TapuOzeti } from "./islem.ts";
 import { KOMUTLAR } from "./islem.ts";
 import type { PersonelHedefi } from "./isletme.ts";
@@ -26,21 +26,27 @@ import {
   yatir,
 } from "./tapu.ts";
 import { UZLASTIRMA_ISLETME_EN_COK, cikisKapat, denemeErtele, denenecekler, sonrakiDeneme, transferDurumu, type CevapDurumu, type CikisKaydi } from "./transfer.ts";
-import { depoTasi, devral, devralBekliyor, dukkanListesi, fiyatOnizle, rafIslem, satinAl, tezgahGorunumu } from "./tezgah-uclar.ts";
+import { atolyeListesi, atolyedeUret, depoTasi, devral, devralBekliyor, dukkanListesi, emirUc, fiyatOnizle, genisletUc, mesai, rafIslem, satinAl, tezgahGorunumu, topluUc, zanaatUc } from "./tezgah-uclar.ts";
 import { tezgahKayitlariAc, yolcuKarti } from "./tezgah-donum.ts";
 
 export interface MulkMotoru {
   readonly kasaba: Kasaba;
   mulkOyuncu(hesapId: string): Promise<Sonuc<{ kar: Karakter }>>;
-  mulkAdimi(hesapId: string, govde: unknown, yukle: string[], isle: (kar: Karakter) => Sonuc<Record<string, unknown>>): Promise<Sonuc<unknown>>;
+  mulkAdimi(hesapId: string, govde: unknown, yukle: string[], isle: (kar: Karakter, ek: MulkEki) => Sonuc<Record<string, unknown>>): Promise<Sonuc<unknown>>;
   mulkIslem<T>(yukle: string[], isle: () => T): Promise<T>;
+}
+
+/** Mülk adımının ek yazımları (atölyede üretim: levha olayı ve ekonomi kaydı). */
+export interface MulkEki {
+  olaylar: OlayTaslagi[];
+  ekonomi?: boolean;
 }
 
 export type IsletmeCagir = (ileti: IsletmeIleti) => Promise<Sonuc<IsletmeYaniti>>;
 
 /** Tezgâh (Dilim 1) okuma ve yazma alt işlemleri (yerleşimde; işletme DO'suna gitmez). */
-export const TEZGAH_OKU = ["dukkanlar", "tezgah", "onizle"] as const;
-export const TEZGAH_YAZ = ["depo", "raf", "satinal", "devral"] as const;
+export const TEZGAH_OKU = ["dukkanlar", "atolyeler", "tezgah", "onizle"] as const;
+export const TEZGAH_YAZ = ["depo", "raf", "satinal", "devral", "zanaat", "uret", "mesai", "emir", "toplu", "genislet"] as const;
 /** Bölge vergi oranını tazeleyen alt işlemler (raf satışı vergisi). */
 export const VERGI_ALT: readonly string[] = ["satinal", "raf", "edin"];
 
@@ -134,7 +140,8 @@ function tapuOzeti(k: Kasaba, isletme: string): TapuOzeti | undefined {
   const t = k.mk?.t[isletme];
   if (!c || !t || c.yerlesim !== k.y) return undefined;
   const s = k.sakin.find((x) => x.o === t.s);
-  return { isletme, yerlesim: k.y, tur: c.tur, no: c.no, ts: t.ts, sahip: { h: t.h, o: t.s, ad: s?.ad ?? "" } };
+  const za = c.tur === "atolye" ? k.mk?.tz?.[isletme]?.za : undefined;
+  return { isletme, yerlesim: k.y, tur: c.tur, no: c.no, ts: t.ts, sahip: { h: t.h, o: t.s, ad: s?.ad ?? "" }, ...(za ? { za } : {}) };
 }
 
 /** Yanıttaki transfer(ler)in güncel durumunu ekler (tekrarlanan istekNo da güncel durumu görür). */
@@ -151,9 +158,10 @@ export async function mulkIsle(motor: MulkMotoru, ileti: MulkIletisi, an: number
   const k = motor.kasaba;
   const { hesapId, alt } = ileti;
   const govde = ileti.govde;
-  if (alt === "dukkanlar") {
+  if (alt === "dukkanlar" || alt === "atolyeler") {
     const r = await motor.mulkOyuncu(hesapId);
-    return r.ok ? basarili(dukkanListesi(k, r.deger.kar)) : r;
+    if (!r.ok) return r;
+    return basarili(alt === "dukkanlar" ? dukkanListesi(k, r.deger.kar) : atolyeListesi(k, r.deger.kar));
   }
   if (alt === "liste") {
     const r = await motor.mulkOyuncu(hesapId);
@@ -182,17 +190,39 @@ export async function mulkIsle(motor: MulkMotoru, ileti: MulkIletisi, an: number
   if ((TEZGAH_YAZ as readonly string[]).includes(alt)) {
     const no = istekNoCoz(govde);
     if (!no.ok) return no;
-    // Devralmada eski sahip, satın almada satıcı (armağan tavanı) yüklenir.
-    const eski = alt === "devral" || alt === "satinal" ? k.mk?.t[isletme]?.s : undefined;
-    const r = await motor.mulkAdimi(hesapId, govde, eski ? [eski] : [], (kar) =>
-      alt === "depo"
-        ? depoTasi(k, kar, isletme, govde, an)
-        : alt === "raf"
-          ? rafIslem(k, kar, isletme, govde, vergiOrani)
-          : alt === "satinal"
-            ? satinAl(k, kar, isletme, govde, an, no.deger, vergiOrani ?? k.mk?.vo ?? 0)
-            : devral(k, kar, isletme, an, no.deger),
-    );
+    // Devralmada eski sahip, satın almada satıcı (armağan tavanı) yüklenir; atölyede sahip ve oyuncu çalışanlar
+    // (zanaat önerisi, emrin ustası).
+    const tapu = k.mk?.t[isletme];
+    const yukle =
+      alt === "devral" || alt === "satinal"
+        ? tapu ? [tapu.s] : []
+        : c.tur === "atolye" && tapu
+          ? [...new Set([tapu.s, ...(tapu.y?.po ?? [])])]
+          : [];
+    const r = await motor.mulkAdimi(hesapId, govde, yukle, (kar, ek) => {
+      switch (alt) {
+        case "depo":
+          return depoTasi(k, kar, isletme, govde, an);
+        case "raf":
+          return rafIslem(k, kar, isletme, govde, vergiOrani);
+        case "satinal":
+          return satinAl(k, kar, isletme, govde, an, no.deger, vergiOrani ?? k.mk?.vo ?? 0);
+        case "zanaat":
+          return zanaatUc(k, kar, isletme, govde);
+        case "uret":
+          return atolyedeUret(k, kar, isletme, govde, ek);
+        case "mesai":
+          return mesai(k, kar, isletme, govde);
+        case "emir":
+          return emirUc(k, kar, isletme, govde);
+        case "toplu":
+          return topluUc(k, kar, isletme, govde, an);
+        case "genislet":
+          return genisletUc(k, kar, isletme);
+        default:
+          return devral(k, kar, isletme, an, no.deger);
+      }
+    });
     await uzlastir(motor, an, cagir, true, kota);
     return r;
   }

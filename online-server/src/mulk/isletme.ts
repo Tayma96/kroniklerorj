@@ -62,6 +62,7 @@ import {
   type TezyinGrubu,
   type Yetki,
 } from "./kurallar.ts";
+import { NPC_ATOLYE_MAAS_EN_AZ } from "./tezgah-kurallar.ts";
 import { bekleyenToplam, bosDefter, bosKutu, cikisAc, type CikisKutusu, type GirisDefteri } from "./transfer.ts";
 
 export interface Kisi {
@@ -180,6 +181,8 @@ export interface Isletme {
   /** Tezgâh modeli (dükkân, atölye): faaliyet ayı sayacı (kepenkli ay sayılmaz) ve göç işareti. */
   fa?: number;
   tg?: 1;
+  /** Atölye zanaatı (Dilim 2; yerleşimin tezgâh kaydından tapu özetiyle gelir): atölyede kalite rolünün mesleği. */
+  za?: MeslekId;
 }
 
 /** [PARAMETRE] Komut tekrar kaydı. */
@@ -288,6 +291,14 @@ export function bakim(is: Isletme): number {
   return bakimGideri(is.tur, yerlesimBul(is.yerlesim)?.tur);
 }
 
+/**
+ * Rolün kalite mesleği: atölyede zanaat (Dilim 2; tüccar değil; zanaat seçilmemişse yok), diğer türlerde rol tablosu.
+ */
+export function rolMeslegi(is: Pick<Isletme, "tur" | "za">, rol: Rol): MeslekId | null {
+  if (is.tur === "atolye") return is.za ?? null;
+  return ROL_MESLEGI[rol];
+}
+
 /** Kalite: türün kalite rollerinde en yüksek meslek kademesi; rolde kimse yoksa sahibin kendi kademesi (döküm). */
 export function kalite(is: Isletme): { toplam: number; dokum: { rol: Rol; kademe: number; kaynak: "personel" | "sahip" }[] } {
   const dokum: { rol: Rol; kademe: number; kaynak: "personel" | "sahip" }[] = [];
@@ -295,7 +306,7 @@ export function kalite(is: Isletme): { toplam: number; dokum: { rol: Rol; kademe
     const kd = etkinler(is)
       .filter((s) => s.r === rol)
       .reduce((m, s) => Math.max(m, s.kd), -1);
-    const meslek = ROL_MESLEGI[rol];
+    const meslek = rolMeslegi(is, rol);
     if (kd >= 0) dokum.push({ rol, kademe: kd, kaynak: "personel" });
     else dokum.push({ rol, kademe: meslek ? (is.sm[meslek] ?? 0) : 0, kaynak: "sahip" });
   }
@@ -600,7 +611,10 @@ export function personel(is: Isletme, b: Baglam, govde: unknown, hedef: Personel
   teklifTemizle(is, ay);
   const d = yetkiDurumu(is, b.o, ay);
   // Çalışanın meslek kademesi her komutunda tazelenir (kalite bağı).
-  if (d.sozlesme) d.sozlesme.kd = (ROL_MESLEGI[d.sozlesme.r] ? (b.mk[ROL_MESLEGI[d.sozlesme.r]!] ?? 0) : 0) as Kademe;
+  if (d.sozlesme) {
+    const m = rolMeslegi(is, d.sozlesme.r);
+    d.sozlesme.kd = (m ? (b.mk[m] ?? 0) : 0) as Kademe;
+  }
   const islem = govde.islem;
   switch (islem) {
     case "teklif":
@@ -639,7 +653,7 @@ export function personel(is: Isletme, b: Baglam, govde: unknown, hedef: Personel
       if (islem === "red") return basarili({ teklif: t.n, kabul: false });
       if (calisiyorMu(is, b.o)) return hata("zaten_calisan");
       if (etkinler(is).length >= PERSONEL_EN_COK) return hata("personel_dolu");
-      const meslek = ROL_MESLEGI[t.r];
+      const meslek = rolMeslegi(is, t.r);
       const s = yeniSozlesme(is, { t: "oyuncu", h: b.h, o: b.o, ad: b.ad }, t.r, t.y, t.m, (meslek ? (b.mk[meslek] ?? 0) : 0) as Kademe, ay);
       defterYaz(is, ay, "iseGiris", 0, `${s.n}:${b.o}:${t.r}:${t.m}`);
       return basarili({ sozlesme: sozlesmeGorunumu(s), kabul: true });
@@ -704,6 +718,7 @@ export function personel(is: Isletme, b: Baglam, govde: unknown, hedef: Personel
       if (m === undefined) return hata("maas_gecersiz");
       // Sahip çalışanı tek taraflı mağdur edemez: oyuncu çalışanın maaşı yalnız artırılabilir (kesinti sözleşmeye bağlı).
       if (s.k.t === "oyuncu" && m < s.m) return hata("maas_kesinti");
+      if (s.k.t === "npc" && is.tur === "atolye" && m < NPC_ATOLYE_MAAS_EN_AZ) return hata("maas_npc_taban");
       s.m = m;
       defterYaz(is, ay, "maas", 0, `${s.n}:${m}`);
       return basarili({ sozlesme: sozlesmeGorunumu(s), maasYuku: maasYuku(is) });
@@ -723,6 +738,8 @@ function iseAl(is: Isletme, tur: "teklif" | "npc", govde: Record<string, unknown
     const npc = hedef.npc;
     if (!npc) return hata("kisi_yok");
     if (npcCalisiyorMu(is, npc.n)) return hata("zaten_calisan");
+    // Atölyede NPC emeği üretir (Dilim 2): maaş tabanı, NPC emeğiyle üretip tabandan satmanın kâr etmemesi için.
+    if (is.tur === "atolye" && m < NPC_ATOLYE_MAAS_EN_AZ) return hata("maas_npc_taban");
     // NPC kendi kademesini taşır; yetkisi yoktur (NPC kasa, fiyat, personel yönetmez).
     const s = yeniSozlesme(is, { t: "npc", n: npc.n, ad: npc.ad }, r, [], m, NPC_CALISAN_KADEMESI, ay);
     defterYaz(is, ay, "iseGiris", 0, `${s.n}:${npc.n}:${r}:${m}`);
@@ -908,6 +925,8 @@ export function ayarYuku(is: Isletme) {
     po: etkinler(is).flatMap((s) => (s.k.t === "oyuncu" ? [s.k.o] : [])),
     pn: etkinler(is).flatMap((s) => (s.k.t === "npc" ? [s.k.n] : [])),
     to: is.tk.map((t) => t.hedef.o),
+    /** Atölye (Dilim 2): emek veren NPC çalışan sayısı (maaşı NPC_ATOLYE_MAAS_EN_AZ ve üstü). */
+    ...(is.tur === "atolye" ? { ne: etkinler(is).filter((s) => s.k.t === "npc" && s.m >= NPC_ATOLYE_MAAS_EN_AZ).length } : {}),
   };
 }
 export type AyarYuku = ReturnType<typeof ayarYuku>;

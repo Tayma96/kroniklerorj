@@ -18,6 +18,7 @@ import {
   kasayaGir,
   panel,
   personel,
+  rolMeslegi,
   sahipDegis,
   tezyinAl,
   IST_EN_COK,
@@ -27,7 +28,8 @@ import {
   type Kisi,
   type PersonelHedefi,
 } from "./isletme.ts";
-import { KALITE_ROLLERI, ROL_MESLEGI, type MulkTuru } from "./kurallar.ts";
+import { KALITE_ROLLERI, type MulkTuru } from "./kurallar.ts";
+import type { MeslekId } from "../icerik/meslekler.ts";
 import { UZLASTIRMA_TUR_EN_COK, cikisKapat, girisUygula, type CevapDurumu, type CikisKaydi } from "./transfer.ts";
 import { devralUygula, tezgahKaydiUygula } from "./tezgah-isletme.ts";
 
@@ -38,6 +40,8 @@ export interface TapuOzeti {
   no: number;
   ts: number;
   sahip: Kisi;
+  /** Atölye zanaatı (Dilim 2). */
+  za?: MeslekId;
 }
 
 export const KOMUTLAR = ["ad", "tezyin", "fiyat", "kapi", "cek", "emanet", "personel"] as const;
@@ -79,7 +83,7 @@ function sahipTazele(is: Isletme, b: Baglam): void {
   if (b.o !== is.sahip.o) return;
   const sm: Isletme["sm"] = {};
   for (const r of KALITE_ROLLERI[is.tur]) {
-    const m = ROL_MESLEGI[r];
+    const m = rolMeslegi(is, r);
     if (m && b.mk[m] !== undefined) sm[m] = b.mk[m];
   }
   is.sm = sm;
@@ -104,7 +108,10 @@ export function devirSurumu(is: Isletme): string {
 export function isletmeIsle(onceki: Isletme | undefined, ileti: IsletmeIleti, an: number): { is: Isletme | undefined; sonuc: Sonuc<IsletmeYaniti> } {
   const ay = oyunAyi(an);
   let is = onceki;
-  if ((ileti.islem === "komut" || ileti.islem === "oku") && ileti.tapu.isletme === ileti.isletme) is = tapuUygula(is, ileti.tapu, ay);
+  if ((ileti.islem === "komut" || ileti.islem === "oku") && ileti.tapu.isletme === ileti.isletme) {
+    is = tapuUygula(is, ileti.tapu, ay);
+    if (is.tur === "atolye" && ileti.tapu.za && is.za !== ileti.tapu.za) is.za = ileti.tapu.za;
+  }
   if (is) ayIlerlet(is, ay, an);
   let deger: unknown;
   let sonuclar: [string, CevapDurumu, string?][] | undefined;
