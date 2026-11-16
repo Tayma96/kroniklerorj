@@ -19,10 +19,11 @@
 ## Sıradaki işler (bu sırayla)
 1. Dilim 2 `denge-denetcisi` (brief'teki açık riskler) → düzeltme; tasarım §6 ve `ONLINE_DURUM.md` güncellemesi.
 2. Atölye ekranı (brief sonundaki madde) → çeviri → `react-reviewer` → düzeltme.
-3. Dilim 3: meslek kancaları ilk parti ≈70 (tasarım §7) + "boşta kanca listesi yalnız kısalır" testi (199 hak'tan 196'sı boşta).
+3. Dilim 3: meslek kancaları ilk parti ≈70 (tasarım §7) + "boşta kanca listesi yalnız kısalır" testi.
 4. Oyuncu numarası (8 hane, rastgele, hesaba bağlı), arama, oyuncu sayfası.
-5. Han masa oyunları çatısı + iki oyun; canlı masalar vitrini; hızlı tepkiler.
-6. Test Worker'ını yeniden dağıt; Berkay test APK'sı çıkarır.
+5. Han masa oyunları çatısı + iki oyun; canlı masalar vitrini.
+6. Eşya kademeleri ve özellikleri (tasarım §9: 6 kademe, efsanevi yalnız pir, hüner, yadigâr).
+7. Test Worker'ını yeniden dağıt; Berkay APK çıkarır.
 
 ## Berkay'da
 - `GOOGLE_CLIENT_ID`, FCM, Play ürünleri/ödeme; test APK'sı ve 5–10 kişilik cihaz denemesi (ses dahil).

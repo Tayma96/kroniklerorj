@@ -163,3 +163,18 @@ tüketicisi olduğunu ve listenin yalnız kısaldığını doğrular. İstemcide
 Depo/raf kayıt biçimi; ay dönümü işleme sırası (üretim emri → raf satışı → bakım → itibar); uç adları; eski kayıt
 göçü; parametrelerin sim ile ince ayarı (§5.4 sınırları içinde). Sunucu yetkili, her eylem tekrar güvenli,
 DO alt istek bütçesi istek başına ≤ 12.
+
+## 9. Dilim 4 — Eşya kademeleri ve özellikleri (Berkay, 17 Kasım; tasarım taslağı, kod yok)
+İstek: "Yeni başlayan demirciyle pir aynı ürünü üretmesin; pir efsanevi silah üretsin, gücü ve etkileri farklı olsun."
+Bugün: kalite 4 kademe (sade, iyi, üstün, şaheser); puan = meslek kademesi + zanaat + beceri + alet + zar. Kalite yalnız
+pazar değerini (×1–2,5) ve aletin ek çıktı/ömrünü etkiliyor; silah, zırh, giysi, yiyecek kalitesinin kullanımda etkisi yok.
+Yön (yönetici önerisi; uygulamadan önce kod dökümü ve denge denetimi gerekir):
+- **Altı kademe:** sade · iyi · üstün · şaheser · nadide · efsanevi. Tavan mesleğe bağlı: çırak en çok iyi, kalfa üstün,
+  usta şaheser (ender nadide), **efsanevi yalnız pir** ve yalnız atölyesinde; ayda sınırlı sayıda.
+- **Özellik (her eşya ailesine):** silah → düello/muhafızlık/savaş gücü; zırh-kalkan → dayanım; alet → verim ve ömür
+  (bugünkü); giysi-çizme → görünüş (nam) ve yol; yiyecek → takat/kondisyon; araba-koşum → kervan yükü. Kademe arttıkça artar,
+  tavanlıdır, dökümle görünür.
+- **Hüner (nadide ve efsanevide):** kademe sayısından ayrı tek bir özel etki (ör. "ikinci hamle", "yolda yıpranmaz").
+- **Efsanevi eşya adlıdır:** ustasının ve atölyesinin damgasını taşır, kroniğe ve levhaya geçer, mirasla hanedan
+  yadigârı olur; satılabilir ama kopyalanamaz.
+- Süzgeç: gerçek parayla alınamaz; güç tavanlı (kaybeden bir şey kaybetmez kuralı sürer); farm yok (aylık sınır).
