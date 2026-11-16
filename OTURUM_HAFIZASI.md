@@ -21,7 +21,6 @@
 3. Dilim 3: meslek kancaları ilk parti ≈70 (tasarım §7) + "boşta kanca listesi yalnız kısalır" testi. Döküm: 199 hak'tan 196'sı, 74 kalite'den 57'si, 51 hizmet'ten 30'u boşta.
 4. Oyuncu numarası (8 hane, rastgele, hesaba bağlı), arama, oyuncu sayfası (armağan duvarı, anlar, söz).
 5. Han masa oyunları çatısı + iki oyun; canlı masalar vitrini; hızlı tepkiler.
-6. Sokak'ta hizmet/lonca/divan/kervansaray/zaviye için uygun görsel yok (eldeki en yakınlar kullanıldı).
 
 ## Berkay'da
 - Realtime uygulaması (`REALTIME_APP_ID/TOKEN`), `GOOGLE_CLIENT_ID`, FCM, Play ürünleri/ödeme sırları; Worker dağıtımı; yeni test APK'sı ve 5–10 kişilik cihaz denemesi.
