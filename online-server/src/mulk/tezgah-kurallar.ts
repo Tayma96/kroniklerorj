@@ -28,7 +28,7 @@ export const RAF_FIYAT_UST = 3;
 // ── Hane bütçesi (NPC müşteri, §5.2) ──
 
 /** [PARAMETRE] Yerleşimde, malı olan her üretici meslek için aylık NPC bütçesi B (akçe). */
-export const HANE_BUTCESI: Readonly<Record<YerlesimTuru, number>> = { koy: 12, kasaba: 30, sehir: 70 };
+export const HANE_BUTCESI: Readonly<Record<YerlesimTuru, number>> = { koy: 10, kasaba: 24, sehir: 56 };
 /** [PARAMETRE] O meslekte yerleşimde hiç (yaşayan) oyuncu yoksa B bu çarpanla artar (kıtlık sinyali). */
 export const KITLIK_BUTCE_CARPANI = 1.5;
 /**
@@ -62,8 +62,17 @@ export const PAY_YONTEMI: PayYontemi = "butce";
 
 // ── Kepenk ve devralma (§4) ──
 
-/** [PARAMETRE] Bu kadar ay üst üste kepengi kapalı dükkân, bütün yuvalar doluyken devralınabilir. */
-export const DEVRALMA_KEPENK_AY = 12;
+/**
+ * [PARAMETRE] Bu kadar ay (1 ay = 12 gerçek saat; 60 ay = 30 gün) üst üste satışsız VE sahibinin/vekilinin hiçbir
+ * raf-depo-fiyat eylemi olmayan dükkân, bütün yuvalar doluyken devralınabilir.
+ */
+export const DEVRALMA_KEPENK_AY = 60;
+/** [PARAMETRE] Çalışanın (sahip ve vekil değil) depodan envantere günlük alış tavanı (malın adil değeri, akçe). */
+export const CALISAN_DEPO_GUNLUK_ADIL = 20;
+/** [PARAMETRE] Depo defterinde tutulan en çok satır. */
+export const DEPO_DEFTER_EN_COK = 40;
+/** [PARAMETRE] Karşılıklı işlem penceresi (ay): bu süre içinde iki yönlü ödeme yapan çift bayraklanır. */
+export const KARSILIKLI_PENCERE_AY = 6;
 /** Devralınabilen türler: atölye Dilim 2'ye kadar hep kepenkli durduğu için (üretim emri yok) devralınamaz. */
 export const DEVRALMA_TURLERI = ["dukkan"] as const;
 

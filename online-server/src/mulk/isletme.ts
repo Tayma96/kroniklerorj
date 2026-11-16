@@ -401,6 +401,8 @@ export interface KasaGirisi {
   o: string;
   kume: boolean;
   karsilikli: boolean;
+  /** Raf satışı: gelir/seviye puanına sayılan üst sınır (adil değer); üstü kasaya girer ama puan saymaz. */
+  sayilan?: number;
 }
 
 /** Kasaya giriş. Kapalı (iflas) işletme reddeder: kaynak telafi eder. Müşteri ödemesi izleme kancasına yazılır. */
@@ -409,7 +411,7 @@ export function kasayaGir(is: Isletme, g: KasaGirisi, ay: number): { durum: "kab
   if (!Number.isInteger(g.tutar) || g.tutar <= 0) return { durum: "red", neden: "tutar_gecersiz" };
   is.kasa += g.tutar;
   if (g.neden !== "yatir") {
-    is.gelir += g.kume || g.karsilikli ? 0 : g.tutar;
+    is.gelir += g.kume || g.karsilikli ? 0 : Math.min(g.tutar, g.sayilan ?? g.tutar);
     izle(is, g, ay);
   }
   defterYaz(is, ay, g.neden, g.tutar, g.o);
@@ -577,6 +579,8 @@ export interface PersonelHedefi {
   /** Oyuncu (YerlesimDO çözdü: yerel kimlik, hesap, ad, meslek kademeleri) ya da NPC (kimlik, ad). */
   oyuncu?: Kisi & { mk: Partial<Record<MeslekId, Kademe>> };
   npc?: { n: string; ad: string };
+  /** Yerleşimde han sahibi olanlar (tek han kuralı: başka hana vekil olamaz). */
+  hs?: string[];
 }
 
 function yeniSozlesme(is: Isletme, k: Calisan, r: Rol, y: Yetki[], m: number, kd: Kademe, ay: number): Sozlesme {
@@ -676,6 +680,8 @@ export function personel(is: Isletme, b: Baglam, govde: unknown, hedef: Personel
       if (typeof govde.ver !== "boolean") return hata("gecersiz_istek");
       if (y === "vekalet" && govde.ver) {
         if (s.k.t !== "oyuncu") return hata("yetki_gecersiz");
+        // Tek han kuralı: aynı yerleşimde han sahibi başka bir hanı vekil olarak yönetemez (miras istisnası tapudadır).
+        if (is.tur === "han" && hedef.hs?.includes(s.k.o)) return hata("vekil_han_sahibi");
         const sure = govde.sure;
         if (!Number.isInteger(sure) || (sure as number) < 1 || (sure as number) > VEKALET_EN_UZUN_AY) return hata("sure_gecersiz");
         for (const x of etkinler(is)) if (x !== s && x.y.includes("vekalet")) return hata("vekil_var");
@@ -755,7 +761,7 @@ export function sozlesmeGorunumu(s: Sozlesme) {
  * Tek ay: bakım (ödenemeyen borç), maaş (emanetten; ödenmezse işveren sözleşmeyi bozmuş sayılır), itibar. Pasif NPC
  * geliri yoktur (tezgâh modeli): han yolcu payını, dükkân raf hasılatını yerleşimin ay dönümü kaydıyla alır
  * (tezgah-isletme.ts). Dükkânın bakım, faaliyet, itibar ve iflası o kayıtla işler (kepenkli ayda kayıt gelmez);
- * atölye Dilim 2'ye kadar kepenkli durur (bakım yazılmaz, iflas etmez). Maaş her türde burada.
+ * atölye Dilim 2'ye kadar kepenkli durur (bakım yazılmaz, iflas etmez, maaş işlemez).
  */
 function birAy(is: Isletme, ay: number, an: number): void {
   if (is.durum !== "acik") return;
@@ -771,7 +777,31 @@ function birAy(is: Isletme, ay: number, an: number): void {
     if (odenen > 0) defterYaz(is, ay, "bakim", -odenen);
     is.borcAy = is.borc > 0 ? is.borcAy + 1 : 0;
   }
-  // Maaş (emanet kasasından). Ödenemeyen sözleşme işverence bozulmuş sayılır.
+  // Maaş: han her ay; dükkân yalnız satış olan (kepenksiz) ay, tezgah kaydıyla (maasOde); atölye Dilim 2'ye kadar
+  // kepenkli: sözleşme askıda, maaş işlemez, ödenemedi diye bozulma ve itibar kaybı olmaz.
+  const bozulan = tezgah ? 0 : maasOde(is, ay, an);
+  vekaletSuresi(is, ay);
+  if (!tezgah) {
+    const fark = kalite(is).toplam * ITIBAR_KALITE + musteri - (is.borc > 0 ? ITIBAR_BORC : 0) - bozulan * ITIBAR_MAAS_BOZMA;
+    is.it = Math.max(0, Math.min(ITIBAR_EN_COK, is.it + fark));
+  }
+  teklifTemizle(is, ay);
+  sozlesmeArsivKirp(is);
+  if (!tezgah && is.borcAy >= IFLAS_BORC_AY) iflasEt(is, ay, an);
+}
+
+/** Süresi biten vekâlet düşer (her türde, her ay). */
+function vekaletSuresi(is: Isletme, ay: number): void {
+  for (const s of etkinler(is)) {
+    if (s.vk !== undefined && s.vk < ay) {
+      delete s.vk;
+      s.y = s.y.filter((y) => y !== "vekalet");
+    }
+  }
+}
+
+/** Bir ayın maaşları (emanet kasasından). Ödenemeyen sözleşme işverence bozulmuş sayılır; bozulan sayısını döner. */
+export function maasOde(is: Isletme, ay: number, an: number): number {
   let bozulan = 0;
   for (const s of etkinler(is)) {
     if (is.emanet >= s.m) {
@@ -789,18 +819,8 @@ function birAy(is: Isletme, ay: number, an: number): void {
       bozulan++;
       sozlesmeBoz(is, s, ay);
     }
-    if (s.vk !== undefined && s.vk < ay) {
-      delete s.vk;
-      s.y = s.y.filter((y) => y !== "vekalet");
-    }
   }
-  const fark = tezgah
-    ? -bozulan * ITIBAR_MAAS_BOZMA
-    : kalite(is).toplam * ITIBAR_KALITE + musteri - (is.borc > 0 ? ITIBAR_BORC : 0) - bozulan * ITIBAR_MAAS_BOZMA;
-  is.it = Math.max(0, Math.min(ITIBAR_EN_COK, is.it + fark));
-  teklifTemizle(is, ay);
-  sozlesmeArsivKirp(is);
-  if (!tezgah && is.borcAy >= IFLAS_BORC_AY) iflasEt(is, ay, an);
+  return bozulan;
 }
 
 function sozlesmeBoz(is: Isletme, s: Sozlesme, ay: number): void {

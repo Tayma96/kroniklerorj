@@ -160,19 +160,22 @@ test("oyuncu müşteri: anında alır, vergi hazineye, net kasaya, mal yapan izi
   br.teslim();
   const is = br.isler.get(ID)!;
   assert.equal(is.kasa, 29);
-  assert.equal(is.gelir, 29, "yabancı müşteri geliri sayılır");
+  assert.equal(is.gelir, 19, "yabancı müşteri geliri adil değere kadar sayılır (3 × 6,4 = 19; üstü kasada, puan saymaz)");
   // Aynı hane (küme): kasaya girer, gelire/itibara sayılmaz.
   const c = yetiskin(k, 3);
   c.e = a.e;
   c.h = a.h;
   k.sakin.find((s) => s.o === "o3")!.e = a.e;
   k.sakin.find((s) => s.o === "o3")!.h = a.h;
+  // Aynı kümede adil üstü fiyat armağan sayılır ve geçmez (bant = adil): fiyat adile (6) iner.
+  assert.deepEqual(satinAl(k, c, ID, { satir: 1, adet: 2 }, AN, "s-0000006", 0), { ok: false, hata: "pompa_siniri" });
+  assert.ok(rafIslem(k, a, ID, { islem: "fiyat", satir: 1, fiyat: 6 }).ok);
   const r2 = satinAl(k, c, ID, { satir: 1, adet: 2 }, AN, "s-0000005", 0);
   assert.ok(r2.ok);
   assert.equal((r2.deger.satis as { kume: boolean }).kume, true);
   br.teslim();
-  assert.equal(is.kasa, 49);
-  assert.equal(is.gelir, 29, "küme satışı gelir/seviye puanı üretmez");
+  assert.equal(is.kasa, 41);
+  assert.equal(is.gelir, 19, "küme satışı gelir/seviye puanı üretmez");
   assert.ok(is.iz.m.some((x) => x[2] === "kume"));
   assert.deepEqual(is.iz.s, ["o2"], "itibar müşteri sayımına yalnız bayraksız müşteri");
 });
@@ -353,24 +356,37 @@ test("han yolcu havuzu: oyuncu hanları toplamı ≤ Y, han başına tavan; ucuz
   assert.equal((md.hy as { ay: number }).ay, AY + 1);
 });
 
-test("§5.4 (4): iki hesap arası karşılıklı alışveriş döngüsü bayraklanır ve vergiyle akçe kaybettirir", () => {
+test("§5.4 (4): iki hesap arası karşılıklı döngü gelir, itibar ve seviye puanı üretmez; akçe basmaz", () => {
   const { k, a, b } = hazir();
+  const br = kopru(k);
+  const ID2 = "develi.dukkan.2";
   assert.ok(edin(k, b, { tur: "dukkan" }, AN, "e-0000010").ok);
   mulkDefteri(k).cik.k = [];
-  yansit(k, "develi.dukkan.2");
+  yansit(k, ID2);
+  const isA = isletmeKur(ID, "develi", "dukkan", 1, { h: a.h, o: a.o, ad: a.ad }, mulkDefteri(k).t[ID]!.ts, AY);
+  const isB = isletmeKur(ID2, "develi", "dukkan", 2, { h: b.h, o: b.o, ad: b.ad }, mulkDefteri(k).t[ID2]!.ts, AY);
+  br.isler.set(ID, isA);
+  br.isler.set(ID2, isB);
   kaliteliEkle(b, "civi", [[0, 10]]);
   assert.ok(depoTasi(k, a, ID, { yon: "koy", mal: "ekmek", adet: 10 }).ok);
-  assert.ok(rafIslem(k, a, ID, { islem: "koy", mal: "ekmek", adet: 10, fiyat: 12 }).ok);
-  assert.ok(depoTasi(k, b, "develi.dukkan.2", { yon: "koy", mal: "civi", adet: 10 }).ok);
-  assert.ok(rafIslem(k, b, "develi.dukkan.2", { islem: "koy", mal: "civi", adet: 10, fiyat: 9 }).ok);
+  assert.ok(rafIslem(k, a, ID, { islem: "koy", mal: "ekmek", adet: 10, fiyat: 6 }).ok);
+  assert.ok(depoTasi(k, b, ID2, { yon: "koy", mal: "civi", adet: 10 }).ok);
+  assert.ok(rafIslem(k, b, ID2, { islem: "koy", mal: "civi", adet: 10, fiyat: 4 }).ok);
   const once = a.pa + b.pa;
-  const r1 = satinAl(k, b, ID, { satir: 1, adet: 3 }, AN, "s-1000001", 4);
-  const r2 = satinAl(k, a, "develi.dukkan.2", { satir: 1, adet: 4 }, AN, "s-1000002", 4);
-  assert.ok(r1.ok && r2.ok);
-  assert.equal((r2.deger.satis as { karsilikli: boolean }).karsilikli, true, "ikinci yön karşılıklı işlem: gelir/itibar/seviyeye sayılmaz");
-  const kasaya = mulkDefteri(k).cik.k.filter((x) => x.t === "kasaya").reduce((t, x) => t + x.a, 0);
-  assert.ok(kasaya < 36 + 36, "vergi kesildi: döngü akçe basmaz");
-  assert.equal(a.pa + b.pa + kasaya, once - mulkDefteri(k).vergiGiden!.reduce((t, x) => t + x.tutar, 0));
+  // Dört ay dönüşümlü: B→A, A→B, B→A, A→B (her bacak 2 adet).
+  for (let i = 0; i < 4; i++) {
+    const r = i % 2 === 0 ? satinAl(k, b, ID, { satir: 1, adet: 2 }, AN, `s-30000${i}`, 4) : satinAl(k, a, ID2, { satir: 1, adet: 2 }, AN, `s-30000${i}`, 4);
+    assert.ok(r.ok, JSON.stringify(r));
+    br.teslim(AN + i * AY_MS);
+    k.ay++;
+  }
+  // Yalnız ilk bacak (yabancıdan ilk ödeme) adil değeriyle (2 × 4 = 8) puana girer; sonraki üç bacak bayraklı: 0.
+  assert.equal(isA.gelir + isB.gelir, 8, "döngü gelir puanı (seviye) üretmez");
+  assert.ok(isA.iz.m.some((x) => x[2] === "karsilikli") && isB.iz.m.some((x) => x[2] === "karsilikli"), "bayraklı bacaklar izleme kaydında");
+  assert.equal(isB.iz.s.length, 0, "son ay (bayraklı) müşteri sayımına girmez: itibar artmaz");
+  const kasaya = isA.kasa + isB.kasa;
+  const vergi = (mulkDefteri(k).vergiGiden ?? []).reduce((t, x) => t + x.tutar, 0);
+  assert.equal(a.pa + b.pa + kasaya + vergi, once, "döngü akçe basmaz (vergi birikimi oyunculardan çıkar)");
 });
 
 test("iade bekleyen: devralmada ölmüş sahibin bedeli, malı ve kasası yanmaz; vârise geçer; yerleşimde yoksa hazineye", () => {

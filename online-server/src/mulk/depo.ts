@@ -22,8 +22,15 @@ export interface Tezgah extends Envanterli {
   r: RafSatiri[];
   /** Raf satır sayacı. */
   n: number;
-  /** Üst üste kepenkli geçen ay dönümü (devralma eşiği). */
+  /** Devralma sayacı: üst üste satışsız VE sahip/vekil tezgâh eylemi olmayan ay (satış ya da eylem anında sıfırlar). */
   kk: number;
+  /** Son oyuncu satışının ayı ve sahibin/vekilin son tezgâh eyleminin ayı (kepenk ve devralma sayımı). */
+  os?: number;
+  se?: number;
+  /** Çalışanların depodan envantere günlük alışı (adil değer): [TR günü, yerel kimlik → toplam]. */
+  cg?: [gun: number, Record<string, number>];
+  /** Depo defteri: çalışanın her depodan alışı [ay, kim, mal, kalite, adet] (en yeni sonda, sınırlı). */
+  dd?: [ay: number, o: string, mal: string, kalite: number, adet: number][];
   /** Son gün sonu dökümü (ay dönümü). */
   gs?: unknown;
 }

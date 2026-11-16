@@ -35,12 +35,17 @@ akçe basan bir döngü; oyuncunun "neden az sattım" sorusuna ekranda yanıt bu
 ## 4. Ortak çekirdek
 - **Depo:** her işletmenin kendi mal deposu (kalite partileriyle). Kapasite seviyeye göre: dükkân [40,60,90,130,180],
   atölye [60,90,130,180,240] adet. Sahip ve yetkili çalışan envanterinden depoya, depodan envanterine taşır (anında).
-- **Kepenk (yokluk cezası yok):** raf ya da üretim emri boşsa ay dönümünde kepenk kendiliğinden iner: o ay bakım
-  yazılmaz, iflas sayacı ilerlemez, itibar düşmez, faaliyet ayı sayılmaz. Mal konunca ya da emir verilince açılır.
-  Elle "kapı" ayarı kalkar (ölü karar).
+- **Kepenk (yokluk cezası yok; düzeltme 2):** kepenk = o ay hiç satış yok (NPC'ye ya da oyuncuya). Kepenkli ayda
+  bakım yazılmaz, borç/iflas sayacı ilerlemez, itibar düşmez, faaliyet ayı sayılmaz, **maaş işlemez** (sözleşme
+  askıda; ödenemedi diye bozulma ve −8 itibar yok). Satış olan ayda bakım o ayın hasılatından/kasadan düşer. Rafı
+  satılamayan malla dolu dükkân bu yüzden iflas etmez. Elle "kapı" ayarı dükkân/atölyede kalkar (ölü karar).
 - **Yuva kıtlığı:** dükkân/atölye yuvaları artar — şehir 12/9, kasaba 6/4, köy 2/2 (talep paylaşıldığı için yuva
-  sayısı akçe basmaz). Bütün yuvalar doluyken 12 aydır kepengi kapalı bir işletme için başka oyuncu **devralma**
-  isteyebilir: eski sahibine edinim bedelinin tamamı, depo ve kasa iade edilir (kayıp yok), itibar ve seviye sıfırlanır.
+  sayısı akçe basmaz). Bütün yuvalar doluyken **60 ay (30 gerçek gün) etkinliksiz** dükkân için başka oyuncu
+  **devralma** isteyebilir. Etkinliksiz ay = satış yok VE sahibin/vekilin hiçbir raf-depo-fiyat eylemi yok; satış ya da
+  sahip eylemi sayacı anında sıfırlar, devirde ve mirasta da sıfırlanır. Eski sahibine **beyliğe ödediği edinim
+  bedeli** (oyuncular arası devir fiyatı değil; devir ve mirasta aynen taşınır), depo ve kasa iade edilir (kayıp yok;
+  sahibe yazılamayan iade bekler, vârise geçer, sahibi yerleşimde yoksa hazineye), itibar ve seviye sıfırlanır.
+  Atölye Dilim 2'ye kadar devralınamaz.
 - **Seviye** bugünkü puanla (itibar + faaliyet ayı + gelir) kalır; açtığı şey değişir (raf, depo, tezgâh).
 - **Pasif NPC geliri kalkar** (dükkân ve atölye). Eski kayıt: ilk açılışta depo boş, kepenk kapalı, borç silinir.
 - **Vergi:** işletme satış gelirinden bölgenin vergi oranı (%0–4) hazineye; pazar bacı (%5) dükkânda alınmaz.
@@ -56,7 +61,7 @@ akçe basan bir döngü; oyuncunun "neden az sattım" sorusuna ekranda yanıt bu
 
 ### 5.2 Hane bütçesi (rekabetin kaynağı)
 - Her yerleşimde, malı olan her üretici meslek (oduncu, çiftçi, demirci, marangoz, dokumacı, aşçı, şifacı, tüccar)
-  için aylık NPC bütçesi `B`: köy 12, kasaba 30, şehir 70 akçe [PARAMETRE]. O meslekte yerleşimde hiç oyuncu yoksa ×1,5
+  için aylık NPC bütçesi `B`: köy 10, kasaba 24, şehir 56 akçe [PARAMETRE; 16 Kasım: NPC girişi eski pasif gelirin 3 katını aşmasın diye %20 düşürüldü]. O meslekte yerleşimde hiç oyuncu yoksa ×1,5
   (bugünkü kıtlık sinyali). Bütçe o ay rafta bulunan o meslek malları arasında eşit bölünür: `b_mal`.
 - NPC, birim fiyatı `1,5 × taban × kalite çarpanı`nı aşan satırı almaz (NPC tavanı; 1,6 iken stoktan alıp rafta satmak kâr bırakıyordu). Dükkânın aylık NPC hasılatı seviye tavanıyla sınırlıdır: [30,60,100,160,240] akçe.
 - Satırın **çekiciliği** `a = F × Q × R × H`:

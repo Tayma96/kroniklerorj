@@ -7,7 +7,9 @@ import type { YerlesimTuru } from "../src/dunya-veri.ts";
 import { MALLAR, MAL_IDLERI, type MalId } from "../src/icerik/mallar.ts";
 import { adil, talepCoz, yolcuCoz, type Dukkan, type TalepSatiri } from "../src/mulk/hane-butcesi.ts";
 import { BAKIM, MULK_YUVA, NPC_GELIR_TAVAN } from "../src/mulk/kurallar.ts";
-import { fiyatBandi } from "../src/mulk/raf.ts";
+import { fiyatBandi, rafaKoy } from "../src/mulk/raf.ts";
+import type { Tezgah } from "../src/mulk/depo.ts";
+import { kaliteliEkle } from "../src/yerlesim/kalite.ts";
 import { DUKKAN_NPC_TAVAN, HANE_BUTCESI, KITLIK_BUTCE_CARPANI, RAF_SATIR, URETICI_MESLEKLER, YOLCU_BUTCESI, type PayYontemi } from "../src/mulk/tezgah-kurallar.ts";
 import { npcTavani } from "../src/mulk/hane-butcesi.ts";
 import { stokFiyat } from "../src/yerlesim/npc-taban.ts";
@@ -128,27 +130,54 @@ test("§5.4 (2): 1. seviye, ortalama paylı, stoklu dükkân bakımını çıkar
   // Stoksuz dükkân: kepenk (kayıt yok, bakım yok) → 0; tezgah.test.ts kepenk testinde doğrulanır.
 });
 
-test("§5.4 (3): NPC stoğundan alıp rafta NPC'ye satmak kâr ettirmez (NPC tavanı ≤ stok fiyatı)", () => {
+test("§5.4 (3): NPC stoğundan alıp rafta NPC'ye satmak kâr ettirmez — her kalite", () => {
   for (const m of MAL_IDLERI) {
     if (MALLAR[m].taban <= 0) continue;
+    // Sade: NPC'nin sattığı tek kalite; raf NPC tavanı stok fiyatını aşmaz.
     assert.ok(npcTavani(m, 0) <= stokFiyat(m).toplam, `${m}: tavan ${npcTavani(m, 0)} > stok ${stokFiyat(m).toplam}`);
+    // İyi/üstün/şaheser: NPC'den (stok ya da NPC) yalnız sade alınır; sade mal rafa üst kaliteyle konamaz.
+    for (const q of [1, 2, 3] as const) {
+      const t: Tezgah = { r: [], n: 0, kk: 0 };
+      kaliteliEkle(t, m, [[0, 5]]);
+      assert.deepEqual(rafaKoy(t, m, q, 1, Math.max(1, Math.floor(npcTavani(m, q))), 4), { ok: false, hata: "mal_yok" }, `${m}/${q}`);
+    }
   }
 });
 
-test("§5.4 (5): yerleşim başına NPC→oyuncu toplam girişi ≤ 3 × bugünkü pasif gelir toplamı", () => {
-  // Bugünkü (eski) pasif gelir tavanı: eski yuvalar (şehir 5/4/3, kasaba 2/2/2, köy 0/1/1) × en yüksek seviye tavanı.
-  const eskiYuva = { sehir: 12, kasaba: 6, koy: 2 } as const;
+test("§5.4 (5): yerleşim başına NPC→oyuncu girişi: bütçe tavanı ≤ 3 × eski pasif tavan; gerçekçi doluluk karşılaştırması", () => {
+  // (a) Tavan tabanı: eski yuvalar (şehir 5/4/3, kasaba 2/2/2, köy 0/1/1) × en yüksek seviye tavanı (46). Yeni en kötü
+  // durum: bütün meslekler kıtlıkta (×1,5) ΣB + Y. (b) Gerçekçi taban: aynı doluluk (eski yuva sayısı kadar işletme),
+  // 2. seviye, itibar 30, kalite 1 kademe — eski formül taban × 1,3 × 1,05 (tavanlı); yeni: aynı sayıda dükkân (4 satır,
+  // taban fiyat, tam stok, oyuncu meslekleri var) + aynı sayıda han (fc 100). Yorum: ölçülen oran tabloda; sınır (a)
+  // kilitli, (b) yönetici bilgisi için yazılır (yeni sistemde gelir satılan mala bağlı, eskisi bedavaydı).
+  const eskiYuva = { sehir: { han: 5, dukkan: 4, atolye: 3 }, kasaba: { han: 2, dukkan: 2, atolye: 2 }, koy: { han: 0, dukkan: 1, atolye: 1 } } as const;
+  const eskiGelir = { han: 6, dukkan: 4, atolye: 5 } as const;
   const sonuc: string[] = [];
   for (const tur of ["sehir", "kasaba", "koy"] as const) {
-    const eski = eskiYuva[tur] * NPC_GELIR_TAVAN[4]!;
+    const e = eskiYuva[tur];
+    const eskiTavan = (e.han + e.dukkan + e.atolye) * NPC_GELIR_TAVAN[4]!;
     const butceTavani = URETICI_MESLEKLER.length * Math.floor(HANE_BUTCESI[tur] * KITLIK_BUTCE_CARPANI) + YOLCU_BUTCESI[tur];
-    // Ölçülen: bütün yuvalar dolu, kıtlık, 5. seviye, tam stok, çeşitli fiyatlar + bütün hanlar.
+    assert.ok(butceTavani <= 3 * eskiTavan, `${tur}: ${butceTavani} > 3 × ${eskiTavan}`);
     const { r } = calistir({ tur, n: MULK_YUVA[tur].dukkan, stok: 24, yontem: "butce", seviye: 4, satir: RAF_SATIR[4]!, kitlik: true });
-    const hanlar = Array.from({ length: Math.max(1, MULK_YUVA[tur].han) }, (_, i) => ({ no: i + 1, isletme: `h${i}`, fc: 50, kalite: 6, itibar: 100, seviye: 4 }));
-    const y = yolcuCoz(tur, hanlar).dagitilan;
-    const olculen = r.harcanan + y;
-    sonuc.push(`${tur}: ölçülen ${olculen}, tavan ${butceTavani}, sınır 3×${eski}=${3 * eski}`);
-    assert.ok(olculen <= butceTavani && butceTavani <= 3 * eski);
+    const enKotu = r.harcanan + yolcuCoz(tur, Array.from({ length: Math.max(1, MULK_YUVA[tur].han) }, (_, i) => ({ no: i + 1, isletme: `h${i}`, fc: 50, kalite: 6, itibar: 100, seviye: 4 }))).dagitilan;
+    assert.ok(enKotu <= butceTavani);
+    const eskiGercek = (Object.keys(e) as (keyof typeof e)[]).reduce((t, x) => t + e[x] * Math.min(NPC_GELIR_TAVAN[1]!, Math.floor(eskiGelir[x] * 1.3 * 1.05)), 0);
+    const yeniD = calistir({ tur, n: e.dukkan, stok: 24, yontem: "butce", seviye: 1, satir: 4, strateji: () => "taban", kalite: () => 0 }).r.harcanan;
+    const yeniH = e.han ? yolcuCoz(tur, Array.from({ length: e.han }, (_, i) => ({ no: i + 1, isletme: `h${i}`, fc: 100, kalite: 1, itibar: 30, seviye: 1 }))).dagitilan : 0;
+    sonuc.push(`${tur}: en kötü ${enKotu} ≤ tavan ${butceTavani} ≤ 3×${eskiTavan}; gerçekçi eski ${eskiGercek} → yeni ${yeniD + yeniH} (×${((yeniD + yeniH) / Math.max(1, eskiGercek)).toFixed(1)})`);
   }
   console.log(`(5) ${sonuc.join("; ")}`);
+});
+
+test("ucuz fiyat pay ve adedi artırır (fazla stok erir) ama kârı düşürür: ucuzcu hiçbir senaryoda en iyi değil", () => {
+  const d = new Map([["d1", { id: "d1", itibar: 30, tavan: 999 }], ["d2", { id: "d2", itibar: 30, tavan: 999 }]]);
+  const sonuc = (fiyat: number) => {
+    const r = talepCoz("sehir", [{ id: "d1#1", dukkan: "d1", mal: "kumas", q: 0, adet: 24, fiyat }, { id: "d2#1", dukkan: "d2", mal: "kumas", q: 0, adet: 24, fiyat: 15 }], d, () => 1);
+    const x = r.satirlar.find((y) => y.dukkan === "d1")!;
+    return { pay: x.pay, adet: x.adet, kar: x.hasilat - x.adet * 15 };
+  };
+  const ucuz = sonuc(12);
+  const taban = sonuc(15);
+  assert.ok(ucuz.pay > taban.pay && ucuz.adet > taban.adet, "ucuz: daha çok pay ve adet");
+  assert.ok(ucuz.kar < taban.kar, "ucuz: kâr düşer (adil altı satış zarar)");
 });

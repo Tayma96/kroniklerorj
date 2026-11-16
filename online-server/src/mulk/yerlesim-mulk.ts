@@ -42,7 +42,7 @@ export type IsletmeCagir = (ileti: IsletmeIleti) => Promise<Sonuc<IsletmeYaniti>
 export const TEZGAH_OKU = ["dukkanlar", "tezgah", "onizle"] as const;
 export const TEZGAH_YAZ = ["depo", "raf", "satinal", "devral"] as const;
 /** Bölge vergi oranını tazeleyen alt işlemler (raf satışı vergisi). */
-export const VERGI_ALT: readonly string[] = ["satinal", "raf"];
+export const VERGI_ALT: readonly string[] = ["satinal", "raf", "edin"];
 
 /** İstemci uçlarının alt işlemleri (HesapDO → YerlesimDO "mulk"). */
 export const MULK_ALT = ["liste", "edin", "panel", "devirOnizle", "yatir", "devir", ...KOMUTLAR, ...TEZGAH_OKU, ...TEZGAH_YAZ] as const;
@@ -163,7 +163,11 @@ export async function mulkIsle(motor: MulkMotoru, ileti: MulkIletisi, an: number
   if (alt === "edin") {
     const no = istekNoCoz(govde);
     if (!no.ok) return no;
-    const r = await motor.mulkAdimi(hesapId, govde, [], (kar) => edin(k, kar, govde, an, no.deger));
+    const r = await motor.mulkAdimi(hesapId, govde, [], (kar) => {
+      const e = edin(k, kar, govde, an, no.deger);
+      if (e.ok && vergiOrani !== undefined) mulkDefteri(k).vo = vergiOrani;
+      return e;
+    });
     await uzlastir(motor, an, cagir, true, kota);
     return durumEkle(k, r);
   }
@@ -178,10 +182,11 @@ export async function mulkIsle(motor: MulkMotoru, ileti: MulkIletisi, an: number
   if ((TEZGAH_YAZ as readonly string[]).includes(alt)) {
     const no = istekNoCoz(govde);
     if (!no.ok) return no;
-    const eski = alt === "devral" ? k.mk?.t[isletme]?.s : undefined;
+    // Devralmada eski sahip, satın almada satıcı (armağan tavanı) yüklenir.
+    const eski = alt === "devral" || alt === "satinal" ? k.mk?.t[isletme]?.s : undefined;
     const r = await motor.mulkAdimi(hesapId, govde, eski ? [eski] : [], (kar) =>
       alt === "depo"
-        ? depoTasi(k, kar, isletme, govde)
+        ? depoTasi(k, kar, isletme, govde, an)
         : alt === "raf"
           ? rafIslem(k, kar, isletme, govde, vergiOrani)
           : alt === "satinal"
@@ -238,11 +243,15 @@ export async function mulkIsle(motor: MulkMotoru, ileti: MulkIletisi, an: number
   const no = istekNoCoz(govde);
   if (!no.ok) return no;
   let hedef: PersonelHedefi | undefined;
+  if (alt === "personel" && c.tur === "han") {
+    const hs = [...new Set(Object.entries(k.mk?.t ?? {}).filter(([id]) => isletmeCoz(id)?.tur === "han").map(([, t]) => t.s))];
+    hedef = { hs };
+  }
   if (alt === "personel" && nesneMi(govde) && govde.hedef !== undefined) {
     const h = govde.hedef;
     const ph = await motor.mulkIslem(typeof h === "string" && h.startsWith("o") ? [h] : [], () => personelHedefi(k, h));
     if (!ph.ok) return ph;
-    hedef = ph.deger;
+    hedef = { ...ph.deger, ...(hedef?.hs ? { hs: hedef.hs } : {}) };
   }
   let r: Sonuc<IsletmeYaniti>;
   try {

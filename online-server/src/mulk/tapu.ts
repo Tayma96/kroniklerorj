@@ -33,6 +33,7 @@ import {
 } from "./kurallar.ts";
 import type { AyarYuku, Baglam, GirisNedeni, Kisi } from "./isletme.ts";
 import { tezgahBosalt, type Tezgah } from "./depo.ts";
+import { KARSILIKLI_PENCERE_AY } from "./tezgah-kurallar.ts";
 import { akceIade, malIade, type IadeKaydi } from "./iade.ts";
 import {
   CIKIS_EN_COK,
@@ -60,6 +61,25 @@ export interface TapuKaydi {
   y?: AyarYuku & { as: number };
   /** Devir teklifi: alıcı yerel kimlik, fiyat, ay. */
   dv?: { o: string; f: number; ay: number };
+  /**
+   * Beyliğe gerçekten ödenen edinim bedeli (devralma iadesi bundan; devirde ve mirasta aynen taşınır, asla oyuncular
+   * arası devir fiyatı olmaz). Eski kayıtta yok: `iadeBedeli` türün bugünkü bedelini ve `f`yi aşmayanı alır.
+   */
+  eb?: number;
+}
+
+/** Devralmada eski sahibe iade edilecek tutar: beyliğe ödenen edinim bedeli. */
+export function iadeBedeli(k: Kasaba, isletme: string): number {
+  const t = k.mk?.t[isletme];
+  const c = isletmeCoz(isletme);
+  if (!t || !c) return 0;
+  return t.eb ?? Math.min(t.f, EDINIM_FIYATI[k.tur][c.tur]);
+}
+
+/** Sahip değişiminde (devir, miras) devralma sayacı sıfırlanır: yeni sahip etkinlikle başlar. */
+export function devralmaSayaciSifirla(md: MulkDefteri, isletme: string): void {
+  const tz = md.tz?.[isletme];
+  if (tz) tz.kk = 0;
 }
 
 export interface MulkDefteri {
@@ -71,6 +91,8 @@ export interface MulkDefteri {
   gir: GirisDefteri;
   /** Bu ayın müşteri ödemeleri (karşılıklı işlem izleme): [ay, [ödeyen, sahip][]]. */
   mh: [ay: number, [string, string][]];
+  /** Karşılıklı işlem penceresi: [ay, ödeyen, sahip] (son KARSILIKLI_PENCERE_AY ay). */
+  mp?: [ay: number, odeyen: string, sahip: string][];
   /** Oyuncu hanı kiracıları: işletme → [yerel kimlik, bitiş ms][]. */
   od: Record<string, [string, number][]>;
   /** Denetim: edinim bedeli olarak dünyadan çıkan akçe. */
@@ -182,17 +204,21 @@ export function edin(k: Kasaba, kar: Karakter, govde: unknown, an: number, istek
   cikisAc(md.cik, { i: islem, t: "kur", h: id, a: 0, y: { isletme: id, tur, no, ts, sahip: { h: kar.h, o: kar.o, ad: kar.ad } } }, an);
   kar.pa -= sart.fiyat;
   md.batak += sart.fiyat;
-  md.t[id] = { s: kar.o, h: kar.h, ts, a: k.ay, f: sart.fiyat };
+  md.t[id] = { s: kar.o, h: kar.h, ts, a: k.ay, f: sart.fiyat, eb: sart.fiyat };
   return basarili({ edinim: { isletme: id, tur, no, fiyat: sart.fiyat, batak: sart.fiyat, sart, islem } });
 }
 
 // ── Cüzdan → kasa ──
 
-/** Karşılıklı işlem: bu ay sahip, ödeyenin işletmesine ödeme yaptı mı. */
+/**
+ * Karşılıklı işlem: son KARSILIKLI_PENCERE_AY ay içinde sahip, ödeyenin işletmesine ödeme yaptı mı (iki yönlü çift:
+ * A→B ve B→A dönüşümlü aylarda da yakalanır). `mp`: [ay, ödeyen, sahip] penceresi.
+ */
 function karsilikliMi(md: MulkDefteri, ay: number, oden: string, sahip: string): boolean {
-  if (md.mh[0] !== ay) return false;
   const odeyenin = new Set(sahipMulkleri(md, oden));
-  return odeyenin.size > 0 && md.mh[1].some(([a, b]) => a === sahip && b === oden);
+  if (odeyenin.size === 0) return false;
+  if (md.mh[0] === ay && md.mh[1].some(([a, b]) => a === sahip && b === oden)) return true;
+  return (md.mp ?? []).some(([a, x, y]) => ay - a < KARSILIKLI_PENCERE_AY && x === sahip && y === oden);
 }
 
 /**
@@ -214,6 +240,10 @@ export function kasayaCikis(k: Kasaba, kar: Karakter, isletme: string, tutar: nu
     if (md.mh[0] !== k.ay) md.mh = [k.ay, []];
     md.mh[1].push([kar.o, tapu.s]);
     if (md.mh[1].length > MUSTERI_IZ_EN_COK) md.mh[1].splice(0, md.mh[1].length - MUSTERI_IZ_EN_COK);
+    const mp = (md.mp ??= []).filter(([a]) => k.ay - a < KARSILIKLI_PENCERE_AY);
+    if (!mp.some(([a, x, y]) => a === k.ay && x === kar.o && y === tapu.s)) mp.push([k.ay, kar.o, tapu.s]);
+    if (mp.length > MUSTERI_IZ_EN_COK) mp.splice(0, mp.length - MUSTERI_IZ_EN_COK);
+    md.mp = mp;
   }
   return basarili({ islem, kume, karsilikli });
 }
@@ -493,7 +523,9 @@ export function devirKabul(k: Kasaba, alici: Karakter, isletme: string, an: numb
   alici.pa -= f;
   satici.pa += f;
   const eski = tapu.s;
-  md.t[isletme] = { s: alici.o, h: alici.h, ts, a: k.ay, f, ...(tapu.y ? { y: { ...tapu.y, ts } } : {}) };
+  const eb = iadeBedeli(k, isletme);
+  md.t[isletme] = { s: alici.o, h: alici.h, ts, a: k.ay, f, eb, ...(tapu.y ? { y: { ...tapu.y, ts } } : {}) };
+  devralmaSayaciSifirla(md, isletme);
   return basarili({ devir: { isletme, fiyat: f, satici: eski, ts } });
 }
 

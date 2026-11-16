@@ -72,3 +72,34 @@ test("alt istek bütçesi: biriken kervan + tezgâh + vergi teslimi her turda �
   await d.fetch(new Request("https://ic/", { method: "POST", body: JSON.stringify({ islem: "durum", yerlesim: "demirhan", hesapId: "yok" }) }));
   assert.ok(sayac.tur <= ALT_ISTEK_EN_COK, `istek: ${sayac.tur}`);
 });
+
+test("12: NPC satış vergisi oranı hiç bilinmiyorsa ay dönümünden önce bölgeden tazelenir (bütçe içinde)", async () => {
+  const saat = Date.now();
+  let cagri = 0;
+  const yanit = (v: unknown) => new Response(JSON.stringify(v), { headers: { "content-type": "application/json" } });
+  const stub = (isle: (ileti: Nesne) => unknown) => ({ ...ad(), get: () => ({ fetch: async (_u: string, init?: RequestInit) => (cagri++, yanit(isle(JSON.parse(String(init?.body))))) }) }) as unknown as DurableObjectNamespace;
+  const env = {
+    YONETIM: stub(() => ({ ok: true, deger: {} })),
+    BOLGE: stub(() => ({ ok: true, deger: { bolge: { vergi: { oran: 3 } } } })),
+    ISLETME: stub(() => ({ ok: true, deger: { sonuclar: [], teslim: [] } })),
+    YERLESIM: stub(() => ({ ok: false, hata: "gecersiz_istek" })),
+  } as unknown as Env;
+  const depolama = sahteDepolama();
+  const yap = () => new YerlesimDO({ id: { toString: () => "y" }, storage: depolama } as unknown as DurableObjectState, env, () => saat);
+  await yap().fetch(new Request("https://ic/", { method: "POST", body: JSON.stringify({ islem: "durum", yerlesim: "demirhan", hesapId: "yok" }) }));
+  const mk = { v: 1, ts: 1, t: { "demirhan.dukkan.1": { s: "o1", h: "h1", ts: 1, a: 0, f: 180 } }, cik: { k: [], z: [] }, gir: { g: {} }, mh: [0, []], od: {}, batak: 180 };
+  depolama.veri.set("mk", mk);
+  const m = depolama.veri.get("m") as Nesne;
+  m.sa -= 1;
+  depolama.veri.set("m", m);
+  const d = yap();
+  await d.alarm();
+  assert.equal((depolama.veri.get("mk") as Nesne).vo, 3, "oran yazıldı");
+  assert.ok(d.harcanan <= ALT_ISTEK_EN_COK);
+  cagri = 0;
+  m.sa -= 1;
+  depolama.veri.set("m", m);
+  await yap().alarm();
+  const bolgeCagrisi = cagri;
+  assert.ok(bolgeCagrisi <= 2, "oran biliniyorsa yeniden sorulmaz (yalnız yönetim parametresi)");
+});

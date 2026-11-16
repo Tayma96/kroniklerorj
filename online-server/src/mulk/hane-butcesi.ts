@@ -153,9 +153,11 @@ export function talepCoz(
   const sirali = satirlar
     .filter((s) => s.adet > 0 && MALLAR[s.mal].taban > 0 && dukkanlar.has(s.dukkan))
     .sort((a, b) => (MAL_SIRA.get(a.mal)! - MAL_SIRA.get(b.mal)!) || (a.dukkan < b.dukkan ? -1 : a.dukkan > b.dukkan ? 1 : 0) || (a.id < b.id ? -1 : 1));
-  // Meslek başına rafta bulunan farklı mal sayısı: B mallar arasında eşit bölünür.
+  // Meslek başına rafta bulunan, NPC'ye gerçekten satılabilir (fiyat ≤ NPC tavanı) farklı mal sayısı: B bunlar
+  // arasında eşit bölünür. Tavan üstü satır bütçeyi sulandırmaz.
   const malMeslek = new Map<MeslekId, Set<MalId>>();
   for (const s of sirali) {
+    if (s.fiyat > npcTavani(s.mal, s.q)) continue;
     const m = MALLAR[s.mal].meslek;
     if (!malMeslek.has(m)) malMeslek.set(m, new Set());
     malMeslek.get(m)!.add(s.mal);

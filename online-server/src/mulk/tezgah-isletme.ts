@@ -5,8 +5,8 @@
 // eski sahibin kasası ve emaneti cüzdanına gider (kayıp yok), itibar ve seviye sıfırlanır.
 
 import type { Isletme, Kisi } from "./isletme.ts";
-import { bakim, defterYaz, etkinler, iflasEt, isletmeKur, kalite } from "./isletme.ts";
-import { IFLAS_BORC_AY, ITIBAR_BORC, ITIBAR_EN_COK, ITIBAR_KALITE, ITIBAR_MUSTERI, ITIBAR_MUSTERI_TAVAN, isletmeCoz } from "./kurallar.ts";
+import { bakim, defterYaz, etkinler, iflasEt, isletmeKur, kalite, maasOde } from "./isletme.ts";
+import { IFLAS_BORC_AY, ITIBAR_BORC, ITIBAR_EN_COK, ITIBAR_KALITE, ITIBAR_MAAS_BOZMA, ITIBAR_MUSTERI, ITIBAR_MUSTERI_TAVAN, isletmeCoz } from "./kurallar.ts";
 import { cikisAc, type CevapDurumu, type CikisKaydi } from "./transfer.ts";
 
 type AyGirdisi = [ay: number, net: number, satir: number];
@@ -37,7 +37,9 @@ function dukkanAyi(is: Isletme, ay: number, satir: number, an: number): void {
   // "Müşteri sayısı" girdisi: NPC'ye satış yapan satır + bu ayın sayılan (bayraksız) oyuncu müşterisi, tavanlı.
   const oyuncu = is.iz.ay === ay - 1 ? is.iz.s.length : 0;
   const musteri = Math.min(ITIBAR_MUSTERI_TAVAN, (satir + oyuncu) * ITIBAR_MUSTERI);
-  const fark = kalite(is).toplam * ITIBAR_KALITE + musteri - (is.borc > 0 ? ITIBAR_BORC : 0);
+  // Maaş yalnız satış olan ayda (kepenkli ayda sözleşme askıda).
+  const bozulan = maasOde(is, ay, an);
+  const fark = kalite(is).toplam * ITIBAR_KALITE + musteri - (is.borc > 0 ? ITIBAR_BORC : 0) - bozulan * ITIBAR_MAAS_BOZMA;
   is.it = Math.max(0, Math.min(ITIBAR_EN_COK, is.it + fark));
   if (is.borcAy >= IFLAS_BORC_AY) iflasEt(is, ay, an);
 }

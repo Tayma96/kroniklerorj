@@ -8,14 +8,16 @@ import { akceIade, iadeTeslim, malIade } from "./iade.ts";
 import type { Karakter, Kasaba } from "../yerlesim/tipler.ts";
 import { basarili, hata, type Sonuc } from "../tipler.ts";
 import { bosTezgah, depoAdedi, depoGorunumu, depoKapasitesi, depodanAl, depoyaKoy, tasimaCoz, tezgahBosalt, type Tezgah } from "./depo.ts";
-import { npcTavani, talepCoz, type Dukkan, type TalepSatiri } from "./hane-butcesi.ts";
+import { adil, npcTavani, talepCoz, type Dukkan, type TalepSatiri } from "./hane-butcesi.ts";
 import type { Kisi } from "./isletme.ts";
 import { ITIBAR_BASLANGIC, KISI_MULK_EN_COK, MULK_YUVA, isletmeCoz, type MulkTuru, type Yetki } from "./kurallar.ts";
 import { fiyatBandi, fiyatGecerli, rafAdedi, rafBos, rafSatirSiniri, rafaKoy, raftanAl, raftanSat, satirBul, satirGorunumu } from "./raf.ts";
-import { bosYuva, edinimSarti, kasayaCikis, mulkDefteri, sahipMulkleri, vergiAyir, type MulkDefteri } from "./tapu.ts";
-import { meslekOyuncuSayaci } from "./tezgah-donum.ts";
+import { bosYuva, edinimSarti, iadeBedeli, kasayaCikis, mulkDefteri, sahipMulkleri, vergiAyir, type MulkDefteri } from "./tapu.ts";
+import { meslekOyuncuSayaci, saticilar } from "./tezgah-donum.ts";
+import { pompaDenetle, pompaYaz } from "../yerlesim/pazar-tahta.ts";
+import { trGunu } from "../yonetim/sikayet.ts";
 import { CIKIS_EN_COK, cikisAc } from "./transfer.ts";
-import { DEVRALMA_KEPENK_AY, DEVRALMA_TURLERI, DUKKAN_NPC_TAVAN, PAY_YONTEMI, RAF_SATIR_ADET, TEZGAH_KAYIT_PAYI } from "./tezgah-kurallar.ts";
+import { CALISAN_DEPO_GUNLUK_ADIL, DEPO_DEFTER_EN_COK, DEVRALMA_KEPENK_AY, NPC_TAVAN_CARPANI, DEVRALMA_TURLERI, DUKKAN_NPC_TAVAN, PAY_YONTEMI, RAF_SATIR_ADET, TEZGAH_KAYIT_PAYI } from "./tezgah-kurallar.ts";
 
 function nesneMi(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
@@ -50,6 +52,8 @@ function izinler(md: MulkDefteri, isletme: string, o: string) {
   const { sahip, y } = yetkiler(md, isletme, o);
   return {
     sahip,
+    /** Sahip ya da vekil: devralma sayacını sıfırlar, depodan alışta tavansızdır. */
+    yonetici: sahip || y.includes("vekalet"),
     depoKoy: sahip || y.includes(TEZGAH_YETKI.depoKoy),
     depoAl: sahip || y.includes(TEZGAH_YETKI.depoAl),
     raf: sahip || y.includes(TEZGAH_YETKI.raf),
@@ -62,6 +66,12 @@ function devralinabilir(k: Kasaba, md: MulkDefteri, isletme: string): boolean {
   if (!c || !(DEVRALMA_TURLERI as readonly string[]).includes(c.tur)) return false;
   const t = md.tz?.[isletme];
   return !!md.t[isletme] && (t?.kk ?? 0) >= DEVRALMA_KEPENK_AY && bosYuva(k, md, c.tur) === undefined;
+}
+
+/** Sahibin/vekilin tezgâh eylemi: devralma sayacı anında sıfırlanır. */
+function etkinlik(k: Kasaba, t: Tezgah): void {
+  t.se = k.ay;
+  t.kk = 0;
 }
 
 function sahipAdi(k: Kasaba, o: string): string {
@@ -114,13 +124,14 @@ export function tezgahGorunumu(k: Kasaba, kar: Karakter, isletme: string): Sonuc
     itibar,
     kepenk: tur === "atolye" || rafBos(t),
     kepenkAy: t.kk,
+    gecenAyKepenk: (t.gs as { kepenk?: boolean } | undefined)?.kepenk ?? true,
     raf: tur === "dukkan" ? t.r.map((s) => satirGorunumu(s, itibar)) : [],
     rafSiniri: { satir: tur === "dukkan" ? rafSatirSiniri(seviye) : 0, adet: RAF_SATIR_ADET },
     npcTavanSeviye: tur === "dukkan" ? (DUKKAN_NPC_TAVAN[seviye] ?? DUKKAN_NPC_TAVAN[0]!) : 0,
     devralinabilir: devralinabilir(k, md, isletme) && tapu.s !== kar.o,
     izin: { depoKoy: iz.depoKoy, depoAl: iz.depoAl, raf: iz.raf && tur === "dukkan", fiyat: iz.fiyat && tur === "dukkan", satinAl: tur === "dukkan" && tapu.s !== kar.o },
     ...(yetkili
-      ? { depo: depoGorunumu(t), depoKapasite: depoKapasitesi(tur, seviye), depoDolu: depoAdedi(t), gunSonu: t.gs ?? null, ozet: md.tzo ?? null }
+      ? { depo: depoGorunumu(t), depoKapasite: depoKapasitesi(tur, seviye), depoDolu: depoAdedi(t), gunSonu: t.gs ?? null, ozet: md.tzo ?? null, depoDefteri: (t.dd ?? []).map(([ay, o, mal, kalite, adet]) => ({ ay, kim: o, mal, kalite, adet })) }
       : {}),
   });
 }
@@ -159,7 +170,7 @@ export function fiyatOnizle(k: Kasaba, kar: Karakter, isletme: string, govde: un
   const sid = mevcut ? `${isletme}#${mevcut.n}` : `${isletme}#onizle`;
   const liste = satirlar.filter((s) => s.id !== sid);
   liste.push({ id: sid, dukkan: isletme, mal, q: q as Kalite, adet, fiyat });
-  const r = talepCoz(k.tur, liste, dukkanlar, meslekOyuncuSayaci(k), PAY_YONTEMI);
+  const r = talepCoz(k.tur, liste, dukkanlar, meslekOyuncuSayaci(k, saticilar(md, liste)), PAY_YONTEMI);
   const x = r.satirlar.find((s) => s.id === sid)!;
   const meslek = r.meslekler.find((m) => m.meslek === MALLAR[mal].meslek)!;
   void kar;
@@ -187,7 +198,7 @@ export function fiyatOnizle(k: Kasaba, kar: Karakter, isletme: string, govde: un
 // ── Yazma ──
 
 /** POST .../depo {yon: koy|al, mal, kalite?, adet}: sahip ya da yetkili çalışan; envanter ↔ depo (tek yazım). */
-export function depoTasi(k: Kasaba, kar: Karakter, isletme: string, govde: unknown): Sonuc<Record<string, unknown>> {
+export function depoTasi(k: Kasaba, kar: Karakter, isletme: string, govde: unknown, an = 0): Sonuc<Record<string, unknown>> {
   const h = hedef(k, isletme);
   if (!h.ok) return h;
   const { md, tur, t, seviye } = h.deger;
@@ -202,9 +213,24 @@ export function depoTasi(k: Kasaba, kar: Karakter, isletme: string, govde: unkno
     r = depoyaKoy(kar, t, g.deger, depoKapasitesi(tur, seviye));
   } else if (govde.yon === "al") {
     if (!iz.depoAl) return hata("yetki_yok");
+    // Çalışan (sahip/vekil değil): günlük adil değer tavanı ve depo defterine satır (mal kaçırma önlemi).
+    const deger = Math.ceil(adil(g.deger.mal, g.deger.q) * g.deger.adet);
+    let bugun = 0;
+    if (!iz.yonetici) {
+      const gun = trGunu(an);
+      if (!t.cg || t.cg[0] !== gun) t.cg = [gun, {}];
+      bugun = t.cg[1][kar.o] ?? 0;
+      if (bugun + deger > CALISAN_DEPO_GUNLUK_ADIL) return hata("depo_cekim_tavani");
+    }
     r = depodanAl(kar, t, g.deger);
+    if (r.ok && !iz.yonetici) {
+      t.cg![1][kar.o] = bugun + deger;
+      (t.dd ??= []).push([k.ay, kar.o, g.deger.mal, g.deger.q, g.deger.adet]);
+      if (t.dd.length > DEPO_DEFTER_EN_COK) t.dd.splice(0, t.dd.length - DEPO_DEFTER_EN_COK);
+    }
   } else return hata("gecersiz_istek");
   if (!r.ok) return r;
+  if (iz.yonetici) etkinlik(k, t);
   return basarili({ depo: { yon: govde.yon, mal: g.deger.mal, kalite: g.deger.q, adet: g.deger.adet, icerik: depoGorunumu(t), dolu: depoAdedi(t), kapasite: depoKapasitesi(tur, seviye) } });
 }
 
@@ -226,6 +252,7 @@ export function rafIslem(k: Kasaba, kar: Karakter, isletme: string, govde: unkno
     if (govde.fiyat !== undefined && !iz.fiyat) return hata("yetki_yok");
     const r = rafaKoy(t, g.deger.mal, g.deger.q, g.deger.adet, govde.fiyat, seviye);
     if (!r.ok) return r;
+    if (iz.yonetici) etkinlik(k, t);
     return basarili({ raf: t.r.map((s) => satirGorunumu(s)), satir: satirGorunumu(r.deger.satir) });
   }
   const s = satirBul(t, govde.satir);
@@ -237,12 +264,14 @@ export function rafIslem(k: Kasaba, kar: Karakter, isletme: string, govde: unkno
     if (depoAdedi(t) + (adet as number) > depoKapasitesi(tur, seviye)) return hata("depo_dolu");
     const r = raftanAl(t, s, adet as number);
     if (!r.ok) return r;
+    if (iz.yonetici) etkinlik(k, t);
     return basarili({ raf: t.r.map((x) => satirGorunumu(x)), depoDolu: depoAdedi(t) });
   }
   if (islem === "fiyat") {
     if (!iz.fiyat) return hata("yetki_yok");
     if (!fiyatGecerli(s.m, s.q, govde.fiyat)) return hata("fiyat_bant_disi");
     s.f = govde.fiyat as number;
+    if (iz.yonetici) etkinlik(k, t);
     return basarili({ satir: satirGorunumu(s) });
   }
   return hata("gecersiz_istek");
@@ -259,7 +288,8 @@ export function satinAl(k: Kasaba, kar: Karakter, isletme: string, govde: unknow
   const { md, tur, t } = h.deger;
   if (tur !== "dukkan") return hata("tezgah_yok");
   const tapu = md.t[isletme]!;
-  if (tapu.s === kar.o) return hata("kendine");
+  // Sahip ve işletmenin oyuncu çalışanı kendi dükkânından alamaz.
+  if (tapu.s === kar.o || tapu.y?.py?.some(([o]) => o === kar.o)) return hata("kendine");
   if (!nesneMi(govde)) return hata("gecersiz_istek");
   const s = satirBul(t, govde.satir);
   if (!s) return hata("satir_yok");
@@ -270,12 +300,21 @@ export function satinAl(k: Kasaba, kar: Karakter, isletme: string, govde: unknow
   const tutar = s.f * (adet as number);
   if (kar.pa < tutar) return hata("para_yok");
   if (md.cik.k.length >= CIKIS_EN_COK) return hata("transfer_bekliyor");
+  // Armağan (pompa) denetimi pazarla aynı: adil bandın dışı aylık hediye tavanına sayılır; aynı kümede bant = adil.
+  const satici = k.kar.get(tapu.s);
+  // Rafta hediye sayılmayan üst sınır NPC tavanıdır (1,5 × adil): üstü (bant 3×'e kadar) armağan tavanına sayılır.
+  const pompa = satici ? pompaDenetle(satici, kar, s.m, s.q, adet as number, tutar, k.ay, NPC_TAVAN_CARPANI) : undefined;
+  if (pompa && !pompa.ok) return pompa;
+  // Aynı hane kümesinde bant sıfırdır: adil değerin üstünde satış hiç geçmez (aile içi akçe aktarma yolu kapalı).
+  if (pompa?.ok && pompa.deger.ayniKume && pompa.deger.yon === "alicidan") return hata("pompa_siniri");
   const oran = Number.isInteger(vergiOrani) && vergiOrani >= 0 && vergiOrani <= 4 ? vergiOrani : 0;
   md.vo = oran;
   const v = vergiAyir(md, isletme, tutar, oran);
   const islem = `y:${k.y}:${kar.o}:satinal:${istekNo}`;
   kar.pa -= tutar;
-  const c = kasayaCikis(k, kar, isletme, v.net, "satis", an, islem, false, { satici: tapu.s });
+  // Gelir/itibar/seviye puanına yalnız adil değere kadar olan kısım yazılır (üstü kasaya girer, puan saymaz).
+  const sayilan = Math.min(v.net, Math.floor(adil(s.m, s.q) * (adet as number)));
+  const c = kasayaCikis(k, kar, isletme, v.net, "satis", an, islem, false, { satici: tapu.s, sayilan });
   if (!c.ok) {
     kar.pa += tutar;
     return c;
@@ -286,6 +325,10 @@ export function satinAl(k: Kasaba, kar: Karakter, isletme: string, govde: unknow
   const q = s.q;
   const p = raftanSat(t, s, adet as number)!;
   kaliteliEkle(kar, mal, p);
+  if (pompa?.ok && satici) pompaYaz(satici, kar, pompa.deger, k.ay);
+  // Satış kepengi açar ve devralma sayacını sıfırlar.
+  t.os = k.ay;
+  t.kk = 0;
   return basarili({
     satis: { isletme, satir: s.n, mal, kalite: q, adet, birim: s.f, tutar, vergi: { oran, tutar: v.vergi }, kasaya: v.net, islem, kume: c.deger.kume, karsilikli: c.deger.karsilikli, yapan: p.find((x) => x[2] !== undefined)?.[2] ?? null },
   });
@@ -319,16 +362,18 @@ export function devral(k: Kasaba, kar: Karakter, isletme: string, an: number, is
   }
   kar.pa -= sart.fiyat;
   md.batak += sart.fiyat;
-  akceIade(k, tapu.s, tapu.f);
-  md.batak -= tapu.f;
+  // İade yalnız beyliğe gerçekten ödenen edinim bedeli (devir fiyatı değil): batak eksiye düşmez, akçe basılmaz.
+  const bedel = Math.min(iadeBedeli(k, isletme), md.batak);
+  akceIade(k, tapu.s, bedel);
+  md.batak -= bedel;
   const tz = md.tz?.[isletme];
   let iade = 0;
   if (tz) malIade(k, tapu.s, (h) => (iade = tezgahBosalt(tz, h)));
-  (md.ob ??= []).push({ t: "tezgah", w: tapu.s, h: kar.o, g: tapu.s, n: 5, k: "olay.tezgah.devralindi", p: { isletme, ad: tapu.y?.ad ?? "", bedel: tapu.f, mal: iade, kepenkAy: tz?.kk ?? 0 } });
+  (md.ob ??= []).push({ t: "tezgah", w: tapu.s, h: kar.o, g: tapu.s, n: 5, k: "olay.tezgah.devralindi", p: { isletme, ad: tapu.y?.ad ?? "", bedel, mal: iade, kepenkAy: tz?.kk ?? 0 } });
   (md.tz ??= {})[isletme] = bosTezgah();
-  md.t[isletme] = { s: kar.o, h: kar.h, ts, a: k.ay, f: sart.fiyat };
+  md.t[isletme] = { s: kar.o, h: kar.h, ts, a: k.ay, f: sart.fiyat, eb: sart.fiyat };
   delete md.od[isletme];
-  return basarili({ devralma: { isletme, fiyat: sart.fiyat, eskiSahip: tapu.s, iade: { bedel: tapu.f, mal: iade, kasa: "isletmeden" }, ts } });
+  return basarili({ devralma: { isletme, fiyat: sart.fiyat, eskiSahip: tapu.s, iade: { bedel, mal: iade, kasa: "isletmeden" }, ts } });
 }
 
 /** Devralma kaydı teslim edilmeden işletmeye komut gitmez (eski kasa yeni sahibe geçmesin). */

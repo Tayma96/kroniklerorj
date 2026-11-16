@@ -142,7 +142,7 @@ export function isletmeIsle(onceki: Isletme | undefined, ileti: IsletmeIleti, an
           }
           const hedef = is;
           const r = girisUygula(hedef.gir, x.i, an, () =>
-            kasayaGir(hedef, { tutar: x.a, neden: x.y.neden as GirisNedeni, o: String(x.y.o), kume: x.y.kume === true, karsilikli: x.y.karsilikli === true }, ay),
+            kasayaGir(hedef, { tutar: x.a, neden: x.y.neden as GirisNedeni, o: String(x.y.o), kume: x.y.kume === true, karsilikli: x.y.karsilikli === true, ...(Number.isInteger(x.y.sayilan) && (x.y.sayilan as number) >= 0 ? { sayilan: x.y.sayilan as number } : {}) }, ay),
           );
           sonuclar.push(r.neden ? [x.i, r.durum, r.neden] : [x.i, r.durum]);
         } else sonuclar.push([x.i, "red", "gecersiz_istek"]);

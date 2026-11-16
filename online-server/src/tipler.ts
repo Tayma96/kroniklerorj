@@ -318,6 +318,8 @@ export const HATA_DURUMU = {
   fiyat_bant_disi: 400,
   fiyat_degisti: 409,
   devralma_kosulu: 409,
+  depo_cekim_tavani: 409,
+  vekil_han_sahibi: 409,
   kalite_gecersiz: 400,
   adet_gecersiz: 400,
   fiyat_gecersiz: 400,

@@ -11,7 +11,7 @@ import type { MeslekId } from "../icerik/meslekler.ts";
 import { olduMu } from "../yerlesim/hanedan.ts";
 import type { Kasaba, OlayTaslagi } from "../yerlesim/tipler.ts";
 import { iadeCoz } from "./iade.ts";
-import { partiToplam, type Tezgah } from "./depo.ts";
+import { bosTezgah, partiToplam, type Tezgah } from "./depo.ts";
 import { talepCoz, yolcuCoz, type Dukkan, type TalepSatiri, type YolcuHani } from "./hane-butcesi.ts";
 import { ITIBAR_BASLANGIC, NPC_HAN_NO, isletmeCoz, isletmeKimligi } from "./kurallar.ts";
 import { rafBos, raftanSat } from "./raf.ts";
@@ -19,14 +19,30 @@ import { hanNolari, mulkDefteri, vergiAyir } from "./tapu.ts";
 import { CIKIS_EN_COK, cikisAc } from "./transfer.ts";
 import { DUKKAN_NPC_TAVAN, PAY_YONTEMI, TEZGAH_KAYIT_PAYI } from "./tezgah-kurallar.ts";
 
-/** Yerleşimde o meslekte (ana meslek) yaşayan oyuncu sayısı (kıtlık sinyali). */
-export function meslekOyuncuSayaci(k: Kasaba): (m: MeslekId) => number {
-  const say = new Map<string, number>();
+/**
+ * Yerleşimde o meslekte (ana meslek) yaşayan oyuncu sayısı (kıtlık sinyali). Pazardaki kural gibi (npc-taban.ts
+ * saticiHaricSayi) o mesleğin malını rafta satan sahipler sayılmaz: tek demirci kendi bütçesini düşürmez.
+ */
+export function meslekOyuncuSayaci(k: Kasaba, haric: ReadonlyMap<MeslekId, ReadonlySet<string>> = new Map()): (m: MeslekId) => number {
+  const say = new Map<string, string[]>();
   for (const kar of k.kar.values()) {
     if (olduMu(kar) || kar.gc || !kar.ms?.a) continue;
-    say.set(kar.ms.a, (say.get(kar.ms.a) ?? 0) + 1);
+    say.set(kar.ms.a, [...(say.get(kar.ms.a) ?? []), kar.o]);
   }
-  return (m) => say.get(m) ?? 0;
+  return (m) => (say.get(m) ?? []).filter((o) => !haric.get(m)?.has(o)).length;
+}
+
+/** Meslek → o mesleğin malını rafta satan dükkân sahipleri. */
+export function saticilar(md: { t: Record<string, { s: string }> }, satirlar: readonly TalepSatiri[]): Map<MeslekId, Set<string>> {
+  const m = new Map<MeslekId, Set<string>>();
+  for (const s of satirlar) {
+    const sahip = md.t[s.dukkan]?.s;
+    if (!sahip) continue;
+    const meslek = MALLAR[s.mal].meslek;
+    if (!m.has(meslek)) m.set(meslek, new Set());
+    m.get(meslek)!.add(sahip);
+  }
+  return m;
 }
 
 /** Bir kayıtta taşınan en çok ay girdisi (işletme 64'e kadar kabul eder). */
@@ -57,24 +73,14 @@ export function tezgahDonumu(k: Kasaba, ay: number): OlayTaslagi[] {
   const satirlar: TalepSatiri[] = [];
   const dukkanlar = new Map<string, Dukkan>();
   const satirHaritasi = new Map<string, { t: Tezgah; n: number }>();
+  const tumu: string[] = [];
   for (const [id, tapu] of Object.entries(md.t)) {
     const c = isletmeCoz(id);
     if (!c || c.tur !== "dukkan" || c.yerlesim !== k.y || tapu.y?.durum === "iflas") continue;
-    const t = tz[id];
-    const dolu = !!t && t.r.some((s) => partiToplam(s.p) > 0);
-    if (!dolu) {
-      // Kepenk: bakım, iflas sayacı, itibar kaybı, faaliyet ayı yok (işletmeye kayıt gitmez).
-      if (t) {
-        t.kk++;
-        t.gs = { ay, kepenk: true };
-      }
-      continue;
-    }
-    t.kk = 0;
-    if (!yerVar(k, id)) {
-      t.gs = { ay, kepenk: false, ertelendi: true };
-      continue;
-    }
+    // Tezgâh kaydı yoksa kurulur: devralma sayacı her dükkânda ilerler.
+    const t = (tz[id] ??= bosTezgah());
+    tumu.push(id);
+    if (!t.r.some((s) => partiToplam(s.p) > 0) || !yerVar(k, id)) continue;
     const seviye = tapu.y?.seviye ?? 0;
     dukkanlar.set(id, { id, itibar: tapu.y?.it ?? ITIBAR_BASLANGIC, tavan: DUKKAN_NPC_TAVAN[seviye] ?? DUKKAN_NPC_TAVAN[0]! });
     for (const s of t.r) {
@@ -83,34 +89,56 @@ export function tezgahDonumu(k: Kasaba, ay: number): OlayTaslagi[] {
       satirlar.push({ id: sid, dukkan: id, mal: s.m, q: s.q, adet: partiToplam(s.p), fiyat: s.f });
     }
   }
-  const r = talepCoz(k.tur, satirlar, dukkanlar, meslekOyuncuSayaci(k), PAY_YONTEMI);
+  const r = talepCoz(k.tur, satirlar, dukkanlar, meslekOyuncuSayaci(k, saticilar(md, satirlar)), PAY_YONTEMI);
   const oran = Number.isInteger(md.vo) && md.vo! >= 0 && md.vo! <= 4 ? md.vo! : 0;
   let vergiToplam = 0;
-  for (const [id] of dukkanlar) {
+  for (const id of tumu) {
     const t = tz[id]!;
+    const tapu = md.t[id]!;
     const benim = r.satirlar.filter((x) => x.dukkan === id);
     for (const x of benim) {
       if (x.adet <= 0) continue;
       const s = t.r.find((y) => y.n === satirHaritasi.get(x.id)!.n);
       if (s) raftanSat(t, s, x.adet);
     }
+    const adet = benim.reduce((a, x) => a + x.adet, 0);
+    // Kepenk = biten ayda hiç satış yok (NPC'ye ya da oyuncuya): bakım, borç/iflas sayacı, itibar, faaliyet, maaş işlemez.
+    const satisVar = adet > 0 || t.os === ay - 1;
+    // Devralma sayacı: satışsız VE sahibin/vekilin tezgâh eylemi olmayan üst üste ay.
+    t.kk = satisVar || t.se === ay - 1 ? 0 : t.kk + 1;
+    const satirDokumu = benim.map((x) => ({
+      satir: satirHaritasi.get(x.id)!.n,
+      mal: x.mal,
+      kalite: x.q,
+      fiyat: x.fiyat,
+      satilan: x.adet,
+      kalan: x.kalan,
+      hasilat: x.hasilat,
+      payYuzde: Math.round(x.pay * 1000) / 10,
+      carpanlar: x.carpan,
+      cekicilik: x.a,
+      bMal: x.bMal,
+      npcTavan: x.npcTavan,
+      neden: x.neden,
+    }));
+    if (!satisVar || !yerVar(k, id)) {
+      t.gs = { ay, kepenk: true, ...(satirDokumu.length ? { satirlar: satirDokumu } : {}) };
+      continue;
+    }
     const hasilat = benim.reduce((a, x) => a + x.hasilat, 0);
     const v = vergiAyir(md, id, hasilat, oran);
     (md.vergiKesir ??= {})[id] = v.kalan;
     vergiToplam += v.vergi;
     md.kaynak = (md.kaynak ?? 0) + hasilat;
-    const satir = benim.filter((x) => x.adet > 0).length;
-    girdiEkle(k, id, ay, v.net, satir);
+    girdiEkle(k, id, ay, v.net, benim.filter((x) => x.adet > 0).length);
     // Bilgi veren olaylar (ayda bir; dönüm her ay bir kez işlenir): satış yapan dükkânın gün sonu, raf boşaldıysa kepenk.
-    const sahip = md.t[id]!.s;
-    const ad = md.t[id]!.y?.ad ?? "";
-    const adet = benim.reduce((a, x) => a + x.adet, 0);
+    const ad = tapu.y?.ad ?? "";
     if (adet > 0) {
       const enCok = [...benim].sort((a, b) => b.adet - a.adet || b.hasilat - a.hasilat)[0]!;
-      olaylar.push({ t: "tezgah", w: sahip, h: "", g: sahip, n: 2, k: "olay.tezgah.gunSonu", p: { isletme: id, ad, adet, hasilat, mal: enCok.mal } });
+      olaylar.push({ t: "tezgah", w: tapu.s, h: "", g: tapu.s, n: 2, k: "olay.tezgah.gunSonu", p: { isletme: id, ad, adet, hasilat, mal: enCok.mal } });
+      if (rafBos(t)) olaylar.push({ t: "tezgah", w: tapu.s, h: "", g: tapu.s, n: 2, k: "olay.tezgah.kepenkIndi", p: { isletme: id, ad } });
     }
-    if (rafBos(t)) olaylar.push({ t: "tezgah", w: sahip, h: "", g: sahip, n: 2, k: "olay.tezgah.kepenkIndi", p: { isletme: id, ad } });
-    const seviye = md.t[id]!.y?.seviye ?? 0;
+    const seviye = tapu.y?.seviye ?? 0;
     t.gs = {
       ay,
       kepenk: false,
@@ -118,21 +146,7 @@ export function tezgahDonumu(k: Kasaba, ay: number): OlayTaslagi[] {
       vergi: { oran, tutar: v.vergi },
       net: v.net,
       tavan: { seviye: DUKKAN_NPC_TAVAN[seviye] ?? DUKKAN_NPC_TAVAN[0]!, kullanilan: hasilat },
-      satirlar: benim.map((x) => ({
-        satir: satirHaritasi.get(x.id)!.n,
-        mal: x.mal,
-        kalite: x.q,
-        fiyat: x.fiyat,
-        satilan: x.adet,
-        kalan: x.kalan,
-        hasilat: x.hasilat,
-        payYuzde: Math.round(x.pay * 1000) / 10,
-        carpanlar: x.carpan,
-        cekicilik: x.a,
-        bMal: x.bMal,
-        npcTavan: x.npcTavan,
-        neden: x.neden,
-      })),
+      satirlar: satirDokumu,
     };
   }
   if (vergiToplam > 0) (md.vergiGiden ??= []).push({ anahtar: `y:${k.y}:tz:vergi:${ay}`, tutar: vergiToplam, yerlesim: k.y });

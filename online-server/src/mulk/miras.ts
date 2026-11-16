@@ -7,6 +7,7 @@
 import { kimlikTasiyiciEkle, type DevirPlani } from "../yerlesim/devir.ts";
 import type { Kasaba } from "../yerlesim/tipler.ts";
 import { cikisAc } from "./transfer.ts";
+import { devralmaSayaciSifirla, iadeBedeli } from "./tapu.ts";
 
 export function mirasMulkTasi(k: Kasaba, eski: string, yeni: string, plan: DevirPlani): void {
   const md = k.mk;
@@ -19,7 +20,8 @@ export function mirasMulkTasi(k: Kasaba, eski: string, yeni: string, plan: Devir
     const ts = ++md.ts;
     // Kutu kapasitesi devirHesapla'da denetlendi; tapu yine de yeni kimliğe yazılır (kayıt kaybolmaz).
     cikisAc(md.cik, { i: `y:${k.y}:${yeni}:miras:${isletme}`, t: "sahip", h: isletme, a: 0, y: { isletme, ts, sahip: { h: varis.h, o: yeni, ad: varis.ad } } }, 0);
-    md.t[isletme] = { s: yeni, h: varis.h, ts, a: tapu.a, f: tapu.f, ...(tapu.y ? { y: { ...tapu.y, ts } } : {}) };
+    md.t[isletme] = { s: yeni, h: varis.h, ts, a: tapu.a, f: tapu.f, eb: iadeBedeli(k, isletme), ...(tapu.y ? { y: { ...tapu.y, ts } } : {}) };
+    devralmaSayaciSifirla(md, isletme);
   }
 }
 

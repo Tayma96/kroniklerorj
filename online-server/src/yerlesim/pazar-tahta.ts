@@ -210,10 +210,11 @@ export interface PompaDokumu {
 }
 
 /** Bu işlemin hediye sayılan kısmı ve tavan denetimi (değiştirmez). */
-export function pompaDenetle(satici: Karakter, alici: Karakter, mal: MalId, q: Kalite, adet: number, tutar: number, ay: number): Sonuc<PompaDokumu> {
+export function pompaDenetle(satici: Karakter, alici: Karakter, mal: MalId, q: Kalite, adet: number, tutar: number, ay: number, ustCarpan = PAZAR_ADIL_UST): Sonuc<PompaDokumu> {
   const kume = ayniKume(satici, alici);
   const adil = adilBirim(mal, q) * adet;
-  const bant = kume ? { alt: Math.floor(adil), ust: Math.ceil(adil) } : { alt: Math.floor(adil * PAZAR_ADIL_ALT), ust: Math.ceil(adil * PAZAR_ADIL_UST) };
+  // `ustCarpan`: hediye sayılmayan üst sınır (pazar 3×; dükkân rafı NPC tavanı, tezgah-uclar.ts).
+  const bant = kume ? { alt: Math.floor(adil), ust: Math.ceil(adil) } : { alt: Math.floor(adil * PAZAR_ADIL_ALT), ust: Math.ceil(adil * ustCarpan) };
   const carpan = kume ? PAZAR_KUME_CARPANI : 1;
   let hediye = 0;
   let yon: PompaDokumu["yon"] = null;
