@@ -1,9 +1,9 @@
 // Han (Faz 10, GET /v1/han?han=N): yerleşimin hanları (4.9: şehirde 5, kasabada 2 yuva, köyde yalnız NPC hanı),
 // seçili hanın atmosferi ve masaları: doluluk, ayakta dinleyici, sıra. Birden çok han varsa üstte han seçici; seçim
 // yerleşim başına cihazda hatırlanır ve masa, pano, ikram, ziyafet ve ses çağrılarının hepsine `han` olarak gider.
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { View, Text, useWindowDimensions } from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import Animated from "react-native-reanimated";
 import { useI18n, applyParams } from "../../lib/i18n";
 import { C, F } from "../../lib/theme";
@@ -13,13 +13,13 @@ import { DesignPressable as Pressable } from "../../lib/design-pressable";
 import { OnlineYakinda } from "../../lib/online-yakinda";
 import { OnlineKapisi, useOnline } from "../../lib/online/durum";
 import { onlineEkranAcik } from "../../lib/online/kapi";
-import { Bant, Cerceve, CizgiDugme, GeriDugme, Madalyon, belir, geriGit, giris, hiza, yon } from "../../lib/online/ui";
+import { BASMA_OLCEK, Bant, Cerceve, CizgiDugme, GeriDugme, Madalyon, belir, geriGit, giris, hiza, yon } from "../../lib/online/ui";
 import { Baslik2, Rozet, SatirOku, SayfaBasi, Yukleniyor } from "../../lib/online/yasam-ui";
 import { ekHataAnahtari, type EkHata } from "../../lib/online/ek-istemci";
 import { HanPanosu } from "../../lib/online/han-pano";
 import { useHanIstemci, IKRAMLAR, hanMenusu, hanNoCoz, type HanKarti, type HanOzeti, type MasaOzeti } from "../../lib/online/han-veri";
 import { HanSayfa, IKRAM_IKON, Not } from "../../lib/online/han-ui";
-import { HanSecici, MasaIskeleti, hanKartAdi } from "../../lib/online/han-secici";
+import { HanSecici, MasaIskeleti, hanKartAdi, hanSirala } from "../../lib/online/han-secici";
 import { hanSecimiOku, hanSecimiYaz } from "../../lib/online/depo";
 import type { Dil } from "../../lib/online/protokol";
 
@@ -30,7 +30,7 @@ function MasaKarti({ m, koltuk, rtl, t, sira, onAc }: { m: MasaOzeti; koltuk: nu
   const alt = [...(m.tanidik ? [applyParams(t("onl.han.tanidikVar"), [m.tanidik])] : []), applyParams(t("onl.han.oturan"), [m.oturan, koltuk]), applyParams(t("onl.han.ayakta"), [m.ayakta]), ...(m.sira ? [applyParams(t("onl.han.sirada"), [m.sira])] : [])].join(" · ");
   return <Animated.View entering={giris(Math.min(sira, 8) * 40)}>
     <Pressable accessibilityRole="button" accessibilityLabel={`${applyParams(t("onl.han.masaNo"), [m.no])}. ${durum}. ${alt}`} accessibilityState={{ disabled: kapali }} disabled={kapali}
-      onPress={() => { hap("tap"); onAc(); }} style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.985 : 1 }], opacity: kapali ? 0.55 : 1 })}>
+      onPress={() => { hap("tap"); onAc(); }} style={({ pressed }) => ({ transform: [{ scale: pressed ? BASMA_OLCEK : 1 }], opacity: kapali ? 0.55 : 1 })}>
       <Cerceve aktif={!dolu && m.oturan > 0 && !kapali} ic={{ flexDirection: yon(rtl), alignItems: "center", gap: 12, paddingVertical: 12, paddingHorizontal: 12, minHeight: 76 }}>
         <Madalyon icon="flame" size={42} aktif={!dolu && m.oturan > 0 && !kapali} />
         <View style={{ flex: 1, gap: 5, minWidth: 0 }}>
@@ -77,24 +77,30 @@ function HanEkran() {
   useEffect(() => {
     if (secili !== null) return;
     let iptal = false;
-    if (!yerId) { setSecili(1); return; }
+    if (!yerId) {
+      // Yerleşim kimliği gelene dek beklenir (kayıtlı seçim okunamaz); profil kesin yoksa ya da kimlik hiç gelmezse 1.
+      if (!o.hazir) return;
+      const z = setTimeout(() => { if (!iptal) setSecili(1); }, o.profil ? 4000 : 0);
+      return () => { iptal = true; clearTimeout(z); };
+    }
     void hanSecimiOku(yerId).then((n) => { if (!iptal) setSecili(n ?? 1); });
     return () => { iptal = true; };
-  }, [yerId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [yerId, o.hazir, !!o.profil]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (paramHan !== null && paramHan !== secili) sec(paramHan); }, [paramHan]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const yukle = useCallback(async () => {
+  // `sessiz`: ekrana dönüşte yenileme; iskelet/yükleniyor göstermez, hata olursa eski veri kalır.
+  const yukle = useCallback(async (sessiz = false) => {
     if (secili === null) return;
     const n = ++sira.current;
-    setYukleniyor(true);
+    if (!sessiz) setYukleniyor(true);
     const s = await istemci.han(lang as Dil);
     if (n !== sira.current) return; // başka han seçildi: eski yanıt atılır
-    setYukleniyor(false);
+    if (!sessiz) setYukleniyor(false);
     if (s.ok) {
       setOzet(s.deger); setHata(null); setTurAdi(s.deger.han.ad);
       setHanlar(s.deger.hanlar ?? []);
-      void hanSecimiYaz(s.deger.yerlesim.id, istemci.hanNo);
-    } else if (HAN_GITTI.has(s.hata) && istemci.hanNo !== 1) {
+    } else if (sessiz) return;
+    else if (HAN_GITTI.has(s.hata) && istemci.hanNo !== 1) {
       setBilgi(t("onl.hs.hanGitti"));
       if (yerId) void hanSecimiYaz(yerId, 1);
       setSecili(1);
@@ -102,13 +108,28 @@ function HanEkran() {
   }, [istemci, lang, secili]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (o.profil) void yukle(); }, [o.profil?.hesapId, yukle]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Ekrana odak dönüşünde sessiz yenile (ilk odakta ilk yükleme zaten çalışır).
+  const yukleRef = useRef(yukle);
+  yukleRef.current = yukle;
+  const ilkOdak = useRef(true);
+  const ozetVar = useRef(false);
+  ozetVar.current = !!ozet;
+  useFocusEffect(useCallback(() => {
+    if (ilkOdak.current) { ilkOdak.current = false; return; }
+    if (ozetVar.current) void yukleRef.current(true);
+  }, []));
+
   const sec = (no: number) => {
     if (no === secili) return;
+    if (yerId) void hanSecimiYaz(yerId, no);
     sira.current++; // yoldaki yanıt yok sayılır
     setOzet(null); setHata(null); setBilgi(null); setYukleniyor(false);
     setSecili(no);
   };
 
+  // Kart sırası ilk yüklemede hesaplanır; han kümesi değişmedikçe sabit kalır (sayılar güncellenir, kartlar parmağın altında yer değiştirmez).
+  const kume = hanlar.map((k) => k.no).sort((x, y) => x - y).join(",");
+  const kartSirasi = useMemo(() => hanSirala(hanlar).map((k) => k.no), [kume]); // eslint-disable-line react-hooks/exhaustive-deps
   const kart = hanlar.find((k) => k.no === secili);
   const coklu = hanlar.length > 1;
   const tur = ozet?.han.tur ?? "han";
@@ -126,7 +147,7 @@ function HanEkran() {
     {!o.profil && o.hazir ? <View style={{ marginTop: 16 }}><Bant tur="bilgi" metin={t("onl.v.profilYok")} rtl={rtl} eylem={t("onl.p.giriseDon")} onEylem={() => router.replace("/online")} /></View> : null}
     {bilgi ? <View style={{ marginTop: 12 }}><Bant tur="bilgi" metin={bilgi} rtl={rtl} eylem={t("onl.kapat")} onEylem={() => setBilgi(null)} /></View> : null}
 
-    {coklu && secili !== null && turAdi ? <HanSecici hanlar={hanlar} secili={secili} turAdi={turAdi} rtl={rtl} t={t} onSec={sec}
+    {coklu && secili !== null && turAdi ? <HanSecici hanlar={hanlar} sira={kartSirasi} secili={secili} turAdi={turAdi} rtl={rtl} t={t} onSec={sec}
       onSahip={(id) => router.push(`/online/oyuncu/${encodeURIComponent(id)}`)} /> : null}
     {kart && !kart.acik ? <Animated.View entering={belir()} style={{ marginTop: 10 }}><Bant tur="bilgi" metin={t("onl.hs.kapaliBant")} rtl={rtl} /></Animated.View> : null}
 

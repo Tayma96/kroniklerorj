@@ -22,6 +22,8 @@ export const ONL = {
 export const GLOW = { shadowColor: C.goldBright, shadowOpacity: 0.5, shadowRadius: 12, shadowOffset: { width: 0, height: 0 } };
 const GOLGE = { textShadowColor: "rgba(0,0,0,0.95)", textShadowRadius: 6, textShadowOffset: { width: 0, height: 1 } };
 
+/** Dokunulabilir kartların ortak basma geri bildirimi ölçeği. */
+export const BASMA_OLCEK = 0.985;
 export const yon = (rtl: boolean) => (rtl ? "row-reverse" : "row") as "row" | "row-reverse";
 export const hiza = (rtl: boolean) => (rtl ? "right" : "left") as "right" | "left";
 /** Giriş animasyonu; sade modda yok. */
@@ -164,7 +166,7 @@ export function AltinDugme({ etiket, onPress, kapali = false, bekliyor = false, 
   const dar = useWindowDimensions().width < 360;
   return <Pressable accessibilityLabel={erisim ?? etiket} accessibilityState={{ disabled: pasif, busy: bekliyor }} disabled={pasif}
     onPress={() => { hap("advance"); onPress(); }}
-    style={({ pressed }) => [{ minHeight: 54, borderRadius: 8, overflow: "hidden", borderWidth: 1.5, borderColor: pasif ? "rgba(168,130,63,0.55)" : C.goldBright, transform: [{ scale: pressed ? 0.985 : 1 }] }, pasif ? null : GLOW]}>
+    style={({ pressed }) => [{ minHeight: 54, borderRadius: 8, overflow: "hidden", borderWidth: 1.5, borderColor: pasif ? "rgba(168,130,63,0.55)" : C.goldBright, transform: [{ scale: pressed ? BASMA_OLCEK : 1 }] }, pasif ? null : GLOW]}>
     <LinearGradient pointerEvents="none" colors={pasif ? ["rgba(60,46,28,0.95)", "rgba(36,27,16,0.95)"] : [C.goldBright, C.gold, C.goldDim]} style={StyleSheet.absoluteFill} />
     <View style={{ flexDirection: yon(rtl), alignItems: "center", justifyContent: "center", gap: 10, paddingHorizontal: 18, paddingVertical: 12 }}>
       {bekliyor ? <ActivityIndicator color={C.goldBright} /> : icon ? <GameIcon name={icon} size={19} color={pasif ? C.parchmentMuted : C.inkOnGold} /> : null}

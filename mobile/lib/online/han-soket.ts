@@ -23,7 +23,7 @@ export type AkisOgesi =
   | { tur: "olay"; id: string; olay: MasaOlayi }
   | { tur: "anons"; id: string; anons: MasaAnonsu }
   /** H8 atışma kıtası (satır sonları korunur; `sira` 1..toplam). */
-  | { tur: "kita"; id: string; hesap: string; ad: string; koltuk: number; metin: string; sira: number; zaman: number; balon?: string };
+  | { tur: "kita"; id: string; hesap: string; ad: string; koltuk: number; metin: string; sira: number; zaman: number; balon?: string; /** Kıta gelirken atışmadan: A tarafı mı (balon rengi/hizası) ve kıta sayısı (yoksa bilinmiyor). */ a: boolean; toplam?: number };
 
 export interface MasaDurumu {
   bag: BagDurumu;
@@ -77,7 +77,7 @@ function indirge(d: MasaDurumu, e: Eylem): MasaDurumu {
         case "hosgeldin": return { ...d, bag: "acik", deneme: 0, kapanis: null, ben: v.ben, masa: v.masa, susturma: v.susturma, hata: null, ses: v.ses ?? null, sahne: v.sahne ?? null, atisma: v.atisma ?? null, kitaEnCok: sinirCoz(v.kitaEnCok) ?? sinirCoz(v.atisma?.kitaEnCok) ?? d.kitaEnCok };
         case "sahne": return { ...d, sahne: v.sahne };
         case "atisma": return { ...d, atisma: v.atisma, kitaEnCok: sinirCoz(v.atisma?.kitaEnCok) ?? d.kitaEnCok, ...(v.son ? { atismaSon: { ...v.son, id: e.id } } : {}) };
-        case "kita": return { ...d, akis: ekle(d.akis, { tur: "kita", id: e.id, hesap: v.hesap, ad: v.ad, koltuk: v.koltuk, metin: v.metin, sira: v.sira, zaman: v.zaman, ...(v.balon ? { balon: v.balon } : {}) }) };
+        case "kita": return { ...d, akis: ekle(d.akis, { tur: "kita", id: e.id, hesap: v.hesap, ad: v.ad, koltuk: v.koltuk, metin: v.metin, sira: v.sira, zaman: v.zaman, a: d.atisma ? v.hesap === d.atisma.a : d.atismaSon ? v.hesap === d.atismaSon.a : v.sira % 2 === 1, ...(d.atisma?.toplam ? { toplam: d.atisma.toplam } : {}), ...(v.balon ? { balon: v.balon } : {}) }) };
         case "sesDurum": return { ...d, ses: v.ses };
         case "durum": return { ...d, masa: v.masa };
         case "ileti":

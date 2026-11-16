@@ -4,7 +4,7 @@
 // başının moderasyonu. Kendi koltuğunda: kalk, ses, yemin, sahneyi aç. H8: ozan sahnesi (sofranın yerinde sahne şeridi,
 // söz verilmeyen dinleyicide yazı kutusu yerine "söz iste") ve atışma (atışma panosu, kıta kutusu, oylama).
 // Bağlantı han-soket.ts'te; sıra, oy ve sonuç sunucudan gelir.
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { memo, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { View, Text, TextInput, ScrollView, KeyboardAvoidingView, Platform, type NativeScrollEvent, type NativeSyntheticEvent } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -60,6 +60,18 @@ function zamanYaz(ms: number, lang: string) {
   try { return new Date(ms).toLocaleTimeString(lang, { hour: "2-digit", minute: "2-digit" }); } catch { return ""; }
 }
 
+type IletiOgesi = Extract<AkisOgesi, { tur: "ileti" }>;
+/** Sohbet satırı: öğe, `benim`, `rtl`, `t`, `lang` değişmedikçe yeniden çizilmez (yeni satır gelince eskiler dokunulmaz). */
+const IletiSatiri = memo(function IletiSatiri({ a, benim, rtl, t, lang }: { a: IletiOgesi; benim: boolean; rtl: boolean; t: (k: string) => string; lang: string }) {
+  return <View accessible accessibilityLabel={`${a.ad}: ${a.metin}`} style={{ alignSelf: benim ? (rtl ? "flex-start" : "flex-end") : rtl ? "flex-end" : "flex-start", maxWidth: "88%", borderRadius: 10, borderColor: a.balon ? "#F3D27A" : benim ? "rgba(243,210,122,0.6)" : "rgba(201,162,78,0.3)", borderWidth: a.balon ? 1.5 : 1, backgroundColor: a.balon ? "rgba(88,30,40,0.92)" : benim ? "rgba(70,50,22,0.92)" : "rgba(20,14,8,0.88)", paddingHorizontal: 10, paddingVertical: 7, gap: 2 }}>
+    <View style={{ flexDirection: yon(rtl), gap: 8, alignItems: "baseline" }}>
+      <Text numberOfLines={1} style={{ flexShrink: 1, fontFamily: F.display, fontSize: 11.5, color: benim ? C.goldBright : C.gold }}>{benim ? t("onl.han.sen") : a.ad}</Text>
+      <Text style={{ fontFamily: F.serif, fontSize: 11.5, color: C.parchmentMuted }}>{zamanYaz(a.zaman, lang)}</Text>
+    </View>
+    <Text style={{ fontFamily: F.serif, fontSize: 15, lineHeight: 20, color: C.parchment, textAlign: hiza(rtl) }}>{a.metin}</Text>
+  </View>;
+});
+
 function MasaEkran() {
   const router = useRouter();
   const { t, rtl, lang } = useI18n();
@@ -102,7 +114,7 @@ function MasaEkran() {
   const kabulKilit = useRef(new Set<number>());
   const akisKutu = useRef<ScrollView>(null);
   const altta = useRef(true);
-  const taraflar = useRef<{ a: string; b: string; toplam: number } | null>(null);
+  const [kitaTaslak, setKitaTaslak] = useState("");
 
   const setPanel = (p: Panel) => { panelRef.current = p; setPanelD(p); };
 
@@ -153,8 +165,16 @@ function MasaEkran() {
   // Atışma sonucu panoda kısa süre kalır.
   const son = d.atismaSon && d.atismaSon.id !== gizliSon ? d.atismaSon : null;
   useEffect(() => { if (!son) return; const z = setTimeout(() => setGizliSon(son.id), SONUC_MS); return () => clearTimeout(z); }, [son?.id]); // eslint-disable-line react-hooks/exhaustive-deps
-  if (d.atisma) taraflar.current = { a: d.atisma.a, b: d.atisma.b, toplam: d.atisma.toplam };
-  else if (d.atismaSon) taraflar.current = { a: d.atismaSon.a, b: d.atismaSon.b, toplam: taraflar.current?.toplam ?? 0 };
+
+  // Kıta taslağı ekranda tutulur (yeniden bağlanma/sıra gidip gelmesi silmez); yalnız kıtam kabul edilince ya da atışma bitince silinir.
+  const kitaIz = useRef<{ olay: number; kita: number } | null>(null);
+  const atOlay = d.atisma?.olay ?? null, atKita = d.atisma?.kita ?? null, atSira = d.atisma?.sira ?? null, benHesap = d.ben?.hesap ?? null;
+  useEffect(() => {
+    if (atOlay === null || atKita === null) { kitaIz.current = null; setKitaTaslak(""); return; }
+    const on = kitaIz.current;
+    if (on && on.olay === atOlay && atKita > on.kita && atSira !== benHesap) setKitaTaslak("");
+    kitaIz.current = { olay: atOlay, kita: atKita };
+  }, [atOlay, atKita, atSira, benHesap]);
 
   const masa = d.masa;
   const ben = d.ben?.hesap ?? null;
@@ -279,8 +299,7 @@ function MasaEkran() {
   const akisCiz = (a: AkisOgesi) => {
     if (a.tur === "anons") return <AnonsSeridi anons={a.anons} ad={adBul} rtl={rtl} t={t} />;
     if (a.tur === "kita") {
-      const tr = taraflar.current;
-      return <KitaBalonu ad={a.ad} metin={a.metin} sira={a.sira} toplam={tr?.toplam || undefined} a={tr ? a.hesap === tr.a : a.sira % 2 === 1} benim={a.hesap === ben} rtl={rtl} t={t} />;
+      return <KitaBalonu ad={a.ad} metin={a.metin} sira={a.sira} toplam={a.toplam} a={a.a} benim={a.hesap === ben} rtl={rtl} t={t} />;
     }
     if (a.tur === "olay") {
       const x = a.olay;
@@ -302,14 +321,7 @@ function MasaEkran() {
         {bana ? <CizgiDugme etiket={t(x.tur === "meydanOku" ? "onl.han.duelloKabul" : x.tur === "atisma" ? "onl.han.atisma.kabulEt" : "onl.han.kabulEt")} icon={x.tur === "meydanOku" ? "crossed-swords" : x.tur === "atisma" ? "lyre" : "ring"} rtl={rtl} kucuk kapali={!acik || !oturuyor} onPress={() => { void kabulEt(x); }} /> : null}
       </View>;
     }
-    const benim = a.hesap === ben;
-    return <View accessible accessibilityLabel={`${a.ad}: ${a.metin}`} style={{ alignSelf: benim ? (rtl ? "flex-start" : "flex-end") : rtl ? "flex-end" : "flex-start", maxWidth: "88%", borderRadius: 10, borderColor: a.balon ? "#F3D27A" : benim ? "rgba(243,210,122,0.6)" : "rgba(201,162,78,0.3)", borderWidth: a.balon ? 1.5 : 1, backgroundColor: a.balon ? "rgba(88,30,40,0.92)" : benim ? "rgba(70,50,22,0.92)" : "rgba(20,14,8,0.88)", paddingHorizontal: 10, paddingVertical: 7, gap: 2 }}>
-      <View style={{ flexDirection: yon(rtl), gap: 8, alignItems: "baseline" }}>
-        <Text numberOfLines={1} style={{ flexShrink: 1, fontFamily: F.display, fontSize: 11.5, color: benim ? C.goldBright : C.gold }}>{benim ? t("onl.han.sen") : a.ad}</Text>
-        <Text style={{ fontFamily: F.serif, fontSize: 11.5, color: C.parchmentMuted }}>{zamanYaz(a.zaman, lang)}</Text>
-      </View>
-      <Text style={{ fontFamily: F.serif, fontSize: 15, lineHeight: 20, color: C.parchment, textAlign: hiza(rtl) }}>{a.metin}</Text>
-    </View>;
+    return <IletiSatiri a={a} benim={a.hesap === ben} rtl={rtl} t={t} lang={lang} />;
   };
 
   const notStil = { fontFamily: F.serifItalic, fontSize: 13, lineHeight: 18, color: C.parchmentMuted, textAlign: hiza(rtl) } as const;
@@ -336,7 +348,7 @@ function MasaEkran() {
   let alt: ReactNode = yaziKutusu;
   let altYukseklik = BESTE_HAN + 30;
   if (acik && atisma?.asama === "kita") {
-    if (atisma.sira === ben) { alt = <KitaKutusu altBosluk={ins.bottom} acik={acik} rtl={rtl} t={t} enCok={d.kitaEnCok ?? undefined} onGonder={(k) => m.kita(k)} />; altYukseklik = 196; }
+    if (atisma.sira === ben) { alt = <KitaKutusu altBosluk={ins.bottom} acik={acik} rtl={rtl} t={t} value={kitaTaslak} onChange={setKitaTaslak} enCok={d.kitaEnCok ?? undefined} onGonder={(k) => m.kita(k)} />; altYukseklik = 196; }
     else { alt = <DurumSeridi altBosluk={ins.bottom} rtl={rtl} metin={applyParams(t("onl.han.atisma.siraOnda"), [atisma.sira ? adBul(atisma.sira) : ""])} />; altYukseklik = 64; }
   } else if (acik && sahne && oturuyor && !sahneSozum) {
     alt = <DurumSeridi altBosluk={ins.bottom} rtl={rtl} icon="star" metin={t(sahneIstedim ? "onl.han.sahne.sozBekliyorsun" : "onl.han.sahne.dinliyorsun")}

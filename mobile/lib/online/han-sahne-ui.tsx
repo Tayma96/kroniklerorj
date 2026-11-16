@@ -1,7 +1,7 @@
 // H8 ozan sahnesi ve atışma arayüzü: sofranın yerine konan sahne şeridi ve atışma panosu, sohbet akışındaki kıta balonu,
 // sırası gelen tarafın kıta kutusu ve oylama düğmeleri. Durum yalnız sunucudan gelir (sahne/atisma çerçeveleri);
 // istemci sırayı, oyu ya da sonucu hesaplamaz, yalnız "şu an ne oluyor, ben ne yapabilirim"i gösterir.
-import { useState } from "react";
+import { memo, useEffect, useState } from "react";
 import { View, Text, TextInput } from "react-native";
 import Animated from "react-native-reanimated";
 import { GameIcon } from "../icons";
@@ -73,6 +73,14 @@ export function AtismaPanosu({ atisma, son, plaka, ad, ben, basBen, acik, rtl, t
   ben: string | null; basBen: boolean; acik: boolean; rtl: boolean; t: Ceviri; onOy: (h: string) => void; onBitir: () => void;
 }) {
   const [onay, setOnay] = useState(false);
+  const [gonderilen, setGonderilen] = useState<string | null>(null);
+  const atA = atisma?.a ?? null, atB = atisma?.b ?? null, atAsama = atisma?.asama ?? null, atOlay = atisma?.olay ?? null;
+  const verdimMi = !!ben && !!atisma?.oyVeren.includes(ben);
+  // Bitirme onayı ve gönderilen oy pano ömrü boyunca kalmaz: taraflar/aşama değişince ya da oy kabul edilince sıfırlanır.
+  useEffect(() => { setOnay(false); }, [atA, atB, atAsama, atOlay]);
+  useEffect(() => { setGonderilen(null); }, [atA, atB, atAsama, atOlay, verdimMi]);
+  // Bağlantı koparsa (acik=false) oy yeniden denenebilsin.
+  useEffect(() => { if (!acik) setGonderilen(null); }, [acik]);
   const g = atisma ?? son;
   if (!g) return null;
   const a = g.a, b = g.b;
@@ -96,7 +104,7 @@ export function AtismaPanosu({ atisma, son, plaka, ad, ben, basBen, acik, rtl, t
   const verdim = !!ben && at.oyVeren.includes(ben);
   const durum = at.asama === "kita"
     ? (at.sira === ben ? t("onl.han.atisma.siraSende") : applyParams(t("onl.han.atisma.siraOnda"), [at.sira ? ad(at.sira) : ""]))
-    : verdim ? t("onl.han.atisma.oyunVerildi") : hakVar ? t("onl.han.atisma.oyVer") : taraf ? t("onl.han.atisma.tarafOyYok") : t("onl.han.atisma.hakYok");
+    : gonderilen && !verdim ? t("onl.han.atisma.oyGidiyor") : verdim ? t("onl.han.atisma.oyunVerildi") : hakVar ? t("onl.han.atisma.oyVer") : taraf ? t("onl.han.atisma.tarafOyYok") : t("onl.han.atisma.hakYok");
   const bitirebilir = taraf || basBen;
   return <SofraZemini minHeight={170}>
     <View style={{ width: "100%", paddingHorizontal: 12, paddingVertical: 10, gap: 8 }}>
@@ -120,9 +128,9 @@ export function AtismaPanosu({ atisma, son, plaka, ad, ben, basBen, acik, rtl, t
       </View>
       <Text accessibilityLiveRegion="polite" style={{ fontFamily: F.serif, fontSize: 13.5, lineHeight: 18, color: C.parchment, textAlign: "center" }}>{durum}</Text>
       {at.asama === "oylama" && hakVar && !verdim ? <View style={{ flexDirection: yon(rtl), gap: 8 }}>
-        {[a, b].map((h, i) => <Pressable key={h} accessibilityRole="button" accessibilityLabel={applyParams(t("onl.han.atisma.oyErisim"), [ad(h)])} disabled={!acik}
-          onPress={() => { hap("advance"); onOy(h); }}
-          style={({ pressed }) => ({ flex: 1, minHeight: 64, flexDirection: yon(rtl), alignItems: "center", justifyContent: "center", gap: 8, paddingHorizontal: 8, borderRadius: 12, borderWidth: 1.5, borderColor: i === 0 ? A_RENK : B_RENK, backgroundColor: pressed ? "rgba(201,162,78,0.3)" : "rgba(14,10,6,0.7)", opacity: acik ? 1 : 0.5 })}>
+        {[a, b].map((h, i) => <Pressable key={h} accessibilityRole="button" accessibilityLabel={applyParams(t("onl.han.atisma.oyErisim"), [ad(h)])} disabled={!acik || gonderilen !== null} accessibilityState={{ disabled: !acik || gonderilen !== null }}
+          onPress={() => { if (gonderilen !== null) return; hap("advance"); setGonderilen(h); onOy(h); }}
+          style={({ pressed }) => ({ flex: 1, minHeight: 64, flexDirection: yon(rtl), alignItems: "center", justifyContent: "center", gap: 8, paddingHorizontal: 8, borderRadius: 12, borderWidth: 1.5, borderColor: i === 0 ? A_RENK : B_RENK, backgroundColor: pressed ? "rgba(201,162,78,0.3)" : "rgba(14,10,6,0.7)", opacity: acik && gonderilen === null ? 1 : 0.5 })}>
           <KisiYuzu id={h} ad={ad(h)} boyut={32} />
           <Text numberOfLines={2} style={{ flexShrink: 1, fontFamily: F.display, fontSize: 12.5, color: C.parchment, textAlign: "center" }}>{ad(h)}</Text>
         </Pressable>)}
@@ -141,7 +149,7 @@ export function AtismaPanosu({ atisma, son, plaka, ad, ben, basBen, acik, rtl, t
 }
 
 /** Sohbet akışında kıta balonu: taraf rengine göre hizalı, sıra no, satır sonları korunur. */
-export function KitaBalonu({ ad, metin, sira, toplam, a, benim, rtl, t }: { ad: string; metin: string; sira: number; toplam?: number; a: boolean; benim: boolean; rtl: boolean; t: Ceviri }) {
+export const KitaBalonu = memo(function KitaBalonu({ ad, metin, sira, toplam, a, benim, rtl, t }: { ad: string; metin: string; sira: number; toplam?: number; a: boolean; benim: boolean; rtl: boolean; t: Ceviri }) {
   const renk = a ? A_RENK : B_RENK;
   const sola = a !== rtl;
   return <View accessible accessibilityLabel={`${applyParams(t("onl.han.atisma.kitaNo"), [sira])}, ${ad}: ${metin}`}
@@ -153,12 +161,11 @@ export function KitaBalonu({ ad, metin, sira, toplam, a, benim, rtl, t }: { ad: 
     </View>
     <Text style={{ fontFamily: F.serifItalic, fontSize: 15.5, lineHeight: 22, color: C.parchment, textAlign: hiza(rtl) }}>{metin}</Text>
   </View>;
-}
+});
 
 /** Sırası gelen tarafın çok satırlı kıta kutusu (alt şerit): 4 satır, harf sayacı; sınır aşılınca gönder kapalı + neden. */
-/** `enCok`: sunucunun bu bağlantıya verdiği harf sınırı (genç hesapta 240); verilmezse KITA_EN_UZUN. */
-export function KitaKutusu({ altBosluk, acik, rtl, t, onGonder, enCok = KITA_EN_UZUN }: { altBosluk: number; acik: boolean; rtl: boolean; t: Ceviri; onGonder: (metin: string) => boolean; enCok?: number }) {
-  const [metin, setMetin] = useState("");
+/** Taslak (`value`/`onChange`) üst ekranda tutulur; gönderince silinmez, sunucu kabul edince üst ekran siler. `enCok`: sunucunun bu bağlantıya verdiği harf sınırı (genç hesapta 240); verilmezse KITA_EN_UZUN. */
+export function KitaKutusu({ altBosluk, acik, rtl, t, onGonder, value: metin, onChange: setMetin, enCok = KITA_EN_UZUN }: { altBosluk: number; acik: boolean; rtl: boolean; t: Ceviri; onGonder: (metin: string) => boolean; value: string; onChange: (v: string) => void; enCok?: number }) {
   const temiz = kitaTemizle(metin);
   const satir = kitaSatir(temiz);
   const harf = harfSayisi(temiz);
@@ -171,7 +178,7 @@ export function KitaKutusu({ altBosluk, acik, rtl, t, onGonder, enCok = KITA_EN_
         style={{ flex: 1, minHeight: 88, maxHeight: 132, borderRadius: 8, borderWidth: 1, borderColor: neden ? C.ember : ONL.frameHi, backgroundColor: "rgba(14,10,6,0.9)", color: C.parchment, fontFamily: F.serifItalic, fontSize: 16, lineHeight: 22, padding: 10, textAlign: hiza(rtl), textAlignVertical: "top" }} />
       <View style={{ width: 96 }}>
         <AltinDugme etiket={t("onl.han.atisma.gonder")} icon="lyre" rtl={rtl} kapali={kapali} erisim={[t("onl.han.atisma.gonder"), neden].filter(Boolean).join(". ")}
-          onPress={() => { if (onGonder(temiz)) setMetin(""); }} />
+          onPress={() => { onGonder(temiz); }} />
       </View>
     </View>
     <Text style={{ fontFamily: F.serif, fontSize: 12, color: neden ? C.ember : C.parchmentMuted, textAlign: hiza(rtl) }}>{neden ?? applyParams(t("onl.han.atisma.sayac"), [satir, KITA_SATIR, harf, enCok])}</Text>
