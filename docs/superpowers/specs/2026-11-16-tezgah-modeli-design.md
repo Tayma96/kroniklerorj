@@ -120,6 +120,21 @@ dükkân kârı 77 akçe/ay; 1. seviye dolu çarşıda bakımını çıkarıyor;
 - **Genişletme malzeme ister:** raf/tezgâh/depo artışı (seviye atlayınca) kereste, çivi, doğrama gibi mallarla
   tamamlanır → oduncu, demirci, marangoz için kalıcı talep.
 
+### 6.1 Dilim 2 uygulama kararları (yönetici, 16 Kasım; henüz kod yok)
+- Zanaat: tarifi olan meslekler (oduncu, çiftçi, demirci, marangoz, dokumacı, aşçı, kâtip). Kuruluşta sahibin ana/yan
+  mesleği uygunsa atanır; ilk değişiklik ücretsiz, sonrası akçe ve açık emir yokken.
+- Emirle üretimin kalitesi: emrin ustası (tarifi yapabilen en yüksek kademeli sahip/çalışan) + seviye bonusu; NPC emeği
+  payı arttıkça düşer (dökümlü). Emirle üretim XP, hizmet puanı, nam vermez.
+- Toplu sipariş: yerleşim başına ayda EN ÇOK 1 (atölyesi olan aileler arasında dönüşümlü); taban değer ≤ 60, ödül ≤ 84.
+- Genişletme: dükkân ve atölyede seviye atlayınca yeni raf/tezgâh/depo, depodan malzeme düşülerek açılır; malzemeler
+  NPC'den alınabilir mallardan seçilir (kilitlenme olmaz); eski kayıtta bugünkü kapasite verilmiş sayılır.
+- Atölye kepengi: o ay üretim ya da toplu sipariş teslimi yoksa kepenkli (bakım/borç/iflas/maaş yok); devralma 60 ay.
+- Denge sınırları (testle): NPC emeğiyle üretip taban fiyattan satmak kâr ettirmez (NPC maaş tabanı buna göre); girdi/çıktı
+  korunumu; bonus adet artırmaz; toplu sipariş girişi ≤ 84/ay; alt istek ≤ 12; takat → emek 1:1.
+- Dilim 1 küçük ekleri: `olay.tezgah.devralmaKasasi`ya `ad`; `depoDefteri` satırına `kimAd`; `GET /v1/dukkanlar`a
+  `bedel:{dukkan,atolye}`.
+- Sunucu ajanı uzun işte her adımda ara kaydı oturum dalına push eder (konteyner yenilenince commit'siz iş kayboluyor).
+
 ## 7. Dilim 3 — Meslek ve beceri kancaları
 Kural: bir düğüm açıldığında oyuncu ne kazandığını ekranda dökümle görür. Aşağıdakiler bu sisteme bağlanır
 (ilk parti ≈70 kanca); siyaset ve toplum kancaları kendi sistemlerinde ayrı programla kapanır.
