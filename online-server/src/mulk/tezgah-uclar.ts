@@ -499,11 +499,17 @@ export function devral(k: Kasaba, kar: Karakter, isletme: string, an: number, is
 
 // ── Atölye (Dilim 2) ──
 
+function iflasMi(md: MulkDefteri, isletme: string): boolean {
+  return md.t[isletme]?.y?.durum === "iflas";
+}
+
 /** Atölye hedefi: tür denetimi + zanaat hazırlığı. */
 function atolyeHedef(k: Kasaba, isletme: string) {
   const h = hedef(k, isletme);
   if (!h.ok) return h;
   if (h.deger.tur !== "atolye") return hata("tezgah_yok");
+  // İflas eden atölyede (yansı) yazma yok: üretim, mesai, emir, toplu teslim ve zanaat işletmeye ulaşamaz, yanardı.
+  if (iflasMi(h.deger.md, isletme)) return hata("isletme_kapali");
   zanaatHazirla(k, h.deger.md, isletme, h.deger.t);
   return h;
 }
@@ -632,7 +638,8 @@ export function topluUc(k: Kasaba, kar: Karakter, isletme: string, govde: unknow
   const r = topluTeslim(md.tsp, nesneMi(govde) ? govde.siparis : undefined, isletme, ad, t, k.ay);
   if (!r.ok) return r;
   const s = r.deger.siparis;
-  cikisAc(md.cik, { i: `y:${k.y}:toplu:${s.id}`, t: "tezgah", h: isletme, a: s.odul, y: { isletme, aylar: [[k.ay, s.odul, 0]], neden: "toplu", siparis: s.id, ...(t.za ? { za: t.za } : {}) } }, an, CIKIS_EN_COK + TEZGAH_KAYIT_PAYI);
+  // Ret telafisi için (tapu.ts telafi): düşen partiler, önceki "son alan" ve teslim eden kayıtta taşınır.
+  cikisAc(md.cik, { i: `y:${k.y}:toplu:${s.id}`, t: "tezgah", h: isletme, a: s.odul, y: { isletme, aylar: [[k.ay, s.odul, 0]], neden: "toplu", siparis: s.id, ...(t.za ? { za: t.za } : {}), parti: r.deger.parti, saOnce: r.deger.saOnce ?? null, o: kar.o } }, an, CIKIS_EN_COK + TEZGAH_KAYIT_PAYI);
   md.kaynak = (md.kaynak ?? 0) + s.odul;
   t.ua = k.ay;
   if (iz.yonetici) etkinlik(k, t);
@@ -645,6 +652,7 @@ export function genisletUc(k: Kasaba, kar: Karakter, isletme: string): Sonuc<Rec
   const h = hedef(k, isletme);
   if (!h.ok) return h;
   const { md, tur, t, seviye } = h.deger;
+  if (iflasMi(md, isletme)) return hata("isletme_kapali");
   if (!izinler(md, isletme, kar.o).genislet) return hata("yetki_yok");
   const r = genislet(tur, t, seviye);
   if (!r.ok) return r;

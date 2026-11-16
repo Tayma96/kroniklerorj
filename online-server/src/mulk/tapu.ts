@@ -34,7 +34,7 @@ import {
 import type { AyarYuku, Baglam, GirisNedeni, Kisi } from "./isletme.ts";
 import { tezgahBosalt, type Tezgah } from "./depo.ts";
 import { KARSILIKLI_PENCERE_AY, ZANAAT_MESLEKLERI } from "./tezgah-kurallar.ts";
-import type { TopluDefter } from "./toplu-siparis.ts";
+import { topluGeriAl, type TopluDefter } from "./toplu-siparis.ts";
 import { akceIade, malIade, type IadeKaydi } from "./iade.ts";
 import {
   CIKIS_EN_COK,
@@ -468,6 +468,14 @@ export function telafi(k: Kasaba, x: CikisKaydi): void {
   } else if (x.t === "tezgah") {
     // NPC parası işletmeye hiç girmedi: denetim kaydından düşer (akçe basılmadı).
     md.kaynak = (md.kaynak ?? 0) - x.a;
+    // Toplu sipariş teslimi reddedildiyse mal ve sipariş geri gelir (yanmaz). Depo yoksa (iflas iadesi yapıldı) mal
+    // teslim edene döner.
+    if (x.y.neden === "toplu") {
+      const isletme = String(x.y.isletme);
+      const t = md.tz?.[isletme];
+      const kar = typeof x.y.o === "string" ? k.kar.get(x.y.o) : undefined;
+      topluGeriAl(md.tsp, x.y, isletme, t ?? kar);
+    }
   } else if (x.t === "devral") {
     // İşletme yeni sahibi kuramadı (beklenmez): kayıt yalnız tapu sürümünü taşır, para taşımaz.
   } else if (x.t === "kur") {

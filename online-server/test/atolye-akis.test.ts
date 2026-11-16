@@ -17,6 +17,7 @@ import { atolyeListesi, atolyedeUret, depoTasi, devral, dukkanListesi, emirUc, g
 import { DEVRALMA_KEPENK_AY, NPC_ATOLYE_MAAS_EN_AZ, NPC_EMEK_AY, ZANAAT_DEGISIM_BEDELI } from "../src/mulk/tezgah-kurallar.ts";
 import { MULK_YUVA } from "../src/mulk/kurallar.ts";
 import type { Karakter, Kasaba } from "../src/yerlesim/tipler.ts";
+import type { MalId } from "../src/icerik/mallar.ts";
 import { oyuncuEkle, testKasabasi } from "./kasaba-yardimci.ts";
 
 const AY = 10;
@@ -338,4 +339,70 @@ test("A: maaşı emanetten karşılanan NPC eskisi gibi çalışır; emanet biri
   tezgahDonumu(k, AY + 2);
   gs = tz(k).gs as typeof gs;
   assert.deepEqual([gs.emek.npcKullanilan, gs.npc.emekVeren, gs.npc.neden], [0, 0, "emanet_maas_yetmez"]);
+});
+
+test("B: iflas eden atölyede yazma uçları reddeder; takat, mal, akçe yanmaz", () => {
+  const { k, a, br } = hazir();
+  assert.ok(zanaatUc(k, a, ID, { meslek: "oduncu" }).ok);
+  tezgahDonumu(k, AY + 1);
+  k.ay = AY + 1;
+  const s = atolyeListesi(k, a).topluSiparis[0]!;
+  kaliteliEkle(tz(k), s.mal as never, [[0, s.adet]]);
+  kaliteliEkle(tz(k), "odun", [[0, 5]]);
+  yansit(k, ID, { durum: "iflas" });
+  const tk = a.tk;
+  const pa = a.pa;
+  const depo = JSON.stringify(tz(k));
+  const kapali = { ok: false, hata: "isletme_kapali" };
+  assert.deepEqual(zanaatUc(k, a, ID, { meslek: "oduncu" }), kapali);
+  assert.deepEqual(atolyedeUret(k, a, ID, { tarif: "kereste" }, { olaylar: [] }), kapali);
+  assert.deepEqual(mesai(k, a, ID, { emek: 2 }), kapali);
+  assert.deepEqual(emirUc(k, a, ID, { islem: "ac", tarif: "kereste", kez: 1 }), kapali);
+  assert.deepEqual(topluUc(k, a, ID, { siparis: s.id }, AN), kapali);
+  assert.deepEqual(genisletUc(k, a, ID), kapali);
+  assert.deepEqual([a.tk, a.pa, JSON.stringify(tz(k))], [tk, pa, depo]);
+  assert.equal(mulkDefteri(k).tsp!.l.find((x) => x.id === s.id)!.durum, "acik");
+  void br;
+});
+
+test("B: yansı gecikmesinde iflas işletmesi toplu teslimi reddederse mal (adet + kalite) ve sipariş geri gelir", () => {
+  const { k, a, br } = hazir();
+  const md = mulkDefteri(k);
+  assert.ok(zanaatUc(k, a, ID, { meslek: "oduncu" }).ok);
+  tezgahDonumu(k, AY + 1);
+  k.ay = AY + 1;
+  const s = atolyeListesi(k, a).topluSiparis[0]!;
+  const mal = s.mal as MalId;
+  kaliteliEkle(tz(k), mal, [[2, 1, a.o, ID], [1, 1, a.o], [0, s.adet - 2]]);
+  const once = { adet: tz(k).ev?.[mal], kq: JSON.stringify(tz(k).kq?.[mal]) };
+  md.tsp!.sa = "develi.atolye.2";
+  const kaynak = md.kaynak ?? 0;
+  assert.ok(topluUc(k, a, ID, { siparis: s.id }, AN).ok);
+  assert.equal(tz(k).ev?.[mal], undefined);
+  // İşletme iflas etti ama yansı henüz gelmedi: kayıt "isletme_kapali" ile reddedilir.
+  br.isler.get(ID)!.durum = "iflas";
+  br.teslim(AN + 1000);
+  assert.equal(md.kaynak, kaynak, "akçe basılmadı");
+  assert.deepEqual({ adet: tz(k).ev?.[mal], kq: JSON.stringify(tz(k).kq?.[mal]) }, once, "mal adet ve kalitesiyle depoda");
+  const sp = md.tsp!.l.find((x) => x.id === s.id)!;
+  assert.deepEqual([sp.durum, sp.al, sp.ta, md.tsp!.sa], ["acik", undefined, undefined, "develi.atolye.2"]);
+  assert.ok(md.cik.k.every((x) => x.y.siparis !== s.id));
+});
+
+test("B: eski toplu kaydı (parti alanı yok) reddedilirse sipariş açılır, mal sade olarak iade edilir", () => {
+  const { k, a } = hazir();
+  const md = mulkDefteri(k);
+  assert.ok(zanaatUc(k, a, ID, { meslek: "oduncu" }).ok);
+  tezgahDonumu(k, AY + 1);
+  k.ay = AY + 1;
+  const s = atolyeListesi(k, a).topluSiparis[0]!;
+  kaliteliEkle(tz(k), s.mal as MalId, [[0, s.adet]]);
+  assert.ok(topluUc(k, a, ID, { siparis: s.id }, AN).ok);
+  const x = md.cik.k.find((y) => y.y.siparis === s.id)!;
+  const eski = { ...x, y: { isletme: ID, aylar: x.y.aylar, neden: "toplu", siparis: s.id } } as CikisKaydi;
+  md.cik.k = md.cik.k.filter((y) => y !== x);
+  telafi(k, eski);
+  assert.equal(tz(k).ev?.[s.mal as MalId], s.adet);
+  assert.equal(tz(k).kq?.[s.mal as MalId], undefined, "sade");
+  assert.equal(md.tsp!.l.find((y) => y.id === s.id)!.durum, "acik");
 });

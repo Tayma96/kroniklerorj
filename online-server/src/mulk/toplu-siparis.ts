@@ -11,6 +11,7 @@ import { dizinSec, tohumlu } from "../yerlesim/rastgele.ts";
 import { basarili, hata, type Sonuc } from "../tipler.ts";
 import { depodanDus } from "./atolye.ts";
 import type { Tezgah } from "./depo.ts";
+import { kaliteliEkle, kaliteMi, partiParca, type KaliteParti } from "../yerlesim/kalite.ts";
 import { TOPLU_DEGER_EN_COK, TOPLU_ODUL_CARPANI, TOPLU_SURE, TOPLU_TUTMA_AY } from "./tezgah-kurallar.ts";
 
 export interface TopluSiparis {
@@ -80,19 +81,67 @@ export function topluDonumu(d: TopluDefter, yerlesim: string, ay: number, zanaat
 }
 
 /** Teslim: atölye zanaatı siparişinki, depoda yeterli mal (her kalite; önce sade), üst üste değil. Mal depodan düşer. */
-export function topluTeslim(d: TopluDefter, idHam: unknown, isletme: string, ad: string, t: Tezgah, ay: number): Sonuc<{ siparis: TopluSiparis }> {
+export function topluTeslim(d: TopluDefter, idHam: unknown, isletme: string, ad: string, t: Tezgah, ay: number): Sonuc<{ siparis: TopluSiparis; parti: KaliteParti[]; saOnce?: string }> {
   const s = typeof idHam === "string" ? d.l.find((x) => x.id === idHam) : undefined;
   if (!s) return hata("siparis_yok");
   if (s.durum !== "acik" || ay >= s.son) return hata("siparis_kapandi");
   if (t.za !== s.meslek) return hata("zanaat_disi");
   if (d.sa === isletme) return hata("ust_uste");
+  const izliOnce = (t.kq?.[s.mal] ?? []).map((p) => [...p] as KaliteParti);
   if (!depodanDus(t, s.mal, s.adet)) return hata("mal_yok");
+  const saOnce = d.sa;
   s.durum = "teslim";
   s.al = isletme;
   s.alAd = ad;
   s.ta = ay;
   d.sa = isletme;
-  return basarili({ siparis: s });
+  return basarili({ siparis: s, parti: dusenPartiler(izliOnce, t.kq?.[s.mal] ?? [], s.adet), ...(saOnce !== undefined ? { saOnce } : {}) });
+}
+
+/** Depodan düşen partiler (önce/sonra izli parti farkı; kalanı izsiz sade). */
+function dusenPartiler(once: readonly KaliteParti[], sonra: readonly KaliteParti[], adet: number): KaliteParti[] {
+  const cikan: KaliteParti[] = [];
+  for (const p of once) {
+    const k = sonra.find((x) => x[0] === p[0] && x[2] === p[2] && x[3] === p[3]);
+    const d = p[1] - (k?.[1] ?? 0);
+    if (d > 0) cikan.push(partiParca(p, d));
+  }
+  const izsiz = adet - cikan.reduce((a, p) => a + p[1], 0);
+  if (izsiz > 0) cikan.unshift([0, izsiz]);
+  return cikan;
+}
+
+/** Kayıttaki parti listesini doğrular (adet toplamı tutmalı); geçersizse yalnız sade adet (kalite uydurulmaz). */
+export function partiCoz(ham: unknown, adet: number): KaliteParti[] {
+  const sade: KaliteParti[] = [[0, adet]];
+  if (!Array.isArray(ham)) return sade;
+  const l: KaliteParti[] = [];
+  for (const p of ham) {
+    if (!Array.isArray(p) || !kaliteMi(p[0]) || !Number.isInteger(p[1]) || p[1] <= 0) return sade;
+    if ((p[2] !== undefined && p[2] !== null && typeof p[2] !== "string") || (p[3] !== undefined && p[3] !== null && typeof p[3] !== "string")) return sade;
+    l.push(partiParca([p[0], p[1], p[2] ?? undefined, p[3] ?? undefined], p[1]));
+  }
+  return l.reduce((a, p) => a + p[1], 0) === adet ? l : sade;
+}
+
+/**
+ * Teslim kaydı işletmece reddedildi (ör. yansı gelmeden iflas): sipariş yeniden açılır, "son alan" eski değerine
+ * döner, mal kayıttaki partilerle (eski kayıtta sade) depoya iade edilir. Sipariş listeden düştüyse yalnız mal döner.
+ */
+export function topluGeriAl(d: TopluDefter | undefined, y: Record<string, unknown>, isletme: string, depo: Pick<Tezgah, "ev" | "kq"> | undefined): { mal: MalId; parti: KaliteParti[] } | undefined {
+  const s = d?.l.find((x) => x.id === y.siparis);
+  if (!d || !s || s.durum !== "teslim" || s.al !== isletme) return undefined;
+  s.durum = "acik";
+  delete s.al;
+  delete s.alAd;
+  delete s.ta;
+  if (d.sa === isletme) {
+    if (typeof y.saOnce === "string") d.sa = y.saOnce;
+    else delete d.sa;
+  }
+  const parti = partiCoz(y.parti, s.adet);
+  if (depo) kaliteliEkle(depo, s.mal, parti);
+  return { mal: s.mal, parti };
 }
 
 export function topluGorunumu(d: TopluDefter | undefined, ay: number, benim?: { isletme: string; t: Tezgah }) {
