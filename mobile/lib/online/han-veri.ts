@@ -63,7 +63,8 @@ export interface MasaOlayi {
 export interface SahneGorunumu { anlatici: string; soz: string[]; istek: string[]; acilis: number }
 export type AtismaSonucTuru = "kazandi" | "berabere" | "hukumsuz" | "iptal";
 /** H8 ozan atışması. a: teklif eden (ilk kıta), b: kabul eden; oy dağılımı sonuca kadar gizli. */
-export interface AtismaGorunumu { olay: number; a: string; b: string; kita: number; toplam: number; sira: string | null; asama: "kita" | "oylama"; hak: string[]; oyVeren: string[] }
+/** `kitaEnCok` (isteğe bağlı): bu bağlantı için kıta harf sınırı (genç hesapta 240); yoksa KITA_EN_UZUN. */
+export interface AtismaGorunumu { olay: number; a: string; b: string; kita: number; toplam: number; sira: string | null; asama: "kita" | "oylama"; hak: string[]; oyVeren: string[]; kitaEnCok?: number }
 export interface AtismaSonucu { olay: number; a: string; b: string; sonuc: AtismaSonucTuru; kazanan: string[]; oy: [number, number] }
 /** [sunucu kurallar.ts] Kıta sınırları: en çok 4 satır; toplam harf (24 saatten genç hesapta 240). */
 export const KITA_SATIR = 4;
@@ -115,7 +116,7 @@ export interface SdpYaniti { type: "offer" | "answer"; sdp: string }
 
 /** Sunucu → istemci. */
 export type SunucuIletisi =
-  | { t: "hosgeldin"; ben: Plaka; susturma: { bitis: number | null } | null; masa: MasaGorunumu; ses?: SesDurumu; sahne?: SahneGorunumu | null; atisma?: AtismaGorunumu | null }
+  | { t: "hosgeldin"; ben: Plaka; susturma: { bitis: number | null } | null; masa: MasaGorunumu; ses?: SesDurumu; sahne?: SahneGorunumu | null; atisma?: AtismaGorunumu | null; kitaEnCok?: number }
   | { t: "sahne"; sahne: SahneGorunumu | null }
   | { t: "atisma"; atisma: AtismaGorunumu | null; son?: AtismaSonucu }
   | { t: "kita"; hesap: string; ad: string; koltuk: number; metin: string; sira: number; zaman: number; balon?: string }
@@ -133,13 +134,53 @@ export interface MasaOzeti { no: number; oturan: number; ayakta: number; sira: n
 export const IKRAMLAR = ["ekmek", "serbet", "yemek", "gulSuyu"] as const;
 export type IkramId = (typeof IKRAMLAR)[number];
 export interface MenuSatiri { id: IkramId; fiyat: number }
-/** GET /v1/han. `menu` NPC hancının fiyatlarıdır; sunucu eklemediyse fiyatlar ilk ikram yanıtından öğrenilir. */
+/**
+ * 4.9 Çoklu han kartı (sunucu han/tipler.ts HanKarti): `no` istemcinin `han` parametresidir (1 = NPC'nin işlettiği ya da
+ * devralınmış 1. han). `oda` NPC hanında null; `masa` seçili olmayan hanlarda bir değişim gecikmeli olabilir.
+ */
+export interface HanKarti {
+  no: number;
+  isletme: string;
+  sahip: "npc" | "oyuncu";
+  sahipKisi?: { id: string; ad: string };
+  /** İşletme adı (oyuncu koyar; boşsa tür adı gösterilir). */
+  ad: string;
+  seviye: number;
+  /** Fiyat çarpanı (%): menü, ziyafet ve oda fiyatı. NPC hanında 100. */
+  fc: number;
+  acik: boolean;
+  oda: { dolu: number; kapasite: number } | null;
+  /** Benim bu handaki müdavim rozetim ("tanidik" | "mudavim" | "demirbas") ya da null. */
+  mudavim: string | null;
+  masa?: { sayi: number; acik: number; oturan: number };
+}
+/** GET /v1/han?han=N. `menu` taban fiyatlardır (oyuncu hanında `fc` ile çarpılır); `hanlar` eski sunucuda yok. */
 export interface HanOzeti {
   yerlesim: { id: string; ad: string };
-  han: { tur: HanTuru; ad: string };
+  /** `ad` her zaman hanın tür adıdır (Han, Küçük Han, Menzil); işletme adı `hanlar[].ad`. `no` eski sunucuda yok. */
+  han: { tur: HanTuru; ad: string; no?: number; isletme?: string };
   koltuk: number;
   masalar: MasaOzeti[];
   menu?: MenuSatiri[];
+  hanlar?: HanKarti[];
+}
+/** [sunucu mulk/tapu.ts HAN_NO_EN_COK] Han numarası 1..9; geçersiz parametre 1. hana düşer. */
+export const HAN_NO_EN_COK = 9;
+export function hanNoCoz(ham: unknown): number {
+  const n = typeof ham === "number" ? ham : typeof ham === "string" && /^[1-9]$/.test(ham) ? Number(ham) : NaN;
+  return Number.isInteger(n) && n >= 1 && n <= HAN_NO_EN_COK ? n : 1;
+}
+/** Seçili hanın kartı (eski sunucuda ya da liste gelmezse undefined). */
+export const seciliKart = (o: HanOzeti | null | undefined): HanKarti | undefined => o?.hanlar?.find((k) => k.no === (o.han.no ?? 1));
+/**
+ * Görünen menü fiyatı: oyuncu hanında sunucunun ödeme formülüyle (mulkluHanOdemesi: tavan, en az 1) çarpanlı; NPC hanında
+ * taban. Yalnız gösterim içindir; ödenen tutar ikram/ziyafet yanıtından okunur.
+ */
+export function hanMenusu(o: HanOzeti | null | undefined): MenuSatiri[] | undefined {
+  if (!o?.menu) return undefined;
+  const k = seciliKart(o);
+  if (!k || k.sahip !== "oyuncu") return o.menu;
+  return o.menu.map((m) => ({ ...m, fiyat: Math.max(1, Math.ceil((m.fiyat * k.fc) / 100 - 1e-9)) }));
 }
 export interface HanEylemGirdisi { masa: number; tur: HanEylemi; hedef?: string; olay?: number; sart?: string; istekNo: string }
 export interface IkramGirdisi { masa: number; hedef: string; ikram: IkramId; istekNo: string }
@@ -158,10 +199,22 @@ export const anonsMu = (v: unknown): v is MasaAnonsu =>
   nesneMi(v) && metinMi(v.kim) && metinMi(v.oge)
   && ((v.tur === "ikram" || v.tur === "armagan" || v.tur === "debdebe") ? metinMi(v.hedef) : v.tur === "ziyafet" && (v.hedef === undefined || metinMi(v.hedef)));
 const masaOzetiMi = (v: unknown): v is MasaOzeti => nesneMi(v) && sayiMi(v.no) && sayiMi(v.oturan) && sayiMi(v.ayakta) && sayiMi(v.sira) && ayarMi(v.ayar);
-const hanOzetiMi = (v: unknown): v is HanOzeti =>
+const hanKartiMi = (v: unknown): v is HanKarti =>
+  nesneMi(v) && sayiMi(v.no) && metinMi(v.isletme) && (v.sahip === "npc" || v.sahip === "oyuncu") && typeof v.ad === "string"
+  && sayiMi(v.seviye) && sayiMi(v.fc) && typeof v.acik === "boolean" && (v.oda === null || (nesneMi(v.oda) && sayiMi(v.oda.dolu) && sayiMi(v.oda.kapasite)))
+  && (v.mudavim === null || metinMi(v.mudavim)) && (v.sahipKisi === undefined || (nesneMi(v.sahipKisi) && metinMi(v.sahipKisi.id) && typeof v.sahipKisi.ad === "string"))
+  && (v.masa === undefined || (nesneMi(v.masa) && sayiMi(v.masa.sayi) && sayiMi(v.masa.acik) && sayiMi(v.masa.oturan)));
+const hanOzetiHamMi = (v: unknown): v is HanOzeti =>
   nesneMi(v) && nesneMi(v.yerlesim) && metinMi(v.yerlesim.ad) && nesneMi(v.han) && metinMi(v.han.ad) && metinMi(v.han.tur)
   && sayiMi(v.koltuk) && Array.isArray(v.masalar) && v.masalar.every(masaOzetiMi)
   && (v.menu === undefined || (Array.isArray(v.menu) && v.menu.every((m) => nesneMi(m) && metinMi(m.id) && sayiMi(m.fiyat))));
+/** Bozuk kartlar listeden düşer (liste bozulursa yalnız seçili han görünür; masalar yine açılır). */
+const hanOzetiMi = (v: unknown): v is HanOzeti => {
+  if (!hanOzetiHamMi(v)) return false;
+  const ham = (v as { hanlar?: unknown }).hanlar;
+  if (ham !== undefined) (v as { hanlar?: HanKarti[] }).hanlar = Array.isArray(ham) ? ham.filter(hanKartiMi) : undefined;
+  return true;
+};
 export const sesDurumuMu = (v: unknown): v is SesDurumu =>
   nesneMi(v) && typeof v.acik === "boolean" && Array.isArray(v.yayin) && v.yayin.every((y) => nesneMi(y) && metinMi(y.hesap) && metinMi(y.iz))
   && Array.isArray(v.konusan) && v.konusan.every(metinMi) && Array.isArray(v.kapali) && v.kapali.every(metinMi) && Array.isArray(v.soz) && v.soz.every(plakaMi);
@@ -218,7 +271,12 @@ export interface HamSoket {
   dinle(d: { acildi: () => void; ileti: (v: SunucuIletisi) => void; kapandi: (kod: number) => void }): void;
 }
 
+/**
+ * Bir hana bağlı istemci (4.9): bütün çağrılar `hanNo`yu taşır (GET'te `?han=N`, POST gövdesinde `han`). Han değişince
+ * yeni istemci alınır (useHanIstemci(hanNo)); böylece hiçbir çağrı sessizce 1. hana düşmez.
+ */
 export interface HanIstemci {
+  readonly hanNo: number;
   han(dil: Dil): Promise<EkSonuc<HanOzeti>>;
   eylem(g: HanEylemGirdisi): Promise<EkSonuc<{ olay: MasaOlayi }>>;
   ikram(g: IkramGirdisi): Promise<EkSonuc<IkramSonucu>>;
@@ -247,19 +305,22 @@ const ilanMi = (v: unknown): v is PanoIlani => nesneMi(v) && metinMi(v.id) && me
 const ilanlarMi = (v: unknown): v is { ilanlar: PanoIlani[] } => nesneMi(v) && Array.isArray(v.ilanlar) && v.ilanlar.every(ilanMi);
 const ziyafetMi = (v: unknown): v is ZiyafetSonucu => nesneMi(v) && sayiMi(v.bedel) && sayiMi(v.para) && sayiMi(v.nam);
 
-export function httpHanIstemci(soketAc: (no: number) => HamSoket | undefined): HanIstemci {
+export function httpHanIstemci(soketAc: (no: number, han: number) => HamSoket | undefined, hanNo = 1): HanIstemci {
+  const han = hanNoCoz(hanNo);
   return {
-    han: (dil) => ekCagir({ yontem: "GET", yol: `/v1/han?dil=${dil}`, tekrar: true }, hanOzetiMi),
+    hanNo: han,
+    han: (dil) => ekCagir({ yontem: "GET", yol: `/v1/han?dil=${dil}&han=${han}`, tekrar: true }, hanOzetiMi),
     // istekNo ile tekrar güvenli (sunucu aynı istekNo'ya aynı olayı döndürür; ikram ikinci kez ödetmez).
-    eylem: (g) => ekCagir({ yontem: "POST", yol: "/v1/han/eylem", govde: g, tekrar: true }, eylemYanitiMi),
-    ikram: (g) => ekCagir({ yontem: "POST", yol: "/v1/han/ikram", govde: g, tekrar: true }, ikramYanitiMi),
-    soket: soketAc,
+    eylem: (g) => ekCagir({ yontem: "POST", yol: "/v1/han/eylem", govde: { ...g, han }, tekrar: true }, eylemYanitiMi),
+    ikram: (g) => ekCagir({ yontem: "POST", yol: "/v1/han/ikram", govde: { ...g, han }, tekrar: true }, ikramYanitiMi),
+    soket: (no) => soketAc(no, han),
     // Ses çağrıları tekrar edilmez: her biri SFU durumunu değiştirir (yanıtı kaybolan istek yeniden kurulur).
-    ses: (no, alt, govde) => ekCagir({ yontem: "POST", yol: `/v1/han/masa/${no}/ses/${alt}`, govde, tekrar: false }, nesneMi),
-    ziyafet: (g) => ekCagir({ yontem: "POST", yol: "/v1/han/ziyafet", govde: g, tekrar: true }, ziyafetMi),
-    pano: () => ekCagir({ yontem: "GET", yol: "/v1/han/pano", tekrar: true }, ilanlarMi),
-    panoAs: (g) => ekCagir({ yontem: "POST", yol: "/v1/han/pano", govde: g, tekrar: true }, ilanlarMi),
-    panoSil: (g) => ekCagir({ yontem: "POST", yol: "/v1/han/pano/sil", govde: g, tekrar: true }, ilanlarMi),
+    ses: (no, alt, govde) => ekCagir({ yontem: "POST", yol: `/v1/han/masa/${no}/ses/${alt}?han=${han}`, govde, tekrar: false }, nesneMi),
+    ziyafet: (g) => ekCagir({ yontem: "POST", yol: "/v1/han/ziyafet", govde: { ...g, han }, tekrar: true }, ziyafetMi),
+    pano: () => ekCagir({ yontem: "GET", yol: `/v1/han/pano?han=${han}`, tekrar: true }, ilanlarMi),
+    panoAs: (g) => ekCagir({ yontem: "POST", yol: "/v1/han/pano", govde: { ...g, han }, tekrar: true }, ilanlarMi),
+    panoSil: (g) => ekCagir({ yontem: "POST", yol: "/v1/han/pano/sil", govde: { ...g, han }, tekrar: true }, ilanlarMi),
+    // Şikâyet hana bağlı değildir: ilan kimliği yerleşimde tekildir (sunucu hanPanoIlan bütün hanlarda arar).
     ilanSikayet: (g) => ekCagir({ yontem: "POST", yol: "/v1/sikayet", govde: g, tekrar: true }, nesneMi),
   };
 }
@@ -268,8 +329,8 @@ export function httpHanIstemci(soketAc: (no: number) => HamSoket | undefined): H
  * Gerçek WebSocket: GET /v1/han/masa/:no/baglan, Bearer oturumu başlıkta (React Native WebSocket üçüncü bağımsız
  * değişkenle başlık taşır). Belirteç depodan okunana kadar gönderilenler sıraya alınır.
  */
-export function gercekSoket(no: number): HamSoket | undefined {
-  const adres = soketAdresi(`/v1/han/masa/${no}/baglan`);
+export function gercekSoket(no: number, han = 1): HamSoket | undefined {
+  const adres = soketAdresi(`/v1/han/masa/${no}/baglan?han=${hanNoCoz(han)}`);
   if (!adres) return undefined;
   let ws: WebSocket | null = null;
   let kapali = false;
@@ -308,16 +369,21 @@ export function gercekSoket(no: number): HamSoket | undefined {
   };
 }
 
-let gercek: HanIstemci | null = null;
-/** Oturum türüne göre han istemcisi: geliştirici/önizleme oturumunda sahte han, yoksa sunucu. */
-export function useHanIstemci(): HanIstemci {
+const gercekler = new Map<number, HanIstemci>();
+/**
+ * Oturum türüne göre seçili hana bağlı istemci: geliştirici/önizleme oturumunda sahte han, yoksa sunucu. `hanNo`
+ * verilmezse 1. han (köy ve tek hanlı yerleşim).
+ */
+export function useHanIstemci(hanNo = 1): HanIstemci {
   const o = useOnline();
   const sahte = o.oturum?.tur === "gelistirici";
   const hesap = o.profil?.hesapId ?? "ben";
   const ad = o.profil?.ad ?? "—";
+  const han = hanNoCoz(hanNo);
   return useMemo(() => {
-    if (sahte) return sahteHanIstemci(hesap, ad);
-    gercek ??= httpHanIstemci(gercekSoket);
-    return gercek;
-  }, [sahte, hesap, ad]);
+    if (sahte) return sahteHanIstemci(hesap, ad, han);
+    let g = gercekler.get(han);
+    if (!g) { g = httpHanIstemci(gercekSoket, han); gercekler.set(han, g); }
+    return g;
+  }, [sahte, hesap, ad, han]);
 }

@@ -1,18 +1,20 @@
-// Geliştirici/önizleme için sahte mülk ve işletme (Faz 12–13) istemcisi. Senaryo: kasabanın hanı oyuncunun; bir
+// Geliştirici/önizleme için sahte mülk ve işletme (Faz 12–13) istemcisi. Senaryo (4.9 çoklu han, şehir): 1. han NPC'nin
+// (devralınabilir), 2. ve 3. han başka oyuncuların, 4. han oyuncunun, 5. yuva boş arsa (oyuncunun hanı olduğu için
+// `han_siniri`); bir
 // dükkân Zeynep'in (oyuncuya devir teklifiyle), bir atölye Usta Kerem'in (oyuncuya iş teklifiyle), diğer yuvalar boş.
 // Panel, kasa, gelir dökümü ve devir önizlemesi sunucu biçiminde hazır gelir; istemci hesap yapmaz.
 import { ekBasarili, ekBasarisiz } from "./ek-istemci";
-import type { DevirOnizleme, EdinimSarti, IsletmePaneli, MulkIstemci, MulkListesi, MulkTuru, PanelYaniti, Rol, SozlesmeGorunumu, TezyinGrubu, Yetki } from "./mulk-veri";
+import type { DevirOnizleme, Yuva, EdinimSarti, IsletmePaneli, MulkIstemci, MulkListesi, MulkTuru, PanelYaniti, Rol, SozlesmeGorunumu, TezyinGrubu, Yetki } from "./mulk-veri";
 
 const AY = 40;
 const bekle = () => new Promise<void>((r) => setTimeout(r, 60));
-const FIYAT: Record<MulkTuru, number> = { han: 250, dukkan: 120, atolye: 150 };
+const FIYAT: Record<MulkTuru, number> = { han: 600, dukkan: 180, atolye: 220 };
 const TEZ_FIYAT: Record<string, number> = { selcuklu: 40, ahsap: 20, tas: 60, sakin: 10, hareketli: 15, luks: 50, mutevazi: 5, kandil: 5, samdan: 15, avize: 45, yok: 0, misafirOdasi: 35, toplantiOdasi: 35 };
 const ROL_YETKI: Record<Rol, Yetki[]> = { hanci: ["musteri", "fiyat"], garson: ["musteri"], asci: [], ozan: ["masa"], yonetici: ["kasa", "musteri", "fiyat", "personel", "masa"] };
 
 export function sahteMulkIstemci(baslangicPara: number, yer: string): MulkIstemci {
   const id = (tur: MulkTuru, no: number) => `${yer}.${tur}.${no}`;
-  const HAN = id("han", 1);
+  const HAN = id("han", 4);
   const s = { para: Math.max(140, baslangicPara), benim: [HAN] as string[], sn: 3 };
   const soz = (no: number, ad: string, cid: string, tur: "oyuncu" | "npc", rol: Rol, maas: number, kd: number): SozlesmeGorunumu => ({
     no, calisan: { tur, id: cid, ad }, rol, yetkiler: [...ROL_YETKI[rol]], maas, baslangic: AY - 5, bitis: null, odenenAy: 5, kademe: kd, durum: "etkin", vekaletBitis: null,
@@ -38,9 +40,19 @@ export function sahteMulkIstemci(baslangicPara: number, yer: string): MulkIstemc
     const eksik = s.para < FIYAT[tur] ? ["akce"] : [];
     return { fiyat: FIYAT[tur], akce: s.para, nam: 44, namEsigi: 60, loncaKademe: 1, loncaEsigi: 1, yas: 19, yasEsigi: 16, uygun: eksik.length === 0, eksik };
   };
+  const hanSayim = () => s.benim.filter((x) => x.includes(".han.")).length;
+  const BASKA_HANLAR: Record<number, [string, string, string, number]> = { 2: ["o2", "Kerim Usta", "Kervan Konağı", 1], 3: ["o3", "Ayşe Hatun", "Gül Bahçesi Hanı", 3] };
+  const hanYuvalari = (): Yuva[] => [1, 2, 3, 4, 5].map((no): Yuva => {
+    const isl = id("han", no);
+    if (isl === HAN) return { isletme: HAN, tur: "han", no, durum: "sahipli", sahip: { id: "o1", ad: "Elif Nur" }, ad: han.ad, seviye: 1 };
+    const b = BASKA_HANLAR[no];
+    if (b) return { isletme: isl, tur: "han", no, durum: "sahipli", sahip: { id: b[0], ad: b[1] }, ad: b[2], seviye: b[3] };
+    if (s.benim.includes(isl)) return { isletme: isl, tur: "han", no, durum: "sahipli", sahip: { id: "o1", ad: "Elif Nur" }, ad: "", seviye: 0 };
+    return { isletme: isl, tur: "han", no, durum: "bos", fiyat: FIYAT.han, npc: no === 1, arsa: no !== 1 };
+  });
   const liste = (): MulkListesi => ({
     yuvalar: [
-      { isletme: HAN, tur: "han", no: 1, durum: "sahipli", sahip: { id: "o1", ad: "Elif Nur" }, ad: han.ad, seviye: 1 },
+      ...hanYuvalari(),
       { isletme: id("dukkan", 1), tur: "dukkan", no: 1, durum: "sahipli", sahip: { id: "o4", ad: "Zeynep" }, ad: "Zeynep'in Kumaş Dükkânı", seviye: 0, devirTeklifi: { fiyat: 90 } },
       s.benim.includes(id("dukkan", 2)) ? { isletme: id("dukkan", 2), tur: "dukkan", no: 2, durum: "sahipli", sahip: { id: "o1", ad: "Elif Nur" }, ad: "", seviye: 0 }
         : { isletme: id("dukkan", 2), tur: "dukkan", no: 2, durum: "bos", fiyat: FIYAT.dukkan },
@@ -48,13 +60,14 @@ export function sahteMulkIstemci(baslangicPara: number, yer: string): MulkIstemc
         : { isletme: id("atolye", 1), tur: "atolye", no: 1, durum: "bos", fiyat: FIYAT.atolye },
       { isletme: id("atolye", 2), tur: "atolye", no: 2, durum: "sahipli", sahip: { id: "o7", ad: "Usta Kerem" }, ad: "Kerem Ocağı", seviye: 2 },
     ],
-    benim: [...s.benim], calistigim: [], teklifler: [id("atolye", 2)], sinir: { enCok: 2, sahip: s.benim.length },
+    benim: [...s.benim], calistigim: [], teklifler: [id("atolye", 2)], sinir: { enCok: 3, sahip: s.benim.length, hanEnCok: 1, han: hanSayim() },
     edinimSarti: { han: sart("han"), dukkan: sart("dukkan"), atolye: sart("atolye") }, bekleyen: [],
   });
   const panel = (isletme: string): PanelYaniti | null => {
     if (isletme === HAN) return { isletme: han, konum: "sahip", yetkiler: ["kasa", "musteri", "fiyat", "personel", "vekalet", "masa"] };
     if (isletme === id("dukkan", 1)) return vitrin(isletme, "dukkan", "Zeynep'in Kumaş Dükkânı", ["o4", "Zeynep"]);
     if (isletme === id("atolye", 2)) return vitrin(isletme, "atolye", "Kerem Ocağı", ["o7", "Usta Kerem"]);
+    for (const [no, b] of Object.entries(BASKA_HANLAR)) if (isletme === id("han", Number(no))) return vitrin(isletme, "han", b[2], [b[0], b[1]]);
     return null;
   };
   const yeniSoz = (rol: Rol, maas: number, ad: string, cid: string, tur: "oyuncu" | "npc") => { const x = soz(++s.sn, ad, cid, tur, rol, maas, 1); x.baslangic = AY; x.odenenAy = 0; han.personel!.push(x); return x; };
@@ -62,8 +75,9 @@ export function sahteMulkIstemci(baslangicPara: number, yer: string): MulkIstemc
     async liste() { await bekle(); return ekBasarili(liste()); },
     async edin(g) {
       await bekle();
-      if (s.benim.length >= 2) return ekBasarisiz("mulk_siniri");
-      const no = g.tur === "dukkan" ? 2 : g.tur === "atolye" ? 1 : 0;
+      if (s.benim.length >= 3) return ekBasarisiz("mulk_siniri");
+      if (g.tur === "han" && hanSayim() >= 1) return ekBasarisiz("han_siniri");
+      const no = g.tur === "han" ? (g.no ?? 1) : g.tur === "dukkan" ? 2 : g.tur === "atolye" ? 1 : 0;
       if (!no || s.benim.includes(id(g.tur, no))) return ekBasarisiz("mulk_dolu");
       const sa = sart(g.tur);
       if (!sa.uygun) return ekBasarisiz("para_yok");

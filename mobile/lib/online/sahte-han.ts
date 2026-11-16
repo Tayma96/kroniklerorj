@@ -1,11 +1,13 @@
 // Geliştirici oturumu ve tasarım önizlemesi için sahte han: bellekte dört masa, birkaç uydurma oyuncu ve sahte soket.
 // Sunucunun masa kurallarını (otur/kalk/sıra/masa başı/at/öne al/sustur, butonlu eylem, ikram) kabaca taklit eder;
 // sunucuya hiç bağlanmaz. Sohbet örnekleri oyuncu yazısı yerine geçer (çeviri sözlüğü değildir).
+// 4.9 çoklu han: şehirde üç han (1. NPC'nin, 2. ve 3. oyuncunun; farklı fiyat, oda doluluğu ve kalabalık); her
+// hanın kendi masaları ve panosu vardır, `han` parametresi taklit edilir (bilinmeyen han `han_yok`).
 // Faz 16 ses de taklit edilir (yerel WebRTC modülü olmadan): yayın/konuşan/ses kesme/söz isteme durumları gelir, ses yoktur.
 import { ekBasarili, ekBasarisiz, type EkSonuc } from "./ek-istemci";
 import type {
   PanoIlani,
-  HamSoket, HanEylemGirdisi, HanOzeti, IkramGirdisi, IkramId, IkramSonucu, IstemciIletisi, MasaAnonsu, MasaAyari,
+  HamSoket, HanEylemGirdisi, HanKarti, HanOzeti, IkramGirdisi, IkramId, IkramSonucu, IstemciIletisi, MasaAnonsu, MasaAyari,
   MasaGorunumu, MasaOlayi, MenuSatiri, Plaka, SesDurumu, SunucuIletisi, HanIstemci, SahneGorunumu, AtismaGorunumu, AtismaSonucTuru,
 } from "./han-veri";
 import { KITA_EN_UZUN, KITA_SATIR } from "./han-veri";
@@ -13,7 +15,7 @@ import type { Dil } from "./protokol";
 
 const KOLTUK = 6;
 const MENU: MenuSatiri[] = [{ id: "ekmek", fiyat: 2 }, { id: "serbet", fiyat: 3 }, { id: "yemek", fiyat: 6 }, { id: "gulSuyu", fiyat: 10 }];
-const HAN_ADI: Record<Dil, string> = { tr: "Küçük Han", en: "Small Inn", es: "Posada pequeña", pt: "Pequena estalagem", ar: "خان صغير", ru: "Малый постоялый двор" };
+const HAN_ADI: Record<Dil, string> = { tr: "Han", en: "Inn", es: "Posada", pt: "Estalagem", ar: "خان", ru: "Постоялый двор" };
 const AYAR: MasaAyari = { tur: "acik", acik: true, sesli: true, kavgaYasak: false };
 const KISILER: Plaka[] = [
   { hesap: "oy-kerim", ad: "Kerim Usta", mudavim: true, kisi: "o2", nam: 64 }, { hesap: "oy-ayse", ad: "Ayşe Hatun", ozan: true, kisi: "o3", nam: 118 }, { hesap: "oy-osman", ad: "Osman Kalfa", nam: 12 },
@@ -46,16 +48,33 @@ function masaKur(oturan: number[], ayakta: number, sira: number[] = []): SahteMa
   return { koltuklar, oturma, sira: sira.map((k) => KISILER[k]!), ayakta, atilan: new Set() };
 }
 
-let dunya: Dunya | null = null;
-function dunyaAl(): Dunya {
-  dunya ??= {
-    masalar: [masaKur([0, 1, 4], 2), masaKur([2, 3, 5, 6, 7, 1], 3, [4]), masaKur([], 0), masaKur([6], 1)],
-    olayNo: 40, olaylar: new Map(), para: 40, istek: new Map(), soket: null,
-  };
-  // Masa 2 bilerek dolu: altı koltuk.
-  const m2 = dunya.masalar[1]!;
-  m2.koltuklar = m2.koltuklar.map((p, i) => p ?? KISILER[(i + 2) % KISILER.length]!);
-  m2.oturma = m2.oturma.map((o, i) => o || i + 1);
+/** Önizleme hanları: 1 NPC (en kalabalık), 2 Kerim Usta'nın ucuz hanı (müdavimisin), 3 Ayşe Hatun'un pahalı ve dolu hanı. */
+const SAHTE_HANLAR: Omit<HanKarti, "masa" | "isletme">[] = [
+  { no: 1, sahip: "npc", ad: "", seviye: 0, fc: 100, acik: true, oda: null, mudavim: null },
+  { no: 2, sahip: "oyuncu", sahipKisi: { id: "o2", ad: "Kerim Usta" }, ad: "Kervan Konağı", seviye: 1, fc: 85, acik: true, oda: { dolu: 3, kapasite: 6 }, mudavim: "mudavim" },
+  { no: 3, sahip: "oyuncu", sahipKisi: { id: "o3", ad: "Ayşe Hatun" }, ad: "Gül Bahçesi Hanı", seviye: 3, fc: 135, acik: true, oda: { dolu: 6, kapasite: 6 }, mudavim: null },
+];
+const ILK_MASALAR: Record<number, () => SahteMasa[]> = {
+  1: () => [masaKur([0, 1, 4], 2), masaKur([2, 3, 5, 6, 7, 1], 3, [4]), masaKur([], 0), masaKur([6], 1)],
+  2: () => [masaKur([2, 5], 1), masaKur([], 0), masaKur([3], 0)],
+  3: () => [masaKur([7], 0), masaKur([], 0)],
+};
+const dunyalar = new Map<number, Dunya>();
+/** Akçe bütün hanlarda ortak (tek cüzdan). */
+let cuzdan = 40;
+const hanVarMi = (han: number) => Object.hasOwn(ILK_MASALAR, han);
+function dunyaAl(han = 1): Dunya {
+  let dunya = dunyalar.get(han);
+  if (!dunya) {
+    dunya = { masalar: (ILK_MASALAR[han] ?? ILK_MASALAR[1]!)(), olayNo: 40, olaylar: new Map(), para: 0, istek: new Map(), soket: null };
+    dunyalar.set(han, dunya);
+    if (han === 1) {
+      // 1. hanın 2. masası bilerek dolu: altı koltuk.
+      const m2 = dunya.masalar[1]!;
+      m2.koltuklar = m2.koltuklar.map((p, i) => p ?? KISILER[(i + 2) % KISILER.length]!);
+      m2.oturma = m2.oturma.map((o, i) => o || i + 1);
+    }
+  }
   return dunya;
 }
 
@@ -82,8 +101,10 @@ class SahteSoket implements HamSoket {
   private sahne: SahneGorunumu | null = null;
   private atisma: AtismaGorunumu | null = null;
   private oylar = new Map<string, string>();
-  constructor(readonly no: number, readonly ben: Plaka) {
-    const w = dunyaAl();
+  constructor(readonly no: number, readonly ben: Plaka, readonly han = 1) {
+    // Gerçek sunucuda bir hesap aynı anda tek masadadır (4005 başka masa): öteki hanların soketi de kapanır.
+    for (const [h, d] of dunyalar) if (h !== han) d.soket?.kapat();
+    const w = dunyaAl(han);
     w.soket?.kapat();
     w.soket = this;
     this.sonra(150, () => {
@@ -133,7 +154,7 @@ class SahteSoket implements HamSoket {
     this.sesYolla();
     return null;
   }
-  private masa() { return dunyaAl().masalar[this.no - 1]!; }
+  private masa() { return dunyaAl(this.han).masalar[this.no - 1]!; }
   /** H8: masa meşgul mü (sahne ya da atışma). */
   mesgul() { return !!this.sahne || !!this.atisma; }
   private sahneYolla() { this.yolla({ t: "sahne", sahne: this.sahne ? { ...this.sahne, soz: [...this.sahne.soz], istek: [...this.sahne.istek] } : null }); }
@@ -195,8 +216,8 @@ class SahteSoket implements HamSoket {
   private hata(hata: string, istek?: string) { this.yolla({ t: "hata", hata, ...(istek ? { istek } : {}) }); }
   anons(a: MasaAnonsu) { this.yolla({ t: "anons", anons: a }); }
   olay(o: Omit<MasaOlayi, "no" | "masa" | "zaman" | "katilim">): MasaOlayi {
-    const w = dunyaAl();
-    const tam: MasaOlayi = { ...o, no: ++w.olayNo, masa: `masa:sahte:${this.no}`, zaman: Date.now(), katilim: oturanlar(this.masa()).sort((a, b) => a.i - b.i).map((x) => x.p.hesap) };
+    const w = dunyaAl(this.han);
+    const tam: MasaOlayi = { ...o, no: ++w.olayNo, masa: `masa:sahte:${this.han}:${this.no}`, zaman: Date.now(), katilim: oturanlar(this.masa()).sort((a, b) => a.i - b.i).map((x) => x.p.hesap) };
     w.olaylar.set(tam.no, tam);
     this.yolla({ t: "olay", olay: tam });
     return tam;
@@ -218,7 +239,7 @@ class SahteSoket implements HamSoket {
     this.yayin.clear();
     this.zaman.forEach(clearTimeout);
     if (this.dongu) clearInterval(this.dongu);
-    const w = dunyaAl();
+    const w = dunyaAl(this.han);
     if (w.soket === this) w.soket = null;
   }
   gonder(ileti: IstemciIletisi) {
@@ -268,8 +289,8 @@ class SahteSoket implements HamSoket {
         m.koltuklar = m.koltuklar.map((p) => (p?.hesap === ileti.hedef ? null : p));
         m.sira = m.sira.filter((p) => p.hesap !== ileti.hedef);
         m.atilan.add(ileti.hedef);
-        const w = dunyaAl();
-        const o: MasaOlayi = { no: ++w.olayNo, masa: `masa:sahte:${this.no}`, tur: "atma", kim: this.ben.hesap, hedef: ileti.hedef, zaman: Date.now(), katilim };
+        const w = dunyaAl(this.han);
+        const o: MasaOlayi = { no: ++w.olayNo, masa: `masa:sahte:${this.han}:${this.no}`, tur: "atma", kim: this.ben.hesap, hedef: ileti.hedef, zaman: Date.now(), katilim };
         this.yolla({ t: "olay", olay: o });
         return this.durum();
       }
@@ -392,26 +413,42 @@ const EYLEM_KURALI: Record<string, { hedef: boolean; oturan: boolean; sart: bool
 };
 const gecikme = <T,>(v: T, ms = 220) => new Promise<T>((r) => setTimeout(() => r(v), ms));
 
-const SAHTE_PANO: PanoIlani[] = [];
-export function sahteHanIstemci(hesap: string, ad: string): HanIstemci {
+const SAHTE_PANO = new Map<number, PanoIlani[]>();
+const panoAl = (han: number) => { let l = SAHTE_PANO.get(han); if (!l) { l = []; SAHTE_PANO.set(han, l); } return l; };
+const isletme = (no: number) => `develi.han.${no}`;
+export function sahteHanIstemci(hesap: string, ad: string, hanNo = 1): HanIstemci {
   const ben: Plaka = { hesap, ad };
+  const han = hanNo;
+  const yok = <T,>() => gecikme(ekBasarisiz<T>("han_yok"));
+  const pano = panoAl(han);
   return {
+    hanNo: han,
     han: (dil) => {
-      const w = dunyaAl();
+      if (!hanVarMi(han)) return yok();
+      const masaOzetleri = (h: number) => {
+        const w = dunyaAl(h);
+        return w.masalar.map((m, i) => {
+          const g = gorunum(i + 1, m, ben, w.soket?.no === i + 1);
+          return { no: i + 1, oturan: g.koltuklar.filter(Boolean).length, ayakta: g.ayakta, sira: g.sira.length, ayar: { ...AYAR, ...m.ayar } };
+        });
+      };
+      const hanlar: HanKarti[] = SAHTE_HANLAR.map((k) => {
+        const l = masaOzetleri(k.no);
+        return { ...k, isletme: isletme(k.no), masa: { sayi: l.length, acik: l.filter((m) => m.ayar.acik).length, oturan: l.reduce((t, m) => t + m.oturan, 0) } };
+      });
       const ozet: HanOzeti = {
         yerlesim: { id: "develi", ad: "Develi" },
-        han: { tur: "kucukHan", ad: HAN_ADI[dil] },
+        han: { tur: "han", ad: HAN_ADI[dil], no: han, isletme: isletme(han) },
         koltuk: KOLTUK,
-        masalar: w.masalar.map((m, i) => {
-          const g = gorunum(i + 1, m, ben, w.soket?.no === i + 1);
-          return { no: i + 1, oturan: g.koltuklar.filter(Boolean).length, ayakta: g.ayakta, sira: g.sira.length, ayar: AYAR };
-        }),
+        masalar: masaOzetleri(han),
         menu: MENU,
+        hanlar,
       };
       return gecikme(ekBasarili(ozet));
     },
     eylem: (g: HanEylemGirdisi): Promise<EkSonuc<{ olay: MasaOlayi }>> => {
-      const w = dunyaAl();
+      if (!hanVarMi(han)) return yok();
+      const w = dunyaAl(han);
       const onceki = w.istek.get("e" + g.istekNo) as { olay: MasaOlayi } | undefined;
       if (onceki) return gecikme(ekBasarili(onceki));
       const s = w.soket;
@@ -455,7 +492,8 @@ export function sahteHanIstemci(hesap: string, ad: string): HanIstemci {
       return gecikme(ekBasarili(yanit));
     },
     ikram: (g: IkramGirdisi): Promise<EkSonuc<IkramSonucu>> => {
-      const w = dunyaAl();
+      if (!hanVarMi(han)) return yok();
+      const w = dunyaAl(han);
       const onceki = w.istek.get("i" + g.istekNo) as IkramSonucu | undefined;
       if (onceki) return gecikme(ekBasarili(onceki));
       if (g.hedef === hesap) return gecikme(ekBasarisiz("kendi_hedef"));
@@ -464,34 +502,38 @@ export function sahteHanIstemci(hesap: string, ad: string): HanIstemci {
       if (!m || !s || s.no !== g.masa) return gecikme(ekBasarisiz("masa_gecersiz"));
       if (!m.koltuklar.some((p) => p?.hesap === hesap)) return gecikme(ekBasarisiz("oturmuyor"));
       if (!m.koltuklar.some((p) => p?.hesap === g.hedef) && !m.sira.some((p) => p.hesap === g.hedef)) return gecikme(ekBasarisiz("hedef_masada_degil"));
-      const fiyat = MENU.find((x) => x.id === g.ikram)?.fiyat;
-      if (fiyat === undefined) return gecikme(ekBasarisiz("ikram_gecersiz"));
-      if (w.para < fiyat) return gecikme(ekBasarisiz("para_yok"));
-      w.para -= fiyat;
+      const taban = MENU.find((x) => x.id === g.ikram)?.fiyat;
+      if (taban === undefined) return gecikme(ekBasarisiz("ikram_gecersiz"));
+      // Oyuncu hanında sunucu gibi fiyat çarpanlı (tavan, en az 1).
+      const kart = SAHTE_HANLAR.find((k) => k.no === han);
+      const fiyat = kart?.sahip === "oyuncu" ? Math.max(1, Math.ceil((taban * kart.fc) / 100 - 1e-9)) : taban;
+      if (cuzdan < fiyat) return gecikme(ekBasarisiz("para_yok"));
+      cuzdan -= fiyat;
       const anons: MasaAnonsu = { tur: "ikram", kim: hesap, hedef: g.hedef, oge: g.ikram as IkramId, zaman: Date.now() };
       s.anons(anons);
-      const yanit: IkramSonucu = { ikram: g.ikram, fiyat, para: w.para, anons };
+      const yanit: IkramSonucu = { ikram: g.ikram, fiyat, para: cuzdan, anons };
       w.istek.set("i" + g.istekNo, yanit);
       return gecikme(ekBasarili(yanit));
     },
-    soket: (no) => (no >= 1 && no <= dunyaAl().masalar.length ? new SahteSoket(no, ben) : undefined),
+    soket: (no) => (hanVarMi(han) && no >= 1 && no <= dunyaAl(han).masalar.length ? new SahteSoket(no, ben, han) : undefined),
     sahte: true,
     // Önizleme: ziyafet ödemesi yalnız gerçek sunucuda; pano bu cihazın belleğinde.
     ziyafet: () => gecikme(ekBasarisiz("sunucu_yok")),
-    pano: () => gecikme(ekBasarili({ ilanlar: [...SAHTE_PANO] })),
+    pano: () => (hanVarMi(han) ? gecikme(ekBasarili({ ilanlar: [...pano] })) : yok()),
     panoAs: (g) => {
-      SAHTE_PANO.unshift({ id: "p" + (SAHTE_PANO.length + 1), tur: g.tur, metin: g.metin, kisi: { id: hesap, ad }, zaman: Date.now(), bitis: Date.now() + 7 * 864e5, benim: true });
-      return gecikme(ekBasarili({ ilanlar: [...SAHTE_PANO] }));
+      if (!hanVarMi(han)) return yok();
+      pano.unshift({ id: `p${han}-${pano.length + 1}`, tur: g.tur, metin: g.metin, kisi: { id: hesap, ad }, zaman: Date.now(), bitis: Date.now() + 7 * 864e5, benim: true });
+      return gecikme(ekBasarili({ ilanlar: [...pano] }));
     },
     panoSil: (g) => {
-      const i = SAHTE_PANO.findIndex((x) => x.id === g.ilan && x.benim);
+      const i = pano.findIndex((x) => x.id === g.ilan && x.benim);
       if (i < 0) return gecikme(ekBasarisiz("ilan_yok"));
-      SAHTE_PANO.splice(i, 1);
-      return gecikme(ekBasarili({ ilanlar: [...SAHTE_PANO] }));
+      pano.splice(i, 1);
+      return gecikme(ekBasarili({ ilanlar: [...pano] }));
     },
     ilanSikayet: () => gecikme(ekBasarili({ durum: "acik" })),
     ses: (no, alt) => {
-      const s = dunyaAl().soket;
+      const s = dunyaAl(han).soket;
       if (!s || s.no !== no) return gecikme(ekBasarisiz("masada_degil"));
       if (alt === "yayin" || alt === "kapat") {
         const h = s.sesYayin(alt === "yayin");

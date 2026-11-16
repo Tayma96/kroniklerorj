@@ -50,9 +50,11 @@ export interface MasaDurumu {
   sahne: SahneGorunumu | null;
   atisma: AtismaGorunumu | null;
   atismaSon: (AtismaSonucu & { id: string }) | null;
+  /** Kıta harf sınırı (sunucu hosgeldin/atışma `kitaEnCok`; genç hesapta 240). Gelmezse null: KITA_EN_UZUN geçer. */
+  kitaEnCok: number | null;
 }
 
-const BASLANGIC: MasaDurumu = { bag: "baglaniyor", deneme: 0, kapanis: null, ben: null, masa: null, susturma: null, akis: [], kabuller: {}, sessiz: [], sonAnons: null, hata: null, raporlandi: 0, ses: null, sahne: null, atisma: null, atismaSon: null };
+const BASLANGIC: MasaDurumu = { bag: "baglaniyor", deneme: 0, kapanis: null, ben: null, masa: null, susturma: null, akis: [], kabuller: {}, sessiz: [], sonAnons: null, hata: null, raporlandi: 0, ses: null, sahne: null, atisma: null, atismaSon: null, kitaEnCok: null };
 
 type Eylem =
   | { t: "bag"; bag: BagDurumu; deneme?: number; kapanis?: number | null }
@@ -61,6 +63,7 @@ type Eylem =
   | { t: "sifirla" };
 
 const ekle = (akis: AkisOgesi[], o: AkisOgesi) => (akis.length >= AKIS_EN_COK ? [...akis.slice(akis.length - AKIS_EN_COK + 1), o] : [...akis, o]);
+const sinirCoz = (v: unknown): number | null => (typeof v === "number" && Number.isInteger(v) && v > 0 ? v : null);
 const hataCoz = (h: string): EkHata => (hataKoduMu(h) || ekHataMi(h) ? h : "gecersiz_istek");
 
 function indirge(d: MasaDurumu, e: Eylem): MasaDurumu {
@@ -71,9 +74,9 @@ function indirge(d: MasaDurumu, e: Eylem): MasaDurumu {
     case "sunucu": {
       const v = e.v;
       switch (v.t) {
-        case "hosgeldin": return { ...d, bag: "acik", deneme: 0, kapanis: null, ben: v.ben, masa: v.masa, susturma: v.susturma, hata: null, ses: v.ses ?? null, sahne: v.sahne ?? null, atisma: v.atisma ?? null };
+        case "hosgeldin": return { ...d, bag: "acik", deneme: 0, kapanis: null, ben: v.ben, masa: v.masa, susturma: v.susturma, hata: null, ses: v.ses ?? null, sahne: v.sahne ?? null, atisma: v.atisma ?? null, kitaEnCok: sinirCoz(v.kitaEnCok) ?? sinirCoz(v.atisma?.kitaEnCok) ?? d.kitaEnCok };
         case "sahne": return { ...d, sahne: v.sahne };
-        case "atisma": return { ...d, atisma: v.atisma, ...(v.son ? { atismaSon: { ...v.son, id: e.id } } : {}) };
+        case "atisma": return { ...d, atisma: v.atisma, kitaEnCok: sinirCoz(v.atisma?.kitaEnCok) ?? d.kitaEnCok, ...(v.son ? { atismaSon: { ...v.son, id: e.id } } : {}) };
         case "kita": return { ...d, akis: ekle(d.akis, { tur: "kita", id: e.id, hesap: v.hesap, ad: v.ad, koltuk: v.koltuk, metin: v.metin, sira: v.sira, zaman: v.zaman, ...(v.balon ? { balon: v.balon } : {}) }) };
         case "sesDurum": return { ...d, ses: v.ses };
         case "durum": return { ...d, masa: v.masa };
@@ -112,8 +115,8 @@ let sayac = 0;
 const yeniId = () => `a${Date.now().toString(36)}${(sayac++).toString(36)}`;
 
 /** Bir masaya bağlanır; ekrandan çıkınca bağlantıyı kapatır. `no` yoksa bağlanmaz. */
-export function useMasa(no: number | undefined) {
-  const istemci = useHanIstemci();
+export function useMasa(no: number | undefined, hanNo = 1) {
+  const istemci = useHanIstemci(hanNo);
   const [d, gonderD] = useReducer(indirge, BASLANGIC);
   const soket = useRef<HamSoket | null>(null);
   const bekleme = useRef<ReturnType<typeof setTimeout> | null>(null);

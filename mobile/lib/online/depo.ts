@@ -14,6 +14,7 @@ const IMLEC = ONEK + "imlec";
 const MESLEK = ONEK + "meslek";
 const TEST_CIHAZ = ONEK + "testCihaz";
 const HATIRLATMA = ONEK + "hatirlatma";
+const HAN_SECIMI = ONEK + "hanSecimi";
 
 // Sunucunun oturum biçimi: base64url(yük).base64url(HMAC-SHA256).
 const OTURUM_BICIMI = /^[A-Za-z0-9_-]{1,2048}\.[A-Za-z0-9_-]{43}$/;
@@ -178,3 +179,25 @@ export async function hatirlatmaOku(): Promise<boolean> {
   return (await oku(HATIRLATMA)) === "1";
 }
 export const hatirlatmaYaz = (acik: boolean) => (acik ? yaz(HATIRLATMA, "1") : sil(HATIRLATMA));
+
+/** 4.9: yerleşim başına son seçilen han numarası (cihazda; yalnız kolaylık, sunucu hiçbir şeyi buna bağlamaz). */
+async function hanSecimleri(): Promise<Record<string, number>> {
+  try {
+    const v = JSON.parse((await oku(HAN_SECIMI)) ?? "{}") as unknown;
+    return typeof v === "object" && v !== null && !Array.isArray(v) ? (v as Record<string, number>) : {};
+  } catch { return {}; }
+}
+export async function hanSecimiOku(yerlesim: string): Promise<number | null> {
+  const n = (await hanSecimleri())[yerlesim];
+  return typeof n === "number" && Number.isInteger(n) && n >= 1 && n <= 9 ? n : null;
+}
+export async function hanSecimiYaz(yerlesim: string, no: number): Promise<void> {
+  const l = await hanSecimleri();
+  if (l[yerlesim] === no) return;
+  delete l[yerlesim];
+  l[yerlesim] = no;
+  // Göçten sonra eski yerleşimler birikmesin: en çok 12 kayıt.
+  const anahtarlar = Object.keys(l);
+  for (const k of anahtarlar.slice(0, Math.max(0, anahtarlar.length - 12))) delete l[k];
+  await yaz(HAN_SECIMI, JSON.stringify(l));
+}

@@ -156,24 +156,25 @@ export function KitaBalonu({ ad, metin, sira, toplam, a, benim, rtl, t }: { ad: 
 }
 
 /** Sırası gelen tarafın çok satırlı kıta kutusu (alt şerit): 4 satır, harf sayacı; sınır aşılınca gönder kapalı + neden. */
-export function KitaKutusu({ altBosluk, acik, rtl, t, onGonder }: { altBosluk: number; acik: boolean; rtl: boolean; t: Ceviri; onGonder: (metin: string) => boolean }) {
+/** `enCok`: sunucunun bu bağlantıya verdiği harf sınırı (genç hesapta 240); verilmezse KITA_EN_UZUN. */
+export function KitaKutusu({ altBosluk, acik, rtl, t, onGonder, enCok = KITA_EN_UZUN }: { altBosluk: number; acik: boolean; rtl: boolean; t: Ceviri; onGonder: (metin: string) => boolean; enCok?: number }) {
   const [metin, setMetin] = useState("");
   const temiz = kitaTemizle(metin);
   const satir = kitaSatir(temiz);
   const harf = harfSayisi(temiz);
-  const neden = satir > KITA_SATIR ? applyParams(t("onl.han.atisma.satirFazla"), [KITA_SATIR]) : harf > KITA_EN_UZUN ? applyParams(t("onl.han.atisma.harfFazla"), [KITA_EN_UZUN]) : null;
+  const neden = satir > KITA_SATIR ? applyParams(t("onl.han.atisma.satirFazla"), [KITA_SATIR]) : harf > enCok ? applyParams(t("onl.han.atisma.harfFazla"), [enCok]) : null;
   const kapali = !acik || !temiz || !!neden;
   return <View style={{ paddingBottom: altBosluk + 8, paddingTop: 8, paddingHorizontal: 12, borderTopWidth: 1, borderColor: C.goldBright, backgroundColor: "rgba(30,20,10,0.98)", gap: 6 }}>
     <Text style={{ fontFamily: F.display, fontSize: 12, color: C.goldBright, textAlign: hiza(rtl) }}>{t("onl.han.atisma.siraSende")}</Text>
     <View style={{ flexDirection: yon(rtl), gap: 8, alignItems: "flex-end" }}>
-      <TextInput value={metin} onChangeText={setMetin} multiline maxLength={KITA_EN_UZUN * 2} accessibilityLabel={t("onl.han.atisma.kitaYaz")} placeholder={t("onl.han.atisma.kitaIpucu")} placeholderTextColor={C.parchmentMuted}
+      <TextInput value={metin} onChangeText={setMetin} multiline maxLength={enCok * 2} accessibilityLabel={t("onl.han.atisma.kitaYaz")} placeholder={t("onl.han.atisma.kitaIpucu")} placeholderTextColor={C.parchmentMuted}
         style={{ flex: 1, minHeight: 88, maxHeight: 132, borderRadius: 8, borderWidth: 1, borderColor: neden ? C.ember : ONL.frameHi, backgroundColor: "rgba(14,10,6,0.9)", color: C.parchment, fontFamily: F.serifItalic, fontSize: 16, lineHeight: 22, padding: 10, textAlign: hiza(rtl), textAlignVertical: "top" }} />
       <View style={{ width: 96 }}>
         <AltinDugme etiket={t("onl.han.atisma.gonder")} icon="lyre" rtl={rtl} kapali={kapali} erisim={[t("onl.han.atisma.gonder"), neden].filter(Boolean).join(". ")}
           onPress={() => { if (onGonder(temiz)) setMetin(""); }} />
       </View>
     </View>
-    <Text style={{ fontFamily: F.serif, fontSize: 12, color: neden ? C.ember : C.parchmentMuted, textAlign: hiza(rtl) }}>{neden ?? applyParams(t("onl.han.atisma.sayac"), [satir, KITA_SATIR, harf, KITA_EN_UZUN])}</Text>
+    <Text style={{ fontFamily: F.serif, fontSize: 12, color: neden ? C.ember : C.parchmentMuted, textAlign: hiza(rtl) }}>{neden ?? applyParams(t("onl.han.atisma.sayac"), [satir, KITA_SATIR, harf, enCok])}</Text>
   </View>;
 }
 

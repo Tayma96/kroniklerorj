@@ -30,10 +30,13 @@ export interface EdinimSarti {
 export interface Yuva {
   isletme: string; tur: MulkTuru; no: number; durum: "bos" | "sahipli";
   sahip?: { id: string; ad: string }; ad?: string; seviye?: number; fiyat?: number; devirTeklifi?: { fiyat: number };
+  /** 4.9 han yuvası (yalnız boşken): `npc` NPC'nin işlettiği 1. han (edinilirse devralınır), `arsa` boş arsa (han kurulur). */
+  npc?: boolean; arsa?: boolean;
 }
 /** GET /v1/mulk */
 export interface MulkListesi {
-  yuvalar: Yuva[]; benim: string[]; calistigim: string[]; teklifler: string[]; sinir: { enCok: number; sahip: number };
+  /** `hanEnCok`/`han` (4.9): aynı yerleşimde kişi başı han sınırı ve sahip olunan han sayısı (eski sunucuda yok). */
+  yuvalar: Yuva[]; benim: string[]; calistigim: string[]; teklifler: string[]; sinir: { enCok: number; sahip: number; hanEnCok?: number; han?: number };
   edinimSarti: Record<MulkTuru, EdinimSarti>; bekleyen: { islem: string; tur: string; tutar: number; durum: string }[];
 }
 export interface EdinimYaniti {
@@ -75,7 +78,8 @@ const devirMi = (v: unknown): v is DevirOnizleme => nesneMi(v) && metinMi(v.suru
 
 export interface MulkIstemci {
   liste(): Promise<EkSonuc<MulkListesi>>;
-  edin(g: { tur: MulkTuru; istekNo: string }): Promise<EkSonuc<EdinimYaniti>>;
+  /** `no`: hedef yuva (4.9 han yuvası; verilmezse sunucu ilk boş yuvayı seçer). */
+  edin(g: { tur: MulkTuru; no?: number; istekNo: string }): Promise<EkSonuc<EdinimYaniti>>;
   panel(id: string): Promise<EkSonuc<PanelYaniti>>;
   devir(id: string): Promise<EkSonuc<DevirOnizleme>>;
   komut(id: string, k: IsletmeKomutu, govde: Record<string, unknown> & { istekNo: string }): Promise<EkSonuc<KomutYaniti>>;

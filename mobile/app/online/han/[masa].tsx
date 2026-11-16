@@ -22,13 +22,14 @@ import { AltinDugme, Bant, Cerceve, CizgiDugme, GeriDugme, ONL, geriGit, hiza, y
 import { AltPanel, Baslik2, Rozet, SayfaBasi, Yukleniyor } from "../../../lib/online/yasam-ui";
 import { hataAnahtari, istekTekrarMi } from "../../../lib/online/hata";
 import {
-  KAPANIS, ILETI_EN_UZUN, SART_EN_UZUN, SIKAYET_NEDENLERI, harfSayisi, tekSatir, useHanIstemci,
+  KAPANIS, ILETI_EN_UZUN, SART_EN_UZUN, SIKAYET_NEDENLERI, hanMenusu, hanNoCoz, harfSayisi, seciliKart, tekSatir, useHanIstemci,
   type HanEylemi, type MasaOlayi, type MenuSatiri, type Plaka, type SikayetNedeni,
 } from "../../../lib/online/han-veri";
 import { kapanisAnahtari, useMasa, type AkisOgesi } from "../../../lib/online/han-soket";
 import { AnonsSeridi, EYLEM_IKON, HanSayfa, Not, SecimOgesi, hanHataAnahtari, type PlakaSesi } from "../../../lib/online/han-ui";
 import { KoltukDuzeni, KoltukPortresi, isaretler, type Kutlama } from "../../../lib/online/han-koltuk-ui";
 import { ArmaganCekmecesi, type ArmaganSonucu } from "../../../lib/online/han-armagan";
+import { hanKartAdi } from "../../../lib/online/han-secici";
 import { AtismaPanosu, DurumSeridi, KitaBalonu, KitaKutusu, SahneSeridi } from "../../../lib/online/han-sahne-ui";
 import { oyuncuKimligiMi } from "../../../lib/online/toplum-veri";
 import { useToplum } from "../../../lib/online/toplum-durum";
@@ -63,12 +64,15 @@ function MasaEkran() {
   const router = useRouter();
   const { t, rtl, lang } = useI18n();
   const ins = useSafeAreaInsets();
-  const { masa: param } = useLocalSearchParams<{ masa?: string }>();
+  const { masa: param, han: hanParam } = useLocalSearchParams<{ masa?: string; han?: string }>();
   const no = masaNo(param);
+  // 4.9: masa seçili hanın masasıdır; bağlanma, eylem, ikram, ziyafet ve ses aynı `han` ile gider.
+  const hanNo = hanNoCoz(Array.isArray(hanParam) ? hanParam[0] : hanParam);
+  const hanYolu = `/online/han?han=${hanNo}`;
   const o = useOnline();
   const toplum = useToplum();
-  const istemci = useHanIstemci();
-  const m = useMasa(o.profil ? no : undefined);
+  const istemci = useHanIstemci(hanNo);
+  const m = useMasa(o.profil ? no : undefined, hanNo);
   const d = m.durum;
   const [metin, setMetin] = useState("");
   const [kisiHesap, setKisiHesap] = useState<string | null>(null);
@@ -84,6 +88,7 @@ function MasaEkran() {
   const [panelHata, setPanelHata] = useState<string | null>(null);
   const [raporBekliyor, setRaporBekliyor] = useState(false);
   const [menu, setMenu] = useState<MenuSatiri[] | null>(null);
+  const [hanAd, setHanAd] = useState<string | null>(null);
   const [kutlama, setKutlama] = useState<Kutlama | null>(null);
   const [onay, setOnay] = useState<null | "at" | "engelle">(null);
   const [yeni, setYeni] = useState(0);
@@ -104,7 +109,13 @@ function MasaEkran() {
   // Fiyatlar sunucudan: GET /v1/han menüsü (yoksa ilk ikram yanıtındaki fiyat öğrenilir).
   useEffect(() => {
     let iptal = false;
-    if (o.profil) void istemci.han(lang as Dil).then((s) => { if (!iptal && s.ok && s.deger.menu) setMenu(s.deger.menu); });
+    if (o.profil) void istemci.han(lang as Dil).then((s) => {
+      if (iptal || !s.ok) return;
+      const mn = hanMenusu(s.deger);
+      if (mn) setMenu(mn);
+      const k = seciliKart(s.deger);
+      setHanAd(k && (s.deger.hanlar?.length ?? 0) > 1 ? hanKartAdi(k, s.deger.han.ad, t) : null);
+    });
     return () => { iptal = true; };
   }, [istemci, lang, o.profil?.hesapId]); // eslint-disable-line react-hooks/exhaustive-deps
   // Şikâyet: panel, sunucunun "rapor" yanıtı ya da hatası gelene dek açık kalır.
@@ -325,7 +336,7 @@ function MasaEkran() {
   let alt: ReactNode = yaziKutusu;
   let altYukseklik = BESTE_HAN + 30;
   if (acik && atisma?.asama === "kita") {
-    if (atisma.sira === ben) { alt = <KitaKutusu altBosluk={ins.bottom} acik={acik} rtl={rtl} t={t} onGonder={(k) => m.kita(k)} />; altYukseklik = 196; }
+    if (atisma.sira === ben) { alt = <KitaKutusu altBosluk={ins.bottom} acik={acik} rtl={rtl} t={t} enCok={d.kitaEnCok ?? undefined} onGonder={(k) => m.kita(k)} />; altYukseklik = 196; }
     else { alt = <DurumSeridi altBosluk={ins.bottom} rtl={rtl} metin={applyParams(t("onl.han.atisma.siraOnda"), [atisma.sira ? adBul(atisma.sira) : ""])} />; altYukseklik = 64; }
   } else if (acik && sahne && oturuyor && !sahneSozum) {
     alt = <DurumSeridi altBosluk={ins.bottom} rtl={rtl} icon="star" metin={t(sahneIstedim ? "onl.han.sahne.sozBekliyorsun" : "onl.han.sahne.dinliyorsun")}
@@ -357,12 +368,12 @@ function MasaEkran() {
 
   return <HanSayfa alt={serit(alt)} altYukseklik={altYukseklik}>
     <View style={{ flexDirection: yon(rtl), alignItems: "center", gap: 6 }}>
-      <GeriDugme rtl={rtl} etiket={t("onl.han.hanaDon")} onPress={() => geriGit(router, "/online/han")} />
+      <GeriDugme rtl={rtl} etiket={t("onl.han.hanaDon")} onPress={() => geriGit(router, hanYolu)} />
       <View style={{ flex: 1 }} />
       {masa ? <Rozet icon="walk" metin={applyParams(t("onl.han.ayakta"), [masa.ayakta])} /> : null}
     </View>
     <View style={{ marginTop: 6 }}>
-      <SayfaBasi ust={t("onl.han.ust")} baslik={applyParams(t("onl.han.masaNo"), [no])} alt={masa ? (masa.ayar.kavgaYasak ? t("onl.han.kavgaYasakAlt") : t("onl.han.acikMasaAlt")) : undefined} rtl={rtl} />
+      <SayfaBasi ust={hanAd ?? t("onl.han.ust")} baslik={applyParams(t("onl.han.masaNo"), [no])} alt={masa ? (masa.ayar.kavgaYasak ? t("onl.han.kavgaYasakAlt") : t("onl.han.acikMasaAlt")) : undefined} rtl={rtl} />
     </View>
 
     {/* bağlantı ve hata bantları */}
@@ -370,7 +381,7 @@ function MasaEkran() {
       {!o.profil && o.hazir ? <Bant tur="bilgi" metin={t("onl.v.profilYok")} rtl={rtl} eylem={t("onl.p.giriseDon")} onEylem={() => router.replace("/online")} /> : null}
       {d.bag === "yeniden" ? <Bant tur="bilgi" metin={applyParams(t("onl.han.yenidenBaglaniyor"), [d.deneme])} rtl={rtl} /> : null}
       {d.bag === "kapandi" ? <Bant metin={t(d.kapanis === null && d.hata ? hanHataAnahtari(d.hata.kod) : kapanisAnahtari(d.kapanis))} rtl={rtl}
-        eylem={t(d.kapanis === KAPANIS.atildi ? "onl.han.hanaDon" : "onl.han.yenidenBaglan")} onEylem={() => (d.kapanis === KAPANIS.atildi ? geriGit(router, "/online/han") : m.yenidenBaglan())} /> : null}
+        eylem={t(d.kapanis === KAPANIS.atildi ? "onl.han.hanaDon" : "onl.han.yenidenBaglan")} onEylem={() => (d.kapanis === KAPANIS.atildi ? geriGit(router, hanYolu) : m.yenidenBaglan())} /> : null}
       {d.hata && d.bag !== "kapandi" && !panel ? <Bant metin={d.hata.kod === "susturuldu" ? (d.hata.bitis ? applyParams(t("onl.han.susturulduBitis"), [new Date(d.hata.bitis).toLocaleString(lang)]) : t("onl.han.susturulduSuresiz")) : hata(d.hata.kod)} rtl={rtl} eylem={t("onl.kapat")} onEylem={m.hataTemizle} /> : null}
       {bilgi ? <Bant tur="bilgi" metin={bilgi} rtl={rtl} eylem={t("onl.kapat")} onEylem={() => setBilgi(null)} /> : null}
       {d.sonAnons && d.sonAnons.kim !== ben ? <AnonsSeridi key={d.sonAnons.id} anons={d.sonAnons} ad={adBul} rtl={rtl} t={t} buyuk /> : null}

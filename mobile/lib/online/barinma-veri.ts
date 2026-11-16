@@ -50,6 +50,19 @@ export interface BarinmaGorunumu {
   ikamet?: boolean;
   sandik?: SandikGorunumu;
   gorusme?: GorusmeGorunumu;
+  /** 4.9: `odalar` kataloğunun hanı (GET /v1/barinma?han=N; kira yanıtında ve eski sunucuda yok). */
+  hanNo?: number;
+}
+
+/**
+ * 4.9: kira sözleşmesinin han kodu → han numarası. "npc:<yerleşim>" NPC'nin işlettiği 1. han; "oyuncu:<y>.han.<N>"
+ * oyuncu hanı. Tanınmazsa null.
+ */
+export function hanKodundanNo(kod: string | undefined): number | null {
+  if (!kod) return null;
+  if (kod.startsWith("npc:")) return 1;
+  const m = /^oyuncu:[a-z0-9-]{1,40}\.han\.([1-9])$/.exec(kod);
+  return m ? Number(m[1]) : null;
 }
 export interface SandikGorunumu { durum: "sandik" | "emanet" | "yok"; acik: boolean; kapasite: number; adet: number; mallar: Record<string, number> }
 export interface GorusmeOzeti {
@@ -107,8 +120,9 @@ export const yerlesimDonus = (y: unknown): DonusEkrani | null => (nesneMi(y) && 
 const TEK_DOKUNUS_YOLLARI: ReadonlySet<string> = new Set(["/v1/barinma/kira", "/v1/barinma/tesis", "/v1/barinma/otomatik"]);
 
 export interface BarinmaIstemci {
-  barinma(dil: Dil): Promise<EkSonuc<{ barinma: BarinmaGorunumu }>>;
-  kira(g: { oda: OdaId; sure: KiraSuresi; istekNo: string }): Promise<EkSonuc<KiraYaniti>>;
+  /** `han`: oda kataloğu ve fiyatı bu hanın (4.9; köy ve tek hanlı yerleşimde 1). */
+  barinma(dil: Dil, han: number): Promise<EkSonuc<{ barinma: BarinmaGorunumu }>>;
+  kira(g: { oda: OdaId; sure: KiraSuresi; han: number; istekNo: string }): Promise<EkSonuc<KiraYaniti>>;
   tesis(g: { istekNo: string }): Promise<EkSonuc<TesisYaniti>>;
   otomatik(g: { mod: OtomatikMod; istekNo: string }): Promise<EkSonuc<OtomatikYaniti>>;
   donus(dil: Dil): Promise<EkSonuc<{ donusEkrani: DonusEkrani }>>;
@@ -120,7 +134,7 @@ export interface BarinmaIstemci {
 }
 
 const httpBarinma: BarinmaIstemci = {
-  barinma: (dil) => ekCagir({ yontem: "GET", yol: `/v1/barinma?dil=${dil}`, tekrar: true }, sarili("barinma", barinmaMi)),
+  barinma: (dil, han) => ekCagir({ yontem: "GET", yol: `/v1/barinma?dil=${dil}&han=${han}`, tekrar: true }, sarili("barinma", barinmaMi)),
   kira: (g) => ekCagir({ yontem: "POST", yol: "/v1/barinma/kira", govde: g, tekrar: true }, (v): v is KiraYaniti => barinmaliMi(v) && nesneMi(v.kira)),
   tesis: (g) => ekCagir({ yontem: "POST", yol: "/v1/barinma/tesis", govde: g, tekrar: true }, (v): v is TesisYaniti => barinmaliMi(v) && nesneMi(v.tesis)),
   sandik: (g) => ekCagir({ yontem: "POST", yol: "/v1/barinma/sandik", govde: g, tekrar: true }, nesneMi),

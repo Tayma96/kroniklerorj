@@ -16,7 +16,7 @@ import { AltinDugme, Bant, Cerceve, CizgiDugme, GeriDugme, Madalyon, geriGit, gi
 import { Baslik2, BosKart, Hap, OnlineSayfa, Rozet, SayfaBasi, YerlesimBekle, Yukleniyor, sahneGorseli } from "../../lib/online/yasam-ui";
 import { ekHataAnahtari, type EkHata } from "../../lib/online/ek-istemci";
 import { istekNoUret } from "../../lib/online/depo";
-import { MULK_IKON, MULK_TURLERI, isletmeYolu, useMulkIstemci, type EdinimSarti, type MulkListesi, type MulkTuru, type Yuva } from "../../lib/online/mulk-veri";
+import { MULK_IKON, MULK_TURLERI, isletmeYolu, useMulkIstemci, type EdinimSarti, type MulkListesi, type Yuva } from "../../lib/online/mulk-veri";
 
 type Ceviri = (k: string) => string;
 const SEVIYE = ["mutevazi", "gelisen", "taninmis", "prestijli", "simge"];
@@ -40,14 +40,20 @@ function YuvaKarti({ x, m, benId, t, rtl, bekliyor, hata, onEdin, onAc }: { x: Y
   const teklif = m.teklifler.includes(x.isletme);
   const s = m.edinimSarti[x.tur];
   const sinirDolu = m.sinir.sahip >= m.sinir.enCok;
+  // 4.9: aynı yerleşimde kişi başı han sınırı (sunucu han_siniri); NPC hanı devralınır, boş arsaya han kurulur.
+  const hanSiniri = x.tur === "han" && m.sinir.hanEnCok !== undefined && (m.sinir.han ?? 0) >= m.sinir.hanEnCok;
+  const baslik = x.durum === "sahipli" && x.ad ? x.ad
+    : x.durum === "bos" && x.npc ? applyParams(t("onl.mk.npcHanAd"), [x.no])
+    : x.durum === "bos" && x.arsa ? applyParams(t("onl.mk.arsaAd"), [x.no])
+    : applyParams(t("onl.mk.yuvaAd"), [t("onl.mk.tur." + x.tur), x.no]);
+  const altSatir = x.durum === "bos" ? t(x.npc ? "onl.mk.npcHanAlt" : x.arsa ? "onl.mk.arsaAlt" : "onl.mk.bos") : benim ? t("onl.mk.senin") : applyParams(t("onl.isl.sahibi"), [x.sahip?.ad ?? ""]);
+  const edinEtiket = applyParams(t(x.npc ? "onl.mk.devral" : x.arsa ? "onl.mk.hanKur" : "onl.mk.edin"), [s.fiyat]);
   return <Cerceve aktif={benim || !!x.devirTeklifi || teklif} ic={{ padding: 12, gap: 9 }}>
     <View style={{ flexDirection: yon(rtl), alignItems: "center", gap: 10 }}>
-      <Madalyon icon={MULK_IKON[x.tur]} size={44} aktif={benim} />
+      <Madalyon icon={x.npc ? "banner" : x.arsa ? "house" : MULK_IKON[x.tur]} size={44} aktif={benim} />
       <View style={{ flex: 1, gap: 2 }}>
-        <Text numberOfLines={2} style={{ fontFamily: F.display, fontSize: 15, lineHeight: 20, color: C.parchment, textAlign: hiza(rtl) }}>{x.durum === "sahipli" && x.ad ? x.ad : applyParams(t("onl.mk.yuvaAd"), [t("onl.mk.tur." + x.tur), x.no])}</Text>
-        <Text numberOfLines={1} style={{ fontFamily: F.serif, fontSize: 13.5, color: C.parchmentDim, textAlign: hiza(rtl) }}>
-          {x.durum === "bos" ? t("onl.mk.bos") : benim ? t("onl.mk.senin") : applyParams(t("onl.isl.sahibi"), [x.sahip?.ad ?? ""])}
-        </Text>
+        <Text numberOfLines={2} style={{ fontFamily: F.display, fontSize: 15, lineHeight: 20, color: C.parchment, textAlign: hiza(rtl) }}>{baslik}</Text>
+        <Text numberOfLines={2} style={{ fontFamily: F.serif, fontSize: 13.5, lineHeight: 18, color: C.parchmentDim, textAlign: hiza(rtl) }}>{altSatir}</Text>
       </View>
     </View>
     <View style={{ flexDirection: yon(rtl), flexWrap: "wrap", gap: 6 }}>
@@ -59,9 +65,10 @@ function YuvaKarti({ x, m, benId, t, rtl, bekliyor, hata, onEdin, onAc }: { x: Y
     {x.durum === "bos" ? <>
       <SartListesi s={s} t={t} rtl={rtl} />
       {hata ? <Bant metin={hata} rtl={rtl} /> : null}
-      <AltinDugme etiket={applyParams(t("onl.mk.edin"), [s.fiyat])} icon="house" rtl={rtl} kapali={!s.uygun || sinirDolu} bekliyor={bekliyor} onPress={onEdin}
-        erisim={`${applyParams(t("onl.mk.edin"), [s.fiyat])}${!s.uygun ? " · " + t("onl.mk.sartEksik") : ""}`} />
-      {sinirDolu ? <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{applyParams(t("onl.mk.sinirDolu"), [m.sinir.enCok])}</Text> : null}
+      <AltinDugme etiket={edinEtiket} icon={x.npc ? "crown" : "house"} rtl={rtl} kapali={!s.uygun || sinirDolu || hanSiniri} bekliyor={bekliyor} onPress={onEdin}
+        erisim={`${edinEtiket}${hanSiniri ? " · " + applyParams(t("onl.mk.hanSiniri"), [m.sinir.hanEnCok ?? 1]) : !s.uygun ? " · " + t("onl.mk.sartEksik") : ""}`} />
+      {hanSiniri ? <Text style={{ fontFamily: F.serifItalic, fontSize: 13, lineHeight: 18, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{applyParams(t("onl.mk.hanSiniri"), [m.sinir.hanEnCok ?? 1])}</Text>
+        : sinirDolu ? <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{applyParams(t("onl.mk.sinirDolu"), [m.sinir.enCok])}</Text> : null}
     </> : <View style={{ gap: 8 }}>
       {x.devirTeklifi ? <AltinDugme etiket={t("onl.mk.devirIncele")} icon="crown" rtl={rtl} onPress={() => onAc(true)} /> : null}
       {teklif ? <AltinDugme etiket={t("onl.mk.teklifIncele")} icon="scroll" rtl={rtl} onPress={() => onAc(false, true)} /> : null}
@@ -79,7 +86,7 @@ function MulkEkran() {
   const sahte = o.oturum?.tur === "gelistirici";
   const [m, setM] = useState<MulkListesi | null>(null);
   const [yukHata, setYukHata] = useState<EkHata | null>(null);
-  const [hata, setHata] = useState<{ tur: MulkTuru; metin: string } | null>(null);
+  const [hata, setHata] = useState<{ isletme: string; metin: string } | null>(null);
   const [bilgi, setBilgi] = useState<string | null>(null);
   const [bekliyor, setBekliyor] = useState(false);
 
@@ -90,16 +97,18 @@ function MulkEkran() {
   useEffect(() => { void yukle(); }, [yukle]);
   if (!y) return <YerlesimBekle rtl={rtl} t={t} onGiris={() => router.replace("/online")} />;
 
-  const edin = async (tur: MulkTuru) => {
+  const edin = async (x: Yuva) => {
+    const tur = x.tur;
     setBekliyor(true); setHata(null); setBilgi(null);
-    const r = await ist.edin({ tur, istekNo: istekNoUret() });
+    // 4.9: tıklanan yuva gider (han yuvalarında NPC hanı ile arsalar ayrıdır).
+    const r = await ist.edin({ tur, no: x.no, istekNo: istekNoUret() });
     setBekliyor(false);
     if (r.ok) {
       hap("success");
       setBilgi(applyParams(t(r.deger.transferDurumu === "bekliyor" ? "onl.mk.edinildiBekliyor" : "onl.mk.edinildi"), [t("onl.mk.tur." + tur), r.deger.edinim.fiyat]));
       await yukle();
       if (!sahte) void o.yerlesimYukle(true);
-    } else { hap("error"); setHata({ tur, metin: t(ekHataAnahtari(r.hata)) }); }
+    } else { hap("error"); setHata({ isletme: x.isletme, metin: t(ekHataAnahtari(r.hata)) }); }
   };
   const ac = (id: string, devir?: boolean, teklif?: boolean) => router.push(teklif ? `${isletmeYolu(id)}?teklif=1` : isletmeYolu(id, devir));
 
@@ -122,13 +131,22 @@ function MulkEkran() {
         {m.bekleyen.length ? <View style={{ marginTop: 10 }}><Bant metin={applyParams(t("onl.mk.bekleyen"), [m.bekleyen.length])} rtl={rtl} tur="bilgi" /></View> : null}
         {MULK_TURLERI.map((tur) => {
           const liste = m.yuvalar.filter((x) => x.tur === tur);
+          // Köyde han yuvası yoktur: köyün tek hanını NPC işletir (nedeni yazılır, düğme yok).
+          if (!liste.length && tur === "han" && y.yerlesim.tur === "koy") return <View key={tur}>
+            <Baslik2 metin={t("onl.mk.grup." + tur)} rtl={rtl} />
+            <BosKart icon="banner" metin={t("onl.mk.koyHanYok")} rtl={rtl} />
+          </View>;
           if (!liste.length) return null;
+          const isleyen = liste.filter((x) => x.durum === "sahipli" || x.npc).length;
           return <View key={tur}>
             <Baslik2 metin={t("onl.mk.grup." + tur)} rtl={rtl} sag={<Text style={{ fontFamily: F.display, fontSize: 12, color: C.gold }}>{liste.length}</Text>} />
+            {tur === "han" && liste.length > 1 ? <Text style={{ marginBottom: 8, fontFamily: F.serif, fontSize: 14, lineHeight: 20, color: C.parchmentDim, textAlign: hiza(rtl) }}>
+              {applyParams(t("onl.mk.hanYuvaNot"), [liste.length, isleyen, m.edinimSarti.han.fiyat])}
+            </Text> : null}
             <View style={{ gap: 10 }}>
               {liste.map((x, n) => <Animated.View key={x.isletme} entering={giris(n * 40)}>
-                <YuvaKarti x={x} m={m} benId={y.ben.id} t={t} rtl={rtl} bekliyor={bekliyor} hata={hata?.tur === x.tur && x.durum === "bos" ? hata.metin : null}
-                  onEdin={() => { void edin(x.tur); }} onAc={(d, tk) => ac(x.isletme, d, tk)} />
+                <YuvaKarti x={x} m={m} benId={y.ben.id} t={t} rtl={rtl} bekliyor={bekliyor} hata={hata?.isletme === x.isletme ? hata.metin : null}
+                  onEdin={() => { void edin(x); }} onAc={(d, tk) => ac(x.isletme, d, tk)} />
               </Animated.View>)}
             </View>
           </View>;

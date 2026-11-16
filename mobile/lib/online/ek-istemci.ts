@@ -22,6 +22,7 @@ export const EK_HATALAR = [
   "debdebe_kapali", "armagan_siniri", "urun_gecersiz",
   "sahne_acik", "sahne_yok", "sahne_yasak", "soz_verilmedi", "masa_mesgul", "atisma_yok", "atisma_suruyor", "sira_degil",
   "oylama_kapali", "oy_verildi", "oy_hakki_yok",
+  "han_gecersiz", "han_yok", "han_siniri",
   "olu", "evli", "akraba_evlilik", "gorus_yetersiz", "vasiyet_gecersiz", "varis_gecersiz", "devir_yok", "devir_degisti",
   ...UCGEN_BARINMA_HATALARI, ...EKO_MULK_HATALARI,
 ] as const;

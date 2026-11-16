@@ -14,7 +14,10 @@ const NITELIK = {
   oda: { aylik: 4, kondisyon: 5, sandik: 10, ozel: true, adres: true },
   hasOda: { aylik: 9, kondisyon: 10, sandik: 30, ozel: true, adres: true },
 } as const;
-const fiyat = (a: number, s: 1 | 3 | 12) => Math.ceil(a * s * (1 - (s === 1 ? 0 : s === 3 ? 0.1 : 0.2)) - 1e-9);
+const fiyat = (a: number, s: 1 | 3 | 12, fc = 100) => Math.ceil(((a * fc) / 100) * s * (1 - (s === 1 ? 0 : s === 3 ? 0.1 : 0.2)) - 1e-9);
+/** 4.9 önizleme hanları (sahte-han.ts ile aynı): fiyat çarpanı ve boş oda; 3. han dolu. Köyde yalnız 1. han. */
+const HANLAR: Record<number, { fc: number; bos: number }> = { 1: { fc: 100, bos: 99 }, 2: { fc: 85, bos: 3 }, 3: { fc: 135, bos: 0 } };
+const hanKodu = (han: number) => (han === 1 ? "npc:develi" : `oyuncu:develi.han.${han}`);
 
 export function sahteBarinmaIstemci(baslangicPara: number, tur: YerlesimTuru): BarinmaIstemci {
   const simdi = Date.now();
@@ -22,16 +25,18 @@ export function sahteBarinmaIstemci(baslangicPara: number, tur: YerlesimTuru): B
   const tesisTuru = tur === "koy" ? "zaviye" : "imaret";
   const s = {
     para: Math.max(6, baslangicPara),
-    konak: null as null | { oda?: OdaId; tesis?: boolean; bas: number; bitis: number },
+    konak: null as null | { oda?: OdaId; han?: number; tesis?: boolean; bas: number; bitis: number },
     mod: "kapali" as OtomatikMod,
     tesisKullanildi: false,
   };
-  const odalar = (): OdaTeklifi[] => (["yatak", "oda", "hasOda"] as OdaId[]).map((oda) => {
+  const hanAl = (han: number) => HANLAR[tur === "koy" ? 1 : han];
+  const odalar = (han: number): OdaTeklifi[] => (["yatak", "oda", "hasOda"] as OdaId[]).map((oda) => {
     const n = NITELIK[oda];
-    const f = { "1": fiyat(n.aylik, 1), "3": fiyat(n.aylik, 3), "12": fiyat(n.aylik, 12) };
+    const fc = hanAl(han)?.fc ?? 100;
+    const f = { "1": fiyat(n.aylik, 1, fc), "3": fiyat(n.aylik, 3, fc), "12": fiyat(n.aylik, 12, fc) };
     return { oda, aylik: n.aylik, nitelik: { ...n }, fiyatlar: f, yeterli: s.para >= f["1"] };
   });
-  const gorunum = (): BarinmaGorunumu => {
+  const gorunum = (han = 1): BarinmaGorunumu => {
     const an = Date.now();
     const k = s.konak && s.konak.bitis > an ? s.konak : null;
     const uygun = !s.tesisKullanildi && s.para < fiyat(2, 1);
@@ -40,25 +45,26 @@ export function sahteBarinmaIstemci(baslangicPara: number, tur: YerlesimTuru): B
       durum: k ? "konakli" : "evsiz",
       unvan: k ? null : "evsiz",
       konaklama: k ? { tur: k.oda ? "oda" : "tesis", bitis: k.bitis, kalanMs: k.bitis - an, yakindaBiter: k.bitis - an <= 12 * SAAT,
-        ...(k.oda ? { oda: k.oda, han: "npc:develi", nitelik: { ...NITELIK[k.oda] } } : {}) } : null,
+        ...(k.oda ? { oda: k.oda, han: hanKodu(k.han ?? 1), nitelik: { ...NITELIK[k.oda] } } : {}) } : null,
       zincir: k ? null : {
         baslangic: z, asama: "evsiz", sonraki: { asama: "canKaybi", an: z + 96 * SAAT },
         etkiler: { kondisyonAylik: -20, gonulAylik: -10, canAylik: 0, canTaban: 10, olum: false },
         esikler: { evsizMs: 24 * SAAT, canKaybiMs: 96 * SAAT },
       },
       misafirhane: { ilkYerlesim: "develi", hakMs: 48 * SAAT, buSehir: { baslangic: z - 48 * SAAT, bitis: z, kullanildi: true } },
-      odalar: odalar(),
+      odalar: odalar(han),
       tesis: { tur: tesisTuru, acik: true, uygun, ...(uygun ? { kalanHak: 2 } : { neden: s.tesisKullanildi ? "tesis_dolu" : "tesis_sart" }), sureMs: AY },
       otomatik: { mod: s.mod, modlar: ["kapali", "oda", "tesis", "uyar"] },
       uyku: false,
       mola: null,
-      sozlesmeler: s.konak?.oda ? [{ oda: s.konak.oda, han: "npc:develi", baslangic: s.konak.bas, bitis: s.konak.bitis, odenen: 2, etkin: !!k }] : [],
+      sozlesmeler: s.konak?.oda ? [{ oda: s.konak.oda, han: hanKodu(s.konak.han ?? 1), baslangic: s.konak.bas, bitis: s.konak.bitis, odenen: 2, etkin: !!k }] : [],
       gunluk: [
         { an: z + 24 * SAAT, k: GUNLUK + "zincir.evsiz", p: { z } },
         { an: z, k: GUNLUK + "misafirhane.bitti", p: { bitis: z } },
         { an: z - 48 * SAAT, k: GUNLUK + "misafirhane.basladi", p: { bitis: z, ilk: 1 } },
       ],
       para: s.para,
+      hanNo: han,
     };
   };
   const secenekler = (g: BarinmaGorunumu): TekDokunus[] => {
@@ -70,14 +76,17 @@ export function sahteBarinmaIstemci(baslangicPara: number, tur: YerlesimTuru): B
     if (g.otomatik.mod === "kapali") l.push({ tur: "otomatik", anahtar: "donus.secenek.otomatik", fiyat: 0, uygun: true, istek: { yontem: "POST", yol: "/v1/barinma/otomatik", govde: { mod: "oda" } } });
     return l;
   };
-  const kira = (oda: OdaId, sure: 1 | 3 | 12): EkSonuc<{ f: number }> => {
-    const f = fiyat(NITELIK[oda].aylik, sure);
+  const kira = (oda: OdaId, sure: 1 | 3 | 12, han: number): EkSonuc<{ f: number }> => {
+    const h = hanAl(han);
+    if (!h) return ekBasarisiz("han_yok");
+    const f = fiyat(NITELIK[oda].aylik, sure, h.fc);
     if (s.para < f) return ekBasarisiz("para_yok");
     const an = Date.now();
-    const etkin = s.konak?.oda === oda && s.konak.bitis > an;
-    if (s.konak?.oda && s.konak.oda !== oda && s.konak.bitis > an) return ekBasarisiz("oda_var");
+    const etkin = s.konak?.oda === oda && (s.konak.han ?? 1) === han && s.konak.bitis > an;
+    if (s.konak?.oda && !etkin && s.konak.bitis > an) return ekBasarisiz("oda_var");
+    if (!etkin && h.bos <= 0) return ekBasarisiz("han_dolu");
     s.para -= f;
-    s.konak = { oda, bas: etkin ? s.konak!.bas : an, bitis: (etkin ? s.konak!.bitis : an) + sure * AY };
+    s.konak = { oda, han, bas: etkin ? s.konak!.bas : an, bitis: (etkin ? s.konak!.bitis : an) + sure * AY };
     return ekBasarili({ f });
   };
   const tesis = (): EkSonuc<true> => {
@@ -89,10 +98,14 @@ export function sahteBarinmaIstemci(baslangicPara: number, tur: YerlesimTuru): B
     return ekBasarili(true);
   };
   return {
-    async barinma() { await bekle(); return ekBasarili({ barinma: gorunum() }); },
+    async barinma(_dil, han) {
+      await bekle();
+      if (!hanAl(han)) return ekBasarisiz("han_yok");
+      return ekBasarili({ barinma: gorunum(han) });
+    },
     async kira(g) {
       await bekle();
-      const r = kira(g.oda, g.sure);
+      const r = kira(g.oda, g.sure, g.han);
       if (!r.ok) return r;
       return ekBasarili({ kira: { oda: g.oda, sure: g.sure, fiyat: r.deger.f, batak: r.deger.f, baslangic: s.konak!.bas, bitis: s.konak!.bitis, uzatildi: false }, barinma: gorunum() });
     },
@@ -132,7 +145,7 @@ export function sahteBarinmaIstemci(baslangicPara: number, tur: YerlesimTuru): B
       await bekle();
       const gv = sec.istek.govde;
       if (sec.istek.yol === "/v1/barinma/kira") {
-        const r = kira(gv.oda as OdaId, 1);
+        const r = kira(gv.oda as OdaId, 1, typeof gv.han === "number" ? gv.han : 1);
         if (!r.ok) return r;
       } else if (sec.istek.yol === "/v1/barinma/tesis") {
         const r = tesis();

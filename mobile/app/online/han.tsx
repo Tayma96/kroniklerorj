@@ -1,8 +1,9 @@
-// Han (Faz 10, GET /v1/han): yerleşimin hanı (şehirde han, kasabada küçük han, köyde menzil), atmosferi ve masalar:
-// doluluk, ayakta dinleyici, sıra. Sıralama sunucunun masa numarasıdır; harcama sırayı ya da koltuğu etkilemez.
-import { useCallback, useEffect, useState } from "react";
+// Han (Faz 10, GET /v1/han?han=N): yerleşimin hanları (4.9: şehirde 5, kasabada 2 yuva, köyde yalnız NPC hanı),
+// seçili hanın atmosferi ve masaları: doluluk, ayakta dinleyici, sıra. Birden çok han varsa üstte han seçici; seçim
+// yerleşim başına cihazda hatırlanır ve masa, pano, ikram, ziyafet ve ses çağrılarının hepsine `han` olarak gider.
+import { useCallback, useEffect, useRef, useState } from "react";
 import { View, Text, useWindowDimensions } from "react-native";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import Animated from "react-native-reanimated";
 import { useI18n, applyParams } from "../../lib/i18n";
 import { C, F } from "../../lib/theme";
@@ -12,12 +13,14 @@ import { DesignPressable as Pressable } from "../../lib/design-pressable";
 import { OnlineYakinda } from "../../lib/online-yakinda";
 import { OnlineKapisi, useOnline } from "../../lib/online/durum";
 import { onlineEkranAcik } from "../../lib/online/kapi";
-import { Bant, Cerceve, CizgiDugme, GeriDugme, Madalyon, geriGit, giris, hiza, yon } from "../../lib/online/ui";
+import { Bant, Cerceve, CizgiDugme, GeriDugme, Madalyon, belir, geriGit, giris, hiza, yon } from "../../lib/online/ui";
 import { Baslik2, Rozet, SatirOku, SayfaBasi, Yukleniyor } from "../../lib/online/yasam-ui";
 import { ekHataAnahtari, type EkHata } from "../../lib/online/ek-istemci";
 import { HanPanosu } from "../../lib/online/han-pano";
-import { useHanIstemci, IKRAMLAR, type HanOzeti, type MasaOzeti } from "../../lib/online/han-veri";
+import { useHanIstemci, IKRAMLAR, hanMenusu, hanNoCoz, type HanKarti, type HanOzeti, type MasaOzeti } from "../../lib/online/han-veri";
 import { HanSayfa, IKRAM_IKON, Not } from "../../lib/online/han-ui";
+import { HanSecici, MasaIskeleti, hanKartAdi } from "../../lib/online/han-secici";
+import { hanSecimiOku, hanSecimiYaz } from "../../lib/online/depo";
 import type { Dil } from "../../lib/online/protokol";
 
 function MasaKarti({ m, koltuk, rtl, t, sira, onAc }: { m: MasaOzeti; koltuk: number; rtl: boolean; t: (k: string) => string; sira: number; onAc: () => void }) {
@@ -48,50 +51,100 @@ function MasaKarti({ m, koltuk, rtl, t, sira, onAc }: { m: MasaOzeti; koltuk: nu
   </Animated.View>;
 }
 
+/** Seçili han yoksa (sunucu han_yok/han_gecersiz: sahibi bıraktı, yuva boşaldı) 1. hana dönülür. */
+const HAN_GITTI: ReadonlySet<string> = new Set(["han_yok", "han_gecersiz"]);
+
 function HanEkran() {
   const router = useRouter();
   const { t, rtl, lang } = useI18n();
   const dar = useWindowDimensions().width < 360;
   const o = useOnline();
-  const istemci = useHanIstemci();
-  const [han, setHan] = useState<HanOzeti | null>(null);
+  const { han: hanParam } = useLocalSearchParams<{ han?: string }>();
+  const paramHan = hanParam === undefined ? null : hanNoCoz(Array.isArray(hanParam) ? hanParam[0] : hanParam);
+  const yerId = o.yerlesim?.yerlesim.id ?? null;
+  // null: cihazdaki son seçim okunuyor (o sürede hiçbir han istenmez; yanlış hanın masaları görünmez).
+  const [secili, setSecili] = useState<number | null>(paramHan);
+  const istemci = useHanIstemci(secili ?? 1);
+  const [ozet, setOzet] = useState<HanOzeti | null>(null);
+  const [hanlar, setHanlar] = useState<HanKarti[]>([]);
+  const [turAdi, setTurAdi] = useState<string | null>(null);
   const [hata, setHata] = useState<EkHata | null>(null);
+  const [bilgi, setBilgi] = useState<string | null>(null);
   const [yukleniyor, setYukleniyor] = useState(false);
+  const sira = useRef(0);
+
+  // Parametre yoksa yerleşimin son seçili hanı (yoksa 1).
+  useEffect(() => {
+    if (secili !== null) return;
+    let iptal = false;
+    if (!yerId) { setSecili(1); return; }
+    void hanSecimiOku(yerId).then((n) => { if (!iptal) setSecili(n ?? 1); });
+    return () => { iptal = true; };
+  }, [yerId]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (paramHan !== null && paramHan !== secili) sec(paramHan); }, [paramHan]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const yukle = useCallback(async () => {
+    if (secili === null) return;
+    const n = ++sira.current;
     setYukleniyor(true);
     const s = await istemci.han(lang as Dil);
+    if (n !== sira.current) return; // başka han seçildi: eski yanıt atılır
     setYukleniyor(false);
-    if (s.ok) { setHan(s.deger); setHata(null); } else setHata(s.hata);
-  }, [istemci, lang]);
+    if (s.ok) {
+      setOzet(s.deger); setHata(null); setTurAdi(s.deger.han.ad);
+      setHanlar(s.deger.hanlar ?? []);
+      void hanSecimiYaz(s.deger.yerlesim.id, istemci.hanNo);
+    } else if (HAN_GITTI.has(s.hata) && istemci.hanNo !== 1) {
+      setBilgi(t("onl.hs.hanGitti"));
+      if (yerId) void hanSecimiYaz(yerId, 1);
+      setSecili(1);
+    } else setHata(s.hata);
+  }, [istemci, lang, secili]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (o.profil) void yukle(); }, [o.profil?.hesapId, yukle]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const atmosfer = han ? t("onl.han.atmosfer." + han.han.tur) : t("onl.han.atmosfer.han");
+  const sec = (no: number) => {
+    if (no === secili) return;
+    sira.current++; // yoldaki yanıt yok sayılır
+    setOzet(null); setHata(null); setBilgi(null); setYukleniyor(false);
+    setSecili(no);
+  };
+
+  const kart = hanlar.find((k) => k.no === secili);
+  const coklu = hanlar.length > 1;
+  const tur = ozet?.han.tur ?? "han";
+  const atmosfer = t("onl.han.atmosfer." + tur);
+  const baslik = kart && turAdi ? hanKartAdi(kart, turAdi, t) : ozet ? ozet.han.ad : t("onl.han.baslik");
+  const menu = hanMenusu(ozet);
   return <HanSayfa>
     <View style={{ flexDirection: yon(rtl), alignItems: "center" }}>
       <GeriDugme rtl={rtl} etiket={t("onl.geri")} onPress={() => geriGit(router, "/online/yasam")} />
     </View>
     <View style={{ marginTop: 8 }}>
-      <SayfaBasi ust={han?.yerlesim.ad ?? o.yerlesim?.yerlesim.ad ?? t("onl.han.ust")} baslik={han ? han.han.ad : t("onl.han.baslik")} alt={atmosfer} rtl={rtl} />
+      <SayfaBasi ust={ozet?.yerlesim.ad ?? o.yerlesim?.yerlesim.ad ?? t("onl.han.ust")} baslik={baslik} alt={atmosfer} rtl={rtl} />
     </View>
 
     {!o.profil && o.hazir ? <View style={{ marginTop: 16 }}><Bant tur="bilgi" metin={t("onl.v.profilYok")} rtl={rtl} eylem={t("onl.p.giriseDon")} onEylem={() => router.replace("/online")} /></View> : null}
+    {bilgi ? <View style={{ marginTop: 12 }}><Bant tur="bilgi" metin={bilgi} rtl={rtl} eylem={t("onl.kapat")} onEylem={() => setBilgi(null)} /></View> : null}
 
-    <Baslik2 metin={t("onl.han.masalar")} rtl={rtl} sag={han ? <Text style={{ fontFamily: F.display, fontSize: 12, color: C.gold }}>{han.masalar.length}</Text> : undefined} />
-    {hata && !han ? <Bant metin={t(ekHataAnahtari(hata))} rtl={rtl} eylem={t("onl.yenidenDene")} onEylem={() => { void yukle(); }} />
-      : !han ? <Yukleniyor metin={t("onl.han.yukleniyor")} />
-      : <View style={{ gap: 10 }}>
-        {han.masalar.map((m, i) => <MasaKarti key={m.no} m={m} koltuk={han.koltuk} rtl={rtl} t={t} sira={i} onAc={() => router.push(`/online/han/${m.no}`)} />)}
+    {coklu && secili !== null && turAdi ? <HanSecici hanlar={hanlar} secili={secili} turAdi={turAdi} rtl={rtl} t={t} onSec={sec}
+      onSahip={(id) => router.push(`/online/oyuncu/${encodeURIComponent(id)}`)} /> : null}
+    {kart && !kart.acik ? <Animated.View entering={belir()} style={{ marginTop: 10 }}><Bant tur="bilgi" metin={t("onl.hs.kapaliBant")} rtl={rtl} /></Animated.View> : null}
+
+    <Baslik2 metin={t("onl.han.masalar")} rtl={rtl} sag={ozet ? <Text style={{ fontFamily: F.display, fontSize: 12, color: C.gold }}>{ozet.masalar.length}</Text> : undefined} />
+    {hata && !ozet ? <Bant metin={t(ekHataAnahtari(hata))} rtl={rtl} eylem={t("onl.yenidenDene")} onEylem={() => { void yukle(); }} />
+      : !ozet ? (coklu ? <MasaIskeleti rtl={rtl} etiket={t("onl.han.yukleniyor")} /> : <Yukleniyor metin={t("onl.han.yukleniyor")} />)
+      : <View key={secili ?? 1} style={{ gap: 10 }}>
+        {ozet.masalar.map((m, i) => <MasaKarti key={m.no} m={m} koltuk={ozet.koltuk} rtl={rtl} t={t} sira={i} onAc={() => router.push(`/online/han/${m.no}?han=${secili ?? 1}`)} />)}
       </View>}
-    {han ? <View style={{ marginTop: 10 }}><CizgiDugme etiket={t("onl.han.yenile")} icon="hourglass" rtl={rtl} kucuk kapali={yukleniyor} onPress={() => { void yukle(); }} /></View> : null}
+    {ozet ? <View style={{ marginTop: 10 }}><CizgiDugme etiket={t("onl.han.yenile")} icon="hourglass" rtl={rtl} kucuk kapali={yukleniyor} onPress={() => { void yukle(); }} /></View> : null}
 
-    {o.profil ? <HanPanosu istemci={istemci} /> : null}
+    {o.profil && secili !== null ? <HanPanosu key={secili} istemci={istemci} /> : null}
 
     <Baslik2 metin={t("onl.han.menu")} rtl={rtl} />
     <Cerceve ic={{ padding: 12, gap: 10 }}>
       <View style={{ flexDirection: yon(rtl), flexWrap: "wrap", gap: 8 }}>
         {IKRAMLAR.map((id) => {
-          const fiyat = han?.menu?.find((x) => x.id === id)?.fiyat;
+          const fiyat = menu?.find((x) => x.id === id)?.fiyat;
           return <View key={id} accessible accessibilityLabel={`${t("onl.han.ikram." + id)}${fiyat !== undefined ? ", " + applyParams(t("onl.han.akce"), [fiyat]) : ""}`}
             style={{ flexDirection: yon(rtl), alignItems: "center", gap: 6, paddingHorizontal: 10, minHeight: 36, borderRadius: 18, borderWidth: 1, borderColor: "rgba(201,162,78,0.55)", backgroundColor: "rgba(14,10,6,0.6)", flexBasis: dar ? "100%" : "47%", flexGrow: 1 }}>
             <GameIcon name={IKRAM_IKON[id]} size={15} color={C.goldBright} />
@@ -100,7 +153,7 @@ function HanEkran() {
           </View>;
         })}
       </View>
-      <Text style={{ fontFamily: F.serif, fontSize: 13.5, lineHeight: 19, color: C.parchmentDim, textAlign: hiza(rtl) }}>{t("onl.han.menuNot")}</Text>
+      <Text style={{ fontFamily: F.serif, fontSize: 13.5, lineHeight: 19, color: C.parchmentDim, textAlign: hiza(rtl) }}>{t(kart?.sahip === "oyuncu" ? "onl.hs.menuNotOyuncu" : "onl.han.menuNot")}</Text>
     </Cerceve>
 
     <View style={{ marginTop: 16, gap: 8 }}>

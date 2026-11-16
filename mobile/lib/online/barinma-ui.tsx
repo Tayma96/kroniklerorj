@@ -1,7 +1,7 @@
 // Barınma (Faz 14) arayüzü: yaşam ekranındaki barınma kartı (durum, kalan süre, zincir aşaması ve sonraki etkisi,
 // oda kirası 1/3/12 ay, imaret/zaviye, otomatik konaklama modu) ve dönüş ekranının paylaştığı parçalar. Dil
 // yargılamaz: "ceza" değil "durum" anlatılır, her etkinin nasıl kalkacağı yazılır. Bütün değerler sunucudan gelir.
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { View, Text } from "react-native";
 import { useRouter } from "expo-router";
 import Animated from "react-native-reanimated";
@@ -12,14 +12,16 @@ import { hap } from "../haptics";
 import { DesignPressable as Pressable } from "../design-pressable";
 import { useOnline } from "./durum";
 import { isaretli } from "./metin";
-import { hatirlatmaOku, hatirlatmaYaz, istekNoUret } from "./depo";
+import { hanSecimiOku, hatirlatmaOku, hatirlatmaYaz, istekNoUret } from "./depo";
 import { barinmaHatirlat, hatirlatmaIzni, hatirlatmaSil, hatirlatmaVarMi } from "./hatirlatma";
 import { OdaKarti } from "./oda-ui";
 import { ekHataAnahtari, type EkHata } from "./ek-istemci";
 import { Bant, Cerceve, CizgiDugme, Madalyon, giris, hiza, yon } from "./ui";
-import { AltPanel, Baslik2, Rozet } from "./yasam-ui";
+import { AltPanel, Baslik2, Rozet, Yukleniyor } from "./yasam-ui";
+import { useHanIstemci, type HanKarti } from "./han-veri";
+import { fiyatSozu, hanKartAdi, hanSirala } from "./han-secici";
 import {
-  KIRA_SURELERI, OTOMATIK_MODLAR, useBarinmaIstemci, useSunucuFarki, yerlesimBarinma, yerlesimDonus,
+  KIRA_SURELERI, OTOMATIK_MODLAR, hanKodundanNo, useBarinmaIstemci, useSunucuFarki, yerlesimBarinma, yerlesimDonus,
   type BarinmaGorunumu, type Konaklama, type KiraSuresi, type OdaId, type OtomatikMod, type Zincir,
 } from "./barinma-veri";
 
@@ -70,15 +72,58 @@ export function ZincirGostergesi({ z, simdi, rtl, t, toparlanmaNotu = true }: { 
 /** Yaşam ekranındaki dönüş yönlendirmesi: aynı yokluk için oturumda bir kez. */
 const gosterilen = new Set<number>();
 
-/** Kira, tesis ve otomatik mod paneli. */
-function BarinmaPaneli({ g, simdi, rtl, t, onYeni }: { g: BarinmaGorunumu; simdi: number; rtl: boolean; t: Ceviri; onYeni: (g: BarinmaGorunumu, not?: string) => void }) {
+/**
+ * 4.9: yerleşimin han listesi (oda hangi handa, kiralarken han seçimi). GET /v1/han ağır bir çağrıdır; yaşam ekranına
+ * her dönüşte yinelenmesin diye kısa süre bellekte tutulur. Köyde hiç istenmez (yalnız NPC hanı).
+ */
+let hanOnbellek: { hesap: string; zaman: number; hanlar: HanKarti[]; turAdi: string } | null = null;
+const HAN_ONBELLEK_MS = 120_000;
+type HanBilgisi = { hanlar: HanKarti[]; turAdi: string };
+function useHanListesi(etkin: boolean): { bilgi: HanBilgisi | null; yukle: () => void } {
+  const { lang } = useI18n();
+  const o = useOnline();
+  const hesap = o.profil?.hesapId ?? "";
+  const istemci = useHanIstemci(1);
+  const taze = hanOnbellek && hanOnbellek.hesap === hesap && Date.now() - hanOnbellek.zaman < HAN_ONBELLEK_MS ? hanOnbellek : null;
+  const [bilgi, setBilgi] = useState<HanBilgisi | null>(taze);
+  const yukle = useCallback(() => {
+    if (!etkin) return;
+    const t0 = hanOnbellek && hanOnbellek.hesap === hesap && Date.now() - hanOnbellek.zaman < HAN_ONBELLEK_MS ? hanOnbellek : null;
+    if (t0) { setBilgi(t0); return; }
+    void istemci.han(lang).then((r) => {
+      if (!r.ok) return;
+      hanOnbellek = { hesap, zaman: Date.now(), hanlar: r.deger.hanlar ?? [], turAdi: r.deger.han.ad };
+      setBilgi(hanOnbellek);
+    });
+  }, [etkin, hesap, istemci, lang]);
+  return { bilgi, yukle };
+}
+
+/** Odanın bulunduğu hanın adı: NPC hanında "Beylik hanı", oyuncu hanında işletme adı (liste gelmediyse yuva no). */
+function odaHanAdi(kod: string | undefined, bilgi: HanBilgisi | null, t: Ceviri): string | null {
+  const no = hanKodundanNo(kod);
+  if (no === null) return null;
+  if (kod?.startsWith("npc:")) return t("onl.hs.npc");
+  const k = bilgi?.hanlar.find((x) => x.no === no);
+  return k && bilgi ? hanKartAdi(k, bilgi.turAdi, t) : applyParams(t("onl.hs.yuvaNo"), [no]);
+}
+
+/** Kira, tesis ve otomatik mod paneli. `g` seçili hanın kataloğudur (`hanNo`); durum alanları her handa aynıdır. */
+function BarinmaPaneli({ g, hanNo, hanlar, odaHanNo, odaHanAd, katalogBekliyor, onHanSec, simdi, rtl, t, onYeni }: {
+  g: BarinmaGorunumu; hanNo: number; hanlar: HanBilgisi | null; odaHanNo: number | null; odaHanAd: string | null; katalogBekliyor: boolean;
+  onHanSec: (no: number) => void; simdi: number; rtl: boolean; t: Ceviri; onYeni: (g: BarinmaGorunumu, not?: string) => void;
+}) {
   const ist = useBarinmaIstemci();
   const [bekleyen, setBekleyen] = useState<string | null>(null);
   const [hata, setHata] = useState<EkHata | null>(null);
-  const etkinOda = g.konaklama?.tur === "oda" ? g.konaklama.oda : undefined;
+  const odaVar = g.konaklama?.tur === "oda";
+  // Etkin oda başka handaysa bu handa yeni oda tutulamaz (sunucu oda_var); süre uzatma yalnız kendi hanında.
+  const baskaHanda = odaVar && odaHanNo !== null && odaHanNo !== hanNo;
+  const etkinOda = odaVar && !baskaHanda ? g.konaklama?.oda : undefined;
+  const coklu = !!hanlar && hanlar.hanlar.length > 1;
   const kirala = async (oda: OdaId, sure: KiraSuresi) => {
     setHata(null); setBekleyen(`${oda}:${sure}`);
-    const r = await ist.kira({ oda, sure, istekNo: istekNoUret() });
+    const r = await ist.kira({ oda, sure, han: hanNo, istekNo: istekNoUret() });
     setBekleyen(null);
     if (r.ok) { hap("success"); onYeni(r.deger.barinma, applyParams(t(r.deger.kira.uzatildi ? "onl.br.uzatildi" : "onl.br.kiralandi"), [t("onl.br.oda." + oda), r.deger.kira.fiyat])); }
     else { hap("error"); setHata(r.hata); }
@@ -98,6 +143,26 @@ function BarinmaPaneli({ g, simdi, rtl, t, onYeni }: { g: BarinmaGorunumu; simdi
         <Text style={{ fontFamily: F.serif, fontSize: 14.5, lineHeight: 19, color: C.parchmentDim, textAlign: hiza(rtl) }}>{applyParams(t("onl.br.akcen"), [g.para])}</Text>
       </View>
     </View>
+    {coklu && hanlar ? <View accessibilityRole="radiogroup" accessibilityLabel={t("onl.hs.kiraHanSec")} style={{ gap: 6 }}>
+      <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: rtl ? 0 : 1.4, color: C.gold, textAlign: hiza(rtl) }}>{t("onl.hs.kiraHanSec")}</Text>
+      {hanSirala(hanlar.hanlar).map((k) => {
+        const secili = k.no === hanNo;
+        const ad = hanKartAdi(k, hanlar.turAdi, t);
+        const oda = k.oda ? applyParams(t(k.oda.dolu >= k.oda.kapasite ? "onl.hs.odaDolu" : "onl.hs.oda"), [k.oda.dolu, k.oda.kapasite]) : t("onl.hs.npc");
+        return <Pressable key={k.no} accessibilityRole="radio" accessibilityState={{ selected: secili, disabled: !!bekleyen }} accessibilityLabel={`${ad}. ${fiyatSozu(k.fc, t)}. ${oda}${odaHanNo === k.no && odaVar ? ". " + t("onl.br.burada") : ""}`}
+          disabled={!!bekleyen} onPress={() => { if (secili) return; hap("selection"); setHata(null); onHanSec(k.no); }}
+          style={({ pressed }) => ({ flexDirection: yon(rtl), alignItems: "center", gap: 10, minHeight: 48, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, borderWidth: secili ? 2 : 1, borderColor: secili ? C.goldBright : "rgba(201,162,78,0.35)", backgroundColor: secili ? "rgba(201,162,78,0.16)" : pressed ? "rgba(201,162,78,0.1)" : "rgba(14,10,6,0.7)" })}>
+          <GameIcon name={k.sahip === "npc" ? "banner" : "beer"} size={16} color={secili ? C.goldBright : C.gold} />
+          <View style={{ flex: 1, gap: 1 }}>
+            <Text numberOfLines={1} style={{ fontFamily: F.display, fontSize: 13.5, color: secili ? C.parchment : C.parchmentDim, textAlign: hiza(rtl) }}>{ad}</Text>
+            <Text numberOfLines={1} style={{ fontFamily: F.serif, fontSize: 13, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{`${fiyatSozu(k.fc, t)} · ${oda}`}</Text>
+          </View>
+          {odaHanNo === k.no && odaVar ? <Rozet icon="house" metin={t("onl.br.burada")} renk={C.sage} /> : null}
+        </Pressable>;
+      })}
+    </View> : null}
+    {baskaHanda ? <Bant tur="bilgi" metin={applyParams(t("onl.hs.odaBaskaHanda"), [odaHanAd ?? ""])} rtl={rtl} /> : null}
+    {katalogBekliyor ? <Yukleniyor metin={t("onl.hs.odalarYukleniyor")} /> : <>
     {g.odalar.length === 0 ? <Bant tur="bilgi" metin={t("onl.hh.han_kapali")} rtl={rtl} /> : null}
     {g.odalar.map((o) => {
       const n = o.nitelik;
@@ -107,7 +172,7 @@ function BarinmaPaneli({ g, simdi, rtl, t, onYeni }: { g: BarinmaGorunumu; simdi
         n.ozel ? t("onl.br.nit.ozel") : null,
         n.adres ? t("onl.br.nit.adres") : null,
       ].filter(Boolean).join(" · ");
-      const baska = !!etkinOda && etkinOda !== o.oda;
+      const baska = baskaHanda || (!!etkinOda && etkinOda !== o.oda);
       return <Cerceve key={o.oda} aktif={etkinOda === o.oda} ic={{ padding: 12, gap: 8 }}>
         <View style={{ flexDirection: yon(rtl), alignItems: "center", gap: 8 }}>
           <Text style={{ flex: 1, fontFamily: F.display, fontSize: 15, color: C.parchment, textAlign: hiza(rtl) }}>{t("onl.br.oda." + o.oda)}</Text>
@@ -132,9 +197,10 @@ function BarinmaPaneli({ g, simdi, rtl, t, onYeni }: { g: BarinmaGorunumu; simdi
             </Pressable>;
           })}
         </View>
-        {baska ? <Text style={{ fontFamily: F.serifItalic, fontSize: 13.5, lineHeight: 18, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{t("onl.br.odaVar")}</Text> : null}
+        {baska && !baskaHanda ? <Text style={{ fontFamily: F.serifItalic, fontSize: 13.5, lineHeight: 18, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{t("onl.br.odaVar")}</Text> : null}
       </Cerceve>;
     })}
+    </>}
     <Text style={{ fontFamily: F.serifItalic, fontSize: 13.5, lineHeight: 18, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{t("onl.br.pesinNot")}</Text>
     <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: rtl ? 0 : 1.4, color: C.gold, textAlign: hiza(rtl) }}>{t("onl.br.otomatik")}</Text>
     <View accessibilityRole="radiogroup" style={{ gap: 6 }}>
@@ -172,6 +238,35 @@ export function BarinmaKarti() {
   const [not, setNot] = useState<string | null>(null);
   const [hata, setHata] = useState<EkHata | null>(null);
   const [bekliyor, setBekliyor] = useState(false);
+  // 4.9 çoklu han: oda kataloğu seçilen hanın; köyde yalnız 1. han (liste istenmez).
+  const koy = o.yerlesim?.yerlesim.tur === "koy";
+  const yerId = o.yerlesim?.yerlesim.id ?? null;
+  const hl = useHanListesi(!koy && !!o.profil);
+  const [panelHan, setPanelHan] = useState(1);
+  const [katalog, setKatalog] = useState<BarinmaGorunumu | null>(null);
+  const [katalogBekliyor, setKatalogBekliyor] = useState(false);
+  const odaKodu = g?.konaklama?.tur === "oda" ? g.konaklama.han : undefined;
+  const odaHanNo = hanKodundanNo(odaKodu);
+  // Oda bir oyuncu hanındaysa adı için liste gerekir (NPC hanının adı sabittir).
+  useEffect(() => { if (odaKodu?.startsWith("oyuncu:")) hl.yukle(); }, [odaKodu]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const katalogYukle = (han: number) => {
+    setPanelHan(han);
+    if (g?.hanNo === han) { setKatalog(g); setKatalogBekliyor(false); return; }
+    setKatalog(null); setKatalogBekliyor(true);
+    void ist.barinma(lang, han).then((r) => {
+      setKatalogBekliyor(false);
+      if (r.ok) setKatalog(r.deger.barinma);
+      else { setHata(r.hata); if (han !== 1) { setPanelHan(1); katalogYukle(1); } }
+    });
+  };
+  const panelAc = async () => {
+    hap("tap"); setHata(null); setPanel(true);
+    if (koy) { katalogYukle(1); return; }
+    hl.yukle();
+    const hatir = yerId ? await hanSecimiOku(yerId) : null;
+    katalogYukle(odaHanNo ?? hatir ?? 1);
+  };
 
   useEffect(() => {
     const d = yerlesimDonus(o.yerlesim);
@@ -181,7 +276,8 @@ export function BarinmaKarti() {
   }, [o.yerlesim]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     let iptal = false;
-    void ist.barinma(lang).then((r) => { if (!iptal && r.ok) { setG(r.deger.barinma); setAlindi(Date.now()); } });
+    const ilk = hanKodundanNo(yerlesimBarinma(o.yerlesim)?.konaklama?.han) ?? 1;
+    void ist.barinma(lang, koy ? 1 : ilk).then((r) => { if (!iptal && r.ok) { setG(r.deger.barinma); setAlindi(Date.now()); } });
     return () => { iptal = true; };
   }, [ist, lang]);
   useEffect(() => { const id = setInterval(() => setSimdiYerel(Date.now()), 30_000); return () => clearInterval(id); }, []);
@@ -205,6 +301,8 @@ export function BarinmaKarti() {
   const kalan = k?.kalanMs != null ? Math.max(0, k.kalanMs - gecen) : null;
   const guvende = k && (k.tur === "ocak" || k.tur === "oda");
   const tesisGoster = g.tesis.acik && !guvende && k?.tur !== "tesis";
+  // Yalnız birden çok hanlı yerleşimde (ya da oyuncu hanındaki odada) han adı yazılır; köyde gerek yok.
+  const odaAd = !koy && k?.tur === "oda" && (odaKodu?.startsWith("oyuncu:") || (hl.bilgi?.hanlar.length ?? 0) > 1) ? odaHanAdi(odaKodu, hl.bilgi, t) : null;
   const yeni = (y: BarinmaGorunumu, n?: string) => { setG(y); setAlindi(Date.now()); if (n) { setNot(n); setPanel(false); } void o.yerlesimYukle(true); };
   const tesis = async () => {
     setHata(null); setNot(null); setBekliyor(true);
@@ -225,19 +323,23 @@ export function BarinmaKarti() {
             <Text style={{ fontFamily: F.serif, fontSize: 15, lineHeight: 20, color: C.parchmentDim, textAlign: hiza(rtl) }}>
               {k ? konaklamaMetni(k, kalan, t) : t("onl.br.konakYok")}
             </Text>
+            {odaAd ? <View style={{ flexDirection: yon(rtl), alignItems: "center", gap: 6 }}>
+              <GameIcon name="beer" size={13} color={C.gold} />
+              <Text numberOfLines={1} style={{ flexShrink: 1, fontFamily: F.serif, fontSize: 14, color: C.parchmentDim, textAlign: hiza(rtl) }}>{applyParams(t("onl.hs.odaHan"), [odaAd])}</Text>
+            </View> : null}
           </View>
         </View>
         {k?.yakindaBiter ? <Bant tur="bilgi" metin={t("onl.br.yakinda")} rtl={rtl} /> : null}
         {g.zincir ? <ZincirGostergesi z={g.zincir} simdi={simdi} rtl={rtl} t={t} /> : null}
         {g.mola && g.mola > simdi ? <Text style={{ fontFamily: F.serifItalic, fontSize: 14, lineHeight: 19, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{applyParams(t("onl.br.mola"), [sureYaz(g.mola - simdi, t)])}</Text> : null}
         <View style={{ flexDirection: yon(rtl), flexWrap: "wrap", gap: 8 }}>
-          <View style={{ flexGrow: 1, flexBasis: 140 }}><CizgiDugme kucuk icon="camel" etiket={t(k?.tur === "oda" ? "onl.br.uzat" : "onl.br.kirala")} rtl={rtl} onPress={() => { setHata(null); setPanel(true); }} /></View>
+          <View style={{ flexGrow: 1, flexBasis: 140 }}><CizgiDugme kucuk icon="camel" etiket={t(k?.tur === "oda" ? "onl.br.uzat" : "onl.br.kirala")} rtl={rtl} onPress={() => { void panelAc(); }} /></View>
           {tesisGoster ? <View style={{ flexGrow: 1, flexBasis: 140 }}>
             <CizgiDugme kucuk icon="bread" etiket={applyParams(t("onl.br.tesisGir"), [t("onl.br.tesis." + g.tesis.tur)])} rtl={rtl} kapali={!g.tesis.uygun || bekliyor} onPress={() => { void tesis(); }} />
           </View> : null}
         </View>
         {tesisGoster && !g.tesis.uygun && g.tesis.neden ? <Text style={{ fontFamily: F.serifItalic, fontSize: 13.5, lineHeight: 18, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{t(ekHataAnahtari(g.tesis.neden as EkHata))}</Text> : null}
-        <Pressable accessibilityRole="button" accessibilityLabel={`${t("onl.br.otomatik")}: ${t("onl.br.mod." + g.otomatik.mod)}`} onPress={() => { hap("tap"); setPanel(true); }}
+        <Pressable accessibilityRole="button" accessibilityLabel={`${t("onl.br.otomatik")}: ${t("onl.br.mod." + g.otomatik.mod)}`} onPress={() => { void panelAc(); }}
           style={{ flexDirection: yon(rtl), alignItems: "center", gap: 8, minHeight: 44 }}>
           <GameIcon name="compass" size={15} color={C.gold} />
           <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 14.5, color: C.parchmentDim, textAlign: hiza(rtl) }}>{applyParams(t("onl.br.otomatikSatir"), [t("onl.br.mod." + g.otomatik.mod)])}</Text>
@@ -253,9 +355,11 @@ export function BarinmaKarti() {
         {hata ? <Bant metin={t(ekHataAnahtari(hata))} rtl={rtl} /> : null}
       </Cerceve>
     </Animated.View>
-    <OdaKarti g={g} onYenile={() => { void ist.barinma(lang).then((r) => { if (r.ok) { setG(r.deger.barinma); setAlindi(Date.now()); } }); }} />
+    <OdaKarti g={g} onYenile={() => { void ist.barinma(lang, koy ? 1 : odaHanNo ?? g.hanNo ?? 1).then((r) => { if (r.ok) { setG(r.deger.barinma); setAlindi(Date.now()); } }); }} />
     <AltPanel acik={panel} onKapat={() => setPanel(false)} etiket={t("onl.br.kiraBaslik")} rtl={rtl} t={t}>
-      {panel ? <BarinmaPaneli g={g} simdi={simdi} rtl={rtl} t={t} onYeni={yeni} /> : null}
+      {panel ? <BarinmaPaneli g={katalog ? { ...katalog, konaklama: g.konaklama, para: g.para, otomatik: g.otomatik } : g} hanNo={panelHan} hanlar={koy ? null : hl.bilgi}
+        odaHanNo={odaHanNo} odaHanAd={odaHanAdi(odaKodu, hl.bilgi, t)} katalogBekliyor={katalogBekliyor} onHanSec={katalogYukle}
+        simdi={simdi} rtl={rtl} t={t} onYeni={yeni} /> : null}
     </AltPanel>
   </>;
 }
