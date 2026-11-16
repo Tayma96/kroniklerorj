@@ -4,6 +4,7 @@
 // envanteriyle aynıdır (`ev` adet, `kq` izli partiler) ve kalite.ts yardımcılarıyla taşınır (yapan izi korunur).
 
 import type { MalId } from "../icerik/mallar.ts";
+import type { MeslekId } from "../icerik/meslekler.ts";
 import { kaliteliCikar, kaliteliEkle, kaliteAdedi, partiParca, type Envanterli, type Kalite, type KaliteParti } from "../yerlesim/kalite.ts";
 import { basarili, hata, type Sonuc } from "../tipler.ts";
 import { DEPO_KAPASITE, DEPO_TASIMA_EN_COK, rafMaliMi } from "./tezgah-kurallar.ts";
@@ -31,12 +32,37 @@ export interface Tezgah extends Envanterli {
   cg?: [gun: number, Record<string, number>];
   /** Depo defteri: çalışanın her depodan alışı [ay, kim, mal, kalite, adet] (en yeni sonda, sınırlı). */
   dd?: [ay: number, o: string, mal: string, kalite: number, adet: number][];
-  /** Son gün sonu dökümü (ay dönümü). */
+  /** Son gün sonu dökümü (ay dönümü; atölyede üretim dökümü). */
   gs?: unknown;
+  // ── Dilim 2 ──
+  /** Genişletme kademesi: kapasitesi (raf satırı, tezgâh, depo) açılmış en yüksek seviye. Eski kayıtta yok → bugünkü seviye. */
+  gk?: number;
+  /** Atölye: zanaat mesleği ve yapılan zanaat değişikliği sayısı. */
+  za?: MeslekId;
+  zs?: number;
+  /** Atölye: oyuncu emek havuzu (bağlanan mesai; takat → emek 1:1). */
+  eh?: number;
+  /** Atölye: açık üretim emirleri ve emir sayacı. */
+  ue?: UretimEmri[];
+  en?: number;
+  /** Atölye: son anlık üretim ya da toplu sipariş teslimi ayı (kepenk ölçütü). */
+  ua?: number;
+  /** Atölye: depodaki aletlerin aşınma sayacı (emirle ve anlık üretimde). */
+  as?: Record<string, number>;
 }
 
-export function bosTezgah(): Tezgah {
-  return { r: [], n: 0, kk: 0 };
+/** Üretim emri: tarif, toplam yapım, yapılan, açılış ayı, açan. */
+export interface UretimEmri {
+  n: number;
+  tr: string;
+  k: number;
+  y: number;
+  a: number;
+  o: string;
+}
+
+export function bosTezgah(gk?: number): Tezgah {
+  return gk === undefined ? { r: [], n: 0, kk: 0 } : { r: [], n: 0, kk: 0, gk };
 }
 
 export function depoAdedi(t: Envanterli): number {
@@ -86,9 +112,10 @@ export interface TasimaGirdisi {
 }
 
 /** Gövdeden {mal, kalite?, adet} çözer. */
-export function tasimaCoz(g: Record<string, unknown>, malBul: (v: unknown) => MalId | undefined): Sonuc<TasimaGirdisi> {
+export function tasimaCoz(g: Record<string, unknown>, malBul: (v: unknown) => MalId | undefined, herMal = false): Sonuc<TasimaGirdisi> {
   const mal = malBul(g.mal);
-  if (!mal || !rafMaliMi(mal)) return hata("mal_gecersiz");
+  // Atölye deposu tabanı 0 olan zanaat mallarını da (kâtip: mürekkep, senet) taşır; su hiçbir depoya girmez.
+  if (!mal || mal === "su" || (!herMal && !rafMaliMi(mal))) return hata("mal_gecersiz");
   const q = g.kalite === undefined ? 0 : g.kalite;
   if (q !== 0 && q !== 1 && q !== 2 && q !== 3) return hata("kalite_gecersiz");
   const adet = g.adet;

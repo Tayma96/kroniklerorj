@@ -21,14 +21,16 @@ export interface LevhaKaydi {
   ay: number;
   /** Tarif kimliği. */
   t: string;
+  /** Atölye damgası (tezgâh Dilim 2): işletme kimliği ve o anki adı. */
+  at?: [isletme: string, ad: string];
 }
 
 /** Üstün/şaheser ürünü levhaya yazar (ilk kez ise); yeni kayıt ve herkese açık olayı döndürür. */
-export function levhaYaz(k: Kasaba, kar: Karakter, tarif: string, mal: MalId, q: Kalite, ay: number): { kayit: LevhaKaydi; olay: OlayTaslagi } | null {
+export function levhaYaz(k: Kasaba, kar: Karakter, tarif: string, mal: MalId, q: Kalite, ay: number, atolye?: [isletme: string, ad: string]): { kayit: LevhaKaydi; olay: OlayTaslagi } | null {
   if (q < LEVHA_EN_AZ_KALITE) return null;
   const ek = ekonomiAl(k);
   if (ek.lv.some((x) => x.o === kar.o && x.ml === mal && x.q === q)) return null;
-  const kayit: LevhaKaydi = { o: kar.o, ad: kar.ad, ml: mal, q, ay, t: tarif };
+  const kayit: LevhaKaydi = { o: kar.o, ad: kar.ad, ml: mal, q, ay, t: tarif, ...(atolye ? { at: atolye } : {}) };
   ek.lv.push(kayit);
   while (ek.lv.length > LEVHA_EN_COK) {
     const i = ek.lv.findIndex((x) => x.q < 3);
@@ -36,7 +38,7 @@ export function levhaYaz(k: Kasaba, kar: Karakter, tarif: string, mal: MalId, q:
   }
   return {
     kayit,
-    olay: { t: "levha", w: kar.o, h: "", g: "", n: q >= 3 ? 7 : 5, k: "olay.levha", p: { kim: oyuncuRef(kar), mal, kalite: KALITE_ADLARI[q] } },
+    olay: { t: "levha", w: kar.o, h: "", g: "", n: q >= 3 ? 7 : 5, k: "olay.levha", p: { kim: oyuncuRef(kar), mal, kalite: KALITE_ADLARI[q], ...(atolye ? { atolye: atolye[0], atolyeAd: atolye[1] } : {}) } },
   };
 }
 
@@ -51,7 +53,7 @@ export function levhaGorunumu(k: Kasaba, malHam?: unknown) {
     ustalar.set(x.o, u);
   }
   return {
-    kayitlar: [...liste].reverse().map((x) => ({ oyuncu: { id: x.o, ad: x.ad }, mal: x.ml, kalite: KALITE_ADLARI[x.q], kademe: x.q, ay: x.ay, tarif: x.t })),
+    kayitlar: [...liste].reverse().map((x) => ({ oyuncu: { id: x.o, ad: x.ad }, mal: x.ml, kalite: KALITE_ADLARI[x.q], kademe: x.q, ay: x.ay, tarif: x.t, ...(x.at ? { atolye: { id: x.at[0], ad: x.at[1] } } : {}) })),
     ustalar: [...ustalar.values()].sort((a, b) => b.saheser - a.saheser || b.ustun - a.ustun || (a.id < b.id ? -1 : 1)),
   };
 }

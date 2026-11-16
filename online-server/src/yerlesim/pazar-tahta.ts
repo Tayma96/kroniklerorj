@@ -13,7 +13,7 @@ import { basarili, hata, type Sonuc } from "../tipler.ts";
 import { defterYaz } from "./defter.ts";
 import { engelliMi } from "./engel.ts";
 import { hanedanKasabasi } from "./hanedan.ts";
-import { KALITE_ADLARI, KALITE_DEGER_CARPANI, kaliteAdedi, kaliteliCikar, kaliteliEkle, kaliteMi, type Kalite, type KaliteParti } from "./kalite.ts";
+import { KALITE_ADLARI, KALITE_DEGER_CARPANI, kaliteAdedi, kaliteliCikar, kaliteliEkle, kaliteMi, partiParca, type Kalite, type KaliteParti } from "./kalite.ts";
 import { karakterYasi } from "./karakter.ts";
 import { npcFiyat, stogaEkle, stokFiyat, type KasabaStogu } from "./npc-taban.ts";
 import { oyuncuRef } from "./ortak.ts";

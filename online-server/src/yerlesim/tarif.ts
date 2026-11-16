@@ -215,7 +215,13 @@ export function kaliteZari(k: Karakter, t: Tarif, ay: number): Zar {
   return tohumlu("kalite", k.o, t.id, ay, k.bs?.[`tarif:${t.id}`] ?? 0);
 }
 
-export function tarifYap(k: Karakter, idHam: unknown, ay: number, zar?: Zar): Sonuc<TarifSonucu> {
+/** Atölyede üretim (tezgâh Dilim 2): ek kalite kalemleri (seviye bonusu) ve ürüne yazılan atölye damgası. */
+export interface AtolyeEki {
+  kalemler: readonly { k: string; d: number }[];
+  damga: string;
+}
+
+export function tarifYap(k: Karakter, idHam: unknown, ay: number, zar?: Zar, atolye?: AtolyeEki): Sonuc<TarifSonucu> {
   const t = tarifBul(idHam);
   if (!t) return hata("tarif_gecersiz");
   if (!tarifAcik(k, t.id)) return hata("dugum_kapali");
@@ -229,13 +235,14 @@ export function tarifYap(k: Karakter, idHam: unknown, ay: number, zar?: Zar): So
   const adet = ciktiAdedi(k, t, aracVar);
   const araclar = kullanilanAraclar(k, t);
   const aracKalite = araclar.length > 0 ? (Math.max(...araclar.map((m) => enIyiKalite(k, m))) as Kalite) : null;
-  const kalite = urunKalitesi(k, t, kaliteBecerisi(k, t), aracKalite, zar ?? kaliteZari(k, t, ay));
+  const kalite = urunKalitesi(k, t, kaliteBecerisi(k, t), aracKalite, zar ?? kaliteZari(k, t, ay), atolye?.kalemler);
   const ea = etkiAraci(k, t);
   const arac: Asinma | null = t.arac && aracVar ? aracAsindir(k, t.arac.mal) : null;
   // Etki aracı tarifin aracıyla aynıysa bir kez aşınır.
   const etki: Asinma | null = ea?.var && ea.mal !== t.arac?.mal ? aracAsindir(k, ea.mal) : null;
-  kaliteliEkle(k, t.cikti[0], [[kalite.kademe, adet, k.o]]);
-  for (const [mal, n] of Object.entries(t.yan ?? {}) as [MalId, number][]) if (n > 0) kaliteliEkle(k, mal, [[0, n, k.o]]);
+  const dm = atolye?.damga;
+  kaliteliEkle(k, t.cikti[0], [dm ? [kalite.kademe, adet, k.o, dm] : [kalite.kademe, adet, k.o]]);
+  for (const [mal, n] of Object.entries(t.yan ?? {}) as [MalId, number][]) if (n > 0) kaliteliEkle(k, mal, [dm ? [0, n, k.o, dm] : [0, n, k.o]]);
   basariSay(k, `tarif:${t.id}`, adet);
   const hizmet = hizmetEkle(k, t.meslek, t.hizmet);
   halDegistir(k, ay, { kondisyon: -IS_KONDISYON * t.takat }, "hal.neden.tarif");
