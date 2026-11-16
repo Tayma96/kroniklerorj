@@ -11,5 +11,5 @@ export const EKO_MULK_HATALARI = [
   "zaten_calisan", "teklif_var", "vekil_var", "sozlesme_yok", "han_dolu",
   // Tezgâh modeli Dilim 1 (depo, raf, raftan satın alma, devralma)
   "tezgah_yok", "kepenk_kendiliginden", "depo_dolu", "raf_dolu", "raf_satir_dolu", "satir_yok", "fiyat_bant_disi", "fiyat_degisti",
-  "devralma_kosulu", "kalite_gecersiz", "adet_gecersiz", "fiyat_gecersiz", "kendine",
+  "devralma_kosulu", "kalite_gecersiz", "adet_gecersiz", "fiyat_gecersiz", "kendine", "depo_cekim_tavani", "vekil_han_sahibi",
 ] as const;

@@ -30,7 +30,7 @@ export function sahteTezgahIstemci(baslangicPara: number, yer: string): TezgahIs
         { satir: 2, mal: "alet", kalite: 2, fiyat: 40, satilan: 0, kalan: 3, hasilat: 0, payYuzde: 0, carpanlar: { F: 0.36, Q: 1.25, R: 0.68, H: 1 }, cekicilik: 0, bMal: 35, npcTavan: 33, neden: "tavan" },
         { satir: 3, mal: "tahil", kalite: 0, fiyat: 2, satilan: 4, kalan: 0, hasilat: 9, payYuzde: 100, carpanlar: { F: 1, Q: 1, R: 0.68, H: 1 }, cekicilik: 0.68, bMal: 9, npcTavan: 3, neden: "stok" },
       ] } },
-    { id: id("dukkan", 3), ad: "Hasan Bey'in Nalbur Dükkânı", sahip: { id: "o9", ad: "Hasan Bey" }, seviye: 0, itibar: 10, kk: 13, ben: false, gs: null, tur: "dukkan", depo: [], r: [] },
+    { id: id("dukkan", 3), ad: "Hasan Bey'in Nalbur Dükkânı", sahip: { id: "o9", ad: "Hasan Bey" }, seviye: 0, itibar: 10, kk: 61, ben: false, gs: null, tur: "dukkan", depo: [], r: [] },
     { id: id("atolye", 2), ad: "Kerem Ocağı", sahip: { id: "o7", ad: "Usta Kerem" }, seviye: 2, itibar: 22, kk: 4, ben: false, gs: null, tur: "atolye", depo: [], r: [] },
   ];
   const bul = (isletme: string) => dk.find((x) => x.id === isletme);
@@ -43,11 +43,11 @@ export function sahteTezgahIstemci(baslangicPara: number, yer: string): TezgahIs
   };
   const bos = (d: Dukkan) => !d.r.some((x) => x.adet > 0);
   const gorunum = (d: Dukkan): TezgahGorunumu => ({
-    isletme: d.id, tur: d.tur, ad: d.ad, sahip: d.sahip, seviye: d.seviye, itibar: d.itibar, kepenk: d.tur === "atolye" || bos(d), kepenkAy: d.kk,
+    isletme: d.id, tur: d.tur, ad: d.ad, sahip: d.sahip, seviye: d.seviye, itibar: d.itibar, kepenk: d.tur === "atolye" || bos(d), kepenkAy: d.kk, gecenAyKepenk: d.gs ? d.gs.kepenk : true,
     raf: d.tur === "dukkan" ? d.r.map((h) => satirG(d, h)) : [], rafSiniri: { satir: d.tur === "dukkan" ? [3, 4, 6, 8, 10][d.seviye]! : 0, adet: 24 },
-    npcTavanSeviye: d.tur === "dukkan" ? [30, 60, 100, 160, 240][d.seviye]! : 0, devralinabilir: d.kk >= 12 && !d.ben && d.tur === "dukkan",
+    npcTavanSeviye: d.tur === "dukkan" ? [30, 60, 100, 160, 240][d.seviye]! : 0, devralinabilir: d.kk >= 60 && !d.ben && d.tur === "dukkan",
     izin: { depoKoy: d.ben, depoAl: d.ben, raf: d.ben && d.tur === "dukkan", fiyat: d.ben && d.tur === "dukkan", satinAl: !d.ben && d.tur === "dukkan" },
-    ...(d.ben ? { depo: d.depo.filter((x) => x.adet > 0), depoKapasite: 40, depoDolu: d.depo.reduce((t, x) => t + x.adet, 0), gunSonu: d.gs,
+    ...(d.ben ? { depo: d.depo.filter((x) => x.adet > 0), depoKapasite: 40, depoDolu: d.depo.reduce((t, x) => t + x.adet, 0), gunSonu: d.gs, depoDefteri: [{ ay: AY - 1, kim: "o5", mal: "kereste", kalite: 0, adet: 2 }],
       ozet: { ay: AY - 1, meslekler: [{ meslek: "demirci", neden: "kimseSatmadi" }, { meslek: "ciftci", neden: "satildi" }] } } : {}),
   });
   const depoDolu = (d: Dukkan) => d.depo.reduce((t, x) => t + x.adet, 0);
@@ -60,9 +60,9 @@ export function sahteTezgahIstemci(baslangicPara: number, yer: string): TezgahIs
       await bekle();
       const l: DukkanKarti[] = dk.filter((d) => d.tur === "dukkan").map((d, i) => ({
         isletme: d.id, no: i + 1, ad: d.ad, sahip: d.sahip, seviye: d.seviye, itibar: d.itibar, kepenk: bos(d), satir: d.r.length,
-        mallar: [...new Set(d.r.map((x) => x.m))], benim: d.ben, devralinabilir: d.kk >= 12 && !d.ben,
+        mallar: [...new Set(d.r.map((x) => x.m))], benim: d.ben, devralinabilir: d.kk >= 60 && !d.ben,
       }));
-      return ekBasarili({ dukkanlar: l, yuva: { dukkan: { toplam: 3, dolu: 3 }, atolye: { toplam: 3, dolu: 1 } }, devralmaKepenkAy: 12 });
+      return ekBasarili({ dukkanlar: l, yuva: { dukkan: { toplam: 3, dolu: 3 }, atolye: { toplam: 3, dolu: 1 } }, devralmaKepenkAy: 60 });
     },
     async tezgah(isletme) { await bekle(); const d = bul(isletme); return d ? ekBasarili(gorunum(d)) : ekBasarisiz(isletme.includes(".han.") ? "tezgah_yok" : "isletme_yok"); },
     async onizle(isletme, g) {

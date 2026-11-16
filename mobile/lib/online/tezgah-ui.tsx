@@ -135,7 +135,8 @@ export function KepenkSatiri({ g, rtl, t, musteri = false, devralmaAy }: { g: Te
   return <View style={{ gap: 6 }}>
     <Not metin={metin} rtl={rtl} icon={g.kepenk ? "hourglass" : "sun"} renk={g.kepenk ? C.parchmentDim : C.sage} />
     {!musteri && g.kepenk && g.kepenkAy > 1 && !uzun ? <Not metin={applyParams(t("onl.tz.kepenk.ay"), [g.kepenkAy])} rtl={rtl} /> : null}
-    {uzun ? <Not metin={t("onl.tz.kepenk.uzun")} rtl={rtl} icon="leaf" renk={C.gold} /> : null}
+    {uzun ? <Not metin={applyParams(t("onl.tz.kepenk.uzun"), [g.kepenkAy, devralmaAy ?? 0])} rtl={rtl} icon="leaf" renk={C.gold} /> : null}
+    {!musteri && !atolye && g.gecenAyKepenk && g.gunSonu === undefined ? <Not metin={t("onl.tz.kepenk.gecenAy")} rtl={rtl} /> : null}
   </View>;
 }
 
@@ -367,6 +368,8 @@ export function DepoCekmecesi({ acik, oturum, g, ist, onKapat, onYenile, rtl, t 
   useEffect(() => { if (acik) { setHata(null); setBilgi(null); setMal(null); setAdet(1); } }, [acik, oturum]);
 
   const ev = (o.envanter ?? o.yerlesim?.ben.envanter ?? {}) as Record<string, number | undefined>;
+  const kisiAdi = (id: string) => o.yerlesim?.ben.tanidiklar.find((x) => x.id === id)?.ad
+    ?? o.yerlesim?.harita.flatMap((m) => m.kisiler).find((x) => x.id === id)?.ad ?? t("onl.tz.dd.calisan");
   const kq = benKalite(o.yerlesim?.ben);
   const dolu = g.depoDolu ?? 0, kap = g.depoKapasite ?? 0;
   const bosYer = Math.max(0, kap - dolu);
@@ -428,6 +431,12 @@ export function DepoCekmecesi({ acik, oturum, g, ist, onKapat, onYenile, rtl, t 
     {mal && enCok > 0 ? <Sayac etiket={t("onl.tz.adet")} deger={Math.min(adet, enCok)} en={1} cok={enCok} onDegis={setAdet} /> : null}
     <Sonuc hata={hata} bilgi={bilgi} rtl={rtl} />
     {neden && (mal || !izin) ? <Not metin={neden} rtl={rtl} /> : null}
+    {sekme === "al" && g.depoDefteri?.length ? <View style={{ gap: 4 }}>
+      <AltBaslik metin={t("onl.tz.dd.baslik")} rtl={rtl} />
+      {[...g.depoDefteri].reverse().slice(0, 8).map((x, i) => <Text key={i} style={{ fontFamily: F.serif, fontSize: 13, lineHeight: 18, color: C.parchmentDim, textAlign: hiza(rtl) }}>
+        {applyParams(t("onl.tz.dd.satir"), [x.ay, kisiAdi(x.kim), x.adet, malAdi(t, x.mal), kaliteAdi(t, x.kalite)])}
+      </Text>)}
+    </View> : null}
     <AltinDugme etiket={t(sekme === "koy" ? "onl.tz.depo.koyDugme" : "onl.tz.depo.alDugme")} icon={sekme === "koy" ? "backpack" : "amphora"} rtl={rtl}
       kapali={!!neden} bekliyor={yaz.bekliyor} erisim={[t(sekme === "koy" ? "onl.tz.depo.koyDugme" : "onl.tz.depo.alDugme"), neden].filter(Boolean).join(". ")}
       onPress={() => { void gonder(); }} />
@@ -663,7 +672,7 @@ export function SatinAlCekmecesi({ acik, oturum, g, satirNo, ist, para, onKapat,
         <Satir etiket={t("onl.tz.birim")} deger={ak(t, satir.fiyat)} renk={C.goldBright} rtl={rtl} />
         {enCok > 0 ? <Sayac etiket={t("onl.tz.adet")} deger={n} en={1} cok={enCok} onDegis={(x) => { setAdet(x); setHata(null); }} /> : null}
         <View style={{ flexDirection: yon(rtl), justifyContent: "space-between", alignItems: "center" }}>
-          <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchmentDim }}>{applyParams(t("onl.pz.toplamFiyat"), [n, satir.fiyat])}</Text>
+          <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchmentDim }}>{applyParams(t("onl.tz.toplam"), [n, satir.fiyat])}</Text>
           <Text style={{ fontFamily: F.display, fontSize: 17, color: C.goldBright }}>{ak(t, toplam)}</Text>
         </View>
       </> : null}

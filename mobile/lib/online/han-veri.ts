@@ -2,6 +2,7 @@
 // masa görünümü, olay, anons, GET /v1/han, POST /v1/han/eylem, POST /v1/han/ikram). İstemci sonuç hesaplamaz: koltuk,
 // sıra, masa başı, olay ve katılım listesi sunucudan gelir; burada yalnız biçim denetlenir ve niyet gönderilir.
 import { useMemo } from "react";
+import type { YolcuKarti } from "./tezgah-veri";
 import { useOnline } from "./durum";
 import { ekCagir, soketAdresi, metinMi, nesneMi, sayiMi, type EkSonuc } from "./ek-istemci";
 import { oturumOku } from "./depo";
@@ -153,6 +154,8 @@ export interface HanKarti {
   /** Benim bu handaki müdavim rozetim ("tanidik" | "mudavim" | "demirbas") ya da null. */
   mudavim: string | null;
   masa?: { sayi: number; acik: number; oturan: number };
+  /** Tezgâh modeli: son ay dönümündeki yolcu payı (yalnız hanın sahibi ve oyuncu çalışanı görür). */
+  yolcu?: YolcuKarti;
 }
 /** GET /v1/han?han=N. `menu` taban fiyatlardır (oyuncu hanında `fc` ile çarpılır); `hanlar` eski sunucuda yok. */
 export interface HanOzeti {

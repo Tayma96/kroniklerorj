@@ -4,6 +4,7 @@
 // (tezgah-kurallar.ts RAF_FIYAT_ALT/UST, NPC_TAVAN_CARPANI, kalite.ts KALITE_DEGER_CARPANI [PARAMETRE] kopyası);
 // doğrulama sunucudadır (`fiyat_bant_disi`).
 import { useMemo } from "react";
+import { applyParams } from "../i18n";
 import { useOnline } from "./durum";
 import { ekCagir, ekHataAnahtari, nesneMi, sayiMi, metinMi, type EkHata, type EkSonuc } from "./ek-istemci";
 import { MALLAR } from "./meslek-veri";
@@ -34,8 +35,13 @@ export interface TezgahGorunumu {
   isletme: string; tur: "dukkan" | "atolye"; ad: string; sahip: { id: string; ad: string }; seviye: number; itibar: number;
   kepenk: boolean; kepenkAy: number; raf: RafSatiri[]; rafSiniri: { satir: number; adet: number }; npcTavanSeviye: number;
   devralinabilir: boolean; izin: TezgahIzni;
+  /** Son ay dönümü kepenkli geçti mi (o ay hiç satış olmadı; bakım, borç, maaş ve itibar kaybı işlemedi). Eski sunucuda yok. */
+  gecenAyKepenk?: boolean;
   depo?: DepoSatiri[]; depoKapasite?: number; depoDolu?: number; gunSonu?: GunSonu | null; ozet?: TezgahOzeti | null;
+  /** Çalışanların depodan çekimleri (yalnız sahip/yetkiliye; `kim` karakter kimliği). Eski sunucuda yok. */
+  depoDefteri?: DepoDefterSatiri[];
 }
+export interface DepoDefterSatiri { ay: number; kim: string; mal: string; kalite: Kademe; adet: number }
 export interface DukkanKarti {
   isletme: string; no: number; ad: string; sahip: { id: string; ad: string }; seviye: number; itibar: number; kepenk: boolean;
   satir: number; mallar: string[]; benim: boolean; devralinabilir: boolean;
@@ -142,6 +148,8 @@ export function tezgahHataAnahtari(kod: EkHata): string {
   if (kod === "yetki_yok") return "onl.tz.h.yetkiYok";
   if (kod === "stok_yok") return "onl.tz.h.stokYok";
   if (kod === "mal_yok") return "onl.tz.h.malYok";
+  if (kod === "pompa_siniri") return "onl.tz.h.pompa";
+  if (kod === "kendine") return "onl.tz.h.kendine";
   return ekHataAnahtari(kod);
 }
 /**
@@ -168,4 +176,23 @@ export function tezgahHatirla(hesap: string, g: TezgahGorunumu) { tezgahSon.set(
 export function hatirlananTezgah(hesap: string, isletme: string): TezgahGorunumu | null {
   const x = tezgahSon.get(isletme);
   return x && x.hesap === hesap ? x.g : null;
+}
+
+/** Yetkilinin kendi dükkânında rafa konabilecek mal var mı: depoda satılabilir mal ve boş satır ya da dolmamış satır. */
+export function rafaKonabilir(g: TezgahGorunumu): boolean {
+  if (g.tur !== "dukkan" || !g.izin.raf || !g.depo?.length) return false;
+  const satilir = g.depo.filter((x) => x.adet > 0 && rafMali(x.mal));
+  if (!satilir.length) return false;
+  if (g.raf.length < g.rafSiniri.satir) return true;
+  return satilir.some((x) => g.raf.some((r) => r.mal === x.mal && r.kalite === x.kalite && r.adet < g.rafSiniri.adet));
+}
+
+/** İşim kartının tek satır canlı özeti (sayılar sunucudan; sözle). */
+export function dukkanOzetMetni(t: (k: string) => string, g: TezgahGorunumu): string {
+  if (g.tur === "atolye") return t("onl.tz.oz.atolye");
+  const adet = g.raf.reduce((n, x) => n + x.adet, 0);
+  const raf = adet > 0 ? applyParams(t("onl.tz.oz.raf"), [g.raf.length, adet]) : t("onl.tz.oz.rafBos");
+  const gs = g.gunSonu;
+  const gecen = !gs ? null : gs.kepenk ? t("onl.tz.oz.gecenKepenk") : gs.hasilat !== undefined ? applyParams(t("onl.tz.oz.hasilat"), [gs.hasilat]) : null;
+  return gecen ? `${raf} · ${gecen}` : raf;
 }

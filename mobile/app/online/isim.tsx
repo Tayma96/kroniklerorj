@@ -17,6 +17,7 @@ import { MESLEK_YASI } from "../../lib/online/meslek-veri";
 import { MULK_IKON, isletmeYolu, useMulkIstemci, type MulkListesi } from "../../lib/online/mulk-veri";
 import { ekHataAnahtari, type EkHata } from "../../lib/online/ek-istemci";
 import { acilabilirMulk, mulkListesiniHatirla } from "../../lib/online/simdi-rehber";
+import { dukkanOzetMetni, hatirlananTezgah, rafaKonabilir, tezgahHatirla, useTezgahIstemci, type TezgahGorunumu } from "../../lib/online/tezgah-veri";
 
 const ISIM_GORSELI = require("../../assets/arka/atolye_demirci.jpg");
 const MULK_GORSELI = require("../../assets/tasarim/v4/venue-mulkler.jpg");
@@ -30,6 +31,8 @@ function IsimEkran() {
   const hesap = o.profil?.hesapId ?? "";
   const [m, setM] = useState<MulkListesi | null>(null);
   const [mHata, setMHata] = useState<EkHata | null>(null);
+  const tzi = useTezgahIstemci();
+  const [tzler, setTzler] = useState<Record<string, TezgahGorunumu>>({});
 
   const mulkYukle = useCallback(async () => {
     setMHata(null);
@@ -38,6 +41,23 @@ function IsimEkran() {
   }, [ist, hesap]);
   useEffect(() => { if (y) void mulkYukle(); }, [!!y, mulkYukle]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (y && !o.siparisler) void o.siparisleriYukle(true); }, [!!y]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Dükkân/atölye kartlarının canlı özeti: sahip ya da çalışan olduğum her tezgâh bir kez okunur (rehber de bunu kullanır).
+  const tezgahIds = m ? [...new Set([...m.benim, ...m.calistigim])].filter((id) => { const tur = m.yuvalar.find((v) => v.isletme === id)?.tur; return tur === "dukkan" || tur === "atolye"; }) : [];
+  const tezgahAnahtar = tezgahIds.join(",");
+  useEffect(() => {
+    if (!tezgahIds.length) return;
+    let iptal = false;
+    const once: Record<string, TezgahGorunumu> = {};
+    for (const id of tezgahIds) { const h = hatirlananTezgah(hesap, id); if (h) once[id] = h; }
+    setTzler(once);
+    void Promise.all(tezgahIds.map(async (id) => {
+      const r = await tzi.tezgah(id);
+      if (iptal || !r.ok) return;
+      tezgahHatirla(hesap, r.deger);
+      setTzler((x) => ({ ...x, [id]: r.deger }));
+    }));
+    return () => { iptal = true; };
+  }, [tezgahAnahtar, tzi, hesap]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!y) return <YerlesimBekle sekme="isim" rtl={rtl} t={t} onGiris={() => router.replace("/online")} />;
 
@@ -86,11 +106,14 @@ function IsimEkran() {
     <Baslik2 metin={t("onl.im.b.isletme")} rtl={rtl} />
     <View style={{ gap: 8 }}>
       <GirisSatiri rtl={rtl} icon="house" gorsel={MULK_GORSELI} vurgu={!!acilir} baslik={t("onl.im.mulk")} alt={mulkAlt} onPress={() => git("/online/mulk")} />
+      <GirisSatiri rtl={rtl} icon="coins" baslik={t("onl.tz.carsi")} alt={t("onl.im.carsi.alt")} onPress={() => git("/online/carsi")} />
       {mHata && !m ? <Bant metin={t(ekHataAnahtari(mHata))} rtl={rtl} eylem={t("onl.yenidenDene")} onEylem={() => { void mulkYukle(); }} />
         : !m ? <Yukleniyor metin={t("onl.im.mulk.yukleniyor")} />
         : <>
-          {m.benim.map((id) => { const x = yuvaAdi(id); return <GirisSatiri key={id} rtl={rtl} icon={x.icon} baslik={x.ad} alt={t("onl.im.isletme.sahip")} onPress={() => git(isletmeYolu(id))} />; })}
-          {m.calistigim.filter((id) => !m.benim.includes(id)).map((id) => { const x = yuvaAdi(id); return <GirisSatiri key={id} rtl={rtl} icon={x.icon} baslik={x.ad} alt={t("onl.im.isletme.calisan")} onPress={() => git(isletmeYolu(id))} />; })}
+          {m.benim.map((id) => { const x = yuvaAdi(id); const g = tzler[id]; return <GirisSatiri key={id} rtl={rtl} icon={x.icon} baslik={x.ad} vurgu={!!g && rafaKonabilir(g)}
+            alt={g ? `${t("onl.im.isletme.sahip")} · ${dukkanOzetMetni(t, g)}` : t("onl.im.isletme.sahip")} onPress={() => git(isletmeYolu(id))} />; })}
+          {m.calistigim.filter((id) => !m.benim.includes(id)).map((id) => { const x = yuvaAdi(id); const g = tzler[id]; return <GirisSatiri key={id} rtl={rtl} icon={x.icon} baslik={x.ad}
+            alt={g ? `${t("onl.im.isletme.calisan")} · ${dukkanOzetMetni(t, g)}` : t("onl.im.isletme.calisan")} onPress={() => git(isletmeYolu(id))} />; })}
           {!m.benim.length && !m.calistigim.length ? <Text style={{ fontFamily: F.serifItalic, fontSize: 14, lineHeight: 20, color: C.parchmentDim, textAlign: rtl ? "right" : "left", paddingHorizontal: 4 }}>{t("onl.im.isletme.yok")}</Text> : null}
         </>}
     </View>

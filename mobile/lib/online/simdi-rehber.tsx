@@ -1,6 +1,7 @@
 // "Şimdi" rehberi (Yaşam'ın üstü): eldeki durumdan türeyen en çok üç öneri, her biri tek cümle ve tek düğme.
-// Yalnız istemcide zaten bulunan veri okunur (yerleşim, meslek, siparişler, gelen kutusu, son mülk listesi); yeni
-// ağır çağrı yapılmaz. Zamanlayıcı, sayaç ya da kaçırma korkusu yok: öneri yol gösterir, baskı yapmaz.
+// İstemcide bulunan veri okunur (yerleşim, meslek, siparişler, gelen kutusu, son mülk listesi, son tezgâh görünümü);
+// mülk listesi ve kendi dükkânlarımın tezgâhı bellekte yoksa oturumda bir kez sessizce alınır (Yaşam da İşim kadar bilsin). Zamanlayıcı, sayaç ya da kaçırma korkusu yok: öneri yol gösterir, baskı yapmaz.
+import { useEffect, useState } from "react";
 import { View, Text } from "react-native";
 import { useRouter } from "expo-router";
 import Animated from "react-native-reanimated";
@@ -14,7 +15,8 @@ import { BASMA_OLCEK, Cerceve, Madalyon, belir, hiza, yon } from "./ui";
 import { Baslik2 } from "./yasam-ui";
 import { MESLEK_YASI } from "./meslek-veri";
 import { yerlesimBarinma } from "./barinma-veri";
-import type { MulkListesi, MulkTuru } from "./mulk-veri";
+import { isletmeYolu, useMulkIstemci, type MulkListesi, type MulkTuru } from "./mulk-veri";
+import { hatirlananTezgah, rafaKonabilir, tezgahHatirla, useTezgahIstemci } from "./tezgah-veri";
 
 type Ceviri = (k: string) => string;
 
@@ -68,15 +70,50 @@ export function useSimdiOnerileri(t: Ceviri, onBarinma?: () => void): Oneri[] {
   }
   const handa = y.harita.find((m) => m.id === "han")?.kisiler.filter((k) => k.id !== ben.id).length ?? 0;
   if (handa >= HAN_KALABALIK) ekle({ id: "han", icon: "beer", metin: applyParams(t("onl.sm.han"), [handa]), dugme: t("onl.sm.han.d"), yol: "/online/han" });
-  const mulk = acilabilirMulk(hatirlananMulkListesi(o.profil?.hesapId ?? ""));
+  const hesap = o.profil?.hesapId ?? "";
+  const ml = hatirlananMulkListesi(hesap);
+  const rafli = (ml?.benim ?? []).find((id) => { const g = hatirlananTezgah(hesap, id); return !!g && rafaKonabilir(g); });
+  if (rafli) ekle({ id: "raf", icon: "scales", metin: t("onl.sm.raf"), dugme: t("onl.sm.raf.d"), yol: isletmeYolu(rafli) });
+  const mulk = acilabilirMulk(ml);
   if (mulk) ekle({ id: "mulk", icon: mulk === "han" ? "beer" : mulk === "atolye" ? "anvil" : "scales", metin: t("onl.sm.mulk." + mulk), dugme: t("onl.sm.mulk.d"), yol: "/online/mulk" });
   return liste;
 }
 
 /** Yaşam'ın üstündeki rehber: öneri kartları ya da sakin "her şey yolunda" satırı. */
+let rehberYuklenen: string | null = null;
+
+/** Mülk listesi ve kendi tezgâhlarım bellekte yoksa hesap başına bir kez alınır; bitince rehber yeniden çizilir. */
+function useRehberVerisi(): void {
+  const o = useOnline();
+  const mist = useMulkIstemci();
+  const tzi = useTezgahIstemci();
+  const [, yenile] = useState(0);
+  const hesap = o.profil?.hesapId ?? "";
+  const hazir = !!o.yerlesim;
+  useEffect(() => {
+    if (!hazir || !hesap || rehberYuklenen === hesap) return;
+    rehberYuklenen = hesap;
+    let iptal = false;
+    void (async () => {
+      let ml = hatirlananMulkListesi(hesap);
+      if (!ml) {
+        const r = await mist.liste();
+        if (!r.ok) { rehberYuklenen = null; return; }
+        ml = r.deger;
+        mulkListesiniHatirla(hesap, ml);
+      }
+      const dukkanlar = ml.benim.filter((id) => ml!.yuvalar.find((v) => v.isletme === id)?.tur === "dukkan" && !hatirlananTezgah(hesap, id));
+      await Promise.all(dukkanlar.map(async (id) => { const r = await tzi.tezgah(id); if (r.ok) tezgahHatirla(hesap, r.deger); }));
+      if (!iptal) yenile((n) => n + 1);
+    })();
+    return () => { iptal = true; };
+  }, [hazir, hesap, mist, tzi]);
+}
+
 export function SimdiRehberi({ onBarinma }: { onBarinma?: () => void }) {
   const router = useRouter();
   const { t, rtl } = useI18n();
+  useRehberVerisi();
   const oneriler = useSimdiOnerileri(t, onBarinma);
   return <View>
     <Baslik2 metin={t("onl.sm.baslik")} rtl={rtl} ust={16} />

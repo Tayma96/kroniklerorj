@@ -1,4 +1,4 @@
-// Sokak sekmesi: yerleşimin mekânları büyük, görselli karolar olarak (Han/Hanlar, Pazar, Lonca, Divan, Kervansaray,
+// Sokak sekmesi: yerleşimin mekânları büyük, görselli karolar olarak (Han/Hanlar, Pazar, Çarşı, Lonca, Divan, Kervansaray,
 // Zaviye, Hizmet Pazarı, Mahalle). Canlı durum satırı yalnız eldeki yerleşim verisinden (harita, meslek); yeni çağrı yok.
 import { View, type ImageSourcePropType } from "react-native";
 import { useRouter } from "expo-router";
@@ -11,14 +11,16 @@ import { giris } from "../../lib/online/ui";
 import { Hap, OnlineSayfa, SayfaBasi, YerlesimBekle, sahneGorseli, useYerlesimEkrani } from "../../lib/online/yasam-ui";
 import { MekanKarosu } from "../../lib/online/gezinti-ui";
 import { MESLEK_YASI } from "../../lib/online/meslek-veri";
+import { hatirlananDukkanlar } from "../../lib/online/tezgah-veri";
 
-type MekanId = "han" | "pazar" | "lonca" | "divan" | "kervansaray" | "zaviye" | "hizmet" | "mahalle";
+type MekanId = "han" | "pazar" | "carsi" | "lonca" | "divan" | "kervansaray" | "zaviye" | "hizmet" | "mahalle";
 interface Mekan { id: MekanId; icon: string; yol: string; gorsel?: ImageSourcePropType }
 
 /** Mekân sırası: en çok uğranan önce. Hizmet Pazarı için uygun görsel yok (degrade + madalyon). */
 const MEKANLAR: readonly Mekan[] = [
   { id: "han", icon: "beer", yol: "/online/han", gorsel: require("../../assets/mulk/han.jpg") },
   { id: "pazar", icon: "scales", yol: "/online/pazar", gorsel: require("../../assets/tasarim/v4/venue-pazar.jpg") },
+  { id: "carsi", icon: "coins", yol: "/online/carsi", gorsel: require("../../assets/mulk/dukkan.jpg") },
   { id: "lonca", icon: "banner", yol: "/online/lonca", gorsel: require("../../assets/arka/ahi_tekke.jpg") },
   { id: "divan", icon: "castle", yol: "/online/siyaset", gorsel: require("../../assets/arka/kadi_divan.jpg") },
   { id: "kervansaray", icon: "camel", yol: "/online/kervan", gorsel: require("../../assets/arka/gurbet_yol.jpg") },
@@ -44,6 +46,12 @@ function SokakEkran() {
     switch (id) {
       case "han": { const n = kisiSay("han"); return n ? applyParams(t("onl.sk.d.hanKisi"), [n]) : t("onl.sk.d.hanSessiz"); }
       case "pazar": { const n = kisiSay("carsi"); return n ? applyParams(t("onl.sk.d.carsiKisi"), [n]) : null; }
+      case "carsi": {
+        const l = hatirlananDukkanlar(o.profil?.hesapId ?? "");
+        if (!l) return null;
+        const acik = l.dukkanlar.filter((d) => !d.kepenk).length;
+        return l.dukkanlar.length ? applyParams(t("onl.sk.d.carsi"), [l.dukkanlar.length, acik]) : t("onl.sk.d.carsiBos");
+      }
       case "lonca": return meslek ? applyParams(t("onl.sk.d.lonca"), [t("onl.mes." + meslek)]) : t("onl.sk.d.loncaYok");
       case "mahalle": return benYer ? applyParams(t("onl.sk.d.mahalle"), [t("onl.mekan." + benYer.id)]) : null;
       default: return null;

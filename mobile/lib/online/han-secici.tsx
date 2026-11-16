@@ -4,7 +4,7 @@
 import { useEffect, useRef } from "react";
 import { View, Text, ScrollView, useWindowDimensions } from "react-native";
 import Animated from "react-native-reanimated";
-import { applyParams } from "../i18n";
+import { applyParams, useI18n, yuzdeL } from "../i18n";
 import { C, F } from "../theme";
 import { GameIcon } from "../icons";
 import { hap } from "../haptics";
@@ -56,6 +56,7 @@ export function hanKartErisim(k: HanKarti, turAdi: string, t: Ceviri, kalabalik:
     kalabalik ? t("onl.hs.kalabalik") : null,
     k.mudavim ? applyParams(t("onl.hs.mudavimin"), [t("onl.topluluk.rozet." + k.mudavim)]) : null,
     !k.acik ? t("onl.hs.kapali") : null,
+    k.yolcu ? `${t("onl.tz.yp.baslik")}: ${applyParams(t("onl.tz.yp.ozet"), [`%${k.yolcu.payYuzde}`, k.yolcu.tutar])}` : null,
   ].filter(Boolean).join(". ");
 }
 
@@ -63,6 +64,7 @@ function HanKartiGorunumu({ k, turAdi, secili, kalabalik, genislik, rtl, t, onSe
   k: HanKarti; turAdi: string; secili: boolean; kalabalik: boolean; genislik: number; rtl: boolean; t: Ceviri;
   onSec: () => void; onSahip?: (id: string) => void; onYerles?: (x: number) => void;
 }) {
+  const { lang } = useI18n();
   const sahipId = k.sahip === "oyuncu" ? k.sahipKisi?.id : undefined;
   const sahipAd = k.sahipKisi?.ad || t("onl.hs.sahipBilinmez");
   const dolu = !!k.oda && k.oda.kapasite > 0 && k.oda.dolu >= k.oda.kapasite;
@@ -94,6 +96,12 @@ function HanKartiGorunumu({ k, turAdi, secili, kalabalik, genislik, rtl, t, onSe
         <GameIcon name="family" size={13} color={k.masa.oturan ? C.goldBright : C.parchmentMuted} />
         <Text numberOfLines={2} style={{ flex: 1, fontFamily: F.serif, fontSize: 13.5, lineHeight: 18, color: C.parchmentDim, textAlign: hiza(rtl) }}>
           {k.masa.oturan ? applyParams(t("onl.hs.canli"), [k.masa.oturan, k.masa.acik]) : applyParams(t("onl.hs.sakin"), [k.masa.acik])}
+        </Text>
+      </View> : null}
+      {k.yolcu ? <View style={{ flexDirection: yon(rtl), alignItems: "center", gap: 6 }}>
+        <GameIcon name="camel" size={13} color={C.sage} />
+        <Text numberOfLines={2} style={{ flex: 1, fontFamily: F.serif, fontSize: 13, lineHeight: 17, color: C.sage, textAlign: hiza(rtl) }}>
+          {`${t("onl.tz.yp.baslik")}: ${applyParams(t("onl.tz.yp.ozet"), [yuzdeL(k.yolcu.payYuzde, lang), k.yolcu.tutar])}`}
         </Text>
       </View> : null}
     </Cerceve>

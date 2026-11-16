@@ -78,6 +78,12 @@ const PARAM: Record<string, string[]> = {
   "olay.kervan.dondu": ["hedefAd", "kalan"],
   "olay.goc.geldi": ["kisi", "kaynakAd"],
   "olay.goc.gitti": ["kisi", "hedefAd"],
+  // Tezgâh modeli Dilim 1: dükkân gün sonu, raf boşaldı (kepenk), devralma ve han yolcu payı (yalnız sahibine).
+  "olay.tezgah.gunSonu": ["ad", "adet", "hasilat", "mal"],
+  "olay.tezgah.kepenkIndi": ["ad"],
+  "olay.tezgah.devralindi": ["ad", "bedel", "mal", "kepenkAy"],
+  "olay.tezgah.devralmaKasasi": ["tutar"],
+  "olay.han.yolcuPayi": ["ad", "tutar", "payYuzde"],
   "olay.darbe.ganimetKayip": ["tutar", "yuzde"],
   "olay.darbe.ganimetPay": ["tutar"],
   "hal.can.saglam": ["toparlama", "esik", "taban"],
@@ -121,6 +127,7 @@ function degerYaz(ad: string, v: unknown, t: Ceviri, lang: Lang, k = ""): string
     case "mal": return t("onl.mal." + v);
     case "hizmet": return t("onl.hizmet.ad." + v);
     case "tur": return t("onl.tp.tur." + v);
+    case "ad": return v || (k.startsWith("olay.tezgah.") ? t("onl.mk.tur.dukkan") : k === "olay.han.yolcuPayi" ? t("onl.mk.tur.han") : v);
     case "neden": return k === "olay.han.duelloOlmadi" ? t("onl.han.duelloNeden." + v) : v;
     case "sart": return k === "olay.oda.gorusme" ? t("onl.oda.sart." + v) : v;
     default: return v;
@@ -185,6 +192,8 @@ export function olayIkonu(o: Pick<Olay, "ozet" | "tur">): string {
     "olay.hizmetTalep": "scroll-open", "olay.hizmetTalepTeslim": "medal",
     "olay.yonetim.telafiAkce": "gift", "olay.yonetim.telafiEsya": "gift",
     "olay.darbe.ganimetKayip": "scales", "olay.darbe.ganimetPay": "scales",
+    "olay.tezgah.gunSonu": "coins", "olay.tezgah.kepenkIndi": "hourglass", "olay.tezgah.devralindi": "crown",
+    "olay.tezgah.devralmaKasasi": "coins", "olay.han.yolcuPayi": "camel",
   };
   return tablo[k] ?? "scroll-open";
 }
