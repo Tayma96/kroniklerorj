@@ -1,28 +1,29 @@
-# Kronikler — güncel çalışma özeti (14 Kasım 2026)
+# Kronikler — güncel çalışma özeti (16 Kasım 2026)
 
 ## Kurallar
-- Repo Tayma96/kroniklerorj, ana dal `apk`. Türkçe tek satır commit, ek satır yok. Berkay tam yetki verdi (birleştirme, silme, `apk`'ye push).
-- Tek sert kural: **her şey ücretsiz**. Ücret çıkarabilecek adım önce kontrol edilir. Anahtar okuma/yazdırma yok.
-- Yeni oyuncu metni 6 dilde. Eski kayıt ve çevrimdışı akış korunur. İşbölümü `AGENTS.md`'de (esnek).
-- Kota: ajanlar 5 saatlik sınırı doldurabiliyor; birer birer çalıştır, kesilirse SendMessage ile sürdür.
-- Bulut oturumunda developers.cloudflare.com kapalı; Cloudflare API biçimi npm `partytracks` kitaplığından okunur.
-
-## Ürün yapısı
-- Tek Oyunculu (`mobile/app/oyun/`) ve Çok Oyunculu (`mobile/app/online/`, sunucu `online-server/`). Kayıtlar ayrı.
-- Eski Diyar MP söküldü. Giriş "Çok Oyuncu" → `/online`; kapı kapalı, "Yakında".
+- Repo Tayma96/kroniklerorj, ana dal `apk` (oturum dalına aynı commit). Türkçe tek satır commit, ek satır yok.
+- Tek sert kural: **her şey ücretsiz**. Anahtar okuma/yazdırma yok.
+- Berkay (15 Kasım): "Benden talimat ve onay bekleme, en iyisi nasılsa yap." İstisna: canlı/test Worker dağıtımı, silme, gerçek para/ödeme.
+- Yönetici en güçlü model; kod Opus alt ajan, test ve **çeviri Sonnet** (istemci ajanı metni yalnız Türkçe yazar). En çok 2 ajan, çakışmayan klasörlerde. Limit kesilirse SendMessage ile sürdür.
+- Kalite çıtası "AAA metin oyunu": her ekran sahne; hareket tek ortak katmandan (150–300 ms, UI iş parçacığı, reduce motion); ölü karar yok; her arayüz işi `react-reviewer`dan geçer. **Hiçbir meslek ve beceri kancası boşta kalmaz.**
+- Yeni oyuncu metni 6 dilde. Bulut oturumunda developers.cloudflare.com kapalı.
 
 ## Çevrimiçi durum
-- **Tek güncel durum belgesi: `docs/online/ONLINE_DURUM.md`** (sağlam alanlar, açık işler H/D/S/G, ilk sürüm tasarım kararları, Berkay'a kalan gerilimler). `FAZ_DURUM.md` geçersiz.
-- 14 Kasım: darbe akçe ganimeti (yalnız akçe, mülk alınmaz); ateşkes ön talimatı; Kül Yemini mührü (ky=2); miras (işletme vârise); han H1–H5 (keşif sırası, masa ayarı, küfür maskesi, şikâyette masa, eylem etkileri; yemin namı mühürlüye); düello (rızalı, kaybeden bir şey kaybetmez); barınma yerel hatırlatması; belirteç `expo-secure-store`'da.
-- Sunucu 532 test, hepsi geçiyor. Sunucu hiç dağıtılmadı (`docs/online/DENEME_SUNUCUSU.md`). Yeni APK gerekir (secure-store, notifications).
-- Suikast ve kan davası ilk sürümde yok (GDD §11).
+- Tek durum belgesi: `docs/online/ONLINE_DURUM.md`. Sunucu 622+ test, canlı test Worker'ı var (yeni commit'ler dağıtılmadı).
+- 15–16 Kasım: H8 ozan sahnesi ve atışma sunucusu (`7b09ee4`); han masası koltuk düzeni, kişi kartı, ikram/Debdebe armağan çekmecesi (`026740a`); çoklu han sunucusu — şehir 5, kasaba 2, köy yalnız NPC, plakada `kisi`/`nam` (`860d0ad`).
+- Sürüyor: han ekranı inceleme düzeltmeleri + sahne/atışma arayüzü (istemci); han listesi alt istek sayısını ≤12'ye indirme (sunucu).
 
-## Sıradaki işler
-1. Göç (D1): sunucu ajanda, sonra istemci ekranı (`ONLINE_DURUM.md` §4.5).
-2. Han: H7 akçeyle ziyafet, H8 ozan sahnesi, H9 masa türleri, H10 NPC/pano, H11 Debdebe süsleri, H12 oda getirileri.
-3. D2 kervan; E4 203 hak kancası; 14 meslek denge.
-4. Deneme sunucusu açılınca ilk dilim: giriş → profil → yerleşim → yaşam → meslek → işler.
+## Sıradaki işler (bu sırayla)
+1. İstemci: han seçici (yerleşimde han listesi, `?han=N`, hata `han_gecersiz|han_yok|han_siniri`), mülk ekranında arsa/yuva.
+2. Dükkân/atölye **tezgâh modeli**: atölye zanaata göre üretir, dükkân raf+fiyatla satar, yerleşimin sınırlı NPC talebi fiyat/kalite/itibara göre paylaşılır (hanlar dahil), boş rafta kepenk (bakım/iflas durur). Önce kanca dökümü, tasarım `docs/superpowers/specs/`, coder'dan iki yaklaşım.
+3. Oyuncu numarası (8 hane, rastgele, hesaba bağlı), arama, oyuncu sayfası (armağan duvarı, anlar, söz).
+4. Sokak sahnesi: Yaşam'daki ~25 giriş yerine dokunulabilir yerleşim; ilk adımlar rehberi; "Debdebe" girişi "Mağaza" adıyla.
+5. Han masa oyunları çatısı + iki oyun; canlı masalar vitrini; hızlı tepkiler.
+
+## Tasarım kararları (15 Kasım)
+- Armağan: akçeyle ikram (akçe yanar, alıcıya geçmez) + Debdebe. Şans/ödül havuzu mekaniği yok. Gerçek fotoğraf yükleme yok.
+- Masa açmak herkese ücretsiz; han kıt mülk. Bir kişi aynı yerleşimde en çok 1 han.
 
 ## Berkay'da
-- `DENEME_SUNUCUSU.md` adımları; Realtime uygulaması (`REALTIME_APP_ID/TOKEN`); `GOOGLE_CLIENT_ID`; mağaza ayarları.
-- Karar bekleyen: gerçek parayla beceri süre kısaltma satışı ve Debdebe armağanının teveccühe girmesi (`ONLINE_DURUM.md` §5).
+- Realtime uygulaması (`REALTIME_APP_ID/TOKEN`), `GOOGLE_CLIENT_ID`, FCM, Play ürünleri ve ödeme sırları; yeni test APK'sı ve 5–10 kişilik gerçek cihaz denemesi.
+- Karar: Debdebe armağanının teveccühe (gelir, seçim) girmesi; süre kısaltma satışı (`ONLINE_DURUM.md` §5).
