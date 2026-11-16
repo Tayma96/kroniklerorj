@@ -13,6 +13,7 @@ import { isReduceMotion } from "../perf";
 import { BASMA_OLCEK, Cerceve, Madalyon, ONL, belir, hiza, yon } from "./ui";
 import { Rozet } from "./yasam-ui";
 import type { HanKarti } from "./han-veri";
+import { YolcuPayiDokumu, yolcuPayiMetni } from "./tezgah-ui";
 
 type Ceviri = (k: string) => string;
 const SEVIYE = ["mutevazi", "gelisen", "taninmis", "prestijli", "simge"];
@@ -45,7 +46,7 @@ export function kalabalikHan(l: HanKarti[]): number | null {
 const SEVIYE_ADI = (k: HanKarti, t: Ceviri) => t("onl.isl.sv." + (SEVIYE[k.seviye] ?? "mutevazi"));
 
 /** Ekran okuyucu için kartın tam özeti. */
-export function hanKartErisim(k: HanKarti, turAdi: string, t: Ceviri, kalabalik: boolean): string {
+export function hanKartErisim(k: HanKarti, turAdi: string, t: Ceviri, kalabalik: boolean, lang: Parameters<typeof yuzdeL>[1]): string {
   return [
     hanKartAdi(k, turAdi, t),
     k.sahip === "npc" ? t("onl.hs.npc") : applyParams(t("onl.isl.sahibi"), [k.sahipKisi?.ad || t("onl.hs.sahipBilinmez")]),
@@ -56,7 +57,7 @@ export function hanKartErisim(k: HanKarti, turAdi: string, t: Ceviri, kalabalik:
     kalabalik ? t("onl.hs.kalabalik") : null,
     k.mudavim ? applyParams(t("onl.hs.mudavimin"), [t("onl.topluluk.rozet." + k.mudavim)]) : null,
     !k.acik ? t("onl.hs.kapali") : null,
-    k.yolcu ? `${t("onl.tz.yp.baslik")}: ${applyParams(t("onl.tz.yp.ozet"), [`%${k.yolcu.payYuzde}`, k.yolcu.tutar])}` : null,
+    k.yolcu ? yolcuPayiMetni(t, k.yolcu, lang) : null,
   ].filter(Boolean).join(". ");
 }
 
@@ -70,7 +71,7 @@ function HanKartiGorunumu({ k, turAdi, secili, kalabalik, genislik, rtl, t, onSe
   const dolu = !!k.oda && k.oda.kapasite > 0 && k.oda.dolu >= k.oda.kapasite;
   const baglanti = !!(sahipId && onSahip);
   return <View style={{ width: genislik }} onLayout={(e) => onYerles?.(e.nativeEvent.layout.x)}>
-    <Pressable accessibilityRole="radio" accessibilityState={{ selected: secili }} accessibilityLabel={hanKartErisim(k, turAdi, t, kalabalik)}
+    <Pressable accessibilityRole="radio" accessibilityState={{ selected: secili }} accessibilityLabel={hanKartErisim(k, turAdi, t, kalabalik, lang)}
     accessibilityHint={secili ? undefined : t("onl.hs.secIpucu")}
     onPress={() => { if (secili) return; hap("selection"); onSec(); }}
     style={({ pressed }) => ({ width: "100%", transform: [{ scale: pressed && !secili ? BASMA_OLCEK : 1 }] })}>
@@ -98,12 +99,7 @@ function HanKartiGorunumu({ k, turAdi, secili, kalabalik, genislik, rtl, t, onSe
           {k.masa.oturan ? applyParams(t("onl.hs.canli"), [k.masa.oturan, k.masa.acik]) : applyParams(t("onl.hs.sakin"), [k.masa.acik])}
         </Text>
       </View> : null}
-      {k.yolcu ? <View style={{ flexDirection: yon(rtl), alignItems: "center", gap: 6 }}>
-        <GameIcon name="camel" size={13} color={C.sage} />
-        <Text numberOfLines={2} style={{ flex: 1, fontFamily: F.serif, fontSize: 13, lineHeight: 17, color: C.sage, textAlign: hiza(rtl) }}>
-          {`${t("onl.tz.yp.baslik")}: ${applyParams(t("onl.tz.yp.ozet"), [yuzdeL(k.yolcu.payYuzde, lang), k.yolcu.tutar])}`}
-        </Text>
-      </View> : null}
+      {k.yolcu ? <YolcuPayiDokumu y={k.yolcu} t={t} rtl={rtl} kisa /> : null}
     </Cerceve>
     </Pressable>
     {baglanti ? <Pressable accessibilityRole="link" accessibilityLabel={applyParams(t("onl.hs.sahipGit"), [sahipAd])}

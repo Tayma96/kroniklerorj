@@ -79,8 +79,29 @@ export function useSimdiOnerileri(t: Ceviri, onBarinma?: () => void): Oneri[] {
   return liste;
 }
 
-/** Yaşam'ın üstündeki rehber: öneri kartları ya da sakin "her şey yolunda" satırı. */
+/** Rehber verisi bu hesap için eksiksiz alındı (işaret yükleme BİTİNCE ve hatasızsa yazılır). */
 let rehberYuklenen: string | null = null;
+/** Süren yükleme tek söz olarak paylaşılır: unmount/yeniden bağlanma onu kaybetmez, ikinci istek açılmaz. */
+let rehberSoz: { hesap: string; soz: Promise<void> } | null = null;
+
+function rehberYukle(hesap: string, mist: ReturnType<typeof useMulkIstemci>, tzi: ReturnType<typeof useTezgahIstemci>): Promise<void> {
+  if (rehberSoz?.hesap === hesap) return rehberSoz.soz;
+  const soz: Promise<void> = (async () => {
+    let ml = hatirlananMulkListesi(hesap);
+    if (!ml) {
+      const r = await mist.liste();
+      if (!r.ok) return;
+      ml = r.deger;
+      mulkListesiniHatirla(hesap, ml);
+    }
+    const dukkanlar = ml.benim.filter((id) => ml!.yuvalar.find((v) => v.isletme === id)?.tur === "dukkan" && !hatirlananTezgah(hesap, id));
+    let tamam = true;
+    await Promise.all(dukkanlar.map(async (id) => { const r = await tzi.tezgah(id); if (r.ok) tezgahHatirla(hesap, r.deger); else tamam = false; }));
+    if (tamam) rehberYuklenen = hesap; // hata varsa işaret yazılmaz: sonraki bağlanmada yeniden denenir
+  })().catch(() => { /* işaret yazılmadı; sonraki bağlanmada yeniden denenir */ }).finally(() => { if (rehberSoz?.soz === soz) rehberSoz = null; });
+  rehberSoz = { hesap, soz };
+  return soz;
+}
 
 /** Mülk listesi ve kendi tezgâhlarım bellekte yoksa hesap başına bir kez alınır; bitince rehber yeniden çizilir. */
 function useRehberVerisi(): void {
@@ -92,24 +113,13 @@ function useRehberVerisi(): void {
   const hazir = !!o.yerlesim;
   useEffect(() => {
     if (!hazir || !hesap || rehberYuklenen === hesap) return;
-    rehberYuklenen = hesap;
     let iptal = false;
-    void (async () => {
-      let ml = hatirlananMulkListesi(hesap);
-      if (!ml) {
-        const r = await mist.liste();
-        if (!r.ok) { rehberYuklenen = null; return; }
-        ml = r.deger;
-        mulkListesiniHatirla(hesap, ml);
-      }
-      const dukkanlar = ml.benim.filter((id) => ml!.yuvalar.find((v) => v.isletme === id)?.tur === "dukkan" && !hatirlananTezgah(hesap, id));
-      await Promise.all(dukkanlar.map(async (id) => { const r = await tzi.tezgah(id); if (r.ok) tezgahHatirla(hesap, r.deger); }));
-      if (!iptal) yenile((n) => n + 1);
-    })();
+    void rehberYukle(hesap, mist, tzi).then(() => { if (!iptal) yenile((n) => n + 1); });
     return () => { iptal = true; };
   }, [hazir, hesap, mist, tzi]);
 }
 
+/** Yaşam'ın üstündeki rehber: öneri kartları ya da sakin "her şey yolunda" satırı. */
 export function SimdiRehberi({ onBarinma }: { onBarinma?: () => void }) {
   const router = useRouter();
   const { t, rtl } = useI18n();

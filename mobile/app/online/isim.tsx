@@ -1,9 +1,9 @@
 // İşim sekmesi: meslek ve beceri ağacı, üretim (işler, lonca siparişleri, ısmarlamalar), işletmelerim (dükkân, atölye,
 // han aç / yönet; sahip olduğum ve çalıştığım işletmeler kart olarak) ve ekonomi defteri. Mülk listesi bir kez
 // GET /v1/mulk ile alınır ve "Şimdi" rehberi için bellekte bırakılır; kervan Sokak'taki Kervansaray'dadır.
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { View, Text } from "react-native";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import Animated from "react-native-reanimated";
 import { useI18n, applyParams } from "../../lib/i18n";
 import { C, F } from "../../lib/theme";
@@ -58,6 +58,23 @@ function IsimEkran() {
     }));
     return () => { iptal = true; };
   }, [tezgahAnahtar, tzi, hesap]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Sekme bağlı kaldığı için dükkândan dönünce özet sessizce tazelenir (ilk odakta çift yükleme yok; hata olursa eski veri kalır).
+  const ilkOdak = useRef(true);
+  const tezgahIdRef = useRef<string[]>([]);
+  tezgahIdRef.current = tezgahIds;
+  useFocusEffect(useCallback(() => {
+    if (ilkOdak.current) { ilkOdak.current = false; return; }
+    const ids = tezgahIdRef.current;
+    if (!ids.length) return;
+    let iptal = false;
+    void Promise.all(ids.map(async (id) => {
+      const r = await tzi.tezgah(id);
+      if (iptal || !r.ok) return;
+      tezgahHatirla(hesap, r.deger);
+      setTzler((x) => ({ ...x, [id]: r.deger }));
+    }));
+    return () => { iptal = true; };
+  }, [tzi, hesap]));
 
   if (!y) return <YerlesimBekle sekme="isim" rtl={rtl} t={t} onGiris={() => router.replace("/online")} />;
 

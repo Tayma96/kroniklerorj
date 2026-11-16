@@ -129,12 +129,16 @@ function IsletmeEkran() {
   const ac = (tur: "raf" | "al" | "depo" | "devral", satir: number | null = null) => setCek({ tur, satir, oturum: ++acilis.current });
   const kapat = () => setCek(null);
 
+  const tzSira = useRef(0);
   const tezgahYukle = useCallback(async () => {
     if (!tezgahli) return;
+    const n = ++tzSira.current;
     const r = await tzi.tezgah(id);
+    if (n !== tzSira.current) return; // eski yanıt atılır
     if (r.ok) { setTz(r.deger); setTzHata(null); tezgahHatirla(hesap, r.deger); } else setTzHata(tezgahHataMetni(t, r));
   }, [tzi, id, tezgahli, hesap]); // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { void tezgahYukle(); }, [tezgahYukle]);
+  // `id` değişince eski tezgâh ve hata durumu sıfırlanır.
+  useEffect(() => { setTz(null); setTzHata(null); setYukHata(null); void tezgahYukle(); }, [tezgahYukle]);
   // Devralma eşiği (ay) yalnız çarşı listesinde gelir: bilinmiyorsa bir kez sessizce alınır.
   useEffect(() => {
     if (!tezgahli || devralmaAy !== null) return;
@@ -142,7 +146,7 @@ function IsletmeEkran() {
     void tzi.dukkanlar().then((r) => { if (!iptal && r.ok) { setDevralmaAy(r.deger.devralmaKepenkAy); dukkanlariHatirla(hesap, r.deger); } });
     return () => { iptal = true; };
   }, [tezgahli]); // eslint-disable-line react-hooks/exhaustive-deps
-  const tezgahTazele = async () => { await tezgahYukle(); if (!sahte) void o.yerlesimYukle(true); };
+  const tezgahTazele = async () => { await tezgahYukle(); if (!sahte) await o.yerlesimYukle(true); };
 
   const yukle = useCallback(async () => {
     if (!id) { setYukHata("isletme_yok"); return; }
@@ -357,7 +361,7 @@ function IsletmeEkran() {
       <SayfaBasi ust={y.yerlesim.ad} baslik={t(tezgahli ? (konum ? (isletmeParca(id)?.tur === "atolye" ? "onl.tz.baslikAtolye" : "onl.tz.baslikSahip") : "onl.tz.baslikMusteri") : "onl.isl.baslik")}
         alt={t(tezgahli ? (konum ? "onl.tz.altSahip" : "onl.tz.altMusteri") : konum ? "onl.isl.alt" : "onl.isl.altVitrin")} rtl={rtl} />
     </View>
-    {yukHata && !p && (!tezgahli || (!tz && tzHata)) ? <Bant metin={t(ekHataAnahtari(yukHata))} rtl={rtl} eylem={t("onl.yenidenDene")} onEylem={() => { void yukle(); void tezgahYukle(); }} />
+    {yukHata && !p ? <Bant metin={t(ekHataAnahtari(yukHata))} rtl={rtl} eylem={t("onl.yenidenDene")} onEylem={() => { void yukle(); void tezgahYukle(); }} />
       : tezgahli && !tz && tzHata ? <Bant metin={tzHata} rtl={rtl} eylem={t("onl.yenidenDene")} onEylem={() => { void tezgahYukle(); }} />
       : !p || (tezgahli && !tz) ? (tezgahli ? <TezgahIskeleti etiket={t("onl.isl.yukleniyor")} rtl={rtl} /> : <Yukleniyor metin={t("onl.isl.yukleniyor")} />) : <>
         {tezgahli ? tezgahBolumu : ust}
