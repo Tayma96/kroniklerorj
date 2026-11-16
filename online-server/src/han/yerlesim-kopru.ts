@@ -12,6 +12,8 @@ export interface IkramOdemeGovdesi {
   /** Sunucu menüsünden; YerlesimDO yine IKRAM_MENUSU'ndan yeniden hesaplar. */
   fiyat: number;
   istekNo: string;
+  /** 4.9: masanın hanı (ödeme o hanın kasasına; yoksa 1. han). */
+  han?: number;
 }
 
 /** HesapDO → YerlesimDO ileti biçimi (YerlesimIleti'nin `hanIkram` üyesi). */

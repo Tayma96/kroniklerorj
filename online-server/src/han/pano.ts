@@ -28,6 +28,8 @@ export interface Ilan {
   t: PanoTuru;
   m: string;
   z: number;
+  /** 4.9: ilanın asıldığı han (yoksa 1. han; eski kayıt). Kimlik numarası yerleşimde tektir. */
+  h?: number;
 }
 export interface PanoKaydi {
   n: number;
@@ -62,11 +64,15 @@ export function panoBuda(p: PanoKaydi, simdi: number): void {
   p.l = p.l.filter((x) => simdi - x.z < PANO_OMUR_MS);
 }
 
-export function ilanEkle(p: PanoKaydi, ilan: Omit<Ilan, "i" | "z">, simdi: number): Ilan {
+const ilanHani = (x: Ilan): number => x.h ?? 1;
+
+/** İlan ekler; PANO_EN_COK sınırı han başınadır (o hanın en eski ilanı düşer). */
+export function ilanEkle(p: PanoKaydi, ilan: Omit<Ilan, "i" | "z" | "h">, simdi: number, han = 1): Ilan {
   panoBuda(p, simdi);
-  const yeni: Ilan = { i: ++p.n, ...ilan, z: simdi };
+  const yeni: Ilan = { i: ++p.n, ...ilan, z: simdi, ...(han !== 1 ? { h: han } : {}) };
   p.l.push(yeni);
-  if (p.l.length > PANO_EN_COK) p.l.splice(0, p.l.length - PANO_EN_COK);
+  let fazla = p.l.filter((x) => ilanHani(x) === han).length - PANO_EN_COK;
+  if (fazla > 0) p.l = p.l.filter((x) => !(ilanHani(x) === han && fazla-- > 0));
   return yeni;
 }
 
@@ -80,10 +86,13 @@ export function ilanSil(p: PanoKaydi, o: string, idHam: unknown): Sonuc<{ silind
   return basarili({ silindi: ilanKimlik(id!) });
 }
 
-/** Görünüm: yeniden eskiye; sahibin yerel kimliği (profil bağlantısı), bitiş anı ve "benim" işareti. */
-export function panoGorunumu(p: PanoKaydi | undefined, ben: string, simdi: number) {
+/**
+ * Görünüm: yeniden eskiye; sahibin yerel kimliği (profil bağlantısı), bitiş anı ve "benim" işareti. `han`: yalnız o
+ * hanın panosu (4.9; varsayılan 1. han); null bütün hanlar (şikâyet araması).
+ */
+export function panoGorunumu(p: PanoKaydi | undefined, ben: string, simdi: number, han: number | null = 1) {
   return (p?.l ?? [])
-    .filter((x) => simdi - x.z < PANO_OMUR_MS)
+    .filter((x) => simdi - x.z < PANO_OMUR_MS && (han === null || ilanHani(x) === han))
     .sort((a, b) => b.z - a.z || b.i - a.i)
     .map((x) => ({ id: ilanKimlik(x.i), tur: x.t, metin: x.m, kisi: { id: x.o, ad: x.ad }, zaman: x.z, bitis: x.z + PANO_OMUR_MS, benim: x.o === ben }));
 }

@@ -8,16 +8,30 @@ import type { Kademe, MeslekId } from "../icerik/meslekler.ts";
 export const MULK_TURLERI = ["han", "dukkan", "atolye"] as const;
 export type MulkTuru = (typeof MULK_TURLERI)[number];
 
-/** [PARAMETRE] Yerleşim başına mülk yuvası. Han yuvası yerleşimin tek hanıdır (masaları olan han; NPC ya da oyuncu). */
+/**
+ * [PARAMETRE] Yerleşim başına oyuncunun edinebileceği mülk yuvası (4.9 Çoklu han; Berkay: şehirde 5, kasabada 2 han,
+ * köyde oyuncu hanı yok). Han 1. yuvası yerleşimin bugünkü hanıdır (sahipsizken NPC işletir); 2. ve sonraki yuvalar
+ * boş arsadır, edinilince han olur. Köyde yalnız NPC hanı vardır (bkz. hanYuvaSayisi).
+ */
 export const MULK_YUVA: Readonly<Record<YerlesimTuru, Readonly<Record<MulkTuru, number>>>> = {
-  sehir: { han: 1, dukkan: 4, atolye: 3 },
-  kasaba: { han: 1, dukkan: 2, atolye: 2 },
-  koy: { han: 1, dukkan: 1, atolye: 1 },
+  sehir: { han: 5, dukkan: 4, atolye: 3 },
+  kasaba: { han: 2, dukkan: 2, atolye: 2 },
+  koy: { han: 0, dukkan: 1, atolye: 1 },
 };
 
-/** [PARAMETRE] Edinim bedeli (akçe; beyliğe ödenir, dünyadan çıkar). Çırağın aylık emeği ~12 akçe. */
+/** NPC'nin işlettiği (sahipsizken) ve her yerleşimde var olan han yuvası. Kimliği ve masa adları değişmez. */
+export const NPC_HAN_NO = 1;
+/** [PARAMETRE] Bir kişi aynı yerleşimde en çok bu kadar han sahibi olabilir (tekel önlemi; kişi mülk sınırı ayrıca). */
+export const HAN_KISI_YERLESIM_EN_COK = 1;
+
+/** Yerleşimdeki han yuvası sayısı (NPC hanı dahil; köyde 1). Han numarası 1..bu. */
+export function hanYuvaSayisi(tur: YerlesimTuru): number {
+  return Math.max(NPC_HAN_NO, MULK_YUVA[tur].han);
+}
+
+/** [PARAMETRE] Edinim bedeli (akçe; beyliğe ödenir, dünyadan çıkar). Çırağın aylık emeği ~12 akçe. Köy hanı satılmaz. */
 export const EDINIM_FIYATI: Readonly<Record<YerlesimTuru, Readonly<Record<MulkTuru, number>>>> = {
-  sehir: { han: 400, dukkan: 180, atolye: 220 },
+  sehir: { han: 600, dukkan: 180, atolye: 220 },
   kasaba: { han: 250, dukkan: 120, atolye: 150 },
   koy: { han: 120, dukkan: 60, atolye: 80 },
 };
@@ -35,6 +49,13 @@ export const KISI_MULK_EN_COK = 2;
 
 /** [PARAMETRE] Aylık bakım gideri (kasadan; dünyadan çıkar). Ödenemeyen kısım bakım borcudur. */
 export const BAKIM: Readonly<Record<MulkTuru, number>> = { han: 6, dukkan: 3, atolye: 4 };
+/** [PARAMETRE] Han bakımı yerleşim türüne göre (şehir hanı büyük ve pahalı). Diğer türler BAKIM'dan. */
+export const HAN_BAKIM: Readonly<Record<YerlesimTuru, number>> = { sehir: 10, kasaba: 6, koy: 6 };
+
+/** İşletmenin aylık bakımı: han yerleşim türüne göre; bilinmeyen yerleşim bugünkü değer. */
+export function bakimGideri(tur: MulkTuru, yerlesimTuru: YerlesimTuru | undefined): number {
+  return tur === "han" && yerlesimTuru ? HAN_BAKIM[yerlesimTuru] : BAKIM[tur];
+}
 /** [PARAMETRE] Bu kadar ay üst üste borçlu kalan işletme iflas eder: mülk beyliğe döner, karakter silinmez. */
 export const IFLAS_BORC_AY = 3;
 
@@ -60,6 +81,17 @@ export const KAPASITE: Readonly<Record<MulkTuru, readonly number[]>> = {
   dukkan: [1, 2, 2, 3, 4],
   atolye: [1, 1, 2, 2, 3],
 };
+/** [PARAMETRE] Han oda kapasitesi yerleşim türüne göre (şehir hanı büyük; kasaba ve eski köy hanı bugünkü tablo). */
+export const HAN_KAPASITE: Readonly<Record<YerlesimTuru, readonly number[]>> = {
+  sehir: [5, 8, 11, 14, 18],
+  kasaba: [3, 5, 7, 9, 12],
+  koy: [3, 5, 7, 9, 12],
+};
+
+/** Seviyeye göre kapasite tablosu: han yerleşim türüne göre; bilinmeyen yerleşim bugünkü tablo. */
+export function kapasiteTablosu(tur: MulkTuru, yerlesimTuru: YerlesimTuru | undefined): readonly number[] {
+  return tur === "han" && yerlesimTuru ? HAN_KAPASITE[yerlesimTuru] : KAPASITE[tur];
+}
 /** [PARAMETRE] Oyuncu hanının sunduğu odalar seviyeye göre (has oda tanınmış seviyede açılır). */
 export const HAN_ODA_SEVIYESI = { yatak: 0, oda: 0, hasOda: 2 } as const;
 

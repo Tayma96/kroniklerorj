@@ -55,7 +55,8 @@
 //   GET  /v1/defter?ay=                  → gelir-gider dökümü (son N ay), emanetteki akçe
 //   POST /v1/sikayet {hedef, neden, aciklama?, istekNo} → {id, durum, kalan}
 //   GET  /v1/duyurular                   → son 5 duyuru
-//   GET  /v1/han?dil=                    → yerleşimin hanı ve masaları (doluluk)          (Faz 10, src/han/)
+//   GET  /v1/han?dil=&han=               → seçili han (yoksa 1.) ve masaları + hanlar[] kartları (Faz 10; 4.9 çoklu han)
+//        4.9: han seçen uçlar `?han=N` (GET, baglan, ses) ya da gövdede `han` (POST); yoksa 1. han (eski istemci).
 //   GET  /v1/han/masa/:no/baglan         → WebSocket yükseltmesi (Upgrade: websocket + oturum); iletiler src/han/tipler.ts
 //   POST /v1/han/eylem {masa, tur, hedef?, olay?, sart?, istekNo} → {olay} (katılım listesiyle)
 //   POST /v1/han/masa/:no/ses/oturum {}            → {ice}  (Faz 16 ses; Realtime yoksa 503 ses_kapali)
@@ -372,11 +373,17 @@ async function yonetimUcu(istek: Request, env: Env, uc: YonetimUcu, url: URL): P
 }
 
 /** Han masasına WebSocket: oturum + HesapDO bileti (yaptırım, plaka), sonra MasaDO yükseltmesi. */
-async function masaBaglan(istek: Request, env: Env, no: string): Promise<Response> {
+/** 4.9 Çoklu han: `?han=` sorgu parametresi (yoksa null → 1. han; doğrulama HesapDO/YerlesimDO'da). */
+function hanSorgu(url: URL): string | null {
+  const h = url.searchParams.get("han");
+  return h === null ? null : h.slice(0, 4);
+}
+
+async function masaBaglan(istek: Request, env: Env, no: string, han: string | null = null): Promise<Response> {
   if ((istek.headers.get("upgrade") ?? "").toLowerCase() !== "websocket") return hataYaniti("yukseltme_gerekli");
   const yetki = await yetkilendir(istek, env);
   if (!yetki.ok) return hataYaniti(yetki.hata);
-  const bilet = await hesapCagir<MasaBileti>(env, yetki.deger, { islem: "masaBilet", hesapId: yetki.deger, masa: no.slice(0, 8), oturumSurumu: yetki.surum ?? 0 });
+  const bilet = await hesapCagir<MasaBileti>(env, yetki.deger, { islem: "masaBilet", hesapId: yetki.deger, masa: no.slice(0, 8), han, oturumSurumu: yetki.surum ?? 0 });
   if (!bilet.ok) return basarisizYanit(bilet);
   return masayaYukselt(env, bilet.deger);
 }
@@ -558,7 +565,7 @@ async function yonlendir(istek: Request, env: Env): Promise<Response> {
     case "/v1/barinma":
     case "/v1/donus": {
       const islem = yol === "/v1/barinma" ? "barinma" : "donus";
-      return yontem === "GET" ? hesaba(istek, env, (hesapId) => basarili({ islem, hesapId, dil })) : hataYaniti("yontem_yok");
+      return yontem === "GET" ? hesaba(istek, env, (hesapId) => basarili({ islem, hesapId, dil, ...(islem === "barinma" ? { han: hanSorgu(url) } : {}) })) : hataYaniti("yontem_yok");
     }
     case "/v1/barinma/kira":
       return yontem === "POST" ? govdeli(istek, env, "barinmaKira") : hataYaniti("yontem_yok");
@@ -642,13 +649,13 @@ async function yonlendir(istek: Request, env: Env): Promise<Response> {
     case "/v1/kervan/haber":
       return yontem === "POST" ? kervanGovdeli(istek, env, "kervanHaber") : hataYaniti("yontem_yok");
     case "/v1/han":
-      return yontem === "GET" ? hesaba(istek, env, (hesapId) => basarili({ islem: "han", hesapId, dil })) : hataYaniti("yontem_yok");
+      return yontem === "GET" ? hesaba(istek, env, (hesapId) => basarili({ islem: "han", hesapId, dil, han: hanSorgu(url) })) : hataYaniti("yontem_yok");
     case "/v1/han/eylem":
       return yontem === "POST" ? hanGovdeli(istek, env, "hanEylem") : hataYaniti("yontem_yok");
     case "/v1/han/ikram":
       return yontem === "POST" ? hanGovdeli(istek, env, "hanIkram") : hataYaniti("yontem_yok");
     case "/v1/han/pano":
-      if (yontem === "GET") return hesaba(istek, env, (hesapId) => basarili({ islem: "hanPano", hesapId }));
+      if (yontem === "GET") return hesaba(istek, env, (hesapId) => basarili({ islem: "hanPano", hesapId, han: hanSorgu(url) }));
       return yontem === "POST" ? hanGovdeli(istek, env, "hanPanoYaz") : hataYaniti("yontem_yok");
     case "/v1/han/pano/sil":
       return yontem === "POST" ? hanGovdeli(istek, env, "hanPanoSil") : hataYaniti("yontem_yok");
@@ -712,7 +719,7 @@ async function yonlendir(istek: Request, env: Env): Promise<Response> {
     });
   }
   const masa = MASA_YOLU.exec(yol);
-  if (masa?.[1]) return yontem === "GET" ? masaBaglan(istek, env, masa[1]) : hataYaniti("yontem_yok");
+  if (masa?.[1]) return yontem === "GET" ? masaBaglan(istek, env, masa[1], hanSorgu(url)) : hataYaniti("yontem_yok");
   const ses = SES_YOLU.exec(yol);
   if (ses?.[1] && ses[2]) {
     if (yontem !== "POST") return hataYaniti("yontem_yok");
@@ -722,7 +729,7 @@ async function yonlendir(istek: Request, env: Env): Promise<Response> {
     const alt = ses[2] as SesAlt;
     return hesaba(istek, env, async (hesapId) => {
       const govde = await govdeOku(istek);
-      return govde.ok ? basarili({ islem: "hanSes", hesapId, masa: masaNo, alt, govde: govde.deger }) : govde;
+      return govde.ok ? basarili({ islem: "hanSes", hesapId, masa: masaNo, alt, govde: govde.deger, han: hanSorgu(url) }) : govde;
     });
   }
   const kisi = KISI_YOLU.exec(yol);

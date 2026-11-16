@@ -12,8 +12,10 @@ import { eylemGirdisiCoz } from "./eylem.ts";
 import { IKRAM_GUNLUK, IKRAM_MENUSU, ikramGirdisiCoz } from "./ikram.ts";
 import { ZIYAFET_GUNLUK, ziyafetGirdisiCoz } from "./ziyafet.ts";
 import { PANO_GUNLUK, panoGirdisiCoz } from "./pano.ts";
-import { HAN_DUZENI, HAN_EYLEM_GUNLUK, HAN_TURU_ADLARI, KOLTUK_SAYISI, masaAdi, masaNoCoz, masaSayisi, masaSirala } from "./kurallar.ts";
-import type { HanOzeti, HanTuru, MasaAnonsu, SesAlt, MasaBileti, MasaIcOzeti, MasaIleti, MasaOlayi, MasaOzeti } from "./tipler.ts";
+import { HAN_DUZENI, HAN_EYLEM_GUNLUK, HAN_TURU_ADLARI, KOLTUK_SAYISI, hanMasaAdi, masaNoCoz, masaSayisi, masaSirala } from "./kurallar.ts";
+import { hanNoCoz } from "../mulk/tapu.ts";
+import { isletmeKimligi } from "../mulk/kurallar.ts";
+import type { HanKarti, HanOzeti, HanTuru, MasaAnonsu, SesAlt, MasaBileti, MasaIcOzeti, MasaIleti, MasaOlayi, MasaOzeti } from "./tipler.ts";
 import type { IkramOdeyici } from "./yerlesim-kopru.ts";
 
 // HesapDO depo anahtarları (yalnız "han:" önekli; başka anahtara dokunulmaz)
@@ -54,10 +56,14 @@ export interface HanHesapBaglami {
   ziyafetOde?: ZiyafetOdeyici;
   /** H5: masa olayını yerleşime iletir (tekrar güvenli; anahtar masa adı + olay no). Yoksa etki yok. */
   hanOlayiGonder?: HanOlayiGonderici;
+  /** 4.9: yerleşimin açık hanları (YerlesimDO `hanlar`). Yoksa yalnız 1. han vardır (2.+ han `han_yok`). */
+  hanlarSor?: HanListeleyici;
 }
 
-/** HesapDO → YerlesimDO "engeller" çağrısı (H4: müdavim rozeti de döner). */
-export type EngelListeleyici = (yerlesim: string) => Promise<Sonuc<{ engeller: string[]; mudavim?: boolean; ozan?: boolean }>>;
+/** HesapDO → YerlesimDO "engeller" çağrısı (H4: müdavim rozeti de döner; 4.9: rozet seçili hanın). */
+export type EngelListeleyici = (yerlesim: string, han?: number) => Promise<Sonuc<{ engeller: string[]; mudavim?: boolean; ozan?: boolean; kisi?: string; nam?: number }>>;
+/** HesapDO → YerlesimDO "hanlar" çağrısı (4.9). */
+export type HanListeleyici = (yerlesim: string) => Promise<Sonuc<{ hanlar: HanKarti[] }>>;
 /** HesapDO → YerlesimDO "hanTanidiklar" çağrısı. */
 export type TanidikListeleyici = (yerlesim: string) => Promise<Sonuc<{ hesaplar: string[] }>>;
 
@@ -70,7 +76,7 @@ export interface HanOlayiGovdesi {
 export interface HanOlayiBekleyen extends HanOlayiGovdesi {
   yerlesim: string;
 }
-export type ZiyafetOdeyici = (yerlesim: string, govde: { masa: string; masaNo: number; oturanlar: string[]; istekNo: string }) => Promise<Sonuc<{ bedel: number; para: number; nam: number }>>;
+export type ZiyafetOdeyici = (yerlesim: string, govde: { masa: string; masaNo: number; oturanlar: string[]; istekNo: string; han?: number }) => Promise<Sonuc<{ bedel: number; para: number; nam: number }>>;
 export type HanOlayiGonderici = (yerlesim: string, govde: HanOlayiGovdesi) => Promise<Sonuc<unknown>>;
 
 interface HanYeri {
@@ -78,40 +84,87 @@ interface HanYeri {
   yerlesimAdi: string;
   tur: HanTuru;
   masa: number;
+  /** 4.9: seçili han numarası (1 = bugünkü han). */
+  han: number;
+  /** Yerleşimden gelen han kartları (yalnız sorulduysa). */
+  kartlar?: HanKarti[];
 }
 
-async function hanYeri(depo: Depo): Promise<Sonuc<HanYeri>> {
-  const profil = await profilGetir(depo);
+/**
+ * Oyuncunun yerleşimi ve seçili han (4.9). Han verilmezse 1. han (eski istemci; ek iç çağrı yok). 2. ve sonraki
+ * hanlar yalnız yerleşimde açıksa (sahipli) geçerlidir: sahipsiz arsanın masası yoktur. `kartlar`: listeyi de iste.
+ */
+async function hanYeri(b: Pick<HanHesapBaglami, "depo" | "hanlarSor">, hamHan?: unknown, kartlar = false): Promise<Sonuc<HanYeri>> {
+  const han = hanNoCoz(hamHan);
+  if (han === undefined) return hata("han_gecersiz");
+  const profil = await profilGetir(b.depo);
   if (!profil.ok) return profil;
   const y = yerlesimBul(profil.deger.yerlesim);
   if (!y) return hata("yerlesim_gecersiz");
-  return basarili({ yerlesim: y.id, yerlesimAdi: y.ad, tur: HAN_DUZENI[y.tur].tur, masa: masaSayisi(y.tur) });
+  const yer: HanYeri = { yerlesim: y.id, yerlesimAdi: y.ad, tur: HAN_DUZENI[y.tur].tur, masa: masaSayisi(y.tur), han };
+  if (han === 1 && !kartlar) return basarili(yer);
+  if (!b.hanlarSor) return han === 1 ? basarili(yer) : hata("han_yok");
+  let r: Sonuc<{ hanlar: HanKarti[] }>;
+  try {
+    r = await b.hanlarSor(y.id);
+  } catch (e) {
+    // 1. han liste olmadan da çalışır; diğer hanın varlığı doğrulanamazsa reddedilir.
+    if (han === 1) return basarili(yer);
+    throw e;
+  }
+  if (!r.ok) return han === 1 ? basarili(yer) : r;
+  const l = Array.isArray(r.deger.hanlar) ? r.deger.hanlar : [];
+  if (!l.some((x) => x.no === han)) return hata("han_yok");
+  return basarili({ ...yer, kartlar: l });
 }
 
-/** GET /v1/han?dil= : oyuncunun yerleşimindeki han ve masaların doluluğu. */
-export async function hanListesi(b: HanHesapBaglami, dil: unknown): Promise<Sonuc<HanOzeti>> {
-  const yer = await hanYeri(b.depo);
+/** Seçili hanın masa adı. */
+function masaAdiYer(yer: HanYeri, no: number): string {
+  return hanMasaAdi(yer.yerlesim, yer.tur, yer.han, no);
+}
+
+/**
+ * GET /v1/han?dil=&han= : oyuncunun yerleşimindeki seçili han (yoksa 1. han), masaların doluluğu ve yerleşimin bütün
+ * açık hanlarının kartları (4.9: sahip, seviye, fiyat çarpanı, oda doluluğu, masa/oturan sayısı, müdavim rozetim).
+ */
+export async function hanListesi(b: HanHesapBaglami, dil: unknown, hamHan?: unknown): Promise<Sonuc<HanOzeti>> {
+  const yer = await hanYeri(b, hamHan, true);
   if (!yer.ok) return yer;
-  const { yerlesim, tur } = yer.deger;
+  const { yerlesim, tur, han } = yer.deger;
   const nolar = Array.from({ length: yer.deger.masa }, (_, i) => i + 1);
-  const [ozetler, tanidiklar] = await Promise.all([
-    Promise.all(nolar.map((no) => b.masaCagir(masaAdi(yerlesim, tur, no), { islem: "ozet", masa: masaAdi(yerlesim, tur, no), no }))),
+  const kartlar = yer.deger.kartlar ?? [{ no: 1, isletme: isletmeKimligi(yerlesim, "han", 1), sahip: "npc", ad: "", seviye: 0, fc: 100, acik: true, oda: null, mudavim: null } satisfies HanKarti];
+  // Masa özetleri: her açık hanın her masası (seçili hanınkiler ayrıntılı listeye de girer).
+  const ozetSor = (h: number) => Promise.all(nolar.map((no) => { const ad = hanMasaAdi(yerlesim, tur, h, no); return b.masaCagir(ad, { islem: "ozet", masa: ad, no }); }));
+  const [hanOzetleri, tanidiklar] = await Promise.all([
+    Promise.all(kartlar.map((k) => ozetSor(k.no))),
     tanidikKumesi(b, yerlesim),
   ]);
   const masalar: MasaOzeti[] = [];
-  for (const o of ozetler) {
-    if (!o.ok) return o;
-    // Oturan kimlikleri yalnız sayıma girer; istemciye giden özette yoktur.
-    const { oturanlar, ...ozet } = o.deger as MasaIcOzeti;
-    const tanidik = (oturanlar ?? []).filter((h) => h !== b.hesapId && tanidiklar.has(h)).length;
-    masalar.push({ ...ozet, tanidik });
+  const hanlar: HanKarti[] = [];
+  for (let i = 0; i < kartlar.length; i++) {
+    const kart = kartlar[i]!;
+    let acik = 0;
+    let oturan = 0;
+    for (const o of hanOzetleri[i]!) {
+      if (!o.ok) return o;
+      // Oturan kimlikleri yalnız sayıma girer; istemciye giden özette yoktur.
+      const { oturanlar, ...ozet } = o.deger as MasaIcOzeti;
+      oturan += ozet.oturan;
+      if (ozet.ayar?.acik !== false) acik++;
+      if (kart.no === han) {
+        const tanidik = (oturanlar ?? []).filter((h) => h !== b.hesapId && tanidiklar.has(h)).length;
+        masalar.push({ ...ozet, tanidik });
+      }
+    }
+    hanlar.push({ ...kart, masa: { sayi: nolar.length, acik, oturan } });
   }
   return basarili({
     yerlesim: { id: yerlesim, ad: yer.deger.yerlesimAdi },
-    han: { tur, ad: HAN_TURU_ADLARI[tur][dilCoz(dil)] },
+    han: { tur, ad: HAN_TURU_ADLARI[tur][dilCoz(dil)], no: han, isletme: isletmeKimligi(yerlesim, "han", han) },
     koltuk: KOLTUK_SAYISI,
     masalar: masaSirala(masalar),
     menu: Object.entries(IKRAM_MENUSU).map(([id, m]) => ({ id, fiyat: m.fiyat })),
+    hanlar,
   });
 }
 
@@ -130,14 +183,14 @@ async function tanidikKumesi(b: HanHesapBaglami, yerlesim: string): Promise<Set<
  * GET /v1/han/masa/:no/baglan öncesi: masa numarası doğrulanır, bilet üretilir (plaka + yaptırım anlık görüntüsü).
  * Oyuncu aynı anda tek masadadır: önceki masa farklıysa oradaki bağlantı kapatılır.
  */
-export async function masaBileti(b: HanHesapBaglami, hamNo: unknown): Promise<Sonuc<MasaBileti>> {
+export async function masaBileti(b: HanHesapBaglami, hamNo: unknown, hamHan?: unknown): Promise<Sonuc<MasaBileti>> {
   const profil = await profilGetir(b.depo);
   if (!profil.ok) return profil;
-  const yer = await hanYeri(b.depo);
+  const yer = await hanYeri(b, hamHan);
   if (!yer.ok) return yer;
   const no = masaNoCoz(hamNo, yer.deger.masa);
   if (no === undefined) return hata("masa_gecersiz");
-  const ad = masaAdi(yer.deger.yerlesim, yer.deger.tur, no);
+  const ad = masaAdiYer(yer.deger, no);
   const onceki = await b.depo.al<string>(SON_MASA);
   if (onceki && onceki !== ad) {
     try {
@@ -149,12 +202,16 @@ export async function masaBileti(b: HanHesapBaglami, hamNo: unknown): Promise<So
   let eg: string[] = [];
   let mudavim = false;
   let ozan = false;
+  let kisi: string | undefined;
+  let nam: number | undefined;
   if (b.engelSor) {
-    const r = await b.engelSor(yer.deger.yerlesim);
+    const r = await b.engelSor(yer.deger.yerlesim, yer.deger.han);
     if (!r.ok) return r;
     eg = r.deger.engeller;
     mudavim = r.deger.mudavim === true;
     ozan = r.deger.ozan === true;
+    if (typeof r.deger.kisi === "string") kisi = r.deger.kisi;
+    if (typeof r.deger.nam === "number") nam = r.deger.nam;
   }
   let ho: number | undefined;
   try { ho = await b.hesapOlusturma?.(); } catch { /* bilinmezse yeni hesap sınırı uygulanmaz */ }
@@ -176,8 +233,15 @@ export async function masaBileti(b: HanHesapBaglami, hamNo: unknown): Promise<So
     ...(susler.masaSusu ? { masaSusu: susler.masaSusu } : {}),
     ...(mudavim ? { mudavim: true as const } : {}),
     ...(ozan ? { ozan: true as const } : {}),
+    ...(kisi ? { kisi } : {}),
+    ...(nam !== undefined ? { nam } : {}),
   };
   return basarili({ masa: ad, no, plaka, yt, eg, ...(typeof ho === "number" ? { ho } : {}) });
+}
+
+/** Gövdedeki `han` alanı (4.9; yoksa 1. han). */
+function hanAlani(govde: unknown): unknown {
+  return typeof govde === "object" && govde !== null && !Array.isArray(govde) ? (govde as Record<string, unknown>).han : undefined;
 }
 
 // Hesap başına han yazma sırası: eylem/ikram, sayaç ve istekNo kaydını başka DO'ya await'ten önce okuyup sonra
@@ -206,12 +270,13 @@ async function hanEylemiSirada(b: HanHesapBaglami, govde: unknown): Promise<Sonu
     await olayKuyruguBosalt(b);
     return kayitli;
   }
-  const yer = await hanYeri(b.depo);
+  const yer = await hanYeri(b, hanAlani(govde));
   if (!yer.ok) return yer;
   if (masaNoCoz(girdi.deger.masa, yer.deger.masa) === undefined) return hata("masa_gecersiz");
+  // Günlük tavan hesap başınadır: bütün hanlar aynı sayacı paylaşır (4.9).
   const sayac = gunlukSay(await b.depo.al<GunlukSayac>(EYLEM_SAYAC), b.simdi, HAN_EYLEM_GUNLUK);
   if (!sayac.izin) return hata("eylem_siniri");
-  const ad = masaAdi(yer.deger.yerlesim, yer.deger.tur, girdi.deger.masa);
+  const ad = masaAdiYer(yer.deger, girdi.deger.masa);
   const sonuc = (await b.masaCagir(ad, { islem: "eylem", masa: ad, hesap: b.hesapId, girdi: girdi.deger })) as Sonuc<{ olay: MasaOlayi }>;
   if (!sonuc.ok) return sonuc;
   const yaz: Record<string, unknown> = { [anahtar]: sonuc, [EYLEM_SAYAC]: sayac.durum };
@@ -277,16 +342,16 @@ async function hanIkramiSirada(b: HanHesapBaglami, govde: unknown): Promise<Sonu
   const kayitli = await b.depo.al<Sonuc<IkramSonucu>>(anahtar);
   if (kayitli) return kayitli;
   if (hedef === b.hesapId) return hata("kendi_hedef");
-  const yer = await hanYeri(b.depo);
+  const yer = await hanYeri(b, hanAlani(govde));
   if (!yer.ok) return yer;
   if (masaNoCoz(girdi.deger.masa, yer.deger.masa) === undefined) return hata("masa_gecersiz");
   const sayac = gunlukSay(await b.depo.al<GunlukSayac>(IKRAM_SAYAC), b.simdi, IKRAM_GUNLUK);
   if (!sayac.izin) return hata("eylem_siniri");
-  const ad = masaAdi(yer.deger.yerlesim, yer.deger.tur, girdi.deger.masa);
+  const ad = masaAdiYer(yer.deger, girdi.deger.masa);
   const kontrol = await b.masaCagir(ad, { islem: "ikramKontrol", masa: ad, hesap: b.hesapId, hedef });
   if (!kontrol.ok) return kontrol;
   const fiyat = IKRAM_MENUSU[ikram].fiyat;
-  const odeme = await b.ikramOde({ islem: "hanIkram", yerlesim: yer.deger.yerlesim, hesapId: b.hesapId, govde: { hedef, ikram, fiyat, istekNo } });
+  const odeme = await b.ikramOde({ islem: "hanIkram", yerlesim: yer.deger.yerlesim, hesapId: b.hesapId, govde: { hedef, ikram, fiyat, istekNo, han: yer.deger.han } });
   if (!odeme.ok) return odeme;
   const anons: MasaAnonsu = { tur: "ikram", kim: b.hesapId, hedef, oge: ikram, zaman: b.simdi };
   // Anons en iyi çabadır: ödeme yapıldıktan sonra masa yanıt vermese de sonuç kaydedilir (tekrar ikinci kez ödetmez).
@@ -324,16 +389,16 @@ async function hanZiyafetiSirada(b: HanHesapBaglami, govde: unknown): Promise<So
   const anahtar = ZIYAFET_ISTEK + girdi.deger.istekNo;
   const kayitli = await b.depo.al<Sonuc<ZiyafetSonucu>>(anahtar);
   if (kayitli) return kayitli;
-  const yer = await hanYeri(b.depo);
+  const yer = await hanYeri(b, hanAlani(govde));
   if (!yer.ok) return yer;
   if (masaNoCoz(girdi.deger.masa, yer.deger.masa) === undefined) return hata("masa_gecersiz");
   const sayac = gunlukSay(await b.depo.al<GunlukSayac>(ZIYAFET_SAYAC), b.simdi, ZIYAFET_GUNLUK);
   if (!sayac.izin) return hata("eylem_siniri");
-  const ad = masaAdi(yer.deger.yerlesim, yer.deger.tur, girdi.deger.masa);
+  const ad = masaAdiYer(yer.deger, girdi.deger.masa);
   const kontrol = await b.masaCagir(ad, { islem: "ziyafetKontrol", masa: ad, hesap: b.hesapId });
   if (!kontrol.ok) return kontrol;
   const oturanlar = (kontrol.deger as { oturanlar?: string[] }).oturanlar ?? [];
-  const odeme = await b.ziyafetOde(yer.deger.yerlesim, { masa: ad, masaNo: girdi.deger.masa, oturanlar, istekNo: girdi.deger.istekNo });
+  const odeme = await b.ziyafetOde(yer.deger.yerlesim, { masa: ad, masaNo: girdi.deger.masa, oturanlar, istekNo: girdi.deger.istekNo, han: yer.deger.han });
   if (!odeme.ok) return odeme;
   const anons: MasaAnonsu = { tur: "ziyafet", kim: b.hesapId, oge: "ziyafet", zaman: b.simdi };
   try {
@@ -369,12 +434,12 @@ export function hanPanoYaz(b: Pick<HanHesapBaglami, "depo" | "simdi">, govde: un
  * POST /v1/han/masa/:no/ses/<alt> (Faz 16): masa adı oyuncunun yerleşiminden çözülür, iş MasaDO'dadır
  * (yetki kapısı ve Realtime vekilliği). Hız sınırı ve uzaklaştırma engeli HesapDO'da bu çağrıdan önce uygulanır.
  */
-export async function hanSesi(b: HanHesapBaglami, hamNo: unknown, alt: SesAlt, govde: unknown): Promise<Sonuc<unknown>> {
-  const yer = await hanYeri(b.depo);
+export async function hanSesi(b: HanHesapBaglami, hamNo: unknown, alt: SesAlt, govde: unknown, hamHan?: unknown): Promise<Sonuc<unknown>> {
+  const yer = await hanYeri(b, hamHan);
   if (!yer.ok) return yer;
   const no = masaNoCoz(hamNo, yer.deger.masa);
   if (no === undefined) return hata("masa_gecersiz");
-  const ad = masaAdi(yer.deger.yerlesim, yer.deger.tur, no);
+  const ad = masaAdiYer(yer.deger, no);
   return b.masaCagir(ad, { islem: "ses", masa: ad, hesap: b.hesapId, alt, govde });
 }
 

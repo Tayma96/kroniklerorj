@@ -82,8 +82,9 @@ export interface Sakin {
   ms?: MeslekId;
   /** Teveccüh kademesi (sipariş önceliği karakterleri yüklemeden bakar; değişince yazılır). */
   tv?: number;
-  /** Müdavim rozeti kademesi (E7; profil ve plaka karakteri yüklemeden okur). */
+  /** Müdavim rozeti kademesi (E7; profil ve plaka karakteri yüklemeden okur). 1. han; diğer hanlar `mdh` (4.9). */
   md?: number;
+  mdh?: Record<string, number>;
   /** H6: yerleşime giriş ayı (düello kapısı; eski kayıtta yok → doğum ayı + başlangıç yaşı). */
   gi?: number;
 }
@@ -200,6 +201,8 @@ export interface Karakter {
   /** Meşrep (E5): üç eksen seçimi; müdavim ziyaret günleri ve rozet (E7); hami namı aylık sayacı [ay, nam] (E6). */
   mr?: MesrepKaydi;
   md?: MudavimKaydi;
+  /** 4.9: 2. ve sonraki hanların müdavim kayıtları (han no → kayıt). */
+  mdh?: Record<string, MudavimKaydi>;
   hk?: [ay: number, nam: number];
   /** Göç (D1): eski yerleşimde mühür/kapanış izi; son göç ayı (soğuma; karakterle taşınır); geliş işlem kimliği. */
   gc?: import("./goc.ts").GocIzi;

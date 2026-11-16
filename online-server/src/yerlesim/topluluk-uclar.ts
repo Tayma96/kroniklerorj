@@ -98,10 +98,11 @@ export function zaviyeUc(m: YerlesimMotoru, hesapId: string, govde: unknown): Pr
 }
 
 /** İç (HesapDO masa bileti sonrası): han ziyareti sayılır; yeni rozet hancının tanıma olayını düşürür. */
-export function mudavimUc(m: YerlesimMotoru, hesapId: string): Promise<Sonuc<unknown>> {
+export function mudavimUc(m: YerlesimMotoru, hesapId: string, han = 1): Promise<Sonuc<unknown>> {
   return m.karakterYaz(hesapId, (kar, s, ay, simdi) => {
-    const r = mudavimZiyaret(kar, simdi, ay);
-    s.md = r.rozet || undefined;
+    const r = mudavimZiyaret(kar, simdi, ay, han);
+    if (han === 1) s.md = r.rozet || undefined;
+    else if (r.rozet) (s.mdh ??= {})[String(han)] = r.rozet;
     return basarili({ deger: { sayildi: r.sayildi, ziyaret: r.sayi, rozet: r.rozet }, olaylar: r.olay ? [r.olay] : [] });
   });
 }

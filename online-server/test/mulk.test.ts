@@ -117,7 +117,8 @@ test("edinim şartı (D-17): yaş, nam ya da lonca, akçe, yuva ve kişi sınır
   assert.ok(r.ok);
   assert.equal(a.pa, 1000 - EDINIM_FIYATI.kasaba.han);
   assert.equal(mulkDefteri(k).cik.k[0]!.t, "kur");
-  assert.deepEqual(edin(k, a, { tur: "han" }, AN, "e-0000006"), { ok: false, hata: "mulk_dolu" }, "kasabada tek han yuvası");
+  // 4.9: kasabada iki han yuvası var, ama aynı kişi aynı yerleşimde ikinci hanı edinemez (tekel önlemi).
+  assert.deepEqual(edin(k, a, { tur: "han" }, AN, "e-0000006"), { ok: false, hata: "han_siniri" }, "aynı yerleşimde ikinci han yok");
   assert.ok(edin(k, a, { tur: "dukkan" }, AN, "e-0000007").ok);
   assert.deepEqual(edin(k, a, { tur: "atolye" }, AN, "e-0000008"), { ok: false, hata: "mulk_siniri" });
 });

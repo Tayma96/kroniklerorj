@@ -80,7 +80,7 @@ import { toplumDonumu } from "./toplum-donum.ts";
 import { hanOlayiCoz, hanOlayiIslendiMi, hanOlayiUygula, hanTanidikKimlikleri, ziyafetEtkisi, ziyafetKonukSayisi } from "./han-olay.ts";
 import { ZIYAFET_EN_AZ_KONUK, ziyafetBedeli } from "../han/ziyafet.ts";
 import { ilanCoz, ilanEkle, ilanKimlik, ilanSil, panoBuda, panoGirdisiCoz, panoGorunumu } from "../han/pano.ts";
-import { MUDAVIM_PLAKA_KADEME } from "./mudavim.ts";
+import { MUDAVIM_PLAKA_KADEME, MUDAVIM_ROZETLERI } from "./mudavim.ts";
 import { oyuncuArabuluculukAc, oyuncuArabuluculukCevap, oyuncuArabuluculukGeriAl, oyuncuArabuluculukTaslak, oyuncuArabuluculukImzala, oyuncuArabuluculukUygula } from "./arabuluculuk-oyuncu.ts";
 import { OYUNCU_TEKLIF_TURLERI, oyuncuArabuluculukAl, toplumAl, type OyuncuArabuluculuk, type Toplum } from "./toplum.ts";
 import { MALLAR, MAL_IDLERI, malBul } from "../icerik/mallar.ts";
@@ -103,7 +103,9 @@ import { levhaYaz } from "./levha.ts";
 import type { EkonomiKaydi } from "./pazar-tahta.ts";
 import type { UcgenDefteri } from "./bilgi.ts";
 import { eksenler } from "./hafiza.ts";
-import { mulkluHanOdemesi, mulkluIkram, mulkluKira, oyuncuHani } from "../mulk/tapu.ts";
+import { hanNoCoz, hanNolari, hanVar, mulkluHanOdemesi, mulkluIkram, mulkluKira, oyuncuHani } from "../mulk/tapu.ts";
+import { isletmeKimligi } from "../mulk/kurallar.ts";
+import type { HanKarti } from "../han/tipler.ts";
 import type { MulkDefteri } from "../mulk/tapu.ts";
 // Ölümde mülk devri: tapuyu vârise taşıyan kimlik taşıyıcısını kaydeder.
 import "../mulk/miras.ts";
@@ -1528,7 +1530,7 @@ export class YerlesimMotoru {
     });
   }
 
-  async engeller(hesapId: string): Promise<Sonuc<{ engeller: string[]; mudavim: boolean; ozan: boolean }>> {
+  async engeller(hesapId: string, han = 1): Promise<Sonuc<{ engeller: string[]; mudavim: boolean; ozan: boolean; kisi: string; nam?: number }>> {
     const s = this.kasaba.sakin.find((x) => x.h === hesapId);
     if (!s) return hata("sakin_yok");
     const eg = this.kasaba.tp?.eg ?? {};
@@ -1538,7 +1540,44 @@ export class YerlesimMotoru {
     for (const x of this.kasaba.sakin) if (x.h !== hesapId && yerel.has(x.o)) hesaplar.add(x.h);
     // H4: plaka rozeti (sakin dizinindeki müdavim kademesi; oyun mantığı okumaz).
     // H8: ozan işareti (ana meslek ozan; yalnız görünür, güç vermez).
-    return basarili({ engeller: [...hesaplar].sort(), mudavim: (s.md ?? 0) >= MUDAVIM_PLAKA_KADEME, ozan: s.ms === "ozan" });
+    // 4.9: müdavim rozeti han başınadır.
+    const rozet = han === 1 ? (s.md ?? 0) : (s.mdh?.[String(han)] ?? 0);
+    // Plaka kişi kartı: karakter kimliği ve nam (herkese açık oyuncu sayfasındakiyle aynı bilgi).
+    await this.#yukle([s.o]);
+    const kar = this.kasaba.kar.get(s.o);
+    const nam = kar ? kar.nm.reduce((t, x) => t + x, 0) : undefined;
+    return basarili({ engeller: [...hesaplar].sort(), mudavim: rozet >= MUDAVIM_PLAKA_KADEME, ozan: s.ms === "ozan", kisi: s.o, ...(nam !== undefined ? { nam } : {}) });
+  }
+
+  /**
+   * 4.9 Çoklu han: yerleşimin açık hanları (1. han her zaman; diğerleri sahipliyse). Sahip oyuncu mu NPC mi, işletme
+   * adı, seviye, fiyat çarpanı, oda doluluk/kapasite (NPC hanında sınırsız: null) ve isteyenin müdavim rozeti.
+   * Salt okuma; masa doluluğunu HesapDO ekler.
+   */
+  async hanlar(hesapId: string): Promise<Sonuc<{ hanlar: HanKarti[] }>> {
+    const k = this.kasaba;
+    const s = k.sakin.find((x) => x.h === hesapId);
+    if (!s) return hata("sakin_yok");
+    const md = k.mk;
+    const an = this.#simdi;
+    return basarili({
+      hanlar: hanNolari(k).map((no): HanKarti => {
+        const isletme = isletmeKimligi(k.y, "han", no);
+        const t = md?.t[isletme];
+        const rozet = no === 1 ? (s.md ?? 0) : (s.mdh?.[String(no)] ?? 0);
+        const mudavim = rozet > 0 ? MUDAVIM_ROZETLERI[rozet - 1]! : null;
+        if (!t) return { no, isletme, sahip: "npc", ad: "", seviye: 0, fc: 100, acik: true, oda: null, mudavim };
+        const oh = oyuncuHani(k, no)!;
+        const dolu = (md?.od[isletme] ?? []).filter(([, b]) => b > an).length;
+        const sk = k.sakin.find((x) => x.o === t.s);
+        return { no, isletme, sahip: "oyuncu", sahipKisi: { id: t.s, ad: sk?.ad ?? "" }, ad: t.y?.ad ?? "", seviye: oh.seviye, fc: oh.fc, acik: oh.kapasite > 0, oda: { dolu: Math.min(dolu, oh.kapasite), kapasite: oh.kapasite }, mudavim };
+      }),
+    });
+  }
+
+  /** 4.9: han numarası bu yerleşimde açık bir han mı (iç çağrı doğrulaması). */
+  hanAcikMi(han: number): boolean {
+    return hanVar(this.kasaba, han);
   }
 
   /** H1 (han keşif sırası): oyuncunun dostları ve hane üyeleri, hesap kimliği olarak (yalnız HesapDO sayar). */
@@ -1593,7 +1632,9 @@ export class YerlesimMotoru {
       if (engelliMi(this.kasaba.tp, kar.o, alan.o)) return hata("engelli");
       // Faz 12: yerleşimin hanı oyuncu işletmesiyse akçe kasaya (çıkış kutusu), değilse dünyadan çıkar.
       this.#kirli.add(MULK);
-      const odeme = mulkluIkram(this.kasaba, kar, ikram as IkramId, this.#simdi, String(govde.istekNo), vergiOrani);
+      const han = hanNoCoz(govde.han);
+      if (han === undefined) return hata("han_gecersiz");
+      const odeme = mulkluIkram(this.kasaba, kar, ikram as IkramId, this.#simdi, String(govde.istekNo), vergiOrani, han);
       if (!odeme.ok) return odeme;
       const teveccuh = teveccuhEkle(alan, kar, "ikram", ay, odeme.deger.fiyat);
       const sk = this.kasaba.sakin.find((x) => x.o === alan.o);
@@ -1619,7 +1660,9 @@ export class YerlesimMotoru {
       const konuklar = sakinler.map((x) => k.kar.get(x.o)).filter((x): x is Karakter => x !== undefined && x.o !== kar.o && !olduMu(x));
       if (ziyafetKonukSayisi(kar, konuklar) < ZIYAFET_EN_AZ_KONUK) return hata("ziyafet_konuk_az");
       this.#kirli.add(MULK);
-      const odeme = mulkluHanOdemesi(k, kar, ziyafetBedeli(konuklar.length), this.#simdi, `y:${k.y}:${kar.o}:ziyafet:${String(govde.istekNo)}`, vergiOrani);
+      const han = hanNoCoz(govde.han);
+      if (han === undefined) return hata("han_gecersiz");
+      const odeme = mulkluHanOdemesi(k, kar, ziyafetBedeli(konuklar.length), this.#simdi, `y:${k.y}:${kar.o}:ziyafet:${String(govde.istekNo)}`, vergiOrani, false, han);
       if (!odeme.ok) return odeme;
       const etki = ziyafetEtkisi(k, kar, konuklar, masaNo, odeme.deger.fiyat, ay);
       ek.olaylar.push(...etki.olaylar);
@@ -1635,12 +1678,16 @@ export class YerlesimMotoru {
   }
 
   /** H10 han ilan panosu: oku (yazmaz), yaz ve sil (istekNo ile tekrar güvenli; günlük sınır HesapDO'da). */
-  async hanPano(hesapId: string, alt: "oku" | "yaz" | "sil", govde: unknown): Promise<Sonuc<unknown>> {
+  async hanPano(hesapId: string, alt: "oku" | "yaz" | "sil", govde: unknown, hanHam?: unknown): Promise<Sonuc<unknown>> {
     const k = this.kasaba;
+    // 4.9: pano han başınadır; han okumada sorgudan, yazma/silmede gövdeden (yoksa 1. han).
+    const han = hanNoCoz(alt === "oku" ? hanHam : nesneMi(govde) ? govde.han : undefined);
+    if (han === undefined) return hata("han_gecersiz");
+    if (!hanVar(k, han)) return hata("han_yok");
     if (alt === "oku") {
       const r = await this.#oyuncu(hesapId);
       if (!r.ok) return r;
-      return basarili({ ilanlar: panoGorunumu(k.tp?.pn, r.deger.kar.o, this.#simdi) });
+      return basarili({ ilanlar: panoGorunumu(k.tp?.pn, r.deger.kar.o, this.#simdi, han) });
     }
     return this.#tekrarGuvenli(hesapId, govde, (kar, _s, _ay, ek) => {
       const pn = (toplumAl(k).pn ??= { n: 0, l: [] });
@@ -1649,14 +1696,14 @@ export class YerlesimMotoru {
       if (alt === "yaz") {
         const g = panoGirdisiCoz(govde);
         if (!g.ok) return g;
-        yanit = { ilan: ilanKimlik(ilanEkle(pn, { o: kar.o, ad: kar.ad, t: g.deger.tur, m: g.deger.metin }, this.#simdi).i) };
+        yanit = { ilan: ilanKimlik(ilanEkle(pn, { o: kar.o, ad: kar.ad, t: g.deger.tur, m: g.deger.metin }, this.#simdi, han).i) };
       } else {
         const r = ilanSil(pn, kar.o, nesneMi(govde) ? govde.ilan : undefined);
         if (!r.ok) return r;
         yanit = r.deger;
       }
       ek.toplum = true;
-      return basarili({ ...yanit, ilanlar: panoGorunumu(pn, kar.o, this.#simdi) });
+      return basarili({ ...yanit, ilanlar: panoGorunumu(pn, kar.o, this.#simdi, han) });
     }, "pano");
   }
 
@@ -1665,7 +1712,7 @@ export class YerlesimMotoru {
     const k = this.kasaba;
     if (!k.sakin.some((x) => x.h === hesapId)) return hata("sakin_yok");
     const id = ilanCoz(ilanHam);
-    const ilan = id === undefined ? undefined : panoGorunumu(k.tp?.pn, "", this.#simdi).find((x) => x.id === ilanKimlik(id));
+    const ilan = id === undefined ? undefined : panoGorunumu(k.tp?.pn, "", this.#simdi, null).find((x) => x.id === ilanKimlik(id));
     const sahip = ilan ? k.sakin.find((x) => x.o === ilan.kisi.id) : undefined;
     if (!ilan || !sahip) return hata("ilan_yok");
     return basarili({ hesap: sahip.h, id: ilan.id, metin: ilan.metin });
@@ -2064,15 +2111,19 @@ export class YerlesimMotoru {
     return basarili({ iptal: true, geri });
   }
 
-  async barinmaOku(islem: "barinma" | "donus", hesapId: string, simdi: number): Promise<Sonuc<unknown>> {
+  async barinmaOku(islem: "barinma" | "donus", hesapId: string, simdi: number, hanHam?: unknown): Promise<Sonuc<unknown>> {
+    // 4.9: oda kataloğu seçilen hanın (yoksa 1. han); dönüş ekranı hana bağlı değildir.
+    const han = islem === "barinma" ? hanNoCoz(hanHam) : 1;
+    if (han === undefined) return hata("han_gecersiz");
+    if (!hanVar(this.kasaba, han)) return hata("han_yok");
     const r = await this.#oyuncu(hesapId);
     if (!r.ok) return r;
     const kar = r.deger.kar;
-    const oh = islem === "barinma" ? oyuncuHani(this.kasaba) : undefined;
+    const oh = islem === "barinma" ? oyuncuHani(this.kasaba, han) : undefined;
     if (oh) await this.#yukle([oh.sahip]);
     const sahip = oh ? this.kasaba.kar.get(oh.sahip) : undefined;
     const deger = islem === "barinma"
-      ? { barinma: barinmaGorunumu(this.kasaba, kar, simdi, oh && sahip ? { ...oh, sahip } : undefined) }
+      ? { barinma: { ...barinmaGorunumu(this.kasaba, kar, simdi, oh && sahip ? { ...oh, sahip } : undefined), hanNo: han } }
       : { donusEkrani: donusOku(this.kasaba, kar, simdi) };
     if (oh && sahip) this.#kirli.add(KAR + sahip.o);
     this.#kirli.add(KAR + kar.o);
@@ -2087,7 +2138,8 @@ export class YerlesimMotoru {
   async barinmaIslem(islem: BarinmaIslem, hesapId: string, govde: unknown, simdi: number, vergiOrani = 0): Promise<Sonuc<unknown>> {
     const k = this.kasaba;
     if (islem === "barinmaKira") {
-      const oh = oyuncuHani(k);
+      const han = hanNoCoz(nesneMi(govde) ? govde.han : undefined);
+      const oh = han === undefined ? undefined : oyuncuHani(k, han);
       if (oh) {
         await this.#yukle([oh.sahip]);
         this.#kirli.add(KAR + oh.sahip);

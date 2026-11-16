@@ -70,6 +70,14 @@ export function masaAdi(yerlesim: string, han: HanTuru, no: number): string {
   return `masa:${yerlesim}:${han}:${no}`;
 }
 
+/**
+ * 4.9 Çoklu han: `han`. hanın masa adı. 1. han bugünkü adı korur ("masa:<y>:<tür>:<no>"); diğerleri
+ * "masa:<y>:<tür><han>:<no>" (ör. "masa:demirhan:han3:2"). Masa sayısı yerleşim türünden (HAN_DUZENI).
+ */
+export function hanMasaAdi(yerlesim: string, tur: HanTuru, han: number, no: number): string {
+  return han === 1 ? masaAdi(yerlesim, tur, no) : `masa:${yerlesim}:${tur}${han}:${no}`;
+}
+
 /** 1..sayi aralığında masa numarası; sayı ya da rakam dizisi kabul edilir. */
 export function masaNoCoz(ham: unknown, sayi: number): number | undefined {
   const n = typeof ham === "number" ? ham : typeof ham === "string" && /^\d{1,2}$/.test(ham) ? Number(ham) : NaN;

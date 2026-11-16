@@ -37,6 +37,7 @@ ileti yayını, masa başı yetkisi). Durable Object'ler arası çağrılar ger�
 | H10 | Handa NPC'ler (hancı, ozan, haberci). İlan panosu var (14 Kasım). | orta |
 | H11 | Debdebe giriş anonsu. Sohbet balonu ve masa süsü var (14 Kasım). | küçük |
 | H12 | Oda getirileri sunucuda var (14 Kasım): sandık ve han emaneti, ikamet verisi, özel görüşme. Açık: istemci ekranı; ikamete bağlı kapı. | küçük |
+| H13 | Çoklu han (§4.9): sunucu var (15 Kasım); istemci açık (han seçici, `hanlar` kartları, `han` parametresi, yeni hata metinleri `han_gecersiz/han_yok/han_siniri`). Açık tasarım: paylaşımlı NPC talep havuzu. | orta |
 
 ### Dünya
 | # | Eksik | Boyut |
@@ -144,6 +145,18 @@ Yemin → mertlik (mühürlü, çift başına ayda bir). Sözleşme ve ittifak k
   eşitlikte berabere. Taraf kalkarsa ya da kıta aşamasında kapatılırsa iptal.
 - **Ödül yalnız anılma:** masa olayı (`atismaSonuc`) + yerleşimde tanıklık ve kazanan hakkında söylenti (bakış etkisi 0).
   Akçe, nam, XP, teveccüh yok; kaybeden bir şey kaybetmez. Sahne ve atışma aynı masada aynı anda olmaz.
+
+### 4.9 Çoklu han (15 Kasım, sunucu)
+- **Yuva:** şehir 5, kasaba 2 han; köyde oyuncu hanı yok (yalnız NPC hanı; oda/masa/pano çalışır). 1. han bugünkü han
+  (kimlik/masa adı aynı; sahipsizken NPC). 2.+ yuva arsadır: edinilince han olur; sahipsiz arsa listede yok, masası yok.
+- **Boyut/bedel:** edinim şehir 600, kasaba 250; bakım şehir 10, kasaba 6; oda kapasitesi şehir [5,8,11,14,18], kasaba
+  [3,5,7,9,12]. Masa sayısı zaten yerleşim türüne göre (şehir 8, kasaba 4, köy 2); değişmedi.
+- **Sınır:** kişi aynı yerleşimde en çok 1 han (`han_siniri`; edinim ve devirde); kişi başı 2 mülk sürer.
+- **Rekabet:** ödeme (kira, ikram, ziyafet) seçilen hanın kasasına; fc han başına. Günlük ikram/ziyafet/eylem/pano
+  tavanları, tek oda, kendi hanına kira yok, aynı küme bayrağı kişi başınadır. NPC gelir formülü değişmedi.
+- **Han başına:** müdavimlik, pano, masa ayarı, keşif sırası. Söylenti/tanıklık yerleşim düzeyinde.
+- **Kapanış:** 1. han iflasta NPC'ye döner, diğeri kapanır; peşin kira bitişe dek geçerli, sandık/emanet yerleşimde.
+- **Protokol:** `?han=N` (GET /v1/han, /v1/han/pano, /v1/barinma, masa baglan/ses) ya da gövdede `han`; yoksa 1. han.
 
 ## 5. Berkay'ın kararına bağlı gerilimler (koda dokunulmadı)
 - **Süre kısaltma satışı:** Debdebe kataloğunda gerçek parayla beceri süresi kısaltma var (`kisaltma_*`, karakter başına

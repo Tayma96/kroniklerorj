@@ -38,10 +38,22 @@ function pencereSayisi(md: MudavimKaydi | undefined, gun: number): number {
   return md ? md.g.filter((g) => gun - g < MUDAVIM_PENCERE_GUN).length : 0;
 }
 
-/** Han ziyareti (bilet kesildi). Aynı gün ikinci kez sayılmaz. Yeni rozet kazanıldıysa hancının tanıma olayı döner. */
-export function mudavimZiyaret(k: Karakter, simdi: number, ay: number): { sayildi: boolean; sayi: number; rozet: number; olay?: OlayTaslagi } {
+/** 4.9: hanın müdavim kaydı (1. han eski `md` alanı; diğerleri `mdh[han]`). `yaz`: yoksa kurar. */
+export function mudavimKaydi(k: Karakter, han: number, yaz: true): MudavimKaydi;
+export function mudavimKaydi(k: Karakter, han: number, yaz?: false): MudavimKaydi | undefined;
+export function mudavimKaydi(k: Karakter, han: number, yaz = false): MudavimKaydi | undefined {
+  if (han === 1) return yaz ? (k.md ??= { g: [], r: 0 }) : k.md;
+  if (!yaz) return k.mdh?.[String(han)];
+  return ((k.mdh ??= {})[String(han)] ??= { g: [], r: 0 });
+}
+
+/**
+ * Han ziyareti (bilet kesildi). Aynı gün ikinci kez sayılmaz. Yeni rozet kazanıldıysa hancının tanıma olayı döner.
+ * Müdavimlik han başınadır (4.9): her hanın sayımı ve rozeti ayrıdır.
+ */
+export function mudavimZiyaret(k: Karakter, simdi: number, ay: number, han = 1): { sayildi: boolean; sayi: number; rozet: number; olay?: OlayTaslagi } {
   const gun = Math.floor(simdi / GUN_MS);
-  const md = (k.md ??= { g: [], r: 0 });
+  const md = mudavimKaydi(k, han, true);
   let sayildi = false;
   if (md.g.at(-1) !== gun && !md.g.includes(gun)) {
     md.g.push(gun);
@@ -61,7 +73,7 @@ export function mudavimZiyaret(k: Karakter, simdi: number, ay: number): { sayild
       sayildi,
       sayi,
       rozet: kd,
-      olay: { t: "mudavim", w: k.o, h: k.o, g: k.o, n: 4, k: "olay.mudavim.rozet", p: { rozet: MUDAVIM_ROZETLERI[kd - 1]!, ziyaret: sayi } },
+      olay: { t: "mudavim", w: k.o, h: k.o, g: k.o, n: 4, k: "olay.mudavim.rozet", p: { rozet: MUDAVIM_ROZETLERI[kd - 1]!, ziyaret: sayi, ...(han !== 1 ? { han } : {}) } },
     };
   }
   return { sayildi, sayi, rozet: md.r };

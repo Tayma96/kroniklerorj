@@ -284,6 +284,10 @@ export const HATA_DURUMU = {
   mulk_tur_gecersiz: 400,
   mulk_dolu: 409,
   mulk_siniri: 409,
+  // 4.9 Çoklu han: geçersiz han numarası, sahipsiz arsa (han yok), aynı yerleşimde ikinci han.
+  han_gecersiz: 400,
+  han_yok: 404,
+  han_siniri: 409,
   edinim_sarti: 409,
   ad_jetonu_yok: 409,
   tezyin_gecersiz: 400,
@@ -465,13 +469,14 @@ export type HesapIleti = (
   | { islem: "sikayet"; hesapId: string; govde: unknown; masa?: { ad: string; no: number } }
   | { islem: "duyurular"; hesapId: string }
   // Han masası (Faz 10): src/han/hesap-kopru.ts
-  | { islem: "han"; hesapId: string; dil?: string | null }
-  | { islem: "masaBilet"; hesapId: string; masa: string }
+  // 4.9 Çoklu han: `han` seçili han numarası (sorgudan; yoksa 1. han). Gövdeli uçlarda `han` gövdededir.
+  | { islem: "han"; hesapId: string; dil?: string | null; han?: string | null }
+  | { islem: "masaBilet"; hesapId: string; masa: string; han?: string | null }
   | { islem: "hanEylem" | "hanIkram" | "hanZiyafet"; hesapId: string; govde: unknown }
   // H10 han ilan panosu
-  | { islem: "hanPano"; hesapId: string }
+  | { islem: "hanPano"; hesapId: string; han?: string | null }
   | { islem: "hanPanoYaz" | "hanPanoSil"; hesapId: string; govde: unknown }
-  | { islem: "hanSes"; hesapId: string; masa: string; alt: SesAlt; govde: unknown }
+  | { islem: "hanSes"; hesapId: string; masa: string; alt: SesAlt; govde: unknown; han?: string | null }
   // Debdebe (src/debdebe/hesap.ts)
   | { islem: "debdebe" | "debdebeLevha" | "debdebeSezon"; hesapId: string }
   | { islem: "debdebeDene"; hesapId: string; urun: string | null; dil?: string | null }
@@ -620,7 +625,7 @@ export type BarinmaIslem = (typeof BARINMA_ISLEMLERI)[number];
 /** Barınma iletileri (HesapDO aynen YerlesimDO'ya iletir; `yerlesim` eklenir). */
 export type BarinmaIletisi =
   | { islem: BarinmaIslem; hesapId: string; govde: unknown }
-  | { islem: "barinma" | "donus"; hesapId: string; dil?: string | null };
+  | { islem: "barinma" | "donus"; hesapId: string; dil?: string | null; han?: string | null };
 
 /** Yerleşime sakin kaydı (profil oluşunca HesapDO gönderir; tekrar güvenli). */
 export interface SakinKaydi {
@@ -654,13 +659,15 @@ export type YerlesimIleti =
   | { islem: "sakinHesabi"; yerlesim: string; hesapId: string; hedef: string }
   | { islem: "ucgenOku"; yerlesim: string; hesapId: string; npc?: string | null; hedef?: string | null; dil?: string | null }
   /** Han masası bileti için: oyuncunun iki yönlü engel listesi (hesap kimlikleri). */
-  | { islem: "engeller"; yerlesim: string; hesapId: string }
+  | { islem: "engeller"; yerlesim: string; hesapId: string; han?: unknown }
+  /** 4.9: yerleşimin açık hanları (kart: sahip, seviye, fc, oda doluluğu, müdavim rozetim). */
+  | { islem: "hanlar"; yerlesim: string; hesapId: string }
   /** H1: han keşif sırası için oyuncunun dostları ve hane üyeleri (hesap kimlikleri). */
   | { islem: "hanTanidiklar"; yerlesim: string; hesapId: string }
   /** H7: HesapDO → YerlesimDO ziyafet ödemesi ve etkisi (masa kontrolünden sonra; istekNo ile tekrar güvenli). */
   | { islem: "hanZiyafet"; yerlesim: string; hesapId: string; govde: unknown }
   /** H10: ilan panosu (oku/yaz/sil; yazma ve silme istekNo ile tekrar güvenli). */
-  | { islem: "hanPano"; yerlesim: string; hesapId: string; alt: "oku" | "yaz" | "sil"; govde?: unknown }
+  | { islem: "hanPano"; yerlesim: string; hesapId: string; alt: "oku" | "yaz" | "sil"; govde?: unknown; han?: unknown }
   /** H10 şikâyet: ilan kimliği → sahibinin hesap kimliği ve metni (yalnız sakin sorar). */
   | { islem: "hanPanoIlan"; yerlesim: string; hesapId: string; ilan: string }
   /** H5: HesapDO → YerlesimDO masa olayı (tekrar güvenli; govde {anahtar, olay}); istemci ulaşamaz. */
@@ -679,7 +686,7 @@ export type YerlesimIleti =
   | { islem: "armaganTeveccuh" | "armaganGeri"; yerlesim: string; hesapId: string; govde: unknown }
   | (ToplulukIletisi & { yerlesim: string })
   /** HesapDO → YerlesimDO (masa bileti sonrası): müdavim han ziyareti; istemci doğrudan ulaşamaz. */
-  | { islem: "mudavimZiyaret"; yerlesim: string; hesapId: string }
+  | { islem: "mudavimZiyaret"; yerlesim: string; hesapId: string; han?: unknown }
   /** Göç (D1; HesapDO yürütür, istemci ulaşamaz): önizleme; (1) çıkış, (2) giriş, (3) tamam; (2) kalıcı reddinde iptal. */
   | { islem: "gocOnizle"; yerlesim: string; hesapId: string; hedef: string }
   | { islem: "gocCikis" | "gocGiris" | "gocTamam" | "gocIptal"; yerlesim: string; hesapId: string; govde: unknown }

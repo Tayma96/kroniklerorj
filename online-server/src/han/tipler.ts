@@ -47,6 +47,10 @@ export interface Plaka {
   mudavim?: true;
   /** H8: ana mesleği ozan (yalnız görünür işaret; hiçbir yetki ya da güç vermez). */
   ozan?: true;
+  /** Kişi kartı: oyuncunun bu yerleşimdeki karakter kimliği ("o123"; /v1/oyuncu/:id) ve namı (dört eksen toplamı,
+   * 0–400). Yalnız herkese açık oyuncu sayfasındaki bilgiler; yoksa istemci "Profile git/Engelle"yi kapalı tutar. */
+  kisi?: string;
+  nam?: number;
 }
 
 export interface MasaGorunumu {
@@ -232,6 +236,9 @@ export interface SoketEki {
   md?: 1;
   /** H8 ozan işareti (plaka; oyun mantığı okumaz). */
   oz?: 1;
+  /** Kişi kartı: karakter kimliği ve nam (plaka; oyun mantığı okumaz). */
+  ki?: string;
+  nm?: number;
   /** H11 Debdebe sohbet balonu ve masa süsü (kozmetik; oyun mantığı okumaz). */
   bl?: string;
   su?: string;
@@ -317,11 +324,36 @@ export interface MasaOzeti {
 /** MasaDO → HesapDO iç özeti: oturan hesaplar yalnız tanıdık sayımı içindir, istemciye gönderilmez. */
 export type MasaIcOzeti = Omit<MasaOzeti, "tanidik"> & { oturanlar: string[] };
 
+/**
+ * 4.9 Çoklu han: yerleşimdeki bir hanın kartı (GET /v1/han `hanlar`). `no` istemcinin `han` parametresidir (1 = bugünkü
+ * han; sahipsizken NPC). `oda` NPC hanında null (sınırsız). `masa`: masa sayısı, açık masa ve oturan toplamı (HesapDO).
+ */
+export interface HanKarti {
+  no: number;
+  isletme: string;
+  sahip: "npc" | "oyuncu";
+  sahipKisi?: { id: string; ad: string };
+  /** İşletme adı (oyuncu koyar; boşsa istemci tür adını gösterir). */
+  ad: string;
+  seviye: number;
+  /** Fiyat çarpanı (%): menü, ziyafet ve oda fiyatı. NPC hanında 100. */
+  fc: number;
+  /** Oyuncu hanı kapısı kapalıysa ya da yansı gelmediyse false (ödeme `han_kapali`). */
+  acik: boolean;
+  oda: { dolu: number; kapasite: number } | null;
+  /** İsteyenin bu handaki müdavim rozeti (yoksa null). */
+  mudavim: string | null;
+  masa?: { sayi: number; acik: number; oturan: number };
+}
+
 export interface HanOzeti {
   yerlesim: { id: string; ad: string };
-  han: { tur: HanTuru; ad: string };
+  /** `no`: seçili han (4.9; eski istemci yok sayar). */
+  han: { tur: HanTuru; ad: string; no: number; isletme: string };
   koltuk: number;
   masalar: MasaOzeti[];
-  /** İkram menüsü (fiyat akçe; ödeme YerlesimDO'da). */
+  /** İkram menüsü (fiyat akçe; ödeme YerlesimDO'da). Oyuncu hanında fiyat çarpanla değişir (`hanlar[].fc`). */
   menu: { id: string; fiyat: number }[];
+  /** 4.9: yerleşimin açık hanları (keşif sırasıyla değil, numara sırasıyla). Yerleşim yanıt vermezse yalnız seçili han. */
+  hanlar: HanKarti[];
 }

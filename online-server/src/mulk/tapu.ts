@@ -19,11 +19,15 @@ import {
   EDINIM_LONCA_KADEME,
   EDINIM_NAM_ESIGI,
   EDINIM_YASI,
+  HAN_KISI_YERLESIM_EN_COK,
   KISI_MULK_EN_COK,
   MULK_TURLERI,
   MULK_YUVA,
   ROL_MESLEGI,
+  NPC_HAN_NO,
   TRANSFER_EN_COK,
+  hanYuvaSayisi,
+  isletmeCoz,
   isletmeKimligi,
   type MulkTuru,
 } from "./kurallar.ts";
@@ -124,13 +128,31 @@ function bosYuva(k: Kasaba, md: MulkDefteri, tur: MulkTuru): number | undefined 
   return undefined;
 }
 
-/** POST /v1/mulk/edin {tur}: şart + boş yuva + kişi sınırı; bedel beyliğe (dünyadan çıkar); işletme kurulumu çıkış kutusuna. */
+/** Kişinin bu yerleşimde sahip olduğu han sayısı (4.9 tekel önlemi). */
+export function sahipHanSayisi(k: Kasaba, md: MulkDefteri, o: string): number {
+  return sahipMulkleri(md, o).filter((id) => {
+    const c = isletmeCoz(id);
+    return c?.tur === "han" && c.yerlesim === k.y;
+  }).length;
+}
+
+/**
+ * POST /v1/mulk/edin {tur, no?}: şart + boş yuva + kişi sınırı; bedel beyliğe (dünyadan çıkar); işletme kurulumu çıkış
+ * kutusuna. `no` verilirse o yuva (boş olmalı), yoksa ilk boş yuva. Han: köyde yuva yok (`mulk_dolu`), kişi başı aynı
+ * yerleşimde en çok HAN_KISI_YERLESIM_EN_COK han (`han_siniri`).
+ */
 export function edin(k: Kasaba, kar: Karakter, govde: unknown, an: number, istekNo: string): Sonuc<Record<string, unknown>> {
   if (!nesneMi(govde) || typeof govde.tur !== "string" || !(MULK_TURLERI as readonly string[]).includes(govde.tur)) return hata("mulk_tur_gecersiz");
   const tur = govde.tur as MulkTuru;
   const md = mulkDefteri(k);
   if (sahipMulkleri(md, kar.o).length >= KISI_MULK_EN_COK) return hata("mulk_siniri");
-  const no = bosYuva(k, md, tur);
+  if (tur === "han" && sahipHanSayisi(k, md, kar.o) >= HAN_KISI_YERLESIM_EN_COK) return hata("han_siniri");
+  let no: number | undefined;
+  if (govde.no !== undefined) {
+    const n = govde.no;
+    if (!Number.isInteger(n) || (n as number) < 1 || (n as number) > MULK_YUVA[k.tur][tur]) return hata("mulk_dolu");
+    no = md.t[isletmeKimligi(k.y, tur, n as number)] ? undefined : (n as number);
+  } else no = bosYuva(k, md, tur);
   if (no === undefined) return hata("mulk_dolu");
   const sart = edinimSarti(k, kar, tur);
   if (sart.eksik.includes("yas")) return hata("yas_kapisi");
@@ -194,6 +216,30 @@ export function yatir(k: Kasaba, kar: Karakter, isletme: string, govde: unknown,
 
 // ── Oyuncu hanı (Faz 14 kira ve Faz 10 ikram köprüsü) ──
 
+/** [4.9] Han numarası: verilmezse 1 (eski istemci); 1..HAN_YUVA_EN_COK tamsayı ya da rakam dizisi. */
+export const HAN_NO_EN_COK = 9;
+export function hanNoCoz(ham: unknown): number | undefined {
+  if (ham === undefined || ham === null || ham === "") return NPC_HAN_NO;
+  const n = typeof ham === "number" ? ham : typeof ham === "string" && /^[1-9]$/.test(ham) ? Number(ham) : NaN;
+  return Number.isInteger(n) && n >= 1 && n <= HAN_NO_EN_COK ? n : undefined;
+}
+
+/**
+ * Bu yerleşimde `han` numaralı han var mı: 1. han her zaman (NPC ya da oyuncu); diğerleri yalnız sahipliyse
+ * (sahipsiz arsa han değildir). Eski kayıtta yuva tablosu dışında kalan sahipli han da okunur.
+ */
+export function hanVar(k: Kasaba, han: number): boolean {
+  if (han === NPC_HAN_NO) return true;
+  return !!k.mk?.t[isletmeKimligi(k.y, "han", han)];
+}
+
+/** Yerleşimin açık hanları (1. han ve sahipli diğer yuvalar), numara sırasıyla. */
+export function hanNolari(k: Kasaba): number[] {
+  const l: number[] = [];
+  for (let n = 1; n <= Math.max(hanYuvaSayisi(k.tur), HAN_NO_EN_COK); n++) if (hanVar(k, n)) l.push(n);
+  return l;
+}
+
 export interface OyuncuHani {
   isletme: string;
   sahip: string;
@@ -202,9 +248,12 @@ export interface OyuncuHani {
   kapasite: number;
 }
 
-/** Yerleşimin hanı oyuncu işletmesi ve açık mı (yansıya göre; yansı gelmeden NPC han sayılmaz, han kapalıdır). */
-export function oyuncuHani(k: Kasaba): OyuncuHani | undefined {
-  const id = isletmeKimligi(k.y, "han", 1);
+/**
+ * Yerleşimin `han`. hanı oyuncu işletmesi ve açık mı (yansıya göre; yansı gelmeden NPC han sayılmaz, han kapalıdır).
+ * Yoksa: 1. han NPC hanıdır; diğerleri boş arsadır (hanDurumu `yok`).
+ */
+export function oyuncuHani(k: Kasaba, han = NPC_HAN_NO): OyuncuHani | undefined {
+  const id = isletmeKimligi(k.y, "han", han);
   const t = k.mk?.t[id];
   if (!t) return undefined;
   const y = t.y;
@@ -226,7 +275,10 @@ function bosOda(md: MulkDefteri, isletme: string, kapasite: number, an: number):
 
 /** Kira: oyuncu hanında gelir vergisi net kasaya gider; NPC hancı ödemesi dünyadan çıkar. */
 export function mulkluKira(k: Kasaba, kar: Karakter, govde: unknown, an: number, vergiOrani = 0): Sonuc<Record<string, unknown>> {
-  const oh = oyuncuHani(k);
+  const han = hanNoCoz(nesneMi(govde) ? govde.han : undefined);
+  if (han === undefined) return hata("han_gecersiz");
+  if (!hanVar(k, han)) return hata("han_yok");
+  const oh = oyuncuHani(k, han);
   if (!oh) return kiraTut(k, kar, govde, an);
   const md = mulkDefteri(k);
   if (oh.sahip === kar.o) return hata("kendine");
@@ -253,17 +305,19 @@ export function mulkluKira(k: Kasaba, kar: Karakter, govde: unknown, an: number,
 }
 
 /** İkram ödemesi: oyuncu hanında gelir vergisi sonrası net kasaya, NPC handa dünyadan çıkar. */
-export function mulkluIkram(k: Kasaba, kar: Karakter, ikram: IkramId, an: number, istekNo: string, vergiOrani = 0): Sonuc<{ fiyat: number; batak: number; kasaya: number; vergi: number; islem?: string }> {
+export function mulkluIkram(k: Kasaba, kar: Karakter, ikram: IkramId, an: number, istekNo: string, vergiOrani = 0, han = NPC_HAN_NO): Sonuc<{ fiyat: number; batak: number; kasaya: number; vergi: number; islem?: string }> {
   // Hancı "ikram" hizmeti yalnız NPC menüsünde %10 meslek indirimi sağlar; oyuncu hanının fiyatını sahibi belirler.
-  return mulkluHanOdemesi(k, kar, IKRAM_MENUSU[ikram].fiyat, an, `y:${k.y}:${kar.o}:ikram:${istekNo}`, vergiOrani, hizmetAcik(kar, "ikram"));
+  return mulkluHanOdemesi(k, kar, IKRAM_MENUSU[ikram].fiyat, an, `y:${k.y}:${kar.o}:ikram:${istekNo}`, vergiOrani, hizmetAcik(kar, "ikram"), han);
 }
 
 /**
  * Han ödemesi (ikram, H7 ziyafet): NPC hanında akçe dünyadan çıkar (batak); oyuncu hanında fiyat çarpanlı, vergi
  * ayrılır ve net tutar işletme kasasına çıkış kutusuyla gider. `islem`: tekrar güvenli çıkış kimliği.
  */
-export function mulkluHanOdemesi(k: Kasaba, kar: Karakter, taban: number, an: number, islem: string, vergiOrani = 0, npcIndirim = false): Sonuc<{ fiyat: number; batak: number; kasaya: number; vergi: number; islem?: string }> {
-  const oh = oyuncuHani(k);
+export function mulkluHanOdemesi(k: Kasaba, kar: Karakter, taban: number, an: number, islem: string, vergiOrani = 0, npcIndirim = false, han = NPC_HAN_NO): Sonuc<{ fiyat: number; batak: number; kasaya: number; vergi: number; islem?: string }> {
+  // 4.9: ödeme masanın bulunduğu hanın kasasına gider; sahipsiz arsada masa yoktur.
+  if (!hanVar(k, han)) return hata("han_yok");
+  const oh = oyuncuHani(k, han);
   if (!oh) {
     const fiyat = npcIndirim ? Math.max(1, Math.round(taban * 0.9)) : taban;
     if (kar.pa < fiyat) return hata("para_yok");
@@ -377,6 +431,7 @@ export function devirKabul(k: Kasaba, alici: Karakter, isletme: string, an: numb
   const tapu = md.t[isletme];
   if (!tapu?.dv || tapu.dv.o !== alici.o) return hata("teklif_yok");
   if (sahipMulkleri(md, alici.o).length >= KISI_MULK_EN_COK) return hata("mulk_siniri");
+  if (isletmeCoz(isletme)?.tur === "han" && sahipHanSayisi(k, md, alici.o) >= HAN_KISI_YERLESIM_EN_COK) return hata("han_siniri");
   const satici = k.kar.get(tapu.s);
   if (!satici) return hata("kisi_yok");
   const f = tapu.dv.f;
@@ -432,6 +487,8 @@ export function mulkListesi(k: Kasaba, kar: Karakter) {
         no: i + 1,
         durum: t ? ("sahipli" as const) : ("bos" as const),
         ...(t ? { sahip: { id: t.s, ad: sahip?.ad ?? "" }, ad: t.y?.ad ?? "", seviye: t.y?.seviye ?? 0 } : { fiyat: EDINIM_FIYATI[k.tur][tur] }),
+        // 4.9: sahipsiz 1. han NPC işletir; sahipsiz diğer han yuvaları boş arsadır.
+        ...(tur === "han" && !t ? { npc: i + 1 === NPC_HAN_NO, arsa: i + 1 !== NPC_HAN_NO } : {}),
         ...(t?.dv?.o === kar.o ? { devirTeklifi: { fiyat: t.dv.f } } : {}),
       };
     }),
@@ -447,7 +504,7 @@ export function mulkListesi(k: Kasaba, kar: Karakter) {
     benim: sahipMulkleri(md, kar.o),
     calistigim,
     teklifler,
-    sinir: { enCok: KISI_MULK_EN_COK, sahip: sahipMulkleri(md, kar.o).length },
+    sinir: { enCok: KISI_MULK_EN_COK, sahip: sahipMulkleri(md, kar.o).length, hanEnCok: HAN_KISI_YERLESIM_EN_COK, han: sahipHanSayisi(k, md, kar.o) },
     edinimSarti: Object.fromEntries(MULK_TURLERI.map((t) => [t, edinimSarti(k, kar, t)])),
     bekleyen: bekleyenGorunumu(md, kar.o),
   };

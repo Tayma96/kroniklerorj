@@ -90,6 +90,8 @@ function biletCoz(ham: string | null): MasaBileti | undefined {
         ...(typeof b.plaka.masaSusu === "string" && b.plaka.masaSusu.length <= 40 ? { masaSusu: b.plaka.masaSusu } : {}),
         ...(b.plaka.mudavim === true ? { mudavim: true as const } : {}),
         ...(b.plaka.ozan === true ? { ozan: true as const } : {}),
+        ...(typeof b.plaka.kisi === "string" && /^o[1-9][0-9]{0,8}$/.test(b.plaka.kisi) ? { kisi: b.plaka.kisi } : {}),
+        ...(Number.isInteger(b.plaka.nam) && (b.plaka.nam as number) >= 0 && (b.plaka.nam as number) <= 400 ? { nam: b.plaka.nam as number } : {}),
       };
       const ho = typeof b.ho === "number" && Number.isFinite(b.ho) ? { ho: b.ho } : {};
       return { masa: b.masa, no: b.no, plaka, yt: b.yt ?? {}, eg: engelListesiCoz(b.eg), ...ho };

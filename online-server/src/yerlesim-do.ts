@@ -14,6 +14,7 @@ import { basarili, hata, type Env, type Sonuc, type YerlesimIleti } from "./tipl
 import type { CalismaParametreleri } from "./yerlesim/tipler.ts";
 import { sonrakiAlarm, YerlesimMotoru } from "./yerlesim/motor.ts";
 import { mulkIsle, teslimAl, uzlastir, type IsletmeCagir } from "./mulk/yerlesim-mulk.ts";
+import { hanNoCoz } from "./mulk/tapu.ts";
 
 export class YerlesimDO {
   readonly #env: Env;
@@ -211,7 +212,7 @@ export class YerlesimDO {
       case "hanIkram":
         return motor.hanIkram(ileti.hesapId, ileti.govde, vergiOrani);
       case "hanPano":
-        return motor.hanPano(ileti.hesapId, ileti.alt, ileti.govde);
+        return motor.hanPano(ileti.hesapId, ileti.alt, ileti.govde, ileti.han);
       case "hanPanoIlan":
         return motor.hanPanoIlan(ileti.hesapId, ileti.ilan);
       case "hanZiyafet":
@@ -223,8 +224,14 @@ export class YerlesimDO {
         return armaganGeri(motor, ileti.hesapId, ileti.govde);
       case "sakinHesabi":
         return motor.sakinHesabi(ileti.hesapId, ileti.hedef);
-      case "engeller":
-        return motor.engeller(ileti.hesapId);
+      case "engeller": {
+        const han = hanNoCoz(ileti.han);
+        if (han === undefined) return hata("han_gecersiz");
+        if (!motor.hanAcikMi(han)) return hata("han_yok");
+        return motor.engeller(ileti.hesapId, han);
+      }
+      case "hanlar":
+        return motor.hanlar(ileti.hesapId);
       case "hanTanidiklar":
         return motor.hanTanidiklar(ileti.hesapId);
       case "hanOlayi":
@@ -255,8 +262,11 @@ export class YerlesimDO {
         return senlikUc(motor, ileti.hesapId, ileti.govde);
       case "zaviye":
         return zaviyeUc(motor, ileti.hesapId, ileti.govde);
-      case "mudavimZiyaret":
-        return mudavimUc(motor, ileti.hesapId);
+      case "mudavimZiyaret": {
+        const han = hanNoCoz(ileti.han);
+        if (han === undefined || !motor.hanAcikMi(han)) return hata("han_yok");
+        return mudavimUc(motor, ileti.hesapId, han);
+      }
       // Ekonomi (Faz 6) ve hizmet pazarı (E4.3): src/yerlesim/ekonomi-uclar.ts
       case "hizmet":
         return hizmetOku(motor, ileti.hesapId);
@@ -293,7 +303,7 @@ export class YerlesimDO {
       // Barınma (Faz 14): ms damgalı kurallar dünya saatini alır.
       case "barinma":
       case "donus":
-        return motor.barinmaOku(ileti.islem, ileti.hesapId, simdi);
+        return motor.barinmaOku(ileti.islem, ileti.hesapId, simdi, ileti.islem === "barinma" ? ileti.han : undefined);
       case "barinmaKira":
       case "barinmaTesis":
       case "barinmaOtomatik":

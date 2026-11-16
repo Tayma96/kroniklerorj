@@ -286,17 +286,18 @@ export class HesapDO {
       case "beceri":
         return this.#yerlesime({ islem: "beceri", hesapId: ileti.hesapId, meslek: ileti.meslek });
       case "han":
-        return hanListesi(await this.#han(ileti.hesapId, simdi), ileti.dil);
+        return hanListesi(await this.#han(ileti.hesapId, simdi), ileti.dil, ileti.han);
       case "masaBilet": {
-        const bilet = await masaBileti(await this.#han(ileti.hesapId, simdi), ileti.masa);
+        const bilet = await masaBileti(await this.#han(ileti.hesapId, simdi), ileti.masa, ileti.han);
         // E7 müdavim: sunucuda kesilen bilet han ziyaretidir (gün başına bir kez sayılır; hata bileti etkilemez).
-        if (bilet.ok) await this.#yerlesime({ islem: "mudavimZiyaret", hesapId: ileti.hesapId }).catch(() => undefined);
+        // 4.9: müdavimlik han başınadır (bilet geçerliyse han numarası da geçerlidir).
+        if (bilet.ok) await this.#yerlesime({ islem: "mudavimZiyaret", hesapId: ileti.hesapId, ...(ileti.han ? { han: ileti.han } : {}) }).catch(() => undefined);
         return bilet;
       }
       case "hanEylem":
         return hanEylemi(await this.#han(ileti.hesapId, simdi), ileti.govde);
       case "hanPano":
-        return this.#yerlesime({ islem: "hanPano", hesapId: ileti.hesapId, alt: "oku" });
+        return this.#yerlesime({ islem: "hanPano", hesapId: ileti.hesapId, alt: "oku", ...(ileti.han ? { han: ileti.han } : {}) });
       case "hanPanoYaz":
         return hanPanoYaz({ depo: this.#depo, simdi }, ileti.govde, (govde) => this.#yerlesime({ islem: "hanPano", hesapId: ileti.hesapId, alt: "yaz", govde }));
       case "hanPanoSil":
@@ -304,7 +305,7 @@ export class HesapDO {
       case "hanZiyafet":
         return hanZiyafeti(await this.#han(ileti.hesapId, simdi), ileti.govde);
       case "hanSes":
-        return hanSesi(await this.#han(ileti.hesapId, simdi), ileti.masa, ileti.alt, ileti.govde);
+        return hanSesi(await this.#han(ileti.hesapId, simdi), ileti.masa, ileti.alt, ileti.govde, ileti.han);
       case "hanIkram": {
         const r = await hanIkrami(await this.#han(ileti.hesapId, simdi), ileti.govde);
         // Oyun içi cömertlik de Cömertler Levhası'nda anılır (yalnız görünürlüğü açık olan; oyun etkisi yok).
@@ -418,7 +419,8 @@ export class HesapDO {
       yaptirim: await this.#yaptirimDurumu(),
       masaCagir: (ad, i) => masaCagir(env, ad, i),
       ikramOde: ikramOdeyici(env),
-      engelSor: (yerlesim) => yerlesimCagir(env, { islem: "engeller", yerlesim, hesapId }),
+      engelSor: (yerlesim, han) => yerlesimCagir(env, { islem: "engeller", yerlesim, hesapId, ...(han && han !== 1 ? { han } : {}) }),
+      hanlarSor: (yerlesim) => yerlesimCagir(env, { islem: "hanlar", yerlesim, hesapId }),
       tanidikSor: (yerlesim) => yerlesimCagir(env, { islem: "hanTanidiklar", yerlesim, hesapId }),
       hesapOlusturma: async () => (await hesapKaydi(this.#depo))?.olusturma,
       ziyafetOde: (yerlesim, govde) => yerlesimCagir(env, { islem: "hanZiyafet", yerlesim, hesapId, govde }),

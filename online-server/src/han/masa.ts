@@ -108,7 +108,7 @@ export function kayitlar(soketler: readonly MasaSoketi[]): Kayit[] {
 }
 
 function plaka(ek: SoketEki): Plaka {
-  return { hesap: ek.h, ad: ek.a, ...(ek.cf ? { cerceve: ek.cf } : {}), ...(ek.bl ? { balon: ek.bl } : {}), ...(ek.su ? { masaSusu: ek.su } : {}), ...(ek.md ? { mudavim: true as const } : {}), ...(ek.oz ? { ozan: true as const } : {}) };
+  return { hesap: ek.h, ad: ek.a, ...(ek.cf ? { cerceve: ek.cf } : {}), ...(ek.bl ? { balon: ek.bl } : {}), ...(ek.su ? { masaSusu: ek.su } : {}), ...(ek.md ? { mudavim: true as const } : {}), ...(ek.oz ? { ozan: true as const } : {}), ...(ek.ki ? { kisi: ek.ki } : {}), ...(typeof ek.nm === "number" ? { nam: ek.nm } : {}) };
 }
 
 /** Oturanlar koltuk sırasıyla. */
@@ -340,6 +340,8 @@ export function baglan(b: MasaBaglami, yeni: MasaSoketi, bilet: MasaBileti): voi
     if (once.ek.si !== undefined) ek.si = once.ek.si;
   }
   if (bilet.plaka.ozan) ek.oz = 1;
+  if (bilet.plaka.kisi) ek.ki = bilet.plaka.kisi;
+  if (typeof bilet.plaka.nam === "number") ek.nm = bilet.plaka.nam;
   let sesDegisti = false;
   for (const r of eski) {
     // Eski bağlantının yayını yeni bağlantıya geçmez (yeni WebRTC bağlantısı kurulur): SFU'da kapatılır.

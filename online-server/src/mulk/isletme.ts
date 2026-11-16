@@ -9,9 +9,10 @@ import { adDuzenle, trKucuk } from "../ad.ts";
 import { adDogrula } from "../ad.ts";
 import { trGunu } from "../yonetim/sikayet.ts";
 import { teveccuhEtkisi } from "../yerlesim/teveccuh.ts";
+import { yerlesimBul } from "../dunya-veri.ts";
 import {
   AD_UCRETSIZ_DEGISIM,
-  BAKIM,
+  bakimGideri,
   CALISAN_GUNLUK_CEKIM,
   CIKARMA_TAZMINAT_AY,
   DEFTER_EN_COK,
@@ -32,7 +33,7 @@ import {
   IZLEME_INCELEME_ESIGI,
   KALITE_GELIR_YUZDE,
   KALITE_ROLLERI,
-  KAPASITE,
+  kapasiteTablosu,
   MAAS_EN_AZ,
   MAAS_EN_COK,
   NPC_CALISAN_KADEMESI,
@@ -265,7 +266,12 @@ export function seviye(is: Isletme): number {
 
 /** Kapasite yalnız seviyeden (parayla artmaz). */
 export function kapasite(is: Isletme): number {
-  return KAPASITE[is.tur][seviye(is)]!;
+  return kapasiteTablosu(is.tur, yerlesimBul(is.yerlesim)?.tur)[seviye(is)]!;
+}
+
+/** Aylık bakım (4.9: han yerleşim türüne göre). */
+export function bakim(is: Isletme): number {
+  return bakimGideri(is.tur, yerlesimBul(is.yerlesim)?.tur);
 }
 
 /** Kalite: türün kalite rollerinde en yüksek meslek kademesi; rolde kimse yoksa sahibin kendi kademesi (döküm). */
@@ -742,11 +748,11 @@ function birAy(is: Isletme, ay: number, an: number): void {
     defterYaz(is, ay, "npcMusteri", g.tutar);
   }
   // Bakım ve borç.
-  const bakim = BAKIM[is.tur] + is.borc;
-  const odenen = Math.min(is.kasa, bakim);
+  const gider = bakim(is) + is.borc;
+  const odenen = Math.min(is.kasa, gider);
   is.kasa -= odenen;
   is.batak += odenen;
-  is.borc = bakim - odenen;
+  is.borc = gider - odenen;
   if (odenen > 0) defterYaz(is, ay, "bakim", -odenen);
   is.borcAy = is.borc > 0 ? is.borcAy + 1 : 0;
   // Maaş (emanet kasasından). Ödenemeyen sözleşme işverence bozulmuş sayılır.
@@ -934,7 +940,7 @@ export function panel(is: Isletme, o: string, ay: number, an: number) {
       maasYuku: maasYuku(is),
       kalite: kalite(is),
       npcGeliri: npcGeliri(is),
-      bakim: BAKIM[is.tur],
+      bakim: bakim(is),
       personel: etkinler(is).map(sozlesmeGorunumu),
       ...(yonetici ? { teklifler: is.tk, oneriler: is.on, sicil: is.sicil, izleme: { ay: is.iz.ay, bayrakli: is.iz.b, musteri: is.iz.s.length, inceleme: is.iz.in } } : {}),
       cekim: { bugun, tavan: d.konum === "sahip" ? SAHIP_GUNLUK_CEKIM : CALISAN_GUNLUK_CEKIM },
