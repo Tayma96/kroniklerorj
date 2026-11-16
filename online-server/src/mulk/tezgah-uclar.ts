@@ -23,7 +23,7 @@ import type { Kisi } from "./isletme.ts";
 import { EDINIM_FIYATI, ITIBAR_BASLANGIC, KISI_MULK_EN_COK, MULK_YUVA, isletmeCoz, type MulkTuru, type Yetki } from "./kurallar.ts";
 import { fiyatBandi, fiyatGecerli, rafAdedi, rafBos, rafSatirSiniri, rafaKoy, raftanAl, raftanSat, satirBul, satirGorunumu } from "./raf.ts";
 import { bosYuva, edinimSarti, iadeBedeli, kasayaCikis, mulkDefteri, sahipMulkleri, vergiAyir, type MulkDefteri } from "./tapu.ts";
-import { meslekOyuncuSayaci, saticilar } from "./tezgah-donum.ts";
+import { meslekOyuncuSayaci, npcDokumu, saticilar } from "./tezgah-donum.ts";
 import { pompaDenetle, pompaYaz } from "../yerlesim/pazar-tahta.ts";
 import { trGunu } from "../yonetim/sikayet.ts";
 import { CIKIS_EN_COK, cikisAc } from "./transfer.ts";
@@ -248,7 +248,7 @@ function atolyeGorunumu(k: Kasaba, md: MulkDefteri, isletme: string, t: Tezgah, 
     zanaatDegisim: { yapilan: zs, ucretsizKalan: Math.max(0, ZANAAT_UCRETSIZ_DEGISIM - zs), bedel: zs >= ZANAAT_UCRETSIZ_DEGISIM ? ZANAAT_DEGISIM_BEDELI : 0 },
     tezgah: { sayi: tezgahSayisi(t, seviye), acikEmir: t.ue?.length ?? 0 },
     kaliteBonus: ATOLYE_KALITE_SEVIYE_PUANI * seviye,
-    emek: { havuz: t.eh ?? 0, tavan: emekTavani(t, seviye), npcCalisan: ne, npcAylik: NPC_EMEK_AY * ne, npcKaliteCeza: NPC_EMEK_KALITE_CEZA, npcMaasEnAz: NPC_ATOLYE_MAAS_EN_AZ },
+    emek: { havuz: t.eh ?? 0, tavan: emekTavani(t, seviye), npcCalisan: ne, npcAylik: NPC_EMEK_AY * ne, npc: npcDokumu(ne, Math.max(ne, tapu.y?.nt ?? ne)), npcKaliteCeza: NPC_EMEK_KALITE_CEZA, npcMaasEnAz: NPC_ATOLYE_MAAS_EN_AZ },
     emirler: (t.ue ?? []).map((e) => ({ no: e.n, tarif: e.tr, kez: e.k, yapilan: e.y, kalan: e.k - e.y, acilis: e.a, acan: { id: e.o, ad: k.kar.get(e.o)?.ad ?? sahipAdi(k, e.o) } })),
     emirKezEnCok: EMIR_KEZ_EN_COK,
     sonUretimAyi: t.ua ?? null,

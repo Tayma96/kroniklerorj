@@ -263,6 +263,25 @@ export function etkinler(is: Isletme): Sozlesme[] {
   return is.pr.filter((s) => s.d === "etkin");
 }
 
+/**
+ * Atölye NPC emeği (Dilim 2): emek verebilecek NPC sözleşmesi (maaşı NPC_ATOLYE_MAAS_EN_AZ ve üstü) ve bunlardan
+ * maaşı emanetten birikimli karşılananlar. Sıra maasOde ile aynıdır (ödenemeyen atlanır, sonrakiler denenir); maaşı
+ * ödenemeyecek NPC emek vermez, çünkü üretim dönümde hemen yapılır, maaş sonra ödenir.
+ */
+export function npcEmekSayisi(is: Isletme): { toplam: number; maasli: number } {
+  let kalan = is.emanet;
+  let toplam = 0;
+  let maasli = 0;
+  for (const s of etkinler(is)) {
+    const uygun = s.k.t === "npc" && s.m >= NPC_ATOLYE_MAAS_EN_AZ;
+    if (uygun) toplam++;
+    if (kalan < s.m) continue;
+    kalan -= s.m;
+    if (uygun) maasli++;
+  }
+  return { toplam, maasli };
+}
+
 /** Aylık maaş yükü: bir sonraki dönümde emanetten ödenecek toplam. */
 export function maasYuku(is: Isletme): number {
   return etkinler(is).reduce((t, s) => t + s.m, 0);
@@ -740,6 +759,9 @@ function iseAl(is: Isletme, tur: "teklif" | "npc", govde: Record<string, unknown
     if (npcCalisiyorMu(is, npc.n)) return hata("zaten_calisan");
     // Atölyede NPC emeği üretir (Dilim 2): maaş tabanı, NPC emeğiyle üretip tabandan satmanın kâr etmemesi için.
     if (is.tur === "atolye" && m < NPC_ATOLYE_MAAS_EN_AZ) return hata("maas_npc_taban");
+    // Atölyede NPC emeği dönümde hemen üretir, maaşı sonra emanetten ödenir: emanet bütün maaş yükünü + yeni maaşı
+    // karşılamadan NPC alınmaz (maaşsız emek yok; emanetten çekim zaten maaş yükünün altına inemez).
+    if (is.tur === "atolye" && is.emanet < maasYuku(is) + m) return hata("emanet_yetersiz");
     // NPC kendi kademesini taşır; yetkisi yoktur (NPC kasa, fiyat, personel yönetmez).
     const s = yeniSozlesme(is, { t: "npc", n: npc.n, ad: npc.ad }, r, [], m, NPC_CALISAN_KADEMESI, ay);
     defterYaz(is, ay, "iseGiris", 0, `${s.n}:${npc.n}:${r}:${m}`);
@@ -925,8 +947,11 @@ export function ayarYuku(is: Isletme) {
     po: etkinler(is).flatMap((s) => (s.k.t === "oyuncu" ? [s.k.o] : [])),
     pn: etkinler(is).flatMap((s) => (s.k.t === "npc" ? [s.k.n] : [])),
     to: is.tk.map((t) => t.hedef.o),
-    /** Atölye (Dilim 2): emek veren NPC çalışan sayısı (maaşı NPC_ATOLYE_MAAS_EN_AZ ve üstü). */
-    ...(is.tur === "atolye" ? { ne: etkinler(is).filter((s) => s.k.t === "npc" && s.m >= NPC_ATOLYE_MAAS_EN_AZ).length } : {}),
+    /**
+     * Atölye (Dilim 2): ne = emek veren NPC (maaşı tabanda ve emanetten karşılanıyor), nt = maaşı tabanda olan bütün
+     * NPC sözleşmeleri (nt − ne: maaşı emanetten karşılanmadığı için emek vermeyen; dökümde gösterilir).
+     */
+    ...(is.tur === "atolye" ? (({ toplam, maasli }) => ({ ne: maasli, nt: toplam }))(npcEmekSayisi(is)) : {}),
   };
 }
 export type AyarYuku = ReturnType<typeof ayarYuku>;

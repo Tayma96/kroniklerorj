@@ -182,12 +182,15 @@ function atolyeDonumu(k: Kasaba, ay: number): OlayTaslagi[] {
     zanaatHazirla(k, md, id, t);
     if (t.za) zanaatlar.push(t.za);
     const ad = tapu.y?.ad ?? "";
+    // Emek veren NPC: maaşı emanetten karşılanan (işletme yansısı); eski yansıda nt yoksa hepsi karşılanmış sayılır.
+    const ne = tapu.y?.ne ?? 0;
+    const nt = Math.max(ne, tapu.y?.nt ?? ne);
     const u = emirleriIsle({
       t,
       isletme: id,
       seviye,
       kapasite: depoKapasitesi("atolye", etkinSeviye(t, seviye)),
-      npcEmek: NPC_EMEK_AY * (tapu.y?.ne ?? 0),
+      npcEmek: NPC_EMEK_AY * ne,
       adaylar: atolyeAdaylari(k, md, id),
       ay,
     });
@@ -197,7 +200,7 @@ function atolyeDonumu(k: Kasaba, ay: number): OlayTaslagi[] {
     }
     const uretimli = t.ua === ay - 1 || u.yapim > 0;
     t.kk = uretimli || t.se === ay - 1 ? 0 : t.kk + 1;
-    const dokum = { ay, kepenk: !uretimli, anlik: t.ua === ay - 1, yapim: u.yapim, emek: u.emek, emirler: u.emirler.slice(0, URETIM_DOKUM_EN_COK) };
+    const dokum = { ay, kepenk: !uretimli, anlik: t.ua === ay - 1, yapim: u.yapim, emek: u.emek, npc: npcDokumu(ne, nt), emirler: u.emirler.slice(0, URETIM_DOKUM_EN_COK) };
     t.gs = dokum;
     if (uretimli && yerVar(k, id)) girdiEkle(k, id, ay, 0, 1);
     if (u.yapim > 0) {
@@ -210,6 +213,11 @@ function atolyeDonumu(k: Kasaba, ay: number): OlayTaslagi[] {
   if (r.acilan) olaylar.push({ t: "tezgah", w: "", h: "", g: "", n: 3, k: "olay.tezgah.topluSiparis", p: { siparis: r.acilan.id, meslek: r.acilan.meslek, mal: r.acilan.mal, adet: r.acilan.adet, odul: r.acilan.odul } });
   if (!tsp.l.length && tsp.sm === undefined) delete md.tsp;
   return olaylar;
+}
+
+/** NPC emeği dökümü: sözleşmeli NPC, emek veren ve maaşı emanetten karşılanmadığı için emek vermeyen (gizli sayı yok). */
+export function npcDokumu(ne: number, nt: number) {
+  return { sozlesme: nt, emekVeren: ne, maassiz: nt - ne, neden: nt > ne ? ("emanet_maas_yetmez" as const) : null };
 }
 
 /** Han yolcu havuzu: açık hanlar (NPC hanı sabit çekicilikle) Y'yi paylaşır; NPC hanının payı yanar. */

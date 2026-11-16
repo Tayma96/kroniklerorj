@@ -245,6 +245,9 @@ test("IsletmeDO: atölye kalite rolü zanaat mesleği; NPC maaş tabanı; yansı
   r = isletmeIsle(r.is, { islem: "komut", isletme: ID, tapu, baglam, alt: "personel", govde: { islem: "npc", rol: "yonetici", maas: NPC_ATOLYE_MAAS_EN_AZ - 1 }, hedef: { npc: { n: "n5", ad: "Ali" } }, istekNo: "p-0000001" }, AN);
   assert.deepEqual(r.sonuc, { ok: false, hata: "maas_npc_taban" });
   r = isletmeIsle(r.is, { islem: "komut", isletme: ID, tapu, baglam, alt: "personel", govde: { islem: "npc", rol: "yonetici", maas: NPC_ATOLYE_MAAS_EN_AZ }, hedef: { npc: { n: "n5", ad: "Ali" } }, istekNo: "p-0000002" }, AN);
+  assert.deepEqual(r.sonuc, { ok: false, hata: "emanet_yetersiz" });
+  r.is!.emanet = NPC_ATOLYE_MAAS_EN_AZ;
+  r = isletmeIsle(r.is, { islem: "komut", isletme: ID, tapu, baglam, alt: "personel", govde: { islem: "npc", rol: "yonetici", maas: NPC_ATOLYE_MAAS_EN_AZ }, hedef: { npc: { n: "n5", ad: "Ali" } }, istekNo: "p-0000003" }, AN);
   assert.ok(r.sonuc.ok);
   assert.equal(ayarYuku(r.is!).ne, 1);
   assert.equal(NPC_EMEK_AY * 1, 2);
@@ -265,4 +268,74 @@ test("Dilim 1 ekleri: dükkân listesinde edinim bedeli, depo defterinde kimAd, 
   girisIsle(k, x, AN);
   const olay = (md.ob ?? []).find((o) => o.k === "olay.tezgah.devralmaKasasi");
   assert.equal(olay?.p.ad, "Eski Hızar");
+});
+
+// ── Denge denetimi düzeltmeleri (Dilim 2) ──
+
+function personelKomutu(k: Kasaba, a: Karakter) {
+  const md = mulkDefteri(k);
+  const tapu = { isletme: ID, yerlesim: "develi", tur: "atolye" as const, no: 1, ts: md.t[ID]!.ts, sahip: { h: a.h, o: a.o, ad: a.ad }, za: "oduncu" as const };
+  const baglam = { h: a.h, o: a.o, ad: a.ad, mk: {}, tv: 0 };
+  return (alt: "personel" | "emanet", govde: Record<string, unknown>, istekNo: string, hedef?: { npc: { n: string; ad: string } }): IsletmeIleti => ({ islem: "komut", isletme: ID, tapu, baglam, alt, govde, ...(hedef ? { hedef } : {}), istekNo });
+}
+
+/** İşletmenin çıkış kutusunu (yansı dahil) yerleşime ulaştırır. */
+function yansiAkit(k: Kasaba, br: ReturnType<typeof kopru>, an = AN): void {
+  const r = br.isle({ islem: "teslim", isletme: ID, kayitlar: [] }, an);
+  assert.ok(r.ok);
+  if (r.deger.teslim.length) br.isle({ islem: "onay", isletme: ID, sonuclar: r.deger.teslim.map((x) => [x.i, girisIsle(k, x, an).durum]) }, an);
+}
+
+test("A: maaşı karşılanmayan NPC emek vermez: emanet 0 iken 8 NPC işe alınıp dönümde bedava emek alınamaz", () => {
+  const { k, a, br } = hazir();
+  assert.ok(zanaatUc(k, a, ID, { meslek: "oduncu" }).ok);
+  const is = br.isler.get(ID)!;
+  is.kasa = 100;
+  const kmt = personelKomutu(k, a);
+  const al = (i: number) => br.isle(kmt("personel", { islem: "npc", rol: "yonetici", maas: NPC_ATOLYE_MAAS_EN_AZ }, `p-00000${i}`, { npc: { n: `n${i}`, ad: "N" } }));
+  for (let i = 1; i <= 8; i++) assert.deepEqual(al(i), { ok: false, hata: "emanet_yetersiz" }, "emanet maaşı karşılamadan NPC alınmaz");
+  // Eski kayıt / maaş artırımı ile karşılanmayan sözleşme: sözleşme var ama emek vermez, nedeni dökümde.
+  is.emanet = 8 * NPC_ATOLYE_MAAS_EN_AZ;
+  for (let i = 1; i <= 8; i++) assert.ok(al(i).ok);
+  is.emanet = 0;
+  yansiAkit(k, br);
+  assert.deepEqual([mulkDefteri(k).t[ID]!.y?.ne, mulkDefteri(k).t[ID]!.y?.nt], [0, 8]);
+  assert.ok(emirUc(k, a, ID, { islem: "ac", tarif: "kereste", kez: 16 }).ok);
+  kaliteliEkle(a, "odun", [[0, 16]]);
+  assert.ok(depoTasi(k, a, ID, { yon: "koy", mal: "odun", adet: 16 }).ok);
+  tezgahDonumu(k, AY + 1);
+  const gs = tz(k).gs as { yapim: number; emek: { npcVerilen: number; npcKullanilan: number } };
+  assert.equal(gs.emek.npcKullanilan, 0, "maaşı ödenemeyecek NPC emek vermez");
+  assert.equal(gs.yapim, 0);
+  assert.deepEqual((tz(k).gs as { npc: unknown }).npc, { sozlesme: 8, emekVeren: 0, maassiz: 8, neden: "emanet_maas_yetmez" });
+});
+
+test("A: maaşı emanetten karşılanan NPC eskisi gibi çalışır; emanet birikimli olarak kaç NPC'yi karşılıyorsa o kadar", () => {
+  const { k, a, br } = hazir();
+  assert.ok(zanaatUc(k, a, ID, { meslek: "oduncu" }).ok);
+  const is = br.isler.get(ID)!;
+  is.kasa = 100;
+  const kmt = personelKomutu(k, a);
+  assert.ok(br.isle(kmt("emanet", { yon: "koy", tutar: 100 }, "e-0000001")).ok);
+  assert.equal(is.emanet, 100);
+  for (let i = 1; i <= 2; i++) assert.ok(br.isle(kmt("personel", { islem: "npc", rol: "yonetici", maas: NPC_ATOLYE_MAAS_EN_AZ }, `p-00000${i}`, { npc: { n: `n${i}`, ad: "N" } })).ok);
+  assert.deepEqual(br.isle(kmt("personel", { islem: "npc", rol: "yonetici", maas: NPC_ATOLYE_MAAS_EN_AZ }, "p-0000003", { npc: { n: "n3", ad: "N" } })), { ok: false, hata: "emanet_yetersiz" });
+  yansiAkit(k, br);
+  assert.deepEqual([mulkDefteri(k).t[ID]!.y?.ne, mulkDefteri(k).t[ID]!.y?.nt], [2, 2]);
+  assert.ok(emirUc(k, a, ID, { islem: "ac", tarif: "kereste", kez: 8 }).ok);
+  kaliteliEkle(a, "odun", [[0, 8]]);
+  assert.ok(depoTasi(k, a, ID, { yon: "koy", mal: "odun", adet: 8 }).ok);
+  tezgahDonumu(k, AY + 1);
+  let gs = tz(k).gs as { yapim: number; emek: { npcKullanilan: number }; npc: { emekVeren: number; neden: string | null } };
+  assert.deepEqual([gs.emek.npcKullanilan, gs.yapim, gs.npc.emekVeren, gs.npc.neden], [2 * NPC_EMEK_AY, 2 * NPC_EMEK_AY, 2, null]);
+  // Üretimli ayın kaydı maaşı öder (100 − 76 = 24): ertesi ay emanet bir NPC'yi bile karşılamaz → emek yok.
+  tezgahKayitlariAc(k, AN);
+  br.teslim(AN + AY_MS);
+  assert.equal(is.emanet, 100 - 2 * NPC_ATOLYE_MAAS_EN_AZ);
+  assert.ok(is.pr.every((s) => s.d === "etkin" && s.od === 1), "maaş ödendi, sözleşme sürüyor");
+  yansiAkit(k, br, AN + AY_MS);
+  assert.deepEqual([mulkDefteri(k).t[ID]!.y?.ne, mulkDefteri(k).t[ID]!.y?.nt], [0, 2]);
+  tezgahDonumu(k, AY + 2);
+  gs = tz(k).gs as typeof gs;
+  assert.deepEqual([gs.emek.npcKullanilan, gs.npc.emekVeren, gs.npc.neden], [0, 0, "emanet_maas_yetmez"]);
 });
