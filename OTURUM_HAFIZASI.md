@@ -1,29 +1,28 @@
-# Kronikler — güncel çalışma özeti (16 Kasım 2026)
+# Kronikler — güncel çalışma özeti (16 Kasım 2026, akşam)
 
 ## Kurallar
 - Repo Tayma96/kroniklerorj, ana dal `apk` (oturum dalına aynı commit). Türkçe tek satır commit, ek satır yok.
 - Tek sert kural: **her şey ücretsiz**. Anahtar okuma/yazdırma yok.
-- Berkay (15 Kasım): "Benden talimat ve onay bekleme, en iyisi nasılsa yap." İstisna: canlı/test Worker dağıtımı, silme, gerçek para/ödeme.
-- Yönetici en güçlü model; kod Opus alt ajan, test ve **çeviri Sonnet** (istemci ajanı metni yalnız Türkçe yazar). En çok 2 ajan, çakışmayan klasörlerde. Limit kesilirse SendMessage ile sürdür.
-- Kalite çıtası "AAA metin oyunu": her ekran sahne; hareket tek ortak katmandan (150–300 ms, UI iş parçacığı, reduce motion); ölü karar yok; her arayüz işi `react-reviewer`dan geçer. **Hiçbir meslek ve beceri kancası boşta kalmaz.**
-- Yeni oyuncu metni 6 dilde. Bulut oturumunda developers.cloudflare.com kapalı.
+- Berkay: "Talimat ve onay bekleme, en iyisi nasılsa yap." İstisna: Worker dağıtımı, silme, gerçek para/ödeme.
+- **Token disiplini (Berkay, 16 Kasım):** aynı anda TEK Opus ajanı (+en çok bir Sonnet); her ajana `model` açıkça yaz (yazılmazsa en pahalı modelde koşar); düzeltme turu büyümüş ajanı sürdürerek değil dar kapsamlı yeni ajanla; ajan çalışırken ara durum mesajı yazma; her büyük iş yeni oturumda.
+- Yönetici plan/tasarım/inceleme; kod Opus (`online-sunucu`, `online-istemci`), test ve **çeviri Sonnet** (`tester`; istemci ajanı metni yalnız Türkçe yazar). Ajanlara "commit/push yok, `git stash` yok" de; commit'i yönetici atar.
+- Çıta "AAA metin oyunu": her ekran sahne; hareket yalnız `lib/online/ui.tsx` `HAREKET`/`belir`/`giris`/`BASMA_OLCEK`; ölü karar yok; her arayüz işi `react-reviewer`dan, her ekonomi işi `denge-denetcisi`nden geçer. Hiçbir meslek/beceri kancası boşta kalmaz.
 
 ## Çevrimiçi durum
-- Tek durum belgesi: `docs/online/ONLINE_DURUM.md`. Sunucu 622+ test, canlı test Worker'ı var (yeni commit'ler dağıtılmadı).
-- 15–16 Kasım: H8 ozan sahnesi ve atışma sunucusu (`7b09ee4`); han masası koltuk düzeni, kişi kartı, ikram/Debdebe armağan çekmecesi (`026740a`); çoklu han sunucusu — şehir 5, kasaba 2, köy yalnız NPC, plakada `kisi`/`nam` (`860d0ad`).
-- Sürüyor: han ekranı inceleme düzeltmeleri + sahne/atışma arayüzü (istemci); han listesi alt istek sayısını ≤12'ye indirme (sunucu).
+- Durum belgesi `docs/online/ONLINE_DURUM.md`; tasarım `docs/superpowers/specs/2026-11-16-tezgah-modeli-design.md`.
+- Sunucu 652 test, hepsi geçiyor. Canlı test Worker'ına yeni commit'ler dağıtılmadı.
+- Bitti (15–16 Kasım): ozan sahnesi/atışma; han masası koltuk, kişi kartı, ikram/armağan; çoklu han (şehir 5, kasaba 2) + han seçici; 5 sekmeli gezinme (Yaşam, Sokak, İşim, Çevrem, Ben) + "Şimdi" rehberi; tezgâh modeli Dilim 1 sunucusu (raf, depo, hane bütçesi, kepenk = satışsız ay, devralma 60 ay, han yolcu havuzu) ve denge denetimi düzeltmeleri.
+- **Yarım:** tezgâh Dilim 1 istemcisi (ara kayıt commit'li). Brief ve protokol: `docs/superpowers/specs/2026-11-16-tezgah-istemci-brief.md`.
+- İstemci ekranlarının hiçbiri cihazda görülmedi; `design-preview.cjs` bu ortamda paket hatasıyla duruyor.
 
 ## Sıradaki işler (bu sırayla)
-1. İstemci: han seçici (yerleşimde han listesi, `?han=N`, hata `han_gecersiz|han_yok|han_siniri`), mülk ekranında arsa/yuva.
-2. Dükkân/atölye **tezgâh modeli**: atölye zanaata göre üretir, dükkân raf+fiyatla satar, yerleşimin sınırlı NPC talebi fiyat/kalite/itibara göre paylaşılır (hanlar dahil), boş rafta kepenk (bakım/iflas durur). Önce kanca dökümü, tasarım `docs/superpowers/specs/`, coder'dan iki yaklaşım.
-3. Oyuncu numarası (8 hane, rastgele, hesaba bağlı), arama, oyuncu sayfası (armağan duvarı, anlar, söz).
-4. Sokak sahnesi: Yaşam'daki ~25 giriş yerine dokunulabilir yerleşim; ilk adımlar rehberi; "Debdebe" girişi "Mağaza" adıyla.
+1. Dükkân ekranını bitir (brief'e göre) → çeviri → `react-reviewer` → düzeltme → push.
+2. Tezgâh Dilim 2: atölye (zanaat, üretim emri, emek havuzu, toplu sipariş; tasarım §6), sunucu sonra istemci.
+3. Dilim 3: meslek kancaları ilk parti ≈70 (tasarım §7) + "boşta kanca listesi yalnız kısalır" testi. Döküm: 199 hak'tan 196'sı, 74 kalite'den 57'si, 51 hizmet'ten 30'u boşta.
+4. Oyuncu numarası (8 hane, rastgele, hesaba bağlı), arama, oyuncu sayfası (armağan duvarı, anlar, söz).
 5. Han masa oyunları çatısı + iki oyun; canlı masalar vitrini; hızlı tepkiler.
-
-## Tasarım kararları (15 Kasım)
-- Armağan: akçeyle ikram (akçe yanar, alıcıya geçmez) + Debdebe. Şans/ödül havuzu mekaniği yok. Gerçek fotoğraf yükleme yok.
-- Masa açmak herkese ücretsiz; han kıt mülk. Bir kişi aynı yerleşimde en çok 1 han.
+6. Sokak'ta hizmet/lonca/divan/kervansaray/zaviye için uygun görsel yok (eldeki en yakınlar kullanıldı).
 
 ## Berkay'da
-- Realtime uygulaması (`REALTIME_APP_ID/TOKEN`), `GOOGLE_CLIENT_ID`, FCM, Play ürünleri ve ödeme sırları; yeni test APK'sı ve 5–10 kişilik gerçek cihaz denemesi.
-- Karar: Debdebe armağanının teveccühe (gelir, seçim) girmesi; süre kısaltma satışı (`ONLINE_DURUM.md` §5).
+- Realtime uygulaması (`REALTIME_APP_ID/TOKEN`), `GOOGLE_CLIENT_ID`, FCM, Play ürünleri/ödeme sırları; Worker dağıtımı; yeni test APK'sı ve 5–10 kişilik cihaz denemesi.
+- Karar: Debdebe armağanının teveccühe girmesi; süre kısaltma satışı (`ONLINE_DURUM.md` §5).
