@@ -61,7 +61,7 @@ function MahalleEkran() {
     return [...(mekan?.kisiler ?? [])].sort((a, b) => sira(a) - sira(b));
   }, [mekan, isaretler, benId]);
 
-  if (!y) return <YerlesimBekle sekme="mahalle" rtl={rtl} t={t} onGiris={() => router.replace("/online")} />;
+  if (!y) return <YerlesimBekle sekme="sokak" rtl={rtl} t={t} onGiris={() => router.replace("/online")} />;
 
   const { W, H, merkez } = haritaOlcusu(width);
   const sol = (width - W) / 2;
@@ -83,7 +83,7 @@ function MahalleEkran() {
     if (s.ok) { hap("success"); setSonuc(s.deger); } else if (!istekTekrarMi(s.hata)) { hap("error"); setEylemHata(t(hataAnahtari(s.hata))); }
   };
 
-  return <OnlineSayfa gorsel={sahneGorseli(y.yerlesim.tur, y.saat.mevsim)} oran={0.3} sekme="mahalle" rtl={rtl} t={t} rozet={{ karakter: ben.ozellikPuani > 0 }}
+  return <OnlineSayfa gorsel={sahneGorseli(y.yerlesim.tur, y.saat.mevsim)} oran={0.3} sekme="sokak" rtl={rtl} t={t} rozet={{ ben: ben.ozellikPuani > 0 }}
     alt={<AltPanel acik={!!sonuc} onKapat={() => setSonuc(null)} etiket={t("onl.ey.sonuc")} rtl={rtl} t={t}>
       {sonuc ? <EylemSonucu y={sonuc} rtl={rtl} t={t} lang={lang} onTamam={() => setSonuc(null)} /> : null}
     </AltPanel>}>

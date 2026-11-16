@@ -215,7 +215,7 @@ function IslerEkran() {
 
   return <OnlineSayfa gorsel={sahneGorseli(y.yerlesim.tur, y.saat.mevsim)} oran={0.3} rtl={rtl} t={t} alt={paneller}>
     <View style={{ flexDirection: yon(rtl), alignItems: "center", gap: 6 }}>
-      <GeriDugme rtl={rtl} etiket={t("onl.geri")} onPress={() => geriGit(router, "/online/yasam")} />
+      <GeriDugme rtl={rtl} etiket={t("onl.geri")} onPress={() => geriGit(router, "/online/isim")} />
       <View style={{ flex: 1 }} />
       <Hap icon="coins" metin={String(ben.para)} erisim={applyParams(t("onl.ya.paraErisim"), [ben.para])} />
       <TakatHapi kalan={ben.takat.kalan} tavan={ben.takat.tavan} t={t} />

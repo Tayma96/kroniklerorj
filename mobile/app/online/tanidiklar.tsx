@@ -1,3 +1,4 @@
+// Çevrem sekmesi (/online/cevrem ve eski /online/tanidiklar): gelen kutusu, hanedan ve tanıdıklar.
 // Çevrimiçi tanıdıklar (Faz 2c, §6.0): oyuncunun seçtiği kişiler ve işaretleri (tanıdık · dost · düşman), süzgeçler,
 // NPC'nin sana bakışı (işaretten ayrı) ve "listene ekle?" önerileri. Sıra sunucudan: bakışın büyüklüğüne göre.
 import { useState } from "react";
@@ -15,11 +16,15 @@ import { onlineEkranAcik } from "../../lib/online/kapi";
 import { Cerceve, ONL, giris, hiza, yon } from "../../lib/online/ui";
 import { kisiYolu } from "../../lib/online/toplum-veri";
 import {
-  Baslik2, BosKart, GorusOlcegi, IsaretRozeti, KisiYuzu, Muhur, OnlineSayfa, SatirOku, SayfaBasi, TakatHapi, YerlesimBekle, gorusRengi, sahneGorseli,
+  Baslik2, BosKart, GorusOlcegi, IsaretRozeti, KisiYuzu, Muhur, OnlineSayfa, SatirOku, SayfaBasi, TakatHapi, YerlesimBekle, gorusRengi,
   useYerlesimEkrani, yuzBilgisi,
 } from "../../lib/online/yasam-ui";
 import { ISARET_IKON, isaretli, ruhAnahtari } from "../../lib/online/metin";
 import type { Tanidik } from "../../lib/online/protokol";
+import { GelenKutusuKarti } from "../../lib/online/toplum-ui";
+import { HanedanGirisi } from "../../lib/online/yasam-han-giris";
+
+const CEVREM_GORSELI = require("../../assets/tasarim/v4/venue-hanedan.jpg");
 
 type Suzgec = "hepsi" | "dost" | "dusman" | "tanidik" | "oyuncu";
 const SUZGECLER: readonly Suzgec[] = ["hepsi", "dost", "dusman", "tanidik", "oyuncu"];
@@ -34,18 +39,25 @@ function TanidiklarEkran() {
   const y = o.yerlesim;
   const [suzgec, setSuzgec] = useState<Suzgec>("hepsi");
   const [hepsi, setHepsi] = useState(false);
-  if (!y) return <YerlesimBekle sekme="tanidiklar" rtl={rtl} t={t} onGiris={() => router.replace("/online")} />;
+  if (!y) return <YerlesimBekle sekme="cevrem" rtl={rtl} t={t} onGiris={() => router.replace("/online")} />;
 
   const ben = y.ben;
   const liste = ben.tanidiklar.filter((k) => uyar(k, suzgec));
   const gorunen = hepsi ? liste : liste.slice(0, ONE_CIKAN);
   const git = (id: string) => { hap("tap"); router.push(kisiYolu(id)); };
 
-  return <OnlineSayfa gorsel={sahneGorseli(y.yerlesim.tur, y.saat.mevsim)} oran={0.3} sekme="tanidiklar" rtl={rtl} t={t} rozet={{ karakter: ben.ozellikPuani > 0 }}>
-    <SayfaBasi ust={y.yerlesim.ad} baslik={t("onl.ta.baslik")} alt={applyParams(t("onl.ta.alt"), [ben.tanidiklar.length])} rtl={rtl}
+  return <OnlineSayfa gorsel={CEVREM_GORSELI} oran={0.34} sekme="cevrem" rtl={rtl} t={t} rozet={{ ben: ben.ozellikPuani > 0 }}>
+    <SayfaBasi ust={y.yerlesim.ad} baslik={t("onl.cv.baslik")} alt={t("onl.cv.alt")} rtl={rtl}
       sag={<TakatHapi kalan={ben.takat.kalan} tavan={ben.takat.tavan} t={t} />} />
+    <View style={{ minHeight: 70 }} />
+    <Animated.View entering={giris(40)}>
+      <GelenKutusuKarti ust={0} />
+      <HanedanGirisi ben={ben} />
+    </Animated.View>
 
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -16, marginTop: 16 }} contentContainerStyle={{ paddingHorizontal: 16, gap: 8, flexDirection: yon(rtl) }}>
+    <Baslik2 metin={t("onl.ta.baslik")} rtl={rtl} sag={<Text style={{ fontFamily: F.display, fontSize: 12, color: C.gold }}>{applyParams(t("onl.ta.alt"), [ben.tanidiklar.length])}</Text>} />
+
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -16 }} contentContainerStyle={{ paddingHorizontal: 16, gap: 8, flexDirection: yon(rtl) }}>
       {SUZGECLER.map((s) => {
         const aktif = s === suzgec;
         const sayi = ben.tanidiklar.filter((k) => uyar(k, s)).length;

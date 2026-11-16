@@ -1,7 +1,7 @@
 // Faz 2 (yaşayan yerleşim) ekranlarının ortak parçaları: sayfa iskeleti ve alt menü, kişi yüzü (portre ya da
 // monogram sikke), oyuncu mührü, takat göstergesi, öğrenme şeridi, görüş ölçeği, şans halkası, rozet, alt panel.
 // Görsel dil Faz 1 (lib/online/ui.tsx) ve oyunun alt menüsüyle aynıdır; tek oyunculu motor ya da kayıt içe aktarılmaz.
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode, type RefObject } from "react";
 import { View, Text, Image, Modal, ScrollView, ActivityIndicator, StyleSheet, useWindowDimensions, type ImageSourcePropType } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -43,16 +43,18 @@ const GOLGE = { textShadowColor: "rgba(0,0,0,0.95)", textShadowRadius: 6, textSh
 
 // ---------------------------------------------------------------- sayfa iskeleti ve alt menü
 
-export type Sekme = "yasam" | "mahalle" | "tanidiklar" | "karakter";
+export type Sekme = "yasam" | "sokak" | "isim" | "cevrem" | "ben";
+/** Beş sekme, her işe tek yol: Yaşam (gündem) · Sokak (mekânlar) · İşim (geçim) · Çevrem (insanlar) · Ben (karakter). */
 const SEKMELER: readonly { id: Sekme; yol: string; icon: string; etiket: string }[] = [
   { id: "yasam", yol: "/online/yasam", icon: "house", etiket: "onl.nav.yasam" },
-  { id: "mahalle", yol: "/online/mahalle", icon: "map", etiket: "onl.nav.mahalle" },
-  { id: "tanidiklar", yol: "/online/tanidiklar", icon: "family", etiket: "onl.nav.tanidiklar" },
-  { id: "karakter", yol: "/online/karakter", icon: "hood", etiket: "onl.nav.karakter" },
+  { id: "sokak", yol: "/online/sokak", icon: "map", etiket: "onl.nav.sokak" },
+  { id: "isim", yol: "/online/isim", icon: "anvil", etiket: "onl.nav.isim" },
+  { id: "cevrem", yol: "/online/cevrem", icon: "family", etiket: "onl.nav.cevrem" },
+  { id: "ben", yol: "/online/karakter", icon: "hood", etiket: "onl.nav.ben" },
 ];
 export const MENU_YUKSEKLIK = 62;
 
-/** Çevrimiçi alt menü: oyunun koyu ahşap menüsüyle aynı dil, dört sekme (Yaşam · Mahalle · Tanıdıklar · Karakter). */
+/** Çevrimiçi alt menü: oyunun koyu ahşap menüsüyle aynı dil, beş sekme. Sekme değişimi anında (geçiş animasyonu yok, _layout). */
 export function AltMenu({ aktif, rtl, t, rozet }: { aktif: Sekme; rtl: boolean; t: Ceviri; rozet?: Partial<Record<Sekme, boolean>> }) {
   const router = useRouter();
   const ins = useSafeAreaInsets();
@@ -64,15 +66,15 @@ export function AltMenu({ aktif, rtl, t, rozet }: { aktif: Sekme; rtl: boolean; 
       {SEKMELER.map((s, i) => {
         const secili = s.id === aktif;
         return <Pressable key={s.id} accessibilityRole="tab" accessibilityLabel={t(s.etiket)} accessibilityState={{ selected: secili }}
-          onPress={() => { if (secili) return; hap("tap"); router.replace(s.yol); }}
-          style={({ pressed }) => ({ flex: 1, alignItems: "center", justifyContent: "center", paddingTop: 6, opacity: pressed ? 0.75 : 1 })}>
+          onPress={() => { if (!secili) router.replace(s.yol); }}
+          style={({ pressed }) => ({ flex: 1, minWidth: 44, alignItems: "center", justifyContent: "center", paddingTop: 6, opacity: pressed ? 0.75 : 1 })}>
           {i > 0 ? <View pointerEvents="none" style={[{ position: "absolute", top: 14, bottom: 14, width: 1, backgroundColor: "rgba(205,185,143,0.16)" }, rtl ? { right: 0 } : { left: 0 }]} /> : null}
-          {secili ? <View pointerEvents="none" style={{ position: "absolute", top: 0, width: 34, height: 2.5, borderRadius: 2, backgroundColor: C.goldBright }} /> : null}
+          {secili ? <View pointerEvents="none" style={{ position: "absolute", top: 0, width: 30, height: 2.5, borderRadius: 2, backgroundColor: C.goldBright }} /> : null}
           <View style={{ shadowColor: C.goldBright, shadowOpacity: secili ? 0.85 : 0, shadowRadius: 9 }}>
-            <GameIcon name={s.icon} size={secili ? 24 : 22} color={secili ? C.goldBright : "#E6D6B4"} />
-            {rozet?.[s.id] ? <View pointerEvents="none" style={{ position: "absolute", top: -2, right: -6, width: 10, height: 10, borderRadius: 5, backgroundColor: "#B5331F", borderWidth: 1.5, borderColor: "#1B130A" }} /> : null}
+            <GameIcon name={s.icon} size={secili ? 23 : 21} color={secili ? C.goldBright : "#E6D6B4"} />
+            {rozet?.[s.id] ? <View pointerEvents="none" style={{ position: "absolute", top: -2, right: -6, width: 9, height: 9, borderRadius: 5, backgroundColor: C.goldBright, borderWidth: 1.5, borderColor: "#1B130A" }} /> : null}
           </View>
-          <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ marginTop: 3, fontFamily: F.serif, fontSize: dar ? 11 : 12.5, lineHeight: 16, color: secili ? C.goldBright : "#E6D6B4", textAlign: "center", paddingHorizontal: 2 }}>{t(s.etiket)}</Text>
+          <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ marginTop: 3, fontFamily: F.serif, fontSize: dar ? 11 : 12, lineHeight: 16, color: secili ? C.goldBright : "#E6D6B4", textAlign: "center", paddingHorizontal: 2 }}>{t(s.etiket)}</Text>
         </Pressable>;
       })}
     </View>
@@ -80,10 +82,10 @@ export function AltMenu({ aktif, rtl, t, rozet }: { aktif: Sekme; rtl: boolean; 
 }
 
 /** Sahne zeminli kaydırılabilir sayfa; sekme verilirse alt menü de çizilir. */
-export function OnlineSayfa({ gorsel, oran = 0.42, sekme, rtl, t, rozet, children, alt }: { gorsel: ImageSourcePropType; oran?: number; sekme?: Sekme; rtl: boolean; t: Ceviri; rozet?: Partial<Record<Sekme, boolean>>; children: ReactNode; alt?: ReactNode }) {
+export function OnlineSayfa({ gorsel, oran = 0.42, sekme, rtl, t, rozet, children, alt, kaydirRef }: { gorsel: ImageSourcePropType; oran?: number; sekme?: Sekme; rtl: boolean; t: Ceviri; rozet?: Partial<Record<Sekme, boolean>>; children: ReactNode; alt?: ReactNode; kaydirRef?: RefObject<ScrollView | null> }) {
   const ins = useSafeAreaInsets();
   return <Sahne gorsel={gorsel} oran={oran} koyu={0.22}>
-    <ScrollView contentContainerStyle={{ paddingTop: ins.top + 8, paddingHorizontal: 16, paddingBottom: (sekme ? MENU_YUKSEKLIK : 0) + ins.bottom + 28 }}>
+    <ScrollView ref={kaydirRef} contentContainerStyle={{ paddingTop: ins.top + 8, paddingHorizontal: 16, paddingBottom: (sekme ? MENU_YUKSEKLIK : 0) + ins.bottom + 28 }}>
       {children}
     </ScrollView>
     {alt}

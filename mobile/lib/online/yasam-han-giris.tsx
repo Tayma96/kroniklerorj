@@ -1,33 +1,30 @@
-// Yaşam ekranından han ve hanedan girişleri (yasam.tsx'e tek satırla eklenir). Hanedan kartı ben.hanedan'dan
-// (nesil, son günler) okur; eski sunucu göndermezse yalnız başlık görünür.
-import { View, Text, useWindowDimensions } from "react-native";
+// Çevrem sekmesinin hanedan girişi (eskiden Yaşam'daki han + hanedan ikilisi; han artık Sokak'ta). Hanedan kartı
+// ben.hanedan'dan (nesil, son günler) okur; eski sunucu göndermezse yalnız başlık ve genel alt satır görünür.
+import { View, Text } from "react-native";
 import { useRouter } from "expo-router";
 import { useI18n, applyParams } from "../i18n";
 import { C, F } from "../theme";
-import { hap } from "../haptics";
 import { DesignPressable as Pressable } from "../design-pressable";
-import { Cerceve, Madalyon, yon } from "./ui";
+import { BASMA_OLCEK, Cerceve, Madalyon, hiza, yon } from "./ui";
+import { SatirOku } from "./yasam-ui";
 import { benHanedani } from "./hanedan-veri";
 import type { Ben } from "./protokol";
 
-export function YasamHanGirisi({ ben }: { ben: Ben }) {
+export function HanedanGirisi({ ben }: { ben: Ben }) {
   const router = useRouter();
   const { t, rtl } = useI18n();
-  const dar = useWindowDimensions().width < 360;
   const hd = benHanedani(ben);
   const uyari = !!hd && (hd.sonGunler || hd.olu);
-  const kartlar = [
-    { id: "han", icon: "flame", baslik: t("onl.han.kisa"), alt: t("onl.han.yaAlt"), yol: "/online/han", vurgu: false },
-    { id: "hanedan", icon: "banner", baslik: t("onl.hd.kisa"), alt: hd?.olu ? t("onl.hd.yaOlu") : hd?.sonGunler ? t("onl.hd.yaSonGunler") : hd ? applyParams(t("onl.hd.nesil"), [hd.nesil]) : t("onl.hd.yaAlt"), yol: "/online/hanedan", vurgu: uyari },
-  ];
-  return <View style={{ marginTop: 8, flexDirection: yon(rtl), gap: 8 }}>
-    {kartlar.map((h) => <Pressable key={h.id} accessibilityRole="button" accessibilityLabel={`${h.baslik}: ${h.alt}`} onPress={() => { hap("tap"); router.push(h.yol); }}
-      style={({ pressed }) => ({ flex: 1, transform: [{ scale: pressed ? 0.97 : 1 }] })}>
-      <Cerceve aktif={h.vurgu} ic={{ alignItems: "center", gap: 6, paddingVertical: 12, paddingHorizontal: 6, minHeight: 104 }}>
-        <Madalyon icon={h.icon} size={38} aktif={h.vurgu} />
-        <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ fontFamily: F.display, fontSize: dar ? 11.5 : 12.5, color: C.parchment, textAlign: "center" }}>{h.baslik}</Text>
-        <Text numberOfLines={2} style={{ fontFamily: F.serif, fontSize: dar ? 12.5 : 13.5, lineHeight: 17, color: h.vurgu ? C.ember : C.parchmentDim, textAlign: "center" }}>{h.alt}</Text>
-      </Cerceve>
-    </Pressable>)}
-  </View>;
+  const alt = hd?.olu ? t("onl.hd.yaOlu") : hd?.sonGunler ? t("onl.hd.yaSonGunler") : hd ? applyParams(t("onl.hd.nesil"), [hd.nesil]) : t("onl.hd.yaAlt");
+  return <Pressable accessibilityRole="button" accessibilityLabel={`${t("onl.hd.kisa")}: ${alt}`} onPress={() => router.push("/online/hanedan")}
+    style={({ pressed }) => ({ marginTop: 8, transform: [{ scale: pressed ? BASMA_OLCEK : 1 }] })}>
+    <Cerceve aktif={uyari} ic={{ flexDirection: yon(rtl), alignItems: "center", gap: 10, paddingVertical: 10, paddingHorizontal: 12, minHeight: 64 }}>
+      <Madalyon icon="banner" size={38} aktif={uyari} />
+      <View style={{ flex: 1, gap: 2 }}>
+        <Text numberOfLines={1} style={{ fontFamily: F.display, fontSize: 13.5, color: C.parchment, textAlign: hiza(rtl) }}>{t("onl.hd.kisa")}</Text>
+        <Text numberOfLines={2} style={{ fontFamily: F.serif, fontSize: 13.5, lineHeight: 18, color: uyari ? C.ember : C.parchmentDim, textAlign: hiza(rtl) }}>{alt}</Text>
+      </View>
+      <SatirOku rtl={rtl} />
+    </Cerceve>
+  </Pressable>;
 }

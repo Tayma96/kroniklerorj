@@ -454,13 +454,13 @@ export function GelenKutusuKarti({ ust = 8 }: { ust?: number }) {
   </Pressable>;
 }
 
-/** Karakter ekranındaki Faz 3a bölümü: profil sayfam, gelen kutusu ve olağan düzen. */
-export function KarakterToplumBolumu({ benId }: { benId: string }) {
+/** Karakter (Ben) ekranındaki Faz 3a bölümü: profil sayfam ve olağan düzen; gelen kutusu Yaşam ve Çevrem'dedir (`gelen` ile açılır). */
+export function KarakterToplumBolumu({ benId, gelen = false }: { benId: string; gelen?: boolean }) {
   const { t, rtl } = useI18n();
   const router = useRouter();
   return <View style={{ marginTop: 12, gap: 8 }}>
     <CizgiDugme etiket={t("onl.tp.profilim")} icon="hood" rtl={rtl} kucuk onPress={() => router.push(`/online/oyuncu/${benId}`)} />
-    <GelenKutusuKarti ust={0} />
+    {gelen ? <GelenKutusuKarti ust={0} /> : null}
     <OlaganDuzenKarti />
   </View>;
 }

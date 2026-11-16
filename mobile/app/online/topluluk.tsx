@@ -78,7 +78,7 @@ function ToplulukEkran() {
   const dertKatilari = durum?.ortakDert.uygunKatkilarim.filter((x) => !MAL_KATKILARI.has(x)) ?? [];
   return <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 28, gap: 12 }}>
     <View style={{ flexDirection: yon(rtl), alignItems: "center" }}>
-      <GeriDugme rtl={rtl} etiket={t("onl.geri")} onPress={() => geriGit(router, "/online/yasam")} />
+      <GeriDugme rtl={rtl} etiket={t("onl.geri")} onPress={() => geriGit(router, "/online/sokak")} />
     </View>
     <SayfaBasi ust={online.yerlesim?.yerlesim.ad ?? online.profil.yerlesim} baslik={t("onl.topluluk.baslik")} alt={t("onl.topluluk.alt")} rtl={rtl} />
     {hata ? <Bant metin={hata} rtl={rtl} /> : null}

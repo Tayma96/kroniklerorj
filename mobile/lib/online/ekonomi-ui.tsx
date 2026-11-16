@@ -1,14 +1,11 @@
 // Faz 6 ekonomi ve Faz 5 kasaba nabzı ortak parçaları: kalite rozeti, ambar kalite izi ("Yapan: Usta X"), NPC fiyatıyla
-// karşılaştırma dökümü, yaşam ekranının kasaba nabzı kartı ve ekonomi geçişleri. Sayılar sunucudan; burada yalnız gösterim.
+// karşılaştırma dökümü, yaşam ekranının kasaba nabzı kartı (ekonomi geçişleri İşim/Sokak sekmelerinde). Sayılar sunucudan; burada yalnız gösterim.
 import { View, Text } from "react-native";
-import { useRouter } from "expo-router";
 import { useI18n, applyParams } from "../i18n";
 import { C, F } from "../theme";
 import { GameIcon } from "../icons";
-import { DesignPressable as Pressable } from "../design-pressable";
-import { hap } from "../haptics";
 import { useOnline } from "./durum";
-import { Cerceve, Madalyon, hiza, yon } from "./ui";
+import { Cerceve, hiza, yon } from "./ui";
 import { Baslik2, Rozet } from "./yasam-ui";
 import { MAL_IKON } from "./meslek-veri";
 import { benKalite, yerlesimNabzi, type Karsilastirma, type KaliteParti } from "./ekonomi-veri";
@@ -102,33 +99,5 @@ export function NabizKarti() {
         </View>)}
       </View> : null}
     </Cerceve>
-  </View>;
-}
-
-/** Yaşam ekranı: pazar, ısmarlama, mülk, levha ve defter geçişleri. */
-export function EkonomiGirisi() {
-  const router = useRouter();
-  const { t, rtl } = useI18n();
-  const ogeler = [
-    { id: "pazar", icon: "scales", yol: "/online/pazar" },
-    { id: "ismarlama", icon: "scroll", yol: "/online/ismarlama" },
-    { id: "mulk", icon: "house", yol: "/online/mulk" },
-    { id: "levha", icon: "trophy", yol: "/online/levha" },
-    { id: "defter", icon: "book", yol: "/online/defter" },
-  ];
-  return <View>
-    <Baslik2 metin={t("onl.eko.baslik")} rtl={rtl} />
-    <View style={{ flexDirection: yon(rtl), flexWrap: "wrap", gap: 8 }}>
-      {ogeler.map((g) => <Pressable key={g.id} accessibilityLabel={`${t("onl.eko." + g.id)}: ${t("onl.eko." + g.id + ".alt")}`} onPress={() => { hap("tap"); router.push(g.yol); }}
-        style={({ pressed }) => ({ flexBasis: "47%", flexGrow: 1, transform: [{ scale: pressed ? 0.97 : 1 }] })}>
-        <Cerceve ic={{ flexDirection: yon(rtl), alignItems: "center", gap: 8, padding: 10, minHeight: 64 }}>
-          <Madalyon icon={g.icon} size={34} />
-          <View style={{ flex: 1, gap: 1 }}>
-            <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ fontFamily: F.display, fontSize: 13, color: C.parchment, textAlign: hiza(rtl) }}>{t("onl.eko." + g.id)}</Text>
-            <Text numberOfLines={2} style={{ fontFamily: F.serif, fontSize: 12.5, lineHeight: 16, color: C.parchmentDim, textAlign: hiza(rtl) }}>{t("onl.eko." + g.id + ".alt")}</Text>
-          </View>
-        </Cerceve>
-      </Pressable>)}
-    </View>
   </View>;
 }

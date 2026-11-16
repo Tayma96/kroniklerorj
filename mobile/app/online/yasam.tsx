@@ -1,8 +1,9 @@
 // Çevrimiçi yaşam (ana sayfa, Faz 2c): Dönüş Kartı (en çok 5, tanıdıklar önce), açık gerilimler, takat, öğrenme
-// dönemi şeridi (6 gün; bugünün hedefi ve ödülü, tamam/kaçan günler), hızlı geçişler ve yerleşim defteri (imleçli).
+// dönemi şeridi (6 gün; bugünün hedefi ve ödülü, tamam/kaçan günler), "Şimdi" rehberi, gelen kutusu ve yerleşim defteri.
+// Mekânlar Sokak, geçim İşim, insanlar Çevrem, karakter Ben sekmesindedir; burada bağlantı ızgarası yoktur.
 // Veri sunucudan (GET /v1/yerlesim, /v1/olaylar); tek oyunculu motor ya da kayıt okunmaz.
-import { useEffect, useMemo, useState } from "react";
-import { View, Text, useWindowDimensions } from "react-native";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { View, Text, ScrollView, useWindowDimensions } from "react-native";
 import { useRouter } from "expo-router";
 import Animated from "react-native-reanimated";
 import { useI18n, applyParams } from "../../lib/i18n";
@@ -22,9 +23,10 @@ import {
   gorusRengi, gunDurumu, ISARET_RENK, odulYaz, sahneGorseli, useYerlesimEkrani, yuzBilgisi,
 } from "../../lib/online/yasam-ui";
 import { EylemSonucu } from "../../lib/online/eylem-ui";
-import { YasamHanGirisi } from "../../lib/online/yasam-han-giris";
+import { SimdiRehberi } from "../../lib/online/simdi-rehber";
+import { isReduceMotion } from "../../lib/perf";
 import { BarinmaKarti } from "../../lib/online/barinma-ui";
-import { EkonomiGirisi, NabizKarti } from "../../lib/online/ekonomi-ui";
+import { NabizKarti } from "../../lib/online/ekonomi-ui";
 import { SISTEM_IKON, isaretli, olayIkonu, ozetYaz, ruhAnahtari } from "../../lib/online/metin";
 import { hataAnahtari, istekTekrarMi } from "../../lib/online/hata";
 import type { EylemYaniti, Isaret, Olay, OgrenmeGunu, YerlesimDurumu } from "../../lib/online/protokol";
@@ -107,10 +109,12 @@ function YasamEkran() {
   const [sonuc, setSonuc] = useState<EylemYaniti | null>(null);
   const [eylemHata, setEylemHata] = useState<string | null>(null);
   const [tumDefter, setTumDefter] = useState(false);
+  const kaydir = useRef<ScrollView | null>(null);
+  const barinmaY = useRef(0);
 
   useEffect(() => { const id = setInterval(() => setSimdi(Date.now()), 30_000); return () => clearInterval(id); }, []);
   useEffect(() => { if (y && !o.defter.length) void o.olaylarYukle(); }, [!!y]); // eslint-disable-line react-hooks/exhaustive-deps
-  // Lonca siparişleri kısayolu açık ilan sayısını gösterir (sessiz yükleme; hata kısayolu kilitlemez).
+  // "Şimdi" rehberi teslim edilebilir siparişi gösterir (sessiz yükleme; hata ekranı kilitlemez).
   useEffect(() => { if (y && !o.siparisler) void o.siparisleriYukle(true); }, [!!y]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const isaretler = useMemo(() => new Map((y?.ben.tanidiklar ?? []).map((k) => [k.id, k.isaret] as const)), [y]);
@@ -131,7 +135,6 @@ function YasamEkran() {
   const dar = W < 360;
   const yeniler = [...o.defter].reverse();
   const gorunenDefter = tumDefter ? yeniler : yeniler.slice(0, 8);
-  const benYer = y.harita.find((m) => m.kisiler.some((k) => k.id === ben.id));
 
   const kisiyeGit = (id: string | null) => { if (id) router.push(kisiYolu(id)); };
   const mektep = async () => {
@@ -141,11 +144,11 @@ function YasamEkran() {
   };
   const hedefeGit = (g: OgrenmeGunu) => {
     if (g.sistem === "mektep") return void mektep();
-    router.replace(g.sistem === "dostluk" ? "/online/tanidiklar" : g.sistem === "karar" ? "/online/karakter" : "/online/mahalle");
+    router.replace(g.sistem === "dostluk" ? "/online/cevrem" : g.sistem === "karar" ? "/online/karakter" : "/online/mahalle");
   };
 
-  return <OnlineSayfa gorsel={sahneGorseli(y.yerlesim.tur, saat.mevsim)} oran={0.5} sekme="yasam" rtl={rtl} t={t}
-    rozet={{ karakter: ben.ozellikPuani > 0 }}
+  return <OnlineSayfa gorsel={sahneGorseli(y.yerlesim.tur, saat.mevsim)} oran={0.5} sekme="yasam" rtl={rtl} t={t} kaydirRef={kaydir}
+    rozet={{ ben: ben.ozellikPuani > 0 }}
     alt={<AltPanel acik={!!sonuc} onKapat={() => setSonuc(null)} etiket={t("onl.ey.sonuc")} rtl={rtl} t={t}>
       {sonuc ? <EylemSonucu y={sonuc} rtl={rtl} t={t} lang={lang} onTamam={() => setSonuc(null)} /> : null}
     </AltPanel>}>
@@ -178,6 +181,9 @@ function YasamEkran() {
       </View>
     </Animated.View>
 
+    {/* Şimdi: en çok üç öneri, her biri tek düğme */}
+    <SimdiRehberi onBarinma={() => kaydir.current?.scrollTo({ y: Math.max(0, barinmaY.current - 12), animated: !isReduceMotion() })} />
+
     {/* Takat */}
     <Animated.View entering={giris(140)} style={{ marginTop: 16 }}>
       <Cerceve ic={{ padding: 14 }}>
@@ -185,11 +191,9 @@ function YasamEkran() {
       </Cerceve>
     </Animated.View>
 
-    {/* Barınma (Faz 14); 24 saati aşan yoklukta dönüş ekranını açar */}
-    <BarinmaKarti />
+    {/* Barınma (Faz 14); 24 saati aşan yoklukta dönüş ekranını açar. Rehberin "barınma" önerisi buraya kaydırır. */}
+    <View onLayout={(e) => { barinmaY.current = e.nativeEvent.layout.y; }}><BarinmaKarti /></View>
     <NabizKarti />
-    <EkonomiGirisi />
-    <CizgiDugme etiket={t("onl.db.baslik")} icon="sparkles" rtl={rtl} kucuk onPress={() => router.push("/online/debdebe")} />
 
     {/* Öğrenme dönemi */}
     {og.suruyor ? <Animated.View entering={giris(200)} style={{ marginTop: 12 }}>
@@ -210,6 +214,9 @@ function YasamEkran() {
         </Pressable> : null}
       </Cerceve>
     </Animated.View> : null}
+
+    {/* Gelen kutusu: cevap bekleyen teklif ve dostluk istekleri (Faz 3a) */}
+    <GelenKutusuKarti ust={14} />
 
     {/* Dönüş Kartı */}
     <Baslik2 metin={t("onl.ya.donusKarti")} rtl={rtl} sag={kart.length ? <Text style={{ fontFamily: F.display, fontSize: 12, color: C.gold }}>{kart.length}</Text> : undefined} />
@@ -277,67 +284,6 @@ function YasamEkran() {
         </Cerceve>)}
       </View>
     </> : null}
-
-    {/* Hızlı geçişler */}
-    <Baslik2 metin={t("onl.ya.hizli")} rtl={rtl} />
-    <View style={{ flexDirection: yon(rtl), gap: 8 }}>
-      {[
-        { id: "mahalle", icon: "map", baslik: t("onl.nav.mahalle"), alt: benYer ? applyParams(t("onl.ya.hizliMahalle"), [t("onl.mekan." + benYer.id)]) : t("onl.ya.hizliMahalleYok"), yol: "/online/mahalle" },
-        { id: "tanidiklar", icon: "family", baslik: t("onl.nav.tanidiklar"), alt: applyParams(t("onl.ya.hizliTanidik"), [ben.tanidiklar.length]), yol: "/online/tanidiklar" },
-        { id: "karakter", icon: "hood", baslik: t("onl.nav.karakter"), alt: ben.ozellikPuani > 0 ? applyParams(t("onl.ya.hizliPuan"), [ben.ozellikPuani]) : applyParams(t("onl.ya.yas"), [ben.yas]), yol: "/online/karakter", vurgu: ben.ozellikPuani > 0 },
-      ].map((h) => <Pressable key={h.id} accessibilityLabel={`${h.baslik}: ${h.alt}`} onPress={() => { hap("tap"); router.replace(h.yol); }} style={({ pressed }) => ({ flex: 1, transform: [{ scale: pressed ? 0.97 : 1 }] })}>
-        <Cerceve aktif={!!h.vurgu} ic={{ alignItems: "center", gap: 6, paddingVertical: 12, paddingHorizontal: 6, minHeight: 104 }}>
-          <Madalyon icon={h.icon} size={38} aktif={!!h.vurgu} />
-          <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ fontFamily: F.display, fontSize: dar ? 11.5 : 12.5, color: C.parchment, textAlign: "center" }}>{h.baslik}</Text>
-          <Text numberOfLines={2} style={{ fontFamily: F.serif, fontSize: dar ? 12.5 : 13.5, lineHeight: 17, color: h.vurgu ? C.goldBright : C.parchmentDim, textAlign: "center" }}>{h.alt}</Text>
-        </Cerceve>
-      </Pressable>)}
-    </View>
-
-    {/* Geçim: meslek, temel işler, lonca */}
-    <View style={{ marginTop: 8, flexDirection: yon(rtl), gap: 8 }}>
-      {[
-        { id: "meslek", icon: "anvil", baslik: t("onl.ms.ust"), alt: o.meslekDurumu?.kayit.a ? t("onl.mes." + o.meslekDurumu.kayit.a) : ben.yas < 13 ? t("onl.ya.hizliMeslekGenc") : t("onl.ya.hizliMeslekSec"), yol: "/online/meslek", vurgu: !o.meslekDurumu?.kayit.a && ben.yas >= 13 },
-        { id: "isler", icon: "saw", baslik: t("onl.is.kisa"), alt: t("onl.ya.hizliIsler"), yol: "/online/isler" },
-        { id: "lonca", icon: "banner", baslik: t("onl.lo.kisa"), alt: t("onl.ya.hizliLonca"), yol: "/online/lonca" },
-      ].map((h) => <Pressable key={h.id} accessibilityLabel={`${h.baslik}: ${h.alt}`} onPress={() => { hap("tap"); router.push(h.yol); }} style={({ pressed }) => ({ flex: 1, transform: [{ scale: pressed ? 0.97 : 1 }] })}>
-        <Cerceve aktif={!!h.vurgu} ic={{ alignItems: "center", gap: 6, paddingVertical: 12, paddingHorizontal: 6, minHeight: 104 }}>
-          <Madalyon icon={h.icon} size={38} aktif={!!h.vurgu} />
-          <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ fontFamily: F.display, fontSize: dar ? 11.5 : 12.5, color: C.parchment, textAlign: "center" }}>{h.baslik}</Text>
-          <Text numberOfLines={2} style={{ fontFamily: F.serif, fontSize: dar ? 12.5 : 13.5, lineHeight: 17, color: h.vurgu ? C.goldBright : C.parchmentDim, textAlign: "center" }}>{h.alt}</Text>
-        </Cerceve>
-      </Pressable>)}
-    </View>
-
-    {/* Lonca siparişleri */}
-    {(() => {
-      const acikIlan = o.siparisler?.filter((x) => x.durum === "acik" && x.kalanAy > 0) ?? [];
-      const verebilir = acikIlan.some((x) => x.teslimEdebilir);
-      const alt = !o.siparisler ? t("onl.sp.yaAlt") : acikIlan.length ? applyParams(t("onl.sp.yaAcik"), [acikIlan.length]) : t("onl.sp.yaYok");
-      return <Pressable accessibilityLabel={`${t("onl.sp.baslik")}: ${alt}`} onPress={() => { hap("tap"); router.push("/online/siparisler"); }}
-        style={({ pressed }) => ({ marginTop: 8, transform: [{ scale: pressed ? 0.985 : 1 }] })}>
-        <Cerceve aktif={verebilir} ic={{ flexDirection: yon(rtl), alignItems: "center", gap: 10, paddingVertical: 10, paddingHorizontal: 12, minHeight: 64 }}>
-          <Madalyon icon="scroll-open" size={38} aktif={verebilir} />
-          <View style={{ flex: 1, gap: 2 }}>
-            <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ fontFamily: F.display, fontSize: 13.5, color: C.parchment, textAlign: hiza(rtl) }}>{t("onl.sp.baslik")}</Text>
-            <Text numberOfLines={2} style={{ fontFamily: F.serif, fontSize: 13.5, lineHeight: 18, color: verebilir ? C.goldBright : C.parchmentDim, textAlign: hiza(rtl) }}>{verebilir ? t("onl.sp.yaVerebilir") : alt}</Text>
-          </View>
-          {acikIlan.length ? <Rozet metin={String(acikIlan.length)} renk={C.goldBright} dolu={verebilir} /> : null}
-        </Cerceve>
-      </Pressable>;
-    })()}
-    <YasamHanGirisi ben={ben} />
-    <CizgiDugme etiket={t("onl.topluluk.baslik")} icon="users" rtl={rtl} kucuk onPress={() => router.push("/online/topluluk")} />
-    <CizgiDugme etiket={t("onl.hizmet.kisa")} icon="briefcase" rtl={rtl} kucuk onPress={() => router.push("/online/hizmet")} />
-    <CizgiDugme etiket={t("onl.siyaset.baslik")} icon="castle" rtl={rtl} kucuk onPress={() => router.push("/online/siyaset")} />
-    <CizgiDugme etiket={t("onl.eko.pazar")} icon="shopping-basket" rtl={rtl} kucuk onPress={() => router.push("/online/pazar")} />
-    <CizgiDugme etiket={t("onl.eko.mulk")} icon="house" rtl={rtl} kucuk onPress={() => router.push("/online/mulk")} />
-    <CizgiDugme etiket={t("onl.lv.baslik")} icon="award" rtl={rtl} kucuk onPress={() => router.push("/online/levha")} />
-    <CizgiDugme etiket={t("onl.df.baslik")} icon="scroll-open" rtl={rtl} kucuk onPress={() => router.push("/online/defter")} />
-    <CizgiDugme etiket={t("onl.kv.baslik")} icon="camel" rtl={rtl} kucuk onPress={() => router.push("/online/kervan")} />
-
-    {/* Gelen kutusu: cevap bekleyen teklif ve dostluk istekleri (Faz 3a) */}
-    <GelenKutusuKarti />
 
     {/* Yerleşim defteri */}
     <Baslik2 metin={t("onl.ya.defter")} rtl={rtl} sag={o.defterYeni > 0 ? <Rozet metin={applyParams(t("onl.ya.yeni"), [o.defterYeni])} renk={C.goldBright} dolu /> : undefined} />

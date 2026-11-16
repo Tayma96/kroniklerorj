@@ -48,7 +48,7 @@ function KronikEkran() {
   if (!y) return <YerlesimBekle rtl={rtl} t={t} onGiris={() => router.replace("/online")} />;
   return <OnlineSayfa gorsel={GORSEL} oran={0.3} rtl={rtl} t={t}>
     <View style={{ flexDirection: yon(rtl), alignItems: "center" }}>
-      <GeriDugme rtl={rtl} etiket={t("onl.geri")} onPress={() => geriGit(router, "/online/hanedan")} />
+      <GeriDugme rtl={rtl} etiket={t("onl.geri")} onPress={() => geriGit(router, "/online/karakter")} />
     </View>
     <View style={{ marginTop: 8 }}>
       <SayfaBasi ust={y.yerlesim.ad} baslik={t("onl.kr.baslik")} alt={t("onl.kr.alt")} rtl={rtl} />

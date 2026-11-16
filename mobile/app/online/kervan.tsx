@@ -86,7 +86,7 @@ function KervanEkran() {
   const mallar = (m: Record<string, number>) => Object.entries(m).map(([k, n]) => `${malAdi(t, k)} ×${n}`).join(", ");
 
   return <OnlineSayfa gorsel={sahneGorseli(y.yerlesim.tur, y.saat.mevsim)} oran={0.3} rtl={rtl} t={t}>
-    <GeriDugme rtl={rtl} etiket={t("onl.geri")} onPress={() => geriGit(router, "/online/yasam")} />
+    <GeriDugme rtl={rtl} etiket={t("onl.geri")} onPress={() => geriGit(router, "/online/sokak")} />
     <SayfaBasi ust={t("onl.goc.ust")} baslik={t("onl.kv.baslik")} alt={t("onl.kv.alt")} rtl={rtl} />
 
     <Baslik2 metin={t("onl.kv.yolda")} rtl={rtl} />

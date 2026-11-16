@@ -191,7 +191,7 @@ function MeslekEkran() {
     const s = await o.tarifYap(id);
     if (s.ok) { hap("success"); setTarifSonuc(s.deger); } else { hap("error"); setTarifHata({ id, metin: tarifHatasi(s.hata, t) }); }
   };
-  const geri = () => geriGit(router, "/online/yasam");
+  const geri = () => geriGit(router, "/online/isim");
 
   const gonder = async (g: MeslekGirdisi, basari?: string) => {
     setHata(null);

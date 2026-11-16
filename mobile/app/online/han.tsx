@@ -138,7 +138,7 @@ function HanEkran() {
   const menu = hanMenusu(ozet);
   return <HanSayfa>
     <View style={{ flexDirection: yon(rtl), alignItems: "center" }}>
-      <GeriDugme rtl={rtl} etiket={t("onl.geri")} onPress={() => geriGit(router, "/online/yasam")} />
+      <GeriDugme rtl={rtl} etiket={t("onl.geri")} onPress={() => geriGit(router, "/online/sokak")} />
     </View>
     <View style={{ marginTop: 8 }}>
       <SayfaBasi ust={ozet?.yerlesim.ad ?? o.yerlesim?.yerlesim.ad ?? t("onl.han.ust")} baslik={baslik} alt={atmosfer} rtl={rtl} />

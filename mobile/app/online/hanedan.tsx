@@ -181,7 +181,7 @@ function HanedanEkran() {
 
   return <OnlineSayfa gorsel={EV_GORSEL} oran={0.34} rtl={rtl} t={t}>
     <View style={{ flexDirection: yon(rtl), alignItems: "center" }}>
-      <GeriDugme rtl={rtl} etiket={t("onl.geri")} onPress={() => geriGit(router, "/online/yasam")} />
+      <GeriDugme rtl={rtl} etiket={t("onl.geri")} onPress={() => geriGit(router, "/online/cevrem")} />
     </View>
     <View style={{ marginTop: 8 }}>
       <SayfaBasi ust={y.yerlesim.ad} baslik={t("onl.hd.baslik")} alt={h ? applyParams(t("onl.hd.nesil"), [h.nesil]) : undefined} rtl={rtl} />

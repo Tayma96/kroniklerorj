@@ -33,7 +33,7 @@ function LoncaEkran() {
 
   return <OnlineSayfa gorsel={sahneGorseli(y.yerlesim.tur, y.saat.mevsim)} oran={0.3} rtl={rtl} t={t}>
     <View style={{ flexDirection: yon(rtl), alignItems: "center" }}>
-      <GeriDugme rtl={rtl} etiket={t("onl.geri")} onPress={() => geriGit(router, "/online/yasam")} />
+      <GeriDugme rtl={rtl} etiket={t("onl.geri")} onPress={() => geriGit(router, "/online/sokak")} />
     </View>
     <View style={{ marginTop: 8 }}>
       <SayfaBasi ust={y.yerlesim.ad} baslik={t("onl.lo.baslik")} alt={satirlar ? applyParams(t(bos ? "onl.lo.ozet" : "onl.lo.ozetDolu"), [bos]) : undefined} rtl={rtl} />

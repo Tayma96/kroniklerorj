@@ -28,7 +28,7 @@ function DefterEkran() {
   const akce = (n: number) => applyParams(t("onl.is.akce"), [n]);
   if (!y) return <YerlesimBekle rtl={rtl} t={t} onGiris={() => router.replace("/online")} />;
   return <OnlineSayfa gorsel={sahneGorseli(y.yerlesim.tur, y.saat.mevsim)} oran={0.3} rtl={rtl} t={t}>
-    <GeriDugme rtl={rtl} etiket={t("onl.geri")} onPress={() => geriGit(router, "/online/yasam")} />
+    <GeriDugme rtl={rtl} etiket={t("onl.geri")} onPress={() => geriGit(router, "/online/isim")} />
     <SayfaBasi ust={t("onl.eko.baslik")} baslik={t("onl.df.baslik")} alt={t("onl.df.alt")} rtl={rtl} />
     {hata && !veri ? <Bant metin={t(ekHataAnahtari(hata))} rtl={rtl} /> : null}
     {!veri ? <Yukleniyor metin={t("onl.df.yukleniyor")} /> : <>

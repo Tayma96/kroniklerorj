@@ -5,7 +5,12 @@ import { OnlineDurumSaglayici } from "../../lib/online/durum";
 import { onlineEkranAcik } from "../../lib/online/kapi";
 import { C } from "../../lib/theme";
 
+/** Alt menünün beş sekmesi: sekme değişimi anında olur (kayma animasyonu yok). */
+const SEKME_EKRANLARI = ["yasam", "sokak", "isim", "cevrem", "karakter"] as const;
+
 export default function OnlineDuzen() {
-  const yigin = <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: C.bg }, animation: "slide_from_right" }} />;
+  const yigin = <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: C.bg }, animation: "slide_from_right" }}>
+    {SEKME_EKRANLARI.map((ad) => <Stack.Screen key={ad} name={ad} options={{ animation: "none" }} />)}
+  </Stack>;
   return onlineEkranAcik() ? <OnlineDurumSaglayici>{yigin}</OnlineDurumSaglayici> : yigin;
 }

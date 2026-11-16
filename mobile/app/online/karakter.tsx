@@ -14,6 +14,7 @@ import { OnlineKapisi } from "../../lib/online/durum";
 import { onlineEkranAcik } from "../../lib/online/kapi";
 import { AltinDugme, Bant, Cerceve, Check, CizgiDugme, GLOW, Madalyon, ONL, giris, hiza, yon } from "../../lib/online/ui";
 import { KarakterToplumBolumu } from "../../lib/online/toplum-ui";
+import { GirisSatiri } from "../../lib/online/gezinti-ui";
 import {
   AltPanel, Baslik2, Hap, KisiYuzu, OnlineSayfa, Rozet, SatirOku, SayfaBasi, TakatGostergesi, YerlesimBekle, gunDurumu, odulYaz, sahneGorseli,
   useYerlesimEkrani, yuzBilgisi,
@@ -40,7 +41,7 @@ function KarakterEkran() {
   const [kapatHata, setKapatHata] = useState<string | null>(null);
   const [muhurHata, setMuhurHata] = useState<string | null>(null);
   const [muhurBekliyor, setMuhurBekliyor] = useState(false);
-  if (!y) return <YerlesimBekle sekme="karakter" rtl={rtl} t={t} onGiris={() => router.replace("/online")} />;
+  if (!y) return <YerlesimBekle sekme="ben" rtl={rtl} t={t} onGiris={() => router.replace("/online")} />;
 
   const ben = y.ben;
   const og = ben.ogrenme;
@@ -70,7 +71,7 @@ function KarakterEkran() {
     if (s.ok) { hap("success"); setKapatSor(false); } else { hap("error"); setKapatHata(t(hataAnahtari(s.hata))); }
   };
 
-  return <OnlineSayfa gorsel={sahneGorseli(y.yerlesim.tur, y.saat.mevsim)} oran={0.32} sekme="karakter" rtl={rtl} t={t}
+  return <OnlineSayfa gorsel={sahneGorseli(y.yerlesim.tur, y.saat.mevsim)} oran={0.32} sekme="ben" rtl={rtl} t={t}
     alt={<>
       <AltPanel acik={!!secim} onKapat={() => { setSecim(null); setHata(null); }} etiket={t("onl.ka.onay")} rtl={rtl} t={t}>
         {secim ? <>
@@ -103,7 +104,7 @@ function KarakterEkran() {
         {sonuc ? <EylemSonucu y={sonuc} rtl={rtl} t={t} lang={lang} onTamam={() => setSonuc(null)} /> : null}
       </AltPanel>
     </>}>
-    <SayfaBasi ust={t("onl.nav.karakter")} baslik={ben.ad} alt={applyParams(t("onl.ka.alt"), [ben.yas, y.yerlesim.ad])} rtl={rtl}
+    <SayfaBasi ust={t("onl.bn.baslik")} baslik={ben.ad} alt={applyParams(t("onl.ka.alt"), [ben.yas, y.yerlesim.ad])} rtl={rtl}
       sol={<KisiYuzu id={ben.id} ad={ben.ad} boyut={64} yas={ben.yas} cinsiyet={ben.cinsiyet} ben />} />
     <View style={{ flexDirection: yon(rtl), flexWrap: "wrap", gap: 8, marginTop: 14 }}>
       <Hap icon="coins" metin={String(ben.para)} erisim={applyParams(t("onl.ya.paraErisim"), [ben.para])} />
@@ -269,8 +270,14 @@ function KarakterEkran() {
     </Cerceve> : null}
     {ben.muhurlu ? <View style={{ marginTop: 12, flexDirection: yon(rtl) }}><Rozet icon="flame" metin={t("onl.ka.muhurlu")} renk={C.goldBright} /></View> : null}
 
-    {/* Göç: yerleşimi kalıcı değiştirme (önizleme ve onay ayrı ekranda) */}
-    <View style={{ marginTop: 14 }}><CizgiDugme etiket={t("onl.goc.baslik")} icon="camel" rtl={rtl} kucuk onPress={() => router.push("/online/goc")} /></View>
+    {/* Ben: mağaza, levha, kronik; göç (önizleme ve onay ayrı ekranda) */}
+    <Baslik2 metin={t("onl.bn.baslik")} rtl={rtl} />
+    <View style={{ gap: 8 }}>
+      <GirisSatiri rtl={rtl} icon="gems" baslik={t("onl.bn.magaza")} alt={t("onl.bn.magaza.alt")} onPress={() => router.push("/online/debdebe")} />
+      <GirisSatiri rtl={rtl} icon="trophy" baslik={t("onl.lv.baslik")} alt={t("onl.eko.levha.alt")} onPress={() => router.push("/online/levha")} />
+      <GirisSatiri rtl={rtl} icon="book" baslik={t("onl.kr.baslik")} alt={t("onl.bn.kronik.alt")} onPress={() => router.push("/online/kronik")} />
+      <GirisSatiri rtl={rtl} icon="camel" baslik={t("onl.goc.baslik")} alt={t("onl.bn.goc.alt")} onPress={() => router.push("/online/goc")} />
+    </View>
 
     {/* Hesap: bütün cihazlardaki oturumları kapatma */}
     <Baslik2 metin={t("onl.hs.baslik")} rtl={rtl} />
