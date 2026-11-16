@@ -178,3 +178,14 @@ Yön (yönetici önerisi; uygulamadan önce kod dökümü ve denge denetimi gere
 - **Efsanevi eşya adlıdır:** ustasının ve atölyesinin damgasını taşır, kroniğe ve levhaya geçer, mirasla hanedan
   yadigârı olur; satılabilir ama kopyalanamaz.
 - Süzgeç: gerçek parayla alınamaz; güç tavanlı (kaybeden bir şey kaybetmez kuralı sürer); farm yok (aylık sınır).
+
+### 9.1 Berkay'ın netleştirmesi (17 Kasım): fark "bayağı hissedilsin", bütün mesleklerde
+- Yalnız demirci değil **14 mesleğin hepsi**, mal da **hizmet** de (şifacının ilacı ve tedavisi, aşçının ekmeği, ozanın
+  türküsü, kâtibin belgesi…). Dilim 3 kancalarındaki boşta `kalite(...)` etkileri (57 adet) buraya bağlanır.
+- Fark dik olmalı, gözle görülmeli: etki çarpanı kademeye göre yaklaşık sade ×1 · iyi ×1,5 · üstün ×2 · şaheser ×3 ·
+  nadide ×4 · efsanevi ×5 (öneri; sim ile ayarlanır, tavanlı).
+- **Alt kademe kusurludur ama zarar vermez:** çırağın ekmeği doyurur, keyif vermez ("bayat"); çırak şifacının ilacı az
+  iyileştirir. Yan etki/ceza yok — yalnız eksik etki.
+- **Üst kademe ikinci, üçüncü etki ekler:** ustanın ekmeği tokluk + keyif; pirin ekmeği tokluğu doldurur, keyif verir,
+  az da sağlık. Efsanevi ilaç tam iyileştirir + kısa süreli dayanıklılık gibi hüner.
+- Her üründe ve hizmette oyuncu "kim yaptı, kaçıncı kademe, ne veriyor" dökümünü görür; alıcı ustayı arar hâle gelmeli.
