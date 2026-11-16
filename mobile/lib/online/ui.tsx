@@ -10,7 +10,7 @@ import { GameIcon } from "../icons";
 import { C, F } from "../theme";
 import { hap } from "../haptics";
 import { isReduceMotion } from "../perf";
-import { FadeInUp } from "react-native-reanimated";
+import { FadeIn, FadeInUp, FadeOut, ZoomIn } from "react-native-reanimated";
 
 export const ONL = {
   frame: "#A8823F",
@@ -26,6 +26,11 @@ export const yon = (rtl: boolean) => (rtl ? "row-reverse" : "row") as "row" | "r
 export const hiza = (rtl: boolean) => (rtl ? "right" : "left") as "right" | "left";
 /** Giriş animasyonu; sade modda yok. */
 export const giris = (ms: number) => (isReduceMotion() ? undefined : FadeInUp.delay(ms).duration(520));
+/** Çevrimiçi hareket standardı: geçişler 150–300 ms, Reanimated (UI iş parçacığı); hareket azaltıldıysa animasyon yok. */
+export const HAREKET = { kisa: 150, orta: 220, uzun: 300, nabiz: 560 } as const;
+export const belir = () => (isReduceMotion() ? undefined : FadeIn.duration(HAREKET.orta));
+export const kaybol = () => (isReduceMotion() ? undefined : FadeOut.duration(HAREKET.orta));
+export const buyuyerekBelir = () => (isReduceMotion() ? undefined : ZoomIn.duration(HAREKET.uzun));
 
 export function Ornament({ size = 14, color = ONL.gold }: { size?: number; color?: string }) {
   return <Svg width={size} height={size} viewBox="0 0 24 24">

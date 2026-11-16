@@ -7,7 +7,7 @@ import { ekHataMi, type EkHata } from "./ek-istemci";
 import { hataKoduMu } from "./protokol";
 import {
   KAPANIS, useHanIstemci, type HamSoket, type IstemciIletisi, type MasaAnonsu, type MasaGorunumu, type MasaOlayi, type Plaka,
-  type SesDurumu, type SikayetNedeni, type SunucuIletisi,
+  type SesDurumu, type SikayetNedeni, type SunucuIletisi, type SahneGorunumu, type AtismaGorunumu, type AtismaSonucu,
 } from "./han-veri";
 
 /** [PARAMETRE] Akışta bellekte tutulan en çok satır. */
@@ -21,7 +21,9 @@ export type BagDurumu = "baglaniyor" | "acik" | "yeniden" | "kapandi";
 export type AkisOgesi =
   | { tur: "ileti"; id: string; hesap: string; ad: string; koltuk: number; metin: string; zaman: number; balon?: string }
   | { tur: "olay"; id: string; olay: MasaOlayi }
-  | { tur: "anons"; id: string; anons: MasaAnonsu };
+  | { tur: "anons"; id: string; anons: MasaAnonsu }
+  /** H8 atışma kıtası (satır sonları korunur; `sira` 1..toplam). */
+  | { tur: "kita"; id: string; hesap: string; ad: string; koltuk: number; metin: string; sira: number; zaman: number; balon?: string };
 
 export interface MasaDurumu {
   bag: BagDurumu;
@@ -44,9 +46,13 @@ export interface MasaDurumu {
   raporlandi: number;
   /** Faz 16 ses durumu (eski sunucu göndermezse null: ses düğmesi gizli). */
   ses: SesDurumu | null;
+  /** H8 ozan sahnesi ve atışma (eski sunucuda gelmez: null). `atismaSon`: son biten atışmanın sonucu (pano kısa süre gösterir). */
+  sahne: SahneGorunumu | null;
+  atisma: AtismaGorunumu | null;
+  atismaSon: (AtismaSonucu & { id: string }) | null;
 }
 
-const BASLANGIC: MasaDurumu = { bag: "baglaniyor", deneme: 0, kapanis: null, ben: null, masa: null, susturma: null, akis: [], kabuller: {}, sessiz: [], sonAnons: null, hata: null, raporlandi: 0, ses: null };
+const BASLANGIC: MasaDurumu = { bag: "baglaniyor", deneme: 0, kapanis: null, ben: null, masa: null, susturma: null, akis: [], kabuller: {}, sessiz: [], sonAnons: null, hata: null, raporlandi: 0, ses: null, sahne: null, atisma: null, atismaSon: null };
 
 type Eylem =
   | { t: "bag"; bag: BagDurumu; deneme?: number; kapanis?: number | null }
@@ -65,7 +71,10 @@ function indirge(d: MasaDurumu, e: Eylem): MasaDurumu {
     case "sunucu": {
       const v = e.v;
       switch (v.t) {
-        case "hosgeldin": return { ...d, bag: "acik", deneme: 0, kapanis: null, ben: v.ben, masa: v.masa, susturma: v.susturma, hata: null, ses: v.ses ?? null };
+        case "hosgeldin": return { ...d, bag: "acik", deneme: 0, kapanis: null, ben: v.ben, masa: v.masa, susturma: v.susturma, hata: null, ses: v.ses ?? null, sahne: v.sahne ?? null, atisma: v.atisma ?? null };
+        case "sahne": return { ...d, sahne: v.sahne };
+        case "atisma": return { ...d, atisma: v.atisma, ...(v.son ? { atismaSon: { ...v.son, id: e.id } } : {}) };
+        case "kita": return { ...d, akis: ekle(d.akis, { tur: "kita", id: e.id, hesap: v.hesap, ad: v.ad, koltuk: v.koltuk, metin: v.metin, sira: v.sira, zaman: v.zaman, ...(v.balon ? { balon: v.balon } : {}) }) };
         case "sesDurum": return { ...d, ses: v.ses };
         case "durum": return { ...d, masa: v.masa };
         case "ileti":
@@ -186,7 +195,12 @@ export function useMasa(no: number | undefined) {
     sesAc: (hedef: string) => gonder({ t: "sesAc", hedef }),
     sozIste: () => gonder({ t: "sozIste" }),
     sozGeri: () => gonder({ t: "sozGeri" }),
-    ayar: (a: { kavgaYasak?: boolean; kilitli?: boolean; sesli?: boolean; tur?: "acik" | "ozel" }) => gonder({ t: "ayar", ...a }),
+    ayar: (a: { kavgaYasak?: boolean; kilitli?: boolean; sesli?: boolean; tur?: "acik" | "ozel"; sahneYasak?: boolean }) => gonder({ t: "ayar", ...a }),
+    sahneAc: () => gonder({ t: "sahneAc" }),
+    sahneKapat: () => gonder({ t: "sahneKapat" }),
+    kita: (metin: string) => gonder({ t: "kita", metin }),
+    oy: (hedef: string) => gonder({ t: "oy", hedef }),
+    atismaKapat: () => gonder({ t: "atismaKapat" }),
     davet: (hedef: string, kaldir = false) => gonder(kaldir ? { t: "davet", hedef, kaldir: true } : { t: "davet", hedef }),
     sozVer: (hedef: string, kabul = true) => gonder(kabul ? { t: "sozVer", hedef } : { t: "sozVer", hedef, kabul: false }),
     rapor: (hedef: string, neden: SikayetNedeni, aciklama?: string) =>

@@ -6,8 +6,9 @@ import { ekBasarili, ekBasarisiz, type EkSonuc } from "./ek-istemci";
 import type {
   PanoIlani,
   HamSoket, HanEylemGirdisi, HanOzeti, IkramGirdisi, IkramId, IkramSonucu, IstemciIletisi, MasaAnonsu, MasaAyari,
-  MasaGorunumu, MasaOlayi, MenuSatiri, Plaka, SesDurumu, SunucuIletisi, HanIstemci,
+  MasaGorunumu, MasaOlayi, MenuSatiri, Plaka, SesDurumu, SunucuIletisi, HanIstemci, SahneGorunumu, AtismaGorunumu, AtismaSonucTuru,
 } from "./han-veri";
+import { KITA_EN_UZUN, KITA_SATIR } from "./han-veri";
 import type { Dil } from "./protokol";
 
 const KOLTUK = 6;
@@ -15,9 +16,18 @@ const MENU: MenuSatiri[] = [{ id: "ekmek", fiyat: 2 }, { id: "serbet", fiyat: 3 
 const HAN_ADI: Record<Dil, string> = { tr: "Küçük Han", en: "Small Inn", es: "Posada pequeña", pt: "Pequena estalagem", ar: "خان صغير", ru: "Малый постоялый двор" };
 const AYAR: MasaAyari = { tur: "acik", acik: true, sesli: true, kavgaYasak: false };
 const KISILER: Plaka[] = [
-  { hesap: "oy-kerim", ad: "Kerim Usta", mudavim: true }, { hesap: "oy-ayse", ad: "Ayşe Hatun", ozan: true }, { hesap: "oy-osman", ad: "Osman Kalfa" },
+  { hesap: "oy-kerim", ad: "Kerim Usta", mudavim: true, kisi: "o2", nam: 64 }, { hesap: "oy-ayse", ad: "Ayşe Hatun", ozan: true, kisi: "o3", nam: 118 }, { hesap: "oy-osman", ad: "Osman Kalfa", nam: 12 },
   { hesap: "oy-zeynep", ad: "Zeynep" }, { hesap: "oy-mehmet", ad: "Mehmet Çelebi", cerceve: "yaldiz" }, { hesap: "oy-hatice", ad: "Hatice Kadın" },
-  { hesap: "oy-yakup", ad: "Yakup" }, { hesap: "oy-selim", ad: "Selim Ağa" },
+  { hesap: "oy-yakup", ad: "Yakup", ozan: true }, { hesap: "oy-selim", ad: "Selim Ağa" },
+];
+/** H8 önizleme kıtaları (oyuncu yazısı yerine geçer; çeviri sözlüğü değildir). */
+const KITALAR = [
+  "Kervan geçer bu yoldan, toz kalır ardında\nHancı der ki misafir, söz kalır ardında",
+  "Söz dediğin gönülden, dilden değil ey yâren\nBir şerbetle tatlanır, acı kalmaz ardında",
+  "Develi'nin ovası, karla örtülü kışın\nBahar gelir uyanır, umut kalır ardında",
+  "Sazımın teli ince, sözümün özü derin\nMeclis dağılsa bile, bir ses kalır ardında",
+  "Ozan olan yorulmaz, yol uzun da olsa\nAdım adım yürüse, iz kalır ardında",
+  "Bu atışma bitince, kim kazansa hoş gelir\nDostluk baki bu handa, tat kalır ardında",
 ];
 const SOZLER = [
   "Kervan yarın sabah Konya yolundan geliyormuş.", "Demirhan'da tuz yine pahalanmış, duydunuz mu?",
@@ -69,6 +79,9 @@ class SahteSoket implements HamSoket {
   private konusan = new Set<string>();
   private sesKesik = new Set<string>();
   private soz: Plaka[] = [];
+  private sahne: SahneGorunumu | null = null;
+  private atisma: AtismaGorunumu | null = null;
+  private oylar = new Map<string, string>();
   constructor(readonly no: number, readonly ben: Plaka) {
     const w = dunyaAl();
     w.soket?.kapat();
@@ -76,7 +89,12 @@ class SahteSoket implements HamSoket {
     this.sonra(150, () => {
       this.d?.acildi();
       if (no === 1) this.yayin.add("oy-kerim").add("oy-ayse");
-      this.yolla({ t: "hosgeldin", ben, susturma: null, masa: this.gor(), ses: this.sesGor() });
+      // Önizleme: 1. masada iki misafir atışıyor, 4. masada bir ozan sahneyi açmış.
+      const m0 = this.masa();
+      if (no === 1 && m0.koltuklar.some((p) => p?.hesap === "oy-ayse") && m0.koltuklar.some((p) => p?.hesap === "oy-kerim")) this.atismaBaslat("oy-ayse", "oy-kerim", 39);
+      if (no === 4 && m0.koltuklar.some((p) => p?.hesap === "oy-yakup")) this.sahne = { anlatici: "oy-yakup", soz: [], istek: [], acilis: Date.now() };
+      this.yolla({ t: "hosgeldin", ben, susturma: null, masa: this.gor(), ses: this.sesGor(), ...(this.sahne ? { sahne: this.sahne } : {}), ...(this.atisma ? { atisma: this.atisma } : {}) });
+      if (this.atisma) this.botKita();
       if (no !== 1) return;
       // Önizleme için anons türleri ve bir teklif: ikram, armağan, Debdebe süsleri ayrı görünsün.
       this.sonra(900, () => this.anons({ tur: "ikram", kim: "oy-ayse", hedef: "oy-kerim", oge: "serbet", zaman: Date.now() }));
@@ -116,6 +134,60 @@ class SahteSoket implements HamSoket {
     return null;
   }
   private masa() { return dunyaAl().masalar[this.no - 1]!; }
+  /** H8: masa meşgul mü (sahne ya da atışma). */
+  mesgul() { return !!this.sahne || !!this.atisma; }
+  private sahneYolla() { this.yolla({ t: "sahne", sahne: this.sahne ? { ...this.sahne, soz: [...this.sahne.soz], istek: [...this.sahne.istek] } : null }); }
+  private atismaYolla() { this.yolla({ t: "atisma", atisma: this.atisma ? { ...this.atisma, hak: [...this.atisma.hak], oyVeren: [...this.atisma.oyVeren] } : null }); }
+  private adi(h: string) { return h === this.ben.hesap ? this.ben.ad : KISILER.find((k) => k.hesap === h)?.ad ?? h; }
+  atismaBaslat(a: string, b: string, olay: number) {
+    this.oylar.clear();
+    this.atisma = { olay, a, b, kita: 0, toplam: 6, sira: a, asama: "kita", hak: [], oyVeren: [] };
+  }
+  /** Sırası gelen sahte taraf birkaç saniye sonra kıtasını yazar. */
+  private botKita() {
+    const at = this.atisma;
+    if (!at || at.asama !== "kita" || at.sira === this.ben.hesap || !at.sira) return;
+    const sira = at.sira;
+    this.sonra(3800, () => { if (this.atisma === at && at.sira === sira) this.kitaYaz(sira, KITALAR[at.kita % KITALAR.length]!); });
+  }
+  atismaBaslatYolla(a: string, b: string, olay: number) { this.atismaBaslat(a, b, olay); this.atismaYolla(); this.botKita(); }
+  private kitaYaz(h: string, metin: string) {
+    const at = this.atisma!;
+    const m = this.masa();
+    at.kita += 1;
+    this.yolla({ t: "kita", hesap: h, ad: this.adi(h), koltuk: m.koltuklar.findIndex((p) => p?.hesap === h), metin, sira: at.kita, zaman: Date.now() });
+    if (at.kita >= at.toplam) {
+      at.asama = "oylama"; at.sira = null;
+      at.hak = oturanlar(m).map((x) => x.p.hesap).filter((x) => x !== at.a && x !== at.b);
+      this.atismaYolla();
+      // Sahte seçmenler oyunu verir; oyuncu 15 sn içinde vermezse sonuç o anki oylarla çıkar.
+      at.hak.filter((x) => x !== this.ben.hesap).forEach((x, i) => this.sonra(1500 + i * 1200, () => this.oyVer(x, i % 2 ? at.b : at.a)));
+      this.sonra(15000, () => { if (this.atisma === at) this.atismaBitir(); });
+      return;
+    }
+    at.sira = h === at.a ? at.b : at.a;
+    this.atismaYolla();
+    this.botKita();
+  }
+  private oyVer(h: string, kime: string) {
+    const at = this.atisma;
+    if (!at || at.asama !== "oylama" || !at.hak.includes(h) || at.oyVeren.includes(h)) return;
+    this.oylar.set(h, kime);
+    at.oyVeren.push(h);
+    if (at.oyVeren.length >= at.hak.length) this.atismaBitir();
+    else this.atismaYolla();
+  }
+  private atismaBitir() {
+    const at = this.atisma;
+    if (!at) return;
+    const oy: [number, number] = [0, 0];
+    for (const k of this.oylar.values()) oy[k === at.a ? 0 : 1] += 1;
+    const sonuc: AtismaSonucTuru = at.asama === "kita" ? "iptal" : oy[0] + oy[1] === 0 ? "hukumsuz" : oy[0] === oy[1] ? "berabere" : "kazandi";
+    const kazanan = sonuc === "berabere" ? [at.a, at.b] : sonuc === "kazandi" ? [oy[0] > oy[1] ? at.a : at.b] : [];
+    this.atisma = null;
+    this.yolla({ t: "atisma", atisma: null, son: { olay: at.olay, a: at.a, b: at.b, sonuc, kazanan, oy } });
+    if (sonuc !== "iptal") this.olay({ tur: "atismaSonuc", kim: kazanan[0] ?? at.a, hedef: kazanan[0] === at.b ? at.a : at.b, olay: at.olay, sonuc, oy });
+  }
   private gor() { return gorunum(this.no, this.masa(), this.ben, true); }
   private sonra(ms: number, is: () => void) { this.zaman.push(setTimeout(() => { if (!this.kapali) is(); }, ms)); }
   private yolla(v: SunucuIletisi) { if (!this.kapali) this.d?.ileti(v); }
@@ -177,6 +249,8 @@ class SahteSoket implements HamSoket {
         return this.durum();
       case "yaz": {
         if (benKoltuk < 0) return this.hata("oturmuyor");
+        if (this.atisma?.asama === "kita") return this.hata("atisma_suruyor");
+        if (this.sahne && this.sahne.anlatici !== this.ben.hesap && !this.sahne.soz.includes(this.ben.hesap)) return this.hata("soz_verilmedi");
         const metin = ileti.metin.replace(/[\r\n]+/g, " ").replace(/\s{2,}/g, " ").trim();
         if (!metin || [...metin].length > 240) return this.hata("metin_gecersiz");
         return this.yolla({ t: "ileti", hesap: this.ben.hesap, ad: this.ben.ad, koltuk: benKoltuk, metin, zaman: Date.now() });
@@ -221,6 +295,18 @@ class SahteSoket implements HamSoket {
         if (ileti.t === "sesKapat") { this.sesKesik.add(ileti.hedef); this.konusan.delete(ileti.hedef); } else this.sesKesik.delete(ileti.hedef);
         return this.sesYolla();
       case "sozIste":
+        if (this.sahne && benKoltuk >= 0) {
+          if (!this.sahne.istek.includes(this.ben.hesap)) this.sahne.istek.push(this.ben.hesap);
+          this.sahneYolla();
+          // Sahte anlatıcı birkaç saniye sonra söz verir.
+          if (this.sahne.anlatici !== this.ben.hesap) return this.sonra(3000, () => {
+            const s = this.sahne;
+            if (!s || !s.istek.includes(this.ben.hesap)) return;
+            s.istek = s.istek.filter((h) => h !== this.ben.hesap); s.soz.push(this.ben.hesap);
+            this.sahneYolla();
+          });
+          return;
+        }
         if (benKoltuk >= 0) return this.hata("zaten_oturuyor");
         if (!this.soz.some((p) => p.hesap === this.ben.hesap)) this.soz.push(this.ben);
         this.sesYolla();
@@ -233,17 +319,67 @@ class SahteSoket implements HamSoket {
           this.sesYolla();
         });
       case "sozGeri":
+        if (this.sahne && this.sahne.istek.includes(this.ben.hesap)) { this.sahne.istek = this.sahne.istek.filter((h) => h !== this.ben.hesap); return this.sahneYolla(); }
         if (!this.soz.some((p) => p.hesap === this.ben.hesap)) return this.hata("soz_istegi_yok");
         this.soz = this.soz.filter((p) => p.hesap !== this.ben.hesap);
         return this.sesYolla();
       case "sozVer":
+        if (this.sahne) {
+          const s = this.sahne;
+          if (s.anlatici !== this.ben.hesap && !masaninBasi) return this.hata("yetki_yok");
+          if (ileti.kabul === false) { s.istek = s.istek.filter((h) => h !== ileti.hedef); s.soz = s.soz.filter((h) => h !== ileti.hedef); }
+          else if (!s.istek.includes(ileti.hedef)) return this.hata("soz_istegi_yok");
+          else { s.istek = s.istek.filter((h) => h !== ileti.hedef); s.soz.push(ileti.hedef); }
+          return this.sahneYolla();
+        }
         if (!masaninBasi) return this.hata("yetki_yok");
         return this.hata("soz_istegi_yok");
       case "ayar": {
         if (!masaninBasi) return this.hata("yetki_yok");
-        const { kavgaYasak, kilitli, sesli } = ileti;
-        this.masa().ayar = { ...this.masa().ayar, ...(kavgaYasak !== undefined ? { kavgaYasak } : {}), ...(kilitli !== undefined ? { kilitli } : {}), ...(sesli !== undefined ? { sesli } : {}) };
+        const { kavgaYasak, kilitli, sesli, sahneYasak } = ileti;
+        this.masa().ayar = { ...this.masa().ayar, ...(kavgaYasak !== undefined ? { kavgaYasak } : {}), ...(kilitli !== undefined ? { kilitli } : {}), ...(sesli !== undefined ? { sesli } : {}), ...(sahneYasak !== undefined ? { sahneYasak } : {}) };
         return this.durum();
+      }
+      case "sahneAc":
+        if (benKoltuk < 0) return this.hata("oturmuyor");
+        if (this.sahne) return this.hata("sahne_acik");
+        if (this.atisma) return this.hata("masa_mesgul");
+        if (this.masa().ayar?.sahneYasak) return this.hata("sahne_yasak");
+        this.sahne = { anlatici: this.ben.hesap, soz: [], istek: [], acilis: Date.now() };
+        this.sahneYolla();
+        // Sahte dinleyici söz ister (anlatıcı kişi kartından söz verir).
+        return this.sonra(2500, () => {
+          const h = oturanlar(this.masa()).find((x) => x.p.hesap !== this.ben.hesap)?.p.hesap;
+          if (!h || !this.sahne || this.sahne.istek.includes(h)) return;
+          this.sahne.istek.push(h); this.sahneYolla();
+        });
+      case "sahneKapat":
+        if (!this.sahne) return this.hata("sahne_yok");
+        if (this.sahne.anlatici !== this.ben.hesap && !masaninBasi) return this.hata("yetki_yok");
+        this.sahne = null;
+        return this.sahneYolla();
+      case "kita": {
+        const at = this.atisma;
+        if (!at) return this.hata("atisma_yok");
+        if (at.asama !== "kita" || at.sira !== this.ben.hesap) return this.hata("sira_degil");
+        const metin = ileti.metin.replace(/\r/g, "").trim();
+        if (!metin || metin.split("\n").length > KITA_SATIR || [...metin].length > KITA_EN_UZUN) return this.hata("metin_gecersiz");
+        return this.kitaYaz(this.ben.hesap, metin);
+      }
+      case "oy": {
+        const at = this.atisma;
+        if (!at) return this.hata("atisma_yok");
+        if (at.asama !== "oylama") return this.hata("oylama_kapali");
+        if (!at.hak.includes(this.ben.hesap)) return this.hata("oy_hakki_yok");
+        if (at.oyVeren.includes(this.ben.hesap)) return this.hata("oy_verildi");
+        if (ileti.hedef !== at.a && ileti.hedef !== at.b) return this.hata("taraf_degil");
+        return this.oyVer(this.ben.hesap, ileti.hedef);
+      }
+      case "atismaKapat": {
+        const at = this.atisma;
+        if (!at) return this.hata("atisma_yok");
+        if (at.a !== this.ben.hesap && at.b !== this.ben.hesap && !masaninBasi) return this.hata("yetki_yok");
+        return this.atismaBitir();
       }
     }
   }
@@ -252,7 +388,7 @@ class SahteSoket implements HamSoket {
 const EYLEM_KURALI: Record<string, { hedef: boolean; oturan: boolean; sart: boolean }> = {
   yemin: { hedef: false, oturan: true, sart: true }, sozlesme: { hedef: true, oturan: true, sart: true },
   ittifak: { hedef: true, oturan: true, sart: false }, ihbar: { hedef: true, oturan: false, sart: false },
-  meydanOku: { hedef: true, oturan: true, sart: false },
+  meydanOku: { hedef: true, oturan: true, sart: false }, atisma: { hedef: true, oturan: true, sart: false },
 };
 const gecikme = <T,>(v: T, ms = 220) => new Promise<T>((r) => setTimeout(() => r(v), ms));
 
@@ -286,9 +422,11 @@ export function sahteHanIstemci(hesap: string, ad: string): HanIstemci {
       let olay: MasaOlayi;
       if (g.tur === "kabul") {
         const t = g.olay !== undefined ? w.olaylar.get(g.olay) : undefined;
-        if (!t || t.hedef !== hesap || (t.tur !== "sozlesme" && t.tur !== "ittifak")) return gecikme(ekBasarisiz("olay_yok"));
+        if (!t || t.hedef !== hesap || (t.tur !== "sozlesme" && t.tur !== "ittifak" && t.tur !== "atisma")) return gecikme(ekBasarisiz("olay_yok"));
         if (t.durum !== "teklif") return gecikme(ekBasarisiz("karar_verildi"));
-        olay = s.olay({ tur: "kabul", kim: hesap, hedef: t.kim, olay: t.no });
+        if (t.tur === "atisma" && s.mesgul()) return gecikme(ekBasarisiz("masa_mesgul"));
+        olay = s.olay({ tur: "kabul", kim: hesap, hedef: t.kim, olay: t.no, ...(t.tur === "atisma" ? { teklifTur: "atisma" as const } : {}) });
+        if (t.tur === "atisma") s.atismaBaslatYolla(t.kim, hesap, t.no);
         w.olaylar.set(t.no, { ...t, durum: "kabul", kabulOlay: olay.no });
       } else {
         const k = EYLEM_KURALI[g.tur]!;
@@ -296,7 +434,8 @@ export function sahteHanIstemci(hesap: string, ad: string): HanIstemci {
         if (g.hedef === hesap) return gecikme(ekBasarisiz("kendi_hedef"));
         if (g.hedef && k.oturan && !oturan.has(g.hedef)) return gecikme(ekBasarisiz("hedef_masada_degil"));
         if (k.sart && !g.sart?.trim()) return gecikme(ekBasarisiz("metin_gecersiz"));
-        const onayli = g.tur === "sozlesme" || g.tur === "ittifak";
+        if (g.tur === "atisma" && s.mesgul()) return gecikme(ekBasarisiz("masa_mesgul"));
+        const onayli = g.tur === "sozlesme" || g.tur === "ittifak" || g.tur === "atisma";
         olay = s.olay({ tur: g.tur, kim: hesap, ...(g.hedef ? { hedef: g.hedef } : {}), ...(g.sart?.trim() ? { sart: g.sart.trim() } : {}), ...(onayli ? { durum: "teklif" as const } : {}) });
         // Sahte karşı taraf sözleşmeyi/ittifakı birkaç saniye sonra kabul eder.
         if (onayli && g.hedef) {
@@ -304,8 +443,10 @@ export function sahteHanIstemci(hesap: string, ad: string): HanIstemci {
           setTimeout(() => {
             const t = w.olaylar.get(olay.no);
             if (!t || t.durum !== "teklif" || w.soket !== s) return;
-            const kabul = s.olay({ tur: "kabul", kim: hedef, hedef: hesap, olay: t.no });
+            if (g.tur === "atisma" && s.mesgul()) return;
+            const kabul = s.olay({ tur: "kabul", kim: hedef, hedef: hesap, olay: t.no, ...(g.tur === "atisma" ? { teklifTur: "atisma" as const } : {}) });
             w.olaylar.set(t.no, { ...t, durum: "kabul", kabulOlay: kabul.no });
+            if (g.tur === "atisma") s.atismaBaslatYolla(hesap, hedef, t.no);
           }, 3500);
         }
       }

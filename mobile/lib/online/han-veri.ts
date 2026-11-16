@@ -22,10 +22,12 @@ export type SikayetNedeni = (typeof SIKAYET_NEDENLERI)[number];
 export type HanTuru = "han" | "kucukHan" | "menzil";
 export type MasaTuru = "acik" | "ozel" | "meclis" | "tuccar";
 /** `kilitli`: masa başı yeni oturan ve sıraya gireni kabul etmiyor (ayakta dinleme sürer; eski sunucuda yok). */
-export interface MasaAyari { tur: MasaTuru; acik: boolean; sesli: boolean; kavgaYasak: boolean; kilitli?: boolean; davet?: string[] }
+/** `sahneYasak` (H8): masa başı ozan sahnesini yasakladı (yalnız true iken gelir). */
+export interface MasaAyari { tur: MasaTuru; acik: boolean; sesli: boolean; kavgaYasak: boolean; kilitli?: boolean; davet?: string[]; sahneYasak?: boolean }
 /** İsim plakası. `cerceve` sunucunun sahiplikten eklediği Debdebe süsüdür; oyun mantığı okumaz. */
 /** `mudavim`: bu yerleşimin müdavim rozeti; `ozan`: ana mesleği ozan (H8). İkisi de yalnız görünür işarettir. */
-export interface Plaka { hesap: string; ad: string; cerceve?: string; mudavim?: true; ozan?: true; balon?: string; masaSusu?: string }
+/** `kisi`: karakter kimliği ("o123"; /v1/oyuncu/:id) ve `nam` (0–400): kişi kartı için; yoksa profil/engel kapalı kalır. */
+export interface Plaka { hesap: string; ad: string; cerceve?: string; mudavim?: true; ozan?: true; balon?: string; masaSusu?: string; kisi?: string; nam?: number }
 export interface MasaGorunumu {
   no: number;
   koltuklar: (Plaka | null)[];
@@ -34,9 +36,10 @@ export interface MasaGorunumu {
   ayakta: number;
   ayar: MasaAyari;
 }
-export const HAN_EYLEMLERI = ["yemin", "sozlesme", "ittifak", "ihbar", "meydanOku", "kabul"] as const;
+export const HAN_EYLEMLERI = ["yemin", "sozlesme", "ittifak", "ihbar", "meydanOku", "atisma", "kabul"] as const;
 export type HanEylemi = (typeof HAN_EYLEMLERI)[number];
-export type MasaOlayTuru = HanEylemi | "atma";
+export type MasaOlayTuru = HanEylemi | "atma" | "atismaSonuc";
+export type TeklifTuru = "sozlesme" | "ittifak" | "meydanOku" | "atisma";
 export interface MasaOlayi {
   no: number;
   masa: string;
@@ -50,8 +53,21 @@ export interface MasaOlayi {
   durum?: "teklif" | "kabul";
   kabulOlay?: number;
   /** Kabul olayında onaylanan teklifin türü. */
-  teklifTur?: "sozlesme" | "ittifak" | "meydanOku";
+  teklifTur?: TeklifTuru;
+  /** H8 `atismaSonuc`: sonuç ve oylar [a, b]; `kim` kazanan (berabere/hükümsüzde a), `olay` teklif numarası. */
+  sonuc?: AtismaSonucTuru;
+  oy?: [number, number];
 }
+
+/** H8 ozan sahnesi (sunucu SahneGorunumu): anlatıcı ve söz verilenler yazar; istek: söz isteyen oturanlar. */
+export interface SahneGorunumu { anlatici: string; soz: string[]; istek: string[]; acilis: number }
+export type AtismaSonucTuru = "kazandi" | "berabere" | "hukumsuz" | "iptal";
+/** H8 ozan atışması. a: teklif eden (ilk kıta), b: kabul eden; oy dağılımı sonuca kadar gizli. */
+export interface AtismaGorunumu { olay: number; a: string; b: string; kita: number; toplam: number; sira: string | null; asama: "kita" | "oylama"; hak: string[]; oyVeren: string[] }
+export interface AtismaSonucu { olay: number; a: string; b: string; sonuc: AtismaSonucTuru; kazanan: string[]; oy: [number, number] }
+/** [sunucu kurallar.ts] Kıta sınırları: en çok 4 satır; toplam harf (24 saatten genç hesapta 240). */
+export const KITA_SATIR = 4;
+export const KITA_EN_UZUN = 400;
 export type AnonsTuru = "ikram" | "armagan" | "debdebe" | "ziyafet";
 /** Ziyafet anonsu hedefsizdir (bütün masaya). */
 export interface MasaAnonsu { tur: AnonsTuru; kim: string; hedef?: string; oge: string; zaman: number }
@@ -74,7 +90,13 @@ export type IstemciIletisi =
   | { t: "sozGeri" }
   | { t: "sozVer"; hedef: string; kabul?: boolean }
   /** Masa başının masa ayarı (yalnız masa başı; sunucu doğrular). */
-  | { t: "ayar"; kavgaYasak?: boolean; kilitli?: boolean; sesli?: boolean; tur?: "acik" | "ozel" }
+  | { t: "ayar"; kavgaYasak?: boolean; kilitli?: boolean; sesli?: boolean; tur?: "acik" | "ozel"; sahneYasak?: boolean }
+  /** H8: ozan sahnesi ve atışma. */
+  | { t: "sahneAc" }
+  | { t: "sahneKapat" }
+  | { t: "kita"; metin: string }
+  | { t: "oy"; hedef: string }
+  | { t: "atismaKapat" }
   /** Özel masaya davet (yalnız masa başı); `kaldir` daveti geri alır. */
   | { t: "davet"; hedef: string; kaldir?: true };
 
@@ -93,7 +115,10 @@ export interface SdpYaniti { type: "offer" | "answer"; sdp: string }
 
 /** Sunucu → istemci. */
 export type SunucuIletisi =
-  | { t: "hosgeldin"; ben: Plaka; susturma: { bitis: number | null } | null; masa: MasaGorunumu; ses?: SesDurumu }
+  | { t: "hosgeldin"; ben: Plaka; susturma: { bitis: number | null } | null; masa: MasaGorunumu; ses?: SesDurumu; sahne?: SahneGorunumu | null; atisma?: AtismaGorunumu | null }
+  | { t: "sahne"; sahne: SahneGorunumu | null }
+  | { t: "atisma"; atisma: AtismaGorunumu | null; son?: AtismaSonucu }
+  | { t: "kita"; hesap: string; ad: string; koltuk: number; metin: string; sira: number; zaman: number; balon?: string }
   | { t: "sesDurum"; ses: SesDurumu }
   | { t: "durum"; masa: MasaGorunumu }
   | { t: "ileti"; hesap: string; ad: string; koltuk: number; metin: string; zaman: number; balon?: string }
@@ -140,6 +165,12 @@ const hanOzetiMi = (v: unknown): v is HanOzeti =>
 export const sesDurumuMu = (v: unknown): v is SesDurumu =>
   nesneMi(v) && typeof v.acik === "boolean" && Array.isArray(v.yayin) && v.yayin.every((y) => nesneMi(y) && metinMi(y.hesap) && metinMi(y.iz))
   && Array.isArray(v.konusan) && v.konusan.every(metinMi) && Array.isArray(v.kapali) && v.kapali.every(metinMi) && Array.isArray(v.soz) && v.soz.every(plakaMi);
+const metinlerMi = (v: unknown): v is string[] => Array.isArray(v) && v.every(metinMi);
+export const sahneMi = (v: unknown): v is SahneGorunumu => nesneMi(v) && metinMi(v.anlatici) && metinlerMi(v.soz) && metinlerMi(v.istek);
+export const atismaMi = (v: unknown): v is AtismaGorunumu => nesneMi(v) && sayiMi(v.olay) && metinMi(v.a) && metinMi(v.b) && sayiMi(v.kita) && sayiMi(v.toplam)
+  && (v.sira === null || metinMi(v.sira)) && (v.asama === "kita" || v.asama === "oylama") && metinlerMi(v.hak) && metinlerMi(v.oyVeren);
+const atismaSonucuMu = (v: unknown): v is AtismaSonucu => nesneMi(v) && sayiMi(v.olay) && metinMi(v.a) && metinMi(v.b) && metinMi(v.sonuc)
+  && metinlerMi(v.kazanan) && Array.isArray(v.oy) && v.oy.length === 2 && v.oy.every(sayiMi);
 const eylemYanitiMi = (v: unknown): v is { olay: MasaOlayi } => nesneMi(v) && masaOlayiMi(v.olay);
 const ikramYanitiMi = (v: unknown): v is IkramSonucu => nesneMi(v) && metinMi(v.ikram) && sayiMi(v.fiyat) && sayiMi(v.para) && anonsMu(v.anons);
 
@@ -151,7 +182,15 @@ export function sunucuIletisiCoz(ham: unknown): SunucuIletisi | undefined {
   }
   if (!nesneMi(v) || !metinMi(v.t)) return undefined;
   switch (v.t) {
-    case "hosgeldin": return plakaMi(v.ben) && masaGorunumuMu(v.masa) && (v.ses === undefined || sesDurumuMu(v.ses)) ? (v as SunucuIletisi) : undefined;
+    case "hosgeldin": {
+      if (!plakaMi(v.ben) || !masaGorunumuMu(v.masa) || !(v.ses === undefined || sesDurumuMu(v.ses))) return undefined;
+      // Bozuk sahne/atışma alanı bağlantıyı düşürmez: yok sayılır.
+      const { sahne, atisma, ...geri } = v;
+      return { ...geri, ...(sahneMi(sahne) ? { sahne } : {}), ...(atismaMi(atisma) ? { atisma } : {}) } as SunucuIletisi;
+    }
+    case "sahne": return v.sahne === null || sahneMi(v.sahne) ? (v as SunucuIletisi) : undefined;
+    case "atisma": return (v.atisma === null || atismaMi(v.atisma)) && (v.son === undefined || atismaSonucuMu(v.son)) ? (v as SunucuIletisi) : undefined;
+    case "kita": return metinMi(v.hesap) && metinMi(v.ad) && sayiMi(v.koltuk) && metinMi(v.metin) && sayiMi(v.sira) && sayiMi(v.zaman) ? (v as SunucuIletisi) : undefined;
     case "sesDurum": return sesDurumuMu(v.ses) ? (v as SunucuIletisi) : undefined;
     case "durum": return masaGorunumuMu(v.masa) ? (v as SunucuIletisi) : undefined;
     case "ileti": return metinMi(v.hesap) && metinMi(v.ad) && sayiMi(v.koltuk) && metinMi(v.metin) && sayiMi(v.zaman) ? (v as SunucuIletisi) : undefined;
