@@ -6,7 +6,9 @@ import assert from "node:assert/strict";
 import type { YerlesimTuru } from "../src/dunya-veri.ts";
 import { MALLAR, MAL_IDLERI, type MalId } from "../src/icerik/mallar.ts";
 import { adil, talepCoz, yolcuCoz, type Dukkan, type TalepSatiri } from "../src/mulk/hane-butcesi.ts";
-import { BAKIM, MULK_YUVA, NPC_GELIR_TAVAN } from "../src/mulk/kurallar.ts";
+import { BAKIM, MULK_YUVA, NPC_GELIR_TAVAN, PERSONEL_EN_COK } from "../src/mulk/kurallar.ts";
+import { TARIFLER } from "../src/icerik/tarifler.ts";
+import { NPC_ATOLYE_MAAS_EN_AZ, NPC_EMEK_AY, ZANAAT_MESLEKLERI } from "../src/mulk/tezgah-kurallar.ts";
 import { fiyatBandi, rafaKoy } from "../src/mulk/raf.ts";
 import type { Tezgah } from "../src/mulk/depo.ts";
 import { kaliteliEkle } from "../src/yerlesim/kalite.ts";
@@ -180,4 +182,33 @@ test("ucuz fiyat pay ve adedi artırır (fazla stok erir) ama kârı düşürür
   const taban = sonuc(15);
   assert.ok(ucuz.pay > taban.pay && ucuz.adet > taban.adet, "ucuz: daha çok pay ve adet");
   assert.ok(ucuz.kar < taban.kar, "ucuz: kâr düşer (adil altı satış zarar)");
+});
+
+test("Dilim 2: edilgen atölye (yalnız NPC emeği + üretim emri + raf), şehir + kıtlık, en iyi kalite → sahibin aylık net kazancı ≤ 35", () => {
+  // Üst sınır: her zanaat tarifi, 1–8 NPC, ayda her yapım sayısı; ürün şaheser, NPC tavan fiyatından tek satıcı olarak
+  // 5. seviye dükkân rafında. Net = hasılat − girdi − NPC maaşı (bakım düşülmedi, araç aşınması yok: iyimser).
+  // Bağlayan sınır meslek bütçesi (B şehir × kıtlık = 84): hasılat B'yi aşamaz, maaş + girdi kalanı yer.
+  const enIyi = (kitlik: boolean, girdiCarpani: number) => {
+    let net = -Infinity;
+    for (const t of Object.values(TARIFLER)) {
+      if (!(ZANAAT_MESLEKLERI as readonly string[]).includes(t.meslek)) continue;
+      const mal = t.cikti[0] as MalId;
+      if (!(MALLAR[mal].taban > 0)) continue;
+      const girdi = Object.entries(t.girdi).reduce((a, [m, n]) => a + Math.ceil(MALLAR[m as MalId].taban * girdiCarpani) * (n ?? 0), 0);
+      for (let n = 1; n <= PERSONEL_EN_COK; n++) {
+        for (let yap = 1; yap <= Math.floor((NPC_EMEK_AY * n) / t.takat); yap++) {
+          const r = talepCoz("sehir", [{ id: "d#0", dukkan: "d", mal, q: 3, adet: yap * t.cikti[1], fiyat: npcTavani(mal, 3) }], new Map([["d", { id: "d", itibar: 100, tavan: DUKKAN_NPC_TAVAN[4]! }]]), () => (kitlik ? 0 : 1), "butce");
+          net = Math.max(net, r.harcanan - yap * girdi - n * NPC_ATOLYE_MAAS_EN_AZ);
+        }
+      }
+    }
+    return net;
+  };
+  const taban = enIyi(true, 1);
+  const stok = enIyi(true, 1.5);
+  const bol = enIyi(false, 1);
+  console.log(`edilgen atölye üst sınırı: kıtlık + taban girdi ${taban}, kıtlık + NPC stoğu girdi ${stok}, kıtlıksız ${bol} (bakım ${BAKIM.atolye} düşülmedi)`);
+  assert.ok(taban <= 35, `kıtlık + taban: ${taban}`);
+  assert.ok(stok <= 31.5, `kıtlık + 1,5× girdi: ${stok}`);
+  assert.ok(bol <= 10, `kıtlıksız: ${bol}`);
 });
