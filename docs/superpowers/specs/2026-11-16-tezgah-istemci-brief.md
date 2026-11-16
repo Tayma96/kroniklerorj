@@ -36,3 +36,21 @@ Tasarım: `2026-11-16-tezgah-modeli-design.md` §4–§5.
 6. Beş olay anahtarının metni ve ikonu.
 
 Kalite: hareket yalnız `HAREKET`/`belir`/`giris`/`BASMA_OLCEK`; reduce motion; her yazma `istekNo` + senkron kilit; çekmece açıkken satır değişirse kilit + neden; ≥44 pt; 320/390 px; RTL; `GameIcon`; iç içe erişilebilir Pressable yok; boş/iskelet/hata durumları. Bitince: çeviri (Sonnet), `react-reviewer` (Sonnet), düzeltme, push.
+
+---
+
+# Dilim 2 — atölye: sunucu protokolü (17 Kasım; sunucu `19ebc10`, 668 test; istemci ve denge denetimi YOK)
+
+- POST `/v1/isletme/:id/…` (hepsi `istekNo`): `zanaat {meslek}` (yalnız sahip) · `uret {tarif}` (sahip ya da "musteri" yetkisi) · `mesai {emek}` (sahip ya da her oyuncu çalışan) · `emir {islem:"ac",tarif,kez}` / `{islem:"iptal",emir}` (sahip ya da vekil) · `toplu {siparis}` (sahip ya da "musteri") · `genislet {}` (sahip ya da vekil; dükkânda da çalışır).
+- GET `/v1/atolyeler` → `{atolyeler:[{isletme,no,ad,sahip,seviye,itibar,zanaat,kepenk,benim,devralinabilir}], topluSiparis[], yuva, bedel, devralmaKepenkAy}`. GET `/v1/dukkanlar` artık `bedel:{dukkan,atolye}` da döner.
+- GET `/v1/isletme/:id/tezgah` ekleri: yetkiliye `genisletme:{kademe,seviye,sonraki:{hedef,malzeme:[{mal,adet,depoda,taban}]}}`, `depoDefteri[].kimAd`; atölyede `atolye:{zanaat,zanaatOneri,zanaatlar,zanaatDegisim:{yapilan,ucretsizKalan,bedel},tezgah:{sayi,acikEmir},kaliteBonus,emek:{havuz,tavan,npcCalisan,npcAylik,npcKaliteCeza,npcMaasEnAz},emirler:[{no,tarif,kez,yapilan,kalan,acilis,acan}],emirKezEnCok,sonUretimAyi,topluSiparis[],benimTakat}`; `izin`e `genislet,uret,mesai,emir,toplu,zanaat`.
+- Atölyede `gunSonu`: `{ay,kepenk,anlik,yapim,emek:{oyuncuOnce,oyuncuSonra,npcVerilen,npcKullanilan},emirler:[{emir,tarif,kez,yapilan,buAy,cikti,kalite[4],usta,emek,neden}]}`.
+- Hata kodları: `zanaat_yok, zanaat_disi, emir_acik, tezgah_dolu, emir_yok, kez_gecersiz, usta_yok, havuz_dolu, emek_gecersiz, genisletme_yok, malzeme_yok, ust_uste, maas_npc_taban`.
+- Olaylar: `olay.tezgah.uretim {isletme,ad,yapim,mal,adet}`, `olay.tezgah.topluSiparis {siparis,meslek,mal,adet,odul}`, `olay.tezgah.topluTeslim {isletme,ad,mal,adet,odul}`; `olay.levha` artık `atolye, atolyeAd`; `olay.tezgah.devralmaKasasi` artık `ad`.
+- Parametreler: tezgâh [1,2,3,4,5]; kalite bonusu 5×seviye; zanaat ilk değişim ücretsiz, sonra 30 akçe; emek havuzu tezgâh×6, tek mesai ≤18; NPC emeği 2/ay (birikmez), kalite cezası 30, NPC atölye maaşı ≥38; emir en çok 24 kez; toplu sipariş değer ≤60, ödül ×1,4 (≤84/ay), süre 2 ay; genişletme malzemesi kereste, çivi, doğrama, kesme taş, kiriş.
+- Kurallar: zanaat tarifi olan 7 meslekten herhangi biri (sahibin mesleği şart değil); emirle üretimde kişisel verim becerisi yok (çıktı tarifin taban adedi), XP/nam yok; emek sırası önce oyuncu havuzu sonra NPC; atölye kepengi = o ay üretim ya da toplu teslim yok.
+- **Açık riskler (denge denetçisine):** NPC emeğiyle üretilen kaliteli mal rafta 1,5× tavandan satılınca §6.1 (a) sınırı yalnız taban fiyat için kilitli; iflas eden atölyenin reddedilen toplu sipariş tesliminde mal geri gelmiyor; `test/kervan-akis.test.ts` duvar saatine bağlı, ara sıra düşüyor (eskiden beri).
+- **Yapılmadı:** ısmarlamanın atölyeye verilmesi; tasarım §6'nın gerçek kurallarla güncellenmesi; `ONLINE_DURUM.md` satırı; alt istek bütçesi için ayrı atölye testi.
+
+## Atölye ekranı (istemci, yapılacak)
+"Atölyem" (`isletme/[id]`, tür atölye): zanaat seçimi/değişimi; tezgâhlar ve açık üretim emirleri (aç/iptal, ilerleme); "atölyede üret" (tarif listesi, girdi depoda var/yok dökümü); mesai bağlama (takatten emek; geri alınmaz uyarısı); emek havuzu ve NPC emeği dökümü; depo (Dilim 1 bileşeni); ay sonu üretim dökümü (neden sözle); toplu sipariş listesi ve teslim; genişletme (malzeme listesi, depoda var/yok). Çarşı'ya "Atölyeler" sekmesi ya da ayrı liste (`/v1/atolyeler`); dükkânda da "Genişlet". Kalite kuralları Dilim 1 ile aynı; `AdetSecici`, `useTekIstek`, çekmece kalıpları `tezgah-ui.tsx`ten yeniden kullanılır.

@@ -1,4 +1,4 @@
-# Kronikler — güncel çalışma özeti (16 Kasım 2026, gece)
+# Kronikler — güncel çalışma özeti (17 Kasım 2026)
 
 ## Kurallar
 - Repo Tayma96/kroniklerorj, ana dal `apk` (oturum dalına aynı commit). Türkçe tek satır commit, ek satır yok.
@@ -10,19 +10,19 @@
 - Kod Opus (`online-sunucu`, `online-istemci`), test ve **çeviri Sonnet** (`tester`; istemci ajanı metni yalnız Türkçe yazar). Ajanlara `git stash` yasak.
 - Çıta "AAA metin oyunu": hareket yalnız `lib/online/ui.tsx` `HAREKET`/`belir`/`giris`/`BASMA_OLCEK`; her arayüz işi `react-reviewer`, her ekonomi işi `denge-denetcisi` (model yaz). Hiçbir meslek/beceri kancası boşta kalmaz.
 
-## Çevrimiçi durum (`apk` = `a59c82b` + bu dosya)
-- Belgeler: `docs/online/ONLINE_DURUM.md`; tasarım `docs/superpowers/specs/2026-11-16-tezgah-modeli-design.md` (§6.1 Dilim 2 kararları); istemci protokolü `…-tezgah-istemci-brief.md`.
-- Sunucu 652 test. Test Worker'ı `05d2e17` ile dağıtıldı; ses açık (Realtime + sır kurulu). Test dağıtımını yönetici yapar: GitHub `deploy-online-server.yml`, hedef `test`.
-- Bitti: sahne/atışma; han masası; çoklu han + seçici; 5 sekme + "Şimdi" rehberi; tezgâh Dilim 1 sunucu + denge düzeltmeleri; dükkân ekranları (Dükkânım, Çarşı, satın alma, devralma, yolcu payı; 6 dil).
-- Ekranlar cihazda görülmedi; `design-preview.cjs` burada çalışmıyor.
+## Çevrimiçi durum (17 Kasım)
+- Belgeler: `docs/online/ONLINE_DURUM.md`; tasarım `docs/superpowers/specs/2026-11-16-tezgah-modeli-design.md`; **protokol ve ekran brief'i** `…-tezgah-istemci-brief.md` (Dilim 1 + Dilim 2 atölye).
+- Sunucu 668 test, hepsi geçiyor (`kervan-akis` ara sıra düşer: duvar saati). Test Worker'ı `05d2e17`de (ses açık); sonraki commit'ler dağıtılmadı. Dağıtım: GitHub `deploy-online-server.yml`, hedef `test`.
+- Bitti: sahne/atışma; han masası; çoklu han; 5 sekme + rehber; tezgâh Dilim 1 (sunucu, denge düzeltmeleri, dükkân ekranları + inceleme düzeltmeleri); **Dilim 2 atölye sunucusu** (zanaat, atölyede üretim, emek havuzu, üretim emri, toplu sipariş, genişletme).
+- Ekranlar cihazda görülmedi.
 
 ## Sıradaki işler (bu sırayla)
-1. Dükkân ekranları `react-reviewer` incelemesi (commit `0c54c4d`, `a59c82b`; yarıda kesildi) → düzeltme → push.
-2. Tezgâh Dilim 2 atölye sunucusu (tasarım §6 + §6.1; hiç kod yok) → `denge-denetcisi` → istemci → çeviri.
-3. Dilim 3: meslek kancaları ilk parti ≈70 (§7) + "boşta kanca listesi yalnız kısalır" testi (199 hak'tan 196'sı boşta).
+1. Dilim 2 `denge-denetcisi` (brief'teki açık riskler) → düzeltme; tasarım §6 ve `ONLINE_DURUM.md` güncellemesi.
+2. Atölye ekranı (brief sonundaki madde) → çeviri → `react-reviewer` → düzeltme.
+3. Dilim 3: meslek kancaları ilk parti ≈70 (tasarım §7) + "boşta kanca listesi yalnız kısalır" testi (199 hak'tan 196'sı boşta).
 4. Oyuncu numarası (8 hane, rastgele, hesaba bağlı), arama, oyuncu sayfası.
 5. Han masa oyunları çatısı + iki oyun; canlı masalar vitrini; hızlı tepkiler.
-6. Sonra: test Worker'ını yeniden dağıt; Berkay test APK'sı çıkarır.
+6. Test Worker'ını yeniden dağıt; Berkay test APK'sı çıkarır.
 
 ## Berkay'da
 - `GOOGLE_CLIENT_ID`, FCM, Play ürünleri/ödeme; test APK'sı ve 5–10 kişilik cihaz denemesi (ses dahil).
