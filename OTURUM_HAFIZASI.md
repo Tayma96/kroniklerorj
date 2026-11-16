@@ -4,7 +4,7 @@
 - Repo Tayma96/kroniklerorj, ana dal `apk` (oturum dalına aynı commit). Türkçe tek satır commit, ek satır yok.
 - Tek sert kural: **her şey ücretsiz**. Anahtar okuma/yazdırma yok.
 - Berkay: "Talimat ve onay bekleme, en iyisi nasılsa yap." İstisna: üretim dağıtımı, silme, gerçek para/ödeme.
-- **Token disiplini (Berkay, 16 Kasım):** aynı anda TEK Opus ajanı (+en çok bir Sonnet); her ajana `model` açıkça yaz (yazılmazsa en pahalı modelde koşar); düzeltme turu büyümüş ajanı sürdürerek değil dar kapsamlı yeni ajanla; ajan çalışırken ara durum mesajı yazma; her büyük iş yeni oturumda.
+- **Token disiplini (Berkay, 16 Kasım):** aynı anda TEK Opus ajanı (+en çok bir Sonnet); her ajana `model` açıkça yaz; düzeltme turu büyümüş ajanı sürdürerek değil dar kapsamlı yeni ajanla; ara durum mesajı yok; her büyük iş yeni oturumda.
 - Yönetici plan/tasarım/inceleme; kod Opus (`online-sunucu`, `online-istemci`), test ve **çeviri Sonnet** (`tester`; istemci ajanı metni yalnız Türkçe yazar). Ajanlara "commit/push yok, `git stash` yok" de; commit'i yönetici atar.
 - Çıta "AAA metin oyunu": her ekran sahne; hareket yalnız `lib/online/ui.tsx` `HAREKET`/`belir`/`giris`/`BASMA_OLCEK`; ölü karar yok; her arayüz işi `react-reviewer`dan, her ekonomi işi `denge-denetcisi`nden geçer. Hiçbir meslek/beceri kancası boşta kalmaz.
 
