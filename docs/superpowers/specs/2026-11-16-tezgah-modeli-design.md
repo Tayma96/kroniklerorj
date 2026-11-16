@@ -189,3 +189,11 @@ Yön (yönetici önerisi; uygulamadan önce kod dökümü ve denge denetimi gere
 - **Üst kademe ikinci, üçüncü etki ekler:** ustanın ekmeği tokluk + keyif; pirin ekmeği tokluğu doldurur, keyif verir,
   az da sağlık. Efsanevi ilaç tam iyileştirir + kısa süreli dayanıklılık gibi hüner.
 - Her üründe ve hizmette oyuncu "kim yaptı, kaçıncı kademe, ne veriyor" dökümünü görür; alıcı ustayı arar hâle gelmeli.
+
+### 9.2 Yedinci kademe: tılsımlı (Berkay, 17 Kasım)
+- Efsanevinin üstünde, **binde bir** ihtimalle çıkan kademe (çalışma adı "tılsımlı"; mistik/kerametli his). Yalnız pirin
+  efsanevi denemesinde, o deneme başarılıysa ayrıca binde bir. Etki çarpanı efsanevinin üstünde (öneri ×7) + iki hüner.
+- Farm süzgeci: şans yalnız aylık sınırlı efsanevi denemesine bağlıdır; deneme sayısı parayla, takatla ya da tekrar
+  üretimle artırılamaz; zar sunucuda tohumlu ve tekrar güvenlidir. Gerçek parayla şans artırılamaz, satın alınamaz.
+- Her tılsımlı eşya tektir ve adlıdır; çıktığında beylik genelinde kroniğe ve söylentiye düşer, hanedan yadigârı olur.
+- Sunucuda kaç tane çıktığı yönetici panelinde sayılır (beklenen: 1000 pirde ayda birkaç tane).
