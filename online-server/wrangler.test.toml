@@ -81,4 +81,4 @@ TEST_GIRIS_ACIK = "1"
 # Faz 16 sesli sohbet: Cloudflare Realtime uygulama kimliği (gizli değil). Boşken ses kapalıdır (uçlar 503 ses_kapali).
 # Uygulama anahtarı burada DEĞİL: `wrangler secret put REALTIME_APP_TOKEN`. İsteğe bağlı TURN: REALTIME_TURN_ID (vars) +
 # `wrangler secret put REALTIME_TURN_TOKEN`.
-REALTIME_APP_ID = ""
+REALTIME_APP_ID = "ec2da72da597170bc15be8a6e13633d3"
