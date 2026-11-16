@@ -18,7 +18,7 @@
 - Ekranlar cihazda görülmedi.
 
 ## Sıradaki işler (bu sırayla)
-1. Dilim 2 `denge-denetcisi` (brief'teki açık riskler) → düzeltme; tasarım §6 ve `ONLINE_DURUM.md` güncellemesi.
+1. **Sürüyor (17 Kasım gece):** Dilim 2 denge denetimi yapıldı; düzeltmeler `online-sunucu` ajanında, ara commit'ler `claude/sharp-clarke-uhhvnl` dalında (apk'ye yönetici alır). Bulgular: A) maaşı ödenmeyen NPC emeği bedava (iseAl emanet şartı + emek maaşı karşılanan NPC'yle sınırlı); B) iflas atölyesinde yazma uçları reddetmeli, reddedilen toplu teslimde mal/sipariş geri gelmeli; C) sim kilidi: edilgen atölye net ≤ 35 akçe/ay; D) `cikisAc` sonucu denetimi, emir dökümünde kalite kalemleri. Bitince: testler, diff incelemesi, apk'ye al, tasarım §6 + `ONLINE_DURUM.md` güncelle. Dal apk'den ilerideyse ve inceleme notu yoksa önce `npm test` + diff oku.
 2. Atölye ekranı (brief sonundaki madde) → çeviri → `react-reviewer` → düzeltme.
 3. Dilim 3: meslek kancaları ilk parti ≈70 (tasarım §7) + "boşta kanca listesi yalnız kısalır" testi.
 4. Oyuncu numarası (8 hane, rastgele, hesaba bağlı), arama, oyuncu sayfası.
