@@ -3,6 +3,7 @@
 // üretmez; topluluk kaydı ("tl"), değişen öteki oyuncular ve defter birlikte yazılır. Müdavim ziyareti istemciden
 // gelmez: HesapDO masa bileti kestiğinde iç çağrıdır (gün başına bir kez sayılır, doğal olarak tekrar güvenli).
 
+import { etkinlikKatil } from "../etkinlik/katilim.ts";
 import { hata, basarili, type Sonuc } from "../tipler.ts";
 import { hamiGorunumu, hamiIslem } from "./hami.ts";
 import { zaviyeIslem, zaviyeOzeti } from "./lonca-grup.ts";
@@ -105,4 +106,10 @@ export function mudavimUc(m: YerlesimMotoru, hesapId: string, han = 1): Promise<
     else if (r.rozet) (s.mdh ??= {})[String(han)] = r.rozet;
     return basarili({ deger: { sayildi: r.sayildi, ziyaret: r.sayi, rozet: r.rozet }, olaylar: r.olay ? [r.olay] : [] });
   });
+}
+
+/** POST /v1/etkinlik {id, istekNo}: canlı etkinliğe bir kez katılım (src/etkinlik/katilim.ts). */
+export function etkinlikUc(m: YerlesimMotoru, hesapId: string, govde: unknown): Promise<Sonuc<unknown>> {
+  if (!nesneMi(govde)) return Promise.resolve(hata("gecersiz_istek"));
+  return m.toplulukYaz(hesapId, govde, [], (kar, ay) => etkinlikKatil(m.kasaba, kar, govde, ay));
 }

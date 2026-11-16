@@ -3,7 +3,7 @@
 // sırayla, çağrı başına sınırlı yetiştirilir. İnce sarmalayıcıdır; kurallar src/yerlesim/*.ts'dedir.
 
 import { doDepo, type Depo } from "./depo.ts";
-import { hamiUc, mesrepUc, mudavimUc, ortakDertUc, senlikUc, toplulukOku, zaviyeUc } from "./yerlesim/topluluk-uclar.ts";
+import { etkinlikUc, hamiUc, mesrepUc, mudavimUc, ortakDertUc, senlikUc, toplulukOku, zaviyeUc } from "./yerlesim/topluluk-uclar.ts";
 import { defterOku, hizmetGeriUc, hizmetHazirlaUc, hizmetIlanUc, hizmetIslemUc, hizmetOku, hizmetTalepTeslimUc, hizmetGorevTeslimUc, ismarlaUc, ismarlamaCevapUc, ismarlamaOku, levhaOku, pazarGeri, pazarIlan, pazarIslem, pazarOku } from "./yerlesim/ekonomi-uclar.ts";
 import { armaganGeri, armaganTeveccuh } from "./yerlesim/armagan-uclar.ts";
 import { iletiOku, isletmeCagir, jsonYanit, yerlesimCagir, yonetimCagir } from "./ic.ts";
@@ -74,7 +74,7 @@ export class YerlesimDO {
     motor.parametreleriGuncelle({});
     try {
       this.#harca();
-      const parametreler = await yonetimCagir(this.#env, { islem: "parametrelerCalisma" });
+      const parametreler = await yonetimCagir(this.#env, { islem: "parametrelerCalisma", yerlesim: motor.kasaba.y });
       if (parametreler.ok && typeof parametreler.deger === "object" && parametreler.deger !== null) {
         motor.parametreleriGuncelle(parametreler.deger as CalismaParametreleri);
       }
@@ -201,9 +201,12 @@ export class YerlesimDO {
     await this.#parametreleriYukle(motor);
     await this.#voTazele(motor, simdi);
     const { kalan } = await motor.yetistir(simdi);
+    await motor.etkinlikSenkron(simdi);
     await this.#alarmKur(simdi, kalan);
     const tezgahVergi = ileti.islem === "mulk" && VERGI_ALT.includes(ileti.alt) ? await this.#vergiOraniBelki(ileti.yerlesim) : undefined;
-    const vergiOrani = ileti.islem === "hanIkram" || ileti.islem === "hanZiyafet" || ileti.islem === "barinmaKira"
+    // Sultan'ın Fermanı etkinliği (src/etkinlik/): han ikramı, ziyafet ve oda kirasından vergi alınmaz.
+    const vergisiz = motor.kasaba.pr?.ETK?.vergisiz === true;
+    const vergiOrani = vergisiz ? 0 : ileti.islem === "hanIkram" || ileti.islem === "hanZiyafet" || ileti.islem === "barinmaKira"
       ? await this.#vergiOrani(ileti.yerlesim)
       : (tezgahVergi ?? 0);
     switch (ileti.islem) {
@@ -326,6 +329,8 @@ export class YerlesimDO {
         return senlikUc(motor, ileti.hesapId, ileti.govde);
       case "zaviye":
         return zaviyeUc(motor, ileti.hesapId, ileti.govde);
+      case "etkinlik":
+        return etkinlikUc(motor, ileti.hesapId, ileti.govde);
       case "mudavimZiyaret": {
         const han = hanNoCoz(ileti.han);
         if (han === undefined || !motor.hanAcikMi(han)) return hata("han_yok");
@@ -450,6 +455,7 @@ export class YerlesimDO {
       await this.#parametreleriYukle(motor);
       await this.#voTazele(motor, simdi);
     const { kalan } = await motor.yetistir(simdi);
+      await motor.etkinlikSenkron(simdi);
       await this.#depolama.setAlarm(sonrakiAlarm(simdi, kalan));
       this.#alarmVar = true;
       await this.#kervanUzlastir(simdi, false);

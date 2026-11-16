@@ -248,9 +248,13 @@ export function pompaYaz(satici: Karakter, alici: Karakter, d: PompaDokumu, ay: 
   alan.ha = [ay, aylik(alan.ha, ay) + d.hediye];
 }
 
+/** Şenlik/Panayır etkinlikleri (src/etkinlik/) bacı düşürür ve ilan tavanını artırır; etkinlik yoksa sabitler. */
+export const pazarBacOrani = (k: Pick<Kasaba, "pr">): number => Math.min(PAZAR_BAC_ORANI, k.pr?.ETK?.bac ?? PAZAR_BAC_ORANI);
+export const pazarIlanTavani = (k: Pick<Kasaba, "pr">): number => PAZAR_ILAN_EN_COK + (k.pr?.ETK?.ilanEk ?? 0);
+
 /** Bacı ve satıcıya kalanı hesaplar. */
-export function bacHesapla(tutar: number): { bac: number; net: number } {
-  const bac = Math.floor(tutar * PAZAR_BAC_ORANI);
+export function bacHesapla(tutar: number, oran = PAZAR_BAC_ORANI): { bac: number; net: number } {
+  const bac = Math.floor(tutar * oran);
   return { bac, net: tutar - bac };
 }
 
@@ -275,7 +279,7 @@ export function ilanAc(k: Kasaba, kar: Karakter, g: Record<string, unknown>, ay:
   if (!kaliteMi(q)) return hata("ilan_gecersiz");
   if (karakterYasi(kar, ay) < TEKLIF_YASI) return hata("yas_kapisi");
   const ek = ekonomiAl(k);
-  if (acikIlanlar(ek, kar.o).length >= PAZAR_ILAN_EN_COK) return hata("ilan_siniri");
+  if (acikIlanlar(ek, kar.o).length >= pazarIlanTavani(k)) return hata("ilan_siniri");
   const adet = g.adet;
   const fiyat = g.fiyat;
   let p: KaliteParti[] | undefined;
@@ -373,7 +377,7 @@ export function ilanIsle(
   if (satis && ben.pa < tutar) return hata("para_yok");
   // --- değişiklikler (bütün denetimlerden sonra) ---
   pompaYaz(satici, alici, pompa.deger, ay);
-  const { bac, net } = bacHesapla(tutar);
+  const { bac, net } = bacHesapla(tutar, pazarBacOrani(k));
   if (satis) {
     ben.pa -= tutar;
     kaliteliEkle(ben, ilan.ml, partiAyir(ilan.p ?? [], adet));

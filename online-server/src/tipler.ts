@@ -210,6 +210,12 @@ export const HATA_DURUMU = {
   eposta_gecersiz: 400,
   kurucu_degismez: 409,
   duyuru_gecersiz: 400,
+  // Canlı etkinlikler (src/etkinlik/)
+  etkinlik_gecersiz: 400,
+  etkinlik_yok: 404,
+  etkinlik_siniri: 409,
+  etkinlik_suruyor: 409,
+  etkinlik_katildin: 409,
   hesap_yok: 404,
   // Hanedan (Faz 7)
   olu: 403,
@@ -569,11 +575,14 @@ export const YONETIM_UCLARI = {
   kayit: "GET",
   debdebe: "GET",
   "debdebe-iade": "POST",
+  etkinlikler: "GET",
+  "etkinlik-baslat": "POST",
+  "etkinlik-durdur": "POST",
 } as const satisfies Record<string, "GET" | "POST">;
 export type YonetimUcu = keyof typeof YONETIM_UCLARI;
 
 export type YonetimIleti =
-  | { islem: "parametrelerCalisma" }
+  | { islem: "parametrelerCalisma"; yerlesim?: string }
   | { islem: "giris"; yonetici: YoneticiKimligi }
   | { islem: "yonet"; yonetici: YoneticiKimligi; uc: YonetimUcu; govde?: unknown; sorgu?: Record<string, string | null> }
   /** HesapDO → YonetimDO: oyuncu şikayeti. */
@@ -631,7 +640,7 @@ export type HanedanIletisi =
   | { islem: "kronik"; hesapId: string; imlec?: string | null; dil?: string | null };
 
 /** Topluluk (E5–E7) gövdeli işlemleri: POST /v1/mesrep, /v1/hami, /v1/ortak-dert, /v1/senlik, /v1/zaviye. */
-export const TOPLULUK_ISLEMLERI = ["mesrep", "hami", "ortakDert", "senlik", "zaviye"] as const;
+export const TOPLULUK_ISLEMLERI = ["mesrep", "hami", "ortakDert", "senlik", "zaviye", "etkinlik"] as const;
 export type ToplulukIslem = (typeof TOPLULUK_ISLEMLERI)[number];
 /** Topluluk iletileri (HesapDO aynen YerlesimDO'ya iletir; `yerlesim` eklenir). */
 export type ToplulukIletisi = { islem: ToplulukIslem; hesapId: string; govde: unknown } | { islem: "topluluk"; hesapId: string; dil?: string | null };

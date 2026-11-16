@@ -41,6 +41,8 @@ import {
   ilanGorunumu,
   ilanIsle,
   pazarEmaneti,
+  pazarBacOrani,
+  pazarIlanTavani,
 } from "./pazar-tahta.ts";
 import { HEDIYE_ALMA_AYLIK, HEDIYE_VERME_AYLIK } from "./teklif.ts";
 import type { Karakter } from "./tipler.ts";
@@ -197,7 +199,7 @@ export function pazarOku(m: YerlesimMotoru, hesapId: string, malHam: unknown): P
       ilanlar: acik.map((x) => ilanGorunumu(x, kar.o, ay)),
       benim: (k.ek?.il ?? []).filter((x) => x.o === kar.o).map((x) => ilanGorunumu(x, kar.o, ay)),
       ozet: [...ozet.values()].sort((a, b) => (a.mal < b.mal ? -1 : 1)),
-      kurallar: PAZAR_KURALLARI,
+      kurallar: { ...PAZAR_KURALLARI, ilanEnCok: pazarIlanTavani(m.kasaba), bacOrani: pazarBacOrani(m.kasaba) },
       kaliteler: KALITE_ADLARI,
       armaganKalan: armaganKalan(kar, ay),
       emanet: pazarEmaneti(k.ek, kar.o),

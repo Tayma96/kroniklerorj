@@ -29,6 +29,8 @@ export interface ToplulukKaydi {
   /** Ortak dertler ve sonraki kimlik. */
   od: OrtakDert[];
   on: number;
+  /** Derdi açılmış canlı etkinlik kimlikleri (src/yerlesim/ortak-dert.ts etkinlikDertleri). */
+  ea?: string[];
   /** Şenlik katkı kayıtları (açık ve son kapananlar). */
   sn: SenlikKaydi[];
   /** Zaviyeler ve sonraki kimlik. */

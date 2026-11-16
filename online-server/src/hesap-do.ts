@@ -353,6 +353,7 @@ export class HesapDO {
       case "ortakDert":
       case "senlik":
       case "zaviye":
+      case "etkinlik":
       // Ekonomi (Faz 6): ileti aynen yerleşime gider.
       case "pazarIlan":
       case "pazarIslem":

@@ -12,6 +12,7 @@ import { etkinDeger, PARAMETRELER, type ParametreAdi, type ParametreKaydi } from
 import { yonetimIsle, type YonetimBaglami } from "./yonetim/islem.ts";
 import { kurucuListesi } from "./yonetim/yetki.ts";
 import { masaAtmaKaydet } from "./han/y1-kayit.ts";
+import { etkinlikCalisma } from "./etkinlik/yonetim.ts";
 
 /** [PARAMETRE] Yönetici (e-posta) başına dakikadaki istek sınırı. */
 export const YONETIM_HIZ_SINIRI = 60;
@@ -60,7 +61,9 @@ export class YonetimDO {
     if (ileti.islem === "parametrelerCalisma") {
       const adlar = Object.keys(PARAMETRELER) as ParametreAdi[];
       const kayitlar = await this.#depo.alCok<ParametreKaydi>(adlar.map((ad) => `param:${ad}`));
-      const degerler = Object.fromEntries(adlar.map((ad) => [ad, etkinDeger(PARAMETRELER[ad], kayitlar.get(`param:${ad}`))]));
+      const degerler: Record<string, unknown> = Object.fromEntries(adlar.map((ad) => [ad, etkinDeger(PARAMETRELER[ad], kayitlar.get(`param:${ad}`))]));
+      // Canlı etkinlikler yalnız yerleşime gider (src/etkinlik/): her istekte okunduğu için başlatma/durdurma anlıktır.
+      if (typeof ileti.yerlesim === "string") degerler.ETKINLIKLER = await etkinlikCalisma(this.#depo, ileti.yerlesim, simdi);
       return jsonYanit(basarili(degerler));
     }
     if (ileti.islem === "masaAtma") return jsonYanit(await masaAtmaKaydet(this.#depo, ileti));

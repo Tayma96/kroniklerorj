@@ -89,6 +89,7 @@
 //   POST /v1/hami {islem: teklif|iste|kabul|ret|birak, hedef, istekNo} → {bag, hami}  (hami akçe almaz, aşamada nam)
 //   POST /v1/ortak-dert {dert, katki, mal?, adet?, istekNo} → {dert, katki (döküm), odul, basardi}
 //   POST /v1/senlik {katki: yemek|sus|hayir, mal?, adet?, tutar?, istekNo} → {senlik, katki, odul}
+//   POST /v1/etkinlik {id, istekNo}      → {etkinlik, tur, odul, etkinlikler}  (canlı etkinliğe bir kez katılım; src/etkinlik/)
 //   POST /v1/zaviye {islem: kur|davet|katil|reddet|ayril|cikar|yatir|ver|arma|oy, ..., istekNo} → {zaviye, zaviyeler}
 //   GET  /v1/siyaset?bolge=&kayit=       → bölge, makamlar, seçimler, kasa/defter, meşruiyet, Sultanlık, Moğol, kayıt (Faz 7, src/siyaset/)
 //   POST /v1/siyaset {islem: aday|adayCekil|oy|onay|yetki|itiraz|ozerklikCevap|ozerklikBirak, makam?, ..., istekNo} → {sonuc, gorunum}
@@ -532,6 +533,8 @@ async function yonlendir(istek: Request, env: Env): Promise<Response> {
       return yontem === "POST" ? toplulukGovdeli(istek, env, "senlik") : hataYaniti("yontem_yok");
     case "/v1/zaviye":
       return yontem === "POST" ? toplulukGovdeli(istek, env, "zaviye") : hataYaniti("yontem_yok");
+    case "/v1/etkinlik":
+      return yontem === "POST" ? toplulukGovdeli(istek, env, "etkinlik") : hataYaniti("yontem_yok");
     // Ekonomi (Faz 6) ve hizmet pazarı (E4.3): src/yerlesim/ekonomi-uclar.ts
     case "/v1/hizmet":
       return yontem === "GET" ? hesaba(istek, env, (hesapId) => basarili({ islem: "hizmet", hesapId, dil })) : hataYaniti("yontem_yok");

@@ -5,8 +5,8 @@
 import { utf8 } from "../b64.ts";
 
 const STIL = `
-:root{color-scheme:light dark;--z:#f6f3ee;--y:#1d1b18;--c:#d9d2c7;--v:#8a3b12;--k:#b3261e;--i:#fff}
-@media (prefers-color-scheme:dark){:root{--z:#16140f;--y:#ece6dc;--c:#3a352d;--v:#e08a4f;--k:#f2b8b5;--i:#211e18}}
+:root{color-scheme:light dark;--z:#f6f3ee;--y:#1d1b18;--c:#d9d2c7;--v:#8a3b12;--k:#b3261e;--i:#fff;--a:#2e7d32}
+@media (prefers-color-scheme:dark){:root{--z:#16140f;--y:#ece6dc;--c:#3a352d;--v:#e08a4f;--k:#f2b8b5;--i:#211e18;--a:#81c784}}
 *{box-sizing:border-box}
 body{margin:0;background:var(--z);color:var(--y);font:15px/1.45 system-ui,sans-serif}
 header{padding:12px 16px;border-bottom:1px solid var(--c);display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
@@ -28,6 +28,18 @@ button:disabled{opacity:.5}
 pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;margin:4px 0}
 table{width:100%;border-collapse:collapse;font-size:13px}td,th{border-top:1px solid var(--c);padding:4px;text-align:left;vertical-align:top}
 .tablo{overflow-x:auto}
+nav#sekmeler{display:flex;gap:6px;flex-wrap:wrap;max-width:860px;margin:8px auto 0;padding:0 16px}
+nav#sekmeler button{margin:0;background:transparent;color:var(--v);padding:6px 12px}
+nav#sekmeler button[aria-current="true"]{background:var(--v);color:#fff}
+section.sekmeDisi{display:none}
+.etkIzgara{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.etkKart{border:1px solid var(--c);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:4px}
+.etkKart.acik{border-color:var(--a);box-shadow:0 0 0 1px var(--a) inset}
+.etkKart h3{font-size:15px;margin:0}
+.etkKart .satir>*{flex:1 1 100px}
+.durumAcik{color:var(--a);font-weight:600}
+.durumKapali{opacity:.7}
+button.durdur{background:var(--k);border-color:var(--k)}
 `;
 
 const BETIK = `
@@ -78,7 +90,160 @@ function cikis() {
   belirtec = ""; try { sessionStorage.removeItem("ybelirtec"); } catch (e) {}
   for (const s of document.querySelectorAll("section[data-yetki]")) s.hidden = true;
   $("#girisBolum").hidden = false; $("#benBilgi").textContent = "";
+  $("#sekmeler").hidden = true; etkVeri = null;
 }
+
+// ---- sekmeler: her bölüm bir sekme; tıklanan bölüm görünür (seçim oturumda hatırlanır)
+let seciliSekme = "";
+try { seciliSekme = sessionStorage.getItem("ysekme") || ""; } catch (e) {}
+function sekmeleriKur() {
+  const nav = $("#sekmeler"); nav.textContent = "";
+  const bolumler = [...document.querySelectorAll("section[data-yetki]")].filter((s) => !s.hidden);
+  for (const s of bolumler) if (!s.id) s.id = "b-" + s.dataset.yetki;
+  if (!seciliSekme || !bolumler.some((s) => s.id === seciliSekme)) seciliSekme = (bolumler.find((s) => s.id === "etkinlikBolum") || bolumler[0] || {}).id || "";
+  for (const s of bolumler) {
+    const b = el("button", { type: "button", metin: s.querySelector("h2").textContent, tik: () => { seciliSekme = s.id; try { sessionStorage.setItem("ysekme", s.id); } catch (e) {} sekmeleriKur(); } });
+    if (s.id === seciliSekme) b.setAttribute("aria-current", "true");
+    nav.append(b);
+    s.classList.toggle("sekmeDisi", s.id !== seciliSekme);
+  }
+  nav.hidden = bolumler.length === 0;
+}
+
+// ---- canlı etkinlikler
+let etkVeri = null;
+let saatFarki = 0; // sunucu saati - tarayıcı saati
+function sureYaz(ms) {
+  ms = Math.max(0, Math.floor(ms / 1000));
+  const g = Math.floor(ms / 86400), sa = Math.floor(ms % 86400 / 3600), dk = Math.floor(ms % 3600 / 60), sn = ms % 60;
+  return (g ? g + " gün " : "") + (g || sa ? sa + " sa " : "") + dk + " dk " + String(sn).padStart(2, "0") + " sn";
+}
+const KAPSAM_AD = { dunya: "Bütün dünya", beylik: "Bir beylik", tur: "Bir yerleşim türü", yerlesim: "Tek yerleşim (şehir, kasaba, köy)" };
+const TUR_AD = { sehir: "Bütün şehirler", kasaba: "Bütün kasabalar", koy: "Bütün köyler" };
+const TUR_TEK = { sehir: "şehir", kasaba: "kasaba", koy: "köy" };
+let nufus = null; // yerleşim → oyuncu sayısı (Oyuncu sayılarını getir)
+const sayiEki = (id) => nufus && nufus[id] !== undefined ? " · " + nufus[id] + " oyuncu" : "";
+const NAM_AD = { comertlik: "cömertlik", dindarlik: "dindarlık", mertlik: "mertlik", caliskanlik: "çalışkanlık" };
+const MESLEK_AD = { ciftci: "çiftçi", asci: "aşçı", hanci: "hancı", oduncu: "oduncu", marangoz: "marangoz", dokumaci: "dokumacı", demirci: "demirci", sifaci: "şifacı", asker: "asker", katip: "kâtip", divan: "divan", tuccar: "tüccar", ozan: "ozan", arabulucu: "arabulucu" };
+const MAL_AD = { bugday: "buğday", odun: "odun", kagit: "kâğıt", ekmek: "ekmek", bakir: "bakır" };
+const DERT_AD = { kitlik: "kıtlık", haydut: "haydut", salgin: "salgın", hasat: "hasat" };
+function yerAdi(e) {
+  if (e.kapsam === "dunya") return "Bütün dünya";
+  if (e.kapsam === "tur") return TUR_AD[e.hedef] || e.hedef;
+  for (const b of etkVeri.beylikler) {
+    if (e.kapsam === "beylik" && b.id === e.hedef) return b.ad;
+    for (const y of b.yerlesimler) if (e.kapsam === "yerlesim" && y.id === e.hedef) return y.ad + " (" + b.ad + ")";
+  }
+  return e.hedef || "";
+}
+function durumSatiri(e) {
+  const p = el("div", { class: "durumAcik", "data-bas": String(e.bas), "data-bit": e.bit === null ? "" : String(e.bit) });
+  p.textContent = "● Etkinlik başlatıldı · " + sureYaz(Date.now() + saatFarki - e.bas) + " süredir aktif";
+  return p;
+}
+function sayaclariTazele() {
+  const simdi = Date.now() + saatFarki;
+  let biten = false;
+  for (const d of document.querySelectorAll("[data-bas]")) {
+    d.textContent = "● Etkinlik başlatıldı · " + sureYaz(simdi - Number(d.dataset.bas)) + " süredir aktif";
+    if (d.dataset.bit && simdi >= Number(d.dataset.bit)) biten = true;
+  }
+  for (const d of document.querySelectorAll("[data-kalan]")) d.textContent = "Kendiliğinden bitmesine: " + sureYaz(Number(d.dataset.kalan) - simdi);
+  if (biten && !etkYukleniyor) etkinlikYukle().catch((e) => hataYaz("#etkHata", e));
+}
+let etkYukleniyor = false;
+async function etkinlikYukle() {
+  etkYukleniyor = true;
+  try {
+    etkVeri = await api("GET", "etkinlikler");
+    saatFarki = etkVeri.simdi - Date.now();
+    etkinlikCiz();
+  } finally { etkYukleniyor = false; }
+}
+async function nufusYukle() {
+  const v = await api("GET", "ekonomi");
+  nufus = {};
+  for (const y of v.yerlesimler) nufus[y.yerlesim] = y.oyuncuSayisi;
+  const satirlar = [...v.yerlesimler].sort((a, b) => b.oyuncuSayisi - a.oyuncuSayisi);
+  const k = $("#etkNufus"); k.textContent = "";
+  const tablo = el("table", {}, el("tr", {}, el("th", { metin: "Yerleşim" }), el("th", { metin: "Beylik" }), el("th", { metin: "Oyuncu" })));
+  for (const y of satirlar) tablo.append(el("tr", {}, el("td", { metin: y.ad }), el("td", { metin: y.beylik }), el("td", { metin: String(y.oyuncuSayisi) })));
+  k.closest("details").open = true;
+  k.append(el("p", { class: "kucuk", metin: "Toplam " + v.toplam.oyuncuSayisi + " oyuncu. Kalabalık yeri rahatlatmak için boş yerlere çekici bir etkinlik (Panayır, Kervan Mevsimi, Bereket, Göç Dalgası) aç; sakin yeri canlandırmak için de aynısı." }), tablo);
+  if (etkVeri) etkinlikCiz();
+}
+async function etkinlikDurdur(d, e) {
+  await dugme(d, "#etkHata", async () => {
+    await api("POST", "etkinlik-durdur", { id: e.id, istekNo: istekNo() });
+    $("#etkBilgi").textContent = e.ad + " durduruldu (" + sureYaz(Date.now() + saatFarki - e.bas) + " açık kaldı).";
+    await etkinlikYukle();
+  });
+}
+function etkinlikCiz() {
+  const v = etkVeri;
+  const yonetebilir = yetkiler.includes("etkinlikYonet");
+  // Şu an açık olanlar
+  const a = $("#etkAcik"); a.textContent = "";
+  if (!v.etkin.length) a.append(el("p", { class: "kucuk", metin: "Şu an açık etkinlik yok." }));
+  for (const e of v.etkin) {
+    const kart = el("div", { class: "kart" },
+      el("strong", { metin: e.ad }), " · ", el("span", { class: "kucuk", metin: yerAdi(e) + " (" + e.yerSayisi + " yer) · başlatan " + e.kim + " · " + zaman(e.bas) }),
+      durumSatiri(e),
+      e.bit === null ? el("div", { class: "kucuk", metin: "Süresiz: durdurulana kadar açık." }) : el("div", { class: "kucuk", "data-kalan": String(e.bit) }));
+    if (yonetebilir) kart.append(el("button", { type: "button", class: "durdur", metin: "Eventi durdur", tik: (ev) => etkinlikDurdur(ev.target, e) }));
+    a.append(kart);
+  }
+  // Katalog
+  const k = $("#etkKatalog"); k.textContent = "";
+  for (const t of v.katalog) {
+    const aciklar = v.etkin.filter((e) => e.tur === t.tur);
+    const kart = el("div", { class: "etkKart" + (aciklar.length ? " acik" : "") }, el("h3", { metin: t.ad }), el("div", { class: "kucuk", metin: t.ozet }));
+    const odul = "Katılım (1 takat, bir kez): +" + t.katilim.namN + " " + (NAM_AD[t.katilim.nam] || t.katilim.nam) + ", +" + t.katilim.gonul + " gönül"
+      + (t.katilim.mal ? ", " + t.katilim.mal[1] + " " + (MAL_AD[t.katilim.mal[0]] || t.katilim.mal[0]) : "")
+      + (t.katilim.meslek.length ? " · iki kat: " + t.katilim.meslek.map((m) => MESLEK_AD[m] || m).join(", ") : "")
+      + (t.dert ? " · ortak dert açar: " + (DERT_AD[t.dert] || t.dert) : "");
+    kart.append(el("div", { class: "kucuk", metin: odul }));
+    if (aciklar.length) for (const e of aciklar) {
+      kart.append(durumSatiri(e), el("div", { class: "kucuk", metin: yerAdi(e) }));
+      if (yonetebilir) kart.append(el("button", { type: "button", class: "durdur", metin: "Eventi durdur", tik: (ev) => etkinlikDurdur(ev.target, e) }));
+    } else kart.append(el("div", { class: "durumKapali", metin: "○ Kapalı" }));
+    if (yonetebilir) {
+      const kapsam = el("select", { "aria-label": "Kapsam" }, ...v.kapsamlar.map((x) => el("option", { value: x, metin: KAPSAM_AD[x] || x })));
+      const hedef = el("select", { "aria-label": "Hedef", hidden: "" });
+      const hedefDoldur = () => {
+        hedef.textContent = "";
+        hedef.hidden = kapsam.value === "dunya";
+        for (const b of v.beylikler) {
+          if (kapsam.value === "beylik") {
+            const top = nufus ? b.yerlesimler.reduce((s, y) => s + (nufus[y.id] || 0), 0) : null;
+            hedef.append(el("option", { value: b.id, metin: b.ad + (top === null ? "" : " · " + top + " oyuncu") }));
+          } else if (kapsam.value === "yerlesim") for (const y of b.yerlesimler) hedef.append(el("option", { value: y.id, metin: y.ad + " (" + (TUR_TEK[y.tur] || y.tur) + ") · " + b.ad + sayiEki(y.id) }));
+        }
+        if (kapsam.value === "tur") for (const [id, ad] of Object.entries(TUR_AD)) hedef.append(el("option", { value: id, metin: ad }));
+      };
+      kapsam.addEventListener("change", hedefDoldur);
+      const saatler = [1, 3, 6, 12, 24, 48, 72, 168, 0];
+      if (!saatler.includes(t.saat)) saatler.unshift(t.saat);
+      const sure = el("select", { "aria-label": "Süre" }, ...saatler.map((s) => el("option", { value: String(s), metin: s === 0 ? "Durdurana kadar" : s >= 24 && s % 24 === 0 ? (s / 24) + " gün" : s + " saat" })));
+      sure.value = String(t.saat);
+      const baslat = el("button", { type: "button", metin: "Eventi başlat", tik: (ev) => dugme(ev.target, "#etkHata", async () => {
+        const govde = { tur: t.tur, kapsam: kapsam.value, saat: Number(sure.value), istekNo: istekNo() };
+        if (kapsam.value !== "dunya") govde.hedef = hedef.value;
+        await api("POST", "etkinlik-baslat", govde);
+        $("#etkBilgi").textContent = t.ad + " başlatıldı. Oyunda hemen etkin.";
+        await etkinlikYukle();
+      }) });
+      kart.append(el("div", { class: "satir" }, kapsam, hedef, sure), baslat);
+    }
+    k.append(kart);
+  }
+  // Geçmiş
+  const g = $("#etkGecmis"); g.textContent = "";
+  if (!v.gecmis.length) g.append(el("p", { class: "kucuk", metin: "Henüz biten etkinlik yok." }));
+  for (const e of v.gecmis) g.append(el("div", { class: "kart kucuk", metin: e.ad + " · " + yerAdi(e) + " · " + zaman(e.bas) + " → " + zaman(e.dur || e.bit)
+    + " · " + sureYaz(e.sure) + " açık kaldı · " + (e.dur ? "durduran " + e.durKim : "süresi doldu") }));
+}
+setInterval(() => { if (etkVeri) sayaclariTazele(); }, 1000);
 
 async function yukle() {
   const ben = await api("GET", "ben");
@@ -87,11 +252,14 @@ async function yukle() {
   $("#benBilgi").textContent = ben.eposta + " · " + ben.rol + (ben.ortamKurucusu ? " (ortam)" : "");
   $("#benYetki").textContent = "Yetkiler: " + ben.yetkiler.join(", ");
   for (const s of document.querySelectorAll("section[data-yetki]")) s.hidden = !yetkiler.includes(s.dataset.yetki);
+  for (const d of document.querySelectorAll("[data-gerek]")) d.hidden = !yetkiler.includes(d.dataset.gerek);
   if (yetkiler.includes("sikayetGor")) await sikayetYukle();
   if (yetkiler.includes("parametreGor")) await parametreYukle();
   if (yetkiler.includes("ekonomi")) await ekonomiYukle();
   if (yetkiler.includes("telafiler")) await telafiYukle();
   if (yetkiler.includes("kayitGor")) { kayitImleci = ""; $("#kayitListe").textContent = ""; await kayitYukle(); }
+  if (yetkiler.includes("etkinlikGor")) await etkinlikYukle().catch((e) => hataYaz("#etkHata", e));
+  sekmeleriKur();
 }
 
 let seciliHesap = "";
@@ -253,17 +421,28 @@ $("#rKaydet").addEventListener("click", (e) => dugme(e.target, "#rolHata", async
   const v = await api("POST", "rol", { eposta: $("#rEposta").value, rol, gerekce: $("#rGerekce").value, istekNo: istekNo() });
   $("#rolHata").textContent = "Roller: " + JSON.stringify(v.roller);
 }));
+$("#etkYenile").addEventListener("click", (e) => dugme(e.target, "#etkHata", etkinlikYukle));
+$("#etkNufusDugme").addEventListener("click", (e) => dugme(e.target, "#etkHata", nufusYukle));
 $("#kayitDaha").addEventListener("click", (e) => dugme(e.target, "#kayitHata", kayitYukle));
 if (belirtec) yukle().catch((e) => { cikis(); hataYaz("#girisHata", e); });
 `;
 
 const GOVDE = `<header><h1>Kronikler Online · Yönetim</h1><div><span id="benBilgi"></span>
 <button class="ikincil" id="cikisDugme">Çıkış</button></div></header>
+<nav id="sekmeler" hidden aria-label="Bölümler"></nav>
 <main>
 <section id="girisBolum"><h2>Giriş</h2>
 <p class="kucuk">Google kimlik belirtecini (ID token) yapıştırın. Yalnız kayıtlı yönetici e-postaları girebilir; her deneme kayda geçer.</p>
 <label for="token">Google ID token</label><textarea id="token" autocomplete="off" spellcheck="false"></textarea>
 <button id="girisDugme">Giriş</button><div class="hata" id="girisHata"></div></section>
+
+<section data-yetki="etkinlikGor" id="etkinlikBolum" hidden><h2>Etkinlikler</h2>
+<p class="kucuk">Her kartta kapsamı seç: bütün dünya, bir beylik, bütün şehirler/kasabalar/köyler ya da tek bir şehir, kasaba veya köy. Bir etkinliği seçip <b>Eventi başlat</b>'a bastığın an oyunda açılır; <b>Eventi durdur</b> anında kapatır (oyuncunun bir sonraki dokunuşunda söner). Hepsi ücretsiz, herkese eşit; kaçıran bir şey kaybetmez. Başlatma ve durdurma yalnız Kurucu; her işlem kayda geçer.</p>
+<button class="ikincil" id="etkYenile">Yenile</button><button class="ikincil" id="etkNufusDugme" data-gerek="ekonomi">Oyuncu sayılarını getir</button><div class="hata" id="etkHata"></div><div class="kucuk" id="etkBilgi" role="status"></div>
+<h3>Şu an açık</h3><div id="etkAcik"></div>
+<details><summary>Bölgelere göre oyuncu sayısı</summary><div id="etkNufus" class="tablo"><p class="kucuk">"Oyuncu sayılarını getir"e bas: her yerleşimin oyuncu sayısı burada ve seçim listelerinde görünür.</p></div></details>
+<h3>Etkinlik listesi</h3><div id="etkKatalog" class="etkIzgara"></div>
+<h3>Geçmiş</h3><div id="etkGecmis"></div></section>
 
 <section data-yetki="ben" hidden><h2>Ben</h2><div id="benYetki" class="kucuk"></div></section>
 

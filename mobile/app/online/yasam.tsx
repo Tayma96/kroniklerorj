@@ -26,6 +26,7 @@ import { EylemSonucu } from "../../lib/online/eylem-ui";
 import { SimdiRehberi } from "../../lib/online/simdi-rehber";
 import { isReduceMotion } from "../../lib/perf";
 import { BarinmaKarti } from "../../lib/online/barinma-ui";
+import { EtkinlikBandi } from "../../lib/online/etkinlik-ui";
 import { NabizKarti } from "../../lib/online/ekonomi-ui";
 import { SISTEM_IKON, isaretli, olayIkonu, ozetYaz, ruhAnahtari } from "../../lib/online/metin";
 import { hataAnahtari, istekTekrarMi } from "../../lib/online/hata";
@@ -180,6 +181,9 @@ function YasamEkran() {
         </Text>
       </View>
     </Animated.View>
+
+    {/* Canlı etkinlikler: yönetici başlatınca belirir, durdurunca kaybolur */}
+    <EtkinlikBandi />
 
     {/* Şimdi: en çok üç öneri, her biri tek düğme */}
     <SimdiRehberi onBarinma={() => kaydir.current?.scrollTo({ y: Math.max(0, barinmaY.current - 12), animated: !isReduceMotion() })} />

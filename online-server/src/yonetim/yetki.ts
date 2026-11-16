@@ -40,6 +40,9 @@ export const YETKI = {
   /** Y3: Debdebe satın alma defteri ve iadesi (§7.1: yalnız Kurucu). */
   debdebeGor: KURUCU,
   debdebeIade: KURUCU,
+  /** Canlı etkinlikler: liste herkes; başlatma/durdurma yalnız Kurucu. */
+  etkinlikGor: HEPSI,
+  etkinlikYonet: KURUCU,
 } as const satisfies Record<string, readonly Rol[]>;
 export type YonetimIslemi = keyof typeof YETKI;
 

@@ -72,6 +72,7 @@ import {
   type YaptirimTuru,
 } from "./yaptirim.ts";
 import { debdebeIade, debdebeKayit, debdebeListesi } from "./y3.ts";
+import { etkinlikBaslat, etkinlikDurdur, etkinlikListesi } from "../etkinlik/yonetim.ts";
 import { telafiListesi, telafiUygula } from "./y2.ts";
 import { epostaDuzenle, rolCoz, verilebilirRolMu, yetkiler, yetkiVar, type Rol, type YonetimIslemi } from "./yetki.ts";
 
@@ -741,6 +742,12 @@ async function yonet(
       return debdebeListesi(o, sorgu);
     case "debdebe-iade":
       return debdebeIade(o, govde);
+    case "etkinlikler":
+      return etkinlikListesi(o);
+    case "etkinlik-baslat":
+      return etkinlikBaslat(o, govde);
+    case "etkinlik-durdur":
+      return etkinlikDurdur(o, govde);
     default:
       return reddet(o, o.uc, "bulunamadi");
   }

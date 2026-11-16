@@ -116,6 +116,8 @@ export interface OrtakDert {
   d: "acik" | "basardi" | "basarisiz";
   ka?: number;
   k: DertKatkisi[];
+  /** Canlı etkinliğin açtığı dert: etkinlik kimliği (başarısızlıkta gösterge düşmez; etkinlik bitince kapanır). */
+  e?: string;
 }
 
 const derttenTetik = (t: DertTuru): KasabaTetigi | undefined => (t === "kitlik" || t === "haydut" ? t : undefined);
@@ -140,7 +142,8 @@ function kapat(k: Kasaba, tl: ToplulukKaydi, d: OrtakDert, ay: number, basardi: 
   d.d = basardi ? "basardi" : "basarisiz";
   d.ka = ay;
   const g = DERT_GOSTERGE[d.t];
-  const fark = gostergeDegistir(tl, g, basardi ? DERT_BASARI_ARTIS : -DERT_BASARISIZ_DUSUS);
+  // Etkinlik derdi kayıp cezası taşımaz: başarısız ya da erken biterse gösterge düşmez.
+  const fark = basardi ? gostergeDegistir(tl, g, DERT_BASARI_ARTIS) : d.e ? 0 : gostergeDegistir(tl, g, -DERT_BASARISIZ_DUSUS);
   const tetik = derttenTetik(d.t);
   if (basardi && tetik) {
     const ap = arkaPlanAl(k);
@@ -155,6 +158,34 @@ function kapat(k: Kasaba, tl: ToplulukKaydi, d: OrtakDert, ay: number, basardi: 
     k: basardi ? "olay.ortakDert.basardi" : "olay.ortakDert.basarisiz",
     p: { dert: d.t, puan: d.pu, esik: d.es, katilan: d.k.length, gosterge: g, fark },
   };
+}
+
+/** [PARAMETRE] Topluluk kaydında tutulan, derdi açılmış etkinlik kimliği sayısı (aynı etkinlik iki kez dert açmaz). */
+export const ETKINLIK_DERT_IZ = 20;
+
+/**
+ * Canlı etkinlik dertleri (src/etkinlik/): etkin etkinliğin derdi bir kez açılır (aynı türde açık dert varsa ona
+ * katılır, ikincisi açılmaz); etkinliği biten ya da durdurulan açık dert hemen kapanır (eşik tuttuysa başarı, tutmadıysa
+ * gösterge düşmeden). `sureAy` etkinliğin kalan süresidir (oyun ayı); pencere en az ORTAK_DERT_PENCERE_EN_AZ.
+ */
+export function etkinlikDertleri(k: Kasaba, ay: number, etkin: readonly { id: string; dert: DertTuru; sureAy: number }[]): OlayTaslagi[] {
+  const olaylar: OlayTaslagi[] = [];
+  if (!k.tl && etkin.length === 0) return olaylar;
+  const tl = toplulukAl(k);
+  const idler = new Set(etkin.map((e) => e.id));
+  for (const d of tl.od) {
+    if (d.d === "acik" && d.e && !idler.has(d.e)) olaylar.push(kapat(k, tl, d, ay, d.pu >= d.es));
+  }
+  const iz = (tl.ea ??= []);
+  for (const e of etkin) {
+    if (iz.includes(e.id)) continue;
+    iz.push(e.id);
+    if (tl.od.some((d) => d.d === "acik" && d.t === e.dert)) continue;
+    olaylar.push(dertAc(k, tl, e.dert, ay, e.sureAy));
+    tl.od.at(-1)!.e = e.id;
+  }
+  if (iz.length > ETKINLIK_DERT_IZ) tl.ea = iz.slice(-ETKINLIK_DERT_IZ);
+  return olaylar;
 }
 
 /** Ay dönümü: yeni dertler, NPC halkının katkısı, süresi dolanların kapanışı. */

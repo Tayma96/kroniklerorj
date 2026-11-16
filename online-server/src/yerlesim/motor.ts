@@ -11,7 +11,10 @@ import { yerlesimBul } from "../dunya-veri.ts";
 import type { Dil } from "../icerik/adlar.ts";
 import { HAYALLER, HUYLAR, TUHAFLIKLAR } from "../icerik/kisilik.ts";
 import { istekNoCoz } from "../mantik.ts";
-import { oyunAyi, sonrakiDonum, takvim } from "../saat.ts";
+import { AY_MS, oyunAyi, sonrakiDonum, takvim } from "../saat.ts";
+import { etkiBirlestir, ozetListesiCoz, parametreUygula } from "../etkinlik/katalog.ts";
+import { etkinlikGorunumu } from "../etkinlik/katilim.ts";
+import { etkinlikDertleri } from "./ortak-dert.ts";
 import { basarili, hata, type BarinmaIslem, type SakinKaydi, type Sonuc } from "../tipler.ts";
 import { harita, npcMekani } from "./cizelge.ts";
 import { arkaPlanGorunumu, type ArkaPlan } from "./arka-plan.ts";
@@ -276,7 +279,39 @@ export class YerlesimMotoru {
 
   /** Y2: yönetim panelinden gelen izinli parametreler yalnız bellek görünümüne yazılır, kasaba kaydına girmez. */
   parametreleriGuncelle(parametreler: CalismaParametreleri): void {
-    this.kasaba.pr = { ...parametreler };
+    // Canlı etkinlikler (src/etkinlik/): parametre değişimleri yönetici ayarının üstüne, sınırlar içinde uygulanır.
+    // ETKINLIKLER yoksa (YonetimDO yanıt vermedi) etkinlik durumu bilinmiyor sayılır; dertlere dokunulmaz.
+    const { ETKINLIKLER: ham, ETK: _etk, ...temel } = parametreler;
+    if (ham === undefined) {
+      this.kasaba.pr = { ...temel };
+      return;
+    }
+    const liste = ozetListesiCoz(ham);
+    this.kasaba.pr = { ...parametreUygula(temel, liste), ETKINLIKLER: liste, ETK: etkiBirlestir(liste) };
+  }
+
+  /**
+   * Canlı etkinlik dertlerini eşler: yeni etkinliğin derdini açar, biten/durdurulan etkinliğin derdini kapatır.
+   * Değişiklik yoksa yazmaz. Etkinlik durumu bilinmiyorsa (YonetimDO yanıtsız) hiçbir şey yapmaz.
+   */
+  async etkinlikSenkron(simdi: number): Promise<void> {
+    const k = this.kasaba;
+    const liste = k.pr?.ETKINLIKLER;
+    if (!liste) return;
+    const etkin = (k.pr?.ETK?.dertler ?? []).map((d) => {
+      const o = liste.find((x) => x.id === d.id);
+      const kalan = o?.bit == null ? 0 : o.bit - simdi;
+      return { ...d, sureAy: Math.max(1, Math.ceil(kalan / AY_MS)) };
+    });
+    const iz = k.tl?.ea ?? [];
+    const yeniVar = etkin.some((e) => !iz.includes(e.id));
+    const kapanacak = (k.tl?.od ?? []).some((d) => d.d === "acik" && d.e !== undefined && !etkin.some((e) => e.id === d.e));
+    if (!yeniVar && !kapanacak) return;
+    // Dert eşiği etkin oyuncu sayısından kurulur: açılacaksa bütün sakinler yüklenir.
+    if (yeniVar) await this.#yukle(k.sakin.map((s) => s.o));
+    for (const t of etkinlikDertleri(k, k.ay, etkin)) await this.#olayEkle(t, k.ay);
+    this.#kirli.add(TOPLULUK);
+    await this.kaydet();
   }
 
   /**
@@ -772,6 +807,7 @@ export class YerlesimMotoru {
       imlec: this.#meta.sq,
       barinma: donus.barinma,
       donusEkrani: donus.donusEkrani,
+      etkinlikler: etkinlikGorunumu(k, kar),
     });
   }
 

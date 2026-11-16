@@ -196,6 +196,9 @@ function aySayaci(d: KervanDefteri | undefined, o: string, ay: number): [number,
   return s && s[0] === ay ? s : [ay, 0, []];
 }
 
+/** Kervan Mevsimi etkinliği (src/etkinlik/) tüccar başına aylık tavanı artırır. */
+export const kervanAylikTavan = (k: Pick<Kasaba, "pr">): number => KERVAN_AYLIK + (k.pr?.ETK?.kervanEk ?? 0);
+
 /** Kapılar (yük yoksa yüke bağlı kapılar `null`). Takat tembel tazelenir (karakterin kendi kuralı). */
 export function kervanKapilari(
   d: KervanDefteri | undefined,
@@ -203,6 +206,7 @@ export function kervanKapilari(
   ay: number,
   hedef: string,
   yuk: Yuk | undefined,
+  aylikTavan = KERVAN_AYLIK,
 ): Record<KervanKapisi, boolean | null> {
   takatTazele(kar, ay);
   const ev = kar.ev ?? {};
@@ -215,7 +219,7 @@ export function kervanKapilari(
     mal: yuk ? (Object.entries(yuk) as [MalId, number][]).every(([m, n]) => (ev[m] ?? 0) >= n) : null,
     bedel: (ev.nal ?? 0) - (y.nal ?? 0) >= KERVAN_NAL && (ev.kosum ?? 0) - (y.kosum ?? 0) >= KERVAN_KOSUM,
     takat: kar.tk >= KERVAN_TAKAT,
-    aylik: sayi < KERVAN_AYLIK,
+    aylik: sayi < aylikTavan,
     malHedef: yuk ? Object.keys(yuk).every((m) => !mh.includes(`${m}:${hedef}`)) : null,
     kutu: (d?.c.k.length ?? 0) < 32,
   };
@@ -230,8 +234,8 @@ export function ilkKervanEngeli(k: Record<KervanKapisi, boolean | null>): HataKo
  * (1) Kalkış: kapılar tutmalı (çağıran denetler); mallar + bedel düşer, takat harcanır, sayaç artar, çıkış kaydı
  * açılır. Başarılıysa kayıt döner.
  */
-export function kervanCikar(d: KervanDefteri, kar: Karakter, hedef: string, yuk: Yuk, ay: number, islem: string, an: number): Sonuc<CikisKaydi> {
-  const engel = ilkKervanEngeli(kervanKapilari(d, kar, ay, hedef, yuk));
+export function kervanCikar(d: KervanDefteri, kar: Karakter, hedef: string, yuk: Yuk, ay: number, islem: string, an: number, aylikTavan = KERVAN_AYLIK): Sonuc<CikisKaydi> {
+  const engel = ilkKervanEngeli(kervanKapilari(d, kar, ay, hedef, yuk, aylikTavan));
   if (engel) return hata(engel);
   if (!takatHarca(kar, ay, KERVAN_TAKAT)) return hata("takat_yok");
   for (const [m, n] of Object.entries(yuk) as [MalId, number][]) envanterEkle(kar, m, -n);

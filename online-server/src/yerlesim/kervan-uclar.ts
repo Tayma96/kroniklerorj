@@ -43,6 +43,7 @@ import {
   yukSorguCoz,
   yukTavani,
   type Yuk,
+  kervanAylikTavan,
 } from "./kervan.ts";
 import type { Karakter, Kasaba, OlayTaslagi } from "./tipler.ts";
 
@@ -103,7 +104,7 @@ export async function kervanOnizle(motor: KervanMotoru, hesapId: string, hedefHa
   const yukS = yukSorguCoz(mallarHam);
   if (yukS && !yukS.ok) return yukS;
   const yuk = yukS?.deger;
-  const kapilar = kervanKapilari(d, kar, ay, h.deger, yuk);
+  const kapilar = kervanKapilari(d, kar, ay, h.deger, yuk, kervanAylikTavan(k));
   const engel = ilkKervanEngeli(kapilar);
   const s = d?.s[kar.o];
   const va = ay + KERVAN_YOL_AY;
@@ -119,7 +120,7 @@ export async function kervanOnizle(motor: KervanMotoru, hesapId: string, hedefHa
     uygun: engel === undefined && yuk !== undefined,
     bedel: { nal: KERVAN_NAL, kosum: KERVAN_KOSUM, takat: KERVAN_TAKAT },
     yuk: { ...yukTavani(kar, yuk), adet: yuk ? adet(yuk) : null },
-    aylik: { kullanilan: s && s[0] === ay ? s[1] : 0, tavan: KERVAN_AYLIK, malHedef: s && s[0] === ay ? s[2] : [] },
+    aylik: { kullanilan: s && s[0] === ay ? s[1] : 0, tavan: kervanAylikTavan(k), malHedef: s && s[0] === ay ? s[2] : [] },
     takat: kar.tk,
     // Tahmin: yük verildiyse o yük, verilmediyse envanterdeki satılabilir malların tamamı (birim fiyat + varış kotası).
     tahmin: uzak?.tahmin ?? null,
@@ -139,12 +140,12 @@ export function kervanGonder(motor: KervanMotoru, hesapId: string, govde: unknow
     const d = (k.kv ??= bosKervanDefteri());
     sayacBuda(d, ay);
     const islem = `kervan:${k.y}:${kar.o}:${String(govde.istekNo)}`;
-    const r = kervanCikar(d, kar, h.deger, yuk.deger, ay, islem, simdi);
+    const r = kervanCikar(d, kar, h.deger, yuk.deger, ay, islem, simdi, kervanAylikTavan(k));
     if (!r.ok) return r;
     return basarili({
       kervan: { id: islem, hedef: h.deger, hedefAd: yerlesimBul(h.deger)?.ad ?? h.deger, mallar: yuk.deger, kalkisAyi: ay, varisAyi: ay + KERVAN_YOL_AY },
       bedel: { nal: KERVAN_NAL, kosum: KERVAN_KOSUM, takat: KERVAN_TAKAT },
-      aylik: { kullanilan: d.s[kar.o]![1], tavan: KERVAN_AYLIK },
+      aylik: { kullanilan: d.s[kar.o]![1], tavan: kervanAylikTavan(k) },
     });
   });
 }

@@ -1,6 +1,7 @@
 // Yerleşim çekirdeğinin veri biçimleri. Depolanan kayıtlarda alan adları kısadır: kasaba başına yüzlerce
 // NPC her dönümde yazılır. Dışarıya giden biçimler (uç yanıtları) uzun ve okunur adlar taşır.
 
+import type { EtkinlikEtkisi, EtkinlikOzeti } from "../etkinlik/katalog.ts";
 import type { MulkDefteri } from "../mulk/tapu.ts";
 import type { YerlesimTuru } from "../dunya-veri.ts";
 import type { MeslekId } from "../icerik/meslekler.ts";
@@ -113,6 +114,8 @@ export interface Karakter {
   /** Takat ve en son işlendiği ay (tembel tazelenir). */
   tk: number;
   ta: number;
+  /** Katıldığı canlı etkinliklerin kimlikleri (tek sefer izi; src/etkinlik/katilim.ts; eski kayıtta yok). */
+  ek?: string[];
   /** Para (akçe). */
   pa: number;
   /** Usta NPC (çıraklık; yoksa 0). */
@@ -304,6 +307,9 @@ export interface CalismaParametreleri {
   SIPARIS_ODUL_CARPANI?: number;
   TEMEL_CIKTI?: number;
   AZALAN_PENCERE_IS?: number;
+  /** Bu yerleşimde etkin canlı etkinlikler (YonetimDO; src/etkinlik/katalog.ts) ve birleşik etkisi. */
+  ETKINLIKLER?: EtkinlikOzeti[];
+  ETK?: EtkinlikEtkisi;
 }
 
 export interface Kasaba {
