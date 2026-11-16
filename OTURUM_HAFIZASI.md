@@ -6,13 +6,13 @@
 - Berkay: "Talimat ve onay bekleme, en iyisi nasılsa yap." İstisna: üretim dağıtımı, silme, gerçek para.
 - **Token disiplini:** oturum uzayınca her mesaj limitin %30'unu yiyor → her büyük iş YENİ oturumda; aynı anda TEK Opus ajanı (+bir Sonnet); her ajana `model` açıkça yaz; düzeltmeyi dar kapsamlı yeni ajanla yap; ara durum mesajı yok.
 - **Kayıp önlemi:** konteyner yenilenince commit'siz iş siliniyor. Uzun işte ajan her adımda ara kaydı oturum dalına push eder; `apk`ye inceleme sonrası yönetici gönderir.
-- **Başka bir Claude oturumu** (Berkay'ın diğer hesabı) yönetici paneli ve etkinlikler üzerinde çalışıyor: her push'tan önce `git fetch origin apk`, onun commit'lerini koru, ezme. Etkinlik işini ikinci kez yapma.
+- **İki Claude hesabı sırayla** aynı işi sürdürür (biri limite girince öbürü): her push'tan önce `git fetch origin apk`, öbürünün commit'lerini koru. Etkinlik işi bitti (`docs/online/ETKINLIKLER.md`), ikinci kez yapma.
 - Kod Opus (`online-sunucu`, `online-istemci`), test ve **çeviri Sonnet** (`tester`; istemci ajanı metni yalnız Türkçe yazar). Ajanlara `git stash` yasak.
 - Çıta "AAA metin oyunu": hareket yalnız `lib/online/ui.tsx` `HAREKET`/`belir`/`giris`/`BASMA_OLCEK`; her arayüz işi `react-reviewer`, her ekonomi işi `denge-denetcisi` (model yaz). Hiçbir meslek/beceri kancası boşta kalmaz.
 
 ## Çevrimiçi durum (17 Kasım)
 - Belgeler: `docs/online/ONLINE_DURUM.md`; tasarım `docs/superpowers/specs/2026-11-16-tezgah-modeli-design.md`; **protokol ve ekran brief'i** `…-tezgah-istemci-brief.md` (Dilim 1 + Dilim 2 atölye).
-- Sunucu 668 test, hepsi geçiyor. Test Worker'ı `05d2e17`de (ses açık); sonrası dağıtılmadı. Dağıtım: GitHub `deploy-online-server.yml`, hedef `test`.
+- Sunucu 675 test, hepsi geçiyor. Test Worker'ı `377b8a3`te (etkinlikler dahil, ses açık). Dağıtım: GitHub `deploy-online-server.yml`, hedef `test`.
 - Bitti: sahne/atışma; han masası; çoklu han; 5 sekme + rehber; tezgâh Dilim 1 (sunucu, denge düzeltmeleri, dükkân ekranları + inceleme düzeltmeleri); **Dilim 2 atölye sunucusu** (zanaat, atölyede üretim, emek havuzu, üretim emri, toplu sipariş, genişletme).
 - Canlı etkinlikler (yönetici): 18 etkinlik, panel Etkinlikler sekmesi (başlat/durdur, süre sayacı, dünya/beylik/tür/tek yerleşim, oyuncu sayıları), Yaşam bandı; `docs/online/ETKINLIKLER.md`.
 - Ekranlar cihazda görülmedi.

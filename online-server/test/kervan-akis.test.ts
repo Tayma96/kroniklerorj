@@ -5,7 +5,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { YerlesimDO } from "../src/index.ts";
 import { yerlesimCagir } from "../src/ic.ts";
-import { AY_MS, oyunAyi } from "../src/saat.ts";
+import { AY_MS, DUNYA_BASLANGICI_MS, oyunAyi } from "../src/saat.ts";
 import type { Env } from "../src/tipler.ts";
 import { seviyeVer } from "../src/yerlesim/beceri.ts";
 import { HABER_TAKAT, KERVAN_KOSUM, KERVAN_NAL, KERVAN_TAKAT, type KervanDefteri } from "../src/yerlesim/kervan.ts";
@@ -15,7 +15,10 @@ import { sahteAdAlani } from "./yardimci.ts";
 type Nesne = Record<string, any>;
 
 async function dunya() {
-  const zaman = { saat: Date.now() };
+  // Duvar saatine bağlı olmasın: içinde bulunulan oyun ayının ortasına sabitlenir. Ayın son dakikasında başlayan
+  // koşuda yeniden deneme alarmları sonraki aya taşıyor ve "hasılat ay+1 defterinde" beklentisi boşa düşüyordu.
+  const gercek = Date.now();
+  const zaman = { saat: DUNYA_BASLANGICI_MS + oyunAyi(gercek) * AY_MS + AY_MS / 2 };
   const env = {} as Env;
   const yerlesimler = sahteAdAlani((ctx) => new YerlesimDO(ctx, env, () => zaman.saat));
   const kesinti = { dusur: 0, yanitYut: 0, red: 0, varis: 0 };
