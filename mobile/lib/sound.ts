@@ -44,8 +44,16 @@ export function subscribeAudioPreferences(fn: () => void): () => void { listener
 export function isSoundEnabled() { return prefs.effects; }
 export function isMusicEnabled() { return prefs.music; }
 export function isAmbianceEnabled() { return prefs.ambiance; }
+// Müzik açıkken öbür uygulamaların sesi kısılır (duckOthers); yalnız efekt/ortam varken eskisi gibi karışır.
+let modeMusic: boolean | null = null;
+function syncAudioMode(force = false): Promise<void> {
+  if (!force && (modeMusic === null || modeMusic === prefs.music)) return Promise.resolve();
+  modeMusic = prefs.music;
+  return setAudioModeAsync({ playsInSilentMode: false, allowsRecording: false, shouldPlayInBackground: false, interruptionMode: prefs.music ? 'duckOthers' : 'mixWithOthers' });
+}
 async function setPreference(name: keyof SesTercih, on: boolean) {
   revisions[name]++; prefs = { ...prefs, [name]: on }; notify();
+  if (name === 'music') void syncAudioMode().catch(() => {});
   const write = (writes[name] || Promise.resolve()).then(() => AsyncStorage.setItem(KEYS[name], on ? '1' : '0')).catch(() => {});
   writes[name] = write; await write;
 }
@@ -81,7 +89,8 @@ export function initializeAudio(): () => void {
   const stateChanged = () => { mixer.setActive(ready && AppState.currentState === 'active'); if (AppState.currentState !== 'active') clearEvent(); };
   const sub = AppState.addEventListener('change', stateChanged);
   applyPlan();
-  void Promise.allSettled([loadPreferences(run), Promise.resolve().then(() => setAudioModeAsync({ playsInSilentMode: false, allowsRecording: false, shouldPlayInBackground: false, interruptionMode: 'mixWithOthers' }))]).then(results => {
+  const loaded = loadPreferences(run);
+  void Promise.allSettled([loaded, loaded.catch(() => {}).then(() => syncAudioMode(true))]).then(results => {
     if (stopped || epoch !== run) return; ready = results[1].status === 'fulfilled'; stateChanged();
   });
   const stop = () => { if (stopped) return; stopped = true; sub.remove(); if (epoch !== run) return; ++epoch; clearEvent(); mixer.dispose(); cleanup = null; };

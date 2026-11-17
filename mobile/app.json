@@ -19,7 +19,7 @@
       },
       "predictiveBackGestureEnabled": false,
       "package": "com.kronikler.app",
-      "versionCode": 100,
+      "versionCode": 101,
       "blockedPermissions": [
         "android.permission.CAMERA"
       ]

@@ -6,7 +6,7 @@
 // küresel varken doğrudur; telefondaki uygulamada Platform.OS hiçbir zaman "web" olmadığından açılamaz.
 // Önizleme kapıyı açar ve sahte verili geliştirici oturumuyla başlar (lib/online/onizleme.ts).
 import { Platform } from "react-native";
-import { ONLINE_GELISTIRME } from "./ayar";
+import { ONLINE_GELISTIRME, ONLINE_SAHTE_OTURUM } from "./ayar";
 
 export function onizlemeMi(): boolean {
   if (Platform.OS !== "web") return false;
@@ -17,4 +17,10 @@ export function onizlemeMi(): boolean {
 /** /online ekranları açık mı (geliştirici bayrağı ya da tasarım önizlemesi). Çizim anında çağrılır. */
 export function onlineEkranAcik(): boolean {
   return ONLINE_GELISTIRME || onizlemeMi();
+}
+
+/** Sahte verili geliştirici oturumu sunulabilir mi: __DEV__, açık sahte oturum bayrağı ya da tasarım önizlemesi. */
+export function sahteOturumAcik(): boolean {
+  if (!onlineEkranAcik()) return false;
+  return (typeof __DEV__ !== "undefined" && __DEV__) || ONLINE_SAHTE_OTURUM || onizlemeMi();
 }

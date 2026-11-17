@@ -16,7 +16,7 @@ import { istekTekrarDinle, oturumDustuDinle } from "./oturum-olay";
 import { httpIstemci, type OnlineIstemci } from "./istemci";
 import type { BeceriIstemci } from "./beceri-agaci/beceri-veri";
 import type { ToplumIstemci } from "./toplum-istemci";
-import { onlineEkranAcik } from "./kapi";
+import { sahteOturumAcik } from "./kapi";
 import { onizlemeTohumu, type Tohum } from "./onizleme";
 import { sahteIstemci } from "./sahte";
 import {
@@ -58,7 +58,7 @@ export interface OnlineDurum {
   hazir: boolean;
   /** Sunucu adresi ayarlı mı (ONLINE_SUNUCU_URL). */
   sunucuVar: boolean;
-  /** Geliştirici oturumu sunulabilir mi (ONLINE_GELISTIRME ya da önizleme). */
+  /** Sahte verili geliştirici oturumu sunulabilir mi (__DEV__, ONLINE_SAHTE_OTURUM ya da önizleme). */
   gelistiriciAcik: boolean;
   oturum: OnlineOturum | null;
   profil: Profil | null;
@@ -444,7 +444,7 @@ export function OnlineDurumSaglayici({ children, tohum }: { children: ReactNode;
   const deger: OnlineDurum = {
     hazir,
     sunucuVar: !!sunucu,
-    gelistiriciAcik: onlineEkranAcik(),
+    gelistiriciAcik: sahteOturumAcik(),
     oturum,
     profil,
     dunya,
@@ -488,7 +488,7 @@ export function OnlineDurumSaglayici({ children, tohum }: { children: ReactNode;
         return g;
       }, true),
     gelistiriciGiris: () => {
-      if (!onlineEkranAcik()) return;
+      if (!sahteOturumAcik()) return;
       sahte.current = sahteIstemci();
       yerlesimiBirak();
       setProfil(null);

@@ -157,9 +157,29 @@ export const meslekYaz = (hesapId: string, m: unknown, k: unknown, e: unknown) =
 export async function testCihazKimligi(): Promise<string> {
   const onceki = await oku(TEST_CIHAZ);
   if (onceki && /^test-[A-Za-z0-9_-]{16,64}$/.test(onceki)) return onceki;
-  const yeni = "test-" + istekNoUret().replace(/[^A-Za-z0-9_-]/g, "");
+  // Eski kısa kimlik biçime uyuyorsa yukarıda aynen döner (hesap kaybolmaz); yenisi 24 rastgele bayt (192 bit).
+  const yeni = "test-" + rastgeleKimlik(24);
   await yaz(TEST_CIHAZ, yeni);
   return yeni;
+}
+
+/** n rastgele bayttan base64url (A-Za-z0-9_-) dizgi; varsa crypto.getRandomValues, yoksa Math.random karışımı. */
+function rastgeleKimlik(n: number): string {
+  const a = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+  const bayt = new Uint8Array(n);
+  const kripto = (globalThis as { crypto?: { getRandomValues?: (b: Uint8Array) => Uint8Array } }).crypto;
+  let doldu = false;
+  if (kripto?.getRandomValues) { try { kripto.getRandomValues(bayt); doldu = true; } catch { doldu = false; } }
+  if (!doldu) {
+    let t = Date.now() ^ Math.floor((globalThis as { performance?: { now(): number } }).performance?.now?.() ?? 0);
+    for (let i = 0; i < n; i++) { t = (Math.imul(t ^ (t >>> 15), 2246822507) + i) | 0; bayt[i] = (Math.floor(Math.random() * 256) ^ t) & 255; }
+  }
+  let s = "";
+  for (let i = 0; i < n; i += 3) {
+    const x = (bayt[i] << 16) | ((bayt[i + 1] ?? 0) << 8) | (bayt[i + 2] ?? 0);
+    s += a[(x >>> 18) & 63] + a[(x >>> 12) & 63] + a[(x >>> 6) & 63] + a[x & 63];
+  }
+  return s.slice(0, Math.ceil((n * 4) / 3));
 }
 
 /** Yeni bir istek numarası: zaman + 20 rastgele karakter (sunucu biçimi [A-Za-z0-9_-]{8,64}). */

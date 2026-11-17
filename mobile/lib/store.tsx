@@ -89,7 +89,16 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         // Açılış okuması sürerken sıfırlanan/yenilenen hayat geri getirilemez.
         if (!currentLoad()) return;
         if (obj) {
-          const s = migrate(obj as GameState); oyunKaydi.remember(s);
+          let s: GameState;
+          try { s = migrate(obj as GameState); }
+          catch (e) {
+            // Ana kayıt okunur ama göçte patlarsa bir önceki yazımın yedeği denenir; o da olmazsa kurtarma akışı.
+            const yedek = kayitGovdesi(await AsyncStorage.getItem(KEY + "_bak").catch(() => null));
+            if (!yedek || !currentLoad()) throw e;
+            s = migrate(yedek as GameState);
+          }
+          if (!currentLoad()) return;
+          oyunKaydi.remember(s);
           if (!changing.current) setState(s);
         }
       } catch { if (currentLoad()) oyunKaydi.reportFailure(); }

@@ -13140,7 +13140,7 @@ export function migrate(s: GameState): GameState {
     s.seeds = s.seeds.filter((t) => t && typeof t === "object" && typeof t.kaynak === "string" && Number.isFinite(t.ekim) && Number.isFinite(t.hmin) && Number.isFinite(t.hmax));
     for (const t of s.seeds) if (t.ip != null && !(typeof t.ip === "object" && typeof t.ip.ima === "string" && Array.isArray(t.ip.vade) && t.ip.vade.length === 2 && t.ip.vade.every((v) => Number.isFinite(v)))) delete t.ip;
   }
-  s.monthScene = repairMonthScene(s.monthScene, s);
+  { const ms = repairMonthScene(s.monthScene, s); if (ms) s.monthScene = ms; else delete s.monthScene; }
   if (s.sahne_izi != null && !(Array.isArray(s.sahne_izi) && s.sahne_izi.every((x) => typeof x === "string"))) s.sahne_izi = undefined;
   if (s.hafiza != null) { // Yankı hafızası: bozuk kayıt ayıklanır, eğilim bilinmeyense iz düşer
     s.hafiza = Array.isArray(s.hafiza) ? s.hafiza.filter((x) => x && typeof x === "object" && Number.isFinite(x.n) && typeof x.k === "string" && Number.isFinite(x.t) && IZ_ETLERI.includes(x.et)).map((x) => ({ ...x, ref: Number.isFinite(x.ref) ? x.ref : undefined, ata: typeof x.ata === "string" ? x.ata : undefined, kisi: typeof x.kisi === "string" ? x.kisi : undefined, kisiId: typeof x.kisiId === "string" ? x.kisiId : undefined })).slice(-HAFIZA_EN_COK) : undefined;

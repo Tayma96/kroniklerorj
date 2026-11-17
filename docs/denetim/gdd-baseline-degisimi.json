@@ -1,0 +1,82 @@
+{
+  "kind": "sentetik-davranis-tabaninin-gerekceli-degisimi",
+  "date": "2026-11-17",
+  "previousEngineSha256": "053468a1ae1f744a3d21aaf078cf620087f37d39c767af8d04dfb85c1d0fd57b",
+  "previousEngineCommit": "3c83986",
+  "newEngineSha256": "7c6404d38d855ad3516fe9ec23a5816a63d6e42488218c6e56e94c0ef303cf93",
+  "changedFlows": [
+    "yeni",
+    "ay",
+    "yemek",
+    "is",
+    "ticaret",
+    "sohbet",
+    "ders",
+    "suc",
+    "yol",
+    "varis"
+  ],
+  "changedSyntheticAges": [
+    "7",
+    "30",
+    "60"
+  ],
+  "reason": "Taban 17 Ekim (3c83986) motorunda kaydedilmişti; sonra motor/dünya/olay/nüfus dosyalarında 47 bilinçli oynanış commitinde (savaş ve diyar ekonomisi, doğulan ocak seçimi, hissiyat 1-5, şeref kademesi, hayatın derdi kaldırıldı, Aşama 1 ün kazancı, Aşama 3 kader kırılması) davranış değişti. Ayrıca göçte boş monthScene artık undefined anahtar bırakmaz (idempotency düzeltmesi, hash etkisi yok).",
+  "hashes": {
+    "yeni": {
+      "before": "812d7a96f192971c030041adb380d97935a38c6f38dbf5b4e63fc7028c867441",
+      "after": "04448f57e2a1a713c7ed9198f5f9f1119b2bffd5faa71891582c2afb0838faac"
+    },
+    "ay": {
+      "before": "f835380135d312b7e54014b4f4e01bd703749a0d7c7bc4ad82bdc993cce7b675",
+      "after": "acd1e39647eb71fdc155c2254d1e59111b348306adfde11ea2bab785967f92c5"
+    },
+    "yemek": {
+      "before": "73058c61f406cd808a69be75aa02e4a6ecd4b98c4f9cc917dae500d8ab77518c",
+      "after": "9a9f1d9d49e462e8b4e97ca50bd704490d182dce2ba74a9602108065d0f0e6c7"
+    },
+    "is": {
+      "before": "d45c5f21e121440c0d5bbb08a1bb66a1eca9ba36aaf3a3a263d38ec610adfdb1",
+      "after": "b929c1288bbf4603e95261f694894a07075b1c9eb257c2be77d6735a6f426976"
+    },
+    "ticaret": {
+      "before": "7ee6afd9939d8bbfe0881a45a4b9f29e6ec73f57202a1817cf326caecbbf176f",
+      "after": "a7c7235310fda6cfb1d585eeca91cbfafa25cc78eb73a47e385b8821c20c3f15"
+    },
+    "sohbet": {
+      "before": "b018908d6e8b24a00221ad0d0321f5c81b338b5129f3b89a2ba32077bc55c75d",
+      "after": "adcf52f3436253cb3afc9454352db4a5a640b621d653e8a8c39be3f995bfc3fe"
+    },
+    "ders": {
+      "before": "d35bace7d7fe2e3fd17c9f1fde0ae254fb62b671fc2595a6d13e39c6ba28c52d",
+      "after": "1cfbf9d8e821b823c8a9ff52e7ff6d34f8f322b67fbae0f81e43066f7c1e69a2"
+    },
+    "suc": {
+      "before": "33d59c5ea2592945164fce75bdb64449295a61a574108d285cccc2ad07ba0552",
+      "after": "0be0a440db31f171f1f4446cee6258bfa7cbb496223e63bdb3f2f9f870cbf791"
+    },
+    "yol": {
+      "before": "d3ab498a4bd71a770ebb75746429fb0ee98d654593349583708f0c61aa9e8302",
+      "after": "921a43c03c0d103ff102036ff74c739e54b1f50e250ac7c3fcd2481d883fdc1a"
+    },
+    "varis": {
+      "before": "a7f2a00f49b9169e25ff1ca21558e72037001df2ee6e7cac166eace3a6dcc1d3",
+      "after": "94e4237fa74e7468854151c6063fa4ee049660b79b5ba596d647fcfd49cf6ebf"
+    }
+  },
+  "simulations": {
+    "7": {
+      "before": "a766a20a317804466d3eec79bb45a90022d4bf997f246223b0728fe4be0cf4b6",
+      "after": "354589d5072aae8070c4dc41e8ab212eb6c2de03e91d6d55fe829aba56c203fb"
+    },
+    "30": {
+      "before": "82ccbbea2c6c4fa20cd524490bc07ccb9ab3d7aeaaeb9c71a4702986ed4b4dda",
+      "after": "d05a113eedde826ec263f8957b3f432635bbddbbb4f54268a0891be1d8a7d8c0"
+    },
+    "60": {
+      "before": "5fbb6011e1cedbf0a82b1bfa220b09fa0a7f941ffedb48a6bf1c1675846d6132",
+      "after": "2abce620192420f1d8c468c66af4388346df38fa19910a419418a1741ddfb908"
+    }
+  },
+  "realUserGoldenSaves": false
+}

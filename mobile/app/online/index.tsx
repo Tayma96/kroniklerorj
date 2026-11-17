@@ -13,7 +13,7 @@ import { hap } from "../../lib/haptics";
 import { OnlineYakinda } from "../../lib/online-yakinda";
 import { OnlineKapisi, useOnline } from "../../lib/online/durum";
 import { onlineEkranAcik } from "../../lib/online/kapi";
-import { ONLINE_TEST_GIRIS } from "../../lib/online/ayar";
+import { ONLINE_TEST_GIRIS, TEST_KOD_EN_AZ } from "../../lib/online/ayar";
 import { genelHataMi, hataAnahtari } from "../../lib/online/hata";
 import { AltinDugme, Bant, Cerceve, CizgiDugme, GeriDugme, giris, geriGit, Madalyon, Ornament, ONL, Sahne, hiza, yon } from "../../lib/online/ui";
 
@@ -33,12 +33,16 @@ function GirisEkran() {
   const [testKod, setTestKod] = useState("");
   const [testHata, setTestHata] = useState<string | null>(null);
   const [testBekliyor, setTestBekliyor] = useState(false);
+  const [testGoster, setTestGoster] = useState(false);
   const dar = W < 360;
   const testGiris = async () => {
     setTestBekliyor(true); setTestHata(null);
-    const r = await o.testGiris(testKod);
-    setTestBekliyor(false);
-    if (!r.ok) { setTestHata(t(hataAnahtari(r.hata))); return; }
+    let r: Awaited<ReturnType<typeof o.testGiris>>;
+    try { r = await o.testGiris(testKod); }
+    catch { setTestHata(t("onl.h.ag")); return; }
+    finally { setTestBekliyor(false); }
+    // Sunucu yanlış kodu "gecersiz_istek" ile döndürür; oyuncuya kuru hata yerine sıcak bir not gösterilir.
+    if (!r.ok) { setTestHata(t(r.hata === "gecersiz_istek" ? "onl.g.testKodYanlis" : hataAnahtari(r.hata))); return; }
     hap("success"); router.replace(r.deger.profilVar ? "/online/varis" : "/online/profil");
   };
   const devam = () => router.push(o.profil ? "/online/varis" : "/online/profil");
@@ -113,11 +117,17 @@ function GirisEkran() {
         {ONLINE_TEST_GIRIS && !o.oturum ? <View style={{ marginTop: 8, borderRadius: 10, borderWidth: 1, borderStyle: "dashed", borderColor: "rgba(201,162,78,0.5)", backgroundColor: "rgba(14,10,6,0.78)", padding: 13, gap: 9 }}>
           <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: rtl ? 0 : 1, color: C.goldBright, textAlign: hiza(rtl) }}>{t("onl.g.testGiris")}</Text>
           <Text style={{ fontFamily: F.serif, fontSize: 13.5, lineHeight: 18, color: C.parchmentDim, textAlign: hiza(rtl) }}>{t("onl.g.testNot")}</Text>
-          <TextInput value={testKod} onChangeText={setTestKod} autoCapitalize="characters" autoCorrect={false} secureTextEntry maxLength={128}
-            placeholder={t("onl.g.testKod")} placeholderTextColor={C.parchmentMuted}
-            style={{ minHeight: 48, borderWidth: 1, borderColor: "rgba(201,162,78,0.45)", borderRadius: 8, paddingHorizontal: 12, color: C.parchment, fontFamily: F.display, textAlign: hiza(rtl) }} />
+          <View style={{ flexDirection: yon(rtl), alignItems: "center", gap: 8 }}>
+            <TextInput value={testKod} onChangeText={setTestKod} autoCapitalize="none" autoCorrect={false} secureTextEntry={!testGoster} maxLength={128}
+              placeholder={t("onl.g.testKod")} placeholderTextColor={C.parchmentMuted} accessibilityLabel={t("onl.g.testKod")}
+              style={{ flex: 1, minWidth: 0, minHeight: 48, borderWidth: 1, borderColor: "rgba(201,162,78,0.45)", borderRadius: 8, paddingHorizontal: 12, color: C.parchment, fontFamily: F.display, textAlign: hiza(rtl) }} />
+            <Pressable accessibilityRole="button" accessibilityLabel={t(testGoster ? "onl.g.testKodGizle" : "onl.g.testKodGoster")} onPress={() => { hap("tap"); setTestGoster((g) => !g); }}
+              style={({ pressed }) => ({ width: 48, height: 48, borderRadius: 8, borderWidth: 1, borderColor: "rgba(201,162,78,0.45)", backgroundColor: pressed ? "rgba(201,162,78,0.22)" : "rgba(201,162,78,0.1)", alignItems: "center", justifyContent: "center" })}>
+              <GameIcon name={testGoster ? "hood" : "sun"} size={20} color={C.goldBright} />
+            </Pressable>
+          </View>
           {testHata ? <Bant metin={testHata} rtl={rtl} /> : null}
-          <AltinDugme etiket={t("onl.g.testGiris")} icon="key-round" rtl={rtl} bekliyor={testBekliyor} kapali={testBekliyor || testKod.trim().length < 24} onPress={() => void testGiris()} />
+          <AltinDugme etiket={t("onl.g.testGiris")} icon="key-round" rtl={rtl} bekliyor={testBekliyor} kapali={testBekliyor || testKod.trim().length < TEST_KOD_EN_AZ} onPress={() => void testGiris()} />
         </View> : null}
         {genelHataMi(o.hata) ? <Bant metin={t(hataAnahtari(o.hata))} rtl={rtl} eylem={t("onl.yenidenDene")} onEylem={() => { void o.geriYukle(); }} /> : null}
       </Animated.View>

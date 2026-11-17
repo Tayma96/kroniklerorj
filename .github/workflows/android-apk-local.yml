@@ -18,7 +18,7 @@ on:
         options: [latest, test]
         default: latest
       online_gelistirme:
-        description: "Yalnız test APK'sında /online ekranlarını aç"
+        description: "Yalnız test APK'sında /online ekranlarını ve sahte veriyle geliştirici oturumunu aç"
         type: boolean
         default: false
       online_test_giris:
@@ -99,6 +99,7 @@ jobs:
     env:
       GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.daemon=false"
       EXPO_PUBLIC_ONLINE_GELISTIRME: ${{ inputs.kanal == 'test' && (inputs.online_gelistirme || inputs.online_test_giris) && '1' || '0' }}
+      EXPO_PUBLIC_ONLINE_SAHTE_OTURUM: ${{ inputs.kanal == 'test' && inputs.online_gelistirme && '1' || '0' }}
       EXPO_PUBLIC_ONLINE_TEST_GIRIS: ${{ inputs.kanal == 'test' && inputs.online_test_giris && '1' || '0' }}
       EXPO_PUBLIC_ONLINE_SUNUCU_URL: ${{ inputs.kanal == 'test' && inputs.online_sunucu_url || '' }}
     steps:
