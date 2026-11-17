@@ -61,6 +61,9 @@ export interface Player {
   faction: string | null; faction_standing: Record<string, number>;
   skills: Skills; skill_xp: Skills; perks: string[];
   stat_xp?: Stats; // özellik tecrübesi (kullanımla birikir; stat_points'e EK — Vercel add_stat_xp)
+  stat_kullanim?: Partial<Record<keyof Stats, number[]>>; // K2: son 12 ayda bu statın kullanıldığı zarların tur numaraları
+  niyet?: NiyetId; niyet_yil?: number; niyet_degisti?: boolean; // K2 yıllık odak: seçilen niyet, seçildiği oyun yılı (turn/12), yıl içinde değişti mi (akış ×0.5)
+  karizma_xp?: { t: number; n: number }; // K2: sohbet/hediye/kur/pazarlık karizma XP'si — ayda en çok 3 kez
   injuries: Injury[]; career_xp: number;
   nam: Nam; child_invests: Record<string, string[]>;
   child_edu?: Record<string, { track: string; weeks: number }>; // süregelen evlat eğitimi (haftalık biriken)
@@ -267,8 +270,13 @@ export function effStat(p: Player, key: keyof Stats): number {
   const pen = (p.injuries || []).filter((i) => i.stat === key).reduce((a, i) => a + i.delta, 0);
   let base = p.stats[key];
   if (key === "charisma" && p.equipped) base += attireScore(p).charisma; // kuşanılmış her karizmalı eşya (kıyafet, takı) katkı verir
+  else if (p.equipped) for (const sl of EQUIP_SLOTS) { const id = p.equipped[sl]; const b = id ? ITEMS[id]?.[key as "strength" | "stamina" | "intelligence"] : 0; if (b) base += b; } // K2: ağır silah güç, zırh/kalkan dayanıklılık verir
   return Math.max(0, Math.min(statCapOf(p) + 3, base - pen)); // eşya katkısıyla bile tavanın en çok 3 üstü
 }
+// K2: tavan 20'ye çıktı; para/güç/olasılık formüllerinde 10 üstü katkı yarı hızla işler (azalan getiri).
+// Böylece 20'lik güç ücreti ve savaş gücünü ikiye katlamaz. zar() bu yardımcıyı kullanmaz (oran zaten 0.95'te kıskaçlı).
+export function statEtki(v: number): number { return v <= 10 ? v : 10 + (v - 10) * 0.5; }
+export function effEtki(p: Player, key: keyof Stats): number { return statEtki(effStat(p, key)); }
 // ── Tek zar (K1): etkinGüç = effStat + beceri seviyesi/2 + ek kalemler; oran = clamp(0.6 + 0.08×(güç − zorluk), 0.08, 0.95).
 // zarOrani saf önizlemedir (RNG tüketmez); zar aynı oranla tohumlu gameRandom(s) atar — ekranda gösterilenle birebir.
 export interface ZarGirdi { stat?: keyof Stats; beceri?: keyof Skills; ekKalemler?: ZarKalemi[]; zorluk: number }
@@ -284,6 +292,7 @@ export function zarOrani(s: GameState, g: ZarGirdi): ZarOnizleme {
 }
 export function zar(s: GameState, g: ZarGirdi): ZarOnizleme & { basari: boolean } {
   const o = zarOrani(s, g);
+  if (g.stat) statKullanimIsle(s.player, g.stat, s.turn); // "son 12 ayda N kararda" sayacı
   return { ...o, basari: gameRandom(s) < o.oran };
 }
 // Mülk: konuma bağlı (loc) + kondisyon (cond 0..100) + kademe (level 1..3). Gelir refah×kondisyon×kademe.
@@ -1934,7 +1943,7 @@ export function yetenekAdaylari(s: GameState): string[] {
   for (const y of SOY_YETENEKLERI) {
     let n = 0;
     for (const k of Object.keys(y.beceri || {}) as SkillKey[]) if ((y.beceri![k] || 1) > 1) n += (p.skill_xp?.[k] || 0) / 100;
-    for (const [k, v] of Object.entries(y.stat || {}) as [keyof Stats, number][]) if (v > 0) n += (p.stats[k] || 0) * 0.8;
+    for (const [k, v] of Object.entries(y.stat || {}) as [keyof Stats, number][]) if (v > 0) n += statEtki(p.stats[k] || 0) * 0.8;
     if (y.rep && y.rep > 0) n += Math.max(0, p.reputation) / 12;
     const eg = hafizaEgilimi(s.hafiza); if (eg && y.et === eg) n += 4;
     puan[y.id] = n;
@@ -2276,6 +2285,7 @@ export function ayNotu(s: GameState): { k: string; p?: EvtParam[] } | null {
   const p = s.player; if (p.dead || p.age < 13 || inJail(p)) return null;
   const ipler = acikIpler(s).map((t) => ({ t, kalan: t.ekim + t.ip!.vade[1] - s.turn })).sort((a, b) => a.kalan - b.kalan);
   if (ipler[0] && ipler[0].kalan <= 6) return { k: "not.ipYakin", p: [{ sfx: ipKisa(ipler[0].t) }] };
+  if (s.turn % 12 < 2 && niyetBekliyor(s)) return { k: "not.niyet" }; // K2: yıl başında niyet hatırlatması (zorunlu değil)
   const canliEvlat = new Set(yasayanEvlatAdlari(s));
   const ev16 = (p.child_meta || []).find((c) => { const ay = s.turn - c.born; return canliEvlat.has(c.n) && ay >= 180 && ay < 192; });
   if (ev16) return { k: "not.evlat16", p: [ev16.n] };
@@ -2288,6 +2298,7 @@ export function ayNotu(s: GameState): { k: string; p?: EvtParam[] } | null {
   if (sonra === "Kış" && bu !== "Kış") return { k: (p.winter_stock_until ?? -1) > s.turn ? "not.kisDolu" : "not.kisBos" };
   if (sonra === "Sonbahar" && bu !== "Sonbahar" && p.properties.some((x) => x.type === "tarla")) return { k: "not.hasat" };
   if ((p.debt || 0) > 0) return { k: "not.borc", p: [Math.round(p.debt || 0)] };
+  if (niyetBekliyor(s)) return { k: "not.niyet" };
   return null;
 }
 export function ipKisa(t: Seed): string { return t.ip?.ima ? t.ip.ima.replace(/\.ima$/, ".kisa") : ""; }
@@ -2858,7 +2869,7 @@ function locEventPersonal(s: GameState) {
     if (e.type === "veba" && chance(0.15)) { const h = 6 + Math.floor(Math.random() * 8); s.player.health = Math.max(1, s.player.health - h); push(s, "saglik", `${e.loc}'deki veba sana da bulaştı; halsiz düştün (−${h} sağlık).`, "kişisel", false, { k: "lev.veba.hit", p: [h] }); }
     else if (e.type === "panayir" && s.player.horse && chance(0.20)) {
       const hn = s.player.horse_name || "";
-      if (Math.random() < Math.min(0.85, 0.4 + effStat(s.player, "stamina") * 0.05)) { const prize = 20 + Math.floor(Math.random() * 21); s.player.money += prize; s.player.races_won = (s.player.races_won || 0) + 1; unEkle(s.player, "fame", 3); bumpNam(s.player, "mert", 1); push(s, "gunluk", `${e.loc} panayırında at yarışına girdin; ${hn} tozu dumana kattı, kese ve alkış senin (+${prize} akçe).`, "kişisel", true, { k: "horse.race.win", p: [{ pl: e.loc }, hn, prize] }); }
+      if (Math.random() < Math.min(0.85, 0.4 + effEtki(s.player, "stamina") * 0.05)) { const prize = 20 + Math.floor(Math.random() * 21); s.player.money += prize; s.player.races_won = (s.player.races_won || 0) + 1; unEkle(s.player, "fame", 3); bumpNam(s.player, "mert", 1); push(s, "gunluk", `${e.loc} panayırında at yarışına girdin; ${hn} tozu dumana kattı, kese ve alkış senin (+${prize} akçe).`, "kişisel", true, { k: "horse.race.win", p: [{ pl: e.loc }, hn, prize] }); }
       else { s.player.health = Math.max(1, s.player.health - 2); push(s, "gunluk", `${e.loc} panayırındaki yarışta ${hn} son düzlükte kaldı; toz yuttun ama meydan seni tanıdı.`, "kişisel", false, { k: "horse.race.lose", p: [{ pl: e.loc }, hn] }); }
     }
     else if (e.type === "panayir" && chance(0.30)) { const g = 5 + Math.floor(Math.random() * 10); s.player.money += g; unEkle(s.player, "reputation", 1); push(s, "gunluk", `${e.loc} panayırında eğlendin, biraz da kazandın (+${g} akçe).`, "kişisel", false, { k: "lev.panayir.gain", p: [g] }); }
@@ -3976,6 +3987,7 @@ export function advance(prev: GameState, n = 1): GameState {
   for (let i = 0; i < n; i++) {
     if (s.pendingScene) break; // çoklu ay ilerletmede yeni açılan mahkeme kararı atlanamaz
     if (s.player.dead) break;
+    niyetAkisi(s); // K2: biten ayın niyet akışı (yıl dönmeden önce — seçilen yıl 12 ay akar)
     snapshotPrices(s); // ayrılan ayın pazar fiyatlarını hafızaya al (R3.3 'geçen fiyat')
     s.turn += 1; const cal = currentCalendar(s.turn);
     warEconomyTick(s); // ayın üretim/gelir/yiyecek hesaplarından önce aynı bölgesel fotoğraf
@@ -3987,6 +3999,8 @@ export function advance(prev: GameState, n = 1): GameState {
     // Yıl dönümü: yaş günün geldi — yılın kısa muhasebesi kroniğe (landmark) düşer; hayat "yaşanmış" hissettirir.
     if (s.turn % 12 === 0 && !s.player.dead) {
       const pl = s.player;
+      yasEgrisi(s); // K2: 40+ beden gerilemesi, 50+ hikmet
+      if (pl.niyet_yil != null && pl.niyet_yil !== oyunYili(s.turn)) { delete pl.niyet; delete pl.niyet_yil; delete pl.niyet_degisti; } // geçen yılın niyeti kapanır; yeni yıl yeni seçim
       if (pl.yr_money === undefined) pl.yr_money = pl.money;
       else {
         const d = pl.money - pl.yr_money;
@@ -4034,7 +4048,7 @@ export function advance(prev: GameState, n = 1): GameState {
     // Çocuğu ailesi besler: açlık daha yavaş düşer ve dipte aile karnını doyurur.
     const seasonMult = ({ "İlkbahar": 1.0, "Yaz": 1.1, "Sonbahar": 0.9, "Kış": 1.3 } as Record<string, number>)[cal.season] ?? 1; // 4 mevsim eğrisi (Vercel season_hunger_mult)
     const seasonMultEff = cal.season === "Kış" && (s.player.winter_stock_until ?? -1) >= s.turn ? 0.95 : seasonMult; // dolu kiler: kış açlığı yaz gibi geçer
-    const stamReduce = child ? 0 : Math.min(0.3, effStat(s.player, "stamina") * 0.03); // dayanıklılık açlığı yavaşlatır (Vercel stamina_hunger_reduction)
+    const stamReduce = child ? 0 : Math.min(0.3, effEtki(s.player, "stamina") * 0.03); // dayanıklılık açlığı yavaşlatır (Vercel stamina_hunger_reduction)
     const tutumluReduce = !child && hasPerk(s.player, "tutumlu") ? 0.15 : 0; // tutumlu: kıt kanaat geçinir — açlık daha yavaş düşer
     const drop = Math.max(child ? 2 : 3, Math.round((child ? 4 : 8) * seasonMultEff * (1 - Math.min(0.45, stamReduce + tutumluReduce))));
     s.player.hunger = Math.max(0, s.player.hunger - drop);
@@ -4561,7 +4575,7 @@ function tickPlot(s: GameState, rivals: RivalHouse[]) {
   const h = rivals.find((x) => x.id === pl.houseId);
   if (!h) { s.plot = null; return; }
   // İlerleme: zekâ, eller ve Gölge ağı
-  const prog = 0.30 + effStat(p, "intelligence") * 0.015 + pl.helpers * 0.12 + (p.faction === "golge" ? 0.08 : 0);
+  const prog = 0.30 + effEtki(p, "intelligence") * 0.015 + pl.helpers * 0.12 + (p.faction === "golge" ? 0.08 : 0);
   if (Math.random() < prog) pl.stage += 1;
   // Fısıltı: iş büyüdükçe ve eller çoğaldıkça artar; Gölge iz siler
   pl.heat += 3 + (pl.kind === "sabotaj" ? 3 : pl.kind === "nifak" ? 2 : 1) + pl.helpers - (p.faction === "golge" ? 1 : 0) - (s.court && s.court.casusbasi ? 1 : 0);
@@ -4671,7 +4685,7 @@ export function feudSuePeace(prev: GameState): GameState {
   f.act_turn = s.turn;
   p.money -= cost;
   const h = ensureRivals(s).find((x) => x.id === f.houseId);
-  const chance = Math.max(0.15, Math.min(0.85, 0.35 + effStat(p, "charisma") * 0.03 + p.reputation * 0.002 - f.heat * 0.003));
+  const chance = Math.max(0.15, Math.min(0.85, 0.35 + effEtki(p, "charisma") * 0.03 + p.reputation * 0.002 - f.heat * 0.003));
   if (Math.random() < chance) {
     s.feud = null;
     if (h) h.tutum = -10; // sulh: husumet küle döner ama kor hâlâ sıcak
@@ -5015,7 +5029,7 @@ function caravanAttackChance(s: GameState): number {
 // Saldırı kaybı oranı (Vercel caravan._attack_outcome portu): savunma = güç×0.4 + dövüş×0.6.
 function caravanLossPct(s: GameState): number {
   const p = s.player;
-  const def = p.stats.strength * 0.4 + p.skills.combat * 0.6 + (p.retinue || 0) * 1.5; // maiyet yağmada omuz verir
+  const def = statEtki(p.stats.strength) * 0.4 + p.skills.combat * 0.6 + (p.retinue || 0) * 1.5; // maiyet yağmada omuz verir
   if (def >= 12) return 0.10 + gameRandom(s) * 0.20;  // direndin, az kaybettin
   if (def >= 6) return 0.30 + gameRandom(s) * 0.30;   // yarısı gitti
   return 0.55 + gameRandom(s) * 0.35;                  // güçsüz kaldın, çoğu gitti
@@ -5717,7 +5731,7 @@ export function workForecast(s: GameState, style: WorkStyle = "normal"): WorkFor
   const p = s.player;
   const ws = WORK_STYLES.find((w) => w.id === style) || WORK_STYLES[1];
   const pr = professionById(p.profession);
-  const stat = effStat(p, PROF_STAT[p.profession] || "stamina");
+  const stat = effEtki(p, PROF_STAT[p.profession] || "stamina"); // K2: 10 üstü ücrete yarı hızla
   let mult = 1;
   if (p.faction === "demirci") mult += 0.2;
   if (hasPerk(p, "tefeci")) mult += 0.2;
@@ -5728,6 +5742,7 @@ export function workForecast(s: GameState, style: WorkStyle = "normal"): WorkFor
   if (p.cirak && p.cirak.prof === p.profession) mult += 0.05; // çırağın eli: tezgâhta bir çift el daha
   mult += esnafAhlaki(p); // ahilik: şerefli esnafa müşteri, adı kötüye çıkana ters bakış
   mult += meslekYoluIsBonusu(p); // aynı tezgâhta kök salan usta: müşteri ağı, ocak düzeni ve pirlik
+  mult *= Math.max(0.96, 1 + (effEtki(p, "stamina") - 5) * 0.01); // K2: dayanıklı beden uzun mesaiye dayanır
   const localWar = regionalWarEffects(s, p.location_name);
   const neededCraft = ["demirci", "şifacı"].includes(p.profession) ? 1 + (localWar.foodDemand - 1) * 0.25 : 1;
   mult *= p.profession === "asker" ? Math.max(0.7, localWar.revenue) : Math.min(1.1, localWar.production * neededCraft);
@@ -5892,10 +5907,10 @@ export function professionAction(prev: GameState): GameState {
   const yolXp0 = p.career_xp; const yolKademe = meslekYoluKademesi(p);
   const ok = zar(s, imzaZarGirdi(p)).basari; // tek zar: meslek statı + meslek yolu kademesi
   if (ok) {
-    let reward = Math.round((a.reward + effStat(p, a.stat) * 3 + Math.floor(Math.random() * 12)) * titleMult * inflationFactor(s) * (yolKademe >= 3 ? 1.30 : yolKademe >= 2 ? 1.15 : 1));
+    let reward = Math.round((a.reward + effEtki(p, a.stat) * 3 + Math.floor(Math.random() * 12)) * titleMult * inflationFactor(s) * (yolKademe >= 3 ? 1.30 : yolKademe >= 2 ? 1.15 : 1));
     // Ustalık eseri (büyük başarı): beceri/özellik ve kariyer kademesi yükseldikçe ihtimal artar (%5 → %30).
     // Her meslek için geçerli — efor ve ustalık ödüllendirilir: daha büyük kazanç, fazladan şöhret ve hızlı kariyer.
-    const crit = Math.random() < Math.min(0.30, 0.05 + effStat(p, a.stat) * 0.02 + tier * 0.04);
+    const crit = Math.random() < Math.min(0.30, 0.05 + effEtki(p, a.stat) * 0.02 + tier * 0.04);
     if (a.fame) unEkle(p, "fame", a.fame);
     if (a.rep) unEkle(p, "reputation", a.rep);
     if (a.honor) unEkle(p, "honor", a.honor);
@@ -6040,7 +6055,7 @@ export function tezgahHuner(p: Player, k?: TezgahKart): boolean {
 export function tezgahHunerStat(p: Player, k?: TezgahKart): keyof Stats { return PROF_STAT[k ? k.prof : p.profession] || "stamina"; }
 // Riskli yolun başarı şansı (0-100): meslek özelliğine bağlı, kartta görünür.
 export function tezgahSans(p: Player, k: TezgahKart): number {
-  return Math.round(Math.max(0.15, Math.min(0.9, 0.35 + effStat(p, PROF_STAT[k.prof] || "stamina") * 0.06)) * 100);
+  return Math.round(Math.max(0.15, Math.min(0.9, 0.35 + effEtki(p, PROF_STAT[k.prof] || "stamina") * 0.06)) * 100);
 }
 // Zar kart düşerken atılır; kart ile motor aynı sonucu görür (önizleme = gerçek).
 export function tezgahBasari(p: Player, k: TezgahKart, i: number): boolean {
@@ -6100,7 +6115,7 @@ export function rakipAktif(p: Player): Rakip | undefined { const r = p.rakip; re
 export function rakipYollari(p: Player): (keyof Stats)[] { const pr = p.rakip?.prof || p.profession; return [PROF_STAT[pr] || "stamina", "charisma", "intelligence"]; }
 export function rakipPuan(p: Player, stat: keyof Stats): number {
   const dom = (PROF_SKILL[p.profession] || "crafting") as SkillKey;
-  return Math.round(effStat(p, stat) * 7 + skillLevel(p.skill_xp[dom] || 0) * 3 + kademeOf(p) * 6);
+  return Math.round(effEtki(p, stat) * 7 + skillLevel(p.skill_xp[dom] || 0) * 3 + kademeOf(p) * 6);
 }
 export function rakipOranlari(p: Player): number[] {
   const r = p.rakip; if (!r) return [0, 0, 0];
@@ -6372,7 +6387,7 @@ export function sellerPersonaOf(s: GameState): { id: string; mult: number } { re
 export function bargainChance(s: GameState): number {
   const p = s.player;
   const favor = 1 + factionLocalFavor(s) * 0.08; // loncanın hâkim olduğu sancakta pazarlık kolay, düşmanın elinde zor
-  return Math.max(0.1, Math.min(0.95, (0.42 + (p.temperament === "kurnaz" ? 0.03 : 0) + effStat(p, "charisma") * 0.035 + p.skills.trade * 0.025 + bargainBonus(s)) * sellerPersona(p.location_name).mult * favor));
+  return Math.max(0.1, Math.min(0.95, (0.42 + (p.temperament === "kurnaz" ? 0.03 : 0) + effEtki(p, "charisma") * 0.035 + p.skills.trade * 0.025 + bargainBonus(s)) * sellerPersona(p.location_name).mult * favor));
 }
 // Arayüzün her pazarlık/blöf kararı kayıtlı zarı ilerletir; eski GameState değişmez.
 export function rollBargain(prev: GameState, bluff = false): { state: GameState; success: boolean } {
@@ -6527,6 +6542,7 @@ export function settleBargain(prev: GameState, key: string): GameState {
   const state = session.sell ? negotiatedSell(prev, session.id, session.price) : negotiatedBuy(prev, session.id, session.price);
   const settled = session.sell ? state.player.bargain_sell_turn === state.turn : state.player.bargain_buy_turn === state.turn;
   if (!settled) return state;
+  karizmaXp(state, 3); // pazarlıkla bağlanan alışveriş (alış/satış pazarlığı ayda birer)
   const sessions = { ...state.player.bargain_sessions };
   delete sessions[key];
   state.player.bargain_sessions = Object.keys(sessions).length ? sessions : undefined;
@@ -6687,7 +6703,7 @@ export function sohbetCevapla(prev: GameState, id: string, answer: SohbetYanit, 
   const delta = budgetTalkRel(end, s.turn, raw);
   s.relationships[id] = Math.max(-100, Math.min(100, (s.relationships[id] || 0) + delta));
   end.mood = Math.max(-100, Math.min(100, end.mood + delta));
-  if (delta > 0) remember(s, npc, "icten_sohbet", { yuk: delta });
+  if (delta > 0) { remember(s, npc, "icten_sohbet", { yuk: delta }); karizmaXp(s, 2); } // derin sohbet dili açar (t:cevap ay kilidi altında)
   else if (delta < 0) remember(s, npc, "haddini_asma", { yuk: delta });
   const key = answer === "destek" ? "sohbet.end." + (acted ? "eylem" : "destek") : answer === "sinir" ? "sohbet.end." + (raw < 0 ? "sinirSoguk" : "sinir") : "sohbet.end.kapat";
   conversation.adim = 3; conversation.son = answer; conversation.satir = key;
@@ -6815,7 +6831,7 @@ export function talkWith(prev: GameState, npc: NPC, intent: string, lang: string
   // Yapısal ödül (anı + sosyal beceri) yalnız gerçek kazançta; tavan dolunca sonraki niyetler yalnız muhabbet olur (farm kapalı).
   if (applied > 0) {
     remember(s, npc, applied >= 8 ? "icten_sohbet" : "guzel_sohbet");
-    if (!npcActUsed(ns, "t:xp", s.turn)) { markNpcAct(ns, "t:xp", s.turn); gainSkill(s, "social", 5); } // sosyal beceri kişi başına ayda bir (beceri farmı önlenir)
+    if (!npcActUsed(ns, "t:xp", s.turn)) { markNpcAct(ns, "t:xp", s.turn); gainSkill(s, "social", 5); karizmaXp(s, 2); } // sosyal beceri kişi başına ayda bir (beceri farmı önlenir)
   } else if (relDelta < 0) {
     remember(s, npc, relDelta <= -3 ? "alay" : "rahatsizlik"); // geri tepen tepki iz bırakır — gerçek sonuç
   }
@@ -6839,6 +6855,7 @@ export function giftTo(prev: GameState, npc: NPC, itemId: string): GameState {
   ns.memories.push(`${ITEMS[itemId]?.name || "Bir hediye"} hediye ettin.`);
   if (ns.memories.length > 8) ns.memories = ns.memories.slice(-8);
   remember(s, npc, (ITEMS[itemId]?.buy || 0) >= 25 ? "comert_hediye" : "hediye");
+  karizmaXp(s, 2); // gönül almayı bilmek (hediye kanalı ayda bir)
   if (jewel) push(s, "sohbet", `${npc.name}'a ${ITEMS[itemId]?.name || "bir takı"} taktın; gözleri parladı, eli uzun süre üstünde gezindi.`, "kişisel", false, { k: "evj.giftJewel", p: [npcP(s, npc), { i: itemId }] });
   else { const gv = chance(0.5); push(s, "sohbet", gv ? `${npc.name} hediyeni evirip çevirdi, sonra bağrına bastı: "Bunu hak edecek ne yaptım?"` : `${npc.name}'a ${ITEMS[itemId]?.name || "bir hediye"} verdin. Çok sevindi.`, "kişisel", false, { k: gv ? "evj.gift2" : "evj.gift", p: [npcP(s, npc), { i: itemId }] }); }
   return s;
@@ -7080,7 +7097,7 @@ export function flirtWith(prev: GameState, npc: NPC): GameState {
   if (ok) {
     const up = 6 + Math.floor(Math.random() * 8);
     s.relationships[npc.id] = Math.min(100, taban + up); ns.mood = Math.max(-100, Math.min(100, ns.mood + 12));
-    remember(s, npc, "guzel_sohbet");
+    remember(s, npc, "guzel_sohbet"); karizmaXp(s, 3); // karşılık bulan kur (flört kanalı ayda bir)
     if (flirtIsForbidden(p, npc)) {
       // YASAK İLİŞKİ: gizli sevgili başlar/derinleşir. Ateş biriktikçe ifşa ve piç riski artar (aylık tik'te).
       bumpNam(p, "capkin", 4);
@@ -7117,7 +7134,7 @@ function affairTick(s: GameState) {
     push(s, "doğum", `Yasak ilişkinizden bir çocuk dünyaya geldi: ${c}. ${a.name} ile olan bu sır artık saklanamayacak kadar büyük.`, "kişisel", true, { k: "affair.bastard", p: [c, npcP(s, a)] });
   }
   // 2) İfşa — ateş + şöhret oranında; karizma (ketumluk) düşürür. İfşa olunca ilişki biter, sonuçlar patlar.
-  const exposeChance = Math.min(0.55, 0.04 + (a.heat / 100) * 0.22 + p.fame / 3000 - (p.stats.charisma || 0) * 0.004);
+  const exposeChance = Math.min(0.55, 0.04 + (a.heat / 100) * 0.22 + p.fame / 3000 - statEtki(p.stats.charisma || 0) * 0.004);
   if (p.affair_exposed_turn === undefined || s.turn - p.affair_exposed_turn >= 3) {
     if (chance(Math.max(0.01, exposeChance))) { exposeAffair(s, a, sg); p.affair = undefined; p.affair_exposed_turn = s.turn; }
   }
@@ -7498,9 +7515,10 @@ export function changeProfession(prev: GameState, prof: string): GameState {
 }
 
 // Özellik puanı harca.
-// Özellik tavanı yaşa bağlı: çocuk bedeni/aklı 8'de durur, 10 "olağanüstü" yetişkinliğe kalır
-// (denge: tam-gaz çocukluk 13 yaşında 4 statı da maksluyordu; puanlar kaybolmaz, 13'ten sonra harcanır).
-export function statCapOf(p: Player): number { return p.age < 13 ? 8 : 10; }
+// Özellik tavanı yaşa bağlı (K2): çocuk 10'da durur, yetişkin ömür boyu 20'ye dek büyür
+// (puanlar kaybolmaz, 13'ten sonra harcanır). 10 üstü para/güç/olasılık katkısı statEtki ile yarı hızdadır.
+export const STAT_TAVAN = 20;
+export function statCapOf(p: Player): number { return p.age < 13 ? 10 : STAT_TAVAN; }
 export function allocateStat(prev: GameState, key: keyof Stats): GameState {
   const s = clone(prev); const p = s.player;
   if (p.dead || p.stat_points <= 0 || p.stats[key] >= statCapOf(p)) return s; // yaş tavanı (addStatXp ile aynı sınır)
@@ -7509,7 +7527,15 @@ export function allocateStat(prev: GameState, key: keyof Stats): GameState {
 }
 // ── Stat-XP (Vercel skills.add_stat_xp portu): özellikler kullanımla yavaşça büyür (stat_points'e EK) ──
 const STAT_LABEL: Record<keyof Stats, string> = { strength: "Güç", intelligence: "Zekâ", charisma: "Karizma", stamina: "Dayanıklılık" };
-export function statXpForNext(level: number): number { return 25 + level * 15; } // bir üst seviye için gereken tecrübe
+export function statXpForNext(level: number): number { return Math.round((25 + level * 15) * (level >= 10 ? 1.5 : 1)); } // bir üst seviye için gereken tecrübe; 10 üstü ×1.5 (ilerleme 50–60 yaşa yayılır)
+// K2 kademe adları: 1–5 acemi, 6–10 yetkin, 11–15 usta, 16–20 efsane.
+export function statKademeKey(v: number): string { return v <= 5 ? "st.kademe.acemi" : v <= 10 ? "st.kademe.yetkin" : v <= 15 ? "st.kademe.usta" : "st.kademe.efsane"; }
+// Son 12 ayda bu stat kaç zarda (karar) kullanıldı — zar() tur numarasını yazar, eskiler budanır.
+function statKullanimIsle(p: Player, key: keyof Stats, turn: number) {
+  const m = p.stat_kullanim || (p.stat_kullanim = {});
+  const a = (m[key] || []).filter((t) => t > turn - 12); a.push(turn); m[key] = a.slice(-30);
+}
+export function statKullanimSayisi(p: Player, key: keyof Stats, turn: number): number { return (p.stat_kullanim?.[key] || []).filter((t) => t > turn - 12).length; }
 // Özellik niteliği: 1–10 ölçeğinde değerin kıyas etiketini verir (oyuncu 21 zeka iyi mi kötü mü görsün diye).
 // Tavan 10'dur (addStatXp 10'da durur); 5–6 ortalama, 10 olağanüstü.
 export function statTierKey(v: number): string {
@@ -7524,7 +7550,7 @@ export function statXpOf(p: Player, key: keyof Stats): number { return p.stat_xp
 const STAT_OVERFLOW_SKILL: Record<keyof Stats, SkillKey> = { strength: "combat", intelligence: "trade", charisma: "social", stamina: "crafting" };
 function addStatXp(s: GameState, key: keyof Stats, amt: number) {
   const p = s.player;
-  const cap = statCapOf(p); // çocukta 8, yetişkinde 10
+  const cap = statCapOf(p); // çocukta 10, yetişkinde 20
   if (p.stats[key] >= cap) { gainSkill(s, STAT_OVERFLOW_SKILL[key], Math.max(1, Math.round(amt / 2))); return; } // tavan sonrası emek boşa gitmez: ilgili beceriye yarı oranda ustalık akar
   if (!p.stat_xp) p.stat_xp = { strength: 0, intelligence: 0, charisma: 0, stamina: 0 };
   p.stat_xp[key] += amt;
@@ -7533,7 +7559,64 @@ function addStatXp(s: GameState, key: keyof Stats, amt: number) {
     p.stats[key] += 1;
     push(s, "beceri", `${STAT_LABEL[key]} özelliğin tecrübeyle gelişti (${p.stats[key]}).`, "kişisel", false, { k: "statxp.up", p: [{ statk: key }, p.stats[key]] });
   }
-  if (p.stats[key] >= 10) p.stat_xp[key] = 0; // yalnız gerçek tavanda sıfırla — çocuk tavanındaki birikim 13'te serpilmeye dönüşür
+  if (p.stats[key] >= STAT_TAVAN) p.stat_xp[key] = 0; // yalnız gerçek tavanda sıfırla — çocuk tavanındaki birikim 13'te serpilmeye dönüşür
+}
+// ── Niyet (K2 yıllık odak): 13 yaşından itibaren her oyun yılı bir odak seçilir; ayda ilgili stata +3, beceriye +4 XP akar.
+// Zorunlu değil (seçilmezse niyetsiz yıl, akış yok). Yıl içinde değiştirmek serbest; değişince o yılın kalanında akış yarıya iner.
+// Vârise geçmez: continueAsHeir yeni oyuncu kurar, heirPreview niyet okumaz (ikisi aynı).
+export type NiyetId = "huner" | "carsi" | "sefer" | "ahi" | "ilim";
+export const NIYET_YAS = 13;
+export const NIYETLER: { id: NiyetId; icon: string; stat: keyof Stats; beceri?: SkillKey }[] = [
+  { id: "huner", icon: "meslek", stat: "strength", beceri: "crafting" },
+  { id: "carsi", icon: "akce", stat: "charisma", beceri: "trade" },
+  { id: "sefer", icon: "crossed-swords", stat: "stamina", beceri: "combat" },
+  { id: "ahi", icon: "orgutler", stat: "charisma", beceri: "social" },
+  { id: "ilim", icon: "mektep", stat: "intelligence" },
+];
+export function oyunYili(turn: number): number { return Math.floor(turn / 12); }
+export function aktifNiyet(s: GameState): NiyetId | undefined { const p = s.player; return p.niyet && p.niyet_yil === oyunYili(s.turn) ? p.niyet : undefined; }
+export function niyetBekliyor(s: GameState): boolean { const p = s.player; return !p.dead && p.age >= NIYET_YAS && !aktifNiyet(s); }
+export function niyetSec(prev: GameState, id: NiyetId): GameState {
+  const s = clone(prev); const p = s.player;
+  if (p.dead || p.age < NIYET_YAS || !NIYETLER.some((n) => n.id === id)) return s;
+  const cur = aktifNiyet(s); if (cur === id) return s;
+  p.niyet_degisti = cur ? true : undefined; // taahhüt: yıl içinde dönen niyetin akışı bu yılın kalanında yarıya iner
+  p.niyet = id; p.niyet_yil = oyunYili(s.turn);
+  push(s, "beceri", `Bu yılın niyeti: ${id}.`, "kişisel", false, { k: cur ? "niyet.log.degisti" : "niyet.log.secildi", p: [{ tk: "niyet." + id }] });
+  return s;
+}
+// Ay kapanışında (advance) yaşanan ayın niyet akışı.
+function niyetAkisi(s: GameState) {
+  const n = aktifNiyet(s); if (!n || s.player.dead) return;
+  const d = NIYETLER.find((x) => x.id === n)!; const k = s.player.niyet_degisti ? 0.5 : 1;
+  addStatXp(s, d.stat, 3 * k);
+  if (d.beceri) gainSkill(s, d.beceri, 4 * k);
+}
+// Yaş eğrisi (K2): 40+ güç ve dayanıklılık yılda ayrı ayrı %10 (dayanıklılık ≥12 ise %5) olasılıkla −1 (alt sınır 1);
+// 50+ yılda bir kez zekâ veya karizmadan düşük olana "hikmet" +15 stat XP. Tohumlu gameRandom(s).
+function yasEgrisi(s: GameState) {
+  const p = s.player; if (p.dead) return;
+  if (p.age >= 40) {
+    const ol = p.stats.stamina >= 12 ? 0.05 : 0.10;
+    for (const k of ["strength", "stamina"] as const) {
+      if (gameRandom(s) >= ol || p.stats[k] <= 1) continue;
+      p.stats[k] -= 1;
+      if (p.stat_xp) p.stat_xp[k] = Math.min(p.stat_xp[k], statXpForNext(p.stats[k]) - 1); // düşüş anında geri sıçramasın; kayıp emekle telafi edilir
+      push(s, "beceri", `Yıllar bedenine dokundu; ${STAT_LABEL[k]} geriledi (${p.stats[k]}).`, "kişisel", false, { k: "st.yas.dusus", p: [{ statk: k }, p.stats[k]] });
+    }
+  }
+  if (p.age >= 50) {
+    const k: keyof Stats = p.stats.intelligence <= p.stats.charisma ? "intelligence" : "charisma";
+    addStatXp(s, k, 15);
+    push(s, "beceri", `Yılların hikmeti: ${STAT_LABEL[k]} tecrübe kazandı.`, "kişisel", false, { k: "st.yas.hikmet", p: [{ statk: k }] });
+  }
+}
+// Karizma XP'si sosyal eylemlerden (sohbet, hediye, kur, pazarlık): her eylemin kendi tur kilidi altında, ayrıca ayda en çok 3 kez.
+function karizmaXp(s: GameState, amt: number) {
+  const p = s.player; const c = p.karizma_xp && p.karizma_xp.t === s.turn ? p.karizma_xp : { t: s.turn, n: 0 };
+  if (c.n >= 3) return;
+  p.karizma_xp = { t: s.turn, n: c.n + 1 };
+  addStatXp(s, "charisma", amt);
 }
 
 // ── Mektep: 4 ders, her biri farklı yön geliştirir ──
@@ -7675,7 +7758,7 @@ export function clubPractice(prev: GameState): StudyResult {
   const chips: { label: string; col: string; k?: string; p?: (string | number)[] }[] = [];
   let gain = 1; let key = "";
   if (p.club === "gures") {
-    const win = Math.random() < Math.min(0.9, 0.4 + effStat(p, "strength") * 0.05);
+    const win = Math.random() < Math.min(0.9, 0.4 + effEtki(p, "strength") * 0.05);
     if (win) { gainSkill(s, "combat", 10); addStatXp(s, "strength", 4); unEkle(p, "fame", 2); gain = 2;
       chips.push({ label: "Dövüş +10", col: "#C9A84C", k: "chip.fight", p: ["+10"] }, { label: "Şöhret +2", col: "#7B4FAF", k: "chip.fame", p: ["+2"] }); key = "club.gures.win";
       { const v2 = chance(0.5); push(s, "mektep", v2 ? "Kündeden kurtulup rakibini havada döndürdün; minder kenarında ıslıklar çaldı." : "Güreş minderinde rakibini yendin; adın delikanlılar arasında anıldı.", "kişisel", true, { k: v2 ? "club.gures.win2" : "club.gures.win" }); } }
@@ -7688,7 +7771,7 @@ export function clubPractice(prev: GameState): StudyResult {
     chips.push({ label: "Zanaat +10", col: "#C9A84C", k: "chip.craft", p: ["+10"] }, { label: `+${pay} akçe`, col: "#E0BC5A", k: "chip.coin", p: [pay] }); key = "club.cirak.win";
     { const v2 = chance(0.5); push(s, "mektep", v2 ? "Ustanın verdiği işi vaktinden önce bitirdin; kalfalar ölçüp ölçüp bir daha baktı." : "Ustanın yanında bir işi bitirdin; emeğinin karşılığını cebine koydun.", "kişisel", true, { k: v2 ? "club.cirak.win2" : "club.cirak.win", p: [pay] }); }
   } else { // koro
-    const win = Math.random() < Math.min(0.9, 0.4 + effStat(p, "charisma") * 0.05);
+    const win = Math.random() < Math.min(0.9, 0.4 + effEtki(p, "charisma") * 0.05);
     if (win) { gainSkill(s, "social", 10); addStatXp(s, "charisma", 4); unEkle(p, "reputation", 1); gain = 2;
       chips.push({ label: "Sosyal +10", col: "#C9A84C", k: "chip.social", p: ["+10"] }, { label: "İtibar +1", col: "#7FA66A", k: "chip.rep", p: ["+1"] }); key = "club.koro.win";
       { const v2 = chance(0.5); push(s, "mektep", v2 ? "Bugün nağmeyi sen yükselttin; hoca gözlerini kapadı, meclis nefesini tuttu." : "Koroda sesin meclisi büyüledi; el üstünde tutuldun.", "kişisel", true, { k: v2 ? "club.koro.win2" : "club.koro.win" }); } }
@@ -7842,7 +7925,7 @@ export function youthAction(prev: GameState, kind: GencAct): StudyResult {
     addStatXp(s, "strength", 3); addStatXp(s, "stamina", 3);
     const rakipler = yasitlar(s).filter((k) => k.g === p.gender);
     if (rakipler.length && Math.random() < 0.4) {
-      const k = rnd(rakipler); const kaz = Math.random() < 0.35 + (p.stats.strength + p.stats.stamina) * 0.04;
+      const k = rnd(rakipler); const kaz = Math.random() < 0.35 + (statEtki(p.stats.strength) + statEtki(p.stats.stamina)) * 0.04;
       if (kaz) { unEkle(p, "reputation", 1); bumpNam(p, "mert", 1); key = "genc.huner"; push(s, "olgunluk", `Meydanda koşu yarışına girdin; son düzlükte ${kisiAdi(k, "tr")} geride kaldı, alkışlar senindi.`, "kişisel", false, { k: key, p: [kfParam(k)] }); }
       else { p.health = Math.max(1, p.health - 2); key = gk(k, "genc.hunerKayip"); push(s, "olgunluk", `Meydandaki yarışta ${kisiAdi(k, "tr")} seni geçti; dizlerin kanadı, hırsın bilendi.`, "kişisel", false, { k: key, p: [kfParam(k)] }); }
       if (s.relationships[k.id] === undefined) s.relationships[k.id] = 0;
@@ -7921,7 +8004,7 @@ export function adultAction(prev: GameState, kind: AdultAct): StudyResult {
     addStatXp(s, "strength", 5); gainSkill(s, "combat", 4);
     key = "adult.talim";
     const r = Math.random();
-    if (r < Math.max(0.03, 0.10 - effStat(p, "stamina") * 0.008)) { // acemilik sakatlar; dayanıklılık korur
+    if (r < Math.max(0.03, 0.10 - effEtki(p, "stamina") * 0.008)) { // acemilik sakatlar; dayanıklılık korur
       const hurt = 3 + Math.floor(Math.random() * 4); p.health = Math.max(1, p.health - hurt);
       chips.push({ label: `Sakatlık -${hurt}`, col: "#C0556B", k: "chip.talimHurt", p: [hurt] });
       push(s, "olgunluk", `Talimde ters düştün; bir yerini incittin (sağlık -${hurt}).`, "kişisel", false, { k: "adult.talimHurt", p: [hurt] });
@@ -7935,7 +8018,7 @@ export function adultAction(prev: GameState, kind: AdultAct): StudyResult {
     addStatXp(s, "charisma", 5); gainSkill(s, "social", 4); unEkle(p, "reputation", 1);
     key = "adult.meclis";
     const r = Math.random();
-    if (r < Math.max(0.03, 0.09 - effStat(p, "charisma") * 0.007)) { // yanlış söz: dedikodu tohumu
+    if (r < Math.max(0.03, 0.09 - effEtki(p, "charisma") * 0.007)) { // yanlış söz: dedikodu tohumu
       p.reputation = Math.max(-100, p.reputation - 3); witnessScandal(s, "tatsiz_konu", 0.2);
       push(s, "olgunluk", "Mecliste ağzından yanlış bir laf kaçtı; kulaktan kulağa yayıldı.", "kişisel", false, { k: "adult.meclisSlip" });
     } else if (r > 0.88) { // sözün mecliste karşılık buldu: yeni bir tanışlık
@@ -8080,7 +8163,7 @@ export function crimeInvestigationInfo(s: GameState, lang: Lang = "tr"): CrimeIn
 export function crimeInvestigationMisdirectOdds(s: GameState): number {
   const c = s.player.crime_case; if (!c) return 0;
   const p = s.player;
-  return Math.max(0.15, Math.min(0.82, 0.30 + effStat(p, "intelligence") * 0.04 + Math.min(8, p.skills?.social || 0) * 0.02 + (p.faction === "golge" ? 0.12 : 0) - c.evidence * 0.002));
+  return Math.max(0.15, Math.min(0.82, 0.30 + effEtki(p, "intelligence") * 0.04 + Math.min(8, p.skills?.social || 0) * 0.02 + (p.faction === "golge" ? 0.12 : 0) - c.evidence * 0.002));
 }
 function investigationPeople(s: GameState, excluded: Set<string>): Kisi[] {
   const wy = worldYears(s);
@@ -8173,13 +8256,13 @@ export function crimePlanPreview(s: GameState, kind: CrimeKind, approach: CrimeA
   const common = golgeBonus + hasariBonus + crimeSuccessMod(s);
   let execution: number; let attentionMult: number; let loot: number; let heatMult: number;
   if (approach === "sessiz") {
-    execution = ct.base + 0.01 + effStat(p, "intelligence") * 0.016 + effStat(p, "stamina") * 0.008 + common * 0.85;
+    execution = ct.base + 0.01 + effEtki(p, "intelligence") * 0.016 + effEtki(p, "stamina") * 0.008 + common * 0.85;
     attentionMult = 0.55; loot = 0.78; heatMult = 0.62;
   } else if (approach === "zor") {
-    execution = ct.base - 0.12 + effStat(p, "strength") * 0.014 + effStat(p, "stamina") * 0.008 + golgeBonus * 0.45 + hasariBonus + crimeSuccessMod(s) * 0.75;
+    execution = ct.base - 0.12 + effEtki(p, "strength") * 0.014 + effEtki(p, "stamina") * 0.008 + golgeBonus * 0.45 + hasariBonus + crimeSuccessMod(s) * 0.75;
     attentionMult = 1.55; loot = 1.28; heatMult = 1.45;
   } else {
-    execution = ct.base + effStat(p, "charisma") * 0.01 + common;
+    execution = ct.base + effEtki(p, "charisma") * 0.01 + common;
     attentionMult = 1; loot = 1; heatMult = 1;
   }
   const intel = crimeIntelFor(s, kind);
@@ -8322,7 +8405,7 @@ export function resolveCrimeScene(prev: GameState, choice: "saklan" | "rusvet" |
   let escaped = false; let scratch = 0; let note: { k: string; p?: EvtParam[] };
   if (choice === "saklan") {
     // Saklan: gizlenme testi (dayanıklılık + gölge). Sessiz kaçış.
-    const chance = 0.42 + p.stats.stamina * 0.03 + golgeBonus - ct.sev * 0.04 + (approach === "sessiz" ? 0.12 : approach === "zor" ? -0.05 : 0);
+    const chance = 0.42 + statEtki(p.stats.stamina) * 0.03 + golgeBonus - ct.sev * 0.04 + (approach === "sessiz" ? 0.12 : approach === "zor" ? -0.05 : 0);
     escaped = gameRandom(s) < Math.max(0.08, chance);
     gainSkill(s, "social", 3);
     note = { k: escaped ? "crimesc.hideWin" : "crimesc.hideLose" };
@@ -8337,7 +8420,7 @@ export function resolveCrimeScene(prev: GameState, choice: "saklan" | "rusvet" |
     } else { escaped = false; note = { k: "crimesc.bribePoor" }; }
   } else {
     // Kaç: atletik test (güç + dayanıklılık). Başarırsan sıyrıkla kurtulursun.
-    const chance = 0.34 + (p.stats.strength + p.stats.stamina) * 0.025 + golgeBonus - ct.sev * 0.03 + (approach === "zor" ? 0.12 : approach === "sessiz" ? -0.03 : 0);
+    const chance = 0.34 + (statEtki(p.stats.strength) + statEtki(p.stats.stamina)) * 0.025 + golgeBonus - ct.sev * 0.03 + (approach === "zor" ? 0.12 : approach === "sessiz" ? -0.03 : 0);
     escaped = gameRandom(s) < Math.max(0.06, chance);
     if (escaped) { scratch = 2 + Math.floor(gameRandom(s) * (ct.sev * 2)); p.health = Math.max(1, p.health - scratch); }
     gainSkill(s, "combat", 4);
@@ -8422,7 +8505,7 @@ export function trialEvidence(s: GameState, lang: Lang = "tr"): TrialEvidenceInf
 }
 export function trialDefenseOdds(s: GameState): number {
   const p = s.player; const ct = CRIME_TYPES[trialCrime(s)]; const evidence = trialEvidence(s).score;
-  return Math.max(0.10, Math.min(0.78, 0.28 + effStat(p, "charisma") * 0.03 + effStat(p, "intelligence") * 0.02 - ct.sev * 0.015 - evidence * 0.003));
+  return Math.max(0.10, Math.min(0.78, 0.28 + effEtki(p, "charisma") * 0.03 + effEtki(p, "intelligence") * 0.02 - ct.sev * 0.015 - evidence * 0.003));
 }
 export function trialWitnessInfo(s: GameState, lang: Lang = "tr"): TrialWitnessInfo | null {
   if (s.pendingScene?.kind !== "trial") return null;
@@ -8563,7 +8646,7 @@ export function listenWhispers(prev: GameState): GameState {
   p.listen_turn = s.turn; p.money -= cost;
   const ep = s.enemyPlot;
   if (ep && !ep.known) {
-    const found = Math.random() < 0.35 + effStat(p, "intelligence") * 0.015 + (p.retinue || 0) * 0.05;
+    const found = Math.random() < 0.35 + effEtki(p, "intelligence") * 0.015 + (p.retinue || 0) * 0.05;
     if (found) {
       ep.known = true;
       const h = ensureRivals(s).find((x) => x.id === ep.houseId);
@@ -8685,7 +8768,7 @@ export function resolveOpportunity(prev: GameState, opp: Opportunity, forced?: b
   // Tur başına tek fırsat çözümü (diğer gelir eylemleriyle tutarlı; çoklu-çözüm farmı kapatılır).
   if (p.opp_turn === s.turn) return s;
   p.opp_turn = s.turn;
-  const success = forced !== undefined ? forced : Math.random() < Math.min(0.9, Math.max(0.1, (1 - opp.risk) + effStat(p, opp.stat) * 0.03)); // yedek yol (forced verilmezse): olasılık 0.1–0.9 kıskaçlı + effStat — hep-kazan/hep-kaybet kapatıldı
+  const success = forced !== undefined ? forced : Math.random() < Math.min(0.9, Math.max(0.1, (1 - opp.risk) + effEtki(p, opp.stat) * 0.03)); // yedek yol (forced verilmezse): olasılık 0.1–0.9 kıskaçlı + effStat — hep-kazan/hep-kaybet kapatıldı
   p.hunger = Math.max(0, p.hunger - 5);
   if (success) {
     let reward = opp.reward;
@@ -8803,7 +8886,7 @@ export function sinavOrani(s: GameState, yol: number): number {
   const zorluk = 4 + 2 * hedef; // yolun özelliği: 2. kademe 6 · 3. kademe 8 · zirve (4. kademe) 10
   const gerek = 2 * hedef;      // mesleğin beceri seviyesi (emek): 2 · 4 · zirve 6
   const dom = (PROF_SKILL[p.profession] || "crafting") as SkillKey;
-  const o = 0.35 + (effStat(p, yollar[yol]) - zorluk) * 0.07 + (skillLevel(p.skill_xp[dom]) - gerek) * 0.08 + ustaDestegi(s);
+  const o = 0.35 + (effEtki(p, yollar[yol]) - zorluk) * 0.07 + (skillLevel(p.skill_xp[dom]) - gerek) * 0.08 + ustaDestegi(s);
   return Math.max(0.08, Math.min(0.92, Math.round(o * 100) / 100));
 }
 // Ustanın sözü sınavda ağır basar: seni seven usta kefil olur (+10'a kadar), küs usta aleyhine konuşur (−8'e kadar).
@@ -9465,7 +9548,7 @@ export function doFactionTask(prev: GameState, id: string): GameState {
   if (p.faction_task_turn === s.turn) { push(s, "örgüt_görev", `Bu ay ocak için hizmetini gördün; yenisi gelecek aya.`, "kişisel", false, { k: "evj.factionTaskWait" }); return s; }
   p.faction_task_turn = s.turn;
   const rank = factionRank(p.faction_standing[id] || 0);            // rütbe ödülü ölçekler
-  const statBonus = p.stats[f.stat] * 2;
+  const statBonus = statEtki(p.stats[f.stat]) * 2; // K2: 10 üstü yarı hızla
   // Loncan bu sancağa hâkimse burada daha güçlüsün: görev daha çok kazandırır.
   const dom = factionHoldsHere(s, id) ? 1.25 : 1;
   // Taban %30 kısıldı (erken oyunda işin ~3 katıydı) ama işçi maaşı gibi enflasyona bağlandı (geç oyunda değersizleşmesin).
@@ -10521,7 +10604,7 @@ export function intimidate(prev: GameState): GameState {
   if (p.dead || p.age < 13) return s;
   if (p.intimidate_turn === s.turn) return s; // ayda tek gözdağı — korku 0→100 spam'i kapatıldı
   p.intimidate_turn = s.turn;
-  const ok = Math.random() < Math.min(0.92, 0.5 + p.stats.strength * 0.04 + dread(s) / 300 + (hasPerk(p, "kan_donduran") ? 0.25 : 0)); // perk garantiyi değil olasılığı artırır
+  const ok = Math.random() < Math.min(0.92, 0.5 + statEtki(p.stats.strength) * 0.04 + dread(s) / 300 + (hasPerk(p, "kan_donduran") ? 0.25 : 0)); // perk garantiyi değil olasılığı artırır
   if (ok) { let fear = hasPerk(p, "kan_donduran") ? 12 : 8; if (hasPerk(p, "diplomat")) fear = Math.round(fear * 1.5); unEkle(p, "fear", fear); p.reputation = Math.max(-100, p.reputation - 3); bumpNam(p, "zalim", 7); witnessScandal(s, "tehdit", 0.5); const why = dread(s) > 30 ? " Zaten korkulan adın, bir bakışın yetti." : ""; push(s, "sosyal", `Birine gözdağı verdin; adın çekinilen biri oldu.${why}`, "kişisel", false, { k: "evj.intimWin", p: [dread(s) > 30 ? { sfx: "sfx.intimWinWhy" } : ""] }); }
   else { p.reputation = Math.max(-100, p.reputation - 5); p.honor = Math.max(0, p.honor - 3); const why = esteem(s) > 25 ? " Sevilen biri olduğundan kimse seni ciddiye almadı." : ""; push(s, "sosyal", `Gözdağın ters tepti; itibarın zarar gördü.${why}`, "kişisel", false, { k: "evj.intimLose", p: [esteem(s) > 25 ? { sfx: "sfx.intimLoseWhy" } : ""] }); }
   return s;
@@ -10551,7 +10634,7 @@ export const ENCOUNTERS: Encounter[] = [
 ];
 // Oyuncunun savaş gücü: kuvvet + dayanıklılık/2 + silah + asker avantajı.
 export function combatPower(p: Player): number {
-  let pw = effStat(p, "strength") * 2 + effStat(p, "stamina") + p.skills.combat;
+  let pw = effEtki(p, "strength") * 2 + effEtki(p, "stamina") + p.skills.combat; // K2: 10 üstü yarı hızla (60 yaşta güç patlaması yok)
   const wid = p.equipped?.silah; const w = wid ? ITEMS[wid] : null;
   let weaponPw = Math.round((w?.power || 0) * equippedQualityMult(p, "silah"));
   if (w?.twoHanded) weaponPw = Math.round(weaponPw * 1.32); // çift elli silah daha sert vurur (kalkan feda edilir)
@@ -10609,7 +10692,7 @@ export function attireScore(p: Player): { charisma: number; prestige: number } {
 // Sosyal varlık: karizma (kıyafet dahil) eksi cenk yükü cezası. Silahlı/zırhlı biri divanda,
 // düğünde, flörtte çekici değil tehditkâr/heybetli durur — bu yüzden ikna gücü düşer.
 export function socialPresence(p: Player): number {
-  return Math.max(0, effStat(p, "charisma") - Math.round(martialLoad(p) * 2));
+  return Math.max(0, Math.round(effEtki(p, "charisma")) - Math.round(martialLoad(p) * 2));
 }
 // Eşya kuşan (silah/zırh) — envanterden çıkarıp slota koyar, eskisini geri verir.
 export function equipItem(prev: GameState, id: string): GameState {
@@ -10753,7 +10836,7 @@ export function reconcileNemesis(prev: GameState): GameState {
   if (p.reconcile_turn === s.turn) return s; // ayda tek girişim
   p.reconcile_turn = s.turn;
   p.money -= cost;
-  const odds = Math.min(0.85, 0.35 + effStat(p, "charisma") * 0.05 + Math.max(0, p.honor) / 200);
+  const odds = Math.min(0.85, 0.35 + effEtki(p, "charisma") * 0.05 + Math.max(0, p.honor) / 200);
   if (Math.random() < odds) {
     s.story.nemesis = null;
     p.peace_made = true;
@@ -10977,7 +11060,7 @@ export function sermayeler(s: GameState): { id: SermayeId; deger: number; kaleml
   const cevre = topla("cevre", [["sk.dost", Math.min(56, dost * 7)], ["sk.tanidik", Math.min(20, iyi * 2)], ["sk.aile", aile], ["sk.lonca", (p.faction ? 8 : 0) + Math.min(10, (s.allied_houses?.length || 0) * 5)], ["sk.hasim", -Math.min(30, hasim * 4)]]);
   // Zanaat: en güçlü beceri, öteki beceriler, meslekte kademe, zekâ
   const bec = [p.skills.combat, p.skills.trade, p.skills.crafting, p.skills.social].sort((a, b) => b - a);
-  const bilgi = topla("bilgi", [["sk.beceri", bec[0] * 5 + Math.min(30, bec[1] + bec[2] + bec[3])], ["sk.kademe", kademeOf(p) * 6], ["sk.zeka", effStat(p, "intelligence")]]);
+  const bilgi = topla("bilgi", [["sk.beceri", bec[0] * 5 + Math.min(30, bec[1] + bec[2] + bec[3])], ["sk.kademe", kademeOf(p) * 6], ["sk.zeka", effEtki(p, "intelligence")]]);
   // Nam: itibar, şeref, şöhret ve (biraz) korku
   const nam = topla("nam", [["sk.itibar", ((p.reputation + 100) / 2) * 0.4], ["sk.seref", p.honor * 0.3], ["sk.sohret", p.fame * 0.25], ["sk.korku", p.fear * 0.05]]);
   return [para, cevre, bilgi, nam];
@@ -11288,7 +11371,7 @@ export function applyDilemma(prev: GameState, delta: Delta, resultText: string, 
   // Yazgı payı (test bulgusu): aynı seçim herkeste aynı sonucu doğurmasın — sağlık/itibar bedeli ±%25 zarla oynar,
   // bedenî bedeli güç statı hafifletir (para metinde açıkça yazıldığı için zarsız kalır).
   const jit = (v: number) => { const r = Math.round(v * (0.75 + Math.random() * 0.5)); return v > 0 ? Math.max(1, r) : Math.min(-1, r); };
-  if (delta.health) { let hv = jit(delta.health); if (hv < 0) hv = Math.min(-1, hv + Math.floor(effStat(p, "strength") / 4)); p.health = clampStat(p.health + hv); }
+  if (delta.health) { let hv = jit(delta.health); if (hv < 0) hv = Math.min(-1, hv + Math.floor(effEtki(p, "strength") / 4)); p.health = clampStat(p.health + hv); }
   if (delta.hunger) p.hunger = clampStat(p.hunger + delta.hunger);
   if (delta.reputation) unEkle(p, "reputation", jit(delta.reputation));
   if (delta.honor) unEkle(p, "honor", delta.honor);
@@ -11691,7 +11774,7 @@ export function teklifSansi(s: GameState, npc: NPC, tur: "kur" | "gorucu" | "flo
     ekle("sans.taban", 35); ekle("sans.gorus", relWith(s, npc.id) - 15); ekle("sans.sosyal", socialPresence(p) * 4); ekle("sans.cekicilik", allureBonus(s) * 100);
     tavan = 90;
   } else {
-    ekle("sans.taban", 40); ekle("sans.beceri", (p.skills?.social || 0) * 5); ekle("sans.karizma", p.stats.charisma * 2);
+    ekle("sans.taban", 40); ekle("sans.beceri", (p.skills?.social || 0) * 5); ekle("sans.karizma", statEtki(p.stats.charisma) * 2);
     tavan = 85;
   }
   const top = ks.reduce((a, x) => a + x.v, 0); const c = Math.max(0, Math.min(tavan, top));
@@ -12632,7 +12715,7 @@ export function serveCourt(prev: GameState): GameState {
   const s = clone(prev); const p = s.player;
   if (!canServeCourt(s)) return s;
   p.court_action_turn = s.turn; p.hunger = Math.max(0, p.hunger - 6);
-  const skill = (effStat(p, "intelligence") + effStat(p, "charisma")) / 2;
+  const skill = (effEtki(p, "intelligence") + effEtki(p, "charisma")) / 2;
   const ok = Math.random() < 0.45 + skill * 0.05;
   const rank = p.courtRank ?? 0;
   if (ok) {
@@ -12684,7 +12767,7 @@ function courtTick(s: GameState) {
     const ev = COURT_EVENTS[Math.floor(Math.random() * COURT_EVENTS.length)];
     if (ev === "sultanLutuf") { p.courtFavor = clamp100((p.courtFavor ?? 55) + 5); const g = Math.round(10 * inflationFactor(s)); p.money += g; push(s, "saray", `Hükümdar bir lütufta bulundu; kesene ${g} akçe ve gönlüne sıcaklık düştü.`, "kişisel", false, { k: "court.ev.sultanLutuf", p: [g] }); }
     else if (ev === "rakip") { if (effStat(p, "charisma") >= 6 || fav > 55) { p.courtFavor = clamp100((p.courtFavor ?? 55) + 3); push(s, "saray", `Bir rakip saraylı kuyunu kazmak istedi; diliyle alt ettin, itibarın arttı.`, "kişisel", false, { k: "court.ev.rakipFoil" }); } else { p.courtFavor = clamp100((p.courtFavor ?? 55) - 7); push(s, "saray", `Bir rakip saraylı seni hükümdara çekiştirdi; itibarın sarsıldı.`, "kişisel", true, { k: "court.ev.rakipHit" }); } }
-    else if (ev === "sinav") { if (Math.random() < 0.4 + effStat(p, "intelligence") * 0.05) { p.courtFavor = clamp100((p.courtFavor ?? 55) + 6); p.courtXp = (p.courtXp ?? 0) + 6; push(s, "saray", `Hükümdar bir mesele danıştı; isabetli görüşünle takdir topladın.`, "kişisel", false, { k: "court.ev.sinavWin" }); } else { p.courtFavor = clamp100((p.courtFavor ?? 55) - 4); push(s, "saray", `Hükümdarın danıştığı meselede şaşaladın; biraz gözden düştün.`, "kişisel", false, { k: "court.ev.sinavLose" }); } }
+    else if (ev === "sinav") { if (Math.random() < 0.4 + effEtki(p, "intelligence") * 0.05) { p.courtFavor = clamp100((p.courtFavor ?? 55) + 6); p.courtXp = (p.courtXp ?? 0) + 6; push(s, "saray", `Hükümdar bir mesele danıştı; isabetli görüşünle takdir topladın.`, "kişisel", false, { k: "court.ev.sinavWin" }); } else { p.courtFavor = clamp100((p.courtFavor ?? 55) - 4); push(s, "saray", `Hükümdarın danıştığı meselede şaşaladın; biraz gözden düştün.`, "kişisel", false, { k: "court.ev.sinavLose" }); } }
     else { p.courtFavor = clamp100((p.courtFavor ?? 55) - 3); push(s, "saray", `Sarayda hakkında bir dedikodu dolaştı; gölgesi itibarına düştü.`, "kişisel", false, { k: "court.ev.dedikodu" }); }
     checkCourtPromotion(s);
   }
@@ -12935,7 +13018,7 @@ function kirKok(s: GameState, n?: number) { const ev = s.history[s.history.lengt
 // Teklifin rakamları: konacak pay (nakit+emanetin %40'ı ya da %10'u) ve görünür şans (stat 0–10).
 export function kirilmaTeklif(s: GameState, ikinci = false): { buyuk: number; kucuk: number; sans: number } {
   const p = s.player, l = likit(p);
-  const sans = Math.max(20, Math.min(80, Math.round(38 + 4 * (p.skills?.trade || 0) + 1.5 * effStat(p, "intelligence") + (ikinci ? 10 : 0))));
+  const sans = Math.max(20, Math.min(80, Math.round(38 + 4 * (p.skills?.trade || 0) + 1.5 * effEtki(p, "intelligence") + (ikinci ? 10 : 0))));
   return { buyuk: Math.round(l * 0.4), kucuk: Math.round(l * 0.1), sans };
 }
 function yoldaOrtaklik(p: Player): Kirilma | undefined { return (p.kirilmalar || []).find((k) => k.id === "ortaklik" && k.faz === "yolda" && (k.yol === "buyuk" || k.yol === "kucuk")); }
@@ -12943,7 +13026,7 @@ function yoldaOrtaklik(p: Player): Kirilma | undefined { return (p.kirilmalar ||
 export function kirilmaHaber(s: GameState): { iyi: boolean; geri: number; yetis: number } | null {
   const p = s.player, o = yoldaOrtaklik(p); if (!o) return null;
   const iyi = ((o.zar ?? 99) < (o.sans ?? 0)) === ((o.hz ?? 0) < 75);
-  return { iyi, geri: Math.round((o.pay || 0) * 0.6), yetis: Math.max(15, Math.min(85, Math.round(30 + 3 * effStat(p, "strength") + 2 * effStat(p, "charisma")))) };
+  return { iyi, geri: Math.round((o.pay || 0) * 0.6), yetis: Math.max(15, Math.min(85, Math.round(30 + 3 * effEtki(p, "strength") + 2 * effEtki(p, "charisma")))) };
 }
 // Teklifi getiren: kentteki bir tüccar (yoksa dükkâncı, o da yoksa bir yetişkin); aile değil. Kimse yoksa metin "bir kervanbaşı" der.
 function kervanbasi(s: GameState, random: () => number): string | undefined {
@@ -13123,6 +13206,16 @@ export function migrate(s: GameState): GameState {
   if (p.family_news !== undefined && !(p.family_news && typeof p.family_news.id === "string" && Number.isFinite(p.family_news.q))) p.family_news = undefined;
   if (!p.stats || typeof p.stats !== "object") p.stats = { strength: 1, intelligence: 1, charisma: 1, stamina: 1 };
   for (const k of ["strength", "intelligence", "charisma", "stamina"]) if (!Number.isFinite(p.stats[k])) p.stats[k] = 1;
+  // K2 (F1): niyet/stat sayacı/karizma kilidi opsiyonel — bozuksa varsayılansız silinir (eski kayıt aynı sayılarla kalır).
+  if (p.niyet !== undefined && !(NIYETLER.some((n) => n.id === p.niyet) && Number.isFinite(p.niyet_yil))) { delete p.niyet; delete p.niyet_yil; delete p.niyet_degisti; }
+  if (p.niyet === undefined) { delete p.niyet_yil; delete p.niyet_degisti; }
+  if (p.niyet_degisti !== undefined && p.niyet_degisti !== true) delete p.niyet_degisti;
+  if (p.stat_kullanim !== undefined) {
+    const sk = p.stat_kullanim; const temiz: Record<string, number[]> = {};
+    if (sk && typeof sk === "object") for (const k of ["strength", "intelligence", "charisma", "stamina"]) if (Array.isArray(sk[k])) { const a = sk[k].filter((t: unknown) => Number.isFinite(t)).slice(-30); if (a.length) temiz[k] = a; }
+    if (Object.keys(temiz).length) p.stat_kullanim = temiz; else delete p.stat_kullanim;
+  }
+  if (p.karizma_xp !== undefined && !(p.karizma_xp && Number.isFinite(p.karizma_xp.t) && Number.isFinite(p.karizma_xp.n))) delete p.karizma_xp;
   const SAYI_VARSAYILAN: Record<string, number> = { money: 0, health: 60, hunger: 60, reputation: 0, honor: 0, fear: 0, fame: 0 };
   for (const [k, v] of Object.entries(SAYI_VARSAYILAN)) if (!Number.isFinite(p[k])) p[k] = v;
   if (p.crime_heat !== undefined) p.crime_heat = Number.isFinite(p.crime_heat) ? Math.max(0, Math.min(100, Math.round(p.crime_heat))) : undefined;

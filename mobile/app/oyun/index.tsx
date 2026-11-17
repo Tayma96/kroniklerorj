@@ -32,7 +32,7 @@ import { hap } from "../../lib/haptics";
 import { C, F, T } from "../../lib/theme";
 import { SoylentiIzi, soylentiLead } from "../../lib/rumor-ui";
 import { AileHaberi } from "../../lib/evlat-ui";
-import { aileHaberiniOku, varisAdaylari, aileHaberi, effStat } from "../../lib/game";
+import { aileHaberiniOku, varisAdaylari, aileHaberi, effStat, effEtki } from "../../lib/game";
 import { ITEMS } from "../../lib/world";
 
 const SEASON_KEY: Record<string, string> = { "Kış": "kis", "İlkbahar": "ilkbahar", "Yaz": "yaz", "Sonbahar": "sonbahar" };
@@ -257,7 +257,7 @@ export default function Dashboard() {
             ...(milestone.etki.health ? [{ icon: "saglik", text: `${milestone.etki.health > 0 ? "+" : "−"}${Math.abs(milestone.etki.health)} ${t("char.health")}`, color: C.blood }] : []),
           ] : undefined} />
       ) : opp ? (
-        <OpportunityModal opp={opp} statVal={opp ? state.player.stats[opp.stat] : 5} onResolve={onResolveOpp} progress={savedMonth} onProgress={!savedMonth ? undefined : (stage, success) => apply(s => progressMonthOpportunity(s, savedMonth.id, stage, success))} onPass={() => { hap("tap"); if (savedMonth) apply(s => resolveMonthOpportunity(s, savedMonth.id, true)); }} />
+        <OpportunityModal opp={opp} statVal={opp ? effEtki(state.player, opp.stat) : 5} onResolve={onResolveOpp} progress={savedMonth} onProgress={!savedMonth ? undefined : (stage, success) => apply(s => progressMonthOpportunity(s, savedMonth.id, stage, success))} onPass={() => { hap("tap"); if (savedMonth) apply(s => resolveMonthOpportunity(s, savedMonth.id, true)); }} />
       ) : tzDilemma ? (
         <DilemmaModal dilemma={tzDilemma} onChoose={onTezgah} female={p.gender === "kadın"} />
       ) : state.hesap && !p.dead && !yearReport ? ( // yıl karnesi kapanınca hesap anı gelir (iki pencere üst üste açılmaz)

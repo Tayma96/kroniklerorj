@@ -1,5 +1,5 @@
 // Tur-tabanlı taktik savaş motoru (saf). Sonuç savas ekranında GameState'e uygulanır.
-import { Player, Encounter, combatPower, armorDefense, weaponClass, shieldBlockChance } from "./game";
+import { Player, Encounter, combatPower, armorDefense, weaponClass, shieldBlockChance, statEtki } from "./game";
 import { WClass } from "./world";
 import { nextRandom } from "./random";
 
@@ -70,7 +70,7 @@ function pickEnemyMove(arch: EArch, power: number, random: () => number, despera
 // Telegraf bu ihtimalle doğru çıkar; aksi halde düşman fent atıp niyetini gizler.
 export function readAccuracy(p: Player, enemyPower: number, arch: EArch = "asker", desperate = false): number {
   const skill = p.skills?.combat || 0;
-  const intel = p.stats?.intelligence || 0;
+  const intel = statEtki(p.stats?.intelligence || 0); // K2: 10 üstü yarı hızla
   let a = 0.70 + skill * 0.018 + intel * 0.004 - Math.max(0, enemyPower - 6) * 0.012 + ARCH[arch].feint;
   if (weaponClass(p) === "hizli") a += 0.05; // çevik refleks düşmanı daha iyi okur
   if (desperate) a -= 0.12; // çaresiz düşman erratik → niyeti okuması zor
