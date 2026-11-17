@@ -431,18 +431,29 @@ export function ilanIsle(
   });
 }
 
-/** Emaneti sahibine iade eder (sahip yoksa akçe hazineye, mal kasaba stoğuna: toplam korunur). */
-function iadeEt(k: Kasaba, ilan: Ilan, sahip: Karakter | undefined): void {
+/**
+ * Emaneti sahibine iade eder (sahip yoksa akçe hazineye, mal kasaba stoğuna; stok tavanını aşan mal yok olmaz,
+ * taban değeriyle hazineye yazılır: toplam korunur). Döner: hazineye taban değeriyle geçen adet.
+ */
+export function iadeEt(k: Kasaba, ilan: Ilan, sahip: Karakter | undefined): number {
+  let tasan = 0;
   if (sahip) {
     if (ilan.e > 0) sahip.pa += ilan.e;
     if (ilan.p && ilan.p.length > 0) kaliteliEkle(sahip, ilan.ml, ilan.p);
   } else {
     if (ilan.e > 0) hanedanKasabasi(k).hz += ilan.e;
     const n = (ilan.p ?? []).reduce((a, x) => a + x[1], 0);
-    if (n > 0) stogaEkle((k.st ??= {}) as KasabaStogu, ilan.ml, n);
+    if (n > 0) {
+      const st = (k.st ??= {}) as KasabaStogu;
+      const once = st[ilan.ml] ?? 0;
+      stogaEkle(st, ilan.ml, n);
+      tasan = n - ((st[ilan.ml] ?? 0) - once);
+      if (tasan > 0) hanedanKasabasi(k).hz += tasan * MALLAR[ilan.ml].taban;
+    }
   }
   ilan.e = 0;
   ilan.p = [];
+  return tasan;
 }
 
 /** POST /v1/pazar/geri {ilan}: sahibi ilanı kapatır, kalan emanet iade edilir. */
