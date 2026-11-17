@@ -1,4 +1,5 @@
 import { DesignPressable as Pressable } from "../../lib/design-pressable";
+import { SansDokumu } from "../../lib/sans-etiketi";
 import { useState, useRef } from "react";
 import { View, Text, ScrollView, useWindowDimensions } from "react-native";
 import Animated, { useSharedValue, useAnimatedStyle, withSequence, withTiming } from "react-native-reanimated";
@@ -339,19 +340,7 @@ export default function Savas() {
                     </Pressable>
                   </View>
                   {diyetAcik ? (
-                    <View style={{ paddingTop: 8 }}>
-                      <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1.5, color: C.goldDim, marginBottom: 4 }}>{t("sans.title")}</Text>
-                      {ds!.kalemler.map((x, i) => (
-                        <View key={i} style={{ flexDirection: "row", paddingVertical: 2 }}>
-                          <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 15, color: C.parchmentDim }}>{t(x.k)}</Text>
-                          <Text style={{ fontFamily: F.display, fontSize: 13, color: x.v > 0 ? C.sage : C.blood }}>{x.v > 0 ? "+" + x.v : x.v}</Text>
-                        </View>
-                      ))}
-                      <View style={{ flexDirection: "row", paddingTop: 4, marginTop: 3, borderTopWidth: 1, borderTopColor: C.border }}>
-                        <Text style={{ flex: 1, fontFamily: F.display, fontSize: 13, color: C.parchment }}>{t("sans.toplam")}</Text>
-                        <Text style={{ fontFamily: F.display, fontSize: 13, color: C.gold }}>{yuzdeL(ds!.yuzde, lang)}</Text>
-                      </View>
-                    </View>
+                    <View style={{ paddingTop: 8 }}><SansDokumu kalemler={ds!.kalemler} yuzde={ds!.yuzde} /></View>
                   ) : null}
                 </View>
               );

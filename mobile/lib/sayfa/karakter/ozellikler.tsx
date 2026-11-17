@@ -7,7 +7,7 @@ import { useGame } from "../../store";
 import { useI18n, yuzdeL } from "../../i18n";
 import { hap } from "../../haptics";
 import { GameIcon } from "../../icons";
-import { sermayeler, SermayeId, allocateStat, Stats, pendingPerkCount, statXpOf, statXpForNext, statTierKey, publicPerception, atHome } from "../../game";
+import { sermayeler, SermayeId, allocateStat, Stats, pendingPerkCount, statXpOf, statXpForNext, statTierKey, publicPerception, atHome, effStat, statCapOf } from "../../game";
 import { C, F } from "../../theme";
 import { Pano, Giris, Cubuk, KR, yon } from "./parca";
 
@@ -26,6 +26,7 @@ export function OzelliklerSekmesi() {
   const [sermayeAcik, setSermayeAcik] = useState<SermayeId | null>(null);
   const p = state!.player;
   const canAdd = p.stat_points > 0;
+  const tavan = statCapOf(p); // çocukta 8, 13 yaştan sonra 10
   const add = (k: keyof Stats) => { hap("success"); apply((s) => allocateStat(s, k)); };
   const perks = pendingPerkCount(p);
 
@@ -44,21 +45,22 @@ export function OzelliklerSekmesi() {
       </View> : undefined}>
         <View style={{ flexDirection: row, flexWrap: "wrap", gap: 8 }}>
           {NITELIK.map((n) => {
-            const v = p.stats[n.k]; const ad = t(n.ad); const xpNext = v < 10 ? statXpForNext(v) : 0; const xp = statXpOf(p, n.k);
-            return <View key={n.k} accessible={!canAdd} accessibilityLabel={`${ad}: ${v} / 10, ${t(statTierKey(v))}`} style={{ width: "48.6%", flexGrow: 1, borderRadius: 8, borderWidth: 1, borderColor: C.border, backgroundColor: KR.well, padding: 10, gap: 6 }}>
+            const ham = p.stats[n.k]; const v = effStat(p, n.k); const fark = v - ham; // etkin değer: yara düşürür, kıyafet/takı karizma ekler
+            const ad = t(n.ad); const xpNext = ham < 10 ? statXpForNext(ham) : 0; const xp = statXpOf(p, n.k);
+            return <View key={n.k} accessible={!canAdd} accessibilityLabel={`${ad}: ${v} / ${tavan}, ${t(statTierKey(v))}${fark ? `, ${t("char.statHam")} ${ham}` : ""}`} style={{ width: "48.6%", flexGrow: 1, borderRadius: 8, borderWidth: 1, borderColor: C.border, backgroundColor: KR.well, padding: 10, gap: 6 }}>
               <View style={{ flexDirection: row, alignItems: "center", justifyContent: "space-between" }}>
                 <View style={{ width: 40, height: 40, borderRadius: 20, borderWidth: 1.5, borderColor: n.tone, alignItems: "center", justifyContent: "center", backgroundColor: "#120C06" }}>
                   <GameIcon name={n.icon} size={20} color={n.tone} />
                 </View>
-                <Text style={{ fontFamily: F.display, fontSize: 26, lineHeight: 30, color: C.goldBright }}>{v}<Text style={{ fontSize: 12, color: C.parchmentMuted }}> /10</Text></Text>
+                <Text style={{ fontFamily: F.display, fontSize: 26, lineHeight: 30, color: C.goldBright }}>{v}{fark ? <Text style={{ fontSize: 12, color: fark > 0 ? C.sage : C.blood }}> {fark > 0 ? "+" + fark : "−" + -fark}</Text> : null}<Text style={{ fontSize: 12, color: C.parchmentMuted }}> /{tavan}</Text></Text>
               </View>
               <View>
                 <Text numberOfLines={1} style={{ fontFamily: F.display, fontSize: 12.5, lineHeight: 16, color: C.parchmentDim, textAlign: ta }}>{ad}</Text>
                 <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: 14.5, lineHeight: 18, color: n.tone, textAlign: ta }}>{t(statTierKey(v))}</Text>
               </View>
-              <Cubuk pct={v * 10} tone={n.tone} h={5} rtl={rtl} />
+              <Cubuk pct={Math.min(100, (v / tavan) * 100)} tone={n.tone} h={5} rtl={rtl} />
               {xpNext ? <Cubuk pct={(xp / xpNext) * 100} tone={C.goldBright} h={2} rtl={rtl} /> : null}
-              {canAdd && v < 10 ? <Pressable accessibilityRole="button" accessibilityLabel={`${ad} +1`} onPress={() => add(n.k)}
+              {canAdd && ham < tavan ? <Pressable accessibilityRole="button" accessibilityLabel={`${ad} +1`} onPress={() => add(n.k)}
                 style={({ pressed }) => ({ minHeight: 44, borderRadius: 7, borderWidth: 1, borderBottomWidth: pressed ? 1 : 2.5, borderColor: C.gold, borderBottomColor: "#080503", backgroundColor: pressed ? "rgba(201,162,78,0.1)" : "rgba(201,162,78,0.2)", alignItems: "center", justifyContent: "center", transform: [{ translateY: pressed ? 1.5 : 0 }] })}>
                 <Text style={{ fontFamily: F.display, fontSize: 15, color: C.goldBright }}>+1</Text>
               </Pressable> : null}

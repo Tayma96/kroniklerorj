@@ -2,7 +2,7 @@ import { DesignPressable as Pressable } from "../../lib/design-pressable";
 import { RealmNotices, realmNoticeCount, noticeRows } from "../../lib/realm-notices-ui";
 import { GameSheet, useHomeSheet, type HomeSheetId } from "../../lib/home-hud";
 import { SAHNE_GORSEL } from "../../lib/sahne-tema";
-import { View, Text, ScrollView, Modal } from "react-native";
+import { View, Text, ScrollView, Modal, Alert } from "react-native";
 import { LoadingScreen } from "../../lib/fx";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { useState, useEffect, useRef, useMemo } from "react";
@@ -413,7 +413,10 @@ export default function Dashboard() {
             <GameButton variant="secondary" accessibilityLabel={t("dash.readLife")} icon="roman" rtl={rtl} onPress={() => router.push("/oyun/roman")} style={{ flex: 1 }}>
               <Text style={{ fontFamily: F.display, fontSize: 13, color: C.goldBright, letterSpacing: 1, textAlign: "center" }}>{t("dash.readLife")}</Text>
             </GameButton>
-            <GameButton variant="secondary" accessibilityLabel={t("dash.newLife")} icon="leaf" rtl={rtl} onPress={async () => { try { await resetGame(); router.replace("/yeni-oyun"); } catch {} }} style={{ flex: 1 }}>
+            <GameButton variant="secondary" accessibilityLabel={t("dash.newLife")} icon="leaf" rtl={rtl} onPress={() => Alert.alert(t("settings.newLife"), t("settings.reset"), [
+              { text: t("common.cancel"), style: "cancel" },
+              { text: t("menu.sifirla"), style: "destructive", onPress: async () => { try { await resetGame(); router.replace("/yeni-oyun"); } catch {} } },
+            ])} style={{ flex: 1 }}>
               <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchmentDim, letterSpacing: 1, textAlign: "center" }}>{t("dash.newLife")}</Text>
             </GameButton>
           </View>

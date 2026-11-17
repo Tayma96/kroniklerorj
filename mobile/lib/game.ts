@@ -18,6 +18,8 @@ import { IzlenimDefteri, izlenimHazirla, izlenimler, izlenimToplami, belirginIzl
 import { Konusma, SohbetYanit, SohbetKonu, SOHBET_KONULARI, konusmaGecerli, ilkSozEtkisi, ilkSozAnahtari } from "./npc-sohbet";
 import { RumorHearing, rumorOrigin, rumorGraph, spreadRumor } from "./soylenti-agi";
 import { arcById, ArcChoice, availableArcs } from "./arcs";
+import { ZarKalemi, ZarKademe, zarOranHesapla, zarKademe } from "./zar";
+export type { ZarKalemi, ZarKademe } from "./zar";
 
 export interface Stats { strength: number; intelligence: number; charisma: number; stamina: number; }
 export interface Skills { combat: number; trade: number; crafting: number; social: number; }
@@ -264,8 +266,25 @@ function bumpNam(p: Player, key: keyof Nam, amt: number) { if (p.nam) p.nam[key]
 export function effStat(p: Player, key: keyof Stats): number {
   const pen = (p.injuries || []).filter((i) => i.stat === key).reduce((a, i) => a + i.delta, 0);
   let base = p.stats[key];
-  if (key === "charisma" && p.equipped?.kiyafet) base += attireScore(p).charisma; // kıyafet karizmaya katkı
-  return Math.max(0, base - pen);
+  if (key === "charisma" && p.equipped) base += attireScore(p).charisma; // kuşanılmış her karizmalı eşya (kıyafet, takı) katkı verir
+  return Math.max(0, Math.min(statCapOf(p) + 3, base - pen)); // eşya katkısıyla bile tavanın en çok 3 üstü
+}
+// ── Tek zar (K1): etkinGüç = effStat + beceri seviyesi/2 + ek kalemler; oran = clamp(0.6 + 0.08×(güç − zorluk), 0.08, 0.95).
+// zarOrani saf önizlemedir (RNG tüketmez); zar aynı oranla tohumlu gameRandom(s) atar — ekranda gösterilenle birebir.
+export interface ZarGirdi { stat?: keyof Stats; beceri?: keyof Skills; ekKalemler?: ZarKalemi[]; zorluk: number }
+export interface ZarOnizleme { oran: number; kademe: ZarKademe; guc: number; zorluk: number; stat?: keyof Stats; statDeger?: number; kalemler: ZarKalemi[] }
+export function zarOrani(s: GameState, g: ZarGirdi): ZarOnizleme {
+  const p = s.player; const kalemler: ZarKalemi[] = []; let guc = 0; let statDeger: number | undefined;
+  if (g.stat) { statDeger = effStat(p, g.stat); guc += statDeger; kalemler.push({ etiket: "st." + g.stat, deger: statDeger }); }
+  if (g.beceri) { const b = (p.skills?.[g.beceri] || 0) / 2; if (b) { guc += b; kalemler.push({ etiket: "skill." + g.beceri, deger: b }); } }
+  for (const k of g.ekKalemler || []) if (k.deger) { guc += k.deger; kalemler.push({ etiket: k.etiket, deger: k.deger }); }
+  kalemler.push({ etiket: "zar.zorluk", deger: -g.zorluk });
+  const oran = zarOranHesapla(guc, g.zorluk);
+  return { oran, kademe: zarKademe(oran), guc, zorluk: g.zorluk, stat: g.stat, statDeger, kalemler };
+}
+export function zar(s: GameState, g: ZarGirdi): ZarOnizleme & { basari: boolean } {
+  const o = zarOrani(s, g);
+  return { ...o, basari: gameRandom(s) < o.oran };
 }
 // Mülk: konuma bağlı (loc) + kondisyon (cond 0..100) + kademe (level 1..3). Gelir refah×kondisyon×kademe.
 export interface Property { type: string; loc: string; cond: number; level?: number; workers?: string[]; ledger?: { y: number; net: number; months?: number }[]; ledger_accum?: { y: number; net: number; months: number }; tenant?: boolean; guard?: boolean; fallow_until?: number; fertile_until?: number; }
@@ -5808,7 +5827,7 @@ function rollWorkEvent(s: GameState) {
   const vi = adaylar.length ? rnd(adaylar) : Math.floor(Math.random() * pool.length);
   const ev = pool[vi];
   const wevKey = vi > 0 ? profKey + "." + vi : profKey; // varyant 0 eski anahtarları kullanır — eski kayıt olayları çözülmeye devam eder
-  const ok = Math.random() < 0.4 + effStat(p, ev.stat) * 0.06;
+  const ok = zar(s, { stat: ev.stat, zorluk: IS_OLAYI_ZORLUK }).basari; // tek zar (eski 0.4+0.06×stat tavansızdı)
   if (ok) {
     if (ev.wMoney) p.money += ev.wMoney;
     if (ev.wHealth) p.health = Math.min(100, p.health + ev.wHealth);
@@ -5851,6 +5870,19 @@ export function canProfAction(s: GameState): boolean {
   const p = s.player;
   return !p.dead && !inJail(p) && p.age >= 13 && hasProfAction(p) && profActionReady(p, s.turn) && p.hunger >= 18;
 }
+// İş mini olayı ve imza eyleminin zorluğu (F0 geçişi: eski ortalama başarı korunur).
+export const IS_OLAYI_ZORLUK = 4;
+export const IMZA_ZORLUK = 4;
+export function imzaZarGirdi(p: Player): ZarGirdi {
+  const a = PROF_ACTIONS[p.profession]; const yk = meslekYoluKademesi(p);
+  return { stat: a?.stat || "intelligence", zorluk: IMZA_ZORLUK, ekKalemler: yk >= 2 ? [{ etiket: "zar.kalem.meslekYolu", deger: yk >= 3 ? 2 : 1 }] : [] };
+}
+// İş mini olayları mesleğin olay havuzundaki statlarla sınanır: her farklı stat için önizleme (RNG yok).
+export function isOlayiOranlari(s: GameState): ZarOnizleme[] {
+  const pool = WORK_EVENTS[s.player.profession] || WORK_EVENTS["_"] || [];
+  const statlar = [...new Set(pool.map((e) => e.stat))];
+  return statlar.map((stat) => zarOrani(s, { stat, zorluk: IS_OLAYI_ZORLUK }));
+}
 export function professionAction(prev: GameState): GameState {
   const s = clone(prev); const p = s.player;
   if (!canProfAction(s)) return s;
@@ -5858,7 +5890,7 @@ export function professionAction(prev: GameState): GameState {
   const tier = pr ? careerTier(pr, kariyerXp(p)) : 0; const titleMult = TITLE_MULT[tier] || 1;
   p.prof_action_turn = s.turn; p.hunger = Math.max(0, p.hunger - 8);
   const yolXp0 = p.career_xp; const yolKademe = meslekYoluKademesi(p);
-  const ok = Math.random() < Math.min(0.95, 0.45 + effStat(p, a.stat) * 0.05 + (yolKademe >= 2 ? 0.05 : 0) + (yolKademe >= 3 ? 0.05 : 0));
+  const ok = zar(s, imzaZarGirdi(p)).basari; // tek zar: meslek statı + meslek yolu kademesi
   if (ok) {
     let reward = Math.round((a.reward + effStat(p, a.stat) * 3 + Math.floor(Math.random() * 12)) * titleMult * inflationFactor(s) * (yolKademe >= 3 ? 1.30 : yolKademe >= 2 ? 1.15 : 1));
     // Ustalık eseri (büyük başarı): beceri/özellik ve kariyer kademesi yükseldikçe ihtimal artar (%5 → %30).
@@ -7125,6 +7157,17 @@ function exposeAffair(s: GameState, a: NonNullable<Player["affair"]>, _sg: "erke
     push(s, "sohbet", `${a.name} ile gönül işin dile düştü; kimi hoş gördü kimi ayıpladı.`, "kişisel", false, { k: "affair.gossipMild", p: [npcP(s, a)] });
   }
 }
+// Başarılı dedikodu söylenti ağına girer: "iftira" söylentisi (%1 oyuncu, %2 hedef) hedefin çevresinden
+// bir dinleyiciden yayılmaya başlar; ay ay gossipTick/spreadRumor ile uzaklaşır, kaynağı sana döner.
+function dedikoduSoylentisi(s: GameState, npc: NPC) {
+  const rs = s.player_rumors || []; const pop = nufusOf(s);
+  let dinleyici = npc.id;
+  if (pop.k[npc.id]) { const komsu = rumorGraph(pop, worldYears(s))[npc.id] || []; if (komsu.length) dinleyici = komsu[Math.floor(gameRandom(s) * komsu.length)]; }
+  rs.push({ id: Math.floor(gameRandom(s) * 2176782336).toString(36), hafta: s.turn, tur: "iftira", vi: Math.floor(gameRandom(s) * (RUMOR_VARIANTS.iftira || 1)),
+    nam: MEMORY_TYPES.iftira?.nam || null, yon: -1, siddet: 1, kaynak: npc.name, loc: s.player.location_name, kaynakId: npc.id,
+    duyanlar: pop.k[dinleyici] ? rumorOrigin(dinleyici, s.turn) : undefined });
+  s.player_rumors = rs.slice(-12);
+}
 export function gossipAbout(prev: GameState, npc: NPC): GameState {
   const s = clone(prev); const p = s.player; if (p.dead || p.age < 13) return s;
   const ns = npcStateOf(s, npc.id); const rel = s.relationships[npc.id] || 0;
@@ -7133,6 +7176,7 @@ export function gossipAbout(prev: GameState, npc: NPC): GameState {
   if (ok) {
     s.relationships[npc.id] = Math.max(-100, rel - 4); ns.mood = Math.max(-100, ns.mood - 4); bumpNam(p, "zalim", 2);
     push(s, "sohbet", `${npc.name} hakkında diller döktürdün; namı sarsıldı.`, "kişisel", false, { k: "npca.gossipWin", p: [npcP(s, npc)] });
+    dedikoduSoylentisi(s, npc);
   } else {
     s.relationships[npc.id] = Math.max(-100, rel - 12); ns.mood = Math.max(-100, ns.mood - 14); remember(s, npc, "hakaret");
     push(s, "sohbet", `Dedikodun ${npc.name}'in kulağına gitti; sana diş biledi (−12 ilişki).`, "kişisel", false, { k: "npca.gossipLose", p: [npcP(s, npc)] });
@@ -7270,7 +7314,8 @@ function rollTravelEvent(s: GameState, route: TravelRoute) {
   const insec = Math.max(0, -cityFx(s, p.location_name).sec); // eşkıya/yangın olayı varış şehrini tehlikeli yapar
   const chance = (route === "patika" ? 0.42 : route === "kervan" ? 0.5 : 0.34) + insec * 0.012;
   if (gameRandom(s) >= chance) return;
-  const test = (stat: keyof Stats, per = 0.05, base = 0.4) => gameRandom(s) < Math.min(0.9, base + effStat(p, stat) * per);
+  // Tek zar: eski taban ≥0.48 → zorluk 4, 0.42–0.45 → 5, ≤0.40 → 6 (ortalama oran korunur; bkz. F0 geçiş tablosu)
+  const test = (stat: keyof Stats, zorluk: number) => zar(s, { stat, zorluk }).basari;
   // Kervan rotası güvenli/sosyal olaylara yönelir; diğerleri tüm havuzu çeker. At sahibine özel olay eklenir.
   const pool = route === "kervan" ? ["han", "yolcu", "tuccar", "kutsal", "kayipcocuk", "atnali", "dervis", "eskici", "menzilci"] : ["han", "yolcu", "tuccar", "firtina", "gecit", "kervanf", "kutsal", "izler", "coban", "harabe", "kopru", "devrikyuk", "kayipcocuk", "arikovani", "atnali", "dervis", "siginak", "eskici", "sislivadi", "sazlik", "menzilci", "gecates", "ahlat"];
   if (p.horse) pool.push("atli"); // atlıya yol başka görünür
@@ -7281,22 +7326,22 @@ function rollTravelEvent(s: GameState, route: TravelRoute) {
   } else if (ev === "tuccar") {
     // Gezgin satıcı: ucuza yararlı bir mal.
     const goods = ["sifa", "ekmek", "et", "bal"]; const g = goods[Math.floor(gameRandom(s) * goods.length)];
-    if (test("charisma", 0.06, 0.45)) { p.inventory[g] = (p.inventory[g] || 0) + 1; push(s, "yolculuk", `Gezgin bir satıcıyla karşılaştın; pazarlıkla ucuza bir ${ITEMS[g]?.name || g} kaptın.`, "kişisel", true, { k: "evj.trMerchWin", p: [{ i: g }] }); }
+    if (test("charisma", 5)) { p.inventory[g] = (p.inventory[g] || 0) + 1; push(s, "yolculuk", `Gezgin bir satıcıyla karşılaştın; pazarlıkla ucuza bir ${ITEMS[g]?.name || g} kaptın.`, "kişisel", true, { k: "evj.trMerchWin", p: [{ i: g }] }); }
     else push(s, "yolculuk", "Gezgin bir satıcı malını fazla pahalı istedi; eli boş yürüdün.", "kişisel", false, { k: "evj.trMerchLose" });
   } else if (ev === "yolcu") {
     // Yol arkadaşı (derviş/kaçak/tüccar/asker) — sohbetten beceri/irfan.
     const kinds = ["derviş", "kaçak tüccar", "yaşlı asker", "seyyah"]; const whoIdx = Math.floor(gameRandom(s) * kinds.length); const who = kinds[whoIdx];
-    if (test("charisma", 0.05, 0.5)) { gainSkill(s, "social", 12); push(s, "yolculuk", `Yolda bir ${who} ile dertleştin; sohbetinden hisse kaptın (sosyal beceri arttı).`, "kişisel", true, { k: "evj.trCompWin", p: [{ wc: whoIdx }] }); }
+    if (test("charisma", 4)) { gainSkill(s, "social", 12); push(s, "yolculuk", `Yolda bir ${who} ile dertleştin; sohbetinden hisse kaptın (sosyal beceri arttı).`, "kişisel", true, { k: "evj.trCompWin", p: [{ wc: whoIdx }] }); }
     else push(s, "yolculuk", `Yolda bir ${who} ile yürüdün; lafı pek tutmadı.`, "kişisel", false, { k: "evj.trCompLose", p: [{ wc: whoIdx }] });
   } else if (ev === "firtina") {
-    if (test("stamina", 0.06, 0.45)) push(s, "yolculuk", "Yolda fırtınaya yakalandın ama sağlam bir kayalığa sığınıp atlattın.", "kişisel", false, { k: "evj.trStormWin" });
+    if (test("stamina", 5)) push(s, "yolculuk", "Yolda fırtınaya yakalandın ama sağlam bir kayalığa sığınıp atlattın.", "kişisel", false, { k: "evj.trStormWin" });
     else { const hurt = 5 + Math.floor(gameRandom(s) * 8); p.health = Math.max(1, p.health - hurt); p.hunger = Math.max(0, p.hunger - 8); push(s, "yolculuk", `Yolda fırtına seni hırpaladı (−${hurt} sağlık).`, "kişisel", true, { k: "evj.trStormLose", p: [hurt] }); }
   } else if (ev === "gecit") {
-    if (test("strength", 0.06, 0.42)) { gainSkill(s, "combat", 6); push(s, "yolculuk", "Sarp bir geçidi güçle aşıp kestirme yaptın.", "kişisel", false, { k: "evj.trPassWin" }); }
+    if (test("strength", 5)) { gainSkill(s, "combat", 6); push(s, "yolculuk", "Sarp bir geçidi güçle aşıp kestirme yaptın.", "kişisel", false, { k: "evj.trPassWin" }); }
     else { const hurt = 4 + Math.floor(gameRandom(s) * 7); p.health = Math.max(1, p.health - hurt); push(s, "yolculuk", `Sarp geçitte ayağın kaydı, biraz hırpalandın (−${hurt} sağlık).`, "kişisel", false, { k: "evj.trPassLose", p: [hurt] }); }
   } else if (ev === "kervanf") {
     // Kervan fırsatı: ticaret testiyle küçük kâr.
-    if (test("intelligence", 0.05, 0.4)) { const gain = 10 + Math.floor(gameRandom(s) * 25); p.money += gain; gainSkill(s, "trade", 6); push(s, "yolculuk", `Yolda bir kervana ufak bir ticaret yaptın (+${gain} akçe).`, "kişisel", true, { k: "evj.trCarWin", p: [gain] }); }
+    if (test("intelligence", 6)) { const gain = 10 + Math.floor(gameRandom(s) * 25); p.money += gain; gainSkill(s, "trade", 6); push(s, "yolculuk", `Yolda bir kervana ufak bir ticaret yaptın (+${gain} akçe).`, "kişisel", true, { k: "evj.trCarWin", p: [gain] }); }
     else push(s, "yolculuk", "Yolda bir kervan gördün ama denk bir alışveriş çıkmadı.", "kişisel", false, { k: "evj.trCarLose" });
   }
   else if (ev === "kutsal") {
@@ -7304,61 +7349,61 @@ function rollTravelEvent(s: GameState, route: TravelRoute) {
     unEkle(p, "honor", 2); p.health = Math.min(100, p.health + 3); bumpNam(p, "dindar", 1);
     push(s, "yolculuk", "Yol üstünde bir türbeye uğrayıp dua ettin; içine bir ferahlık indi.", "kişisel", false, { k: "evj.trShrine" });
   } else if (ev === "izler") {
-    if (test("stamina", 0.06, 0.45)) { gainSkill(s, "combat", 6); push(s, "yolculuk", "Patikada kurt izleri gördün; izleri okuyup sürüden önce davrandın.", "kişisel", false, { k: "evj.trTracksWin" }); }
+    if (test("stamina", 5)) { gainSkill(s, "combat", 6); push(s, "yolculuk", "Patikada kurt izleri gördün; izleri okuyup sürüden önce davrandın.", "kişisel", false, { k: "evj.trTracksWin" }); }
     else { const hurt = 3 + Math.floor(gameRandom(s) * 4); p.health = Math.max(1, p.health - hurt); push(s, "yolculuk", `Kurtlar karanlıkta yolunu kesti; kaçarken hırpalandın (−${hurt} sağlık).`, "kişisel", false, { k: "evj.trTracksLose", p: [hurt] }); }
   } else if (ev === "coban") {
-    if (test("stamina", 0.05, 0.5)) { const pay = Math.round((6 + Math.floor(gameRandom(s) * 8)) * inflationFactor(s)); p.money += pay; bumpNam(p, "comert", 2); push(s, "yolculuk", `Sürüsü dağılmış bir çobana yardım ettin; duasını ve birkaç akçesini aldın (+${pay}).`, "kişisel", false, { k: "evj.trShepherd", p: [pay] }); }
+    if (test("stamina", 4)) { const pay = Math.round((6 + Math.floor(gameRandom(s) * 8)) * inflationFactor(s)); p.money += pay; bumpNam(p, "comert", 2); push(s, "yolculuk", `Sürüsü dağılmış bir çobana yardım ettin; duasını ve birkaç akçesini aldın (+${pay}).`, "kişisel", false, { k: "evj.trShepherd", p: [pay] }); }
     else push(s, "yolculuk", "Dağılan bir sürüyü toparlamaya çalıştın ama koyunlar seni dinlemedi; çoban gülümseyip teşekkür etti.", "kişisel", false, { k: "evj.trShepherdLose" });
   } else if (ev === "eskici") {
     // Eskicinin kırık tekeri: omuz ver — dua, birkaç akçe ve cömert nam.
-    if (test("strength", 0.05, 0.5)) { const pay = Math.round((4 + Math.floor(gameRandom(s) * 6)) * inflationFactor(s)); p.money += pay; bumpNam(p, "comert", 1); push(s, "yolculuk", `Eskicinin kırılan tekerini omuzlayıp taktın; dua ve birkaç akçe aldın (+${pay}).`, "kişisel", false, { k: "evj.trTinkerWin", p: [pay] }); }
+    if (test("strength", 4)) { const pay = Math.round((4 + Math.floor(gameRandom(s) * 6)) * inflationFactor(s)); p.money += pay; bumpNam(p, "comert", 1); push(s, "yolculuk", `Eskicinin kırılan tekerini omuzlayıp taktın; dua ve birkaç akçe aldın (+${pay}).`, "kişisel", false, { k: "evj.trTinkerWin", p: [pay] }); }
     else { p.hunger = Math.max(0, p.hunger - 4); push(s, "yolculuk", "Eskicinin tekeriyle boğuştun ama çivi tutmadı; ikiniz de yorgun, araba yerinde.", "kişisel", false, { k: "evj.trTinkerLose" }); }
   } else if (ev === "sislivadi") {
     // Sisli vadi: yönü okuyan kestirmeyi bulur; şaşıran saatlerce dolanır.
-    if (test("intelligence", 0.06, 0.42)) { addStatXp(s, "intelligence", 2); push(s, "yolculuk", "Vadiyi sis bastı; yosunun yönünden kuzeyi bulup kestirmeden çıktın.", "kişisel", false, { k: "evj.trFogWin" }); }
+    if (test("intelligence", 5)) { addStatXp(s, "intelligence", 2); push(s, "yolculuk", "Vadiyi sis bastı; yosunun yönünden kuzeyi bulup kestirmeden çıktın.", "kişisel", false, { k: "evj.trFogWin" }); }
     else { p.hunger = Math.max(0, p.hunger - 6); push(s, "yolculuk", "Sisin içinde aynı kayayı üç kez gördün; vadiden çıktığında gün bitmişti.", "kişisel", false, { k: "evj.trFogLose" }); }
   } else if (ev === "sazlik") {
     // Sazlığa saplanan yük atı: omuz veren dua ve akçe alır; beceremeyen çamurla döner.
-    if (test("strength", 0.05, 0.48)) { const pay = Math.round((5 + Math.floor(gameRandom(s) * 7)) * inflationFactor(s)); p.money += pay; bumpNam(p, "comert", 1); push(s, "yolculuk", `Sazlığa saplanan yük atını sürücüsüyle birlikte çekip çıkardın; dua ve birkaç akçe aldın (+${pay}).`, "kişisel", false, { k: "evj.trReedWin", p: [pay] }); }
+    if (test("strength", 4)) { const pay = Math.round((5 + Math.floor(gameRandom(s) * 7)) * inflationFactor(s)); p.money += pay; bumpNam(p, "comert", 1); push(s, "yolculuk", `Sazlığa saplanan yük atını sürücüsüyle birlikte çekip çıkardın; dua ve birkaç akçe aldın (+${pay}).`, "kişisel", false, { k: "evj.trReedWin", p: [pay] }); }
     else { p.hunger = Math.max(0, p.hunger - 5); push(s, "yolculuk", "Atı çamurdan çekeyim derken kendin dizine kadar battın; hayvan kendi kendine çıktı, sen çamurla döndün.", "kişisel", false, { k: "evj.trReedLose" }); }
   } else if (ev === "menzilci") {
     // Attan düşen menzil ulağı: mektubu yetiştiren posta ücretini ve itibarı alır.
-    if (test("stamina", 0.05, 0.45)) { const pay = Math.round((7 + Math.floor(gameRandom(s) * 9)) * inflationFactor(s)); p.money += pay; unEkle(p, "reputation", 1); push(s, "yolculuk", `Attan düşen menzil ulağının mektubunu bir sonraki hana sen yetiştirdin; posta ücreti sana kaldı (+${pay}).`, "kişisel", false, { k: "evj.trCourierWin", p: [pay] }); }
+    if (test("stamina", 5)) { const pay = Math.round((7 + Math.floor(gameRandom(s) * 9)) * inflationFactor(s)); p.money += pay; unEkle(p, "reputation", 1); push(s, "yolculuk", `Attan düşen menzil ulağının mektubunu bir sonraki hana sen yetiştirdin; posta ücreti sana kaldı (+${pay}).`, "kişisel", false, { k: "evj.trCourierWin", p: [pay] }); }
     else push(s, "yolculuk", "Ulağın mektubunu yetiştireyim derken yolu uzattın; han kapanmıştı, mektup sabahı bekledi.", "kişisel", false, { k: "evj.trCourierLose" });
   } else if (ev === "gecates") {
     // Gece çoban ateşi: sofraya oturan türkü ve dinçlikle kalkar; yolu şaşıran soğukta konaklar.
-    if (test("charisma", 0.05, 0.5)) { gainSkill(s, "social", 6); p.hunger = Math.min(100, p.hunger + 4); push(s, "yolculuk", "Gece bir çoban ateşine misafir oldun; ekmek bölündü, türkü döndü. Sabah yola dinç ve dost sesiyle çıktın.", "kişisel", false, { k: "evj.trFireWin" }); }
+    if (test("charisma", 4)) { gainSkill(s, "social", 6); p.hunger = Math.min(100, p.hunger + 4); push(s, "yolculuk", "Gece bir çoban ateşine misafir oldun; ekmek bölündü, türkü döndü. Sabah yola dinç ve dost sesiyle çıktın.", "kişisel", false, { k: "evj.trFireWin" }); }
     else { p.hunger = Math.max(0, p.hunger - 3); push(s, "yolculuk", "Gecenin ateşi uzaktan göründü ama yolunu şaşırttı; soğukta konakladın, azığın azaldı.", "kişisel", false, { k: "evj.trFireLose" }); }
   } else if (ev === "ahlat") {
     // Yol kenarı yaban armudu: olgununu seçen doyar; hama saldıran ekşir.
-    if (test("intelligence", 0.05, 0.5)) { p.hunger = Math.min(100, p.hunger + 6); p.health = Math.min(100, p.health + 1); push(s, "yolculuk", "Yol kenarındaki yaban armudunun olgunlarını seçtin; karnın doydu, heybene de kaldı.", "kişisel", false, { k: "evj.trPearWin" }); }
+    if (test("intelligence", 4)) { p.hunger = Math.min(100, p.hunger + 6); p.health = Math.min(100, p.health + 1); push(s, "yolculuk", "Yol kenarındaki yaban armudunun olgunlarını seçtin; karnın doydu, heybene de kaldı.", "kişisel", false, { k: "evj.trPearWin" }); }
     else { p.health = Math.max(1, p.health - 2); push(s, "yolculuk", "Ham ahlat mideni bozdu; yolun kalanı ekşi bir yüzle geçti (−2 sağlık).", "kişisel", false, { k: "evj.trPearLose" }); }
   } else if (ev === "harabe") {
-    if (test("intelligence", 0.05, 0.38)) { const loot = Math.round((10 + Math.floor(gameRandom(s) * 18)) * inflationFactor(s)); p.money += loot; push(s, "yolculuk", `Eski bir kervansaray harabesini kolaçan ettin; taşların arasından unutulmuş bir kese çıktı (+${loot} akçe).`, "kişisel", true, { k: "evj.trRuinWin", p: [loot] }); }
+    if (test("intelligence", 6)) { const loot = Math.round((10 + Math.floor(gameRandom(s) * 18)) * inflationFactor(s)); p.money += loot; push(s, "yolculuk", `Eski bir kervansaray harabesini kolaçan ettin; taşların arasından unutulmuş bir kese çıktı (+${loot} akçe).`, "kişisel", true, { k: "evj.trRuinWin", p: [loot] }); }
     else push(s, "yolculuk", "Eski bir harabeyi kolaçan ettin; örümcek ağından başka bir şey çıkmadı.", "kişisel", false, { k: "evj.trRuinLose" });
   } else if (ev === "kopru") {
-    if (test("intelligence", 0.05, 0.42)) { gainSkill(s, "crafting", 6); unEkle(p, "reputation", 1); push(s, "yolculuk", "Selin yıktığı köprüde gevşeyen tahtayı yerine oturttun; arkandan gelen kervan da geçti, dualar aldın.", "kişisel", false, { k: "evj.trBridgeWin" }); }
+    if (test("intelligence", 5)) { gainSkill(s, "crafting", 6); unEkle(p, "reputation", 1); push(s, "yolculuk", "Selin yıktığı köprüde gevşeyen tahtayı yerine oturttun; arkandan gelen kervan da geçti, dualar aldın.", "kişisel", false, { k: "evj.trBridgeWin" }); }
     else { const hurt = 3 + Math.floor(gameRandom(s) * 5); p.health = Math.max(1, p.health - hurt); p.hunger = Math.max(0, p.hunger - 4); push(s, "yolculuk", `Yıkık köprüde dere geçidi aramak zorunda kaldın; sırılsıklam ve yorgun vardın (−${hurt} sağlık).`, "kişisel", false, { k: "evj.trBridgeLose", p: [hurt] }); }
   } else if (ev === "devrikyuk") {
-    if (test("strength", 0.06, 0.42)) { const pay = Math.round((7 + Math.floor(gameRandom(s) * 8)) * inflationFactor(s)); p.money += pay; bumpNam(p, "comert", 1); push(s, "yolculuk", `Devrilen yük arabasını omuz verip kaldırdın; arabacı avucuna birkaç akçe sıkıştırdı (+${pay}).`, "kişisel", false, { k: "evj.trCartWin", p: [pay] }); }
+    if (test("strength", 5)) { const pay = Math.round((7 + Math.floor(gameRandom(s) * 8)) * inflationFactor(s)); p.money += pay; bumpNam(p, "comert", 1); push(s, "yolculuk", `Devrilen yük arabasını omuz verip kaldırdın; arabacı avucuna birkaç akçe sıkıştırdı (+${pay}).`, "kişisel", false, { k: "evj.trCartWin", p: [pay] }); }
     else push(s, "yolculuk", "Devrilen arabaya omuz verdin ama yük yerinden oynamadı; arabacı yine de duacı kaldı.", "kişisel", false, { k: "evj.trCartLose" });
   } else if (ev === "arikovani") {
-    if (test("intelligence", 0.05, 0.45)) { p.hunger = Math.min(100, p.hunger + 5); bumpNam(p, "comert", 1); push(s, "yolculuk", "Devrilen kovanların başında çaresiz kalan arıcıya dumanla yardım ettin; arılar duruldu, yola bir çanak balla devam ettin.", "kişisel", false, { k: "evj.trHiveWin" }); }
+    if (test("intelligence", 5)) { p.hunger = Math.min(100, p.hunger + 5); bumpNam(p, "comert", 1); push(s, "yolculuk", "Devrilen kovanların başında çaresiz kalan arıcıya dumanla yardım ettin; arılar duruldu, yola bir çanak balla devam ettin.", "kişisel", false, { k: "evj.trHiveWin" }); }
     else { const hurt = 2 + Math.floor(gameRandom(s) * 3); p.health = Math.max(1, p.health - hurt); push(s, "yolculuk", `Kovanlara yaklaşınca arılar öfkeyle kalktı; iki sokmayla kaçtın (−${hurt} sağlık). Arıcı özürler diledi.`, "kişisel", false, { k: "evj.trHiveLose", p: [hurt] }); }
   } else if (ev === "atnali") {
-    if (test("intelligence", 0.05, 0.42)) { const pay = Math.round((6 + Math.floor(gameRandom(s) * 7)) * inflationFactor(s)); p.money += pay; unEkle(p, "reputation", 1); push(s, "yolculuk", `Yol kenarında topal atıyla kalakalmış süvarinin nalını çakıp düzelttin; avucuna akçe sıkıştırıp yola koyuldu (+${pay}).`, "kişisel", false, { k: "evj.trShoeWin", p: [pay] }); }
+    if (test("intelligence", 5)) { const pay = Math.round((6 + Math.floor(gameRandom(s) * 7)) * inflationFactor(s)); p.money += pay; unEkle(p, "reputation", 1); push(s, "yolculuk", `Yol kenarında topal atıyla kalakalmış süvarinin nalını çakıp düzelttin; avucuna akçe sıkıştırıp yola koyuldu (+${pay}).`, "kişisel", false, { k: "evj.trShoeWin", p: [pay] }); }
     else { p.hunger = Math.max(0, p.hunger - 3); push(s, "yolculuk", "Huysuz at nal tutturmadı; süvariyle yarım saat uğraşıp terledin, at yine topal, sen yine yolda.", "kişisel", false, { k: "evj.trShoeLose" }); }
   } else if (ev === "dervis") {
-    if (test("charisma", 0.05, 0.45)) { p.health = Math.min(100, p.health + 3); bumpNam(p, "dindar", 1); push(s, "yolculuk", "Yolda bir gezgin dervişe yoldaş oldun; anlattığı kıssa içindeki düğümü çözdü, ayrılırken duasını aldın.", "kişisel", false, { k: "evj.trDervisWin" }); }
+    if (test("charisma", 5)) { p.health = Math.min(100, p.health + 3); bumpNam(p, "dindar", 1); push(s, "yolculuk", "Yolda bir gezgin dervişe yoldaş oldun; anlattığı kıssa içindeki düğümü çözdü, ayrılırken duasını aldın.", "kişisel", false, { k: "evj.trDervisWin" }); }
     else push(s, "yolculuk", "Gezgin derviş suskun çıktı; fersah boyu yalnız ayak sesleriniz konuştu. Yine de kötü yoldaş değildi.", "kişisel", false, { k: "evj.trDervisLose" });
   } else if (ev === "kayipcocuk") {
-    if (test("charisma", 0.05, 0.5)) { unEkle(p, "reputation", 2); bumpNam(p, "mert", 1); push(s, "yolculuk", "Yol kenarında ağlayan, yolunu şaşırmış bir çocuk buldun; elinden tutup köyüne ulaştırdın. Anası kapıda dua etti.", "kişisel", false, { k: "evj.trChildWin" }); }
+    if (test("charisma", 4)) { unEkle(p, "reputation", 2); bumpNam(p, "mert", 1); push(s, "yolculuk", "Yol kenarında ağlayan, yolunu şaşırmış bir çocuk buldun; elinden tutup köyüne ulaştırdın. Anası kapıda dua etti.", "kişisel", false, { k: "evj.trChildWin" }); }
     else push(s, "yolculuk", "Yolunu şaşırmış bir çocuğa yaklaştın ama ürküp kaçtı; neyse ki az ileride köylüler buldu.", "kişisel", false, { k: "evj.trChildLose" });
   } else if (ev === "siginak") {
-    if (test("intelligence", 0.05, 0.45)) { p.hunger = Math.min(100, p.hunger + 6); push(s, "yolculuk", "Gök bir anda karardı; kaya kovuğunu ilk sen gördün, bir yolcuyla kuru kaldınız. Azığından çörek ikram etti.", "kişisel", false, { k: "evj.trShelterWin" }); }
+    if (test("intelligence", 5)) { p.hunger = Math.min(100, p.hunger + 6); push(s, "yolculuk", "Gök bir anda karardı; kaya kovuğunu ilk sen gördün, bir yolcuyla kuru kaldınız. Azığından çörek ikram etti.", "kişisel", false, { k: "evj.trShelterWin" }); }
     else { p.health = Math.max(1, p.health - 2); push(s, "yolculuk", "Sağanak açıkta yakaladı; sırılsıklam vardın, akşama kadar titredin (−2 sağlık).", "kişisel", false, { k: "evj.trShelterLose" }); }
   } else if (ev === "atli") {
-    if (test("stamina", 0.05, 0.5)) { unEkle(p, "fame", 2); bumpNam(p, "mert", 1); push(s, "yolculuk", `Yolda bir atlıyla yarıştınız; ${p.horse_name || "atın"} rüzgâr gibi uçtu, adın yol boyu anlatıldı.`, "kişisel", false, { k: "evj.trRaceWin", p: [p.horse_name || ""] }); }
+    if (test("stamina", 4)) { unEkle(p, "fame", 2); bumpNam(p, "mert", 1); push(s, "yolculuk", `Yolda bir atlıyla yarıştınız; ${p.horse_name || "atın"} rüzgâr gibi uçtu, adın yol boyu anlatıldı.`, "kişisel", false, { k: "evj.trRaceWin", p: [p.horse_name || ""] }); }
     else push(s, "yolculuk", "Yolda bir atlıyla yarıştınız; tozunu yuttun ama iyi koşturdun.", "kişisel", false, { k: "evj.trRaceLose" });
   }
   if (p.health <= 0) die(s, `${p.name}, yolda can verdi.`, { k: "evj.dieRoad", p: [p.name] });
@@ -7512,6 +7557,8 @@ export function maxPlayEnergy(age: number): number { return age < 18 ? 4 : 0; } 
 export function playEnergy(s: GameState): number { return s.player.play_energy ?? maxPlayEnergy(s.player.age); }
 // Sınava kaç ders kaldı (4 derste bir sınav).
 export function lessonsToExam(p: Player): number { return 4 - ((p.lesson_count || 0) % 4); }
+export const DERS_OLAYI_ZORLUK = 4;
+export const SINAV_ZORLUK = 3;
 const EXAM_STAT: Record<string, keyof Stats> = { din: "intelligence", matematik: "intelligence", edebiyat: "charisma", beden: "strength" };
 // Ders-içi olaylar (Vercel school.py ders olayları): mektep günlerine doku katar; stat testli.
 interface SchoolEvent { id: string; stat: keyof Stats; }
@@ -7589,7 +7636,7 @@ export function studySubject(prev: GameState, id: string): StudyResult {
   // ── Ders-içi olay (Vercel school.py ders olayları): %40, stat testli; "cesur" sonuç anlatılır ──
   if (chance(0.4)) {
     const ev = rnd(SCHOOL_EVENTS);
-    const pass = Math.random() < Math.min(0.9, 0.4 + effStat(p, ev.stat) * 0.06);
+    const pass = zar(s, { stat: ev.stat, zorluk: DERS_OLAYI_ZORLUK }).basari; // tek zar
     const w = pass ? "win" : "lose";
     if (ev.id === "kopya") { if (pass) { unEkle(p, "honor", 4); chips.push({ label: "Şeref +4", col: "#7FA66A", k: "chip.honor", p: ["+4"] }); } else { p.honor = Math.max(0, p.honor - 3); p.reputation = Math.max(-100, p.reputation - 2); chips.push({ label: "Şeref −3", col: "#C0556B", k: "chip.honor", p: ["−3"] }); } }
     else if (ev.id === "kavga") { if (pass) { unEkle(p, "honor", 5); unEkle(p, "reputation", 2); p.health = Math.max(1, p.health - 3); chips.push({ label: "Şeref +5", col: "#7FA66A", k: "chip.honor", p: ["+5"] }); } else { p.health = Math.max(1, p.health - 5); chips.push({ label: "Sağlık −5", col: "#C0556B", k: "chip.health", p: ["−5"] }); } }
@@ -7606,7 +7653,7 @@ export function studySubject(prev: GameState, id: string): StudyResult {
   }
   // ── Sınav: her 4 derste bir (ilgili statla test) ──
   if (p.lesson_count % 4 === 0) {
-    const passed = Math.random() < Math.min(0.9, 0.35 + effStat(p, EXAM_STAT[id] || "intelligence") * 0.12);
+    const passed = zar(s, { stat: EXAM_STAT[id] || "intelligence", zorluk: SINAV_ZORLUK }).basari; // tek zar
     if (passed) {
       p.exam_wins = (p.exam_wins || 0) + 1;
       if (p.exam_wins <= 3) { p.stat_points += 1; chips.push({ label: "Sınav geçildi · Puan +1", col: "#E0BC5A", k: "chip.exam" }); push(s, "mektep", "Sınava girdin ve geçtin — bir özellik puanı kazandın.", "kişisel", true, { k: "evj.examPass" }); }
@@ -10552,7 +10599,7 @@ export function martialLoad(p: Player): number {
 export function attireScore(p: Player): { charisma: number; prestige: number } {
   const damp = 1 - 0.7 * martialLoad(p); // tam zırhta sosyal katkı %70 kırpılır (zırh kaftanı da takıyı da gizler)
   let cha = 0, pre = 0;
-  for (const sl of ["kiyafet", "taki"] as EquipSlot[]) {
+  for (const sl of EQUIP_SLOTS) {
     const id = p.equipped?.[sl]; if (!id) continue;
     const it = ITEMS[id]; const m = equippedQualityMult(p, sl);
     cha += (it?.charisma || 0) * m; pre += (it?.prestige || 0) * m;

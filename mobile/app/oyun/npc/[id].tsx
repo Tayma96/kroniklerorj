@@ -1,4 +1,5 @@
 import { DesignPressable as Pressable } from "../../../lib/design-pressable";
+import { SansDokumu } from "../../../lib/sans-etiketi";
 import { useState, useMemo, useRef, useEffect, type ReactNode } from "react";
 import { View, Text, ScrollView, type ViewStyle } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -86,25 +87,6 @@ const TIE_META: Record<TieKind, { icon: string; tone: string }> = {
 };
 const TIE_ORDER: TieKind[] = ["es", "ebeveyn", "evlat", "kardes", "dost", "rakip"];
 const APPRENTICE_SKILLS = ["combat", "trade", "crafting", "social"] as const;
-
-function SansDokum({ kalemler, yuzde, t, baslik = "sans.title" }: { kalemler: { k: string; v: number }[]; yuzde: number; t: (k: string) => string; baslik?: string }) {
-  const { lang } = useI18n();
-  return (
-    <View style={{ paddingHorizontal: 4, paddingBottom: 10, paddingTop: 2 }}>
-      <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1.5, color: C.goldDim, marginBottom: 4 }}>{t(baslik)}</Text>
-      {kalemler.map((x, i) => (
-        <View key={i} style={{ flexDirection: "row", paddingVertical: 2 }}>
-          <Text style={{ flex: 1, fontFamily: F.serif, fontSize: T.body, color: C.parchmentDim }}>{t(x.k)}</Text>
-          <Text style={{ fontFamily: F.display, fontSize: 13, color: x.v > 0 ? C.sage : C.blood }}>{x.v > 0 ? "+" + x.v : x.v}</Text>
-        </View>
-      ))}
-      <View style={{ flexDirection: "row", paddingTop: 4, marginTop: 3, borderTopWidth: 1, borderTopColor: C.border }}>
-        <Text style={{ flex: 1, fontFamily: F.display, fontSize: 13, color: C.parchment }}>{t("sans.toplam")}</Text>
-        <Text style={{ fontFamily: F.display, fontSize: 13, color: C.gold }}>{yuzdeL(yuzde, lang)}</Text>
-      </View>
-    </View>
-  );
-}
 
 // Hediye eşya ikonu — türüne göre (emoji yerine GameIcon).
 function giftIcon(it: any): string {
@@ -231,9 +213,9 @@ export default function NpcDetail() {
       blocked: young ? t("npcx.young") : usedAct("helal") ? done : undefined,
       custom: <View style={{ gap: 10 }}>
         <SheetChoice icon="prayer-beads" label={t("npca.helalBtn")} tag={pct(a.yuzde)} onPress={() => doAct((s) => helallikIste(s, npc, false))} />
-        <SansDokum kalemler={a.kalemler} yuzde={a.yuzde} t={t} baslik="npcx.chance" />
+        <SansDokumu kalemler={a.kalemler} yuzde={a.yuzde} baslik="npcx.chance" />
         <SheetChoice icon="akce" label={t("npca.helalBedelBtn")} sub={applyParams(t("sohbet.cost"), [cost], lang)} tag={pct(b.yuzde)} disabled={money < cost} onPress={() => doAct((s) => helallikIste(s, npc, true))} />
-        <SansDokum kalemler={b.kalemler} yuzde={b.yuzde} t={t} baslik="npcx.chance" />
+        <SansDokumu kalemler={b.kalemler} yuzde={b.yuzde} baslik="npcx.chance" />
       </View> }); }
     eylemler.push({ id: "insult", icon: "skull", tone: C.blood, tile: t("npcx.t.insult"), title: t("npca.insultBtn"), desc: t("npcx.insult.d"),
       blocked: young ? t("npcx.young") : usedAct("insult") ? done : undefined, run: () => doAct((s) => insultNpc(s, npc)) });
@@ -475,7 +457,7 @@ export default function NpcDetail() {
           <GameIcon name="crossed-swords" size={14} color={C.ember} />
           <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 15, lineHeight: 21, color: C.ember }}>{w}</Text>
         </View>)}
-        {acik.sans ? <SansDokum kalemler={acik.sans.kalemler} yuzde={acik.sans.yuzde} t={t} baslik={acik.id === "propose" ? "sans.title" : "npcx.chance"} /> : null}
+        {acik.sans ? <SansDokumu kalemler={acik.sans.kalemler} yuzde={acik.sans.yuzde} baslik={acik.id === "propose" ? "sans.title" : "npcx.chance"} /> : null}
         {acik.blocked ? <Text style={{ fontFamily: F.serifItalic, fontSize: 15, lineHeight: 22, color: C.parchmentMuted, textAlign: "center", marginVertical: 10 }}>{acik.blocked}</Text>
           : acik.custom ? <View style={{ marginTop: 4 }}>{acik.custom}</View>
           : acik.run ? <SheetChoice icon={acik.icon} label={acik.title} tag={acik.tag} tone={acik.tone} primary onPress={acik.run} /> : null}
