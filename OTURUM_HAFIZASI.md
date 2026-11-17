@@ -10,6 +10,7 @@
 - Kod Opus (`online-sunucu`, `online-istemci`), test ve **çeviri Sonnet** (`tester`; istemci ajanı metni yalnız Türkçe yazar). Ajanlara `git stash` yasak.
 - Çıta "AAA metin oyunu": hareket yalnız `lib/online/ui.tsx` `HAREKET`/`belir`/`giris`/`BASMA_OLCEK`; her arayüz işi `react-reviewer`, her ekonomi işi `denge-denetcisi` (model yaz). Hiçbir meslek/beceri kancası boşta kalmaz.
 
+- **İş bölümü (Berkay, 17 Kasım):** tek oyunculu oyunu Berkay'ın ÖBÜR hesabındaki Claude geliştirir. Bu oturum yalnız çevrimiçi (`online-server/`, `mobile/app/online/`, `mobile/lib/online/`). Tek oyunculu dosyalara dokunma; gerekirse dar, açıklamalı değişiklik ve öbür hesabın `apk` commit'lerini birleştirirken onları koru.
 - **Yönetici kuralı (Berkay, 17 Kasım):** kurucu (Berkay) hiçbir şeyle sınırlanmaz — kendine/herkese istediği kadar akçe/mal verir-alır, tavan ve kendine-fayda yasağı kurucuya uygulanmaz. Sınırlar oyuncular içindir; moderatör yetkilerini kurucu panelden tek tek belirler.
 
 ## Çevrimiçi durum (17 Kasım)
