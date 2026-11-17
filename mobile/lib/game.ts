@@ -585,12 +585,12 @@ export interface Isletme {
   etki?: { m: number; until: number }; // kararın geçici gelir çarpanı
   goc?: number; // eski kayıttan geçiş: bu tura dek çevre çarpanı dar bantta (ilk yıl gelir ±%10)
 }
-export const ISL_FIYAT_TALEP = [1.35, 1, 0.66];
-export const ISL_FIYAT_MARJ = [0.85, 1, 1.3];
+export const ISL_FIYAT_TALEP = [1.35, 1, 0.62];
+export const ISL_FIYAT_MARJ = [0.85, 1, 1.35];
 export const ISL_KALITE_GELIR = [1, 1.08, 1.22]; // müşteri başına gelir
-export const ISL_KALITE_GIDER = [0, 0.14, 0.42];  // müşteri başına gider (taban gelirin katı)
+export const ISL_KALITE_GIDER = [0, 0.2, 0.55];  // müşteri başına gider (taban gelirin katı)
 // Namın yöneldiği değer [fiyat][kalite]; seçkin kalitede nam iki kat hızlı yürür.
-export const ISL_NAM_HEDEF = [[55, 68, 85], [30, 48, 68], [12, 26, 66]];
+export const ISL_NAM_HEDEF = [[55, 62, 85], [30, 56, 72], [12, 24, 62]];
 const islKis = (x: number, a: number, b: number) => Math.max(a, Math.min(b, x));
 export function isletmeMi(pr: Property): boolean { return (ISLETME_TIPLERI as readonly string[]).includes(pr.type); }
 export function isletmeAyari(pr: Property): Isletme { return pr.isl || { f: 1, q: 1, nam: 50 }; }
@@ -636,7 +636,7 @@ export function isletmeHesap(s: GameState, pr: Property, base: number, cpl: numb
   const npcs = pr.workers?.length ? townNpcsOf(s, pr.loc) : [];
   let emek = 0; for (const id of pr.workers || []) { const n = npcs.find((x) => x.id === id); if (n) emek += workerProductivity(n, pr.type); }
   const kapasite = tip + 0.45 * emek;
-  const talep = (tip + 1.35) * 1.15 * env * ISL_FIYAT_TALEP[a.f] * (0.8 + a.nam / 250);
+  const talep = (tip + 1.35) * 1.08 * env * ISL_FIYAT_TALEP[a.f] * (0.9 + a.nam / 500);
   const hizmet = Math.min(talep, kapasite);
   const etki = a.etki && a.etki.until > s.turn ? a.etki.m : 1;
   const uyum = isletmeUyumu(s.player, pr.type);
@@ -9464,7 +9464,7 @@ export function buyProperty(prev: GameState, type: string): GameState {
   const s = clone(prev); const p = s.player; const t = PROPERTY_TYPES[type];
   const cost = propBuyCost(s, type);
   if (!t || p.dead || p.age < MULK_YAS || p.money < cost || !mulkSarti(s, type).ok) return s;
-  p.money -= cost; p.properties.push({ type, loc: p.location_name, cond: 100, ...((ISLETME_TIPLERI as readonly string[]).includes(type) ? { isl: { f: 1, q: 1, nam: 40 } } : {}) }); // F5: yeni işletme az tanınır (nam 40)
+  p.money -= cost; p.properties.push({ type, loc: p.location_name, cond: 100, ...((ISLETME_TIPLERI as readonly string[]).includes(type) ? { isl: { f: 1, q: 0, nam: 40 } } : {}) }); // F5: yeni işletme az tanınır (nam 40)
   { const pv = chance(0.5); push(s, "mülk_alım", pv ? `Anahtar avucuna düştü; ${p.location_name}'deki ${t.name.toLowerCase()} artık senin. Eşik ilk kez senin adınla aşıldı.` : `${p.location_name}'de ${t.name} satın aldın. Adına bir tapu daha.`, "kişisel", true, { k: pv ? "evj.propBuy2" : "evj.propBuy", p: [{ pl: p.location_name }, { pt2: type }] }); }
   return s;
 }
@@ -14102,8 +14102,8 @@ export function migrate(s: GameState): GameState {
   if (p.properties.length && typeof p.properties[0] === "string") {
     p.properties = p.properties.map((t: any) => ({ type: t, loc: p.location_name, cond: 100 }));
   }
-  // F5: eski han/dükkân sahipleri varsayılan ayarla (olağan fiyat, iyi kalite, nam 50) işletmeye geçer; ilk yıl çevre çarpanı dar bantta.
-  for (const pr of p.properties) if (pr && isletmeMi(pr) && (!pr.isl || typeof pr.isl !== "object")) pr.isl = { f: 1, q: 1, nam: 50, goc: (s.turn || 0) + 12 };
+  // F5: eski han/dükkân sahipleri eski gelirle aynı ayarla (olağan fiyat, sade kalite = ek gider yok, nam 50) işletmeye geçer; ilk yıl çevre çarpanı dar bantta.
+  for (const pr of p.properties) if (pr && isletmeMi(pr) && (!pr.isl || typeof pr.isl !== "object")) pr.isl = { f: 1, q: 0, nam: 50, goc: (s.turn || 0) + 12 };
   for (const pr of p.properties) if (pr?.isl) { const a = pr.isl; if (![0, 1, 2].includes(a.f)) a.f = 1; if (![0, 1, 2].includes(a.q)) a.q = 1; if (!Number.isFinite(a.nam)) a.nam = 50; a.nam = Math.max(0, Math.min(100, a.nam)); if (a.karar && !(ISL_KARARLAR as readonly string[]).includes(a.karar)) { a.karar = undefined; a.kz = undefined; } }
   if (p.generation === undefined) p.generation = 1;
   if (!p.skills) p.skills = { combat: 0, trade: 0, crafting: 0, social: 0 };
