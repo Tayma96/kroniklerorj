@@ -353,3 +353,40 @@ test("S3: HesapDO istekleri sırayla işler (eşzamanlı iki istek yaptırım ka
   await Promise.all([d.fetch(istek()), d.fetch(istek())]);
   assert.equal(okuma, 1);
 });
+
+import isleyici, { DunyaDO } from "../src/index.ts";
+import { sahteAdAlani } from "./yardimci.ts";
+
+test("S4: GET /v1/dunya kenar önbelleğinden döner (DO'ya ikinci kez gidilmez)", async () => {
+  const kayit = new Map<string, { govde: string; basliklar: string | null }>();
+  const g = globalThis as { caches?: unknown };
+  const eski = g.caches;
+  g.caches = {
+    default: {
+      async match(i: Request) {
+        const v = kayit.get(i.url);
+        return v ? new Response(v.govde, { status: 200, headers: { "content-type": "application/json" } }) : undefined;
+      },
+      async put(i: Request, y: Response) {
+        kayit.set(i.url, { govde: await y.text(), basliklar: y.headers.get("cache-control") });
+      },
+    },
+  };
+  try {
+    let cagri = 0;
+    const env = { ZAR_YEDEK_IZINLI: "1" } as never as import("../src/tipler.ts").Env;
+    env.DUNYA = sahteAdAlani((ctx) => {
+      const d = new DunyaDO(ctx, env);
+      return { fetch: (i: Request) => (cagri++, d.fetch(i)) };
+    });
+    const a = await isleyici.fetch(new Request("https://k.test/v1/dunya"), env);
+    const b = await isleyici.fetch(new Request("https://k.test/v1/dunya?x=1"), env);
+    assert.equal(a.status, 200);
+    assert.equal(b.status, 200);
+    assert.equal(cagri, 1);
+    assert.equal(await a.text(), await b.text());
+    assert.match(kayit.get("https://k.test/v1/dunya")!.basliklar ?? "", /max-age=45/);
+  } finally {
+    g.caches = eski;
+  }
+});

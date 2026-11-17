@@ -195,6 +195,47 @@ function basarisizYanit(s: Basarisiz): Response {
   return jsonYanit(s.bitis !== undefined ? { hata: s.hata, bitis: s.bitis } : { hata: s.hata }, durum);
 }
 
+/** [PARAMETRE] `GET /v1/dunya` kenar önbelleği süresi (sn; 17 Kasım denetimi S4): herkese aynı özet, tek DO'ya yük binmez. */
+export const DUNYA_ONBELLEK_SN = 45;
+
+interface KenarOnbellegi {
+  match(istek: Request): Promise<Response | undefined>;
+  put(istek: Request, yanit: Response): Promise<void>;
+}
+
+/** Cloudflare `caches.default` (Node testlerinde yoksa önbelleksiz). */
+function kenarOnbellegi(): KenarOnbellegi | undefined {
+  const c = (globalThis as { caches?: { default?: KenarOnbellegi } }).caches;
+  return c?.default;
+}
+
+async function dunyaOzeti(istek: Request, env: Env): Promise<Response> {
+  const onbellek = kenarOnbellegi();
+  const anahtar = new Request(new URL("/v1/dunya", istek.url).toString(), { method: "GET" });
+  if (onbellek) {
+    try {
+      const v = await onbellek.match(anahtar);
+      if (v) return v;
+    } catch {
+      // önbellek erişilemezse doğrudan DO'dan
+    }
+  }
+  const sonuc = await dunyaCagir(env, { islem: "ozet" });
+  if (!sonuc.ok) return basarisizYanit(sonuc);
+  const govde = JSON.stringify(sonuc.deger);
+  if (onbellek) {
+    try {
+      await onbellek.put(anahtar, new Response(govde, {
+        status: 200,
+        headers: { "content-type": "application/json; charset=utf-8", "cache-control": `public, max-age=${DUNYA_ONBELLEK_SN}` },
+      }));
+    } catch {
+      // en iyi çaba
+    }
+  }
+  return jsonYanit(sonuc.deger);
+}
+
 function sonucYaniti<T>(sonuc: Sonuc<T>): Response {
   return sonuc.ok ? jsonYanit(sonuc.deger) : basarisizYanit(sonuc);
 }
@@ -453,7 +494,7 @@ async function yonlendir(istek: Request, env: Env): Promise<Response> {
     case "/v1/giris":
       return yontem === "POST" ? giris(istek, env) : hataYaniti("yontem_yok");
     case "/v1/dunya":
-      return yontem === "GET" ? sonucYaniti(await dunyaCagir(env, { islem: "ozet" })) : hataYaniti("yontem_yok");
+      return yontem === "GET" ? dunyaOzeti(istek, env) : hataYaniti("yontem_yok");
     case "/v1/profil":
       if (yontem === "GET") return hesaba(istek, env, (hesapId) => basarili({ islem: "profil", hesapId }));
       if (yontem === "POST") {
