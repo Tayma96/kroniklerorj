@@ -12,14 +12,15 @@
 
 ## Çevrimiçi durum (17 Kasım)
 - Belgeler: `docs/online/ONLINE_DURUM.md`; tasarım `docs/superpowers/specs/2026-11-16-tezgah-modeli-design.md`; **protokol ve ekran brief'i** `…-tezgah-istemci-brief.md` (Dilim 1 + Dilim 2 atölye).
-- Sunucu 683 test, hepsi geçiyor. Test Worker'ı `377b8a3`te (etkinlikler dahil, ses açık; atölye denge düzeltmeleri henüz dağıtılmadı). Dağıtım: GitHub `deploy-online-server.yml`, hedef `test`.
-- Bitti: sahne/atışma; han masası; çoklu han; 5 sekme + rehber; tezgâh Dilim 1 (sunucu, denge düzeltmeleri, dükkân ekranları + inceleme düzeltmeleri); **Dilim 2 atölye sunucusu** (zanaat, üretim, emek havuzu, emir, toplu sipariş, genişletme) + **denge denetimi ve düzeltmeleri** (`206493b`; tasarım §6.1, `ONLINE_DURUM.md` §4.10).
+- Sunucu 703 test, hepsi geçiyor. Test Worker'ı `377b8a3`te (atölye + Dilim 3 henüz dağıtılmadı). Dağıtım: GitHub `deploy-online-server.yml`, hedef `test`.
+- Bitti: sahne/atışma; han masası; çoklu han; 5 sekme + rehber; tezgâh Dilim 1; Dilim 2 atölye (sunucu + **ekran**, 6 dil, incelendi; `1f79c89`); **Dilim 3 sunucu** (`514db1b`): 87 kanca 10 kanala bağlı, tek kayıt `src/icerik/kanca-kayit.ts`, yığılma kuralı `src/mulk/kanca.ts`, boşta 232 (`bosta-kancalar.ts`, yalnız kısalır testi), denge denetimi yapıldı (toplu indirim tavanı 10 ve yalnız damgalı mal; çalışan kancası geçen aydan beri çalışıyorsa ve tek işletmeye).
 - Canlı etkinlikler (yönetici): 18 etkinlik, panel Etkinlikler sekmesi (başlat/durdur, süre sayacı, dünya/beylik/tür/tek yerleşim, oyuncu sayıları), Yaşam bandı; `docs/online/ETKINLIKLER.md`.
 - Ekranlar cihazda görülmedi.
 
 ## Sıradaki işler (bu sırayla)
-1. Atölye ekranı (brief sonundaki madde + "Denetim sonrası protokol ekleri") → çeviri → `react-reviewer` → düzeltme.
-3. Dilim 3: meslek kancaları ilk parti ≈70 (tasarım §7) + "boşta kanca listesi yalnız kısalır" testi.
+1. Dilim 3 istemcisi: brief sonundaki "Dilim 3 protokol ekleri" (kanca dökümü, rafSiniri, depoKapasite, fiyatTablosu, indirimYuzde, tekEnCok) → çeviri → `react-reviewer`.
+2. Atölye ekranı anlık yenileme: defter yalnız yaşam ekranında çekiliyor; açık atölyede yeni olay kendiliğinden gelmiyor. Geliştirici modunda sahte atölye verisi yok.
+3. Kanca partisi 2 (boşta 232): konsinye `komisyon`, bakım (`yapiOnarimi`/`bakimDefteri`), `namYayma` (başka dükkânı övme hizmeti), `hileliTarti` yeni mekanik ister.
 4. Oyuncu numarası (8 hane, rastgele, hesaba bağlı), arama, oyuncu sayfası.
 5. Han masa oyunları çatısı + iki oyun; canlı masalar vitrini.
 6. Eşya kademeleri ve özellikleri (tasarım §9: 6 kademe, efsanevi yalnız pir, hüner, yadigâr).
