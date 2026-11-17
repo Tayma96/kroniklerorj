@@ -13,7 +13,7 @@ import type { OlayTaslagi } from "../yerlesim/tipler.ts";
 import { atolyeKalemleri, emekTavani, etkinSeviye, genislet, genisletmeGorunumu, tezgahSayisi, zanaatOner, zanaatSec } from "./atolye.ts";
 import { emirAc, emirIptal } from "./uretim-emri.ts";
 import { topluGeriAl, topluGorunumu, topluTeslim } from "./toplu-siparis.ts";
-import { kaliteliEkle, type Kalite } from "../yerlesim/kalite.ts";
+import { kaliteliEkle, kaliteMi, type Kalite } from "../yerlesim/kalite.ts";
 import { EFSANEVI_DENEME_AY, EFSANEVI_PIR_KADEMESI, efsaneviHakki, elDegistir } from "../yerlesim/esya.ts";
 import { efsaneviKaydet } from "../yerlesim/esya-kayit.ts";
 import { akceIade, iadeTeslim, malIade } from "./iade.ts";
@@ -362,7 +362,7 @@ export function fiyatOnizle(k: Kasaba, kar: Karakter, isletme: string, govde: un
   const mal = malBul(g.mal);
   if (!mal || MALLAR[mal].taban <= 0) return hata("mal_gecersiz");
   const q = Number(g.kalite ?? 0);
-  if (q !== 0 && q !== 1 && q !== 2 && q !== 3) return hata("kalite_gecersiz");
+  if (!kaliteMi(q)) return hata("kalite_gecersiz");
   const fiyat = Number(g.fiyat);
   if (!fiyatGecerli(mal, q as Kalite, fiyat)) return hata("fiyat_bant_disi");
   const { md } = h.deger;
