@@ -890,12 +890,30 @@ async function yonlendir(istek: Request, env: Env): Promise<Response> {
   return hataYaniti("bulunamadi");
 }
 
+/**
+ * 500 dönen beklenmedik hatanın Workers Logs kaydı: hata adı, mesajı, yöntem ve uç yolu. Kişisel veri ve sır
+ * girmesin diye sorgu dizesi atılır, ilk iki kesimden (`/v1/<uç>`) sonraki yol kesimleri (kişi kimliği, davet kodu,
+ * künye numarası) `:p` olur; mesaj 300 karakterle kısılır.
+ */
+export function hataKaydi(e: unknown, istek: Request): { ad: string; mesaj: string; yontem: string; yol: string } {
+  let yol = "?";
+  try {
+    const kesim = new URL(istek.url).pathname.split("/");
+    yol = kesim.map((k, i) => (i > 2 && k ? ":p" : k)).join("/");
+  } catch {
+    // Biçimsiz adres: yol bilinmiyor olarak kalır.
+  }
+  const ad = e instanceof Error ? e.name : typeof e;
+  const mesaj = (e instanceof Error ? e.message : String(e)).slice(0, 300);
+  return { ad, mesaj, yontem: istek.method, yol };
+}
+
 export default {
   async fetch(istek: Request, env: Env): Promise<Response> {
     try {
       return await yonlendir(istek, env);
     } catch (e) {
-      console.error("istek hatası", e instanceof Error ? e.message : String(e));
+      console.error("sunucu_hatasi", JSON.stringify(hataKaydi(e, istek)));
       return hataYaniti("sunucu_hatasi");
     }
   },

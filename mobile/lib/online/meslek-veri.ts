@@ -65,12 +65,32 @@ export const MESLEKLER = Object.fromEntries(MESLEK_IDLERI.map((id) => [id, kur(i
 
 /** Malın NPC taban değeri ve asıl üreten meslek (sunucu mallar.ts). taban 0 = ticareti yapılmaz (su). */
 export const MALLAR: Record<MalId, { taban: number; meslek: MeslekId }> = {
-  odun: { taban: 1, meslek: "oduncu" }, sertOdun: { taban: 4, meslek: "oduncu" }, tas: { taban: 1, meslek: "oduncu" },
+  odun: { taban: 1, meslek: "oduncu" }, sertOdun: { taban: 3, meslek: "oduncu" }, tas: { taban: 1, meslek: "oduncu" },
   ot: { taban: 1, meslek: "sifaci" }, yun: { taban: 2, meslek: "ciftci" }, su: { taban: 0, meslek: "hanci" },
-  kereste: { taban: 3, meslek: "oduncu" }, cevher: { taban: 3, meslek: "oduncu" }, komur: { taban: 3, meslek: "oduncu" },
-  tahil: { taban: 2, meslek: "ciftci" }, deri: { taban: 3, meslek: "dokumaci" }, alet: { taban: 14, meslek: "demirci" },
-  nal: { taban: 4, meslek: "demirci" }, sifaliOt: { taban: 3, meslek: "sifaci" }, inceYun: { taban: 4, meslek: "ciftci" },
+  kereste: { taban: 3, meslek: "oduncu" }, cevher: { taban: 3, meslek: "oduncu" },
+  komur: { taban: 3, meslek: "oduncu" }, tahil: { taban: 2, meslek: "ciftci" }, deri: { taban: 6, meslek: "dokumaci" },
+  alet: { taban: 24, meslek: "demirci" }, nal: { taban: 8, meslek: "demirci" },
+  sifaliOt: { taban: 3, meslek: "sifaci" }, inceYun: { taban: 4, meslek: "ciftci" },
   kagit: { taban: 6, meslek: "tuccar" }, murekkep: { taban: 0, meslek: "katip" }, senet: { taban: 0, meslek: "katip" },
+  sozlesme: { taban: 0, meslek: "katip" }, arbalet: { taban: 75, meslek: "demirci" },
+  bugday: { taban: 3, meslek: "ciftci" }, bakla: { taban: 3, meslek: "ciftci" }, post: { taban: 2, meslek: "ciftci" },
+  et: { taban: 3, meslek: "ciftci" }, zahire: { taban: 28, meslek: "ciftci" }, kiris: { taban: 22, meslek: "oduncu" },
+  bakir: { taban: 10, meslek: "oduncu" }, kesmeTas: { taban: 9, meslek: "oduncu" },
+  blok: { taban: 39, meslek: "oduncu" }, degirmenTasi: { taban: 120, meslek: "oduncu" },
+  civi: { taban: 3, meslek: "demirci" }, bicak: { taban: 6, meslek: "demirci" },
+  mizrak: { taban: 17, meslek: "demirci" }, kalkan: { taban: 17, meslek: "demirci" },
+  kilic: { taban: 38, meslek: "demirci" }, zincir: { taban: 35, meslek: "demirci" },
+  pulZirh: { taban: 129, meslek: "demirci" }, dograma: { taban: 21, meslek: "marangoz" },
+  kagni: { taban: 46, meslek: "marangoz" }, araba: { taban: 107, meslek: "marangoz" },
+  oyma: { taban: 9, meslek: "marangoz" }, saz: { taban: 17, meslek: "marangoz" },
+  kundekari: { taban: 50, meslek: "marangoz" }, bez: { taban: 10, meslek: "dokumaci" },
+  kumas: { taban: 15, meslek: "dokumaci" }, giysi: { taban: 27, meslek: "dokumaci" },
+  kosum: { taban: 25, meslek: "dokumaci" }, cizme: { taban: 21, meslek: "dokumaci" },
+  astar: { taban: 37, meslek: "dokumaci" }, kece: { taban: 13, meslek: "dokumaci" },
+  cadir: { taban: 61, meslek: "dokumaci" }, ekmek: { taban: 4, meslek: "asci" }, un: { taban: 6, meslek: "asci" },
+  corba: { taban: 4, meslek: "asci" }, kuruEt: { taban: 8, meslek: "asci" }, peksimet: { taban: 7, meslek: "asci" },
+  pastirma: { taban: 30, meslek: "asci" }, erzakSandigi: { taban: 131, meslek: "asci" },
+  tuz: { taban: 2, meslek: "tuccar" },
 };
 /** NPC'nin satabildiği mallar (su hariç). */
 export const NPC_MALLARI: readonly MalId[] = MAL_IDLERI.filter((m) => MALLAR[m].taban > 0);
@@ -97,7 +117,13 @@ export const AILE_IKON: Record<Aile, string> = { toprak: "leaf", zanaat: "anvil"
 export const MAL_IKON: Record<MalId, string> = {
   odun: "saw", sertOdun: "saw", tas: "castle", ot: "leaf", yun: "wool", su: "bucket", kereste: "saw", cevher: "gems", komur: "flame",
   tahil: "wheat", deri: "backpack", alet: "anvil", nal: "anvil", sifaliOt: "herbs", inceYun: "sheep",
-  kagit: "scroll", murekkep: "droplet", senet: "scroll-text",
+  kagit: "scroll", murekkep: "droplet", senet: "scroll-text", sozlesme: "scroll-text", arbalet: "shield",
+  bugday: "wheat", bakla: "leaf", post: "backpack", et: "amphora", zahire: "wheat", kiris: "saw", bakir: "gems", kesmeTas: "castle",
+  blok: "castle", degirmenTasi: "castle", civi: "anvil", bicak: "anvil", mizrak: "shield", kalkan: "shield", kilic: "shield",
+  zincir: "anvil", pulZirh: "shield", dograma: "house", kagni: "house", araba: "house", oyma: "house", saz: "lyre",
+  kundekari: "house", bez: "wool", kumas: "wool", giysi: "wool", kosum: "backpack", cizme: "backpack", astar: "wool",
+  kece: "wool", cadir: "house", ekmek: "bread", un: "wheat", corba: "bread", kuruEt: "amphora", peksimet: "bread",
+  pastirma: "amphora", erzakSandigi: "amphora", tuz: "gems",
 };
 export const IS_IKON: Record<IsId, string> = { odun: "saw", tas: "castle", ot: "herbs", yun: "sheep", su: "bucket" };
 export const TUR_IKON: Record<DugumTuru, string> = { tarif: "scroll-open", kalite: "star", toplu: "coins", ozel: "medal", hak: "crown" };
