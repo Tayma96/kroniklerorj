@@ -92,6 +92,9 @@ const KAYIT = "kayit:"; // + 12 hane → IslemKaydi (girdi başına bir anahtar;
 const ISTEK = "istek:"; // + eposta + "\n" + istekNo → IstekKaydi
 const PARAM = "param:"; // + ad → ParametreKaydi
 const YAPTIRIM = "yaptirim:"; // + hesap → Yaptirim[]
+const YONETICI_HESAP = "yoneticiHesap:"; // + oyuncu hesabı → yöneticinin e-postası (girişte yazılır)
+/** [PARAMETRE] Hedef başına tutulan yaptırım kaydı (etkin olanlar hiç atılmaz; tam geçmiş işlem kaydında). */
+export const YAPTIRIM_LISTE_EN_COK = 50;
 const SIKAYET = "sikayet:"; // + 12 hane → Sikayet
 const SIKAYET_ACIK = "sikayetAcik"; // number[] (eskiden yeniye; hedef başına bir kayıt)
 const SIKAYET_HEDEF = "sikayetHedef:"; // + hedef → açık şikayet numarası
@@ -269,6 +272,18 @@ export async function yaz(
   await o.b.depo.koy({ ...degisiklik, ...(await kayitHazirla(o, islem, "tamam", ek)), [istekAnahtari(o, no)]: istek });
 }
 
+/**
+ * Yönetici koruması (17 Kasım denetimi S9): kendi oyuncu hesabına yaptırım yok; başka bir yöneticinin hesabına
+ * yalnız kurucu yaptırım verebilir. Hata kodu ya da undefined.
+ */
+async function yaptirimHedefDenetle(o: Oturum, hedef: string): Promise<"kendi_hedef" | "yetki_yok" | undefined> {
+  if (hedef === o.y.hesap) return "kendi_hedef";
+  const eposta = await o.b.depo.al<string>(YONETICI_HESAP + hedef);
+  if (eposta === o.y.eposta) return "kendi_hedef";
+  if (eposta && (await rolBul(o.b, eposta)) && o.rol !== "kurucu") return "yetki_yok";
+  return undefined;
+}
+
 async function yaptirimEkleHazirla(
   b: YonetimBaglami,
   hedef: string,
@@ -278,6 +293,12 @@ async function yaptirimEkleHazirla(
   const liste = (await b.depo.al<Yaptirim[]>(YAPTIRIM + hedef)) ?? [];
   const yaptirim: Yaptirim = { id, ...y };
   liste.push(yaptirim);
+  // Son YAPTIRIM_LISTE_EN_COK; önce en eski etkin olmayanlar atılır (etkin yaptırım düşmez).
+  while (liste.length > YAPTIRIM_LISTE_EN_COK) {
+    const i = liste.findIndex((x) => !yaptirimEtkin(x, b.simdi));
+    if (i < 0) break;
+    liste.splice(i, 1);
+  }
   return { degisiklik: { [SAYAC_YAPTIRIM]: id, [YAPTIRIM + hedef]: liste }, yaptirim, ozet: etkinOzet(liste, b.simdi) };
 }
 
@@ -297,7 +318,7 @@ async function giris(b: YonetimBaglami, y: YoneticiKimligi): Promise<Sonuc<{ rol
     return hata("yetki_yok");
   }
   const o: Oturum = { b, y, rol, uc: "giris", ozet: "" };
-  await b.depo.koy(await kayitHazirla(o, "giris", "tamam", {}));
+  await b.depo.koy({ ...(await kayitHazirla(o, "giris", "tamam", {})), ...(y.hesap ? { [YONETICI_HESAP + y.hesap]: y.eposta } : {}) });
   return basarili({ rol });
 }
 
@@ -348,6 +369,8 @@ async function yaptirimUygula(o: Oturum, govde: unknown): Promise<Sonuc<unknown>
   if (onceki) return onceki;
   const bulunan = await o.b.oyuncuBul({ hesap: hedef });
   if (!bulunan.ok) return reddet(o, tur, "hesap_yok", ek);
+  const koruma = await yaptirimHedefDenetle(o, hedef);
+  if (koruma) return reddet(o, tur, koruma, ek);
 
   // Yalnız depolama: tekrar denetimi + ekleme + kayıt.
   const yarisan = await tekrar(o, istekNo);
@@ -451,6 +474,10 @@ async function sikayetKarar(o: Oturum, govde: unknown): Promise<Sonuc<unknown>> 
   if (!s) return reddet(o, "sikayetKarar", "sikayet_yok", ek);
   const ekH: Ek = { ...ek, hedef: s.hedef };
   if (s.hedef === o.y.hesap) return reddet(o, "sikayetKarar", "kendi_hedef", ekH);
+  if (sure) {
+    const koruma = await yaptirimHedefDenetle(o, s.hedef);
+    if (koruma) return reddet(o, "sikayetKarar", koruma, ekH);
+  }
   if (s.durum !== "acik") return reddet(o, "sikayetKarar", "karar_verildi", ekH);
   const acik = ((await o.b.depo.al<number[]>(SIKAYET_ACIK)) ?? []).filter((i) => i !== id);
   let degisiklik: Record<string, unknown> = { [SIKAYET_ACIK]: acik };

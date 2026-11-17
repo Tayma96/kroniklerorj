@@ -345,21 +345,25 @@ test("şikayet ve kendine fayda yasağı: kendini şikayet, sınır, susturma, k
     // Kurucu kendi hakkındaki şikayete karar veremez; moderatör verebilir.
     const kendi = await cagir("POST", "/yonetim/sikayet-karar", { oturum: yb, govde: { id: s1.govde.id, karar: "reddet", gerekce: "kendi hakkımda karar", istekNo: no() } });
     assert.deepEqual([kendi.durum, kendi.govde], [403, { hata: "kendi_hedef" }]);
-    const modKarar = await cagir("POST", "/yonetim/sikayet-karar", {
+    // S9 (17 Kasım): yöneticinin hesabına yalnız kurucu yaptırım verebilir; moderatör yalnız reddedebilir.
+    const modYaptirim = await cagir("POST", "/yonetim/sikayet-karar", {
       oturum: mb, govde: { id: s1.govde.id, karar: "yaptirim", tur: "uzaklastirma", gun: 1, gerekce: "taciz doğrulandı, bir gün", istekNo: no() },
     });
+    assert.deepEqual([modYaptirim.durum, modYaptirim.govde], [403, { hata: "yetki_yok" }]);
+    const modKarar = await cagir("POST", "/yonetim/sikayet-karar", {
+      oturum: mb, govde: { id: s1.govde.id, karar: "reddet", gerekce: "yönetici hesabı, kurucuya iletildi", istekNo: no() },
+    });
     assert.equal(modKarar.durum, 200);
-    assert.equal(modKarar.govde.sikayet.durum, "yaptirim");
+    assert.equal(modKarar.govde.sikayet.durum, "reddedildi");
     assert.equal(
       (await cagir("POST", "/yonetim/sikayet-karar", { oturum: mb, govde: { id: s1.govde.id, karar: "reddet", gerekce: "ikinci karar denemesi", istekNo: no() } })).govde.hata,
       "karar_verildi",
     );
-    assert.equal((await cagir("GET", "/v1/profil", { oturum: ayse.oturum })).govde.hata, "uzaklastirildi");
+    assert.equal((await cagir("GET", "/v1/profil", { oturum: ayse.oturum })).durum, 200);
 
     // Kurucu kendi oyuncu hesabının yaptırımını kaldıramaz.
     const kendiKaldir = await cagir("POST", "/yonetim/yaptirim-kaldir", { oturum: yb, govde: { hedef: ayse.hesap, gerekce: "kendimi affediyorum", istekNo: no() } });
     assert.deepEqual([kendiKaldir.durum, kendiKaldir.govde], [403, { hata: "kendi_hedef" }]);
-    assert.equal((await cagir("GET", "/v1/profil", { oturum: ayse.oturum })).durum, 403);
 
     // Kurucu Mehmet hakkındaki şikayete susturma verir: Mehmet oynar ama şikayet açamaz.
     const karar2 = await cagir("POST", "/yonetim/sikayet-karar", {
@@ -375,7 +379,7 @@ test("şikayet ve kendine fayda yasağı: kendini şikayet, sınır, susturma, k
     // Moderatör başka yöneticinin e-postasını değil rolünü görür.
     const kapanan = await cagir("GET", "/yonetim/sikayetler?durum=yaptirim", { oturum: mb });
     const kararlar = (kapanan.govde.sikayetler as { karar: { kim: string } }[]).map((k) => k.karar.kim).sort();
-    assert.deepEqual(kararlar, ["kurucu", MOD]);
+    assert.deepEqual(kararlar, ["kurucu"]);
     assert.equal((await cagir("GET", "/yonetim/sikayetler?durum=acik", { oturum: mb })).govde.toplamAcik, 0);
     // Karar sonrası aynı hedefe gelen şikayet yeni kayıt açar.
     const yeniKayit = await cagir("POST", "/v1/sikayet", { oturum: ali.oturum, govde: { hedef: mehmet.hesap, neden: "spam", istekNo: no() } });
@@ -591,6 +595,39 @@ test("Y3 telafi (17 Kasım E9): oyun karakteri olmayan yönetici de telafi vereb
       govde: { hedef: mehmet.hesap, tur: "akce", tutar: 100, gerekce: "Hatalı işlem düzeltmesi", istekNo: no() },
     });
     assert.equal(r.durum, 200, JSON.stringify(r.govde));
+  } finally {
+    globalThis.fetch = eskiFetch;
+  }
+});
+
+test("S9/S10: moderatör kendine ve başka yöneticiye yaptırım veremez, kurucu verebilir; hedef listesi son 50", async () => {
+  try {
+    const { env, cagir, oyuncu, yonetici } = await kur();
+    await oyuncu(KURUCU_SUB, "Ayşe");
+    const modOyuncu = await oyuncu("440000000000000000004", "Moddo");
+    const mehmet = await oyuncu("220000000000000000002", "Mehmet");
+    const yb = (await yonetici(KURUCU_SUB, KURUCU)).govde.oturum as string;
+    await cagir("POST", "/yonetim/rol", { oturum: yb, govde: { eposta: MOD, rol: "moderator", gerekce: "yeni moderatör atandı", istekNo: no() } });
+    const mb = (await yonetici("440000000000000000004", MOD)).govde.oturum as string;
+    const yaptir = (oturum: string, hedef: string) => cagir("POST", "/yonetim/yaptirim", {
+      oturum, govde: { hedef, tur: "susturma", gun: 1, gerekce: "sohbette ısrarlı spam", istekNo: no() },
+    });
+    assert.deepEqual((await yaptir(mb, modOyuncu.hesap)).govde, { hata: "kendi_hedef" });
+    const kurucuHesap = (await cagir("GET", "/yonetim/ben", { oturum: yb })).govde.kendiHesap as string;
+    assert.deepEqual((await yaptir(mb, kurucuHesap)).govde, { hata: "yetki_yok" }, "moderatör kurucuya yaptırım veremez");
+    assert.equal((await yaptir(yb, modOyuncu.hesap)).durum, 200, "kurucu moderatöre verebilir");
+    assert.deepEqual((await yaptir(yb, kurucuHesap)).govde, { hata: "kendi_hedef" });
+    // S10: hedefte 60 süresi dolmuş + 1 kalıcı kayıt varken yeni yaptırım: liste 50'ye budanır, etkinler kalır.
+    const yd = [...(env.YONETIM as unknown as { ornekler: Map<string, { depolama: { veri: Map<string, unknown> } }> }).ornekler.values()][0]!.depolama.veri;
+    const eskiler = Array.from({ length: 60 }, (_, i) => ({ id: 1000 + i, tur: "susturma", baslangic: 1, bitis: 2, kim: KURUCU, gerekce: "eski kayıt" }));
+    yd.set(`yaptirim:${mehmet.hesap}`, [{ id: 999, tur: "kaliciUzaklastirma", baslangic: 1, bitis: null, kim: KURUCU, gerekce: "kalıcı" }, ...eskiler]);
+    assert.equal((await yaptir(yb, mehmet.hesap)).durum, 200);
+    const liste = yd.get(`yaptirim:${mehmet.hesap}`) as { id: number; bitis: number | null }[];
+    assert.equal(liste.length, 50);
+    assert.ok(liste.some((x) => x.id === 999), "etkin kalıcı yaptırım budanmaz");
+    const gor = await cagir("GET", `/yonetim/oyuncu?hesap=${encodeURIComponent(mehmet.hesap)}`, { oturum: yb });
+    assert.equal(gor.durum, 200, JSON.stringify(gor.govde));
+    assert.ok((gor.govde.yaptirim.liste as unknown[]).length <= 50, String((gor.govde.yaptirim.liste as unknown[]).length));
   } finally {
     globalThis.fetch = eskiFetch;
   }
