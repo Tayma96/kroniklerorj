@@ -77,8 +77,11 @@ export function Sahne({ gorsel, oran = 0.6, koyu = 0.35, children }: { gorsel: I
 }
 
 /** Altın çerçeveli kart; seçilince parlak kenar ve dış hale. */
+// collapsable={false}: dış kap, seçilince hale (gölge) alır. Yeni mimaride (Fabric) yalnız düzen taşıyan bir View
+// düzleştirilir; gölge gelince düzleşme bozulur ve içindeki yerel görünümler yeniden ebeveynlenir. İçeride bir
+// TextInput varsa odağını kaybeder: dokununca klavye açılıp hemen kapanır (çevrimiçi ad alanı, Android).
 export function Cerceve({ aktif = false, radius = 10, children, style, ic }: { aktif?: boolean; radius?: number; children: ReactNode; style?: StyleProp<ViewStyle>; ic?: StyleProp<ViewStyle> }) {
-  return <View style={[{ borderRadius: radius }, aktif ? GLOW : null, style]}>
+  return <View collapsable={false} style={[{ borderRadius: radius }, aktif ? GLOW : null, style]}>
     {aktif ? <View pointerEvents="none" style={{ position: "absolute", top: -4, left: -4, right: -4, bottom: -4, borderRadius: radius + 4, borderWidth: 2, borderColor: "rgba(243,210,122,0.3)" }} /> : null}
     <View style={[{ flexGrow: 1, borderRadius: radius, borderWidth: 1.5, borderColor: aktif ? C.goldBright : "rgba(168,130,63,0.78)", backgroundColor: aktif ? "rgba(42,31,19,0.95)" : ONL.cam, overflow: "hidden" }, ic]}>
       <LinearGradient pointerEvents="none" colors={["rgba(243,210,122,0.07)", "rgba(243,210,122,0)"]} style={{ position: "absolute", top: 0, left: 0, right: 0, height: 40 }} />

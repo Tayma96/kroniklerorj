@@ -24,6 +24,7 @@ export type Cekim = {
   sureMs?: number;    // sabit çekim süresi (ortak zaman çizelgesi; giriş sinematiği)
   gecikmeMs?: number; // altyazının çekim başından gecikmesi
   altyaziUst?: boolean; // altyazı ekranın üst bandında (alt kısım görüntüde önemliyse)
+  videoDisi?: boolean; // video perdesi bitti: bu çekim kendi durağan karesiyle oynar (çevrimiçi varış)
 };
 
 const G = {

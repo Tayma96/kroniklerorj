@@ -57,6 +57,17 @@ const ANAHTAR: Partial<Record<OnlineHata, string>> = {
   istek_tekrar: "onl.h.istekTekrar",
   eylem_gecersiz: "onl.h.genel",
   imlec_gecersiz: "onl.h.genel",
+  // Koda özgü metin: "bir aksilik oldu" yerine ne olduğunu söyler (varış ve giriş akışı).
+  sunucu_hatasi: "onl.h.sunucuHatasi",
+  yapilandirma_eksik: "onl.h.yapilandirma",
+  gecersiz_yanit: "onl.h.gecersizYanit",
+  gecersiz_istek: "onl.h.gecersizIstek",
+  istekno_gecersiz: "onl.h.gecersizIstek",
+  govde_buyuk: "onl.h.gecersizIstek",
+  yontem_yok: "onl.h.gecersizIstek",
+  bulunamadi: "onl.h.bulunamadi",
+  profil_var: "onl.h.profilVar",
+  cinsiyet_gecersiz: "onl.h.cinsiyet",
 };
 
 export function hataAnahtari(kod: OnlineHata): string {
