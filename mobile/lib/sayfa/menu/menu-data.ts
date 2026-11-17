@@ -34,7 +34,7 @@ export const MENU_DESTS: MenuDest[] = [
   { to: "/oyun/meslek", key: "meslek", icon: "meslek", group: "sehir", scene: sabit(mulkImage("dukkan")), acik: RESIT },
   { to: "/oyun/mulkler", key: "mulkler", icon: "mulkler", group: "sehir", scene: sabit(venueImage("mulkler")), acik: (s) => s.player.age >= MULK_YAS || s.player.properties.length > 0 || s.player.dead },
   { to: "/oyun/mahalle", key: "mahalle", icon: "house", group: "sehir", scene: sabit(venueImage("mahalle")) },
-  { to: "/oyun/mektep", key: "mektep", icon: "mektep", group: "sehir", scene: sabit(venueImage("mektep")) },
+  { to: "/oyun/mektep", key: "mektep", icon: "mektep", group: "sehir", scene: sabit(venueImage("mektep")), acik: (s) => s.player.age >= 7 || s.player.dead }, // F3: sıbyan/medrese/ders halkası (18+ artık ölü değil)
   { to: "/oyun/haberler", key: "haberler", icon: "haberler", group: "sehir", scene: sabit(venueImage("haberler")) },
   { to: "/oyun/gorevler", key: "gorevler", icon: "scroll-open", group: "sehir", scene: sabit(SAHNE_GORSEL.hasat) },
   { to: "/oyun/harita", key: "harita", icon: "map", group: "sehir", scene: sabit(MAP_HERO) },

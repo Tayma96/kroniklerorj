@@ -43,7 +43,7 @@ export function MkMektep() {
     </Text>
     <View style={{ gap: 7, paddingHorizontal: 10, paddingTop: 10, paddingBottom: 10 }}>
       {secenekler.map((c, i) => <View key={i} style={{ gap: 4 }}>
-        <PressableScale haptic="selection" accessibilityRole="button" accessibilityLabel={`${c.etiket}. ${c.yol}`} onPress={() => { playTap(); apply((s) => chooseMonthMektep(s, m.id, i)); }}
+        <PressableScale haptic="selection" accessibilityLabel={`${c.etiket}. ${c.yol}`} onPress={() => { playTap(); apply((s) => chooseMonthMektep(s, m.id, i)); }}
           style={{ minHeight: 56, borderRadius: 4, borderWidth: 1, borderColor: "rgba(244,201,184,0.45)", backgroundColor: "rgba(18,8,5,0.82)", paddingHorizontal: 12, paddingVertical: 8, alignItems: rtl ? "flex-end" : "flex-start" }}>
           <Text style={{ fontFamily: F.serif, fontSize: 16, lineHeight: 20, color: "#F4E8CF", textAlign: align }}>{c.etiket}</Text>
           <Text style={{ fontFamily: F.serif, fontSize: 13, lineHeight: 17, color: "#E9CBB6", textAlign: align, marginTop: 2 }}>{c.yol}</Text>

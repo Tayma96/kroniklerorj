@@ -1,7 +1,7 @@
 // Zanaatlar sekmesi: tezgâhın, sana açık meslekler ve henüz kapalı olanlar. Satır açılır, şartlar ve geçiş düğmesi görünür.
 import { useState } from "react";
 import { View, Text, Pressable } from "react-native";
-import { changeProfession, PROFESSIONS, meslekSarti, meslekEksik, meslekSermaye, meslegeUygun, effStat, type Profession } from "../../game";
+import { changeProfession, PROFESSIONS, meslekSarti, meslekEksik, meslekSermaye, meslegeUygun, effStat, meslekXpMin, type Profession } from "../../game";
 import { professionNameL } from "../../locale-data";
 import { useGame } from "../../store";
 import { useI18n, applyParams } from "../../i18n";
@@ -62,7 +62,7 @@ export function MeslekListesi({ onGecti }: { onGecti: () => void }) {
               <View style={{ marginTop: 8 }}>
                 <Etiket rtl={rtl} tone={C.parchmentMuted}>{t("mes.need")}</Etiket>
                 {m.statMin > 0 && sart(`${t("st." + m.stat)} ${m.statMin}`, ek.stat, String(Math.floor(effStat(p, m.stat))))}
-                {m.xpMin > 0 && sart(applyParams(t("mes.xp"), [t("skill." + m.skill), m.xpMin], lang), ek.xp, String(p.skill_xp?.[m.skill] || 0))}
+                {m.xpMin > 0 && sart(applyParams(t("mes.xp"), [t("skill." + m.skill), meslekXpMin(p, pr.id)], lang), ek.xp, String(p.skill_xp?.[m.skill] || 0))}
                 {ser > 0 && sart(t("mes.capital").replace("%1", String(ser)), ek.sermaye, String(Math.floor(p.money)))}
               </View>
             ))}
