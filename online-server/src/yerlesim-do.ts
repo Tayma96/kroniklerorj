@@ -98,6 +98,9 @@ export class YerlesimDO {
     if (ileti.islem === "masaDoluluk") return jsonYanit(await this.#dolulukYaz(ileti.yerlesim, ileti.govde));
     // Canlı masalar vitrini: aynı hafif yol (motor açılmaz); tek küçük depo kaydı.
     if (ileti.islem === "masaOyunu" || ileti.islem === "masaVitrin") return jsonYanit(await this.#vitrin(ileti));
+    // Künye (başka yerleşimden oyuncu sayfası): salt okuma hafif yolu. Ay yetiştirilmez, vergi/etkinlik/kervan/mülk
+    // uzlaştırılmaz, alarm kurulmaz, başka DO'ya çağrı yok; yerleşim kurulmamışsa kurulmaz.
+    if (ileti.islem === "kunye") return jsonYanit(await this.#kunyeOku(ileti));
     this.#butceYenile();
     try {
       const simdi = this.#saat();
@@ -129,6 +132,19 @@ export class YerlesimDO {
       else await this.#depo.sil([VITRIN]);
     }
     return ileti.islem === "masaVitrin" ? basarili({ masalar: vitrinListesi(kayit, Date.now()) }) : basarili({});
+  }
+
+  async #kunyeOku(ileti: Extract<YerlesimIleti, { islem: "kunye" }>): Promise<Sonuc<unknown>> {
+    if (!yerlesimBul(ileti.yerlesim)) return hata("yerlesim_gecersiz");
+    if (!this.#motor && !(await this.#depo.al("m"))) return hata("kisi_yok");
+    try {
+      const motor = await this.#ac(ileti.yerlesim, this.#saat());
+      if (!motor) return hata("yerlesim_gecersiz");
+      return await motor.kunye(ileti.hesapId, ileti.dil, this.#saat(), ileti.izleyen);
+    } catch (e) {
+      this.#motor = undefined;
+      throw e;
+    }
   }
 
   async #dolulukYaz(yerlesim: string, govde: unknown): Promise<Sonuc<unknown>> {
@@ -311,8 +327,6 @@ export class YerlesimDO {
         return armaganGeri(motor, ileti.hesapId, ileti.govde);
       case "sakinHesabi":
         return motor.sakinHesabi(ileti.hesapId, ileti.hedef);
-      case "kunye":
-        return motor.kunye(ileti.hesapId, ileti.dil);
       case "engeller": {
         const han = hanNoCoz(ileti.han);
         if (han === undefined) return hata("han_gecersiz");

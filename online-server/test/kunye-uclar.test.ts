@@ -5,7 +5,8 @@ import assert from "node:assert/strict";
 import isleyici, { DunyaDO, HesapDO, YerlesimDO } from "../src/index.ts";
 import type { Env } from "../src/tipler.ts";
 import { ARAMA_DAKIKA_SINIRI, SAYFA_ALANLARI } from "../src/kunye/hesap.ts";
-import { googleYuku, ISTEMCI, jwtImzala, rsaAnahtari, sahteAdAlani, sahteJwks } from "./yardimci.ts";
+import { googleYuku, ISTEMCI, jwtImzala, rsaAnahtari, sahteAdAlani, sahteJwks, type SahteDepolama } from "./yardimci.ts";
+import { AY_MS } from "../src/saat.ts";
 
 function ortam(): Env {
   const env = { GOOGLE_CLIENT_ID: `web-istemci,${ISTEMCI}`, OTURUM_ANAHTARI: "o".repeat(48) } as Env;
@@ -71,7 +72,8 @@ test("künye uçları: numara, arama, sayfa, hız kovası", async () => {
 
     const sayfa = await cagir("GET", `/v1/kunye/${n1}?dil=tr`, { oturum: o2 });
     assert.equal(sayfa.durum, 200);
-    assert.deepEqual(Object.keys(sayfa.govde).sort(), SAYFA_ALANLARI);
+    // Çevrimiçi durum yalnız kendisine ve onu tanıdık/dost sayanın tanıdığına: tanımayana alan hiç dönmez.
+    assert.deepEqual(Object.keys(sayfa.govde).sort(), SAYFA_ALANLARI.filter((x) => x !== "durum"));
     assert.equal(sayfa.govde.ad, "Kerem");
     assert.equal(sayfa.govde.ben, false);
     assert.equal(sayfa.govde.ayniYerlesim, true);
@@ -82,17 +84,30 @@ test("künye uçları: numara, arama, sayfa, hız kovası", async () => {
     const oyuncu = await cagir("GET", `/v1/oyuncu/${(sayfa.govde.kisi as { id: string }).id}`, { oturum: o2 });
     assert.equal(oyuncu.durum, 200);
     assert.equal(oyuncu.govde.ad, "Kerem");
+    assert.equal(oyuncu.govde.numara, n1, "oyuncu sayfası künye numarasını taşır");
     const kendi = await cagir("GET", `/v1/kunye/${n1}`, { oturum: o1 });
     assert.equal(kendi.govde.ben, true);
+    assert.ok(["simdi", "bugun", "uzak"].includes(kendi.govde.durum as string), "kendi durumunu görür");
     assert.equal((await cagir("GET", "/v1/kunye/99999999x", { oturum: o2 })).durum, 400);
 
-    // Engel: Kerem Zeynep'i engeller → iki yönde de arama ve sayfa kapanır.
+    // Kerem Zeynep'i tanıdık işaretler → Zeynep, Kerem'in durumunu görür.
     const zeynepId = (await cagir("GET", `/v1/kunye/${n2}`, { oturum: o1 })).govde.kisi as { id: string };
+    const tn = await cagir("POST", "/v1/tanidik", { oturum: o1, govde: { hedef: zeynepId.id, isaret: "tanidik", istekNo: "kunye-tanidik-01" } });
+    assert.equal(tn.durum, 200, JSON.stringify(tn.govde));
+    const taniyan = await cagir("GET", `/v1/kunye/${n1}?dil=tr`, { oturum: o2 });
+    assert.deepEqual(Object.keys(taniyan.govde).sort(), SAYFA_ALANLARI);
+
+    // Engel: Kerem Zeynep'i engeller → iki yönde de arama ve sayfa kapanır.
     const eg = await cagir("POST", "/v1/engelle", { oturum: o1, govde: { hedef: zeynepId.id, istekNo: "kunye-engel-0001" } });
     assert.equal(eg.durum, 200);
     assert.deepEqual((await cagir("GET", `/v1/kunye/${n1}`, { oturum: o2 })).govde, { hata: "kisi_yok" });
     assert.deepEqual((await cagir("GET", "/v1/oyuncu-ara?ad=kerem", { oturum: o2 })).govde, { sonuclar: [], imlec: null });
     assert.deepEqual((await cagir("GET", `/v1/oyuncu-ara?no=${n2}`, { oturum: o1 })).govde, { sonuclar: [], imlec: null });
+    // Engel kalkınca (yerleşim ve hesap düzeyi birlikte) sayfa ve arama yeniden açılır.
+    const kaldir = await cagir("POST", "/v1/engelle", { oturum: o1, govde: { hedef: zeynepId.id, islem: "kaldir", istekNo: "kunye-engel-0002" } });
+    assert.equal(kaldir.durum, 200);
+    assert.equal((await cagir("GET", `/v1/kunye/${n1}`, { oturum: o2 })).durum, 200);
+    assert.deepEqual(((await cagir("GET", `/v1/oyuncu-ara?no=${n2}`, { oturum: o1 })).govde.sonuclar as unknown[]).length, 1);
 
     // Aramaya özel dakikalık kova (genel sınırdan dar).
     const o3 = await gir("330000000000000000003");
@@ -103,6 +118,18 @@ test("künye uçları: numara, arama, sayfa, hız kovası", async () => {
     assert.equal(durumlar[ARAMA_DAKIKA_SINIRI], 429);
     // Kendi numaran kovaya takılmaz.
     assert.equal((await cagir("GET", "/v1/numara", { oturum: o3 })).durum, 200);
+
+    // Künye hedef yerleşimi çalıştırmaz: aylar sonra bile salt okuma (ay yetiştirilmez, alarm kurulmaz, yazım yok).
+    const yer = env.YERLESIM as unknown as { ornekler: Map<string, { depolama: SahteDepolama }> };
+    const develi = [...yer.ornekler.values()].find((x) => (x.depolama.veri.get("m") as { y?: string } | undefined)?.y === "develi")!;
+    const once = structuredClone([...develi.depolama.veri.entries()]);
+    const alarmOnce = develi.depolama.alarmAni;
+    const ileri = new YerlesimDO({ id: { toString: () => "x" }, storage: develi.depolama } as never, env, () => simdi + 6 * AY_MS);
+    const yaz = await ileri.fetch(new Request("https://ic/", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ islem: "kunye", yerlesim: "develi", hesapId: "yok", dil: "tr" }) }));
+    assert.deepEqual(await yaz.json(), { ok: false, hata: "kisi_yok" });
+    assert.equal(ileri.harcanan, 0, "başka DO'ya çağrı yok");
+    assert.deepEqual([...develi.depolama.veri.entries()], once, "depoya yazım yok (ay yetiştirilmedi)");
+    assert.equal(develi.depolama.alarmAni, alarmOnce, "alarm kurulmadı");
   } finally {
     globalThis.fetch = eskiFetch;
   }

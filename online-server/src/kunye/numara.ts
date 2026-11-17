@@ -130,12 +130,41 @@ function sonucKur(hesapId: string, numara: number, ad: string, profil: Profil | 
   return { hesapId, numara, ad, yerlesim: profil.yerlesim, beylik: y?.beylik ?? profil.beylik };
 }
 
-/** Tam numarayla tek kayıt (profili olmayan hesap bulunmaz). */
-export async function numaraBul(depo: Depo, ham: unknown): Promise<Sonuc<NumaraSonucu>> {
+// ── Hesap düzeyinde engel (denetim 17 Kasım) ──
+// Yerleşim içi engel (yerlesim/engel.ts) yerleşime bağlıdır; künye ve arama yerleşimden bağımsız çalışsın diye
+// engel ayrıca hesap düzeyinde DunyaDO'da tutulur: `eg:<hesap>` → engellediği hesaplar. Denetim iki yönlüdür.
+
+const EG = "eg:";
+/** [PARAMETRE] Hesap başına tutulan en çok engel (eskisi düşer). */
+export const HESAP_ENGEL_EN_COK = 500;
+
+/** Engeli yazar ya da kaldırır (tekrar güvenli). */
+export async function hesapEngelYaz(depo: Depo, hesapId: unknown, hedef: unknown, kaldir: boolean): Promise<Sonuc<{ engelli: boolean }>> {
+  if (typeof hesapId !== "string" || typeof hedef !== "string" || !hesapId || !hedef || hesapId.length > 128 || hedef.length > 128 || hesapId === hedef) return hata("gecersiz_istek");
+  const liste = (await depo.al<string[]>(EG + hesapId)) ?? [];
+  const var_ = liste.includes(hedef);
+  if (kaldir ? !var_ : var_) return basarili({ engelli: !kaldir });
+  const yeni = kaldir ? liste.filter((x) => x !== hedef) : [...liste, hedef].slice(-HESAP_ENGEL_EN_COK);
+  if (yeni.length) await depo.koy({ [EG + hesapId]: yeni });
+  else await depo.sil([EG + hesapId]);
+  return basarili({ engelli: !kaldir });
+}
+
+/** İki hesap arasında (hangi yönde olursa olsun) hesap düzeyinde engel var mı. */
+export async function hesapEngelliMi(depo: Depo, a: string, b: string): Promise<boolean> {
+  if (a === b) return false;
+  const [la, lb] = await Promise.all([depo.al<string[]>(EG + a), depo.al<string[]>(EG + b)]);
+  return (la ?? []).includes(b) || (lb ?? []).includes(a);
+}
+
+/** Tam numarayla tek kayıt (profili olmayan hesap bulunmaz). `arayan` verilirse hesap düzeyinde engel süzülür. */
+export async function numaraBul(depo: Depo, ham: unknown, arayan?: string): Promise<Sonuc<NumaraSonucu>> {
   const n = numaraCoz(ham);
   if (n === undefined) return hata("numara_gecersiz");
   const hesapId = await depo.al<string>(NO + n);
   if (hesapId === undefined) return hata("kisi_yok");
+  // Engelin varlığı sızmaz: bulunmayanla aynı yanıt.
+  if (arayan !== undefined && (await hesapEngelliMi(depo, arayan, hesapId))) return hata("kisi_yok");
   const [kayit, profil] = await Promise.all([depo.al<NumaraKaydi>(NK + hesapId), depo.al<Profil>(KAYIT + hesapId)]);
   const s = sonucKur(hesapId, n, kayit?.ad ?? profil?.ad ?? "", profil);
   return s ? basarili(s) : hata("kisi_yok");
@@ -166,6 +195,7 @@ export async function adAra(
   onekHam: unknown,
   imlecHam: unknown,
   sinirHam: unknown = ARAMA_SAYFA,
+  arayan?: string,
 ): Promise<Sonuc<{ sonuclar: NumaraSonucu[]; imlec: string | null }>> {
   if (typeof onekHam !== "string" || onekHam.length > 64) return hata("gecersiz_istek");
   const onek = adAnahtari(onekHam);
@@ -186,7 +216,7 @@ export async function adAra(
     const d = bulunan.get(a)!;
     const n = Number(a.slice(a.lastIndexOf(AYRAC) + 1));
     const s = sonucKur(d.h, n, d.ad, profiller.get(KAYIT + d.h));
-    if (s) sonuclar.push(s);
+    if (s && (arayan === undefined || !(await hesapEngelliMi(depo, arayan, d.h)))) sonuclar.push(s);
   }
   const son = sayfa[sayfa.length - 1];
   return basarili({ sonuclar, imlec: anahtarlar.length > sinir && son ? imlecYaz(son) : null });

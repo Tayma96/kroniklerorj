@@ -17,8 +17,13 @@ export const DURUM_SIMDI_MS = 15 * 60_000;
 /** [PARAMETRE] Son görülme bu kadar yeniyse "bugun"; daha eskiyse "uzak". */
 export const DURUM_BUGUN_MS = 24 * 60 * 60_000;
 
-/** YerlesimDO'nun döndürdüğü alanlar (sıralı). HesapDO bunlara yalnız numara, ben ve ayniYerlesim ekler. */
+/**
+ * YerlesimDO'nun döndürdüğü alanlar (sıralı). HesapDO bunlara yalnız numara, ben ve ayniYerlesim ekler. `durum`
+ * koşulludur (KUNYE_KOSULLU): yalnız kendisine ve aynı yerleşimdeki tanıdık/dostuna döner, yoksa alan hiç yoktur.
+ */
 export const KUNYE_ALANLARI = ["ad", "beylik", "durum", "hanedan", "isletmeler", "kisi", "meslek", "nam", "olu", "teveccuh", "yerlesim"] as const;
+/** Koşullu alanlar: yalnız izinli izleyene döner (yoksa yanıtta anahtar da yok). */
+export const KUNYE_KOSULLU: readonly (typeof KUNYE_ALANLARI)[number][] = ["durum"];
 
 export type CevrimiciDurum = "simdi" | "bugun" | "uzak";
 
@@ -31,7 +36,8 @@ export interface KunyeGorunumu {
   nam: Record<(typeof NAMLAR)[number], number>;
   teveccuh: number;
   isletmeler: { tur: string; no: number; ad: string }[];
-  durum: CevrimiciDurum;
+  /** Yalnız kendisine ve aynı yerleşimde kişinin tanıdık/dost saydığı izleyene; başkasına alan hiç dönmez. */
+  durum?: CevrimiciDurum;
   olu: boolean;
   /** Sosyal eylemlere bağlanacak kimlik: yerleşim + yerel oyuncu kimliği (`/v1/oyuncu/:id`, dostluk, teklif...). */
   kisi: { yerlesim: string; id: string };
@@ -50,7 +56,7 @@ function unvan(kd: number | undefined): string | null {
   return kd === undefined ? null : (KADEMELER[kd] ?? null);
 }
 
-export function kunyeGorunumu(k: Kasaba, kar: Karakter, simdi: number, dil: Dil): KunyeGorunumu {
+export function kunyeGorunumu(k: Kasaba, kar: Karakter, simdi: number, dil: Dil, durumGorur = true): KunyeGorunumu {
   const y = yerlesimBul(k.y);
   const beylik = y?.beylik ?? "";
   const ms = kar.ms;
@@ -74,7 +80,7 @@ export function kunyeGorunumu(k: Kasaba, kar: Karakter, simdi: number, dil: Dil)
     nam: adlandir(NAMLAR, kar.nm),
     teveccuh: teveccuhKademesi(kar, k.ay),
     isletmeler,
-    durum: durumKovasi(kar.kz, simdi),
+    ...(durumGorur ? { durum: durumKovasi(kar.kz, simdi) } : {}),
     olu: olduMu(kar),
     kisi: { yerlesim: k.y, id: kar.o },
   };

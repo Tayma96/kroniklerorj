@@ -317,10 +317,31 @@ export class HesapDO {
             await engeliMasayaBildir({ depo: this.#depo, hesapId: ileti.hesapId, masaCagir: (ad, i) => masaCagir(this.#env, ad, i) }, liste);
           }
         }
+        // Hesap düzeyinde engel (künye/arama yerleşimden bağımsız süzer); en iyi çaba, yerleşim engeli asıl kayıttır.
+        if (r.ok) {
+          const g = (typeof ileti.govde === "object" && ileti.govde !== null ? ileti.govde : {}) as { hedef?: unknown; islem?: unknown };
+          try {
+            const sh = typeof g.hedef === "string" ? await this.#yerlesime({ islem: "sakinHesabi", hesapId: ileti.hesapId, hedef: g.hedef }) : hata("kisi_yok");
+            if (sh.ok) await dunyaCagir(this.#env, { islem: "hesapEngel", hesapId: ileti.hesapId, hedef: (sh.deger as { hesap: string }).hesap, kaldir: g.islem === "kaldir" });
+          } catch {
+            // dünya erişilemezse yerleşim engeli yine geçerlidir
+          }
+        }
         return r;
       }
-      case "oyuncu":
-        return this.#yerlesime({ islem: "oyuncu", hesapId: ileti.hesapId, oyuncu: ileti.oyuncu, dil: ileti.dil });
+      case "oyuncu": {
+        const r = await this.#yerlesime({ islem: "oyuncu", hesapId: ileti.hesapId, oyuncu: ileti.oyuncu, dil: ileti.dil });
+        // İsteğe bağlı `numara` (istemci künyeye doğrudan geçer); bulunamazsa alan eklenmez.
+        if (!r.ok || typeof r.deger !== "object" || r.deger === null) return r;
+        try {
+          const sh = await this.#yerlesime({ islem: "sakinHesabi", hesapId: ileti.hesapId, hedef: ileti.oyuncu });
+          if (!sh.ok) return r;
+          const n = await dunyaCagir(this.#env, { islem: "numaraAl", hesapId: (sh.deger as { hesap: string }).hesap });
+          return n.ok ? basarili({ ...(r.deger as Record<string, unknown>), numara: (n.deger as { numara: number }).numara }) : r;
+        } catch {
+          return r;
+        }
+      }
       case "gelen":
         return this.#yerlesime({ islem: "gelen", hesapId: ileti.hesapId, dil: ileti.dil });
       case "duzenOku":

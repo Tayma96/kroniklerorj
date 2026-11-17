@@ -1,15 +1,17 @@
 // Künye (HesapDO tarafı): kendi numaran, oyuncu araması (tam numara ya da ad öneki) ve oyuncu sayfası.
 // Kötüye kullanım koruması: aramaya özel dakikalık kova (HesapDO belleğinde), günlük toplam sorgu tavanı ve
 // numara taramasına karşı günlük ıska tavanı (depoda, gün değişince sıfırlanır), adda en az karakter.
-// Engel (src/yerlesim/engel.ts, iki yönlü): engellediğin ya da seni engelleyen oyuncu aramada çıkmaz, sayfası
-// "kisi_yok" döner (engelin varlığı sızmaz). Engel yerleşim içidir; yalnız aynı yerleşimdeki sonuçlar için sorulur.
+// Engel (iki yönlü): engellediğin ya da seni engelleyen oyuncu aramada çıkmaz, sayfası "kisi_yok" döner (engelin
+// varlığı sızmaz). Engel hesap düzeyinde de tutulur (DunyaDO `eg:`; engelle ucu yazar) ve künye/aramada her zaman,
+// yerleşimden bağımsız uygulanır; yerleşim içi engel (src/yerlesim/engel.ts) ayrıca aynı yerleşimde sorulur.
+// Çevrimiçi `durum` yalnız kendisine ve aynı yerleşimde onu tanıdık/dost sayan kişinin tanıdığına döner.
 // Hesap kimliği istemciye hiçbir yanıtta dönmez.
 
 import { adDuzenle } from "../ad.ts";
 import type { Depo } from "../depo.ts";
 import { PROFIL_ANAHTARI } from "../mantik.ts";
 import { basarili, hata, type DunyaIleti, type Profil, type Sonuc, type YerlesimIleti } from "../tipler.ts";
-import { KUNYE_ALANLARI, type KunyeGorunumu } from "./gorunum.ts";
+import { KUNYE_ALANLARI, KUNYE_KOSULLU, type KunyeGorunumu } from "./gorunum.ts";
 import { beylikAdi, numaraCoz, type NumaraSonucu } from "./numara.ts";
 import { yerlesimBul } from "../dunya-veri.ts";
 
@@ -21,6 +23,8 @@ export const ARAMA_GUNLUK_SINIRI = 200;
 export const NUMARA_ISKA_GUNLUK = 20;
 /** [PARAMETRE] Ad aramasında önekin en az harf sayısı (boşluk ve kesme sayılmaz). */
 export const AD_ARAMA_EN_AZ = 3;
+/** [PARAMETRE] Hesap başına günde en çok bu kadar ad araması sayfası (ad dizinini sayfa sayfa taramaya karşı). */
+export const AD_ARAMA_SAYFA_GUNLUK = 30;
 
 const GUN_MS = 24 * 60 * 60_000;
 /** HesapDO depo anahtarları. */
@@ -45,6 +49,8 @@ export interface AramaIzi {
   g: number;
   s: number;
   i: number;
+  /** Bugünkü ad araması sayfa sayısı (eski kayıtta yok: 0). */
+  a?: number;
 }
 
 export interface AramaSonucu {
@@ -60,9 +66,10 @@ export function aramaIzi(iz: AramaIzi | undefined, simdi: number): AramaIzi {
   return iz && iz.g === g ? { ...iz } : { g, s: 0, i: 0 };
 }
 
-/** Sorgu izni: günlük tavan; numara sorgusunda ayrıca ıska tavanı. Saf. */
-export function aramaIzni(iz: AramaIzi, numara: boolean): boolean {
+/** Sorgu izni: günlük tavan; numara sorgusunda ayrıca ıska tavanı, ad aramasında ayrıca sayfa tavanı. Saf. */
+export function aramaIzni(iz: AramaIzi, numara: boolean, adSayfasi = false): boolean {
   if (iz.s >= ARAMA_GUNLUK_SINIRI) return false;
+  if (adSayfasi && (iz.a ?? 0) >= AD_ARAMA_SAYFA_GUNLUK) return false;
   return !numara || iz.i < NUMARA_ISKA_GUNLUK;
 }
 
@@ -87,11 +94,11 @@ async function engelliler(b: KunyeBaglami, profil: Profil): Promise<Set<string>>
   return new Set(r.ok ? ((r.deger as { engeller?: string[] }).engeller ?? []) : []);
 }
 
-async function hazirlik(b: KunyeBaglami, numara: boolean): Promise<Sonuc<{ profil: Profil; iz: AramaIzi }>> {
+async function hazirlik(b: KunyeBaglami, numara: boolean, adSayfasi = false): Promise<Sonuc<{ profil: Profil; iz: AramaIzi }>> {
   const profil = await b.depo.al<Profil>(PROFIL_ANAHTARI);
   if (!profil) return hata("profil_yok");
   const iz = aramaIzi(await b.depo.al<AramaIzi>(ARAMA_IZ), b.simdi);
-  if (!aramaIzni(iz, numara)) return hata("arama_siniri");
+  if (!aramaIzni(iz, numara, adSayfasi)) return hata("arama_siniri");
   return basarili({ profil, iz });
 }
 
@@ -106,19 +113,21 @@ export async function oyuncuAra(b: KunyeBaglami, sorgu: { no?: string | null; ad
     // Boşluk ve kesme sayılmaz: "a b" gibi geniş önekler taramaya dönüşmesin.
     if ([...adDuzenle(sorgu.ad).replace(/[ ']/g, "")].length < AD_ARAMA_EN_AZ) return hata("arama_kisa");
   } else if (numaraCoz(sorgu.no) === undefined) return hata("numara_gecersiz");
-  const h = await hazirlik(b, numaraIle);
+  const h = await hazirlik(b, numaraIle, !numaraIle);
   if (!h.ok) return h;
   const { profil, iz } = h.deger;
   iz.s++;
   let bulunan: NumaraSonucu[];
   let imlec: string | null = null;
   if (numaraIle) {
-    const r = await b.dunya({ islem: "numaraBul", numara: String(sorgu.no) });
+    // Hesap düzeyinde engel dünyada süzülür (yerleşimden bağımsız); engelli bulunmayanla aynı görünür.
+    const r = await b.dunya({ islem: "numaraBul", numara: String(sorgu.no), arayan: b.hesapId });
     if (!r.ok && r.hata !== "kisi_yok") return r;
     if (!r.ok) iz.i++;
     bulunan = r.ok ? [r.deger as NumaraSonucu] : [];
   } else {
-    const r = await b.dunya({ islem: "adAra", onek: sorgu.ad!, imlec: sorgu.imlec ?? null });
+    iz.a = (iz.a ?? 0) + 1;
+    const r = await b.dunya({ islem: "adAra", onek: sorgu.ad!, imlec: sorgu.imlec ?? null, arayan: b.hesapId });
     if (!r.ok) return r;
     const d = r.deger as { sonuclar: NumaraSonucu[]; imlec: string | null };
     bulunan = d.sonuclar;
@@ -140,7 +149,7 @@ export async function oyuncuSayfasi(b: KunyeBaglami, numaraHam: unknown, dil: st
   if (!h.ok) return h;
   const { profil, iz } = h.deger;
   iz.s++;
-  const r = await b.dunya({ islem: "numaraBul", numara: String(numara) });
+  const r = await b.dunya({ islem: "numaraBul", numara: String(numara), arayan: b.hesapId });
   if (!r.ok) {
     if (r.hata === "kisi_yok") iz.i++;
     await b.depo.koy({ [ARAMA_IZ]: iz });
@@ -151,7 +160,8 @@ export async function oyuncuSayfasi(b: KunyeBaglami, numaraHam: unknown, dil: st
   const ben = hedef.hesapId === b.hesapId;
   const ayniYerlesim = hedef.yerlesim === profil.yerlesim;
   if (!ben && ayniYerlesim && (await engelliler(b, profil)).has(hedef.hesapId)) return hata("kisi_yok");
-  const g = await b.yerlesim({ islem: "kunye", yerlesim: hedef.yerlesim, hesapId: hedef.hesapId, dil: dil ?? null });
+  // `izleyen`: çevrimiçi durum yalnız kendisine ve aynı yerleşimdeki tanıdık/dostuna (yerleşim karar verir).
+  const g = await b.yerlesim({ islem: "kunye", yerlesim: hedef.yerlesim, hesapId: hedef.hesapId, dil: dil ?? null, izleyen: b.hesapId });
   if (!g.ok) return g.hata === "sakin_yok" ? hata("kisi_yok") : g;
   const gorunum = g.deger as KunyeGorunumu;
   if (gorunum.ad !== hedef.ad) {
@@ -162,7 +172,11 @@ export async function oyuncuSayfasi(b: KunyeBaglami, numaraHam: unknown, dil: st
     }
   }
   const sayfa: Record<string, unknown> = { numara, ben, ayniYerlesim };
-  for (const a of KUNYE_ALANLARI) sayfa[a] = gorunum[a];
+  for (const a of KUNYE_ALANLARI) {
+    // Koşullu alan (durum): yalnız yerleşim döndürdüyse ve izleyen aynı yerleşimdeyse (ya da kendisiyse).
+    if (KUNYE_KOSULLU.includes(a) && (gorunum[a] === undefined || !(ben || ayniYerlesim))) continue;
+    sayfa[a] = gorunum[a];
+  }
   return basarili(sayfa);
 }
 
