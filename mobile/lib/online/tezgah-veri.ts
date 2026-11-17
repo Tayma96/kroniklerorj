@@ -27,9 +27,32 @@ export interface GunSonuSatiri {
 export interface GunSonu {
   ay: number; kepenk: boolean; ertelendi?: boolean;
   hasilat?: number; vergi?: { oran: number; tutar: number }; net?: number; tavan?: { seviye: number; kullanilan: number }; satirlar?: GunSonuSatiri[];
+  /** Atölye (Dilim 2) ay dönümü dökümü: atolye-veri.ts `AtolyeGunSonu`. Dükkânda yok. */
+  anlik?: boolean; yapim?: number; emek?: { oyuncuOnce: number; oyuncuSonra: number; npcVerilen: number; npcKullanilan: number };
+  npc?: NpcDokumu; emirler?: EmirDokumu[];
+}
+/** Atölyenin NPC emek dökümü: sözleşmeli, emek veren (maaşı emanetten karşılanan), maaşsız ve nedeni. */
+export interface NpcDokumu { sozlesme: number; emekVeren: number; maassiz: number; neden: "emanet_maas_yetmez" | string | null }
+export type EmirNedeni = "emek_yok" | "girdi_yok" | "arac_yok" | "depo_dolu" | "usta_yok" | "tarif_yok";
+/** Ay dönümünde bir üretim emrinin dökümü (sunucu uretim-emri.ts EmirDokumu). */
+export interface EmirDokumu {
+  emir: number; tarif: string; kez: number; yapilan: number; buAy: number; cikti: { mal: string; adet: number };
+  /** Bu ay çıkan adet kalite kademesine göre [sade, iyi, üstün, şaheser]. */
+  kalite: [number, number, number, number]; usta: { id: string; ad: string } | null; emek: { oyuncu: number; npc: number };
+  neden: EmirNedeni | string | null;
+  kaliteDokum?: { kalemler: { k: string; enAz: number; enCok: number }[]; toplam: { enAz: number; enCok: number } } | null;
 }
 export interface TezgahOzeti { ay: number; meslekler?: { meslek: string; neden: "kimseSatmadi" | "satildi" | string; B?: number; harcanan?: number }[] }
-export interface TezgahIzni { depoKoy: boolean; depoAl: boolean; raf: boolean; fiyat: boolean; satinAl: boolean }
+export interface TezgahIzni {
+  depoKoy: boolean; depoAl: boolean; raf: boolean; fiyat: boolean; satinAl: boolean;
+  /** Dilim 2: genişletme (dükkân ve atölye); atölyede üretim, mesai, emir, toplu teslim, zanaat. Eski sunucuda yok. */
+  genislet?: boolean; uret?: boolean; mesai?: boolean; emir?: boolean; toplu?: boolean; zanaat?: boolean;
+}
+/** Genişletme: kademe (açılmış kapasite) ve işletme seviyesi; sonraki adımın malzemesi depoda var/yok dökümüyle. */
+export interface GenisletmeGorunumu {
+  kademe: number; seviye: number;
+  sonraki: { hedef: number; malzeme: { mal: string; adet: number; depoda: number; taban: number }[] } | null;
+}
 /** GET /v1/isletme/:id/tezgah (depo, gün sonu ve özet yalnız sahip/yetkili çalışana). */
 export interface TezgahGorunumu {
   isletme: string; tur: "dukkan" | "atolye"; ad: string; sahip: { id: string; ad: string }; seviye: number; itibar: number;
@@ -40,8 +63,29 @@ export interface TezgahGorunumu {
   depo?: DepoSatiri[]; depoKapasite?: number; depoDolu?: number; gunSonu?: GunSonu | null; ozet?: TezgahOzeti | null;
   /** Çalışanların depodan çekimleri (yalnız sahip/yetkiliye; `kim` karakter kimliği). Eski sunucuda yok. */
   depoDefteri?: DepoDefterSatiri[];
+  /** Dilim 2 (yalnız yetkiliye): genişletme ve atölye bölümü (atolye-veri.ts). Eski sunucuda yok. */
+  genisletme?: GenisletmeGorunumu;
+  atolye?: AtolyeBolumu;
 }
-export interface DepoDefterSatiri { ay: number; kim: string; mal: string; kalite: Kademe; adet: number }
+export interface DepoDefterSatiri { ay: number; kim: string; kimAd?: string; mal: string; kalite: Kademe; adet: number }
+/** Bir açık üretim emri (tezgâhta). */
+export interface UretimEmri { no: number; tarif: string; kez: number; yapilan: number; kalan: number; acilis: number; acan: { id: string; ad: string } }
+/** Toplu sipariş (kasabanın atölyelere açtığı büyük sipariş); `depoda`/`teslimEdebilir`/`ustUste` yalnız teslim edebilen atölyeye. */
+export interface TopluSiparis {
+  id: string; meslek: string; mal: string; adet: number; deger: number; odul: number;
+  odulDokum: { toplam: number; kalemler: { k: string; d: number }[] };
+  acilis: number; son: number; kalanAy: number; durum: "acik" | "teslim" | "kapandi" | string;
+  alan: { isletme: string; ad: string; ay: number | null } | null;
+  depoda?: number; teslimEdebilir?: boolean; ustUste?: boolean;
+}
+/** GET .../tezgah `atolye` (yalnız yetkiliye). */
+export interface AtolyeBolumu {
+  zanaat: string | null; zanaatOneri: string | null; zanaatlar: string[];
+  zanaatDegisim: { yapilan: number; ucretsizKalan: number; bedel: number };
+  tezgah: { sayi: number; acikEmir: number }; kaliteBonus: number;
+  emek: { havuz: number; tavan: number; npcCalisan: number; npcAylik: number; npc?: NpcDokumu; npcKaliteCeza: number; npcMaasEnAz: number };
+  emirler: UretimEmri[]; emirKezEnCok: number; sonUretimAyi: number | null; topluSiparis: TopluSiparis[]; benimTakat: number;
+}
 export interface DukkanKarti {
   isletme: string; no: number; ad: string; sahip: { id: string; ad: string }; seviye: number; itibar: number; kepenk: boolean;
   satir: number; mallar: string[]; benim: boolean; devralinabilir: boolean;
@@ -49,6 +93,8 @@ export interface DukkanKarti {
 /** GET /v1/dukkanlar */
 export interface DukkanListesi {
   dukkanlar: DukkanKarti[]; yuva: { dukkan: { toplam: number; dolu: number }; atolye: { toplam: number; dolu: number } }; devralmaKepenkAy: number;
+  /** Dilim 2: edinim bedelleri. Eski sunucuda yok. */
+  bedel?: { dukkan: number; atolye: number };
 }
 /** GET /v1/isletme/:id/onizle */
 export interface Onizleme {
@@ -189,7 +235,12 @@ export function rafaKonabilir(g: TezgahGorunumu): boolean {
 
 /** İşim kartının tek satır canlı özeti (sayılar sunucudan; sözle). */
 export function dukkanOzetMetni(t: (k: string) => string, g: TezgahGorunumu): string {
-  if (g.tur === "atolye") return t("onl.tz.oz.atolye");
+  if (g.tur === "atolye") {
+    const a = g.atolye;
+    if (!a) return t(g.kepenk ? "onl.atl.oz.kepenk" : "onl.atl.oz.acik");
+    if (!a.zanaat) return t("onl.atl.oz.zanaatYok");
+    return applyParams(t("onl.atl.oz.emir"), [a.tezgah.acikEmir, a.tezgah.sayi, a.emek.havuz, a.emek.tavan]);
+  }
   const adet = g.raf.reduce((n, x) => n + x.adet, 0);
   const raf = adet > 0 ? applyParams(t("onl.tz.oz.raf"), [g.raf.length, adet]) : t("onl.tz.oz.rafBos");
   const gs = g.gunSonu;
