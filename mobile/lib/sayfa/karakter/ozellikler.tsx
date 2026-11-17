@@ -4,7 +4,7 @@ import { View, Text } from "react-native";
 import { useRouter } from "expo-router";
 import { DesignPressable as Pressable } from "../../design-pressable";
 import { useGame } from "../../store";
-import { useI18n, yuzdeL } from "../../i18n";
+import { useI18n, yuzdeL, applyParams } from "../../i18n";
 import { hap } from "../../haptics";
 import { GameIcon } from "../../icons";
 import { sermayeler, SermayeId, allocateStat, Stats, pendingPerkCount, statXpOf, statXpForNext, statKademeKey, statKullanimSayisi, publicPerception, atHome, effStat, statCapOf, NIYETLER, NiyetId, NIYET_YAS, aktifNiyet, niyetSec } from "../../game";
@@ -50,7 +50,7 @@ export function OzelliklerSekmesi() {
             const ham = p.stats[n.k]; const v = effStat(p, n.k); const fark = v - ham; // etkin değer: yara düşürür, kıyafet/takı karizma ekler
             const ad = t(n.ad); const xpNext = ham < tavan ? statXpForNext(ham) : 0; const xp = statXpOf(p, n.k);
             const kullanim = statKullanimSayisi(p, n.k, state!.turn);
-            return <View key={n.k} accessible={!canAdd} accessibilityLabel={`${ad}: ${v} / ${tavan}, ${t(statKademeKey(v))}. ${t("st.islev." + n.k)}${kullanim ? `. ${t("st.kullanim").replace("%1", String(kullanim))}` : ""}${fark ? `, ${t("char.statHam")} ${ham}` : ""}`} style={{ width: "48.6%", flexGrow: 1, borderRadius: 8, borderWidth: 1, borderColor: C.border, backgroundColor: KR.well, padding: 10, gap: 6 }}>
+            return <View key={n.k} accessible={!canAdd} accessibilityLabel={`${ad}: ${v} / ${tavan}, ${t(statKademeKey(v))}. ${t("st.islev." + n.k)}${kullanim ? `. ${applyParams(t("st.kullanim"), [kullanim], lang)}` : ""}${fark ? `, ${t("char.statHam")} ${ham}` : ""}`} style={{ width: "48.6%", flexGrow: 1, borderRadius: 8, borderWidth: 1, borderColor: C.border, backgroundColor: KR.well, padding: 10, gap: 6 }}>
               <View style={{ flexDirection: row, alignItems: "center", justifyContent: "space-between" }}>
                 <View style={{ width: 40, height: 40, borderRadius: 20, borderWidth: 1.5, borderColor: n.tone, alignItems: "center", justifyContent: "center", backgroundColor: "#120C06" }}>
                   <GameIcon name={n.icon} size={20} color={n.tone} />
@@ -60,8 +60,8 @@ export function OzelliklerSekmesi() {
               <View>
                 <Text numberOfLines={1} style={{ fontFamily: F.display, fontSize: 12.5, lineHeight: 16, color: C.parchmentDim, textAlign: ta }}>{ad}</Text>
                 <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: 14.5, lineHeight: 18, color: n.tone, textAlign: ta }}>{t(statKademeKey(v))}</Text>
-                <Text style={{ fontFamily: F.serif, fontSize: 12, lineHeight: 15, color: C.parchmentMuted, textAlign: ta }}>{t("st.islev." + n.k)}</Text>
-                {kullanim ? <Text style={{ fontFamily: F.display, fontSize: 11, lineHeight: 14, color: C.goldDim, textAlign: ta, marginTop: 2 }}>{t("st.kullanim").replace("%1", String(kullanim))}</Text> : null}
+                <Text numberOfLines={3} style={{ fontFamily: F.serif, fontSize: 12, lineHeight: 15, color: C.parchmentMuted, textAlign: ta }}>{t("st.islev." + n.k)}</Text>
+                {kullanim ? <Text numberOfLines={2} style={{ fontFamily: F.display, fontSize: 11, lineHeight: 14, color: C.goldDim, textAlign: ta, marginTop: 2 }}>{applyParams(t("st.kullanim"), [kullanim], lang)}</Text> : null}
               </View>
               <Cubuk pct={Math.min(100, (v / tavan) * 100)} tone={n.tone} h={5} rtl={rtl} />
               {xpNext ? <Cubuk pct={(xp / xpNext) * 100} tone={C.goldBright} h={2} rtl={rtl} /> : null}
@@ -84,7 +84,7 @@ export function OzelliklerSekmesi() {
         <View style={{ gap: 6 }}>
           {NIYETLER.map((n) => {
             const on = n.id === niyet;
-            return <Pressable key={n.id} accessibilityRole="button" accessibilityState={{ selected: on }} accessibilityLabel={`${t("niyet." + n.id)}${on ? `, ${t("niyet.secili")}` : ""}. ${t("niyet." + n.id + ".d")} ${t("niyet." + n.id + ".k")}`} onPress={() => niyetSecim(n.id)}
+            return <Pressable key={n.id} accessibilityRole="button" accessibilityState={{ selected: on }} accessibilityLabel={`${t("niyet." + n.id)}. ${t("niyet." + n.id + ".d")} ${t("niyet." + n.id + ".k")}`} onPress={() => niyetSecim(n.id)}
               style={({ pressed }) => ({ minHeight: 52, flexDirection: row, alignItems: "center", gap: 10, paddingHorizontal: 10, paddingVertical: 8, borderRadius: 8, borderWidth: on ? 1.5 : 1, borderColor: on ? C.gold : C.border, backgroundColor: on ? "rgba(201,162,78,0.16)" : pressed ? "rgba(201,162,78,0.08)" : KR.well })}>
               <GameIcon name={n.icon} size={20} color={on ? C.goldBright : C.goldDim} />
               <View style={{ flex: 1, minWidth: 0 }}>
@@ -99,7 +99,7 @@ export function OzelliklerSekmesi() {
     </Giris> : null}
 
     {/* Beceriler — dokununca beceri ağacı */}
-    <Giris i={1}>
+    <Giris i={2}>
       <Pano title={t("char.skills")} icon="medal" rtl={rtl} right={perks > 0 ? <View style={{ paddingHorizontal: 9, height: 24, borderRadius: 12, justifyContent: "center", backgroundColor: KR.alert, borderWidth: 1, borderColor: "#FBE3C4" }}>
         <Text style={{ fontFamily: F.display, fontSize: 11.5, lineHeight: 15, color: "#FFF4E2" }}>{perks}</Text>
       </View> : undefined}>
@@ -122,7 +122,7 @@ export function OzelliklerSekmesi() {
     </Giris>
 
     {/* Dört sermaye: dokununca katkı dökümü; kapalıyken en zayıfı için yol */}
-    <Giris i={2}>
+    <Giris i={3}>
       <Pano title={t("sermaye.baslik")} icon="akce" rtl={rtl}>
         <View style={{ flexDirection: row, gap: 6 }}>
           {sm.map((x) => {
@@ -152,7 +152,7 @@ export function OzelliklerSekmesi() {
     </Giris>
 
     {/* Mevki & bağlılık: dört toplumsal değer + bulunduğun yerde halkın algısı */}
-    <Giris i={3}>
+    <Giris i={4}>
       <Pano title={t("char.status")} icon="orgutler" rtl={rtl}>
         <View style={{ flexDirection: row, gap: 6 }}>
           {([["karakter", "soc.reputation.l", p.reputation, C.sage], ["zafer", "soc.honor.l", p.honor, C.frost], ["suc", "soc.fear.l", p.fear, C.blood], ["orgutler", "soc.fame.l", p.fame, C.goldSoft]] as const).map(([ic, key, val, tone]) => (

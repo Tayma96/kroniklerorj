@@ -1,5 +1,5 @@
 import { DesignPressable as Pressable } from "./design-pressable";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Modal, View, Text, ScrollView} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { GameState, WorkStyle, workForecast, isOlayiOranlari } from "./game";
@@ -13,7 +13,7 @@ export function EmekOngoru({ state, styleId }: { state: GameState; styleId: Work
   const { t, lang } = useI18n();
   const insets = useSafeAreaInsets();
   const f = workForecast(state, styleId);
-  const olaylar = isOlayiOranlari(state); // ay içi iş olayı zarları (önizleme, RNG yok)
+  const olaylar = useMemo(() => isOlayiOranlari(state), [state]); // ay içi iş olayı zarları (önizleme, RNG yok)
   const text = (key: string, values: (string | number)[]) => applyParams(t(key), values, lang);
   const range = text("work.forecast.pay", [f.min, f.max]);
   const cost = text("work.forecast.cost", [f.hunger]);
