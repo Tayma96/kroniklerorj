@@ -2,7 +2,8 @@
 import { useState } from "react";
 import { View, Text } from "react-native";
 import type { GameState } from "../../game";
-import { launchCaravan, caravanRouteOptions, caravanPremium } from "../../game";
+import { launchCaravan, caravanRouteChoices, caravanRiskOnizleme, caravanPremium } from "../../game";
+import { SansEtiketi } from "../../sans-etiketi";
 import { ITEMS } from "../../world";
 import { caravanRouteText } from "../../caravan-route-locales";
 import { useI18n, yuzdeL } from "../../i18n";
@@ -59,7 +60,8 @@ export function KervanSekmesi({ state, apply, rtl }: { state: GameState; apply: 
     </Bolum>;
   }
 
-  const routes = caravanRouteOptions(state).slice(0, 3);
+  const routes = caravanRouteChoices(state); // F5: dengeli · en kârlı · en güvenli (kâr–risk–süre)
+  const turEt = ["isl.kv.dengeli", "isl.kv.kar", "isl.kv.guvenli"];
   const selected = routes.find((r) => `${r.dest}|${r.good}` === routeId) || routes[0];
   const young = p.age < 13;
   return <>
@@ -72,17 +74,19 @@ export function KervanSekmesi({ state, apply, rtl }: { state: GameState; apply: 
     {!!routes.length && <Bolum title={caravanRouteText(lang, "title")} icon="map" rtl={rtl}>
       <Not rtl={rtl}>{caravanRouteText(lang, "hint")}</Not>
       <View accessibilityRole="radiogroup" style={{ gap: 8 }}>
-        {routes.map((route) => {
+        {routes.map((route, ri) => {
           const key = `${route.dest}|${route.good}`;
+          const risk = caravanRiskOnizleme(state, route);
           const on = selected?.dest === route.dest && selected?.good === route.good;
           const gap = Math.round((route.spread - 1) * 100);
-          return <Pressable key={key} accessibilityRole="radio" accessibilityState={{ selected: on, checked: on }} accessibilityLabel={`${t("it." + route.good)}, ${placeName(route.dest, lang)}, ${caravanRouteText(lang, "gap")} ${yuzdeL(gap, lang)}`}
+          return <Pressable key={key} accessibilityRole="radio" accessibilityState={{ selected: on, checked: on }} accessibilityLabel={`${t("it." + route.good)}, ${placeName(route.dest, lang)}, ${caravanRouteText(lang, "gap")} ${yuzdeL(gap, lang)}, ${t(turEt[ri] || "isl.kv.dengeli")}, ${t("isl.kv.sure").replace("%1", String(route.konak))}, ${t("isl.kv.yagmasiz")} ${yuzdeL(Math.round(risk.oran * 100), lang)}`}
             onPress={() => { hap("tap"); setRouteId(key); }}
             style={({ pressed }) => ({ flexDirection: row, alignItems: "center", gap: 10, paddingVertical: 9, paddingHorizontal: 10, borderRadius: 9, borderWidth: on ? 1.5 : 1, borderColor: on ? C.ember : pressed ? C.borderHi : C.border, backgroundColor: on ? "rgba(224,90,48,0.12)" : "rgba(14,10,6,0.6)" })}>
             <Madalyon icon={malIkonu(ITEMS[route.good] || {})} tone={on ? C.ember : C.parchmentMuted} size={40} />
             <View style={{ flex: 1, minWidth: 0 }}>
               <Text style={{ fontFamily: F.display, fontSize: 14, color: C.parchment, textAlign: rtl ? "right" : "left" }}>{t("it." + route.good)}</Text>
               <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchmentMuted, textAlign: rtl ? "right" : "left" }}>{placeName(p.location_name, lang)} {rtl ? "←" : "→"} {placeName(route.dest, lang)}</Text>
+              <Text style={{ fontFamily: F.serifItalic, fontSize: 13.5, color: C.parchmentDim, textAlign: rtl ? "right" : "left" }}>{t(turEt[ri] || "isl.kv.dengeli")} · {t("isl.kv.sure").replace("%1", String(route.konak))} · {t("isl.kv.yagmasiz")} {yuzdeL(Math.round(risk.oran * 100), lang)}</Text>
             </View>
             <View style={{ alignItems: "center", gap: 3 }}>
               <Text style={{ fontFamily: F.display, fontSize: 16, color: gap >= 0 ? C.sage : C.blood }}>{gap > 0 ? "+" : ""}{yuzdeL(gap, lang)}</Text>
@@ -93,6 +97,7 @@ export function KervanSekmesi({ state, apply, rtl }: { state: GameState; apply: 
           </Pressable>;
         })}
       </View>
+      {selected ? <View style={{ marginTop: 8 }}><SansEtiketi zar={caravanRiskOnizleme(state, selected)} baslik="isl.kv.yagmasiz" /></View> : null}
     </Bolum>}
 
     <Bolum title={t("pazar.invest")} icon="coins" rtl={rtl}>

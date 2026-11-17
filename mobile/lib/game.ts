@@ -585,12 +585,12 @@ export interface Isletme {
   etki?: { m: number; until: number }; // kararın geçici gelir çarpanı
   goc?: number; // eski kayıttan geçiş: bu tura dek çevre çarpanı dar bantta (ilk yıl gelir ±%10)
 }
-export const ISL_FIYAT_TALEP = [1.35, 1, 0.72];
-export const ISL_FIYAT_MARJ = [0.8, 1, 1.3];
+export const ISL_FIYAT_TALEP = [1.35, 1, 0.66];
+export const ISL_FIYAT_MARJ = [0.85, 1, 1.3];
 export const ISL_KALITE_GELIR = [1, 1.08, 1.22]; // müşteri başına gelir
-export const ISL_KALITE_GIDER = [0, 0.1, 0.42];  // müşteri başına gider (taban gelirin katı)
+export const ISL_KALITE_GIDER = [0, 0.14, 0.42];  // müşteri başına gider (taban gelirin katı)
 // Namın yöneldiği değer [fiyat][kalite]; seçkin kalitede nam iki kat hızlı yürür.
-export const ISL_NAM_HEDEF = [[45, 62, 80], [30, 48, 68], [12, 26, 66]];
+export const ISL_NAM_HEDEF = [[55, 68, 85], [30, 48, 68], [12, 26, 66]];
 const islKis = (x: number, a: number, b: number) => Math.max(a, Math.min(b, x));
 export function isletmeMi(pr: Property): boolean { return (ISLETME_TIPLERI as readonly string[]).includes(pr.type); }
 export function isletmeAyari(pr: Property): Isletme { return pr.isl || { f: 1, q: 1, nam: 50 }; }
@@ -643,6 +643,13 @@ export function isletmeHesap(s: GameState, pr: Property, base: number, cpl: numb
   const brut = base * cpl * hizmet * ISL_FIYAT_MARJ[a.f] * ISL_KALITE_GELIR[a.q] * uyum * etki;
   const gider = base * hizmet * ISL_KALITE_GIDER[a.q];
   return { talep, kapasite, hizmet, brut, gider, trafik, rakip, uyum, tip };
+}
+// Ekran için: ay kapanışıyla aynı girdilerle (bakım, kademe, şehir refahı/güvenliği) işletme hesabı.
+export function isletmeDurumu(s: GameState, pr: Property): IsletmeHesap {
+  const ci = cityInfo(pr.loc, placeKind(pr.loc)); const fx = cityFx(s, pr.loc);
+  const prosp = Math.max(5, ci.prosperity + fx.prosp), sec = Math.max(0, ci.security + fx.sec);
+  const cpl = (0.75 + prosp / 200) * (pr.cond / 100) * (1 + ((pr.level || 1) - 1) * 0.5);
+  return isletmeHesap(s, pr, PROPERTY_TYPES[pr.type]?.income || 0, cpl, prosp, sec);
 }
 export function setIsletmeAyar(prev: GameState, index: number, alan: "f" | "q", deger: number): GameState {
   const s = clone(prev); const pr = s.player.properties[index];
@@ -715,7 +722,7 @@ function isletmeKararTetik(s: GameState) {
     const havuz = ISL_KARARLAR.filter((id) => id !== a.son?.id && islKararUygun(s, pr, id));
     if (!havuz.length) return;
     a.karar = havuz[Math.floor(gameRandom(s) * havuz.length)]; a.kz = gameRandom(s); yeni++;
-    push(s, "isletme", `${pr.loc}'daki ${(PROPERTY_TYPES[pr.type]?.name || "işletme").toLowerCase()} için bir karar bekliyor.`, "kişisel", false, { k: "isl.kararGeldi", p: [{ pt2: pr.type }, { pl: pr.loc }, { tq: "isl.k." + a.karar + ".t" }] });
+    push(s, "isletme", `${pr.loc}'daki ${(PROPERTY_TYPES[pr.type]?.name || "işletme").toLowerCase()} için bir karar bekliyor.`, "kişisel", false, { k: "isl.kararGeldi", p: [{ pt2: pr.type }, { pl: pr.loc }, { tk: "isl.k." + a.karar + ".t" }] });
   });
   return yeni;
 }

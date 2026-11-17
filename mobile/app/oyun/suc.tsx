@@ -5,7 +5,7 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { doCrime, resolveCrimeScene, CrimeKind, CrimeApproach, CRIME_APPROACHES, crimePlanPreview, crimeHeat, crimeIntelFor, crimeIntelTargetName, scoutCrime, layLow, fenceHotGoods, crimeUnlocked, crimeReq, underworldStanding, underworldTier, UNDERWORLD_TIERS, inJail, playDice, resolveTrial, trialEvidence, trialDefenseOdds, trialWitnessInfo, trialSettlementCost, crimeInvestigationInfo, crimeInvestigationMisdirectOdds, misdirectInvestigation } from "../../lib/game";
+import { diceBigStake, doCrime, resolveCrimeScene, CrimeKind, CrimeApproach, CRIME_APPROACHES, crimePlanPreview, crimeHeat, crimeIntelFor, crimeIntelTargetName, scoutCrime, layLow, fenceHotGoods, crimeUnlocked, crimeReq, underworldStanding, underworldTier, UNDERWORLD_TIERS, inJail, playDice, resolveTrial, trialEvidence, trialDefenseOdds, trialWitnessInfo, trialSettlementCost, crimeInvestigationInfo, crimeInvestigationMisdirectOdds, misdirectInvestigation } from "../../lib/game";
 import { C, F } from "../../lib/theme";
 import { GameIcon } from "../../lib/icons";
 import { useI18n, applyParams } from "../../lib/i18n";
@@ -198,12 +198,27 @@ export default function Suc() {
             <View style={{ backgroundColor: "rgba(201,168,76,0.06)", borderWidth: 1, borderColor: "rgba(201,168,76,0.35)", borderRadius: 5, padding: 13, marginBottom: 12 }}>
               <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1.5, color: C.goldDim }}>{t("dice.title").toUpperCase()}</Text>
               <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, marginTop: 3 }}>{t(played ? "dice.done" : "dice.desc")}</Text>
-              <View style={{ flexDirection: "row", gap: 8, marginTop: 9 }}>
+              <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: C.goldDim, marginTop: 9 }}>{t("isl.zar.kucukBaslik")}</Text>
+              <View style={{ flexDirection: "row", gap: 8, marginTop: 5 }}>
                 {[10, 25, 50].map((bet) => {
                   const dis = played || jailed || state.player.money < bet;
                   return (
-                    <Pressable key={bet} disabled={dis} onPress={() => { hap("advance"); apply((s) => playDice(s, bet)); }} style={{ flex: 1, paddingVertical: 10, borderRadius: 5, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: "rgba(201,168,76,0.10)", alignItems: "center", opacity: dis ? 0.4 : 1 }}>
+                    <Pressable key={bet} disabled={dis} accessibilityRole="button" accessibilityState={{ disabled: dis }} accessibilityLabel={`${t("isl.zar.kucukBaslik")}: ${applyParams(t("dice.btn"), [bet])}`} onPress={() => { hap("advance"); apply((s) => playDice(s, bet)); }} style={{ flex: 1, minHeight: 44, justifyContent: "center", paddingVertical: 10, borderRadius: 5, borderWidth: 1, borderColor: C.goldDim, backgroundColor: C.surface, alignItems: "center", opacity: dis ? 0.4 : 1 }}>
                       <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 0.5, color: C.gold }}>{applyParams(t("dice.btn"), [bet])}</Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+              {/* F5: büyük masa — bahis dört kat, kayıpta kavga sık ve eksik kalan veresiye borç olur (EV yine eksi) */}
+              <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: C.ember, marginTop: 9 }}>{t("isl.zar.buyukBaslik")}</Text>
+              <Text style={{ fontFamily: F.serifItalic, fontSize: 14, color: C.parchmentMuted, marginTop: 2 }}>{t("isl.zar.buyukAcik")}</Text>
+              <View style={{ flexDirection: "row", gap: 8, marginTop: 5 }}>
+                {[25, 50].map((bet) => {
+                  const stake = diceBigStake(bet);
+                  const dis = played || jailed || state.player.money < Math.ceil(stake / 2);
+                  return (
+                    <Pressable key={bet} disabled={dis} accessibilityRole="button" accessibilityState={{ disabled: dis }} accessibilityLabel={`${t("isl.zar.buyukBaslik")}: ${applyParams(t("isl.zar.buyukBtn"), [stake])}`} onPress={() => { hap("advance"); apply((s) => playDice(s, bet, true)); }} style={{ flex: 1, minHeight: 44, justifyContent: "center", paddingVertical: 10, borderRadius: 5, borderWidth: 1, borderColor: C.ember, backgroundColor: C.surface, alignItems: "center", opacity: dis ? 0.4 : 1 }}>
+                      <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 0.5, color: C.ember }}>{applyParams(t("isl.zar.buyukBtn"), [stake])}</Text>
                     </Pressable>
                   );
                 })}

@@ -2,7 +2,7 @@
 import { View, Text, Image, StyleSheet } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
-import { MULK_YAS, PROPERTY_TYPES, buyProperty, mulkSarti, propAlimTahmini, propBuyCost, type GameState } from "../../game";
+import { MULK_YAS, PROPERTY_TYPES, buyProperty, mulkSarti, propAlimTahmini, propBuyCost, type GameState, ISLETME_SINIR } from "../../game";
 import { placeName } from "../../locale-data";
 import { mulkImage } from "../../assets";
 import { useI18n, applyParams, renderEvt } from "../../i18n";
@@ -43,6 +43,7 @@ function TapuKarti({ id, state, apply, delay }: { id: string; state: GameState; 
       {ta.yil != null && <Satir icon="hourglass" text={applyParams(t("mulk.geriOdeme"), [ta.yil], lang)} rtl={rtl} />}
       <Satir icon="iliskiler" text={applyParams(t("mulkler.slots"), [PROPERTY_TYPES[id].slots], lang)} rtl={rtl} />
       {sart.kapi ? <Satir icon="scroll" text={renderEvt(`kir.kapi.${sart.kapi.id}`, "", [sart.kapi.yas, sart.kapi.kalan ?? 0], lang, t, p.gender === "kadın")} tone={C.ember} rtl={rtl} />
+        : "sinir" in sart && sart.sinir ? <Satir icon="coins" text={applyParams(t("isl.sinirDolu"), [ISLETME_SINIR], lang)} tone={C.ember} rtl={rtl} />
         : !sart.ok && <Satir icon="medal" text={applyParams(t("mulk.sart"), [sart.itibar, sart.unvan + 1], lang)} tone={C.ember} rtl={rtl} />}
       <View style={{ flexGrow: 1, minHeight: 4 }} />
       <Plaka primary icon="scroll" label={t("mulkler.buy")} cost={cost} costTone={short ? C.blood : undefined} lang={lang} rtl={rtl} disabled={!can}

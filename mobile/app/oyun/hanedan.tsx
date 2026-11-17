@@ -12,7 +12,7 @@ import { aileUyesi,
   WILL_STYLES, throneRequirements, throneBacking, canClaimThrone, throneOdds, claimThrone, THRONE_COST,
   canFoundSettlement, foundSettlement, settlementIncome, settleFee, SETTLE_MAX, SETTLE_TIER, developSettlement, developSettlementCost,
   nextSettleTier, canUpgradeSettleTier, upgradeSettleTier, propsInLoc,
-  PRESTIGE, prestigeCost, fundPrestige, MARKET_LEVER_MIN, marketLeverCost, canManipulateMarket, manipulateMarket,
+  PRESTIGE, prestigeCost, fundPrestige, marketLeverMin, marketLeverCost, canManipulateMarket, manipulateMarket,
   acceptDynastyOffer, declineDynastyOffer,
   feudPeaceCost, feudSuePeace, feudStrike, proposeToHouse, sendEnvoy, ENVOY_COST, canDemandTribute, demandTribute, inflationFactor,
   startPlot, hirePlotHelper, plotCost, plotHelperCost,
@@ -583,7 +583,7 @@ export default function Hanedan() {
         })()}
 
         {/* ── PİYASAYI OYNAT (yalnızca çok zengin) ── */}
-        {p.money >= MARKET_LEVER_MIN && (() => {
+        {p.money >= marketLeverMin(state) && (() => {
           const chk = canManipulateMarket(state); const cost = marketLeverCost(state);
           return (
             <>

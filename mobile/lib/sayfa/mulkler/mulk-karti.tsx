@@ -14,6 +14,8 @@ import { GameIcon } from "../../icons";
 import { Portre } from "../../ui";
 import { C, F } from "../../theme";
 import { Kademe, Madalyon, Olculer, Plaka, Rozet, Spark, condTone, fmt, signed } from "./parca";
+import { IsletmePaneli, VakifDugmesi } from "./isletme-karti";
+import { degirmenCarpani } from "../../game";
 
 type Apply = (fn: (s: GameState) => GameState) => void;
 
@@ -79,7 +81,10 @@ export function MulkKarti({ state, pr, i, open, hireOpen, onManage, onHire, appl
         {pr.type === "ev" && <Rozet icon="house" label={pr.tenant ? t("mulkler.rented") : t("mulkler.vacant")} tone={pr.tenant ? C.gold : C.parchmentMuted} rtl={rtl} />}
         {resting && <Rozet icon="leaf" label={applyParams(t("mulk.fallowLeft"), [Math.max(0, (pr.fallow_until ?? 0) - state.turn)], lang)} tone={C.parchmentDim} rtl={rtl} />}
         {fertile && <Rozet icon="wheat" label={applyParams(t("mulk.fertileLeft"), [(pr.fertile_until ?? 0) - state.turn], lang)} tone={C.sage} rtl={rtl} />}
+        {pr.vakif && <Rozet icon="scroll-open" label={t("isl.vakifRozet")} tone={C.gold} rtl={rtl} />}
+        {degirmenCarpani(state, pr) > 1 && <Rozet icon="wheat" label={t("isl.degirmenli")} tone={C.sage} rtl={rtl} />}
       </View>
+      <IsletmePaneli state={state} pr={pr} i={i} act={act} />
 
       <View style={{ flexDirection: row, gap: 8 }}>
         {maxed
@@ -119,8 +124,12 @@ function Yonetim({ state, pr, i, hireOpen, onHire, act, rtl }: { state: GameStat
   return <Animated.View entering={sade ? undefined : FadeIn.duration(220)} style={{ gap: 8, paddingTop: 12, borderTopWidth: 1, borderTopColor: C.border }}>
     {pr.type === "degirmen" && <View style={{ flexDirection: row, gap: 8, padding: 10, borderRadius: 7, borderWidth: 1, borderColor: C.goldDim, backgroundColor: "rgba(221,180,90,0.06)" }}>
       <GameIcon name="wheat" size={18} color={C.gold} />
-      <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 14, lineHeight: 20, color: C.parchmentDim, textAlign: ta }}>{applyParams(t("mulk.millRule"), [p.inventory.bugday || 0], lang)}</Text>
+      <View style={{ flex: 1, gap: 4 }}>
+        <Text style={{ fontFamily: F.serif, fontSize: 14, lineHeight: 20, color: C.parchmentDim, textAlign: ta }}>{applyParams(t("mulk.millRule"), [p.inventory.bugday || 0], lang)}</Text>
+        <Text style={{ fontFamily: F.serif, fontSize: 14, lineHeight: 20, color: C.parchmentDim, textAlign: ta }}>{t("isl.degirmen")}</Text>
+      </View>
     </View>}
+    <VakifDugmesi state={state} pr={pr} i={i} act={act} />
     <Anahtar icon="shield" on={!!pr.guard} rtl={rtl} title={pr.guard ? t("mulk.guardOff") : t("mulk.guardOn")} sub={applyParams(t("mulkler.guardSub"), [fmt(guardWage, lang)], lang)}
       state={pr.guard ? t("mulkler.guarded") : t("mulkler.unguarded")} onPress={() => act((s) => setGuard(s, i, !pr.guard))} />
     {pr.type === "ev" && <Anahtar icon="house" on={!!pr.tenant} rtl={rtl} title={pr.tenant ? t("mulk.rentEnd") : t("mulk.rentOut")} sub={t("mulkler.rentSub")}

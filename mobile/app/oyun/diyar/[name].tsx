@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useGame } from "../../../lib/store";
 import { WarWorldCard } from "../../../lib/war-world-ui";
-import { kapiAcik, inJail, travelBy, buyHorse, HORSE_COST, placeKind, TRAVEL_ROUTES, beylikOf, GOV_TITLE, isGovernor, canRunForGovernor, runForGovernor, govReqRep, govLegOf, shoreUpLegitimacy, GOV_SHORE_COST, govTaxOf, govHappyOf, govTreasuryOf, GOV_TAX_PRESETS, setGovTax, investTreasury, GOV_INVEST_COST, locEventsAt, LOC_EVENT_TYPES, citySpecialtyIdx, GOV_EDICTS, canIssueEdict, issueEdict, edictCooldownLeft, GOV_WORKS, canFundWork, fundWork, worksOf } from "../../../lib/game";
+import { kapiAcik, inJail, travelBy, buyHorse, HORSE_COST, placeKind, TRAVEL_ROUTES, beylikOf, GOV_TITLE, isGovernor, canRunForGovernor, runForGovernor, govReqRep, govMaxCount, govLegOf, shoreUpLegitimacy, GOV_SHORE_COST, govTaxOf, govHappyOf, govTreasuryOf, GOV_TAX_PRESETS, setGovTax, investTreasury, GOV_INVEST_COST, locEventsAt, LOC_EVENT_TYPES, citySpecialtyIdx, GOV_EDICTS, canIssueEdict, issueEdict, edictCooldownLeft, GOV_WORKS, canFundWork, fundWork, worksOf } from "../../../lib/game";
 import { cityInfo, marketGoods, locSeed } from "../../../lib/world";
 import { useI18n, yuzdeL, applyParams, renderEvt } from "../../../lib/i18n";
 import { placeName } from "../../../lib/locale-data";
@@ -206,7 +206,7 @@ export default function DiyarDetay() {
               <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.gold }}>{t("gov.run")}</Text>
             </Pressable>
           ) : (
-            <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, marginTop: 10 }}>{applyParams(t("gov.needRep"), [govReqRep(kind)])}</Text>
+            <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, marginTop: 10 }}>{(state.player.governorships || []).length >= govMaxCount(state.player) ? applyParams(t("isl.valiSinir"), [govMaxCount(state.player)]) : applyParams(t("gov.needRep"), [govReqRep(kind)])}</Text>
           )
         ) : null}
       </View>

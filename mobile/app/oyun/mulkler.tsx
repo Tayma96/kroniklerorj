@@ -17,6 +17,8 @@ import { MulkSahnesi, Sekmeler, fmt } from "../../lib/sayfa/mulkler/parca";
 import { HazineOzeti, GorevKarti, BosMulk } from "../../lib/sayfa/mulkler/hazine";
 import { MulkKarti } from "../../lib/sayfa/mulkler/mulk-karti";
 import { TapuPazari } from "../../lib/sayfa/mulkler/tapu-pazari";
+import { IsletmeSiniri } from "../../lib/sayfa/mulkler/isletme-karti";
+import { isletmeSayisi, ISLETME_SINIR, isletmeMi } from "../../lib/game";
 
 // Mülkler: sahne başlığı → yıllık gelir özeti → sekmeler (Mülklerin / Tapu Pazarı).
 export default function Mulkler() {
@@ -59,6 +61,7 @@ export default function Mulkler() {
 
           <Animated.View key={active} entering={sade ? undefined : FadeIn.duration(260)}>
             {active === "mulk" ? <>
+              {props.some(isletmeMi) && <IsletmeSiniri sayi={isletmeSayisi(p)} sinir={ISLETME_SINIR} />}
               {siraVakti && <GorevKarti icon="amphora" tone={C.sage} title={t("mulk.sira")} body={siraDone ? t("mulk.siraDone") : t("mulk.siraDesc")}
                 action={siraDone ? undefined : t("mulk.siraBtn")} primary onPress={siraDone ? undefined : () => { hap("success"); playTap(); apply((s) => siraGunu(s)); }} />}
               {props.length === 0
