@@ -14,7 +14,8 @@ import { defterYaz } from "./defter.ts";
 import { engelliMi } from "./engel.ts";
 import { hanedanKasabasi } from "./hanedan.ts";
 import { AZALAN_PENCERE, getiriCarpani } from "./eylem.ts";
-import { KALITE_ADLARI, kaliteAdedi, kaliteliCikar, kaliteliEkle, kaliteMi, type Kalite } from "./kalite.ts";
+import { elDegistir } from "./esya.ts";
+import { KALITE_ADLARI, KALITE_NADIDE, kaliteAdedi, kaliteliCikar, kaliteliEkle, kaliteMi, type Kalite } from "./kalite.ts";
 import { karakterYasi } from "./karakter.ts";
 import { hizmetEkle } from "./meslek.ts";
 import { malMeslegindeMi } from "./npc-taban.ts";
@@ -167,12 +168,13 @@ export function ismarlamaCevap(
       if (ism.d !== "surer" || ay > ism.sa) return hata("ismarlama_kapandi");
       let q: Kalite | null = null;
       if (kaliteHam !== undefined) q = kaliteMi(kaliteHam) && kaliteHam >= ism.q && kaliteAdedi(ben, ism.ml, kaliteHam) >= ism.n ? kaliteHam : null;
-      else for (let x = ism.q; x <= 3 && q === null; x++) if (kaliteAdedi(ben, ism.ml, x as Kalite) >= ism.n) q = x as Kalite;
+      // Kendiliğinden seçimde adlı eşya verilmez (kalite açıkça istenir).
+      else for (let x = ism.q; x <= KALITE_NADIDE && q === null; x++) if (kaliteAdedi(ben, ism.ml, x as Kalite) >= ism.n) q = x as Kalite;
       if (q === null) return hata("mal_yok");
       const pompa = pompaDenetle(ben, diger, ism.ml, q, ism.n, ism.e, ay);
       if (!pompa.ok) return pompa;
       pompaYaz(ben, diger, pompa.deger, ay);
-      kaliteliEkle(diger, ism.ml, kaliteliCikar(ben, ism.ml, ism.n, q)!);
+      kaliteliEkle(diger, ism.ml, elDegistir(kaliteliCikar(ben, ism.ml, ism.n, q)!, ay, "ismarlama", diger.ad));
       const ucret = ism.e;
       ben.pa += ucret;
       ism.e = 0;

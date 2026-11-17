@@ -13,7 +13,8 @@ import { basarili, hata, type Sonuc } from "../tipler.ts";
 import { defterYaz } from "./defter.ts";
 import { engelliMi } from "./engel.ts";
 import { hanedanKasabasi } from "./hanedan.ts";
-import { KALITE_ADLARI, KALITE_DEGER_CARPANI, kaliteAdedi, kaliteliCikar, kaliteliEkle, kaliteMi, partiParca, type Kalite, type KaliteParti } from "./kalite.ts";
+import { elDegistir } from "./esya.ts";
+import { KALITE_ADLARI, KALITE_DEGER_CARPANI, KALITE_NADIDE, kaliteAdedi, kaliteliCikar, kaliteliEkle, kaliteMi, partiParca, type Kalite, type KaliteParti } from "./kalite.ts";
 import { karakterYasi } from "./karakter.ts";
 import { npcFiyat, stogaEkle, stokFiyat, type KasabaStogu } from "./npc-taban.ts";
 import { oyuncuRef } from "./ortak.ts";
@@ -108,6 +109,8 @@ export interface EkonomiKaydi {
   /** Kasaba görevleri ve son üretim ayı; eski ekonomi kayıtlarıyla uyumlu. */
   hg?: HizmetKasabaGorevi[];
   hga?: number;
+  /** Eşya kademeleri (Dilim 4): yerleşimde çıkan efsanevi ve tılsımlı sayısı (yönetici sayacı). */
+  es?: [efsanevi: number, tilsimli: number];
 }
 
 export function ekonomiAl(k: Kasaba): EkonomiKaydi {
@@ -335,7 +338,8 @@ function partiAyir(p: KaliteParti[], adet: number): KaliteParti[] {
 /** En az `q` kalitede elde olan en düşük kalite (yoksa null). */
 function teslimKalitesi(kar: Karakter, mal: MalId, q: Kalite, adet: number, istenen: unknown): Kalite | null {
   if (istenen !== undefined) return kaliteMi(istenen) && istenen >= q && kaliteAdedi(kar, mal, istenen) >= adet ? istenen : null;
-  for (let x = q; x <= 3; x++) if (kaliteAdedi(kar, mal, x as Kalite) >= adet) return x as Kalite;
+  // Kendiliğinden seçimde adlı eşya (efsanevi/tılsımlı) verilmez; onu satmak için kalite açıkça istenir.
+  for (let x = q; x <= KALITE_NADIDE; x++) if (kaliteAdedi(kar, mal, x as Kalite) >= adet) return x as Kalite;
   return null;
 }
 
@@ -380,10 +384,10 @@ export function ilanIsle(
   const { bac, net } = bacHesapla(tutar, pazarBacOrani(k));
   if (satis) {
     ben.pa -= tutar;
-    kaliteliEkle(ben, ilan.ml, partiAyir(ilan.p ?? [], adet));
+    kaliteliEkle(ben, ilan.ml, elDegistir(partiAyir(ilan.p ?? [], adet), ay, "satis", ben.ad));
   } else {
     ilan.e -= tutar;
-    kaliteliEkle(sahip, ilan.ml, kaliteliCikar(ben, ilan.ml, adet, q)!);
+    kaliteliEkle(sahip, ilan.ml, elDegistir(kaliteliCikar(ben, ilan.ml, adet, q)!, ay, "satis", sahip.ad));
   }
   satici.pa += net;
   if (bac > 0) hanedanKasabasi(k).hz += bac;

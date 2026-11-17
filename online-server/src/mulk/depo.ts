@@ -5,7 +5,7 @@
 
 import type { MalId } from "../icerik/mallar.ts";
 import type { MeslekId } from "../icerik/meslekler.ts";
-import { kaliteliCikar, kaliteliEkle, kaliteAdedi, partiParca, type Envanterli, type Kalite, type KaliteParti } from "../yerlesim/kalite.ts";
+import { KALITELER, kaliteliCikar, kaliteliEkle, kaliteAdedi, kaliteMi, partiEsMi, partiParca, type Envanterli, type Kalite, type KaliteParti } from "../yerlesim/kalite.ts";
 import { basarili, hata, type Sonuc } from "../tipler.ts";
 import { DEPO_KAPASITE, DEPO_TASIMA_EN_COK, rafMaliMi } from "./tezgah-kurallar.ts";
 
@@ -83,9 +83,9 @@ export function partiToplam(p: readonly KaliteParti[]): number {
 /** Partileri (aynı kalite) yapan izine göre birleştirir. */
 export function partiBirlestir(liste: KaliteParti[], gelen: readonly KaliteParti[]): void {
   for (const g of gelen) {
-    const [q, n, yp, dm] = g;
+    const n = g[1];
     if (n <= 0) continue;
-    const ayni = liste.find((p) => p[0] === q && p[2] === yp && p[3] === dm);
+    const ayni = liste.find((p) => partiEsMi(p, g));
     if (ayni) ayni[1] += n;
     else liste.push(partiParca(g, n));
   }
@@ -119,7 +119,7 @@ export function tasimaCoz(g: Record<string, unknown>, malBul: (v: unknown) => Ma
   // Atölye deposu tabanı 0 olan zanaat mallarını da (kâtip: mürekkep, senet) taşır; su hiçbir depoya girmez.
   if (!mal || mal === "su" || (!herMal && !rafMaliMi(mal))) return hata("mal_gecersiz");
   const q = g.kalite === undefined ? 0 : g.kalite;
-  if (q !== 0 && q !== 1 && q !== 2 && q !== 3) return hata("kalite_gecersiz");
+  if (!kaliteMi(q)) return hata("kalite_gecersiz");
   const adet = g.adet;
   if (!Number.isInteger(adet) || (adet as number) < 1 || (adet as number) > DEPO_TASIMA_EN_COK) return hata("adet_gecersiz");
   return basarili({ mal, q: q as Kalite, adet: adet as number });
@@ -151,7 +151,7 @@ export function tezgahBosalt(t: Tezgah, hedef: Envanterli): number {
   }
   t.r = [];
   for (const [mal, adet] of Object.entries(t.ev ?? {})) {
-    for (const q of [3, 2, 1, 0] as const) {
+    for (const q of [...KALITELER].reverse()) {
       const d = kaliteAdedi(t, mal, q);
       if (d <= 0) continue;
       const p = kaliteliCikar(t, mal as MalId, d, q);
@@ -171,7 +171,7 @@ export function tezgahBosalt(t: Tezgah, hedef: Envanterli): number {
 export function depoGorunumu(t: Envanterli) {
   const l: { mal: string; kalite: Kalite; adet: number }[] = [];
   for (const mal of Object.keys(t.ev ?? {}).sort()) {
-    for (const q of [0, 1, 2, 3] as const) {
+    for (const q of KALITELER) {
       const d = kaliteAdedi(t, mal, q);
       if (d > 0) l.push({ mal, kalite: q, adet: d });
     }

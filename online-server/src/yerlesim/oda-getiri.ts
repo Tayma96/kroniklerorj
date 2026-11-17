@@ -19,7 +19,7 @@
 
 import { malBul, type MalId } from "../icerik/mallar.ts";
 import { basarili, hata, type Sonuc } from "../tipler.ts";
-import { kaliteAdedi, kaliteliCikar, kaliteliEkle, kaliteMi, type Envanterli, type Kalite, type KaliteParti } from "./kalite.ts";
+import { KALITELER, kaliteAdedi, kaliteliCikar, kaliteliEkle, kaliteMi, type Envanterli, type Kalite, type KaliteParti } from "./kalite.ts";
 import { ODALAR, type KiraSozlesmesi } from "./oda.ts";
 import type { Karakter, Kasaba, OlayTaslagi } from "./tipler.ts";
 import { toplumAl } from "./toplum.ts";
@@ -97,7 +97,7 @@ export function sandikGorunumu(kar: Karakter, y: string, an: number) {
 
 /** `adet` malı kaynaktan hedefe taşır: kalite verilirse yalnız o kalite, verilmezse en düşük kaliteden başlar. */
 function tasi(kaynak: Envanterli, hedef: Envanterli, mal: MalId, adet: number, q: Kalite | undefined): boolean {
-  const kaliteler: Kalite[] = q === undefined ? [0, 1, 2, 3] : [q];
+  const kaliteler: readonly Kalite[] = q === undefined ? KALITELER : [q];
   const toplam = kaliteler.reduce<number>((a, x) => a + Math.max(0, kaliteAdedi(kaynak, mal, x)), 0);
   if (toplam < adet) return false;
   let kalan = adet;

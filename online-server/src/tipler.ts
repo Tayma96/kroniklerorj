@@ -333,6 +333,9 @@ export const HATA_DURUMU = {
   kalite_gecersiz: 400,
   adet_gecersiz: 400,
   fiyat_gecersiz: 400,
+  // Eşya kademeleri (Dilim 4): efsanevi denemesi yalnız pir, ayda sınırlı
+  efsanevi_pir_degil: 409,
+  efsanevi_hak_yok: 409,
   // Tezgâh modeli (Dilim 2: atölye)
   zanaat_yok: 409,
   zanaat_disi: 409,

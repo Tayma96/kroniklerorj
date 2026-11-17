@@ -7,7 +7,7 @@
 import { MALLAR, type MalId } from "../icerik/mallar.ts";
 import { tarifBul, type Tarif } from "../icerik/tarifler.ts";
 import { kaliteBecerisi, ALET_OMRU } from "../yerlesim/tarif.ts";
-import { ALET_KALITE_OMUR, enIyiKalite, kaliteliCikar, kaliteliEkle, urunKalitesi, type Kalite } from "../yerlesim/kalite.ts";
+import { ALET_KALITE_OMUR, KALITE_EFSANEVI, enIyiKalite, kaliteliCikar, kaliteliEkle, urunKalitesi, type Kalite } from "../yerlesim/kalite.ts";
 import { tohumlu } from "../yerlesim/rastgele.ts";
 import type { Karakter } from "../yerlesim/tipler.ts";
 import { basarili, hata, type Sonuc } from "../tipler.ts";
@@ -94,6 +94,8 @@ function depoAletOmru(t: Tezgah, mal: MalId): number {
 /** Depodaki aleti bir kullanım aşındırır; ömür dolunca en iyi kalitedeki bir alet tükenir. */
 export function depoAletAsindir(t: Tezgah, mal: MalId): void {
   const q = enIyiKalite(t as unknown as Karakter, mal);
+  // Adlı eşya (efsanevi/tılsımlı alet) yıpranmaz: kırılıp yok olmaz (§9 süzgeci).
+  if (q >= KALITE_EFSANEVI) return;
   const omur = depoAletOmru(t, mal);
   const as = (t.as ??= {});
   const n = (as[mal] ?? 0) + 1;
@@ -175,8 +177,9 @@ export function emirleriIsle(g: UretimGirdisi): UretimSonucu {
       const aracKalite = aracVar ? enIyiKalite(t as unknown as Karakter, tr.arac!.mal) : null;
       const adet = aracVar ? tr.arac!.adet : tr.cikti[1];
       const zar = tohumlu("atolye", g.isletme, tr.id, ay, e.n, e.y);
-      const ks = urunKalitesi(usta, tr, kaliteBecerisi(usta, tr), aracKalite, zar, atolyeKalemleri(g.seviye, n / tr.takat, g.kanca));
-      const q = ks.kademe;
+      const ks = urunKalitesi(usta, tr, kaliteBecerisi(usta, tr), aracKalite, zar, atolyeKalemleri(g.seviye, n / tr.takat, g.kanca), true);
+      // Emirle üretim (NPC emeği / toplu) şaheseri aşamaz (kalite.ts KALITE_EMIR_TAVANI; efsanevi yalnız elle).
+      const q = ks.kademe as 0 | 1 | 2 | 3;
       kaliteDokumEkle(d, ks.dokum);
       if (aracVar) depoAletAsindir(t, tr.arac!.mal);
       kaliteliEkle(t, tr.cikti[0], [[q, adet, usta.o, g.isletme]]);

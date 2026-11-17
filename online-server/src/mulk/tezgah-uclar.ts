@@ -14,6 +14,8 @@ import { atolyeKalemleri, emekTavani, etkinSeviye, genislet, genisletmeGorunumu,
 import { emirAc, emirIptal } from "./uretim-emri.ts";
 import { topluGeriAl, topluGorunumu, topluTeslim } from "./toplu-siparis.ts";
 import { kaliteliEkle, type Kalite } from "../yerlesim/kalite.ts";
+import { elDegistir } from "../yerlesim/esya.ts";
+import { efsaneviKaydet } from "../yerlesim/esya-kayit.ts";
 import { akceIade, iadeTeslim, malIade } from "./iade.ts";
 import type { Karakter, Kasaba } from "../yerlesim/tipler.ts";
 import { basarili, hata, type Sonuc } from "../tipler.ts";
@@ -524,7 +526,7 @@ export function satinAl(k: Kasaba, kar: Karakter, isletme: string, govde: unknow
   const mal = s.m;
   const q = s.q;
   const p = raftanSat(t, s, adet as number)!;
-  kaliteliEkle(kar, mal, p);
+  kaliteliEkle(kar, mal, elDegistir(p, k.ay, "satis", kar.ad));
   if (pompa?.ok && satici) pompaYaz(satici, kar, pompa.deger, k.ay);
   // Satış kepengi açar ve devralma sayacını sıfırlar.
   t.os = k.ay;
@@ -639,7 +641,7 @@ export function atolyedeUret(k: Kasaba, kar: Karakter, isletme: string, govde: u
     const giren = Object.values(girdiGorunumu(kar, tr)).reduce((a, n) => a + (n ?? 0), 0);
     const cikan = ciktiAdedi(kar, tr, aracVar) + Object.values(tr.yan ?? {}).reduce((a, n) => a + (n ?? 0), 0);
     if (depoAdedi(kar) - giren + cikan > kapasite) r = hata("depo_dolu");
-    else r = tarifYap(kar, tr.id, k.ay, undefined, { kalemler: atolyeKalemleri(seviye, 0, { kalite: kancaHesapla(kancaAdaylari(k, md, isletme), "atolyeKalite", { meslek: t.za }).deger, npcCeza: 0 }), damga: isletme });
+    else r = tarifYap(kar, tr.id, k.ay, undefined, { kalemler: atolyeKalemleri(seviye, 0, { kalite: kancaHesapla(kancaAdaylari(k, md, isletme), "atolyeKalite", { meslek: t.za }).deger, npcCeza: 0 }), damga: isletme, ...(nesneMi(govde) && govde.efsanevi === true ? { efsanevi: { atolyeAd: ad } } : {}) });
   } finally {
     t.ev = kar.ev;
     t.kq = kar.kq;
@@ -654,7 +656,12 @@ export function atolyedeUret(k: Kasaba, kar: Karakter, isletme: string, govde: u
     if (kar.as === undefined) delete kar.as;
   }
   if (!r.ok) return r;
-  const lv = levhaYaz(k, kar, r.deger.tarif, r.deger.cikti.mal, r.deger.kalite.kademe, k.ay, [isletme, ad]);
+  const efs = r.deger.efsanevi;
+  if (efs?.esya && efs.kademe !== null) {
+    ek.olaylar.push(efsaneviKaydet(k, kar, r.deger.cikti.mal, efs.kademe, efs.esya, [isletme, ad]));
+    ek.ekonomi = true;
+  }
+  const lv = levhaYaz(k, kar, r.deger.tarif, r.deger.cikti.mal, efs?.kademe ?? r.deger.kalite.kademe, k.ay, [isletme, ad]);
   if (lv) {
     ek.olaylar.push(lv.olay);
     ek.ekonomi = true;

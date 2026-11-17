@@ -45,15 +45,18 @@ export function levhaYaz(k: Kasaba, kar: Karakter, tarif: string, mal: MalId, q:
 /** GET /v1/levha: en yeni önce; oyuncu başına şaheser ve üstün sayısı. */
 export function levhaGorunumu(k: Kasaba, malHam?: unknown) {
   const liste = (k.ek?.lv ?? []).filter((x) => typeof malHam !== "string" || x.ml === malHam);
-  const ustalar = new Map<string, { id: string; ad: string; saheser: number; ustun: number }>();
+  const ustalar = new Map<string, { id: string; ad: string; efsanevi: number; nadide: number; saheser: number; ustun: number }>();
   for (const x of liste) {
-    const u = ustalar.get(x.o) ?? { id: x.o, ad: x.ad, saheser: 0, ustun: 0 };
-    if (x.q >= 3) u.saheser++;
+    const u = ustalar.get(x.o) ?? { id: x.o, ad: x.ad, efsanevi: 0, nadide: 0, saheser: 0, ustun: 0 };
+    // Dilim 4: efsanevi (tılsımlı dahil) ve nadide ayrı sayılır; sıralama önce efsanevi.
+    if (x.q >= 5) u.efsanevi++;
+    else if (x.q === 4) u.nadide++;
+    else if (x.q >= 3) u.saheser++;
     else u.ustun++;
     ustalar.set(x.o, u);
   }
   return {
     kayitlar: [...liste].reverse().map((x) => ({ oyuncu: { id: x.o, ad: x.ad }, mal: x.ml, kalite: KALITE_ADLARI[x.q], kademe: x.q, ay: x.ay, tarif: x.t, ...(x.at ? { atolye: { id: x.at[0], ad: x.at[1] } } : {}) })),
-    ustalar: [...ustalar.values()].sort((a, b) => b.saheser - a.saheser || b.ustun - a.ustun || (a.id < b.id ? -1 : 1)),
+    ustalar: [...ustalar.values()].sort((a, b) => b.efsanevi - a.efsanevi || b.nadide - a.nadide || b.saheser - a.saheser || b.ustun - a.ustun || (a.id < b.id ? -1 : 1)),
   };
 }

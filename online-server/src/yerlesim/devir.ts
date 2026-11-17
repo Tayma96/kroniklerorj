@@ -24,6 +24,7 @@ import {
   type HanedanKaydi,
 } from "./hanedan.ts";
 import { karakterOlustur, NAMLAR } from "./karakter.ts";
+import { mirasPartileri } from "./esya.ts";
 import { kronikEkle, type KronikSatiri } from "./kronik.ts";
 import { kisiCoz, npcAdi, npcKimlik, oyuncuRef, yas } from "./ortak.ts";
 import { dizinSec, karma, tohumlu } from "./rastgele.ts";
@@ -337,11 +338,16 @@ export function devirUygula(kasaba: Kasaba, plan: DevirPlani, ay: number): Sonuc
         kar.pa += k.akce;
         delete hk.em[String(npcI)];
         break;
-      case "envanter":
+      case "envanter": {
         kar.ev = { ...k.mallar };
+        // Dilim 4: izli partiler (kalite, yapan, adlı eşya) da geçer; adlı eşya "miras" satırıyla yadigâr olur.
+        const kq = mirasPartileri([olu.kq, olu.br?.sd?.kq], kar.ev, ay, kar.ad);
+        if (kq) kar.kq = kq;
         delete olu.ev;
+        delete olu.kq;
         if (olu.br) delete olu.br.sd;
         break;
+      }
       case "nam":
         kar.nm = k.nam.slice(0, NAMLAR.length);
         break;
