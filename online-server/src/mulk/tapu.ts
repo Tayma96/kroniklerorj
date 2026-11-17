@@ -10,6 +10,7 @@ import { odaCoz } from "../yerlesim/oda.ts";
 import { ayniKume } from "../yerlesim/teveccuh.ts";
 import { olduMu } from "../yerlesim/hanedan.ts";
 import { npcAdi } from "../yerlesim/ortak.ts";
+import { HEDIYE_ALMA_AYLIK, HEDIYE_VERME_AYLIK, aylik } from "../yerlesim/teklif.ts";
 import { IKRAM_MENUSU, type IkramId } from "../han/ikram.ts";
 import type { Karakter, Kasaba, OlayTaslagi, Sakin } from "../yerlesim/tipler.ts";
 import type { Kademe, MeslekId } from "../icerik/meslekler.ts";
@@ -67,6 +68,54 @@ export interface TapuKaydi {
    * arası devir fiyatı olmaz). Eski kayıtta yok: `iadeBedeli` türün bugünkü bedelini ve `f`yi aşmayanı alır.
    */
   eb?: number;
+  /** Son oyuncular arası devir ayı (devir soğuması, DEVIR_SOGUMA_AY). */
+  sd?: number;
+}
+
+/** [PARAMETRE] Devir fiyatının adil bandı: beyliğe ödenen edinim bedelinin (iadeBedeli) alt/üst katı. */
+export const DEVIR_ADIL_ALT = 0.5;
+export const DEVIR_ADIL_UST = 2;
+/** [PARAMETRE] Aynı işletme bu kadar ay geçmeden yeniden devredilemez (devir döngüsüyle akçe aktarımı). */
+export const DEVIR_SOGUMA_AY = 12;
+
+export interface DevirPompa {
+  bant: { alt: number; ust: number };
+  /** Bandı aşan kısım: armağan tavanına sayılır (yon: kimden kime). */
+  hediye: number;
+  yon: "alicidan" | "saticidan" | null;
+  verenKalan: number;
+  alanKalan: number;
+}
+
+/**
+ * Devir fiyatının hediye sayılan kısmı (değiştirmez). Bant dışı fark verenin ve alanın aylık armağan tavanına
+ * (HEDIYE_VERME_AYLIK / HEDIYE_ALMA_AYLIK) sayılır; aşarsa `pompa_siniri`. Aynı kümede fiyat yalnız 0 olabilir.
+ */
+export function devirPompa(k: Kasaba, satici: Karakter, alici: Karakter, isletme: string, f: number): Sonuc<DevirPompa> {
+  if (ayniKume(satici, alici)) {
+    if (f !== 0) return hata("ayni_kume");
+    return basarili({ bant: { alt: 0, ust: 0 }, hediye: 0, yon: null, verenKalan: 0, alanKalan: 0 });
+  }
+  const eb = iadeBedeli(k, isletme);
+  const bant = { alt: Math.floor(eb * DEVIR_ADIL_ALT), ust: Math.ceil(eb * DEVIR_ADIL_UST) };
+  let hediye = 0;
+  let yon: DevirPompa["yon"] = null;
+  if (f > bant.ust) {
+    hediye = f - bant.ust;
+    yon = "alicidan";
+  } else if (f < bant.alt) {
+    hediye = bant.alt - f;
+    yon = "saticidan";
+  }
+  const veren = yon === "saticidan" ? satici : alici;
+  const alan = yon === "saticidan" ? alici : satici;
+  const d: DevirPompa = { bant, hediye, yon, verenKalan: HEDIYE_VERME_AYLIK - aylik(veren.hv, k.ay), alanKalan: HEDIYE_ALMA_AYLIK - aylik(alan.ha, k.ay) };
+  if (hediye > 0 && (hediye > d.verenKalan || hediye > d.alanKalan)) return hata("pompa_siniri");
+  return basarili(d);
+}
+
+function devirSogumada(k: Kasaba, t: TapuKaydi): boolean {
+  return t.sd !== undefined && k.ay - t.sd < DEVIR_SOGUMA_AY;
 }
 
 /** Devralmada eski sahibe iade edilecek tutar: beyliğe ödenen edinim bedeli. */
@@ -513,8 +562,10 @@ export function devirTeklif(k: Kasaba, kar: Karakter, isletme: string, govde: un
   const alici = typeof govde.alici === "string" ? sakin(k, govde.alici) : undefined;
   if (!alici) return hata("kisi_yok");
   if (alici.o === kar.o) return hata("kendine");
+  if (devirSogumada(k, tapu)) return hata("aralik_dolu");
   const f = govde.fiyat;
   if (!Number.isInteger(f) || (f as number) < 0 || (f as number) > TRANSFER_EN_COK) return hata("tutar_gecersiz");
+  if ((f as number) !== 0 && ayniKume(kar, alici)) return hata("ayni_kume");
   tapu.dv = { o: alici.o, f: f as number, ay: k.ay };
   return basarili({ devir: { isletme, alici: alici.o, fiyat: f } });
 }
@@ -531,18 +582,28 @@ export function devirKabul(k: Kasaba, alici: Karakter, isletme: string, an: numb
   if (isletmeCoz(isletme)?.tur === "han" && sahipHanSayisi(k, md, alici.o) >= HAN_KISI_YERLESIM_EN_COK) return hata("han_siniri");
   const satici = k.kar.get(tapu.s);
   if (!satici) return hata("kisi_yok");
+  if (devirSogumada(k, tapu)) return hata("aralik_dolu");
   const f = tapu.dv.f;
   if (alici.pa < f) return hata("para_yok");
   if (md.cik.k.length >= CIKIS_EN_COK) return hata("transfer_bekliyor");
+  const pompa = devirPompa(k, satici, alici, isletme, f);
+  if (!pompa.ok) return pompa;
   const ts = ++md.ts;
   cikisAc(md.cik, { i: `y:${k.y}:${alici.o}:devir:${istekNo}`, t: "sahip", h: isletme, a: 0, y: { isletme, ts, sahip: { h: alici.h, o: alici.o, ad: alici.ad } } }, an);
   alici.pa -= f;
   satici.pa += f;
   const eski = tapu.s;
   const eb = iadeBedeli(k, isletme);
-  md.t[isletme] = { s: alici.o, h: alici.h, ts, a: k.ay, f, eb, ...(tapu.y ? { y: { ...tapu.y, ts } } : {}) };
+  md.t[isletme] = { s: alici.o, h: alici.h, ts, a: k.ay, f, eb, sd: k.ay, ...(tapu.y ? { y: { ...tapu.y, ts } } : {}) };
   devralmaSayaciSifirla(md, isletme);
-  return basarili({ devir: { isletme, fiyat: f, satici: eski, ts } });
+  const p = pompa.deger;
+  if (p.hediye > 0 && p.yon) {
+    const veren = p.yon === "saticidan" ? satici : alici;
+    const alan = p.yon === "saticidan" ? alici : satici;
+    veren.hv = [k.ay, aylik(veren.hv, k.ay) + p.hediye];
+    alan.ha = [k.ay, aylik(alan.ha, k.ay) + p.hediye];
+  }
+  return basarili({ devir: { isletme, fiyat: f, satici: eski, ts, bant: p.bant, hediye: p.hediye } });
 }
 
 // ── Bağlam ve görünüm ──

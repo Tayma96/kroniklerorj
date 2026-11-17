@@ -106,7 +106,7 @@ export function hediyeDegeri(s: Sartlar): number {
   return (s.tu ?? 0) + (mal ? Math.max(1, MALLAR[mal].taban) * (s.mn ?? 0) : 0);
 }
 
-function aylik(sayac: [number, number] | undefined, ay: number): number {
+export function aylik(sayac: [number, number] | undefined, ay: number): number {
   return sayac && sayac[0] === ay ? sayac[1] : 0;
 }
 

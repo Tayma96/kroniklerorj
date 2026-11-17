@@ -51,7 +51,7 @@ test("1 KRİTİK: devir fiyatı iade edilmez; devral yalnız beyliğe ödenen be
   assert.ok(edin(k, a, { tur: "dukkan" }, AN, "e-0000001").ok);
   yuvalariDoldur(k);
   const t1 = toplam(k);
-  assert.ok(devirTeklif(k, a, ID, { islem: "teklif", alici: "o2", fiyat: 1500 }).ok);
+  assert.ok(devirTeklif(k, a, ID, { islem: "teklif", alici: "o2", fiyat: 200 }).ok);
   mulkDefteri(k).tz = { [ID]: { r: [], n: 0, kk: DEVRALMA_KEPENK_AY } };
   assert.ok(devirKabul(k, b, ID, AN, "dv-0000001").ok);
   assert.equal(mulkDefteri(k).tz![ID]!.kk, 0, "devirde devralma sayacı sıfırlanır");
@@ -62,7 +62,7 @@ test("1 KRİTİK: devir fiyatı iade edilmez; devral yalnız beyliğe ödenen be
   const paB = b.pa;
   const r = devral(k, c, ID, AN, "dr-0000001");
   assert.ok(r.ok, JSON.stringify(r));
-  assert.equal(b.pa, paB + 120, "beyliğe ödenen edinim bedeli (120) iade, devir fiyatı (1500) değil");
+  assert.equal(b.pa, paB + 120, "beyliğe ödenen edinim bedeli (120) iade, devir fiyatı (200) değil");
   assert.equal(toplam(k), t2, "devral akçe basmaz");
   assert.ok(mulkDefteri(k).batak >= 0, "batak eksiye düşmez");
   // İflas: işletmeden gelen kasa iadesi cüzdana (kaynağı işletme kasası), tapu boşalır; yerleşim tarafı akçe basmaz.
