@@ -219,6 +219,10 @@ export interface Player {
   dog_turn?: number; // ayda bir sevme (bağ farmı kapalı)
   dog_bff?: boolean; // başarım izi: köpekle bağ 80 sınırını aştı
   gov_run_turn?: number; // ayda tek valilik adaylığı
+  vali_ilk?: boolean; // F5: ilk valiliğin tam itibar/şöhret ödülü alındı (sonrakiler küçük)
+  isl_rep_turn?: number; // F5: işletme namından itibar akışı ayda en çok bir kez
+  yanke_n?: number; // F5: yankesicilik denemesi sayısı (tekrar yakalanma şansını artırır)
+  siparis_itibar?: Record<string, number>; // F5: şehir başına son tam itibarlı atölye siparişi turu (3 ayda bir tam)
   fac_rank_seen?: Record<string, number>; // lonca başına görülen en yüksek rütbe — tören yalnız onu aşınca (standing düşüp çıksa da tekrarlanmaz)
   child_meta?: { n: string; born: number; ms?: number; bastard?: boolean }[]; // evlat kilometre taşları: doğum turu + son anılan eşik (ilk adım/mektep/çıraklık/yetişkinlik); bastard: yasak ilişkiden doğan gayrimeşru evlat
   factionBans?: Record<string, number>; // fraksiyon id → geri dönüş yasağının bittiği tur (FACTION_MEMBERSHIP)
@@ -312,7 +316,7 @@ export function zar(s: GameState, g: ZarGirdi): ZarOnizleme & { basari: boolean 
   return { ...o, basari: gameRandom(s) < o.oran };
 }
 // Mülk: konuma bağlı (loc) + kondisyon (cond 0..100) + kademe (level 1..3). Gelir refah×kondisyon×kademe.
-export interface Property { type: string; loc: string; cond: number; level?: number; workers?: string[]; ledger?: { y: number; net: number; months?: number }[]; ledger_accum?: { y: number; net: number; months: number }; tenant?: boolean; guard?: boolean; fallow_until?: number; fertile_until?: number; }
+export interface Property { type: string; loc: string; cond: number; level?: number; workers?: string[]; ledger?: { y: number; net: number; months?: number }[]; ledger_accum?: { y: number; net: number; months: number }; tenant?: boolean; guard?: boolean; fallow_until?: number; fertile_until?: number; isl?: Isletme; vakif?: boolean; } // F5: isl = işletme ayarı (han/dükkân/atölye), vakif = vakfedilmiş (satılamaz, gelirin %40'ı hayra)
 export const PROP_MAX_LEVEL = 3;
 export function propUpgradeCost(pr: Property): number { return Math.round((PROPERTY_TYPES[pr.type]?.cost || 100) * (pr.level || 1) * 0.8); }
 export function upgradeProperty(prev: GameState, index: number): GameState {
@@ -330,8 +334,9 @@ export const PROPERTY_TYPES: Record<string, { name: string; icon: string; cost: 
   ev:       { name: "Ev",       icon: "house", cost: 2500,  income: 36,  slots: 1 },
   bag:      { name: "Bağ",      icon: "leaf",  cost: 4000,  income: 55,  slots: 2 },
   dukkan:   { name: "Dükkân",   icon: "coins", cost: 6500,  income: 90,  slots: 2 },
+  atolye:   { name: "Atölye",   icon: "anvil", cost: 8000,  income: 110, slots: 2 }, // F5: işletilebilir zanaat atölyesi
   han:      { name: "Han",      icon: "castle", cost: 11000, income: 150, slots: 3 },
-  degirmen: { name: "Değirmen", icon: "anvil", cost: 18000, income: 210, slots: 4 },
+  degirmen: { name: "Değirmen", icon: "anvil", cost: 15000, income: 210, slots: 4 }, // F5: 18000 → 15000; getirisi öbür tiplerle aynı bantta (10 yıllık sim)
 };
 // Güncel alış bedeli = nominal × enflasyon (geç-oyunda mülk pahalanır → nakit erir, değer korunur).
 // Her yeni mülk %15 daha pahalı (radikal sonuçlar planı, aşama 1): kira bileşik büyüyüp tek doğru hamle olmasın
@@ -549,20 +554,214 @@ export function propAylikTahmin(s: GameState, pr: Property): number {
   const prosp = Math.max(5, ci.prosperity + fx.prosp); const sec = Math.max(0, ci.security + fx.sec);
   const cpl = (0.75 + prosp / 200) * (pr.cond / 100) * (1 + ((pr.level || 1) - 1) * 0.5);
   const tip = pr.type === "tarla" ? 1.025 * (pr.fallow_until !== undefined ? 0 : (pr.fertile_until ?? 0) > s.turn ? 1.5 : 1)
-    : pr.type === "dukkan" ? 1 + prosp / 300 : pr.type === "han" ? 0.6 + (prosp + sec) / 250
     : pr.type === "ev" ? (pr.tenant ? 1.25 * 0.96 : 0.7) : 1;
   let pm = 1; if (hasPerk(s.player, "tuccar_prensi")) pm += 0.1; if (hasPerk(s.player, "tamirci")) pm += 0.05; // K3: ikincil
   const w = propWorkerStats(s, pr, base, cpl);
-  const brut = (base * cpl * tip * meslekYoluMulkCarpani(s.player, pr.type) + w.gross) * pm; // F4: çiftçi tarla/bağ, hancı han
-  const gider = w.wage + (pr.guard ? 4 : 0) + 3;
-  return Math.round((brut - gider) * inflationFactor(s));
+  const isl = isletmeMi(pr) ? isletmeHesap(s, pr, base, cpl, prosp, sec) : null; // F5: işletme kartı (talep × kapasite × ayarlar)
+  const brut = (isl ? isl.brut : base * cpl * tip * meslekYoluMulkCarpani(s.player, pr.type) * degirmenCarpani(s, pr) + w.gross) * pm; // F4: çiftçi tarla/bağ, hancı han
+  const gider = w.wage + (pr.guard ? 4 : 0) + 3 + (isl ? isl.gider : 0);
+  return Math.round((brut * (pr.vakif ? 1 - VAKIF_HAYIR_PAYI : 1) - gider) * inflationFactor(s)); // F5: vakfın hayır payı keseye gelmez
 }
 // Henüz alınmamış bir mülkün burada (bakımı tam, 1. kademe, işçisiz) getireceği tahmini net ve kendini ödeme süresi (yıl).
 export function propAlimTahmini(s: GameState, type: string): { aylik: number; yil: number | null } {
   const aylik = propAylikTahmin(s, { type, loc: s.player.location_name, cond: 100, tenant: type === "ev" ? true : undefined });
   return { aylik, yil: aylik > 0 ? Math.round((propBuyCost(s, type) / (aylik * 12)) * 10) / 10 : null };
 }
-export function propWorkerSlots(pr: Property): number { return (PROPERTY_TYPES[pr.type]?.slots || 0) + ((pr.level || 1) - 1); }
+export function propWorkerSlots(pr: Property): number { const n = (PROPERTY_TYPES[pr.type]?.slots || 0) + ((pr.level || 1) - 1); return isletmeMi(pr) ? Math.min(ISLETME_KADRO_TAVAN, n) : n; } // F5: işletmede kadro en çok 3 kalfa
+// ── F5 İşletme (K6): han, dükkân ve atölye işletme kartı ──
+// Üç ayar: fiyat (ucuz/olağan/pahalı), kadro (mülkün işçileri = kalfa, en çok 3), kalite (sade/iyi/seçkin).
+// Talep = tip × kervan trafiği × rakip × fiyat × işletme namı; kapasite = tip + kalfaların emeği; hizmet = ikisinin küçüğü.
+// Gelir = taban × bakım/kademe × hizmet × fiyat marjı × kalite × meslek uyumu − kalite gideri (müşteri başına).
+// Ödünleşim: ucuz çok müşteri çeker (kapasite darlığı) ama marjı düşüktür, nam ve itibar getirir; pahalı az müşteriyle
+// yüksek marj alır, itibar getirmez, namı yalnız seçkin kaliteyle tutar; seçkin müşteri başına pahalıdır ama namı hızlı büyütür.
+// Aynı anda en çok 3 işletme (vakıf işletme sayılmaz). Pasif mülkler (tarla, bağ, ev, değirmen) sınır dışıdır.
+export const ISLETME_TIPLERI = ["han", "dukkan", "atolye"] as const;
+export const ISLETME_SINIR = 3;
+export const ISLETME_KADRO_TAVAN = 3;
+export interface Isletme {
+  f: number; q: number; nam: number; // fiyat 0-2 · kalite 0-2 · işletme namı 0-100
+  karar?: string; kz?: number; km?: number; // bekleyen mevsim kararı · önceden atılmış zar · son karar mevsimi
+  son?: { id: string; c: number; ok: boolean; t: number }; // son kararın özeti
+  etki?: { m: number; until: number }; // kararın geçici gelir çarpanı
+  goc?: number; // eski kayıttan geçiş: bu tura dek çevre çarpanı dar bantta (ilk yıl gelir ±%10)
+}
+export const ISL_FIYAT_TALEP = [1.35, 1, 0.72];
+export const ISL_FIYAT_MARJ = [0.8, 1, 1.3];
+export const ISL_KALITE_GELIR = [1, 1.08, 1.22]; // müşteri başına gelir
+export const ISL_KALITE_GIDER = [0, 0.1, 0.42];  // müşteri başına gider (taban gelirin katı)
+// Namın yöneldiği değer [fiyat][kalite]; seçkin kalitede nam iki kat hızlı yürür.
+export const ISL_NAM_HEDEF = [[45, 62, 80], [30, 48, 68], [12, 26, 66]];
+const islKis = (x: number, a: number, b: number) => Math.max(a, Math.min(b, x));
+export function isletmeMi(pr: Property): boolean { return (ISLETME_TIPLERI as readonly string[]).includes(pr.type); }
+export function isletmeAyari(pr: Property): Isletme { return pr.isl || { f: 1, q: 1, nam: 50 }; }
+// Sınıra sayılan işletme: vakfedilmemiş han/dükkân/atölye.
+export function isletmeSayisi(p: Player): number { return (p.properties || []).filter((pr) => isletmeMi(pr) && !pr.vakif).length; }
+export function isletmeAlinabilir(p: Player, type: string): boolean { return !(ISLETME_TIPLERI as readonly string[]).includes(type) || isletmeSayisi(p) < ISLETME_SINIR; }
+export function isletmeTipCarpani(type: string, prosp: number, sec: number): number {
+  return type === "han" ? 0.6 + (prosp + sec) / 250 : type === "dukkan" ? 1 + prosp / 300 : type === "atolye" ? 0.9 + prosp / 400 : 1;
+}
+// Kervan trafiği: şehrin ticaret durumu (tüccar hizmeti, panayır, eşkıya, ticaret antlaşması, savaş yolu).
+export function isletmeTrafik(s: GameState, loc: string): number {
+  const ev = locEventsAt(s, loc); let t = 0.9 + 0.2 * cityEconomy(s, loc).services.trade;
+  const k = placeKind(loc); if (k === "şehir") t += 0.05; else if (k === "köy") t -= 0.08;
+  if (ev.includes("panayir")) t += 0.12;
+  if (ev.includes("eskiya")) t -= 0.12;
+  if (crownTreaty(s, regionOf(loc))?.kind === "ticaret") t += 0.06;
+  t -= Math.min(0.15, regionalWarEffects(s, loc).roadRisk || 0);
+  return islKis(t, 0.65, 1.3);
+}
+const ISL_RAKIP_MESLEK: Record<string, { m: string[]; w: number }> = { han: { m: ["hancı"], w: 0.05 }, dukkan: { m: ["tüccar"], w: 0.04 }, atolye: { m: ["demirci", "marangoz", "dokumacı", "kuyumcu"], w: 0.025 } };
+// Rakip baskısı: aynı şehirdeki NPC esnaf ve oyuncunun kendi aynı tip işletmesi müşteriyi böler.
+export function isletmeRakip(s: GameState, pr: Property): number {
+  const r = ISL_RAKIP_MESLEK[pr.type]; if (!r) return 1;
+  const jobs = cityEconomy(s, pr.loc).professions;
+  const n = r.m.reduce((a, m) => a + (jobs[m] || 0), 0);
+  const kendi = s.player.properties.filter((x) => x !== pr && x.type === pr.type && x.loc === pr.loc).length;
+  return islKis(1.1 - r.w * n - 0.1 * kendi, 0.75, 1.1);
+}
+const ISL_ZANAAT = ["demirci", "marangoz", "dokumacı", "kuyumcu"];
+// Sahibin meslek uyumu: hancı→han (MESLEK_YOLLARI etkisi aynen), tüccar→dükkân, zanaatkâr→atölye (+%6/yol gücü).
+export function isletmeUyumu(p: Player, type: string): number {
+  if (type === "han") return meslekYoluMulkCarpani(p, "han");
+  const g = meslekYoluGucu(p);
+  if (type === "dukkan" && p.profession === "tüccar") return 1 + 0.06 * g;
+  if (type === "atolye" && ISL_ZANAAT.includes(p.profession)) return 1 + 0.06 * g;
+  return 1;
+}
+export interface IsletmeHesap { talep: number; kapasite: number; hizmet: number; brut: number; gider: number; trafik: number; rakip: number; uyum: number; tip: number }
+export function isletmeHesap(s: GameState, pr: Property, base: number, cpl: number, prosp: number, sec: number): IsletmeHesap {
+  const a = isletmeAyari(pr); const tip = isletmeTipCarpani(pr.type, prosp, sec);
+  const trafik = isletmeTrafik(s, pr.loc), rakip = isletmeRakip(s, pr);
+  const env = a.goc && a.goc > s.turn ? islKis(trafik * rakip, 0.93, 1.07) : islKis(trafik * rakip, 0.6, 1.3);
+  const npcs = pr.workers?.length ? townNpcsOf(s, pr.loc) : [];
+  let emek = 0; for (const id of pr.workers || []) { const n = npcs.find((x) => x.id === id); if (n) emek += workerProductivity(n, pr.type); }
+  const kapasite = tip + 0.45 * emek;
+  const talep = (tip + 1.35) * 1.15 * env * ISL_FIYAT_TALEP[a.f] * (0.8 + a.nam / 250);
+  const hizmet = Math.min(talep, kapasite);
+  const etki = a.etki && a.etki.until > s.turn ? a.etki.m : 1;
+  const uyum = isletmeUyumu(s.player, pr.type);
+  const brut = base * cpl * hizmet * ISL_FIYAT_MARJ[a.f] * ISL_KALITE_GELIR[a.q] * uyum * etki;
+  const gider = base * hizmet * ISL_KALITE_GIDER[a.q];
+  return { talep, kapasite, hizmet, brut, gider, trafik, rakip, uyum, tip };
+}
+export function setIsletmeAyar(prev: GameState, index: number, alan: "f" | "q", deger: number): GameState {
+  const s = clone(prev); const pr = s.player.properties[index];
+  if (!pr || !isletmeMi(pr) || s.player.dead || ![0, 1, 2].includes(deger)) return s;
+  const a = { ...isletmeAyari(pr) }; if (a[alan] === deger) return s;
+  a[alan] = deger; pr.isl = a;
+  return s;
+}
+// Aylık nam yürüyüşü (ay kapanışı): ayarların hedefine yavaşça yaklaşır.
+function isletmeNamTick(pr: Property) {
+  const a = pr.isl = { ...isletmeAyari(pr) };
+  const hedef = ISL_NAM_HEDEF[a.f]?.[a.q] ?? 40;
+  a.nam = Math.round(islKis(a.nam + (hedef - a.nam) * (a.q === 2 ? 0.08 : 0.04), 0, 100) * 10) / 10;
+}
+// Sahibine itibar akışı: ayda en çok +1 (tur kilitli), adil fiyatlı ve namlı işletmeden; pahalı fiyat itibar getirmez.
+function isletmeItibarTick(s: GameState) {
+  const p = s.player; if (p.isl_rep_turn === s.turn) return;
+  const isl = p.properties.filter(isletmeMi); if (!isl.length) return;
+  let sans = 0, kotu = false;
+  for (const pr of isl) { const a = isletmeAyari(pr); if (a.f < 2) sans = Math.max(sans, ((a.nam - 50) / 150) * (a.f === 0 ? 1.5 : 1)); if (a.nam < 20) kotu = true; }
+  const r = gameRandom(s);
+  if (sans > 0 && r < sans) { p.isl_rep_turn = s.turn; unEkle(p, "reputation", 1); }
+  else if (kotu && r > 0.92) { p.isl_rep_turn = s.turn; unEkle(p, "reputation", -1); }
+}
+// ── Mevsim kararı: her mevsim başında işletme başına en çok bir kart (bekleyen kart süresizdir, cezası yoktur) ──
+export const ISL_KARARLAR = ["kervan", "muhtesip", "rakip", "zam", "kitlik", "siparis"] as const;
+export type IslKararId = typeof ISL_KARARLAR[number];
+export interface IslSecimEtki { para?: number; nam?: number; itibar?: number; etki?: { m: number; ay: number }; kalfaGider?: boolean; comert?: number }
+// Bedeller taban gelirin katıdır (B = taban × enflasyon). zar: o seçeneğin sonucu zarla belirlenir (ok/bas).
+export const ISL_KARAR_SECIM: Record<IslKararId, [{ ok: IslSecimEtki; bas?: IslSecimEtki }, { ok: IslSecimEtki; bas?: IslSecimEtki }]> = {
+  kervan:   [{ ok: { para: -1.0, etki: { m: 1.25, ay: 3 }, nam: 2 } }, { ok: { para: 1.2, nam: -4 } }],
+  muhtesip: [{ ok: { nam: 5, itibar: 1 }, bas: { para: -1.0, nam: -4 } }, { ok: { para: -0.7, nam: 1 } }],
+  rakip:    [{ ok: { etki: { m: 0.9, ay: 4 } } }, { ok: { etki: { m: 0.8, ay: 3 }, nam: 4 } }],
+  zam:      [{ ok: { para: -0.8, nam: 2 } }, { ok: {}, bas: { kalfaGider: true, nam: -2 } }],
+  kitlik:   [{ ok: { para: 1.5, nam: -6, itibar: -1 } }, { ok: { nam: 6, itibar: 1, comert: 1 } }],
+  siparis:  [{ ok: { para: 2.0, nam: 4 }, bas: { para: -0.6, nam: -3 } }, { ok: { para: 0.5 } }],
+};
+export const ISL_KARAR_IKON: Record<IslKararId, string> = { kervan: "camel", muhtesip: "scales", rakip: "crossed-swords", zam: "iliskiler", kitlik: "wheat", siparis: "scroll" };
+function islKitlikVar(s: GameState): boolean { const me = s.marketEvent && (s.marketEvent.until ?? 0) > s.turn ? s.marketEvent.key : null; return me === "kuraklik" || me === "kithasat"; }
+export function islKararUygun(s: GameState, pr: Property, id: IslKararId): boolean {
+  if (id === "kervan" || id === "kitlik") return (pr.type === "han" || pr.type === "dukkan") && (id === "kervan" || islKitlikVar(s));
+  if (id === "zam") return (pr.workers?.length || 0) > 0;
+  if (id === "siparis") return pr.type === "atolye" || pr.type === "han";
+  return true;
+}
+// Zarlı seçenek: muhtesip (kaliteyi göster), zam (pazarlık), sipariş (üstlen). Zorluk kaliteyle düşer.
+export function islKararZarSecimi(id: string): number { return id === "zam" ? 1 : id === "muhtesip" || id === "siparis" ? 0 : -1; }
+export function islKararZarGirdi(s: GameState, pr: Property, id: string): ZarGirdi | null {
+  const p = s.player; const q = isletmeAyari(pr).q;
+  if (id === "muhtesip") { const beceri: keyof Skills = pr.type === "atolye" ? "crafting" : "trade"; return { stat: "intelligence", beceri, zorluk: 11 - 2 * q, ekKalemler: hunerKalemleri(p, "pazarlik", "intelligence") }; }
+  if (id === "zam") return { stat: "charisma", beceri: "social", zorluk: 9, ekKalemler: hunerKalemleri(p, "pazarlik", "charisma") };
+  if (id === "siparis") return pr.type === "atolye" ? { stat: "intelligence", beceri: "crafting", zorluk: 11 - 2 * q, ekKalemler: hunerKalemleri(p, "is", "intelligence") } : { stat: "charisma", beceri: "social", zorluk: 11 - 2 * q, ekKalemler: hunerKalemleri(p, "pazarlik", "charisma") };
+  return null;
+}
+export function islKararOnizleme(s: GameState, pr: Property): ZarOnizleme | null { const a = isletmeAyari(pr); const g = a.karar ? islKararZarGirdi(s, pr, a.karar) : null; return g ? zarOrani(s, g) : null; }
+// Kartla motor aynı sonucu görür: zar kart düşerken atılır (kz), oran çözüm anında hesaplanır (önizleme = gerçek).
+export function islKararBasari(s: GameState, pr: Property, c: number): boolean {
+  const a = isletmeAyari(pr); if (!a.karar || islKararZarSecimi(a.karar) !== c) return true;
+  const o = islKararOnizleme(s, pr); return !o || (a.kz ?? 0) < o.oran;
+}
+function isletmeKararTetik(s: GameState) {
+  if (s.turn % 3 !== 0) return;
+  const mevsim = s.turn / 3; let yeni = 0;
+  s.player.properties.forEach((pr) => {
+    if (!isletmeMi(pr)) return;
+    const a = pr.isl = { ...isletmeAyari(pr) };
+    if (a.karar || a.km === mevsim) return;
+    a.km = mevsim;
+    if (gameRandom(s) >= 0.6) return;
+    const havuz = ISL_KARARLAR.filter((id) => id !== a.son?.id && islKararUygun(s, pr, id));
+    if (!havuz.length) return;
+    a.karar = havuz[Math.floor(gameRandom(s) * havuz.length)]; a.kz = gameRandom(s); yeni++;
+    push(s, "isletme", `${pr.loc}'daki ${(PROPERTY_TYPES[pr.type]?.name || "işletme").toLowerCase()} için bir karar bekliyor.`, "kişisel", false, { k: "isl.kararGeldi", p: [{ pt2: pr.type }, { pl: pr.loc }, { tq: "isl.k." + a.karar + ".t" }] });
+  });
+  return yeni;
+}
+export function resolveIsletmeKarari(prev: GameState, index: number, c: number): GameState {
+  const s = clone(prev); const p = s.player; const pr = p.properties[index];
+  if (!pr || p.dead || !isletmeMi(pr) || (c !== 0 && c !== 1)) return s;
+  const a = pr.isl = { ...isletmeAyari(pr) }; const id = a.karar as IslKararId | undefined;
+  if (!id || !ISL_KARAR_SECIM[id]) return s;
+  const zarli = islKararZarSecimi(id) === c;
+  const ok = islKararBasari(s, pr, c);
+  if (zarli) { const g = islKararZarGirdi(s, pr, id); if (g?.stat) statKullanimIsle(p, g.stat, s.turn); }
+  const sec = ISL_KARAR_SECIM[id][c]; const e = ok ? sec.ok : (sec.bas || sec.ok);
+  const B = (PROPERTY_TYPES[pr.type]?.income || 0) * inflationFactor(s);
+  if (e.para) { const d = Math.round(e.para * B); if (d < 0 && p.money < -d) { p.debt = (p.debt || 0) + (-d - p.money); if (!p.loan_turn) p.loan_turn = s.turn; p.money = 0; } else p.money += d; }
+  if (e.nam) a.nam = islKis(a.nam + e.nam, 0, 100);
+  if (e.itibar) unEkle(p, "reputation", e.itibar);
+  if (e.comert) bumpNam(p, "comert", e.comert);
+  if (e.etki) a.etki = { m: e.etki.m, until: s.turn + e.etki.ay };
+  if (e.kalfaGider && pr.workers?.length) {
+    const gid = pr.workers[pr.workers.length - 1]; pr.workers = pr.workers.slice(0, -1);
+    const k = nufusOf(s).k[gid]; if (k) remember(s, { id: gid, name: kisiAdi(k, "tr") }, "ucret_odenmedi");
+  }
+  if (zarli) gainSkill(s, islKararZarGirdi(s, pr, id)?.beceri || "trade", 4);
+  a.son = { id, c, ok, t: s.turn }; a.karar = undefined; a.kz = undefined;
+  push(s, "isletme", "İşletmede bir karar verdin.", "kişisel", false, { k: "isl.k." + id + ".r" + c + (ok ? "" : "x"), p: [{ pt2: pr.type }, { pl: pr.loc }] });
+  return s;
+}
+// ── Vakıf (K6): mülk ya da işletme vakfedilir — satılamaz, el konulamaz, gelirin %40'ı vakıf fonuna (hayra) akar;
+// kalıcı itibar tabanı (vakıf başına 5, en çok 15), vâris devralır ve adını önden yürütür (heirPreview = continueAsHeir).
+export const VAKIF_HAYIR_PAYI = 0.4;
+export function vakifMulkSayisi(p: Player): number { return (p.properties || []).filter((pr) => pr.vakif).length; }
+export function vakifItibarTabani(p: Player): number { return Math.min(15, 5 * vakifMulkSayisi(p)); }
+export function vakifMulkVarisItibari(p: Player): number { return Math.min(6, 2 * vakifMulkSayisi(p)); }
+export function vakfedilebilir(s: GameState, index: number): boolean { const p = s.player; const pr = p.properties[index]; return !!pr && !pr.vakif && !p.dead && p.age >= 18 && !inJail(p); }
+export function vakfet(prev: GameState, index: number): GameState {
+  const s = clone(prev); const p = s.player;
+  if (!vakfedilebilir(s, index)) return s;
+  const pr = p.properties[index]; pr.vakif = true;
+  unEkle(p, "reputation", 3); unEkle(p, "fame", 2); bumpNam(p, "comert", 3); bumpNam(p, "dindar", 1);
+  if (p.reputation < vakifItibarTabani(p)) p.reputation = vakifItibarTabani(p);
+  push(s, "bagis", `${pr.loc}'daki ${(PROPERTY_TYPES[pr.type]?.name || "mülk").toLowerCase()} vakfedildi; vakfiye mühürlendi, gelirinin bir kısmı artık hayra akacak.`, "kişisel", true, { k: "isl.vakfedildi", p: [{ pt2: pr.type }, { pl: pr.loc }] });
+  return s;
+}
+// Değirmen: aynı şehirdeki kendi tarla/bağ gelirine +%15; kıtlıkta tarla/bağ cezası yarıya iner (un elde, ekmek ucuz).
+export function degirmenVar(s: GameState, loc: string): boolean { return s.player.properties.some((x) => x.type === "degirmen" && x.loc === loc); }
+export function degirmenCarpani(s: GameState, pr: Property): number { return (pr.type === "tarla" || pr.type === "bag") && degirmenVar(s, pr.loc) ? 1.15 : 1; }
 // Yaşayan dünya kadrosu: deterministik temel (isim dile göre çözülür) + kalıcı evrim katmanı (ölüm/yaş/doğum).
 // Kadro büyüklüğü yerleşim tipine göre: şehir kalabalık, köy tenha (canlı dünya hissi).
 export function rosterSize(loc: string): number { const k = placeKind(loc); return k === "şehir" ? 30 : k === "kale" ? 20 : 15; } // test geri bildirimi: 10 kişilik kasaba boş hissettiriyordu; taban deterministik olduğundan büyütme eski kayıtlara yeni yüzler ekler, kimseyi silmez
@@ -1183,6 +1382,7 @@ const PROP_PROF_FIT: Record<string, string[]> = {
   ev: ["şifacı", "müzisyen"],
   dukkan: ["tüccar", "fırıncı", "balıkçı"],
   degirmen: ["demirci", "çiftçi"],
+  atolye: ["demirci", "marangoz", "dokumacı", "kuyumcu"],
 };
 // İşçi üretkenliği (Vercel _worker_productivity portu): yaş eğrisi + meslek uyumu + mizaç. 0.6–1.6.
 export function workerProductivity(npc: NPC, propType: string): number {
@@ -2587,7 +2787,7 @@ export interface GameState {
   mpRealm?: boolean; // çok oyuncu: beylik hakimiyeti SUNUCUDA → yerel ocak-beylik savaşı bastırılır (paralel gerçeklik olmaz)
   rivals?: RivalHouse[]; // rakip hanedanların yaşayan gücü (zamanla değişir + hamle yapar)
   pretender?: { houseId: string; strength: number } | null; // taht iddiacısı: taçtayken beliren rakip hanedan — bastır ya da uzlaş, yoksa iç savaş
-  caravan: { invested: number; dest: string; route?: string[]; step?: number; lost?: number; returnTurn?: number; good?: string; spread?: number; insured?: boolean } | null;
+  caravan: { invested: number; dest: string; route?: string[]; step?: number; lost?: number; returnTurn?: number; good?: string; spread?: number; insured?: boolean; risk?: number } | null; // F5 risk: rotanın yağma çarpanı
   workshopOrder?: WorkshopOrder; // kabul edilmiş kasaba siparişi; vade yok, teslim edilene veya oyuncu vazgeçene dek yaşar
   econ: number; // piyasa çarpanı (kıtlık>1, bolluk<1)
   settlements?: Settlement[]; // hanedanın kurduğu yerleşimler
@@ -4156,6 +4356,7 @@ export function advance(prev: GameState, n = 1): GameState {
     const cityCache: Record<string, { prosperity: number; security: number }> = {};
     const cityOf = (loc: string) => cityCache[loc] || (cityCache[loc] = cityInfo(loc, placeKind(loc)));
     let burnPr: Property | null = null; // katastrofik kayıp adayı: turda EN FAZLA bir mülk yanar
+    let vakifFonHayir = 0; // F5: vakıf mülklerin hayır payı (enflasyonsuz)
     for (const pr of s.player.properties) {
       const base = PROPERTY_TYPES[pr.type]?.income || 0;
       const ci = cityOf(pr.loc || s.player.location_name);
@@ -4165,13 +4366,12 @@ export function advance(prev: GameState, n = 1): GameState {
       const condProspLevel = (0.75 + effProsp / 200) * (pr.cond / 100) * (1 + ((pr.level || 1) - 1) * 0.5);
       // Tipe özgü davranış (Vercel property_system per-tip tick ruhu): tarla mevsimlik, dükkân refaha duyarlı.
       const typeMult = pr.type === "tarla" ? ({ "İlkbahar": 1.0, "Yaz": 1.15, "Sonbahar": 1.7, "Kış": 0.25 }[cal.season] ?? 1)
-        : pr.type === "dukkan" ? (1 + effProsp / 300)
-        : pr.type === "han" ? (0.6 + (effProsp + effSec) / 250)  // han: yolcu trafiği refah+güvenlikle artar
-        : pr.type === "ev" ? (pr.tenant ? 1.25 : 0.7) : 1; // kiracılı ev kira getirir
+        : pr.type === "ev" ? (pr.tenant ? 1.25 : 0.7) : 1; // kiracılı ev kira getirir (han/dükkân/atölye: işletme hesabı aşağıda)
       // Piyasa mevsimi tapuya işler: kuraklık tarlayı/bağı kurutur; kıtlıkta ve bollukta değirmenin çarkı hız keser/kesmez.
       const me = s.marketEvent && (s.marketEvent.until ?? 0) > s.turn ? s.marketEvent.key : null;
-      const mevMult = me === "kuraklik" ? (pr.type === "tarla" ? 0.6 : pr.type === "bag" ? 0.7 : 1)
-        : me === "kithasat" ? (pr.type === "tarla" ? 0.7 : pr.type === "degirmen" ? 1.15 : 1)
+      const degirmenli = degirmenVar(s, pr.loc); // F5: kendi değirmeni olan tarla/bağ kıtlığı yarı cezayla atlatır
+      const mevMult = me === "kuraklik" ? (pr.type === "tarla" ? (degirmenli ? 0.8 : 0.6) : pr.type === "bag" ? (degirmenli ? 0.85 : 0.7) : 1)
+        : me === "kithasat" ? (pr.type === "tarla" ? (degirmenli ? 0.85 : 0.7) : pr.type === "degirmen" ? 1.15 : 1)
         : me === "bolluk" ? (pr.type === "tarla" ? 1.1 : pr.type === "degirmen" ? 1.2 : 1)
         : 1;
       // Nadas: dinlenen tarla gelir vermez; yıl dolunca toprak canlanır (+20 bakım, 24 ay bereket ×1.5).
@@ -4183,17 +4383,20 @@ export function advance(prev: GameState, n = 1): GameState {
       const nadasMult = pr.type === "tarla" ? (pr.fallow_until !== undefined ? 0 : (pr.fertile_until ?? 0) > s.turn ? 1.5 : 1) : 1;
       const rentSkip = pr.type === "ev" && pr.tenant && chance(0.04); // kiracı ara sıra aksatır
       if (rentSkip) { if (i === n - 1) push(s, "mülk", `${pr.loc}'daki evin kiracısı bu ay kirayı aksattı; "hasat gelince" dedi, kapıyı yavaş kapattı.`, "kişisel", false, { k: "evj.tenantSkip", p: [{ pl: pr.loc }] }); }
-      else inc += base * condProspLevel * typeMult * mevMult * nadasMult * meslekYoluMulkCarpani(s.player, pr.type); // F4: meslek yolu
       if (pr.type === "ev" && (pr.level || 1) >= 2 && chance(0.04)) unEkle(s.player, "reputation", 1); // köklü ev → itibar damlası
-      // İşçi ekonomisi: çalışan NPC'ler üretimi artırır ama ücret ister.
+      // İşçi ekonomisi: çalışan NPC'ler üretimi artırır ama ücret ister. İşletmede kalfalar kapasitedir (F5: isletmeHesap).
       const w = propWorkerStats(s, pr, base, condProspLevel);
-      inc += w.gross; wages += w.wage;
+      const isl = isletmeMi(pr) ? isletmeHesap(s, pr, base, condProspLevel, effProsp, effSec) : null;
+      const prBrut = isl ? isl.brut : (rentSkip ? 0 : base * condProspLevel * typeMult * mevMult * nadasMult * meslekYoluMulkCarpani(s.player, pr.type) * degirmenCarpani(s, pr)) + w.gross; // F4: meslek yolu · F5: değirmen
+      const hayir = pr.vakif ? prBrut * VAKIF_HAYIR_PAYI : 0; // F5: vakfın hayır payı keseye girmez, vakıf fonuna akar
+      if (hayir > 0) vakifFonHayir += hayir * pmult;
+      inc += prBrut - hayir; wages += w.wage + (isl ? isl.gider : 0);
+      if (isl) isletmeNamTick(pr);
       if (pr.guard) wages += 4; // bekçi ücreti (enflasyon çarpanı aşağıda tüm ücretlere uygulanır)
       // Mülk defteri: gerçek aylık katkı 12 ay birikir; işçi, bekçi, tapu bakımı ve enflasyon hesaba girer.
       const ledgerYear = Math.ceil(s.turn / 12);
       if (!pr.ledger_accum || pr.ledger_accum.y !== ledgerYear) pr.ledger_accum = { y: ledgerYear, net: 0, months: 0 };
-      const ledgerIncome = (rentSkip ? 0 : base * condProspLevel * typeMult * mevMult * nadasMult * meslekYoluMulkCarpani(s.player, pr.type)) + w.gross;
-      pr.ledger_accum.net += (ledgerIncome * pmult - w.wage - (pr.guard ? 4 : 0) - 3) * inflationFactor(s);
+      pr.ledger_accum.net += ((prBrut - hayir) * pmult - w.wage - (isl ? isl.gider : 0) - (pr.guard ? 4 : 0) - 3) * inflationFactor(s);
       pr.ledger_accum.months += 1;
       if (s.turn > 0 && s.turn % 12 === 0) {
         pr.ledger = pr.ledger || [];
@@ -4219,6 +4422,9 @@ export function advance(prev: GameState, n = 1): GameState {
       }
     }
     inc = Math.round(inc * pmult);
+    if (vakifFonHayir > 0) vakifFonaEkle(s, Math.round(vakifFonHayir * inflationFactor(s)));
+    if (s.player.properties.some(isletmeMi)) { isletmeItibarTick(s); isletmeKararTetik(s); } // F5: namdan itibar akışı, mevsim kararı
+    { const taban = vakifItibarTabani(s.player); if (taban > 0 && s.player.reputation < taban) s.player.reputation = taban; } // F5: vakfın kalıcı itibar tabanı
     // Kurulan yerleşimler yavaşça gelişir ve vergi getirir
     if (s.settlements?.length) {
       for (const st of s.settlements) if (st.dev < 100) st.dev = Math.min(100, st.dev + 1);
@@ -4293,9 +4499,9 @@ export function advance(prev: GameState, n = 1): GameState {
       const ceiling = Math.round(creditLimit(s) * 1.6) + 500; // borç bunu aşınca tefeci harekete geçer
       if ((s.player.debt || 0) > ceiling) {
         const props = s.player.properties;
-        if (props.length) { // önce en ucuz mülke el koy (teminat satışı)
+        if (props.some((pr) => !pr.vakif)) { // önce en ucuz mülke el koy (teminat satışı; vakıf mülk hariç)
           let idx = 0, lo = Infinity;
-          props.forEach((pr, k) => { const v = PROPERTY_TYPES[pr.type]?.cost || 0; if (v < lo) { lo = v; idx = k; } });
+          props.forEach((pr, k) => { const v = PROPERTY_TYPES[pr.type]?.cost || 0; if (!pr.vakif && v < lo) { lo = v; idx = k; } }); // F5: vakfa el konulmaz
           const seized = props[idx];
           const credit = Math.round((PROPERTY_TYPES[seized.type]?.cost || 0) * inflationFactor(s) * 0.6);
           props.splice(idx, 1);
@@ -5124,7 +5330,7 @@ function tickCaravan(s: GameState) {
   const route = c.route; const last = route.length - 1;
   c.step = Math.min((c.step ?? 0) + 1, last);
   // Konaklarda saldırı kontrolü — varış menzili de tekin değildir (son ayakta yarı ihtimalle pusu; "son ayak hep güvenli" garantisi kaldırıldı).
-  if (gameRandom(s) < caravanAttackChance(s) * (c.step < last ? 1 : 0.5)) {
+  if (gameRandom(s) < Math.min(0.6, caravanAttackChance(s) * (c.risk ?? 1)) * (c.step < last ? 1 : 0.5)) { // F5: rota çarpanı (eski kayıt 1)
     const lost = Math.round(c.invested * caravanLossPct(s));
     c.invested -= lost; c.lost = (c.lost ?? 0) + lost;
     { const rv2 = gameRandom(s) < 0.5; push(s, "kervan", rv2 ? `Gece konağında oklar uçtu; ${route[c.step]} yakınında yükün bir kısmı eşkıyaya kaldı (${lost} akçe). Sürücüler sağ — mal gider, can kalır.` : `Kervan ${route[c.step]} yakınında eşkıyaya uğradı! ${lost} akçelik mal yağmalandı.`, "kişisel", true, { k: rv2 ? "evj.carRaid2" : "evj.carRaid", p: [{ pl: route[c.step] }, lost] }); }
@@ -5175,7 +5381,13 @@ function cityGoodPriceIndex(s: GameState, loc: string, good: string): number {
 }
 // Oyuncunun seçebilmesi için şehirler arası yük/hedef seçeneklerini fiyat farkına göre sırala.
 // Fiyat farkı kâr garantisi değildir: sermaye doygunluğu, yol riski ve sigorta sonucu değiştirir.
-export interface CaravanRouteOption { dest: string; good: string; spread: number; }
+// F5 kâr–risk–süre üçgeni: yüksek fiyat farkı çoğu zaman uzak ve tekin olmayan pazardadır — rotanın yağma çarpanı (risk)
+// hedefin yol güvenliğiyle ve farkın büyüklüğüyle artar; bölge dışı ve büyük farklı rota daha çok konak sürer.
+export interface CaravanRouteOption { dest: string; good: string; spread: number; risk: number; konak: number; }
+export function caravanRouteRisk(s: GameState, dest: string, spread: number): number {
+  const sec = cityInfo(dest, placeKind(dest)).security + cityFx(s, dest).sec;
+  return Math.round(Math.max(0.5, Math.min(2.2, 0.7 + (55 - sec) / 60 + Math.max(0, spread - 1.15) * 1.2)) * 100) / 100;
+}
 export function caravanRouteOptions(s: GameState, origin = s.player.location_name): CaravanRouteOption[] {
   const goods = Object.keys(GOOD_PRODUCERS);
   const oIdx: Record<string, number> = {};
@@ -5183,12 +5395,31 @@ export function caravanRouteOptions(s: GameState, origin = s.player.location_nam
   const options: CaravanRouteOption[] = [];
   for (const dest of LOCATIONS) {
     if (dest === origin) continue;
+    const uzak = regionOf(dest) !== regionOf(origin) ? 1 : 0;
     for (const g of goods) {
       const spread = cityGoodPriceIndex(s, dest, g) / oIdx[g]; // hedefte pahalı / çıkışta ucuz
-      options.push({ dest, good: g, spread });
+      options.push({ dest, good: g, spread, risk: caravanRouteRisk(s, dest, spread), konak: 1 + uzak + (spread >= 1.35 ? 1 : 0) });
     }
   }
   return options.sort((a, b) => b.spread - a.spread);
+}
+// Ekrandaki üç rota: dengeli (fark/risk en iyisi), en kârlı, en güvenli — hiçbiri her zaman doğru değil.
+export function caravanRouteChoices(s: GameState, origin = s.player.location_name): CaravanRouteOption[] {
+  const all = caravanRouteOptions(s, origin); const ok = all.filter((o) => o.spread > 1.02);
+  const havuz = ok.length >= 3 ? ok : all; const out: CaravanRouteOption[] = [];
+  const ekle = (o?: CaravanRouteOption) => { if (o && !out.some((x) => x.dest === o.dest && x.good === o.good)) out.push(o); };
+  ekle([...havuz].sort((a, b) => (b.spread - 1) / (b.risk * (1 + 0.15 * b.konak)) - (a.spread - 1) / (a.risk * (1 + 0.15 * a.konak)))[0]);
+  ekle(havuz[0]);
+  ekle([...havuz].filter((o) => o.spread >= 1.06).sort((a, b) => a.risk * a.konak - b.risk * b.konak)[0]);
+  for (const o of havuz) { if (out.length >= 3) break; ekle(o); }
+  return out.slice(0, 3);
+}
+// Yağmasız varış şansı (görünür şans): konak başı baskın × rota çarpanı; son ayak yarı ihtimal (tickCaravan ile aynı).
+export function caravanRiskOnizleme(s: GameState, o: Pick<CaravanRouteOption, "risk" | "konak">): ZarOnizleme {
+  const per = Math.min(0.6, caravanAttackChance(s) * o.risk);
+  let sag = 1; for (let k = 1; k <= o.konak; k++) sag *= 1 - per * (k < o.konak ? 1 : 0.5);
+  const oran = Math.max(0, Math.min(1, sag));
+  return { oran, kademe: zarKademe(oran), guc: 0, zorluk: 0, kalemler: [{ etiket: "isl.kv.baskin", deger: -Math.round(per * 100) }, { etiket: "isl.kv.rota", deger: Math.round((o.risk - 1) * 100) / 100 }, { etiket: "isl.kv.konak", deger: o.konak }] };
 }
 // Kervan gönder: en kârlı şehirler-arası rotayı bul, çok konaklı yol kur, her ay bir konak ilerlesin.
 // Pazar tezgâhı: 3 aylık kira — akçe gider, kiralanan şehirde satışlar %20 kârlı olur. Kira yenilenebilir ama üst üste binmez.
@@ -5268,16 +5499,16 @@ export function launchCaravan(prev: GameState, amount: number, insured = false, 
   if (others.length === 0) return s;
   // Arbitraj: en iyi fiyat farkını veren mal+hedef. Bulunamazsa rastgele hedef (emniyet).
   const options = caravanRouteOptions(s, origin);
-  const arb = (choice && options.find((o) => o.dest === choice.dest && o.good === choice.good)) || options[0] || null;
+  const arb = (choice && options.find((o) => o.dest === choice.dest && o.good === choice.good)) || caravanRouteChoices(s, origin)[0] || null; // F5: seçimsiz çağrı en kârlıyı değil dengeli rotayı alır
   const dest = arb ? arb.dest : others[Math.floor(gameRandom(s) * others.length)];
-  // 1-2 ara konak (origin ve hedef hariç).
+  // Ara konaklar (origin ve hedef hariç): rotanın konak sayısı kadar ayak (F5: süre üçgenin bir köşesi).
   const pool = others.filter((l) => l !== dest);
-  const nwp = Math.min(pool.length, 1 + (gameRandom(s) < 0.5 ? 1 : 0));
+  const nwp = Math.min(pool.length, arb ? arb.konak - 1 : 1);
   const waypoints: string[] = [];
   for (let i = 0; i < nwp; i++) waypoints.push(pool.splice(Math.floor(gameRandom(s) * pool.length), 1)[0]);
   const route = [origin, ...waypoints, dest];
   p.money -= amount + prim;
-  s.caravan = { invested: amount, dest, route, step: 0, lost: 0, good: arb?.good, spread: arb?.spread, insured };
+  s.caravan = { invested: amount, dest, route, step: 0, lost: 0, good: arb?.good, spread: arb?.spread, insured, risk: arb?.risk };
   if (insured) push(s, "kervan", `Tüccarlar Loncası kervana kefil oldu; prim peşin ödendi (−${prim} akçe). Yağmada kaybın üçte ikisi lonca kesesinden döner.`, "kişisel", false, { k: "evj.carInsured", p: [prim] });
   const carried = arb ? { i: arb.good } : { i: "bugday" };
   { const cl2 = gameRandom(s) < 0.5; push(s, "kervan", cl2 ? `Develer sabah ezanında çöktürüldü, denkler bağlandı; ${amount} akçelik yük yolda: ${route.join(" → ")}. ${route.length - 1} konak sürecek.` : `${amount} akçelik kervan yola çıktı: ${route.join(" → ")}. ${route.length - 1} konak sürecek.`, "kişisel", false, { k: cl2 ? "evj.carLaunch2" : "evj.carLaunch", p: [amount, { route }, route.length - 1, carried] }); }
@@ -8634,6 +8865,10 @@ export function crimePlanPreview(s: GameState, kind: CrimeKind, approach: CrimeA
   const intel = crimeIntelFor(s, kind);
   if (intel) execution += intel.quality === 2 ? 0.10 : 0.06;
   execution += hunerOranEki(p, "suc"); // K3: Nişancı/Gazi kalemi (kalem başına %8)
+  if (kind === "yankesicilik") { // F5: küçük iş namlıya küçük gelir; el yaşla ağırlaşır, tekrarlanan yüz tanınır
+    loot /= 1 + 0.35 * underworldTier(p);
+    execution -= Math.min(0.15, Math.max(0, p.age - 25) * 0.006) + Math.min(0.15, (p.yanke_n || 0) * 0.01);
+  }
   const baseAttention = ct.sev * 0.05 + dread(s) / 100 * 0.15 + crimeHeat(p) / 220;
   const golgeGizli = p.faction === "golge" ? 0.5 : 1;
   const intelCover = intel ? (intel.quality === 2 ? 0.65 : 0.80) : 1;
@@ -8709,6 +8944,7 @@ export function doCrime(prev: GameState, kind: CrimeKind, approach: CrimeApproac
   const ct = CRIME_TYPES[kind] || CRIME_TYPES.yankesicilik;
   const intel = crimeIntelFor(s, kind);
   const plan = crimePlanPreview(s, kind, approach);
+  if (kind === "yankesicilik") p.yanke_n = (p.yanke_n || 0) + 1; // F5: tekrar sayacı (önizleme denemeden önce okunur)
   p.crime_heat = Math.min(100, crimeHeat(p) + plan.heatGain);
   const kurban = crimeIntelVictim(s, kind) || kurbanSec(s, kind);
   if (intel) delete p.crime_intel;
@@ -9106,10 +9342,28 @@ function tickRetinue(s: GameState) {
 
 // Zar Meclisi (han köşesi kumarı): ayda bir el, kasa hep avantajlı — heyecan satar, servet satmaz.
 // Dinen hoş görülmez (dindar nam düşer); zar meclisinde ara sıra kavga çıkar.
-export function playDice(prev: GameState, bet: number): GameState {
+// F5: iki masa — küçük masa (1'e 1, kavga seyrek) ya da büyük masa (bahis 4 kat, kazanırsan 2.3 katı döner; kasa payı aynı ~%8
+// ama kayıpta kavga sık ve kesede olmayan pay veresiye yazılır → borç). Beklenen değer iki masada da eksidir; karar oynaklıktır.
+export function diceBigStake(bet: number): number { return Math.round(bet * 4); }
+export function playDice(prev: GameState, bet: number, buyuk = false): GameState {
   const s = clone(prev); const p = s.player;
   if (p.dead || p.age < 16 || inJail(p)) return s;
   if (p.gamble_turn === s.turn) return s; // ayda tek el
+  if (buyuk) {
+    const stake = diceBigStake(Math.max(1, Math.floor(bet)));
+    if (p.money < Math.ceil(stake / 2)) return s; // veresiye en çok yarısına kadar
+    p.gamble_turn = s.turn; bumpNam(p, "dindar", -2);
+    if (gameRandom(s) < 0.4) {
+      const kazanc = Math.round(stake * 1.3); p.money += kazanc;
+      push(s, "gunluk", `Büyük masada zarlar senin için döndü (+${kazanc} akçe); meclis sustu, gözler kesende.`, "kişisel", false, { k: "isl.zar.buyukKazan", p: [kazanc] });
+    } else {
+      const nakit = Math.min(p.money, stake); const veresiye = stake - nakit; p.money -= nakit;
+      if (veresiye > 0) { p.debt = (p.debt || 0) + veresiye; if (!p.loan_turn) p.loan_turn = s.turn; }
+      if (gameRandom(s) < 0.2) { p.health = Math.max(1, p.health - 5); unEkle(p, "reputation", -2); push(s, "gunluk", `Büyük masada kese gitti (−${stake} akçe); hile lafı açıldı, iskemleler devrildi (−5 sağlık, itibar −2).`, "kişisel", false, { k: "isl.zar.buyukKavga", p: [stake, veresiye] }); }
+      else push(s, "gunluk", `Büyük masada kaybettin (−${stake} akçe${veresiye ? `, ${veresiye} akçesi veresiye borç` : ""}).`, "kişisel", false, { k: veresiye ? "isl.zar.buyukBorc" : "isl.zar.buyukKayip", p: [stake, veresiye] });
+    }
+    return s;
+  }
   const stake = Math.max(1, Math.min(Math.floor(bet), p.money));
   if (stake <= 0 || p.money < stake) return s;
   p.gamble_turn = s.turn;
@@ -9193,16 +9447,17 @@ export const MULK_YAS = 16; // tapu reşit olmayana verilmez (miras kalan mülk 
 export const MULK_SART: Record<string, { itibar: number; unvan: number }> = { han: { itibar: 15, unvan: 1 }, degirmen: { itibar: 30, unvan: 2 } };
 export function mulkSarti(s: GameState, type: string): { ok: boolean; itibar: number; unvan: number; kapi?: { id: KirilmaId; yas: number; kalan?: number } } {
   const kp = kapiAcik(s, "mulk"), kapi = kp.acik ? {} : { kapi: kp.neden }; // kâtiplikte tapu alınmaz (neden arayüzde)
-  const sr = MULK_SART[type]; if (!sr) return { ok: kp.acik, itibar: 0, unvan: 0, ...kapi };
+  const sinir = isletmeAlinabilir(s.player, type) ? {} : { sinir: true as const }; // F5: aynı anda en çok 3 işletme
+  const sr = MULK_SART[type]; if (!sr) return { ok: kp.acik && !("sinir" in sinir), itibar: 0, unvan: 0, ...kapi, ...sinir };
   const p = s.player; const pr = professionById(p.profession);
   const tier = pr ? careerTier(pr, kariyerXp(p)) : 0;
-  return { ok: kp.acik && (p.reputation >= sr.itibar || tier >= sr.unvan), itibar: sr.itibar, unvan: sr.unvan, ...kapi };
+  return { ok: kp.acik && !("sinir" in sinir) && (p.reputation >= sr.itibar || tier >= sr.unvan), itibar: sr.itibar, unvan: sr.unvan, ...kapi, ...sinir };
 }
 export function buyProperty(prev: GameState, type: string): GameState {
   const s = clone(prev); const p = s.player; const t = PROPERTY_TYPES[type];
   const cost = propBuyCost(s, type);
   if (!t || p.dead || p.age < MULK_YAS || p.money < cost || !mulkSarti(s, type).ok) return s;
-  p.money -= cost; p.properties.push({ type, loc: p.location_name, cond: 100 });
+  p.money -= cost; p.properties.push({ type, loc: p.location_name, cond: 100, ...((ISLETME_TIPLERI as readonly string[]).includes(type) ? { isl: { f: 1, q: 1, nam: 40 } } : {}) }); // F5: yeni işletme az tanınır (nam 40)
   { const pv = chance(0.5); push(s, "mülk_alım", pv ? `Anahtar avucuna düştü; ${p.location_name}'deki ${t.name.toLowerCase()} artık senin. Eşik ilk kez senin adınla aşıldı.` : `${p.location_name}'de ${t.name} satın aldın. Adına bir tapu daha.`, "kişisel", true, { k: pv ? "evj.propBuy2" : "evj.propBuy", p: [{ pl: p.location_name }, { pt2: type }] }); }
   return s;
 }
@@ -9752,7 +10007,7 @@ export function heirPreview(prev: GameState, heirRef: string, willId = "esit", s
   const inheritMoney = Math.floor(netWealth * will.frac) + 20;
   const gen = p.generation + 1;
   const heirLegacy: Record<string, boolean> = { ...(p.legacy || {}) }; delete heirLegacy.hekim; delete heirLegacy.hac;
-  const legacyRep = (heirLegacy.imaret ? 5 : 0) + (heirLegacy.vakif ? 8 : 0) + Math.min(12, Math.floor((p.vakif_fon || 0) / 5000)) + 2 * vakifTier(p.vakif_fon || 0);
+  const legacyRep = (heirLegacy.imaret ? 5 : 0) + (heirLegacy.vakif ? 8 : 0) + Math.min(12, Math.floor((p.vakif_fon || 0) / 5000)) + 2 * vakifTier(p.vakif_fon || 0) + vakifMulkVarisItibari(p); // F5: vakfedilmiş mülkler
   const estateTier = p.estate || 0;
   const saheserIz = saheserMirasAlanlari(prev);
   const invests = childName && p.child_invests ? p.child_invests[childName] || [] : [];
@@ -9798,18 +10053,20 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
   const will = WILL_STYLES.find((w) => w.id === willId) || WILL_STYLES[0];
   const netWealth = Math.max(0, (p.money + (p.deposit || 0)) - (p.debt || 0)); // ödenmemiş borç mirastan düşülür (borç ölümle silinmez)
   const inheritMoney = Math.floor(netWealth * will.frac) + 20; // emanet de mirasa dahil
-  const props = p.properties.slice(0, Math.max(1, Math.ceil(p.properties.length * will.frac))); // vasiyet oranı mülke de işler; kalan hisseler kardeşlere ve vakfa dağılır (boş listede güvenli)
+  const serbest = p.properties.filter((pr) => !pr.vakif);
+  const props = [...p.properties.filter((pr) => pr.vakif), ...serbest.slice(0, Math.max(1, Math.ceil(serbest.length * will.frac)))]; // vasiyet oranı mülke de işler; kalan hisseler kardeşlere dağılır. F5: vakıf bölünmez, mütevellilik vârise geçer
   // Tur-bazlı mülk damgaları vârisin sıfırdan başlayan takvimine yeniden tabanlanır (devir rebase):
   // nadas/bereket süresi kaldığı yerden sürer; süresi geçmiş damga temizlenir. (Kiracı ve bekçi tur bağımsız — olduğu gibi kalır.)
   for (const pr of props) {
     if (pr.fallow_until !== undefined) pr.fallow_until = Math.max(1, pr.fallow_until - prev.turn);
     if (pr.fertile_until !== undefined) { const kalan = pr.fertile_until - prev.turn; if (kalan > 0) pr.fertile_until = kalan; else pr.fertile_until = undefined; }
+    if (pr.isl) { const a = pr.isl = { ...pr.isl }; if (a.etki) { const k = a.etki.until - prev.turn; a.etki = k > 0 ? { ...a.etki, until: k } : undefined; } a.goc = undefined; a.km = undefined; if (a.son) a.son = { ...a.son, t: a.son.t - prev.turn }; } // F5: işletme damgaları
   }
   const gen = p.generation + 1;
   const surname = knownHeir ? (knownHeir.sa || kisiSoyad(knownHeir, lang)) : p.surname;
   // Kalıcı görkem eserleri vârise geçer (oyunun kendi vaadi: "nesiller boyu sürecek") — hekim ve hac kişiseldir, kalmaz.
   const heirLegacy: Record<string, boolean> = { ...(p.legacy || {}) }; delete heirLegacy.hekim; delete heirLegacy.hac;
-  const legacyRep = (heirLegacy.imaret ? 5 : 0) + (heirLegacy.vakif ? 8 : 0) + Math.min(12, Math.floor((p.vakif_fon || 0) / 5000)) + 2 * vakifTier(p.vakif_fon || 0); // atanın hayratı (+fonun büyüklüğü) vârisin adını önden yürütür
+  const legacyRep = (heirLegacy.imaret ? 5 : 0) + (heirLegacy.vakif ? 8 : 0) + Math.min(12, Math.floor((p.vakif_fon || 0) / 5000)) + 2 * vakifTier(p.vakif_fon || 0) + vakifMulkVarisItibari(p); // F5: vakfedilmiş mülkler // atanın hayratı (+fonun büyüklüğü) vârisin adını önden yürütür
   const legacyFameFloor = heirLegacy.anit ? 15 : 0; // anıt: aile adı unutulmaz — vârisin şöhret tabanı
   const estateTier = p.estate || 0; // konak taşınmazdır: vâris aynı çatının altında doğar
   const saheserIz = saheserMirasAlanlari(prev);
@@ -9894,6 +10151,7 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
   const pn = p.nam || { comert: 0, zalim: 0, capkin: 0, dindar: 0, mert: 0 }; const on = s.soy_nam;
   const soyNam: Nam = { comert: 0, zalim: 0, capkin: 0, dindar: 0, mert: 0 };
   for (const key of Object.keys(soyNam) as (keyof Nam)[]) soyNam[key] = Math.floor((pn[key] || 0) / 4 + (on?.[key] || 0) / 2);
+  soyNam.comert += Math.min(3, vakifMulkSayisi(p)); // F5: vakfedilmiş mülk hanedanın cömert nâmına küçük iz bırakır
   const ataIyi = Object.values(ataHatira).filter((v) => v >= 15).length, ataKotu = Object.values(ataHatira).filter((v) => v <= -15).length;
   const nesilSeed = Math.floor(gameRandom(s) * 1e9);
   const ns: GameState = {
@@ -12612,10 +12870,16 @@ export function donateVakif(prev: GameState, amount: number): GameState {
   if (p.dead || !p.legacy?.vakif || amount <= 0 || p.money < amount) return s;
   if (p.vakif_turn === s.turn) return s; // ayda tek bağış — itibar damlası farmlanamaz
   p.vakif_turn = s.turn; p.money -= amount;
-  const onceki = vakifTier(p.vakif_fon || 0);
-  p.vakif_fon = (p.vakif_fon || 0) + amount;
   unEkle(p, "reputation", 2); bumpNam(p, "comert", 3);
   push(s, "bagis", `Vakfına ${amount} akçe akıttın; kazanın altında yanan ateş büyüdü.`, "kişisel", false, { k: "est.vakifFund", p: [amount] });
+  vakifFonaEkle(s, amount);
+  return s;
+}
+// Vakıf fonu tek sayaç: bağış da vakfedilmiş mülkün hayır payı da buraya akar (F5); mertebe eşiği aynı biçimde düşer.
+export function vakifFonaEkle(s: GameState, amount: number) {
+  const p = s.player; if (amount <= 0) return;
+  const onceki = vakifTier(p.vakif_fon || 0);
+  p.vakif_fon = (p.vakif_fon || 0) + amount;
   // Mertebe eşiği aşıldı: bir kezlik büyük an (landmark) — şöhret ve cömert nam mertebeyle büyür.
   const yeni = vakifTier(p.vakif_fon || 0);
   if (yeni > onceki) {
@@ -12623,7 +12887,6 @@ export function donateVakif(prev: GameState, amount: number): GameState {
     const VT_TR = ["", "Vakfın mahallenin direği oldu; kapısında kazan hiç sönmüyor.", "Vakfın şehrin dört yanında anılıyor; adın hayırla yazılıyor.", "Vakfın diyarın en büyük hayratlarından sayılıyor; kervanlar bile yolunu değiştirip uğruyor.", "Vakfın çağlara kalacak bir müessese oldu; adın taşa değil gönüllere kazındı."];
     push(s, "bagis", VT_TR[yeni] || VT_TR[1], "kişisel", true, { k: "est.vakifTier" + yeni });
   }
-  return s;
 }
 export const PRESTIGE: Record<string, { cost: number; repeat?: boolean; once?: boolean }> = {
   hekim:  { cost: 2500,  repeat: true },   // özel hekim → sağlık (ömrü uzatır)
@@ -12651,12 +12914,13 @@ export function fundPrestige(prev: GameState, id: string): GameState {
 // ── PİYASA OYNATMA ("Elon Musk" — haddinden fazla zengin oyuncu ekonominin dinamolarını oynatır) ──
 // Yalnızca çok zengin oyuncu (≥50.000 akçe) büyük sermaye dökerek piyasayı kasıtlı oynatabilir;
 // etki herkesi bağlar (dünya-bazlı sonuç) ve bir süre sürer. Soğuma: aktifken tekrar oynatılamaz.
-export const MARKET_LEVER_MIN = 50000;
+export const MARKET_LEVER_MIN = 8000; // F5: eşik 8.000 × enflasyon (marketLeverMin)
+export function marketLeverMin(s: GameState): number { return Math.round(MARKET_LEVER_MIN * inflationFactor(s)); }
 export function marketLeverCost(s: GameState): number { return Math.round(20000 * inflationFactor(s)); }
 export function canManipulateMarket(s: GameState): { ok: boolean; reason: string } {
   const p = s.player;
   if (p.dead) return { ok: false, reason: "dead" };
-  if (p.money < MARKET_LEVER_MIN) return { ok: false, reason: "poor" };
+  if (p.money < marketLeverMin(s)) return { ok: false, reason: "poor" };
   if ((s.world?.marketLeverUntil || 0) > s.turn) return { ok: false, reason: "cool" };
   if (p.money < marketLeverCost(s)) return { ok: false, reason: "gold" };
   return { ok: true, reason: "" };
@@ -12678,8 +12942,11 @@ export function govReqRep(kind: string): number { return kind === "şehir" ? 50 
 export function isGovernor(p: Player, name: string): boolean { return (p.governorships || []).includes(name); }
 export function canRunForGovernor(s: GameState, name: string): boolean {
   const p = s.player;
-  return !p.dead && p.age >= 18 && !isGovernor(p, name) && !(p.appointedGov || {})[name] && p.reputation >= govReqRep(placeKind(name)); // atanmış vekil olan şehre tekrar vali olunmaz (çift gelir önlenir)
+  return !p.dead && p.age >= 18 && !isGovernor(p, name) && !(p.appointedGov || {})[name] && p.reputation >= govReqRep(placeKind(name)) // atanmış vekil olan şehre tekrar vali olunmaz (çift gelir önlenir)
+    && (p.governorships || []).length < govMaxCount(p); // F5: eşzamanlı valilik sınırı
 }
+// F5: aynı anda en çok 2 valilik (itibar 80+ ise 3) — şehir şehir vali olup itibar/vergi toplanamaz.
+export function govMaxCount(p: Player): number { return p.reputation >= 80 ? 3 : 2; }
 export function runForGovernor(prev: GameState, name: string): GameState {
   const s = clone(prev); const p = s.player;
   if (!canRunForGovernor(s, name)) return s;
@@ -12689,7 +12956,8 @@ export function runForGovernor(prev: GameState, name: string): GameState {
   p.governorships.push(name);
   if (!p.govLeg) p.govLeg = {};
   p.govLeg[name] = 60; // başlangıç meşruiyeti
-  unEkle(p, "reputation", 5); unEkle(p, "fame", 6);
+  if (!p.vali_ilk) { p.vali_ilk = true; unEkle(p, "reputation", 5); unEkle(p, "fame", 6); } // F5: tam ödül yalnız ilk valilikte
+  else { unEkle(p, "reputation", 1); unEkle(p, "fame", 1); }
   push(s, "yonetim", `${name} valiliğine getirildin — artık ${GOV_TITLE[placeKind(name)] || "Vali"}sin.`, "kişisel", true, { k: "evj.govAppoint", p: [{ pl: name }] });
   return s;
 }
@@ -13413,8 +13681,12 @@ export function deliverWorkshopOrder(prev: GameState): GameState {
   if (p.inventory[o.good] <= 0) delete p.inventory[o.good];
   p.money += Math.max(1, Math.round(o.pay));
   const guild = npcLonca(p.profession);
-  if (guild && p.faction === guild) { p.faction_standing = p.faction_standing || {}; p.faction_standing[guild] = Math.min(100, (p.faction_standing[guild] || 0) + 3); }
-  else unEkle(p, "reputation", 2);
+  // F5: aynı şehre art arda teslimde itibar azalır — 3 ayda bir tam (aradan 2 ay geçtiyse yarım, 1 ayda hiç).
+  const sonTam = p.siparis_itibar?.[o.city]; const ara = sonTam == null ? 99 : s.turn - sonTam;
+  const pay = ara >= 3 ? 1 : ara === 2 ? 0.5 : 0;
+  if (pay >= 1) p.siparis_itibar = { ...(p.siparis_itibar || {}), [o.city]: s.turn };
+  if (guild && p.faction === guild) { if (pay > 0) { p.faction_standing = p.faction_standing || {}; p.faction_standing[guild] = Math.min(100, (p.faction_standing[guild] || 0) + Math.round(3 * pay)); } }
+  else if (pay > 0) unEkle(p, "reputation", Math.round(2 * pay));
   p.workshop_order_turn = s.turn;
   addTradePressure(s, o.city, o.good, -0.045);
   delete s.workshopOrder;
@@ -13650,8 +13922,8 @@ export function kirilmaSec(prev: GameState, tip: KirSahne, i: number, kisi?: str
     const nak = Math.min(p.money, kalan); p.money -= nak; kalan -= nak;
     const em = Math.min(p.deposit || 0, kalan); if (em > 0) { p.deposit = (p.deposit || 0) - em; kalan -= em; }
     let satilan = 0;
-    while (kalan > 0 && p.properties.length) {
-      let idx = 0, lo = Infinity; p.properties.forEach((pr, j) => { const v = PROPERTY_TYPES[pr.type]?.cost || 0; if (v < lo) { lo = v; idx = j; } });
+    while (kalan > 0 && p.properties.some((pr) => !pr.vakif)) { // F5: vakıf satılamaz
+      let idx = 0, lo = Infinity; p.properties.forEach((pr, j) => { const v = PROPERTY_TYPES[pr.type]?.cost || 0; if (!pr.vakif && v < lo) { lo = v; idx = j; } });
       const pr = p.properties.splice(idx, 1)[0]; kalan -= Math.round((PROPERTY_TYPES[pr.type]?.cost || 0) * inflationFactor(s) * 0.6); satilan++;
     }
     if (kalan < 0) p.money += -kalan;
@@ -13665,8 +13937,8 @@ export function kirilmaSec(prev: GameState, tip: KirSahne, i: number, kisi?: str
     const eski = p.location_name, bolge = regionOf(eski);
     const ad = LOCATIONS.filter((l) => l !== eski && regionOf(l) !== bolge), havuz = ad.length ? ad : LOCATIONS.filter((l) => l !== eski);
     const hedef = havuz[Math.floor(gameRandom(s) * havuz.length)];
-    const giden = p.properties.filter((pr) => pr.loc === eski).length;
-    p.properties = p.properties.filter((pr) => pr.loc !== eski);
+    const giden = p.properties.filter((pr) => pr.loc === eski && !pr.vakif).length;
+    p.properties = p.properties.filter((pr) => pr.loc !== eski || pr.vakif); // vakıf yerinde kalır, mütevelliliği sürer
     markVisit(p, eski); p.location_name = hedef; p.home_name = hedef; markVisit(p, hedef);
     p.reputation = 0; p.fame = Math.floor(p.fame / 2); unEkle(p, "honor", -8);
     p.faction_standing = { ...p.faction_standing, golge: Math.max(p.faction_standing.golge || 0, 25) };
@@ -13823,6 +14095,9 @@ export function migrate(s: GameState): GameState {
   if (p.properties.length && typeof p.properties[0] === "string") {
     p.properties = p.properties.map((t: any) => ({ type: t, loc: p.location_name, cond: 100 }));
   }
+  // F5: eski han/dükkân sahipleri varsayılan ayarla (olağan fiyat, iyi kalite, nam 50) işletmeye geçer; ilk yıl çevre çarpanı dar bantta.
+  for (const pr of p.properties) if (pr && isletmeMi(pr) && (!pr.isl || typeof pr.isl !== "object")) pr.isl = { f: 1, q: 1, nam: 50, goc: (s.turn || 0) + 12 };
+  for (const pr of p.properties) if (pr?.isl) { const a = pr.isl; if (![0, 1, 2].includes(a.f)) a.f = 1; if (![0, 1, 2].includes(a.q)) a.q = 1; if (!Number.isFinite(a.nam)) a.nam = 50; a.nam = Math.max(0, Math.min(100, a.nam)); if (a.karar && !(ISL_KARARLAR as readonly string[]).includes(a.karar)) { a.karar = undefined; a.kz = undefined; } }
   if (p.generation === undefined) p.generation = 1;
   if (!p.skills) p.skills = { combat: 0, trade: 0, crafting: 0, social: 0 };
   if (!p.skill_xp) p.skill_xp = { combat: 0, trade: 0, crafting: 0, social: 0 };

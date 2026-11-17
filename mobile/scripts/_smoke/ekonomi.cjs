@@ -8,7 +8,7 @@
 // gerçek buyProperty ile alır (yılda en çok bir tapu; yaş ≥ MULK_YAS gibi oyun şartları fonksiyonun kendisinde),
 // evi kiraya verir, bakımı 60'ın altına düşeni onarır. Pasif hiç almaz. EKO_MULK=0 → kimse almaz (karşılaştırma).
 // Kullanım: node scripts/_smoke/ekonomi.cjs [hayat=200]
-//   EKO_JSON=1 → tek satır JSON · EKO_TURLER=pasif,etkin,usta · EKO_GIRIS=<başka game.ts> (deneme kopyası)
+//   EKO_JSON=1 → tek satır JSON · EKO_TURLER=pasif,etkin,usta · EKO_GIRIS=<başka game.ts> (deneme kopyası) · EKO_PAKET=<derlenmiş .cjs>
 const ESBUILD = require("./esbuild-yolu.cjs");
 const { execSync } = require("child_process");
 const os = require("os");
@@ -16,8 +16,8 @@ const fs = require("fs");
 const path = require("path");
 const mobile = path.join(__dirname, "..", "..");
 const paket = path.join(os.tmpdir(), `kronikler-eko-${process.pid}.cjs`);
-execSync(`${ESBUILD} ${process.env.EKO_GIRIS || "lib/game.ts"} --bundle --platform=node --format=cjs --outfile=${paket} --log-level=error`, { cwd: mobile, stdio: "inherit" });
-const g = require(paket);
+if (!process.env.EKO_PAKET) execSync(`${ESBUILD} ${process.env.EKO_GIRIS || "lib/game.ts"} --bundle --platform=node --format=cjs --outfile=${paket} --log-level=error`, { cwd: mobile, stdio: "inherit" });
+const g = require(process.env.EKO_PAKET || paket); // EKO_PAKET: önceden derlenmiş motor paketi (ör. değişiklik öncesi karşılaştırma)
 const LIVES = parseInt(process.argv[2] || "200", 10);
 const R = (a) => a[Math.floor(Math.random() * a.length)];
 const servet = (p) => p.money + (p.deposit || 0);
@@ -110,7 +110,7 @@ for (const tur of (process.env.EKO_TURLER || "pasif,etkin,usta").split(",")) {
   o.son = { hunerMedyan: med(H.map((h) => h.son.hak)), olumYasi: med(H.map((h) => h.son.yas)), gencBos: Math.round(100 * H.filter((h) => h.son.gencBos).length / H.length) };
   sonuc[tur] = o;
 }
-try { fs.unlinkSync(paket); } catch {}
+if (!process.env.EKO_PAKET) try { fs.unlinkSync(paket); } catch {}
 if (process.env.EKO_JSON) { console.log(JSON.stringify(sonuc)); process.exit(0); }
 console.log(`EKONOMİ DENETİMİ · ${LIVES} hayat/tür · mülk alımı ${MULK ? "AÇIK (etkin/usta)" : "KAPALI"}`);
 for (const tur of Object.keys(sonuc)) for (const y of [20, 40, 60, "son"]) {
