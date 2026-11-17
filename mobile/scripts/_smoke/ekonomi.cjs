@@ -79,7 +79,7 @@ function hayat(tur) {
     for (const t of TIPLER) if (!yetti[t] && s.player.age >= 16 && s.player.money >= g.propBuyCost(s, t)) yetti[t] = true;
     const age = s.player.age;
     if (age >= 13 && age <= 20 && s.player.money < 5) gencBos = true;
-    for (const y of [20, 40, 60]) if (age === y && m[y] == null) m[y] = { servet: servet(s.player), mulkDeger: mulkDegeri(s), mulkSayi: s.player.properties.length, ...kay, enf: g.inflationFactor(s) };
+    for (const y of [20, 40, 60]) if (age === y && m[y] == null) m[y] = { servet: servet(s.player), mulkDeger: mulkDegeri(s), mulkSayi: s.player.properties.length, ...kay, enf: g.inflationFactor(s), gider: 12 * g.lifestyleUpkeep(s) + 12 * Math.round(4 * g.inflationFactor(s)) }; // yıllık gider ≈ hane geçimi + sofra (ayda ~4 akçe × enflasyon)
   }
   // Ömür sonunda hak edilen hüner kademesi (seçilmiş + seçilmeyi bekleyen; hedef ~6–9) ve ölüm yaşı
   m.son = { hak: s.player.perks.length + g.pendingPerkCount(s.player), yas: s.player.age, gencBos, alimlar, yetti };
@@ -96,7 +96,8 @@ for (const tur of (process.env.EKO_TURLER || "pasif,etkin,usta").split(",")) {
     o[y] = { n: L.length, servetMedyan: med(L.map((x) => x.servet)), servetOrt: ort(L.map((x) => x.servet)),
       mulkDegerMedyan: med(L.map((x) => x.mulkDeger)), mulkSayiOrt: Math.round(10 * ort(L.map((x) => x.mulkSayi * 10)) / 10) / 10, mulk: ort(L.map((x) => x.mulk)),
       calisma: ort(L.map((x) => x.calisma)), ay: ort(L.map((x) => x.ay)), yemek: ort(L.map((x) => x.yemek)), kart: ort(L.map((x) => x.kart)),
-      enflasyon: Math.round(ort(L.map((x) => x.enf * 1000)) ) / 1000 };
+      enflasyon: Math.round(ort(L.map((x) => x.enf * 1000)) ) / 1000,
+      giderYil: med(L.map((x) => x.gider)), nakitGiderOran: (() => { const r = med(L.map((x) => x.gider > 0 ? x.servet / x.gider : null)); return r == null ? null : Math.round(r * 10) / 10; })() };
   }
   const say = { 0: 0, 1: 0, 2: 0, "3+": 0 }; const tipSay = {}; const ilkYas = []; const yetenTip = {};
   for (const h of H) {
@@ -117,5 +118,5 @@ for (const tur of Object.keys(sonuc)) for (const y of [20, 40, 60, "son"]) {
   if (y === "son") { console.log(`  ${tur.padEnd(5)} kesesi bir kez olsun bedele yeten hayat sayısı: ${TIPLER.map((t) => t + " " + (sonuc[tur].mulk.yetenTip[t] || 0)).join(" · ")}`); }
   if (y === "son") { const z = sonuc[tur].son; console.log(`  ${tur.padEnd(5)} ömür: hüner kademesi medyan ${z.hunerMedyan} · ölüm yaşı medyan ${z.olumYasi} · 13–20 yaşta kesesi dibe vuran %${z.gencBos}`); continue; }
   const x = sonuc[tur][y];
-  console.log(`  ${tur.padEnd(5)} ${y} yaş (n=${x.n}): kese+emanet medyan ${x.servetMedyan} · ort ${x.servetOrt} | birikmiş: çalışma ${x.calisma} · ay kapanışı ${x.ay} · yemek ${x.yemek}${tur !== "pasif" ? " · kart/kapı/sınav " + x.kart : ""} ${MULK && tur !== "pasif" ? ` · mülk alım/onarım ${x.mulk} · mülk ort ${x.mulkSayiOrt} adet (bugünkü bedel medyan ${x.mulkDegerMedyan})` : ""} · enflasyon ×${x.enflasyon}`);
+  console.log(`  ${tur.padEnd(5)} ${y} yaş (n=${x.n}): kese+emanet medyan ${x.servetMedyan} · ort ${x.servetOrt} | birikmiş: çalışma ${x.calisma} · ay kapanışı ${x.ay} · yemek ${x.yemek}${tur !== "pasif" ? " · kart/kapı/sınav " + x.kart : ""} ${MULK && tur !== "pasif" ? ` · mülk alım/onarım ${x.mulk} · mülk ort ${x.mulkSayiOrt} adet (bugünkü bedel medyan ${x.mulkDegerMedyan})` : ""} · enflasyon ×${x.enflasyon} · nakit/yıllık gider medyan ${x.nakitGiderOran} yıl (gider ${x.giderYil})`);
 }
