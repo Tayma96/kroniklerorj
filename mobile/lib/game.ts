@@ -7720,7 +7720,7 @@ export const MEDRESE_DERSLERI: MektepDers[] = [
 export const CALIS_STAT_XP = 14; // ayda bir çalışmanın odak statına tecrübesi
 export const CALIS_BECERI_XP = 7;
 export const MEDRESE_HARCLIK = 2; // medrese talebesine aylık küçük harçlık (enflasyonla)
-export const SIBYAN_ZORLUK = 5, MEDRESE_ZORLUK = 11, ICAZET_ZORLUK = 14, KILIC_ZORLUK = 15; // K2 ölçeği (stat tavanı 20)
+export const SIBYAN_ZORLUK = 5, MEDRESE_ZORLUK = 11, ICAZET_ZORLUK = 16, KILIC_ZORLUK = 15; // K2 ölçeği (stat tavanı 20)
 export const DERS_HALKASI_XP = 25;
 export const MUDERRIS_ZEKA = 12;
 // Eğitim yolu: kayıtta yoksa 13–17 yaş çırak sayılır (F3 öncesi kayıtlar ve vâris).
