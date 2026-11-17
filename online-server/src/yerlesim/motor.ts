@@ -162,6 +162,12 @@ const MULK = "mk";
 const KERVAN = "kv";
 /** [PARAMETRE] Gelen kutusunda gösterilen son kapanan teklif sayısı; söylenti yalanlamanın takat bedeli. */
 export const GELEN_KAPALI_EN_COK = 20;
+/** [PARAMETRE] Yönetici telafisinin teknik üst sınırı (işlem başına; kurucu tavansızdır, bu yalnız sayı güvenliği). */
+export const TELAFI_TEKNIK_AKCE = 1_000_000_000;
+export const TELAFI_TEKNIK_ADET = 1_000_000;
+/** [PARAMETRE] Yönetim oyuncu ayrıntısında gösterilen son istek ve defter ayı sayısı. */
+export const YONETIM_AYRINTI_ISTEK = 10;
+export const YONETIM_AYRINTI_DEFTER_AY = 6;
 export const YALANLAMA_TAKAT = 1;
 const KRONIK = "kronik:";
 
@@ -605,31 +611,65 @@ export class YerlesimMotoru {
     });
   }
 
-  /** Y3: Kurucu telafisi. Yalnız hedef oyuncuya görünen olay ve karakter bazlı tekrar güvenliği. */
+  /**
+   * Y3: yönetici telafisi (YonetimDO'dan; istemci ulaşamaz). `yon: "al"` akçe/mal alır: cüzdan sıfırın altına inmez,
+   * adlı eşya (efsanevi/tılsımlı) düşmez; gerçekte alınan miktar `uygulanan` olarak döner. Tutar/adet üst sınırı
+   * teknik sınırdır (TELAFI_TEKNIK_*); moderatör tavanları YonetimDO'da uygulanır. Yalnız hedef oyuncuya görünen olay
+   * ve karakter bazlı tekrar güvenliği.
+   */
   async yonetimTelafi(hesapId: string, govde: unknown): Promise<Sonuc<unknown>> {
     if (!nesneMi(govde)) return hata("gecersiz_istek");
     return this.#tekrarGuvenli(hesapId, govde, (kar, _s, ay, ek) => {
       if (typeof govde.gerekce !== "string" || govde.gerekce.trim().length < 10 || govde.gerekce.trim().length > 240) return hata("gerekce_gecersiz");
       const gerekce = govde.gerekce.trim();
+      const al = govde.yon === "al";
+      if (govde.yon !== undefined && govde.yon !== "ver" && !al) return hata("deger_sinir_disi");
       let olayParam: Record<string, string | number>;
       let yanit: Record<string, unknown>;
       if (govde.tur === "akce") {
-        if (typeof govde.tutar !== "number" || !Number.isInteger(govde.tutar) || govde.tutar < 1 || govde.tutar > 10000) return hata("deger_sinir_disi");
-        kar.pa += govde.tutar;
-        olayParam = { tutar: govde.tutar, gerekce };
-        yanit = { tur: "akce", tutar: govde.tutar, gerekce };
+        if (typeof govde.tutar !== "number" || !Number.isInteger(govde.tutar) || govde.tutar < 1 || govde.tutar > TELAFI_TEKNIK_AKCE) return hata("deger_sinir_disi");
+        const uygulanan = al ? Math.min(Math.max(0, kar.pa), govde.tutar) : govde.tutar;
+        kar.pa += al ? -uygulanan : uygulanan;
+        olayParam = { tutar: al ? -uygulanan : uygulanan, gerekce };
+        yanit = { tur: "akce", yon: al ? "al" : "ver", tutar: govde.tutar, uygulanan, gerekce };
       } else if (govde.tur === "esya") {
         const mal = malBul(govde.mal);
         if (!mal) return hata("mal_gecersiz");
-        if (typeof govde.adet !== "number" || !Number.isInteger(govde.adet) || govde.adet < 1 || govde.adet > 50) return hata("deger_sinir_disi");
-        envanterEkle(kar, mal, govde.adet);
-        olayParam = { mal, adet: govde.adet, gerekce };
-        yanit = { tur: "esya", mal, adet: govde.adet, gerekce };
+        if (typeof govde.adet !== "number" || !Number.isInteger(govde.adet) || govde.adet < 1 || govde.adet > TELAFI_TEKNIK_ADET) return hata("deger_sinir_disi");
+        const once = kar.ev?.[mal] ?? 0;
+        const sonra = envanterEkle(kar, mal, al ? -govde.adet : govde.adet);
+        const uygulanan = Math.abs(sonra - once);
+        olayParam = { mal, adet: al ? -uygulanan : uygulanan, gerekce };
+        yanit = { tur: "esya", yon: al ? "al" : "ver", mal, adet: govde.adet, uygulanan, gerekce };
       } else {
         return hata("deger_sinir_disi");
       }
       ek.olay = { t: "yonetimTelafi", w: "kurum", h: kar.o, g: kar.o, n: 5, k: govde.tur === "akce" ? "olay.yonetim.telafiAkce" : "olay.yonetim.telafiEsya", p: olayParam };
       return basarili(yanit);
+    });
+  }
+
+  /** Yönetim: oyuncu ayrıntısı (salt okuma; YonetimDO'dan, istemci ulaşamaz). Son işlemler: istek izleri ve aylık defter. */
+  async yonetimAyrinti(hesapId: string): Promise<Sonuc<unknown>> {
+    const s = this.kasaba.sakin.find((x) => x.h === hesapId);
+    if (!s) return hata("sakin_yok");
+    await this.#yukle([s.o]);
+    const kar = this.kasaba.kar.get(s.o);
+    if (!kar) return hata("sakin_yok");
+    const k = this.kasaba;
+    const ev = kar.ev ?? {};
+    return basarili({
+      ad: kar.ad,
+      yerlesim: k.y,
+      yas: yas(kar.d, k.ay),
+      olu: olduMu(kar),
+      para: kar.pa,
+      takat: kar.tk,
+      nam: kar.nm,
+      meslek: { ana: kar.ms?.a ?? "", ilerleme: Object.keys(kar.ms?.s ?? {}) },
+      envanter: { cesit: Object.keys(ev).length, adet: Object.values(ev).reduce((t, n) => t + n, 0), mallar: ev },
+      sonIstekler: (kar.ist ?? []).slice(-YONETIM_AYRINTI_ISTEK).reverse().map(([no, , z]) => ({ no, zaman: z ?? null })),
+      defter: (kar.df ?? []).slice(-YONETIM_AYRINTI_DEFTER_AY).reverse().map(([ay, kalemler]) => ({ ay, kalemler })),
     });
   }
 

@@ -252,6 +252,7 @@ export class YerlesimDO {
     // YonetimDO → YerlesimDO iç çağrıları geri döngü oluşturmamak için parametre/ay dönümü çağırmaz.
     if (ileti.islem === "siyasetKimlik") return motor.siyasetKimlik(ileti.hesapId);
     if (ileti.islem === "yonetimTelafi") return motor.yonetimTelafi(ileti.hesapId, ileti.govde);
+    if (ileti.islem === "yonetimAyrinti") return motor.yonetimAyrinti(ileti.hesapId);
     if (ileti.islem === "ganimetKes" || ileti.islem === "ganimetPay") return motor.ganimet(ileti.islem, ileti.hesapId, ileti.govde);
     await this.#parametreleriYukle(motor);
     await this.#voTazele(motor, simdi);

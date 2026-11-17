@@ -2,6 +2,7 @@
 
 import type { Env, Sonuc } from "../tipler.ts";
 import type { MasaBileti, MasaIleti } from "./tipler.ts";
+import { doAdi } from "../dunya-surumu.ts";
 
 /** Worker → MasaDO yükseltme isteğinde biletin taşındığı iç başlık. Worker istemcinin başlıklarını taşımaz,
  *  isteği sıfırdan kurar; bu yüzden istemci bu başlığı kendisi koyamaz. Başlık ByteString olmalıdır: JSON,
@@ -9,7 +10,7 @@ import type { MasaBileti, MasaIleti } from "./tipler.ts";
 export const BILET_BASLIGI = "x-kronikler-masa-bileti";
 
 function masaKoku(env: Env, ad: string): DurableObjectStub {
-  return env.MASA.get(env.MASA.idFromName(ad));
+  return env.MASA.get(env.MASA.idFromName(doAdi(env, ad)));
 }
 
 export async function masaCagir<T>(env: Env, ad: string, ileti: MasaIleti): Promise<Sonuc<T>> {

@@ -2,14 +2,14 @@
 // - GET  /yonetim/etkinlikler        → katalog, etkin olanlar (ne zamandır açık), geçmiş, beylik/yerleşim seçenekleri
 // - POST /yonetim/etkinlik-baslat    {tur, kapsam, hedef?, saat, gerekce?, istekNo} → etkinlik
 // - POST /yonetim/etkinlik-durdur    {id, istekNo} → durdurulan etkinlik
-// Başlatma/durdurma yalnız Kurucu (yetki: etkinlikYonet), her biri işlem kaydına girer ve istekNo ile tekrar güvenlidir.
+// Başlatma/durdurma: kurucu ve yetki verilmiş moderatör (yetki: etkinlikYonet); süre sınırı yalnız moderatöre, her biri işlem kaydına girer ve istekNo ile tekrar güvenlidir.
 // Yerleşim her istekte `parametrelerCalisma {yerlesim}` ile etkin listeyi alır: durdurma bir sonraki istekte söner.
 
 import type { Depo } from "../depo.ts";
 import { BEYLIKLER } from "../dunya-veri.ts";
 import { istekNoCoz } from "../mantik.ts";
 import { basarili, type Sonuc } from "../tipler.ts";
-import { reddet, tekrar, yaz, yetkiIste, type Oturum } from "../yonetim/islem.ts";
+import { kurucuMu, reddet, tekrar, yaz, yetkiIste, type Oturum } from "../yonetim/islem.ts";
 import { gerekceCoz } from "../yonetim/yaptirim.ts";
 import {
   ETKINLIK_ETKIN_EN_COK,
@@ -35,6 +35,8 @@ const AKTIF = "etk:aktif";
 const GECMIS = "etk:gecmis";
 const SAYAC = "etk:sayac";
 const SAAT_MS = 3_600_000;
+/** [PARAMETRE] Kurucunun açabileceği en uzun süre (saat; yalnız sayı güvenliği, ≈10 yıl). 0 = süresiz her zaman açık. */
+export const ETKINLIK_SAAT_TEKNIK = 24 * 365 * 10;
 
 function nesneMi(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
@@ -107,7 +109,9 @@ export async function etkinlikBaslat(o: Oturum, govde: unknown): Promise<Sonuc<u
   if (!no.ok) return reddet(o, "etkinlikBaslat", no.hata);
   if (!turMu(g.tur) || !kapsamMi(g.kapsam) || !hedefGecerli(g.kapsam, g.hedef)) return reddet(o, "etkinlikBaslat", "etkinlik_gecersiz");
   const saat = g.saat === undefined ? ETKINLIKLER[g.tur].saat : g.saat;
-  if (typeof saat !== "number" || !Number.isInteger(saat) || saat < 0 || saat > ETKINLIK_SAAT_EN_COK) {
+  // Süre sınırı yalnız moderatöre: kurucu istediği kadar açık tutar (teknik sınır ETKINLIK_SAAT_TEKNIK).
+  const saatSiniri = kurucuMu(o) ? ETKINLIK_SAAT_TEKNIK : ETKINLIK_SAAT_EN_COK;
+  if (typeof saat !== "number" || !Number.isInteger(saat) || saat < 0 || saat > saatSiniri) {
     return reddet(o, "etkinlikBaslat", "etkinlik_gecersiz");
   }
   const gerekceHam = g.gerekce === undefined || g.gerekce === "" ? `Canlı etkinlik: ${ETKINLIKLER[g.tur].ad}` : g.gerekce;

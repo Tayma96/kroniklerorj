@@ -69,6 +69,12 @@ export class HesapDO {
     const simdi = Date.now();
     // Yönetimin iç yazımı oyuncunun hız sınırına takılmaz.
     if (ileti.islem === "yaptirimYaz") return jsonYanit(await this.#yaptirimYaz(ileti.durum, ileti.hesapId));
+    // Yönetim oyuncu ayrıntısı (salt okuma): hesap kaydı, oturum sürümü ve etkin yaptırım özeti.
+    if (ileti.islem === "yonetimOzet") {
+      const k = await hesapKaydi(this.#depo);
+      if (!k) return jsonYanit(hata("hesap_yok"));
+      return jsonYanit(basarili({ olusturma: k.olusturma, sonGiris: k.sonGiris ?? null, oturumSurumu: await this.#oturumSurumuOku(), yaptirim: (await this.#yaptirimDurumu()) ?? {} }));
+    }
     // Debdebe iç iletileri (başka HesapDO ya da YonetimDO): hız sınırı ve yaptırım uygulanmaz.
     if (ileti.islem === "debdebeRozet") return jsonYanit(await debdebe.rozetAl(this.#depo, ileti.rozet));
     if (ileti.islem === "debdebeRozetSil") return jsonYanit(await debdebe.rozetKaldir(this.#depo, ileti.id));

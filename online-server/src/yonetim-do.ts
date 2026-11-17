@@ -13,6 +13,7 @@ import { yonetimIsle, type YonetimBaglami } from "./yonetim/islem.ts";
 import { kurucuListesi } from "./yonetim/yetki.ts";
 import { masaAtmaKaydet } from "./han/y1-kayit.ts";
 import { etkinlikCalisma } from "./etkinlik/yonetim.ts";
+import { dunyaSurumu } from "./dunya-surumu.ts";
 
 /** [PARAMETRE] Yönetici (e-posta) başına dakikadaki istek sınırı. */
 export const YONETIM_HIZ_SINIRI = 60;
@@ -43,11 +44,46 @@ export function hizTablosuSay(
   return h.izin;
 }
 
+/** [PARAMETRE] Kurucu anahtarı: IP başına pencerede en çok başarısız deneme ve pencere süresi. */
+export const ANAHTAR_IP_HATA = 5;
+export const ANAHTAR_PENCERE_MS = 15 * 60_000;
+/** [PARAMETRE] Kurucu anahtarı: bütün IP'ler toplamı saatlik başarısız deneme tavanı (dağıtık denemeye karşı). */
+export const ANAHTAR_GENEL_HATA_SAATLIK = 30;
+
+export interface AnahtarSayaci {
+  ip: Map<string, { p: number; n: number }>;
+  genel: { p: number; n: number };
+}
+
+export function anahtarSayaciYeni(): AnahtarSayaci {
+  return { ip: new Map(), genel: { p: -1, n: 0 } };
+}
+
+/** Saf: bu IP şimdi deneyebilir mi (IP penceresi ve genel saatlik tavan dolmadıysa). */
+export function anahtarIzin(s: AnahtarSayaci, ip: string, simdi: number): boolean {
+  const p = Math.floor(simdi / ANAHTAR_PENCERE_MS);
+  const g = Math.floor(simdi / 3_600_000);
+  if (s.genel.p === g && s.genel.n >= ANAHTAR_GENEL_HATA_SAATLIK) return false;
+  const k = s.ip.get(ip);
+  return !(k && k.p === p && k.n >= ANAHTAR_IP_HATA);
+}
+
+/** Saf: başarısız denemeyi sayar; tablo HIZ_TABLOSU_EN_COK'u aşınca eski pencereler atılır. */
+export function anahtarHataSay(s: AnahtarSayaci, ip: string, simdi: number): void {
+  const p = Math.floor(simdi / ANAHTAR_PENCERE_MS);
+  const g = Math.floor(simdi / 3_600_000);
+  s.genel = s.genel.p === g ? { p: g, n: s.genel.n + 1 } : { p: g, n: 1 };
+  if (!s.ip.has(ip) && s.ip.size >= HIZ_TABLOSU_EN_COK) for (const [k, d] of s.ip) if (d.p < p) s.ip.delete(k);
+  const k = s.ip.get(ip);
+  s.ip.set(ip, k && k.p === p ? { p, n: k.n + 1 } : { p, n: 1 });
+}
+
 export class YonetimDO {
   readonly #depo: Depo;
   readonly #env: Env;
   readonly #hiz = new Map<string, HizDurumu>();
   #yetkisiz: HizDurumu | undefined;
+  readonly #anahtar = anahtarSayaciYeni();
 
   constructor(ctx: DurableObjectState, env: Env) {
     this.#depo = doDepo(ctx.storage);
@@ -76,6 +112,14 @@ export class YonetimDO {
       simdi,
       kurucular: kurucuListesi(env.YONETICI_EPOSTALAR),
       oyuncuBul: (sorgu) => dunyaCagir<Profil>(env, { islem: "oyuncuBul", ...sorgu }),
+      dunyaCagir: (i) => dunyaCagir(env, i),
+      ayrintiOku: (yerlesim, hesapId) => yerlesimCagir(env, { islem: "yonetimAyrinti", yerlesim, hesapId }),
+      dunyaSurumu: dunyaSurumu(env),
+      ...(env.YONETIM_KURUCU_ANAHTARI ? { kurucuAnahtari: env.YONETIM_KURUCU_ANAHTARI } : {}),
+      anahtarSiniri: {
+        izin: (ip) => anahtarIzin(this.#anahtar, ip, simdi),
+        hata: (ip) => anahtarHataSay(this.#anahtar, ip, simdi),
+      },
       siyasiKimlikOku: (hesapId, yerlesim) => yerlesimCagir<SiyasiKimlik>(env, { islem: "siyasetKimlik", yerlesim, hesapId }),
       telafiYaz: (yerlesim, hedef, govde) => yerlesimCagir(env, { islem: "yonetimTelafi", yerlesim, hesapId: hedef, govde }),
       ekonomiOku: async () => {

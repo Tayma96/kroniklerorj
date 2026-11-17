@@ -23,26 +23,40 @@ import {
   yaptirimGirdisiCoz,
   type Yaptirim,
 } from "../src/yonetim/yaptirim.ts";
-import { epostaDuzenle, kurucuListesi, rolCoz, yetkiler, yetkiVar, YETKI } from "../src/yonetim/yetki.ts";
+import { epostaDuzenle, ISLEM_ADLARI, kurucuListesi, MOD_VARSAYILAN, MOD_YETKILERI, modYetkileri, modYetkiListesiCoz, rolCoz, yetkiler, yetkiVar } from "../src/yonetim/yetki.ts";
 import { googleYuku, ISTEMCI, jwtImzala, rsaAnahtari, sahteJwks } from "./yardimci.ts";
 
 const GIZLI = "o".repeat(48);
 const IST = "istek-000001";
 
-test("yetki matrisi: moderatör sınırlı, kurucu her şey, bilinmeyen ve rolsüz reddedilir", () => {
-  for (const i of ["sikayetGor", "sikayetKarar", "susturma", "uzaklastirma", "oyuncuGor", "adDegisikligiZorunlu", "yaptirimKaldir"]) {
+test("yetki matrisi: kurucu her şey; moderatör varsayılan ya da kişisel yetkiler; bilinmeyen ve rolsüz reddedilir", () => {
+  for (const i of ["sikayetGor", "sikayetKarar", "susturma", "uzaklastirma", "oyuncuGor", "yaptirimKaldir", "etkinlikGor", "ben", "giris", "oturumKapat"]) {
     assert.ok(yetkiVar("moderator", i), i);
   }
-  for (const i of ["parametreDegistir", "parametreGeri", "kaliciUzaklastirma", "kaliciKaldir", "rolVer", "duyuru", "iade", "kayitGor"]) {
+  for (const i of ["parametreDegistir", "parametreGeri", "kaliciUzaklastirma", "kaliciKaldir", "rolVer", "duyuru", "kayitGor", "telafi", "telafiGeri", "ekonomi", "oyuncuAyrinti"]) {
     assert.equal(yetkiVar("moderator", i), false, i);
     assert.ok(yetkiVar("kurucu", i), i);
   }
-  for (const i of Object.keys(YETKI)) assert.ok(yetkiVar("kurucu", i));
+  for (const i of Object.keys(ISLEM_ADLARI)) assert.ok(yetkiVar("kurucu", i));
+  // Ölü yetkiler kaldırıldı (ad değişikliği zorunluluğu, iade, geri alma yerine telafiGeri).
+  for (const i of ["adDegisikligiZorunlu", "iade", "geriAlma"]) assert.equal(yetkiVar("kurucu", i), false, i);
   assert.equal(yetkiVar("kurucu", "dunyayiSil"), false);
   assert.equal(yetkiVar("kurucu", "toString"), false);
   assert.equal(yetkiVar(undefined, "ben"), false);
   assert.deepEqual(yetkiler(undefined), []);
   assert.ok(yetkiler("moderator").length < yetkiler("kurucu").length);
+  // Kişisel yetki: kurucu açtığı kadar; rolVer moderatöre hiç verilemez.
+  const kisisel = modYetkiListesiCoz(["telafi", "ekonomi", "telafi"])!;
+  assert.deepEqual(kisisel, ["ekonomi", "telafi"]);
+  assert.ok(yetkiVar("moderator", "telafi", kisisel));
+  assert.equal(yetkiVar("moderator", "susturma", kisisel), false, "kapatılan varsayılan yetki işlemez");
+  assert.equal(modYetkiListesiCoz(["rolVer"]), undefined);
+  assert.equal(modYetkiListesiCoz(["ben"]), undefined);
+  assert.equal(modYetkiListesiCoz(["uydurma"]), undefined);
+  assert.equal(yetkiVar("moderator", "rolVer", MOD_YETKILERI), false);
+  assert.ok(!MOD_YETKILERI.includes("rolVer"));
+  assert.deepEqual(modYetkileri(undefined), MOD_VARSAYILAN);
+  assert.deepEqual(modYetkileri({ y: ["ekonomi", "eskiYetki" as never], t: 0 }), ["ekonomi"]);
 });
 
 test("roller: ortamdaki kurucu baskın, boş liste kimseyi yönetici yapmaz, istemci rolü yok sayılır", () => {
@@ -152,7 +166,9 @@ test("şikayet girdisi ve günlük sınır (TR günü)", () => {
 test("yönetici belirteci oyuncu belirtecinden ayrıdır ve 12 saat geçerlidir", async () => {
   const simdi = Date.now();
   const yb = await yoneticiOturumuOlustur({ sub: "1234", eposta: "k@o.com" }, GIZLI, simdi);
-  assert.deepEqual(await yoneticiOturumuDogrula(yb, GIZLI, simdi), { ok: true, sub: "1234", eposta: "k@o.com" });
+  assert.deepEqual(await yoneticiOturumuDogrula(yb, GIZLI, simdi), { ok: true, sub: "1234", eposta: "k@o.com", surum: 0 });
+  const yb3 = await yoneticiOturumuOlustur({ sub: "1234", eposta: "k@o.com" }, GIZLI, simdi, 3);
+  assert.deepEqual(await yoneticiOturumuDogrula(yb3, GIZLI, simdi), { ok: true, sub: "1234", eposta: "k@o.com", surum: 3 }, "oturum sürümü belirteçte taşınır");
   assert.deepEqual((await oturumDogrula(yb, GIZLI, simdi)).ok, false, "yönetici belirteci oyuncu doğrulamasından geçmez");
   const ob = await oturumOlustur("do-hesap", GIZLI, simdi);
   assert.deepEqual(await yoneticiOturumuDogrula(ob, GIZLI, simdi), { ok: false, hata: "oturum_gecersiz" });

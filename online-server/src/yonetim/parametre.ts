@@ -85,10 +85,22 @@ export function caprazIhlaller(d: (ad: ParametreAdi) => number): (keyof typeof C
   return (Object.keys(CAPRAZ_KURALLAR) as (keyof typeof CAPRAZ_KURALLAR)[]).filter((k) => !CAPRAZ_KURALLAR[k](d));
 }
 
-/** Yeni etkin değerle (öbürleri mevcut etkin değer) çapraz sınırları denetler. */
+/** Kuralların payı (> 0 ya da ≥ 0 geçerli): ihlal varken payın küçülmesi kuralı kötüleştirir. */
+export const CAPRAZ_PAYLAR = {
+  siparisNpc: (d: (ad: ParametreAdi) => number) => d("NPC_CARPAN") - (1 + d("KITLIK_PRIM")) * d("SIPARIS_ODUL_CARPANI"),
+  stokKitlik: (d: (ad: ParametreAdi) => number) => d("STOK_CARPAN") - (1 + d("KITLIK_PRIM")),
+} as const satisfies Record<keyof typeof CAPRAZ_KURALLAR, (d: (ad: ParametreAdi) => number) => number>;
+
+/**
+ * Yeni etkin değerle (öbürleri mevcut etkin değer) çapraz sınırları denetler. Yalnız değişikliğin bozduğu ya da
+ * kötüleştirdiği kurallar reddedilir: önceden var olan bir ihlal, ona dokunmayan (payını küçültmeyen) değişikliği
+ * kilitlemez; ihlali düzelten ya da hafifleten değişiklik her zaman geçer.
+ */
 export function caprazDenetle(ad: ParametreAdi, yeni: number, etkin: (ad: ParametreAdi) => number): { hata: HataKodu; kurallar: string[] } | undefined {
-  const ihlal = caprazIhlaller((x) => (x === ad ? yeni : etkin(x)));
-  return ihlal.length ? { hata: "parametre_capraz", kurallar: ihlal } : undefined;
+  const sonra = (x: ParametreAdi) => (x === ad ? yeni : etkin(x));
+  const onceIhlal = new Set(caprazIhlaller(etkin));
+  const kotu = caprazIhlaller(sonra).filter((k) => !onceIhlal.has(k) || CAPRAZ_PAYLAR[k](sonra) < CAPRAZ_PAYLAR[k](etkin));
+  return kotu.length ? { hata: "parametre_capraz", kurallar: kotu } : undefined;
 }
 
 /** [PARAMETRE] Parametre kaydında tutulan geçmiş uzunluğu (tam geçmiş işlem kaydındadır). */

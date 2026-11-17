@@ -86,3 +86,9 @@ TEST_GIRIS_ACIK = "1"
 # Uygulama anahtarı burada DEĞİL: `wrangler secret put REALTIME_APP_TOKEN`. İsteğe bağlı TURN: REALTIME_TURN_ID (vars) +
 # `wrangler secret put REALTIME_TURN_TOKEN`.
 REALTIME_APP_ID = "48937fa89fb088fd9ba3aa3ddff85038"
+# Dünya sürümü (yayın öncesi sıfırlama; README "Yayın öncesi sıfırlama"). "1" bugünkü dünyadır (DO adlarına önek
+# eklenmez). Başka bir değer (ör. "2") verilip dağıtılınca herkes boş dünyada sıfırdan başlar; yönetim kaydı ve
+# yönetici rolleri korunur. Geri "1" yazılırsa eski dünya geri gelir (veri silinmez, yalnız kullanılmaz).
+DUNYA_SURUMU = "1"
+# YONETIM_KURUCU_ANAHTARI (en az 32 karakter) burada DEĞİL: `wrangler secret put YONETIM_KURUCU_ANAHTARI` ile sır olarak
+# konur. Tanımlıysa panelde "Kurucu anahtarı" ile kurucu girişi açıktır; tanımsızsa bu yol kapalıdır.

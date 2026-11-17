@@ -222,6 +222,29 @@ export async function adAra(
   return basarili({ sonuclar, imlec: anahtarlar.length > sinir && son ? imlecYaz(son) : null });
 }
 
+/** [PARAMETRE] Yönetim kimlik özetinde tek istekte en çok hesap. */
+export const KIMLIK_OZET_EN_COK = 200;
+
+/**
+ * Yönetim (YonetimDO) için: hesap kimliklerinin görünen adı, oyuncu numarası ve yerleşimi. Profil yoksa ad boş,
+ * numara henüz üretilmediyse null. Engel süzmesi yoktur (yönetici aracı); istemciye doğrudan dönmez.
+ */
+export async function kimlikOzetleri(depo: Depo, ham: unknown): Promise<Sonuc<Record<string, { ad: string; numara: number | null; yerlesim: string | null }>>> {
+  if (!Array.isArray(ham) || ham.length > KIMLIK_OZET_EN_COK || !ham.every((h) => typeof h === "string" && h.length > 0 && h.length <= 128)) return hata("gecersiz_istek");
+  const hesaplar = [...new Set(ham as string[])];
+  const [kayitlar, profiller] = await Promise.all([
+    depo.alCok<NumaraKaydi>(hesaplar.map((h) => NK + h)),
+    depo.alCok<Profil>(hesaplar.map((h) => KAYIT + h)),
+  ]);
+  const sonuc: Record<string, { ad: string; numara: number | null; yerlesim: string | null }> = {};
+  for (const h of hesaplar) {
+    const k = kayitlar.get(NK + h);
+    const p = profiller.get(KAYIT + h);
+    sonuc[h] = { ad: p?.ad ?? k?.ad ?? "", numara: k?.n ?? null, yerlesim: p?.yerlesim ?? null };
+  }
+  return basarili(sonuc);
+}
+
 /** Beylik adı (sonuç kartı için). */
 export function beylikAdi(id: string): string {
   return BEYLIKLER.find((b) => b.id === id)?.ad ?? id;

@@ -1,12 +1,12 @@
 // Y3 Debdebe yönetimi (ana tasarım §7.1–7.3): satın alma defteri (mağaza işlem kimliği → hesap; bütün hesaplarda bir
 // kez varlık verir) ve Kurucu'nun Debdebe iadesi. İade gerekçe ister, işlem kaydına yalnız eklenir, istekNo ile tekrar
-// güvenlidir; yönetici kendi oyuncu hesabının satın alımını iade edemez (kendine fayda yasağı). İade varlığı
+// güvenlidir; moderatör kendi oyuncu hesabının satın alımını iade edemez (kendine fayda yasağı; kurucuya uygulanmaz). İade varlığı
 // HesapDO'da geri alır; defter "iade" olur ve aynı makbuz bir daha varlık vermez.
 // TODO(Y3): mağaza iade bildirimleri (Google RTDN, App Store Server Notifications V2) bu deftere `iade` yazacak uç.
 
 import { istekNoCoz } from "../mantik.ts";
 import { basarili, hata, type Sonuc } from "../tipler.ts";
-import { hane, kayitHazirla, reddet, tekrar, yaz, yetkiIste, type Ek, type Oturum, type YonetimBaglami } from "./islem.ts";
+import { hane, kayitHazirla, kurucuMu, reddet, tekrar, yaz, yetkiIste, type Ek, type Oturum, type YonetimBaglami } from "./islem.ts";
 import { gerekceCoz, hesapIdCoz } from "./yaptirim.ts";
 
 /** [PARAMETRE] Sayfa boyu ve hesap başına dizinde tutulan işlem sayısı. */
@@ -28,6 +28,8 @@ export interface DebdebeDefterKaydi {
   durum: "verildi" | "iade";
   test?: boolean;
   iade?: { kim: string; zaman: number; gerekce: string };
+  /** Kaydın bağlandığı dünya sürümü (eski kayıtta yok → "1"). Dünya sıfırlanınca makbuz yeni hesaba bağlanabilir. */
+  ds?: string;
 }
 
 /** HesapDO'dan: işlem kimliğini bu hesaba sahiplendirir. Başka hesaba aitse ya da iade edildiyse reddedilir. */
@@ -36,6 +38,15 @@ export async function debdebeKayit(b: YonetimBaglami, k: unknown): Promise<Sonuc
   const g = k as Record<string, unknown>;
   if (typeof g.islem !== "string" || g.islem.length > 200 || typeof g.hesap !== "string" || typeof g.urun !== "string" || typeof g.magaza !== "string") return hata("gecersiz_istek");
   const var_ = await b.depo.al<DebdebeDefterKaydi>(DEFTER + g.islem);
+  const surum = b.dunyaSurumu ?? "1";
+  // Dünya sıfırlandıysa (sürüm değişti) önceki dünyanın makbuzu yeni dünyadaki hesaba bir kez yeniden bağlanır:
+  // gerçek parayla alınan varlık sıfırlamada kaybolmaz. İade edilmiş makbuz yine reddedilir.
+  if (var_ && var_.durum !== "iade" && (var_.ds ?? "1") !== surum && var_.hesap !== g.hesap) {
+    const tasinan: DebdebeDefterKaydi = { ...var_, hesap: g.hesap, ds: surum };
+    const liste = [...((await b.depo.al<string[]>(HESAP + g.hesap)) ?? []), g.islem].slice(-DEBDEBE_HESAP_EN_COK);
+    await b.depo.koy({ [DEFTER + g.islem]: tasinan, [HESAP + g.hesap]: liste });
+    return basarili({ no: var_.no, yeni: true });
+  }
   if (var_) {
     if (var_.hesap !== g.hesap) return hata("makbuz_kullanilmis");
     if (var_.durum === "iade") return hata("makbuz_iade");
@@ -45,6 +56,7 @@ export async function debdebeKayit(b: YonetimBaglami, k: unknown): Promise<Sonuc
   const kayit: DebdebeDefterKaydi = {
     no, islem: g.islem, magaza: g.magaza, urun: g.urun.slice(0, 40), hesap: g.hesap, zaman: b.simdi, durum: "verildi",
     ...(g.test === true ? { test: true } : {}),
+    ...(surum !== "1" ? { ds: surum } : {}),
   };
   const liste = [...((await b.depo.al<string[]>(HESAP + g.hesap)) ?? []), g.islem].slice(-DEBDEBE_HESAP_EN_COK);
   await b.depo.koy({ [SAYAC]: no, [DEFTER + g.islem]: kayit, [SIRA + hane(no)]: g.islem, [HESAP + g.hesap]: liste });
@@ -98,7 +110,7 @@ export async function debdebeIade(o: Oturum, govde: unknown): Promise<Sonuc<unkn
   const kayit = await o.b.depo.al<DebdebeDefterKaydi>(DEFTER + islem);
   if (!kayit) return reddet(o, "debdebeIade", "islem_yok", ek0);
   const ek: Ek = { hedef: kayit.hesap, gerekce: gerekce.deger, ayrinti: { islem, urun: kayit.urun } };
-  if (kayit.hesap === o.y.hesap) return reddet(o, "debdebeIade", "kendi_hedef", ek);
+  if (!kurucuMu(o) && kayit.hesap === o.y.hesap) return reddet(o, "debdebeIade", "kendi_hedef", ek);
   if (!o.b.hesabaIlet) return reddet(o, "debdebeIade", "yapilandirma_eksik", ek);
   // HesapDO iadesi tekrar güvenlidir: defter zaten "iade" ise yine çağrılır (yarım kalan iade tamamlanır).
   const h = await o.b.hesabaIlet(kayit.hesap, { islem: "debdebeIade", hesapId: kayit.hesap, islemKimligi: islem });

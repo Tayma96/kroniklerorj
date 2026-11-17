@@ -473,6 +473,13 @@ export interface Env {
   YONETICI_EPOSTALAR?: string;
   /** İsteğe bağlı: yönetici girişinde kabul edilen Google istemci kimlikleri; yoksa GOOGLE_CLIENT_ID. */
   YONETIM_GOOGLE_CLIENT_ID?: string;
+  /**
+   * Kurucu anahtarı (sır: `wrangler secret put YONETIM_KURUCU_ANAHTARI`, en az 32 karakter). Google girişi kurulana
+   * dek panelde "Kurucu anahtarı" ile kurucu oturumu açar. Tanımsız ya da kısaysa bu giriş yolu kapalıdır.
+   */
+  YONETIM_KURUCU_ANAHTARI?: string;
+  /** Dünya sürümü ([vars], varsayılan "1"): değişince oyun DO'ları boş başlar; YonetimDO korunur (src/dunya-surumu.ts). */
+  DUNYA_SURUMU?: string;
   /** Debdebe satışı: "1" açık; başka her değer ya da yoksa kapalı (varsayılan). */
   DEBDEBE_ACIK?: string;
   /** "1": mağaza test (sandbox/lisans testçisi) satın almaları kabul edilir. Üretimde konmaz. */
@@ -563,6 +570,8 @@ export type HesapIleti = (
   | { islem: "siyasetYaz"; hesapId: string; govde: unknown }
   /** YonetimDO → HesapDO: hesabın etkin yaptırım özeti (tamamı yazılır; tekrar güvenli). */
   | { islem: "yaptirimYaz"; hesapId: string; durum: HesapYaptirimi }
+  /** YonetimDO → HesapDO: hesap kaydı özeti (oluşturma, son giriş, oturum sürümü, yaptırım); salt okuma. */
+  | { islem: "yonetimOzet"; hesapId: string }
   /** POST /v1/oturumlar/kapat: hesabın oturum sürümünü artırır (bütün belirteçler düşer). */
   | { islem: "oturumlariKapat"; hesapId: string }
   /** Göç (D1): POST /v1/goc {hedef, istekNo} ve önizleme GET /v1/goc?hedef= (src/goc-hesap.ts). */
@@ -589,6 +598,8 @@ export interface YoneticiKimligi {
   sub: string;
   /** Yöneticinin kendi oyuncu hesabının kimliği (hesapKimligi(sub)); kendine fayda yasağı için. */
   hesap: string;
+  /** Belirteçteki yönetici oturum sürümü (yoksa 0); YonetimDO'daki güncel sürümle eşleşmezse oturum geçersizdir. */
+  surum?: number;
 }
 
 export const YONETIM_UCLARI = {
@@ -612,12 +623,19 @@ export const YONETIM_UCLARI = {
   etkinlikler: "GET",
   "etkinlik-baslat": "POST",
   "etkinlik-durdur": "POST",
+  "telafi-geri": "POST",
+  "oyuncu-ara": "GET",
+  "oyuncu-ayrinti": "GET",
+  moderatorler: "GET",
+  "oturumlari-kapat": "POST",
 } as const satisfies Record<string, "GET" | "POST">;
 export type YonetimUcu = keyof typeof YONETIM_UCLARI;
 
 export type YonetimIleti =
   | { islem: "parametrelerCalisma"; yerlesim?: string }
   | { islem: "giris"; yonetici: YoneticiKimligi }
+  /** Worker → YonetimDO: kurucu anahtarıyla giriş (IP başına başarısız deneme sınırı ve karşılaştırma DO'da). */
+  | { islem: "anahtarGiris"; ip: string; anahtar: string }
   | { islem: "yonet"; yonetici: YoneticiKimligi; uc: YonetimUcu; govde?: unknown; sorgu?: Record<string, string | null> }
   /** HesapDO → YonetimDO: oyuncu şikayeti. */
   | { islem: "sikayetEkle"; sikayetci: string; govde: unknown; masa?: { ad: string; no: number }; ilan?: { id: string; metin: string } }
@@ -716,6 +734,8 @@ export type KervanIstemciIletisi =
 export type YerlesimIleti =
   | { islem: "ekonomiSagligi"; yerlesim: string }
   | { islem: "yonetimTelafi"; yerlesim: string; hesapId: string; govde: unknown }
+  /** YonetimDO: oyuncu ayrıntısı (cüzdan, envanter özeti, meslek, son işlemler); salt okuma. */
+  | { islem: "yonetimAyrinti"; yerlesim: string; hesapId: string }
   | { islem: "sakinEkle"; yerlesim: string; sakin: SakinKaydi }
   | { islem: "durum"; yerlesim: string; hesapId: string; dil?: string | null }
   | { islem: "olaylar"; yerlesim: string; hesapId: string; imlec?: string | null; dil?: string | null }
@@ -786,6 +806,8 @@ export type DunyaIleti =
   | { islem: "davetCoz"; kod: string }
   /** YonetimDO → DunyaDO: ada ya da hesap kimliğine göre kayıtlı profil. */
   | { islem: "oyuncuBul"; ad?: string; hesap?: string }
+  /** YonetimDO: hesap kimliklerinin görünen adı ve oyuncu numarası (şikayet listesi, telafi geçmişi). */
+  | { islem: "kimlikOzet"; hesaplar: string[] }
   /** Künye (HesapDO → DunyaDO; src/kunye/numara.ts): numara üret/oku, numarayla bul, ad dizinini tazele, ad öneki ara. */
   | { islem: "numaraAl"; hesapId: string }
   | { islem: "numaraBul"; numara: string; arayan?: string }
