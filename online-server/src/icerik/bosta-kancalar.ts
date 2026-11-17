@@ -3,8 +3,12 @@
 // boşta kanca bulursa düşer). Yeni boşta kanca eklemek yasaktır; BOSTA_TAVAN yalnız azaltılır.
 // Anahtar biçimi: icerik/kanca-kayit.ts kancaAnahtari.
 
-/** Liste uzunluğunun üst sınırı (yalnız azalır). */
-export const BOSTA_TAVAN = 230;
+/**
+ * Liste uzunluğunun üst sınırı (yalnız azalır). 232: Dilim 3 ilk parti denge denetiminde `hak:namYayma` (başka dükkânı
+ * övme hizmeti, kendi rafına çekicilik değil) ve `hak:hileliTarti` (hileli tartı dürüst H olamaz) kayıttan geri alındı;
+ * parti henüz ana dala girmediği için taban budur.
+ */
+export const BOSTA_TAVAN = 232;
 
 export const BOSTA_KANCALAR: readonly string[] = [
   "arac:av:mizrak",
@@ -64,6 +68,7 @@ export const BOSTA_KANCALAR: readonly string[] = [
   "hak:hekimIcazeti",
   "hak:heyetUzlasmasi",
   "hak:hikmetliKarar",
+  "hak:hileliTarti",
   "hak:husumetListesi",
   "hak:ilkGorus",
   "hak:ipekYoluSeferi",
@@ -98,6 +103,7 @@ export const BOSTA_KANCALAR: readonly string[] = [
   "hak:meraHakki",
   "hak:meraKarari",
   "hak:naiplik",
+  "hak:namYayma",
   "hak:navlun",
   "hak:nobetKoltuklari",
   "hak:ordugahHakki",

@@ -11,7 +11,7 @@ import { dizinSec, tohumlu } from "../yerlesim/rastgele.ts";
 import { basarili, hata, type Sonuc } from "../tipler.ts";
 import { depodanDus } from "./atolye.ts";
 import type { Tezgah } from "./depo.ts";
-import { kaliteliEkle, kaliteMi, partiParca, type KaliteParti } from "../yerlesim/kalite.ts";
+import { damgaliAdet, damgaliCikar, kaliteliEkle, kaliteMi, partiParca, type KaliteParti } from "../yerlesim/kalite.ts";
 import { TOPLU_DEGER_EN_COK, TOPLU_ODUL_CARPANI, TOPLU_SURE, TOPLU_TUTMA_AY } from "./tezgah-kurallar.ts";
 
 export interface TopluSiparis {
@@ -88,18 +88,40 @@ export function teslimAdedi(adet: number, indirimYuzde = 0): number {
 }
 
 /**
- * Teslim: atölye zanaatı siparişinki, depoda yeterli mal (her kalite; önce sade), üst üste değil. Mal depodan düşer.
- * `indirim`: sipariş zanaatına göre tavanlı kanca yüzdesi (mulk/kanca.ts topluIndirim); ödülü değiştirmez.
+ * Teslim planı (denge, Dilim 3): kanca indirimi YALNIZ atölyenin kendi ürettiği (kendi damgasını taşıyan) partilerle
+ * geçerlidir; depodaki damgalı mal indirimli adedi karşılamıyorsa tam adet istenir (damgasız mal karışmaz). Böylece
+ * NPC stoğundan ya da pazardan alınan mal indirimle teslim edilip al-sat kârı doğuramaz (ödül/adet ≤ 1,4 × taban <
+ * NPC stok fiyatı 1,5 × taban).
  */
-export function topluTeslim(d: TopluDefter, idHam: unknown, isletme: string, ad: string, t: Tezgah, ay: number, indirim: (m: MeslekId) => number = () => 0): Sonuc<{ siparis: TopluSiparis; parti: KaliteParti[]; saOnce?: string; adet: number }> {
+export function teslimPlani(s: Pick<TopluSiparis, "adet" | "mal">, t: Tezgah, isletme: string, indirimYuzde = 0): { adet: number; indirimYuzde: number; damgali: boolean } {
+  const ind = teslimAdedi(s.adet, indirimYuzde);
+  if (ind < s.adet && damgaliAdet(t, s.mal, isletme) >= ind) return { adet: ind, indirimYuzde, damgali: true };
+  return { adet: s.adet, indirimYuzde: 0, damgali: false };
+}
+
+/**
+ * Teslim: atölye zanaatı siparişinki, depoda yeterli mal (her kalite; önce sade), üst üste değil. Mal depodan düşer.
+ * `indirim`: sipariş zanaatına göre tavanlı kanca yüzdesi (mulk/kanca.ts topluIndirim); ödülü değiştirmez ve yalnız
+ * atölye damgalı partilerle teslimde uygulanır (`teslimPlani`).
+ */
+export function topluTeslim(d: TopluDefter, idHam: unknown, isletme: string, ad: string, t: Tezgah, ay: number, indirim: (m: MeslekId) => number = () => 0): Sonuc<{ siparis: TopluSiparis; parti: KaliteParti[]; saOnce?: string; adet: number; indirimYuzde: number }> {
   const s = typeof idHam === "string" ? d.l.find((x) => x.id === idHam) : undefined;
   if (!s) return hata("siparis_yok");
   if (s.durum !== "acik" || ay >= s.son) return hata("siparis_kapandi");
   if (t.za !== s.meslek) return hata("zanaat_disi");
   if (d.sa === isletme) return hata("ust_uste");
-  const izliOnce = (t.kq?.[s.mal] ?? []).map((p) => [...p] as KaliteParti);
-  const adet = teslimAdedi(s.adet, indirim(s.meslek));
-  if (!depodanDus(t, s.mal, adet)) return hata("mal_yok");
+  const plan = teslimPlani(s, t, isletme, indirim(s.meslek));
+  const adet = plan.adet;
+  let parti: KaliteParti[];
+  if (plan.damgali) {
+    const c = damgaliCikar(t, s.mal, adet, isletme);
+    if (!c) return hata("mal_yok");
+    parti = c;
+  } else {
+    const izliOnce = (t.kq?.[s.mal] ?? []).map((p) => [...p] as KaliteParti);
+    if (!depodanDus(t, s.mal, adet)) return hata("mal_yok");
+    parti = dusenPartiler(izliOnce, t.kq?.[s.mal] ?? [], adet);
+  }
   const saOnce = d.sa;
   s.durum = "teslim";
   s.al = isletme;
@@ -107,7 +129,7 @@ export function topluTeslim(d: TopluDefter, idHam: unknown, isletme: string, ad:
   s.ta = ay;
   if (adet < s.adet) s.ti = adet;
   d.sa = isletme;
-  return basarili({ siparis: s, adet, parti: dusenPartiler(izliOnce, t.kq?.[s.mal] ?? [], adet), ...(saOnce !== undefined ? { saOnce } : {}) });
+  return basarili({ siparis: s, adet, indirimYuzde: plan.indirimYuzde, parti, ...(saOnce !== undefined ? { saOnce } : {}) });
 }
 
 /** Depodan düşen partiler (önce/sonra izli parti farkı; kalanı izsiz sade). */
@@ -162,8 +184,9 @@ export function topluGorunumu(d: TopluDefter | undefined, ay: number, benim?: { 
   return [...(d?.l ?? [])].reverse().map((s) => {
     const acik = s.durum === "acik" && ay < s.son;
     const depoda = benim ? (benim.t.ev?.[s.mal] ?? 0) : 0;
-    const indirim = benim?.indirim?.(s.meslek) ?? 0;
-    const teslimAdet = teslimAdedi(s.adet, indirim);
+    const plan = benim ? teslimPlani(s, benim.t, benim.isletme, benim.indirim?.(s.meslek) ?? 0) : { adet: s.adet, indirimYuzde: 0 };
+    const teslimAdet = plan.adet;
+    const indirim = plan.indirimYuzde;
     return {
       id: s.id,
       meslek: s.meslek,

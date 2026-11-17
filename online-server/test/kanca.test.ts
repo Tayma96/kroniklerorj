@@ -14,14 +14,17 @@ import { agacGorunumu, kancaMi, seviyeVer, yapisalKancaMi } from "../src/yerlesi
 import { kaliteliEkle } from "../src/yerlesim/kalite.ts";
 import { ilerleme, meslekSec } from "../src/yerlesim/meslek.ts";
 import type { Karakter, Kasaba } from "../src/yerlesim/tipler.ts";
-import { bilgiKancasi, kancaHesapla, kisiKatkisi } from "../src/mulk/kanca.ts";
+import { bilgiKancasi, kancaHesapla, kancaKisileri, kisiKatkisi, type KancaTapusu } from "../src/mulk/kanca.ts";
+import { stokFiyat } from "../src/yerlesim/npc-taban.ts";
+import { mulkIsle, type MulkMotoru } from "../src/mulk/yerlesim-mulk.ts";
+import { basarili, hata } from "../src/tipler.ts";
 import { atolyeKalemleri, genisletmeMalzemesi } from "../src/mulk/atolye.ts";
 import { bosTezgah, depoKapasitesi, type Tezgah } from "../src/mulk/depo.ts";
 import { npcTavani, talepCoz } from "../src/mulk/hane-butcesi.ts";
 import { rafaKoy } from "../src/mulk/raf.ts";
 import { edin, mulkDefteri } from "../src/mulk/tapu.ts";
 import { emirAc, emirleriIsle } from "../src/mulk/uretim-emri.ts";
-import { topluGeriAl, topluGorunumu, topluTeslim, type TopluDefter } from "../src/mulk/toplu-siparis.ts";
+import { teslimAdedi, teslimPlani, topluGeriAl, topluGorunumu, topluMallari, topluTeslim, topluTutar, type TopluDefter } from "../src/mulk/toplu-siparis.ts";
 import { tezgahDonumu, yolcuKarti } from "../src/mulk/tezgah-donum.ts";
 import { depoTasi, fiyatOnizle, rafIslem, tezgahGorunumu } from "../src/mulk/tezgah-uclar.ts";
 import {
@@ -46,8 +49,11 @@ import { oyuncuEkle, testKasabasi } from "./kasaba-yardimci.ts";
 const AY = 10;
 const AN = DUNYA_BASLANGICI_MS + AY * AY_MS + 1000;
 
-/** [KİLİT] Boşta kanca sayısının bu testteki üst sınırı: yalnız azaltılır (bosta-kancalar.ts BOSTA_TAVAN ile birlikte). */
-const BOSTA_EN_COK = 230;
+/**
+ * [KİLİT] Boşta kanca sayısının bu testteki üst sınırı: yalnız azaltılır (bosta-kancalar.ts BOSTA_TAVAN ile birlikte).
+ * 232: Dilim 3 ilk parti denetiminde namYayma ve hileliTarti geri alındı (parti ana dala girmeden; taban budur).
+ */
+const BOSTA_EN_COK = 232;
 
 function yetiskin(k: Kasaba, no: number, meslek?: string): Karakter {
   const kar = oyuncuEkle(k, no, AY - 12 * 20);
@@ -262,7 +268,7 @@ test("han H: sahibin/çalışanın han kancası yolcu payı çekiciliğine girer
   const kart = yolcuKarti(k, "demirhan.han.2", sahip.o)!;
   assert.equal(kart.carpan.H, 1.09);
   assert.equal(kart.kanca.deger, 9);
-  assert.deepEqual(kart.kanca.kalemler.map((x) => x.kanca).sort(), ["hak:hanBerati", "kalite:oda"]);
+  assert.deepEqual(kart.kanca.kalemler!.map((x) => x.kanca).sort(), ["hak:hanBerati", "kalite:oda"]);
   const hy = mulkDefteri(k).hy as { dagitilan: number; Y: number };
   assert.ok(hy.dagitilan <= hy.Y, "Y aşılmaz");
 });
@@ -348,7 +354,8 @@ test("toplu sipariş: zanaat kancası teslim adedini düşürür, ödül aynı; 
   const d: TopluDefter = { l: [{ id: "t5", meslek: "oduncu", mal: "kereste", adet: 10, deger: 40, odul: 56, acilis: 5, son: 7, durum: "acik" }] };
   const t = bosTezgah();
   t.za = "oduncu";
-  kaliteliEkle(t, "kereste", [[0, 9]]);
+  // İndirim yalnız atölyenin kendi damgalı malıyla (denge: al-sat kârı yok).
+  kaliteliEkle(t, "kereste", [[0, 9, undefined, "a1"]]);
   const ind = (m: MeslekId) => (m === "oduncu" ? 20 : 0);
   const gor = topluGorunumu(d, 5, { isletme: "a1", t, indirim: ind })[0] as { teslimAdet: number; teslimEdebilir: boolean; odul: number };
   assert.equal(gor.teslimAdet, 8);
@@ -399,4 +406,162 @@ test("fiyat tablosu: tüccar kancası rakip raf fiyatlarını görünümde açar
   const gb = tezgahGorunumu(k, b, "develi.dukkan.2");
   assert.ok(gb.ok);
   assert.equal(gb.deger.fiyatTablosu, undefined);
+});
+
+// ── Denge denetimi düzeltmeleri (Dilim 3 kanca) ──
+
+test("toplu indirim: NPC stoğundan alınan (damgasız) malla teslim indirimle bile hiçbir malda kâr bırakmaz", () => {
+  for (const m of ZANAAT_MESLEKLERI) {
+    for (const mal of topluMallari(m)) {
+      const tt = topluTutar(mal);
+      const s = { id: "t5", meslek: m, mal, adet: tt.adet, deger: tt.deger, odul: tt.odul, acilis: 5, son: 7, durum: "acik" as const };
+      // Depo NPC stoğundan dolduruldu: damgasız. Tavan indirimle bile tam adet istenir.
+      const t = bosTezgah();
+      t.za = m;
+      kaliteliEkle(t, mal, [[0, tt.adet]]);
+      const plan = teslimPlani(s, t, "a1", KANCA_TAVAN.topluIndirim);
+      assert.equal(plan.adet, tt.adet, `${mal}: damgasız mal tam adet`);
+      assert.ok(tt.odul <= tt.adet * stokFiyat(mal).toplam, `${mal}: ödül ${tt.odul} > stok maliyeti ${tt.adet * stokFiyat(mal).toplam}`);
+      // Karışık: indirimli adede bir eksik damgalı + damgasız → yine tam adet.
+      const ind = teslimAdedi(tt.adet, KANCA_TAVAN.topluIndirim);
+      if (ind < tt.adet) {
+        const t2 = bosTezgah();
+        t2.za = m;
+        kaliteliEkle(t2, mal, [[0, ind - 1, undefined, "a1"], [0, tt.adet]]);
+        assert.equal(teslimPlani(s, t2, "a1", KANCA_TAVAN.topluIndirim).adet, tt.adet, `${mal}: karışık tam adet`);
+        // Başka atölyenin damgası da sayılmaz.
+        const t3 = bosTezgah();
+        t3.za = m;
+        kaliteliEkle(t3, mal, [[0, tt.adet, undefined, "a2"]]);
+        assert.equal(teslimPlani(s, t3, "a1", KANCA_TAVAN.topluIndirim).adet, tt.adet, `${mal}: başka damga`);
+      }
+    }
+  }
+  // Uçtan uca: damgasız mal indirimli adette reddedilir; damgalıyla indirim uygulanır, damgasız mal depoda kalır.
+  const d: TopluDefter = { l: [{ id: "t5", meslek: "oduncu", mal: "kereste", adet: 10, deger: 40, odul: 56, acilis: 5, son: 7, durum: "acik" }] };
+  const t = bosTezgah();
+  t.za = "oduncu";
+  kaliteliEkle(t, "kereste", [[0, 9]]);
+  assert.deepEqual(topluTeslim(structuredClone(d), "t5", "a1", "A", structuredClone(t), 5, () => 10), { ok: false, hata: "mal_yok" });
+  kaliteliEkle(t, "kereste", [[1, 9, undefined, "a1"]]);
+  const r = topluTeslim(d, "t5", "a1", "A", t, 5, () => 10);
+  assert.ok(r.ok);
+  assert.equal(r.deger.adet, 9);
+  assert.equal(r.deger.indirimYuzde, 10);
+  assert.deepEqual(r.deger.parti, [[1, 9, undefined, "a1"]]);
+  assert.equal(t.ev?.kereste, 9, "damgasız 9 depoda kaldı");
+});
+
+test("toplu indirim: bileşik edilgen atölye (raf + toplu aynı ay, bütün kanallar tavanda) aylık net ≤ 35", () => {
+  // Kendi damgalı ürünü (NPC emeği, emir): toplu sipariş indirimli adetle teslim, kalan şaheser tavan fiyatla tek satıcı
+  // 5. seviye rafta, H tavanda, kıtlık. Net = ödül + raf − girdi − NPC maaşı (bakım düşülmedi: iyimser).
+  let net = -Infinity;
+  let en = "";
+  for (const t of Object.values(TARIFLER)) {
+    if (!(ZANAAT_MESLEKLERI as readonly string[]).includes(t.meslek)) continue;
+    const mal = t.cikti[0] as MalId;
+    if (!topluMallari(t.meslek as MeslekId).includes(mal)) continue;
+    const girdi = Object.entries(t.girdi).reduce((a, [m, n]) => a + MALLAR[m as MalId].taban * (n ?? 0), 0);
+    const tt = topluTutar(mal);
+    const teslim = teslimAdedi(tt.adet, KANCA_TAVAN.topluIndirim);
+    for (let n = 1; n <= PERSONEL_EN_COK; n++) {
+      for (let yap = 1; yap <= Math.floor((NPC_EMEK_AY * n) / t.takat); yap++) {
+        const kalan = yap * t.cikti[1] - teslim;
+        if (kalan < 0) continue;
+        const raf = kalan > 0 ? talepCoz("sehir", [{ id: "d#0", dukkan: "d", mal, q: 3, adet: kalan, fiyat: npcTavani(mal, 3), hYuzde: KANCA_TAVAN.dukkanH }], new Map([["d", { id: "d", itibar: 100, tavan: DUKKAN_NPC_TAVAN[4]! }]]), () => 0, "butce").harcanan : 0;
+        const v = tt.odul + raf - yap * girdi - n * NPC_ATOLYE_MAAS_EN_AZ;
+        if (v > net) [net, en] = [v, `${mal} ${n} NPC ${yap} yapım: toplu ${tt.odul}/${teslim} + raf ${raf}`];
+      }
+    }
+  }
+  assert.ok(net <= 35, `bileşik edilgen atölye ${net} (${en})`);
+});
+
+test("ödünç usta: aynı ay işe alınan çalışanın kancası sayılmaz; iki işletmede çalışan yalnız en eskisine katkı verir", () => {
+  const AYx = 10;
+  const tapular: Record<string, KancaTapusu> = {
+    A: { s: "sa", y: { pb: [["u", 8], ["v", AYx]] } },
+    B: { s: "sb", y: { pb: [["u", 5]] } },
+    C: { s: "sa", y: { pb: [["w", 3]] } },
+    D: { s: "sd", y: { durum: "iflas", pb: [["w", 1]] } },
+    E: { s: "se", y: { pb: [["x", 4]] } },
+    F: { s: "sf", y: { pb: [["x", 4]] } },
+  };
+  // v bu ay başladı: sayılmaz; gelecek ay sayılır.
+  assert.deepEqual(kancaKisileri(tapular, "A", AYx), ["sa"]);
+  assert.deepEqual(kancaKisileri(tapular, "A", AYx + 1), ["sa", "v"]);
+  // u: B (ay 5) A'dan (ay 8) eski → yalnız B.
+  assert.deepEqual(kancaKisileri(tapular, "B", AYx), ["sb", "u"]);
+  // Sahip kendi işletmelerinin hepsine (A ve C); iflas işletmesindeki sözleşme w'nin hakkını almaz.
+  assert.deepEqual(kancaKisileri(tapular, "C", AYx), ["sa", "w"]);
+  // Eşit başlangıçta işletme kimliği sırası.
+  assert.deepEqual(kancaKisileri(tapular, "E", AYx), ["se", "x"]);
+  assert.deepEqual(kancaKisileri(tapular, "F", AYx), ["sf"]);
+  // Eski yansı (pb yok): çalışan sayılmaz.
+  assert.deepEqual(kancaKisileri({ A: { s: "sa", y: {} } }, "A", AYx), ["sa"]);
+});
+
+test("önizleme = ay dönümünde uygulanan: çalışan kancası yüklenmemiş karakterden de okunur; aynı ay işe alınan ikisinde de yok", async () => {
+  for (const [bas, beklenen] of [[AY - 1, 1.05], [AY, 1]] as const) {
+    const k = testKasabasi("develi", AY);
+    const a = yetiskin(k, 1);
+    const b = ogrenmis(k, 2, "kalite:satis");
+    assert.ok(edin(k, a, { tur: "dukkan" }, AN, "e-0000001").ok);
+    mulkDefteri(k).cik.k = [];
+    const ID = "develi.dukkan.1";
+    yansit(k, ID, { py: [[b.o, ["musteri"]]], po: [b.o], pb: [[b.o, bas]] });
+    kaliteliEkle(a, "ekmek", [[0, 10]]);
+    assert.ok(depoTasi(k, a, ID, { yon: "koy", mal: "ekmek", adet: 10 }).ok);
+    assert.ok(rafIslem(k, a, ID, { islem: "koy", mal: "ekmek", adet: 10, fiyat: MALLAR.ekmek.taban }).ok);
+    // Çalışan bellekte yok (başka istekte düşmüş): uç kanca kişilerini yükler.
+    const depo = new Map([[b.o, b]]);
+    k.kar.delete(b.o);
+    const motor: MulkMotoru = {
+      kasaba: k,
+      mulkOyuncu: async (_h, yukle = []) => {
+        for (const o of yukle) if (depo.has(o)) k.kar.set(o, depo.get(o)!);
+        return basarili({ kar: a });
+      },
+      mulkAdimi: async () => hata("sunucu_hatasi"),
+      mulkIslem: async (_y, isle) => isle(),
+    };
+    const on = await mulkIsle(motor, { hesapId: "h", alt: "onizle", isletme: ID, govde: { mal: "ekmek", fiyat: MALLAR.ekmek.taban } }, AN, async () => hata("sunucu_hatasi"));
+    assert.ok(on.ok);
+    const onH = ((on.deger as { onizleme: { carpanlar: { H: number } } }).onizleme).carpanlar.H;
+    assert.equal(onH, beklenen, `başlangıç ${bas}: önizleme`);
+    // Görünümde döküm: katkı verenin adı, kimliği yok; kalemler sahibe görünür.
+    if (beklenen > 1) {
+      const g = tezgahGorunumu(k, a, ID);
+      assert.ok(g.ok);
+      const hk = (g.deger.kanca as Record<string, { kisiAd: string; kisi?: string; kalemler?: unknown[] }>)["dukkanH.asci"]!;
+      assert.equal(hk.kisiAd, b.ad);
+      assert.equal(hk.kisi, undefined);
+      assert.ok(hk.kalemler?.length);
+    }
+    tezgahDonumu(k, AY + 1);
+    const gs = mulkDefteri(k).tz![ID]!.gs as { satirlar: { mal: string; carpanlar: { H: number } }[] };
+    assert.equal(gs.satirlar.find((x) => x.mal === "ekmek")!.carpanlar.H, onH, `başlangıç ${bas}: dönüm = önizleme`);
+  }
+});
+
+test("kanca dökümü: kalemler yalnız sahibe ve katkı verene; öbür yetkiliye yalnız kanal toplamı ve ad", () => {
+  const k = testKasabasi("develi", AY);
+  const a = yetiskin(k, 1);
+  const b = ogrenmis(k, 2, "kalite:satis");
+  const c = yetiskin(k, 3);
+  assert.ok(edin(k, a, { tur: "dukkan" }, AN, "e-0000001").ok);
+  mulkDefteri(k).cik.k = [];
+  const ID = "develi.dukkan.1";
+  yansit(k, ID, { py: [[b.o, ["musteri"]], [c.o, ["musteri"]]], po: [b.o, c.o], pb: [[b.o, AY - 2], [c.o, AY - 2]] });
+  kaliteliEkle(a, "ekmek", [[0, 10]]);
+  assert.ok(depoTasi(k, a, ID, { yon: "koy", mal: "ekmek", adet: 10 }).ok);
+  assert.ok(rafIslem(k, a, ID, { islem: "koy", mal: "ekmek", adet: 10, fiyat: MALLAR.ekmek.taban }).ok);
+  const dokum = (kim: Karakter) => {
+    const g = tezgahGorunumu(k, kim, ID);
+    assert.ok(g.ok);
+    return (g.deger.kanca as Record<string, Record<string, unknown>>)["dukkanH.asci"]!;
+  };
+  assert.ok(dokum(a).kalemler, "sahip");
+  assert.ok(dokum(b).kalemler, "katkı veren");
+  assert.deepEqual(dokum(c), { deger: 5, tavan: KANCA_TAVAN.dukkanH, kisiAd: b.ad });
 });

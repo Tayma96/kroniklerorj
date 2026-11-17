@@ -131,6 +131,33 @@ export function kaliteliCikar(k: Envanterli, mal: MalId, adet: number, q: Kalite
   return cikan;
 }
 
+/** Bu atölye damgasını taşıyan adet (tezgâh Dilim 2–3). */
+export function damgaliAdet(k: Envanterli, mal: string, damga: string): number {
+  return partiler(k, mal).filter((p) => p[3] === damga).reduce((a, p) => a + p[1], 0);
+}
+
+/** Yalnız `damga` taşıyan partilerden `adet` çıkarır (önce düşük kalite); yetmezse hiçbir şey değişmez, null döner. */
+export function damgaliCikar(k: Envanterli, mal: MalId, adet: number, damga: string): KaliteParti[] | null {
+  if (!(adet > 0) || damgaliAdet(k, mal, damga) < adet) return null;
+  const liste = partiler(k, mal).map((p) => [...p] as KaliteParti);
+  const cikan: KaliteParti[] = [];
+  let kalan = adet;
+  for (let i = liste.length - 1; i >= 0 && kalan > 0; i--) {
+    const p = liste[i]!;
+    if (p[3] !== damga) continue;
+    const d = Math.min(kalan, p[1]);
+    p[1] -= d;
+    kalan -= d;
+    cikan.push(partiParca(p, d));
+  }
+  const ev = (k.ev ??= {});
+  const yeni = (ev[mal] ?? 0) - adet;
+  if (yeni > 0) ev[mal] = yeni;
+  else delete ev[mal];
+  yaz(k, mal, liste);
+  return cikan;
+}
+
 /** Partileri envantere ekler (aynı kalite ve yapan birleşir). */
 export function kaliteliEkle(k: Envanterli, mal: MalId, gelen: readonly KaliteParti[]): void {
   const toplam = gelen.reduce((a, p) => a + Math.max(0, p[1]), 0);

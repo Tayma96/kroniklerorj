@@ -2212,7 +2212,8 @@ export class YerlesimMotoru {
 
   // ── Mülk (Faz 12–13): src/mulk/yerlesim-mulk.ts kullanır; mülk defteri karakterle aynı yazımda kaydolur. ──
 
-  async mulkOyuncu(hesapId: string): Promise<Sonuc<{ kar: Karakter }>> {
+  async mulkOyuncu(hesapId: string, yukle: string[] = []): Promise<Sonuc<{ kar: Karakter }>> {
+    if (yukle.length) await this.#yukle(yukle);
     const r = await this.#oyuncu(hesapId);
     return r.ok ? basarili({ kar: r.deger.kar }) : r;
   }

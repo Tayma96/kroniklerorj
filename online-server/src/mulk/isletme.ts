@@ -945,6 +945,8 @@ export function ayarYuku(is: Isletme) {
     kq: kalite(is).toplam,
     py: etkinler(is).flatMap((s) => (s.k.t === "oyuncu" ? [[s.k.o, yetkiDurumu(is, s.k.o, is.ay).yetkiler] as [string, Yetki[]]] : [])),
     po: etkinler(is).flatMap((s) => (s.k.t === "oyuncu" ? [s.k.o] : [])),
+    /** Dilim 3 kanca kişi kuralı (mulk/kanca.ts kancaKisileri): oyuncu çalışanların sözleşme başlangıç ayı. */
+    pb: etkinler(is).flatMap((s) => (s.k.t === "oyuncu" ? [[s.k.o, s.b] as [string, number]] : [])),
     pn: etkinler(is).flatMap((s) => (s.k.t === "npc" ? [s.k.n] : [])),
     to: is.tk.map((t) => t.hedef.o),
     /**

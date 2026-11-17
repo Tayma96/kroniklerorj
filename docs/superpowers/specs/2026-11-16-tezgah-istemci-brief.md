@@ -60,18 +60,18 @@ Kalite: hareket yalnız `HAREKET`/`belir`/`giris`/`BASMA_OLCEK`; reduce motion; 
 
 # Dilim 3 protokol ekleri — meslek/beceri kancaları (17 Kasım; sunucu, istemci YOK)
 
-Kanca = beceri düğümündeki etki. 89 kanca tezgâh/atölye/hana bağlandı (kayıt `online-server/src/icerik/kanca-kayit.ts`); 230'u boşta (`bosta-kancalar.ts`, yalnız kısalır). Değerler gizli değil: her etki aşağıdaki dökümlerle gelir. Ortak döküm biçimi `KancaDokumu = {deger, tavan, kisi, kalemler:[{kanca, d}]}` (`kanca` = `"hak:pazarGunu"`, `"kalite:satis"` gibi; metin anahtarı `onl.kanca.<kanca>` önerilir, düğüm adı `onl.ba.*` ile birlikte). Değer, sahip ve oyuncu çalışanlar arasından en yüksek kişinin katkısıdır (toplanmaz), kanal tavanıyla kırpılır.
+Kanca = beceri düğümündeki etki. 87 kanca tezgâh/atölye/hana bağlandı (kayıt `online-server/src/icerik/kanca-kayit.ts`); 232'si boşta (`bosta-kancalar.ts`, yalnız kısalır). Değerler gizli değil: her etki aşağıdaki dökümlerle gelir. Ortak döküm biçimi `KancaDokumu = {deger, tavan, kisiAd, kalemler?:[{kanca, d}]}` (`kisiAd` katkı verenin görünen adı ya da null; kimlik dönmez. `kalemler` yalnız işletme sahibine ve katkı verenin kendisine gelir; öbür yetkililer ve gün sonu dökümü yalnız toplamı görür) (`kanca` = `"hak:pazarGunu"`, `"kalite:satis"` gibi; metin anahtarı `onl.kanca.<kanca>` önerilir, düğüm adı `onl.ba.*` ile birlikte). Değer, sahip ve oyuncu çalışanlar arasından en yüksek kişinin katkısıdır (toplanmaz), kanal tavanıyla kırpılır. Çalışan yalnız sözleşmesi bu aydan önce başladıysa ve en eski sözleşmesi bu işletmedeyse sayılır (ekran "gelecek ay etkin" diyebilir).
 
 - **Beceri ağacı** (`GET /v1/beceri`): `seviyeler[].etkiler[].kanca` artık bu kayda göre: `false` = "etkin", `true` = "yakında". Düğüm kartı rozeti buna bakar.
 - **`GET /v1/isletme/:id/tezgah`** (yetkiliye):
   - `kanca: Record<kanal, KancaDokumu>` — yalnız etkisi olanlar. Kanallar: `depo` (+% kapasite), dükkânda `rafSatir` (+satır), `rafAdet` (+adet/satır), `dukkanH.<meslek>` (rafta o mesleğin malına H yüzdesi); atölyede `atolyeKalite` (+kalite puanı), `npcCeza` (NPC emeği kalite cezasından −puan), `topluIndirim` (toplu teslim adedinden −%). Ekran: Dükkânım/Atölyem başında "Ustalık etkileri" kartı (kanal adı, değer/tavan, kimden, kalemler).
-  - `rafSiniri.satir/adet` ve `depoKapasite` kancalı değeri gösterir (istemci sabit kullanmasın).
+  - `rafSiniri.satir/adet` ve `depoKapasite` kancalı değeri gösterir (istemci sabit kullanmasın). Raftan alma (`raf al`, `satinal`) ve önizleme `adet` sınırı da `rafSiniri.adet`tir.
   - `genisletme.sonraki.malzeme[].adet` indirimli adettir.
   - `fiyatTablosu?: [{isletme, ad, mal, kalite, fiyat, adet}]` — yalnız bakan oyuncu `hak:fiyatTablosu` (Tüccar › Pazarlık 1) bildiğinde ve dükkânda; en çok 40 satır. Ekran: raf çekmecesinde fiyat ayarının yanında "Çarşı fiyatları".
   - `atolye.emek.tekEnCok` — tek mesai üst sınırı (18); istemcideki yedek sabit yerine bu okunur.
   - `gunSonu.hKanca?: Record<meslek, KancaDokumu>` (dükkân) — gün sonu dökümünde H çarpanının nedeni; satırların `carpanlar.H`'si zaten kancalıdır.
   - Atölye `gunSonu.emirler[].kaliteDokum.kalemler`de yeni kalem `kalite.kanca`; `kalite.npcEmegi` kancayla azalmış gelir.
-- **Toplu sipariş** (`atolye.topluSiparis[]`, `GET /v1/atolyeler`): teslim edebilecek atölye için `teslimAdet` ve `indirimYuzde`; `teslimEdebilir` artık `depoda ≥ teslimAdet`. `POST …/toplu` yanıtı `toplu:{adet (teslim edilen), siparisAdet, indirimYuzde, odul, …}`; `olay.tezgah.topluTeslim.adet` teslim edilen adettir. Ödül değişmez.
+- **Toplu sipariş** (`atolye.topluSiparis[]`, `GET /v1/atolyeler`): teslim edebilecek atölye için `teslimAdet` ve `indirimYuzde` (indirim yalnız depodaki atölye damgalı mal indirimli adedi karşılıyorsa; değilse `indirimYuzde: 0`, `teslimAdet` = tam adet — ekran "indirim yalnız kendi ürettiğin malla" ipucu verebilir); `teslimEdebilir` artık `depoda ≥ teslimAdet`. `POST …/toplu` yanıtı `toplu:{adet (teslim edilen), siparisAdet, indirimYuzde, odul, …}`; `olay.tezgah.topluTeslim.adet` teslim edilen adettir. Ödül değişmez.
 - **Han:** yolcu payı kartı (`yolcuKarti`) `kanca: KancaDokumu` döner; `carpan.H` kancalıdır.
 - **Önizleme** (`GET /v1/isletme/:id/onizle`): `carpanlar.H` kancalı.
 - Yeni hata kodu yok.

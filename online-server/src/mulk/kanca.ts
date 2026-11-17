@@ -4,6 +4,11 @@
 // YIĞILMA KURALI (tek yer): bir kanalda kişinin katkısı, açık etkilerinden o kanala bağlı kancaların değerleri
 // toplamıdır; işletmenin değeri sahip ve oyuncu çalışanlar arasından EN YÜKSEK kişi katkısıdır (kişiler toplanmaz,
 // hiçbir şey çarpılmaz) ve kanal tavanıyla kırpılır. Böylece çalışan toplamak ya da çok meslek öğrenmek tavanı aşamaz.
+//
+// KİŞİ KURALI ("ödünç usta" önlemi, `kancaKisileri`): sahip kendi işletmelerinin hepsine katkı verir. Oyuncu çalışan
+// (i) yalnız sözleşmesi içinde bulunulan aydan ÖNCE başlamışsa sayılır (işe al → genişlet/teslim et → istifa aynı ayda
+// bonus taşımaz) ve (ii) çalışan olarak yalnız TEK işletmeye katkı verir: en eski sözleşmesi (başlangıç ayı, eşitlikte
+// işletme kimliği). Böylece bir kişi kancasını sınırsız işletmeye ödünç veremez.
 
 import { KANCA_BAGLARI, kancaAnahtari, type KancaKanali } from "../icerik/kanca-kayit.ts";
 import type { MalId } from "../icerik/mallar.ts";
@@ -33,6 +38,39 @@ export interface KancaSonucu {
   /** Değeri veren kişi ve kancaları (döküm; gizli sayı yok). */
   kisi: string | null;
   kalemler: KancaKalemi[];
+}
+
+/** [PARAMETRE] Çalışanın kancası sözleşme başlangıcından en az bu kadar ay sonra sayılır (1: başlangıç ayı sayılmaz). */
+export const KANCA_CALISAN_BEKLEME_AY = 1;
+
+/** Kişi kuralının okuduğu tapu özeti: sahip ve yansıdaki oyuncu çalışanların sözleşme başlangıç ayları (`pb`). */
+export interface KancaTapusu {
+  s: string;
+  y?: { durum?: string; pb?: readonly (readonly [string, number])[] };
+}
+
+/**
+ * İşletmeye kanca katkısı verebilecek kişiler (kişi kuralı, dosya başı): sahip + bekleme süresini doldurmuş ve en eski
+ * sözleşmesi bu işletmede olan oyuncu çalışanlar. Yansısı `pb` taşımayan (eski) kayıtta çalışan sayılmaz. Saf.
+ */
+export function kancaKisileri(tapular: Readonly<Record<string, KancaTapusu>>, isletme: string, ay: number): string[] {
+  const tapu = tapular[isletme];
+  if (!tapu) return [];
+  const l = [tapu.s];
+  const gecerli = (b: number) => Number.isInteger(b) && ay - b >= KANCA_CALISAN_BEKLEME_AY;
+  for (const [o, b] of tapu.y?.pb ?? []) {
+    if (o === tapu.s || l.includes(o) || !gecerli(b)) continue;
+    let enEski: { id: string; b: number } | undefined;
+    for (const [id, t] of Object.entries(tapular)) {
+      if (t.y?.durum === "iflas" || t.s === o) continue;
+      for (const [x, bx] of t.y?.pb ?? []) {
+        if (x !== o || !gecerli(bx)) continue;
+        if (!enEski || bx < enEski.b || (bx === enEski.b && id < enEski.id)) enEski = { id, b: bx };
+      }
+    }
+    if (enEski?.id === isletme) l.push(o);
+  }
+  return l;
 }
 
 /** Kişinin bir kanaldaki katkısı: kanala bağlı açık kancaların toplamı (filtreye uyanlar). */
@@ -72,7 +110,12 @@ export function bilgiKancasi(k: Karakter, kanal: Exclude<KancaKanali, DegerliKan
   return false;
 }
 
-/** Dökümde kısa biçim (istemciye): yalnız etkisi olan kanal döner. */
-export function kancaDokumu(s: KancaSonucu) {
-  return { deger: s.deger, tavan: s.tavan, kisi: s.kisi, kalemler: s.kalemler };
+/**
+ * Dökümde kısa biçim (istemciye): kanal toplamı (değer, tavan) ve katkı verenin görünen adı (kimlik değil).
+ * Öğrenilmiş düğüm kalemleri yalnız işletme sahibine ve katkı verenin kendisine (`bakan`); öbür yetkililere ve
+ * saklanan gün sonu dökümüne yalnız kanal toplamı.
+ */
+export function kancaDokumu(s: KancaSonucu, ad: (o: string) => string, bakan?: { o: string; sahip: boolean }): { deger: number; tavan: number; kisiAd: string | null; kalemler?: KancaKalemi[] } {
+  const kalemGor = !!bakan && (bakan.sahip || s.kisi === null || bakan.o === s.kisi);
+  return { deger: s.deger, tavan: s.tavan, kisiAd: s.kisi ? ad(s.kisi) : null, ...(kalemGor ? { kalemler: s.kalemler } : {}) };
 }

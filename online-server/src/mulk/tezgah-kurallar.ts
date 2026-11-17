@@ -196,7 +196,7 @@ export const KANCA_TAVAN = {
   depo: 25,
   atolyeKalite: 10,
   npcCeza: 15,
-  topluIndirim: 20,
+  topluIndirim: 10,
   genisletme: 25,
 } as const;
 export type DegerliKanal = keyof typeof KANCA_TAVAN;

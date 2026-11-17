@@ -144,6 +144,12 @@ dükkân kârı 77 akçe/ay; 1. seviye dolu çarşıda bakımını çıkarıyor;
     31, kıtlık yoksa 10; bakım düşülmeden). Bağlayan sınır meslek bütçesi; sim testinde kilitli.
   - Emir dökümünde emir başına kalite kalemleri (usta kademesi, beceri, araç, zar, seviye bonusu, NPC cezası) aralıkla verilir.
   - Yapılmadı: ısmarlamanın atölyeye verilmesi; alt istek bütçesi için ayrı atölye testi.
+- **Dilim 3 kanca denetimi (17 Kasım):**
+  - Toplu indirim (`topluIndirim` tavanı %10) yalnız atölyenin kendi damgalı partileriyle teslimde geçerli; damgasız mal
+    karışırsa tam adet istenir (NPC stoğundan al-teslim et kârı yok). Raf + toplu aynı ay bileşik edilgen atölye ≤ 35 (testle).
+  - Ödünç usta yok: çalışanın kancası sözleşmesi içinde bulunulan aydan önce başladıysa sayılır (ay dönümü biten ayın
+    gözüyle: önizleme = uygulanan); çalışan olarak yalnız en eski sözleşmesinin işletmesine katkı verir, sahip kendi
+    işletmelerinin hepsine. Kural `mulk/kanca.ts kancaKisileri`; kanca okuyan uçlar bu kişileri belleğe yükler.
 - Sunucu ajanı uzun işte her adımda ara kaydı oturum dalına push eder (konteyner yenilenince commit'siz iş kayboluyor).
 
 ## 7. Dilim 3 — Meslek ve beceri kancaları

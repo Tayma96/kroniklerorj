@@ -26,12 +26,13 @@ import {
   yatir,
 } from "./tapu.ts";
 import { UZLASTIRMA_ISLETME_EN_COK, cikisKapat, denemeErtele, denenecekler, sonrakiDeneme, transferDurumu, type CevapDurumu, type CikisKaydi } from "./transfer.ts";
-import { atolyeListesi, atolyedeUret, depoTasi, devral, devralBekliyor, dukkanListesi, emirUc, fiyatOnizle, genisletUc, mesai, rafIslem, satinAl, tezgahGorunumu, topluUc, zanaatUc } from "./tezgah-uclar.ts";
+import { atolyeListesi, atolyedeUret, kancaYuklenecekler, depoTasi, devral, devralBekliyor, dukkanListesi, emirUc, fiyatOnizle, genisletUc, mesai, rafIslem, satinAl, tezgahGorunumu, topluUc, zanaatUc } from "./tezgah-uclar.ts";
 import { tezgahKayitlariAc, yolcuKarti } from "./tezgah-donum.ts";
 
 export interface MulkMotoru {
   readonly kasaba: Kasaba;
-  mulkOyuncu(hesapId: string): Promise<Sonuc<{ kar: Karakter }>>;
+  /** `yukle`: kanca kişileri gibi okumada gereken diğer karakterler (yerel depo, alt istek değil). */
+  mulkOyuncu(hesapId: string, yukle?: string[]): Promise<Sonuc<{ kar: Karakter }>>;
   mulkAdimi(hesapId: string, govde: unknown, yukle: string[], isle: (kar: Karakter, ek: MulkEki) => Sonuc<Record<string, unknown>>): Promise<Sonuc<unknown>>;
   mulkIslem<T>(yukle: string[], isle: () => T): Promise<T>;
 }
@@ -153,13 +154,22 @@ function durumEkle(k: Kasaba, r: Sonuc<unknown>): Sonuc<unknown> {
   return basarili({ ...d, transferDurumu: transferDurumu(k.mk.cik, islem) });
 }
 
+/** Yerleşimdeki bu türden işletmeler (kanca yükleme listesi). */
+function turIsletmeleri(k: Kasaba, tur: "dukkan" | "atolye"): string[] {
+  return Object.keys(k.mk?.t ?? {}).filter((id) => {
+    const c = isletmeCoz(id);
+    return c?.tur === tur && c.yerlesim === k.y;
+  });
+}
+
 /** Mülk uçlarının tek girişi. `an`: dünya saati (ms). */
 export async function mulkIsle(motor: MulkMotoru, ileti: MulkIletisi, an: number, cagir: IsletmeCagir, vergiOrani?: number, kota: () => number = () => Infinity): Promise<Sonuc<unknown>> {
   const k = motor.kasaba;
   const { hesapId, alt } = ileti;
   const govde = ileti.govde;
   if (alt === "dukkanlar" || alt === "atolyeler") {
-    const r = await motor.mulkOyuncu(hesapId);
+    // Atölye listesi toplu sipariş indirimini gösterir: kanca kişileri yüklenir (önizleme = uygulanan).
+    const r = await motor.mulkOyuncu(hesapId, alt === "atolyeler" ? kancaYuklenecekler(k, turIsletmeleri(k, "atolye")) : []);
     if (!r.ok) return r;
     return basarili(alt === "dukkanlar" ? dukkanListesi(k, r.deger.kar) : atolyeListesi(k, r.deger.kar));
   }
@@ -183,7 +193,9 @@ export async function mulkIsle(motor: MulkMotoru, ileti: MulkIletisi, an: number
   if (!c || c.yerlesim !== k.y) return hata("isletme_yok");
   const isletme = c.id;
   if (alt === "tezgah" || alt === "onizle") {
-    const r = await motor.mulkOyuncu(hesapId);
+    // Kanca değeri yüklü karakterden okunur: görünüm bu işletmenin, önizleme bütün dükkânların (talep girdisi) kanca
+    // kişilerini yükler; ay dönümünde bütün sakinler yüklüdür.
+    const r = await motor.mulkOyuncu(hesapId, kancaYuklenecekler(k, alt === "tezgah" ? [isletme] : turIsletmeleri(k, "dukkan")));
     if (!r.ok) return r;
     return alt === "tezgah" ? tezgahGorunumu(k, r.deger.kar, isletme) : fiyatOnizle(k, r.deger.kar, isletme, govde);
   }
@@ -193,12 +205,17 @@ export async function mulkIsle(motor: MulkMotoru, ileti: MulkIletisi, an: number
     // Devralmada eski sahip, satın almada satıcı (armağan tavanı) yüklenir; atölyede sahip ve oyuncu çalışanlar
     // (zanaat önerisi, emrin ustası).
     const tapu = k.mk?.t[isletme];
-    const yukle =
-      alt === "devral" || alt === "satinal"
-        ? tapu ? [tapu.s] : []
-        : c.tur === "atolye" && tapu
-          ? [...new Set([tapu.s, ...(tapu.y?.po ?? [])])]
-          : [];
+    // Her türde kanca kişileri de (depo kapasitesi, raf eki, indirimler yüklü karakterden okunur).
+    const yukle = [
+      ...new Set([
+        ...(alt === "devral" || alt === "satinal"
+          ? tapu ? [tapu.s] : []
+          : c.tur === "atolye" && tapu
+            ? [tapu.s, ...(tapu.y?.po ?? [])]
+            : []),
+        ...kancaYuklenecekler(k, [isletme]),
+      ]),
+    ];
     const r = await motor.mulkAdimi(hesapId, govde, yukle, (kar, ek) => {
       switch (alt) {
         case "depo":
@@ -248,7 +265,7 @@ export async function mulkIsle(motor: MulkMotoru, ileti: MulkIletisi, an: number
     return durumEkle(k, r);
   }
   // İşletmeye giden okuma ve komutlar: bağlam ve tapu özeti yerleşimden.
-  const ben = await motor.mulkOyuncu(hesapId);
+  const ben = await motor.mulkOyuncu(hesapId, alt === "panel" && c.tur === "han" ? kancaYuklenecekler(k, [isletme]) : []);
   if (!ben.ok) return ben;
   const kar = ben.deger.kar;
   const tapu = tapuOzeti(k, isletme);
