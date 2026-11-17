@@ -10,6 +10,7 @@ import { sahteAtolyeIstemci } from "./sahte-atolye";
 import { tezgahHataMetni, type DepoSatiri, type TopluSiparis, type GenisletmeGorunumu, type TezgahGorunumu } from "./tezgah-veri";
 import { TARIFLER } from "./meslek-veri";
 import type { Olay, TarifSatiri } from "./protokol";
+import type { EfsaneviSonucu, KaliteKisiti, OzellikDokumu } from "./esya-veri";
 
 /** GET /v1/atolyeler satırı. */
 export interface AtolyeKarti {
@@ -25,7 +26,9 @@ export interface ZanaatYaniti { zanaat: { meslek: string; bedel: number; degisim
 export interface AtolyeUretimYaniti {
   uretim: {
     tarif: string; cikti: { mal: string; adet: number }; yan?: Record<string, number> | null; girdi: Record<string, number>;
-    kalite?: { kademe: number; ad?: string; dokum?: { toplam: number; kalemler: { k: string; d: number }[] }; sonrakiEsik?: number | null } | null;
+    kalite?: { kademe: number; ad?: string; dokum?: { toplam: number; kalemler: { k: string; d: number }[] }; sonrakiEsik?: number | null; tavan?: number; kisit?: KaliteKisiti | null } | null;
+    /** Dilim 4: efsanevi denemesi (istenmediyse null) ve çıkan en yüksek kademenin özellik dökümü. */
+    efsanevi?: EfsaneviSonucu | null; ozellik?: OzellikDokumu;
     hizmet?: number; atolye: { isletme: string; ad: string }; levha: boolean;
   };
   depo: DepoSatiri[]; depoDolu: number; depoKapasite: number;
@@ -46,7 +49,7 @@ export type EmirKomutu = { islem: "ac"; tarif: string; kez: number } | { islem: 
 export interface AtolyeIstemci {
   atolyeler(): Promise<EkSonuc<AtolyeListesi>>;
   zanaat(id: string, g: { meslek: string; istekNo: string }): Promise<EkSonuc<ZanaatYaniti>>;
-  uret(id: string, g: { tarif: string; istekNo: string }): Promise<EkSonuc<AtolyeUretimYaniti>>;
+  uret(id: string, g: { tarif: string; efsanevi?: true; istekNo: string }): Promise<EkSonuc<AtolyeUretimYaniti>>;
   mesai(id: string, g: { emek: number; istekNo: string }): Promise<EkSonuc<MesaiYaniti>>;
   emir(id: string, g: EmirKomutu & { istekNo: string }): Promise<EkSonuc<EmirYaniti>>;
   toplu(id: string, g: { siparis: string; istekNo: string }): Promise<EkSonuc<TopluYaniti>>;
@@ -82,6 +85,9 @@ export function useAtolyeIstemci(): AtolyeIstemci {
  */
 export function atolyeHataMetni(t: (k: string) => string, s: { hata: string; ham?: string }): string {
   const kod = s.ham ?? s.hata;
+  const es = "onl.es.h." + kod;
+  const ev = t(es);
+  if (ev !== es) return ev;
   const k = "onl.atl.h." + kod;
   const v = t(k);
   if (v !== k) return v;

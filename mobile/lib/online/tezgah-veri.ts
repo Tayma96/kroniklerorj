@@ -3,6 +3,7 @@
 // Fiyat bandı aynası (bantHesapla) yalnız henüz rafta olmayan bir mal için seçenek göstermek içindir
 // (tezgah-kurallar.ts RAF_FIYAT_ALT/UST, NPC_TAVAN_CARPANI, kalite.ts KALITE_DEGER_CARPANI [PARAMETRE] kopyası);
 // doğrulama sunucudadır (`fiyat_bant_disi`).
+import type { AtolyeEfsanevi } from "./esya-veri";
 import { useMemo } from "react";
 import { applyParams } from "../i18n";
 import { useOnline } from "./durum";
@@ -10,7 +11,8 @@ import { ekCagir, ekHataAnahtari, nesneMi, sayiMi, metinMi, type EkHata, type Ek
 import { MALLAR } from "./meslek-veri";
 import { sahteTezgahIstemci } from "./sahte-tezgah";
 
-export type Kademe = 0 | 1 | 2 | 3;
+/** Dilim 4: 7 kademe (sade … tılsımlı); eski kayıtlarda 0–3. */
+export type Kademe = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 export interface FiyatBandi { alt: number; ust: number }
 export interface Carpanlar { F: number; Q: number; R: number; H: number }
 export interface RafSatiri {
@@ -105,6 +107,8 @@ export interface AtolyeBolumu {
   tezgah: { sayi: number; acikEmir: number }; kaliteBonus: number;
   emek: { havuz: number; tavan: number; npcCalisan: number; npcAylik: number; npc?: NpcDokumu; npcKaliteCeza: number; npcMaasEnAz: number; tekEnCok?: number };
   emirler: UretimEmri[]; emirKezEnCok: number; sonUretimAyi: number | null; topluSiparis: TopluSiparis[]; benimTakat: number;
+  /** Dilim 4: bakanın efsanevi denemesi (zanaatta pirse); eski sunucuda yok. */
+  efsanevi?: AtolyeEfsanevi;
 }
 export interface DukkanKarti {
   isletme: string; no: number; ad: string; sahip: { id: string; ad: string }; seviye: number; itibar: number; kepenk: boolean;
@@ -192,7 +196,7 @@ export function useTezgahIstemci(): TezgahIstemci {
 
 // ---------------------------------------------------------------- fiyat bandı aynası (yalnız gösterim)
 
-const KALITE_DEGER = [1, 1.25, 1.6, 2.5] as const;
+const KALITE_DEGER = [1, 1.25, 1.6, 2.5, 3.5, 5, 7] as const;
 const tabanBul = (mal: string) => (MALLAR as Record<string, { taban: number } | undefined>)[mal]?.taban ?? 0;
 /** Rafa çıkabilen mal (tabanı 0 olan mal satılmaz). */
 export const rafMali = (mal: string) => tabanBul(mal) > 0;
