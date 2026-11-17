@@ -94,19 +94,19 @@ export function useOnizleme(ist: TezgahIstemci, isletme: string, girdi: { mal: s
 
 // ---------------------------------------------------------------- küçük parçalar
 
-function Not({ metin, rtl, renk = C.parchmentMuted, icon }: { metin: string; rtl: boolean; renk?: string; icon?: string }) {
+export function Not({ metin, rtl, renk = C.parchmentMuted, icon }: { metin: string; rtl: boolean; renk?: string; icon?: string }) {
   return <View style={{ flexDirection: yon(rtl), alignItems: "flex-start", gap: 8 }}>
     {icon ? <View style={{ marginTop: 2 }}><GameIcon name={icon} size={14} color={renk} /></View> : null}
     <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 13.5, lineHeight: 19, color: renk, textAlign: hiza(rtl) }}>{metin}</Text>
   </View>;
 }
-function Satir({ etiket, deger, renk = C.parchment, rtl }: { etiket: string; deger: string; renk?: string; rtl: boolean }) {
+export function Satir({ etiket, deger, renk = C.parchment, rtl }: { etiket: string; deger: string; renk?: string; rtl: boolean }) {
   return <View style={{ flexDirection: yon(rtl), justifyContent: "space-between", alignItems: "center", gap: 8, minHeight: 26 }}>
     <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 14, lineHeight: 19, color: C.parchmentDim, textAlign: hiza(rtl) }}>{etiket}</Text>
     <Text style={{ fontFamily: F.display, fontSize: 14, color: renk }}>{deger}</Text>
   </View>;
 }
-function AltBaslik({ metin, rtl }: { metin: string; rtl: boolean }) {
+export function AltBaslik({ metin, rtl }: { metin: string; rtl: boolean }) {
   return <Text accessibilityRole="header" style={{ fontFamily: F.display, fontSize: 11.5, letterSpacing: rtl ? 0 : 1.2, color: C.goldBright, textAlign: hiza(rtl) }}>{metin}</Text>;
 }
 function Sekme({ etiket, icon, secili, rtl, onPress }: { etiket: string; icon: string; secili: boolean; rtl: boolean; onPress: () => void }) {
@@ -117,7 +117,7 @@ function Sekme({ etiket, icon, secili, rtl, onPress }: { etiket: string; icon: s
     <Text numberOfLines={2} style={{ flexShrink: 1, fontFamily: F.display, fontSize: 12.5, textAlign: "center", color: secili ? C.parchment : C.parchmentDim }}>{etiket}</Text>
   </Pressable>;
 }
-function Sonuc({ hata, bilgi, rtl }: { hata: string | null; bilgi: string | null; rtl: boolean }) {
+export function Sonuc({ hata, bilgi, rtl }: { hata: string | null; bilgi: string | null; rtl: boolean }) {
   if (!hata && !bilgi) return null;
   return <Animated.View entering={belir()} accessibilityRole="alert" accessibilityLiveRegion="polite"
     style={{ flexDirection: yon(rtl), alignItems: "center", gap: 10, padding: 10, borderRadius: 8, borderWidth: 1, borderColor: hata ? "rgba(200,64,64,0.6)" : "rgba(122,154,92,0.6)", backgroundColor: hata ? "rgba(60,16,12,0.7)" : "rgba(30,44,22,0.7)" }}>
@@ -129,7 +129,7 @@ function Sonuc({ hata, bilgi, rtl }: { hata: string | null; bilgi: string | null
 /** Kepenk durumu sözle: neden kapalı, ne yazılmadı, ne yapılırsa açılır (baskısız). */
 export function KepenkSatiri({ g, rtl, t, musteri = false, devralmaAy }: { g: TezgahGorunumu; rtl: boolean; t: Ceviri; musteri?: boolean; devralmaAy?: number | null }) {
   const atolye = g.tur === "atolye";
-  const metin = atolye ? t("onl.tz.kepenk.atolye") : musteri ? (g.raf.some((x) => x.adet > 0) ? t("onl.tz.kepenk.musteriAcik") : t("onl.tz.kepenk.musteriBos"))
+  const metin = atolye ? t(g.kepenk ? "onl.atl.kepenk.kapali" : "onl.atl.kepenk.acik") : musteri ? (g.raf.some((x) => x.adet > 0) ? t("onl.tz.kepenk.musteriAcik") : t("onl.tz.kepenk.musteriBos"))
     : g.kepenk ? t("onl.tz.kepenk.kapaliNot") : t("onl.tz.kepenk.acikNot");
   // Sahibin kendi dükkânında devralma sayacı yarıyı geçtiyse sakin bilgi (korkutmadan).
   const uzun = !musteri && !atolye && !!devralmaAy && g.kepenkAy >= Math.ceil(devralmaAy / 2);
@@ -239,7 +239,7 @@ export function TezgahIskeleti({ etiket, rtl }: { etiket: string; rtl: boolean }
 }
 
 /** Adet seçici: −/+ ve hızlı seçimler (+10, Tümü = üst sınır; sınırı çağıran en küçük geçerli değerle verir). */
-function AdetSecici({ etiket, deger, en = 1, cok, onDegis, rtl, t }: { etiket: string; deger: number; en?: number; cok: number; onDegis: (n: number) => void; rtl: boolean; t: Ceviri }) {
+export function AdetSecici({ etiket, deger, en = 1, cok, onDegis, rtl, t }: { etiket: string; deger: number; en?: number; cok: number; onDegis: (n: number) => void; rtl: boolean; t: Ceviri }) {
   const hizli = (ad: string, gorunen: string, hedef: number) => {
     const y = Math.max(en, Math.min(cok, hedef));
     const kapali = y === deger;
@@ -462,7 +462,7 @@ export function DepoCekmecesi({ acik, oturum, g, ist, onKapat, onYenile, rtl, t 
     {sekme === "al" && g.depoDefteri?.length ? <View style={{ gap: 4 }}>
       <AltBaslik metin={t("onl.tz.dd.baslik")} rtl={rtl} />
       {[...g.depoDefteri].reverse().slice(0, 8).map((x, i) => <Text key={`${x.ay}.${x.kim}.${x.mal}.${i}`} style={{ fontFamily: F.serif, fontSize: 13, lineHeight: 18, color: C.parchmentDim, textAlign: hiza(rtl) }}>
-        {applyParams(t("onl.tz.dd.satir"), [x.ay, kisiAdi(x.kim), x.adet, malAdi(t, x.mal), kaliteAdi(t, x.kalite)])}
+        {applyParams(t("onl.tz.dd.satir"), [x.ay, x.kimAd || kisiAdi(x.kim), x.adet, malAdi(t, x.mal), kaliteAdi(t, x.kalite)])}
       </Text>)}
     </View> : null}
     <AltinDugme etiket={t(sekme === "koy" ? "onl.tz.depo.koyDugme" : "onl.tz.depo.alDugme")} icon={sekme === "koy" ? "backpack" : "amphora"} rtl={rtl}
