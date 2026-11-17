@@ -15,7 +15,8 @@ const ROL_YETKI: Record<Rol, Yetki[]> = { hanci: ["musteri", "fiyat"], garson: [
 export function sahteMulkIstemci(baslangicPara: number, yer: string): MulkIstemci {
   const id = (tur: MulkTuru, no: number) => `${yer}.${tur}.${no}`;
   const HAN = id("han", 4);
-  const s = { para: Math.max(140, baslangicPara), benim: [HAN] as string[], sn: 3 };
+  // Oyuncunun atölyesi baştan sahipli: atölye ekranı (sahte-atolye.ts) sunucusuz da dolu görünsün.
+  const s = { para: Math.max(140, baslangicPara), benim: [HAN, id("atolye", 1)] as string[], sn: 3 };
   const soz = (no: number, ad: string, cid: string, tur: "oyuncu" | "npc", rol: Rol, maas: number, kd: number): SozlesmeGorunumu => ({
     no, calisan: { tur, id: cid, ad }, rol, yetkiler: [...ROL_YETKI[rol]], maas, baslangic: AY - 5, bitis: null, odenenAy: 5, kademe: kd, durum: "etkin", vekaletBitis: null,
   });
@@ -68,6 +69,12 @@ export function sahteMulkIstemci(baslangicPara: number, yer: string): MulkIstemc
     if (isletme === id("dukkan", 1)) return vitrin(isletme, "dukkan", "Zeynep'in Kumaş Dükkânı", ["o4", "Zeynep"]);
     if (isletme === id("atolye", 2)) return vitrin(isletme, "atolye", "Kerem Ocağı", ["o7", "Usta Kerem"]);
     for (const [no, b] of Object.entries(BASKA_HANLAR)) if (isletme === id("han", Number(no))) return vitrin(isletme, "han", b[2], [b[0], b[1]]);
+    // Oyuncunun dükkânı/atölyesi: sahip paneli (kasa küçük, personel yok; tezgâh verisi sahte-tezgah.ts'ten).
+    if (s.benim.includes(isletme) && (isletme === id("dukkan", 2) || isletme === id("atolye", 1))) {
+      const v = vitrin(isletme, isletme === id("atolye", 1) ? "atolye" : "dukkan", "", ["o1", "Elif Nur"]);
+      return { isletme: { ...v.isletme, kasa: 42, emanet: 24, borc: 0, borcAy: 0, defter: [], maasYuku: 0, personel: [], teklifler: [], oneriler: [], sicil: 0, cekim: { bugun: 0, tavan: 200 } },
+        konum: "sahip", yetkiler: ["kasa", "musteri", "fiyat", "personel", "vekalet"] };
+    }
     return null;
   };
   const yeniSoz = (rol: Rol, maas: number, ad: string, cid: string, tur: "oyuncu" | "npc") => { const x = soz(++s.sn, ad, cid, tur, rol, maas, 1); x.baslangic = AY; x.odenenAy = 0; han.personel!.push(x); return x; };

@@ -5,7 +5,8 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
 import { AppState } from "react-native";
 import { useFocusEffect } from "expo-router";
 import { useOnline } from "./durum";
-import { ekBasarili, ekBasarisiz, ekCagir, nesneMi, metinMi, type EkSonuc } from "./ek-istemci";
+import { ekCagir, nesneMi, metinMi, type EkSonuc } from "./ek-istemci";
+import { sahteAtolyeIstemci } from "./sahte-atolye";
 import { tezgahHataMetni, type DepoSatiri, type TopluSiparis, type GenisletmeGorunumu, type TezgahGorunumu } from "./tezgah-veri";
 import { TARIFLER } from "./meslek-veri";
 import type { Olay, TarifSatiri } from "./protokol";
@@ -67,21 +68,12 @@ const httpAtolye: AtolyeIstemci = {
   genislet: (id, g) => post(id, "genislet", g, (v): v is GenisletYaniti => nesneMi(v) && nesneMi(v.genisletme)),
 };
 
-/** Geliştirici önizlemesi: sahte tezgâhta atölye üretimi yok; yazmalar sakin bir "sunucu yok" döner, liste boştur. */
-const sahteAtolye: AtolyeIstemci = {
-  atolyeler: async () => ekBasarili({ atolyeler: [], topluSiparis: [], yuva: { toplam: 3, dolu: 0 }, bedel: 0, devralmaKepenkAy: 60 }),
-  zanaat: async () => ekBasarisiz("sunucu_yok"),
-  uret: async () => ekBasarisiz("sunucu_yok"),
-  mesai: async () => ekBasarisiz("sunucu_yok"),
-  emir: async () => ekBasarisiz("sunucu_yok"),
-  toplu: async () => ekBasarisiz("sunucu_yok"),
-  genislet: async () => ekBasarisiz("sunucu_yok"),
-};
-
+/** Geliştirici önizlemesinde sahte atölye (sahte-atolye.ts; sahte tezgâhla aynı durum), yoksa sunucu. */
 export function useAtolyeIstemci(): AtolyeIstemci {
   const o = useOnline();
   const sahte = o.oturum?.tur === "gelistirici";
-  return useMemo(() => (sahte ? sahteAtolye : httpAtolye), [sahte]);
+  const yer = o.yerlesim?.yerlesim.id ?? "develi";
+  return useMemo(() => (sahte ? sahteAtolyeIstemci(yer) : httpAtolye), [sahte, yer]);
 }
 
 /**
