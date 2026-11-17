@@ -179,3 +179,24 @@ export const GENISLETME_MALZEME: Readonly<Record<"dukkan" | "atolye", readonly R
     { kiris: 2, civi: 14, dograma: 3, kesmeTas: 8 },
   ],
 };
+
+// ── Dilim 3: meslek/beceri kancaları (kayıt: icerik/kanca-kayit.ts; hesap ve yığılma: mulk/kanca.ts) ──
+
+/**
+ * [PARAMETRE] Kanal tavanları (kanalın biriminde). Yığılma: kişi katkısı kancalarının toplamı, işletme değeri kişiler
+ * arasından en yükseği (toplanmaz, çarpılmaz), sonra bu tavan. dukkanH/hanH: H yüzde puanı (H_TAVAN_YUZDE ile aynı);
+ * rafSatir: +satır; rafAdet: +adet; depo: +%; atolyeKalite: +kalite puanı; npcCeza: −ceza puanı; topluIndirim: teslim
+ * adedinden −%; genisletme: malzemeden −%.
+ */
+export const KANCA_TAVAN = {
+  dukkanH: H_TAVAN_YUZDE,
+  hanH: H_TAVAN_YUZDE,
+  rafSatir: 2,
+  rafAdet: 8,
+  depo: 25,
+  atolyeKalite: 10,
+  npcCeza: 15,
+  topluIndirim: 20,
+  genisletme: 25,
+} as const;
+export type DegerliKanal = keyof typeof KANCA_TAVAN;

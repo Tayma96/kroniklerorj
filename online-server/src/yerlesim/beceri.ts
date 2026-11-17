@@ -3,6 +3,7 @@
 // kalır, kalfa+ bedelle sıfırlanır), ağaç görünümü ve mesleki geçmiş. Saf fonksiyonlar; zaman `simdi` (ms) ile gelir.
 
 import { AGACLAR, UNVANLAR, beceriDugumu, type BeceriDugumu, type Etki } from "../icerik/agaclar/index.ts";
+import { KANCA_BAGLARI, kancaAnahtari } from "../icerik/kanca-kayit.ts";
 import { MALLAR } from "../icerik/mallar.ts";
 import { MESLEK_IDLERI, meslekBul, type Kademe, type MeslekId } from "../icerik/meslekler.ts";
 import { TARIFLER } from "../icerik/tarifler.ts";
@@ -41,8 +42,16 @@ const DK = 60_000;
 
 // ---------------------------------------------------------------- etki bağları
 
-/** Etki bir sisteme bağlı mı; değilse kancadır (veri olarak durur, sistemi gelince okunur). */
+/**
+ * Etki boşta bir kanca mı (veri olarak durur, sistemi gelince okunur)? Yapısal bağlar (tarif, iş, ürün kalitesi,
+ * verim, araç, ömür, tasarruf) burada; öbür bağlar tek kayıttan (`icerik/kanca-kayit.ts` KANCA_BAGLARI) okunur.
+ */
 export function kancaMi(e: Etki): boolean {
+  return yapisalKancaMi(e) && !Object.hasOwn(KANCA_BAGLARI, kancaAnahtari(e));
+}
+
+/** Yapısal olarak (veri kimliğiyle) bağlı değil mi; kayıt bakılmaz. */
+export function yapisalKancaMi(e: Etki): boolean {
   switch (e.tur) {
     case "tarif":
       return !Object.hasOwn(TARIFLER, e.tarif);
@@ -61,6 +70,9 @@ export function kancaMi(e: Etki): boolean {
       return (!kaliteHedefiMi(e.hedef) && !Object.hasOwn(TEMEL_ISLER, e.hedef)) || !Object.hasOwn(MALLAR, e.mal);
     case "hizmet":
       return e.hizmet !== "ikram";
+    case "hak":
+    case "sinerji":
+      return true;
     default:
       return true;
   }

@@ -29,6 +29,8 @@ export interface TopluSiparis {
   durum: "acik" | "teslim" | "dustu";
   /** Teslim eden atölye, adı ve ay. */
   al?: string;
+  /** Teslim edilen adet (kanca indirimiyle `adet`ten az olabilir; yoksa `adet`). */
+  ti?: number;
   alAd?: string;
   ta?: number;
 }
@@ -80,22 +82,32 @@ export function topluDonumu(d: TopluDefter, yerlesim: string, ay: number, zanaat
   return { acilan: s, dusen };
 }
 
-/** Teslim: atölye zanaatı siparişinki, depoda yeterli mal (her kalite; önce sade), üst üste değil. Mal depodan düşer. */
-export function topluTeslim(d: TopluDefter, idHam: unknown, isletme: string, ad: string, t: Tezgah, ay: number): Sonuc<{ siparis: TopluSiparis; parti: KaliteParti[]; saOnce?: string }> {
+/** Kanca indirimiyle teslim adedi: adet − ⌊adet × yüzde / 100⌋ (en az 1). Ödül değişmez (§7 Dilim 3). */
+export function teslimAdedi(adet: number, indirimYuzde = 0): number {
+  return Math.max(1, adet - Math.floor((adet * Math.max(0, indirimYuzde)) / 100));
+}
+
+/**
+ * Teslim: atölye zanaatı siparişinki, depoda yeterli mal (her kalite; önce sade), üst üste değil. Mal depodan düşer.
+ * `indirim`: sipariş zanaatına göre tavanlı kanca yüzdesi (mulk/kanca.ts topluIndirim); ödülü değiştirmez.
+ */
+export function topluTeslim(d: TopluDefter, idHam: unknown, isletme: string, ad: string, t: Tezgah, ay: number, indirim: (m: MeslekId) => number = () => 0): Sonuc<{ siparis: TopluSiparis; parti: KaliteParti[]; saOnce?: string; adet: number }> {
   const s = typeof idHam === "string" ? d.l.find((x) => x.id === idHam) : undefined;
   if (!s) return hata("siparis_yok");
   if (s.durum !== "acik" || ay >= s.son) return hata("siparis_kapandi");
   if (t.za !== s.meslek) return hata("zanaat_disi");
   if (d.sa === isletme) return hata("ust_uste");
   const izliOnce = (t.kq?.[s.mal] ?? []).map((p) => [...p] as KaliteParti);
-  if (!depodanDus(t, s.mal, s.adet)) return hata("mal_yok");
+  const adet = teslimAdedi(s.adet, indirim(s.meslek));
+  if (!depodanDus(t, s.mal, adet)) return hata("mal_yok");
   const saOnce = d.sa;
   s.durum = "teslim";
   s.al = isletme;
   s.alAd = ad;
   s.ta = ay;
+  if (adet < s.adet) s.ti = adet;
   d.sa = isletme;
-  return basarili({ siparis: s, parti: dusenPartiler(izliOnce, t.kq?.[s.mal] ?? [], s.adet), ...(saOnce !== undefined ? { saOnce } : {}) });
+  return basarili({ siparis: s, adet, parti: dusenPartiler(izliOnce, t.kq?.[s.mal] ?? [], adet), ...(saOnce !== undefined ? { saOnce } : {}) });
 }
 
 /** Depodan düşen partiler (önce/sonra izli parti farkı; kalanı izsiz sade). */
@@ -131,23 +143,27 @@ export function partiCoz(ham: unknown, adet: number): KaliteParti[] {
 export function topluGeriAl(d: TopluDefter | undefined, y: Record<string, unknown>, isletme: string, depo: Pick<Tezgah, "ev" | "kq"> | undefined): { mal: MalId; parti: KaliteParti[] } | undefined {
   const s = d?.l.find((x) => x.id === y.siparis);
   if (!d || !s || s.durum !== "teslim" || s.al !== isletme) return undefined;
+  const adet = s.ti ?? s.adet;
   s.durum = "acik";
   delete s.al;
   delete s.alAd;
   delete s.ta;
+  delete s.ti;
   if (d.sa === isletme) {
     if (typeof y.saOnce === "string") d.sa = y.saOnce;
     else delete d.sa;
   }
-  const parti = partiCoz(y.parti, s.adet);
+  const parti = partiCoz(y.parti, adet);
   if (depo) kaliteliEkle(depo, s.mal, parti);
   return { mal: s.mal, parti };
 }
 
-export function topluGorunumu(d: TopluDefter | undefined, ay: number, benim?: { isletme: string; t: Tezgah }) {
+export function topluGorunumu(d: TopluDefter | undefined, ay: number, benim?: { isletme: string; t: Tezgah; indirim?: (m: MeslekId) => number }) {
   return [...(d?.l ?? [])].reverse().map((s) => {
     const acik = s.durum === "acik" && ay < s.son;
     const depoda = benim ? (benim.t.ev?.[s.mal] ?? 0) : 0;
+    const indirim = benim?.indirim?.(s.meslek) ?? 0;
+    const teslimAdet = teslimAdedi(s.adet, indirim);
     return {
       id: s.id,
       meslek: s.meslek,
@@ -162,7 +178,7 @@ export function topluGorunumu(d: TopluDefter | undefined, ay: number, benim?: { 
       durum: s.durum,
       alan: s.al ? { isletme: s.al, ad: s.alAd ?? "", ay: s.ta ?? null } : null,
       ...(benim
-        ? { depoda, teslimEdebilir: acik && benim.t.za === s.meslek && d?.sa !== benim.isletme && depoda >= s.adet, ustUste: d?.sa === benim.isletme }
+        ? { depoda, teslimAdet, indirimYuzde: indirim, teslimEdebilir: acik && benim.t.za === s.meslek && d?.sa !== benim.isletme && depoda >= teslimAdet, ustUste: d?.sa === benim.isletme }
         : {}),
     };
   });

@@ -23,7 +23,10 @@ import type { Kisi } from "./isletme.ts";
 import { EDINIM_FIYATI, ITIBAR_BASLANGIC, KISI_MULK_EN_COK, MULK_YUVA, isletmeCoz, type MulkTuru, type Yetki } from "./kurallar.ts";
 import { fiyatBandi, fiyatGecerli, rafAdedi, rafBos, rafSatirSiniri, rafaKoy, raftanAl, raftanSat, satirBul, satirGorunumu } from "./raf.ts";
 import { bosYuva, edinimSarti, iadeBedeli, kasayaCikis, mulkDefteri, sahipMulkleri, vergiAyir, type MulkDefteri } from "./tapu.ts";
-import { meslekOyuncuSayaci, npcDokumu, saticilar } from "./tezgah-donum.ts";
+import { depoKancasi, dukkanHKancasi, meslekOyuncuSayaci, npcDokumu, saticilar } from "./tezgah-donum.ts";
+import { bilgiKancasi, kancaDokumu, kancaHesapla } from "./kanca.ts";
+import type { MalzemeIndirimi } from "./atolye.ts";
+import type { MeslekId } from "../icerik/meslekler.ts";
 import { pompaDenetle, pompaYaz } from "../yerlesim/pazar-tahta.ts";
 import { trGunu } from "../yonetim/sikayet.ts";
 import { CIKIS_EN_COK, cikisAc } from "./transfer.ts";
@@ -74,6 +77,52 @@ export function zanaatHazirla(k: Kasaba, md: MulkDefteri, isletme: string, t: Te
   if (t.za || isletmeCoz(isletme)?.tur !== "atolye") return;
   const z = zanaatOner(k.kar.get(md.t[isletme]?.s ?? ""));
   if (z) t.za = z;
+}
+
+// ── Dilim 3 kancaları (mulk/kanca.ts; kişiler = sahip + oyuncu çalışanlar, en yüksek katkı, tavanlı) ──
+
+function depoKap(k: Kasaba, md: MulkDefteri, isletme: string, tur: TezgahTuru, seviye: number): number {
+  return depoKapasitesi(tur, seviye, depoKancasi(k, md, isletme).deger);
+}
+
+function rafEki(k: Kasaba, md: MulkDefteri, isletme: string): { satir: number; adet: number } {
+  const ki = atolyeAdaylari(k, md, isletme);
+  return { satir: kancaHesapla(ki, "rafSatir").deger, adet: kancaHesapla(ki, "rafAdet").deger };
+}
+
+function malzemeIndirimi(k: Kasaba, md: MulkDefteri, isletme: string): MalzemeIndirimi {
+  const ki = atolyeAdaylari(k, md, isletme);
+  return (mal) => kancaHesapla(ki, "genisletme", { mal }).deger;
+}
+
+function topluIndirimi(k: Kasaba, md: MulkDefteri, isletme: string): (m: MeslekId) => number {
+  const ki = atolyeAdaylari(k, md, isletme);
+  return (m) => kancaHesapla(ki, "topluIndirim", { meslek: m }).deger;
+}
+
+/** Yetkiliye kanca dökümü: etkisi olan kanallar (değer, tavan, kişi, kalemler). */
+function kancaGorunumu(k: Kasaba, md: MulkDefteri, isletme: string, tur: TezgahTuru, t: Tezgah) {
+  const ki = atolyeAdaylari(k, md, isletme);
+  const l: [string, ReturnType<typeof kancaHesapla>][] = [["depo", kancaHesapla(ki, "depo")]];
+  if (tur === "dukkan") {
+    l.push(["rafSatir", kancaHesapla(ki, "rafSatir")], ["rafAdet", kancaHesapla(ki, "rafAdet")]);
+    const hk = dukkanHKancasi(k, md, isletme);
+    for (const m of new Set(t.r.map((s) => MALLAR[s.m].meslek))) l.push([`dukkanH.${m}`, hk(m)]);
+  } else if (t.za) {
+    l.push(["atolyeKalite", kancaHesapla(ki, "atolyeKalite", { meslek: t.za })], ["npcCeza", kancaHesapla(ki, "npcCeza", { meslek: t.za })], ["topluIndirim", kancaHesapla(ki, "topluIndirim", { meslek: t.za })]);
+  }
+  return Object.fromEntries(l.filter(([, s]) => s.deger > 0).map(([a, s]) => [a, kancaDokumu(s)]));
+}
+
+/** Fiyat tablosu (tüccar `fiyatTablosu` kancası): yerleşimdeki öbür dükkânların raf satırları, mal sırasıyla (en çok 40). */
+function fiyatTablosu(k: Kasaba, md: MulkDefteri, isletme: string) {
+  const l: { isletme: string; ad: string; mal: string; kalite: number; fiyat: number; adet: number }[] = [];
+  for (const [id, tapu] of Object.entries(md.t)) {
+    const c = isletmeCoz(id);
+    if (!c || c.tur !== "dukkan" || c.yerlesim !== k.y || id === isletme || tapu.y?.durum === "iflas") continue;
+    for (const s of md.tz?.[id]?.r ?? []) if (rafAdedi(s) > 0) l.push({ isletme: id, ad: tapu.y?.ad ?? "", mal: s.m, kalite: s.q, fiyat: s.f, adet: rafAdedi(s) });
+  }
+  return l.sort((a, b) => (a.mal < b.mal ? -1 : a.mal > b.mal ? 1 : a.kalite - b.kalite || a.fiyat - b.fiyat || (a.isletme < b.isletme ? -1 : 1))).slice(0, 40);
 }
 
 /** Sahip ve oyuncu çalışanlar (yerleşimde yüklü, yaşayan): emrin ustası adayları. */
@@ -186,7 +235,7 @@ export function atolyeListesi(k: Kasaba, kar: Karakter) {
   // Teslim edebileceği atölye: sahibi ya da "musteri" yetkili çalışanı olduğu ilk atölye.
   const benimId = ids.find((id) => izinler(md, id, kar.o).toplu);
   const benim = benimId ? { isletme: benimId, t: (md.tz ??= {})[benimId] ?? bosTezgah() } : undefined;
-  return { atolyeler, topluSiparis: topluGorunumu(md.tsp, k.ay, benim), yuva: { toplam: MULK_YUVA[k.tur].atolye, dolu: ids.length }, bedel: EDINIM_FIYATI[k.tur].atolye, devralmaKepenkAy: DEVRALMA_KEPENK_AY };
+  return { atolyeler, topluSiparis: topluGorunumu(md.tsp, k.ay, benim && { ...benim, indirim: topluIndirimi(k, md, benim.isletme) }), yuva: { toplam: MULK_YUVA[k.tur].atolye, dolu: ids.length }, bedel: EDINIM_FIYATI[k.tur].atolye, devralmaKepenkAy: DEVRALMA_KEPENK_AY };
 }
 
 /** GET /v1/isletme/:id/tezgah: raf (herkese), depo + gün sonu dökümü + izinler (sahip ve yetkili çalışana). */
@@ -209,7 +258,7 @@ export function tezgahGorunumu(k: Kasaba, kar: Karakter, isletme: string): Sonuc
     kepenkAy: t.kk,
     gecenAyKepenk: (t.gs as { kepenk?: boolean } | undefined)?.kepenk ?? true,
     raf: tur === "dukkan" ? t.r.map((s) => satirGorunumu(s, itibar)) : [],
-    rafSiniri: { satir: tur === "dukkan" ? rafSatirSiniri(etkin) : 0, adet: RAF_SATIR_ADET },
+    rafSiniri: tur === "dukkan" ? (() => { const e = rafEki(k, md, isletme); return { satir: rafSatirSiniri(etkin) + e.satir, adet: RAF_SATIR_ADET + e.adet }; })() : { satir: 0, adet: RAF_SATIR_ADET },
     npcTavanSeviye: tur === "dukkan" ? (DUKKAN_NPC_TAVAN[seviye] ?? DUKKAN_NPC_TAVAN[0]!) : 0,
     devralinabilir: devralinabilir(k, md, isletme) && tapu.s !== kar.o,
     izin: {
@@ -224,12 +273,14 @@ export function tezgahGorunumu(k: Kasaba, kar: Karakter, isletme: string): Sonuc
     ...(yetkili
       ? {
           depo: depoGorunumu(t),
-          depoKapasite: depoKapasitesi(tur, etkin),
+          depoKapasite: depoKap(k, md, isletme, tur, etkin),
           depoDolu: depoAdedi(t),
           gunSonu: t.gs ?? null,
           ozet: md.tzo ?? null,
           depoDefteri: (t.dd ?? []).map(([ay, o, mal, kalite, adet]) => ({ ay, kim: o, kimAd: k.kar.get(o)?.ad ?? sahipAdi(k, o), mal, kalite, adet })),
-          genisletme: genisletmeGorunumu(tur, t, seviye),
+          genisletme: genisletmeGorunumu(tur, t, seviye, malzemeIndirimi(k, md, isletme)),
+          kanca: kancaGorunumu(k, md, isletme, tur, t),
+          ...(tur === "dukkan" && bilgiKancasi(kar, "fiyatTablosu") ? { fiyatTablosu: fiyatTablosu(k, md, isletme) } : {}),
           ...(tur === "atolye" ? { atolye: atolyeGorunumu(k, md, isletme, t, seviye, kar) } : {}),
         }
       : {}),
@@ -248,11 +299,11 @@ function atolyeGorunumu(k: Kasaba, md: MulkDefteri, isletme: string, t: Tezgah, 
     zanaatDegisim: { yapilan: zs, ucretsizKalan: Math.max(0, ZANAAT_UCRETSIZ_DEGISIM - zs), bedel: zs >= ZANAAT_UCRETSIZ_DEGISIM ? ZANAAT_DEGISIM_BEDELI : 0 },
     tezgah: { sayi: tezgahSayisi(t, seviye), acikEmir: t.ue?.length ?? 0 },
     kaliteBonus: ATOLYE_KALITE_SEVIYE_PUANI * seviye,
-    emek: { havuz: t.eh ?? 0, tavan: emekTavani(t, seviye), npcCalisan: ne, npcAylik: NPC_EMEK_AY * ne, npc: npcDokumu(ne, Math.max(ne, tapu.y?.nt ?? ne)), npcKaliteCeza: NPC_EMEK_KALITE_CEZA, npcMaasEnAz: NPC_ATOLYE_MAAS_EN_AZ },
+    emek: { havuz: t.eh ?? 0, tavan: emekTavani(t, seviye), tekEnCok: MESAI_TEK_EN_COK, npcCalisan: ne, npcAylik: NPC_EMEK_AY * ne, npc: npcDokumu(ne, Math.max(ne, tapu.y?.nt ?? ne)), npcKaliteCeza: NPC_EMEK_KALITE_CEZA, npcMaasEnAz: NPC_ATOLYE_MAAS_EN_AZ },
     emirler: (t.ue ?? []).map((e) => ({ no: e.n, tarif: e.tr, kez: e.k, yapilan: e.y, kalan: e.k - e.y, acilis: e.a, acan: { id: e.o, ad: k.kar.get(e.o)?.ad ?? sahipAdi(k, e.o) } })),
     emirKezEnCok: EMIR_KEZ_EN_COK,
     sonUretimAyi: t.ua ?? null,
-    topluSiparis: topluGorunumu(md.tsp, k.ay, { isletme, t }),
+    topluSiparis: topluGorunumu(md.tsp, k.ay, { isletme, t, indirim: topluIndirimi(k, md, isletme) }),
     benimTakat: kar.tk,
   };
 }
@@ -267,7 +318,11 @@ function talepGirdisi(k: Kasaba, md: MulkDefteri) {
     if (!c || c.tur !== "dukkan" || !t || tapu.y?.durum === "iflas") continue;
     const seviye = tapu.y?.seviye ?? 0;
     dukkanlar.set(id, { id, itibar: tapu.y?.it ?? ITIBAR_BASLANGIC, tavan: DUKKAN_NPC_TAVAN[seviye] ?? DUKKAN_NPC_TAVAN[0]! });
-    for (const s of t.r) satirlar.push({ id: `${id}#${s.n}`, dukkan: id, mal: s.m, q: s.q, adet: rafAdedi(s), fiyat: s.f });
+    const hk = dukkanHKancasi(k, md, id);
+    for (const s of t.r) {
+      const h = hk(MALLAR[s.m].meslek).deger;
+      satirlar.push({ id: `${id}#${s.n}`, dukkan: id, mal: s.m, q: s.q, adet: rafAdedi(s), fiyat: s.f, ...(h > 0 ? { hYuzde: h } : {}) });
+    }
   }
   return { satirlar, dukkanlar };
 }
@@ -290,7 +345,8 @@ export function fiyatOnizle(k: Kasaba, kar: Karakter, isletme: string, govde: un
   const adet = Number.isInteger(Number(g.adet)) && Number(g.adet) > 0 ? Math.min(RAF_SATIR_ADET, Number(g.adet)) : mevcut ? Math.max(1, rafAdedi(mevcut)) : RAF_SATIR_ADET;
   const sid = mevcut ? `${isletme}#${mevcut.n}` : `${isletme}#onizle`;
   const liste = satirlar.filter((s) => s.id !== sid);
-  liste.push({ id: sid, dukkan: isletme, mal, q: q as Kalite, adet, fiyat });
+  const hk = dukkanHKancasi(k, md, isletme)(MALLAR[mal].meslek).deger;
+  liste.push({ id: sid, dukkan: isletme, mal, q: q as Kalite, adet, fiyat, ...(hk > 0 ? { hYuzde: hk } : {}) });
   const r = talepCoz(k.tur, liste, dukkanlar, meslekOyuncuSayaci(k, saticilar(md, liste)), PAY_YONTEMI);
   const x = r.satirlar.find((s) => s.id === sid)!;
   const meslek = r.meslekler.find((m) => m.meslek === MALLAR[mal].meslek)!;
@@ -331,7 +387,7 @@ export function depoTasi(k: Kasaba, kar: Karakter, isletme: string, govde: unkno
   let r;
   if (govde.yon === "koy") {
     if (!iz.depoKoy) return hata("yetki_yok");
-    r = depoyaKoy(kar, t, g.deger, depoKapasitesi(tur, seviye));
+    r = depoyaKoy(kar, t, g.deger, depoKap(k, md, isletme, tur, seviye));
   } else if (govde.yon === "al") {
     if (!iz.depoAl) return hata("yetki_yok");
     // Çalışan (sahip/vekil değil): günlük adil değer tavanı ve depo defterine satır (mal kaçırma önlemi).
@@ -352,7 +408,7 @@ export function depoTasi(k: Kasaba, kar: Karakter, isletme: string, govde: unkno
   } else return hata("gecersiz_istek");
   if (!r.ok) return r;
   if (iz.yonetici) etkinlik(k, t);
-  return basarili({ depo: { yon: govde.yon, mal: g.deger.mal, kalite: g.deger.q, adet: g.deger.adet, icerik: depoGorunumu(t), dolu: depoAdedi(t), kapasite: depoKapasitesi(tur, seviye) } });
+  return basarili({ depo: { yon: govde.yon, mal: g.deger.mal, kalite: g.deger.q, adet: g.deger.adet, icerik: depoGorunumu(t), dolu: depoAdedi(t), kapasite: depoKap(k, md, isletme, tur, seviye) } });
 }
 
 /** POST .../raf {islem: koy, mal, kalite?, adet, fiyat?} | {islem: al, satir, adet} | {islem: fiyat, satir, fiyat}. */
@@ -371,7 +427,7 @@ export function rafIslem(k: Kasaba, kar: Karakter, isletme: string, govde: unkno
     const g = tasimaCoz(govde, malBul);
     if (!g.ok) return g;
     if (govde.fiyat !== undefined && !iz.fiyat) return hata("yetki_yok");
-    const r = rafaKoy(t, g.deger.mal, g.deger.q, g.deger.adet, govde.fiyat, seviye);
+    const r = rafaKoy(t, g.deger.mal, g.deger.q, g.deger.adet, govde.fiyat, seviye, rafEki(k, md, isletme));
     if (!r.ok) return r;
     if (iz.yonetici) etkinlik(k, t);
     return basarili({ raf: t.r.map((s) => satirGorunumu(s)), satir: satirGorunumu(r.deger.satir) });
@@ -382,7 +438,7 @@ export function rafIslem(k: Kasaba, kar: Karakter, isletme: string, govde: unkno
     if (!iz.raf) return hata("yetki_yok");
     const adet = govde.adet;
     if (!Number.isInteger(adet) || (adet as number) < 1 || (adet as number) > RAF_SATIR_ADET) return hata("adet_gecersiz");
-    if (depoAdedi(t) + (adet as number) > depoKapasitesi(tur, seviye)) return hata("depo_dolu");
+    if (depoAdedi(t) + (adet as number) > depoKap(k, md, isletme, tur, seviye)) return hata("depo_dolu");
     const r = raftanAl(t, s, adet as number);
     if (!r.ok) return r;
     if (iz.yonetici) etkinlik(k, t);
@@ -546,7 +602,7 @@ export function atolyedeUret(k: Kasaba, kar: Karakter, isletme: string, govde: u
   const tr = tarifBul(nesneMi(govde) ? govde.tarif : undefined);
   if (!tr) return hata("tarif_gecersiz");
   if (tr.meslek !== t.za) return hata("zanaat_disi");
-  const kapasite = depoKapasitesi("atolye", etkin);
+  const kapasite = depoKap(k, md, isletme, "atolye", etkin);
   const ad = md.t[isletme]!.y?.ad ?? "";
   const ev0 = kar.ev;
   const kq0 = kar.kq;
@@ -560,7 +616,7 @@ export function atolyedeUret(k: Kasaba, kar: Karakter, isletme: string, govde: u
     const giren = Object.values(girdiGorunumu(kar, tr)).reduce((a, n) => a + (n ?? 0), 0);
     const cikan = ciktiAdedi(kar, tr, aracVar) + Object.values(tr.yan ?? {}).reduce((a, n) => a + (n ?? 0), 0);
     if (depoAdedi(kar) - giren + cikan > kapasite) r = hata("depo_dolu");
-    else r = tarifYap(kar, tr.id, k.ay, undefined, { kalemler: atolyeKalemleri(seviye), damga: isletme });
+    else r = tarifYap(kar, tr.id, k.ay, undefined, { kalemler: atolyeKalemleri(seviye, 0, { kalite: kancaHesapla(atolyeAdaylari(k, md, isletme), "atolyeKalite", { meslek: t.za }).deger, npcCeza: 0 }), damga: isletme });
   } finally {
     t.ev = kar.ev;
     t.kq = kar.kq;
@@ -634,7 +690,7 @@ export function topluUc(k: Kasaba, kar: Karakter, isletme: string, govde: unknow
   if (!iz.toplu) return hata("yetki_yok");
   if (!md.tsp) return hata("siparis_yok");
   const ad = md.t[isletme]!.y?.ad ?? "";
-  const r = topluTeslim(md.tsp, nesneMi(govde) ? govde.siparis : undefined, isletme, ad, t, k.ay);
+  const r = topluTeslim(md.tsp, nesneMi(govde) ? govde.siparis : undefined, isletme, ad, t, k.ay, topluIndirimi(k, md, isletme));
   if (!r.ok) return r;
   const s = r.deger.siparis;
   // Ret telafisi için (tapu.ts telafi): düşen partiler, önceki "son alan" ve teslim eden kayıtta taşınır.
@@ -647,8 +703,8 @@ export function topluUc(k: Kasaba, kar: Karakter, isletme: string, govde: unknow
   md.kaynak = (md.kaynak ?? 0) + s.odul;
   t.ua = k.ay;
   if (iz.yonetici) etkinlik(k, t);
-  (md.ob ??= []).push({ t: "tezgah", w: md.t[isletme]!.s, h: "", g: "", n: 4, k: "olay.tezgah.topluTeslim", p: { isletme, ad, mal: s.mal, adet: s.adet, odul: s.odul } });
-  return basarili({ toplu: { siparis: s.id, mal: s.mal, adet: s.adet, odul: s.odul, kasaya: s.odul, islem: `y:${k.y}:toplu:${s.id}` }, depo: depoGorunumu(t), depoDolu: depoAdedi(t) });
+  (md.ob ??= []).push({ t: "tezgah", w: md.t[isletme]!.s, h: "", g: "", n: 4, k: "olay.tezgah.topluTeslim", p: { isletme, ad, mal: s.mal, adet: r.deger.adet, odul: s.odul } });
+  return basarili({ toplu: { siparis: s.id, mal: s.mal, adet: r.deger.adet, siparisAdet: s.adet, indirimYuzde: s.adet - r.deger.adet > 0 ? topluIndirimi(k, md, isletme)(s.meslek) : 0, odul: s.odul, kasaya: s.odul, islem: `y:${k.y}:toplu:${s.id}` }, depo: depoGorunumu(t), depoDolu: depoAdedi(t) });
 }
 
 /** POST .../genislet {}: sahip ya da vekil; dükkân ve atölye. Seviyenin açtığı kapasite depodaki malzemeyle açılır. */
@@ -658,13 +714,14 @@ export function genisletUc(k: Kasaba, kar: Karakter, isletme: string): Sonuc<Rec
   const { md, tur, t, seviye } = h.deger;
   if (iflasMi(md, isletme)) return hata("isletme_kapali");
   if (!izinler(md, isletme, kar.o).genislet) return hata("yetki_yok");
-  const r = genislet(tur, t, seviye);
+  const indirim = malzemeIndirimi(k, md, isletme);
+  const r = genislet(tur, t, seviye, indirim);
   if (!r.ok) return r;
   etkinlik(k, t);
   const etkin = etkinSeviye(t, seviye);
   return basarili({
-    genisletme: { kademe: t.gk, malzeme: r.deger.malzeme, rafSatir: tur === "dukkan" ? rafSatirSiniri(etkin) : 0, depoKapasite: depoKapasitesi(tur, etkin), tezgah: tur === "atolye" ? tezgahSayisi(t, seviye) : 0 },
-    sonraki: genisletmeGorunumu(tur, t, seviye),
+    genisletme: { kademe: t.gk, malzeme: r.deger.malzeme, rafSatir: tur === "dukkan" ? rafSatirSiniri(etkin) : 0, depoKapasite: depoKap(k, md, isletme, tur, etkin), tezgah: tur === "atolye" ? tezgahSayisi(t, seviye) : 0 },
+    sonraki: genisletmeGorunumu(tur, t, seviye, indirim),
     depo: depoGorunumu(t),
   });
 }

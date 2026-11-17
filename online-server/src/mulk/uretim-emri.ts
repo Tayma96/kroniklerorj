@@ -12,7 +12,7 @@ import { tohumlu } from "../yerlesim/rastgele.ts";
 import type { Karakter } from "../yerlesim/tipler.ts";
 import { basarili, hata, type Sonuc } from "../tipler.ts";
 import { depoAdedi, type Tezgah, type UretimEmri } from "./depo.ts";
-import { atolyeKalemleri, depodanDus, tezgahSayisi, ustaSec } from "./atolye.ts";
+import { atolyeKalemleri, depodanDus, tezgahSayisi, ustaSec, type AtolyeKancasi } from "./atolye.ts";
 import { EMIR_KEZ_EN_COK } from "./tezgah-kurallar.ts";
 
 /** Emir açar: tarif atölyenin zanaatından; sahip ya da bir oyuncu çalışan tarifi yapabilmeli; tezgâh sınırı. */
@@ -127,6 +127,8 @@ export interface UretimGirdisi {
   /** Sahip ve oyuncu çalışanlar (yerleşimde, yaşayan). */
   adaylar: readonly Karakter[];
   ay: number;
+  /** Atölye kancaları (Dilim 3; tavanlı): kalite bonusu ve NPC emeği cezası indirimi. */
+  kanca?: AtolyeKancasi;
 }
 
 /** Ay dönümünde emirleri sırayla işler (en eski önce). Tamamlanan emir listeden çıkar. */
@@ -173,7 +175,7 @@ export function emirleriIsle(g: UretimGirdisi): UretimSonucu {
       const aracKalite = aracVar ? enIyiKalite(t as unknown as Karakter, tr.arac!.mal) : null;
       const adet = aracVar ? tr.arac!.adet : tr.cikti[1];
       const zar = tohumlu("atolye", g.isletme, tr.id, ay, e.n, e.y);
-      const ks = urunKalitesi(usta, tr, kaliteBecerisi(usta, tr), aracKalite, zar, atolyeKalemleri(g.seviye, n / tr.takat));
+      const ks = urunKalitesi(usta, tr, kaliteBecerisi(usta, tr), aracKalite, zar, atolyeKalemleri(g.seviye, n / tr.takat, g.kanca));
       const q = ks.kademe;
       kaliteDokumEkle(d, ks.dokum);
       if (aracVar) depoAletAsindir(t, tr.arac!.mal);

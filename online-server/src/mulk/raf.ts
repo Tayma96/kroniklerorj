@@ -38,14 +38,14 @@ export function satirBul(t: Tezgah, n: unknown): RafSatiri | undefined {
 }
 
 /** Depo → raf. Aynı mal + kalite satırı varsa ona eklenir (fiyat verilirse güncellenir); yoksa yeni satır (fiyat şart). */
-export function rafaKoy(t: Tezgah, mal: MalId, q: Kalite, adet: number, fiyat: unknown, seviye: number): Sonuc<{ satir: RafSatiri }> {
+export function rafaKoy(t: Tezgah, mal: MalId, q: Kalite, adet: number, fiyat: unknown, seviye: number, ek: { satir: number; adet: number } = { satir: 0, adet: 0 }): Sonuc<{ satir: RafSatiri }> {
   let s = t.r.find((x) => x.m === mal && x.q === q);
   if (fiyat !== undefined && !fiyatGecerli(mal, q, fiyat)) return hata("fiyat_bant_disi");
   if (!s) {
     if (fiyat === undefined) return hata("fiyat_gecersiz");
-    if (t.r.length >= rafSatirSiniri(seviye)) return hata("raf_dolu");
+    if (t.r.length >= rafSatirSiniri(seviye) + ek.satir) return hata("raf_dolu");
   }
-  if ((s ? rafAdedi(s) : 0) + adet > RAF_SATIR_ADET) return hata("raf_satir_dolu");
+  if ((s ? rafAdedi(s) : 0) + adet > RAF_SATIR_ADET + ek.adet) return hata("raf_satir_dolu");
   if (kaliteAdedi(t, mal, q) < adet) return hata("mal_yok");
   const p = kaliteliCikar(t, mal, adet, q)!;
   if (!s) {

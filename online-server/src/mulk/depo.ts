@@ -69,9 +69,11 @@ export function depoAdedi(t: Envanterli): number {
   return Object.values(t.ev ?? {}).reduce((a, b) => a + b, 0);
 }
 
-export function depoKapasitesi(tur: "dukkan" | "atolye", seviye: number): number {
+/** Depo kapasitesi; `artiYuzde`: kanca bonusu (Dilim 3, tavanlı değer çağırandan; adet aşağı yuvarlanır). */
+export function depoKapasitesi(tur: "dukkan" | "atolye", seviye: number, artiYuzde = 0): number {
   const tablo = DEPO_KAPASITE[tur];
-  return tablo[Math.max(0, Math.min(tablo.length - 1, seviye))]!;
+  const taban = tablo[Math.max(0, Math.min(tablo.length - 1, seviye))]!;
+  return taban + Math.floor((taban * Math.max(0, artiYuzde)) / 100);
 }
 
 export function partiToplam(p: readonly KaliteParti[]): number {

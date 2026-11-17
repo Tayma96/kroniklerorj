@@ -24,6 +24,35 @@ import { emirleriIsle } from "./uretim-emri.ts";
 import { topluDonumu } from "./toplu-siparis.ts";
 import { atolyeAdaylari, zanaatHazirla } from "./tezgah-uclar.ts";
 import { levhaYaz } from "../yerlesim/levha.ts";
+import { kancaDokumu, kancaHesapla, type KancaSonucu } from "./kanca.ts";
+import type { MulkDefteri } from "./tapu.ts";
+import type { Karakter } from "../yerlesim/tipler.ts";
+
+/**
+ * Dükkânın H kancası (Dilim 3), satırdaki malın mesleğine göre (önbellekli): sahip ve oyuncu çalışanlardan en yüksek
+ * katkı, H tavanıyla. Dönüm, önizleme ve görünüm aynı hesabı kullanır.
+ */
+export function dukkanHKancasi(k: Kasaba, md: MulkDefteri, isletme: string): (m: MeslekId) => KancaSonucu {
+  const kisiler: Karakter[] = atolyeAdaylari(k, md, isletme);
+  const on = new Map<MeslekId, KancaSonucu>();
+  return (m) => {
+    let s = on.get(m);
+    if (!s) on.set(m, (s = kancaHesapla(kisiler, "dukkanH", { meslek: m })));
+    return s;
+  };
+}
+
+/** Gün sonu dökümüne H kancası: satırlardaki meslek başına uygulanan değer ve kalemleri (yalnız etkisi olan). */
+function hKancaDokumu(hk: ((m: MeslekId) => KancaSonucu) | undefined, mallar: readonly MalId[]): { hKanca?: Record<string, ReturnType<typeof kancaDokumu>> } {
+  if (!hk) return {};
+  const l = [...new Set(mallar.map((m) => MALLAR[m].meslek))].map((m) => [m, hk(m)] as const).filter(([, s]) => s.deger > 0);
+  return l.length ? { hKanca: Object.fromEntries(l.map(([m, s]) => [m, kancaDokumu(s)])) } : {};
+}
+
+/** İşletmenin depo kancası (tavanlı yüzde). */
+export function depoKancasi(k: Kasaba, md: MulkDefteri, isletme: string): KancaSonucu {
+  return kancaHesapla(atolyeAdaylari(k, md, isletme), "depo");
+}
 
 /**
  * Yerleşimde o meslekte (ana meslek) yaşayan oyuncu sayısı (kıtlık sinyali). Pazardaki kural gibi (npc-taban.ts
@@ -80,6 +109,7 @@ export function tezgahDonumu(k: Kasaba, ay: number): OlayTaslagi[] {
   const dukkanlar = new Map<string, Dukkan>();
   const satirHaritasi = new Map<string, { t: Tezgah; n: number }>();
   const tumu: string[] = [];
+  const hkHarita = new Map<string, (m: MeslekId) => KancaSonucu>();
   for (const [id, tapu] of Object.entries(md.t)) {
     const c = isletmeCoz(id);
     if (!c || c.tur !== "dukkan" || c.yerlesim !== k.y || tapu.y?.durum === "iflas") continue;
@@ -90,10 +120,13 @@ export function tezgahDonumu(k: Kasaba, ay: number): OlayTaslagi[] {
     if (!t.r.some((s) => partiToplam(s.p) > 0) || !yerVar(k, id)) continue;
     const seviye = tapu.y?.seviye ?? 0;
     dukkanlar.set(id, { id, itibar: tapu.y?.it ?? ITIBAR_BASLANGIC, tavan: DUKKAN_NPC_TAVAN[seviye] ?? DUKKAN_NPC_TAVAN[0]! });
+    const hk = dukkanHKancasi(k, md, id);
+    hkHarita.set(id, hk);
     for (const s of t.r) {
       const sid = `${id}#${s.n}`;
       satirHaritasi.set(sid, { t, n: s.n });
-      satirlar.push({ id: sid, dukkan: id, mal: s.m, q: s.q, adet: partiToplam(s.p), fiyat: s.f });
+      const h = hk(MALLAR[s.m].meslek).deger;
+      satirlar.push({ id: sid, dukkan: id, mal: s.m, q: s.q, adet: partiToplam(s.p), fiyat: s.f, ...(h > 0 ? { hYuzde: h } : {}) });
     }
   }
   const r = talepCoz(k.tur, satirlar, dukkanlar, meslekOyuncuSayaci(k, saticilar(md, satirlar)), PAY_YONTEMI);
@@ -154,6 +187,7 @@ export function tezgahDonumu(k: Kasaba, ay: number): OlayTaslagi[] {
       net: v.net,
       tavan: { seviye: DUKKAN_NPC_TAVAN[seviye] ?? DUKKAN_NPC_TAVAN[0]!, kullanilan: hasilat },
       satirlar: satirDokumu,
+      ...hKancaDokumu(hkHarita.get(id), benim.map((x) => x.mal)),
     };
   }
   if (vergiToplam > 0) (md.vergiGiden ??= []).push({ anahtar: `y:${k.y}:tz:vergi:${ay}`, tutar: vergiToplam, yerlesim: k.y });
@@ -185,14 +219,16 @@ function atolyeDonumu(k: Kasaba, ay: number): OlayTaslagi[] {
     // Emek veren NPC: maaşı emanetten karşılanan (işletme yansısı); eski yansıda nt yoksa hepsi karşılanmış sayılır.
     const ne = tapu.y?.ne ?? 0;
     const nt = Math.max(ne, tapu.y?.nt ?? ne);
+    const adaylar = atolyeAdaylari(k, md, id);
     const u = emirleriIsle({
       t,
       isletme: id,
       seviye,
-      kapasite: depoKapasitesi("atolye", etkinSeviye(t, seviye)),
+      kapasite: depoKapasitesi("atolye", etkinSeviye(t, seviye), kancaHesapla(adaylar, "depo").deger),
       npcEmek: NPC_EMEK_AY * ne,
-      adaylar: atolyeAdaylari(k, md, id),
+      adaylar,
       ay,
+      ...(t.za ? { kanca: { kalite: kancaHesapla(adaylar, "atolyeKalite", { meslek: t.za }).deger, npcCeza: kancaHesapla(adaylar, "npcCeza", { meslek: t.za }).deger } } : {}),
     });
     for (const l of u.levha) {
       const lv = levhaYaz(k, l.usta, l.tarif, l.mal, l.q, ay, [id, ad]);
@@ -234,7 +270,8 @@ function hanDonumu(k: Kasaba, ay: number): OlayTaslagi[] {
     }
     const y = t.y;
     if (!y || y.durum !== "acik" || !y.kapi || !yerVar(k, id)) continue;
-    hanlar.push({ no, isletme: id, fc: y.fc, kalite: y.kq ?? 0, itibar: y.it ?? ITIBAR_BASLANGIC, seviye: y.seviye });
+    const h = kancaHesapla(atolyeAdaylari(k, md, id), "hanH").deger;
+    hanlar.push({ no, isletme: id, fc: y.fc, kalite: y.kq ?? 0, itibar: y.it ?? ITIBAR_BASLANGIC, seviye: y.seviye, ...(h > 0 ? { hYuzde: h } : {}) });
   }
   const r = yolcuCoz(k.tur, hanlar);
   for (const h of r.hanlar) {
@@ -274,12 +311,13 @@ export function malMeslegi(m: MalId): MeslekId {
 }
 
 /** Hanın son yolcu payı dökümü (yalnız sahibi ve oyuncu çalışanı için; rakip görmez). */
-export function yolcuKarti(k: Kasaba, isletme: string, o: string): { ay: number; payYuzde: number; tutar: number; tavan: number; carpan: { F: number; K: number; R: number; H: number } } | undefined {
+export function yolcuKarti(k: Kasaba, isletme: string, o: string): { ay: number; payYuzde: number; tutar: number; tavan: number; carpan: { F: number; K: number; R: number; H: number }; kanca: ReturnType<typeof kancaDokumu> } | undefined {
   const md = k.mk;
   const t = md?.t[isletme];
   if (!t || (t.s !== o && !t.y?.py?.some(([x]) => x === o))) return undefined;
   const hy = md!.hy as { ay: number; hanlar: { isletme: string | null; pay: number; tutar: number; tavan: number; carpan: { F: number; K: number; R: number; H: number } }[] } | undefined;
   const h = hy?.hanlar.find((x) => x.isletme === isletme);
   if (!hy || !h) return undefined;
-  return { ay: hy.ay, payYuzde: Math.round(h.pay * 1000) / 10, tutar: h.tutar, tavan: h.tavan, carpan: h.carpan };
+  // Kanca dökümü bugünkü kadrodan (gelecek ayın H'si); son ayın H'si carpan.H'de.
+  return { ay: hy.ay, payYuzde: Math.round(h.pay * 1000) / 10, tutar: h.tutar, tavan: h.tavan, carpan: h.carpan, kanca: kancaDokumu(kancaHesapla(atolyeAdaylari(k, md!, isletme), "hanH")) };
 }

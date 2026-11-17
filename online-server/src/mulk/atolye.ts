@@ -79,10 +79,18 @@ export function ustaSec(adaylar: readonly Karakter[], t: Tarif): Karakter | unde
   return enIyi;
 }
 
-/** Atölye kalite kalemleri: seviye bonusu ve NPC emeği payı cezası (dökümde görünür). */
-export function atolyeKalemleri(seviye: number, npcPay = 0): { k: string; d: number }[] {
+/** Atölyenin kanca değerleri (Dilim 3; tavanlı, mulk/kanca.ts): kaliteye +puan, NPC emeği cezasından −puan. */
+export interface AtolyeKancasi {
+  kalite: number;
+  npcCeza: number;
+}
+
+/** Atölye kalite kalemleri: seviye bonusu, kanca bonusu ve NPC emeği payı cezası (dökümde görünür). */
+export function atolyeKalemleri(seviye: number, npcPay = 0, kanca: AtolyeKancasi = { kalite: 0, npcCeza: 0 }): { k: string; d: number }[] {
   const l = [{ k: "kalite.atolye", d: ATOLYE_KALITE_SEVIYE_PUANI * Math.max(0, seviye) }];
-  if (npcPay > 0) l.push({ k: "kalite.npcEmegi", d: -Math.round(NPC_EMEK_KALITE_CEZA * Math.min(1, npcPay)) });
+  if (kanca.kalite > 0) l.push({ k: "kalite.kanca", d: kanca.kalite });
+  const ceza = Math.max(0, NPC_EMEK_KALITE_CEZA - Math.max(0, kanca.npcCeza));
+  if (npcPay > 0 && ceza > 0) l.push({ k: "kalite.npcEmegi", d: -Math.round(ceza * Math.min(1, npcPay)) });
   return l;
 }
 
@@ -93,17 +101,27 @@ export function depodanDus(t: Tezgah, mal: MalId, n: number): boolean {
   return true;
 }
 
-/** Bir sonraki genişletmenin malzemesi (yoksa null: kapasite seviyeye yetişmiş ya da en üst seviye). */
-export function genisletmeMalzemesi(tur: "dukkan" | "atolye", t: Tezgah, seviye: number): { hedef: number; malzeme: Partial<Record<MalId, number>> } | null {
+/** Genişletme malzemesi indirimi (Dilim 3 kancası): mal → tavanlı yüzde. */
+export type MalzemeIndirimi = (mal: MalId) => number;
+
+/** Bir sonraki genişletmenin malzemesi (yoksa null: kapasite seviyeye yetişmiş ya da en üst seviye). İndirim adet başına
+ * aşağı yuvarlanır (en az 1 kalır). */
+export function genisletmeMalzemesi(tur: "dukkan" | "atolye", t: Tezgah, seviye: number, indirim?: MalzemeIndirimi): { hedef: number; malzeme: Partial<Record<MalId, number>> } | null {
   const gk = t.gk ?? seviye;
   if (gk >= seviye) return null;
   const m = GENISLETME_MALZEME[tur][gk];
-  return m ? { hedef: gk + 1, malzeme: { ...m } } : null;
+  if (!m) return null;
+  const malzeme: Partial<Record<MalId, number>> = {};
+  for (const [mal, n] of Object.entries(m) as [MalId, number][]) {
+    const y = Math.max(0, indirim?.(mal) ?? 0);
+    malzeme[mal] = Math.max(1, n - Math.floor((n * y) / 100));
+  }
+  return { hedef: gk + 1, malzeme };
 }
 
 /** Genişletme: malzemenin hepsi depoda olmalı; tek seferde düşer, kademe bir artar. */
-export function genislet(tur: "dukkan" | "atolye", t: Tezgah, seviye: number): Sonuc<{ hedef: number; malzeme: Partial<Record<MalId, number>> }> {
-  const g = genisletmeMalzemesi(tur, t, seviye);
+export function genislet(tur: "dukkan" | "atolye", t: Tezgah, seviye: number, indirim?: MalzemeIndirimi): Sonuc<{ hedef: number; malzeme: Partial<Record<MalId, number>> }> {
+  const g = genisletmeMalzemesi(tur, t, seviye, indirim);
   if (!g) return hata("genisletme_yok");
   const eksik = Object.entries(g.malzeme).some(([m, n]) => (t.ev?.[m] ?? 0) < (n ?? 0));
   if (eksik) return hata("malzeme_yok");
@@ -113,8 +131,8 @@ export function genislet(tur: "dukkan" | "atolye", t: Tezgah, seviye: number): S
 }
 
 /** Genişletme görünümü: eksik malzeme dökümüyle. */
-export function genisletmeGorunumu(tur: "dukkan" | "atolye", t: Tezgah, seviye: number) {
-  const g = genisletmeMalzemesi(tur, t, seviye);
+export function genisletmeGorunumu(tur: "dukkan" | "atolye", t: Tezgah, seviye: number, indirim?: MalzemeIndirimi) {
+  const g = genisletmeMalzemesi(tur, t, seviye, indirim);
   return {
     kademe: t.gk ?? seviye,
     seviye,
