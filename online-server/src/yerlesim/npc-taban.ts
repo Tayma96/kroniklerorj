@@ -8,7 +8,7 @@
 import { MALLAR, malBul, type MalId } from "../icerik/mallar.ts";
 import type { MeslekId } from "../icerik/meslekler.ts";
 import { basarili, hata, type Sonuc } from "../tipler.ts";
-import { kaliteKirp } from "./kalite.ts";
+import { adliAdet, kaliteKirp } from "./kalite.ts";
 import type { CalismaParametreleri, Dokum, Karakter } from "./tipler.ts";
 
 /** [PARAMETRE] NPC satış çarpanı, oyuncu başına mal başına aylık alım kotası, kıtlık primi oranı. */
@@ -23,10 +23,11 @@ export const STOK_EN_COK = 12;
 export type KasabaStogu = Partial<Record<MalId, number>>;
 
 /** Envantere ekler (negatif = çıkarır, sıfırın altına inmez); kalan adedi döndürür. Eklenen izsiz (sade) sayılır;
- * çıkarmada önce izsiz sade, sonra en düşük kaliteli parti düşer (kalite.ts). */
+ * çıkarmada önce izsiz sade, sonra en düşük kaliteli parti düşer (kalite.ts). Adlı eşya (efsanevi/tılsımlı) bu
+ * yoldan hiç düşmez: çağıran önce `esyaKilidi` ile reddeder; adet adlı eşya sayısının altına inmez. */
 export function envanterEkle(k: Karakter, mal: MalId, adet: number): number {
   const ev = (k.ev ??= {});
-  const yeni = Math.max(0, (ev[mal] ?? 0) + adet);
+  const yeni = Math.max(adet < 0 ? adliAdet(k, mal) : 0, (ev[mal] ?? 0) + adet);
   if (yeni === 0) delete ev[mal];
   else ev[mal] = yeni;
   if (adet < 0) kaliteKirp(k, mal);

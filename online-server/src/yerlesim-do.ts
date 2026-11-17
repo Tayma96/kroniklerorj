@@ -19,6 +19,7 @@ import { hanNoCoz } from "./mulk/tapu.ts";
 import { DOLULUK, dolulukUygula, type DolulukKaydi } from "./han/doluluk.ts";
 import { VITRIN, vitrinBudar, vitrinListesi, vitrinUygula, type VitrinKaydi } from "./han/oyun/vitrin.ts";
 import { yerlesimBul } from "./dunya-veri.ts";
+import { zarSirriAyarla } from "./yerlesim/zar-sirri.ts";
 
 /** [PARAMETRE] Bir istekte bölgeye teslim edilen en çok vergi kaydı (DO alt istek bütçesi ≤ 12). */
 export const VERGI_TUR_EN_COK = 2;
@@ -48,6 +49,7 @@ export class YerlesimDO {
 
   constructor(ctx: DurableObjectState, env: Env, saat: () => number = Date.now) {
     this.#env = env;
+    zarSirriAyarla(env.ZAR_SIRRI);
     this.#isletme = (i) => (env.ISLETME ? (this.#harca(), isletmeCagir(env, i)) : Promise.resolve({ ok: false, hata: "isletme_yok" }));
     this.#kervan = (i) => (this.#harca(), yerlesimCagir(env, i));
     this.#depolama = ctx.storage;

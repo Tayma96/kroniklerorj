@@ -19,6 +19,7 @@ import { aracArtisi, hakAcik, hizmetAcik } from "./beceri-etki.ts";
 import { hizmetEkle, meslekKaydi } from "./meslek.ts";
 import { aracAsindir } from "./tarif.ts";
 import { gostergeDegistir, toplulukAl } from "./topluluk-kayit.ts";
+import { esyaKilidi } from "./kalite.ts";
 import { envanterEkle } from "./npc-taban.ts";
 import { araciSozlesmeAc, araciSozlesmeKontrol, araciSozlesmeIptal, arabulucuYap, TAZMINAT_TAVANI } from "./arabulucu.ts";
 import { tohumlu } from "./rastgele.ts";
@@ -279,6 +280,8 @@ export function teklifOlustur(k: Kasaba, gon: Karakter, alici: Karakter, govde: 
     if (gon.pa < e) return hata("para_yok");
     if (t_ === "borc" && s.sn === 1) {
       if ((gon.ev?.senet ?? 0) < 1) return hata("mal_yok");
+      const kilit = esyaKilidi(gon, { senet: 1 });
+      if (kilit) return hata(kilit);
       envanterEkle(gon, "senet", -1);
       s.se = 1;
     }
@@ -288,6 +291,8 @@ export function teklifOlustur(k: Kasaba, gon: Karakter, alici: Karakter, govde: 
     if (aylik(gon.hv, ay) + deger > HEDIYE_VERME_AYLIK) return hata("tavan_doldu");
     if (gon.pa < (s.tu ?? 0)) return hata("para_yok");
     if (s.ml && (gon.ev?.[s.ml] ?? 0) < s.mn!) return hata("mal_yok");
+    const kilit = s.ml ? esyaKilidi(gon, { [s.ml]: s.mn! }) : null;
+    if (kilit) return hata(kilit);
     if (!takatHarca(gon, ay, HEDIYE_TAKAT)) return hata("takat_yok");
     gon.hv = [ay, aylik(gon.hv, ay) + deger];
     e = s.tu ?? 0;
@@ -378,6 +383,7 @@ function kabulUygula(k: Kasaba, t: Teklif, ay: number): Sonuc<OlayTaslagi[]> {
       const b = k.kar.get(borclu)!;
       const a = k.kar.get(alacakli)!;
       if (t.s.sn === 1 && t.s.yn === "iste" && (a.ev?.senet ?? 0) < 1) return hata("mal_yok");
+      if (t.s.sn === 1 && t.s.yn === "iste" && esyaKilidi(a, { senet: 1 })) return hata("esya_kilitli");
       if (t.s.yn === "iste") {
         if (a.pa < tu) return hata("para_yok");
         a.pa -= tu;

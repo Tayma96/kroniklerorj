@@ -19,7 +19,8 @@
 
 import { malBul, type MalId } from "../icerik/mallar.ts";
 import { basarili, hata, type Sonuc } from "../tipler.ts";
-import { KALITELER, kaliteAdedi, kaliteliCikar, kaliteliEkle, kaliteMi, type Envanterli, type Kalite, type KaliteParti } from "./kalite.ts";
+import { esyaKimligi } from "./pazar-tahta.ts";
+import { KALITELER, hepsiniTasi, kaliteliCikar, secilebilirAdet, kaliteliEkle, kaliteMi, type Envanterli, type Kalite, type KaliteParti } from "./kalite.ts";
 import { ODALAR, type KiraSozlesmesi } from "./oda.ts";
 import type { Karakter, Kasaba, OlayTaslagi } from "./tipler.ts";
 import { toplumAl } from "./toplum.ts";
@@ -98,13 +99,14 @@ export function sandikGorunumu(kar: Karakter, y: string, an: number) {
 /** `adet` malı kaynaktan hedefe taşır: kalite verilirse yalnız o kalite, verilmezse en düşük kaliteden başlar. */
 function tasi(kaynak: Envanterli, hedef: Envanterli, mal: MalId, adet: number, q: Kalite | undefined): boolean {
   const kaliteler: readonly Kalite[] = q === undefined ? KALITELER : [q];
-  const toplam = kaliteler.reduce<number>((a, x) => a + Math.max(0, kaliteAdedi(kaynak, mal, x)), 0);
+  // Adlı eşya (efsanevi/tılsımlı) kimliksiz taşımada seçilmez: yerinde kalır.
+  const toplam = kaliteler.reduce<number>((a, x) => a + Math.max(0, secilebilirAdet(kaynak, mal, x)), 0);
   if (toplam < adet) return false;
   let kalan = adet;
   const giden: KaliteParti[] = [];
   for (const x of kaliteler) {
     if (kalan <= 0) break;
-    const n = Math.min(kalan, Math.max(0, kaliteAdedi(kaynak, mal, x)));
+    const n = Math.min(kalan, Math.max(0, secilebilirAdet(kaynak, mal, x)));
     if (n <= 0) continue;
     const c = kaliteliCikar(kaynak, mal, n, x);
     if (!c) return false; // olmaz: adet önceden sayıldı
@@ -137,9 +139,21 @@ export function sandikIslem(kar: Karakter, y: string, govde: unknown, an: number
   if (typeof adet !== "number" || !Number.isInteger(adet) || adet < 1) return hata("gecersiz_istek");
   if (govde.kalite !== undefined && !kaliteMi(govde.kalite)) return hata("gecersiz_istek");
   const q = govde.kalite as Kalite | undefined;
+  // Adlı eşya yalnız `esya` kimliğiyle (kalite açık, adet 1) taşınır.
+  const esya = esyaKimligi(govde.esya);
+  if (esya === null || (esya !== undefined && (q === undefined || adet !== 1))) return hata("gecersiz_istek");
   const kapasite = sandikKapasitesi(kar, y, an);
   if (kapasite <= 0 || !kar.br) return hata("sandik_yok");
   const sd = (kar.br.sd ??= {});
+  if (esya !== undefined) {
+    if (islem === "koy" && sandikAdedi(sd) + 1 > kapasite) return hata("sandik_dolu");
+    const [kaynak, hedef] = islem === "koy" ? [kar, sd] : [sd, kar];
+    const c = kaliteliCikar(kaynak, mal, 1, q!, esya);
+    if (c) kaliteliEkle(hedef, mal, c);
+    sandikTemizle(kar);
+    if (!c) return hata("mal_yok");
+    return basarili({ sandikIslem: { islem, mal, adet, kalite: q, esya }, sandik: sandikGorunumu(kar, y, an) });
+  }
   if (islem === "koy") {
     if (sandikAdedi(sd) + adet > kapasite) return hata("sandik_dolu");
     if (!tasi(kar, sd, mal, adet, q)) {
@@ -162,7 +176,8 @@ export function emanetAl(kar: Karakter, y: string, an: number): Sonuc<Record<str
   for (const [m, n] of Object.entries(sd.ev ?? {})) {
     const mal = m as MalId;
     if (n <= 0) continue;
-    if (tasi(sd, kar, mal, n, undefined)) alinan[m] = n;
+    // Bütün mal (adlı eşya dahil) döner.
+    alinan[m] = hepsiniTasi(sd, kar, mal);
   }
   sandikTemizle(kar);
   return basarili({ emanet: { alinan }, sandik: sandikGorunumu(kar, y, an) });

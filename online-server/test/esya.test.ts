@@ -33,6 +33,10 @@ import {
   EFSANEVI_DENEME_AY,
   EFSANEVI_SANS_TABAN,
   EFSANEVI_SANS_TAVAN,
+  EFSANEVI_SANS_PUAN,
+  TILSIM_SANS_BINDE,
+  ALET_BEREKET_VERIM,
+  efsaneviSansDokumu,
   ETKI_CARPANI,
   YADIGAR_GECMIS_EN_COK,
   efsaneviDene,
@@ -50,13 +54,20 @@ import {
 } from "../src/yerlesim/esya.ts";
 import { efsaneviKaydet, esyaSayaci } from "../src/yerlesim/esya-kayit.ts";
 import { ilerleme, meslekSec } from "../src/yerlesim/meslek.ts";
-import { aracAsindir, tarifYap } from "../src/yerlesim/tarif.ts";
+import { ALET_OMRU, aletOmru, aracAsindir, ciktiAdedi, tarifYap } from "../src/yerlesim/tarif.ts";
+import { omurArtisi } from "../src/yerlesim/beceri-etki.ts";
 import { tohumlu } from "../src/yerlesim/rastgele.ts";
 import type { Karakter, Kasaba } from "../src/yerlesim/tipler.ts";
 import { bosTezgah, depoGorunumu, tasimaCoz, type Tezgah } from "../src/mulk/depo.ts";
 import { emirAc, emirleriIsle } from "../src/mulk/uretim-emri.ts";
 import { adil, npcTavani, talepCoz } from "../src/mulk/hane-butcesi.ts";
-import { rafaKoy } from "../src/mulk/raf.ts";
+import { rafaKoy, rafSatilabilir, raftanSat, satirGorunumu } from "../src/mulk/raf.ts";
+import { depodanDus } from "../src/mulk/atolye.ts";
+import { depoyaKoy, tezgahBosalt } from "../src/mulk/depo.ts";
+import { npcyeSat } from "../src/yerlesim/pazar.ts";
+import { envanterEkle } from "../src/yerlesim/npc-taban.ts";
+import { esyaKilidi } from "../src/yerlesim/kalite.ts";
+import { ilanAc, ilanGorunumu } from "../src/yerlesim/pazar-tahta.ts";
 import { DUKKAN_NPC_TAVAN, HANE_BUTCESI, KITLIK_BUTCE_CARPANI, NPC_ATOLYE_MAAS_EN_AZ, NPC_EMEK_AY, Q_CARPANI, ZANAAT_MESLEKLERI } from "../src/mulk/tezgah-kurallar.ts";
 import { PERSONEL_EN_COK } from "../src/mulk/kurallar.ts";
 import { devirHesapla, devirUygula } from "../src/yerlesim/devir.ts";
@@ -267,8 +278,8 @@ test("tılsımlı: başarılı efsanevinin ayrıca binde biri; iki ayrı hüner;
   assert.equal(efsaneviSansi(KALITE_ESIK[4]! - 1), 0);
   assert.equal(efsaneviSansi(KALITE_ESIK[4]!), EFSANEVI_SANS_TABAN);
   assert.equal(efsaneviSansi(10_000), EFSANEVI_SANS_TAVAN);
-  assert.deepEqual([0, 10, 25, 40].map(sansBandi), ["yok", "zayif", "makul", "guclu"]);
-  // Beklenen sıklık: 1000 pir ayda bir deneme, en iyi şansla → efsanevi ≈ 400, tılsımlı ≈ 0,4 (binde bir).
+  assert.deepEqual([0, 10, 13, 17].map(sansBandi), ["yok", "zayif", "makul", "guclu"]);
+  // Beklenen sıklık: en iyi şansla deneme başına efsanevi %20, tılsımlı bunun binde 15'i.
   let efs = 0;
   let tls = 0;
   for (let i = 0; i < 20_000; i++) {
@@ -277,9 +288,37 @@ test("tılsımlı: başarılı efsanevinin ayrıca binde biri; iki ayrı hüner;
     if (s.kademe === 5) efs++;
     if (s.kademe === 6) tls++;
   }
-  assert.ok(efs > 7000 && efs < 9000, `efsanevi ${efs}/20000`);
-  assert.ok(tls <= 40, `tılsımlı ${tls}/20000`);
+  assert.ok(efs > 3500 && efs < 4500, `efsanevi ${efs}/20000`);
+  assert.ok(tls >= 25 && tls <= 110, `tılsımlı ${tls}/20000`);
   console.log(`  20000 tam şanslı deneme: efsanevi ${efs}, tılsımlı ${tls}`);
+});
+
+test("denge §9.2: 1000 pir ayda bir (en iyi şansla) — ayda birkaç tılsımlı, efsanevi pirlerin ≤ %20'si (sim kilidi)", () => {
+  assert.deepEqual([EFSANEVI_SANS_TABAN, EFSANEVI_SANS_PUAN, EFSANEVI_SANS_TAVAN, TILSIM_SANS_BINDE], [10, 0.5, 20, 15]);
+  const aylar = 12;
+  let efs = 0;
+  let tls = 0;
+  for (let ay = 0; ay < aylar; ay++) {
+    for (let i = 0; i < 1000; i++) {
+      const c = { o: `o${i}`, h: `h${i}`, ad: "x" } as Karakter;
+      const s = efsaneviDene(c, "kilic", 4, 10_000, AY + ay, "A");
+      if (s.kademe === 5) efs++;
+      if (s.kademe === 6) tls++;
+    }
+  }
+  const tAy = tls / aylar;
+  const eAy = (efs + tls) / aylar;
+  console.log(`  1000 pir × ${aylar} ay: aylık efsanevi ${eAy.toFixed(1)}, tılsımlı ${tAy.toFixed(2)}`);
+  assert.ok(tAy >= 1 && tAy <= 6, `ayda birkaç tılsımlı: ${tAy}`);
+  assert.ok(eAy <= 220, `efsanevi tavanı: ${eAy}`);
+  // Döküm sayıları gerçek şansla birebir (gizli sayı yok).
+  const d = efsaneviSansDokumu(KALITE_ESIK[4]! + 7);
+  assert.equal(d.yuzde, efsaneviSansi(KALITE_ESIK[4]! + 7));
+  assert.deepEqual(d.kalemler, [{ k: "efsanevi.taban", d: 10 }, { k: "efsanevi.puan", d: 3 }]);
+  assert.equal(d.tilsimBinde, TILSIM_SANS_BINDE);
+  const t = efsaneviSansDokumu(10_000);
+  assert.equal(t.yuzde, EFSANEVI_SANS_TAVAN);
+  assert.ok(t.kalemler.some((x) => x.k === "efsanevi.tavan" && x.d < 0));
 });
 
 test("tekrar güvenliği: efsanevi zarı oyuncu + ay tohumlu (tarif ya da sayaçla değişmez); aynı girdi aynı eşya", () => {
@@ -308,26 +347,71 @@ test("efsanevi kaydı: kroniğe ve herkese açık olaya düşer, yönetici sayac
 
 // ── Hüner ve özellik ──
 
-test("özellik dökümü: aile, kademeyle artan çarpan, üst kademe ek etki, sadede kusur (ceza değil), nadide hüneri", () => {
+test("özellik dökümü: aile, üst kademe ek etki, sadede kusur (ceza değil), nadide hüneri; bağlanmamış etki bagli:false, çarpan yok", () => {
   assert.equal(esyaAilesi("kilic"), "silah");
   assert.equal(esyaAilesi("ekmek"), "yiyecek");
   assert.equal(esyaAilesi("odun"), "mal");
   const sade = ozellikDokumu("ekmek", 0);
   assert.equal(sade.kusur, "bayat");
-  assert.deepEqual(sade.etkiler, [{ id: "tokluk", carpan: 1 }]);
+  assert.deepEqual(sade.etkiler, [{ id: "tokluk", bagli: false }]);
   assert.deepEqual(sade.hunerler, []);
+  assert.equal(sade.bagli, false);
   const saheser = ozellikDokumu("ekmek", 3);
   assert.deepEqual(saheser.etkiler.map((x) => x.id), ["tokluk", "keyif"]);
   assert.equal(saheser.kusur, null);
   const nadide = ozellikDokumu("ekmek", 4);
   assert.deepEqual(nadide.etkiler.map((x) => x.id), ["tokluk", "keyif", "saglik"]);
   assert.deepEqual(nadide.hunerler, [nadideHuneri("ekmek")]);
-  assert.equal(nadide.carpan, 4);
+  assert.deepEqual(nadide.hunerDokumu, [{ id: nadideHuneri("ekmek"), bagli: false }]);
+  assert.ok(!("carpan" in nadide), "okunmayan çarpan dökümde yazılmaz");
   for (const m of MAL_IDLERI) {
     const a = AILELER[esyaAilesi(m)];
     assert.equal(new Set(a.hunerler).size, a.hunerler.length, `${m}: hüner eşsiz`);
   }
-  assert.equal(ozellikDokumu("alet", 2).bagli, true, "alet etkisi bağlı (verim/ömür)");
+  // Alet: verim ve ömür bağlı ve gerçek değerle; incelik bağlı değil.
+  const usta = ozellikDokumu("alet", 4);
+  assert.deepEqual(usta.etkiler, [
+    { id: "verim", bagli: true, deger: ALET_KALITE_VERIM[4], birim: "adet" },
+    { id: "omur", bagli: true, yipranmaz: true },
+    { id: "incelik", bagli: false },
+  ]);
+  assert.deepEqual(usta.hunerDokumu, [{ id: "yipranmaz", bagli: true }]);
+  assert.deepEqual(ozellikDokumu("alet", 2).etkiler.find((e) => e.id === "omur"), { id: "omur", bagli: true, deger: ALET_KALITE_OMUR[2], birim: "kullanim" });
+});
+
+test("gösterilen = gerçek: alet dökümünde bagli:true her etki oyun mantığında birebir işler (verim, ömür, yıpranmaz)", () => {
+  const k = testKasabasi("develi", AY);
+  const aletler: [Kalite, EsyaKaydi | undefined][] = [[0, undefined], [1, undefined], [2, undefined], [3, undefined], [4, undefined]];
+  const ref = demirci(k, 40, 3);
+  aletler.push([5, esyaYap(ref, "alet", 5, AY, "A", hep(0))], [6, esyaYap(ref, "alet", 6, AY, "A", hep(0))]);
+  let no = 41;
+  for (const [q, e] of aletler) {
+    const c = demirci(k, no++, 3);
+    const d = ozellikDokumu("alet", q, e);
+    for (const h of d.hunerDokumu) assert.ok(!h.bagli || ["yipranmaz", "bereketli"].includes(h.id), `${q}: bağlı hüner tanımlı`);
+    if (e) assert.ok(e.h.every((h) => d.hunerDokumu.find((x) => x.id === h)?.bagli), `${q}: adlı alete yalnız bağlı hüner`);
+    // Araçsız ve bu aletle çıktı farkı = dökümdeki verim (tarif aracı: alet).
+    const tarif = Object.values(TARIFLER).find((t) => "arac" in t && (t as { arac?: { mal: string } }).arac?.mal === "alet")!;
+    const once = ciktiAdedi(c, tarif as never, true);
+    kaliteliEkle(c, "alet", [e ? [q, 1, c.o, ATOLYE, e] : [q, 1, c.o]]);
+    const verim = d.etkiler.find((x) => x.id === "verim")!;
+    assert.equal(ciktiAdedi(c, tarif as never, true) - once, verim.bagli ? (verim as { deger: number }).deger : 0, `${q}: verim`);
+    const omur = d.etkiler.find((x) => x.id === "omur");
+    if (omur && "yipranmaz" in omur) {
+      for (let i = 0; i < 40; i++) assert.equal(aracAsindir(c, "alet").asindi, false, `${q}: yıpranmaz`);
+      assert.equal(c.ev?.alet, 1);
+    } else {
+      const beklenen = ALET_OMRU + omurArtisi(c, "alet") + (omur ? (omur as { deger: number }).deger : 0);
+      assert.equal(aletOmru(c, "alet"), beklenen, `${q}: ömür`);
+      let n = 0;
+      while ((c.ev?.alet ?? 0) > 0 && n < 100) {
+        aracAsindir(c, "alet");
+        n++;
+      }
+      assert.equal(n, beklenen, `${q}: ömründe tükenir`);
+    }
+  }
+  assert.equal(ALET_BEREKET_VERIM, 1);
 });
 
 test("efsanevi alet yıpranmaz (kırılıp yok olmaz); sıradan alet ömründe tükenir", () => {
@@ -360,8 +444,10 @@ test("adlı eşya partisi: birleşmez, kopyalanmaz, parti sınırında düşmez,
   assert.deepEqual(partiParca(t.kq!.kilic![0]!, 1)[4], t.kq!.kilic![0]![4]);
   const geri = JSON.parse(JSON.stringify(t)) as Tezgah;
   assert.deepEqual(geri.kq!.kilic!.filter((p) => p[4]).map((p) => p[4]!.i).sort(), ["e1", "e2"]);
-  const c = kaliteliCikar(geri, "kilic", 1, 5)!;
+  assert.equal(kaliteliCikar(geri, "kilic", 1, 5), null, "adlı eşya kimliksiz çıkmaz");
+  const c = kaliteliCikar(geri, "kilic", 1, 5, "e1")!;
   assert.equal(c.length, 1);
+  assert.equal(c[0]![4]!.i, "e1");
   assert.ok(c[0]![4]);
   assert.equal(kaliteAdedi(geri, "kilic", 5), 1, "yalnız biri çıktı");
   // Toplu siparişe damgalı sayılmaz (eşya toplu teslimle NPC'ye gitmez).
@@ -491,6 +577,91 @@ test("geriye uyum: eski 0–3 partiler, eşyasız eski depo ve 'ef'siz karakter 
   const malBul = (v: unknown) => (typeof v === "string" && v in MALLAR ? (v as MalId) : undefined);
   assert.ok(tasimaCoz({ mal: "kilic", kalite: 5, adet: 1 }, malBul).ok);
   assert.deepEqual(tasimaCoz({ mal: "kilic", kalite: 7, adet: 1 }, malBul), { ok: false, hata: "kalite_gecersiz" });
+});
+
+// ── Denetim sonrası (17 Kasım): adlı eşya sessizce yok olmaz, göç ikinci hak açmaz, ilan/raf eşyayı gösterir ──
+
+test("adlı eşya kilidi: 1 sade + 1 efsanevi kılıçla 2 kılıç NPC'ye satış esya_kilitli; efsanevi yerinde, hiçbir şey değişmez", () => {
+  const k = testKasabasi("develi", AY);
+  const c = demirci(k, 60, 3);
+  const e = esyaYap(c, "kilic", 5, AY, "A", hep(0));
+  c.ev = {};
+  kaliteliEkle(c, "kilic", [[0, 1, c.o]]);
+  kaliteliEkle(c, "kilic", [[5, 1, c.o, ATOLYE, e]]);
+  const once = structuredClone({ ev: c.ev, kq: c.kq, pa: c.pa, ns: c.ns });
+  assert.deepEqual(npcyeSat(c, "kilic", 2, () => 0, AY), { ok: false, hata: "esya_kilitli" });
+  assert.deepEqual({ ev: c.ev, kq: c.kq, pa: c.pa, ns: c.ns }, once);
+  // Tek sade satılır; efsanevi yerinde kalır.
+  assert.ok(npcyeSat(c, "kilic", 1, () => 0, AY).ok);
+  assert.equal(c.ev!.kilic, 1);
+  assert.equal(c.kq!.kilic![0]![4]!.i, e.i);
+  // Artık 1 kılıç var ama o adlı: kimliksiz satış yine kilitli.
+  assert.deepEqual(npcyeSat(c, "kilic", 1, () => 0, AY), { ok: false, hata: "esya_kilitli" });
+  // Savunma: denetimsiz eksi envanterEkle adlı eşyanın altına inmez, kaliteKirp ona dokunmaz.
+  envanterEkle(c, "kilic", -5);
+  assert.equal(c.ev!.kilic, 1);
+  assert.equal(c.kq!.kilic![0]![4]!.i, e.i);
+  assert.equal(esyaKilidi(c, { kilic: 1 }), "esya_kilitli");
+  assert.equal(esyaKilidi(c, { kilic: 2 }), null, "envanter hiç yetmiyorsa çağıranın mal_yok'u geçerli");
+});
+
+test("adlı eşya kilidi: tarif girdisi ve depo genişletmesi adlı eşyayı yakmaz (esya_kilitli); kimlikle taşınır", () => {
+  const k = testKasabasi("develi", AY);
+  const c = demirci(k, 61, 3);
+  const e = esyaYap(c, "civi", 5, AY, "A", hep(0));
+  c.ev = {};
+  kaliteliEkle(c, "civi", [[5, 1, c.o, ATOLYE, e]]);
+  const t: Tezgah = bosTezgah();
+  const malBul = (v: unknown) => (typeof v === "string" && v in MALLAR ? (v as MalId) : undefined);
+  const g = tasimaCoz({ mal: "civi", kalite: 5, adet: 1 }, malBul, true);
+  assert.ok(g.ok);
+  assert.deepEqual(depoyaKoy(c, t, g.deger, 100), { ok: false, hata: "esya_kilitli" });
+  const gi = tasimaCoz({ mal: "civi", kalite: 5, adet: 1, esya: e.i }, malBul, true);
+  assert.ok(gi.ok);
+  assert.ok(depoyaKoy(c, t, gi.deger, 100).ok);
+  assert.equal(t.kq!.civi![0]![4]!.i, e.i);
+  assert.equal(depodanDus(t, "civi", 1), false, "depodan kimliksiz düşüş adlı eşyayı almaz");
+  // İflas/devralma boşaltması adlı eşyayı da taşır.
+  const varis = { ev: {} } as Karakter;
+  tezgahBosalt(t, varis);
+  assert.equal(varis.kq!.civi![0]![4]!.i, e.i);
+});
+
+test("göç: efsanevi hak sayacı yerleşim ayından bağımsız — daha geride bir yerleşimde ikinci hak açılmaz", () => {
+  const c = { o: "o1", h: "h1", ad: "x" } as Karakter;
+  efsaneviDene(c, "kilic", 4, 10_000, AY + 3, "A", hep(0.99));
+  assert.deepEqual(c.ef, [AY + 3, 1]);
+  assert.equal(efsaneviHakki(c, AY + 3), 0);
+  assert.equal(efsaneviHakki(c, AY + 1), 0, "göçle geride kalan yerleşimde hak yok");
+  const r = efsaneviDene(c, "kilic", 4, 10_000, AY + 1, "A", hep(0.99));
+  assert.deepEqual(c.ef, [AY + 3, 2], "sayaç ayı geri gitmez");
+  assert.equal(r.kalanHak, 0);
+  assert.equal(efsaneviHakki(c, AY + 4), 1, "sonraki gerçek ay hak döner");
+});
+
+test("ilan ve raf adlı eşyanın herkese açık görünümünü verir (geçmiş yok); kimliksiz alım onu seçmez", () => {
+  const k = testKasabasi("develi", AY);
+  const c = demirci(k, 62, 3);
+  const e = esyaYap(c, "kilic", 5, AY, "Demirhane", hep(0));
+  c.ev = {};
+  kaliteliEkle(c, "kilic", [[5, 1, c.o, ATOLYE, e]]);
+  assert.deepEqual(ilanAc(k, c, { tur: "sat", mal: "kilic", adet: 1, fiyat: 500, kalite: 5 }, AY), { ok: false, hata: "esya_kilitli" });
+  const r = ilanAc(k, c, { tur: "sat", mal: "kilic", adet: 1, fiyat: 500, kalite: 5, esya: e.i }, AY);
+  assert.ok(r.ok, JSON.stringify(r));
+  const gv = ilanGorunumu(r.deger.ilan, "x", AY) as { esyalar?: Record<string, unknown>[] };
+  assert.equal(gv.esyalar?.length, 1);
+  assert.deepEqual(Object.keys(gv.esyalar![0]!).sort(), ["atolye", "hunerler", "id", "kademe", "kalite", "lakap", "ozellik", "usta", "yapim"]);
+  assert.equal(gv.esyalar![0]!.usta, c.ad);
+  // Raf: adlı eşya NPC talebine girmez; görünümde eşya ve kimliksiz alınabilen adet.
+  const t: Tezgah = bosTezgah();
+  kaliteliEkle(t, "kilic", [[5, 1, c.o, ATOLYE, { ...e, i: "e9" }], [3, 2, c.o]]);
+  const rr = rafaKoy(t, "kilic", 5, 1, Math.floor(adil("kilic", 5)), 4, undefined, "e9");
+  assert.ok(rr.ok, JSON.stringify(rr));
+  const s = rr.deger.satir;
+  assert.equal(rafSatilabilir(s), 0);
+  assert.deepEqual(raftanSat(t, s, 1), null, "kimliksiz satış adlı eşyayı almaz");
+  assert.equal((satirGorunumu(s) as { esyalar?: unknown[] }).esyalar?.length, 1);
+  assert.equal(raftanSat(t, s, 1, "e9")![0]![4]!.i, "e9");
 });
 
 // ── Uç (atölyede anlık üretim) ──

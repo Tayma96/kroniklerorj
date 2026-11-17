@@ -6,6 +6,7 @@
 import { MALLAR, malBul, type MalId } from "../icerik/mallar.ts";
 import type { MeslekId } from "../icerik/meslekler.ts";
 import { basarili, hata, type Sonuc } from "../tipler.ts";
+import { esyaKilidi } from "./kalite.ts";
 import { envanterEkle, saticiDegeri, stogaEkle, type KasabaStogu } from "./npc-taban.ts";
 import type { CalismaParametreleri, Dokum, Karakter } from "./tipler.ts";
 
@@ -56,6 +57,8 @@ export function npcyeSat(
   if (!mal || MALLAR[mal].taban === 0) return hata("mal_gecersiz");
   if (typeof adetHam !== "number" || !Number.isInteger(adetHam) || adetHam < 1) return hata("mal_gecersiz");
   if ((k.ev?.[mal] ?? 0) < adetHam) return hata("mal_yok");
+  const kilit = esyaKilidi(k, { [mal]: adetHam });
+  if (kilit) return hata(kilit);
   const once = satilan(k, mal, ay);
   const meslek = MALLAR[mal].meslek;
   const digerMeslektas = Math.max(0, oyuncuSayisi(meslek) - (k.ms?.a === meslek ? 1 : 0));

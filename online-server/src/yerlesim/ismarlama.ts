@@ -15,12 +15,12 @@ import { engelliMi } from "./engel.ts";
 import { hanedanKasabasi } from "./hanedan.ts";
 import { AZALAN_PENCERE, getiriCarpani } from "./eylem.ts";
 import { elDegistir } from "./esya.ts";
-import { KALITE_ADLARI, KALITE_NADIDE, kaliteAdedi, kaliteliCikar, kaliteliEkle, kaliteMi, type Kalite } from "./kalite.ts";
+import { KALITE_ADLARI, KALITE_NADIDE, kaliteliCikar, kaliteliEkle, kaliteMi, secilebilirAdet, type Kalite } from "./kalite.ts";
 import { karakterYasi } from "./karakter.ts";
 import { hizmetEkle } from "./meslek.ts";
 import { malMeslegindeMi } from "./npc-taban.ts";
 import { oyuncuRef } from "./ortak.ts";
-import { ekonomiAl, pompaDenetle, pompaYaz, type PompaDokumu } from "./pazar-tahta.ts";
+import { ekonomiAl, esyaKimligi, pompaDenetle, pompaYaz, secimNedeni, type PompaDokumu } from "./pazar-tahta.ts";
 import { TEKLIF_YASI } from "./teklif.ts";
 import { ayniKume } from "./teveccuh.ts";
 import type { Karakter, Kasaba, OlayTaslagi } from "./tipler.ts";
@@ -130,6 +130,7 @@ export function ismarlamaCevap(
   cevap: unknown,
   kaliteHam: unknown,
   ay: number,
+  esyaHam?: unknown,
 ): Sonuc<{ ismarlama: Ismarlama; olaylar: OlayTaslagi[]; teslim?: TeslimDokumu }> {
   const ism = ismarlamaBul(k, idHam);
   if (!ism) return hata("ismarlama_yok");
@@ -166,15 +167,17 @@ export function ismarlamaCevap(
     case "teslim": {
       if (!usta) return hata("taraf_degil");
       if (ism.d !== "surer" || ay > ism.sa) return hata("ismarlama_kapandi");
+      // Adlı eşya yalnız `esya` kimliğiyle (ısmarlama adedi 1 ve kalite açıkça) verilir; kendiliğinden seçimde hiç.
+      const esya = esyaKimligi(esyaHam);
+      if (esya === null || (esya !== undefined && (ism.n !== 1 || kaliteHam === undefined))) return hata("ismarlama_gecersiz");
       let q: Kalite | null = null;
-      if (kaliteHam !== undefined) q = kaliteMi(kaliteHam) && kaliteHam >= ism.q && kaliteAdedi(ben, ism.ml, kaliteHam) >= ism.n ? kaliteHam : null;
-      // Kendiliğinden seçimde adlı eşya verilmez (kalite açıkça istenir).
-      else for (let x = ism.q; x <= KALITE_NADIDE && q === null; x++) if (kaliteAdedi(ben, ism.ml, x as Kalite) >= ism.n) q = x as Kalite;
-      if (q === null) return hata("mal_yok");
+      if (kaliteHam !== undefined) q = kaliteMi(kaliteHam) && kaliteHam >= ism.q && secilebilirAdet(ben, ism.ml, kaliteHam, esya) >= ism.n ? kaliteHam : null;
+      else for (let x = ism.q; x <= KALITE_NADIDE && q === null; x++) if (secilebilirAdet(ben, ism.ml, x as Kalite) >= ism.n) q = x as Kalite;
+      if (q === null) return hata(kaliteHam !== undefined && kaliteMi(kaliteHam) && esya === undefined ? (secimNedeni(ben, ism.ml, kaliteHam, ism.n) ?? "mal_yok") : "mal_yok");
       const pompa = pompaDenetle(ben, diger, ism.ml, q, ism.n, ism.e, ay);
       if (!pompa.ok) return pompa;
       pompaYaz(ben, diger, pompa.deger, ay);
-      kaliteliEkle(diger, ism.ml, elDegistir(kaliteliCikar(ben, ism.ml, ism.n, q)!, ay, "ismarlama", diger.ad));
+      kaliteliEkle(diger, ism.ml, elDegistir(kaliteliCikar(ben, ism.ml, ism.n, q, esya)!, ay, "ismarlama", diger.ad));
       const ucret = ism.e;
       ben.pa += ucret;
       ism.e = 0;

@@ -1,6 +1,7 @@
 // E4.3: öğrenilmiş hizmeti süreli stoğa hazırlar; ilan, satın alma, teslim ve bozulma akışını yönetir.
 import type { MalId } from "../icerik/mallar.ts";
 import { hizmetAcik, sinerjilerAcik } from "./beceri-etki.ts";
+import { esyaKilidi } from "./kalite.ts";
 import { envanterEkle } from "./npc-taban.ts";
 import { halDegistir, type Hal } from "./hal.ts";
 import { hizmetEkle } from "./meslek.ts";
@@ -59,6 +60,8 @@ export function hizmetHazirla(
     if ((kar.ev?.[mal] ?? 0) < gereken) return hata("girdi_yok");
     if (gereken > 0) girdiler[mal] = gereken;
   }
+  const kilit = esyaKilidi(kar, girdiler);
+  if (kilit) return hata(kilit);
   const takat = tarif.takat * adet;
   // Takat denetimi girdiler tüketilmeden yapılır; takatHarca başarısızsa mal kaybı olmaz.
   if (!takatHarca(kar, ay, takat)) return hata("takat_yok");

@@ -5,37 +5,56 @@
 //
 // Denge: deneme sayısı parayla, takatla ya da tekrar üretimle artmaz (ay başına EFSANEVI_DENEME_AY; deneme ancak ürün
 // nadide çıkınca harcanır ve her deneme bir gerçek üretimin girdisini ve takatini ister). Zar sunucuda tohumludur
-// (oyuncu + ay: aynı ay ikinci kez zar atılamaz). Emirle (NPC emeği / toplu) üretim şaheseri aşamaz (kalite.ts).
-// Olasılık oyuncuya kaba bantla söylenir; sayılar burada [PARAMETRE] olarak açıktır. Saf fonksiyonlar.
+// ve ortam sırrıyla HMAC'lidir (oyuncu + ay + mal; zar-sirri.ts): istemci önceden hesaplayamaz, aynı ay ikinci kez
+// atılamaz. Emirle (NPC emeği / toplu) üretim şaheseri aşamaz (kalite.ts). Olasılık oyuncuya yüzde ve kalemleriyle
+// döner (efsaneviSansDokumu); bant yalnız etikettir. Saf fonksiyonlar.
 
 import type { MalId } from "../icerik/mallar.ts";
 import {
+  ALET_KALITE_OMUR,
+  ALET_KALITE_VERIM,
   KALITE_ADLARI,
   KALITE_EFSANEVI,
   KALITE_ESIK,
   KALITE_NADIDE,
   KALITE_TILSIMLI,
+  enIyiKalite,
   kaliteKirp,
   kaliteliEkle,
+  type Envanterli,
   type EsyaKaydi,
   type Kalite,
   type KaliteParti,
 } from "./kalite.ts";
-import { karma, tohumlu, type Zar } from "./rastgele.ts";
+import { karma, type Zar } from "./rastgele.ts";
+import { sirliZar } from "./zar-sirri.ts";
 import type { Karakter } from "./tipler.ts";
 
-/** [PARAMETRE] Etki çarpanı (§9.1): sade ×1 · iyi ×1,5 · üstün ×2 · şaheser ×3 · nadide ×4 · efsanevi ×5 · tılsımlı ×7. */
+/**
+ * [PARAMETRE] Etki çarpanı önerisi (§9.1): sade ×1 · iyi ×1,5 · üstün ×2 · şaheser ×3 · nadide ×4 · efsanevi ×5 ·
+ * tılsımlı ×7. Bugün hiçbir oyun mantığı bunu okumaz; dökümde gösterilmez (gösterilen etki = gerçek etki). Bağlı
+ * etkiler (alet verimi, ömrü) kendi tablolarındaki gerçek değerle döner (kalite.ts ALET_KALITE_*).
+ */
 export const ETKI_CARPANI: readonly number[] = [1, 1.5, 2, 3, 4, 5, 7];
 /** [PARAMETRE] Efsanevi denemesine yetkili meslek kademesi (3 = pir). */
 export const EFSANEVI_PIR_KADEMESI = 3;
 /** [PARAMETRE] Kişi başına aylık efsanevi denemesi. */
 export const EFSANEVI_DENEME_AY = 1;
-/** [PARAMETRE] Efsanevi şansı (yüzde): taban + nadide eşiğinin üstündeki her puan için artış, tavanlı. */
+/**
+ * [PARAMETRE] Efsanevi şansı (yüzde): taban + nadide eşiğinin üstündeki her puan için artış (aşağı yuvarlanır),
+ * tavanlı. Denge (§9.2, "1000 pirde ayda birkaç tılsımlı"): denemenin ancak nadide çıkan işte harcandığıyla
+ * birlikte aylık efsanevi oranı pirlerin yaklaşık %10–20'si; tılsımlı bunun binde 15'i.
+ */
 export const EFSANEVI_SANS_TABAN = 10;
-export const EFSANEVI_SANS_PUAN = 1;
-export const EFSANEVI_SANS_TAVAN = 40;
+export const EFSANEVI_SANS_PUAN = 0.5;
+export const EFSANEVI_SANS_TAVAN = 20;
 /** [PARAMETRE] Başarılı efsanevi denemesinde ayrıca tılsımlı olma şansı (binde). */
-export const TILSIM_SANS_BINDE = 1;
+export const TILSIM_SANS_BINDE = 15;
+/** [PARAMETRE] Kaba bant eşikleri (yüzde): altı zayıf, arası makul, üstü güçlü. Bant yalnız etikettir; sayı dökümdedir. */
+export const SANS_BANDI_MAKUL = 12;
+export const SANS_BANDI_GUCLU = 17;
+/** [PARAMETRE] "bereketli" hünerli aletin fazladan çıktısı (adet; kalite verimine eklenir). */
+export const ALET_BEREKET_VERIM = 1;
 /** [PARAMETRE] Lakap sayısı (istemci `esya.lakap.0..N-1`). */
 export const ESYA_LAKAP_SAYISI = 24;
 /** [PARAMETRE] Yadigâr geçmişinde tutulan en çok satır (ilk satır, yapım, hep kalır). */
@@ -96,13 +115,17 @@ export interface AileTanimi {
   hunerler: readonly string[];
   /** Etki bugün oyunda bağlı mı (alet: verim ve ömür). Bağlı değilse dökümde bilgi olarak görünür. */
   bagli: boolean;
+  /** Oyunda karşılığı olan etkiler ve hünerler (yoksa hiçbiri bağlı değil). Efsanevi/tılsımlı bu ailede yalnız bağlı
+   * hünerlerden alır (sırayla: efsanevi ilkini, tılsımlı ilk ikisini). */
+  bagliEtkiler?: readonly string[];
+  bagliHunerler?: readonly string[];
 }
 
 /** [PARAMETRE] Aile tanımları (§9: silah güç, zırh dayanım, alet verim/ömür, giysi görünüş ve yol, yiyecek takat…). */
 export const AILELER: Readonly<Record<EsyaAilesi, AileTanimi>> = {
   silah: { etkiler: [["guc", 0], ["isabet", 3], ["heybet", 4]], kusur: "korAgiz", hunerler: ["ikinciHamle", "keskinAgiz", "dengeliSap"], bagli: false },
   zirh: { etkiler: [["dayanim", 0], ["hafiflik", 3], ["sarsilmazlik", 4]], kusur: "inceSac", hunerler: ["sarsilmaz", "hafifDokuma", "yaraKapatan"], bagli: false },
-  alet: { etkiler: [["verim", 0], ["omur", 1], ["incelik", 4]], kusur: "kabaIs", hunerler: ["yipranmaz", "bereketli", "cabukEl"], bagli: true },
+  alet: { etkiler: [["verim", 0], ["omur", 1], ["incelik", 4]], kusur: "kabaIs", hunerler: ["yipranmaz", "bereketli", "cabukEl"], bagli: true, bagliEtkiler: ["verim", "omur"], bagliHunerler: ["yipranmaz", "bereketli"] },
   giysi: { etkiler: [["gorunus", 0], ["yol", 3], ["mevsim", 4]], kusur: "kabaDikis", hunerler: ["gozAlici", "yolYorulmaz", "dortMevsim"], bagli: false },
   yiyecek: { etkiler: [["tokluk", 0], ["keyif", 3], ["saglik", 4]], kusur: "bayat", hunerler: ["uzunTokluk", "bereketliSofra", "sifali"], bagli: false },
   arac: { etkiler: [["yuk", 0], ["hiz", 3], ["dayanim", 4]], kusur: "gicirti", hunerler: ["yukHafifletir", "yolKisaltir", "saglamDingil"], bagli: false },
@@ -121,46 +144,120 @@ export function nadideHuneri(mal: string): string {
   return AILELER[esyaAilesi(mal)].hunerler[0]!;
 }
 
-/** Kademenin özellik dökümü: aile, etkiler (çarpanla), sadede kusur, hüner(ler). Gizli sayı yok. */
+/** Kademenin ve eşyanın hünerleri (nadide: ailenin ilk hüneri; adlı eşya: kaydındakiler). */
+export function hunerleri(mal: string, q: Kalite, esya?: EsyaKaydi): string[] {
+  return esya ? [...esya.h] : q === KALITE_NADIDE ? [nadideHuneri(mal)] : [];
+}
+
+/** Hünerin bu ailede oyunda karşılığı var mı. */
+export function hunerBagliMi(mal: string, huner: string): boolean {
+  return AILELER[esyaAilesi(mal)].bagliHunerler?.includes(huner) === true;
+}
+
+/** Aletin (araç olarak kullanılan malın) bu kademe ve hünerlerle gerçek etkisi: fazladan çıktı, ömür, yıpranmazlık. */
+export function aletEtkisi(mal: string, q: Kalite, hunerler: readonly string[]): { verim: number; omur: number; yipranmaz: boolean } {
+  const bereket = hunerler.includes("bereketli") && hunerBagliMi(mal, "bereketli") ? ALET_BEREKET_VERIM : 0;
+  return {
+    verim: (ALET_KALITE_VERIM[q] ?? 0) + bereket,
+    omur: ALET_KALITE_OMUR[q] ?? 0,
+    yipranmaz: hunerler.includes("yipranmaz") && hunerBagliMi(mal, "yipranmaz"),
+  };
+}
+
+/** Eldeki en iyi (kullanılacak) birimin kademesi ve hünerleri: adlı eşyada en iyi partinin kaydı. */
+export function enIyiBirim(k: Envanterli, mal: string): { q: Kalite; hunerler: string[] } {
+  const q = enIyiKalite(k as Karakter, mal);
+  const ilk = k.kq?.[mal]?.find((p) => p[0] === q && p[1] > 0);
+  return { q, hunerler: hunerleri(mal, q, ilk?.[4]) };
+}
+
+/** Eldeki en iyi aletin gerçek etkisi (tarif, temel iş ve atölye aynı kaynağı kullanır). */
+export function eldekiAletEtkisi(k: Envanterli, mal: string): { q: Kalite; verim: number; omur: number; yipranmaz: boolean } {
+  const b = enIyiBirim(k, mal);
+  return { q: b.q, ...aletEtkisi(mal, b.q, b.hunerler) };
+}
+
+/**
+ * Kademenin özellik dökümü: aile, etkiler, sadede kusur, hüner(ler). Gizli sayı yok ve gösterilen = gerçek: bağlı
+ * etki (`bagli:true`) oyundaki gerçek değeriyle döner (alet: `verim` +N adet, `omur` +N kullanım ya da `yipranmaz`);
+ * bağlı olmayan etki ve hüner `bagli:false`tır (istemci "yakında" der). Çarpan yazılmaz (hiçbir mantık okumaz).
+ */
 export function ozellikDokumu(mal: string, q: Kalite, esya?: EsyaKaydi) {
   const aile = esyaAilesi(mal);
   const a = AILELER[aile];
-  const carpan = ETKI_CARPANI[q] ?? 1;
-  const hunerler = esya ? [...esya.h] : q === KALITE_NADIDE ? [nadideHuneri(mal)] : [];
+  const hunerler = hunerleri(mal, q, esya);
+  const alet = aletEtkisi(mal, q, hunerler);
+  const etkiler = a.etkiler
+    .filter(([, en]) => q >= en)
+    .map(([id]) => {
+      const bagli = a.bagliEtkiler?.includes(id) === true;
+      if (!bagli) return { id, bagli };
+      if (id === "verim") return { id, bagli, deger: alet.verim, birim: "adet" as const };
+      if (id === "omur") return alet.yipranmaz ? { id, bagli, yipranmaz: true } : { id, bagli, deger: alet.omur, birim: "kullanim" as const };
+      return { id, bagli };
+    });
   return {
     aile,
     kademe: q,
     kalite: KALITE_ADLARI[q],
-    carpan,
-    etkiler: a.etkiler.filter(([, en]) => q >= en).map(([id]) => ({ id, carpan })),
+    etkiler,
     eksik: a.etkiler.filter(([, en]) => q < en).map(([id, en]) => ({ id, kademe: en })),
     kusur: q === 0 ? a.kusur : null,
     hunerler,
-    bagli: a.bagli,
+    /** Hünerlerin bağlılığı (aynı sırayla). */
+    hunerDokumu: hunerler.map((id) => ({ id, bagli: hunerBagliMi(mal, id) })),
+    /** Bu dökümde oyunda karşılığı olan en az bir etki ya da hüner var mı. */
+    bagli: etkiler.some((e) => e.bagli) || hunerler.some((h) => hunerBagliMi(mal, h)),
   };
 }
 
 // ── Efsanevi denemesi ──
 
-/** Bu ay kalan efsanevi denemesi. */
+/**
+ * Bu ay kalan efsanevi denemesi. Hak sayacının ayı yerleşimin ayından ilerideyse (göçle yerleşimler arası ay farkı)
+ * o ay da harcanmış sayılır: göç ikinci hak açmaz.
+ */
 export function efsaneviHakki(k: Pick<Karakter, "ef">, ay: number): number {
-  const kullanilan = k.ef && k.ef[0] === ay ? k.ef[1] : 0;
+  const kullanilan = k.ef && ay <= k.ef[0] ? k.ef[1] : 0;
   return Math.max(0, EFSANEVI_DENEME_AY - kullanilan);
 }
 
 /** Efsanevi şansı (yüzde) ürünün kalite puanından; puan nadide eşiğinin altındaysa 0. */
 export function efsaneviSansi(puan: number): number {
-  const esik = KALITE_ESIK[KALITE_NADIDE]!;
-  if (puan < esik) return 0;
-  return Math.min(EFSANEVI_SANS_TAVAN, EFSANEVI_SANS_TABAN + Math.floor(puan - esik) * EFSANEVI_SANS_PUAN);
+  return efsaneviSansDokumu(puan).yuzde;
 }
 
-/** Oyuncuya söylenen kaba bant (gizli sayı yerine dil). */
+/** Oyuncuya söylenen kaba bant (sayının yanında etiket). */
 export function sansBandi(yuzde: number): "yok" | "zayif" | "makul" | "guclu" {
   if (yuzde <= 0) return "yok";
-  if (yuzde < 20) return "zayif";
-  if (yuzde < 32) return "makul";
+  if (yuzde < SANS_BANDI_MAKUL) return "zayif";
+  if (yuzde < SANS_BANDI_GUCLU) return "makul";
   return "guclu";
+}
+
+/** Efsanevi şansının açık dökümü (gizli sayı yok): taban, puan fazlası, tavan kesintisi; tılsım binde ayrıca. */
+export function efsaneviSansDokumu(puan: number) {
+  const esik = KALITE_ESIK[KALITE_NADIDE]!;
+  const kalemler: { k: string; d: number }[] = [];
+  if (puan >= esik) {
+    kalemler.push({ k: "efsanevi.taban", d: EFSANEVI_SANS_TABAN });
+    const fazla = Math.floor(Math.floor(puan - esik) * EFSANEVI_SANS_PUAN);
+    if (fazla > 0) kalemler.push({ k: "efsanevi.puan", d: fazla });
+    const ham = EFSANEVI_SANS_TABAN + fazla;
+    if (ham > EFSANEVI_SANS_TAVAN) kalemler.push({ k: "efsanevi.tavan", d: EFSANEVI_SANS_TAVAN - ham });
+  }
+  const yuzde = kalemler.reduce((a, x) => a + x.d, 0);
+  return {
+    yuzde,
+    bant: sansBandi(yuzde),
+    kalemler,
+    /** Nadide eşiği (puan) ve puan başına artış; tavan. */
+    esik,
+    puanBasina: EFSANEVI_SANS_PUAN,
+    tavan: EFSANEVI_SANS_TAVAN,
+    /** Başarılı denemede ayrıca tılsımlı olma şansı (binde). */
+    tilsimBinde: TILSIM_SANS_BINDE,
+  };
 }
 
 /** Efsanevi denemesinin ön koşulu (zar atılmadan, hiçbir şey değişmeden). */
@@ -174,17 +271,22 @@ export interface EfsaneviSonucu {
   denendi: boolean;
   /** Denenmediyse nedeni (hak harcanmaz). */
   neden: "nadide_degil" | null;
-  /** Kaba şans bandı. */
+  /** Kaba şans bandı (etiket; sayı `sansDokumu`nda). */
   sans: ReturnType<typeof sansBandi>;
+  /** Şansın açık dökümü: yüzde, kalemler (taban, puan fazlası, tavan), tılsım binde. */
+  sansDokumu: ReturnType<typeof efsaneviSansDokumu>;
   /** Çıkan kademe (efsanevi ya da tılsımlı) ve eşya; başarısızsa null. */
   kademe: Kalite | null;
   esya: EsyaKaydi | null;
   kalanHak: number;
 }
 
-/** Aylık zar: oyuncu + ay (tarif ya da sayaç değil; aynı ay ikinci zar yok). */
-export function efsaneviZari(k: Pick<Karakter, "o" | "h">, ay: number): Zar {
-  return tohumlu("efsanevi", k.h, k.o, ay);
+/**
+ * Aylık zar: oyuncu + ay + mal, ortam sırrıyla HMAC'li (zar-sirri.ts; istemci sonucu önceden hesaplayamaz). Aynı ay
+ * ikinci zar yok: hak sayacı ayda bir.
+ */
+export function efsaneviZari(k: Pick<Karakter, "o" | "h">, ay: number, mal = ""): Zar {
+  return sirliZar("efsanevi", k.h, k.o, ay, mal);
 }
 
 /**
@@ -192,23 +294,33 @@ export function efsaneviZari(k: Pick<Karakter, "o" | "h">, ay: number): Zar {
  * eşya kaydı döner (binde TILSIM_SANS_BINDE tılsımlı). Karakterde yalnız `ef` (deneme sayacı) değişir.
  */
 export function efsaneviDene(k: Karakter, mal: MalId, kademe: Kalite, puan: number, ay: number, atolyeAd: string, zar?: Zar): EfsaneviSonucu {
-  const yuzde = efsaneviSansi(puan);
-  if (kademe !== KALITE_NADIDE) return { denendi: false, neden: "nadide_degil", sans: sansBandi(yuzde), kademe: null, esya: null, kalanHak: efsaneviHakki(k, ay) };
-  const r = zar ?? efsaneviZari(k, ay);
-  k.ef = [ay, (k.ef && k.ef[0] === ay ? k.ef[1] : 0) + 1];
+  const sansDokumu = efsaneviSansDokumu(puan);
+  const yuzde = sansDokumu.yuzde;
+  const sans = sansDokumu.bant;
+  if (kademe !== KALITE_NADIDE) return { denendi: false, neden: "nadide_degil", sans, sansDokumu, kademe: null, esya: null, kalanHak: efsaneviHakki(k, ay) };
+  const r = zar ?? efsaneviZari(k, ay, mal);
+  // Sayaç ayı geri gitmez (göçle daha geride bir yerleşime geçilse de harcanan hak sayılır).
+  const sayacAyi = k.ef && k.ef[0] > ay ? k.ef[0] : ay;
+  k.ef = [sayacAyi, (k.ef && ay <= k.ef[0] ? k.ef[1] : 0) + 1];
   const tut = r() * 100 < yuzde;
   const tilsim = r() * 1000 < TILSIM_SANS_BINDE;
-  if (!tut) return { denendi: true, neden: null, sans: sansBandi(yuzde), kademe: null, esya: null, kalanHak: efsaneviHakki(k, ay) };
+  if (!tut) return { denendi: true, neden: null, sans, sansDokumu, kademe: null, esya: null, kalanHak: efsaneviHakki(k, ay) };
   const q: Kalite = tilsim ? KALITE_TILSIMLI : KALITE_EFSANEVI;
-  return { denendi: true, neden: null, sans: sansBandi(yuzde), kademe: q, esya: esyaYap(k, mal, q, ay, atolyeAd, r), kalanHak: efsaneviHakki(k, ay) };
+  return { denendi: true, neden: null, sans, sansDokumu, kademe: q, esya: esyaYap(k, mal, q, ay, atolyeAd, r), kalanHak: efsaneviHakki(k, ay) };
 }
 
-/** Adlı eşya kaydı (kimlik deterministik: hesap + kişi + ay + mal; hesap kimliği açığa çıkmaz, karması alınır). */
+/**
+ * Adlı eşya kaydı (kimlik deterministik: hesap + kişi + ay + mal; hesap kimliği açığa çıkmaz, karması alınır).
+ * Ailenin bağlı hünerleri varsa (alet) yalnız onlardan alır: efsanevi ilkini (alet: yıpranmaz), tılsımlı ilk ikisini;
+ * böylece adlı alet hiçbir zaman etkisiz hünerle çıkmaz ve yıpranıp yok olmaz.
+ */
 export function esyaYap(k: Pick<Karakter, "o" | "h" | "ad">, mal: MalId, q: Kalite, ay: number, atolyeAd: string, r: Zar): EsyaKaydi {
-  const liste = AILELER[esyaAilesi(mal)].hunerler;
+  const a = AILELER[esyaAilesi(mal)];
+  const liste = a.hunerler;
   const ilk = Math.floor(r() * liste.length);
-  const h = [liste[ilk]!];
+  let h = [liste[ilk]!];
   if (q >= KALITE_TILSIMLI && liste.length > 1) h.push(liste[(ilk + 1 + Math.floor(r() * (liste.length - 1))) % liste.length]!);
+  if (a.bagliHunerler?.length) h = a.bagliHunerler.slice(0, q >= KALITE_TILSIMLI ? 2 : 1);
   return { i: `e${karma("esya", k.h, k.o, ay, mal).toString(36)}`, l: Math.floor(r() * ESYA_LAKAP_SAYISI), u: k.ad, a: atolyeAd, h, y: ay, g: [[ay, "yapim", k.ad]] };
 }
 
@@ -239,7 +351,25 @@ export function mirasPartileri(kaynaklar: readonly (Record<string, KaliteParti[]
   return hedef.kq;
 }
 
-/** İstemci görünümü (yalnız sahibine ve satış ilanında): ad, usta, atölye, hünerler, yadigâr geçmişi. */
+/**
+ * Herkese açık görünüm (pazar ilanı ve raf satırı; alıcı satın almadan görür): lakap, kademe, usta, atölye,
+ * hünerler, yapım ayı ve özellik dökümü. Yadigâr geçmişi (kimlerin elinden geçtiği) yalnız sahibine gösterilir.
+ */
+export function esyaKamuGorunumu(mal: string, q: Kalite, e: EsyaKaydi) {
+  return {
+    id: e.i,
+    lakap: e.l,
+    kademe: q,
+    kalite: KALITE_ADLARI[q],
+    usta: e.u,
+    atolye: e.a,
+    hunerler: [...e.h],
+    yapim: e.y,
+    ozellik: ozellikDokumu(mal, q, e),
+  };
+}
+
+/** İstemci görünümü (yalnız sahibine): ad, usta, atölye, hünerler, yadigâr geçmişi. */
 export function esyaGorunumu(mal: string, q: Kalite, e: EsyaKaydi) {
   return {
     id: e.i,

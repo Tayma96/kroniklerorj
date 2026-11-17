@@ -130,6 +130,8 @@ export const HATA_DURUMU = {
   tarif_gecersiz: 400,
   girdi_yok: 409,
   mal_yok: 409,
+  /** Kimliksiz düşüş adlı eşyaya (efsanevi/tılsımlı) dokunurdu: o eşya yalnız `esya` kimliğiyle harcanır. */
+  esya_kilitli: 409,
   siparis_yok: 404,
   siparis_kapandi: 409,
   // Oyuncular arası (Faz 3a)
@@ -485,6 +487,11 @@ export interface Env {
   /** İsteğe bağlı TURN anahtarı (kısıtlı ağlar); yoksa STUN kullanılır. */
   REALTIME_TURN_ID?: string;
   REALTIME_TURN_TOKEN?: string;
+  /**
+   * Kalite ve efsanevi zarının tohum sırrı (sır: `wrangler secret put ZAR_SIRRI`, en az 16 karakter). Yoksa yerel
+   * yedek kullanılır ve uyarı yazılır (yalnız yerel/test). İstemciye hiç gitmez.
+   */
+  ZAR_SIRRI?: string;
 }
 
 /** Dünya DO'suna profil kaydı isteği (HesapDO gönderir). */

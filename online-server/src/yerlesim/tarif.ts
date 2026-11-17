@@ -13,22 +13,22 @@ import { takatHarca, takatTazele } from "./karakter.ts";
 import { TARIF_KILIDI } from "../icerik/agaclar/index.ts";
 import { acikEtkiler, aracArtisi, basariSay, omurArtisi, sinerjiAcik, tasarrufOrani, tarifAcik, verimArtisi } from "./beceri-etki.ts";
 import {
-  ALET_KALITE_OMUR,
-  ALET_KALITE_VERIM,
   KALITE_BECERI_TAVAN,
-  KALITE_EFSANEVI,
   KALITE_NADIDE,
   enIyiKalite,
+  esyaKilidi,
   kaliteliCikar,
   kaliteliEkle,
+  serbestAdet,
   urunKalitesi,
   type Kalite,
   type KaliteSonucu,
 } from "./kalite.ts";
-import { efsaneviDene, efsaneviOnKosul, ozellikDokumu, type EfsaneviSonucu } from "./esya.ts";
+import { efsaneviDene, efsaneviOnKosul, eldekiAletEtkisi, ozellikDokumu, type EfsaneviSonucu } from "./esya.ts";
 import { hizmetEkle } from "./meslek.ts";
 import { envanterEkle } from "./npc-taban.ts";
-import { tohumlu, type Zar } from "./rastgele.ts";
+import type { Zar } from "./rastgele.ts";
+import { sirliZar } from "./zar-sirri.ts";
 import type { Karakter } from "./tipler.ts";
 
 /** [PARAMETRE] Bir aletin kullanım ömrü (bu kadar kullanımda bir alet tükenir). */
@@ -38,7 +38,7 @@ export const ALET_OMRU = 4;
  * + eldeki en iyi aracın kalitesi (yapanın ustalığı: ALET_KALITE_OMUR). */
 export function aletOmru(k: Karakter, mal: string): number {
   const taban = Object.hasOwn(MALLAR, mal) ? (MALLAR[mal as MalId].omur ?? ALET_OMRU) : ALET_OMRU;
-  return taban + omurArtisi(k, mal) + (ALET_KALITE_OMUR[enIyiKalite(k, mal)] ?? 0);
+  return taban + omurArtisi(k, mal) + eldekiAletEtkisi(k, mal).omur;
 }
 
 export interface Asinma {
@@ -48,19 +48,24 @@ export interface Asinma {
   asindi: boolean;
   /** Kullanılan aracın kalitesi (en iyisi kullanılır). */
   kalite: Kalite;
+  /** Kullanılan araç "yipranmaz" hünerli: aşınmadı (yalnız o zaman var). */
+  yipranmaz?: true;
 }
 
-/** Aracı bir kullanım aşındırır; etkin ömür dolunca bir araç (kullanılan en iyi kaliteli olan) tükenir. */
+/**
+ * Aracı bir kullanım aşındırır; etkin ömür dolunca bir araç (kullanılan en iyi kaliteli olan) tükenir. Yıpranmazlık
+ * kademeye değil "yipranmaz" hünerine bağlıdır (nadide alet ve adlı alet onu taşır: hiç aşınmaz). Adlı eşya bu yoldan
+ * hiçbir zaman yok olmaz: hünersiz eski bir adlı araç kullanıldıysa yerine kimliksiz bir birim düşer, yoksa hiçbiri.
+ */
 export function aracAsindir(k: Karakter, mal: MalId): Asinma {
-  const kalite = enIyiKalite(k, mal);
+  const { q: kalite, yipranmaz } = eldekiAletEtkisi(k, mal);
   const omur = aletOmru(k, mal);
-  // Adlı eşya (efsanevi/tılsımlı alet) yıpranmaz: kırılıp yok olmaz (§9 süzgeci).
-  if (kalite >= KALITE_EFSANEVI) return { mal, kullanim: 0, omur, asindi: false, kalite };
+  if (yipranmaz) return { mal, kullanim: 0, omur, asindi: false, kalite, yipranmaz: true };
   const as = (k.as ??= {});
   const kullanim = (as[mal] ?? 0) + 1;
   const asindi = kullanim >= omur;
   if (asindi) {
-    if (!kaliteliCikar(k, mal, 1, kalite)) envanterEkle(k, mal, -1);
+    if (!kaliteliCikar(k, mal, 1, kalite) && serbestAdet(k, mal) > 0) envanterEkle(k, mal, -1);
     delete as[mal];
   } else as[mal] = kullanim;
   return { mal, kullanim, omur, asindi, kalite };
@@ -75,7 +80,7 @@ export function etkiAraci(k: Karakter, t: Tarif): { mal: MalId; arti: number; va
 
 /** Kullanılan araçların kalitesinden gelen fazladan çıktı (aracı yapanın ustalığı). */
 function aracKaliteVerimi(k: Karakter, mallar: readonly MalId[]): number {
-  return mallar.reduce((a, m) => a + (ALET_KALITE_VERIM[enIyiKalite(k, m)] ?? 0), 0);
+  return mallar.reduce((a, m) => a + eldekiAletEtkisi(k, m).verim, 0);
 }
 
 /** Bu yapımda kullanılacak araç malları (tarifin aracı ve etki aracı; tekrarsız). */
@@ -219,9 +224,12 @@ export interface TarifSonucu {
   hal: HalGorunumu;
 }
 
-/** Kalite zarı: aynı oyuncu, tarif, ay ve üretim sayacıyla aynı sonuç (deterministik). */
+/**
+ * Kalite zarı: aynı oyuncu, tarif, ay ve üretim sayacıyla aynı sonuç (deterministik); tohum ortam sırrıyla HMAC'li
+ * (zar-sirri.ts), istemci sonucu önceden hesaplayıp en iyi anı seçemez.
+ */
 export function kaliteZari(k: Karakter, t: Tarif, ay: number): Zar {
-  return tohumlu("kalite", k.o, t.id, ay, k.bs?.[`tarif:${t.id}`] ?? 0);
+  return sirliZar("kalite", k.h, k.o, t.id, ay, k.bs?.[`tarif:${t.id}`] ?? 0);
 }
 
 /** Atölyede üretim (tezgâh Dilim 2): ek kalite kalemleri (seviye bonusu) ve ürüne yazılan atölye damgası. */
@@ -237,6 +245,8 @@ export function tarifYap(k: Karakter, idHam: unknown, ay: number, zar?: Zar, ato
   if (!t) return hata("tarif_gecersiz");
   if (!tarifAcik(k, t.id)) return hata("dugum_kapali");
   if (Object.keys(eksikGirdi(k, t)).length > 0) return hata("girdi_yok");
+  const kilit = esyaKilidi(k, girdiGorunumu(k, t));
+  if (kilit) return hata(kilit);
   const aracVar = t.arac !== undefined && (k.ev?.[t.arac.mal] ?? 0) > 0;
   if (t.arac?.zorunlu && !aracVar) return hata("arac_yok");
   if (atolye?.efsanevi) {
