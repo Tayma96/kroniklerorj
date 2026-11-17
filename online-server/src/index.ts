@@ -61,6 +61,7 @@
 //   GET  /v1/han?dil=&han=               → seçili han (yoksa 1.) ve masaları + hanlar[] kartları (Faz 10; 4.9 çoklu han)
 //        4.9: han seçen uçlar `?han=N` (GET, baglan, ses) ya da gövdede `han` (POST); yoksa 1. han (eski istemci).
 //   GET  /v1/han/masa/:no/baglan         → WebSocket yükseltmesi (Upgrade: websocket + oturum); iletiler src/han/tipler.ts
+//   GET  /v1/han/masalar                 → {masalar:[{han, masa, oyun, asama, oyuncu, enCok, bos, seyirci, katilabilir}]} (canlı masa oyunları)
 //   POST /v1/han/eylem {masa, tur, hedef?, olay?, sart?, istekNo} → {olay} (katılım listesiyle)
 //   POST /v1/han/masa/:no/ses/oturum {}            → {ice}  (Faz 16 ses; Realtime yoksa 503 ses_kapali)
 //   POST /v1/han/masa/:no/ses/yayin {sdp, mid}     → {sdp, yeniden, iz}  (yalnız oturan, susturulmamış, sesi kesilmemiş)
@@ -672,6 +673,8 @@ async function yonlendir(istek: Request, env: Env): Promise<Response> {
       return yontem === "POST" ? kervanGovdeli(istek, env, "kervanHaber") : hataYaniti("yontem_yok");
     case "/v1/han":
       return yontem === "GET" ? hesaba(istek, env, (hesapId) => basarili({ islem: "han", hesapId, dil, han: hanSorgu(url) })) : hataYaniti("yontem_yok");
+    case "/v1/han/masalar":
+      return yontem === "GET" ? hesaba(istek, env, (hesapId) => basarili({ islem: "hanMasalar", hesapId })) : hataYaniti("yontem_yok");
     case "/v1/han/eylem":
       return yontem === "POST" ? hanGovdeli(istek, env, "hanEylem") : hataYaniti("yontem_yok");
     case "/v1/han/ikram":

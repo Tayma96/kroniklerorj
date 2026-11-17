@@ -30,6 +30,8 @@ import type { AtismaSonucu, MasaAyari, MasaBileti, MasaIleti, MasaOlayi, SoketEk
 import { Realtime, realtimeAyari, type Getir } from "./han/realtime.ts";
 import { sesIsle } from "./han/ses.ts";
 import { masaAdiCoz } from "./han/doluluk.ts";
+import { masaOyunuCoz, oyunSuruyor, vitrinOzeti, type MasaOyunu } from "./han/oyun/cati.ts";
+import { VITRIN_TAZELE_MS, vitrinAnahtari } from "./han/oyun/vitrin.ts";
 import { hesapCagir, iletiOku, jsonYanit, yerlesimCagir, yonetimCagir } from "./ic.ts";
 import { basarili, hata, HATA_DURUMU, type Env, type Sonuc } from "./tipler.ts";
 
@@ -61,6 +63,9 @@ const ETKINLIK = "etkinlik";
 const ANMA_KUYRUK = "anma:kuyruk";
 /** 4.9: yerleşime son bildirilen doluluk [oturan, açık 1/0] (yalnız değişince yeniden bildirilir). */
 const DOLULUK_SON = "doluluk:son";
+/** Masa oyunu (src/han/oyun/; gizli tohum ve zarlar yalnız burada) ve yerleşime son bildirilen vitrin özeti. */
+const OYUN = "oyun";
+const VITRIN_SON = "vitrin:son";
 /** [PARAMETRE] Teslim bekleyen anılma olaylarının en çok sayısı (eskiler düşer). */
 export const ANMA_KUYRUK_EN_COK = 20;
 
@@ -118,6 +123,10 @@ export class MasaDO {
   #anmaVar: boolean | null = null;
   /** 4.9: yerleşime son bildirilen doluluk (null = depodan yüklenmedi). */
   #sonDoluluk: [number, 0 | 1] | undefined | null = null;
+  /** Masa oyunu (null = yüklenmedi). */
+  #oyun: MasaOyunu | undefined | null = null;
+  /** Son bildirilen vitrin özeti [anahtar, z] (null = yüklenmedi). */
+  #sonVitrin: [string, number] | undefined | null = null;
   /** İşlem sırasında sıraya alınan SFU iz kapatmaları; işlem sonunda beklenir. */
   readonly #bekleyen: Promise<unknown>[] = [];
   /** Hesap başına iki yönlü engel listesi önbelleği (asıl kayıt depoda `eg:<hesap>`). */
@@ -142,6 +151,7 @@ export class MasaDO {
     await this.#bosalt();
     await this.#anmaBosalt();
     await this.#dolulukBildir(ileti.masa);
+    await this.#vitrinBildir(ileti.masa);
     return jsonYanit(sonuc);
   }
 
@@ -152,6 +162,7 @@ export class MasaDO {
     await this.#bosalt();
     await this.#anmaBosalt();
     await this.#dolulukBildir(ek.m);
+    await this.#vitrinBildir(ek.m);
   }
 
   #realtime(): Realtime | undefined {
@@ -177,6 +188,7 @@ export class MasaDO {
     await this.#bosalt();
     await this.#anmaBosalt();
     if (ek) await this.#dolulukBildir(ek.m, ws);
+    if (ek) await this.#vitrinBildir(ek.m, ws);
     try {
       ws.close(1000, "ayrildi");
     } catch {
@@ -210,6 +222,46 @@ export class MasaDO {
     } catch {
       // en iyi çaba: yerleşim yanıt vermezse kayıt sonraki değişimde ya da canlı okumada düzelir
     }
+  }
+
+  /**
+   * Canlı masalar vitrini: oyun özeti (tür, aşama, oyuncu, boş yer, seyirci) değiştiyse ya da VITRIN_TAZELE_MS geçtiyse
+   * yerleşime bildirir (gizli bilgi yok). Oyun yoksa/bittiyse kayıt silinir. En iyi çaba: hata masayı bozmaz.
+   */
+  async #vitrinBildir(masa: string, haric?: WebSocket): Promise<void> {
+    const c = masaAdiCoz(masa);
+    if (!c) return;
+    try {
+      const oyun = await this.#oyunAl();
+      if (this.#sonVitrin === null) this.#sonVitrin = await this.#depo.al<[string, number]>(VITRIN_SON);
+      if (!oyun && !this.#sonVitrin) return;
+      const bagli = kayitlar(this.#ctx.getWebSockets().filter((w) => w !== haric).map((w) => this.#sar(w))).map((r) => r.ek.h);
+      const ozet = vitrinOzeti(oyun, bagli);
+      const anahtar = vitrinAnahtari(ozet);
+      const simdi = Date.now();
+      const son = this.#sonVitrin;
+      if (son && son[0] === anahtar && (!ozet || simdi - son[1] < VITRIN_TAZELE_MS)) return;
+      const r = await yerlesimCagir(this.#env, {
+        islem: "masaOyunu", yerlesim: c.yerlesim, hesapId: "",
+        govde: { kayit: { han: c.han, masa: c.no, ...(ozet ? { ozet } : {}), z: simdi } },
+      });
+      if (!r.ok) return;
+      this.#sonVitrin = ozet ? [anahtar, simdi] : undefined;
+      if (ozet) await this.#depo.koy({ [VITRIN_SON]: [anahtar, simdi] });
+      else await this.#depo.sil([VITRIN_SON]);
+    } catch {
+      // en iyi çaba: sonraki değişimde düzelir
+    }
+  }
+
+  async #oyunAl(): Promise<MasaOyunu | undefined> {
+    if (this.#oyun === null) this.#oyun = masaOyunuCoz(await this.#depo.al<unknown>(OYUN));
+    return this.#oyun;
+  }
+
+  #oyunYaz(o: MasaOyunu | undefined): void {
+    this.#oyun = o;
+    this.#bekleyen.push(o ? this.#depo.koy({ [OYUN]: o }) : this.#depo.sil([OYUN]));
   }
 
   #sar(ws: WebSocket): MasaSoketi {
@@ -305,6 +357,7 @@ export class MasaDO {
     const depo = this.#depo;
     const simdi = Date.now();
     const etkinlik = await this.#etkinlikAl();
+    const oyun = await this.#oyunAl();
     return {
       masa,
       no: masaNo(masa),
@@ -318,6 +371,8 @@ export class MasaDO {
       engelliMi: this.#engelliMi,
       ...(etkinlik ? { etkinlik } : {}),
       etkinlikYaz: (e) => this.#etkinlikYaz(e),
+      ...(oyun ? { oyun } : {}),
+      oyunYaz: (o) => this.#oyunYaz(o),
       anil: (sonuc, katilim) => {
         this.#bekleyen.push(this.#anil(masa, sonuc, katilim, simdi).catch(() => undefined));
       },
@@ -354,6 +409,7 @@ export class MasaDO {
     baglan(b, this.#sar(sunucu), bilet);
     await this.#bosalt();
     await this.#dolulukBildir(bilet.masa);
+    await this.#vitrinBildir(bilet.masa);
     return this.#araclar.yukselt(istemci);
   }
 
@@ -379,7 +435,7 @@ export class MasaDO {
           ayar: b.ayar,
           simdi: b.simdi,
           engelliMi: b.engelliMi,
-          mesgul: b.etkinlik !== undefined,
+          mesgul: b.etkinlik !== undefined || oyunSuruyor(b.oyun),
         });
         if (!sonuc.ok) return sonuc;
         if (sonuc.deger.yeni) for (const r of kayitlar(b.soketler)) r.soket.gonder({ t: "olay", olay: sonuc.deger.olay });
