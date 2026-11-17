@@ -10,6 +10,8 @@
 - Kod Opus (`online-sunucu`, `online-istemci`), test ve **çeviri Sonnet** (`tester`; istemci ajanı metni yalnız Türkçe yazar). Ajanlara `git stash` yasak.
 - Çıta "AAA metin oyunu": hareket yalnız `lib/online/ui.tsx` `HAREKET`/`belir`/`giris`/`BASMA_OLCEK`; her arayüz işi `react-reviewer`, her ekonomi işi `denge-denetcisi` (model yaz). Hiçbir meslek/beceri kancası boşta kalmaz.
 
+- **Yönetici kuralı (Berkay, 17 Kasım):** kurucu (Berkay) hiçbir şeyle sınırlanmaz — kendine/herkese istediği kadar akçe/mal verir-alır, tavan ve kendine-fayda yasağı kurucuya uygulanmaz. Sınırlar oyuncular içindir; moderatör yetkilerini kurucu panelden tek tek belirler.
+
 ## Çevrimiçi durum (17 Kasım)
 - Belgeler: `docs/online/ONLINE_DURUM.md`; tasarım `docs/superpowers/specs/2026-11-16-tezgah-modeli-design.md`; **protokol ve ekran brief'i** `…-tezgah-istemci-brief.md` (Dilim 1 + Dilim 2 atölye).
 - Sunucu 771 test, hepsi geçiyor. Test Worker'ı `a25a20f`te (17 Kasım işleri dahil). Dağıtım: GitHub `deploy-online-server.yml`, hedef `test`. Yeni sır adı `ZAR_SIRRI` (≥16 karakter; yoksa yedek tohum) — Berkay Cloudflare'de tanımlamalı.
