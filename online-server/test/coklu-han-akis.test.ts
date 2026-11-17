@@ -4,6 +4,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import isleyici, { DunyaDO, HesapDO, IsletmeDO, MasaDO, YerlesimDO, YonetimDO } from "../src/index.ts";
+import { DOLULUK_AYAR } from "../src/masa-do.ts";
+
+// Doluluk bildirimi birleştirmesi (S11) bu akışta anında olsun: kart oturan sayısını hemen görür.
+DOLULUK_AYAR.gecikmeMs = 0;
 import type { Env } from "../src/tipler.ts";
 import { oyunAyi } from "../src/saat.ts";
 import { hibernasyonlu, sahteAraclar } from "./han-yardimci.ts";

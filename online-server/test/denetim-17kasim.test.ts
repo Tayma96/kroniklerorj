@@ -407,3 +407,13 @@ test("S7: 1 MB'yi aşan depo değeri uyarı loguna anahtar ve boyutla düşer", 
     console.warn = eski;
   }
 });
+
+import { DOLULUK_AYAR, dolulukZamani } from "../src/masa-do.ts";
+
+test("S11: masa doluluk bildirimi 2–5 sn içinde birleştirilir", () => {
+  assert.ok(DOLULUK_AYAR.gecikmeMs >= 2000 && DOLULUK_AYAR.gecikmeMs <= 5000);
+  assert.equal(dolulukZamani(0, 10_000, 3000), "hemen");
+  assert.equal(dolulukZamani(9_000, 10_000, 3000), 2000);
+  assert.equal(dolulukZamani(7_000, 10_000, 3000), "hemen");
+  assert.equal(dolulukZamani(9_000, 10_000, 0), "hemen");
+});

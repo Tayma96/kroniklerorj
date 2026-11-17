@@ -42,6 +42,15 @@ export interface WebSocketDurumu extends DurableObjectState {
 }
 
 /** WebSocket çifti ve 101 yanıtı (testte sahtesi verilir: Node 101 durumlu Response kurmaz). */
+/** [PARAMETRE] Masa doluluk bildirimlerinin birleştirme aralığı (ms; 2–5 sn). Testler 0 yapabilir (anında). */
+export const DOLULUK_AYAR = { gecikmeMs: 3000 };
+
+/** Doluluk bildirimi şimdi mi gider, yoksa kaç ms sonra (birleştirme)? Saf. */
+export function dolulukZamani(sonAn: number, simdi: number, gecikme = DOLULUK_AYAR.gecikmeMs): "hemen" | number {
+  const gecen = simdi - sonAn;
+  return gecikme > 0 && gecen >= 0 && gecen < gecikme ? gecikme - gecen : "hemen";
+}
+
 export interface MasaAraclari {
   cift(): [istemci: WebSocket, sunucu: WebSocket];
   yukselt(istemci: WebSocket): Response;
@@ -123,6 +132,9 @@ export class MasaDO {
   #anmaVar: boolean | null = null;
   /** 4.9: yerleşime son bildirilen doluluk (null = depodan yüklenmedi). */
   #sonDoluluk: [number, 0 | 1] | undefined | null = null;
+  /** Son doluluk bildirimi anı ve bekleyen birleştirme zamanlayıcısı (17 Kasım denetimi S11). */
+  #dolulukAni = 0;
+  #dolulukZamanlayici: unknown;
   /** Masa oyunu (null = yüklenmedi). */
   #oyun: MasaOyunu | undefined | null = null;
   /** Son bildirilen vitrin özeti [anahtar, z] (null = yüklenmedi). */
@@ -201,7 +213,27 @@ export class MasaDO {
    * kez; değişmediyse çağrı yok). Başarısızlık masayı bozmaz: son bildirilen güncellenmez, sonraki değişimde ya da
    * seçili hanın canlı okumasında düzelir.
    */
+  /**
+   * Doluluk bildirimi birleştirilir: son bildirimden DOLULUK_AYAR.gecikmeMs geçmediyse tek bir gecikmeli bildirim
+   * kurulur (otur/kalk fırtınası yerleşime her olayda gitmez); süre geçtiyse hemen gider.
+   */
   async #dolulukBildir(masa: string, haric?: WebSocket): Promise<void> {
+    const z = dolulukZamani(this.#dolulukAni, Date.now());
+    if (z !== "hemen") {
+      if (this.#dolulukZamanlayici === undefined) {
+        const t = setTimeout(() => {
+          this.#dolulukZamanlayici = undefined;
+          void this.#dolulukGonder(masa);
+        }, z);
+        (t as { unref?: () => void } | undefined)?.unref?.();
+        this.#dolulukZamanlayici = t;
+      }
+      return;
+    }
+    await this.#dolulukGonder(masa, haric);
+  }
+
+  async #dolulukGonder(masa: string, haric?: WebSocket): Promise<void> {
     const c = masaAdiCoz(masa);
     if (!c) return;
     try {
@@ -215,6 +247,7 @@ export class MasaDO {
         islem: "masaDoluluk", yerlesim: c.yerlesim, hesapId: "",
         govde: { kayitlar: [{ han: c.han, masa: c.no, oturan, acik: acik === 1, z: Date.now() }] },
       });
+      this.#dolulukAni = Date.now();
       if (!r.ok) return;
       this.#sonDoluluk = [oturan, acik];
       if (oturan === 0 && acik === 1) await this.#depo.sil([DOLULUK_SON]);

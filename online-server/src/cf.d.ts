@@ -190,3 +190,7 @@ interface WebSocket {
   deserializeAttachment(): unknown;
 }
 declare var WebSocketPair: { new (): { 0: WebSocket; 1: WebSocket } };
+
+// Zamanlayıcı (Workers ve Node 22'de ortak; dönüş değeri ortama göre değişir).
+declare function setTimeout(cb: () => void, ms?: number): unknown;
+declare function clearTimeout(id: unknown): void;
