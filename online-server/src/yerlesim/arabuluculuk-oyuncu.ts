@@ -2,6 +2,11 @@
 // Emanet, taraflardan biri ölürse terekeye iade edilerek dosya cezasız kapatılır.
 
 import { basarili, hata, type Sonuc } from "../tipler.ts";
+import { sohbetMaskele } from "../han/filtre.ts";
+import { tekSatir } from "../han/kurallar.ts";
+
+/** [PARAMETRE] Uzlaşma notunun en uzun hâli (temizlenmiş metin, karakter). */
+export const UZLASMA_NOT_EN_UZUN = 240;
 import { engelliMi } from "./engel.ts";
 import { olduMu } from "./hanedan.ts";
 import { acikHusumet, husumetIslem } from "./iliski.ts";
@@ -155,9 +160,12 @@ export function oyuncuArabuluculukTaslak(
   if (!Number.isSafeInteger(sTutari) || (sTutari as number) < 0 || (sTutari as number) > 100000
     || !Number.isSafeInteger(kTutari) || (kTutari as number) < 0 || (kTutari as number) > 100000
     || ((sTutari as number) === 0 && (kTutari as number) === 0)) return hata("deger_sinir_disi");
-  if (notHam !== undefined && (typeof notHam !== "string" || notHam.trim().length > 240)) return hata("gerekce_gecersiz");
+  if (notHam !== undefined && typeof notHam !== "string") return hata("gerekce_gecersiz");
+  // Not başka oyunculara görünür: tek satır, görünmez karakter yok, yasak sözcük maskeli; uzunluk temiz metinle.
+  const not = typeof notHam === "string" ? sohbetMaskele(tekSatir(notHam)).trim() : "";
+  if ([...not].length > UZLASMA_NOT_EN_UZUN) return hata("gerekce_gecersiz");
   const onceki = d.uz;
-  const yeni = { s: sTutari as number, k: kTutari as number, ...(typeof notHam === "string" && notHam.trim() ? { not: notHam.trim() } : {}) };
+  const yeni = { s: sTutari as number, k: kTutari as number, ...(not ? { not } : {}) };
   if (onceki && onceki.s === yeni.s && onceki.k === yeni.k && onceki.not === yeni.not) return basarili(d);
   d.uz = yeni;
   d.sonAy = ay + OYUNCU_ARABULUCU_UZLASMA_VADE_AY;

@@ -390,3 +390,20 @@ test("S4: GET /v1/dunya kenar önbelleğinden döner (DO'ya ikinci kez gidilmez)
     g.caches = eski;
   }
 });
+
+import { DEPO_DEGER_UYARI, boyutDenetle } from "../src/yerlesim/motor.ts";
+
+test("S7: 1 MB'yi aşan depo değeri uyarı loguna anahtar ve boyutla düşer", () => {
+  const eski = console.warn;
+  const loglar: string[] = [];
+  console.warn = (m: string) => void loglar.push(m);
+  try {
+    const asan = boyutDenetle([["kucuk", { a: 1 }], ["buyuk", "x".repeat(DEPO_DEGER_UYARI + 10)]], "develi");
+    assert.deepEqual(asan, ["buyuk"]);
+    assert.equal(loglar.length, 1);
+    assert.match(loglar[0]!, /anahtar=buyuk/);
+    assert.doesNotMatch(loglar[0]!, /xxxx/);
+  } finally {
+    console.warn = eski;
+  }
+});

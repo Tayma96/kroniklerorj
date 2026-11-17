@@ -259,6 +259,27 @@ export interface TekrarEki {
   mulk?: boolean;
 }
 
+/** [PARAMETRE] Tek depo değerinin uyarı eşiği (JSON karakter; DO değer sınırı 2 MB, 17 Kasım denetimi S7). */
+export const DEPO_DEGER_UYARI = 1_000_000;
+
+/** Eşiği aşan değerleri anahtar ve boyutla uyarı loguna yazar (içerik yazılmaz). Döner: aşan anahtarlar. */
+export function boyutDenetle(girdiler: [string, unknown][], yerlesim: string): string[] {
+  const asan: string[] = [];
+  for (const [a, v] of girdiler) {
+    let n = 0;
+    try {
+      n = JSON.stringify(v)?.length ?? 0;
+    } catch {
+      continue;
+    }
+    if (n > DEPO_DEGER_UYARI) {
+      asan.push(a);
+      console.warn(`depo değeri büyük: yerleşim=${yerlesim} anahtar=${a} boyut=${n}`);
+    }
+  }
+  return asan;
+}
+
 export class YerlesimMotoru {
   readonly kasaba: Kasaba;
   readonly #depo: Depo;
@@ -410,6 +431,7 @@ export class YerlesimMotoru {
     }
     kayit[META] = m;
     const girdiler = Object.entries(kayit).filter(([, v]) => v !== undefined);
+    boyutDenetle(girdiler, this.kasaba.y);
     const silinecek = [...this.#silinecek];
     this.#kirli.clear();
     this.#silinecek.clear();

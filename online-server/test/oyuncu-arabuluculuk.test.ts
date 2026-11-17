@@ -507,3 +507,19 @@ test("imzalı oyuncu uzlaşması iki yönlü açık husumeti kaldırır ve düş
   assert.equal(kk.tn[s.o], "tanidik");
   assert.equal(tp.hu.filter((h) => h.d === "acik").length, 0);
 });
+
+test("S8: uzlaşma notu tek satıra iner, yasak sözcük maskelenir, uzunluk temiz metinle ölçülür", async () => {
+  const { MASKE } = await import("../src/han/filtre.ts");
+  const k = testKasabasi("develi", 700);
+  const s = oyuncuEkle(k, 171), kk = oyuncuEkle(k, 172), ar = oyuncuEkle(k, 173);
+  const ac = oyuncuArabuluculukAc(k, s, kk, ar, k.ay);
+  assert.ok(ac.ok);
+  if (!ac.ok) return;
+  const id = String(ac.deger.i);
+  for (const x of [s, kk, ar]) assert.ok(oyuncuArabuluculukCevap(k, x, id, "kabul", k.ay).ok);
+  assert.ok(oyuncuArabuluculukTaslak(k, ar, id, 10, 0, "ilk satır\n\n\nikinci  satır‮ kahpe", k.ay).ok);
+  assert.equal(ac.deger.uz?.not, `ilk satır ikinci satır ${MASKE}`);
+  // Görünmez karakterlerle şişirilmiş not temizlenince sınır içindeyse kabul edilir.
+  assert.ok(oyuncuArabuluculukTaslak(k, ar, id, 11, 0, "a".repeat(200) + "​".repeat(100), k.ay).ok);
+  assert.deepEqual(oyuncuArabuluculukTaslak(k, ar, id, 12, 0, "b".repeat(241), k.ay), { ok: false, hata: "gerekce_gecersiz" });
+});
