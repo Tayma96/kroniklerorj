@@ -23,6 +23,9 @@
 - Davet kodu Berkay'da. APK: `apk-test`, üretime bağlı. Herkese açık indirme: https://kronikler-indir.berkaycinkilic.workers.dev (iş akışı `apk-indir.yml`, Release'ten parçalayıp yayınlar ve doğrular).
 - E-posta ile giriş/kayıt sonraya kaldı: yarım iş `eposta-giris-taslak` dalında.
 
+## Tek oyunculu yeniden yapılanma (17 Kasım, bu hesap)
+- Berkay tek oyunculuda tam yetki verdi; çevrimiçi öbür hesapta. Plan `docs/tek-oyunculu/TASARIM.md` (K1–K10, F0–F10), denetimler `docs/tek-oyunculu/denetim/`. Yeni hikâye ekleme yok; oynanabilirlik, stat kapıları, ömür boyu ilerleme.
+
 ## Sıradaki işler
 1. Arkadaş denemesi geri bildirimleri.
 2. E-posta girişi (taslak dal) + doğrulama/şifre sıfırlama; Google girişi.
