@@ -73,6 +73,8 @@ export interface EtkinlikTanimi {
   bac?: number;
   /** Oyuncu başına açık pazar ilanı tavanına ek. */
   ilanEk?: number;
+  /** NPC'lerin oyuncudan aylık alım kotasına (npcSatisKotasi) mal başı ek. */
+  satisEk?: number;
   /** Tüccar başına aylık kervan tavanına ek. */
   kervanEk?: number;
   /** İşletme vergisi alınmaz (beylik vergisi bu sürede sıfır sayılır). */
@@ -136,7 +138,7 @@ export const ETKINLIKLER: Readonly<Record<EtkinlikTuru, EtkinlikTanimi>> = {
   vakif: {
     ikon: "prayer-beads", ad: "Vakıf Günü", saat: 24,
     ozet: "Vakıf yoksullar için mal topluyor: NPC'ler oyuncudan ayda 2 adet fazla alır. Katılan cömertlik kazanır.",
-    p: { NPC_AYLIK_KOTA: { ekle: 2 } },
+    satisEk: 2,
     katilim: { nam: "comertlik", namN: 2, gonul: 3, meslek: ["hanci", "katip"] },
   },
   dugun: {
@@ -176,7 +178,7 @@ export const ETKINLIKLER: Readonly<Record<EtkinlikTuru, EtkinlikTanimi>> = {
   goc: {
     ikon: "walk", ad: "Göç Dalgası", saat: 48,
     ozet: "Yolcular akın ediyor: NPC'ler ayda 1 adet fazla alır. Yeni geleni ağırlayan cömertlik kazanır; hancı iki kat.",
-    p: { NPC_AYLIK_KOTA: { ekle: 1 } },
+    satisEk: 1,
     katilim: { nam: "comertlik", namN: 1, gonul: 3, meslek: ["hanci", "arabulucu"] },
   },
   hasat: {
@@ -273,6 +275,8 @@ export interface EtkinlikEtkisi {
   bac?: number;
   ilanEk: number;
   kervanEk: number;
+  /** NPC alım kotası eki (en büyüğü; eski kayıtta yok → 0). */
+  satisEk?: number;
   vergisiz: boolean;
   /** Etkinlik kimliği → açılacak dert. */
   dertler: { id: string; dert: DertTuru }[];
@@ -286,6 +290,7 @@ export function etkiBirlestir(liste: readonly EtkinlikOzeti[]): EtkinlikEtkisi {
     if (t.bac !== undefined) e.bac = Math.min(e.bac ?? t.bac, t.bac);
     e.ilanEk = Math.max(e.ilanEk, t.ilanEk ?? 0);
     e.kervanEk = Math.max(e.kervanEk, t.kervanEk ?? 0);
+    if (t.satisEk) e.satisEk = Math.max(e.satisEk ?? 0, t.satisEk);
     if (t.vergisiz) e.vergisiz = true;
     if (t.dert) e.dertler.push({ id: o.id, dert: t.dert });
   }

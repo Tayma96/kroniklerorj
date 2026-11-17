@@ -16,12 +16,16 @@ export const NPC_SATIS_KOTASI = 6;
 export const NPC_ODUNCU_SATIS_KOTASI = 8;
 /** [DENGE] Tek demircinin yüksek değerli alet/nal satışında aylık akçe yoğunlaşmasını sınırlar;
  * ikinci demirci gelince kasaba talebi genel kotaya çıkar. Callback, satıcı dışındaki oyuncuları sayar. */
-export function npcSatisKotasi(mal: MalId, digerMeslektas = 0): number {
-  if (mal === "alet" && digerMeslektas <= 0) return 1;
-  if (mal === "nal" && digerMeslektas <= 0) return 2;
-  if (MALLAR[mal].meslek === "oduncu") return NPC_ODUNCU_SATIS_KOTASI;
-  return NPC_SATIS_KOTASI;
+export function npcSatisKotasi(mal: MalId, digerMeslektas = 0, ek = 0): number {
+  const e = Number.isInteger(ek) && ek > 0 ? ek : 0;
+  if (mal === "alet" && digerMeslektas <= 0) return 1 + e;
+  if (mal === "nal" && digerMeslektas <= 0) return 2 + e;
+  if (MALLAR[mal].meslek === "oduncu") return NPC_ODUNCU_SATIS_KOTASI + e;
+  return NPC_SATIS_KOTASI + e;
 }
+
+/** Etkinlik eki (Vakıf Günü, Göç Dalgası: "NPC'ler ayda fazla alır"); etkinlik yoksa 0. */
+export const npcSatisEki = (p?: Pick<CalismaParametreleri, "ETK">): number => p?.ETK?.satisEk ?? 0;
 /** [PARAMETRE] Kıtlık primi oyuncu başına mal başına ayda yalnız bu kadar birime ödenir (kıt pazar çabuk doyar;
  * tek üreticinin yüksek katma değerli malında primin aylık kazancı sınırlı kalır). */
 export const KITLIK_KOTASI = 2;
@@ -62,7 +66,7 @@ export function npcyeSat(
   const once = satilan(k, mal, ay);
   const meslek = MALLAR[mal].meslek;
   const digerMeslektas = Math.max(0, oyuncuSayisi(meslek) - (k.ms?.a === meslek ? 1 : 0));
-  const kotaTavan = npcSatisKotasi(mal, digerMeslektas);
+  const kotaTavan = npcSatisKotasi(mal, digerMeslektas, npcSatisEki(parametreler));
   if (once + adetHam > kotaTavan) return hata("kota_doldu");
   const primli = saticiDegeri(k, mal, oyuncuSayisi, parametreler);
   const prim = primli.kalemler.find((x) => x.k === "kitlik")?.d ?? 0;
@@ -90,12 +94,12 @@ export function npcyeSat(
 }
 
 /** Kalan NPC alım kotası (NPC'nin bu ay oyuncudan daha kaç adet alacağı), ticareti yapılan her mal için. */
-export function kalanSatisKotasi(k: Karakter, ay: number, oyuncuSayisi: (m: MeslekId) => number = () => 0): Partial<Record<MalId, number>> {
+export function kalanSatisKotasi(k: Karakter, ay: number, oyuncuSayisi: (m: MeslekId) => number = () => 0, ek = 0): Partial<Record<MalId, number>> {
   const kota: Partial<Record<MalId, number>> = {};
   for (const [mal, m] of Object.entries(MALLAR) as [MalId, (typeof MALLAR)[MalId]][]) {
     if (m.taban <= 0) continue;
     const digerMeslektas = Math.max(0, oyuncuSayisi(m.meslek) - (k.ms?.a === m.meslek ? 1 : 0));
-    kota[mal] = npcSatisKotasi(mal, digerMeslektas) - satilan(k, mal, ay);
+    kota[mal] = npcSatisKotasi(mal, digerMeslektas, ek) - satilan(k, mal, ay);
   }
   return kota;
 }

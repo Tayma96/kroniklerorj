@@ -29,7 +29,7 @@ import { takatHarca, takatTazele } from "./karakter.ts";
 import { loncaTablosu, oyuncuSayaci, type LoncaSatiri } from "./lonca.ts";
 import { esyaKilidi } from "./kalite.ts";
 import { envanterEkle, npcFiyat, satisDegeri, stogaEkle, type KasabaStogu } from "./npc-taban.ts";
-import { KITLIK_KOTASI, npcSatisKotasi } from "./pazar.ts";
+import { KITLIK_KOTASI, npcSatisEki, npcSatisKotasi } from "./pazar.ts";
 import type { CalismaParametreleri, Dokum, Karakter, Kasaba } from "./tipler.ts";
 
 /** [PARAMETRE] Kervan bedeli: envanterden nal ve koşum (tüketilir), karakterden takat. */
@@ -279,7 +279,7 @@ export function varisHesapla(yuk: Yuk, oyuncuSayisi: (m: MeslekId) => number, ku
   let hasilat = 0;
   for (const [mal, adet] of (Object.entries(yuk) as [MalId, number][]).sort(([a], [b]) => (a < b ? -1 : 1))) {
     const n = oyuncuSayisi(MALLAR[mal].meslek);
-    const tavan = npcSatisKotasi(mal, n);
+    const tavan = npcSatisKotasi(mal, n, npcSatisEki(p));
     const [once, primOnce] = kullanilan(mal);
     const sat = Math.min(adet, Math.max(0, tavan - once));
     const birim = satisDegeri(mal, n, p);

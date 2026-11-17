@@ -56,14 +56,14 @@ Katılım sütununda ödül "nam · gönül · mal" sırasıyla verilir; listele
 | 6 | Panayır | 48 sa | Bac 0, ilan tavanı +3 | +1 cömertlik · +2 | tüccar |
 | 7 | Haydut Baskını | 24 sa | Haydut ortak derdi (mal/akçe kaybı yok) | +1 mertlik · +2 | asker, demirci |
 | 8 | Salgın | 24 sa | Salgın ortak derdi (ölüm yok) | +1 dindarlık · +2 | şifacı, aşçı |
-| 9 | Vakıf Günü | 24 sa | NPC aylık alım kotası +2 | +2 cömertlik · +3 | hancı, kâtip |
+| 9 | Vakıf Günü | 24 sa | NPC'lerin oyuncudan alım kotası mal başı +2 | +2 cömertlik · +3 | hancı, kâtip |
 | 10 | Düğün Mevsimi | 48 sa | NPC satış fiyatı ×0,9 | +1 cömertlik · +6 | aşçı, ozan |
 | 11 | Lonca Yarışması | 72 sa | Lonca siparişi ödülü ×1,06 (çapraz kural: < 1,6) | +1 çalışkanlık · +2 | demirci, marangoz, dokumacı |
 | 12 | Pehlivan Şenliği | 24 sa | Düello ve meydan okuma günü | +2 mertlik · +3 | asker |
 | 13 | Sultan'ın Fermanı | 48 sa | Han ikramı, ziyafet, oda kirasında vergi 0 | +1 dindarlık · +3 | kâtip, divan |
 | 14 | Kış Kıyamet | 48 sa | NPC satış fiyatı ×1,2, kıtlık primi ×1,5 (üretene kazanç) | +1 cömertlik · +3 · 2 odun | oduncu |
 | 15 | İlim Haftası | 72 sa | Medrese açık | +1 çalışkanlık · +3 · 1 kâğıt | kâtip, divan |
-| 16 | Göç Dalgası | 48 sa | NPC aylık alım kotası +1 | +1 cömertlik · +3 | hancı, arabulucu |
+| 16 | Göç Dalgası | 48 sa | NPC'lerin oyuncudan alım kotası mal başı +1 | +1 cömertlik · +3 | hancı, arabulucu |
 | 17 | Hasat Bayramı | 48 sa | Hasat ortak derdi, temel iş çıktısı +1 | +1 çalışkanlık · +3 · 2 ekmek | çiftçi |
 | 18 | Kayıp Hazine | 24 sa | Hazine arayışı | +1 mertlik · +2 · 1 bakır | tüccar, kâtip |
 

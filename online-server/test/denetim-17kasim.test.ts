@@ -207,3 +207,22 @@ test("E4: 18 etkinliğin her biri ve ikili birleşimleri çapraz kuralları bozm
   // Lonca çarpanı < 1,6 (varsayılan üzerinde).
   assert.ok(parametreUygula({}, [oz("lonca", "e1")]).SIPARIS_ODUL_CARPANI! < 1.6);
 });
+
+import { etkiBirlestir } from "../src/etkinlik/katalog.ts";
+import { NPC_SATIS_KOTASI, npcyeSat } from "../src/yerlesim/pazar.ts";
+
+test("E6: Vakıf Günü ve Göç Dalgası NPC'lerin oyuncudan alım kotasını artırır", () => {
+  const oz = (tur: "vakif" | "goc", id: string) => ({ id, tur, bas: 0, bit: null });
+  assert.equal(etkiBirlestir([oz("vakif", "e1")]).satisEk, 2);
+  assert.equal(etkiBirlestir([oz("goc", "e1"), oz("vakif", "e2")]).satisEk, 2);
+  const k = testKasabasi("develi", 10);
+  const kar = yetiskin(k, 1);
+  kar.ev = { ekmek: 20 };
+  const pr = { ETK: etkiBirlestir([oz("vakif", "e1")]) };
+  const r = npcyeSat(kar, "ekmek", NPC_SATIS_KOTASI + 2, () => 1, k.ay, undefined, pr);
+  assert.ok(r.ok, JSON.stringify(r));
+  assert.equal(r.deger.kota.tavan, NPC_SATIS_KOTASI + 2);
+  const kar2 = yetiskin(k, 2);
+  kar2.ev = { ekmek: 20 };
+  assert.deepEqual(npcyeSat(kar2, "ekmek", NPC_SATIS_KOTASI + 1, () => 1, k.ay), { ok: false, hata: "kota_doldu" });
+});

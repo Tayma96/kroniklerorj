@@ -54,7 +54,7 @@ import { barinmaDonumu, barinmaGorunumu, otomatikAyarla, tesisKonakla } from "./
 import { emanetAl, gorusmeIslem, ikametVar, sandikIslem } from "./oda-getiri.ts";
 import { donusHazirla, donusOku } from "./donus-ekrani.ts";
 import { NPC_AYLIK_KOTA, envanterEkle, npcdenAl, npcdenAlinan, stokGorunumu, type KasabaStogu } from "./npc-taban.ts";
-import { kalanSatisKotasi, NPC_SATIS_KOTASI, npcyeSat } from "./pazar.ts";
+import { kalanSatisKotasi, NPC_SATIS_KOTASI, npcSatisEki, npcyeSat } from "./pazar.ts";
 import { siparisDonumu, siparisGorunumu, siparisTeslim, type Siparis } from "./siparis.ts";
 import { tarifListesi, tarifYap } from "./tarif.ts";
 import { tohumlu } from "./rastgele.ts";
@@ -747,8 +747,8 @@ export class YerlesimMotoru {
       tarifler: tarifListesi(kar),
       temelIsler: temelIsOnizleme(kar, oyuncuSayaci(k), ay, k.pr),
       npcKota: {
-        sat: kalanSatisKotasi(kar, ay, oyuncuSayaci(k)),
-        satTavan: NPC_SATIS_KOTASI,
+        sat: kalanSatisKotasi(kar, ay, oyuncuSayaci(k), npcSatisEki(k.pr)),
+        satTavan: NPC_SATIS_KOTASI + npcSatisEki(k.pr),
         al: Object.fromEntries(MAL_IDLERI.filter((m) => MALLAR[m].taban > 0).map((m) => [m, npcAlimTavan - npcdenAlinan(kar, m, ay)])),
         alTavan: npcAlimTavan,
       },
