@@ -13,7 +13,8 @@ import { Sinematik } from "../../lib/sinematik/oynatici";
 import { OnlineKapisi, useOnline } from "../../lib/online/durum";
 import { onlineEkranAcik } from "../../lib/online/kapi";
 import { sinematikGoruldu, sinematikIsaretle } from "../../lib/online/depo";
-import { varisCekimleri } from "../../lib/online/varis-cekimler";
+import { hataAnahtari } from "../../lib/online/hata";
+import { VARIS_VIDEO, varisCekimleri, varisParca } from "../../lib/online/varis-cekimler";
 import { BASLANGIC_YASI, OGRENME_GUNU, yerlesimBul, type Cinsiyet, type Mevsim } from "../../lib/online/protokol";
 import { AltinDugme, Bant, Cerceve, Check, CizgiDugme, giris, GLOW, Madalyon, ONL, Ornament, Sahne, TUR_IKON, UstBar, hiza, yon } from "../../lib/online/ui";
 
@@ -31,6 +32,8 @@ const KOY: Record<Mevsim, number> = {
 };
 const PORTRE: Record<Cinsiyet, number> = { erkek: require("../../assets/portre/e_cocuk.png"), kadın: require("../../assets/portre/k_cocuk.png") };
 const SAAT_MS = 3_600_000;
+/** Bir öğrenme günü kaç oyun ayı (sunucu yerlesim/ogrenme.ts GUN_BASINA_AY; gün hesabı da buna dayanır). */
+const GUN_BASINA_AY = 2;
 
 function Bilgi({ icon, etiket, deger, rtl }: { icon: string; etiket: string; deger: string; rtl: boolean }) {
   return <View accessible accessibilityLabel={`${etiket}: ${deger}`} style={{ flex: 1, minWidth: 118, flexDirection: yon(rtl), alignItems: "center", gap: 9, padding: 10, borderRadius: 8, borderWidth: 1, borderColor: "rgba(201,162,78,0.25)", backgroundColor: ONL.camKoyu }}>
@@ -88,14 +91,14 @@ function VarisEkran() {
     </View>;
   }
   if (sinema) {
-    return <Sinematik cekimler={cekimler} onDone={() => { setSinema(false); void sinematikIsaretle(p.hesapId); }} />;
+    return <Sinematik cekimler={cekimler} parca={varisParca(lang)} video={VARIS_VIDEO} onDone={() => { setSinema(false); void sinematikIsaretle(p.hesapId); }} />;
   }
 
   const saat = o.dunya?.saat;
   const sunucuSimdi = saat ? saat.simdi + (simdi - o.dunyaAlindi) : simdi;
   const oyunAyi = saat ? saat.oyunAyi + (sunucuSimdi >= saat.sonrakiDonum ? 1 : 0) : p.dogumAyi + BASLANGIC_YASI * 12;
   const yas = Math.floor((oyunAyi - p.dogumAyi) / 12);
-  const gun = Math.min(OGRENME_GUNU, Math.max(1, Math.floor((oyunAyi - p.dogumAyi - BASLANGIC_YASI * 12) / 2) + 1));
+  const gun = Math.min(OGRENME_GUNU, Math.max(1, Math.floor((oyunAyi - p.dogumAyi - BASLANGIC_YASI * 12) / GUN_BASINA_AY) + 1));
   const kalan = saat ? Math.max(0, saat.sonrakiDonum - sunucuSimdi) : 0;
   const mevsim: Mevsim = saat?.mevsim ?? "yaz";
   const tur = yer?.yerlesim.tur ?? "kasaba";
@@ -119,6 +122,12 @@ function VarisEkran() {
         <View style={{ marginVertical: 10 }}><Ornament size={15} /></View>
       </Animated.View>
 
+      {/* Dünya özeti alınamadıysa: koda özgü metin (genel metne düşerse kod da yazılır) ve yeniden dene; kart yine görünür. */}
+      {!o.dunya && o.hata && o.islem !== "dunya" ? <View style={{ marginBottom: 12 }}>
+        <Bant metin={hataAnahtari(o.hata) === "onl.h.genel" ? `${t("onl.h.genel")} ${applyParams(t("onl.h.kod"), [o.hata])}` : t(hataAnahtari(o.hata))} rtl={rtl}
+          eylem={t("onl.yenidenDene")} onEylem={() => { void o.dunyaYukle(); }} />
+      </View> : null}
+
       <Animated.View entering={giris(180)}>
         <Cerceve ic={{ padding: 14, gap: 14 }}>
           <View style={{ flexDirection: yon(rtl), alignItems: "center", gap: 13 }}>
@@ -138,7 +147,7 @@ function VarisEkran() {
           </View>
           <View style={{ flexDirection: yon(rtl), alignItems: "center", gap: 9, paddingTop: 2 }}>
             <Madalyon icon="graduate-cap" size={30} />
-            <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 14.5, lineHeight: 20, color: C.parchmentDim, textAlign: hiza(rtl) }}>{t("onl.v.ipucu")}</Text>
+            <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 14.5, lineHeight: 20, color: C.parchmentDim, textAlign: hiza(rtl) }}>{applyParams(t("onl.v.donemNe"), [OGRENME_GUNU, GUN_BASINA_AY], lang)}</Text>
           </View>
         </Cerceve>
       </Animated.View>
