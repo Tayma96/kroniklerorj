@@ -24,7 +24,7 @@
 - E-posta ile giriş/kayıt sonraya kaldı: yarım iş `eposta-giris-taslak` dalında.
 
 ## Tek oyunculu yeniden yapılanma (17 Kasım, bu hesap)
-- Berkay tek oyunculuda tam yetki verdi; çevrimiçi öbür hesapta. Plan `docs/tek-oyunculu/TASARIM.md` (K1–K10, F0–F10), denetimler `docs/tek-oyunculu/denetim/`. Yeni hikâye ekleme yok; oynanabilirlik, stat kapıları, ömür boyu ilerleme.
+- Berkay tek oyunculuda tam yetki verdi; çevrimiçi öbür hesapta. Plan `docs/tek-oyunculu/TASARIM.md` (K1–K10, F0–F10), denetimler `docs/tek-oyunculu/denetim/`. Yeni hikâye yok. Bitti ve apk'de: F0 tek zar, F1 stat/niyet, F2 hüner ağacı, F3 mektep/medrese/icazet, F4 usta kapısı/meslek/lonca. Sırada F5 işletme/vakıf/ekonomi. Commit footer'sız (mobile/AGENTS.md).
 
 ## Sıradaki işler
 1. Arkadaş denemesi geri bildirimleri.
