@@ -317,7 +317,7 @@ test("Çatı: denetim — açıklanan tohum taahhüde uyar ve hamle kaydı aynı
   // Farklı tohum farklı zar üretir (zar istemciden gelmez, tohumdan türer).
   const z1 = await adimZari("x", 1, 1);
   const z2 = await adimZari("y", 1, 1);
-  assert.notDeepEqual([z1(), z1(), z1()], [z2(), z2(), z2()]);
+  assert.notEqual(JSON.stringify([z1(), z1(), z1()]), JSON.stringify([z2(), z2(), z2()]));
 });
 
 test("Çatı: depo kaydı çözümü — geçerli kayıt aynen döner, bozuk kayıt düşer", async () => {
