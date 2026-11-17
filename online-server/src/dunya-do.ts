@@ -7,14 +7,19 @@ import { iletiOku, jsonYanit } from "./ic.ts";
 import { davetCoz, davetOlustur, dunyaOzeti, gocKayit, kayitOl, oyuncuBul } from "./mantik.ts";
 import { basarili, hata, type DunyaIleti, type Env, type Sonuc } from "./tipler.ts";
 import { levhaOku, levhaYaz, type LevhaYazimi } from "./debdebe/levha.ts";
+import { adAra, numaraAdTazele, numaraAl, numaraBul, type Listeleyici } from "./kunye/numara.ts";
 
 const rastgele = (bayt: number): Uint8Array => crypto.getRandomValues(new Uint8Array(bayt));
 
 export class DunyaDO {
   readonly #depo: Depo;
+  readonly #liste: Listeleyici;
 
   constructor(ctx: DurableObjectState, _env: Env) {
     this.#depo = doDepo(ctx.storage);
+    const s = ctx.storage;
+    this.#liste = async <T,>(onek: string, sinir: number, sonra?: string) =>
+      s.list ? s.list<T>({ prefix: onek, limit: sinir, ...(sonra ? { startAfter: sonra } : {}) }) : new Map<string, T>();
   }
 
   async fetch(istek: Request): Promise<Response> {
@@ -34,6 +39,15 @@ export class DunyaDO {
         return davetCoz(this.#depo, ileti.kod);
       case "oyuncuBul":
         return oyuncuBul(this.#depo, { ad: ileti.ad, hesap: ileti.hesap });
+      // Künye (oyuncu numarası ve arama): src/kunye/numara.ts
+      case "numaraAl":
+        return numaraAl(this.#depo, ileti.hesapId, rastgele);
+      case "numaraBul":
+        return numaraBul(this.#depo, ileti.numara);
+      case "numaraAdTazele":
+        return numaraAdTazele(this.#depo, ileti.hesapId, ileti.ad);
+      case "adAra":
+        return adAra(this.#depo, this.#liste, ileti.onek, ileti.imlec);
       // Cömertler Levhası (Faz 15)
       case "levhaYaz":
         return levhaYaz(this.#depo, ileti.yazim as LevhaYazimi, simdi);

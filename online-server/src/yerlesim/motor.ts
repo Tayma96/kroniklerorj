@@ -110,6 +110,7 @@ import { eksenler } from "./hafiza.ts";
 import { hanNoCoz, hanNolari, hanVar, mulkluHanOdemesi, mulkluIkram, mulkluKira, oyuncuHani } from "../mulk/tapu.ts";
 import { isletmeKimligi } from "../mulk/kurallar.ts";
 import type { HanKarti } from "../han/tipler.ts";
+import { kunyeGorunumu, type KunyeGorunumu } from "../kunye/gorunum.ts";
 import { hanMasaOzeti, type DolulukKaydi } from "../han/doluluk.ts";
 import { masaSayisi } from "../han/kurallar.ts";
 import type { MulkDefteri } from "../mulk/tapu.ts";
@@ -1574,6 +1575,15 @@ export class YerlesimMotoru {
       // H12: adres veren geçerli kira. Veri hazır; henüz hiçbir kapı (makam adaylığı) buna bağlı değil.
       ikamet: ikametVar(kar, k.y, this.#simdi),
     });
+  }
+
+  /** Künye (oyuncu numarası sayfası): hesabın güncel karakterinin yalnız herkese açık alanları (src/kunye/gorunum.ts). */
+  async kunye(hedefHesap: string, dilHam: unknown): Promise<Sonuc<KunyeGorunumu>> {
+    const s = this.kasaba.sakin.find((x) => x.h === hedefHesap);
+    if (!s) return hata("kisi_yok");
+    await this.#yukle([s.o]);
+    const kar = this.kasaba.kar.get(s.o);
+    return kar ? basarili(kunyeGorunumu(this.kasaba, kar, this.#simdi, dilCoz(dilHam))) : hata("kisi_yok");
   }
 
   async engeller(hesapId: string, han = 1): Promise<Sonuc<{ engeller: string[]; mudavim: boolean; ozan: boolean; kisi: string; nam?: number }>> {

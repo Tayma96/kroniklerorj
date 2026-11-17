@@ -161,6 +161,8 @@ interface DurableObjectStorage {
   put<T>(entries: Record<string, T>): Promise<void>;
   delete(key: string): Promise<boolean>;
   delete(keys: string[]): Promise<number>;
+  /** Önekli sıralı listeleme (yalnız DunyaDO ad araması kullanır; src/kunye/numara.ts). */
+  list?<T = unknown>(secenek: { prefix?: string; startAfter?: string; limit?: number }): Promise<Map<string, T>>;
   getAlarm(): Promise<number | null>;
   setAlarm(scheduledTime: number): Promise<void>;
 }

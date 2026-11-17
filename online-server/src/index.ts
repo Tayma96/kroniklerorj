@@ -25,6 +25,9 @@
 //   POST /v1/siparis/teslim {siparis, istekNo, dil?} → ödül, hizmet, görüş, teşekkür izi olayı
 //   GET  /v1/siparisler?dil=             → açık ve son kapanan lonca siparişleri
 //   GET  /v1/oyuncu/:id?dil=             → oyuncu profili (yalnız görünür alanlar; Faz 3a)
+//   GET  /v1/numara                      → {numara}: kendi 8 haneli oyuncu numaran (src/kunye/)
+//   GET  /v1/oyuncu-ara?no= | ?ad=&imlec= → {sonuclar: [{numara, ad, yerlesim, beylik}], imlec}
+//   GET  /v1/kunye/:numara?dil=          → oyuncu sayfası (yalnız herkese açık alanlar)
 //   POST /v1/dostluk {hedef, islem: iste|kabul|ret|bitir, istekNo} → {hedef, bag}
 //   POST /v1/teklif {tur, hedef, ...şartlar, istekNo} → {teklif}
 //   POST /v1/teklif/:id/cevap {cevap: kabul|ret|geri|bitir|ode, tutar?, istekNo} → {teklif}
@@ -165,6 +168,7 @@ const OTURUM_ANAHTARI_EN_KISA = 32;
 const DAVET_YOLU = /^\/v1\/davet\/([^/]+)$/;
 const KISI_YOLU = /^\/v1\/kisi\/([^/]+)$/;
 const OYUNCU_YOLU = /^\/v1\/oyuncu\/([^/]+)$/;
+const KUNYE_YOLU = /^\/v1\/kunye\/([^/]{1,32})$/;
 const TEKLIF_CEVAP_YOLU = /^\/v1\/teklif\/([^/]+)\/cevap$/;
 const MASA_YOLU = /^\/v1\/han\/masa\/([^/]+)\/baglan$/;
 const SES_YOLU = /^\/v1\/han\/masa\/([^/]{1,8})\/ses\/(oturum|yayin|dinle|anlas|kapat)$/;
@@ -623,6 +627,13 @@ async function yonlendir(istek: Request, env: Env): Promise<Response> {
       return yontem === "POST" ? govdeli(istek, env, "duzen") : hataYaniti("yontem_yok");
     case "/v1/duyurular":
       return yontem === "GET" ? hesaba(istek, env, (hesapId) => basarili({ islem: "duyurular", hesapId })) : hataYaniti("yontem_yok");
+    case "/v1/numara":
+      return yontem === "GET" ? hesaba(istek, env, (hesapId) => basarili({ islem: "numara", hesapId })) : hataYaniti("yontem_yok");
+    case "/v1/oyuncu-ara": {
+      if (yontem !== "GET") return hataYaniti("yontem_yok");
+      const q = url.searchParams;
+      return hesaba(istek, env, (hesapId) => basarili({ islem: "oyuncuAra", hesapId, no: q.get("no"), ad: q.get("ad"), imlec: q.get("imlec") }));
+    }
     case "/v1/siyaset":
       if (yontem === "GET") {
         return hesaba(istek, env, (hesapId) => basarili({ islem: "siyaset", hesapId, bolge: url.searchParams.get("bolge"), kayitSayfa: url.searchParams.get("kayit") }));
@@ -759,6 +770,12 @@ async function yonlendir(istek: Request, env: Env): Promise<Response> {
     if (yontem !== "GET") return hataYaniti("yontem_yok");
     const ham = kisi[1];
     return hesaba(istek, env, (hesapId) => basarili({ islem: "kisi", hesapId, kisi: ham, dil }));
+  }
+  const kunye = KUNYE_YOLU.exec(yol);
+  if (kunye?.[1]) {
+    if (yontem !== "GET") return hataYaniti("yontem_yok");
+    const numara = kunye[1];
+    return hesaba(istek, env, (hesapId) => basarili({ islem: "kunye", hesapId, numara, dil }));
   }
   const oyuncu = OYUNCU_YOLU.exec(yol);
   if (oyuncu?.[1]) {

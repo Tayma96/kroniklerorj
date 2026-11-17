@@ -86,6 +86,10 @@ export const HATA_DURUMU = {
   istekno_gecersiz: 400,
   sakin_yok: 404,
   kisi_yok: 404,
+  // Künye (oyuncu numarası, arama, sayfa): src/kunye/
+  numara_gecersiz: 400,
+  arama_kisa: 400,
+  arama_siniri: 429,
   eylem_gecersiz: 400,
   isaret_gecersiz: 400,
   imlec_gecersiz: 400,
@@ -503,6 +507,10 @@ export type HesapIleti = (
   /** `masa`: yalnız MasaDO'nun `rapor` yolu koyar (H4); istemci yolu taşımaz. */
   | { islem: "sikayet"; hesapId: string; govde: unknown; masa?: { ad: string; no: number } }
   | { islem: "duyurular"; hesapId: string }
+  // Künye (src/kunye/hesap.ts): kendi numaran, oyuncu araması, oyuncu sayfası
+  | { islem: "numara"; hesapId: string }
+  | { islem: "oyuncuAra"; hesapId: string; no?: string | null; ad?: string | null; imlec?: string | null }
+  | { islem: "kunye"; hesapId: string; numara: string; dil?: string | null }
   // Han masası (Faz 10): src/han/hesap-kopru.ts
   // 4.9 Çoklu han: `han` seçili han numarası (sorgudan; yoksa 1. han). Gövdeli uçlarda `han` gövdededir.
   | { islem: "han"; hesapId: string; dil?: string | null; han?: string | null }
@@ -695,6 +703,8 @@ export type YerlesimIleti =
   | { islem: "duzenOku"; yerlesim: string; hesapId: string }
   /** Şikayet hedefi: yerel oyuncu kimliği (`o12`) → hesap kimliği (aynı yerleşimin sakini). */
   | { islem: "sakinHesabi"; yerlesim: string; hesapId: string; hedef: string }
+  /** Künye: hesabın güncel karakterinin herkese açık alanları (`hesapId` sayfası istenen hesap; src/kunye/gorunum.ts). */
+  | { islem: "kunye"; yerlesim: string; hesapId: string; dil?: string | null }
   | { islem: "ucgenOku"; yerlesim: string; hesapId: string; npc?: string | null; hedef?: string | null; dil?: string | null }
   /** Han masası bileti için: oyuncunun iki yönlü engel listesi (hesap kimlikleri). */
   | { islem: "engeller"; yerlesim: string; hesapId: string; han?: unknown }
@@ -746,6 +756,11 @@ export type DunyaIleti =
   | { islem: "davetCoz"; kod: string }
   /** YonetimDO → DunyaDO: ada ya da hesap kimliğine göre kayıtlı profil. */
   | { islem: "oyuncuBul"; ad?: string; hesap?: string }
+  /** Künye (HesapDO → DunyaDO; src/kunye/numara.ts): numara üret/oku, numarayla bul, ad dizinini tazele, ad öneki ara. */
+  | { islem: "numaraAl"; hesapId: string }
+  | { islem: "numaraBul"; numara: string }
+  | { islem: "numaraAdTazele"; hesapId: string; ad: string }
+  | { islem: "adAra"; onek: string; imlec: string | null }
   /** Cömertler Levhası (src/debdebe/levha.ts). */
   | { islem: "levhaYaz"; yazim: { beylik: string; hesap: string; ad: string; puan: number; seviye: string | null; gorunur: boolean } }
   | { islem: "levhaOku"; beylik: string }

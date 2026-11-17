@@ -16,6 +16,7 @@ import * as debdebe from "./debdebe/hesap.ts";
 import { yapilandirilmamisDogrulayici, type MakbuzDogrulayici } from "./debdebe/makbuz.ts";
 import { SEZON_KAYNAK_PUANI } from "./debdebe/sezon.ts";
 import { siyasetOku, siyasetYaz, siyasetYoklama } from "./siyaset/hesap-kopru.ts";
+import { adiTazele, ARAMA_DAKIKA_SINIRI, benimNumaram, oyuncuAra, oyuncuSayfasi, type KunyeBaglami } from "./kunye/hesap.ts";
 import { emanetCek, emanetOnizle, GOC_IS, gocBaslat, gocOnizle, gocSiyasetKapilari, gocSurdur, type GocBaglami } from "./goc-hesap.ts";
 
 /** Göç işi beklerken de çalışan uçlar (yerleşime gitmeyen ya da işi kendisi sürdürenler). */
@@ -32,6 +33,8 @@ export class HesapDO {
   /** Bellekte tutulur: örnek uykuya geçince sıfırlanması zararsızdır, depolamaya yazım harcamaz. */
   #hiz: HizDurumu | undefined;
   #sesHiz: HizDurumu | undefined;
+  /** Künye arama/sayfa uçlarının ayrı, dar dakikalık kovası (bellekte; günlük tavanlar depoda). */
+  #aramaHiz: HizDurumu | undefined;
   /** Yaptırım özeti önbelleği: bu örnek tek yazandır, bu yüzden tutarlıdır. null = yok. */
   #yaptirim: HesapYaptirimi | null | undefined;
   /** Etkin hız sınırı önbelleği (YonetimDO'dan; erişilemezse varsayılan). Bellekte, kısa süreli. */
@@ -80,6 +83,7 @@ export class HesapDO {
     if (engel) return jsonYanit(engel);
     if (ileti.islem === "giris") {
       const g = await girisKaydet(this.#depo, ileti.hesapId, ileti.sub, simdi);
+      await this.#numaraHazirla(ileti.hesapId, simdi);
       const uzak = uzaklastirmaBilgisi(yaptirim, simdi);
       const surum = await this.#oturumSurumuOku();
       return jsonYanit(basarili({ ...g, ...(uzak ? { uzaklastirma: uzak } : {}), ...(surum > 0 ? { oturumSurumu: surum } : {}) }));
@@ -94,6 +98,30 @@ export class HesapDO {
       }
     }
     return jsonYanit(sonuc);
+  }
+
+  /** Oyuncu numarası tembel üretilir (ilk giriş, profil kurulumu); en iyi çaba: hata girişi bozmaz. */
+  async #numaraHazirla(hesapId: string, simdi: number, tazele = false): Promise<void> {
+    try {
+      const b = this.#kunye(hesapId, simdi);
+      // Profil numaradan sonra kurulduysa dünya kaydı adı dizine de sokar (numaraAl tekrar güvenlidir).
+      if (tazele) await b.dunya({ islem: "numaraAl", hesapId });
+      await benimNumaram(b);
+    } catch {
+      // en iyi çaba: numara ilk `GET /v1/numara`da yine üretilir
+    }
+  }
+
+  #kunye(hesapId: string, simdi: number): KunyeBaglami {
+    const env = this.#env;
+    return { depo: this.#depo, hesapId, simdi, dunya: (i) => dunyaCagir(env, i), yerlesim: (i) => yerlesimCagir(env, i) };
+  }
+
+  /** Künye arama kovası: genel hız sınırına ek olarak dakikada ARAMA_DAKIKA_SINIRI. */
+  #aramaIzni(simdi: number): boolean {
+    const r = hizKontrol(this.#aramaHiz, simdi, ARAMA_DAKIKA_SINIRI);
+    this.#aramaHiz = r.durum;
+    return r.izin;
   }
 
   #debdebe(hesapId: string, simdi: number): debdebe.DebdebeBaglami {
@@ -211,14 +239,32 @@ export class HesapDO {
         return yonetimCagir(this.#env, { islem: "duyurular" });
       case "profil":
         return profilGetir(this.#depo);
-      case "profilOlustur":
-        return profilOlustur(
+      case "profilOlustur": {
+        const r = await profilOlustur(
           this.#depo,
           ileti.hesapId,
           ileti.govde,
           (k) => dunyaCagir<Profil>(this.#env, { islem: "kayit", istek: k }),
           (p) => yerlesimCagir(this.#env, { islem: "sakinEkle", yerlesim: p.yerlesim, sakin: sakinKaydi(p) }),
         );
+        if (r.ok) await this.#numaraHazirla(ileti.hesapId, simdi, true);
+        return r;
+      }
+      // Künye (src/kunye/hesap.ts): kendi numaran, arama, oyuncu sayfası
+      case "numara":
+        return benimNumaram(this.#kunye(ileti.hesapId, simdi));
+      case "oyuncuAra":
+        if (!this.#aramaIzni(simdi)) return hata("hiz_siniri");
+        return oyuncuAra(this.#kunye(ileti.hesapId, simdi), { no: ileti.no ?? null, ad: ileti.ad ?? null, imlec: ileti.imlec ?? null });
+      case "kunye":
+        if (!this.#aramaIzni(simdi)) return hata("hiz_siniri");
+        return oyuncuSayfasi(this.#kunye(ileti.hesapId, simdi), ileti.numara, ileti.dil);
+      case "devir": {
+        const r = await this.#yerlesime(ileti);
+        // Vâris geçti: numara aynı kalır, ad dizini yeni karakterin adıyla tazelenir (en iyi çaba).
+        if (r.ok) await adiTazele(this.#kunye(ileti.hesapId, simdi)).catch(() => undefined);
+        return r;
+      }
       case "davetOlustur":
         return dunyaCagir(this.#env, { islem: "davetOlustur", hesapId: ileti.hesapId });
       case "davetCoz":
@@ -341,7 +387,6 @@ export class HesapDO {
         return debdebe.levhaGorunurUc(this.#debdebe(ileti.hesapId, simdi), ileti.govde);
       // Hanedan (Faz 7): ileti aynen yerleşime gider.
       case "vasiyet":
-      case "devir":
       case "evlilik":
       case "hanedan":
       case "devirOnizle":

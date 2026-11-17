@@ -291,6 +291,8 @@ export class YerlesimDO {
         return armaganGeri(motor, ileti.hesapId, ileti.govde);
       case "sakinHesabi":
         return motor.sakinHesabi(ileti.hesapId, ileti.hedef);
+      case "kunye":
+        return motor.kunye(ileti.hesapId, ileti.dil);
       case "engeller": {
         const han = hanNoCoz(ileti.han);
         if (han === undefined) return hata("han_gecersiz");
