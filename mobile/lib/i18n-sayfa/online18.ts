@@ -9,6 +9,7 @@ export const rows: Record<string, string[]> = {
   "onl.atl.eskiSunucu": ["Atölye üretimi bu sunucuda henüz açılmadı; depo kullanılabilir."],
   "onl.atl.kepenk.acik": ["Atölye bu ay çalıştı; tezgâhlar sıcak."],
   "onl.atl.kepenk.kapali": ["Atölyenin kepengi kapalı: bu ay ne üretim yapıldı ne toplu teslim. Bir emir ya da tek bir üretim kepengi açar; kapalıyken hiçbir şey kaybetmezsin."],
+  "onl.atl.kepenk.kapaliZiyaretci": ["Atölye bu ay sessiz; tezgâhlarda iş görünmüyor."],
   "onl.atl.oz.acik": ["Atölye açık"],
   "onl.atl.oz.kepenk": ["Atölye sessiz; ilk üretim kepengi açar"],
   "onl.atl.oz.zanaatYok": ["Zanaat seçilmedi; üretim seçimi bekliyor"],

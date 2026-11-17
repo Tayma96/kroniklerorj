@@ -129,7 +129,7 @@ export function Sonuc({ hata, bilgi, rtl }: { hata: string | null; bilgi: string
 /** Kepenk durumu sözle: neden kapalı, ne yazılmadı, ne yapılırsa açılır (baskısız). */
 export function KepenkSatiri({ g, rtl, t, musteri = false, devralmaAy }: { g: TezgahGorunumu; rtl: boolean; t: Ceviri; musteri?: boolean; devralmaAy?: number | null }) {
   const atolye = g.tur === "atolye";
-  const metin = atolye ? t(g.kepenk ? "onl.atl.kepenk.kapali" : "onl.atl.kepenk.acik") : musteri ? (g.raf.some((x) => x.adet > 0) ? t("onl.tz.kepenk.musteriAcik") : t("onl.tz.kepenk.musteriBos"))
+  const metin = atolye ? t(g.kepenk ? (musteri ? "onl.atl.kepenk.kapaliZiyaretci" : "onl.atl.kepenk.kapali") : "onl.atl.kepenk.acik") : musteri ? (g.raf.some((x) => x.adet > 0) ? t("onl.tz.kepenk.musteriAcik") : t("onl.tz.kepenk.musteriBos"))
     : g.kepenk ? t("onl.tz.kepenk.kapaliNot") : t("onl.tz.kepenk.acikNot");
   // Sahibin kendi dükkânında devralma sayacı yarıyı geçtiyse sakin bilgi (korkutmadan).
   const uzun = !musteri && !atolye && !!devralmaAy && g.kepenkAy >= Math.ceil(devralmaAy / 2);
