@@ -51,6 +51,8 @@ export interface SenlikKaydi {
   ac: number;
   bt: number;
   k: { o: string; ad: string; t: SenlikKatkisi[]; n: number }[];
+  /** Kişi → katkı sayısı (levha LEVHA_EN_COK ile kırpılsa da tavan ve tek sefer ödül bundan; eski kayıtta yok). */
+  ks?: Record<string, number>;
   kp?: 1;
 }
 
@@ -114,7 +116,8 @@ export function senlikKatki(k: Kasaba, kar: Karakter, govde: Record<string, unkn
   const tl = toplulukAl(k);
   let r = tl.sn.find((x) => x.i === s.id);
   const satir = r?.k.find((x) => x.o === kar.o);
-  if ((satir?.n ?? 0) >= SENLIK_KATKI_EN_COK) return hata("katki_siniri");
+  const sayi = r?.ks?.[kar.o] ?? satir?.n ?? 0;
+  if (sayi >= SENLIK_KATKI_EN_COK) return hata("katki_siniri");
   let mal: MalId | undefined;
   let adet = 0;
   let tutar = 0;
@@ -139,13 +142,14 @@ export function senlikKatki(k: Kasaba, kar: Karakter, govde: Record<string, unkn
     tl.sn.push(r);
   }
   const odul: { gonul?: number; nam?: number } = {};
-  if (!satir) {
+  (r.ks ??= {})[kar.o] = sayi + 1;
+  if (sayi === 0) {
     const g = halDegistir(kar, ay, { gonul: SENLIK_GONUL }, "hal.neden.senlik").gonul;
     if (g) odul.gonul = g;
     const n = namEkle(kar, ay, "comertlik", mesrepNam(kar, "hediye", SENLIK_NAM));
     if (n) odul.nam = n;
-    if (r.k.length < LEVHA_EN_COK) r.k.push({ o: kar.o, ad: kar.ad, t: [katki], n: 1 });
-  } else {
+    if (!satir && r.k.length < LEVHA_EN_COK) r.k.push({ o: kar.o, ad: kar.ad, t: [katki], n: 1 });
+  } else if (satir) {
     satir.n++;
     if (!satir.t.includes(katki)) satir.t.push(katki);
   }
@@ -166,7 +170,7 @@ export function senlikGorunumu(k: Kasaba, kar: Karakter, ay: number) {
   const s = senlikDurumu(ay);
   const r = s ? k.tl?.sn.find((x) => x.i === s.id) : undefined;
   const son = [...(k.tl?.sn ?? [])].reverse().find((x) => x.kp);
-  const benim = r?.k.find((x) => x.o === kar.o)?.n ?? 0;
+  const benim = r?.ks?.[kar.o] ?? r?.k.find((x) => x.o === kar.o)?.n ?? 0;
   return {
     simdiki: s ? { ...s, levha: comertlerLevhasi(r), benim: { sayi: benim, kalan: SENLIK_KATKI_EN_COK - benim } } : null,
     sonKapanan: son ? { id: son.i, tur: son.t, levha: comertlerLevhasi(son) } : null,

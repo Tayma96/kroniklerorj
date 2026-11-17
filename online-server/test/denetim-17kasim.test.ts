@@ -226,3 +226,38 @@ test("E6: Vakıf Günü ve Göç Dalgası NPC'lerin oyuncudan alım kotasını a
   kar2.ev = { ekmek: 20 };
   assert.deepEqual(npcyeSat(kar2, "ekmek", NPC_SATIS_KOTASI + 1, () => 1, k.ay), { ok: false, hata: "kota_doldu" });
 });
+
+import { arkaPlanAl } from "../src/yerlesim/arka-plan.ts";
+import { DEFTER_EN_COK, ORTAK_DERT_KISI_EN_COK, ortakDertDonumu, ortakDertKatki } from "../src/yerlesim/ortak-dert.ts";
+import { LEVHA_EN_COK, SENLIK_KATKI_EN_COK, senlikDurumu, senlikKatki } from "../src/yerlesim/senlik.ts";
+import { toplulukAl } from "../src/yerlesim/topluluk-kayit.ts";
+
+test("E7: defter dolu olsa da ortak dert katkı tavanı ve tek sefer ödül kişi sayacından", () => {
+  const k = testKasabasi("develi", 300);
+  const a = oyuncuEkle(k, 1, k.ay - 20 * 12);
+  const ay = k.ay + 1;
+  arkaPlanAl(k).tt.kitlik = ay + 2;
+  ortakDertDonumu(k, ay);
+  const d = k.tl!.od.find((x) => x.t === "kitlik")!;
+  d.es = 1e9;
+  for (let i = 0; i < DEFTER_EN_COK; i++) d.k.push({ o: `x${i}`, ad: "X", t: ["elEmegi"], n: 1, p: 1 });
+  a.tk = 18;
+  const g0 = a.nm.slice();
+  for (let i = 0; i < ORTAK_DERT_KISI_EN_COK; i++) assert.ok(ortakDertKatki(k, a, { dert: d.i, katki: "elEmegi" }, ay).ok);
+  assert.deepEqual(ortakDertKatki(k, a, { dert: d.i, katki: "elEmegi" }, ay), { ok: false, hata: "katki_siniri" });
+  assert.equal(a.nm.reduce((x, y) => x + y, 0) - g0.reduce((x, y) => x + y, 0) <= 5, true, "nam bir kez");
+});
+
+test("E7: levha dolu olsa da şenlik katkı tavanı kişi sayacından", () => {
+  const k = testKasabasi("develi", 0);
+  let acik = -1;
+  for (let ay = 0; ay < 40 && acik < 0; ay++) if (senlikDurumu(ay)?.durum === "acik") acik = ay;
+  const s = senlikDurumu(acik)!;
+  const tl = toplulukAl(k);
+  tl.sn.push({ i: s.id, t: s.tur, ac: s.acilis, bt: s.bitis, k: Array.from({ length: LEVHA_EN_COK }, (_, i) => ({ o: `x${i}`, ad: "X", t: ["hayir"], n: 1 })) });
+  const z = oyuncuEkle(k, 1, acik - 20 * 12);
+  z.tk = 18;
+  z.pa = 100;
+  for (let i = 0; i < SENLIK_KATKI_EN_COK; i++) assert.ok(senlikKatki(k, z, { katki: "hayir", tutar: 1 }, acik).ok);
+  assert.deepEqual(senlikKatki(k, z, { katki: "hayir", tutar: 1 }, acik), { ok: false, hata: "katki_siniri" });
+});

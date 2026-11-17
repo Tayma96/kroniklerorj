@@ -117,6 +117,8 @@ export interface OrtakDert {
   d: "acik" | "basardi" | "basarisiz";
   ka?: number;
   k: DertKatkisi[];
+  /** Kişi → katkı sayısı (defter DEFTER_EN_COK ile kırpılsa da tavan ve tek sefer ödül bundan; eski kayıtta yok). */
+  ks?: Record<string, number>;
   /** Canlı etkinliğin açtığı dert: etkinlik kimliği (başarısızlıkta gösterge düşmez; etkinlik bitince kapanır). */
   e?: string;
 }
@@ -252,7 +254,8 @@ export function ortakDertKatki(k: Kasaba, kar: Karakter, govde: Record<string, u
   const katki = tur as KatkiTuru;
   if (!uygunKatkilar(kar).includes(katki)) return hata("katki_gecersiz");
   const satir = d.k.find((x) => x.o === kar.o);
-  if ((satir?.n ?? 0) >= ORTAK_DERT_KISI_EN_COK) return hata("katki_siniri");
+  const sayi = d.ks?.[kar.o] ?? satir?.n ?? 0;
+  if (sayi >= ORTAK_DERT_KISI_EN_COK) return hata("katki_siniri");
   const mallar = KATKI_MALLARI[katki];
   const kalemler: { k: string; d: number; p?: Record<string, string | number> }[] = [];
   let ham: number;
@@ -282,13 +285,14 @@ export function ortakDertKatki(k: Kasaba, kar: Karakter, govde: Record<string, u
   if (mal) envanterEkle(kar, mal, -adet);
   const olaylar: OlayTaslagi[] = [];
   const odul: { gonul?: number; nam?: Partial<Record<Nam, number>> } = {};
-  if (!satir) {
+  (d.ks ??= {})[kar.o] = sayi + 1;
+  if (sayi === 0) {
     const g = halDegistir(kar, ay, { gonul: ORTAK_DERT_GONUL }, "hal.neden.ortakDert").gonul;
     if (g) odul.gonul = g;
     const n = namEkle(kar, ay, DERT_NAM[d.t], ORTAK_DERT_NAM);
     if (n) odul.nam = { [DERT_NAM[d.t]]: n };
-    if (d.k.length < DEFTER_EN_COK) d.k.push({ o: kar.o, ad: kar.ad, t: [katki], n: 1, p: puan });
-  } else {
+    if (!satir && d.k.length < DEFTER_EN_COK) d.k.push({ o: kar.o, ad: kar.ad, t: [katki], n: 1, p: puan });
+  } else if (satir) {
     satir.n++;
     satir.p += puan;
     if (!satir.t.includes(katki)) satir.t.push(katki);
@@ -326,7 +330,7 @@ export function dertGorunumu(d: OrtakDert, kar?: Karakter) {
     halk: d.np,
     carpanlar: Object.fromEntries(KATKI_TURLERI.map((t) => [t, carpanBul(d.t, t)])),
     defter: d.k.map((x) => ({ id: x.o, ad: x.ad, katkilar: x.t })),
-    ...(kar ? { benim: { sayi: ben?.n ?? 0, kalan: ORTAK_DERT_KISI_EN_COK - (ben?.n ?? 0), puan: ben?.p ?? 0 } } : {}),
+    ...(kar ? { benim: { sayi: d.ks?.[kar.o] ?? ben?.n ?? 0, kalan: ORTAK_DERT_KISI_EN_COK - (d.ks?.[kar.o] ?? ben?.n ?? 0), puan: ben?.p ?? 0 } } : {}),
     ...(d.ka !== undefined ? { kapanis: d.ka } : {}),
   };
 }
