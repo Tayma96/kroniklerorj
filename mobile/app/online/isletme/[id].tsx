@@ -152,8 +152,9 @@ function IsletmeEkran() {
     void tzi.dukkanlar().then((r) => { if (!iptal && r.ok) { setDevralmaAy(r.deger.devralmaKepenkAy); dukkanlariHatirla(hesap, r.deger); } });
     return () => { iptal = true; };
   }, [tezgahli]); // eslint-disable-line react-hooks/exhaustive-deps
-  // Tezgâh olayı (üretim, toplu sipariş/teslim) gelince açık tezgâh yeniden yüklenir.
-  useTezgahOlayi(tezgahli, (x) => x.ozet.k === "olay.tezgah.topluSiparis" || x.ozet.p.isletme === id, () => { void tezgahYukle(); });
+  // Tezgâh olayı (üretim, toplu sipariş/teslim) gelince açık tezgâh yeniden yüklenir; atölye ekranı odaktayken defter
+  // seyrek yoklanır (dükkânda ay içinde tezgâh olayı yok, yoklama da yok).
+  useTezgahOlayi(tezgahli, (x) => x.ozet.k === "olay.tezgah.topluSiparis" || x.ozet.p.isletme === id, () => { void tezgahYukle(); }, isletmeParca(id)?.tur === "atolye");
   const tezgahTazele = async () => { await tezgahYukle(); if (!sahte) await o.yerlesimYukle(true); };
 
   const yukle = useCallback(async () => {

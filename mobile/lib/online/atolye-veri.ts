@@ -1,7 +1,9 @@
 // Tezgâh modeli Dilim 2 (atölye) istemci biçimleri: online-server/src/mulk/{tezgah-uclar,atolye,uretim-emri,toplu-siparis}.ts
 // ile birebir. Zanaat, üretim, mesai, emir, toplu teslim ve genişletme sunucuda doğrulanır ve hesaplanır; istemci yalnız
 // niyeti (istekNo ile) gönderir ve sunucunun verdiği sayıları gösterir. GET .../tezgah'ın atölye bölümü tezgah-veri.ts'te.
-import { useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
+import { AppState } from "react-native";
+import { useFocusEffect } from "expo-router";
 import { useOnline } from "./durum";
 import { ekBasarili, ekBasarisiz, ekCagir, nesneMi, metinMi, type EkSonuc } from "./ek-istemci";
 import { tezgahHataMetni, type DepoSatiri, type TopluSiparis, type GenisletmeGorunumu, type TezgahGorunumu } from "./tezgah-veri";
@@ -32,7 +34,8 @@ export interface EmirYaniti {
   emir: { no: number; tarif: string; kez: number; yapilan: number; acilis: number; durum: "acik" | "iptal" };
   emirler: { no: number; tarif: string; kez: number; yapilan: number }[];
 }
-export interface TopluYaniti { toplu: { siparis: string; mal: string; adet: number; odul: number; kasaya: number; islem: string }; depo: DepoSatiri[]; depoDolu: number }
+/** `adet` teslim edilen (indirimliyse az), `siparisAdet` siparişin adedi, `indirimYuzde` uygulanan indirim (Dilim 3; eski sunucuda yok). */
+export interface TopluYaniti { toplu: { siparis: string; mal: string; adet: number; siparisAdet?: number; indirimYuzde?: number; odul: number; kasaya: number; islem: string }; depo: DepoSatiri[]; depoDolu: number }
 export interface GenisletYaniti {
   genisletme: { kademe: number; malzeme: Record<string, number>; rafSatir: number; depoKapasite: number; tezgah: number };
   sonraki: GenisletmeGorunumu; depo: DepoSatiri[];
@@ -121,12 +124,38 @@ export const hatirlananAtolyeler = (hesap: string): AtolyeListesi | null => (ato
 
 /** Tezgâh Dilim 2 olayları: gelince açık atölye/işletme ekranı ya da çarşının atölye listesi yeniden yüklenir. */
 const TEZGAH_OLAYLARI: ReadonlySet<string> = new Set(["olay.tezgah.uretim", "olay.tezgah.topluSiparis", "olay.tezgah.topluTeslim"]);
+/** [PARAMETRE] Açık atölye ekranında defter yoklama aralığı (ms): seyrek ve hafif; yalnız ekran odakta ve uygulama öndeyken. */
+export const TEZGAH_YOKLAMA_MS = 45_000;
+
+/**
+ * Ekran odaktayken ve uygulama öndeyken defteri seyrek, sessizce yoklar (yalnız yeni olaylar gelir). Arka planda,
+ * başka ekrandayken ya da `etkin` kapalıyken hiç istek gitmez; uygulama öne dönünce bir kez hemen yoklar.
+ */
+export function useDefterYoklama(etkin: boolean) {
+  const o = useOnline();
+  const yoklaRef = useRef(o.olaylarYokla);
+  yoklaRef.current = o.olaylarYokla;
+  useFocusEffect(useCallback(() => {
+    if (!etkin) return;
+    let zaman: ReturnType<typeof setInterval> | null = null;
+    const baslat = () => { if (!zaman) zaman = setInterval(() => { void yoklaRef.current(); }, TEZGAH_YOKLAMA_MS); };
+    const durdur = () => { if (zaman) { clearInterval(zaman); zaman = null; } };
+    if (AppState.currentState === "active") baslat();
+    const abone = AppState.addEventListener("change", (d) => {
+      if (d === "active") { void yoklaRef.current(); baslat(); } else durdur();
+    });
+    return () => { durdur(); abone.remove(); };
+  }, [etkin]));
+}
+
 /**
  * Olay defterine (o.defter) ekran açıkken yeni bir tezgâh olayı düşerse `onOlay` bir kez çağrılır. Açılıştaki olaylar
- * yeni sayılmaz (sıra `sira` ile izlenir); `etkin` kapalıyken gelenler sessizce geçilir.
+ * yeni sayılmaz (sıra `sira` ile izlenir); `etkin` kapalıyken gelenler sessizce geçilir. `yokla` açıkken ekran odakta
+ * kaldıkça defter seyrek yoklanır (useDefterYoklama), böylece yeni üretim/toplu sipariş kendiliğinden görünür.
  */
-export function useTezgahOlayi(etkin: boolean, suz: (o: Olay) => boolean, onOlay: () => void) {
+export function useTezgahOlayi(etkin: boolean, suz: (o: Olay) => boolean, onOlay: () => void, yokla = etkin) {
   const o = useOnline();
+  useDefterYoklama(etkin && yokla);
   const son = useRef<number | null>(null);
   const suzRef = useRef(suz);
   suzRef.current = suz;

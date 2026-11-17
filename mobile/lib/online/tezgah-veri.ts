@@ -18,6 +18,13 @@ export interface RafSatiri {
   npcTavan: number; adil: number; yapan?: string; cekicilik?: Carpanlar & { a: number };
 }
 export interface DepoSatiri { mal: string; kalite: Kademe; adet: number }
+/**
+ * Dilim 3 kanca dökümü (sunucu mulk/kanca.ts kancaDokumu): kanalın uygulanan değeri (tavanla kırpılmış), tavanı ve değeri
+ * veren kişinin görünen adı (kimlik dönmez). `kalemler` yalnız işletme sahibine ve katkı verenin kendisine gelir.
+ */
+export interface KancaDokumu { deger: number; tavan: number; kisiAd: string | null; kalemler?: { kanca: string; d: number }[] }
+/** Tüccar `hak:fiyatTablosu` bilene dükkânda: yerleşimdeki öbür dükkânların raf satırları (en çok 40). */
+export interface FiyatTablosuSatiri { isletme: string; ad: string; mal: string; kalite: Kademe; fiyat: number; adet: number }
 export type SatirNedeni = "butce" | "stok" | "tavan" | "rakip" | "seviyeTavani";
 export interface GunSonuSatiri {
   satir: number; mal: string; kalite: Kademe; fiyat: number; satilan: number; kalan: number; hasilat: number; payYuzde: number;
@@ -30,6 +37,8 @@ export interface GunSonu {
   /** Atölye (Dilim 2) ay dönümü dökümü: atolye-veri.ts `AtolyeGunSonu`. Dükkânda yok. */
   anlik?: boolean; yapim?: number; emek?: { oyuncuOnce: number; oyuncuSonra: number; npcVerilen: number; npcKullanilan: number };
   npc?: NpcDokumu; emirler?: EmirDokumu[];
+  /** Dilim 3 (dükkân): rafta mesleğin malına H çarpanını veren kanca dökümü (yalnız toplam). Eski sunucuda yok. */
+  hKanca?: Record<string, KancaDokumu>;
 }
 /** Atölyenin NPC emek dökümü: sözleşmeli, emek veren (maaşı emanetten karşılanan), maaşsız ve nedeni. */
 export interface NpcDokumu { sozlesme: number; emekVeren: number; maassiz: number; neden: "emanet_maas_yetmez" | string | null }
@@ -66,6 +75,12 @@ export interface TezgahGorunumu {
   /** Dilim 2 (yalnız yetkiliye): genişletme ve atölye bölümü (atolye-veri.ts). Eski sunucuda yok. */
   genisletme?: GenisletmeGorunumu;
   atolye?: AtolyeBolumu;
+  /**
+   * Dilim 3 (yalnız yetkiliye): etkisi olan kanallar. `depo`, dükkânda `rafSatir`, `rafAdet`, `dukkanH.<meslek>`; atölyede
+   * `atolyeKalite`, `npcCeza`, `topluIndirim`. `rafSiniri` ve `depoKapasite` zaten kancalı gelir. Eski sunucuda yok.
+   */
+  kanca?: Record<string, KancaDokumu>;
+  fiyatTablosu?: FiyatTablosuSatiri[];
 }
 export interface DepoDefterSatiri { ay: number; kim: string; kimAd?: string; mal: string; kalite: Kademe; adet: number }
 /** Bir açık üretim emri (tezgâhta). */
@@ -77,6 +92,11 @@ export interface TopluSiparis {
   acilis: number; son: number; kalanAy: number; durum: "acik" | "teslim" | "kapandi" | string;
   alan: { isletme: string; ad: string; ay: number | null } | null;
   depoda?: number; teslimEdebilir?: boolean; ustUste?: boolean;
+  /**
+   * Dilim 3 (teslim edebilecek atölyeye): teslim edilecek adet ve indirim yüzdesi. İndirim yalnız depodaki atölye damgalı
+   * mal indirimli adedi karşılıyorsa; değilse `indirimYuzde: 0` ve `teslimAdet` = tam adet. Ödül değişmez.
+   */
+  teslimAdet?: number; indirimYuzde?: number;
 }
 /** GET .../tezgah `atolye` (yalnız yetkiliye). */
 export interface AtolyeBolumu {
@@ -114,7 +134,7 @@ export interface SatisYaniti {
 }
 export interface DevralmaYaniti { devralma: { isletme: string; fiyat: number; eskiSahip: string; iade: { bedel: number; mal: number; kasa: string }; ts: number } }
 /** Han kartında ve han panelinde (yalnız sahip/çalışan): son ay dönümünün yolcu payı. */
-export interface YolcuKarti { ay: number; payYuzde: number; tutar: number; tavan: number; carpan: { F: number; K: number; R: number; H: number } }
+export interface YolcuKarti { ay: number; payYuzde: number; tutar: number; tavan: number; carpan: { F: number; K: number; R: number; H: number }; kanca?: KancaDokumu }
 
 export type RafKomutu =
   | { islem: "koy"; mal: string; kalite?: Kademe; adet: number; fiyat?: number }
