@@ -8,6 +8,7 @@ import { GameIcon } from "../../icons";
 import { DesignPressable } from "../../design-pressable";
 import { ITEMS } from "../../world";
 import type { Recipe } from "../../game";
+import { BECERI_TAVAN, skillProgress } from "../../game";
 import { C, F } from "../../theme";
 
 const ART = require("../../../assets/arka/atolye_demirci.jpg");
@@ -178,8 +179,8 @@ export function InputChip({ id, name, have, need, rtl, light = false }: { id: st
 // Tezgâh durumu: ustalık madalyonu + ilerleme, bu ayın ocak durumu ve atölyenin kuralı. Sahnenin alt kenarına biner.
 export type ForgeMode = "ready" | "rest" | "closed";
 export function ForgeStatus({ level, xp, mode, rtl, labels }: { level: number; xp: number; mode: ForgeMode; rtl: boolean; labels: { skill: string; medal: string; badge: string; progress: string; line: string; rule: string } }) {
-  const maxed = level >= 10;
-  const pct = maxed ? 1 : Math.max(0, Math.min(1, (xp - level * 100) / 100));
+  const maxed = level >= BECERI_TAVAN;
+  const pct = skillProgress(xp); // K3: 11–20 her seviye 150 XP
   const tone = mode === "ready" ? C.sage : mode === "rest" ? C.emberSoft : C.blood;
   const icon = mode === "ready" ? "flame" : mode === "rest" ? "hourglass" : "prisoner";
   return <Frame style={{ marginTop: -38, marginBottom: 20 }}>

@@ -6,7 +6,7 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { SUBJECTS, studySubject, studiedThisTurn, lessonsToExam, CLUBS, joinClub, clubPractice, studyEnergy, maxStudyEnergy, STUDY_COST } from "../../lib/game";
+import { BECERI_TAVAN, skillProgress, SUBJECTS, studySubject, studiedThisTurn, lessonsToExam, CLUBS, joinClub, clubPractice, studyEnergy, maxStudyEnergy, STUDY_COST } from "../../lib/game";
 import { GameIcon } from "../../lib/icons";
 import { subjImage, MEKTEP_HERO } from "../../lib/assets";
 import { localFirstName, locSeed } from "../../lib/world";
@@ -65,7 +65,7 @@ export default function Mektep() {
     }
     const lvl = (p.skills as any)[m.key] as number;
     const xp = (p.skill_xp as any)[m.key] as number;
-    return { pct: lvl >= 10 ? 100 : xp % 100 };
+    return { pct: lvl >= BECERI_TAVAN ? 100 : Math.round(skillProgress(xp) * 100) };
   };
   const develops = (id: string) => {
     const m = META[id];

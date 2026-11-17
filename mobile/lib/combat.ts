@@ -69,10 +69,11 @@ function pickEnemyMove(arch: EArch, power: number, random: () => number, despera
 // Niyet okuma isabeti: dövüş becerisi + zekâ artırır, düşman gücü + arketip kurnazlığı azaltır.
 // Telegraf bu ihtimalle doğru çıkar; aksi halde düşman fent atıp niyetini gizler.
 export function readAccuracy(p: Player, enemyPower: number, arch: EArch = "asker", desperate = false): number {
-  const skill = p.skills?.combat || 0;
+  const skill = statEtki(p.skills?.combat || 0); // K3: beceri 10 üstü azalan getiri
   const intel = statEtki(p.stats?.intelligence || 0); // K2: 10 üstü azalan getiri
   let a = 0.70 + skill * 0.018 + intel * 0.004 - Math.max(0, enemyPower - 6) * 0.012 + ARCH[arch].feint;
   if (weaponClass(p) === "hizli") a += 0.05; // çevik refleks düşmanı daha iyi okur
+  if (p.perks?.includes("cevik")) a += 0.08; // K3 Çevik hüneri: niyet okuma +%8 (tavan aynı)
   if (desperate) a -= 0.12; // çaresiz düşman erratik → niyeti okuması zor
   // Elit düşman (güç 14+) asla tam kitap gibi okunmaz — geç oyunda dövüş otomatiğe bağlanmasın.
   return Math.max(0.38, Math.min(enemyPower >= 14 ? 0.85 : 0.93, a));
@@ -87,7 +88,7 @@ export function startBattle(p: Player, e: Encounter, rngState: number): BattleSt
   const log: CbLogEntry[] = [{ k: "cb.log.start", p: [e.title, pw, e.power] }];
   // Menzilli silah (yay): melee öncesi açılış oku.
   if (weaponClass(p) === "menzilli") {
-    const volley = 6 + (p.skills?.combat || 0) + Math.round(pw * 0.18);
+    const volley = 6 + statEtki(p.skills?.combat || 0) + Math.round(pw * 0.18);
     enemyHp = Math.max(1, enemyHp - volley);
     log.push({ k: "cb.log.volley", p: [volley] });
   }
@@ -148,7 +149,7 @@ export function stepBattle(prev: BattleState, p: Player, mv: Move, stance: Stanc
   const fp: CbLogParam = feint ? { lk: "cb.log.feint" } : "";
   let entry: CbLogEntry;
   if (mv === "toparlan") {
-    const recovered = Math.min(maxBreath - breath, 26 + (p.skills?.combat || 0));
+    const recovered = Math.min(maxBreath - breath, 26 + statEtki(p.skills?.combat || 0));
     bs.breath = breath + recovered;
     const damage = Math.max(1, taken(Math.round(baseE * 0.55)) - armorDefense(p));
     bs.playerHp -= damage; bs.momentum = 0;

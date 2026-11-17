@@ -28,7 +28,7 @@ export function OzelliklerSekmesi() {
   const canAdd = p.stat_points > 0;
   const tavan = statCapOf(p); // çocukta 10, 13 yaştan sonra 20 (K2)
   const add = (k: keyof Stats) => { hap("success"); apply((s) => allocateStat(s, k)); };
-  const perks = pendingPerkCount(p);
+  const perks = pendingPerkCount(p, aktifNiyet(state!));
   const niyet = aktifNiyet(state!);
   const niyetSecim = (id: NiyetId) => { if (id === niyet) return; hap("tap"); apply((s) => niyetSec(s, id)); };
 
@@ -109,7 +109,7 @@ export function OzelliklerSekmesi() {
             <View key={sk} style={{ flexDirection: row, alignItems: "center", gap: 9, marginBottom: 8 }}>
               <GameIcon name={ic} size={15} color={C.goldDim} />
               <Text numberOfLines={1} style={{ width: 92, fontFamily: F.display, fontSize: 12, color: C.parchmentDim, textAlign: ta }}>{t("skill." + sk)}</Text>
-              <View style={{ flex: 1 }}><Cubuk pct={p.skills[sk] * 10} tone={C.gold} h={5} rtl={rtl} /></View>
+              <View style={{ flex: 1 }}><Cubuk pct={p.skills[sk] * 5} tone={C.gold} h={5} rtl={rtl} /></View>
               <Text style={{ width: 24, textAlign: "center", fontFamily: F.display, fontSize: 14, color: C.parchment }}>{p.skills[sk]}</Text>
             </View>
           ))}

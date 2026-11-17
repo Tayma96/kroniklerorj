@@ -39,7 +39,7 @@ export function MulkKarti({ state, pr, i, open, hireOpen, onManage, onHire, appl
   const gain = maxed ? 0 : propAylikTahmin(state, { ...pr, level: lvl + 1 }) - inc; // büyütmenin gerçek formülle aylık katkısı
   const ledger = (pr.ledger || []).filter((e) => e.months === 12);
   const trend = (ledger.slice(-1)[0]?.net ?? 0) >= 0 ? C.sage : C.blood;
-  const rc = repairCost(pr), uc = propUpgradeCost(pr);
+  const rc = repairCost(pr, p), uc = propUpgradeCost(pr);
   const resting = pr.fallow_until !== undefined, fertile = (pr.fertile_until ?? 0) > state.turn;
   const name = t("pt." + pr.type), incTone = inc >= 0 ? C.sage : C.blood;
   const act = (fn: (s: GameState) => GameState, coin = false) => { hap(coin ? "success" : "tap"); if (coin) playCoin(); else playTap(); apply(fn); };

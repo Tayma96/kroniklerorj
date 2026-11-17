@@ -4,6 +4,7 @@ import { rows as ana } from "./ana";
 import { rows as karakter } from "./karakter";
 import { rows as zar } from "./zar";
 import { rows as stat } from "./stat";
+import { rows as huner } from "./huner";
 import { rows as iliskiler } from "./iliskiler";
 import { rows as menu } from "./menu";
 import { rows as sehir } from "./sehir";
@@ -37,5 +38,5 @@ import { rows as online20 } from "./online20";
 import { rows as online21 } from "./online21";
 import { rows as online22 } from "./online22";
 
-const all: Record<string, string[]> = { ...ana, ...karakter, ...iliskiler, ...menu, ...sehir, ...pazar, ...atolye, ...meslek, ...mulkler, ...mahalle, ...sinematik, ...online, ...online2, ...online3, ...online4, ...online5, ...onlineToplum, ...online6, ...online7, ...online8, ...online9, ...online10, ...online11, ...online12, ...online13, ...online14, ...online15, ...online16, ...online17, ...online18, ...online19, ...online20, ...online21, ...online22, ...zar, ...stat };
+const all: Record<string, string[]> = { ...ana, ...karakter, ...iliskiler, ...menu, ...sehir, ...pazar, ...atolye, ...meslek, ...mulkler, ...mahalle, ...sinematik, ...online, ...online2, ...online3, ...online4, ...online5, ...onlineToplum, ...online6, ...online7, ...online8, ...online9, ...online10, ...online11, ...online12, ...online13, ...online14, ...online15, ...online16, ...online17, ...online18, ...online19, ...online20, ...online21, ...online22, ...zar, ...stat, ...huner };
 export const SAYFA_METIN = Object.fromEntries((["tr", "en", "es", "pt", "ar", "ru"] as Lang[]).map((lang, i) => [lang, Object.fromEntries(Object.entries(all).map(([key, values]) => [key, values[i]]))])) as Record<Lang, Record<string, string>>;

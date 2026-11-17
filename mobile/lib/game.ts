@@ -361,6 +361,7 @@ export function loanRate(s: GameState): number {
   let r = LOAN_MONTHLY_RATE;
   if (s.player.faction === "tuccar") r -= 0.006;       // tüccar loncası → tefeciyle araları iyi
   if (hasPerk(s.player, "tefeci")) r -= 0.005;          // tefecilik ağını bilirsin
+  if (hasPerk(s.player, "sarraf")) r -= 0.01;           // K3 Sarraf: sarraflar arasından biri
   return Math.max(0.012, Math.round(r * 1000) / 1000);
 }
 // Kredi tavanı: itibar + mülk teminatı (enflasyonla ölçekli). İtibarın dipteyse tefeci güvenmez, az verir.
@@ -368,7 +369,7 @@ export function creditLimit(s: GameState): number {
   const p = s.player;
   const propVal = p.properties.reduce((a, pr) => a + (PROPERTY_TYPES[pr.type]?.cost || 0), 0);
   const repFactor = Math.max(0.05, (p.reputation + 100) / 200); // -100..100 → 0.05..1
-  const base = (1000 + propVal * 0.4) * repFactor;
+  const base = (1000 + propVal * 0.4) * repFactor * (hasPerk(p, "sarraf") ? 1.5 : 1); // K3 Sarraf: kredi tavanı +%50
   return Math.round(base * inflationFactor(s));
 }
 // O an alınabilecek azami ödünç (tavan − mevcut borç).
@@ -535,7 +536,7 @@ export function propAylikTahmin(s: GameState, pr: Property): number {
   const tip = pr.type === "tarla" ? 1.025 * (pr.fallow_until !== undefined ? 0 : (pr.fertile_until ?? 0) > s.turn ? 1.5 : 1)
     : pr.type === "dukkan" ? 1 + prosp / 300 : pr.type === "han" ? 0.6 + (prosp + sec) / 250
     : pr.type === "ev" ? (pr.tenant ? 1.25 * 0.96 : 0.7) : 1;
-  let pm = 1; if (hasPerk(s.player, "tuccar_prensi")) pm += 0.3; if (hasPerk(s.player, "tamirci")) pm += 0.15;
+  let pm = 1; if (hasPerk(s.player, "tuccar_prensi")) pm += 0.1; if (hasPerk(s.player, "tamirci")) pm += 0.05; // K3: ikincil
   const w = propWorkerStats(s, pr, base, cpl);
   const brut = (base * cpl * tip + w.gross) * pm;
   const gider = w.wage + (pr.guard ? 4 : 0) + 3;
@@ -1441,7 +1442,7 @@ function npcTeklifTiki(s: GameState) {
   } else if (t && s.turn - t.turn >= 3) { // eski cevapsız teklifler kırgınlık taşır; şahit işi cezasız kapanır
     const k = nufusOf(s).k[t.id];
     if (k && t.sebep === "sahit_sadaka") push(s, "sohbet", `${kisiAdi(k, "tr")} işin sırasının geçtiğini söyledi; aranızda kırgınlık yok.`, "kişisel", false, { k: "echo.expired", p: [knParam(k)] });
-    else if (k) { s.relationships[t.id] = Math.max(-100, (s.relationships[t.id] || 0) - 4); push(s, "sohbet", `${kisiAdi(k, "tr")} teklifine cevap alamadı; kırgın.`, "kişisel", false, { k: "npct.sustu", p: [knParam(k)] }); }
+    else if (k && !hasPerk(p, "hosgoru")) { s.relationships[t.id] = Math.max(-100, (s.relationships[t.id] || 0) - 4); push(s, "sohbet", `${kisiAdi(k, "tr")} teklifine cevap alamadı; kırgın.`, "kişisel", false, { k: "npct.sustu", p: [knParam(k)] }); }
     s.npcTeklif = undefined;
   }
   alacakTiki(s);
@@ -1473,7 +1474,7 @@ function npcTeklifTiki(s: GameState) {
   const tutar = Math.round((15 + Math.floor(Math.random() * 36)) * inflationFactor(s));
   // Borç: seveni ister; cömertliği dillere düşmüşe çıkarcı huylu da (sevmese bile) gelir — saf görünenin kapısı çok çalınır, ödenmeyen borç da çok olur.
   const safGorunur = (p.nam?.comert || 0) >= 25;
-  if ((p.alacaklar || []).length < 3 && p.money >= tutar * 2)
+  if ((p.alacaklar || []).length < (hasPerk(p, "tefeci") ? 5 : 3) && p.money >= tutar * 2)
     for (const k of yerde) { const r = relWith(s, k.id); if (!acik.has(k.id) && (r >= 15 || (safGorunur && huyGrubu(huyOf(k)) === "cikarci" && r >= 0))) secenek.push({ id: k.id, tur: "borc", tutar, ay: 12 + Math.floor(Math.random() * 13), sebep: borcSebebi(s, k) }); }
   if (!secenek.length) return;
   const sec = rnd(secenek); const k = pop.k[sec.id];
@@ -1791,9 +1792,10 @@ function alacakTiki(s: GameState) {
     if (!k || k.ol != null) { if (k) push(s, "sohbet", `Borçlun ${kisiAdi(k, "tr")} vefat etti; alacağın mezara gitti.`, "kişisel", false, { k: "npct.borcOlum", p: [knParam(k), a.tutar] }); continue; }
     if (s.turn < a.vade) { kalan.push(a); continue; }
     const huy = huyOf(k);
-    const sans = (["mert", "dindar", "sabırlı", "cömert", "ciddi"].includes(huy) ? 0.9 : huy === "kurnaz" || huy === "hırslı" ? 0.55 : 0.75) + (BORC_SEBEP_ETKI[a.sebep || ""] || 0);
+    const tefeci = hasPerk(p, "tefeci"); // K3 Tefeci: senetli alacak — daha sık ve faiziyle döner
+    const sans = (["mert", "dindar", "sabırlı", "cömert", "ciddi"].includes(huy) ? 0.9 : huy === "kurnaz" || huy === "hırslı" ? 0.55 : 0.75) + (BORC_SEBEP_ETKI[a.sebep || ""] || 0) + (tefeci ? 0.1 : 0);
     if (Math.random() < sans) {
-      const dukkan = a.sebep === "dukkan"; const geri = a.tutar + (huy === "cömert" || huy === "mert" || dukkan ? Math.round(a.tutar * 0.1) : 0); p.money += geri;
+      const dukkan = a.sebep === "dukkan"; const geri = a.tutar + (huy === "cömert" || huy === "mert" || dukkan ? Math.round(a.tutar * 0.1) : 0) + (tefeci ? Math.round(a.tutar * 0.15) : 0); p.money += geri;
       s.relationships[a.id] = Math.min(100, (s.relationships[a.id] || 0) + 3);
       push(s, "sohbet", `${kisiAdi(k, "tr")} borcunu ödedi: ${geri} akçe kesene döndü.`, "kişisel", false, { k: dukkan ? "npct.borcOdendiDukkan" : "npct.borcOdendi", p: [knParam(k), geri] });
     } else if (!a.uzatildi) {
@@ -2473,7 +2475,7 @@ export function rumorReplyOptions(s: GameState, r: Rumor) {
   const witnessId = available && r.yon < 0 && r.olay && listeners.length ? (r.duyanlar || []).filter(h => local(h) && h.chain.length === 1 && !h.sessiz && !h.aciklama && huyGrubu(huyOf(pop.k[h.id])) !== "cikarci" && relWith(s, h.id) >= 0 && s.npc_state?.[h.id]?.anilar?.some(m => m.olay === r.olay && m.tur === r.tur && m.kanit === "gorgu" && Math.abs(m.yuk) >= 1)).sort((a, b) => relWith(s, b.id) - relWith(s, a.id))[0]?.id : undefined;
   return { sourceId, sourceHere, quiet: !!origin?.sessiz, available, witnessId, listeners,
     cost: 15 * Math.max(1, Math.round(r.siddet)),
-    chance: Math.max(.15, Math.min(.85, .40 + (p.skills?.social || 0) * .05 + socialPresence(p) * .03 - r.siddet * .08)) };
+    chance: Math.max(.15, Math.min(.85, .40 + becEtki(p, "social") * .05 + socialPresence(p) * .03 - r.siddet * .08)) };
 }
 // Söylenti eylemi: yüzleş / yay / sustur (Vercel rumor_action). Döndürür yeni state.
 export function rumorAction(prev: GameState, rumorId: string, eylem: "yuzles" | "yay" | "sustur" | "sahit"): GameState {
@@ -3734,7 +3736,7 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
       const idx = p.properties.findIndex((pr2) => pr2.cond < 60);
       if (idx >= 0) {
         const pr2 = p.properties[idx];
-        const rcost = repairCost(pr2);
+        const rcost = repairCost(pr2, p);
         if (p.money >= rcost + 40) { // kâhya keseyi dibine kadar boşaltmaz
           p.money -= rcost; pr2.cond = 100;
           push(s, "mülk", `Kâhya ${pr2.loc}'daki mülkü kendiliğinden onarttı (−${rcost} akçe); "beyim duymadan dam akmasın" demiş.`, "kişisel", false, { k: "evj.kahyaRepair", p: [{ pl: pr2.loc }, rcost] });
@@ -4001,6 +4003,7 @@ export function advance(prev: GameState, n = 1): GameState {
     if (s.turn % 12 === 0 && !s.player.dead) {
       const pl = s.player;
       yasEgrisi(s); // K2: 40+ beden gerilemesi, 50+ hikmet
+      kethudaTiki(s); // K3 Kethüda: küskünlükler yılda bir yumuşar
       if (pl.niyet_yil != null && pl.niyet_yil !== oyunYili(s.turn)) { delete pl.niyet; delete pl.niyet_yil; delete pl.niyet_degisti; } // geçen yılın niyeti kapanır; yeni yıl yeni seçim
       if (pl.yr_money === undefined) pl.yr_money = pl.money;
       else {
@@ -4067,8 +4070,8 @@ export function advance(prev: GameState, n = 1): GameState {
     }
     // Mülk pasif geliri — KONUMA (şehir refahı) + KONDİSYONA göre; düşük güvenlikte yağma + aşınma
     let pmult = 1;
-    if (hasPerk(s.player, "tuccar_prensi")) pmult += 0.3;
-    if (hasPerk(s.player, "tamirci")) pmult += 0.15;
+    if (hasPerk(s.player, "tuccar_prensi")) pmult += 0.1; // K3: ikincil
+    if (hasPerk(s.player, "tamirci")) pmult += 0.05;
     let inc = 0;
     let wages = 0; // işçi ücretleri (ekonomiden çıkan; pmult'tan bağımsız)
     const produced: Record<string, number> = {}; // işçilerin ürettiği gerçek hammadde (üretim zinciri)
@@ -4123,7 +4126,7 @@ export function advance(prev: GameState, n = 1): GameState {
         delete pr.ledger_accum;
       }
       const y = propYield(s, pr); if (y) { const sm = pr.type === "tarla" ? ({ "İlkbahar": 0.6, "Yaz": 1.0, "Sonbahar": 1.8, "Kış": 0.2 }[cal.season] ?? 1) : 1; const q = Math.round(y.qty * sm * nadasMult); if (q > 0) { const city = pr.loc || s.player.location_name; if (y.good === "un") millCapacityByCity[city] = (millCapacityByCity[city] || 0) + q; else { produced[y.good] = (produced[y.good] || 0) + q; if (y.good === "bugday") farmWheatByCity[city] = (farmWheatByCity[city] || 0) + q; } } } // işçi emeği → gerçek hammadde (tarla mevsimlik)
-      if (pr.cond > 40 && chance(pr.type === "ev" && pr.tenant ? 0.35 : 0.2)) pr.cond -= 1; // zamanla aşınma (kiracılı ev daha hızlı yıpranır)
+      if (pr.cond > 40 && chance((pr.type === "ev" && pr.tenant ? 0.35 : 0.2) * (hasPerk(s.player, "tamirci") ? 0.5 : 1))) pr.cond -= 1; // zamanla aşınma (kiracılı ev daha hızlı yıpranır)
       if (effSec < 30 && chance((0.02 + (effSec < 10 ? 0.03 : 0)) * (pr.guard ? 0.35 : 1))) { // düşük güvenlikte yağma (bekçili mülkte üçte bire iner)
         pr.cond = Math.max(20, pr.cond - 15);
         if (i === n - 1) push(s, "mülk_yagma", `${PROPERTY_TYPES[pr.type]?.name || "Mülkün"} (${pr.loc}) yağmaya uğradı; onarım gerek.`, "kişisel", false, { k: "evj.propRaid", p: [{ pt2: pr.type }, { pl: pr.loc }] });
@@ -4807,7 +4810,7 @@ export function proposeToHouse(prev: GameState, houseId: string, type: "ittifak"
   if ((s.allied_houses || []).includes(houseId)) return s; // zaten müttefik
   p.propose_turn = s.turn;
   const tutum = h.tutum ?? 0;
-  const sans = Math.max(0.05, Math.min(0.9, 0.25 + tutum / 100 + esteem(s) / 60 + (type === "evlilik" ? p.fame / 300 : 0)));
+  const sans = Math.max(0.05, Math.min(0.9, 0.25 + tutum / 100 + esteem(s) / 60 + (type === "evlilik" ? p.fame / 300 : 0) + (hasPerk(p, "diplomat") ? 0.1 : 0)));
   if (Math.random() < sans) {
     h.tutum = Math.min(100, tutum + (type === "evlilik" ? 40 : 30));
     if (!s.allied_houses) s.allied_houses = [];
@@ -4821,8 +4824,7 @@ export function proposeToHouse(prev: GameState, houseId: string, type: "ittifak"
       { const ha2 = chance(0.5); push(s, "hanedan_haber", ha2 ? `${h.name} mührünü bastı: bundan böyle yolunuz bir; iki hanenin ocağı aynı rüzgârla yanacak.` : `${h.name} teklifini kabul etti; iki hane el sıkıştı.`, "makro", true, { k: ha2 ? "evj.houseAllyAccept2" : "evj.houseAllyAccept", p: [{ hn: h.nameIdx }] }); }
     }
   } else {
-    h.tutum = Math.max(-100, tutum - 8);
-    p.reputation = Math.max(-100, p.reputation - 2);
+    if (!hasPerk(p, "diplomat")) { h.tutum = Math.max(-100, tutum - 8); p.reputation = Math.max(-100, p.reputation - 2); } // K3 Diplomat: ret küslük doğurmaz
     push(s, "hanedan_haber", `${h.name} teklifini geri çevirdi; kapıda soğuk bir rüzgâr esti.`, "kişisel", false, { k: "evj.houseProposeRefused", p: [{ hn: h.nameIdx }] });
   }
   return s;
@@ -5017,6 +5019,7 @@ function caravanAttackChance(s: GameState): number {
   if (p.reputation >= 80) c -= 0.03;
   if (p.skills.trade >= 4) c -= 0.03;
   if (p.skills.trade >= 8) c -= 0.03;
+  c -= hunerOranEki(p, "kervan");        // K3: Güvenli Kervan/Bezirgân kalemi (kalem başına %8)
   if (p.fear >= 55) c -= 0.03;           // korkulan biri ("Korkulan" kademesi) daha az gözü kara saldırı çeker
   c -= (p.retinue || 0) * 0.02;          // maiyet kılıçları kervanla yürür — eşkıya iştahı kırılır
   const stop = s.caravan?.route?.[s.caravan.step ?? 0] || s.caravan?.dest;
@@ -5030,10 +5033,11 @@ function caravanAttackChance(s: GameState): number {
 // Saldırı kaybı oranı (Vercel caravan._attack_outcome portu): savunma = güç×0.4 + dövüş×0.6.
 function caravanLossPct(s: GameState): number {
   const p = s.player;
-  const def = statEtki(p.stats.strength) * 0.4 + p.skills.combat * 0.6 + (p.retinue || 0) * 1.5; // maiyet yağmada omuz verir
-  if (def >= 12) return 0.10 + gameRandom(s) * 0.20;  // direndin, az kaybettin
-  if (def >= 6) return 0.30 + gameRandom(s) * 0.30;   // yarısı gitti
-  return 0.55 + gameRandom(s) * 0.35;                  // güçsüz kaldın, çoğu gitti
+  const def = statEtki(p.stats.strength) * 0.4 + becEtki(p, "combat") * 0.6 + (p.retinue || 0) * 1.5 + (hasPerk(p, "kervanbasi") ? 6 : 0); // maiyet yağmada omuz verir
+  const k = hasPerk(p, "kervanbasi") ? 0.5 : 1; // K3 Kervanbaşı: baskında kayıp yarıya
+  if (def >= 12) return (0.10 + gameRandom(s) * 0.20) * k;  // direndin, az kaybettin
+  if (def >= 6) return (0.30 + gameRandom(s) * 0.30) * k;   // yarısı gitti
+  return (0.55 + gameRandom(s) * 0.35) * k;                  // güçsüz kaldın, çoğu gitti
 }
 // Kervanı her ay bir konak ilerlet; yolda saldırı riski, varışta kâr (Vercel process_caravan_tick portu).
 function tickCaravan(s: GameState) {
@@ -5078,7 +5082,8 @@ function tickCaravan(s: GameState) {
   const effSpread = 1 + (spread - 1) * (satCap / (satCap + c.invested));
   // Taban ~0.92: fiyat farkı yoksa kervan masrafına çalışır (arbitraj yok = kâr yok). Ticaret becerisi
   // yalnız arbitraj dilimini büyütür — doymuş pazarda usta tüccar bile ancak başabaş çıkar.
-  const mult = Math.max(0.4, 0.92 + 0.5 * (effSpread - 1) * (1 + p.skills.trade * 0.05) + (gameRandom(s) * 0.2 - 0.05) + (crownTreaty(s, regionOf(c.dest))?.kind === "ticaret" ? 0.06 : 0));
+  const sapma = gameRandom(s) * 0.2 - 0.05; // K3 Keskin Göz: kötü pazar sürprizi (eksi sapma) olmaz — RNG tüketimi aynı
+  const mult = Math.max(0.4, 0.92 + 0.5 * (effSpread - 1) * (1 + becEtki(p, "trade") * 0.05) * (hasPerk(p, "tuccar_prensi") ? 1.5 : 1) + (hasPerk(p, "keskin_goz") ? Math.max(0, sapma) : sapma) + (crownTreaty(s, regionOf(c.dest))?.kind === "ticaret" ? 0.06 : 0));
   const ret = Math.round(c.invested * mult);
   p.money += ret; gainSkill(s, "trade", 10);
   if (c.good) addTradePressure(s, c.dest, c.good, -Math.min(0.20, c.invested / 20000)); // getirdiğin mal hedefte arzı bollaştırır (kalıcı iz, sönümlü)
@@ -5657,7 +5662,7 @@ export function serveArmy(prev: GameState, move: FrontMove): GameState {
   const s = clone(prev), p = s.player, w = playerArmyWar(s)!, d = w.service!;
   if (d.actionTurn !== s.turn) { d.actionTurn = s.turn; d.rounds = 0; }
   p.battle_turn = s.turn; p.war_support_turn = s.turn;
-  const result = frontContact(w, s, move, armorDefense(p), p.skills.combat);
+  const result = frontContact(w, s, move, armorDefense(p) + (hasPerk(p, "kalkanli") ? 3 : 0) + (hasPerk(p, "sancaktar") ? 2 : 0), becEtki(p, "combat") + (hasPerk(p, "sancaktar") ? 4 : 0)); // K3: Kalkanlı/Sancaktar cephede de işler
   p.health = Math.max(0, p.health - result.hurt);
   push(s, "ocak_savasi", "Manganın görevi orduya yansıdı.", "kişisel", false,
     { k: "army.contact", p: [{ sfx: `army.move.${move}` }, result.hurt, result.morale, result.saved] });
@@ -5735,10 +5740,8 @@ export function workForecast(s: GameState, style: WorkStyle = "normal"): WorkFor
   const stat = effEtki(p, PROF_STAT[p.profession] || "stamina"); // K2: 10 üstü ücrete azalan getiriyle
   let mult = 1;
   if (p.faction === "demirci") mult += 0.2;
-  if (hasPerk(p, "tefeci")) mult += 0.2;
-  if (hasPerk(p, "becerikli")) mult += 0.15;
-  if (hasPerk(p, "usta_eli")) mult += 0.2;
-  if (hasPerk(p, "basyapit")) mult += 0.25;
+  if (hasPerk(p, "becerikli")) mult += 0.05; // K3: ikincil (asıl etkisi iş olayı zarı)
+  if (hasPerk(p, "usta_eli")) mult += 0.05;  // K3: ikincil (asıl etkisi imza zarı)
   { const rk = p.rakip; if (rk && rk.bitti && rk.prof === p.profession) mult += rk.bitti === "ustun" ? 0.1 : rk.bitti === "ortak" ? 0.08 : -0.05; } // çarşının bayrağı: müşteri bayraklı tezgâha gider
   if (p.cirak && p.cirak.prof === p.profession) mult += 0.05; // çırağın eli: tezgâhta bir çift el daha
   mult += esnafAhlaki(p); // ahilik: şerefli esnafa müşteri, adı kötüye çıkana ters bakış
@@ -5843,7 +5846,7 @@ function rollWorkEvent(s: GameState) {
   const vi = adaylar.length ? rnd(adaylar) : Math.floor(Math.random() * pool.length);
   const ev = pool[vi];
   const wevKey = vi > 0 ? profKey + "." + vi : profKey; // varyant 0 eski anahtarları kullanır — eski kayıt olayları çözülmeye devam eder
-  const ok = zar(s, { stat: ev.stat, zorluk: IS_OLAYI_ZORLUK }).basari; // tek zar (eski 0.4+0.06×stat tavansızdı)
+  const ok = zar(s, { stat: ev.stat, zorluk: IS_OLAYI_ZORLUK, ekKalemler: hunerKalemleri(p, "is") }).basari; // tek zar (eski 0.4+0.06×stat tavansızdı)
   if (ok) {
     if (ev.wMoney) p.money += ev.wMoney;
     if (ev.wHealth) p.health = Math.min(100, p.health + ev.wHealth);
@@ -5891,13 +5894,13 @@ export const IS_OLAYI_ZORLUK = 4;
 export const IMZA_ZORLUK = 4;
 export function imzaZarGirdi(p: Player): ZarGirdi {
   const a = PROF_ACTIONS[p.profession]; const yk = meslekYoluKademesi(p);
-  return { stat: a?.stat || "intelligence", zorluk: IMZA_ZORLUK, ekKalemler: yk >= 2 ? [{ etiket: "zar.kalem.meslekYolu", deger: yk >= 3 ? 2 : 1 }] : [] };
+  return { stat: a?.stat || "intelligence", zorluk: IMZA_ZORLUK, ekKalemler: [...(yk >= 2 ? [{ etiket: "zar.kalem.meslekYolu", deger: yk >= 3 ? 2 : 1 }] : []), ...hunerKalemleri(p, "imza")] };
 }
 // İş mini olayları mesleğin olay havuzundaki statlarla sınanır: her farklı stat için önizleme (RNG yok).
 export function isOlayiOranlari(s: GameState): ZarOnizleme[] {
   const pool = WORK_EVENTS[s.player.profession] || WORK_EVENTS["_"] || [];
   const statlar = [...new Set(pool.map((e) => e.stat))];
-  return statlar.map((stat) => zarOrani(s, { stat, zorluk: IS_OLAYI_ZORLUK }));
+  return statlar.map((stat) => zarOrani(s, { stat, zorluk: IS_OLAYI_ZORLUK, ekKalemler: hunerKalemleri(s.player, "is") }));
 }
 export function professionAction(prev: GameState): GameState {
   const s = clone(prev); const p = s.player;
@@ -6116,7 +6119,7 @@ export function rakipAktif(p: Player): Rakip | undefined { const r = p.rakip; re
 export function rakipYollari(p: Player): (keyof Stats)[] { const pr = p.rakip?.prof || p.profession; return [PROF_STAT[pr] || "stamina", "charisma", "intelligence"]; }
 export function rakipPuan(p: Player, stat: keyof Stats): number {
   const dom = (PROF_SKILL[p.profession] || "crafting") as SkillKey;
-  return Math.round(effEtki(p, stat) * 7 + skillLevel(p.skill_xp[dom] || 0) * 3 + kademeOf(p) * 6);
+  return Math.round(effEtki(p, stat) * 7 + statEtki(skillLevel(p.skill_xp[dom] || 0)) * 3 + kademeOf(p) * 6);
 }
 export function rakipOranlari(p: Player): number[] {
   const r = p.rakip; if (!r) return [0, 0, 0];
@@ -6263,7 +6266,7 @@ export function cirakDers(prev: GameState): GameState {
   if (!cirakDersHazir(prev)) return prev;
   const s = clone(prev); const p = s.player; const c = p.cirak!;
   const dom = (PROF_SKILL[c.prof] || "crafting") as SkillKey;
-  const kazanc = 5 + skillLevel(p.skill_xp[dom] || 0) * 0.4 + (c.huy === "hevesli" ? 1.5 : 0); // çıraklık yıllar sürer (~3 yıl)
+  const kazanc = (5 + statEtki(skillLevel(p.skill_xp[dom] || 0)) * 0.4 + (c.huy === "hevesli" ? 1.5 : 0)) * (hasPerk(p, "pir_eli") ? 1.5 : 1); // çıraklık yıllar sürer (~3 yıl)
   c.ilerleme = Math.min(100, Math.round((c.ilerleme + kazanc) * 10) / 10); c.sonDers = s.turn; c.ihmal = 0;
   p.hunger = Math.max(0, p.hunger - 5);
   gainSkill(s, dom, 2); // öğretmek ustayı da biler
@@ -6354,7 +6357,7 @@ export function buyPrice(s: GameState, id: string): number {
   const p = s.player;
   const g = marketGoods(locSeed(p.location_name)).find((x) => x.id === id); if (!g) return 0;
   let disc = p.faction === "tuccar" ? 0.85 : 1;
-  if (hasPerk(p, "pazarlikci")) disc -= 0.10;
+  if (hasPerk(p, "pazarlikci")) disc -= 0.05; // ikincil; asıl etkisi pazarlık zarı kalemi
   const it = itibarFiyat(p); disc = it > 1 ? disc * it : Math.min(disc, it); // itibar kademesi (Hissiyat 2): indirim öbür indirimlerle yığılmaz
   return Math.max(1, Math.round(marketPrice(g.buy, s.econ) * disc * goodPriceMult(s, id) * merchantPriceMult(s)));
 }
@@ -6375,7 +6378,7 @@ export function bargainBase(s: GameState, id: string): number {
   const p = s.player;
   const g = marketGoods(locSeed(p.location_name)).find((x) => x.id === id); if (!g) return 0;
   let disc = p.faction === "tuccar" ? 0.85 : 1;
-  if (hasPerk(p, "pazarlikci")) disc -= 0.10;
+  if (hasPerk(p, "pazarlikci")) disc -= 0.05; // ikincil; asıl etkisi pazarlık zarı kalemi
   return Math.max(1, Math.round(marketPrice(g.buy, s.econ) * disc * goodPriceMult(s, id)));
 }
 // Pazarlıkta satıcı kişiliği (Vercel bargain.py): şehre göre deterministik mizaç; pazarlık havasını belirler.
@@ -6388,13 +6391,13 @@ export function sellerPersonaOf(s: GameState): { id: string; mult: number } { re
 export function bargainChance(s: GameState): number {
   const p = s.player;
   const favor = 1 + factionLocalFavor(s) * 0.08; // loncanın hâkim olduğu sancakta pazarlık kolay, düşmanın elinde zor
-  return Math.max(0.1, Math.min(0.95, (0.42 + (p.temperament === "kurnaz" ? 0.03 : 0) + effEtki(p, "charisma") * 0.035 + p.skills.trade * 0.025 + bargainBonus(s)) * sellerPersona(p.location_name).mult * favor));
+  return Math.max(0.1, Math.min(0.95, (0.42 + (p.temperament === "kurnaz" ? 0.03 : 0) + effEtki(p, "charisma") * 0.035 + becEtki(p, "trade") * 0.025 + bargainBonus(s) + hunerOranEki(p, "pazarlik")) * sellerPersona(p.location_name).mult * favor));
 }
 // Arayüzün her pazarlık/blöf kararı kayıtlı zarı ilerletir; eski GameState değişmez.
 export function rollBargain(prev: GameState, bluff = false): { state: GameState; success: boolean } {
   if (prev.player.dead || inJail(prev.player) || prev.player.age < 13) return { state: prev, success: false };
   const state = clone(prev);
-  const success = gameRandom(state) < bargainChance(state) * (bluff ? 0.7 : 1);
+  const success = gameRandom(state) < bargainChance(state) * (bluff ? (hasPerk(state.player, "dilbaz") ? 0.9 : 0.7) : 1); // K3 Dilbaz: blöf şansı az kırılır
   return { state, success };
 }
 export function bargainSessionKey(turn: number, city: string, id: string, sell: boolean): string {
@@ -6503,7 +6506,7 @@ export function sellItem(prev: GameState, id: string): GameState {
   const tier = QUALITY_GOODS.has(id) ? takeQualityUnit(p, id) : "siradan";
   p.inventory[id] -= 1; if (p.inventory[id] <= 0) delete p.inventory[id];
   let sell = Math.max(1, Math.round(marketPrice(g.sell, s.econ) * goodPriceMult(s, id) * QUALITY_MULT[tier])); // 0 akçeye satış/envanter sızıntısı önlenir (diğer fiyat fonksiyonlarıyla tutarlı)
-  if (hasPerk(p, "dilbaz")) sell = Math.round(sell * 1.25);
+  if (hasPerk(p, "dilbaz")) sell = Math.round(sell * 1.1);
   if (stallActive(s)) sell = Math.round(sell * 1.2); // tezgâh sahibinin malı göz önünde: satış kârlı
   p.money += sell; addTradePressure(s, p.location_name, id, -0.045); // satış yerel arzı artırır → fiyat düşer
   if (p.trade_xp_turn !== s.turn) { p.trade_xp_turn = s.turn; gainSkill(s, "trade", 5); } // al-sat XP: tur başına tek (buğday al-sat döngüsüyle beceri farmı kapatıldı);
@@ -6530,7 +6533,7 @@ export function negotiatedSell(prev: GameState, id: string, price: number): Game
   const tier = QUALITY_GOODS.has(id) ? takeQualityUnit(p, id) : "siradan";
   p.inventory[id] -= 1; if (p.inventory[id] <= 0) delete p.inventory[id];
   let earn = Math.max(1, Math.round(price * QUALITY_MULT[tier]));
-  if (hasPerk(p, "dilbaz")) earn = Math.round(earn * 1.25);
+  if (hasPerk(p, "dilbaz")) earn = Math.round(earn * 1.1);
   if (stallActive(s)) earn = Math.round(earn * 1.2); // tezgâh pazarlıkta da geçer
   p.money += earn; addTradePressure(s, p.location_name, id, -0.045);
   if (p.trade_xp_turn !== s.turn) { p.trade_xp_turn = s.turn; gainSkill(s, "trade", 6); }
@@ -6802,7 +6805,7 @@ export function talkWith(prev: GameState, npc: NPC, intent: string, lang: string
   if (relDelta > 0) {
     relDelta *= talkWarmthMod(s);                                  // sıcak/korkulan tanınmanın etkisi
     if (intent === "iltifat") relDelta *= 1 + allureBonus(s);      // çapkınlık iltifatı güçlendirir
-    if (hasPerk(p, "dil_dokme")) relDelta *= 1.5;
+    if (hasPerk(p, "dil_dokme")) relDelta *= 1.2; // ikincil
     relDelta = Math.round(relDelta);
   }
   // Olumlu kazanç ay-tavanına takılır (aynı kişiyle onlarca niyetle ilişki farmlanamaz); olumsuz tepki tam işler.
@@ -6873,10 +6876,12 @@ export function bestSkillOf(p: Player): keyof Skills {
   const keys: (keyof Skills)[] = ["combat", "trade", "crafting", "social"];
   return keys.reduce((a, b) => (p.skills[b] > p.skills[a] ? b : a), keys[0]);
 }
+// K3 Pîr Eli (seçenek): çırak yetiştirmek 35 yaşında açılır.
+export function ciragaYas(p: Player): number { return hasPerk(p, "pir_eli") ? 35 : 45; }
 export function canTakeApprentice(s: GameState, npc: NPC): boolean {
   const p = s.player;
   // Mevcut çırak varken de yeni çırak alınabilir (eskisi bırakılır) — şehir değiştiren oyuncu içerikten kalıcı mahrum kalmasın.
-  return !p.cirak && !p.dead && p.age >= 45 && p.apprentice?.id !== npc.id && p.apprentice_turn !== s.turn && p.skills[bestSkillOf(p)] >= 6 && npc.alive !== false && npc.age >= 12 && npc.age <= 22;
+  return !p.cirak && !p.dead && p.age >= ciragaYas(p) && p.apprentice?.id !== npc.id && p.apprentice_turn !== s.turn && p.skills[bestSkillOf(p)] >= 6 && npc.alive !== false && npc.age >= 12 && npc.age <= 22;
 }
 export function takeApprentice(prev: GameState, npc: NPC, skill: keyof Skills = bestSkillOf(prev.player)): GameState {
   const s = clone(prev); const p = s.player;
@@ -6903,7 +6908,7 @@ export function mentorApprentice(prev: GameState): GameState {
     return s;
   }
   p.apprentice_turn = s.turn;
-  a.months += 1;
+  a.months += hasPerk(p, "pir_eli") ? 1.5 : 1; // K3 Pîr Eli: çırak 1,5 kat hızlı yetişir
   const lessonSkill = a.skill || bestSkillOf(p); // eski kayıtta dal yoksa ustanın bugünkü hüneriyle devam et
   a.skill = lessonSkill;
   gainSkill(s, lessonSkill, 5); // iki yıllık emek, ustanın çırağa aktardığı dalı keskinleştirir
@@ -7333,7 +7338,7 @@ function rollTravelEvent(s: GameState, route: TravelRoute) {
   const chance = (route === "patika" ? 0.42 : route === "kervan" ? 0.5 : 0.34) + insec * 0.012;
   if (gameRandom(s) >= chance) return;
   // Tek zar: eski taban ≥0.48 → zorluk 4, 0.42–0.45 → 5, ≤0.40 → 6 (ortalama oran korunur; bkz. F0 geçiş tablosu)
-  const test = (stat: keyof Stats, zorluk: number) => zar(s, { stat, zorluk }).basari;
+  const test = (stat: keyof Stats, zorluk: number) => zar(s, { stat, zorluk, ekKalemler: hunerKalemleri(p, "yol", stat) }).basari; // K3: Çevik/Nişancı/Gazi kalemi
   // Kervan rotası güvenli/sosyal olaylara yönelir; diğerleri tüm havuzu çeker. At sahibine özel olay eklenir.
   const pool = route === "kervan" ? ["han", "yolcu", "tuccar", "kutsal", "kayipcocuk", "atnali", "dervis", "eskici", "menzilci"] : ["han", "yolcu", "tuccar", "firtina", "gecit", "kervanf", "kutsal", "izler", "coban", "harabe", "kopru", "devrikyuk", "kayipcocuk", "arikovani", "atnali", "dervis", "siginak", "eskici", "sislivadi", "sazlik", "menzilci", "gecates", "ahlat"];
   if (p.horse) pool.push("atli"); // atlıya yol başka görünür
@@ -7690,8 +7695,8 @@ export function studySubject(prev: GameState, id: string): StudyResult {
   p.lesson_count = (p.lesson_count || 0) + 1;
   p.hunger = Math.max(0, p.hunger - 5);
   addStatXp(s, EXAM_STAT[id] || "intelligence", 5); // dersin özelliği tecrübeyle gelişir
-  const lucky = chance(hasPerk(p, "mucit") ? 0.75 : 0.5);
-  const statBonus = chance(hasPerk(p, "mucit") ? 0.35 : 0.12); // mucit şansı ~3 katlar ama GARANTİLEMEZ (garanti = yılda 24 puan, ekonomi kırılıyordu)
+  const lucky = chance(0.5);
+  const statBonus = chance(0.12); // mucit şansı ~3 katlar ama GARANTİLEMEZ (garanti = yılda 24 puan, ekonomi kırılıyordu)
   const chips: { label: string; col: string; k?: string; p?: (string | number)[] }[] = [];
   let key = "";
   const seasoned = (p.exam_wins || 0) >= 3; // yerleşik öğrenci: bundan sonra okul puan değil ustalık (statXp) verir — tavan ezilmez, okul değerli kalır
@@ -8268,6 +8273,7 @@ export function crimePlanPreview(s: GameState, kind: CrimeKind, approach: CrimeA
   }
   const intel = crimeIntelFor(s, kind);
   if (intel) execution += intel.quality === 2 ? 0.10 : 0.06;
+  execution += hunerOranEki(p, "suc"); // K3: Nişancı/Gazi kalemi (kalem başına %8)
   const baseAttention = ct.sev * 0.05 + dread(s) / 100 * 0.15 + crimeHeat(p) / 220;
   const golgeGizli = p.faction === "golge" ? 0.5 : 1;
   const intelCover = intel ? (intel.quality === 2 ? 0.65 : 0.80) : 1;
@@ -8711,7 +8717,7 @@ export const RETINUE_MAX = 3;
 export const RETINUE_HIRE = 35;
 export const RETINUE_WAGE = 10;
 export function retinueHireCost(s: GameState): number { return Math.round(RETINUE_HIRE * inflationFactor(s)); }
-export function retinueWage(s: GameState): number { return Math.round(RETINUE_WAGE * inflationFactor(s)) * (s.player.retinue || 0); }
+export function retinueWage(s: GameState): number { return Math.round(RETINUE_WAGE * inflationFactor(s) * (hasPerk(s.player, "lider") ? 0.5 : 1)) * (s.player.retinue || 0); } // K3 Lider: maiyet ücreti yarı
 export function hireGuard(prev: GameState): GameState {
   const s = clone(prev); const p = s.player;
   if (p.dead || p.age < 16 || inJail(p)) return s;
@@ -8773,7 +8779,7 @@ export function resolveOpportunity(prev: GameState, opp: Opportunity, forced?: b
   p.hunger = Math.max(0, p.hunger - 5);
   if (success) {
     let reward = opp.reward;
-    if (hasPerk(p, "keskin_goz")) reward = Math.round(reward * 1.3);
+    if (hasPerk(p, "keskin_goz")) reward = Math.round(reward * 1.1); // ikincil
     p.money += reward; unEkle(p, "reputation", 4);
     gainSkill(s, opp.stat === "strength" ? "combat" : opp.stat === "charisma" ? "social" : "trade", 7);
     { const ov = chance(0.5); push(s, "görev_tamamlandı", ov ? `"${opp.title}" işi tamamlandı; alın teri keseye akçe oldu (+${reward}).` : `"${opp.title}" görevini başardın (+${reward} akçe).`, "kişisel", true, { k: ov ? "evj.oppWin2" : "evj.oppWin", p: [{ opp: opp.key }, reward] }); }
@@ -8841,11 +8847,11 @@ export function buyProperty(prev: GameState, type: string): GameState {
   return s;
 }
 // Onarım bedeli (eksik kondisyonla orantılı).
-export function repairCost(pr: Property): number { return Math.max(1, Math.round((PROPERTY_TYPES[pr.type]?.cost || 100) * 0.3 * (100 - pr.cond) / 100)); }
+export function repairCost(pr: Property, p?: Player): number { return Math.max(1, Math.round((PROPERTY_TYPES[pr.type]?.cost || 100) * 0.3 * (100 - pr.cond) / 100 * (p && hasPerk(p, "tamirci") ? 0.5 : 1))); } // K3 Tamirci: yarı fiyat
 export function repairProperty(prev: GameState, index: number): GameState {
   const s = clone(prev); const p = s.player; const pr = p.properties[index];
   if (p.dead || !pr || pr.cond >= 100) return s;
-  const cost = repairCost(pr); if (p.money < cost) return s;
+  const cost = repairCost(pr, p); if (p.money < cost) return s;
   p.money -= cost; pr.cond = 100;
   { const rv = chance(0.5); push(s, "mülk", rv ? `Usta kalfasıyla gelip ${pr.loc}'daki ${(PROPERTY_TYPES[pr.type]?.name || "mülk").toLowerCase()} damını, direğini elden geçirdi (−${cost} akçe); "on yıl daha gider" dedi.` : `${PROPERTY_TYPES[pr.type]?.name || "Mülk"} (${pr.loc}) onarıldı (−${cost} akçe).`, "kişisel", false, { k: rv ? "evj.propRepair2" : "evj.propRepair", p: [{ pt2: pr.type }, { pl: pr.loc }, cost] }); }
   return s;
@@ -8887,7 +8893,7 @@ export function sinavOrani(s: GameState, yol: number): number {
   const zorluk = 4 + 2 * hedef; // yolun özelliği: 2. kademe 6 · 3. kademe 8 · zirve (4. kademe) 10
   const gerek = 2 * hedef;      // mesleğin beceri seviyesi (emek): 2 · 4 · zirve 6
   const dom = (PROF_SKILL[p.profession] || "crafting") as SkillKey;
-  const o = 0.35 + (effEtki(p, yollar[yol]) - zorluk) * 0.07 + (skillLevel(p.skill_xp[dom]) - gerek) * 0.08 + ustaDestegi(s);
+  const o = 0.35 + (effEtki(p, yollar[yol]) - zorluk) * 0.07 + (statEtki(skillLevel(p.skill_xp[dom])) - gerek) * 0.08 + ustaDestegi(s);
   return Math.max(0.08, Math.min(0.92, Math.round(o * 100) / 100));
 }
 // Ustanın sözü sınavda ağır basar: seni seven usta kefil olur (+10'a kadar), küs usta aleyhine konuşur (−8'e kadar).
@@ -9554,10 +9560,10 @@ export function doFactionTask(prev: GameState, id: string): GameState {
   const dom = factionHoldsHere(s, id) ? 1.25 : 1;
   // Taban %30 kısıldı (erken oyunda işin ~3 katıydı) ama işçi maaşı gibi enflasyona bağlandı (geç oyunda değersizleşmesin).
   let reward = Math.round((f.task.reward * 0.7 + statBonus + Math.floor(Math.random() * 8)) * rank.mult * dom * inflationFactor(s));
-  if (id === "tuccar" && hasPerk(p, "guvenli_kervan")) reward = Math.round(reward * 1.5);
+  if (id === "tuccar" && hasPerk(p, "guvenli_kervan")) reward = Math.round(reward * 1.2); // ikincil
   p.money += reward; p.hunger = Math.max(0, p.hunger - 6);
   let standing = f.task.standing * factionStandingMod(s, id) * dom;
-  if (hasPerk(p, "lider")) standing = standing * 1.5;
+  if (hasPerk(p, "lider")) standing = standing * 1.25; // ikincil
   standing = Math.round(standing);
   const rankBefore = factionRankIndex(p.faction_standing[id] || 0);
   p.faction_standing[id] = (p.faction_standing[id] || 0) + standing;
@@ -10547,11 +10553,10 @@ export function hostFeast(prev: GameState): GameState {
   const s = clone(prev); const p = s.player;
   if (p.dead || p.age < 13) return s;
   if (p.feast_turn === s.turn) return s; // ayda tek ziyafet — para→şöhret çeviricisi spam'lenemez
-  const cost = 40;
+  const cost = hasPerk(p, "sohret_avcisi") ? 25 : 40; // K3 Şöhret Avcısı: sofrayı ucuza kurarsın
   if (p.money < cost) { push(s, "sosyal", "Ziyafet verecek akçen yok.", "kişisel", false, { k: "evj.noFeast" }); return s; }
   let fame = 8, rep = 5;
-  if (hasPerk(p, "sohret_avcisi")) fame += 5;
-  if (hasPerk(p, "diplomat")) { fame = Math.round(fame * 1.5); rep = Math.round(rep * 1.5); }
+  if (hasPerk(p, "sohret_avcisi")) fame += 3; // ikincil
   p.money -= cost; p.feast_turn = s.turn; unEkle(p, "fame", fame); unEkle(p, "reputation", rep);
   gainSkill(s, "social", 5); bumpNam(p, "comert", 8);
   const why = recognition(s) > 0.5 ? " Tanınan biri olduğundan ziyafetin çok konuşuldu." : "";
@@ -10583,8 +10588,7 @@ export function giveAlms(prev: GameState): GameState {
   if (p.money < cost) { push(s, "sosyal", "Sadaka verecek akçen yok.", "kişisel", false, { k: "evj.noAlms" }); return s; }
   let honor = 7, rep = 3;
   if (p.temperament === "merhametli") honor += 3; // merhametli mizaç: hayrın gönülden gelir, adı da öyle anılır
-  if (hasPerk(p, "hosgoru")) honor += 5;
-  if (hasPerk(p, "diplomat")) { honor = Math.round(honor * 1.5); rep = Math.round(rep * 1.5); }
+  if (hasPerk(p, "hosgoru")) honor += 3; // ikincil
   p.money -= cost; p.alms_turn = s.turn; unEkle(p, "honor", honor); unEkle(p, "reputation", rep);
   gainSkill(s, "social", 5);
   bumpNam(p, "comert", 6); bumpNam(p, "dindar", 5);
@@ -10605,14 +10609,17 @@ export function intimidate(prev: GameState): GameState {
   if (p.dead || p.age < 13) return s;
   if (p.intimidate_turn === s.turn) return s; // ayda tek gözdağı — korku 0→100 spam'i kapatıldı
   p.intimidate_turn = s.turn;
-  const ok = Math.random() < Math.min(0.92, 0.5 + statEtki(p.stats.strength) * 0.04 + dread(s) / 300 + (hasPerk(p, "kan_donduran") ? 0.25 : 0)); // perk garantiyi değil olasılığı artırır
-  if (ok) { let fear = hasPerk(p, "kan_donduran") ? 12 : 8; if (hasPerk(p, "diplomat")) fear = Math.round(fear * 1.5); unEkle(p, "fear", fear); p.reputation = Math.max(-100, p.reputation - 3); bumpNam(p, "zalim", 7); witnessScandal(s, "tehdit", 0.5); const why = dread(s) > 30 ? " Zaten korkulan adın, bir bakışın yetti." : ""; push(s, "sosyal", `Birine gözdağı verdin; adın çekinilen biri oldu.${why}`, "kişisel", false, { k: "evj.intimWin", p: [dread(s) > 30 ? { sfx: "sfx.intimWinWhy" } : ""] }); }
+  const ok = Math.random() < Math.min(0.92, 0.5 + statEtki(p.stats.strength) * 0.04 + dread(s) / 300 + hunerOranEki(p, "gozdagi")); // K3: Kan Donduran/Gazi zar kalemi — garantiyi değil olasılığı artırır
+  if (ok) { const fear = hasPerk(p, "kan_donduran") ? 12 : 8; unEkle(p, "fear", fear); p.reputation = Math.max(-100, p.reputation - 3); bumpNam(p, "zalim", 7); witnessScandal(s, "tehdit", 0.5); const why = dread(s) > 30 ? " Zaten korkulan adın, bir bakışın yetti." : ""; push(s, "sosyal", `Birine gözdağı verdin; adın çekinilen biri oldu.${why}`, "kişisel", false, { k: "evj.intimWin", p: [dread(s) > 30 ? { sfx: "sfx.intimWinWhy" } : ""] }); }
   else { p.reputation = Math.max(-100, p.reputation - 5); p.honor = Math.max(0, p.honor - 3); const why = esteem(s) > 25 ? " Sevilen biri olduğundan kimse seni ciddiye almadı." : ""; push(s, "sosyal", `Gözdağın ters tepti; itibarın zarar gördü.${why}`, "kişisel", false, { k: "evj.intimLose", p: [esteem(s) > 25 ? { sfx: "sfx.intimLoseWhy" } : ""] }); }
   return s;
 }
 
 // ── Savaş / Çatışma ──
 export interface Encounter { id: string; title: string; desc: string; power: number; reward: number; fame: number; honor: number; danger: number; minFame?: number; } // minFame: efsane karşılaşmalar ancak ad duyulunca gelir (geç oyuna amaç)
+// K3 Pehlivan (seçenek): efsane karşılaşmaların şöhret şartı 25 erken açılır.
+export function efsaneSohretSarti(p: Player, e: Encounter): number { return e.minFame ? Math.max(0, e.minFame - (hasPerk(p, "pehlivan") ? 25 : 0)) : 0; }
+export function efsaneAcik(p: Player, e: Encounter): boolean { return !e.minFame || p.fame >= efsaneSohretSarti(p, e); }
 export const ENCOUNTERS: Encounter[] = [
   { id: "haydut",  title: "Yol Haydutları",   desc: "Pusudaki haydutlar kervanına göz dikti.", power: 6,  reward: 35,  fame: 4,  honor: 3,  danger: 14 },
   { id: "ayi",     title: "Dağda Ayı",        desc: "Patikada azgın bir ayıyla burun buruna geldin.", power: 8,  reward: 30,  fame: 5,  honor: 4,  danger: 20 },
@@ -10635,17 +10642,16 @@ export const ENCOUNTERS: Encounter[] = [
 ];
 // Oyuncunun savaş gücü: kuvvet + dayanıklılık/2 + silah + asker avantajı.
 export function combatPower(p: Player): number {
-  let pw = effEtki(p, "strength") * 2 + effEtki(p, "stamina") + p.skills.combat; // K2: 10 üstü azalan getiri (60 yaşta güç patlaması yok)
+  let pw = effEtki(p, "strength") * 2 + effEtki(p, "stamina") + becEtki(p, "combat"); // K2/K3: 10 üstü azalan getiri (stat ve beceri): 10 üstü azalan getiri (60 yaşta güç patlaması yok)
   const wid = p.equipped?.silah; const w = wid ? ITEMS[wid] : null;
   let weaponPw = Math.round((w?.power || 0) * equippedQualityMult(p, "silah"));
   if (w?.twoHanded) weaponPw = Math.round(weaponPw * 1.32); // çift elli silah daha sert vurur (kalkan feda edilir)
   pw += weaponPw || ((p.inventory["bicak"] || 0) > 0 ? 4 : 0); // kalite-ölçekli silah, yoksa elindeki bıçak
   if (p.faction === "asker") pw += 3;
-  pw += (p.retinue || 0) * 3; // maiyet omuz omuza çarpışır
+  pw += (p.retinue || 0) * (hasPerk(p, "savas_ustasi") ? 5 : 3); // maiyet omuz omuza çarpışır (Savaş Ustası saflarını sıklaştırır)
   if (p.childhood === "canli") pw += 2; // canlı çocukluk: ömür boyu dinç beden
   if (p.temperament === "yigit") pw += 1; // yiğit mizaç: doğuştan cenkçi damar
-  if (hasPerk(p, "cevik")) pw += 3;
-  if (hasPerk(p, "nisanci")) pw += 5;
+  if (hasPerk(p, "kalkanli")) pw += 2; // K3 Kalkanlı: kalkan sırtı (ikincil); asıl etkisi düello hasarı ve cephe zırhı
   return pw;
 }
 // Kuşanılı zırhın toplam savunması (gövde + kalkan + miğfer + eldiven + çizme). Savaşta hasarı azaltır.
@@ -10761,6 +10767,7 @@ export function startBattleAttempt(prev: GameState): GameState {
 export function applyBattleOutcome(prev: GameState, id: string, won: boolean, finalHp: number): GameState {
   const s = clone(prev); const p = s.player; const e = ENCOUNTERS.find((x) => x.id === id);
   if (!e || p.dead || !Number.isFinite(finalHp)) return s;
+  if (!efsaneAcik(p, e)) return s; // efsane kapısı motor tarafında da (Pehlivan şartı 25 şöhret indirir)
   if (p.battle_award_turn === s.turn) return s; // çekirdek kapısı (UI'dan bağımsız): sonuç ayda bir kez uygulanır
   p.battle_award_turn = s.turn;
   p.battle_turn = s.turn; // giriş kilidi kurulmamışsa (eski akış) burada da kurulur — çifte güvence
@@ -10772,7 +10779,7 @@ export function applyBattleOutcome(prev: GameState, id: string, won: boolean, fi
   }
   if (won) {
     let reward = Math.round(e.reward * inflationFactor(s)); // ödül çağın parasıyla — geç oyunda dövüş anlamsız kalmasın
-    if (hasPerk(p, "savas_ustasi")) reward = Math.round(reward * 1.5);
+    if (hasPerk(p, "savas_ustasi")) reward = Math.round(reward * 1.2); // ikincil
     p.money += reward; unEkle(p, "fame", e.fame); unEkle(p, "honor", e.honor);
     unEkle(p, "fear", Math.round(e.fame / 2));
     bumpNam(p, "mert", 6);
@@ -11433,7 +11440,9 @@ function ikilemKisisi(s: GameState, id: string, delta: Delta) {
   push(s, "olay", `O gün karşındaki: ${kisiAdi(k, "tr")}. ${iyi ? "Bu iyiliği unutmayacak." : "Bunu unutmayacak."}`, "kişisel", false, { k: iyi ? "ikilem.kisiIyi" : "ikilem.kisiKotu", p: [knParam(k)] });
 }
 
-// ── Beceri Ağacı — 4 dal (savaş/ticaret/zanaat/sosyal), her dalda 3/6/9'da perk seçimi ──
+// ── Beceri Ağacı 2.0 (K3) — 4 dal × 4 kademe (beceri 4/8/12/16), her kademede 2 seçenekten biri ──
+// Her hünerin türü: "secenek" yeni bir eylem/kapı açar, "zar" bir zara görünür ek kalem verir (şans dökümünde hüner adıyla),
+// "sistem" bir sistemin kuralını değiştirir. Düz +% yalnız ikincildir. Dal tamamlanınca (4. kademe) kalıcı unvan; bir ömre iki ustalık.
 export type SkillKey = keyof Skills;
 export const SKILL_META: { key: SkillKey; name: string; icon: string; blurb: string }[] = [
   { key: "combat",   name: "Savaş",   icon: "crossed-swords", blurb: "Kılıç, kalkan ve cesaret." },
@@ -11441,59 +11450,107 @@ export const SKILL_META: { key: SkillKey; name: string; icon: string; blurb: str
   { key: "crafting", name: "Zanaat",  icon: "anvil",          blurb: "El emeği, göz nuru." },
   { key: "social",   name: "Sosyal",  icon: "lyre",           blurb: "Söz, saygı ve nüfuz." },
 ];
-export interface Perk { id: string; tree: SkillKey; tier: number; name: string; desc: string; }
-// Her dal için 3 kademe (3/6/9), her kademede 2 seçenek.
+export type HunerTur = "secenek" | "zar" | "sistem";
+export interface Perk { id: string; tree: SkillKey; tier: number; tur: HunerTur; name: string; desc: string; }
+// tier: 1–4 (eski 3/6/9 kademeleri 1/2/3'e eşlendi; kayıtta yalnız id tutulduğundan eski hünerler olduğu gibi korunur).
 export const PERKS: Perk[] = [
   // SAVAŞ
-  { id: "cevik",      tree: "combat", tier: 3, name: "Çevik",         desc: "Savaş gücün +3." },
-  { id: "kalkanli",   tree: "combat", tier: 3, name: "Kalkanlı",      desc: "Çatışmada aldığın hasar %25 azalır." },
-  { id: "nisanci",    tree: "combat", tier: 6, name: "Nişancı",       desc: "Savaş gücün +5." },
-  { id: "kan_donduran",tree:"combat", tier: 6, name: "Kan Donduran",  desc: "Gözdağı her zaman tutar, korku kazancın artar." },
-  { id: "savas_ustasi",tree:"combat", tier: 9, name: "Savaş Ustası",  desc: "Çatışma ödülleri %50 artar." },
-  { id: "yilmaz",     tree: "combat", tier: 9, name: "Yılmaz",        desc: "Zafer kazandığında sağlığın 5'in altına düşmez." },
+  { id: "cevik",        tree: "combat", tier: 1, tur: "zar",     name: "Çevik",          desc: "Yol olayında güç ve dayanıklılık sınamasına +2 kalem; düelloda niyet okuma +%8." },
+  { id: "kalkanli",     tree: "combat", tier: 1, tur: "sistem",  name: "Kalkanlı",       desc: "Düelloda alınan hasar −%25, cephede zırhın +3; savaş gücün +2." },
+  { id: "nisanci",      tree: "combat", tier: 2, tur: "zar",     name: "Nişancı",        desc: "Yol olaylarına ve suç zarına +2 kalem." },
+  { id: "kan_donduran", tree: "combat", tier: 2, tur: "zar",     name: "Kan Donduran",   desc: "Gözdağı zarına +3 kalem; korku kazancın artar." },
+  { id: "savas_ustasi", tree: "combat", tier: 3, tur: "sistem",  name: "Savaş Ustası",   desc: "Maiyetinin her eri savaş gücüne +5 katar (3 yerine); çatışma ödülü +%20." },
+  { id: "yilmaz",       tree: "combat", tier: 3, tur: "sistem",  name: "Yılmaz",         desc: "Yaralanma ihtimalin yarıya iner; zaferde sağlığın 5'in altına düşmez." },
+  { id: "pehlivan",     tree: "combat", tier: 4, tur: "secenek", name: "Pehlivan",       desc: "Efsane rakiplere 25 şöhret erken meydan okuyabilirsin." },
+  { id: "sancaktar",    tree: "combat", tier: 4, tur: "sistem",  name: "Sancaktar",      desc: "Cephede savaş becerin +4, zırhın +2 sayılır." },
   // TİCARET
-  { id: "pazarlikci", tree: "trade",  tier: 3, name: "Pazarlıkçı",    desc: "Alışta %10 indirim." },
-  { id: "dilbaz",     tree: "trade",  tier: 3, name: "Dilbaz Tâcir",  desc: "Satışta %25 fazla akçe." },
-  { id: "keskin_goz", tree: "trade",  tier: 6, name: "Keskin Göz",    desc: "Fırsat ödülleri %30 artar." },
-  { id: "guvenli_kervan",tree:"trade",tier: 6, name: "Güvenli Kervan",desc: "Tüccar lonca görevleri %50 fazla kazandırır." },
-  { id: "tuccar_prensi",tree:"trade", tier: 9, name: "Tüccar Prensi", desc: "Mülk gelirin %30 artar." },
-  { id: "tefeci",     tree: "trade",  tier: 9, name: "Tefeci",        desc: "Çalışma kazancın %20 artar." },
+  { id: "pazarlikci",   tree: "trade",  tier: 1, tur: "zar",     name: "Pazarlıkçı",     desc: "Pazarlık zarına +2 kalem; alışta %5 indirim." },
+  { id: "dilbaz",       tree: "trade",  tier: 1, tur: "sistem",  name: "Dilbaz Tâcir",   desc: "Blöf pazarlığın şansı az kırılır; satışta +%10." },
+  { id: "keskin_goz",   tree: "trade",  tier: 2, tur: "sistem",  name: "Keskin Göz",     desc: "Kervan kârında kötü pazar sürprizi olmaz; fırsat ödülü +%10." },
+  { id: "guvenli_kervan",tree: "trade", tier: 2, tur: "zar",     name: "Güvenli Kervan", desc: "Kervan baskın zarına karşı +2 kalem; tüccar lonca görevi +%20." },
+  { id: "tuccar_prensi",tree: "trade",  tier: 3, tur: "sistem",  name: "Tüccar Prensi",  desc: "Kervan kârında şehirler arası fiyat farkı 1,5 kat işler; mülk geliri +%10." },
+  { id: "tefeci",       tree: "trade",  tier: 3, tur: "sistem",  name: "Tefeci",         desc: "Verdiğin borçlar %15 fazlasıyla ve daha sık döner; 5 alacak tutabilirsin." },
+  { id: "kervanbasi",   tree: "trade",  tier: 4, tur: "sistem",  name: "Kervanbaşı",     desc: "Kervan baskınında kaybın yarıya iner, savunman +6." },
+  { id: "sarraf",       tree: "trade",  tier: 4, tur: "sistem",  name: "Sarraf",         desc: "Sarraf faizin aylık 1 puan düşer, kredi tavanın +%50." },
   // ZANAAT
-  { id: "becerikli",  tree: "crafting",tier:3, name: "Becerikli",     desc: "Çalışma kazancın %15 artar." },
-  { id: "tutumlu",    tree: "crafting",tier:3, name: "Tutumlu",       desc: "Yemek 10 fazla tokluk verir." },
-  { id: "usta_eli",   tree: "crafting",tier:6, name: "Usta Eli",      desc: "Çalışma kazancın ek %20 artar." },
-  { id: "tamirci",    tree: "crafting",tier:6, name: "Tamirci",       desc: "Mülk gelirin %15 artar." },
-  { id: "basyapit",   tree: "crafting",tier:9, name: "Başyapıt",      desc: "Çalışma kazancın ek %25 artar." },
-  { id: "mucit",      tree: "crafting",tier:9, name: "Mucit",         desc: "Mektepte her çalışma puan kazandırır." },
+  { id: "becerikli",    tree: "crafting",tier: 1, tur: "zar",    name: "Becerikli",      desc: "İş olayı zarına +2 kalem; çalışma kazancı +%5." },
+  { id: "tutumlu",      tree: "crafting",tier: 1, tur: "sistem", name: "Tutumlu",        desc: "Açlığın yavaş düşer; yemek 10 fazla tokluk verir." },
+  { id: "usta_eli",     tree: "crafting",tier: 2, tur: "zar",    name: "Usta Eli",       desc: "İmza eylemi zarına +2 kalem; çalışma kazancı +%5." },
+  { id: "tamirci",      tree: "crafting",tier: 2, tur: "sistem", name: "Tamirci",        desc: "Mülk onarımı yarı fiyata, aşınma yarı hızda; mülk geliri +%5." },
+  { id: "basyapit",     tree: "crafting",tier: 3, tur: "sistem", name: "Başyapıt",       desc: "Atölyede kalite zarında becerin +4 sayılır." },
+  { id: "mucit",        tree: "crafting",tier: 3, tur: "secenek",name: "Mucit",          desc: "Atölyede iki yeni tarif açılır: Demir Miğfer ve Büyük Kalkan." },
+  { id: "pir_eli",      tree: "crafting",tier: 4, tur: "secenek",name: "Pîr Eli",        desc: "Çırak yetiştirmek 35 yaşında açılır; çırağın 1,5 kat hızlı yetişir." },
+  { id: "hassa",        tree: "crafting",tier: 4, tur: "sistem", name: "Hassa Ustası",   desc: "Atölyeye 4 sipariş teklifi gelir, sipariş ücreti +%25." },
   // SOSYAL
-  { id: "dil_dokme",  tree: "social", tier: 3, name: "Dil Dökme",     desc: "Sohbette ilişki kazancın %50 artar." },
-  { id: "hosgoru",    tree: "social", tier: 3, name: "Hoşgörü",       desc: "Sadaka şeref kazancını artırır." },
-  { id: "karizmatik", tree: "social", tier: 6, name: "Karizmatik",    desc: "Evlilik teklifin ve loncaya katılımın kolaylaşır." },
-  { id: "sohret_avcisi",tree:"social",tier: 6, name: "Şöhret Avcısı", desc: "Ziyafet şöhret kazancını artırır." },
-  { id: "diplomat",   tree: "social", tier: 9, name: "Diplomat",      desc: "Tüm itibar eylemleri %50 daha etkili." },
-  { id: "lider",      tree: "social", tier: 9, name: "Lider",         desc: "Lonca görev itibarın %50 artar." },
+  { id: "dil_dokme",    tree: "social", tier: 1, tur: "zar",     name: "Dil Dökme",      desc: "Flört ve dedikodu zarına +2 kalem; sohbette ilişki +%20." },
+  { id: "hosgoru",      tree: "social", tier: 1, tur: "sistem",  name: "Hoşgörü",        desc: "Cevapsız kalan teklifler kırgınlık doğurmaz; sadaka şerefi +3." },
+  { id: "karizmatik",   tree: "social", tier: 2, tur: "zar",     name: "Karizmatik",     desc: "Kur ve görücü zarına +2 kalem; loncaya katılım eşiği −%20." },
+  { id: "sohret_avcisi",tree: "social", tier: 2, tur: "sistem",  name: "Şöhret Avcısı",  desc: "Ziyafet 25 akçeye kurulur; ziyafet şöhreti +3." },
+  { id: "diplomat",     tree: "social", tier: 3, tur: "sistem",  name: "Diplomat",       desc: "Hane teklifin reddedilse de hane küsmez, itibarın düşmez; kabul +%10." },
+  { id: "lider",        tree: "social", tier: 3, tur: "sistem",  name: "Lider",          desc: "Maiyet ücreti yarıya iner; lonca görev itibarı +%25." },
+  { id: "gonul_eri",    tree: "social", tier: 4, tur: "zar",     name: "Gönül Eri",      desc: "Kur, görücü, flört ve dedikodu zarlarına +1 kalem." },
+  { id: "kethuda",      tree: "social", tier: 4, tur: "sistem",  name: "Kethüda",        desc: "Her yıl küs olduğun kişiler yumuşar (görüş +5, en çok sıfıra)." },
 ];
 export function perkById(id: string): Perk | undefined { return PERKS.find((p) => p.id === id); }
-export function hasPerk(p: Player, id: string): boolean { return p.perks.includes(id); }
+export function hasPerk(p: Player, id: string): boolean { return !!p.perks?.includes(id); }
 
-// Beceri seviyesi: her 100 xp = 1 seviye (maks 10).
-export function skillLevel(xp: number): number { return Math.max(0, Math.min(10, Math.floor(xp / 100))); }
-const SKILL_TIERS = [3, 6, 9];
-// Bir dalda hak edilmiş ama henüz seçilmemiş perk kademesi var mı?
-export function pendingPerkTier(p: Player, tree: SkillKey): number | null {
-  const lvl = p.skills[tree];
-  for (const t of SKILL_TIERS) {
-    if (lvl >= t) {
-      const chosen = p.perks.some((id) => { const pk = perkById(id); return pk && pk.tree === tree && pk.tier === t; });
-      if (!chosen) return t;
-    }
-  }
+// Beceri seviyesi: 1–10 her seviye 100 XP, 11–20 her seviye 150 XP (tavan 20; 20 = 2500 XP).
+export const BECERI_TAVAN = 20;
+export function skillLevel(xp: number): number { return xp < 1000 ? Math.max(0, Math.floor(xp / 100)) : Math.min(BECERI_TAVAN, 10 + Math.floor((xp - 1000) / 150)); }
+export function skillXpForLevel(n: number): number { return n <= 10 ? n * 100 : 1000 + (n - 10) * 150; }
+// Seviye içi ilerleme (0..1; tavanda 1) — ekranlar için.
+export function skillProgress(xp: number): number { const l = skillLevel(xp); if (l >= BECERI_TAVAN) return 1; const a = skillXpForLevel(l), b = skillXpForLevel(l + 1); return Math.max(0, Math.min(1, (xp - a) / (b - a))); }
+export const HUNER_ESIK = [4, 8, 12, 16];
+// Niyet bağı: aktif niyetin dalında kademe eşiği bir seviye erken açılır (ilim niyetinin dalı yok).
+export function niyetDali(n?: NiyetId): SkillKey | undefined { return n ? NIYETLER.find((x) => x.id === n)?.beceri : undefined; }
+export function kademeEsigi(tree: SkillKey, tier: number, niyet?: NiyetId): number { return HUNER_ESIK[tier - 1] - (niyetDali(niyet) === tree ? 1 : 0); }
+function kademeSecili(p: Player, tree: SkillKey, tier: number): boolean { return (p.perks || []).some((id) => { const pk = perkById(id); return !!pk && pk.tree === tree && pk.tier === tier; }); }
+// Tamamlanan dallar (4. kademe seçilmiş) → kalıcı unvan.
+export function hunerUnvanlari(p: Player): SkillKey[] { return SKILL_META.map((m) => m.key).filter((k) => kademeSecili(p, k, 4)); }
+export const USTALIK_SINIRI = 2; // "bir ömre iki ustalık sığar": üçüncü dalın 4. kademesi kilitli
+export function ustalikDolu(p: Player, tree: SkillKey): boolean { return !kademeSecili(p, tree, 4) && hunerUnvanlari(p).length >= USTALIK_SINIRI; }
+export type HunerKilit = { tur: "beceri"; esik: number } | { tur: "onceki"; tier: number } | { tur: "ustalik" } | null;
+// Bir kademenin seçim durumu: null = seçilebilir ya da seçilmiş; aksi hâlde kilit nedeni.
+export function kademeKilidi(p: Player, tree: SkillKey, tier: number, niyet?: NiyetId): HunerKilit {
+  if (kademeSecili(p, tree, tier)) return null;
+  const esik = kademeEsigi(tree, tier, niyet);
+  if ((p.skills?.[tree] || 0) < esik) return { tur: "beceri", esik };
+  for (let t = 1; t < tier; t++) if (!kademeSecili(p, tree, t)) return { tur: "onceki", tier: t };
+  if (tier === 4 && ustalikDolu(p, tree)) return { tur: "ustalik" };
   return null;
 }
-export function pendingPerkCount(p: Player): number {
-  // Dal değil KADEME sayar: seviye 9 + hiç hüner seçilmemiş dalda 3 bekleyen hak vardır — rozet eksik saymasın.
-  return SKILL_META.reduce((n, m) => n + SKILL_TIERS.filter((t) => p.skills[m.key] >= t && !p.perks.some((id) => { const pk = perkById(id); return pk && pk.tree === m.key && pk.tier === t; })).length, 0);
+// Bir dalda hak edilmiş ama henüz seçilmemiş ilk kademe (1–4).
+export function pendingPerkTier(p: Player, tree: SkillKey, niyet?: NiyetId): number | null {
+  for (let t = 1; t <= 4; t++) { if (kademeSecili(p, tree, t)) continue; return kademeKilidi(p, tree, t, niyet) ? null : t; }
+  return null;
 }
+export function pendingPerkCount(p: Player, niyet?: NiyetId): number {
+  // Dal değil KADEME sayar: beceri 12 + hiç hüner seçilmemiş dalda 3 bekleyen hak vardır.
+  return SKILL_META.reduce((n, m) => n + [1, 2, 3, 4].filter((t) => !kademeSecili(p, m.key, t) && (p.skills?.[m.key] || 0) >= kademeEsigi(m.key, t, niyet) && !(t === 4 && ustalikDolu(p, m.key))).length, 0);
+}
+// ── Hüner zar kalemleri: her zar noktası bir "alan" adıyla sorar; hüner adı (ve dal unvanı) şans dökümünde görünür kalem olur.
+export type HunerAlan = "yol" | "suc" | "gozdagi" | "pazarlik" | "kervan" | "is" | "imza" | "ders" | "sinav" | "kur" | "gorucu" | "flort" | "dedikodu";
+const HUNER_ZAR: Record<string, { alan: HunerAlan[]; deger: number; stat?: (keyof Stats)[] }> = {
+  cevik: { alan: ["yol"], deger: 2, stat: ["strength", "stamina"] },
+  nisanci: { alan: ["yol", "suc"], deger: 2 },
+  kan_donduran: { alan: ["gozdagi"], deger: 3 },
+  pazarlikci: { alan: ["pazarlik"], deger: 2 },
+  guvenli_kervan: { alan: ["kervan"], deger: 2 },
+  becerikli: { alan: ["is"], deger: 2 },
+  usta_eli: { alan: ["imza"], deger: 2 },
+  dil_dokme: { alan: ["flort", "dedikodu"], deger: 2 },
+  karizmatik: { alan: ["kur", "gorucu"], deger: 2 },
+  gonul_eri: { alan: ["kur", "gorucu", "flort", "dedikodu"], deger: 1 },
+};
+const DAL_ALAN: Record<SkillKey, HunerAlan[]> = { combat: ["yol", "suc", "gozdagi"], trade: ["pazarlik", "kervan"], crafting: ["is", "imza"], social: ["kur", "gorucu", "flort", "dedikodu"] };
+export function hunerKalemleri(p: Player, alan: HunerAlan, stat?: keyof Stats): ZarKalemi[] {
+  const out: ZarKalemi[] = [];
+  for (const id of p.perks || []) { const z = HUNER_ZAR[id]; if (z && z.alan.includes(alan) && (!z.stat || (stat && z.stat.includes(stat)))) out.push({ etiket: "perk." + id + ".l", deger: z.deger }); }
+  for (const k of hunerUnvanlari(p)) if (DAL_ALAN[k].includes(alan)) out.push({ etiket: "huner.unvan." + k, deger: 1 });
+  return out;
+}
+// Zar dışı (eski oran formüllü) noktalar için aynı kalemlerin olasılık karşılığı: kalem başına ZAR_ADIM (0.08).
+export function hunerOranEki(p: Player, alan: HunerAlan, stat?: keyof Stats): number { return hunerKalemleri(p, alan, stat).reduce((a, k) => a + k.deger, 0) * 0.08; }
 // XP ekle; seviye atlarsa günlüğe işle (saf — clone edilmiş state üstünde çağrılır).
 function gainSkill(s: GameState, key: SkillKey, xp: number) {
   const p = s.player;
@@ -11506,22 +11563,34 @@ function gainSkill(s: GameState, key: SkillKey, xp: number) {
   if (after > before) {
     p.skills[key] = after;
     const m = SKILL_META.find((x) => x.key === key)!;
-    const perk = SKILL_TIERS.includes(after);
+    const n = aktifNiyet(s);
+    const perk = [1, 2, 3, 4].some((t) => { const e = kademeEsigi(key, t, n); return before < e && after >= e && !(t === 4 && ustalikDolu(p, key)); });
     push(s, "beceri", `${m.name} becerin ${after}. seviyeye yükseldi.${perk ? " Yeni bir hüner seçebilirsin!" : ""}`, "kişisel", false, { k: `ev.su.${key}${perk ? ".perk" : ""}`, p: [after] });
   } else {
     p.skills[key] = after;
   }
 }
-// Bir perk seç (kademe hak edilmişse).
+// Bir hüner seç (kademe hak edilmişse; sıra, niyet bağı ve iki ustalık sınırı motor tarafında da denetlenir).
 export function choosePerk(prev: GameState, id: string): GameState {
   const s = clone(prev); const p = s.player; const pk = perkById(id);
   if (p.dead || !pk || hasPerk(p, id)) return s;
-  if (p.skills[pk.tree] < pk.tier) return s;
-  if (pendingPerkTier(p, pk.tree) !== pk.tier) return s; // bu kademe zaten doldurulmuş
+  if (pendingPerkTier(p, pk.tree, aktifNiyet(s)) !== pk.tier) return s; // kademe açık değil ya da zaten doldurulmuş
   p.perks.push(id);
-  push(s, "hüner", `Yeni hüner: ${pk.name} — ${pk.desc}`, "kişisel", true, { k: "evj.perk", p: [pk.name, pk.desc] });
+  push(s, "hüner", `Yeni hüner: ${pk.name} — ${pk.desc}`, "kişisel", true, { k: "evj.perk", p: [{ tk: "perk." + id + ".l" }, { tk: "huner." + id + ".e" }] });
+  if (pk.tier === 4) {
+    const m = SKILL_META.find((x) => x.key === pk.tree)!;
+    push(s, "lakap", `${m.name} dalında ustalığın tamamlandı: adın artık "${HUNER_UNVAN_TR[pk.tree]}" diye anılıyor.`, "kişisel", true, { k: "huner.log.unvan", p: [{ tk: "skill." + pk.tree }, { tk: "huner.unvan." + pk.tree }] });
+  }
   return s;
 }
+export const HUNER_UNVAN_TR: Record<SkillKey, string> = { combat: "Gazi", trade: "Bezirgân", crafting: "Usta-i Kâmil", social: "Ahi Baba" };
+// Kethüda: yılda bir küskünlükler yumuşar (yalnız eksi görüşler; sıfırı geçmez).
+function kethudaTiki(s: GameState) {
+  const p = s.player; if (p.dead || !hasPerk(p, "kethuda")) return;
+  for (const [id, v] of Object.entries(s.relationships || {})) if (v < 0) s.relationships[id] = Math.min(0, v + 5);
+}
+// Hüner etkileri — tek noktada okunur (her hünerin uygulama yeri rg "huner" ile bulunur).
+export function becEtki(p: Player, k: SkillKey): number { return statEtki(p.skills?.[k] || 0); }
 
 // ── Hikâye yayları ──
 export function beginArc(prev: GameState, id: string): GameState {
@@ -11591,7 +11660,7 @@ export function advanceArc(prev: GameState, choiceIdx: number, loc?: { result?: 
 
 // ── Rakip hanedanlar: oyuncunun gücü ve hanedanlara tavrı ──
 export function playerHousePower(p: Player): number {
-  return Math.round(p.fame + p.generation * 10 + p.properties.length * 6 + p.reputation / 2 + p.skills.combat);
+  return Math.round(p.fame + p.generation * 10 + p.properties.length * 6 + p.reputation / 2 + becEtki(p, "combat"));
 }
 // Bir hanedanın oyuncuya tavrı (-100..100): nam/itibar artırır, gurur+korku düşürür.
 export function houseAttitude(p: Player, house: { pride: number; trait: string }): number {
@@ -11762,20 +11831,22 @@ export function teklifSansi(s: GameState, npc: NPC, tur: "kur" | "gorucu" | "flo
   let tavan = 100;
   if (tur === "kur") {
     ekle("sans.taban", 25); ekle("sans.gorus", (relWith(s, npc.id) - 50) * 1.2); ekle("sans.sosyal", socialPresence(p) * 3);
-    if (hasPerk(p, "karizmatik")) ekle("sans.karizmatik", 20);
+    for (const k of hunerKalemleri(p, "kur")) ekle(k.etiket, k.deger * 8); // K3: Karizmatik/Gönül Eri/Ahi Baba (kalem başına 8 puan)
     const n = p.nam || ({} as Nam); const trust = ((n.mert || 0) + p.honor * 0.6 + (n.dindar || 0) * 0.4) / 100;
     const kt = ekle("sans.guven", recognition(s) * trust * 20) + ekle("sans.capkin", -(n.capkin || 0) / 100 * 12) + ekle("sans.korku", -dread(s) / 100 * 15) + ekle("sans.zalim", playerDominantNam(p) === "zalim" ? -18 : 0);
     if (kt > 25) ks.push({ k: "sans.sinir", v: 25 - kt }); else if (kt < -40) ks.push({ k: "sans.sinir", v: -40 - kt }); // ailelerin gözündeki itibar −40..+25
     tavan = 97;
   } else if (tur === "gorucu") {
     ekle("sans.taban", 42); ekle("sans.sosyal", socialPresence(p) * 4); ekle("sans.sohret", p.fame / 3.2);
-    if (hasPerk(p, "karizmatik")) ekle("sans.karizmatik", 15);
+    for (const k of hunerKalemleri(p, "gorucu")) ekle(k.etiket, k.deger * 8);
     tavan = 92;
   } else if (tur === "flort") {
     ekle("sans.taban", 35); ekle("sans.gorus", relWith(s, npc.id) - 15); ekle("sans.sosyal", socialPresence(p) * 4); ekle("sans.cekicilik", allureBonus(s) * 100);
+    for (const k of hunerKalemleri(p, "flort")) ekle(k.etiket, k.deger * 8);
     tavan = 90;
   } else {
-    ekle("sans.taban", 40); ekle("sans.beceri", (p.skills?.social || 0) * 5); ekle("sans.karizma", statEtki(p.stats.charisma) * 2);
+    ekle("sans.taban", 40); ekle("sans.beceri", becEtki(p, "social") * 5); ekle("sans.karizma", statEtki(p.stats.charisma) * 2);
+    for (const k of hunerKalemleri(p, "dedikodu")) ekle(k.etiket, k.deger * 8);
     tavan = 85;
   }
   const top = ks.reduce((a, x) => a + x.v, 0); const c = Math.max(0, Math.min(tavan, top));
@@ -11854,7 +11925,7 @@ export function throneOdds(s: GameState): number {
   // saygınlık) beceri tavanı 10 ve sabit katkılarla 0.9 tavanını her nitelikli oyuncuda doldurup
   // tahtı garanti %90'a çeviriyordu. Yeniden kalibre: sınırda iddia gerçek bir kumar (~%68),
   // baskın hanedan hâlâ avantajlı (~%84).
-  const odds = 0.30 + (dynastyPower(s) - topRival) / 260 + p.fame / 600 + p.skills.combat / 90 + (esteem(s) / 650);
+  const odds = 0.30 + (dynastyPower(s) - topRival) / 260 + p.fame / 600 + becEtki(p, "combat") / 90 + (esteem(s) / 650);
   return Math.max(0.18, Math.min(0.84, odds));
 }
 // Tahta iddia — sefer parası her hâlükârda harcanır; başarısızlık ağır bedel.
@@ -12341,7 +12412,7 @@ export function suppressPretender(prev: GameState): GameState {
   if (p.crown_action_turn === s.turn) return s; // ayda tek taht eylemi
   p.crown_action_turn = s.turn; p.money -= PRETENDER_SUPPRESS_COST;
   const h = ensureRivals(s).find((x) => x.id === s.pretender!.houseId); if (!h) { s.pretender = null; return s; }
-  if (gameRandom(s) < Math.min(0.9, 0.45 + p.skills.combat * 0.03 + crownAuthorityOf(p) / 200 + Math.min(0.09, (s.allied_houses?.length || 0) * 0.03))) { // müttefikler iddiacıya karşı da yanında
+  if (gameRandom(s) < Math.min(0.9, 0.45 + becEtki(p, "combat") * 0.03 + crownAuthorityOf(p) / 200 + Math.min(0.09, (s.allied_houses?.length || 0) * 0.03))) { // müttefikler iddiacıya karşı da yanında
     s.pretender!.strength = Math.max(0, s.pretender!.strength - 28); h.power = Math.max(20, h.power - 8); p.fear = clamp100(p.fear + 3);
     if (s.pretender!.strength <= 0) { s.pretender = null; p.crownAuthority = clamp100(crownAuthorityOf(p) + 8); push(s, "taht", `${h.name} sindirildi; iddia söndü.`, "kişisel", true, { k: "crown.pretCrushed", p: [{ hn: h.nameIdx }] }); }
     else push(s, "taht", `${h.name} destekçilerine gözdağı verdin; iddia geriledi.`, "kişisel", false, { k: "crown.pretSupWin", p: [{ hn: h.nameIdx }] });
@@ -12476,7 +12547,7 @@ export function canLaunchCampaign(s: GameState, target?: string): boolean {
 }
 export function campaignOdds(s: GameState, target?: string): number {
   const p = s.player;
-  const odds = 0.34 + (dynastyPower(s) - 140) / 500 + crownAuthorityOf(p) / 450 + p.skills.combat / 70 + Math.min(0.09, (s.allied_houses?.length || 0) * 0.04); // müttefik haneler sancağın altına atlı yollar
+  const odds = 0.34 + (dynastyPower(s) - 140) / 500 + crownAuthorityOf(p) / 450 + becEtki(p, "combat") / 70 + Math.min(0.09, (s.allied_houses?.length || 0) * 0.04); // müttefik haneler sancağın altına atlı yollar
   const defender = target ? s.realm?.find((x) => x.id === target) : undefined;
   const resistance = defender ? (1 - defender.tension / 100) * 0.08 + factionTrait(defender.holder).aggression * 0.04 : 0;
   return Math.max(0.15, Math.min(0.88, odds + crownPolicyOf(p).war - resistance));
@@ -12642,7 +12713,7 @@ function crownTick(s: GameState) {
       s.pretender.strength = Math.min(100, s.pretender.strength + 2 + (crownAuthorityOf(p) < 50 ? 2 : 0));
       if (s.pretender.strength >= 100) {
         // İç savaş: iddia doruğa vardı — tek hamlede çözülür.
-        const win = gameRandom(s) < Math.max(0.15, Math.min(0.85, 0.5 + (crownAuthorityOf(p) - 50) / 100 + p.skills.combat / 40 - h.power / 400));
+        const win = gameRandom(s) < Math.max(0.15, Math.min(0.85, 0.5 + (crownAuthorityOf(p) - 50) / 100 + becEtki(p, "combat") / 40 - h.power / 400));
         if (win) {
           s.pretender = null; h.power = Math.max(20, h.power - 30);
           p.fame = clamp100(p.fame + 10); p.crownAuthority = clamp100(crownAuthorityOf(p) + 15);
@@ -12658,7 +12729,7 @@ function crownTick(s: GameState) {
   }
   // Otorite dibe vurursa: isyan — bastıramazsan tacını yitirirsin (nadir, çok düşük otoritede).
   if (crownAuthorityOf(p) < 12 && gameRandom(s) < 0.05) { // tur-içi olaylardan sonraki güncel otorite
-    if (p.skills.combat + p.fame / 2 > 30 && gameRandom(s) < 0.5) {
+    if (becEtki(p, "combat") + p.fame / 2 > 30 && gameRandom(s) < 0.5) {
       p.crownAuthority = 30; push(s, "taht", `Büyük bir isyan patladı; güçbela bastırdın, tahtı korudun.`, "kişisel", true, { k: "crown.rebellionHold" });
     } else {
       p.crowned = false; p.crownAuthority = undefined; p.appointedGov = {};
@@ -12781,7 +12852,7 @@ function courtTick(s: GameState) {
 }
 
 // ── Zanaat / üretim zincirleri — hammaddeyi mamule çevir ──
-export interface Recipe { id: string; out: string; outQty: number; inputs: Record<string, number>; minSkill: number; prof?: string; } // prof: yalnız o mesleğin ustalık tarifi
+export interface Recipe { id: string; out: string; outQty: number; inputs: Record<string, number>; minSkill: number; prof?: string; perk?: string; } // prof: yalnız o mesleğin ustalık tarifi; perk: yalnız o hünerle açılan tarif (K3 Mucit)
 export const RECIPES: Recipe[] = [
   // ── Meslek ustalık tarifleri: zanaat kolu olmayan mesleklere kendi tezgâhı (değer öz-kullanımda; arbitraj kapalı) ──
   { id: "turfanda",    out: "turfanda",    outQty: 1, inputs: { bugday: 2 },      minSkill: 1, prof: "çiftçi" },
@@ -12801,10 +12872,14 @@ export const RECIPES: Recipe[] = [
   { id: "yay",         out: "yay",         outQty: 1, inputs: { kereste: 1, deri: 1 }, minSkill: 2 },
   { id: "savas_balta", out: "savas_balta", outQty: 1, inputs: { demir: 4, kereste: 1 }, minSkill: 5 },
   { id: "zincir_zirh", out: "zincir_zirh", outQty: 1, inputs: { demir: 4 }, minSkill: 5 },
+  // ── K3 Mucit hünerinin açtığı tarifler (çıktılar çarşıda satılan mevcut eşyalar; tezgâh kuralları aynı) ──
+  { id: "demir_migfer", out: "demir_migfer", outQty: 1, inputs: { demir: 2, deri: 1 }, minSkill: 8, perk: "mucit" },
+  { id: "buyuk_kalkan", out: "buyuk_kalkan", outQty: 1, inputs: { kereste: 3, demir: 2 }, minSkill: 10, perk: "mucit" },
 ];
 export function canCraft(p: Player, r: Recipe): boolean {
   if (inJail(p)) return false; // zindanda tezgâh yok
   if (r.prof && p.profession !== r.prof) return false; // ustalık tarifi: meslek dışına kapalı
+  if (r.perk && !hasPerk(p, r.perk)) return false; // hüner tarifi: hüner yoksa kapalı
   if (p.skills.crafting < r.minSkill) return false;
   return Object.entries(r.inputs).every(([id, q]) => (p.inventory[id] || 0) >= q);
 }
@@ -12816,13 +12891,13 @@ export function workshopOrderOffers(s: GameState): WorkshopOrderOffer[] {
   if (p.dead || p.age < 13 || inJail(p) || s.workshopOrder || p.workshop_order_turn === s.turn) return [];
   const city = p.location_name, goods = marketGoods(locSeed(city));
   return RECIPES.flatMap((r) => {
-    if (p.skills.crafting < r.minSkill || (r.prof && r.prof !== p.profession)) return [];
+    if (p.skills.crafting < r.minSkill || (r.prof && r.prof !== p.profession) || (r.perk && !hasPerk(p, r.perk))) return [];
     const item = goods.find((g) => g.id === r.out);
     if (!item) return [];
     const scarcity = goodPriceMult(s, r.out);
-    const pay = Math.max(1, Math.round(marketPrice(item.sell, s.econ || 1) * scarcity * 0.85));
+    const pay = Math.max(1, Math.round(marketPrice(item.sell, s.econ || 1) * scarcity * 0.85 * (hasPerk(p, "hassa") ? 1.25 : 1))); // K3 Hassa Ustası: ücret +%25
     return [{ recipeId: r.id, good: r.out, city, pay, scarcity, inputs: { ...r.inputs } }];
-  }).sort((a, b) => b.scarcity - a.scarcity || b.pay - a.pay || (a.recipeId < b.recipeId ? -1 : a.recipeId > b.recipeId ? 1 : 0)).slice(0, 3);
+  }).sort((a, b) => b.scarcity - a.scarcity || b.pay - a.pay || (a.recipeId < b.recipeId ? -1 : a.recipeId > b.recipeId ? 1 : 0)).slice(0, hasPerk(p, "hassa") ? 4 : 3); // K3 Hassa Ustası: 4 teklif
 }
 export function acceptWorkshopOrder(prev: GameState, recipeId: string): GameState {
   const s = clone(prev), p = s.player;
@@ -12934,7 +13009,7 @@ export function craft(prev: GameState, id: string): GameState {
   let qTier: QualityTier | "" = "";
   if (QUALITY_GOODS.has(r.out)) {
     for (let k = 0; k < r.outQty; k++) {
-      const tier = rollCraftQuality(p.skills.crafting);
+      const tier = rollCraftQuality(becEtki(p, "crafting") + (hasPerk(p, "basyapit") ? 4 : 0)); // K3 Başyapıt: kalite zarında +4
       addQuality(p, r.out, tier);
       if (k === 0 && tier !== "siradan") { qNote = ` — ${QUALITY_LABEL[tier]} işçilik!`; qTier = tier; }
     }
@@ -13019,7 +13094,7 @@ function kirKok(s: GameState, n?: number) { const ev = s.history[s.history.lengt
 // Teklifin rakamları: konacak pay (nakit+emanetin %40'ı ya da %10'u) ve görünür şans (stat 0–10).
 export function kirilmaTeklif(s: GameState, ikinci = false): { buyuk: number; kucuk: number; sans: number } {
   const p = s.player, l = likit(p);
-  const sans = Math.max(20, Math.min(80, Math.round(38 + 4 * (p.skills?.trade || 0) + 1.5 * effEtki(p, "intelligence") + (ikinci ? 10 : 0))));
+  const sans = Math.max(20, Math.min(80, Math.round(38 + 4 * becEtki(p, "trade") + 1.5 * effEtki(p, "intelligence") + (ikinci ? 10 : 0))));
   return { buyuk: Math.round(l * 0.4), kucuk: Math.round(l * 0.1), sans };
 }
 function yoldaOrtaklik(p: Player): Kirilma | undefined { return (p.kirilmalar || []).find((k) => k.id === "ortaklik" && k.faz === "yolda" && (k.yol === "buyuk" || k.yol === "kucuk")); }
@@ -13244,6 +13319,13 @@ export function migrate(s: GameState): GameState {
   if (!p.skills) p.skills = { combat: 0, trade: 0, crafting: 0, social: 0 };
   if (!p.skill_xp) p.skill_xp = { combat: 0, trade: 0, crafting: 0, social: 0 };
   if (!p.perks) p.perks = [];
+  // K3 göçü: hüner kaydı yalnız id'dir — eski 3/6/9 kademe hünerleri yeni 1/2/3. kademede olduğu gibi kalır (silinmez).
+  // Beceri tavanı 20: seviye XP'den yeni eğriyle yeniden okunur (1–10 ×100, 11–20 ×150); kayıtlı seviye hiç düşmez.
+  p.perks = Array.isArray(p.perks) ? [...new Set((p.perks as unknown[]).filter((x): x is string => typeof x === "string"))] : [];
+  for (const k of ["combat", "trade", "crafting", "social"] as const) {
+    if (!Number.isFinite(p.skill_xp[k])) p.skill_xp[k] = 0;
+    p.skills[k] = Math.max(Math.min(BECERI_TAVAN, Number.isFinite(p.skills[k]) ? p.skills[k] : 0), skillLevel(p.skill_xp[k]));
+  }
   if (p.meslek_pirleri !== undefined) p.meslek_pirleri = Array.isArray(p.meslek_pirleri) ? [...new Set(p.meslek_pirleri.filter((x: unknown) => typeof x === "string" && PROFS.includes(x as string)))] : undefined;
   if (!p.injuries) p.injuries = [];
   if (!Number.isFinite(p.career_xp)) p.career_xp = 0;
