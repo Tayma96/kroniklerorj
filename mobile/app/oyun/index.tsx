@@ -20,6 +20,7 @@ import { currentCalendar } from "../../lib/calendar";
 import { MK, MkHero, MkIdentity, MkDecision, MkAlert, MkAlertChips, MkRecent, MkBookRow } from "../../lib/home-mockup-ui";
 import { MkKirilma, MkHal } from "../../lib/kirilma-ui";
 import { MkMektep } from "../../lib/mektep-kart-ui";
+import { MkUstaKapisi } from "../../lib/usta-kapisi-ui";
 import { AnaZemin } from "../../lib/sayfa/ana/zemin";
 import { AyOzeti, useAyFarki, sayi } from "../../lib/sayfa/ana/ay-ozeti";
 import { useSadeMod } from "../../lib/use-sade-mod";
@@ -436,7 +437,7 @@ export default function Dashboard() {
       )}
 
         </View>
-        <Animated.View entering={gir(2)}><MkHal /><MkKirilma /><MkMektep /><MkDecision /></Animated.View>
+        <Animated.View entering={gir(2)}><MkHal /><MkKirilma /><MkMektep /><MkUstaKapisi /><MkDecision /></Animated.View>
         {!p.dead && alert && <Animated.View entering={gir(3)}>
           <MkAlert icon={alert.icon} title={alert.title} sub={alert.sub} red={alert.tone !== C.gold} rtl={rtl} onPress={() => setSheet(alert.id)} />
           <MkAlertChips rtl={rtl} items={alerts.slice(1).map((a) => ({ key: a.id, icon: a.icon, title: a.title, red: a.tone !== C.gold, onPress: () => setSheet(a.id) }))} />

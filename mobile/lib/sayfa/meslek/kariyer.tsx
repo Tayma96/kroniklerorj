@@ -1,11 +1,11 @@
 // Kariyer sekmesi: peştamal merdiveni (çıraktan zirveye), meslek fırsatı ve meslekle yazılan ömür (usta → pir → şaheser).
 import { useState } from "react";
 import { View, Text, Pressable } from "react-native";
-import { professionById, careerTier, kariyerXp, sinavDurumu, hasProfAction, canProfAction, professionAction, profActionCooldownLeft, meslekYoluKademesi, meslekYoluIlerleme, MESLEK_YOLU_ESIK, meslekSaheserleri, neslinSaheseri, saheserBedeli, saheserYapabilir, saheserYap } from "../../game";
+import { professionById, careerTier, kariyerXp, sinavDurumu, ustalikSinavi, SINAV_ASAMALARI, aktifNiyet, niyetDali, meslekYoluGucu, meslekBecerisi, hasProfAction, canProfAction, professionAction, profActionCooldownLeft, meslekYoluKademesi, meslekYoluIlerleme, MESLEK_YOLU_ESIK, meslekSaheserleri, neslinSaheseri, saheserBedeli, saheserYapabilir, saheserYap } from "../../game";
 import { careerTitleL } from "../../locale-data";
-import type { SinavKartiVeri } from "../../kart3d";
+import { SansEtiketi } from "../../sans-etiketi";
 import { useGame } from "../../store";
-import { useI18n, applyParams } from "../../i18n";
+import { useI18n, applyParams, yuzdeL } from "../../i18n";
 import { hap } from "../../haptics";
 import { playTap } from "../../sound";
 import { GameIcon } from "../../icons";
@@ -28,8 +28,9 @@ function Dugum({ durum, icon, no }: { durum: Durum; icon: string; no: number }) 
 }
 
 // Peştamal merdiveni: her kademe bir düğüm, aralarındaki elmas bir peştamal sınavı.
-export function KariyerMerdiveni({ onSinav }: { onSinav: (v: SinavKartiVeri) => void }) {
-  const { state } = useGame();
+export function KariyerMerdiveni() {
+  const { state, apply } = useGame();
+  const [sonuc, setSonuc] = useState<boolean[] | null>(null); // son sınavın aşama sonuçları (aynı ekranda kalır)
   const { t, lang } = useI18n();
   const rtl = lang === "ar";
   if (!state) return null;
@@ -63,18 +64,20 @@ export function KariyerMerdiveni({ onSinav }: { onSinav: (v: SinavKartiVeri) => 
         </View>
       </View>
       {d && <SinavKutusu d={d} mevcut={unvanlar[kademe]} hedef={careerTitleL(p.profession, d.hedef * 30, lang, kadin)} rtl={rtl} kayit={(p.sinav_gecme || p.sinav_kalma) ? applyParams(t("ahi.record"), [p.sinav_gecme || 0, p.sinav_kalma || 0], lang) : ""}
-        onSinav={(hedefUnvan) => { hap("tap"); onSinav({ prof: p.profession, hedefUnvan, yollar: d.yollar, oranlar: d.oranlar }); }} />}
+        sonuc={sonuc} onSinav={() => { hap("tap"); playTap(); const r = ustalikSinavi(state); if (r.basari != null) { apply(() => r.state); setSonuc(r.asamalar || null); hap(r.basari ? "success" : "error"); } }} />}
+      {d && <Yukselis d={d} rtl={rtl} />}
       <Text style={[{ fontFamily: F.serif, fontSize: 14, lineHeight: 20, color: C.parchmentMuted, marginTop: 10 }, hiza(rtl)]}>{t("ahi.ladder")}</Text>
     </Panel>
   );
 }
 
 type SinavD = NonNullable<ReturnType<typeof sinavDurumu>>;
-// Sıradaki basamak: hizmet çubuğu, durum ve sınav düğmesi.
-function SinavKutusu({ d, mevcut, hedef, kayit, rtl, onSinav }: { d: SinavD; mevcut: string; hedef: string; kayit: string; rtl: boolean; onSinav: (hedefUnvan: string) => void }) {
+// Sıradaki basamak: hizmet çubuğu, durum, üç aşamanın şans etiketleri (dokununca kalemler) ve sınav düğmesi.
+function SinavKutusu({ d, mevcut, hedef, kayit, rtl, sonuc, onSinav }: { d: SinavD; mevcut: string; hedef: string; kayit: string; rtl: boolean; sonuc: boolean[] | null; onSinav: () => void }) {
   const { t, lang } = useI18n();
   const durum = d.zirve ? t("ahi.top") : d.hazir ? t("ahi.ready") : d.bekleAy > 0 ? applyParams(t("ahi.cool"), [d.bekleAy], lang) : applyParams(t("ahi.wait"), [d.hizmetAy], lang);
   const hizmet = Math.max(0, Math.min(30, 30 - d.hizmetAy));
+  const gk = (b: boolean) => t(b ? "ms.sinav.gecti" : "ms.sinav.kaldi");
   return (
     <View style={{ marginTop: 14, padding: 12, borderRadius: 8, borderWidth: 1, borderColor: d.hazir ? C.goldBright + "AA" : C.borderHi, backgroundColor: d.hazir ? "rgba(221,180,90,0.12)" : "rgba(12,8,4,0.55)" }}>
       {!d.zirve && <Etiket rtl={rtl}>{t("meslek.sonraki")}</Etiket>}
@@ -91,7 +94,35 @@ function SinavKutusu({ d, mevcut, hedef, kayit, rtl, onSinav }: { d: SinavD; mev
       </View>}
       <Text accessibilityLiveRegion="polite" style={[{ fontFamily: F.serifItalic, fontSize: 15, lineHeight: 22, color: d.hazir ? C.goldBright : C.parchmentDim, marginTop: 8 }, hiza(rtl)]}>{durum}</Text>
       {!!kayit && <Text style={[{ fontFamily: F.serif, fontSize: 14, lineHeight: 20, color: C.parchmentMuted, marginTop: 3 }, hiza(rtl)]}>{kayit}</Text>}
-      {d.hazir && <EylemDugmesi label={t("ahi.btn")} icon="medal" rtl={rtl} onPress={() => onSinav(hedef)} />}
+      {!d.zirve && <View style={{ marginTop: 10, gap: 6 }}>
+        <Text style={[{ fontFamily: F.serif, fontSize: 14, lineHeight: 20, color: C.parchmentMuted }, hiza(rtl)]}>{t("ms.sinav.kural")}</Text>
+        {d.asamalar.map((z, i) => <SansEtiketi key={SINAV_ASAMALARI[i]} zar={z} baslik={"ms.asama." + SINAV_ASAMALARI[i]} />)}
+        <Text style={[{ fontFamily: F.display, fontSize: 13.5, color: C.gold }, hiza(rtl)]}>{applyParams(t("ms.sinav.genel"), [yuzdeL(Math.round(d.genel * 100), lang)], lang)}</Text>
+      </View>}
+      {sonuc && <Text accessibilityLiveRegion="polite" style={[{ fontFamily: F.serif, fontSize: 14.5, lineHeight: 20, color: sonuc.filter(Boolean).length >= 2 ? C.sage : C.ember, marginTop: 8 }, hiza(rtl)]}>{applyParams(t("ms.sinav.sonuc"), sonuc.map(gk), lang)}</Text>}
+      {d.hazir && <EylemDugmesi label={t("ms.sinav.btn")} icon="medal" rtl={rtl} onPress={onSinav} />}
+    </View>
+  );
+}
+
+// Nasıl yükselirim: kalan hizmet / bekleyiş, becerinin kaynağı ve zirvede usta yolu.
+function Yukselis({ d, rtl }: { d: SinavD; rtl: boolean }) {
+  const { state } = useGame();
+  const { t, lang } = useI18n();
+  if (!state) return null;
+  const p = state.player, dom = meslekBecerisi(p.profession), niyet = aktifNiyet(state);
+  const niyetMetni = niyet && niyetDali(niyet) === dom ? t("niyet." + niyet) : "—";
+  const ilk = d.zirve ? t("ms.yuksel.zirve") : d.hazir ? t("ms.yuksel.hazir") : d.bekleAy > 0 ? applyParams(t("ms.yuksel.bekle"), [d.bekleAy], lang) : applyParams(t("ms.yuksel.hizmet"), [d.hizmetAy], lang);
+  const satir = (txt: string, icon: string) => <View style={{ flexDirection: yon(rtl), alignItems: "flex-start", gap: 8, marginTop: 6 }}>
+    <GameIcon name={icon} size={15} color={C.goldDim} />
+    <Text style={[{ flex: 1, fontFamily: F.serif, fontSize: 14.5, lineHeight: 21, color: C.parchmentDim }, hiza(rtl)]}>{txt}</Text>
+  </View>;
+  return (
+    <View accessible accessibilityRole="summary" style={{ marginTop: 12, paddingTop: 10, borderTopWidth: 1, borderTopColor: C.border }}>
+      <Etiket rtl={rtl}>{t("ms.yuksel.baslik")}</Etiket>
+      {satir(ilk, "hourglass")}
+      {satir(applyParams(t("ms.yuksel.beceri"), [t("skill." + dom), p.skills?.[dom] || 0, niyetMetni], lang), "book")}
+      {!d.zirve && satir(applyParams(t("ms.yol.guc"), [meslekYoluGucu(p)], lang) + " · " + t("my." + p.profession + ".n"), "scroll-open")}
     </View>
   );
 }

@@ -3,17 +3,17 @@ import { View, Text, ScrollView, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { professionById, sinavDurumu, ustalikSinavi, rakipAktif, rakipYarisi, rakipOrtaklikHazir, hasProfAction, canProfAction, meslekYoluKademesi, neslinSaheseri, meslekSaheserleri, saheserYapabilir, cirakAlabilir, cirakDersHazir, CIRAK_BEDEL } from "../../lib/game";
+import { professionById, ustaKapisiYasi, sinavDurumu, rakipAktif, rakipYarisi, rakipOrtaklikHazir, hasProfAction, canProfAction, meslekYoluKademesi, neslinSaheseri, meslekSaheserleri, saheserYapabilir, cirakAlabilir, cirakDersHazir, CIRAK_BEDEL } from "../../lib/game";
 import { SinavKartiModal, SinavKartiVeri } from "../../lib/kart3d";
 import { C, F, L } from "../../lib/theme";
-import { useI18n } from "../../lib/i18n";
+import { useI18n, applyParams } from "../../lib/i18n";
 import { hap } from "../../lib/haptics";
 import { playTap } from "../../lib/sound";
 import { BackLabel, Panel } from "../../lib/ui";
 import { MeslekFresk, Madalyon, Giris, Sekmeler, meslekSahnesi, type SekmeId } from "../../lib/sayfa/meslek/ortak";
 import { MeslekVitrini, KazancSeridi } from "../../lib/sayfa/meslek/vitrin";
 import { KariyerMerdiveni, FirsatKarti, OmurYolu } from "../../lib/sayfa/meslek/kariyer";
-import { RakipPaneli, CirakPaneli } from "../../lib/sayfa/meslek/lonca";
+import { RakipPaneli, CirakPaneli, LoncaPaneli } from "../../lib/sayfa/meslek/lonca";
 import { MeslekListesi } from "../../lib/sayfa/meslek/meslekler";
 
 export default function Meslek() {
@@ -21,7 +21,6 @@ export default function Meslek() {
   const router = useRouter();
   const { state, apply } = useGame();
   const { t, lang } = useI18n();
-  const [sinav, setSinav] = useState<SinavKartiVeri | null>(null); // açılışta dondurulur: sonuç gelince kademe değişse de kart kapanana dek aynı kalır
   const [yaris, setYaris] = useState<SinavKartiVeri | null>(null); // lonca bayrağı yarışı — aynı dondurma kuralı
   const [sekme, setSekme] = useState<SekmeId>("kariyer");
   const scroll = useRef<ScrollView>(null), sekmeY = useRef(0), kaydirY = useRef(0);
@@ -42,7 +41,7 @@ export default function Meslek() {
             <Panel>
               <View style={{ alignItems: "center", gap: 12, paddingVertical: 8 }}>
                 <Madalyon icon="hourglass" size={62} />
-                <Text style={{ fontFamily: F.serifItalic, fontSize: 17, lineHeight: 24, color: C.parchmentDim, textAlign: "center" }}>{t("mes.tooYoung")}</Text>
+                <Text style={{ fontFamily: F.serifItalic, fontSize: 17, lineHeight: 24, color: C.parchmentDim, textAlign: "center" }}>{applyParams(t("ms.kapi.yas"), [ustaKapisiYasi(p), t(p.egitim_yolu === "medrese" ? "ms.egitim.medrese" : "ms.egitim.cirak")], lang)}</Text>
               </View>
             </Panel>
           </Giris>
@@ -80,20 +79,20 @@ export default function Meslek() {
           </View>
         )}
         {acikSekme === "kariyer" && <View key="kariyer">
-          <Giris sira={0}><KariyerMerdiveni onSinav={setSinav} /></Giris>
+          <Giris sira={0}><KariyerMerdiveni /></Giris>
           <Giris sira={1}><FirsatKarti /></Giris>
           <Giris sira={2}><OmurYolu /></Giris>
         </View>}
         {acikSekme === "lonca" && <View key="lonca">
-          <Giris sira={0}><RakipPaneli onYaris={setYaris} /></Giris>
-          <Giris sira={1}><CirakPaneli /></Giris>
+          <Giris sira={0}><LoncaPaneli /></Giris>
+          <Giris sira={1}><RakipPaneli onYaris={setYaris} /></Giris>
+          <Giris sira={2}><CirakPaneli /></Giris>
         </View>}
         {acikSekme === "meslekler" && <View key="meslekler">
           <Giris><MeslekListesi onGecti={() => { setSekme("kariyer"); scroll.current?.scrollTo({ y: 0, animated: true }); }} /></Giris>
         </View>}
       </ScrollView>
       {geri}
-      <SinavKartiModal v={sinav} onSec={(yol) => { const res = ustalikSinavi(state, yol); if (res.basari != null) apply(() => res.state); return res.basari; }} onKapat={() => setSinav(null)} />
       <SinavKartiModal v={yaris} onSec={(yol) => { const res = rakipYarisi(state, yol); if (res.basari != null) apply(() => res.state); return res.basari; }} onKapat={() => setYaris(null)} />
     </MeslekFresk>
   );

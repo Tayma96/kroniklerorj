@@ -2,7 +2,7 @@ import type { Dilemma } from "./events";
 import type { GameState, Opportunity, KirSahne, Player } from "./game";
 export interface MonthScene {
   id: string; turn: number; generation: number; kind: "senlik" | "ikilem" | "orta" | "firsat" | "kapi" | "bos" | "kirilma" | "mektep"; done: boolean;
-  mek?: { id: string }; // F3 mektep kartı (sıbyan olayı, 12 yaş yol kararı, 17 yaş kılıç icazeti): içerik id'den türetilir
+  mek?: { id: string }; // F3 mektep kartı (sıbyan olayı, 12 yaş yol kararı, 17 yaş kılıç icazeti) · F4 "usta" (usta kapısı): içerik id'den türetilir
   kir?: { tip: KirSahne; kisi?: string }; // kader kırılması anı (aşama 3): içerik kayıttan türetilir, yalnız tip ve kişi saklanır
   dilemma?: Omit<Dilemma, "when">; opp?: Opportunity;
   stage?: "intro" | "play" | "result"; success?: boolean;
@@ -57,6 +57,7 @@ export function repairMonthScene(raw: unknown, s: GameState): MonthScene | undef
 export const MEKTEP_KART_IDLERI = ["kopya", "kavga", "siir", "soru", "yaramazlik", "yardim", "hattat", "ezber", "bahce", "harita", "misafir"];
 export function mektepSahneGecerli(p: Player, id: string): boolean {
   if (p.dead) return false;
+  if (id === "usta") return p.profession === "işsiz" && !!p.usta_kapisi?.adaylar?.length && (p.usta_kapisi.ert || 0) < 2; // F4 usta kapısı
   if (id === "yol") return p.age === 12 && !p.egitim_yolu;
   if (id === "kilic") return p.age === 17 && (p.egitim_yolu ?? "cirak") === "cirak" && !p.icazet && !(p.fates || []).includes("kilic17");
   return MEKTEP_KART_IDLERI.includes(id) && p.age >= 7 && p.age <= 12 && !(p.mektep_gorulen || []).includes(id);

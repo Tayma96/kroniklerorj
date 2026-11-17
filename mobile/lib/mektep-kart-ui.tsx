@@ -17,9 +17,10 @@ export function MkMektep() {
   if (!state || state.player.dead) return null;
   const rtl = lang === "ar", align = rtl ? "right" as const : "left" as const, female = state.player.gender === "kadın";
   const m = pendingMonthScene(state);
+  if (m?.mek?.id === "usta") return null; // F4: usta kapısı kendi kartında (usta-kapisi-ui)
   if (!m?.mek) {
     const sc = state.monthScene?.turn === state.turn ? state.monthScene.secim : undefined;
-    if (!sc?.id.startsWith("mek.")) return null;
+    if (!sc?.id.startsWith("mek.") || sc.id === "mek.usta") return null;
     const ev = [...state.history].reverse().find((e) => e.day === state.turn && (e.k?.startsWith("sch.") || e.k?.startsWith("mek.kart.") || e.k?.startsWith("mek.yol.") || e.k?.startsWith("mek.icazet.")));
     if (!ev) return null;
     return <MkPanel style={{ marginBottom: 10 }}>

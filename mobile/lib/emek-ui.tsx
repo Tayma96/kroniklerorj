@@ -2,7 +2,7 @@ import { DesignPressable as Pressable } from "./design-pressable";
 import { useMemo, useState } from "react";
 import { Modal, View, Text, ScrollView} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { GameState, WorkStyle, workForecast, isOlayiOranlari } from "./game";
+import { GameState, WorkStyle, workForecast, isOlayiOranlari, HIRSLI_SAGLIK } from "./game";
 import { SansEtiketi } from "./sans-etiketi";
 import { useI18n, applyParams, yuzdeL } from "./i18n";
 import { GameIcon } from "./icons";
@@ -18,7 +18,7 @@ export function EmekOngoru({ state, styleId }: { state: GameState; styleId: Work
   const range = text("work.forecast.pay", [f.min, f.max]);
   const cost = text("work.forecast.cost", [f.hunger]);
   const restGain = Math.min(f.health, Math.max(0, 100 - state.player.health));
-  const rest = restGain ? text("work.forecast.rest", [restGain]) : "";
+  const rest = [restGain ? text("work.forecast.rest", [restGain]) : "", styleId === "garantici" ? t("ms.ws.dayEk") : styleId === "kaytarici" ? t("ms.ws.yarimEk") : ""].filter(Boolean).join(" · "); // F4: tarzın yan değeri
   const risk = text("work.forecast.risk", [yuzdeL(Math.round(f.fail * 100), lang)]);
   const number = (n: number) => Math.round(n * 100) / 100;
   const lines: [string, string][] = [
@@ -51,13 +51,13 @@ export function EmekOngoru({ state, styleId }: { state: GameState; styleId: Work
           </View>
           <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 14 }}>
             <Text style={{ fontFamily: F.serif, fontSize: 22, color: C.parchment, marginBottom: 4 }}>{range}</Text>
-            <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentDim, lineHeight: 22, marginBottom: 10 }}>{t("work.hint." + styleId)}</Text>
+            <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentDim, lineHeight: 22, marginBottom: 10 }}>{t("ms.ws.hint." + styleId)}</Text>
             {lines.map(([label, value]) => <View key={label} style={{ flexDirection: lang === "ar" ? "row-reverse" : "row", gap: 10, paddingVertical: 5, borderBottomWidth: 1, borderColor: C.border }}>
               <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 15, color: C.parchmentDim }}>{label}</Text><Text style={{ fontFamily: F.serif, fontSize: 15, color: C.gold }}>{value}</Text>
             </View>)}
             <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.sage, marginTop: 12 }}>{[cost, rest].filter(Boolean).join(" · ")}</Text>
             <Text style={{ fontFamily: F.serif, fontSize: 15, color: f.fail ? C.ember : C.parchmentDim, marginTop: 4 }}>{risk}</Text>
-            {!!f.fail && <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.ember, lineHeight: 22, marginTop: 4 }}>{text("work.forecast.loss", [f.lossMin, f.lossMax])} {t(styleId === "hirsli" ? "work.forecast.hurt" : "work.forecast.shame")}</Text>}
+            {!!f.fail && <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.ember, lineHeight: 22, marginTop: 4 }}>{text("ms.ws.loss", [HIRSLI_SAGLIK])}</Text>}
             <Text style={{ fontFamily: F.serifItalic, fontSize: 15, lineHeight: 22, color: C.parchmentMuted, marginTop: 12 }}>{t("work.forecast.extra")}</Text>
             {olaylar.length ? <View style={{ marginTop: 12, gap: 6 }}>
               <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.goldDim }}>{t("zar.isOlaylari")}</Text>
