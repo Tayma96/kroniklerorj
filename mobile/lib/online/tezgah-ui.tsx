@@ -25,7 +25,7 @@ import { meslekYaz } from "./metin";
 import type { EkSonuc } from "./ek-istemci";
 import {
   bantHesapla, bantIci, geciciHataMi, rafMali, seviyeAnahtari, tezgahHataMetni,
-  type Carpanlar, type DepoSatiri, type FiyatBandi, type GunSonu, type Kademe, type Onizleme, type RafKomutu, type RafSatiri, type TezgahGorunumu, type TezgahIstemci, type YolcuKarti,
+  type Carpanlar, type DepoSatiri, type FiyatBandi, type FiyatTablosuSatiri, type GunSonu, type Kademe, type Onizleme, type RafKomutu, type RafSatiri, type TezgahGorunumu, type TezgahIstemci, type YolcuKarti,
 } from "./tezgah-veri";
 
 type Ceviri = (k: string) => string;
@@ -493,6 +493,8 @@ export function GunSonuKarti({ gs, ozet, t, rtl }: { gs: GunSonu | null | undefi
     {gs.tavan ? <Satir etiket={t("onl.tz.gs.tavan")} deger={`${gs.tavan.kullanilan}/${gs.tavan.seviye}`} rtl={rtl} /> : null}
     {hicYok ? <Not metin={t("onl.tz.gs.satisYok")} rtl={rtl} icon="compass" renk={C.gold} /> : null}
     {bosMeslek.length ? <Not metin={applyParams(t("onl.tz.gs.firsat"), [bosMeslek.join(", ")])} rtl={rtl} icon="star" renk={C.gold} /> : null}
+    {Object.entries(gs.hKanca ?? {}).filter(([, d]) => d.deger > 0).map(([m, d]) => <Not key={"h" + m} icon="sun" renk={C.sage} rtl={rtl}
+      metin={applyParams(t(d.kisiAd ? "onl.k3.gs.hKanca" : "onl.k3.gs.hKancaAdsiz"), [meslekYaz(m, lang), yuzdeL(d.deger, lang), d.kisiAd ?? ""])} />)}
     {satirlar.length ? <Pressable accessibilityRole="button" accessibilityState={{ expanded: acik }} accessibilityLabel={t(acik ? "onl.tz.gs.gizle" : "onl.tz.gs.dokum")}
       onPress={() => { hap("selection"); setAcik(!acik); }} style={{ minHeight: 44, flexDirection: yon(rtl), alignItems: "center", gap: 6 }}>
       <GameIcon name="scroll" size={14} color={C.gold} />
@@ -512,6 +514,37 @@ export function GunSonuKarti({ gs, ozet, t, rtl }: { gs: GunSonu | null | undefi
       {nedenMetni(t, x.neden) ? <Text style={{ fontFamily: F.serifItalic, fontSize: 13, lineHeight: 18, color: x.neden === "stok" ? C.sage : C.gold, textAlign: hiza(rtl) }}>{nedenMetni(t, x.neden)}</Text> : null}
     </Animated.View>) : null}
   </Cerceve>;
+}
+
+// ---------------------------------------------------------------- çarşı fiyatları (tüccar fiyat tablosu kancası)
+
+/**
+ * Raf çekmecesinde fiyat ayarının yanında: yerleşimdeki öbür dükkânların aynı maldaki raf fiyatları (sunucunun
+ * `fiyatTablosu`; yalnız Tüccar › Pazarlık bilene gelir). Aynı kalite vurgulanır; istemci yalnız süzer, hesap yapmaz.
+ */
+export function CarsiFiyatlari({ satirlar, mal, kalite, t, rtl }: { satirlar: FiyatTablosuSatiri[]; mal: string; kalite: Kademe; t: Ceviri; rtl: boolean }) {
+  const [acik, setAcik] = useState(true);
+  const l = satirlar.filter((x) => x.mal === mal);
+  return <View style={{ gap: 6, padding: 10, borderRadius: 10, borderWidth: 1, borderColor: "rgba(201,162,78,0.3)", backgroundColor: "rgba(14,10,6,0.55)" }}>
+    <Pressable accessibilityRole="button" accessibilityState={{ expanded: acik }} accessibilityLabel={applyParams(t("onl.k3.tablo.baslik"), [l.length])}
+      onPress={() => { hap("selection"); setAcik(!acik); }} style={{ minHeight: 44, flexDirection: yon(rtl), alignItems: "center", gap: 8 }}>
+      <GameIcon name="scroll-open" size={15} color={C.gold} />
+      <Text style={{ flex: 1, fontFamily: F.display, fontSize: 13, color: C.gold, textAlign: hiza(rtl) }}>{applyParams(t("onl.k3.tablo.baslik"), [l.length])}</Text>
+    </Pressable>
+    {acik ? <Animated.View entering={belir()} style={{ gap: 4 }}>
+      {l.length ? l.map((x, i) => {
+        const ayni = x.kalite === kalite;
+        return <View key={`${x.isletme}.${x.kalite}.${i}`} accessible
+          accessibilityLabel={[x.ad || t("onl.k3.tablo.adsiz"), kaliteAdi(t, x.kalite), applyParams(t("onl.tz.adetN"), [x.adet]), ak(t, x.fiyat)].join(", ")}
+          style={{ flexDirection: yon(rtl), alignItems: "center", gap: 8, paddingVertical: 3 }}>
+          <Text numberOfLines={1} style={{ flex: 1, fontFamily: ayni ? F.display : F.serif, fontSize: 12.5, color: ayni ? C.parchment : C.parchmentDim, textAlign: hiza(rtl) }}>{x.ad || t("onl.k3.tablo.adsiz")}</Text>
+          <Text numberOfLines={1} style={{ flexShrink: 1, maxWidth: "34%", fontFamily: F.serif, fontSize: 12, color: KALITE_RENK[x.kalite] ?? C.parchmentDim }}>{`${kaliteAdi(t, x.kalite)} · ${x.adet}`}</Text>
+          <Text style={{ fontFamily: F.display, fontSize: 13, color: ayni ? C.goldBright : C.parchmentDim }}>{ak(t, x.fiyat)}</Text>
+        </View>;
+      }) : <Text style={{ fontFamily: F.serifItalic, fontSize: 12.5, lineHeight: 17, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{t("onl.k3.tablo.yok")}</Text>}
+      {l.length ? <Text style={{ fontFamily: F.serifItalic, fontSize: 12, lineHeight: 16, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{t("onl.k3.tablo.ipucu")}</Text> : null}
+    </Animated.View> : null}
+  </View>;
 }
 
 // ---------------------------------------------------------------- raf çekmecesi (sahip / yetkili çalışan)
@@ -605,6 +638,7 @@ export function RafCekmecesi({ acik, oturum, g, satirNo, ist, onKapat, onYenile,
       {g.izin.fiyat ? <View style={{ gap: 10 }}>
         <AltBaslik metin={t("onl.tz.fiyatBaslik")} rtl={rtl} />
         <FiyatAdimlayici deger={fiyat} bant={bilgiBant.bant} adil={bilgiBant.adil} npcTavan={bilgiBant.npcTavan} onDegis={(n) => { setFiyat(n); setBilgi(null); setHata(null); }} rtl={rtl} t={t} kapali={yaz.bekliyor} />
+        {g.fiyatTablosu ? <CarsiFiyatlari satirlar={g.fiyatTablosu} mal={hedef.mal} kalite={hedef.kalite} t={t} rtl={rtl} /> : null}
         <OnizlemeKarti veri={oniz.veri} yukleniyor={oniz.yukleniyor} hata={oniz.hata} rtl={rtl} t={t} />
         {satir ? <AltinDugme etiket={applyParams(t("onl.tz.fiyatKaydet"), [fiyat])} icon="scales" rtl={rtl} kapali={!fiyatDegisti} bekliyor={yaz.bekliyor}
           onPress={() => { void yazRaf({ islem: "fiyat", satir: satir.satir, fiyat }, applyParams(t("onl.tz.fiyatKaydedildi"), [fiyat])); }} /> : null}

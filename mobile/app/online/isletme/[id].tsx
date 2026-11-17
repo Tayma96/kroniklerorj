@@ -31,6 +31,7 @@ import {
   DepoCekmecesi, DepoOzeti, DevralCekmecesi, DukkanBasligi, GunSonuKarti, KepenkSatiri, RafCekmecesi, RafIzgarasi, SatinAlCekmecesi, TezgahIskeleti, YolcuPayiDokumu,
 } from "../../../lib/online/tezgah-ui";
 import { AtolyeBolumu, GenisletmeKarti } from "../../../lib/online/atolye-ui";
+import { UstalikKarti } from "../../../lib/online/kanca-ui";
 import { atolyeHataMetni, useAtolyeIstemci, useTezgahOlayi } from "../../../lib/online/atolye-veri";
 import { hatirlananMulkListesi } from "../../../lib/online/simdi-rehber";
 import { kisiYolu } from "../../../lib/online/toplum-veri";
@@ -152,8 +153,9 @@ function IsletmeEkran() {
     void tzi.dukkanlar().then((r) => { if (!iptal && r.ok) { setDevralmaAy(r.deger.devralmaKepenkAy); dukkanlariHatirla(hesap, r.deger); } });
     return () => { iptal = true; };
   }, [tezgahli]); // eslint-disable-line react-hooks/exhaustive-deps
-  // Tezgâh olayı (üretim, toplu sipariş/teslim) gelince açık tezgâh yeniden yüklenir.
-  useTezgahOlayi(tezgahli, (x) => x.ozet.k === "olay.tezgah.topluSiparis" || x.ozet.p.isletme === id, () => { void tezgahYukle(); });
+  // Tezgâh olayı (üretim, toplu sipariş/teslim) gelince açık tezgâh yeniden yüklenir; atölye ekranı odaktayken defter
+  // seyrek yoklanır (dükkânda ay içinde tezgâh olayı yok, yoklama da yok).
+  useTezgahOlayi(tezgahli, (x) => x.ozet.k === "olay.tezgah.topluSiparis" || x.ozet.p.isletme === id, () => { void tezgahYukle(); }, isletmeParca(id)?.tur === "atolye");
   const tezgahTazele = async () => { await tezgahYukle(); if (!sahte) await o.yerlesimYukle(true); };
 
   const yukle = useCallback(async () => {
@@ -330,6 +332,7 @@ function IsletmeEkran() {
   const tezgahBolumu = tz ? <View style={{ gap: 10 }}>
     <DukkanBasligi g={tz} rtl={rtl} t={t} konum={konum} />
     <KepenkSatiri g={tz} rtl={rtl} t={t} musteri={musteri} devralmaAy={devralmaAy} />
+    {yetkili ? <UstalikKarti g={tz} t={t} rtl={rtl} /> : null}
     {musteri && tz.sahip.id ? <Pressable accessibilityRole="link" accessibilityLabel={applyParams(t("onl.tz.sahipSayfasi"), [tz.sahip.ad || t("onl.hs.sahipBilinmez")])}
       onPress={() => { hap("tap"); router.push(kisiYolu(tz.sahip.id)); }}
       style={({ pressed }) => ({ minHeight: 44, flexDirection: yon(rtl), alignItems: "center", gap: 8, opacity: pressed ? 0.7 : 1 })}>

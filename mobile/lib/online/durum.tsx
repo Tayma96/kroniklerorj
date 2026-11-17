@@ -109,6 +109,11 @@ export interface OnlineDurum {
   /** Göç tamamlandı: yeni profil yazılır, eski yerleşimin bütün önbelleği ve olay imleci sıfırlanır, yeni yerleşim yüklenir. */
   gocTamamlandi(p: Profil): Promise<void>;
   olaylarYukle(devam?: boolean): Promise<Sonuc<OlaylarYaniti>>;
+  /**
+   * Sessiz yoklama: defteri imleçten ileri çeker (yalnız yeni olaylar); genel işlem/hata durumuna dokunmaz, üst üste
+   * binmez. Açık atölye ekranı ve çarşının atölye sekmesi odaktayken seyrek çağırır (atolye-veri.ts useTezgahOlayi).
+   */
+  olaylarYokla(): Promise<void>;
   kisiYukle(id: string): Promise<Sonuc<Kisi>>;
   /** Aynı eylem ağ hatasından sonra yeniden denenirse aynı istekNo gider (sunucu iki kez işlemez). */
   eylemYap(girdi: EylemGirdisi): Promise<Sonuc<EylemYaniti>>;
@@ -172,6 +177,7 @@ export function OnlineDurumSaglayici({ children, tohum }: { children: ReactNode;
   /** Sunucu ben.meslek gönderiyor mu (gönderiyorsa yerel kopya ne okunur ne yazılır). */
   const benMeslekVar = useRef(false);
   const defterImlec = useRef<number | null>(null);
+  const yoklamada = useRef(false);
   const okunanImlec = useRef<number | null>(null);
   const bekleyenEylem = useRef(new Map<string, string>());
   const { lang } = useI18n();
@@ -535,6 +541,11 @@ export function OnlineDurumSaglayici({ children, tohum }: { children: ReactNode;
     hataIslem,
     yerlesimYukle: (sessiz = false) => (sessiz ? yerlesimAl() : calistir("yerlesim", yerlesimAl)),
     olaylarYukle: (devam = false) => calistir("olaylar", () => defterCek(devam)),
+    olaylarYokla: async () => {
+      if (yoklamada.current || !oturum || !yerlesim) return;
+      yoklamada.current = true;
+      try { await defterCek(true); } catch { /* sessiz: bir sonraki yoklamada yeniden denenir */ } finally { yoklamada.current = false; }
+    },
     kisiYukle: (id) => calistir("kisi", () => kisiAl(id)),
     toplumIstemci: () => istemci().toplum,
     beceriIstemci: () => istemci().beceri,
