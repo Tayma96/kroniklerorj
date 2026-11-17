@@ -21,11 +21,13 @@ import { ekHataAnahtari, type EkHata } from "../../lib/online/ek-istemci";
 import { istekTekrarMi } from "../../lib/online/hata";
 import { istekNoUret } from "../../lib/online/depo";
 import { MALLAR, NPC_MALLARI } from "../../lib/online/meslek-veri";
-import { KaliteRozeti, KarsilastirmaDokumu, kaliteAdi, malAdi, malIkonu } from "../../lib/online/ekonomi-ui";
+import { KademeliRozet } from "../../lib/online/kademe-ui";
+import { kademeBul } from "../../lib/online/esya-veri";
+import { KarsilastirmaDokumu, kaliteAdi, malAdi, malIkonu } from "../../lib/online/ekonomi-ui";
 import { useEkonomiIstemci, type IlanGorunumu, type IlanTuru, type Kademe4, type PazarIslemYaniti, type PazarYaniti } from "../../lib/online/ekonomi-veri";
 
 type Ceviri = (k: string) => string;
-const KALITELER: readonly ("0" | "1" | "2" | "3")[] = ["0", "1", "2", "3"];
+const KALITELER: readonly ("0" | "1" | "2" | "3" | "4" | "5" | "6")[] = ["0", "1", "2", "3", "4", "5", "6"];
 
 function IlanKarti({ x, t, rtl, onIslem, onGeri, bekliyor }: { x: IlanGorunumu; t: Ceviri; rtl: boolean; onIslem?: () => void; onGeri?: () => void; bekliyor?: boolean }) {
   const [dokum, setDokum] = useState(false);
@@ -48,7 +50,7 @@ function IlanKarti({ x, t, rtl, onIslem, onGeri, bekliyor }: { x: IlanGorunumu; 
       </View>
       <View style={{ flexDirection: yon(rtl), flexWrap: "wrap", gap: 6 }}>
         <Rozet icon={satis ? "coins" : "scales"} metin={t(satis ? "onl.pz.tur.sat" : "onl.pz.tur.al")} renk={satis ? C.gold : C.sage} />
-        <KaliteRozeti kademe={x.kademe} />
+        <KademeliRozet parti={{ mal: x.mal, kademe: x.kademe }} />
         {acik ? <Rozet icon="hourglass" metin={applyParams(t("onl.pz.kalanAy"), [x.kalanAy])} renk={x.kalanAy <= 1 ? C.ember : C.gold} />
           : <Rozet metin={t("onl.pz.durum." + x.durum)} renk={C.parchmentMuted} />}
         {x.karsilastirma.tabanOrani !== null ? <Rozet metin={applyParams(t("onl.pz.oran"), [x.karsilastirma.tabanOrani])} renk={x.karsilastirma.tabanOrani > 150 ? C.ember : C.parchmentDim} /> : null}
@@ -147,7 +149,7 @@ function PazarEkran() {
       <View style={{ alignItems: "center", gap: 8 }}>
         <Madalyon icon="scales" size={60} aktif />
         <Text accessibilityRole="header" accessibilityLiveRegion="polite" style={{ fontFamily: F.display, fontSize: 20, color: C.goldBright, textAlign: "center" }}>{t("onl.pz.tamam")}</Text>
-        <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchmentDim, textAlign: "center" }}>{`${sonuc.adet} × ${malAdi(t, sonuc.ilan.mal)} · ${kaliteAdi(t, ["sade", "iyi", "ustun", "saheser"].indexOf(sonuc.kalite))}`}</Text>
+        <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchmentDim, textAlign: "center" }}>{`${sonuc.adet} × ${malAdi(t, sonuc.ilan.mal)} · ${kaliteAdi(t, kademeBul(sonuc.kalite))}`}</Text>
       </View>
       <View style={{ flexDirection: yon(rtl), flexWrap: "wrap", justifyContent: "center", gap: 8 }}>
         <Degisim icon="coins" metin={applyParams(t("onl.pz.s.tutar"), [sonuc.tutar])} olumlu={sonuc.ilan.tur === "al"} />
