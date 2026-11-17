@@ -2,7 +2,7 @@
 import type { EvtParam } from "./i18n";
 import { AccordKind, RealmOffer, RealmRuler, DiplomacyState, ACCORDS, emptyDiplomacy, realmPair, realmBond, changeBond, findAccord, quoteAccord, signAccord, breakAccords, repairDiplomacy } from "./diplomacy";
 import { nextRandom } from "./random";
-import { MonthScene, pendingMonthScene, repairMonthScene } from "./month-scene-state";
+import { MonthScene, pendingMonthScene, repairMonthScene, mektepSahneGecerli } from "./month-scene-state";
 import { ArmyWar, FrontMove, armyForecast, makeArmy, clashArmies, frontContact, nextEnemy, repairArmyWar } from "./army";
 import { WarWorld, WarRegion, CivilAid, peacefulRegion, emptyWarWorld, warRegion, warEffects, recordWar, tickWarWorld, repairWarWorld, aidNeeded, applyCivilAid, truceLeft } from "./war-world";
 import { currentCalendar, playerAge, CalendarInfo } from "./calendar";
@@ -93,6 +93,17 @@ export interface Player {
   genc_acts?: Record<string, number>; // gençlik uğraşları sayacı (13-17)
   play_energy?: number; // çocukluk günleri hakkı — mektepten AYRI havuz (ders çalışmak oyunu yemez)
   club?: string; teacherBond?: number; // mektep kulübü (haftalık pasif XP) + hoca bağı
+  // F3 (K4) mektep/medrese — hepsi opsiyonel: gerçek hoca, akranlar, talebe (nüfus kimlikleri); 12 yaş yol kararı; 17'de icazet;
+  // yıllık odak dersi ve yıl sayaçları; mektep kartları (yılda en çok 2, ömürde tekrar etmez); 18+ ders halkası ve müderrislik.
+  hoca_id?: string; akran_ids?: string[]; talebe_id?: string;
+  egitim_yolu?: "cirak" | "medrese";
+  icazet?: { tur: IcazetTur; derece: 1 | 2 | 3 };
+  mektep_odak?: string; mektep_odak_yil?: number;
+  mektep_yil?: { y: number; n: number; ek?: number }; // bu oyun yılının çalışma sayısı (odak değişince yarıya) + kopya kalemi
+  mektep_kart?: { y: number; n: number }; mektep_gorulen?: string[];
+  mektep_sinav?: { y: number; sonuc: "kaldi" | "gecti" | "ustun"; ders: string; icazet?: boolean };
+  calis_turn?: number; ders_halkasi_yil?: number; icazet_kaldi?: boolean;
+  muderris?: { y: number; n: number; t: number }; // müderrislik: yıl, o yılki ders sayısı (azalan getiri), son tur (ayda bir)
   club_standing?: number; last_club_turn?: number; club_grad?: string; // kulüp itibarı + aylık meşk kapısı + mezun olunan kulüp
   duzen?: { kapali?: boolean; tarz?: WorkStyle };
   un_kalan?: Partial<Record<"reputation" | "honor" | "fame" | "fear", number>>; // ün kazancı küsuru (azalan getiri; eski kayıtta yok)
@@ -674,6 +685,7 @@ function nufusKorunan(s: GameState): Set<string> {
   const p = s.player;
   for (const pr of p.properties || []) for (const w of pr.workers || []) k.add(w);
   if (p.child_friend) k.add(p.child_friend.id);
+  for (const id of [p.hoca_id, p.talebe_id, ...(p.akran_ids || [])]) if (id) k.add(id); // F3 mektep çevresi
   if (p.apprentice) k.add(p.apprentice.id);
   for (const x of s.kanDefteri || []) { k.add(x.id); if (x.olen) k.add(x.olen); }
   for (const id of [s.story?.nemesis?.id, s.story?.nemesis?.olen, s.hesap?.id, p.katil, s.npcTeklif?.ek, ...(p.kefaletler || []).map((x) => x.id)]) if (id) k.add(id);
@@ -1279,7 +1291,7 @@ function setWarCooldown(s: GameState, a: string, b: string, turns: number) { if 
 export function joinThreshold(p: Player, f: Faction): number { return p.perks.includes("karizmatik") ? Math.round(f.joinRep * 0.8) : f.joinRep; }
 
 export interface GameEvent { day: number; type: string; text: string; scope: "kişisel" | "makro"; landmark?: boolean; k?: string; p?: EvtParam[]; q?: number; kok?: number; etki?: Seed["etki"]; } // kok: geri dönen sonucun kökü (hafıza izi n) · etki: o dönüşün getirdiği (Hissiyat 3) // q: olay sırası (artan; ekranlar "yeni olay"ı bununla tanır — kronik 250'de kırpılınca uzunluk artmaz)
-export interface DynastyRecord { generation: number; name: string; profession: string; diedAge: number; fame: number; reputation: number; faction: string | null; note: string; noteK?: string; causeK?: string; grandchildren?: string[]; } // noteK: kitabe kimliği (6 dile çevrilir); note eski kayıtlar için TR yedek; causeK: ölüm nedeni kodu
+export interface DynastyRecord { generation: number; name: string; profession: string; diedAge: number; fame: number; reputation: number; faction: string | null; note: string; noteK?: string; causeK?: string; grandchildren?: string[]; icazet?: string; } // noteK: kitabe kimliği (6 dile çevrilir); note eski kayıtlar için TR yedek; causeK: ölüm nedeni kodu
 export interface NpcState { mood: number; memories: string[]; anilar?: Memory[]; int_turn?: number; act_turns?: Record<string, number>; rel_gain_turn?: number; rel_gain_amt?: number; son?: SohbetSon; ani_sira?: number; bakis?: BakisDefteri; izlenim?: IzlenimDefteri; konusma?: Konusma; }
 // son: bu kişiyle son sohbetin konusu ve nasıl bittiği — bir dahaki sohbette hatırlanır (diyalog takip katmanı; eski kayıtta yok, sorun değil).
 // int_turn (eski): tek blok kilit — artık kullanılmıyor, eski kayıtlar için duruyor.
@@ -3335,7 +3347,8 @@ export function dogumOlasiligi(s: GameState): number {
 function rollLifeEvents(s: GameState, cal: CalendarInfo) {
   evlatMektuplariTick(s);
   const p = s.player; if (p.dead) return; // ayın erken bir adımında ölen oyuncuya o ay hayat olayı yazılmaz
-  if (p.age === 13 && p.profession === "işsiz") {
+  if (p.age >= 13 && p.age < 18 && !p.egitim_yolu) p.egitim_yolu = "cirak"; // yol kararı verilmeden 13 olunduysa çıraklık
+  if (p.age === (p.egitim_yolu === "medrese" ? 17 : 13) && p.profession === "işsiz") { // medrese yolunda meslek 17'de
     // Çocukluk hayali meslek seçimini etkiler: %45 ihtimalle hayalinin yoluna düşersin.
     // Meslek hak edilir: çocuklukta emek vermeyen ancak açık kapılı işlere (çoban/çiftçi/balıkçı) düşer.
     const ehil = PROFS.filter((id) => meslekSermaye(s, id) === 0 && meslegeUygun(s, id));
@@ -4004,6 +4017,7 @@ export function advance(prev: GameState, n = 1): GameState {
       const pl = s.player;
       yasEgrisi(s); // K2: 40+ beden gerilemesi, 50+ hikmet
       kethudaTiki(s); // K3 Kethüda: küskünlükler yılda bir yumuşar
+      mektepYilSonu(s); // F3: yıl sonu sınavı / icazet
       if (pl.niyet_yil != null && pl.niyet_yil !== oyunYili(s.turn)) { delete pl.niyet; delete pl.niyet_yil; delete pl.niyet_degisti; } // geçen yılın niyeti kapanır; yeni yıl yeni seçim
       if (pl.yr_money === undefined) pl.yr_money = pl.money;
       else {
@@ -4039,6 +4053,7 @@ export function advance(prev: GameState, n = 1): GameState {
     // Çalışma gücü: her ay yenilenir (ders + kulüp meşki bundan harcanır).
     s.player.study_energy = maxStudyEnergy(s.player.age);
     s.player.play_energy = maxPlayEnergy(s.player.age); // çocukluk hakları da tazelenir
+    mektepAyTick(s); // F3: hoca/akran güvencesi, medrese harçlığı
     // Mektep kulübü: okul çağında (7-17) her ay sessiz pasif beceri kazanımı (Vercel öğrenci topluluğu).
     if (s.player.club && s.player.age >= 7 && s.player.age < 18) { const cl = CLUBS.find((c) => c.id === s.player.club); if (cl) gainSkill(s, cl.skill, 2); }
     // Mezuniyet: 18'inde kulüpten ayrılırken, yılların kulüp itibarı kalıcı bir hüner bırakır.
@@ -7509,6 +7524,7 @@ export const ALL_PROFS = PROFS;
 export function changeProfession(prev: GameState, prof: string): GameState {
   const s = clone(prev); const p = s.player;
   if (p.dead || p.age < 13 || prof === p.profession || !PROFS.includes(prof)) return s;
+  if (mektepEvresi(p) === "medrese") return s; // F3: medrese talebesi meslek tutmaz (meslek 17'de)
   if (!meslegeUygun(s, prof)) { push(s, "meslek_değişimi", `${cap(prof)} olmaya henüz ehil değilsin; önce ehliyetini göster.`, "kişisel", false, { k: "evj.mesRet", p: [{ pr: prof }] }); return s; }
   { const ser = meslekSermaye(s, prof); if (ser > 0) { p.money -= ser; push(s, "meslek_değişimi", `Tezgâh hakkı ve alet edevat için ${ser} akçe sermaye koydun.`, "kişisel", false, { k: "evj.mesSermaye", p: [ser] }); } }
   if (!p.professions_tried) p.professions_tried = [];
@@ -7639,16 +7655,12 @@ export const STUDY_COST = 2; // ders / kulüp meşki başına enerji
 export function maxStudyEnergy(age: number): number { return age >= 7 && age < 18 ? 4 : 2; } // okul çağı 2 iş, yetişkin 1 iş/ay
 export function studyEnergy(s: GameState): number { return s.player.study_energy ?? maxStudyEnergy(s.player.age); }
 // Bu ay artık çalışılamıyor mu? (enerji ders maliyetinin altında).
-export function studiedThisTurn(s: GameState): boolean { return studyEnergy(s) < STUDY_COST; }
+export function studiedThisTurn(s: GameState): boolean { return s.player.calis_turn === s.turn || studyEnergy(s) < STUDY_COST; }
 // Çocukluk günleri (oyun/yardım/yaramazlık/keşif) mektepten ayrı hak kullanır — ders çalışan çocuk oynamaktan olmaz (test geri bildirimi).
 export const PLAY_COST = 2;
 export function maxPlayEnergy(age: number): number { return age < 18 ? 4 : 0; } // ayda 2 hak: çocuklukta oyun, gençlikte (13-17) gençlik uğraşları
 export function playEnergy(s: GameState): number { return s.player.play_energy ?? maxPlayEnergy(s.player.age); }
-// Sınava kaç ders kaldı (4 derste bir sınav).
-export function lessonsToExam(p: Player): number { return 4 - ((p.lesson_count || 0) % 4); }
 export const DERS_OLAYI_ZORLUK = 4;
-export const SINAV_ZORLUK = 3;
-const EXAM_STAT: Record<string, keyof Stats> = { din: "intelligence", matematik: "intelligence", edebiyat: "charisma", beden: "strength" };
 // Ders-içi olaylar (Vercel school.py ders olayları): mektep günlerine doku katar; stat testli.
 interface SchoolEvent { id: string; stat: keyof Stats; }
 const SCHOOL_EVENTS: SchoolEvent[] = [
@@ -7685,72 +7697,329 @@ export function joinClub(prev: GameState, id: string | null): GameState {
   push(s, "mektep", `${CLUB_TR[id]} kulübüne katıldın; her ay sessizce gelişeceksin.`, "kişisel", false, { k: "club.join." + id });
   return s;
 }
-// Bir ders çalış — ayda 1 ders sınırı + 4 derste bir sınav (school.py portu).
-export function studySubject(prev: GameState, id: string): StudyResult {
+// ── Mektep F3 (K4): sıbyan 7–12 · 12'de yol kararı · medrese 13–16 · 17'de icazet · 18+ ders halkası ──
+// Ders tıklama makinesi kalktı: ayda bir "çalış" (yıllık odak dersine XP), yıl sonunda tek sınav (zar), yılda en çok iki
+// seçimli mektep kartı (ay sahnesinde, ömürde tekrar etmez). Hoca ve akranlar nüfustan gerçek kişilerdir.
+export type IcazetTur = "hat" | "hesap" | "fikih" | "tip" | "kilic";
+export const ICAZET_TURLERI: IcazetTur[] = ["hat", "hesap", "fikih", "tip", "kilic"];
+// İcazetin kolaylaştırdığı / zarına kalem verdiği meslekler.
+export const ICAZET_MESLEK: Record<IcazetTur, string[]> = { hat: ["katip"], fikih: ["katip"], tip: ["şifacı"], hesap: ["tüccar", "kuyumcu"], kilic: ["asker"] };
+export interface MektepDers { id: string; stat: keyof Stats; beceri?: SkillKey; icon: string }
+export const SIBYAN_DERSLERI: MektepDers[] = [
+  { id: "din", stat: "intelligence", icon: "prayer-beads" },
+  { id: "matematik", stat: "intelligence", beceri: "trade", icon: "scales" },
+  { id: "edebiyat", stat: "charisma", beceri: "social", icon: "book" },
+  { id: "beden", stat: "strength", beceri: "combat", icon: "fist" },
+];
+export const MEDRESE_DERSLERI: MektepDers[] = [
+  { id: "fikih", stat: "intelligence", beceri: "social", icon: "scroll" },
+  { id: "hesap", stat: "intelligence", beceri: "trade", icon: "scales" },
+  { id: "hat", stat: "charisma", beceri: "crafting", icon: "scroll-open" },
+  { id: "tip", stat: "intelligence", beceri: "crafting", icon: "herbs" },
+];
+export const CALIS_STAT_XP = 14; // ayda bir çalışmanın odak statına tecrübesi
+export const CALIS_BECERI_XP = 10;
+export const MEDRESE_HARCLIK = 2; // medrese talebesine aylık küçük harçlık (enflasyonla)
+export const SIBYAN_ZORLUK = 4, MEDRESE_ZORLUK = 7, ICAZET_ZORLUK = 9, KILIC_ZORLUK = 8;
+export const DERS_HALKASI_XP = 25;
+export const MUDERRIS_ZEKA = 12;
+// Eğitim yolu: kayıtta yoksa 13–17 yaş çırak sayılır (F3 öncesi kayıtlar ve vâris).
+export function egitimYolu(p: Player): "cirak" | "medrese" | undefined { return p.egitim_yolu ?? (p.age >= 13 && p.age < 18 ? "cirak" : undefined); }
+export type MektepEvre = "yok" | "sibyan" | "medrese" | "ara" | "halka";
+export function mektepEvresi(p: Player): MektepEvre {
+  if (p.age < 7) return "yok"; if (p.age < 13) return "sibyan";
+  if (p.age < 17 && egitimYolu(p) === "medrese") return "medrese";
+  return p.age >= 18 ? "halka" : "ara";
+}
+export function mektepDersleri(p: Player): MektepDers[] { return mektepEvresi(p) === "medrese" ? MEDRESE_DERSLERI : SIBYAN_DERSLERI; }
+// Bu yılın odak dersi (seçilmediyse yok).
+export function mektepOdak(s: GameState): string | undefined {
+  const p = s.player; return p.mektep_odak && p.mektep_odak_yil === oyunYili(s.turn) && mektepDersleri(p).some((d) => d.id === p.mektep_odak) ? p.mektep_odak : undefined;
+}
+function odakAta(s: GameState, id: string) {
+  const p = s.player; const y = oyunYili(s.turn); const onceki = mektepOdak(s);
+  if (onceki === id) return;
+  if (onceki && p.mektep_yil?.y === y) p.mektep_yil.n = Math.floor(p.mektep_yil.n / 2); // taahhüt: yıl içinde dönen odakta çalışma kalemi yarıya iner
+  p.mektep_odak = id; p.mektep_odak_yil = y;
+}
+export function mektepOdakSec(prev: GameState, id: string): GameState {
+  const s = clone(prev); const p = s.player; const ev = mektepEvresi(p);
+  if (p.dead || (ev !== "sibyan" && ev !== "medrese") || !mektepDersleri(p).some((d) => d.id === id) || mektepOdak(s) === id) return prev;
+  odakAta(s, id); return s;
+}
+export function calisabilir(s: GameState): boolean {
+  const p = s.player; const ev = mektepEvresi(p);
+  return !p.dead && !inJail(p) && (ev === "sibyan" || ev === "medrese") && p.calis_turn !== s.turn && studyEnergy(s) >= STUDY_COST;
+}
+// Hoca bağı kalemi (görüş): 25+ → +1, 60+ → +2. Çalışma kalemi: bu yıl odakta her 4 çalışma +1 (en çok +3).
+function hocaKalemi(s: GameState): number { const id = s.player.hoca_id; if (!id || !kisiYasiyor(s, id)) return 0; const v = relWith(s, id); return v >= 60 ? 2 : v >= 25 ? 1 : 0; }
+// Bu yılın sınavı (önizleme; yıl sonunda mektepYilSonu aynı kalemlerle atar). Medresede 16. yıl icazet sınavıdır.
+export function mektepSinavGirdi(s: GameState): ZarGirdi {
+  const p = s.player; const yil = oyunYili(s.turn); const dersler = mektepDersleri(p); const ev = mektepEvresi(p);
+  const d = dersler.find((x) => x.id === mektepOdak(s)) || [...dersler].sort((a, b) => effStat(p, b.stat) - effStat(p, a.stat))[0];
+  const my = p.mektep_yil?.y === yil ? p.mektep_yil : undefined;
+  const ek: ZarKalemi[] = [{ etiket: "mek.kalem.hoca", deger: hocaKalemi(s) }, { etiket: "mek.kalem.calisma", deger: Math.min(3, Math.floor((my?.n || 0) / 4)) }];
+  if (my?.ek) ek.push({ etiket: "mek.kalem.kopya", deger: my.ek });
+  const z = ev === "medrese" ? (p.age === 16 ? ICAZET_ZORLUK : MEDRESE_ZORLUK) : SIBYAN_ZORLUK + Math.floor(Math.max(0, p.age - 7) / 2);
+  return { stat: d.stat, zorluk: z, ekKalemler: [...ek, ...hunerKalemleri(p, "sinav", d.stat)] };
+}
+export function mektepSinavDersi(s: GameState): string {
+  const p = s.player; const g = mektepSinavGirdi(s); const odak = mektepOdak(s);
+  return odak || mektepDersleri(p).find((d) => d.stat === g.stat)?.id || mektepDersleri(p)[0].id;
+}
+// Tek zar + üstünlük: r < oran → geçti; r < oran×⅓ → üstün (derece 3), r < oran×⅔ → derece 2.
+function zarDerece(s: GameState, g: ZarGirdi): { basari: boolean; derece: 0 | 1 | 2 | 3; oran: number } {
+  const o = zarOrani(s, g); if (g.stat) statKullanimIsle(s.player, g.stat, s.turn);
+  const r = gameRandom(s);
+  const derece = r >= o.oran ? 0 : r < o.oran / 3 ? 3 : r < (o.oran * 2) / 3 ? 2 : 1;
+  return { basari: derece > 0, derece, oran: o.oran };
+}
+
+// ── Hoca ve akranlar: nüfustan gerçek kişiler (yerinde yaşayan, uygun yaşta); ölür ya da taşınırsa yenisi ──
+function hocaBul(s: GameState): Kisi {
+  const pop = nufusHazirla(s); const p = s.player; const wy = worldYears(s);
+  const ad = Object.values(pop.k).filter((k) => k.ol == null && k.loc === p.location_name && yasOf(k, wy) >= 28 && yasOf(k, wy) <= 70 && !oyuncuAkrabasi(p, k.id) && k.id !== p.spouse_id && !(p.akran_ids || []).includes(k.id));
+  const puan = (k: Kisi) => (k.prof === "katip" ? 3 : k.prof === "şifacı" ? 2 : 0) + ({ ilkeli: 2, sicak: 1, cekingen: 0, cikarci: -1 } as Record<HuyGrubu, number>)[huyGrubu(huyOf(k))] + gameRandom(s);
+  if (ad.length) return ad.map((k) => ({ k, v: puan(k) })).sort((a, b) => b.v - a.v)[0].k;
+  const k = yeniGelen(pop, wy, p.location_name, gameRandom(s) < 0.75 ? "erkek" : "kadın", 38 + Math.floor(gameRandom(s) * 20), () => gameRandom(s));
+  k.prof = "katip"; nufusDegisti(pop); return k;
+}
+function akranlarKur(s: GameState) {
+  const p = s.player; const wy = worldYears(s); const sec: string[] = [];
+  const ad = yasitlar(s).filter((k) => Math.abs(yasOf(k, wy) - p.age) <= 1 && k.id !== p.child_friend?.id && k.id !== p.hoca_id);
+  while (sec.length < 2 && ad.length) sec.push(ad.splice(Math.floor(gameRandom(s) * ad.length), 1)[0].id);
+  while (sec.length < 2) { const k = yasitKur(s); if (sec.includes(k.id)) break; sec.push(k.id); }
+  p.akran_ids = sec;
+  for (const id of sec) if (s.relationships[id] === undefined) s.relationships[id] = 5;
+}
+function mektepBaslat(s: GameState) {
+  const p = s.player; const pop = nufusOf(s);
+  const h = p.hoca_id ? pop.k[p.hoca_id] : undefined;
+  if (!(h && h.ol == null && h.loc === p.location_name)) {
+    const yeni = hocaBul(s);
+    p.hoca_id = yeni.id; if (s.relationships[yeni.id] === undefined) s.relationships[yeni.id] = 10;
+    if (h) p.teacherBond = Math.floor((p.teacherBond || 0) / 2); // yeni hocayla bağ yeniden kurulur (emeğin yarısı kalır)
+    const key = !h ? "mek.hoca.ilk" : h.ol != null ? "mek.hoca.vefat" : "mek.hoca.yeni";
+    push(s, "mektep", !h ? `Mektebe başladın; hocan ${kisiAdi(yeni, "tr")}.` : `Hocan değişti; yeni hocan ${kisiAdi(yeni, "tr")}.`, "kişisel", false, { k: key, p: [knParam(yeni), ...(h ? [knParam(h)] : [])] });
+  }
+  if (!p.akran_ids) akranlarKur(s);
+}
+// Ay kapanışı: okul çağında hoca/akran güvencesi; medrese talebesine harçlık.
+function mektepAyTick(s: GameState) {
+  const p = s.player; if (p.dead) return; const ev = mektepEvresi(p);
+  if (ev === "sibyan" || ev === "medrese") mektepBaslat(s);
+  if (ev === "medrese") p.money += Math.max(1, Math.round(MEDRESE_HARCLIK * inflationFactor(s)));
+}
+
+// Çalış (ayda bir, studySubject adı eski çağıranlar için korunur): odak dersine stat + beceri tecrübesi, hoca bağı.
+export function studySubject(prev: GameState, id?: string): StudyResult {
   const s = clone(prev); const p = s.player;
   if (p.dead) return { state: s, key: "", chips: [] };
-  if (p.age < 7 || p.age >= 18) return { state: s, key: "", chips: [], blocked: true }; // mektep yalnız okul çağında (7-17) — yetişkin bedava puan/sınav farmlayamaz (joinClub/clubPractice ile aynı kapı)
-  if (studyEnergy(s) < STUDY_COST) return { state: s, key: "", chips: [], blocked: true }; // çalışma gücü yetmiyor
-  p.study_energy = studyEnergy(s) - STUDY_COST;
+  if (!calisabilir(s)) return { state: s, key: "", chips: [], blocked: true };
+  const dersler = mektepDersleri(p);
+  if (id && dersler.some((d) => d.id === id)) odakAta(s, id);
+  if (!mektepOdak(s)) odakAta(s, dersler[0].id);
+  const d = dersler.find((x) => x.id === p.mektep_odak)!;
+  p.study_energy = studyEnergy(s) - STUDY_COST; p.calis_turn = s.turn;
   p.lesson_count = (p.lesson_count || 0) + 1;
   p.hunger = Math.max(0, p.hunger - 5);
-  addStatXp(s, EXAM_STAT[id] || "intelligence", 5); // dersin özelliği tecrübeyle gelişir
-  const lucky = chance(0.5);
-  const statBonus = chance(0.12); // mucit şansı ~3 katlar ama GARANTİLEMEZ (garanti = yılda 24 puan, ekonomi kırılıyordu)
+  mektepBaslat(s);
+  const y = oyunYili(s.turn); p.mektep_yil = p.mektep_yil?.y === y ? { ...p.mektep_yil, n: p.mektep_yil.n + 1 } : { y, n: 1 };
   const chips: { label: string; col: string; k?: string; p?: (string | number)[] }[] = [];
-  let key = "";
-  const seasoned = (p.exam_wins || 0) >= 3; // yerleşik öğrenci: bundan sonra okul puan değil ustalık (statXp) verir — tavan ezilmez, okul değerli kalır
-  p.teacherBond = (p.teacherBond || 0) + 1; // hoca bağı çalıştıkça güçlenir
+  const seasoned = (p.exam_wins || 0) >= 3;
+  p.teacherBond = (p.teacherBond || 0) + 1;
+  if (p.hoca_id) s.relationships[p.hoca_id] = Math.min(100, (s.relationships[p.hoca_id] || 0) + 2);
   if (p.teacherBond % 12 === 0) {
     if (!seasoned) { p.stat_points += 1; chips.push({ label: "Hoca takdiri · Puan +1", col: "#E0BC5A", k: "chip.bond" }); push(s, "mektep", "Hocan emeğini gördü ve seni takdir etti (özellik puanı).", "kişisel", true, { k: "club.bond" }); }
-    else { addStatXp(s, "intelligence", 10); chips.push({ label: "Hoca takdiri · Ustalık", col: "#E0BC5A", k: "chip.ustalik" }); }
+    else { addStatXp(s, d.stat, 10); chips.push({ label: "Hoca takdiri · Ustalık", col: "#E0BC5A", k: "chip.ustalik" }); }
   }
-  if (id === "din") {
-    bumpNam(p, "dindar", 4); chips.push({ label: "Dindar +4", col: "#9C7BC4", k: "chip.dindar", p: ["+4"] });
-    if (lucky) { unEkle(p, "honor", 2); chips.push({ label: "Şeref +2", col: "#7FA66A", k: "chip.honor", p: ["+2"] }); key = "ev.study.din.l"; push(s, "mektep", "Dini ilimler okudun; gönlün huzur buldu.", "kişisel", false, { k: key }); }
-    else { const dv = chance(0.5); key = dv ? "ev.study.din.p2" : "ev.study.din.p"; push(s, "mektep", dv ? "Hoca kıssayı yarıda kesti: \"Gerisini siz düşünün.\" Yol boyu düşündün." : "Mektepte dua ve hikmet dinledin.", "kişisel", false, { k: key }); }
-  } else if (id === "matematik") {
-    if (p.trade_xp_turn !== s.turn) { p.trade_xp_turn = s.turn; gainSkill(s, "trade", 5); } // al-sat XP: tur başına tek (buğday al-sat döngüsüyle beceri farmı kapatıldı); chips.push({ label: "Ticaret +5", col: "#C9A84C", k: "chip.trade", p: ["+5"] });
-    if (statBonus && !seasoned) { p.stat_points += 1; chips.push({ label: "Özellik Puanı +1", col: "#E0BC5A", k: "chip.statpt" }); key = "ev.study.matematik.l"; push(s, "mektep", "Hesap çalıştın; bir özellik puanı kazandın.", "kişisel", false, { k: key }); }
-    else { addStatXp(s, "intelligence", 6); const dv = chance(0.5); key = dv ? "ev.study.matematik.p2" : "ev.study.matematik.p"; push(s, "mektep", dv ? "Çarpım yanlış çıktı, hoca değneği rahleye vurdu; ikinci hesapta rakamlar hizaya geldi." : "Rakamlarla boğuştun.", "kişisel", false, { k: key }); }
-  } else if (id === "edebiyat") {
-    gainSkill(s, "social", 5); chips.push({ label: "Sosyal +5", col: "#C9A84C", k: "chip.social", p: ["+5"] });
-    if (statBonus && !seasoned) { p.stat_points += 1; chips.push({ label: "Özellik Puanı +1", col: "#E0BC5A", k: "chip.statpt" }); key = "ev.study.edebiyat.l"; push(s, "mektep", "Edebiyat çalıştın; bir özellik puanı kazandın.", "kişisel", false, { k: key }); }
-    else { addStatXp(s, "charisma", 6); const dv = chance(0.5); key = dv ? "ev.study.edebiyat.p2" : "ev.study.edebiyat.p"; push(s, "mektep", dv ? "Bir beyit diline takıldı; eve dönene dek mırıldandın." : "Beyitler ezberledin.", "kişisel", false, { k: key }); }
-  } else {
-    gainSkill(s, "combat", 5); chips.push({ label: "Savaş +5", col: "#C9A84C", k: "chip.combat", p: ["+5"] });
-    if (statBonus && !seasoned) { p.stat_points += 1; chips.push({ label: "Özellik Puanı +1", col: "#E0BC5A", k: "chip.statpt" }); key = "ev.study.beden.l"; push(s, "mektep", "Beden çalıştın; bir özellik puanı kazandın.", "kişisel", false, { k: key }); }
-    else { addStatXp(s, "strength", 6); const dv = chance(0.5); key = dv ? "ev.study.beden.p2" : "ev.study.beden.p"; push(s, "mektep", dv ? "Avluda koşu vardı; sonuncu gelmedin — bu da bir başlangıç." : "Ter döktün, güçlendin.", "kişisel", false, { k: key }); }
-  }
-  // ── Ders-içi olay (Vercel school.py ders olayları): %40, stat testli; "cesur" sonuç anlatılır ──
-  if (chance(0.4)) {
-    const ev = rnd(SCHOOL_EVENTS);
-    const pass = zar(s, { stat: ev.stat, zorluk: DERS_OLAYI_ZORLUK }).basari; // tek zar
-    const w = pass ? "win" : "lose";
-    if (ev.id === "kopya") { if (pass) { unEkle(p, "honor", 4); chips.push({ label: "Şeref +4", col: "#7FA66A", k: "chip.honor", p: ["+4"] }); } else { p.honor = Math.max(0, p.honor - 3); p.reputation = Math.max(-100, p.reputation - 2); chips.push({ label: "Şeref −3", col: "#C0556B", k: "chip.honor", p: ["−3"] }); } }
-    else if (ev.id === "kavga") { if (pass) { unEkle(p, "honor", 5); unEkle(p, "reputation", 2); p.health = Math.max(1, p.health - 3); chips.push({ label: "Şeref +5", col: "#7FA66A", k: "chip.honor", p: ["+5"] }); } else { p.health = Math.max(1, p.health - 5); chips.push({ label: "Sağlık −5", col: "#C0556B", k: "chip.health", p: ["−5"] }); } }
-    else if (ev.id === "siir") { if (pass) { gainSkill(s, "social", 8); unEkle(p, "fame", 1); chips.push({ label: "Sosyal +8", col: "#C9A84C", k: "chip.social", p: ["+8"] }); } else { p.honor = Math.max(0, p.honor - 1); } }
-    else if (ev.id === "soru") { if (pass) { if (!seasoned) { p.stat_points += 1; chips.push({ label: "Özellik Puanı +1", col: "#E0BC5A", k: "chip.statpt" }); } else { addStatXp(s, EXAM_STAT[id] || "intelligence", 10); chips.push({ label: "Ustalık", col: "#E0BC5A", k: "chip.ustalik" }); } } }
-    else if (ev.id === "yaramazlik") { if (pass) { bumpNam(p, "capkin", 2); } else { p.honor = Math.max(0, p.honor - 2); chips.push({ label: "Şeref −2", col: "#C0556B", k: "chip.honor", p: ["−2"] }); } }
-    else if (ev.id === "yardim") { if (pass) { unEkle(p, "honor", 3); gainSkill(s, "social", 6); chips.push({ label: "Sosyal +6", col: "#C9A84C", k: "chip.social", p: ["+6"] }); } }
-    else if (ev.id === "hattat") { if (pass) { gainSkill(s, "crafting", 8); chips.push({ label: "Zanaat +8", col: "#C9A84C", k: "chip.craft", p: ["+8"] }); } else { p.honor = Math.max(0, p.honor - 1); } }
-    else if (ev.id === "ezber") { if (pass) { addStatXp(s, "intelligence", 8); unEkle(p, "fame", 1); chips.push({ label: "Ustalık", col: "#E0BC5A", k: "chip.ustalik" }); } }
-    else if (ev.id === "harita") { if (pass) { addStatXp(s, "intelligence", 8); chips.push({ label: "Ustalık", col: "#E0BC5A", k: "chip.ustalik" }); } else { p.honor = Math.max(0, p.honor - 1); } }
-    else if (ev.id === "misafir") { if (pass) { gainSkill(s, "social", 8); unEkle(p, "fame", 1); chips.push({ label: "Sosyal +8", col: "#C9A84C", k: "chip.social", p: ["+8"] }); } else { p.honor = Math.max(0, p.honor - 1); } }
-    else { if (pass) { addStatXp(s, "stamina", 6); p.hunger = Math.min(100, p.hunger + 2); chips.push({ label: "Ustalık", col: "#C9A84C", k: "chip.ustalik" }); } else { p.health = Math.max(1, p.health - 2); chips.push({ label: "Sağlık −2", col: "#C0556B", k: "chip.health", p: ["−2"] }); } }
-    push(s, "mektep", `Mektep: ${SCHOOL_EV_TR[ev.id + "." + w]}`, "kişisel", false, { k: "sch." + ev.id + "." + w });
-  }
-  // ── Sınav: her 4 derste bir (ilgili statla test) ──
-  if (p.lesson_count % 4 === 0) {
-    const passed = zar(s, { stat: EXAM_STAT[id] || "intelligence", zorluk: SINAV_ZORLUK }).basari; // tek zar
-    if (passed) {
-      p.exam_wins = (p.exam_wins || 0) + 1;
-      if (p.exam_wins <= 3) { p.stat_points += 1; chips.push({ label: "Sınav geçildi · Puan +1", col: "#E0BC5A", k: "chip.exam" }); push(s, "mektep", "Sınava girdin ve geçtin — bir özellik puanı kazandın.", "kişisel", true, { k: "evj.examPass" }); }
-      else { addStatXp(s, EXAM_STAT[id] || "intelligence", 15); chips.push({ label: "Sınav geçildi · Tecrübe", col: "#E0BC5A", k: "chip.examXp" }); push(s, "mektep", "Sınavı yine geçtin; artık puandan çok ustalık birikiyor.", "kişisel", false, { k: "evj.examPassXp" }); }
-    }
-    else { chips.push({ label: "Sınavda zorlandın", col: "#C0556B", k: "chip.examFail" }); push(s, "mektep", "Sınava girdin ama zorlandın; daha çok çalışmalısın.", "kişisel", false, { k: "evj.examFail" }); }
-  }
+  addStatXp(s, d.stat, CALIS_STAT_XP);
+  if (d.beceri) { gainSkill(s, d.beceri, CALIS_BECERI_XP); chips.push({ label: "+" + CALIS_BECERI_XP, col: "#C9A84C", k: "chip.beceri", p: [CALIS_BECERI_XP] }); }
+  if (d.id === "din") { bumpNam(p, "dindar", 4); unEkle(p, "honor", 1); chips.push({ label: "Dindar +4", col: "#9C7BC4", k: "chip.dindar", p: ["+4"] }); }
+  if (!seasoned && d.id !== "din" && gameRandom(s) < 0.12) { p.stat_points += 1; chips.push({ label: "Özellik Puanı +1", col: "#E0BC5A", k: "chip.statpt" }); }
+  const v = gameRandom(s) < 0.5 ? "p2" : "p";
+  const key = mektepEvresi(p) === "medrese" ? "mek.calis." + d.id : "ev.study." + d.id + "." + v;
+  const TR: Record<string, string> = { din: "Mektepte dua ve hikmet dinledin.", matematik: "Rakamlarla boğuştun.", edebiyat: "Beyitler ezberledin.", beden: "Ter döktün, güçlendin.", fikih: "Medresede fıkıh okudun.", hesap: "Medresede hesap okudun.", hat: "Medresede hat meşk ettin.", tip: "Medresede tıp okudun." };
+  push(s, "mektep", TR[d.id] || "", "kişisel", false, { k: key });
   return { state: s, key, chips };
+}
+
+// ── Yıl sonu: sıbyanda sınav (7–12), medresede sınav (13–15), 16'yı bitirince icazet sınavı ──
+function mektepYilSonu(s: GameState) {
+  const p = s.player; if (p.dead) return;
+  const y = p.age - 1; const yil = oyunYili(s.turn) - 1;
+  const sibyan = y >= 7 && y <= 12; const medrese = p.egitim_yolu === "medrese" && y >= 13 && y <= 16;
+  if (!sibyan && !medrese) return;
+  const icazet = medrese && y === 16;
+  // sınav dersleri bitirilen yılın evresine göre (12'yi bitiren sıbyan; medresede yaş 13 olunca da sıbyan sayılmaz)
+  const dersler = sibyan ? SIBYAN_DERSLERI : MEDRESE_DERSLERI;
+  const odakD = p.mektep_odak_yil === yil ? dersler.find((d) => d.id === p.mektep_odak) : undefined;
+  const d = odakD || [...dersler].sort((a, b) => effStat(p, b.stat) - effStat(p, a.stat))[0];
+  const my = p.mektep_yil?.y === yil ? p.mektep_yil : undefined;
+  const ek: ZarKalemi[] = [{ etiket: "mek.kalem.hoca", deger: hocaKalemi(s) }, { etiket: "mek.kalem.calisma", deger: Math.min(3, Math.floor((my?.n || 0) / 4)) }];
+  if (my?.ek) ek.push({ etiket: "mek.kalem.kopya", deger: my.ek });
+  const z = icazet ? ICAZET_ZORLUK : medrese ? MEDRESE_ZORLUK : SIBYAN_ZORLUK + Math.floor((y - 7) / 2);
+  const r = zarDerece(s, { stat: d.stat, zorluk: z, ekKalemler: [...ek, ...hunerKalemleri(p, "sinav", d.stat)] });
+  delete p.mektep_yil;
+  const yuzde = Math.round(r.oran * 100);
+  if (icazet) {
+    const tur = d.id as IcazetTur;
+    p.mektep_sinav = { y: yil, sonuc: r.basari ? (r.derece === 3 ? "ustun" : "gecti") : "kaldi", ders: d.id, icazet: true };
+    if (r.basari) {
+      p.icazet = { tur, derece: r.derece as 1 | 2 | 3 }; delete p.icazet_kaldi;
+      unEkle(p, "reputation", 2 + r.derece); unEkle(p, "fame", r.derece);
+      if (p.hoca_id) s.relationships[p.hoca_id] = Math.min(100, (s.relationships[p.hoca_id] || 0) + 5);
+      push(s, "mektep", `Medreseyi bitirdin: ${tur} icazeti (${r.derece}. derece).`, "kişisel", true, { k: "mek.icazet.aldi", p: [{ tk: "mek.ders." + tur }, { tk: "mek.derece." + r.derece }, yuzde] });
+    } else { p.icazet_kaldi = true; push(s, "mektep", "İcazet sınavında kaldın; ders halkasında yeniden girebilirsin.", "kişisel", true, { k: "mek.icazet.kaldi", p: [{ tk: "mek.ders." + tur }, yuzde] }); }
+    return;
+  }
+  p.mektep_sinav = { y: yil, sonuc: r.derece === 3 ? "ustun" : r.basari ? "gecti" : "kaldi", ders: d.id };
+  if (r.basari) {
+    p.exam_wins = (p.exam_wins || 0) + 1;
+    if (p.exam_wins <= 3) p.stat_points += 1; else addStatXp(s, d.stat, 15); // ilk üç geçiş puan (eski kural)
+    if (r.derece === 3) { addStatXp(s, d.stat, 10); unEkle(p, "fame", 1); if (p.hoca_id) s.relationships[p.hoca_id] = Math.min(100, (s.relationships[p.hoca_id] || 0) + 3); }
+    push(s, "mektep", r.derece === 3 ? "Yıl sonu sınavını üstün geçtin." : "Yıl sonu sınavını geçtin.", "kişisel", r.derece === 3 || p.exam_wins <= 3, { k: r.derece === 3 ? "mek.sinav.ustun" : p.exam_wins <= 3 ? "mek.sinav.gecti" : "mek.sinav.gectiXp", p: [{ tk: "mek.ders." + d.id }, yuzde] });
+  } else push(s, "mektep", "Yıl sonu sınavında kaldın.", "kişisel", false, { k: "mek.sinav.kaldi", p: [{ tk: "mek.ders." + d.id }, yuzde] });
+}
+
+// ── Mektep kartları: mevcut 11 ders olayı seçimli; A seçeneği zar (stat sınaması), B güvenli ama başka değer ──
+export const MEKTEP_KARTLARI = SCHOOL_EVENTS.map((e) => e.id);
+export function mektepKartZar(s: GameState, id: string): ZarGirdi | null {
+  const p = s.player;
+  if (id === "kilic") return { stat: "strength", zorluk: KILIC_ZORLUK, ekKalemler: [{ etiket: "st.stamina", deger: Math.round(effEtki(p, "stamina") / 2) }, ...hunerKalemleri(p, "sinav", "strength")] };
+  const ev = SCHOOL_EVENTS.find((e) => e.id === id); if (!ev) return null;
+  return { stat: ev.stat, zorluk: DERS_OLAYI_ZORLUK, ekKalemler: hunerKalemleri(p, "ders", ev.stat) };
+}
+export function kilicBedeli(s: GameState): number { return Math.round(15 * inflationFactor(s)); }
+// Bu ayın mektep sahnesi (ay sahnesi seçer): 12 yaş yol kararı, 17 yaş kılıç icazeti (çırak), sıbyanda yılda en çok 2 kart
+// (12. yaşta 1 + yol kararı); ilk kart yılın 3. ayından, ikincisi 8. ayından sonra. Ömürde aynı kart iki kez gelmez.
+export function mektepSahnesi(s: GameState, random: () => number = Math.random): string | null {
+  const p = s.player; if (p.dead || inJail(p)) return null;
+  if (p.age === 12 && !p.egitim_yolu) return "yol";
+  if (p.age === 17 && egitimYolu(p) === "cirak" && !p.icazet && !(p.fates || []).includes("kilic17")) return "kilic";
+  if (p.age < 7 || p.age > 12) return null;
+  const n = p.mektep_kart?.y === p.age ? p.mektep_kart.n : 0; const ay = s.turn % 12;
+  const hedef = p.age === 12 ? 1 : 2;
+  if (n >= hedef || !(n === 0 ? ay >= 2 : ay >= 7)) return null;
+  const havuz = MEKTEP_KARTLARI.filter((id) => !(p.mektep_gorulen || []).includes(id));
+  return havuz.length ? havuz[Math.floor(random() * havuz.length)] : null;
+}
+const akranGorus = (s: GameState, d: number) => { for (const id of s.player.akran_ids || []) if (kisiYasiyor(s, id)) s.relationships[id] = Math.max(-100, Math.min(100, (s.relationships[id] || 0) + d)); };
+const hocaGorus = (s: GameState, d: number) => { const id = s.player.hoca_id; if (id && kisiYasiyor(s, id)) s.relationships[id] = Math.max(-100, Math.min(100, (s.relationships[id] || 0) + d)); };
+export function mektepKartSec(prev: GameState, id: string, index: number): GameState {
+  if (index !== 0 && index !== 1 || !mektepSahneGecerli(prev.player, id)) return prev;
+  const s = clone(prev); const p = s.player;
+  if (id === "yol") {
+    p.egitim_yolu = index === 0 ? "cirak" : "medrese";
+    if (index === 0) { gainSkill(s, "crafting", 15); gainSkill(s, "trade", 15); } else addStatXp(s, "intelligence", 8);
+    push(s, "mektep", index === 0 ? "Çıraklık yolunu seçtin." : "Medrese yolunu seçtin.", "kişisel", true, { k: index === 0 ? "mek.yol.cirak.x" : "mek.yol.medrese.x" });
+    return s;
+  }
+  if (id === "kilic") {
+    (p.fates = p.fates || []).push("kilic17");
+    if (index === 1) { gainSkill(s, (PROF_SKILL[p.profession] || "crafting") as SkillKey, 10); push(s, "mektep", "Talimhaneye gitmedin; tezgâhına döndün.", "kişisel", false, { k: "mek.kart.kilic.bx" }); return s; }
+    p.money = Math.max(0, p.money - kilicBedeli(s));
+    const r = zarDerece(s, mektepKartZar(s, "kilic")!);
+    if (r.basari) { p.icazet = { tur: "kilic", derece: r.derece as 1 | 2 | 3 }; unEkle(p, "reputation", 1 + r.derece); bumpNam(p, "mert", 2); push(s, "mektep", "Talimhaneden kılıç icazetiyle çıktın.", "kişisel", true, { k: "mek.icazet.aldi", p: [{ tk: "mek.ders.kilic" }, { tk: "mek.derece." + r.derece }, Math.round(r.oran * 100)] }); }
+    else { gainSkill(s, "combat", 12); push(s, "mektep", "Talimhanede icazet alamadın ama kolun pişti.", "kişisel", false, { k: "mek.kart.kilic.al" }); }
+    return s;
+  }
+  // sıbyan kartı: yıl sayacı + ömür boyu görülenler
+  p.mektep_kart = p.mektep_kart?.y === p.age ? { y: p.age, n: p.mektep_kart.n + 1 } : { y: p.age, n: 1 };
+  p.mektep_gorulen = [...(p.mektep_gorulen || []), id];
+  const seasoned = (p.exam_wins || 0) >= 3; const y = oyunYili(s.turn);
+  let k: string;
+  if (index === 1) {
+    k = "mek.kart." + id + ".bx";
+    if (id === "kopya") { unEkle(p, "honor", 4); k = "sch.kopya.win"; }
+    else if (id === "kavga") { p.honor = Math.max(0, p.honor - 1); hocaGorus(s, 3); }
+    else if (id === "siir") addStatXp(s, "charisma", 4);
+    else if (id === "soru") { addStatXp(s, "intelligence", 4); hocaGorus(s, 2); }
+    else if (id === "yaramazlik") { hocaGorus(s, 2); akranGorus(s, -3); }
+    else if (id === "yardim") { const d = mektepDersleri(p).find((x) => x.id === mektepOdak(s)) || mektepDersleri(p)[0]; addStatXp(s, d.stat, 5); }
+    else if (id === "hattat") { addStatXp(s, "intelligence", 3); gainSkill(s, "crafting", 3); }
+    else if (id === "harita") hocaGorus(s, 3);
+    else if (id === "misafir") addStatXp(s, "intelligence", 4);
+    else addStatXp(s, "intelligence", 3); // ezber, bahce
+  } else {
+    const ok = zar(s, mektepKartZar(s, id)!).basari;
+    k = "sch." + id + "." + (ok ? "win" : "lose");
+    if (id === "kopya") { if (ok) { p.mektep_yil = p.mektep_yil?.y === y ? { ...p.mektep_yil, ek: 1 } : { y, n: 0, ek: 1 }; p.honor = Math.max(0, p.honor - 1); k = "mek.kart.kopya.aw"; } else { p.honor = Math.max(0, p.honor - 3); p.reputation = Math.max(-100, p.reputation - 2); hocaGorus(s, -8); } }
+    else if (id === "kavga") { if (ok) { unEkle(p, "honor", 5); unEkle(p, "reputation", 2); p.health = Math.max(1, p.health - 3); } else p.health = Math.max(1, p.health - 5); }
+    else if (id === "siir") { if (ok) { gainSkill(s, "social", 8); unEkle(p, "fame", 1); } else p.honor = Math.max(0, p.honor - 1); }
+    else if (id === "soru") { if (ok) { if (!seasoned) p.stat_points += 1; else addStatXp(s, "intelligence", 10); } }
+    else if (id === "yaramazlik") { if (ok) { bumpNam(p, "capkin", 2); akranGorus(s, 6); } else { p.honor = Math.max(0, p.honor - 2); hocaGorus(s, -5); } }
+    else if (id === "yardim") { if (ok) { unEkle(p, "honor", 3); gainSkill(s, "social", 6); akranGorus(s, 5); } }
+    else if (id === "hattat") { if (ok) gainSkill(s, "crafting", 8); else p.honor = Math.max(0, p.honor - 1); }
+    else if (id === "ezber") { if (ok) { addStatXp(s, "intelligence", 8); unEkle(p, "fame", 1); } }
+    else if (id === "harita") { if (ok) addStatXp(s, "intelligence", 8); else p.honor = Math.max(0, p.honor - 1); }
+    else if (id === "misafir") { if (ok) { gainSkill(s, "social", 8); unEkle(p, "fame", 1); } else p.honor = Math.max(0, p.honor - 1); }
+    else { if (ok) { addStatXp(s, "stamina", 6); p.hunger = Math.min(100, p.hunger + 2); } else p.health = Math.max(1, p.health - 2); } // bahce
+  }
+  push(s, "mektep", `Mektep: ${SCHOOL_EV_TR[id + ".win"] || ""}`, "kişisel", false, { k });
+  return s;
+}
+
+// ── 18+ ders halkası: yılda bir ders (seçilen stata küçük tecrübe, küçük bedel); medresede icazeti kaçırana yeniden sınav ──
+export function dersHalkasiBedeli(s: GameState): number { return Math.round(8 * inflationFactor(s)); }
+export function dersHalkasiAcik(s: GameState): boolean { const p = s.player; return !p.dead && !inJail(p) && p.age >= 18 && p.ders_halkasi_yil !== oyunYili(s.turn); }
+export function dersHalkasi(prev: GameState, stat: keyof Stats): GameState {
+  const s = clone(prev); const p = s.player; const bedel = dersHalkasiBedeli(s);
+  if (!dersHalkasiAcik(s) || !(stat in p.stats) || p.money < bedel) return prev;
+  p.ders_halkasi_yil = oyunYili(s.turn); p.money -= bedel;
+  addStatXp(s, stat, DERS_HALKASI_XP);
+  push(s, "mektep", "Bir ders halkasına oturdun.", "kişisel", false, { k: "mek.halka.ders", p: [{ statk: stat }, bedel] });
+  return s;
+}
+export function icazetTekrarAcik(s: GameState): boolean { return dersHalkasiAcik(s) && !s.player.icazet && !!s.player.icazet_kaldi; }
+export function icazetTekrarGirdi(s: GameState): ZarGirdi {
+  const p = s.player; const tur = (MEDRESE_DERSLERI.some((d) => d.id === p.mektep_odak) ? p.mektep_odak : "fikih")!;
+  const d = MEDRESE_DERSLERI.find((x) => x.id === tur)!;
+  return { stat: d.stat, zorluk: ICAZET_ZORLUK, ekKalemler: [{ etiket: "mek.kalem.hoca", deger: hocaKalemi(s) }, ...hunerKalemleri(p, "sinav", d.stat)] };
+}
+export function icazetTekrar(prev: GameState): GameState {
+  const s = clone(prev); const p = s.player;
+  if (!icazetTekrarAcik(s)) return prev;
+  p.ders_halkasi_yil = oyunYili(s.turn);
+  const g = icazetTekrarGirdi(s); const tur = (MEDRESE_DERSLERI.find((d) => d.stat === g.stat && d.id === p.mektep_odak)?.id || "fikih") as IcazetTur;
+  const r = zarDerece(s, g);
+  if (r.basari) { p.icazet = { tur, derece: r.derece as 1 | 2 | 3 }; delete p.icazet_kaldi; unEkle(p, "reputation", 2 + r.derece); push(s, "mektep", "İcazetini aldın.", "kişisel", true, { k: "mek.icazet.aldi", p: [{ tk: "mek.ders." + tur }, { tk: "mek.derece." + r.derece }, Math.round(r.oran * 100)] }); }
+  else push(s, "mektep", "İcazet sınavında yine kaldın.", "kişisel", false, { k: "mek.icazet.kaldi", p: [{ tk: "mek.ders." + tur }, Math.round(r.oran * 100)] });
+  return s;
+}
+// Müderrislik: zekâ ≥12 + icazet (derece ≥2). Ayda bir ders verme (çalışma gücünden), küçük gelir + itibar; yılın her dersinde azalır.
+export function muderrisMi(p: Player): boolean { return !p.dead && p.age >= 18 && effStat(p, "intelligence") >= MUDERRIS_ZEKA && (p.icazet?.derece || 0) >= 2 && p.icazet?.tur !== "kilic"; }
+export function muderrisGeliri(s: GameState): number {
+  const p = s.player; const n = p.muderris?.y === oyunYili(s.turn) ? p.muderris.n : 0;
+  return Math.max(1, Math.round(6 * inflationFactor(s) * Math.max(0.25, 1 - 0.1 * n)));
+}
+export function dersVerAcik(s: GameState): boolean { const p = s.player; return muderrisMi(p) && !inJail(p) && p.muderris?.t !== s.turn && studyEnergy(s) >= STUDY_COST; }
+export function dersVer(prev: GameState): GameState {
+  const s = clone(prev); const p = s.player;
+  if (!dersVerAcik(s)) return prev;
+  const y = oyunYili(s.turn); const n = p.muderris?.y === y ? p.muderris.n : 0;
+  const gelir = muderrisGeliri(s);
+  p.study_energy = studyEnergy(s) - STUDY_COST; p.muderris = { y, n: n + 1, t: s.turn };
+  p.money += gelir; if (n < 3) unEkle(p, "reputation", 1); gainSkill(s, "social", 3);
+  if (!p.talebe_id || !kisiYasiyor(s, p.talebe_id)) {
+    const pop = nufusHazirla(s); const wy = worldYears(s);
+    const ad = Object.values(pop.k).filter((k) => k.ol == null && k.loc === p.location_name && yasOf(k, wy) >= 12 && yasOf(k, wy) <= 20 && !oyuncuAkrabasi(p, k.id) && k.id !== p.spouse_id);
+    const k = ad.length ? ad[Math.floor(gameRandom(s) * ad.length)] : (() => { const x = yeniGelen(pop, wy, p.location_name, gameRandom(s) < 0.5 ? "erkek" : "kadın", 14, () => gameRandom(s)); nufusDegisti(pop); return x; })();
+    p.talebe_id = k.id; s.relationships[k.id] = Math.max(s.relationships[k.id] || 0, 20);
+    push(s, "mektep", `${kisiAdi(k, "tr")} talebe olarak halkana oturdu.`, "kişisel", false, { k: "mek.talebe.yeni", p: [knParam(k)] });
+  } else s.relationships[p.talebe_id] = Math.min(100, (s.relationships[p.talebe_id] || 0) + 1);
+  push(s, "mektep", `Ders verdin (+${gelir} akçe).`, "kişisel", false, { k: "mek.muderris.ders", p: [gelir] });
+  return s;
+}
+// İcazetin zar kalemi (iş olayı ve imza): ilgili meslekte +1, 3. derecede +2.
+export function icazetKalemi(p: Player, alan: HunerAlan): ZarKalemi[] {
+  const ic = p.icazet; if (!ic || (alan !== "is" && alan !== "imza") || !ICAZET_MESLEK[ic.tur]?.includes(p.profession)) return [];
+  return [{ etiket: "mek.kalem.icazet", deger: ic.derece === 3 ? 2 : 1 }];
+}
+// Meslek kapısı: icazetin açtığı meslekte beceri tecrübesi şartı yarıya iner (mevcut şart kırılmaz, ek yol).
+export function meslekXpMin(p: Player, id: string): number {
+  const m = meslekSarti(id); if (!m) return 0;
+  return p.icazet && ICAZET_MESLEK[p.icazet.tur]?.includes(id) ? Math.ceil(m.xpMin / 2) : m.xpMin;
 }
 
 // Kulüpte meşk et — ayda 1, kulüp çağında (7-17). Aktif çalışma: derse ek, kulübe özgü sonuç + kulüp itibarı.
@@ -8960,7 +9229,7 @@ export function meslekSermaye(s: GameState, id: string): number { const m = mesl
 export function meslekEksik(s: GameState, id: string): { stat: boolean; xp: boolean; sermaye: boolean } {
   const p = s.player; const m = meslekSarti(id);
   if (!m) return { stat: true, xp: true, sermaye: true };
-  return { stat: effStat(p, m.stat) < m.statMin, xp: (p.skill_xp?.[m.skill] || 0) < m.xpMin, sermaye: p.money < meslekSermaye(s, id) };
+  return { stat: effStat(p, m.stat) < m.statMin, xp: (p.skill_xp?.[m.skill] || 0) < meslekXpMin(p, id), sermaye: p.money < meslekSermaye(s, id) };
 }
 export function meslegeUygun(s: GameState, id: string): boolean { const e = meslekEksik(s, id); return !e.stat && !e.xp && !e.sermaye; }
 
@@ -9382,6 +9651,7 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
     generation: p.generation, name: p.name, profession: p.profession,
     diedAge: p.age, fame: Math.round(p.fame), reputation: Math.round(p.reputation), faction: p.faction,
     note: DYNNOTE_TR[dynastyNote(p)], noteK: dynastyNote(p), causeK: p.death_cause, grandchildren: p.grandchildren?.length ? [...p.grandchildren] : undefined,
+    ...(p.icazet ? { icazet: p.icazet.tur } : {}), // F3: atanın icazeti ocak kaydında (F7 ocak gelenekleri için); vârise geçmez
   };
   const dynasty = [...(prev.dynasty || []), ancestor];
   const noteStr = childName && investNotes.length ? ` ${heir}, ${investNotes.join(", ")} olarak yetişti.` : "";
@@ -11089,6 +11359,7 @@ export function yakinCember(s: GameState, lang: Lang = "tr"): { npc: NPC; rol: s
   ekle(p.betrothed?.id, "cember.soz", 1, 4);
   for (const id of evlatKimlikleri(p)) ekle(id, cins(id, "cember.evlat"), 2, 2);
   ekle(p.usta_id, "cember.usta", 2, 4); ekle(p.cirak?.id, "cember.cirak", 2, 4);
+  ekle(p.hoca_id, "cember.hoca", 2, 4); ekle(p.talebe_id, "cember.talebe", 2, 4); // F3: mektep hocası, müderrisin talebesi
   if (p.rakip && !p.rakip.bitti) ekle(p.rakip.id, "cember.rakip", 2, 4);
   const yd = yoldasDurumu(p); if (p.child_friend && yd !== "ayrildi") ekle(p.child_friend.id, yd === "rakip" ? "cember.rakip" : "cember.yoldas", 2, 4);
   for (const x of s.kanDefteri || []) ekle(x.id, x.tur === "canborcu" ? "cember.canborcu" : "cember.kanli", 2, 4);
@@ -11100,6 +11371,7 @@ export function yakinCember(s: GameState, lang: Lang = "tr"): { npc: NPC; rol: s
   const hasimlar = geri.filter((x) => x.v < 0).slice(0, 3);
   for (const x of hasimlar) ekle(x.id, "cember.hasim", 3, 5);
   for (const id of p.sibling_ids || []) ekle(id, cins(id, "cember.kardes"), 4, 3);
+  for (const id of p.akran_ids || []) ekle(id, "cember.akran", 4, 4); // F3: mektep akranları
   for (const x of geri) ekle(x.id, x.v > 0 ? "cember.dost" : "cember.hasim", 5, 5);
   // Seçim: önce 1–2. öncelik (en ağır hasıma bir yer ayırarak), sonra sırayla kalanlar.
   const ayir = hasimlar.length ? 1 : 0; const secili: typeof aday = [];
@@ -11547,6 +11819,7 @@ export function hunerKalemleri(p: Player, alan: HunerAlan, stat?: keyof Stats): 
   const out: ZarKalemi[] = [];
   for (const id of p.perks || []) { const z = HUNER_ZAR[id]; if (z && z.alan.includes(alan) && (!z.stat || (stat && z.stat.includes(stat)))) out.push({ etiket: "perk." + id + ".l", deger: z.deger }); }
   for (const k of hunerUnvanlari(p)) if (DAL_ALAN[k].includes(alan)) out.push({ etiket: "huner.unvan." + k, deger: 1 });
+  out.push(...icazetKalemi(p, alan)); // F3: ilgili meslekte icazet
   return out;
 }
 // Zar dışı (eski oran formüllü) noktalar için aynı kalemlerin olasılık karşılığı: kalem başına ZAR_ADIM (0.08).
@@ -11831,6 +12104,7 @@ export function teklifSansi(s: GameState, npc: NPC, tur: "kur" | "gorucu" | "flo
   let tavan = 100;
   if (tur === "kur") {
     ekle("sans.taban", 25); ekle("sans.gorus", (relWith(s, npc.id) - 50) * 1.2); ekle("sans.sosyal", socialPresence(p) * 3);
+    if (p.icazet) ekle("sans.icazet", 2 + p.icazet.derece); // F3: icazetli kısmet: ailelerin gözünde küçük artı
     for (const k of hunerKalemleri(p, "kur")) ekle(k.etiket, k.deger * 8); // K3: Karizmatik/Gönül Eri/Ahi Baba (kalem başına 8 puan)
     const n = p.nam || ({} as Nam); const trust = ((n.mert || 0) + p.honor * 0.6 + (n.dindar || 0) * 0.4) / 100;
     const kt = ekle("sans.guven", recognition(s) * trust * 20) + ekle("sans.capkin", -(n.capkin || 0) / 100 * 12) + ekle("sans.korku", -dread(s) / 100 * 15) + ekle("sans.zalim", playerDominantNam(p) === "zalim" ? -18 : 0);
@@ -11838,6 +12112,7 @@ export function teklifSansi(s: GameState, npc: NPC, tur: "kur" | "gorucu" | "flo
     tavan = 97;
   } else if (tur === "gorucu") {
     ekle("sans.taban", 42); ekle("sans.sosyal", socialPresence(p) * 4); ekle("sans.sohret", p.fame / 3.2);
+    if (p.icazet) ekle("sans.icazet", 2 + p.icazet.derece);
     for (const k of hunerKalemleri(p, "gorucu")) ekle(k.etiket, k.deger * 8);
     tavan = 92;
   } else if (tur === "flort") {
@@ -12754,7 +13029,8 @@ export function canEnterCourt(s: GameState): boolean {
   if (p.dead || p.crowned || inCourt(p) || p.age < 18 || p.reputation < 30) return false;
   // Divana liyakatle girilir: kâtiplikte pişmiş olmak YA DA okumuş-yazmış keskin bir akıl (zekâ + mektep sınavı ya da ticaret tecrübesi).
   const katipPismis = p.profession === "katip" && p.career_xp >= 30;
-  const okumus = effStat(p, "intelligence") >= 6 && ((p.exam_wins || 0) >= 3 || (p.skill_xp?.trade || 0) >= 200);
+  const icazetli = !!p.icazet && p.icazet.tur !== "kilic" && p.icazet.tur !== "tip"; // F3: hat/fıkıh/hesap icazeti divan kapısıdır
+  const okumus = effStat(p, "intelligence") >= 6 && ((p.exam_wins || 0) >= 3 || (p.skill_xp?.trade || 0) >= 200 || icazetli);
   return katipPismis || okumus;
 }
 export function enterCourt(prev: GameState): GameState {
@@ -13285,6 +13561,17 @@ export function migrate(s: GameState): GameState {
   // K2 (F1): niyet/stat sayacı/karizma kilidi opsiyonel — bozuksa varsayılansız silinir (eski kayıt aynı sayılarla kalır).
   if (p.niyet !== undefined && !(NIYETLER.some((n) => n.id === p.niyet) && Number.isFinite(p.niyet_yil))) { delete p.niyet; delete p.niyet_yil; delete p.niyet_degisti; }
   if (p.niyet === undefined) { delete p.niyet_yil; delete p.niyet_degisti; }
+  // F3 mektep: opsiyonel alanlar bozuksa silinir; 13–17 yaşında yol kararı yoksa çıraklık sayılır (hoca ilk ayda atanır).
+  if (p.egitim_yolu !== undefined && p.egitim_yolu !== "cirak" && p.egitim_yolu !== "medrese") delete p.egitim_yolu;
+  if (p.egitim_yolu === undefined && Number.isFinite(p.age) && p.age >= 13 && p.age < 18) p.egitim_yolu = "cirak";
+  if (p.icazet !== undefined && !(p.icazet && ICAZET_TURLERI.includes(p.icazet.tur) && [1, 2, 3].includes(p.icazet.derece))) delete p.icazet;
+  for (const key of ["hoca_id", "talebe_id", "mektep_odak"]) if (p[key] !== undefined && typeof p[key] !== "string") delete p[key];
+  if (p.akran_ids !== undefined) { if (Array.isArray(p.akran_ids)) p.akran_ids = p.akran_ids.filter((v: unknown) => typeof v === "string").slice(0, 3); else delete p.akran_ids; }
+  if (p.mektep_gorulen !== undefined) { if (Array.isArray(p.mektep_gorulen)) p.mektep_gorulen = p.mektep_gorulen.filter((v: unknown) => typeof v === "string"); else delete p.mektep_gorulen; }
+  for (const key of ["mektep_odak_yil", "calis_turn", "ders_halkasi_yil"]) if (p[key] !== undefined && !Number.isFinite(p[key])) delete p[key];
+  for (const key of ["mektep_yil", "mektep_kart", "muderris"]) if (p[key] !== undefined && !(p[key] && Number.isFinite(p[key].y) && Number.isFinite(p[key].n))) delete p[key];
+  if (p.mektep_sinav !== undefined && !(p.mektep_sinav && Number.isFinite(p.mektep_sinav.y) && ["kaldi", "gecti", "ustun"].includes(p.mektep_sinav.sonuc) && typeof p.mektep_sinav.ders === "string")) delete p.mektep_sinav;
+  if (p.icazet_kaldi !== undefined && p.icazet_kaldi !== true) delete p.icazet_kaldi;
   if (p.niyet_degisti !== undefined && p.niyet_degisti !== true) delete p.niyet_degisti;
   if (p.stat_kullanim !== undefined) {
     const sk = p.stat_kullanim; const temiz: Record<string, number[]> = {};
