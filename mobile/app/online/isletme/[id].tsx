@@ -4,6 +4,8 @@
 // görür. Kasa, gelir dökümü, kalite ve devir sürümü sunucudan gelir; her yazmadan sonra panel yeniden okunur.
 // Tezgâh modeli (dükkân, atölye): GET .../tezgah ile dükkân sahnesi, kepenk, raf ızgarası (sahibe "Dükkânım", müşteriye
 // "Dükkâna gir"), depo çekmecesi ve gün sonu; elle kapı ayarı ve fiyat çarpanı burada yoktur. Han: yolcu payı dökümü.
+// Atölye (Dilim 2, lib/online/atolye-ui.tsx): zanaat, tezgâh ve emirler, üretim, mesai ve emek havuzu, ay sonu dökümü, toplu
+// sipariş, genişletme (dükkânda da); NPC işe alımı Personel bölümünden (atölyede maaş tabanı ve emanet şartıyla).
 import { useCallback, useEffect, useRef, useState } from "react";
 import { View, Text, TextInput } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -28,6 +30,8 @@ import { dukkanlariHatirla, hatirlananDukkanlar, tezgahHataMetni, tezgahHatirla,
 import {
   DepoCekmecesi, DepoOzeti, DevralCekmecesi, DukkanBasligi, GunSonuKarti, KepenkSatiri, RafCekmecesi, RafIzgarasi, SatinAlCekmecesi, TezgahIskeleti, YolcuPayiDokumu,
 } from "../../../lib/online/tezgah-ui";
+import { AtolyeBolumu, GenisletmeKarti } from "../../../lib/online/atolye-ui";
+import { atolyeHataMetni, useAtolyeIstemci } from "../../../lib/online/atolye-veri";
 import { hatirlananMulkListesi } from "../../../lib/online/simdi-rehber";
 import { kisiYolu } from "../../../lib/online/toplum-veri";
 
@@ -59,7 +63,7 @@ function DevirKarti({ d, t, rtl }: { d: DevirOnizleme; t: Ceviri; rtl: boolean }
   </Cerceve>;
 }
 
-function SozlesmeKarti({ s, t, rtl, sahip, yonetici, bekliyor, onKomut }: { s: SozlesmeGorunumu; t: Ceviri; rtl: boolean; sahip: boolean; yonetici: boolean; bekliyor: boolean; onKomut: (g: Record<string, unknown>) => void }) {
+function SozlesmeKarti({ s, t, rtl, sahip, yonetici, bekliyor, onKomut, npcMaasEnAz }: { s: SozlesmeGorunumu; t: Ceviri; rtl: boolean; sahip: boolean; yonetici: boolean; bekliyor: boolean; onKomut: (g: Record<string, unknown>) => void; npcMaasEnAz?: number | null }) {
   const [maas, setMaas] = useState(s.maas);
   return <Cerceve ic={{ padding: 12, gap: 8 }}>
     <View style={{ flexDirection: yon(rtl), alignItems: "center", gap: 10 }}>
@@ -84,11 +88,12 @@ function SozlesmeKarti({ s, t, rtl, sahip, yonetici, bekliyor, onKomut }: { s: S
     </View>
     {s.vekaletBitis !== null ? <Not metin={applyParams(t("onl.isl.vekaletBitis"), [s.vekaletBitis])} rtl={rtl} /> : null}
     {yonetici ? <>
-      <Sayac etiket={t("onl.isl.maas")} deger={maas} en={s.calisan.tur === "oyuncu" ? s.maas : SINIR.maasEnAz} cok={SINIR.maasEnCok} onDegis={setMaas} />
+      <Sayac etiket={t("onl.isl.maas")} deger={maas} en={s.calisan.tur === "oyuncu" ? s.maas : Math.min(s.maas, npcMaasEnAz ?? SINIR.maasEnAz)} cok={SINIR.maasEnCok} onDegis={setMaas} />
       <View style={{ flexDirection: yon(rtl), gap: 8 }}>
         <View style={{ flex: 1 }}><CizgiDugme etiket={t("onl.isl.maasKaydet")} icon="coins" rtl={rtl} kucuk kapali={maas === s.maas || bekliyor} onPress={() => onKomut({ islem: "maas", sozlesme: s.no, maas })} /></View>
         <View style={{ flex: 1 }}><CizgiDugme etiket={t("onl.isl.cikar")} icon="walk" rtl={rtl} kucuk kapali={bekliyor} onPress={() => onKomut({ islem: "cikar", sozlesme: s.no })} /></View>
       </View>
+      {s.calisan.tur === "npc" && npcMaasEnAz ? <Not metin={applyParams(t(s.maas < npcMaasEnAz ? "onl.atl.npc.maasAlti" : "onl.atl.npc.maasNot"), [npcMaasEnAz])} rtl={rtl} /> : null}
       <Not metin={applyParams(t("onl.isl.tazminatNot"), [s.maas])} rtl={rtl} />
     </> : null}
   </Cerceve>;
@@ -117,6 +122,7 @@ function IsletmeEkran() {
   const [devirF, setDevirF] = useState<{ alici: string | null; fiyat: number }>({ alici: null, fiyat: 100 });
   // Tezgâh (dükkân, atölye)
   const tzi = useTezgahIstemci();
+  const ati = useAtolyeIstemci();
   const hesap = o.profil?.hesapId ?? "";
   const tezgahli = isletmeParca(id)?.tur === "dukkan" || isletmeParca(id)?.tur === "atolye";
   const [tz, setTz] = useState<TezgahGorunumu | null>(null);
@@ -157,7 +163,7 @@ function IsletmeEkran() {
   useEffect(() => { void yukle(); }, [yukle]);
   if (!y) return <YerlesimBekle rtl={rtl} t={t} onGiris={() => router.replace("/online")} />;
 
-  const komut = async (k: IsletmeKomutu, govde: Record<string, unknown>, basari?: string) => {
+  const komut = async (k: IsletmeKomutu, govde: Record<string, unknown>, basari?: string, atolyeBaglami = false) => {
     setBekliyor(true); setHata(null); setBilgi(null);
     const r = await ist.komut(id, k, { ...govde, istekNo: istekNoUret() });
     setBekliyor(false);
@@ -166,7 +172,7 @@ function IsletmeEkran() {
       setBilgi(r.deger.transferDurumu === "bekliyor" ? t("onl.isl.transferBekliyor") : basari ?? t("onl.isl.kaydedildi"));
       await yukle();
       if (!sahte) void o.yerlesimYukle(true);
-    } else { hap("error"); setHata(t(ekHataAnahtari(r.hata))); }
+    } else { hap("error"); setHata(atolyeBaglami ? atolyeHataMetni(t, r) : t(ekHataAnahtari(r.hata))); }
   };
 
   const ak = (n: number) => applyParams(t("onl.is.akce"), [n]);
@@ -178,6 +184,12 @@ function IsletmeEkran() {
   const adaylar = y.ben.tanidiklar.slice(0, 10);
   const oyuncuAdaylar = adaylar.filter((x) => x.oyuncu);
   const bolumler: Bolum[] = konum ? ["kasa", "ayar", "personel", ...(sahip ? ["devir" as const] : [])] : [];
+  // Atölyede NPC emeği üretir: NPC maaş tabanı ve emanet şartı sunucudan (atolye.emek.npcMaasEnAz).
+  const atolyeIsletme = is?.tur === "atolye";
+  const npcMaasEnAz = atolyeIsletme ? tz?.atolye?.emek.npcMaasEnAz ?? null : null;
+  const iflas = is?.durum === "iflas";
+  const adayNpc = !!isAl.hedef && !adaylar.find((a) => a.id === isAl.hedef)?.oyuncu;
+  const isAlEnAz = adayNpc && npcMaasEnAz ? npcMaasEnAz : SINIR.maasEnAz;
 
   const ust = is ? <Cerceve aktif={is.durum === "acik" && is.kapi} ic={{ padding: 12, gap: 10 }}>
     <View style={{ flexDirection: yon(rtl), alignItems: "center", gap: 10 }}>
@@ -276,7 +288,7 @@ function IsletmeEkran() {
       <Text style={{ fontFamily: F.display, fontSize: 11.5, letterSpacing: rtl ? 0 : 1.2, color: C.goldBright, textAlign: hiza(rtl) }}>{applyParams(t("onl.isl.kalite"), [is.kalite.toplam])}</Text>
       {is.kalite.dokum.map((d) => <Satir key={d.rol} etiket={`${t("onl.isl.rol." + d.rol)} · ${t("onl.isl.kaynak." + d.kaynak)}`} deger={t("onl.kd." + ["cirak", "kalfa", "usta", "pir"][Math.max(0, Math.min(3, d.kademe))])} rtl={rtl} />)}
     </Cerceve> : null}
-    {(is.personel ?? []).length ? (is.personel ?? []).map((s) => <SozlesmeKarti key={s.no} s={s} t={t} rtl={rtl} sahip={sahip} yonetici={yonetici} bekliyor={bekliyor} onKomut={(g) => { void komut("personel", g); }} />)
+    {(is.personel ?? []).length ? (is.personel ?? []).map((s) => <SozlesmeKarti key={s.no} s={s} t={t} rtl={rtl} sahip={sahip} yonetici={yonetici} bekliyor={bekliyor} onKomut={(g) => { void komut("personel", g, undefined, atolyeIsletme); }} npcMaasEnAz={npcMaasEnAz} />)
       : <BosKart icon="family" metin={t("onl.isl.personelYok")} rtl={rtl} />}
     {is.teklifler?.length ? <Cerceve ic={{ padding: 12, gap: 4 }}>
       <Text style={{ fontFamily: F.display, fontSize: 11.5, letterSpacing: rtl ? 0 : 1.2, color: C.goldBright, textAlign: hiza(rtl) }}>{t("onl.isl.bekleyenTeklif")}</Text>
@@ -284,13 +296,15 @@ function IsletmeEkran() {
     </Cerceve> : null}
     {yonetici ? <Cerceve ic={{ padding: 12, gap: 10 }}>
       <Text style={{ fontFamily: F.display, fontSize: 11.5, letterSpacing: rtl ? 0 : 1.2, color: C.goldBright, textAlign: hiza(rtl) }}>{t("onl.isl.iseAl")}</Text>
-      {adaylar.length ? <Secenekler secenekler={adaylar.map((a) => a.id)} secili={isAl.hedef} onSec={(h) => setIsAl({ ...isAl, hedef: h })} etiket={(h) => adaylar.find((a) => a.id === h)?.ad ?? h} ikon={(h) => (adaylar.find((a) => a.id === h)?.oyuncu ? "family" : "hood")} />
+      {adaylar.length ? <Secenekler secenekler={adaylar.map((a) => a.id)} secili={isAl.hedef}
+        onSec={(h) => { const npc = !adaylar.find((a) => a.id === h)?.oyuncu; setIsAl({ ...isAl, hedef: h, maas: npc && npcMaasEnAz ? Math.max(isAl.maas, npcMaasEnAz) : isAl.maas }); }} etiket={(h) => adaylar.find((a) => a.id === h)?.ad ?? h} ikon={(h) => (adaylar.find((a) => a.id === h)?.oyuncu ? "family" : "hood")} />
         : <BosKart icon="family" metin={t("onl.isl.adayYok")} rtl={rtl} />}
       <Secenekler secenekler={ROLLER} secili={isAl.rol} onSec={(r) => setIsAl({ ...isAl, rol: r })} etiket={(r) => t("onl.isl.rol." + r)} />
-      <Sayac etiket={t("onl.isl.maas")} deger={isAl.maas} en={SINIR.maasEnAz} cok={SINIR.maasEnCok} onDegis={(m) => setIsAl({ ...isAl, maas: m })} />
+      <Sayac etiket={t("onl.isl.maas")} deger={Math.max(isAl.maas, isAlEnAz)} en={isAlEnAz} cok={SINIR.maasEnCok} onDegis={(m) => setIsAl({ ...isAl, maas: m })} />
       <Not metin={t("onl.isl.iseAlNot")} rtl={rtl} />
+      {atolyeIsletme && npcMaasEnAz ? <Not metin={applyParams(t("onl.atl.npc.personelNot"), [npcMaasEnAz, tz?.atolye?.emek.npcKaliteCeza ?? 0])} rtl={rtl} /> : null}
       <AltinDugme etiket={t(isAl.hedef && adaylar.find((a) => a.id === isAl.hedef)?.oyuncu ? "onl.isl.teklifGonder" : "onl.isl.npcAl")} icon="medal" rtl={rtl} kapali={!isAl.hedef} bekliyor={bekliyor}
-        onPress={() => { const oy = !!adaylar.find((a) => a.id === isAl.hedef)?.oyuncu; void komut("personel", { islem: oy ? "teklif" : "npc", hedef: isAl.hedef, rol: isAl.rol, maas: isAl.maas }); }} />
+        onPress={() => { const oy = !!adaylar.find((a) => a.id === isAl.hedef)?.oyuncu; void komut("personel", { islem: oy ? "teklif" : "npc", hedef: isAl.hedef, rol: isAl.rol, maas: Math.max(isAl.maas, isAlEnAz) }, undefined, atolyeIsletme); }} />
     </Cerceve> : null}
     {konum !== "sahip" ? <CizgiDugme etiket={t("onl.isl.istifa")} icon="walk" rtl={rtl} kucuk kapali={bekliyor} onPress={() => { void komut("personel", { islem: "istifa" }); }} /> : null}
   </View> : null;
@@ -331,15 +345,20 @@ function IsletmeEkran() {
         if (edinimFiyat === null) void ist.liste().then((r) => { if (r.ok) setEdinimFiyat(r.deger.edinimSarti.dukkan?.fiyat ?? null); });
       }} />
     </Cerceve> : null}
-    {yetkili ? <>
+    {yetkili && tz.tur === "atolye" ? <AtolyeBolumu g={tz} ist={ati} iflas={iflas} yonetici={konum === "sahip" || konum === "vekil"} rtl={rtl} t={t}
+      onYenile={tezgahTazele} onDepo={() => ac("depo")}
+      onPersonel={konum === "sahip" || konum === "vekil" ? () => { hap("selection"); setBolum("personel"); setHata(null); setBilgi(null); } : undefined} /> : null}
+    {yetkili && tz.tur === "dukkan" ? <>
       <Baslik2 metin={t("onl.tz.depo")} rtl={rtl} ust={10} />
-      {tz.tur === "atolye" ? <Not metin={t("onl.tz.uretimYakinda")} rtl={rtl} /> : null}
       <DepoOzeti g={tz} t={t} rtl={rtl} onAc={() => ac("depo")} />
-      {tz.tur === "dukkan" ? <>
-        <Baslik2 metin={t("onl.tz.gunSonu")} rtl={rtl} ust={10} />
-        <GunSonuKarti gs={tz.gunSonu} ozet={tz.ozet} t={t} rtl={rtl} />
+      <Baslik2 metin={t("onl.tz.gunSonu")} rtl={rtl} ust={10} />
+      <GunSonuKarti gs={tz.gunSonu} ozet={tz.ozet} t={t} rtl={rtl} />
+      {tz.genisletme ? <>
+        <Baslik2 metin={t("onl.atl.genislet.baslik")} rtl={rtl} ust={10} />
+        <GenisletmeKarti g={tz} gn={tz.genisletme} ist={ati} iflas={iflas} rtl={rtl} t={t} onYenile={tezgahTazele} />
       </> : null}
     </> : null}
+    {!yetkili && tz.tur === "atolye" ? <Not metin={t("onl.atl.ziyaretci")} rtl={rtl} /> : null}
   </View> : null;
   const tezgahCekmeceleri = tz ? <>
     <RafCekmecesi acik={cek?.tur === "raf"} oturum={cek?.oturum ?? 0} g={tz} satirNo={cekSatir} ist={tzi} onKapat={kapat} onYenile={tezgahTazele}
@@ -359,7 +378,7 @@ function IsletmeEkran() {
     </View>
     <View style={{ marginTop: 8, marginBottom: 12 }}>
       <SayfaBasi ust={y.yerlesim.ad} baslik={t(tezgahli ? (konum ? (isletmeParca(id)?.tur === "atolye" ? "onl.tz.baslikAtolye" : "onl.tz.baslikSahip") : "onl.tz.baslikMusteri") : "onl.isl.baslik")}
-        alt={t(tezgahli ? (konum ? "onl.tz.altSahip" : "onl.tz.altMusteri") : konum ? "onl.isl.alt" : "onl.isl.altVitrin")} rtl={rtl} />
+        alt={t(tezgahli ? (isletmeParca(id)?.tur === "atolye" ? (konum ? "onl.atl.alt" : "onl.atl.altZiyaretci") : konum ? "onl.tz.altSahip" : "onl.tz.altMusteri") : konum ? "onl.isl.alt" : "onl.isl.altVitrin")} rtl={rtl} />
     </View>
     {yukHata && !p ? <Bant metin={t(ekHataAnahtari(yukHata))} rtl={rtl} eylem={t("onl.yenidenDene")} onEylem={() => { void yukle(); void tezgahYukle(); }} />
       : tezgahli && !tz && tzHata ? <Bant metin={tzHata} rtl={rtl} eylem={t("onl.yenidenDene")} onEylem={() => { void tezgahYukle(); }} />
@@ -393,7 +412,7 @@ function IsletmeEkran() {
         </>}
         <View style={{ marginTop: 18, flexDirection: yon(rtl), alignItems: "center", gap: 8 }}>
           <GameIcon name="scroll" size={14} color={C.parchmentMuted} />
-          <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 13, lineHeight: 18, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{t(tezgahli ? "onl.tz.kural" : "onl.isl.kural")}</Text>
+          <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 13, lineHeight: 18, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{t(tezgahli ? (isletmeParca(id)?.tur === "atolye" ? "onl.atl.kural" : "onl.tz.kural") : "onl.isl.kural")}</Text>
         </View>
         {tezgahCekmeceleri}
       </>}

@@ -386,8 +386,9 @@ export function AtolyeBolumu({ g, ist, iflas, yonetici, rtl, t, onYenile, onDepo
   </View>;
 }
 
-function TopluKarti({ s, lang, rtl, t, izin, iflas, bekliyor, onTeslim }: {
-  s: TopluSiparis; lang: Lang; rtl: boolean; t: Ceviri; izin: boolean; iflas: boolean; bekliyor: boolean; onTeslim: () => void;
+/** Toplu sipariş kartı; `salt` (çarşı listesi) yalnız gösterir, teslim atölye ekranındadır. */
+export function TopluKarti({ s, lang, rtl, t, izin, iflas, bekliyor, onTeslim, salt = false }: {
+  s: TopluSiparis; lang: Lang; rtl: boolean; t: Ceviri; izin: boolean; iflas: boolean; bekliyor: boolean; onTeslim: () => void; salt?: boolean;
 }) {
   const acik = s.durum === "acik" && s.kalanAy > 0;
   const carpan = s.odulDokum.kalemler.find((x) => x.k === "toplu_carpani")?.d ?? 0;
@@ -412,7 +413,8 @@ function TopluKarti({ s, lang, rtl, t, izin, iflas, bekliyor, onTeslim }: {
         </View>
         {s.alan ? <Text style={{ fontFamily: F.serifItalic, fontSize: 12.5, color: C.gold, textAlign: hiza(rtl) }}>{applyParams(t("onl.atl.toplu.alan"), [s.alan.ad || t("onl.mk.tur.atolye")])}</Text> : null}
       </View>
-      {acik ? (neden ? <Not metin={neden} rtl={rtl} /> : <AltinDugme etiket={t("onl.atl.toplu.teslim")} icon="medal" rtl={rtl} bekliyor={bekliyor} onPress={onTeslim}
+      {acik && salt && s.teslimEdebilir ? <Not metin={t("onl.atl.toplu.atolyendenTeslim")} rtl={rtl} icon="anvil" renk={C.sage} /> : null}
+      {acik && !salt ? (neden ? <Not metin={neden} rtl={rtl} /> : <AltinDugme etiket={t("onl.atl.toplu.teslim")} icon="medal" rtl={rtl} bekliyor={bekliyor} onPress={onTeslim}
         erisim={applyParams(t("onl.atl.toplu.teslimErisim"), [s.adet, malAdi(t, s.mal), s.odul])} />) : null}
     </Cerceve>
   </Animated.View>;
