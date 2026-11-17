@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { testGiris } from "../src/index.ts";
+import { TEST_HESAP_IP_SAATLIK, testGiris, testKovaSifirla } from "../src/index.ts";
 import { oturumDogrula } from "../src/oturum.ts";
 import type { Env } from "../src/tipler.ts";
 
@@ -14,8 +14,11 @@ function ortam(ayar: Partial<Pick<Env, "TEST_GIRIS_ACIK" | "TEST_GIRIS_KODU">> =
     idFromString: (id: string) => id,
     get: (id: string) => ({
       fetch: async (_url: string, init: RequestInit) => {
-        const ileti = JSON.parse(String(init.body)) as { islem: string; sub: string; hesapId: string };
+        const ileti = JSON.parse(String(init.body)) as { islem: string; sub: string; hesapId: string; yeniYasak?: boolean };
         assert.equal(ileti.islem, "giris");
+        if (ileti.yeniYasak && !hesaplar.has(id)) {
+          return new Response(JSON.stringify({ ok: false, hata: "hesap_yok" }), { headers: { "content-type": "application/json" } });
+        }
         hesaplar.set(id, { sub: ileti.sub, giris: (hesaplar.get(id)?.giris ?? 0) + 1 });
         return new Response(JSON.stringify({ ok: true, deger: { profilVar: false } }), { headers: { "content-type": "application/json" } });
       },
@@ -31,10 +34,10 @@ function ortam(ayar: Partial<Pick<Env, "TEST_GIRIS_ACIK" | "TEST_GIRIS_KODU">> =
   return { env, hesaplar };
 }
 
-function istek(kod: string, cihazId = "test-0123456789abcdefghijklmnop") {
+function istek(kod: string, cihazId = "test-0123456789abcdefghijklmnop", ip = "203.0.113.1") {
   return new Request("https://online.test/v1/test-giris", {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers: { "content-type": "application/json", "cf-connecting-ip": ip },
     body: JSON.stringify({ kod, cihazId }),
   });
 }
@@ -78,4 +81,22 @@ test("aynı cihaz aynı anonim test hesabını açar; farklı cihaz ayrı hesap 
   );
   assert.equal([...hesaplar.values()].filter(x => x.sub.startsWith("test:")).length, 2);
   assert.equal([...hesaplar.values()].reduce((n, x) => n + x.giris, 0), 3);
+});
+
+test("S5: yeni test hesabı 22+ karakterlik cihaz kimliği ister; eski kısa kimlikli hesap girer; IP başına saatlik yeni hesap tavanı", async () => {
+  testKovaSifirla();
+  const { env, hesaplar } = ortam();
+  const kisa = "test-0123456789abcdef"; // 16 karakter: eski biçim
+  assert.equal((await testGiris(istek(KOD, kisa, "198.51.100.7"), env)).status, 400, "yeni hesap kısa kimlikle açılmaz");
+  // Eski hesap (kısa kimlikle önceden açılmış) girebilir.
+  const { hesapKimligi } = await import("../src/ic.ts");
+  hesaplar.set(hesapKimligi(env, `test:${kisa}`), { sub: `test:${kisa}`, giris: 1 });
+  assert.equal((await testGiris(istek(KOD, kisa, "198.51.100.7"), env)).status, 200);
+  for (let i = 0; i < TEST_HESAP_IP_SAATLIK; i++) {
+    assert.equal((await testGiris(istek(KOD, `test-yeni-cihaz-${String(i).padStart(10, "0")}xxxxxx`, "198.51.100.8"), env)).status, 200);
+  }
+  assert.equal((await testGiris(istek(KOD, "test-yeni-cihaz-asim-0000000000000", "198.51.100.8"), env)).status, 429);
+  assert.equal((await testGiris(istek(KOD, "test-yeni-cihaz-asim-0000000000000", "198.51.100.9"), env)).status, 200, "başka IP");
+  assert.equal((await testGiris(istek(KOD, "test-yeni-cihaz-0000000000xxxxxx", "198.51.100.8"), env)).status, 200, "var olan hesap IP tavanına sayılmaz");
+  testKovaSifirla();
 });

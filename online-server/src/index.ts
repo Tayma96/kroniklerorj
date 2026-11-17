@@ -306,6 +306,37 @@ async function hesaba(
   return sonucYaniti(await hesapCagir(env, yetki.deger, { ...hazir.deger, oturumSurumu: yetki.surum ?? 0 }));
 }
 
+/** [PARAMETRE] Test girişi (17 Kasım denetimi S5): IP başına saatte açılabilecek yeni hesap; cihaz başına dakikada deneme. */
+export const TEST_HESAP_IP_SAATLIK = 5;
+export const TEST_GIRIS_CIHAZ_DAKIKALIK = 10;
+/** [PARAMETRE] Yeni test hesabında cihaz kimliğinin rastgele kısmı en az bu uzunluk (base64url; 22 ≈ 128 bit). */
+export const TEST_CIHAZ_EN_AZ = 22;
+/** [PARAMETRE] Hız kovası haritasının en çok kaydı (aşınca eski pencereler budanır). */
+const TEST_KOVA_EN_COK = 5000;
+
+/** Worker içi (isolate başına) basit sabit pencere kovası: anahtar → [pencere başı, sayı]. */
+const testKovasi = new Map<string, [number, number]>();
+
+/** Kovayı bir artırır; sınır aşıldıysa false (artırmaz). */
+export function testKovaAl(anahtar: string, pencereMs: number, sinir: number, simdi: number): boolean {
+  if (testKovasi.size > TEST_KOVA_EN_COK) {
+    for (const [a, [bas]] of testKovasi) if (simdi - bas >= 3_600_000) testKovasi.delete(a);
+  }
+  const k = testKovasi.get(anahtar);
+  if (!k || simdi - k[0] >= pencereMs) {
+    testKovasi.set(anahtar, [simdi, 1]);
+    return true;
+  }
+  if (k[1] >= sinir) return false;
+  k[1]++;
+  return true;
+}
+
+/** Testler için kovayı sıfırlar. */
+export function testKovaSifirla(): void {
+  testKovasi.clear();
+}
+
 export async function testGiris(istek: Request, env: Env): Promise<Response> {
   // Kapalıysa uç dışarıdan görünmez. Açık tutulacaksa bu Worker yalnız test ortamı olmalıdır.
   const gizliKod = env.TEST_GIRIS_KODU;
@@ -327,9 +358,17 @@ export async function testGiris(istek: Request, env: Env): Promise<Response> {
   // Cihaz kimliği yerel depoda üretilir; "test:" ad alanı Google sub'larıyla çakışmaz.
   const sub = `test:${cihazId}`;
   const hesapId = hesapKimligi(env, sub);
-  const kayit = await hesapCagir<{ profilVar: boolean; uzaklastirma?: { bitis: number | null }; oturumSurumu?: number }>(env, hesapId, {
-    islem: "giris", hesapId, sub,
-  });
+  const simdi = Date.now();
+  if (!testKovaAl(`cihaz:${cihazId}`, 60_000, TEST_GIRIS_CIHAZ_DAKIKALIK, simdi)) return hataYaniti("hiz_siniri");
+  type GirisYaniti = { profilVar: boolean; uzaklastirma?: { bitis: number | null }; oturumSurumu?: number };
+  // Önce var olan hesap (eski kısa kimlikli hesaplar da girer); yoksa yeni hesap şartları ve IP kovası.
+  let kayit = await hesapCagir<GirisYaniti>(env, hesapId, { islem: "giris", hesapId, sub, yeniYasak: true });
+  if (!kayit.ok && kayit.hata === "hesap_yok") {
+    if (cihazId.length - "test-".length < TEST_CIHAZ_EN_AZ) return hataYaniti("gecersiz_istek");
+    const ip = istek.headers.get("cf-connecting-ip") ?? "bilinmiyor";
+    if (!testKovaAl(`ip:${ip}`, 3_600_000, TEST_HESAP_IP_SAATLIK, simdi)) return hataYaniti("hiz_siniri");
+    kayit = await hesapCagir<GirisYaniti>(env, hesapId, { islem: "giris", hesapId, sub });
+  }
   if (!kayit.ok) return basarisizYanit(kayit);
   const oturum = await oturumOlustur(hesapId, anahtar, Date.now(), undefined, kayit.deger.oturumSurumu ?? 0);
   return jsonYanit({ oturum, profilVar: kayit.deger.profilVar, ...(kayit.deger.uzaklastirma ? { uzaklastirma: kayit.deger.uzaklastirma } : {}) });

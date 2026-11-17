@@ -507,7 +507,8 @@ export interface KayitIstegi {
 
 // --- Worker → DO iç iletileri (dışarıya açık değildir) ---
 export type HesapIleti = (
-  | { islem: "giris"; hesapId: string; sub: string }
+  /** `yeniYasak`: hesap yoksa açılmaz, `hesap_yok` döner (test girişi yeni hesabı ayrıca denetler). */
+  | { islem: "giris"; hesapId: string; sub: string; yeniYasak?: boolean }
   | { islem: "profil"; hesapId: string }
   | { islem: "profilOlustur"; hesapId: string; govde: unknown }
   | { islem: "davetOlustur"; hesapId: string }

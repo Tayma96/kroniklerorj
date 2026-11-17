@@ -99,6 +99,7 @@ export class HesapDO {
     const engel = yaptirimEngeli(yaptirim, ileti.islem, simdi);
     if (engel) return jsonYanit(engel);
     if (ileti.islem === "giris") {
+      if (ileti.yeniYasak && !(await hesapKaydi(this.#depo))) return jsonYanit(hata("hesap_yok"));
       const g = await girisKaydet(this.#depo, ileti.hesapId, ileti.sub, simdi);
       await this.#numaraHazirla(ileti.hesapId, simdi);
       const uzak = uzaklastirmaBilgisi(yaptirim, simdi);
