@@ -11494,10 +11494,10 @@ export const PERKS: Perk[] = [
 export function perkById(id: string): Perk | undefined { return PERKS.find((p) => p.id === id); }
 export function hasPerk(p: Player, id: string): boolean { return !!p.perks?.includes(id); }
 
-// Beceri seviyesi: 1–10 her seviye 100 XP, 11–20 her seviye 150 XP (tavan 20; 20 = 2500 XP).
+// Beceri seviyesi: 1–10 her seviye 100 XP, 11–20 her seviye 200 XP (tavan 20; 20 = 3000 XP).
 export const BECERI_TAVAN = 20;
-export function skillLevel(xp: number): number { return xp < 1000 ? Math.max(0, Math.floor(xp / 100)) : Math.min(BECERI_TAVAN, 10 + Math.floor((xp - 1000) / 150)); }
-export function skillXpForLevel(n: number): number { return n <= 10 ? n * 100 : 1000 + (n - 10) * 150; }
+export function skillLevel(xp: number): number { return xp < 1000 ? Math.max(0, Math.floor(xp / 100)) : Math.min(BECERI_TAVAN, 10 + Math.floor((xp - 1000) / 200)); }
+export function skillXpForLevel(n: number): number { return n <= 10 ? n * 100 : 1000 + (n - 10) * 200; }
 // Seviye içi ilerleme (0..1; tavanda 1) — ekranlar için.
 export function skillProgress(xp: number): number { const l = skillLevel(xp); if (l >= BECERI_TAVAN) return 1; const a = skillXpForLevel(l), b = skillXpForLevel(l + 1); return Math.max(0, Math.min(1, (xp - a) / (b - a))); }
 export const HUNER_ESIK = [4, 8, 12, 16];
@@ -13320,7 +13320,7 @@ export function migrate(s: GameState): GameState {
   if (!p.skill_xp) p.skill_xp = { combat: 0, trade: 0, crafting: 0, social: 0 };
   if (!p.perks) p.perks = [];
   // K3 göçü: hüner kaydı yalnız id'dir — eski 3/6/9 kademe hünerleri yeni 1/2/3. kademede olduğu gibi kalır (silinmez).
-  // Beceri tavanı 20: seviye XP'den yeni eğriyle yeniden okunur (1–10 ×100, 11–20 ×150); kayıtlı seviye hiç düşmez.
+  // Beceri tavanı 20: seviye XP'den yeni eğriyle yeniden okunur (1–10 ×100, 11–20 ×200); kayıtlı seviye hiç düşmez.
   p.perks = Array.isArray(p.perks) ? [...new Set((p.perks as unknown[]).filter((x): x is string => typeof x === "string"))] : [];
   for (const k of ["combat", "trade", "crafting", "social"] as const) {
     if (!Number.isFinite(p.skill_xp[k])) p.skill_xp[k] = 0;
