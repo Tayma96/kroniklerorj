@@ -86,3 +86,14 @@ yenile), pas_yok, gecersiz_istek, hiz_siniri`.
 3. Oyun açma menüsü: masa eylem çubuğunda "Masa oyunu" → iki oyunun kısa kuralıyla seçim.
 
 Metinler önce Türkçe; 6 dil çevirisi tester'da.
+
+## Denetim sonrası protokol ekleri (17 Kasım)
+- **Kurucu devri / bayat bekleme:** bekleme açılışından (`OYUN_KOPMA_SABRI_MS`, 3 dk) sonra başlatılmadıysa görünümde
+  `devralAcik: true` gelir. O zaman bekleme listesindeki herhangi bir oturan `oyunBaslat` gönderebilir (başlatan kurucu
+  olur) ya da `oyunDagit` ile beklemeyi kaldırabilir. Önceden yalnız kurucu (`yetki_yok`). Arayüz: `devralAcik` ise
+  bekleyen herkese "Başlat" ve "Beklemeyi dağıt" düğmeleri.
+- **Terk edilmiş oyun / bayat bekleme masayı kilitlemez:** bütün oyuncuları sabırdan uzun süredir yok olan oyun ya da
+  bayat bekleme `masa_mesgul` döndürmez; sahne/atışma açılınca o oyun masadan kalkar (`oyun: null` yayını). Yeni oyun da
+  açılabilir (`oyun_var` dönmez).
+- Sahne/atışma sürerken `oyunBaslat` → `masa_mesgul` (bayat beklemenin üstüne sahne açıldıysa).
+- Görünüm izin listesine yalnız `devralAcik` eklendi; var olan alanlar değişmedi.
