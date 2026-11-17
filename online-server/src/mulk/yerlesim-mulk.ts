@@ -5,7 +5,7 @@
 
 import { istekNoCoz } from "../mantik.ts";
 import { basarili, hata, type Sonuc } from "../tipler.ts";
-import { teveccuhKademesi } from "../yerlesim/teveccuh.ts";
+import { teveccuhEkonomiKademesi } from "../yerlesim/teveccuh.ts";
 import type { Karakter, Kasaba, OlayTaslagi } from "../yerlesim/tipler.ts";
 import type { IsletmeIleti, IsletmeYaniti, Komut, TapuOzeti } from "./islem.ts";
 import { KOMUTLAR } from "./islem.ts";
@@ -270,7 +270,7 @@ export async function mulkIsle(motor: MulkMotoru, ileti: MulkIletisi, an: number
   const kar = ben.deger.kar;
   const tapu = tapuOzeti(k, isletme);
   if (!tapu) return hata("isletme_yok");
-  const baglam = baglamYap(k, kar, teveccuhKademesi(kar, k.ay));
+  const baglam = baglamYap(k, kar, teveccuhEkonomiKademesi(kar, k.ay));
   // Asıl komut/okuma ve onayı için 2 alt istek ayrılır.
   await uzlastir(motor, an, cagir, true, () => kota() - 2);
   if (alt === "panel" || alt === "devirOnizle") {

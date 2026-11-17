@@ -31,11 +31,18 @@ export const TEVECCUH_ETKI = {
 
 export type TeveccuhAlani = "ilkIzlenim" | "siparis" | "secim" | "sahne" | "musteri" | "ahi";
 
+/** [PARAMETRE] Akçeyle ikram/armağandan aynı verenin aynı alana bir ayda yazabileceği en çok teveccüh puanı. */
+export const TEVECCUH_CIFT_AYLIK = 20;
+
 export interface TeveccuhKaydi {
   /** Puan (sönmüş), son işlendiği ay, sayılan verenler. */
   p: number;
   a: number;
   v: string[];
+  /** Puanın Debdebe (gerçek para) armağanından gelen kısmı (aynı sönmeyle): ekonomik etkilere sayılmaz. */
+  d?: number;
+  /** Bu ayın veren başı sayacı (ikram/armağan çift tavanı): [ay, veren → puan]. */
+  c?: [ay: number, sayac: Record<string, number>];
 }
 
 /** Hesap kümesi yaklaşığı: aynı ocak (hane). Aynı Google kişisi bilinemez; bilinirse buraya eklenir. */
@@ -47,7 +54,9 @@ function tazele(k: Karakter, ay: number): TeveccuhKaydi | undefined {
   const t = k.tv;
   if (!t) return undefined;
   if (ay > t.a) {
-    t.p = t.p * Math.pow(1 - TEVECCUH_AYLIK_SONME, ay - t.a);
+    const c = Math.pow(1 - TEVECCUH_AYLIK_SONME, ay - t.a);
+    t.p = t.p * c;
+    if (t.d) t.d = t.d * c;
     t.a = ay;
   }
   return t;
@@ -63,6 +72,15 @@ export function teveccuhEkle(alan: Karakter, veren: Karakter | string, tur: Teve
   if (vid === alan.o) return 0;
   if (tur !== "debdebe" && (typeof veren === "string" || ayniKume(alan, veren))) return 0;
   const t = tazele(alan, ay) ?? (alan.tv = { p: 0, a: ay, v: [] });
+  if (tur === "debdebe") t.d = (t.d ?? 0) + tutar;
+  else {
+    // Çift tavanı: aynı veren aynı alana ayda en çok TEVECCUH_CIFT_AYLIK puan yazar.
+    if (!t.c || t.c[0] !== ay) t.c = [ay, {}];
+    const once = t.c[1][vid] ?? 0;
+    tutar = Math.min(tutar, TEVECCUH_CIFT_AYLIK - once);
+    if (!(tutar > 0)) return 0;
+    t.c[1][vid] = once + tutar;
+  }
   t.p += tutar;
   if (!t.v.includes(vid)) {
     t.v.push(vid);
@@ -78,6 +96,7 @@ export function teveccuhCikar(alan: Karakter, ay: number, tutar: number): number
   if (!t) return 0;
   const d = Math.min(t.p, tutar);
   t.p -= d;
+  if (t.d) t.d = Math.max(0, t.d - d);
   return d;
 }
 
@@ -85,6 +104,39 @@ export function teveccuhPuani(k: Karakter, ay: number): number {
   const t = k.tv;
   if (!t) return 0;
   return ay > t.a ? t.p * Math.pow(1 - TEVECCUH_AYLIK_SONME, ay - t.a) : t.p;
+}
+
+/** Puanın ekonomik etkilere (sipariş önceliği, ahi şartı, müşteri) sayılan kısmı: Debdebe armağanı hariç. */
+export function teveccuhEkonomiPuani(k: Karakter, ay: number): number {
+  const t = k.tv;
+  if (!t) return 0;
+  const c = ay > t.a ? Math.pow(1 - TEVECCUH_AYLIK_SONME, ay - t.a) : 1;
+  return Math.max(0, (t.p - (t.d ?? 0)) * c);
+}
+
+function puanKademesi(p: number): number {
+  let kd = 0;
+  for (let i = 1; i < TEVECCUH_KADEMELERI.length; i++) if (p >= TEVECCUH_KADEMELERI[i]!) kd = i;
+  return kd;
+}
+
+/** Ekonomik etkilerin kademesi (Debdebe armağanı sayılmaz; tasarım: parayla ekonomik üstünlük yok). */
+export function teveccuhEkonomiKademesi(k: Karakter, ay: number): number {
+  return puanKademesi(teveccuhEkonomiPuani(k, ay));
+}
+
+/** Sakin özetine görünen (tv) ve ekonomik (te; eşitse yazılmaz) kademeyi yazar. */
+export function sakinTeveccuhYaz(s: { tv?: number; te?: number }, k: Karakter, ay: number): void {
+  const kd = teveccuhKademesi(k, ay);
+  const eko = teveccuhEkonomiKademesi(k, ay);
+  s.tv = kd || undefined;
+  if (eko === kd) delete s.te;
+  else s.te = eko;
+}
+
+/** Sakin özetinden ekonomik kademe (eski kayıtta `te` yok → görünen kademe). */
+export function sakinEkonomiKademesi(s: { tv?: number; te?: number }): number {
+  return s.te ?? s.tv ?? 0;
 }
 
 export function teveccuhKademesi(k: Karakter, ay: number): number {

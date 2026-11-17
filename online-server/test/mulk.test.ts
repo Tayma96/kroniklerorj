@@ -321,13 +321,15 @@ test("oyuncu hanı: kira ve ikram kasaya, çarpanlı fiyat; aynı hane ve karş�
   assert.equal(br.is.kasa, 8);
   assert.equal(br.is.iz.s.length, 1, "sayılan müşteri");
   assert.equal(br.is.iz.b, 0);
-  // Aynı haneden ödeme: kasaya girer ama sayılmaz, bayraklanır.
+  // Aynı haneden ödeme (17 Kasım denetimi E3): kasaya girmez, dünyadan çıkar (küme akçe aktaramaz).
   b.e = a.e;
   k.sakin.find((s) => s.o === "o2")!.e = a.e;
-  mulkluIkram(k, b, "ekmek", AN, "i-0000002");
+  const ik2 = mulkluIkram(k, b, "ekmek", AN, "i-0000002");
+  assert.ok(ik2.ok);
+  assert.equal(ik2.deger.kasaya, 0);
+  assert.equal(ik2.deger.batak, ik2.deger.fiyat);
   br.yerlesimdenTeslim();
-  assert.equal(br.is.iz.b, 1);
-  assert.equal(br.is.iz.m.at(-1)![2], "kume");
+  assert.equal(br.is.kasa, 8, "küme ödemesi kasaya girmez");
   assert.deepEqual(mulkluKira(k, a, { oda: "yatak", sure: 1, istekNo: "k-0000002" }, AN), { ok: false, hata: "kendine" });
 });
 

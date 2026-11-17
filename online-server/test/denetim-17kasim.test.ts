@@ -120,3 +120,67 @@ test("E2: zaviyeye yatırmada üye başı aylık tavan", () => {
   assert.deepEqual(zaviyeIslem(k, u[1]!, { islem: "yatir", tutar: 1 }, k.ay), { ok: false, hata: "tavan_doldu" });
   assert.ok(zaviyeIslem(k, u[1]!, { islem: "yatir", tutar: 1 }, k.ay + 1).ok);
 });
+
+import { HAN_ODEME_SERBEST_AYLIK, mulkluHanOdemesi } from "../src/mulk/tapu.ts";
+import { HEDIYE_VERME_AYLIK as HV } from "../src/yerlesim/teklif.ts";
+import { TEVECCUH_CIFT_AYLIK, sakinEkonomiKademesi, sakinTeveccuhYaz, teveccuhEkle, teveccuhEkonomiKademesi, teveccuhKademesi } from "../src/yerlesim/teveccuh.ts";
+
+test("E3: ikram/armağan teveccühü veren-alan çifti başına aylık tavanlı; başka veren ayrı sayılır", () => {
+  const k = testKasabasi("develi", 10);
+  const alan = yetiskin(k, 1);
+  const v1 = yetiskin(k, 2);
+  const v2 = yetiskin(k, 3);
+  let top = 0;
+  for (let i = 0; i < 30; i++) top += teveccuhEkle(alan, v1, "ikram", k.ay, 6);
+  assert.equal(top, TEVECCUH_CIFT_AYLIK);
+  assert.equal(teveccuhEkle(alan, v2, "ikram", k.ay, 6), 6);
+  assert.equal(teveccuhEkle(alan, v1, "ikram", k.ay + 1, 6), 6, "yeni ay sayaç sıfırlanır");
+});
+
+test("E3: oyuncu hanında küme ödemesi kasaya girmez; aynı kişinin aylık ödemesi armağan tavanına sayılır", () => {
+  const k = testKasabasi("develi", 10);
+  const sahip = yetiskin(k, 1);
+  const musteri = yetiskin(k, 2, 5000);
+  assert.ok(edin(k, sahip, { tur: "han" }, AN, "e-0000001").ok);
+  const t = mulkDefteri(k).t["develi.han.1"]!;
+  t.y = { isletme: "develi.han.1", ts: t.ts, ad: "", fc: 100, seviye: 0, durum: "acik", kapi: true, kapasite: 1, it: 10, kq: 0, py: [], pn: [], po: [], to: [], as: 1 } as never;
+  let kasaya = 0;
+  let no = 0;
+  let red = "";
+  for (let i = 0; i < 100; i++) {
+    const r = mulkluHanOdemesi(k, musteri, 10, AN, `i-${++no}`, 0, false, 1);
+    if (!r.ok) {
+      red = r.hata;
+      break;
+    }
+    kasaya += r.deger.kasaya;
+  }
+  assert.equal(red, "tavan_doldu");
+  assert.ok(kasaya <= HAN_ODEME_SERBEST_AYLIK + HV, `kasaya ${kasaya}`);
+  assert.equal(aylikDeger(musteri.hv, k.ay), kasaya - HAN_ODEME_SERBEST_AYLIK);
+  // Küme: kasaya girmez.
+  const kardes = yetiskin(k, 3);
+  kardes.e = sahip.e;
+  const r = mulkluHanOdemesi(k, kardes, 10, AN, "i-kume", 0, false, 1);
+  assert.ok(r.ok);
+  assert.deepEqual([r.deger.kasaya, r.deger.batak], [0, 10]);
+});
+
+function aylikDeger(s: [number, number] | undefined, ay: number): number {
+  return s && s[0] === ay ? s[1] : 0;
+}
+
+test("E5: Debdebe armağanı teveccühü görünür kademeye sayılır, ekonomik kademeye (sipariş önceliği, ahi) sayılmaz", () => {
+  const k = testKasabasi("develi", 10);
+  const alan = yetiskin(k, 1);
+  const v = yetiskin(k, 2);
+  teveccuhEkle(alan, v, "debdebe", k.ay, 5000);
+  assert.equal(teveccuhKademesi(alan, k.ay), 5);
+  assert.equal(teveccuhEkonomiKademesi(alan, k.ay), 0);
+  teveccuhEkle(alan, v, "armagan", k.ay, 20);
+  assert.equal(teveccuhEkonomiKademesi(alan, k.ay), 1);
+  assert.equal(teveccuhEkonomiKademesi(alan, k.ay + 24), 0, "aynı sönme");
+  const s = k.sakin.find((x) => x.o === alan.o)!;
+  sakinTeveccuhYaz(s, alan, k.ay);
+  assert.deepEqual([s.tv, sakinEkonomiKademesi(s)], [5, 1]);
+});

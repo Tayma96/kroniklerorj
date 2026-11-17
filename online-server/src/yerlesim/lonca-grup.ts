@@ -20,7 +20,7 @@ import { olduMu } from "./hanedan.ts";
 import { karakterYasi } from "./karakter.ts";
 import { mesrepEtkisi } from "./mesrep.ts";
 import { oyuncuRef } from "./ortak.ts";
-import { ayniKume, TEVECCUH_ETKI, teveccuhKademesi } from "./teveccuh.ts";
+import { ayniKume, TEVECCUH_ETKI, teveccuhEkonomiKademesi } from "./teveccuh.ts";
 import { toplulukAl, type ToplulukKaydi } from "./topluluk-kayit.ts";
 import type { Karakter, Kasaba, OlayTaslagi } from "./tipler.ts";
 
@@ -95,7 +95,7 @@ export function ahiSarti(k: Karakter): number {
 }
 
 export function ahiAdayiMi(k: Karakter, ay: number): boolean {
-  return !olduMu(k) && teveccuhKademesi(k, ay) >= ahiSarti(k);
+  return !olduMu(k) && teveccuhEkonomiKademesi(k, ay) >= ahiSarti(k);
 }
 
 /** Kanca (siyaset, §8 lonca temsilcisi): kasabadaki ahi başları. */
@@ -413,7 +413,7 @@ export function zaviyeOzeti(k: Kasaba, kar: Karakter, ay: number) {
       durum: kuruluyor(z) ? "kuruluyor" : "acik",
       ahiBasi: z.ab ? ad(k, z.ab) : null,
     })),
-    ahiSarti: { teveccuhKademe: ahiSarti(kar), benimKademem: teveccuhKademesi(kar, ay), adayim: ahiAdayiMi(kar, ay) },
+    ahiSarti: { teveccuhKademe: ahiSarti(kar), benimKademem: teveccuhEkonomiKademesi(kar, ay), adayim: ahiAdayiMi(kar, ay) },
     kurallar: ZAVIYE_KURALLARI,
   };
 }

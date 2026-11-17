@@ -78,7 +78,7 @@ import {
   vitrinGorunumu,
   vitrinSec,
 } from "./teklif.ts";
-import { teveccuhEkle, teveccuhGorunumu, teveccuhKademesi, teveccuhEtkisi, TEVECCUH_ETKI } from "./teveccuh.ts";
+import { sakinEkonomiKademesi, sakinTeveccuhYaz, teveccuhEkle, teveccuhEkonomiKademesi, teveccuhGorunumu, teveccuhKademesi, teveccuhEtkisi, TEVECCUH_ETKI } from "./teveccuh.ts";
 import { IKRAM_MENUSU, type IkramId } from "../han/ikram.ts";
 import { toplumDonumu } from "./toplum-donum.ts";
 import { hanOlayiCoz, hanOlayiIslendiMi, hanOlayiUygula, hanTanidikKimlikleri, ziyafetEtkisi, ziyafetKonukSayisi } from "./han-olay.ts";
@@ -1331,9 +1331,10 @@ export class YerlesimMotoru {
   /** Lonca siparişinde teveccüh önceliği: açılış ayında aynı meslekte daha yüksek kademeli biri varsa beklenir. */
   #oncelik(kar: Karakter, sp: Siparis, ay: number) {
     const meslek = MALLAR[sp.mal].meslek;
-    const kademe = teveccuhKademesi(kar, ay);
+    // Ekonomik kademe: Debdebe armağanından gelen teveccüh sipariş önceliğine sayılmaz.
+    const kademe = teveccuhEkonomiKademesi(kar, ay);
     let enYuksek = 0;
-    for (const x of this.kasaba.sakin) if (x.o !== kar.o && x.ms === meslek && (x.tv ?? 0) > enYuksek) enYuksek = x.tv ?? 0;
+    for (const x of this.kasaba.sakin) if (x.o !== kar.o && x.ms === meslek && sakinEkonomiKademesi(x) > enYuksek) enYuksek = sakinEkonomiKademesi(x);
     const bekle = sp.durum === "acik" && ay === sp.acilis && enYuksek >= TEVECCUH_ETKI.siparisKademe && enYuksek > kademe;
     return { kademe, enYuksek, bekle, kalem: { k: "siparis.oncelik.teveccuh", d: teveccuhEtkisi(kademe, "siparis") } };
   }
@@ -1711,7 +1712,7 @@ export class YerlesimMotoru {
       if (!odeme.ok) return odeme;
       const teveccuh = teveccuhEkle(alan, kar, "ikram", ay, odeme.deger.fiyat);
       const sk = this.kasaba.sakin.find((x) => x.o === alan.o);
-      if (sk) sk.tv = teveccuhKademesi(alan, ay) || undefined;
+      if (sk) sakinTeveccuhYaz(sk, alan, ay);
       ek.digerleri.push(alan.o);
       return basarili({ ikram, fiyat: odeme.deger.fiyat, batak: odeme.deger.batak, ...(odeme.deger.kasaya ? { kasaya: odeme.deger.kasaya, transfer: { islem: odeme.deger.islem } } : {}), teveccuh });
     }, "ikram");
@@ -2025,6 +2026,7 @@ export class YerlesimMotoru {
       ...(kar.ms?.a ? { ms: kar.ms.a } : {}),
       ...(tv ? { tv } : {}),
     };
+    sakinTeveccuhYaz(sakin, kar, ay);
     k.sakin.push(sakin);
     k.kar.set(o, kar);
     k.ili.set(o, {});

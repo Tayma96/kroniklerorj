@@ -165,7 +165,7 @@ test("devir: aile adı küçük başlangıç teveccühü verir (veren listesi ge
   const ortak = oyuncuEkle(k, 3, k.ay - 30 * 12);
   alacakli.e = 9001;
   ortak.e = 9002;
-  teveccuhEkle(kar, alacakli, "armagan", k.ay, 60);
+  teveccuhEkle(kar, alacakli, "debdebe", k.ay, 60);
   const tp = toplumAl(k);
   const borcVar = { i: 1, t: "borc" as const, g: "o2", a: "o1", s: { tu: 20, fz: 0, va: 6, yn: "ver" as const }, e: 0, ac: k.ay, sa: k.ay, v: "ret" as const, d: "surer" as const, kl: 20, vd: k.ay + 6, bo: [[k.ay - 1, 4] as [number, number]], od: 1 as const };
   const borcAlacak = { i: 2, t: "borc" as const, g: "o1", a: "o3", s: { tu: 10, fz: 0, va: 6, yn: "ver" as const }, e: 0, ac: k.ay, sa: k.ay, v: "ret" as const, d: "surer" as const, kl: 10, vd: k.ay + 6, bo: [[k.ay - 2, 2] as [number, number]] };

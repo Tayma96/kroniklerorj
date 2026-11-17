@@ -7,7 +7,7 @@ import { basarili, hata, type Sonuc } from "../tipler.ts";
 import { engelliMi } from "./engel.ts";
 import { olduMu } from "./hanedan.ts";
 import type { YerlesimMotoru } from "./motor.ts";
-import { teveccuhCikar, teveccuhEkle, teveccuhKademesi } from "./teveccuh.ts";
+import { sakinTeveccuhYaz, teveccuhCikar, teveccuhEkle } from "./teveccuh.ts";
 
 /** [PARAMETRE] Tek armağanın en çok teveccüh tutarı (HesapDO kataloğunun üstünde güvenlik sınırı). */
 export const ARMAGAN_TEVECCUH_EN_COK = 1000;
@@ -34,7 +34,7 @@ export async function armaganTeveccuh(motor: YerlesimMotoru, hesapId: string, go
     if (alan.o === kar.o) return hata("kendi_hedef");
     if (engelliMi(motor.kasaba.tp, kar.o, alan.o)) return hata("engelli");
     const teveccuh = teveccuhEkle(alan, kar, "debdebe", ay, tutar);
-    hs.tv = teveccuhKademesi(alan, ay) || undefined;
+    sakinTeveccuhYaz(hs, alan, ay);
     ek.digerleri.push(alan.o);
     ek.olaylar.push({ t: "debdebe", w: kar.o, h: alan.o, g: alan.o, n: 3, k: "olay.debdebe.armagan", p: { urun, kim: kar.o } });
     return basarili({ alanHesap: hs.h, alan: alan.o, teveccuh });
@@ -49,7 +49,7 @@ export async function armaganGeri(motor: YerlesimMotoru, hesapId: string, govde:
   return motor.ekonomiYaz(hesapId, govde, "diger", [], (kar, ay) => {
     const dusulen = teveccuhCikar(kar, ay, tutar);
     const s = motor.kasaba.sakin.find((x) => x.o === kar.o);
-    if (s) s.tv = teveccuhKademesi(kar, ay) || undefined;
+    if (s) sakinTeveccuhYaz(s, kar, ay);
     return basarili({ dusulen });
   });
 }

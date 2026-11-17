@@ -1,11 +1,12 @@
-// Teveccüh (§6.2, Berkay 9 Kasım): hediyenin tutarıyla artar (veren başına tavan yok), aynı haneden akçe armağanı
-// sayılmaz, Debdebe armağanı aynı haneden de sayılır, sönme çok yavaştır, NPC bakışında görünür kalemdir.
+// Teveccüh (§6.2, Berkay 9 Kasım; 17 Kasım denetimi): hediyenin tutarıyla artar, akçeyle ikram/armağanda veren-alan
+// çifti başına aylık tavan (TEVECCUH_CIFT_AYLIK) vardır, aynı haneden akçe armağanı sayılmaz, Debdebe armağanı aynı haneden de sayılır, sönme çok yavaştır, NPC bakışında görünür kalemdir.
 import test from "node:test";
 import { MALLAR } from "../src/icerik/mallar.ts";
 import assert from "node:assert/strict";
 import { gorus } from "../src/yerlesim/gorus.ts";
 import { teklifCevap, teklifOlustur, vitrinGorunumu, vitrinSec } from "../src/yerlesim/teklif.ts";
 import {
+  TEVECCUH_CIFT_AYLIK,
   TEVECCUH_KADEMELERI,
   teveccuhEkle,
   teveccuhEtkisi,
@@ -23,13 +24,15 @@ function kur() {
   return { k, alan, zengin };
 }
 
-test("zengin verenin büyük armağanı kademeyi belirgin artırır (veren başına tavan yok)", () => {
+test("cömert verenin armağanları zamanla kademeyi belirgin artırır; çift başına aylık tavan", () => {
   const { k, alan, zengin } = kur();
   assert.equal(teveccuhKademesi(alan, k.ay), 0);
   assert.equal(teveccuhEkle(alan, zengin, "armagan", k.ay, 5), 5);
   const az = teveccuhKademesi(alan, k.ay);
-  teveccuhEkle(alan, zengin, "armagan", k.ay, 200);
-  const cok = teveccuhKademesi(alan, k.ay);
+  assert.equal(teveccuhEkle(alan, zengin, "armagan", k.ay, 200), TEVECCUH_CIFT_AYLIK - 5, "aynı ay çift tavanı");
+  assert.equal(teveccuhEkle(alan, zengin, "ikram", k.ay, 10), 0, "ikram da aynı tavana sayılır");
+  for (let i = 1; i <= 4; i++) teveccuhEkle(alan, zengin, "armagan", k.ay + i, 200);
+  const cok = teveccuhKademesi(alan, k.ay + 4);
   assert.ok(cok >= az + 2, `${az} → ${cok}`);
   assert.equal(teveccuhGorunumu(alan, k.ay).verenSayisi, 1);
   assert.ok(teveccuhGorunumu(alan, k.ay).etkiler.length > 0, "etkiler görünür");
@@ -49,7 +52,7 @@ test("aynı haneden akçe armağanı sayılmaz; Debdebe armağanı aynı haneden
 
 test("sönme çok yavaş ve tembel (ay damgalı)", () => {
   const { k, alan, zengin } = kur();
-  teveccuhEkle(alan, zengin, "armagan", k.ay, TEVECCUH_KADEMELERI[3]! * 1.05);
+  teveccuhEkle(alan, zengin, "debdebe", k.ay, TEVECCUH_KADEMELERI[3]! * 1.05);
   assert.equal(teveccuhKademesi(alan, k.ay), 3);
   assert.equal(teveccuhKademesi(alan, k.ay + 6), 3, "6 ay sonra kademe korunur");
   const yil = teveccuhPuani(alan, k.ay + 12);
@@ -76,7 +79,7 @@ test("teveccüh NPC bakışında görünür kalemdir (tavanlı); armağan kabul�
   const t = teklifOlustur(k2, a, b, { tur: "hediye", mal: "alet", adet: 1 }, k2.ay);
   assert.ok(t.ok, JSON.stringify(t));
   assert.ok(teklifCevap(k2, b, `t${t.deger.teklif.i}`, "kabul", {}, k2.ay).ok);
-  assert.equal(teveccuhPuani(b, k2.ay), MALLAR.alet.taban, "alet değeri (taban) kadar");
+  assert.equal(teveccuhPuani(b, k2.ay), Math.min(TEVECCUH_CIFT_AYLIK, MALLAR.alet.taban), "alet değeri (taban) kadar, çift tavanıyla");
   assert.deepEqual(b.ev, { alet: 1 });
   assert.equal(vitrinGorunumu(b)[0]?.mal, "alet");
   assert.deepEqual(vitrinSec(b, ["t999"]), { ok: false, hata: "teklif_yok" });

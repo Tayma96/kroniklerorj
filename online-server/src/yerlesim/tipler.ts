@@ -83,6 +83,8 @@ export interface Sakin {
   ms?: MeslekId;
   /** Teveccüh kademesi (sipariş önceliği karakterleri yüklemeden bakar; değişince yazılır). */
   tv?: number;
+  /** Ekonomik teveccüh kademesi (Debdebe hariç; `tv`den farklıysa yazılır). */
+  te?: number;
   /** Müdavim rozeti kademesi (E7; profil ve plaka karakteri yüklemeden okur). 1. han; diğer hanlar `mdh` (4.9). */
   md?: number;
   mdh?: Record<string, number>;
@@ -174,6 +176,8 @@ export interface Karakter {
   hv?: [ay: number, akce: number];
   ha?: [ay: number, akce: number];
   hg?: Record<string, number[]>;
+  /** Oyuncu hanlarına bu ayki ikram/ziyafet ödemesi (armağan tavanı denetimi): [ay, işletme → akçe]. */
+  hho?: [ay: number, isletme: Record<string, number>];
   /** Usta: kalfa yaptığı çıraklar "o5:demirci" (pir sayacı tek sefer izi). */
   cs?: string[];
   /** Kendi ürettiği mal sayacı (armağanda "yapan" izi; envanterle kırpılır). */

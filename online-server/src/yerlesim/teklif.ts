@@ -26,7 +26,7 @@ import { tohumlu } from "./rastgele.ts";
 import { acikNpcTeklifi, npcBorcTahsil, npcKabul } from "./npc-teklif.ts";
 import { kisiAdi, kisiCoz, npcAdi, npcKimlik, oyuncuRef } from "./ortak.ts";
 import { haneTaniklari, soylentiEkle } from "./soylenti.ts";
-import { teveccuhEkle, teveccuhKademesi } from "./teveccuh.ts";
+import { sakinTeveccuhYaz, teveccuhEkle } from "./teveccuh.ts";
 import { OYUNCU_TEKLIF_TURLERI, teklifCoz, teklifKimlik, toplumAl, type OyuncuTeklifTuru, type Sartlar, type Teklif } from "./toplum.ts";
 import type { Karakter, Kasaba, OlayTaslagi } from "./tipler.ts";
 
@@ -413,7 +413,7 @@ function kabulUygula(k: Kasaba, t: Teklif, ay: number): Sonuc<OlayTaslagi[]> {
       soylentiEkle(k, "hediyeOyuncu", gon.o, alici.o, haneTaniklari(k, [alici.e], ay, `hediye:${t.i}`), ay);
       teveccuhEkle(alici, gon, "armagan", ay, hediyeDegeri(t.s));
       const sakin = k.sakin.find((x) => x.o === alici.o);
-      if (sakin) sakin.tv = teveccuhKademesi(alici, ay) || undefined;
+      if (sakin) sakinTeveccuhYaz(sakin, alici, ay);
       const yapan = t.s.yp ? k.kar.get(t.s.yp) : undefined;
       (alici.av ??= []).push({
         i: t.i, v: gon.o, va: gon.ad, ay,

@@ -408,6 +408,9 @@ export function mulkluKira(k: Kasaba, kar: Karakter, govde: unknown, an: number,
   return basarili({ ...r.deger, barinma: gorunum, kira: { ...kira, kasaya: net }, vergi: { oran, tutar: vergi }, transfer: { islem: c.deger.islem } });
 }
 
+/** [PARAMETRE] Bir kişinin bir oyuncu hanına ayda armağan tavanına sayılmadan ödeyebileceği ikram/ziyafet akçesi. */
+export const HAN_ODEME_SERBEST_AYLIK = 20;
+
 /** İkram ödemesi: oyuncu hanında gelir vergisi sonrası net kasaya, NPC handa dünyadan çıkar. */
 export function mulkluIkram(k: Kasaba, kar: Karakter, ikram: IkramId, an: number, istekNo: string, vergiOrani = 0, han = NPC_HAN_NO): Sonuc<{ fiyat: number; batak: number; kasaya: number; vergi: number; islem?: string }> {
   // Hancı "ikram" hizmeti yalnız NPC menüsünde %10 meslek indirimi sağlar; oyuncu hanının fiyatını sahibi belirler.
@@ -430,12 +433,27 @@ export function mulkluHanOdemesi(k: Kasaba, kar: Karakter, taban: number, an: nu
   }
   if (oh.kapasite === 0) return hata("han_kapali");
   const fiyat = Math.max(1, Math.ceil((taban * oh.fc) / 100 - 1e-9));
+  // Küme (aynı hane/hesap kümesi) kendi hanına ödeyerek akçe aktaramaz: ödeme kasaya girmez, dünyadan çıkar.
+  const sahipS = k.sakin.find((x) => x.o === oh.sahip);
+  if (!sahipS || ayniKume(kar, sahipS)) {
+    if (kar.pa < fiyat) return hata("para_yok");
+    kar.pa -= fiyat;
+    mulkDefteri(k).batak += fiyat;
+    return basarili({ fiyat, batak: fiyat, kasaya: 0, vergi: 0 });
+  }
+  // Aynı kişinin bu handa bu ayki ödemesi HAN_ODEME_SERBEST_AYLIK'ı aşan kısmı armağan (verme) tavanına sayılır.
+  const sayac = kar.hho && kar.hho[0] === k.ay ? kar.hho[1] : {};
+  const once = sayac[oh.isletme] ?? 0;
+  const hediye = Math.max(0, once + fiyat - Math.max(HAN_ODEME_SERBEST_AYLIK, once));
+  if (hediye > 0 && aylik(kar.hv, k.ay) + hediye > HEDIYE_VERME_AYLIK) return hata("tavan_doldu");
   const oran = Number.isInteger(vergiOrani) && vergiOrani >= 0 && vergiOrani <= 4 ? vergiOrani : 0;
   const md = mulkDefteri(k);
   const vergiPay = vergiAyir(md, oh.isletme, fiyat, oran);
   const { vergi, net } = vergiPay;
   const c = kasayaCikis(k, kar, oh.isletme, net, "ikram", an, islem, true);
   if (!c.ok) return c;
+  kar.hho = [k.ay, { ...sayac, [oh.isletme]: once + fiyat }];
+  if (hediye > 0) kar.hv = [k.ay, aylik(kar.hv, k.ay) + hediye];
   (md.vergiKesir ??= {})[oh.isletme] = vergiPay.kalan;
   if (vergi > 0) (md.vergiGiden ??= []).push({ anahtar: `${islem}:vergi`, tutar: vergi, yerlesim: k.y });
   return basarili({ fiyat, batak: 0, kasaya: net, vergi, islem: c.deger.islem });
