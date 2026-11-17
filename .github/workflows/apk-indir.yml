@@ -1,0 +1,44 @@
+name: APK indirme sayfasi (herkese acik)
+
+# GitHub Release'teki APK'yı herkese açık kronikler-indir Worker'ına koyar (depo özel olduğu için).
+on:
+  workflow_dispatch:
+    inputs:
+      surum:
+        description: "Kaynak Release etiketi"
+        type: choice
+        options: [apk-test, apk-latest]
+        default: apk-test
+
+permissions:
+  contents: read
+
+jobs:
+  yayinla:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: online-server/package-lock.json
+      - name: Wrangler
+        working-directory: online-server
+        run: npm ci --no-audit --no-fund
+      - name: APK'yi indir ve parcala
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download "${{ inputs.surum }}" -p Kronikler.apk -D "$RUNNER_TEMP"
+          mkdir -p tools/apk-indir/public/parca
+          cd tools/apk-indir/public/parca
+          split -b 20m -d -a 2 --additional-suffix=.bin "$RUNNER_TEMP/Kronikler.apk" ""
+          boyut=$(stat -c %s "$RUNNER_TEMP/Kronikler.apk")
+          node -e 'const fs=require("fs");const p=fs.readdirSync(".").filter(f=>f.endsWith(".bin")).sort();fs.writeFileSync("liste.json",JSON.stringify({boyut:Number(process.argv[1]),parcalar:p}))' "$boyut"
+          cat liste.json
+      - name: Worker'i dagit
+        working-directory: tools/apk-indir
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: ../../online-server/node_modules/.bin/wrangler deploy
