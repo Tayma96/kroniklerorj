@@ -23,6 +23,7 @@ import { ISARET_IKON, isaretli, ruhAnahtari } from "../../lib/online/metin";
 import type { Tanidik } from "../../lib/online/protokol";
 import { GelenKutusuKarti } from "../../lib/online/toplum-ui";
 import { HanedanGirisi } from "../../lib/online/yasam-han-giris";
+import { NumaraKarti, OyuncuArama } from "../../lib/online/kunye-ui";
 
 const CEVREM_GORSELI = require("../../assets/tasarim/v4/venue-hanedan.jpg");
 
@@ -53,6 +54,11 @@ function TanidiklarEkran() {
     <Animated.View entering={giris(40)}>
       <GelenKutusuKarti ust={0} />
       <HanedanGirisi ben={ben} />
+    </Animated.View>
+
+    <Baslik2 metin={t("onl.kn.ara.baslik")} rtl={rtl} />
+    <Animated.View entering={giris(60)}>
+      <OyuncuArama />
     </Animated.View>
 
     <Baslik2 metin={t("onl.ta.baslik")} rtl={rtl} sag={<Text style={{ fontFamily: F.display, fontSize: 12, color: C.gold }}>{applyParams(t("onl.ta.alt"), [ben.tanidiklar.length])}</Text>} />
@@ -112,6 +118,9 @@ function TanidiklarEkran() {
         </Cerceve>)}
       </View>
     </> : null}
+
+    <Baslik2 metin={t("onl.kn.numaraBaslik")} rtl={rtl} />
+    <NumaraKarti kunyeLink />
 
     <View style={{ marginTop: 16, flexDirection: yon(rtl), gap: 10, paddingHorizontal: 4 }}>
       <GameIcon name="scroll-open" size={15} color={C.goldDim} />

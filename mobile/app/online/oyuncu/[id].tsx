@@ -21,6 +21,7 @@ import { MEKAN_IKON, etkiYaz } from "../../../lib/online/metin";
 import { hataAnahtari } from "../../../lib/online/hata";
 import { NAMLAR, type OnlineHata } from "../../../lib/online/protokol";
 import { useToplum, type Toplum } from "../../../lib/online/toplum-durum";
+import { KunyeyeGecis, NumaraKarti } from "../../../lib/online/kunye-ui";
 import { GelenKutusuKarti, Secenekler, TeklifFormu, armaganYaz, ayFarki, kademeAdi, kapiMetni } from "../../../lib/online/toplum-ui";
 import { SIKAYET_NEDENLERI, TOPLUM_SINIR, kisiYolu, oyuncuKimligiMi, type OyuncuProfili, type OyuncuTeklifTuru, type SikayetNedeni, type VitrinArmagani } from "../../../lib/online/toplum-veri";
 
@@ -328,6 +329,7 @@ function OyuncuEkran() {
         {durumlar.length ? <View style={{ flexDirection: yon(rtl), flexWrap: "wrap", gap: 6 }}>
           {durumlar.map((d) => <Rozet key={d.metin} icon={d.icon} metin={d.metin} renk={d.renk} />)}
         </View> : null}
+        {!p.ben ? <KunyeyeGecis ad={p.ad} yerlesim={y.yerlesim.id} /> : null}
       </Cerceve>
     </Animated.View>
 
@@ -358,6 +360,7 @@ function OyuncuEkran() {
       </View>
     </> : <>
       <GelenKutusuKarti ust={14} />
+      <View style={{ marginTop: 14 }}><NumaraKarti kunyeLink /></View>
     </>}
 
     {/* Teveccüh */}
