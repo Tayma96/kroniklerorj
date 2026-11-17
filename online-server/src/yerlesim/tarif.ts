@@ -25,7 +25,7 @@ import {
   type Kalite,
   type KaliteSonucu,
 } from "./kalite.ts";
-import { efsaneviDene, efsaneviOnKosul, type EfsaneviSonucu } from "./esya.ts";
+import { efsaneviDene, efsaneviOnKosul, ozellikDokumu, type EfsaneviSonucu } from "./esya.ts";
 import { hizmetEkle } from "./meslek.ts";
 import { envanterEkle } from "./npc-taban.ts";
 import { tohumlu, type Zar } from "./rastgele.ts";
@@ -212,6 +212,8 @@ export interface TarifSonucu {
   kalite: KaliteSonucu;
   /** Efsanevi denemesi (yalnız istenirse; atölyede pirin kendi emeği). */
   efsanevi: EfsaneviSonucu | null;
+  /** Çıkan en yüksek kademenin özellik dökümü (aile, etkiler, hüner; esya.ts). */
+  ozellik: ReturnType<typeof ozellikDokumu>;
   yapan: string;
   hizmet: number;
   hal: HalGorunumu;
@@ -273,6 +275,7 @@ export function tarifYap(k: Karakter, idHam: unknown, ay: number, zar?: Zar, ato
     etkiAraci: etki,
     kalite,
     efsanevi: ef,
+    ozellik: ozellikDokumu(t.cikti[0], ef?.kademe ?? kalite.kademe, ef?.esya ?? undefined),
     yapan: k.o,
     hizmet,
     hal: halGorunumu(k, ay),

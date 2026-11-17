@@ -14,7 +14,7 @@ import { atolyeKalemleri, emekTavani, etkinSeviye, genislet, genisletmeGorunumu,
 import { emirAc, emirIptal } from "./uretim-emri.ts";
 import { topluGeriAl, topluGorunumu, topluTeslim } from "./toplu-siparis.ts";
 import { kaliteliEkle, type Kalite } from "../yerlesim/kalite.ts";
-import { elDegistir } from "../yerlesim/esya.ts";
+import { EFSANEVI_DENEME_AY, EFSANEVI_PIR_KADEMESI, efsaneviHakki, elDegistir } from "../yerlesim/esya.ts";
 import { efsaneviKaydet } from "../yerlesim/esya-kayit.ts";
 import { akceIade, iadeTeslim, malIade } from "./iade.ts";
 import type { Karakter, Kasaba } from "../yerlesim/tipler.ts";
@@ -329,6 +329,8 @@ function atolyeGorunumu(k: Kasaba, md: MulkDefteri, isletme: string, t: Tezgah, 
     sonUretimAyi: t.ua ?? null,
     topluSiparis: topluGorunumu(md.tsp, k.ay, { isletme, t, indirim: topluIndirimi(k, md, isletme) }),
     benimTakat: kar.tk,
+    // Dilim 4: bakanın efsanevi denemesi (zanaatta pirse); şans üretimde kaba bantla döner.
+    efsanevi: { pir: !!t.za && (kar.ms?.s[t.za]?.kd ?? 0) >= EFSANEVI_PIR_KADEMESI, hak: efsaneviHakki(kar, k.ay), ayda: EFSANEVI_DENEME_AY },
   };
 }
 

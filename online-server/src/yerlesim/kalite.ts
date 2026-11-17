@@ -75,6 +75,8 @@ export const KALITE_ESIK: readonly number[] = [0, 30, 55, 85, 125];
  * (ender: eşik 125), pir nadide; efsanevi yalnız pirin atölye denemesiyle.
  */
 export const KALITE_KADEME_TAVANI: readonly Kalite[] = [1, 2, 4, 4];
+/** [PARAMETRE] Puanı nadideye yeten ustanın (pir değil) nadide çıkarma şansı (yüzde; değilse şaheser). */
+export const KALITE_USTA_NADIDE_YUZDE = 20;
 /** [PARAMETRE] Emirle (NPC emeği / toplu) üretimin kalite tavanı: şaheser. */
 export const KALITE_EMIR_TAVANI: Kalite = 3;
 /** [PARAMETRE] Tarifin mesleğindeki kademeye göre puan (çırak, kalfa, usta, pir). */
@@ -242,7 +244,7 @@ export interface KaliteSonucu {
   sonrakiEsik: number | null;
   /** Bu üretimin puanla erişilebilen kalite tavanı; puan tavanı aştıysa nedeni (meslek kademesi ya da emir). */
   tavan: Kalite;
-  kisit: "kalite.tavan.meslek" | "kalite.tavan.emir" | null;
+  kisit: "kalite.tavan.meslek" | "kalite.tavan.emir" | "kalite.tavan.ustaNadide" | null;
 }
 
 export function kademeBul(puan: number): Kalite {
@@ -270,8 +272,13 @@ export function urunKalitesi(k: Karakter, t: Tarif, beceri: number, aracKalite: 
   for (const x of ek) kalemler.push({ k: x.k, d: x.d });
   const toplam = Math.max(0, kalemler.reduce((a, x) => a + x.d, 0));
   const ham = kademeBul(toplam);
-  const kademe = Math.min(ham, tavan) as Kalite;
-  const kisit = ham > tavan ? (emir && tavan < mt ? "kalite.tavan.emir" : "kalite.tavan.meslek") : null;
+  let kademe = Math.min(ham, tavan) as Kalite;
+  let kisit: KaliteSonucu["kisit"] = ham > tavan ? (emir && tavan < mt ? "kalite.tavan.emir" : "kalite.tavan.meslek") : null;
+  // Usta nadideye "ender" ulaşır (§9): puan yetse de aynı zarın ikinci çekilişiyle KALITE_USTA_NADIDE_YUZDE.
+  if (kademe === KALITE_NADIDE && kd < 3 && zar() * 100 >= KALITE_USTA_NADIDE_YUZDE) {
+    kademe = KALITE_SAHESER;
+    kisit = "kalite.tavan.ustaNadide";
+  }
   return { kademe, ad: KALITE_ADLARI[kademe], dokum: { toplam, kalemler }, sonrakiEsik: kademe >= tavan ? null : (KALITE_ESIK[kademe + 1] ?? null), tavan, kisit };
 }
 
