@@ -31,6 +31,8 @@ function durumAl(ad: string): Durum {
     { sira: 4, ay: 120, tur: "dogum", ozet: { k: KR + "dogum", p: { anne: ref("o4", ad), baba: ref("n41", "Hasan"), cocuk: ref("n77", "Mehmed"), meslek: "demirci" } } },
     { sira: 5, ay: 150, tur: "evlilik", ozet: { k: KR + "evlilik", p: { a: ref("o2", "Selim Ağa"), b: ref("n12", "Rabia") } } },
     { sira: 6, ay: 170, tur: "dogum", ozet: { k: KR + "dogum", p: { anne: ref("o4", ad), baba: ref("n41", "Hasan"), cocuk: ref("n78", "Fatma"), meslek: "" } } },
+    { sira: 7, ay: 220, tur: "esya", ozet: { k: KR + "esya.tilsimli", p: { kim: ref("o9", "Pir Davud"), mal: "kilic", kalite: "tilsimli", lakap: 3, atolyeAd: "Demirkapı Ocağı" } } },
+    { sira: 7, ay: 250, tur: "esya", ozet: { k: KR + "esya.efsanevi", p: { kim: ref("o7", "Usta Kerem"), mal: "alet", kalite: "efsanevi", lakap: 15, atolyeAd: "Kerem Ocağı" } } },
     { sira: 7, ay: 260, tur: "olum", ozet: { k: KR + "olum", p: { kisi: ref("o3", "Kerim Usta"), yas: 64, nesil: 1 } } },
     { sira: 8, ay: 288, tur: "dogum", ozet: { k: KR + "dogum", p: { anne: ref("o4", ad), baba: ref("n41", "Hasan"), cocuk: ref("n79", "Ali"), meslek: "dokumaci" } } },
   ];

@@ -4,6 +4,7 @@
 // zanaat dışı) ve kapanmış biri, ustalık etkileri (kalite ve toplu indirim; depo bir çalışan ustadan). Sunucunun kaba
 // bir taklididir: sayılar ve neden kodları aynı biçimde gelir, gerçek hesap sunucudadır. Durum yerleşim başına tektir;
 // sahte tezgâh (GET …/tezgah) ile sahte atölye istemcisi (yazmalar) aynı depoyu ve emirleri paylaşır.
+import type { EfsaneviSonucu } from "./esya-veri";
 import { ekBasarili, ekBasarisiz, type EkHata, type EkSonuc } from "./ek-istemci";
 import { TARIFLER } from "./meslek-veri";
 import type { AtolyeIstemci, AtolyeKarti, AtolyeListesi } from "./atolye-veri";
@@ -40,7 +41,7 @@ export function sahteAtolyeDurumu(yer: string): SahteAtolye {
     isletme: `${yer}.atolye.1`, zanaat: "demirci", zs: 1, seviye: 1, kademe: 1, en: 1, havuz: 7, takat: 8,
     emirler: [{ no: 1, tarif: "alet", kez: 6, yapilan: 2, kalan: 4, acilis: AY - 2, acan: BEN }],
     depo: [
-      { mal: "nal", kalite: 0, adet: 14 }, { mal: "nal", kalite: 1, adet: 8 }, { mal: "alet", kalite: 1, adet: 11 },
+      { mal: "nal", kalite: 0, adet: 14 }, { mal: "nal", kalite: 1, adet: 8 }, { mal: "alet", kalite: 1, adet: 11 }, { mal: "alet", kalite: 2, adet: 3 }, { mal: "alet", kalite: 3, adet: 1 }, { mal: "alet", kalite: 4, adet: 1 },
       { mal: "cevher", kalite: 0, adet: 6 }, { mal: "komur", kalite: 0, adet: 5 }, { mal: "kereste", kalite: 0, adet: 4 }, { mal: "tas", kalite: 0, adet: 12 },
     ],
     damgali: { nal: 19, alet: 4 },
@@ -122,8 +123,20 @@ export function sahteAtolyeGorunumu(a: SahteAtolye): { atolye: AtolyeBolumu; kan
       emek: { havuz: a.havuz, tavan: emekTavani(a), tekEnCok: TEK_MESAI, npcCalisan: 1, npcAylik: 2, npc: { sozlesme: 2, emekVeren: 1, maassiz: 1, neden: "emanet_maas_yetmez" }, npcKaliteCeza: 30, npcMaasEnAz: 38 },
       emirler: a.emirler.map((e) => ({ ...e, kalan: e.kez - e.yapilan })), emirKezEnCok: EMIR_KEZ, sonUretimAyi: AY - 1,
       topluSiparis: a.toplu.map((s) => topluGorunumu(a, s)), benimTakat: a.takat,
+      // Dilim 4: önizlemede bakan pirdir; hak her görünümde dolar ki üç sonuç (nadide çıkmadı, nasip olmadı, efsane) görülsün.
+      efsanevi: { pir: true, hak: 1, ayda: 1 },
     },
   };
+}
+
+/** Önizlemede efsanevi denemesinin üç sonucu sırayla: nadide çıkmadı (hak kalır), nasip olmadı, efsane doğdu. */
+let efSira = 0;
+function sahteEfsanevi(mal: string): EfsaneviSonucu {
+  const n = efSira++ % 3;
+  if (n === 0) return { denendi: false, neden: "nadide_degil", sans: "yok", kademe: null, esya: null, kalanHak: 1 };
+  if (n === 1) return { denendi: true, neden: null, sans: "zayif", kademe: null, esya: null, kalanHak: 0 };
+  return { denendi: true, neden: null, sans: "makul", kademe: 5, kalanHak: 0,
+    esya: { i: "e" + mal + AY, l: 8, u: BEN.ad, a: "Elif Nur Ocağı", h: ["bereketli"], y: AY, g: [[AY, "yapim", BEN.ad]] } };
 }
 
 /** Geliştirici modunun atölye istemcisi: sahte tezgâhla aynı durumu yazar. */
@@ -160,9 +173,12 @@ export function sahteAtolyeIstemci(yer: string): AtolyeIstemci {
       for (const [m, n] of Object.entries(tf.girdi)) depodanAl(a, m, n ?? 0);
       a.takat -= tf.takat;
       const [mal, adet] = tf.cikti;
-      depoyaKoy(a, mal, 1, adet, true);
+      const ef = g.efsanevi ? sahteEfsanevi(mal) : null;
+      const q = ef ? (ef.kademe ?? (ef.denendi ? 4 : 3)) : 1;
+      depoyaKoy(a, mal, q, adet, true);
       return ekBasarili({
-        uretim: { tarif: tf.id, cikti: { mal, adet }, girdi: tf.girdi as Record<string, number>, kalite: { kademe: 1, dokum: { toplam: 13, kalemler: [{ k: kk("atolye", 5, 5).k, d: 5 }, { k: kk("kanca", 8, 8).k, d: 8 }] } }, atolye: { isletme: a.isletme, ad: "" }, levha: false },
+        uretim: { tarif: tf.id, cikti: { mal, adet }, girdi: tf.girdi as Record<string, number>, kalite: { kademe: ef?.denendi ? 4 : ef ? 3 : 1, dokum: { toplam: 13, kalemler: [{ k: kk("atolye", 5, 5).k, d: 5 }, { k: kk("kanca", 8, 8).k, d: 8 }] }, ...(ef && !ef.denendi ? { kisit: "kalite.tavan.ustaNadide" as const } : {}) }, atolye: { isletme: a.isletme, ad: "" }, levha: false,
+          efsanevi: ef, ...(ef?.esya ? { ozellik: { aile: "alet", kademe: 5, kalite: "efsanevi", carpan: 5, etkiler: [{ id: "verim", carpan: 5 }, { id: "omur", carpan: 5 }, { id: "incelik", carpan: 5 }], eksik: [], kusur: null, hunerler: ef.esya.h, bagli: true } } : {}) },
         depo: a.depo.filter((x) => x.adet > 0), depoDolu: depoDolu(a), depoKapasite: DEPO_KAP,
       });
     },
