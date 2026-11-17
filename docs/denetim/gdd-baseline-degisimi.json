@@ -78,5 +78,18 @@
       "after": "2abce620192420f1d8c468c66af4388346df38fa19910a419418a1741ddfb908"
     }
   },
-  "realUserGoldenSaves": false
+  "realUserGoldenSaves": false,
+  "sonrakiDegisimler": [
+    {
+      "date": "2026-11-17",
+      "previousEngineSha256": "7c6404d38d855ad3516fe9ec23a5816a63d6e42488218c6e56e94c0ef303cf93",
+      "newEngineSha256": "3f5401ea47c8f20cdea82cec64b5a17cdcfe2aef58572b765669e36996ff3855",
+      "changedFlows": [
+        "ders",
+        "sohbet",
+        "yol"
+      ],
+      "reason": "Öbür hesabın apk dalındaki F0–F2 bilinçli oynanış değişiklikleri (3cfa867 tek zar/şans etiketi, a86e4f8/c6a1fa4 stat tavanı 20 ve statEtki, af755c9/da57b04 hüner ağacı 2.0) ders/sohbet/yol akışlarını değiştirdi; apk dalı (d3c1890) tabanı güncellemeden aynı farkı veriyordu. Şüpheli fark yok; taban birleşmeden sonra yenilendi."
+    }
+  ]
 }

@@ -1,10 +1,11 @@
-// Çevrimiçi yaşam (ana sayfa, Faz 2c): Dönüş Kartı (en çok 5, tanıdıklar önce), açık gerilimler, takat, öğrenme
+// Çevrimiçi yaşam (ana sayfa, Faz 2c; düzen tek oyunculu ana sayfayla aynı: sahne, kimlik, paneller, defter satırı): Dönüş Kartı (en çok 5, tanıdıklar önce), açık gerilimler, takat, öğrenme
 // dönemi şeridi (6 gün; bugünün hedefi ve ödülü, tamam/kaçan günler), "Şimdi" rehberi, gelen kutusu ve yerleşim defteri.
 // Mekânlar Sokak, geçim İşim, insanlar Çevrem, karakter Ben sekmesindedir; burada bağlantı ızgarası yoktur.
 // Veri sunucudan (GET /v1/yerlesim, /v1/olaylar); tek oyunculu motor ya da kayıt okunmaz.
 import { useEffect, useMemo, useRef, useState } from "react";
-import { View, Text, ScrollView, useWindowDimensions } from "react-native";
+import { View, Text, ScrollView } from "react-native";
 import { useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated from "react-native-reanimated";
 import { useI18n, applyParams } from "../../lib/i18n";
 import type { Lang } from "../../lib/locale-data";
@@ -15,14 +16,17 @@ import { hap } from "../../lib/haptics";
 import { OnlineYakinda } from "../../lib/online-yakinda";
 import { OnlineKapisi } from "../../lib/online/durum";
 import { onlineEkranAcik } from "../../lib/online/kapi";
-import { Bant, Cerceve, CizgiDugme, Madalyon, ONL, TUR_IKON, giris, hiza, yon } from "../../lib/online/ui";
+import { Bant, CizgiDugme, Madalyon, ONL, giris, hiza, yon } from "../../lib/online/ui";
 import { kisiYolu } from "../../lib/online/toplum-veri";
 import { GelenKutusuKarti } from "../../lib/online/toplum-ui";
 import {
-  AltPanel, Baslik2, BosKart, GorusOlcegi, Hap, KisiYuzu, OgrenmeSeridi, OnlineSayfa, Rozet, SatirOku, TakatGostergesi, YerlesimBekle,
+  AltMenu, AltPanel, GorusOlcegi, KisiYuzu, MENU_YUKSEKLIK, OgrenmeSeridi, Rozet, SatirOku, TakatGostergesi, YerlesimBekle,
   gorusRengi, gunDurumu, ISARET_RENK, odulYaz, sahneGorseli, useYerlesimEkrani, yuzBilgisi,
 } from "../../lib/online/yasam-ui";
 import { EylemSonucu } from "../../lib/online/eylem-ui";
+import { AnaZemin, ZEMIN } from "../../lib/sayfa/ana/zemin";
+import { MkBookRow, MkHero, MkIdentity, MkPanel, MkPanelHeader } from "../../lib/sayfa/ana/paneller";
+import { MK } from "../../lib/mk-sus";
 import { SimdiRehberi } from "../../lib/online/simdi-rehber";
 import { isReduceMotion } from "../../lib/perf";
 import { BarinmaKarti } from "../../lib/online/barinma-ui";
@@ -34,6 +38,10 @@ import type { EylemYaniti, Isaret, Olay, OgrenmeGunu, YerlesimDurumu } from "../
 
 type Ceviri = (k: string) => string;
 const SAAT_MS = 3_600_000;
+/** Bir öğrenme günü kaç oyun ayı (sunucu yerlesim/ogrenme.ts GUN_BASINA_AY). */
+const GUN_BASINA_AY = 2;
+/** Mevsim simgesi: tek oyunculu ana sayfanın sahne başlığıyla aynı. */
+const MEVSIM_IKON: Record<string, string> = { kis: "flame", ilkbahar: "leaf", yaz: "sun", sonbahar: "wheat" };
 const KART_EN_COK = 5;
 const GERILIM_EN_COK = 5;
 
@@ -102,7 +110,7 @@ function GunHedefi({ g, bugun, rtl, t, lang, bekliyor, onGit }: { g: OgrenmeGunu
 function YasamEkran() {
   const router = useRouter();
   const { t, rtl, lang } = useI18n();
-  const { width: W, height: H } = useWindowDimensions();
+  const ins = useSafeAreaInsets();
   const o = useYerlesimEkrani();
   const y = o.yerlesim;
   const [simdi, setSimdi] = useState(() => Date.now());
@@ -133,7 +141,6 @@ function YasamEkran() {
   const kacan = og.gunler.filter((g) => gunDurumu(g, og.gun) === "kacti");
   const saat = y.saat;
   const kalan = Math.max(0, saat.sonrakiDonum - (saat.simdi + (simdi - o.yerlesimAlindi)));
-  const dar = W < 360;
   const yeniler = [...o.defter].reverse();
   const gorunenDefter = tumDefter ? yeniler : yeniler.slice(0, 8);
 
@@ -148,166 +155,171 @@ function YasamEkran() {
     router.replace(g.sistem === "dostluk" ? "/online/cevrem" : g.sistem === "karar" ? "/online/karakter" : "/online/mahalle");
   };
 
-  return <OnlineSayfa gorsel={sahneGorseli(y.yerlesim.tur, saat.mevsim)} oran={0.5} sekme="yasam" rtl={rtl} t={t} kaydirRef={kaydir}
-    rozet={{ ben: ben.ozellikPuani > 0 }}
-    alt={<AltPanel acik={!!sonuc} onKapat={() => setSonuc(null)} etiket={t("onl.ey.sonuc")} rtl={rtl} t={t}>
-      {sonuc ? <EylemSonucu y={sonuc} rtl={rtl} t={t} lang={lang} onTamam={() => setSonuc(null)} /> : null}
-    </AltPanel>}>
-    {/* Üst şerit: ben, yaş, akçe */}
-    <View style={{ flexDirection: yon(rtl), alignItems: "center", gap: 10 }}>
-      <Pressable accessibilityLabel={applyParams(t("onl.ya.benErisim"), [ben.ad, ben.yas])} onPress={() => router.replace("/online/karakter")} style={{ borderRadius: 30 }}>
-        <KisiYuzu id={ben.id} ad={ben.ad} boyut={54} yas={ben.yas} cinsiyet={ben.cinsiyet} ben />
-      </Pressable>
-      <View style={{ flex: 1 }}>
-        <Text numberOfLines={1} style={{ fontFamily: F.display, fontSize: 17, color: C.goldBright, textAlign: hiza(rtl), textShadowColor: "rgba(0,0,0,0.95)", textShadowRadius: 6 }}>{ben.ad}</Text>
-        <Text numberOfLines={1} style={{ fontFamily: F.serif, fontSize: 15, color: C.parchment, textAlign: hiza(rtl), textShadowColor: "rgba(0,0,0,0.95)", textShadowRadius: 6 }}>{applyParams(t("onl.ya.yas"), [ben.yas])}</Text>
-      </View>
-      <Hap icon="coins" metin={String(ben.para)} erisim={applyParams(t("onl.ya.paraErisim"), [ben.para])} />
-    </View>
+  const sahne = sahneGorseli(y.yerlesim.tur, saat.mevsim);
+  const kalanMetin = applyParams(t("onl.v.kalan"), [Math.floor(kalan / SAAT_MS), Math.floor((kalan % SAAT_MS) / 60_000)]);
+  const meslek = o.meslekDurumu?.kayit.a || null;
+  const rol = meslek ? t("onl.mes." + meslek) : applyParams(t("onl.ana.sakin"), [y.yerlesim.ad]);
+  // Tek oyunculu ana sayfanın kimlik paneli: dört gösterge (akçe, takat, öğrenme günü ya da yaş, yeni aya kalan).
+  const gostergeler = [
+    { icon: "coins", label: t("onl.ana.akce"), value: String(ben.para) },
+    { icon: "flame", label: t("onl.ana.takat"), value: `${ben.takat.kalan}/${ben.takat.tavan}`, tone: ben.takat.kalan > 0 ? undefined : C.ember },
+    og.suruyor ? { icon: "graduate-cap", label: t("onl.ana.gun"), value: `${og.gun}/${og.gunler.length}` } : { icon: "hourglass", label: t("onl.ana.yas"), value: String(ben.yas) },
+    { icon: "hourglass", label: t("onl.ana.yeniAy"), value: kalanMetin },
+  ];
+  const panel = { marginHorizontal: 0, marginTop: 14 };
 
-    {/* Yerleşim başlığı ve dönüm sayacı */}
-    <View style={{ minHeight: Math.max(dar ? 64 : 92, H * 0.1) }} />
-    <Animated.View entering={giris(60)} style={{ alignItems: "center", gap: 6 }}>
-      <View style={{ flexDirection: yon(rtl), alignItems: "center", gap: 7, paddingHorizontal: 12, paddingVertical: 4, borderRadius: 12, borderWidth: 1, borderColor: ONL.gold, backgroundColor: "rgba(14,10,6,0.62)" }}>
-        <GameIcon name={TUR_IKON[y.yerlesim.tur] ?? "house"} size={13} color={C.goldBright} />
-        <Text style={{ fontFamily: F.display, fontSize: 11.5, letterSpacing: rtl ? 0 : 1.6, color: C.goldBright }}>{`${t("onl.tur." + y.yerlesim.tur)} · ${t("onl.mevsim." + saat.mevsim)} ${saat.yil}`}</Text>
-      </View>
-      <Text accessibilityRole="header" style={{ fontFamily: F.display, fontSize: dar ? 30 : 34, lineHeight: dar ? 38 : 42, color: C.parchment, textAlign: "center", textShadowColor: "rgba(0,0,0,0.95)", textShadowRadius: 10 }}>{y.yerlesim.ad}</Text>
-      <View accessible accessibilityLabel={`${t("onl.v.donum")} ${applyParams(t("onl.v.kalan"), [Math.floor(kalan / SAAT_MS), Math.floor((kalan % SAAT_MS) / 60_000)])}`}
-        style={{ flexDirection: yon(rtl), alignItems: "center", gap: 7 }}>
-        <GameIcon name="hourglass" size={14} color={C.gold} />
-        <Text style={{ fontFamily: F.serif, fontSize: 15.5, color: C.parchmentDim, textShadowColor: "rgba(0,0,0,0.95)", textShadowRadius: 6 }}>
-          {`${t("onl.ya.donum")} ${applyParams(t("onl.v.kalan"), [Math.floor(kalan / SAAT_MS), Math.floor((kalan % SAAT_MS) / 60_000)])}`}
-        </Text>
-      </View>
-    </Animated.View>
+  return <View style={{ flex: 1, backgroundColor: ZEMIN }}>
+    <AnaZemin source={sahne} />
+    <ScrollView ref={kaydir} style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: MENU_YUKSEKLIK + ins.bottom + 28 }}>
+      {/* Sahne ve kimlik: tek oyunculu ana sayfayla aynı paneller (lib/sayfa/ana/paneller) */}
+      <MkHero source={sahne} topInset={ins.top} seasonIcon={MEVSIM_IKON[saat.mevsim] ?? "sun"} rtl={rtl}
+        title={y.yerlesim.ad} sub={`${t("onl.tur." + y.yerlesim.tur)}  •  ${t("onl.mevsim." + saat.mevsim)} ${saat.yil}`}
+        onBook={() => router.push("/online/kronik")} bookLabel={t("onl.kr.baslik")} bookIcon="book" />
+      <MkIdentity age={ben.yas} gender={ben.cinsiyet} name={ben.ad} role={rol} stats={gostergeler} rtl={rtl}
+        portraitLabel={applyParams(t("onl.ya.benErisim"), [ben.ad, ben.yas])} onPortrait={() => router.replace("/online/karakter")} />
 
-    {/* Canlı etkinlikler: yönetici başlatınca belirir, durdurunca kaybolur */}
-    <EtkinlikBandi />
+      <View style={{ paddingHorizontal: MK.side }}>
+        {/* Canlı etkinlikler: yönetici başlatınca belirir, durdurunca kaybolur */}
+        <EtkinlikBandi />
 
-    {/* Şimdi: en çok üç öneri, her biri tek düğme */}
-    <SimdiRehberi onBarinma={() => kaydir.current?.scrollTo({ y: Math.max(0, barinmaY.current - 12), animated: !isReduceMotion() })} />
+        {/* Şimdi: en çok üç öneri, her biri tek düğme (tek oyunculudaki uyarı afişinin yeri) */}
+        <SimdiRehberi onBarinma={() => kaydir.current?.scrollTo({ y: Math.max(0, barinmaY.current - 12), animated: !isReduceMotion() })} />
 
-    {/* Takat */}
-    <Animated.View entering={giris(140)} style={{ marginTop: 16 }}>
-      <Cerceve ic={{ padding: 14 }}>
-        <TakatGostergesi kalan={ben.takat.kalan} tavan={ben.takat.tavan} aylik={ben.takat.aylik} rtl={rtl} t={t} />
-      </Cerceve>
-    </Animated.View>
-
-    {/* Barınma (Faz 14); 24 saati aşan yoklukta dönüş ekranını açar. Rehberin "barınma" önerisi buraya kaydırır. */}
-    <View onLayout={(e) => { barinmaY.current = e.nativeEvent.layout.y; }}><BarinmaKarti /></View>
-    <NabizKarti />
-
-    {/* Öğrenme dönemi */}
-    {og.suruyor ? <Animated.View entering={giris(200)} style={{ marginTop: 12 }}>
-      <Cerceve ic={{ padding: 14, gap: 12 }}>
-        <View style={{ flexDirection: yon(rtl), alignItems: "center", gap: 8 }}>
-          <GameIcon name="graduate-cap" size={16} color={C.goldBright} />
-          <Text style={{ flex: 1, fontFamily: F.display, fontSize: 12.5, letterSpacing: rtl ? 0 : 1.4, color: C.goldBright, textAlign: hiza(rtl) }}>{applyParams(t("onl.v.donem"), [og.gun, og.gunler.length])}</Text>
-        </View>
-        <OgrenmeSeridi ogrenme={og} rtl={rtl} t={t} secili={gun.gun} onSec={(g) => setSecGun(g === og.gun ? null : g)} />
-        <GunHedefi g={gun} bugun={og.gun} rtl={rtl} t={t} lang={lang} bekliyor={o.islem === "eylem"} onGit={() => hedefeGit(gun)} />
-        {eylemHata ? <Bant metin={eylemHata} rtl={rtl} /> : null}
-        {secGun === null && kacan.length ? <Pressable accessibilityLabel={applyParams(t("onl.ya.kacan"), [kacan.map((g) => g.gun).join(", ")])} onPress={() => { hap("selection"); setSecGun(kacan[0].gun); }}
-          style={{ flexDirection: yon(rtl), alignItems: "center", gap: 8, paddingHorizontal: 10, borderRadius: 8, backgroundColor: "rgba(120,52,24,0.35)", borderWidth: 1, borderColor: "rgba(214,120,72,0.55)" }}>
-          <GameIcon name="hourglass" size={15} color={C.emberSoft} />
-          <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 14.5, lineHeight: 19, color: C.parchment, textAlign: hiza(rtl) }}>
-            {applyParams(t("onl.ya.kacan"), [kacan.map((g) => `${g.gun} · ${t("onl.ogrenme.sistem." + g.sistem)}`).join(", ")])}
-          </Text>
-        </Pressable> : null}
-      </Cerceve>
-    </Animated.View> : null}
-
-    {/* Gelen kutusu: cevap bekleyen teklif ve dostluk istekleri (Faz 3a) */}
-    <GelenKutusuKarti ust={14} />
-
-    {/* Dönüş Kartı */}
-    <Baslik2 metin={t("onl.ya.donusKarti")} rtl={rtl} sag={kart.length ? <Text style={{ fontFamily: F.display, fontSize: 12, color: C.gold }}>{kart.length}</Text> : undefined} />
-    {kart.length ? <Cerceve ic={{ paddingVertical: 4 }}>
-      {kart.map(({ ol, r }, i) => {
-        const kisi = olayKisisi(ol, ben.id);
-        const isaret = (ol.kim && isaretler.get(ol.kim)) || (ol.hedef && isaretler.get(ol.hedef)) || null;
-        const metin = ozetYaz(ol.ozet, t, lang);
-        return <Pressable key={ol.sira} disabled={!kisi} accessibilityLabel={metin} accessibilityHint={kisi ? t("onl.ya.kisiyeGit") : undefined} onPress={() => { hap("tap"); kisiyeGit(kisi); }}
-          style={({ pressed }) => ({ flexDirection: yon(rtl), alignItems: "center", gap: 12, paddingHorizontal: 12, paddingVertical: 10, borderTopWidth: i ? 1 : 0, borderColor: "rgba(201,162,78,0.14)", backgroundColor: pressed ? "rgba(201,162,78,0.08)" : "transparent" })}>
-          <View style={{ width: 40, height: 40, borderRadius: 20, borderWidth: 1.5, borderColor: isaret ? ISARET_RENK[isaret] : r === 3 ? C.goldBright : ONL.frame, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(14,10,6,0.7)" }}>
-            <GameIcon name={olayIkonu(ol)} size={19} color={r === 3 ? C.goldBright : C.gold} />
-          </View>
-          <View style={{ flex: 1, gap: 3 }}>
-            <Text style={{ fontFamily: F.serif, fontSize: 16, lineHeight: 22, color: C.parchment, textAlign: hiza(rtl) }}>{metin}</Text>
-            {r > 0 ? <Text style={{ fontFamily: F.display, fontSize: 10.5, letterSpacing: rtl ? 0 : 1, color: isaret ? ISARET_RENK[isaret] : C.goldBright, textAlign: hiza(rtl) }}>
-              {r === 3 ? t("onl.ya.seninle") : t("onl.ya.tanidigin." + (isaret ?? "tanidik"))}
-            </Text> : null}
-          </View>
-          {kisi ? <SatirOku rtl={rtl} /> : null}
-        </Pressable>;
-      })}
-    </Cerceve> : <BosKart icon="scroll" metin={t("onl.ya.kartBos")} rtl={rtl} />}
-
-    {/* Açık gerilimler */}
-    <Baslik2 metin={t("onl.ya.gerilimler")} rtl={rtl} />
-    {gerilim.length ? <View style={{ gap: 10 }}>
-      {gerilim.map((g) => <Cerceve key={g.id} ic={{ padding: 12, gap: 10 }}>
-        <Pressable accessibilityLabel={`${g.ad}: ${t(ruhAnahtari(g.gorus))} ${isaretli(g.gorus)}`} onPress={() => { hap("tap"); kisiyeGit(g.id); }} style={{ flexDirection: yon(rtl), alignItems: "center", gap: 12 }}>
-          <KisiYuzu id={g.id} ad={g.ad} boyut={46} isaret={g.isaret} oyuncu={g.oyuncu} {...yuzBilgisi(o.kisiler, g.id)} />
-          <View style={{ flex: 1, gap: 5 }}>
-            <View style={{ flexDirection: yon(rtl), alignItems: "center", gap: 8 }}>
-              <Text numberOfLines={1} style={{ flexShrink: 1, fontFamily: F.display, fontSize: 15, color: C.parchment }}>{g.ad}</Text>
-              <Text style={{ fontFamily: F.display, fontSize: 13, color: gorusRengi(g.gorus) }}>{isaretli(g.gorus)}</Text>
+        {/* Öğrenme dönemi: ne olduğu tek cümleyle, altı gün şeridi ve bugünün hedefi */}
+        {og.suruyor ? <Animated.View entering={giris(120)}>
+          <MkPanel style={panel}>
+            <MkPanelHeader title={applyParams(t("onl.ana.donem"), [og.gun, og.gunler.length])} rtl={rtl} />
+            <View style={{ paddingHorizontal: 12, paddingBottom: 12, gap: 12 }}>
+              <Text style={{ fontFamily: F.serifItalic, fontSize: 14, lineHeight: 19, color: MK.muted, textAlign: hiza(rtl) }}>{applyParams(t("onl.v.donemNe"), [og.gunler.length, GUN_BASINA_AY], lang)}</Text>
+              <OgrenmeSeridi ogrenme={og} rtl={rtl} t={t} secili={gun.gun} onSec={(g) => setSecGun(g === og.gun ? null : g)} />
+              <GunHedefi g={gun} bugun={og.gun} rtl={rtl} t={t} lang={lang} bekliyor={o.islem === "eylem"} onGit={() => hedefeGit(gun)} />
+              {eylemHata ? <Bant metin={eylemHata} rtl={rtl} /> : null}
+              {secGun === null && kacan.length ? <Pressable accessibilityLabel={applyParams(t("onl.ya.kacan"), [kacan.map((g) => g.gun).join(", ")])} onPress={() => { hap("selection"); setSecGun(kacan[0].gun); }}
+                style={{ minHeight: 44, flexDirection: yon(rtl), alignItems: "center", gap: 8, paddingHorizontal: 10, borderRadius: 8, backgroundColor: "rgba(120,52,24,0.35)", borderWidth: 1, borderColor: "rgba(214,120,72,0.55)" }}>
+                <GameIcon name="hourglass" size={15} color={C.emberSoft} />
+                <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 14.5, lineHeight: 19, color: C.parchment, textAlign: hiza(rtl) }}>
+                  {applyParams(t("onl.ya.kacan"), [kacan.map((g) => `${g.gun} · ${t("onl.ogrenme.sistem." + g.sistem)}`).join(", ")])}
+                </Text>
+              </Pressable> : null}
             </View>
-            <GorusOlcegi deger={g.gorus} rtl={rtl} />
-            <Text style={{ fontFamily: F.serif, fontSize: 14.5, lineHeight: 19, color: C.parchmentDim, textAlign: hiza(rtl) }}>
-              {g.sebep ? applyParams(t("onl.ya.gerilimSebep"), [t(ruhAnahtari(g.gorus)), t("onl." + g.sebep)]) : t(ruhAnahtari(g.gorus))}
-            </Text>
-          </View>
-        </Pressable>
-        <CizgiDugme etiket={t("onl.ya.gonlunuAl")} icon="family" rtl={rtl} kucuk onPress={() => kisiyeGit(g.id)} />
-      </Cerceve>)}
-    </View> : <BosKart icon="shield" metin={t("onl.ya.gerilimBos")} rtl={rtl} />}
+          </MkPanel>
+        </Animated.View> : null}
 
-    {/* Seni fark edenler (öneriler) */}
-    {y.oneriler.filter((x) => x.gorus > 0).length ? <>
-      <Baslik2 metin={t("onl.ya.oneriler")} rtl={rtl} />
-      <View style={{ gap: 8 }}>
-        {y.oneriler.filter((x) => x.gorus > 0).map((k) => <Cerceve key={k.id} ic={{ paddingHorizontal: 12, paddingVertical: 8 }}>
-          <View style={{ flexDirection: yon(rtl), alignItems: "center", gap: 12 }}>
-            <Pressable accessibilityLabel={k.ad} onPress={() => kisiyeGit(k.id)} style={{ flex: 1, flexDirection: yon(rtl), alignItems: "center", gap: 12 }}>
-              <KisiYuzu id={k.id} ad={k.ad} boyut={42} {...yuzBilgisi(o.kisiler, k.id)} />
-              <View style={{ flex: 1 }}>
-                <Text numberOfLines={1} style={{ fontFamily: F.display, fontSize: 14.5, color: C.parchment, textAlign: hiza(rtl) }}>{k.ad}</Text>
-                <Text style={{ fontFamily: F.serif, fontSize: 14, color: gorusRengi(k.gorus), textAlign: hiza(rtl) }}>{`${t(ruhAnahtari(k.gorus))} · ${isaretli(k.gorus)}`}</Text>
-              </View>
-            </Pressable>
-            <Pressable accessibilityLabel={applyParams(t("onl.ki.ekleErisim"), [k.ad])} onPress={() => { hap("tap"); void o.tanidikIsaretle(k.id, "tanidik"); }}
-              style={({ pressed }) => ({ paddingHorizontal: 12, borderRadius: 8, borderWidth: 1, borderColor: ONL.frameHi, backgroundColor: pressed ? "rgba(201,162,78,0.24)" : "rgba(201,162,78,0.12)", flexDirection: "row", alignItems: "center", gap: 6 })}>
-              <Text style={{ fontFamily: F.display, fontSize: 18, lineHeight: 20, color: C.goldBright }}>+</Text>
-              <Text style={{ fontFamily: F.display, fontSize: 12, color: C.goldBright }}>{t("onl.ya.ekle")}</Text>
-            </Pressable>
+        {/* Takat: kimlikteki göstergenin açıklaması (aylık dolum, birikim tavanı) */}
+        <MkPanel style={panel}>
+          <View style={{ padding: 14 }}>
+            <TakatGostergesi kalan={ben.takat.kalan} tavan={ben.takat.tavan} aylik={ben.takat.aylik} rtl={rtl} t={t} />
           </View>
-        </Cerceve>)}
+        </MkPanel>
+
+        {/* Barınma (Faz 14); 24 saati aşan yoklukta dönüş ekranını açar. Rehberin "barınma" önerisi buraya kaydırır. */}
+        <View onLayout={(e) => { barinmaY.current = e.nativeEvent.layout.y; }}><BarinmaKarti /></View>
+        <NabizKarti />
+
+        {/* Gelen kutusu: cevap bekleyen teklif ve dostluk istekleri (Faz 3a) */}
+        <GelenKutusuKarti ust={14} />
+
+        {/* Dönüş Kartı (tek oyunculudaki "Son Gelişmeler" paneli) */}
+        <MkPanel style={panel}>
+          <MkPanelHeader title={t("onl.ya.donusKarti")} rtl={rtl} right={kart.length ? <Text style={{ fontFamily: F.display, fontSize: 12, color: C.gold }}>{kart.length}</Text> : undefined} />
+          {kart.length ? <View style={{ marginHorizontal: 12, marginBottom: 12, borderRadius: 3, borderWidth: 1, borderColor: "rgba(140,107,55,0.55)", backgroundColor: "rgba(14,10,6,0.5)", overflow: "hidden" }}>
+            {kart.map(({ ol, r }, i) => {
+              const kisi = olayKisisi(ol, ben.id);
+              const isaret = (ol.kim && isaretler.get(ol.kim)) || (ol.hedef && isaretler.get(ol.hedef)) || null;
+              const metin = ozetYaz(ol.ozet, t, lang);
+              return <Pressable key={ol.sira} disabled={!kisi} accessibilityLabel={metin} accessibilityHint={kisi ? t("onl.ya.kisiyeGit") : undefined} onPress={() => { hap("tap"); kisiyeGit(kisi); }}
+                style={({ pressed }) => ({ minHeight: 44, flexDirection: yon(rtl), alignItems: "center", gap: 10, paddingHorizontal: 10, paddingVertical: 8, borderTopWidth: i ? 1 : 0, borderColor: "rgba(140,107,55,0.35)", backgroundColor: pressed ? "rgba(201,162,78,0.08)" : "transparent" })}>
+                <View style={{ width: 36, height: 36, borderRadius: 18, borderWidth: 1.5, borderColor: isaret ? ISARET_RENK[isaret] : r === 3 ? C.goldBright : ONL.frame, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(14,10,6,0.7)" }}>
+                  <GameIcon name={olayIkonu(ol)} size={18} color={r === 3 ? C.goldBright : MK.gold} />
+                </View>
+                <View style={{ flex: 1, gap: 2 }}>
+                  <Text style={{ fontFamily: F.serif, fontSize: 14.5, lineHeight: 19, color: MK.ink, textAlign: hiza(rtl) }}>{metin}</Text>
+                  {r > 0 ? <Text style={{ fontFamily: F.display, fontSize: 10.5, letterSpacing: rtl ? 0 : 1, color: isaret ? ISARET_RENK[isaret] : C.goldBright, textAlign: hiza(rtl) }}>
+                    {r === 3 ? t("onl.ya.seninle") : t("onl.ya.tanidigin." + (isaret ?? "tanidik"))}
+                  </Text> : null}
+                </View>
+                {kisi ? <SatirOku rtl={rtl} /> : null}
+              </Pressable>;
+            })}
+          </View> : <Text style={{ fontFamily: F.serif, fontSize: 14, color: MK.muted, paddingHorizontal: 14, paddingBottom: 14, textAlign: hiza(rtl) }}>{t("onl.ya.kartBos")}</Text>}
+        </MkPanel>
+
+        {/* Açık gerilimler */}
+        <MkPanel style={panel}>
+          <MkPanelHeader title={t("onl.ya.gerilimler")} rtl={rtl} />
+          {gerilim.length ? <View style={{ paddingHorizontal: 12, paddingBottom: 12, gap: 12 }}>
+            {gerilim.map((g, i) => <View key={g.id} style={{ gap: 10, paddingTop: i ? 12 : 0, borderTopWidth: i ? 1 : 0, borderColor: "rgba(140,107,55,0.35)" }}>
+              <Pressable accessibilityLabel={`${g.ad}: ${t(ruhAnahtari(g.gorus))} ${isaretli(g.gorus)}`} onPress={() => { hap("tap"); kisiyeGit(g.id); }} style={{ flexDirection: yon(rtl), alignItems: "center", gap: 12 }}>
+                <KisiYuzu id={g.id} ad={g.ad} boyut={46} isaret={g.isaret} oyuncu={g.oyuncu} {...yuzBilgisi(o.kisiler, g.id)} />
+                <View style={{ flex: 1, gap: 5 }}>
+                  <View style={{ flexDirection: yon(rtl), alignItems: "center", gap: 8 }}>
+                    <Text numberOfLines={1} style={{ flexShrink: 1, fontFamily: F.display, fontSize: 15, color: C.parchment }}>{g.ad}</Text>
+                    <Text style={{ fontFamily: F.display, fontSize: 13, color: gorusRengi(g.gorus) }}>{isaretli(g.gorus)}</Text>
+                  </View>
+                  <GorusOlcegi deger={g.gorus} rtl={rtl} />
+                  <Text style={{ fontFamily: F.serif, fontSize: 14.5, lineHeight: 19, color: C.parchmentDim, textAlign: hiza(rtl) }}>
+                    {g.sebep ? applyParams(t("onl.ya.gerilimSebep"), [t(ruhAnahtari(g.gorus)), t("onl." + g.sebep)]) : t(ruhAnahtari(g.gorus))}
+                  </Text>
+                </View>
+              </Pressable>
+              <CizgiDugme etiket={t("onl.ya.gonlunuAl")} icon="family" rtl={rtl} kucuk onPress={() => kisiyeGit(g.id)} />
+            </View>)}
+          </View> : <Text style={{ fontFamily: F.serif, fontSize: 14, color: MK.muted, paddingHorizontal: 14, paddingBottom: 14, textAlign: hiza(rtl) }}>{t("onl.ya.gerilimBos")}</Text>}
+        </MkPanel>
+
+        {/* Seni fark edenler (öneriler) */}
+        {y.oneriler.filter((x) => x.gorus > 0).length ? <MkPanel style={panel}>
+          <MkPanelHeader title={t("onl.ya.oneriler")} rtl={rtl} />
+          <View style={{ paddingHorizontal: 12, paddingBottom: 10 }}>
+            {y.oneriler.filter((x) => x.gorus > 0).map((k, i) => <View key={k.id} style={{ flexDirection: yon(rtl), alignItems: "center", gap: 12, paddingVertical: 8, borderTopWidth: i ? 1 : 0, borderColor: "rgba(140,107,55,0.35)" }}>
+              <Pressable accessibilityLabel={k.ad} onPress={() => kisiyeGit(k.id)} style={{ flex: 1, flexDirection: yon(rtl), alignItems: "center", gap: 12 }}>
+                <KisiYuzu id={k.id} ad={k.ad} boyut={42} {...yuzBilgisi(o.kisiler, k.id)} />
+                <View style={{ flex: 1 }}>
+                  <Text numberOfLines={1} style={{ fontFamily: F.display, fontSize: 14.5, color: C.parchment, textAlign: hiza(rtl) }}>{k.ad}</Text>
+                  <Text style={{ fontFamily: F.serif, fontSize: 14, color: gorusRengi(k.gorus), textAlign: hiza(rtl) }}>{`${t(ruhAnahtari(k.gorus))} · ${isaretli(k.gorus)}`}</Text>
+                </View>
+              </Pressable>
+              <Pressable accessibilityLabel={applyParams(t("onl.ki.ekleErisim"), [k.ad])} onPress={() => { hap("tap"); void o.tanidikIsaretle(k.id, "tanidik"); }}
+                style={({ pressed }) => ({ minHeight: 44, paddingHorizontal: 12, borderRadius: 8, borderWidth: 1, borderColor: ONL.frameHi, backgroundColor: pressed ? "rgba(201,162,78,0.24)" : "rgba(201,162,78,0.12)", flexDirection: "row", alignItems: "center", gap: 6 })}>
+                <Text style={{ fontFamily: F.display, fontSize: 18, lineHeight: 20, color: C.goldBright }}>+</Text>
+                <Text style={{ fontFamily: F.display, fontSize: 12, color: C.goldBright }}>{t("onl.ya.ekle")}</Text>
+              </Pressable>
+            </View>)}
+          </View>
+        </MkPanel> : null}
+
+        {/* Yerleşim defteri */}
+        <MkPanel style={panel}>
+          <MkPanelHeader title={t("onl.ya.defter")} rtl={rtl} right={o.defterYeni > 0 ? <Rozet metin={applyParams(t("onl.ya.yeni"), [o.defterYeni])} renk={C.goldBright} dolu /> : undefined} />
+          {gorunenDefter.length ? <View style={{ marginHorizontal: 12, marginBottom: 12, borderRadius: 3, borderWidth: 1, borderColor: "rgba(140,107,55,0.55)", backgroundColor: "rgba(14,10,6,0.5)", overflow: "hidden" }}>
+            {gorunenDefter.map((ol, i) => {
+              const yeni = o.defterOkunan >= 0 && ol.sira > o.defterOkunan;
+              const kisi = olayKisisi(ol, ben.id);
+              return <Pressable key={ol.sira} disabled={!kisi} accessibilityLabel={ozetYaz(ol.ozet, t, lang)} onPress={() => kisiyeGit(kisi)}
+                style={{ minHeight: 42, flexDirection: yon(rtl), alignItems: "center", gap: 10, paddingHorizontal: 10, paddingVertical: 7, borderTopWidth: i ? 1 : 0, borderColor: "rgba(140,107,55,0.35)" }}>
+                <View style={{ width: 22, alignItems: "center" }}><GameIcon name={olayIkonu(ol)} size={17} color={yeni ? C.goldBright : MK.gold} /></View>
+                <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 14, lineHeight: 18, color: yeni ? MK.ink : MK.muted, textAlign: hiza(rtl) }}>{ozetYaz(ol.ozet, t, lang)}</Text>
+                {yeni ? <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: C.goldBright }} /> : null}
+              </Pressable>;
+            })}
+          </View> : <Text style={{ fontFamily: F.serif, fontSize: 14, color: MK.muted, paddingHorizontal: 14, paddingBottom: 14, textAlign: hiza(rtl) }}>{o.islem === "olaylar" ? t("onl.yukleniyor") : t("onl.ya.defterBos")}</Text>}
+          {yeniler.length > 8 || o.defterDahaVar ? <View style={{ paddingHorizontal: 12, paddingBottom: 12, gap: 8 }}>
+            {yeniler.length > 8 ? <CizgiDugme etiket={t(tumDefter ? "onl.ya.daha.az" : "onl.ya.daha.cok")} rtl={rtl} kucuk onPress={() => setTumDefter((v) => !v)} /> : null}
+            {o.defterDahaVar ? <CizgiDugme etiket={t("onl.ya.devami")} icon="scroll-open" rtl={rtl} kucuk kapali={o.islem === "olaylar"} onPress={() => { void o.olaylarYukle(true); }} /> : null}
+          </View> : null}
+        </MkPanel>
       </View>
-    </> : null}
 
-    {/* Yerleşim defteri */}
-    <Baslik2 metin={t("onl.ya.defter")} rtl={rtl} sag={o.defterYeni > 0 ? <Rozet metin={applyParams(t("onl.ya.yeni"), [o.defterYeni])} renk={C.goldBright} dolu /> : undefined} />
-    {gorunenDefter.length ? <Cerceve ic={{ paddingVertical: 4 }}>
-      {gorunenDefter.map((ol, i) => {
-        const yeni = o.defterOkunan >= 0 && ol.sira > o.defterOkunan;
-        const kisi = olayKisisi(ol, ben.id);
-        return <Pressable key={ol.sira} disabled={!kisi} accessibilityLabel={ozetYaz(ol.ozet, t, lang)} onPress={() => kisiyeGit(kisi)}
-          style={{ flexDirection: yon(rtl), alignItems: "center", gap: 10, paddingHorizontal: 12, paddingVertical: 6, borderTopWidth: i ? 1 : 0, borderColor: "rgba(201,162,78,0.1)" }}>
-          <GameIcon name={olayIkonu(ol)} size={16} color={yeni ? C.goldBright : C.goldDim} />
-          <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 14.5, lineHeight: 20, color: yeni ? C.parchment : C.parchmentDim, textAlign: hiza(rtl) }}>{ozetYaz(ol.ozet, t, lang)}</Text>
-          {yeni ? <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: C.goldBright }} /> : null}
-        </Pressable>;
-      })}
-    </Cerceve> : <BosKart icon="scroll-open" metin={o.islem === "olaylar" ? t("onl.yukleniyor") : t("onl.ya.defterBos")} rtl={rtl} />}
-    <View style={{ marginTop: 10, gap: 8 }}>
-      {yeniler.length > 8 ? <CizgiDugme etiket={t(tumDefter ? "onl.ya.daha.az" : "onl.ya.daha.cok")} rtl={rtl} kucuk onPress={() => setTumDefter((v) => !v)} /> : null}
-      {o.defterDahaVar ? <CizgiDugme etiket={t("onl.ya.devami")} icon="scroll-open" rtl={rtl} kucuk kapali={o.islem === "olaylar"} onPress={() => { void o.olaylarYukle(true); }} /> : null}
-    </View>
-  </OnlineSayfa>;
+      {/* Tek oyunculudaki Yaşam Defteri satırı: yerleşimin kalıcı kroniği */}
+      <View style={{ marginTop: 14 }}>
+        <MkBookRow title={t("onl.kr.baslik")} sub={t("onl.ana.kronikAlt")} rtl={rtl} onPress={() => router.push("/online/kronik")} />
+      </View>
+    </ScrollView>
+    <AltPanel acik={!!sonuc} onKapat={() => setSonuc(null)} etiket={t("onl.ey.sonuc")} rtl={rtl} t={t}>
+      {sonuc ? <EylemSonucu y={sonuc} rtl={rtl} t={t} lang={lang} onTamam={() => setSonuc(null)} /> : null}
+    </AltPanel>
+    <AltMenu aktif="yasam" rtl={rtl} t={t} rozet={{ ben: ben.ozellikPuani > 0 }} />
+  </View>;
 }
 
 export default function OnlineYasam() {

@@ -39,6 +39,12 @@ class_name = "BolgeDO"
 name = "SULTANLIK"
 class_name = "SultanlikDO"
 
+# Workers Logs: üretim hatalarını panelde görmek için (ücretsiz plan kotası içinde). 500 dönen yer hata adı,
+# mesaj ve uç yolunu `console.error` ile yazar; kişisel veri ve sır yazılmaz.
+[observability]
+enabled = true
+head_sampling_rate = 1
+
 # SQLite tabanlı Durable Object'ler (ücretsiz planda kullanılabilen tür).
 [[migrations]]
 tag = "v1"

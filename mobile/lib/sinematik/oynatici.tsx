@@ -188,7 +188,7 @@ function SinematikIc({ cekimler, onDone, parca, video }: { cekimler: Cekim[]; on
   }, [c.baslik, reduced]);
   const kat = (k: string) => !reduced && !!c.katman?.includes(k as never);
   const [videoHata, setVideoHata] = useState(false);
-  const videoAcik = !!video && !reduced && !videoHata;
+  const videoAcik = !!video && !reduced && !videoHata && !c.videoDisi;
 
   return (
     <View style={{ flex: 1, backgroundColor: "#000" }}>
