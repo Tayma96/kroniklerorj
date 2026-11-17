@@ -104,7 +104,7 @@ test("Masa oyunu: gizli zar yalnız sahibinin soketine gider — izin listesi ve
   await x.yolla(v, { t: "hamle", n: 1, hamle: { tut: true } });
   const geç = x.gir("gec"); // ayakta yeni gelen
   const zar = (x.oyun!.d as { zarlar: number[][] }).zarlar;
-  const UST = new Set(["id", "tur", "asama", "kurucu", "enAz", "enCok", "oyuncular", "n", "sira", "taahhut", "durum", "ben", "dagit", "pasAcik", "sabir"]);
+  const UST = new Set(["id", "tur", "asama", "kurucu", "enAz", "enCok", "oyuncular", "n", "sira", "taahhut", "durum", "ben", "dagit", "pasAcik", "devralAcik", "sabir"]);
   const DURUM = new Set(["acan", "cikti", "el", "elEnCok", "gecmis", "hedef", "kazanc", "yeniledi"]);
   const kisiler: [SahteSoket, number | null][] = [[a, 0], [v, 1], [c, 2], [sy[0]!, null], [geç, null]];
   for (const [s, i] of kisiler) {

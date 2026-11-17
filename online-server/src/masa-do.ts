@@ -30,7 +30,7 @@ import type { AtismaSonucu, MasaAyari, MasaBileti, MasaIleti, MasaOlayi, SoketEk
 import { Realtime, realtimeAyari, type Getir } from "./han/realtime.ts";
 import { sesIsle } from "./han/ses.ts";
 import { masaAdiCoz } from "./han/doluluk.ts";
-import { masaOyunuCoz, oyunSuruyor, vitrinOzeti, type MasaOyunu } from "./han/oyun/cati.ts";
+import { masaOyunuCoz, oyunMesgul, vitrinOzeti, type MasaOyunu } from "./han/oyun/cati.ts";
 import { VITRIN_TAZELE_MS, vitrinAnahtari } from "./han/oyun/vitrin.ts";
 import { hesapCagir, iletiOku, jsonYanit, yerlesimCagir, yonetimCagir } from "./ic.ts";
 import { basarili, hata, HATA_DURUMU, type Env, type Sonuc } from "./tipler.ts";
@@ -435,7 +435,7 @@ export class MasaDO {
           ayar: b.ayar,
           simdi: b.simdi,
           engelliMi: b.engelliMi,
-          mesgul: b.etkinlik !== undefined || oyunSuruyor(b.oyun),
+          mesgul: b.etkinlik !== undefined || oyunMesgul(b.oyun, b.simdi),
         });
         if (!sonuc.ok) return sonuc;
         if (sonuc.deger.yeni) for (const r of kayitlar(b.soketler)) r.soket.gonder({ t: "olay", olay: sonuc.deger.olay });

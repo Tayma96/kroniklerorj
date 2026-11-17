@@ -80,6 +80,8 @@ export interface OyunGorunumu {
   dagit: string[];
   /** Sırası gelen oyuncu sabır süresinden uzun süredir yoksa ve oyun destekliyorsa true. */
   pasAcik: boolean;
+  /** Beklemede: sabırdan uzun süredir başlatılmadı; bekleyen herhangi bir oturan başlatabilir (kurucu olur) ya da dağıtabilir. */
+  devralAcik: boolean;
   sabir: number;
   sonuc?: { tur: OyunSonucTuru; kazanan: string[] };
   /** Yalnız bitince: denetim için tohum ve hamle kaydı. */
@@ -105,9 +107,31 @@ export function modul(t: OyunTuru): OyunModulu<unknown> {
   return OYUNLAR[t];
 }
 
-/** Bekleme ya da oyun sürüyor mu (masa meşgul). */
+/** Bekleme ya da oyun sürüyor mu. */
 export function oyunSuruyor(o: MasaOyunu | undefined): boolean {
   return o !== undefined && o.asama !== "bitti";
+}
+
+/**
+ * Masa meşgul mü (sahne/atışma açılamaz): oyun sürüyor ve terk edilmemiş, ya da bekleme sabırdan kısa. Bütün
+ * oyuncuları sabırdan uzun süredir masada olmayan oyun ve sabırdan uzun süredir başlatılmayan bekleme masayı
+ * kilitlemez (sahne açılabilir; açılınca bayat oyun masadan kalkar).
+ */
+export function oyunMesgul(o: MasaOyunu | undefined, simdi: number): boolean {
+  return oyunSuruyor(o) && !terkEdilmis(o!, simdi) && !beklemeBayat(o!, simdi);
+}
+
+/**
+ * Bekleme sabırdan uzun süredir başlatılmadı (kurucu oturuyor ama ilgilenmiyor): bekleyen herhangi bir oturan
+ * kuruculuğu devralıp başlatabilir ya da beklemeyi dağıtabilir. Süre beklemenin açılışından (`z`) sayılır.
+ */
+export function beklemeBayat(o: MasaOyunu, simdi: number): boolean {
+  return o.asama === "bekleme" && simdi - o.z >= OYUN_KOPMA_SABRI_MS;
+}
+
+/** Beklemede kurucunun yerine geçebilir mi: bekleme bayat ve kendisi bekleme listesinde (liste yalnız oturanlardır). */
+function devralabilir(o: MasaOyunu, kim: string, simdi: number): boolean {
+  return beklemeBayat(o, simdi) && o.oyuncular.includes(kim);
 }
 
 // ---------------------------------------------------------------- rastgelelik
@@ -133,7 +157,7 @@ export async function adimZari(tohum: string, id: number, adim: number): Promise
 export function oyunAc(eski: MasaOyunu | undefined, ham: unknown, kim: string, ad: string, simdi: number): Sonuc<MasaOyunu> {
   const tur = oyunTuruCoz(ham);
   if (!tur) return hata("oyun_turu_gecersiz");
-  if (eski && oyunSuruyor(eski) && !terkEdilmis(eski, simdi)) return hata("oyun_var");
+  if (eski && oyunMesgul(eski, simdi)) return hata("oyun_var");
   return basarili({ id: Math.max(simdi, (eski?.id ?? 0) + 1), tur, asama: "bekleme", kurucu: kim, oyuncular: [kim], adlar: [ad], n: 0, yok: {}, cekilen: [], dagit: [], z: simdi });
 }
 
@@ -159,14 +183,17 @@ export function beklemedenCikar(o: MasaOyunu, kimler: readonly string[]): MasaOy
   return { ...o, kurucu, oyuncular: kalan.map(([h]) => h), adlar: kalan.map(([, a]) => a) };
 }
 
-/** Kurucu başlatır. `tohum`/`taahhut`: sunucu üretir; `zar`: adım 0'ın zarı. */
-export function oyunBaslat(o: MasaOyunu | undefined, kim: string, tohum: string, taahhut: string, zar: Zar): Sonuc<MasaOyunu> {
+/**
+ * Kurucu başlatır. `tohum`/`taahhut`: sunucu üretir; `zar`: adım 0'ın zarı. Bekleme sabırdan uzun süredir
+ * başlatılmadıysa (beklemeBayat) bekleyen herhangi bir oturan başlatır ve kurucu olur.
+ */
+export function oyunBaslat(o: MasaOyunu | undefined, kim: string, tohum: string, taahhut: string, zar: Zar, simdi = 0): Sonuc<MasaOyunu> {
   if (!o || o.asama === "bitti") return hata("oyun_yok");
   if (o.asama !== "bekleme") return hata("oyun_basladi");
-  if (kim !== o.kurucu) return hata("yetki_yok");
+  if (kim !== o.kurucu && !devralabilir(o, kim, simdi)) return hata("yetki_yok");
   const m = modul(o.tur);
   if (o.oyuncular.length < m.enAz) return hata("oyuncu_az");
-  return basarili({ ...o, asama: "oyun", n: 0, tohum, taahhut, d: m.kur(o.oyuncular.length, zar), kayit: [], yok: {}, cekilen: [], dagit: [] });
+  return basarili({ ...o, kurucu: kim, asama: "oyun", n: 0, tohum, taahhut, d: m.kur(o.oyuncular.length, zar), kayit: [], yok: {}, cekilen: [], dagit: [] });
 }
 
 // ---------------------------------------------------------------- oyun
@@ -278,12 +305,13 @@ export function dagitHakki(o: MasaOyunu, simdi: number): string[] {
 
 /**
  * Dağıtma oyu (oyunda). Hakkı olan herkes oy verince oyun sonuçsuz biter (kimse kazanmaz, kimse kaybetmez). Hamle
- * yapılınca oylar sıfırlanır (oyun sürüyor demektir). Kurucu beklemede dağıtırsa oyun hemen kalkar.
+ * yapılınca oylar sıfırlanır (oyun sürüyor demektir). Kurucu beklemede dağıtırsa oyun hemen kalkar; bekleme
+ * sabırdan uzun süredir başlatılmadıysa bekleyen herhangi bir oturan da dağıtabilir.
  */
 export function oyunDagit(o: MasaOyunu | undefined, kim: string, simdi: number): Sonuc<{ oyun: MasaOyunu | undefined; degisti: boolean }> {
   if (!o || o.asama === "bitti") return hata("oyun_yok");
   if (o.asama === "bekleme") {
-    if (kim !== o.kurucu) return hata("yetki_yok");
+    if (kim !== o.kurucu && !devralabilir(o, kim, simdi)) return hata("yetki_yok");
     return basarili({ oyun: undefined, degisti: true });
   }
   if (!etkinOyuncular(o).includes(kim)) return hata("oyuncu_degil");
@@ -341,6 +369,7 @@ export function oyunGorunumu(o: MasaOyunu, izleyen: string | null, simdi: number
     sira: siradaki(o),
     dagit: [...o.dagit],
     pasAcik: o.asama === "oyun" && pasAcik(o, simdi),
+    devralAcik: beklemeBayat(o, simdi),
     sabir: OYUN_KOPMA_SABRI_MS,
   };
   if (o.taahhut) g.taahhut = o.taahhut;

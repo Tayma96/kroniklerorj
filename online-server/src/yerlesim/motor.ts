@@ -122,6 +122,7 @@ import type { KervanDefteri } from "./kervan.ts";
 import { istekBul, istekYaz } from "./istek-defteri.ts";
 import { ucgenDonumu, ucgenGorunumu, ucgenIslem, ucgenOkumaYuklenecek, ucgenYuklenecek } from "./ucgen.ts";
 import { kronikEkle } from "./kronik.ts";
+import { esyaSayaci } from "./esya-kayit.ts";
 import { EMANET_ARSIV_EN_COK, EMANET_BEDELI, emanetCikar, emanetDokumu, emanetEkle, emanetGeriYaz, emanetIslemiMi, emanetPaketiGecerli } from "./goc-emanet.ts";
 import {
   GOC_MISAFIRHANE_SAAT,
@@ -575,6 +576,8 @@ export class YerlesimMotoru {
       son12Ay: { gelir: akis.gelir, gider: akis.gider, net: akis.gelir - akis.gider },
       kasabaStokAdet: stokAdet,
       acikSiparis: k.sp?.filter((s) => s.durum === "acik").length ?? 0,
+      // Eşya kademeleri (Dilim 4): yerleşimde çıkan efsanevi ve tılsımlı sayısı (denge izlemesi).
+      esya: esyaSayaci(k),
     });
   }
 

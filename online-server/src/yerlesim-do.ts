@@ -225,7 +225,7 @@ export class YerlesimDO {
 
   async #isle(ileti: YerlesimIleti, simdi: number): Promise<Sonuc<unknown>> {
     if (ileti.islem === "ekonomiSagligi" && !(await this.#depo.al("m"))) {
-      return basarili({ yerlesim: ileti.yerlesim, oyuncuSayisi: 0, npcSayisi: 0, toplamAkce: 0, ortalamaAkce: 0, medyanAkce: 0, enDusukAkce: 0, enYuksekAkce: 0, son12Ay: { gelir: 0, gider: 0, net: 0 }, kasabaStokAdet: 0, acikSiparis: 0 });
+      return basarili({ yerlesim: ileti.yerlesim, oyuncuSayisi: 0, npcSayisi: 0, toplamAkce: 0, ortalamaAkce: 0, medyanAkce: 0, enDusukAkce: 0, enYuksekAkce: 0, son12Ay: { gelir: 0, gider: 0, net: 0 }, kasabaStokAdet: 0, acikSiparis: 0, esya: { efsanevi: 0, tilsimli: 0 } });
     }
     const motor = await this.#ac(ileti.yerlesim, simdi);
     if (!motor) return hata("yerlesim_gecersiz");
