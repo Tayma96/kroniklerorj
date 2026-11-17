@@ -111,7 +111,7 @@ test("tarif: çıktı kalite ve yapan iziyle envantere girer; kılıç kalitesi 
   assert.equal(levhaYaz(k, c, "nal", "nal", 1, k.ay), null, "iyi kalite levhaya girmez");
   const g = levhaGorunumu(k);
   assert.equal(g.kayitlar.length, 1);
-  assert.deepEqual(g.ustalar[0], { id: c.o, ad: c.ad, saheser: 0, ustun: 1 });
+  assert.deepEqual(g.ustalar[0], { id: c.o, ad: c.ad, efsanevi: 0, nadide: 0, saheser: 0, ustun: 1 });
 });
 
 test("alet kalitesi (yapanın ustalığı): üstün alet hasatta fazladan çıktı ve ömür verir; kullanılan en iyi alet tükenir", () => {

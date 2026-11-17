@@ -10,7 +10,7 @@ import type { Kasaba, OlayParam } from "./tipler.ts";
 export const KRONIK_SAYFA = 64;
 export const KRONIK_YANIT_EN_COK = 50;
 
-export type KronikTuru = "olum" | "devir" | "evlilik" | "dogum" | "goc";
+export type KronikTuru = "olum" | "devir" | "evlilik" | "dogum" | "goc" | "esya";
 
 export interface KronikSatiri {
   /** Sıra (motor verir; 1'den artar). */

@@ -13,7 +13,9 @@ import type { OlayTaslagi } from "../yerlesim/tipler.ts";
 import { atolyeKalemleri, emekTavani, etkinSeviye, genislet, genisletmeGorunumu, tezgahSayisi, zanaatOner, zanaatSec } from "./atolye.ts";
 import { emirAc, emirIptal } from "./uretim-emri.ts";
 import { topluGeriAl, topluGorunumu, topluTeslim } from "./toplu-siparis.ts";
-import { kaliteliEkle, type Kalite } from "../yerlesim/kalite.ts";
+import { kaliteliEkle, kaliteMi, type Kalite } from "../yerlesim/kalite.ts";
+import { EFSANEVI_DENEME_AY, EFSANEVI_PIR_KADEMESI, efsaneviHakki, elDegistir } from "../yerlesim/esya.ts";
+import { efsaneviKaydet } from "../yerlesim/esya-kayit.ts";
 import { akceIade, iadeTeslim, malIade } from "./iade.ts";
 import type { Karakter, Kasaba } from "../yerlesim/tipler.ts";
 import { basarili, hata, type Sonuc } from "../tipler.ts";
@@ -327,6 +329,8 @@ function atolyeGorunumu(k: Kasaba, md: MulkDefteri, isletme: string, t: Tezgah, 
     sonUretimAyi: t.ua ?? null,
     topluSiparis: topluGorunumu(md.tsp, k.ay, { isletme, t, indirim: topluIndirimi(k, md, isletme) }),
     benimTakat: kar.tk,
+    // Dilim 4: bakanın efsanevi denemesi (zanaatta pirse); şans üretimde kaba bantla döner.
+    efsanevi: { pir: !!t.za && (kar.ms?.s[t.za]?.kd ?? 0) >= EFSANEVI_PIR_KADEMESI, hak: efsaneviHakki(kar, k.ay), ayda: EFSANEVI_DENEME_AY },
   };
 }
 
@@ -358,7 +362,7 @@ export function fiyatOnizle(k: Kasaba, kar: Karakter, isletme: string, govde: un
   const mal = malBul(g.mal);
   if (!mal || MALLAR[mal].taban <= 0) return hata("mal_gecersiz");
   const q = Number(g.kalite ?? 0);
-  if (q !== 0 && q !== 1 && q !== 2 && q !== 3) return hata("kalite_gecersiz");
+  if (!kaliteMi(q)) return hata("kalite_gecersiz");
   const fiyat = Number(g.fiyat);
   if (!fiyatGecerli(mal, q as Kalite, fiyat)) return hata("fiyat_bant_disi");
   const { md } = h.deger;
@@ -524,7 +528,7 @@ export function satinAl(k: Kasaba, kar: Karakter, isletme: string, govde: unknow
   const mal = s.m;
   const q = s.q;
   const p = raftanSat(t, s, adet as number)!;
-  kaliteliEkle(kar, mal, p);
+  kaliteliEkle(kar, mal, elDegistir(p, k.ay, "satis", kar.ad));
   if (pompa?.ok && satici) pompaYaz(satici, kar, pompa.deger, k.ay);
   // Satış kepengi açar ve devralma sayacını sıfırlar.
   t.os = k.ay;
@@ -639,7 +643,7 @@ export function atolyedeUret(k: Kasaba, kar: Karakter, isletme: string, govde: u
     const giren = Object.values(girdiGorunumu(kar, tr)).reduce((a, n) => a + (n ?? 0), 0);
     const cikan = ciktiAdedi(kar, tr, aracVar) + Object.values(tr.yan ?? {}).reduce((a, n) => a + (n ?? 0), 0);
     if (depoAdedi(kar) - giren + cikan > kapasite) r = hata("depo_dolu");
-    else r = tarifYap(kar, tr.id, k.ay, undefined, { kalemler: atolyeKalemleri(seviye, 0, { kalite: kancaHesapla(kancaAdaylari(k, md, isletme), "atolyeKalite", { meslek: t.za }).deger, npcCeza: 0 }), damga: isletme });
+    else r = tarifYap(kar, tr.id, k.ay, undefined, { kalemler: atolyeKalemleri(seviye, 0, { kalite: kancaHesapla(kancaAdaylari(k, md, isletme), "atolyeKalite", { meslek: t.za }).deger, npcCeza: 0 }), damga: isletme, ...(nesneMi(govde) && govde.efsanevi === true ? { efsanevi: { atolyeAd: ad } } : {}) });
   } finally {
     t.ev = kar.ev;
     t.kq = kar.kq;
@@ -654,7 +658,12 @@ export function atolyedeUret(k: Kasaba, kar: Karakter, isletme: string, govde: u
     if (kar.as === undefined) delete kar.as;
   }
   if (!r.ok) return r;
-  const lv = levhaYaz(k, kar, r.deger.tarif, r.deger.cikti.mal, r.deger.kalite.kademe, k.ay, [isletme, ad]);
+  const efs = r.deger.efsanevi;
+  if (efs?.esya && efs.kademe !== null) {
+    ek.olaylar.push(efsaneviKaydet(k, kar, r.deger.cikti.mal, efs.kademe, efs.esya, [isletme, ad]));
+    ek.ekonomi = true;
+  }
+  const lv = levhaYaz(k, kar, r.deger.tarif, r.deger.cikti.mal, efs?.kademe ?? r.deger.kalite.kademe, k.ay, [isletme, ad]);
   if (lv) {
     ek.olaylar.push(lv.olay);
     ek.ekonomi = true;

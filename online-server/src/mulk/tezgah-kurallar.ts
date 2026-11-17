@@ -42,8 +42,9 @@ export const NPC_TAVAN_CARPANI = 1.5;
 export const F_ALT = 0.6;
 export const F_UST = 1.6;
 export const F_US = 2;
-/** [PARAMETRE] Kalite çarpanı Q (sade, iyi, üstün, şaheser). */
-export const Q_CARPANI: readonly number[] = [1, 1.1, 1.25, 1.5];
+/** [PARAMETRE] Kalite çarpanı Q (sade, iyi, üstün, şaheser, nadide, efsanevi, tılsımlı). Pay çekiciliğidir; meslek
+ * bütçesi ve dükkân seviye tavanı aşılmaz (hane-butcesi.ts değişmezi; tezgah-sim kademe testi). */
+export const Q_CARPANI: readonly number[] = [1, 1.1, 1.25, 1.5, 1.75, 2, 2.5];
 /** [PARAMETRE] İtibar çarpanı R = taban + itibar / bölen. */
 export const R_TABAN = 0.5;
 export const R_BOLEN = 100;

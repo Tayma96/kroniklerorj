@@ -16,6 +16,8 @@ import {
   ALET_KALITE_OMUR,
   ALET_KALITE_VERIM,
   KALITE_BECERI_TAVAN,
+  KALITE_EFSANEVI,
+  KALITE_NADIDE,
   enIyiKalite,
   kaliteliCikar,
   kaliteliEkle,
@@ -23,6 +25,7 @@ import {
   type Kalite,
   type KaliteSonucu,
 } from "./kalite.ts";
+import { efsaneviDene, efsaneviOnKosul, ozellikDokumu, type EfsaneviSonucu } from "./esya.ts";
 import { hizmetEkle } from "./meslek.ts";
 import { envanterEkle } from "./npc-taban.ts";
 import { tohumlu, type Zar } from "./rastgele.ts";
@@ -51,6 +54,8 @@ export interface Asinma {
 export function aracAsindir(k: Karakter, mal: MalId): Asinma {
   const kalite = enIyiKalite(k, mal);
   const omur = aletOmru(k, mal);
+  // Adlı eşya (efsanevi/tılsımlı alet) yıpranmaz: kırılıp yok olmaz (§9 süzgeci).
+  if (kalite >= KALITE_EFSANEVI) return { mal, kullanim: 0, omur, asindi: false, kalite };
   const as = (k.as ??= {});
   const kullanim = (as[mal] ?? 0) + 1;
   const asindi = kullanim >= omur;
@@ -205,6 +210,10 @@ export interface TarifSonucu {
   etkiAraci: Asinma | null;
   /** Ürünün kalite kademesi ve dökümü; ürün yapan (bu oyuncu) iziyle envantere girer. */
   kalite: KaliteSonucu;
+  /** Efsanevi denemesi (yalnız istenirse; atölyede pirin kendi emeği). */
+  efsanevi: EfsaneviSonucu | null;
+  /** Çıkan en yüksek kademenin özellik dökümü (aile, etkiler, hüner; esya.ts). */
+  ozellik: ReturnType<typeof ozellikDokumu>;
   yapan: string;
   hizmet: number;
   hal: HalGorunumu;
@@ -219,6 +228,8 @@ export function kaliteZari(k: Karakter, t: Tarif, ay: number): Zar {
 export interface AtolyeEki {
   kalemler: readonly { k: string; d: number }[];
   damga: string;
+  /** Efsanevi denemesi istendi (Dilim 4): atölyenin o anki adı (eşyaya yazılır) ve isteğe bağlı test zarı. */
+  efsanevi?: { atolyeAd: string; zar?: Zar };
 }
 
 export function tarifYap(k: Karakter, idHam: unknown, ay: number, zar?: Zar, atolye?: AtolyeEki): Sonuc<TarifSonucu> {
@@ -228,6 +239,10 @@ export function tarifYap(k: Karakter, idHam: unknown, ay: number, zar?: Zar, ato
   if (Object.keys(eksikGirdi(k, t)).length > 0) return hata("girdi_yok");
   const aracVar = t.arac !== undefined && (k.ev?.[t.arac.mal] ?? 0) > 0;
   if (t.arac?.zorunlu && !aracVar) return hata("arac_yok");
+  if (atolye?.efsanevi) {
+    const engel = efsaneviOnKosul(k, t.meslek, ay);
+    if (engel) return hata(engel);
+  }
   takatTazele(k, ay);
   if (!takatHarca(k, ay, t.takat)) return hata("takat_yok");
   const girdi = girdiGorunumu(k, t);
@@ -241,7 +256,12 @@ export function tarifYap(k: Karakter, idHam: unknown, ay: number, zar?: Zar, ato
   // Etki aracı tarifin aracıyla aynıysa bir kez aşınır.
   const etki: Asinma | null = ea?.var && ea.mal !== t.arac?.mal ? aracAsindir(k, ea.mal) : null;
   const dm = atolye?.damga;
-  kaliteliEkle(k, t.cikti[0], [dm ? [kalite.kademe, adet, k.o, dm] : [kalite.kademe, adet, k.o]]);
+  // Efsanevi denemesi: ürün nadide çıktıysa hak harcanır; başarılıysa bir adet adlı eşya olur, kalanı nadide kalır.
+  const ef = atolye?.efsanevi && dm ? efsaneviDene(k, t.cikti[0], kalite.kademe, kalite.dokum.toplam, ay, atolye.efsanevi.atolyeAd, atolye.efsanevi.zar) : null;
+  if (ef?.esya && dm) {
+    if (adet > 1) kaliteliEkle(k, t.cikti[0], [[KALITE_NADIDE, adet - 1, k.o, dm]]);
+    kaliteliEkle(k, t.cikti[0], [[ef.kademe!, 1, k.o, dm, ef.esya]]);
+  } else kaliteliEkle(k, t.cikti[0], [dm ? [kalite.kademe, adet, k.o, dm] : [kalite.kademe, adet, k.o]]);
   for (const [mal, n] of Object.entries(t.yan ?? {}) as [MalId, number][]) if (n > 0) kaliteliEkle(k, mal, [dm ? [0, n, k.o, dm] : [0, n, k.o]]);
   basariSay(k, `tarif:${t.id}`, adet);
   const hizmet = hizmetEkle(k, t.meslek, t.hizmet);
@@ -254,6 +274,8 @@ export function tarifYap(k: Karakter, idHam: unknown, ay: number, zar?: Zar, ato
     arac,
     etkiAraci: etki,
     kalite,
+    efsanevi: ef,
+    ozellik: ozellikDokumu(t.cikti[0], ef?.kademe ?? kalite.kademe, ef?.esya ?? undefined),
     yapan: k.o,
     hizmet,
     hal: halGorunumu(k, ay),

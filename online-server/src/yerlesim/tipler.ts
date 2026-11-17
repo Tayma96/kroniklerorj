@@ -195,6 +195,8 @@ export interface Karakter {
   un?: string[];
   /** Faz 6 ekonomi: envanterin izli partileri (kalite + yapan; mal → partiler; izsiz kalan sade). */
   kq?: Record<string, KaliteParti[]>;
+  /** Eşya kademeleri (Dilim 4): bu ayki efsanevi denemesi [ay, sayı] (yerlesim/esya.ts). */
+  ef?: [ay: number, n: number];
   /** Gelir-gider defteri (son DEFTER_AY ay). */
   df?: DefterAyi[];
   /** Ismarlama ustalık sicili: [teslim, gecikme] (lonca güveni; profilde görünür). */
