@@ -49,7 +49,7 @@ export function MkUstaKapisi() {
           <View style={{ flexDirection: rtl ? "row-reverse" : "row", alignItems: "center", gap: 8 }}>
             <GameIcon name={meslekIkonu(a.aday.prof)} size={18} color={MK.gold} />
             <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 16, lineHeight: 20, color: "#F4E8CF", textAlign: align }}>{meslek}</Text>
-            <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 0.5, color: "#E9CBB6" }}>{t("ms.kapi.kaynak." + a.aday.kaynak)}</Text>
+            <Text numberOfLines={2} style={{ flexShrink: 1, maxWidth: "45%", fontFamily: F.display, fontSize: 11, letterSpacing: 0.5, color: "#E9CBB6" }}>{t("ms.kapi.kaynak." + a.aday.kaynak)}</Text>
           </View>
           {!!usta && <Text style={{ fontFamily: F.serif, fontSize: 13.5, lineHeight: 18, color: "#E9CBB6", textAlign: align, marginTop: 3 }}>{usta}</Text>}
           <Text style={{ fontFamily: F.serif, fontSize: 13, lineHeight: 17, color: a.tamam ? C.sage : C.emberSoft, textAlign: align, marginTop: 3 }}>{sart}</Text>

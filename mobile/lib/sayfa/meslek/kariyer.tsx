@@ -64,7 +64,7 @@ export function KariyerMerdiveni() {
         </View>
       </View>
       {d && <SinavKutusu d={d} mevcut={unvanlar[kademe]} hedef={careerTitleL(p.profession, d.hedef * 30, lang, kadin)} rtl={rtl} kayit={(p.sinav_gecme || p.sinav_kalma) ? applyParams(t("ahi.record"), [p.sinav_gecme || 0, p.sinav_kalma || 0], lang) : ""}
-        sonuc={sonuc} onSinav={() => { hap("tap"); playTap(); const r = ustalikSinavi(state); if (r.basari != null) { apply(() => r.state); setSonuc(r.asamalar || null); hap(r.basari ? "success" : "error"); } }} />}
+        sonuc={sonuc} onSinav={() => { hap("tap"); playTap(); const r = ustalikSinavi(state); if (r.basari != null) { apply((s) => { const q = ustalikSinavi(s); return q.basari != null ? q.state : s; }); setSonuc(r.asamalar || null); hap(r.basari ? "success" : "error"); } }} />}
       {d && <Yukselis d={d} rtl={rtl} />}
       <Text style={[{ fontFamily: F.serif, fontSize: 14, lineHeight: 20, color: C.parchmentMuted, marginTop: 10 }, hiza(rtl)]}>{t("ahi.ladder")}</Text>
     </Panel>

@@ -93,7 +93,7 @@ export default function Meslek() {
         </View>}
       </ScrollView>
       {geri}
-      <SinavKartiModal v={yaris} onSec={(yol) => { const res = rakipYarisi(state, yol); if (res.basari != null) apply(() => res.state); return res.basari; }} onKapat={() => setYaris(null)} />
+      <SinavKartiModal v={yaris} onSec={(yol) => { const res = rakipYarisi(state, yol); if (res.basari != null) apply((s) => { const q = rakipYarisi(s, yol); return q.basari != null ? q.state : s; }); return res.basari; }} onKapat={() => setYaris(null)} />
     </MeslekFresk>
   );
 }
