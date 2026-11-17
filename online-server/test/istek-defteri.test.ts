@@ -8,7 +8,7 @@ const kar = (): Pick<Karakter, "ist" | "isk"> => ({ ist: [] });
 
 test("parametreler: pencere en az 24 saat, iz üst sınırı 200", () => {
   assert.ok(ISTEK_PENCERESI_MS >= 24 * 60 * 60 * 1000);
-  assert.equal(ISTEK_IZ_EN_COK, 200);
+  assert.equal(ISTEK_IZ_EN_COK, 1000, "17 Kasım S13: pencere içinde 1000 kimlik");
 });
 
 test("son yanıtlar aynen döner; 10'dan eski istekNo 24 saat boyunca tekrar sayılır", () => {

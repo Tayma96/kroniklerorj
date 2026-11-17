@@ -10,7 +10,7 @@ export const IST_EN_COK = 10;
 /** [PARAMETRE] Tekrarsızlık penceresi: bu süre içinde aynı istekNo yeniden işlenmez. */
 export const ISTEK_PENCERESI_MS = 24 * 60 * 60 * 1000;
 /** [PARAMETRE] Pencere içindeki eski istek kimliklerinin üst sınırı (depo boyutu). */
-export const ISTEK_IZ_EN_COK = 200;
+export const ISTEK_IZ_EN_COK = 1000;
 
 type Defter = Pick<Karakter, "ist" | "isk">;
 

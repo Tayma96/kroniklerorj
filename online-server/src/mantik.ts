@@ -1,8 +1,8 @@
 // İş kuralları. Workers çalışma zamanına bağlı değildir: depo ve dış çağrılar parametre olarak gelir,
 // böylece `node --test` ile doğrudan denenir. HesapDO ve DunyaDO yalnız bunları depolamaya bağlar.
 
-import { adAnahtari, adDogrula } from "./ad.ts";
-import type { Depo } from "./depo.ts";
+import { adAnahtari, adBenzerlikAnahtari, adDogrula, benzerAnahtarlar } from "./ad.ts";
+import { DEPO_TOPLU_SINIR, type Depo } from "./depo.ts";
 import { BEYLIKLER, yerlesimBul } from "./dunya-veri.ts";
 import { oyunAyi, sonrakiDonum, takvim } from "./saat.ts";
 import {
@@ -43,6 +43,7 @@ export const PROFIL_ANAHTARI = PROFIL;
 const ISTEK = "istek:"; // + istekNo → Sonuc<Profil>
 const KAYIT = "kayit:"; // + hesapId → Profil (dünyadaki asıl kayıt)
 const AD = "ad:"; // + ad anahtarı → hesapId
+const ADB = "adb:"; // + ad benzerlik anahtarı → hesapId (17 Kasım S12; yalnız yeni kayıtlarda yazılır)
 const NUFUS = "nufus:"; // + yerleşim → sayı
 const DAVET = "davet:"; // + kod → hesapId
 const DAVET_KODU = "davetkodu:"; // + hesapId → kod
@@ -241,6 +242,15 @@ export async function kayitOl(depo: Depo, istek: KayitIstegi, simdi: number): Pr
 
   const adSahibi = await depo.al<string>(AD + ad.anahtar);
   if (adSahibi !== undefined && adSahibi !== istek.hesapId) return hata("ad_alinmis");
+  // Görünüşte aynı ad (ı/i/l karışması): yeni kayıtların benzerlik dizini ve eski adların bütün karışık biçimleri.
+  const benzer = adBenzerlikAnahtari(ad.ad);
+  const benzerSahibi = await depo.al<string>(ADB + benzer);
+  if (benzerSahibi !== undefined && benzerSahibi !== istek.hesapId) return hata("ad_alinmis");
+  const bicimler = benzerAnahtarlar(ad.anahtar).filter((x) => x !== ad.anahtar).map((x) => AD + x);
+  for (let i = 0; i < bicimler.length; i += DEPO_TOPLU_SINIR) {
+    const bulunan = await depo.alCok<string>(bicimler.slice(i, i + DEPO_TOPLU_SINIR));
+    for (const h of bulunan.values()) if (h !== istek.hesapId) return hata("ad_alinmis");
+  }
 
   const nufus = (await depo.al<number>(NUFUS + yerlesim.id)) ?? 0;
   if (!davetEden && nufus >= yerlesim.evKapasite) return hata("yerlesim_dolu");
@@ -260,6 +270,7 @@ export async function kayitOl(depo: Depo, istek: KayitIstegi, simdi: number): Pr
   await depo.koy({
     [KAYIT + istek.hesapId]: profil,
     [AD + ad.anahtar]: istek.hesapId,
+    [ADB + benzer]: istek.hesapId,
     [NUFUS + yerlesim.id]: nufus + 1,
   });
   return basarili(profil);

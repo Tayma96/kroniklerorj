@@ -103,8 +103,24 @@ test("ad benzersizliği Türkçe büyük/küçük harf duyarsız", async () => {
   assert.ok((await profilOlustur(bellekDepo(), "h1", govde({ ad: "İlker" }), kayit)).ok);
   const ikinci = await profilOlustur(bellekDepo(), "h2", govde({ ad: "  ilker " }), kayit);
   assert.deepEqual(ikinci, { ok: false, hata: "ad_alinmis" });
-  assert.ok((await profilOlustur(bellekDepo(), "h3", govde({ ad: "Ilker" }), kayit)).ok); // ı ≠ i
-  assert.equal(dunya.veri.get("nufus:kizilca"), 2);
+  // S12 (17 Kasım): ı/i/l görünüşte karışır; "Ilker" (ılker) artık "İlker"in benzeri sayılır.
+  assert.deepEqual(await profilOlustur(bellekDepo(), "h3", govde({ ad: "Ilker" }), kayit), { ok: false, hata: "ad_alinmis" });
+  assert.equal(dunya.veri.get("nufus:kizilca"), 1);
+});
+
+test("S12: karışan harflerle (ı/i/l) yeni ad eski ve yeni adlarla çakışmaz; eski çakışan kayıtlar bozulmaz", async () => {
+  const { dunya, kayit } = dunyaKur();
+  // Eski kayıt (benzerlik dizini olmadan): "ılgaz" ve onunla görünüşte aynı "llgaz" önceden alınmış olsun.
+  dunya.veri.set("ad:ılgaz", "eski1");
+  dunya.veri.set("ad:llgaz", "eski2");
+  assert.deepEqual(await profilOlustur(bellekDepo(), "h1", govde({ ad: "Ilgaz" }), kayit), { ok: false, hata: "ad_alinmis" });
+  assert.deepEqual(await profilOlustur(bellekDepo(), "h2", govde({ ad: "ligaz" }), kayit), { ok: false, hata: "ad_alinmis" });
+  assert.equal(dunya.veri.get("ad:ılgaz"), "eski1", "eski kayıtlar yerinde");
+  assert.equal(dunya.veri.get("ad:llgaz"), "eski2");
+  // Yeni kayıt benzerlik dizinine girer.
+  assert.ok((await profilOlustur(bellekDepo(), "h3", govde({ ad: "Lale" }), kayit)).ok);
+  assert.deepEqual(await profilOlustur(bellekDepo(), "h4", govde({ ad: "Iale" }), kayit), { ok: false, hata: "ad_alinmis" });
+  assert.ok((await profilOlustur(bellekDepo(), "h5", govde({ ad: "Kale" }), kayit)).ok, "farklı ad serbest");
 });
 
 test("kapasite: dolu yerleşim davetsiz reddedilir, davetle esnek", async () => {

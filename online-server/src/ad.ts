@@ -28,6 +28,30 @@ export function adAnahtari(ad: string): string {
   return trKucuk(adDuzenle(ad));
 }
 
+/** Görünüşte karışan harfler (17 Kasım denetimi S12): ı, i ve l (büyük I ile küçük l çoğu yazıda aynıdır). */
+export const KARISAN_HARFLER: readonly string[] = ["ı", "i", "l"];
+
+/** Benzerlik anahtarı: benzersizlik anahtarında karışan harfler tek simgeye katlanır ("Ilker" ≈ "llker" ≈ "ılker"). */
+export function adBenzerlikAnahtari(ad: string): string {
+  return adAnahtari(ad).replace(/[ıil]/g, "i");
+}
+
+/** [PARAMETRE] Eski adlarla çakışma denetiminde açılacak en çok karışan harf konumu (3^n anahtar). */
+export const BENZER_KONUM_EN_COK = 6;
+
+/**
+ * Benzersizlik anahtarının, karışan harfleri farklı yazılmış bütün biçimleri (eski kayıtlarla çakışma denetimi).
+ * Karışan harf konumu BENZER_KONUM_EN_COK'tan fazlaysa yalnız anahtarın kendisi döner.
+ */
+export function benzerAnahtarlar(anahtar: string): string[] {
+  const harfler = [...anahtar];
+  const konumlar = harfler.flatMap((h, i) => (KARISAN_HARFLER.includes(h) ? [i] : []));
+  if (konumlar.length === 0 || konumlar.length > BENZER_KONUM_EN_COK) return [anahtar];
+  let sonuc = [harfler];
+  for (const i of konumlar) sonuc = sonuc.flatMap((h) => KARISAN_HARFLER.map((x) => h.map((y, j) => (j === i ? x : y))));
+  return sonuc.map((h) => h.join(""));
+}
+
 // Kısa ve genel tutulur; yalnız açık küfür ve resmî görünen adlar.
 const YASAK_SOZCUK = new Set(["amk", "aq", "sik", "sikik", "got", "pic", "ibne", "gm", "sistem", "kronikler"]);
 const YASAK_PARCA = ["orospu", "yarrak", "pezevenk", "kahpe", "admin", "moderator", "yonetici"];
