@@ -16,7 +16,8 @@ import { istekNoUret } from "../../lib/online/depo";
 import { ekHataAnahtari, type EkHata } from "../../lib/online/ek-istemci";
 import { NPC_MALLARI } from "../../lib/online/meslek-veri";
 import { useEkonomiIstemci, type IsmarlamaGorunumu, type IsmarlamaYaniti, type Kademe4 } from "../../lib/online/ekonomi-veri";
-import { malAdi, kaliteAdi } from "../../lib/online/ekonomi-ui";
+import { malAdi, kaliteAdi, KaliteRozeti } from "../../lib/online/ekonomi-ui";
+import { kademeBul } from "../../lib/online/esya-veri";
 
 type Ceviri = (k: string) => string;
 
@@ -36,12 +37,12 @@ function IsmarlamaKarti({ x, t, rtl, bekliyor, onCevap }: {
       <Text style={{ fontFamily: F.display, color: C.goldBright, fontSize: 13 }}>{applyParams(t("onl.is.akce"), [x.ucret])}</Text>
     </View>
     <View style={{ flexDirection: yon(rtl), flexWrap: "wrap", gap: 6 }}>
-      <Text style={{ fontFamily: F.serif, color: C.parchmentDim, fontSize: 12.5 }}>{applyParams(t("onl.im.kalite"), [kaliteAdi(t, x.kademe)])}</Text>
+      <View style={{ flexDirection: yon(rtl), alignItems: "center", gap: 5 }}><Text style={{ fontFamily: F.serif, color: C.parchmentDim, fontSize: 12.5 }}>{t("onl.tz.kalite")}</Text><KaliteRozeti kademe={x.kademe} kucuk /></View>
       <Text style={{ fontFamily: F.serif, color: C.parchmentDim, fontSize: 12.5 }}>{applyParams(t("onl.im.sonAy"), [x.son])}</Text>
       <Text style={{ fontFamily: F.serif, color: C.parchmentDim, fontSize: 12.5 }}>{t("onl.im.durum." + x.durum)}</Text>
     </View>
     {x.emanet > 0 ? <Text style={{ fontFamily: F.serif, fontSize: 12.5, color: C.gold }}>{applyParams(t("onl.im.emanet"), [x.emanet])}</Text> : null}
-    {x.durum === "teslim" && x.teslimKalitesi ? <Text style={{ fontFamily: F.serif, fontSize: 12.5, color: C.sage }}>{applyParams(t("onl.im.teslimKalite"), [kaliteAdi(t, ["sade", "iyi", "ustun", "saheser"].indexOf(x.teslimKalitesi))])}</Text> : null}
+    {x.durum === "teslim" && x.teslimKalitesi ? <Text style={{ fontFamily: F.serif, fontSize: 12.5, color: C.sage }}>{applyParams(t("onl.im.teslimKalite"), [kaliteAdi(t, kademeBul(x.teslimKalitesi))])}</Text> : null}
     {x.durum === "acik" && gelen ? <View style={{ flexDirection: yon(rtl), gap: 8 }}>
       <View style={{ flex: 1 }}><CizgiDugme etiket={t("onl.im.kabul")} icon="check" rtl={rtl} kucuk kapali={bekliyor} onPress={() => onCevap("kabul")} /></View>
       <View style={{ flex: 1 }}><CizgiDugme etiket={t("onl.im.ret")} icon="x" rtl={rtl} kucuk kapali={bekliyor} onPress={() => onCevap("ret")} /></View>

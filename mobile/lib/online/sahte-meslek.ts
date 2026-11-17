@@ -60,7 +60,8 @@ export interface SahteMeslek {
 /** `baslangic` verilirse o meslekte kalfa olarak başlar (önizleme: ağaç görünümü). */
 export function sahteMeslekKur(kasaba: SahteKasaba, baslangic?: MeslekId, profilAd = ""): SahteMeslek {
   const kayit: MeslekKaydi = { a: "", y: "", s: {} };
-  const ev: Record<string, number> = {};
+  // Dilim 4: ambarda her kademeden örnek (sahte-ekonomi.ts sahteKalite partileriyle aynı adetler).
+  const ev: Record<string, number> = { ekmek: 2, nal: 3, alet: 3, kilic: 1 };
   const tz: Partial<Record<IsId, number[]>> = {};
   let tb: [number, Record<string, number>] = [-1, {}];
   const ist = new Map<string, unknown>();

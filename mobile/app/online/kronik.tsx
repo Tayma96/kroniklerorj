@@ -19,7 +19,7 @@ import type { Dil } from "../../lib/online/protokol";
 import type { Lang } from "../../lib/locale-data";
 
 const GORSEL = require("../../assets/arka/medrese.jpg");
-const TUR_IKON: Record<string, string> = { olum: "tombstone", devir: "banner", evlilik: "ring", dogum: "baby" };
+const TUR_IKON: Record<string, string> = { olum: "tombstone", devir: "banner", evlilik: "ring", dogum: "baby", esya: "crown" };
 
 function KronikEkran() {
   const router = useRouter();
@@ -62,13 +62,13 @@ function KronikEkran() {
             const tk = ayTakvimi(s.ay, y.saat);
             const metin = ozetYaz(s.ozet, t, lang as Lang);
             return <Animated.View key={s.sira} entering={giris(Math.min(i, 10) * 25)} accessible accessibilityLabel={`${applyParams(t("onl.kr.tarih"), [tk.yil, tk.ay])}. ${metin}`}
-              style={{ flexDirection: yon(rtl), gap: 10, alignItems: "flex-start", paddingHorizontal: 12, paddingVertical: 10, borderTopWidth: i ? 1 : 0, borderColor: "rgba(201,162,78,0.14)" }}>
-              <View style={{ width: 30, height: 30, borderRadius: 15, borderWidth: 1, borderColor: "rgba(201,162,78,0.5)", alignItems: "center", justifyContent: "center", backgroundColor: "rgba(0,0,0,0.3)" }}>
+              style={{ flexDirection: yon(rtl), gap: 10, alignItems: "flex-start", paddingHorizontal: 12, paddingVertical: 10, borderTopWidth: i ? 1 : 0, borderColor: "rgba(201,162,78,0.14)", backgroundColor: s.tur === "esya" ? "rgba(243,210,122,0.08)" : undefined }}>
+              <View style={{ width: 30, height: 30, borderRadius: 15, borderWidth: s.tur === "esya" ? 1.5 : 1, borderColor: s.tur === "esya" ? C.goldBright : "rgba(201,162,78,0.5)", alignItems: "center", justifyContent: "center", backgroundColor: "rgba(0,0,0,0.3)" }}>
                 <GameIcon name={TUR_IKON[s.tur] ?? "scroll"} size={15} color={s.tur === "olum" ? C.parchmentMuted : C.goldBright} />
               </View>
               <View style={{ flex: 1, gap: 2 }}>
                 <Text style={{ fontFamily: F.display, fontSize: 11.5, letterSpacing: rtl ? 0 : 1, color: C.gold, textAlign: hiza(rtl) }}>{applyParams(t("onl.kr.tarih"), [tk.yil, tk.ay])}</Text>
-                <Text style={{ fontFamily: F.serif, fontSize: 15, lineHeight: 21, color: C.parchment, textAlign: hiza(rtl) }}>{metin}</Text>
+                <Text style={{ fontFamily: s.tur === "esya" ? F.serifItalic : F.serif, fontSize: 15, lineHeight: 21, color: s.tur === "esya" ? C.goldBright : C.parchment, textAlign: hiza(rtl) }}>{metin}</Text>
               </View>
             </Animated.View>;
           })}

@@ -2,6 +2,7 @@
 // tahmin göstermez; iş yapıldıktan sonra sunucunun döndürdüğü çıktı ve fırsat dökümü (bu_is, meslekte) görünür.
 // Ambar (envanter) ve NPC'den pahalı, aylık kotalı alım (POST /v1/taban-al); ambardan NPC'ye satış (POST /v1/sat):
 // birim fiyat dökümü (taban, kıtlık) ve aylık kota satıştan sonra sunucudan gelir.
+import { KaliteIzi } from "../../lib/online/ekonomi-ui";
 import { useState } from "react";
 import { View, Text, useWindowDimensions } from "react-native";
 import { useRouter } from "expo-router";
@@ -271,11 +272,12 @@ function IslerEkran() {
         <Cerceve ic={{ paddingHorizontal: 12, paddingVertical: 4 }}>
         {ambar.map((m, i) => <View key={m}
           style={{ flexDirection: yon(rtl), alignItems: "center", gap: 10, minHeight: 52, paddingVertical: 4, borderTopWidth: i ? 1 : 0, borderColor: "rgba(201,162,78,0.12)" }}>
-          <View accessible accessibilityLabel={`${t("onl.mal." + m)}: ${ev?.[m] ?? 0}`} style={{ flex: 1, flexDirection: yon(rtl), alignItems: "center", gap: 10 }}>
+          <View accessibilityLabel={`${t("onl.mal." + m)}: ${ev?.[m] ?? 0}`} style={{ flex: 1, flexDirection: yon(rtl), alignItems: "center", gap: 10 }}>
             <GameIcon name={MAL_IKON[m]} size={18} color={C.gold} />
             <View style={{ flex: 1 }}>
               <Text numberOfLines={1} style={{ fontFamily: F.serif, fontSize: 15.5, color: C.parchment, textAlign: hiza(rtl) }}>{t("onl.mal." + m)}</Text>
               {satilirMi(m) && kitlikVar(m) ? <Text numberOfLines={1} style={{ fontFamily: F.serif, fontSize: 12.5, color: C.sage, textAlign: hiza(rtl) }}>{t("onl.kitlik")}</Text> : null}
+              <KaliteIzi mal={m} />
             </View>
             <Text style={{ fontFamily: F.display, fontSize: 15, color: C.goldBright }}>{`× ${ev?.[m] ?? 0}`}</Text>
           </View>

@@ -63,7 +63,7 @@ export interface DevirPlani {
   varis: VarisBilgisi; tereke: number; kalemler: DevirKalemi[];
   kronik: { t: string; k: string; p: Record<string, unknown> };
 }
-export interface KronikSatiri { sira: number; ay: number; tur: "olum" | "devir" | "evlilik" | "dogum"; ozet: Ozet }
+export interface KronikSatiri { sira: number; ay: number; tur: "olum" | "devir" | "evlilik" | "dogum" | "esya"; ozet: Ozet }
 export interface DevirOnizleme { plan: DevirPlani; pk: string; varsayim: boolean; kronik: KronikSatiri }
 export interface DevirYaniti { id: string; pk: string; plan: DevirPlani; para: number; hanedan: HanedanOzeti; olay?: unknown }
 export interface EvlilikYaniti { es: { id: string; ad: string }; esik: number; bedel: number; takat: number; para: number }

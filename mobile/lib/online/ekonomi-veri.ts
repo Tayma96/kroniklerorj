@@ -5,10 +5,12 @@ import { useMemo } from "react";
 import { useOnline } from "./durum";
 import { ekCagir, metinMi, nesneMi, sayiMi, type EkSonuc } from "./ek-istemci";
 import { sahteEkonomiIstemci } from "./sahte-ekonomi";
+import type { EsyaGorunumu } from "./esya-veri";
 
-export const KALITE_ADLARI = ["sade", "iyi", "ustun", "saheser"] as const;
+export const KALITE_ADLARI = ["sade", "iyi", "ustun", "saheser", "nadide", "efsanevi", "tilsimli"] as const;
 export type KaliteAdi = (typeof KALITE_ADLARI)[number];
-export type Kademe4 = 0 | 1 | 2 | 3;
+/** Dilim 4: 7 kademe (ad tarihsel; sunucu kalite 0–6 kabul eder). */
+export type Kademe4 = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 export type IlanTuru = "sat" | "al";
 export type IlanDurumu = "acik" | "bitti" | "geri" | "dustu";
 export type IsmarlamaDurumu = "acik" | "surer" | "teslim" | "ret" | "geri" | "dustu" | "gecikti";
@@ -57,7 +59,7 @@ export type IsmarlamaCevabi = "kabul" | "ret" | "geri" | "teslim";
 /** GET /v1/levha */
 export interface LevhaYaniti {
   kayitlar: { oyuncu: { id: string; ad: string }; mal: string; kalite: KaliteAdi; kademe: Kademe4; ay: number; tarif: string }[];
-  ustalar: { id: string; ad: string; saheser: number; ustun: number }[];
+  ustalar: { id: string; ad: string; saheser: number; ustun: number; efsanevi?: number; nadide?: number }[];
 }
 /** GET /v1/defter?ay= */
 export interface DefterYaniti {
@@ -73,7 +75,8 @@ export interface KasabaNabzi {
   gundem: Record<string, number>; tetikler: ("kitlik" | "haydut")[]; gocNiyeti: number; sayaclar: Record<string, number>;
 }
 /** /v1/yerlesim `ben.envanterKalite` (kalite.ts kaliteGorunumu): yalnız izli partisi olan mallar. */
-export type KaliteParti = { kalite: KaliteAdi; kademe: Kademe4; adet: number; yapan: string | null };
+/** Dilim 4: nadidede `huner`, efsanevi/tılsımlıda `esya`; `atolye` damga (işletme kimliği). */
+export type KaliteParti = { kalite: KaliteAdi; kademe: Kademe4; adet: number; yapan: string | null; atolye?: string; huner?: string; esya?: EsyaGorunumu };
 export type EnvanterKalite = Record<string, KaliteParti[]>;
 
 const dizi = Array.isArray;

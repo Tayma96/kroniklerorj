@@ -6,6 +6,7 @@ import type {
   DefterYaniti, EkonomiIstemci, EnvanterKalite, IlanGorunumu, IlanTuru, IsmarlamaGorunumu, Kademe4, Karsilastirma, KasabaNabzi, KaliteAdi,
   LevhaYaniti, PazarYaniti,
 } from "./ekonomi-veri";
+import type { OzellikDokumu } from "./esya-veri";
 
 const AY = 40;
 const ADLARI: KaliteAdi[] = ["sade", "iyi", "ustun", "saheser"];
@@ -30,9 +31,35 @@ export function sahteNabiz(): KasabaNabzi {
 
 /** Ambar kalite partileri (sahte envanterdeki demirci malları için). */
 export function sahteKalite(): EnvanterKalite {
+  // Dilim 4: her kademeden örnek; nadidede hüner, efsanevi ve tılsımlıda adlı eşya ve yadigâr geçmişi (esya.ts biçimi).
+  const oz = (aile: string, q: number, carpan: number, etkiler: string[], eksik: [string, number][], hunerler: string[], bagli: boolean): OzellikDokumu => ({
+    aile, kademe: q, kalite: ["sade", "iyi", "ustun", "saheser", "nadide", "efsanevi", "tilsimli"][q]!, carpan, etkiler: etkiler.map((id) => ({ id, carpan })),
+    eksik: eksik.map(([id, kademe]) => ({ id, kademe })), kusur: null, hunerler, bagli,
+  });
   return {
+    ekmek: [{ kalite: "sade", kademe: 0, adet: 2, yapan: "Fırıncı Hatice" }],
     nal: [{ kalite: "iyi", kademe: 1, adet: 2, yapan: "Elif Nur" }, { kalite: "ustun", kademe: 2, adet: 1, yapan: "Elif Nur" }],
-    alet: [{ kalite: "saheser", kademe: 3, adet: 1, yapan: "Usta Kerem" }],
+    alet: [
+      { kalite: "saheser", kademe: 3, adet: 1, yapan: "Usta Kerem" },
+      { kalite: "nadide", kademe: 4, adet: 1, yapan: "Usta Kerem", huner: "yipranmaz" },
+      { kalite: "efsanevi", kademe: 5, adet: 1, yapan: "Usta Kerem", esya: {
+        id: "e1k9", lakap: 15, kademe: 5, kalite: "efsanevi", usta: "Usta Kerem", atolye: "Kerem Ocağı", hunerler: ["bereketli"], yapim: AY - 30,
+        gecmis: [
+          { ay: AY - 30, tur: "yapim", kim: "Usta Kerem" }, { ay: AY - 26, tur: "satis", kim: "Hasan Efendi" }, { ay: AY - 19, tur: "ismarlama", kim: "Kalfa Yusuf" },
+          { ay: AY - 12, tur: "miras", kim: "Rabia" }, { ay: AY - 3, tur: "satis", kim: "Elif Nur" },
+        ],
+        ozellik: oz("alet", 5, 5, ["verim", "omur", "incelik"], [], ["bereketli"], true),
+      } },
+    ],
+    kilic: [{ kalite: "tilsimli", kademe: 6, adet: 1, yapan: "Pir Davud", esya: {
+      id: "e7x2", lakap: 3, kademe: 6, kalite: "tilsimli", usta: "Pir Davud", atolye: "Demirkapı Ocağı", hunerler: ["keskinAgiz", "dengeliSap"], yapim: AY - 300,
+      gecmis: [
+        { ay: AY - 300, tur: "yapim", kim: "Pir Davud" }, { ay: AY - 260, tur: "miras", kim: "Davud oğlu Selim" }, { ay: AY - 211, tur: "satis", kim: "Sancakbeyi Ömer" },
+        { ay: AY - 170, tur: "miras", kim: "Ömer kızı Ayşe" }, { ay: AY - 120, tur: "ismarlama", kim: "Kervanbaşı Nuri" }, { ay: AY - 84, tur: "devir", kim: "Hacı Rıza" },
+        { ay: AY - 40, tur: "miras", kim: "Rıza oğlu Kemal" }, { ay: AY - 6, tur: "satis", kim: "Elif Nur" },
+      ],
+      ozellik: oz("silah", 6, 7, ["guc", "isabet", "heybet"], [], ["keskinAgiz", "dengeliSap"], false),
+    } }],
   };
 }
 
@@ -76,11 +103,13 @@ export function sahteEkonomiIstemci(baslangicPara: number): EkonomiIstemci {
   const giden = [ism("i4", "musteri", ["o11", "Mahmut"], "deri", 3, 0, 14, "acik"), ism("i1", "musteri", ["o7", "Usta Kerem"], "alet", 1, 3, 45, "teslim")];
   const levha: LevhaYaniti = {
     kayitlar: [
+      { oyuncu: { id: "o9", ad: "Pir Davud" }, mal: "kilic", kalite: "efsanevi", kademe: 5, ay: AY - 1, tarif: "demirci.kilic" },
+      { oyuncu: { id: "o7", ad: "Usta Kerem" }, mal: "alet", kalite: "nadide", kademe: 4, ay: AY - 1, tarif: "demirci.alet" },
       { oyuncu: { id: "o7", ad: "Usta Kerem" }, mal: "alet", kalite: "saheser", kademe: 3, ay: AY - 1, tarif: "demirci.alet" },
       { oyuncu: { id: "o1", ad: "Elif Nur" }, mal: "nal", kalite: "ustun", kademe: 2, ay: AY - 2, tarif: "demirci.nal" },
       { oyuncu: { id: "o4", ad: "Zeynep" }, mal: "inceYun", kalite: "ustun", kademe: 2, ay: AY - 4, tarif: "dokumaci.inceYun" },
     ],
-    ustalar: [{ id: "o7", ad: "Usta Kerem", saheser: 1, ustun: 2 }, { id: "o1", ad: "Elif Nur", saheser: 0, ustun: 1 }, { id: "o4", ad: "Zeynep", saheser: 0, ustun: 1 }],
+    ustalar: [{ id: "o9", ad: "Pir Davud", efsanevi: 1, nadide: 2, saheser: 3, ustun: 1 }, { id: "o7", ad: "Usta Kerem", efsanevi: 0, nadide: 1, saheser: 1, ustun: 2 }, { id: "o1", ad: "Elif Nur", saheser: 0, ustun: 1 }, { id: "o4", ad: "Zeynep", saheser: 0, ustun: 1 }],
   };
   const defter = (): DefterYaniti => {
     const aylar = [

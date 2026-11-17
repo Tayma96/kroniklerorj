@@ -10,6 +10,7 @@ import { Baslik2, Rozet } from "./yasam-ui";
 import { MAL_IKON } from "./meslek-veri";
 import { benKalite, yerlesimNabzi, type Karsilastirma, type KaliteParti } from "./ekonomi-veri";
 import { sahteKalite, sahteNabiz } from "./sahte-ekonomi";
+import { KADEME_RENK, KademeRozeti, KademeliRozet, kademeAdi } from "./kademe-ui";
 
 type Ceviri = (k: string) => string;
 
@@ -20,13 +21,11 @@ export function malAdi(t: Ceviri, m: string): string {
   return v === k ? m : v;
 }
 export const malIkonu = (m: string) => (MAL_IKON as Record<string, string>)[m] ?? "amphora";
-export const KALITE_RENK = [C.parchmentMuted, C.sage, C.gold, C.goldBright] as const;
-export const kaliteAdi = (t: Ceviri, kademe: number) => t("onl.eko.q." + Math.max(0, Math.min(3, kademe)));
-
-export function KaliteRozeti({ kademe }: { kademe: number }) {
-  const { t } = useI18n();
-  const q = Math.max(0, Math.min(3, kademe));
-  return <Rozet icon={q >= 3 ? "gems" : q === 2 ? "star" : undefined} metin={kaliteAdi(t, q)} renk={KALITE_RENK[q]} dolu={q >= 2} />;
+/** Kademe dili tek kaynaktan (kademe-ui.tsx KADEME): 7 kademe, ad + işaret + renk. Eski adlar korunur. */
+export const KALITE_RENK = KADEME_RENK;
+export const kaliteAdi = kademeAdi;
+export function KaliteRozeti({ kademe, kucuk }: { kademe: number; kucuk?: boolean }) {
+  return <KademeRozeti kademe={kademe} kucuk={kucuk} />;
 }
 
 function useSahte(): boolean {
@@ -42,9 +41,11 @@ export function KaliteIzi({ mal }: { mal: string }) {
   const liste: KaliteParti[] = kq?.[mal] ?? [];
   if (!liste.length) return null;
   return <View style={{ gap: 3, marginTop: 2 }}>
-    {liste.map((p, i) => <Text key={i} numberOfLines={2} style={{ fontFamily: F.serif, fontSize: 12.5, lineHeight: 17, color: KALITE_RENK[p.kademe] ?? C.parchmentDim, textAlign: hiza(rtl) }}>
-      {`${p.adet} × ${kaliteAdi(t, p.kademe)}${p.yapan ? " · " + applyParams(t("onl.eko.yapan"), [p.yapan]) : ""}`}
-    </Text>)}
+    {liste.map((p, i) => <View key={i} style={{ flexDirection: yon(rtl), flexWrap: "wrap", alignItems: "center", gap: 6 }}>
+      <Text style={{ fontFamily: F.display, fontSize: 12, color: C.parchment }}>{`${p.adet} ×`}</Text>
+      <KademeliRozet parti={{ mal, kademe: p.kademe, adet: p.adet, yapan: p.yapan, huner: p.huner, esya: p.esya }} kucuk />
+      {p.yapan && !p.esya ? <Text numberOfLines={1} style={{ flexShrink: 1, fontFamily: F.serif, fontSize: 12.5, color: C.parchmentDim, textAlign: hiza(rtl) }}>{applyParams(t("onl.eko.yapan"), [p.yapan])}</Text> : null}
+    </View>)}
   </View>;
 }
 

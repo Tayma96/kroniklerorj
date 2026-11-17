@@ -24,6 +24,8 @@ import { geciciHataMi } from "./tezgah-veri";
 import type { EmirDokumu, GenisletmeGorunumu, GunSonu, TezgahGorunumu, TopluSiparis, UretimEmri } from "./tezgah-veri";
 import { MESAI_TEK_EN_COK, atolyeHataMetni, depodaToplam, zanaatTarifleri, type AtolyeIstemci } from "./atolye-veri";
 import { topluIndirimKancasi } from "./kanca-ui";
+import { EfsaneviDeneme, EfsaneviSonucKarti, KaliteKisitiNotu } from "./kademe-ui";
+import { esyaHamdan, type EfsaneviSonucu, type EsyaGorunumu } from "./esya-veri";
 
 type Ceviri = (k: string) => string;
 type Tarif = ReturnType<typeof zanaatTarifleri>[number];
@@ -487,8 +489,10 @@ function UretCekmecesi({ acik, oturum, g, tarifler, ist, iflas, onKapat, onYenil
   const a = g.atolye!;
   const y = useYazma(oturum);
   const [sec, setSec] = useState<string | null>(null);
-  const [sonuc, setSonuc] = useState<{ mal: string; adet: number; kademe: number | null; levha: boolean } | null>(null);
-  useEffect(() => { if (acik) { setSec(null); setSonuc(null); } }, [acik, oturum]);
+  const [sonuc, setSonuc] = useState<{ mal: string; adet: number; kademe: number | null; levha: boolean; kisit: string | null; ef: EfsaneviSonucu | null; esya: EsyaGorunumu | null } | null>(null);
+  const [efsanevi, setEfsanevi] = useState(false);
+  useEffect(() => { if (acik) { setSec(null); setSonuc(null); setEfsanevi(false); } }, [acik, oturum]);
+  const efDene = efsanevi && !!a.efsanevi?.pir && (a.efsanevi?.hak ?? 0) > 0;
   const tf = tarifler.find((x) => x.id === sec);
   const eksik = tf ? Object.entries(tf.girdi).filter(([m, n]) => depodaToplam(g, m) < n) : [];
   const neden = iflas ? t("onl.atl.h.isletme_kapali") : !g.izin.uret ? t("onl.atl.uret.yetkiYok") : !tf ? t("onl.atl.uret.sec")
@@ -505,14 +509,23 @@ function UretCekmecesi({ acik, oturum, g, tarifler, ist, iflas, onKapat, onYenil
         <Text style={{ fontFamily: F.display, fontSize: 15, color: C.goldBright, textAlign: hiza(rtl) }}>{applyParams(t("onl.is.cikti"), [sonuc.adet, malAdi(t, sonuc.mal)])}</Text>
         {sonuc.kademe !== null ? <View style={{ flexDirection: yon(rtl) }}><KaliteRozeti kademe={sonuc.kademe} /></View> : null}
         {sonuc.levha ? <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.gold, textAlign: hiza(rtl) }}>{t("onl.atl.uret.levha")}</Text> : null}
+        <KaliteKisitiNotu kisit={sonuc.kisit} />
       </View>
     </Animated.View> : <Sonuc hata={y.hata} bilgi={y.bilgi} rtl={rtl} />}
+    {sonuc?.ef ? <EfsaneviSonucKarti s={sonuc.ef} mal={sonuc.mal} esya={sonuc.esya} /> : null}
     {sonuc && y.hata ? <Sonuc hata={y.hata} bilgi={null} rtl={rtl} /> : null}
     {neden && sec ? <Not metin={neden} rtl={rtl} /> : null}
-    <AltinDugme etiket={t("onl.atl.uret.dugme")} icon="anvil" rtl={rtl} kapali={!!neden} bekliyor={y.bekliyor}
-      erisim={[t("onl.atl.uret.dugme"), neden].filter(Boolean).join(". ")}
-      onPress={() => { if (!tf || neden) return; const id = tf.id; void y.gonder(`uret|${id}`, (istekNo) => ist.uret(g.isletme, { tarif: id, istekNo }), onYenile, (v) => {
-        if (v) setSonuc({ mal: v.uretim.cikti.mal, adet: v.uretim.cikti.adet, kademe: typeof v.uretim.kalite?.kademe === "number" ? v.uretim.kalite.kademe : null, levha: v.uretim.levha });
+    <EfsaneviDeneme e={a.efsanevi} secili={efsanevi} onDegis={setEfsanevi} kapali={iflas || !g.izin.uret} />
+    <AltinDugme etiket={t(efDene ? "onl.es.ef.dugme" : "onl.atl.uret.dugme")} icon="anvil" rtl={rtl} kapali={!!neden} bekliyor={y.bekliyor}
+      erisim={[t(efDene ? "onl.es.ef.dugme" : "onl.atl.uret.dugme"), neden].filter(Boolean).join(". ")}
+      onPress={() => { if (!tf || neden) return; const id = tf.id; const ef = efDene; void y.gonder(`uret|${id}|${ef ? 1 : 0}`, (istekNo) => ist.uret(g.isletme, ef ? { tarif: id, efsanevi: true, istekNo } : { tarif: id, istekNo }), onYenile, (v) => {
+        if (v) {
+          const e = v.uretim.efsanevi ?? null;
+          const kademe = e?.kademe ?? (typeof v.uretim.kalite?.kademe === "number" ? v.uretim.kalite.kademe : null);
+          setSonuc({ mal: v.uretim.cikti.mal, adet: v.uretim.cikti.adet, kademe, levha: v.uretim.levha, kisit: v.uretim.kalite?.kisit ?? null, ef: e,
+            esya: e?.esya && e.kademe ? esyaHamdan(e.esya, e.kademe, v.uretim.ozellik) : null });
+          if (e) setEfsanevi(false);
+        }
         return v ? applyParams(t("onl.atl.uret.tamam"), [v.uretim.cikti.adet, malAdi(t, v.uretim.cikti.mal)]) : t("onl.atl.uret.tamamKisa");
       }); }} />
   </AltPanel>;
