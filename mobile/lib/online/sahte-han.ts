@@ -12,6 +12,8 @@ import type {
 } from "./han-veri";
 import { KITA_EN_UZUN, KITA_SATIR } from "./han-veri";
 import type { Dil } from "./protokol";
+import { OYUN_KOMUTLARI, type OyunIletisi } from "./masa-oyun-veri";
+import { sahteOyunAyir, sahteOyunBagla, sahteOyunIsle, sahteOyunKalkti, sahteOyunSuruyor, type SahteOyunOrtami } from "./sahte-masa-oyun";
 
 const KOLTUK = 6;
 const MENU: MenuSatiri[] = [{ id: "ekmek", fiyat: 2 }, { id: "serbet", fiyat: 3 }, { id: "yemek", fiyat: 6 }, { id: "gulSuyu", fiyat: 10 }];
@@ -101,7 +103,18 @@ class SahteSoket implements HamSoket {
   private sahne: SahneGorunumu | null = null;
   private atisma: AtismaGorunumu | null = null;
   private oylar = new Map<string, string>();
+  /** Masa oyunları (sahte-masa-oyun.ts): bu soketin ortamı. */
+  private readonly oyunAnahtar: string;
+  private readonly oyunOrtam: SahteOyunOrtami;
   constructor(readonly no: number, readonly ben: Plaka, readonly han = 1) {
+    this.oyunAnahtar = `${han}:${no}`;
+    this.oyunOrtam = {
+      ben: { hesap: ben.hesap, ad: ben.ad },
+      oturan: () => oturanlar(this.masa()).map((x) => ({ hesap: x.p.hesap, ad: x.p.ad })),
+      mesgul: () => this.mesgul(),
+      yolla: (oyun) => this.yolla({ t: "oyun", oyun }),
+      hata: (kod, istek) => this.hata(kod, istek),
+    };
     // Gerçek sunucuda bir hesap aynı anda tek masadadır (4005 başka masa): öteki hanların soketi de kapanır.
     for (const [h, d] of dunyalar) if (h !== han) d.soket?.kapat();
     const w = dunyaAl(han);
@@ -114,7 +127,7 @@ class SahteSoket implements HamSoket {
       const m0 = this.masa();
       if (no === 1 && m0.koltuklar.some((p) => p?.hesap === "oy-ayse") && m0.koltuklar.some((p) => p?.hesap === "oy-kerim")) this.atismaBaslat("oy-ayse", "oy-kerim", 39);
       if (no === 4 && m0.koltuklar.some((p) => p?.hesap === "oy-yakup")) this.sahne = { anlatici: "oy-yakup", soz: [], istek: [], acilis: Date.now() };
-      this.yolla({ t: "hosgeldin", ben, susturma: null, masa: this.gor(), ses: this.sesGor(), ...(this.sahne ? { sahne: this.sahne } : {}), ...(this.atisma ? { atisma: this.atisma } : {}) });
+      this.yolla({ t: "hosgeldin", ben, susturma: null, masa: this.gor(), ses: this.sesGor(), oyun: sahteOyunBagla(this.oyunAnahtar, this.oyunOrtam), ...(this.sahne ? { sahne: this.sahne } : {}), ...(this.atisma ? { atisma: this.atisma } : {}) });
       if (this.atisma) this.botKita();
       if (no !== 1) return;
       // Önizleme için anons türleri ve bir teklif: ikram, armağan, Debdebe süsleri ayrı görünsün.
@@ -236,6 +249,7 @@ class SahteSoket implements HamSoket {
     if (i >= 0) m.koltuklar[i] = null;
     m.sira = m.sira.filter((p) => p.hesap !== this.ben.hesap);
     this.kapali = true;
+    sahteOyunAyir(this.oyunAnahtar, this.oyunOrtam);
     this.yayin.clear();
     this.zaman.forEach(clearTimeout);
     if (this.dongu) clearInterval(this.dongu);
@@ -250,6 +264,7 @@ class SahteSoket implements HamSoket {
     const benKoltuk = m.koltuklar.findIndex((p) => p?.hesap === this.ben.hesap);
     const masaninBasi = masaBasi(m) === this.ben.hesap;
     const bulunan = (h: string) => m.koltuklar.some((p) => p?.hesap === h) || m.sira.some((p) => p.hesap === h);
+    if (OYUN_KOMUTLARI.has(ileti.t)) return sahteOyunIsle(this.oyunAnahtar, ileti as OyunIletisi);
     switch (ileti.t) {
       case "otur": {
         if (benKoltuk >= 0) return this.hata("zaten_oturuyor");
@@ -267,7 +282,8 @@ class SahteSoket implements HamSoket {
           if (this.yayin.delete(this.ben.hesap)) { this.konusan.delete(this.ben.hesap); this.sesYolla(); }
         } else if (m.sira.some((p) => p.hesap === this.ben.hesap)) m.sira = m.sira.filter((p) => p.hesap !== this.ben.hesap);
         else return this.hata("oturmuyor");
-        return this.durum();
+        this.durum();
+        return sahteOyunKalkti(this.oyunAnahtar);
       case "yaz": {
         if (benKoltuk < 0) return this.hata("oturmuyor");
         if (this.atisma?.asama === "kita") return this.hata("atisma_suruyor");
@@ -364,7 +380,7 @@ class SahteSoket implements HamSoket {
       case "sahneAc":
         if (benKoltuk < 0) return this.hata("oturmuyor");
         if (this.sahne) return this.hata("sahne_acik");
-        if (this.atisma) return this.hata("masa_mesgul");
+        if (this.atisma || sahteOyunSuruyor(this.oyunAnahtar)) return this.hata("masa_mesgul");
         if (this.masa().ayar?.sahneYasak) return this.hata("sahne_yasak");
         this.sahne = { anlatici: this.ben.hesap, soz: [], istek: [], acilis: Date.now() };
         this.sahneYolla();

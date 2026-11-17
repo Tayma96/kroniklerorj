@@ -8,6 +8,7 @@ import { ekCagir, soketAdresi, metinMi, nesneMi, sayiMi, type EkSonuc } from "./
 import { oturumOku } from "./depo";
 import { sahteHanIstemci } from "./sahte-han";
 import type { Dil } from "./protokol";
+import { oyunGorunumuMu, type OyunGorunumu, type OyunIletisi } from "./masa-oyun-veri";
 
 /** [sunucu kurallar.ts] Varsayılan koltuk sayısı (GET /v1/han `koltuk` alanı esastır). */
 export const KOLTUK_SAYISI = 6;
@@ -100,7 +101,9 @@ export type IstemciIletisi =
   | { t: "oy"; hedef: string }
   | { t: "atismaKapat" }
   /** Özel masaya davet (yalnız masa başı); `kaldir` daveti geri alır. */
-  | { t: "davet"; hedef: string; kaldir?: true };
+  | { t: "davet"; hedef: string; kaldir?: true }
+  /** Han masa oyunları (src/han/oyun/masa-oyun.ts). */
+  | OyunIletisi;
 
 /** Masanın ses durumu (sunucu SesDurumu). Yalnız kimlikler; ses kaydedilmez. */
 export interface SesDurumu {
@@ -117,7 +120,9 @@ export interface SdpYaniti { type: "offer" | "answer"; sdp: string }
 
 /** Sunucu → istemci. */
 export type SunucuIletisi =
-  | { t: "hosgeldin"; ben: Plaka; susturma: { bitis: number | null } | null; masa: MasaGorunumu; ses?: SesDurumu; sahne?: SahneGorunumu | null; atisma?: AtismaGorunumu | null; kitaEnCok?: number }
+  | { t: "hosgeldin"; ben: Plaka; susturma: { bitis: number | null } | null; masa: MasaGorunumu; ses?: SesDurumu; sahne?: SahneGorunumu | null; atisma?: AtismaGorunumu | null; kitaEnCok?: number; oyun?: OyunGorunumu | null }
+  /** Masa oyunu görünümü (kişiye özel; oyun yoksa null). */
+  | { t: "oyun"; oyun: OyunGorunumu | null }
   | { t: "sahne"; sahne: SahneGorunumu | null }
   | { t: "atisma"; atisma: AtismaGorunumu | null; son?: AtismaSonucu }
   | { t: "kita"; hesap: string; ad: string; koltuk: number; metin: string; sira: number; zaman: number; balon?: string }
@@ -241,9 +246,10 @@ export function sunucuIletisiCoz(ham: unknown): SunucuIletisi | undefined {
     case "hosgeldin": {
       if (!plakaMi(v.ben) || !masaGorunumuMu(v.masa) || !(v.ses === undefined || sesDurumuMu(v.ses))) return undefined;
       // Bozuk sahne/atışma alanı bağlantıyı düşürmez: yok sayılır.
-      const { sahne, atisma, ...geri } = v;
-      return { ...geri, ...(sahneMi(sahne) ? { sahne } : {}), ...(atismaMi(atisma) ? { atisma } : {}) } as SunucuIletisi;
+      const { sahne, atisma, oyun, ...geri } = v;
+      return { ...geri, ...(sahneMi(sahne) ? { sahne } : {}), ...(atismaMi(atisma) ? { atisma } : {}), ...(oyunGorunumuMu(oyun) ? { oyun } : {}) } as SunucuIletisi;
     }
+    case "oyun": return v.oyun === null || oyunGorunumuMu(v.oyun) ? (v as SunucuIletisi) : undefined;
     case "sahne": return v.sahne === null || sahneMi(v.sahne) ? (v as SunucuIletisi) : undefined;
     case "atisma": return (v.atisma === null || atismaMi(v.atisma)) && (v.son === undefined || atismaSonucuMu(v.son)) ? (v as SunucuIletisi) : undefined;
     case "kita": return metinMi(v.hesap) && metinMi(v.ad) && sayiMi(v.koltuk) && metinMi(v.metin) && sayiMi(v.sira) && sayiMi(v.zaman) ? (v as SunucuIletisi) : undefined;
