@@ -11,7 +11,7 @@ import { KATALOG, urunPuani, seviyeAdi, type UrunId } from "../src/debdebe/katal
 import { makbuzDenetle } from "../src/debdebe/makbuz.ts";
 import { denePaketi } from "../src/debdebe/dene.ts";
 import { sezonIlerle, sezonKaydi, SEZON_GUNLUK_TAVAN } from "../src/debdebe/sezon.ts";
-import { beceriHizlandir, DEBDEBE_KISALTMA_EN_COK } from "../src/yerlesim/beceri.ts";
+import { beceriHizlandir } from "../src/yerlesim/beceri.ts";
 import type { Karakter } from "../src/yerlesim/tipler.ts";
 import type { Depo } from "../src/depo.ts";
 import { plakaCerçevesi } from "../src/debdebe/hesap.ts";
@@ -92,7 +92,6 @@ test("Dene: üç bağlam, gerçek oyuncu yok, figüranlar deterministik", () => 
   assert.ok(p.sahneler.every((s) => s.figuranlar.every((f) => f.figuran)));
   assert.deepEqual(denePaketi("kaftan_hilat", "Ayşe", {}, "tr"), p);
   assert.ok(denePaketi("armagan_hilat", "Ayşe", {}, "tr").sahneler[0]!.armagan);
-  assert.ok(denePaketi("kisaltma_30dk", "Ayşe", {}, "tr").aciklama);
 });
 
 test("Sezon Defteri: oynayarak ilerler, aynı istek iki kez saymaz, günlük tavan, ücretli iz ödülü", () => {
@@ -110,18 +109,13 @@ test("Sezon Defteri: oynayarak ilerler, aynı istek iki kez saymaz, günlük tav
   assert.equal(satinAlimUygula(c, "sezon_ucretli", b("google:10", "sezon_ucretli"), T0).ok, false);
 });
 
-test("süre kısaltma: yalnız süre; öğrenme başına tavan; Debdebe miktarı yoksa kapalı", () => {
+test("süre kısaltma satılmaz: katalogda kısaltma ürünü yok, Debdebe kaynağı her zaman kapalı", () => {
   const k = { bo: { t: "o", m: "demirci", d: "demirci.aletcilik", s: 1, b: T0, e: T0 + 120 * 60_000, p: 1 } } as unknown as Karakter;
   const yok = () => undefined;
   assert.deepEqual(beceriHizlandir(k, "debdebe", T0, yok), { ok: false, hata: "hizlandirma_kapali" });
-  const r = beceriHizlandir(k, "debdebe", T0, yok, { dk: 30 });
-  assert.ok(r.ok && r.deger.kisaltmaMs === 30 * 60_000);
-  assert.equal(k.bo!.e, T0 + 90 * 60_000);
-  assert.equal(k.bo!.p, 1, "puan değişmez");
-  const y = beceriHizlandir(k, "debdebe", T0, yok, { oran: 0.9 });
-  assert.ok(y.ok && y.deger.kisaltmaMs === 45 * 60_000, "pay üst sınırı %50");
-  for (let i = 2; i < DEBDEBE_KISALTMA_EN_COK; i++) beceriHizlandir(k, "debdebe", T0, yok, { dk: 1 });
-  assert.deepEqual(beceriHizlandir(k, "debdebe", T0, yok, { dk: 1 }), { ok: false, hata: "hizlandirma_yok" });
+  assert.deepEqual(beceriHizlandir(k, "debdebe", T0, yok, { dk: 30 }), { ok: false, hata: "hizlandirma_kapali" });
+  assert.equal(k.bo!.e, T0 + 120 * 60_000);
+  assert.ok(!Object.values(KATALOG).some((u) => (u.tur as string) === "kisaltma"));
 });
 
 test("uçlar: satın alma, kuşanma, armağan + teveccüh + rozet, kısaltma stoğu, levha, Y3 iade", async () => {
@@ -200,10 +194,8 @@ test("uçlar: satın alma, kuşanma, armağan + teveccüh + rozet, kısaltma sto
   assert.equal(tv(), 120, "Debdebe armağanı teveccühü tutarıyla");
   assert.equal((depo.veri.get(`o:${ayse.o}`) as Karakter).pa >= 0, true);
 
-  // Süre kısaltma: stok harcanmadan önce öğrenme denetlenir (öğrenme yoksa stok kalır).
-  assert.equal((await al(ayse.oturum, "kisaltma_30dk", makbuz("GPA.1003", "kisaltma_30dk"))).durum, 200);
-  assert.deepEqual((await cagir("POST", "/v1/beceri/hizlandir", { oturum: ayse.oturum, govde: { kaynak: "debdebe", urun: "kisaltma_30dk", istekNo: no() } })).govde, { hata: "ogrenme_yok" });
-  assert.equal((await cagir("GET", "/v1/debdebe", { oturum: ayse.oturum })).govde.ben.stok.kisaltma_30dk, 1);
+  // Süre kısaltma ürünü yok (E5).
+  assert.notEqual((await al(ayse.oturum, "kisaltma_30dk", makbuz("GPA.1003", "kisaltma_30dk"))).durum, 200);
 
   // Levha: görünmek isteğe bağlı; adlar, tutar yok.
   assert.equal((await cagir("POST", "/v1/debdebe/levha-gorunur", { oturum: ayse.oturum, govde: { gorunur: true, istekNo: no() } })).govde.levhaGorunur, true);
@@ -219,7 +211,7 @@ test("uçlar: satın alma, kuşanma, armağan + teveccüh + rozet, kısaltma sto
   const yo = (await cagir("POST", "/yonetim/giris", { govde: { idToken: yt } })).govde.oturum as string;
   const liste = await cagir("GET", "/yonetim/debdebe", { oturum: yo });
   assert.equal(liste.durum, 200, JSON.stringify(liste.govde));
-  assert.equal(liste.govde.islemler.length, 6);
+  assert.equal(liste.govde.islemler.length, 5, "kısaltma ürünü yok (E5)");
   const iade = (islem: string, gerekce = "Mağaza iadesi onaylandı") => cagir("POST", "/yonetim/debdebe-iade", { oturum: yo, govde: { islem, gerekce, istekNo: no() } });
   assert.deepEqual((await iade("google:GPA.3001")).govde, { hata: "kendi_hedef" });
   assert.equal((await iade("google:GPA.1002", "")).govde.hata, "gerekce_gecersiz");

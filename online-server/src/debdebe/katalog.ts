@@ -102,10 +102,7 @@ export const KATALOG = {
   armagan_sini: { tur: "armagan", kademe: "kademe_199", teveccuh: 45 },
   armagan_sancak: { tur: "armagan", kademe: "kademe_299", teveccuh: 70 },
   armagan_hilat: { tur: "armagan", kademe: "kademe_499", teveccuh: 120 },
-  // Süre kısaltma (yalnız beceri öğrenme süresi)
-  kisaltma_30dk: { tur: "kisaltma", kademe: "kademe_099", kisaltmaDk: 30 },
-  kisaltma_2sa: { tur: "kisaltma", kademe: "kademe_299", kisaltmaDk: 120 },
-  kisaltma_yari: { tur: "kisaltma", kademe: "kademe_499", kisaltmaOran: 0.5 },
+  // Süre kısaltma ürünü yok (17 Kasım denetimi E5: gerçek parayla bekleme atlanmaz).
   // Ayan (aylık) ve Sezon Defteri ücretli izi
   ayan_aylik: { tur: "ayan", kademe: "kademe_399" },
   sezon_ucretli: { tur: "sezon", kademe: "kademe_499" },
