@@ -10,7 +10,7 @@
 import type { MalId } from "../icerik/mallar.ts";
 import type { MeslekId } from "../icerik/meslekler.ts";
 import { BEYLIKLER, YERLESIMLER, yerlesimBul, type YerlesimTuru } from "../dunya-veri.ts";
-import { PARAMETRELER } from "../yonetim/parametre.ts";
+import { PARAMETRELER, caprazIhlaller, type ParametreAdi } from "../yonetim/parametre.ts";
 import type { DertTuru } from "../yerlesim/ortak-dert.ts";
 import type { Nam } from "../yerlesim/karakter.ts";
 import type { CalismaParametreleri } from "../yerlesim/tipler.ts";
@@ -116,10 +116,9 @@ export const ETKINLIKLER: Readonly<Record<EtkinlikTuru, EtkinlikTanimi>> = {
   },
   panayir: {
     ikon: "coins", ad: "Panayır", saat: 48,
-    ozet: "Pazar bacı alınmaz, oyuncu başına 3 ilan fazla açılır, kasaba stoğu %20 ucuz satılır.",
+    ozet: "Pazar bacı alınmaz, oyuncu başına 3 ilan fazla açılır.",
     bac: 0,
     ilanEk: 3,
-    p: { STOK_CARPAN: { carp: 0.8 } },
     katilim: { nam: "comertlik", namN: 1, gonul: 2, meslek: ["tuccar"] },
   },
   haydut: {
@@ -148,8 +147,8 @@ export const ETKINLIKLER: Readonly<Record<EtkinlikTuru, EtkinlikTanimi>> = {
   },
   lonca: {
     ikon: "anvil", ad: "Lonca Yarışması", saat: 72,
-    ozet: "Loncalar yarışıyor: lonca siparişi ödülleri %50 artar. Katılan çalışkanlık namı alır; zanaatkârlar iki kat.",
-    p: { SIPARIS_ODUL_CARPANI: { carp: 1.5 } },
+    ozet: "Loncalar yarışıyor: lonca siparişi ödülleri %6 artar. Katılan çalışkanlık namı alır; zanaatkârlar iki kat.",
+    p: { SIPARIS_ODUL_CARPANI: { carp: 1.06 } },
     katilim: { nam: "caliskanlik", namN: 1, gonul: 2, meslek: ["demirci", "marangoz", "dokumaci"] },
   },
   pehlivan: {
@@ -311,7 +310,38 @@ export function parametreUygula(pr: CalismaParametreleri, liste: readonly Etkinl
       sonuc[ad] = tanim.tam ? Math.round(v) : Math.round(v * 1000) / 1000;
     }
   }
-  return sonuc;
+  return caprazKirp(sonuc);
+}
+
+/**
+ * Çapraz kurallar (yonetim/parametre.ts CAPRAZ_KURALLAR) etkinlikler birlikte açıkken de bozulmasın: ihlalde çarpan
+ * kurala uyan sınıra kırpılır. siparisNpc: önce sipariş ödül çarpanı, alt sınırdaysa kıtlık primi düşer. stokKitlik:
+ * stok çarpanı 1 + kıtlık primine çıkar, üst sınırdaysa kıtlık primi düşer. Sonuç ihlalsizdir (test: 18 etkinlik ve
+ * ikili birleşimleri).
+ */
+export function caprazKirp(pr: CalismaParametreleri): CalismaParametreleri {
+  const d = (ad: ParametreAdi): number => (pr[ad as keyof CalismaParametreleri] as number | undefined) ?? PARAMETRELER[ad].varsayilan;
+  const yaz = (ad: "SIPARIS_ODUL_CARPANI" | "KITLIK_PRIM" | "STOK_CARPAN", v: number) => {
+    const t = PARAMETRELER[ad];
+    pr[ad] = Math.min(t.ust, Math.max(t.alt, v));
+  };
+  const asagi = (v: number) => Math.floor(v * 1000 - 1e-6) / 1000;
+  const yukari = (v: number) => Math.ceil(v * 1000 - 1e-6) / 1000;
+  for (let i = 0; i < 4; i++) {
+    const ihlal = caprazIhlaller(d);
+    if (ihlal.length === 0) break;
+    if (ihlal.includes("siparisNpc")) {
+      yaz("SIPARIS_ODUL_CARPANI", asagi(d("NPC_CARPAN") / (1 + d("KITLIK_PRIM"))));
+      if (!caprazIhlaller(d).includes("siparisNpc")) continue;
+      yaz("KITLIK_PRIM", asagi(d("NPC_CARPAN") / d("SIPARIS_ODUL_CARPANI") - 1));
+    }
+    if (caprazIhlaller(d).includes("stokKitlik")) {
+      yaz("STOK_CARPAN", yukari(1 + d("KITLIK_PRIM")));
+      if (!caprazIhlaller(d).includes("stokKitlik")) continue;
+      yaz("KITLIK_PRIM", asagi(d("STOK_CARPAN") - 1));
+    }
+  }
+  return pr;
 }
 
 /** Gelen ham listeyi doğrular (YonetimDO yanıtı; bilinmeyen tür atılır). */

@@ -61,7 +61,9 @@ test("parametre etkileri yönetici ayarının üstüne uygulanır ve sınırlar 
   // Üst üste binen indirim NPC çarpanını 1,5 sınırının altına indiremez.
   const c = parametreUygula({ NPC_CARPAN: 1.6 }, [oz("bereket"), oz("dugun", "e2")]);
   assert.equal(c.NPC_CARPAN, PARAMETRELER.NPC_CARPAN.alt);
-  assert.equal(parametreUygula({ SIPARIS_ODUL_CARPANI: 2.5 }, [oz("lonca")]).SIPARIS_ODUL_CARPANI, PARAMETRELER.SIPARIS_ODUL_CARPANI.ust);
+  // Çapraz kural (17 Kasım denetimi E4): sipariş ödül çarpanı NPC alışından kâr açacak kadar yükselemez.
+  const l = parametreUygula({ SIPARIS_ODUL_CARPANI: 2.5 }, [oz("lonca")]);
+  assert.ok((1 + (l.KITLIK_PRIM ?? PARAMETRELER.KITLIK_PRIM.varsayilan)) * l.SIPARIS_ODUL_CARPANI! < (l.NPC_CARPAN ?? PARAMETRELER.NPC_CARPAN.varsayilan));
   const e = etkiBirlestir([oz("senlik"), oz("panayir", "e2"), oz("ferman", "e3"), oz("haydut", "e4")]);
   assert.equal(e.bac, 0);
   assert.equal(e.ilanEk, 3);

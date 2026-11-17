@@ -53,12 +53,12 @@ Katılım sütununda ödül "nam · gönül · mal" sırasıyla verilir; listele
 | 3 | Kıtlık | 48 sa | Kıtlık ortak derdi açılır, eksik meslek primi ×2 | +1 cömertlik · +3 | çiftçi, aşçı, hancı |
 | 4 | Kervan Mevsimi | 72 sa | Tüccar başına aylık kervan +1 | +1 çalışkanlık · +2 | tüccar |
 | 5 | Ozan Gecesi | 6 sa | Hanlarda sahne ve atışma akşamı | +1 mertlik · +4 | ozan |
-| 6 | Panayır | 48 sa | Bac 0, ilan tavanı +3, kasaba stoğu ×0,8 | +1 cömertlik · +2 | tüccar |
+| 6 | Panayır | 48 sa | Bac 0, ilan tavanı +3 | +1 cömertlik · +2 | tüccar |
 | 7 | Haydut Baskını | 24 sa | Haydut ortak derdi (mal/akçe kaybı yok) | +1 mertlik · +2 | asker, demirci |
 | 8 | Salgın | 24 sa | Salgın ortak derdi (ölüm yok) | +1 dindarlık · +2 | şifacı, aşçı |
 | 9 | Vakıf Günü | 24 sa | NPC aylık alım kotası +2 | +2 cömertlik · +3 | hancı, kâtip |
 | 10 | Düğün Mevsimi | 48 sa | NPC satış fiyatı ×0,9 | +1 cömertlik · +6 | aşçı, ozan |
-| 11 | Lonca Yarışması | 72 sa | Lonca siparişi ödülü ×1,5 | +1 çalışkanlık · +2 | demirci, marangoz, dokumacı |
+| 11 | Lonca Yarışması | 72 sa | Lonca siparişi ödülü ×1,06 (çapraz kural: < 1,6) | +1 çalışkanlık · +2 | demirci, marangoz, dokumacı |
 | 12 | Pehlivan Şenliği | 24 sa | Düello ve meydan okuma günü | +2 mertlik · +3 | asker |
 | 13 | Sultan'ın Fermanı | 48 sa | Han ikramı, ziyafet, oda kirasında vergi 0 | +1 dindarlık · +3 | kâtip, divan |
 | 14 | Kış Kıyamet | 48 sa | NPC satış fiyatı ×1,2, kıtlık primi ×1,5 (üretene kazanç) | +1 cömertlik · +3 · 2 odun | oduncu |

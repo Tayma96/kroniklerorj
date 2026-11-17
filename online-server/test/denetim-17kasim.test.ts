@@ -184,3 +184,26 @@ test("E5: Debdebe armağanı teveccühü görünür kademeye sayılır, ekonomik
   sakinTeveccuhYaz(s, alan, k.ay);
   assert.deepEqual([s.tv, sakinEkonomiKademesi(s)], [5, 1]);
 });
+
+import { ETKINLIK_TURLERI, parametreUygula } from "../src/etkinlik/katalog.ts";
+import { PARAMETRELER, caprazIhlaller, type ParametreAdi } from "../src/yonetim/parametre.ts";
+
+test("E4: 18 etkinliğin her biri ve ikili birleşimleri çapraz kuralları bozmaz", () => {
+  const oz = (tur: (typeof ETKINLIK_TURLERI)[number], id: string) => ({ id, tur, bas: 0, bit: null });
+  assert.equal(ETKINLIK_TURLERI.length, 18);
+  const denetle = (liste: ReturnType<typeof oz>[]) => {
+    const pr = parametreUygula({}, liste) as Record<string, number | undefined>;
+    const d = (ad: ParametreAdi) => pr[ad] ?? PARAMETRELER[ad].varsayilan;
+    assert.deepEqual(caprazIhlaller(d), [], liste.map((x) => x.tur).join("+"));
+    for (const ad of Object.keys(PARAMETRELER) as ParametreAdi[]) {
+      const v = d(ad);
+      assert.ok(v >= PARAMETRELER[ad].alt && v <= PARAMETRELER[ad].ust, `${ad}=${v}`);
+    }
+  };
+  for (const a of ETKINLIK_TURLERI) {
+    denetle([oz(a, "e1")]);
+    for (const b of ETKINLIK_TURLERI) if (a < b) denetle([oz(a, "e1"), oz(b, "e2")]);
+  }
+  // Lonca çarpanı < 1,6 (varsayılan üzerinde).
+  assert.ok(parametreUygula({}, [oz("lonca", "e1")]).SIPARIS_ODUL_CARPANI! < 1.6);
+});
