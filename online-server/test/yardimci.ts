@@ -94,6 +94,13 @@ export function sahteDepolama(): SahteDepolama {
       for (const a of k) if (veri.delete(a)) n++;
       return n;
     },
+    async list(s: { prefix?: string; startAfter?: string; limit?: number } = {}) {
+      const anahtarlar = [...veri.keys()]
+        .filter((a) => (!s.prefix || a.startsWith(s.prefix)) && (s.startAfter === undefined || a > s.startAfter))
+        .sort()
+        .slice(0, s.limit ?? Infinity);
+      return new Map(anahtarlar.map((a) => [a, structuredClone(veri.get(a))]));
+    },
     async getAlarm() {
       return depolama.alarmAni;
     },

@@ -19,7 +19,7 @@ export const ARAMA_DAKIKA_SINIRI = 10;
 export const ARAMA_GUNLUK_SINIRI = 200;
 /** [PARAMETRE] Numara taramasına karşı: hesap başına günde en çok bu kadar boşa düşen (bulunmayan) numara sorgusu. */
 export const NUMARA_ISKA_GUNLUK = 20;
-/** [PARAMETRE] Ad aramasında önekin en az karakter sayısı. */
+/** [PARAMETRE] Ad aramasında önekin en az harf sayısı (boşluk ve kesme sayılmaz). */
 export const AD_ARAMA_EN_AZ = 3;
 
 const GUN_MS = 24 * 60 * 60_000;
@@ -103,7 +103,8 @@ export async function oyuncuAra(b: KunyeBaglami, sorgu: { no?: string | null; ad
   const numaraIle = sorgu.no !== undefined && sorgu.no !== null && sorgu.no !== "";
   if (!numaraIle) {
     if (typeof sorgu.ad !== "string") return hata("gecersiz_istek");
-    if ([...adDuzenle(sorgu.ad)].length < AD_ARAMA_EN_AZ) return hata("arama_kisa");
+    // Boşluk ve kesme sayılmaz: "a b" gibi geniş önekler taramaya dönüşmesin.
+    if ([...adDuzenle(sorgu.ad).replace(/[ ']/g, "")].length < AD_ARAMA_EN_AZ) return hata("arama_kisa");
   } else if (numaraCoz(sorgu.no) === undefined) return hata("numara_gecersiz");
   const h = await hazirlik(b, numaraIle);
   if (!h.ok) return h;
