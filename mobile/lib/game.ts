@@ -7917,7 +7917,7 @@ export function mektepKartSec(prev: GameState, id: string, index: number): GameS
   }
   if (id === "kilic") {
     (p.fates = p.fates || []).push("kilic17");
-    if (index === 1) { gainSkill(s, (PROF_SKILL[p.profession] || "crafting") as SkillKey, 10); push(s, "mektep", "Talimhaneye gitmedin; tezgâhına döndün.", "kişisel", false, { k: "mek.kart.kilic.bx" }); return s; }
+    if (index === 1 || p.money < kilicBedeli(s)) { gainSkill(s, (PROF_SKILL[p.profession] || "crafting") as SkillKey, 10); push(s, "mektep", "Talimhaneye gitmedin; tezgâhına döndün.", "kişisel", false, { k: "mek.kart.kilic.bx" }); return s; }
     p.money = Math.max(0, p.money - kilicBedeli(s));
     const r = zarDerece(s, mektepKartZar(s, "kilic")!);
     if (r.basari) { p.icazet = { tur: "kilic", derece: r.derece as 1 | 2 | 3 }; unEkle(p, "reputation", 1 + r.derece); bumpNam(p, "mert", 2); push(s, "mektep", "Talimhaneden kılıç icazetiyle çıktın.", "kişisel", true, { k: "mek.icazet.aldi", p: [{ tk: "mek.ders.kilic" }, { tk: "mek.derece." + r.derece }, Math.round(r.oran * 100)] }); }

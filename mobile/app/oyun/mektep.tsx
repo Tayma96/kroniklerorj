@@ -33,8 +33,8 @@ function Blok({ title, icon, children, rtl }: { title: string; icon: string; chi
     {children}
   </View>;
 }
-function Dugme({ label, onPress, disabled, on, a11y }: { label: string; onPress: () => void; disabled?: boolean; on?: boolean; a11y?: string }) {
-  return <Pressable accessibilityRole="button" accessibilityLabel={a11y || label} accessibilityState={{ disabled: !!disabled, selected: !!on }} onPress={onPress} disabled={disabled}
+function Dugme({ label, onPress, disabled, on, a11y, acilir }: { label: string; onPress: () => void; disabled?: boolean; on?: boolean; a11y?: string; acilir?: boolean }) {
+  return <Pressable accessibilityRole="button" accessibilityLabel={a11y || label} accessibilityState={acilir ? { disabled: !!disabled, expanded: !!on } : { disabled: !!disabled, selected: !!on }} onPress={onPress} disabled={disabled}
     style={{ minHeight: 44, flexGrow: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 10, paddingVertical: 8, borderRadius: 5, borderWidth: 1.5, borderColor: on ? C.gold : disabled ? C.border : "rgba(212,180,90,0.6)", backgroundColor: on ? "rgba(212,180,90,0.18)" : disabled ? C.bg : "rgba(212,180,90,0.08)" }}>
     <Text style={{ fontFamily: F.display, fontSize: 13, color: disabled ? C.parchmentMuted : on ? C.goldBright : C.gold, textAlign: "center" }}>{label}</Text>
   </Pressable>;
@@ -56,12 +56,12 @@ export default function Mektep() {
 
   const calis = () => {
     const res = studySubject(state); if (res.blocked) return;
-    hap("success"); playTap(); apply(() => res.state); setLast({ key: res.key, chips: res.chips, tick: Date.now() });
+    hap("success"); playTap(); apply((s) => { const r = studySubject(s); return r.blocked ? s : r.state; }); setLast({ key: res.key, chips: res.chips, tick: Date.now() });
   };
   const clubDone = studyEnergy(state) < STUDY_COST;
   const mesk = () => {
     if (!p.club || clubDone) return; const res = clubPractice(state); if (res.blocked) return;
-    hap("success"); playTap(); apply(() => res.state); setLast({ key: res.key, chips: res.chips, tick: Date.now() });
+    hap("success"); playTap(); apply((s) => { const r = clubPractice(s); return r.blocked ? s : r.state; }); setLast({ key: res.key, chips: res.chips, tick: Date.now() });
   };
 
   // Hoca kartı: gerçek NPC, npc sayfasına bağlantı.
@@ -177,7 +177,7 @@ export default function Mektep() {
         {ev === "halka" ? <>{halkaBlok}{icazetBlok}{muderrisBlok}</> : null}
 
         {(ev !== "yok" && ev !== "halka") ? <>
-          <Dugme label={t("club.head") + " · " + t("mek.akran.baslik")} on={fazla} onPress={() => setFazla(!fazla)} />
+          <Dugme label={t("club.head") + " · " + t("mek.akran.baslik")} on={fazla} acilir onPress={() => setFazla(!fazla)} />
           {fazla ? <View style={{ marginTop: 12 }}>{kulupVeAkran}{okul ? txt(t("mek.kartNot")) : null}</View> : null}
         </> : null}
       </ScrollView>
