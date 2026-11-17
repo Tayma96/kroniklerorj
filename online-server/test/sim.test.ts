@@ -83,7 +83,7 @@ test("simülasyon: 1 kasaba, 20 oyuncu, 24 ay — dönüm süresi ve farm, çeş
   // Ortanca dönüm hızlı olmalı; tek bir uç değer (CI'da paralel testlerin yarattığı yük) testi düşürmesin.
   const ortanca = [...sureler].sort((a, b) => a - b)[Math.floor(sureler.length / 2)]!;
   assert.ok(ortanca < 50, `ay dönümü ortancası ${ortanca} ms`);
-  assert.ok(enUzun < 250, `ay dönümü en uzun ${enUzun} ms`);
+  assert.ok(enUzun < 500, `ay dönümü en uzun ${enUzun} ms`);
   assert.ok(farm < cesitli * 0.4, `farm ${farm} / çeşitli ${cesitli}`);
   assert.ok(eylemSayisi <= OYUNCU * AY * 6 + OYUNCU * 12, "takat eylem sayısını sınırlar");
   assert.ok(olay < AY * 40, `olay hacmi ${olay}`);

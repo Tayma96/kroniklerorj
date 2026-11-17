@@ -177,13 +177,35 @@ Yönetici panelinden başlatılıp durdurulan 18 etkinlik; kapsam dünya, beylik
 Plan ve kurallar: `docs/online/ETKINLIKLER.md`. Yönetici girişi için `YONETIM_GOOGLE_CLIENT_ID` ve `YONETICI_EPOSTALAR`
 henüz tanımlı değil (Berkay ile birlikte).
 
-## 5. Berkay'ın kararına bağlı gerilimler (koda dokunulmadı)
-- **Süre kısaltma satışı:** Debdebe kataloğunda gerçek parayla beceri süresi kısaltma var (`kisaltma_*`, karakter başına
-  en çok 3). 9 Kasım beceri ağacı spec'i bunu istiyor; GDD D-14/D-15 ve "parayla atlatma yok" süzgeci yasaklıyor.
-  `DEBDEBE_ACIK` kapalıyken çalışmaz. Yayın öncesi tek karar gerekir.
-- **Debdebe armağanı teveccühü:** 9 Kasım kararıyla ("zengin oyuncu etkisini görmeli") tam sayılıyor. Teveccüh kademesi
-  işletmenin NPC müşteri gelirine (kademe × %5, seviye tavanlı), seçim liyakatine (tavan 6) ve ahi başı adaylığına
-  giriyor; yani gerçek para dolaylı oyun gücü veriyor. GDD "Debdebe yalnız görünüş" der.
+### 4.12 Denetim 17 Kasım (arkadaş denemesi öncesi; testler `test/denetim-17kasim.test.ts` ve ilgili dosyalar)
+- E1 İşletme devri: fiyat edinim bedelinin ×0,5–×2 bandında; aşan kısım armağan tavanına; kümede fiyatsız; 12 ay soğuma.
+- E2 Zaviye kasası dağılınca yatıranlara oranlı döner, artan hazineye; üye başı aylık yatırma tavanı 200.
+- E3 Teveccühe veren-alan çifti başı aylık tavan 20; oyuncu hanında küme ödemesi kasaya girmez, kişi başı ayda 20 akçe üstü armağan tavanına sayılır.
+- E4 Etkinlik parametrelerinde çapraz kural kırpması (tek ve ikili birleşimler); Panayır stok indirimi kalktı, Lonca ×1,06.
+- E5 Debdebe süre kısaltma ürünleri kaldırıldı; Debdebe teveccühü ekonomik etkilere (sipariş önceliği, ahi, müşteri) sayılmaz.
+- E6 Vakıf Günü / Göç Dalgası NPC'lerin oyuncudan alım kotasını gerçekten artırır (`satisEk`).
+- E7 Ortak dert ve şenlik katkı sayacı defterden ayrı (`ks`): defter dolsa da tavan ve tek sefer ödül korunur.
+- E8 Sahipsiz ilan iadesinde stok tavanını aşan mal taban değeriyle hazineye.
+- E9 Oyun karakteri olmayan yönetici telafi verebilir.
+- E10 Vâris ölünün o ayki `ns`, `tb`, `ek` (ve armağan) sayaçlarını devralır.
+- S1 `ZAR_SIRRI` yok/kısaysa yedek yalnız `ZAR_YEDEK_IZINLI=1` iken; değilse zar isteyen yazma `yapilandirma_eksik`. İki Worker'da da sır tanımlı olmalı.
+- S2 YerlesimDO ve IsletmeDO istek sırası (bolge-do kalıbı; DO→DO iç iletiler sırasız, kilitlenme yok); hata olunca bellekteki kasaba atılır.
+- S3 HesapDO istek sırası (iç iletiler ve masa şikâyeti sırasız).
+- S4 `GET /v1/dunya` 45 sn kenar önbelleği.
+- S5 Test girişi: cihaz başına dakikada 10, IP başına saatte 5 yeni hesap; yeni hesapta cihaz kimliği 22+ karakter (eski hesaplar girer).
+- S6 Davetle kayıt üst sınırı ev kapasitesi × 1,25.
+- S7 1 MB'yi aşan depo değeri uyarı logu (anahtar ve boyut).
+- S8 Uzlaşma notu tek satır, maskeli, uzunluk temiz metinle.
+- S9/S10 Yöneticinin hesabına yalnız kurucu yaptırım verir, kendine yok; hedef yaptırım listesi son 50 (etkinler kalır).
+- S11 Masa doluluk bildirimi 3 sn içinde birleştirilir.
+- S12 Ad benzersizliğinde ı/i/l katlanır (yeni adlar; eski çakışanlar bozulmaz).
+- S13 İstek izi 24 saat ve 1000 kimlikle sınırlı.
+- F1 Süre eşikli testler (hanedan-sim, sim, gündem) 500 ms; tam takım 5 kez art arda temiz.
+
+## 5. Berkay'ın kararına bağlı gerilimler
+- **Süre kısaltma satışı:** 17 Kasım denetimiyle kaldırıldı (E5); geri getirmek Berkay kararı.
+- **Debdebe armağanı teveccühü:** görünen kademeye tam sayılır; 17 Kasım'dan beri ekonomik etkilere (sipariş önceliği,
+  ahi şartı, NPC müşteri) sayılmaz (E5). Seçim liyakati hâlâ görünen kademeyi okur.
 - **Açık kararların koddaki öneri değerleri:** D-17 edinim eşiği, D-21 yoksunluk değerleri, D-22 uyku, D-23 imaret
   konaklaması koda "öneri" etiketiyle girdi.
 - **Yaş:** handa ve seste yaş sınırı yok (Berkay). Mağaza yaş derecelendirmesi yayın öncesi doğrulanmalı (D-24).
