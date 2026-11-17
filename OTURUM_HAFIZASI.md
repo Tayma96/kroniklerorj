@@ -18,11 +18,16 @@
 - Canlı etkinlikler (yönetici): 18 etkinlik, panel Etkinlikler sekmesi (başlat/durdur, süre sayacı, dünya/beylik/tür/tek yerleşim, oyuncu sayıları), Yaşam bandı; `docs/online/ETKINLIKLER.md`.
 - Ekranlar cihazda görülmedi.
 
-## Sıradaki işler (bu sırayla)
-1. Berkay APK çıkarır, cihazda ilk bakış (ekranlar hiç görülmedi).
-2. Kanca partisi 2 (boşta 232): konsinye `komisyon`, bakım, `namYayma` (başka dükkânı övme hizmeti), `hileliTarti` (kısa kâr / yakalanırsa ün kaybı); 57 boşta `kalite(...)` etkisi; eşya aile etkileri (silah, zırh, yiyecek) yalnız alet bağlı.
-3. Atölye emrinde alet verimi uygulanmıyor; eski engellerin hesap düzeyine geriye dönük doldurulması yok.
-4. `eslint-plugin-react-hooks` mobilde yok; eklenip tester akışına konmalı.
+## 17 Kasım akşamı: arkadaş denemesi
+- Üretim Worker'ı `kronikler-online` açıldı (Berkay onayı; yayından önce veri sıfırlanır, `TEST_GIRIS_ACIK` "0" yapılır). Sırlar kurulu; Realtime uygulaması ayrı.
+- Davet kodu Berkay'da. APK: `apk-test`, üretime bağlı. Herkese açık indirme: https://kronikler-indir.berkaycinkilic.workers.dev (iş akışı `apk-indir.yml`, Release'ten parçalayıp yayınlar ve doğrular).
+- E-posta ile giriş/kayıt sonraya kaldı: yarım iş `eposta-giris-taslak` dalında.
+
+## Sıradaki işler
+1. Arkadaş denemesi geri bildirimleri.
+2. E-posta girişi (taslak dal) + doğrulama/şifre sıfırlama; Google girişi.
+3. Kanca partisi 2 (boşta 232); eşya aile etkileri; atölye emrinde alet verimi.
+4. APK ~170 MB: görseller webp, müzik bit hızı. `expo-crypto`, `eslint-plugin-react-hooks`.
 
 ## Berkay'da
 - `GOOGLE_CLIENT_ID`, FCM, Play ürünleri/ödeme; test APK'sı ve 5–10 kişilik cihaz denemesi (ses dahil).
