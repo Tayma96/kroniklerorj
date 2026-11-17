@@ -17,7 +17,7 @@ import { BASMA_OLCEK, CizgiDugme, GLOW, Madalyon, ONL, belir, giris, hiza, yon }
 import { AltPanel } from "./yasam-ui";
 import {
   KADEME_ADLARI, KADEME_NADIDE, KADEME_TILSIMLI, kademeKirp, kartliMi, yadigarSatirlari,
-  type AtolyeEfsanevi, type EfsaneviSonucu, type EsyaGorunumu, type KademeliParti, type KaliteKisiti,
+  type AtolyeEfsanevi, type EfsaneviSonucu, type EsyaGorunumu, type KademeliParti, type KaliteKisiti, type OzellikEtkisi, type SansDokumu, type UstaNadide,
 } from "./esya-veri";
 
 type Ceviri = (k: string) => string;
@@ -92,7 +92,7 @@ export function KademeRozeti({ kademe, kucuk = false, soluk = false }: { kademe:
  * Malın kademe rozeti; nadide ve üstündeyse dokunulur ve eşya kartını açar. Adlı eşyada lakap, el değiştirmişse
  * "yadigâr" etiketi de görünür. Dokunma alanı en az 44.
  */
-export function KademeliRozet({ parti, kucuk = false }: { parti: KademeliParti; kucuk?: boolean }) {
+export function KademeliRozet({ parti, kucuk = false, sahibi = true }: { parti: KademeliParti; kucuk?: boolean; sahibi?: boolean }) {
   const { t, rtl } = useI18n();
   const [acik, setAcik] = useState(false);
   const q = kademeKirp(parti.kademe);
@@ -111,7 +111,7 @@ export function KademeliRozet({ parti, kucuk = false }: { parti: KademeliParti; 
       </View> : null}
       <GameIcon name="scroll-open" size={12} color={C.gold} />
     </Pressable>
-    <EsyaKarti parti={parti} acik={acik} onKapat={() => setAcik(false)} />
+    <EsyaKarti parti={parti} acik={acik} onKapat={() => setAcik(false)} sahibi={sahibi} />
   </>;
 }
 
@@ -125,6 +125,13 @@ function Yakinda({ t }: { t: Ceviri }) {
   return <View style={{ paddingHorizontal: 6, paddingVertical: 1, borderRadius: 8, borderWidth: 1, borderColor: C.parchmentMuted }}>
     <Text style={{ fontFamily: F.display, fontSize: 9.5, letterSpacing: 0.5, color: C.parchmentMuted }}>{t("onl.es.yakinda")}</Text>
   </View>;
+}
+
+/** Bağlı etkinin gerçek değeri: "+1 çıktı", "+12 kullanım", "Yıpranmaz"; bilinmeyen birimde boş. */
+function etkiDegeri(t: Ceviri, x: OzellikEtkisi): string {
+  if (x.yipranmaz) return t("onl.es.deger.yipranmaz");
+  if (typeof x.deger !== "number") return "";
+  return applyParams(t(x.birim === "kullanim" ? "onl.es.deger.kullanim" : "onl.es.deger.adet"), [x.deger]);
 }
 
 /** Yadigâr geçmişi: elden ele, en çok 8 satır; ilk satır hep yapım. Zaman çizgisi gibi. */
@@ -185,8 +192,7 @@ export function EsyaKarti({ parti, acik, onKapat, sahibi = true }: { parti: Kade
     {oz ? <Kutu baslik={applyParams(t("onl.es.etkiler"), [sozluk(t, "onl.es.aile." + oz.aile, oz.aile)])} rtl={rtl}>
       {oz.etkiler.map((x) => <View key={x.id} style={{ flexDirection: yon(rtl), alignItems: "center", gap: 8, minHeight: 24 }}>
         <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 14.5, color: C.parchment, textAlign: hiza(rtl) }}>{sozluk(t, "onl.es.etki." + x.id, x.id)}</Text>
-        {!oz.bagli ? <Yakinda t={t} /> : null}
-        <Text style={{ fontFamily: F.display, fontSize: 14, color: C.goldBright }}>{`×${x.carpan}`}</Text>
+        {x.bagli ? <Text style={{ flexShrink: 1, fontFamily: F.display, fontSize: 13.5, color: C.goldBright, textAlign: rtl ? "left" : "right" }}>{etkiDegeri(t, x)}</Text> : <Yakinda t={t} />}
       </View>)}
       {oz.eksik.map((x) => <View key={x.id} style={{ flexDirection: yon(rtl), alignItems: "center", gap: 8, minHeight: 24, opacity: 0.55 }}>
         <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 14, color: C.parchmentDim, textAlign: hiza(rtl) }}>{sozluk(t, "onl.es.etki." + x.id, x.id)}</Text>
@@ -202,7 +208,10 @@ export function EsyaKarti({ parti, acik, onKapat, sahibi = true }: { parti: Kade
       {hunerler.map((h) => <View key={h} style={{ flexDirection: yon(rtl), gap: 10, alignItems: "flex-start" }}>
         <View style={{ marginTop: 2 }}><KademeIsareti kademe={Math.max(q, KADEME_NADIDE)} size={14} renk={C.goldBright} /></View>
         <View style={{ flex: 1, gap: 2 }}>
-          <Text style={{ fontFamily: F.display, fontSize: 14, color: C.goldBright, textAlign: hiza(rtl) }}>{hunerAdi(t, h)}</Text>
+          <View style={{ flexDirection: yon(rtl), flexWrap: "wrap", alignItems: "center", gap: 6 }}>
+            <Text style={{ flexShrink: 1, fontFamily: F.display, fontSize: 14, color: C.goldBright, textAlign: hiza(rtl) }}>{hunerAdi(t, h)}</Text>
+            {oz?.hunerDokumu?.find((d) => d.id === h)?.bagli === false ? <Yakinda t={t} /> : null}
+          </View>
           <Text style={{ fontFamily: F.serif, fontSize: 14, lineHeight: 20, color: C.parchment, textAlign: hiza(rtl) }}>{hunerAciklama(t, h)}</Text>
         </View>
       </View>)}
@@ -278,7 +287,8 @@ export function EfsaneviDeneme({ e, secili, onDegis, kapali = false }: { e: Atol
 export function EfsaneviSonucKarti({ s, mal, esya }: { s: EfsaneviSonucu; mal: string; esya: EsyaGorunumu | null }) {
   const { t, rtl } = useI18n();
   const [acik, setAcik] = useState(false);
-  const bant = s.sans !== "yok" ? applyParams(t("onl.es.ef.bant"), [t("onl.es.ef.sans." + s.sans)]) : null;
+  const bant = s.sansDokumu ? null : s.sans !== "yok" ? applyParams(t("onl.es.ef.bant"), [t("onl.es.ef.sans." + s.sans)]) : null;
+  const dokum = s.sansDokumu && s.sansDokumu.kalemler.length ? <SansDokumuKutusu d={s.sansDokumu} /> : null;
   if (!s.denendi) return <Animated.View entering={belir()} accessibilityLiveRegion="polite" style={{ flexDirection: yon(rtl), gap: 10, alignItems: "flex-start", padding: 12, borderRadius: 10, borderWidth: 1, borderColor: "rgba(201,162,78,0.35)", backgroundColor: "rgba(14,10,6,0.6)" }}>
     <GameIcon name="hourglass" size={16} color={C.gold} />
     <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 14.5, lineHeight: 20, color: C.parchment, textAlign: hiza(rtl) }}>{applyParams(t("onl.es.ef.denenmedi"), [s.kalanHak])}</Text>
@@ -290,6 +300,7 @@ export function EfsaneviSonucKarti({ s, mal, esya }: { s: EfsaneviSonucu; mal: s
     </View>
     <Text style={{ fontFamily: F.serif, fontSize: 14.5, lineHeight: 21, color: C.parchmentDim, textAlign: hiza(rtl) }}>{applyParams(t("onl.es.ef.nasipMetin"), [malAd(t, mal)])}</Text>
     {bant ? <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{bant}</Text> : null}
+    {dokum}
   </Animated.View>;
   const tilsim = s.kademe === KADEME_TILSIMLI;
   const ad = esyaAdi(t, esya, mal);
@@ -303,11 +314,51 @@ export function EfsaneviSonucKarti({ s, mal, esya }: { s: EfsaneviSonucu; mal: s
     {esya.hunerler.length ? <Text style={{ fontFamily: F.serifItalic, fontSize: 14, lineHeight: 20, color: C.gold, textAlign: "center" }}>
       {applyParams(t("onl.es.ef.hunerSatiri"), [esya.hunerler.map((h) => hunerAdi(t, h)).join(" · ")])}
     </Text> : null}
+    {dokum ? <View style={{ alignSelf: "stretch" }}>{dokum}</View> : null}
     <View style={{ alignSelf: "stretch" }}>
       <CizgiDugme etiket={t("onl.es.kartiAc")} icon="scroll-open" rtl={rtl} onPress={() => { hap("tap"); setAcik(true); }} />
     </View>
     <EsyaKarti parti={{ mal, kademe: s.kademe, esya }} acik={acik} onKapat={() => setAcik(false)} />
   </Animated.View>;
+}
+
+/**
+ * Efsanevi şansının açık dökümü (gizli sayı yok): "Şans %14 · makul" ve kalemler (taban, puan fazlası, tavan kesintisi);
+ * başarıda ayrıca tılsımlı olma payı (binde). Sayılar sunucudan; istemci yalnız yazar.
+ */
+export function SansDokumuKutusu({ d }: { d: SansDokumu }) {
+  const { t, rtl } = useI18n();
+  const bant = d.bant !== "yok" ? t("onl.es.ef.sans." + d.bant) : null;
+  const baslik = applyParams(t("onl.es.sd.baslik"), [d.yuzde]);
+  const kalem = (k: string) => { const a = "onl.es.sd." + k.replace(/^efsanevi\./, ""); const v = t(a); return v === a ? k : v; };
+  return <View accessible accessibilityLabel={[baslik, bant, ...d.kalemler.map((x) => `${kalem(x.k)} ${applyParams(t("onl.es.sd.deger"), [x.d > 0 ? "+" : x.d < 0 ? "−" : "", Math.abs(x.d)])}`)].filter(Boolean).join(". ")}
+    style={{ gap: 4, padding: 10, borderRadius: 10, borderWidth: 1, borderColor: "rgba(201,162,78,0.28)", backgroundColor: "rgba(14,10,6,0.55)" }}>
+    <View style={{ flexDirection: yon(rtl), flexWrap: "wrap", alignItems: "center", gap: 8 }}>
+      <Text style={{ flexShrink: 1, fontFamily: F.display, fontSize: 13.5, color: C.goldBright, textAlign: hiza(rtl) }}>{baslik}</Text>
+      {bant ? <View style={{ paddingHorizontal: 7, paddingVertical: 1, borderRadius: 8, borderWidth: 1, borderColor: ONL.frame }}>
+        <Text style={{ fontFamily: F.display, fontSize: 10.5, letterSpacing: 0.5, color: C.gold }}>{bant}</Text>
+      </View> : null}
+    </View>
+    {d.kalemler.map((x) => <View key={x.k} style={{ flexDirection: yon(rtl), alignItems: "center", gap: 8 }}>
+      <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 13.5, lineHeight: 18, color: C.parchmentDim, textAlign: hiza(rtl) }}>{kalem(x.k)}</Text>
+      <Text style={{ fontFamily: F.display, fontSize: 13, color: x.d < 0 ? C.ember : C.sage }}>{applyParams(t("onl.es.sd.deger"), [x.d > 0 ? "+" : x.d < 0 ? "−" : "", Math.abs(x.d)])}</Text>
+    </View>)}
+    <Text style={{ fontFamily: F.serifItalic, fontSize: 12.5, lineHeight: 17, color: C.parchmentMuted, textAlign: hiza(rtl) }}>
+      {applyParams(t("onl.es.sd.not"), [d.puanBasina * 10, d.tavan, d.tilsimBinde])}
+    </Text>
+  </View>;
+}
+
+/** Ustanın nadide zarı (pir olmayan, puanı nadideye yetti): yüzde ve sonucu açıkça; tutmadıysa ceza yok. */
+export function UstaNadideNotu({ u }: { u: UstaNadide | null | undefined }) {
+  const { t, rtl } = useI18n();
+  if (!u) return null;
+  return <View style={{ flexDirection: yon(rtl), alignItems: "flex-start", gap: 7 }}>
+    <View style={{ marginTop: 2 }}><GameIcon name={u.tuttu ? "gems" : "hourglass"} size={13} color={u.tuttu ? C.emberSoft : C.parchmentMuted} /></View>
+    <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 13, lineHeight: 18, color: u.tuttu ? C.gold : C.parchmentMuted, textAlign: hiza(rtl) }}>
+      {applyParams(t(u.tuttu ? "onl.es.un.tuttu" : "onl.es.un.tutmadi"), [u.yuzde])}
+    </Text>
+  </View>;
 }
 
 /** Ay sonu / sonuç dökümünde kademe adetleri: "3 × [İyi] · 1 × [Üstün]" rozetle. */
@@ -323,3 +374,55 @@ export function KademeAdetleri({ adetler }: { adetler: readonly number[] }) {
   </View>;
 }
 
+
+/** Ambardaki adlı eşyalar (efsanevi/tılsımlı partiler): mal ve isteğe bağlı kademe süzgeciyle. */
+export function adliEsyalar(partiler: readonly { kademe: number; esya?: EsyaGorunumu }[] | null | undefined, kademe?: number): EsyaGorunumu[] {
+  return (partiler ?? []).filter((p) => !!p.esya && (kademe === undefined || p.kademe === kademe)).map((p) => p.esya!);
+}
+
+/**
+ * Adlı eşya seçici: sunucu adlı eşyayı kendiliğinden hiçbir işe karıştırmaz, yalnız kimliğiyle verilir. Elde birden çok
+ * adlı eşya varsa oyuncu hangisini satacağını/koyacağını burada seçer; "adsız" seçeneği eskisi gibi kimliksiz gönderir.
+ * Seçilince adet 1 ve kalite eşyanınki olur (çağıran ayarlar). Liste boşsa hiçbir şey çizilmez.
+ */
+export function AdliEsyaSecici({ mal, esyalar, secili, onSec, adsizVar = true, sahibi = true }: {
+  mal: string; esyalar: readonly EsyaGorunumu[]; secili: string | null; onSec: (e: EsyaGorunumu | null) => void; adsizVar?: boolean; sahibi?: boolean;
+}) {
+  const { t, rtl } = useI18n();
+  const [kart, setKart] = useState<EsyaGorunumu | null>(null);
+  if (!esyalar.length) return null;
+  const secenek = (e: EsyaGorunumu | null) => {
+    const acik = (e?.id ?? null) === secili;
+    const ad = e ? esyaAdi(t, e, mal) : t("onl.es.sec.adsiz");
+    return <Pressable key={e?.id ?? "adsiz"} accessibilityRole="radio" accessibilityState={{ checked: acik }} accessibilityLabel={e ? applyParams(t("onl.es.kartAcErisim"), [ad, kademeAdi(t, e.kademe)]) : ad}
+      onPress={() => { hap("selection"); onSec(e); }}
+      style={({ pressed }) => ({ minHeight: 44, flexDirection: yon(rtl), alignItems: "center", gap: 8, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10, borderWidth: acik ? 1.5 : 1,
+        borderColor: acik ? C.goldBright : ONL.frame, backgroundColor: acik ? "rgba(243,210,122,0.12)" : "rgba(14,10,6,0.55)", transform: [{ scale: pressed ? BASMA_OLCEK : 1 }] })}>
+      <View style={{ width: 16, height: 16, borderRadius: 8, borderWidth: 1.5, borderColor: acik ? C.goldBright : C.parchmentMuted, alignItems: "center", justifyContent: "center" }}>
+        {acik ? <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: C.goldBright }} /> : null}
+      </View>
+      {e ? <KademeRozeti kademe={e.kademe} kucuk /> : null}
+      <Text numberOfLines={2} style={{ flex: 1, fontFamily: e ? F.serifItalic : F.serif, fontSize: 14, lineHeight: 19, color: e ? C.goldBright : C.parchmentDim, textAlign: hiza(rtl) }}>{ad}</Text>
+      {e ? <Pressable accessibilityRole="button" accessibilityLabel={t("onl.es.kartiAc")} hitSlop={6} onPress={() => { hap("tap"); setKart(e); }}
+        style={{ minWidth: 44, minHeight: 44, alignItems: "center", justifyContent: "center" }}>
+        <GameIcon name="scroll-open" size={15} color={C.gold} />
+      </Pressable> : null}
+    </Pressable>;
+  };
+  return <View accessibilityRole="radiogroup" accessibilityLabel={t("onl.es.sec.baslik")} style={{ gap: 6 }}>
+    <Text style={{ fontFamily: F.display, fontSize: 11.5, letterSpacing: rtl ? 0 : 1.1, color: C.goldBright, textAlign: hiza(rtl) }}>{t("onl.es.sec.baslik")}</Text>
+    {adsizVar ? secenek(null) : null}
+    {esyalar.map((e) => secenek(e))}
+    <Text style={{ fontFamily: F.serifItalic, fontSize: 12.5, lineHeight: 17, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{t(secili ? "onl.es.sec.notSecili" : "onl.es.sec.not")}</Text>
+    {kart ? <EsyaKarti parti={{ mal, kademe: kart.kademe, esya: kart }} acik onKapat={() => setKart(null)} sahibi={sahibi} /> : null}
+  </View>;
+}
+
+/** İlan/raf satırındaki adlı eşyalar (herkese açık): lakap ve kademe; dokununca kart satın almadan açılır. */
+export function SatirEsyalari({ mal, esyalar }: { mal: string; esyalar: readonly EsyaGorunumu[] }) {
+  const { rtl } = useI18n();
+  if (!esyalar.length) return null;
+  return <View style={{ flexDirection: yon(rtl), flexWrap: "wrap", gap: 6 }}>
+    {esyalar.map((e) => <KademeliRozet key={e.id} parti={{ mal, kademe: e.kademe, esya: e }} kucuk sahibi={false} />)}
+  </View>;
+}

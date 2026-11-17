@@ -5,7 +5,7 @@ import { useMemo } from "react";
 import { useOnline } from "./durum";
 import { ekCagir, metinMi, nesneMi, sayiMi, type EkSonuc } from "./ek-istemci";
 import { sahteEkonomiIstemci } from "./sahte-ekonomi";
-import type { EsyaGorunumu } from "./esya-veri";
+import type { EsyaGorunumu, EsyaKamu } from "./esya-veri";
 
 export const KALITE_ADLARI = ["sade", "iyi", "ustun", "saheser", "nadide", "efsanevi", "tilsimli"] as const;
 export type KaliteAdi = (typeof KALITE_ADLARI)[number];
@@ -27,6 +27,8 @@ export interface IlanGorunumu {
   kalan: number; ilk: number; birimFiyat: number; toplam: number; emanet: { adet: number; akce: number }; yapanlar: string[];
   acilis: number; son: number; kalanAy: number; durum: IlanDurumu; karsilastirma: Karsilastirma;
   islemler: { ay: number; kim: string; adet: number; tutar: number }[];
+  /** Satırdaki adlı eşyalar (herkese açık; yadigâr geçmişi yok). Eski sunucu göndermez. */
+  esyalar?: EsyaKamu[];
 }
 export interface PazarOzeti { mal: string; npcTaban: number; npcdenAlis: number; enUcuzSatis: number | null; enYuksekAlim: number | null }
 export interface PazarKurallari {
@@ -41,7 +43,7 @@ export interface PazarYaniti {
 export interface PazarIslemYaniti {
   islem: { ilan: IlanGorunumu; adet: number; kalite: KaliteAdi; tutar: number; bac: number; net: number; karsilastirma: Karsilastirma; pompa: PompaDokumu };
 }
-export interface IlanIstegi { tur: IlanTuru; mal: string; adet: number; fiyat: number; sure?: number; kalite?: Kademe4; istekNo: string }
+export interface IlanIstegi { tur: IlanTuru; mal: string; adet: number; fiyat: number; sure?: number; kalite?: Kademe4; esya?: string; istekNo: string }
 
 export interface IsmarlamaGorunumu {
   id: string; rol: "musteri" | "usta" | null; musteri: { id: string; ad: string }; usta: { id: string; ad: string }; mal: string; adet: number;
@@ -100,11 +102,11 @@ export const benKalite = (ben: unknown): EnvanterKalite | null =>
 export interface EkonomiIstemci {
   pazar(mal?: string): Promise<EkSonuc<PazarYaniti>>;
   ilan(g: IlanIstegi): Promise<EkSonuc<{ ilan: IlanGorunumu }>>;
-  islem(g: { ilan: string; adet: number; kalite?: Kademe4; istekNo: string }): Promise<EkSonuc<PazarIslemYaniti>>;
+  islem(g: { ilan: string; adet: number; kalite?: Kademe4; esya?: string; istekNo: string }): Promise<EkSonuc<PazarIslemYaniti>>;
   geri(g: { ilan: string; istekNo: string }): Promise<EkSonuc<{ ilan: IlanGorunumu; iade: unknown }>>;
   ismarlamalar(): Promise<EkSonuc<IsmarlamaYaniti>>;
   ismarla(g: { hedef: string; mal: string; adet: number; kalite?: Kademe4; sure: number; ucret: number; istekNo: string }): Promise<EkSonuc<{ ismarlama: IsmarlamaGorunumu }>>;
-  cevap(g: { ismarlama: string; cevap: IsmarlamaCevabi; kalite?: Kademe4; istekNo: string }): Promise<EkSonuc<{ ismarlama: IsmarlamaGorunumu; teslim: unknown }>>;
+  cevap(g: { ismarlama: string; cevap: IsmarlamaCevabi; kalite?: Kademe4; esya?: string; istekNo: string }): Promise<EkSonuc<{ ismarlama: IsmarlamaGorunumu; teslim: unknown }>>;
   levha(mal?: string): Promise<EkSonuc<LevhaYaniti>>;
   defter(ay?: number): Promise<EkSonuc<DefterYaniti>>;
 }

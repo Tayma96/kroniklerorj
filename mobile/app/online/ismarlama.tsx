@@ -15,16 +15,20 @@ import { Secenekler } from "../../lib/online/toplum-ui";
 import { istekNoUret } from "../../lib/online/depo";
 import { ekHataAnahtari, type EkHata } from "../../lib/online/ek-istemci";
 import { NPC_MALLARI } from "../../lib/online/meslek-veri";
-import { useEkonomiIstemci, type IsmarlamaGorunumu, type IsmarlamaYaniti, type Kademe4 } from "../../lib/online/ekonomi-veri";
+import { benKalite, useEkonomiIstemci, type IsmarlamaGorunumu, type IsmarlamaYaniti, type Kademe4 } from "../../lib/online/ekonomi-veri";
 import { malAdi, kaliteAdi, KaliteRozeti } from "../../lib/online/ekonomi-ui";
-import { kademeBul } from "../../lib/online/esya-veri";
+import { kademeBul, type EsyaGorunumu } from "../../lib/online/esya-veri";
+import { AdliEsyaSecici, adliEsyalar } from "../../lib/online/kademe-ui";
 
 type Ceviri = (k: string) => string;
 
-function IsmarlamaKarti({ x, t, rtl, bekliyor, onCevap }: {
+function IsmarlamaKarti({ x, t, rtl, bekliyor, onCevap, esyalar = [] }: {
   x: IsmarlamaGorunumu; t: Ceviri; rtl: boolean; bekliyor: boolean;
-  onCevap: (cevap: "kabul" | "ret" | "geri" | "teslim") => void;
+  onCevap: (cevap: "kabul" | "ret" | "geri" | "teslim", esya?: EsyaGorunumu | null) => void;
+  /** Teslim edilebilecek adlı eşyalar (ısmarlama adedi 1 ve kademe yeterliyse); yalnız kimliğiyle verilir. */
+  esyalar?: EsyaGorunumu[];
 }) {
+  const [esya, setEsya] = useState<EsyaGorunumu | null>(null);
   const gelen = x.rol === "usta";
   const kisi = gelen ? x.musteri.ad : x.usta.ad;
   return <Cerceve aktif={x.durum === "acik" || x.durum === "surer"} ic={{ padding: 12, gap: 8 }}>
@@ -48,7 +52,8 @@ function IsmarlamaKarti({ x, t, rtl, bekliyor, onCevap }: {
       <View style={{ flex: 1 }}><CizgiDugme etiket={t("onl.im.ret")} icon="x" rtl={rtl} kucuk kapali={bekliyor} onPress={() => onCevap("ret")} /></View>
     </View> : null}
     {x.durum === "acik" && !gelen ? <CizgiDugme etiket={t("onl.im.geri")} icon="undo" rtl={rtl} kucuk kapali={bekliyor} onPress={() => onCevap("geri")} /> : null}
-    {x.durum === "surer" && gelen ? <CizgiDugme etiket={t("onl.im.teslim")} icon="package-check" rtl={rtl} kucuk kapali={bekliyor} onPress={() => onCevap("teslim")} /> : null}
+    {x.durum === "surer" && gelen && x.adet === 1 ? <AdliEsyaSecici mal={x.mal} esyalar={esyalar} secili={esya?.id ?? null} onSec={setEsya} /> : null}
+    {x.durum === "surer" && gelen ? <CizgiDugme etiket={t("onl.im.teslim")} icon="package-check" rtl={rtl} kucuk kapali={bekliyor} onPress={() => onCevap("teslim", esya)} /> : null}
   </Cerceve>;
 }
 
@@ -78,9 +83,9 @@ function IsmarlamaEkran() {
   }, [ist]);
   useEffect(() => { void yukle(); }, [yukle]);
 
-  const cevapla = async (id: string, cevap: "kabul" | "ret" | "geri" | "teslim") => {
+  const cevapla = async (id: string, cevap: "kabul" | "ret" | "geri" | "teslim", esya?: EsyaGorunumu | null) => {
     setYukleniyor(true); setHata(null); setBilgi(null);
-    const r = await ist.cevap({ ismarlama: id, cevap, istekNo: istekNoUret() });
+    const r = await ist.cevap(cevap === "teslim" && esya ? { ismarlama: id, cevap, kalite: esya.kademe as Kademe4, esya: esya.id, istekNo: istekNoUret() } : { ismarlama: id, cevap, istekNo: istekNoUret() });
     setYukleniyor(false);
     if (!r.ok) { hap("error"); setHata(t(ekHataAnahtari(r.hata))); return; }
     hap("success"); setBilgi(t("onl.im.islemTamam"));
@@ -129,7 +134,8 @@ function IsmarlamaEkran() {
     <Baslik2 metin={t("onl.im.gelen")} rtl={rtl} sag={<Text style={{ color: C.gold }}>{durum?.gelen.length ?? 0}</Text>} />
     {yukHata && !durum ? <Bant metin={t(ekHataAnahtari(yukHata))} rtl={rtl} eylem={t("onl.yenidenDene")} onEylem={() => void yukle()} />
       : !durum ? <Yukleniyor metin={t("onl.im.yukleniyor")} />
-      : durum.gelen.length ? <View style={{ gap: 9 }}>{durum.gelen.map((x) => <IsmarlamaKarti key={x.id} x={x} t={t} rtl={rtl} bekliyor={yukleniyor} onCevap={(c) => void cevapla(x.id, c)} />)}</View>
+      : durum.gelen.length ? <View style={{ gap: 9 }}>{durum.gelen.map((x) => <IsmarlamaKarti key={x.id} x={x} t={t} rtl={rtl} bekliyor={yukleniyor} onCevap={(c, e) => void cevapla(x.id, c, e)}
+        esyalar={adliEsyalar(benKalite(y?.ben)?.[x.mal]).filter((e) => e.kademe >= x.kademe)} />)}</View>
       : <BosKart icon="scroll" metin={t("onl.im.gelenBos")} rtl={rtl} />}
     <Baslik2 metin={t("onl.im.giden")} rtl={rtl} sag={<Text style={{ color: C.gold }}>{durum?.giden.length ?? 0}</Text>} />
     {durum?.giden.length ? <View style={{ gap: 9 }}>{durum.giden.map((x) => <IsmarlamaKarti key={x.id} x={x} t={t} rtl={rtl} bekliyor={yukleniyor} onCevap={(c) => void cevapla(x.id, c)} />)}</View>

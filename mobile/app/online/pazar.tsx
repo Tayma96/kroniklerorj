@@ -21,10 +21,10 @@ import { ekHataAnahtari, type EkHata } from "../../lib/online/ek-istemci";
 import { istekTekrarMi } from "../../lib/online/hata";
 import { istekNoUret } from "../../lib/online/depo";
 import { MALLAR, NPC_MALLARI } from "../../lib/online/meslek-veri";
-import { KademeliRozet } from "../../lib/online/kademe-ui";
-import { kademeBul } from "../../lib/online/esya-veri";
+import { AdliEsyaSecici, KademeliRozet, SatirEsyalari, adliEsyalar } from "../../lib/online/kademe-ui";
+import { esyaKamudan, esyalarOku, kademeBul, type EsyaGorunumu } from "../../lib/online/esya-veri";
 import { KarsilastirmaDokumu, kaliteAdi, malAdi, malIkonu } from "../../lib/online/ekonomi-ui";
-import { useEkonomiIstemci, type IlanGorunumu, type IlanTuru, type Kademe4, type PazarIslemYaniti, type PazarYaniti } from "../../lib/online/ekonomi-veri";
+import { benKalite, useEkonomiIstemci, type IlanGorunumu, type IlanTuru, type Kademe4, type PazarIslemYaniti, type PazarYaniti } from "../../lib/online/ekonomi-veri";
 
 type Ceviri = (k: string) => string;
 const KALITELER: readonly ("0" | "1" | "2" | "3" | "4" | "5" | "6")[] = ["0", "1", "2", "3", "4", "5", "6"];
@@ -55,6 +55,7 @@ function IlanKarti({ x, t, rtl, onIslem, onGeri, bekliyor }: { x: IlanGorunumu; 
           : <Rozet metin={t("onl.pz.durum." + x.durum)} renk={C.parchmentMuted} />}
         {x.karsilastirma.tabanOrani !== null ? <Rozet metin={applyParams(t("onl.pz.oran"), [x.karsilastirma.tabanOrani])} renk={x.karsilastirma.tabanOrani > 150 ? C.ember : C.parchmentDim} /> : null}
       </View>
+      <SatirEsyalari mal={x.mal} esyalar={esyalarOku(x.esyalar).map(esyaKamudan)} />
       {x.yapanlar.length ? <Text numberOfLines={2} style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.gold, textAlign: hiza(rtl) }}>{applyParams(t("onl.eko.yapan"), [x.yapanlar.join(", ")])}</Text> : null}
       {x.benim && acik ? <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchmentDim, textAlign: hiza(rtl) }}>
         {satis ? applyParams(t("onl.pz.emanetMal"), [x.emanet.adet]) : applyParams(t("onl.pz.emanetAkce"), [x.emanet.akce])}
@@ -83,6 +84,8 @@ function PazarEkran() {
   const [mal, setMal] = useState<string | null>(null);
   const [secili, setSecili] = useState<IlanGorunumu | null>(null);
   const [adet, setAdet] = useState(1);
+  /** Alım ilanına teslimde ya da satış ilanında seçilen adlı eşya (kimliğiyle gider; adet 1). */
+  const [esya, setEsya] = useState<EsyaGorunumu | null>(null);
   const [sonuc, setSonuc] = useState<PazarIslemYaniti["islem"] | null>(null);
   const [form, setForm] = useState(false);
   const [f, setF] = useState<{ tur: IlanTuru; mal: string | null; kalite: Kademe4; adet: number; fiyat: number; sure: number }>({ tur: "sat", mal: null, kalite: 0, adet: 1, fiyat: 2, sure: 2 });
@@ -100,7 +103,7 @@ function PazarEkran() {
   const islem = async () => {
     if (!secili) return;
     setBekliyor(true); setHata(null);
-    const r = await ist.islem({ ilan: secili.id, adet, istekNo: istekNoUret() });
+    const r = await ist.islem(esya ? { ilan: secili.id, adet: 1, kalite: esya.kademe as Kademe4, esya: esya.id, istekNo: istekNoUret() } : { ilan: secili.id, adet, istekNo: istekNoUret() });
     setBekliyor(false);
     if (r.ok) { hap("success"); setSecili(null); setSonuc(r.deger.islem); void sonra(); }
     // istek_tekrar: işlem daha önce yapılmış; hata değil, tahta sunucudan tazelenir.
@@ -110,7 +113,8 @@ function PazarEkran() {
   const ilanVer = async () => {
     if (!f.mal) return;
     setBekliyor(true); setHata(null);
-    const r = await ist.ilan({ tur: f.tur, mal: f.mal, adet: f.adet, fiyat: f.fiyat, sure: f.sure, kalite: f.kalite, istekNo: istekNoUret() });
+    const satEsya = f.tur === "sat" ? esya : null;
+    const r = await ist.ilan({ tur: f.tur, mal: f.mal, adet: satEsya ? 1 : f.adet, fiyat: f.fiyat, sure: f.sure, kalite: satEsya ? (satEsya.kademe as Kademe4) : f.kalite, ...(satEsya ? { esya: satEsya.id } : {}), istekNo: istekNoUret() });
     setBekliyor(false);
     if (r.ok) { hap("success"); setForm(false); void sonra(); }
     else if (istekTekrarMi(r.hata)) { setForm(false); void sonra(); }
@@ -130,16 +134,21 @@ function PazarEkran() {
   const formMallari: string[] = f.tur === "sat" ? Object.keys(ev).filter((m) => (ev[m as keyof typeof ev] ?? 0) > 0 && (MALLAR as Record<string, { taban: number }>)[m]?.taban > 0) : [...NPC_MALLARI];
   const taban = f.mal ? (MALLAR as Record<string, { taban: number }>)[f.mal]?.taban : undefined;
   const k = p?.kurallar;
+  const ek = benKalite(y.ben);
+  // Alım ilanına teslimde: ilanın kademesi ve üstündeki adlı eşyalar; satış formunda: seçili mal ve kademedeki.
+  const teslimEsyalari = secili && secili.tur === "al" ? adliEsyalar(ek?.[secili.mal]).filter((e) => e.kademe >= secili.kademe) : [];
+  const formEsyalari = form && f.tur === "sat" && f.mal ? adliEsyalar(ek?.[f.mal], f.kalite) : [];
 
-  const islemPaneli = <AltPanel acik={!!secili || !!sonuc || form} onKapat={() => { setSecili(null); setSonuc(null); setForm(false); setHata(null); }} etiket={t("onl.pz.baslik")} rtl={rtl} t={t}>
+  const islemPaneli = <AltPanel acik={!!secili || !!sonuc || form} onKapat={() => { setSecili(null); setSonuc(null); setForm(false); setHata(null); setEsya(null); }} etiket={t("onl.pz.baslik")} rtl={rtl} t={t}>
     {secili ? <>
       <Text accessibilityRole="header" style={{ fontFamily: F.display, fontSize: 19, color: C.goldBright, textAlign: "center" }}>
         {applyParams(t(secili.tur === "sat" ? "onl.pz.alBaslik" : "onl.pz.satBaslik"), [malAdi(t, secili.mal), secili.sahip.ad])}
       </Text>
-      <Sayac etiket={t("onl.pz.adet")} deger={adet} en={1} cok={secili.kalan} onDegis={setAdet} />
+      <AdliEsyaSecici mal={secili.mal} esyalar={teslimEsyalari} secili={esya?.id ?? null} onSec={setEsya} />
+      {esya ? null : <Sayac etiket={t("onl.pz.adet")} deger={adet} en={1} cok={secili.kalan} onDegis={setAdet} />}
       <View style={{ flexDirection: yon(rtl), justifyContent: "space-between" }}>
-        <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchmentDim }}>{applyParams(t("onl.pz.toplamFiyat"), [adet, secili.birimFiyat])}</Text>
-        <Text style={{ fontFamily: F.display, fontSize: 16, color: C.goldBright }}>{applyParams(t("onl.is.akce"), [adet * secili.birimFiyat])}</Text>
+        <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchmentDim }}>{applyParams(t("onl.pz.toplamFiyat"), [esya ? 1 : adet, secili.birimFiyat])}</Text>
+        <Text style={{ fontFamily: F.display, fontSize: 16, color: C.goldBright }}>{applyParams(t("onl.is.akce"), [(esya ? 1 : adet) * secili.birimFiyat])}</Text>
       </View>
       <KarsilastirmaDokumu k={secili.karsilastirma} />
       <Text style={{ fontFamily: F.serifItalic, fontSize: 13, lineHeight: 18, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{applyParams(t("onl.pz.bacNot"), [Math.round((k?.bacOrani ?? 0.05) * 100)])}</Text>
@@ -160,11 +169,12 @@ function PazarEkran() {
       <AltinDugme etiket={t("onl.is.tamam")} rtl={rtl} onPress={() => setSonuc(null)} />
     </> : form ? <>
       <Text accessibilityRole="header" style={{ fontFamily: F.display, fontSize: 19, color: C.goldBright, textAlign: "center" }}>{t("onl.pz.ilanVer")}</Text>
-      <Secenekler secenekler={["sat", "al"] as const} secili={f.tur} onSec={(s) => setF({ ...f, tur: s, mal: null })} etiket={(s) => t("onl.pz.tur." + s)} />
-      {formMallari.length ? <Secenekler secenekler={formMallari} secili={f.mal} onSec={(m) => setF({ ...f, mal: m, fiyat: Math.max(1, (MALLAR as Record<string, { taban: number }>)[m]?.taban ?? 1) })} etiket={(m) => malAdi(t, m)} ikon={malIkonu} />
+      <Secenekler secenekler={["sat", "al"] as const} secili={f.tur} onSec={(s) => { setEsya(null); setF({ ...f, tur: s, mal: null }); }} etiket={(s) => t("onl.pz.tur." + s)} />
+      {formMallari.length ? <Secenekler secenekler={formMallari} secili={f.mal} onSec={(m) => { setEsya(null); setF({ ...f, mal: m, fiyat: Math.max(1, (MALLAR as Record<string, { taban: number }>)[m]?.taban ?? 1) }); }} etiket={(m) => malAdi(t, m)} ikon={malIkonu} />
         : <BosKart icon="backpack" metin={t("onl.pz.ambarBos")} rtl={rtl} />}
-      <Secenekler secenekler={KALITELER} secili={String(f.kalite) as "0"} onSec={(q) => setF({ ...f, kalite: Number(q) as Kademe4 })} etiket={(q) => kaliteAdi(t, Number(q))} />
-      <Sayac etiket={t("onl.pz.adet")} deger={f.adet} en={1} cok={f.tur === "sat" && f.mal ? Math.max(1, Math.min(k?.adetEnCok ?? 50, ev[f.mal as keyof typeof ev] ?? 1)) : k?.adetEnCok ?? 50} onDegis={(n) => setF({ ...f, adet: n })} />
+      <Secenekler secenekler={KALITELER} secili={String(f.kalite) as "0"} onSec={(q) => { setEsya(null); setF({ ...f, kalite: Number(q) as Kademe4 }); }} etiket={(q) => kaliteAdi(t, Number(q))} />
+      {f.mal ? <AdliEsyaSecici mal={f.mal} esyalar={formEsyalari} secili={esya?.id ?? null} onSec={setEsya} /> : null}
+      {esya && f.tur === "sat" ? null : <Sayac etiket={t("onl.pz.adet")} deger={f.adet} en={1} cok={f.tur === "sat" && f.mal ? Math.max(1, Math.min(k?.adetEnCok ?? 50, ev[f.mal as keyof typeof ev] ?? 1)) : k?.adetEnCok ?? 50} onDegis={(n) => setF({ ...f, adet: n })} />}
       <Sayac etiket={t("onl.pz.birimFiyat")} deger={f.fiyat} en={1} cok={100_000} onDegis={(n) => setF({ ...f, fiyat: n })} />
       <Sayac etiket={t("onl.pz.sure")} deger={f.sure} en={1} cok={k?.sureEnCok ?? 3} onDegis={(n) => setF({ ...f, sure: n })} birim={t("onl.pz.ay")} />
       {taban !== undefined ? <Text style={{ fontFamily: F.serif, fontSize: 13.5, color: C.parchmentDim, textAlign: hiza(rtl) }}>{applyParams(t("onl.pz.tabanBilgi"), [taban])}</Text> : null}
@@ -196,7 +206,7 @@ function PazarEkran() {
     </View> : null}
 
     <View style={{ marginTop: 12 }}>
-      <AltinDugme etiket={t("onl.pz.ilanVer")} icon="scroll-open" rtl={rtl} onPress={() => { setHata(null); setForm(true); }} />
+      <AltinDugme etiket={t("onl.pz.ilanVer")} icon="scroll-open" rtl={rtl} onPress={() => { setHata(null); setEsya(null); setForm(true); }} />
     </View>
 
     {p?.ozet.length ? <>
@@ -220,7 +230,7 @@ function PazarEkran() {
       : !p ? <Yukleniyor metin={t("onl.pz.yukleniyor")} />
       : ilanlar.length ? <View style={{ gap: 10 }}>
         {ilanlar.map((x, n) => <Animated.View key={x.id} entering={giris(n * 40)}>
-          <IlanKarti x={x} t={t} rtl={rtl} onIslem={() => { setHata(null); setAdet(1); setSecili(x); }} />
+          <IlanKarti x={x} t={t} rtl={rtl} onIslem={() => { setHata(null); setAdet(1); setEsya(null); setSecili(x); }} />
         </Animated.View>)}
       </View> : <BosKart icon="scales" metin={t("onl.pz.bos")} rtl={rtl} />}
 

@@ -32,9 +32,13 @@ export function sahteNabiz(): KasabaNabzi {
 /** Ambar kalite partileri (sahte envanterdeki demirci malları için). */
 export function sahteKalite(): EnvanterKalite {
   // Dilim 4: her kademeden örnek; nadidede hüner, efsanevi ve tılsımlıda adlı eşya ve yadigâr geçmişi (esya.ts biçimi).
-  const oz = (aile: string, q: number, carpan: number, etkiler: string[], eksik: [string, number][], hunerler: string[], bagli: boolean): OzellikDokumu => ({
-    aile, kademe: q, kalite: ["sade", "iyi", "ustun", "saheser", "nadide", "efsanevi", "tilsimli"][q]!, carpan, etkiler: etkiler.map((id) => ({ id, carpan })),
-    eksik: eksik.map(([id, kademe]) => ({ id, kademe })), kusur: null, hunerler, bagli,
+  // Gösterilen = gerçek (esya.ts ozellikDokumu): alet verim/ömür bağlı ve gerçek değerli; diğer aileler "yakında".
+  const oz = (aile: string, q: number, etkiler: string[], eksik: [string, number][], hunerler: string[], bagli: boolean): OzellikDokumu => ({
+    aile, kademe: q, kalite: ["sade", "iyi", "ustun", "saheser", "nadide", "efsanevi", "tilsimli"][q]!,
+    etkiler: etkiler.map((id) => (!bagli || (id !== "verim" && id !== "omur") ? { id, bagli: false }
+      : id === "verim" ? { id, bagli: true, deger: 2 + (hunerler.includes("bereketli") ? 1 : 0), birim: "adet" as const } : { id, bagli: true, yipranmaz: true })),
+    eksik: eksik.map(([id, kademe]) => ({ id, kademe })), kusur: null, hunerler,
+    hunerDokumu: hunerler.map((id) => ({ id, bagli: bagli && (id === "yipranmaz" || id === "bereketli") })), bagli,
   });
   return {
     ekmek: [{ kalite: "sade", kademe: 0, adet: 2, yapan: "Fırıncı Hatice" }],
@@ -43,12 +47,12 @@ export function sahteKalite(): EnvanterKalite {
       { kalite: "saheser", kademe: 3, adet: 1, yapan: "Usta Kerem" },
       { kalite: "nadide", kademe: 4, adet: 1, yapan: "Usta Kerem", huner: "yipranmaz" },
       { kalite: "efsanevi", kademe: 5, adet: 1, yapan: "Usta Kerem", esya: {
-        id: "e1k9", lakap: 15, kademe: 5, kalite: "efsanevi", usta: "Usta Kerem", atolye: "Kerem Ocağı", hunerler: ["bereketli"], yapim: AY - 30,
+        id: "e1k9", lakap: 15, kademe: 5, kalite: "efsanevi", usta: "Usta Kerem", atolye: "Kerem Ocağı", hunerler: ["yipranmaz", "bereketli"], yapim: AY - 30,
         gecmis: [
           { ay: AY - 30, tur: "yapim", kim: "Usta Kerem" }, { ay: AY - 26, tur: "satis", kim: "Hasan Efendi" }, { ay: AY - 19, tur: "ismarlama", kim: "Kalfa Yusuf" },
           { ay: AY - 12, tur: "miras", kim: "Rabia" }, { ay: AY - 3, tur: "satis", kim: "Elif Nur" },
         ],
-        ozellik: oz("alet", 5, 5, ["verim", "omur", "incelik"], [], ["bereketli"], true),
+        ozellik: oz("alet", 5, ["verim", "omur", "incelik"], [], ["yipranmaz", "bereketli"], true),
       } },
     ],
     kilic: [{ kalite: "tilsimli", kademe: 6, adet: 1, yapan: "Pir Davud", esya: {
@@ -58,7 +62,7 @@ export function sahteKalite(): EnvanterKalite {
         { ay: AY - 170, tur: "miras", kim: "Ömer kızı Ayşe" }, { ay: AY - 120, tur: "ismarlama", kim: "Kervanbaşı Nuri" }, { ay: AY - 84, tur: "devir", kim: "Hacı Rıza" },
         { ay: AY - 40, tur: "miras", kim: "Rıza oğlu Kemal" }, { ay: AY - 6, tur: "satis", kim: "Elif Nur" },
       ],
-      ozellik: oz("silah", 6, 7, ["guc", "isabet", "heybet"], [], ["keskinAgiz", "dengeliSap"], false),
+      ozellik: oz("silah", 6, ["guc", "isabet", "heybet"], [], ["keskinAgiz", "dengeliSap"], false),
     } }],
   };
 }

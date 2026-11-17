@@ -140,7 +140,7 @@ function KunyeEkran() {
             {olu ? <View style={{ flexDirection: yon(rtl), alignItems: "center", gap: 7 }}>
               <GameIcon name="tombstone" size={14} color={C.parchmentMuted} />
               <Text style={{ flexShrink: 1, fontFamily: F.serifItalic, fontSize: 14, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{t("onl.kn.olu")}</Text>
-            </View> : <DurumNoktasi durum={k.durum} t={t} rtl={rtl} />}
+            </View> : k.durum ? <DurumNoktasi durum={k.durum} t={t} rtl={rtl} /> : null}
           </View>
         </View>
         <View style={{ flexDirection: yon(rtl), flexWrap: "wrap", alignItems: "center", gap: 6 }}>

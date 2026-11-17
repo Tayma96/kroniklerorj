@@ -3,7 +3,7 @@
 // Fiyat bandı aynası (bantHesapla) yalnız henüz rafta olmayan bir mal için seçenek göstermek içindir
 // (tezgah-kurallar.ts RAF_FIYAT_ALT/UST, NPC_TAVAN_CARPANI, kalite.ts KALITE_DEGER_CARPANI [PARAMETRE] kopyası);
 // doğrulama sunucudadır (`fiyat_bant_disi`).
-import type { AtolyeEfsanevi } from "./esya-veri";
+import type { AtolyeEfsanevi, EsyaKamu } from "./esya-veri";
 import { useMemo } from "react";
 import { applyParams } from "../i18n";
 import { useOnline } from "./durum";
@@ -18,6 +18,8 @@ export interface Carpanlar { F: number; Q: number; R: number; H: number }
 export interface RafSatiri {
   satir: number; mal: string; kalite: Kademe; kaliteAdi: string; adet: number; fiyat: number; bant: FiyatBandi;
   npcTavan: number; adil: number; yapan?: string; cekicilik?: Carpanlar & { a: number };
+  /** Satırdaki adlı eşyalar (herkese açık) ve kimliksiz alınabilen adet (raf.ts rafEsyaAlanlari); yoksa alan yok. */
+  esyalar?: EsyaKamu[]; satilabilir?: number;
 }
 export interface DepoSatiri { mal: string; kalite: Kademe; adet: number }
 /**
@@ -26,7 +28,7 @@ export interface DepoSatiri { mal: string; kalite: Kademe; adet: number }
  */
 export interface KancaDokumu { deger: number; tavan: number; kisiAd: string | null; kalemler?: { kanca: string; d: number }[] }
 /** Tüccar `hak:fiyatTablosu` bilene dükkânda: yerleşimdeki öbür dükkânların raf satırları (en çok 40). */
-export interface FiyatTablosuSatiri { isletme: string; ad: string; mal: string; kalite: Kademe; fiyat: number; adet: number }
+export interface FiyatTablosuSatiri { isletme: string; ad: string; mal: string; kalite: Kademe; fiyat: number; adet: number; esyalar?: EsyaKamu[]; satilabilir?: number }
 export type SatirNedeni = "butce" | "stok" | "tavan" | "rakip" | "seviyeTavani";
 export interface GunSonuSatiri {
   satir: number; mal: string; kalite: Kademe; fiyat: number; satilan: number; kalan: number; hasilat: number; payYuzde: number;
@@ -141,17 +143,17 @@ export interface DevralmaYaniti { devralma: { isletme: string; fiyat: number; es
 export interface YolcuKarti { ay: number; payYuzde: number; tutar: number; tavan: number; carpan: { F: number; K: number; R: number; H: number }; kanca?: KancaDokumu }
 
 export type RafKomutu =
-  | { islem: "koy"; mal: string; kalite?: Kademe; adet: number; fiyat?: number }
-  | { islem: "al"; satir: number; adet: number }
+  | { islem: "koy"; mal: string; kalite?: Kademe; adet: number; fiyat?: number; esya?: string }
+  | { islem: "al"; satir: number; adet: number; esya?: string }
   | { islem: "fiyat"; satir: number; fiyat: number };
 
 export interface TezgahIstemci {
   dukkanlar(): Promise<EkSonuc<DukkanListesi>>;
   tezgah(id: string): Promise<EkSonuc<TezgahGorunumu>>;
   onizle(id: string, g: { mal: string; kalite: Kademe; fiyat: number; adet?: number }): Promise<EkSonuc<Onizleme>>;
-  depo(id: string, g: { yon: "koy" | "al"; mal: string; kalite?: Kademe; adet: number; istekNo: string }): Promise<EkSonuc<DepoYaniti>>;
+  depo(id: string, g: { yon: "koy" | "al"; mal: string; kalite?: Kademe; adet: number; esya?: string; istekNo: string }): Promise<EkSonuc<DepoYaniti>>;
   raf(id: string, g: RafKomutu & { istekNo: string }): Promise<EkSonuc<RafYaniti>>;
-  satinAl(id: string, g: { satir: number; adet: number; fiyat: number; istekNo: string }): Promise<EkSonuc<SatisYaniti>>;
+  satinAl(id: string, g: { satir: number; adet: number; fiyat: number; esya?: string; istekNo: string }): Promise<EkSonuc<SatisYaniti>>;
   devral(id: string, g: { istekNo: string }): Promise<EkSonuc<DevralmaYaniti>>;
 }
 

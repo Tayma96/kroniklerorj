@@ -11,11 +11,24 @@ import { istekNoUret } from "./depo";
 import { ekHataAnahtari, type EkHata } from "./ek-istemci";
 import { istekTekrarMi } from "./hata";
 import { malAdi } from "./ekonomi-ui";
+import { benKalite } from "./ekonomi-veri";
+import { esyaAdi } from "./kademe-ui";
+import { esyaHamdan, type EsyaGorunumu, type EsyaHam } from "./esya-veri";
 import { useBarinmaIstemci, type BarinmaGorunumu, type GorusmeOzeti } from "./barinma-veri";
 import { Bant, Cerceve, CizgiDugme, hiza, yon } from "./ui";
 import { Baslik2, Rozet } from "./yasam-ui";
 
 const kisiAd = (k: { i: string; ad: string } | string) => (typeof k === "string" ? k : k.ad);
+/** Sandık partilerindeki adlı eşyalar (ham [kalite, adet, yapan, atölye, eşya] satırlarından). */
+function sandikEsyalari(partiler: Record<string, unknown[]> | undefined): { mal: string; e: EsyaGorunumu }[] {
+  const l: { mal: string; e: EsyaGorunumu }[] = [];
+  for (const [mal, ps] of Object.entries(partiler ?? {})) for (const p of Array.isArray(ps) ? ps : []) {
+    if (!Array.isArray(p) || typeof p[0] !== "number") continue;
+    const ham = p[4] as EsyaHam | undefined;
+    if (ham && typeof ham === "object" && typeof ham.i === "string") l.push({ mal, e: esyaHamdan({ ...ham, g: ham.g ?? [] }, p[0]) });
+  }
+  return l;
+}
 
 export function OdaKarti({ g, onYenile }: { g: BarinmaGorunumu; onYenile: () => void }) {
   const { t, rtl } = useI18n();
@@ -36,6 +49,10 @@ export function OdaKarti({ g, onYenile }: { g: BarinmaGorunumu; onYenile: () => 
     else { hap("error"); setHata(r.hata ?? "sunucu_hatasi"); }
   };
   const envanter = Object.entries(o.envanter ?? {}).filter((e): e is [string, number] => (e[1] ?? 0) > 0);
+  // Adlı eşya kimliksiz taşınmaz: ambardakiler ve sandıktakiler ayrı düğmeyle, kimliğiyle (adet 1, kalite açık).
+  const kq = benKalite(o.yerlesim?.ben);
+  const ambarEsyalari = Object.entries(kq ?? {}).flatMap(([mal, ps]) => ps.filter((p) => p.esya).map((p) => ({ mal, e: p.esya! })));
+  const sandikAdli = sandikEsyalari(sd?.partiler);
   const oyuncular = (o.yerlesim?.ben.tanidiklar ?? []).filter((x) => x.oyuncu);
   const benim: GorusmeOzeti | null = gr?.benim ?? null;
 
@@ -56,6 +73,11 @@ export function OdaKarti({ g, onYenile }: { g: BarinmaGorunumu; onYenile: () => 
           {sd.durum === "sandik" ? <CizgiDugme etiket={t("onl.oda.al")} rtl={rtl} kucuk kapali={bekliyor}
             onPress={() => { void calis(() => ist.sandik({ islem: "al", mal, adet: 1, istekNo: istekNoUret() })); }} /> : null}
         </View>)}
+        {sd.durum === "sandik" ? sandikAdli.map(({ mal, e }) => <View key={e.id} style={{ flexDirection: yon(rtl), alignItems: "center", gap: 8, minHeight: 44 }}>
+          <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 14, color: C.goldBright, textAlign: hiza(rtl) }}>{esyaAdi(t, e, mal)}</Text>
+          <CizgiDugme etiket={t("onl.oda.al")} rtl={rtl} kucuk kapali={bekliyor}
+            onPress={() => { void calis(() => ist.sandik({ islem: "al", mal, adet: 1, kalite: e.kademe, esya: e.id, istekNo: istekNoUret() })); }} />
+        </View>) : null}
         {sd.durum === "emanet" && sd.adet > 0 ? <CizgiDugme etiket={t("onl.oda.emanetAl")} icon="camel" rtl={rtl} kucuk kapali={bekliyor}
           onPress={() => { void calis(() => ist.emanet({ istekNo: istekNoUret() }), t("onl.oda.emanetGeldi")); }} /> : null}
         {sd.durum === "sandik" && sd.acik && sd.adet < sd.kapasite && envanter.length ? <>
@@ -63,6 +85,8 @@ export function OdaKarti({ g, onYenile }: { g: BarinmaGorunumu; onYenile: () => 
           <View style={{ flexDirection: yon(rtl), flexWrap: "wrap", gap: 6 }}>
             {envanter.slice(0, 12).map(([mal, n]) => <CizgiDugme key={mal} etiket={`${malAdi(t, mal)} (${n})`} rtl={rtl} kucuk kapali={bekliyor}
               onPress={() => { void calis(() => ist.sandik({ islem: "koy", mal, adet: 1, istekNo: istekNoUret() })); }} />)}
+            {ambarEsyalari.map(({ mal, e }) => <CizgiDugme key={e.id} etiket={esyaAdi(t, e, mal)} icon="crown" rtl={rtl} kucuk kapali={bekliyor}
+              onPress={() => { void calis(() => ist.sandik({ islem: "koy", mal, adet: 1, kalite: e.kademe, esya: e.id, istekNo: istekNoUret() })); }} />)}
           </View>
         </> : null}
       </View> : null}

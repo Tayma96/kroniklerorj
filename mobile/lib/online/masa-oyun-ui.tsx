@@ -439,6 +439,14 @@ export function MasaOyunPaneli({ m, ben, oturuyor, acik, mesgul, rtl, t }: { m: 
             <View style={{ flex: 1 }}><CizgiDugme etiket={t("onl.mo.bekleme.ayril")} icon="walk" rtl={rtl} kucuk kapali={!acik || bekle} onPress={() => m.oyunAyril()} /></View>
             <View style={{ flex: 1 }}><CizgiDugme etiket={t("onl.mo.bekleme.kaldir")} rtl={rtl} kucuk kapali={!acik || bekle} onPress={() => m.oyunDagit()} /></View>
           </View>
+        </> : o.devralAcik ? <>
+          <Text style={notStil(rtl)}>{applyParams(t("onl.mo.bekleme.devralNot"), [ad(o.kurucu)])}</Text>
+          <AltinDugme etiket={t("onl.mo.bekleme.devralBaslat")} icon="star" rtl={rtl} bekliyor={bekle} kapali={!acik || o.oyuncular.length < o.enAz} onPress={() => m.oyunBaslat()} />
+          {o.oyuncular.length < o.enAz ? <Text style={notStil(rtl)}>{applyParams(t("onl.mo.bekleme.azNot"), [o.enAz])}</Text> : null}
+          <View style={{ flexDirection: yon(rtl), gap: 8 }}>
+            <View style={{ flex: 1 }}><CizgiDugme etiket={t("onl.mo.bekleme.ayril")} icon="walk" rtl={rtl} kucuk kapali={!acik || bekle} onPress={() => m.oyunAyril()} /></View>
+            <View style={{ flex: 1 }}><CizgiDugme etiket={t("onl.mo.bekleme.devralDagit")} rtl={rtl} kucuk kapali={!acik || bekle} onPress={() => m.oyunDagit()} /></View>
+          </View>
         </> : <>
           <Text style={notStil(rtl)}>{applyParams(t("onl.mo.bekleme.kurucuBekle"), [ad(o.kurucu)])}</Text>
           <CizgiDugme etiket={t("onl.mo.bekleme.ayril")} icon="walk" rtl={rtl} kucuk kapali={!acik || bekle} onPress={() => m.oyunAyril()} />

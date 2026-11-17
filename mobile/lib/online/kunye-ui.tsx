@@ -13,7 +13,7 @@ import { BASMA_OLCEK, Bant, Cerceve, CizgiDugme, Madalyon, ONL, belir, hiza, yon
 import { KisiYuzu, SatirOku } from "./yasam-ui";
 import { useOnline } from "./durum";
 import {
-  aramaNiyeti, kunyeBekletir, kunyeHataAnahtari, kunyeYolu, numaraBicim, numaraSesli, numaraTemizle, useKunyeIstemci,
+  aramaNiyeti, kunyeBekletir, kunyeHataAnahtari, kunyeYolu, numaraBicim, numaraGecerliMi, numaraSesli, numaraTemizle, useKunyeIstemci,
   type CevrimiciDurum, type KunyeHata, type KunyeKarti,
 } from "./kunye-veri";
 
@@ -227,7 +227,7 @@ export function OyuncuArama() {
  * Yerel profilden künyeye: sunucu `numara` verdiyse doğrudan gider; yoksa aynı yerleşimde aynı adı taşıyan tek kişiyi ad
  * aramasıyla bulur (oyuncu dokununca, bir kez). Ad aramanın alt sınırına (3 harf) yetmiyorsa bağlantı gizlenir.
  */
-export function KunyeyeGecis({ ad, yerlesim, numara }: { ad: string; yerlesim: string; numara?: string }) {
+export function KunyeyeGecis({ ad, yerlesim, numara }: { ad: string; yerlesim: string; numara?: string | number }) {
   const { t, rtl } = useI18n();
   const router = useRouter();
   const istemci = useKunyeIstemci();
@@ -235,7 +235,9 @@ export function KunyeyeGecis({ ad, yerlesim, numara }: { ad: string; yerlesim: s
   const [not, setNot] = useState<string | null>(null);
   const canli = useRef(true);
   useEffect(() => () => { canli.current = false; }, []);
-  const dogrudan = numara ? numaraTemizle(numara) : null;
+  // Sunucu numarayı sayı olarak gönderir (GET /v1/oyuncu/:id); geçersizse ad aramasına düşülür.
+  const temiz = numara !== undefined && numara !== null ? numaraTemizle(String(numara)) : null;
+  const dogrudan = temiz && numaraGecerliMi(temiz) ? temiz : null;
   if (!dogrudan && [...ad.trim()].filter((c) => /\p{L}/u.test(c)).length < 3) return null;
   const bul = async () => {
     if (dogrudan) { hap("tap"); router.push(kunyeYolu(dogrudan)); return; }

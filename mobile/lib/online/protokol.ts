@@ -83,7 +83,7 @@ export const SUNUCU_HATALARI = [
   "yerlesim_dolu", "davet_gecersiz", "davet_yok", "istekno_gecersiz", "sakin_yok", "kisi_yok", "eylem_gecersiz",
   "isaret_gecersiz", "imlec_gecersiz", "yas_kapisi", "ogrenme_kapali", "hedef_uygun_degil", "takat_yok", "para_yok",
   "zaten_cirak", "karar_verildi", "puan_yok", "muhur_yok", "muhur_alindi", "meslek_gecersiz", "meslek_yok", "kademe_kapali", "dal_kapali", "dugum_kapali",
-  "geri_alma_dolu", "mal_gecersiz", "kota_doldu", "verim_yok", "tarif_gecersiz", "girdi_yok", "mal_yok", "siparis_yok", "siparis_kapandi",
+  "geri_alma_dolu", "mal_gecersiz", "kota_doldu", "verim_yok", "tarif_gecersiz", "girdi_yok", "mal_yok", "esya_kilitli", "siparis_yok", "siparis_kapandi",
   "yapilandirma_eksik", "sunucu_hatasi",
   // Beceri ağacı v2 (online-server yerlesim/beceri.ts)
   "meslek_degisim_dolu", "dugum_gecersiz", "dugum_gizli", "seviye_tavan", "on_kosul_eksik", "ogrenme_suruyor", "ogrenme_yok",

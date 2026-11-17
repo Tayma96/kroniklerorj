@@ -10,7 +10,7 @@ import { sahteAtolyeIstemci } from "./sahte-atolye";
 import { tezgahHataMetni, type DepoSatiri, type TopluSiparis, type GenisletmeGorunumu, type TezgahGorunumu } from "./tezgah-veri";
 import { TARIFLER } from "./meslek-veri";
 import type { Olay, TarifSatiri } from "./protokol";
-import type { EfsaneviSonucu, KaliteKisiti, OzellikDokumu } from "./esya-veri";
+import type { EfsaneviSonucu, KaliteKisiti, OzellikDokumu, UstaNadide } from "./esya-veri";
 
 /** GET /v1/atolyeler satırı. */
 export interface AtolyeKarti {
@@ -26,7 +26,7 @@ export interface ZanaatYaniti { zanaat: { meslek: string; bedel: number; degisim
 export interface AtolyeUretimYaniti {
   uretim: {
     tarif: string; cikti: { mal: string; adet: number }; yan?: Record<string, number> | null; girdi: Record<string, number>;
-    kalite?: { kademe: number; ad?: string; dokum?: { toplam: number; kalemler: { k: string; d: number }[] }; sonrakiEsik?: number | null; tavan?: number; kisit?: KaliteKisiti | null } | null;
+    kalite?: { kademe: number; ad?: string; dokum?: { toplam: number; kalemler: { k: string; d: number }[] }; sonrakiEsik?: number | null; tavan?: number; kisit?: KaliteKisiti | null; ustaNadide?: UstaNadide | null } | null;
     /** Dilim 4: efsanevi denemesi (istenmediyse null) ve çıkan en yüksek kademenin özellik dökümü. */
     efsanevi?: EfsaneviSonucu | null; ozellik?: OzellikDokumu;
     hizmet?: number; atolye: { isletme: string; ad: string }; levha: boolean;

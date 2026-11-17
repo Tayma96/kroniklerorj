@@ -35,7 +35,8 @@ export interface Kunye {
   /** Teveccüh kademesi (0..5). */
   teveccuh: number;
   isletmeler: { tur: string; no: number; ad: string }[];
-  durum: CevrimiciDurum;
+  /** Yalnız kişinin kendisine ve onu tanıdık/dost işaretlediği aynı yerleşimdekine gelir; yoksa durum gösterilmez. */
+  durum?: CevrimiciDurum;
   olu: boolean;
   /** Sosyal eylemler için yerel kimlik (`/v1/oyuncu/:id`). */
   kisi: { yerlesim: string; id: string };
@@ -112,7 +113,7 @@ function kunyeOku(v: unknown): Kunye | null {
   const m = v.meslek, h = v.hanedan, nm = v.nam, ks = v.kisi;
   if (!numara || !metinMi(v.ad) || typeof v.ben !== "boolean" || typeof v.ayniYerlesim !== "boolean" || !kimlikAdMi(v.yerlesim) || !kimlikAdMi(v.beylik)) return null;
   if (!nesneMi(m) || !nesneMi(h) || !metinMi(h.soyad) || !sayiMi(h.nesil) || !nesneMi(nm) || !nesneMi(ks) || !metinMi(ks.yerlesim) || !metinMi(ks.id)) return null;
-  if (!sayiMi(v.teveccuh) || !Array.isArray(v.isletmeler) || !(v.durum === "simdi" || v.durum === "bugun" || v.durum === "uzak") || typeof v.olu !== "boolean") return null;
+  if (!sayiMi(v.teveccuh) || !Array.isArray(v.isletmeler) || !(v.durum === undefined || v.durum === "simdi" || v.durum === "bugun" || v.durum === "uzak") || typeof v.olu !== "boolean") return null;
   const ana = metinYaDaNull(m.ana), yan = metinYaDaNull(m.yan);
   return {
     numara, ad: v.ad, ben: v.ben, ayniYerlesim: v.ayniYerlesim,
@@ -123,7 +124,7 @@ function kunyeOku(v: unknown): Kunye | null {
     teveccuh: Math.max(0, Math.min(5, Math.trunc(v.teveccuh))),
     isletmeler: v.isletmeler.filter((x): x is { tur: string; no: number; ad: unknown } => nesneMi(x) && metinMi(x.tur) && sayiMi(x.no))
       .map((x) => ({ tur: x.tur, no: x.no, ad: metinMi(x.ad) ? x.ad : "" })),
-    durum: v.durum, olu: v.olu, kisi: { yerlesim: ks.yerlesim, id: ks.id },
+    ...(v.durum !== undefined ? { durum: v.durum } : {}), olu: v.olu, kisi: { yerlesim: ks.yerlesim, id: ks.id },
   };
 }
 

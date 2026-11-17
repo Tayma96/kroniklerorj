@@ -64,7 +64,11 @@ export function hanKodundanNo(kod: string | undefined): number | null {
   const m = /^oyuncu:[a-z0-9-]{1,40}\.han\.([1-9])$/.exec(kod);
   return m ? Number(m[1]) : null;
 }
-export interface SandikGorunumu { durum: "sandik" | "emanet" | "yok"; acik: boolean; kapasite: number; adet: number; mallar: Record<string, number> }
+export interface SandikGorunumu {
+  durum: "sandik" | "emanet" | "yok"; acik: boolean; kapasite: number; adet: number; mallar: Record<string, number>;
+  /** Sandıktaki kalite partileri (sunucu kalite.ts ham biçimi: [kalite, adet, yapan?, atölye?, eşya?]); adlı eşya kimliği buradan. */
+  partiler?: Record<string, unknown[]>;
+}
 export interface GorusmeOzeti {
   ev: { i: string; ad: string }; benim: boolean; davetliler: { kisi: { i: string; ad: string } | string; kabul: boolean }[];
   baslangic: number; bitis: number; soz: number; sozEnCok: number;
@@ -128,7 +132,7 @@ export interface BarinmaIstemci {
   donus(dil: Dil): Promise<EkSonuc<{ donusEkrani: DonusEkrani }>>;
   tekDokunus(s: TekDokunus, istekNo: string): Promise<EkSonuc<BarinmaYaniti>>;
   /** H12: sandık, han emaneti ve özel görüşme. */
-  sandik(g: { islem: "koy" | "al"; mal: string; adet: number; istekNo: string }): Promise<EkSonuc<Record<string, unknown>>>;
+  sandik(g: { islem: "koy" | "al"; mal: string; adet: number; kalite?: number; esya?: string; istekNo: string }): Promise<EkSonuc<Record<string, unknown>>>;
   emanet(g: { istekNo: string }): Promise<EkSonuc<Record<string, unknown>>>;
   gorusme(g: { islem: "davet" | "kabul" | "bitir" | "soz"; hedef?: string; sart?: string; istekNo: string }): Promise<EkSonuc<Record<string, unknown>>>;
 }

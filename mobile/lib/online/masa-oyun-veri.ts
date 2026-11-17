@@ -33,6 +33,8 @@ export interface OyunGorunumu {
   dagit: string[];
   pasAcik: boolean;
   sabir: number;
+  /** Bayat bekleme (sunucu OYUN_KOPMA_SABRI_MS geçti, başlatılmadı): bekleyen herkes başlatabilir ya da dağıtabilir. */
+  devralAcik?: boolean;
   sonuc?: { tur: OyunSonucTuru; kazanan: string[] };
   tohum?: string;
   kayit?: OyunAdimi[];

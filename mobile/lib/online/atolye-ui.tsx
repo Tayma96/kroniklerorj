@@ -14,7 +14,7 @@ import type { Lang } from "../locale-data";
 import { useOnline } from "./durum";
 import { AltinDugme, BASMA_OLCEK, Cerceve, CizgiDugme, Doluluk, Madalyon, ONL, belir, giris, hiza, yon } from "./ui";
 import { AltPanel, Baslik2, BosKart, Rozet } from "./yasam-ui";
-import { KaliteRozeti, kaliteAdi, malAdi, malIkonu } from "./ekonomi-ui";
+import { KaliteRozeti, malAdi, malIkonu } from "./ekonomi-ui";
 import { MESLEK_IKON, TARIF_IKON } from "./meslek-veri";
 import { meslekYaz } from "./metin";
 import { istekTekrarMi } from "./hata";
@@ -24,8 +24,8 @@ import { geciciHataMi } from "./tezgah-veri";
 import type { EmirDokumu, GenisletmeGorunumu, GunSonu, TezgahGorunumu, TopluSiparis, UretimEmri } from "./tezgah-veri";
 import { MESAI_TEK_EN_COK, atolyeHataMetni, depodaToplam, zanaatTarifleri, type AtolyeIstemci } from "./atolye-veri";
 import { topluIndirimKancasi } from "./kanca-ui";
-import { EfsaneviDeneme, EfsaneviSonucKarti, KaliteKisitiNotu } from "./kademe-ui";
-import { esyaHamdan, type EfsaneviSonucu, type EsyaGorunumu } from "./esya-veri";
+import { EfsaneviDeneme, EfsaneviSonucKarti, KademeAdetleri, KaliteKisitiNotu, UstaNadideNotu } from "./kademe-ui";
+import { esyaHamdan, type EfsaneviSonucu, type EsyaGorunumu, type UstaNadide } from "./esya-veri";
 
 type Ceviri = (k: string) => string;
 type Tarif = ReturnType<typeof zanaatTarifleri>[number];
@@ -39,10 +39,8 @@ function tarifAdi(t: Ceviri, id: string, mal?: string): string {
 const tarifIkonu = (id: string, mal?: string) => TARIF_IKON[id] ?? (mal ? malIkonu(mal) : "scroll-open");
 const zanaatAdi = (m: string, lang: Lang) => meslekYaz(m, lang);
 const zanaatIkonu = (m: string) => (MESLEK_IKON as Record<string, string>)[m] ?? "anvil";
-/** Kalite kademelerine göre adet: "3 sade · 1 iyi" (yalnız sıfır olmayanlar). */
 /** "3 kalas" gibi adet + ad (dile göre sıra çeviride). */
 const adetMal = (t: Ceviri, n: number, ad: string) => applyParams(t("onl.atl.adetMal"), [n, ad]);
-const kaliteAdetMetni = (t: Ceviri, k: readonly number[]) => k.map((n, i) => (n > 0 ? adetMal(t, n, kaliteAdi(t, i)) : null)).filter(Boolean).join(" · ");
 /** Kalite kalemi adı ("kalite.atolye" → onl.atl.kk.atolye); bilinmeyen kalem sakin genel adla. */
 function kalemAdi(t: Ceviri, k: string): string {
   if (k === "kalite.kanca") return t("onl.k3.kk.kanca");
@@ -159,7 +157,7 @@ function KaliteDokumu({ d, t, rtl }: { d: NonNullable<EmirDokumu["kaliteDokum"]>
 function EmirDokumSatiri({ x, t, rtl }: { x: EmirDokumu; t: Ceviri; rtl: boolean }) {
   const [acik, setAcik] = useState(false);
   const neden = x.neden ? (() => { const k = "onl.atl.neden." + x.neden; const v = t(k); return v === k ? t("onl.atl.neden.diger") : v; })() : null;
-  const kalite = kaliteAdetMetni(t, x.kalite);
+  const kaliteVar = x.kalite.some((n) => n > 0);
   return <View style={{ gap: 3, paddingTop: 8, borderTopWidth: 1, borderColor: "rgba(201,162,78,0.14)" }}>
     <View accessible style={{ gap: 3 }}>
       <View style={{ flexDirection: yon(rtl), alignItems: "center", gap: 8 }}>
@@ -170,7 +168,10 @@ function EmirDokumSatiri({ x, t, rtl }: { x: EmirDokumu; t: Ceviri; rtl: boolean
       <Text style={{ fontFamily: F.serif, fontSize: 13, lineHeight: 18, color: C.parchmentDim, textAlign: hiza(rtl) }}>
         {applyParams(t("onl.atl.gs.emirSatir"), [x.buAy, x.yapilan, x.kez, x.cikti.adet, malAdi(t, x.cikti.mal)])}
       </Text>
-      {kalite ? <Text style={{ fontFamily: F.serif, fontSize: 12.5, lineHeight: 17, color: C.parchmentDim, textAlign: hiza(rtl) }}>{applyParams(t("onl.atl.gs.kalite"), [kalite])}</Text> : null}
+      {kaliteVar ? <View style={{ flexDirection: yon(rtl), flexWrap: "wrap", alignItems: "center", gap: 6 }}>
+        <Text style={{ fontFamily: F.serif, fontSize: 12.5, lineHeight: 17, color: C.parchmentDim, textAlign: hiza(rtl) }}>{t("onl.tz.kalite")}</Text>
+        <KademeAdetleri adetler={x.kalite} />
+      </View> : null}
       {x.usta || x.emek.oyuncu || x.emek.npc ? <Text style={{ fontFamily: F.serif, fontSize: 12.5, lineHeight: 17, color: C.parchmentMuted, textAlign: hiza(rtl) }}>
         {applyParams(t(x.usta ? "onl.atl.gs.ustaEmek" : "onl.atl.gs.emek"), [x.usta?.ad ?? "", x.emek.oyuncu, x.emek.npc])}
       </Text> : null}
@@ -489,7 +490,7 @@ function UretCekmecesi({ acik, oturum, g, tarifler, ist, iflas, onKapat, onYenil
   const a = g.atolye!;
   const y = useYazma(oturum);
   const [sec, setSec] = useState<string | null>(null);
-  const [sonuc, setSonuc] = useState<{ mal: string; adet: number; kademe: number | null; levha: boolean; kisit: string | null; ef: EfsaneviSonucu | null; esya: EsyaGorunumu | null } | null>(null);
+  const [sonuc, setSonuc] = useState<{ mal: string; adet: number; kademe: number | null; levha: boolean; kisit: string | null; un: UstaNadide | null; ef: EfsaneviSonucu | null; esya: EsyaGorunumu | null } | null>(null);
   const [efsanevi, setEfsanevi] = useState(false);
   useEffect(() => { if (acik) { setSec(null); setSonuc(null); setEfsanevi(false); } }, [acik, oturum]);
   const efDene = efsanevi && !!a.efsanevi?.pir && (a.efsanevi?.hak ?? 0) > 0;
@@ -509,7 +510,8 @@ function UretCekmecesi({ acik, oturum, g, tarifler, ist, iflas, onKapat, onYenil
         <Text style={{ fontFamily: F.display, fontSize: 15, color: C.goldBright, textAlign: hiza(rtl) }}>{applyParams(t("onl.is.cikti"), [sonuc.adet, malAdi(t, sonuc.mal)])}</Text>
         {sonuc.kademe !== null ? <View style={{ flexDirection: yon(rtl) }}><KaliteRozeti kademe={sonuc.kademe} /></View> : null}
         {sonuc.levha ? <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.gold, textAlign: hiza(rtl) }}>{t("onl.atl.uret.levha")}</Text> : null}
-        <KaliteKisitiNotu kisit={sonuc.kisit} />
+        <UstaNadideNotu u={sonuc.un} />
+        {sonuc.un && sonuc.kisit === "kalite.tavan.ustaNadide" ? null : <KaliteKisitiNotu kisit={sonuc.kisit} />}
       </View>
     </Animated.View> : <Sonuc hata={y.hata} bilgi={y.bilgi} rtl={rtl} />}
     {sonuc?.ef ? <EfsaneviSonucKarti s={sonuc.ef} mal={sonuc.mal} esya={sonuc.esya} /> : null}
@@ -522,7 +524,7 @@ function UretCekmecesi({ acik, oturum, g, tarifler, ist, iflas, onKapat, onYenil
         if (v) {
           const e = v.uretim.efsanevi ?? null;
           const kademe = e?.kademe ?? (typeof v.uretim.kalite?.kademe === "number" ? v.uretim.kalite.kademe : null);
-          setSonuc({ mal: v.uretim.cikti.mal, adet: v.uretim.cikti.adet, kademe, levha: v.uretim.levha, kisit: v.uretim.kalite?.kisit ?? null, ef: e,
+          setSonuc({ mal: v.uretim.cikti.mal, adet: v.uretim.cikti.adet, kademe, levha: v.uretim.levha, kisit: v.uretim.kalite?.kisit ?? null, un: v.uretim.kalite?.ustaNadide ?? null, ef: e,
             esya: e?.esya && e.kademe ? esyaHamdan(e.esya, e.kademe, v.uretim.ozellik) : null });
           if (e) setEfsanevi(false);
         }

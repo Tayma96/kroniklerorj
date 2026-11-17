@@ -131,12 +131,15 @@ export function sahteAtolyeGorunumu(a: SahteAtolye): { atolye: AtolyeBolumu; kan
 
 /** Önizlemede efsanevi denemesinin üç sonucu sırayla: nadide çıkmadı (hak kalır), nasip olmadı, efsane doğdu. */
 let efSira = 0;
+/** Sunucu şans kalemi öneki (esya.ts efsaneviSansDokumu). */
+const EF = "efsanevi.";
 function sahteEfsanevi(mal: string): EfsaneviSonucu {
   const n = efSira++ % 3;
   if (n === 0) return { denendi: false, neden: "nadide_degil", sans: "yok", kademe: null, esya: null, kalanHak: 1 };
-  if (n === 1) return { denendi: true, neden: null, sans: "zayif", kademe: null, esya: null, kalanHak: 0 };
-  return { denendi: true, neden: null, sans: "makul", kademe: 5, kalanHak: 0,
-    esya: { i: "e" + mal + AY, l: 8, u: BEN.ad, a: "Elif Nur Ocağı", h: ["bereketli"], y: AY, g: [[AY, "yapim", BEN.ad]] } };
+  const sd = (puan: number) => ({ yuzde: 10 + puan, bant: (10 + puan < 12 ? "zayif" : "makul") as "zayif" | "makul", kalemler: [{ k: EF + "taban", d: 10 }, ...(puan ? [{ k: EF + "puan", d: puan }] : [])], esik: 12, puanBasina: 0.5, tavan: 20, tilsimBinde: 15 });
+  if (n === 1) return { denendi: true, neden: null, sans: "zayif", sansDokumu: sd(0), kademe: null, esya: null, kalanHak: 0 };
+  return { denendi: true, neden: null, sans: "makul", sansDokumu: sd(3), kademe: 5, kalanHak: 0,
+    esya: { i: "e" + mal + AY, l: 8, u: BEN.ad, a: "Elif Nur Ocağı", h: ["yipranmaz"], y: AY, g: [[AY, "yapim", BEN.ad]] } };
 }
 
 /** Geliştirici modunun atölye istemcisi: sahte tezgâhla aynı durumu yazar. */
@@ -178,7 +181,7 @@ export function sahteAtolyeIstemci(yer: string): AtolyeIstemci {
       depoyaKoy(a, mal, q, adet, true);
       return ekBasarili({
         uretim: { tarif: tf.id, cikti: { mal, adet }, girdi: tf.girdi as Record<string, number>, kalite: { kademe: ef?.denendi ? 4 : ef ? 3 : 1, dokum: { toplam: 13, kalemler: [{ k: kk("atolye", 5, 5).k, d: 5 }, { k: kk("kanca", 8, 8).k, d: 8 }] }, ...(ef && !ef.denendi ? { kisit: "kalite.tavan.ustaNadide" as const } : {}) }, atolye: { isletme: a.isletme, ad: "" }, levha: false,
-          efsanevi: ef, ...(ef?.esya ? { ozellik: { aile: "alet", kademe: 5, kalite: "efsanevi", carpan: 5, etkiler: [{ id: "verim", carpan: 5 }, { id: "omur", carpan: 5 }, { id: "incelik", carpan: 5 }], eksik: [], kusur: null, hunerler: ef.esya.h, bagli: true } } : {}) },
+          efsanevi: ef, ...(ef?.esya ? { ozellik: { aile: "alet", kademe: 5, kalite: "efsanevi", etkiler: [{ id: "verim", bagli: true, deger: 2, birim: "adet" as const }, { id: "omur", bagli: true, yipranmaz: true }, { id: "incelik", bagli: false }], eksik: [], kusur: null, hunerler: ef.esya.h, hunerDokumu: ef.esya.h.map((id) => ({ id, bagli: true })), bagli: true } } : {}) },
         depo: a.depo.filter((x) => x.adet > 0), depoDolu: depoDolu(a), depoKapasite: DEPO_KAP,
       });
     },
