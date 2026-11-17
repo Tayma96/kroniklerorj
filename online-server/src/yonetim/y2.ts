@@ -85,20 +85,22 @@ export async function telafiUygula(o: Oturum, govde: unknown): Promise<Sonuc<unk
   } catch {
     return reddet(o, "telafi", "sunucu_hatasi", ek);
   }
-  if (!yoneticiProfil.ok) return reddet(o, "telafi", "hesap_yok", ek);
+  // Oyun karakteri olmayan yönetici de telafi verebilir: kümesi boştur (yalnız kendi hesabı hedef olamaz).
+  if (!yoneticiProfil.ok && yoneticiProfil.hata !== "kisi_yok") return reddet(o, "telafi", "hesap_yok", ek);
   if (!hedefProfil.ok) return reddet(o, "telafi", "kisi_yok", ek);
-  let yoneticiKimlik: Awaited<ReturnType<typeof kimlikOku>>;
+  if (hedef === o.y.hesap) return reddet(o, "telafi", "kendi_hedef", ek);
+  let yoneticiKimlik: Awaited<ReturnType<typeof kimlikOku>> | undefined;
   let hedefKimlik: Awaited<ReturnType<typeof kimlikOku>>;
   try {
     [yoneticiKimlik, hedefKimlik] = await Promise.all([
-      kimlikOku(o.y.hesap, yoneticiProfil.deger.yerlesim),
+      yoneticiProfil.ok ? kimlikOku(o.y.hesap, yoneticiProfil.deger.yerlesim) : Promise.resolve(undefined),
       kimlikOku(hedef, hedefProfil.deger.yerlesim),
     ]);
   } catch {
     return reddet(o, "telafi", "sunucu_hatasi", ek);
   }
-  if (!yoneticiKimlik.ok || !hedefKimlik.ok) return reddet(o, "telafi", "hedef_uygun_degil", ek);
-  if (kumeKesisir(kumeAnahtarlari(yoneticiKimlik.deger), kumeAnahtarlari(hedefKimlik.deger))) {
+  if ((yoneticiKimlik && !yoneticiKimlik.ok) || !hedefKimlik.ok) return reddet(o, "telafi", "hedef_uygun_degil", ek);
+  if (yoneticiKimlik?.ok && kumeKesisir(kumeAnahtarlari(yoneticiKimlik.deger), kumeAnahtarlari(hedefKimlik.deger))) {
     return reddet(o, "telafi", "kendi_hedef", ek);
   }
 

@@ -580,3 +580,18 @@ test("Y3 telafi küme denetimi aynı hanedeki farklı hesapları da yakalar", ()
   const altHesap = { hesap: "hesap-b", yerlesim: "kizilca", e: 7 };
   assert.equal(kumeKesisir(kumeAnahtarlari(yonetici), kumeAnahtarlari(altHesap)), true);
 });
+
+test("Y3 telafi (17 Kasım E9): oyun karakteri olmayan yönetici de telafi verebilir", async () => {
+  try {
+    const { cagir, oyuncu, yonetici } = await kur();
+    const mehmet = await oyuncu("220000000000000000002", "Mehmet", "develi");
+    const yb = (await yonetici(KURUCU_SUB, KURUCU)).govde.oturum as string;
+    const r = await cagir("POST", "/yonetim/telafi", {
+      oturum: yb,
+      govde: { hedef: mehmet.hesap, tur: "akce", tutar: 100, gerekce: "Hatalı işlem düzeltmesi", istekNo: no() },
+    });
+    assert.equal(r.durum, 200, JSON.stringify(r.govde));
+  } finally {
+    globalThis.fetch = eskiFetch;
+  }
+});
