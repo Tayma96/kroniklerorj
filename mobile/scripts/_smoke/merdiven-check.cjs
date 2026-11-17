@@ -17,9 +17,11 @@ for (const pr of g.PROFESSIONS) if (pr.tiers.length !== 4 || new Set(pr.tiers).s
 
 // 2) Her meslek: her kademe 30 ay hizmet; sınav kazanılınca bir kademe; kalınca 6 ay bekleme; zirve bonusu yalnız zirvede ve bir kez
 const R0 = Math.random;
+// F4: sınav üç aşamalı tohumlu zar (gameRandom) — sonuç zar durumu (rng_state) aranarak zorlanır.
+const zorla = (s, want) => { for (let r = 1; r < 5000; r++) { const c = JSON.parse(JSON.stringify(s)); c.rng_state = (Math.imul(r, 2654435761) >>> 0) || 1; const x = g.ustalikSinavi(c, 0); if (x.basari === want) return x; } return { basari: null, state: s }; };
 for (const pr of g.PROFESSIONS) {
-  if (!g.SINAV_YOLLARI[pr.id]) { H(pr.id + ": sınav yolu yok"); continue; }
   let s = oyuncu(pr.id, 0, 0);
+  if (g.sinavDurumu(s).asamalar.length !== 3) { H(pr.id + ": üç aşama yok"); continue; }
   for (let k = 0; k < pr.tiers.length - 1; k++) {
     const d0 = g.sinavDurumu(s);
     if (d0.hizmetAy !== (k + 1) * 30 - s.player.career_xp) H(`${pr.id} k${k}: hizmetAy ${d0.hizmetAy}`);
@@ -28,11 +30,11 @@ for (const pr of g.PROFESSIONS) {
     s.player.money = 1e6; if (g.ustalikSinavi(s, 0).basari !== null) H(`${pr.id} k${k}: para hizmetsiz sınav açtı`);
     s.player.career_xp = (k + 1) * 30;
     // önce bir kez kal: 6 ay bekleme
-    Math.random = () => 0.999; let r = g.ustalikSinavi(s, 0); Math.random = R0;
+    let r = zorla(s, false);
     if (r.basari !== false || r.state.player.sinav_bekle !== r.state.turn + g.SINAV_BEKLEME || g.SINAV_BEKLEME !== 6) H(`${pr.id} k${k}: kalma/6 ay bekleme bozuk`);
     s = r.state; s.player.sinav_bekle = undefined; s.player.sinav_turn = undefined;
     const f0 = s.player.fame, h0 = s.player.honor, m0 = s.player.money;
-    Math.random = () => 0; r = g.ustalikSinavi(s, 0); Math.random = R0;
+    r = zorla(s, true);
     if (r.basari !== true || r.state.player.kademe !== k + 1) { H(`${pr.id} k${k}: sınav geçilmedi/kademe ${r.state.player.kademe}`); break; }
     s = r.state; s.player.sinav_turn = undefined;
     const zirve = k + 1 === pr.tiers.length - 1;
@@ -90,7 +92,7 @@ for (let v = 0; v < g.MERDIVEN_SURUM; v++) for (const pr of g.PROFESSIONS) {
 }
 // 3d) Kalınca söz tutulur: bekleyiş boyunca çağrı yok, bekleyiş dolunca work() bir kez "yeniden çağrı" düşürür (dönüm penceresi açmaz)
 { let s = oyuncu("çiftçi", 0, 30); s.player.hunger = 100;
-  Math.random = () => 0.999; s = g.ustalikSinavi(s, 0).state; Math.random = R0;
+  s = zorla(s, false).state;
   const say = (st, k) => st.history.filter((e) => e.k === k).length;
   for (let ay = 0; ay < g.SINAV_BEKLEME + 2; ay++) {
     const once = say(s, "evj.sinav.yeniden"); s.player.hunger = 100; s.player.health = 100; s = g.work(s);

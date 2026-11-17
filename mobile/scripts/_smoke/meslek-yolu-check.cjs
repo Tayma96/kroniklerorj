@@ -6,14 +6,15 @@ const copy = (x) => JSON.parse(JSON.stringify(x));
 (async () => {
   const build = await esbuild.build({ entryPoints: [path.join(root, "lib/game.ts")], bundle: true, platform: "node", format: "cjs", write: false });
   const module = { exports: {} }; new Function("module", "exports", "require", build.outputFiles[0].text)(module, module.exports, require); const g = module.exports;
-  assert.equal(Object.keys(g.MESLEK_YOLLARI).length, g.PROFESSIONS.length);
+  assert.equal(Object.keys(g.MESLEK_YOLLARI).length, g.PROFESSIONS.length); for (const pr of g.PROFESSIONS) assert(g.MESLEK_YOLLARI[pr.id], pr.id + ' yol tanımı');
   const base = g.newGame("Usta", "Ocak", "kadın"); let cases = 0;
   for (const pr of g.PROFESSIONS) {
     const s = copy(base), p = s.player;
     p.age = p.base_age = 35; p.profession = pr.id; p.kademe = 3; p.capstones = [pr.id]; p.career_xp = 90; p.money = 1000; p.hunger = 60;
     assert.equal(g.meslekYoluKademesi(p), 1, pr.id + " usta");
-    const baseMult = g.workForecast(s).mult;
-    p.career_xp = 126; assert.equal(g.meslekYoluKademesi(p), 2, pr.id + " ocak"); assert(g.workForecast(s).mult > baseMult, pr.id + " kök ücreti");
+    const g1 = g.meslekYoluGucu(p), e1 = g.meslekYoluEtkiDegeri(pr.id, g1); assert.equal(g1, 2, pr.id + " usta gücü");
+    p.career_xp = 126; assert.equal(g.meslekYoluKademesi(p), 2, pr.id + " ocak"); assert(g.meslekYoluGucu(p) > g1 && g.meslekYoluEtkiDegeri(pr.id, g.meslekYoluGucu(p)) > e1, pr.id + " yol etkisi büyür");
+    assert(g.MESLEK_YOLLARI[pr.id].etki && g.MESLEK_YOLLARI[pr.id].oran > 0, pr.id + " özgün etki"); cases++;
     p.career_xp = 179; p.work_turn = undefined; p.tezgah_turn = s.turn;
     const oldRandom = Math.random; Math.random = () => .99;
     let pir;
@@ -33,5 +34,5 @@ const copy = (x) => JSON.parse(JSON.stringify(x));
   }
   const eski = copy(base); eski.player.age = eski.player.base_age = 50; eski.player.profession = "demirci"; eski.player.kademe = 3; eski.player.career_xp = 240; eski.player.capstones = ["demirci"];
   const goc = g.migrate(eski); assert(goc.player.meslek_pirleri.includes("demirci"), "eski ustanın pirliği korunur"); cases++;
-  console.log(`MESLEK YOLU: TEMİZ · ${cases} denetim · ${g.PROFESSIONS.length} meslek · usta/ocak/pir · özgün imza karşılıkları`);
+  console.log(`MESLEK YOLU: TEMİZ · ${cases} denetim · ${g.PROFESSIONS.length} meslek · usta/ocak/pir · özgün yol etkisi büyür · imza karşılıkları`);
 })().catch((e) => { console.error(e); process.exitCode = 1; });

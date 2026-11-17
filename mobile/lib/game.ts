@@ -9234,16 +9234,8 @@ function dynastyNote(p: Player): string {
 const DYNNOTE_TR: Record<string, string> = { destan: "Adı destanlara karıştı.", saygin: "Diyarda saygın bir isimdi.", mulk: "Geride büyük bir mülk bıraktı.", korkulan: "Korkulan bir isimdi.", kalabalik: "Kalabalık bir soy bıraktı.", gezgin: "Yolların adamı sayıldı; her handa bir hatırası kaldı.", alim: "Aklıyla anıldı; sözü meclislerde tartıldı.", usta: "Elinin emeği ondan sonra da konuştu; yaptıkları kaldı.", sade: "Sade bir hayat sürdü." };
 
 // ── AHİLİK: PEŞTAMAL SINAVI — kademe hizmetle değil sınavla kazanılır ──
-// Hizmet süresi bir sonraki kademeye yettiğinde lonca seni ustaların önüne çağırır. Her mesleğin kendi sınavı ve üç yolu var;
-// her yol farklı bir özelliğe yaslanır (yapına uyan yolu seçmek stratejidir), mesleğin becerisi her yolda işe yarar.
+// Hizmet süresi bir sonraki kademeye yettiğinde lonca seni ustaların önüne çağırır (sınav: aşağıda üç aşamalı zar).
 // Kalırsan altı ay sonra yeniden çağrılırsın. Farm yok: deneme ayda bir, yükseliş yine hizmet süresine bağlı.
-export const SINAV_YOLLARI: Record<string, [keyof Stats, keyof Stats, keyof Stats]> = {
-  çiftçi: ["stamina", "intelligence", "charisma"], demirci: ["strength", "intelligence", "stamina"], tüccar: ["charisma", "intelligence", "stamina"],
-  balıkçı: ["stamina", "intelligence", "strength"], avcı: ["strength", "intelligence", "stamina"], marangoz: ["intelligence", "strength", "stamina"],
-  çoban: ["stamina", "charisma", "strength"], fırıncı: ["intelligence", "stamina", "charisma"], asker: ["strength", "intelligence", "stamina"],
-  müzisyen: ["charisma", "intelligence", "stamina"], şifacı: ["intelligence", "charisma", "stamina"], katip: ["intelligence", "stamina", "charisma"],
-  kuyumcu: ["intelligence", "stamina", "charisma"], dokumacı: ["intelligence", "stamina", "charisma"], hancı: ["charisma", "strength", "intelligence"],
-};
 export const SINAV_BEKLEME = 6; // kalınca yeniden çağrı (ay)
 // F4 (K5): peştamal sınavı üç aşamalı K1 zarı — ustalık (mesleğin statı + becerisi), ahlak (itibar, şeref, nam), sohbet (karizma +
 // sosyal). Her aşama ayrı zar, üçten ikisini geçen peştamal kuşanır. Usta bağı ustalık ve ahlakta, lonca kefili (kendi meslek

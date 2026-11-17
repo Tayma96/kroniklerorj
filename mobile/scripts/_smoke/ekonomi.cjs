@@ -55,7 +55,7 @@ function hayat(tur) {
     if (p.hunger < 35) { s = g.eat(s); kay.yemek += s.player.money - a; }
     a = s.player.money;
     if (p.age >= 13 && p.profession !== "işsiz" && s.player.hunger >= 30) { s = g.work(s); kay.calisma += s.player.money - a; }
-    if (usta) { a = servet(s.player); try { const d = g.sinavDurumu(s); if (d && d.hazir) s = g.ustalikSinavi(s, 1).state; } catch (e) {} kay.kart += servet(s.player) - a; }
+    if (usta) { a = servet(s.player); try { const d = g.sinavDurumu(s); if (d && d.hazir) s = g.ustalikSinavi(s).state; } catch (e) {} kay.kart += servet(s.player) - a; }
     a = servet(s.player);
     s = g.advance(s, 1);
     kay.ay += servet(s.player) - a;

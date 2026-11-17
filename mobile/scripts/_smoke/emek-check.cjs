@@ -5,9 +5,15 @@ const root = path.resolve(__dirname, '../..'), copy = s => JSON.parse(JSON.strin
   const build = await esbuild.build({ entryPoints: [path.join(root, 'lib/game.ts')], bundle: true, platform: 'node', format: 'cjs', write: false });
   const module = { exports: {} }; new Function('module', 'exports', 'require', build.outputFiles[0].text)(module, module.exports, require); const g = module.exports;
   const base = g.newGame('Emek', 'Ocak', 'kadın'); let cases = 0;
+  // Ücret zarı Math.random; hırslının patlama zarı tohumlu (gameRandom) — istenen dal rng_state aranarak seçilir (F4).
   const rolled = (s, style, roll, failed = false) => {
-    const original = Math.random; let n = 0; Math.random = () => n++ === 0 ? (roll + .1) / 6 : failed && n === 2 ? .01 : .99;
-    try { return g.work(s, style); } finally { Math.random = original; }
+    const original = Math.random; let n = 0; Math.random = () => n++ === 0 ? (roll + .1) / 6 : .99;
+    try {
+      const fail = g.WORK_STYLES.find((w) => w.id === style).fail;
+      if (!fail) return g.work(s, style);
+      for (let r = 1; r < 5000; r++) { const c = copy(s); c.rng_state = (Math.imul(r, 2654435761) >>> 0) || 1; n = 0; const out = g.work(c, style); const hurt = out.player.health < c.player.health; if (hurt === failed) return out; }
+      throw Error('dal bulunamadı');
+    } finally { Math.random = original; }
   };
   for (const pr of g.PROFESSIONS) for (const variant of [0,1,2]) for (const ws of g.WORK_STYLES) for (let roll = 0; roll < 6; roll++) {
     const s = copy(base), p = s.player; p.age = p.base_age = 30; p.profession = pr.id; p.tezgah_turn = s.turn;
@@ -19,11 +25,12 @@ const root = path.resolve(__dirname, '../..'), copy = s => JSON.parse(JSON.strin
     assert.equal(JSON.stringify(s), raw); assert.equal(f.fail, ws.fail);
     const result = rolled(s, ws.id, roll), earned = result.player.money - p.money;
     assert(earned >= f.min && earned <= f.max, pr.id); assert.equal(result.player.hunger, p.hunger - f.hunger);
-    assert.equal(result.player.health, p.health + f.health); assert.equal(result.player.work_turn, s.turn);
+    assert.equal(result.player.health, Math.min(100, p.health + f.health)); assert.equal(result.player.work_turn, s.turn);
+    if (ws.id === 'kaytarici') assert.equal(result.player.study_energy, g.maxStudyEnergy(30) + g.STUDY_COST, 'yarım gün uğraş hakkı');
     assert.deepEqual(g.work(result, ws.id), result, 'Tek ayda tekrar kazanç/dinlenme olmaz'); cases++;
     if (ws.fail) { const loss = rolled(s, ws.id, roll, true), wage = loss.player.money - p.money;
-      assert(wage >= f.lossMin && wage <= f.lossMax); assert.equal(loss.player.health, ws.id === 'hirsli' ? 51 : 60);
-      assert.equal(loss.player.reputation, ws.id === 'kaytarici' ? p.reputation - 2 : p.reputation); cases++; }
+      assert.equal(wage, 0); assert.equal(f.lossMin, 0); assert.equal(loss.player.health, p.health - g.HIRSLI_SAGLIK);
+      assert.equal(loss.player.reputation, p.reputation); cases++; }
   }
   for (const health of [99,100]) for (const hunger of [0,2]) {
     const s = copy(base); s.player.age = s.player.base_age = 30; s.player.profession = 'demirci'; s.player.health = health; s.player.hunger = hunger; s.player.tezgah_turn = s.turn;
@@ -32,8 +39,8 @@ const root = path.resolve(__dirname, '../..'), copy = s => JSON.parse(JSON.strin
   for (const gate of ['dead','young','jobless','worked']) {
     const s = copy(base); s.player.age = s.player.base_age = 30; s.player.profession = 'demirci';
     if (gate === 'dead') s.player.dead = true; if (gate === 'young') s.player.age = s.player.base_age = 12;
-    if (gate === 'jobless') s.player.profession = 'işsiz'; if (gate === 'worked') s.player.work_turn = s.turn;
+    if (gate === 'jobless') s.player.profession = 'işsiz'; /* ırgatlık yılı yoksa iş yok */ if (gate === 'worked') s.player.work_turn = s.turn;
     assert.deepEqual(g.work(s, 'garantici'), s); cases++;
   }
-  console.log('EMEK: TEMİZ · ' + cases + ' senaryo · ' + g.PROFESSIONS.length + ' meslek · dört tarz · iki risk dalı · zar/yazım yok · ay kilidi');
+  console.log('EMEK: TEMİZ · ' + cases + ' senaryo · ' + g.PROFESSIONS.length + ' meslek · dört tarz (yarım gün uğraş hakkı) · hırslı patlama dalı · zar/yazım yok · ay kilidi');
 })().catch(e => { console.error(e); process.exitCode = 1; });

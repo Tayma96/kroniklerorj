@@ -29,6 +29,7 @@ for (let i = 0; i < LIVES; i++) {
     let guard = 0;
     while (!s.player.dead && s.player.age < 85 && guard++ < TURNS) {
       const p = s.player;
+      try { if (g.ustaKapisiAcik(s)) s = g.ustaKapisiSec(s, Math.floor(Math.random() * 4)); } catch (e) { errors++; if (errors <= 5) console.log("USTA KAPISI HATASI:", e.message); } // F4: usta kapısı (rastgele seçim, ertele dahil)
       if (p.hunger < 35) s = g.eat(s);
       if (p.age >= 13 && p.profession !== "işsiz" && p.hunger >= 30) s = g.work(s);
       // Mektep çağı: ders + kulüp (okul olayları/hoca bağı/kulüp kapsamı)
@@ -80,7 +81,7 @@ for (let i = 0; i < LIVES; i++) {
         } catch (e) { errors++; if (errors <= 5) console.log("OKUMA HATASI:", e.message); }
         try { if (!s.npcTeklif && Math.random() < 0.15) s = g.kapiyaGelen(s); if (s.npcTeklif && Math.random() < 0.6) s = g.npcTeklifYanit(s, Math.random() < 0.5, Math.random() < 0.5 ? 0 : 1); } catch (e) { errors++; if (errors <= 5) console.log("TEKLİF HATASI:", e.message); } // NPC'nin kendi teklifi (dünürcü/borç)
         try { // ahilik: hizmet dolunca peştamal sınavına gir (zirve bonusu, kalma bekleme ve kademe yolu da koşar)
-          const sd = g.sinavDurumu(s); if (sd && sd.hazir && Math.random() < 0.6) s = g.ustalikSinavi(s, R([0, 1, 2])).state;
+          const sd = g.sinavDurumu(s); if (sd && sd.hazir && Math.random() < 0.6) s = g.ustalikSinavi(s).state;
         } catch (e) { errors++; if (errors <= 5) console.log("SINAV HATASI:", e.message); }
         try { // çırak: usta olunca al, çoğu zaman ders ver (bazen ihmal et → kaçış yolu da koşar)
           if (g.cirakAlabilir(s.player, s.turn) && Math.random() < 0.15) s = g.cirakAl(s, R([0, 1, 2]));

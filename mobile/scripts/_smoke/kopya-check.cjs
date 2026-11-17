@@ -15,7 +15,7 @@ for (let h = 0; h < HAYAT; h++) {
   while (!s.player.dead && gd++ < 900) {
     const eylemler = [(x) => g.advance(x), (x) => g.eat(x), (x) => g.work(x)];
     if (s.player.age >= 13 && s.player.profession === "işsiz") eylemler.push((x) => g.changeProfession(x, R(["çiftçi", "çoban", "balıkçı"])));
-    const sd = g.sinavDurumu(s); if (sd && sd.hazir) eylemler.push((x) => g.ustalikSinavi(x, R([0, 1, 2])).state);
+    const sd = g.sinavDurumu(s); if (sd && sd.hazir) eylemler.push((x) => g.ustalikSinavi(x).state);
     const ns = s.player.age >= 13 ? g.npcsOf(s) : []; if (ns.length) eylemler.push((x) => g.talkWith(x, R(ns), R(["hosbes", "dert", "is"])).state);
     for (const f of eylemler) {
       const once = gd % 15 === 0 ? muhur(s) : null; const yeni = f(s);
