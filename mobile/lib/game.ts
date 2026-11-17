@@ -9250,10 +9250,10 @@ export function sinavAsamaGirdisi(s: GameState, asama: SinavAsamaId, hedef = kad
   const p = s.player; const dom = (PROF_SKILL[p.profession] || "crafting") as SkillKey; const st = PROF_STAT[p.profession] || "stamina";
   const usta = ustaKalemi(s), lonca = loncaKefili(s);
   const ek = (xs: ZarKalemi[]) => xs.filter((k) => k.deger);
-  if (asama === "ustalik") return { stat: st, beceri: dom, zorluk: 5 + 2 * hedef, ekKalemler: ek([{ etiket: "ms.kalem.usta", deger: usta }, { etiket: "ms.kalem.eksik", deger: hedef === 1 && p.usta_kapisi?.eksik ? -2 : 0 }, ...hunerKalemleri(p, "sinav", st)]) };
-  if (asama === "sohbet") return { stat: "charisma", beceri: "social", zorluk: 4 + 2 * hedef, ekKalemler: ek([{ etiket: "ms.kalem.lonca", deger: lonca }]) };
+  if (asama === "ustalik") return { stat: st, beceri: dom, zorluk: 7 + 3 * hedef, ekKalemler: ek([{ etiket: "ms.kalem.usta", deger: usta }, { etiket: "ms.kalem.eksik", deger: hedef === 1 && p.usta_kapisi?.eksik ? -2 : 0 }, ...hunerKalemleri(p, "sinav", st)]) };
+  if (asama === "sohbet") return { stat: "charisma", beceri: "social", zorluk: 6 + 3 * hedef, ekKalemler: ek([{ etiket: "ms.kalem.lonca", deger: lonca }]) };
   const nm = p.nam || ({} as Nam);
-  return { zorluk: 2 * hedef, ekKalemler: ek([
+  return { zorluk: 3 * hedef, ekKalemler: ek([
     { etiket: "ms.kalem.itibar", deger: Math.max(-3, Math.min(6, Math.round(p.reputation / 12))) },
     { etiket: "ms.kalem.seref", deger: unKademesi("honor", p.honor) },
     { etiket: "ms.kalem.nam", deger: Math.max(-3, Math.min(3, Math.round(((nm.mert || 0) + (nm.dindar || 0) + (nm.comert || 0)) / 40 - (nm.zalim || 0) / 20))) },
