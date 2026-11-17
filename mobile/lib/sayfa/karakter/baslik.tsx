@@ -9,7 +9,7 @@ import { GameIcon } from "../../icons";
 import { Portre } from "../../ui";
 import { armaImage } from "../../assets";
 import { placeName, careerTitleL } from "../../locale-data";
-import { canWork, inJail, professionById, kariyerXp, healerCost, visitHealer, hamamCost, visitHamam, playEnergy, PLAY_COST, studyEnergy, STUDY_COST } from "../../game";
+import { hunerUnvanlari, canWork, inJail, professionById, kariyerXp, healerCost, visitHealer, hamamCost, visitHamam, playEnergy, PLAY_COST, studyEnergy, STUDY_COST } from "../../game";
 import { C, F } from "../../theme";
 import { Pano, Madalyon, Rozet, Cubuk, Giris, AltBaslik, KR, yon } from "./parca";
 
@@ -49,6 +49,7 @@ export function KarakterKimlik({ onSettings }: { onSettings: () => void }) {
           <Rozet text={`${p.age} ${t("misc.age")} · ${p.gender === "kadın" ? t("misc.female") : t("misc.male")}`} />
           <Rozet icon="sehir" text={placeName(p.location_name, lang)} />
           <Rozet icon="star" text={`${p.generation}. ${t("misc.generation")}`} />
+          {hunerUnvanlari(p).map((k) => <Rozet key={k} icon="medal" tone={C.goldBright} text={t("huner.unvan." + k)} />)}
           {inJail(p) ? <Rozet icon="prisoner" tone={C.blood} text={`${t("jail.title")} · ${p.jail!.left} ${t("char.mo")}`} /> : null}
         </View>
       </View>

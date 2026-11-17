@@ -1,5 +1,5 @@
 // İkilemler — ay ilerlerken çıkan anlatısal seçimler. Saf veri; etki applyDilemma ile uygulanır.
-import { GameState, Delta, Player, effStat, Opportunity, opportunitiesFor, kapiyaGelen, donumAni, inJail, acikIpler, senlikAni, kirilmaSahnesi, KirSahne } from "./game";
+import { GameState, Delta, Player, effEtki, statEtki, Opportunity, opportunitiesFor, kapiyaGelen, donumAni, inJail, acikIpler, senlikAni, kirilmaSahnesi, KirSahne } from "./game";
 
 export interface Choice { label: string; delta: Delta; result: string; rk?: string; sans?: number; risk?: { taban: number; ticaret?: number; zeka?: number; kayip: Delta; metin: string }; gercek?: Delta; } // rk: sonuç metni anahtarı (riskli yolun kötü sonucu) · sans: görünür başarı şansı % · risk: kart açılırken zar atılır (şans = taban + ticaret×beceri + zekâ×stat), tutmazsa kayıp uygulanır · gercek: uygulanacak delta (delta kartta gösterilen)
 export interface Dilemma {
@@ -1413,7 +1413,7 @@ export function riskiCoz(p: Player, d: Dilemma, random: () => number = Math.rand
   if (!d.choices.some((c) => c.risk)) return d;
   return { ...d, choices: d.choices.map((c, i) => {
     const r = c.risk; if (!r) return c;
-    const sans = Math.max(10, Math.min(90, Math.round(r.taban + (r.ticaret || 0) * (p.skills?.trade || 0) + (r.zeka || 0) * effStat(p, "intelligence"))));
+    const sans = Math.max(10, Math.min(90, Math.round(r.taban + (r.ticaret || 0) * statEtki(p.skills?.trade || 0) + (r.zeka || 0) * effEtki(p, "intelligence"))));
     const ok = random() * 100 < sans;
     const goster = { ...c.delta } as Record<string, unknown>;
     for (const [k, v] of Object.entries(r.kayip)) if (typeof v === "number" && Math.abs(v) > Math.abs((goster[k] as number) || 0)) goster[k] = v;

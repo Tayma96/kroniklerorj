@@ -1,16 +1,16 @@
 {
   "kind": "sentetik-karakterizasyon-gercek-oyuncu-kaydi-degil",
-  "engineSha256": "7c6404d38d855ad3516fe9ec23a5816a63d6e42488218c6e56e94c0ef303cf93",
+  "engineSha256": "93f62fd1bf8501c2001742a95889b46199b0cb6ac133bdcb3078636c2f317105",
   "flows": {
     "yeni": "04448f57e2a1a713c7ed9198f5f9f1119b2bffd5faa71891582c2afb0838faac",
     "ay": "acd1e39647eb71fdc155c2254d1e59111b348306adfde11ea2bab785967f92c5",
     "yemek": "9a9f1d9d49e462e8b4e97ca50bd704490d182dce2ba74a9602108065d0f0e6c7",
     "is": "b929c1288bbf4603e95261f694894a07075b1c9eb257c2be77d6735a6f426976",
     "ticaret": "a7c7235310fda6cfb1d585eeca91cbfafa25cc78eb73a47e385b8821c20c3f15",
-    "sohbet": "adcf52f3436253cb3afc9454352db4a5a640b621d653e8a8c39be3f995bfc3fe",
-    "ders": "1cfbf9d8e821b823c8a9ff52e7ff6d34f8f322b67fbae0f81e43066f7c1e69a2",
+    "sohbet": "e1feb6287f3978b0515381641a762cadfdb8efd66f584874f8802c5b38415bcb",
+    "ders": "bca7198795e00103705c860eec965a3dc59c562d9203edafcddbaa94770941fb",
     "suc": "0be0a440db31f171f1f4446cee6258bfa7cbb496223e63bdb3f2f9f870cbf791",
-    "yol": "921a43c03c0d103ff102036ff74c739e54b1f50e250ac7c3fcd2481d883fdc1a",
+    "yol": "0451e2029fb655488d0f1d04e2463eb8eee28469bcd1e0f1da3efdb1bfba4d18",
     "varis": "94e4237fa74e7468854151c6063fa4ee049660b79b5ba596d647fcfd49cf6ebf"
   },
   "simulations": {
@@ -29,13 +29,13 @@
     "60": {
       "months": 30,
       "dead": false,
-      "hash": "2abce620192420f1d8c468c66af4388346df38fa19910a419418a1741ddfb908",
-      "saveBytes": 204320
+      "hash": "c0e9dfbb8b90731c646a8eb9d277417d88322fb3084b0513fa63d7a122ad4293",
+      "saveBytes": 203299
     }
   },
   "measuredTickMs": {
-    "p50": 1.23,
-    "p95": 10.89,
-    "max": 15.95
+    "p50": 1.32,
+    "p95": 12.14,
+    "max": 23.17
   }
 }

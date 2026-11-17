@@ -1,4 +1,5 @@
 import { DesignPressable as Pressable } from "../../lib/design-pressable";
+import { SansDokumu } from "../../lib/sans-etiketi";
 import { useState, useRef } from "react";
 import { View, Text, ScrollView, useWindowDimensions } from "react-native";
 import Animated, { useSharedValue, useAnimatedStyle, withSequence, withTiming } from "react-native-reanimated";
@@ -6,7 +7,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
 import { ArmyFront } from "../../lib/army-ui";
-import { ENCOUNTERS, combatPower, armorDefense, weaponClass, hasShield, shieldBlockChance, applyBattleOutcome, nemesisEncounter, applyNemesisOutcome, reconcileNemesis, reconcileCost, diyetBedeli, diyetSansi, diyetOde, kisiProfil, trainCombat, trainCost, startBattleAttempt, inflationFactor, hireGuard, dismissGuards, retinueHireCost, retinueWage, RETINUE_MAX, inJail, Encounter, applyYuzlesme, yuzlesmeHarac, yuzlesmeKese, YUZLESME_YARA } from "../../lib/game";
+import { ENCOUNTERS, efsaneAcik, efsaneSohretSarti, combatPower, armorDefense, weaponClass, hasShield, shieldBlockChance, applyBattleOutcome, nemesisEncounter, applyNemesisOutcome, reconcileNemesis, reconcileCost, diyetBedeli, diyetSansi, diyetOde, kisiProfil, trainCombat, trainCost, startBattleAttempt, inflationFactor, hireGuard, dismissGuards, retinueHireCost, retinueWage, RETINUE_MAX, inJail, Encounter, applyYuzlesme, yuzlesmeHarac, yuzlesmeKese, YUZLESME_YARA } from "../../lib/game";
 import { YZ_SECIMLER, YzCozum, YzSecim, yzTuru, yzSans, yzOran, yzCoz, yzUygula } from "../../lib/yuzlesme";
 import { startBattle, stepBattle, battleMoveCost, MOVES, STANCES, BattleState, Move, Stance, CbLogEntry } from "../../lib/combat";
 import { DuelArena } from "../../lib/duel-arena";
@@ -339,19 +340,7 @@ export default function Savas() {
                     </Pressable>
                   </View>
                   {diyetAcik ? (
-                    <View style={{ paddingTop: 8 }}>
-                      <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1.5, color: C.goldDim, marginBottom: 4 }}>{t("sans.title")}</Text>
-                      {ds!.kalemler.map((x, i) => (
-                        <View key={i} style={{ flexDirection: "row", paddingVertical: 2 }}>
-                          <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 15, color: C.parchmentDim }}>{t(x.k)}</Text>
-                          <Text style={{ fontFamily: F.display, fontSize: 13, color: x.v > 0 ? C.sage : C.blood }}>{x.v > 0 ? "+" + x.v : x.v}</Text>
-                        </View>
-                      ))}
-                      <View style={{ flexDirection: "row", paddingTop: 4, marginTop: 3, borderTopWidth: 1, borderTopColor: C.border }}>
-                        <Text style={{ flex: 1, fontFamily: F.display, fontSize: 13, color: C.parchment }}>{t("sans.toplam")}</Text>
-                        <Text style={{ fontFamily: F.display, fontSize: 13, color: C.gold }}>{yuzdeL(ds!.yuzde, lang)}</Text>
-                      </View>
-                    </View>
+                    <View style={{ paddingTop: 8 }}><SansDokumu kalemler={ds!.kalemler} yuzde={ds!.yuzde} /></View>
                   ) : null}
                 </View>
               );
@@ -437,7 +426,7 @@ export default function Savas() {
             </View>
           );
         })()}
-        {ENCOUNTERS.filter((e) => !e.minFame || p.fame >= e.minFame).map((e) => {
+        {ENCOUNTERS.filter((e) => efsaneAcik(p, e)).map((e) => {
           const tooStrong = e.power > pw + 8;
           return (
             <View key={e.id} style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 5, padding: 14, marginBottom: 10 }}>
@@ -456,12 +445,12 @@ export default function Savas() {
           );
         })}
         {(() => {
-          const locked = ENCOUNTERS.filter((e) => e.minFame && p.fame < e.minFame).sort((x, y) => (x.minFame || 0) - (y.minFame || 0))[0];
+          const locked = ENCOUNTERS.filter((e) => !efsaneAcik(p, e)).sort((x, y) => efsaneSohretSarti(p, x) - efsaneSohretSarti(p, y))[0];
           if (!locked) return null;
           return (
             <View style={{ borderWidth: 1, borderColor: C.border, borderStyle: "dashed" as const, borderRadius: 5, padding: 12, marginBottom: 10, opacity: 0.85 }}>
               <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, lineHeight: 22 }}>
-                {applyParams(t("cb.legendTeaser"), [locked.minFame || 0])}
+                {applyParams(t("cb.legendTeaser"), [efsaneSohretSarti(p, locked)])}
               </Text>
             </View>
           );

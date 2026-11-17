@@ -124,6 +124,7 @@ export function KusamSekmesi() {
     const tier = q(secili), bonus = bonusOf(m);
     const parcalar = [t(m.labelKey)];
     if (bonus > 0) parcalar.push(`+${bonus} ${t(m.field === "power" ? "karakter.cenkGucu" : "karakter.savunma")}`);
+    for (const k of ["strength", "stamina", "intelligence"] as const) if (it?.[k]) parcalar.push(`+${it[k]} ${t("st." + k)}`); // K2: eşyanın özellik katkısı (effStat sayar)
     if (tier !== "siradan") parcalar.push(qAd(tier));
     const sinif = secili === "silah" && it?.wclass ? it.wclass : null;
     const aciklama = sinif ? t("wc." + sinif + ".d") : secili === "kiyafet" ? t("char.attireHint") : secili === "taki" ? t("char.jewelryHint") : null;

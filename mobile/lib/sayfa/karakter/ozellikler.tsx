@@ -4,10 +4,10 @@ import { View, Text } from "react-native";
 import { useRouter } from "expo-router";
 import { DesignPressable as Pressable } from "../../design-pressable";
 import { useGame } from "../../store";
-import { useI18n, yuzdeL } from "../../i18n";
+import { useI18n, yuzdeL, applyParams } from "../../i18n";
 import { hap } from "../../haptics";
 import { GameIcon } from "../../icons";
-import { sermayeler, SermayeId, allocateStat, Stats, pendingPerkCount, statXpOf, statXpForNext, statTierKey, publicPerception, atHome } from "../../game";
+import { sermayeler, SermayeId, allocateStat, Stats, pendingPerkCount, statXpOf, statXpForNext, statKademeKey, statKullanimSayisi, publicPerception, atHome, effStat, statCapOf, NIYETLER, NiyetId, NIYET_YAS, aktifNiyet, niyetSec } from "../../game";
 import { C, F } from "../../theme";
 import { Pano, Giris, Cubuk, KR, yon } from "./parca";
 
@@ -26,8 +26,11 @@ export function OzelliklerSekmesi() {
   const [sermayeAcik, setSermayeAcik] = useState<SermayeId | null>(null);
   const p = state!.player;
   const canAdd = p.stat_points > 0;
+  const tavan = statCapOf(p); // çocukta 10, 13 yaştan sonra 20 (K2)
   const add = (k: keyof Stats) => { hap("success"); apply((s) => allocateStat(s, k)); };
-  const perks = pendingPerkCount(p);
+  const perks = pendingPerkCount(p, aktifNiyet(state!));
+  const niyet = aktifNiyet(state!);
+  const niyetSecim = (id: NiyetId) => { if (id === niyet) return; hap("tap"); apply((s) => niyetSec(s, id)); };
 
   const sm = sermayeler(state!);
   const zayif = [...sm].sort((a, b) => a.deger - b.deger)[0];
@@ -44,21 +47,25 @@ export function OzelliklerSekmesi() {
       </View> : undefined}>
         <View style={{ flexDirection: row, flexWrap: "wrap", gap: 8 }}>
           {NITELIK.map((n) => {
-            const v = p.stats[n.k]; const ad = t(n.ad); const xpNext = v < 10 ? statXpForNext(v) : 0; const xp = statXpOf(p, n.k);
-            return <View key={n.k} accessible={!canAdd} accessibilityLabel={`${ad}: ${v} / 10, ${t(statTierKey(v))}`} style={{ width: "48.6%", flexGrow: 1, borderRadius: 8, borderWidth: 1, borderColor: C.border, backgroundColor: KR.well, padding: 10, gap: 6 }}>
+            const ham = p.stats[n.k]; const v = effStat(p, n.k); const fark = v - ham; // etkin değer: yara düşürür, kıyafet/takı karizma ekler
+            const ad = t(n.ad); const xpNext = ham < tavan ? statXpForNext(ham) : 0; const xp = statXpOf(p, n.k);
+            const kullanim = statKullanimSayisi(p, n.k, state!.turn);
+            return <View key={n.k} accessible={!canAdd} accessibilityLabel={`${ad}: ${v} / ${tavan}, ${t(statKademeKey(v))}. ${t("st.islev." + n.k)}${kullanim ? `. ${applyParams(t("st.kullanim"), [kullanim], lang)}` : ""}${fark ? `, ${t("char.statHam")} ${ham}` : ""}`} style={{ width: "48.6%", flexGrow: 1, borderRadius: 8, borderWidth: 1, borderColor: C.border, backgroundColor: KR.well, padding: 10, gap: 6 }}>
               <View style={{ flexDirection: row, alignItems: "center", justifyContent: "space-between" }}>
                 <View style={{ width: 40, height: 40, borderRadius: 20, borderWidth: 1.5, borderColor: n.tone, alignItems: "center", justifyContent: "center", backgroundColor: "#120C06" }}>
                   <GameIcon name={n.icon} size={20} color={n.tone} />
                 </View>
-                <Text style={{ fontFamily: F.display, fontSize: 26, lineHeight: 30, color: C.goldBright }}>{v}<Text style={{ fontSize: 12, color: C.parchmentMuted }}> /10</Text></Text>
+                <Text style={{ fontFamily: F.display, fontSize: 26, lineHeight: 30, color: C.goldBright }}>{v}{fark ? <Text style={{ fontSize: 12, color: fark > 0 ? C.sage : C.blood }}> {fark > 0 ? "+" + fark : "−" + -fark}</Text> : null}<Text style={{ fontSize: 12, color: C.parchmentMuted }}> /{tavan}</Text></Text>
               </View>
               <View>
                 <Text numberOfLines={1} style={{ fontFamily: F.display, fontSize: 12.5, lineHeight: 16, color: C.parchmentDim, textAlign: ta }}>{ad}</Text>
-                <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: 14.5, lineHeight: 18, color: n.tone, textAlign: ta }}>{t(statTierKey(v))}</Text>
+                <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: 14.5, lineHeight: 18, color: n.tone, textAlign: ta }}>{t(statKademeKey(v))}</Text>
+                <Text numberOfLines={3} style={{ fontFamily: F.serif, fontSize: 12, lineHeight: 15, color: C.parchmentMuted, textAlign: ta }}>{t("st.islev." + n.k)}</Text>
+                {kullanim ? <Text numberOfLines={2} style={{ fontFamily: F.display, fontSize: 11, lineHeight: 14, color: C.goldDim, textAlign: ta, marginTop: 2 }}>{applyParams(t("st.kullanim"), [kullanim], lang)}</Text> : null}
               </View>
-              <Cubuk pct={v * 10} tone={n.tone} h={5} rtl={rtl} />
+              <Cubuk pct={Math.min(100, (v / tavan) * 100)} tone={n.tone} h={5} rtl={rtl} />
               {xpNext ? <Cubuk pct={(xp / xpNext) * 100} tone={C.goldBright} h={2} rtl={rtl} /> : null}
-              {canAdd && v < 10 ? <Pressable accessibilityRole="button" accessibilityLabel={`${ad} +1`} onPress={() => add(n.k)}
+              {canAdd && ham < tavan ? <Pressable accessibilityRole="button" accessibilityLabel={`${ad} +1`} onPress={() => add(n.k)}
                 style={({ pressed }) => ({ minHeight: 44, borderRadius: 7, borderWidth: 1, borderBottomWidth: pressed ? 1 : 2.5, borderColor: C.gold, borderBottomColor: "#080503", backgroundColor: pressed ? "rgba(201,162,78,0.1)" : "rgba(201,162,78,0.2)", alignItems: "center", justifyContent: "center", transform: [{ translateY: pressed ? 1.5 : 0 }] })}>
                 <Text style={{ fontFamily: F.display, fontSize: 15, color: C.goldBright }}>+1</Text>
               </Pressable> : null}
@@ -68,8 +75,31 @@ export function OzelliklerSekmesi() {
       </Pano>
     </Giris>
 
+    {/* Niyet (K2): yılın odağı — 5 yol; seçilen her ay özelliğe ve beceriye tecrübe akıtır */}
+    {p.age >= NIYET_YAS && !p.dead ? <Giris i={1}>
+      <Pano title={t("niyet.baslik")} icon="compass" rtl={rtl}>
+        <Text style={{ fontFamily: F.serifItalic, fontSize: 14, lineHeight: 19, color: niyet && p.niyet_degisti ? C.emberSoft : C.parchmentDim, textAlign: ta, marginBottom: 8 }}>
+          {niyet ? (p.niyet_degisti ? t("niyet.yari") : t("niyet.giris")) : t("niyet.yok")}
+        </Text>
+        <View style={{ gap: 6 }}>
+          {NIYETLER.map((n) => {
+            const on = n.id === niyet;
+            return <Pressable key={n.id} accessibilityRole="button" accessibilityState={{ selected: on }} accessibilityLabel={`${t("niyet." + n.id)}. ${t("niyet." + n.id + ".d")} ${t("niyet." + n.id + ".k")}`} onPress={() => niyetSecim(n.id)}
+              style={({ pressed }) => ({ minHeight: 52, flexDirection: row, alignItems: "center", gap: 10, paddingHorizontal: 10, paddingVertical: 8, borderRadius: 8, borderWidth: on ? 1.5 : 1, borderColor: on ? C.gold : C.border, backgroundColor: on ? "rgba(201,162,78,0.16)" : pressed ? "rgba(201,162,78,0.08)" : KR.well })}>
+              <GameIcon name={n.icon} size={20} color={on ? C.goldBright : C.goldDim} />
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={{ fontFamily: F.display, fontSize: 13.5, lineHeight: 17, color: on ? C.goldBright : C.parchment, textAlign: ta }}>{t("niyet." + n.id)}{on ? ` · ${t("niyet.secili")}` : ""}</Text>
+                <Text style={{ fontFamily: F.serifItalic, fontSize: 13.5, lineHeight: 18, color: C.parchmentDim, textAlign: ta }}>{t("niyet." + n.id + ".d")}</Text>
+                <Text style={{ fontFamily: F.display, fontSize: 11, lineHeight: 14, color: C.goldDim, textAlign: ta }}>{t("niyet." + n.id + ".k")}</Text>
+              </View>
+            </Pressable>;
+          })}
+        </View>
+      </Pano>
+    </Giris> : null}
+
     {/* Beceriler — dokununca beceri ağacı */}
-    <Giris i={1}>
+    <Giris i={2}>
       <Pano title={t("char.skills")} icon="medal" rtl={rtl} right={perks > 0 ? <View style={{ paddingHorizontal: 9, height: 24, borderRadius: 12, justifyContent: "center", backgroundColor: KR.alert, borderWidth: 1, borderColor: "#FBE3C4" }}>
         <Text style={{ fontFamily: F.display, fontSize: 11.5, lineHeight: 15, color: "#FFF4E2" }}>{perks}</Text>
       </View> : undefined}>
@@ -79,7 +109,7 @@ export function OzelliklerSekmesi() {
             <View key={sk} style={{ flexDirection: row, alignItems: "center", gap: 9, marginBottom: 8 }}>
               <GameIcon name={ic} size={15} color={C.goldDim} />
               <Text numberOfLines={1} style={{ width: 92, fontFamily: F.display, fontSize: 12, color: C.parchmentDim, textAlign: ta }}>{t("skill." + sk)}</Text>
-              <View style={{ flex: 1 }}><Cubuk pct={p.skills[sk] * 10} tone={C.gold} h={5} rtl={rtl} /></View>
+              <View style={{ flex: 1 }}><Cubuk pct={p.skills[sk] * 5} tone={C.gold} h={5} rtl={rtl} /></View>
               <Text style={{ width: 24, textAlign: "center", fontFamily: F.display, fontSize: 14, color: C.parchment }}>{p.skills[sk]}</Text>
             </View>
           ))}
@@ -92,7 +122,7 @@ export function OzelliklerSekmesi() {
     </Giris>
 
     {/* Dört sermaye: dokununca katkı dökümü; kapalıyken en zayıfı için yol */}
-    <Giris i={2}>
+    <Giris i={3}>
       <Pano title={t("sermaye.baslik")} icon="akce" rtl={rtl}>
         <View style={{ flexDirection: row, gap: 6 }}>
           {sm.map((x) => {
@@ -122,7 +152,7 @@ export function OzelliklerSekmesi() {
     </Giris>
 
     {/* Mevki & bağlılık: dört toplumsal değer + bulunduğun yerde halkın algısı */}
-    <Giris i={3}>
+    <Giris i={4}>
       <Pano title={t("char.status")} icon="orgutler" rtl={rtl}>
         <View style={{ flexDirection: row, gap: 6 }}>
           {([["karakter", "soc.reputation.l", p.reputation, C.sage], ["zafer", "soc.honor.l", p.honor, C.frost], ["suc", "soc.fear.l", p.fear, C.blood], ["orgutler", "soc.fame.l", p.fame, C.goldSoft]] as const).map(([ic, key, val, tone]) => (

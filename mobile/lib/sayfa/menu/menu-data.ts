@@ -1,7 +1,7 @@
 // Menü merkezi: her hedefin grubu, sahnesi, ikonu, açılma kapısı ve bekleyen-iş rozeti.
 // Kademeli açılım (TASARIM_PUSULASI ilke 7): ekran oyuncunun hayatına değince menüye girer — çocuk menüsü sade kalır.
 import type { ImageSourcePropType } from "react-native";
-import { pendingPerkCount, playerWar, sinavDurumu, MULK_YAS, varisAdaylari, nemesisEncounter, type GameState } from "../../game";
+import { pendingPerkCount, aktifNiyet, playerWar, sinavDurumu, MULK_YAS, varisAdaylari, nemesisEncounter, type GameState } from "../../game";
 import { venueImage, mulkImage, subjImage, armaImage, MAP_HERO } from "../../assets";
 import { SAHNE_GORSEL } from "../../sahne-tema";
 
@@ -65,7 +65,7 @@ export function rozet(key: string, state: GameState | null): Rozet {
   if (!state) return BOS;
   const p = state.player;
   switch (key) {
-    case "beceriler": return { n: pendingPerkCount(p), urgent: false };
+    case "beceriler": return { n: pendingPerkCount(p, aktifNiyet(state)), urgent: false };
     case "meslek": { // Ahilik: peştamal sınavı hazır, rakip yarışı ya da ihmal edilen çırak
       const ry = p.rakip; const yaris = !!ry && !ry.bitti && ry.prof === p.profession && ry.yaris != null;
       const ck = p.cirak; const ihmal = !!ck && ck.prof === p.profession && ck.ihmal >= 2;

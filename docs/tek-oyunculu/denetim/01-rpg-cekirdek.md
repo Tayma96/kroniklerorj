@@ -1,0 +1,12 @@
+# Denetim 1 — RPG çekirdeği (17 Kasım)
+- 4 stat güç/zekâ/karizma/dayanıklılık (game.ts:22). Başlangıç toplam 5 (3093). Tavan 13 öncesi 8, sonra 10 (statCapOf 7458). Puan: allocateStat (7459); kaynaklar çocuk %10/ay (3350), 12 yaş +1, 13 yaş +3, ilk 3 sınav, hoca bağı, başarım +1 (3943). XP: addStatXp (7480), 25+15×seviye; tavan üstü XP yarıyla beceriye. addStatXp ~104 çağrı: zekâ 48, day 27, güç 21, karizma 10. Yetişkin work +4 XP meslek statına (5761); adultAction ayda 1 (7862). Yaşla düşüş yok; yara effStat (264).
+- Tahmin: meslek statı ~28 yaşta 10; ömrün ikinci yarısı büyüme yok.
+- Okuma: güç 17, zekâ 22, karizma 26, day 14. events.ts 344 seçenekten 1'i stat okuyor (1416).
+- Beceri 4: combat/trade/crafting/social, xp/100 tavan 10 (11349), gainSkill (11367) 125 çağrı (sosyal 72). Çalışma +8/ay (5760).
+- Beceri ağacı 24 hüner, 4 dal×3 kademe(3/6/9)×2 (11315–11344), pendingPerkTier/choosePerk. Hepsi uygulanmış ama: Mucit fiilen ölü (7562, mektep), kalkanlı yalnız düello (combat.ts:144), çevik/nişancı sabit, tefeci yanlış dal (5704).
+- Zar: dağınık formüller 0.35–0.45+stat×k; test() 7273, ders 7592, sınav 7609, iş 5811 tavansız (>1 olabilir). Oran yalnız teklifSansi/helalSansi/diyetSansi döküm veriyor. 243 Math.random, 137 gameRandom.
+- combatPower (10506); combat.ts düello; karizma dövüşte yok.
+- Eşya 30 kuşanılır (world.ts:168–204), hiçbiri güç/zekâ/day vermez; effStat takı karizması hatası (267), karizma tavansız.
+- Döngü: _layout.tsx:130 → store.tsx:155 → advance (3950); rollLifeEvents (3302); advanceUntilEvent (11408). Ortak eylem puanı yok, 57 ayrı *_turn kilidi.
+- migrate (13033), store 4 çağrı; migrate-check.cjs.
+- UI: ozellikler.tsx:47 ham stat, :61 çocuk tavan 8'de + düğmesi; ana ekran yalnız güç/zekâ (index.tsx:391).

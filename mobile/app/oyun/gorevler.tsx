@@ -3,7 +3,7 @@ import { View, Text, ScrollView} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { playerWar, pendingPerkCount, nemesisEncounter, familyQuestsOf, varisAdaylari } from "../../lib/game";
+import { playerWar, pendingPerkCount, nemesisEncounter, familyQuestsOf, varisAdaylari, niyetBekliyor, aktifNiyet } from "../../lib/game";
 import { arcById } from "../../lib/arcs";
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
@@ -23,7 +23,9 @@ export default function Gorevler() {
     if (varisAdaylari(state).length > 0) tasks.push({ icon: "baby", title: t("gv.heir.t"), sub: t("gv.heir.s"), to: "/oyun/nesil", urgent: true });
   } else {
     if (p.stat_points > 0) tasks.push({ icon: "shield", title: t("gv.statpts.t").replace("%n", String(p.stat_points)), sub: t("gv.statpts.s"), to: "/oyun/karakter", urgent: true });
-    if (pendingPerkCount(p) > 0) tasks.push({ icon: "medal", title: `${pendingPerkCount(p)} ${t("char.perksAvail")}`, sub: t("gv.perks.s"), to: "/oyun/beceriler", urgent: true });
+    if (niyetBekliyor(state)) tasks.push({ icon: "compass", title: t("gv.niyet.t"), sub: t("gv.niyet.s"), to: "/oyun/karakter" }); // K2: yıllık niyet (isteğe bağlı)
+    const hunerHak = pendingPerkCount(p, aktifNiyet(state));
+    if (hunerHak > 0) tasks.push({ icon: "medal", title: `${hunerHak} ${t("char.perksAvail")}`, sub: t("gv.perks.s"), to: "/oyun/beceriler", urgent: true });
     const arc = arcById(state.story.active?.id || null);
     if (arc) tasks.push({ icon: arc.icon, title: `${t("gv.story.pre")}${t("arc." + arc.id + ".t")}`, sub: t("gv.story.s"), to: "/oyun/hikayeler", urgent: true });
     const war = playerWar(state);

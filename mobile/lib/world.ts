@@ -8,7 +8,7 @@ export const QUIRKS = ["sürekli hava durumundan dert yanar","eski günleri anla
 // NPC'nin peşinde olduğu hayat hedefi (söylenti ve sohbete renk katar).
 export const GOALS = ["bir dükkân açmanın hayalini kuruyor","kızını/oğlunu evermek istiyor","borçlarından kurtulmaya çalışıyor","hacca gitmeyi diliyor","toprak satın almak için biriktiriyor","ustabaşı olmak istiyor","küs olduğu kardeşiyle barışmak istiyor","bir ev yaptırmanın derdinde","kervan ticaretine atılmak istiyor","adını duyurmak istiyor","yıllardır görmediği memleketini görmek istiyor","çırağını kendi dükkânına kavuşturmak istiyor","babasından kalma bağı yeniden yeşertmek istiyor","bir yetimi yanına çırak almak istiyor"];
 export type WClass = "hizli" | "kesici" | "ezici" | "delici" | "menzilli";
-export interface Item { id: string; name: string; icon: string; buy: number; sell: number; kind: "yiyecek" | "esya" | "silah" | "zirh" | "kalkan" | "baslik" | "eldiven" | "ayakkabi" | "kiyafet" | "taki"; heal?: number; feed?: number; power?: number; defense?: number; charisma?: number; prestige?: number; wclass?: WClass; twoHanded?: boolean; }
+export interface Item { id: string; name: string; icon: string; buy: number; sell: number; kind: "yiyecek" | "esya" | "silah" | "zirh" | "kalkan" | "baslik" | "eldiven" | "ayakkabi" | "kiyafet" | "taki"; heal?: number; feed?: number; power?: number; defense?: number; charisma?: number; prestige?: number; strength?: number; stamina?: number; intelligence?: number; wclass?: WClass; twoHanded?: boolean; }
 
 const AD_E = ["Mehmet","Ahmet","Mustafa","Hasan","Hüseyin","İbrahim","Osman","Yusuf","Murat","Kerem","Emre","Cihan","Barış","Tolga","Mert"];
 const AD_K = ["Ayşe","Fatma","Zeynep","Emine","Hatice","Elif","Nur","Reyhan","Cansu","Derya","Sevda","Pınar","Gül","Nazlı","Hande"];
@@ -169,29 +169,29 @@ export const ITEMS: Record<string, Item> = {
   hancer:       { id: "hancer",       name: "Hançer",       icon: "crossed-swords", buy: 32,  sell: 13,  kind: "silah", power: 5,  wclass: "hizli" },
   yay:          { id: "yay",          name: "Av Yayı",      icon: "bow", buy: 50,  sell: 20,  kind: "silah", power: 7,  wclass: "menzilli", twoHanded: true },
   kilic:        { id: "kilic",        name: "Kılıç",        icon: "crossed-swords", buy: 60,  sell: 24,  kind: "silah", power: 8,  wclass: "kesici" },
-  gurz:         { id: "gurz",         name: "Gürz",         icon: "crossed-swords", buy: 88,  sell: 35,  kind: "silah", power: 9,  wclass: "ezici" },
-  mizrak:       { id: "mizrak",       name: "Mızrak",       icon: "crossed-swords", buy: 100, sell: 40,  kind: "silah", power: 10, wclass: "delici", twoHanded: true },
-  savas_balta:  { id: "savas_balta",  name: "Savaş Baltası",icon: "crossed-swords", buy: 110, sell: 44,  kind: "silah", power: 11, wclass: "ezici", twoHanded: true },
+  gurz:         { id: "gurz",         name: "Gürz",         icon: "crossed-swords", buy: 88,  sell: 35,  kind: "silah", power: 9,  wclass: "ezici", strength: 1 },
+  mizrak:       { id: "mizrak",       name: "Mızrak",       icon: "crossed-swords", buy: 100, sell: 40,  kind: "silah", power: 10, wclass: "delici", twoHanded: true, strength: 1 },
+  savas_balta:  { id: "savas_balta",  name: "Savaş Baltası",icon: "crossed-swords", buy: 110, sell: 44,  kind: "silah", power: 11, wclass: "ezici", twoHanded: true, strength: 1 },
   celik_kilic:  { id: "celik_kilic",  name: "Çelik Kılıç",  icon: "crossed-swords", buy: 140, sell: 56,  kind: "silah", power: 13, wclass: "kesici" },
   yatagan:      { id: "yatagan",      name: "Yatağan",      icon: "crossed-swords", buy: 210, sell: 84,  kind: "silah", power: 15, wclass: "kesici" },
   // Gövde zırhı (defense)
   deri_zirh:    { id: "deri_zirh",    name: "Deri Zırh",    icon: "shield", buy: 45,  sell: 18,  kind: "zirh", defense: 4 },
   pamuk_zirh:   { id: "pamuk_zirh",   name: "Pamuklu Zırh", icon: "shield", buy: 82,  sell: 33,  kind: "zirh", defense: 6 },
-  zincir_zirh:  { id: "zincir_zirh",  name: "Zincir Zırh",  icon: "shield", buy: 120, sell: 48,  kind: "zirh", defense: 9 },
-  plaka_zirh:   { id: "plaka_zirh",   name: "Plaka Zırh",   icon: "shield", buy: 250, sell: 100, kind: "zirh", defense: 13 },
+  zincir_zirh:  { id: "zincir_zirh",  name: "Zincir Zırh",  icon: "shield", buy: 120, sell: 48,  kind: "zirh", defense: 9, stamina: 1 },
+  plaka_zirh:   { id: "plaka_zirh",   name: "Plaka Zırh",   icon: "shield", buy: 250, sell: 100, kind: "zirh", defense: 13, stamina: 1 },
   // Kalkan (defense, ayrı slot)
-  kalkan:       { id: "kalkan",       name: "Kalkan",       icon: "kite", buy: 70,  sell: 28,  kind: "kalkan", defense: 6 },
-  buyuk_kalkan: { id: "buyuk_kalkan", name: "Büyük Kalkan", icon: "kite", buy: 135, sell: 54,  kind: "kalkan", defense: 9 },
+  kalkan:       { id: "kalkan",       name: "Kalkan",       icon: "kite", buy: 70,  sell: 28,  kind: "kalkan", defense: 6, stamina: 1 },
+  buyuk_kalkan: { id: "buyuk_kalkan", name: "Büyük Kalkan", icon: "kite", buy: 135, sell: 54,  kind: "kalkan", defense: 9, stamina: 1 },
   // Başlık / miğfer (defense)
   deri_baslik:  { id: "deri_baslik",  name: "Deri Başlık",  icon: "hood", buy: 26,  sell: 10,  kind: "baslik", defense: 2 },
   demir_migfer: { id: "demir_migfer", name: "Demir Miğfer", icon: "hood", buy: 78,  sell: 31,  kind: "baslik", defense: 5 },
-  tolga:        { id: "tolga",        name: "Tolga",        icon: "hood", buy: 165, sell: 66,  kind: "baslik", defense: 8 },
+  tolga:        { id: "tolga",        name: "Tolga",        icon: "hood", buy: 165, sell: 66,  kind: "baslik", defense: 8, stamina: 1 },
   // Eldiven (defense)
   deri_eldiven: { id: "deri_eldiven", name: "Deri Eldiven", icon: "fist", buy: 18,  sell: 7,   kind: "eldiven", defense: 1 },
   zincir_eldiven:{ id: "zincir_eldiven",name: "Zincir Eldiven",icon: "fist",buy: 56, sell: 22,  kind: "eldiven", defense: 3 },
   // Ayakkabı / çizme (defense)
   carik:        { id: "carik",        name: "Çarık",        icon: "boot", buy: 15,  sell: 6,   kind: "ayakkabi", defense: 1 },
-  demir_cizme:  { id: "demir_cizme",  name: "Demir Çizme",  icon: "boot", buy: 62,  sell: 25,  kind: "ayakkabi", defense: 3 },
+  demir_cizme:  { id: "demir_cizme",  name: "Demir Çizme",  icon: "boot", buy: 62,  sell: 25,  kind: "ayakkabi", defense: 3, stamina: 1 },
   // Kıyafet (karizma + itibar/prestij)
   gunluk_kiyafet:{ id: "gunluk_kiyafet",name: "Günlük Kıyafet",icon: "wool",buy: 22, sell: 9,   kind: "kiyafet", charisma: 0, prestige: 1 },
   yun_cubbe:    { id: "yun_cubbe",    name: "Yün Cübbe",    icon: "wool", buy: 64,  sell: 26,  kind: "kiyafet", charisma: 1, prestige: 3 },

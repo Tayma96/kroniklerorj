@@ -1,8 +1,9 @@
 import { DesignPressable as Pressable } from "./design-pressable";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Modal, View, Text, ScrollView} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { GameState, WorkStyle, workForecast } from "./game";
+import { GameState, WorkStyle, workForecast, isOlayiOranlari } from "./game";
+import { SansEtiketi } from "./sans-etiketi";
 import { useI18n, applyParams, yuzdeL } from "./i18n";
 import { GameIcon } from "./icons";
 import { C, F } from "./theme";
@@ -12,6 +13,7 @@ export function EmekOngoru({ state, styleId }: { state: GameState; styleId: Work
   const { t, lang } = useI18n();
   const insets = useSafeAreaInsets();
   const f = workForecast(state, styleId);
+  const olaylar = useMemo(() => isOlayiOranlari(state), [state]); // ay içi iş olayı zarları (önizleme, RNG yok)
   const text = (key: string, values: (string | number)[]) => applyParams(t(key), values, lang);
   const range = text("work.forecast.pay", [f.min, f.max]);
   const cost = text("work.forecast.cost", [f.hunger]);
@@ -57,6 +59,10 @@ export function EmekOngoru({ state, styleId }: { state: GameState; styleId: Work
             <Text style={{ fontFamily: F.serif, fontSize: 15, color: f.fail ? C.ember : C.parchmentDim, marginTop: 4 }}>{risk}</Text>
             {!!f.fail && <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.ember, lineHeight: 22, marginTop: 4 }}>{text("work.forecast.loss", [f.lossMin, f.lossMax])} {t(styleId === "hirsli" ? "work.forecast.hurt" : "work.forecast.shame")}</Text>}
             <Text style={{ fontFamily: F.serifItalic, fontSize: 15, lineHeight: 22, color: C.parchmentMuted, marginTop: 12 }}>{t("work.forecast.extra")}</Text>
+            {olaylar.length ? <View style={{ marginTop: 12, gap: 6 }}>
+              <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.goldDim }}>{t("zar.isOlaylari")}</Text>
+              {olaylar.map((z) => <SansEtiketi key={z.stat} zar={z} />)}
+            </View> : null}
           </ScrollView>
         </View>
       </View>

@@ -3,7 +3,7 @@ import { View, ScrollView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { RECIPES, canCraft, craft, inJail, Recipe, workshopOrderOffers, acceptWorkshopOrder, deliverWorkshopOrder, cancelWorkshopOrder, workshopOrderStatus, npcLonca, type GameState, type WorkshopOrderOffer } from "../../lib/game";
+import { RECIPES, BECERI_TAVAN, skillXpForLevel, canCraft, craft, inJail, Recipe, workshopOrderOffers, acceptWorkshopOrder, deliverWorkshopOrder, cancelWorkshopOrder, workshopOrderStatus, npcLonca, type GameState, type WorkshopOrderOffer } from "../../lib/game";
 import { C } from "../../lib/theme";
 import { useI18n, applyParams, renderEvt } from "../../lib/i18n";
 import { professionNameL, placeName, type Lang } from "../../lib/locale-data";
@@ -101,6 +101,7 @@ export default function Atolye() {
       else if (jailed) reason = { icon: "prisoner", text: t("atolye.jailed") };
       else if (crafted) reason = { icon: "hourglass", text: t("atolye.busy") };
       else if (locked) reason = { icon: "graduate-cap", text: applyParams(t("wsp.locked"), [r.minSkill]) };
+      else if (r.perk && !p.perks?.includes(r.perk)) reason = { icon: "medal", text: applyParams(t("huner.tarifKilit"), [t("perk." + r.perk + ".l")]) };
       else reason = { icon: "backpack", text: t("wsp.noMat") };
     }
     return {
@@ -124,7 +125,7 @@ export default function Atolye() {
           skill: `${t("skill.crafting")} · ${t("wsp.skillAbbr")} ${skill}`,
           medal: applyParams(t("atolye.skillLabel"), [skill]),
           badge: mode === "ready" ? t("atolye.forge.ready") : mode === "rest" ? t("atolye.forge.rest") : t("atolye.forge.closed"),
-          progress: skill >= 10 ? t("atolye.maxLevel") : applyParams(t("atolye.xpNext"), [Math.max(1, (skill + 1) * 100 - (p.skill_xp?.crafting ?? skill * 100))]),
+          progress: skill >= BECERI_TAVAN ? t("atolye.maxLevel") : applyParams(t("atolye.xpNext"), [Math.max(1, skillXpForLevel(skill + 1) - (p.skill_xp?.crafting ?? skillXpForLevel(skill)))]),
           line: mode === "ready" ? t("atolye.forgeLine.ready") : mode === "rest" ? t("atolye.forgeLine.rest") : t("atolye.forgeLine.closed"),
           rule: `${t("wsp.hint")} ${t("wsp.gain")}.`,
         }} />

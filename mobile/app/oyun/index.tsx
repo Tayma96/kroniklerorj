@@ -2,7 +2,7 @@ import { DesignPressable as Pressable } from "../../lib/design-pressable";
 import { RealmNotices, realmNoticeCount, noticeRows } from "../../lib/realm-notices-ui";
 import { GameSheet, useHomeSheet, type HomeSheetId } from "../../lib/home-hud";
 import { SAHNE_GORSEL } from "../../lib/sahne-tema";
-import { View, Text, ScrollView, Modal } from "react-native";
+import { View, Text, ScrollView, Modal, Alert } from "react-native";
 import { LoadingScreen } from "../../lib/fx";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { useState, useEffect, useRef, useMemo } from "react";
@@ -32,7 +32,7 @@ import { hap } from "../../lib/haptics";
 import { C, F, T } from "../../lib/theme";
 import { SoylentiIzi, soylentiLead } from "../../lib/rumor-ui";
 import { AileHaberi } from "../../lib/evlat-ui";
-import { aileHaberiniOku, varisAdaylari, aileHaberi, effStat } from "../../lib/game";
+import { aileHaberiniOku, varisAdaylari, aileHaberi, effStat, effEtki } from "../../lib/game";
 import { ITEMS } from "../../lib/world";
 
 const SEASON_KEY: Record<string, string> = { "Kış": "kis", "İlkbahar": "ilkbahar", "Yaz": "yaz", "Sonbahar": "sonbahar" };
@@ -257,7 +257,7 @@ export default function Dashboard() {
             ...(milestone.etki.health ? [{ icon: "saglik", text: `${milestone.etki.health > 0 ? "+" : "−"}${Math.abs(milestone.etki.health)} ${t("char.health")}`, color: C.blood }] : []),
           ] : undefined} />
       ) : opp ? (
-        <OpportunityModal opp={opp} statVal={opp ? state.player.stats[opp.stat] : 5} onResolve={onResolveOpp} progress={savedMonth} onProgress={!savedMonth ? undefined : (stage, success) => apply(s => progressMonthOpportunity(s, savedMonth.id, stage, success))} onPass={() => { hap("tap"); if (savedMonth) apply(s => resolveMonthOpportunity(s, savedMonth.id, true)); }} />
+        <OpportunityModal opp={opp} statVal={opp ? effEtki(state.player, opp.stat) : 5} onResolve={onResolveOpp} progress={savedMonth} onProgress={!savedMonth ? undefined : (stage, success) => apply(s => progressMonthOpportunity(s, savedMonth.id, stage, success))} onPass={() => { hap("tap"); if (savedMonth) apply(s => resolveMonthOpportunity(s, savedMonth.id, true)); }} />
       ) : tzDilemma ? (
         <DilemmaModal dilemma={tzDilemma} onChoose={onTezgah} female={p.gender === "kadın"} />
       ) : state.hesap && !p.dead && !yearReport ? ( // yıl karnesi kapanınca hesap anı gelir (iki pencere üst üste açılmaz)
@@ -413,7 +413,10 @@ export default function Dashboard() {
             <GameButton variant="secondary" accessibilityLabel={t("dash.readLife")} icon="roman" rtl={rtl} onPress={() => router.push("/oyun/roman")} style={{ flex: 1 }}>
               <Text style={{ fontFamily: F.display, fontSize: 13, color: C.goldBright, letterSpacing: 1, textAlign: "center" }}>{t("dash.readLife")}</Text>
             </GameButton>
-            <GameButton variant="secondary" accessibilityLabel={t("dash.newLife")} icon="leaf" rtl={rtl} onPress={async () => { try { await resetGame(); router.replace("/yeni-oyun"); } catch {} }} style={{ flex: 1 }}>
+            <GameButton variant="secondary" accessibilityLabel={t("dash.newLife")} icon="leaf" rtl={rtl} onPress={() => Alert.alert(t("settings.newLife"), t("settings.reset"), [
+              { text: t("common.cancel"), style: "cancel" },
+              { text: t("menu.sifirla"), style: "destructive", onPress: async () => { try { await resetGame(); router.replace("/yeni-oyun"); } catch {} } },
+            ])} style={{ flex: 1 }}>
               <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchmentDim, letterSpacing: 1, textAlign: "center" }}>{t("dash.newLife")}</Text>
             </GameButton>
           </View>

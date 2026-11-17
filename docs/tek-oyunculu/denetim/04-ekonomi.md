@@ -1,0 +1,5 @@
+# Denetim 4 — ekonomi ve denge (17 Kasım)
+- Gelir: work (5749, workForecast 5697) ayda tek, TITLE_MULT 1/1.4/1.9/2.15 (5677), bonuslar toplamsal tavansız (5702-5711). Mülk PROPERTY_TYPES (284) tarla 30…değirmen 210/ay, her yeni mülk +%15 (295), sayı sınırsız. Kervan (5064-5171) tek kervan, satCap doygunluk, launchCaravan seçim yoksa options[0] (5156). sellItem (6449). manipulateMarket (11978) eşik 50k. Atölye siparişi %85 fiyat, +2 itibar/ay (12725). Suç CRIME_TYPES (7982) ayda tek, yeraltı namı 0/2/6/12. Kumar playDice (8612) EV negatif. İltizam (3729). Valilik governorIncome (12198), adaylık +5 itibar/+6 şöhret (12006) şehir sayısı tavanı yok. Saray maaşı 6/12/22/38/60 (12544).
+- Gider: lifestyleUpkeep (301), servet vergisi dilimli (315), enflasyon 0.8–2.5 (4938). Vakıf/estate geç oyun musluğu (11827-11922).
+- Ölü/baskın: WORK_STYLES (5683) garantici ve kayıtsız ölü, hırslı EV 1.19 baskın. Mülk getirisi düz ~%1.4/ay, değirmen en kötü. Kervan hep en yüksek spread. Yankesicilik risksiz ek gelir. Kumar karar değil.
+- Betikler: scripts/balance-sim.ts, _smoke/ekonomi.cjs, check-npc-economy.cjs, run-parallel.cjs, olu-karar.cjs.
