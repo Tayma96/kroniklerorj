@@ -7718,9 +7718,9 @@ export const MEDRESE_DERSLERI: MektepDers[] = [
   { id: "tip", stat: "intelligence", beceri: "crafting", icon: "herbs" },
 ];
 export const CALIS_STAT_XP = 14; // ayda bir çalışmanın odak statına tecrübesi
-export const CALIS_BECERI_XP = 10;
+export const CALIS_BECERI_XP = 7;
 export const MEDRESE_HARCLIK = 2; // medrese talebesine aylık küçük harçlık (enflasyonla)
-export const SIBYAN_ZORLUK = 4, MEDRESE_ZORLUK = 7, ICAZET_ZORLUK = 9, KILIC_ZORLUK = 8;
+export const SIBYAN_ZORLUK = 5, MEDRESE_ZORLUK = 11, ICAZET_ZORLUK = 14, KILIC_ZORLUK = 15; // K2 ölçeği (stat tavanı 20)
 export const DERS_HALKASI_XP = 25;
 export const MUDERRIS_ZEKA = 12;
 // Eğitim yolu: kayıtta yoksa 13–17 yaş çırak sayılır (F3 öncesi kayıtlar ve vâris).
@@ -7760,7 +7760,7 @@ export function mektepSinavGirdi(s: GameState): ZarGirdi {
   const my = p.mektep_yil?.y === yil ? p.mektep_yil : undefined;
   const ek: ZarKalemi[] = [{ etiket: "mek.kalem.hoca", deger: hocaKalemi(s) }, { etiket: "mek.kalem.calisma", deger: Math.min(3, Math.floor((my?.n || 0) / 4)) }];
   if (my?.ek) ek.push({ etiket: "mek.kalem.kopya", deger: my.ek });
-  const z = ev === "medrese" ? (p.age === 16 ? ICAZET_ZORLUK : MEDRESE_ZORLUK) : SIBYAN_ZORLUK + Math.floor(Math.max(0, p.age - 7) / 2);
+  const z = ev === "medrese" ? (p.age === 16 ? ICAZET_ZORLUK : MEDRESE_ZORLUK) : SIBYAN_ZORLUK + Math.max(0, p.age - 7);
   return { stat: d.stat, zorluk: z, ekKalemler: [...ek, ...hunerKalemleri(p, "sinav", d.stat)] };
 }
 export function mektepSinavDersi(s: GameState): string {
@@ -7858,7 +7858,7 @@ function mektepYilSonu(s: GameState) {
   const my = p.mektep_yil?.y === yil ? p.mektep_yil : undefined;
   const ek: ZarKalemi[] = [{ etiket: "mek.kalem.hoca", deger: hocaKalemi(s) }, { etiket: "mek.kalem.calisma", deger: Math.min(3, Math.floor((my?.n || 0) / 4)) }];
   if (my?.ek) ek.push({ etiket: "mek.kalem.kopya", deger: my.ek });
-  const z = icazet ? ICAZET_ZORLUK : medrese ? MEDRESE_ZORLUK : SIBYAN_ZORLUK + Math.floor((y - 7) / 2);
+  const z = icazet ? ICAZET_ZORLUK : medrese ? MEDRESE_ZORLUK : SIBYAN_ZORLUK + (y - 7);
   const r = zarDerece(s, { stat: d.stat, zorluk: z, ekKalemler: [...ek, ...hunerKalemleri(p, "sinav", d.stat)] });
   delete p.mektep_yil;
   const yuzde = Math.round(r.oran * 100);
@@ -7886,7 +7886,7 @@ function mektepYilSonu(s: GameState) {
 export const MEKTEP_KARTLARI = SCHOOL_EVENTS.map((e) => e.id);
 export function mektepKartZar(s: GameState, id: string): ZarGirdi | null {
   const p = s.player;
-  if (id === "kilic") return { stat: "strength", zorluk: KILIC_ZORLUK, ekKalemler: [{ etiket: "st.stamina", deger: Math.round(effEtki(p, "stamina") / 2) }, ...hunerKalemleri(p, "sinav", "strength")] };
+  if (id === "kilic") return { stat: "strength", zorluk: KILIC_ZORLUK, ekKalemler: [{ etiket: "st.stamina", deger: Math.round(effEtki(p, "stamina") / 4) }, ...hunerKalemleri(p, "sinav", "strength")] };
   const ev = SCHOOL_EVENTS.find((e) => e.id === id); if (!ev) return null;
   return { stat: ev.stat, zorluk: DERS_OLAYI_ZORLUK, ekKalemler: hunerKalemleri(p, "ders", ev.stat) };
 }
