@@ -42,9 +42,9 @@ function Overview({ niyet }: { niyet?: NiyetId }) {
     <View style={{ backgroundColor: C.cardHi, borderWidth: 1, borderColor: C.borderHi, borderRadius: 5, padding: 14, marginBottom: 14 }}>
       <View style={{ flexDirection: row, alignItems: "center", justifyContent: "space-between", marginBottom: 11, gap: 8 }}>
         <Text style={{ flexShrink: 1, fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.gold, textTransform: "uppercase", textAlign: ta }}>{t("bec.overview")}</Text>
-        <View accessible accessibilityLabel={applyParams(t("huner.ozet"), [chosen, unvan.length, USTALIK_SINIRI])} style={{ flexDirection: row, alignItems: "center", gap: 5 }}>
+        <View accessible accessibilityLabel={applyParams(t("huner.ozet"), [chosen, unvan.length, USTALIK_SINIRI])} style={{ flexShrink: 1, flexDirection: row, alignItems: "center", gap: 5 }}>
           <GameIcon name="medal" size={12} color={C.gold} />
-          <Text style={{ fontFamily: F.display, fontSize: 13, color: C.gold }}>{applyParams(t("huner.ozet"), [chosen, unvan.length, USTALIK_SINIRI])}</Text>
+          <Text numberOfLines={2} style={{ flexShrink: 1, fontFamily: F.display, fontSize: 13, color: C.gold, textAlign: ta }}>{applyParams(t("huner.ozet"), [chosen, unvan.length, USTALIK_SINIRI])}</Text>
         </View>
       </View>
       {SKILL_META.map((m) => {
@@ -64,7 +64,7 @@ function Overview({ niyet }: { niyet?: NiyetId }) {
                 return <View key={i} style={{ flex: 1, height: 7, borderRadius: 2, backgroundColor: dolu === 2 ? link.tone : dolu === 1 ? link.tone + "77" : "rgba(255,255,255,0.07)" }} />;
               })}
             </View>
-            <Text style={{ width: 22, textAlign: "center", fontFamily: F.display, fontSize: 13, color: link.tone }}>{lvl}</Text>
+            <Text style={{ minWidth: 22, textAlign: "center", fontFamily: F.display, fontSize: 13, color: link.tone }}>{lvl}</Text>
             {pend ? <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: C.gold }} /> : <View style={{ width: 7 }} />}
           </View>
         );
@@ -92,7 +92,7 @@ function HunerKarti({ pk, tone, isChosen, dimmed, choosable, onPick }: { pk: Per
         backgroundColor: isChosen ? tone + "1F" : C.bg, opacity: dimmed ? 0.45 : 1 }}>
       <View style={{ flex: 1 }}>
         <View style={{ flexDirection: row, alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-          <Text style={{ fontFamily: F.display, fontSize: 13, color: isChosen ? tone : C.parchment, textAlign: ta }}>{ad}</Text>
+          <Text style={{ flexShrink: 1, fontFamily: F.display, fontSize: 13, color: isChosen ? tone : C.parchment, textAlign: ta }}>{ad}</Text>
           <View style={{ flexDirection: row, alignItems: "center", gap: 3, paddingHorizontal: 6, minHeight: 20, borderRadius: 10, borderWidth: 1, borderColor: tone + "66" }}>
             <GameIcon name={TUR_IKON[pk.tur]} size={10} color={tone} />
             <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 0.5, color: tone }}>{tur}</Text>
