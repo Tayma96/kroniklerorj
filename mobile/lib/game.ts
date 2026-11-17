@@ -273,9 +273,10 @@ export function effStat(p: Player, key: keyof Stats): number {
   else if (p.equipped) for (const sl of EQUIP_SLOTS) { const id = p.equipped[sl]; const b = id ? ITEMS[id]?.[key as "strength" | "stamina" | "intelligence"] : 0; if (b) base += b; } // K2: ağır silah güç, zırh/kalkan dayanıklılık verir
   return Math.max(0, Math.min(statCapOf(p) + 3, base - pen)); // eşya katkısıyla bile tavanın en çok 3 üstü
 }
-// K2: tavan 20'ye çıktı; para/güç/olasılık formüllerinde 10 üstü katkı yarı hızla işler (azalan getiri).
-// Böylece 20'lik güç ücreti ve savaş gücünü ikiye katlamaz. zar() bu yardımcıyı kullanmaz (oran zaten 0.95'te kıskaçlı).
-export function statEtki(v: number): number { return v <= 10 ? v : 10 + (v - 10) * 0.5; }
+// K2: tavan 20'ye çıktı; para/güç/olasılık formüllerinde 10 üstü katkı beşte bir hızla işler (azalan getiri; 20 → 12).
+// Meslek ücreti neredeyse tümüyle 2×stat olduğundan (taban 3–6) daha cömert eğim 60 yaşta ücreti %130+ şişiriyordu (F1 sim).
+// Usta/efsane farkı asıl zar()da görünür: o bu yardımcıyı kullanmaz, statı doğrudan okur (oran zaten 0.95'te kıskaçlı).
+export function statEtki(v: number): number { return v <= 10 ? v : 10 + (v - 10) * 0.2; }
 export function effEtki(p: Player, key: keyof Stats): number { return statEtki(effStat(p, key)); }
 // ── Tek zar (K1): etkinGüç = effStat + beceri seviyesi/2 + ek kalemler; oran = clamp(0.6 + 0.08×(güç − zorluk), 0.08, 0.95).
 // zarOrani saf önizlemedir (RNG tüketmez); zar aynı oranla tohumlu gameRandom(s) atar — ekranda gösterilenle birebir.
@@ -5731,7 +5732,7 @@ export function workForecast(s: GameState, style: WorkStyle = "normal"): WorkFor
   const p = s.player;
   const ws = WORK_STYLES.find((w) => w.id === style) || WORK_STYLES[1];
   const pr = professionById(p.profession);
-  const stat = effEtki(p, PROF_STAT[p.profession] || "stamina"); // K2: 10 üstü ücrete yarı hızla
+  const stat = effEtki(p, PROF_STAT[p.profession] || "stamina"); // K2: 10 üstü ücrete azalan getiriyle
   let mult = 1;
   if (p.faction === "demirci") mult += 0.2;
   if (hasPerk(p, "tefeci")) mult += 0.2;
@@ -9548,7 +9549,7 @@ export function doFactionTask(prev: GameState, id: string): GameState {
   if (p.faction_task_turn === s.turn) { push(s, "örgüt_görev", `Bu ay ocak için hizmetini gördün; yenisi gelecek aya.`, "kişisel", false, { k: "evj.factionTaskWait" }); return s; }
   p.faction_task_turn = s.turn;
   const rank = factionRank(p.faction_standing[id] || 0);            // rütbe ödülü ölçekler
-  const statBonus = statEtki(p.stats[f.stat]) * 2; // K2: 10 üstü yarı hızla
+  const statBonus = statEtki(p.stats[f.stat]) * 2; // K2: 10 üstü azalan getiri
   // Loncan bu sancağa hâkimse burada daha güçlüsün: görev daha çok kazandırır.
   const dom = factionHoldsHere(s, id) ? 1.25 : 1;
   // Taban %30 kısıldı (erken oyunda işin ~3 katıydı) ama işçi maaşı gibi enflasyona bağlandı (geç oyunda değersizleşmesin).
@@ -10634,7 +10635,7 @@ export const ENCOUNTERS: Encounter[] = [
 ];
 // Oyuncunun savaş gücü: kuvvet + dayanıklılık/2 + silah + asker avantajı.
 export function combatPower(p: Player): number {
-  let pw = effEtki(p, "strength") * 2 + effEtki(p, "stamina") + p.skills.combat; // K2: 10 üstü yarı hızla (60 yaşta güç patlaması yok)
+  let pw = effEtki(p, "strength") * 2 + effEtki(p, "stamina") + p.skills.combat; // K2: 10 üstü azalan getiri (60 yaşta güç patlaması yok)
   const wid = p.equipped?.silah; const w = wid ? ITEMS[wid] : null;
   let weaponPw = Math.round((w?.power || 0) * equippedQualityMult(p, "silah"));
   if (w?.twoHanded) weaponPw = Math.round(weaponPw * 1.32); // çift elli silah daha sert vurur (kalkan feda edilir)

@@ -29,7 +29,7 @@ export function yzSans(s: GameState, e: Encounter, secim: YzSecim): number {
   const p = s.player; const tur = yzTuru(e.id) ?? "eskiya";
   const ust = Math.max(-0.2, Math.min(0.2, (combatPower(p) - e.power * 1.6) / 50));
   const zor = Math.max(0, e.power - 6) * 0.015;
-  const ch = effEtki(p, "charisma"), zk = effEtki(p, "intelligence"), dy = effEtki(p, "stamina"); // K2: 10 üstü yarı hızla
+  const ch = effEtki(p, "charisma"), zk = effEtki(p, "intelligence"), dy = effEtki(p, "stamina"); // K2: 10 üstü azalan getiri
   const sk = p.skills?.combat || 0, so = p.skills?.social || 0;
   if (secim === "konus") {
     if (tur === "hayvan") return sinir(0.22 + zk * 0.035 + sk * 0.01 - zor);
