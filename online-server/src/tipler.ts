@@ -411,6 +411,17 @@ export const HATA_DURUMU = {
   kervan_aylik_siniri: 409,
   kervan_mal_hedef: 409,
   kervan_ulasilamadi: 503,
+  // Han masa oyunları: src/han/oyun/cati.ts
+  oyun_yok: 404,
+  oyun_var: 409,
+  oyun_turu_gecersiz: 400,
+  oyun_dolu: 409,
+  oyun_basladi: 409,
+  oyuncu_degil: 403,
+  oyuncu_az: 409,
+  hamle_gecersiz: 400,
+  hamle_no: 409,
+  pas_yok: 409,
   yapilandirma_eksik: 500,
   sunucu_hatasi: 500,
 } as const satisfies Record<string, number>;
@@ -510,6 +521,8 @@ export type HesapIleti = (
   | { islem: "hanEylem" | "hanIkram" | "hanZiyafet"; hesapId: string; govde: unknown }
   // H10 han ilan panosu
   | { islem: "hanPano"; hesapId: string; han?: string | null }
+  // Canlı masalar vitrini: GET /v1/han/masalar
+  | { islem: "hanMasalar"; hesapId: string }
   | { islem: "hanPanoYaz" | "hanPanoSil"; hesapId: string; govde: unknown }
   | { islem: "hanSes"; hesapId: string; masa: string; alt: SesAlt; govde: unknown; han?: string | null }
   // Debdebe (src/debdebe/hesap.ts)
@@ -702,6 +715,9 @@ export type YerlesimIleti =
   | { islem: "hanlar"; yerlesim: string; hesapId: string }
   /** 4.9: MasaDO/HesapDO → YerlesimDO masa doluluk bildirimi (mutlak değer; govde {kayitlar}); istemci ulaşamaz. */
   | { islem: "masaDoluluk"; yerlesim: string; hesapId: string; govde: unknown }
+  /** Canlı masalar vitrini: MasaDO oyun özeti bildirir; HesapDO herkese açık listeyi okur (src/han/oyun/vitrin.ts). */
+  | { islem: "masaOyunu"; yerlesim: string; hesapId: string; govde: unknown }
+  | { islem: "masaVitrin"; yerlesim: string; hesapId: string }
   /** H1: han keşif sırası için oyuncunun dostları ve hane üyeleri (hesap kimlikleri). */
   | { islem: "hanTanidiklar"; yerlesim: string; hesapId: string }
   /** H7: HesapDO → YerlesimDO ziyafet ödemesi ve etkisi (masa kontrolünden sonra; istekNo ile tekrar güvenli). */

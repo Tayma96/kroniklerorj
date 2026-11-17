@@ -155,7 +155,7 @@ function karar(d: CanakDurumu, i: number, yenile: readonly number[], zar: Zar): 
 }
 
 const ZAR_DEGERI = (v: unknown): v is number => Number.isInteger(v) && (v as number) >= 1 && (v as number) <= 6;
-const CANAK = (v: unknown): v is number[] => Array.isArray(v) && v.length === CANAK_ZAR && v.every(ZAR_DEGERI);
+const CANAK_DIZI = (v: unknown): v is number[] => Array.isArray(v) && v.length === CANAK_ZAR && v.every(ZAR_DEGERI);
 const EL_TURU = new Set<unknown>(["uclu", "sirali", "cift", "tek"]);
 
 export const CANAK: OyunModulu<CanakDurumu> = {
@@ -219,14 +219,14 @@ export const CANAK: OyunModulu<CanakDurumu> = {
     const dizin = (v: unknown) => Number.isInteger(v) && (v as number) >= 0 && (v as number) < n;
     if (!Number.isInteger(d.el) || (d.el as number) < 1 || (d.el as number) > CANAK_EL_EN_COK || !dizin(d.acan)) return undefined;
     if (d.sira !== null && !dizin(d.sira)) return undefined;
-    if (!dizi(d.zarlar, CANAK) || !dizi(d.cikti, (x) => typeof x === "boolean")) return undefined;
+    if (!dizi(d.zarlar, CANAK_DIZI) || !dizi(d.cikti, (x) => typeof x === "boolean")) return undefined;
     if (!dizi(d.yeniledi, (x) => x === null || (Number.isInteger(x) && (x as number) >= 0 && (x as number) <= CANAK_ZAR))) return undefined;
     if (!dizi(d.kazanc, (x) => Number.isInteger(x) && (x as number) >= 0 && (x as number) <= CANAK_EL_EN_COK)) return undefined;
     if (!Array.isArray(d.gecmis) || d.gecmis.length > CANAK_EL_EN_COK) return undefined;
     const gecmis: ElKaydi[] = [];
     for (const g of d.gecmis as Record<string, unknown>[]) {
       if (typeof g !== "object" || g === null || !Number.isInteger(g.el) || (g.alan !== null && !dizin(g.alan))) return undefined;
-      if (!dizi(g.zarlar, (x) => x === null || CANAK(x)) || !dizi(g.turler, (x) => x === null || EL_TURU.has(x))) return undefined;
+      if (!dizi(g.zarlar, (x) => x === null || CANAK_DIZI(x)) || !dizi(g.turler, (x) => x === null || EL_TURU.has(x))) return undefined;
       gecmis.push({ el: g.el as number, zarlar: (g.zarlar as (number[] | null)[]).map((z) => (z ? [...z] : null)), turler: [...(g.turler as (ElTuru | null)[])], alan: g.alan as number | null });
     }
     const durum: CanakDurumu = {

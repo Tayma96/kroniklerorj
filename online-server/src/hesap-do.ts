@@ -296,6 +296,8 @@ export class HesapDO {
       }
       case "hanEylem":
         return hanEylemi(await this.#han(ileti.hesapId, simdi), ileti.govde);
+      case "hanMasalar":
+        return this.#yerlesime({ islem: "masaVitrin", hesapId: ileti.hesapId });
       case "hanPano":
         return this.#yerlesime({ islem: "hanPano", hesapId: ileti.hesapId, alt: "oku", ...(ileti.han ? { han: ileti.han } : {}) });
       case "hanPanoYaz":

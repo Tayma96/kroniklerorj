@@ -45,6 +45,8 @@ import {
   type Oturan,
 } from "./sahne.ts";
 import { MASA_BASI_AYARLARI, MASA_BASI_TURLERI } from "./tipler.ts";
+import { oyunGorunumu, oyunSuruyor, type MasaOyunu } from "./oyun/cati.ts";
+import { OYUN_KOMUTLARI, oyunDenetleYayinla, oyunKomutu } from "./oyun/masa-oyun.ts";
 import type {
   AtismaSonucu,
   IstemciIletisi,
@@ -91,6 +93,12 @@ export interface MasaBaglami {
   etkinlikYaz?(e: Etkinlik | undefined): void;
   /** H8: atışma sonuçlandı (kazandı/berabere/hükümsüz): masa olayı yazılır, kazanan(lar) yerleşimde anılır. */
   anil?(sonuc: AtismaSonucu, katilim: string[]): void;
+  /** Masa oyunu (DO depodan yükler; yoksa undefined). src/han/oyun/. */
+  oyun?: MasaOyunu;
+  /** Masa oyununu kalıcı yazar (undefined: siler). */
+  oyunYaz?(o: MasaOyunu | undefined): void;
+  /** Oyun tohumu üreticisi (testte sabit; yoksa crypto). */
+  tohumUret?(): string;
 }
 
 export interface Kayit {
@@ -192,7 +200,7 @@ export function atismaBaslatYayinla(b: MasaBaglami, kabul: MasaOlayi): boolean {
   if (kabul.tur !== "kabul" || kabul.teklifTur !== "atisma" || !kabul.hedef || kabul.olay === undefined) return false;
   const tum = kayitlar(b.soketler);
   etkinlikDenetleYayinla(b, tum);
-  if (b.etkinlik) return false;
+  if (b.etkinlik || oyunSuruyor(b.oyun)) return false;
   etkinlikGuncelle(b, tum, atismaBaslat(kabul.olay, kabul.hedef, kabul.kim, oturanListesi(tum)));
   return true;
 }
@@ -273,6 +281,7 @@ function cikar(b: MasaBaglami, cikanlar: readonly Kayit[], kalan: readonly Kayit
   durumYayinla(b, kalan);
   if (ses) sesYayinla(b, kalan);
   etkinlikDenetleYayinla(b, kalan);
+  oyunDenetleYayinla(b, kalan);
 }
 
 /** H9: kilitli masada kimse, özel masada yalnız davetli yeni oturabilir. */
@@ -368,6 +377,8 @@ export function baglan(b: MasaBaglami, yeni: MasaSoketi, bilet: MasaBileti): voi
     ...(kitaEnCok < KITA_EN_UZUN ? { kitaEnCok } : {}),
     ...(e?.tur === "sahne" ? { sahne: sahneGorunumu(e) } : {}),
     ...(e?.tur === "atisma" ? { atisma: { ...atismaGorunumu(e), ...(kitaEnCok < KITA_EN_UZUN ? { kitaEnCok } : {}) } } : {}),
+    // Yeniden bağlanan oyuncu kendi gizli bilgisini (zar) yeniden alır; başkası yalnız açık görünümü.
+    ...(b.oyun ? { oyun: oyunGorunumu(b.oyun, ek.h, b.simdi) } : {}),
   });
   yayinla(digerleri, { t: "durum", masa });
   if (sesDegisti) sesYayinla(b, digerleri);
@@ -446,6 +457,9 @@ async function komutIsle(
 ): Promise<Basarisiz | undefined> {
   // H8: DO uyanışından sonra ya da kapanış olayı kaçtıysa geçersiz sahne/atışma burada düşer.
   if (b.etkinlik) etkinlikDenetleYayinla(b, tumu(b, kaynak, ek));
+  // Masa oyunu: dönen oyuncunun "yok" işareti silinir, kalkan bekleme listesinden düşer.
+  if (b.oyun) oyunDenetleYayinla(b, tumu(b, kaynak, ek));
+  if (OYUN_KOMUTLARI.has(ileti.t)) return oyunKomutu(b, kaynak, ek, ileti, tumu(b, kaynak, ek));
   switch (ileti.t) {
     case "otur":
       return otur(b, kaynak, ek, ileti.koltuk);
@@ -555,6 +569,7 @@ function kalk(b: MasaBaglami, kaynak: MasaSoketi, ek: SoketEki): Basarisiz | und
   durumYayinla(b, tum);
   if (ses) sesYayinla(b, tum);
   etkinlikDenetleYayinla(b, tum);
+  oyunDenetleYayinla(b, tum);
   return undefined;
 }
 
@@ -816,6 +831,8 @@ function davetEt(b: MasaBaglami, kaynak: MasaSoketi, ek: SoketEki, ham: unknown,
 
 function sahneyiAc(b: MasaBaglami, kaynak: MasaSoketi, ek: SoketEki): Basarisiz | undefined {
   if (surer(ek.yt.susturma, b.simdi)) return { ok: false, hata: "susturuldu", bitis: ek.yt.susturma.bitis };
+  // Masa oyunu sürerken sahne açılmaz (sahne/atışma ile oyun aynı masada aynı anda olmaz).
+  if (oyunSuruyor(b.oyun)) return hata("masa_mesgul");
   const tum = tumu(b, kaynak, ek);
   const r = sahneAc(b.etkinlik, ek.h, oturanListesi(tum), b.ayar, b.simdi);
   if (!r.ok) return r;

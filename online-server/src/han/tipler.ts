@@ -1,6 +1,7 @@
 // Han masası (Faz 10) ortak biçimleri: WebSocket iletileri, masa görünümü, olay, iç iletiler.
 // Masa para tutmaz: bu dosyadaki hiçbir biçimde akçe, kasa ya da fiyat alanı yoktur (GDD §13 "Masa DO").
 
+import type { OyunGorunumu } from "./oyun/cati.ts";
 import type { HataKodu, HesapYaptirimi } from "../tipler.ts";
 
 /** Yerleşim türüne göre mekân: şehirde han, kasabada küçük han, köyde menzil (GDD §16 Yapı). */
@@ -144,7 +145,16 @@ export type IstemciIletisi =
   // oy hakkı olan bir kez oy verir; taraf ya da masa başı kapatır (kıta aşamasında iptal, oylamada sonuçlandırır).
   | { t: "kita"; metin: string }
   | { t: "oy"; hedef: string }
-  | { t: "atismaKapat" };
+  | { t: "atismaKapat" }
+  // Masa oyunları (src/han/oyun/): oturan açar/katılır; kurucu başlatır; `n` görülen adım numarası (tekrar güvenliği).
+  | { t: "oyunAc"; oyun: string }
+  | { t: "oyunKatil" }
+  | { t: "oyunAyril" }
+  | { t: "oyunBaslat" }
+  | { t: "hamle"; n: number; hamle: unknown }
+  | { t: "oyunPas"; n: number }
+  | { t: "oyunDagit" }
+  | { t: "oyunKapat" };
 
 /** H8 sahne görünümü (herkese aynı). */
 export interface SahneGorunumu {
@@ -209,7 +219,9 @@ export interface SesDurumu {
 
 /** Sunucu → istemci. */
 export type SunucuIletisi =
-  | { t: "hosgeldin"; ben: Plaka; susturma: { bitis: number | null } | null; masa: MasaGorunumu; ses?: SesDurumu; sahne?: SahneGorunumu; atisma?: AtismaGorunumu; /** Yeni hesapta (24 sa) atışma kıtası harf sınırı; yoksa KITA_EN_UZUN. */ kitaEnCok?: number }
+  | { t: "hosgeldin"; ben: Plaka; susturma: { bitis: number | null } | null; masa: MasaGorunumu; ses?: SesDurumu; sahne?: SahneGorunumu; atisma?: AtismaGorunumu; /** Yeni hesapta (24 sa) atışma kıtası harf sınırı; yoksa KITA_EN_UZUN. */ kitaEnCok?: number; /** Masa oyunu (izleyene özel görünüm). */ oyun?: OyunGorunumu }
+  /** Masa oyunu değişti (izleyene özel; null: oyun kalktı). src/han/oyun/. */
+  | { t: "oyun"; oyun: OyunGorunumu | null }
   /** H8: sahne açıldı/değişti (null: kapandı). */
   | { t: "sahne"; sahne: SahneGorunumu | null }
   /** H8: atışma başladı/ilerledi (null: bitti; `son` bitişin sonucu). */

@@ -17,6 +17,7 @@ import { sonrakiAlarm, YerlesimMotoru } from "./yerlesim/motor.ts";
 import { VERGI_ALT, mulkIsle, teslimAl, uzlastir, type IsletmeCagir } from "./mulk/yerlesim-mulk.ts";
 import { hanNoCoz } from "./mulk/tapu.ts";
 import { DOLULUK, dolulukUygula, type DolulukKaydi } from "./han/doluluk.ts";
+import { VITRIN, vitrinBudar, vitrinListesi, vitrinUygula, type VitrinKaydi } from "./han/oyun/vitrin.ts";
 import { yerlesimBul } from "./dunya-veri.ts";
 
 /** [PARAMETRE] Bir istekte bölgeye teslim edilen en çok vergi kaydı (DO alt istek bütçesi ≤ 12). */
@@ -93,6 +94,8 @@ export class YerlesimDO {
     if (!ileti || typeof ileti.yerlesim !== "string") return jsonYanit(hata("gecersiz_istek"));
     // 4.9 masa doluluğu: hafif yol (motor açılmaz, ay yetiştirilmez, başka DO'ya çağrı yok); tek küçük depo kaydı.
     if (ileti.islem === "masaDoluluk") return jsonYanit(await this.#dolulukYaz(ileti.yerlesim, ileti.govde));
+    // Canlı masalar vitrini: aynı hafif yol (motor açılmaz); tek küçük depo kaydı.
+    if (ileti.islem === "masaOyunu" || ileti.islem === "masaVitrin") return jsonYanit(await this.#vitrin(ileti));
     this.#butceYenile();
     try {
       const simdi = this.#saat();
@@ -109,6 +112,21 @@ export class YerlesimDO {
       this.#motor = undefined;
       throw e;
     }
+  }
+
+  async #vitrin(ileti: Extract<YerlesimIleti, { islem: "masaOyunu" | "masaVitrin" }>): Promise<Sonuc<unknown>> {
+    if (!yerlesimBul(ileti.yerlesim)) return hata("yerlesim_gecersiz");
+    const kayit = (await this.#depo.al<VitrinKaydi>(VITRIN)) ?? {};
+    let degisti = vitrinBudar(kayit, Date.now());
+    if (ileti.islem === "masaOyunu") {
+      const ham = typeof ileti.govde === "object" && ileti.govde !== null ? (ileti.govde as { kayit?: unknown }).kayit : undefined;
+      if (vitrinUygula(kayit, ham)) degisti = true;
+    }
+    if (degisti) {
+      if (Object.keys(kayit).length) await this.#depo.koy({ [VITRIN]: kayit });
+      else await this.#depo.sil([VITRIN]);
+    }
+    return ileti.islem === "masaVitrin" ? basarili({ masalar: vitrinListesi(kayit, Date.now()) }) : basarili({});
   }
 
   async #dolulukYaz(yerlesim: string, govde: unknown): Promise<Sonuc<unknown>> {
