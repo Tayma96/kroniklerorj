@@ -31,7 +31,7 @@ import {
   DepoCekmecesi, DepoOzeti, DevralCekmecesi, DukkanBasligi, GunSonuKarti, KepenkSatiri, RafCekmecesi, RafIzgarasi, SatinAlCekmecesi, TezgahIskeleti, YolcuPayiDokumu,
 } from "../../../lib/online/tezgah-ui";
 import { AtolyeBolumu, GenisletmeKarti } from "../../../lib/online/atolye-ui";
-import { atolyeHataMetni, useAtolyeIstemci } from "../../../lib/online/atolye-veri";
+import { atolyeHataMetni, useAtolyeIstemci, useTezgahOlayi } from "../../../lib/online/atolye-veri";
 import { hatirlananMulkListesi } from "../../../lib/online/simdi-rehber";
 import { kisiYolu } from "../../../lib/online/toplum-veri";
 
@@ -152,6 +152,8 @@ function IsletmeEkran() {
     void tzi.dukkanlar().then((r) => { if (!iptal && r.ok) { setDevralmaAy(r.deger.devralmaKepenkAy); dukkanlariHatirla(hesap, r.deger); } });
     return () => { iptal = true; };
   }, [tezgahli]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Tezgâh olayı (üretim, toplu sipariş/teslim) gelince açık tezgâh yeniden yüklenir.
+  useTezgahOlayi(tezgahli, (x) => x.ozet.k === "olay.tezgah.topluSiparis" || x.ozet.p.isletme === id, () => { void tezgahYukle(); });
   const tezgahTazele = async () => { await tezgahYukle(); if (!sahte) await o.yerlesimYukle(true); };
 
   const yukle = useCallback(async () => {

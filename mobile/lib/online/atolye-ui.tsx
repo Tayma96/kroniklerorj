@@ -20,6 +20,7 @@ import { meslekYaz } from "./metin";
 import { istekTekrarMi } from "./hata";
 import { AdetSecici, AltBaslik, DepoOzeti, Not, Satir, Sonuc, useTekIstek } from "./tezgah-ui";
 import type { EkSonuc } from "./ek-istemci";
+import { geciciHataMi } from "./tezgah-veri";
 import type { EmirDokumu, GenisletmeGorunumu, GunSonu, TezgahGorunumu, TopluSiparis, UretimEmri } from "./tezgah-veri";
 import { MESAI_TEK_EN_COK, atolyeHataMetni, depodaToplam, zanaatTarifleri, type AtolyeIstemci } from "./atolye-veri";
 
@@ -36,7 +37,9 @@ const tarifIkonu = (id: string, mal?: string) => TARIF_IKON[id] ?? (mal ? malIko
 const zanaatAdi = (m: string, lang: Lang) => meslekYaz(m, lang);
 const zanaatIkonu = (m: string) => (MESLEK_IKON as Record<string, string>)[m] ?? "anvil";
 /** Kalite kademelerine göre adet: "3 sade · 1 iyi" (yalnız sıfır olmayanlar). */
-const kaliteAdetMetni = (t: Ceviri, k: readonly number[]) => k.map((n, i) => (n > 0 ? `${n} ${kaliteAdi(t, i)}` : null)).filter(Boolean).join(" · ");
+/** "3 kalas" gibi adet + ad (dile göre sıra çeviride). */
+const adetMal = (t: Ceviri, n: number, ad: string) => applyParams(t("onl.atl.adetMal"), [n, ad]);
+const kaliteAdetMetni = (t: Ceviri, k: readonly number[]) => k.map((n, i) => (n > 0 ? adetMal(t, n, kaliteAdi(t, i)) : null)).filter(Boolean).join(" · ");
 /** Kalite kalemi adı ("kalite.atolye" → onl.atl.kk.atolye); bilinmeyen kalem sakin genel adla. */
 function kalemAdi(t: Ceviri, k: string): string {
   const a = "onl.atl.kk." + k.replace(/^kalite\./, "");
@@ -81,6 +84,8 @@ function useYazma(oturum: number) {
   const { t } = useI18n();
   const [hata, setHata] = useState<string | null>(null);
   const [bilgi, setBilgi] = useState<string | null>(null);
+  // Geçici hata (ağ, zaman aşımı) sonrası: aynı imza aynı istekNo ile yeniden denenecek; çekmece kapansa da sürer.
+  const [askida, setAskida] = useState(false);
   const oturumRef = useRef(oturum);
   oturumRef.current = oturum;
   useEffect(() => { setHata(null); setBilgi(null); }, [oturum]);
@@ -88,6 +93,7 @@ function useYazma(oturum: number) {
     const bas = oturumRef.current;
     const r = await yaz.calistir(imza, async (istekNo) => {
       const s = await f(istekNo);
+      setAskida(!s.ok && geciciHataMi(s.hata));
       if (s.ok || istekTekrarMi(s.hata)) await onYenile();
       return s;
     });
@@ -102,7 +108,7 @@ function useYazma(oturum: number) {
     return null;
   };
   const temizle = () => { setHata(null); setBilgi(null); };
-  return { bekliyor: yaz.bekliyor, hata, bilgi, gonder, temizle };
+  return { bekliyor: yaz.bekliyor, askida, hata, bilgi, gonder, temizle };
 }
 
 // ---------------------------------------------------------------- genişletme (dükkân ve atölye)
@@ -128,10 +134,10 @@ export function GenisletmeKarti({ g, gn, ist, iflas, rtl, t, onYenile }: {
     {s ? <View style={{ flexDirection: yon(rtl), flexWrap: "wrap", gap: 6 }}>
       {s.malzeme.map((m) => <GirdiCipi key={m.mal} mal={m.mal} gereken={m.adet} depoda={m.depoda} t={t} />)}
     </View> : null}
-    {s && eksik.length ? <Not metin={applyParams(t("onl.atl.genislet.eksikListe"), [eksik.map((m) => `${m.adet - m.depoda} ${malAdi(t, m.mal)}`).join(", ")])} rtl={rtl} /> : null}
+    {s && eksik.length ? <Not metin={applyParams(t("onl.atl.genislet.eksikListe"), [eksik.map((m) => adetMal(t, m.adet - m.depoda, malAdi(t, m.mal))).join(", ")])} rtl={rtl} /> : null}
     <Sonuc hata={y.hata} bilgi={y.bilgi} rtl={rtl} />
     {s ? (neden ? <Not metin={neden} rtl={rtl} /> : <OnayliDugme etiket={t("onl.atl.genislet.dugme")} icon="house" rtl={rtl} t={t} bekliyor={y.bekliyor}
-      onayMetni={applyParams(t("onl.atl.genislet.onay"), [s.malzeme.map((m) => `${m.adet} ${malAdi(t, m.mal)}`).join(", ")])}
+      onayMetni={applyParams(t("onl.atl.genislet.onay"), [s.malzeme.map((m) => adetMal(t, m.adet, malAdi(t, m.mal))).join(", ")])}
       onOnay={() => { void y.gonder(`genislet|${gn.kademe}`, (istekNo) => ist.genislet(g.isletme, { istekNo }), onYenile,
         (v) => (v ? applyParams(t("onl.atl.genislet.tamam"), [v.genisletme.kademe, v.genisletme.depoKapasite]) : t("onl.atl.genislet.tamamKisa"))); }} />) : null}
   </Cerceve>;
@@ -190,7 +196,7 @@ export function AtolyeGunSonuKarti({ gs, t, rtl }: { gs: GunSonu | null | undefi
       <Satir etiket={t("onl.atl.gs.havuz")} deger={`${gs.emek.oyuncuOnce} → ${gs.emek.oyuncuSonra}`} rtl={rtl} />
       {gs.emek.npcVerilen > 0 ? <Satir etiket={t("onl.atl.gs.npcEmek")} deger={`${gs.emek.npcKullanilan}/${gs.emek.npcVerilen}`} rtl={rtl} /> : null}
     </> : null}
-    {npc && npc.maassiz > 0 ? <Not metin={applyParams(t("onl.atl.npc.maassizGecen"), [npc.maassiz])} rtl={rtl} icon="coins" renk={C.emberSoft} /> : null}
+    {npc && npc.maassiz > 0 ? <Not metin={applyParams(t(npc.neden === "emanet_maas_yetmez" ? "onl.atl.npc.maassizGecen" : "onl.atl.npc.maassizGecenGenel"), [npc.maassiz])} rtl={rtl} icon="coins" renk={C.emberSoft} /> : null}
     {emirler.length ? <Pressable accessibilityRole="button" accessibilityState={{ expanded: acik }} accessibilityLabel={t(acik ? "onl.tz.gs.gizle" : "onl.tz.gs.dokum")}
       onPress={() => { hap("selection"); setAcik(!acik); }} style={{ minHeight: 44, flexDirection: yon(rtl), alignItems: "center", gap: 6 }}>
       <GameIcon name="scroll" size={14} color={C.gold} />
@@ -256,7 +262,7 @@ function TarifSecimi({ tarifler, g, secili, onSec, rtl, t }: { tarifler: Tarif[]
         <View style={{ flexDirection: yon(rtl), alignItems: "center", gap: 8 }}>
           <GameIcon name={tarifIkonu(tf.id, tf.cikti.mal)} size={17} color={s ? C.goldBright : C.gold} />
           <Text numberOfLines={2} style={{ flex: 1, fontFamily: F.display, fontSize: 13.5, color: C.parchment, textAlign: hiza(rtl) }}>{ad}</Text>
-          <Text numberOfLines={1} style={{ fontFamily: F.serif, fontSize: 12.5, color: C.parchmentDim }}>{applyParams(t("onl.atl.tarifCikti"), [tf.cikti.adet, malAdi(t, tf.cikti.mal)])}</Text>
+          <Text numberOfLines={1} style={{ flexShrink: 1, maxWidth: "45%", fontFamily: F.serif, fontSize: 12.5, color: C.parchmentDim }}>{applyParams(t("onl.atl.tarifCikti"), [tf.cikti.adet, malAdi(t, tf.cikti.mal)])}</Text>
         </View>
         {girdi.length ? <View style={{ flexDirection: yon(rtl), flexWrap: "wrap", gap: 6 }}>
           {girdi.map(([m, n]) => <GirdiCipi key={m} mal={m} gereken={n} depoda={depodaToplam(g, m)} t={t} />)}
@@ -287,6 +293,7 @@ export function AtolyeBolumu({ g, ist, iflas, yonetici, rtl, t, onYenile, onDepo
   const emirY = useYazma(0);
   const topluY = useYazma(0);
   const [topluNo, setTopluNo] = useState<string | null>(null);
+  const [iptalNo, setIptalNo] = useState<number | null>(null);
   if (!a) return <View style={{ gap: 10 }}>
     <Baslik2 metin={t("onl.tz.depo")} rtl={rtl} ust={10} />
     <DepoOzeti g={g} t={t} rtl={rtl} onAc={onDepo} />
@@ -328,8 +335,8 @@ export function AtolyeBolumu({ g, ist, iflas, yonetici, rtl, t, onYenile, onDepo
       sag={<Text style={{ fontFamily: F.display, fontSize: 12, color: C.parchmentDim }}>{applyParams(t("onl.atl.tezgahSayi"), [a.tezgah.acikEmir, a.tezgah.sayi])}</Text>} />
     <Not metin={t("onl.atl.emirAciklama")} rtl={rtl} />
     {a.emirler.map((e) => <Animated.View key={e.no} entering={belir()}>
-      <EmirKarti e={e} tf={tfBul(e.tarif)} izin={!!iz.emir} iflas={iflas} bekliyor={emirY.bekliyor} rtl={rtl} t={t}
-        onIptal={() => { void emirY.gonder(`iptal|${e.no}`, (istekNo) => ist.emir(g.isletme, { islem: "iptal", emir: e.no, istekNo }), onYenile,
+      <EmirKarti e={e} tf={tfBul(e.tarif)} izin={!!iz.emir} iflas={iflas} bekliyor={emirY.bekliyor && iptalNo === e.no} rtl={rtl} t={t}
+        onIptal={() => { setIptalNo(e.no); void emirY.gonder(`iptal|${e.no}`, (istekNo) => ist.emir(g.isletme, { islem: "iptal", emir: e.no, istekNo }), onYenile,
           () => applyParams(t("onl.atl.emir.iptalTamam"), [tarifAdi(t, e.tarif, tfBul(e.tarif)?.cikti.mal)])); }} />
     </Animated.View>)}
     {Array.from({ length: bosTezgah }, (_, i) => <BosTezgah key={"b" + i} t={t} rtl={rtl} kapali={!!emirNeden} neden={emirNeden} onPress={() => ac("emir")} />)}
@@ -429,7 +436,7 @@ function ZanaatCekmecesi({ acik, oturum, g, ist, onKapat, onYenile, rtl, t }: {
   const a = g.atolye!;
   const y = useYazma(oturum);
   const [sec, setSec] = useState<string | null>(null);
-  useEffect(() => { if (acik) setSec(a.zanaat ?? a.zanaatOneri ?? null); }, [acik, oturum]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (acik) setSec(a.zanaat ?? a.zanaatOneri ?? null); }, [acik, oturum]); // eslint-disable-line react-hooks/exhaustive-deps -- yalnız açılışta seçimi kur; sunucu tazelemesi seçimi ezmesin
   const degisim = !!a.zanaat && !!sec && sec !== a.zanaat;
   const neden = !sec ? t("onl.atl.zanaatSecIpucu") : sec === a.zanaat ? t("onl.atl.zanaatAyni") : degisim && a.emirler.length ? t("onl.atl.h.emir_acik") : null;
   const bedelNot = !a.zanaat ? t("onl.atl.zanaatIlk") : a.zanaatDegisim.ucretsizKalan > 0 ? applyParams(t("onl.atl.zanaatUcretsiz"), [a.zanaatDegisim.ucretsizKalan])
@@ -471,7 +478,7 @@ function UretCekmecesi({ acik, oturum, g, tarifler, ist, iflas, onKapat, onYenil
   const tf = tarifler.find((x) => x.id === sec);
   const eksik = tf ? Object.entries(tf.girdi).filter(([m, n]) => depodaToplam(g, m) < n) : [];
   const neden = iflas ? t("onl.atl.h.isletme_kapali") : !g.izin.uret ? t("onl.atl.uret.yetkiYok") : !tf ? t("onl.atl.uret.sec")
-    : tf.acik === false ? t("onl.atl.tarifKapaliUzun") : eksik.length ? applyParams(t("onl.atl.uret.eksik"), [eksik.map(([m, n]) => `${n - depodaToplam(g, m)} ${malAdi(t, m)}`).join(", ")])
+    : tf.acik === false ? t("onl.atl.tarifKapaliUzun") : eksik.length ? applyParams(t("onl.atl.uret.eksik"), [eksik.map(([m, n]) => adetMal(t, n - depodaToplam(g, m), malAdi(t, m))).join(", ")])
     : a.benimTakat < tf.takat ? applyParams(t("onl.atl.uret.takat"), [tf.takat, a.benimTakat]) : null;
   return <AltPanel acik={acik} onKapat={onKapat} etiket={t("onl.atl.uret.baslik")} rtl={rtl} t={t}>
     <Text accessibilityRole="header" style={{ fontFamily: F.display, fontSize: 17, color: C.parchment, textAlign: hiza(rtl), paddingEnd: 36 }}>{t("onl.atl.uret.baslik")}</Text>
@@ -535,9 +542,13 @@ function MesaiCekmecesi({ acik, oturum, g, ist, iflas, onKapat, onYenile, rtl, t
   const a = g.atolye!;
   const y = useYazma(oturum);
   const [emek, setEmek] = useState(1);
-  useEffect(() => { if (acik) setEmek(1); }, [acik, oturum]);
+  // Geçici hatada gönderilen miktar kilitlenir: yeniden deneme aynı imza/istekNo ile gider, takat iki kez harcanmaz.
+  const [kilitN, setKilitN] = useState<number | null>(null);
+  useEffect(() => { if (acik && !y.askida) setEmek(1); }, [acik, oturum]); // eslint-disable-line react-hooks/exhaustive-deps -- askıdaki miktar açılışta sıfırlanmasın
+  useEffect(() => { if (!y.bekliyor && !y.askida) setKilitN(null); }, [y.bekliyor, y.askida]);
   const bos = Math.max(0, a.emek.tavan - a.emek.havuz);
-  const enCok = Math.max(0, Math.min(MESAI_TEK_EN_COK, bos, a.benimTakat));
+  const enCok = Math.max(0, Math.min(a.emek.tekEnCok ?? MESAI_TEK_EN_COK, bos, a.benimTakat));
+  const gosterN = kilitN ?? Math.min(emek, Math.max(1, enCok));
   useEffect(() => { setEmek((e) => Math.max(1, Math.min(e, Math.max(1, enCok)))); }, [enCok]);
   const neden = iflas ? t("onl.atl.h.isletme_kapali") : !g.izin.mesai ? t("onl.atl.mesai.yetkiYok") : bos <= 0 ? t("onl.atl.h.havuz_dolu") : a.benimTakat <= 0 ? t("onl.atl.mesai.takatYok") : null;
   return <AltPanel acik={acik} onKapat={onKapat} etiket={t("onl.atl.mesai.baslik")} rtl={rtl} t={t}>
@@ -548,13 +559,14 @@ function MesaiCekmecesi({ acik, oturum, g, ist, iflas, onKapat, onYenile, rtl, t
       <Doluluk nufus={a.emek.havuz} kapasite={Math.max(1, a.emek.tavan)} rtl={rtl} />
       <Satir etiket={t("onl.atl.benimTakat")} deger={String(a.benimTakat)} rtl={rtl} />
     </View>
-    {enCok > 0 && !neden ? <AdetSecici etiket={t("onl.atl.mesai.emek")} deger={Math.min(emek, enCok)} cok={enCok} onDegis={setEmek} rtl={rtl} t={t} /> : null}
+    {kilitN !== null ? <Satir etiket={t("onl.atl.mesai.emek")} deger={String(kilitN)} rtl={rtl} />
+      : enCok > 0 && !neden ? <AdetSecici etiket={t("onl.atl.mesai.emek")} deger={Math.min(emek, enCok)} cok={enCok} onDegis={setEmek} rtl={rtl} t={t} /> : null}
     <Not metin={t("onl.atl.mesai.geriAlinmaz")} rtl={rtl} icon="compass" renk={C.gold} />
     <Sonuc hata={y.hata} bilgi={y.bilgi} rtl={rtl} />
     {neden ? <Not metin={neden} rtl={rtl} /> : null}
-    <AltinDugme etiket={applyParams(t("onl.atl.mesai.dugme"), [Math.min(emek, Math.max(1, enCok))])} icon="flame" rtl={rtl} kapali={!!neden} bekliyor={y.bekliyor}
-      erisim={[applyParams(t("onl.atl.mesai.dugme"), [Math.min(emek, Math.max(1, enCok))]), neden].filter(Boolean).join(". ")}
-      onPress={() => { if (neden) return; const n = Math.min(emek, enCok); void y.gonder(`mesai|${n}`, (istekNo) => ist.mesai(g.isletme, { emek: n, istekNo }), onYenile,
+    <AltinDugme etiket={applyParams(t("onl.atl.mesai.dugme"), [gosterN])} icon="flame" rtl={rtl} kapali={!!neden} bekliyor={y.bekliyor}
+      erisim={[applyParams(t("onl.atl.mesai.dugme"), [gosterN]), neden].filter(Boolean).join(". ")}
+      onPress={() => { if (neden) return; const n = kilitN ?? Math.min(emek, enCok); setKilitN(n); void y.gonder(`mesai|${n}`, (istekNo) => ist.mesai(g.isletme, { emek: n, istekNo }), onYenile,
         (v) => (v ? applyParams(t("onl.atl.mesai.tamam"), [v.mesai.emek, v.mesai.havuz, v.mesai.tavan]) : t("onl.atl.mesai.tamamKisa"))); }} />
   </AltPanel>;
 }

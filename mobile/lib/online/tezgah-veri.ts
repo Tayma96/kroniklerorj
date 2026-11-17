@@ -83,7 +83,7 @@ export interface AtolyeBolumu {
   zanaat: string | null; zanaatOneri: string | null; zanaatlar: string[];
   zanaatDegisim: { yapilan: number; ucretsizKalan: number; bedel: number };
   tezgah: { sayi: number; acikEmir: number }; kaliteBonus: number;
-  emek: { havuz: number; tavan: number; npcCalisan: number; npcAylik: number; npc?: NpcDokumu; npcKaliteCeza: number; npcMaasEnAz: number };
+  emek: { havuz: number; tavan: number; npcCalisan: number; npcAylik: number; npc?: NpcDokumu; npcKaliteCeza: number; npcMaasEnAz: number; tekEnCok?: number };
   emirler: UretimEmri[]; emirKezEnCok: number; sonUretimAyi: number | null; topluSiparis: TopluSiparis[]; benimTakat: number;
 }
 export interface DukkanKarti {

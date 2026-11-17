@@ -1,12 +1,12 @@
 // Tezgâh modeli Dilim 2 (atölye) istemci biçimleri: online-server/src/mulk/{tezgah-uclar,atolye,uretim-emri,toplu-siparis}.ts
 // ile birebir. Zanaat, üretim, mesai, emir, toplu teslim ve genişletme sunucuda doğrulanır ve hesaplanır; istemci yalnız
 // niyeti (istekNo ile) gönderir ve sunucunun verdiği sayıları gösterir. GET .../tezgah'ın atölye bölümü tezgah-veri.ts'te.
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useOnline } from "./durum";
 import { ekBasarili, ekBasarisiz, ekCagir, nesneMi, metinMi, type EkSonuc } from "./ek-istemci";
 import { tezgahHataMetni, type DepoSatiri, type TopluSiparis, type GenisletmeGorunumu, type TezgahGorunumu } from "./tezgah-veri";
 import { TARIFLER } from "./meslek-veri";
-import type { TarifSatiri } from "./protokol";
+import type { Olay, TarifSatiri } from "./protokol";
 
 /** GET /v1/atolyeler satırı. */
 export interface AtolyeKarti {
@@ -93,7 +93,7 @@ export function atolyeHataMetni(t: (k: string) => string, s: { hata: string; ham
   return tezgahHataMetni(t, s as Parameters<typeof tezgahHataMetni>[1]);
 }
 
-/** [PARAMETRE] Tek mesaide bağlanabilecek en çok emek (sunucu MESAI_TEK_EN_COK; aşılırsa `emek_gecersiz`). */
+/** [PARAMETRE] Tek mesaide bağlanabilecek en çok emek; yalnız yedek: sunucu `atolye.emek.tekEnCok` verirse o esas alınır. */
 export const MESAI_TEK_EN_COK = 18;
 
 /** Depodaki bir malın bütün kalitelerdeki toplam adedi (sunucu `depoda` alanı gibi). */
@@ -118,3 +118,25 @@ export function zanaatTarifleri(tarifler: TarifSatiri[] | null, zanaat: string |
 let atolyeSon: { hesap: string; liste: AtolyeListesi } | null = null;
 export function atolyeleriHatirla(hesap: string, l: AtolyeListesi) { atolyeSon = { hesap, liste: l }; }
 export const hatirlananAtolyeler = (hesap: string): AtolyeListesi | null => (atolyeSon && atolyeSon.hesap === hesap ? atolyeSon.liste : null);
+
+/** Tezgâh Dilim 2 olayları: gelince açık atölye/işletme ekranı ya da çarşının atölye listesi yeniden yüklenir. */
+const TEZGAH_OLAYLARI: ReadonlySet<string> = new Set(["olay.tezgah.uretim", "olay.tezgah.topluSiparis", "olay.tezgah.topluTeslim"]);
+/**
+ * Olay defterine (o.defter) ekran açıkken yeni bir tezgâh olayı düşerse `onOlay` bir kez çağrılır. Açılıştaki olaylar
+ * yeni sayılmaz (sıra `sira` ile izlenir); `etkin` kapalıyken gelenler sessizce geçilir.
+ */
+export function useTezgahOlayi(etkin: boolean, suz: (o: Olay) => boolean, onOlay: () => void) {
+  const o = useOnline();
+  const son = useRef<number | null>(null);
+  const suzRef = useRef(suz);
+  suzRef.current = suz;
+  const cbRef = useRef(onOlay);
+  cbRef.current = onOlay;
+  useEffect(() => {
+    const enBuyuk = o.defter.reduce((m, x) => Math.max(m, x.sira), -1);
+    const once = son.current;
+    son.current = once === null ? enBuyuk : Math.max(once, enBuyuk);
+    if (once === null || !etkin) return;
+    if (o.defter.some((x) => x.sira > once && TEZGAH_OLAYLARI.has(x.ozet.k) && suzRef.current(x))) cbRef.current();
+  }, [o.defter, etkin]);
+}

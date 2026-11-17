@@ -24,7 +24,7 @@ import { hatirlananMulkListesi, mulkListesiniHatirla } from "../../lib/online/si
 import { dukkanlariHatirla, hatirlananDukkanlar, seviyeAnahtari, tezgahHataMetni, useTezgahIstemci, type DukkanKarti, type DukkanListesi } from "../../lib/online/tezgah-veri";
 import { DUKKAN_GORSEL, DevralCekmecesi } from "../../lib/online/tezgah-ui";
 import { TopluKarti } from "../../lib/online/atolye-ui";
-import { atolyeleriHatirla, atolyeHataMetni, hatirlananAtolyeler, useAtolyeIstemci, type AtolyeKarti, type AtolyeListesi } from "../../lib/online/atolye-veri";
+import { atolyeleriHatirla, atolyeHataMetni, hatirlananAtolyeler, useAtolyeIstemci, useTezgahOlayi, type AtolyeKarti, type AtolyeListesi } from "../../lib/online/atolye-veri";
 import { MESLEK_IKON } from "../../lib/online/meslek-veri";
 import { meslekYaz } from "../../lib/online/metin";
 
@@ -70,7 +70,7 @@ function AtolyeKartiGorunumu({ d, t, rtl, lang, onPress }: { d: AtolyeKarti; t: 
   const ad = d.ad || applyParams(t("onl.atl.adsiz"), [d.no]);
   const zanaat = d.zanaat ? meslekYaz(d.zanaat, lang) : t("onl.atl.zanaatSecilmedi");
   const erisim = [
-    ad, d.benim ? t("onl.tz.senin") : applyParams(t("onl.isl.sahibi"), [d.sahip.ad || t("onl.hs.sahipBilinmez")]), zanaat,
+    ad, d.benim ? t("onl.atl.senin") : applyParams(t("onl.isl.sahibi"), [d.sahip.ad || t("onl.hs.sahipBilinmez")]), zanaat,
     t(seviyeAnahtari(d.seviye)), applyParams(t("onl.isl.itibarN"), [d.itibar]), t(d.kepenk ? "onl.tz.kepenk.kapali" : "onl.tz.kepenk.acik"),
   ].join(". ");
   return <Pressable accessibilityRole="button" accessibilityLabel={erisim} accessibilityHint={t(d.benim ? "onl.atl.ipucu.atolyem" : "onl.atl.ipucu.gir")} onPress={() => { hap("tap"); onPress(); }}
@@ -81,12 +81,12 @@ function AtolyeKartiGorunumu({ d, t, rtl, lang, onPress }: { d: AtolyeKarti; t: 
         <View style={{ flex: 1, gap: 2 }}>
           <Text numberOfLines={2} style={{ fontFamily: F.display, fontSize: 15.5, lineHeight: 20, color: C.parchment, textAlign: hiza(rtl) }}>{ad}</Text>
           <Text numberOfLines={1} style={{ fontFamily: F.serif, fontSize: 13.5, color: C.parchmentDim, textAlign: hiza(rtl) }}>
-            {`${zanaat} · ${d.benim ? t("onl.tz.senin") : applyParams(t("onl.isl.sahibi"), [d.sahip.ad || t("onl.hs.sahipBilinmez")])}`}
+            {`${zanaat} · ${d.benim ? t("onl.atl.senin") : applyParams(t("onl.isl.sahibi"), [d.sahip.ad || t("onl.hs.sahipBilinmez")])}`}
           </Text>
         </View>
       </View>
       <View style={{ flexDirection: yon(rtl), flexWrap: "wrap", gap: 6 }}>
-        {d.benim ? <Rozet icon="crown" metin={t("onl.tz.senin")} renk={C.goldBright} dolu /> : null}
+        {d.benim ? <Rozet icon="crown" metin={t("onl.atl.senin")} renk={C.goldBright} dolu /> : null}
         <Rozet icon="trophy" metin={t(seviyeAnahtari(d.seviye))} />
         <Rozet icon="star" metin={applyParams(t("onl.isl.itibarN"), [d.itibar])} />
         <Rozet icon={d.kepenk ? "shield" : "sun"} metin={t(d.kepenk ? "onl.tz.kepenk.kapali" : "onl.tz.kepenk.acik")} renk={d.kepenk ? C.parchmentMuted : C.sage} />
@@ -131,12 +131,16 @@ function CarsiEkran() {
   const [sekme, setSekme] = useState<"dukkan" | "atolye">("dukkan");
   const [al, setAl] = useState<AtolyeListesi | null>(() => hatirlananAtolyeler(hesap));
   const [alHata, setAlHata] = useState<string | null>(null);
+  const alSira = useRef(0);
   const atolyeYukle = useCallback(async () => {
+    const n = ++alSira.current;
     setAlHata(null);
     const r = await ati.atolyeler();
+    if (n !== alSira.current) return; // eski yanıt atılır
     if (r.ok) { setAl(r.deger); atolyeleriHatirla(hesap, r.deger); } else setAlHata(atolyeHataMetni(t, r));
   }, [ati, hesap]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (y && sekme === "atolye") void atolyeYukle(); }, [!!y, sekme, atolyeYukle]); // eslint-disable-line react-hooks/exhaustive-deps
+  useTezgahOlayi(!!y && sekme === "atolye", () => true, () => { void atolyeYukle(); });
 
   const yukle = useCallback(async () => {
     setHata(null);
@@ -244,7 +248,7 @@ function CarsiEkran() {
         : !liste.length ? <BosKart icon="scales" metin={applyParams(t("onl.tz.suzgecBos"), [malAdi(t, suzgec ?? "")])} rtl={rtl} />
         : liste.map((d, i) => <Animated.View key={d.isletme} entering={giris(40 + i * 30)} style={{ gap: 6 }}>
           <DukkanKartiGorunumu d={d} t={t} rtl={rtl} vurgu={suzgec} onPress={() => router.push(isletmeYolu(d.isletme))} />
-          {d.devralinabilir ? <CizgiDugme etiket={t("onl.tz.dv.incele")} icon="crown" rtl={rtl} kucuk onPress={() => setDevral({ d, bedel: edinim?.fiyat ?? null, oturum: ++acilis.current })} /> : null}
+          {d.devralinabilir ? <CizgiDugme etiket={t("onl.tz.dv.incele")} icon="crown" rtl={rtl} kucuk onPress={() => setDevral({ d, bedel: l?.bedel?.dukkan ?? edinim?.fiyat ?? null, oturum: ++acilis.current })} /> : null}
         </Animated.View>)}
       {hata && l ? <Bant metin={hata} rtl={rtl} eylem={t("onl.yenidenDene")} onEylem={() => { void yukle(); }} /> : null}
     </View>
