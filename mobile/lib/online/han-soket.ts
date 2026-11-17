@@ -9,6 +9,10 @@ import {
   KAPANIS, useHanIstemci, type HamSoket, type IstemciIletisi, type MasaAnonsu, type MasaGorunumu, type MasaOlayi, type Plaka,
   type SesDurumu, type SikayetNedeni, type SunucuIletisi, type SahneGorunumu, type AtismaGorunumu, type AtismaSonucu,
 } from "./han-veri";
+import { OYUN_KOMUTLARI, oyunHatasiCoz, type OyunGorunumu, type OyunHatasi, type OyunIletisi, type OyunTuru } from "./masa-oyun-veri";
+
+/** [PARAMETRE] Yanıt gelmezse (ör. etkisiz tekrar) masa oyunu düğme kilidinin açılacağı süre (ms). */
+const OYUN_KILIT_MS = 6000;
 
 /** [PARAMETRE] Akışta bellekte tutulan en çok satır. */
 const AKIS_EN_COK = 120;
@@ -52,15 +56,22 @@ export interface MasaDurumu {
   atismaSon: (AtismaSonucu & { id: string }) | null;
   /** Kıta harf sınırı (sunucu hosgeldin/atışma `kitaEnCok`; genç hesapta 240). Gelmezse null: KITA_EN_UZUN geçer. */
   kitaEnCok: number | null;
+  /** Masa oyunu görünümü (kişiye özel; yeniden bağlanınca hosgeldin ile geri gelir). */
+  oyun: OyunGorunumu | null;
+  /** Son masa oyunu hatası (yalnız oyun komutlarının hatası; masa bandına düşmez). */
+  oyunHata: { kod: OyunHatasi; id: string } | null;
+  /** Oyun komutu gönderildi, yanıt bekleniyor (çift dokunuş kilidi). */
+  oyunBekle: boolean;
 }
 
-const BASLANGIC: MasaDurumu = { bag: "baglaniyor", deneme: 0, kapanis: null, ben: null, masa: null, susturma: null, akis: [], kabuller: {}, sessiz: [], sonAnons: null, hata: null, raporlandi: 0, ses: null, sahne: null, atisma: null, atismaSon: null, kitaEnCok: null };
+const BASLANGIC: MasaDurumu = { bag: "baglaniyor", deneme: 0, kapanis: null, ben: null, masa: null, susturma: null, akis: [], kabuller: {}, sessiz: [], sonAnons: null, hata: null, raporlandi: 0, ses: null, sahne: null, atisma: null, atismaSon: null, kitaEnCok: null, oyun: null, oyunHata: null, oyunBekle: false };
 
 type Eylem =
   | { t: "bag"; bag: BagDurumu; deneme?: number; kapanis?: number | null }
   | { t: "sunucu"; v: SunucuIletisi; id: string }
   | { t: "hata"; kod: EkHata | null; bitis?: number | null }
-  | { t: "sifirla" };
+  | { t: "sifirla" }
+  | { t: "oyunKilit"; acik: boolean; hata?: OyunHatasi; id?: string; temizle?: true };
 
 const ekle = (akis: AkisOgesi[], o: AkisOgesi) => (akis.length >= AKIS_EN_COK ? [...akis.slice(akis.length - AKIS_EN_COK + 1), o] : [...akis, o]);
 const sinirCoz = (v: unknown): number | null => (typeof v === "number" && Number.isInteger(v) && v > 0 ? v : null);
@@ -69,13 +80,15 @@ const hataCoz = (h: string): EkHata => (hataKoduMu(h) || ekHataMi(h) ? h : "gece
 function indirge(d: MasaDurumu, e: Eylem): MasaDurumu {
   switch (e.t) {
     case "sifirla": return BASLANGIC;
-    case "bag": return { ...d, bag: e.bag, deneme: e.deneme ?? d.deneme, kapanis: e.kapanis === undefined ? d.kapanis : e.kapanis };
+    case "oyunKilit": return { ...d, oyunBekle: e.acik, ...(e.hata ? { oyunHata: { kod: e.hata, id: e.id ?? "" } } : e.acik || e.temizle ? { oyunHata: null } : {}) };
+    case "bag": return { ...d, ...(e.bag !== "acik" ? { oyunBekle: false } : {}), bag: e.bag, deneme: e.deneme ?? d.deneme, kapanis: e.kapanis === undefined ? d.kapanis : e.kapanis };
     case "hata": return { ...d, hata: e.kod ? { kod: e.kod, ...(e.bitis !== undefined ? { bitis: e.bitis } : {}) } : null };
     case "sunucu": {
       const v = e.v;
       switch (v.t) {
-        case "hosgeldin": return { ...d, bag: "acik", deneme: 0, kapanis: null, ben: v.ben, masa: v.masa, susturma: v.susturma, hata: null, ses: v.ses ?? null, sahne: v.sahne ?? null, atisma: v.atisma ?? null, kitaEnCok: sinirCoz(v.kitaEnCok) ?? sinirCoz(v.atisma?.kitaEnCok) ?? d.kitaEnCok };
+        case "hosgeldin": return { ...d, bag: "acik", deneme: 0, kapanis: null, ben: v.ben, masa: v.masa, susturma: v.susturma, hata: null, ses: v.ses ?? null, sahne: v.sahne ?? null, atisma: v.atisma ?? null, oyun: v.oyun ?? null, oyunBekle: false, kitaEnCok: sinirCoz(v.kitaEnCok) ?? sinirCoz(v.atisma?.kitaEnCok) ?? d.kitaEnCok };
         case "sahne": return { ...d, sahne: v.sahne };
+        case "oyun": return { ...d, oyun: v.oyun, oyunBekle: false, oyunHata: null };
         case "atisma": return { ...d, atisma: v.atisma, kitaEnCok: sinirCoz(v.atisma?.kitaEnCok) ?? d.kitaEnCok, ...(v.son ? { atismaSon: { ...v.son, id: e.id } } : {}) };
         case "kita": return { ...d, akis: ekle(d.akis, { tur: "kita", id: e.id, hesap: v.hesap, ad: v.ad, koltuk: v.koltuk, metin: v.metin, sira: v.sira, zaman: v.zaman, a: d.atisma ? v.hesap === d.atisma.a : d.atismaSon ? v.hesap === d.atismaSon.a : v.sira % 2 === 1, ...(d.atisma?.toplam ? { toplam: d.atisma.toplam } : {}), ...(v.balon ? { balon: v.balon } : {}) }) };
         case "sesDurum": return { ...d, ses: v.ses };
@@ -91,6 +104,7 @@ function indirge(d: MasaDurumu, e: Eylem): MasaDurumu {
         case "sessiz": return { ...d, sessiz: v.liste };
         case "rapor": return { ...d, raporlandi: d.raporlandi + 1 };
         case "hata": {
+          if (v.istek && OYUN_KOMUTLARI.has(v.istek)) return { ...d, oyunBekle: false, oyunHata: { kod: oyunHatasiCoz(v.hata), id: e.id } };
           const kod = hataCoz(v.hata);
           return { ...d, hata: { kod, ...(v.bitis !== undefined ? { bitis: v.bitis } : {}) }, ...(kod === "susturuldu" ? { susturma: { bitis: v.bitis ?? null } } : {}) };
         }
@@ -183,8 +197,34 @@ export function useMasa(no: number | undefined, hanNo = 1) {
     return true;
   }, [d.bag]);
 
+  // Etkisiz tekrarlarda sunucu yanıt göndermez: kilit bir süre sonra kendiliğinden açılır.
+  useEffect(() => {
+    if (!d.oyunBekle) return;
+    const z = setTimeout(() => gonderD({ t: "oyunKilit", acik: false }), OYUN_KILIT_MS);
+    return () => clearTimeout(z);
+  }, [d.oyunBekle]);
+  const oyunNo = d.oyun?.n ?? 0;
+  const oyunGonder = useCallback((ileti: OyunIletisi) => {
+    const s = soket.current;
+    if (!s || d.bag !== "acik") { gonderD({ t: "oyunKilit", acik: false, hata: "ag_yok", id: yeniId() }); return false; }
+    if (d.oyunBekle) return false;
+    gonderD({ t: "oyunKilit", acik: true });
+    s.gonder(ileti);
+    return true;
+  }, [d.bag, d.oyunBekle]);
+
   return {
     durum: d,
+    /** Masa oyunları: niyet gönderilir; sonuç ve geçerlilik sunucudadır. Hamle `n` ile tekrar güvenli. */
+    oyunAc: (oyun: OyunTuru) => oyunGonder({ t: "oyunAc", oyun }),
+    oyunKatil: () => oyunGonder({ t: "oyunKatil" }),
+    oyunAyril: () => oyunGonder({ t: "oyunAyril" }),
+    oyunBaslat: () => oyunGonder({ t: "oyunBaslat" }),
+    hamle: (hamle: Record<string, unknown>) => oyunGonder({ t: "hamle", n: oyunNo, hamle }),
+    oyunPas: () => oyunGonder({ t: "oyunPas", n: oyunNo }),
+    oyunDagit: () => oyunGonder({ t: "oyunDagit" }),
+    oyunKapat: () => oyunGonder({ t: "oyunKapat" }),
+    oyunHataTemizle: () => gonderD({ t: "oyunKilit", acik: d.oyunBekle, temizle: true }),
     otur: (koltuk?: number) => gonder(koltuk === undefined ? { t: "otur" } : { t: "otur", koltuk }),
     kalk: () => gonder({ t: "kalk" }),
     yaz: (metin: string) => gonder({ t: "yaz", metin }),
