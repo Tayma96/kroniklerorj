@@ -70,6 +70,12 @@ export const HATA_DURUMU = {
   google_gecersiz: 401,
   google_erisilemiyor: 503,
   hiz_siniri: 429,
+  /** E-posta + şifre girişi (src/eposta.ts). giris_hatali: e-posta yok YA DA şifre yanlış (ayırt edilmez). */
+  eposta_gecersiz: 400,
+  sifre_zayif: 400,
+  eposta_kayitli: 409,
+  giris_hatali: 401,
+  eposta_giris_kapali: 404,
   /** Yönetim: kurucunun bugünkü akçe telafisi tavanı (TELAFI_GUNLUK_AKCE) doldu. */
   telafi_gunluk_siniri: 429,
   profil_yok: 404,
@@ -463,6 +469,8 @@ export interface Env {
   TEST_GIRIS_ACIK?: string;
   /** Yalnız test Worker'ında kullanılan en az 32 karakterlik davet sırrı. */
   TEST_GIRIS_KODU?: string;
+  /** E-posta + şifre ile kayıt/giriş ([vars]); "1" değilse uçlar eposta_giris_kapali. */
+  EPOSTA_GIRIS_ACIK?: string;
   /** Han masası: masa başına bir MasaDO (idFromName("masa:<yerlesim>:<han>:<no>")); para tutmaz. */
   MASA: DurableObjectNamespace;
   /** Tek örnek YonetimDO (idFromName("yonetim")): roller, işlem kaydı, parametreler, şikayet, yaptırım. */
@@ -797,4 +805,7 @@ export type DunyaIleti =
   | { islem: "levhaYaz"; yazim: { beylik: string; hesap: string; ad: string; puan: number; seviye: string | null; gorunur: boolean } }
   | { islem: "levhaOku"; beylik: string }
   /** Göç (D1): HesapDO → DunyaDO; kayıtlı yerleşimi taşır, nüfus sayaçlarını günceller (hedef doluysa yerlesim_dolu). `geri`: iptalde eski yere dönüş (kapasiteye bakılmaz). */
-  | { islem: "gocKayit"; hesapId: string; kaynak: string; hedef: string; geri?: boolean };
+  | { islem: "gocKayit"; hesapId: string; kaynak: string; hedef: string; geri?: boolean }
+  /** E-posta dizini (Worker → DunyaDO; src/eposta.ts). `anahtar` normalize e-postanın SHA-256'sıdır; düz e-posta saklanmaz. */
+  | { islem: "epostaKayit"; anahtar: string; sub: string; sifre: string }
+  | { islem: "epostaBul"; anahtar: string };

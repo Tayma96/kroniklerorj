@@ -92,6 +92,8 @@ export const SUNUCU_HATALARI = [
   "darbe_kapali", "devlet_talep_var", "taraf_degil", "deger_sinir_disi", "stok_yok", "arac_yok", "ayni_kume",
   // istekNo tekrarsızlık penceresi (online-server yerlesim/istek-defteri.ts): işlem zaten yapıldı, yanıtı saklı değil.
   "istek_tekrar",
+  // E-posta + şifre girişi (POST /v1/eposta/kayit, /v1/eposta/giris).
+  "eposta_gecersiz", "sifre_zayif", "eposta_kayitli", "giris_hatali", "eposta_giris_kapali",
 ] as const;
 export type HataKodu = (typeof SUNUCU_HATALARI)[number] | ToplumHataKodu;
 

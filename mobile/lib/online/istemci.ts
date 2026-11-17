@@ -20,6 +20,8 @@ import { beceriUclari, type BeceriIstemci } from "./beceri-agaci/beceri-veri";
 export interface OnlineIstemci {
   giris(idToken: string): Promise<Sonuc<GirisYaniti>>;
   testGiris(kod: string, cihazId: string): Promise<Sonuc<GirisYaniti>>;
+  epostaGiris(eposta: string, sifre: string): Promise<Sonuc<GirisYaniti>>;
+  epostaKayit(eposta: string, sifre: string): Promise<Sonuc<GirisYaniti>>;
   dunya(): Promise<Sonuc<DunyaOzeti>>;
   profil(): Promise<Sonuc<Profil>>;
   profilOlustur(istek: ProfilIstegi): Promise<Sonuc<Profil>>;
@@ -136,6 +138,9 @@ export function httpIstemci(ayar: HttpAyari): OnlineIstemci {
   return {
     giris: (idToken) => cagir({ yontem: "POST", yol: "/v1/giris", govde: { idToken }, yetki: false, tekrar: false }, girisYanitiMi),
     testGiris: (kod, cihazId) => cagir({ yontem: "POST", yol: "/v1/test-giris", govde: { kod, cihazId }, yetki: false, tekrar: true }, girisYanitiMi),
+    // Kayıt iki kez işlenmesin diye yeniden denenmez; giriş de (hız sınırı sayacı şişmesin).
+    epostaGiris: (eposta, sifre) => cagir({ yontem: "POST", yol: "/v1/eposta/giris", govde: { eposta, sifre }, yetki: false, tekrar: false }, girisYanitiMi),
+    epostaKayit: (eposta, sifre) => cagir({ yontem: "POST", yol: "/v1/eposta/kayit", govde: { eposta, sifre }, yetki: false, tekrar: false }, girisYanitiMi),
     dunya: () => cagir({ yontem: "GET", yol: "/v1/dunya", yetki: false, tekrar: true }, dunyaMi),
     profil: () => cagir({ yontem: "GET", yol: "/v1/profil", yetki: true, tekrar: true }, profilMi),
     // Aynı gövde (aynı istekNo) ile yeniden denenir.

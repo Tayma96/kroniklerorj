@@ -118,6 +118,8 @@ export function sahteIstemci(gecikmeMs = 450, baslangic: Profil | null = null, a
   return {
     async giris() { await bekle(); return basarili({ oturum: "gelistirici", profilVar: profil !== null }); },
     async testGiris() { await bekle(); return basarisiz("gecersiz_istek"); },
+    async epostaGiris() { await bekle(); return basarisiz("eposta_giris_kapali"); },
+    async epostaKayit() { await bekle(); return basarisiz("eposta_giris_kapali"); },
     async dunya() { await bekle(); return basarili(sahteDunya()); },
     async profil() { await bekle(); return profil ? basarili(profil) : basarisiz("profil_yok"); },
     async profilOlustur(istek) {

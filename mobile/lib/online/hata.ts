@@ -5,6 +5,11 @@ import { TOPLUM_HATA_ANAHTARI } from "./toplum-metin";
 const ANAHTAR: Partial<Record<OnlineHata, string>> = {
   ...TOPLUM_HATA_ANAHTARI,
   sunucu_yok: "onl.h.sunucuYok",
+  eposta_gecersiz: "onl.ep.h.epostaGecersiz",
+  sifre_zayif: "onl.ep.h.sifreZayif",
+  eposta_kayitli: "onl.ep.h.epostaKayitli",
+  giris_hatali: "onl.ep.h.girisHatali",
+  eposta_giris_kapali: "onl.ep.h.kapali",
   ag_yok: "onl.h.ag",
   zaman_asimi: "onl.h.ag",
   google_erisilemiyor: "onl.h.ag",

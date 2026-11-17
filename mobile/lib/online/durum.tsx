@@ -93,6 +93,10 @@ export interface OnlineDurum {
   googleGiris(idToken: string): Promise<Sonuc<GirisYaniti>>;
   /** Yalnız test APK'sında açık; davet kodu + kalıcı cihaz kimliğiyle Google'sız giriş. */
   testGiris(kod: string): Promise<Sonuc<GirisYaniti>>;
+  /** POST /v1/eposta/giris: e-posta + şifreyle giriş; başarı yanıtı test girişiyle aynı. E-posta ve şifre saklanmaz. */
+  epostaGiris(eposta: string, sifre: string): Promise<Sonuc<GirisYaniti>>;
+  /** POST /v1/eposta/kayit: yeni hesap açar ve oturum döndürür. */
+  epostaKayit(eposta: string, sifre: string): Promise<Sonuc<GirisYaniti>>;
   gelistiriciGiris(): void;
   cikis(): Promise<void>;
   /** Oturum neden kapandı (girişte bilgi notu); yeni girişte silinir. */
@@ -441,6 +445,20 @@ export function OnlineDurumSaglayici({ children, tohum }: { children: ReactNode;
     if (siparisler) void siparisAl();
   }, [dil]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Davet kodlu ve e-postalı girişin ortak başarı yolu: belirteç saklanır (e-posta/şifre asla), profil varsa çekilir.
+  const oturumAc = async (g: Sonuc<GirisYaniti>): Promise<Sonuc<GirisYaniti>> => {
+    if (!g.ok) return g;
+    belirtec.current = g.deger.oturum;
+    await oturumYaz(g.deger.oturum);
+    setOturumNotu(null);
+    setOturum({ tur: "sunucu" });
+    if (g.deger.profilVar) {
+      const p = await http.profil();
+      if (p.ok) setProfil(p.deger);
+    }
+    return g;
+  };
+
   const deger: OnlineDurum = {
     hazir,
     sunucuVar: !!sunucu,
@@ -461,18 +479,10 @@ export function OnlineDurumSaglayici({ children, tohum }: { children: ReactNode;
       calistir("giris", async () => {
         if (!ONLINE_TEST_GIRIS) return basarisiz("gecersiz_istek");
         const cihazId = await testCihazKimligi();
-        const g = await http.testGiris(kod.trim(), cihazId);
-        if (!g.ok) return g;
-        belirtec.current = g.deger.oturum;
-        await oturumYaz(g.deger.oturum);
-        setOturumNotu(null);
-        setOturum({ tur: "sunucu" });
-        if (g.deger.profilVar) {
-          const p = await http.profil();
-          if (p.ok) setProfil(p.deger);
-        }
-        return g;
+        return oturumAc(await http.testGiris(kod.trim(), cihazId));
       }, true),
+    epostaGiris: (eposta, sifre) => calistir("giris", async () => oturumAc(await http.epostaGiris(eposta.trim(), sifre)), true),
+    epostaKayit: (eposta, sifre) => calistir("giris", async () => oturumAc(await http.epostaKayit(eposta.trim(), sifre)), true),
     googleGiris: (idToken) =>
       calistir("giris", async () => {
         const g = await http.giris(idToken);

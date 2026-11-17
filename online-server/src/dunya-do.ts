@@ -7,6 +7,7 @@ import { iletiOku, jsonYanit } from "./ic.ts";
 import { davetCoz, davetOlustur, dunyaOzeti, gocKayit, kayitOl, oyuncuBul } from "./mantik.ts";
 import { basarili, hata, type DunyaIleti, type Env, type Sonuc } from "./tipler.ts";
 import { levhaOku, levhaYaz, type LevhaYazimi } from "./debdebe/levha.ts";
+import { epostaBul, epostaKayit } from "./eposta.ts";
 import { adAra, hesapEngelYaz, numaraAdTazele, numaraAl, numaraBul, type Listeleyici } from "./kunye/numara.ts";
 
 const rastgele = (bayt: number): Uint8Array => crypto.getRandomValues(new Uint8Array(bayt));
@@ -14,6 +15,8 @@ const rastgele = (bayt: number): Uint8Array => crypto.getRandomValues(new Uint8A
 export class DunyaDO {
   readonly #depo: Depo;
   readonly #liste: Listeleyici;
+  /** E-posta kaydını sıraya koyar: giriş kapısına ek olarak, aynı e-postanın iki kaydı asla araya girmez. */
+  #epostaSirasi: Promise<unknown> = Promise.resolve();
 
   constructor(ctx: DurableObjectState, _env: Env) {
     this.#depo = doDepo(ctx.storage);
@@ -58,6 +61,14 @@ export class DunyaDO {
       // Göç (D1): src/goc-hesap.ts
       case "gocKayit":
         return gocKayit(this.#depo, ileti.hesapId, ileti.kaynak, ileti.hedef, ileti.geri === true);
+      // E-posta dizini (src/eposta.ts): yalnız Worker çağırır; düz e-posta gelmez.
+      case "epostaKayit": {
+        const is = this.#epostaSirasi.then(() => epostaKayit(this.#depo, ileti.anahtar, ileti.sub, ileti.sifre, simdi));
+        this.#epostaSirasi = is.catch(() => undefined);
+        return is;
+      }
+      case "epostaBul":
+        return epostaBul(this.#depo, ileti.anahtar);
       default:
         return hata("gecersiz_istek");
     }
