@@ -5,12 +5,14 @@
 // bir taklididir: sayılar ve neden kodları aynı biçimde gelir, gerçek hesap sunucudadır. Durum yerleşim başına tektir;
 // sahte tezgâh (GET …/tezgah) ile sahte atölye istemcisi (yazmalar) aynı depoyu ve emirleri paylaşır.
 import { ekBasarili, ekBasarisiz, type EkHata, type EkSonuc } from "./ek-istemci";
-
-/** Sunucunun istemcide tanımsız atölye kodu (`ham`), gerçek istemcinin döndürdüğü biçimde. */
-const hamHata = <T,>(kod: string): EkSonuc<T> => ({ ok: false, hata: "gecersiz_istek" as EkHata, ham: kod });
 import { TARIFLER } from "./meslek-veri";
 import type { AtolyeIstemci, AtolyeKarti, AtolyeListesi } from "./atolye-veri";
 import type { AtolyeBolumu, DepoSatiri, GenisletmeGorunumu, GunSonu, Kademe, KancaDokumu, TopluSiparis, UretimEmri } from "./tezgah-veri";
+
+/** Sunucunun istemcide tanımsız atölye kodu (`ham`), gerçek istemcinin döndürdüğü biçimde. */
+const hamHata = <T,>(kod: string): EkSonuc<T> => ({ ok: false, hata: "gecersiz_istek" as EkHata, ham: kod });
+/** Sunucu kalite kalemi kimliği ("kalite.atolye" gibi; metin anahtarı değil). */
+const kk = (ad: string, enAz: number, enCok: number) => ({ k: "kalite." + ad, enAz, enCok });
 
 const AY = 40;
 const bekle = () => new Promise<void>((r) => setTimeout(r, 80));
@@ -53,7 +55,7 @@ export function sahteAtolyeDurumu(yer: string): SahteAtolye {
       npc: { sozlesme: 2, emekVeren: 1, maassiz: 1, neden: "emanet_maas_yetmez" },
       emirler: [{
         emir: 1, tarif: "alet", kez: 6, yapilan: 2, buAy: 2, cikti: { mal: "alet", adet: 2 }, kalite: [0, 1, 1, 0], usta: BEN, emek: { oyuncu: 3, npc: 1 }, neden: "girdi_yok",
-        kaliteDokum: { kalemler: [{ k: "kalite.atolye", enAz: 5, enCok: 5 }, { k: "kalite.kanca", enAz: 8, enCok: 8 }, { k: "kalite.npcEmegi", enAz: -30, enCok: 0 }, { k: "kalite.zar", enAz: -10, enCok: 10 }], toplam: { enAz: -27, enCok: 23 } },
+        kaliteDokum: { kalemler: [kk("atolye", 5, 5), kk("kanca", 8, 8), kk("npcEmegi", -30, 0), kk("zar", -10, 10)], toplam: { enAz: -27, enCok: 23 } },
       }],
     },
   };
@@ -160,7 +162,7 @@ export function sahteAtolyeIstemci(yer: string): AtolyeIstemci {
       const [mal, adet] = tf.cikti;
       depoyaKoy(a, mal, 1, adet, true);
       return ekBasarili({
-        uretim: { tarif: tf.id, cikti: { mal, adet }, girdi: tf.girdi as Record<string, number>, kalite: { kademe: 1, dokum: { toplam: 13, kalemler: [{ k: "kalite.atolye", d: 5 }, { k: "kalite.kanca", d: 8 }] } }, atolye: { isletme: a.isletme, ad: "" }, levha: false },
+        uretim: { tarif: tf.id, cikti: { mal, adet }, girdi: tf.girdi as Record<string, number>, kalite: { kademe: 1, dokum: { toplam: 13, kalemler: [{ k: kk("atolye", 5, 5).k, d: 5 }, { k: kk("kanca", 8, 8).k, d: 8 }] } }, atolye: { isletme: a.isletme, ad: "" }, levha: false },
         depo: a.depo.filter((x) => x.adet > 0), depoDolu: depoDolu(a), depoKapasite: DEPO_KAP,
       });
     },
