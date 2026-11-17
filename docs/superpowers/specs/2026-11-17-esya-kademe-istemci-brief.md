@@ -74,6 +74,8 @@ yıpranmaz), mirasla varise geçer; başkasının envanteri görünmez.
 - **İlan, raf satırı ve fiyat tablosu:** satırda adlı eşya varsa `esyalar[]` (herkese açık: `id, lakap, kademe, kalite,
   usta, atolye, hunerler, yapim, ozellik`; yadigâr geçmişi YOK, o yalnız sahibinin envanterinde) ve rafta
   `satilabilir` (kimliksiz alınabilen adet). Alıcı kartı satın almadan açar.
+- **İşletme depo görünümü (`depo`, tezgâh/dükkân/atölye):** adlı eşya taşıyan `{mal, kalite, adet}` satırına aynı biçimde
+  `esyalar[]` (kimlik dahil, geçmiş yok) eklendi; eşyasız satırda alan yok. Depodan alma ve rafa koyma kimliği buradan seçer.
 - **`ozellik` yeni biçim (gösterilen = gerçek):** `etkiler[]` her biri `{id, bagli}`; `bagli:true` olanda gerçek değer:
   alet `verim` → `{deger, birim:"adet"}` (+N çıktı, kişisel üretim ve temel işte; atölye emrinde verim yok), alet `omur`
   → `{deger, birim:"kullanim"}` ya da `{yipranmaz:true}`. `bagli:false` → "yakında". Yeni `hunerDokumu[{id, bagli}]`

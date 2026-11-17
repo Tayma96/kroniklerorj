@@ -7,6 +7,7 @@ import type { MalId } from "../icerik/mallar.ts";
 import type { MeslekId } from "../icerik/meslekler.ts";
 import { KALITELER, hepsiniTasi, kaliteliCikar, kaliteliEkle, kaliteAdedi, kaliteMi, partiEsMi, secilebilirAdet, partiParca, type Envanterli, type Kalite, type KaliteParti } from "../yerlesim/kalite.ts";
 import { basarili, hata, type Sonuc } from "../tipler.ts";
+import { esyaKamuGorunumu } from "../yerlesim/esya.ts";
 import { DEPO_KAPASITE, DEPO_TASIMA_EN_COK, rafMaliMi } from "./tezgah-kurallar.ts";
 
 /** Raf satırı: bir mal + bir kalite + partiler (adet ve yapan izi) + birim fiyat. */
@@ -187,13 +188,19 @@ export function tezgahBosalt(t: Tezgah, hedef: Envanterli): number {
   return n;
 }
 
-/** Depo görünümü: mal → kalite → adet ve başlıca yapan. */
+/**
+ * Depo görünümü: mal → kalite → adet. Adlı eşya taşıyan satırda `esyalar[]` raf/ilanla AYNI herkese açık
+ * görünümdür (kimlik, lakap, kademe, hüner, usta, atölye; yadigâr geçmişi yok): istemci depodan alma ve rafa
+ * koymada eşyayı kimliğiyle seçebilsin. Eşyasız satıra alan eklenmez (eklemeli, geriye uyumlu).
+ */
 export function depoGorunumu(t: Envanterli) {
-  const l: { mal: string; kalite: Kalite; adet: number }[] = [];
+  const l: { mal: string; kalite: Kalite; adet: number; esyalar?: ReturnType<typeof esyaKamuGorunumu>[] }[] = [];
   for (const mal of Object.keys(t.ev ?? {}).sort()) {
     for (const q of KALITELER) {
       const d = kaliteAdedi(t, mal, q);
-      if (d > 0) l.push({ mal, kalite: q, adet: d });
+      if (d <= 0) continue;
+      const esyalar = (t.kq?.[mal] ?? []).filter((p) => p[0] === q && p[4]).map((p) => esyaKamuGorunumu(mal, q, p[4]!));
+      l.push(esyalar.length ? { mal, kalite: q, adet: d, esyalar } : { mal, kalite: q, adet: d });
     }
   }
   return l;

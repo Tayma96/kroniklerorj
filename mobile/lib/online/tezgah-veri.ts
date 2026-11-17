@@ -21,7 +21,8 @@ export interface RafSatiri {
   /** Satırdaki adlı eşyalar (herkese açık) ve kimliksiz alınabilen adet (raf.ts rafEsyaAlanlari); yoksa alan yok. */
   esyalar?: EsyaKamu[]; satilabilir?: number;
 }
-export interface DepoSatiri { mal: string; kalite: Kademe; adet: number }
+/** Depo satırı; adlı eşya varsa `esyalar[]` (herkese açık, kimlikli; depo.ts depoGorunumu), yoksa alan yok. */
+export interface DepoSatiri { mal: string; kalite: Kademe; adet: number; esyalar?: EsyaKamu[] }
 /**
  * Dilim 3 kanca dökümü (sunucu mulk/kanca.ts kancaDokumu): kanalın uygulanan değeri (tavanla kırpılmış), tavanı ve değeri
  * veren kişinin görünen adı (kimlik dönmez). `kalemler` yalnız işletme sahibine ve katkı verenin kendisine gelir.

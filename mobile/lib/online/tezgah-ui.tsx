@@ -413,13 +413,16 @@ export function DepoCekmecesi({ acik, oturum, g, ist, onKapat, onYenile, rtl, t 
   const heybeAdsiz = mal ? kademeAdetleri(ev[mal] ?? 0, kq?.[mal], true) : [0, 0, 0, 0, 0, 0, 0];
   const heybeEsya = sekme === "koy" && mal ? adliEsyalar(kq?.[mal], q) : [];
   const depoSatir = sekme === "al" && mal ? depo.find((x) => x.mal === mal && x.kalite === q) ?? null : null;
-  const eldeki = sekme === "koy" ? (esya ? 1 : heybeAdsiz[q] ?? 0) : depoSatir?.adet ?? 0;
+  // Depodaki adlı eşyalar yalnız kimliğiyle alınır; kimliksiz alınabilen adet onları saymaz.
+  const depoEsya = depoSatir ? esyalarOku(depoSatir.esyalar).map(esyaKamudan) : [];
+  const depoAdsiz = depoSatir ? Math.max(0, depoSatir.adet - depoEsya.length) : 0;
+  const eldeki = sekme === "koy" ? (esya ? 1 : heybeAdsiz[q] ?? 0) : esya ? 1 : depoAdsiz;
   const enCok = Math.max(0, Math.min(60, eldeki, sekme === "koy" ? bosYer : 60));
   useEffect(() => { setAdet((a) => Math.max(1, Math.min(a, Math.max(1, enCok)))); }, [enCok]);
 
   const izin = sekme === "koy" ? g.izin.depoKoy : g.izin.depoAl;
   const neden = !izin ? t("onl.tz.h.yetkiYok") : !mal ? t(sekme === "koy" ? "onl.tz.depo.malSec" : "onl.tz.depo.satirSec")
-    : eldeki <= 0 ? t(sekme === "koy" ? "onl.tz.depo.heybedeYok" : "onl.tz.depo.depodaYok")
+    : eldeki <= 0 ? t(sekme === "al" && depoEsya.length ? "onl.es.sec.gerekli" : sekme === "koy" ? "onl.tz.depo.heybedeYok" : "onl.tz.depo.depodaYok")
     : sekme === "koy" && bosYer <= 0 ? t("onl.hh.depo_dolu") : null;
   const gonder = async () => {
     if (!mal || neden) return;
@@ -467,6 +470,7 @@ export function DepoCekmecesi({ acik, oturum, g, ist, onKapat, onYenile, rtl, t 
         onSec={(k) => setQ(Number(k) as Kademe)} etiket={(k) => `${kaliteAdi(t, Number(k))} · ${heybeAdet[Number(k)]}`} />
       <AdliEsyaSecici mal={mal} esyalar={heybeEsya} secili={esya?.id ?? null} onSec={setEsya} adsizVar={(heybeAdsiz[q] ?? 0) > 0} />
     </View> : null}
+    {sekme === "al" && mal && depoSatir ? <AdliEsyaSecici mal={mal} esyalar={depoEsya} secili={esya?.id ?? null} onSec={setEsya} adsizVar={depoAdsiz > 0} /> : null}
     {mal && enCok > 0 && !esya ? <AdetSecici etiket={t("onl.tz.adet")} deger={Math.min(adet, enCok)} cok={enCok} onDegis={setAdet} rtl={rtl} t={t} /> : null}
     <Sonuc hata={hata} bilgi={bilgi} rtl={rtl} />
     {neden && (mal || !izin) ? <Not metin={neden} rtl={rtl} /> : null}
@@ -575,6 +579,8 @@ export function RafCekmecesi({ acik, oturum, g, satirNo, ist, onKapat, onYenile,
   const [stokYon, setStokYon] = useState<"ekle" | "al">("ekle");
   /** Raftan depoya alırken seçilen adlı eşya (yalnız kimliğiyle, adet 1). */
   const [rafEsya, setRafEsya] = useState<EsyaGorunumu | null>(null);
+  /** Depodan rafa koyarken seçilen adlı eşya (yalnız kimliğiyle, adet 1). */
+  const [koyEsya, setKoyEsya] = useState<EsyaGorunumu | null>(null);
   const [hata, setHata] = useState<string | null>(null);
   const [bilgi, setBilgi] = useState<string | null>(null);
   const oturumRef = useRef(oturum);
@@ -586,20 +592,26 @@ export function RafCekmecesi({ acik, oturum, g, satirNo, ist, onKapat, onYenile,
   // Açılışta: mevcut satırın fiyatı ya da yeni satırda adil fiyat; satır değişince (başka satır) yeniden kurulur.
   useEffect(() => {
     if (!acik) return;
-    setHata(null); setBilgi(null); setAdet(1); setStokYon("ekle"); setRafEsya(null);
+    setHata(null); setBilgi(null); setAdet(1); setStokYon("ekle"); setRafEsya(null); setKoyEsya(null);
     if (satirNo === null) setYeni(null);
     if (satir) setFiyat(satir.fiyat);
   }, [acik, oturum, satirNo]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (yeni) { const b = bantHesapla(yeni.mal, yeni.kalite); if (b) setFiyat(bantIci(b.adil, b.bant)); } }, [yeni?.mal, yeni?.kalite]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  useEffect(() => { setKoyEsya(null); }, [hedef?.mal, hedef?.kalite, stokYon]);
+
   const depo = g.depo ?? [];
-  const depoAdet = hedef ? depo.find((x) => x.mal === hedef.mal && x.kalite === hedef.kalite)?.adet ?? 0 : 0;
+  const depoSatiri = hedef ? depo.find((x) => x.mal === hedef.mal && x.kalite === hedef.kalite) ?? null : null;
+  const depoAdet = depoSatiri?.adet ?? 0;
+  // Depodaki adlı eşyalar rafa yalnız kimliğiyle konur; kimliksiz konabilen adet onları saymaz.
+  const depoEsyalari = depoSatiri ? esyalarOku(depoSatiri.esyalar).map(esyaKamudan) : [];
+  const depoAdsiz = Math.max(0, depoAdet - depoEsyalari.length);
   const bosYer = Math.max(0, (g.depoKapasite ?? 0) - (g.depoDolu ?? 0));
   const rafYer = g.rafSiniri.adet - (satir?.adet ?? 0);
   const satirEsyalari = satir ? esyalarOku(satir.esyalar).map(esyaKamudan) : [];
   // Kimliksiz alınabilen adet (adlı eşya sayılmaz); eski sunucu `satilabilir` göndermez.
   const rafAdsiz = satir ? (typeof satir.satilabilir === "number" ? satir.satilabilir : satir.adet - satirEsyalari.length) : 0;
-  const enCok = stokYon === "ekle" ? Math.max(0, Math.min(rafYer, depoAdet)) : rafEsya ? (bosYer > 0 ? 1 : 0) : Math.max(0, Math.min(rafAdsiz, bosYer));
+  const enCok = stokYon === "ekle" ? (koyEsya ? (rafYer > 0 ? 1 : 0) : Math.max(0, Math.min(rafYer, depoAdsiz))) : rafEsya ? (bosYer > 0 ? 1 : 0) : Math.max(0, Math.min(rafAdsiz, bosYer));
   useEffect(() => { setAdet((a) => Math.max(1, Math.min(a, Math.max(1, enCok)))); }, [enCok]);
 
   const onizGirdi = acik && hedef && bilgiBant && g.izin.fiyat && !kayip ? { mal: hedef.mal, kalite: hedef.kalite, fiyat, adet: satir ? undefined : Math.max(1, Math.min(adet, enCok || 1)) } : null;
@@ -624,7 +636,7 @@ export function RafCekmecesi({ acik, oturum, g, satirNo, ist, onKapat, onYenile,
   const baslik = hedef ? `${malAdi(t, hedef.mal)} · ${kaliteAdi(t, hedef.kalite)}` : t("onl.tz.yeniSatir");
   const fiyatDegisti = !!satir && fiyat !== satir.fiyat;
   const stokNeden = kayip ? t("onl.tz.satirGitti") : !g.izin.raf ? t("onl.tz.h.yetkiYok")
-    : stokYon === "ekle" ? (depoAdet <= 0 ? t("onl.tz.depodaBuYok") : rafYer <= 0 ? t("onl.hh.raf_satir_dolu") : null)
+    : stokYon === "ekle" ? (depoAdet <= 0 ? t("onl.tz.depodaBuYok") : rafYer <= 0 ? t("onl.hh.raf_satir_dolu") : !koyEsya && depoAdsiz <= 0 ? t("onl.es.sec.gerekli") : null)
     : (satir?.adet ?? 0) <= 0 ? t("onl.tz.satirBos") : bosYer <= 0 ? t("onl.hh.depo_dolu") : !rafEsya && rafAdsiz <= 0 ? t("onl.es.sec.gerekli") : null;
 
   return <AltPanel acik={acik} onKapat={onKapat} etiket={baslik} rtl={rtl} t={t}>
@@ -671,18 +683,21 @@ export function RafCekmecesi({ acik, oturum, g, satirNo, ist, onKapat, onYenile,
           <Sekme etiket={t("onl.tz.raftanDepoya")} icon="amphora" secili={stokYon === "al"} rtl={rtl} onPress={() => setStokYon("al")} />
         </View> : null}
         {satir && stokYon === "al" ? <AdliEsyaSecici mal={satir.mal} esyalar={satirEsyalari} secili={rafEsya?.id ?? null} onSec={setRafEsya} adsizVar={rafAdsiz > 0} /> : null}
+        {stokYon === "ekle" ? <AdliEsyaSecici mal={hedef.mal} esyalar={depoEsyalari} secili={koyEsya?.id ?? null} onSec={setKoyEsya} adsizVar={depoAdsiz > 0} /> : null}
         <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchmentDim, textAlign: hiza(rtl) }}>{applyParams(t("onl.tz.depodaN"), [depoAdet])}</Text>
-        {enCok > 0 && !(stokYon === "al" && rafEsya) ? <AdetSecici etiket={t("onl.tz.adet")} deger={Math.min(adet, enCok)} cok={enCok} onDegis={setAdet} rtl={rtl} t={t} /> : null}
+        {enCok > 0 && !(stokYon === "al" ? rafEsya : koyEsya) ? <AdetSecici etiket={t("onl.tz.adet")} deger={Math.min(adet, enCok)} cok={enCok} onDegis={setAdet} rtl={rtl} t={t} /> : null}
         {stokNeden ? <Not metin={stokNeden} rtl={rtl} /> : null}
         {satir ? <CizgiDugme etiket={t(stokYon === "ekle" ? "onl.tz.rafaEkle" : "onl.tz.raftanAl")} icon={stokYon === "ekle" ? "backpack" : "amphora"} rtl={rtl}
           kapali={!!stokNeden || yaz.bekliyor}
           onPress={() => { const n = Math.min(adet, enCok); void (stokYon === "ekle"
-            ? yazRaf({ islem: "koy", mal: satir.mal, kalite: satir.kalite, adet: n }, applyParams(t("onl.tz.rafaEklendi"), [n, malAdi(t, satir.mal)]))
+            ? yazRaf(koyEsya ? { islem: "koy", mal: satir.mal, kalite: satir.kalite, adet: 1, esya: koyEsya.id } : { islem: "koy", mal: satir.mal, kalite: satir.kalite, adet: n },
+              applyParams(t("onl.tz.rafaEklendi"), [koyEsya ? 1 : n, malAdi(t, satir.mal)])).then(() => setKoyEsya(null))
             : yazRaf(rafEsya ? { islem: "al", satir: satir.satir, adet: 1, esya: rafEsya.id } : { islem: "al", satir: satir.satir, adet: n },
               applyParams(t("onl.tz.raftanAlindi"), [rafEsya ? 1 : n, malAdi(t, satir.mal)])).then(() => setRafEsya(null))); }} />
-          : <AltinDugme etiket={applyParams(t("onl.tz.rafaKoy"), [Math.min(adet, Math.max(1, enCok)), fiyat])} icon="scales" rtl={rtl}
+          : <AltinDugme etiket={applyParams(t("onl.tz.rafaKoy"), [koyEsya ? 1 : Math.min(adet, Math.max(1, enCok)), fiyat])} icon="scales" rtl={rtl}
             kapali={!!stokNeden || !g.izin.fiyat} bekliyor={yaz.bekliyor}
-            onPress={() => { const n = Math.min(adet, enCok); void yazRaf({ islem: "koy", mal: hedef.mal, kalite: hedef.kalite, adet: n, fiyat }, applyParams(t("onl.tz.rafaEklendi"), [n, malAdi(t, hedef.mal)])); }} />}
+            onPress={() => { const n = koyEsya ? 1 : Math.min(adet, enCok);
+              void yazRaf({ islem: "koy", mal: hedef.mal, kalite: hedef.kalite, adet: n, fiyat, ...(koyEsya ? { esya: koyEsya.id } : {}) }, applyParams(t("onl.tz.rafaEklendi"), [n, malAdi(t, hedef.mal)])).then(() => setKoyEsya(null)); }} />}
         {!satir ? <CizgiDugme etiket={t("onl.tz.baskaMal")} icon="scroll" rtl={rtl} kucuk kapali={yaz.bekliyor} onPress={() => setYeni(null)} /> : null}
       </View>
     </> : null}

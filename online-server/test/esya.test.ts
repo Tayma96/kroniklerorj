@@ -664,6 +664,21 @@ test("ilan ve raf adlı eşyanın herkese açık görünümünü verir (geçmiş
   assert.equal(raftanSat(t, s, 1, "e9")![0]![4]!.i, "e9");
 });
 
+test("depo görünümü adlı eşyaları rafla aynı herkese açık biçimde ve kimlikle verir (geçmiş yok); eşyasız satır alansız", () => {
+  const k = testKasabasi("develi", AY);
+  const c = demirci(k, 63, 3);
+  const e = esyaYap(c, "kilic", 5, AY, "Demirhane", hep(0));
+  const t: Tezgah = bosTezgah();
+  kaliteliEkle(t, "kilic", [[5, 1, c.o, ATOLYE, e], [5, 2, c.o], [3, 1, c.o]]);
+  const g = depoGorunumu(t) as { mal: string; kalite: number; adet: number; esyalar?: Record<string, unknown>[] }[];
+  const s5 = g.find((x) => x.kalite === 5)!;
+  assert.equal(s5.adet, 3);
+  assert.equal(s5.esyalar?.length, 1);
+  assert.deepEqual(Object.keys(s5.esyalar![0]!).sort(), ["atolye", "hunerler", "id", "kademe", "kalite", "lakap", "ozellik", "usta", "yapim"]);
+  assert.equal(s5.esyalar![0]!.id, e.i);
+  assert.equal("esyalar" in g.find((x) => x.kalite === 3)!, false);
+});
+
 // ── Uç (atölyede anlık üretim) ──
 
 test("uç: atölyede efsanevi isteği — pir olmayan reddedilir, pirde nadide değilse hak kalır; görünüm hakkı söyler", async () => {
