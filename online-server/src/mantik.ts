@@ -209,6 +209,10 @@ export async function yerlesimeIlet(
 
 // ---------------------------------------------------------------- dünya tarafı (DunyaDO)
 
+/** [PARAMETRE] Davetle kayıtta yerleşimin esneyebileceği üst sınır: ev kapasitesinin bu katı. */
+export const DAVET_KAPASITE_CARPANI = 1.25;
+export const davetliKapasite = (evKapasite: number): number => Math.floor(evKapasite * DAVET_KAPASITE_CARPANI);
+
 /**
  * Dünyaya kayıt: ad benzersizliği, davet çözümü, kapasite. Hesap zaten kayıtlıysa mevcut kaydı döndürür
  * (tekrar güvenli; nüfus bir kez artar). Davetle gelen davet edenin yerleşimine yerleşir ve ev sınırı
@@ -240,6 +244,8 @@ export async function kayitOl(depo: Depo, istek: KayitIstegi, simdi: number): Pr
 
   const nufus = (await depo.al<number>(NUFUS + yerlesim.id)) ?? 0;
   if (!davetEden && nufus >= yerlesim.evKapasite) return hata("yerlesim_dolu");
+  // Davet ev sınırını esnetir ama sınırsız değildir (17 Kasım denetimi S6).
+  if (davetEden && nufus >= davetliKapasite(yerlesim.evKapasite)) return hata("yerlesim_dolu");
 
   const profil: Profil = {
     hesapId: istek.hesapId,

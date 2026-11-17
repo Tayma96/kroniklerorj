@@ -127,6 +127,20 @@ test("kapasite: dolu yerleşim davetsiz reddedilir, davetle esnek", async () => 
   assert.ok((await oyuncu(dunya, "h3", { ad: "Üçüncü", yerlesim: "misis" })).ok);
 });
 
+test("S6: davetle kayıtta da üst sınır (ev kapasitesi × 1,25)", async () => {
+  const { DAVET_KAPASITE_CARPANI, davetliKapasite } = await import("../src/mantik.ts");
+  const dunya = bellekDepo();
+  const kapasite = yerlesimBul("kizilca")!.evKapasite;
+  assert.ok((await oyuncu(dunya, "davetci", { ad: "Davetçi" })).ok);
+  const kod = await davetOlustur(dunya, "davetci", rastgele);
+  assert.ok(kod.ok);
+  const ust = davetliKapasite(kapasite);
+  assert.equal(ust, Math.floor(kapasite * DAVET_KAPASITE_CARPANI));
+  dunya.veri.set("nufus:kizilca", ust - 1);
+  assert.ok((await oyuncu(dunya, "h2", { ad: "Gelen", davet: kod.deger.kod })).ok);
+  assert.deepEqual(await oyuncu(dunya, "h3", { ad: "Sonraki", davet: kod.deger.kod }), { ok: false, hata: "yerlesim_dolu" });
+});
+
 test("davet kodu: oluştur, aynısını döndür, çöz", async () => {
   const dunya = bellekDepo();
   assert.deepEqual(await davetOlustur(dunya, "h1", rastgele), { ok: false, hata: "profil_yok" });
