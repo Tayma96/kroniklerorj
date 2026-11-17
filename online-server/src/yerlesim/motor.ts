@@ -255,6 +255,8 @@ export interface TekrarEki {
   topluluk?: boolean;
   /** D2: kervan defteri değişti. */
   kervan?: boolean;
+  /** Mülk defteri değişti (ör. dağılan zaviye kasası: iade bekleyeni, hazine kutusu). */
+  mulk?: boolean;
 }
 
 export class YerlesimMotoru {
@@ -999,6 +1001,7 @@ export class YerlesimMotoru {
     if (ek.ekonomi) this.#kirli.add(EKONOMI);
     if (ek.topluluk) this.#kirli.add(TOPLULUK);
     if (ek.kervan) this.#kirli.add(KERVAN);
+    if (ek.mulk && this.kasaba.mk) this.#kirli.add(MULK);
     await this.kaydet();
     return basarili(yanit);
   }

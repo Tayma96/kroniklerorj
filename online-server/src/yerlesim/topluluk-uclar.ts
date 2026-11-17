@@ -94,6 +94,7 @@ export function zaviyeUc(m: YerlesimMotoru, hesapId: string, govde: unknown): Pr
     if (!r.ok) return r;
     ek.olaylar.push(...r.deger.olaylar);
     ek.digerleri.push(...r.deger.digerleri);
+    if (r.deger.mulk) ek.mulk = true;
     return basarili({ ...r.deger.yanit, zaviyeler: zaviyeOzeti(m.kasaba, kar, ay) });
   });
 }

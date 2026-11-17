@@ -74,3 +74,49 @@ test("E1 sim: devir döngüsüyle aktarım armağan tavanını aşamaz", () => {
   assert.ok(aktarim <= HEDIYE_VERME_AYLIK * AYLAR, `aktarım ${aktarim}`);
   assert.ok(aktarim <= 120 * DEVIR_ADIL_UST * Math.ceil(AYLAR / DEVIR_SOGUMA_AY), `aktarım ${aktarim}`);
 });
+
+import { ZAVIYE_EN_AZ, ZAVIYE_YATIR_AYLIK, zaviyeIslem } from "../src/yerlesim/lonca-grup.ts";
+
+function zaviyeKur(k: Kasaba): Karakter[] {
+  const uyeler = Array.from({ length: ZAVIYE_EN_AZ }, (_, i) => oyuncuEkle(k, i + 1, k.ay - 20 * 12));
+  uyeler.forEach((u, i) => {
+    u.pa = 1000;
+    u.e = 90000 + i;
+  });
+  const [ku, ...digerleri] = uyeler;
+  assert.ok(zaviyeIslem(k, ku!, { islem: "kur", ad: "Demirciler", sekil: "kalkan", renk: "al" }, k.ay).ok);
+  for (const u of digerleri) {
+    assert.ok(zaviyeIslem(k, ku!, { islem: "davet", hedef: u.o }, k.ay).ok);
+    assert.ok(zaviyeIslem(k, u, { islem: "katil", zaviye: "z1" }, k.ay).ok);
+  }
+  return uyeler;
+}
+
+test("E2: zaviye dağılınca kasa yatıranlara yatırdıkları oranda döner, artan hazineye; son üye hepsini almaz", () => {
+  const k = testKasabasi("develi", 400);
+  const u = zaviyeKur(k);
+  const ay = k.ay;
+  assert.ok(zaviyeIslem(k, u[1]!, { islem: "yatir", tutar: 100 }, ay).ok);
+  assert.ok(zaviyeIslem(k, u[2]!, { islem: "yatir", tutar: 50 }, ay).ok);
+  assert.ok(zaviyeIslem(k, u[3]!, { islem: "yatir", tutar: 1 }, ay).ok);
+  const toplamOnce = u.reduce((a, x) => a + x.pa, 0) + k.tl!.zv[0]!.ks;
+  // Herkes ayrılır; son ayrılan u[4] hiç yatırmadı.
+  for (const x of [u[0]!, u[1]!, u[2]!, u[3]!]) assert.ok(zaviyeIslem(k, x, { islem: "ayril" }, ay).ok);
+  const pa4 = u[4]!.pa;
+  const r = zaviyeIslem(k, u[4]!, { islem: "ayril" }, ay);
+  assert.ok(r.ok);
+  assert.equal(u[4]!.pa, pa4, "yatırmayan son üye kasayı almaz");
+  assert.equal(u[1]!.pa, 1000, "yatırdığını geri alır");
+  assert.equal(u[2]!.pa, 1000);
+  const hazine = (mulkDefteri(k).vergiGiden ?? []).reduce((a, x) => a + x.tutar, 0);
+  assert.equal(u.reduce((a, x) => a + x.pa, 0) + hazine, toplamOnce, "toplam akçe korunur");
+  assert.equal(k.tl!.zv.length, 0);
+});
+
+test("E2: zaviyeye yatırmada üye başı aylık tavan", () => {
+  const k = testKasabasi("develi", 400);
+  const u = zaviyeKur(k);
+  assert.ok(zaviyeIslem(k, u[1]!, { islem: "yatir", tutar: ZAVIYE_YATIR_AYLIK }, k.ay).ok);
+  assert.deepEqual(zaviyeIslem(k, u[1]!, { islem: "yatir", tutar: 1 }, k.ay), { ok: false, hata: "tavan_doldu" });
+  assert.ok(zaviyeIslem(k, u[1]!, { islem: "yatir", tutar: 1 }, k.ay + 1).ok);
+});

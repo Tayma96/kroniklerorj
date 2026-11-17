@@ -5,13 +5,15 @@
 //   "kuruluyor"dur: kasa ve arma kapalıdır.
 // - Kasa: her üye yatırabilir; yalnız yönetici (ahi başı, yoksa kurucu vekil) kasadan bir üyeye verebilir. Kendine ve
 //   aynı hesap kümesine verilemez; alan üyenin kıdemi ve üye başı aylık tavan vardır; bütün hareketler üyelere açık
-//   (şeffaf defter). Akçe yalnız oyuncular arasında yer değiştirir: toplam akçe korunur. Son üye ayrılırsa kasa ona
-//   döner.
+//   (şeffaf defter). Akçe yalnız oyuncular arasında yer değiştirir: toplam akçe korunur. Zaviye dağılınca kasa
+//   yatıranlara yatırdıkları oranda döner, artan hazineye (`kasaDagit`). Üye başı aylık yatırma tavanı vardır.
 // - Ahi başı: üyelerin oyuyla, dönümde seçilir. Aday şartı teveccüh kademesidir (§6.2 `TEVECCUH_ETKI.ahiKademe`);
 //   meşrep gururu şartı bir kademe kaydırır (gururlu −1, mütevazı +1). Oy en az üyelerin yarısı olmalıdır.
 // Saf fonksiyonlar.
 
 import { adDogrula } from "../ad.ts";
+import { akceIade } from "../mulk/iade.ts";
+import { mulkDefteri } from "../mulk/tapu.ts";
 import { basarili, hata, type Sonuc } from "../tipler.ts";
 import { engelliMi } from "./engel.ts";
 import { olduMu } from "./hanedan.ts";
@@ -33,6 +35,8 @@ export const ZAVIYE_DAVET_SURE = 4;
 export const ZAVIYE_YATIR_EN_COK = 200;
 export const ZAVIYE_VER_AYLIK = 50;
 export const ZAVIYE_VER_KIDEM = 2;
+/** [PARAMETRE] Üye başı aylık kasaya yatırma tavanı (akçe). */
+export const ZAVIYE_YATIR_AYLIK = 200;
 /** [PARAMETRE] Kasa defterinde tutulan hareket sayısı. */
 export const ZAVIYE_HAREKET_EN_COK = 40;
 export const ARMA_SEKILLERI = ["kalkan", "hilal", "yildiz", "lale", "ok", "cark"] as const;
@@ -55,6 +59,9 @@ export interface Zaviye {
   /** Kasa (emanet akçe) ve hareketleri: [ay, kim, alan ("" = kasa), tutar]. */
   ks: number;
   kh: [ay: number, kim: string, alan: string, tutar: number][];
+  /** Yatıranların toplam katkısı (dağılınca kasa bu oranda iade edilir) ve bu ayki yatırma sayacı. */
+  yt?: Record<string, number>;
+  ya?: Record<string, [ay: number, tutar: number]>;
   /** Davetler: [davet edilen, ay]. Oylar: üye → aday. */
   dv: [o: string, ay: number][];
   oy: Record<string, string>;
@@ -115,6 +122,8 @@ export interface ZaviyeSonucu {
   yanit: Record<string, unknown>;
   olaylar: OlayTaslagi[];
   digerleri: string[];
+  /** Mülk defteri değişti (dağılan kasanın iade bekleyeni / hazine kutusu). */
+  mulk?: boolean;
 }
 
 /**
@@ -175,7 +184,8 @@ export function zaviyeIslem(k: Kasaba, kar: Karakter, govde: Record<string, unkn
     }
     case "ayril": {
       if (!benim) return hata("zaviye_yok");
-      return basarili({ ...ayril(tl, benim, kar, ay), digerleri: [] });
+      const r = ayril(k, tl, benim, kar, ay);
+      return basarili({ yanit: r.yanit, olaylar: r.olaylar, digerleri: r.alanlar.filter((o) => o !== kar.o), ...(r.dagildi ? { mulk: true } : {}) });
     }
     case "cikar": {
       if (!benim) return hata("zaviye_yok");
@@ -192,9 +202,14 @@ export function zaviyeIslem(k: Kasaba, kar: Karakter, govde: Record<string, unkn
       if (kuruluyor(benim)) return hata("zaviye_kuruluyor");
       const t = tutarCoz(govde.tutar, ZAVIYE_YATIR_EN_COK);
       if (t === undefined) return hata("tutar_gecersiz");
+      const sayac = benim.ya?.[kar.o];
+      const buAy = sayac && sayac[0] === ay ? sayac[1] : 0;
+      if (buAy + t > ZAVIYE_YATIR_AYLIK) return hata("tavan_doldu");
       if (kar.pa < t) return hata("para_yok");
       kar.pa -= t;
       benim.ks += t;
+      (benim.ya ??= {})[kar.o] = [ay, buAy + t];
+      (benim.yt ??= {})[kar.o] = (benim.yt[kar.o] ?? 0) + t;
       hareket(benim, ay, kar.o, "", t);
       return sonuc(benim);
     }
@@ -241,21 +256,50 @@ export function zaviyeIslem(k: Kasaba, kar: Karakter, govde: Record<string, unkn
   return hata("zaviye_gecersiz");
 }
 
-function ayril(tl: ToplulukKaydi, z: Zaviye, kar: Karakter, ay: number): { yanit: Record<string, unknown>; olaylar: OlayTaslagi[] } {
+/**
+ * Dağılan zaviyenin kasası: yatıranlara yatırdıkları oranda (akceIade: ölü/göçmüş yatıranın payı vârise ya da
+ * hazineye), yuvarlama artığı ve katkı kaydı olmayan kasa hazineye (vergi kutusu). Toplam akçe korunur.
+ * Döner: kişi → iade.
+ */
+export function kasaDagit(k: Kasaba, z: Zaviye, ay: number): Record<string, number> {
+  const paylar: Record<string, number> = {};
+  const ks = z.ks;
+  z.ks = 0;
+  if (ks <= 0) return paylar;
+  const katki = Object.entries(z.yt ?? {}).filter(([, n]) => n > 0);
+  const toplam = katki.reduce((a, [, n]) => a + n, 0);
+  let dagitilan = 0;
+  if (toplam > 0) {
+    for (const [o, n] of katki) {
+      const pay = Math.floor((ks * n) / toplam);
+      if (pay <= 0) continue;
+      akceIade(k, o, pay);
+      paylar[o] = pay;
+      dagitilan += pay;
+    }
+  }
+  const artan = ks - dagitilan;
+  if (artan > 0) (mulkDefteri(k).vergiGiden ??= []).push({ anahtar: `y:${k.y}:zaviye:${z.i}:${ay}`, tutar: artan, yerlesim: k.y });
+  return paylar;
+}
+
+function ayril(k: Kasaba, tl: ToplulukKaydi, z: Zaviye, kar: Karakter, ay: number): { yanit: Record<string, unknown>; olaylar: OlayTaslagi[]; alanlar: string[]; dagildi: boolean } {
   z.u = z.u.filter((x) => x.o !== kar.o);
   delete z.oy[kar.o];
   for (const [o, a] of Object.entries(z.oy)) if (a === kar.o) delete z.oy[o];
   if (z.ab === kar.o) delete z.ab;
   const olaylar: OlayTaslagi[] = [{ t: "zaviye", w: kar.o, h: "", g: "", n: 3, k: "olay.zaviye.ayrildi", p: { kisi: oyuncuRef(kar), zaviye: z.ad } }];
   let iade = 0;
-  if (z.u.length === 0) {
-    iade = z.ks;
-    kar.pa += iade;
-    z.ks = 0;
+  let alanlar: string[] = [];
+  const dagildi = z.u.length === 0;
+  if (dagildi) {
+    const paylar = kasaDagit(k, z, ay);
+    alanlar = Object.keys(paylar);
+    iade = paylar[kar.o] ?? 0;
     tl.zv = tl.zv.filter((x) => x !== z);
     olaylar.push({ t: "zaviye", w: "", h: "", g: "", n: 4, k: "olay.zaviye.dagildi", p: { zaviye: z.ad } });
   }
-  return { yanit: { ayrildi: zaviyeKimlik(z.i), kasaIadesi: iade }, olaylar };
+  return { yanit: { ayrildi: zaviyeKimlik(z.i), kasaIadesi: iade }, olaylar, alanlar, dagildi };
 }
 
 /** Ay dönümü: davetler düşer, ölü üyeler çıkar, ahi başı oyla seçilir (yarı eşiği; şartı taşıyan aday). */
@@ -268,7 +312,7 @@ export function zaviyeDonumu(k: Kasaba, ay: number): OlayTaslagi[] {
     for (const u of [...z.u]) {
       const c = k.kar.get(u.o);
       if (c && olduMu(c)) {
-        const r = ayril(tl, z, c, ay);
+        const r = ayril(k, tl, z, c, ay);
         olaylar.push(...r.olaylar);
       }
     }
