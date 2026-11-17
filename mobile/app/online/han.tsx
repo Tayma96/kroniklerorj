@@ -22,6 +22,7 @@ import { HanSayfa, IKRAM_IKON, Not } from "../../lib/online/han-ui";
 import { HanSecici, MasaIskeleti, hanKartAdi, hanSirala } from "../../lib/online/han-secici";
 import { hanSecimiOku, hanSecimiYaz } from "../../lib/online/depo";
 import type { Dil } from "../../lib/online/protokol";
+import { CanliMasalar } from "../../lib/online/masa-oyun-ui";
 
 function MasaKarti({ m, koltuk, rtl, t, sira, onAc }: { m: MasaOzeti; koltuk: number; rtl: boolean; t: (k: string) => string; sira: number; onAc: () => void }) {
   const dolu = m.oturan >= koltuk;
@@ -158,6 +159,10 @@ function HanEkran() {
         {ozet.masalar.map((m, i) => <MasaKarti key={m.no} m={m} koltuk={ozet.koltuk} rtl={rtl} t={t} sira={i} onAc={() => router.push(`/online/han/${m.no}?han=${secili ?? 1}`)} />)}
       </View>}
     {ozet ? <View style={{ marginTop: 10 }}><CizgiDugme etiket={t("onl.han.yenile")} icon="hourglass" rtl={rtl} kucuk kapali={yukleniyor} onPress={() => { void yukle(); }} /></View> : null}
+
+    {/* canlı masa oyunları: yerleşimdeki bütün hanlarda bekleyen ve süren masalar */}
+    {o.profil ? <CanliMasalar hanlar={hanlar} turAdi={turAdi} etkin={!!o.profil} rtl={rtl} t={t}
+      onAc={(h, masa, katil) => router.push(`/online/han/${masa}?han=${h}${katil ? "&oyun=katil" : ""}`)} /> : null}
 
     {o.profil && secili !== null ? <HanPanosu key={secili} istemci={istemci} /> : null}
 

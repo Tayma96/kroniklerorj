@@ -34,6 +34,7 @@ import { AtismaPanosu, DurumSeridi, KitaBalonu, KitaKutusu, SahneSeridi } from "
 import { oyuncuKimligiMi } from "../../../lib/online/toplum-veri";
 import { useToplum } from "../../../lib/online/toplum-durum";
 import { useSes } from "../../../lib/online/ses";
+import { MasaOyunPaneli } from "../../../lib/online/masa-oyun-ui";
 import type { Dil } from "../../../lib/online/protokol";
 
 type SecimEylemi = Exclude<HanEylemi, "kabul">;
@@ -431,6 +432,9 @@ function MasaEkran() {
           <Text style={[notStil, { fontSize: 12.5, lineHeight: 17 }]}>{t("onl.han.ziyafetNot")}</Text>
         </> : <Text style={notStil}>{t("onl.han.oturunca")}</Text>}
       </View>
+
+      {/* masa oyunları (Çanak Zarı, Dokuz Taş): açma, bekleme, oyun, bitiş, seyirci */}
+      <MasaOyunPaneli m={m} ben={ben} oturuyor={oturuyor} acik={acik} mesgul={mesgul} rtl={rtl} t={t} />
 
       {basBen && d.ses?.soz.length ? <>
         <Baslik2 metin={applyParams(t("onl.ses.sozBaslik"), [d.ses.soz.length])} rtl={rtl} />
