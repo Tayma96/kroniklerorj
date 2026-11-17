@@ -17,7 +17,7 @@ import { IS_KILIDI } from "../icerik/agaclar/index.ts";
 import { aracArtisi, basariSay, isAcik, verimArtisi } from "./beceri-etki.ts";
 import { hizmetEkle, meslekKaydi } from "./meslek.ts";
 import { envanterEkle, saticiDegeri } from "./npc-taban.ts";
-import { ALET_KALITE_VERIM, enIyiKalite } from "./kalite.ts";
+import { eldekiAletEtkisi } from "./esya.ts";
 import { ALET_OMRU, aletOmru, aracAsindir } from "./tarif.ts";
 import type { CalismaParametreleri, Dokum, Karakter } from "./tipler.ts";
 
@@ -113,8 +113,8 @@ function verim(k: Karakter, id: IsId, ay: number, p?: CalismaParametreleri): Ver
   const pencereAy = pencere(k, id, p);
   const n = (k.tz?.[id] ?? []).filter((x) => ay - x < pencereAy).length;
   const ae = aracArtisi(k, id);
-  const kq = ae ? enIyiKalite(k, ae.mal) : 0;
-  const arac = ae ? { mal: ae.mal, arti: ae.arti + (ALET_KALITE_VERIM[kq] ?? 0), var: (k.ev?.[ae.mal] ?? 0) > 0, kalite: kq } : null;
+  const ak = ae ? eldekiAletEtkisi(k, ae.mal) : null;
+  const arac = ae && ak ? { mal: ae.mal, arti: ae.arti + ak.verim, var: (k.ev?.[ae.mal] ?? 0) > 0, kalite: ak.q } : null;
   const cikti = !is.usta && id !== "onarim" ? (p?.TEMEL_CIKTI ?? is.cikti) : is.cikti;
   const taban = cikti + verimArtisi(k, id).arti + (arac?.var ? arac.arti : 0);
   const ham = Math.floor(taban / (1 + n));

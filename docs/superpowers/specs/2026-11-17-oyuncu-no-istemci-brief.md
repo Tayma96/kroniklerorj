@@ -40,3 +40,15 @@ Sayfa alanları (birebir bu liste): `numara, ad, ben, ayniYerlesim, yerlesim {id
 3. **Kendi numaran** (profil/ayarlar): numara `1234 5678` biçiminde, "Kopyala" ve "Paylaş" (sistem paylaşım sayfası; metin: numara + kısa çağrı).
 
 Metinler 6 dil; istemci ajanı yalnız Türkçe yazar, çeviri `tester`da.
+
+## Denetim sonrası protokol ekleri (17 Kasım)
+- **`durum` koşullu:** oyuncu sayfasında `durum` yalnız kişinin kendisine (`ben`) ve aynı yerleşimde o kişinin
+  tanıdık/dost işaretlediği izleyene döner; diğerlerinde alan **hiç yoktur** (null değil). Arayüz: alan yoksa durum
+  noktasını gösterme.
+- **Engel hesap düzeyinde:** engelle ucu engeli hesaba da yazar; künye ve arama yerleşimden bağımsız (göçten sonra da)
+  iki yönde süzer. Yanıt yine `404 kisi_yok` / boş liste (engelin varlığı sızmaz). Engel kaldırılınca ikisi birlikte kalkar.
+- **Ad araması sayfa tavanı:** hesap başına günde 30 ad araması sayfası (devam imleçleri dahil); dolunca `429
+  arama_siniri` (numara araması ve sayfa sürer). "Daha fazla" düğmesi bu hatada gizlenir.
+- **`GET /v1/oyuncu/:id` yanıtına isteğe bağlı `numara`** (8 hane): varsa kişi kartından künyeye doğrudan geç
+  (`/v1/kunye/:numara`). Alan yoksa düğmeyi gösterme.
+- Künye isteği hedef yerleşimde salt okumadır (ay yetiştirmez); davranış değişmedi, yalnız hızlandı.

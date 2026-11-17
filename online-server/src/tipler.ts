@@ -130,6 +130,8 @@ export const HATA_DURUMU = {
   tarif_gecersiz: 400,
   girdi_yok: 409,
   mal_yok: 409,
+  /** Kimliksiz düşüş adlı eşyaya (efsanevi/tılsımlı) dokunurdu: o eşya yalnız `esya` kimliğiyle harcanır. */
+  esya_kilitli: 409,
   siparis_yok: 404,
   siparis_kapandi: 409,
   // Oyuncular arası (Faz 3a)
@@ -485,6 +487,11 @@ export interface Env {
   /** İsteğe bağlı TURN anahtarı (kısıtlı ağlar); yoksa STUN kullanılır. */
   REALTIME_TURN_ID?: string;
   REALTIME_TURN_TOKEN?: string;
+  /**
+   * Kalite ve efsanevi zarının tohum sırrı (sır: `wrangler secret put ZAR_SIRRI`, en az 16 karakter). Yoksa yerel
+   * yedek kullanılır ve uyarı yazılır (yalnız yerel/test). İstemciye hiç gitmez.
+   */
+  ZAR_SIRRI?: string;
 }
 
 /** Dünya DO'suna profil kaydı isteği (HesapDO gönderir). */
@@ -720,7 +727,8 @@ export type YerlesimIleti =
   /** Şikayet hedefi: yerel oyuncu kimliği (`o12`) → hesap kimliği (aynı yerleşimin sakini). */
   | { islem: "sakinHesabi"; yerlesim: string; hesapId: string; hedef: string }
   /** Künye: hesabın güncel karakterinin herkese açık alanları (`hesapId` sayfası istenen hesap; src/kunye/gorunum.ts). */
-  | { islem: "kunye"; yerlesim: string; hesapId: string; dil?: string | null }
+  /** `izleyen`: sayfayı açanın hesabı (çevrimiçi durum yalnız aynı yerleşimdeki tanıdık/dostuna döner). */
+  | { islem: "kunye"; yerlesim: string; hesapId: string; dil?: string | null; izleyen?: string }
   | { islem: "ucgenOku"; yerlesim: string; hesapId: string; npc?: string | null; hedef?: string | null; dil?: string | null }
   /** Han masası bileti için: oyuncunun iki yönlü engel listesi (hesap kimlikleri). */
   | { islem: "engeller"; yerlesim: string; hesapId: string; han?: unknown }
@@ -777,9 +785,11 @@ export type DunyaIleti =
   | { islem: "oyuncuBul"; ad?: string; hesap?: string }
   /** Künye (HesapDO → DunyaDO; src/kunye/numara.ts): numara üret/oku, numarayla bul, ad dizinini tazele, ad öneki ara. */
   | { islem: "numaraAl"; hesapId: string }
-  | { islem: "numaraBul"; numara: string }
+  | { islem: "numaraBul"; numara: string; arayan?: string }
   | { islem: "numaraAdTazele"; hesapId: string; ad: string }
-  | { islem: "adAra"; onek: string; imlec: string | null }
+  | { islem: "adAra"; onek: string; imlec: string | null; arayan?: string }
+  /** Hesap düzeyinde engel (künye/arama yerleşimden bağımsız süzülür). */
+  | { islem: "hesapEngel"; hesapId: string; hedef: string; kaldir: boolean }
   /** Cömertler Levhası (src/debdebe/levha.ts). */
   | { islem: "levhaYaz"; yazim: { beylik: string; hesap: string; ad: string; puan: number; seviye: string | null; gorunur: boolean } }
   | { islem: "levhaOku"; beylik: string }

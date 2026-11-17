@@ -224,7 +224,7 @@ export async function pazarIslem(m: YerlesimMotoru, hesapId: string, govde: unkn
   const ilan = ilanBul(m.kasaba, govde.ilan);
   return m.ekonomiYaz(hesapId, govde, "pazarAlim", ilan ? [ilan.o] : [], (kar, ay, ek) => {
     const sahip = ilan ? m.kasaba.kar.get(ilan.o) : undefined;
-    const r = ilanIsle(m.kasaba, kar, sahip, govde.ilan, govde.adet, govde.kalite, ay);
+    const r = ilanIsle(m.kasaba, kar, sahip, govde.ilan, govde.adet, govde.kalite, ay, govde.esya);
     if (!r.ok) return r;
     const s = r.deger.sonuc;
     const satici = s.ilan.t === "sat" ? sahip! : kar;
@@ -291,7 +291,7 @@ export function ismarlamaCevapUc(m: YerlesimMotoru, hesapId: string, govde: unkn
   const kalem = govde.cevap === "teslim" ? "ismarlamaGelir" : "ismarlamaIade";
   return m.ekonomiYaz(hesapId, govde, kalem, ism ? [ism.m, ism.u] : [], (kar, ay, ek) => {
     const diger = ism ? m.kasaba.kar.get(ism.m === kar.o ? ism.u : ism.m) : undefined;
-    const r = ismarlamaCevap(m.kasaba, kar, diger, govde.ismarlama, govde.cevap, govde.kalite, ay);
+    const r = ismarlamaCevap(m.kasaba, kar, diger, govde.ismarlama, govde.cevap, govde.kalite, ay, govde.esya);
     if (!r.ok) return r;
     ek.digerleri.push(diger!.o);
     ek.olaylar.push(...r.deger.olaylar);

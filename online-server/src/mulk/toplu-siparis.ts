@@ -11,7 +11,7 @@ import { dizinSec, tohumlu } from "../yerlesim/rastgele.ts";
 import { basarili, hata, type Sonuc } from "../tipler.ts";
 import { depodanDus } from "./atolye.ts";
 import type { Tezgah } from "./depo.ts";
-import { damgaliAdet, damgaliCikar, kaliteliEkle, kaliteMi, partiParca, type KaliteParti } from "../yerlesim/kalite.ts";
+import { damgaliAdet, damgaliCikar, esyaKilidi, kaliteliEkle, kaliteMi, partiParca, type KaliteParti } from "../yerlesim/kalite.ts";
 import { TOPLU_DEGER_EN_COK, TOPLU_ODUL_CARPANI, TOPLU_SURE, TOPLU_TUTMA_AY } from "./tezgah-kurallar.ts";
 
 export interface TopluSiparis {
@@ -119,7 +119,7 @@ export function topluTeslim(d: TopluDefter, idHam: unknown, isletme: string, ad:
     parti = c;
   } else {
     const izliOnce = (t.kq?.[s.mal] ?? []).map((p) => [...p] as KaliteParti);
-    if (!depodanDus(t, s.mal, adet)) return hata("mal_yok");
+    if (!depodanDus(t, s.mal, adet)) return hata(esyaKilidi(t, { [s.mal]: adet }) ?? "mal_yok");
     parti = dusenPartiler(izliOnce, t.kq?.[s.mal] ?? [], adet);
   }
   const saOnce = d.sa;

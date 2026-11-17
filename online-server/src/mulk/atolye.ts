@@ -6,6 +6,7 @@ import type { MeslekId } from "../icerik/meslekler.ts";
 import type { Tarif } from "../icerik/tarifler.ts";
 import { tarifAcik } from "../yerlesim/beceri-etki.ts";
 import { envanterEkle } from "../yerlesim/npc-taban.ts";
+import { esyaKilidi, serbestAdet } from "../yerlesim/kalite.ts";
 import type { Karakter } from "../yerlesim/tipler.ts";
 import { basarili, hata, type Sonuc } from "../tipler.ts";
 import type { Tezgah } from "./depo.ts";
@@ -94,9 +95,12 @@ export function atolyeKalemleri(seviye: number, npcPay = 0, kanca: AtolyeKancasi
   return l;
 }
 
-/** Depodan `n` adet düşer (önce izsiz sade, sonra en düşük kalite). Yetmezse false, hiçbir şey değişmez. */
+/**
+ * Depodan `n` adet düşer (önce izsiz sade, sonra en düşük kalite). Adlı eşya (efsanevi/tılsımlı) bu yoldan düşmez:
+ * kimliksiz adet yetmezse false, hiçbir şey değişmez (çağıran `esyaKilidi` ile nedenini ayırır).
+ */
 export function depodanDus(t: Tezgah, mal: MalId, n: number): boolean {
-  if ((t.ev?.[mal] ?? 0) < n) return false;
+  if (serbestAdet(t, mal) < n) return false;
   if (n > 0) envanterEkle(t as unknown as Karakter, mal, -n);
   return true;
 }
@@ -125,6 +129,8 @@ export function genislet(tur: "dukkan" | "atolye", t: Tezgah, seviye: number, in
   if (!g) return hata("genisletme_yok");
   const eksik = Object.entries(g.malzeme).some(([m, n]) => (t.ev?.[m] ?? 0) < (n ?? 0));
   if (eksik) return hata("malzeme_yok");
+  const kilit = esyaKilidi(t, g.malzeme);
+  if (kilit) return hata(kilit);
   for (const [m, n] of Object.entries(g.malzeme)) depodanDus(t, m as MalId, n ?? 0);
   t.gk = g.hedef;
   return basarili(g);

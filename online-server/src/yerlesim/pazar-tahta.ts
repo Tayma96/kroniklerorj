@@ -13,8 +13,8 @@ import { basarili, hata, type Sonuc } from "../tipler.ts";
 import { defterYaz } from "./defter.ts";
 import { engelliMi } from "./engel.ts";
 import { hanedanKasabasi } from "./hanedan.ts";
-import { elDegistir } from "./esya.ts";
-import { KALITE_ADLARI, KALITE_DEGER_CARPANI, KALITE_NADIDE, kaliteAdedi, kaliteliCikar, kaliteliEkle, kaliteMi, partiParca, type Kalite, type KaliteParti } from "./kalite.ts";
+import { elDegistir, esyaKamuGorunumu } from "./esya.ts";
+import { KALITE_ADLARI, KALITE_DEGER_CARPANI, KALITE_NADIDE, kaliteAdedi, kaliteliCikar, kaliteliEkle, kaliteMi, partiParca, secilebilirAdet, type Envanterli, type Kalite, type KaliteParti } from "./kalite.ts";
 import { karakterYasi } from "./karakter.ts";
 import { npcFiyat, stogaEkle, stokFiyat, type KasabaStogu } from "./npc-taban.ts";
 import { oyuncuRef } from "./ortak.ts";
@@ -288,8 +288,12 @@ export function ilanAc(k: Kasaba, kar: Karakter, g: Record<string, unknown>, ay:
   let p: KaliteParti[] | undefined;
   let e = 0;
   if (tur === "sat") {
-    if (kaliteAdedi(kar, mal, q) < adet) return hata("mal_yok");
-    p = kaliteliCikar(kar, mal, adet, q)!;
+    // Adlı eşya yalnız `esya` kimliğiyle (adet 1) ilana çıkar; kimliksiz ilan onu hiç seçmez.
+    const esya = esyaKimligi(g.esya);
+    if (esya === null || (esya !== undefined && adet !== 1)) return hata("ilan_gecersiz");
+    const eksik = secimNedeni(kar, mal, q, adet, esya);
+    if (eksik) return hata(eksik);
+    p = kaliteliCikar(kar, mal, adet, q, esya)!;
   } else {
     e = adet * fiyat;
     if (kar.pa < e) return hata("para_yok");
@@ -335,11 +339,26 @@ function partiAyir(p: KaliteParti[], adet: number): KaliteParti[] {
   return cikan;
 }
 
-/** En az `q` kalitede elde olan en düşük kalite (yoksa null). */
-function teslimKalitesi(kar: Karakter, mal: MalId, q: Kalite, adet: number, istenen: unknown): Kalite | null {
-  if (istenen !== undefined) return kaliteMi(istenen) && istenen >= q && kaliteAdedi(kar, mal, istenen) >= adet ? istenen : null;
-  // Kendiliğinden seçimde adlı eşya (efsanevi/tılsımlı) verilmez; onu satmak için kalite açıkça istenir.
-  for (let x = q; x <= KALITE_NADIDE; x++) if (kaliteAdedi(kar, mal, x as Kalite) >= adet) return x as Kalite;
+/** Gövdedeki isteğe bağlı `esya` kimliği (geçersizse null; yoksa undefined). */
+export function esyaKimligi(ham: unknown): string | undefined | null {
+  if (ham === undefined || ham === null) return undefined;
+  return typeof ham === "string" && /^e[0-9a-z]{1,16}$/.test(ham) ? ham : null;
+}
+
+/** Seçimin eksik nedeni: adlı eşya yüzünden yetmiyorsa esya_kilitli, yoksa mal_yok (yetiyorsa null). */
+export function secimNedeni(kar: Envanterli, mal: MalId, q: Kalite, adet: number, esya?: string): "mal_yok" | "esya_kilitli" | null {
+  if (secilebilirAdet(kar, mal, q, esya) >= adet) return null;
+  return esya === undefined && kaliteAdedi(kar, mal, q) >= adet ? "esya_kilitli" : "mal_yok";
+}
+
+/**
+ * En az `q` kalitede elde olan en düşük kalite (yoksa null). Adlı eşya yalnız `esya` kimliğiyle verilir (o zaman
+ * kalite de açıkça istenmelidir); kendiliğinden seçimde hiç verilmez.
+ */
+function teslimKalitesi(kar: Karakter, mal: MalId, q: Kalite, adet: number, istenen: unknown, esya?: string): Kalite | null {
+  if (istenen !== undefined) return kaliteMi(istenen) && istenen >= q && secilebilirAdet(kar, mal, istenen, esya) >= adet ? istenen : null;
+  if (esya !== undefined) return null;
+  for (let x = q; x <= KALITE_NADIDE; x++) if (secilebilirAdet(kar, mal, x as Kalite) >= adet) return x as Kalite;
   return null;
 }
 
@@ -355,6 +374,7 @@ export function ilanIsle(
   adetHam: unknown,
   kaliteHam: unknown,
   ay: number,
+  esyaHam?: unknown,
 ): Sonuc<{ sonuc: IlanIslemSonucu; olaylar: OlayTaslagi[] }> {
   const ilan = ilanBul(k, idHam);
   if (!ilan) return hata("ilan_yok");
@@ -370,9 +390,11 @@ export function ilanIsle(
   const satici = satis ? sahip : ben;
   const alici = satis ? ben : sahip;
   let q: Kalite = ilan.q;
+  const esya = satis ? undefined : esyaKimligi(esyaHam);
+  if (esya === null || (esya !== undefined && adet !== 1)) return hata("ilan_gecersiz");
   if (!satis) {
-    const tq = teslimKalitesi(ben, ilan.ml, ilan.q, adet, kaliteHam);
-    if (tq === null) return hata("mal_yok");
+    const tq = teslimKalitesi(ben, ilan.ml, ilan.q, adet, kaliteHam, esya);
+    if (tq === null) return hata(kaliteHam !== undefined && kaliteMi(kaliteHam) && esya === undefined ? (secimNedeni(ben, ilan.ml, kaliteHam, adet) ?? "mal_yok") : "mal_yok");
     q = tq;
   }
   // Pompa sınırı paradan önce denetlenir (kural akçeden bağımsızdır).
@@ -387,7 +409,7 @@ export function ilanIsle(
     kaliteliEkle(ben, ilan.ml, elDegistir(partiAyir(ilan.p ?? [], adet), ay, "satis", ben.ad));
   } else {
     ilan.e -= tutar;
-    kaliteliEkle(sahip, ilan.ml, elDegistir(kaliteliCikar(ben, ilan.ml, adet, q)!, ay, "satis", sahip.ad));
+    kaliteliEkle(sahip, ilan.ml, elDegistir(kaliteliCikar(ben, ilan.ml, adet, q, esya)!, ay, "satis", sahip.ad));
   }
   satici.pa += net;
   if (bac > 0) hanedanKasabasi(k).hz += bac;
@@ -484,5 +506,11 @@ export function ilanGorunumu(ilan: Ilan, ben: string, ay: number) {
     durum: ilan.d,
     karsilastirma: karsilastirma(ilan.ml, ilan.q, ilan.f),
     islemler: (ilan.h ?? []).map(([a, kim, adet, tutar]) => ({ ay: a, kim, adet, tutar })),
+    // Adlı eşyanın herkese açık görünümü (alıcı satın almadan görür; yadigâr geçmişi yok). Yoksa alan eklenmez.
+    ...(ilanEsyalari(ilan).length ? { esyalar: ilanEsyalari(ilan) } : {}),
   };
+}
+
+function ilanEsyalari(ilan: Ilan) {
+  return (ilan.p ?? []).filter((x) => x[4] && x[1] > 0).map((x) => esyaKamuGorunumu(ilan.ml, x[0], x[4]!));
 }

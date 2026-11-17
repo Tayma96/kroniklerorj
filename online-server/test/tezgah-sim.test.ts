@@ -98,7 +98,8 @@ test("§5.4 (1): şehirde en iyi paylı, tam stoklu 5. seviye dükkânın aylık
   let enCokB = -Infinity;
   for (const yontem of ["butce", "adet"] as const) {
     for (const c of [1, 1.1, 1.2, 1.3, 1.4, 1.5]) {
-      for (const q of [0, 1, 2, 3] as const) {
+      // Bütün kademeler (sade..tılsımlı): kademe fiyat çarpanı tavanı delmez.
+      for (const q of [0, 1, 2, 3, 4, 5, 6] as const) {
         const d = calistirCarpan("sehir", 4, c, q, yontem);
         if (yontem === "butce" && d.kar > enCok.kar) enCok = { kar: d.kar, brut: d.brut, carpan: c, yontem };
         if (yontem === "butce") assert.ok(d.kar <= 90, `kâr ${d.kar} (c=${c}, q=${q})`);

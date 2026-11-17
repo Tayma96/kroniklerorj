@@ -116,19 +116,73 @@ function yaz(k: Envanterli, mal: string, liste: KaliteParti[]): void {
   } else (k.kq ??= {})[mal] = temiz;
 }
 
-/** İzli partilerin toplamı envanteri aşarsa (eski yol `envanterEkle` eksiyle düştüyse) en düşük kaliteden kırpar. */
-export function kaliteKirp(k: Karakter, mal: string): void {
+/**
+ * İzli partilerin toplamı envanteri aşarsa (eski yol `envanterEkle` eksiyle düştüyse) en düşük kaliteden kırpar.
+ * Adlı eşyalı partiye (efsanevi/tılsımlı) ASLA dokunmaz: o eşya yalnız kimliğiyle harcanır. Çağıranlar eksi
+ * `envanterEkle`den önce `esyaKilidi` ile denetler; denetimsiz bir yol kalırsa envanterEkle adedi adlı eşyanın
+ * altına indirmez (npc-taban.ts).
+ */
+export function kaliteKirp(k: Envanterli, mal: string): void {
   const liste = partiler(k, mal);
   if (liste.length === 0) return;
   let fazla = liste.reduce((a, p) => a + p[1], 0) - (k.ev?.[mal] ?? 0);
   if (fazla <= 0) return;
   const kopya = liste.map((p) => [...p] as KaliteParti);
   for (let i = kopya.length - 1; i >= 0 && fazla > 0; i--) {
+    if (kopya[i]![4]) continue;
     const d = Math.min(fazla, kopya[i]![1]);
     kopya[i]![1] -= d;
     fazla -= d;
   }
   yaz(k, mal, kopya);
+}
+
+/** Bu maldaki adlı eşyalı (efsanevi/tılsımlı) parti adedi. */
+export function adliAdet(k: Envanterli, mal: string): number {
+  return partiler(k, mal).filter((p) => p[4]).reduce((a, p) => a + p[1], 0);
+}
+
+/** Kimliksiz harcanabilen adet: envanter − adlı eşya. */
+export function serbestAdet(k: Envanterli, mal: string): number {
+  return Math.max(0, (k.ev?.[mal] ?? 0) - adliAdet(k, mal));
+}
+
+/**
+ * Kimliksiz düşüşün (tarif girdisi, NPC'ye satış, kervan, sipariş, şenlik...) adlı eşyaya dokunup dokunmayacağı:
+ * envanter yetiyor ama adlı eşya hariç yetmiyorsa "esya_kilitli" (adlı eşya yalnız kimliğini veren uçla harcanır).
+ * Envanter hiç yetmiyorsa null döner (çağıranın kendi "mal_yok" denetimi geçerlidir).
+ */
+export function esyaKilidi(k: Envanterli, ihtiyac: Readonly<Partial<Record<string, number>>>): "esya_kilitli" | null {
+  for (const [mal, n] of Object.entries(ihtiyac)) {
+    if (!(n !== undefined && n > 0)) continue;
+    if ((k.ev?.[mal] ?? 0) >= n && serbestAdet(k, mal) < n) return "esya_kilitli";
+  }
+  return null;
+}
+
+/**
+ * Seçilebilir adet: `esyaId` verilirse yalnız o adlı eşya (bu kalitede 0 ya da 1); verilmezse adlı eşya hariç.
+ * Pazar, raf, ısmarlama, taşıma gibi seçen uçlar bunu kullanır; görünüm `kaliteAdedi`dir.
+ */
+export function secilebilirAdet(k: Envanterli, mal: string, q: Kalite, esyaId?: string): number {
+  if (esyaId !== undefined) return partiler(k, mal).filter((p) => p[0] === q && p[4]?.i === esyaId).reduce((a, p) => a + p[1], 0);
+  return kaliteAdedi(k, mal, q) - partiler(k, mal).filter((p) => p[0] === q && p[4]).reduce((a, p) => a + p[1], 0);
+}
+
+/** Bir malın bütün adedini (izsiz, izli, adlı) kaynaktan hedefe taşır: iflas ve devralmada kayıp yok. Taşınan adet. */
+export function hepsiniTasi(kaynak: Envanterli, hedef: Envanterli, mal: MalId): number {
+  const n = kaynak.ev?.[mal] ?? 0;
+  if (n <= 0) return 0;
+  const liste = partiler(kaynak, mal).map((p) => [...p] as KaliteParti);
+  const izsiz = n - liste.reduce((a, p) => a + p[1], 0);
+  const giden: KaliteParti[] = [...(izsiz > 0 ? [[0, izsiz] as KaliteParti] : []), ...liste.filter((p) => p[1] > 0)];
+  if (kaynak.ev) delete kaynak.ev[mal];
+  if (kaynak.kq) {
+    delete kaynak.kq[mal];
+    if (Object.keys(kaynak.kq).length === 0) delete kaynak.kq;
+  }
+  kaliteliEkle(hedef, mal, giden);
+  return n;
 }
 
 /** Bu kalitede elde kaç adet var (sade: izsiz + izli sade). */
@@ -152,13 +206,16 @@ export function enIyiKalite(k: Karakter, mal: string): Kalite {
   return (partiler(k, mal)[0]?.[0] ?? 0) as Kalite;
 }
 
-/** Belirli kalitede `adet` malı çıkarır (sadede önce izsiz); yetmezse hiçbir şey değişmez, null döner. */
-export function kaliteliCikar(k: Envanterli, mal: MalId, adet: number, q: Kalite): KaliteParti[] | null {
-  if (!(adet > 0) || kaliteAdedi(k, mal, q) < adet) return null;
+/**
+ * Belirli kalitede `adet` malı çıkarır (sadede önce izsiz); yetmezse hiçbir şey değişmez, null döner. Adlı eşya
+ * (efsanevi/tılsımlı) yalnız `esyaId` verilince ve yalnız o eşya çıkar.
+ */
+export function kaliteliCikar(k: Envanterli, mal: MalId, adet: number, q: Kalite, esyaId?: string): KaliteParti[] | null {
+  if (!(adet > 0) || secilebilirAdet(k, mal, q, esyaId) < adet) return null;
   const liste = partiler(k, mal).map((p) => [...p] as KaliteParti);
   const cikan: KaliteParti[] = [];
   let kalan = adet;
-  if (q === 0) {
+  if (q === 0 && esyaId === undefined) {
     const izsiz = (k.ev?.[mal] ?? 0) - liste.reduce((a, p) => a + p[1], 0);
     const d = Math.min(kalan, Math.max(0, izsiz));
     if (d > 0) cikan.push([0, d]);
@@ -166,7 +223,8 @@ export function kaliteliCikar(k: Envanterli, mal: MalId, adet: number, q: Kalite
   }
   for (let i = liste.length - 1; i >= 0 && kalan > 0; i--) {
     const p = liste[i]!;
-    if (p[0] !== q) continue;
+    // Adlı eşya yalnız kimliğiyle çıkar; kimlik verildiyse yalnız o eşya.
+    if (p[0] !== q || (esyaId === undefined ? !!p[4] : p[4]?.i !== esyaId)) continue;
     const d = Math.min(kalan, p[1]);
     p[1] -= d;
     kalan -= d;
@@ -245,6 +303,11 @@ export interface KaliteSonucu {
   /** Bu üretimin puanla erişilebilen kalite tavanı; puan tavanı aştıysa nedeni (meslek kademesi ya da emir). */
   tavan: Kalite;
   kisit: "kalite.tavan.meslek" | "kalite.tavan.emir" | "kalite.tavan.ustaNadide" | null;
+  /**
+   * Puanı nadideye yeten pir olmayan ustanın ikinci zarı (gizli sayı yok): şans yüzdesi ve tutup tutmadığı. Bu
+   * zar atılmadıysa null.
+   */
+  ustaNadide: { yuzde: number; tuttu: boolean } | null;
 }
 
 export function kademeBul(puan: number): Kalite {
@@ -275,11 +338,16 @@ export function urunKalitesi(k: Karakter, t: Tarif, beceri: number, aracKalite: 
   let kademe = Math.min(ham, tavan) as Kalite;
   let kisit: KaliteSonucu["kisit"] = ham > tavan ? (emir && tavan < mt ? "kalite.tavan.emir" : "kalite.tavan.meslek") : null;
   // Usta nadideye "ender" ulaşır (§9): puan yetse de aynı zarın ikinci çekilişiyle KALITE_USTA_NADIDE_YUZDE.
-  if (kademe === KALITE_NADIDE && kd < 3 && zar() * 100 >= KALITE_USTA_NADIDE_YUZDE) {
-    kademe = KALITE_SAHESER;
-    kisit = "kalite.tavan.ustaNadide";
+  let ustaNadide: KaliteSonucu["ustaNadide"] = null;
+  if (kademe === KALITE_NADIDE && kd < 3) {
+    const tuttu = zar() * 100 < KALITE_USTA_NADIDE_YUZDE;
+    ustaNadide = { yuzde: KALITE_USTA_NADIDE_YUZDE, tuttu };
+    if (!tuttu) {
+      kademe = KALITE_SAHESER;
+      kisit = "kalite.tavan.ustaNadide";
+    }
   }
-  return { kademe, ad: KALITE_ADLARI[kademe], dokum: { toplam, kalemler }, sonrakiEsik: kademe >= tavan ? null : (KALITE_ESIK[kademe + 1] ?? null), tavan, kisit };
+  return { kademe, ad: KALITE_ADLARI[kademe], dokum: { toplam, kalemler }, sonrakiEsik: kademe >= tavan ? null : (KALITE_ESIK[kademe + 1] ?? null), tavan, kisit, ustaNadide };
 }
 
 /** Envanterin kalite görünümü: yalnız izli partisi olan mallar (adet, kalite adı, yapan). */

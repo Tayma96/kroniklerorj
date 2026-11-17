@@ -140,6 +140,10 @@ Dağıtım **elle** yapılır; otomatik dağıtım ve CI yoktur. Anahtar sohbete
 4. **`OTURUM_ANAHTARI`** (sır, en az 32 karakter): rastgele üretip doğrudan Worker sırrı olarak koyun:
    `openssl rand -base64 48 | npx wrangler secret put OTURUM_ANAHTARI`
    Anahtar değişirse bütün oturumlar geçersiz olur; oyuncular yeniden giriş yapar.
+   **`ZAR_SIRRI`** (sır, en az 16 karakter): kalite ve efsanevi zarının tohumunu HMAC'ler (istemci zarı önceden
+   hesaplayamaz). `openssl rand -base64 32 | npx wrangler secret put ZAR_SIRRI` (test Worker'ına da
+   `--config wrangler.test.toml` ile ayrı). Yoksa yerel yedek kullanılır ve uyarı yazılır; üretimde mutlaka konmalı.
+   Değişirse yalnız gelecekteki zarlar değişir.
 5. Deneme: `curl https://kronikler-online.<hesap>.workers.dev/v1/dunya`
 
 Yerel çalışma için (isteğe bağlı) `online-server/.dev.vars` dosyasına `OTURUM_ANAHTARI=...` yazılabilir; bu dosya

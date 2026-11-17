@@ -19,6 +19,7 @@ import { olduMu } from "./hanedan.ts";
 import { namEkle, takatHarca, type Nam } from "./karakter.ts";
 import { mesrepEtkisi } from "./mesrep.ts";
 import { hizmetAcik } from "./beceri-etki.ts";
+import { esyaKilidi } from "./kalite.ts";
 import { envanterEkle } from "./npc-taban.ts";
 import { oyuncuRef } from "./ortak.ts";
 import { tohumlu } from "./rastgele.ts";
@@ -262,6 +263,8 @@ export function ortakDertKatki(k: Kasaba, kar: Karakter, govde: Record<string, u
     adet = typeof govde.adet === "number" && Number.isInteger(govde.adet) ? govde.adet : 0;
     if (!mal || !mallar.includes(mal) || adet < 1 || adet > ORTAK_DERT_ADET_EN_COK) return hata("katki_gecersiz");
     if ((kar.ev?.[mal] ?? 0) < adet) return hata("mal_yok");
+    const kilit = esyaKilidi(kar, { [mal]: adet });
+    if (kilit) return hata(kilit);
     ham = MALLAR[mal].taban * adet;
     kalemler.push({ k: "ortakDert.puan.mal", d: ham, p: { mal, adet, taban: MALLAR[mal].taban } });
   } else if (katki === "elEmegi") {

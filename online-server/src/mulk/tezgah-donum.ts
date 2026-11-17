@@ -14,7 +14,7 @@ import { iadeCoz } from "./iade.ts";
 import { bosTezgah, partiToplam, type Tezgah } from "./depo.ts";
 import { talepCoz, yolcuCoz, type Dukkan, type TalepSatiri, type YolcuHani } from "./hane-butcesi.ts";
 import { ITIBAR_BASLANGIC, NPC_HAN_NO, isletmeCoz, isletmeKimligi } from "./kurallar.ts";
-import { rafBos, raftanSat } from "./raf.ts";
+import { rafBos, rafSatilabilir, raftanSat } from "./raf.ts";
 import { hanNolari, mulkDefteri, vergiAyir } from "./tapu.ts";
 import { CIKIS_EN_COK, cikisAc } from "./transfer.ts";
 import { DUKKAN_NPC_TAVAN, NPC_EMEK_AY, PAY_YONTEMI, TEZGAH_KAYIT_PAYI, URETIM_DOKUM_EN_COK } from "./tezgah-kurallar.ts";
@@ -132,7 +132,8 @@ export function tezgahDonumu(k: Kasaba, ay: number): OlayTaslagi[] {
       const sid = `${id}#${s.n}`;
       satirHaritasi.set(sid, { t, n: s.n });
       const h = hk(MALLAR[s.m].meslek).deger;
-      satirlar.push({ id: sid, dukkan: id, mal: s.m, q: s.q, adet: partiToplam(s.p), fiyat: s.f, ...(h > 0 ? { hYuzde: h } : {}) });
+      // Adlı eşya NPC talebine girmez (yalnız oyuncu, kimliğiyle alır).
+      satirlar.push({ id: sid, dukkan: id, mal: s.m, q: s.q, adet: rafSatilabilir(s), fiyat: s.f, ...(h > 0 ? { hYuzde: h } : {}) });
     }
   }
   const r = talepCoz(k.tur, satirlar, dukkanlar, meslekOyuncuSayaci(k, saticilar(md, satirlar)), PAY_YONTEMI);

@@ -484,6 +484,9 @@ test("Y2 ekonomi sağlığı: kurucu yerleşim toplamlarını görür, oyuncu ki
     assert.ok(rapor.govde.toplam.oyuncuSayisi >= 1);
     assert.ok(rapor.govde.yerlesimler.some((x: { yerlesim: string }) => x.yerlesim === "kizilca"));
     assert.equal(rapor.govde.eksikYerlesim, 0);
+    // Eşya sayacı (efsanevi/tılsımlı) yerleşim başına ve toplamda.
+    assert.deepEqual(rapor.govde.toplam.esya, { efsanevi: 0, tilsimli: 0 });
+    assert.ok(rapor.govde.yerlesimler.every((x: { esya?: unknown }) => typeof x.esya === "object"));
     assert.ok(!JSON.stringify(rapor.govde).includes(mehmet.hesap), "raporda hesap kimliği yok");
     assert.ok(rapor.govde.yerlesimler.every((x: Record<string, unknown>) => !("oyuncular" in x) && !("hesaplar" in x)));
   } finally {

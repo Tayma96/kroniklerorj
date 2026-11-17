@@ -45,8 +45,8 @@ import {
   type Oturan,
 } from "./sahne.ts";
 import { MASA_BASI_AYARLARI, MASA_BASI_TURLERI } from "./tipler.ts";
-import { oyunGorunumu, oyunSuruyor, type MasaOyunu } from "./oyun/cati.ts";
-import { OYUN_KOMUTLARI, oyunDenetleYayinla, oyunKomutu } from "./oyun/masa-oyun.ts";
+import { oyunGorunumu, oyunMesgul, type MasaOyunu } from "./oyun/cati.ts";
+import { OYUN_KOMUTLARI, bayatOyunuKaldir, oyunDenetleYayinla, oyunKomutu } from "./oyun/masa-oyun.ts";
 import type {
   AtismaSonucu,
   IstemciIletisi,
@@ -200,7 +200,7 @@ export function atismaBaslatYayinla(b: MasaBaglami, kabul: MasaOlayi): boolean {
   if (kabul.tur !== "kabul" || kabul.teklifTur !== "atisma" || !kabul.hedef || kabul.olay === undefined) return false;
   const tum = kayitlar(b.soketler);
   etkinlikDenetleYayinla(b, tum);
-  if (b.etkinlik || oyunSuruyor(b.oyun)) return false;
+  if (b.etkinlik || bayatOyunuKaldir(b, tum)) return false;
   etkinlikGuncelle(b, tum, atismaBaslat(kabul.olay, kabul.hedef, kabul.kim, oturanListesi(tum)));
   return true;
 }
@@ -831,11 +831,13 @@ function davetEt(b: MasaBaglami, kaynak: MasaSoketi, ek: SoketEki, ham: unknown,
 
 function sahneyiAc(b: MasaBaglami, kaynak: MasaSoketi, ek: SoketEki): Basarisiz | undefined {
   if (surer(ek.yt.susturma, b.simdi)) return { ok: false, hata: "susturuldu", bitis: ek.yt.susturma.bitis };
-  // Masa oyunu sürerken sahne açılmaz (sahne/atışma ile oyun aynı masada aynı anda olmaz).
-  if (oyunSuruyor(b.oyun)) return hata("masa_mesgul");
+  // Masa oyunu sürerken sahne açılmaz (sahne/atışma ile oyun aynı masada aynı anda olmaz). Terk edilmiş oyun ya da
+  // bayat bekleme kilitlemez: sahne açılırken masadan kalkar.
   const tum = tumu(b, kaynak, ek);
+  if (oyunMesgul(b.oyun, b.simdi)) return hata("masa_mesgul");
   const r = sahneAc(b.etkinlik, ek.h, oturanListesi(tum), b.ayar, b.simdi);
   if (!r.ok) return r;
+  bayatOyunuKaldir(b, tum);
   etkinlikGuncelle(b, tum, r.deger);
   return undefined;
 }

@@ -16,6 +16,7 @@ import {
   oyunHamle,
   oyunKatil,
   oyunPas,
+  oyunMesgul,
   oyunSuruyor,
   taahhutHesapla,
   type MasaOyunu,
@@ -35,6 +36,17 @@ function yaz(b: MasaBaglami, tum: readonly Kayit[], o: MasaOyunu | undefined): v
   b.oyun = o;
   b.oyunYaz?.(o);
   oyunYayinla(b, tum);
+}
+
+/**
+ * Sahne/atışma açılmadan önce: terk edilmiş oyun ya da bayat bekleme masayı kilitlemez, masadan kalkar (kimse bir şey
+ * kaybetmez; akçe/ödül yoktur). Masa hâlâ meşgulse true.
+ */
+export function bayatOyunuKaldir(b: MasaBaglami, tum: readonly Kayit[]): boolean {
+  if (!oyunSuruyor(b.oyun)) return false;
+  if (oyunMesgul(b.oyun, b.simdi)) return true;
+  yaz(b, tum, undefined);
+  return false;
 }
 
 /** Oturuş/bağlantı değişince: bekleme listesi ve "yok" işaretleri güncellenir. */
@@ -83,9 +95,11 @@ export async function oyunKomutu(
     }
     case "oyunBaslat": {
       if (!o || o.asama !== "bekleme") return hata(o && o.asama === "oyun" ? "oyun_basladi" : "oyun_yok");
-      if (ek.h !== o.kurucu) return hata("yetki_yok");
+      // Bayat beklemenin üstüne sahne açılmış olabilir: sahne sürerken oyun başlamaz.
+      if (b.etkinlik) return hata("masa_mesgul");
       const tohum = (b.tohumUret ?? varsayilanTohum)();
-      const r = oyunBaslat(o, ek.h, tohum, await taahhutHesapla(tohum), await adimZari(tohum, o.id, 0));
+      // Yetki çatıda: kurucu ya da (bekleme bayatsa) bekleyen herhangi bir oturan.
+      const r = oyunBaslat(o, ek.h, tohum, await taahhutHesapla(tohum), await adimZari(tohum, o.id, 0), b.simdi);
       if (!r.ok) return r;
       yaz(b, tum, r.deger);
       return undefined;

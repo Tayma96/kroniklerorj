@@ -7,7 +7,7 @@ import { iletiOku, jsonYanit } from "./ic.ts";
 import { davetCoz, davetOlustur, dunyaOzeti, gocKayit, kayitOl, oyuncuBul } from "./mantik.ts";
 import { basarili, hata, type DunyaIleti, type Env, type Sonuc } from "./tipler.ts";
 import { levhaOku, levhaYaz, type LevhaYazimi } from "./debdebe/levha.ts";
-import { adAra, numaraAdTazele, numaraAl, numaraBul, type Listeleyici } from "./kunye/numara.ts";
+import { adAra, hesapEngelYaz, numaraAdTazele, numaraAl, numaraBul, type Listeleyici } from "./kunye/numara.ts";
 
 const rastgele = (bayt: number): Uint8Array => crypto.getRandomValues(new Uint8Array(bayt));
 
@@ -43,11 +43,13 @@ export class DunyaDO {
       case "numaraAl":
         return numaraAl(this.#depo, ileti.hesapId, rastgele);
       case "numaraBul":
-        return numaraBul(this.#depo, ileti.numara);
+        return numaraBul(this.#depo, ileti.numara, ileti.arayan);
       case "numaraAdTazele":
         return numaraAdTazele(this.#depo, ileti.hesapId, ileti.ad);
       case "adAra":
-        return adAra(this.#depo, this.#liste, ileti.onek, ileti.imlec);
+        return adAra(this.#depo, this.#liste, ileti.onek, ileti.imlec, undefined, ileti.arayan);
+      case "hesapEngel":
+        return hesapEngelYaz(this.#depo, ileti.hesapId, ileti.hedef, ileti.kaldir === true);
       // Cömertler Levhası (Faz 15)
       case "levhaYaz":
         return levhaYaz(this.#depo, ileti.yazim as LevhaYazimi, simdi);

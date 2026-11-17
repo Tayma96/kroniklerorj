@@ -3,9 +3,10 @@
 // Raf boşsa ay dönümünde kepenk kendiliğinden iner (tezgah-donum.ts). Saf fonksiyonlar.
 
 import type { MalId } from "../icerik/mallar.ts";
-import { kaliteliCikar, kaliteliEkle, kaliteAdedi, KALITE_ADLARI, type Kalite, type KaliteParti } from "../yerlesim/kalite.ts";
+import { kaliteliCikar, kaliteliEkle, KALITE_ADLARI, type Kalite, type KaliteParti } from "../yerlesim/kalite.ts";
+import { esyaKamuGorunumu } from "../yerlesim/esya.ts";
 import { basarili, hata, type Sonuc } from "../tipler.ts";
-import { partiBirlestir, partiCikar, partiToplam, type RafSatiri, type Tezgah } from "./depo.ts";
+import { partiBirlestir, partiCikar, partiToplam, secilebilirToplam, secimEksigi, type RafSatiri, type Tezgah } from "./depo.ts";
 import { adil, cekicilik, npcTavani } from "./hane-butcesi.ts";
 import { RAF_FIYAT_ALT, RAF_FIYAT_UST, RAF_SATIR, RAF_SATIR_ADET } from "./tezgah-kurallar.ts";
 
@@ -38,7 +39,7 @@ export function satirBul(t: Tezgah, n: unknown): RafSatiri | undefined {
 }
 
 /** Depo → raf. Aynı mal + kalite satırı varsa ona eklenir (fiyat verilirse güncellenir); yoksa yeni satır (fiyat şart). */
-export function rafaKoy(t: Tezgah, mal: MalId, q: Kalite, adet: number, fiyat: unknown, seviye: number, ek: { satir: number; adet: number } = { satir: 0, adet: 0 }): Sonuc<{ satir: RafSatiri }> {
+export function rafaKoy(t: Tezgah, mal: MalId, q: Kalite, adet: number, fiyat: unknown, seviye: number, ek: { satir: number; adet: number } = { satir: 0, adet: 0 }, esya?: string): Sonuc<{ satir: RafSatiri }> {
   let s = t.r.find((x) => x.m === mal && x.q === q);
   if (fiyat !== undefined && !fiyatGecerli(mal, q, fiyat)) return hata("fiyat_bant_disi");
   if (!s) {
@@ -46,8 +47,9 @@ export function rafaKoy(t: Tezgah, mal: MalId, q: Kalite, adet: number, fiyat: u
     if (t.r.length >= rafSatirSiniri(seviye) + ek.satir) return hata("raf_dolu");
   }
   if ((s ? rafAdedi(s) : 0) + adet > RAF_SATIR_ADET + ek.adet) return hata("raf_satir_dolu");
-  if (kaliteAdedi(t, mal, q) < adet) return hata("mal_yok");
-  const p = kaliteliCikar(t, mal, adet, q)!;
+  const eksik = secimEksigi(t, mal, q, adet, esya);
+  if (eksik) return hata(eksik);
+  const p = kaliteliCikar(t, mal, adet, q, esya)!;
   if (!s) {
     s = { n: ++t.n, m: mal, q, p: [], f: fiyat as number };
     t.r.push(s);
@@ -56,18 +58,26 @@ export function rafaKoy(t: Tezgah, mal: MalId, q: Kalite, adet: number, fiyat: u
   return basarili({ satir: s });
 }
 
-/** Raf → depo (kapasite denetimi çağıranda). Satır boşalırsa kalkar. */
-export function raftanAl(t: Tezgah, s: RafSatiri, adet: number): Sonuc<{ partiler: KaliteParti[] }> {
-  const p = partiCikar(s.p, adet);
-  if (!p) return hata("mal_yok");
+/** NPC talebine ve kimliksiz alıma açık adet (adlı eşya hariç: o yalnız kimliğiyle, oyuncuya satılır). */
+export function rafSatilabilir(s: RafSatiri): number {
+  return secilebilirToplam(s.p);
+}
+
+/** Raf → depo (kapasite denetimi çağıranda). Satır boşalırsa kalkar. Adlı eşya yalnız `esya` kimliğiyle. */
+export function raftanAl(t: Tezgah, s: RafSatiri, adet: number, esya?: string): Sonuc<{ partiler: KaliteParti[] }> {
+  const p = partiCikar(s.p, adet, esya);
+  if (!p) return hata(esya === undefined && rafAdedi(s) >= adet ? "esya_kilitli" : "mal_yok");
   kaliteliEkle(t, s.m, p);
   if (rafAdedi(s) === 0) t.r = t.r.filter((x) => x !== s);
   return basarili({ partiler: p });
 }
 
-/** Satırdan satış (oyuncu ya da NPC): çıkan partiler döner; satır boşalırsa kalkar. */
-export function raftanSat(t: Tezgah, s: RafSatiri, adet: number): KaliteParti[] | null {
-  const p = partiCikar(s.p, adet);
+/**
+ * Satırdan satış (oyuncu ya da NPC): çıkan partiler döner; satır boşalırsa kalkar. Adlı eşya NPC'ye hiç gitmez;
+ * oyuncu onu yalnız `esya` kimliğiyle alır.
+ */
+export function raftanSat(t: Tezgah, s: RafSatiri, adet: number, esya?: string): KaliteParti[] | null {
+  const p = partiCikar(s.p, adet, esya);
   if (!p) return null;
   if (rafAdedi(s) === 0) t.r = t.r.filter((x) => x !== s);
   return p;
@@ -88,5 +98,15 @@ export function satirGorunumu(s: RafSatiri, itibar?: number) {
     adil: adil(s.m, s.q),
     ...(yapan ? { yapan } : {}),
     ...(itibar !== undefined ? { cekicilik: cekicilik(s.m, s.q, s.f, itibar) } : {}),
+    ...rafEsyaAlanlari(s),
   };
+}
+
+/**
+ * Satırdaki adlı eşyaların herkese açık görünümü (lakap, kademe, hüner, usta, atölye; yadigâr geçmişi yok) ve
+ * kimliksiz alınabilen adet. Satırda adlı eşya yoksa alan eklenmez.
+ */
+export function rafEsyaAlanlari(s: RafSatiri): { esyalar?: ReturnType<typeof esyaKamuGorunumu>[]; satilabilir?: number } {
+  const esyalar = s.p.filter((p) => p[4]).map((p) => esyaKamuGorunumu(s.m, p[0], p[4]!));
+  return esyalar.length ? { esyalar, satilabilir: rafSatilabilir(s) } : {};
 }

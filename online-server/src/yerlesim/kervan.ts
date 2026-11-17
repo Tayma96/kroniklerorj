@@ -27,6 +27,7 @@ import { hizmetAcik } from "./beceri-etki.ts";
 import { olduMu } from "./hanedan.ts";
 import { takatHarca, takatTazele } from "./karakter.ts";
 import { loncaTablosu, oyuncuSayaci, type LoncaSatiri } from "./lonca.ts";
+import { esyaKilidi } from "./kalite.ts";
 import { envanterEkle, npcFiyat, satisDegeri, stogaEkle, type KasabaStogu } from "./npc-taban.ts";
 import { KITLIK_KOTASI, npcSatisKotasi } from "./pazar.ts";
 import type { CalismaParametreleri, Dokum, Karakter, Kasaba } from "./tipler.ts";
@@ -237,6 +238,11 @@ export function ilkKervanEngeli(k: Record<KervanKapisi, boolean | null>): HataKo
 export function kervanCikar(d: KervanDefteri, kar: Karakter, hedef: string, yuk: Yuk, ay: number, islem: string, an: number, aylikTavan = KERVAN_AYLIK): Sonuc<CikisKaydi> {
   const engel = ilkKervanEngeli(kervanKapilari(d, kar, ay, hedef, yuk, aylikTavan));
   if (engel) return hata(engel);
+  const ihtiyac: Partial<Record<string, number>> = { ...yuk };
+  ihtiyac.nal = (ihtiyac.nal ?? 0) + KERVAN_NAL;
+  ihtiyac.kosum = (ihtiyac.kosum ?? 0) + KERVAN_KOSUM;
+  const kilit = esyaKilidi(kar, ihtiyac);
+  if (kilit) return hata(kilit);
   if (!takatHarca(kar, ay, KERVAN_TAKAT)) return hata("takat_yok");
   for (const [m, n] of Object.entries(yuk) as [MalId, number][]) envanterEkle(kar, m, -n);
   envanterEkle(kar, "nal", -KERVAN_NAL);

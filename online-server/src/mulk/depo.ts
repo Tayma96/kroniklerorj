@@ -5,7 +5,7 @@
 
 import type { MalId } from "../icerik/mallar.ts";
 import type { MeslekId } from "../icerik/meslekler.ts";
-import { KALITELER, kaliteliCikar, kaliteliEkle, kaliteAdedi, kaliteMi, partiEsMi, partiParca, type Envanterli, type Kalite, type KaliteParti } from "../yerlesim/kalite.ts";
+import { KALITELER, hepsiniTasi, kaliteliCikar, kaliteliEkle, kaliteAdedi, kaliteMi, partiEsMi, secilebilirAdet, partiParca, type Envanterli, type Kalite, type KaliteParti } from "../yerlesim/kalite.ts";
 import { basarili, hata, type Sonuc } from "../tipler.ts";
 import { DEPO_KAPASITE, DEPO_TASIMA_EN_COK, rafMaliMi } from "./tezgah-kurallar.ts";
 
@@ -91,13 +91,25 @@ export function partiBirlestir(liste: KaliteParti[], gelen: readonly KaliteParti
   }
 }
 
-/** Partilerden `adet` çıkarır (sondan başa); çıkanları döner. Yetmezse null, hiçbir şey değişmez. */
-export function partiCikar(liste: KaliteParti[], adet: number): KaliteParti[] | null {
-  if (!(adet > 0) || partiToplam(liste) < adet) return null;
+/** Seçilebilir parti mi: adlı eşya yalnız kimliğiyle, kimlik verildiyse yalnız o eşya. */
+const secilir = (p: KaliteParti, esyaId?: string): boolean => (esyaId === undefined ? !p[4] : p[4]?.i === esyaId);
+
+/** Kimliksiz seçilebilen (adlı eşya hariç) ya da verilen eşyanın adedi. */
+export function secilebilirToplam(liste: readonly KaliteParti[], esyaId?: string): number {
+  return liste.filter((p) => secilir(p, esyaId)).reduce((a, x) => a + x[1], 0);
+}
+
+/**
+ * Partilerden `adet` çıkarır (sondan başa); çıkanları döner. Adlı eşya yalnız `esyaId` ile ve yalnız o eşya çıkar.
+ * Yetmezse null, hiçbir şey değişmez.
+ */
+export function partiCikar(liste: KaliteParti[], adet: number, esyaId?: string): KaliteParti[] | null {
+  if (!(adet > 0) || secilebilirToplam(liste, esyaId) < adet) return null;
   const cikan: KaliteParti[] = [];
   let kalan = adet;
   for (let i = liste.length - 1; i >= 0 && kalan > 0; i--) {
     const p = liste[i]!;
+    if (!secilir(p, esyaId)) continue;
     const d = Math.min(kalan, p[1]);
     p[1] -= d;
     kalan -= d;
@@ -111,9 +123,17 @@ export interface TasimaGirdisi {
   mal: MalId;
   q: Kalite;
   adet: number;
+  /** Adlı eşyanın kimliği (efsanevi/tılsımlı yalnız bununla seçilir; verilirse adet 1). */
+  esya?: string;
 }
 
-/** Gövdeden {mal, kalite?, adet} çözer. */
+/** Gövdedeki isteğe bağlı `esya` kimliği (geçersizse null; yoksa undefined). */
+export function esyaKimligiCoz(ham: unknown): string | undefined | null {
+  if (ham === undefined || ham === null) return undefined;
+  return typeof ham === "string" && /^e[0-9a-z]{1,16}$/.test(ham) ? ham : null;
+}
+
+/** Gövdeden {mal, kalite?, adet, esya?} çözer. */
 export function tasimaCoz(g: Record<string, unknown>, malBul: (v: unknown) => MalId | undefined, herMal = false): Sonuc<TasimaGirdisi> {
   const mal = malBul(g.mal);
   // Atölye deposu tabanı 0 olan zanaat mallarını da (kâtip: mürekkep, senet) taşır; su hiçbir depoya girmez.
@@ -122,22 +142,32 @@ export function tasimaCoz(g: Record<string, unknown>, malBul: (v: unknown) => Ma
   if (!kaliteMi(q)) return hata("kalite_gecersiz");
   const adet = g.adet;
   if (!Number.isInteger(adet) || (adet as number) < 1 || (adet as number) > DEPO_TASIMA_EN_COK) return hata("adet_gecersiz");
-  return basarili({ mal, q: q as Kalite, adet: adet as number });
+  const esya = esyaKimligiCoz(g.esya);
+  if (esya === null || (esya !== undefined && adet !== 1)) return hata("adet_gecersiz");
+  return basarili({ mal, q: q as Kalite, adet: adet as number, ...(esya ? { esya } : {}) });
+}
+
+/** Seçimin eksik nedeni: adlı eşya yüzünden yetmiyorsa esya_kilitli, yoksa mal_yok. */
+export function secimEksigi(k: Envanterli, mal: string, q: Kalite, adet: number, esya?: string): "mal_yok" | "esya_kilitli" | null {
+  if (secilebilirAdet(k, mal, q, esya) >= adet) return null;
+  return esya === undefined && kaliteAdedi(k, mal, q) >= adet ? "esya_kilitli" : "mal_yok";
 }
 
 /** Envanter → depo (kapasite denetimli). Kaynak ve depo aynı yazımdadır. */
 export function depoyaKoy(kaynak: Envanterli, t: Tezgah, g: TasimaGirdisi, kapasite: number): Sonuc<{ partiler: KaliteParti[] }> {
-  if (kaliteAdedi(kaynak, g.mal, g.q) < g.adet) return hata("mal_yok");
+  const eksik = secimEksigi(kaynak, g.mal, g.q, g.adet, g.esya);
+  if (eksik) return hata(eksik);
   if (depoAdedi(t) + g.adet > kapasite) return hata("depo_dolu");
-  const p = kaliteliCikar(kaynak, g.mal, g.adet, g.q)!;
+  const p = kaliteliCikar(kaynak, g.mal, g.adet, g.q, g.esya)!;
   kaliteliEkle(t, g.mal, p);
   return basarili({ partiler: p });
 }
 
 /** Depo → envanter. */
 export function depodanAl(hedef: Envanterli, t: Tezgah, g: TasimaGirdisi): Sonuc<{ partiler: KaliteParti[] }> {
-  if (kaliteAdedi(t, g.mal, g.q) < g.adet) return hata("mal_yok");
-  const p = kaliteliCikar(t, g.mal, g.adet, g.q)!;
+  const eksik = secimEksigi(t, g.mal, g.q, g.adet, g.esya);
+  if (eksik) return hata(eksik);
+  const p = kaliteliCikar(t, g.mal, g.adet, g.q, g.esya)!;
   kaliteliEkle(hedef, g.mal, p);
   return basarili({ partiler: p });
 }
@@ -150,18 +180,8 @@ export function tezgahBosalt(t: Tezgah, hedef: Envanterli): number {
     n += partiToplam(s.p);
   }
   t.r = [];
-  for (const [mal, adet] of Object.entries(t.ev ?? {})) {
-    for (const q of [...KALITELER].reverse()) {
-      const d = kaliteAdedi(t, mal, q);
-      if (d <= 0) continue;
-      const p = kaliteliCikar(t, mal as MalId, d, q);
-      if (p) {
-        kaliteliEkle(hedef, mal as MalId, p);
-        n += d;
-      }
-    }
-    void adet;
-  }
+  // Her mal bütünüyle (izsiz, izli ve adlı eşya) taşınır: hiçbir parti silinmez.
+  for (const mal of Object.keys(t.ev ?? {})) n += hepsiniTasi(t, hedef, mal as MalId);
   delete t.ev;
   delete t.kq;
   return n;

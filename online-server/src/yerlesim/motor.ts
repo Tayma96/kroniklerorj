@@ -122,6 +122,7 @@ import type { KervanDefteri } from "./kervan.ts";
 import { istekBul, istekYaz } from "./istek-defteri.ts";
 import { ucgenDonumu, ucgenGorunumu, ucgenIslem, ucgenOkumaYuklenecek, ucgenYuklenecek } from "./ucgen.ts";
 import { kronikEkle } from "./kronik.ts";
+import { esyaSayaci } from "./esya-kayit.ts";
 import { EMANET_ARSIV_EN_COK, EMANET_BEDELI, emanetCikar, emanetDokumu, emanetEkle, emanetGeriYaz, emanetIslemiMi, emanetPaketiGecerli } from "./goc-emanet.ts";
 import {
   GOC_MISAFIRHANE_SAAT,
@@ -575,6 +576,8 @@ export class YerlesimMotoru {
       son12Ay: { gelir: akis.gelir, gider: akis.gider, net: akis.gelir - akis.gider },
       kasabaStokAdet: stokAdet,
       acikSiparis: k.sp?.filter((s) => s.durum === "acik").length ?? 0,
+      // Eşya kademeleri (Dilim 4): yerleşimde çıkan efsanevi ve tılsımlı sayısı (denge izlemesi).
+      esya: esyaSayaci(k),
     });
   }
 
@@ -1577,13 +1580,21 @@ export class YerlesimMotoru {
     });
   }
 
-  /** Künye (oyuncu numarası sayfası): hesabın güncel karakterinin yalnız herkese açık alanları (src/kunye/gorunum.ts). */
-  async kunye(hedefHesap: string, dilHam: unknown): Promise<Sonuc<KunyeGorunumu>> {
+  /**
+   * Künye (oyuncu numarası sayfası): hesabın güncel karakterinin yalnız herkese açık alanları (src/kunye/gorunum.ts).
+   * Salt okur (YerlesimDO hafif yolu: ay yetiştirilmez, alarm kurulmaz). Çevrimiçi `durum` yalnız kişinin kendisine
+   * ve aynı yerleşimde onu tanıdık/dost işaretlemiş kişinin tanıdığına döner (`izleyen` hesabı); diğerlerinde alan yok.
+   */
+  async kunye(hedefHesap: string, dilHam: unknown, simdi = this.#simdi, izleyen?: string): Promise<Sonuc<KunyeGorunumu>> {
     const s = this.kasaba.sakin.find((x) => x.h === hedefHesap);
     if (!s) return hata("kisi_yok");
     await this.#yukle([s.o]);
     const kar = this.kasaba.kar.get(s.o);
-    return kar ? basarili(kunyeGorunumu(this.kasaba, kar, this.#simdi, dilCoz(dilHam))) : hata("kisi_yok");
+    if (!kar) return hata("kisi_yok");
+    const iz = izleyen === undefined ? undefined : this.kasaba.sakin.find((x) => x.h === izleyen);
+    const isaret = iz ? kar.tn[iz.o] : undefined;
+    const durumGorur = izleyen === hedefHesap || isaret === "tanidik" || isaret === "dost";
+    return basarili(kunyeGorunumu(this.kasaba, kar, simdi, dilCoz(dilHam), durumGorur));
   }
 
   async engeller(hesapId: string, han = 1): Promise<Sonuc<{ engeller: string[]; mudavim: boolean; ozan: boolean; kisi: string; nam?: number }>> {

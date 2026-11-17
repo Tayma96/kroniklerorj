@@ -11,6 +11,7 @@ import { basarili, hata, type Sonuc } from "../tipler.ts";
 import { halDegistir } from "./hal.ts";
 import { namEkle, takatHarca } from "./karakter.ts";
 import { mesrepNam } from "./mesrep.ts";
+import { esyaKilidi } from "./kalite.ts";
 import { envanterEkle } from "./npc-taban.ts";
 import { KATKI_MALLARI } from "./ortak-dert.ts";
 import { gostergeDegistir, toplulukAl } from "./topluluk-kayit.ts";
@@ -127,6 +128,8 @@ export function senlikKatki(k: Kasaba, kar: Karakter, govde: Record<string, unkn
     adet = typeof govde.adet === "number" && Number.isInteger(govde.adet) ? govde.adet : 0;
     if (!mal || !liste.includes(mal) || adet < 1 || adet > SENLIK_ADET_EN_COK) return hata("katki_gecersiz");
     if ((kar.ev?.[mal] ?? 0) < adet) return hata("mal_yok");
+    const kilit = esyaKilidi(kar, { [mal]: adet });
+    if (kilit) return hata(kilit);
   }
   if (!takatHarca(kar, ay, SENLIK_TAKAT)) return hata("takat_yok");
   if (mal) envanterEkle(kar, mal, -adet);

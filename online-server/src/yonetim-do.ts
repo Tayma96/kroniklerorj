@@ -79,7 +79,7 @@ export class YonetimDO {
       siyasiKimlikOku: (hesapId, yerlesim) => yerlesimCagir<SiyasiKimlik>(env, { islem: "siyasetKimlik", yerlesim, hesapId }),
       telafiYaz: (yerlesim, hedef, govde) => yerlesimCagir(env, { islem: "yonetimTelafi", yerlesim, hesapId: hedef, govde }),
       ekonomiOku: async () => {
-        type Satir = { yerlesim: string; oyuncuSayisi: number; npcSayisi: number; toplamAkce: number; bakiyeler: number[]; ortalamaAkce: number; medyanAkce: number; enDusukAkce: number; enYuksekAkce: number; son12Ay: { gelir: number; gider: number; net: number }; kasabaStokAdet: number; acikSiparis: number };
+        type Satir = { yerlesim: string; oyuncuSayisi: number; npcSayisi: number; toplamAkce: number; bakiyeler: number[]; ortalamaAkce: number; medyanAkce: number; enDusukAkce: number; enYuksekAkce: number; son12Ay: { gelir: number; gider: number; net: number }; kasabaStokAdet: number; acikSiparis: number; esya?: { efsanevi: number; tilsimli: number } };
         const sonuclar = await Promise.all(YERLESIMLER.map(async (y) => {
           try { return await yerlesimCagir<Satir>(env, { islem: "ekonomiSagligi", yerlesim: y.id }); }
           catch { return null; }
@@ -100,7 +100,9 @@ export class YonetimDO {
           toplamAkce: r.toplamAkce, ortalamaAkce: r.ortalamaAkce, medyanAkce: r.medyanAkce,
           enDusukAkce: r.enDusukAkce, enYuksekAkce: r.enYuksekAkce, son12Ay: r.son12Ay,
           kasabaStokAdet: r.kasabaStokAdet, acikSiparis: r.acikSiparis,
+          esya: r.esya ?? { efsanevi: 0, tilsimli: 0 },
         }));
+        const esya = { efsanevi: satirlar.reduce((s, r) => s + (r.esya?.efsanevi ?? 0), 0), tilsimli: satirlar.reduce((s, r) => s + (r.esya?.tilsimli ?? 0), 0) };
         return basarili({
           yerlesimler: yerlesimler.sort((a, b) => a.ad.localeCompare(b.ad, "tr")),
           eksikYerlesim: YERLESIMLER.length - satirlar.length,
@@ -110,6 +112,7 @@ export class YonetimDO {
             medyanAkce, enDusukAkce: bakiyeler[0] ?? 0, enYuksekAkce: bakiyeler.at(-1) ?? 0,
             kasabaStokAdet: topla("kasabaStokAdet"), acikSiparis: topla("acikSiparis"),
             son12Ay: { gelir, gider, net: gelir - gider },
+            esya,
           },
         });
       },

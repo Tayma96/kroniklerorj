@@ -61,3 +61,32 @@ Eski kayıtlarda 0–3 gelir; ek alan yoksa olağan.
 ## 5. Süzgeç (metinde söylenecek)
 Parayla kademe/hüner/şans alınmaz; efsanevi denemesi ayda bir, yeniden zar yok; adlı eşya kırılmaz (alet
 yıpranmaz), mirasla varise geçer; başkasının envanteri görünmez.
+
+## 6. Denetim sonrası protokol ekleri (17 Kasım)
+- **Yeni hata `esya_kilitli` (409):** kimliksiz düşüş (tarif girdisi, NPC'ye satış, kervan, sipariş, şenlik, ortak dert,
+  teklif/hediye/senet, hizmet hazırlama, depo genişletme, toplu sipariş; pazar/raf/ısmarlama/taşıma kalite seçiminde)
+  yalnız adlı eşyaya (efsanevi/tılsımlı) dokunarak yetecekse reddedilir; hiçbir şey değişmez. Metin: "Adlı eşyan bu
+  işe kendiliğinden verilmez; onu ayrıca seç." Adlı eşya yalnız kimliğiyle harcanır/taşınır.
+- **İsteğe bağlı `esya` (eşya kimliği, `e…`; verilirse `adet: 1` ve `kalite` açık) şu gövdelere eklendi:**
+  `POST /v1/pazar/ilan` (tur sat), `POST /v1/pazar/islem` (alım ilanına teslim), `POST /v1/ismarlama/cevap` (teslim;
+  ısmarlama adedi 1), işletme raf `{islem: koy|al}`, `satinal`, depo taşıma, `POST /v1/barinma/sandik`. Verilmezse adlı
+  eşya hiç seçilmez. Raftaki adlı eşya NPC'ye satılmaz; oyuncu `satinal {satir, adet:1, esya}` ile alır.
+- **İlan, raf satırı ve fiyat tablosu:** satırda adlı eşya varsa `esyalar[]` (herkese açık: `id, lakap, kademe, kalite,
+  usta, atolye, hunerler, yapim, ozellik`; yadigâr geçmişi YOK, o yalnız sahibinin envanterinde) ve rafta
+  `satilabilir` (kimliksiz alınabilen adet). Alıcı kartı satın almadan açar.
+- **`ozellik` yeni biçim (gösterilen = gerçek):** `etkiler[]` her biri `{id, bagli}`; `bagli:true` olanda gerçek değer:
+  alet `verim` → `{deger, birim:"adet"}` (+N çıktı, kişisel üretim ve temel işte; atölye emrinde verim yok), alet `omur`
+  → `{deger, birim:"kullanim"}` ya da `{yipranmaz:true}`. `bagli:false` → "yakında". Yeni `hunerDokumu[{id, bagli}]`
+  (alet: `yipranmaz`, `bereketli` (+1 çıktı) bağlı; `cabukEl` ve diğer ailelerin hünerleri bağlı değil). **`carpan`
+  alanları kaldırıldı** (hiçbir oyun mantığı okumuyordu; "×3" yazma). `bagli` (üst) = en az bir bağlı etki/hüner var.
+- **Yıpranmazlık hünere bağlı:** "yipranmaz" hünerli alet (nadide alet ve her adlı alet) hiç aşınmaz; araç
+  aşınmasında `arac.yipranmaz: true`. Adlı alet her zaman bağlı hünerle çıkar (efsanevi: yıpranmaz; tılsımlı:
+  yıpranmaz + bereketli). Adlı eşya hiçbir yoldan sessizce yok olmaz.
+- **Şans dökümü:** `uretim.efsanevi.sansDokumu = {yuzde, bant, kalemler[{k, d}], esik, puanBasina, tavan, tilsimBinde}`;
+  kalemler `efsanevi.taban`, `efsanevi.puan`, `efsanevi.tavan` (eksi). Artık yüzde gösterilir; bant etiket olarak
+  kalır (zayıf < 12, makul < 17, güçlü ≥ 17). Oranlar: taban %10, puan başına %0,5, tavan %20, tılsımlı binde 15.
+- **Usta nadide zarı:** `uretim.kalite.ustaNadide = {yuzde: 20, tuttu} | null` (pir olmayanın puanı nadideye yettiğinde).
+- **Göç:** efsanevi hakkı göçle yeniden açılmaz (aynı ay ikinci deneme `efsanevi_hak_yok`).
+- **Yönetici:** `GET /yonetim/ekonomi` yerleşim satırlarında ve `toplam`da `esya: {efsanevi, tilsimli}`.
+- **Sır:** zar tohumu Worker sırrı `ZAR_SIRRI` ile HMAC'lenir (en az 16 karakter; `wrangler secret put ZAR_SIRRI`).
+  İstemciyi etkilemez.

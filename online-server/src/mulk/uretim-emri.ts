@@ -7,7 +7,8 @@
 import { MALLAR, type MalId } from "../icerik/mallar.ts";
 import { tarifBul, type Tarif } from "../icerik/tarifler.ts";
 import { kaliteBecerisi, ALET_OMRU } from "../yerlesim/tarif.ts";
-import { ALET_KALITE_OMUR, KALITE_EFSANEVI, enIyiKalite, kaliteliCikar, kaliteliEkle, urunKalitesi, type Kalite } from "../yerlesim/kalite.ts";
+import { KALITE_EFSANEVI, enIyiKalite, kaliteliCikar, kaliteliEkle, serbestAdet, urunKalitesi, type Kalite } from "../yerlesim/kalite.ts";
+import { eldekiAletEtkisi } from "../yerlesim/esya.ts";
 import { tohumlu } from "../yerlesim/rastgele.ts";
 import type { Karakter } from "../yerlesim/tipler.ts";
 import { basarili, hata, type Sonuc } from "../tipler.ts";
@@ -88,14 +89,16 @@ export interface UretimSonucu {
 
 /** Depodaki aletin etkin ömrü (temel ömür + aletin kalitesi; atölyede kişisel beceri ömrü yok). */
 function depoAletOmru(t: Tezgah, mal: MalId): number {
-  return (MALLAR[mal].omur ?? ALET_OMRU) + (ALET_KALITE_OMUR[enIyiKalite(t as unknown as Karakter, mal)] ?? 0);
+  return (MALLAR[mal].omur ?? ALET_OMRU) + eldekiAletEtkisi(t, mal).omur;
 }
 
-/** Depodaki aleti bir kullanım aşındırır; ömür dolunca en iyi kalitedeki bir alet tükenir. */
+/**
+ * Depodaki aleti bir kullanım aşındırır; ömür dolunca en iyi kalitedeki bir alet tükenir. "yipranmaz" hünerli alet
+ * (nadide ve adlı alet) aşınmaz; adlı eşya bu yoldan hiç yok olmaz (tarif.ts aracAsindir ile aynı kural).
+ */
 export function depoAletAsindir(t: Tezgah, mal: MalId): void {
-  const q = enIyiKalite(t as unknown as Karakter, mal);
-  // Adlı eşya (efsanevi/tılsımlı alet) yıpranmaz: kırılıp yok olmaz (§9 süzgeci).
-  if (q >= KALITE_EFSANEVI) return;
+  const { q, yipranmaz } = eldekiAletEtkisi(t, mal);
+  if (yipranmaz) return;
   const omur = depoAletOmru(t, mal);
   const as = (t.as ??= {});
   const n = (as[mal] ?? 0) + 1;
@@ -109,7 +112,8 @@ export function depoAletAsindir(t: Tezgah, mal: MalId): void {
 /** Tek yapımın engeli (yoksa null): emek, girdi, araç, depo kapasitesi. */
 function engel(t: Tezgah, tr: Tarif, emek: number, kapasite: number): BeklemeNedeni | null {
   if (emek < tr.takat) return "emek_yok";
-  for (const [m, n] of Object.entries(tr.girdi)) if ((t.ev?.[m] ?? 0) < (n ?? 0)) return "girdi_yok";
+  // Adlı eşya (efsanevi/tılsımlı) emir girdisi olmaz: yalnız kimliksiz adet sayılır (emir bekler, eşya yanmaz).
+  for (const [m, n] of Object.entries(tr.girdi)) if (serbestAdet(t, m) < (n ?? 0)) return "girdi_yok";
   const aracVar = !!tr.arac && (t.ev?.[tr.arac.mal] ?? 0) > 0;
   if (tr.arac?.zorunlu && !aracVar) return "arac_yok";
   const giren = Object.values(tr.girdi).reduce((a, n) => a + (n ?? 0), 0);

@@ -14,6 +14,7 @@ import { AYLIK_GORUS_TAVANI, iliskiAl } from "./eylem.ts";
 import { GONUL_SIPARIS, halDegistir } from "./hal.ts";
 import { loncaTablosu, NPC_YETISKIN, oyuncuSayaci, type LoncaDurumu } from "./lonca.ts";
 import { hizmetEkle } from "./meslek.ts";
+import { esyaKilidi } from "./kalite.ts";
 import { envanterEkle, malMeslegindeMi, satisDegeri } from "./npc-taban.ts";
 import { npcAdi, npcKimlik, npcRef, oyuncuRef, yas } from "./ortak.ts";
 import { agirlikliSec, aralik, dizinSec, tohumlu } from "./rastgele.ts";
@@ -183,6 +184,8 @@ export function siparisTeslim(
   if (s.durum !== "acik" || ay >= s.son) return hata("siparis_kapandi");
   if (!malMeslegindeMi(kar, s.mal)) return hata("meslek_yok");
   if ((kar.ev?.[s.mal] ?? 0) < s.adet) return hata("mal_yok");
+  const kilit = esyaKilidi(kar, { [s.mal]: s.adet });
+  if (kilit) return hata(kilit);
   envanterEkle(kar, s.mal, -s.adet);
   kar.pa += s.odul;
   s.durum = "teslim";

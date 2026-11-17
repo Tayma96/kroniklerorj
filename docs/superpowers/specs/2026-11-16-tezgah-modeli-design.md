@@ -214,3 +214,9 @@ Yön (yönetici önerisi; uygulamadan önce kod dökümü ve denge denetimi gere
   üretimle artırılamaz; zar sunucuda tohumlu ve tekrar güvenlidir. Gerçek parayla şans artırılamaz, satın alınamaz.
 - Her tılsımlı eşya tektir ve adlıdır; çıktığında beylik genelinde kroniğe ve söylentiye düşer, hanedan yadigârı olur.
 - Sunucuda kaç tane çıktığı yönetici panelinde sayılır (beklenen: 1000 pirde ayda birkaç tane).
+- **Oranlar (denge denetimi sonrası, 17 Kasım; `esya.ts` [PARAMETRE], sim testiyle kilitli):** efsanevi şansı =
+  taban %10 + nadide eşiğinin üstündeki her puan için %0,5 (aşağı yuvarlanır), tavan **%20**; başarılı denemede
+  tılsımlı **binde 15**. Ayda bir deneme ve deneme yalnız nadide çıkan işte harcandığından en iyi şansla 1000 pirde
+  ayda ≈200 efsanevi, ≈3 tılsımlı ("birkaç"). Usta (pir değil) nadideye puanı yetse de %20 ikinci zarla ulaşır.
+  Yüzde ve kalemleri oyuncuya dökümle döner (`sansDokumu`); zayıf/makul/güçlü bandı yalnız etikettir. Zar tohumu
+  `ZAR_SIRRI` ortam sırrıyla HMAC'lidir (istemci önceden hesaplayamaz); hak sayacı göçle sıfırlanmaz.

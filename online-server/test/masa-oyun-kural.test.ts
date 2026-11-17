@@ -17,9 +17,11 @@ import {
   oyunGorunumu,
   oyunHamle,
   oyunKatil,
+  oyunMesgul,
   oyunPas,
   oyunuYenidenOyna,
   taahhutHesapla,
+  terkEdilmis,
   type MasaOyunu,
 } from "../src/han/oyun/cati.ts";
 import type { Zar } from "../src/yerlesim/rastgele.ts";
@@ -222,6 +224,30 @@ test("Çatı: açma/katılma/başlatma kapıları; kurucu giderse sıradaki kuru
   assert.equal(hataOf(oyunKatil(b, "c", "C")), "oyun_basladi");
 });
 
+test("Çatı: bekleme kilitlenmez — sabır geçince bekleyen biri devralıp başlatır ya da dağıtır; terk/bayat oyun masayı meşgul etmez", async () => {
+  const o = ok(oyunKatil(bekleme("canak", ["a"]), "b", "B")).oyun;
+  const sonra = T0 + OYUN_KOPMA_SABRI_MS;
+  // Sabırdan önce yalnız kurucu.
+  assert.equal(hataOf(oyunBaslat(o, "b", "x", "y", Z, T0 + 1000)), "yetki_yok");
+  assert.equal(hataOf(oyunDagit(o, "b", T0 + 1000)), "yetki_yok");
+  assert.equal(oyunGorunumu(o, "b", T0 + 1000).devralAcik, false);
+  assert.equal(oyunMesgul(o, T0 + 1000), true);
+  // Sabır geçti: bekleyen biri başlatır ve kurucu olur; bekleme listesinde olmayan başlatamaz.
+  assert.equal(oyunGorunumu(o, "b", sonra).devralAcik, true);
+  assert.equal(hataOf(oyunBaslat(o, "c", "x", "y", Z, sonra)), "yetki_yok");
+  const bas = ok(oyunBaslat(o, "b", "x", "y", Z, sonra));
+  assert.deepEqual([bas.asama, bas.kurucu], ["oyun", "b"]);
+  assert.equal(ok(oyunDagit(o, "b", sonra)).oyun, undefined, "bekleyen bayat beklemeyi dağıtır");
+  assert.equal(oyunMesgul(o, sonra), false, "bayat bekleme sahneyi kilitlemez");
+  // Terk edilmiş oyun: meşgul değil, yeni oyun açılabilir.
+  const b = await baslamis();
+  const terk = oyunDenetle(b, new Set(), new Set(), T0).oyun!;
+  assert.equal(oyunMesgul(terk, T0 + 1000), true, "sabır dolmadan meşgul");
+  assert.equal(terkEdilmis(terk, sonra), true);
+  assert.equal(oyunMesgul(terk, sonra), false);
+  assert.ok(oyunAc(terk, "canak", "c", "C", sonra).ok);
+});
+
 test("Çatı: hamle numarası tekrar güvenli (eski n etkisiz), ileri n reddedilir; oyuncu olmayan oynayamaz", async () => {
   const o = await baslamis();
   assert.equal(hataOf(oyunHamle(o, "c", 0, { tut: true }, Z)), "oyuncu_degil");
@@ -284,7 +310,7 @@ test("Çatı: görünüm izin listesi — gizli zar yalnız sahibine; seyirci a�
   assert.deepEqual(ga.ben?.zarlarim, d.zarlar[0]);
   assert.deepEqual(gb.ben?.zarlarim, d.zarlar[1]);
   assert.equal(gs.ben, undefined);
-  const IZIN = ["id", "tur", "asama", "kurucu", "enAz", "enCok", "oyuncular", "n", "sira", "taahhut", "durum", "ben", "dagit", "pasAcik", "sabir"];
+  const IZIN = ["id", "tur", "asama", "kurucu", "enAz", "enCok", "oyuncular", "n", "sira", "taahhut", "durum", "ben", "dagit", "pasAcik", "devralAcik", "sabir"];
   for (const g of [ga, gb, gs]) {
     for (const k of Object.keys(g)) assert.ok(IZIN.includes(k), `beklenmeyen alan ${k}`);
     assert.deepEqual(Object.keys(g.durum!).sort(), ["acan", "cikti", "el", "elEnCok", "gecmis", "hedef", "kazanc", "yeniledi"]);

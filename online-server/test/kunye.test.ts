@@ -2,9 +2,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { bellekDepo, type BellekDepo } from "../src/depo.ts";
-import { ARAMA_SAYFA, adAra, imlecOku, numaraAdTazele, numaraAl, numaraBul, numaraCoz, numaraUret, type Listeleyici } from "../src/kunye/numara.ts";
-import { KUNYE_ALANLARI, durumKovasi, kunyeGorunumu } from "../src/kunye/gorunum.ts";
-import { AD_ARAMA_EN_AZ, ARAMA_GUNLUK_SINIRI, NUMARA_ISKA_GUNLUK, SAYFA_ALANLARI, SONUC_ALANLARI, benimNumaram, oyuncuAra, oyuncuSayfasi, type KunyeBaglami } from "../src/kunye/hesap.ts";
+import { ARAMA_SAYFA, adAra, hesapEngelliMi, hesapEngelYaz, imlecOku, numaraAdTazele, numaraAl, numaraBul, numaraCoz, numaraUret, type Listeleyici } from "../src/kunye/numara.ts";
+import { KUNYE_ALANLARI, KUNYE_KOSULLU, durumKovasi, kunyeGorunumu } from "../src/kunye/gorunum.ts";
+import { AD_ARAMA_EN_AZ, AD_ARAMA_SAYFA_GUNLUK, ARAMA_GUNLUK_SINIRI, NUMARA_ISKA_GUNLUK, SAYFA_ALANLARI, SONUC_ALANLARI, benimNumaram, oyuncuAra, oyuncuSayfasi, type KunyeBaglami } from "../src/kunye/hesap.ts";
 import { PROFIL_ANAHTARI } from "../src/mantik.ts";
 import { devirHesapla, devirUygula } from "../src/yerlesim/devir.ts";
 import { oyuncuOlumu } from "../src/yerlesim/yaslilik.ts";
@@ -176,8 +176,8 @@ function baglam(dunyaDepo: BellekDepo, hesapId: string, ayar: { engel?: string[]
   const dunya = async (i: DunyaIleti): Promise<Sonuc<unknown>> => {
     cagrilar.push(i.islem);
     if (i.islem === "numaraAl") return numaraAl(dunyaDepo, i.hesapId, sirali(hesapId.length * 31 + 7));
-    if (i.islem === "numaraBul") return numaraBul(dunyaDepo, i.numara);
-    if (i.islem === "adAra") return adAra(dunyaDepo, listeleyici(dunyaDepo), i.onek, i.imlec);
+    if (i.islem === "numaraBul") return numaraBul(dunyaDepo, i.numara, i.arayan);
+    if (i.islem === "adAra") return adAra(dunyaDepo, listeleyici(dunyaDepo), i.onek, i.imlec, undefined, i.arayan);
     if (i.islem === "numaraAdTazele") return numaraAdTazele(dunyaDepo, i.hesapId, i.ad);
     return hata("gecersiz_istek");
   };
@@ -285,4 +285,40 @@ test("oyuncu sayfası: alanlar izin listesiyle birebir, özel veri yok, engelde 
   const bul = await numaraBul(dd, String(hedef.numara));
   assert.ok(bul.ok);
   assert.equal(bul.deger.ad, "Kerem Oğlu Ali");
+});
+
+test("hesap düzeyinde engel: başka yerleşimde de iki yönde arama ve sayfa kapanır; kaldırınca açılır", async () => {
+  const dd = bellekDepo();
+  const uzak = await oyuncuKur(dd, "hesap-uzak", "Zeynep Hatun", "misis");
+  const { b, depo, cagrilar } = baglam(dd, "hesap-bakan");
+  await depo.koy({ [PROFIL_ANAHTARI]: profil("hesap-bakan", "Bakan") });
+  // Uzak oyuncu bakanı engellemiş (göçten önce aynı yerleşimdeydiler): yerleşim engeli sorulmadan süzülür.
+  assert.deepEqual(await hesapEngelYaz(dd, "hesap-uzak", "hesap-bakan", false), basarili({ engelli: true }));
+  assert.deepEqual(await hesapEngelYaz(dd, "hesap-uzak", "hesap-bakan", false), basarili({ engelli: true }), "tekrar güvenli");
+  assert.equal(await hesapEngelliMi(dd, "hesap-bakan", "hesap-uzak"), true, "iki yönlü");
+  cagrilar.length = 0;
+  assert.deepEqual(await oyuncuSayfasi(b, String(uzak.numara), "tr"), hata("kisi_yok"));
+  assert.deepEqual(await oyuncuAra(b, { ad: "zey" }), basarili({ sonuclar: [], imlec: null }));
+  assert.deepEqual(await oyuncuAra(b, { no: String(uzak.numara) }), basarili({ sonuclar: [], imlec: null }));
+  assert.ok(!cagrilar.includes("engeller"), "yerleşim engeli sorulmadı: hesap düzeyi yeterli");
+  await hesapEngelYaz(dd, "hesap-uzak", "hesap-bakan", true);
+  const s = await oyuncuSayfasi(b, String(uzak.numara), "tr");
+  assert.ok(s.ok);
+  assert.ok(!("durum" in s.deger), "başka yerleşimdeki izleyene durum dönmez");
+});
+
+test("ad araması günlük sayfa tavanı; çevrimiçi durum koşullu alan", async () => {
+  const dd = bellekDepo();
+  const hedef = await oyuncuKur(dd, "hesap-hedef", "Kerem");
+  const { b, depo } = baglam(dd, "hesap-ara");
+  await depo.koy({ [PROFIL_ANAHTARI]: profil("hesap-ara", "Arayan") });
+  assert.equal(AD_ARAMA_SAYFA_GUNLUK, 30);
+  for (let i = 0; i < AD_ARAMA_SAYFA_GUNLUK; i++) assert.ok((await oyuncuAra(b, { ad: "ker" })).ok);
+  assert.deepEqual(await oyuncuAra(b, { ad: "ker" }), hata("arama_siniri"));
+  assert.ok((await oyuncuAra(b, { no: String(hedef.numara) })).ok, "numara araması ad sayfa tavanından bağımsız");
+  const k = testKasabasi("develi", 0);
+  const kar = oyuncuEkle(k, 1);
+  assert.ok(!("durum" in kunyeGorunumu(k, kar, 1000, "tr", false)));
+  assert.ok("durum" in kunyeGorunumu(k, kar, 1000, "tr", true));
+  assert.deepEqual(KUNYE_KOSULLU, ["durum"]);
 });
