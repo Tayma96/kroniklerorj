@@ -76,11 +76,17 @@ type Eylem =
 const ekle = (akis: AkisOgesi[], o: AkisOgesi) => (akis.length >= AKIS_EN_COK ? [...akis.slice(akis.length - AKIS_EN_COK + 1), o] : [...akis, o]);
 const sinirCoz = (v: unknown): number | null => (typeof v === "number" && Number.isInteger(v) && v > 0 ? v : null);
 const hataCoz = (h: string): EkHata => (hataKoduMu(h) || ekHataMi(h) ? h : "gecersiz_istek");
+/** Hamle sırası kimliği: oyun hatası yalnız `id`/`n` değişince temizlenir. */
+const oyunSirasi = (o: OyunGorunumu | null | undefined) => (o ? `${o.id}:${o.n}` : "-");
+/** Kilidi açan ilerleme imzası: sıra, aşama, oyuncu ve dağıtma listesi (katıl/başlat `n`'yi artırmaz).
+ *  Başkalarının "yok" işareti gibi değişiklikler kilidi açmaz. */
+const oyunImzasi = (o: OyunGorunumu | null | undefined) =>
+  (o ? `${oyunSirasi(o)}:${o.asama}:${o.oyuncular.map((x) => x.hesap + (x.cekildi ? "!" : "")).join(",")}:${o.dagit.join(",")}` : "-");
 
 function indirge(d: MasaDurumu, e: Eylem): MasaDurumu {
   switch (e.t) {
     case "sifirla": return BASLANGIC;
-    case "oyunKilit": return { ...d, oyunBekle: e.acik, ...(e.hata ? { oyunHata: { kod: e.hata, id: e.id ?? "" } } : e.acik || e.temizle ? { oyunHata: null } : {}) };
+    case "oyunKilit": return { ...d, oyunBekle: e.acik, ...(e.hata ? { oyunHata: { kod: e.hata, id: e.id ?? "" } } : e.temizle ?{ oyunHata: null } : {}) };
     case "bag": return { ...d, ...(e.bag !== "acik" ? { oyunBekle: false } : {}), bag: e.bag, deneme: e.deneme ?? d.deneme, kapanis: e.kapanis === undefined ? d.kapanis : e.kapanis };
     case "hata": return { ...d, hata: e.kod ? { kod: e.kod, ...(e.bitis !== undefined ? { bitis: e.bitis } : {}) } : null };
     case "sunucu": {
@@ -88,7 +94,11 @@ function indirge(d: MasaDurumu, e: Eylem): MasaDurumu {
       switch (v.t) {
         case "hosgeldin": return { ...d, bag: "acik", deneme: 0, kapanis: null, ben: v.ben, masa: v.masa, susturma: v.susturma, hata: null, ses: v.ses ?? null, sahne: v.sahne ?? null, atisma: v.atisma ?? null, oyun: v.oyun ?? null, oyunBekle: false, kitaEnCok: sinirCoz(v.kitaEnCok) ?? sinirCoz(v.atisma?.kitaEnCok) ?? d.kitaEnCok };
         case "sahne": return { ...d, sahne: v.sahne };
-        case "oyun": return { ...d, oyun: v.oyun, oyunBekle: false, oyunHata: null };
+        case "oyun": {
+          const sira = oyunSirasi(v.oyun) !== oyunSirasi(d.oyun);
+          const ilerledi = sira || oyunImzasi(v.oyun) !== oyunImzasi(d.oyun);
+          return { ...d, oyun: v.oyun, ...(ilerledi ? { oyunBekle: false } : {}), ...(sira ? { oyunHata: null } : {}) };
+        }
         case "atisma": return { ...d, atisma: v.atisma, kitaEnCok: sinirCoz(v.atisma?.kitaEnCok) ?? d.kitaEnCok, ...(v.son ? { atismaSon: { ...v.son, id: e.id } } : {}) };
         case "kita": return { ...d, akis: ekle(d.akis, { tur: "kita", id: e.id, hesap: v.hesap, ad: v.ad, koltuk: v.koltuk, metin: v.metin, sira: v.sira, zaman: v.zaman, a: d.atisma ? v.hesap === d.atisma.a : d.atismaSon ? v.hesap === d.atismaSon.a : v.sira % 2 === 1, ...(d.atisma?.toplam ? { toplam: d.atisma.toplam } : {}), ...(v.balon ? { balon: v.balon } : {}) }) };
         case "sesDurum": return { ...d, ses: v.ses };
@@ -203,15 +213,20 @@ export function useMasa(no: number | undefined, hanNo = 1) {
     const z = setTimeout(() => gonderD({ t: "oyunKilit", acik: false }), OYUN_KILIT_MS);
     return () => clearTimeout(z);
   }, [d.oyunBekle]);
+  // Çift dokunuş kilidi eşzamanlı ref'tedir (aynı karedeki ikinci dokunuş da görür); `oyunBekle` yalnız görüntü içindir.
+  // Durum kilidi açınca (ilerleme, kendi komut hatası, kopma, zaman aşımı) ref de bırakılır.
+  const kilit = useRef(false);
+  useEffect(() => { if (!d.oyunBekle) kilit.current = false; });
   const oyunNo = d.oyun?.n ?? 0;
   const oyunGonder = useCallback((ileti: OyunIletisi) => {
     const s = soket.current;
-    if (!s || d.bag !== "acik") { gonderD({ t: "oyunKilit", acik: false, hata: "ag_yok", id: yeniId() }); return false; }
-    if (d.oyunBekle) return false;
+    if (!s || d.bag !== "acik") { kilit.current = false; gonderD({ t: "oyunKilit", acik: false, hata: "ag_yok", id: yeniId() }); return false; }
+    if (kilit.current) return false;
+    kilit.current = true;
     gonderD({ t: "oyunKilit", acik: true });
     s.gonder(ileti);
     return true;
-  }, [d.bag, d.oyunBekle]);
+  }, [d.bag]);
 
   return {
     durum: d,

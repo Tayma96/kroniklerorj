@@ -2,7 +2,7 @@
 // numara, yerleşim · beylik, meslek ve unvan, nam, teveccüh kademesi, işletmeler, kaba çevrimiçi durum; ölüyse sade yas çerçevesi.
 // Aynı yerleşimdeyse sosyal eylemler mevcut oyuncu profilinde (/online/oyuncu/:id; durumları GET /v1/oyuncu/:id'den);
 // başka yerleşimdeyse yalnız bilgi. Kendi künyende numaran kopyalanır ve paylaşılır. İstemci hiçbir şey hesaplamaz.
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { View, Text } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import Animated from "react-native-reanimated";
@@ -89,10 +89,15 @@ function KunyeEkran() {
   const [k, setK] = useState<Kunye | null>(null);
   const [hata, setHata] = useState<KunyeHata | null>(null);
   const [kopyalandi, setKopyalandi] = useState(false);
+  // Sıra sayacı: yalnız son isteğin yanıtı yazılır; ekrandan çıkınca (sayaç ilerler) hiçbiri yazılmaz.
+  const sira = useRef(0);
+  useEffect(() => () => { sira.current += 1; }, []);
   const yukle = async () => {
+    const benim = ++sira.current;
     if (!numara) { setHata("numara_gecersiz"); return; }
     setHata(null);
     const r = await istemci.sayfa(numara, lang);
+    if (benim !== sira.current) return;
     if (r.ok) setK(r.deger); else setHata(r.hata);
   };
   useEffect(() => { setK(null); setKopyalandi(false); void yukle(); }, [numara, lang, istemci]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -126,7 +131,7 @@ function KunyeEkran() {
     <Animated.View entering={giris(60)} style={{ marginTop: 14 }}>
       <Cerceve aktif={!olu && k.teveccuh >= 3} ic={{ padding: 14, gap: 12, ...(olu ? { backgroundColor: "rgba(20,18,16,0.82)" } : null) }}>
         <View style={{ flexDirection: yon(rtl), alignItems: "center", gap: 14 }}>
-          <View style={{ opacity: olu ? 0.55 : 1 }}><KisiYuzu id={k.kisi.id} ad={k.ad} boyut={76} oyuncu ben={k.ben} /></View>
+          <View style={{ opacity: olu ? 0.55 : 1 }}><KisiYuzu id={"n" + k.numara} ad={k.ad} boyut={76} oyuncu ben={k.ben} /></View>
           <View style={{ flex: 1, gap: 4 }}>
             <Text accessibilityRole="header" style={{ fontFamily: F.display, fontSize: 21, lineHeight: 27, color: olu ? C.parchmentDim : C.parchment, textAlign: hiza(rtl) }}>{k.ad}</Text>
             <Text style={{ fontFamily: F.serif, fontSize: 15, lineHeight: 20, color: olu ? C.parchmentMuted : "#F0D490", textAlign: hiza(rtl) }}>
@@ -152,7 +157,7 @@ function KunyeEkran() {
 
     {/* Kendi numaran ya da eylemler */}
     {k.ben ? <Animated.View entering={giris(100)} style={{ marginTop: 14, gap: 10 }}>
-      <NumaraKarti />
+      <NumaraKarti numara={k.numara} />
       <Text style={{ fontFamily: F.serifItalic, fontSize: 14, lineHeight: 19, color: C.parchmentMuted, textAlign: hiza(rtl), paddingHorizontal: 4 }}>{t("onl.kn.benNot")}</Text>
     </Animated.View> : !olu ? <>
       <Baslik2 metin={t("onl.kn.ey.baslik")} rtl={rtl} />

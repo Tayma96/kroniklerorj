@@ -178,6 +178,11 @@ export function OnlineDurumSaglayici({ children, tohum }: { children: ReactNode;
   const benMeslekVar = useRef(false);
   const defterImlec = useRef<number | null>(null);
   const yoklamada = useRef(false);
+  /** Defter isteği uçuşu (yükleme ve yoklama aynı promise'i paylaşır). */
+  const defterUcus = useRef<{ devam: boolean; p: Promise<Sonuc<OlaylarYaniti>> } | null>(null);
+  /** Yerleşim bırakılınca artar; uçuştaki defter yanıtı nesil ya da yerleşim kimliği değiştiyse atılır. */
+  const defterNesil = useRef(0);
+  const yerlesimKimlik = useRef<string | null>(null);
   const okunanImlec = useRef<number | null>(null);
   const bekleyenEylem = useRef(new Map<string, string>());
   const { lang } = useI18n();
@@ -189,7 +194,10 @@ export function OnlineDurumSaglayici({ children, tohum }: { children: ReactNode;
   const sahte = useRef<OnlineIstemci | null>(tohum?.gelistirici ? sahteIstemci(tohum.gecikme ?? 450, tohum.profil ?? null, { yas: tohum.yas, meslek: tohum.meslek }) : null);
   const istemci = (): OnlineIstemci => (oturum?.tur === "gelistirici" && sahte.current ? sahte.current : http);
 
+  yerlesimKimlik.current = yerlesim?.yerlesim.id ?? null;
   const yerlesimiBirak = () => {
+    defterNesil.current += 1;
+    defterUcus.current = null;
     setYerlesim(null);
     setKisiler({});
     setDefter([]);
@@ -364,6 +372,9 @@ export function OnlineDurumSaglayici({ children, tohum }: { children: ReactNode;
   };
   /** Olay defterini kalıcı imleçten ileri doğru (sayfa sayfa) çeker; okunanı imlece yazar. */
   const defterCek = async (devam: boolean): Promise<Sonuc<OlaylarYaniti>> => {
+    const nesil0 = defterNesil.current;
+    const kimlik0 = yerlesimKimlik.current;
+    const eskidi = () => defterNesil.current !== nesil0 || yerlesimKimlik.current !== kimlik0;
     const hesap = profil?.hesapId ?? "";
     const kalici = !tohum && oturum?.tur === "sunucu" && !!hesap;
     const son = yerlesim?.imlec ?? 0;
@@ -383,6 +394,8 @@ export function OnlineDurumSaglayici({ children, tohum }: { children: ReactNode;
       if (!sonuc.deger.dahaVar) break;
     }
     if (!sonuc.ok && !gelen.length) return sonuc;
+    // Bu arada yerleşim bırakıldı ya da değişti: eski yanıt deftere ve imlece yazılmaz.
+    if (eskidi()) return sonuc;
     defterImlec.current = bas;
     setDefter((eski) => {
       const harita = new Map((devam ? eski : []).map((o) => [o.sira, o]));
@@ -394,6 +407,15 @@ export function OnlineDurumSaglayici({ children, tohum }: { children: ReactNode;
     setDefterDahaVar(sonuc.ok ? sonuc.deger.dahaVar : true);
     if (kalici) await imlecYaz(hesap, bas);
     return sonuc.ok ? sonuc : basarisiz(sonuc.hata);
+  };
+  /** Aynı türde uçuştaki defter isteğini paylaşır; farklı türdeyse onun bitmesini bekleyip sırayla çeker. */
+  const defterPaylas = (devam: boolean): Promise<Sonuc<OlaylarYaniti>> => {
+    const u = defterUcus.current;
+    if (u && u.devam === devam) return u.p;
+    const once: Promise<unknown> = u ? u.p.catch(() => undefined) : Promise.resolve();
+    const p: Promise<Sonuc<OlaylarYaniti>> = once.then(() => defterCek(devam)).finally(() => { if (defterUcus.current?.p === p) defterUcus.current = null; });
+    defterUcus.current = { devam, p };
+    return p;
   };
 
   // istek_tekrar: işlem sunucuda zaten yapılmış. Bekleyen istekNo kuyruktan düşmüştür (geçici hata değil); yerel durum
@@ -540,11 +562,12 @@ export function OnlineDurumSaglayici({ children, tohum }: { children: ReactNode;
     defterOkunan,
     hataIslem,
     yerlesimYukle: (sessiz = false) => (sessiz ? yerlesimAl() : calistir("yerlesim", yerlesimAl)),
-    olaylarYukle: (devam = false) => calistir("olaylar", () => defterCek(devam)),
+    olaylarYukle: (devam = false) => calistir("olaylar", () => defterPaylas(devam)),
     olaylarYokla: async () => {
       if (yoklamada.current || !oturum || !yerlesim) return;
       yoklamada.current = true;
-      try { await defterCek(true); } catch { /* sessiz: bir sonraki yoklamada yeniden denenir */ } finally { yoklamada.current = false; }
+      // Uçuşta bir defter isteği varsa yeni istek atılmaz; onun sonucu beklenir.
+      try { await (defterUcus.current ? defterUcus.current.p : defterPaylas(true)); } catch { /* sessiz: bir sonraki yoklamada yeniden denenir */ } finally { yoklamada.current = false; }
     },
     kisiYukle: (id) => calistir("kisi", () => kisiAl(id)),
     toplumIstemci: () => istemci().toplum,

@@ -117,6 +117,8 @@ export interface OyuncuProfili {
   eylemler: OyuncuEylemi[];
   /** Beceri ağacı v2 §5: kalıcı unvanlar (sunucu henüz göndermiyor). */
   unvanlar?: string[];
+  /** Künye numarası (8 hane; eski sunucu göndermez): varsa künyeye doğrudan geçilir. */
+  numara?: string;
 }
 
 export interface SoylentiGorunumu {

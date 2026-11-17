@@ -3,6 +3,7 @@
 // hamle geçerliliği, el sonucu ve kazanan sunucudan gelir. Buradaki tahta geometrisi (komşuluk, üçleme çizgileri) yalnız
 // görüntü ipucudur (dokunulabilir noktaların vurgusu, "taş al" sorusu); doğrulama sunucudadır.
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useFocusEffect } from "expo-router";
 import { useOnline } from "./durum";
 import { ekCagir, metinMi, nesneMi, sayiMi, type EkSonuc } from "./ek-istemci";
 import { sahteVitrin } from "./sahte-masa-oyun";
@@ -174,7 +175,7 @@ export function useVitrin(etkin: boolean) {
     setYukleniyor(false);
     if (r.ok) { setListe(r.deger.masalar); setHata(null); } else setHata(r.hata);
   }, [etkin, sahte]);
-  useEffect(() => { void yukle(); }, [yukle]);
+  useFocusEffect(useCallback(() => { void yukle(); }, [yukle]));
   return { liste, hata, yukleniyor, yukle };
 }
 

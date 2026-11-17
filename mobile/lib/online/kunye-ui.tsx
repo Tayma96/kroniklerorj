@@ -11,8 +11,9 @@ import { DesignPressable as Pressable } from "../design-pressable";
 import { hap } from "../haptics";
 import { BASMA_OLCEK, Bant, Cerceve, CizgiDugme, Madalyon, ONL, belir, hiza, yon } from "./ui";
 import { KisiYuzu, SatirOku } from "./yasam-ui";
+import { useOnline } from "./durum";
 import {
-  aramaNiyeti, kunyeBekletir, kunyeHataAnahtari, kunyeYolu, numaraBicim, numaraSesli, useKunyeIstemci,
+  aramaNiyeti, kunyeBekletir, kunyeHataAnahtari, kunyeYolu, numaraBicim, numaraSesli, numaraTemizle, useKunyeIstemci,
   type CevrimiciDurum, type KunyeHata, type KunyeKarti,
 } from "./kunye-veri";
 
@@ -50,20 +51,38 @@ export function DurumNoktasi({ durum, t, rtl }: { durum: CevrimiciDurum; t: Cevi
   </View>;
 }
 
-/** Kendi oyuncu numaran: 1234 5678, kopyala, paylaş; isteğe bağlı künyene bağlantı. */
-export function NumaraKarti({ kunyeLink = false }: { kunyeLink?: boolean }) {
+/** Kendi numaran uygulama açıkken hesap başına bir kez çekilir (bellek önbelleği; numara hesaba bağlıdır, değişmez). */
+const numaramOnbellek = new Map<string, string>();
+
+/** Kendi oyuncu numaran: 1234 5678, kopyala, paylaş; isteğe bağlı künyene bağlantı. `numara` verilirse istek atılmaz. */
+export function NumaraKarti({ kunyeLink = false, numara: verilen }: { kunyeLink?: boolean; numara?: string }) {
   const { t, rtl } = useI18n();
   const router = useRouter();
   const istemci = useKunyeIstemci();
-  const [numara, setNumara] = useState<string | null>(null);
+  const o = useOnline();
+  const anahtar = `${o.oturum?.tur ?? ""}:${o.profil?.hesapId ?? ""}`;
+  const onbellek = {
+    al: () => (o.profil?.hesapId ? numaramOnbellek.get(anahtar) : undefined),
+    koy: (n: string) => { if (o.profil?.hesapId) numaramOnbellek.set(anahtar, n); },
+  };
+  const [cekilen, setNumara] = useState<string | null>(() => onbellek.al() ?? null);
+  const numara = verilen ?? cekilen;
   const [hata, setHata] = useState<KunyeHata | null>(null);
   const [kopyalandi, setKopyalandi] = useState(false);
+  const canli = useRef(true);
+  useEffect(() => () => { canli.current = false; }, []);
   const yukle = async () => {
     setHata(null);
     const r = await istemci.numaram();
-    if (r.ok) setNumara(r.deger); else setHata(r.hata);
+    if (!canli.current) return;
+    if (r.ok) { onbellek.koy(r.deger); setNumara(r.deger); } else setHata(r.hata);
   };
-  useEffect(() => { void yukle(); }, [istemci]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (verilen) { onbellek.koy(verilen); return; }
+    const b = onbellek.al();
+    if (b) { setNumara(b); return; }
+    void yukle();
+  }, [istemci, verilen, anahtar]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (hata) return <Bant metin={t(kunyeHataAnahtari(hata))} rtl={rtl} eylem={kunyeBekletir(hata) ? undefined : t("onl.yenidenDene")} onEylem={() => { void yukle(); }} />;
   const bicimli = numara ? numaraBicim(numara) : "";
@@ -204,19 +223,28 @@ export function OyuncuArama() {
   </View>;
 }
 
-/** Yerel profilden künyeye: aynı yerleşimde aynı adı taşıyan tek kişiyi ad aramasıyla bulur (oyuncu dokununca, bir kez). */
-export function KunyeyeGecis({ ad, yerlesim }: { ad: string; yerlesim: string }) {
+/**
+ * Yerel profilden künyeye: sunucu `numara` verdiyse doğrudan gider; yoksa aynı yerleşimde aynı adı taşıyan tek kişiyi ad
+ * aramasıyla bulur (oyuncu dokununca, bir kez). Ad aramanın alt sınırına (3 harf) yetmiyorsa bağlantı gizlenir.
+ */
+export function KunyeyeGecis({ ad, yerlesim, numara }: { ad: string; yerlesim: string; numara?: string }) {
   const { t, rtl } = useI18n();
   const router = useRouter();
   const istemci = useKunyeIstemci();
   const [bekliyor, setBekliyor] = useState(false);
   const [not, setNot] = useState<string | null>(null);
+  const canli = useRef(true);
+  useEffect(() => () => { canli.current = false; }, []);
+  const dogrudan = numara ? numaraTemizle(numara) : null;
+  if (!dogrudan && [...ad.trim()].filter((c) => /\p{L}/u.test(c)).length < 3) return null;
   const bul = async () => {
+    if (dogrudan) { hap("tap"); router.push(kunyeYolu(dogrudan)); return; }
     if (bekliyor) return;
     setBekliyor(true);
     setNot(null);
     const anahtar = ad.trim().toLocaleLowerCase("tr");
     const r = await istemci.adAra(ad.trim(), null);
+    if (!canli.current) return;
     setBekliyor(false);
     if (!r.ok) { setNot(t(kunyeHataAnahtari(r.hata))); return; }
     const eslesen = r.deger.sonuclar.filter((k) => k.yerlesim.id === yerlesim && k.ad.trim().toLocaleLowerCase("tr") === anahtar);

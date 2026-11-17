@@ -110,7 +110,7 @@ function KancaSatiri({ kanal, d, g, t, rtl, lang }: { kanal: string; d: KancaDok
           <Text style={{ fontFamily: F.display, fontSize: 12.5, color: C.sage }}>{kancaBirimi(t, kanal, x.d, lang)}</Text>
         </View>;
       })}
-      {kalemler.reduce((n, x) => n + x.d, 0) > d.deger ? <Not metin={applyParams(t("onl.k3.tavanKirpti"), [tavan])} rtl={rtl} /> : null}
+      {tavanda ?<Not metin={applyParams(t("onl.k3.tavanKirpti"), [tavan])} rtl={rtl} /> : null}
     </Animated.View> : null}
   </View>;
 }

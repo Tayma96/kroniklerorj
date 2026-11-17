@@ -329,7 +329,7 @@ function OyuncuEkran() {
         {durumlar.length ? <View style={{ flexDirection: yon(rtl), flexWrap: "wrap", gap: 6 }}>
           {durumlar.map((d) => <Rozet key={d.metin} icon={d.icon} metin={d.metin} renk={d.renk} />)}
         </View> : null}
-        {!p.ben ? <KunyeyeGecis ad={p.ad} yerlesim={y.yerlesim.id} /> : null}
+        {!p.ben ? <KunyeyeGecis ad={p.ad} yerlesim={y.yerlesim.id} numara={p.numara} /> : null}
       </Cerceve>
     </Animated.View>
 

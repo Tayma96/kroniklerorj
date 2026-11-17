@@ -2,7 +2,7 @@
 // ve han ekranındaki "Canlı masalar" vitrini. Sunucu yetkilidir: sıra, el sonucu, kazanan ve hamle geçerliliği sunucudan
 // gelir; burada yalnız niyet gönderilir. Dokuz Taş vurguları görüntü ipucudur. Zamanlayıcı ve geri sayım yoktur: kopan
 // oyuncu için sabır dolunca nazik seçenekler belirir, süre gösterilmez. Hareket yalnız ui.tsx `belir`/`HAREKET`.
-import { useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { View, Text, useWindowDimensions } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import Animated from "react-native-reanimated";
@@ -75,7 +75,7 @@ function ElSirasi({ rtl, t }: { rtl: boolean; t: Ceviri }) {
 
 function ElSonucu({ o, c, el, rtl, t }: { o: OyunGorunumu; c: CanakDurumu; el: CanakDurumu["gecmis"][number]; rtl: boolean; t: Ceviri }) {
   const alanAd = el.alan !== null ? o.oyuncular[el.alan]?.ad ?? "" : null;
-  return <Animated.View key={el.el} entering={belir()} accessibilityLiveRegion="polite" style={{ gap: 8, padding: 10, borderRadius: 10, borderWidth: 1, borderColor: "rgba(201,162,78,0.45)", backgroundColor: "rgba(40,28,14,0.7)" }}>
+  return <Animated.View entering={belir()} accessibilityLiveRegion="polite" style={{ gap: 8, padding: 10, borderRadius: 10, borderWidth: 1, borderColor: "rgba(201,162,78,0.45)", backgroundColor: "rgba(40,28,14,0.7)" }}>
     <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: rtl ? 0 : 1, color: C.gold, textAlign: hiza(rtl) }}>{applyParams(t("onl.mo.canak.elAcildi"), [el.el])}</Text>
     {el.zarlar.map((z, i) => {
       const p = o.oyuncular[i];
@@ -93,7 +93,7 @@ function ElSonucu({ o, c, el, rtl, t }: { o: OyunGorunumu; c: CanakDurumu; el: C
   </Animated.View>;
 }
 
-function CanakGorunumu({ o, c, ben, benHesap, siraBende, bekle, onHamle, rtl, t }: { o: OyunGorunumu; c: CanakDurumu; ben: CanakBen | null; benHesap: string | null; siraBende: boolean; bekle: boolean; onHamle: (h: Record<string, unknown>) => void; rtl: boolean; t: Ceviri }) {
+const CanakGorunumu = memo(function CanakGorunumu({ o, c, ben, benHesap, siraBende, bekle, onHamle, rtl, t }: { o: OyunGorunumu; c: CanakDurumu; ben: CanakBen | null; benHesap: string | null; siraBende: boolean; bekle: boolean; onHamle: (h: Record<string, unknown>) => void; rtl: boolean; t: Ceviri }) {
   const [secim, setSecim] = useState<number[]>([]);
   useEffect(() => setSecim([]), [o.n, c.el]);
   const benI = o.oyuncular.findIndex((p) => p.hesap === benHesap);
@@ -114,7 +114,7 @@ function CanakGorunumu({ o, c, ben, benHesap, siraBende, bekle, onHamle, rtl, t 
       </View>)}
     </View>
 
-    {son ? <ElSonucu o={o} c={c} el={son} rtl={rtl} t={t} /> : null}
+    {son ? <ElSonucu key={son.el} o={o} c={c} el={son} rtl={rtl} t={t} /> : null}
 
     {/* rakiplerin kapalı çanakları */}
     {o.asama === "oyun" ? <View style={{ flexDirection: yon(rtl), flexWrap: "wrap", gap: 8 }}>
@@ -158,7 +158,7 @@ function CanakGorunumu({ o, c, ben, benHesap, siraBende, bekle, onHamle, rtl, t 
 
     <ElSirasi rtl={rtl} t={t} />
   </View>;
-}
+});
 
 // ---------------------------------------------------------------- Dokuz Taş
 
@@ -176,7 +176,7 @@ function Tas({ renk, boyut, vurgu }: { renk: 0 | 1; boyut: number; vurgu?: boole
 
 type Bekleyen = { koy: number } | { kaynak: number; hedef: number };
 
-function DokuzGorunumu({ o, d, benHesap, siraBende, bekle, onHamle, rtl, t }: { o: OyunGorunumu; d: DokuzDurumu; benHesap: string | null; siraBende: boolean; bekle: boolean; onHamle: (h: Record<string, unknown>) => void; rtl: boolean; t: Ceviri }) {
+const DokuzGorunumu = memo(function DokuzGorunumu({ o, d, benHesap, siraBende, bekle, onHamle, rtl, t }: { o: OyunGorunumu; d: DokuzDurumu; benHesap: string | null; siraBende: boolean; bekle: boolean; onHamle: (h: Record<string, unknown>) => void; rtl: boolean; t: Ceviri }) {
   const { width } = useWindowDimensions();
   const B = Math.min(width, 392);
   const adim = B / 7;
@@ -280,13 +280,15 @@ function DokuzGorunumu({ o, d, benHesap, siraBende, bekle, onHamle, rtl, t }: { 
     {d.el[0] === 0 && d.el[1] === 0 && d.sessiz > 0 ? <Text style={notStil(rtl)}>{applyParams(t("onl.mo.dokuz.sessiz"), [d.sessiz, d.sessizEnCok])}</Text> : null}
     {benI < 0 && o.asama === "oyun" ? <Not metin={t("onl.mo.dokuz.seyirci")} rtl={rtl} icon="hood" /> : null}
   </View>;
-}
+});
+const HAMLE_YOK = () => undefined;
 
 // ---------------------------------------------------------------- oyun seçimi
 
-function OyunSecici({ acik, onKapat, onSec, bekle, rtl, t }: { acik: boolean; onKapat: () => void; onSec: (o: OyunTuru) => void; bekle: boolean; rtl: boolean; t: Ceviri }) {
+function OyunSecici({ acik, onKapat, onSec, bekle, hata, rtl, t }: { acik: boolean; onKapat: () => void; onSec: (o: OyunTuru) => void; bekle: boolean; /** Açma hatası modalın içinde de görünür. */ hata?: ReactNode; rtl: boolean; t: Ceviri }) {
   return <AltPanel acik={acik} onKapat={onKapat} etiket={t("onl.mo.sec.baslik")} rtl={rtl} t={t}>
     <Text accessibilityRole="header" style={{ fontFamily: F.display, fontSize: 18, color: C.goldBright, textAlign: hiza(rtl), paddingEnd: 36 }}>{t("onl.mo.sec.baslik")}</Text>
+    {hata ?? null}
     <Text style={notStil(rtl)}>{t("onl.mo.sec.alt")}</Text>
     {OYUN_TURLERI.map((o, i) => <Animated.View key={o} entering={giris(i * 60)}>
       <Pressable accessibilityRole="button" accessibilityLabel={`${t("onl.mo.oyun." + o)}. ${t("onl.mo.kisi." + o)}. ${t("onl.mo.kural." + o)}`} accessibilityState={{ disabled: bekle }} disabled={bekle}
@@ -347,16 +349,25 @@ export function MasaOyunPaneli({ m, ben, oturuyor, acik, mesgul, rtl, t }: { m: 
   const [, setTik] = useState(0);
   const niyetBitti = useRef(niyet !== "katil");
   const oturDenendi = useRef(false);
+  const oturMasa = useRef(m.durum.masa);
   const benOyuncu = !!o && !!ben && o.oyuncular.some((p) => p.hesap === ben && !p.cekildi);
   const kopanVar = !!o && o.asama === "oyun" && o.oyuncular.some((p) => p.yok !== undefined);
+  const bosYerVar = !!o && o.oyuncular.length < o.enCok;
+  // Vitrin niyeti tek seferliktir: oturma isteğinden sonra masa güncellenip (ya da hata gelip) oturulmadıysa düşer.
+  const masaD = m.durum.masa;
+  const masaHata = m.durum.hata;
 
-  // Vitrinden katılma niyeti: önce otur, sonra bekleyen oyuna katıl.
+  // Vitrinden katılma niyeti: önce otur, sonra yalnız bekleme + boş yer varken katıl.
   useEffect(() => {
     if (niyetBitti.current || !acik) return;
-    if (!oturuyor) { if (!oturDenendi.current) { oturDenendi.current = true; m.otur(); } return; }
+    if (!oturuyor) {
+      if (!oturDenendi.current) { oturDenendi.current = true; oturMasa.current = masaD; m.otur(); return; }
+      if (masaD !== oturMasa.current || masaHata) niyetBitti.current = true;
+      return;
+    }
     niyetBitti.current = true;
-    if (o?.asama === "bekleme" && !benOyuncu) m.oyunKatil();
-  }, [acik, oturuyor, o?.asama, benOyuncu]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (o?.asama === "bekleme" && bosYerVar && !benOyuncu) m.oyunKatil();
+  }, [acik, oturuyor, o?.asama, benOyuncu, bosYerVar, masaD, masaHata]); // eslint-disable-line react-hooks/exhaustive-deps
   // Kopan oyuncu varken sabrın dolduğunu fark etmek için ara ara yeniden çizilir (ekranda süre yoktur).
   useEffect(() => {
     if (!kopanVar) return;
@@ -364,11 +375,26 @@ export function MasaOyunPaneli({ m, ben, oturuyor, acik, mesgul, rtl, t }: { m: 
     return () => clearInterval(z);
   }, [kopanVar]);
   useEffect(() => { if (o) setSecici(false); }, [o?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Hamle geri çağrısı sabit kalır (memo'lu tahtalar her karede yeniden çizilmesin); güncel masa ref'ten okunur.
+  const mRef = useRef(m);
+  mRef.current = m;
+  const onHamle = useCallback((h: Record<string, unknown>) => { mRef.current.hamle(h); }, []);
+  const canak = useMemo(() => (o ? canakDurumu(o) : null), [o]);
+  const dokuz = useMemo(() => (o ? dokuzDurumu(o) : null), [o]);
+  // "Dağıt" ipucu için kopan oyuncunun ilk görüldüğü yerel an (cihaz saati sunucu zamanıyla karşılaştırılmaz).
+  const yokIlk = useRef(new Map<string, number>());
+  if (o) {
+    const simdi = Date.now();
+    for (const p of o.oyuncular) {
+      if (p.yok === undefined) yokIlk.current.delete(p.hesap);
+      else if (!yokIlk.current.has(p.hesap)) yokIlk.current.set(p.hesap, simdi);
+    }
+  }
 
   const hataMetni = m.durum.oyunHata ? t("onl.mo.hata." + m.durum.oyunHata.kod) : null;
   const hataBandi = hataMetni ? <Bant metin={hataMetni} rtl={rtl} eylem={m.durum.oyunHata?.kod === "hamle_no" ? t("onl.han.yenidenBaglan") : t("onl.kapat")}
     onEylem={() => { if (m.durum.oyunHata?.kod === "hamle_no") m.yenidenBaglan(); m.oyunHataTemizle(); }} /> : null;
-  const seciciEl = <OyunSecici acik={secici} onKapat={() => setSecici(false)} bekle={bekle} rtl={rtl} t={t} onSec={(tur) => { m.oyunAc(tur); }} />;
+  const seciciEl = <OyunSecici acik={secici} onKapat={() => setSecici(false)} bekle={bekle} hata={hataBandi} rtl={rtl} t={t} onSec={(tur) => { m.oyunAc(tur); }} />;
 
   if (!o) {
     if (!oturuyor) return hataBandi;
@@ -383,10 +409,7 @@ export function MasaOyunPaneli({ m, ben, oturuyor, acik, mesgul, rtl, t }: { m: 
   const ad = (h: string) => o.oyuncular.find((p) => p.hesap === h)?.ad ?? t("onl.han.birMisafir");
   const siraBende = !!ben && o.sira === ben;
   const siradaki = o.oyuncular.find((p) => p.hesap === o.sira);
-  const yokUzun = (p: { yok?: number } | undefined) => p?.yok !== undefined && Date.now() - p.yok >= o.sabir;
-  const canak = canakDurumu(o);
-  const dokuz = dokuzDurumu(o);
-  const onHamle = (h: Record<string, unknown>) => { m.hamle(h); };
+  const yokUzun = (p: { hesap: string; yok?: number } | undefined) => p?.yok !== undefined && Date.now() - (yokIlk.current.get(p.hesap) ?? Date.now()) >= o.sabir;
   const dagitVerdim = !!ben && o.dagit.includes(ben);
   const etkinSayi = o.oyuncular.filter((p) => !p.cekildi).length;
 
@@ -440,7 +463,7 @@ export function MasaOyunPaneli({ m, ben, oturuyor, acik, mesgul, rtl, t }: { m: 
       {siradaki && siradaki.yok !== undefined && !siraBende ? (yokUzun(siradaki) || o.pasAcik) && benOyuncu ? <View style={{ gap: 8 }}>
         <Not metin={applyParams(t(o.tur === "canak" ? "onl.mo.kopma.uzunCanak" : "onl.mo.kopma.uzunDokuz"), [siradaki.ad])} rtl={rtl} icon="walk" />
         <View style={{ flexDirection: yon(rtl), gap: 8 }}>
-          {o.tur === "canak" ? <View style={{ flex: 1 }}><CizgiDugme etiket={t("onl.mo.kopma.pas")} icon="hourglass" rtl={rtl} kucuk kapali={!acik || bekle} onPress={() => m.oyunPas()} /></View> : null}
+          {o.tur === "canak" && o.pasAcik ? <View style={{ flex: 1 }}><CizgiDugme etiket={t("onl.mo.kopma.pas")} icon="hourglass" rtl={rtl} kucuk kapali={!acik || bekle} onPress={() => m.oyunPas()} /></View> : null}
           <View style={{ flex: 1 }}><CizgiDugme etiket={t(dagitVerdim ? "onl.mo.kopma.dagitVerdin" : "onl.mo.kopma.dagit")} rtl={rtl} kucuk kapali={!acik || bekle || dagitVerdim} onPress={() => m.oyunDagit()} /></View>
         </View>
       </View> : <Not metin={applyParams(t("onl.mo.kopma.bekle"), [siradaki.ad])} rtl={rtl} icon="walk" /> : null}
@@ -461,8 +484,8 @@ export function MasaOyunPaneli({ m, ben, oturuyor, acik, mesgul, rtl, t }: { m: 
     </> : null}
 
     {o.asama === "bitti" ? <>
-      {canak && canak.gecmis.length ? <ElSonucu o={o} c={canak} el={canak.gecmis[canak.gecmis.length - 1]!} rtl={rtl} t={t} /> : null}
-      {dokuz ? <DokuzGorunumu o={o} d={dokuz} benHesap={ben} siraBende={false} bekle rtl={rtl} t={t} onHamle={() => undefined} /> : null}
+      {canak && canak.gecmis.length ? <ElSonucu key={canak.gecmis[canak.gecmis.length - 1]!.el} o={o} c={canak} el={canak.gecmis[canak.gecmis.length - 1]!} rtl={rtl} t={t} /> : null}
+      {dokuz ? <DokuzGorunumu o={o} d={dokuz} benHesap={ben} siraBende={false} bekle rtl={rtl} t={t} onHamle={HAMLE_YOK} /> : null}
       <Bitis o={o} ben={ben} rtl={rtl} t={t} />
       {oturuyor ? <View style={{ flexDirection: yon(rtl), gap: 8 }}>
         <View style={{ flex: 1 }}><AltinDugme etiket={t("onl.mo.son.yeni")} icon="amphora" rtl={rtl} kapali={!acik || bekle || mesgul} onPress={() => setSecici(true)} /></View>
@@ -509,6 +532,7 @@ export function CanliMasalar({ hanlar, turAdi, etkin, rtl, t, onAc }: { hanlar: 
       : !v.liste ? <Yukleniyor metin={t("onl.mo.vitrin.yukleniyor")} />
       : !v.liste.length ? <BosKart icon="amphora" metin={t("onl.mo.vitrin.bosDurum")} rtl={rtl} />
       : <View style={{ gap: 10 }}>{v.liste.map((s, i) => <VitrinSatirKarti key={`${s.han}:${s.masa}`} s={s} hanAdi={hanAdi(s.han)} sira={i} rtl={rtl} t={t} onAc={(k) => onAc(s.han, s.masa, k)} />)}</View>}
+    {v.liste && v.hata ? <View style={{ marginTop: 10 }}><Bant metin={t("onl.mo.vitrin.hata")} rtl={rtl} /></View> : null}
     {v.liste ? <View style={{ marginTop: 10 }}><CizgiDugme etiket={t("onl.mo.vitrin.yenile")} icon="hourglass" rtl={rtl} kucuk kapali={v.yukleniyor} onPress={() => { void v.yukle(); }} /></View> : null}
   </View>;
 }

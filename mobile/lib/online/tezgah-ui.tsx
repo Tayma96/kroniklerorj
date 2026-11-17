@@ -824,6 +824,8 @@ export function YolcuPayiDokumu({ y, t, rtl, kisa = false }: { y: YolcuKarti; t:
     <Text style={{ fontFamily: F.serif, fontSize: 12.5, lineHeight: 17, color: C.parchmentDim, textAlign: hiza(rtl) }}>
       {applyParams(t("onl.tz.yp.carpanlar"), [ondalik(c.F, lang), ondalik(c.K, lang), ondalik(c.R, lang), ondalik(c.H, lang)])}
     </Text>
+    {y.kanca && y.kanca.deger > 0 ? <Not icon="sun" renk={C.sage} rtl={rtl}
+      metin={applyParams(t(y.kanca.kisiAd ? "onl.k3.yp.kanca" : "onl.k3.yp.kancaAdsiz"), [yuzdeL(y.kanca.deger, lang), y.kanca.kisiAd ?? ""])} /> : null}
     <Not metin={y.tutar >= y.tavan ? t("onl.tz.yp.tavanda") : t("onl.tz.yp.not")} rtl={rtl} />
   </Cerceve>;
 }
