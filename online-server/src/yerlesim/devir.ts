@@ -310,6 +310,13 @@ export function devirUygula(kasaba: Kasaba, plan: DevirPlani, ay: number): Sonuc
   kar.pa = 0;
   kar.im = olu.im;
   kar.ky = yas(v.d, ay) >= 13 ? 1 : 0;
+  // Ölünün bu ayki tek sefer/tavan izleri vârise geçer (ölüp dirilerek kota ve tavan tazelenmez).
+  if (olu.ns && olu.ns[0] === ay) kar.ns = [ay, { ...olu.ns[1] }];
+  if (olu.tb && olu.tb[0] === ay) kar.tb = [ay, { ...olu.tb[1] }];
+  if (olu.ek?.length) kar.ek = [...olu.ek];
+  if (olu.hv && olu.hv[0] === ay) kar.hv = [ay, olu.hv[1]];
+  if (olu.ha && olu.ha[0] === ay) kar.ha = [ay, olu.ha[1]];
+  if (olu.hho && olu.hho[0] === ay) kar.hho = [ay, { ...olu.hho[1] }];
   const ak = new Set([...(olu.hd!.co ?? []), ...(olu.hd!.ak ?? [])].filter((i) => i !== npcI && kasaba.dizin.has(i)));
   const atalar = [...(olu.hd!.at ?? []), [olu.o, olu.ad, olu.d, plan.ol] as [string, string, number, number]];
   const hd: HanedanKaydi = { h: plan.hanedan, n: plan.nesil, s: hanedanSoyadi(kasaba, olu), at: atalar };

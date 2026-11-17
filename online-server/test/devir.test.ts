@@ -202,3 +202,18 @@ test("devir: aile adı küçük başlangıç teveccühü verir (veren listesi ge
   assert.equal(toplamAkce(k), once, "akçe korunur");
   void c;
 });
+
+test("devir (17 Kasım E10): ölünün bu ayki NPC kota sayaçları ve etkinlik izi vârise geçer", () => {
+  const { k, kar } = ailesiyle([30]);
+  kar.ns = [k.ay, { ekmek: 6 }];
+  kar.tb = [k.ay, { demir: 3 }];
+  kar.ek = ["etk-1"];
+  oyuncuOlumu(k, kar, k.ay);
+  const plan = devirHesapla(k, "o1", undefined, k.ay);
+  assert.ok(plan.ok);
+  const r = devirUygula(k, plan.deger, k.ay);
+  assert.ok(r.ok);
+  assert.deepEqual(r.deger.kar.ns, [k.ay, { ekmek: 6 }]);
+  assert.deepEqual(r.deger.kar.tb, [k.ay, { demir: 3 }]);
+  assert.deepEqual(r.deger.kar.ek, ["etk-1"]);
+});
