@@ -21,17 +21,33 @@ test("SHA-256 ve HMAC-SHA256 bilinen vektörlerle (FIPS 180-2, RFC 4231)", () =>
 test("sırlı zar: aynı sır + parçalar aynı; sır değişince değişir; mal zara katılır; kısa sır yok sayılır", () => {
   try {
     const c = { o: "o1", h: "h1" } as Karakter;
-    zarSirriAyarla(undefined);
+    zarSirriAyarla(undefined, true);
     const yedek = sirliTohum("efsanevi", "h1", "o1", 30, "kilic");
     assert.equal(sirliTohum("efsanevi", "h1", "o1", 30, "kilic"), yedek);
     assert.notEqual(efsaneviZari(c, 30, "kilic")(), efsaneviZari(c, 30, "alet")(), "mal zara katılır");
-    zarSirriAyarla("kisa");
-    assert.equal(sirliTohum("efsanevi", "h1", "o1", 30, "kilic"), yedek, "kısa sır yedeğe düşer");
+    zarSirriAyarla("kisa", true);
+    assert.equal(sirliTohum("efsanevi", "h1", "o1", 30, "kilic"), yedek, "kısa sır yedeğe düşer (yedek izinliyken)");
     zarSirriAyarla("bu-bir-deneme-sirridir-0123456789");
     const sirli = sirliTohum("efsanevi", "h1", "o1", 30, "kilic");
     assert.notEqual(sirli, yedek, "sır zarı değiştirir (istemci önceden hesaplayamaz)");
     assert.equal(sirliZar("a", 1)(), sirliZar("a", 1)());
   } finally {
+    zarSirriAyarla(undefined, true);
+  }
+});
+
+test("S1: ZAR_SIRRI yok/kısa ve yedek izni yoksa zar kapalıdır (yapilandirma_eksik); sır gelince açılır", async () => {
+  const { ZarYapilandirmaHatasi, zarHazir } = await import("../src/yerlesim/zar-sirri.ts");
+  try {
     zarSirriAyarla(undefined);
+    assert.equal(zarHazir(), false);
+    assert.throws(() => sirliTohum("a"), ZarYapilandirmaHatasi);
+    zarSirriAyarla("kisa");
+    assert.throws(() => sirliZar("a"), ZarYapilandirmaHatasi);
+    zarSirriAyarla("bu-bir-deneme-sirridir-0123456789");
+    assert.equal(zarHazir(), true);
+    assert.ok(Number.isInteger(sirliTohum("a")));
+  } finally {
+    zarSirriAyarla(undefined, true);
   }
 });

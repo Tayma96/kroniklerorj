@@ -20,7 +20,7 @@ test("4.9 uçtan uca: şehirde 2. han edinilir, listede görünür, masası ayr�
   try {
     const saat = Date.now();
     const araclar = sahteAraclar();
-    const env = { GOOGLE_CLIENT_ID: ISTEMCI, OTURUM_ANAHTARI: "o".repeat(48) } as Env;
+    const env = { GOOGLE_CLIENT_ID: ISTEMCI, ZAR_YEDEK_IZINLI: "1", OTURUM_ANAHTARI: "o".repeat(48) } as Env;
     const yerlesimler = sahteAdAlani((ctx) => new YerlesimDO(ctx, env, () => saat));
     const masalar = sahteAdAlani((ctx) => new MasaDO(hibernasyonlu(ctx), env, araclar));
     const isletmeler = sahteAdAlani((ctx) => new IsletmeDO(ctx, env, () => saat));

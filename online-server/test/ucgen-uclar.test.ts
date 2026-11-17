@@ -78,7 +78,7 @@ test("POST/GET /v1/ucgen motor: idempotent, kalıcı, önizleme görünürlüğ�
 });
 
 test("HTTP: /v1/ucgen yolu tanımlı (oturumsuz 401, yanlış yöntem 405)", async () => {
-  const env = { GOOGLE_CLIENT_ID: "x", OTURUM_ANAHTARI: "o".repeat(48) } as Env;
+  const env = { GOOGLE_CLIENT_ID: "x", ZAR_YEDEK_IZINLI: "1", OTURUM_ANAHTARI: "o".repeat(48) } as Env;
   const istek = (method: string) => isleyici.fetch(new Request("https://kronikler-online.test/v1/ucgen", { method }), env);
   assert.equal((await istek("GET")).status, 401);
   assert.equal((await istek("POST")).status, 401);

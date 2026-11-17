@@ -16,7 +16,7 @@ test("H7 uçtan uca: ziyafet bütün masaya; bedel sunucuda, akçe düşer, nam 
   const anahtar = await rsaAnahtari("kid-ziyfk");
   globalThis.fetch = sahteJwks([anahtar]).getir;
   const araclar = sahteAraclar();
-  const env = { GOOGLE_CLIENT_ID: ISTEMCI, OTURUM_ANAHTARI: "o".repeat(48) } as Env;
+  const env = { GOOGLE_CLIENT_ID: ISTEMCI, ZAR_YEDEK_IZINLI: "1", OTURUM_ANAHTARI: "o".repeat(48) } as Env;
   const hesap = sahteAdAlani((ctx) => new HesapDO(ctx, env));
   const masa = sahteAdAlani((ctx) => new MasaDO(hibernasyonlu(ctx), env, araclar));
   const yonetim = sahteAdAlani((ctx) => new YonetimDO(ctx, env));

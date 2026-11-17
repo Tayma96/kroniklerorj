@@ -1,8 +1,9 @@
 // Sırlı zar tohumu (denge denetimi 17 Kasım): kalite ve efsanevi zarı yalnız oyuncu + ay + tarif gibi bilinen
 // parçalardan tohumlanırsa istemci sonucu önceden hesaplayıp en iyi ayı/malı seçebilir. Tohum, Worker ortamındaki
 // `ZAR_SIRRI` sırrıyla HMAC-SHA256'lanır; sonuç yine deterministiktir (aynı sır + aynı parçalar = aynı zar), testler
-// tekrarlanabilir kalır. Sır yoksa (yerel geliştirme, testler) sabit bir yedek kullanılır ve bir kez uyarı yazılır;
-// sırrın değeri hiçbir yere yazılmaz. Web Crypto eşzamansız olduğundan küçük, eşzamanlı bir SHA-256 buradadır.
+// tekrarlanabilir kalır. Sır yoksa sabit yedeğe yalnız `ZAR_YEDEK_IZINLI === "1"` iken (yerel geliştirme, testler)
+// düşülür; değilse zar isteyen her işlem `ZarYapilandirmaHatasi` atar ve YerlesimDO `yapilandirma_eksik` döner
+// (17 Kasım denetimi S1). Sırrın değeri hiçbir yere yazılmaz. Web Crypto eşzamansız olduğundan küçük, eşzamanlı bir SHA-256 buradadır.
 
 import { mulberry32, type Zar } from "./rastgele.ts";
 
@@ -12,19 +13,41 @@ const YEDEK = "kronikler-yerel-zar-yedegi";
 export const ZAR_SIRRI_EN_AZ = 16;
 
 let anahtar: Uint8Array = new TextEncoder().encode(YEDEK);
+/** Modül varsayılanı (saf fonksiyon testleri): yedekle hazır. YerlesimDO kurucusu ortama göre ayarlar. */
+let hazir = true;
 let uyarildi = false;
 
-/** Ortamdan gelen sırrı kurar (YerlesimDO kurucusu). Sır yoksa yedek kalır ve bir kez uyarılır. */
-export function zarSirriAyarla(sir: string | undefined): void {
+/** Zar sırrı yapılandırılmamış (ve yedek izni yok): zar isteyen yazma `yapilandirma_eksik` döner. */
+export class ZarYapilandirmaHatasi extends Error {
+  constructor() {
+    super("zar_sirri_yok");
+    this.name = "ZarYapilandirmaHatasi";
+  }
+}
+
+/**
+ * Ortamdan gelen sırrı kurar (YerlesimDO kurucusu). Sır yoksa ya da kısaysa yedeğe yalnız `yedekIzinli` iken düşer
+ * (bir kez uyarılır); değilse zar kapalıdır.
+ */
+export function zarSirriAyarla(sir: string | undefined, yedekIzinli = false): void {
   if (typeof sir === "string" && sir.length >= ZAR_SIRRI_EN_AZ) {
     anahtar = new TextEncoder().encode(sir);
+    hazir = true;
     return;
   }
   anahtar = new TextEncoder().encode(YEDEK);
+  hazir = yedekIzinli;
   if (!uyarildi) {
     uyarildi = true;
-    console.warn("ZAR_SIRRI tanımlı değil: zar tohumu yerel yedekle üretiliyor (yalnız yerel/test için uygundur).");
+    console.warn(yedekIzinli
+      ? "ZAR_SIRRI tanımlı değil: zar tohumu yerel yedekle üretiliyor (ZAR_YEDEK_IZINLI; yalnız yerel/test)."
+      : "ZAR_SIRRI tanımlı değil ya da kısa: zar gerektiren yazmalar yapilandirma_eksik döner.");
   }
+}
+
+/** Zar kullanılabilir mi (sır ya da izinli yedek). */
+export function zarHazir(): boolean {
+  return hazir;
 }
 
 const K = new Uint32Array([
@@ -110,6 +133,7 @@ export function hmacSha256(anahtarBaytlari: Uint8Array, ileti: Uint8Array): Uint
 
 /** Sırlı tohum: parçalar ":" ile birleşir, sırla HMAC'lenir, ilk 4 bayt mulberry32 tohumudur. */
 export function sirliTohum(...parcalar: (string | number)[]): number {
+  if (!hazir) throw new ZarYapilandirmaHatasi();
   const d = hmacSha256(anahtar, new TextEncoder().encode(parcalar.join(":")));
   return ((d[0]! << 24) | (d[1]! << 16) | (d[2]! << 8) | d[3]!) >>> 0;
 }

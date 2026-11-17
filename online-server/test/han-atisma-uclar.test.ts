@@ -19,7 +19,7 @@ test("H8 uçtan uca: atışma teklif-kabul, kıtalar, oylama, masa olayı ve yer
   const anahtar = await rsaAnahtari("kid-atisk");
   globalThis.fetch = sahteJwks([anahtar]).getir;
   const araclar = sahteAraclar();
-  const env = { GOOGLE_CLIENT_ID: ISTEMCI, OTURUM_ANAHTARI: "o".repeat(48) } as Env;
+  const env = { GOOGLE_CLIENT_ID: ISTEMCI, ZAR_YEDEK_IZINLI: "1", OTURUM_ANAHTARI: "o".repeat(48) } as Env;
   let masaCtx: WebSocketDurumu | undefined;
   const hesap = sahteAdAlani((ctx) => new HesapDO(ctx, env));
   const masa = sahteAdAlani((ctx) => {

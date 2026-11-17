@@ -19,7 +19,7 @@ import { hanNoCoz } from "./mulk/tapu.ts";
 import { DOLULUK, dolulukUygula, type DolulukKaydi } from "./han/doluluk.ts";
 import { VITRIN, vitrinBudar, vitrinListesi, vitrinUygula, type VitrinKaydi } from "./han/oyun/vitrin.ts";
 import { yerlesimBul } from "./dunya-veri.ts";
-import { zarSirriAyarla } from "./yerlesim/zar-sirri.ts";
+import { ZarYapilandirmaHatasi, zarSirriAyarla } from "./yerlesim/zar-sirri.ts";
 
 /** [PARAMETRE] Bir istekte bölgeye teslim edilen en çok vergi kaydı (DO alt istek bütçesi ≤ 12). */
 export const VERGI_TUR_EN_COK = 2;
@@ -46,10 +46,16 @@ export class YerlesimDO {
   #kalan = ALT_ISTEK_EN_COK;
   /** Denetim (testler): bu istekte harcanan alt istek. */
   harcanan = 0;
+  /**
+   * İstek sırası (17 Kasım denetimi S2; bolge-do.ts kalıbı): oyuncu istekleri ve alarm await noktalarında iç içe
+   * geçmez. DO→DO iç iletileri (ganimet, kervan varışı, fiyat özeti) sıraya girmez: gönderen DO kendi sırasında
+   * beklerken karşılıklı kilitlenme olmasın (bu iletiler geri çağrı yapmaz).
+   */
+  #sira: Promise<unknown> = Promise.resolve();
 
   constructor(ctx: DurableObjectState, env: Env, saat: () => number = Date.now) {
     this.#env = env;
-    zarSirriAyarla(env.ZAR_SIRRI);
+    zarSirriAyarla(env.ZAR_SIRRI, env.ZAR_YEDEK_IZINLI === "1");
     this.#isletme = (i) => (env.ISLETME ? (this.#harca(), isletmeCagir(env, i)) : Promise.resolve({ ok: false, hata: "isletme_yok" }));
     this.#kervan = (i) => (this.#harca(), yerlesimCagir(env, i));
     this.#depolama = ctx.storage;
@@ -91,6 +97,12 @@ export class YerlesimDO {
     this.#alarmVar = true;
   }
 
+  #sirayla<T>(is: () => Promise<T>): Promise<T> {
+    const p = this.#sira.then(is, is);
+    this.#sira = p.catch(() => undefined);
+    return p;
+  }
+
   async fetch(istek: Request): Promise<Response> {
     const ileti = await iletiOku<YerlesimIleti>(istek);
     if (!ileti || typeof ileti.yerlesim !== "string") return jsonYanit(hata("gecersiz_istek"));
@@ -101,6 +113,11 @@ export class YerlesimDO {
     // Künye (başka yerleşimden oyuncu sayfası): salt okuma hafif yolu. Ay yetiştirilmez, vergi/etkinlik/kervan/mülk
     // uzlaştırılmaz, alarm kurulmaz, başka DO'ya çağrı yok; yerleşim kurulmamışsa kurulmaz.
     if (ileti.islem === "kunye") return jsonYanit(await this.#kunyeOku(ileti));
+    const sirasiz = ileti.islem === "ganimetKes" || ileti.islem === "ganimetPay" || ileti.islem === "kervanVaris" || ileti.islem === "fiyatOzeti";
+    return sirasiz ? this.#istekIsle(ileti) : this.#sirayla(() => this.#istekIsle(ileti));
+  }
+
+  async #istekIsle(ileti: YerlesimIleti): Promise<Response> {
     this.#butceYenile();
     try {
       const simdi = this.#saat();
@@ -114,7 +131,9 @@ export class YerlesimDO {
       await this.#vergiUzlastir(simdi);
       return jsonYanit(sonuc);
     } catch (e) {
+      // Bellekteki kasaba (ve bu istekte kirlenen anahtarlar) atılır; sonraki istek depodan yeniden yükler.
       this.#motor = undefined;
+      if (e instanceof ZarYapilandirmaHatasi) return jsonYanit(hata("yapilandirma_eksik"));
       throw e;
     }
   }
@@ -482,7 +501,11 @@ export class YerlesimDO {
   }
 
   /** Ay dönümü alarmı: kaçanları yetiştirir; kaldıysa 1 sn sonra, yoksa bir sonraki dönümde yeniden kurar. */
-  async alarm(): Promise<void> {
+  alarm(): Promise<void> {
+    return this.#sirayla(() => this.#alarmIsle());
+  }
+
+  async #alarmIsle(): Promise<void> {
     const simdi = this.#saat();
     this.#butceYenile();
     try {

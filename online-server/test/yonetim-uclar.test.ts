@@ -18,7 +18,7 @@ function ortam(ek: Partial<Env> = {}): Env {
   const env = {
     GOOGLE_CLIENT_ID: ISTEMCI,
     YONETIM_GOOGLE_CLIENT_ID: ISTEMCI,
-    OTURUM_ANAHTARI: "o".repeat(48),
+    ZAR_YEDEK_IZINLI: "1", OTURUM_ANAHTARI: "o".repeat(48),
     YONETICI_EPOSTALAR: `Berkay@Ornek.com`,
     ...ek,
   } as Env;

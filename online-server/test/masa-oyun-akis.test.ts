@@ -243,7 +243,7 @@ test("Uçtan uca: masa oyunu DO'da sürer, vitrinde görünür, DO uyanınca dur
   try {
     const saat = Date.now();
     const araclar = sahteAraclar();
-    const env = { GOOGLE_CLIENT_ID: ISTEMCI, OTURUM_ANAHTARI: "o".repeat(48) } as Env;
+    const env = { GOOGLE_CLIENT_ID: ISTEMCI, ZAR_YEDEK_IZINLI: "1", OTURUM_ANAHTARI: "o".repeat(48) } as Env;
     const masalar = sahteAdAlani((ctx) => new MasaDO(hibernasyonlu(ctx), env, araclar));
     Object.assign(env, {
       HESAP: sahteAdAlani((ctx) => new HesapDO(ctx, env)),

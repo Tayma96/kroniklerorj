@@ -93,7 +93,7 @@ test("sesli sohbet sinyalleşmesi ayrı hız kovasındadır: ekranları kesmez, 
 });
 
 test("Content-Length olmayan büyük gövde akış olarak okunur ve sınırda kesilir", async () => {
-  const env = { GOOGLE_CLIENT_ID: "x", OTURUM_ANAHTARI: ANAHTAR } as unknown as Env;
+  const env = { GOOGLE_CLIENT_ID: "x", ZAR_YEDEK_IZINLI: "1", OTURUM_ANAHTARI: ANAHTAR } as unknown as Env;
   let cekilen = 0;
   const parca = new Uint8Array(4096).fill(0x20);
   const akis = new ReadableStream<Uint8Array>({
@@ -114,7 +114,7 @@ test("Content-Length olmayan büyük gövde akış olarak okunur ve sınırda ke
 });
 
 test("sınır altındaki çok baytlı gövde geçerli JSON olarak okunur", async () => {
-  const env = { GOOGLE_CLIENT_ID: "", OTURUM_ANAHTARI: ANAHTAR } as unknown as Env;
+  const env = { GOOGLE_CLIENT_ID: "", ZAR_YEDEK_IZINLI: "1", OTURUM_ANAHTARI: ANAHTAR } as unknown as Env;
   const yanit = await isleyici.fetch(new Request("https://kronikler-online.test/v1/giris", {
     method: "POST", body: JSON.stringify({ idToken: "ş".repeat(3000) }),
   }), env);
@@ -123,7 +123,7 @@ test("sınır altındaki çok baytlı gövde geçerli JSON olarak okunur", async
 });
 
 function ortam(): Env {
-  const env = { OTURUM_ANAHTARI: ANAHTAR, TEST_GIRIS_ACIK: "1", TEST_GIRIS_KODU: KOD } as unknown as Env;
+  const env = { ZAR_YEDEK_IZINLI: "1", OTURUM_ANAHTARI: ANAHTAR, TEST_GIRIS_ACIK: "1", TEST_GIRIS_KODU: KOD } as unknown as Env;
   env.HESAP = sahteAdAlani((ctx) => new HesapDO(ctx, env));
   env.DUNYA = sahteAdAlani((ctx) => new DunyaDO(ctx, env));
   env.YERLESIM = sahteAdAlani((ctx) => new YerlesimDO(ctx, env));

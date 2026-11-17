@@ -276,3 +276,80 @@ test("E8: sahipsiz ilan iadesinde stok tavanını aşan mal yok olmaz, taban de�
   assert.equal((k.st as Record<string, number>).ekmek, STOK_EN_COK);
   assert.equal(hanedanKasabasi(k).hz, hz0 + 3 * MALLAR.ekmek.taban);
 });
+
+import { YerlesimDO } from "../src/yerlesim-do.ts";
+import { zarHazir, zarSirriAyarla } from "../src/yerlesim/zar-sirri.ts";
+import { sahteDepolama } from "./yardimci.ts";
+
+test("S1: YerlesimDO sırsız ortamda yedeğe yalnız ZAR_YEDEK_IZINLI=1 iken düşer", () => {
+  const ctx = { id: { toString: () => "x" }, storage: sahteDepolama() } as never;
+  try {
+    new YerlesimDO(ctx, {} as never);
+    assert.equal(zarHazir(), false);
+    new YerlesimDO(ctx, { ZAR_YEDEK_IZINLI: "1" } as never);
+    assert.equal(zarHazir(), true);
+    new YerlesimDO(ctx, { ZAR_SIRRI: "kisa" } as never);
+    assert.equal(zarHazir(), false);
+    new YerlesimDO(ctx, { ZAR_SIRRI: "x".repeat(32) } as never);
+    assert.equal(zarHazir(), true);
+  } finally {
+    zarSirriAyarla(undefined, true);
+  }
+});
+
+test("S2: YerlesimDO istekleri sırayla işler (iki eşzamanlı istek tek motor açar, araya girmez)", async () => {
+  const depolama = sahteDepolama();
+  let mOkuma = 0;
+  const asil = depolama.get.bind(depolama) as (k: string | string[]) => Promise<unknown>;
+  (depolama as { get: unknown }).get = async (k: string | string[]) => {
+    if (k === "m") {
+      mOkuma++;
+      for (let i = 0; i < 5; i++) await null;
+    }
+    return asil(k);
+  };
+  const env = { ZAR_YEDEK_IZINLI: "1" } as never;
+  const d = new YerlesimDO({ id: { toString: () => "yerlesim:develi" }, storage: depolama } as never, env);
+  const istek = () => new Request("https://ic/", { method: "POST", body: JSON.stringify({ islem: "durum", yerlesim: "develi", hesapId: "h-yok" }) });
+  const [a, b] = await Promise.all([d.fetch(istek()), d.fetch(istek())]);
+  assert.equal(a.status, b.status);
+  assert.equal(mOkuma, 1, "ikinci istek ilkinin açtığı motoru kullanır");
+});
+
+import { IsletmeDO } from "../src/isletme-do.ts";
+
+test("S2: IsletmeDO istekleri sırayla işler (eşzamanlı iki istek kaydı bir kez yükler)", async () => {
+  const depolama = sahteDepolama();
+  let okuma = 0;
+  const asil = depolama.get.bind(depolama) as (k: string | string[]) => Promise<unknown>;
+  (depolama as { get: unknown }).get = async (k: string | string[]) => {
+    if (k === "is") {
+      okuma++;
+      for (let i = 0; i < 5; i++) await null;
+    }
+    return asil(k);
+  };
+  const d = new IsletmeDO({ id: { toString: () => "isletme:develi.dukkan.1" }, storage: depolama } as never, {} as never);
+  const istek = () => new Request("https://ic/", { method: "POST", body: JSON.stringify({ islem: "gorunum", isletme: "develi.dukkan.1", hesapId: "h" }) });
+  await Promise.all([d.fetch(istek()), d.fetch(istek())]);
+  assert.equal(okuma, 1);
+});
+
+import { HesapDO } from "../src/hesap-do.ts";
+
+test("S3: HesapDO istekleri sırayla işler (eşzamanlı iki istek yaptırım kaydını bir kez okur)", async () => {
+  const depolama = sahteDepolama();
+  let okuma = 0;
+  const asil = depolama.get.bind(depolama) as (k: string | string[]) => Promise<unknown>;
+  (depolama as { get: unknown }).get = async (k: string | string[]) => {
+    if (k === "yaptirim") {
+      okuma++;
+      for (let i = 0; i < 5; i++) await null;
+    }
+    return asil(k);
+  };
+  const d = new HesapDO({ id: { toString: () => "h" }, storage: depolama } as never, {} as never);
+  const istek = () => new Request("https://ic/", { method: "POST", body: JSON.stringify({ islem: "profil", hesapId: "h" }) });
+  await Promise.all([d.fetch(istek()), d.fetch(istek())]);
+  assert.equal(okuma, 1);
+});

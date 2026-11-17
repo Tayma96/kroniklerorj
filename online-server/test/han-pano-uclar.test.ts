@@ -16,7 +16,7 @@ test("H10 uçtan uca: ilan as, oku, günlük sınır, filtre, yalnız sahibi sil
   const anahtar = await rsaAnahtari("kid-panok");
   globalThis.fetch = sahteJwks([anahtar]).getir;
   const araclar = sahteAraclar();
-  const env = { GOOGLE_CLIENT_ID: ISTEMCI, OTURUM_ANAHTARI: "o".repeat(48) } as Env;
+  const env = { GOOGLE_CLIENT_ID: ISTEMCI, ZAR_YEDEK_IZINLI: "1", OTURUM_ANAHTARI: "o".repeat(48) } as Env;
   const hesap = sahteAdAlani((ctx) => new HesapDO(ctx, env));
   const masa = sahteAdAlani((ctx) => new MasaDO(hibernasyonlu(ctx), env, araclar));
   const yonetim = sahteAdAlani((ctx) => new YonetimDO(ctx, env));

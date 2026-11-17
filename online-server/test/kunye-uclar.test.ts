@@ -9,7 +9,7 @@ import { googleYuku, ISTEMCI, jwtImzala, rsaAnahtari, sahteAdAlani, sahteJwks, t
 import { AY_MS } from "../src/saat.ts";
 
 function ortam(): Env {
-  const env = { GOOGLE_CLIENT_ID: `web-istemci,${ISTEMCI}`, OTURUM_ANAHTARI: "o".repeat(48) } as Env;
+  const env = { GOOGLE_CLIENT_ID: `web-istemci,${ISTEMCI}`, ZAR_YEDEK_IZINLI: "1", OTURUM_ANAHTARI: "o".repeat(48) } as Env;
   env.HESAP = sahteAdAlani((ctx) => new HesapDO(ctx, env));
   env.DUNYA = sahteAdAlani((ctx) => new DunyaDO(ctx, env));
   env.YERLESIM = sahteAdAlani((ctx) => new YerlesimDO(ctx, env));

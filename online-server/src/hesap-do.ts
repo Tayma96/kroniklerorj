@@ -43,6 +43,18 @@ export class HesapDO {
   #oturumSurumu: number | undefined;
 
   readonly #dogrulayici: MakbuzDogrulayici;
+  /**
+   * İstek sırası (17 Kasım denetimi S3; bolge-do.ts kalıbı): göç ve öteki yazmalar await noktalarında iç içe geçmez.
+   * Hız sınırı ve iç iletiler (yaptırım, Debdebe rozeti/iadesi, masadan gelen şikâyet) sıraya girmez: başka DO kendi
+   * sırasında bu hesabı beklerken karşılıklı kilitlenme olmasın.
+   */
+  #sira: Promise<unknown> = Promise.resolve();
+
+  #sirayla<T>(is: () => Promise<T>): Promise<T> {
+    const p = this.#sira.then(is, is);
+    this.#sira = p.catch(() => undefined);
+    return p;
+  }
 
   /** `secenek.dogrulayici`: yalnız testte sahte mağaza doğrulayıcısı; üretimde mağaza bağlantısı (yapılandırılmamış). */
   constructor(ctx: DurableObjectState, env: Env, secenek: { dogrulayici?: MakbuzDogrulayici } = {}) {
@@ -73,6 +85,11 @@ export class HesapDO {
       this.#hiz = hiz.durum;
       if (!hiz.izin) return jsonYanit(hata("hiz_siniri"));
     }
+    if (ileti.islem === "sikayet") return this.#istekIsle(ileti, simdi);
+    return this.#sirayla(() => this.#istekIsle(ileti, simdi));
+  }
+
+  async #istekIsle(ileti: HesapIleti, simdi: number): Promise<Response> {
     if (!this.#parametre || this.#parametre.son <= simdi) await this.#parametreTazele(simdi);
     if (typeof ileti.oturumSurumu === "number" && ileti.oturumSurumu !== (await this.#oturumSurumuOku())) {
       return jsonYanit(hata("oturum_gecersiz"));

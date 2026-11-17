@@ -6,7 +6,7 @@ import type { Env } from "../src/tipler.ts";
 import { googleYuku, ISTEMCI, jwtImzala, rsaAnahtari, sahteAdAlani, sahteJwks } from "./yardimci.ts";
 
 function ortam(ek: Partial<Env> = {}): Env {
-  const env = { GOOGLE_CLIENT_ID: `web-istemci,${ISTEMCI}`, OTURUM_ANAHTARI: "o".repeat(48), ...ek } as Env;
+  const env = { GOOGLE_CLIENT_ID: `web-istemci,${ISTEMCI}`, ZAR_YEDEK_IZINLI: "1", OTURUM_ANAHTARI: "o".repeat(48), ...ek } as Env;
   env.HESAP = sahteAdAlani((ctx) => new HesapDO(ctx, env));
   env.DUNYA = sahteAdAlani((ctx) => new DunyaDO(ctx, env));
   env.YERLESIM = sahteAdAlani((ctx) => new YerlesimDO(ctx, env));
@@ -117,7 +117,7 @@ test("uçlar: giriş, profil, tekrar güvenliği, davet, dünya, hız sınırı"
 });
 
 test("yapılandırma eksikse giriş ve oturum uçları 500 yapilandirma_eksik", async () => {
-  const cagir = istemci(ortam({ GOOGLE_CLIENT_ID: "", OTURUM_ANAHTARI: "kisa" }));
+  const cagir = istemci(ortam({ GOOGLE_CLIENT_ID: "", ZAR_YEDEK_IZINLI: "1", OTURUM_ANAHTARI: "kisa" }));
   const g = await cagir("POST", "/v1/giris", { govde: { idToken: "a.b.c" } });
   assert.deepEqual([g.durum, g.govde], [500, { hata: "yapilandirma_eksik" }]);
   assert.equal((await cagir("GET", "/v1/profil", { oturum: "x.y" })).durum, 500);

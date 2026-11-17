@@ -17,7 +17,7 @@ test("beceri uçları: ağaç, öğren, süre, iptal, hızlandır, yeniden, öze
   globalThis.fetch = jwks.getir;
   try {
     let saat = Date.now();
-    const env = { GOOGLE_CLIENT_ID: ISTEMCI, OTURUM_ANAHTARI: "o".repeat(48) } as Env;
+    const env = { GOOGLE_CLIENT_ID: ISTEMCI, ZAR_YEDEK_IZINLI: "1", OTURUM_ANAHTARI: "o".repeat(48) } as Env;
     env.HESAP = sahteAdAlani((ctx) => new HesapDO(ctx, env));
     env.DUNYA = sahteAdAlani((ctx) => new DunyaDO(ctx, env));
     const yerlesimler = sahteAdAlani((ctx) => new YerlesimDO(ctx, env, () => saat));

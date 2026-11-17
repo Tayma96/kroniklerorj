@@ -17,7 +17,7 @@ test("göç uçları: önizleme, kapı, göç, tekrar, profil, siyasi kimlik, mi
   globalThis.fetch = jwks.getir;
   try {
     const saat = Date.now();
-    const env = { GOOGLE_CLIENT_ID: ISTEMCI, OTURUM_ANAHTARI: "o".repeat(48) } as Env;
+    const env = { GOOGLE_CLIENT_ID: ISTEMCI, ZAR_YEDEK_IZINLI: "1", OTURUM_ANAHTARI: "o".repeat(48) } as Env;
     env.HESAP = sahteAdAlani((ctx) => new HesapDO(ctx, env));
     env.DUNYA = sahteAdAlani((ctx) => new DunyaDO(ctx, env));
     const yerlesimler = sahteAdAlani((ctx) => new YerlesimDO(ctx, env, () => saat));

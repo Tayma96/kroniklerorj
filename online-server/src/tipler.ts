@@ -488,10 +488,12 @@ export interface Env {
   REALTIME_TURN_ID?: string;
   REALTIME_TURN_TOKEN?: string;
   /**
-   * Kalite ve efsanevi zarının tohum sırrı (sır: `wrangler secret put ZAR_SIRRI`, en az 16 karakter). Yoksa yerel
-   * yedek kullanılır ve uyarı yazılır (yalnız yerel/test). İstemciye hiç gitmez.
+   * Kalite ve efsanevi zarının tohum sırrı (sır: `wrangler secret put ZAR_SIRRI`, en az 16 karakter). Yoksa zar
+   * gerektiren yazmalar `yapilandirma_eksik` döner (ZAR_YEDEK_IZINLI="1" ise yerel yedek). İstemciye hiç gitmez.
    */
   ZAR_SIRRI?: string;
+  /** "1" iken ZAR_SIRRI yokken yerel yedek tohuma düşülür (yalnız yerel geliştirme ve testler; üretimde tanımlanmaz). */
+  ZAR_YEDEK_IZINLI?: string;
 }
 
 /** Dünya DO'suna profil kaydı isteği (HesapDO gönderir). */

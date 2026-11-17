@@ -49,7 +49,7 @@ async function kur(sesAcik = true) {
   const araclar = { ...sahteAraclar(), getir: rt.getir };
   const env = {
     GOOGLE_CLIENT_ID: ISTEMCI,
-    OTURUM_ANAHTARI: "o".repeat(48),
+    ZAR_YEDEK_IZINLI: "1", OTURUM_ANAHTARI: "o".repeat(48),
     ...(sesAcik ? { REALTIME_APP_ID: "uygulama123", REALTIME_APP_TOKEN: TOKEN } : {}),
   } as Env;
   const hesap = sahteAdAlani((ctx) => new HesapDO(ctx, env));

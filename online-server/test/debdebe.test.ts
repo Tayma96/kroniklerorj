@@ -122,7 +122,7 @@ test("uçlar: satın alma, kuşanma, armağan + teveccüh + rozet, kısaltma sto
   const anahtar = await rsaAnahtari("kid-debdebe");
   globalThis.fetch = sahteJwks([anahtar]).getir;
   const dogrulayici = sahteDogrulayici();
-  const env = { GOOGLE_CLIENT_ID: ISTEMCI, YONETIM_GOOGLE_CLIENT_ID: ISTEMCI, OTURUM_ANAHTARI: "o".repeat(48), YONETICI_EPOSTALAR: "berkay@ornek.com" } as Env;
+  const env = { GOOGLE_CLIENT_ID: ISTEMCI, YONETIM_GOOGLE_CLIENT_ID: ISTEMCI, ZAR_YEDEK_IZINLI: "1", OTURUM_ANAHTARI: "o".repeat(48), YONETICI_EPOSTALAR: "berkay@ornek.com" } as Env;
   env.HESAP = sahteAdAlani((ctx) => new HesapDO(ctx, env, { dogrulayici }));
   env.DUNYA = sahteAdAlani((ctx) => new DunyaDO(ctx, env));
   const yerlesimler = sahteAdAlani((ctx) => new YerlesimDO(ctx, env));

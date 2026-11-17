@@ -23,7 +23,7 @@ function ortam(ayar: Partial<Pick<Env, "TEST_GIRIS_ACIK" | "TEST_GIRIS_KODU">> =
   };
   const env = {
     HESAP,
-    OTURUM_ANAHTARI: ANAHTAR,
+    ZAR_YEDEK_IZINLI: "1", OTURUM_ANAHTARI: ANAHTAR,
     TEST_GIRIS_ACIK: "1",
     TEST_GIRIS_KODU: KOD,
     ...ayar,

@@ -20,6 +20,18 @@ export class IsletmeDO {
   #is: Isletme | undefined;
   #yuklendi = false;
   #uzlastiriyor = false;
+  /**
+   * İstek sırası (17 Kasım denetimi S2): fetch ve alarmın yerel kısmı iç içe geçmez. Yerleşime teslim çağrısı sıra
+   * DIŞINDA beklenir (YerlesimDO kendi sırasında bu DO'yu çağırabilir; karşılıklı kilitlenme olmasın), sonucu yine
+   * sırayla uygulanır.
+   */
+  #sira: Promise<unknown> = Promise.resolve();
+
+  #sirayla<T>(is: () => Promise<T>): Promise<T> {
+    const p = this.#sira.then(is, is);
+    this.#sira = p.catch(() => undefined);
+    return p;
+  }
 
   constructor(ctx: DurableObjectState, env: Env, saat: () => number = Date.now) {
     this.#depolama = ctx.storage;
@@ -51,6 +63,10 @@ export class IsletmeDO {
   async fetch(istek: Request): Promise<Response> {
     const ileti = await iletiOku<IsletmeIleti>(istek);
     if (!ileti || typeof ileti.isletme !== "string") return jsonYanit(hata("gecersiz_istek"));
+    return this.#sirayla(() => this.#istekIsle(ileti));
+  }
+
+  async #istekIsle(ileti: IsletmeIleti): Promise<Response> {
     const simdi = this.#saat();
     try {
       const onceki = await this.#yukle();
@@ -69,13 +85,22 @@ export class IsletmeDO {
   /** Ay dönümü + uzlaştırma: zamanı gelen kasa → cüzdan kayıtları yerleşime teslim edilir; red telafi edilir. */
   async alarm(): Promise<void> {
     const simdi = this.#saat();
-    const is = await this.#yukle();
-    if (!is) return;
-    ayIlerlet(is, oyunAyi(simdi), simdi);
-    ayarGonder(is, simdi);
-    await this.#kaydet();
+    const var_ = await this.#sirayla(async () => {
+      try {
+        const is = await this.#yukle();
+        if (!is) return false;
+        ayIlerlet(is, oyunAyi(simdi), simdi);
+        ayarGonder(is, simdi);
+        await this.#kaydet();
+        return true;
+      } catch (e) {
+        this.#yuklendi = false;
+        throw e;
+      }
+    });
+    if (!var_) return;
     await this.uzlastir(simdi);
-    await this.#alarmKur(simdi);
+    await this.#sirayla(() => this.#alarmKur(simdi));
   }
 
   /** Bekleyen kayıtları teslim eder (testler de çağırır). Cevapsız kalan kayıt ertelenir; zaman aşımı telafi doğurmaz. */
@@ -92,13 +117,17 @@ export class IsletmeDO {
       } catch {
         r = undefined;
       }
-      if (r?.ok) {
-        for (const [i, d] of r.deger.sonuclar) {
-          const k = cikisKapat(is.cik, i, d, simdi);
-          if (k?.durum === "iade") isletmeTelafi(is, k.kayit);
-        }
-      } else for (const k of kayitlar) denemeErtele(is.cik, k.i, simdi);
-      await this.#kaydet();
+      await this.#sirayla(async () => {
+        // Bekleme sırasında bellekteki kayıt atılmış olabilir (hata): güncel kayıt üzerine uygulanır.
+        const guncel = (await this.#yukle()) ?? is;
+        if (r?.ok) {
+          for (const [i, d] of r.deger.sonuclar) {
+            const k = cikisKapat(guncel.cik, i, d, simdi);
+            if (k?.durum === "iade") isletmeTelafi(guncel, k.kayit);
+          }
+        } else for (const k of kayitlar) denemeErtele(guncel.cik, k.i, simdi);
+        await this.#kaydet();
+      });
     } finally {
       this.#uzlastiriyor = false;
     }
