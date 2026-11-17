@@ -5,7 +5,7 @@
 import { useEffect, useRef, useState } from "react";
 import { View, Text } from "react-native";
 import Animated from "react-native-reanimated";
-import { useI18n, applyParams } from "../i18n";
+import { useI18n, applyParams, yuzdeL } from "../i18n";
 import { C, F } from "../theme";
 import { GameIcon } from "../icons";
 import { hap } from "../haptics";
@@ -23,6 +23,7 @@ import type { EkSonuc } from "./ek-istemci";
 import { geciciHataMi } from "./tezgah-veri";
 import type { EmirDokumu, GenisletmeGorunumu, GunSonu, TezgahGorunumu, TopluSiparis, UretimEmri } from "./tezgah-veri";
 import { MESAI_TEK_EN_COK, atolyeHataMetni, depodaToplam, zanaatTarifleri, type AtolyeIstemci } from "./atolye-veri";
+import { topluIndirimKancasi } from "./kanca-ui";
 
 type Ceviri = (k: string) => string;
 type Tarif = ReturnType<typeof zanaatTarifleri>[number];
@@ -42,6 +43,7 @@ const adetMal = (t: Ceviri, n: number, ad: string) => applyParams(t("onl.atl.ade
 const kaliteAdetMetni = (t: Ceviri, k: readonly number[]) => k.map((n, i) => (n > 0 ? adetMal(t, n, kaliteAdi(t, i)) : null)).filter(Boolean).join(" · ");
 /** Kalite kalemi adı ("kalite.atolye" → onl.atl.kk.atolye); bilinmeyen kalem sakin genel adla. */
 function kalemAdi(t: Ceviri, k: string): string {
+  if (k === "kalite.kanca") return t("onl.k3.kk.kanca");
   const a = "onl.atl.kk." + k.replace(/^kalite\./, "");
   const v = t(a);
   return v !== a ? v : t("onl.atl.kk.diger");
@@ -373,9 +375,12 @@ export function AtolyeBolumu({ g, ist, iflas, yonetici, rtl, t, onYenile, onDepo
     <Baslik2 metin={t("onl.atl.toplu.baslik")} rtl={rtl} ust={10} />
     <Not metin={t("onl.atl.toplu.aciklama")} rtl={rtl} />
     {a.topluSiparis.length ? a.topluSiparis.map((s) => <TopluKarti key={s.id} s={s} lang={lang} rtl={rtl} t={t} izin={!!iz.toplu} iflas={iflas}
-      bekliyor={topluY.bekliyor && topluNo === s.id}
+      bekliyor={topluY.bekliyor && topluNo === s.id} indirimKanca={topluIndirimKancasi(g, s.meslek)}
       onTeslim={() => { setTopluNo(s.id); void topluY.gonder(`toplu|${s.id}`, (istekNo) => ist.toplu(g.isletme, { siparis: s.id, istekNo }), onYenile,
-        (v) => (v ? applyParams(t("onl.atl.toplu.tamam"), [v.toplu.adet, malAdi(t, v.toplu.mal), v.toplu.kasaya]) : t("onl.atl.toplu.tamamKisa"))); }} />)
+        (v) => (!v ? t("onl.atl.toplu.tamamKisa")
+          : v.toplu.indirimYuzde && v.toplu.siparisAdet && v.toplu.siparisAdet > v.toplu.adet
+            ? applyParams(t("onl.k3.toplu.tamamIndirim"), [v.toplu.adet, malAdi(t, v.toplu.mal), v.toplu.siparisAdet, v.toplu.kasaya])
+            : applyParams(t("onl.atl.toplu.tamam"), [v.toplu.adet, malAdi(t, v.toplu.mal), v.toplu.kasaya]))); }} />)
       : <BosKart icon="scroll" metin={t("onl.atl.toplu.yok")} rtl={rtl} />}
     <Sonuc hata={topluY.hata} bilgi={topluY.bilgi} rtl={rtl} />
 
@@ -394,13 +399,18 @@ export function AtolyeBolumu({ g, ist, iflas, yonetici, rtl, t, onYenile, onDepo
 }
 
 /** Toplu sipariş kartı; `salt` (çarşı listesi) yalnız gösterir, teslim atölye ekranındadır. */
-export function TopluKarti({ s, lang, rtl, t, izin, iflas, bekliyor, onTeslim, salt = false }: {
+export function TopluKarti({ s, lang, rtl, t, izin, iflas, bekliyor, onTeslim, salt = false, indirimKanca = 0 }: {
   s: TopluSiparis; lang: Lang; rtl: boolean; t: Ceviri; izin: boolean; iflas: boolean; bekliyor: boolean; onTeslim: () => void; salt?: boolean;
+  /** Atölyenin bu siparişin zanaatındaki toplu indirim kancası (yüzde; Dilim 3). Damga koşulunu anlatmak için. */
+  indirimKanca?: number;
 }) {
   const acik = s.durum === "acik" && s.kalanAy > 0;
+  // Teslim edilecek adet sunucudan (Dilim 3 `teslimAdet`; indirim yalnız damgalı malla); eski sunucuda tam adet.
+  const hedef = s.teslimAdet ?? s.adet;
+  const indirimli = !!s.indirimYuzde && hedef < s.adet;
   const carpan = s.odulDokum.kalemler.find((x) => x.k === "toplu_carpani")?.d ?? 0;
   const neden = !acik ? null : iflas ? t("onl.atl.h.isletme_kapali") : !izin ? t("onl.atl.toplu.yetkiYok") : s.ustUste ? t("onl.atl.h.ust_uste")
-    : s.depoda !== undefined && s.depoda < s.adet ? applyParams(t("onl.atl.toplu.eksik"), [s.adet - s.depoda, malAdi(t, s.mal)])
+    : s.depoda !== undefined && s.depoda < hedef ? applyParams(t("onl.atl.toplu.eksik"), [hedef - s.depoda, malAdi(t, s.mal)])
     : s.teslimEdebilir === false ? applyParams(t("onl.atl.toplu.zanaatDisi"), [zanaatAdi(s.meslek, lang)]) : null;
   return <Animated.View entering={belir()}>
     <Cerceve aktif={acik && !!s.teslimEdebilir} ic={{ padding: 12, gap: 8 }}>
@@ -416,13 +426,17 @@ export function TopluKarti({ s, lang, rtl, t, izin, iflas, bekliyor, onTeslim, s
         <Text style={{ fontFamily: F.serif, fontSize: 12.5, lineHeight: 17, color: C.parchmentDim, textAlign: hiza(rtl) }}>{applyParams(t("onl.atl.toplu.odulDokum"), [s.deger, carpan])}</Text>
         <View style={{ flexDirection: yon(rtl), flexWrap: "wrap", gap: 6 }}>
           <Rozet icon={acik ? "hourglass" : "shield"} metin={acik ? applyParams(t("onl.atl.toplu.kalanAy"), [s.kalanAy]) : t(s.alan ? "onl.atl.toplu.teslimEdildi" : "onl.atl.toplu.kapandi")} renk={acik ? C.gold : C.parchmentMuted} />
-          {s.depoda !== undefined && acik ? <Rozet icon="backpack" metin={applyParams(t("onl.atl.toplu.depoda"), [s.depoda, s.adet])} renk={s.depoda >= s.adet ? C.sage : C.parchmentMuted} /> : null}
+          {s.depoda !== undefined && acik ? <Rozet icon="backpack" metin={applyParams(t("onl.atl.toplu.depoda"), [s.depoda, hedef])} renk={s.depoda >= hedef ? C.sage : C.parchmentMuted} /> : null}
+          {indirimli && acik ? <Rozet icon="medal" metin={applyParams(t("onl.k3.toplu.rozet"), [yuzdeL(s.indirimYuzde ?? 0, lang), hedef])} renk={C.sage} /> : null}
         </View>
+        {indirimli && acik ? <Text style={{ fontFamily: F.serifItalic, fontSize: 12.5, lineHeight: 17, color: C.sage, textAlign: hiza(rtl) }}>{applyParams(t("onl.k3.toplu.indirimli"), [s.adet, hedef])}</Text> : null}
         {s.alan ? <Text style={{ fontFamily: F.serifItalic, fontSize: 12.5, color: C.gold, textAlign: hiza(rtl) }}>{applyParams(t("onl.atl.toplu.alan"), [s.alan.ad || t("onl.mk.tur.atolye")])}</Text> : null}
       </View>
+      {acik && !salt && !indirimli && indirimKanca > 0 && s.depoda !== undefined && !s.ustUste
+        ? <Not metin={applyParams(t("onl.k3.toplu.damga"), [yuzdeL(indirimKanca, lang)])} rtl={rtl} icon="anvil" renk={C.gold} /> : null}
       {acik && salt && s.teslimEdebilir ? <Not metin={t("onl.atl.toplu.atolyendenTeslim")} rtl={rtl} icon="anvil" renk={C.sage} /> : null}
       {acik && !salt ? (neden ? <Not metin={neden} rtl={rtl} /> : <AltinDugme etiket={t("onl.atl.toplu.teslim")} icon="medal" rtl={rtl} bekliyor={bekliyor} onPress={onTeslim}
-        erisim={applyParams(t("onl.atl.toplu.teslimErisim"), [s.adet, malAdi(t, s.mal), s.odul])} />) : null}
+        erisim={applyParams(t("onl.atl.toplu.teslimErisim"), [hedef, malAdi(t, s.mal), s.odul])} />) : null}
     </Cerceve>
   </Animated.View>;
 }

@@ -31,6 +31,7 @@ import {
   DepoCekmecesi, DepoOzeti, DevralCekmecesi, DukkanBasligi, GunSonuKarti, KepenkSatiri, RafCekmecesi, RafIzgarasi, SatinAlCekmecesi, TezgahIskeleti, YolcuPayiDokumu,
 } from "../../../lib/online/tezgah-ui";
 import { AtolyeBolumu, GenisletmeKarti } from "../../../lib/online/atolye-ui";
+import { UstalikKarti } from "../../../lib/online/kanca-ui";
 import { atolyeHataMetni, useAtolyeIstemci, useTezgahOlayi } from "../../../lib/online/atolye-veri";
 import { hatirlananMulkListesi } from "../../../lib/online/simdi-rehber";
 import { kisiYolu } from "../../../lib/online/toplum-veri";
@@ -331,6 +332,7 @@ function IsletmeEkran() {
   const tezgahBolumu = tz ? <View style={{ gap: 10 }}>
     <DukkanBasligi g={tz} rtl={rtl} t={t} konum={konum} />
     <KepenkSatiri g={tz} rtl={rtl} t={t} musteri={musteri} devralmaAy={devralmaAy} />
+    {yetkili ? <UstalikKarti g={tz} t={t} rtl={rtl} /> : null}
     {musteri && tz.sahip.id ? <Pressable accessibilityRole="link" accessibilityLabel={applyParams(t("onl.tz.sahipSayfasi"), [tz.sahip.ad || t("onl.hs.sahipBilinmez")])}
       onPress={() => { hap("tap"); router.push(kisiYolu(tz.sahip.id)); }}
       style={({ pressed }) => ({ minHeight: 44, flexDirection: yon(rtl), alignItems: "center", gap: 8, opacity: pressed ? 0.7 : 1 })}>
