@@ -2821,7 +2821,7 @@ function dictFor(lang: Lang): Dict { return DICT_CACHE[lang] || (DICT_CACHE[lang
 // Hook'suz çevirici — saf modüller (lore vb.) için. Eksik anahtar TR'ye, o da yoksa anahtara düşer.
 // Yüzde dile göre yazılır: Türkçede işaret önde (%45), İngilizce/Portekizcede arkada (45%), İspanyolca/Rusçada boşlukla (45 %), Arapçada ٪.
 export function yuzdeL(n: number, lang: Lang): string { return lang === "tr" ? "%" + n : lang === "ar" ? n + "٪" : lang === "es" || lang === "ru" ? n + "\u00a0%" : n + "%"; }
-export function tFor(lang: Lang, key: string): string { return dictFor(lang)[key] ?? TR[key] ?? key; }
+export function tFor(lang: Lang, key: string): string { return dictFor(lang)[key] ?? TR[key] ?? SAYFA_METIN.tr[key] ?? key; }
 // %1, %2 … yer tutucularını parametrelerle doldurur (günlük/kronik kayıtları için).
 // "%1 hijo(s)" kalıpları sayıya göre çözülür: 1 → "1 hijo", 5 → "5 hijos" (ardışık sözcükler de: "2 amigo(s) leal(es)").
 // Sayı 1 iken düz çoğul kalmış süre sözcüğü tekile iner ("1 months" → "1 month", "en 1 meses" → "en 1 mes", "daqui a 1 meses" → "daqui a 1 mês").
@@ -3082,7 +3082,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [langChosen, setLangChosen] = useState<boolean | null>(null);
   useEffect(() => { (async () => { let ok = false; try { const v = await AsyncStorage.getItem(KEY); if (v && DICT_BUILDERS[v as Lang]) { setLangState(v as Lang); ok = true; } } catch {} setLangChosen(ok); })(); }, []);
   const setLang = useCallback((l: Lang) => { setLangState(l); setLangChosen(true); AsyncStorage.setItem(KEY, l).catch(() => {}); }, []);
-  const t = useCallback((key: string) => dictFor(lang)[key] ?? TR[key] ?? key, [lang]);
+  const t = useCallback((key: string) => dictFor(lang)[key] ?? TR[key] ?? SAYFA_METIN.tr[key] ?? key, [lang]);
   const rtl = LANGS.find((l) => l.code === lang)?.rtl ?? false;
   const tg = useCallback((key: string, female: boolean) => { if (female) { const d = dictFor(lang); const f = d[key + ".f"]; if (f) return f; } return t(key); }, [lang, t]);
   displayFontFor(lang);
