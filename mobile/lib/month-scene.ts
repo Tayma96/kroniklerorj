@@ -1,4 +1,4 @@
-import { GameState, advance, applyDilemma, resolveOpportunity, gameRandom, gunlukDuzen, duzenYemek, kirilmaSec, mektepKartSec, danisanSesleri, danisanEtkisi, husumetSec } from "./game";
+import { GameState, advance, applyDilemma, resolveOpportunity, gameRandom, gunlukDuzen, duzenYemek, kirilmaSec, mektepKartSec, danisanSesleri, danisanEtkisi, husumetSec, kancaSec, kancaSecilebilir } from "./game";
 import { ayinSahnesi } from "./events";
 import { pendingMonthScene, repairMonthScene, MonthScene } from "./month-scene-state";
 import { tFor } from "./i18n";
@@ -10,7 +10,7 @@ export function prepareMonthScene(prev: GameState, since?: number): GameState {
   const generation = prev.player.generation || 1;
   const s = { ...rolled.s, rng_state: work.rng_state };
   const danis = rolled.dilemma ? danisanSesleri(s, rolled.dilemma.choices) : []; // F6a: yakın çevrenin tavsiyesi (tohumlu, kart açılırken bir kez)
-  const raw: MonthScene = { id: `month:${generation}:${prev.turn}`, generation, turn: prev.turn, kind: rolled.tur, done: !rolled.dilemma && !rolled.opp && !rolled.kir && !rolled.mek && !rolled.hus, ...(rolled.kir ? { kir: { ...rolled.kir } } : {}), ...(rolled.mek ? { mek: { ...rolled.mek } } : {}), ...(rolled.hus ? { hus: { ...rolled.hus } } : {}),
+  const raw: MonthScene = { id: `month:${generation}:${prev.turn}`, generation, turn: prev.turn, kind: rolled.tur, done: !rolled.dilemma && !rolled.opp && !rolled.kir && !rolled.mek && !rolled.hus && !rolled.kan, ...(rolled.kir ? { kir: { ...rolled.kir } } : {}), ...(rolled.mek ? { mek: { ...rolled.mek } } : {}), ...(rolled.hus ? { hus: { ...rolled.hus } } : {}), ...(rolled.kan ? { kan: { ...rolled.kan } } : {}),
     ...(rolled.dilemma ? { dilemma: JSON.parse(JSON.stringify(rolled.dilemma)) } : {}), ...(danis.length ? { danis } : {}), ...(rolled.opp ? { opp: { ...rolled.opp }, stage: "intro" } : {}) };
   return { ...s, monthScene: repairMonthScene(raw, s) };
 }
@@ -59,6 +59,17 @@ export function chooseMonthHusumet(prev: GameState, id: string, index: number): 
   const s = finish(s0), etki: Record<string, number> = {};
   for (const x of ["money", "reputation", "honor", "fame", "fear", "health", "stat_points"] as const) { const v = Math.round((s.player[x] as number) - (prev.player[x] as number)); if (v) etki[x] = v; }
   return { ...s, monthScene: { ...s.monthScene!, secim: { id: "hus", i: index, label: "hus", etki } } };
+}
+// F6b kanca kartı (telafi yayı / elçilik / muhbirlik): dayanağı kalmadıysa sahne kapanır (ay kilitli kalmaz); bayat sahne değişmez.
+export function chooseMonthKanca(prev: GameState, id: string, index: number): GameState {
+  const m = pendingMonthScene(prev), k = m?.kan;
+  if (!m || m.id !== id || !k) return prev;
+  if (!kancaSecilebilir(prev, k)) return finish(prev);
+  const s0 = kancaSec(prev, k, index);
+  if (s0 === prev) return prev;
+  const s = finish(s0), etki: Record<string, number> = {};
+  for (const x of ["money", "reputation", "honor", "fame", "fear", "health", "stat_points"] as const) { const v = Math.round((s.player[x] as number) - (prev.player[x] as number)); if (v) etki[x] = v; }
+  return { ...s, monthScene: { ...s.monthScene!, secim: { id: "kan." + k.id, i: index, label: k.id, etki } } };
 }
 export function progressMonthOpportunity(prev: GameState, id: string, stage: "play" | "result", success?: boolean): GameState {
   const m = pendingMonthScene(prev);
