@@ -7,7 +7,7 @@ import { iletiOku, jsonYanit } from "./ic.ts";
 import { davetCoz, davetOlustur, dunyaOzeti, gocKayit, kayitOl, oyuncuBul } from "./mantik.ts";
 import { basarili, hata, type DunyaIleti, type Env, type Sonuc } from "./tipler.ts";
 import { levhaOku, levhaYaz, type LevhaYazimi } from "./debdebe/levha.ts";
-import { adAra, hesapEngelYaz, numaraAdTazele, numaraAl, numaraBul, type Listeleyici } from "./kunye/numara.ts";
+import { adAra, hesapEngelYaz, kimlikOzetleri, numaraAdTazele, numaraAl, numaraBul, type Listeleyici } from "./kunye/numara.ts";
 
 const rastgele = (bayt: number): Uint8Array => crypto.getRandomValues(new Uint8Array(bayt));
 
@@ -39,6 +39,8 @@ export class DunyaDO {
         return davetCoz(this.#depo, ileti.kod);
       case "oyuncuBul":
         return oyuncuBul(this.#depo, { ad: ileti.ad, hesap: ileti.hesap });
+      case "kimlikOzet":
+        return kimlikOzetleri(this.#depo, ileti.hesaplar);
       // Künye (oyuncu numarası ve arama): src/kunye/numara.ts
       case "numaraAl":
         return numaraAl(this.#depo, ileti.hesapId, rastgele);

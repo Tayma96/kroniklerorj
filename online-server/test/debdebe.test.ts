@@ -205,7 +205,7 @@ test("uçlar: satın alma, kuşanma, armağan + teveccüh + rozet, kısaltma sto
   assert.deepEqual(lv.buHaftaAnilanlar, ["Ayşe"]);
   assert.equal(/"(p|puan|tutar|sira)"/.test(JSON.stringify(lv)), false, "tutar ve sıra görünmez");
 
-  // Y3: Kurucu iadesi (gerekçe zorunlu, kendi hesabına yasak); armağan iadesi teveccühü ve rozeti geri alır.
+  // Y3: Kurucu iadesi (gerekçe zorunlu; kurucu kendi hesabını da iade edebilir); armağan iadesi teveccühü ve rozeti geri alır.
   assert.equal((await al(berkay.oturum, "balon_ipek", makbuz("GPA.3001", "balon_ipek"))).durum, 200);
   const yt = await jwtImzala(anahtar, googleYuku(Date.now(), { sub: "110000000000000000013", email: "berkay@ornek.com", email_verified: true }));
   const yo = (await cagir("POST", "/yonetim/giris", { govde: { idToken: yt } })).govde.oturum as string;
@@ -213,7 +213,8 @@ test("uçlar: satın alma, kuşanma, armağan + teveccüh + rozet, kısaltma sto
   assert.equal(liste.durum, 200, JSON.stringify(liste.govde));
   assert.equal(liste.govde.islemler.length, 5, "kısaltma ürünü yok (E5)");
   const iade = (islem: string, gerekce = "Mağaza iadesi onaylandı") => cagir("POST", "/yonetim/debdebe-iade", { oturum: yo, govde: { islem, gerekce, istekNo: no() } });
-  assert.deepEqual((await iade("google:GPA.3001")).govde, { hata: "kendi_hedef" });
+  // Kurucu hiçbir şeyle sınırlanmaz (Berkay kuralı): kendi satın alımını da iade edebilir (moderatöre yasak).
+  assert.equal((await iade("google:GPA.3001")).durum, 200);
   assert.equal((await iade("google:GPA.1002", "")).govde.hata, "gerekce_gecersiz");
   const i1 = await iade("google:GPA.1002");
   assert.equal(i1.durum, 200, JSON.stringify(i1.govde));

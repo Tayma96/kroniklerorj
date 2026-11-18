@@ -42,6 +42,8 @@ export interface TapuOzeti {
   sahip: Kisi;
   /** Atölye zanaatı (Dilim 2). */
   za?: MeslekId;
+  /** Bu tapu sürümü oyuncular arası devirle doğdu (B2: kasa ve emanet eski sahibe iade edilir). */
+  dv?: 1;
 }
 
 export const KOMUTLAR = ["ad", "tezyin", "fiyat", "kapi", "cek", "emanet", "personel"] as const;
@@ -60,7 +62,7 @@ export interface IsletmeYaniti {
 }
 
 /** Tapu özeti yeniyse işletmeyi kurar (iflastan sonra yeni sahip) ya da sahibini değiştirir. Çıkış/giriş defteri korunur. */
-function tapuUygula(is: Isletme | undefined, t: TapuOzeti, ay: number): Isletme {
+function tapuUygula(is: Isletme | undefined, t: TapuOzeti, ay: number, an: number): Isletme {
   if (!is) return isletmeKur(t.isletme, t.yerlesim, t.tur, t.no, t.sahip, t.ts, ay);
   if (t.ts <= is.ts) return is;
   if (is.durum === "iflas") {
@@ -74,7 +76,7 @@ function tapuUygula(is: Isletme | undefined, t: TapuOzeti, ay: number): Isletme 
     yeni.as = is.as;
     return yeni;
   }
-  sahipDegis(is, t.sahip, t.ts, ay);
+  sahipDegis(is, t.sahip, t.ts, ay, an, t.dv === 1);
   return is;
 }
 
@@ -95,8 +97,8 @@ export function isletmeTelafi(is: Isletme, x: CikisKaydi): void {
   if (x.t !== "cuzdana") return;
   const neden = x.y.neden;
   if (neden === "maas" || neden === "tazminat") is.emanet += x.a;
-  // Devralma iadesi eski sahibe ulaşamadıysa (kişi yok) yeni sahibe kalmaz: dünyadan çıkar.
-  else if (neden === "devral") is.batak += x.a;
+  // Devralma ve devir iadesi eski sahibe ulaşamadıysa (kişi yok) yeni sahibe kalmaz: dünyadan çıkar.
+  else if (neden === "devral" || neden === "devir") is.batak += x.a;
   else is.kasa += x.a;
 }
 
@@ -109,7 +111,7 @@ export function isletmeIsle(onceki: Isletme | undefined, ileti: IsletmeIleti, an
   const ay = oyunAyi(an);
   let is = onceki;
   if ((ileti.islem === "komut" || ileti.islem === "oku") && ileti.tapu.isletme === ileti.isletme) {
-    is = tapuUygula(is, ileti.tapu, ay);
+    is = tapuUygula(is, ileti.tapu, ay, an);
     if (is.tur === "atolye" && ileti.tapu.za && is.za !== ileti.tapu.za) is.za = ileti.tapu.za;
   }
   if (is) ayIlerlet(is, ay, an);
@@ -122,7 +124,7 @@ export function isletmeIsle(onceki: Isletme | undefined, ileti: IsletmeIleti, an
       for (const x of ileti.kayitlar) {
         if (x.t === "kur" || x.t === "sahip") {
           const t = x.y as unknown as TapuOzeti;
-          is = tapuUygula(is, { isletme: ileti.isletme, yerlesim: ileti.isletme.split(".")[0]!, tur: (x.y.tur as MulkTuru) ?? is?.tur ?? "han", no: Number(x.y.no ?? is?.no ?? 1), ts: t.ts, sahip: t.sahip }, ay);
+          is = tapuUygula(is, { isletme: ileti.isletme, yerlesim: ileti.isletme.split(".")[0]!, tur: (x.y.tur as MulkTuru) ?? is?.tur ?? "han", no: Number(x.y.no ?? is?.no ?? 1), ts: t.ts, sahip: t.sahip, ...(x.y.dv === 1 ? { dv: 1 as const } : {}) }, ay, an);
           girisUygula(is.gir, x.i, an, () => ({ durum: "kabul" }));
           sonuclar.push([x.i, "kabul"]);
         } else if (x.t === "devral") {

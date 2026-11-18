@@ -4,12 +4,15 @@
 // birebir biçimi. İstemci sonuç hesaplamaz: yalnız niyet gönderir, sunucunun gördüğü sınırları ön izlemede gösterir.
 // Bu dosya protokol.ts'den yalnız TİP alır (çalışma anında döngü yok; protokol.ts buradan hata kodlarını alır).
 import type { Cinsiyet, Dil, Kademe, KisiAdi, MalId, MeslekId } from "./protokol";
+import { meslekiGecmisMi, type MeslekiGecmis } from "./beceri-agaci/beceri-veri";
 
 /** Faz 3a hata kodları (tipler.ts HATA_DURUMU) ve /v1/sikayet kodları. */
 export const TOPLUM_HATALARI = [
   "teklif_gecersiz", "teklif_yok", "teklif_kapandi", "teklif_siniri", "taraf_degil", "kendine", "engelli", "tavan_doldu",
   "hediye_dongu", "aralik_dolu", "istek_yok", "soylenti_yok", "duzen_gecersiz", "oncelik_bekle",
   "kendini_sikayet", "sikayet_gecersiz", "sikayet_siniri", "kuyruk_dolu", "susturuldu",
+  // E5–E7 topluluk (meşrep, hami, ortak dert, şenlik, zaviye) ve oyuncu arabuluculuğu; metinler "onl.hata.<kod>".
+  "mesrep_gecersiz", "mesrep_erken", "mesrep_kilitli", "hami_gecersiz", "hami_uygun_degil", "hami_var", "hami_dolu", "bag_yok", "dert_yok", "dert_kapandi", "katki_gecersiz", "katki_siniri", "senlik_yok", "zaviye_gecersiz", "zaviye_yok", "zaviye_var", "zaviye_dolu", "zaviye_kuruluyor", "kidem_yetersiz", "aday_uygun_degil", "arabulucu_tarafsiz_degil",
 ] as const;
 export type ToplumHataKodu = (typeof TOPLUM_HATALARI)[number];
 
@@ -84,8 +87,8 @@ export interface TeklifGorunumu {
 }
 
 export interface OyuncuMeslegi { ana: MeslekId | null; anaKademe: Kademe | null; yan: MeslekId | null; yanKademe: Kademe | null }
-/** Mesleki geçmiş: her meslekte kademe ve öğrenilmiş dallar. */
-export interface OyuncuMeslekSatiri { meslek: MeslekId; kademe: Kademe; dallar: string[] }
+/** Mesleki geçmiş satırı: her meslekte kademe ve öğrenilmiş düğümler (beceri ağacı v2). */
+export type OyuncuMeslekSatiri = MeslekiGecmis["meslekler"][number];
 export interface TeveccuhEtkisi { k: string; p: { deger: number } }
 export interface TeveccuhGorunumu { kademe: number; puan: number; sonrakiEsik: number | null; verenSayisi: number; etkiler: TeveccuhEtkisi[] }
 export interface VitrinArmagani { id: string; kimden: KisiAdi; ay: number; akce?: number; mal?: MalId; adet?: number; yapan: KisiAdi | null }
@@ -102,7 +105,8 @@ export interface OyuncuProfili {
   cinsiyet: Cinsiyet;
   yas: number;
   meslek: OyuncuMeslegi;
-  meslekler: OyuncuMeslekSatiri[];
+  /** Mesleki geçmiş (sunucu beceri.ts mesleki): meslek başına kademe ve öğrenilmiş düğümler, toplam beceri, unvanlar. */
+  mesleki: MeslekiGecmis;
   hane: { id: number; reis: KisiAdi | null };
   nam: Record<string, number>;
   mekan: string | null;
@@ -115,8 +119,6 @@ export interface OyuncuProfili {
   teveccuh: TeveccuhGorunumu;
   vitrin: VitrinArmagani[];
   eylemler: OyuncuEylemi[];
-  /** Beceri ağacı v2 §5: kalıcı unvanlar (sunucu henüz göndermiyor). */
-  unvanlar?: string[];
   /** Künye numarası (8 hane; sunucu sayı gönderir, eski sunucu hiç göndermez): varsa künyeye doğrudan geçilir. */
   numara?: number | string;
 }
@@ -220,11 +222,10 @@ export function oyuncuProfiliMi(v: unknown): v is OyuncuProfili {
   const p: Nesne = v;
   const m = p.meslek, h = p.hane, hu = p.husumet;
   return mantik(p.ben) && (p.cinsiyet === "erkek" || p.cinsiyet === "kadın") && sayi(p.yas)
-    && nesne(m) && dizi(p.meslekler) && p.meslekler.every((x) => nesne(x) && metin(x.meslek) && sayi(x.kademe) && dizi(x.dallar))
+    && nesne(m) && meslekiGecmisMi(p.mesleki)
     && nesne(h) && nesne(p.nam) && bagMi(p.bag) && nesne(hu) && mantik(hu.benIlanEttim) && mantik(hu.oIlanEtti)
     && dizi(p.husumetler) && sayi(p.dostSayisi) && dizi(p.ortakTanidiklar) && p.ortakTanidiklar.every(kisiMi) && mantik(p.engelledim)
-    && teveccuhMi(p.teveccuh) && vitrinMi(p.vitrin) && dizi(p.eylemler) && p.eylemler.every((e) => nesne(e) && metin(e.tur) && mantik(e.acik))
-    && (p.unvanlar === undefined || (dizi(p.unvanlar) && p.unvanlar.every(metin)));
+    && teveccuhMi(p.teveccuh) && vitrinMi(p.vitrin) && dizi(p.eylemler) && p.eylemler.every((e) => nesne(e) && metin(e.tur) && mantik(e.acik));
 }
 const ayliListe = (v: unknown) => dizi(v) && v.every((x) => kisiMi(x) && sayi(x.ay));
 const teklifListesi = (v: unknown) => dizi(v) && v.every(teklifMi);
@@ -312,7 +313,7 @@ export function toplulukDurumuMi(v: unknown): v is ToplulukDurumu {
   if (!nesne(v.senlik) || !(v.senlik.simdiki === null || nesne(v.senlik.simdiki))) return false;
   if (!nesne(v.hami) || !mantik(v.hami.hamiOlabilir) || !mantik(v.hami.yeniGelen) || !sayi(v.hami.buAyHamiNami) || !dizi(v.hami.suren) || !dizi(v.hami.gelen) || !dizi(v.hami.giden) || !dizi(v.hami.biten)) return false;
   if (!nesne(v.mudavim) || !sayi(v.mudavim.ziyaret) || !(v.mudavim.rozet === null || metin(v.mudavim.rozet))) return false;
-  if (!nesne(v.zaviye) || !(v.zaviye.ben === null || zaviyeGorunumuMi(v.zaviye.ben))
+  if (!nesne(v.zaviye) || !(v.zaviye.benim === null || zaviyeGorunumuMi(v.zaviye.benim))
     || !dizi(v.zaviye.davetler) || !v.zaviye.davetler.every((d) => nesne(d) && metin(d.id) && metin(d.ad) && sayi(d.uyeSayisi))
     || !dizi(v.zaviye.kasabada) || !v.zaviye.kasabada.every((z) => nesne(z) && metin(z.id) && metin(z.ad) && sayi(z.uyeSayisi) && metin(z.durum))
     || !nesne(v.zaviye.ahiSarti) || !sayi(v.zaviye.ahiSarti.teveccuhKademe) || !sayi(v.zaviye.ahiSarti.benimKademem) || !mantik(v.zaviye.ahiSarti.adayim)) return false;

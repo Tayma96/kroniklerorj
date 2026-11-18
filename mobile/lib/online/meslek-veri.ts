@@ -97,13 +97,19 @@ export const NPC_MALLARI: readonly MalId[] = MAL_IDLERI.filter((m) => MALLAR[m].
 /** NPC etiket fiyatı (birim). Ödenen tutarın dökümü alımdan sonra sunucudan gelir. */
 export const npcEtiketFiyati = (mal: MalId) => Math.ceil(MALLAR[mal].taban * NPC_CARPAN);
 
-/** Temel işler (sunucu temel-is.ts TEMEL_ISLER): çıktı malı, işi kendi işi sayan meslek, usta iş düğümü. */
-export const TEMEL_ISLER: Record<IsId, { mal: MalId; meslek: MeslekId; usta?: { dugum: string; mal: MalId } }> = {
-  odun: { mal: "odun", meslek: "oduncu", usta: { dugum: "oduncu.orman.0", mal: "sertOdun" } },
-  tas: { mal: "tas", meslek: "oduncu", usta: { dugum: "oduncu.maden.0", mal: "cevher" } },
-  ot: { mal: "ot", meslek: "sifaci", usta: { dugum: "sifaci.otlar.0", mal: "sifaliOt" } },
-  yun: { mal: "yun", meslek: "ciftci", usta: { dugum: "ciftci.suru.0", mal: "inceYun" } },
-  su: { mal: "su", meslek: "hanci" },
+/** Temel işler (sunucu temel-is.ts TEMEL_ISLER): çıktı malı (onarım ve yamaklıkta yok), işi kendi işi sayan meslek,
+ * usta iş mi (kilidi sunucu IS_KILIDI), yamaklık mı. Liste ve açıklık sunucunun ben.temelIsler önizlemesinden gelir;
+ * bu tablo yalnız önizleme yokken (eski sunucu, sahte istemci) kullanılır. */
+export const TEMEL_ISLER: Record<IsId, { mal: MalId | null; meslek: MeslekId; usta?: true; yamak?: true }> = {
+  odun: { mal: "odun", meslek: "oduncu" }, tas: { mal: "tas", meslek: "oduncu" }, ot: { mal: "ot", meslek: "sifaci" },
+  yun: { mal: "yun", meslek: "ciftci" }, su: { mal: "su", meslek: "hanci" }, onarim: { mal: null, meslek: "demirci" },
+  koruk: { mal: null, meslek: "demirci", yamak: true }, tezgah: { mal: null, meslek: "marangoz", yamak: true },
+  tarak: { mal: null, meslek: "dokumaci", yamak: true }, mutfak: { mal: null, meslek: "asci", yamak: true },
+  ezber: { mal: null, meslek: "ozan", yamak: true }, kalem: { mal: null, meslek: "katip", yamak: true },
+  hamal: { mal: null, meslek: "tuccar", yamak: true }, sahitlik: { mal: null, meslek: "arabulucu", yamak: true },
+  karakol: { mal: null, meslek: "asker", yamak: true }, evrak: { mal: null, meslek: "divan", yamak: true },
+  sertOdun: { mal: "sertOdun", meslek: "oduncu", usta: true }, cevher: { mal: "cevher", meslek: "oduncu", usta: true },
+  inceYun: { mal: "inceYun", meslek: "ciftci", usta: true }, sifaliOt: { mal: "sifaliOt", meslek: "sifaci", usta: true },
 };
 export const ISLER: readonly IsId[] = IS_IDLERI;
 
@@ -125,7 +131,11 @@ export const MAL_IKON: Record<MalId, string> = {
   kece: "wool", cadir: "house", ekmek: "bread", un: "wheat", corba: "bread", kuruEt: "amphora", peksimet: "bread",
   pastirma: "amphora", erzakSandigi: "amphora", tuz: "gems",
 };
-export const IS_IKON: Record<IsId, string> = { odun: "saw", tas: "castle", ot: "herbs", yun: "sheep", su: "bucket" };
+export const IS_IKON: Record<IsId, string> = {
+  odun: "saw", tas: "castle", ot: "herbs", yun: "sheep", su: "bucket", onarim: "anvil", koruk: "flame", tezgah: "saw", tarak: "wool",
+  mutfak: "bread", ezber: "lyre", kalem: "scroll", hamal: "backpack", sahitlik: "family", karakol: "shield", evrak: "scroll-open",
+  sertOdun: "saw", cevher: "gems", inceYun: "sheep", sifaliOt: "healing",
+};
 export const TUR_IKON: Record<DugumTuru, string> = { tarif: "scroll-open", kalite: "star", toplu: "coins", ozel: "medal", hak: "crown" };
 
 // ---------------------------------------------------------------- açılış şartı (yalnız gösterim; karar sunucuda)
@@ -138,17 +148,17 @@ export type KilitSebebi = "dal" | "kademe" | "onceki" | "pirTek" | "puan";
  * kalan beceri puanı (sunucu ben.beceri); bilinmiyorsa puan koşulu gösterilmez (karar yine sunucuda).
  */
 export function dugumHali(m: MeslekTanimi, i: MeslekIlerleme | undefined, d: Dugum, puan?: number): { hal: DugumHali; sebep?: KilitSebebi } {
-  if (i?.dg.includes(d.id)) return { hal: "acik" };
-  if (!i || !i.dl.includes(d.dal)) return { hal: "kilitli", sebep: "dal" };
+  if (i?.dg?.includes(d.id)) return { hal: "acik" };
+  if (!i || !i.dl?.includes(d.dal)) return { hal: "kilitli", sebep: "dal" };
   if (d.kd > i.kd) return { hal: "kilitli", sebep: "kademe" };
-  if (d.kd > 0 && !i.dg.includes(`${m.id}.${d.dal}.${d.kd - 1}`)) return { hal: "kilitli", sebep: "onceki" };
-  if (d.kd === 3 && i.dg.some((x) => x.endsWith(".3"))) return { hal: "kilitli", sebep: "pirTek" };
+  if (d.kd > 0 && !i.dg?.includes(`${m.id}.${d.dal}.${d.kd - 1}`)) return { hal: "kilitli", sebep: "onceki" };
+  if (d.kd === 3 && i.dg?.some((x) => x.endsWith(".3"))) return { hal: "kilitli", sebep: "pirTek" };
   if (puan !== undefined && puan < DUGUM_BEDEL[d.kd]) return { hal: "kilitli", sebep: "puan" };
   return { hal: "acilabilir" };
 }
 /** Açık düğüm geri alınabilir mi (üstündeki düğüm açık değilse). Pişmanlık aralığını sunucu denetler. */
 export const geriAlinabilir = (m: MeslekTanimi, i: MeslekIlerleme | undefined, d: Dugum) =>
-  !!i?.dg.includes(d.id) && !i.dg.includes(`${m.id}.${d.dal}.${d.kd + 1}`);
+  !!i?.dg?.includes(d.id) && !i.dg.includes(`${m.id}.${d.dal}.${d.kd + 1}`);
 /** Kaç dal açılabilir (çırak 1, kalfa 2, usta ve pir 3). */
 export const dalHakki = (i: MeslekIlerleme | undefined) => Math.min((i?.kd ?? 0) + 1, 3);
 
@@ -161,7 +171,7 @@ export const BASLANGIC_PUANI = 1;
 /** Sunucu beceriPuani kopyası: yalnız sahte istemci ve eski sunucu (ben.beceri yok) gösterimi için. */
 export function beceriPuaniYerel(i: MeslekIlerleme, kademeHizmet: readonly number[] = KADEME_HIZMET_VARSAYILAN): BeceriPuani {
   const kazanilan = BASLANGIC_PUANI + Math.floor(i.hz / PUAN_TECRUBE);
-  const harcanan = i.dg.reduce((a, id) => a + (DUGUM_BEDEL[Number(id.split(".")[2])] ?? 0), 0);
+  const harcanan = (i.dg ?? []).reduce((a, id) => a + (DUGUM_BEDEL[Number(id.split(".")[2])] ?? 0), 0);
   return {
     tecrube: i.hz, kazanilan, harcanan, kalan: kazanilan - harcanan, sonrakiPuan: PUAN_TECRUBE - (i.hz % PUAN_TECRUBE),
     sonrakiKademe: i.kd >= 3 ? null : kademeHizmet[i.kd + 1] ?? null,

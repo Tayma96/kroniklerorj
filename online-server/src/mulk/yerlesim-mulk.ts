@@ -21,6 +21,7 @@ import {
   mulkDefteri,
   mulkListesi,
   personelHedefi,
+  tazminatTavanlari,
   telafi,
   telafiGerekenler,
   yatir,
@@ -142,7 +143,7 @@ function tapuOzeti(k: Kasaba, isletme: string): TapuOzeti | undefined {
   if (!c || !t || c.yerlesim !== k.y) return undefined;
   const s = k.sakin.find((x) => x.o === t.s);
   const za = c.tur === "atolye" ? k.mk?.tz?.[isletme]?.za : undefined;
-  return { isletme, yerlesim: k.y, tur: c.tur, no: c.no, ts: t.ts, sahip: { h: t.h, o: t.s, ad: s?.ad ?? "" }, ...(za ? { za } : {}) };
+  return { isletme, yerlesim: k.y, tur: c.tur, no: c.no, ts: t.ts, sahip: { h: t.h, o: t.s, ad: s?.ad ?? "" }, ...(za ? { za } : {}), ...(t.de ? { dv: 1 as const } : {}) };
 }
 
 /** Yanıttaki transfer(ler)in güncel durumunu ekler (tekrarlanan istekNo da güncel durumu görür). */
@@ -299,6 +300,12 @@ export async function mulkIsle(motor: MulkMotoru, ileti: MulkIletisi, an: number
     const ph = await motor.mulkIslem(typeof h === "string" && h.startsWith("o") ? [h] : [], () => personelHedefi(k, h));
     if (!ph.ok) return ph;
     hedef = { ...ph.deger, ...(hedef?.hs ? { hs: hedef.hs } : {}) };
+  }
+  // B1: tazminatlı çıkarma armağan sayılır: işverenin (sahip) ve oyuncu çalışanların kalan armağan tavanı.
+  if (alt === "personel" && nesneMi(govde) && govde.islem === "cikar") {
+    const kisiler = [tapu.sahip.o, ...(k.mk?.t[isletme]?.y?.po ?? [])];
+    const tz = await motor.mulkIslem(kisiler, () => tazminatTavanlari(k, tapu.sahip.o, kisiler.slice(1)));
+    hedef = { ...(hedef ?? {}), tz };
   }
   let r: Sonuc<IsletmeYaniti>;
   try {

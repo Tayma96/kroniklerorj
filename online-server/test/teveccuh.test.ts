@@ -65,9 +65,12 @@ test("teveccüh NPC bakışında görünür kalemdir (tavanlı); armağan kabul�
   const ili = k.ili.get(alan.o)!;
   const npc = k.npc.find((n) => n.e !== alan.e)!;
   assert.equal(gorus(k, npc, alan, ili, k.ay).kalemler.find((x) => x.k === "gorus.teveccuh"), undefined);
+  // B5: parayla (Debdebe) alınan teveccüh NPC görüşüne sayılmaz; akçeyle ikram/armağan teveccühü sayılır.
   teveccuhEkle(alan, zengin, "debdebe", k.ay, 5000);
+  assert.equal(gorus(k, npc, alan, ili, k.ay).kalemler.find((x) => x.k === "gorus.teveccuh")?.d ?? 0, 0);
+  assert.ok(teveccuhEkle(alan, zengin, "armagan", k.ay, 20) > 0);
   const kalem = gorus(k, npc, alan, ili, k.ay).kalemler.find((x) => x.k === "gorus.teveccuh");
-  assert.equal(kalem?.d, teveccuhEtkisi(5, "ilkIzlenim"));
+  assert.equal(kalem?.d, teveccuhEtkisi(1, "ilkIzlenim"));
   assert.ok(teveccuhEtkisi(5, "ilkIzlenim") <= 5);
 
   // Teklif yoluyla armağan: kabulde teveccüh ve vitrin; sahibi vitrini seçer.

@@ -90,6 +90,8 @@ export interface Sakin {
   mdh?: Record<string, number>;
   /** H6: yerleşime giriş ayı (düello kapısı; eski kayıtta yok → doğum ayı + başlangıç yaşı). */
   gi?: number;
+  /** Hesap kümesi izi (B3): HesapDO'nun cihaz/IP tuzlu özetleri (ham değer yok); `ayniKume` okur. */
+  kk?: string[];
 }
 
 export type Isaret = "tanidik" | "dost" | "dusman";
@@ -178,6 +180,10 @@ export interface Karakter {
   hg?: Record<string, number[]>;
   /** Oyuncu hanlarına bu ayki ikram/ziyafet ödemesi (armağan tavanı denetimi): [ay, işletme → akçe]. */
   hho?: [ay: number, isletme: Record<string, number>];
+  /** Han sahibinin bu ayki armağan sayılmayan (serbest) han geliri toplamı [ay, akçe] (B4; tapu.ts hanHediyesi). */
+  hsg?: [ay: number, akce: number];
+  /** Hesap kümesi izi (B3): HesapDO'nun cihaz/IP tuzlu özetleri (ham değer yok); `ayniKume` okur. */
+  kk?: string[];
   /** Usta: kalfa yaptığı çıraklar "o5:demirci" (pir sayacı tek sefer izi). */
   cs?: string[];
   /** Kendi ürettiği mal sayacı (armağanda "yapan" izi; envanterle kırpılır). */

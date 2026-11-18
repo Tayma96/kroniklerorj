@@ -110,6 +110,7 @@
 // Yönetim (ana tasarım §7; oyuncu oturumundan ayrı yönetici belirteci, src/yonetim/kimlik.ts):
 //   GET  /yonetim                        → tek sayfalık panel (HTML, sıkı CSP)
 //   POST /yonetim/giris {idToken}        → {oturum, rol}
+//   POST /yonetim/anahtar-giris {anahtar} → {oturum, rol: "kurucu"} (YONETIM_KURUCU_ANAHTARI tanımlıysa; yoksa 404)
 //   GET  /v1/mulk                        → yuvalar (boş/sahipli, bedel), benim, çalıştığım, teklifler, edinim şartı, bekleyen transferler (Faz 12)
 //   POST /v1/mulk/edin {tur: han|dukkan|atolye, istekNo} → {edinim, transferDurumu, para}  (akçe + nam ya da lonca; D-17)
 //   GET  /v1/isletme/:id                 → panel (konuma ve yetkiye göre; dışarıdan vitrin)
@@ -130,6 +131,8 @@
 import { GoogleDogrulayici, GoogleHatasi, istemciKimlikleri } from "./google.ts";
 import { dunyaCagir, hesapCagir, hesapKimligi, jsonYanit, yonetimCagir } from "./ic.ts";
 import { oturumDogrula, oturumOlustur, sabitSurecliEsit } from "./oturum.ts";
+import { oyuncuOturumAnahtari } from "./dunya-surumu.ts";
+import { girisIzleri } from "./kume-izi.ts";
 import {
   basarili,
   hata,
@@ -149,7 +152,7 @@ import {
   type YoneticiKimligi,
   type YonetimUcu,
 } from "./tipler.ts";
-import { yoneticiOturumuDogrula, yoneticiOturumuOlustur } from "./yonetim/kimlik.ts";
+import { KURUCU_ANAHTAR_KIMLIGI, kurucuAnahtariAcik, yoneticiOturumuDogrula, yoneticiOturumuOlustur } from "./yonetim/kimlik.ts";
 import { panelYaniti } from "./yonetim/panel.ts";
 import { masayaYukselt } from "./han/ic.ts";
 import type { MasaBileti, SesAlt } from "./han/tipler.ts";
@@ -245,6 +248,12 @@ function oturumAnahtari(env: Env): string | undefined {
   return a && a.length >= OTURUM_ANAHTARI_EN_KISA ? a : undefined;
 }
 
+/** Oyuncu belirteçlerinin anahtarı: dünya sürümüne bağlıdır (sürüm "1"de sırrın kendisi; src/dunya-surumu.ts). */
+function oyuncuAnahtari(env: Env): string | undefined {
+  const a = oturumAnahtari(env);
+  return a ? oyuncuOturumAnahtari(a, env) : undefined;
+}
+
 /** Gövdeyi akış olarak okur; AZAMI_GOVDE baytı aşınca okumayı keser (undefined). Content-Length'e güvenmez. */
 async function sinirliMetin(istek: Request): Promise<string | undefined> {
   if (!istek.body) return "";
@@ -285,7 +294,7 @@ async function govdeOku(istek: Request): Promise<Sonuc<Record<string, unknown>>>
 
 /** Bearer oturumunu doğrular; hesap kimliğini ve belirteçteki oturum sürümünü döndürür (sürüm HesapDO'da denetlenir). */
 async function yetkilendir(istek: Request, env: Env): Promise<Sonuc<string> & { surum?: number }> {
-  const anahtar = oturumAnahtari(env);
+  const anahtar = oyuncuAnahtari(env);
   if (!anahtar) return hata("yapilandirma_eksik");
   const m = /^Bearer\s+(\S+)$/i.exec(istek.headers.get("authorization") ?? "");
   if (!m?.[1]) return hata("oturum_yok");
@@ -352,7 +361,7 @@ export async function testGiris(istek: Request, env: Env): Promise<Response> {
   const kodBayt = new TextEncoder().encode(kod);
   const gizliBayt = new TextEncoder().encode(gizliKod);
   if (!sabitSurecliEsit(kodBayt, gizliBayt)) return hataYaniti("gecersiz_istek");
-  const anahtar = oturumAnahtari(env);
+  const anahtar = oyuncuAnahtari(env);
   if (!anahtar) return hataYaniti("yapilandirma_eksik");
 
   // Cihaz kimliği yerel depoda üretilir; "test:" ad alanı Google sub'larıyla çakışmaz.
@@ -362,12 +371,15 @@ export async function testGiris(istek: Request, env: Env): Promise<Response> {
   if (!testKovaAl(`cihaz:${cihazId}`, 60_000, TEST_GIRIS_CIHAZ_DAKIKALIK, simdi)) return hataYaniti("hiz_siniri");
   type GirisYaniti = { profilVar: boolean; uzaklastirma?: { bitis: number | null }; oturumSurumu?: number };
   // Önce var olan hesap (eski kısa kimlikli hesaplar da girer); yoksa yeni hesap şartları ve IP kovası.
-  let kayit = await hesapCagir<GirisYaniti>(env, hesapId, { islem: "giris", hesapId, sub, yeniYasak: true });
+  // B3: hesap kümesi izi (IP'nin tuzlu özeti; ham değer saklanmaz). Test cihaz kimliği hesabın kendisidir (sub),
+  // küme işareti taşımaz.
+  const iz = await girisIzleri(anahtar, istek.headers.get("cf-connecting-ip"));
+  let kayit = await hesapCagir<GirisYaniti>(env, hesapId, { islem: "giris", hesapId, sub, yeniYasak: true, iz });
   if (!kayit.ok && kayit.hata === "hesap_yok") {
     if (cihazId.length - "test-".length < TEST_CIHAZ_EN_AZ) return hataYaniti("gecersiz_istek");
     const ip = istek.headers.get("cf-connecting-ip") ?? "bilinmiyor";
     if (!testKovaAl(`ip:${ip}`, 3_600_000, TEST_HESAP_IP_SAATLIK, simdi)) return hataYaniti("hiz_siniri");
-    kayit = await hesapCagir<GirisYaniti>(env, hesapId, { islem: "giris", hesapId, sub });
+    kayit = await hesapCagir<GirisYaniti>(env, hesapId, { islem: "giris", hesapId, sub, iz });
   }
   if (!kayit.ok) return basarisizYanit(kayit);
   const oturum = await oturumOlustur(hesapId, anahtar, Date.now(), undefined, kayit.deger.oturumSurumu ?? 0);
@@ -382,7 +394,7 @@ async function giris(istek: Request, env: Env): Promise<Response> {
     return hataYaniti("gecersiz_istek");
   }
   const kimlikler = istemciKimlikleri(env.GOOGLE_CLIENT_ID);
-  const anahtar = oturumAnahtari(env);
+  const anahtar = oyuncuAnahtari(env);
   if (kimlikler.length === 0 || !anahtar) return hataYaniti("yapilandirma_eksik");
 
   let kimlik;
@@ -400,6 +412,8 @@ async function giris(istek: Request, env: Env): Promise<Response> {
     islem: "giris",
     hesapId,
     sub: kimlik.sub,
+    // B3: hesap kümesi izi (IP'nin tuzlu özeti; ham IP saklanmaz).
+    iz: await girisIzleri(anahtar, istek.headers.get("cf-connecting-ip")),
   });
   if (!kayit.ok) return basarisizYanit(kayit);
   const oturum = await oturumOlustur(hesapId, anahtar, Date.now(), undefined, kayit.deger.oturumSurumu ?? 0);
@@ -422,7 +436,7 @@ async function yoneticiYetkilendir(istek: Request, env: Env): Promise<Sonuc<Yone
   if (!m?.[1]) return hata("oturum_yok");
   const s = await yoneticiOturumuDogrula(m[1], anahtar, Date.now());
   if (!s.ok) return hata(s.hata);
-  return basarili({ eposta: s.eposta, sub: s.sub, hesap: hesapKimligi(env, s.sub) });
+  return basarili({ eposta: s.eposta, sub: s.sub, hesap: hesapKimligi(env, s.sub), surum: s.surum });
 }
 
 async function yonetimGiris(istek: Request, env: Env): Promise<Response> {
@@ -441,10 +455,30 @@ async function yonetimGiris(istek: Request, env: Env): Promise<Response> {
     throw e;
   }
   if (!kimlik.eposta) return hataYaniti("eposta_dogrulanmamis");
+  if (kimlik.sub === KURUCU_ANAHTAR_KIMLIGI.sub) return hataYaniti("yetki_yok");
   const yonetici: YoneticiKimligi = { eposta: kimlik.eposta, sub: kimlik.sub, hesap: hesapKimligi(env, kimlik.sub) };
-  const sonuc = await yonetimCagir<{ rol: string }>(env, { islem: "giris", yonetici });
+  const sonuc = await yonetimCagir<{ rol: string; oturumSurumu?: number }>(env, { islem: "giris", yonetici });
   if (!sonuc.ok) return basarisizYanit(sonuc);
-  const oturum = await yoneticiOturumuOlustur({ sub: kimlik.sub, eposta: kimlik.eposta }, anahtar, Date.now());
+  const oturum = await yoneticiOturumuOlustur({ sub: kimlik.sub, eposta: kimlik.eposta }, anahtar, Date.now(), sonuc.deger.oturumSurumu ?? 0);
+  return jsonYanit({ oturum, rol: sonuc.deger.rol });
+}
+
+/**
+ * POST /yonetim/anahtar-giris {anahtar}: Google girişi kurulana dek kurucu girişi. YONETIM_KURUCU_ANAHTARI tanımsız
+ * ya da kısaysa yol yoktur (404). Karşılaştırma, IP başına deneme sınırı ve işlem kaydı YonetimDO'dadır.
+ */
+async function yonetimAnahtarGiris(istek: Request, env: Env): Promise<Response> {
+  if (!kurucuAnahtariAcik(env.YONETIM_KURUCU_ANAHTARI)) return hataYaniti("bulunamadi");
+  const anahtar = oturumAnahtari(env);
+  if (!anahtar) return hataYaniti("yapilandirma_eksik");
+  const govde = await govdeOku(istek);
+  if (!govde.ok) return hataYaniti(govde.hata);
+  const verilen = govde.deger.anahtar;
+  if (typeof verilen !== "string" || verilen.length === 0 || verilen.length > 512) return hataYaniti("gecersiz_istek");
+  const ip = istek.headers.get("cf-connecting-ip") ?? "bilinmiyor";
+  const sonuc = await yonetimCagir<{ rol: string; oturumSurumu?: number }>(env, { islem: "anahtarGiris", ip, anahtar: verilen });
+  if (!sonuc.ok) return basarisizYanit(sonuc);
+  const oturum = await yoneticiOturumuOlustur(KURUCU_ANAHTAR_KIMLIGI, anahtar, Date.now(), sonuc.deger.oturumSurumu ?? 0);
   return jsonYanit({ oturum, rol: sonuc.deger.rol });
 }
 
@@ -459,7 +493,7 @@ async function yonetimUcu(istek: Request, env: Env, uc: YonetimUcu, url: URL): P
     govde = g.deger;
   }
   const sorgu: Record<string, string | null> = {};
-  for (const ad of ["ad", "hesap", "durum", "imlec"]) {
+  for (const ad of ["ad", "hesap", "durum", "imlec", "no"]) {
     const d = url.searchParams.get(ad);
     if (d !== null) sorgu[ad] = d.slice(0, 128);
   }
@@ -793,6 +827,8 @@ async function yonlendir(istek: Request, env: Env): Promise<Response> {
       return yontem === "GET" ? panelYaniti() : hataYaniti("yontem_yok");
     case "/yonetim/giris":
       return yontem === "POST" ? yonetimGiris(istek, env) : hataYaniti("yontem_yok");
+    case "/yonetim/anahtar-giris":
+      return yontem === "POST" ? yonetimAnahtarGiris(istek, env) : hataYaniti("yontem_yok");
   }
   if (Object.hasOwn(DEBDEBE_YAZMA, yol)) {
     if (yontem !== "POST") return hataYaniti("yontem_yok");

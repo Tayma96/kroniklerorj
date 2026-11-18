@@ -11,7 +11,7 @@ import { onlineEkranAcik } from "../../lib/online/kapi";
 import { Bant, Cerceve, CizgiDugme, GeriDugme, Madalyon, geriGit, hiza, yon } from "../../lib/online/ui";
 import { Secenekler } from "../../lib/online/toplum-ui";
 import { Baslik2, Rozet, SayfaBasi, Yukleniyor } from "../../lib/online/yasam-ui";
-import { ekHataAnahtari } from "../../lib/online/ek-istemci";
+import { ekHataAnahtari, ekHataMi, type EkHata } from "../../lib/online/ek-istemci";
 import { istekNoUret } from "../../lib/online/depo";
 import { useSiyasetIstemci, type SiyasetDurumu, type SiyasetIstemci } from "../../lib/online/siyaset-veri";
 
@@ -22,6 +22,8 @@ function SiyasetEkran() {
   const istemci = useSiyasetIstemci();
   const [durum, setDurum] = useState<SiyasetDurumu | null>(null);
   const [hata, setHata] = useState<string | null>(null);
+  // Sunucunun istemcide henüz tanınmayan kodu `ham` ile gelir; ek tabloda metni varsa o gösterilir.
+  const hataMetni = (r: { hata: EkHata; ham?: string }) => t(ekHataAnahtari(r.ham && ekHataMi(r.ham) ? r.ham : r.hata));
   const [sonuc, setSonuc] = useState<string | null>(null);
   const [yukleniyor, setYukleniyor] = useState(false);
   const [ittifakHedef, setIttifakHedef] = useState("");
@@ -32,7 +34,7 @@ function SiyasetEkran() {
     const r = await istemci.yukle();
     setYukleniyor(false);
     if (r.ok) { setDurum(r.deger); setHata(null); }
-    else setHata(t(ekHataAnahtari(r.hata)));
+    else setHata(hataMetni(r));
   }, [istemci, online.profil?.hesapId, t]);
 
   useEffect(() => { void yukle(); }, [yukle]);
@@ -43,7 +45,7 @@ function SiyasetEkran() {
     setHata(null); setSonuc(null); setYukleniyor(true);
     const r = await istemci.yaz(govde);
     setYukleniyor(false);
-    if (!r.ok) { hap("error"); setHata(t(ekHataAnahtari(r.hata))); return; }
+    if (!r.ok) { hap("error"); setHata(hataMetni(r)); return; }
     hap("success");
     setSonuc(mesaj);
     if (r.deger.gorunum) setDurum(r.deger.gorunum);

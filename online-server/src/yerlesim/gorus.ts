@@ -8,7 +8,7 @@ import { yariOmur } from "./hafiza.ts";
 import { NAMLAR } from "./karakter.ts";
 import { yas } from "./ortak.ts";
 import { soylentiEtkisi } from "./soylenti.ts";
-import { teveccuhEtkisi, teveccuhKademesi } from "./teveccuh.ts";
+import { teveccuhEkonomiKademesi, teveccuhEtkisi } from "./teveccuh.ts";
 import { mesrepGorus } from "./mesrep.ts";
 import type { Ani, Dokum, IliskiHaritasi, Kalem, Karakter, Kasaba, Npc } from "./tipler.ts";
 
@@ -98,7 +98,8 @@ function dolaysiz(kasaba: Kasaba, npc: Npc, kar: Karakter, ili: IliskiHaritasi |
   }
   // Faz 3: duyduğu söylentiler ve oyuncunun teveccühü (ilk izlenim; tavanlı).
   ekle("gorus.soylenti", soylentiEtkisi(kasaba, npc.i, kar.o));
-  if (kar.tv) ekle("gorus.teveccuh", teveccuhEtkisi(teveccuhKademesi(kar, ay), "ilkIzlenim"));
+  // B5: NPC görüşü parayla (Debdebe) alınan teveccühü saymaz.
+  if (kar.tv) ekle("gorus.teveccuh", teveccuhEtkisi(teveccuhEkonomiKademesi(kar, ay), "ilkIzlenim"));
   // E5 meşrep (gurur ekseni): mütevazı halkta güven, gururlu mağrur bulunur.
   if (kar.mr) ekle("gorus.mesrep", mesrepGorus(kar));
   // Faz 4: duydukları (kaynağa güvenle), arabuluculuk barışı, ittifak sözü (ortağın hedefi / ortağın kendisi).

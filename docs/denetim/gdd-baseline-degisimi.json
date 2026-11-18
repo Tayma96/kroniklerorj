@@ -90,6 +90,16 @@
         "yol"
       ],
       "reason": "Öbür hesabın apk dalındaki F0–F2 bilinçli oynanış değişiklikleri (3cfa867 tek zar/şans etiketi, a86e4f8/c6a1fa4 stat tavanı 20 ve statEtki, af755c9/da57b04 hüner ağacı 2.0) ders/sohbet/yol akışlarını değiştirdi; apk dalı (d3c1890) tabanı güncellemeden aynı farkı veriyordu. Şüpheli fark yok; taban birleşmeden sonra yenilendi."
+    },
+    {
+      "date": "2026-11-18",
+      "newEngineSha256": "2dbf3ff3a877e6dbb48f9d10330012c663008708462a0d6585334be49da2340c",
+      "changedFlows": [
+        "ay",
+        "ders",
+        "is"
+      ],
+      "reason": "Öbür hesabın apk dalındaki F4 meslek / usta kapısı / Ahi Zaviyesi tek oyunculu değişiklikleri ay, ders ve iş akışlarını değiştirdi; apk dalı tabanı güncellemeden geldi. Çevrimiçi işle ilgisi yok; taban birleşmeden sonra yenilendi."
     }
   ]
 }

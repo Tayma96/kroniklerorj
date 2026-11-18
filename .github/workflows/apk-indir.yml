@@ -45,11 +45,16 @@ jobs:
       - name: Indirmeyi dogrula (tam dosya ve ozet)
         run: |
           beklenen=$(sha256sum "$RUNNER_TEMP/Kronikler.apk" | cut -c1-64)
-          for i in 1 2 3 4 5 6; do
-            if curl -fsS -m 300 -o "$RUNNER_TEMP/inen.apk" https://kronikler-indir.berkaycinkilic.workers.dev/Kronikler.apk; then break; fi
-            sleep 10
+          # Yeni sürüm uç sunuculara birkaç dakikada yayılır; özet tutana dek yeniden dener.
+          inen=""
+          for i in $(seq 1 12); do
+            if curl -fsS -m 300 -H 'cache-control: no-cache' -o "$RUNNER_TEMP/inen.apk" "https://kronikler-indir.berkaycinkilic.workers.dev/Kronikler.apk?v=$i"; then
+              inen=$(sha256sum "$RUNNER_TEMP/inen.apk" | cut -c1-64)
+              echo "deneme $i: $inen"
+              [ "$beklenen" = "$inen" ] && break
+            fi
+            sleep 20
           done
-          inen=$(sha256sum "$RUNNER_TEMP/inen.apk" | cut -c1-64)
-          echo "beklenen $beklenen"; echo "inen     $inen"
+          echo "beklenen $beklenen"
           test "$beklenen" = "$inen"
           curl -fsS -m 30 https://kronikler-indir.berkaycinkilic.workers.dev/ | grep -q "APK'yı indir"

@@ -58,6 +58,7 @@ import { kalanSatisKotasi, NPC_SATIS_KOTASI, npcSatisEki, npcyeSat } from "./paz
 import { siparisDonumu, siparisGorunumu, siparisTeslim, type Siparis } from "./siparis.ts";
 import { tarifListesi, tarifYap } from "./tarif.ts";
 import { tohumlu } from "./rastgele.ts";
+import { kumeIziCoz } from "../kume-izi.ts";
 import { TANIDIK_EN_COK, dostlukIslem, husumetIslem, oyuncuProfili, bagGorunumu, acikHusumet } from "./iliski.ts";
 import { duzenGorunumu, duzenGuncelle } from "./duzen.ts";
 import { engelKaldir, engelle, engelListesi, engelliMi } from "./engel.ts";
@@ -162,6 +163,12 @@ const MULK = "mk";
 const KERVAN = "kv";
 /** [PARAMETRE] Gelen kutusunda gösterilen son kapanan teklif sayısı; söylenti yalanlamanın takat bedeli. */
 export const GELEN_KAPALI_EN_COK = 20;
+/** [PARAMETRE] Yönetici telafisinin teknik üst sınırı (işlem başına; kurucu tavansızdır, bu yalnız sayı güvenliği). */
+export const TELAFI_TEKNIK_AKCE = 1_000_000_000;
+export const TELAFI_TEKNIK_ADET = 1_000_000;
+/** [PARAMETRE] Yönetim oyuncu ayrıntısında gösterilen son istek ve defter ayı sayısı. */
+export const YONETIM_AYRINTI_ISTEK = 10;
+export const YONETIM_AYRINTI_DEFTER_AY = 6;
 export const YALANLAMA_TAKAT = 1;
 const KRONIK = "kronik:";
 
@@ -605,31 +612,65 @@ export class YerlesimMotoru {
     });
   }
 
-  /** Y3: Kurucu telafisi. Yalnız hedef oyuncuya görünen olay ve karakter bazlı tekrar güvenliği. */
+  /**
+   * Y3: yönetici telafisi (YonetimDO'dan; istemci ulaşamaz). `yon: "al"` akçe/mal alır: cüzdan sıfırın altına inmez,
+   * adlı eşya (efsanevi/tılsımlı) düşmez; gerçekte alınan miktar `uygulanan` olarak döner. Tutar/adet üst sınırı
+   * teknik sınırdır (TELAFI_TEKNIK_*); moderatör tavanları YonetimDO'da uygulanır. Yalnız hedef oyuncuya görünen olay
+   * ve karakter bazlı tekrar güvenliği.
+   */
   async yonetimTelafi(hesapId: string, govde: unknown): Promise<Sonuc<unknown>> {
     if (!nesneMi(govde)) return hata("gecersiz_istek");
     return this.#tekrarGuvenli(hesapId, govde, (kar, _s, ay, ek) => {
       if (typeof govde.gerekce !== "string" || govde.gerekce.trim().length < 10 || govde.gerekce.trim().length > 240) return hata("gerekce_gecersiz");
       const gerekce = govde.gerekce.trim();
+      const al = govde.yon === "al";
+      if (govde.yon !== undefined && govde.yon !== "ver" && !al) return hata("deger_sinir_disi");
       let olayParam: Record<string, string | number>;
       let yanit: Record<string, unknown>;
       if (govde.tur === "akce") {
-        if (typeof govde.tutar !== "number" || !Number.isInteger(govde.tutar) || govde.tutar < 1 || govde.tutar > 10000) return hata("deger_sinir_disi");
-        kar.pa += govde.tutar;
-        olayParam = { tutar: govde.tutar, gerekce };
-        yanit = { tur: "akce", tutar: govde.tutar, gerekce };
+        if (typeof govde.tutar !== "number" || !Number.isInteger(govde.tutar) || govde.tutar < 1 || govde.tutar > TELAFI_TEKNIK_AKCE) return hata("deger_sinir_disi");
+        const uygulanan = al ? Math.min(Math.max(0, kar.pa), govde.tutar) : govde.tutar;
+        kar.pa += al ? -uygulanan : uygulanan;
+        olayParam = { tutar: al ? -uygulanan : uygulanan, gerekce };
+        yanit = { tur: "akce", yon: al ? "al" : "ver", tutar: govde.tutar, uygulanan, gerekce };
       } else if (govde.tur === "esya") {
         const mal = malBul(govde.mal);
         if (!mal) return hata("mal_gecersiz");
-        if (typeof govde.adet !== "number" || !Number.isInteger(govde.adet) || govde.adet < 1 || govde.adet > 50) return hata("deger_sinir_disi");
-        envanterEkle(kar, mal, govde.adet);
-        olayParam = { mal, adet: govde.adet, gerekce };
-        yanit = { tur: "esya", mal, adet: govde.adet, gerekce };
+        if (typeof govde.adet !== "number" || !Number.isInteger(govde.adet) || govde.adet < 1 || govde.adet > TELAFI_TEKNIK_ADET) return hata("deger_sinir_disi");
+        const once = kar.ev?.[mal] ?? 0;
+        const sonra = envanterEkle(kar, mal, al ? -govde.adet : govde.adet);
+        const uygulanan = Math.abs(sonra - once);
+        olayParam = { mal, adet: al ? -uygulanan : uygulanan, gerekce };
+        yanit = { tur: "esya", yon: al ? "al" : "ver", mal, adet: govde.adet, uygulanan, gerekce };
       } else {
         return hata("deger_sinir_disi");
       }
       ek.olay = { t: "yonetimTelafi", w: "kurum", h: kar.o, g: kar.o, n: 5, k: govde.tur === "akce" ? "olay.yonetim.telafiAkce" : "olay.yonetim.telafiEsya", p: olayParam };
       return basarili(yanit);
+    });
+  }
+
+  /** Yönetim: oyuncu ayrıntısı (salt okuma; YonetimDO'dan, istemci ulaşamaz). Son işlemler: istek izleri ve aylık defter. */
+  async yonetimAyrinti(hesapId: string): Promise<Sonuc<unknown>> {
+    const s = this.kasaba.sakin.find((x) => x.h === hesapId);
+    if (!s) return hata("sakin_yok");
+    await this.#yukle([s.o]);
+    const kar = this.kasaba.kar.get(s.o);
+    if (!kar) return hata("sakin_yok");
+    const k = this.kasaba;
+    const ev = kar.ev ?? {};
+    return basarili({
+      ad: kar.ad,
+      yerlesim: k.y,
+      yas: yas(kar.d, k.ay),
+      olu: olduMu(kar),
+      para: kar.pa,
+      takat: kar.tk,
+      nam: kar.nm,
+      meslek: { ana: kar.ms?.a ?? "", ilerleme: Object.keys(kar.ms?.s ?? {}) },
+      envanter: { cesit: Object.keys(ev).length, adet: Object.values(ev).reduce((t, n) => t + n, 0), mallar: ev },
+      sonIstekler: (kar.ist ?? []).slice(-YONETIM_AYRINTI_ISTEK).reverse().map(([no, , z]) => ({ no, zaman: z ?? null })),
+      defter: (kar.df ?? []).slice(-YONETIM_AYRINTI_DEFTER_AY).reverse().map(([ay, kalemler]) => ({ ay, kalemler })),
     });
   }
 
@@ -1599,11 +1640,32 @@ export class YerlesimMotoru {
       e: kar.e,
       olu: olduMu(kar),
       nam: kar.nm.reduce((t, x) => t + x, 0),
-      teveccuh: teveccuhKademesi(kar, k.ay),
+      // B5: siyaset (liyakat, ahi başı şartı) parayla (Debdebe) alınan teveccühü saymaz: ekonomik kademe.
+      teveccuh: teveccuhEkonomiKademesi(kar, k.ay),
       haklar: [...haklar].sort(),
+      // B3: hesap kümesi izi (cihaz/IP tuzlu özeti; ham değer yok) küme anahtarlarına girer.
+      ...(kar.kk?.length ? { kk: [...kar.kk] } : {}),
       // H12: adres veren geçerli kira. Veri hazır; henüz hiçbir kapı (makam adaylığı) buna bağlı değil.
       ikamet: ikametVar(kar, k.y, this.#simdi),
     });
+  }
+
+  /** B3: HesapDO'nun hesap kümesi izini (tuzlu özetler) karaktere ve sakine yazar (salt iç ileti). */
+  async kumeIzi(hesapId: string, kkHam: unknown): Promise<Sonuc<unknown>> {
+    const kk = kumeIziCoz(kkHam);
+    if (!kk) return hata("gecersiz_istek");
+    const s = this.kasaba.sakin.find((x) => x.h === hesapId);
+    if (!s) return hata("sakin_yok");
+    await this.#yukle([s.o]);
+    const kar = this.kasaba.kar.get(s.o);
+    s.kk = kk;
+    this.#kirli.add(SAKIN);
+    if (kar) {
+      kar.kk = kk;
+      this.#kirli.add(KAR + kar.o);
+    }
+    await this.kaydet();
+    return basarili({ kk: kk.length });
   }
 
   /**
@@ -1720,7 +1782,9 @@ export class YerlesimMotoru {
     const ikram = govde.ikram;
     if (typeof ikram !== "string" || !Object.hasOwn(IKRAM_MENUSU, ikram)) return hata("ikram_gecersiz");
     const hs = typeof govde.hedef === "string" ? this.kasaba.sakin.find((x) => x.h === govde.hedef) : undefined;
-    if (hs) await this.#yukle([hs.o]);
+    const hanSahibi = this.#hanSahibi(govde.han);
+    const yuk = [...(hs ? [hs.o] : []), ...(hanSahibi ? [hanSahibi] : [])];
+    if (yuk.length) await this.#yukle(yuk);
     return this.#tekrarGuvenli(hesapId, govde, (kar, _s, ay, ek) => {
       const alan = hs ? this.kasaba.kar.get(hs.o) : undefined;
       if (!alan || olduMu(alan)) return hata("kisi_yok");
@@ -1732,12 +1796,19 @@ export class YerlesimMotoru {
       if (han === undefined) return hata("han_gecersiz");
       const odeme = mulkluIkram(this.kasaba, kar, ikram as IkramId, this.#simdi, String(govde.istekNo), vergiOrani, han);
       if (!odeme.ok) return odeme;
+      if (hanSahibi && hanSahibi !== kar.o) ek.digerleri.push(hanSahibi);
       const teveccuh = teveccuhEkle(alan, kar, "ikram", ay, odeme.deger.fiyat);
       const sk = this.kasaba.sakin.find((x) => x.o === alan.o);
       if (sk) sakinTeveccuhYaz(sk, alan, ay);
       ek.digerleri.push(alan.o);
       return basarili({ ikram, fiyat: odeme.deger.fiyat, batak: odeme.deger.batak, ...(odeme.deger.kasaya ? { kasaya: odeme.deger.kasaya, transfer: { islem: odeme.deger.islem } } : {}), teveccuh });
     }, "ikram");
+  }
+
+  /** Oyuncu hanının sahibi (B4: han ödemesinde sahibin armağan ve serbest gelir sayacı yazılır; yüklenmeli). */
+  #hanSahibi(hanHam: unknown): string | undefined {
+    const han = hanNoCoz(hanHam);
+    return han === undefined ? undefined : oyuncuHani(this.kasaba, han)?.sahip;
   }
 
   /**
@@ -1751,7 +1822,8 @@ export class YerlesimMotoru {
     const oturanlar = Array.isArray(govde.oturanlar) ? govde.oturanlar.filter((h): h is string => typeof h === "string").slice(0, 8) : [];
     const masaNo = typeof govde.masaNo === "number" && Number.isInteger(govde.masaNo) ? govde.masaNo : 0;
     const sakinler = k.sakin.filter((x) => oturanlar.includes(x.h));
-    await this.#yukle(sakinler.map((x) => x.o));
+    const hanSahibi = this.#hanSahibi(govde.han);
+    await this.#yukle([...sakinler.map((x) => x.o), ...(hanSahibi ? [hanSahibi] : [])]);
     return this.#tekrarGuvenli(hesapId, govde, (kar, _s, ay, ek) => {
       const konuklar = sakinler.map((x) => k.kar.get(x.o)).filter((x): x is Karakter => x !== undefined && x.o !== kar.o && !olduMu(x));
       if (ziyafetKonukSayisi(kar, konuklar) < ZIYAFET_EN_AZ_KONUK) return hata("ziyafet_konuk_az");
@@ -1760,6 +1832,7 @@ export class YerlesimMotoru {
       if (han === undefined) return hata("han_gecersiz");
       const odeme = mulkluHanOdemesi(k, kar, ziyafetBedeli(konuklar.length), this.#simdi, `y:${k.y}:${kar.o}:ziyafet:${String(govde.istekNo)}`, vergiOrani, false, han);
       if (!odeme.ok) return odeme;
+      if (hanSahibi && hanSahibi !== kar.o) ek.digerleri.push(hanSahibi);
       const etki = ziyafetEtkisi(k, kar, konuklar, masaNo, odeme.deger.fiyat, ay);
       ek.olaylar.push(...etki.olaylar);
       ek.toplum = true;
@@ -2047,6 +2120,7 @@ export class YerlesimMotoru {
       o, h: hesapId, ad: kar.ad, k: kar.k, d: kar.d, e: 0, mk: "", ma: -1e9, gi: ay,
       ...(kar.ms?.a ? { ms: kar.ms.a } : {}),
       ...(tv ? { tv } : {}),
+      ...(kar.kk?.length ? { kk: [...kar.kk] } : {}),
     };
     sakinTeveccuhYaz(sakin, kar, ay);
     k.sakin.push(sakin);

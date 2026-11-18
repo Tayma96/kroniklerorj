@@ -116,7 +116,8 @@ export function httpIstemci(ayar: HttpAyari): OnlineIstemci {
     const kod = typeof veri === "object" && veri !== null ? (veri as { hata?: unknown }).hata : undefined;
     const hata = hataKoduMu(kod) ? kod : durumdanHata(yanit.status);
     yanitOlayi(hata, yanit.status, belirtecGitti);
-    return [basarisiz(hata), yanit.status];
+    // Tanınmayan sunucu kodu `ham` olarak taşınır: ekran ek metin tablosundan (onl.hh.*) anlatabilir.
+    return [typeof kod === "string" && kod !== hata ? { ok: false, hata, ham: kod } : basarisiz(hata), yanit.status];
   }
 
   async function cagir<T>(istek: Istek, bicim: (v: unknown) => v is T): Promise<Sonuc<T>> {

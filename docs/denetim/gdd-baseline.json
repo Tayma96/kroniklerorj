@@ -1,14 +1,14 @@
 {
   "kind": "sentetik-karakterizasyon-gercek-oyuncu-kaydi-degil",
-  "engineSha256": "93f62fd1bf8501c2001742a95889b46199b0cb6ac133bdcb3078636c2f317105",
+  "engineSha256": "a94dc994e6ca1338d207b6ccc769fc604df6cd0238fd175ef6afbf6aac297e89",
   "flows": {
     "yeni": "04448f57e2a1a713c7ed9198f5f9f1119b2bffd5faa71891582c2afb0838faac",
-    "ay": "acd1e39647eb71fdc155c2254d1e59111b348306adfde11ea2bab785967f92c5",
+    "ay": "0801e2d95e30ae6aae04722cc80a50b61dabf835e71e677af200783888b3b82b",
     "yemek": "9a9f1d9d49e462e8b4e97ca50bd704490d182dce2ba74a9602108065d0f0e6c7",
-    "is": "b929c1288bbf4603e95261f694894a07075b1c9eb257c2be77d6735a6f426976",
+    "is": "3a7c448fdc1e323348acda8e03c5e4b1e951478cfafedfd902748d3f49ac858e",
     "ticaret": "a7c7235310fda6cfb1d585eeca91cbfafa25cc78eb73a47e385b8821c20c3f15",
     "sohbet": "e1feb6287f3978b0515381641a762cadfdb8efd66f584874f8802c5b38415bcb",
-    "ders": "bca7198795e00103705c860eec965a3dc59c562d9203edafcddbaa94770941fb",
+    "ders": "ac98600e334502551f64ec0f0f004ceca4815067d6d89ce009dac26652164efd",
     "suc": "0be0a440db31f171f1f4446cee6258bfa7cbb496223e63bdb3f2f9f870cbf791",
     "yol": "0451e2029fb655488d0f1d04e2463eb8eee28469bcd1e0f1da3efdb1bfba4d18",
     "varis": "94e4237fa74e7468854151c6063fa4ee049660b79b5ba596d647fcfd49cf6ebf"
@@ -17,25 +17,25 @@
     "7": {
       "months": 30,
       "dead": false,
-      "hash": "354589d5072aae8070c4dc41e8ab212eb6c2de03e91d6d55fe829aba56c203fb",
-      "saveBytes": 199574
+      "hash": "8be5bb409a739d193d6e5fb99a132bc14a9cd5a2cc3a8901033ea599c2c8a822",
+      "saveBytes": 202897
     },
     "30": {
       "months": 30,
       "dead": false,
-      "hash": "d05a113eedde826ec263f8957b3f432635bbddbbb4f54268a0891be1d8a7d8c0",
-      "saveBytes": 199315
+      "hash": "74c161a9db84ad676f154018fb641a658b8e9f4c7fb76196e012cce70efd54b1",
+      "saveBytes": 200975
     },
     "60": {
       "months": 30,
       "dead": false,
-      "hash": "c0e9dfbb8b90731c646a8eb9d277417d88322fb3084b0513fa63d7a122ad4293",
-      "saveBytes": 203299
+      "hash": "4edd5b65706584adfeb1d7934b4134beda8843999ea7f701436cc4c1cf2f545b",
+      "saveBytes": 201693
     }
   },
   "measuredTickMs": {
-    "p50": 1.32,
-    "p95": 12.14,
-    "max": 23.17
+    "p50": 1.33,
+    "p95": 12.81,
+    "max": 33.1
   }
 }

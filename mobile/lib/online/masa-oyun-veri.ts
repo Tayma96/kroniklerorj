@@ -156,7 +156,7 @@ export const oyunHatasiCoz = (h: string): OyunHatasi => (OH.has(h) ? (h as OyunH
 export interface VitrinSatiri { han: number; masa: number; oyun: OyunTuru; asama: "bekleme" | "oyun"; oyuncu: number; enCok: number; bos: number; seyirci: number; katilabilir: boolean }
 const satirMi = (v: unknown): v is VitrinSatiri => nesneMi(v) && tamMi(v.han) && tamMi(v.masa) && typeof v.oyun === "string" && (OYUN_TURLERI as readonly string[]).includes(v.oyun)
   && (v.asama === "bekleme" || v.asama === "oyun") && tamMi(v.oyuncu) && tamMi(v.enCok) && tamMi(v.bos) && tamMi(v.seyirci) && typeof v.katilabilir === "boolean";
-const vitrinMi = (v: unknown): v is { masalar: VitrinSatiri[] } => nesneMi(v) && diziMi(v.masalar, satirMi);
+export const vitrinMi = (v: unknown): v is { masalar: VitrinSatiri[] } => nesneMi(v) && diziMi(v.masalar, satirMi);
 
 /** GET /v1/han/masalar (geliştirici oturumunda sahte liste). Ekran odaklanınca ve "yenile"de çekilir; yoklama yok. */
 export function useVitrin(etkin: boolean) {

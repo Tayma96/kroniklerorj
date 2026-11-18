@@ -10,6 +10,7 @@ import {
   type YonetimIleti,
 } from "./tipler.ts";
 import type { IsletmeIleti } from "./mulk/islem.ts";
+import { doAdi } from "./dunya-surumu.ts";
 
 /** Tek dünya örneğinin adı. */
 export const DUNYA_ADI = "dunya";
@@ -45,7 +46,7 @@ async function icCagri<T>(
 }
 
 export function dunyaCagir<T>(env: Env, ileti: DunyaIleti): Promise<Sonuc<T>> {
-  return icCagri<T>(env.DUNYA.get(env.DUNYA.idFromName(DUNYA_ADI)), ileti);
+  return icCagri<T>(env.DUNYA.get(env.DUNYA.idFromName(doAdi(env, DUNYA_ADI))), ileti);
 }
 
 export function yonetimCagir<T>(env: Env, ileti: YonetimIleti): Promise<Sonuc<T>> {
@@ -54,17 +55,17 @@ export function yonetimCagir<T>(env: Env, ileti: YonetimIleti): Promise<Sonuc<T>
 
 /** Yerleşim DO'su: yerleşim başına bir örnek. */
 export function yerlesimCagir<T>(env: Env, ileti: YerlesimIleti): Promise<Sonuc<T>> {
-  return icCagri<T>(env.YERLESIM.get(env.YERLESIM.idFromName(`yerlesim:${ileti.yerlesim}`)), ileti);
+  return icCagri<T>(env.YERLESIM.get(env.YERLESIM.idFromName(doAdi(env, `yerlesim:${ileti.yerlesim}`))), ileti);
 }
 
 /** İşletme DO'su: işletme başına bir örnek (Faz 12; src/isletme-do.ts). */
 export function isletmeCagir<T>(env: Env, ileti: IsletmeIleti): Promise<Sonuc<T>> {
-  return icCagri<T>(env.ISLETME!.get(env.ISLETME!.idFromName(`isletme:${ileti.isletme}`)), ileti);
+  return icCagri<T>(env.ISLETME!.get(env.ISLETME!.idFromName(doAdi(env, `isletme:${ileti.isletme}`))), ileti);
 }
 
 /** Google `sub`'ından hesap kimliği: HesapDO'nun kimliği (opak, `sub`'ı göstermez). */
 export function hesapKimligi(env: Env, sub: string): string {
-  return env.HESAP.idFromName(`google:${sub}`).toString();
+  return env.HESAP.idFromName(doAdi(env, `google:${sub}`)).toString();
 }
 
 export async function hesapCagir<T>(env: Env, hesapId: string, ileti: HesapIleti): Promise<Sonuc<T>> {

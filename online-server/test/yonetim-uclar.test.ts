@@ -341,10 +341,12 @@ test("şikayet ve kendine fayda yasağı: kendini şikayet, sınır, susturma, k
     assert.equal(ayseHakkinda?.kendi, true);
     assert.deepEqual([ayseHakkinda?.sayi, ayseHakkinda?.bildirimler.length], [2, 2]);
     assert.equal(ayseHakkinda?.aciklama, sk.aciklama, "metin olduğu gibi saklanır; panel textContent ile yazar");
-
-    // Kurucu kendi hakkındaki şikayete karar veremez; moderatör verebilir.
-    const kendi = await cagir("POST", "/yonetim/sikayet-karar", { oturum: yb, govde: { id: s1.govde.id, karar: "reddet", gerekce: "kendi hakkımda karar", istekNo: no() } });
-    assert.deepEqual([kendi.durum, kendi.govde], [403, { hata: "kendi_hedef" }]);
+    // Ham kimlik yerine ad + oyuncu numarası.
+    const hk = (ayseHakkinda as unknown as { hedefKisi: { ad: string; numara: number | null }; sikayetciKisi: { ad: string } }).hedefKisi;
+    assert.equal(hk.ad, "Ayşe");
+    assert.equal(typeof hk.numara, "number");
+    assert.equal((ayseHakkinda as unknown as { sikayetciKisi: { ad: string } }).sikayetciKisi.ad, "Mehmet");
+    // (Kurucu kendi hakkındaki şikayete de karar verebilir: kurucu sınırsız; moderatöre yasak — yonetim-kurucu.test.ts.)
     // S9 (17 Kasım): yöneticinin hesabına yalnız kurucu yaptırım verebilir; moderatör yalnız reddedebilir.
     const modYaptirim = await cagir("POST", "/yonetim/sikayet-karar", {
       oturum: mb, govde: { id: s1.govde.id, karar: "yaptirim", tur: "uzaklastirma", gun: 1, gerekce: "taciz doğrulandı, bir gün", istekNo: no() },
@@ -361,9 +363,9 @@ test("şikayet ve kendine fayda yasağı: kendini şikayet, sınır, susturma, k
     );
     assert.equal((await cagir("GET", "/v1/profil", { oturum: ayse.oturum })).durum, 200);
 
-    // Kurucu kendi oyuncu hesabının yaptırımını kaldıramaz.
+    // Kurucu kendi oyuncu hesabında da işlem yapabilir (kendine-fayda yasağı kurucuya uygulanmaz): etkin yaptırım yok.
     const kendiKaldir = await cagir("POST", "/yonetim/yaptirim-kaldir", { oturum: yb, govde: { hedef: ayse.hesap, gerekce: "kendimi affediyorum", istekNo: no() } });
-    assert.deepEqual([kendiKaldir.durum, kendiKaldir.govde], [403, { hata: "kendi_hedef" }]);
+    assert.equal(kendiKaldir.govde.hata, "yaptirim_yok");
 
     // Kurucu Mehmet hakkındaki şikayete susturma verir: Mehmet oynar ama şikayet açamaz.
     const karar2 = await cagir("POST", "/yonetim/sikayet-karar", {
@@ -466,7 +468,11 @@ test("panel: Türkçe HTML, sıkı CSP (özetli satır içi betik/stil), çerçe
   assert.ok(!/https?:\/\//.test(html), "dış kaynak yok");
   assert.ok(!/\son[a-z]+=/i.test(html), "satır içi olay işleyicisi yok");
   assert.ok(!html.includes("innerHTML"));
-  for (const bolum of ["Giriş", "Oyuncu ara", "Şikayet kuyruğu", "Ekonomi sağlığı", "Oyuncu telafisi", "Parametreler", "Duyuru", "İşlem kaydı"]) assert.ok(html.includes(bolum), bolum);
+  for (const bolum of ["Giriş", "Oyuncu ara", "Şikayet kuyruğu", "Ekonomi sağlığı", "Oyuncu telafisi", "Parametreler", "Duyuru", "İşlem kaydı",
+    "Kurucu anahtarı", "Moderatörler", "Debdebe", "Her yerden çık", "Dünya sürümü", "Efsanevi eşya", "yetkisiz giriş", "Geri al", "Daha fazla"]) assert.ok(html.includes(bolum), bolum);
+  // Hata kodları Türkçe açıklamayla; çıkışta listeler temizlenir.
+  assert.ok(PANEL_PARCALARI.BETIK.includes("HATA_ACIKLAMA") && PANEL_PARCALARI.BETIK.includes("telafi_gunluk_siniri:"));
+  assert.ok(/function cikis\(\) \{[\s\S]*LISTELER/.test(PANEL_PARCALARI.BETIK));
   const ozet = async (m: string) => {
     const b = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(m)));
     return `'sha256-${btoa(String.fromCharCode(...b))}'`;
@@ -507,11 +513,12 @@ test("Y3 telafi: akçe olayı tekrar güvenli, kendi hesap kümesine kapalı ve 
     const ali = await oyuncu("220000000000000000003", "Ali", "develi");
     const yb = (await yonetici(KURUCU_SUB, KURUCU)).govde.oturum as string;
 
+    // Kurucu sınırsız: kendi oyun karakterine de verir (kendine-fayda yasağı yalnız moderatöre).
     const kendine = await cagir("POST", "/yonetim/telafi", {
       oturum: yb,
       govde: { hedef: ayse.hesap, tur: "akce", tutar: 500, gerekce: "Hatalı işlem düzeltmesi", istekNo: no() },
     });
-    assert.deepEqual([kendine.durum, kendine.govde], [403, { hata: "kendi_hedef" }]);
+    assert.equal(kendine.durum, 200, JSON.stringify(kendine.govde));
 
     const govde = { hedef: mehmet.hesap, tur: "akce", tutar: 500, gerekce: "Hatalı işlem düzeltmesi", istekNo: no() };
     const ilk = await cagir("POST", "/yonetim/telafi", { oturum: yb, govde });
@@ -540,7 +547,8 @@ test("Y3 telafi: akçe olayı tekrar güvenli, kendi hesap kümesine kapalı ve 
 
     const liste = await cagir("GET", "/yonetim/telafiler", { oturum: yb });
     assert.equal(liste.durum, 200);
-    assert.equal(liste.govde.telafiler.length, 2);
+    assert.equal(liste.govde.telafiler.length, 3);
+    assert.ok(liste.govde.telafiler.every((x: { hedefNumara: unknown }) => typeof x.hedefNumara === "number"), "hedef numarası listede");
     assert.ok(liste.govde.telafiler.some((x: { hedef: string; hedefAd: string; tur: string }) => x.hedef === mehmet.hesap && x.hedefAd === "Mehmet" && x.tur === "akce"));
     assert.ok(liste.govde.telafiler.some((x: { hedef: string; tur: string }) => x.hedef === mehmet.hesap && x.tur === "esya"));
   } finally {
@@ -548,36 +556,34 @@ test("Y3 telafi: akçe olayı tekrar güvenli, kendi hesap kümesine kapalı ve 
   }
 });
 
-test("Y3 telafi: kurucu başına günlük akçe tavanı; aşımda telafi_gunluk_siniri, eşya telafisi sayılmaz", async () => {
+test("Y3 telafi: kurucuya tavan yok; moderatörün kişisel günlük tavanı ve işlem sınırı, eşya tavana sayılmaz", async () => {
   try {
     const { cagir, oyuncu, yonetici } = await kur();
     await oyuncu(KURUCU_SUB, "Ayşe");
     const mehmet = await oyuncu("220000000000000000002", "Mehmet", "develi");
     const yb = (await yonetici(KURUCU_SUB, KURUCU)).govde.oturum as string;
-    const akce = (tutar: number) => ({ hedef: mehmet.hesap, tur: "akce", tutar, gerekce: "Hatalı işlem düzeltmesi", istekNo: no() });
-    let toplam = 0;
-    while (toplam + 10000 <= TELAFI_GUNLUK_AKCE) {
-      const r = await cagir("POST", "/yonetim/telafi", { oturum: yb, govde: akce(10000) });
-      assert.equal(r.durum, 200);
-      toplam += 10000;
-    }
-    const kalan = TELAFI_GUNLUK_AKCE - toplam;
-    const asim = await cagir("POST", "/yonetim/telafi", { oturum: yb, govde: akce(kalan + 1) });
+    const akce = (tutar: number, yon = "ver") => ({ hedef: mehmet.hesap, tur: "akce", yon, tutar, gerekce: "Hatalı işlem düzeltmesi", istekNo: no() });
+    // Kurucu: işlem başı 10.000'in ve günlük tavanın çok üstü.
+    const buyuk = await cagir("POST", "/yonetim/telafi", { oturum: yb, govde: akce(TELAFI_GUNLUK_AKCE * 3) });
+    assert.equal(buyuk.durum, 200, JSON.stringify(buyuk.govde));
+    assert.equal((await cagir("POST", "/yonetim/telafi", { oturum: yb, govde: akce(TELAFI_GUNLUK_AKCE * 3) })).durum, 200);
+    // Moderatör: telafi yetkisi ve 15.000 kişisel tavan.
+    await cagir("POST", "/yonetim/rol", { oturum: yb, govde: { eposta: MOD, rol: "moderator", yetkiler: ["telafi", "telafiler"], telafiTavan: 15_000, gerekce: "telafi moderatörü atandı", istekNo: no() } });
+    const mb = (await yonetici("440000000000000000004", MOD)).govde.oturum as string;
+    assert.equal((await cagir("POST", "/yonetim/telafi", { oturum: mb, govde: akce(10_001) })).govde.hata, "deger_sinir_disi", "işlem başı sınır");
+    assert.equal((await cagir("POST", "/yonetim/telafi", { oturum: mb, govde: akce(10_000) })).durum, 200);
+    assert.equal((await cagir("POST", "/yonetim/telafi", { oturum: mb, govde: akce(5_000, "al") })).durum, 200, "alma da tavana sayılır");
+    const asim = await cagir("POST", "/yonetim/telafi", { oturum: mb, govde: akce(1) });
     assert.deepEqual([asim.durum, asim.govde], [429, { hata: "telafi_gunluk_siniri" }]);
     const esya = await cagir("POST", "/yonetim/telafi", {
-      oturum: yb,
+      oturum: mb,
       govde: { hedef: mehmet.hesap, tur: "esya", mal: "nal", adet: 1, gerekce: "Eksik eşya telafisi", istekNo: no() },
     });
     assert.equal(esya.durum, 200, "eşya telafisi akçe tavanına sayılmaz");
-    if (kalan > 0) assert.equal((await cagir("POST", "/yonetim/telafi", { oturum: yb, govde: akce(kalan) })).durum, 200);
-    const liste = await cagir("GET", "/yonetim/telafiler", { oturum: yb });
-    const akceToplami = (liste.govde.telafiler as { tur: string; tutar?: number }[]).reduce((t, x) => t + (x.tur === "akce" ? x.tutar ?? 0 : 0), 0);
-    assert.equal(akceToplami, TELAFI_GUNLUK_AKCE);
   } finally {
     globalThis.fetch = eskiFetch;
   }
 });
-
 
 test("Y3 telafi küme denetimi aynı hanedeki farklı hesapları da yakalar", () => {
   const yonetici = { hesap: "hesap-a", yerlesim: "kizilca", e: 7 };
@@ -616,7 +622,7 @@ test("S9/S10: moderatör kendine ve başka yöneticiye yaptırım veremez, kuruc
     const kurucuHesap = (await cagir("GET", "/yonetim/ben", { oturum: yb })).govde.kendiHesap as string;
     assert.deepEqual((await yaptir(mb, kurucuHesap)).govde, { hata: "yetki_yok" }, "moderatör kurucuya yaptırım veremez");
     assert.equal((await yaptir(yb, modOyuncu.hesap)).durum, 200, "kurucu moderatöre verebilir");
-    assert.deepEqual((await yaptir(yb, kurucuHesap)).govde, { hata: "kendi_hedef" });
+    assert.equal((await yaptir(yb, kurucuHesap)).durum, 200, "kurucu sınırsız: kendi oyun karakterine de yaptırım verebilir");
     // S10: hedefte 60 süresi dolmuş + 1 kalıcı kayıt varken yeni yaptırım: liste 50'ye budanır, etkinler kalır.
     const yd = [...(env.YONETIM as unknown as { ornekler: Map<string, { depolama: { veri: Map<string, unknown> } }> }).ornekler.values()][0]!.depolama.veri;
     const eskiler = Array.from({ length: 60 }, (_, i) => ({ id: 1000 + i, tur: "susturma", baslangic: 1, bitis: 2, kim: KURUCU, gerekce: "eski kayıt" }));

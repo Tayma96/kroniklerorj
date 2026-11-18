@@ -10,6 +10,9 @@
 - Kod Opus (`online-sunucu`, `online-istemci`), test ve **çeviri Sonnet** (`tester`; istemci ajanı metni yalnız Türkçe yazar). Ajanlara `git stash` yasak.
 - Çıta "AAA metin oyunu": hareket yalnız `lib/online/ui.tsx` `HAREKET`/`belir`/`giris`/`BASMA_OLCEK`; her arayüz işi `react-reviewer`, her ekonomi işi `denge-denetcisi` (model yaz). Hiçbir meslek/beceri kancası boşta kalmaz.
 
+- **İş bölümü (Berkay, 17 Kasım):** tek oyunculu oyunu Berkay'ın ÖBÜR hesabındaki Claude geliştirir. Bu oturum yalnız çevrimiçi (`online-server/`, `mobile/app/online/`, `mobile/lib/online/`). Tek oyunculu dosyalara dokunma; gerekirse dar, açıklamalı değişiklik ve öbür hesabın `apk` commit'lerini birleştirirken onları koru.
+- **Yönetici kuralı (Berkay, 17 Kasım):** kurucu (Berkay) hiçbir şeyle sınırlanmaz — kendine/herkese istediği kadar akçe/mal verir-alır, tavan ve kendine-fayda yasağı kurucuya uygulanmaz. Sınırlar oyuncular içindir; moderatör yetkilerini kurucu panelden tek tek belirler.
+
 ## Çevrimiçi durum (17 Kasım)
 - Belgeler: `docs/online/ONLINE_DURUM.md`; tasarım `docs/superpowers/specs/2026-11-16-tezgah-modeli-design.md`; **protokol ve ekran brief'i** `…-tezgah-istemci-brief.md` (Dilim 1 + Dilim 2 atölye).
 - Sunucu 771 test, hepsi geçiyor. Test Worker'ı `a25a20f`te (17 Kasım işleri dahil). Dağıtım: GitHub `deploy-online-server.yml`, hedef `test`. Yeni sır adı `ZAR_SIRRI` (≥16 karakter; yoksa yedek tohum) — Berkay Cloudflare'de tanımlamalı.
@@ -27,10 +30,10 @@
 - Berkay tek oyunculuda tam yetki verdi; çevrimiçi öbür hesapta. Plan `docs/tek-oyunculu/TASARIM.md` (K1–K10, F0–F10), denetimler `docs/tek-oyunculu/denetim/`. Yeni hikâye yok. Bitti ve apk'de: F0 tek zar, F1 stat/niyet, F2 hüner ağacı, F3 mektep/medrese/icazet, F4 usta kapısı/meslek/lonca. Sırada F5 işletme/vakıf/ekonomi. Commit footer'sız (mobile/AGENTS.md).
 
 ## Sıradaki işler
-1. Arkadaş denemesi geri bildirimleri.
-2. E-posta girişi (taslak dal) + doğrulama/şifre sıfırlama; Google girişi.
-3. Kanca partisi 2 (boşta 232); eşya aile etkileri; atölye emrinde alet verimi.
-4. APK ~170 MB: görseller webp, müzik bit hızı. `expo-crypto`, `eslint-plugin-react-hooks`.
+1. Arkadaş denemesi geri bildirimleri (APK `a842f8e`, sunucular `14bd056`; 826 test; `test/istemci-uyum.test.ts` istemci-sunucu uyumunu korur).
+2. Panel: `/yonetim`, kurucu anahtarı sırrı `YONETIM_KURUCU_ANAHTARI` (Berkay'da). Dünya sıfırlama: `DUNYA_SURUMU` (README).
+3. E-posta girişi (taslak dal) + doğrulama; Google girişi. Kanca partisi 2; APK boyutu (~170 MB).
+4. Öbür hesap tek oyunculu değiştirince GDD tabanını güncellemiyor → APK kapısı düşer; gerekçeyle yenile (`gdd-baseline.cjs --kaydet`, `docs/denetim/gdd-baseline-degisimi.json`).
 
 ## Berkay'da
 - `GOOGLE_CLIENT_ID`, FCM, Play ürünleri/ödeme; test APK'sı ve 5–10 kişilik cihaz denemesi (ses dahil).
