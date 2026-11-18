@@ -33,9 +33,9 @@ export function kayitEkle(
 
 // ---------------------------------------------------------------- kimlik, küme, liyakat
 
-/** Hesap kümesi yaklaşığı: aynı hesap ya da aynı hane (teveccuh.ts ayniKume ile aynı ölçü). */
-export function kumeAnahtarlari(k: Pick<SiyasiKimlik, "hesap" | "yerlesim" | "e">): string[] {
-  return [`h:${k.hesap}`, ...(k.e !== 0 ? [`e:${k.yerlesim}:${k.e}`] : [])];
+/** Hesap kümesi yaklaşığı: aynı hesap, aynı hane ya da ortak cihaz/IP izi (teveccuh.ts ayniKume ile aynı ölçü; B3). */
+export function kumeAnahtarlari(k: Pick<SiyasiKimlik, "hesap" | "yerlesim" | "e" | "kk">): string[] {
+  return [`h:${k.hesap}`, ...(k.e !== 0 ? [`e:${k.yerlesim}:${k.e}`] : []), ...(k.kk ?? []).map((x) => `k:${x}`)];
 }
 
 export function kumeKesisir(a: readonly string[], b: readonly string[]): boolean {

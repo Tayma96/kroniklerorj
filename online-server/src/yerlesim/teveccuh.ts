@@ -45,9 +45,19 @@ export interface TeveccuhKaydi {
   c?: [ay: number, sayac: Record<string, number>];
 }
 
-/** Hesap kümesi yaklaşığı: aynı ocak (hane). Aynı Google kişisi bilinemez; bilinirse buraya eklenir. */
-export function ayniKume(a: Pick<Karakter, "o" | "h" | "e">, b: Pick<Karakter, "o" | "h" | "e">): boolean {
-  return a.o === b.o || a.h === b.h || (a.e !== 0 && a.e === b.e);
+type KumeKimligi = Pick<Karakter, "o" | "h" | "e"> & { kk?: readonly string[] };
+
+/** İki küme izi (cihaz/IP tuzlu özetleri) ortak bir özet taşıyor mu (B3). */
+export function kumeIziOrtak(a: readonly string[] | undefined, b: readonly string[] | undefined): boolean {
+  return !!a?.length && !!b?.length && a.some((x) => b.includes(x));
+}
+
+/**
+ * Hesap kümesi yaklaşığı: aynı kişi, aynı hesap, aynı ocak (hane) ya da ortak cihaz/IP izi (B3: HesapDO girişte
+ * tuzlu özet yazar; alt hesap ayrı ocakta olsa da yakalanır). Aynı Google kişisi bilinemez.
+ */
+export function ayniKume(a: KumeKimligi, b: KumeKimligi): boolean {
+  return a.o === b.o || a.h === b.h || (a.e !== 0 && a.e === b.e) || kumeIziOrtak(a.kk, b.kk);
 }
 
 function tazele(k: Karakter, ay: number): TeveccuhKaydi | undefined {

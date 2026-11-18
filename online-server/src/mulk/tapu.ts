@@ -6,7 +6,10 @@
 import { karakterYasi } from "../yerlesim/karakter.ts";
 import { hizmetAcik } from "../yerlesim/beceri-etki.ts";
 import { barinmaGorunumu, kiraTut, oyuncuHanOdaAcik } from "../yerlesim/barinma.ts";
-import { odaCoz } from "../yerlesim/oda.ts";
+import { hanOdalari, odaCoz, sureCoz } from "../yerlesim/oda.ts";
+import { adilBirim } from "../yerlesim/pazar-tahta.ts";
+import { KALITELER, kaliteAdedi } from "../yerlesim/kalite.ts";
+import { MALLAR, type MalId } from "../icerik/mallar.ts";
 import { ayniKume } from "../yerlesim/teveccuh.ts";
 import { olduMu } from "../yerlesim/hanedan.ts";
 import { npcAdi } from "../yerlesim/ortak.ts";
@@ -33,7 +36,7 @@ import {
   type MulkTuru,
 } from "./kurallar.ts";
 import type { AyarYuku, Baglam, GirisNedeni, Kisi } from "./isletme.ts";
-import { tezgahBosalt, type Tezgah } from "./depo.ts";
+import { partiToplam, tezgahBosalt, type Tezgah } from "./depo.ts";
 import { KARSILIKLI_PENCERE_AY, ZANAAT_MESLEKLERI } from "./tezgah-kurallar.ts";
 import { topluGeriAl, type TopluDefter } from "./toplu-siparis.ts";
 import { akceIade, malIade, type IadeKaydi } from "./iade.ts";
@@ -70,6 +73,8 @@ export interface TapuKaydi {
   eb?: number;
   /** Son oyuncular arası devir ayı (devir soğuması, DEVIR_SOGUMA_AY). */
   sd?: number;
+  /** Bu tapu sürümü oyuncular arası devirle doğdu (B2: IsletmeDO kasa ve emaneti eski sahibe iade eder). */
+  de?: 1;
 }
 
 /** [PARAMETRE] Devir fiyatının adil bandı: beyliğe ödenen edinim bedelinin (iadeBedeli) alt/üst katı. */
@@ -77,8 +82,27 @@ export const DEVIR_ADIL_ALT = 0.5;
 export const DEVIR_ADIL_UST = 2;
 /** [PARAMETRE] Aynı işletme bu kadar ay geçmeden yeniden devredilemez (devir döngüsüyle akçe aktarımı). */
 export const DEVIR_SOGUMA_AY = 12;
+/**
+ * [PARAMETRE] Ekonomi denetimi B2: işletmeyle giden depo/raf malının adil değeri (pazar adil birimi × adet) devir
+ * bandına bu katlarla eklenir: malı ucuza devretmek armağan sayılır.
+ */
+export const DEVIR_DEPO_ALT = 0.9;
+export const DEVIR_DEPO_UST = 1.5;
+
+/** İşletmenin depo ve rafındaki malların adil değeri (devirle alıcıya geçen mal; B2). */
+export function tezgahDegeri(t: Tezgah | undefined): number {
+  if (!t) return 0;
+  let d = 0;
+  for (const mal of Object.keys(t.ev ?? {})) {
+    if (!Object.hasOwn(MALLAR, mal)) continue;
+    for (const q of KALITELER) d += kaliteAdedi(t, mal, q) * adilBirim(mal as MalId, q);
+  }
+  for (const r of t.r) if (Object.hasOwn(MALLAR, r.m)) d += partiToplam(r.p) * adilBirim(r.m, r.q);
+  return Math.floor(d);
+}
 
 export interface DevirPompa {
+  /** Adil bant: edinim bedeli + işletmeyle giden depo/raf malının adil değeri (B2). */
   bant: { alt: number; ust: number };
   /** Bandı aşan kısım: armağan tavanına sayılır (yon: kimden kime). */
   hediye: number;
@@ -97,7 +121,8 @@ export function devirPompa(k: Kasaba, satici: Karakter, alici: Karakter, isletme
     return basarili({ bant: { alt: 0, ust: 0 }, hediye: 0, yon: null, verenKalan: 0, alanKalan: 0 });
   }
   const eb = iadeBedeli(k, isletme);
-  const bant = { alt: Math.floor(eb * DEVIR_ADIL_ALT), ust: Math.ceil(eb * DEVIR_ADIL_UST) };
+  const depo = tezgahDegeri(k.mk?.tz?.[isletme]);
+  const bant = { alt: Math.floor(eb * DEVIR_ADIL_ALT + depo * DEVIR_DEPO_ALT), ust: Math.ceil(eb * DEVIR_ADIL_UST + depo * DEVIR_DEPO_UST) };
   let hediye = 0;
   let yon: DevirPompa["yon"] = null;
   if (f > bant.ust) {
@@ -391,14 +416,31 @@ export function mulkluKira(k: Kasaba, kar: Karakter, govde: unknown, an: number,
   if (!sahip || !oyuncuHanOdaAcik(sahip, oda)) return hata("dugum_kapali");
   if (md.cik.k.length >= CIKIS_EN_COK) return hata("transfer_bekliyor");
   const istekNo = nesneMi(govde) ? String(govde.istekNo) : "";
+  // B7: ikram/ziyafetle aynı kural. Küme kendi hanına kira ödeyerek akçe aktaramaz (ödeme dünyadan çıkar); kişi başı
+  // serbest payı ve sahibin aylık serbest gelir tavanını aşan kira armağandır. Fiyat kiraTut'tan önce katalogdan.
+  const kume = ayniKume(kar, sahip);
+  const sure = sureCoz(nesneMi(govde) ? govde.sure : undefined);
+  const teklif = hanOdalari({ tur: "oyuncu", isletme: oh.isletme }, k.tur, { fc: oh.fc, seviye: oh.seviye });
+  const fiyat = sure && teklif.ok ? teklif.deger.find((x) => x.oda === oda)?.fiyatlar[sure] : undefined;
+  const hd = !kume && fiyat !== undefined ? hanHediyesi(k, kar, sahip, oh.isletme, fiyat) : undefined;
+  if (hd && !hd.ok) return hd;
   const r = kiraTut(k, kar, govde, an, { isletme: oh.isletme, fc: oh.fc, seviye: oh.seviye, bos: bosOda(md, oh.isletme, oh.kapasite, an) });
   if (!r.ok) return r;
-  const kira = r.deger.kira as { kasaya: number; bitis: number };
+  const kira = r.deger.kira as { kasaya: number; bitis: number; fiyat: number; batak: number };
+  if (kume) {
+    md.batak += kira.kasaya;
+    const l = md.od[oh.isletme]!.filter(([o]) => o !== kar.o);
+    l.push([kar.o, kira.bitis]);
+    md.od[oh.isletme] = l;
+    const gorunum = { ...barinmaGorunumu(k, kar, an, { ...oh, sahip }), hanNo: han };
+    return basarili({ ...r.deger, barinma: gorunum, kira: { ...kira, batak: kira.kasaya, kasaya: 0 }, vergi: { oran: 0, tutar: 0 } });
+  }
   const oran = Number.isInteger(vergiOrani) && vergiOrani >= 0 && vergiOrani <= 4 ? vergiOrani : 0;
   const vergiPay = vergiAyir(md, oh.isletme, kira.kasaya, oran);
   const { vergi, net } = vergiPay;
   const c = kasayaCikis(k, kar, oh.isletme, net, "kira", an, `y:${k.y}:${kar.o}:kira:${istekNo}`, false);
   if (!c.ok) return c;
+  if (hd?.ok) hanHediyesiYaz(k, kar, sahip, oh.isletme, kira.fiyat, hd.deger);
   (md.vergiKesir ??= {})[oh.isletme] = vergiPay.kalan;
   if (vergi > 0) (md.vergiGiden ??= []).push({ anahtar: `y:${k.y}:${kar.o}:kira:${istekNo}:vergi`, tutar: vergi, yerlesim: k.y });
   const l = md.od[oh.isletme]!.filter(([o]) => o !== kar.o);
@@ -408,8 +450,46 @@ export function mulkluKira(k: Kasaba, kar: Karakter, govde: unknown, an: number,
   return basarili({ ...r.deger, barinma: gorunum, kira: { ...kira, kasaya: net }, vergi: { oran, tutar: vergi }, transfer: { islem: c.deger.islem } });
 }
 
-/** [PARAMETRE] Bir kişinin bir oyuncu hanına ayda armağan tavanına sayılmadan ödeyebileceği ikram/ziyafet akçesi. */
+/** [PARAMETRE] Bir kişinin bir oyuncu hanına ayda armağan tavanına sayılmadan ödeyebileceği ikram/ziyafet/kira akçesi. */
 export const HAN_ODEME_SERBEST_AYLIK = 20;
+/**
+ * [PARAMETRE] Ekonomi denetimi B4: bir han sahibinin bütün ödeyenlerden ayda armağan sayılmadan alabileceği toplam
+ * (kişi başı serbest paylar toplamı). Üstü armağandır: ödeyenin verme ve sahibin alma tavanına sayılır.
+ */
+export const HAN_SAHIP_SERBEST_AYLIK = 300;
+
+export interface HanHediyesi {
+  /** Armağan sayılan kısım ve sahibin serbest gelir sayacına yazılan kısım. */
+  hediye: number;
+  serbest: number;
+}
+
+/**
+ * Oyuncu hanına ödemenin armağan sayılan kısmı (değiştirmez; B4, B7): ödeyenin bu handa bu ayki ödemesinin
+ * HAN_ODEME_SERBEST_AYLIK'ı aşan kısmı ve sahibin aylık toplam serbest gelirini (HAN_SAHIP_SERBEST_AYLIK) aşan kısım.
+ * Armağan ödeyenin verme ve sahibin alma tavanını aşarsa `tavan_doldu`.
+ */
+export function hanHediyesi(k: Kasaba, kar: Karakter, sahip: Karakter, isletme: string, fiyat: number): Sonuc<HanHediyesi> {
+  const sayac = kar.hho && kar.hho[0] === k.ay ? kar.hho[1] : {};
+  const once = sayac[isletme] ?? 0;
+  const kisiHediye = Math.max(0, once + fiyat - Math.max(HAN_ODEME_SERBEST_AYLIK, once));
+  const serbestIstenen = fiyat - kisiHediye;
+  const serbest = Math.min(serbestIstenen, Math.max(0, HAN_SAHIP_SERBEST_AYLIK - aylik(sahip.hsg, k.ay)));
+  const hediye = kisiHediye + (serbestIstenen - serbest);
+  if (hediye > 0 && (aylik(kar.hv, k.ay) + hediye > HEDIYE_VERME_AYLIK || aylik(sahip.ha, k.ay) + hediye > HEDIYE_ALMA_AYLIK)) return hata("tavan_doldu");
+  return basarili({ hediye, serbest });
+}
+
+/** Denetimden geçen han ödemesini sayaçlara yazar (ödeyenin han sayacı, armağan tavanları, sahibin serbest geliri). */
+export function hanHediyesiYaz(k: Kasaba, kar: Karakter, sahip: Karakter, isletme: string, fiyat: number, d: HanHediyesi): void {
+  const sayac = kar.hho && kar.hho[0] === k.ay ? kar.hho[1] : {};
+  kar.hho = [k.ay, { ...sayac, [isletme]: (sayac[isletme] ?? 0) + fiyat }];
+  if (d.serbest > 0) sahip.hsg = [k.ay, aylik(sahip.hsg, k.ay) + d.serbest];
+  if (d.hediye > 0) {
+    kar.hv = [k.ay, aylik(kar.hv, k.ay) + d.hediye];
+    sahip.ha = [k.ay, aylik(sahip.ha, k.ay) + d.hediye];
+  }
+}
 
 /** İkram ödemesi: oyuncu hanında gelir vergisi sonrası net kasaya, NPC handa dünyadan çıkar. */
 export function mulkluIkram(k: Kasaba, kar: Karakter, ikram: IkramId, an: number, istekNo: string, vergiOrani = 0, han = NPC_HAN_NO): Sonuc<{ fiyat: number; batak: number; kasaya: number; vergi: number; islem?: string }> {
@@ -441,19 +521,19 @@ export function mulkluHanOdemesi(k: Kasaba, kar: Karakter, taban: number, an: nu
     mulkDefteri(k).batak += fiyat;
     return basarili({ fiyat, batak: fiyat, kasaya: 0, vergi: 0 });
   }
-  // Aynı kişinin bu handa bu ayki ödemesi HAN_ODEME_SERBEST_AYLIK'ı aşan kısmı armağan (verme) tavanına sayılır.
-  const sayac = kar.hho && kar.hho[0] === k.ay ? kar.hho[1] : {};
-  const once = sayac[oh.isletme] ?? 0;
-  const hediye = Math.max(0, once + fiyat - Math.max(HAN_ODEME_SERBEST_AYLIK, once));
-  if (hediye > 0 && aylik(kar.hv, k.ay) + hediye > HEDIYE_VERME_AYLIK) return hata("tavan_doldu");
+  // B4: kişi başı serbest payı ve sahibin aylık serbest gelir tavanını aşan kısım armağandır (iki tarafın tavanı).
+  // Sahip karakteri çağıran tarafından yüklenir (motor: hanIkram, hanZiyafet).
+  const sahipKar = k.kar.get(oh.sahip);
+  if (!sahipKar) return hata("kisi_yok");
+  const hd = hanHediyesi(k, kar, sahipKar, oh.isletme, fiyat);
+  if (!hd.ok) return hd;
   const oran = Number.isInteger(vergiOrani) && vergiOrani >= 0 && vergiOrani <= 4 ? vergiOrani : 0;
   const md = mulkDefteri(k);
   const vergiPay = vergiAyir(md, oh.isletme, fiyat, oran);
   const { vergi, net } = vergiPay;
   const c = kasayaCikis(k, kar, oh.isletme, net, "ikram", an, islem, true);
   if (!c.ok) return c;
-  kar.hho = [k.ay, { ...sayac, [oh.isletme]: once + fiyat }];
-  if (hediye > 0) kar.hv = [k.ay, aylik(kar.hv, k.ay) + hediye];
+  hanHediyesiYaz(k, kar, sahipKar, oh.isletme, fiyat, hd.deger);
   (md.vergiKesir ??= {})[oh.isletme] = vergiPay.kalan;
   if (vergi > 0) (md.vergiGiden ??= []).push({ anahtar: `${islem}:vergi`, tutar: vergi, yerlesim: k.y });
   return basarili({ fiyat, batak: 0, kasaya: net, vergi, islem: c.deger.islem });
@@ -463,7 +543,7 @@ export function mulkluHanOdemesi(k: Kasaba, kar: Karakter, taban: number, an: nu
 
 export function karGerekenler(kayitlar: CikisKaydi[], md?: MulkDefteri): string[] {
   return kayitlar.flatMap((x) => {
-    if (x.t === "cuzdana" && typeof x.y.o === "string") return [x.y.o];
+    if (x.t === "cuzdana" && typeof x.y.o === "string") return typeof x.y.v === "string" ? [x.y.o, x.y.v] : [x.y.o];
     // İflas: depo ve raf eski sahibin envanterine döner.
     const t = x.t === "iflas" && typeof x.y.isletme === "string" ? md?.t[x.y.isletme] : undefined;
     return t ? [t.s] : [];
@@ -490,7 +570,7 @@ export function girisIsle(k: Kasaba, x: CikisKaydi, an: number): { durum: CevapD
       const tutar = x.y.tutar;
       if (!Number.isInteger(tutar) || (tutar as number) <= 0 || tutar !== x.a) return { durum: "red", neden: "tutar_gecersiz" };
       // Devralma ve iflas iadesi yanmaz: sahibe yazılamıyorsa iade bekleyenine (vâris / hazine yolu, iade.ts).
-      if ((x.y.neden === "devral" || x.y.neden === "iflas") && typeof x.y.o === "string" && (!kar || olduMu(kar) || kar.gc)) {
+      if ((x.y.neden === "devral" || x.y.neden === "devir" || x.y.neden === "iflas") && typeof x.y.o === "string" && (!kar || olduMu(kar) || kar.gc)) {
         akceIade(k, x.y.o, tutar as number);
         if (x.y.neden === "devral") (md.ob ??= []).push(devralmaKasaOlayi(x.y.o, isletme, tutar as number, x.y.ad));
         return { durum: "kabul" };
@@ -499,6 +579,13 @@ export function girisIsle(k: Kasaba, x: CikisKaydi, an: number): { durum: CevapD
       if (!kar || olduMu(kar) || kar.gc) return { durum: "red", neden: "kisi_yok" };
       kar.pa += tutar as number;
       if (x.y.neden === "devral") (md.ob ??= []).push(devralmaKasaOlayi(kar.o, isletme, tutar as number, x.y.ad));
+      // B1: tazminat oyuncular arası armağan sayılır (çıkarma ucunda kalan tavanla denetlendi): alanın alma, işverenin
+      // verme sayacına yazılır.
+      if (x.y.neden === "tazminat") {
+        kar.ha = [k.ay, aylik(kar.ha, k.ay) + (tutar as number)];
+        const veren = typeof x.y.v === "string" ? k.kar.get(x.y.v) : undefined;
+        if (veren) veren.hv = [k.ay, aylik(veren.hv, k.ay) + (tutar as number)];
+      }
       return { durum: "kabul" };
     }
     const tapu = md.t[isletme];
@@ -607,12 +694,12 @@ export function devirKabul(k: Kasaba, alici: Karakter, isletme: string, an: numb
   const pompa = devirPompa(k, satici, alici, isletme, f);
   if (!pompa.ok) return pompa;
   const ts = ++md.ts;
-  cikisAc(md.cik, { i: `y:${k.y}:${alici.o}:devir:${istekNo}`, t: "sahip", h: isletme, a: 0, y: { isletme, ts, sahip: { h: alici.h, o: alici.o, ad: alici.ad } } }, an);
+  cikisAc(md.cik, { i: `y:${k.y}:${alici.o}:devir:${istekNo}`, t: "sahip", h: isletme, a: 0, y: { isletme, ts, sahip: { h: alici.h, o: alici.o, ad: alici.ad }, dv: 1 } }, an);
   alici.pa -= f;
   satici.pa += f;
   const eski = tapu.s;
   const eb = iadeBedeli(k, isletme);
-  md.t[isletme] = { s: alici.o, h: alici.h, ts, a: k.ay, f, eb, sd: k.ay, ...(tapu.y ? { y: { ...tapu.y, ts } } : {}) };
+  md.t[isletme] = { s: alici.o, h: alici.h, ts, a: k.ay, f, eb, sd: k.ay, de: 1, ...(tapu.y ? { y: { ...tapu.y, ts } } : {}) };
   devralmaSayaciSifirla(md, isletme);
   const p = pompa.deger;
   if (p.hediye > 0 && p.yon) {
@@ -625,6 +712,20 @@ export function devirKabul(k: Kasaba, alici: Karakter, isletme: string, an: numb
 }
 
 // ── Bağlam ve görünüm ──
+
+/**
+ * B1: çıkarmada IsletmeDO'ya giden kalan armağan tavanları (işveren verme, çalışan alma). Yüklenmemiş/ölü kişi 0
+ * (tazminat ödenemez, sözleşme sürer; sonraki ay yeniden denenir).
+ */
+export function tazminatTavanlari(k: Kasaba, isveren: string, calisanlar: readonly string[]): { v: number; a: Record<string, number> } {
+  const v = k.kar.get(isveren);
+  const a: Record<string, number> = {};
+  for (const o of calisanlar) {
+    const c = k.kar.get(o);
+    a[o] = c && !olduMu(c) ? Math.max(0, HEDIYE_ALMA_AYLIK - aylik(c.ha, k.ay)) : 0;
+  }
+  return { v: v ? Math.max(0, HEDIYE_VERME_AYLIK - aylik(v.hv, k.ay)) : 0, a };
+}
 
 export function baglamYap(k: Kasaba, kar: Karakter, tv: number): Baglam {
   return { h: kar.h, o: kar.o, ad: kar.ad, mk: meslekKademeleri(kar), tv };

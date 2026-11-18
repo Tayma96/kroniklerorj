@@ -432,8 +432,8 @@ export function ilanIsle(
 }
 
 /**
- * Emaneti sahibine iade eder (sahip yoksa akçe hazineye, mal kasaba stoğuna; stok tavanını aşan mal yok olmaz,
- * taban değeriyle hazineye yazılır: toplam korunur). Döner: hazineye taban değeriyle geçen adet.
+ * Emaneti sahibine iade eder (sahip yoksa akçe hazineye, mal kasaba stoğuna). Stok tavanını aşan sahipsiz mal yok
+ * olur (B11): hazineye akçe yazılmaz, toplam akçe değişmezi korunur (mal akçeye çevrilip basılmaz). Döner: yok olan adet.
  */
 export function iadeEt(k: Kasaba, ilan: Ilan, sahip: Karakter | undefined): number {
   let tasan = 0;
@@ -448,7 +448,6 @@ export function iadeEt(k: Kasaba, ilan: Ilan, sahip: Karakter | undefined): numb
       const once = st[ilan.ml] ?? 0;
       stogaEkle(st, ilan.ml, n);
       tasan = n - ((st[ilan.ml] ?? 0) - once);
-      if (tasan > 0) hanedanKasabasi(k).hz += tasan * MALLAR[ilan.ml].taban;
     }
   }
   ilan.e = 0;

@@ -29,6 +29,17 @@ export function toplulukKimligiTasi(k: Kasaba, eski: string, yeni: string): void
   }
   for (const z of tl.zv) {
     for (const u of z.u) if (u.o === eski) u.o = yeni;
+    // B10: yerel kimlikli aylık sayaçlar (yatırma, kasadan alma) vârise geçer: ölüp dirilerek tavan tazelenmez.
+    if (z.ya?.[eski]) {
+      const [a, t] = z.ya[eski]!;
+      const v = z.ya[yeni];
+      z.ya[yeni] = v && v[0] === a ? [a, v[1] + t] : [a, t];
+      delete z.ya[eski];
+    }
+    if (z.vs?.[1][eski] !== undefined) {
+      z.vs[1][yeni] = (z.vs[1][yeni] ?? 0) + z.vs[1][eski]!;
+      delete z.vs[1][eski];
+    }
     if (z.ab === eski) delete z.ab;
     if (z.ku === eski) z.ku = yeni;
     delete z.oy[eski];

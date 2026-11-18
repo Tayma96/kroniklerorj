@@ -132,6 +132,7 @@ import { GoogleDogrulayici, GoogleHatasi, istemciKimlikleri } from "./google.ts"
 import { dunyaCagir, hesapCagir, hesapKimligi, jsonYanit, yonetimCagir } from "./ic.ts";
 import { oturumDogrula, oturumOlustur, sabitSurecliEsit } from "./oturum.ts";
 import { oyuncuOturumAnahtari } from "./dunya-surumu.ts";
+import { girisIzleri } from "./kume-izi.ts";
 import {
   basarili,
   hata,
@@ -370,12 +371,15 @@ export async function testGiris(istek: Request, env: Env): Promise<Response> {
   if (!testKovaAl(`cihaz:${cihazId}`, 60_000, TEST_GIRIS_CIHAZ_DAKIKALIK, simdi)) return hataYaniti("hiz_siniri");
   type GirisYaniti = { profilVar: boolean; uzaklastirma?: { bitis: number | null }; oturumSurumu?: number };
   // Önce var olan hesap (eski kısa kimlikli hesaplar da girer); yoksa yeni hesap şartları ve IP kovası.
-  let kayit = await hesapCagir<GirisYaniti>(env, hesapId, { islem: "giris", hesapId, sub, yeniYasak: true });
+  // B3: hesap kümesi izi (IP'nin tuzlu özeti; ham değer saklanmaz). Test cihaz kimliği hesabın kendisidir (sub),
+  // küme işareti taşımaz.
+  const iz = await girisIzleri(anahtar, istek.headers.get("cf-connecting-ip"));
+  let kayit = await hesapCagir<GirisYaniti>(env, hesapId, { islem: "giris", hesapId, sub, yeniYasak: true, iz });
   if (!kayit.ok && kayit.hata === "hesap_yok") {
     if (cihazId.length - "test-".length < TEST_CIHAZ_EN_AZ) return hataYaniti("gecersiz_istek");
     const ip = istek.headers.get("cf-connecting-ip") ?? "bilinmiyor";
     if (!testKovaAl(`ip:${ip}`, 3_600_000, TEST_HESAP_IP_SAATLIK, simdi)) return hataYaniti("hiz_siniri");
-    kayit = await hesapCagir<GirisYaniti>(env, hesapId, { islem: "giris", hesapId, sub });
+    kayit = await hesapCagir<GirisYaniti>(env, hesapId, { islem: "giris", hesapId, sub, iz });
   }
   if (!kayit.ok) return basarisizYanit(kayit);
   const oturum = await oturumOlustur(hesapId, anahtar, Date.now(), undefined, kayit.deger.oturumSurumu ?? 0);
@@ -408,6 +412,8 @@ async function giris(istek: Request, env: Env): Promise<Response> {
     islem: "giris",
     hesapId,
     sub: kimlik.sub,
+    // B3: hesap kümesi izi (IP'nin tuzlu özeti; ham IP saklanmaz).
+    iz: await girisIzleri(anahtar, istek.headers.get("cf-connecting-ip")),
   });
   if (!kayit.ok) return basarisizYanit(kayit);
   const oturum = await oturumOlustur(hesapId, anahtar, Date.now(), undefined, kayit.deger.oturumSurumu ?? 0);

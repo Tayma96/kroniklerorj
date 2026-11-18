@@ -62,6 +62,11 @@ export interface Zaviye {
   /** Yatıranların toplam katkısı (dağılınca kasa bu oranda iade edilir) ve bu ayki yatırma sayacı. */
   yt?: Record<string, number>;
   ya?: Record<string, [ay: number, tutar: number]>;
+  /**
+   * Kasadan verme sayacı (B6): [ay, alan yerel kimlik → bu ay aldığı]. Kasa defteri (kh) sınırlı tutulduğu için taşan
+   * eski satırlar tavanı sıfırlayamasın diye ayrı tutulur.
+   */
+  vs?: [ay: number, Record<string, number>];
   /** Davetler: [davet edilen, ay]. Oylar: üye → aday. */
   dv: [o: string, ay: number][];
   oy: Record<string, string>;
@@ -224,11 +229,13 @@ export function zaviyeIslem(k: Kasaba, kar: Karakter, govde: Record<string, unkn
       if (ay - uye.ay < ZAVIYE_VER_KIDEM) return hata("kidem_yetersiz");
       const t = tutarCoz(govde.tutar, ZAVIYE_VER_AYLIK);
       if (t === undefined) return hata("tutar_gecersiz");
-      const buAy = benim.kh.filter((h) => h[0] === ay && h[2] === hedefKar.o).reduce((a, h) => a + h[3], 0);
+      const vs = benim.vs && benim.vs[0] === ay ? benim.vs[1] : {};
+      const buAy = vs[hedefKar.o] ?? 0;
       if (buAy + t > ZAVIYE_VER_AYLIK) return hata("tavan_doldu");
       if (benim.ks < t) return hata("para_yok");
       benim.ks -= t;
       hedefKar.pa += t;
+      benim.vs = [ay, { ...vs, [hedefKar.o]: buAy + t }];
       hareket(benim, ay, kar.o, hedefKar.o, t);
       return sonuc(
         benim,

@@ -17,6 +17,7 @@ import { yapilandirilmamisDogrulayici, type MakbuzDogrulayici } from "./debdebe/
 import { SEZON_KAYNAK_PUANI } from "./debdebe/sezon.ts";
 import { siyasetOku, siyasetYaz, siyasetYoklama } from "./siyaset/hesap-kopru.ts";
 import { adiTazele, ARAMA_DAKIKA_SINIRI, benimNumaram, oyuncuAra, oyuncuSayfasi, type KunyeBaglami } from "./kunye/hesap.ts";
+import { kumeIziEsitle, kumeIziKaydet } from "./kume-izi.ts";
 import { emanetCek, emanetOnizle, GOC_IS, gocBaslat, gocOnizle, gocSiyasetKapilari, gocSurdur, type GocBaglami } from "./goc-hesap.ts";
 
 /** Göç işi beklerken de çalışan uçlar (yerleşime gitmeyen ya da işi kendisi sürdürenler). */
@@ -107,6 +108,7 @@ export class HesapDO {
     if (ileti.islem === "giris") {
       if (ileti.yeniYasak && !(await hesapKaydi(this.#depo))) return jsonYanit(hata("hesap_yok"));
       const g = await girisKaydet(this.#depo, ileti.hesapId, ileti.sub, simdi);
+      await this.#kumeIzi(ileti.hesapId, ileti.iz);
       await this.#numaraHazirla(ileti.hesapId, simdi);
       const uzak = uzaklastirmaBilgisi(yaptirim, simdi);
       const surum = await this.#oturumSurumuOku();
@@ -125,6 +127,16 @@ export class HesapDO {
   }
 
   /** Oyuncu numarası tembel üretilir (ilk giriş, profil kurulumu); en iyi çaba: hata girişi bozmaz. */
+  /** B3: girişin küme izini (tuzlu özetler) kaydeder ve karaktere yazdırır; en iyi çaba (giriş bundan düşmez). */
+  async #kumeIzi(hesapId: string, iz?: unknown): Promise<void> {
+    try {
+      await kumeIziKaydet(this.#depo, iz);
+      await kumeIziEsitle(this.#depo, hesapId, (i) => yerlesimCagir(this.#env, i));
+    } catch {
+      // en iyi çaba
+    }
+  }
+
   async #numaraHazirla(hesapId: string, simdi: number, tazele = false): Promise<void> {
     try {
       const b = this.#kunye(hesapId, simdi);
@@ -232,8 +244,11 @@ export class HesapDO {
         return emanetOnizle(this.#goc(ileti.hesapId, simdi));
       case "gocEmanet":
         return emanetCek(this.#goc(ileti.hesapId, simdi), ileti.govde);
-      case "giris":
-        return basarili(await girisKaydet(this.#depo, ileti.hesapId, ileti.sub, simdi));
+      case "giris": {
+        const g = await girisKaydet(this.#depo, ileti.hesapId, ileti.sub, simdi);
+        await this.#kumeIzi(ileti.hesapId, ileti.iz);
+        return basarili(g);
+      }
       case "sikayet":
         // Şikayet eden kayıtlı oyuncu olmalıdır; kurallar YonetimDO'da.
         {
@@ -271,7 +286,10 @@ export class HesapDO {
           (k) => dunyaCagir<Profil>(this.#env, { islem: "kayit", istek: k }),
           (p) => yerlesimCagir(this.#env, { islem: "sakinEkle", yerlesim: p.yerlesim, sakin: sakinKaydi(p) }),
         );
-        if (r.ok) await this.#numaraHazirla(ileti.hesapId, simdi, true);
+        if (r.ok) {
+          await this.#numaraHazirla(ileti.hesapId, simdi, true);
+          await this.#kumeIzi(ileti.hesapId);
+        }
         return r;
       }
       // Künye (src/kunye/hesap.ts): kendi numaran, arama, oyuncu sayfası
