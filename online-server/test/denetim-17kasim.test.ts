@@ -267,14 +267,15 @@ import { STOK_EN_COK } from "../src/yerlesim/npc-taban.ts";
 import { hanedanKasabasi } from "../src/yerlesim/hanedan.ts";
 import { MALLAR } from "../src/icerik/mallar.ts";
 
-test("E8: sahipsiz ilan iadesinde stok tavanını aşan mal yok olmaz, taban değeriyle hazineye", () => {
+test("E8/B11: sahipsiz ilan iadesinde stok tavanını aşan mal yok olur, hazineye akçe yazılmaz (akçe değişmezi)", () => {
   const k = testKasabasi("develi", 10);
   k.st = { ekmek: STOK_EN_COK - 2 } as never;
   const hz0 = hanedanKasabasi(k).hz;
   const ilan = { i: 1, t: "sat", o: "o9", oa: "X", ml: "ekmek", q: 0, n: 5, n0: 5, f: 3, ac: 10, sa: 12, p: [[0, 5]], e: 0, d: "acik" } as never;
   assert.equal(iadeEt(k, ilan, undefined), 3);
   assert.equal((k.st as Record<string, number>).ekmek, STOK_EN_COK);
-  assert.equal(hanedanKasabasi(k).hz, hz0 + 3 * MALLAR.ekmek.taban);
+  assert.equal(hanedanKasabasi(k).hz, hz0, "mal akçeye çevrilip basılmaz");
+  assert.ok(MALLAR.ekmek.taban > 0);
 });
 
 import { YerlesimDO } from "../src/yerlesim-do.ts";

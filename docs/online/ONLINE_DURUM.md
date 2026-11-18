@@ -201,6 +201,14 @@ henüz tanımlı değil (Berkay ile birlikte).
 - S12 Ad benzersizliğinde ı/i/l katlanır (yeni adlar; eski çakışanlar bozulmaz).
 - S13 İstek izi 24 saat ve 1000 kimlikle sınırlı.
 - F1 Süre eşikli testler (hanedan-sim, sim, gündem) 500 ms; tam takım 5 kez art arda temiz.
+- B (18 Kasım ekonomi denetimi B, `test/ekonomi-denetim-b.test.ts`; yönetici/kurucu sınırsız, tavanlar yalnız oyuncu-oyuncu):
+  B1 tazminat yalnız bir tam ay çalışılmış sözleşmeye, armağan tavanına sayılır (`hv`/`ha`), aynı işveren-çalışan 12 ay yeniden işe alınamaz;
+  B2 devirde kasa+emanet eski sahibe iade (alıcıya geçmez, mirasta kalır), depo/raf malı adil değerle (×0,9–×1,5) devir bandına girer;
+  B3 girişte IP'nin HMAC özeti (`OTURUM_ANAHTARI` tuzlu, ham IP yok; son 3) karakter/sakin `kk`; `ayniKume` ve `kumeAnahtarlari` okur;
+  B4/B7 han ikramı, ziyafeti ve kirasında armağan kısmı sahibin `ha`sına da; sahibin aylık serbest han geliri 300 (üstü armağan); kirada küme ödemesi dünyadan çıkar;
+  B5 siyasi kimlik ve NPC görüşü ekonomik teveccüh (Debdebe hariç); B6 zaviye `ver` tavanı ayrı `vs` sayacında;
+  B9 mirasta devir soğuması taşınır; B10 `kn`,`tz`,`ai`,`ef`,`hk`,`hsg`,`kk` ve zaviye/teveccüh yerel kimlikli sayaçları vârise geçer;
+  B11 stok tavanını aşan sahipsiz mal yok olur, hazineye akçe yazılmaz (E8'in yerine).
 
 ## 5. Berkay'ın kararına bağlı gerilimler
 - **Süre kısaltma satışı:** 17 Kasım denetimiyle kaldırıldı (E5); geri getirmek Berkay kararı.
