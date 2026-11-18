@@ -23,7 +23,7 @@ import type { MeslekId } from "../icerik/meslekler.ts";
 import { yerlesimBul } from "../dunya-veri.ts";
 import { basarili, hata, type HataKodu, type Sonuc } from "../tipler.ts";
 import { bosKutu, cikisAc, type CikisKaydi, type CikisKutusu } from "../mulk/transfer.ts";
-import { acikEtkiler, hizmetAcik } from "./beceri-etki.ts";
+import { acikEtkiler, hizmetAcik, sinerjiAcik } from "./beceri-etki.ts";
 import { aracAsindir, type Asinma } from "./tarif.ts";
 import { olduMu } from "./hanedan.ts";
 import { takatHarca, takatTazele } from "./karakter.ts";
@@ -67,6 +67,40 @@ export const KERVAN_HIZMETI = "kervan";
 export const TOPLU_YUK_HIZMETI = "topluYuk";
 export const HABER_HIZMETI = "fiyatHaberi";
 
+/**
+ * Kanca partisi 2 (uzak kervan). Yalnız BAŞKA BEYLİĞE giden kervanda:
+ * - `hizmet:uzakKervan` (tüccar "uzak şehir"): yük tavanına +UZAK_KERVAN_YUK_EK adet (mutlak tavan aynı). Satışı
+ *   varış kotası sınırlar; yük fazlası satılamazsa geri döner, akçe doğmaz.
+ * - `sinerji:uzakAnlasma` (kâtip tercüme + tüccar uzak şehir): uzak alıcıyla anlaşma, hedefteki varış kotasına mal
+ *   başına +UZAK_ANLASMA_KOTA_EK. Kıtlık primi kotası (KITLIK_KOTASI) ve "alınan mal kâr etmez" kuralı aynıdır.
+ * Kaynak kendi kişisinden hesaplar ve yüke `ke` olarak yazar; hedef beylik farkını yeniden denetler ve kırpar.
+ */
+export const UZAK_KERVAN_HIZMETI = "uzakKervan";
+export const UZAK_ANLASMA_SINERJISI = "uzakAnlasma";
+/** [PARAMETRE] Uzak kervanın yük eki (adet). */
+export const UZAK_KERVAN_YUK_EK = 6;
+/** [PARAMETRE] Uzak anlaşmanın varış kotası eki (mal başına adet, ayda; hesap başına). */
+export const UZAK_ANLASMA_KOTA_EK = 1;
+
+/** İki yerleşim farklı beylikte mi (bilinmeyen yerleşim: hayır). */
+export function uzakMi(kaynak: string | undefined, hedef: string): boolean {
+  if (!kaynak) return false;
+  const a = yerlesimBul(kaynak);
+  const b = yerlesimBul(hedef);
+  return !!a && !!b && a.beylik !== b.beylik;
+}
+
+/** Kaynakta: tüccarın bu hedefe varış kotası eki (uzak anlaşma). */
+export function uzakKotaEki(kar: Karakter, kaynak: string | undefined, hedef: string): number {
+  return uzakMi(kaynak, hedef) && sinerjiAcik(kar, UZAK_ANLASMA_SINERJISI) ? UZAK_ANLASMA_KOTA_EK : 0;
+}
+
+/** Hedefte: yükteki eki doğrular (tam sayı, tavanlı) ve beylik farkı yoksa sıfırlar. */
+export function gecerliKotaEki(ke: unknown, kaynak: string | undefined, hedef: string): number {
+  if (!Number.isInteger(ke) || (ke as number) <= 0 || !uzakMi(kaynak, hedef)) return 0;
+  return Math.min(UZAK_ANLASMA_KOTA_EK, ke as number);
+}
+
 /** Kapılar, denetim sırasıyla (önizleme ve gerçek iş ilk tutmayanı aynı sırayla bulur). */
 export const KERVAN_KAPI_SIRASI = ["olu", "dugum", "yuk", "mal", "bedel", "takat", "aylik", "malHedef", "kutu"] as const;
 export type KervanKapisi = (typeof KERVAN_KAPI_SIRASI)[number];
@@ -93,6 +127,8 @@ export interface KervanYuku {
   /** Kalkış ve varış ayı. */
   ka: number;
   va: number;
+  /** Kanca partisi 2: uzak anlaşma varış kotası eki (yalnız başka beyliğe; yoksa 0). */
+  ke?: number;
 }
 
 /** Bir malın varış satışı. */
@@ -120,6 +156,8 @@ export interface VarisSonucu {
   satilan: Yuk;
   kalan: Yuk;
   satirlar: VarisSatiri[];
+  /** Kanca partisi 2: uygulanan uzak anlaşma kota eki (varsa). */
+  ke?: number;
 }
 
 /** Fiyat haberi: bir yerleşimin özeti. */
@@ -200,7 +238,7 @@ export function yukSorguCoz(ham: unknown): Sonuc<Yuk> | undefined {
  * kalitesi), yoksa 12; `kalite:kervan` yüzdesi eklenir (aşağı yuvarlanır); mutlak tavanla kırpılır. `tasit` toplu
  * yükte aşınacak taşıttır (yük temel tavanı aşmıyorsa taşıt aşınmaz).
  */
-export function yukTavani(kar: Karakter, yuk: Yuk = {}) {
+export function yukTavani(kar: Karakter, yuk: Yuk = {}, uzak = false) {
   const topluYuk = hizmetAcik(kar, TOPLU_YUK_HIZMETI);
   const kalan = (m: MalId) => (kar.ev?.[m] ?? 0) - (yuk[m] ?? 0) >= 1;
   const araba = kalan("araba");
@@ -210,8 +248,9 @@ export function yukTavani(kar: Karakter, yuk: Yuk = {}) {
   const tasitKalite = tasit ? (KERVAN_TASIT_KALITE_YUK[enIyiKalite(kar, tasit)] ?? 0) : 0;
   let kalite = 0;
   for (const e of acikEtkiler(kar)) if (e.tur === "kalite" && e.hedef === "kervan") kalite += e.yuzde;
-  const tavan = Math.min(KERVAN_YUK_MUTLAK, Math.floor(((taban + tasitKalite) * (100 + kalite)) / 100));
-  return { tavan, topluYuk, araba, kagni, tasit, tasitKalite, kalite, taban };
+  const uzakEk = uzak && hizmetAcik(kar, UZAK_KERVAN_HIZMETI) ? UZAK_KERVAN_YUK_EK : 0;
+  const tavan = Math.min(KERVAN_YUK_MUTLAK, Math.floor(((taban + tasitKalite) * (100 + kalite)) / 100) + uzakEk);
+  return { tavan, topluYuk, araba, kagni, tasit, tasitKalite, kalite, taban, uzakEk };
 }
 
 function aySayaci(d: KervanDefteri | undefined, o: string, ay: number): [number, number, string[]] {
@@ -230,6 +269,7 @@ export function kervanKapilari(
   hedef: string,
   yuk: Yuk | undefined,
   aylikTavan = KERVAN_AYLIK,
+  kaynak?: string,
 ): Record<KervanKapisi, boolean | null> {
   takatTazele(kar, ay);
   const ev = kar.ev ?? {};
@@ -238,7 +278,7 @@ export function kervanKapilari(
   return {
     olu: !olduMu(kar),
     dugum: hizmetAcik(kar, KERVAN_HIZMETI),
-    yuk: yuk ? say(yuk) <= yukTavani(kar, yuk).tavan : null,
+    yuk: yuk ? say(yuk) <= yukTavani(kar, yuk, uzakMi(kaynak, hedef)).tavan : null,
     mal: yuk ? (Object.entries(yuk) as [MalId, number][]).every(([m, n]) => (ev[m] ?? 0) >= n) : null,
     bedel: (ev.nal ?? 0) - (y.nal ?? 0) >= KERVAN_NAL && (ev.kosum ?? 0) - (y.kosum ?? 0) >= KERVAN_KOSUM,
     takat: kar.tk >= KERVAN_TAKAT,
@@ -257,14 +297,14 @@ export function ilkKervanEngeli(k: Record<KervanKapisi, boolean | null>): HataKo
  * (1) Kalkış: kapılar tutmalı (çağıran denetler); mallar + bedel düşer, takat harcanır, sayaç artar, çıkış kaydı
  * açılır. Başarılıysa kayıt döner.
  */
-export function kervanCikar(d: KervanDefteri, kar: Karakter, hedef: string, yuk: Yuk, ay: number, islem: string, an: number, aylikTavan = KERVAN_AYLIK): Sonuc<CikisKaydi & { asinma: Asinma[] }> {
-  const engel = ilkKervanEngeli(kervanKapilari(d, kar, ay, hedef, yuk, aylikTavan));
+export function kervanCikar(d: KervanDefteri, kar: Karakter, hedef: string, yuk: Yuk, ay: number, islem: string, an: number, aylikTavan = KERVAN_AYLIK, kaynak?: string): Sonuc<CikisKaydi & { asinma: Asinma[] }> {
+  const engel = ilkKervanEngeli(kervanKapilari(d, kar, ay, hedef, yuk, aylikTavan, kaynak));
   if (engel) return hata(engel);
   const ihtiyac: Partial<Record<string, number>> = { ...yuk };
   ihtiyac.nal = (ihtiyac.nal ?? 0) + KERVAN_NAL;
   const kilit = esyaKilidi(kar, ihtiyac);
   if (kilit) return hata(kilit);
-  const yt = yukTavani(kar, yuk);
+  const yt = yukTavani(kar, yuk, uzakMi(kaynak, hedef));
   if (!takatHarca(kar, ay, KERVAN_TAKAT)) return hata("takat_yok");
   for (const [m, n] of Object.entries(yuk) as [MalId, number][]) envanterEkle(kar, m, -n);
   envanterEkle(kar, "nal", -KERVAN_NAL);
@@ -273,7 +313,8 @@ export function kervanCikar(d: KervanDefteri, kar: Karakter, hedef: string, yuk:
   if (yt.tasit && say(yuk) > KERVAN_YUK_EN_COK) asinma.push(aracAsindir(kar, yt.tasit));
   const [, sayi, mh] = aySayaci(d, kar.o, ay);
   d.s[kar.o] = [ay, sayi + 1, [...mh, ...Object.keys(yuk).map((m) => `${m}:${hedef}`)]];
-  const y: KervanYuku = { o: kar.o, hs: kar.h, ev: { ...yuk }, ka: ay, va: ay + KERVAN_YOL_AY };
+  const ke = uzakKotaEki(kar, kaynak, hedef);
+  const y: KervanYuku = { o: kar.o, hs: kar.h, ev: { ...yuk }, ka: ay, va: ay + KERVAN_YOL_AY, ...(ke > 0 ? { ke } : {}) };
   const kayit = { i: islem, t: "kervan", h: hedef, a: 0, y: y as unknown as Record<string, unknown> };
   cikisAc(d.c, kayit, an);
   return basarili({ ...kayit, b: an, d: 0, s: an, asinma });
@@ -289,6 +330,7 @@ export function kervanYukuGecerli(y: unknown): y is KervanYuku {
   if (typeof y !== "object" || y === null) return false;
   const x = y as Partial<KervanYuku>;
   if (typeof x.o !== "string" || typeof x.hs !== "string" || !Number.isInteger(x.ka) || x.va !== (x.ka ?? NaN) + KERVAN_YOL_AY) return false;
+  if (x.ke !== undefined && (!Number.isInteger(x.ke) || x.ke < 0 || x.ke > UZAK_ANLASMA_KOTA_EK)) return false;
   const yuk = yukCoz(x.ev);
   return yuk.ok && say(yuk.deger) <= KERVAN_YUK_MUTLAK;
 }
@@ -296,14 +338,14 @@ export function kervanYukuGecerli(y: unknown): y is KervanYuku {
 type Kullanilan = (mal: MalId) => [satilan: number, primli: number];
 
 /** Varış satışını hesaplar (yazmaz): hedefin lonca sayımı, parametreleri ve tüccarın varış kotasıyla. */
-export function varisHesapla(yuk: Yuk, oyuncuSayisi: (m: MeslekId) => number, kullanilan: Kullanilan, p?: CalismaParametreleri): Omit<VarisSonucu, "durum" | "an"> {
+export function varisHesapla(yuk: Yuk, oyuncuSayisi: (m: MeslekId) => number, kullanilan: Kullanilan, p?: CalismaParametreleri, ke = 0): Omit<VarisSonucu, "durum" | "an"> {
   const satirlar: VarisSatiri[] = [];
   const satilan: Yuk = {};
   const kalan: Yuk = {};
   let hasilat = 0;
   for (const [mal, adet] of (Object.entries(yuk) as [MalId, number][]).sort(([a], [b]) => (a < b ? -1 : 1))) {
     const n = oyuncuSayisi(MALLAR[mal].meslek);
-    const tavan = npcSatisKotasi(mal, n, npcSatisEki(p));
+    const tavan = npcSatisKotasi(mal, n, npcSatisEki(p) + ke);
     const [once, primOnce] = kullanilan(mal);
     const sat = Math.min(adet, Math.max(0, tavan - once));
     const birim = satisDegeri(mal, n, p);
@@ -318,7 +360,7 @@ export function varisHesapla(yuk: Yuk, oyuncuSayisi: (m: MeslekId) => number, ku
     if (adet - sat > 0) kalan[mal] = adet - sat;
     satirlar.push({ mal, adet, satilan: sat, kalan: adet - sat, kota: { tavan, once, kalan: Math.max(0, tavan - once - sat) }, birim, kitlikAdet, tutar, dokum: { toplam: tutar, kalemler } });
   }
-  return { hasilat, satilan, kalan, satirlar };
+  return { hasilat, satilan, kalan, satirlar, ...(ke > 0 ? { ke } : {}) };
 }
 
 /** Hedefte bu hesabın varış ayındaki kullanılmış kotası. */
@@ -328,8 +370,8 @@ export function kullanilanKota(d: KervanDefteri | undefined, hesap: string, va: 
 }
 
 /** Hedefin satış tahmini (önizleme; yazmaz). Kalkış bu ay olursa varış ayı `va`. */
-export function varisTahmini(k: Kasaba, d: KervanDefteri | undefined, hesap: string, yuk: Yuk, va: number) {
-  return varisHesapla(yuk, oyuncuSayaci(k), kullanilanKota(d, hesap, va), k.pr);
+export function varisTahmini(k: Kasaba, d: KervanDefteri | undefined, hesap: string, yuk: Yuk, va: number, ke = 0) {
+  return varisHesapla(yuk, oyuncuSayaci(k), kullanilanKota(d, hesap, va), k.pr, Number.isInteger(ke) && ke > 0 ? Math.min(UZAK_ANLASMA_KOTA_EK, ke) : 0);
 }
 
 /**
@@ -344,7 +386,7 @@ export function varisIsle(k: Kasaba, d: KervanDefteri, islem: string, kaynak: st
     sonuc = { durum: "red", neden: "gecersiz", an, hasilat: 0, satilan: {}, kalan: {}, satirlar: [] };
   } else {
     const y = yukHam;
-    const h = varisHesapla(y.ev, oyuncuSayaci(k), kullanilanKota(d, y.hs, y.va), k.pr);
+    const h = varisHesapla(y.ev, oyuncuSayaci(k), kullanilanKota(d, y.hs, y.va), k.pr, gecerliKotaEki(y.ke, kaynak, k.y));
     const aylar = (d.v[y.hs] ??= {});
     const ay = (aylar[String(y.va)] ??= {});
     for (const s of h.satirlar) {

@@ -71,7 +71,10 @@ export interface HizmetNpcTalebi {
 }
 
 /** Aylık, kasaba hazinesinden önceden ayrılmış koltuklu hizmet görevi. */
-export type HizmetGorevTuru = "nobet" | "vergiSayimi" | "meclisKaydi" | "talim";
+export type HizmetGorevTuru =
+  | "nobet" | "vergiSayimi" | "meclisKaydi" | "talim"
+  // Kanca partisi 2 (hizmet): yalnız yerleşimde o hizmeti bilen yaşayan biri varken açılan tek koltuklu görevler.
+  | "denetim" | "defter" | "tercume" | "hizliUlak" | "muhurluMektup" | "sifreliMektup" | "izSur" | "sahitDinle" | "hakemlik";
 export interface HizmetKasabaGorevi {
   i: number;
   tur: HizmetGorevTuru;

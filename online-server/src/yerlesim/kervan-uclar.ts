@@ -43,6 +43,8 @@ import {
   yukSorguCoz,
   yukTavani,
   type Yuk,
+  uzakKotaEki,
+  uzakMi,
   kervanAylikTavan,
 } from "./kervan.ts";
 import type { Karakter, Kasaba, OlayTaslagi } from "./tipler.ts";
@@ -78,9 +80,9 @@ interface OzetYaniti {
   tahmin?: Omit<VarisSonucu, "durum" | "an">;
 }
 
-async function ozetIste(cagir: KervanCagir, yerlesim: string, hesap?: string, yuk?: Yuk, va?: number): Promise<OzetYaniti | undefined> {
+async function ozetIste(cagir: KervanCagir, yerlesim: string, hesap?: string, yuk?: Yuk, va?: number, ke = 0): Promise<OzetYaniti | undefined> {
   try {
-    const r = await cagir({ islem: "fiyatOzeti", yerlesim, ...(hesap ? { hesap } : {}), ...(yuk ? { yuk } : {}), ...(va !== undefined ? { va } : {}) });
+    const r = await cagir({ islem: "fiyatOzeti", yerlesim, ...(hesap ? { hesap } : {}), ...(yuk ? { yuk } : {}), ...(va !== undefined ? { va } : {}), ...(ke > 0 ? { ke } : {}) });
     return r.ok && nesneMi(r.deger) && nesneMi(r.deger.ozet) ? (r.deger as unknown as OzetYaniti) : undefined;
   } catch {
     return undefined;
@@ -104,12 +106,13 @@ export async function kervanOnizle(motor: KervanMotoru, hesapId: string, hedefHa
   const yukS = yukSorguCoz(mallarHam);
   if (yukS && !yukS.ok) return yukS;
   const yuk = yukS?.deger;
-  const kapilar = kervanKapilari(d, kar, ay, h.deger, yuk, kervanAylikTavan(k));
+  const kapilar = kervanKapilari(d, kar, ay, h.deger, yuk, kervanAylikTavan(k), k.y);
   const engel = ilkKervanEngeli(kapilar);
   const s = d?.s[kar.o];
   const va = ay + KERVAN_YOL_AY;
   const tahminYuku = yuk ?? satilabilir(kar);
-  const uzak = await ozetIste(cagir, h.deger, kar.h, adet(tahminYuku) > 0 ? tahminYuku : undefined, va);
+  const ke = uzakKotaEki(kar, k.y, h.deger);
+  const uzak = await ozetIste(cagir, h.deger, kar.h, adet(tahminYuku) > 0 ? tahminYuku : undefined, va, ke);
   return basarili({
     ...temel,
     hedef: h.deger,
@@ -119,7 +122,9 @@ export async function kervanOnizle(motor: KervanMotoru, hesapId: string, hedefHa
     engel: engel ?? null,
     uygun: engel === undefined && yuk !== undefined,
     bedel: { nal: KERVAN_NAL, kosum: KERVAN_KOSUM, takat: KERVAN_TAKAT },
-    yuk: { ...yukTavani(kar, yuk), adet: yuk ? adet(yuk) : null },
+    yuk: { ...yukTavani(kar, yuk, uzakMi(k.y, h.deger)), adet: yuk ? adet(yuk) : null },
+    // Kanca partisi 2 (eklemeli): başka beyliğe mi ve uzak anlaşmanın varış kotası eki.
+    uzak: { baskaBeylik: uzakMi(k.y, h.deger), kotaEk: ke },
     aylik: { kullanilan: s && s[0] === ay ? s[1] : 0, tavan: kervanAylikTavan(k), malHedef: s && s[0] === ay ? s[2] : [] },
     takat: kar.tk,
     // Tahmin: yük verildiyse o yük, verilmediyse envanterdeki satılabilir malların tamamı (birim fiyat + varış kotası).
@@ -140,7 +145,7 @@ export function kervanGonder(motor: KervanMotoru, hesapId: string, govde: unknow
     const d = (k.kv ??= bosKervanDefteri());
     sayacBuda(d, ay);
     const islem = `kervan:${k.y}:${kar.o}:${String(govde.istekNo)}`;
-    const r = kervanCikar(d, kar, h.deger, yuk.deger, ay, islem, simdi, kervanAylikTavan(k));
+    const r = kervanCikar(d, kar, h.deger, yuk.deger, ay, islem, simdi, kervanAylikTavan(k), k.y);
     if (!r.ok) return r;
     return basarili({
       kervan: { id: islem, hedef: h.deger, hedefAd: yerlesimBul(h.deger)?.ad ?? h.deger, mallar: yuk.deger, kalkisAyi: ay, varisAyi: ay + KERVAN_YOL_AY },
@@ -201,13 +206,13 @@ export function kervanVarisUc(motor: KervanMotoru, islemNo: unknown, kaynak: unk
 }
 
 /** fiyatOzeti: salt okuma (lonca, en pahalı mallar; yük verildiyse varış tahmini). */
-export function fiyatOzetiUc(motor: KervanMotoru, hesap: unknown, yukHam: unknown, va: unknown): Sonuc<OzetYaniti> {
+export function fiyatOzetiUc(motor: KervanMotoru, hesap: unknown, yukHam: unknown, va: unknown, ke?: unknown): Sonuc<OzetYaniti> {
   const k = motor.kasaba;
   const ozet = fiyatOzeti(k);
   if (typeof hesap !== "string" || yukHam === undefined || !Number.isInteger(va)) return basarili({ ozet });
   const yuk = yukCoz(yukHam);
   if (!yuk.ok) return basarili({ ozet });
-  return basarili({ ozet, tahmin: varisTahmini(k, k.kv, hesap, yuk.deger, va as number) });
+  return basarili({ ozet, tahmin: varisTahmini(k, k.kv, hesap, yuk.deger, va as number, typeof ke === "number" ? ke : 0) });
 }
 
 // ── Kaynak yerleşim: uzlaştırma ──

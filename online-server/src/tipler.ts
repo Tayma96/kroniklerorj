@@ -799,7 +799,7 @@ export type YerlesimIleti =
   | (KervanIstemciIletisi & { yerlesim: string })
   /** Kervan (D2; YerlesimDO → YerlesimDO, istemci ulaşamaz): varış (işlem kimliğiyle bir kez) ve salt okuma fiyat özeti. */
   | { islem: "kervanVaris"; yerlesim: string; islemNo: string; kaynak: string; yuk: unknown }
-  | { islem: "fiyatOzeti"; yerlesim: string; hesap?: string; yuk?: unknown; va?: number }
+  | { islem: "fiyatOzeti"; yerlesim: string; hesap?: string; yuk?: unknown; va?: number; ke?: number }
   | (BarinmaIletisi & { yerlesim: string });
 
 export type DunyaIleti =

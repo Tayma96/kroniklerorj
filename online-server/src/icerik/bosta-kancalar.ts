@@ -6,9 +6,9 @@
 /**
  * Liste uzunluğunun üst sınırı (yalnız azalır). 232: Dilim 3 ilk parti denge denetiminde `hak:namYayma` (başka dükkânı
  * övme hizmeti, kendi rafına çekicilik değil) ve `hak:hileliTarti` (hileli tartı dürüst H olamaz) kayıttan geri alındı;
- * parti henüz ana dala girmediği için taban budur.
+ * parti henüz ana dala girmediği için taban budur. 162: kanca partisi 2 hizmet/tarif/sinerji (18 bağlandı).
  */
-export const BOSTA_TAVAN = 180;
+export const BOSTA_TAVAN = 162;
 
 export const BOSTA_KANCALAR: readonly string[] = [
   "arac:av:mizrak",
@@ -135,60 +135,42 @@ export const BOSTA_KANCALAR: readonly string[] = [
   "hak:zahireAlimi",
   "hak:zaviye",
   "hak:zehirTanima",
-  "hizmet:beylikElciligi",
-  "hizmet:defter",
-  "hizmet:denetim",
-  "hizmet:diyetPazarligi",
-  "hizmet:hakemlik",
-  "hizmet:hediyeliElcilik",
-  "hizmet:hizliUlak",
-  "hizmet:ismarlamaZirh",
-  "hizmet:izSur",
-  "hizmet:komsuElcilik",
-  "hizmet:muhurluMektup",
-  "hizmet:sahitDinle",
-  "hizmet:sifreliMektup",
-  "hizmet:tercume",
-  "hizmet:uzakKervan",
+  "hizmet:beylikElciligi", // elçilik beylik diplomasisi (BolgeDO); kişi elçi rolü siyaset programında
+  "hizmet:diyetPazarligi", // kan davası ilk sürümde yok (ONLINE_DURUM §4.2)
+  "hizmet:hediyeliElcilik", // elçilik beylik diplomasisi (BolgeDO); kişi elçi rolü siyaset programında
+  "hizmet:komsuElcilik", // elçilik beylik diplomasisi (BolgeDO); kişi elçi rolü siyaset programında
   "kalite:araBul",
   "kalite:butce",
   "kalite:cocukRiski",
-  "kalite:defter",
-  "kalite:denetim",
   "kalite:dilekce",
   "kalite:elcilik",
   "kalite:fiyatHaberi",
   "kalite:gozculuk",
-  "kalite:hakemlik",
   "kalite:hali",
   "kalite:hirsizlikTespiti",
-  "kalite:izSur",
   "kalite:mektup",
   "kalite:merhem",
-  "kalite:sahitDinle",
   "kalite:sancak",
   "kalite:savunma",
-  "kalite:tercume",
   "kalite:ulak",
   "kalite:uzlasma",
   "kalite:yolGuvenligi",
   "omur:cizme",
-  "sinerji:degirmenKopruDemiri",
-  "sinerji:kopruDemiri",
-  "sinerji:uzakAnlasma",
-  "tarif:boya",
-  "tarif:degirmenMekanizmasi",
-  "tarif:hali",
-  "tarif:ipekKumas",
-  "tarif:kilitMentese",
-  "tarif:kulce",
-  "tarif:merhem",
-  "tarif:panzehir",
-  "tarif:peynir",
-  "tarif:sancak",
-  "tarif:serbet",
-  "tarif:sifaSerbeti",
-  "tarif:tunc",
+  "sinerji:degirmenKopruDemiri", // tek tüketicisi hak:ahsapKopru kapısı (beceri-etki.ts); köprü hakkıyla birlikte bağlanır
+  "sinerji:kopruDemiri", // tek tüketicisi hak:ahsapKopru kapısı (beceri-etki.ts); köprü hakkıyla birlikte bağlanır
+  "tarif:boya", // yeni mal ister; istemci MAL_IDLERI kapalı küme (eski APK tarif listesini reddeder)
+  "tarif:degirmenMekanizmasi", // yeni mal ister; istemci MAL_IDLERI kapalı küme (eski APK tarif listesini reddeder)
+  "tarif:hali", // yeni mal ister; istemci MAL_IDLERI kapalı küme (eski APK tarif listesini reddeder)
+  "tarif:ipekKumas", // yeni mal ister; istemci MAL_IDLERI kapalı küme (eski APK tarif listesini reddeder)
+  "tarif:kilitMentese", // yeni mal ister; istemci MAL_IDLERI kapalı küme (eski APK tarif listesini reddeder)
+  "tarif:kulce", // yeni mal ister; istemci MAL_IDLERI kapalı küme (eski APK tarif listesini reddeder)
+  "tarif:merhem", // yeni mal ister; istemci MAL_IDLERI kapalı küme (eski APK tarif listesini reddeder)
+  "tarif:panzehir", // yeni mal ister; istemci MAL_IDLERI kapalı küme (eski APK tarif listesini reddeder)
+  "tarif:peynir", // yeni mal ister; istemci MAL_IDLERI kapalı küme (eski APK tarif listesini reddeder)
+  "tarif:sancak", // yeni mal ister; istemci MAL_IDLERI kapalı küme (eski APK tarif listesini reddeder)
+  "tarif:serbet", // yeni mal ister; istemci MAL_IDLERI kapalı küme (eski APK tarif listesini reddeder)
+  "tarif:sifaSerbeti", // yeni mal ister; istemci MAL_IDLERI kapalı küme (eski APK tarif listesini reddeder)
+  "tarif:tunc", // yeni mal ister; istemci MAL_IDLERI kapalı küme (eski APK tarif listesini reddeder)
   "verim:kulce",
   "verim:serbet",
 ];

@@ -471,7 +471,7 @@ export class YerlesimDO {
       case "kervanVaris":
         return kervanVarisUc(motor, ileti.islemNo, ileti.kaynak, ileti.yuk, simdi);
       case "fiyatOzeti":
-        return fiyatOzetiUc(motor, ileti.hesap, ileti.yuk, ileti.va);
+        return fiyatOzetiUc(motor, ileti.hesap, ileti.yuk, ileti.va, ileti.ke);
       case "mulkGiris":
         return { ok: true, deger: { sonuclar: await teslimAl(motor, ileti.kayitlar, simdi) } };
       default:
