@@ -277,7 +277,7 @@ function IsletmeEkran() {
     </Cerceve> : null}
     {yetki("fiyat") && is.tur === "han" ? <Cerceve ic={{ padding: 12, gap: 8 }}>
       <Sayac etiket={t("onl.isl.fiyatCarpani")} deger={carpan ?? is.fiyatCarpani} en={SINIR.fiyatEnAz} cok={SINIR.fiyatEnCok} adim={5} birim="%" onDegis={setCarpan} />
-      <CizgiDugme etiket={t("onl.isl.fiyatKaydet")} icon="scales" rtl={rtl} kucuk kapali={bekliyor || carpan === is.fiyatCarpani} onPress={() => { void komut("fiyat", { carpan }); }} />
+      <CizgiDugme etiket={t("onl.isl.fiyatKaydet")} icon="scales" rtl={rtl} kucuk kapali={bekliyor || (carpan ?? is.fiyatCarpani) === is.fiyatCarpani} onPress={() => { void komut("fiyat", { carpan: carpan ?? is.fiyatCarpani }); }} />
     </Cerceve> : null}
     {yetki("musteri") && is.tur === "han" ? <Cerceve ic={{ padding: 12, gap: 8 }}>
       <Not metin={t(is.kapi ? "onl.isl.kapiAcikNot" : "onl.isl.kapiKapaliNot")} rtl={rtl} />

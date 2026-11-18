@@ -19,7 +19,11 @@ export const EK_HATALAR = [
   "kervan_ayni_yer", "kervan_yuk_gecersiz", "kervan_yuk_siniri", "kervan_bedel_yok", "kervan_aylik_siniri", "kervan_mal_hedef", "kervan_ulasilamadi", "olay_yok", "atildi", "eylem_siniri", "ikram_gecersiz", "ikram_kapali", "yukseltme_gerekli",
   "ses_kapali", "ses_hatasi", "masa_sessiz", "masada_degil", "ses_oturumu_yok", "sesi_kesildi", "soz_istegi_yok",
   "stok_yok", "ilan_gecersiz", "ilan_kapandi", "ilan_siniri",
-  "debdebe_kapali", "armagan_siniri", "urun_gecersiz",
+  "debdebe_kapali", "armagan_siniri", "urun_gecersiz", "yuva_gecersiz", "yuva_kapali", "sahip_degil", "islem_yok",
+  // Siyaset (online-server/src/siyaset): seçim, makam, itiraz, özerklik, darbe, devlet
+  "bolge_gecersiz", "makam_yok", "makam_kapali", "secim_kapali", "zaten_aday", "kume_cakisma", "ardisik_donem", "sinir_asildi",
+  "vekil_gecersiz", "itiraz_yok", "itiraz_kapali", "ozerklik_var", "ozerklik_yok", "darbe_var", "darbe_yok", "darbe_esik_eksik",
+  "darbe_soguma", "devlet_yok", "devlet_kapali", "soguma", "gerekce_gecersiz",
   "sahne_acik", "sahne_yok", "sahne_yasak", "soz_verilmedi", "masa_mesgul", "atisma_yok", "atisma_suruyor", "sira_degil",
   "oylama_kapali", "oy_verildi", "oy_hakki_yok",
   "han_gecersiz", "han_yok", "han_siniri",

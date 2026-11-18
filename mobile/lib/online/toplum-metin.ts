@@ -62,4 +62,5 @@ export const TOPLUM_HATA_ANAHTARI: Partial<Record<OnlineHata, string>> = {
   sikayet_siniri: "onl.h.sikayetSiniri",
   kuyruk_dolu: "onl.h.sikayetSiniri",
   susturuldu: "onl.h.susturuldu",
+  ...Object.fromEntries((["mesrep_gecersiz", "mesrep_erken", "mesrep_kilitli", "hami_gecersiz", "hami_uygun_degil", "hami_var", "hami_dolu", "bag_yok", "dert_yok", "dert_kapandi", "katki_gecersiz", "katki_siniri", "senlik_yok", "zaviye_gecersiz", "zaviye_yok", "zaviye_var", "zaviye_dolu", "zaviye_kuruluyor", "kidem_yetersiz", "aday_uygun_degil", "arabulucu_tarafsiz_degil"] as const).map((k) => [k, "onl.hata." + k])),
 };

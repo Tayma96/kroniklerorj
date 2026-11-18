@@ -11,6 +11,8 @@ export const TOPLUM_HATALARI = [
   "teklif_gecersiz", "teklif_yok", "teklif_kapandi", "teklif_siniri", "taraf_degil", "kendine", "engelli", "tavan_doldu",
   "hediye_dongu", "aralik_dolu", "istek_yok", "soylenti_yok", "duzen_gecersiz", "oncelik_bekle",
   "kendini_sikayet", "sikayet_gecersiz", "sikayet_siniri", "kuyruk_dolu", "susturuldu",
+  // E5–E7 topluluk (meşrep, hami, ortak dert, şenlik, zaviye) ve oyuncu arabuluculuğu; metinler "onl.hata.<kod>".
+  "mesrep_gecersiz", "mesrep_erken", "mesrep_kilitli", "hami_gecersiz", "hami_uygun_degil", "hami_var", "hami_dolu", "bag_yok", "dert_yok", "dert_kapandi", "katki_gecersiz", "katki_siniri", "senlik_yok", "zaviye_gecersiz", "zaviye_yok", "zaviye_var", "zaviye_dolu", "zaviye_kuruluyor", "kidem_yetersiz", "aday_uygun_degil", "arabulucu_tarafsiz_degil",
 ] as const;
 export type ToplumHataKodu = (typeof TOPLUM_HATALARI)[number];
 

@@ -55,7 +55,14 @@ const ANAHTAR: Partial<Record<OnlineHata, string>> = {
   devlet_talep_var: "onl.h.devletTalepVar",
   taraf_degil: "onl.h.tarafDegil",
   istek_tekrar: "onl.h.istekTekrar",
-  eylem_gecersiz: "onl.h.genel",
+  meslek_degisim_dolu: "onl.h.meslekDegisimDolu",
+  arac_yok: "onl.h.aracYok",
+  deger_sinir_disi: "onl.h.degerSinirDisi",
+  // Beceri ağacı v2 (ağaç ekranı kendi tablosuyla daha ayrıntılı anlatır; öbür ekranlar buradan).
+  ogrenme_suruyor: "onl.ba.neden.suren", on_kosul_eksik: "onl.ba.neden.onKosul", seviye_tavan: "onl.ba.neden.tam", dugum_gizli: "onl.ba.neden.gizli",
+  hizlandirma_yok: "onl.ba.h.hizlandirmaYok", hizlandirma_kapali: "onl.ba.kisaltDebdebe", ogrenme_yok: "onl.ba.h.ogrenmeYok", yeniden_bos: "onl.ba.h.yenidenBos",
+  dugum_gecersiz: "onl.h.dugumGecersiz", kaynak_gecersiz: "onl.h.kaynakGecersiz",
+  eylem_gecersiz: "onl.h.eylemGecersiz",
   imlec_gecersiz: "onl.h.genel",
   // Koda özgü metin: "bir aksilik oldu" yerine ne olduğunu söyler (varış ve giriş akışı).
   sunucu_hatasi: "onl.h.sunucuHatasi",
