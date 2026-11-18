@@ -8,8 +8,9 @@
 // tecrübe kasılmasın). Saf fonksiyonlar; tarafların karakterleri yüklü olmalıdır.
 
 import { MALLAR, malBul, type MalId } from "../icerik/mallar.ts";
+import { TARIFLER, type Tarif } from "../icerik/tarifler.ts";
 import { basarili, hata, type Sonuc } from "../tipler.ts";
-import { basariSay } from "./beceri-etki.ts";
+import { basariSay, hizmetAcik } from "./beceri-etki.ts";
 import { defterYaz } from "./defter.ts";
 import { engelliMi } from "./engel.ts";
 import { hanedanKasabasi } from "./hanedan.ts";
@@ -61,6 +62,16 @@ export const ISMARLAMA_UCRET_EN_COK = 100_000;
 /** [PARAMETRE] Ustanın teslimde kazandığı hizmet: taban + kalite kademesi başına (aynı müşteriden azalan getiri). */
 export const ISMARLAMA_HIZMET = 3;
 export const ISMARLAMA_KALITE_HIZMET = 1;
+/**
+ * [PARAMETRE] Kanca partisi 2 (`hizmet:ismarlamaZirh`, demirci "özel zırhlar"): ölçüye göre zırh ısmarlamasını teslim
+ * eden usta tabana bu kadar ek hizmet (tecrübe) alır. Akçe ve mal değişmez; aynı müşteriden azalan getiri aynen uygulanır.
+ */
+export const ISMARLAMA_ZIRH_HIZMET = 2;
+export const ISMARLAMA_ZIRH_KANCASI = "ismarlamaZirh";
+/** Zırh malları: `zirh` grubundaki tariflerin çıktısı (zincir, kalkan, pul zırh). */
+export const ZIRH_MALLARI: ReadonlySet<MalId> = new Set(
+  Object.values(TARIFLER as Record<string, Tarif>).filter((t) => t.grup?.includes("zirh")).map((t) => t.cikti[0]),
+);
 /** [PARAMETRE] Kapanan ısmarlamanın listede kaldığı ay. */
 export const ISMARLAMA_TUTMA_AY = 6;
 
@@ -116,6 +127,8 @@ export interface TeslimDokumu {
   tekrar: number;
   carpan: number;
   pompa: PompaDokumu;
+  /** Kanca partisi 2: ölçüye göre zırh eki (çarpandan önce; yoksa 0). */
+  zirhEk: number;
 }
 
 /**
@@ -186,14 +199,15 @@ export function ismarlamaCevap(
       ism.tq = q;
       const tekrar = (k.ek?.is ?? []).filter((x) => x !== ism && x.d === "teslim" && x.u === ben.o && x.m === diger.o && ay - (x.kp ?? 0) < AZALAN_PENCERE).length;
       const carpan = getiriCarpani(tekrar);
-      const hizmet = hizmetEkle(ben, MALLAR[ism.ml].meslek, Math.floor((ISMARLAMA_HIZMET + q * ISMARLAMA_KALITE_HIZMET) * carpan));
+      const zirhEk = ZIRH_MALLARI.has(ism.ml) && hizmetAcik(ben, ISMARLAMA_ZIRH_KANCASI) ? ISMARLAMA_ZIRH_HIZMET : 0;
+      const hizmet = hizmetEkle(ben, MALLAR[ism.ml].meslek, Math.floor((ISMARLAMA_HIZMET + q * ISMARLAMA_KALITE_HIZMET + zirhEk) * carpan));
       ism.hz = hizmet;
       if (tekrar === 0) basariSay(ben, `teslim:${ism.ml}`, ism.n);
       const ig = (ben.ig ??= [0, 0]);
       ig[0] += 1;
       return basarili({
         ismarlama: ism,
-        teslim: { kalite: q, ucret, hizmet, tekrar, carpan, pompa: pompa.deger },
+        teslim: { kalite: q, ucret, hizmet, tekrar, carpan, pompa: pompa.deger, zirhEk },
         // Teşekkür izi (§5.5): herkese görünür, ustanın adıyla.
         olaylar: [olay("olay.ismarlama.teslim", 5, { ...p, musteri: oyuncuRef(diger), kalite: KALITE_ADLARI[q] }, ben.o, karsi, "")],
       });

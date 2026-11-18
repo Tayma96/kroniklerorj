@@ -268,6 +268,27 @@ export const KANCA_BAGLARI: Readonly<Record<string, KancaBagi>> = {
   "omur:kagni": m("src/yerlesim/kervan.ts"),
   "kalite:kervan": m("src/yerlesim/kervan.ts"),
 
+  // ── Kanca partisi 2 (hizmet/tarif/sinerji): kasaba hizmet görevleri (ulufe hazineden rezerveli; hane başı ayda tek görev) ──
+  "hizmet:denetim": m("src/yerlesim/hizmet-gorev.ts"),
+  "hizmet:defter": m("src/yerlesim/hizmet-gorev.ts"),
+  "hizmet:tercume": m("src/yerlesim/hizmet-gorev.ts"),
+  "hizmet:hizliUlak": m("src/yerlesim/hizmet-gorev.ts"),
+  "hizmet:muhurluMektup": m("src/yerlesim/hizmet-gorev.ts"),
+  "hizmet:sifreliMektup": m("src/yerlesim/hizmet-gorev.ts"),
+  "hizmet:izSur": m("src/yerlesim/hizmet-gorev.ts"),
+  "hizmet:sahitDinle": m("src/yerlesim/hizmet-gorev.ts"),
+  "hizmet:hakemlik": m("src/yerlesim/hizmet-gorev.ts"),
+  "kalite:denetim": m("src/yerlesim/hizmet-gorev.ts"),
+  "kalite:defter": m("src/yerlesim/hizmet-gorev.ts"),
+  "kalite:tercume": m("src/yerlesim/hizmet-gorev.ts"),
+  "kalite:izSur": m("src/yerlesim/hizmet-gorev.ts"),
+  "kalite:sahitDinle": m("src/yerlesim/hizmet-gorev.ts"),
+  "kalite:hakemlik": m("src/yerlesim/hizmet-gorev.ts"),
+  // ── Kanca partisi 2 (hizmet/tarif/sinerji): ısmarlama zırh (teslim tecrübesi) ve uzak kervan (başka beylik) ──
+  "hizmet:ismarlamaZirh": m("src/yerlesim/ismarlama.ts"),
+  "hizmet:uzakKervan": m("src/yerlesim/kervan.ts"),
+  "sinerji:uzakAnlasma": m("src/yerlesim/kervan.ts"),
+
   // ── Kanca partisi 2: konsinye (emanet satır, komisyon) ──
   "hak:komisyon": m("src/mulk/tezgah-uclar.ts"),
 

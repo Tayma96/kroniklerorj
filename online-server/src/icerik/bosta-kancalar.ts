@@ -9,8 +9,9 @@
  * parti henüz ana dala girmediği için taban budur. Kanca partisi 2 (18 Kasım) bağladıkça düşer; bağlanamayanın yanında
  * tek satır neden yazar ("// boşta: ..."). 160: a–e/konsinye dalı (10) ve kalite/eşya dalı (13) birleşti; gece devriyesinin
  * hırsızlık tespiti ve kılıcı yalnız devriye görevinde (nöbete sayılmaz). 151: hak l–r dalı (9; namYayma/hileliTarti çarşı hilesinde) birleşti.
+ * 133: hizmet/tarif/sinerji dalı (18; 9 kasaba görevi, ısmarlama zırh, uzak kervan) birleşti.
  */
-export const BOSTA_TAVAN = 151;
+export const BOSTA_TAVAN = 133;
 
 export const BOSTA_KANCALAR: readonly string[] = [
   // av sistemi yok (izSur hizmeti hizmet ajanında; hedefi "av" olan araçlı hizmet gelince bağlanır)
@@ -121,53 +122,33 @@ export const BOSTA_KANCALAR: readonly string[] = [
   "hak:zahireAlimi",
   "hak:zaviye",
   "hak:zehirTanima",
-  "hizmet:beylikElciligi",
-  "hizmet:defter",
-  "hizmet:denetim",
-  "hizmet:diyetPazarligi",
-  "hizmet:hakemlik",
-  "hizmet:hediyeliElcilik",
-  "hizmet:hizliUlak",
-  "hizmet:ismarlamaZirh",
-  "hizmet:izSur",
-  "hizmet:komsuElcilik",
-  "hizmet:muhurluMektup",
-  "hizmet:sahitDinle",
-  "hizmet:sifreliMektup",
-  "hizmet:tercume",
-  "hizmet:uzakKervan",
+  "hizmet:beylikElciligi", // boşta: elçilik beylik diplomasisi (BolgeDO); kişi elçi rolü siyaset programında
+  "hizmet:diyetPazarligi", // boşta: kan davası ilk sürümde yok (ONLINE_DURUM §4.2)
+  "hizmet:hediyeliElcilik", // boşta: elçilik beylik diplomasisi (BolgeDO); kişi elçi rolü siyaset programında
+  "hizmet:komsuElcilik", // boşta: elçilik beylik diplomasisi (BolgeDO); kişi elçi rolü siyaset programında
   // butce, dilekce: divan bütçe/dilekçe sistemi yok (hak:butceOnerisi, hak:dilekce ile gelir)
   "kalite:butce",
-  // defter, denetim, elcilik, hakemlik, izSur, sahitDinle, tercume: tüketici aynı adlı hizmet (hizmet ajanında);
-  // hizmet tarifi bu kimlikle (ya da grupla) açılınca hizmet-pazari.ts hizmetKalitesi okur, kayda eklenir
-  "kalite:defter",
-  "kalite:denetim",
   "kalite:dilekce",
-  "kalite:elcilik",
-  "kalite:hakemlik",
+  "kalite:elcilik", // boşta: tüketicisi elçilik hizmetleri; beylik diplomasisi (BolgeDO) gelince bağlanır
   // hali, merhem, sancak: tarif kimliğiyle yapısal bağlıdır; tarif (tarif ajanında) eklenince listeden çıkar
   "kalite:hali",
-  "kalite:izSur",
   "kalite:merhem",
-  "kalite:sahitDinle",
   "kalite:sancak",
-  "kalite:tercume",
-  "sinerji:degirmenKopruDemiri",
-  "sinerji:kopruDemiri",
-  "sinerji:uzakAnlasma",
-  "tarif:boya",
-  "tarif:degirmenMekanizmasi",
-  "tarif:hali",
-  "tarif:ipekKumas",
-  "tarif:kilitMentese",
-  "tarif:kulce",
-  "tarif:merhem",
-  "tarif:panzehir",
-  "tarif:peynir",
-  "tarif:sancak",
-  "tarif:serbet",
-  "tarif:sifaSerbeti",
-  "tarif:tunc",
+  "sinerji:degirmenKopruDemiri", // boşta: tek tüketicisi hak:ahsapKopru kapısı (beceri-etki.ts); köprü hakkıyla birlikte bağlanır
+  "sinerji:kopruDemiri", // boşta: tek tüketicisi hak:ahsapKopru kapısı (beceri-etki.ts); köprü hakkıyla birlikte bağlanır
+  "tarif:boya", // boşta: yeni mal ister; istemci MAL_IDLERI kapalı küme (eski APK tarif listesini reddeder)
+  "tarif:degirmenMekanizmasi", // boşta: yeni mal ister; istemci MAL_IDLERI kapalı küme (eski APK tarif listesini reddeder)
+  "tarif:hali", // boşta: yeni mal ister; istemci MAL_IDLERI kapalı küme (eski APK tarif listesini reddeder)
+  "tarif:ipekKumas", // boşta: yeni mal ister; istemci MAL_IDLERI kapalı küme (eski APK tarif listesini reddeder)
+  "tarif:kilitMentese", // boşta: yeni mal ister; istemci MAL_IDLERI kapalı küme (eski APK tarif listesini reddeder)
+  "tarif:kulce", // boşta: yeni mal ister; istemci MAL_IDLERI kapalı küme (eski APK tarif listesini reddeder)
+  "tarif:merhem", // boşta: yeni mal ister; istemci MAL_IDLERI kapalı küme (eski APK tarif listesini reddeder)
+  "tarif:panzehir", // boşta: yeni mal ister; istemci MAL_IDLERI kapalı küme (eski APK tarif listesini reddeder)
+  "tarif:peynir", // boşta: yeni mal ister; istemci MAL_IDLERI kapalı küme (eski APK tarif listesini reddeder)
+  "tarif:sancak", // boşta: yeni mal ister; istemci MAL_IDLERI kapalı küme (eski APK tarif listesini reddeder)
+  "tarif:serbet", // boşta: yeni mal ister; istemci MAL_IDLERI kapalı küme (eski APK tarif listesini reddeder)
+  "tarif:sifaSerbeti", // boşta: yeni mal ister; istemci MAL_IDLERI kapalı küme (eski APK tarif listesini reddeder)
+  "tarif:tunc", // boşta: yeni mal ister; istemci MAL_IDLERI kapalı küme (eski APK tarif listesini reddeder)
   // verim:kulce, verim:serbet: tarif (tarif ajanında) eklenince yapısal bağlanır
   "verim:kulce",
   "verim:serbet",

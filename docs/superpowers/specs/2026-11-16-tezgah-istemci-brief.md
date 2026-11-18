@@ -117,3 +117,16 @@ Bağlanan: `hak:hileliTarti`, `hak:lekeliSatici`, `hak:namYayma`, `hak:ovguTasla
 - **Leke** (herkese): `GET /v1/dukkanlar` satırına ve tezgâh görünümüne `leke:{bitis, itibar}|null` (lekeli dükkân 3 dönüm −20 itibarla satar). Ekran: dükkân kartında "Lekeli (ay N'e dek)" rozeti.
 - **Ozan övgüsü** (`hak:namYayma`): `POST .../raf {islem:"namYay"}` başkasının dükkânında → `{ovgu:{ad, deger, kalemler, ay}, takat}`. 1 takat; ozan ayda 1, dükkân ayda 1 övgü. Hatalar `dugum_kapali`, `kendine` (sahip/çalışan), `ayni_kume`, `teklif_var` (dükkân bu ay övüldü), `eylem_siniri`, `takat_yok`, `isletme_kapali`. Görünümlere `ovgu:{ad, deger}|null` (bu ay); bakan ozana `namYayma:{d, kalemler, kalan, takat}`. Etki: o ay dükkânın `dukkanH.*` kanalında ozan bir kişi sayılır (+5, `hak:ovguTaslama` ile +8; en yüksek kişi, toplanmaz); döküm `kisiAd` ozandır. Ozana akçe/nam/XP yok.
 - **Ortak dert:** `dertGorunumu` yeni alan `halkCagri?` (hancı çağrısıyla gelen halk puanı); `ORTAK_DERT_KURALLARI.halkCagriEk` (4/ay).
+
+## Kanca partisi 2 (hizmet/tarif/sinerji) protokol ekleri (18 Kasım)
+Hepsi eklemeli; eski istemci bozulmaz. Yeni metinler 6 dilde istemcide yazılmalı.
+- `GET /v1/hizmet` `gorevler[]`: yeni `tur` değerleri `denetim`, `defter`, `tercume`, `hizliUlak`, `muhurluMektup`,
+  `sifreliMektup`, `izSur`, `sahitDinle`, `hakemlik` (yalnız yerleşimde o hizmeti bilen yaşayan biri varken, birer
+  koltuk). Her satıra `meslek` (görevi yapabilen meslek) ve `gosterge` (`asayis`|`moral`|`arz`) eklendi. Teslim ucu ve
+  hata kodları aynı (`dugum_kapali`, `ayni_kume`: hane ayda tek kamu görevi). Metin anahtarı önerisi `onl.gorev.<tur>`.
+- Ismarlama teslim yanıtı `teslim.zirhEk`: ölçüye göre zırh eki (tecrübe; zırh malı ve `ismarlamaZirh` hizmeti yoksa 0).
+- `GET /v1/kervan?hedef=…`: `yuk.uzakEk` (başka beyliğe ve `uzakKervan` hizmetiyle yük tavanı eki, yoksa 0) ve yeni
+  `uzak: { baskaBeylik, kotaEk }` (uzak anlaşma sinerjisiyle varış kotasına mal başına ek). Tahmin satırlarının
+  `kota.tavan` değeri eki içerir. Varış sonucunda isteğe bağlı `ke` (uygulanan ek).
+- Boşta kalan 13 tarif (`boya`, `hali`, `sancak`, `merhem` …) yeni mal ister: istemci `MAL_IDLERI` kapalı küme olduğu
+  için eski APK tarif listesini reddeder. Bağlamak için önce istemcide mal kümesi (taban, ikon, 6 dil ad) genişletilmeli.
