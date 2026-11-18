@@ -58,6 +58,7 @@ import { kalanSatisKotasi, NPC_SATIS_KOTASI, npcSatisEki, npcyeSat } from "./paz
 import { siparisDonumu, siparisGorunumu, siparisTeslim, type Siparis } from "./siparis.ts";
 import { tarifListesi, tarifYap } from "./tarif.ts";
 import { tohumlu } from "./rastgele.ts";
+import { kumeIziCoz } from "../kume-izi.ts";
 import { TANIDIK_EN_COK, dostlukIslem, husumetIslem, oyuncuProfili, bagGorunumu, acikHusumet } from "./iliski.ts";
 import { duzenGorunumu, duzenGuncelle } from "./duzen.ts";
 import { engelKaldir, engelle, engelListesi, engelliMi } from "./engel.ts";
@@ -1599,11 +1600,32 @@ export class YerlesimMotoru {
       e: kar.e,
       olu: olduMu(kar),
       nam: kar.nm.reduce((t, x) => t + x, 0),
-      teveccuh: teveccuhKademesi(kar, k.ay),
+      // B5: siyaset (liyakat, ahi başı şartı) parayla (Debdebe) alınan teveccühü saymaz: ekonomik kademe.
+      teveccuh: teveccuhEkonomiKademesi(kar, k.ay),
       haklar: [...haklar].sort(),
+      // B3: hesap kümesi izi (cihaz/IP tuzlu özeti; ham değer yok) küme anahtarlarına girer.
+      ...(kar.kk?.length ? { kk: [...kar.kk] } : {}),
       // H12: adres veren geçerli kira. Veri hazır; henüz hiçbir kapı (makam adaylığı) buna bağlı değil.
       ikamet: ikametVar(kar, k.y, this.#simdi),
     });
+  }
+
+  /** B3: HesapDO'nun hesap kümesi izini (tuzlu özetler) karaktere ve sakine yazar (salt iç ileti). */
+  async kumeIzi(hesapId: string, kkHam: unknown): Promise<Sonuc<unknown>> {
+    const kk = kumeIziCoz(kkHam);
+    if (!kk) return hata("gecersiz_istek");
+    const s = this.kasaba.sakin.find((x) => x.h === hesapId);
+    if (!s) return hata("sakin_yok");
+    await this.#yukle([s.o]);
+    const kar = this.kasaba.kar.get(s.o);
+    s.kk = kk;
+    this.#kirli.add(SAKIN);
+    if (kar) {
+      kar.kk = kk;
+      this.#kirli.add(KAR + kar.o);
+    }
+    await this.kaydet();
+    return basarili({ kk: kk.length });
   }
 
   /**
@@ -1720,7 +1742,9 @@ export class YerlesimMotoru {
     const ikram = govde.ikram;
     if (typeof ikram !== "string" || !Object.hasOwn(IKRAM_MENUSU, ikram)) return hata("ikram_gecersiz");
     const hs = typeof govde.hedef === "string" ? this.kasaba.sakin.find((x) => x.h === govde.hedef) : undefined;
-    if (hs) await this.#yukle([hs.o]);
+    const hanSahibi = this.#hanSahibi(govde.han);
+    const yuk = [...(hs ? [hs.o] : []), ...(hanSahibi ? [hanSahibi] : [])];
+    if (yuk.length) await this.#yukle(yuk);
     return this.#tekrarGuvenli(hesapId, govde, (kar, _s, ay, ek) => {
       const alan = hs ? this.kasaba.kar.get(hs.o) : undefined;
       if (!alan || olduMu(alan)) return hata("kisi_yok");
@@ -1732,12 +1756,19 @@ export class YerlesimMotoru {
       if (han === undefined) return hata("han_gecersiz");
       const odeme = mulkluIkram(this.kasaba, kar, ikram as IkramId, this.#simdi, String(govde.istekNo), vergiOrani, han);
       if (!odeme.ok) return odeme;
+      if (hanSahibi && hanSahibi !== kar.o) ek.digerleri.push(hanSahibi);
       const teveccuh = teveccuhEkle(alan, kar, "ikram", ay, odeme.deger.fiyat);
       const sk = this.kasaba.sakin.find((x) => x.o === alan.o);
       if (sk) sakinTeveccuhYaz(sk, alan, ay);
       ek.digerleri.push(alan.o);
       return basarili({ ikram, fiyat: odeme.deger.fiyat, batak: odeme.deger.batak, ...(odeme.deger.kasaya ? { kasaya: odeme.deger.kasaya, transfer: { islem: odeme.deger.islem } } : {}), teveccuh });
     }, "ikram");
+  }
+
+  /** Oyuncu hanının sahibi (B4: han ödemesinde sahibin armağan ve serbest gelir sayacı yazılır; yüklenmeli). */
+  #hanSahibi(hanHam: unknown): string | undefined {
+    const han = hanNoCoz(hanHam);
+    return han === undefined ? undefined : oyuncuHani(this.kasaba, han)?.sahip;
   }
 
   /**
@@ -1751,7 +1782,8 @@ export class YerlesimMotoru {
     const oturanlar = Array.isArray(govde.oturanlar) ? govde.oturanlar.filter((h): h is string => typeof h === "string").slice(0, 8) : [];
     const masaNo = typeof govde.masaNo === "number" && Number.isInteger(govde.masaNo) ? govde.masaNo : 0;
     const sakinler = k.sakin.filter((x) => oturanlar.includes(x.h));
-    await this.#yukle(sakinler.map((x) => x.o));
+    const hanSahibi = this.#hanSahibi(govde.han);
+    await this.#yukle([...sakinler.map((x) => x.o), ...(hanSahibi ? [hanSahibi] : [])]);
     return this.#tekrarGuvenli(hesapId, govde, (kar, _s, ay, ek) => {
       const konuklar = sakinler.map((x) => k.kar.get(x.o)).filter((x): x is Karakter => x !== undefined && x.o !== kar.o && !olduMu(x));
       if (ziyafetKonukSayisi(kar, konuklar) < ZIYAFET_EN_AZ_KONUK) return hata("ziyafet_konuk_az");
@@ -1760,6 +1792,7 @@ export class YerlesimMotoru {
       if (han === undefined) return hata("han_gecersiz");
       const odeme = mulkluHanOdemesi(k, kar, ziyafetBedeli(konuklar.length), this.#simdi, `y:${k.y}:${kar.o}:ziyafet:${String(govde.istekNo)}`, vergiOrani, false, han);
       if (!odeme.ok) return odeme;
+      if (hanSahibi && hanSahibi !== kar.o) ek.digerleri.push(hanSahibi);
       const etki = ziyafetEtkisi(k, kar, konuklar, masaNo, odeme.deger.fiyat, ay);
       ek.olaylar.push(...etki.olaylar);
       ek.toplum = true;
@@ -2047,6 +2080,7 @@ export class YerlesimMotoru {
       o, h: hesapId, ad: kar.ad, k: kar.k, d: kar.d, e: 0, mk: "", ma: -1e9, gi: ay,
       ...(kar.ms?.a ? { ms: kar.ms.a } : {}),
       ...(tv ? { tv } : {}),
+      ...(kar.kk?.length ? { kk: [...kar.kk] } : {}),
     };
     sakinTeveccuhYaz(sakin, kar, ay);
     k.sakin.push(sakin);

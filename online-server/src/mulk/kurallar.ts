@@ -167,6 +167,12 @@ export const TEKLIF_SURE_AY = 2;
 export const ONERI_EN_COK = 6;
 /** [PARAMETRE] İşten çıkarmada çalışana emanetten ödenen tazminat (aylık maaş × bu). */
 export const CIKARMA_TAZMINAT_AY = 1;
+/**
+ * [PARAMETRE] Ekonomi denetimi B1: tazminat yalnız en az bu kadar TAM ay çalışılmış sözleşmeye ödenir (işe giriş ayı
+ * sayılmaz); çıkarılan oyuncu aynı işverene (işletme sahibi) bu kadar ay geçmeden yeniden işe alınamaz.
+ */
+export const CIKARMA_TAZMINAT_KIDEM_AY = 1;
+export const YENIDEN_ISE_ALMA_SOGUMA_AY = 12;
 /** [PARAMETRE] Vekâlet en uzun süresi (ay). */
 export const VEKALET_EN_UZUN_AY = 6;
 

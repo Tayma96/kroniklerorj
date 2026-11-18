@@ -508,7 +508,8 @@ export interface KayitIstegi {
 // --- Worker → DO iç iletileri (dışarıya açık değildir) ---
 export type HesapIleti = (
   /** `yeniYasak`: hesap yoksa açılmaz, `hesap_yok` döner (test girişi yeni hesabı ayrıca denetler). */
-  | { islem: "giris"; hesapId: string; sub: string; yeniYasak?: boolean }
+  /** `iz`: B3 hesap kümesi izi (Worker'ın cihaz/IP tuzlu özetleri; ham değer yok). */
+  | { islem: "giris"; hesapId: string; sub: string; yeniYasak?: boolean; iz?: string[] }
   | { islem: "profil"; hesapId: string }
   | { islem: "profilOlustur"; hesapId: string; govde: unknown }
   | { islem: "davetOlustur"; hesapId: string }
@@ -757,6 +758,8 @@ export type YerlesimIleti =
   | { islem: "mulkGiris"; yerlesim: string; hesapId: string; kayitlar: CikisKaydi[] }
   /** Siyaset (Faz 7/P1): HesapDO → YerlesimDO, doğrulanmış siyasi kimlik (src/siyaset/hesap-kopru.ts). */
   | { islem: "siyasetKimlik"; yerlesim: string; hesapId: string }
+  /** B3: HesapDO → YerlesimDO hesap kümesi izi (tuzlu özetler) karaktere ve sakine yazılır. */
+  | { islem: "kumeIzi"; yerlesim: string; hesapId: string; kk: string[] }
   /** Darbe ganimeti (BolgeDO → YerlesimDO; istemci ulaşamaz): kaybedenin akçe kesintisi ve kazananın payı. */
   | { islem: "ganimetKes" | "ganimetPay"; yerlesim: string; hesapId: string; govde: unknown }
   | (HanedanIletisi & { yerlesim: string })

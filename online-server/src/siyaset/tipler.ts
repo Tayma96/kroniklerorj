@@ -37,6 +37,8 @@ export interface SiyasiKimlik {
   haklar: string[];
   /** H12: adres veren geçerli kira (ikamet). Veri hazır; henüz hiçbir kapı bağlı değil (eski yanıtta yok). */
   ikamet?: boolean;
+  /** Hesap kümesi izi (B3; cihaz/IP tuzlu özetleri): küme anahtarlarına girer (eski yanıtta yok). */
+  kk?: string[];
 }
 
 /** Makamı tutan kişi; NPC ise kurumun tutucusudur (boş makam toplumu kilitlemez). */

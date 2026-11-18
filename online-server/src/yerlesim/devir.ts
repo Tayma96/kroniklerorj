@@ -317,6 +317,15 @@ export function devirUygula(kasaba: Kasaba, plan: DevirPlani, ay: number): Sonuc
   if (olu.hv && olu.hv[0] === ay) kar.hv = [ay, olu.hv[1]];
   if (olu.ha && olu.ha[0] === ay) kar.ha = [ay, olu.ha[1]];
   if (olu.hho && olu.hho[0] === ay) kar.hho = [ay, { ...olu.hho[1] }];
+  // B10: nam kazanç tavanı, temel iş azalan getirisi, ayak işi, efsanevi denemesi, hami namı, han serbest geliri ve
+  // hesap kümesi izi de geçer (ölüp dirilerek tazelenmez).
+  if (olu.ka === ay) kar.kn = [...olu.kn];
+  if (olu.tz) kar.tz = structuredClone(olu.tz);
+  if (olu.ai && olu.ai[0] === ay) kar.ai = [ay, olu.ai[1]];
+  if (olu.ef && olu.ef[0] === ay) kar.ef = [ay, olu.ef[1]];
+  if (olu.hk && olu.hk[0] === ay) kar.hk = [ay, olu.hk[1]];
+  if (olu.hsg && olu.hsg[0] === ay) kar.hsg = [ay, olu.hsg[1]];
+  if (olu.kk?.length) kar.kk = [...olu.kk];
   const ak = new Set([...(olu.hd!.co ?? []), ...(olu.hd!.ak ?? [])].filter((i) => i !== npcI && kasaba.dizin.has(i)));
   const atalar = [...(olu.hd!.at ?? []), [olu.o, olu.ad, olu.d, plan.ol] as [string, string, number, number]];
   const hd: HanedanKaydi = { h: plan.hanedan, n: plan.nesil, s: hanedanSoyadi(kasaba, olu), at: atalar };
@@ -388,6 +397,13 @@ export function devirUygula(kasaba: Kasaba, plan: DevirPlani, ay: number): Sonuc
   }
   olu.pa -= plan.tereke;
   olu.hd!.dv = o;
+  // B10: başkalarının teveccüh kaydındaki bu ayki veren başı (yerel kimlikli) sayaç vârise geçer.
+  for (const x of kasaba.kar.values()) {
+    const c = x.tv?.c;
+    if (!c || c[0] !== ay || c[1][plan.olu] === undefined) continue;
+    c[1][o] = (c[1][o] ?? 0) + c[1][plan.olu]!;
+    delete c[1][plan.olu];
+  }
   for (const f of TASIYICILAR) f(kasaba, plan.olu, o, plan);
 
   s.o = o;

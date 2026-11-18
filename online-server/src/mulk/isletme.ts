@@ -14,6 +14,8 @@ import {
   bakimGideri,
   CALISAN_GUNLUK_CEKIM,
   CIKARMA_TAZMINAT_AY,
+  CIKARMA_TAZMINAT_KIDEM_AY,
+  YENIDEN_ISE_ALMA_SOGUMA_AY,
   DEFTER_EN_COK,
   FIYAT_CARPANI_EN_AZ,
   FIYAT_CARPANI_EN_COK,
@@ -183,6 +185,8 @@ export interface Isletme {
   tg?: 1;
   /** Atölye zanaatı (Dilim 2; yerleşimin tezgâh kaydından tapu özetiyle gelir): atölyede kalite rolünün mesleği. */
   za?: MeslekId;
+  /** Tazminatlı çıkarma izi (yeniden işe alma soğuması): [işveren yerel kimlik, çalışan yerel kimlik, ay]. */
+  cs?: [isveren: string, calisan: string, ay: number][];
 }
 
 /** [PARAMETRE] Komut tekrar kaydı. */
@@ -473,8 +477,8 @@ export function izle(is: Isletme, g: Pick<KasaGirisi, "o" | "tutar" | "kume" | "
 // ── Kasa → cüzdan (transfer kaynağı) ──
 
 /** Çıkış kaydı açar; kutu doluysa `transfer_bekliyor`. Bakiyeden düşmek çağıranın işidir (aynı yazımda). */
-export function cuzdanaGonder(is: Isletme, i: string, alici: Kisi, tutar: number, neden: string, an: number): boolean {
-  return cikisAc(is.cik, { i, t: "cuzdana", h: is.yerlesim, a: tutar, y: { isletme: is.id, o: alici.o, h: alici.h, tutar, neden } }, an);
+export function cuzdanaGonder(is: Isletme, i: string, alici: Kisi, tutar: number, neden: string, an: number, ek: Record<string, unknown> = {}): boolean {
+  return cikisAc(is.cik, { i, t: "cuzdana", h: is.yerlesim, a: tutar, y: { ...ek, isletme: is.id, o: alici.o, h: alici.h, tutar, neden } }, an);
 }
 
 function gunlukCekim(is: Isletme, o: string, an: number): number {
@@ -611,6 +615,11 @@ export interface PersonelHedefi {
   npc?: { n: string; ad: string };
   /** Yerleşimde han sahibi olanlar (tek han kuralı: başka hana vekil olamaz). */
   hs?: string[];
+  /**
+   * Çıkarmada (ekonomi denetimi B1) YerlesimDO'nun verdiği kalan armağan tavanları: işveren (sahip) verme, oyuncu
+   * çalışan → alma. Tazminat armağan sayılır; yoksa ya da yetmezse tazminatlı çıkarma `tavan_doldu`.
+   */
+  tz?: { v: number; a: Record<string, number> };
 }
 
 function yeniSozlesme(is: Isletme, k: Calisan, r: Rol, y: Yetki[], m: number, kd: Kademe, ay: number): Sozlesme {
@@ -671,6 +680,7 @@ export function personel(is: Isletme, b: Baglam, govde: unknown, hedef: Personel
       is.tk = is.tk.filter((x) => x !== t);
       if (islem === "red") return basarili({ teklif: t.n, kabul: false });
       if (calisiyorMu(is, b.o)) return hata("zaten_calisan");
+      if (yenidenAlimSogumada(is, b.o, ay)) return hata("aralik_dolu");
       if (etkinler(is).length >= PERSONEL_EN_COK) return hata("personel_dolu");
       const meslek = rolMeslegi(is, t.r);
       const s = yeniSozlesme(is, { t: "oyuncu", h: b.h, o: b.o, ad: b.ad }, t.r, t.y, t.m, (meslek ? (b.mk[meslek] ?? 0) : 0) as Kademe, ay);
@@ -682,10 +692,17 @@ export function personel(is: Isletme, b: Baglam, govde: unknown, hedef: Personel
       const s = etkinler(is).find((x) => x.n === govde.sozlesme);
       if (!s) return hata("sozlesme_yok");
       if (d.sozlesme === s) return hata("kendine");
-      const tazminat = s.m * CIKARMA_TAZMINAT_AY;
+      // Ekonomi denetimi B1: tazminat yalnız kıdemli (en az bir tam ay çalışılmış) sözleşmeye; armağan tavanına sayılır
+      // (YerlesimDO yazar), işveren-çalışan çifti 12 ay yeniden işe alınamaz: işe al–çıkar döngüsüyle aktarım yok.
+      const tazminat = ay - s.b > CIKARMA_TAZMINAT_KIDEM_AY ? s.m * CIKARMA_TAZMINAT_AY : 0;
       if (is.emanet < tazminat) return hata("emanet_yetersiz");
       if (s.k.t === "oyuncu") {
-        if (!cuzdanaGonder(is, islemNo, s.k, tazminat, "tazminat", an)) return hata("transfer_bekliyor");
+        if (tazminat > 0) {
+          const kalan = Math.min(hedef.tz?.v ?? 0, hedef.tz?.a[s.k.o] ?? 0);
+          if (tazminat > kalan) return hata("tavan_doldu");
+          if (!cuzdanaGonder(is, islemNo, s.k, tazminat, "tazminat", an, { v: is.sahip.o })) return hata("transfer_bekliyor");
+          is.cs = [...(is.cs ?? []).filter((x) => ay - x[2] < YENIDEN_ISE_ALMA_SOGUMA_AY), [is.sahip.o, s.k.o, ay]];
+        }
       } else is.batak += tazminat;
       is.emanet -= tazminat;
       s.d = "cikarildi";
@@ -747,6 +764,11 @@ export function personel(is: Isletme, b: Baglam, govde: unknown, hedef: Personel
   }
 }
 
+/** Bu işverenin (bugünkü sahip) tazminatla çıkardığı oyuncu soğuma süresinde mi (B1). */
+export function yenidenAlimSogumada(is: Isletme, o: string, ay: number): boolean {
+  return (is.cs ?? []).some(([v, c, a]) => v === is.sahip.o && c === o && ay - a < YENIDEN_ISE_ALMA_SOGUMA_AY);
+}
+
 function iseAl(is: Isletme, tur: "teklif" | "npc", govde: Record<string, unknown>, hedef: PersonelHedefi, ay: number): Sonuc<Record<string, unknown>> {
   const r = rolCoz(govde.rol);
   const m = maasCoz(govde.maas);
@@ -771,6 +793,7 @@ function iseAl(is: Isletme, tur: "teklif" | "npc", govde: Record<string, unknown
   if (!o) return hata("kisi_yok");
   if (o.o === is.sahip.o) return hata("kendine");
   if (calisiyorMu(is, o.o)) return hata("zaten_calisan");
+  if (yenidenAlimSogumada(is, o.o, ay)) return hata("aralik_dolu");
   if (is.tk.some((t) => t.hedef.o === o.o)) return hata("teklif_var");
   if (is.tk.length >= TEKLIF_EN_COK) return hata("teklif_siniri");
   const t: IseTeklif = { n: ++is.sn, hedef: { h: o.h, o: o.o, ad: o.ad }, r, y: [...ROL_YETKILERI[r]], m, ay };
@@ -907,9 +930,21 @@ export function ayIlerlet(is: Isletme, hedefAy: number, an: number): number {
 
 // ── Sahip değişimi (devir) ve yerleşim yansısı ──
 
-/** Tapu sürümü yeniyse sahip değişir; sözleşmeler ve borç işletmeyle birlikte devredilir (önizlemede gösterildi). */
-export function sahipDegis(is: Isletme, sahip: Kisi, ts: number, ay: number): boolean {
+/**
+ * Tapu sürümü yeniyse sahip değişir; sözleşmeler ve borç işletmeyle birlikte devredilir (önizlemede gösterildi).
+ * Oyuncular arası devirde (`devir`; ekonomi denetimi B2) kasa ve emanet alıcıya geçmez: eski sahibin cüzdanına
+ * çıkış kutusundan iade edilir (zorunlu sistem kaydı). Mirasta işletme kasasıyla vârise kalır.
+ */
+export function sahipDegis(is: Isletme, sahip: Kisi, ts: number, ay: number, an = 0, devir = false): boolean {
   if (ts <= is.ts) return false;
+  const eski = is.sahip;
+  const kalan = is.kasa + is.emanet;
+  if (devir && is.durum === "acik" && kalan > 0 && eski.o !== sahip.o) {
+    cikisAc(is.cik, { i: `${is.id}:devir:${ts}`, t: "cuzdana", h: is.yerlesim, a: kalan, y: { isletme: is.id, o: eski.o, h: eski.h, tutar: kalan, neden: "devir", ad: is.ad } }, an, Infinity);
+    defterYaz(is, ay, "devirIade", -kalan, eski.o);
+    is.kasa = 0;
+    is.emanet = 0;
+  }
   is.ts = ts;
   is.sahip = sahip;
   is.sm = {};
@@ -983,6 +1018,8 @@ export function devirOnizleme(is: Isletme) {
     sahip: { id: is.sahip.o, ad: is.sahip.ad },
     kasa: is.kasa,
     emanet: is.emanet,
+    /** B2: devirde kasa ve emanet satıcıya iade edilir, alıcıya geçmez. */
+    kasaSaticiya: true,
     borc: is.borc,
     borcAy: is.borcAy,
     iflasEsigi: IFLAS_BORC_AY,
