@@ -33,7 +33,8 @@ export function MkDecision() {
     const event = [...state.history].reverse().find(e => e.day === state.turn && e.k?.startsWith("dil."));
     if (!event) return null;
     // Sonuç kartı (radikal sonuçlar planı, aşama 2): seçilen yol ve gerçekleşen etki, kararın verildiği yerde.
-    const sc = state.monthScene?.turn === state.turn ? state.monthScene.secim : undefined;
+    const scHam = state.monthScene?.turn === state.turn ? state.monthScene.secim : undefined;
+    const sc = scHam && !scHam.id.includes(".") && scHam.id !== "hus" ? scHam : undefined; // mektep/usta/husumet seçimi ikilem sonucu gibi basılmasın
     const cipler = sc ? Object.entries(sc.etki).filter(([k]) => ETKI[k]) : [];
     return <MkPanel style={{ marginBottom: 10 }}>
       <MkPanelHeader title={t("flow.monthDecision")} rtl={rtl} />
