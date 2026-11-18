@@ -106,7 +106,7 @@ export function hizmetGorevTeslim(
   kar: Karakter,
   id: unknown,
   ay: number,
-): Sonuc<{ gorev: HizmetKasabaGorevi; odul: number; hizmetPuani: number; arac?: ReturnType<typeof aracAsindir>; olay: OlayTaslagi; katki: { gosterge: number; aracEk: number; kalite: number; kaliteEk: number } }> {
+): Sonuc<{ gorev: HizmetKasabaGorevi; odul: number; hizmetPuani: number; arac?: ReturnType<typeof aracAsindir>; olay: OlayTaslagi; katki: { gosterge: number; aracEk: number; kalite: number; kaliteEk: number; gencTalimi?: boolean } }> {
   if (typeof id !== "string") return hata("hedef_uygun_degil");
   const eslesme = /^kg([1-9][0-9]{0,8})$/.exec(id);
   if (!eslesme) return hata("hedef_uygun_degil");
@@ -134,6 +134,9 @@ export function hizmetGorevTeslim(
   const kaliteEk = kalite > 0 && tohumlu("gorevKalite", gorev.i, kar.o)() * 100 < kalite ? 1 : 0;
   const gosterge = 1 + aracEk + kaliteEk;
   gostergeDegistir(topluluk, kural.gosterge, gosterge);
+  // Kanca partisi 2 `gencTalimi`: gençler talim edilince bu ayın dönümünde asayiş yarı aşınır (topluluk-kayit.ts).
+  const gencTalimi = gorev.tur === "talim" && hakAcik(kar, "gencTalimi");
+  if (gencTalimi) topluluk.gt = ay;
   kar.pa += gorev.odul;
   const hizmetPuani = hizmetEkle(kar, kural.meslek, kural.takat * 2);
   gorev.d = "tamam";
@@ -147,5 +150,5 @@ export function hizmetGorevTeslim(
     k: "olay.hizmetGorevTamam",
     p: { oyuncu: kar.ad, odul: gorev.odul, hizmetPuani, takat: kural.takat },
   };
-  return basarili({ gorev, odul: gorev.odul, hizmetPuani, ...(arac ? { arac } : {}), olay, katki: { gosterge, aracEk, kalite, kaliteEk } });
+  return basarili({ gorev, odul: gorev.odul, hizmetPuani, ...(arac ? { arac } : {}), olay, katki: { gosterge, aracEk, kalite, kaliteEk, ...(gencTalimi ? { gencTalimi: true } : {}) } });
 }

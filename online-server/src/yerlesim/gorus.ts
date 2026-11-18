@@ -2,10 +2,12 @@
 // Gösterilen toplam ile motorun kullandığı değer AYNI fonksiyondan gelir; −100..100'e kırpılırsa fark
 // "gorus.sinir" kalemiyle görünür, böylece kalemlerin toplamı her zaman toplama eşittir.
 
+import { ETKILER } from "../icerik/agaclar/index.ts";
 import { HUYLAR } from "../icerik/kisilik.ts";
 import { barisEtkisi, duyulanEtkisi, ittifakEtkisi, ittifakOrtagiEtkisi, oyuncuDostuEtkisi } from "./bilgi.ts";
 import { yariOmur } from "./hafiza.ts";
 import { NAMLAR } from "./karakter.ts";
+import { dugumSeviyesi } from "./meslek.ts";
 import { yas } from "./ortak.ts";
 import { soylentiEtkisi } from "./soylenti.ts";
 import { teveccuhEkonomiKademesi, teveccuhEtkisi } from "./teveccuh.ts";
@@ -36,6 +38,15 @@ const HUY_NAM: ReadonlyMap<number, number> = new Map([
   [HUYLAR.indexOf("sabırlı"), 3],
 ]);
 const KIBIRLI = HUYLAR.indexOf("kibirli");
+
+/**
+ * [PARAMETRE] Kanca partisi 2 `ilkGorus` (ozan "Ezber destan": türküler yayılır, NPC'ler o kişiyi tanır): NPC ile hiç
+ * geçmişi (ilişki kaydı) olmayan oyuncuya ilk görüş +ILK_GORUS. Tanışınca (ilişki kaydı açılınca) kalkar; ±100 sınırı aynı.
+ */
+export const ILK_GORUS = 5;
+/** `hakAcik(kar, "ilkGorus")` ile aynı sonuç; görüş her NPC için hesaplandığından düğüm seviyesine doğrudan bakar. */
+const ILK_GORUS_DUGUMLERI = ETKILER.filter((e) => e.etki.tur === "hak" && e.etki.hak === "ilkGorus");
+export const ilkGorusAcik = (kar: Karakter): boolean => ILK_GORUS_DUGUMLERI.some((e) => dugumSeviyesi(kar, e.dugum) >= e.seviye);
 
 export function aniYuku(ani: Ani, ay: number): number {
   const gecen = Math.max(0, ay - ani[2]);
@@ -134,6 +145,10 @@ function dusmaninDostu(kasaba: Kasaba, npc: Npc, kar: Karakter, ili: IliskiHarit
 
 function topla(kasaba: Kasaba, npc: Npc, kar: Karakter, ili: IliskiHaritasi | undefined, ay: number, kalemler?: Kalem[]): number {
   let ham = dolaysiz(kasaba, npc, kar, ili, ay, kalemler);
+  if (!ili?.[npc.i] && ilkGorusAcik(kar)) {
+    ham += ILK_GORUS;
+    kalemler?.push({ k: "gorus.ilkGorus", d: ILK_GORUS });
+  }
   // Bağ kalemleri (NPC dostları, rakipleri, dost baktığı oyuncuların beyanı) toplamda ±DOST_DOSTU_TAVANI.
   let bag = 0;
   for (const [k, d] of [

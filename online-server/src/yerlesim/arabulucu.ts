@@ -15,7 +15,7 @@ import { kirginlikSebebi } from "./hafiza.ts";
 import { olduMu } from "./hanedan.ts";
 import { ILISKI_YASI, dostMu } from "./iliski.ts";
 import { beceriEkle, karakterYasi, namEkle, takatHarca } from "./karakter.ts";
-import { sinerjiAcik } from "./beceri-etki.ts";
+import { hakAcik, sinerjiAcik } from "./beceri-etki.ts";
 import { kisiAdi, kisiCoz, npcAdi, npcKimlik, npcRef, oyuncuRef, sinirla, yas } from "./ortak.ts";
 import type { Zar } from "./rastgele.ts";
 import type { Dokum, Karakter, Kasaba, OlayTaslagi } from "./tipler.ts";
@@ -286,6 +286,11 @@ export function arabulucuYap(b: UcgenBaglami, g: { talep: number }, zar: Zar, te
     iliski.an.push(["ikiliOyun", IKILI_OYUN.ani, ay]);
     olaylar.push(...haberVer(k, { kaynak: npcKimlik(npc.i), kaynakRef: npcRef(npc), alici: taraf.o, konu: kar.o, tur: "ikiliOyun", guven: IKILI_OYUN.guven, ay, p: { arabulucu: oyuncuRef(kar), npc: npcRef(npc) }, onem: 8 }));
   }
+  // Kanca partisi 2 `heyetUzlasmasi` (ihtiyar heyeti): heyetin başlattığı uzlaşma ilk denemede reddedilmez. Bu NPC ile
+  // pencere içindeki ilk arabuluculukta zar "ret" bandına düşerse sonuç ateşkese çıkar (nam/beceri vermez; ikili oyunda
+  // yakalanma kapsanmaz). Yanıtta `heyet: true`.
+  const heyet = !yakalandi && sonuc === "ret" && tekrar === 0 && hakAcik(kar, "heyetUzlasmasi");
+  if (heyet) sonuc = "ateskes";
   const ab = (iliskiAl(tarafIli, npc.i).ab ??= { v: 0, a: ay, ar: kar.o });
   ab.a = ay;
   ab.ar = kar.o;
@@ -328,7 +333,7 @@ export function arabulucuYap(b: UcgenBaglami, g: { talep: number }, zar: Zar, te
     olaylar.push({ t: "ucgen", w: kar.o, h: taraf.o, g: "", n: 5, k: "olay.ucgen.barisildi", p: { taraf: oyuncuRef(taraf), npc: npcRef(npc), arabulucu: oyuncuRef(kar) } });
   }
   return basarili({
-    yanit: { ...temel, sans, zar: atilan, sonuc, kirginlik, ...ek, ...(yakalandi ? { yakalandi: true } : {}), getiri: { tekrar, carpan: Math.round(carpan * 100) / 100 }, degisim },
+    yanit: { ...temel, sans, zar: atilan, sonuc, kirginlik, ...ek, ...(yakalandi ? { yakalandi: true } : {}), ...(heyet ? { heyet: true } : {}), getiri: { tekrar, carpan: Math.round(carpan * 100) / 100 }, degisim },
     olaylar,
     digerleri: [taraf.o],
   });

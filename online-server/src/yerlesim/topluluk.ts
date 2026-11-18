@@ -12,7 +12,7 @@ import type { Kasaba, OlayTaslagi } from "./tipler.ts";
 
 export function toplulukDonumu(k: Kasaba, ay: number): OlayTaslagi[] {
   const tl = toplulukAl(k);
-  gostergeDonumu(tl);
+  gostergeDonumu(tl, ay);
   return [...hamiDonumu(k, ay), ...ortakDertDonumu(k, ay), ...senlikDonumu(k, ay), ...zaviyeDonumu(k, ay)];
 }
 
