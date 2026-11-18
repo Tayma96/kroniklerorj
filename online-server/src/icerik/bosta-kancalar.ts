@@ -8,7 +8,7 @@
  * övme hizmeti, kendi rafına çekicilik değil) ve `hak:hileliTarti` (hileli tartı dürüst H olamaz) kayıttan geri alındı;
  * parti henüz ana dala girmediği için taban budur.
  */
-export const BOSTA_TAVAN = 180;
+export const BOSTA_TAVAN = 169;
 
 export const BOSTA_KANCALAR: readonly string[] = [
   "arac:av:mizrak",
@@ -107,34 +107,23 @@ export const BOSTA_KANCALAR: readonly string[] = [
   "hak:resmiElcilik",
   "hak:riskPaylasimi",
   "hak:rotaSecimi",
-  "hak:safDuzeni",
-  "hak:sahneSirasi",
-  "hak:sahteBelge",
-  "hak:salginKatkisi",
-  "hak:senetliIhtilaf",
-  "hak:senlikSuslemesi",
-  "hak:serdarAdayligi",
-  "hak:seyhAdayligi",
-  "hak:soylentiDurdurma",
-  "hak:soylentiTasima",
-  "hak:subasiAdayligi",
-  "hak:surKitabesi",
-  "hak:tanikSozu",
-  "hak:tehditHaberi",
-  "hak:toreOnerisi",
-  "hak:ulufePayi",
-  "hak:uzakMalSiparisi",
-  "hak:vadeliAlim",
-  "hak:yaraliDurumu",
-  "hak:yerelSenlik",
-  "hak:yoksulCorbasi",
-  "hak:yolAkcesi",
-  "hak:yolAkcesiMuafiyeti",
-  "hak:yolDevriyesi",
-  "hak:yolEmini",
-  "hak:zahireAlimi",
-  "hak:zaviye",
-  "hak:zehirTanima",
+  "hak:safDuzeni", // çatışmada asker rolü/saf seçeneği yok (siyaset çatışması yalnız makam emri)
+  "hak:sahteBelge", // sahte belge (sahtecilik) sistemi yok
+  "hak:senetliIhtilaf", // hakemlik hizmeti ve senet ihtilafı akışı yok (hizmet:hakemlik de boşta)
+  "hak:serdarAdayligi", // serdar makamı yok (siyaset makam listesi)
+  "hak:seyhAdayligi", // tekke/şeyhlik makamı yok
+  "hak:soylentiDurdurma", // susturma için yeni uç ve hak edilmiş kötü söylentiyi örtme denetimi gerekir
+  "hak:soylentiTasima", // söylentiyi komşu yerleşime taşımak yerleşimler arası ileti ister
+  "hak:subasiAdayligi", // subaşı makamı yok (siyaset makam listesi)
+  "hak:surKitabesi", // sur/bayındırlık projesi ve kitabe kaydı yok
+  "hak:tehditHaberi", // tehdit olayları ay dönümünde zarla doğar; erken haber önden kurulan tehdit takvimi ister
+  "hak:toreOnerisi", // töre (yerel kural) önerisi sistemi yok
+  "hak:uzakMalSiparisi", // kervanda dönüş yükü/uzaktan alım yok
+  "hak:vadeliAlim", // vadeli (borçlu) alım borç/teminat ister; ucuz alım raf/NPC arbitrajı açar
+  "hak:yerelSenlik", // takvim dışı yerel şenlik öneri/onay akışı ister (şenlik takvimi saf ay fonksiyonu)
+  "hak:yolAkcesi", // kervanda yol akçesi (geçiş vergisi) yok
+  "hak:yolAkcesiMuafiyeti", // kervanda yol akçesi (geçiş vergisi) yok
+  "hak:zehirTanima", // zehir sistemi yok (tarif:panzehir de boşta)
   "hizmet:beylikElciligi",
   "hizmet:defter",
   "hizmet:denetim",

@@ -19,7 +19,9 @@ import { AY_MS, DUNYA_BASLANGICI_MS } from "../saat.ts";
 import { basarili, hata, type Sonuc } from "../tipler.ts";
 import { GONUL_EVSIZLIK, HAL_TABAN_CAN, halDegistir } from "./hal.ts";
 import { hizmetAcik, sinerjiAcik } from "./beceri-etki.ts";
-import { olduMu } from "./hanedan.ts";
+import { hanedanKasabasi, olduMu } from "./hanedan.ts";
+import { kasabadaHakVar } from "./ortak-dert.ts";
+import { toplulukAl } from "./topluluk-kayit.ts";
 import {
   KIRA_EN_UZUN_AY,
   ODALAR,
@@ -73,6 +75,15 @@ export const TESIS_SURE_MS = AY_MS;
 export const TESIS_PENCERE_MS = 6 * AY_MS;
 export const TESIS_PENCERE_EN_COK = 2;
 export const SOSYAL_TESIS: Readonly<Record<YerlesimTuru, "imaret" | "zaviye">> = { sehir: "imaret", kasaba: "imaret", koy: "zaviye" };
+/**
+ * [PARAMETRE] Kanca partisi 2 (hak s–z), yerleşim geneli barınma hakları. Ay dönümünde, yerleşimde hakkı açık yaşayan
+ * bir sakin varsa o ay için işlenir (iz `tl.bh`; ay içinde öğrenilen hak ertesi ay sayılır):
+ * - `zaviye` (ozan tekke postu, "yolcuya ücretsiz yatak"): sosyal tesisin pencere hakkına +ZAVIYE_TESIS_EK konaklama.
+ * - `yoksulCorbasi` (aşçı aşhane, "kasaba öder"): can kaybı aşamasındaki evsize can düşmez; hazine kişi başı ayda
+ *   YOKSUL_CORBA_BEDEL öder (akçe hazineden dünyaya çıkar, kimseye geçmez); hazine yetmezse çorba verilemez.
+ */
+export const ZAVIYE_TESIS_EK = 1;
+export const YOKSUL_CORBA_BEDEL = 2;
 /** [PARAMETRE] Dönüş özetinde tutulan barınma günlüğü satırı. */
 export const GUNLUK_EN_COK = 10;
 /** Otomatik konaklama modları (GDD §18): kapalı (varsayılan), en ucuz oda, yalnız ücretsiz tesis, harcama yapma/uyar. */
@@ -248,13 +259,27 @@ export function uyuyor(kar: Karakter, br: BarinmaKaydi, an: number): boolean {
 }
 
 /** Sosyal tesise girebilir mi (D-23 önerisi): açık, yoksul ve pencere tavanı dolmamış. */
-export function tesisUygunlugu(br: BarinmaKaydi, kar: Karakter, tur: YerlesimTuru, an: number): Sonuc<{ kalanHak: number }> {
+export function tesisUygunlugu(br: BarinmaKaydi, kar: Karakter, tur: YerlesimTuru, an: number, ek = 0): Sonuc<{ kalanHak: number }> {
   if (!SOSYAL_TESIS_ACIK) return hata("tesis_kapali");
   if (kar.pa >= kiraFiyati(ODALAR[enUcuzOda(tur)].aylik, 1)) return hata("tesis_sart");
   const kullanilan = br.ts.filter((t) => an - t[1] < TESIS_PENCERE_MS).length;
-  if (kullanilan >= TESIS_PENCERE_EN_COK) return hata("tesis_dolu");
-  return basarili({ kalanHak: TESIS_PENCERE_EN_COK - kullanilan });
+  if (kullanilan >= TESIS_PENCERE_EN_COK + ek) return hata("tesis_dolu");
+  return basarili({ kalanHak: TESIS_PENCERE_EN_COK + ek - kullanilan });
 }
+
+/** Ay dönümü: yerleşim geneli barınma haklarının izi (bütün sakinler yüklüyken). */
+export function barinmaHakIzi(kasaba: Kasaba, ay: number): void {
+  toplulukAl(kasaba).bh = [ay, kasabadaHakVar(kasaba, "zaviye") ? 1 : 0, kasabadaHakVar(kasaba, "yoksulCorbasi") ? 1 : 0];
+}
+
+/** Bu ayın barınma hakları (iz bu aya aitse). */
+export function barinmaHaklari(kasaba: Partial<Pick<Kasaba, "tl" | "ay">>): { zaviye: boolean; corba: boolean } {
+  const b = kasaba.tl?.bh;
+  const bu = !!b && b[0] === kasaba.ay;
+  return { zaviye: bu && b![1] === 1, corba: bu && b![2] === 1 };
+}
+
+const zaviyeEki = (kasaba: Partial<Pick<Kasaba, "tl" | "ay">>): number => (barinmaHaklari(kasaba).zaviye ? ZAVIYE_TESIS_EK : 0);
 
 function sozlesmeKirp(br: BarinmaKaydi): void {
   br.od.sort((a, b) => b.s - a.s);
@@ -264,7 +289,7 @@ function sozlesmeKirp(br: BarinmaKaydi): void {
 function tesisEkle(br: BarinmaKaydi, yerlesim: string, bas: number): number {
   const bitis = bas + TESIS_SURE_MS;
   br.ts.unshift([yerlesim, bas, bitis]);
-  if (br.ts.length > TESIS_PENCERE_EN_COK + 2) br.ts.length = TESIS_PENCERE_EN_COK + 2;
+  if (br.ts.length > TESIS_PENCERE_EN_COK + ZAVIYE_TESIS_EK + 2) br.ts.length = TESIS_PENCERE_EN_COK + ZAVIYE_TESIS_EK + 2;
   return bitis;
 }
 
@@ -293,7 +318,7 @@ function bitenleriYaz(br: BarinmaKaydi, yerlesim: string, an: number): void {
  * otomatik konaklama talimatı. Konaklama ve zincir durumunu döndürür. Tekrar çağrılması güvenlidir.
  */
 export function barinmaIlerlet(
-  kasaba: Pick<Kasaba, "y" | "tur">,
+  kasaba: Pick<Kasaba, "y" | "tur"> & Partial<Pick<Kasaba, "tl" | "ay">>,
   kar: Karakter,
   an: number,
   ocak: boolean,
@@ -343,7 +368,7 @@ export function barinmaIlerlet(
     return { acik: true, durum: "konakli", konaklama: kapsama(br, y, ocak, an) ?? null, z: null, otomatik: { tur: "oda", oda, fiyat, batak: odeme.deger.batak } };
   }
   if (mod === "tesis") {
-    if (!tesisUygunlugu(br, kar, kasaba.tur, an).ok) {
+    if (!tesisUygunlugu(br, kar, kasaba.tur, an, zaviyeEki(kasaba)).ok) {
       if (!gunlukteVar(br, "otomatik.tesisYok", z)) gunlukEkle(br, an, "otomatik.tesisYok", { z });
       return sonuc;
     }
@@ -362,7 +387,9 @@ export function barinmaIlerlet(
  * kondisyon fazladan toparlanır. Uykuda ve dönüş molasında etki işlemez. Aynı ay iki kez işlenmez.
  */
 export function barinmaDonumu(kasaba: Kasaba, ay: number, acik = zincirAcik(kasaba.tur)): OlayTaslagi[] {
+  barinmaHakIzi(kasaba, ay);
   if (!acik) return [];
+  const haklar = barinmaHaklari({ tl: kasaba.tl, ay });
   const an = ayBasi(ay);
   const haneler = new Set(kasaba.npc.map((n) => n.e));
   const olaylar: OlayTaslagi[] = [];
@@ -388,7 +415,13 @@ export function barinmaDonumu(kasaba: Kasaba, ay: number, acik = zincirAcik(kasa
       }
       if (etkili && sira >= 1) {
         halDegistir(kar, ay, { kondisyon: -EVSIZ_KONDISYON, gonul: -EVSIZ_GONUL }, "hal.neden.evsizlik");
-        if (sira >= 2) halDegistir(kar, ay, { can: -CAN_KAYBI_AYLIK }, "hal.neden.barinmaCan");
+        if (sira >= 2) {
+          const hazine = haklar.corba ? hanedanKasabasi(kasaba) : undefined;
+          if (hazine && hazine.hz >= YOKSUL_CORBA_BEDEL) {
+            hazine.hz -= YOKSUL_CORBA_BEDEL;
+            gunlukEkle(br, an, "yoksulCorbasi", { bedel: YOKSUL_CORBA_BEDEL });
+          } else halDegistir(kar, ay, { can: -CAN_KAYBI_AYLIK }, "hal.neden.barinmaCan");
+        }
       }
     } else if (r.konaklama?.tur === "oda" && r.konaklama.oda && ODALAR[r.konaklama.oda].kondisyon > 0) {
       halDegistir(kar, ay, { kondisyon: ODALAR[r.konaklama.oda].kondisyon }, "hal.neden.oda");
@@ -463,7 +496,7 @@ export function tesisKonakla(kasaba: Kasaba, kar: Karakter, simdi: number): Sonu
   barinmaIlerlet(kasaba, kar, simdi, ocak);
   const br = kar.br!;
   if (kapsama(br, kasaba.y, ocak, simdi)) return hata("konaklama_var");
-  const u = tesisUygunlugu(br, kar, kasaba.tur, simdi);
+  const u = tesisUygunlugu(br, kar, kasaba.tur, simdi, zaviyeEki(kasaba));
   if (!u.ok) return u;
   const bitis = tesisEkle(br, kasaba.y, simdi);
   gunlukEkle(br, simdi, "tesis.konakladi", { tesis: SOSYAL_TESIS[kasaba.tur], bitis });
@@ -498,7 +531,9 @@ export function barinmaGorunumu(
     : hanOdalari(npcHani(y), kasaba.tur);
   const k = r.konaklama;
   const zincirde = r.z !== null && (r.durum === "uyari" || r.durum === "evsiz" || r.durum === "canKaybi");
-  const tesis = tesisUygunlugu(br, kar, kasaba.tur, simdi);
+  const haklar = barinmaHaklari(kasaba);
+  const corba = haklar.corba && (kasaba.hd?.hz ?? 0) >= YOKSUL_CORBA_BEDEL;
+  const tesis = tesisUygunlugu(br, kar, kasaba.tur, simdi, haklar.zaviye ? ZAVIYE_TESIS_EK : 0);
   const m = br.mh[y];
   return {
     acik: r.acik,
@@ -522,7 +557,8 @@ export function barinmaGorunumu(
             etkiler: {
               kondisyonAylik: r.durum === "uyari" ? 0 : -EVSIZ_KONDISYON,
               gonulAylik: r.durum === "uyari" ? 0 : -EVSIZ_GONUL,
-              canAylik: r.durum === "canKaybi" ? -CAN_KAYBI_AYLIK : 0,
+              canAylik: r.durum === "canKaybi" && !corba ? -CAN_KAYBI_AYLIK : 0,
+              yoksulCorbasi: corba,
               canTaban: HAL_TABAN_CAN,
               olum: false,
             },
@@ -541,6 +577,7 @@ export function barinmaGorunumu(
       uygun: tesis.ok,
       ...(tesis.ok ? { kalanHak: tesis.deger.kalanHak } : { neden: tesis.hata }),
       sureMs: TESIS_SURE_MS,
+      zaviyeEk: haklar.zaviye ? ZAVIYE_TESIS_EK : 0,
     },
     otomatik: { mod: OTOMATIK_MODLAR[br.om], modlar: OTOMATIK_MODLAR },
     /** H12: adres veren geçerli kira (veri hazır; henüz hiçbir kapı bağlı değil). */

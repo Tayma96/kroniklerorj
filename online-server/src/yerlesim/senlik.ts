@@ -8,6 +8,7 @@
 import { malBul, type MalId } from "../icerik/mallar.ts";
 import { takvim } from "../saat.ts";
 import { basarili, hata, type Sonuc } from "../tipler.ts";
+import { hakAcik } from "./beceri-etki.ts";
 import { halDegistir } from "./hal.ts";
 import { namEkle, takatHarca } from "./karakter.ts";
 import { mesrepNam } from "./mesrep.ts";
@@ -41,6 +42,12 @@ export const SENLIK_GONUL = 4;
 export const SENLIK_NAM = 2;
 export const SENLIK_MORAL = 5;
 export const SENLIK_TUTULAN = 3;
+/**
+ * [PARAMETRE] Kanca partisi 2 (hak s–z): `senlikSuslemesi` (marangoz nakkaşbaşı). Hakkı açık biri şenliğe süs katkısı
+ * verdiyse kapanıştaki moral artışına bu kadar eklenir; şenlik başına bir kez (kaç nakkaş süslerse süslesin). Kişiye
+ * akçe, nam ya da ek ödül yok; yalnız kasaba morali.
+ */
+export const SENLIK_SUSLEME_MORAL = 2;
 export const LEVHA_EN_COK = 200;
 
 /** Katkı kaydı: şenlik kimliği ("nevruz-1252"), türü, açılış/bitiş, katılanlar (ad + türler; tutar tutulur ama
@@ -54,6 +61,8 @@ export interface SenlikKaydi {
   /** Kişi → katkı sayısı (levha LEVHA_EN_COK ile kırpılsa da tavan ve tek sefer ödül bundan; eski kayıtta yok). */
   ks?: Record<string, number>;
   kp?: 1;
+  /** Kanca partisi 2: nakkaş süslemesi yapıldı (tek sefer izi). */
+  su?: 1;
 }
 
 export interface SenlikAni {
@@ -95,8 +104,9 @@ export function senlikDonumu(k: Kasaba, ay: number): OlayTaslagi[] {
   for (const r of tl.sn) {
     if (r.kp || ay <= r.bt) continue;
     r.kp = 1;
-    const fark = r.k.length > 0 ? gostergeDegistir(tl, "moral", SENLIK_MORAL) : 0;
-    olaylar.push({ t: "senlik", w: "", h: "", g: "", n: 5, k: "olay.senlik.bitti", p: { senlik: r.t, katilan: r.k.length, moral: fark } });
+    const susleme = r.k.length > 0 && r.su ? SENLIK_SUSLEME_MORAL : 0;
+    const fark = r.k.length > 0 ? gostergeDegistir(tl, "moral", SENLIK_MORAL + susleme) : 0;
+    olaylar.push({ t: "senlik", w: "", h: "", g: "", n: 5, k: "olay.senlik.bitti", p: { senlik: r.t, katilan: r.k.length, moral: fark, ...(susleme ? { susleme } : {}) } });
   }
   const kapali = tl.sn.filter((r) => r.kp);
   if (kapali.length > SENLIK_TUTULAN) {
@@ -143,6 +153,8 @@ export function senlikKatki(k: Kasaba, kar: Karakter, govde: Record<string, unkn
   }
   const odul: { gonul?: number; nam?: number } = {};
   (r.ks ??= {})[kar.o] = sayi + 1;
+  const susleme = katki === "sus" && hakAcik(kar, "senlikSuslemesi") && !r.su;
+  if (susleme) r.su = 1;
   if (sayi === 0) {
     const g = halDegistir(kar, ay, { gonul: SENLIK_GONUL }, "hal.neden.senlik").gonul;
     if (g) odul.gonul = g;
@@ -154,7 +166,7 @@ export function senlikKatki(k: Kasaba, kar: Karakter, govde: Record<string, unkn
     if (!satir.t.includes(katki)) satir.t.push(katki);
   }
   return basarili({
-    yanit: { senlik: senlikGorunumu(k, kar, ay), katki: { tur: katki, ...(mal ? { mal, adet } : {}), ...(tutar ? { tutar } : {}) }, odul },
+    yanit: { senlik: senlikGorunumu(k, kar, ay), katki: { tur: katki, ...(mal ? { mal, adet } : {}), ...(tutar ? { tutar } : {}), ...(susleme ? { susleme: SENLIK_SUSLEME_MORAL } : {}) }, odul },
     olaylar: [{ t: "senlik", w: kar.o, h: "", g: kar.o, n: 3, k: "olay.senlik.katki", p: { senlik: s.tur, katki } }],
   });
 }
@@ -172,7 +184,7 @@ export function senlikGorunumu(k: Kasaba, kar: Karakter, ay: number) {
   const son = [...(k.tl?.sn ?? [])].reverse().find((x) => x.kp);
   const benim = r?.ks?.[kar.o] ?? r?.k.find((x) => x.o === kar.o)?.n ?? 0;
   return {
-    simdiki: s ? { ...s, levha: comertlerLevhasi(r), benim: { sayi: benim, kalan: SENLIK_KATKI_EN_COK - benim } } : null,
+    simdiki: s ? { ...s, levha: comertlerLevhasi(r), benim: { sayi: benim, kalan: SENLIK_KATKI_EN_COK - benim }, susleme: r?.su === 1 } : null,
     sonKapanan: son ? { id: son.i, tur: son.t, levha: comertlerLevhasi(son) } : null,
     kurallar: {
       sure: SENLIK_SURE_AY,
@@ -183,6 +195,7 @@ export function senlikGorunumu(k: Kasaba, kar: Karakter, ay: number) {
       takat: SENLIK_TAKAT,
       odul: { gonul: SENLIK_GONUL, nam: SENLIK_NAM },
       moral: SENLIK_MORAL,
+      suslemeMoral: SENLIK_SUSLEME_MORAL,
       kacirmaCezasi: 0,
       susMallari: SUS_MALLARI,
       takvim: SENLIKLER,

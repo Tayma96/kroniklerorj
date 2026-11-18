@@ -39,9 +39,10 @@ const KURALLAR: Record<HizmetGorevTuru, GorevKurali> = {
 
 /**
  * [PARAMETRE] Kanca partisi 2: koltuk ekleyen haklar (yerleşimde yaşayan bir sahibi varsa o türe +1 koltuk; ulufe
- * hazineden, yoksa açılmaz). `nobetKoltuklari` garnizon ağasının nöbet dağıtımı, `garnizonTalimi` garnizon talimi.
+ * hazineden, yoksa açılmaz). `nobetKoltuklari` garnizon ağasının nöbet dağıtımı, `garnizonTalimi` garnizon talimi;
+ * `ulufePayi` (hak s–z partisi) bütçe defterinde ulufe payı ayıran divan: bir vergi sayımı koltuğu daha.
  */
-export const KOLTUK_HAKLARI: Readonly<Partial<Record<HizmetGorevTuru, string>>> = { nobet: "nobetKoltuklari", talim: "garnizonTalimi" };
+export const KOLTUK_HAKLARI: Readonly<Partial<Record<HizmetGorevTuru, string>>> = { nobet: "nobetKoltuklari", talim: "garnizonTalimi", vergiSayimi: "ulufePayi" };
 /** [PARAMETRE] Görev kalitesi (yüzde, kalite etkileri toplamı) üst sınırı: göstergeye +1 ek katkı şansı. */
 export const GOREV_KALITE_TAVAN = 60;
 
