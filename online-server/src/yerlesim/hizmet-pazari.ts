@@ -1,15 +1,17 @@
 // E4.3: öğrenilmiş hizmeti süreli stoğa hazırlar; ilan, satın alma, teslim ve bozulma akışını yönetir.
 import type { MalId } from "../icerik/mallar.ts";
-import { hizmetAcik, sinerjilerAcik } from "./beceri-etki.ts";
+import { acikEtkiler, aracArtisi, hakAcik, hizmetAcik, sinerjilerAcik } from "./beceri-etki.ts";
+import { esyaAilesi } from "./esya.ts";
+import { aracAsindir, type Asinma } from "./tarif.ts";
 import { esyaKilidi } from "./kalite.ts";
 import { envanterEkle } from "./npc-taban.ts";
-import { halDegistir, type Hal } from "./hal.ts";
+import { halAl, halDegistir, type Hal } from "./hal.ts";
 import { hizmetEkle } from "./meslek.ts";
 import { ayniKume } from "./teveccuh.ts";
 import { takatHarca } from "./karakter.ts";
 import { hizmetTarifiBul, type HizmetTarifi } from "./hizmet-tarif.ts";
 import { ekonomiAl, type EkonomiKaydi, type HizmetIlan, type HizmetStogu, type HizmetNpcTalebi } from "./pazar-tahta.ts";
-import { hanedanKasabasi } from "./hanedan.ts";
+import { hanedanKasabasi, olduMu } from "./hanedan.ts";
 import { npcKimlik, npcRef, oyuncuRef } from "./ortak.ts";
 import type { Karakter, Kasaba, Npc, OlayTaslagi } from "./tipler.ts";
 import { basarili, hata, type Sonuc } from "../tipler.ts";
@@ -24,9 +26,56 @@ export function hizmetYetkiliMi(kar: Karakter, tarif: HizmetTarifi): boolean {
   return hizmetAcik(kar, tarif.id) && sinerjilerAcik(kar, acarlar);
 }
 
+/** [PARAMETRE] Hizmet kalitesi (kalite etkileri toplamı, yüzde) üst sınırı. */
+export const HIZMET_KALITE_TAVAN = 60;
+/** [PARAMETRE] `kirginTaban`: dertleşmede alıcının gönlü bu değerin altındaysa en az buraya çıkar. */
+export const KIRGIN_GONUL_TABANI = 35;
+
+export interface HizmetKalitesi {
+  /** Tavanlı yüzde ve kalemler (kanca, yüzde; gizli sayı yok). */
+  yuzde: number;
+  tavan: number;
+  kalemler: { kanca: string; d: number }[];
+}
+
+/**
+ * Kanca partisi 2: hizmetin kalitesi = hedefi hizmet kimliği ya da grubu olan öğrenilmiş `kalite` etkilerinin toplamı,
+ * HIZMET_KALITE_TAVAN ile kırpılır. Hal etkisine yüzde olarak eklenir (yukarı yuvarlanır: her kalite hissedilir).
+ */
+export function hizmetKalitesi(kar: Karakter, tarif: HizmetTarifi): HizmetKalitesi {
+  const hedefler = new Set([tarif.id, ...(tarif.grup ?? [])]);
+  const kalemler: { kanca: string; d: number }[] = [];
+  let toplam = 0;
+  for (const e of acikEtkiler(kar)) {
+    if (e.tur !== "kalite" || !hedefler.has(e.hedef)) continue;
+    toplam += e.yuzde;
+    const x = kalemler.find((y) => y.kanca === `kalite:${e.hedef}`);
+    if (x) x.d += e.yuzde;
+    else kalemler.push({ kanca: `kalite:${e.hedef}`, d: e.yuzde });
+  }
+  return { yuzde: Math.min(HIZMET_KALITE_TAVAN, toplam), tavan: HIZMET_KALITE_TAVAN, kalemler };
+}
+
+/** Hizmetin araç eki: tarifin araç hedefine bağlı `arac` etkisi açıksa ve araç envanterdeyse adet başına ek. */
+export function hizmetAracEki(kar: Karakter, tarif: HizmetTarifi): { mal: MalId; ek: number } | null {
+  if (!tarif.arac) return null;
+  const e = aracArtisi(kar, tarif.arac.hedef);
+  if (!e || (kar.ev?.[e.mal] ?? 0) < 1) return null;
+  return { mal: e.mal as MalId, ek: e.arti * tarif.arac.birim };
+}
+
+/** Kalite ve araç ekiyle bir hal etkisinin adet başına değeri (ilk hal etkisi araç ekini alır). */
+export function hizmetEtkiDegeri(deger: number, q: number, a: number): number {
+  const ham = deger + a;
+  return q > 0 ? ham + Math.ceil((ham * q) / 100) : ham;
+}
+
 export interface HizmetHazirlamaSonucu {
   stok: HizmetStogu;
   harcanan: { girdiler: Partial<Record<string, number>>; takat: number };
+  /** Kanca partisi 2: hizmet kalitesi dökümü ve kullanılan araç (yoksa null). */
+  kalite: HizmetKalitesi;
+  arac: (Asinma & { ek: number }) | null;
 }
 
 /** Hazırlanmış hizmet üretir. Bütün kontroller harcamadan önce yapılır. */
@@ -67,11 +116,17 @@ export function hizmetHazirla(
   if (!takatHarca(kar, ay, takat)) return hata("takat_yok");
   for (const [mal, miktar] of Object.entries(girdiler)) envanterEkle(kar, mal as MalId, -miktar);
 
+  const kalite = hizmetKalitesi(kar, tarif);
+  const ae = hizmetAracEki(kar, tarif);
+  // Araç hazırlama başına bir kullanım aşınır (tarifteki gibi: bir yapım, bir aşınma).
+  const arac = ae ? { ...aracAsindir(kar, ae.mal), ek: ae.ek } : null;
   const stok: HizmetStogu = {
     i: ek.n++, o: kar.o, oa: kar.ad, h: tarif.id, n: adet, n0: adet, ac: ay, sa: ay + tarif.hazir.gecerlilikAy,
+    ...(kalite.yuzde > 0 ? { q: kalite.yuzde } : {}),
+    ...(ae ? { a: ae.ek } : {}),
   };
   stoklar.push(stok);
-  return basarili({ stok, harcanan: { girdiler, takat } });
+  return basarili({ stok, harcanan: { girdiler, takat }, kalite, arac });
 }
 
 /** Süresi dolan stok ekranda/işlemde kullanılamaz; ay dönümünde tecrübesi verilip budanır (hizmetKayitBuda). */
@@ -145,7 +200,21 @@ export function hizmetStoguGorunumu(stok: HizmetStogu, ay: number) {
     sonAy: stok.sa,
     kalanAy: Math.max(0, stok.sa - ay),
     fiyatTaban: tarif?.fiyatTaban ?? null,
+    kalite: stok.q ?? 0,
+    aracEki: stok.a ?? 0,
+    etki: tarif ? etkiOnizleme(tarif, stok.q ?? 0, stok.a ?? 0) : [],
   };
+}
+
+/** Alıcıya uygulanacak gerçek etki (adet başına; kalite ve araç eki dahil). Gizli sayı yok. */
+export function etkiOnizleme(tarif: HizmetTarifi, q: number, a: number) {
+  let ilkHal = true;
+  return tarif.etki.map((e) => {
+    if (e.tur !== "hal") return { ...e };
+    const deger = hizmetEtkiDegeri(e.deger, q, ilkHal ? a : 0);
+    ilkHal = false;
+    return { tur: e.tur, alan: e.alan, deger, taban: e.deger };
+  });
 }
 
 
@@ -182,6 +251,9 @@ export function hizmetIlanGorunumu(ilan: HizmetIlan, benim: string, ay: number) 
     kalanAy: Math.max(0, ilan.sa - ay),
     benim: ilan.o === benim,
     fiyatTaban: tarif?.fiyatTaban ?? null,
+    kalite: ilan.q ?? 0,
+    aracEki: ilan.a ?? 0,
+    etki: tarif ? etkiOnizleme(tarif, ilan.q ?? 0, ilan.a ?? 0) : [],
   };
 }
 
@@ -215,6 +287,8 @@ export function hizmetIlanAc(
   const ilan: HizmetIlan = {
     i: ek.n++, o: satici.o, oa: satici.ad, h: stok.h, s: stok.i,
     n: adet, n0: adet, f: fiyatHam as number, ac: ay, sa: stok.sa, d: "acik",
+    ...(stok.q ? { q: stok.q } : {}),
+    ...(stok.a ? { a: stok.a } : {}),
   };
   ek.hi.push(ilan);
   return basarili(ilan);
@@ -247,7 +321,7 @@ export function hizmetIlanIsle(
   id: unknown,
   adetHam: unknown,
   ay: number,
-): Sonuc<{ ilan: HizmetIlan; adet: number; tutar: number; etki: Partial<Hal>; hizmetPuani: number; odul: number }> {
+): Sonuc<{ ilan: HizmetIlan; adet: number; tutar: number; etki: Partial<Hal>; hizmetPuani: number; odul: number; onarim: Record<string, number> | null; isleme: Record<string, number> | null }> {
   const ilan = hizmetIlanBul(ek, id);
   if (!ilan) return hata("ilan_yok");
   if (ilan.d !== "acik" || ilan.sa < ay || ilan.n < 1) return hata("ilan_kapandi");
@@ -261,11 +335,40 @@ export function hizmetIlanIsle(
 
   const adet = adetHam as number;
   const fark: Partial<Hal> = {};
+  const q = ilan.q ?? 0;
+  const a = ilan.a ?? 0;
+  let ilkHal = true;
+  const onarim: { aile: string; deger: number }[] = [];
+  const isleme: { girdi: MalId; girdiAdet: number; cikti: MalId; adet: number }[] = [];
   for (const etki of tarif.etki) {
+    if (etki.tur === "onarim") {
+      onarim.push({ aile: etki.alan, deger: etki.deger * adet });
+      continue;
+    }
+    if (etki.tur === "isleme") {
+      if ((alici.ev?.[etki.girdi] ?? 0) < etki.girdiAdet * adet) return hata("girdi_yok");
+      isleme.push({ girdi: etki.girdi, girdiAdet: etki.girdiAdet * adet, cikti: etki.alan, adet: etki.deger * adet });
+      continue;
+    }
     if (etki.tur !== "hal" || !["can", "kondisyon", "gonul"].includes(etki.alan))
       return hata("hedef_uygun_degil");
     const alan = etki.alan as keyof Hal;
-    fark[alan] = (fark[alan] ?? 0) + etki.deger * adet;
+    fark[alan] = (fark[alan] ?? 0) + hizmetEtkiDegeri(etki.deger, q, ilkHal ? a : 0) * adet;
+    ilkHal = false;
+  }
+  // Onarım: alıcının o ailedeki aşınmış araçları (yoksa hizmet boşa gitmesin diye satış reddedilir).
+  const asinmis = onarim.length
+    ? Object.entries(alici.as ?? {}).filter(([m, n]) => (n ?? 0) > 0 && onarim.some((o) => o.aile === esyaAilesi(m)))
+    : [];
+  if (onarim.length && asinmis.length === 0) return hata("hedef_uygun_degil");
+  if (isleme.length) {
+    const kilit = esyaKilidi(alici, Object.fromEntries(isleme.map((x) => [x.girdi, x.girdiAdet])));
+    if (kilit) return hata(kilit);
+  }
+  // Kırgın gönle taban (dertleşme, hizmetçinin `kirginTaban` hakkı): gönül tabanın altındaysa en az tabana çıkar.
+  if (tarif.id === "dertlesme" && hakAcik(satici, "kirginTaban")) {
+    const simdi = halAl(alici, ay).gonul;
+    if (simdi + (fark.gonul ?? 0) < KIRGIN_GONUL_TABANI) fark.gonul = KIRGIN_GONUL_TABANI - simdi;
   }
   const tutar = ilan.f * adet;
   if (alici.pa < tutar) return hata("para_yok");
@@ -273,6 +376,28 @@ export function hizmetIlanIsle(
   alici.pa -= tutar;
   satici.pa += tutar;
   const etki = halDegistir(alici, ay, fark, `hizmet.${tarif.id}`);
+  let onarimSonucu: Record<string, number> | null = null;
+  let islemeSonucu: Record<string, number> | null = null;
+  if (onarim.length) {
+    const geri: Record<string, number> = {};
+    for (const [m, n] of asinmis) {
+      const o = onarim.find((x) => x.aile === esyaAilesi(m))!;
+      const d = Math.min(n ?? 0, o.deger);
+      alici.as![m] = (n ?? 0) - d;
+      if (alici.as![m] === 0) delete alici.as![m];
+      geri[m] = d;
+    }
+    onarimSonucu = geri;
+  }
+  if (isleme.length) {
+    const cikan: Record<string, number> = {};
+    for (const x of isleme) {
+      envanterEkle(alici, x.girdi, -x.girdiAdet);
+      envanterEkle(alici, x.cikti, x.adet);
+      cikan[x.cikti] = (cikan[x.cikti] ?? 0) + x.adet;
+    }
+    islemeSonucu = cikan;
+  }
   // Aynı hizmetçi → aynı alıcı için ayda en çok iki ödüllü teslim; hesap/hane kümesinde ödül yok.
   const teslimler = (ek.ht ??= []).filter((x) => x.ay >= ay - 2);
   const oncekiOdul = teslimler
@@ -290,9 +415,12 @@ export function hizmetIlanIsle(
   ilan.is.push([ay, alici.o, adet, tutar]);
   if (ilan.is.length > 10) ilan.is.splice(0, ilan.is.length - 10);
   if (ilan.n === 0) ilan.d = "bitti";
-  return basarili({ ilan, adet, tutar, etki, hizmetPuani, odul });
+  return basarili({ ilan, adet, tutar, etki, hizmetPuani, odul, onarim: onarimSonucu, isleme: islemeSonucu });
 }
 
+
+/** [PARAMETRE] NPC talebinde açılış ayı önceliği veren hak (hizmet → hak). */
+export const NPC_TALEP_ONCELIK: Readonly<Record<string, string>> = { lohusa: "dogumTalebi", teselli: "yasliHane" };
 
 /** Olaydan doğan NPC talepleri: doğum → lohusa bakımı, ölüm → yaşayan eşe teselli. */
 export function hizmetNpcTalebiAc(kasaba: Kasaba, ay: number, olaylar: OlayTaslagi[]): OlayTaslagi[] {
@@ -319,6 +447,17 @@ export function hizmetNpcTalebiAc(kasaba: Kasaba, ay: number, olaylar: OlayTasla
       i: ek.n++, olay: olay.w, h: hizmet, hedef: hedefId, hane: hedef.e,
       ac: ay, sa: ay + 1, odul: tarif.npcOdul, d: "acik",
     };
+    // Kanca partisi 2: "talepler bu kapıya gelir" (lohusa → `dogumTalebi`, teselli → `yasliHane`). Hakkı olan, yaşayan,
+    // hedefle aynı hanede olmayan bir oyuncu varsa açılış ayında öncelik onundur (sırayla dönüşümlü); sonra herkes.
+    // Ödül aynıdır (hazineden rezerve); akçe yoktan doğmaz.
+    const hak = NPC_TALEP_ONCELIK[hizmet];
+    if (hak) {
+      const sahipler = [...kasaba.kar.values()]
+        .filter((c) => !olduMu(c) && c.e !== hedef.e && hakAcik(c, hak))
+        .map((c) => c.o)
+        .sort();
+      if (sahipler.length) talep.on = sahipler[talep.i % sahipler.length];
+    }
     talepler.push(talep);
     acilan.push({
       t: "hizmetTalep", w: npcKimlik(hedef.i), h: "", g: "", n: 2,
@@ -336,6 +475,8 @@ export function hizmetNpcTalepleri(ek: EkonomiKaydi | undefined, ay: number) {
     .map((x) => ({
       id: `hn${x.i}`, hizmet: x.h, hedef: x.hedef,
       acilisAy: x.ac, sonAy: x.sa, odul: x.odul,
+      /** Açılış ayında öncelikli bir hizmetçiye ayrılmış mı (kimliği verilmez). */
+      oncelik: !!x.on && x.ac === ay,
     }));
 }
 
@@ -349,6 +490,7 @@ export function hizmetNpcTalepTeslim(
   const talep = ek.hn?.find((x) => x.i === Number(eslesme[1]));
   if (!talep || talep.d !== "acik" || talep.sa < ay) return hata("siparis_kapandi");
   if (satici.e !== 0 && satici.e === talep.hane) return hata("hedef_uygun_degil");
+  if (talep.on && talep.ac === ay && talep.on !== satici.o) return hata("hedef_uygun_degil");
   const hedefNo = /^n([1-9][0-9]{0,8})$/.exec(talep.hedef);
   const hedef: Npc | undefined = hedefNo ? kasaba.dizin.get(Number(hedefNo[1])) : undefined;
   if (!hedef) return hata("hedef_uygun_degil");

@@ -216,4 +216,41 @@ export const KANCA_BAGLARI: Readonly<Record<string, KancaBagi>> = {
 
   // ── Bilgi ──
   "hak:fiyatTablosu": { kanal: "fiyatTablosu" },
+
+  // ── Kanca partisi 2: hizmet pazarı (kalite, yeni hizmetler, araç) ──
+  "kalite:turku": m("src/yerlesim/hizmet-tarif.ts"),
+  "kalite:teselli": m("src/yerlesim/hizmet-tarif.ts"),
+  "kalite:lohusa": m("src/yerlesim/hizmet-tarif.ts"),
+  "kalite:kirikSar": m("src/yerlesim/hizmet-tarif.ts"),
+  "kalite:sifa": m("src/yerlesim/hizmet-tarif.ts"),
+  "kalite:dertlesme": m("src/yerlesim/hizmet-tarif.ts"),
+  "kalite:turkuYak": m("src/yerlesim/hizmet-tarif.ts"),
+  "kalite:barisSofrasi": m("src/yerlesim/hizmet-tarif.ts"),
+  "kalite:gucDogum": m("src/yerlesim/hizmet-tarif.ts"),
+  "kalite:destan": m("src/yerlesim/hizmet-tarif.ts"),
+  "hizmet:gucDogum": m("src/yerlesim/hizmet-tarif.ts"),
+  "hizmet:yaraDikisi": m("src/yerlesim/hizmet-tarif.ts"),
+  "hizmet:dertlesme": m("src/yerlesim/hizmet-tarif.ts"),
+  "hizmet:turkuYak": m("src/yerlesim/hizmet-tarif.ts"),
+  "hizmet:atisma": m("src/yerlesim/hizmet-tarif.ts"),
+  "hizmet:barisIlahisi": m("src/yerlesim/hizmet-tarif.ts"),
+  "hizmet:onarimHizmeti": m("src/yerlesim/hizmet-tarif.ts"),
+  "hizmet:yelekOnarimi": m("src/yerlesim/hizmet-tarif.ts"),
+  "hizmet:postTabaklama": m("src/yerlesim/hizmet-tarif.ts"),
+  "arac:yaraDikisi:alet": m("src/yerlesim/hizmet-tarif.ts"),
+  "arac:sazliSahne:saz": m("src/yerlesim/hizmet-tarif.ts"),
+
+  // ── Kanca partisi 2: hizmet pazarı hakları (kırgın gönül tabanı, NPC talep önceliği) ──
+  "hak:kirginTaban": m("src/yerlesim/hizmet-pazari.ts"),
+  "hak:dogumTalebi": m("src/yerlesim/hizmet-pazari.ts"),
+  "hak:yasliHane": m("src/yerlesim/hizmet-pazari.ts"),
+
+  // ── Kanca partisi 2: kasaba görevleri (kalite, mızrakla nöbet, koltuk hakları) ──
+  "kalite:asayis": m("src/yerlesim/hizmet-gorev.ts"),
+  "kalite:talim": m("src/yerlesim/hizmet-gorev.ts"),
+  "kalite:vergiSayimi": m("src/yerlesim/hizmet-gorev.ts"),
+  "kalite:meclisKaydi": m("src/yerlesim/hizmet-gorev.ts"),
+  "arac:nobet:mizrak": m("src/yerlesim/hizmet-gorev.ts"),
+  "hak:nobetKoltuklari": m("src/yerlesim/hizmet-gorev.ts"),
+  "hak:garnizonTalimi": m("src/yerlesim/hizmet-gorev.ts"),
 };

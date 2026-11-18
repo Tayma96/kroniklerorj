@@ -36,6 +36,9 @@ export interface HizmetStogu {
   n0?: number;
   ac: number;
   sa: number;
+  /** Kanca partisi 2: hazırlayanın hizmet kalitesi (yüzde) ve araç eki (ilk hal etkisine adet başına). Eski kayıtta yok = 0. */
+  q?: number;
+  a?: number;
 }
 
 /** Hizmet teslim/ödül defteri; hesap kimliği yerine yerel oyuncu kimliği tutulur. */
@@ -63,6 +66,8 @@ export interface HizmetNpcTalebi {
   odul: number;
   d: "acik" | "tamam" | "dustu";
   teslim?: { o: string; ad: string; ay: number };
+  /** Kanca partisi 2 (`dogumTalebi`/`yasliHane`): açılış ayında yalnız bu oyuncu teslim edebilir (öncelik; sonra herkes). */
+  on?: string;
 }
 
 /** Aylık, kasaba hazinesinden önceden ayrılmış koltuklu hizmet görevi. */
@@ -93,6 +98,9 @@ export interface HizmetIlan {
   d: HizmetIlanDurumu;
   /** Son işlemler: [ay, alıcı yerel kimliği, adet, tutar]. */
   is?: [ay: number, alici: string, adet: number, tutar: number][];
+  /** Kanca partisi 2: stoğun kalitesi ve araç eki (HizmetStogu `q`, `a`). */
+  q?: number;
+  a?: number;
 }
 
 /** Yerleşimin ekonomi kaydı (depo anahtarı "ek"): sonraki kimlik, ilanlar, ısmarlamalar, levha ve hizmet pazarı. */

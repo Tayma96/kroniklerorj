@@ -7,7 +7,7 @@ import { MALLAR, malBul, type MalId } from "../icerik/mallar.ts";
 import { HIZMET_TARIFLERI } from "./hizmet-tarif.ts";
 import { basarili, hata, type Sonuc } from "../tipler.ts";
 import { DEFTER_AY, defterGorunumu } from "./defter.ts";
-import { hizmetHazirla, hizmetIlanAc, hizmetIlanBul, hizmetIlanGeri, hizmetIlanGorunumu, hizmetIlanIsle, hizmetIlanlar, hizmetNpcTalepleri, hizmetNpcTalepTeslim, hizmetStoguGecerli, hizmetStoguGorunumu, hizmetYetkiliMi } from "./hizmet-pazari.ts";
+import { hizmetHazirla, hizmetIlanAc, hizmetIlanBul, hizmetIlanGeri, hizmetIlanGorunumu, hizmetIlanIsle, hizmetIlanlar, hizmetNpcTalepleri, hizmetNpcTalepTeslim, hizmetStoguGecerli, hizmetStoguGorunumu, hizmetYetkiliMi, hizmetKalitesi } from "./hizmet-pazari.ts";
 import { hizmetGorevleri, hizmetGorevTeslim } from "./hizmet-gorev.ts";
 import {
   ISMARLAMA_ADET_EN_COK,
@@ -69,6 +69,9 @@ export function hizmetOku(m: YerlesimMotoru, hesapId: string): Promise<Sonuc<unk
       fiyatTaban: tarif.fiyatTaban,
       npcOdul: tarif.npcOdul ?? null,
       acik: hizmetYetkiliMi(kar, tarif),
+      grup: tarif.grup ?? [],
+      arac: tarif.arac ?? null,
+      kalite: hizmetKalitesi(kar, tarif),
     }));
     const ek = m.kasaba.ek;
     const stok = (ek?.hs ?? [])
@@ -127,6 +130,8 @@ export async function hizmetIslemUc(m: YerlesimMotoru, hesapId: string, govde: u
         etki: r.deger.etki,
         hizmetPuani: r.deger.hizmetPuani,
         odul: r.deger.odul,
+        ...(r.deger.onarim ? { onarim: r.deger.onarim } : {}),
+        ...(r.deger.isleme ? { isleme: r.deger.isleme } : {}),
       },
     });
   });
@@ -158,6 +163,7 @@ export function hizmetGorevTeslimUc(m: YerlesimMotoru, hesapId: string, govde: u
       odul: r.deger.odul,
       hizmetPuani: r.deger.hizmetPuani,
       arac: r.deger.arac ?? null,
+      katki: r.deger.katki,
     });
   });
 }

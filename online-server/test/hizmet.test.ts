@@ -392,7 +392,7 @@ test("E4.3-B gerçek doğum olayı NPC lohusa talebi açar, hazineyi rezerve ede
   const acilan = hizmetNpcTalebiAc(kasaba, 12, [dogum]);
   assert.equal(acilan.length, 1);
   assert.equal(kasaba.hd?.hz, 12);
-  assert.deepEqual(hizmetNpcTalepleri(ek, 12), [{ id: "hn1", hizmet: "lohusa", hedef: "n1", acilisAy: 12, sonAy: 13, odul: 8 }]);
+  assert.deepEqual(hizmetNpcTalepleri(ek, 12), [{ id: "hn1", hizmet: "lohusa", hedef: "n1", acilisAy: 12, sonAy: 13, odul: 8, oncelik: false }]);
   assert.equal(hizmetNpcTalebiAc(kasaba, 12, [dogum]).length, 0);
   assert.equal(kasaba.hd?.hz, 12);
 });
