@@ -55,6 +55,13 @@ export interface Tezgah extends Envanterli {
   // ── Kanca partisi 2 ──
   /** Dükkân: konsinye komisyon yüzdesi (yoksa KOMISYON_VARSAYILAN). */
   kom?: number;
+  // ── Kanca partisi 2 (hak l–r, mulk/carsi-hile.ts) ──
+  /** Dükkân: hileli tartıyı kuranın kimliği (kuruluyken). */
+  ht?: string;
+  /** Dükkân: hileli tartıda yakalanınca lekenin son dönüm ayı. */
+  lk?: number;
+  /** Dükkân: ozan övgüsü (hak:namYayma) [ozan, ad, ay, H değeri]; yalnız o ayın gözüyle etkin. */
+  ny?: [o: string, ad: string, ay: number, d: number];
 }
 
 /** Üretim emri: tarif, toplam yapım, yapılan, açılış ayı, açan. */

@@ -18,7 +18,7 @@ import { halDegistir } from "./hal.ts";
 import { olduMu } from "./hanedan.ts";
 import { namEkle, takatHarca, type Nam } from "./karakter.ts";
 import { mesrepEtkisi } from "./mesrep.ts";
-import { hizmetAcik } from "./beceri-etki.ts";
+import { hakAcik, hizmetAcik } from "./beceri-etki.ts";
 import { esyaKilidi } from "./kalite.ts";
 import { envanterEkle } from "./npc-taban.ts";
 import { oyuncuRef } from "./ortak.ts";
@@ -75,6 +75,11 @@ export const ORTAK_DERT_ESIK_TABAN = 40;
 export const ORTAK_DERT_ESIK_KISI = 15;
 export const ORTAK_DERT_ESIK_TAVAN = 200;
 export const ORTAK_DERT_NPC_AYLIK = 8;
+/**
+ * [PARAMETRE] Kanca partisi 2 `hak:ortakDertCagrisi` (hancı, han meclisi 1): yerleşimde bu hakkı bilen yaşayan bir sakin
+ * varsa halkın aylık katkısına bu kadar eklenir (hanın çağrısı halkı toplar; kaç hancı olursa olsun bir kez, akçe yok).
+ */
+export const ORTAK_DERT_CAGRI_EK = 4;
 /** [PARAMETRE] Açık pencere en az (ay; 12 gerçek saat = 1 ay); hasat ayı ve süresi; salgın olasılığı ve aralığı. */
 export const ORTAK_DERT_PENCERE_EN_AZ = 4;
 export const HASAT_AYI = 9;
@@ -114,6 +119,8 @@ export interface OrtakDert {
   pu: number;
   /** NPC halkının katkısı (puan). */
   np: number;
+  /** Bunun hancı çağrısıyla (`ortakDertCagrisi`) gelen kısmı (eski kayıtta yok). */
+  nc?: number;
   d: "acik" | "basardi" | "basarisiz";
   ka?: number;
   k: DertKatkisi[];
@@ -205,11 +212,18 @@ export function ortakDertDonumu(k: Kasaba, ay: number): OlayTaslagi[] {
     tl.ss = ay;
     olaylar.push(dertAc(k, tl, "salgin", ay, SALGIN_SURESI));
   }
+  const cagri = k.sakin.some((s) => {
+    const c = k.kar.get(s.o);
+    return !!c && !olduMu(c) && hakAcik(c, "ortakDertCagrisi");
+  })
+    ? ORTAK_DERT_CAGRI_EK
+    : 0;
   for (const d of tl.od) {
     if (d.d !== "acik") continue;
     if (d.ac < ay) {
-      d.np += ORTAK_DERT_NPC_AYLIK;
-      d.pu += ORTAK_DERT_NPC_AYLIK;
+      d.np += ORTAK_DERT_NPC_AYLIK + cagri;
+      d.pu += ORTAK_DERT_NPC_AYLIK + cagri;
+      if (cagri) d.nc = (d.nc ?? 0) + cagri;
     }
     if (d.pu >= d.es) olaylar.push(kapat(k, tl, d, ay, true));
     else if (ay > d.bt) olaylar.push(kapat(k, tl, d, ay, false));
@@ -328,6 +342,7 @@ export function dertGorunumu(d: OrtakDert, kar?: Karakter) {
     esik: d.es,
     puan: d.pu,
     halk: d.np,
+    ...(d.nc ? { halkCagri: d.nc } : {}),
     carpanlar: Object.fromEntries(KATKI_TURLERI.map((t) => [t, carpanBul(d.t, t)])),
     defter: d.k.map((x) => ({ id: x.o, ad: x.ad, katkilar: x.t })),
     ...(kar ? { benim: { sayi: d.ks?.[kar.o] ?? ben?.n ?? 0, kalan: ORTAK_DERT_KISI_EN_COK - (d.ks?.[kar.o] ?? ben?.n ?? 0), puan: ben?.p ?? 0 } } : {}),
@@ -341,6 +356,7 @@ export const ORTAK_DERT_KURALLARI = {
   adetEnCok: ORTAK_DERT_ADET_EN_COK,
   esik: { taban: ORTAK_DERT_ESIK_TABAN, kisi: ORTAK_DERT_ESIK_KISI, tavan: ORTAK_DERT_ESIK_TAVAN },
   halkAylik: ORTAK_DERT_NPC_AYLIK,
+  halkCagriEk: ORTAK_DERT_CAGRI_EK,
   pencereEnAz: ORTAK_DERT_PENCERE_EN_AZ,
   emek: { taban: EMEK_PUAN_TABAN, kademe: EMEK_PUAN_KADEME, elEmegi: EL_EMEGI_PUAN },
   digerCarpani: ORTAK_DERT_DIGER_CARPANI,

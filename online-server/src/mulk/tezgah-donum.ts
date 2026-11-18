@@ -29,6 +29,7 @@ import { levhaYaz } from "../yerlesim/levha.ts";
 import { kancaDokumu, kancaHesapla, type KancaSonucu } from "./kanca.ts";
 import type { MulkDefteri } from "./tapu.ts";
 import type { Karakter } from "../yerlesim/tipler.ts";
+import { dukkanItibari, hileDonumu, ovguyleH, type HileSonucu } from "./carsi-hile.ts";
 
 /**
  * Dükkânın H kancası (Dilim 3), satırdaki malın mesleğine göre (önbellekli): sahip ve oyuncu çalışanlardan en yüksek
@@ -39,7 +40,8 @@ export function dukkanHKancasi(k: Kasaba, md: MulkDefteri, isletme: string, ay =
   const on = new Map<MeslekId, KancaSonucu>();
   return (m) => {
     let s = on.get(m);
-    if (!s) on.set(m, (s = kancaHesapla(kisiler, "dukkanH", { meslek: m })));
+    // Kanca partisi 2: ozan övgüsü (hak:namYayma) o ay ozanı dükkânın bir kişisi gibi sayar (en yüksek katkı).
+    if (!s) on.set(m, (s = ovguyleH(kancaHesapla(kisiler, "dukkanH", { meslek: m }), md, isletme, ay)));
     return s;
   };
 }
@@ -140,7 +142,8 @@ export function tezgahDonumu(k: Kasaba, ay: number): OlayTaslagi[] {
     }
     if (!t.r.some((s) => partiToplam(s.p) > 0) || !yerVar(k, id)) continue;
     const seviye = tapu.y?.seviye ?? 0;
-    dukkanlar.set(id, { id, itibar: tapu.y?.it ?? ITIBAR_BASLANGIC, tavan: DUKKAN_NPC_TAVAN[seviye] ?? DUKKAN_NPC_TAVAN[0]! });
+    // Kanca partisi 2: hileli tartıda yakalanan dükkân lekeli dönümlerde düşük itibarla satar.
+    dukkanlar.set(id, { id, itibar: dukkanItibari(tapu.y?.it ?? ITIBAR_BASLANGIC, t, ay), tavan: DUKKAN_NPC_TAVAN[seviye] ?? DUKKAN_NPC_TAVAN[0]! });
     // Kanca kişi kuralı biten ayın (ay − 1) gözüyle: o ay görülen önizleme dönümde uygulanır.
     const hk = dukkanHKancasi(k, md, id, ay - 1);
     hkHarita.set(id, hk);
@@ -161,12 +164,25 @@ export function tezgahDonumu(k: Kasaba, ay: number): OlayTaslagi[] {
     const benim = r.satirlar.filter((x) => x.dukkan === id);
     // Kanca partisi 2: konsinye satırlarının hasılatı (emanetçi payı ayrılır).
     const konsinye: { o: string; ad: string; y: number; hasilat: number }[] = [];
+    // Kanca partisi 2: hileli tartı (biten ayın gözüyle; konsinye satırları hariç). Yakalanmazsa en çok
+    // HILELI_TARTI_ADET_EN_COK adet raftan düşmez (hasılat aynı: akçe basılmaz); yakalanırsa leke ve nam kaybı.
+    const hileAdet = benim.reduce((a, x) => a + (t.r.find((y) => y.n === satirHaritasi.get(x.id)!.n)?.ko ? 0 : Math.max(0, x.adet)), 0);
+    const hile: HileSonucu | undefined = hileDonumu(k, md, id, t, ay, hileAdet);
+    let hileKalan = hile?.kazanc ?? 0;
+    const hileSatir = new Map<string, number>();
+    for (const x of [...benim].sort((a, b) => b.adet - a.adet || (a.id < b.id ? -1 : 1))) {
+      if (hileKalan <= 0 || x.adet <= 0 || t.r.find((y) => y.n === satirHaritasi.get(x.id)!.n)?.ko) continue;
+      const kes = Math.min(hileKalan, x.adet);
+      hileSatir.set(x.id, kes);
+      hileKalan -= kes;
+    }
     for (const x of benim) {
       if (x.adet <= 0) continue;
       const s = t.r.find((y) => y.n === satirHaritasi.get(x.id)!.n);
       if (!s) continue;
       const ko = s.ko;
-      raftanSat(t, s, x.adet);
+      const kes = hileSatir.get(x.id) ?? 0;
+      if (x.adet - kes > 0) raftanSat(t, s, x.adet - kes);
       if (ko) {
         const v = konsinye.find((z) => z.o === ko.o);
         if (v) v.hasilat += x.hasilat;
@@ -184,7 +200,7 @@ export function tezgahDonumu(k: Kasaba, ay: number): OlayTaslagi[] {
       kalite: x.q,
       fiyat: x.fiyat,
       satilan: x.adet,
-      kalan: x.kalan,
+      kalan: x.kalan + (hileSatir.get(x.id) ?? 0),
       hasilat: x.hasilat,
       payYuzde: Math.round(x.pay * 1000) / 10,
       carpanlar: x.carpan,
@@ -193,8 +209,10 @@ export function tezgahDonumu(k: Kasaba, ay: number): OlayTaslagi[] {
       npcTavan: x.npcTavan,
       neden: x.neden,
     }));
+    const hileDokumu = hile ? { hileliTarti: hile } : {};
+    if (hile?.yakalandi) olaylar.push({ t: "tezgah", w: tapu.s, h: "", g: tapu.s, n: 2, k: "olay.tezgah.hileYakalandi", p: { isletme: id, ad: tapu.y?.ad ?? "", bitis: hile.lekeBitis ?? 0, nam: hile.nam ?? 0 } });
     if (!satisVar || !yerVar(k, id)) {
-      t.gs = { ay, kepenk: true, ...(satirDokumu.length ? { satirlar: satirDokumu } : {}) };
+      t.gs = { ay, kepenk: true, ...(satirDokumu.length ? { satirlar: satirDokumu } : {}), ...hileDokumu };
       continue;
     }
     const hasilat = benim.reduce((a, x) => a + x.hasilat, 0);
@@ -235,6 +253,7 @@ export function tezgahDonumu(k: Kasaba, ay: number): OlayTaslagi[] {
       ...hKancaDokumu(k, hkHarita.get(id), benim.map((x) => x.mal)),
       ...(konsinyeDokumu.length ? { konsinye: konsinyeDokumu } : {}),
       ...(bi > 0 ? { bakimIndirimi: bi } : {}),
+      ...hileDokumu,
     };
   }
   if (vergiToplam > 0) (md.vergiGiden ??= []).push({ anahtar: `y:${k.y}:tz:vergi:${ay}`, tutar: vergiToplam, yerlesim: k.y });

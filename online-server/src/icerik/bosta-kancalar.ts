@@ -8,9 +8,9 @@
  * övme hizmeti, kendi rafına çekicilik değil) ve `hak:hileliTarti` (hileli tartı dürüst H olamaz) kayıttan geri alındı;
  * parti henüz ana dala girmediği için taban budur. Kanca partisi 2 (18 Kasım) bağladıkça düşer; bağlanamayanın yanında
  * tek satır neden yazar ("// boşta: ..."). 160: a–e/konsinye dalı (10) ve kalite/eşya dalı (13) birleşti; gece devriyesinin
- * hırsızlık tespiti ve kılıcı yalnız devriye görevinde (nöbete sayılmaz).
+ * hırsızlık tespiti ve kılıcı yalnız devriye görevinde (nöbete sayılmaz). 151: hak l–r dalı (9; namYayma/hileliTarti çarşı hilesinde) birleşti.
  */
-export const BOSTA_TAVAN = 160;
+export const BOSTA_TAVAN = 151;
 
 export const BOSTA_KANCALAR: readonly string[] = [
   // av sistemi yok (izSur hizmeti hizmet ajanında; hedefi "av" olan araçlı hizmet gelince bağlanır)
@@ -57,7 +57,6 @@ export const BOSTA_KANCALAR: readonly string[] = [
   "hak:hekimIcazeti",
   "hak:heyetUzlasmasi",
   "hak:hikmetliKarar",
-  "hak:hileliTarti",
   "hak:husumetListesi",
   "hak:ilkGorus",
   "hak:ipekYoluSeferi",
@@ -84,24 +83,16 @@ export const BOSTA_KANCALAR: readonly string[] = [
   "hak:koruDikimi",
   "hak:kronikNami",
   "hak:kuraklikDirenci",
-  "hak:lekeliSatici",
-  "hak:meclisSirasi",
-  "hak:menzilhane",
-  "hak:meraHakki",
-  "hak:meraKarari",
-  "hak:naiplik",
-  "hak:namYayma",
-  "hak:navlun",
-  "hak:ordugahHakki",
-  "hak:ortakDertCagrisi",
-  "hak:ortaklikDefteri",
-  "hak:ovguTaslama",
-  "hak:oylama",
-  "hak:ozanIcazeti",
-  "hak:ozanbasi",
-  "hak:resmiElcilik",
-  "hak:riskPaylasimi",
-  "hak:rotaSecimi",
+  "hak:meclisSirasi", // boşta: siyaset (meclis gündem sırası): bölge meclisi programında kapanır
+  "hak:meraKarari", // boşta: mera kararı meclis/gündem işi; çevrimiçide mera sistemi yok
+  "hak:naiplik", // boşta: siyaset (kadılık yolu): makam sisteminde (siyaset/makam.ts) kapanır
+  "hak:navlun", // boşta: başkasının yükünü taşıma yok: kervan yükü tek sahipli (yerlesim/kervan.ts)
+  "hak:ortaklikDefteri", // boşta: ortak (çok sahipli) işletme yok
+  "hak:oylama", // boşta: siyaset (meclis oylaması): bölge meclisi programında kapanır
+  "hak:ozanIcazeti", // boşta: ozan yetiştirme/icazet sistemi çevrimiçide yok
+  "hak:resmiElcilik", // boşta: siyaset (diplomasi): elçilik sistemi yok
+  "hak:riskPaylasimi", // boşta: kervanda kayıp riski ve ortak kafile yok
+  "hak:rotaSecimi", // boşta: kervanda rota ve yol tehlikesi yok
   "hak:safDuzeni",
   "hak:sahneSirasi",
   "hak:sahteBelge",

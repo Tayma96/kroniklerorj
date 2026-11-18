@@ -36,6 +36,8 @@ import type { MeslekId } from "../icerik/meslekler.ts";
 import { pompaDenetle, pompaYaz } from "../yerlesim/pazar-tahta.ts";
 import { trGunu } from "../yonetim/sikayet.ts";
 import { CIKIS_EN_COK, cikisAc } from "./transfer.ts";
+import { zarHazir } from "../yerlesim/zar-sirri.ts";
+import { NAM_YAYMA_AYLIK, NAM_YAYMA_TAKAT, dukkanItibari, hileHakki, lekeGorunumu, lekeliMi, ovguDegeri, ozanAylik, ozanOvebilir, tartiGorunumu } from "./carsi-hile.ts";
 import {
   ATOLYE_KALITE_SEVIYE_PUANI,
   CALISAN_DEPO_GUNLUK_ADIL,
@@ -233,6 +235,9 @@ export function dukkanListesi(k: Kasaba, kar: Karakter) {
         kepenk: !tz || rafBos(tz),
         satir: tz?.r.length ?? 0,
         mallar: [...new Set((tz?.r ?? []).map((s) => s.m))],
+        // Kanca partisi 2: hileli tartıda yakalanan dükkânın lekesi (herkese açık) ve bu ayki ozan övgüsü.
+        leke: lekeGorunumu(tz, k.ay),
+        ovgu: tz?.ny && tz.ny[2] === k.ay ? { ad: tz.ny[1], deger: tz.ny[3] } : null,
         benim: t.s === kar.o,
         devralinabilir: devralinabilir(k, md, id) && t.s !== kar.o,
       };
@@ -294,6 +299,14 @@ export function tezgahGorunumu(k: Kasaba, kar: Karakter, isletme: string): Sonuc
     devralinabilir: devralinabilir(k, md, isletme) && tapu.s !== kar.o,
     // Kanca partisi 2: konsinye (herkese: açık mı, komisyon; benim konsinye satırım).
     ...(tur === "dukkan" ? { komisyon: { ...komisyonGorunumu(k, md, isletme, t), benimSatir: t.r.find((x) => x.ko?.o === kar.o)?.n ?? null } } : {}),
+    // Kanca partisi 2 (hak l–r): leke ve övgü herkese; bakan ozanın övgü hakkı.
+    ...(tur === "dukkan"
+      ? {
+          leke: lekeGorunumu(t, k.ay),
+          ovgu: t.ny && t.ny[2] === k.ay ? { ad: t.ny[1], deger: t.ny[3] } : null,
+          ...(ozanOvebilir(kar) ? { namYayma: { ...ovguDegeri(kar), kalan: Math.max(0, NAM_YAYMA_AYLIK - ozanAylik(md, kar.o, k.ay)), takat: NAM_YAYMA_TAKAT } } : {}),
+        }
+      : {}),
     izin: {
       depoKoy: iz.depoKoy,
       depoAl: iz.depoAl,
@@ -314,6 +327,7 @@ export function tezgahGorunumu(k: Kasaba, kar: Karakter, isletme: string): Sonuc
           genisletme: genisletmeGorunumu(tur, t, seviye, malzemeIndirimi(k, md, isletme)),
           kanca: kancaGorunumu(k, md, isletme, tur, t, { o: kar.o, sahip: iz.sahip }),
           ...(tur === "dukkan" && bilgiKancasi(kar, "fiyatTablosu") ? { fiyatTablosu: fiyatTablosu(k, md, isletme) } : {}),
+          ...(tur === "dukkan" && iz.yonetici && (t.ht || hileHakki(k, md, isletme)) ? { tarti: tartiGorunumu(k, md, isletme, t) } : {}),
           ...(tur === "atolye" ? { atolye: atolyeGorunumu(k, md, isletme, t, seviye, kar) } : {}),
         }
       : {}),
@@ -352,7 +366,8 @@ function talepGirdisi(k: Kasaba, md: MulkDefteri) {
     const t = md.tz?.[id];
     if (!c || c.tur !== "dukkan" || !t || tapu.y?.durum === "iflas") continue;
     const seviye = tapu.y?.seviye ?? 0;
-    dukkanlar.set(id, { id, itibar: tapu.y?.it ?? ITIBAR_BASLANGIC, tavan: DUKKAN_NPC_TAVAN[seviye] ?? DUKKAN_NPC_TAVAN[0]! });
+    // Önizleme = sonraki dönüm (k.ay + 1): lekeli dükkân düşük itibarla.
+    dukkanlar.set(id, { id, itibar: dukkanItibari(tapu.y?.it ?? ITIBAR_BASLANGIC, t, k.ay + 1), tavan: DUKKAN_NPC_TAVAN[seviye] ?? DUKKAN_NPC_TAVAN[0]! });
     const hk = dukkanHKancasi(k, md, id);
     for (const s of t.r) {
       const h = hk(MALLAR[s.m].meslek).deger;
@@ -486,6 +501,38 @@ export function rafIslem(k: Kasaba, kar: Karakter, isletme: string, govde: unkno
     t.kom = oran as number;
     etkinlik(k, t);
     return basarili({ komisyon: komisyonGorunumu(k, md, isletme, t) });
+  }
+  // ── Kanca partisi 2 (hak l–r): hileli tartı (yönetici; kanca kişisinde hak:hileliTarti) ──
+  if (islem === "tarti") {
+    if (!iz.yonetici) return hata("yetki_yok");
+    if (typeof govde.hile !== "boolean") return hata("gecersiz_istek");
+    if (!govde.hile) {
+      delete t.ht;
+      return basarili({ tarti: tartiGorunumu(k, md, isletme, t) });
+    }
+    if (!hileHakki(k, md, isletme)) return hata("dugum_kapali");
+    // Yakalanma zarı sırlıdır (S1): sır yoksa tartı kurulmaz.
+    if (!zarHazir()) return hata("yapilandirma_eksik");
+    // Lekeli dükkân leke sürerken tartıyı yeniden hileli kuramaz.
+    if (lekeliMi(t, k.ay + 1)) return hata("soguma");
+    t.ht = kar.o;
+    etkinlik(k, t);
+    return basarili({ tarti: tartiGorunumu(k, md, isletme, t) });
+  }
+  // ── Kanca partisi 2: ozan övgüsü (hak:namYayma) — başka bir dükkânı över; ozana kazanç yok ──
+  if (islem === "namYay") {
+    const tapu = md.t[isletme]!;
+    if (!ozanOvebilir(kar)) return hata("dugum_kapali");
+    if (tapu.s === kar.o || tapu.y?.py?.some(([o]) => o === kar.o) || tapu.y?.pb?.some(([o]) => o === kar.o)) return hata("kendine");
+    if (tapu.y?.durum === "iflas") return hata("isletme_kapali");
+    const sahip = k.kar.get(tapu.s);
+    if (!sahip || ayniKume(kar, sahip)) return hata("ayni_kume");
+    if (t.ny && t.ny[2] === k.ay) return hata("teklif_var");
+    if (ozanAylik(md, kar.o, k.ay) >= NAM_YAYMA_AYLIK) return hata("eylem_siniri");
+    if (!takatHarca(kar, k.ay, NAM_YAYMA_TAKAT)) return hata("takat_yok");
+    const v = ovguDegeri(kar);
+    t.ny = [kar.o, kar.ad, k.ay, v.d];
+    return basarili({ ovgu: { ad: kar.ad, deger: v.d, kalemler: v.kalemler, ay: k.ay }, takat: kar.tk });
   }
   if (islem === "konsinye") {
     const tapu = md.t[isletme]!;

@@ -271,6 +271,18 @@ export const KANCA_BAGLARI: Readonly<Record<string, KancaBagi>> = {
   // ── Kanca partisi 2: konsinye (emanet satır, komisyon) ──
   "hak:komisyon": m("src/mulk/tezgah-uclar.ts"),
 
+  // ── Kanca partisi 2 (hak l–r): çarşıda ün (hileli tartı, leke, ozan övgüsü), ortak dert çağrısı ──
+  "hak:hileliTarti": m("src/mulk/carsi-hile.ts"),
+  "hak:lekeliSatici": m("src/mulk/carsi-hile.ts"),
+  "hak:namYayma": m("src/mulk/carsi-hile.ts"),
+  "hak:ovguTaslama": m("src/mulk/carsi-hile.ts"),
+  "hak:ortakDertCagrisi": m("src/yerlesim/ortak-dert.ts"),
+  // Ozanbaşının ve kâtibin menzilhanesinin hanı yolcu çeker; ordugâh çadır siparişi; mera NPC çobanı.
+  "hak:ozanbasi": hH(3),
+  "hak:menzilhane": hH(3),
+  "hak:ordugahHakki": tI(5, "dokumaci"),
+  "hak:meraHakki": nC(5, "ciftci"),
+
   // ── Kanca partisi 2: hizmet pazarı hakları a–e (darüşşifa tabanı, aşın geç bozulması) ──
   "hak:bozulmaSuresi": m("src/yerlesim/hizmet-pazari.ts"),
   "hak:darussifa": m("src/yerlesim/hizmet-pazari.ts"),
