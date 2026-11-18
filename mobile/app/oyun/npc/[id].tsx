@@ -13,7 +13,7 @@ import { topMemories, salientMemory, representativeMemory } from "../../../lib/n
 import { NpcTavri } from "../../../lib/npc-bakis-ui";
 import { NpcIzlenimi } from "../../../lib/npc-izlenim-ui";
 import { SohbetDevami } from "../../../lib/npc-sohbet-ui";
-import { sohbetCevapla, aileProfilEylemi, aileProfilEyleminiYap, npcBakisi, type GameState } from "../../../lib/game";
+import { sohbetCevapla, aileProfilEylemi, aileProfilEyleminiYap, npcBakisi, insanEtiketleri, type GameState } from "../../../lib/game";
 import { bakisTavri } from "../../../lib/npc-bakis";
 import { GameSheet } from "../../../lib/home-hud";
 import type { SohbetYanit } from "../../../lib/npc-sohbet";
@@ -360,6 +360,14 @@ export default function NpcDetail() {
         <Text style={{ fontFamily: F.serif, fontSize: T.body, color: C.parchmentMuted, marginTop: 6, lineHeight: T.line }}>{(() => { const q = quirkL(npc.quirk, lang); return q[0].toUpperCase() + q.slice(1); })()}.</Text>
         {prof.karar ? <Text style={{ fontFamily: F.serifItalic, fontSize: T.body, color: C.parchmentMuted, marginTop: 2 }}>{(() => { const k = prof.karar!; const mal = kucukHarf(t("it." + k.mal), lang); const eski = kucukHarf(professionNameL(k.eski, lang), lang); return k.eski === "işsiz" ? (k.yilOnce === 0 ? t("npc.jobFoundNow").replace("%1", mal) : t("npc.jobFoundAgo").replace("%1", String(k.yilOnce)).replace("%2", mal)) : k.yilOnce === 0 ? t("npc.jobSwitchNow").replace("%1", eski).replace("%2", mal) : t("npc.jobSwitchAgo").replace("%1", String(k.yilOnce)).replace("%2", eski).replace("%3", mal); })()}</Text> : null}
         {npc.goal && !prof.olu ? <Text style={{ fontFamily: F.serifItalic, fontSize: T.body, color: C.goldDim, marginTop: 2 }}>{t("npc.dream")} {goalL(npc.goal, lang)}.</Text> : null}
+        {/* F6a: gazi, silah arkadaşı, husumette tuttuğun taraf (yalnız oyuncunun bildiği) */}
+        {(() => { const et = insanEtiketleri(state, npc.id); return et.length ? (
+          <View style={{ flexDirection: rtl ? "row-reverse" : "row", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
+            {et.map((k) => <View key={k} accessible accessibilityLabel={t(k)} style={{ flexDirection: rtl ? "row-reverse" : "row", alignItems: "center", gap: 5, paddingVertical: 4, paddingHorizontal: 8, borderRadius: 5, borderWidth: 1, borderColor: k.includes(".k") ? C.roseDim : C.goldDim, backgroundColor: C.cardHi }}>
+              <GameIcon name={k === "f6.etiket.gazi" || k === "f6.etiket.silah" ? "crossed-swords" : "scales"} size={12} color={k.includes(".k") ? C.roseDim : C.gold} />
+              <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchment }}>{t(k)}</Text>
+            </View>)}
+          </View>) : null; })()}
         {/* Gizli ilişki: bu kişi aktif yasak sevgilinse ateş çubuğuyla göster */}
         {state.player.affair?.id === npc.id ? (
           <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 8, paddingVertical: 5, paddingHorizontal: 8, borderRadius: 5, borderWidth: 1, borderColor: C.ember + "55", backgroundColor: C.ember + "14" }}>

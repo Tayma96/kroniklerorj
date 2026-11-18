@@ -13,6 +13,7 @@ import { ikilemTema, SAHNE_GORSEL } from "./sahne-tema";
 import { etkiler, ETKI, yonOku } from "./kart3d";
 import { playTap } from "./sound";
 import { F } from "./theme";
+import { DanisanSesler } from "./danisan-ui";
 
 export { MK, Ornament } from "./mk-sus";
 import { MK, Ornament } from "./mk-sus";
@@ -58,6 +59,7 @@ export function MkDecision() {
     <Text style={{ fontFamily: F.serif, fontSize: 14, lineHeight: 19, color: MK.ink, paddingHorizontal: 14, paddingRight: rtl ? 14 : tema ? "30%" : 14, paddingLeft: rtl && tema ? "30%" : 14, minHeight: 56, textAlign: rtl ? "right" : "left", textShadowColor: "rgba(0,0,0,0.8)", textShadowRadius: 3 }}>
       <Text style={{ color: MK.gold }}>{text(`dil.${d.id}.t`, d.title)}. </Text>{text(`dil.${d.id}.x`, d.text)}
     </Text>
+    <DanisanSesler m={m} secenekAdi={(i) => text(`dil.${d.id}.c${i}`, d.choices[i].label)} />
     <View style={{ flexDirection: rtl ? "row-reverse" : "row", flexWrap: "wrap", gap: 7, paddingHorizontal: 10, paddingTop: 10, paddingBottom: 10 }}>
       {d.choices.map((choice, index) => {
         const label = text(`dil.${d.id}.c${index}`, choice.label);

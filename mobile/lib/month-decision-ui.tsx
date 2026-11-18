@@ -9,6 +9,7 @@ import { ikilemTema, SAHNE_GORSEL } from "./sahne-tema";
 import { GameIcon } from "./icons";
 import { C, F, T } from "./theme";
 import { PressableScale } from "./ui";
+import { DanisanSesler } from "./danisan-ui";
 
 const ETKI_LABEL: Record<string, string> = { money: "char.money", reputation: "soc.reputation.l", honor: "soc.honor.l", fear: "soc.fear.l", fame: "soc.fame.l", health: "char.health", stat_points: "char.attrs" };
 
@@ -35,6 +36,7 @@ export function MonthDecisionCard({ bare = false }: { bare?: boolean } = {}) {
       <Text style={{ fontFamily: F.serif, fontSize: 18, lineHeight: 22, color: C.goldBright, marginBottom: 4, paddingRight: tema && !rtl ? "22%" : 0, paddingLeft: tema && rtl ? "22%" : 0 }}>{text(`dil.${d.id}.t`, d.title)}</Text>
       <Text style={{ fontFamily: F.serif, fontSize: T.bodyLg, lineHeight: T.lineLg, color: C.parchment, paddingRight: tema && !rtl ? "18%" : 0, paddingLeft: tema && rtl ? "18%" : 0, textShadowColor: "rgba(0,0,0,0.8)", textShadowRadius: 4 }}>{text(`dil.${d.id}.x`, d.text)}</Text>
     </View>
+    <DanisanSesler m={m} secenekAdi={(i) => text(`dil.${d.id}.c${i}`, d.choices[i].label)} />
     <View style={{ flexDirection: rtl ? "row-reverse" : "row", flexWrap: "wrap", gap: 9, marginTop: 14 }}>
       {d.choices.map((choice, index) => {
         const label = text(`dil.${d.id}.c${index}`, choice.label);

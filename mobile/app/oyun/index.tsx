@@ -21,6 +21,7 @@ import { MK, MkHero, MkIdentity, MkDecision, MkAlert, MkAlertChips, MkRecent, Mk
 import { MkKirilma, MkHal } from "../../lib/kirilma-ui";
 import { MkMektep } from "../../lib/mektep-kart-ui";
 import { MkUstaKapisi } from "../../lib/usta-kapisi-ui";
+import { MkHusumet } from "../../lib/husumet-kart-ui";
 import { AnaZemin } from "../../lib/sayfa/ana/zemin";
 import { AyOzeti, useAyFarki, sayi } from "../../lib/sayfa/ana/ay-ozeti";
 import { useSadeMod } from "../../lib/use-sade-mod";
@@ -276,8 +277,8 @@ export default function Dashboard() {
           : renderEvt(tk.tur === "dunur" ? "npct.dunur" : "npct.borc" + (tk.sebep ? "." + tk.sebep : ""), "", tk.tur === "dunur" ? [pr.npc.name] : [pr.npc.name, tk.tutar || 0, tk.ay || 12], lang, t, p.gender === "kadın");
         const yetmez = !!echoBlock || tk.tur !== "dunur" && tk.tur !== "kefil" && tk.tur !== "hakem" && tk.tur !== "imece" && tk.tur !== "canborcu" && tk.tur !== "tanidik" && tk.tur !== "mahkeme" && p.money < (tk.tutar || 0); // kesede yoksa verilemez (ret her zaman açık)
         const ipucu = hakemIpucu(state); const bAdi = tk.tur === "hakem" && tk.ek ? kisiProfil(state, tk.ek, lang)?.npc.name || "" : "";
-        const redEt = echo ? t("echo.decline") : tk.tur === "tanidik" && tk.alt === "haber" ? t("npct.bosver") : tk.tur === "dugun" || tk.tur === "cenaze" || tk.tur === "imece" || (tk.tur === "helal" && tk.alt === "olum") ? t("npct.gitme") : tk.tur === "hakem" ? t("npct.karisma") : tk.tur === "canborcu" ? t("npct.canborcuHelalBtn") : tk.tur === "araci" ? t("npct.araciRedBtn") : tk.tur === "mahkeme" ? t("npct.mahkemeRedBtn") : t("npct.red");
-        const kabulEt = echo ? t("echo.accept") : tk.tur === "dugun" ? applyParams(t("npct.dugunBtn"), [tk.tutar || 0]) : tk.tur === "cenaze" ? applyParams(t("npct.cenazeBtn"), [tk.tutar || 0]) : tk.tur === "kefil" ? t("npct.kefilBtn") : tk.tur === "imece" ? t("npct.imeceBtn") : tk.tur === "tanidik" ? t(tk.alt === "haber" ? "npct.tanidikHaberBtn" : tk.alt === "tanistir" ? "npct.tanistirBtn" : "npct.tanidikBtn") : tk.tur === "canborcu" ? t("npct.canborcuAlBtn") : tk.tur === "helal" ? t("npct.helalBtn") : tk.tur === "araci" ? applyParams(t("cb.diyet"), [tk.tutar || 0]) : tk.tur === "mahkeme" ? t("npct.mahkemeBtn") : t("npct.kabul");
+        const redEt = echo ? t("echo.decline") : tk.tur === "tanidik" && tk.alt === "haber" ? t("npct.bosver") : tk.tur === "dugun" || tk.tur === "cenaze" || tk.tur === "imece" || (tk.tur === "helal" && tk.alt === "olum") ? t("npct.gitme") : tk.tur === "hakem" ? t("npct.karisma") : tk.tur === "canborcu" ? t("npct.canborcuHelalBtn") : tk.tur === "araci" ? t("npct.araciRedBtn") : tk.tur === "mahkeme" ? t("npct.mahkemeRedBtn") : tk.tur === "kirgin" ? t("f6.npct.kirginRedBtn") : t("npct.red");
+        const kabulEt = echo ? t("echo.accept") : tk.tur === "dugun" ? applyParams(t("npct.dugunBtn"), [tk.tutar || 0]) : tk.tur === "cenaze" ? applyParams(t("npct.cenazeBtn"), [tk.tutar || 0]) : tk.tur === "kefil" ? t("npct.kefilBtn") : tk.tur === "imece" ? t("npct.imeceBtn") : tk.tur === "tanidik" ? t(tk.alt === "haber" ? "npct.tanidikHaberBtn" : tk.alt === "tanistir" ? "npct.tanistirBtn" : "npct.tanidikBtn") : tk.tur === "canborcu" ? t("npct.canborcuAlBtn") : tk.tur === "helal" ? t("npct.helalBtn") : tk.tur === "araci" ? applyParams(t("cb.diyet"), [tk.tutar || 0]) : tk.tur === "mahkeme" ? t("npct.mahkemeBtn") : tk.tur === "kirgin" ? applyParams(t("f6.npct.kirginBtn"), [tk.tutar || 0]) : tk.tur === "yardim" ? applyParams(t("f6.npct.yardimBtn"), [tk.tutar || 0]) : t("npct.kabul");
         const araciYuzde = tk.tur === "araci" ? araciSansi(state) : null; // aracının hatırıyla diyet şansı (savaş ekranındaki dökümün üstüne +20)
         const neden = renderEvt("npct.why", "", [(g > 0 ? "+" : "") + g, gorusSebebi(state, tk.id, g >= 0 ? 1 : -1)], lang, t, p.gender === "kadın");
         const yanit = (kabul: boolean, secim?: 0 | 1) => { hap("selection"); playTap(); apply((s) => npcTeklifYanit(s, kabul, secim)); };
@@ -286,7 +287,7 @@ export default function Dashboard() {
             <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.72)", alignItems: "center", justifyContent: "center", padding: 22 }}>
               <ScrollView style={{ width: "100%", maxWidth: 380, maxHeight: "92%", flexGrow: 0 }} contentContainerStyle={{ padding: 1 }}>
               <View style={{ width: "100%", maxWidth: 380, backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(201,168,76,0.45)", borderRadius: 5, padding: 18, alignItems: "center" }}>
-                <GameIcon name={tk.tur === "dunur" || tk.tur === "dugun" ? "ring" : tk.tur === "cenaze" ? "tombstone" : tk.tur === "helal" ? "sosyal" : tk.tur === "araci" || tk.tur === "mahkeme" ? "scales" : tk.tur === "imece" ? "iliskiler" : tk.tur === "tanidik" ? "meslek" : tk.tur === "kardes" ? "iliskiler" : tk.tur === "miras" || tk.tur === "kefil" || tk.tur === "hakem" ? "scales" : "coins"} size={18} color={C.gold} />
+                <GameIcon name={tk.tur === "dunur" || tk.tur === "dugun" ? "ring" : tk.tur === "cenaze" ? "tombstone" : tk.tur === "helal" || tk.tur === "kirgin" ? "sosyal" : tk.tur === "yardim" ? "iliskiler" : tk.tur === "araci" || tk.tur === "mahkeme" ? "scales" : tk.tur === "imece" ? "iliskiler" : tk.tur === "tanidik" ? "meslek" : tk.tur === "kardes" ? "iliskiler" : tk.tur === "miras" || tk.tur === "kefil" || tk.tur === "hakem" ? "scales" : "coins"} size={18} color={C.gold} />
                 {echo && <Pressable accessibilityRole="button" accessibilityLabel={t("echo.later")} onPress={() => setEchoParked(echoDialogKey)} style={{ minHeight: 44, alignSelf: "flex-end", justifyContent: "center", paddingHorizontal: 10 }}><Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchmentMuted }}>{t("echo.later")}</Text></Pressable>}
                 <View style={{ marginTop: 10 }}><Portre age={pr.npc.age} gender={pr.npc.gender} size={64} ring={false} seed={pr.npc.id} /></View>
                 <Text style={{ fontFamily: F.display, fontSize: 16, color: C.parchment, marginTop: 8, textAlign: "center" }}>{pr.npc.name}</Text>
@@ -437,7 +438,7 @@ export default function Dashboard() {
       )}
 
         </View>
-        <Animated.View entering={gir(2)}><MkHal /><MkKirilma /><MkMektep /><MkUstaKapisi /><MkDecision /></Animated.View>
+        <Animated.View entering={gir(2)}><MkHal /><MkKirilma /><MkMektep /><MkUstaKapisi /><MkHusumet /><MkDecision /></Animated.View>
         {!p.dead && alert && <Animated.View entering={gir(3)}>
           <MkAlert icon={alert.icon} title={alert.title} sub={alert.sub} red={alert.tone !== C.gold} rtl={rtl} onPress={() => setSheet(alert.id)} />
           <MkAlertChips rtl={rtl} items={alerts.slice(1).map((a) => ({ key: a.id, icon: a.icon, title: a.title, red: a.tone !== C.gold, onPress: () => setSheet(a.id) }))} />
