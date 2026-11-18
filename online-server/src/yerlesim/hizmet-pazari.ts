@@ -47,7 +47,24 @@ export interface HizmetKalitesi {
  * Kanca partisi 2: hizmetin kalitesi = hedefi hizmet kimliği ya da grubu olan öğrenilmiş `kalite` etkilerinin toplamı,
  * HIZMET_KALITE_TAVAN ile kırpılır. Hal etkisine yüzde olarak eklenir (yukarı yuvarlanır: her kalite hissedilir).
  */
-export function hizmetKalitesi(kar: Karakter, tarif: HizmetTarifi): HizmetKalitesi {
+/** [PARAMETRE] Darüşşifa (yerleşimde yaşayan sahibi varken): yerel şifa hizmetleri en az bu kalitede ("usta kalitesinde"). */
+export const DARUSSIFA_TABANI: Readonly<Record<"darussifa" | "darussifaBasi", number>> = { darussifa: 20, darussifaBasi: 30 };
+/** [PARAMETRE] `bozulmaSuresi` (aşçı kurutma): aşçı hizmetinin hazır stoğu bu kadar ay daha geç bozulur. */
+export const BOZULMA_SURESI_EK_AY = 1;
+
+/** Yerel şifa tabanı: yerleşimde yaşayan darüşşifa (başı) hakkı sahibi varsa (en yükseği). */
+export function darussifaTabani(k: Pick<Kasaba, "kar">): { yuzde: number; kanca: string } | null {
+  let en: { yuzde: number; kanca: string } | null = null;
+  for (const c of k.kar.values()) {
+    if (olduMu(c)) continue;
+    for (const h of ["darussifaBasi", "darussifa"] as const) {
+      if (hakAcik(c, h) && (!en || DARUSSIFA_TABANI[h] > en.yuzde)) en = { yuzde: DARUSSIFA_TABANI[h], kanca: `hak:${h}` };
+    }
+  }
+  return en;
+}
+
+export function hizmetKalitesi(kar: Karakter, tarif: HizmetTarifi, yerel?: { yuzde: number; kanca: string } | null): HizmetKalitesi {
   const hedefler = new Set([tarif.id, ...(tarif.grup ?? [])]);
   const kalemler: { kanca: string; d: number }[] = [];
   let toplam = 0;
@@ -57,6 +74,11 @@ export function hizmetKalitesi(kar: Karakter, tarif: HizmetTarifi): HizmetKalite
     const x = kalemler.find((y) => y.kanca === `kalite:${e.hedef}`);
     if (x) x.d += e.yuzde;
     else kalemler.push({ kanca: `kalite:${e.hedef}`, d: e.yuzde });
+  }
+  // Darüşşifa: şifa grubundaki hizmet yerelde en az taban kalitede (taban farkı ayrı kalem; tavan aynı).
+  if (yerel && tarif.grup?.includes("sifa") && toplam < yerel.yuzde) {
+    kalemler.push({ kanca: yerel.kanca, d: yerel.yuzde - toplam });
+    toplam = yerel.yuzde;
   }
   return { yuzde: Math.min(HIZMET_KALITE_TAVAN, toplam), tavan: HIZMET_KALITE_TAVAN, kalemler };
 }
@@ -90,6 +112,7 @@ export function hizmetHazirla(
   hizmetHam: unknown,
   adetHam: unknown,
   ay: number,
+  yerel?: { yuzde: number; kanca: string } | null,
 ): Sonuc<HizmetHazirlamaSonucu> {
   const tarif: HizmetTarifi | undefined = hizmetTarifiBul(hizmetHam);
   if (!tarif) return hata("tarif_gecersiz");
@@ -121,12 +144,13 @@ export function hizmetHazirla(
   if (!takatHarca(kar, ay, takat)) return hata("takat_yok");
   for (const [mal, miktar] of Object.entries(girdiler)) envanterEkle(kar, mal as MalId, -miktar);
 
-  const kalite = hizmetKalitesi(kar, tarif);
+  const kalite = hizmetKalitesi(kar, tarif, yerel);
   const ae = hizmetAracEki(kar, tarif);
   // Araç hazırlama başına bir kullanım aşınır (tarifteki gibi: bir yapım, bir aşınma).
   const arac = ae ? { ...aracAsindir(kar, ae.mal), ek: ae.ek } : null;
   const stok: HizmetStogu = {
-    i: ek.n++, o: kar.o, oa: kar.ad, h: tarif.id, n: adet, n0: adet, ac: ay, sa: ay + tarif.hazir.gecerlilikAy,
+    i: ek.n++, o: kar.o, oa: kar.ad, h: tarif.id, n: adet, n0: adet, ac: ay,
+    sa: ay + tarif.hazir.gecerlilikAy + (tarif.meslek === "asci" && hakAcik(kar, "bozulmaSuresi") ? BOZULMA_SURESI_EK_AY : 0),
     ...(kalite.yuzde > 0 ? { q: kalite.yuzde } : {}),
     ...(ae ? { a: ae.ek } : {}),
   };
@@ -163,6 +187,10 @@ export function hizmetKayitBuda(ek: EkonomiKaydi, ay: number): void {
 export function hizmetStokDonumu(kasaba: Kasaba, ay: number): void {
   const ek = kasaba.ek;
   if (!ek) return;
+  // Kanca partisi 2: darüşşifa tabanı dönümde (bütün sakinler yüklü) kurulur; uçlar bunu okur (önizleme = uygulanan).
+  const ds = darussifaTabani(kasaba);
+  if (ds) ek.ds = ds;
+  else delete ek.ds;
 
   for (const stok of ek.hs ?? []) {
     if (stok.n <= 0 || stok.sa >= ay) continue;

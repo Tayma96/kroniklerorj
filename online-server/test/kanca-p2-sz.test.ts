@@ -10,7 +10,7 @@ import { kancaHesapla } from "../src/mulk/kanca.ts";
 import { KANCA_TAVAN } from "../src/mulk/tezgah-kurallar.ts";
 import { ucgenAl } from "../src/yerlesim/bilgi.ts";
 import { ARACI_TANIK_SOZU, araciIste, arabuluculukSansi } from "../src/yerlesim/arabulucu.ts";
-import { ayBasi, barinmaDonumu, barinmaGorunumu, barinmaHaklari, tesisKonakla, TESIS_PENCERE_EN_COK, YOKSUL_CORBA_BEDEL, ZAVIYE_TESIS_EK } from "../src/yerlesim/barinma.ts";
+import { ILK_KORUMA_MS, TESIS_SURE_MS, ayBasi, barinmaDonumu, barinmaGorunumu, barinmaHaklari, tesisKonakla, TESIS_PENCERE_EN_COK, YOKSUL_CORBA_BEDEL, ZAVIYE_TESIS_EK } from "../src/yerlesim/barinma.ts";
 import { seviyeVer } from "../src/yerlesim/beceri.ts";
 import { CAN_YARALI_ESIGI, halAl, halDegistir } from "../src/yerlesim/hal.ts";
 import { hanedanKasabasi } from "../src/yerlesim/hanedan.ts";
@@ -211,7 +211,8 @@ test("yaraliDurumu: hakkı açık şifacının kırık sarması canı en az yara
   assert.equal(YARALI_CAN_TABANI, CAN_YARALI_ESIGI);
   const sat = (hak: boolean, can: number) => {
     const k = testKasabasi("develi", AY);
-    const s = ogret(yetiskin(k, 1), "hizmet:kirikSar", ...(hak ? ["hak:yaraliDurumu"] : []));
+    // Haksız da aynı düğümün kalite seviyesini öğrenir: fark yalnız hak.
+    const s = ogret(yetiskin(k, 1), "hizmet:kirikSar", "kalite:kirikSar", ...(hak ? ["hak:yaraliDurumu"] : []));
     const a = yetiskin(k, 2);
     halDegistir(a, AY, { can: can - halAl(a, AY).can }, "test");
     s.ev = { bez: 5, kereste: 5, sifaliOt: 5 };
@@ -284,14 +285,14 @@ test("zaviye: hak sahibi yaşıyorsa sosyal tesis penceresi +1 (ay dönümü izi
   k.ay = AY;
   barinmaDonumu(k, AY);
   assert.deepEqual(barinmaHaklari(k), { zaviye: true, corba: false });
-  let an = ayBasi(AY) + 1000;
+  let an = ayBasi(AY) + ILK_KORUMA_MS + 1000; // misafirhane hakkı bitince
   const g = barinmaGorunumu(k, kar, an);
   assert.equal(g.tesis.zaviyeEk, ZAVIYE_TESIS_EK);
-  assert.equal(g.tesis.kalanHak, TESIS_PENCERE_EN_COK + ZAVIYE_TESIS_EK);
+  assert.equal((g.tesis as { kalanHak?: number }).kalanHak, TESIS_PENCERE_EN_COK + ZAVIYE_TESIS_EK);
   for (let i = 0; i < TESIS_PENCERE_EN_COK + ZAVIYE_TESIS_EK; i++) {
     const r = tesisKonakla(k, kar, an);
     assert.ok(r.ok, `${i}: ${JSON.stringify(r)}`);
-    an += 30 * 24 * 60 * 60 * 1000 + 1;
+    an += TESIS_SURE_MS + 1;
   }
   assert.deepEqual(tesisKonakla(k, kar, an), { ok: false, hata: "tesis_dolu" });
   // İz başka aya aitse etki yok; hak sahibi ölünce sonraki dönüm izi siler.
@@ -309,7 +310,7 @@ test("zaviye yoksa pencere değişmez", () => {
   barinmaDonumu(k, AY);
   const g = barinmaGorunumu(k, kar, ayBasi(AY) + 1000);
   assert.equal(g.tesis.zaviyeEk, 0);
-  assert.equal(g.tesis.kalanHak, TESIS_PENCERE_EN_COK);
+  assert.equal((g.tesis as { kalanHak?: number }).kalanHak, TESIS_PENCERE_EN_COK);
 });
 
 test("yoksulCorbasi: can kaybı aşamasındaki evsize can düşmez, hazine kişi başı 2 öder; hazine bitince can yine düşer", () => {

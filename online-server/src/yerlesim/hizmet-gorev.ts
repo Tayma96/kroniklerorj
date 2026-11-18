@@ -18,6 +18,8 @@ export const KASABA_GOREV_KOLTUKLARI: Readonly<Record<HizmetGorevTuru, number>> 
   vergiSayimi: 1,
   meclisKaydi: 1,
   talim: 2,
+  // Kanca partisi 2: gece devriyesi koltuğu yalnız yerleşimde `hak:devriye` sahibi yaşarken açılır (KOLTUK_HAKLARI).
+  devriye: 0,
 };
 
 interface GorevKurali {
@@ -28,6 +30,8 @@ interface GorevKurali {
   arac?: "mizrak";
   /** Kanca partisi 2: `kalite` etkisinin hedefi (görevin göstergeye katkısını şansla bir artırır). */
   kalite: string;
+  /** Kanca partisi 2: görev hizmet yerine bu hakla açılır (devriye). */
+  hak?: string;
 }
 
 const KURALLAR: Record<HizmetGorevTuru, GorevKurali> = {
@@ -35,6 +39,7 @@ const KURALLAR: Record<HizmetGorevTuru, GorevKurali> = {
   vergiSayimi: { hizmet: "vergiSayimi", meslek: "divan", takat: 2, gosterge: "asayis", kalite: "vergiSayimi" },
   meclisKaydi: { hizmet: "meclisKaydi", meslek: "divan", takat: 1, gosterge: "moral", kalite: "meclisKaydi" },
   talim: { hizmet: "talim", meslek: "asker", takat: 2, gosterge: "asayis", kalite: "talim" },
+  devriye: { hizmet: "devriye", hak: "devriye", meslek: "asker", takat: 2, gosterge: "asayis", kalite: "hirsizlikTespiti" },
 };
 
 /**
@@ -42,7 +47,9 @@ const KURALLAR: Record<HizmetGorevTuru, GorevKurali> = {
  * hazineden, yoksa açılmaz). `nobetKoltuklari` garnizon ağasının nöbet dağıtımı, `garnizonTalimi` garnizon talimi;
  * `ulufePayi` (hak s–z partisi) bütçe defterinde ulufe payı ayıran divan: bir vergi sayımı koltuğu daha.
  */
-export const KOLTUK_HAKLARI: Readonly<Partial<Record<HizmetGorevTuru, string>>> = { nobet: "nobetKoltuklari", talim: "garnizonTalimi", vergiSayimi: "ulufePayi" };
+export const KOLTUK_HAKLARI: Readonly<Partial<Record<HizmetGorevTuru, string>>> = { nobet: "nobetKoltuklari", talim: "garnizonTalimi", devriye: "devriye", vergiSayimi: "ulufePayi" };
+/** [PARAMETRE] Hakla açılan koltuk sayısı (görev türüne göre; yoksa 1). Devriye: gece devriyesi iki koltuk. */
+export const KOLTUK_HAK_SAYISI: Readonly<Partial<Record<HizmetGorevTuru, number>>> = { devriye: 2 };
 /** [PARAMETRE] Görev kalitesi (yüzde, kalite etkileri toplamı) üst sınırı: göstergeye +1 ek katkı şansı. */
 export const GOREV_KALITE_TAVAN = 60;
 
@@ -53,7 +60,7 @@ export function gorevKalitesi(kar: Karakter, tur: HizmetGorevTuru): number {
   return Math.min(GOREV_KALITE_TAVAN, t);
 }
 
-const GOREV_ADLARI: readonly HizmetGorevTuru[] = ["nobet", "vergiSayimi", "meclisKaydi", "talim"];
+const GOREV_ADLARI: readonly HizmetGorevTuru[] = ["nobet", "vergiSayimi", "meclisKaydi", "talim", "devriye"];
 
 /** Ay dönümünde eski açık görevlerin ayrılmış ulufesini iade eder ve yeni ayın koltuklarını açar. */
 export function hizmetGorevDonumu(kasaba: Kasaba, ay: number): void {
@@ -70,7 +77,7 @@ export function hizmetGorevDonumu(kasaba: Kasaba, ay: number): void {
   const sakinler = [...kasaba.kar.values()].filter((c) => !olduMu(c));
   for (const tur of GOREV_ADLARI) {
     const hak = KOLTUK_HAKLARI[tur];
-    const ek1 = hak && sakinler.some((c) => hakAcik(c, hak)) ? 1 : 0;
+    const ek1 = hak && sakinler.some((c) => hakAcik(c, hak)) ? (KOLTUK_HAK_SAYISI[tur] ?? 1) : 0;
     for (let sira = 0; sira < KASABA_GOREV_KOLTUKLARI[tur] + ek1; sira++) {
       if (hazine.hz < KASABA_GOREV_ULUFESI) continue;
       hazine.hz -= KASABA_GOREV_ULUFESI;
@@ -115,7 +122,7 @@ export function hizmetGorevTeslim(
   const gorev = ek.hg?.find((x) => x.i === Number(eslesme[1]));
   if (!gorev || gorev.d !== "acik" || gorev.sa < ay) return hata("siparis_kapandi");
   const kural = KURALLAR[gorev.tur];
-  if (!hizmetAcik(kar, kural.hizmet)) return hata("dugum_kapali");
+  if (kural.hak ? !hakAcik(kar, kural.hak) : !hizmetAcik(kar, kural.hizmet)) return hata("dugum_kapali");
 
   // Aynı hesap veya aynı hane aynı ayda yalnız bir kamu görevinden ulufe alabilir.
   const onceki = (ek.hg ?? []).find((x) =>
