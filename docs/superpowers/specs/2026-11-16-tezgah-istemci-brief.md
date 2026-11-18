@@ -109,3 +109,27 @@ Kanca = beceri düğümündeki etki. 87 kanca tezgâh/atölye/hana bağlandı (k
 - **Bakım indirimi:** kanca görünümünde yeni kanal `bakimIndirim` (yüzde; `hizmet:yapiOnarimi`, `hak:bakimDefteri`); gün sonu
   `bakimIndirimi` (yüzde). Ekran: dükkân/atölye kanca kartında "bakım −%25".
 - **Casus:** yeni olay `olay.ucgen.casusKapi` ({casus, muhafiz, guven, kaynak}); `casusBitti.neden` yeni değer `kapida`.
+
+## Kanca partisi 2 (hak f–k) protokol ekleri
+Hepsi eklemeli; alan yoksa eski davranış. Metinler istemcide (6 dil).
+- **Ortak dert** (`GET /v1/topluluk` `ortakDert.acik[]`): `esikDokum? {ham, kalemler:[{kanca, d, kisiAd}]}` — `haydutOnderligi`/
+  `kitlikOnderligi` (eşik −%20), `kapiKapama`/`karantina` (buyruk, −%15, dert başına bir kez), `hazirlikPenceresi` (d = +1 ay,
+  pencere uzar); toplam eşik indirimi ≤ %30. `POST /v1/ortak-dert` yanıtına `buyruk? {hak, esik}` ve `bagis? {arz}`
+  (`kitlikBagisi`: kıtlıkta erzak sandığı Erzak'a yazar, katkı başına ≤ 2).
+- **Kasaba görevi** (`talim` teslimi): `katki.gencTalimi?: true` → o ayın dönümünde asayiş −2 yerine −1 aşınır.
+- **Arabuluculuk** (`POST /v1/ucgen` `tur:"arabulucu"`): `heyet?: true` → ihtiyar heyeti ilk denemede ret yerine ateşkes.
+- **Görüş dökümü:** yeni kalem `gorus.ilkGorus` (+5; NPC ile geçmiş yoksa).
+- **`GET /v1/gelen`:** `husumetListesi? [{ilanEden:{id,ad}, hedef:{id,ad}, ay, arabulucu:{id,ad}|null}]` (yalnız hakkı olana).
+- **Siyaset:** `kethudaAdayligi` ahi başı adaylığında teveccüh şartını karşılar (yeni alan yok; `aday_uygun_degil` düşer).
+- **`GET /v1/topluluk`:** `hazineDefteri? {satirlar:[{ay, bakiye, fark|null, tutanAd}]}` (defter tutucu yaşarken, son 12 ay);
+  `koru? {sonDikim, sonraki, kurallar}`.
+- **Fiyat haberi** (`POST /v1/kervan/haber`, `GET /v1/kervan` `haber`): `yerlesimler[].dongu? {kitlik, kitlikBitis|null, arz,
+  kitlikCarpani}` (yalnız `fiyatDongusu` hakkıyla alınan haberde).
+- **Yeni uç `POST /v1/kronik/yaz {olay: sıra, istekNo}`** → `{kalem:{olay, yil, yazilan, kalan, nam?:{kisi, nam, d}}, kurallar}`.
+  Ozan (`kasabaKronigi`) yılda 3 herkese açık, ≤ 12 ay eski olayı kroniğe yazar; bedel 1 takat. Kronikte yeni satır türü
+  `kalem` (özet anahtarı olayın kendi anahtarı; `p.kalem` yazan, `p.olayAyi`). `kronikNami`: adı geçen başka oyuncu yılda bir
+  kez en yüksek namına +1. Hatalar: `dugum_kapali`, `hedef_uygun_degil`, `istek_tekrar` (olay zaten yazılı), `aralik_dolu`, `takat_yok`.
+  Ekran: olay defteri satırında "Kroniğe yaz" (yalnız hakkı olana).
+- **Yeni uç `POST /v1/koru {istekNo}`** → `{koru:{sonDikim, sonraki, yenilenen, pay?:{sertOdun}, kurallar}}`. Oduncu
+  (`koruDikimi`) 2 takat + 2 odunla kasabadaki herkesin "odun kes" azalan getirisini sıfırlar; kasaba başına 6 ayda bir.
+  `koruBakimi`: dikimciye 1 sert odun. Hatalar: `dugum_kapali`, `aralik_dolu`, `mal_yok`, `takat_yok`.
