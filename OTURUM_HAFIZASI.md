@@ -30,10 +30,10 @@
 - Berkay tek oyunculuda tam yetki verdi; çevrimiçi öbür hesapta. Plan `docs/tek-oyunculu/TASARIM.md` (K1–K10, F0–F10), denetimler `docs/tek-oyunculu/denetim/`. Yeni hikâye ekleme yok; oynanabilirlik, stat kapıları, ömür boyu ilerleme.
 
 ## Sıradaki işler
-1. Arkadaş denemesi geri bildirimleri.
-2. E-posta girişi (taslak dal) + doğrulama/şifre sıfırlama; Google girişi.
-3. Kanca partisi 2 (boşta 232); eşya aile etkileri; atölye emrinde alet verimi.
-4. APK ~170 MB: görseller webp, müzik bit hızı. `expo-crypto`, `eslint-plugin-react-hooks`.
+1. Arkadaş denemesi geri bildirimleri (APK `a842f8e`, sunucular `14bd056`; 826 test; `test/istemci-uyum.test.ts` istemci-sunucu uyumunu korur).
+2. Panel: `/yonetim`, kurucu anahtarı sırrı `YONETIM_KURUCU_ANAHTARI` (Berkay'da). Dünya sıfırlama: `DUNYA_SURUMU` (README).
+3. E-posta girişi (taslak dal) + doğrulama; Google girişi. Kanca partisi 2; APK boyutu (~170 MB).
+4. Öbür hesap tek oyunculu değiştirince GDD tabanını güncellemiyor → APK kapısı düşer; gerekçeyle yenile (`gdd-baseline.cjs --kaydet`, `docs/denetim/gdd-baseline-degisimi.json`).
 
 ## Berkay'da
 - `GOOGLE_CLIENT_ID`, FCM, Play ürünleri/ödeme; test APK'sı ve 5–10 kişilik cihaz denemesi (ses dahil).
