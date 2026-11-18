@@ -125,7 +125,8 @@ export const MALLAR: Record<MalId, { taban: number; meslek: MeslekId; omur?: num
   bez: { taban: 10, meslek: "dokumaci" },
   kumas: { taban: 15, meslek: "dokumaci" },
   giysi: { taban: 27, meslek: "dokumaci" },
-  kosum: { taban: 25, meslek: "dokumaci" },
+  // Koşum kervanda araçtır (kervan.ts): ömrü 1 = bugünkü gibi her kervanda tükenir; omur etkisi ve kalitesi uzatır.
+  kosum: { taban: 25, meslek: "dokumaci", omur: 1 },
   cizme: { taban: 21, meslek: "dokumaci" },
   astar: { taban: 37, meslek: "dokumaci" },
   kece: { taban: 13, meslek: "dokumaci" },

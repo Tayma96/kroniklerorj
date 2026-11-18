@@ -306,3 +306,123 @@ test("hak:nobetKoltuklari / hak:garnizonTalimi: yerleşimde yaşayan sahibi vars
     assert.equal(hz0 - k2.hd!.hz, ekonomiAl(k2).hg!.length * 4, "ulufe hazineden rezerve; akçe basılmaz");
   }
 });
+
+// ── Tarifler (var olan mallarla) ──
+
+import { TARIFLER, type Tarif } from "../src/icerik/tarifler.ts";
+import { aletOmru, aylikKalan, tarifYap } from "../src/yerlesim/tarif.ts";
+import { MALLAR } from "../src/icerik/mallar.ts";
+import { hepBasari } from "./kasaba-yardimci.ts";
+
+const YENI_TARIFLER = ["secmeBugday", "yaylaGocu", "otAyikla", "damarAra", "molozDuvar", "saban", "orak", "suVerilmisKilic", "komutanZirhi", "hatliBelge", "vasiyet"] as const;
+
+function tarifci(k: Kasaba, no: number, id: string): Karakter {
+  const c = ogrenmis(k, no, `tarif:${id}`);
+  const t = TARIFLER[id as keyof typeof TARIFLER] as Tarif;
+  c.ev = Object.fromEntries(Object.entries(t.girdi).map(([m, n]) => [m, (n ?? 0) * 3]));
+  return c;
+}
+
+test("parti 2 tarifler: düğümle açılır, girdiyi çıktıya çevirir (var olan mal), değer kuralını aşmaz, kaliteEk dökümde", () => {
+  const k = testKasabasi("develi", AY);
+  let no = 1;
+  for (const id of YENI_TARIFLER) {
+    const t = TARIFLER[id] as Tarif;
+    assert.ok(Object.hasOwn(MALLAR, t.cikti[0]), id);
+    const bos = yetiskin(k, no++);
+    bos.ev = { ...t.girdi } as never;
+    assert.deepEqual(tarifYap(bos, id, AY, hepBasari), { ok: false, hata: "dugum_kapali" }, id);
+    const c = tarifci(k, no++, id);
+    const r = tarifYap(c, id, AY, hepBasari);
+    assert.ok(r.ok, `${id}: ${JSON.stringify(r)}`);
+    if (!r.ok) continue;
+    assert.equal(r.deger.cikti.mal, t.cikti[0]);
+    if (t.kaliteEk) assert.ok(r.deger.kalite.dokum.kalemler.some((x) => x.k === "kalite.tarif" && x.d === t.kaliteEk), id);
+    // Değer kuralı: çıktı + yan taban değeri ≤ girdi × 1,3 + takat × 6 (kalite farkı hariç; akçe musluğu yok).
+    const cikti = MALLAR[t.cikti[0]].taban * t.cikti[1] + Object.entries(t.yan ?? {}).reduce((a, [m, n]) => a + MALLAR[m as keyof typeof MALLAR].taban * (n ?? 0), 0);
+    const girdi = Object.entries(t.girdi).reduce((a, [m, n]) => a + MALLAR[m as keyof typeof MALLAR].taban * (n ?? 0), 0);
+    assert.ok(cikti <= girdi * 1.3 + t.takat * 6, `${id}: ${cikti} > ${girdi * 1.3 + t.takat * 6}`);
+  }
+});
+
+test("tarif:damarAra ayda bir (kalite:damarAra kalite puanına); ertesi ay yeniden; emre konmaz", () => {
+  const k = testKasabasi("develi", AY);
+  const c = ogrenmis(k, 1, "tarif:damarAra", "kalite:damarAra");
+  const t = TARIFLER.damarAra as Tarif;
+  assert.ok(tarifYap(c, "damarAra", AY, hepBasari).ok);
+  assert.equal(aylikKalan(c, t, AY), 0);
+  assert.deepEqual(tarifYap(c, "damarAra", AY, hepBasari), { ok: false, hata: "kota_doldu" });
+  c.tk = 60;
+  const r = tarifYap(c, "damarAra", AY + 1, hepBasari);
+  assert.ok(r.ok);
+  if (r.ok) assert.ok(r.deger.kalite.dokum.kalemler.some((x) => x.k === "kalite.beceri" && x.d >= 20), "kalite:damarAra");
+});
+
+test("tarif:yaylaGocu çadırla +1 ince yün, çadır aşınır; omur:cadir çadır ömrünü uzatır", () => {
+  const k = testKasabasi("develi", AY);
+  const c = ogrenmis(k, 1, "tarif:yaylaGocu");
+  const d = ogrenmis(k, 2, "tarif:yaylaGocu", "omur:cadir");
+  c.ev = { cadir: 1 };
+  d.ev = { cadir: 1 };
+  const r = tarifYap(c, "yaylaGocu", AY, hepBasari);
+  assert.ok(r.ok);
+  if (r.ok) {
+    assert.ok(r.deger.cikti.adet >= 3);
+    assert.equal(r.deger.arac?.mal, "cadir");
+  }
+  assert.equal(aletOmru(d, "cadir"), aletOmru(c, "cadir") + 1);
+});
+
+// ── Kervan (taşıt ve koşum aşınması, kervan kalitesi) ──
+
+import { KERVAN_KAGNI_YUK_EN_COK, KERVAN_TOPLU_YUK_EN_COK, KERVAN_YUK_EN_COK, KERVAN_YUK_MUTLAK, bosKervanDefteri, kervanCikar, yukTavani } from "../src/yerlesim/kervan.ts";
+import { kaliteliEkle } from "../src/yerlesim/kalite.ts";
+
+function kervanci(k: Kasaba, no: number, ...kancalar: string[]): Karakter {
+  const c = ogrenmis(k, no, "hizmet:kervan", "hizmet:topluYuk", ...kancalar);
+  c.ev = { nal: 20, kosum: 3, kereste: 60 };
+  return c;
+}
+
+test("kervan: koşum her kervanda bir kullanım (ömrü 1: tükenir); omur:kosum ile iki kervan dayanır", () => {
+  const k = testKasabasi("develi", AY);
+  const c = kervanci(k, 1);
+  const d = bosKervanDefteri();
+  assert.ok(kervanCikar(d, c, "karapinar", { kereste: 5 }, AY, "kervan:develi:o1:aaaaaaaa", 1000).ok);
+  assert.equal(c.ev?.kosum, 2, "kancasız: bugünkü gibi tükendi");
+  const u = kervanci(k, 2, "omur:kosum");
+  assert.equal(aletOmru(u, "kosum"), 2);
+  const d2 = bosKervanDefteri();
+  assert.ok(kervanCikar(d2, u, "karapinar", { kereste: 5 }, AY, "kervan:develi:o2:aaaaaaaa", 1000).ok);
+  assert.equal(u.ev?.kosum, 3, "omur:kosum: ilk kervanda tükenmedi");
+  assert.ok(kervanCikar(d2, u, "konya", { kereste: 4 }, AY, "kervan:develi:o2:bbbbbbbb", 1000).ok);
+  assert.equal(u.ev?.kosum, 2);
+});
+
+test("kervan taşıtı: kağnı 20, araba 30; toplu yükte taşıt aşınır, omur:araba / omur:kagni ömrü uzatır; kalite yüke ekler", () => {
+  const k = testKasabasi("develi", AY);
+  const c = kervanci(k, 1);
+  c.ev!.kagni = 1;
+  assert.equal(yukTavani(c).tavan, KERVAN_KAGNI_YUK_EN_COK);
+  c.ev!.araba = 1;
+  assert.equal(yukTavani(c).tavan, KERVAN_TOPLU_YUK_EN_COK);
+  const d = bosKervanDefteri();
+  const r = kervanCikar(d, c, "karapinar", { kereste: 20 }, AY, "kervan:develi:o1:aaaaaaaa", 1000);
+  assert.ok(r.ok);
+  if (r.ok) assert.ok(r.deger.asinma.some((x) => x.mal === "araba"), "toplu yükte araba aşındı");
+  const r2 = kervanCikar(d, c, "konya", { kereste: 5 }, AY, "kervan:develi:o1:bbbbbbbb", 1000);
+  assert.ok(r2.ok);
+  if (r2.ok) assert.ok(!r2.deger.asinma.some((x) => x.mal === "araba"), "temel yük: taşıt aşınmaz");
+  for (const [kanca, mal] of [["omur:araba", "araba"], ["omur:kagni", "kagni"]] as const) {
+    const u = kervanci(k, kanca === "omur:araba" ? 3 : 4, kanca);
+    assert.equal(aletOmru(u, mal), aletOmru(c, mal) + 2, kanca);
+  }
+  // Taşıt kalitesi (§9 araç ailesi: yük) ve kalite:kervan (yüzde).
+  const q = kervanci(k, 5, "kalite:kervan");
+  q.ev!.araba = 0;
+  kaliteliEkle(q, "araba", [[3, 1, "o9"]]);
+  const yt = yukTavani(q);
+  assert.equal(yt.tasitKalite, 3);
+  assert.equal(yt.tavan, Math.min(KERVAN_YUK_MUTLAK, Math.floor((KERVAN_TOPLU_YUK_EN_COK + 3) * 1.1)));
+  assert.ok(yukTavani(kervanci(k, 6, "kalite:kervan")).tavan > KERVAN_YUK_EN_COK - 1);
+});

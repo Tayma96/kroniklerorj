@@ -23,11 +23,12 @@ import type { MeslekId } from "../icerik/meslekler.ts";
 import { yerlesimBul } from "../dunya-veri.ts";
 import { basarili, hata, type HataKodu, type Sonuc } from "../tipler.ts";
 import { bosKutu, cikisAc, type CikisKaydi, type CikisKutusu } from "../mulk/transfer.ts";
-import { hizmetAcik } from "./beceri-etki.ts";
+import { acikEtkiler, hizmetAcik } from "./beceri-etki.ts";
+import { aracAsindir, type Asinma } from "./tarif.ts";
 import { olduMu } from "./hanedan.ts";
 import { takatHarca, takatTazele } from "./karakter.ts";
 import { loncaTablosu, oyuncuSayaci, type LoncaSatiri } from "./lonca.ts";
-import { esyaKilidi } from "./kalite.ts";
+import { enIyiKalite, esyaKilidi } from "./kalite.ts";
 import { envanterEkle, npcFiyat, satisDegeri, stogaEkle, type KasabaStogu } from "./npc-taban.ts";
 import { KITLIK_KOTASI, npcSatisEki, npcSatisKotasi } from "./pazar.ts";
 import type { CalismaParametreleri, Dokum, Karakter, Kasaba } from "./tipler.ts";
@@ -39,6 +40,15 @@ export const KERVAN_TAKAT = 2;
 /** [PARAMETRE] Yük tavanı (adet, bütün mallar toplamı); `tuccar.topluYuk` + envanterde araba ile toplu yük tavanı. */
 export const KERVAN_YUK_EN_COK = 12;
 export const KERVAN_TOPLU_YUK_EN_COK = 30;
+/**
+ * [PARAMETRE] Kanca partisi 2 (§9 araç ailesi): toplu yükte kağnı da taşıt olur (araba 30, kağnı 20); taşıt toplu
+ * yükte bir kullanım aşınır (MALLAR ömrü + `omur` etkileri + kalitesi), koşum her kervanda bir kullanım (ömrü 1: bugünkü
+ * gibi tükenir; `omur:kosum` ve kalitesi uzatır). Taşıtın kalitesi yüke kademe başına +1 adet ekler; `kalite:kervan`
+ * yük tavanını yüzde artırır. Hepsinin üstünde mutlak tavan KERVAN_YUK_MUTLAK (varış doğrulaması da bunu kullanır).
+ */
+export const KERVAN_KAGNI_YUK_EN_COK = 20;
+export const KERVAN_TASIT_KALITE_YUK: readonly number[] = [0, 1, 2, 3, 4, 5, 6];
+export const KERVAN_YUK_MUTLAK = 40;
 /** [PARAMETRE] Yolculuk süresi (oyun ayı). Parayla kısaltılmaz; gecikme ceza getirmez. */
 export const KERVAN_YOL_AY = 1;
 /** [PARAMETRE] Tüccar başına bir oyun ayında en çok kervan. */
@@ -185,11 +195,23 @@ export function yukSorguCoz(ham: unknown): Sonuc<Yuk> | undefined {
   return yukCoz(nesne);
 }
 
-/** Yük tavanı: toplu yük düğümü ve (gönderilenden sonra) envanterde kalan araba varsa 30, yoksa 12. */
+/**
+ * Yük tavanı: toplu yük düğümü ve (gönderilenden sonra) envanterde kalan taşıt varsa araba 30 / kağnı 20 (+ taşıt
+ * kalitesi), yoksa 12; `kalite:kervan` yüzdesi eklenir (aşağı yuvarlanır); mutlak tavanla kırpılır. `tasit` toplu
+ * yükte aşınacak taşıttır (yük temel tavanı aşmıyorsa taşıt aşınmaz).
+ */
 export function yukTavani(kar: Karakter, yuk: Yuk = {}) {
   const topluYuk = hizmetAcik(kar, TOPLU_YUK_HIZMETI);
-  const araba = (kar.ev?.araba ?? 0) - (yuk.araba ?? 0) >= 1;
-  return { tavan: topluYuk && araba ? KERVAN_TOPLU_YUK_EN_COK : KERVAN_YUK_EN_COK, topluYuk, araba };
+  const kalan = (m: MalId) => (kar.ev?.[m] ?? 0) - (yuk[m] ?? 0) >= 1;
+  const araba = kalan("araba");
+  const kagni = kalan("kagni");
+  const tasit: MalId | null = topluYuk ? (araba ? "araba" : kagni ? "kagni" : null) : null;
+  const taban = tasit === "araba" ? KERVAN_TOPLU_YUK_EN_COK : tasit === "kagni" ? KERVAN_KAGNI_YUK_EN_COK : KERVAN_YUK_EN_COK;
+  const tasitKalite = tasit ? (KERVAN_TASIT_KALITE_YUK[enIyiKalite(kar, tasit)] ?? 0) : 0;
+  let kalite = 0;
+  for (const e of acikEtkiler(kar)) if (e.tur === "kalite" && e.hedef === "kervan") kalite += e.yuzde;
+  const tavan = Math.min(KERVAN_YUK_MUTLAK, Math.floor(((taban + tasitKalite) * (100 + kalite)) / 100));
+  return { tavan, topluYuk, araba, kagni, tasit, tasitKalite, kalite, taban };
 }
 
 function aySayaci(d: KervanDefteri | undefined, o: string, ay: number): [number, number, string[]] {
@@ -235,24 +257,26 @@ export function ilkKervanEngeli(k: Record<KervanKapisi, boolean | null>): HataKo
  * (1) Kalkış: kapılar tutmalı (çağıran denetler); mallar + bedel düşer, takat harcanır, sayaç artar, çıkış kaydı
  * açılır. Başarılıysa kayıt döner.
  */
-export function kervanCikar(d: KervanDefteri, kar: Karakter, hedef: string, yuk: Yuk, ay: number, islem: string, an: number, aylikTavan = KERVAN_AYLIK): Sonuc<CikisKaydi> {
+export function kervanCikar(d: KervanDefteri, kar: Karakter, hedef: string, yuk: Yuk, ay: number, islem: string, an: number, aylikTavan = KERVAN_AYLIK): Sonuc<CikisKaydi & { asinma: Asinma[] }> {
   const engel = ilkKervanEngeli(kervanKapilari(d, kar, ay, hedef, yuk, aylikTavan));
   if (engel) return hata(engel);
   const ihtiyac: Partial<Record<string, number>> = { ...yuk };
   ihtiyac.nal = (ihtiyac.nal ?? 0) + KERVAN_NAL;
-  ihtiyac.kosum = (ihtiyac.kosum ?? 0) + KERVAN_KOSUM;
   const kilit = esyaKilidi(kar, ihtiyac);
   if (kilit) return hata(kilit);
+  const yt = yukTavani(kar, yuk);
   if (!takatHarca(kar, ay, KERVAN_TAKAT)) return hata("takat_yok");
   for (const [m, n] of Object.entries(yuk) as [MalId, number][]) envanterEkle(kar, m, -n);
   envanterEkle(kar, "nal", -KERVAN_NAL);
-  envanterEkle(kar, "kosum", -KERVAN_KOSUM);
+  // Koşum ve (toplu yükte) taşıt araçtır: bir kullanım aşınır (ömrü dolunca tükenir).
+  const asinma: Asinma[] = [aracAsindir(kar, "kosum")];
+  if (yt.tasit && say(yuk) > KERVAN_YUK_EN_COK) asinma.push(aracAsindir(kar, yt.tasit));
   const [, sayi, mh] = aySayaci(d, kar.o, ay);
   d.s[kar.o] = [ay, sayi + 1, [...mh, ...Object.keys(yuk).map((m) => `${m}:${hedef}`)]];
   const y: KervanYuku = { o: kar.o, hs: kar.h, ev: { ...yuk }, ka: ay, va: ay + KERVAN_YOL_AY };
   const kayit = { i: islem, t: "kervan", h: hedef, a: 0, y: y as unknown as Record<string, unknown> };
   cikisAc(d.c, kayit, an);
-  return basarili({ ...kayit, b: an, d: 0, s: an });
+  return basarili({ ...kayit, b: an, d: 0, s: an, asinma });
 }
 
 /** Ay sayaçlarının bayatlarını siler (kaynak). */
@@ -266,7 +290,7 @@ export function kervanYukuGecerli(y: unknown): y is KervanYuku {
   const x = y as Partial<KervanYuku>;
   if (typeof x.o !== "string" || typeof x.hs !== "string" || !Number.isInteger(x.ka) || x.va !== (x.ka ?? NaN) + KERVAN_YOL_AY) return false;
   const yuk = yukCoz(x.ev);
-  return yuk.ok && say(yuk.deger) <= KERVAN_TOPLU_YUK_EN_COK;
+  return yuk.ok && say(yuk.deger) <= KERVAN_YUK_MUTLAK;
 }
 
 type Kullanilan = (mal: MalId) => [satilan: number, primli: number];

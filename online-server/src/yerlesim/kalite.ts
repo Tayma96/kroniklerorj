@@ -329,6 +329,7 @@ export function urunKalitesi(k: Karakter, t: Tarif, beceri: number, aracKalite: 
     { k: "kalite.zanaat", d: Math.floor(Math.max(0, Math.min(100, k.be[3] ?? 0)) / KALITE_ZANAAT_BOLEN) },
     { k: "kalite.beceri", d: Math.min(KALITE_BECERI_TAVAN, Math.max(0, beceri)) },
   ];
+  if (t.kaliteEk) kalemler.push({ k: "kalite.tarif", d: t.kaliteEk });
   if (aracKalite !== null) kalemler.push({ k: "kalite.arac", d: ALET_KALITE_PUANI[aracKalite] ?? 0 });
   kalemler.push({ k: "kalite.zar", d: Math.floor(zar() * KALITE_ZAR) });
   // Ek kalemler (tezgâh Dilim 2: atölye seviye bonusu, NPC emeği cezası); toplam 0'ın altına inmez.

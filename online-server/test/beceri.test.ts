@@ -312,7 +312,7 @@ test("ağaç görünümü: kilit nedenleri, öğreniliyor durumu, puan ve sonrak
   assert.ok("sonraki" in ta);
   assert.deepEqual(ta.sonraki, { seviye: 1, bedel: 2, sureMs: 60 * DK, metin: "onl.ba.demirci.tarimAletleri.s1" });
   assert.ok("seviyeler" in ta && ta.seviyeler[2]!.etkiler[0]!.kanca === false, "hasat %20 bağlı");
-  assert.ok("seviyeler" in ta && ta.seviyeler[0]!.etkiler[0]!.kanca === true, "saban tarifi kanca");
+  assert.ok("seviyeler" in ta && ta.seviyeler[0]!.etkiler[0]!.kanca === false, "saban tarifi bağlı (kanca partisi 2)");
   hizmetEkle(c, "demirci", KADEME_HIZMET[1]!);
   assert.deepEqual(agacGorunumu(c, "korsan", T0), { ok: false, hata: "meslek_gecersiz" });
 });

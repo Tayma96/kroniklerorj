@@ -207,6 +207,8 @@ export interface Karakter {
   kq?: Record<string, KaliteParti[]>;
   /** Eşya kademeleri (Dilim 4): bu ayki efsanevi denemesi [ay, sayı] (yerlesim/esya.ts). */
   ef?: [ay: number, n: number];
+  /** Kanca partisi 2: aylık sınırlı tariflerin bu ayki sayacı [ay, tarif → adet] (Tarif `aylik`). */
+  tr?: [ay: number, n: Record<string, number>];
   /** Gelir-gider defteri (son DEFTER_AY ay). */
   df?: DefterAyi[];
   /** Ismarlama ustalık sicili: [teslim, gecikme] (lonca güveni; profilde görünür). */

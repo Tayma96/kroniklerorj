@@ -46,7 +46,7 @@ const malSay = (t: Tezgah, m: string) => t.ev?.[m] ?? 0;
 
 test("parametreler: tezgâh sayısı, zanaat meslekleri (tarifi olanlar), NPC atölye maaş tabanı türetilmiş", () => {
   assert.deepEqual(TEZGAH_SAYISI, [1, 2, 3, 4, 5]);
-  assert.deepEqual([...ZANAAT_MESLEKLERI], ["asci", "ciftci", "demirci", "dokumaci", "katip", "marangoz", "oduncu"]);
+  assert.deepEqual([...ZANAAT_MESLEKLERI], ["asci", "ciftci", "demirci", "dokumaci", "katip", "marangoz", "oduncu", "sifaci"]);
   assert.equal(NPC_ATOLYE_MAAS_EN_AZ, 38);
 });
 

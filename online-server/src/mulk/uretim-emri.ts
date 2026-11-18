@@ -22,6 +22,8 @@ export function emirAc(t: Tezgah, seviye: number, tarifHam: unknown, kezHam: unk
   const tr = tarifBul(tarifHam);
   if (!tr) return hata("tarif_gecersiz");
   if (tr.meslek !== t.za) return hata("zanaat_disi");
+  // Aylık sınırlı tarif (damar arama) yalnız kişinin kendi elinden çıkar; emre konmaz.
+  if (tr.aylik) return hata("tarif_gecersiz");
   if (!Number.isInteger(kezHam) || (kezHam as number) < 1 || (kezHam as number) > EMIR_KEZ_EN_COK) return hata("kez_gecersiz");
   if ((t.ue?.length ?? 0) >= tezgahSayisi(t, seviye)) return hata("tezgah_dolu");
   if (!ustaSec(adaylar, tr)) return hata("usta_yok");

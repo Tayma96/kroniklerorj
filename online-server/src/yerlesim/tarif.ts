@@ -164,6 +164,13 @@ function eksikGirdi(k: Karakter, t: Tarif): Partial<Record<MalId, number>> {
   return eksik;
 }
 
+/** Aylık sınırlı tarifte bu ay kalan hak (sınırsızsa Infinity). */
+export function aylikKalan(k: Karakter, t: Tarif, ay: number): number {
+  if (!t.aylik) return Infinity;
+  const n = k.tr && k.tr[0] === ay ? (k.tr[1][t.id] ?? 0) : 0;
+  return Math.max(0, t.aylik - n);
+}
+
 /** Bütün tarifler: düğüm açık mı, eksik girdi, şu an yapılabilir mi (takat dahil). */
 export function tarifListesi(k: Karakter) {
   return Object.values(TARIFLER).map((ham) => {
@@ -197,9 +204,11 @@ export function tarifListesi(k: Karakter) {
         : null,
       etkiAraci: ea ? { ...ea, kullanim: k.as?.[ea.mal] ?? 0, omur: aletOmru(k, ea.mal), kalite: enIyiKalite(k, ea.mal) } : null,
       kaliteBecerisi: kaliteBecerisi(k, t),
+      kaliteEk: t.kaliteEk ?? 0,
+      aylik: t.aylik ? { tavan: t.aylik, kalan: aylikKalan(k, t, k.ta ?? 0) } : null,
       acik,
       eksik,
-      yapilabilir: acik && !zorunluEksik && Object.keys(eksik).length === 0 && k.tk >= t.takat,
+      yapilabilir: acik && !zorunluEksik && Object.keys(eksik).length === 0 && k.tk >= t.takat && (!t.aylik || aylikKalan(k, t, k.ta ?? 0) > 0),
     };
   });
 }
@@ -249,6 +258,7 @@ export function tarifYap(k: Karakter, idHam: unknown, ay: number, zar?: Zar, ato
   if (kilit) return hata(kilit);
   const aracVar = t.arac !== undefined && (k.ev?.[t.arac.mal] ?? 0) > 0;
   if (t.arac?.zorunlu && !aracVar) return hata("arac_yok");
+  if (t.aylik && aylikKalan(k, t, ay) <= 0) return hata("kota_doldu");
   if (atolye?.efsanevi) {
     const engel = efsaneviOnKosul(k, t.meslek, ay);
     if (engel) return hata(engel);
@@ -273,6 +283,10 @@ export function tarifYap(k: Karakter, idHam: unknown, ay: number, zar?: Zar, ato
     kaliteliEkle(k, t.cikti[0], [[ef.kademe!, 1, k.o, dm, ef.esya]]);
   } else kaliteliEkle(k, t.cikti[0], [dm ? [kalite.kademe, adet, k.o, dm] : [kalite.kademe, adet, k.o]]);
   for (const [mal, n] of Object.entries(t.yan ?? {}) as [MalId, number][]) if (n > 0) kaliteliEkle(k, mal, [dm ? [0, n, k.o, dm] : [0, n, k.o]]);
+  if (t.aylik) {
+    const n = k.tr && k.tr[0] === ay ? k.tr[1] : {};
+    k.tr = [ay, { ...n, [t.id]: (n[t.id] ?? 0) + 1 }];
+  }
   basariSay(k, `tarif:${t.id}`, adet);
   const hizmet = hizmetEkle(k, t.meslek, t.hizmet);
   halDegistir(k, ay, { kondisyon: -IS_KONDISYON * t.takat }, "hal.neden.tarif");

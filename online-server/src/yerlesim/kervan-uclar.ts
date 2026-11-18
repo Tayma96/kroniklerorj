@@ -146,6 +146,7 @@ export function kervanGonder(motor: KervanMotoru, hesapId: string, govde: unknow
       kervan: { id: islem, hedef: h.deger, hedefAd: yerlesimBul(h.deger)?.ad ?? h.deger, mallar: yuk.deger, kalkisAyi: ay, varisAyi: ay + KERVAN_YOL_AY },
       bedel: { nal: KERVAN_NAL, kosum: KERVAN_KOSUM, takat: KERVAN_TAKAT },
       aylik: { kullanilan: d.s[kar.o]![1], tavan: kervanAylikTavan(k) },
+      asinma: r.deger.asinma,
     });
   });
 }

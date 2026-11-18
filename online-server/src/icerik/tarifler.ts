@@ -18,6 +18,10 @@ export interface Tarif {
   yan?: Partial<Record<MalId, number>>;
   /** Kalite etkisi grupları: `kalite` etkisinin hedefi tarif kimliği ya da bu gruplardan biri olabilir. */
   grup?: readonly string[];
+  /** Kanca partisi 2: tarifin kendi kalite puanı (seçme buğday, su verilmiş kılıç: +; moloz duvar: −). Dökümde `kalite.tarif`. */
+  kaliteEk?: number;
+  /** Kanca partisi 2: kişi başı ayda en çok bu kadar yapılır (damar arama "ayda bir"); emirle yapılamaz. */
+  aylik?: number;
 }
 
 export const TARIFLER = {
@@ -118,6 +122,34 @@ export const TARIFLER = {
     id: "erzakSandigi", meslek: "asci", girdi: { zahire: 2, kuruEt: 2, peksimet: 3 }, cikti: ["erzakSandigi", 1], takat: 2,
     hizmet: 3,
   },
+  // ---- Kanca partisi 2 (18 Kasım): ağaçtaki boşta tarifler, yalnız var olan mallarla (istemci mal listesi değişmez).
+  // Değer kuralı yukarıdaki gibi: çıktı ≈ (Σ girdi × 1,3 + takat × 5) / adet; kalite farkı `kaliteEk` ile. [PARAMETRE]
+  secmeBugday: {
+    id: "secmeBugday", meslek: "ciftci", girdi: { bugday: 4 }, cikti: ["bugday", 3], takat: 1, hizmet: 2, kaliteEk: 15,
+  },
+  yaylaGocu: {
+    id: "yaylaGocu", meslek: "ciftci", girdi: {}, cikti: ["inceYun", 2], yan: { post: 1, et: 1 }, takat: 3, hizmet: 3,
+    arac: { mal: "cadir", adet: 3 },
+  },
+  otAyikla: { id: "otAyikla", meslek: "sifaci", girdi: { ot: 3 }, cikti: ["sifaliOt", 2], takat: 1, hizmet: 2 },
+  damarAra: {
+    id: "damarAra", meslek: "oduncu", girdi: {}, cikti: ["bakir", 1], yan: { cevher: 2 }, takat: 3, hizmet: 3, aylik: 1,
+  },
+  molozDuvar: {
+    id: "molozDuvar", meslek: "oduncu", girdi: { tas: 9, kereste: 1 }, cikti: ["blok", 1], takat: 4, hizmet: 3, kaliteEk: -10,
+  },
+  saban: { id: "saban", meslek: "demirci", girdi: { kereste: 2, cevher: 1, komur: 1 }, cikti: ["alet", 1], takat: 2, hizmet: 3 },
+  orak: { id: "orak", meslek: "demirci", girdi: { cevher: 1, komur: 1, bicak: 1, kereste: 1 }, cikti: ["alet", 1], takat: 2, hizmet: 3 },
+  suVerilmisKilic: {
+    id: "suVerilmisKilic", meslek: "demirci", girdi: { cevher: 2, komur: 3, deri: 1 }, cikti: ["kilic", 1], takat: 4, hizmet: 5,
+    grup: ["silah", "dovme"], kaliteEk: 20,
+  },
+  komutanZirhi: {
+    id: "komutanZirhi", meslek: "demirci", girdi: { zincir: 1, deri: 2, astar: 1, civi: 2 }, cikti: ["pulZirh", 1], takat: 5,
+    hizmet: 6, grup: ["zirh", "zirhDayanikliligi"], kaliteEk: 20,
+  },
+  hatliBelge: { id: "hatliBelge", meslek: "katip", girdi: { kagit: 1, murekkep: 2 }, cikti: ["senet", 1], takat: 2, hizmet: 3, kaliteEk: 15 },
+  vasiyet: { id: "vasiyet", meslek: "katip", girdi: { kagit: 2, murekkep: 1 }, cikti: ["sozlesme", 1], takat: 2, hizmet: 3, kaliteEk: 10 },
 } as const satisfies Record<string, Tarif>;
 export type TarifId = keyof typeof TARIFLER;
 

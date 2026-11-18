@@ -253,4 +253,10 @@ export const KANCA_BAGLARI: Readonly<Record<string, KancaBagi>> = {
   "arac:nobet:mizrak": m("src/yerlesim/hizmet-gorev.ts"),
   "hak:nobetKoltuklari": m("src/yerlesim/hizmet-gorev.ts"),
   "hak:garnizonTalimi": m("src/yerlesim/hizmet-gorev.ts"),
+
+  // ── Kanca partisi 2: kervan (koşum ve taşıt aşınması, kervan kalitesi) ──
+  "omur:kosum": m("src/yerlesim/kervan.ts"),
+  "omur:araba": m("src/yerlesim/kervan.ts"),
+  "omur:kagni": m("src/yerlesim/kervan.ts"),
+  "kalite:kervan": m("src/yerlesim/kervan.ts"),
 };

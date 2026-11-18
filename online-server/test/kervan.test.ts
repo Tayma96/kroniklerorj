@@ -100,7 +100,10 @@ test("toplu yük: düğüm + araba 30; araba yoksa ya da gönderiliyorsa 12", ()
   const { kar } = tuccar();
   assert.equal(yukTavani(kar).tavan, KERVAN_YUK_EN_COK);
   seviyeVer(kar, "tuccar.topluYuk", 1);
-  assert.deepEqual(yukTavani(kar), { tavan: KERVAN_YUK_EN_COK, topluYuk: true, araba: false });
+  assert.deepEqual(
+    (({ tavan, topluYuk, araba }) => ({ tavan, topluYuk, araba }))(yukTavani(kar)),
+    { tavan: KERVAN_YUK_EN_COK, topluYuk: true, araba: false },
+  );
   kar.ev!.araba = 1;
   assert.equal(yukTavani(kar).tavan, KERVAN_TOPLU_YUK_EN_COK);
   assert.equal(yukTavani(kar, { araba: 1 }).tavan, KERVAN_YUK_EN_COK, "tek araba yük olarak gidiyorsa toplu yük yok");
