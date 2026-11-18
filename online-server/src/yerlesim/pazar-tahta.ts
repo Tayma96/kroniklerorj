@@ -71,7 +71,7 @@ export interface HizmetNpcTalebi {
 }
 
 /** Aylık, kasaba hazinesinden önceden ayrılmış koltuklu hizmet görevi. */
-export type HizmetGorevTuru = "nobet" | "vergiSayimi" | "meclisKaydi" | "talim";
+export type HizmetGorevTuru = "nobet" | "vergiSayimi" | "meclisKaydi" | "talim" | "devriye";
 export interface HizmetKasabaGorevi {
   i: number;
   tur: HizmetGorevTuru;
@@ -117,6 +117,8 @@ export interface EkonomiKaydi {
   /** Kasaba görevleri ve son üretim ayı; eski ekonomi kayıtlarıyla uyumlu. */
   hg?: HizmetKasabaGorevi[];
   hga?: number;
+  /** Kanca partisi 2: yerel darüşşifa tabanı (ay dönümünde kurulur; hizmet-pazari.ts darussifaTabani). */
+  ds?: { yuzde: number; kanca: string };
   /** Eşya kademeleri (Dilim 4): yerleşimde çıkan efsanevi ve tılsımlı sayısı (yönetici sayacı). */
   es?: [efsanevi: number, tilsimli: number];
 }

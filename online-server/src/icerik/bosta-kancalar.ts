@@ -6,46 +6,40 @@
 /**
  * Liste uzunluğunun üst sınırı (yalnız azalır). 232: Dilim 3 ilk parti denge denetiminde `hak:namYayma` (başka dükkânı
  * övme hizmeti, kendi rafına çekicilik değil) ve `hak:hileliTarti` (hileli tartı dürüst H olamaz) kayıttan geri alındı;
- * parti henüz ana dala girmediği için taban budur.
+ * parti henüz ana dala girmediği için taban budur. Kanca partisi 2 (18 Kasım) bağladıkça düşer; bağlanamayanın yanında
+ * tek satır neden yazar ("// boşta: ...").
  */
-export const BOSTA_TAVAN = 180;
+export const BOSTA_TAVAN = 173;
 
 export const BOSTA_KANCALAR: readonly string[] = [
   "arac:av:mizrak",
   "arac:corba:kazan",
   "arac:devriye:kilic",
   "arac:saf:kalkan",
-  "hak:ahsapKopru",
-  "hak:akinOnculugu",
-  "hak:alpYemini",
-  "hak:armaCizme",
-  "hak:asayisAmirligi",
-  "hak:asevi",
-  "hak:asiklarMeclisi",
-  "hak:barisKitabesi",
-  "hak:barisYemini",
-  "hak:beylikMeclisi",
-  "hak:bilinenGercek",
-  "hak:birlikKomutanligi",
-  "hak:bolgeHakemi",
-  "hak:bozulmaSuresi",
-  "hak:butceOnerisi",
-  "hak:casusTespiti",
-  "hak:dagitimKarari",
-  "hak:dagitimSirasi",
-  "hak:darussifa",
-  "hak:darussifaBasi",
-  "hak:defterdarAdayligi",
-  "hak:devriye",
-  "hak:dilekce",
-  "hak:dilekceGundemi",
-  "hak:divanBaskanligi",
-  "hak:diyetToresi",
-  "hak:dogumRiski",
-  "hak:dusmanGucu",
-  "hak:ebeBagi",
-  "hak:ebeIcazeti",
-  "hak:elcilikAdayligi",
+  "hak:ahsapKopru", // boşta: köprü/bayındırlık projesi sistemi yok (yalnız işletme genişletmesi var)
+  "hak:akinOnculugu", // boşta: akın/sefer sistemi yok
+  "hak:alpYemini", // boşta: yemin (ant) sistemi yok
+  "hak:asayisAmirligi", // boşta: subaşı/asayiş amiri makamı yok (makamlar: vali, şehir beyi, ahi başı, kasaba ağası, Divan temsilcisi)
+  "hak:asiklarMeclisi", // boşta: âşıklar meclisi ve ozan icazeti sistemi yok
+  "hak:barisKitabesi", // boşta: kitabe/anıt sistemi yok
+  "hak:barisYemini", // boşta: kan davası ve yemin bozma (hane lekesi) sistemi yok
+  "hak:beylikMeclisi", // boşta: beylik meclisi yok
+  "hak:bilinenGercek", // boşta: şahit dinleme kaydı (bilinen gerçek) sistemi yok
+  "hak:birlikKomutanligi", // boşta: ordu/birlik sistemi yok
+  "hak:bolgeHakemi", // boşta: bölge hakemliği makamı yok
+  "hak:butceOnerisi", // boşta: hazine bütçe önerisi akışı yok
+  "hak:dagitimKarari", // boşta: kıtlıkta erzak dağıtım (paylaştırma) sistemi yok
+  "hak:dagitimSirasi", // boşta: kıtlıkta erzak dağıtım (paylaştırma) sistemi yok
+  "hak:defterdarAdayligi", // boşta: defterdar makamı yok
+  "hak:dilekce", // boşta: dilekçe sistemi yok
+  "hak:dilekceGundemi", // boşta: dilekçe sistemi yok
+  "hak:divanBaskanligi", // boşta: Divan başkanlığı makamı yok (Divan NPC)
+  "hak:diyetToresi", // boşta: diyet/kan davası sistemi yok
+  "hak:dogumRiski", // boşta: doğum riski sistemi yok (oyuncu hanesinde doğum risksiz)
+  "hak:dusmanGucu", // boşta: düşman gücü/keşif görünümü yok
+  "hak:ebeBagi", // boşta: hane–ebe bağı sistemi yok
+  "hak:ebeIcazeti", // boşta: icazet sistemi yok
+  "hak:elcilikAdayligi", // boşta: elçi makamı yok
   "hak:fiyatDongusu",
   "hak:gecisAkcesi",
   "hak:gencTalimi",
