@@ -46,6 +46,7 @@
 //   POST /v1/devir {varis?, pk, istekNo} → vâris karakteri, plan (pk tutmazsa 409 devir_degisti)
 //   POST /v1/evlilik {hedef, istekNo}    → NPC ile evlilik (görüş eşiği, düğün bedeli)
 //   GET  /v1/kronik?imlec=&dil=          → yerleşim kroniği (sayfalı, budanmaz)
+//   POST /v1/kronik/yaz {olay, istekNo}  → {kalem: {olay, yil, yazilan, kalan, nam?}, kurallar} (ozan kronik kalemi)
 //   GET  /v1/pazar?mal=&dil=             → oyuncu pazarı: açık ilanlar (NPC taban karşılaştırmalı), benim ilanlarım (Faz 6)
 //   POST /v1/pazar/ilan {tur: sat|al, mal, adet, fiyat, sure?, kalite?, istekNo} → {ilan} (emanet kilitlenir)
 //   POST /v1/pazar/islem {ilan, adet, kalite?, istekNo} → {islem: tutar, bac, net, karsilastirma, pompa}
@@ -635,6 +636,8 @@ async function yonlendir(istek: Request, env: Env): Promise<Response> {
       return yontem === "POST" ? govdeli(istek, env, "devir") : hataYaniti("yontem_yok");
     case "/v1/evlilik":
       return yontem === "POST" ? govdeli(istek, env, "evlilik") : hataYaniti("yontem_yok");
+    case "/v1/kronik/yaz":
+      return yontem === "POST" ? govdeli(istek, env, "kronikYaz") : hataYaniti("yontem_yok");
     case "/v1/kronik":
       return yontem === "GET"
         ? hesaba(istek, env, (hesapId) => basarili({ islem: "kronik", hesapId, imlec: url.searchParams.get("imlec"), dil }))

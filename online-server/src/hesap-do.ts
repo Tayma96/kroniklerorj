@@ -453,6 +453,7 @@ export class HesapDO {
       // Hanedan (Faz 7): ileti aynen yerleşime gider.
       case "vasiyet":
       case "evlilik":
+      case "kronikYaz":
       case "hanedan":
       case "devirOnizle":
       case "kronik":

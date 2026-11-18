@@ -371,6 +371,8 @@ export class YerlesimDO {
         return motor.devir(ileti.hesapId, ileti.govde);
       case "evlilik":
         return motor.evlilik(ileti.hesapId, ileti.govde);
+      case "kronikYaz":
+        return motor.kronikYaz(ileti.hesapId, ileti.govde);
       case "kronik":
         return motor.kronik(ileti.hesapId, ileti.imlec, ileti.dil);
       // Topluluk (E5–E7): src/yerlesim/topluluk-uclar.ts
@@ -471,7 +473,7 @@ export class YerlesimDO {
       case "kervanVaris":
         return kervanVarisUc(motor, ileti.islemNo, ileti.kaynak, ileti.yuk, simdi);
       case "fiyatOzeti":
-        return fiyatOzetiUc(motor, ileti.hesap, ileti.yuk, ileti.va);
+        return fiyatOzetiUc(motor, ileti.hesap, ileti.yuk, ileti.va, ileti.dongu);
       case "mulkGiris":
         return { ok: true, deger: { sonuclar: await teslimAl(motor, ileti.kayitlar, simdi) } };
       default:

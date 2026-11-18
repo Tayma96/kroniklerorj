@@ -122,7 +122,7 @@ import type { ToplulukKaydi } from "./topluluk-kayit.ts";
 import type { KervanDefteri } from "./kervan.ts";
 import { istekBul, istekYaz } from "./istek-defteri.ts";
 import { ucgenDonumu, ucgenGorunumu, ucgenIslem, ucgenOkumaYuklenecek, ucgenYuklenecek } from "./ucgen.ts";
-import { kronikEkle } from "./kronik.ts";
+import { kronikEkle, kronikKalemi } from "./kronik.ts";
 import { esyaSayaci } from "./esya-kayit.ts";
 import { EMANET_ARSIV_EN_COK, EMANET_BEDELI, emanetCikar, emanetDokumu, emanetEkle, emanetGeriYaz, emanetIslemiMi, emanetPaketiGecerli } from "./goc-emanet.ts";
 import {
@@ -2051,6 +2051,22 @@ export class YerlesimMotoru {
       ek.olay = r.deger.olay;
       this.#kirli.add(NPC);
       return basarili(r.deger.sonuc);
+    }, "hanedan");
+  }
+
+  /** POST /v1/kronik/yaz {olay, istekNo}: ozan kronik kalemi (kronik.ts); olayın öznesi önce yüklenir. */
+  async kronikYaz(hesapId: string, govde: unknown): Promise<Sonuc<unknown>> {
+    if (!nesneMi(govde)) return hata("gecersiz_istek");
+    const sira = govde.olay;
+    if (typeof sira !== "number" || !Number.isInteger(sira) || sira < 1) return hata("hedef_uygun_degil");
+    const [olay] = await this.#siradan([sira]);
+    if (olay?.w && this.kasaba.sakin.some((s) => s.o === olay.w)) await this.#yukle([olay.w]);
+    return this.#tekrarGuvenli(hesapId, govde, (kar, _s, ay, ek) => {
+      const r = kronikKalemi(this.kasaba, kar, olay, ay);
+      if (!r.ok) return r;
+      ek.topluluk = true;
+      ek.digerleri.push(...r.deger.digerleri);
+      return basarili(r.deger.yanit);
     }, "hanedan");
   }
 

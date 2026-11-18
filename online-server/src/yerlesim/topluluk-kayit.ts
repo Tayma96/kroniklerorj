@@ -46,6 +46,8 @@ export interface ToplulukKaydi {
   gt?: number;
   /** Kanca partisi 2 `hazineDefteri`: kasaba hazinesinin ay başı bakiyeleri [ay, bakiye, defteri tutanın adı]. */
   hk?: [ay: number, bakiye: number, ad: string][];
+  /** Kanca partisi 2: ozanın kronik kalemi izi (src/yerlesim/kronik.ts). */
+  kl?: { y: Record<string, [number, number]>; s: number[]; n: Record<string, number> };
 }
 
 export function toplulukAl(k: Kasaba): ToplulukKaydi {
