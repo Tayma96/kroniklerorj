@@ -289,7 +289,8 @@ test("telafi yarışı (madde 9): aynı istekNo eşzamanlı ikinci istek istek_t
   const govde = { hedef: "do-hedef", tur: "akce", tutar: 400, gerekce: G, istekNo: "yaris-000001" };
   const a = yonet(M, "telafi", govde);
   const c = yonet(M, "telafi", govde);
-  await new Promise<void>((r) => setTimeout(() => r(), 10));
+  // Tam takım yükünde ikinci isteğin kilit denetimine varması 10 ms'yi aşabiliyor: ilk istek bekletilirken pay bol.
+  await new Promise<void>((r) => setTimeout(() => r(), 150));
   birak();
   const [ra, rc] = await Promise.all([a, c]);
   assert.ok(ra.ok);
