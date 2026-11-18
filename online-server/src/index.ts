@@ -46,6 +46,7 @@
 //   POST /v1/devir {varis?, pk, istekNo} → vâris karakteri, plan (pk tutmazsa 409 devir_degisti)
 //   POST /v1/evlilik {hedef, istekNo}    → NPC ile evlilik (görüş eşiği, düğün bedeli)
 //   GET  /v1/kronik?imlec=&dil=          → yerleşim kroniği (sayfalı, budanmaz)
+//   POST /v1/kronik/yaz {olay, istekNo}  → {kalem: {olay, yil, yazilan, kalan, nam?}, kurallar} (ozan kronik kalemi)
 //   GET  /v1/pazar?mal=&dil=             → oyuncu pazarı: açık ilanlar (NPC taban karşılaştırmalı), benim ilanlarım (Faz 6)
 //   POST /v1/pazar/ilan {tur: sat|al, mal, adet, fiyat, sure?, kalite?, istekNo} → {ilan} (emanet kilitlenir)
 //   POST /v1/pazar/islem {ilan, adet, kalite?, istekNo} → {islem: tutar, bac, net, karsilastirma, pompa}
@@ -93,6 +94,7 @@
 //   POST /v1/hami {islem: teklif|iste|kabul|ret|birak, hedef, istekNo} → {bag, hami}  (hami akçe almaz, aşamada nam)
 //   POST /v1/ortak-dert {dert, katki, mal?, adet?, istekNo} → {dert, katki (döküm), odul, basardi}
 //   POST /v1/senlik {katki: yemek|sus|hayir, mal?, adet?, tutar?, istekNo} → {senlik, katki, odul}
+//   POST /v1/koru {istekNo}              → {koru: {sonDikim, sonraki, yenilenen, pay?, kurallar}} (oduncu koru dikimi)
 //   POST /v1/etkinlik {id, istekNo}      → {etkinlik, tur, odul, etkinlikler}  (canlı etkinliğe bir kez katılım; src/etkinlik/)
 //   POST /v1/zaviye {islem: kur|davet|katil|reddet|ayril|cikar|yatir|ver|arma|oy, ..., istekNo} → {zaviye, zaviyeler}
 //   GET  /v1/siyaset?bolge=&kayit=       → bölge, makamlar, seçimler, kasa/defter, meşruiyet, Sultanlık, Moğol, kayıt (Faz 7, src/siyaset/)
@@ -635,6 +637,8 @@ async function yonlendir(istek: Request, env: Env): Promise<Response> {
       return yontem === "POST" ? govdeli(istek, env, "devir") : hataYaniti("yontem_yok");
     case "/v1/evlilik":
       return yontem === "POST" ? govdeli(istek, env, "evlilik") : hataYaniti("yontem_yok");
+    case "/v1/kronik/yaz":
+      return yontem === "POST" ? govdeli(istek, env, "kronikYaz") : hataYaniti("yontem_yok");
     case "/v1/kronik":
       return yontem === "GET"
         ? hesaba(istek, env, (hesapId) => basarili({ islem: "kronik", hesapId, imlec: url.searchParams.get("imlec"), dil }))
@@ -648,6 +652,8 @@ async function yonlendir(istek: Request, env: Env): Promise<Response> {
       return yontem === "POST" ? toplulukGovdeli(istek, env, "hami") : hataYaniti("yontem_yok");
     case "/v1/ortak-dert":
       return yontem === "POST" ? toplulukGovdeli(istek, env, "ortakDert") : hataYaniti("yontem_yok");
+    case "/v1/koru":
+      return yontem === "POST" ? toplulukGovdeli(istek, env, "koru") : hataYaniti("yontem_yok");
     case "/v1/senlik":
       return yontem === "POST" ? toplulukGovdeli(istek, env, "senlik") : hataYaniti("yontem_yok");
     case "/v1/zaviye":

@@ -165,7 +165,7 @@ export function hizmetGorevTeslim(
   kar: Karakter,
   id: unknown,
   ay: number,
-): Sonuc<{ gorev: HizmetKasabaGorevi; odul: number; hizmetPuani: number; arac?: ReturnType<typeof aracAsindir>; ekArac?: ReturnType<typeof aracAsindir>; olay: OlayTaslagi; katki: { gosterge: number; aracEk: number; ekAracEk: number; kalite: number; kaliteEk: number; tavan: number } }> {
+): Sonuc<{ gorev: HizmetKasabaGorevi; odul: number; hizmetPuani: number; arac?: ReturnType<typeof aracAsindir>; ekArac?: ReturnType<typeof aracAsindir>; olay: OlayTaslagi; katki: { gosterge: number; aracEk: number; ekAracEk: number; kalite: number; kaliteEk: number; tavan: number; gencTalimi?: boolean } }> {
   if (typeof id !== "string") return hata("hedef_uygun_degil");
   const eslesme = /^kg([1-9][0-9]{0,8})$/.exec(id);
   if (!eslesme) return hata("hedef_uygun_degil");
@@ -197,6 +197,9 @@ export function hizmetGorevTeslim(
   const ekArac = ekAracEk > 0 ? aracAsindir(kar, kural.ekArac!.mal) : undefined;
   const gosterge = Math.min(GOREV_GOSTERGE_TAVAN, 1 + aracEk + ekAracEk + kaliteEk);
   gostergeDegistir(topluluk, kural.gosterge, gosterge);
+  // Kanca partisi 2 `gencTalimi`: gençler talim edilince bu ayın dönümünde asayiş yarı aşınır (topluluk-kayit.ts).
+  const gencTalimi = gorev.tur === "talim" && hakAcik(kar, "gencTalimi");
+  if (gencTalimi) topluluk.gt = ay;
   kar.pa += gorev.odul;
   const hizmetPuani = hizmetEkle(kar, kural.meslek, kural.takat * 2);
   gorev.d = "tamam";
@@ -210,5 +213,5 @@ export function hizmetGorevTeslim(
     k: "olay.hizmetGorevTamam",
     p: { oyuncu: kar.ad, odul: gorev.odul, hizmetPuani, takat: kural.takat },
   };
-  return basarili({ gorev, odul: gorev.odul, hizmetPuani, ...(arac ? { arac } : {}), ...(ekArac ? { ekArac } : {}), olay, katki: { gosterge, aracEk, ekAracEk, kalite, kaliteEk, tavan: GOREV_GOSTERGE_TAVAN } });
+  return basarili({ gorev, odul: gorev.odul, hizmetPuani, ...(arac ? { arac } : {}), ...(ekArac ? { ekArac } : {}), olay, katki: { gosterge, aracEk, ekAracEk, kalite, kaliteEk, tavan: GOREV_GOSTERGE_TAVAN, ...(gencTalimi ? { gencTalimi: true } : {}) } });
 }

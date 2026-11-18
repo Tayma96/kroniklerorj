@@ -48,7 +48,7 @@ import { dilCoz, kisiAdi, kisiCoz, meslekGorunumu, npcAdi, npcKimlik, oyuncuRef,
 import { loncaTablosu, oyuncuSayaci } from "./lonca.ts";
 import { KADEME_HIZMET, beceriGorunumu, kademeAtla, meslekKaydi, meslekSec, yanSec } from "./meslek.ts";
 import { agacGorunumu, beceriHizlandir, beceriIptal, beceriOgren, beceriOzeti, beceriYeniden, mesleki, ogrenmeTamamla } from "./beceri.ts";
-import { acikEtkiler, basariSay } from "./beceri-etki.ts";
+import { acikEtkiler, basariSay, hakAcik } from "./beceri-etki.ts";
 import { aylikTakat, halGorunumu } from "./hal.ts";
 import { barinmaDonumu, barinmaGorunumu, otomatikAyarla, tesisKonakla } from "./barinma.ts";
 import { emanetAl, gorusmeIslem, ikametVar, sandikIslem } from "./oda-getiri.ts";
@@ -59,7 +59,7 @@ import { siparisDonumu, siparisGorunumu, siparisTeslim, type Siparis } from "./s
 import { tarifListesi, tarifYap } from "./tarif.ts";
 import { tohumlu } from "./rastgele.ts";
 import { kumeIziCoz } from "../kume-izi.ts";
-import { TANIDIK_EN_COK, dostlukIslem, husumetIslem, oyuncuProfili, bagGorunumu, acikHusumet } from "./iliski.ts";
+import { TANIDIK_EN_COK, dostlukIslem, husumetIslem, husumetListesi, oyuncuProfili, bagGorunumu, acikHusumet } from "./iliski.ts";
 import { duzenGorunumu, duzenGuncelle } from "./duzen.ts";
 import { engelKaldir, engelle, engelListesi, engelliMi } from "./engel.ts";
 import { mekanTaniklari, soylentiEkle, soylentiGorunumu, yalanla } from "./soylenti.ts";
@@ -122,7 +122,7 @@ import type { ToplulukKaydi } from "./topluluk-kayit.ts";
 import type { KervanDefteri } from "./kervan.ts";
 import { istekBul, istekYaz } from "./istek-defteri.ts";
 import { ucgenDonumu, ucgenGorunumu, ucgenIslem, ucgenOkumaYuklenecek, ucgenYuklenecek } from "./ucgen.ts";
-import { kronikEkle } from "./kronik.ts";
+import { kronikEkle, kronikKalemi } from "./kronik.ts";
 import { esyaSayaci } from "./esya-kayit.ts";
 import { EMANET_ARSIV_EN_COK, EMANET_BEDELI, emanetCikar, emanetDokumu, emanetEkle, emanetGeriYaz, emanetIslemiMi, emanetPaketiGecerli } from "./goc-emanet.ts";
 import {
@@ -1598,6 +1598,9 @@ export class YerlesimMotoru {
         .map((h) => ({ ...ad(h.g === kar.o ? h.h : h.g), yon: h.g === kar.o ? "ilanEttim" : "ilanEdildi", ay: h.ay })),
       soylentiler: soylentiGorunumu(k, kar, dil),
       engellenenler: engelListesi(t, kar.o).map(ad),
+      // Kanca partisi 2 `husumetListesi` (ihtiyar heyeti): kasabadaki bütün açık husumetler tek listede; her birinde
+      // sürmekte olan oyuncu arabuluculuğu varsa arabulucunun adı (atanmamışsa null). Yalnız hakkı olana.
+      ...(hakAcik(kar, "husumetListesi") ? { husumetListesi: husumetListesi(k, ad) } : {}),
     });
   }
 
@@ -1629,7 +1632,8 @@ export class YerlesimMotoru {
     if (!r.ok) return r;
     const { kar } = r.deger;
     const haklar = new Set<string>();
-    for (const e of acikEtkiler(kar)) if (e.tur === "hak" && (e.hak === "kasabaMakami" || e.hak === "bolgeMakami")) haklar.add(e.hak);
+    // Kanca partisi 2: `kethudaAdayligi` (pir kethüdalığı) ahi başı adaylığında teveccüh şartının yerini tutar (makam.ts).
+    for (const e of acikEtkiler(kar)) if (e.tur === "hak" && (e.hak === "kasabaMakami" || e.hak === "bolgeMakami" || e.hak === "kethudaAdayligi")) haklar.add(e.hak);
     const k = this.kasaba;
     return basarili({
       kisi: `${k.y}/${kar.o}`,
@@ -2047,6 +2051,22 @@ export class YerlesimMotoru {
       ek.olay = r.deger.olay;
       this.#kirli.add(NPC);
       return basarili(r.deger.sonuc);
+    }, "hanedan");
+  }
+
+  /** POST /v1/kronik/yaz {olay, istekNo}: ozan kronik kalemi (kronik.ts); olayın öznesi önce yüklenir. */
+  async kronikYaz(hesapId: string, govde: unknown): Promise<Sonuc<unknown>> {
+    if (!nesneMi(govde)) return hata("gecersiz_istek");
+    const sira = govde.olay;
+    if (typeof sira !== "number" || !Number.isInteger(sira) || sira < 1) return hata("hedef_uygun_degil");
+    const [olay] = await this.#siradan([sira]);
+    if (olay?.w && this.kasaba.sakin.some((s) => s.o === olay.w)) await this.#yukle([olay.w]);
+    return this.#tekrarGuvenli(hesapId, govde, (kar, _s, ay, ek) => {
+      const r = kronikKalemi(this.kasaba, kar, olay, ay);
+      if (!r.ok) return r;
+      ek.topluluk = true;
+      ek.digerleri.push(...r.deger.digerleri);
+      return basarili(r.deger.yanit);
     }, "hanedan");
   }
 

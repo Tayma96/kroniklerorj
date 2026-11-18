@@ -13,6 +13,8 @@ import { mudavimGorunumu, mudavimZiyaret } from "./mudavim.ts";
 import { dertGorunumu, ortakDertKatki, ORTAK_DERT_KURALLARI, uygunKatkilar } from "./ortak-dert.ts";
 import { senlikGorunumu, senlikKatki } from "./senlik.ts";
 import { gostergeGorunumu } from "./topluluk-kayit.ts";
+import { hazineDefteriGorunumu } from "./topluluk.ts";
+import { koruDik, koruGorunumu } from "./koru.ts";
 
 function nesneMi(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
@@ -37,7 +39,20 @@ export function toplulukOku(m: YerlesimMotoru, hesapId: string): Promise<Sonuc<u
       mudavim: mudavimGorunumu(kar, simdi, ay),
       zaviye: zaviyeOzeti(k, kar, ay),
       gostergeler: gostergeGorunumu(k),
+      ...(k.tl?.hk?.length ? { hazineDefteri: hazineDefteriGorunumu(k) } : {}),
+      ...(k.tl?.ko !== undefined ? { koru: koruGorunumu(k) } : {}),
     });
+  });
+}
+
+/** POST /v1/koru {istekNo}: koru dikimi (koru.ts); bütün sakinler yüklenir (azalan getiri sayaçları sıfırlanır). */
+export function koruUc(m: YerlesimMotoru, hesapId: string, govde: unknown): Promise<Sonuc<unknown>> {
+  if (!nesneMi(govde)) return Promise.resolve(hata("gecersiz_istek"));
+  return m.toplulukYaz(hesapId, govde, m.kasaba.sakin.map((s) => s.o), (kar, ay, ek) => {
+    const r = koruDik(m.kasaba, kar, ay);
+    if (!r.ok) return r;
+    ek.digerleri.push(...r.deger.digerleri);
+    return basarili(r.deger.yanit);
   });
 }
 

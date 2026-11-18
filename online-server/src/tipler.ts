@@ -683,7 +683,7 @@ export const GOVDELI_ISLEMLER = [
 export type GovdeliIslem = (typeof GOVDELI_ISLEMLER)[number];
 
 /** Hanedan (Faz 7) gövdeli işlemleri: POST /v1/vasiyet, /v1/devir, /v1/evlilik. */
-export const HANEDAN_ISLEMLERI = ["vasiyet", "devir", "evlilik"] as const;
+export const HANEDAN_ISLEMLERI = ["vasiyet", "devir", "evlilik", "kronikYaz"] as const;
 export type HanedanIslem = (typeof HANEDAN_ISLEMLERI)[number];
 /** Hanedan iletileri (HesapDO aynen YerlesimDO'ya iletir; `yerlesim` eklenir). */
 export type HanedanIletisi =
@@ -693,7 +693,7 @@ export type HanedanIletisi =
   | { islem: "kronik"; hesapId: string; imlec?: string | null; dil?: string | null };
 
 /** Topluluk (E5–E7) gövdeli işlemleri: POST /v1/mesrep, /v1/hami, /v1/ortak-dert, /v1/senlik, /v1/zaviye. */
-export const TOPLULUK_ISLEMLERI = ["mesrep", "hami", "ortakDert", "senlik", "zaviye", "etkinlik"] as const;
+export const TOPLULUK_ISLEMLERI = ["mesrep", "hami", "ortakDert", "senlik", "zaviye", "etkinlik", "koru"] as const;
 export type ToplulukIslem = (typeof TOPLULUK_ISLEMLERI)[number];
 /** Topluluk iletileri (HesapDO aynen YerlesimDO'ya iletir; `yerlesim` eklenir). */
 export type ToplulukIletisi = { islem: ToplulukIslem; hesapId: string; govde: unknown } | { islem: "topluluk"; hesapId: string; dil?: string | null };
@@ -799,7 +799,7 @@ export type YerlesimIleti =
   | (KervanIstemciIletisi & { yerlesim: string })
   /** Kervan (D2; YerlesimDO → YerlesimDO, istemci ulaşamaz): varış (işlem kimliğiyle bir kez) ve salt okuma fiyat özeti. */
   | { islem: "kervanVaris"; yerlesim: string; islemNo: string; kaynak: string; yuk: unknown }
-  | { islem: "fiyatOzeti"; yerlesim: string; hesap?: string; yuk?: unknown; va?: number; ke?: number }
+  | { islem: "fiyatOzeti"; yerlesim: string; hesap?: string; yuk?: unknown; va?: number; ke?: number; dongu?: boolean }
   | (BarinmaIletisi & { yerlesim: string });
 
 export type DunyaIleti =

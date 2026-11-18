@@ -112,6 +112,28 @@ export const ZAHIRE_ALIM_AKCE = 30;
 export const ORTAK_DERT_GONUL = 3;
 export const ORTAK_DERT_NAM = 1;
 export const DERT_NAM: Readonly<Record<DertTuru, Nam>> = { kitlik: "comertlik", hasat: "caliskanlik", haydut: "mertlik", salgin: "dindarlik" };
+/**
+ * [PARAMETRE] Kanca partisi 2 (hak f–k), derdi hafifleten haklar. Hiçbiri akçe, nam ya da gönül vermez; yalnız derdin
+ * eşiğini, penceresini ya da göstergeyi değiştirir (dökümde `esikDokum` ve katkı yanıtında görünür).
+ * - Önderlik (açılışta; yaşayan bir sakinde açıksa): "senin önderliğinde katkı eşiği düşük açılır".
+ * - Buyruk (`kapiKapama`, `karantina`): hakkı olan ilk katkısında buyruk yazılır, eşik bir kez düşer.
+ * - Toplam eşik indirimi açılış (ham) eşiğinin DERT_ESIK_INDIRIM_TAVAN yüzdesini aşmaz.
+ */
+export const DERT_ONDERLIK: Readonly<Partial<Record<DertTuru, string>>> = { haydut: "haydutOnderligi", kitlik: "kitlikOnderligi" };
+export const DERT_ONDERLIK_INDIRIM = 20;
+export const DERT_BUYRUK: Readonly<Partial<Record<DertTuru, string>>> = { haydut: "kapiKapama", salgin: "karantina" };
+export const DERT_BUYRUK_INDIRIM = 15;
+export const DERT_ESIK_INDIRIM_TAVAN = 30;
+/** [PARAMETRE] Gözcülük `hazirlikPenceresi`: yaklaşan tehdidin (haydut) penceresi açılışta bu kadar ay uzar. */
+export const DERT_HAZIRLIK: Readonly<Partial<Record<DertTuru, string>>> = { haydut: "hazirlikPenceresi" };
+export const DERT_HAZIRLIK_AY = 1;
+/**
+ * [PARAMETRE] `kitlikBagisi`: kıtlık derdine erzak sandığı bağışı Erzak'a (arz göstergesi) da yazar: sandık başına bu
+ * kadar, katkı başına en çok BAGIS_ARZ_EN_COK (kişi başı katkı tavanı ORTAK_DERT_KISI_EN_COK ayrıca geçerli).
+ */
+export const BAGIS_MALI: MalId = "erzakSandigi";
+export const BAGIS_ARZ = 1;
+export const BAGIS_ARZ_EN_COK = 2;
 /** [PARAMETRE] Tutulan kapanmış dert ve defter satırı sayısı. */
 export const ORTAK_DERT_TUTULAN = 6;
 export const DEFTER_EN_COK = 60;
@@ -147,6 +169,27 @@ export interface OrtakDert {
   e?: string;
   /** Kanca partisi 2: hazinenin bu derde yaptığı zahire alımı (akçe; tek sefer izi). */
   za?: number;
+  /** Kanca partisi 2: ham (açılış) eşiği ve eşik/pencere kalemleri [kanca, fark, kişi adı] (döküm; yoksa indirim yok). */
+  eh?: number;
+  ei?: [kanca: string, d: number, ad: string][];
+  /** Buyruğu yazanın yerel kimliği (dert başına bir kez). */
+  bu?: string;
+}
+
+/** Yaşayan, hakkı açık ilk sakin (kimlik sırasıyla; deterministik). */
+function hakSahibi(k: Kasaba, hak: string): Karakter | undefined {
+  return [...k.kar.values()].filter((c) => !olduMu(c) && hakAcik(c, hak)).sort((a, b) => (a.o < b.o ? -1 : a.o > b.o ? 1 : 0))[0];
+}
+
+/** Eşik indirimi (yüzde, ham eşikten) uygular; toplam tavanı aşan kısım kırpılır. Uygulanan indirimi döndürür. */
+function esikIndir(d: OrtakDert, kanca: string, yuzde: number, ad: string): number {
+  const ham = (d.eh ??= d.es);
+  const once = ham - d.es;
+  const tavan = Math.floor((ham * DERT_ESIK_INDIRIM_TAVAN) / 100);
+  const fark = Math.max(0, Math.min(Math.round((ham * yuzde) / 100), tavan - once));
+  d.es -= fark;
+  (d.ei ??= []).push([kanca, -fark, ad]);
+  return fark;
 }
 
 const derttenTetik = (t: DertTuru): KasabaTetigi | undefined => (t === "kitlik" || t === "haydut" ? t : undefined);
@@ -163,6 +206,15 @@ function etkinSayisi(k: Kasaba, ay: number): number {
 function dertAc(k: Kasaba, tl: ToplulukKaydi, t: DertTuru, ay: number, sure: number): OlayTaslagi {
   const es = Math.min(ORTAK_DERT_ESIK_TAVAN, ORTAK_DERT_ESIK_TABAN + ORTAK_DERT_ESIK_KISI * etkinSayisi(k, ay));
   const d: OrtakDert = { i: tl.on++, t, ac: ay, bt: ay + Math.max(sure, ORTAK_DERT_PENCERE_EN_AZ) - 1, es, pu: 0, np: 0, d: "acik", k: [] };
+  const onder = DERT_ONDERLIK[t];
+  const o = onder ? hakSahibi(k, onder) : undefined;
+  if (onder && o) esikIndir(d, onder, DERT_ONDERLIK_INDIRIM, o.ad);
+  const hazirlik = DERT_HAZIRLIK[t];
+  const g = hazirlik ? hakSahibi(k, hazirlik) : undefined;
+  if (hazirlik && g) {
+    d.bt += DERT_HAZIRLIK_AY;
+    (d.ei ??= []).push([hazirlik, DERT_HAZIRLIK_AY, g.ad]);
+  }
   tl.od.push(d);
   return { t: "ortakDert", w: "", h: "", g: "", n: 6, k: "olay.ortakDert.acildi", p: { dert: t, esik: es, bitis: d.bt } };
 }
@@ -345,6 +397,17 @@ export function ortakDertKatki(k: Kasaba, kar: Karakter, govde: Record<string, u
   }
   if (!takatHarca(kar, ay, ORTAK_DERT_TAKAT)) return hata("takat_yok");
   if (mal) envanterEkle(kar, mal, -adet);
+  // Kanca partisi 2: asayiş buyruğu (eşik bir kez düşer) ve kıtlık bağışı (erzak sandığı Erzak'a yazar).
+  const buyrukHak = DERT_BUYRUK[d.t];
+  let buyruk: { hak: string; esik: number } | undefined;
+  if (buyrukHak && !d.bu && hakAcik(kar, buyrukHak)) {
+    d.bu = kar.o;
+    buyruk = { hak: buyrukHak, esik: -esikIndir(d, buyrukHak, DERT_BUYRUK_INDIRIM, kar.ad) };
+  }
+  let bagis: { arz: number } | undefined;
+  if (d.t === "kitlik" && mal === BAGIS_MALI && hakAcik(kar, "kitlikBagisi")) {
+    bagis = { arz: gostergeDegistir(tl, "arz", Math.min(BAGIS_ARZ_EN_COK, BAGIS_ARZ * adet)) };
+  }
   const olaylar: OlayTaslagi[] = [];
   const odul: { gonul?: number; nam?: Partial<Record<Nam, number>> } = {};
   (d.ks ??= {})[kar.o] = sayi + 1;
@@ -373,6 +436,8 @@ export function ortakDertKatki(k: Kasaba, kar: Karakter, govde: Record<string, u
       katki: { tur: katki, puan, dokum: { toplam: puan, kalemler } },
       odul,
       basardi,
+      ...(buyruk ? { buyruk } : {}),
+      ...(bagis ? { bagis } : {}),
     },
     olaylar,
   });
@@ -395,6 +460,7 @@ export function dertGorunumu(d: OrtakDert, kar?: Karakter) {
     defter: d.k.map((x) => ({ id: x.o, ad: x.ad, katkilar: x.t })),
     ...(kar ? { benim: { sayi: d.ks?.[kar.o] ?? ben?.n ?? 0, kalan: ORTAK_DERT_KISI_EN_COK - (d.ks?.[kar.o] ?? ben?.n ?? 0), puan: ben?.p ?? 0 } } : {}),
     ...(d.ka !== undefined ? { kapanis: d.ka } : {}),
+    ...(d.ei?.length ? { esikDokum: { ham: d.eh ?? d.es, kalemler: d.ei.map(([kanca, fark, ad]) => ({ kanca, d: fark, kisiAd: ad })) } } : {}),
   };
 }
 

@@ -3,7 +3,7 @@
 // sırayla, çağrı başına sınırlı yetiştirilir. İnce sarmalayıcıdır; kurallar src/yerlesim/*.ts'dedir.
 
 import { doDepo, type Depo } from "./depo.ts";
-import { etkinlikUc, hamiUc, mesrepUc, mudavimUc, ortakDertUc, senlikUc, toplulukOku, zaviyeUc } from "./yerlesim/topluluk-uclar.ts";
+import { etkinlikUc, hamiUc, koruUc, mesrepUc, mudavimUc, ortakDertUc, senlikUc, toplulukOku, zaviyeUc } from "./yerlesim/topluluk-uclar.ts";
 import { defterOku, hizmetGeriUc, hizmetHazirlaUc, hizmetIlanUc, hizmetIslemUc, hizmetOku, hizmetTalepTeslimUc, hizmetGorevTeslimUc, ismarlaUc, ismarlamaCevapUc, ismarlamaOku, levhaOku, pazarGeri, pazarIlan, pazarIslem, pazarOku } from "./yerlesim/ekonomi-uclar.ts";
 import { armaganGeri, armaganTeveccuh } from "./yerlesim/armagan-uclar.ts";
 import { iletiOku, isletmeCagir, jsonYanit, yerlesimCagir, yonetimCagir } from "./ic.ts";
@@ -371,6 +371,8 @@ export class YerlesimDO {
         return motor.devir(ileti.hesapId, ileti.govde);
       case "evlilik":
         return motor.evlilik(ileti.hesapId, ileti.govde);
+      case "kronikYaz":
+        return motor.kronikYaz(ileti.hesapId, ileti.govde);
       case "kronik":
         return motor.kronik(ileti.hesapId, ileti.imlec, ileti.dil);
       // Topluluk (E5–E7): src/yerlesim/topluluk-uclar.ts
@@ -388,6 +390,8 @@ export class YerlesimDO {
         return zaviyeUc(motor, ileti.hesapId, ileti.govde);
       case "etkinlik":
         return etkinlikUc(motor, ileti.hesapId, ileti.govde);
+      case "koru":
+        return koruUc(motor, ileti.hesapId, ileti.govde);
       case "mudavimZiyaret": {
         const han = hanNoCoz(ileti.han);
         if (han === undefined || !motor.hanAcikMi(han)) return hata("han_yok");
@@ -471,7 +475,7 @@ export class YerlesimDO {
       case "kervanVaris":
         return kervanVarisUc(motor, ileti.islemNo, ileti.kaynak, ileti.yuk, simdi);
       case "fiyatOzeti":
-        return fiyatOzetiUc(motor, ileti.hesap, ileti.yuk, ileti.va, ileti.ke);
+        return fiyatOzetiUc(motor, ileti.hesap, ileti.yuk, ileti.va, ileti.ke, ileti.dongu);
       case "mulkGiris":
         return { ok: true, deger: { sonuclar: await teslimAl(motor, ileti.kayitlar, simdi) } };
       default:

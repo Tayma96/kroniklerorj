@@ -505,8 +505,18 @@ export function hizmetNpcTalebiAc(kasaba: Kasaba, ay: number, olaylar: OlayTasla
     // Kanca partisi 2: "talepler bu kapıya gelir" (lohusa → `dogumTalebi`, teselli → `yasliHane`). Hakkı olan, yaşayan,
     // hedefle aynı hanede olmayan bir oyuncu varsa açılış ayında öncelik onundur (sırayla dönüşümlü); sonra herkes.
     // Ödül aynıdır (hazineden rezerve); akçe yoktan doğmaz.
+    // Kanca partisi 2 `haneEbeligi` ("ebe bağı"): bu hanenin önceki lohusa bakımını yapmış, hakkı açık, yaşayan ve
+    // hanenin dışından şifacı (en yenisi) ilk çağrılır; genel `dogumTalebi` dönüşümünden önce gelir. Ödül aynıdır.
+    if (hizmet === "lohusa") {
+      const ebe = talepler
+        .filter((x) => x.h === "lohusa" && x.d === "tamam" && x.hane === hedef.e && x.teslim)
+        .sort((a, b) => b.i - a.i)
+        .map((x) => kasaba.kar.get(x.teslim!.o))
+        .find((c) => c && !olduMu(c) && c.e !== hedef.e && hakAcik(c, "haneEbeligi"));
+      if (ebe) talep.on = ebe.o;
+    }
     const hak = NPC_TALEP_ONCELIK[hizmet];
-    if (hak) {
+    if (hak && !talep.on) {
       const sahipler = [...kasaba.kar.values()]
         .filter((c) => !olduMu(c) && c.e !== hedef.e && hakAcik(c, hak))
         .map((c) => c.o)

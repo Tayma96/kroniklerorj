@@ -10,8 +10,9 @@
  * tek satır neden yazar ("// boşta: ..."). 160: a–e/konsinye dalı (10) ve kalite/eşya dalı (13) birleşti; gece devriyesinin
  * hırsızlık tespiti ve kılıcı yalnız devriye görevinde (nöbete sayılmaz). 151: hak l–r dalı (9; namYayma/hileliTarti çarşı hilesinde) birleşti.
  * 133: hizmet/tarif/sinerji dalı (18; 9 kasaba görevi, ısmarlama zırh, uzak kervan) birleşti. 122: hak s–z dalı (11).
+ * 104: hak f–k dalı (18; ortak dert önderlik/buyruk, kronik, koru) birleşti.
  */
-export const BOSTA_TAVAN = 122;
+export const BOSTA_TAVAN = 104;
 
 export const BOSTA_KANCALAR: readonly string[] = [
   // av sistemi yok (izSur hizmeti hizmet ajanında; hedefi "av" olan araçlı hizmet gelince bağlanır)
@@ -42,48 +43,30 @@ export const BOSTA_KANCALAR: readonly string[] = [
   "hak:ebeBagi", // boşta: hane–ebe bağı sistemi yok
   "hak:ebeIcazeti", // boşta: icazet sistemi yok
   "hak:elcilikAdayligi", // boşta: elçi makamı yok
-  "hak:fiyatDongusu",
-  "hak:gecisAkcesi",
-  "hak:gencTalimi",
-  "hak:haberSatisi",
-  "hak:hamamProjesi",
-  "hak:haneEbeligi",
-  "hak:hanedanDestani",
-  "hak:haracSecenegi",
-  "hak:haydutDokumu",
-  "hak:haydutOnderligi",
-  "hak:hazineDefteri",
-  "hak:hazineEminligi",
-  "hak:hazirlikPenceresi",
-  "hak:hekimIcazeti",
-  "hak:heyetUzlasmasi",
-  "hak:hikmetliKarar",
-  "hak:husumetListesi",
-  "hak:ilkGorus",
-  "hak:ipekYoluSeferi",
-  "hak:kadilikAdayligi",
-  "hak:kafile",
-  "hak:kapiDefteri",
-  "hak:kapiKapama",
-  "hak:karantina",
-  "hak:kararDefteri",
-  "hak:kararOnerisi",
-  "hak:kasabaKronigi",
-  "hak:kasabaSicili",
-  "hak:katkiDefteri",
-  "hak:kayitDisiKalem",
-  "hak:kayitDisiSifir",
-  "hak:kervanYolu",
-  "hak:kesifRaporu",
-  "hak:kethudaAdayligi",
-  "hak:kitlikBagisi",
-  "hak:kitlikOnderligi",
-  "hak:komsuSohret",
-  "hak:kopruBakimi",
-  "hak:koruBakimi",
-  "hak:koruDikimi",
-  "hak:kronikNami",
-  "hak:kuraklikDirenci",
+  "hak:gecisAkcesi", // köprü yapımı/köprübaşı sistemi yok (ahsapKopru da boşta)
+  "hak:haberSatisi", // oyuncular arası bilgi satışı (teklif türü + haber kopyası) yeni sistem ister
+  "hak:hamamProjesi", // hamam yapısı yok; genişletme indirimi anlamı bozar
+  "hak:hanedanDestani", // hanedan destanı (vâris devrinde nam korunumu) için destan kaydı ve devir kuralı yeni sistem
+  "hak:haracSecenegi", // beylik elçiliği/haraç müzakeresi (BolgeDO) yok; beylikElciligi hizmeti de boşta
+  "hak:haydutDokumu", // kervanda haydut/rota riski yok (ikinci dilim)
+  "hak:hazineEminligi", // hazine emini makamı siyasette yok
+  "hak:hekimIcazeti", // icazet (ustalık onayı) sistemi yok
+  "hak:hikmetliKarar", // meclis karar sistemi yok
+  "hak:ipekYoluSeferi", // uzak pazar/mesafe kavramı yok (kervan her beyliğe gider)
+  "hak:kadilikAdayligi", // kadı makamı siyasette yok
+  "hak:kafile", // kervanda haydut kaybı ve çok tüccarlı kafile yok (ikinci dilim)
+  "hak:kapiDefteri", // yerleşime giriş/ziyaret kavramı yok; göç zaten kronikte
+  "hak:kararDefteri", // meclis karar sistemi yok
+  "hak:kararOnerisi", // meclis karar/oylama sistemi yok
+  "hak:kasabaSicili", // senet/tasdik sistemi yok
+  "hak:katkiDefteri", // yerel şenlik önerisi (yerelSenlik) olmadan anlamsız; şenlik katkısı zaten defterli
+  "hak:kayitDisiKalem", // kasabada kayıt dışı vergi mekaniği yok; bölge vergisini artırmak akçe basar
+  "hak:kayitDisiSifir", // kasabada kayıt dışı vergi mekaniği yok; bölge vergisini artırmak akçe basar
+  "hak:kervanYolu", // yerleşimler arası anlaşma sistemi ve komşuluk verisi yok
+  "hak:kesifRaporu", // oyuncu düzeyinde çatışma/sefer sistemi yok
+  "hak:komsuSohret", // komşuluk verisi yok (yerleşimler arası şöhret yayılımı)
+  "hak:kopruBakimi", // köprü yapımı/köprübaşı sistemi yok
+  "hak:kuraklikDirenci", // kuraklık/hasat kaybı mekaniği yok
   "hak:meclisSirasi", // boşta: siyaset (meclis gündem sırası): bölge meclisi programında kapanır
   "hak:meraKarari", // boşta: mera kararı meclis/gündem işi; çevrimiçide mera sistemi yok
   "hak:naiplik", // boşta: siyaset (kadılık yolu): makam sisteminde (siyaset/makam.ts) kapanır
@@ -96,7 +79,7 @@ export const BOSTA_KANCALAR: readonly string[] = [
   "hak:rotaSecimi", // boşta: kervanda rota ve yol tehlikesi yok
   "hak:safDuzeni", // boşta: çatışmada asker rolü/saf seçeneği yok (siyaset çatışması yalnız makam emri)
   "hak:sahteBelge", // boşta: sahte belge (sahtecilik) sistemi yok
-  "hak:senetliIhtilaf", // boşta: hakemlik hizmeti ve senet ihtilafı akışı yok (hakemlik yalnız kasaba görevi; senet davası yok)
+  "hak:senetliIhtilaf", // boşta: senet ihtilafı (senet davası) akışı yok; hakemlik yalnız kasaba görevi
   "hak:serdarAdayligi", // boşta: serdar makamı yok (siyaset makam listesi)
   "hak:seyhAdayligi", // boşta: tekke/şeyhlik makamı yok
   "hak:soylentiDurdurma", // boşta: susturma için yeni uç ve hak edilmiş kötü söylentiyi örtme denetimi gerekir

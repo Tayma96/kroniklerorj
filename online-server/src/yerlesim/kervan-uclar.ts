@@ -7,13 +7,14 @@ import { MALLAR, type MalId } from "../icerik/mallar.ts";
 import { istekNoCoz } from "../mantik.ts";
 import { cikisKapat, denemeErtele, sonrakiDeneme } from "../mulk/transfer.ts";
 import { basarili, hata, type Sonuc, type YerlesimIleti } from "../tipler.ts";
-import { hizmetAcik } from "./beceri-etki.ts";
+import { hakAcik, hizmetAcik } from "./beceri-etki.ts";
 import { defterYaz } from "./defter.ts";
 import { olduMu } from "./hanedan.ts";
 import { istekBul } from "./istek-defteri.ts";
 import { takatHarca, takatTazele } from "./karakter.ts";
 import {
   bosKervanDefteri,
+  fiyatDongusu,
   fiyatOzeti,
   gecerliHaber,
   HABER_GECERLILIK_AY,
@@ -82,9 +83,9 @@ interface OzetYaniti {
   tahmin?: Omit<VarisSonucu, "durum" | "an">;
 }
 
-async function ozetIste(cagir: KervanCagir, yerlesim: string, hesap?: string, yuk?: Yuk, va?: number, ke = 0): Promise<OzetYaniti | undefined> {
+async function ozetIste(cagir: KervanCagir, yerlesim: string, hesap?: string, yuk?: Yuk, va?: number, ke = 0, dongu?: boolean): Promise<OzetYaniti | undefined> {
   try {
-    const r = await cagir({ islem: "fiyatOzeti", yerlesim, ...(hesap ? { hesap } : {}), ...(yuk ? { yuk } : {}), ...(va !== undefined ? { va } : {}), ...(ke > 0 ? { ke } : {}) });
+    const r = await cagir({ islem: "fiyatOzeti", yerlesim, ...(hesap ? { hesap } : {}), ...(yuk ? { yuk } : {}), ...(va !== undefined ? { va } : {}), ...(ke > 0 ? { ke } : {}), ...(dongu ? { dongu } : {}) });
     return r.ok && nesneMi(r.deger) && nesneMi(r.deger.ozet) ? (r.deger as unknown as OzetYaniti) : undefined;
   } catch {
     return undefined;
@@ -179,7 +180,9 @@ export async function kervanHaber(motor: KervanMotoru, hesapId: string, govde: u
     if (kar.tk < HABER_TAKAT) return hata("takat_yok");
     const beylik = BEYLIKLER.find((b) => b.yerlesimler.some((y) => y.id === k.y));
     const hedefler = haberYerlesimleri(k.y, beylik?.yerlesimler.map((y) => y.id) ?? []);
-    const ozetler = await Promise.all(hedefler.map((y) => ozetIste(cagir, y)));
+    // Kanca partisi 2 `fiyatDongusu`: hakkı olanın haberinde her yerleşimin fiyat döngüsü (kıtlık süresi, Erzak) de gelir.
+    const dongu = hakAcik(kar, "fiyatDongusu");
+    const ozetler = await Promise.all(hedefler.map((y) => ozetIste(cagir, y, undefined, undefined, undefined, 0, dongu)));
     yerlesimler = ozetler.filter((x): x is OzetYaniti => x !== undefined).map((x) => x.ozet);
     if (yerlesimler.length === 0) return hata("kervan_ulasilamadi");
   }
@@ -213,9 +216,10 @@ export function kervanVarisUc(motor: KervanMotoru, islemNo: unknown, kaynak: unk
 }
 
 /** fiyatOzeti: salt okuma (lonca, en pahalı mallar; yük verildiyse varış tahmini). */
-export function fiyatOzetiUc(motor: KervanMotoru, hesap: unknown, yukHam: unknown, va: unknown, ke?: unknown): Sonuc<OzetYaniti> {
+export function fiyatOzetiUc(motor: KervanMotoru, hesap: unknown, yukHam: unknown, va: unknown, ke?: unknown, dongu?: unknown): Sonuc<OzetYaniti> {
   const k = motor.kasaba;
   const ozet = fiyatOzeti(k);
+  if (dongu === true) ozet.dongu = fiyatDongusu(k);
   if (typeof hesap !== "string" || yukHam === undefined || !Number.isInteger(va)) return basarili({ ozet });
   const yuk = yukCoz(yukHam);
   if (!yuk.ok) return basarili({ ozet });

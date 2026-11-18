@@ -33,6 +33,8 @@ import { aileEtkisi, ARAC_KALITE_YUK, enIyiBirim, YOL_GIYSISI } from "./esya.ts"
 import { kaliteYuzdesi } from "./kanca-kalite.ts";
 import { envanterEkle, npcFiyat, satisDegeri, stogaEkle, type KasabaStogu } from "./npc-taban.ts";
 import { KITLIK_KOTASI, npcSatisEki, npcSatisKotasi } from "./pazar.ts";
+import { arkaPlanAl, tetikSurer } from "./arka-plan.ts";
+import { gostergeOku, gostergeTetikCarpani } from "./topluluk-kayit.ts";
 import type { CalismaParametreleri, Dokum, Karakter, Kasaba } from "./tipler.ts";
 
 /** [PARAMETRE] Kervan bedeli: envanterden nal ve koşum (tüketilir), karakterden takat. */
@@ -209,6 +211,23 @@ export interface FiyatOzeti {
   lonca: LoncaSatiri[];
   /** En pahalı mallar: önce kıtlık primli, sonra birim değer; NPC alış (satış değeri) ve NPC satış fiyatı. */
   pahali: { mal: MalId; alis: Dokum; npcSatis: Dokum }[];
+  /** Kanca partisi 2 `fiyatDongusu` (uzak pazarın fiyat döngüsü): yalnız hakkı olanın haberinde. */
+  dongu?: FiyatDongusu;
+}
+
+/** Fiyatı süren etkenler: kıtlık primi sürüyor mu ve hangi aya dek, Erzak (arz) göstergesi, kıtlık olasılığı çarpanı. */
+export interface FiyatDongusu {
+  kitlik: boolean;
+  kitlikBitis: number | null;
+  arz: number;
+  kitlikCarpani: number;
+}
+
+/** Hedef yerleşimin fiyat döngüsü (salt okuma). */
+export function fiyatDongusu(k: Kasaba): FiyatDongusu {
+  const ap = arkaPlanAl(k);
+  const kitlik = tetikSurer(ap, "kitlik", k.ay);
+  return { kitlik, kitlikBitis: kitlik ? (ap.tt.kitlik ?? null) : null, arz: gostergeOku(k, "arz"), kitlikCarpani: gostergeTetikCarpani(k, "kitlik") };
 }
 export interface KervanHaberi {
   ay: number;

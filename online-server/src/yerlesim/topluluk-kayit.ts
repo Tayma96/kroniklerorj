@@ -44,6 +44,14 @@ export interface ToplulukKaydi {
   ss?: number;
   /** Kanca partisi 2 (hak s–z): ay dönümünde yazılan barınma hakları izi [ay, zaviye, yoksul çorbası] (barinma.ts). */
   bh?: [ay: number, zaviye: 0 | 1, corba: 0 | 1];
+  /** Kanca partisi 2 `gencTalimi`: gençlerin talim edildiği son ay (o ayın dönümünde asayiş yarı aşınır). */
+  gt?: number;
+  /** Kanca partisi 2 `hazineDefteri`: kasaba hazinesinin ay başı bakiyeleri [ay, bakiye, defteri tutanın adı]. */
+  hk?: [ay: number, bakiye: number, ad: string][];
+  /** Kanca partisi 2: ozanın kronik kalemi izi (src/yerlesim/kronik.ts). */
+  kl?: { y: Record<string, [number, number]>; s: number[]; n: Record<string, number> };
+  /** Kanca partisi 2 `koruDikimi`: son koru dikimi ayı (src/yerlesim/koru.ts). */
+  ko?: number;
 }
 
 export function toplulukAl(k: Kasaba): ToplulukKaydi {
@@ -66,11 +74,18 @@ export function gostergeDegistir(tl: ToplulukKaydi, g: Gosterge, d: number): num
   return yeni - once;
 }
 
-/** Aylık dengeye dönüş. */
-export function gostergeDonumu(tl: ToplulukKaydi): void {
+/**
+ * [PARAMETRE] Kanca partisi 2 `gencTalimi` ("gençleri talim eder; garnizon gücü aşınmaz"): talim görevi o hakla
+ * yapılan ayın dönümünde dengenin üstündeki asayiş bu kadar aşınır (olağanı GOSTERGE_AYLIK_DONUS).
+ */
+export const GENC_TALIMI_ASINMA = 1;
+
+/** Aylık dengeye dönüş (`ay`: yeni ay; verilirse genç talimi bir önceki ayın talimine bakar). */
+export function gostergeDonumu(tl: ToplulukKaydi, ay?: number): void {
   for (const g of GOSTERGELER) {
     const v = gostergeOku({ tl }, g);
-    const hedef = v > GOSTERGE_DENGE ? Math.max(GOSTERGE_DENGE, v - GOSTERGE_AYLIK_DONUS) : Math.min(GOSTERGE_DENGE, v + GOSTERGE_AYLIK_DONUS);
+    const asinma = g === "asayis" && ay !== undefined && tl.gt === ay - 1 ? GENC_TALIMI_ASINMA : GOSTERGE_AYLIK_DONUS;
+    const hedef = v > GOSTERGE_DENGE ? Math.max(GOSTERGE_DENGE, v - asinma) : Math.min(GOSTERGE_DENGE, v + GOSTERGE_AYLIK_DONUS);
     gostergeDegistir(tl, g, hedef - v);
   }
 }
