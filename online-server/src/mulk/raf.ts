@@ -40,7 +40,8 @@ export function satirBul(t: Tezgah, n: unknown): RafSatiri | undefined {
 
 /** Depo → raf. Aynı mal + kalite satırı varsa ona eklenir (fiyat verilirse güncellenir); yoksa yeni satır (fiyat şart). */
 export function rafaKoy(t: Tezgah, mal: MalId, q: Kalite, adet: number, fiyat: unknown, seviye: number, ek: { satir: number; adet: number } = { satir: 0, adet: 0 }, esya?: string): Sonuc<{ satir: RafSatiri }> {
-  let s = t.r.find((x) => x.m === mal && x.q === q);
+  // Konsinye satırı (emanetçinin) sahibin malıyla birleşmez.
+  let s = t.r.find((x) => x.m === mal && x.q === q && !x.ko);
   if (fiyat !== undefined && !fiyatGecerli(mal, q, fiyat)) return hata("fiyat_bant_disi");
   if (!s) {
     if (fiyat === undefined) return hata("fiyat_gecersiz");
@@ -99,6 +100,8 @@ export function satirGorunumu(s: RafSatiri, itibar?: number) {
     ...(yapan ? { yapan } : {}),
     ...(itibar !== undefined ? { cekicilik: cekicilik(s.m, s.q, s.f, itibar) } : {}),
     ...rafEsyaAlanlari(s),
+    // Kanca partisi 2: konsinye satırı (yalnız NPC'ye satılır; emanetçinin adı ve komisyon yüzdesi).
+    ...(s.ko ? { konsinye: { ad: s.ko.ad, komisyon: s.ko.y } } : {}),
   };
 }
 

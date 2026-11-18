@@ -13,7 +13,7 @@ import { olduMu } from "../yerlesim/hanedan.ts";
 import { kaliteliEkle, type Envanterli, type KaliteParti } from "../yerlesim/kalite.ts";
 import { stogaEkle, type KasabaStogu } from "../yerlesim/npc-taban.ts";
 import type { Karakter, Kasaba } from "../yerlesim/tipler.ts";
-import { tezgahBosalt } from "./depo.ts";
+import { tezgahBosalt, type Tezgah } from "./depo.ts";
 
 export type IadeKaydi = Envanterli & { pa?: number };
 
@@ -138,3 +138,18 @@ kimlikTasiyiciEkle((k, eski, yeni) => {
   delete d.ia![eski];
   birlestir(bekleyen(k, yeni), ia);
 });
+
+/**
+ * Kanca partisi 2 (konsinye): tezgâhın konsinye satırlarını emanetçilerine iade eder (envanter ya da bekleyen; kayıp
+ * yok). Devralma, iflas ve iade boşaltmasından ÖNCE çağrılır: emanet mal dükkân sahibine geçmez. Döner: iade adedi.
+ */
+export function konsinyeIade(k: Kasaba, t: Tezgah): number {
+  let n = 0;
+  for (const s of t.r.filter((x) => x.ko)) {
+    const p = s.p;
+    n += p.reduce((a, x) => a + x[1], 0);
+    malIade(k, s.ko!.o, (h) => kaliteliEkle(h, s.m, p));
+  }
+  t.r = t.r.filter((x) => !x.ko);
+  return n;
+}

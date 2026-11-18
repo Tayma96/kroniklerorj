@@ -9,25 +9,30 @@ import { bakim, defterYaz, etkinler, iflasEt, isletmeKur, kalite, maasOde } from
 import { IFLAS_BORC_AY, ITIBAR_BORC, ITIBAR_EN_COK, ITIBAR_KALITE, ITIBAR_MAAS_BOZMA, ITIBAR_MUSTERI, ITIBAR_MUSTERI_TAVAN, isletmeCoz } from "./kurallar.ts";
 import { cikisAc, type CevapDurumu, type CikisKaydi } from "./transfer.ts";
 import { zanaatMi } from "./atolye.ts";
+import { KANCA_TAVAN } from "./tezgah-kurallar.ts";
 
-type AyGirdisi = [ay: number, net: number, satir: number];
+/** [ay, net, satış yapan satır, bakım indirimi yüzdesi (kanca partisi 2; eski kayıtta yok = 0)]. */
+type AyGirdisi = [ay: number, net: number, satir: number, bakimIndirim: number];
 
 function girdileriCoz(x: CikisKaydi): AyGirdisi[] | undefined {
   const l = x.y.aylar;
   if (!Array.isArray(l) || l.length === 0 || l.length > 64) return undefined;
   const g: AyGirdisi[] = [];
   for (const e of l) {
-    if (!Array.isArray(e) || e.length !== 3 || !e.every((v) => Number.isInteger(v) && v >= 0)) return undefined;
-    g.push([e[0], e[1], e[2]]);
+    if (!Array.isArray(e) || (e.length !== 3 && e.length !== 4) || !e.every((v) => Number.isInteger(v) && v >= 0)) return undefined;
+    if ((e[3] ?? 0) > KANCA_TAVAN.bakimIndirim) return undefined;
+    g.push([e[0], e[1], e[2], e[3] ?? 0]);
   }
   if (g.reduce((t, e) => t + e[1], 0) !== x.a) return undefined;
   return g.sort((a, b) => a[0] - b[0]);
 }
 
 /** Dükkânın (ve üretimli atölye ayının) açık (kepenksiz) bir ayı: bakım + borç, faaliyet ayı, itibar (satış yapan satır + sayılan müşteri), iflas. */
-function dukkanAyi(is: Isletme, ay: number, satir: number, an: number): void {
+function dukkanAyi(is: Isletme, ay: number, satir: number, an: number, bakimIndirim = 0): void {
   if (is.durum !== "acik") return;
-  const gider = bakim(is) + is.borc;
+  // Kanca partisi 2: bakım indirimi (yapı onarımı, bakım defteri; yerleşimin kanca hesabından, tavanlı) yuvarlanır.
+  const b = bakim(is);
+  const gider = b - Math.round((b * bakimIndirim) / 100) + is.borc;
   const odenen = Math.min(is.kasa, gider);
   is.kasa -= odenen;
   is.batak += odenen;
@@ -60,10 +65,10 @@ export function tezgahKaydiUygula(is: Isletme, x: CikisKaydi, an: number): { dur
     is.gelir += net;
     defterYaz(is, ay, kalem, net);
   }
-  if (is.tur === "dukkan") for (const [ay, , satir] of g) dukkanAyi(is, ay, satir, an);
+  if (is.tur === "dukkan") for (const [ay, , satir, bi] of g) dukkanAyi(is, ay, satir, an, bi);
   // Atölye (Dilim 2): üretimli ay girdisi (satir > 0) bakım, maaş, faaliyet, itibar işletir; toplu sipariş ödülü
   // (satir 0) yalnız gelirdir. Üretimsiz ay girdi doğurmaz: kepenkli.
-  if (is.tur === "atolye") for (const [ay, , satir] of g) if (satir > 0) dukkanAyi(is, ay, satir, an);
+  if (is.tur === "atolye") for (const [ay, , satir, bi] of g) if (satir > 0) dukkanAyi(is, ay, satir, an, bi);
   return { durum: "kabul" };
 }
 

@@ -8,7 +8,7 @@
  * övme hizmeti, kendi rafına çekicilik değil) ve `hak:hileliTarti` (hileli tartı dürüst H olamaz) kayıttan geri alındı;
  * parti henüz ana dala girmediği için taban budur.
  */
-export const BOSTA_TAVAN = 183;
+export const BOSTA_TAVAN = 180;
 
 export const BOSTA_KANCALAR: readonly string[] = [
   "arac:av:mizrak",
@@ -22,7 +22,6 @@ export const BOSTA_KANCALAR: readonly string[] = [
   "hak:asayisAmirligi",
   "hak:asevi",
   "hak:asiklarMeclisi",
-  "hak:bakimDefteri",
   "hak:barisKitabesi",
   "hak:barisYemini",
   "hak:beylikMeclisi",
@@ -84,7 +83,6 @@ export const BOSTA_KANCALAR: readonly string[] = [
   "hak:kethudaAdayligi",
   "hak:kitlikBagisi",
   "hak:kitlikOnderligi",
-  "hak:komisyon",
   "hak:komsuSohret",
   "hak:kopruBakimi",
   "hak:koruBakimi",
@@ -152,7 +150,6 @@ export const BOSTA_KANCALAR: readonly string[] = [
   "hizmet:sifreliMektup",
   "hizmet:tercume",
   "hizmet:uzakKervan",
-  "hizmet:yapiOnarimi",
   "kalite:araBul",
   "kalite:butce",
   "kalite:cocukRiski",

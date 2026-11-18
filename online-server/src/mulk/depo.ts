@@ -17,6 +17,8 @@ export interface RafSatiri {
   q: Kalite;
   p: KaliteParti[];
   f: number;
+  /** Kanca partisi 2: konsinye satırı — emanetçi (yerel kimlik, ad) ve konduğu andaki komisyon yüzdesi. */
+  ko?: { o: string; ad: string; y: number };
 }
 
 /** Bir işletmenin tezgâhı: depo (Envanterli), raf, sayaçlar ve son gün sonu dökümü. */
@@ -50,6 +52,9 @@ export interface Tezgah extends Envanterli {
   ua?: number;
   /** Atölye: depodaki aletlerin aşınma sayacı (emirle ve anlık üretimde). */
   as?: Record<string, number>;
+  // ── Kanca partisi 2 ──
+  /** Dükkân: konsinye komisyon yüzdesi (yoksa KOMISYON_VARSAYILAN). */
+  kom?: number;
 }
 
 /** Üretim emri: tarif, toplam yapım, yapılan, açılış ayı, açan. */

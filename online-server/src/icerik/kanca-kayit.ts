@@ -22,8 +22,9 @@ import type { MeslekId } from "./meslekler.ts";
  * - topluIndirim: toplu siparişte teslim adedinden −yüzde (ödül aynı); `meslek` = sipariş zanaatı.
  * - genisletme: genişletme malzemesinden −yüzde; `mal` verilirse yalnız o malzeme.
  * - fiyatTablosu: dükkân görünümünde yerleşimdeki rakip raf fiyatları tablosu (bilgi; değer yok).
+ * - bakimIndirim (kanca partisi 2): dükkân/atölye aylık bakımından −yüzde.
  */
-export type KancaKanali = "mevcut" | "dukkanH" | "hanH" | "rafSatir" | "rafAdet" | "depo" | "atolyeKalite" | "npcCeza" | "topluIndirim" | "genisletme" | "fiyatTablosu";
+export type KancaKanali = "mevcut" | "dukkanH" | "hanH" | "rafSatir" | "rafAdet" | "depo" | "atolyeKalite" | "npcCeza" | "topluIndirim" | "genisletme" | "fiyatTablosu" | "bakimIndirim";
 
 export interface KancaBagi {
   kanal: KancaKanali;
@@ -217,6 +218,10 @@ export const KANCA_BAGLARI: Readonly<Record<string, KancaBagi>> = {
   // ── Bilgi ──
   "hak:fiyatTablosu": { kanal: "fiyatTablosu" },
 
+  // ── Kanca partisi 2: bakım ("bakımı ayni öder", yıpranan yapıların defteri) ──
+  "hizmet:yapiOnarimi": { kanal: "bakimIndirim", d: 25 },
+  "hak:bakimDefteri": { kanal: "bakimIndirim", d: 25 },
+
   // ── Kanca partisi 2: hizmet pazarı (kalite, yeni hizmetler, araç) ──
   "kalite:turku": m("src/yerlesim/hizmet-tarif.ts"),
   "kalite:teselli": m("src/yerlesim/hizmet-tarif.ts"),
@@ -259,4 +264,7 @@ export const KANCA_BAGLARI: Readonly<Record<string, KancaBagi>> = {
   "omur:araba": m("src/yerlesim/kervan.ts"),
   "omur:kagni": m("src/yerlesim/kervan.ts"),
   "kalite:kervan": m("src/yerlesim/kervan.ts"),
+
+  // ── Kanca partisi 2: konsinye (emanet satır, komisyon) ──
+  "hak:komisyon": m("src/mulk/tezgah-uclar.ts"),
 };

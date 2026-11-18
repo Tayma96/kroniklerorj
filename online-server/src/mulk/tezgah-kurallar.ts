@@ -199,5 +199,19 @@ export const KANCA_TAVAN = {
   npcCeza: 15,
   topluIndirim: 10,
   genisletme: 25,
+  /** Kanca partisi 2: dükkân/atölye aylık bakım giderinden −% (yuvarlanır; yalnız gider indirimi, akçe basmaz). */
+  bakimIndirim: 50,
 } as const;
 export type DegerliKanal = keyof typeof KANCA_TAVAN;
+
+// ── Kanca partisi 2: konsinye (komisyon) ──
+
+/**
+ * [PARAMETRE] Konsinye (`hak:komisyon`, tüccar tezgâh kurma 3): dükkânın kanca kişilerinden birinde hak varsa başka
+ * bir oyuncu (emanetçi) malını kendi satırıyla rafa koyar; yalnız NPC'ye satılır (aynı B bütçesinden: akçe basmaz).
+ * Hasılatın neti emanetçiye, `komisyon` yüzdesi dükkânın kasasına (gelir/seviyeye yalnız komisyon sayılır). Aynı
+ * hesap/hane kümesi konsinye yapamaz (pompa); emanetçi başına dükkânda tek satır; emanetçi yaşayan sakin değilse
+ * satır satılmaz, malı iade yoluyla döner.
+ */
+export const KOMISYON_VARSAYILAN = 10;
+export const KOMISYON_EN_COK = 20;

@@ -16,7 +16,7 @@ import { topluGeriAl, topluGorunumu, topluTeslim } from "./toplu-siparis.ts";
 import { kaliteliEkle, kaliteMi, type Kalite } from "../yerlesim/kalite.ts";
 import { EFSANEVI_DENEME_AY, EFSANEVI_PIR_KADEMESI, efsaneviHakki, elDegistir } from "../yerlesim/esya.ts";
 import { efsaneviKaydet } from "../yerlesim/esya-kayit.ts";
-import { akceIade, iadeTeslim, malIade } from "./iade.ts";
+import { akceIade, iadeTeslim, malIade, konsinyeIade } from "./iade.ts";
 import type { Karakter, Kasaba } from "../yerlesim/tipler.ts";
 import { basarili, hata, type Sonuc } from "../tipler.ts";
 import { bosTezgah, depoAdedi, depoGorunumu, depoKapasitesi, depodanAl, depoyaKoy, tasimaCoz, tezgahBosalt, type Tezgah } from "./depo.ts";
@@ -24,7 +24,10 @@ import { adil, npcTavani, talepCoz, type Dukkan, type TalepSatiri } from "./hane
 import type { Kisi } from "./isletme.ts";
 import { EDINIM_FIYATI, ITIBAR_BASLANGIC, KISI_MULK_EN_COK, MULK_YUVA, isletmeCoz, type MulkTuru, type Yetki } from "./kurallar.ts";
 import { fiyatBandi, fiyatGecerli, rafAdedi, rafBos, rafEsyaAlanlari, rafSatilabilir, rafSatirSiniri, rafaKoy, raftanAl, raftanSat, satirBul, satirGorunumu } from "./raf.ts";
-import { secilebilirToplam, esyaKimligiCoz } from "./depo.ts";
+import { secilebilirToplam, esyaKimligiCoz, secimEksigi } from "./depo.ts";
+import { hakAcik } from "../yerlesim/beceri-etki.ts";
+import { ayniKume } from "../yerlesim/teveccuh.ts";
+import { kaliteliCikar } from "../yerlesim/kalite.ts";
 import { bosYuva, edinimSarti, iadeBedeli, kasayaCikis, mulkDefteri, sahipMulkleri, vergiAyir, type MulkDefteri } from "./tapu.ts";
 import { depoKancasi, dukkanHKancasi, meslekOyuncuSayaci, npcDokumu, saticilar } from "./tezgah-donum.ts";
 import { bilgiKancasi, kancaDokumu, kancaHesapla, kancaKisileri } from "./kanca.ts";
@@ -52,6 +55,8 @@ import {
   ZANAAT_DEGISIM_BEDELI,
   ZANAAT_MESLEKLERI,
   ZANAAT_UCRETSIZ_DEGISIM,
+  KOMISYON_EN_COK,
+  KOMISYON_VARSAYILAN,
 } from "./tezgah-kurallar.ts";
 
 function nesneMi(v: unknown): v is Record<string, unknown> {
@@ -108,6 +113,7 @@ function topluIndirimi(k: Kasaba, md: MulkDefteri, isletme: string): (m: MeslekI
 function kancaGorunumu(k: Kasaba, md: MulkDefteri, isletme: string, tur: TezgahTuru, t: Tezgah, bakan: { o: string; sahip: boolean }) {
   const ki = kancaAdaylari(k, md, isletme);
   const l: [string, ReturnType<typeof kancaHesapla>][] = [["depo", kancaHesapla(ki, "depo")]];
+  l.push(["bakimIndirim", kancaHesapla(ki, "bakimIndirim")]);
   if (tur === "dukkan") {
     l.push(["rafSatir", kancaHesapla(ki, "rafSatir")], ["rafAdet", kancaHesapla(ki, "rafAdet")]);
     const hk = dukkanHKancasi(k, md, isletme);
@@ -286,6 +292,8 @@ export function tezgahGorunumu(k: Kasaba, kar: Karakter, isletme: string): Sonuc
     rafSiniri: tur === "dukkan" ? (() => { const e = rafEki(k, md, isletme); return { satir: rafSatirSiniri(etkin) + e.satir, adet: RAF_SATIR_ADET + e.adet }; })() : { satir: 0, adet: RAF_SATIR_ADET },
     npcTavanSeviye: tur === "dukkan" ? (DUKKAN_NPC_TAVAN[seviye] ?? DUKKAN_NPC_TAVAN[0]!) : 0,
     devralinabilir: devralinabilir(k, md, isletme) && tapu.s !== kar.o,
+    // Kanca partisi 2: konsinye (herkese: açık mı, komisyon; benim konsinye satırım).
+    ...(tur === "dukkan" ? { komisyon: { ...komisyonGorunumu(k, md, isletme, t), benimSatir: t.r.find((x) => x.ko?.o === kar.o)?.n ?? null } } : {}),
     izin: {
       depoKoy: iz.depoKoy,
       depoAl: iz.depoAl,
@@ -439,6 +447,16 @@ export function depoTasi(k: Kasaba, kar: Karakter, isletme: string, govde: unkno
   return basarili({ depo: { yon: govde.yon, mal: g.deger.mal, kalite: g.deger.q, adet: g.deger.adet, icerik: depoGorunumu(t), dolu: depoAdedi(t), kapasite: depoKap(k, md, isletme, tur, seviye) } });
 }
 
+/** Konsinye açık mı: dükkânın kanca kişilerinden (sahip + kuralı dolduran çalışan) birinde `hak:komisyon` var. */
+export function konsinyeAcik(k: Kasaba, md: MulkDefteri, isletme: string): boolean {
+  return kancaAdaylari(k, md, isletme).some((c) => hakAcik(c, "komisyon"));
+}
+
+/** Konsinye görünümü: açık mı, komisyon yüzdesi ve rafta konsinye satır sayısı. */
+export function komisyonGorunumu(k: Kasaba, md: MulkDefteri, isletme: string, t: Tezgah) {
+  return { acik: konsinyeAcik(k, md, isletme), oran: t.kom ?? KOMISYON_VARSAYILAN, enCok: KOMISYON_EN_COK, satir: t.r.filter((x) => x.ko).length };
+}
+
 /** POST .../raf {islem: koy, mal, kalite?, adet, fiyat?} | {islem: al, satir, adet} | {islem: fiyat, satir, fiyat}. */
 export function rafIslem(k: Kasaba, kar: Karakter, isletme: string, govde: unknown, vergiOrani?: number): Sonuc<Record<string, unknown>> {
   const h = hedef(k, isletme);
@@ -460,8 +478,47 @@ export function rafIslem(k: Kasaba, kar: Karakter, isletme: string, govde: unkno
     if (iz.yonetici) etkinlik(k, t);
     return basarili({ raf: t.r.map((s) => satirGorunumu(s)), satir: satirGorunumu(r.deger.satir) });
   }
+  // ── Kanca partisi 2: konsinye (hak:komisyon) ──
+  if (islem === "komisyon") {
+    if (!iz.yonetici) return hata("yetki_yok");
+    const oran = govde.oran;
+    if (!Number.isInteger(oran) || (oran as number) < 0 || (oran as number) > KOMISYON_EN_COK) return hata("gecersiz_istek");
+    t.kom = oran as number;
+    etkinlik(k, t);
+    return basarili({ komisyon: komisyonGorunumu(k, md, isletme, t) });
+  }
+  if (islem === "konsinye") {
+    const tapu = md.t[isletme]!;
+    // Emanetçi dükkânın sahibi ya da çalışanı olamaz; aynı hesap/hane kümesi konsinye yapamaz (gelir pompası yok).
+    if (tapu.s === kar.o || tapu.y?.py?.some(([o]) => o === kar.o)) return hata("kendine");
+    if (!konsinyeAcik(k, md, isletme)) return hata("dugum_kapali");
+    const sahip = k.kar.get(tapu.s);
+    if (!sahip || ayniKume(kar, sahip)) return hata("ayni_kume");
+    const g = tasimaCoz(govde, malBul);
+    if (!g.ok) return g;
+    if (g.deger.esya) return hata("esya_kilitli");
+    const { mal, q, adet } = g.deger;
+    if (adet > RAF_SATIR_ADET) return hata("adet_gecersiz");
+    if (t.r.some((x) => x.ko?.o === kar.o)) return hata("teklif_var");
+    if (t.r.length >= rafSatirSiniri(seviye) + rafEki(k, md, isletme).satir) return hata("raf_dolu");
+    if (!fiyatGecerli(mal, q, govde.fiyat)) return hata("fiyat_bant_disi");
+    const eksik = secimEksigi(kar, mal, q, adet);
+    if (eksik) return hata(eksik);
+    const p = kaliteliCikar(kar, mal, adet, q)!;
+    const satir = { n: ++t.n, m: mal, q, p, f: govde.fiyat as number, ko: { o: kar.o, ad: kar.ad, y: t.kom ?? KOMISYON_VARSAYILAN } };
+    t.r.push(satir);
+    return basarili({ satir: satirGorunumu(satir), komisyon: komisyonGorunumu(k, md, isletme, t) });
+  }
   const s = satirBul(t, govde.satir);
   if (!s) return hata("satir_yok");
+  if (islem === "konsinyeGeri") {
+    // Emanetçi kendi satırını geri çeker (envanterine; kayıp yok). Sahip konsinye malına dokunamaz.
+    if (s.ko?.o !== kar.o) return hata("yetki_yok");
+    kaliteliEkle(kar, s.m, s.p);
+    t.r = t.r.filter((x) => x !== s);
+    return basarili({ geri: { mal: s.m, kalite: s.q, adet: rafAdedi({ ...s }) } });
+  }
+  if (s.ko) return hata("yetki_yok");
   if (islem === "al") {
     if (!iz.raf) return hata("yetki_yok");
     const adet = govde.adet;
@@ -500,6 +557,8 @@ export function satinAl(k: Kasaba, kar: Karakter, isletme: string, govde: unknow
   if (!nesneMi(govde)) return hata("gecersiz_istek");
   const s = satirBul(t, govde.satir);
   if (!s) return hata("satir_yok");
+  // Konsinye satırı yalnız NPC'ye satılır (emanetçinin payı ay dönümünde ayrılır).
+  if (s.ko) return hata("yetki_yok");
   const adet = govde.adet;
   if (!Number.isInteger(adet) || (adet as number) < 1 || (adet as number) > RAF_SATIR_ADET + rafEki(k, md, isletme).adet) return hata("adet_gecersiz");
   if (govde.fiyat !== undefined && govde.fiyat !== s.f) return hata("fiyat_degisti");
@@ -578,6 +637,7 @@ export function devral(k: Kasaba, kar: Karakter, isletme: string, an: number, is
   md.batak -= bedel;
   const tz = md.tz?.[isletme];
   let iade = 0;
+  if (tz) konsinyeIade(k, tz);
   if (tz) malIade(k, tapu.s, (h) => (iade = tezgahBosalt(tz, h)));
   (md.ob ??= []).push({ t: "tezgah", w: tapu.s, h: kar.o, g: tapu.s, n: 5, k: "olay.tezgah.devralindi", p: { isletme, ad: tapu.y?.ad ?? "", bedel, mal: iade, kepenkAy: tz?.kk ?? 0 } });
   (md.tz ??= {})[isletme] = bosTezgah(0);

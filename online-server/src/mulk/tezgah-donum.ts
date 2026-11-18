@@ -18,6 +18,8 @@ import { rafBos, rafSatilabilir, raftanSat } from "./raf.ts";
 import { hanNolari, mulkDefteri, vergiAyir } from "./tapu.ts";
 import { CIKIS_EN_COK, cikisAc } from "./transfer.ts";
 import { DUKKAN_NPC_TAVAN, NPC_EMEK_AY, PAY_YONTEMI, TEZGAH_KAYIT_PAYI, URETIM_DOKUM_EN_COK } from "./tezgah-kurallar.ts";
+import { malIade } from "./iade.ts";
+import { kaliteliEkle } from "../yerlesim/kalite.ts";
 import { depoKapasitesi } from "./depo.ts";
 import { etkinSeviye } from "./atolye.ts";
 import { emirleriIsle } from "./uretim-emri.ts";
@@ -40,6 +42,11 @@ export function dukkanHKancasi(k: Kasaba, md: MulkDefteri, isletme: string, ay =
     if (!s) on.set(m, (s = kancaHesapla(kisiler, "dukkanH", { meslek: m })));
     return s;
   };
+}
+
+/** Kanca partisi 2: işletmenin bakım indirimi (yüzde, kanca kişi kuralı ve tavanıyla). */
+export function bakimIndirimi(k: Kasaba, md: MulkDefteri, isletme: string, ay = k.ay): KancaSonucu {
+  return kancaHesapla(kancaAdaylari(k, md, isletme, ay), "bakimIndirim");
 }
 
 /** Dökümde görünen ad (kimlik istemciye gitmez). */
@@ -98,9 +105,9 @@ function yerVar(k: Kasaba, isletme: string): boolean {
   return md.cik.k.length + bekleyenGrup < CIKIS_EN_COK + TEZGAH_KAYIT_PAYI;
 }
 
-function girdiEkle(k: Kasaba, isletme: string, ay: number, net: number, satir: number): void {
+function girdiEkle(k: Kasaba, isletme: string, ay: number, net: number, satir: number, bakimIndirim = 0): void {
   const md = mulkDefteri(k);
-  ((md.tzb ??= {})[isletme] ??= []).push([ay, net, satir]);
+  ((md.tzb ??= {})[isletme] ??= []).push(bakimIndirim > 0 ? [ay, net, satir, bakimIndirim] : [ay, net, satir]);
 }
 
 /** Tek ay dönümü: dükkân rafları NPC'ye satar (kepenk sayımı), hanlar yolcu payını alır. */
@@ -122,6 +129,15 @@ export function tezgahDonumu(k: Kasaba, ay: number): OlayTaslagi[] {
     const t = (tz[id] ??= bosTezgah());
     t.gk ??= tapu.y?.seviye ?? 0;
     tumu.push(id);
+    // Kanca partisi 2: emanetçisi yaşayan sakin olmayan konsinye satırı satılmaz; malı iade yoluyla döner (kayıp yok).
+    for (const s of [...t.r]) {
+      if (!s.ko) continue;
+      const e = k.kar.get(s.ko.o);
+      if (e && !olduMu(e)) continue;
+      const p = s.p;
+      malIade(k, s.ko.o, (h) => kaliteliEkle(h, s.m, p));
+      t.r = t.r.filter((x) => x !== s);
+    }
     if (!t.r.some((s) => partiToplam(s.p) > 0) || !yerVar(k, id)) continue;
     const seviye = tapu.y?.seviye ?? 0;
     dukkanlar.set(id, { id, itibar: tapu.y?.it ?? ITIBAR_BASLANGIC, tavan: DUKKAN_NPC_TAVAN[seviye] ?? DUKKAN_NPC_TAVAN[0]! });
@@ -143,10 +159,19 @@ export function tezgahDonumu(k: Kasaba, ay: number): OlayTaslagi[] {
     const t = tz[id]!;
     const tapu = md.t[id]!;
     const benim = r.satirlar.filter((x) => x.dukkan === id);
+    // Kanca partisi 2: konsinye satırlarının hasılatı (emanetçi payı ayrılır).
+    const konsinye: { o: string; ad: string; y: number; hasilat: number }[] = [];
     for (const x of benim) {
       if (x.adet <= 0) continue;
       const s = t.r.find((y) => y.n === satirHaritasi.get(x.id)!.n);
-      if (s) raftanSat(t, s, x.adet);
+      if (!s) continue;
+      const ko = s.ko;
+      raftanSat(t, s, x.adet);
+      if (ko) {
+        const v = konsinye.find((z) => z.o === ko.o);
+        if (v) v.hasilat += x.hasilat;
+        else konsinye.push({ o: ko.o, ad: ko.ad, y: ko.y, hasilat: x.hasilat });
+      }
     }
     const adet = benim.reduce((a, x) => a + x.adet, 0);
     // Kepenk = biten ayda hiç satış yok (NPC'ye ya da oyuncuya): bakım, borç/iflas sayacı, itibar, faaliyet, maaş işlemez.
@@ -177,7 +202,20 @@ export function tezgahDonumu(k: Kasaba, ay: number): OlayTaslagi[] {
     (md.vergiKesir ??= {})[id] = v.kalan;
     vergiToplam += v.vergi;
     md.kaynak = (md.kaynak ?? 0) + hasilat;
-    girdiEkle(k, id, ay, v.net, benim.filter((x) => x.adet > 0).length);
+    // Konsinye: vergiden sonraki netin emanetçinin satırlarına düşen kısmından komisyon dükkâna, kalanı emanetçiye
+    // (yaşayan sakin; yüklü). Toplam = net: akçe basılmaz, yanmaz.
+    let emanetciye = 0;
+    const konsinyeDokumu = konsinye.map((z) => {
+      const pay = hasilat > 0 ? Math.floor((v.net * z.hasilat) / hasilat) : 0;
+      const komisyon = Math.floor((pay * z.y) / 100);
+      const e = k.kar.get(z.o)!;
+      e.pa += pay - komisyon;
+      emanetciye += pay - komisyon;
+      olaylar.push({ t: "tezgah", w: z.o, h: "", g: z.o, n: 2, k: "olay.tezgah.konsinyeSatis", p: { isletme: id, ad: tapu.y?.ad ?? "", tutar: pay - komisyon, komisyon } });
+      return { ad: z.ad, hasilat: z.hasilat, pay, komisyon, emanetciye: pay - komisyon };
+    });
+    const bi = bakimIndirimi(k, md, id, ay - 1).deger;
+    girdiEkle(k, id, ay, v.net - emanetciye, benim.filter((x) => x.adet > 0).length, bi);
     // Bilgi veren olaylar (ayda bir; dönüm her ay bir kez işlenir): satış yapan dükkânın gün sonu, raf boşaldıysa kepenk.
     const ad = tapu.y?.ad ?? "";
     if (adet > 0) {
@@ -195,6 +233,8 @@ export function tezgahDonumu(k: Kasaba, ay: number): OlayTaslagi[] {
       tavan: { seviye: DUKKAN_NPC_TAVAN[seviye] ?? DUKKAN_NPC_TAVAN[0]!, kullanilan: hasilat },
       satirlar: satirDokumu,
       ...hKancaDokumu(k, hkHarita.get(id), benim.map((x) => x.mal)),
+      ...(konsinyeDokumu.length ? { konsinye: konsinyeDokumu } : {}),
+      ...(bi > 0 ? { bakimIndirimi: bi } : {}),
     };
   }
   if (vergiToplam > 0) (md.vergiGiden ??= []).push({ anahtar: `y:${k.y}:tz:vergi:${ay}`, tutar: vergiToplam, yerlesim: k.y });
@@ -246,7 +286,7 @@ function atolyeDonumu(k: Kasaba, ay: number): OlayTaslagi[] {
     t.kk = uretimli || t.se === ay - 1 ? 0 : t.kk + 1;
     const dokum = { ay, kepenk: !uretimli, anlik: t.ua === ay - 1, yapim: u.yapim, emek: u.emek, npc: npcDokumu(ne, nt), emirler: u.emirler.slice(0, URETIM_DOKUM_EN_COK) };
     t.gs = dokum;
-    if (uretimli && yerVar(k, id)) girdiEkle(k, id, ay, 0, 1);
+    if (uretimli && yerVar(k, id)) girdiEkle(k, id, ay, 0, 1, bakimIndirimi(k, md, id, ay - 1).deger);
     if (u.yapim > 0) {
       const enCok = [...u.emirler].sort((a, b) => b.cikti.adet - a.cikti.adet)[0]!;
       olaylar.push({ t: "tezgah", w: tapu.s, h: "", g: tapu.s, n: 2, k: "olay.tezgah.uretim", p: { isletme: id, ad, yapim: u.yapim, mal: enCok.cikti.mal, adet: enCok.cikti.adet } });

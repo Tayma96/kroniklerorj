@@ -53,7 +53,7 @@ const AN = DUNYA_BASLANGICI_MS + AY * AY_MS + 1000;
  * [KİLİT] Boşta kanca sayısının bu testteki üst sınırı: yalnız azaltılır (bosta-kancalar.ts BOSTA_TAVAN ile birlikte).
  * 232: Dilim 3 ilk parti denetiminde namYayma ve hileliTarti geri alındı (parti ana dala girmeden; taban budur).
  */
-const BOSTA_EN_COK = 183;
+const BOSTA_EN_COK = 180;
 
 function yetiskin(k: Kasaba, no: number, meslek?: string): Karakter {
   const kar = oyuncuEkle(k, no, AY - 12 * 20);
@@ -201,7 +201,9 @@ test("yığılma: kişi içinde toplanır, kişiler arasında en yükseği alın
 test("denge: kanca H bütçeyi büyütmez (Σ harcanan ≤ ΣB); edilgen atölye tavan H ve NPC cezasız kaliteyle ≤ 35", () => {
   // Kanallar yalnız pay (H), kapasite, kalite, teslim adedi ve malzeme değiştirir: B, Y, NPC emeği adedi, maaş, girdi ve
   // ödül hiçbir kanalda yok (kayıt tipi bunu sınırlar).
-  assert.deepEqual(Object.keys(KANCA_TAVAN).sort(), ["atolyeKalite", "depo", "dukkanH", "genisletme", "hanH", "npcCeza", "rafAdet", "rafSatir", "topluIndirim"]);
+  // Kanca partisi 2: bakimIndirim yalnız bakım giderinden (dünyadan çıkan akçe) indirir; net sınırı bakımsız ölçüldüğü
+  // için bileşik durumda da aşılmaz (kanca-parti2 testi tavanı ayrıca kilitler).
+  assert.deepEqual(Object.keys(KANCA_TAVAN).sort(), ["atolyeKalite", "bakimIndirim", "depo", "dukkanH", "genisletme", "hanH", "npcCeza", "rafAdet", "rafSatir", "topluIndirim"]);
   const d = new Map([["d1", { id: "d1", itibar: 100, tavan: 999 }], ["d2", { id: "d2", itibar: 10, tavan: 999 }]]);
   const r = talepCoz("sehir", [
     { id: "d1#1", dukkan: "d1", mal: "ekmek", q: 3, adet: 24, fiyat: npcTavani("ekmek", 3), hYuzde: 999 },

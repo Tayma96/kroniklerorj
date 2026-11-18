@@ -426,3 +426,4 @@ test("kervan taşıtı: kağnı 20, araba 30; toplu yükte taşıt aşınır, om
   assert.equal(yt.tavan, Math.min(KERVAN_YUK_MUTLAK, Math.floor((KERVAN_TOPLU_YUK_EN_COK + 3) * 1.1)));
   assert.ok(yukTavani(kervanci(k, 6, "kalite:kervan")).tavan > KERVAN_YUK_EN_COK - 1);
 });
+

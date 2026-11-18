@@ -39,7 +39,7 @@ import type { AyarYuku, Baglam, GirisNedeni, Kisi } from "./isletme.ts";
 import { partiToplam, tezgahBosalt, type Tezgah } from "./depo.ts";
 import { KARSILIKLI_PENCERE_AY, ZANAAT_MESLEKLERI } from "./tezgah-kurallar.ts";
 import { topluGeriAl, type TopluDefter } from "./toplu-siparis.ts";
-import { akceIade, malIade, type IadeKaydi } from "./iade.ts";
+import { akceIade, malIade, type IadeKaydi, konsinyeIade } from "./iade.ts";
 import {
   CIKIS_EN_COK,
   bekleyenToplam,
@@ -179,7 +179,7 @@ export interface MulkDefteri {
   /** Tezgâh (Dilim 1): işletme → depo + raf (dükkân ve atölye). Karakter envanteriyle aynı DO'da (tek yazım). */
   tz?: Record<string, Tezgah>;
   /** Ay dönümünde toplanan, henüz çıkış kutusuna yazılmamış işletme ay girdileri: işletme → [ay, net akçe, satış yapan satır]. */
-  tzb?: Record<string, [ay: number, net: number, satir: number][]>;
+  tzb?: Record<string, ([ay: number, net: number, satir: number] | [ay: number, net: number, satir: number, bakimIndirim: number])[]>;
   /** Son bilinen bölge vergi oranı (NPC raf satışında kullanılır; oyuncu satın alması ve raf işlemi tazeler). */
   vo?: number;
   /** Denetim: NPC'den işletme kasalarına (raf satışı, yolcu payı) ve vergiye giren akçe. */
@@ -555,6 +555,7 @@ export function tezgahIade(k: Kasaba, isletme: string, o: string): void {
   const md = mulkDefteri(k);
   const tz = md.tz?.[isletme];
   if (!tz) return;
+  konsinyeIade(k, tz);
   malIade(k, o, (h) => tezgahBosalt(tz, h));
   delete md.tz![isletme];
 }
