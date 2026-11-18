@@ -15,7 +15,7 @@ import { basarili, hata, type Sonuc } from "../tipler.ts";
 import { arkaPlanAl, tetikSurer, type KasabaTetigi } from "./arka-plan.ts";
 import { etkinMi } from "./gundem.ts";
 import { halDegistir } from "./hal.ts";
-import { olduMu } from "./hanedan.ts";
+import { hanedanKasabasi, olduMu } from "./hanedan.ts";
 import { namEkle, takatHarca, type Nam } from "./karakter.ts";
 import { mesrepEtkisi } from "./mesrep.ts";
 import { hakAcik, hizmetAcik } from "./beceri-etki.ts";
@@ -92,6 +92,23 @@ export const DERT_GOSTERGE: Readonly<Record<DertTuru, Gosterge>> = { kitlik: "ar
 export const DERT_BASARI_ARTIS = 5;
 export const DERT_BASARISIZ_DUSUS = 10;
 /** [PARAMETRE] İlk katkının tek seferlik ödülü: gönül ve nam (aylık nam tavanı da uygulanır). */
+/**
+ * [PARAMETRE] Kanca partisi 2 (hak s–z): derde göre katkıyı güçlendiren haklar. Hak sahibine o katkı türü açılır ve
+ * o dertte verdiği her katkıya +`puan` (çarpandan sonra; dökümde "ortakDert.puan.hak"). Puan yalnız ortak eşiği
+ * doldurur: akçe yok, ödül (gönül + nam) yine dert başına tek sefer. Salgında şifacının darüşşifa katkısı; haydut
+ * yolunda askerin yol devriyesi ve tüccarın yol eminliği.
+ */
+export const DERT_HAK_EKI: Readonly<Record<string, { dert: DertTuru; katki: KatkiTuru; puan: number }>> = {
+  "salginKatkisi": { dert: "salgin", katki: "bakim", puan: 6 },
+  "yolDevriyesi": { dert: "haydut", katki: "nobet", puan: 6 },
+  "yolEmini": { dert: "haydut", katki: "tedarik", puan: 4 },
+};
+/**
+ * [PARAMETRE] Kanca partisi 2: `zahireAlimi` (divan, "hazineden zahire alımı"). Kasabada hakkı açık yaşayan bir sakin
+ * varsa açık kıtlık derdine ay dönümünde hazine bir kez bu kadar akçelik zahire alır (puan = akçe, mal katkısıyla aynı
+ * ölçü). Akçe hazineden dünyaya çıkar (NPC pazarı); kimseye geçmez. Hazine yetmezse alım olmaz.
+ */
+export const ZAHIRE_ALIM_AKCE = 30;
 export const ORTAK_DERT_GONUL = 3;
 export const ORTAK_DERT_NAM = 1;
 export const DERT_NAM: Readonly<Record<DertTuru, Nam>> = { kitlik: "comertlik", hasat: "caliskanlik", haydut: "mertlik", salgin: "dindarlik" };
@@ -128,6 +145,8 @@ export interface OrtakDert {
   ks?: Record<string, number>;
   /** Canlı etkinliğin açtığı dert: etkinlik kimliği (başarısızlıkta gösterge düşmez; etkinlik bitince kapanır). */
   e?: string;
+  /** Kanca partisi 2: hazinenin bu derde yaptığı zahire alımı (akçe; tek sefer izi). */
+  za?: number;
 }
 
 const derttenTetik = (t: DertTuru): KasabaTetigi | undefined => (t === "kitlik" || t === "haydut" ? t : undefined);
@@ -220,6 +239,8 @@ export function ortakDertDonumu(k: Kasaba, ay: number): OlayTaslagi[] {
     : 0;
   for (const d of tl.od) {
     if (d.d !== "acik") continue;
+    const z = zahireAlimi(k, d);
+    if (z) olaylar.push(z);
     if (d.ac < ay) {
       d.np += ORTAK_DERT_NPC_AYLIK + cagri;
       d.pu += ORTAK_DERT_NPC_AYLIK + cagri;
@@ -234,6 +255,26 @@ export function ortakDertDonumu(k: Kasaba, ay: number): OlayTaslagi[] {
     tl.od = tl.od.filter((d) => !sil.has(d));
   }
   return olaylar;
+}
+
+/** Yerleşimde (sakin listesinde) hakkı açık yaşayan bir oyuncu var mı (ay dönümünde bütün sakinler yüklüdür). */
+export function kasabadaHakVar(k: Pick<Kasaba, "sakin" | "kar">, hak: string): boolean {
+  return k.sakin.some((s) => {
+    const c = k.kar.get(s.o);
+    return !!c && !olduMu(c) && hakAcik(c, hak);
+  });
+}
+
+/** Kıtlık derdine hazinenin zahire alımı (tek sefer; hakkı açık yaşayan sakin ve yeterli hazine şartı). */
+function zahireAlimi(k: Kasaba, d: OrtakDert): OlayTaslagi | undefined {
+  if (d.t !== "kitlik" || d.za !== undefined) return undefined;
+  if (!kasabadaHakVar(k, "zahireAlimi")) return undefined;
+  const hazine = hanedanKasabasi(k);
+  if (hazine.hz < ZAHIRE_ALIM_AKCE) return undefined;
+  hazine.hz -= ZAHIRE_ALIM_AKCE;
+  d.za = ZAHIRE_ALIM_AKCE;
+  d.pu += ZAHIRE_ALIM_AKCE;
+  return { t: "ortakDert", w: "", h: "", g: "", n: 4, k: "olay.ortakDert.zahireAlimi", p: { dert: d.t, akce: ZAHIRE_ALIM_AKCE, puan: ZAHIRE_ALIM_AKCE } };
 }
 
 /** Oyuncunun ana mesleği ve o meslekteki kademesi. */
@@ -251,6 +292,8 @@ export function uygunKatkilar(kar: Karakter): KatkiTuru[] {
   if (hizmetAcik(kar, "nobet") || mesrepEtkisi(kar, "nobet") > 0) liste.add("nobet");
   // Ozanın türkü hizmeti, ana mesleği farklı olan oyuncuya da salgın/hasat moral desteği açar.
   if (hizmetAcik(kar, "turku")) liste.add("moral");
+  // Kanca partisi 2: derde katkı hakları katkı türünü de açar (yol devriyesi nöbet, yol emini tedarik, salgın bakım).
+  for (const [hak, x] of Object.entries(DERT_HAK_EKI)) if (hakAcik(kar, hak)) liste.add(x.katki);
   return KATKI_TURLERI.filter((t) => liste.has(t));
 }
 
@@ -293,8 +336,13 @@ export function ortakDertKatki(k: Kasaba, kar: Karakter, govde: Record<string, u
     kalemler.push({ k: "ortakDert.puan.emek", d: EMEK_PUAN_TABAN }, ...(kd ? [{ k: "ortakDert.puan.kademe", d: EMEK_PUAN_KADEME * kd, p: { kademe: kd } }] : []));
   }
   const carpan = carpanBul(d.t, katki);
-  const puan = Math.max(1, Math.round(ham * carpan));
+  let puan = Math.max(1, Math.round(ham * carpan));
   if (puan !== ham) kalemler.push({ k: "ortakDert.puan.carpan", d: puan - ham, p: { carpan, dert: d.t } });
+  for (const [hak, x] of Object.entries(DERT_HAK_EKI)) {
+    if (x.dert !== d.t || x.katki !== katki || !hakAcik(kar, hak)) continue;
+    puan += x.puan;
+    kalemler.push({ k: "ortakDert.puan.hak", d: x.puan, p: { hak } });
+  }
   if (!takatHarca(kar, ay, ORTAK_DERT_TAKAT)) return hata("takat_yok");
   if (mal) envanterEkle(kar, mal, -adet);
   const olaylar: OlayTaslagi[] = [];

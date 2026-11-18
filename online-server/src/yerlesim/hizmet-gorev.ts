@@ -89,9 +89,10 @@ export const gorevHizmeti = (tur: HizmetGorevTuru): string => KURALLAR[tur].hizm
 
 /**
  * [PARAMETRE] Kanca partisi 2: koltuk ekleyen haklar (yerleşimde yaşayan bir sahibi varsa o türe +1 koltuk; ulufe
- * hazineden, yoksa açılmaz). `nobetKoltuklari` garnizon ağasının nöbet dağıtımı, `garnizonTalimi` garnizon talimi.
+ * hazineden, yoksa açılmaz). `nobetKoltuklari` garnizon ağasının nöbet dağıtımı, `garnizonTalimi` garnizon talimi;
+ * `ulufePayi` (hak s–z partisi) bütçe defterinde ulufe payı ayıran divan: bir vergi sayımı koltuğu daha.
  */
-export const KOLTUK_HAKLARI: Readonly<Partial<Record<HizmetGorevTuru, string>>> = { nobet: "nobetKoltuklari", talim: "garnizonTalimi", devriye: "devriye" };
+export const KOLTUK_HAKLARI: Readonly<Partial<Record<HizmetGorevTuru, string>>> = { nobet: "nobetKoltuklari", talim: "garnizonTalimi", devriye: "devriye", vergiSayimi: "ulufePayi" };
 /** [PARAMETRE] Hakla açılan koltuk sayısı (görev türüne göre; yoksa 1). Devriye: gece devriyesi iki koltuk. */
 export const KOLTUK_HAK_SAYISI: Readonly<Partial<Record<HizmetGorevTuru, number>>> = { devriye: 2 };
 /** [PARAMETRE] Görev kalitesi (yüzde, kalite etkileri toplamı) üst sınırı: göstergeye +1 ek katkı şansı. */

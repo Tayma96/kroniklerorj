@@ -15,7 +15,7 @@ import { kirginlikSebebi } from "./hafiza.ts";
 import { olduMu } from "./hanedan.ts";
 import { ILISKI_YASI, dostMu } from "./iliski.ts";
 import { beceriEkle, karakterYasi, namEkle, takatHarca } from "./karakter.ts";
-import { sinerjiAcik } from "./beceri-etki.ts";
+import { hakAcik, sinerjiAcik } from "./beceri-etki.ts";
 import { kisiAdi, kisiCoz, npcAdi, npcKimlik, npcRef, oyuncuRef, sinirla, yas } from "./ortak.ts";
 import type { Zar } from "./rastgele.ts";
 import { kaliteYuzdesi } from "./kanca-kalite.ts";
@@ -39,6 +39,8 @@ export const ARACI_BARIS_SANSI = 10;
 export const ARACI_KALITE_HEDEFLERI: readonly string[] = ["araBul", "uzlasma"];
 export const ARACI_KALITE_BOLEN = 2;
 export const ARACI_KALITE_TAVAN = 15;
+/** [PARAMETRE] Kanca partisi 2 (hak s–z): arabulucunun `tanikSozu` hakkı (sözü tanıklık sayılır): şansa ek katkı. */
+export const ARACI_TANIK_SOZU = 5;
 export const GUVEN_BOLEN = 2;
 export const KIRGINLIK_BOLEN = 3;
 export const BEDEL_SANS: Readonly<Record<Exclude<AraciBedeli, "tazminat">, number>> = { ozur: 5, helallik: 10, ortakIs: 10 };
@@ -233,6 +235,7 @@ export function arabuluculukSansi(k: Kasaba, ar: Karakter, t: AraciTalebi, ay: n
   if (sinerjiAcik(ar, "barisSansi")) d.ekle("sans.barisSansi", ARACI_BARIS_SANSI);
   const kalite = kaliteYuzdesi(ar, ARACI_KALITE_HEDEFLERI).yuzde;
   if (kalite > 0) d.ekle("sans.kalite", Math.min(ARACI_KALITE_TAVAN, Math.floor(kalite / ARACI_KALITE_BOLEN)), { kalite });
+  if (hakAcik(ar, "tanikSozu")) d.ekle("sans.tanikSozu", ARACI_TANIK_SOZU);
   const ga = gorusDegeri(k, npc, ar, k.ili.get(ar.o), ay);
   d.ekle("sans.guven", Math.round(ga / GUVEN_BOLEN), { gorus: ga });
   const gt = gorus(k, npc, taraf, k.ili.get(taraf.o), ay);

@@ -5,7 +5,7 @@ import { aileEtkisi, enIyiBirim, esyaAilesi, girdiToklugu } from "./esya.ts";
 import { aracAsindir, type Asinma } from "./tarif.ts";
 import { esyaKilidi } from "./kalite.ts";
 import { envanterEkle } from "./npc-taban.ts";
-import { halAl, halDegistir, type Hal } from "./hal.ts";
+import { CAN_YARALI_ESIGI, halAl, halDegistir, type Hal } from "./hal.ts";
 import { hizmetEkle } from "./meslek.ts";
 import { ayniKume } from "./teveccuh.ts";
 import { takatHarca } from "./karakter.ts";
@@ -30,6 +30,11 @@ export function hizmetYetkiliMi(kar: Karakter, tarif: HizmetTarifi): boolean {
 export const HIZMET_KALITE_TAVAN = 60;
 /** [PARAMETRE] `kirginTaban`: dertleşmede alıcının gönlü bu değerin altındaysa en az buraya çıkar. */
 export const KIRGIN_GONUL_TABANI = 35;
+/**
+ * [PARAMETRE] Kanca partisi 2 (hak s–z): `yaraliDurumu` ("yaralı durumu biter"). Bu hakkı açık şifacının kırık sarması
+ * alıcının canını en az buraya çıkarır (yaralı eşiği: altı "yaralı"); can zaten üstündeyse yalnız etkisi kadar.
+ */
+export const YARALI_CAN_TABANI = CAN_YARALI_ESIGI;
 
 export interface HizmetKalitesi {
   /** Tavanlı yüzde ve kalemler (kanca, yüzde; gizli sayı yok). */
@@ -414,6 +419,11 @@ export function hizmetIlanIsle(
   if (tarif.id === "dertlesme" && hakAcik(satici, "kirginTaban")) {
     const simdi = halAl(alici, ay).gonul;
     if (simdi + (fark.gonul ?? 0) < KIRGIN_GONUL_TABANI) fark.gonul = KIRGIN_GONUL_TABANI - simdi;
+  }
+  // Yaralı durumu biter (kırık sarma, hizmetçinin `yaraliDurumu` hakkı): can yaralı eşiğinin altındaysa en az eşiğe çıkar.
+  if (tarif.id === "kirikSar" && hakAcik(satici, "yaraliDurumu")) {
+    const simdi = halAl(alici, ay).can;
+    if (simdi + (fark.can ?? 0) < YARALI_CAN_TABANI) fark.can = YARALI_CAN_TABANI - simdi;
   }
   const tutar = ilan.f * adet;
   if (alici.pa < tutar) return hata("para_yok");

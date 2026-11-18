@@ -130,3 +130,18 @@ Hepsi eklemeli; eski istemci bozulmaz. Yeni metinler 6 dilde istemcide yazılmal
   `kota.tavan` değeri eki içerir. Varış sonucunda isteğe bağlı `ke` (uygulanan ek).
 - Boşta kalan 13 tarif (`boya`, `hali`, `sancak`, `merhem` …) yeni mal ister: istemci `MAL_IDLERI` kapalı küme olduğu
   için eski APK tarif listesini reddeder. Bağlamak için önce istemcide mal kümesi (taban, ikon, 6 dil ad) genişletilmeli.
+
+## Kanca partisi 2 (hak s–z) protokol ekleri
+Bütün alanlar eklemelidir; metin anahtarları 6 dilde eklenmeli.
+- **Ortak dert:** `uygunKatkilar` hak sahiplerine katkı türü açar (`hak:salginKatkisi` → bakım, `hak:yolDevriyesi` → nöbet,
+  `hak:yolEmini` → tedarik). Katkı dökümüne yeni kalem `ortakDert.puan.hak` ({hak}) — salgında +6, haydutta nöbet +6 /
+  tedarik +4. Yeni olay `olay.ortakDert.zahireAlimi` ({dert, akce, puan}): kıtlıkta hazine bir kez 30 akçelik zahire alır.
+- **Şenlik:** katkı yanıtı `katki.susleme` (moral eki, yalnız ilk nakkaş süsünde); `simdiki.susleme` (bool);
+  `kurallar.suslemeMoral`; `olay.senlik.bitti` parametresine `susleme` (varsa). Ekran: "Nakkaş süsledi: kapanışta moral +2".
+- **Kırık sarma** (`hak:yaraliDurumu`): alan değişmez; etki can'ı yaralı eşiğine (50) çıkarabilir, `etki.can` gerçek farkı taşır.
+- **Arabuluculuk:** şans dökümüne yeni kalem `sans.tanikSozu` (+5).
+- **Kasaba görevi** (`hak:ulufePayi`): vergi sayımı koltuğu bir artar; alan yok.
+- **Barınma:** `tesis.zaviyeEk` (0|1; zaviye hakkı sahibi yaşıyorsa pencereye +1); `zincir.etkiler.yoksulCorbasi` (bool;
+  açıksa `canAylik` 0 gösterilir); günlükte yeni satır `barinma.yoksulCorbasi` ({bedel}). Ekran: "Aşhane çorbası: can düşmez
+  (hazine öder)".
+- **Han:** kanca görünümünde `hak:sahneSirasi` hanH +2 (var olan kanal).

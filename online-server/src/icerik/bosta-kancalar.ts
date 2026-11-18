@@ -9,9 +9,9 @@
  * parti henüz ana dala girmediği için taban budur. Kanca partisi 2 (18 Kasım) bağladıkça düşer; bağlanamayanın yanında
  * tek satır neden yazar ("// boşta: ..."). 160: a–e/konsinye dalı (10) ve kalite/eşya dalı (13) birleşti; gece devriyesinin
  * hırsızlık tespiti ve kılıcı yalnız devriye görevinde (nöbete sayılmaz). 151: hak l–r dalı (9; namYayma/hileliTarti çarşı hilesinde) birleşti.
- * 133: hizmet/tarif/sinerji dalı (18; 9 kasaba görevi, ısmarlama zırh, uzak kervan) birleşti.
+ * 133: hizmet/tarif/sinerji dalı (18; 9 kasaba görevi, ısmarlama zırh, uzak kervan) birleşti. 122: hak s–z dalı (11).
  */
-export const BOSTA_TAVAN = 133;
+export const BOSTA_TAVAN = 122;
 
 export const BOSTA_KANCALAR: readonly string[] = [
   // av sistemi yok (izSur hizmeti hizmet ajanında; hedefi "av" olan araçlı hizmet gelince bağlanır)
@@ -94,34 +94,23 @@ export const BOSTA_KANCALAR: readonly string[] = [
   "hak:resmiElcilik", // boşta: siyaset (diplomasi): elçilik sistemi yok
   "hak:riskPaylasimi", // boşta: kervanda kayıp riski ve ortak kafile yok
   "hak:rotaSecimi", // boşta: kervanda rota ve yol tehlikesi yok
-  "hak:safDuzeni",
-  "hak:sahneSirasi",
-  "hak:sahteBelge",
-  "hak:salginKatkisi",
-  "hak:senetliIhtilaf",
-  "hak:senlikSuslemesi",
-  "hak:serdarAdayligi",
-  "hak:seyhAdayligi",
-  "hak:soylentiDurdurma",
-  "hak:soylentiTasima",
-  "hak:subasiAdayligi",
-  "hak:surKitabesi",
-  "hak:tanikSozu",
-  "hak:tehditHaberi",
-  "hak:toreOnerisi",
-  "hak:ulufePayi",
-  "hak:uzakMalSiparisi",
-  "hak:vadeliAlim",
-  "hak:yaraliDurumu",
-  "hak:yerelSenlik",
-  "hak:yoksulCorbasi",
-  "hak:yolAkcesi",
-  "hak:yolAkcesiMuafiyeti",
-  "hak:yolDevriyesi",
-  "hak:yolEmini",
-  "hak:zahireAlimi",
-  "hak:zaviye",
-  "hak:zehirTanima",
+  "hak:safDuzeni", // boşta: çatışmada asker rolü/saf seçeneği yok (siyaset çatışması yalnız makam emri)
+  "hak:sahteBelge", // boşta: sahte belge (sahtecilik) sistemi yok
+  "hak:senetliIhtilaf", // boşta: hakemlik hizmeti ve senet ihtilafı akışı yok (hakemlik yalnız kasaba görevi; senet davası yok)
+  "hak:serdarAdayligi", // boşta: serdar makamı yok (siyaset makam listesi)
+  "hak:seyhAdayligi", // boşta: tekke/şeyhlik makamı yok
+  "hak:soylentiDurdurma", // boşta: susturma için yeni uç ve hak edilmiş kötü söylentiyi örtme denetimi gerekir
+  "hak:soylentiTasima", // boşta: söylentiyi komşu yerleşime taşımak yerleşimler arası ileti ister
+  "hak:subasiAdayligi", // boşta: subaşı makamı yok (siyaset makam listesi)
+  "hak:surKitabesi", // boşta: sur/bayındırlık projesi ve kitabe kaydı yok
+  "hak:tehditHaberi", // boşta: tehdit olayları ay dönümünde zarla doğar; erken haber önden kurulan tehdit takvimi ister
+  "hak:toreOnerisi", // boşta: töre (yerel kural) önerisi sistemi yok
+  "hak:uzakMalSiparisi", // boşta: kervanda dönüş yükü/uzaktan alım yok
+  "hak:vadeliAlim", // boşta: vadeli (borçlu) alım borç/teminat ister; ucuz alım raf/NPC arbitrajı açar
+  "hak:yerelSenlik", // boşta: takvim dışı yerel şenlik öneri/onay akışı ister (şenlik takvimi saf ay fonksiyonu)
+  "hak:yolAkcesi", // boşta: kervanda yol akçesi (geçiş vergisi) yok
+  "hak:yolAkcesiMuafiyeti", // boşta: kervanda yol akçesi (geçiş vergisi) yok
+  "hak:zehirTanima", // boşta: zehir sistemi yok (tarif:panzehir de boşta)
   "hizmet:beylikElciligi", // boşta: elçilik beylik diplomasisi (BolgeDO); kişi elçi rolü siyaset programında
   "hizmet:diyetPazarligi", // boşta: kan davası ilk sürümde yok (ONLINE_DURUM §4.2)
   "hizmet:hediyeliElcilik", // boşta: elçilik beylik diplomasisi (BolgeDO); kişi elçi rolü siyaset programında

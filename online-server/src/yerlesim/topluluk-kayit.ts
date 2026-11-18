@@ -42,6 +42,8 @@ export interface ToplulukKaydi {
   as?: number;
   /** Son salgın ayı (aralık). */
   ss?: number;
+  /** Kanca partisi 2 (hak s–z): ay dönümünde yazılan barınma hakları izi [ay, zaviye, yoksul çorbası] (barinma.ts). */
+  bh?: [ay: number, zaviye: 0 | 1, corba: 0 | 1];
 }
 
 export function toplulukAl(k: Kasaba): ToplulukKaydi {

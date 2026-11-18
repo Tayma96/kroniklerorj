@@ -329,4 +329,17 @@ export const KANCA_BAGLARI: Readonly<Record<string, KancaBagi>> = {
   "kalite:yolGuvenligi": m("src/yerlesim/kervan.ts"),
   "omur:cizme": m("src/yerlesim/kervan.ts"),
   "kalite:cocukRiski": m("src/yerlesim/hizmet-tarif.ts"),
+  // ── Kanca partisi 2 (hak s–z): ortak dert katkısı, hazine zahiresi, şenlik süsü, kırık sarma, arabuluculuk, görev
+  //    koltuğu, barınma (zaviye, yoksul çorbası) ve han sahnesi ──
+  "hak:salginKatkisi": m("src/yerlesim/ortak-dert.ts"),
+  "hak:yolDevriyesi": m("src/yerlesim/ortak-dert.ts"),
+  "hak:yolEmini": m("src/yerlesim/ortak-dert.ts"),
+  "hak:zahireAlimi": m("src/yerlesim/ortak-dert.ts"),
+  "hak:senlikSuslemesi": m("src/yerlesim/senlik.ts"),
+  "hak:yaraliDurumu": m("src/yerlesim/hizmet-pazari.ts"),
+  "hak:tanikSozu": m("src/yerlesim/arabulucu.ts"),
+  "hak:ulufePayi": m("src/yerlesim/hizmet-gorev.ts"),
+  "hak:zaviye": m("src/yerlesim/barinma.ts"),
+  "hak:yoksulCorbasi": m("src/yerlesim/barinma.ts"),
+  "hak:sahneSirasi": hH(2),
 };
