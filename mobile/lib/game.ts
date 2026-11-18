@@ -12923,7 +12923,7 @@ export function fundPrestige(prev: GameState, id: string): GameState {
 // etki herkesi bağlar (dünya-bazlı sonuç) ve bir süre sürer. Soğuma: aktifken tekrar oynatılamaz.
 export const MARKET_LEVER_MIN = 8000; // F5: eşik 8.000 × enflasyon (marketLeverMin)
 export function marketLeverMin(s: GameState): number { return Math.round(MARKET_LEVER_MIN * inflationFactor(s)); }
-export function marketLeverCost(s: GameState): number { return Math.round(20000 * inflationFactor(s)); }
+export function marketLeverCost(s: GameState): number { return Math.round(4000 * inflationFactor(s)); }
 export function canManipulateMarket(s: GameState): { ok: boolean; reason: string } {
   const p = s.player;
   if (p.dead) return { ok: false, reason: "dead" };
