@@ -1,7 +1,7 @@
 // Menü merkezi: her hedefin grubu, sahnesi, ikonu, açılma kapısı ve bekleyen-iş rozeti.
 // Kademeli açılım (TASARIM_PUSULASI ilke 7): ekran oyuncunun hayatına değince menüye girer — çocuk menüsü sade kalır.
 import type { ImageSourcePropType } from "react-native";
-import { pendingPerkCount, aktifNiyet, playerWar, sinavDurumu, MULK_YAS, varisAdaylari, nemesisEncounter, type GameState } from "../../game";
+import { pendingPerkCount, aktifNiyet, playerWar, sinavDurumu, MULK_YAS, varisAdaylari, nemesisEncounter, divanErisim, divanDavaAcik, type GameState } from "../../game";
 import { venueImage, mulkImage, subjImage, armaImage, MAP_HERO } from "../../assets";
 import { SAHNE_GORSEL } from "../../sahne-tema";
 
@@ -44,6 +44,7 @@ export const MENU_DESTS: MenuDest[] = [
   { to: "/oyun/beceriler", key: "beceriler", icon: "medal", group: "guc", scene: sabit(subjImage("beden")) },
   { to: "/oyun/savas", key: "savas", icon: "savas", group: "guc", scene: sabit(SAHNE_GORSEL.mogol_baskin), acik: (s) => RESIT(s) || !!s.story?.nemesis },
   { to: "/oyun/suc", key: "suc", icon: "suc", group: "guc", scene: sabit(SAHNE_GORSEL.kadi_divan), acik: RESIT },
+  { to: "/oyun/divan", key: "divan", icon: "tarih", group: "guc", scene: sabit(SAHNE_GORSEL.kadi_divan), acik: (s) => divanErisim(s.player) }, // F6b: divan hizmeti/kâtip/icazet/tüccar (13+): ayın davası ya da dilekçe
   // Aile & Soy
   { to: "/oyun/hanedan", key: "hanedan", icon: "hanedan", group: "aile", scene: sabit(venueImage("hanedan")) },
   { to: "/oyun/nesil", key: "nesil", icon: "dogum", group: "aile", scene: sabit(SAHNE_GORSEL.dogum), acik: (s) => s.player.dead || s.player.married || s.player.children.length > 0 || s.player.age >= 16 },
@@ -53,7 +54,6 @@ export const MENU_DESTS: MenuDest[] = [
   { to: "/oyun/tarih", key: "tarih", icon: "hourglass", group: "defter" },
   { to: "/oyun/roman", key: "roman", icon: "book", group: "defter" },
   { to: "/oyun/basarimlar", key: "basarimlar", icon: "zafer", group: "defter" },
-  // Günlük Divan davası tek oyunculudan kaldırıldı (oyundan kopuk; ileride makama bağlı gerçek mekanik olarak döner). Ekran ve kaydı duruyor.
 ];
 
 export function acikMi(d: MenuDest, s: GameState | null): boolean { return !s || !d.acik || d.acik(s); }
@@ -77,6 +77,7 @@ export function rozet(key: string, state: GameState | null): Rozet {
     case "haberler": return { n: Math.min(9, Math.max(0, state.turn - (state.newsSeenTurn ?? state.turn))), urgent: false }; // son ziyaretten beri geçen aylar (ilk açılışa dek sessiz)
     case "nesil": return { n: p.dead && varisAdaylari(state).length > 0 ? 1 : 0, urgent: true };
     case "savas": return { n: !p.dead && nemesisEncounter(state) ? 1 : 0, urgent: true }; // son hesaplaşma bekliyor
+    case "divan": return { n: !p.dead && divanDavaAcik(state) ? 1 : 0, urgent: false }; // F6b: bu ayın davası hüküm bekliyor
     case "suc": return { n: !p.dead && state.pendingScene?.kind === "trial" ? 1 : 0, urgent: true }; // mahkeme sahnesi
     case "hanedan": return { n: !p.dead && state.crownCampaign ? 1 : 0, urgent: false }; // taht seferi sürüyor
     default: return BOS;

@@ -12,6 +12,7 @@ import { placeName, careerTitleL } from "../../locale-data";
 import { hunerUnvanlari, canWork, inJail, professionById, kariyerXp, healerCost, visitHealer, hamamCost, visitHamam, playEnergy, PLAY_COST, studyEnergy, STUDY_COST } from "../../game";
 import { C, F } from "../../theme";
 import { Pano, Madalyon, Rozet, Cubuk, Giris, AltBaslik, KR, yon } from "./parca";
+import { TehlikeSayaclari } from "../../tehlike-ui";
 
 // Kimlik: üstte arma + hanedan ve ayar; altta portre madalyonu ile ad, meslek ve künye rozetleri.
 export function KarakterKimlik({ onSettings }: { onSettings: () => void }) {
@@ -93,6 +94,7 @@ export function KarakterGostergeler({ onEmek, onUgras }: { onEmek: () => void; o
         <GameIcon name="skull" size={13} color={C.blood} />
         <Text style={{ fontFamily: F.display, fontSize: 12, color: "#E8796A" }}>{t("chr." + p.chronic.k)}</Text>
       </View> : null}
+      <TehlikeSayaclari />
       {hasCareer ? <View accessible accessibilityLabel={`${t("char.careerXp")} ${careerLevel}: ${xpInLevel} / 30`} style={{ flexDirection: row, alignItems: "center", gap: 10, marginTop: 11, paddingTop: 11, borderTopWidth: 1, borderTopColor: C.border + "AA" }}>
         <View style={{ width: 34, height: 34, borderRadius: 17, borderWidth: 1.5, borderColor: C.gold, backgroundColor: "#2A1808", alignItems: "center", justifyContent: "center" }}>
           <Text style={{ fontFamily: F.display, fontSize: 14, color: C.goldBright }}>{careerLevel}</Text>

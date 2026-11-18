@@ -1,5 +1,6 @@
 import { DesignPressable as Pressable } from "../../lib/design-pressable";
-// Divan: günün davası (çevrimdışı, tarih tohumlu). Hüküm yalnızca ayrı kayda (kronik_divan) yazılır; oyun durumuna dokunmaz.
+// Divan: üstte oyun durumuna bağlı panel (F6b: hizmetteysen ayın davası, değilsen dilekçe); altta günün davası (çevrimdışı,
+// tarih tohumlu) — o hüküm yalnızca ayrı kayda (kronik_divan) yazılır, oyun durumuna dokunmaz.
 // Zamanlayıcı yok, seri yok, kaçan dava yok: geçmiş numaralar arşivde bekler. Ödül yalnızca lakaptır (kimlik).
 import { useEffect, useMemo, useRef, useState } from "react";
 import { View, Text, ScrollView} from "react-native";
@@ -12,6 +13,7 @@ import { useI18n, applyParams, yuzdeL } from "../../lib/i18n";
 import { DIVAN_KEY, DIVAN_LAKAP_ESIK, DIVAN_YOLLAR, DivanKayit, DivanYol, arsivNumaralari, bosDivan, divanDavasi, divanGoc, divanNo, hukumVer, oyYuzde, yolSayilari } from "../../lib/divan";
 import { C, F } from "../../lib/theme";
 import { BackLabel, PageHeader, Panel, ScreenFresk } from "../../lib/ui";
+import { DivanOyunPanel } from "../../lib/tehlike-ui";
 
 const YOL_RENK = ["#7fae8a", "#c9a84c", "#b07a5a"];
 
@@ -46,6 +48,7 @@ export default function Divan() {
         <Pressable onPress={() => router.back()}><BackLabel /></Pressable>
       </View>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 14, paddingBottom: insets.bottom + 90 }}>
+        <DivanOyunPanel />
         <PageHeader kicker={no === bugun ? t("divan.bugun") : t("divan.eyebrow")} title={applyParams(t("divan.no"), [no])} sub={t("divan.alt")} />
         <View ref={kartRef} collapsable={false} style={{ backgroundColor: C.bg }}>
         <Panel title={t("divan." + id + ".t")} icon="tarih">
