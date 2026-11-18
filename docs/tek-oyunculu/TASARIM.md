@@ -81,7 +81,7 @@ medresen, hanın ve ocağınla ömür boyu ve kuşaklar boyu büyüdüğün AAA 
   kalite: sade/iyi/seçkin) + mevsimde 1 işletme kararı (mevcut tezgâh kartı kalıbı). Gelir: refah, güvenlik,
   kervan trafiği, rakip, ayarlar, sahibin mesleği (hancı→han, tüccar→dükkân, zanaatkâr→atölye).
 - **Şöhret** (işletme namı 0–100): kaliteli ve adil işletme yükseltir; şöhret itibar ve müşteri getirir.
-- Sınır: aynı anda en çok 3 işletme (farm kapalı, her biri bir gerilim). Tarla/bağ/değirmen/ev pasif kalır ama
+- Sınır: aynı anda en çok 3 işletme, vakfedilen dahil (farm kapalı, her biri bir gerilim; F5 denge: vakıf sınırı delmesin diye sayılır). Tarla/bağ/değirmen/ev pasif kalır ama
   tip avantajı alır (değirmen tarlaya çarpan, ev kiracı olayı).
 - **Vakıf:** işletme vakfedilebilir → satılamaz, gelirin bir kısmı hayra, kalıcı itibar + Ocak namı; vâris devralır.
 

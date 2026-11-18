@@ -7,7 +7,7 @@ import { DesignPressable as Pressable } from "../../design-pressable";
 import {
   isletmeAyari, isletmeDurumu, isletmeMi, setIsletmeAyar, propAylikTahmin, propWorkerSlots,
   ISL_KARAR_SECIM, ISL_KARAR_IKON, islKararZarSecimi, islKararOnizleme, resolveIsletmeKarari, PROPERTY_TYPES, inflationFactor,
-  vakfedilebilir, vakfet, vakifItibarTabani, type GameState, type Property, type IslKararId,
+  vakfedilebilir, vakfet, vakifItibarTabani, VAKIF_TABAN_BIRIM, VAKIF_TABAN_TAVAN, type GameState, type Property, type IslKararId,
 } from "../../game";
 import { placeName } from "../../locale-data";
 import { useI18n, applyParams } from "../../i18n";
@@ -131,7 +131,7 @@ export function VakifDugmesi({ state, pr, i, act }: { state: GameState; pr: Prop
   const [acik, setAcik] = useState(false);
   if (pr.vakif || !vakfedilebilir(state, i)) return null;
   const ad = t("pt." + pr.type), yer = placeName(pr.loc, lang);
-  const taban = Math.min(15, vakifItibarTabani(state.player) + 5);
+  const taban = Math.min(VAKIF_TABAN_TAVAN, vakifItibarTabani(state.player) + VAKIF_TABAN_BIRIM);
   return <>
     <Pressable accessibilityRole="button" accessibilityLabel={`${t("isl.vakif")}: ${ad}, ${yer}`} accessibilityHint={t("isl.vakifIp")} onPress={() => { hap("tap"); playTap(); setAcik(true); }}
       style={({ pressed }) => ({ minHeight: 52, flexDirection: row, alignItems: "center", gap: 10, paddingHorizontal: 10, paddingVertical: 7, borderRadius: 7, borderWidth: 1, borderColor: pressed ? C.goldBright : C.borderHi, backgroundColor: pressed ? C.surface : C.card })}>
@@ -169,11 +169,11 @@ export function VakifDugmesi({ state, pr, i, act }: { state: GameState; pr: Prop
 export function IsletmeSiniri({ sayi, sinir }: { sayi: number; sinir: number }) {
   const { t, lang } = useI18n(); const { row, ta } = yon(lang);
   const dolu = sayi >= sinir;
-  return <View accessible accessibilityLabel={`${applyParams(t("isl.sinir"), [sayi, sinir], lang)}. ${applyParams(t("isl.sinirDolu"), [sinir], lang)}`}
+  return <View accessible accessibilityLabel={`${applyParams(t("isl.sinir"), [sayi, sinir], lang)}. ${applyParams(t("isl.sinirDolu2"), [sinir], lang)}`}
     style={{ flexDirection: row, alignItems: "center", gap: 8, marginBottom: 10, padding: 10, borderRadius: 8, borderWidth: 1, borderColor: dolu ? C.ember : C.border, backgroundColor: C.surface }}>
     <GameIcon name="coins" size={16} color={dolu ? C.ember : C.gold} />
     <Text style={{ fontFamily: F.display, fontSize: 13, color: dolu ? C.ember : C.gold }}>{applyParams(t("isl.sinir"), [sayi, sinir], lang)}</Text>
-    <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 13.5, lineHeight: 18, color: C.parchmentMuted, textAlign: ta }}>{applyParams(t("isl.sinirDolu"), [sinir], lang)}</Text>
+    <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 13.5, lineHeight: 18, color: C.parchmentMuted, textAlign: ta }}>{applyParams(t("isl.sinirDolu2"), [sinir], lang)}</Text>
   </View>;
 }
 

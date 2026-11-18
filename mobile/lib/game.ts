@@ -222,6 +222,9 @@ export interface Player {
   vali_ilk?: boolean; // F5: ilk valiliğin tam itibar/şöhret ödülü alındı (sonrakiler küçük)
   isl_rep_turn?: number; // F5: işletme namından itibar akışı ayda en çok bir kez
   yanke_n?: number; // F5: yankesicilik denemesi sayısı (tekrar yakalanma şansını artırır)
+  yanke_y?: number; // F5: yanke_n'in ait olduğu yıl (turn/12); yıl değişince sayaç sıfırdan başlar
+  piyasa_n?: number; // F5: bu ömürde piyasa oynatma sayısı (şöhret yalnız ilk 3'te)
+  kervan_rep_turn?: number; // F5: son kervan kâr itibarı turu (3 ayda bir)
   siparis_itibar?: Record<string, number>; // F5: şehir başına son tam itibarlı atölye siparişi turu (3 ayda bir tam)
   fac_rank_seen?: Record<string, number>; // lonca başına görülen en yüksek rütbe — tören yalnız onu aşınca (standing düşüp çıksa da tekrarlanmaz)
   child_meta?: { n: string; born: number; ms?: number; bastard?: boolean }[]; // evlat kilometre taşları: doğum turu + son anılan eşik (ilk adım/mektep/çıraklık/yetişkinlik); bastard: yasak ilişkiden doğan gayrimeşru evlat
@@ -316,7 +319,7 @@ export function zar(s: GameState, g: ZarGirdi): ZarOnizleme & { basari: boolean 
   return { ...o, basari: gameRandom(s) < o.oran };
 }
 // Mülk: konuma bağlı (loc) + kondisyon (cond 0..100) + kademe (level 1..3). Gelir refah×kondisyon×kademe.
-export interface Property { type: string; loc: string; cond: number; level?: number; workers?: string[]; ledger?: { y: number; net: number; months?: number }[]; ledger_accum?: { y: number; net: number; months: number }; tenant?: boolean; guard?: boolean; fallow_until?: number; fertile_until?: number; isl?: Isletme; vakif?: boolean; } // F5: isl = işletme ayarı (han/dükkân/atölye), vakif = vakfedilmiş (satılamaz, gelirin %40'ı hayra)
+export interface Property { type: string; loc: string; cond: number; level?: number; workers?: string[]; ledger?: { y: number; net: number; months?: number }[]; ledger_accum?: { y: number; net: number; months: number }; tenant?: boolean; guard?: boolean; fallow_until?: number; fertile_until?: number; isl?: Isletme; vakif?: boolean; vakif_gen?: number; } // F5: isl = işletme ayarı (han/dükkân/atölye), vakif = vakfedilmiş (satılamaz, gelirin %40'ı hayra)
 export const PROP_MAX_LEVEL = 3;
 export function propUpgradeCost(pr: Property): number { return Math.round((PROPERTY_TYPES[pr.type]?.cost || 100) * (pr.level || 1) * 0.8); }
 export function upgradeProperty(prev: GameState, index: number): GameState {
@@ -574,7 +577,7 @@ export function propWorkerSlots(pr: Property): number { const n = (PROPERTY_TYPE
 // Gelir = taban × bakım/kademe × hizmet × fiyat marjı × kalite × meslek uyumu − kalite gideri (müşteri başına).
 // Ödünleşim: ucuz çok müşteri çeker (kapasite darlığı) ama marjı düşüktür, nam ve itibar getirir; pahalı az müşteriyle
 // yüksek marj alır, itibar getirmez, namı yalnız seçkin kaliteyle tutar; seçkin müşteri başına pahalıdır ama namı hızlı büyütür.
-// Aynı anda en çok 3 işletme (vakıf işletme sayılmaz). Pasif mülkler (tarla, bağ, ev, değirmen) sınır dışıdır.
+// Aynı anda en çok 3 işletme (vakfedilen işletme de sayılır; vakıf sınırı delmesin). Pasif mülkler (tarla, bağ, ev, değirmen) sınır dışıdır.
 export const ISLETME_TIPLERI = ["han", "dukkan", "atolye"] as const;
 export const ISLETME_SINIR = 3;
 export const ISLETME_KADRO_TAVAN = 3;
@@ -587,15 +590,17 @@ export interface Isletme {
 }
 export const ISL_FIYAT_TALEP = [1.35, 1, 0.62];
 export const ISL_FIYAT_MARJ = [0.85, 1, 1.35];
-export const ISL_KALITE_GELIR = [1, 1.08, 1.22]; // müşteri başına gelir
-export const ISL_KALITE_GIDER = [0, 0.2, 0.55];  // müşteri başına gider (taban gelirin katı)
+export const ISL_KALITE_GELIR = [1, 1.25, 1.5]; // müşteri başına gelir
+export const ISL_KALITE_GIDER = [0, 0.24, 0.55]; // müşteri başına gider (taban gelirin katı; ucuzda kalite kâr etmez, pahalıda eder)
+export const ISL_TALEP_KAT = 0.72; // talep ölçeği: olağan fiyatta talep kalfasız kapasiteye yakın, ucuzda aşar, pahalıda altında kalır
+export const ISL_KALFA_KAPASITE = 0.8; // kalfa başına kapasite (× emek): ucuz fiyatın fazla müşterisini karşılar
 // Namın yöneldiği değer [fiyat][kalite]; seçkin kalitede nam iki kat hızlı yürür.
 export const ISL_NAM_HEDEF = [[55, 62, 85], [30, 56, 72], [12, 24, 62]];
 const islKis = (x: number, a: number, b: number) => Math.max(a, Math.min(b, x));
 export function isletmeMi(pr: Property): boolean { return (ISLETME_TIPLERI as readonly string[]).includes(pr.type); }
 export function isletmeAyari(pr: Property): Isletme { return pr.isl || { f: 1, q: 1, nam: 50 }; }
-// Sınıra sayılan işletme: vakfedilmemiş han/dükkân/atölye.
-export function isletmeSayisi(p: Player): number { return (p.properties || []).filter((pr) => isletmeMi(pr) && !pr.vakif).length; }
+// Sınıra sayılan işletme: vakfedilmiş olanlar dahil bütün han/dükkân/atölye (vakfedip yenisini alarak sınır delinmez).
+export function isletmeSayisi(p: Player): number { return (p.properties || []).filter(isletmeMi).length; }
 export function isletmeAlinabilir(p: Player, type: string): boolean { return !(ISLETME_TIPLERI as readonly string[]).includes(type) || isletmeSayisi(p) < ISLETME_SINIR; }
 export function isletmeTipCarpani(type: string, prosp: number, sec: number): number {
   return type === "han" ? 0.6 + (prosp + sec) / 250 : type === "dukkan" ? 1 + prosp / 300 : type === "atolye" ? 0.9 + prosp / 400 : 1;
@@ -635,8 +640,8 @@ export function isletmeHesap(s: GameState, pr: Property, base: number, cpl: numb
   const env = a.goc && a.goc > s.turn ? islKis(trafik * rakip, 0.93, 1.07) : islKis(trafik * rakip, 0.6, 1.3);
   const npcs = pr.workers?.length ? townNpcsOf(s, pr.loc) : [];
   let emek = 0; for (const id of pr.workers || []) { const n = npcs.find((x) => x.id === id); if (n) emek += workerProductivity(n, pr.type); }
-  const kapasite = tip + 0.45 * emek;
-  const talep = (tip + 1.35) * 1.08 * env * ISL_FIYAT_TALEP[a.f] * (0.9 + a.nam / 500);
+  const kapasite = tip + ISL_KALFA_KAPASITE * emek;
+  const talep = (tip + 1.35) * ISL_TALEP_KAT * env * ISL_FIYAT_TALEP[a.f] * (0.9 + a.nam / 500);
   const hizmet = Math.min(talep, kapasite);
   const etki = a.etki && a.etki.until > s.turn ? a.etki.m : 1;
   const uyum = isletmeUyumu(s.player, pr.type);
@@ -680,12 +685,13 @@ export type IslKararId = typeof ISL_KARARLAR[number];
 export interface IslSecimEtki { para?: number; nam?: number; itibar?: number; etki?: { m: number; ay: number }; kalfaGider?: boolean; comert?: number }
 // Bedeller taban gelirin katıdır (B = taban × enflasyon). zar: o seçeneğin sonucu zarla belirlenir (ok/bas).
 export const ISL_KARAR_SECIM: Record<IslKararId, [{ ok: IslSecimEtki; bas?: IslSecimEtki }, { ok: IslSecimEtki; bas?: IslSecimEtki }]> = {
-  kervan:   [{ ok: { para: -1.0, etki: { m: 1.25, ay: 3 }, nam: 2 } }, { ok: { para: 1.2, nam: -4 } }],
-  muhtesip: [{ ok: { nam: 5, itibar: 1 }, bas: { para: -1.0, nam: -4 } }, { ok: { para: -0.7, nam: 1 } }],
+// Denge (F5): iki seçeneğin beklenen değeri (1 itibar ≈ 1B, 1 nam ≈ 0.1B, brüt ≈ 2B/ay, zar ≈ %50) birbirine yakın, türü farklı.
+  kervan:   [{ ok: { para: -0.8, etki: { m: 1.25, ay: 3 }, nam: 2 } }, { ok: { para: 1.2, nam: -4 } }],
+  muhtesip: [{ ok: { nam: 4, itibar: 1 }, bas: { para: -1.0, nam: -4 } }, { ok: { para: -0.4, nam: 3 } }],
   rakip:    [{ ok: { etki: { m: 0.9, ay: 4 } } }, { ok: { etki: { m: 0.8, ay: 3 }, nam: 4 } }],
-  zam:      [{ ok: { para: -0.8, nam: 2 } }, { ok: {}, bas: { kalfaGider: true, nam: -2 } }],
-  kitlik:   [{ ok: { para: 1.5, nam: -6, itibar: -1 } }, { ok: { nam: 6, itibar: 1, comert: 1 } }],
-  siparis:  [{ ok: { para: 2.0, nam: 4 }, bas: { para: -0.6, nam: -3 } }, { ok: { para: 0.5 } }],
+  zam:      [{ ok: { para: -0.5, nam: 2 } }, { ok: {}, bas: { kalfaGider: true, nam: -2 } }],
+  kitlik:   [{ ok: { para: 2.5, nam: -3, itibar: -1 } }, { ok: { nam: 3, itibar: 1, comert: 1 } }],
+  siparis:  [{ ok: { para: 2.0, nam: 4 }, bas: { para: -0.6, nam: -3 } }, { ok: { para: 0.8 } }],
 };
 export const ISL_KARAR_IKON: Record<IslKararId, string> = { kervan: "camel", muhtesip: "scales", rakip: "crossed-swords", zam: "iliskiler", kitlik: "wheat", siparis: "scroll" };
 function islKitlikVar(s: GameState): boolean { const me = s.marketEvent && (s.marketEvent.until ?? 0) > s.turn ? s.marketEvent.key : null; return me === "kuraklik" || me === "kithasat"; }
@@ -751,16 +757,20 @@ export function resolveIsletmeKarari(prev: GameState, index: number, c: number):
   return s;
 }
 // ── Vakıf (K6): mülk ya da işletme vakfedilir — satılamaz, el konulamaz, gelirin %40'ı vakıf fonuna (hayra) akar;
-// kalıcı itibar tabanı (vakıf başına 5, en çok 15), vâris devralır ve adını önden yürütür (heirPreview = continueAsHeir).
+// kalıcı itibar tabanı yalnız vakfedene (vakıf başına 2, en çok 6); vâris vakfı devralır, adı önden yürür (legacyRep içinde
+// vakifMulkVarisItibari) ama taban vârise geçmez — çifte sayım yok (heirPreview = continueAsHeir).
 export const VAKIF_HAYIR_PAYI = 0.4;
+export const VAKIF_TABAN_BIRIM = 2, VAKIF_TABAN_TAVAN = 6;
 export function vakifMulkSayisi(p: Player): number { return (p.properties || []).filter((pr) => pr.vakif).length; }
-export function vakifItibarTabani(p: Player): number { return Math.min(15, 5 * vakifMulkSayisi(p)); }
+// Bu kuşağın kendi vakfettikleri (vakif_gen yoksa eski kayıt: vakfeden sayılır; devirde atanın kuşağı yazılır).
+export function vakifKendiSayisi(p: Player): number { return (p.properties || []).filter((pr) => pr.vakif && (pr.vakif_gen == null || pr.vakif_gen === p.generation)).length; }
+export function vakifItibarTabani(p: Player): number { return Math.min(VAKIF_TABAN_TAVAN, VAKIF_TABAN_BIRIM * vakifKendiSayisi(p)); }
 export function vakifMulkVarisItibari(p: Player): number { return Math.min(6, 2 * vakifMulkSayisi(p)); }
 export function vakfedilebilir(s: GameState, index: number): boolean { const p = s.player; const pr = p.properties[index]; return !!pr && !pr.vakif && !p.dead && p.age >= 18 && !inJail(p); }
 export function vakfet(prev: GameState, index: number): GameState {
   const s = clone(prev); const p = s.player;
   if (!vakfedilebilir(s, index)) return s;
-  const pr = p.properties[index]; pr.vakif = true;
+  const pr = p.properties[index]; pr.vakif = true; pr.vakif_gen = p.generation;
   unEkle(p, "reputation", 3); unEkle(p, "fame", 2); bumpNam(p, "comert", 3); bumpNam(p, "dindar", 1);
   if (p.reputation < vakifItibarTabani(p)) p.reputation = vakifItibarTabani(p);
   push(s, "bagis", `${pr.loc}'daki ${(PROPERTY_TYPES[pr.type]?.name || "mülk").toLowerCase()} vakfedildi; vakfiye mühürlendi, gelirinin bir kısmı artık hayra akacak.`, "kişisel", true, { k: "isl.vakfedildi", p: [{ pt2: pr.type }, { pl: pr.loc }] });
@@ -4419,7 +4429,7 @@ export function advance(prev: GameState, n = 1): GameState {
       }
       // Katastrofik kayıp: mahallede AKTİF yangın olayı varken çok düşük olasılıkla mülk tümüyle kül olur.
       // Diyardaki tek geri-alınamaz mülki kayıp: oyuncu düşük güvenlikli şehirde mülk tutmanın gerçek riskini hisseder.
-      if (!burnPr && i === n - 1 && locEventsAt(s, pr.loc || s.player.location_name).includes("yangin") && chance(pr.guard ? 0.005 : 0.012)) burnPr = pr; // bekçi kıvılcımı erken görür
+      if (!burnPr && !pr.vakif && i === n - 1 && locEventsAt(s, pr.loc || s.player.location_name).includes("yangin") && chance(pr.guard ? 0.005 : 0.012)) burnPr = pr; // bekçi kıvılcımı erken görür
     }
     if (burnPr) {
       const bi = s.player.properties.indexOf(burnPr);
@@ -5377,7 +5387,7 @@ function tickCaravan(s: GameState) {
   p.money += ret; gainSkill(s, "trade", 10);
   if (c.good) addTradePressure(s, c.dest, c.good, -Math.min(0.20, c.invested / 20000)); // getirdiğin mal hedefte arzı bollaştırır (kalıcı iz, sönümlü)
   const paid = c.invested + (c.lost ?? 0); const net = ret - paid; // gerçek kâr/zarar (yağma dahil)
-  if (net > 200) unEkle(p, "reputation", 2); // büyük kâr nam getirir
+  if (net > 200 && (p.kervan_rep_turn == null || s.turn - p.kervan_rep_turn >= 3)) { p.kervan_rep_turn = s.turn; unEkle(p, "reputation", 2); } // büyük kâr nam getirir — F5: 3 ayda bir
   const carried = c.good ? { i: c.good } : { i: "bugday" };
   push(s, "kervan", `${c.dest} kervanın vardı: ${paid} akçe yatırmıştın, ${ret} akçe döndü (net ${net >= 0 ? "+" : ""}${net}).`, "kişisel", true, { k: "evj.carArrive2", p: [{ pl: c.dest }, paid, ret, (net >= 0 ? "+" : "") + net, carried] });
   s.caravan = null;
@@ -8853,6 +8863,8 @@ export function misdirectInvestigation(prev: GameState): GameState {
   return s;
 }
 // Oyuncunun seçmeden önce gördüğü oranlar, çözümde kullanılan oranların aynısıdır: karar okunabilir, sonuç yine risklidir.
+// F5: yankesicilik tekrar sayacı yalnız bu yıl için geçerli (eski kayıtta yıl yoksa sıfırdan).
+export function yankeSayaci(s: GameState, p: Player): number { return p.yanke_y === Math.floor(s.turn / 12) ? (p.yanke_n || 0) : 0; }
 export function crimePlanPreview(s: GameState, kind: CrimeKind, approach: CrimeApproach = "hile"): CrimePlanPreview {
   const p = s.player; const ct = CRIME_TYPES[kind] || CRIME_TYPES.yankesicilik;
   const golgeBonus = p.faction === "golge" ? 0.12 : 0;
@@ -8874,7 +8886,7 @@ export function crimePlanPreview(s: GameState, kind: CrimeKind, approach: CrimeA
   execution += hunerOranEki(p, "suc"); // K3: Nişancı/Gazi kalemi (kalem başına %8)
   if (kind === "yankesicilik") { // F5: küçük iş namlıya küçük gelir; el yaşla ağırlaşır, tekrarlanan yüz tanınır
     loot /= 1 + 0.35 * underworldTier(p);
-    execution -= Math.min(0.15, Math.max(0, p.age - 25) * 0.006) + Math.min(0.15, (p.yanke_n || 0) * 0.01);
+    execution -= Math.min(0.15, Math.max(0, p.age - 25) * 0.006) + Math.min(0.15, yankeSayaci(s, p) * 0.01);
   }
   const baseAttention = ct.sev * 0.05 + dread(s) / 100 * 0.15 + crimeHeat(p) / 220;
   const golgeGizli = p.faction === "golge" ? 0.5 : 1;
@@ -8951,7 +8963,7 @@ export function doCrime(prev: GameState, kind: CrimeKind, approach: CrimeApproac
   const ct = CRIME_TYPES[kind] || CRIME_TYPES.yankesicilik;
   const intel = crimeIntelFor(s, kind);
   const plan = crimePlanPreview(s, kind, approach);
-  if (kind === "yankesicilik") p.yanke_n = (p.yanke_n || 0) + 1; // F5: tekrar sayacı (önizleme denemeden önce okunur)
+  if (kind === "yankesicilik") { const y = Math.floor(s.turn / 12); p.yanke_n = yankeSayaci(s, p) + 1; p.yanke_y = y; } // F5: tekrar sayacı yıllık (önizleme denemeden önce okunur)
   p.crime_heat = Math.min(100, crimeHeat(p) + plan.heatGain);
   const kurban = crimeIntelVictim(s, kind) || kurbanSec(s, kind);
   if (intel) delete p.crime_intel;
@@ -9352,9 +9364,11 @@ function tickRetinue(s: GameState) {
 // F5: iki masa — küçük masa (1'e 1, kavga seyrek) ya da büyük masa (bahis 4 kat, kazanırsan 2.3 katı döner; kasa payı aynı ~%8
 // ama kayıpta kavga sık ve kesede olmayan pay veresiye yazılır → borç). Beklenen değer iki masada da eksidir; karar oynaklıktır.
 export function diceBigStake(bet: number): number { return Math.round(bet * 4); }
+export const DICE_MAX_BET = 50; // arayüzdeki en büyük bahis (enflasyonla ölçeklenir)
 export function playDice(prev: GameState, bet: number, buyuk = false): GameState {
   const s = clone(prev); const p = s.player;
-  if (p.dead || p.age < 16 || inJail(p)) return s;
+  if (p.dead || p.age < 16 || inJail(p) || !Number.isFinite(bet) || bet < 1) return s;
+  bet = Math.min(bet, Math.round(DICE_MAX_BET * inflationFactor(s))); // F5: geçersiz/aşırı bahis motorda reddedilir
   if (p.gamble_turn === s.turn) return s; // ayda tek el
   if (buyuk) {
     const stake = diceBigStake(Math.max(1, Math.floor(bet)));
@@ -10067,6 +10081,7 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
   for (const pr of props) {
     if (pr.fallow_until !== undefined) pr.fallow_until = Math.max(1, pr.fallow_until - prev.turn);
     if (pr.fertile_until !== undefined) { const kalan = pr.fertile_until - prev.turn; if (kalan > 0) pr.fertile_until = kalan; else pr.fertile_until = undefined; }
+    if (pr.vakif && pr.vakif_gen == null) pr.vakif_gen = p.generation; // F5: vakfın kurucusu atadır; taban vârise geçmez
     if (pr.isl) { const a = pr.isl = { ...pr.isl }; if (a.etki) { const k = a.etki.until - prev.turn; a.etki = k > 0 ? { ...a.etki, until: k } : undefined; } a.goc = undefined; a.km = undefined; if (a.son) a.son = { ...a.son, t: a.son.t - prev.turn }; } // F5: işletme damgaları
   }
   const gen = p.generation + 1;
@@ -10209,6 +10224,7 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
       crownAuthority: p.crowned ? Math.max(35, Math.min(70, Math.round(crownAuthorityOf(p) * 0.8))) : undefined,
       appointedGov: p.appointedGov ? Object.fromEntries(Object.entries(p.appointedGov).map(([loc, gov]) => [loc, { ...gov, loyalty: Math.max(15, gov.loyalty - 10) }])) : undefined,
       kirilmalar: kirilmaMirasi(prev), // bu dilimde hiçbir kırılma vârise geçmez (iki ekran aynı kaynaktan)
+      vali_ilk: p.vali_ilk, // F5: ilk valilik ödülü soy düzeyinde (vâris ikinci kez tam ödül almaz)
       yetistirilen_cirak: p.yetistirilen_cirak, // F4: ocağın yetiştirdiği çıraklar kuşaktan kuşağa sayılır (Ocak için)
       will_pref: "esit", fates: [], claimed: [], governorships: [], // taht irsîdir; kader/başarım/valilik yeni baştan
     },
@@ -12939,7 +12955,8 @@ export function manipulateMarket(prev: GameState, dir: "pump" | "dump"): GameSta
   if (dir === "pump") { s.econ = Math.min(2, (s.econ || 1) + 0.45); push(s, "piyasa", `Pazarı kasıp kavurdun — malları topladın, fiyatlar fırladı. Diyar seni konuşuyor.`, "makro", true, { k: "ev.lever.pump" }); }
   else { s.econ = Math.max(0.5, (s.econ || 1) - 0.45); push(s, "piyasa", `Ambarlarını açtın — piyasayı mala boğdun, fiyatlar düştü. Halk minnettar, tüccarlar küplere bindi.`, "makro", true, { k: "ev.lever.dump" }); }
   if (s.world) s.world.marketLeverUntil = s.turn + 6;
-  unEkle(p, "fame", 3);
+  if ((p.piyasa_n || 0) < 3) unEkle(p, "fame", 3); // F5: şöhret yalnız ömürdeki ilk 3 oynatmada
+  p.piyasa_n = (p.piyasa_n || 0) + 1;
   return s;
 }
 
@@ -13692,8 +13709,8 @@ export function deliverWorkshopOrder(prev: GameState): GameState {
   const sonTam = p.siparis_itibar?.[o.city]; const ara = sonTam == null ? 99 : s.turn - sonTam;
   const pay = ara >= 3 ? 1 : ara === 2 ? 0.5 : 0;
   if (pay >= 1) p.siparis_itibar = { ...(p.siparis_itibar || {}), [o.city]: s.turn };
-  if (guild && p.faction === guild) { if (pay > 0) { p.faction_standing = p.faction_standing || {}; p.faction_standing[guild] = Math.min(100, (p.faction_standing[guild] || 0) + Math.round(3 * pay)); } }
-  else if (pay > 0) unEkle(p, "reputation", Math.round(2 * pay));
+  if (guild && p.faction === guild) { if (pay > 0) { p.faction_standing = p.faction_standing || {}; p.faction_standing[guild] = Math.min(100, (p.faction_standing[guild] || 0) + Math.floor(3 * pay)); } }
+  else if (pay > 0) unEkle(p, "reputation", Math.floor(2 * pay));
   p.workshop_order_turn = s.turn;
   addTradePressure(s, o.city, o.good, -0.045);
   delete s.workshopOrder;
