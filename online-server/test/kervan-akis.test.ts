@@ -209,3 +209,12 @@ test("fiyat haberi: düğüm kapısı, 1 takat, aynı beylikten 3 yerleşim, ge�
   const on = (await w.cagir({ islem: "kervan", hedef: null, mallar: null })).deger as Nesne;
   assert.deepEqual(on.haber, h.deger.haber);
 });
+
+test("kanca partisi 2: kalite:fiyatHaberi ile haber bir ay daha geçerli, yanıtta kalite dökümü", async () => {
+  const w = await dunya();
+  w.karakterYaz((k) => seviyeVer(k, "tuccar.fiyatHaberi", 2));
+  const h = await w.cagir({ islem: "kervanHaber", govde: { istekNo: "haber-kalite-1" } });
+  assert.ok(h.ok, JSON.stringify(h));
+  assert.equal(h.deger.haber.gecerli, w.ay + 2);
+  assert.deepEqual(h.deger.kalite, { yuzde: 15, ekAy: 1, kalemler: [{ kanca: "kalite:fiyatHaberi", d: 15 }] });
+});

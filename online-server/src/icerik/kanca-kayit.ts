@@ -282,6 +282,21 @@ export const KANCA_BAGLARI: Readonly<Record<string, KancaBagi>> = {
   // ── Kanca partisi 2: gece devriyesi görevi ──
   "hak:devriye": m("src/yerlesim/hizmet-gorev.ts"),
 
+  // ── Kanca partisi 2 (eşya/kalite): görev (hırsızlık tespiti ve kılıç gece devriyesinde), iş sözleşmesi, arabuluculuk, kervan ve hizmet kalitesi; görev araçları ──
+  "kalite:hirsizlikTespiti": m("src/yerlesim/hizmet-gorev.ts"),
+  "kalite:gozculuk": m("src/yerlesim/hizmet-gorev.ts"),
+  "kalite:savunma": m("src/yerlesim/hizmet-gorev.ts"),
+  "arac:devriye:kilic": m("src/yerlesim/hizmet-gorev.ts"),
+  "arac:saf:kalkan": m("src/yerlesim/hizmet-gorev.ts"),
+  "kalite:mektup": m("src/yerlesim/teklif.ts"),
+  "kalite:ulak": m("src/yerlesim/teklif.ts"),
+  "kalite:araBul": m("src/yerlesim/arabulucu.ts"),
+  "kalite:uzlasma": m("src/yerlesim/arabulucu.ts"),
+  "kalite:fiyatHaberi": m("src/yerlesim/kervan.ts"),
+  "kalite:yolGuvenligi": m("src/yerlesim/kervan.ts"),
+  "omur:cizme": m("src/yerlesim/kervan.ts"),
+  "kalite:cocukRiski": m("src/yerlesim/hizmet-tarif.ts"),
+
   // ── Kanca partisi 2 (hak f–k): ortak dert, görev, hizmet talebi, arabuluculuk, görüş, siyaset, bilgi, kronik, koru ──
   "hak:haydutOnderligi": m("src/yerlesim/ortak-dert.ts"),
   "hak:kitlikOnderligi": m("src/yerlesim/ortak-dert.ts"),

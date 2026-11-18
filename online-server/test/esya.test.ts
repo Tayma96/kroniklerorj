@@ -351,15 +351,15 @@ test("özellik dökümü: aile, üst kademe ek etki, sadede kusur (ceza değil),
   assert.equal(esyaAilesi("kilic"), "silah");
   assert.equal(esyaAilesi("ekmek"), "yiyecek");
   assert.equal(esyaAilesi("odun"), "mal");
-  const sade = ozellikDokumu("ekmek", 0);
+  const sade = ozellikDokumu("peksimet", 0);
   assert.equal(sade.kusur, "bayat");
   assert.deepEqual(sade.etkiler, [{ id: "tokluk", bagli: false }]);
   assert.deepEqual(sade.hunerler, []);
   assert.equal(sade.bagli, false);
-  const saheser = ozellikDokumu("ekmek", 3);
+  const saheser = ozellikDokumu("peksimet", 3);
   assert.deepEqual(saheser.etkiler.map((x) => x.id), ["tokluk", "keyif"]);
   assert.equal(saheser.kusur, null);
-  const nadide = ozellikDokumu("ekmek", 4);
+  const nadide = ozellikDokumu("peksimet", 4);
   assert.deepEqual(nadide.etkiler.map((x) => x.id), ["tokluk", "keyif", "saglik"]);
   assert.deepEqual(nadide.hunerler, [nadideHuneri("ekmek")]);
   assert.deepEqual(nadide.hunerDokumu, [{ id: nadideHuneri("ekmek"), bagli: false }]);

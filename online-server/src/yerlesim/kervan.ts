@@ -23,12 +23,14 @@ import type { MeslekId } from "../icerik/meslekler.ts";
 import { yerlesimBul } from "../dunya-veri.ts";
 import { basarili, hata, type HataKodu, type Sonuc } from "../tipler.ts";
 import { bosKutu, cikisAc, type CikisKaydi, type CikisKutusu } from "../mulk/transfer.ts";
-import { acikEtkiler, hizmetAcik } from "./beceri-etki.ts";
+import { hizmetAcik } from "./beceri-etki.ts";
 import { aracAsindir, type Asinma } from "./tarif.ts";
 import { olduMu } from "./hanedan.ts";
 import { takatHarca, takatTazele } from "./karakter.ts";
 import { loncaTablosu, oyuncuSayaci, type LoncaSatiri } from "./lonca.ts";
 import { enIyiKalite, esyaKilidi } from "./kalite.ts";
+import { aileEtkisi, ARAC_KALITE_YUK, enIyiBirim, YOL_GIYSISI } from "./esya.ts";
+import { kaliteYuzdesi } from "./kanca-kalite.ts";
 import { envanterEkle, npcFiyat, satisDegeri, stogaEkle, type KasabaStogu } from "./npc-taban.ts";
 import { KITLIK_KOTASI, npcSatisEki, npcSatisKotasi } from "./pazar.ts";
 import { arkaPlanAl, tetikSurer } from "./arka-plan.ts";
@@ -49,7 +51,18 @@ export const KERVAN_TOPLU_YUK_EN_COK = 30;
  * yük tavanını yüzde artırır. Hepsinin üstünde mutlak tavan KERVAN_YUK_MUTLAK (varış doğrulaması da bunu kullanır).
  */
 export const KERVAN_KAGNI_YUK_EN_COK = 20;
-export const KERVAN_TASIT_KALITE_YUK: readonly number[] = [0, 1, 2, 3, 4, 5, 6];
+export const KERVAN_TASIT_KALITE_YUK: readonly number[] = ARAC_KALITE_YUK;
+/**
+ * [PARAMETRE] Kanca partisi 2: kervan yükü kalitesinin hedefleri (`kalite:kervan`, tüccarın güvenli yol bilgisi
+ * `kalite:yolGuvenligi`) toplanır ve bu yüzdeyle kırpılır (tek yığılma; mutlak tavan ayrıca).
+ */
+export const KERVAN_KALITE_HEDEFLERI: readonly string[] = ["kervan", "yolGuvenligi"];
+export const KERVAN_KALITE_TAVAN = 30;
+/**
+ * [PARAMETRE] Kanca partisi 2 (§9 giysi "yol"): yükten sonra elde kalan çizme üstün ve üstüyse kervan takatı
+ * CIZME_YOL_TAKAT kadar azalır (en az KERVAN_TAKAT_EN_AZ); çizme bir kullanım aşınır (`omur:cizme` ve kalitesi uzatır).
+ */
+export const KERVAN_TAKAT_EN_AZ = 1;
 export const KERVAN_YUK_MUTLAK = 40;
 /** [PARAMETRE] Yolculuk süresi (oyun ayı). Parayla kısaltılmaz; gecikme ceza getirmez. */
 export const KERVAN_YOL_AY = 1;
@@ -63,6 +76,35 @@ export const HABER_TAKAT = 1;
 export const HABER_YERLESIM = 3;
 export const HABER_MAL = 3;
 export const HABER_GECERLILIK_AY = 1;
+/**
+ * [PARAMETRE] Kanca partisi 2: haber kalitesi (`kalite:fiyatHaberi` yüzdesi) bu eşiğe ulaşırsa haber bir ay daha
+ * geçerli kalır (yalnız bilgi; akçe ve kota değişmez). Ek ay en çok HABER_KALITE_EK_AY.
+ */
+export const HABER_KALITE_ESIGI = 15;
+export const HABER_KALITE_EK_AY = 1;
+
+/** Haberin kalitesi ve ek geçerlilik ayı (döküm). */
+export function haberKalitesi(kar: Karakter): { yuzde: number; ekAy: number; kalemler: { kanca: string; d: number }[] } {
+  const k = kaliteYuzdesi(kar, [HABER_HIZMETI]);
+  return { yuzde: k.yuzde, ekAy: k.yuzde >= HABER_KALITE_ESIGI ? HABER_KALITE_EK_AY : 0, kalemler: k.kalemler };
+}
+
+/** Kervanda yol giysisi (esya.ts YOL_GIYSISI ile aynı mal; tür denetimli). */
+const CIZME = "cizme" satisfies typeof YOL_GIYSISI;
+
+/** Kervanda giyilecek çizme (yükten sonra elde kalan, en iyisi) ve yol etkisi; etkisizse null. */
+export function kervanCizmesi(kar: Karakter, yuk: Yuk = {}): { mal: MalId; kalite: number; takat: number } | null {
+  if ((kar.ev?.[CIZME] ?? 0) - (yuk[CIZME] ?? 0) < 1) return null;
+  const b = enIyiBirim(kar, CIZME);
+  const e = aileEtkisi(CIZME, b.q, "yol", b.hunerler);
+  const d = e && "deger" in e ? e.deger : 0;
+  return d > 0 ? { mal: CIZME, kalite: b.q, takat: d } : null;
+}
+
+/** Kervanın takat bedeli: KERVAN_TAKAT − çizmenin yol etkisi (en az KERVAN_TAKAT_EN_AZ). */
+export function kervanTakati(kar: Karakter, yuk: Yuk = {}): number {
+  return Math.max(KERVAN_TAKAT_EN_AZ, KERVAN_TAKAT - (kervanCizmesi(kar, yuk)?.takat ?? 0));
+}
 
 /** Kervan düğümlerinin hizmet adları (src/icerik/agaclar/tuccar.ts). */
 export const KERVAN_HIZMETI = "kervan";
@@ -227,8 +269,7 @@ export function yukTavani(kar: Karakter, yuk: Yuk = {}) {
   const tasit: MalId | null = topluYuk ? (araba ? "araba" : kagni ? "kagni" : null) : null;
   const taban = tasit === "araba" ? KERVAN_TOPLU_YUK_EN_COK : tasit === "kagni" ? KERVAN_KAGNI_YUK_EN_COK : KERVAN_YUK_EN_COK;
   const tasitKalite = tasit ? (KERVAN_TASIT_KALITE_YUK[enIyiKalite(kar, tasit)] ?? 0) : 0;
-  let kalite = 0;
-  for (const e of acikEtkiler(kar)) if (e.tur === "kalite" && e.hedef === "kervan") kalite += e.yuzde;
+  const kalite = Math.min(KERVAN_KALITE_TAVAN, kaliteYuzdesi(kar, KERVAN_KALITE_HEDEFLERI).yuzde);
   const tavan = Math.min(KERVAN_YUK_MUTLAK, Math.floor(((taban + tasitKalite) * (100 + kalite)) / 100));
   return { tavan, topluYuk, araba, kagni, tasit, tasitKalite, kalite, taban };
 }
@@ -260,7 +301,7 @@ export function kervanKapilari(
     yuk: yuk ? say(yuk) <= yukTavani(kar, yuk).tavan : null,
     mal: yuk ? (Object.entries(yuk) as [MalId, number][]).every(([m, n]) => (ev[m] ?? 0) >= n) : null,
     bedel: (ev.nal ?? 0) - (y.nal ?? 0) >= KERVAN_NAL && (ev.kosum ?? 0) - (y.kosum ?? 0) >= KERVAN_KOSUM,
-    takat: kar.tk >= KERVAN_TAKAT,
+    takat: kar.tk >= kervanTakati(kar, y),
     aylik: sayi < aylikTavan,
     malHedef: yuk ? Object.keys(yuk).every((m) => !mh.includes(`${m}:${hedef}`)) : null,
     kutu: (d?.c.k.length ?? 0) < 32,
@@ -284,12 +325,15 @@ export function kervanCikar(d: KervanDefteri, kar: Karakter, hedef: string, yuk:
   const kilit = esyaKilidi(kar, ihtiyac);
   if (kilit) return hata(kilit);
   const yt = yukTavani(kar, yuk);
-  if (!takatHarca(kar, ay, KERVAN_TAKAT)) return hata("takat_yok");
+  const cizme = kervanCizmesi(kar, yuk);
+  if (!takatHarca(kar, ay, kervanTakati(kar, yuk))) return hata("takat_yok");
   for (const [m, n] of Object.entries(yuk) as [MalId, number][]) envanterEkle(kar, m, -n);
   envanterEkle(kar, "nal", -KERVAN_NAL);
   // Koşum ve (toplu yükte) taşıt araçtır: bir kullanım aşınır (ömrü dolunca tükenir).
   const asinma: Asinma[] = [aracAsindir(kar, "kosum")];
   if (yt.tasit && say(yuk) > KERVAN_YUK_EN_COK) asinma.push(aracAsindir(kar, yt.tasit));
+  // Yol giysisi: etkisi olan çizme bir kullanım aşınır ("cizme" ömrü: omur etkileri + kalitesi).
+  if (cizme) asinma.push(aracAsindir(kar, cizme.mal));
   const [, sayi, mh] = aySayaci(d, kar.o, ay);
   d.s[kar.o] = [ay, sayi + 1, [...mh, ...Object.keys(yuk).map((m) => `${m}:${hedef}`)]];
   const y: KervanYuku = { o: kar.o, hs: kar.h, ev: { ...yuk }, ka: ay, va: ay + KERVAN_YOL_AY };
