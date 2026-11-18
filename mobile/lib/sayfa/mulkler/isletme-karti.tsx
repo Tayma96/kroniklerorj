@@ -60,7 +60,7 @@ export function IsletmePaneli({ state, pr, i, act }: { state: GameState; pr: Pro
     <View style={{ flexDirection: row, alignItems: "center", gap: 8 }}>
       <GameIcon name="coins" size={18} color={C.gold} />
       <Text accessibilityRole="header" style={{ flex: 1, fontFamily: F.display, fontSize: 15, color: C.gold, textAlign: ta }}>{t("isl.baslik")}</Text>
-      <Text accessibilityLabel={`${t("isl.tahmin")}: ${signed(net, lang)}`} style={{ fontFamily: F.display, fontSize: 15, color: net >= 0 ? C.sage : C.blood }}>{signed(net, lang)}{t("mulkler.ay")}</Text>
+      <Text numberOfLines={1} accessibilityLabel={`${t("isl.tahmin")}: ${signed(net, lang)}`} style={{ flexShrink: 0, fontFamily: F.display, fontSize: 15, color: net >= 0 ? C.sage : C.blood }}>{signed(net, lang)}{t("mulkler.ay")}</Text>
     </View>
 
     {/* İşletme namı: 0–100 çubuk */}
@@ -70,7 +70,7 @@ export function IsletmePaneli({ state, pr, i, act }: { state: GameState; pr: Pro
         <Text style={{ fontFamily: F.display, fontSize: 13, color: nam >= 60 ? C.sage : nam < 25 ? C.blood : C.gold }}>{nam}/100</Text>
       </View>
       <View style={{ height: 6, borderRadius: 3, backgroundColor: C.surface, overflow: "hidden", alignItems: row === "row" ? "flex-start" : "flex-end" }}>
-        <View style={{ width: `${nam}%`, height: 6, backgroundColor: nam >= 60 ? C.sage : nam < 25 ? C.blood : C.gold }} />
+        <View style={{ width: `${Math.min(100, Math.max(0, nam))}%`, height: 6, backgroundColor: nam >= 60 ? C.sage : nam < 25 ? C.blood : C.gold }} />
       </View>
     </View>
 

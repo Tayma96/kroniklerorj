@@ -6,7 +6,7 @@ import { launchCaravan, caravanRouteChoices, caravanRiskOnizleme, caravanPremium
 import { SansEtiketi } from "../../sans-etiketi";
 import { ITEMS } from "../../world";
 import { caravanRouteText } from "../../caravan-route-locales";
-import { useI18n, yuzdeL } from "../../i18n";
+import { useI18n, yuzdeL, applyParams } from "../../i18n";
 import { placeName } from "../../locale-data";
 import { hap } from "../../haptics";
 import { DesignPressable as Pressable } from "../../design-pressable";
@@ -79,14 +79,14 @@ export function KervanSekmesi({ state, apply, rtl }: { state: GameState; apply: 
           const risk = caravanRiskOnizleme(state, route);
           const on = selected?.dest === route.dest && selected?.good === route.good;
           const gap = Math.round((route.spread - 1) * 100);
-          return <Pressable key={key} accessibilityRole="radio" accessibilityState={{ selected: on, checked: on }} accessibilityLabel={`${t("it." + route.good)}, ${placeName(route.dest, lang)}, ${caravanRouteText(lang, "gap")} ${yuzdeL(gap, lang)}, ${t(turEt[ri] || "isl.kv.dengeli")}, ${t("isl.kv.sure").replace("%1", String(route.konak))}, ${t("isl.kv.yagmasiz")} ${yuzdeL(Math.round(risk.oran * 100), lang)}`}
+          return <Pressable key={key} accessibilityRole="radio" accessibilityState={{ selected: on, checked: on }} accessibilityLabel={`${t("it." + route.good)}, ${placeName(route.dest, lang)}, ${caravanRouteText(lang, "gap")} ${yuzdeL(gap, lang)}, ${t(turEt[ri] || "isl.kv.dengeli")}, ${applyParams(t("isl.kv.sure"), [route.konak], lang)}, ${t("isl.kv.yagmasiz")} ${yuzdeL(Math.round(risk.oran * 100), lang)}`}
             onPress={() => { hap("tap"); setRouteId(key); }}
             style={({ pressed }) => ({ flexDirection: row, alignItems: "center", gap: 10, paddingVertical: 9, paddingHorizontal: 10, borderRadius: 9, borderWidth: on ? 1.5 : 1, borderColor: on ? C.ember : pressed ? C.borderHi : C.border, backgroundColor: on ? "rgba(224,90,48,0.12)" : "rgba(14,10,6,0.6)" })}>
             <Madalyon icon={malIkonu(ITEMS[route.good] || {})} tone={on ? C.ember : C.parchmentMuted} size={40} />
             <View style={{ flex: 1, minWidth: 0 }}>
               <Text style={{ fontFamily: F.display, fontSize: 14, color: C.parchment, textAlign: rtl ? "right" : "left" }}>{t("it." + route.good)}</Text>
               <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchmentMuted, textAlign: rtl ? "right" : "left" }}>{placeName(p.location_name, lang)} {rtl ? "←" : "→"} {placeName(route.dest, lang)}</Text>
-              <Text style={{ fontFamily: F.serifItalic, fontSize: 13.5, color: C.parchmentDim, textAlign: rtl ? "right" : "left" }}>{t(turEt[ri] || "isl.kv.dengeli")} · {t("isl.kv.sure").replace("%1", String(route.konak))} · {t("isl.kv.yagmasiz")} {yuzdeL(Math.round(risk.oran * 100), lang)}</Text>
+              <Text numberOfLines={2} style={{ flexShrink: 1, fontFamily: F.serifItalic, fontSize: 13.5, color: C.parchmentDim, textAlign: rtl ? "right" : "left" }}>{t(turEt[ri] || "isl.kv.dengeli")} · {applyParams(t("isl.kv.sure"), [route.konak], lang)} · {t("isl.kv.yagmasiz")} {yuzdeL(Math.round(risk.oran * 100), lang)}</Text>
             </View>
             <View style={{ alignItems: "center", gap: 3 }}>
               <Text style={{ fontFamily: F.display, fontSize: 16, color: gap >= 0 ? C.sage : C.blood }}>{gap > 0 ? "+" : ""}{yuzdeL(gap, lang)}</Text>
