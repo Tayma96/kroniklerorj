@@ -1,6 +1,9 @@
 // Üretim emri (tezgâh modeli Dilim 2, §6): tarif + kaç kez. Ay dönümünde havuzdaki emek ve depodaki girdi/alet
 // yettiği kadar işlenir; yetmeyen kısım bekler, hiçbir şey yanmaz. Emirle üretim yalnız mal üretir: kimseye meslek
 // XP'si, hizmet puanı ya da nam vermez; beceri verimi uygulanmaz (çıktı tarifin taban adedi, araçla aracın adedi).
+// Kanca partisi 2: depodaki aletin kademe verimi (esya.ts aletEtkisi; kişisel üretimdekiyle aynı değer) yalnız yapımın
+// OYUNCU emeği payıyla verilir: ⌊verim × oyuncu emeği / takat⌋. NPC emeği aletten verim almaz; böylece edilgen atölye
+// (yalnız NPC emeği) bugünkü sınırda kalır (≤ 35/ay) ve oyuncu takatı kişisel üretimden fazlasını kazandırmaz.
 // Emek: önce oyuncu havuzu (takat → emek 1:1), sonra o ayın NPC emeği (biriktirilmez). Kalite: emrin ustası
 // (kalite.ts urunKalitesi) + atölye seviye bonusu − NPC emeği payı cezası; zar tohumlu (deterministik). Saf.
 
@@ -51,6 +54,8 @@ export interface EmirDokumu {
   cikti: { mal: MalId; adet: number };
   /** Bu ay çıkan adet kalite kademesine göre [sade, iyi, üstün, şaheser]. */
   kalite: [number, number, number, number];
+  /** Kanca partisi 2: bu ay aletin kademe veriminden gelen fazladan adet (yalnız oyuncu emeği payı; `cikti.adet` içinde). */
+  aletVerim: number;
   usta: { id: string; ad: string } | null;
   emek: { oyuncu: number; npc: number };
   neden: BeklemeNedeni | null;
@@ -111,15 +116,24 @@ export function depoAletAsindir(t: Tezgah, mal: MalId): void {
   if (!Object.keys(as).length) delete t.as;
 }
 
+/**
+ * Yapımın aletten fazladan çıktısı: depodaki en iyi aletin kademe verimi × oyuncu emeği payı (aşağı yuvarlanır).
+ * Araçsız yapımda ya da yalnız NPC emeğiyle 0.
+ */
+export function emirAletVerimi(t: Tezgah, tr: Tarif, oyuncuEmek: number): number {
+  if (!tr.arac || (t.ev?.[tr.arac.mal] ?? 0) <= 0 || tr.takat <= 0) return 0;
+  return Math.floor((eldekiAletEtkisi(t, tr.arac.mal).verim * Math.min(oyuncuEmek, tr.takat)) / tr.takat);
+}
+
 /** Tek yapımın engeli (yoksa null): emek, girdi, araç, depo kapasitesi. */
-function engel(t: Tezgah, tr: Tarif, emek: number, kapasite: number): BeklemeNedeni | null {
+function engel(t: Tezgah, tr: Tarif, emek: number, kapasite: number, oyuncuEmek = 0): BeklemeNedeni | null {
   if (emek < tr.takat) return "emek_yok";
   // Adlı eşya (efsanevi/tılsımlı) emir girdisi olmaz: yalnız kimliksiz adet sayılır (emir bekler, eşya yanmaz).
   for (const [m, n] of Object.entries(tr.girdi)) if (serbestAdet(t, m) < (n ?? 0)) return "girdi_yok";
   const aracVar = !!tr.arac && (t.ev?.[tr.arac.mal] ?? 0) > 0;
   if (tr.arac?.zorunlu && !aracVar) return "arac_yok";
   const giren = Object.values(tr.girdi).reduce((a, n) => a + (n ?? 0), 0);
-  const cikan = (aracVar ? tr.arac!.adet : tr.cikti[1]) + Object.values(tr.yan ?? {}).reduce((a, n) => a + (n ?? 0), 0);
+  const cikan = (aracVar ? tr.arac!.adet + emirAletVerimi(t, tr, oyuncuEmek) : tr.cikti[1]) + Object.values(tr.yan ?? {}).reduce((a, n) => a + (n ?? 0), 0);
   if (depoAdedi(t) - giren + cikan > kapasite) return "depo_dolu";
   return null;
 }
@@ -149,7 +163,7 @@ export function emirleriIsle(g: UretimGirdisi): UretimSonucu {
   let emekBitti = false;
   for (const e of [...(t.ue ?? [])].sort((a, b) => a.n - b.n)) {
     const tr = tarifBul(e.tr);
-    const d: EmirDokumu = { emir: e.n, tarif: e.tr, kez: e.k, yapilan: e.y, buAy: 0, cikti: { mal: (tr?.cikti[0] ?? "odun") as MalId, adet: 0 }, kalite: [0, 0, 0, 0], usta: null, emek: { oyuncu: 0, npc: 0 }, neden: null, kaliteDokum: null };
+    const d: EmirDokumu = { emir: e.n, tarif: e.tr, kez: e.k, yapilan: e.y, buAy: 0, cikti: { mal: (tr?.cikti[0] ?? "odun") as MalId, adet: 0 }, kalite: [0, 0, 0, 0], usta: null, emek: { oyuncu: 0, npc: 0 }, neden: null, kaliteDokum: null, aletVerim: 0 };
     sonuc.emirler.push(d);
     if (!tr || tr.meslek !== t.za) {
       d.neden = "tarif_yok";
@@ -166,7 +180,7 @@ export function emirleriIsle(g: UretimGirdisi): UretimSonucu {
       continue;
     }
     while (e.y < e.k) {
-      const neden = engel(t, tr, eo + en, g.kapasite);
+      const neden = engel(t, tr, eo + en, g.kapasite, Math.min(eo, tr.takat));
       if (neden) {
         d.neden = neden;
         if (neden === "emek_yok") emekBitti = true;
@@ -181,7 +195,9 @@ export function emirleriIsle(g: UretimGirdisi): UretimSonucu {
       for (const [m, adet] of Object.entries(tr.girdi)) depodanDus(t, m as MalId, adet ?? 0);
       const aracVar = !!tr.arac && (t.ev?.[tr.arac.mal] ?? 0) > 0;
       const aracKalite = aracVar ? enIyiKalite(t as unknown as Karakter, tr.arac!.mal) : null;
-      const adet = aracVar ? tr.arac!.adet : tr.cikti[1];
+      // Alet verimi aşınmadan önce (bu yapımda kullanılan aletin kademesiyle) hesaplanır.
+      const aletVerim = aracVar ? emirAletVerimi(t, tr, o) : 0;
+      const adet = (aracVar ? tr.arac!.adet : tr.cikti[1]) + aletVerim;
       const zar = tohumlu("atolye", g.isletme, tr.id, ay, e.n, e.y);
       const ks = urunKalitesi(usta, tr, kaliteBecerisi(usta, tr), aracKalite, zar, atolyeKalemleri(g.seviye, n / tr.takat, g.kanca), true);
       // Emirle üretim (NPC emeği / toplu) şaheseri aşamaz (kalite.ts KALITE_EMIR_TAVANI; efsanevi yalnız elle).
@@ -194,6 +210,7 @@ export function emirleriIsle(g: UretimGirdisi): UretimSonucu {
       d.buAy++;
       d.yapilan = e.y;
       d.cikti.adet += adet;
+      d.aletVerim += aletVerim;
       d.kalite[q] += adet;
       sonuc.yapim++;
       if (q >= 2) sonuc.levha.push({ usta, tarif: tr.id, mal: tr.cikti[0], q });

@@ -23,6 +23,7 @@ import { esyaKilidi } from "./kalite.ts";
 import { envanterEkle } from "./npc-taban.ts";
 import { araciSozlesmeAc, araciSozlesmeKontrol, araciSozlesmeIptal, arabulucuYap, TAZMINAT_TAVANI } from "./arabulucu.ts";
 import { tohumlu } from "./rastgele.ts";
+import { kaliteYuzdesi } from "./kanca-kalite.ts";
 import { acikNpcTeklifi, npcBorcTahsil, npcKabul } from "./npc-teklif.ts";
 import { kisiAdi, kisiCoz, npcAdi, npcKimlik, oyuncuRef } from "./ortak.ts";
 import { haneTaniklari, soylentiEkle } from "./soylenti.ts";
@@ -536,6 +537,8 @@ export function teklifCevap(k: Kasaba, ben: Karakter, idHam: unknown, cevap: unk
       const kural = isKurali(t.s.it);
       if (!kural || !hizmetAcik(ben, kural.hizmet)) return hata("dugum_kapali");
       let arabuluculukSonucu: string | undefined;
+      let isKalite = 0;
+      let isKaliteEk = 0;
       if (t.s.it === "arabuluculuk") {
         if (t.s.ta === undefined) return hata("talep_yok");
         const ili = k.ili.get(ben.o);
@@ -551,7 +554,9 @@ export function teklifCevap(k: Kasaba, ben: Karakter, idHam: unknown, cevap: unk
         if (kural.arac && (!kural.aracHedef || aracArtisi(ben, kural.aracHedef)?.mal !== kural.arac || (ben.ev?.[kural.arac] ?? 0) < 1)) return hata("arac_yok");
         if (!takatHarca(ben, ay, kural.takat)) return hata("takat_yok");
         if (kural.arac) aracAsindir(ben, kural.arac);
-        gostergeDegistir(toplulukAl(k), kural.gosterge, 1);
+        isKalite = Math.min(IS_KALITE_TAVAN, kural.kalite ? kaliteYuzdesi(ben, kural.kalite).yuzde : 0);
+        isKaliteEk = isKalite > 0 && tohumlu("isKalite", t.i, ben.o)() * 100 < isKalite ? 1 : 0;
+        gostergeDegistir(toplulukAl(k), kural.gosterge, 1 + isKaliteEk);
       }
       const odul = t.e;
       ben.pa += odul;
@@ -560,7 +565,7 @@ export function teklifCevap(k: Kasaba, ben: Karakter, idHam: unknown, cevap: unk
       t.d = "bitti";
       t.kp = ay;
       t.sn = arabuluculukSonucu ? `arabuluculuk_${arabuluculukSonucu}` : "teslim";
-      olaylar.push({ t: "teklif", w: ben.o, h: t.g, g: t.g, n: 6, k: "olay.teklif.teslim.is", p: { kisi: oyuncuRef(ben), tutar: odul, ...(arabuluculukSonucu ? { sonuc: arabuluculukSonucu } : {}) } });
+      olaylar.push({ t: "teklif", w: ben.o, h: t.g, g: t.g, n: 6, k: "olay.teklif.teslim.is", p: { kisi: oyuncuRef(ben), tutar: odul, ...(arabuluculukSonucu ? { sonuc: arabuluculukSonucu } : {}), ...(isKalite > 0 ? { kalite: isKalite, kaliteEk: isKaliteEk } : {}) } });
       if (mektupHedef && mektupGonderen && t.s.ms) {
         olaylar.push({
           t: "teklif", w: ben.o, h: mektupHedef.o, g: mektupHedef.o, n: 7,
@@ -606,12 +611,18 @@ function borcOde(k: Kasaba, t: Teklif, tutar: number, ay: number, borclu: string
   return [{ t: "teklif", w: borclu, h: alacakli, g: alacakli, n: 4, k: "olay.borc.taksit", p: { kisi: oyuncuRef(b), tutar, kalan: t.kl } }];
 }
 
-interface IsKurali { hizmet: string; meslek: "arabulucu" | "asker" | "katip"; takat: number; gosterge: "moral" | "asayis"; arac?: "zincir"; aracHedef?: string; }
+/**
+ * İş sözleşmesi kuralı. Kanca partisi 2: `kalite` hedefleri (mektupta köy mektubu kalitesi + hızlı ulak kalitesi)
+ * teslimde göstergeye yüzde şansla +1 ekler (tohum sözleşme + teslim eden; teslim bir kez olur). Akçe değişmez.
+ */
+interface IsKurali { hizmet: string; meslek: "arabulucu" | "asker" | "katip"; takat: number; gosterge: "moral" | "asayis"; arac?: "zincir"; aracHedef?: string; kalite?: readonly string[]; }
+/** [PARAMETRE] İş sözleşmesi teslim kalitesi (yüzde) üst sınırı. */
+export const IS_KALITE_TAVAN = 60;
 function isKurali(tur: Sartlar["it"]): IsKurali | undefined {
   switch (tur) {
     case "arabuluculuk": return { hizmet: "araBul", meslek: "arabulucu", takat: 1, gosterge: "moral" };
     case "muhafiz": return { hizmet: "muhafizlik", meslek: "asker", takat: 2, gosterge: "asayis", arac: "zincir", aracHedef: "muhafizlik" };
-    case "mektup": return { hizmet: "mektup", meslek: "katip", takat: 1, gosterge: "moral" };
+    case "mektup": return { hizmet: "mektup", meslek: "katip", takat: 1, gosterge: "moral", kalite: ["mektup", "ulak"] };
     default: return undefined;
   }
 }

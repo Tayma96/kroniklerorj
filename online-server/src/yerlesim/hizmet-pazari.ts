@@ -1,7 +1,7 @@
 // E4.3: öğrenilmiş hizmeti süreli stoğa hazırlar; ilan, satın alma, teslim ve bozulma akışını yönetir.
 import type { MalId } from "../icerik/mallar.ts";
 import { acikEtkiler, aracArtisi, hakAcik, hizmetAcik, sinerjilerAcik } from "./beceri-etki.ts";
-import { esyaAilesi } from "./esya.ts";
+import { aileEtkisi, enIyiBirim, esyaAilesi, girdiToklugu } from "./esya.ts";
 import { aracAsindir, type Asinma } from "./tarif.ts";
 import { esyaKilidi } from "./kalite.ts";
 import { envanterEkle } from "./npc-taban.ts";
@@ -78,12 +78,28 @@ export function hizmetKalitesi(kar: Karakter, tarif: HizmetTarifi, yerel?: { yuz
   return { yuzde: Math.min(HIZMET_KALITE_TAVAN, toplam), tavan: HIZMET_KALITE_TAVAN, kalemler };
 }
 
-/** Hizmetin araç eki: tarifin araç hedefine bağlı `arac` etkisi açıksa ve araç envanterdeyse adet başına ek. */
-export function hizmetAracEki(kar: Karakter, tarif: HizmetTarifi): { mal: MalId; ek: number } | null {
+/**
+ * Hizmetin araç eki: tarifin araç hedefine bağlı `arac` etkisi açıksa ve araç envanterdeyse adet başına ek. Kanca
+ * partisi 2 (§9 sanat "keyif"): araç sazsa eldeki en iyi sazın kademe keyfi (esya.ts SANAT_KEYIF) eke eklenir.
+ */
+export function hizmetAracEki(kar: Karakter, tarif: HizmetTarifi): { mal: MalId; ek: number; keyif: number } | null {
   if (!tarif.arac) return null;
   const e = aracArtisi(kar, tarif.arac.hedef);
   if (!e || (kar.ev?.[e.mal] ?? 0) < 1) return null;
-  return { mal: e.mal as MalId, ek: e.arti * tarif.arac.birim };
+  const b = enIyiBirim(kar, e.mal);
+  const ke = aileEtkisi(e.mal, b.q, "keyif", b.hunerler);
+  const keyif = ke && "deger" in ke ? ke.deger : 0;
+  return { mal: e.mal as MalId, ek: e.arti * tarif.arac.birim + keyif, keyif };
+}
+
+/**
+ * Kanca partisi 2 (§9 yiyecek "tokluk"): hizmet girdisi yiyeceğin kademesi hizmet kalitesine yüzde ekler (harcanacak
+ * en zayıf yiyecek; sade 0 = "bayat"). Öğrenilmiş kaliteyle aynı tavanda toplanır (tek yığılma). Girdi düşmeden önce.
+ */
+export function sofraKalitesi(kar: Karakter, tarif: HizmetTarifi, kalite: HizmetKalitesi): HizmetKalitesi {
+  const t = girdiToklugu(kar, tarif.girdi);
+  if (t.yuzde <= 0) return kalite;
+  return { ...kalite, yuzde: Math.min(kalite.tavan, kalite.yuzde + t.yuzde), kalemler: [...kalite.kalemler, { kanca: `esya:tokluk:${t.mal}`, d: t.yuzde }] };
 }
 
 /** Kalite ve araç ekiyle bir hal etkisinin adet başına değeri (ilk hal etkisi araç ekini alır). */
@@ -97,7 +113,7 @@ export interface HizmetHazirlamaSonucu {
   harcanan: { girdiler: Partial<Record<string, number>>; takat: number };
   /** Kanca partisi 2: hizmet kalitesi dökümü ve kullanılan araç (yoksa null). */
   kalite: HizmetKalitesi;
-  arac: (Asinma & { ek: number }) | null;
+  arac: (Asinma & { ek: number; keyif: number }) | null;
 }
 
 /** Hazırlanmış hizmet üretir. Bütün kontroller harcamadan önce yapılır. */
@@ -137,12 +153,13 @@ export function hizmetHazirla(
   const takat = tarif.takat * adet;
   // Takat denetimi girdiler tüketilmeden yapılır; takatHarca başarısızsa mal kaybı olmaz.
   if (!takatHarca(kar, ay, takat)) return hata("takat_yok");
+  // Tokluk harcanacak birimlerden okunur: girdi düşmeden önce.
+  const kalite = sofraKalitesi(kar, tarif, hizmetKalitesi(kar, tarif, yerel));
   for (const [mal, miktar] of Object.entries(girdiler)) envanterEkle(kar, mal as MalId, -miktar);
 
-  const kalite = hizmetKalitesi(kar, tarif, yerel);
   const ae = hizmetAracEki(kar, tarif);
   // Araç hazırlama başına bir kullanım aşınır (tarifteki gibi: bir yapım, bir aşınma).
-  const arac = ae ? { ...aracAsindir(kar, ae.mal), ek: ae.ek } : null;
+  const arac = ae ? { ...aracAsindir(kar, ae.mal), ek: ae.ek, keyif: ae.keyif } : null;
   const stok: HizmetStogu = {
     i: ek.n++, o: kar.o, oa: kar.ad, h: tarif.id, n: adet, n0: adet, ac: ay,
     sa: ay + tarif.hazir.gecerlilikAy + (tarif.meslek === "asci" && hakAcik(kar, "bozulmaSuresi") ? BOZULMA_SURESI_EK_AY : 0),

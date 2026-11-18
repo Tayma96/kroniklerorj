@@ -28,19 +28,32 @@ interface GorevKurali {
   takat: number;
   gosterge: Gosterge;
   arac?: "mizrak";
-  /** Kanca partisi 2: `kalite` etkisinin hedefi (görevin göstergeye katkısını şansla bir artırır). */
-  kalite: string;
+  /**
+   * Kanca partisi 2: `kalite` etkisi hedefleri (görevin göstergeye katkısını şansla bir artırır; toplanır, tavanlı).
+   * Nöbet: asayiş + gözcülük. Talim: talim + saf düzeninin savunması. Gece devriyesi: hırsızlık tespiti.
+   */
+  kalite: readonly string[];
+  /**
+   * Kanca partisi 2: isteğe bağlı ikinci araç (zorunlu değil): `arac` etkisinin hedefi ve malı. Açık ve envanterde
+   * varsa göstergeye `arti` ekler ve bir kullanım aşınır. Gece devriyesinde kılıç, talimde saf düzeninin kalkanı.
+   */
+  ekArac?: { hedef: string; mal: "kilic" | "kalkan" };
   /** Kanca partisi 2: görev hizmet yerine bu hakla açılır (devriye). */
   hak?: string;
 }
 
+// Gece devriyesi düğümünün üç kancası (hak:devriye, kalite:hirsizlikTespiti, arac:devriye:kilic) yalnız devriye
+// görevinde etki verir; nöbete sayılmaz (tek tüketici, çift sayım yok).
 const KURALLAR: Record<HizmetGorevTuru, GorevKurali> = {
-  nobet: { hizmet: "nobet", meslek: "asker", takat: 2, gosterge: "asayis", arac: "mizrak", kalite: "asayis" },
-  vergiSayimi: { hizmet: "vergiSayimi", meslek: "divan", takat: 2, gosterge: "asayis", kalite: "vergiSayimi" },
-  meclisKaydi: { hizmet: "meclisKaydi", meslek: "divan", takat: 1, gosterge: "moral", kalite: "meclisKaydi" },
-  talim: { hizmet: "talim", meslek: "asker", takat: 2, gosterge: "asayis", kalite: "talim" },
-  devriye: { hizmet: "devriye", hak: "devriye", meslek: "asker", takat: 2, gosterge: "asayis", kalite: "hirsizlikTespiti" },
+  nobet: { hizmet: "nobet", meslek: "asker", takat: 2, gosterge: "asayis", arac: "mizrak", kalite: ["asayis", "gozculuk"] },
+  vergiSayimi: { hizmet: "vergiSayimi", meslek: "divan", takat: 2, gosterge: "asayis", kalite: ["vergiSayimi"] },
+  meclisKaydi: { hizmet: "meclisKaydi", meslek: "divan", takat: 1, gosterge: "moral", kalite: ["meclisKaydi"] },
+  talim: { hizmet: "talim", meslek: "asker", takat: 2, gosterge: "asayis", kalite: ["talim", "savunma"], ekArac: { hedef: "saf", mal: "kalkan" } },
+  devriye: { hizmet: "devriye", hak: "devriye", meslek: "asker", takat: 2, gosterge: "asayis", kalite: ["hirsizlikTespiti"], ekArac: { hedef: "devriye", mal: "kilic" } },
 };
+
+/** [PARAMETRE] Kanca partisi 2: tek teslimin göstergeye en çok katkısı (taban 1 + araçlar + kalite; tek yığılma). */
+export const GOREV_GOSTERGE_TAVAN = 3;
 
 /**
  * [PARAMETRE] Kanca partisi 2: koltuk ekleyen haklar (yerleşimde yaşayan bir sahibi varsa o türe +1 koltuk; ulufe
@@ -55,7 +68,7 @@ export const GOREV_KALITE_TAVAN = 60;
 /** Görevin kalite yüzdesi (hedefi görev kalite kimliği olan kalite etkileri, tavanlı). */
 export function gorevKalitesi(kar: Karakter, tur: HizmetGorevTuru): number {
   let t = 0;
-  for (const e of acikEtkiler(kar)) if (e.tur === "kalite" && e.hedef === KURALLAR[tur].kalite) t += e.yuzde;
+  for (const e of acikEtkiler(kar)) if (e.tur === "kalite" && KURALLAR[tur].kalite.includes(e.hedef)) t += e.yuzde;
   return Math.min(GOREV_KALITE_TAVAN, t);
 }
 
@@ -113,7 +126,7 @@ export function hizmetGorevTeslim(
   kar: Karakter,
   id: unknown,
   ay: number,
-): Sonuc<{ gorev: HizmetKasabaGorevi; odul: number; hizmetPuani: number; arac?: ReturnType<typeof aracAsindir>; olay: OlayTaslagi; katki: { gosterge: number; aracEk: number; kalite: number; kaliteEk: number } }> {
+): Sonuc<{ gorev: HizmetKasabaGorevi; odul: number; hizmetPuani: number; arac?: ReturnType<typeof aracAsindir>; ekArac?: ReturnType<typeof aracAsindir>; olay: OlayTaslagi; katki: { gosterge: number; aracEk: number; ekAracEk: number; kalite: number; kaliteEk: number; tavan: number } }> {
   if (typeof id !== "string") return hata("hedef_uygun_degil");
   const eslesme = /^kg([1-9][0-9]{0,8})$/.exec(id);
   if (!eslesme) return hata("hedef_uygun_degil");
@@ -139,7 +152,11 @@ export function hizmetGorevTeslim(
   const aracEk = kural.arac ? (aracArtisi(kar, gorev.tur)?.mal === kural.arac ? aracArtisi(kar, gorev.tur)!.arti : 0) : 0;
   const kalite = gorevKalitesi(kar, gorev.tur);
   const kaliteEk = kalite > 0 && tohumlu("gorevKalite", gorev.i, kar.o)() * 100 < kalite ? 1 : 0;
-  const gosterge = 1 + aracEk + kaliteEk;
+  // İkinci araç (kılıçla devriye, kalkanla saf): etkisi açık ve elde varsa +arti, bir kullanım aşınır.
+  const ea = kural.ekArac ? aracArtisi(kar, kural.ekArac.hedef) : undefined;
+  const ekAracEk = ea && ea.mal === kural.ekArac!.mal && (kar.ev?.[ea.mal] ?? 0) >= 1 ? ea.arti : 0;
+  const ekArac = ekAracEk > 0 ? aracAsindir(kar, kural.ekArac!.mal) : undefined;
+  const gosterge = Math.min(GOREV_GOSTERGE_TAVAN, 1 + aracEk + ekAracEk + kaliteEk);
   gostergeDegistir(topluluk, kural.gosterge, gosterge);
   kar.pa += gorev.odul;
   const hizmetPuani = hizmetEkle(kar, kural.meslek, kural.takat * 2);
@@ -154,5 +171,5 @@ export function hizmetGorevTeslim(
     k: "olay.hizmetGorevTamam",
     p: { oyuncu: kar.ad, odul: gorev.odul, hizmetPuani, takat: kural.takat },
   };
-  return basarili({ gorev, odul: gorev.odul, hizmetPuani, ...(arac ? { arac } : {}), olay, katki: { gosterge, aracEk, kalite, kaliteEk } });
+  return basarili({ gorev, odul: gorev.odul, hizmetPuani, ...(arac ? { arac } : {}), ...(ekArac ? { ekArac } : {}), olay, katki: { gosterge, aracEk, ekAracEk, kalite, kaliteEk, tavan: GOREV_GOSTERGE_TAVAN } });
 }
