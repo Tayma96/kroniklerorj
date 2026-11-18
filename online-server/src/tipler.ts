@@ -693,7 +693,7 @@ export type HanedanIletisi =
   | { islem: "kronik"; hesapId: string; imlec?: string | null; dil?: string | null };
 
 /** Topluluk (E5–E7) gövdeli işlemleri: POST /v1/mesrep, /v1/hami, /v1/ortak-dert, /v1/senlik, /v1/zaviye. */
-export const TOPLULUK_ISLEMLERI = ["mesrep", "hami", "ortakDert", "senlik", "zaviye", "etkinlik"] as const;
+export const TOPLULUK_ISLEMLERI = ["mesrep", "hami", "ortakDert", "senlik", "zaviye", "etkinlik", "koru"] as const;
 export type ToplulukIslem = (typeof TOPLULUK_ISLEMLERI)[number];
 /** Topluluk iletileri (HesapDO aynen YerlesimDO'ya iletir; `yerlesim` eklenir). */
 export type ToplulukIletisi = { islem: ToplulukIslem; hesapId: string; govde: unknown } | { islem: "topluluk"; hesapId: string; dil?: string | null };

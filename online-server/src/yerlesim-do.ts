@@ -3,7 +3,7 @@
 // sırayla, çağrı başına sınırlı yetiştirilir. İnce sarmalayıcıdır; kurallar src/yerlesim/*.ts'dedir.
 
 import { doDepo, type Depo } from "./depo.ts";
-import { etkinlikUc, hamiUc, mesrepUc, mudavimUc, ortakDertUc, senlikUc, toplulukOku, zaviyeUc } from "./yerlesim/topluluk-uclar.ts";
+import { etkinlikUc, hamiUc, koruUc, mesrepUc, mudavimUc, ortakDertUc, senlikUc, toplulukOku, zaviyeUc } from "./yerlesim/topluluk-uclar.ts";
 import { defterOku, hizmetGeriUc, hizmetHazirlaUc, hizmetIlanUc, hizmetIslemUc, hizmetOku, hizmetTalepTeslimUc, hizmetGorevTeslimUc, ismarlaUc, ismarlamaCevapUc, ismarlamaOku, levhaOku, pazarGeri, pazarIlan, pazarIslem, pazarOku } from "./yerlesim/ekonomi-uclar.ts";
 import { armaganGeri, armaganTeveccuh } from "./yerlesim/armagan-uclar.ts";
 import { iletiOku, isletmeCagir, jsonYanit, yerlesimCagir, yonetimCagir } from "./ic.ts";
@@ -390,6 +390,8 @@ export class YerlesimDO {
         return zaviyeUc(motor, ileti.hesapId, ileti.govde);
       case "etkinlik":
         return etkinlikUc(motor, ileti.hesapId, ileti.govde);
+      case "koru":
+        return koruUc(motor, ileti.hesapId, ileti.govde);
       case "mudavimZiyaret": {
         const han = hanNoCoz(ileti.han);
         if (han === undefined || !motor.hanAcikMi(han)) return hata("han_yok");
