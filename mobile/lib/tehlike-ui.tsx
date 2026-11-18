@@ -27,9 +27,9 @@ export function TehlikeSayaclari() {
   return <View style={{ marginTop: 10 }} accessible accessibilityLabel={`${t("teh.baslik")}. ${acik.map((x) => applyParams(t("teh.a11y"), [t("teh." + x.k), x.v])).join(", ")}. ${t("teh.ipucu")}`}>
     <Text style={{ fontFamily: F.display, fontSize: 11.5, letterSpacing: 1, color: C.parchmentMuted, textAlign: ta, marginBottom: 6 }}>{t("teh.baslik")}</Text>
     <View style={{ flexDirection: row, flexWrap: "wrap", gap: 6, justifyContent: rtl ? "flex-end" : "flex-start" }}>
-      {acik.map((x) => <View key={x.k} style={{ flexDirection: row, alignItems: "center", gap: 6, minHeight: 30, paddingHorizontal: 10, borderRadius: 15, borderWidth: 1, borderColor: tonu(x.v), backgroundColor: C.surface }}>
+      {acik.map((x) => <View key={x.k} style={{ maxWidth: "100%", flexDirection: row, alignItems: "center", gap: 6, minHeight: 30, paddingHorizontal: 10, borderRadius: 15, borderWidth: 1, borderColor: tonu(x.v), backgroundColor: C.surface }}>
         <GameIcon name={TEHLIKE_IKON[x.k]} size={13} color={tonu(x.v)} />
-        <Text style={{ fontFamily: F.display, fontSize: 12, color: C.parchment }}>{t("teh." + x.k)} {x.v}<Text style={{ fontSize: 10, color: C.parchmentMuted }}> / 10</Text></Text>
+        <Text style={{ flexShrink: 1, fontFamily: F.display, fontSize: 12, color: C.parchment }}>{t("teh." + x.k)} {x.v}<Text style={{ fontSize: 10, color: C.parchmentMuted }}> / 10</Text></Text>
       </View>)}
     </View>
     <Text style={{ fontFamily: F.serifItalic, fontSize: 12.5, lineHeight: 17, color: C.parchmentMuted, textAlign: ta, marginTop: 6 }}>{t("teh.ipucu")}</Text>
@@ -80,7 +80,7 @@ export function MkKanca() {
         return <View key={o.key} style={{ gap: 4 }}>
           <PressableScale haptic="selection" disabled={o.kapali} accessibilityLabel={`${etiket}. ${yol}`}
             onPress={() => { playTap(); apply((s) => chooseMonthKanca(s, m.id, i)); }}
-            style={{ minHeight: 56, borderRadius: 4, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.surface, opacity: o.kapali ? 0.5 : 1, paddingHorizontal: 12, paddingVertical: 8, alignItems: rtl ? "flex-end" : "flex-start" }}>
+            style={{ minHeight: 56, borderRadius: 4, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.surface, opacity: o.kapali ? 0.65 : 1, paddingHorizontal: 12, paddingVertical: 8, alignItems: rtl ? "flex-end" : "flex-start" }}>
             <Text style={{ fontFamily: F.serif, fontSize: 16, lineHeight: 20, color: C.parchment, textAlign: ta }}>{etiket}</Text>
             <Text style={{ fontFamily: F.serif, fontSize: 13, lineHeight: 17, color: C.parchmentDim, textAlign: ta, marginTop: 2 }}>{yol}</Text>
           </PressableScale>
@@ -98,7 +98,7 @@ export function DivanOyunPanel() {
   if (!state || state.player.dead || !divanErisim(state.player)) return null;
   const { rtl, row, ta } = yon(lang); const p = state.player; const female = p.gender === "kadın";
   const dugme = (key: string, label: string, alt: string, onPress: () => void, disabled = false) => <PressableScale key={key} haptic="selection" disabled={disabled} accessibilityLabel={`${label}. ${alt}`} onPress={() => { playTap(); onPress(); }}
-    style={{ minHeight: 52, borderRadius: 4, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.surface, opacity: disabled ? 0.5 : 1, paddingHorizontal: 12, paddingVertical: 8, alignItems: rtl ? "flex-end" : "flex-start" }}>
+    style={{ minHeight: 52, borderRadius: 4, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.surface, opacity: disabled ? 0.65 : 1, paddingHorizontal: 12, paddingVertical: 8, alignItems: rtl ? "flex-end" : "flex-start" }}>
     <Text style={{ fontFamily: F.serif, fontSize: 15.5, lineHeight: 20, color: C.parchment, textAlign: ta }}>{label}</Text>
     <Text style={{ fontFamily: F.serif, fontSize: 13, lineHeight: 17, color: C.parchmentDim, textAlign: ta, marginTop: 2 }}>{alt}</Text>
   </PressableScale>;
