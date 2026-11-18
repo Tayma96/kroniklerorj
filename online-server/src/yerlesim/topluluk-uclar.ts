@@ -13,6 +13,7 @@ import { mudavimGorunumu, mudavimZiyaret } from "./mudavim.ts";
 import { dertGorunumu, ortakDertKatki, ORTAK_DERT_KURALLARI, uygunKatkilar } from "./ortak-dert.ts";
 import { senlikGorunumu, senlikKatki } from "./senlik.ts";
 import { gostergeGorunumu } from "./topluluk-kayit.ts";
+import { hazineDefteriGorunumu } from "./topluluk.ts";
 
 function nesneMi(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
@@ -37,6 +38,7 @@ export function toplulukOku(m: YerlesimMotoru, hesapId: string): Promise<Sonuc<u
       mudavim: mudavimGorunumu(kar, simdi, ay),
       zaviye: zaviyeOzeti(k, kar, ay),
       gostergeler: gostergeGorunumu(k),
+      ...(k.tl?.hk?.length ? { hazineDefteri: hazineDefteriGorunumu(k) } : {}),
     });
   });
 }

@@ -44,6 +44,8 @@ export interface ToplulukKaydi {
   ss?: number;
   /** Kanca partisi 2 `gencTalimi`: gençlerin talim edildiği son ay (o ayın dönümünde asayiş yarı aşınır). */
   gt?: number;
+  /** Kanca partisi 2 `hazineDefteri`: kasaba hazinesinin ay başı bakiyeleri [ay, bakiye, defteri tutanın adı]. */
+  hk?: [ay: number, bakiye: number, ad: string][];
 }
 
 export function toplulukAl(k: Kasaba): ToplulukKaydi {

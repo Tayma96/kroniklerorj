@@ -102,6 +102,9 @@ export function kumeCakisir(d: BolgeDurumu, koltukId: string, kume: readonly str
   return d.koltuklar.some((k) => k.id !== koltukId && MAKAMLAR[k.tur].kume && !k.s.npc && kumeKesisir(k.s.kume, kume));
 }
 
+/** Ahi başı (kethüda) adaylığında teveccüh şartının yerini tutan hak (siyasi kimlikte `haklar`). */
+export const KETHUDA_HAKKI = "kethudaAdayligi";
+
 /** Adaylık şartı denetimi (null = uygun). */
 export function adayUygunMu(d: BolgeDurumu, k: Koltuk, kimlik: SiyasiKimlik): HataKodu | null {
   const t = MAKAMLAR[k.tur];
@@ -114,7 +117,9 @@ export function adayUygunMu(d: BolgeDurumu, k: Koltuk, kimlik: SiyasiKimlik): Ha
   if (t.sart === "kasaba" && !kimlik.haklar.includes("kasabaMakami") && !kimlik.haklar.includes("bolgeMakami") && kimlik.nam < SART.kasabaNam) {
     return "aday_uygun_degil";
   }
-  if (t.sart === "teveccuh" && kimlik.teveccuh < SART.ahiTeveccuh) return "aday_uygun_degil";
+  // Kanca partisi 2 `kethudaAdayligi`: meslek loncasının pirine kethüda (ahi başı) adaylığı teveccüh şartı aranmadan açıktır;
+  // liyakat (oy sıralaması) değişmez.
+  if (t.sart === "teveccuh" && kimlik.teveccuh < SART.ahiTeveccuh && !kimlik.haklar.includes(KETHUDA_HAKKI)) return "aday_uygun_degil";
   const kume = kumeAnahtarlari(kimlik);
   if (kumeCakisir(d, k.id, kume)) return "kume_cakisma";
   if (!k.s.npc && kumeKesisir(k.s.kume, kume) && k.ardisik >= SECIM.ardisikEnCok) return "ardisik_donem";

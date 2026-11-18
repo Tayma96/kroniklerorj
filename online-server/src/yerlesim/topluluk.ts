@@ -2,7 +2,9 @@
 // halk katkısı, kapanış) → şenlik (ilan, açılış, kapanış) → zaviye (davet, ahi başı seçimi) → göstergelerin dengeye
 // dönüşü. Bütün sakinlerin karakteri yüklü olmalıdır (motor yetiştirmede yükler).
 
+import { hakAcik } from "./beceri-etki.ts";
 import { kimlikTasiyiciEkle } from "./devir.ts";
+import { hanedanKasabasi, olduMu } from "./hanedan.ts";
 import { hamiDonumu } from "./hami.ts";
 import { zaviyeDonumu } from "./lonca-grup.ts";
 import { ortakDertDonumu } from "./ortak-dert.ts";
@@ -10,9 +12,34 @@ import { senlikDonumu } from "./senlik.ts";
 import { gostergeDonumu, toplulukAl } from "./topluluk-kayit.ts";
 import type { Kasaba, OlayTaslagi } from "./tipler.ts";
 
+/** [PARAMETRE] Hazine defterinde tutulan ay sayısı. */
+export const HAZINE_DEFTERI_AY = 12;
+
+/**
+ * Kanca partisi 2 `hazineDefteri` (kâtip "hazine defterini tutma", divan "hazine defteri"): kasabada yaşayan bir defter
+ * tutucu varken her ay başı hazinenin bakiyesi deftere yazılır; defter herkese görünür (GET /v1/topluluk). Tutucu
+ * yokken yazılmaz (eski satırlar kalır). Akçeye dokunmaz.
+ */
+export function hazineDefteriDonumu(k: Kasaba, ay: number): void {
+  const tutan = [...k.kar.values()].filter((c) => !olduMu(c) && hakAcik(c, "hazineDefteri")).sort((a, b) => (a.o < b.o ? -1 : a.o > b.o ? 1 : 0))[0];
+  if (!tutan) return;
+  const l = (toplulukAl(k).hk ??= []);
+  if (l.at(-1)?.[0] === ay) return;
+  l.push([ay, hanedanKasabasi(k).hz, tutan.ad]);
+  if (l.length > HAZINE_DEFTERI_AY) l.splice(0, l.length - HAZINE_DEFTERI_AY);
+}
+
+/** Hazine defteri görünümü (yoksa null): ay, bakiye, önceki satıra göre fark, tutanın adı. */
+export function hazineDefteriGorunumu(k: Pick<Kasaba, "tl">) {
+  const l = k.tl?.hk;
+  if (!l?.length) return null;
+  return { satirlar: l.map(([ay, bakiye, ad], i) => ({ ay, bakiye, fark: i > 0 ? bakiye - l[i - 1]![1] : null, tutanAd: ad })) };
+}
+
 export function toplulukDonumu(k: Kasaba, ay: number): OlayTaslagi[] {
   const tl = toplulukAl(k);
   gostergeDonumu(tl, ay);
+  hazineDefteriDonumu(k, ay);
   return [...hamiDonumu(k, ay), ...ortakDertDonumu(k, ay), ...senlikDonumu(k, ay), ...zaviyeDonumu(k, ay)];
 }
 

@@ -208,6 +208,24 @@ export function ortakTanidiklar(k: Kasaba, a: Karakter, b: Karakter, dil: Dil): 
  * Başka oyuncunun profili: yalnız görünür alanlar (§13.9). Para, envanter, beceriler, Hal, tanıdık işaretleri,
  * olağan düzen ve NPC ilişkileri dışarıda kalır.
  */
+/** [PARAMETRE] `husumetListesi` yanıtında en çok satır (en yeniler). */
+export const HUSUMET_LISTESI_EN_COK = 50;
+const SUREN_ARABULUCULUK: ReadonlySet<string> = new Set(["davet", "taslak", "imzaBekliyor", "emanette"]);
+
+/** Kasabanın açık husumetleri (en yeniler önce) ve her çifte süren oyuncu arabuluculuğunun arabulucusu. Saf. */
+export function husumetListesi(k: Kasaba, ad: (id: string) => { id: string; ad: string }) {
+  const t = k.tp;
+  const dosyalar = (t?.oa ?? []).filter((x) => SUREN_ARABULUCULUK.has(x.d));
+  return (t?.hu ?? [])
+    .filter((x) => x.d === "acik")
+    .slice(-HUSUMET_LISTESI_EN_COK)
+    .reverse()
+    .map((x) => {
+      const dosya = dosyalar.find((d) => (d.s === x.g && d.k === x.h) || (d.s === x.h && d.k === x.g));
+      return { ilanEden: ad(x.g), hedef: ad(x.h), ay: x.ay, arabulucu: dosya ? ad(dosya.ar) : null };
+    });
+}
+
 export function oyuncuProfili(k: Kasaba, ben: Karakter, o: Karakter, dil: Dil) {
   const ay = k.ay;
   const t = k.tp;
