@@ -204,6 +204,32 @@ export function aileEtkisi(mal: string, q: Kalite, id: string, hunerler: readonl
   }
 }
 
+/**
+ * Kimliksiz düşüşün (`envanterEkle` eksi) harcayacağı birimlerin en düşük kademesi: izsiz birimler (sade) önce,
+ * sonra en düşük kademeli izli partiler; adlı eşyaya dokunulmaz. Hizmet girdisinin tokluğu bu kademeden okunur.
+ */
+export function dusulecekKademe(k: Envanterli, mal: string): Kalite {
+  const liste = k.kq?.[mal] ?? [];
+  const izsiz = (k.ev?.[mal] ?? 0) - liste.reduce((a, p) => a + p[1], 0);
+  if (izsiz > 0) return 0;
+  let en: Kalite | null = null;
+  for (const p of liste) if (!p[4] && p[1] > 0 && (en === null || p[0] < en)) en = p[0];
+  return en ?? 0;
+}
+
+/** Hizmet girdisi yiyeceklerin tokluğu: harcanacak birimlerin en zayıf yiyeceği (sofra en zayıf aşı kadar doyurur). */
+export function girdiToklugu(k: Envanterli, girdi: Readonly<Partial<Record<string, number>>>): { yuzde: number; mal: string | null; kalite: Kalite } {
+  let en: { yuzde: number; mal: string | null; kalite: Kalite } | null = null;
+  for (const [mal, n] of Object.entries(girdi)) {
+    if (!((n ?? 0) > 0)) continue;
+    const q = dusulecekKademe(k, mal);
+    const e = aileEtkisi(mal, q, "tokluk");
+    if (!e || !("deger" in e)) continue;
+    if (!en || e.deger < en.yuzde) en = { yuzde: e.deger, mal, kalite: q };
+  }
+  return en ?? { yuzde: 0, mal: null, kalite: 0 };
+}
+
 /** Eldeki bu aileden mallar arasında en yüksek etki değeri (düello: en iyi silah/zırh). Adlı eşya sayılır (harcanmaz). */
 export function eldekiEnIyiEtki(k: Envanterli, aile: EsyaAilesi, id: string): { mal: string | null; q: Kalite; deger: number } {
   let en: { mal: string | null; q: Kalite; deger: number } = { mal: null, q: 0, deger: 0 };

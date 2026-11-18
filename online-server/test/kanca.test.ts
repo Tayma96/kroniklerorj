@@ -53,7 +53,7 @@ const AN = DUNYA_BASLANGICI_MS + AY * AY_MS + 1000;
  * [KİLİT] Boşta kanca sayısının bu testteki üst sınırı: yalnız azaltılır (bosta-kancalar.ts BOSTA_TAVAN ile birlikte).
  * 232: Dilim 3 ilk parti denetiminde namYayma ve hileliTarti geri alındı (parti ana dala girmeden; taban budur).
  */
-const BOSTA_EN_COK = 183;
+const BOSTA_EN_COK = 170;
 
 function yetiskin(k: Kasaba, no: number, meslek?: string): Karakter {
   const kar = oyuncuEkle(k, no, AY - 12 * 20);

@@ -24,7 +24,9 @@ import {
   KERVAN_AYLIK,
   KERVAN_KOSUM,
   KERVAN_NAL,
-  KERVAN_TAKAT,
+  haberKalitesi,
+  kervanCizmesi,
+  kervanTakati,
   KERVAN_YOL_AY,
   kervanCikar,
   kervanHedefi,
@@ -118,7 +120,9 @@ export async function kervanOnizle(motor: KervanMotoru, hesapId: string, hedefHa
     kapilar,
     engel: engel ?? null,
     uygun: engel === undefined && yuk !== undefined,
-    bedel: { nal: KERVAN_NAL, kosum: KERVAN_KOSUM, takat: KERVAN_TAKAT },
+    bedel: { nal: KERVAN_NAL, kosum: KERVAN_KOSUM, takat: kervanTakati(kar, yuk) },
+    // Kanca partisi 2: yolda giyilecek çizme (takat indirimi; yoksa null).
+    cizme: kervanCizmesi(kar, yuk),
     yuk: { ...yukTavani(kar, yuk), adet: yuk ? adet(yuk) : null },
     aylik: { kullanilan: s && s[0] === ay ? s[1] : 0, tavan: kervanAylikTavan(k), malHedef: s && s[0] === ay ? s[2] : [] },
     takat: kar.tk,
@@ -140,11 +144,12 @@ export function kervanGonder(motor: KervanMotoru, hesapId: string, govde: unknow
     const d = (k.kv ??= bosKervanDefteri());
     sayacBuda(d, ay);
     const islem = `kervan:${k.y}:${kar.o}:${String(govde.istekNo)}`;
+    const takat = kervanTakati(kar, yuk.deger);
     const r = kervanCikar(d, kar, h.deger, yuk.deger, ay, islem, simdi, kervanAylikTavan(k));
     if (!r.ok) return r;
     return basarili({
       kervan: { id: islem, hedef: h.deger, hedefAd: yerlesimBul(h.deger)?.ad ?? h.deger, mallar: yuk.deger, kalkisAyi: ay, varisAyi: ay + KERVAN_YOL_AY },
-      bedel: { nal: KERVAN_NAL, kosum: KERVAN_KOSUM, takat: KERVAN_TAKAT },
+      bedel: { nal: KERVAN_NAL, kosum: KERVAN_KOSUM, takat },
       aylik: { kullanilan: d.s[kar.o]![1], tavan: kervanAylikTavan(k) },
       asinma: r.deger.asinma,
     });
@@ -181,10 +186,12 @@ export async function kervanHaber(motor: KervanMotoru, hesapId: string, govde: u
     if (!hizmetAcik(kar2, HABER_HIZMETI)) return hata("dugum_kapali");
     if (yerlesimler.length === 0) return hata("kervan_ulasilamadi");
     if (!takatHarca(kar2, ay2, HABER_TAKAT)) return hata("takat_yok");
-    const haber = { ay: ay2, gecerli: ay2 + HABER_GECERLILIK_AY, yerlesimler };
+    // Kanca partisi 2: haber kalitesi eşiği aşınca haber bir ay daha geçerli (bilgi; döküm `kalite`).
+    const kalite = haberKalitesi(kar2);
+    const haber = { ay: ay2, gecerli: ay2 + HABER_GECERLILIK_AY + kalite.ekAy, yerlesimler };
     d.h[kar2.o] = haber;
     for (const [o, x] of Object.entries(d.h)) if (x.gecerli < ay2) delete d.h[o];
-    return basarili({ haber, yeni: true, bedel: { takat: HABER_TAKAT } });
+    return basarili({ haber, yeni: true, bedel: { takat: HABER_TAKAT }, kalite });
   });
 }
 

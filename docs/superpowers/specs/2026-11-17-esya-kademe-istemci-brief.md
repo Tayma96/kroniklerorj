@@ -92,3 +92,28 @@ yıpranmaz), mirasla varise geçer; başkasının envanteri görünmez.
 - **Yönetici:** `GET /yonetim/ekonomi` yerleşim satırlarında ve `toplam`da `esya: {efsanevi, tilsimli}`.
 - **Sır:** zar tohumu Worker sırrı `ZAR_SIRRI` ile HMAC'lenir (en az 16 karakter; `wrangler secret put ZAR_SIRRI`).
   İstemciyi etkilemez.
+
+## 7. Kanca partisi 2 protokol ekleri (eşya aileleri ve kalite, 18 Kasım; hepsi eklemeli)
+- **`ozellik.etkiler[]` bağlı değerleri genişledi** (`{id, bagli:true, deger, birim}`; birim anahtarı `esya.birim.<birim>`):
+  silah `guc` ve zırh `dayanim` → `birim:"duello"` (düello kalemi); taşıt (araba, kağnı) `yuk` → `"yuk"` (toplu kervan
+  yüküne +adet); kervan aracı (araba, kağnı, koşum) `dayanim` → `"kullanim"` (ömür); çizme `yol` → `"takat"` (kervan
+  takatı −N); sofra girdisi yiyecek (ekmek, çorba, un) `tokluk` → `"yuzde"` (hizmet kalitesine); saz `keyif` →
+  `"gonul"` (sahne hizmetine adet başına); hammadde (`aile:"mal"`) `deger` → `"carpan"` (pazar değeri çarpanı, "×2,5"
+  yazılabilir: gerçek). Aynı ailenin öbür malları ve öbür etkiler `bagli:false` ("yakında"). Sade değer 0 olabilir
+  (`bagli:true, deger:0`: kusur, ceza değil). Araç ailesinde sıra değişti: `yuk`(sade) · `dayanim`(iyi) · `hiz`(nadide);
+  giysi `yol` artık üstünde açılır.
+- **Düello dökümü:** `DUELLO_KALEMLERI`ne `silah`, `zirh` (zar öncesi) eklendi; olayda `kisiSilah`, `kisiZirh`,
+  `hedefSilah`, `hedefZirh`. Eldeki en iyi silah/zırhın değeridir; eşya harcanmaz, aşınmaz.
+- **Kervan:** önizleme `bedel.takat` artık gerçek takat (çizmeyle 1); yeni `cizme: {mal, kalite, takat} | null`;
+  kalkış `asinma[]`ta çizme satırı olabilir. `yuk.kalite` artık `kalite:kervan + kalite:yolGuvenligi` (tavan 30).
+  `POST /v1/kervan/haber` yanıtında `kalite: {yuzde, ekAy, kalemler[{kanca, d}]}`; kalite ≥ 15 ise `haber.gecerli` +1 ay.
+- **Kasaba görevi teslimi:** `katki`ya `ekAracEk`, `tavan` (3); yanıtta `ekArac` (aşınma, yoksa null). Nöbette kılıç
+  (gece devriyesi), talimde kalkan (saf düzeni) ikinci araçtır; nöbet kalitesine hırsızlık tespiti ve gözcülük, talime
+  savunma sayılır.
+- **İş sözleşmesi (mektup) teslim olayı** `olay.teklif.teslim.is`: kalite varsa `p.kalite`, `p.kaliteEk` (moral +1 şansı).
+- **Arabuluculuk şansı:** yeni kalem `sans.kalite` (`p.kalite` yüzde; ara bulma + gönül köprüsü yüzdesinin yarısı, en çok 15).
+- **Hizmet:** hazırlama ve katalog `kalite.kalemler`inde `esya:tokluk:<mal>` kalemi (girdi yiyeceğin tokluğu); sazlı
+  hizmetin `arac`ında `keyif`. Lohusa ve güç doğum kalitesine `kalite:cocukRiski` sayılır.
+- **Atölye emri dökümü:** her emir satırında `aletVerim` (bu ay aletten gelen fazladan adet, `cikti.adet` içinde). Alet
+  verimi yalnız oyuncu emeği payıyla işler: ⌊verim × oyuncu emeği / takat⌋; NPC emeği verim almaz. (§6'daki "atölye
+  emrinde verim yok" cümlesinin yerine.)

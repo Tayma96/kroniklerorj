@@ -8,13 +8,13 @@
  * övme hizmeti, kendi rafına çekicilik değil) ve `hak:hileliTarti` (hileli tartı dürüst H olamaz) kayıttan geri alındı;
  * parti henüz ana dala girmediği için taban budur.
  */
-export const BOSTA_TAVAN = 183;
+export const BOSTA_TAVAN = 170;
 
 export const BOSTA_KANCALAR: readonly string[] = [
+  // av sistemi yok (izSur hizmeti hizmet ajanında; hedefi "av" olan araçlı hizmet gelince bağlanır)
   "arac:av:mizrak",
+  // "kazan" malı yok: yeni mal + üretim tarifi gerekir (çorba tarifi var; mal eklenince yapısal bağlanır)
   "arac:corba:kazan",
-  "arac:devriye:kilic",
-  "arac:saf:kalkan",
   "hak:ahsapKopru",
   "hak:akinOnculugu",
   "hak:alpYemini",
@@ -153,29 +153,22 @@ export const BOSTA_KANCALAR: readonly string[] = [
   "hizmet:tercume",
   "hizmet:uzakKervan",
   "hizmet:yapiOnarimi",
-  "kalite:araBul",
+  // butce, dilekce: divan bütçe/dilekçe sistemi yok (hak:butceOnerisi, hak:dilekce ile gelir)
   "kalite:butce",
-  "kalite:cocukRiski",
+  // defter, denetim, elcilik, hakemlik, izSur, sahitDinle, tercume: tüketici aynı adlı hizmet (hizmet ajanında);
+  // hizmet tarifi bu kimlikle (ya da grupla) açılınca hizmet-pazari.ts hizmetKalitesi okur, kayda eklenir
   "kalite:defter",
   "kalite:denetim",
   "kalite:dilekce",
   "kalite:elcilik",
-  "kalite:fiyatHaberi",
-  "kalite:gozculuk",
   "kalite:hakemlik",
+  // hali, merhem, sancak: tarif kimliğiyle yapısal bağlıdır; tarif (tarif ajanında) eklenince listeden çıkar
   "kalite:hali",
-  "kalite:hirsizlikTespiti",
   "kalite:izSur",
-  "kalite:mektup",
   "kalite:merhem",
   "kalite:sahitDinle",
   "kalite:sancak",
-  "kalite:savunma",
   "kalite:tercume",
-  "kalite:ulak",
-  "kalite:uzlasma",
-  "kalite:yolGuvenligi",
-  "omur:cizme",
   "sinerji:degirmenKopruDemiri",
   "sinerji:kopruDemiri",
   "sinerji:uzakAnlasma",
@@ -192,6 +185,7 @@ export const BOSTA_KANCALAR: readonly string[] = [
   "tarif:serbet",
   "tarif:sifaSerbeti",
   "tarif:tunc",
+  // verim:kulce, verim:serbet: tarif (tarif ajanında) eklenince yapısal bağlanır
   "verim:kulce",
   "verim:serbet",
 ];

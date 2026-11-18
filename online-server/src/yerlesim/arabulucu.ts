@@ -18,6 +18,7 @@ import { beceriEkle, karakterYasi, namEkle, takatHarca } from "./karakter.ts";
 import { sinerjiAcik } from "./beceri-etki.ts";
 import { kisiAdi, kisiCoz, npcAdi, npcKimlik, npcRef, oyuncuRef, sinirla, yas } from "./ortak.ts";
 import type { Zar } from "./rastgele.ts";
+import { kaliteYuzdesi } from "./kanca-kalite.ts";
 import type { Dokum, Karakter, Kasaba, OlayTaslagi } from "./tipler.ts";
 import { TEKRAR_CEZASI, UCGEN_TAKAT, dokumKur, talepKimlik, zarAt, type UcgenBaglami, type UcgenCiktisi } from "./ucgen-ortak.ts";
 
@@ -31,6 +32,13 @@ export const TAZMINAT_TAVANI = 15;
 export const ARACI_TEMEL = 30;
 /** Ozan barisIlahisi + Arabulucu araBulma sinerjisi: arabuluculuk şansına ek katkı. */
 export const ARACI_BARIS_SANSI = 10;
+/**
+ * [PARAMETRE] Kanca partisi 2: arabuluculuk kalitesi. `kalite:araBul` (ara bulma) ve `kalite:uzlasma` (gönül köprüsü)
+ * yüzdeleri toplanır; şansa yüzdenin yarısı (aşağı yuvarlanır) eklenir, en çok ARACI_KALITE_TAVAN puan. Akçe yok.
+ */
+export const ARACI_KALITE_HEDEFLERI: readonly string[] = ["araBul", "uzlasma"];
+export const ARACI_KALITE_BOLEN = 2;
+export const ARACI_KALITE_TAVAN = 15;
 export const GUVEN_BOLEN = 2;
 export const KIRGINLIK_BOLEN = 3;
 export const BEDEL_SANS: Readonly<Record<Exclude<AraciBedeli, "tazminat">, number>> = { ozur: 5, helallik: 10, ortakIs: 10 };
@@ -223,6 +231,8 @@ export function arabuluculukSansi(k: Kasaba, ar: Karakter, t: AraciTalebi, ay: n
   const d = dokumKur();
   d.ekle("sans.temel", ARACI_TEMEL);
   if (sinerjiAcik(ar, "barisSansi")) d.ekle("sans.barisSansi", ARACI_BARIS_SANSI);
+  const kalite = kaliteYuzdesi(ar, ARACI_KALITE_HEDEFLERI).yuzde;
+  if (kalite > 0) d.ekle("sans.kalite", Math.min(ARACI_KALITE_TAVAN, Math.floor(kalite / ARACI_KALITE_BOLEN)), { kalite });
   const ga = gorusDegeri(k, npc, ar, k.ili.get(ar.o), ay);
   d.ekle("sans.guven", Math.round(ga / GUVEN_BOLEN), { gorus: ga });
   const gt = gorus(k, npc, taraf, k.ili.get(taraf.o), ay);

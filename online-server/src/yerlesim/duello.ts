@@ -1,7 +1,9 @@
 // Düello (H6, ONLINE_DURUM §4.1): han masasında "meydan oku" teklifi hedefin "kabul"üyle düelloya döner. Sunucu çözer,
 // istemci sonuç gönderemez. Saf fonksiyonlar; uygulama ve tanıklık src/yerlesim/han-olay.ts'dedir.
 //
-// Güç = dövüş becerisi + güç·3 + çeviklik·3 + dayanıklılık·2 + ⌊kondisyon/5⌋ + zar(1..20). Zar tohumu olay
+// Güç = dövüş becerisi + güç·3 + çeviklik·3 + dayanıklılık·2 + ⌊kondisyon/5⌋ + silah + zırh + zar(1..20). Silah ve
+// zırh kalemi eldeki en iyi silahın/zırhın kademe değeridir (esya.ts SILAH_GUC, ZIRH_DAYANIM; kanca partisi 2: §9 aile
+// etkisi; sade 0, tılsımlı 8; eşya harcanmaz, aşınmaz). Zar tohumu olay
 // anahtarıdır (deterministik; aynı olay her teslimde aynı sonucu verir). Eşitlikte meydan okunan (savunan) kazanır.
 // Döküm kalem kalem tanıklık olayına yazılır (gizli sayı yok; ağırlıklar aşağıda dışa aktarılmıştır).
 // Sonuç: kazanana mertlik (aylık nam tavanı içinde, aynı çifte mevsimde bir kez); kaybeden hiçbir şey kaybetmez;
@@ -11,6 +13,7 @@ import { BASLANGIC_YASI } from "../mantik.ts";
 import { halOngor } from "./hal.ts";
 import { olduMu } from "./hanedan.ts";
 import { BECERILER, karakterYasi, OZELLIKLER, takatTazele } from "./karakter.ts";
+import { eldekiEnIyiEtki } from "./esya.ts";
 import { aralik, tohumlu } from "./rastgele.ts";
 import { ayniKume } from "./teveccuh.ts";
 import type { Karakter, Sakin } from "./tipler.ts";
@@ -32,7 +35,7 @@ export const DUELLO_AGIRLIK = { dovus: 1, guc: 3, ceviklik: 3, dayaniklilik: 2, 
 export type DuelloKapisi = "yas" | "sure" | "olu" | "ayni_kume" | "takat";
 
 /** Döküm kalemleri (sıra istemci gösterimi içindir). */
-export const DUELLO_KALEMLERI = ["dovus", "guc", "ceviklik", "dayaniklilik", "kondisyon", "zar"] as const;
+export const DUELLO_KALEMLERI = ["dovus", "guc", "ceviklik", "dayaniklilik", "kondisyon", "silah", "zirh", "zar"] as const;
 export type DuelloKalemi = (typeof DUELLO_KALEMLERI)[number];
 export type DuelloDokumu = Record<DuelloKalemi, number> & { toplam: number };
 
@@ -76,6 +79,8 @@ function dokum(k: Karakter, ay: number, zar: number): DuelloDokumu {
     ceviklik: oz("ceviklik") * DUELLO_AGIRLIK.ceviklik,
     dayaniklilik: oz("dayaniklilik") * DUELLO_AGIRLIK.dayaniklilik,
     kondisyon: Math.floor(halOngor(k, ay).kondisyon / DUELLO_AGIRLIK.kondisyonBolen),
+    silah: eldekiEnIyiEtki(k, "silah", "guc").deger,
+    zirh: eldekiEnIyiEtki(k, "zirh", "dayanim").deger,
     zar,
   };
   return { ...d, toplam: DUELLO_KALEMLERI.reduce((t, x) => t + d[x], 0) };

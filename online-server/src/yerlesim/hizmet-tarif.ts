@@ -90,7 +90,8 @@ export const HIZMET_TARIFLERI: readonly HizmetTarifi[] = [
   },
   {
     id: "lohusa",
-    grup: ["sifa"],
+    // Kanca partisi 2: çocuk hastalıkları bilgisi (`kalite:cocukRiski`) lohusa ve güç doğum bakımının kalitesidir.
+    grup: ["sifa", "cocukRiski"],
     npcOdul: 8,
     meslek: "sifaci",
     dugum: "sifaci.lohusaBakimi",
@@ -166,7 +167,7 @@ export const HIZMET_TARIFLERI: readonly HizmetTarifi[] = [
   // alıcının aracına/malına uygulanır. Bütün akçe oyuncudan oyuncuya; değerler [PARAMETRE].
   {
     id: "gucDogum",
-    grup: ["sifa"],
+    grup: ["sifa", "cocukRiski"],
     meslek: "sifaci",
     dugum: "sifaci.gucDogum",
     seviye: 1,
