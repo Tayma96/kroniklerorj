@@ -427,3 +427,95 @@ test("kervan taşıtı: kağnı 20, araba 30; toplu yükte taşıt aşınır, om
   assert.ok(yukTavani(kervanci(k, 6, "kalite:kervan")).tavan > KERVAN_YUK_EN_COK - 1);
 });
 
+
+// ── hak: a–e (sipariş, aş, darüşşifa, casus, devriye) ──
+
+import { BOZULMA_SURESI_EK_AY, DARUSSIFA_TABANI, darussifaTabani, hizmetKalitesi, hizmetStokDonumu } from "../src/yerlesim/hizmet-pazari.ts";
+import { KANCA_BAGLARI } from "../src/icerik/kanca-kayit.ts";
+import { kisiKatkisi } from "../src/mulk/kanca.ts";
+import { CASUS_KAPI_ORANI, casusDonumu } from "../src/yerlesim/casus.ts";
+import { ucgenAl } from "../src/yerlesim/bilgi.ts";
+
+test("hak:asevi / hak:armaCizme: kurum siparişi hakkı kendi zanaatının toplu siparişinde teslim indirimi verir", () => {
+  const k = testKasabasi("develi", AY);
+  for (const [a, m] of [["hak:asevi", "asci"], ["hak:armaCizme", "marangoz"]] as const) {
+    assert.equal(KANCA_BAGLARI[a]?.kanal, "topluIndirim");
+    const c = ogrenmis(k, a === "hak:asevi" ? 1 : 2, a);
+    assert.ok(kisiKatkisi(c, "topluIndirim", { meslek: m }).kalemler.some((x) => x.kanca === a), a);
+    assert.equal(kisiKatkisi(c, "topluIndirim", { meslek: "demirci" }).d, 0, `${a}: başka zanaatta yok`);
+  }
+});
+
+test("hak:bozulmaSuresi: aşçının hazır hizmet stoğu bir ay geç bozulur; başka meslekte etkisiz", () => {
+  const k = testKasabasi("develi", AY);
+  const sade = ogrenmis(k, 1, "hizmet:ziyafet", "sinerji:baklaYemegi");
+  const usta = ogrenmis(k, 2, "hizmet:ziyafet", "sinerji:baklaYemegi", "hak:bozulmaSuresi");
+  for (const c of [sade, usta]) seviyeVer(c, "ciftci.nadas", 1);
+  for (const c of [sade, usta]) bolEnvanter(c);
+  const ek = ekonomi(k);
+  const a = hizmetHazirla(ek, sade, "ziyafet", 1, AY);
+  const b = hizmetHazirla(ek, usta, "ziyafet", 1, AY);
+  assert.ok(a.ok && b.ok, JSON.stringify([a, b]));
+  if (a.ok && b.ok) assert.equal(b.deger.stok.sa - a.deger.stok.sa, BOZULMA_SURESI_EK_AY);
+  const s = ogrenmis(k, 3, "hizmet:turku", "hak:bozulmaSuresi");
+  const t = hizmetHazirla(ek, s, "turku", 1, AY);
+  assert.ok(t.ok && t.deger.stok.sa === AY + hizmetTarifiBul("turku")!.hazir.gecerlilikAy, "ozan hizmeti etkilenmez");
+});
+
+test("hak:darussifa / hak:darussifaBasi: yerleşimde sahibi yaşarken şifa hizmetleri en az taban kalitede (dönümde kurulur)", () => {
+  for (const [hak, taban] of [["hak:darussifa", DARUSSIFA_TABANI.darussifa], ["hak:darussifaBasi", DARUSSIFA_TABANI.darussifaBasi]] as const) {
+    const k = testKasabasi("develi", AY);
+    assert.equal(darussifaTabani(k), null);
+    ogrenmis(k, 1, hak);
+    const cirak = ogrenmis(k, 2, "hizmet:yaraBak");
+    ekonomi(k);
+    hizmetStokDonumu(k, AY);
+    const ds = ekonomi(k).ds!;
+    assert.equal(ds.yuzde, taban, hak);
+    const q = hizmetKalitesi(cirak, hizmetTarifiBul("yaraBak")!, ds);
+    assert.equal(q.yuzde, taban);
+    assert.ok(q.kalemler.some((x) => x.kanca === ds.kanca));
+    assert.equal(hizmetKalitesi(cirak, hizmetTarifiBul("turku")!, ds).yuzde, 0, "şifa dışı hizmet");
+    bolEnvanter(cirak);
+    const r = hizmetHazirla(ekonomi(k), cirak, "yaraBak", 1, AY, ds);
+    assert.ok(r.ok && r.deger.stok.q === taban);
+  }
+});
+
+test("hak:casusTespiti: yerleşimde kapı muhafızı varken casus şansla kapıda yakalanır, izlenen haber alır", () => {
+  let yakalanan = 0;
+  const N = 40;
+  for (let i = 0; i < N; i++) {
+    const k = testKasabasi("develi", AY + i);
+    const sahip = yetiskin(k, 1);
+    const izlenen = yetiskin(k, 2);
+    ogrenmis(k, 3, "hak:casusTespiti");
+    const npc = k.npc.find((n) => n.e !== sahip.e && n.e !== izlenen.e)!;
+    const ug = ucgenAl(k);
+    ug.cs.push({ i: 1, s: sahip.o, iz: izlenen.o, n: npc.i, a: AY + i - 1, b: AY + i + 2 } as never);
+    const olaylar = casusDonumu(k, AY + i);
+    if (olaylar.some((o) => o.k === "olay.ucgen.casusKapi")) {
+      yakalanan++;
+      assert.ok(olaylar.some((o) => o.k === "olay.ucgen.casusBitti" && (o.p as { neden: string }).neden === "kapida"));
+      assert.equal(ucgenAl(k).cs.length, 0);
+    }
+  }
+  assert.ok(yakalanan > 0 && yakalanan < N, `${yakalanan}/${N} (beklenen ≈ ${CASUS_KAPI_ORANI})`);
+});
+
+test("hak:devriye: sahibi yaşarken gece devriyesi koltukları açılır; yalnız hak sahibi doldurur, asayiş artar", () => {
+  const k0 = gorevKasabasi();
+  hizmetGorevDonumu(k0, AY);
+  assert.equal(ekonomiAl(k0).hg!.filter((x) => x.tur === "devriye").length, 0);
+  const k = gorevKasabasi();
+  const bekci = ogrenmis(k, 1, "hak:devriye");
+  const baska = yetiskin(k, 2);
+  hizmetGorevDonumu(k, AY);
+  const koltuk = ekonomiAl(k).hg!.filter((x) => x.tur === "devriye");
+  assert.equal(koltuk.length, 2);
+  assert.deepEqual(hizmetGorevTeslim(k, baska, `kg${koltuk[0]!.i}`, AY), { ok: false, hata: "dugum_kapali" });
+  const once = gostergeOku(k, "asayis");
+  const r = hizmetGorevTeslim(k, bekci, `kg${koltuk[0]!.i}`, AY);
+  assert.ok(r.ok, JSON.stringify(r));
+  assert.ok(gostergeOku(k, "asayis") > once);
+});

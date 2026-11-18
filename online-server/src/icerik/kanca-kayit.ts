@@ -185,6 +185,9 @@ export const KANCA_BAGLARI: Readonly<Record<string, KancaBagi>> = {
   "hak:tabaklamaIlani": tI(5, "dokumaci"),
   "hak:kurumYazismasi": tI(10, "katip"),
   "hak:resmiYazisma": tI(5, "katip"),
+  // Kanca partisi 2 (sipariş hakları, Dilim 3 emsali: kurum siparişi = toplu sipariş indirimi)
+  "hak:asevi": tI(5, "asci"),
+  "hak:armaCizme": tI(5, "marangoz"),
 
   // ── Genişletme malzemesi ──
   "hak:temelTasi": gM(25, "kesmeTas"),
@@ -279,4 +282,15 @@ export const KANCA_BAGLARI: Readonly<Record<string, KancaBagi>> = {
   "hak:menzilhane": hH(3),
   "hak:ordugahHakki": tI(5, "dokumaci"),
   "hak:meraHakki": nC(5, "ciftci"),
+
+  // ── Kanca partisi 2: hizmet pazarı hakları a–e (darüşşifa tabanı, aşın geç bozulması) ──
+  "hak:bozulmaSuresi": m("src/yerlesim/hizmet-pazari.ts"),
+  "hak:darussifa": m("src/yerlesim/hizmet-pazari.ts"),
+  "hak:darussifaBasi": m("src/yerlesim/hizmet-pazari.ts"),
+
+  // ── Kanca partisi 2: casus (kapıda yakalama) ──
+  "hak:casusTespiti": m("src/yerlesim/casus.ts"),
+
+  // ── Kanca partisi 2: gece devriyesi görevi ──
+  "hak:devriye": m("src/yerlesim/hizmet-gorev.ts"),
 };

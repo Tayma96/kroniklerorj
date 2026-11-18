@@ -32,6 +32,7 @@ import {
   lekeliMi,
 } from "../src/mulk/carsi-hile.ts";
 import { ORTAK_DERT_CAGRI_EK, ORTAK_DERT_NPC_AYLIK, dertGorunumu, etkinlikDertleri, ortakDertDonumu } from "../src/yerlesim/ortak-dert.ts";
+import { zarSirriAyarla } from "../src/yerlesim/zar-sirri.ts";
 import { oyuncuEkle, testKasabasi } from "./kasaba-yardimci.ts";
 
 const AY = 10;
@@ -333,4 +334,26 @@ test("hak:ortakDertCagrisi: yerleşimde hakkı bilen yaşayan sakin varsa halkı
     assert.equal(d.np, ORTAK_DERT_NPC_AYLIK + ORTAK_DERT_CAGRI_EK, `${n} hancı: bir kez`);
     assert.equal(dertGorunumu(d).halkCagri, ORTAK_DERT_CAGRI_EK);
   }
+});
+
+test("hileli tartı: zar sırrı yoksa kurulmaz ve dönüm düşmez (kazanç/yakalanma yok); kuran sahiplikten çıkınca kapanır", () => {
+  const ay = zarAyi(false);
+  const k = testKasabasi("develi", AY);
+  const sahip = ogrenmis(k, 1, "hak:hileliTarti");
+  dukkan(k, sahip, ID);
+  assert.ok(rafIslem(k, sahip, ID, { islem: "tarti", hile: true }).ok);
+  zarSirriAyarla(undefined, false);
+  try {
+    assert.deepEqual(rafIslem(k, sahip, ID, { islem: "tarti", hile: true }), { ok: false, hata: "yapilandirma_eksik" });
+    const gs = donum(k, ay);
+    assert.equal(gs.hileliTarti?.kazanc, 0);
+    assert.equal(gs.hileliTarti?.yakalandi, false);
+  } finally {
+    zarSirriAyarla(undefined, true);
+  }
+  const t = mulkDefteri(k).tz![ID]!;
+  assert.equal(t.ht, sahip.o);
+  t.ht = "o99";
+  donum(k, ay + 1);
+  assert.equal(t.ht, undefined, "kuran sahip/çalışan değil: kapandı");
 });

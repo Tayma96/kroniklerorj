@@ -75,3 +75,45 @@ Kanca = beceri düğümündeki etki. 87 kanca tezgâh/atölye/hana bağlandı (k
 - **Han:** yolcu payı kartı (`yolcuKarti`) `kanca: KancaDokumu` döner; `carpan.H` kancalıdır.
 - **Önizleme** (`GET /v1/isletme/:id/onizle`): `carpanlar.H` kancalı.
 - Yeni hata kodu yok.
+
+## Kanca partisi 2 protokol ekleri (18 Kasım; hepsi eklemeli, yeni hata kodu yok)
+
+İstemci ajanı için: alanlar ve ekran yeri. Metinler 6 dilde eklenmeli.
+
+- **Hizmet pazarı** (`GET /v1/hizmet`, hazırla/ilan/satın-al yanıtları):
+  - Katalogda yeni hizmetler: `gucDogum`, `yaraDikisi`, `dertlesme`, `turkuYak`, `atisma`, `barisIlahisi`, `onarimHizmeti`,
+    `yelekOnarimi`, `postTabaklama` (ad/açıklama metni `hizmet.<id>`). Katalog satırına `grup[]`, `arac` ({hedef, birim} | null),
+    `kalite` ({yuzde, tavan, kalemler[{kanca, d}]}: oyuncunun bu hizmetteki kalitesi) eklendi.
+  - Yeni etki türleri (katalog `etki[]`): `{tur:"onarim", alan:"alet"|"silah"|"zirh", deger}` (alıcının aşınmış aracını
+    `deger` kullanım geri alır) ve `{tur:"isleme", alan:<çıktı mal>, deger, girdi, girdiAdet}` (alıcının malını işler).
+  - Stok ve ilan satırına `kalite` (yüzde), `aracEki`, `etki[]` (alıcıya giden gerçek etki: `{tur, alan, deger, taban}`).
+    Ekran: hizmet kartında "kalite +%X" rozeti ve "can +N (taban M)" satırı.
+  - Hazırla yanıtı `hazirlama.kalite` (döküm) ve `hazirlama.arac` (aşınma | null). Satın-al yanıtı `islem.onarim` ({mal: geri
+    alınan kullanım}) ve `islem.isleme` ({mal: çıkan adet}) taşıyabilir.
+  - NPC talep satırına `oncelik` (bool): açılış ayında öncelikli bir hizmetçiye ayrılmış ("bu ay ebeye/yas evine ayrıldı").
+  - Kalem anahtarları `kalite:<hedef>`, `hak:darussifa`, `hak:darussifaBasi` (yerel darüşşifa tabanı).
+- **Kasaba görevleri:** görev türü `devriye` (gece devriyesi; yalnız `hak:devriye` sahibine açık). Görev teslim yanıtına
+  `katki` ({gosterge, aracEk, kalite, kaliteEk}): "asayiş +2 (mızrak +1, kalite şansı +1)".
+- **Tarifler** (`tarifListesi`): yeni tarifler `secmeBugday`, `yaylaGocu`, `otAyikla`, `damarAra`, `molozDuvar`, `saban`,
+  `orak`, `suVerilmisKilic`, `komutanZirhi`, `hatliBelge`, `vasiyet` (metin `tarif.<id>`; mallar var olanlar). Satıra `kaliteEk`
+  ve `aylik` ({tavan, kalan} | null; damar arama ayda bir) eklendi. Kalite dökümünde yeni kalem `kalite.tarif`. Şifacı artık
+  zanaat listesinde (`otAyikla` tarifi; atölye zanaatı "attar imalathanesi").
+- **Kervan:** önizleme `yuk` nesnesine `kagni`, `tasit` (araba|kagni|null), `tasitKalite`, `kalite`, `taban`. Kalkış yanıtına
+  `asinma[]` (koşum her kervanda, taşıt toplu yükte bir kullanım aşınır). Ekran: yük çubuğunda "araba 30 + kalite 3 + %10".
+- **Dükkân konsinye** (`hak:komisyon`): `POST .../raf` yeni işlemler: `{islem:"konsinye", mal, kalite?, adet, fiyat}`
+  (emanetçi: başkasının dükkânı), `{islem:"konsinyeGeri", satir}` (emanetçi), `{islem:"komisyon", oran}` (yönetici, 0–20).
+  Tezgâh görünümüne `komisyon` ({acik, oran, enCok, satir, benimSatir}); raf satırına `konsinye` ({ad, komisyon}) —
+  konsinye satırı yalnız NPC'ye satılır (oyuncu "satın al" düğmesi gizlenmeli). Gün sonu `konsinye[]` ({ad, hasilat, pay,
+  komisyon, emanetciye}); emanetçiye olay `olay.tezgah.konsinyeSatis` ({isletme, ad, tutar, komisyon}). Ekran: başkasının
+  dükkânında "Malını emanet koy" düğmesi, kendi dükkânında komisyon kaydırıcısı.
+- **Bakım indirimi:** kanca görünümünde yeni kanal `bakimIndirim` (yüzde; `hizmet:yapiOnarimi`, `hak:bakimDefteri`); gün sonu
+  `bakimIndirimi` (yüzde). Ekran: dükkân/atölye kanca kartında "bakım −%25".
+- **Casus:** yeni olay `olay.ucgen.casusKapi` ({casus, muhafiz, guven, kaynak}); `casusBitti.neden` yeni değer `kapida`.
+
+## Kanca partisi 2 (hak l–r) protokol ekleri (18 Kasım; sunucu, istemci YOK)
+
+Bağlanan: `hak:hileliTarti`, `hak:lekeliSatici`, `hak:namYayma`, `hak:ovguTaslama`, `hak:ortakDertCagrisi`, `hak:ozanbasi` (han H +3), `hak:menzilhane` (han H +3), `hak:ordugahHakki` (dokumacı toplu −%5), `hak:meraHakki` (çiftçi NPC cezası −5). Kod `online-server/src/mulk/carsi-hile.ts`. Yeni hata kodu yok.
+- **Hileli tartı** (yönetici; dükkânın kanca kişilerinden birinde `hak:hileliTarti`): `POST .../raf {islem:"tarti", hile:boolean}` → `{tarti}`. Hatalar `dugum_kapali` (hak yok), `soguma` (leke sürerken), `yapilandirma_eksik` (zar sırrı yok). Tezgâh görünümüne yöneticiye `tarti:{hak, acik, yuzde:15, adetEnCok:2, yakalanma:{taban:25, denetciyle:50}, leke:{itibar:20, sure:3, nam:5}}`. Gün sonu `hileliTarti:{yakalanmaYuzde, yakalandi, kazanc, lekeBitis?, nam?}` (`kazanc` = raftan düşmeyen adet; hasılat değişmez). Yakalanınca sahibe olay `olay.tezgah.hileYakalandi {isletme, ad, bitis, nam}`. Ekran: dükkânım ayarlarında "Hileli tartı" anahtarı ve olasılık uyarısı ("yerleşimde çarşı denetçisi varsa %50").
+- **Leke** (herkese): `GET /v1/dukkanlar` satırına ve tezgâh görünümüne `leke:{bitis, itibar}|null` (lekeli dükkân 3 dönüm −20 itibarla satar). Ekran: dükkân kartında "Lekeli (ay N'e dek)" rozeti.
+- **Ozan övgüsü** (`hak:namYayma`): `POST .../raf {islem:"namYay"}` başkasının dükkânında → `{ovgu:{ad, deger, kalemler, ay}, takat}`. 1 takat; ozan ayda 1, dükkân ayda 1 övgü. Hatalar `dugum_kapali`, `kendine` (sahip/çalışan), `ayni_kume`, `teklif_var` (dükkân bu ay övüldü), `eylem_siniri`, `takat_yok`, `isletme_kapali`. Görünümlere `ovgu:{ad, deger}|null` (bu ay); bakan ozana `namYayma:{d, kalemler, kalan, takat}`. Etki: o ay dükkânın `dukkanH.*` kanalında ozan bir kişi sayılır (+5, `hak:ovguTaslama` ile +8; en yüksek kişi, toplanmaz); döküm `kisiAd` ozandır. Ozana akçe/nam/XP yok.
+- **Ortak dert:** `dertGorunumu` yeni alan `halkCagri?` (hancı çağrısıyla gelen halk puanı); `ORTAK_DERT_KURALLARI.halkCagriEk` (4/ay).
