@@ -1866,7 +1866,9 @@ export function danisanSesleri(s: GameState, choices: { delta: Delta; sans?: num
     const x = havuz.splice(j, 1)[0]; const huy = huyOf(x.k);
     const y = (HUY_YON[huy] || ["iyilik", "temkin"]).find((v) => yonler.includes(v)); if (!y) continue;
     const uyan = yonler.map((v, i) => (v === y ? i : -1)).filter((i) => i >= 0);
-    out.push({ id: x.id, i: uyan[Math.floor(gameRandom(s) * uyan.length)], y, g: huyGrubu(huy), r: x.rol });
+    const i = uyan[Math.floor(gameRandom(s) * uyan.length)];
+    if (out.length && out[0].i === i) continue; // ikinci ses yalnız farklı seçeneği savunursa gelir: aynı öğüdü iki kez duymak gerilim yaratmaz
+    out.push({ id: x.id, i, y, g: huyGrubu(huy), r: x.rol });
   }
   return out;
 }
@@ -2012,7 +2014,7 @@ export function husumetSec(prev: GameState, a: string, b: string, index: number)
 }
 // ── Savaşın kişisel bedeli (K7/4): yılın en az üç ayı bölgen seferberdeyse yakın çevrendeki asker ve genç erkekler cepheye gider.
 // Yılda en çok bir kayıp (%25), ayrıca biri yaralı ama sağ döner (gazi). Asker oyuncunun yanında bir silah arkadaşı olur.
-export const SAVAS_KAYIP_SANS = 0.25, SAVAS_GAZI_SANS = 0.35, SAVAS_YIL_AY = 3; // savaş yılı: bölgenin en az üç ay seferber kaldığı yıl (seferberlik çoğu yıl ~3 ay sürer)
+export const SAVAS_KAYIP_SANS = 0.15, SAVAS_GAZI_SANS = 0.35, SAVAS_YIL_AY = 3; // savaş yılı: bölgenin en az üç ay seferber kaldığı yıl (seferberlik çoğu yıl ~3 ay sürer)
 function silahArkadasi(s: GameState, pop: Nufus, wy: number) {
   const p = s.player; if (p.dead || p.profession !== "asker" || p.age < 16) return;
   if (p.silah_id && pop.k[p.silah_id]?.ol == null) return;
