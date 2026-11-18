@@ -57,7 +57,7 @@ function hayat(tohum, polAd, opts = {}) {
           if (ns.length) s = g.proposeMarriage(s, ns[0]);
         }
         if (s.player.age >= 20 && prng() < 0.1) for (const t of ["dukkan", "tarla", "ev"]) { const s2 = g.buyProperty(s, t); if (s2 !== s && s2.player.properties.length > s.player.properties.length) { s = s2; break; } }
-        if (usta) { const d = g.sinavDurumu(s); if (d && d.hazir) { let bi = 0; for (let i = 1; i < 3; i++) if (d.oranlar[i] > d.oranlar[bi]) bi = i; s = g.ustalikSinavi(s, bi).state; } }
+        if (usta) { const d = g.sinavDurumu(s); if (d && d.hazir) s = g.ustalikSinavi(s).state; /* F4: üç aşamalı sınav */ }
       } catch (e) { /* aktif eylem başarısızsa geç */ }
     }
     const t0 = s.turn;

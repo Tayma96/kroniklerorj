@@ -1,7 +1,7 @@
 // Zanaatlar sekmesi: tezgâhın, sana açık meslekler ve henüz kapalı olanlar. Satır açılır, şartlar ve geçiş düğmesi görünür.
 import { useState } from "react";
 import { View, Text, Pressable } from "react-native";
-import { changeProfession, PROFESSIONS, meslekSarti, meslekEksik, meslekSermaye, meslegeUygun, effStat, type Profession } from "../../game";
+import { changeProfession, PROFESSIONS, meslekSarti, meslekEksik, meslekSermaye, meslegeUygun, effStat, meslekXpMin, meslekYoluGucu, npcLonca, meslekDegisimBedeli, ustaKapisiAcik, irgatMi, ustaKapisiYasi, mektepEvresi, irgatUcreti, type Profession } from "../../game";
 import { professionNameL } from "../../locale-data";
 import { useGame } from "../../store";
 import { useI18n, applyParams } from "../../i18n";
@@ -10,7 +10,7 @@ import { playTap } from "../../sound";
 import { GameIcon } from "../../icons";
 import { Panel } from "../../ui";
 import { C, F } from "../../theme";
-import { Madalyon, Etiket, Rozet, EylemDugmesi, meslekIkonu, yon, hiza } from "./ortak";
+import { Madalyon, Etiket, Rozet, EylemDugmesi, meslekIkonu, yon, hiza, yolEtkiMetni } from "./ortak";
 
 export function MeslekListesi({ onGecti }: { onGecti: () => void }) {
   const { state, apply } = useGame();
@@ -56,16 +56,27 @@ export function MeslekListesi({ onGecti }: { onGecti: () => void }) {
           <View style={{ paddingBottom: 12, paddingHorizontal: 4 }}>
             <Text style={[{ fontFamily: F.display, fontSize: 13.5, lineHeight: 19, color: C.goldDim }, hiza(rtl)]}>{t("my." + pr.id + ".n")}</Text>
             <Text style={[{ fontFamily: F.serifItalic, fontSize: 15, lineHeight: 22, color: C.parchmentDim, marginTop: 2 }, hiza(rtl)]}>{t("my." + pr.id + ".d")}</Text>
+            <View style={{ flexDirection: yon(rtl), alignItems: "flex-start", gap: 8, marginTop: 7 }}>
+              <GameIcon name="scroll-open" size={15} color={C.gold} />
+              <Text style={[{ flex: 1, fontFamily: F.serif, fontSize: 15, lineHeight: 21, color: C.parchment }, hiza(rtl)]}>{t("ms.yol.baslik")}: {yolEtkiMetni(t, lang, pr.id, cur ? meslekYoluGucu(p) : 1)}{cur ? `  ·  ${applyParams(t("ms.yol.guc"), [meslekYoluGucu(p)], lang)}` : ""}</Text>
+            </View>
+            {npcLonca(pr.id) ? <View style={{ flexDirection: yon(rtl), alignItems: "center", gap: 8, marginTop: 4 }}>
+              <GameIcon name="banner" size={15} color={C.goldDim} />
+              <Text style={[{ flex: 1, fontFamily: F.serif, fontSize: 14.5, lineHeight: 20, color: C.parchmentDim }, hiza(rtl)]}>{applyParams(t("ms.lonca.bagli"), [t("fac." + npcLonca(pr.id) + ".n")], lang)}{p.faction === npcLonca(pr.id) ? `  ·  ${t("org.youMember")}` : ""}</Text>
+            </View> : null}
             {!cur && m && (herkese ? (
               <Text style={[{ fontFamily: F.serifItalic, fontSize: 15, color: C.sage, marginTop: 6 }, hiza(rtl)]}>{t("mes.open")}</Text>
             ) : (
               <View style={{ marginTop: 8 }}>
                 <Etiket rtl={rtl} tone={C.parchmentMuted}>{t("mes.need")}</Etiket>
                 {m.statMin > 0 && sart(`${t("st." + m.stat)} ${m.statMin}`, ek.stat, String(Math.floor(effStat(p, m.stat))))}
-                {m.xpMin > 0 && sart(applyParams(t("mes.xp"), [t("skill." + m.skill), m.xpMin], lang), ek.xp, String(p.skill_xp?.[m.skill] || 0))}
+                {m.xpMin > 0 && sart(applyParams(t("mes.xp"), [t("skill." + m.skill), meslekXpMin(p, pr.id)], lang), ek.xp, String(p.skill_xp?.[m.skill] || 0))}
                 {ser > 0 && sart(t("mes.capital").replace("%1", String(ser)), ek.sermaye, String(Math.floor(p.money)))}
               </View>
             ))}
+            {!cur && p.profession !== "işsiz" && (() => { const b = meslekDegisimBedeli(state, pr.id); return (
+              <Text style={[{ fontFamily: F.serif, fontSize: 14.5, lineHeight: 21, color: C.emberSoft, marginTop: 8 }, hiza(rtl)]}>{applyParams(t("ms.degisim"), [b.xpOnce, b.xpSonra], lang)}{b.sermaye > 0 ? " " + applyParams(t("ms.degisimSermaye"), [b.sermaye], lang) : ""}</Text>
+            ); })()}
             {!cur && <EylemDugmesi label={kilit ? t("meslek.kilit") : t("meslek.gec")} icon={kilit ? "hourglass" : meslekIkonu(pr.id)} variant="secondary" disabled={kilit || p.dead} rtl={rtl}
               onPress={() => { if (p.dead || kilit) return; hap("tap"); apply((s) => changeProfession(s, pr.id)); setAcik(null); onGecti(); }} />}
           </View>
@@ -80,7 +91,7 @@ export function MeslekListesi({ onGecti }: { onGecti: () => void }) {
     <View>
       <View style={{ flexDirection: yon(rtl), alignItems: "center", gap: 10, marginBottom: 12, padding: 11, borderRadius: 8, borderWidth: 1, borderColor: C.ember + "66", backgroundColor: "rgba(40,16,8,0.78)" }}>
         <GameIcon name="scales" size={18} color={C.emberSoft} />
-        <Text style={[{ flex: 1, fontFamily: F.serif, fontSize: 15, lineHeight: 21, color: C.parchment }, hiza(rtl)]}>{p.profession === "işsiz" ? t("meslek.issizNot") : t("mes.switchWarn")}</Text>
+        <Text style={[{ flex: 1, fontFamily: F.serif, fontSize: 15, lineHeight: 21, color: C.parchment }, hiza(rtl)]}>{p.profession !== "işsiz" ? t("mes.switchWarn") : ustaKapisiAcik(state) ? t("ms.kapi.bekliyor") : irgatMi(state) ? applyParams(t("ms.kapi.irgat"), [Math.max(0, (p.usta_kapisi?.sonra ?? state.turn) - state.turn)], lang) + " " + applyParams(t("ms.irgat.ucret"), [irgatUcreti(state)], lang) : mektepEvresi(p) === "medrese" || p.age < ustaKapisiYasi(p) ? applyParams(t("ms.kapi.yas"), [ustaKapisiYasi(p), t(p.egitim_yolu === "medrese" ? "ms.egitim.medrese" : "ms.egitim.cirak")], lang) : t("meslek.issizNot")}</Text>
       </View>
       {mevcut.length > 0 && <Panel title={t("scr.meslek")} icon="anvil">{mevcut.map(satir)}</Panel>}
       {grup(t("meslek.grup.acik"), "compass", uygun)}

@@ -3,7 +3,7 @@
 import { View, Text, Image, useWindowDimensions } from "react-native";
 import { DesignPressable as Pressable } from "../../design-pressable";
 import { useGame } from "../../store";
-import { useI18n, lakapliAd } from "../../i18n";
+import { useI18n, lakapliAd, applyParams } from "../../i18n";
 import { playWater } from "../../sound";
 import { GameIcon } from "../../icons";
 import { Portre } from "../../ui";
@@ -50,6 +50,7 @@ export function KarakterKimlik({ onSettings }: { onSettings: () => void }) {
           <Rozet icon="sehir" text={placeName(p.location_name, lang)} />
           <Rozet icon="star" text={`${p.generation}. ${t("misc.generation")}`} />
           {hunerUnvanlari(p).map((k) => <Rozet key={k} icon="medal" tone={C.goldBright} text={t("huner.unvan." + k)} />)}
+          {p.icazet ? <Rozet icon="scroll" tone={C.goldBright} text={applyParams(t("mek.icazet.rozet"), [t("mek.ders." + p.icazet.tur)])} /> : null}
           {inJail(p) ? <Rozet icon="prisoner" tone={C.blood} text={`${t("jail.title")} · ${p.jail!.left} ${t("char.mo")}`} /> : null}
         </View>
       </View>

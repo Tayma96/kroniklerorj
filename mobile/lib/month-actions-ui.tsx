@@ -32,7 +32,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { EmekOngoru } from "./emek-ui";
 import { SoylentiIzi, soylentiLead } from "./rumor-ui";
 import { AileHaberi } from "./evlat-ui";
-import { aileHaberiniOku, varisAdaylari, aileHaberi, duzenAyarla } from "./game";
+import { aileHaberiniOku, varisAdaylari, aileHaberi, duzenAyarla, irgatMi, irgatUcreti } from "./game";
 import { ITEMS } from "./world";
 
 // Ayın eylemleri: çalışma (emek) ve yaşa göre uğraşlar. Ana ekrandan Karakter ekranına taşındı;
@@ -48,20 +48,22 @@ export function EmekPanel() {
   const duzenAcik = !p.duzen?.kapali;
   return (
     <>
-      {!p.dead && (p.age >= 13 && p.profession !== "işsiz") ? (
+      {!p.dead && p.age >= 13 && (p.profession !== "işsiz" || irgatMi(state)) ? (
         <OrnatePanel>
+          {/* F4: ırgatlık yılı — tek düz ücret, tarz seçimi yok */}
+          {p.profession === "işsiz" ? <Text style={{ fontFamily: F.serif, fontSize: 15, lineHeight: 21, color: C.parchmentDim, marginBottom: 7, textAlign: lang === "ar" ? "right" : "left" }}>{applyParams(t("ms.irgat.ucret"), [irgatUcreti(state)], lang)}</Text> : <>
           {/* Çalışma stili seçici (Vercel work_rework.py) */}
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 7 }}>
             {(["garantici", "normal", "hirsli", "kaytarici"] as const).map((ws) => {
               const on = workStyle === ws;
               return (
-                <Pressable key={ws} accessibilityRole="button" accessibilityLabel={t("work.style." + ws)} accessibilityState={{ selected: on }} onPress={() => { hap("tap"); setWorkStyle(ws); apply((s) => duzenAyarla(s, { tarz: ws })); }} style={{ flexBasis: "45%", flexGrow: 1, minHeight: 44, justifyContent: "center", alignItems: "center", paddingVertical: 8, borderRadius: 5, borderWidth: 1, borderColor: on ? C.gold : C.border, backgroundColor: on ? C.cardHi : "transparent" }}>
-                  <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 0.3, color: on ? C.gold : C.parchmentMuted }}>{t("work.style." + ws)}</Text>
+                <Pressable key={ws} accessibilityRole="button" accessibilityLabel={t(ws === "kaytarici" ? "ms.ws.kaytarici" : "work.style." + ws)} accessibilityState={{ selected: on }} onPress={() => { hap("tap"); setWorkStyle(ws); apply((s) => duzenAyarla(s, { tarz: ws })); }} style={{ flexBasis: "45%", flexGrow: 1, minHeight: 44, justifyContent: "center", alignItems: "center", paddingVertical: 8, borderRadius: 5, borderWidth: 1, borderColor: on ? C.gold : C.border, backgroundColor: on ? C.cardHi : "transparent" }}>
+                  <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 0.3, color: on ? C.gold : C.parchmentMuted }}>{t(ws === "kaytarici" ? "ms.ws.kaytarici" : "work.style." + ws)}</Text>
                 </Pressable>
               );
             })}
           </View>
-          <EmekOngoru state={state} styleId={workStyle} />
+          <EmekOngoru state={state} styleId={workStyle} /></>}
           {(() => { const worked = !canWork(state); return (
           <GameButton variant="secondary" accessibilityLabel={worked ? t("act.workedThisTurn") : t("act.work")} icon="calis" rtl={lang === "ar"} onPress={() => { if (worked) return; hap("tap"); playTap(); doWork(workStyle); }} disabled={worked}>
             <Text style={{ fontFamily: F.display, fontSize: 13, color: C.goldBright, letterSpacing: 1.5, textAlign: "center" }}>{worked ? t("act.workedThisTurn") : t("act.work")}</Text>

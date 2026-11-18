@@ -10,7 +10,9 @@ import { GameButton } from "../../ui";
 import { DUR, EASE } from "../../motion";
 import { useSadeMod } from "../../use-sade-mod";
 import { C, F, L } from "../../theme";
-import type { SaheserAlani } from "../../game";
+import { meslekYoluEtkiDegeri, meslekYoluYuzdeMi, type SaheserAlani } from "../../game";
+import { applyParams, yuzdeL } from "../../i18n";
+import type { Lang } from "../../locale-data";
 
 // Her meslek kendi mekânında görünür: tezgâh, tarla, nehir, divan…
 const SAHNE: Record<string, ImageSourcePropType> = {
@@ -93,4 +95,10 @@ export function Sekmeler({ secili, sekmeler, onSec, rtl }: { secili: SekmeId; se
       </Pressable>
     ); })}
   </View>;
+}
+
+// F4: meslek yolunun tek cümlelik etkisi (güç 1–4'e göre sayı; yüzde ya da miktar).
+export function yolEtkiMetni(t: (k: string) => string, lang: Lang, id: string, guc: number): string {
+  const v = meslekYoluEtkiDegeri(id, guc);
+  return applyParams(t("ms.yol." + id), [meslekYoluYuzdeMi(id) ? yuzdeL(v, lang) : String(v)], lang);
 }

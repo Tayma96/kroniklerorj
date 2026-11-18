@@ -1,227 +1,185 @@
-import { PageHeader } from "../../lib/ui";
+// Mektep (F3/K4): yaşa göre üç görünüm — sıbyan (7–12) / medrese (13–16) / ders halkası (18+); arada yol özeti ve icazet.
+// İlk ekranda en çok üç blok (hoca, odak + çalış, yıl sonu sınavı); kulüp ve akranlar "daha fazla" altında.
+import { PageHeader, BackLabel, ScreenFresk } from "../../lib/ui";
 import { DesignPressable as Pressable } from "../../lib/design-pressable";
-import { View, Text, ScrollView, Image, ImageBackground } from "react-native";
-import { useState } from "react";
+import { View, Text, ScrollView } from "react-native";
+import { useState, type ReactNode } from "react";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { BECERI_TAVAN, skillProgress, SUBJECTS, studySubject, studiedThisTurn, lessonsToExam, CLUBS, joinClub, clubPractice, studyEnergy, maxStudyEnergy, STUDY_COST } from "../../lib/game";
+import {
+  CLUBS, joinClub, clubPractice, studyEnergy, STUDY_COST, studySubject, calisabilir, mektepEvresi, mektepDersleri, mektepOdak, mektepOdakSec,
+  mektepSinavGirdi, zarOrani, egitimYolu, kisiProfil, relWith, dersHalkasi, dersHalkasiAcik, dersHalkasiBedeli, icazetTekrar, icazetTekrarAcik,
+  icazetTekrarGirdi, muderrisMi, dersVer, dersVerAcik, muderrisGeliri, MUDERRIS_ZEKA, oyunYili, type Stats,
+} from "../../lib/game";
 import { GameIcon } from "../../lib/icons";
-import { subjImage, MEKTEP_HERO } from "../../lib/assets";
-import { localFirstName, locSeed } from "../../lib/world";
+import { SansEtiketi } from "../../lib/sans-etiketi";
 import { C, F } from "../../lib/theme";
 import { useI18n, applyParams } from "../../lib/i18n";
+import { yon } from "../../lib/sayfa/karakter/parca";
 import { hap } from "../../lib/haptics";
 import { playTap } from "../../lib/sound";
-import { BackLabel, ScreenFresk } from "../../lib/ui";
 
-// Her ders hangi yönü geliştirir → ilerleme kaynağı + ton.
-const META: Record<string, { kind: "skill" | "nam"; key: string; tone: string }> = {
-  din:       { kind: "nam",   key: "dindar", tone: "#A988D0" },
-  matematik: { kind: "skill", key: "trade",  tone: "#D4B45A" },
-  edebiyat:  { kind: "skill", key: "social", tone: "#74A8CC" },
-  beden:     { kind: "skill", key: "combat", tone: "#E96A38" },
-};
+type Sonuc = { key: string; chips: { label: string; col: string; k?: string; p?: (string | number)[] }[]; tick: number };
+const STATLAR: (keyof Stats)[] = ["intelligence", "charisma", "strength", "stamina"];
+
+function Blok({ title, icon, children, rtl }: { title: string; icon: string; children: ReactNode; rtl: boolean }) {
+  return <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(201,168,76,0.28)", borderRadius: 5, padding: 12, marginBottom: 12, gap: 8 }}>
+    <View style={{ flexDirection: rtl ? "row-reverse" : "row", alignItems: "center", gap: 8 }}>
+      <GameIcon name={icon} size={16} color={C.gold} />
+      <Text accessibilityRole="header" style={{ flex: 1, fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.gold, textAlign: rtl ? "right" : "left" }}>{title}</Text>
+    </View>
+    {children}
+  </View>;
+}
+function Dugme({ label, onPress, disabled, on, a11y, acilir }: { label: string; onPress: () => void; disabled?: boolean; on?: boolean; a11y?: string; acilir?: boolean }) {
+  return <Pressable accessibilityRole="button" accessibilityLabel={a11y || label} accessibilityState={acilir ? { disabled: !!disabled, expanded: !!on } : { disabled: !!disabled, selected: !!on }} onPress={onPress} disabled={disabled}
+    style={{ minHeight: 44, flexGrow: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 10, paddingVertical: 8, borderRadius: 5, borderWidth: 1.5, borderColor: on ? C.gold : disabled ? C.border : "rgba(212,180,90,0.6)", backgroundColor: on ? "rgba(212,180,90,0.18)" : disabled ? C.bg : "rgba(212,180,90,0.08)" }}>
+    <Text style={{ fontFamily: F.display, fontSize: 13, color: disabled ? C.parchmentMuted : on ? C.goldBright : C.gold, textAlign: "center" }}>{label}</Text>
+  </Pressable>;
+}
 
 export default function Mektep() {
   const insets = useSafeAreaInsets(); const router = useRouter();
   const { state, apply } = useGame();
   const { t, lang } = useI18n();
-  const [last, setLast] = useState<null | { key: string; chips: { label: string; col: string; k?: string; p?: (string | number)[] }[]; tick: number }>(null);
+  const { rtl, ta } = yon(lang);
+  const [last, setLast] = useState<Sonuc | null>(null);
+  const [fazla, setFazla] = useState(false);
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   const p = state.player;
-  const done = studiedThisTurn(state);
-  const toExam = lessonsToExam(p);
-  const bond = p.teacherBond || 0;
-  const bondCycle = bond % 12; // ödül bond%12===0'da geliyor (studySubject) — ibre onunla aynı olmalı
-  // Mektebin hocası — bulunduğun yere göre deterministik (isimli gerçek hoca).
-  const teacherName = `${t("mek.teacherTitle")} ${localFirstName(locSeed(p.location_name) + 7, "erkek", lang)}`;
+  const ev = mektepEvresi(p);
+  const okul = ev === "sibyan" || ev === "medrese";
+  const yol = egitimYolu(p);
+  const txt = (s: string) => <Text style={{ fontFamily: F.serif, fontSize: 15, lineHeight: 21, color: C.parchmentDim, textAlign: ta }}>{s}</Text>;
 
-  const onStudy = (id: string) => {
-    if (p.dead || done) return;
-    hap("success"); playTap();
-    const res = studySubject(state, id);
-    if (res.blocked) return;
-    apply(() => res.state);
-    setLast({ key: res.key, chips: res.chips, tick: Date.now() });
+  const calis = () => {
+    const res = studySubject(state); if (res.blocked) return;
+    hap("success"); playTap(); apply((s) => { const r = studySubject(s); return r.blocked ? s : r.state; }); setLast({ key: res.key, chips: res.chips, tick: Date.now() });
   };
-
   const clubDone = studyEnergy(state) < STUDY_COST;
-  const onPractice = () => {
-    if (p.dead || !p.club || clubDone) return;
-    hap("success"); playTap();
-    const res = clubPractice(state);
-    if (res.blocked) return;
-    apply(() => res.state);
-    setLast({ key: res.key, chips: res.chips, tick: Date.now() });
+  const mesk = () => {
+    if (!p.club || clubDone) return; const res = clubPractice(state); if (res.blocked) return;
+    hap("success"); playTap(); apply((s) => { const r = clubPractice(s); return r.blocked ? s : r.state; }); setLast({ key: res.key, chips: res.chips, tick: Date.now() });
   };
 
-  const progressOf = (id: string) => {
-    const m = META[id];
-    if (m.kind === "nam") {
-      const v = p.nam?.[m.key as keyof typeof p.nam] || 0;
-      return { pct: v };
-    }
-    const lvl = (p.skills as any)[m.key] as number;
-    const xp = (p.skill_xp as any)[m.key] as number;
-    return { pct: lvl >= BECERI_TAVAN ? 100 : Math.round(skillProgress(xp) * 100) };
-  };
-  const develops = (id: string) => {
-    const m = META[id];
-    return m.kind === "nam" ? t("nam." + m.key) : t("skill." + m.key);
-  };
+  // Hoca kartı: gerçek NPC, npc sayfasına bağlantı.
+  const hoca = p.hoca_id ? kisiProfil(state, p.hoca_id, lang) : null;
+  const hocaRel = p.hoca_id ? relWith(state, p.hoca_id) : 0;
+  const hocaBlok = <Blok title={t("mek.hoca.baslik")} icon="prayer-beads" rtl={rtl}>
+    {hoca && !hoca.olu ? <Pressable accessibilityRole="button" accessibilityLabel={`${hoca.npc.name}. ${t("mek.hoca.ac")}`} onPress={() => router.push({ pathname: "/oyun/npc/[id]", params: { id: p.hoca_id! } })}
+      style={{ minHeight: 44, flexDirection: rtl ? "row-reverse" : "row", alignItems: "center", gap: 10 }}>
+      <View style={{ flex: 1 }}>
+        <Text style={{ fontFamily: F.display, fontSize: 14, color: C.parchment, textAlign: ta }}>{hoca.npc.name}</Text>
+        {txt(applyParams(t("mek.hoca.bag"), [Math.round(hocaRel), hocaRel >= 60 ? 2 : hocaRel >= 25 ? 1 : 0]))}
+      </View>
+      <GameIcon name="scroll-open" size={18} color={C.goldDim} />
+    </Pressable> : txt(t("mek.hoca.yok"))}
+  </Blok>;
 
+  // Odak dersi + çalış.
+  const odak = mektepOdak(state);
+  const yilN = p.mektep_yil?.y === oyunYili(state.turn) ? p.mektep_yil.n : 0;
+  const odakBlok = <Blok title={t("mek.odak.baslik")} icon="book" rtl={rtl}>
+    <View style={{ flexDirection: rtl ? "row-reverse" : "row", flexWrap: "wrap", gap: 8 }}>
+      {mektepDersleri(p).map((d) => <Dugme key={d.id} label={t("mek.ders." + d.id)} on={odak === d.id} a11y={applyParams(t("mek.odak.sec"), [t("mek.ders." + d.id)])}
+        onPress={() => { hap("tap"); apply((s) => mektepOdakSec(s, d.id)); }} />)}
+    </View>
+    {txt(t("mek.odak.ipucu"))}
+    <Dugme label={!calisabilir(state) ? t("mek.calis.yapildi") : t("mek.calis")} disabled={!calisabilir(state) || !odak} onPress={calis} />
+    {txt(odak ? applyParams(t("mek.calis.d"), [yilN]) : t("mek.calis.odaksiz"))}
+  </Blok>;
+
+  // Yıl sonu sınavı (takvim + şans önizlemesi) ve yol özeti.
+  const icazetYili = ev === "medrese" && p.age === 16;
+  const son = p.mektep_sinav;
+  const sinavBlok = <Blok title={t(icazetYili ? "mek.sinav.icazetBaslik" : "mek.sinav.baslik")} icon="graduate-cap" rtl={rtl}>
+    {txt(t("mek.sinav.d"))}
+    <SansEtiketi zar={zarOrani(state, mektepSinavGirdi(state))} />
+    {son && !son.icazet ? txt(applyParams(t("mek.sinav.son." + son.sonuc), [t("mek.ders." + son.ders)])) : null}
+    {txt(ev === "sibyan" ? (p.egitim_yolu ? t("mek.yol.ozet." + p.egitim_yolu) : t("mek.yol.bekliyor")) : t("mek.yol.ozet.medrese"))}
+  </Blok>;
+
+  const icazetBlok = <Blok title={t("mek.icazet.baslik")} icon="scroll" rtl={rtl}>
+    {p.icazet ? <>
+      <Text style={{ fontFamily: F.display, fontSize: 14, color: C.goldBright, textAlign: ta }}>{applyParams(t("mek.icazet.rozet"), [t("mek.ders." + p.icazet.tur)])} · {t("mek.derece." + p.icazet.derece)}</Text>
+      {txt(t("mek.icazet.etki." + p.icazet.tur))}
+      {txt(t("mek.icazet.etki.ortak"))}
+    </> : txt(p.icazet_kaldi ? t("mek.icazet.kaldiNot") : t("mek.icazet.yok"))}
+  </Blok>;
+
+  const halkaBlok = <Blok title={t("mek.halka.baslik")} icon="book" rtl={rtl}>
+    {txt(applyParams(t("mek.halka.d"), [dersHalkasiBedeli(state)]))}
+    {dersHalkasiAcik(state) ? <View style={{ flexDirection: rtl ? "row-reverse" : "row", flexWrap: "wrap", gap: 8 }}>
+      {STATLAR.map((k) => <Dugme key={k} label={applyParams(t("mek.halka.al"), [t("st." + k)])} disabled={p.money < dersHalkasiBedeli(state)} onPress={() => { hap("success"); playTap(); apply((s) => dersHalkasi(s, k)); }} />)}
+    </View> : txt(t("mek.halka.alindi"))}
+    {icazetTekrarAcik(state) ? <>
+      <SansEtiketi zar={zarOrani(state, icazetTekrarGirdi(state))} baslik="mek.halka.tekrar" />
+      <Dugme label={t("mek.halka.tekrar")} onPress={() => { hap("success"); playTap(); apply((s) => icazetTekrar(s)); }} />
+    </> : null}
+  </Blok>;
+
+  const muderrisBlok = <Blok title={t("mek.muderris.baslik")} icon="scroll-open" rtl={rtl}>
+    {muderrisMi(p) ? <>
+      {txt(applyParams(t("mek.muderris.d"), [muderrisGeliri(state)]))}
+      <Dugme label={dersVerAcik(state) ? t("mek.muderris.ver") : t("mek.muderris.verildi")} disabled={!dersVerAcik(state)} onPress={() => { hap("success"); playTap(); apply((s) => dersVer(s)); }} />
+    </> : txt(applyParams(t("mek.muderris.sart"), [MUDERRIS_ZEKA]))}
+  </Blok>;
+
+  const kulupVeAkran = <>
+    {p.age < 18 && p.age >= 7 ? <Blok title={t("club.head")} icon="lyre" rtl={rtl}>
+      <View style={{ flexDirection: rtl ? "row-reverse" : "row", flexWrap: "wrap", gap: 8 }}>
+        {CLUBS.map((cl) => <Dugme key={cl.id} label={t("club." + cl.id)} on={p.club === cl.id} onPress={() => { hap("tap"); apply((s) => joinClub(s, p.club === cl.id ? null : cl.id)); }} />)}
+      </View>
+      {p.club ? <Dugme label={clubDone ? t("club.practiced") : t("club.practice")} disabled={clubDone} onPress={mesk} /> : null}
+      {txt(t("club.hint"))}
+    </Blok> : null}
+    {(p.akran_ids || []).length ? <Blok title={t("mek.akran.baslik")} icon="family" rtl={rtl}>
+      {(p.akran_ids || []).map((id) => { const k = kisiProfil(state, id, lang); return k && !k.olu ? <Pressable key={id} accessibilityRole="button" accessibilityLabel={k.npc.name} onPress={() => router.push({ pathname: "/oyun/npc/[id]", params: { id } })} style={{ minHeight: 44, justifyContent: "center" }}>
+        <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchment, textAlign: ta }}>{k.npc.name}</Text>
+      </Pressable> : null; })}
+    </Blok> : null}
+  </>;
+
+  const sub = ev === "yok" ? t("mek.evre.yok") : t("mek.evre." + ev);
   return (
     <ScreenFresk style={{ paddingTop: insets.top }}>
       <View style={{ paddingHorizontal: 14, paddingVertical: 12 }}>
-        <Pressable onPress={() => router.back()}><BackLabel /></Pressable>
+        <Pressable accessibilityRole="button" onPress={() => router.back()} style={{ minHeight: 44, justifyContent: "center" }}><BackLabel /></Pressable>
       </View>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 14, paddingBottom: insets.bottom + 100 }}>
+        <PageHeader title={t("scr.mektep")} sub={sub} />
 
-        <PageHeader title={t("scr.mektep")} sub={p.age < 18 ? t("mek.young") : t("mek.old")} />
-        <View style={{ padding: 12, marginBottom: 14, borderWidth: 1, borderColor: C.goldDim, borderRadius: 4, backgroundColor: C.surface }}>
-          <Text style={{ fontFamily: F.display, fontSize: 13, color: C.gold }}>{t("mek.examBadge")}</Text>
-          <Text style={{ fontFamily: F.serif, fontSize: 15, lineHeight: 22, color: done ? C.sage : C.parchment, marginTop: 4 }}>{done ? "✓" : toExam === 1 ? t("mek.examNow") : applyParams(t("mek.exam"), [toExam])}</Text>
-        </View>
-
-        {p.age >= 18 && <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 14 }}>
-          {[{ to: "/oyun/beceriler", key: "scr.beceriler", icon: "medal" }, { to: "/oyun", key: "adult.act.tefekkur", icon: "book" }].map(item => <Pressable key={item.to} onPress={() => router.push(item.to as any)} style={{ flexBasis: "45%", flexGrow: 1, gap: 8, padding: 14, borderWidth: 1, borderColor: C.goldDim, borderRadius: 4, backgroundColor: C.surface }}><GameIcon name={item.icon} color={C.gold} size={24} /><Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchment }}>{t(item.key)}</Text></Pressable>)}
-        </View>}
-
-        {/* Çalışma gücü (enerji) — bu ay kalan ders/meşk hakkı (yalnız okul çağı) */}
-        {p.age < 18 && (
-        <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(201,168,76,0.28)", borderRadius: 5, paddingVertical: 10, paddingHorizontal: 13, marginBottom: 13 }}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 9 }}>
-            <GameIcon name="ilerle" size={15} color={C.gold} />
-            <Text style={{ flex: 1, fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.parchmentMuted, textTransform: "uppercase" }}>{t("mek.energy")}</Text>
-            <Text style={{ fontFamily: F.display, fontSize: 13, color: C.gold }}>{Math.floor(studyEnergy(state) / STUDY_COST)}/{Math.floor(maxStudyEnergy(p.age) / STUDY_COST)}</Text>
-            <View style={{ flexDirection: "row", gap: 5, marginLeft: 4 }}>
-              {Array.from({ length: maxStudyEnergy(p.age) }).map((_, i) => (
-                <View key={i} style={{ width: 12, height: 12, borderRadius: 3, transform: [{ rotate: "45deg" }], backgroundColor: i < studyEnergy(state) ? C.gold : "transparent", borderWidth: 1, borderColor: i < studyEnergy(state) ? C.gold : C.border }} />
-              ))}
-            </View>
-          </View>
-          <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, marginTop: 6, lineHeight: 22 }}>{t("mek.energyHint")}</Text>
-        </View>
-        )}
-
-        {/* Dağıtılmamış puan CTA */}
-        {p.stat_points > 0 && (
-          <Pressable onPress={() => { hap("tap"); router.push("/oyun/karakter"); }} style={{ flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: "rgba(212,180,90,0.12)", borderWidth: 1.5, borderColor: "rgba(212,180,90,0.55)", borderRadius: 5, padding: 12, marginBottom: 13 }}>
-            <View style={{ width: 28, height: 28, borderRadius: 5, backgroundColor: C.gold, alignItems: "center", justifyContent: "center" }}>
-              <Text style={{ fontFamily: F.display, fontSize: 13, color: C.inkOnGold }}>{p.stat_points}</Text>
-            </View>
-            <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 15, color: C.parchment }}>{t("mek.pointsCta")}</Text>
-            <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.gold }}>{t("mek.spend")} ›</Text>
-          </Pressable>
-        )}
-
-        {/* Anlık sonuç bandı */}
         {last && last.key !== "" && (
-          <Animated.View key={last.tick} entering={FadeInDown.duration(260)} style={{ backgroundColor: "rgba(212,180,90,0.10)", borderWidth: 1, borderColor: "rgba(212,180,90,0.4)", borderLeftWidth: 3, borderLeftColor: C.gold, borderRadius: 5, padding: 12, marginBottom: 13 }}>
-            <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchment, lineHeight: 22 }}>{t(last.key)}</Text>
-            {last.chips.length > 0 && (
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
-                {last.chips.map((c, i) => (
-                  <View key={i} style={{ backgroundColor: c.col + "22", borderWidth: 1, borderColor: c.col + "66", borderRadius: 20, paddingVertical: 3, paddingHorizontal: 9 }}>
-                    <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 0.5, color: c.col }}>{c.k ? applyParams(t(c.k), c.p || []) : c.label}</Text>
-                  </View>
-                ))}
-              </View>
-            )}
+          <Animated.View key={last.tick} entering={FadeInDown.duration(260)} style={{ backgroundColor: "rgba(212,180,90,0.10)", borderWidth: 1, borderColor: "rgba(212,180,90,0.4)", borderLeftWidth: rtl ? 1 : 3, borderRightWidth: rtl ? 3 : 1, borderRadius: 5, padding: 12, marginBottom: 12 }}>
+            <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchment, lineHeight: 22, textAlign: ta }}>{t(last.key)}</Text>
+            {last.chips.length > 0 && <View style={{ flexDirection: rtl ? "row-reverse" : "row", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
+              {last.chips.map((c, i) => <View key={i} style={{ backgroundColor: c.col + "22", borderWidth: 1, borderColor: c.col + "66", borderRadius: 20, paddingVertical: 3, paddingHorizontal: 9 }}>
+                <Text style={{ fontFamily: F.display, fontSize: 13, color: c.col }}>{c.k ? applyParams(t(c.k), c.p || []) : c.label}</Text>
+              </View>)}
+            </View>}
           </Animated.View>
         )}
 
-        {/* Bu Ay Dersleri — dairesel amblemler (yalnız okul çağı 7-17; yetişkin çalışamaz) */}
-        {p.age < 18 && (<>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 9, marginBottom: 11 }}>
-          <View style={{ width: 7, height: 7, backgroundColor: C.gold, transform: [{ rotate: "45deg" }] }} />
-          <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.gold, textTransform: "uppercase" }}>{t("mek.lessonsHead")}</Text>
-          <View style={{ flex: 1, height: 1.5, backgroundColor: C.goldDim, opacity: 0.6 }} />
-          <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 0.8, color: C.parchmentMuted }}>{t("mek.cost")}</Text>
-        </View>
-        <View style={{ flexDirection: "row", gap: 9, marginBottom: 6 }}>
-          {SUBJECTS.map((sub) => {
-            const m = META[sub.id]; const pr = progressOf(sub.id);
-            return (
-              <Pressable key={sub.id} onPress={() => onStudy(sub.id)} disabled={p.dead || done} style={{ flex: 1, alignItems: "center", opacity: done ? 0.5 : 1 }}>
-                <Image source={subjImage(sub.id)} style={{ width: 62, height: 62, borderRadius: 31, borderWidth: 2, borderColor: m.tone }} resizeMode="cover" />
-                <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchment, marginTop: 7 }}>{t("subj." + sub.id + ".l")}</Text>
-                <Text numberOfLines={1} style={{ fontFamily: F.serif, fontSize: 15, color: C.parchmentMuted, marginTop: 1 }}>{develops(sub.id)}</Text>
-                <View style={{ width: 52, height: 4, borderRadius: 2, backgroundColor: "rgba(0,0,0,0.4)", overflow: "hidden", marginTop: 6, borderWidth: 1, borderColor: m.tone + "33" }}>
-                  <View style={{ width: `${Math.max(0, Math.min(100, pr.pct))}%`, height: "100%", backgroundColor: m.tone }} />
-                </View>
-              </Pressable>
-            );
-          })}
-        </View>
-        <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, marginTop: 8, marginBottom: 4 }}>
-          {done ? t("mek.doneMonth") : applyParams(t("mek.exam"), [toExam])}
-        </Text>
-        </>)}
-
-        {/* Öğrenci toplulukları (okul çağı) */}
-        {p.age < 18 && (
-          <>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 9, marginTop: 12, marginBottom: 11 }}>
-              <View style={{ width: 7, height: 7, backgroundColor: C.gold, transform: [{ rotate: "45deg" }] }} />
-              <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.gold, textTransform: "uppercase" }}>{t("club.head")}</Text>
-              <View style={{ flex: 1, height: 1.5, backgroundColor: C.goldDim, opacity: 0.6 }} />
-            </View>
-            <View style={{ flexDirection: "row", gap: 10 }}>
-              {CLUBS.map((cl) => {
-                const on = p.club === cl.id;
-                return (
-                  <Pressable key={cl.id} onPress={() => { hap("tap"); apply((s) => joinClub(s, on ? null : cl.id)); }} style={{ flex: 1, alignItems: "center", paddingVertical: 12, borderRadius: 5, borderWidth: 1.5, borderColor: on ? C.gold : C.border, backgroundColor: on ? "rgba(212,180,90,0.12)" : C.card }}>
-                    {on && <View style={{ position: "absolute", top: 7, right: 7, borderWidth: 1, borderColor: "rgba(102,176,112,0.6)", backgroundColor: "rgba(102,176,112,0.18)", borderRadius: 4, paddingHorizontal: 4, paddingVertical: 1 }}><Text style={{ fontFamily: F.display, fontSize: 13, color: C.sage }}>{t("club.member")}</Text></View>}
-                    <View style={{ width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center", borderWidth: 2, borderColor: on ? C.gold : C.borderHi, backgroundColor: "rgba(40,30,16,0.6)" }}>
-                      <GameIcon name={cl.id === "koro" ? "lyre" : cl.id === "gures" ? "crossed-swords" : "anvil"} size={18} color={on ? C.gold : C.goldDim} />
-                    </View>
-                    <Text style={{ fontFamily: F.display, fontSize: 13, color: on ? C.gold : C.parchment, marginTop: 7 }}>{t("club." + cl.id)}</Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-            {p.club ? (
-              <View style={{ marginTop: 11, backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(212,180,90,0.35)", borderRadius: 5, padding: 12 }}>
-                <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 9 }}>
-                  <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.parchmentMuted, textTransform: "uppercase" }}>{t("club.standing")}</Text>
-                  <Text style={{ fontFamily: F.display, fontSize: 13, color: C.gold }}>{p.club_standing || 0}</Text>
-                </View>
-                <Pressable onPress={onPractice} disabled={clubDone} style={{ alignItems: "center", paddingVertical: 11, borderRadius: 5, borderWidth: 1.5, borderColor: clubDone ? C.border : "rgba(212,180,90,0.6)", backgroundColor: clubDone ? C.bg : "rgba(212,180,90,0.14)" }}>
-                  <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 0.5, color: clubDone ? C.parchmentMuted : C.gold }}>{clubDone ? t("club.practiced") : t("club.practice")}</Text>
-                </Pressable>
-              </View>
-            ) : null}
-            <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, marginTop: 8 }}>{t("club.hint")}</Text>
-          </>
+        {p.stat_points > 0 && (
+          <Pressable accessibilityRole="button" accessibilityLabel={t("mek.pointsCta")} onPress={() => { hap("tap"); router.push("/oyun/karakter"); }} style={{ minHeight: 44, flexDirection: rtl ? "row-reverse" : "row", alignItems: "center", gap: 10, backgroundColor: "rgba(212,180,90,0.12)", borderWidth: 1.5, borderColor: "rgba(212,180,90,0.55)", borderRadius: 5, padding: 12, marginBottom: 12 }}>
+            <Text style={{ fontFamily: F.display, fontSize: 13, color: C.gold }}>{p.stat_points}</Text>
+            <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 15, color: C.parchment, textAlign: ta }}>{t("mek.pointsCta")}</Text>
+          </Pressable>
         )}
 
-        {/* Hocan — bağ (yalnız okul çağı) */}
-        {p.age < 18 && (<>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 9, marginTop: 13, marginBottom: 11 }}>
-          <View style={{ width: 7, height: 7, backgroundColor: C.gold, transform: [{ rotate: "45deg" }] }} />
-          <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.gold, textTransform: "uppercase" }}>{t("mek.teacher")}</Text>
-          <View style={{ flex: 1, height: 1.5, backgroundColor: C.goldDim, opacity: 0.6 }} />
-        </View>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.card, borderWidth: 1.5, borderColor: C.border, borderRadius: 5, padding: 12 }}>
-          <View style={{ width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center", borderWidth: 2, borderColor: C.borderHi, backgroundColor: "rgba(67,52,94,0.5)" }}>
-            <GameIcon name="prayer-beads" size={20} color={C.ink} />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchment }}>{teacherName}</Text>
-            <Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, marginTop: 1 }}>{t("mek.bondNote")}</Text>
-            <View style={{ flexDirection: "row", gap: 3, marginTop: 7 }}>
-              {Array.from({ length: 12 }).map((_, i) => (
-                <View key={i} style={{ width: 9, height: 6, borderRadius: 2, backgroundColor: i < bondCycle ? C.gold : "rgba(255,255,255,0.10)" }} />
-              ))}
-            </View>
-          </View>
-          <Text style={{ fontFamily: F.display, fontSize: 13, color: C.gold }}>{bondCycle}/12</Text>
-        </View>
-        </>)}
+        {okul ? <>{hocaBlok}{odakBlok}{sinavBlok}</> : null}
+        {ev === "ara" ? <>
+          <Blok title={t("mek.evre.ara")} icon="walk" rtl={rtl}>{txt(t("mek.yol.ozet." + (yol || "cirak")))}</Blok>
+          {icazetBlok}
+        </> : null}
+        {ev === "halka" ? <>{halkaBlok}{icazetBlok}{muderrisBlok}</> : null}
 
+        {(ev !== "yok" && ev !== "halka") ? <>
+          <Dugme label={t("club.head") + " · " + t("mek.akran.baslik")} on={fazla} acilir onPress={() => setFazla(!fazla)} />
+          {fazla ? <View style={{ marginTop: 12 }}>{kulupVeAkran}{okul ? txt(t("mek.kartNot")) : null}</View> : null}
+        </> : null}
       </ScrollView>
     </ScreenFresk>
   );

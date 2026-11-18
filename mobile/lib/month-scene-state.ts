@@ -1,7 +1,8 @@
 import type { Dilemma } from "./events";
-import type { GameState, Opportunity, KirSahne } from "./game";
+import type { GameState, Opportunity, KirSahne, Player } from "./game";
 export interface MonthScene {
-  id: string; turn: number; generation: number; kind: "senlik" | "ikilem" | "orta" | "firsat" | "kapi" | "bos" | "kirilma"; done: boolean;
+  id: string; turn: number; generation: number; kind: "senlik" | "ikilem" | "orta" | "firsat" | "kapi" | "bos" | "kirilma" | "mektep"; done: boolean;
+  mek?: { id: string }; // F3 mektep kartı (sıbyan olayı, 12 yaş yol kararı, 17 yaş kılıç icazeti) · F4 "usta" (usta kapısı): içerik id'den türetilir
   kir?: { tip: KirSahne; kisi?: string }; // kader kırılması anı (aşama 3): içerik kayıttan türetilir, yalnız tip ve kişi saklanır
   dilemma?: Omit<Dilemma, "when">; opp?: Opportunity;
   stage?: "intro" | "play" | "result"; success?: boolean;
@@ -10,13 +11,13 @@ export interface MonthScene {
 }
 export function pendingMonthScene(s: GameState): MonthScene | undefined {
   const m = s.monthScene;
-  return !s.mpRealm && !s.player.dead && !(s.player.jail && s.player.jail.left > 0) && m && !m.done && m.turn === s.turn && m.generation === (s.player.generation || 1) && (m.dilemma || m.opp || m.kir) ? m : undefined;
+  return !s.mpRealm && !s.player.dead && !(s.player.jail && s.player.jail.left > 0) && m && !m.done && m.turn === s.turn && m.generation === (s.player.generation || 1) && (m.dilemma || m.opp || m.kir || m.mek) ? m : undefined;
 }
 // Kayıt bozulduysa karar üretme veya ödül uydurma; yalnız güvenli veriyi geri yükle.
 export function repairMonthScene(raw: unknown, s: GameState): MonthScene | undefined {
   if (!raw || typeof raw !== "object" || s.mpRealm || s.player.dead) return undefined;
   const m = raw as MonthScene;
-  if (m.turn !== s.turn || m.generation !== (s.player.generation || 1) || m.id !== `month:${m.generation}:${m.turn}` || !["senlik", "ikilem", "orta", "firsat", "kapi", "bos", "kirilma"].includes(m.kind) || typeof m.done !== "boolean") return undefined;
+  if (m.turn !== s.turn || m.generation !== (s.player.generation || 1) || m.id !== `month:${m.generation}:${m.turn}` || !["senlik", "ikilem", "orta", "firsat", "kapi", "bos", "kirilma", "mektep"].includes(m.kind) || typeof m.done !== "boolean") return undefined;
   const base: MonthScene = { id: m.id, turn: m.turn, generation: m.generation, kind: m.kind, done: m.done };
   const secim = m.secim;
   if (m.done) return secim && typeof secim.id === "string" && Number.isInteger(secim.i) && typeof secim.label === "string" && secim.label.length <= 400
@@ -39,10 +40,25 @@ export function repairMonthScene(raw: unknown, s: GameState): MonthScene | undef
     if (!uygun) return { ...base, done: true };
     return { ...base, kir: { tip: k.tip, ...(k.kisi ? { kisi: k.kisi } : {}) } };
   }
+  if (m.kind === "mektep") {
+    const id = m.mek?.id;
+    if (typeof id !== "string" || id.length > 32) return undefined;
+    return mektepSahneGecerli(s.player, id) ? { ...base, mek: { id } } : { ...base, done: true }; // koşul düştüyse ay kilitli kalmaz
+  }
   if (m.kind === "firsat") {
     const o = m.opp;
     if (!o || ![o.id, o.key, o.title, o.desc].every(text) || !["strength", "intelligence", "charisma", "stamina"].includes(o.stat) || !Number.isFinite(o.reward) || o.reward < 0 || !Number.isFinite(o.risk) || o.risk < 0 || o.risk > 1 || m.stage !== undefined && !["intro", "play", "result"].includes(m.stage) || m.stage === "result" && typeof m.success !== "boolean") return undefined;
     return { ...base, opp: { id: o.id, key: o.key, title: o.title, desc: o.desc, reward: o.reward, risk: o.risk, stat: o.stat, ...(Number.isFinite(o.minAge) ? { minAge: o.minAge } : {}) }, stage: m.stage || "intro", ...(m.stage === "result" ? { success: m.success } : {}) };
   }
   return undefined;
+}
+
+// F3 mektep sahnesinin hâlâ geçerli olup olmadığı (motor ve kayıt onarımı aynı kuralı kullanır).
+export const MEKTEP_KART_IDLERI = ["kopya", "kavga", "siir", "soru", "yaramazlik", "yardim", "hattat", "ezber", "bahce", "harita", "misafir"];
+export function mektepSahneGecerli(p: Player, id: string): boolean {
+  if (p.dead) return false;
+  if (id === "usta") return p.profession === "işsiz" && !!p.usta_kapisi?.adaylar?.length && (p.usta_kapisi.ert || 0) < 2; // F4 usta kapısı
+  if (id === "yol") return p.age === 12 && !p.egitim_yolu;
+  if (id === "kilic") return p.age === 17 && (p.egitim_yolu ?? "cirak") === "cirak" && !p.icazet && !(p.fates || []).includes("kilic17");
+  return MEKTEP_KART_IDLERI.includes(id) && p.age >= 7 && p.age <= 12 && !(p.mektep_gorulen || []).includes(id);
 }

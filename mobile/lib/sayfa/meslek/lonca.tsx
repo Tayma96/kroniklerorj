@@ -2,10 +2,10 @@
 import type { ReactNode } from "react";
 import { View, Text, Pressable } from "react-native";
 import { useRouter } from "expo-router";
-import { kariyerXp, professionById, rakipAktif, rakipPuan, rakipYollari, rakipMeydan, rakipMeydanHazir, rakipMeydanKalan, rakipOrtaklik, rakipOrtaklikHazir, RAKIP_HEDEF, RAKIP_MEYDAN_BEDEL, cirakAlabilir, cirakAdaylari, cirakAl, cirakDers, cirakDersHazir, cirakDersKalan, cirakBekleAy, CIRAK_BEDEL, CIRAK_KOST, kademeOf, kisiOf, worldYears, type GameState } from "../../game";
+import { kariyerXp, professionById, rakipAktif, rakipPuan, rakipYollari, rakipMeydan, rakipMeydanHazir, rakipMeydanKalan, rakipOrtaklik, rakipOrtaklikHazir, RAKIP_HEDEF, RAKIP_MEYDAN_BEDEL, cirakAlabilir, cirakAdaylari, cirakAl, cirakDers, cirakDersHazir, cirakDersKalan, cirakBekleAy, CIRAK_BEDEL, CIRAK_KOST, kademeOf, kisiOf, worldYears, npcLonca, loncaMesleklari, factionById, joinThreshold, factionRankIndex, meslekYoluKademesi, type GameState } from "../../game";
 import { kisiNpc } from "../../nufus";
 import { localFirstName } from "../../world";
-import { careerTitleL } from "../../locale-data";
+import { careerTitleL, professionNameL } from "../../locale-data";
 import { rakipAdi, rakipKartVerisi } from "../../rakip-ui";
 import type { SinavKartiVeri } from "../../kart3d";
 import { useGame } from "../../store";
@@ -18,6 +18,42 @@ import { C, F, L } from "../../theme";
 import { Madalyon, Etiket, EylemDugmesi, yon, hiza } from "./ortak";
 
 const HUY_IKON: Record<string, string> = { hevesli: "flame", yetenekli: "star", sadik: "shield" };
+
+// F4 (K5): meslek ↔ lonca tek kavram — mesleğinin bağlı olduğu lonca (Örgütler sayfasındaki aynı örgüt), üyelik durumu,
+// giriş eşiği (kendi meslek loncan yarı eşik, başka meslek loncası bir buçuk kat), üyeliğin işe yararı ve pirin çırak notu.
+export function LoncaPaneli() {
+  const { state } = useGame();
+  const { t, lang } = useI18n();
+  const router = useRouter();
+  const rtl = lang === "ar";
+  if (!state) return null;
+  const p = state.player, fid = npcLonca(p.profession), f = fid ? factionById(fid) : undefined;
+  if (!f) return null;
+  const kadin = p.gender === "kadın";
+  const standing = p.faction_standing?.[f.id] || 0, need = joinThreshold(p, f), uye = p.faction === f.id;
+  const baska = p.faction && p.faction !== f.id ? factionById(p.faction) : undefined;
+  const meslekler = loncaMesleklari(f.id).map((m) => professionNameL(m, lang, kadin)).join(", ");
+  const durum = uye ? applyParams(t("ms.lonca.uye"), [t("fac." + f.id + ".n"), t("frank." + f.id + "." + factionRankIndex(standing))], lang)
+    : baska ? applyParams(t("ms.lonca.baska"), [t("fac." + baska.id + ".n"), t("fac." + f.id + ".n")], lang)
+    : applyParams(t("ms.lonca.degil"), [t("fac." + f.id + ".n"), need, standing], lang);
+  return (
+    <Panel title={t("ms.lonca.baslik")} icon="banner">
+      <View style={{ flexDirection: yon(rtl), alignItems: "center", gap: 12 }}>
+        <Madalyon icon={f.icon} size={46} tone={uye ? C.goldBright : C.gold} dim={!uye} />
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Text style={[{ fontFamily: F.display, fontSize: 15, lineHeight: 21, color: uye ? C.goldBright : C.gold }, hiza(rtl)]}>{t("fac." + f.id + ".n")}</Text>
+          <Bilgi rtl={rtl} mt={2}>{t("fac." + f.id + ".b")}</Bilgi>
+        </View>
+      </View>
+      <Bilgi rtl={rtl} tone={uye ? C.sage : C.parchmentDim}>{durum}</Bilgi>
+      {!uye && !baska && <View style={{ marginTop: 6 }}><ProgressBar value={Math.min(standing, need)} max={Math.max(1, need)} color={C.gold} h={6} /></View>}
+      <Bilgi rtl={rtl}>{t("ms.lonca.fayda")}</Bilgi>
+      <Bilgi rtl={rtl} italic>{applyParams(t("ms.lonca.meslekler"), [meslekler], lang)}</Bilgi>
+      {meslekYoluKademesi(p) >= 3 && <Bilgi rtl={rtl} tone={C.gold}>{t("ms.pir.not")}</Bilgi>}
+      <EylemDugmesi label={t("ms.lonca.git")} icon="banner" variant="secondary" rtl={rtl} onPress={() => { hap("tap"); playTap(); router.push("/oyun/orgutler"); }} />
+    </Panel>
+  );
+}
 
 // Nüfusta yaşayan kişinin yaşı (portre için); kayıt yoksa yedek yaş.
 function kisiYasi(s: GameState, id: string | undefined, yedek: number, lang: Parameters<typeof kisiNpc>[2]): { yas: number; var: boolean } {
