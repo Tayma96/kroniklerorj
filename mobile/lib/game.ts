@@ -2046,7 +2046,7 @@ export function tehlikeEkle(p: Player, t: TehlikeTip, d: number) {
 // Ayın doğal sönümü ve birikimi (advance içinde, ayda bir). Şüphe'nin sönümü crime_heat'in kendi sönümüdür.
 function tehlikeTiki(s: GameState) {
   const p = s.player; if (p.dead) return;
-  if (tehlike(p, "soz") > 0) tehlikeEkle(p, "soz", -1); // dil zamanla susar
+  if (tehlike(p, "soz") > 0 && s.turn % 2 === 0) tehlikeEkle(p, "soz", -1); // dil zamanla susar (iki ayda bir; söylenti dalgası yoksa)
   const debt = p.debt || 0;
   if (debt > 0) {
     const gecikme = p.loan_turn != null && s.turn - p.loan_turn >= 6; // altı aydır taşınan borç alacaklıyı kapıya getirir
