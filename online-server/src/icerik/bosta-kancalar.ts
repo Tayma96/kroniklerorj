@@ -8,7 +8,7 @@
  * övme hizmeti, kendi rafına çekicilik değil) ve `hak:hileliTarti` (hileli tartı dürüst H olamaz) kayıttan geri alındı;
  * parti henüz ana dala girmediği için taban budur.
  */
-export const BOSTA_TAVAN = 180;
+export const BOSTA_TAVAN = 171;
 
 export const BOSTA_KANCALAR: readonly string[] = [
   "arac:av:mizrak",
@@ -62,7 +62,6 @@ export const BOSTA_KANCALAR: readonly string[] = [
   "hak:hekimIcazeti",
   "hak:heyetUzlasmasi",
   "hak:hikmetliKarar",
-  "hak:hileliTarti",
   "hak:husumetListesi",
   "hak:ilkGorus",
   "hak:ipekYoluSeferi",
@@ -89,24 +88,16 @@ export const BOSTA_KANCALAR: readonly string[] = [
   "hak:koruDikimi",
   "hak:kronikNami",
   "hak:kuraklikDirenci",
-  "hak:lekeliSatici",
-  "hak:meclisSirasi",
-  "hak:menzilhane",
-  "hak:meraHakki",
-  "hak:meraKarari",
-  "hak:naiplik",
-  "hak:namYayma",
-  "hak:navlun",
-  "hak:ordugahHakki",
-  "hak:ortakDertCagrisi",
-  "hak:ortaklikDefteri",
-  "hak:ovguTaslama",
-  "hak:oylama",
-  "hak:ozanIcazeti",
-  "hak:ozanbasi",
-  "hak:resmiElcilik",
-  "hak:riskPaylasimi",
-  "hak:rotaSecimi",
+  "hak:meclisSirasi", // siyaset (meclis gündem sırası): bölge meclisi programında kapanır
+  "hak:meraKarari", // mera kararı meclis/gündem işi; çevrimiçide mera sistemi yok
+  "hak:naiplik", // siyaset (kadılık yolu): makam sisteminde (siyaset/makam.ts) kapanır
+  "hak:navlun", // başkasının yükünü taşıma yok: kervan yükü tek sahipli (yerlesim/kervan.ts)
+  "hak:ortaklikDefteri", // ortak (çok sahipli) işletme yok
+  "hak:oylama", // siyaset (meclis oylaması): bölge meclisi programında kapanır
+  "hak:ozanIcazeti", // ozan yetiştirme/icazet sistemi çevrimiçide yok
+  "hak:resmiElcilik", // siyaset (diplomasi): elçilik sistemi yok
+  "hak:riskPaylasimi", // kervanda kayıp riski ve ortak kafile yok
+  "hak:rotaSecimi", // kervanda rota ve yol tehlikesi yok
   "hak:safDuzeni",
   "hak:sahneSirasi",
   "hak:sahteBelge",
