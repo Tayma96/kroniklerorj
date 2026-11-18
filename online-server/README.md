@@ -201,8 +201,12 @@ Kurallar `src/yonetim/` (`yetki.ts` matris, `parametre.ts` kayıt defteri, `yapt
 - **Şikayet:** hedef başına tek açık kayıt; farklı şikayetçiler birleşir (`sayi`), aynı şikayetçi ikinci kez sayılmaz.
   Şikayetçi başına en çok 10 açık şikayet ve günlük sınır; kuyruk (2000 hedef) doluysa yalnız yeni hedef reddedilir.
   Moderatör, başka yöneticilerin e-postası yerine rolünü görür.
-- **Kendine fayda yasağı:** yönetici, Google `sub`ının oyuncu hesabından yaptırım kaldıramaz, kendi hakkındaki
-  şikayete karar veremez (`kendi_hedef`).
+- **Kurucu sınırsızdır (Berkay kuralı):** telafi tavanı, günlük tavan, kendine-fayda yasağı ve etkinlik süre sınırı
+  kurucuya uygulanmaz; her işlemi yine kayda girer. **Moderatör yetkileri kişi başıdır:** kurucu panelin
+  "Moderatörler" bölümünden her moderatörün yetkilerini tek tek açar/kapatır ve günlük telafi tavanını belirler
+  (`src/yonetim/yetki.ts`; kişisel kaydı olmayan moderatör eski varsayılan haklarla sürer).
+- **Kendine fayda yasağı (moderatör):** Google `sub`ının oyuncu hesabından yaptırım kaldıramaz, kendi hakkındaki
+  şikayete karar veremez, kendi hesap/hane kümesine telafi yapamaz (`kendi_hedef`).
 - **Yaptırım uygulanır:** uzaklaştırılmış hesabın `/v1/*` istekleri 403 `{hata: "uzaklastirildi", bitis}` döner
   (`bitis: null` = kalıcı). `/v1/giris` açıktır ve yanıta `uzaklastirma: {bitis}` ekler. Susturma Y1'de yalnız
   kayıtlı bayraktır (sohbet Faz 10'da okuyacak) ve `/v1/sikayet`i kapatır (`susturuldu`).
@@ -224,9 +228,16 @@ Kurallar `src/yonetim/` (`yetki.ts` matris, `parametre.ts` kayıt defteri, `yapt
 | `GET /yonetim/parametreler` | — | kurucu |
 | `POST /yonetim/parametre` | `{ad, deger, gerekce, istekNo}` | kurucu |
 | `POST /yonetim/parametre-geri` | `{ad, gerekce, istekNo}` | kurucu |
-| `POST /yonetim/rol` | `{eposta, rol: "moderator"\|null, gerekce, istekNo}` | kurucu (kurucu yalnız `YONETICI_EPOSTALAR`dan gelir; verilemez, düşürülemez) |
+| `POST /yonetim/rol` | `{eposta, rol: "moderator"\|null, yetkiler?, telafiTavan?, gerekce, istekNo}` | kurucu (kurucu yalnız `YONETICI_EPOSTALAR`dan gelir; verilemez, düşürülemez) |
 | `POST /yonetim/duyuru` | `{metin, gerekce, istekNo}` | kurucu |
 | `GET /yonetim/kayit` | `?imlec=` (en çok 50, yeniden eskiye) | kurucu |
+| `POST /yonetim/anahtar-giris` | `{anahtar}` | `YONETIM_KURUCU_ANAHTARI` tanımlıysa kurucu oturumu (IP başına 15 dk'da 5 yanlış, saatte toplam 30) |
+| `POST /yonetim/oturumlari-kapat` | `{istekNo}` | her yönetici: kendi bütün oturumları düşer |
+| `GET /yonetim/oyuncu-ara` | `?ad=` (ad başı, en az 2 harf) ya da `?no=` (8 hane), `&imlec=` | `oyuncuGor` |
+| `GET /yonetim/oyuncu-ayrinti` | `?hesap=` | `oyuncuAyrinti`: cüzdan, envanter, meslek, son işlemler, son giriş |
+| `GET /yonetim/moderatorler` | — | kurucu: moderatörler, kişisel yetkiler, yetki seçenekleri |
+| `POST /yonetim/telafi` | `{hedef, tur: akce\|esya, yon?: ver\|al, tutar \| mal+adet, gerekce, istekNo}` | `telafi` (moderatör: işlem başı 10.000/50, kişisel günlük tavan) |
+| `POST /yonetim/telafi-geri` | `{no, gerekce, istekNo}` | `telafiGeri`: kaydı ters yönde bir kez uygular |
 | `POST /v1/sikayet` | `{hedef, neden: kufur\|taciz\|uygunsuzAd\|hile\|dolandiricilik\|spam\|diger, aciklama?, istekNo}` | oyuncu (günde 5, kendini değil) |
 | `GET /v1/duyurular` | — | oyuncu: son 5 `{id, metin, zaman}` |
 
@@ -240,6 +251,25 @@ yönetici değildir. Panel: `https://kronikler-online.<hesap>.workers.dev/yoneti
 Yönetim girişi için **`YONETIM_GOOGLE_CLIENT_ID`** zorunludur (yönetim paneline ait Google istemci kimlikleri,
 virgülle; gizli değil). Boşsa `/yonetim/giris` `yapilandirma_eksik` döner; oyuncu `GOOGLE_CLIENT_ID`sine geri
 düşülmez (oyuncu uygulaması için verilmiş bir belirteç yönetim girişinde kullanılamasın). Google düğmesi sonraki adımda.
+
+**Kolay giriş (Google kurulana dek):** `npx wrangler secret put YONETIM_KURUCU_ANAHTARI` ile en az 32 karakterlik
+rastgele bir anahtar koy (ör. bir parola yöneticisinin ürettiği 40 karakter). Panelde "Kurucu anahtarı" alanına
+yapıştırıp "Anahtarla gir"e bas. Sır tanımlı değilse bu yol kapalıdır; sır silinince anahtarla açılan oturumlar da
+hemen düşer. "Her yerden çık" düğmesi o yöneticinin bütün oturumlarını kapatır.
+
+## Yayın öncesi sıfırlama (dünya sürümü)
+
+Oyun dünyasının bütün kayıtları (hesaplar, karakterler, yerleşimler, masalar, işletmeler, bölgeler, sultanlık)
+`DUNYA_SURUMU` değişkenine bağlıdır. Yönetim kaydı, yönetici rolleri ve moderatör yetkileri bu sürümden bağımsızdır.
+
+1. `wrangler.toml` içindeki `[vars]` bölümünde `DUNYA_SURUMU = "1"` satırını `DUNYA_SURUMU = "2"` yap
+   (her sıfırlamada bir artır: 3, 4…). Yayından önce `TEST_GIRIS_ACIK = "0"` yapmayı da unutma.
+2. Değişikliği gönder ve dağıtımı her zamanki gibi çalıştır (GitHub `deploy-online-server.yml`).
+3. Panelin üst satırında "Dünya sürümü: 2" görünür. Bütün oyuncuların oturumu düşer; yeniden giriş yapan herkes boş
+   dünyada sıfırdan karakter kurar. Gerçek parayla alınan Debdebe makbuzu yeni hesaba bir kez yeniden bağlanır.
+4. Eski dünya silinmez, yalnız kullanılmaz: yanlışlıkla yapıldıysa sürümü geri yazıp dağıtmak eski dünyayı geri getirir.
+
+Not: yaptırımlar (uzaklaştırma/susturma) hesap kimliğine bağlı olduğundan yeni dünyaya taşınmaz; gerekirse yeniden verilir.
 
 ## Geliştirme
 

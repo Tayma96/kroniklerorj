@@ -468,7 +468,11 @@ test("panel: Türkçe HTML, sıkı CSP (özetli satır içi betik/stil), çerçe
   assert.ok(!/https?:\/\//.test(html), "dış kaynak yok");
   assert.ok(!/\son[a-z]+=/i.test(html), "satır içi olay işleyicisi yok");
   assert.ok(!html.includes("innerHTML"));
-  for (const bolum of ["Giriş", "Oyuncu ara", "Şikayet kuyruğu", "Ekonomi sağlığı", "Oyuncu telafisi", "Parametreler", "Duyuru", "İşlem kaydı"]) assert.ok(html.includes(bolum), bolum);
+  for (const bolum of ["Giriş", "Oyuncu ara", "Şikayet kuyruğu", "Ekonomi sağlığı", "Oyuncu telafisi", "Parametreler", "Duyuru", "İşlem kaydı",
+    "Kurucu anahtarı", "Moderatörler", "Debdebe", "Her yerden çık", "Dünya sürümü", "Efsanevi eşya", "yetkisiz giriş", "Geri al", "Daha fazla"]) assert.ok(html.includes(bolum), bolum);
+  // Hata kodları Türkçe açıklamayla; çıkışta listeler temizlenir.
+  assert.ok(PANEL_PARCALARI.BETIK.includes("HATA_ACIKLAMA") && PANEL_PARCALARI.BETIK.includes("telafi_gunluk_siniri:"));
+  assert.ok(/function cikis\(\) \{[\s\S]*LISTELER/.test(PANEL_PARCALARI.BETIK));
   const ozet = async (m: string) => {
     const b = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(m)));
     return `'sha256-${btoa(String.fromCharCode(...b))}'`;

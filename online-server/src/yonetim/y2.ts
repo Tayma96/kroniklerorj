@@ -84,6 +84,23 @@ function miktarSiniri(o: Oturum, tur: "akce" | "esya"): number {
  * tekrar denetimi ve kalıcı kayıt. `geri` verilirse o kayıt geri alınmış olarak işaretlenir.
  */
 async function telafiCalistir(o: Oturum, islem: "telafi" | "telafiGeri", no: string, t: TelafiGirdisi, ek: Ek, geri?: TelafiKaydi): Promise<Sonuc<unknown>> {
+  // Aynı yönetici + istekNo zaten işleniyorsa (eşzamanlı yeniden gönderim) ikincisi beklemeden `istek_tekrar` alır;
+  // denetim ve işaret arasında await yoktur (tek DO örneği, tek iş parçacığı). Tamamlanınca yeniden gönderim
+  // tekrar() ile ilk sonucu alır.
+  const iz = `${o.y.eposta}\n${no}`;
+  if (SURUYOR.has(iz)) return reddet(o, islem, "istek_tekrar", ek);
+  SURUYOR.add(iz);
+  try {
+    return await telafiIsle(o, islem, no, t, ek, geri);
+  } finally {
+    SURUYOR.delete(iz);
+  }
+}
+
+/** Süren telafi istekleri (yönetici + istekNo); yalnız bellekte, YonetimDO tek örnektir. */
+const SURUYOR = new Set<string>();
+
+async function telafiIsle(o: Oturum, islem: "telafi" | "telafiGeri", no: string, t: TelafiGirdisi, ek: Ek, geri?: TelafiKaydi): Promise<Sonuc<unknown>> {
   const kurucu = kurucuMu(o);
   const kimlikOku = o.b.siyasiKimlikOku;
   const telafiYaz = o.b.telafiYaz;
