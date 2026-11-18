@@ -47,6 +47,7 @@ export function sahteToplumKur(kasabaAl: () => SahteKasaba | null, meslekAl: () 
   const benId = () => eko()?.benId ?? "o3";
   const ay = () => eko()?.ay ?? 0;
   const benAd = (): KisiAdi => ({ id: benId(), ad: profilAl()?.ad ?? "?" });
+  const mesleki = (meslekler: OyuncuMeslekSatiri[]) => ({ meslekler, toplamBeceri: meslekler.reduce((a, m) => a + m.ogrenilen.length, 0), unvanlar: [] });
   const kisi = (id: string): KisiAdi => (id === benId() ? benAd() : { id, ad: oyuncular.find((x) => x.o === id)?.ad ?? "?" });
 
   function kur(dil: Dil) {
@@ -55,9 +56,9 @@ export function sahteToplumKur(kasabaAl: () => SahteKasaba | null, meslekAl: () 
     const a = ay();
     oyuncular.push(
       { o: "o1", ad: "Ayşe", k: "kadın", yas: 14, tv: 74, nam: [9, 3, 6, 14],
-        meslekler: [{ meslek: "demirci", kademe: 1, dallar: ["alet", "silah"] }, { meslek: "oduncu", kademe: 0, dallar: ["orman"] }],
+        meslekler: [{ meslek: "demirci", kademe: 1, ogrenilen: [{ dugum: "demirci.temelDovme", seviye: 2 }, { dugum: "demirci.aletcilik", seviye: 1 }] }, { meslek: "oduncu", kademe: 0, ogrenilen: [{ dugum: "oduncu.baltacilik", seviye: 1 }] }],
         vitrin: [{ id: "t7", kimden: { id: "o2", ad: "Kerem" }, ay: a - 3, mal: "kereste", adet: 2, yapan: { id: "o2", ad: "Kerem" } }, { id: "t5", kimden: { id: "o3", ad: profilAl()?.ad ?? "?" }, ay: a - 6, akce: 6, yapan: null }] },
-      { o: "o2", ad: "Kerem", k: "erkek", yas: 13, tv: 8, nam: [2, 1, 3, 7], meslekler: [{ meslek: "marangoz", kademe: 0, dallar: [] }], vitrin: [] },
+      { o: "o2", ad: "Kerem", k: "erkek", yas: 13, tv: 8, nam: [2, 1, 3, 7], meslekler: [{ meslek: "marangoz", kademe: 0, ogrenilen: [] }], vitrin: [] },
       { o: "o4", ad: "Deniz", k: "erkek", yas: 12, tv: 0, nam: [0, 0, 4, 1], meslekler: [], vitrin: [] },
     );
     bag.o1 = "istekGeldi";
@@ -114,11 +115,12 @@ export function sahteToplumKur(kasabaAl: () => SahteKasaba | null, meslekAl: () 
     if (id === benId()) {
       const p = profilAl();
       const mk = meslekAl()?.benEki().meslek;
-      const satir = Object.entries(mk?.s ?? {}).map(([meslek, i]) => ({ meslek: meslek as MeslekId, kademe: i!.kd, dallar: i!.dl }));
+      const satir: OyuncuMeslekSatiri[] = Object.entries(mk?.s ?? {}).map(([meslek, i]) => ({ meslek: meslek as MeslekId, kademe: i!.kd,
+        ogrenilen: Object.entries(i!.sv ?? {}).filter(([, n]) => n > 0).map(([dugum, seviye]) => ({ dugum, seviye })) }));
       return basarili({
         id, ad: p?.ad ?? "?", oyuncu: true, ben: true, cinsiyet: p?.cinsiyet ?? "kadın", yas: e.yas,
         meslek: { ana: mk?.a || null, anaKademe: mk?.a ? (mk.s[mk.a]?.kd ?? 0) : null, yan: mk?.y || null, yanKademe: mk?.y ? (mk.s[mk.y]?.kd ?? 0) : null },
-        meslekler: satir, hane: { id: 3, reis: e.yetiskinler(dil)[5] ? { id: e.yetiskinler(dil)[5]!.id, ad: e.yetiskinler(dil)[5]!.ad } : null },
+        mesleki: mesleki(satir), hane: { id: 3, reis: e.yetiskinler(dil)[5] ? { id: e.yetiskinler(dil)[5]!.id, ad: e.yetiskinler(dil)[5]!.ad } : null },
         nam: { comertlik: 6, dindarlik: 4, mertlik: 24, caliskanlik: 12 }, mekan: "carsi", bag: null,
         husumet: { benIlanEttim: false, oIlanEtti: false },
         husumetler: Object.entries(husumet).filter(([, h]) => h.ben || h.o).map(([o, h]) => ({ ...kisi(o), yon: h.ben ? "ilanEtti" : "hedef", ay: h.ay })),
@@ -131,7 +133,7 @@ export function sahteToplumKur(kasabaAl: () => SahteKasaba | null, meslekAl: () 
     return basarili({
       id, ad: o.ad, oyuncu: true, ben: false, cinsiyet: o.k, yas: o.yas,
       meslek: { ana: o.meslekler[0]?.meslek ?? null, anaKademe: o.meslekler[0]?.kademe ?? null, yan: o.meslekler[1]?.meslek ?? null, yanKademe: o.meslekler[1]?.kademe ?? null },
-      meslekler: o.meslekler, hane: { id: 7, reis: e.yetiskinler(dil)[1] ? { id: e.yetiskinler(dil)[1]!.id, ad: e.yetiskinler(dil)[1]!.ad } : null },
+      mesleki: mesleki(o.meslekler), hane: { id: 7, reis: e.yetiskinler(dil)[1] ? { id: e.yetiskinler(dil)[1]!.id, ad: e.yetiskinler(dil)[1]!.ad } : null },
       nam: { comertlik: o.nam[0]!, dindarlik: o.nam[1]!, mertlik: o.nam[2]!, caliskanlik: o.nam[3]! },
       mekan: o.o === "o1" ? "cami" : o.o === "o2" ? "kahvehane" : "meydan", bag: bag[o.o] ?? null,
       husumet: { benIlanEttim: !!husumet[o.o]?.ben, oIlanEtti: !!husumet[o.o]?.o },

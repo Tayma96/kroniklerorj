@@ -219,7 +219,7 @@ export function TeklifFormu({ p, baslangic, onBitti }: { p: OyuncuProfili; basla
   // Çıraklık: usta olacak tarafın en az kalfa olduğu meslekler.
   const [ustaBen, setUstaBen] = useState(true);
   const benimMeslekler = useMemo(() => Object.entries(o.meslekDurumu?.kayit.s ?? {}).filter(([, i]) => (i?.kd ?? 0) >= 1).map(([m]) => m as MeslekId), [o.meslekDurumu]);
-  const onunMeslekleri = p.meslekler.filter((m) => m.kademe >= 1).map((m) => m.meslek);
+  const onunMeslekleri = p.mesleki.meslekler.filter((m) => m.kademe >= 1).map((m) => m.meslek);
   const cirakAday = ustaBen ? benimMeslekler : onunMeslekleri;
   const [meslek, setMeslek] = useState<MeslekId | null>(null);
   const [pay, setPay] = useState(10);

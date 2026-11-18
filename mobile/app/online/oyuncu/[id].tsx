@@ -57,15 +57,15 @@ function Teveccuh({ p, rtl, t, lang }: { p: OyuncuProfili; rtl: boolean; t: Cevi
   </Cerceve>;
 }
 
-/** Mesleki geçmiş: her meslekte kademe ve öğrenilmiş dallar; toplam beceri; unvanlar (sunucu gönderince). */
+/** Mesleki geçmiş (sunucu beceri.ts mesleki): her meslekte kademe ve öğrenilmiş beceriler; toplam beceri; unvanlar. */
 function MeslekiGecmis({ p, rtl, t, onMeslek }: { p: OyuncuProfili; rtl: boolean; t: Ceviri; onMeslek: (m: string) => void }) {
-  const satirlar = [...p.meslekler].sort((a, b) => b.kademe - a.kademe || b.dallar.length - a.dallar.length);
-  const toplam = p.meslekler.reduce((a, m) => a + m.dallar.length, 0);
+  const satirlar = [...p.mesleki.meslekler].sort((a, b) => b.kademe - a.kademe || b.ogrenilen.length - a.ogrenilen.length);
+  const toplam = p.mesleki.toplamBeceri;
   return <Cerceve ic={{ paddingVertical: 4 }}>
     {satirlar.length ? satirlar.map((m, i) => {
       const rol = m.meslek === p.meslek.ana ? t("onl.tp.mg.ana") : m.meslek === p.meslek.yan ? t("onl.tp.mg.yan") : null;
-      const dallar = m.dallar.map((d) => t(`onl.mes.${m.meslek}.${d}`)).join(" · ");
-      return <Pressable key={m.meslek} accessibilityRole="link" accessibilityLabel={`${t("onl.mes." + m.meslek)}, ${kademeAdi(t, m.kademe)}. ${dallar || t("onl.tp.mg.dalYok")}`}
+      const dallar = m.ogrenilen.map((o) => t("onl.ba." + o.dugum)).join(" · ");
+      return <Pressable key={m.meslek} accessibilityRole="link" accessibilityLabel={`${t("onl.mes." + m.meslek)}, ${kademeAdi(t, m.kademe)}. ${dallar || t("onl.ba.bosMeslek")}`}
         accessibilityHint={t("onl.tp.mg.agac")} onPress={() => { hap("tap"); onMeslek(m.meslek); }}
         style={({ pressed }) => ({ minHeight: 44, flexDirection: yon(rtl), alignItems: "center", gap: 10, paddingHorizontal: 12, paddingVertical: 9, borderTopWidth: i ? 1 : 0, borderColor: "rgba(201,162,78,0.12)", backgroundColor: pressed ? "rgba(201,162,78,0.08)" : "transparent" })}>
         <Madalyon icon="anvil" size={36} aktif={m.kademe >= 2} />
@@ -74,14 +74,14 @@ function MeslekiGecmis({ p, rtl, t, onMeslek }: { p: OyuncuProfili; rtl: boolean
             <Text style={{ flexShrink: 1, fontFamily: F.display, fontSize: 14, color: C.parchment, textAlign: hiza(rtl) }}>{`${t("onl.mes." + m.meslek)} — ${kademeAdi(t, m.kademe)}`}</Text>
             {rol ? <Rozet metin={rol} renk={C.gold} /> : null}
           </View>
-          <Text style={{ fontFamily: F.serif, fontSize: 14.5, lineHeight: 19, color: dallar ? C.parchmentDim : C.parchmentMuted, textAlign: hiza(rtl) }}>{dallar || t("onl.tp.mg.dalYok")}</Text>
+          <Text style={{ fontFamily: F.serif, fontSize: 14.5, lineHeight: 19, color: dallar ? C.parchmentDim : C.parchmentMuted, textAlign: hiza(rtl) }}>{dallar || t("onl.ba.bosMeslek")}</Text>
         </View>
         <SatirOku rtl={rtl} />
       </Pressable>;
     }) : <View style={{ padding: 12 }}><Text style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{t(p.ben ? "onl.tp.mg.bosBen" : "onl.tp.mg.bos")}</Text></View>}
     <View style={{ gap: 6, paddingHorizontal: 12, paddingVertical: 10, borderTopWidth: 1, borderColor: "rgba(201,162,78,0.18)" }}>
       <Text style={{ fontFamily: F.display, fontSize: 12.5, color: C.goldBright, textAlign: hiza(rtl) }}>{applyParams(t("onl.tp.mg.toplam"), [toplam])}</Text>
-      {p.unvanlar?.length ? <View style={{ flexDirection: yon(rtl), flexWrap: "wrap", gap: 6 }}>{p.unvanlar.map((u) => <Rozet key={u} icon="medal" metin={u} renk={C.goldBright} />)}</View>
+      {p.mesleki.unvanlar.length ? <View style={{ flexDirection: yon(rtl), flexWrap: "wrap", gap: 6 }}>{p.mesleki.unvanlar.map((u) => <Rozet key={u.id} icon="medal" metin={t("onl.unvan." + u.id)} renk={C.goldBright} />)}</View>
         : <Text style={{ fontFamily: F.serifItalic, fontSize: 14, lineHeight: 19, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{t("onl.tp.mg.unvanYok")}</Text>}
     </View>
   </Cerceve>;

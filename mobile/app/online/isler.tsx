@@ -1,5 +1,6 @@
-// Çevrimiçi temel işler ve ambar (ana tasarım §5.4–5.5): beş temel iş herkese açıktır (1 takat). İstemci önceden
-// tahmin göstermez; iş yapıldıktan sonra sunucunun döndürdüğü çıktı ve fırsat dökümü (bu_is, meslekte) görünür.
+// Çevrimiçi temel işler ve ambar (ana tasarım §5.4–5.5): iş listesi sunucunun ben.temelIsler önizlemesinden çizilir
+// (temel işler ve onarım, yamaklık, usta işleri; her biri 1 takat). Verim ve açıklık sunucudandır; iş yapıldıktan sonra
+// sunucunun döndürdüğü çıktı ve fırsat dökümü (bu_is, meslekte) görünür.
 // Ambar (envanter) ve NPC'den pahalı, aylık kotalı alım (POST /v1/taban-al); ambardan NPC'ye satış (POST /v1/sat):
 // birim fiyat dökümü (taban, kıtlık) ve aylık kota satıştan sonra sunucudan gelir.
 import { KaliteIzi } from "../../lib/online/ekonomi-ui";
@@ -22,7 +23,7 @@ import { isaretli, kalemYaz } from "../../lib/online/metin";
 import {
   IS_IKON, ISLER, MALLAR, MAL_IKON, NPC_AYLIK_KOTA, NPC_MALLARI, npcSatisKotasi, TEMEL_ISLER, TEMEL_IS_YASI, TEMEL_TAKAT, kitlikPrimi, npcEtiketFiyati, satilirMi,
 } from "../../lib/online/meslek-veri";
-import { MAL_IDLERI, type Dokum, type IsId, type MalId, type OnlineHata, type SatYaniti, type TabanAlYaniti, type TemelIsYaniti } from "../../lib/online/protokol";
+import { MAL_IDLERI, temelIsSatiriMi, type Dokum, type IsId, type MalId, type OnlineHata, type SatYaniti, type TabanAlYaniti, type TemelIsSatiri, type TemelIsYaniti } from "../../lib/online/protokol";
 import type { Lang } from "../../lib/locale-data";
 
 type Ceviri = (k: string) => string;
@@ -42,6 +43,16 @@ function AkceDokumu({ dokum, baslik, rtl, t, lang }: { dokum: Dokum; baslik: str
   </View>;
 }
 
+/** Liste satırı: sunucu önizlemesi varsa ondan, yoksa (eski sunucu) yerel tablodan. */
+type IsSatiri = { is: IsId; meslek: string; mal: MalId | null; usta: boolean; yamak: boolean; acik: boolean; dugum: string | null; seviye: number | null; adet: number | null; sonraki: number | null };
+const satirdan = (s: TemelIsSatiri): IsSatiri => ({ is: s.is, meslek: s.meslek, mal: s.mal, usta: s.usta, yamak: s.yamak, acik: s.acik, dugum: s.dugum, seviye: s.seviye, adet: s.adet, sonraki: s.sonraki });
+const tablodan = (is: IsId): IsSatiri => {
+  const x = TEMEL_ISLER[is];
+  return { is, meslek: x.meslek, mal: x.mal, usta: !!x.usta, yamak: !!x.yamak, acik: !x.usta, dugum: null, seviye: null, adet: null, sonraki: null };
+};
+const GRUPLAR = [["temel", "onl.is.temel"], ["yamak", "onl.is.grupYamak"], ["usta", "onl.is.grupUsta"]] as const;
+const grubu = (s: IsSatiri) => (s.usta ? "usta" : s.yamak ? "yamak" : "temel");
+
 /** İş hatası: verim_yok, takat_yok, yas_kapisi anlaşılır cümleyle; gerisi genel hata metniyle. */
 function isHatasi(h: OnlineHata, t: Ceviri): string {
   if (h === "verim_yok") return t("onl.is.h.verim");
@@ -49,6 +60,7 @@ function isHatasi(h: OnlineHata, t: Ceviri): string {
   if (h === "yas_kapisi") return applyParams(t("onl.is.h.yas"), [TEMEL_IS_YASI]);
   if (h === "kota_doldu") return applyParams(t("onl.is.h.kota"), [NPC_AYLIK_KOTA]);
   if (h === "para_yok") return t("onl.is.h.para");
+  if (h === "dugum_kapali") return t("onl.is.h.kilitli");
   return t(hataAnahtari(h));
 }
 /** Satış hatası: kota satış kotasıyla, mal_yok ambarla anlatılır. */
@@ -83,6 +95,8 @@ function IslerEkran() {
   const ev = o.envanter ?? ben.envanter ?? null;
   const ambar = MAL_IDLERI.filter((m) => (ev?.[m] ?? 0) > 0);
   const anaMeslek = o.meslekDurumu?.kayit.a || "";
+  const onizleme = Array.isArray(ben.temelIsler) ? ben.temelIsler.filter(temelIsSatiriMi).map(satirdan) : [];
+  const isSatirlari: IsSatiri[] = onizleme.length ? onizleme : ISLER.map(tablodan);
 
   const isYap = async (is: IsId) => {
     setIsHata(null);
@@ -109,9 +123,12 @@ function IslerEkran() {
     <AltPanel acik={!!sonuc} onKapat={() => setSonuc(null)} etiket={t("onl.is.sonuc")} rtl={rtl} t={t}>
       {sonuc?.tur === "is" ? <>
         <View style={{ alignItems: "center", gap: 8, paddingTop: 6 }}>
-          <Madalyon icon={MAL_IKON[sonuc.y.mal]} size={64} aktif />
+          <Madalyon icon={sonuc.y.mal ? MAL_IKON[sonuc.y.mal] ?? IS_IKON[sonuc.y.is] : IS_IKON[sonuc.y.is] ?? "anvil"} size={64} aktif />
           <Text accessibilityRole="header" style={{ fontFamily: F.display, fontSize: 21, color: C.parchment, textAlign: "center" }}>{t("onl.is." + sonuc.y.is)}</Text>
-          <Text style={{ fontFamily: F.display, fontSize: 18, color: C.goldBright, textAlign: "center" }}>{applyParams(t("onl.is.cikti"), [sonuc.y.adet, t("onl.mal." + sonuc.y.mal)])}</Text>
+          <Text style={{ fontFamily: F.display, fontSize: 18, color: C.goldBright, textAlign: "center" }}>
+            {sonuc.y.onarim ? applyParams(t("onl.is.onarildi"), [sonuc.y.adet, t("onl.mal." + sonuc.y.onarim.mal)])
+              : sonuc.y.mal ? applyParams(t("onl.is.cikti"), [sonuc.y.adet, t("onl.mal." + sonuc.y.mal)]) : t("onl.is.yamakCikti")}
+          </Text>
           {sonuc.y.usta ? <Rozet icon="star" metin={t("onl.is.ustaIs")} renk={C.goldBright} dolu /> : null}
         </View>
         <View style={{ flexDirection: yon(rtl), flexWrap: "wrap", justifyContent: "center", gap: 8 }}>
@@ -226,42 +243,54 @@ function IslerEkran() {
     </View>
     {genc ? <View style={{ marginTop: 12 }}><Bant tur="bilgi" metin={applyParams(t("onl.is.h.yas"), [TEMEL_IS_YASI])} rtl={rtl} /></View> : null}
 
-    {/* Temel işler */}
-    <Baslik2 metin={t("onl.is.temel")} rtl={rtl} />
-    <View style={{ gap: 10 }}>
-      {ISLER.map((is, n) => {
-        const tanim = TEMEL_ISLER[is];
-        const kendi = anaMeslek === tanim.meslek;
-        const hataBu = isHata?.is === is ? isHata.metin : null;
-        return <Animated.View key={is} entering={giris(n * 40)}>
-          <Cerceve ic={{ padding: 12, gap: 10 }}>
-            <View style={{ flexDirection: yon(rtl), alignItems: "center", gap: 10 }}>
-              <Madalyon icon={IS_IKON[is]} size={44} />
-              <View style={{ flex: 1, gap: 3 }}>
-                <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ fontFamily: F.display, fontSize: 15.5, color: C.parchment, textAlign: hiza(rtl) }}>{t("onl.is." + is)}</Text>
-                <Text style={{ fontFamily: F.serif, fontSize: 14, lineHeight: 18, color: C.parchmentDim, textAlign: hiza(rtl) }}>{applyParams(t("onl.is.verir"), [t("onl.mal." + tanim.mal)])}</Text>
-              </View>
-              <View style={{ width: dar ? 84 : 96 }}>
-                <Pressable accessibilityLabel={`${t("onl.is." + is)}. ${applyParams(t("onl.is.takatBedel"), [TEMEL_TAKAT])}`} accessibilityState={{ disabled: genc, busy: o.islem === "temelIs" }}
-                  disabled={genc || o.islem === "temelIs"} onPress={() => { hap("tap"); void isYap(is); }}
-                  style={({ pressed }) => ({ minHeight: 48, borderRadius: 8, borderWidth: 1.5, borderColor: genc ? "rgba(168,130,63,0.4)" : C.goldBright, backgroundColor: pressed ? "rgba(201,162,78,0.3)" : "rgba(201,162,78,0.14)", alignItems: "center", justifyContent: "center", paddingHorizontal: 6, opacity: genc ? 0.55 : 1 })}>
-                  <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ fontFamily: F.display, fontSize: 13.5, color: C.goldBright }}>{t("onl.is.yap")}</Text>
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
-                    <GameIcon name="flame" size={11} color={C.emberSoft} />
-                    <Text style={{ fontFamily: F.display, fontSize: 11, color: C.parchmentDim }}>{TEMEL_TAKAT}</Text>
+    {/* Temel işler: temel + onarım, yamaklık, usta işleri (sunucu önizlemesi) */}
+    {GRUPLAR.map(([grup, baslik]) => {
+      const satirlar = isSatirlari.filter((x) => grubu(x) === grup);
+      if (!satirlar.length) return null;
+      return <View key={grup}>
+        <Baslik2 metin={t(baslik)} rtl={rtl} />
+        <View style={{ gap: 10 }}>
+          {satirlar.map((x, n) => {
+            const kendi = anaMeslek === x.meslek;
+            const kapali = genc || !x.acik;
+            const hataBu = isHata?.is === x.is ? isHata.metin : null;
+            const ikon = IS_IKON[x.is] ?? "anvil";
+            const alt = x.mal ? applyParams(t("onl.is.verir"), [t("onl.mal." + x.mal)]) : x.is === "onarim" ? t("onl.is.onarimAlt") : t("onl.is.yamakAlt");
+            const verim = x.acik && x.adet !== null && x.mal ? applyParams(t("onl.is.verim"), [x.adet, x.sonraki ?? 0]) : null;
+            const kilit = !x.acik && x.dugum ? applyParams(t("onl.is.kilit"), [t("onl.ba." + x.dugum), x.seviye ?? 1]) : !x.acik ? t("onl.is.h.kilitli") : null;
+            return <Animated.View key={x.is} entering={giris(n * 40)}>
+              <Cerceve ic={{ padding: 12, gap: 10 }}>
+                <View style={{ flexDirection: yon(rtl), alignItems: "center", gap: 10 }}>
+                  <Madalyon icon={ikon} size={44} aktif={x.acik && !genc} />
+                  <View style={{ flex: 1, gap: 3 }}>
+                    <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ fontFamily: F.display, fontSize: 15.5, color: x.acik ? C.parchment : C.parchmentMuted, textAlign: hiza(rtl) }}>{t("onl.is." + x.is)}</Text>
+                    <Text style={{ fontFamily: F.serif, fontSize: 14, lineHeight: 18, color: C.parchmentDim, textAlign: hiza(rtl) }}>{alt}</Text>
+                    {verim ? <Text style={{ fontFamily: F.serif, fontSize: 13, lineHeight: 17, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{verim}</Text> : null}
                   </View>
-                </Pressable>
-              </View>
-            </View>
-            <View style={{ flexDirection: yon(rtl), flexWrap: "wrap", gap: 6 }}>
-              <Rozet icon={IS_IKON[is]} metin={applyParams(t("onl.is.kimin"), [t("onl.mes." + tanim.meslek)])} renk={kendi ? C.sage : C.gold} dolu={kendi} />
-              {tanim.usta ? <Rozet icon="star" metin={applyParams(t("onl.is.ustaVerir"), [t("onl.mes." + tanim.usta.dugum), t("onl.mal." + tanim.usta.mal)])} renk={C.goldBright} /> : null}
-            </View>
-            {hataBu ? <Bant metin={hataBu} rtl={rtl} /> : null}
-          </Cerceve>
-        </Animated.View>;
-      })}
-    </View>
+                  <View style={{ width: dar ? 84 : 96 }}>
+                    <Pressable accessibilityLabel={`${t("onl.is." + x.is)}. ${applyParams(t("onl.is.takatBedel"), [TEMEL_TAKAT])}${kilit ? ". " + kilit : ""}`} accessibilityState={{ disabled: kapali, busy: o.islem === "temelIs" }}
+                      disabled={kapali || o.islem === "temelIs"} onPress={() => { hap("tap"); void isYap(x.is); }}
+                      style={({ pressed }) => ({ minHeight: 48, borderRadius: 8, borderWidth: 1.5, borderColor: kapali ? "rgba(168,130,63,0.4)" : C.goldBright, backgroundColor: pressed ? "rgba(201,162,78,0.3)" : "rgba(201,162,78,0.14)", alignItems: "center", justifyContent: "center", paddingHorizontal: 6, opacity: kapali ? 0.55 : 1 })}>
+                      <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ fontFamily: F.display, fontSize: 13.5, color: C.goldBright }}>{t("onl.is.yap")}</Text>
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
+                        <GameIcon name="flame" size={11} color={C.emberSoft} />
+                        <Text style={{ fontFamily: F.display, fontSize: 11, color: C.parchmentDim }}>{TEMEL_TAKAT}</Text>
+                      </View>
+                    </Pressable>
+                  </View>
+                </View>
+                <View style={{ flexDirection: yon(rtl), flexWrap: "wrap", gap: 6 }}>
+                  <Rozet icon={ikon} metin={applyParams(t("onl.is.kimin"), [t("onl.mes." + x.meslek)])} renk={kendi ? C.sage : C.gold} dolu={kendi} />
+                  {x.usta ? <Rozet icon="star" metin={t("onl.is.ustaIs")} renk={C.goldBright} /> : null}
+                  {x.yamak ? <Rozet icon="walk" metin={t("onl.is.yamak")} /> : null}
+                </View>
+                {hataBu ? <Bant metin={hataBu} rtl={rtl} /> : kilit ? <Bant tur="bilgi" metin={kilit} rtl={rtl} /> : null}
+              </Cerceve>
+            </Animated.View>;
+          })}
+        </View>
+      </View>;
+    })}
     <Text style={{ marginTop: 8, fontFamily: F.serifItalic, fontSize: 14, lineHeight: 19, color: C.parchmentMuted, textAlign: hiza(rtl) }}>{t("onl.is.azalanNot")}</Text>
 
     {/* Ambar */}

@@ -212,7 +212,8 @@ function MeslekEkran() {
       {secilenPanel ? (() => {
         const m = MESLEKLER[secilenPanel.meslek];
         const eski = secilenPanel.mod === "ana" && kayit.a && kayit.a !== m.id;
-        const donus = (kayit.s[m.id]?.kd ?? 0) > 0 || (kayit.s[m.id]?.dg.length ?? 0) > 0;
+        const i = kayit.s[m.id];
+        const donus = (i?.kd ?? 0) > 0 || Object.values(i?.sv ?? {}).some((n) => n > 0) || (i?.dg?.length ?? 0) > 0;
         return <>
           <View style={{ alignItems: "center", gap: 8, paddingTop: 6 }}>
             <Madalyon icon={MESLEK_IKON[m.id]} size={64} aktif />

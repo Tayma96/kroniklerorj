@@ -90,7 +90,7 @@ export function sahteMeslekKur(kasaba: SahteKasaba, baslangic?: MeslekId, profil
     const taban = MALLAR[mal].taban;
     return taban + (oyuncuSayisi(MALLAR[mal].meslek) === 0 && taban > 0 ? Math.ceil(taban * KITLIK_PRIM) : 0);
   };
-  const dugumAcik = (id: string) => kayit.s[id.split(".")[0] as MeslekId]?.dg.includes(id) ?? false;
+  const dugumAcik = (id: string) => kayit.s[id.split(".")[0] as MeslekId]?.dg?.includes(id) ?? false;
   const kopya = <T,>(v: T): T => JSON.parse(JSON.stringify(v)) as T;
   const kirp = (x: number, alt: number) => Math.max(alt, Math.min(HAL_TAVAN, x));
   const kademe = () => KONDISYON_KADEMELERI.find((x) => hal.kondisyon >= x.alt) ?? KONDISYON_KADEMELERI[2];
@@ -173,7 +173,9 @@ export function sahteMeslekKur(kasaba: SahteKasaba, baslangic?: MeslekId, profil
         } else {
           const s = secili(m.id);
           if (!s) return hata("meslek_yok");
-          const { i } = s;
+          const i = s.i as MeslekIlerleme & { dl: string[]; dg: string[] };
+          i.dl ??= [];
+          i.dg ??= [];
           if (g.islem === "kademe") {
             if (i.kd >= 3) return hata("kademe_kapali");
             const hedef = (i.kd + 1) as Kademe;
@@ -216,22 +218,22 @@ export function sahteMeslekKur(kasaba: SahteKasaba, baslangic?: MeslekId, profil
         const is = TEMEL_ISLER[g.is];
         if (!is) return hata("eylem_gecersiz");
         if (yas < TEMEL_IS_YASI) return hata("yas_kapisi");
-        const usta = !!is.usta && dugumAcik(is.usta.dugum);
-        const mal = usta && is.usta ? is.usta.mal : is.mal;
+        const usta = !!is.usta;
+        const mal = is.mal;
         const n = (tz[g.is] ?? []).filter((x) => ay - x < AZALAN_PENCERE_IS).length;
         const adet = Math.floor(TEMEL_CIKTI / (1 + n));
         if (adet <= 0) return hata("verim_yok");
-        const kalemler = [{ k: "bu_is", d: adet * satisDegeri(mal) }];
+        const kalemler = [{ k: "bu_is", d: mal ? adet * satisDegeri(mal) : 0 }];
         if (kayit.a && kayit.a !== is.meslek) kalemler.push({ k: "meslekte", d: -MESLEK_TAKAT_DEGERI[kayit.s[kayit.a]?.kd ?? 0] * TEMEL_TAKAT });
         const firsat: Dokum = { toplam: kalemler.reduce((a, x) => a + x.d, 0), kalemler };
         if (kar.tk < TEMEL_TAKAT) return hata("takat_yok");
         kar.tk -= TEMEL_TAKAT;
         tz[g.is] = [...(tz[g.is] ?? []).filter((x) => ay - x < AZALAN_PENCERE_IS), ay];
-        envanterEkle(mal, adet);
+        if (mal) envanterEkle(mal, adet);
         const carpan = kayit.a === is.meslek ? 1 : kayit.y === is.meslek ? YAN_CARPAN : 0;
         if (carpan) ilerleme(is.meslek).hz += carpan;
         halDegistir("kondisyon", -IS_KONDISYON * TEMEL_TAKAT, "hal.neden.temelIs");
-        return basarili({ is: g.is, mal, adet, usta, hizmet: carpan, firsat, takat: kar.tk });
+        return basarili({ is: g.is, mal, adet, usta, yamak: !!is.yamak, hizmet: carpan, firsat, takat: kar.tk });
       });
     },
     tabanAl(g) {
