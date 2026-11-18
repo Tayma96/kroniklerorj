@@ -71,7 +71,7 @@ export function hizmetOku(m: YerlesimMotoru, hesapId: string): Promise<Sonuc<unk
       acik: hizmetYetkiliMi(kar, tarif),
       grup: tarif.grup ?? [],
       arac: tarif.arac ?? null,
-      kalite: hizmetKalitesi(kar, tarif),
+      kalite: hizmetKalitesi(kar, tarif, m.kasaba.ek?.ds),
     }));
     const ek = m.kasaba.ek;
     const stok = (ek?.hs ?? [])
@@ -87,7 +87,7 @@ export function hizmetOku(m: YerlesimMotoru, hesapId: string): Promise<Sonuc<unk
 export function hizmetHazirlaUc(m: YerlesimMotoru, hesapId: string, govde: unknown): Promise<Sonuc<unknown>> {
   if (!nesneMi(govde)) return Promise.resolve(hata("gecersiz_istek"));
   return m.ekonomiYaz(hesapId, govde, "hizmetHazirla", [], (kar, ay) => {
-    const r = hizmetHazirla(ekonomiAl(m.kasaba), kar, govde.hizmet, govde.adet, ay);
+    const r = hizmetHazirla(ekonomiAl(m.kasaba), kar, govde.hizmet, govde.adet, ay, m.kasaba.ek?.ds);
     if (!r.ok) return r;
     return basarili({ hazirlama: r.deger, stok: hizmetStoguGorunumu(r.deger.stok, ay) });
   });

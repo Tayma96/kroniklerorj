@@ -13,6 +13,7 @@ import { engelliMi } from "./engel.ts";
 import { gorusDegeri } from "./gorus.ts";
 import { fark, haberVer } from "./haber.ts";
 import { olduMu } from "./hanedan.ts";
+import { hakAcik } from "./beceri-etki.ts";
 import { karakterYasi, takatHarca, takatTazele } from "./karakter.ts";
 import { npcKimlik, npcRef, oyuncuRef, sinirla, yas } from "./ortak.ts";
 import { karma, tohumlu } from "./rastgele.ts";
@@ -32,6 +33,13 @@ export const CARPIK_ORAN = 0.4;
 export const RAPOR_EN_COK = 2;
 export const CASUS_FARK_ORANI = 0.3;
 export const CASUS_IHBAR_GUVEN = 90;
+/**
+ * [PARAMETRE] Kanca partisi 2 (`hak:casusTespiti`, asker kapı muhafızlığı): yerleşimde yaşayan, casusun sahibi olmayan
+ * bir kapı muhafızı varsa her rapor ayında casus bu olasılıkla kapıda yakalanır; haber izlenene gider, casusluk biter.
+ * Zar casusun tohum dizisinden (yalnız muhafız varken çekilir).
+ */
+export const CASUS_KAPI_ORANI = 0.25;
+export const CASUS_KAPI_GUVEN = 80;
 /** Rapora girmeyen özel eylem izleri; içeriği gizli görüşmeler. */
 export const OZEL_IZLER: readonly string[] = ["ayakIsi", "cirakRed"];
 export const GIZLI_GORUSMELER: readonly string[] = ["kiskirt", "katil", "arabulucu"];
@@ -135,6 +143,12 @@ export function casusDonumu(k: Kasaba, ay: number): OlayTaslagi[] {
     if (gorusDegeri(k, npc, izlenen, k.ili.get(izlenen.o), m) >= DOST_ESIGI) {
       olaylar.push(...haberVer(k, { kaynak: npcKimlik(npc.i), kaynakRef: npcRef(npc), alici: izlenen.o, konu: sahip.o, tur: "casusIhbar", guven: CASUS_IHBAR_GUVEN, ay, p: { sahip: oyuncuRef(sahip), casus: npcRef(npc) }, onem: 8 }));
       bitti("birakti");
+      continue;
+    }
+    const muhafiz = [...k.kar.values()].filter((x) => x.o !== sahip.o && !olduMu(x) && hakAcik(x, "casusTespiti")).sort((a, b) => (a.o < b.o ? -1 : 1))[0];
+    if (muhafiz && r() < CASUS_KAPI_ORANI) {
+      olaylar.push(...haberVer(k, { kaynak: muhafiz.o, kaynakRef: oyuncuRef(muhafiz), alici: izlenen.o, konu: sahip.o, tur: "casusKapi", guven: CASUS_KAPI_GUVEN, ay, p: { casus: npcRef(npc), muhafiz: oyuncuRef(muhafiz) } }));
+      bitti("kapida");
       continue;
     }
     const mekan = npcMekani(k, npc, m) ?? "meydan";
