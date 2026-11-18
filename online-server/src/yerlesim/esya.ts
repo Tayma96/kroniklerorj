@@ -14,6 +14,7 @@ import {
   ALET_KALITE_OMUR,
   ALET_KALITE_VERIM,
   KALITE_ADLARI,
+  KALITE_DEGER_CARPANI,
   KALITE_EFSANEVI,
   KALITE_ESIK,
   KALITE_NADIDE,
@@ -26,6 +27,7 @@ import {
   type Kalite,
   type KaliteParti,
 } from "./kalite.ts";
+import { HIZMET_TARIFLERI } from "./hizmet-tarif.ts";
 import { karma, type Zar } from "./rastgele.ts";
 import { sirliZar } from "./zar-sirri.ts";
 import type { Karakter } from "./tipler.ts";
@@ -113,27 +115,107 @@ export interface AileTanimi {
   kusur: string;
   /** Hünerler: ilki nadidenin hüneri; efsanevi biri, tılsımlı ikisi zarla seçilir. */
   hunerler: readonly string[];
-  /** Etki bugün oyunda bağlı mı (alet: verim ve ömür). Bağlı değilse dökümde bilgi olarak görünür. */
+  /** Ailenin en az bir etkisi oyunda bağlı mı (hangi mal ve kademede: `aileEtkisi`). */
   bagli: boolean;
-  /** Oyunda karşılığı olan etkiler ve hünerler (yoksa hiçbiri bağlı değil). Efsanevi/tılsımlı bu ailede yalnız bağlı
-   * hünerlerden alır (sırayla: efsanevi ilkini, tılsımlı ilk ikisini). */
+  /** Oyunda karşılığı olan etkiler (bilgi; gerçek değer ve mal süzgeci `aileEtkisi`te). */
   bagliEtkiler?: readonly string[];
+  /** Oyunda karşılığı olan hünerler. Efsanevi/tılsımlı bu ailede yalnız bağlı hünerlerden alır (sırayla: efsanevi
+   * ilkini, tılsımlı ilk ikisini). */
   bagliHunerler?: readonly string[];
 }
 
 /** [PARAMETRE] Aile tanımları (§9: silah güç, zırh dayanım, alet verim/ömür, giysi görünüş ve yol, yiyecek takat…). */
 export const AILELER: Readonly<Record<EsyaAilesi, AileTanimi>> = {
-  silah: { etkiler: [["guc", 0], ["isabet", 3], ["heybet", 4]], kusur: "korAgiz", hunerler: ["ikinciHamle", "keskinAgiz", "dengeliSap"], bagli: false },
-  zirh: { etkiler: [["dayanim", 0], ["hafiflik", 3], ["sarsilmazlik", 4]], kusur: "inceSac", hunerler: ["sarsilmaz", "hafifDokuma", "yaraKapatan"], bagli: false },
+  silah: { etkiler: [["guc", 0], ["isabet", 3], ["heybet", 4]], kusur: "korAgiz", hunerler: ["ikinciHamle", "keskinAgiz", "dengeliSap"], bagli: true },
+  zirh: { etkiler: [["dayanim", 0], ["hafiflik", 3], ["sarsilmazlik", 4]], kusur: "inceSac", hunerler: ["sarsilmaz", "hafifDokuma", "yaraKapatan"], bagli: true },
   alet: { etkiler: [["verim", 0], ["omur", 1], ["incelik", 4]], kusur: "kabaIs", hunerler: ["yipranmaz", "bereketli", "cabukEl"], bagli: true, bagliEtkiler: ["verim", "omur"], bagliHunerler: ["yipranmaz", "bereketli"] },
-  giysi: { etkiler: [["gorunus", 0], ["yol", 3], ["mevsim", 4]], kusur: "kabaDikis", hunerler: ["gozAlici", "yolYorulmaz", "dortMevsim"], bagli: false },
-  yiyecek: { etkiler: [["tokluk", 0], ["keyif", 3], ["saglik", 4]], kusur: "bayat", hunerler: ["uzunTokluk", "bereketliSofra", "sifali"], bagli: false },
-  arac: { etkiler: [["yuk", 0], ["hiz", 3], ["dayanim", 4]], kusur: "gicirti", hunerler: ["yukHafifletir", "yolKisaltir", "saglamDingil"], bagli: false },
+  giysi: { etkiler: [["gorunus", 0], ["yol", 2], ["mevsim", 4]], kusur: "kabaDikis", hunerler: ["gozAlici", "yolYorulmaz", "dortMevsim"], bagli: true },
+  yiyecek: { etkiler: [["tokluk", 0], ["keyif", 3], ["saglik", 4]], kusur: "bayat", hunerler: ["uzunTokluk", "bereketliSofra", "sifali"], bagli: true },
+  arac: { etkiler: [["yuk", 0], ["dayanim", 1], ["hiz", 4]], kusur: "gicirti", hunerler: ["yukHafifletir", "yolKisaltir", "saglamDingil"], bagli: true },
   yapi: { etkiler: [["saglamlik", 0], ["guzellik", 3], ["asirlik", 4]], kusur: "egriIs", hunerler: ["asirlik", "depremeDayanikli", "ustaIsi"], bagli: false },
   belge: { etkiler: [["itibar", 0], ["gecerlilik", 3], ["muhur", 4]], kusur: "silikYazi", hunerler: ["inkarEdilmez", "muhurlu", "divanaGecer"], bagli: false },
-  sanat: { etkiler: [["keyif", 0], ["nam", 3], ["hatira", 4]], kusur: "akortsuz", hunerler: ["gonulAlan", "dildenDile", "hasretGideren"], bagli: false },
-  mal: { etkiler: [["deger", 0]], kusur: "kaba", hunerler: ["gozDolduran", "uzunOmur", "bereket"], bagli: false },
+  sanat: { etkiler: [["keyif", 0], ["nam", 3], ["hatira", 4]], kusur: "akortsuz", hunerler: ["gonulAlan", "dildenDile", "hasretGideren"], bagli: true },
+  mal: { etkiler: [["deger", 0]], kusur: "kaba", hunerler: ["gozDolduran", "uzunOmur", "bereket"], bagli: true },
 };
+
+// ── Aile etkileri (kanca partisi 2; gösterilen = gerçek) ──
+// Her tablo kademe (0–6) dizinlidir; sade çoğu ailede 0'dır (kusur: eksik etki, ceza yok). Tüketiciler bu tablolar
+// ve `aileEtkisi` üzerinden okur; dökümdeki `deger` aynı sayıdır.
+
+/** [PARAMETRE] Silahın düello gücüne katkısı (duello.ts kalemi "silah"; zar 1–20 yanında sınırlı). */
+export const SILAH_GUC: readonly number[] = [0, 1, 2, 3, 5, 6, 8];
+/** [PARAMETRE] Zırh/kalkanın düello dayanımına katkısı (duello.ts kalemi "zirh"). */
+export const ZIRH_DAYANIM: readonly number[] = [0, 1, 2, 3, 5, 6, 8];
+/** [PARAMETRE] Taşıtın (araba, kağnı) kalitesinin toplu kervan yüküne kademe başına eki (adet; kervan.ts). */
+export const ARAC_KALITE_YUK: readonly number[] = [0, 1, 2, 3, 4, 5, 6];
+/** [PARAMETRE] Çizmenin kervanda takat indirimi (üstünden; kervan.ts). Kervan takatı 1'in altına inmez. */
+export const CIZME_YOL_TAKAT: readonly number[] = [0, 0, 1, 1, 1, 1, 1];
+/** [PARAMETRE] Hizmet girdisi yiyeceğin hizmet etkisine yüzde eki (sofra hizmetleri; hizmet kalite tavanı içinde). */
+export const YIYECEK_TOKLUK: readonly number[] = [0, 5, 10, 15, 20, 25, 30];
+/** [PARAMETRE] Hizmet aracı sazın (ozan sahnesi) hizmetin ilk hal etkisine adet başına eki (gönül puanı). */
+export const SANAT_KEYIF: readonly number[] = [0, 1, 1, 2, 3, 4, 5];
+
+/** Çizme olarak yolda giyilen mal (kervan). */
+export const YOL_GIYSISI = "cizme" as const satisfies MalId;
+/** Kervanda taşıt olan araçlar (yük eki) ve aşınan araçlar (ömür = kalite ömrü). */
+const TASITLAR: readonly string[] = ["araba", "kagni"];
+const KERVAN_ARACLARI: readonly string[] = ["araba", "kagni", "kosum"];
+/** Hizmet tariflerinin girdisi olan yiyecekler (tokluk bunlarda işler). */
+const SOFRA_GIRDILERI: ReadonlySet<string> = new Set(HIZMET_TARIFLERI.flatMap((t) => Object.keys(t.girdi)).filter((m) => ESYA_AILESI[m as MalId] === "yiyecek"));
+/** Hizmet aracı olan sanat malları (ozan sahnesi: saz). */
+export const HIZMET_SANAT_ARACLARI: readonly string[] = ["saz"];
+
+export type AileEtkiDegeri = { deger: number; birim: "adet" | "kullanim" | "duello" | "yuk" | "takat" | "yuzde" | "gonul" | "carpan" } | { yipranmaz: true };
+
+/**
+ * Bir etkinin bu mal ve kademede oyundaki gerçek değeri; oyunda karşılığı yoksa null (döküm `bagli:false`).
+ * Alet: verim (+adet), ömür (+kullanım ya da yıpranmaz). Silah: düello gücü. Zırh: düello dayanımı. Araç: kervan yükü
+ * (taşıt), dayanım (kervan aracının ömrü). Giysi: çizmenin yol etkisi (kervan takatı). Yiyecek: hizmet girdisi olarak
+ * tokluk (hizmet etkisine yüzde). Sanat: hizmet aracı sazın keyfi. Mal: pazar değeri çarpanı.
+ */
+export function aileEtkisi(mal: string, q: Kalite, id: string, hunerler: readonly string[] = []): AileEtkiDegeri | null {
+  const aile = esyaAilesi(mal);
+  const v = (t: readonly number[]) => t[q] ?? 0;
+  switch (`${aile}:${id}`) {
+    case "alet:verim":
+      return { deger: aletEtkisi(mal, q, hunerler).verim, birim: "adet" };
+    case "alet:omur": {
+      const a = aletEtkisi(mal, q, hunerler);
+      return a.yipranmaz ? { yipranmaz: true } : { deger: a.omur, birim: "kullanim" };
+    }
+    case "silah:guc":
+      return { deger: v(SILAH_GUC), birim: "duello" };
+    case "zirh:dayanim":
+      return { deger: v(ZIRH_DAYANIM), birim: "duello" };
+    case "arac:yuk":
+      return TASITLAR.includes(mal) ? { deger: v(ARAC_KALITE_YUK), birim: "yuk" } : null;
+    case "arac:dayanim":
+      return KERVAN_ARACLARI.includes(mal) ? { deger: v(ALET_KALITE_OMUR), birim: "kullanim" } : null;
+    case "giysi:yol":
+      return mal === YOL_GIYSISI ? { deger: v(CIZME_YOL_TAKAT), birim: "takat" } : null;
+    case "yiyecek:tokluk":
+      return SOFRA_GIRDILERI.has(mal) ? { deger: v(YIYECEK_TOKLUK), birim: "yuzde" } : null;
+    case "sanat:keyif":
+      return HIZMET_SANAT_ARACLARI.includes(mal) ? { deger: v(SANAT_KEYIF), birim: "gonul" } : null;
+    case "mal:deger":
+      return { deger: KALITE_DEGER_CARPANI[q] ?? 1, birim: "carpan" };
+    default:
+      return null;
+  }
+}
+
+/** Eldeki bu aileden mallar arasında en yüksek etki değeri (düello: en iyi silah/zırh). Adlı eşya sayılır (harcanmaz). */
+export function eldekiEnIyiEtki(k: Envanterli, aile: EsyaAilesi, id: string): { mal: string | null; q: Kalite; deger: number } {
+  let en: { mal: string | null; q: Kalite; deger: number } = { mal: null, q: 0, deger: 0 };
+  for (const [mal, n] of Object.entries(k.ev ?? {})) {
+    if (!((n ?? 0) > 0) || esyaAilesi(mal) !== aile) continue;
+    const b = enIyiBirim(k, mal);
+    const e = aileEtkisi(mal, b.q, id, b.hunerler);
+    const d = e && "deger" in e ? e.deger : 0;
+    if (d > en.deger || (d === en.deger && en.mal !== null && d > 0 && mal < en.mal)) en = { mal, q: b.q, deger: d };
+  }
+  return en;
+}
 
 export function esyaAilesi(mal: string): EsyaAilesi {
   return ESYA_AILESI[mal as MalId] ?? "mal";
@@ -179,22 +261,19 @@ export function eldekiAletEtkisi(k: Envanterli, mal: string): { q: Kalite; verim
 
 /**
  * Kademenin özellik dökümü: aile, etkiler, sadede kusur, hüner(ler). Gizli sayı yok ve gösterilen = gerçek: bağlı
- * etki (`bagli:true`) oyundaki gerçek değeriyle döner (alet: `verim` +N adet, `omur` +N kullanım ya da `yipranmaz`);
- * bağlı olmayan etki ve hüner `bagli:false`tır (istemci "yakında" der). Çarpan yazılmaz (hiçbir mantık okumaz).
+ * etki (`bagli:true`) oyundaki gerçek değeriyle ve birimiyle döner (`aileEtkisi`: alet verim/ömür, silah ve zırh
+ * düello, taşıt yükü, çizme yolu, sofra yiyeceği, saz, mal değeri); bağlı olmayan etki ve hüner `bagli:false`tır
+ * (istemci "yakında" der). Etki çarpanı (ETKI_CARPANI) yazılmaz (hiçbir mantık okumaz).
  */
 export function ozellikDokumu(mal: string, q: Kalite, esya?: EsyaKaydi) {
   const aile = esyaAilesi(mal);
   const a = AILELER[aile];
   const hunerler = hunerleri(mal, q, esya);
-  const alet = aletEtkisi(mal, q, hunerler);
   const etkiler = a.etkiler
     .filter(([, en]) => q >= en)
     .map(([id]) => {
-      const bagli = a.bagliEtkiler?.includes(id) === true;
-      if (!bagli) return { id, bagli };
-      if (id === "verim") return { id, bagli, deger: alet.verim, birim: "adet" as const };
-      if (id === "omur") return alet.yipranmaz ? { id, bagli, yipranmaz: true } : { id, bagli, deger: alet.omur, birim: "kullanim" as const };
-      return { id, bagli };
+      const e = aileEtkisi(mal, q, id, hunerler);
+      return e ? { id, bagli: true, ...e } : { id, bagli: false };
     });
   return {
     aile,
